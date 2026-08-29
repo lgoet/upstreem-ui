@@ -519,7 +519,16 @@
     /* ---- laufender Platzhalter ---- */
     var PH_ITEMS = ["Add instructions…"].concat(SUGGESTS);
     var phIdx = 0, phTimer = null;
-    function phLoopActive(){ return !S.inputFocused && !elInput.value.trim(); }
+    /* Nur bei OFFENEM Fenster. Der laufende Platzhalter steht im Eingabefeld des Modals -- ist das
+       zu, sieht ihn niemand, und die Uhr lief trotzdem: alle fuenf Sekunden ein Tick mit einem
+       erzwungenen Umbruch (void offsetWidth), und zwar je Platzierung. In einer Repeating Group
+       sind das so viele Uhren wie Zeilen. Genau das stand reihenweise in der Konsole eines
+       Nutzers ("'setTimeout' handler took 55ms" aus create-with-ai, alle paar Sekunden).
+       open() und close() rufen beide renderAll(), und das ruft phUpdate -- die Uhr startet also
+       beim Oeffnen und haelt beim Schliessen von selbst. */
+    function phLoopActive(){
+      return elOverlay.classList.contains("is-open") && !S.inputFocused && !elInput.value.trim();
+    }
     function phStart(){
       phStop();
       if (!phLoopActive()) return;
@@ -763,6 +772,9 @@
       readAttrs(); renderAll();
       portalZeigen();
       elOverlay.classList.add("is-open");
+      /* NACH der Klasse: der laufende Platzhalter startet nur bei offenem Fenster, und renderAll()
+         oben lief noch, als es zu war. Ohne diese Zeile bliebe das Feld beim Oeffnen stumm. */
+      phUpdate();
       _lastFocus = document.activeElement;
       document.addEventListener("keydown", onKey);
     }

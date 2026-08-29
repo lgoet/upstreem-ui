@@ -232,7 +232,13 @@
      jetzt in der Seitenleiste und im Seitenkopf traegt. Vorher stand hier lucide "scan-search" --
      das war das letzte Zeichen der alten Familie. Getauscht wird im JS und nicht nur in der
      Vorlage: eine Vorlagenaenderung erreicht ein schon eingebautes Bubble-Element nicht. */
-  (function fernrohrSetzen(){
+  /* NICHT nur einmal. Das Markup dieser Komponente gehoert Bubble, und Bubble zeichnet seine
+     Gruppen ueber jQuery.html() neu -- danach steht im Kasten wieder das Zeichen aus der Vorlage,
+     und bei einem Element, das vor dem Wechsel auf das Teleskop eingebaut wurde, ist das das alte.
+     Deshalb wird der Stempel wiederholt: beim Start, in den ersten drei Sekunden gestaffelt, und
+     bei jedem Wechsel des Zustands (siehe setResearchState). Geschrieben wird nur, wo etwas
+     anderes steht -- ein Schreibvorgang ist selbst eine Mutation. */
+  function fernrohrSetzen(){
     if (!UC || !UC.icon) return;
     var svg = UC.icon('telescope', 2);
     if (!svg) return;
@@ -242,8 +248,10 @@
        baut ladebildSetzen zwar neu, aber nur wenn es .upr-loading-inner findet; fehlt die, bleibt
        die alte Kugel stehen. Ein Selektor mehr kostet nichts und schliesst genau diese Luecke. */
     [].forEach.call(root.querySelectorAll('.upr-research-orb, .upr-l2-mark, .upr-loader-core'),
-      function(el){ el.innerHTML = svg; });
-  })();
+      function(el){ if (el.innerHTML.indexOf('10.065') < 0) el.innerHTML = svg; });
+  }
+  fernrohrSetzen();
+  [60, 250, 700, 1500, 3000].forEach(function(ms){ setTimeout(fernrohrSetzen, ms); });
 
   /* Das Ladebild: dasselbe Bild wie im ZWEITEN Ladeschirm des Onboardings (uob-load.is-compact) --
      Kachel, Name, Unterzeile, Balken, Satz, Marken. Die Werte sind von dort uebernommen und nicht
@@ -561,6 +569,7 @@
        view is up — remeasure on every state change. applyStickyNow is a hoisted declaration and
        guards on stickyKit, so an early call before init finishes is a no-op rather than a throw. */
     setTimeout(applyStickyNow, 0);
+    fernrohrSetzen();          /* nach einem Neuaufbau der Gruppe steht sonst wieder das alte Zeichen da */
     root.classList.toggle('is-running', isRunning);
     root.classList.toggle('is-results', isResults);
     root.classList.toggle('is-error', isError);

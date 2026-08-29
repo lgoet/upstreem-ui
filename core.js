@@ -3050,6 +3050,10 @@
        und genau der stand deshalb noch auf "Day/Week/Month", waehrend alle anderen schon kurz
        waren. Ueber das Attribut trifft es auch jede kuenftige Variante. */
     try { els = ziel.querySelectorAll("button[data-gran]"); } catch(e){ return; }
+    els = Array.prototype.slice.call(els);
+    /* Die Wurzel selbst zaehlt mit: der Beobachter uebergibt den hinzugekommenen Knoten, und der
+       KANN der Knopf sein. querySelectorAll findet nur Nachfahren. */
+    if (ziel.matches && ziel.matches("button[data-gran]")) els.push(ziel);
     for (var i = 0; i < els.length; i++){
       var b = els[i], kurz = GRAN_KURZ[b.getAttribute("data-gran")], lang = GRAN_LANG[b.getAttribute("data-gran")];
       if (!kurz) continue;
@@ -3085,6 +3089,11 @@
      Klick und an jeder Mutation. Genau diese Meldung stand reihenweise in der Konsole eines
      Nutzers ("Forced reflow while executing JavaScript took 186ms"). Getrennt bleibt EIN Umbruch
      je Lauf uebrig. */
+  /* ZWEI Durchgaenge, und das ist der Punkt: erst wird an ALLEN Umschaltern gelesen, dann an
+     allen geschrieben. Vorher lag beides ineinander -- lesen an Kasten A, schreiben an A, lesen
+     an B -- und jedes Lesen nach einem Schreiben zwingt den Browser, das Layout neu zu rechnen.
+     Bei zehn Umschaltern sind das zehn erzwungene Umbrueche je Lauf, und der Lauf haengt an jedem
+     Klick und an jeder Mutation. Getrennt bleibt EIN Umbruch je Lauf uebrig. */
   function segLesen(box){
     if (!box.isConnected) return null;
     var aktiv = box.querySelector("button.is-active");
@@ -3096,38 +3105,69 @@
     if (!b) return null;
     return { box: box, x: aktiv.offsetLeft + "px", y: aktiv.offsetTop + "px",
              w: b + "px", h: h + "px",
-             idx: Array.prototype.indexOf.call(box.children, aktiv) };
+             idx: Array.prototype.indexOf.call(box.children, aktiv),
+             key: segSchluessel(box) };
   }
 
-  function segSchreiben(m){
-    var box = m.box;
-    /* GEFAHREN wird nur bei einem echten Wechsel des aktiven Knopfes. Jede andere Messung springt.
-       Der Fall, der es gezeigt hat: in einem Filtermenue wird beim Klick auf einen Typ das ganze
-       Menue neu gezeichnet. Der Umschalter darin ist danach ein NEUES Element ohne Streifenwerte,
-       also Breite 0 in der linken Ecke -- und die erste Messung setzte Werte UND Klasse in einem
-       Zug. Ein Uebergang startet nach dem Zustand NACH der Aenderung, und der trug die Fahrt
-       bereits: der Streifen fuhr aus dem Nichts auf. Genau das war gemeldet.
-       Dasselbe gilt fuer jede Verschiebung, die nicht vom Nutzer kommt (eine Werkzeugleiste, die
-       enger wird, ein Menue, das aufgeht): der Streifen soll dem Knopf folgen, nicht wandern.
-       Der Vergleich laeuft ueber die POSITION des aktiven Knopfes und nicht ueber das Element:
-       nach einem Neuaufbau sind alle Knoepfe neue Elemente, die Stelle des aktiven bleibt aber
-       dieselbe. */
-    var stand = box.classList.contains("is-gleitend");
-    var gleiten = stand && box.__upSegIdx !== m.idx;
-    box.__upSegIdx = m.idx;
-    if (!gleiten) box.classList.add("is-sofort");
-    /* VIER ZAHLEN, sonst nichts. Kein Element, kein Einhaengen, kein Umbau -- der Streifen ist ein
-       ::before und existiert im DOM gar nicht. Deshalb kann diese Funktion auch nichts ausloesen,
-       was ein fremder Beobachter (Bubble) als Aenderung an seinem Baum sieht. */
+  /* Der Streifen muss einen NEUAUFBAU ueberleben. Mehrere Menues zeichnen sich bei jedem Klick
+     komplett neu (das Filtermenue etwa); der Umschalter darin ist danach ein anderes Element,
+     und ein Zustand am Element waere weg. Deshalb ein Schluessel, der den Neuaufbau uebersteht:
+     Komponente, Klassen, Zahl der Knoepfe und die Marke des ersten Knopfes. Datenattribute
+     zuerst, Text nur als Rueckfall -- der Text der Granularitaet wechselt von "Day" auf "D",
+     ein Schluessel daraus waere nach dem Kuerzen ein anderer. */
+  var SEG_STAND = {};
+  function segSchluessel(box){
+    var w = box.closest ? box.closest("[data-instance]") : null;
+    var id = w ? (w.getAttribute("data-instance") || "") : "";
+    var kl = (box.className || "").split(/\s+/).filter(function(c){
+      return c && c !== "is-gleitend" && c !== "is-sofort";
+    }).sort().join(".");
+    var e = box.children[0];
+    var marke = e ? (e.getAttribute("data-metric") || e.getAttribute("data-dim") ||
+                     e.getAttribute("data-gran") || e.getAttribute("data-chart") ||
+                     e.getAttribute("data-mode") || (e.textContent || "").slice(0, 12)) : "";
+    return id + "|" + kl + "|" + box.children.length + "|" + marke;
+  }
+
+  function segWerte(box, m){
     var st = box.style;
     if (st.getPropertyValue("--up-seg-x") !== m.x) st.setProperty("--up-seg-x", m.x);
     if (st.getPropertyValue("--up-seg-y") !== m.y) st.setProperty("--up-seg-y", m.y);
     if (st.getPropertyValue("--up-seg-w") !== m.w) st.setProperty("--up-seg-w", m.w);
     if (st.getPropertyValue("--up-seg-h") !== m.h) st.setProperty("--up-seg-h", m.h);
-    /* Die Klasse ZULETZT und nur einmal: sie schaltet Sichtbarkeit und Fahrt frei. Steht sie schon
-       vor der ersten Messung da, faehrt der Streifen beim ersten Bild aus der linken Ecke heran. */
+  }
+
+  /* Drei Faelle, und nur einer davon faehrt:
+       kein Wechsel          -> springen. Erste Messung, engere Werkzeugleiste, aufgehendes Menue.
+       Wechsel, gleiches El. -> fahren, wie bisher.
+       Wechsel, neues El.    -> erst OHNE Fahrt an die alte Stelle, dann nach EINEM Umbruch mit
+                                Fahrt an die neue. Ohne diesen Umweg faehrt der Streifen aus der
+                                linken Ecke mit Breite 0 auf -- ein neues Element hat keine Werte,
+                                und ein Uebergang startet nach dem Zustand NACH der Aenderung.
+                                Genau das war das Aufblitzen im Filtermenue.
+     VIER ZAHLEN, sonst nichts. Kein Element, kein Einhaengen, kein Umbau -- der Streifen ist ein
+     ::before und existiert im DOM gar nicht. */
+  function segSchreiben(m){
+    var box = m.box;
+    var alt = SEG_STAND[m.key];
+    var stand = box.classList.contains("is-gleitend");
+    var wechsel = !!alt && alt.idx !== m.idx;
+    SEG_STAND[m.key] = { idx: m.idx, x: m.x, y: m.y, w: m.w, h: m.h };
+
+    if (wechsel && stand){                 /* dasselbe Element: einfach fahren */
+      segWerte(box, m);
+      return null;
+    }
+    if (wechsel){                          /* neues Element: erst zurueck, dann fahren */
+      box.classList.add("is-sofort");
+      segWerte(box, alt);
+      box.classList.add("is-gleitend");
+      return { box: box, ziel: m };
+    }
+    box.classList.add("is-sofort");        /* kein Wechsel: springen */
+    segWerte(box, m);
     if (!stand) box.classList.add("is-gleitend");
-    return !gleiten;                       /* diese Box wartet noch auf das Abnehmen von is-sofort */
+    return { box: box, ziel: null };
   }
 
   function segSchriftUhr(){
@@ -3164,14 +3204,19 @@
     }
     var wartend = [];
     for (i = 0; i < messwerte.length; i++){               /* 2. nur schreiben */
-      if (segSchreiben(messwerte[i])) wartend.push(messwerte[i].box);
+      var auftrag = segSchreiben(messwerte[i]);
+      if (auftrag) wartend.push(auftrag);
     }
-    /* 3. EIN erzwungener Umbruch fuer alle zusammen: er legt die neuen Werte ohne Fahrt fest.
-       Erst danach darf die Fahrt wieder gelten. Ohne ihn nimmt der Browser beide Aenderungen
-       zusammen und animiert doch. */
+    /* 3. EIN erzwungener Umbruch fuer alle zusammen: er legt fest, was ohne Fahrt gelten soll.
+       Erst danach faellt die Sperre -- und wer auf die alte Stelle gesetzt wurde, bekommt jetzt
+       seine neue und faehrt dorthin. Ohne diesen Umbruch nimmt der Browser beide Aenderungen
+       zusammen, und es gibt keine Fahrt. */
     if (wartend.length){
       void document.body.offsetWidth;
-      for (i = 0; i < wartend.length; i++) wartend[i].classList.remove("is-sofort");
+      for (i = 0; i < wartend.length; i++){
+        wartend[i].box.classList.remove("is-sofort");
+        if (wartend[i].ziel) segWerte(wartend[i].box, wartend[i].ziel);
+      }
     }
     if (t0){
       SEG_KONTO += performance.now() - t0;
@@ -3329,7 +3374,6 @@
   if (window.MutationObserver){
     var stampGeplant = false;
     var stampObs = new MutationObserver(function(muts){
-      if (stampGeplant) return;
       var neueElemente = false;
       for (var i = 0; i < muts.length && !neueElemente; i++){
         var an = muts[i].addedNodes;
@@ -3338,6 +3382,21 @@
         }
       }
       if (!neueElemente) return;
+      /* Die KURZEN Beschriftungen sofort, noch in diesem Rueckruf. Ein Beobachter-Rueckruf ist ein
+         Microtask: er laeuft vor dem naechsten Bild. Alles andere darf warten, das hier nicht --
+         eine Komponente, die ihre Werkzeugleiste neu zeichnet, schreibt "Day Week Month" hinein,
+         und wer erst 250ms spaeter kuerzt, laesst genau das einmal aufblitzen. Gemeldet beim
+         Wechsel zwischen Domain- und URL-Modus auf der Citations-Seite.
+         Nur die betroffenen Aeste und nicht das ganze Dokument: stampGran nimmt eine Wurzel, und
+         teurer als ein querySelectorAll auf einem frischen Knoten ist das nicht. */
+      for (var m = 0; m < muts.length; m++){
+        var zu = muts[m].addedNodes;
+        for (var n = 0; n < zu.length; n++){
+          if (zu[n].nodeType !== 1) continue;
+          sicher("stampGran", (function(el){ return function(){ stampGran(el); }; })(zu[n]));
+        }
+      }
+      if (stampGeplant) return;
       stampGeplant = true;
       setTimeout(function(){
         stampGeplant = false;
@@ -5496,11 +5555,12 @@
      as an opt-out, so an unset/unreadable key falls through to "thick" here. "thick" itself was the
      midpoint between thin (1.5px, the original) and the first version's 2.75px — 2.75 read as too
      heavy in practice.
-     Danach beide um 15 Prozent zurueckgenommen: 1.5 -> 1.275 und 2.125 -> 1.80625. Beide, nicht nur
-     der Vorgabewert -- sonst waere "thin" nach der Aenderung dicker als vorher "thick" gewirkt hat,
-     und das Verhaeltnis der zwei Stufen zueinander ist die eigentliche Aussage der Einstellung.
+     Am 27.08. waren beide um 15 Prozent zurueckgenommen (1.5 -> 1.275, 2.125 -> 1.80625) und sind
+     am 29.08. wieder auf ihren alten Werten: die Linien wirkten zu duenn. Beide Stufen zusammen,
+     nie nur die Vorgabe -- sonst waere "thin" dicker als vorher "thick" gewirkt hat, und das
+     Verhaeltnis der zwei Stufen zueinander ist die eigentliche Aussage der Einstellung.
      Der Rand der Hoverpunkte zieht von selbst mit: er IST diese Breite (siehe build()). */
-  var LINE_WIDTH_VALUES = { thin: 1.275, thick: 1.80625 };
+  var LINE_WIDTH_VALUES = { thin: 1.5, thick: 2.125 };
   var LINE_WIDTH_KEY = "up_line_width_pref";
   function getLineWidthPref(){
     try { return window.localStorage.getItem(LINE_WIDTH_KEY) === "thin" ? "thin" : "thick"; }
