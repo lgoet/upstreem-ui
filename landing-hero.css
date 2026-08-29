@@ -1770,8 +1770,20 @@
    Fussnote. Die Plakette darum zieht mit, sonst sitzt das Bild an ihrem Rand. */
 /* Das Modellzeichen ist das erste, was man auf der Karte liest -- welches Modell hat das gesagt.
    28 statt 22px: bei 22 war es im kleinen Fenster ein Punkt. */
-.ulh-fen-antwort .urt-model-chip .up-ment-logo { width: 28px; height: 28px; flex: 0 0 28px; border-radius: 8px; }
-.ulh-fen-antwort .urt-model-chip .up-ment-logo img { width: 28px; height: 28px; border-radius: 8px; }
+/* Mit .up-root.urt-root davor, und das ist der Punkt: core setzt fuer schmale Wurzeln
+   .up-root.is-vnarrow .urt-model-chip .up-ment-logo auf 20x20, und das sind vier Klassen gegen
+   drei. Die Regel hier gewann deshalb nur ueber flex-basis die BREITE -- 28 breit, 20 hoch, und
+   ein Zeichen mit object-fit: cover verliert oben und unten je vier Pixel. Das war das
+   "oben und unten abgeschnitten", und es traf auch schon das alte Zeichen.
+   Das Bild fuellt seinen Kasten mit 100% statt mit 28px: der Kasten traegt 1px Polster aus core,
+   ein Bild mit fester 28er Kante stuende ueber seinem Rand. Radius 7 statt 8, weil ein Innenrand
+   um genau dieses eine Pixel kleiner rundet als der Aussenrand. */
+.ulh-fen-antwort .up-root.urt-root .urt-model-chip .up-ment-logo {
+  width: 28px; height: 28px; flex: 0 0 28px; border-radius: 8px;
+}
+.ulh-fen-antwort .up-root.urt-root .urt-model-chip .up-ment-logo img {
+  width: 100%; height: 100%; border-radius: 7px;
+}
 /* Der Wechsel zwischen den drei Antworten: aus, tauschen, ein. Nur die Deckkraft und ein kleiner
    Weg nach oben -- die Karte soll wechseln, nicht springen. */
 .ulh-fen-antwort .ulh-fen-view {
