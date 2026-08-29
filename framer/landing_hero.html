@@ -9,8 +9,16 @@
 
      Leer oder "CDN_PIN" laedt @main -- fuer die oeffentliche Seite bitte nicht: @main
      aendert sich mit jedem Push, und dann aendert sich die Seite ohne dein Zutun.
+
+     DIE LEISTE OBEN haengt sich in die Framer-Seite, nicht in dieses Embed. Sie muss das:
+     ein Embed ist ein eigener Rahmen, der nie scrollt, und darin kann nichts kleben. In der
+     Seite darueber ist sie nativ fixiert -- ohne Nachziehen, ohne Takt.
+     Mitgeliefert wird dabei nur landing-hero.css (dieselbe Adresse, derselbe Pin). Darin steht
+     kein einziger Selektor ohne .ulh-Praefix, sie kann deine Seite also nicht umgestalten.
+     WILLST DU DAS NICHT, schreib data-nav-host="no" an das div unten. Dann bleibt die Leiste im
+     Embed und scrollt mit -- und du baust die Navigation in Framer.
      ============================================================================ -->
-<div class="ulh-root" data-cdn-pin="d49de51"></div>
+<div class="ulh-root" data-cdn-pin="4e6fdf6"></div>
 
 <script>
 (function(){
