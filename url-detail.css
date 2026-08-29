@@ -248,9 +248,25 @@
    Flaechen. Ein zweiter Aufbau nur fuers Laden waere ein zweiter Aufbau, den jemand pflegen muss. */
 .uud-root.is-loading .uud-sect-ments,
 .uud-root.is-loading .uud-sect-embed,
-.uud-root.is-loading .uud-sect-meta,
-.uud-root.is-loading .uud-sect-sum,
 .uud-root.is-loading .uud-sect-conv { display: none; }
+/* Meta-Beschreibung und Zusammenfassung bleiben STEHEN und zeigen Balken. Sie sind die zwei
+   Abschnitte, die beim Laden am laengsten leer bleiben (der Text kommt aus einem eigenen Aufruf),
+   und eine Seite, die dort einfach aufhoert, sieht fertig aus. Die anderen drei bleiben weg: die
+   Mentions haengen an der Zahl der Marken, das Embed an einem fremden Anbieter und die Tabelle an
+   der Zeilenzahl -- fuer die waere ein Balkenbild eine Behauptung ueber die Groesse.
+   Beide tragen bis zum ersten Datensatz das hidden-Attribut. Vier Selektorteile gegen die zwei
+   von ".uud-root > [hidden]", also ueber die Spezifitaet gewonnen und nicht ueber !important. */
+.uud-root.is-loading .uud-sect-meta[hidden],
+.uud-root.is-loading .uud-sect-sum[hidden] { display: block; }
+/* Der Balkensatz liegt IM Markup und wird nur umgeblendet -- kein zweiter Aufbau fuer den
+   Ladezustand. 11px Abstand, damit der Zeilenrhythmus dem Text darunter entspricht: 12px Balken
+   plus 11 ergeben die 23px, die 14.5px Schrift mit Zeilenhoehe 1.6 belegt. Die letzte Zeile
+   kuerzer, so endet ein Absatz. */
+.uud-sk { display: none; flex-direction: column; gap: 11px; }
+.uud-sk .up-tsk-bar { width: 100%; }
+.uud-sk .up-tsk-bar:last-child { width: 62%; }
+.uud-root.is-loading .uud-sk { display: flex; }
+.uud-root.is-loading .uud-text { display: none; }
 .uud-root.is-loading .uud-kpi-val::before {
   content: ""; display: block; width: 56px; height: 15px; border-radius: 6px;
   background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite;

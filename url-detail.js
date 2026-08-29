@@ -287,6 +287,17 @@
     document.head.appendChild(s);
   }
 
+  /* Balken aus core (.up-tsk-bar: 12px hoch, Radius 4, --vc-sk, uutpulse) -- derselbe Balken, den
+     UC.skeletonRows in die Tabellen legt. Nur die Breiten stehen in der CSS, denn sie haengen am
+     Text darunter: volle Zeilen, die letzte kuerzer.
+     Im Modul-Scope und nicht in initRoot: shell() steht hier oben und wuerde eine Funktion aus dem
+     Instanz-Scope nicht sehen. */
+  function skelettText(zeilen) {
+    var n = zeilen || 3, out = "", i;
+    for (i = 0; i < n; i++) out += '<span class="up-tsk-bar"></span>';
+    return '<span class="uud-sk" aria-hidden="true">' + out + '</span>';
+  }
+
   function shell() {
     /* Abschnitte, keine Karten -- wie in response-detail. Eine Karte je Block macht aus einer
        Detailseite eine Kachelwand; die Ueberschrift traegt den Abschnitt, nicht ein Rahmen.
@@ -317,7 +328,11 @@
           '<span class="uud-sec-title">Meta Description</span>' +
           '<span class="uud-sec-desc">The page\'s SEO description</span>' +
         '</div></div>' +
-        '<div class="uud-quote"><p class="uud-text uud-meta"></p></div>' +
+        /* Das Skelett steht IM Markup und nicht erst im Ladezustand: die CSS blendet es um,
+           und damit gibt es keinen zweiten Aufbau, den jemand pflegen muss. Drei Balken, der
+           letzte kuerzer -- so endet ein Absatz. */
+        '<div class="uud-quote">' + skelettText() +
+          '<p class="uud-text uud-meta"></p></div>' +
       '</div>' +
 
       '<div class="uud-sect uud-sect-sum" hidden>' +
@@ -325,7 +340,8 @@
           '<span class="uud-sec-title">AI Summary</span>' +
           '<span class="uud-sec-desc">High-level summary of this page</span>' +
         '</div></div>' +
-        '<div class="uud-quote"><p class="uud-text uud-sum"></p></div>' +
+        '<div class="uud-quote">' + skelettText(4) +
+          '<p class="uud-text uud-sum"></p></div>' +
       '</div>' +
 
       '<div class="uud-sect uud-sect-conv" hidden>' +
