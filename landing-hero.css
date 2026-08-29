@@ -2498,11 +2498,11 @@
   border-left: 1px solid var(--ulh-schiene);
   border-right: 1px solid var(--ulh-schiene);
 }
-.ulh-nav-logo {
-  display: inline-flex; align-items: center; gap: 9px; text-decoration: none;
-  font-size: 17px; font-weight: 500; letter-spacing: -0.02em; color: var(--ulh-text);
-}
-.ulh-nav-logo img { display: block; width: 24px; height: 24px; }
+/* Eine Datei, kein Zeichen mit Text daneben: die Wortmarke bringt Zeichen und Wort in den
+   offiziellen Abstaenden mit. Hoehe 28 statt der 24 des alten Zeichens -- das Zeichen fuellt in
+   der Wortmarke rund 85 Prozent der Hoehe, bei 28 steht es also wieder bei 24. */
+.ulh-nav-logo { display: inline-flex; align-items: center; text-decoration: none; }
+.ulh-nav-logo img { display: block; height: 28px; width: auto; }
 /* Die Mitte ist wirklich die Mitte: absolut gesetzt, damit die Punkte nicht wandern, wenn links
    oder rechts etwas laenger wird. */
 .ulh-nav-mitte {
@@ -2617,13 +2617,11 @@
   padding-bottom: clamp(72px, 10vh, 114px);
 }
 .ulh-fuss-marke { display: flex; flex-direction: column; gap: 14px; margin-right: auto; max-width: 300px; }
-.ulh-fuss-logo {
-  display: inline-flex; align-items: center; gap: 9px; text-decoration: none;
-  font-size: 18px; font-weight: 500; letter-spacing: -0.02em; color: #ffffff;
-}
-/* Das Zeichen ist dunkle Tinte auf Durchsichtigem -- auf Schwarz waere es unsichtbar. invert
-   dreht es um, statt eine zweite Datei zu fuehren, die auseinanderlaufen kann. */
-.ulh-fuss-logo img { display: block; width: 26px; height: 26px; filter: invert(1); }
+.ulh-fuss-logo { display: inline-flex; align-items: center; text-decoration: none; }
+/* Die Wortmarke ist dunkle Tinte auf Durchsichtigem -- auf Schwarz waere sie unsichtbar. invert
+   dreht sie um, statt eine zweite Datei zu fuehren, die auseinanderlaufen kann. 31px, damit das
+   Zeichen darin auf denselben 26 steht wie vorher das einzelne. */
+.ulh-fuss-logo img { display: block; height: 31px; width: auto; filter: invert(1); }
 .ulh-fuss-satz { margin: 0; font-size: 13.5px; line-height: 1.5; color: #9a9a9a; max-width: 30ch; }
 .ulh-fuss-netz { display: flex; gap: 8px; margin-top: 4px; }
 .ulh-fuss-ic {

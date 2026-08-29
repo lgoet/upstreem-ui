@@ -439,9 +439,8 @@
   function leiste(){
     return '<header class="ulh-nav">' +
       '<div class="ulh-spur ulh-nav-in">' +
-        '<a class="ulh-nav-logo" href="https://upstreem.ai">' +
-          '<img src="' + ORBIT_MARKE + '" alt="" width="24" height="24"/>' +
-          '<span>upstreem</span>' +
+        '<a class="ulh-nav-logo" href="https://upstreem.ai" aria-label="upstreem">' +
+          '<img src="' + WORTMARKE + '" alt="upstreem" width="197" height="28"/>' +
         '</a>' +
         '<nav class="ulh-nav-mitte">' +
           NAV_PUNKTE.map(function(p){
@@ -631,9 +630,8 @@
     return '<footer class="ulh-fuss">' +
       '<div class="ulh-spur ulh-fuss-in">' +
         '<div class="ulh-fuss-marke">' +
-          '<a class="ulh-fuss-logo" href="https://upstreem.ai">' +
-            '<img src="' + ORBIT_MARKE + '" alt="" width="26" height="26"/>' +
-            '<span>upstreem</span>' +
+          '<a class="ulh-fuss-logo" href="https://upstreem.ai" aria-label="upstreem">' +
+            '<img src="' + WORTMARKE + '" alt="upstreem" width="218" height="31"/>' +
           '</a>' +
           '<p class="ulh-fuss-satz">See how AI answers talk about your brand.</p>' +
           '<div class="ulh-fuss-netz">' +
@@ -1365,6 +1363,16 @@
      dunkle Tinte auf durchsichtigem Grund, also genau richtig auf der weissen Scheibe. */
   var ORBIT_MARKE = "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/" +
     "BRANDSTYLES/upstreem-mark-square-1f1f1f.svg";
+  /* Die Wortmarke als EINE Datei: Zeichen und Wort in den offiziellen Abstaenden. Vorher stand in
+     Kopf und Fuss das quadratische Zeichen und daneben das Wort als Text -- zwei Dinge, deren
+     Verhaeltnis zueinander von der Schriftgroesse abhing und mit der offiziellen Marke nur
+     ungefaehr uebereinstimmte. Gemessen am geladenen Bild: 761x108, also 7.046:1 -- die Breiten in
+     den Attributen stehen deshalb bei 197 und 218 und nicht bei den 183/203, die aus dem viewBox
+     folgen wuerden. Sie halten nur den Platz bis zum Laden; die Groesse setzt die CSS.
+     Die Hoehen sind so gewaehlt, dass das Zeichen darin so gross bleibt wie das einzelne vorher:
+     es fuellt 92 der 108 Einheiten, also rund 85 Prozent. */
+  var WORTMARKE = "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/" +
+    "BRANDSTYLES/upstreem-lockup-1f1f1f.svg";
   /* Radien der drei Bahnen. Der Kasten der Vorschau ist 330px hoch, SICHTBAR sind davon 304 -- die
      oberen 26 sind die Polsterung, unter der der Inhalt durchlaeuft (siehe .ulh-vis). Die aeussere
      Bahn hat mit 138 also 276 Durchmesser und steht in den 304 mit 14px Luft nach oben und unten.
