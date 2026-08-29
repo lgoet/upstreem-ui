@@ -83,9 +83,18 @@
    eine Spalte. So sitzt spaeter ein Knopf daneben und nicht darunter. */
 .uud-sec { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px;
   margin-bottom: 16px; }
-.uud-sec-txt { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+/* Ueberschrift und Unterzeile NEBENEINANDER, nicht uebereinander: der Abschnittskopf ist damit
+   eine Zeile hoch statt zwei, und der Abstand zum Inhalt darunter traegt die Trennung allein.
+   An der Grundlinie ausgerichtet, damit die zwei Schriftgroessen auf derselben Linie sitzen und
+   nicht mittig gegeneinander schweben. Umbruch erlaubt: auf schmalen Breiten faellt die Unterzeile
+   unter die Ueberschrift, statt sie zusammenzuquetschen.
+   Die Unterzeile ist genau EINEN Punkt kleiner als die Ueberschrift (14 -> 13): nebeneinander
+   liest sich der Unterschied ueber Farbe und Gewicht, ein groesserer Sprung liesse sie wie eine
+   Fussnote wirken. */
+.uud-sec-txt { display: flex; flex-direction: row; align-items: baseline; flex-wrap: wrap;
+  gap: 4px 10px; min-width: 0; }
 .uud-sec-title { font-size: 14px; font-weight: 500; color: var(--vc-text); }
-.uud-sec-desc { font-size: 12.5px; font-weight: 400; line-height: 1.45; color: var(--vc-muted); }
+.uud-sec-desc { font-size: 13px; font-weight: 400; line-height: 1.45; color: var(--vc-muted); }
 
 /* ---- Mentions --------------------------------------------------------------------------------
    Die Liste ist .up-mentlist aus core, eine Stufe groesser (is-lg, 40px). Alles -- Polsterung,
@@ -170,19 +179,17 @@
 }
 .uud-fallback:hover { background: var(--vc-heading-bg); }
 
-/* ---- Zitatstrich -----------------------------------------------------------------------------
-   Ein 1px breiter Strich in der Rahmenfarbe links neben dem Text, 16px Abstand. Er steht IM
-   Textbehaelter, nicht neben der Ueberschrift: die Ueberschrift benennt den Abschnitt, der Strich
-   markiert den fremden Text darunter -- die Meta-Beschreibung und die Zusammenfassung sind beide
-   nicht unsere Worte.
-   stretch statt einer festen Hoehe: der Strich ist so hoch wie der Text, den er begleitet, und
-   das gilt fuer eine Zeile genauso wie fuer zehn. */
-.uud-quote { display: flex; align-items: stretch; gap: 16px; }
-.uud-rule { flex: 0 0 1px; width: 1px; background: var(--vc-border); border-radius: 1px; }
-
-/* ---- Textkarten ------------------------------------------------------------------------------ */
+/* ---- Fremder Text ----------------------------------------------------------------------------
+   Hier stand ein 1px-Strich links neben dem Text, der die Meta-Beschreibung und die
+   Zusammenfassung als fremde Worte markierte. Er ist weg: seit die Abschnitte durch Linien
+   getrennt sind, standen auf einer Seite waagerechte und senkrechte Striche nebeneinander, und
+   das las sich als Raster statt als Gliederung. Der Behaelter bleibt als Block stehen -- er
+   traegt kein Aussehen mehr, aber das Markup der Abschnitte bleibt unangetastet.
+   Der Text einen Punkt groesser als die uebrigen Zeilen der Seite (13.5 -> 14.5): er ist der
+   Inhalt des Abschnitts und nicht seine Beschriftung. */
+.uud-quote { display: block; }
 .uud-text {
-  margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--vc-text);
+  margin: 0; font-size: 14.5px; line-height: 1.6; color: var(--vc-text);
   white-space: pre-wrap; text-wrap: pretty;
 }
 

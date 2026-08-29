@@ -317,8 +317,7 @@
           '<span class="uud-sec-title">Meta Description</span>' +
           '<span class="uud-sec-desc">The page\'s SEO description</span>' +
         '</div></div>' +
-        '<div class="uud-quote"><span class="uud-rule"></span>' +
-          '<p class="uud-text uud-meta"></p></div>' +
+        '<div class="uud-quote"><p class="uud-text uud-meta"></p></div>' +
       '</div>' +
 
       '<div class="uud-sect uud-sect-sum" hidden>' +
@@ -326,8 +325,7 @@
           '<span class="uud-sec-title">AI Summary</span>' +
           '<span class="uud-sec-desc">High-level summary of this page</span>' +
         '</div></div>' +
-        '<div class="uud-quote"><span class="uud-rule"></span>' +
-          '<p class="uud-text uud-sum"></p></div>' +
+        '<div class="uud-quote"><p class="uud-text uud-sum"></p></div>' +
       '</div>' +
 
       '<div class="uud-sect uud-sect-conv" hidden>' +
