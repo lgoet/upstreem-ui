@@ -354,13 +354,13 @@
   var GEO_CHIP = "Why now";
   var GEO_H1 = "Search moved.";
   var GEO_H2 = "Your buyers ask an assistant, and it answers from pages it picked.";
+  /* Die Herkunft steht NICHT mehr im Bild -- sie steht hier. Jede der vier Zahlen ist oben an ihrer
+     Primaerquelle geprueft, mit Datum und Wortlaut; wer sie aendert, aendert sie dort mit. */
   var GEO_KPIS = [
-    { v: "900M", l: "weekly ChatGPT users", q: "OpenAI, Feb 2026" },
-    { v: "1B+", l: "monthly users of Google's AI Mode", q: "Alphabet Q2 2026" },
-    { v: "8%", l: "of searches with an AI summary end in a click - against 15% without one",
-      q: "Pew Research Center, 2025" },
-    { v: "+1,200%", l: "referral traffic from AI to US retail sites in seven months",
-      q: "Adobe Analytics, 2025" }
+    { v: "900M", l: "weekly ChatGPT users" },
+    { v: "1B+", l: "monthly users of Google's AI Mode" },
+    { v: "8%", l: "of searches with an AI summary end in a click - against 15% without one" },
+    { v: "+1,200%", l: "referral traffic from AI to US retail sites in seven months" }
   ];
   /* Monate seit November 2023 und woechentliche Nutzer in Millionen. */
   var GEO_PUNKTE = [[0, 100], [9, 200], [13, 300], [15, 400], [21, 700], [23, 800], [27, 900]];
@@ -369,7 +369,6 @@
     { x: 18, t: "May 2025", s: "AI Mode opens to the US" },
     { x: 23, t: "Oct 2025", s: "AI Mode goes global" }
   ];
-  var GEO_QUELLE = "Weekly ChatGPT users, from OpenAI's own announcements (Nov 2023 to Feb 2026).";
 
   /* Die Kurve als SVG und nicht ueber das Chart-Kit: das Kit zeichnet Karten mit Achsen, Legende
      und Tooltip -- hier steht eine Linie als Grund der Sektion, ohne Kasten und ohne Bedienung.
@@ -467,13 +466,9 @@
             return '<div class="ulh-geo-kpi ulh-auf" style="--auf:' + i + '">' +
               '<span class="ulh-geo-v">' + k.v + '</span>' +
               '<span class="ulh-geo-l">' + k.l + '</span>' +
-              '<span class="ulh-geo-q">' + k.q + '</span>' +
             '</div>';
           }).join("") +
         '</div>' +
-        /* Der Quellenhinweis steht UEBER der Kurve und nicht darunter: unter ihr endet die
-           Sektion buendig mit der Schraffur, dort ist kein Platz mehr. */
-        '<p class="ulh-geo-fuss ulh-auf" style="--auf:4">' + GEO_QUELLE + '</p>' +
       '</div>' +
       /* Die Kurve steht im Fluss und nicht absolut: so ist der Abstand zu den Zahlen eine Zahl
          und keine Rechnung aus zwei Kanten, und ihr unteres Ende liegt genau auf der Linie, die
