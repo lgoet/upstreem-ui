@@ -111,9 +111,14 @@
   from { opacity: 0; transform: scale(0.94); }
   to   { opacity: 1; transform: scale(1); }
 }
+/* --uhm-pop stretches the whole entrance (duration here, per-cell delay in the JS). Default 1 =
+   the app's timing; the landing hero sets 2, where the matrix IS the thing being shown. One
+   factor for both, otherwise the stagger and the duration drift apart. */
 .uhm-grid.is-appear .uhm-cell,
 .uhm-grid.is-appear .uhm-colhead,
-.uhm-grid.is-appear .uhm-rowhead { animation: uhmpop 280ms cubic-bezier(.2,0,.38,.9) both; }
+.uhm-grid.is-appear .uhm-rowhead {
+  animation: uhmpop calc(280ms * var(--uhm-pop, 1)) cubic-bezier(.2,0,.38,.9) both;
+}
 
 /* ---------- skeleton + empty ---------- */
 .uhm-cell.is-sk { background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }

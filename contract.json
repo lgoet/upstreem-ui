@@ -535,7 +535,6 @@
   "data-linewidth",
   "data-local",
   "data-logo",
-  "data-ly-eye",
   "data-market",
   "data-markets-apply-fn",
   "data-markets-fn",
@@ -1563,7 +1562,6 @@
   "uob-boot",
   "uob-boot-kreisel",
   "uob-bseg",
-  "uob-bseg-ind",
   "uob-check",
   "uob-col",
   "uob-count",
@@ -1979,6 +1977,7 @@
   "up-sec-titles",
   "up-seg",
   "up-seg-btn",
+  "up-seg-ind",
   "up-sent",
   "up-sent-dot",
   "up-sent-val",
@@ -2694,7 +2693,7 @@
   "fnattrs": 80,
   "globals": 138,
   "payloadkeys": 86,
-  "dataattrs": 203,
+  "dataattrs": 202,
   "klassen": 1985,
   "keyframes": 60
  }

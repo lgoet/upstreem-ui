@@ -2995,7 +2995,8 @@
 
      Warum nicht ueberall zoom: auf den Schirmen, auf denen es heute gut aussieht, ist transform
      der Zustand, der hier gemessen und ueber Wochen geprueft ist. Umgestellt wird deshalb nur
-     dort, wo das Problem entsteht -- unter anderthalb Geraetepixeln je CSS-Pixel.
+     dort, wo das Problem entsteht -- unter zwei Geraetepixeln je CSS-Pixel (die Begruendung
+     fuer genau diese Grenze steht unten an der Zeile, die sie zieht).
      Ein frueherer Kommentar in der CSS sagte, zoom loese die schmalen Fassungen der Bauteile aus.
      Das war einmal so; heute liefert Chrome fuer beide Wege dieselben Rechtecke, und die Messung
      oben zeigt es. */
@@ -3003,7 +3004,16 @@
     var app = root.querySelector(".ulh-app");
     if (!app) return;
     var dpr = window.devicePixelRatio || 1;
-    var mitZoom = dpr < 1.5;
+    /* Bis 2 und nicht bis 1.5. Windows steht selten auf 100%: die ueblichen Einstellungen sind
+       125, 150 und 175 Prozent, und das sind 1.25, 1.5 und 1.75 Geraetepixel je CSS-Pixel. Die
+       alte Grenze liess damit genau die haeufigsten Faelle im transform-Pfad -- gemeldet war
+       "besser, aber die kleinen Teile noch unsauber", und 150% faellt genau dazwischen.
+       Gemessen am laufenden Fenster (zoom 0.65, dpr 2): eine 1px-Linie kommt unter zoom als
+       0.5 CSS-Pixel heraus, also GENAU ein Geraetepixel -- der Browser legt sie auf das Raster.
+       Unter transform bleibt sie 0.65 breit und wird auf zwei Pixel verteilt.
+       Bei 2 ist Schluss: dort ist transform seit Wochen im Einsatz und sieht gut aus, und dort
+       sitzen die Macs samt Safari, dessen zoom sich anders verhaelt als das von Chrome. */
+    var mitZoom = dpr < 2;
     root.classList.toggle("is-zoom", mitZoom);
     if (mitZoom){
       app.style.transform = "none";
@@ -4831,7 +4841,8 @@
   }
 
   var PERF_STAND_MS = 3000;      /* so lange steht jede der zwei Ansichten (Vorgabe) */
-  var PERF_ABGANG_MS = 300;      /* der Weg hinaus zwischen den zwei Ansichten */
+  var PERF_ABGANG_MS = 450;      /* der Weg hinaus zwischen den zwei Ansichten (mit der CSS: 390ms
+                                    Bewegung, dann wird getauscht -- die Zugabe deckt den Tausch) */
   var PERF_SEITE_MS = 380;       /* erst steht die Seite, dann kommen die Daten -- siehe unten */
 
   /* Warten, bis die Matrix ihre Zellen gezeichnet hat, und ERST DANN auftreten lassen. Vorher

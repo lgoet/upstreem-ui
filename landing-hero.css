@@ -506,12 +506,26 @@
    Gewichtsbalken zurueck -- neu aufgebaut, also mit dem Auftritt der Komponente. Kuerzer als der
    Auftritt: ein Abgang, der so lange braucht wie ein Auftritt, wirkt wie ein Fehler. */
 .ulh-perf .uhm-root {
-  transition: opacity 260ms var(--ulh-ease), translate 260ms var(--ulh-ease);
+  transition: opacity 390ms var(--ulh-ease), translate 390ms var(--ulh-ease);
 }
 .ulh-perf .uhm-root.is-geht { opacity: 0; translate: 0 12px; }
 /* Der Kasten der Matrix traegt keinen eigenen Rahmen mehr: er steht im Fenster schon in einem
    Container, und zwei Rahmen ineinander sind einer zu viel. */
 .ulh-perf .uhm-box { border: 0; padding: 0; }
+/* Der Auftritt hier doppelt so lang wie in der App: dort ploppt die Matrix beim Seitenwechsel
+   herein und soll aus dem Weg sein, hier ist sie die Vorfuehrung selbst und darf gesehen werden.
+   Die Zahl steht als Faktor an EINER Stelle -- performance-radar liest sie fuer den Versatz der
+   Zellen und die CSS fuer die Dauer, sonst laufen Versatz und Dauer auseinander. */
+.ulh-perf .uhm-grid { --uhm-pop: 2; }
+/* Ein leichter Schimmer in den Zellen statt einer flachen Flaeche. Als INNERER Schatten und nicht
+   als background-image: die Farbe kommt aus der Komponente als inline "background:" -- eine
+   Kurzschreibweise, die jedes background-image aus einer Regel hier ueberschreiben wuerde.
+   Der innere Schatten liegt ausserdem UNTER dem Text (Malreihenfolge: Grund, innerer Schatten,
+   Rahmen, Inhalt), ein Overlay laege darueber und truebte die Zahlen. */
+.ulh-perf .uhm-cell {
+  box-shadow: inset 0 10px 12px -8px rgba(255,255,255,0.30),
+              inset 0 -10px 12px -8px rgba(0,0,0,0.07);
+}
 /* Die Themen links: ein farbiger Punkt und der Name in der Textfarbe -- kein Chip, kein Emoji.
    Der Chip aus core (.up-topicchip) bleibt das Markup, hier wird nur sein Aussehen fuer diese
    eine Stelle umgestellt: seine Farbe steckt in --ust-tag-color und wird zum Punkt. */
@@ -1717,7 +1731,7 @@
   transform: scale(calc(var(--ulh-mass, 1) * var(--ulh-fz, 1)));
   transform-origin: top left;
 }
-/* Auf Schirmen ohne doppelte Aufloesung dieselbe Umstellung wie im Hauptfenster: verkleinert wird
+/* Unter zwei Geraetepixeln je CSS-Pixel dieselbe Umstellung wie im Hauptfenster: verkleinert wird
    im Layout, damit die Haarlinien auf ganzen Geraetepixeln liegen. Gerade hier faellt es auf --
    in diesen kleinen Fenstern stehen die kleinen Umschalter. Die zwei Massstaebe multiplizieren
    sich: der der Buehne und der des Fensters. Kein contain noetig, weil hier nichts fixed steht. */
@@ -1880,7 +1894,14 @@
    (responses-table.css: .up-root.is-cards-view .up-box). */
 .ulh-fen-antwort .up-head,
 .ulh-fen-antwort .up-foot { display: none; }
-.ulh-fen-antwort .ulh-fen-app { padding: 14px; box-sizing: border-box; }
+/* KEIN Polster: das Fenster IST die Antwort. Vorher lag die Karte als eigener Kasten mit
+   eigenem Rahmen in einem Fenster, das schon ein Kasten ist -- zwei Rahmen ineinander, und
+   zwischen ihnen 14px Luft, die nichts trug. Die Karte fuellt das Fenster jetzt randlos; ihr
+   eigenes Polster (16px aus responses-table.css) haelt den Text vom Rand weg. */
+.ulh-fen-antwort .ulh-fen-app { padding: 0; box-sizing: border-box; }
+/* Rahmen weg, Radius wie der Ausschnitt (12px, siehe .ulh-fen-view) -- eine Karte, die buendig
+   im Fenster sitzt, darf an den Ecken nicht eckiger sein als das Fenster. */
+.ulh-fen-antwort .urt-card { border: 0; border-radius: 12px; }
 /* Die Karte fuellt das Fenster. In der App ist sie auf 250px gedeckelt und wird von der Zahl der
    Karten daneben in Form gehalten; hier steht sie allein, und ein Deckel liesse unten eine Luecke
    (gemessen: 188px Karte in 244px Platz). Das Raster darum muss die Zeile dafuer strecken --

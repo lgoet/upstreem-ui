@@ -759,11 +759,14 @@
     function runAppear(){
       var nodes = elGrid.querySelectorAll(".uhm-cell, .uhm-colhead, .uhm-rowhead");
       var cols = Math.max(1, state.companies.length);
-      var maxStep = 240;
+      /* Same factor the CSS uses for the duration (--uhm-pop, default 1). Read once per run, not
+         per cell: getComputedStyle on every node of a big matrix is a layout read each time. */
+      var pop = parseFloat(getComputedStyle(elGrid).getPropertyValue("--uhm-pop")) || 1;
+      var maxStep = 240 * pop;
       Array.prototype.forEach.call(nodes, function(el, i){
         var r = Math.floor(i / (cols + 1)), c = i % (cols + 1);
-        var d = Math.min(maxStep, (r + c) * 12);
-        el.style.animationDelay = d + "ms";
+        var d = Math.min(maxStep, (r + c) * 12 * pop);
+        el.style.animationDelay = Math.round(d) + "ms";
       });
       elGrid.classList.remove("is-appear");
       void elGrid.offsetWidth;                 // forced reflow: restart the animation
@@ -772,7 +775,7 @@
       appearTimer = setTimeout(function(){
         elGrid.classList.remove("is-appear");
         Array.prototype.forEach.call(nodes, function(el){ el.style.animationDelay = ""; });
-      }, maxStep + 340);
+      }, maxStep + 340 * pop);
     }
 
     function topicById(id){
