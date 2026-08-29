@@ -1772,13 +1772,24 @@
 /* Das Zeichen des Modells oben in der Karte groesser: 18 -> 22px. Es ist das einzige Logo in
    diesem Fenster und traegt die Aussage "diese Antwort kam von ChatGPT" -- in 18px ist sie eine
    Fussnote. Die Plakette darum zieht mit, sonst sitzt das Bild an ihrem Rand. */
-.ulh-fen-antwort .urt-model-chip .up-ment-logo { width: 22px; height: 22px; flex: 0 0 22px; border-radius: 6px; }
-.ulh-fen-antwort .urt-model-chip .up-ment-logo img { width: 22px; height: 22px; border-radius: 6px; }
+/* Das Modellzeichen ist das erste, was man auf der Karte liest -- welches Modell hat das gesagt.
+   28 statt 22px: bei 22 war es im kleinen Fenster ein Punkt. */
+.ulh-fen-antwort .urt-model-chip .up-ment-logo { width: 28px; height: 28px; flex: 0 0 28px; border-radius: 8px; }
+.ulh-fen-antwort .urt-model-chip .up-ment-logo img { width: 28px; height: 28px; border-radius: 8px; }
+/* Der Wechsel zwischen den drei Antworten: aus, tauschen, ein. Nur die Deckkraft und ein kleiner
+   Weg nach oben -- die Karte soll wechseln, nicht springen. */
+.ulh-fen-antwort .ulh-fen-view {
+  transition: opacity 420ms var(--ulh-weich), translate 420ms var(--ulh-weich);
+}
+.ulh-fen-antwort .ulh-fen-view.is-blende { opacity: 0; translate: 0 -8px; }
 
 /* Die Schublade bleibt IM Fenster: opportunities.js haengt Vorhang und Schublade bei
    data-portal="inline" in den Root statt in den <body>, und ihr position: fixed bezieht sich damit
-   auf die Buehne (sie traegt das transform). Die Ecken der Schublade folgen dem Fenster. */
-.ulh-app .uo-modal { border-radius: 12px 0 0 12px; }
+   auf die Buehne (sie traegt das transform).
+   RUNDUM 12px. Vorher waren nur die linken Ecken rund -- gedacht als "sie sitzt buendig an der
+   rechten Kante des Fensters". Gemessen sitzt sie das nicht: 12px Abstand rechts, 38 oben, 10
+   unten. Eine Karte, die frei im Fenster steht und rechts eckig ist, sieht abgeschnitten aus. */
+.ulh-app .uo-modal { border-radius: 12px; }
 
 /* Die vier Lichter im Hintergrundbild von Mira fallen weg. Gemeint war das unten rechts (core
    setzt sie auf 94/74, 94/0.5, 20/85 und -3/19 Prozent) -- entfernt wird die ganze Ebene und
@@ -2276,4 +2287,168 @@
   .ulh-geo-kpis { grid-template-columns: 1fr; gap: 20px; }
   .ulh-geo-bild { height: 52%; opacity: .7; }
   .ulh-geo-mk-s { display: none; }
+}
+
+/* ---------- Die Leiste oben -------------------------------------------------------------------
+   Sie klebt oben, solange die SEITE scrollt. In einem Embed-Rahmen kann sie das nicht (dort
+   scrollt das Fenster darueber) -- dann steht sie einfach am Anfang der Seite. */
+.ulh-nav {
+  position: sticky; top: 0; z-index: 40;
+  background: rgba(255, 255, 255, .82);
+  -webkit-backdrop-filter: saturate(180%) blur(14px);
+          backdrop-filter: saturate(180%) blur(14px);
+  border-bottom: 1px solid transparent;
+  transition: border-color 200ms var(--ulh-ease), background 200ms var(--ulh-ease);
+}
+/* Die Trennlinie kommt erst, wenn ein Menue offen ist -- vorher soll die Leiste auf der Seite
+   liegen und nicht auf ihr stehen. */
+.ulh-nav.is-offen { border-bottom-color: var(--ulh-border); background: rgba(255, 255, 255, .94); }
+.ulh-nav-in {
+  position: relative;
+  display: flex; align-items: center; gap: 24px; height: 62px;
+}
+.ulh-nav-logo {
+  display: inline-flex; align-items: center; gap: 9px; text-decoration: none;
+  font-size: 17px; font-weight: 500; letter-spacing: -0.02em; color: var(--ulh-text);
+}
+.ulh-nav-logo img { display: block; width: 24px; height: 24px; }
+/* Die Mitte ist wirklich die Mitte: absolut gesetzt, damit die Punkte nicht wandern, wenn links
+   oder rechts etwas laenger wird. */
+.ulh-nav-mitte {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 4px;
+}
+/* .check_reinvention.py meldet hier den Segmented-Control-Knopf der App (.up-seg-btn), weil
+   background, border, Radius, Hoehe und Uebergang zusammen vorkommen. Fehlalarm: das ist ein
+   Navigationspunkt einer Landingpage -- kein Umschalter in einer Gruppe, ohne aktiven Zustand,
+   ohne Nachbarn, an die er sich anschliesst, und ausserhalb jeder .up-root. */
+.ulh-nav-punkt {
+  appearance: none; border: 0; background: transparent; cursor: pointer;
+  font-family: inherit; font-size: 14px; font-weight: 500; letter-spacing: -0.01em;
+  color: var(--ulh-sub); text-decoration: none;
+  height: 34px; padding: 0 12px; border-radius: 9px;
+  display: inline-flex; align-items: center;
+  transition: color 160ms var(--ulh-ease), background 160ms var(--ulh-ease);
+}
+.ulh-nav-punkt:hover { color: var(--ulh-text); background: var(--ulh-kasten); }
+.ulh-nav-rechts { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+/* ---- Das Panel, das dem Zeiger folgt ----
+   EINES fuer beide Menues. Es faehrt und waechst, statt zu schliessen und neu aufzugehen -- die
+   Groesse setzt landing-hero.js aus dem Inhalt, der schon darin steht.
+   overflow: hidden, weil waehrend der Fahrt die groessere der beiden Karten ueberstehen wuerde. */
+/* Und hier meldet der Waechter die aufziehende Suche der App (.up-search), weil overflow, Breite
+   und ein Uebergang zusammenkommen. Auch das ist ein Fehlalarm: das hier ist ein Menue mit zwei
+   Karten darin, das seine Groesse aus seinem Inhalt nimmt -- die Suche zieht ein Feld auf. */
+.ulh-nav-pop {
+  position: absolute; top: calc(100% - 6px); left: 0;
+  width: 0; height: 0; overflow: hidden;
+  background: #ffffff; border: 1px solid var(--ulh-border); border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(11, 13, 24, .04), 0 18px 44px rgba(11, 13, 24, .12);
+  opacity: 0; translate: 0 -6px; pointer-events: none;
+  transition: width 320ms var(--ulh-weich), height 320ms var(--ulh-weich),
+              transform 320ms var(--ulh-weich), opacity 180ms var(--ulh-ease),
+              translate 180ms var(--ulh-ease);
+}
+.ulh-nav-pop.is-offen { opacity: 1; translate: none; pointer-events: auto; }
+.ulh-nav-karte {
+  position: absolute; top: 0; left: 0; width: max-content;
+  display: flex; flex-direction: column; gap: 2px; padding: 14px;
+  opacity: 0; pointer-events: none;
+  transition: opacity 200ms var(--ulh-ease);
+}
+.ulh-nav-karte.is-da { opacity: 1; pointer-events: auto; }
+.ulh-nav-spalte {
+  padding: 4px 10px 8px;
+  font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--ulh-third);
+}
+.ulh-nav-eintrag {
+  display: flex; flex-direction: column; gap: 1px;
+  padding: 9px 10px; border-radius: 10px; text-decoration: none; min-width: 232px;
+  transition: background 160ms var(--ulh-ease);
+}
+.ulh-nav-eintrag:hover { background: var(--ulh-kasten); }
+.ulh-nav-e-t { font-size: 14px; font-weight: 500; letter-spacing: -0.01em; color: var(--ulh-text); }
+.ulh-nav-e-s { font-size: 12.5px; font-weight: 400; color: var(--ulh-sub); }
+
+/* ---------- Der Satz zum Schluss --------------------------------------------------------------
+   Ein Zitat, gross und mittig, auf einer gepunkteten Flaeche. Punkte und keine Striche: die Seite
+   arbeitet sonst mit senkrechten Linien, und die wuerden den Satz durchschneiden. Der Abstand ist
+   derselbe 8er-Raster wie ueberall. */
+.ulh-stimme {
+  position: relative; z-index: 1;
+  padding: clamp(96px, 14vh, 168px) 0 clamp(104px, 15vh, 180px);
+  background-image: radial-gradient(circle, var(--ulh-schiene) 1px, transparent 1px);
+  background-size: 8px 8px;
+  border-bottom: 1px solid var(--ulh-border);
+}
+/* Der Grund verlaeuft an beiden Enden ins Weisse -- eine Flaeche, die hart anfaengt, sieht aus wie
+   ein Kasten, den jemand vergessen hat. */
+.ulh-stimme::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(to bottom, #ffffff 0%, rgba(255,255,255,0) 22%,
+              rgba(255,255,255,0) 78%, #ffffff 100%);
+}
+.ulh-stimme-in { position: relative; display: flex; flex-direction: column; align-items: center;
+  text-align: center; }
+.ulh-stimme-satz {
+  margin: 0; max-width: 22ch;
+  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  font-size: clamp(30px, 3.6vw, 48px); font-weight: 400; line-height: 1.24;
+  letter-spacing: -0.02em; color: var(--ulh-text);
+}
+.ulh-stimme-wer { margin-top: clamp(26px, 3.4vh, 40px); display: flex; flex-direction: column; gap: 3px; }
+.ulh-stimme-name { font-size: 14px; font-weight: 500; color: var(--ulh-text); }
+.ulh-stimme-rolle { font-size: 13.5px; font-weight: 400; color: var(--ulh-sub); }
+.ulh-stimme-cta { margin-top: clamp(28px, 3.6vh, 42px); }
+
+/* ---------- Der Fuss --------------------------------------------------------------------------
+   Schwarz und ueber die ganze Breite: das Ende der Seite soll auch wie eines aussehen. Die Farben
+   sind die des dunklen Themas der App, als Zahl -- die Variablen der App gelten hier nicht
+   (dieselbe Falle wie beim Kasten der Quellen). */
+.ulh-fuss {
+  position: relative; z-index: 1;
+  width: 100vw; margin-left: calc(50% - 50vw);
+  background: #0b0b0b; color: #e0e0e0;
+  padding: clamp(56px, 8vh, 88px) 0 0;
+}
+.ulh-fuss-in {
+  display: flex; gap: 48px; align-items: flex-start; flex-wrap: wrap;
+  padding-bottom: clamp(48px, 7vh, 76px);
+}
+.ulh-fuss-marke { display: flex; flex-direction: column; gap: 14px; margin-right: auto; max-width: 300px; }
+.ulh-fuss-logo {
+  display: inline-flex; align-items: center; gap: 9px; text-decoration: none;
+  font-size: 18px; font-weight: 500; letter-spacing: -0.02em; color: #ffffff;
+}
+/* Das Zeichen ist dunkle Tinte auf Durchsichtigem -- auf Schwarz waere es unsichtbar. invert
+   dreht es um, statt eine zweite Datei zu fuehren, die auseinanderlaufen kann. */
+.ulh-fuss-logo img { display: block; width: 26px; height: 26px; filter: invert(1); }
+.ulh-fuss-satz { margin: 0; font-size: 13.5px; line-height: 1.5; color: #9a9a9a; max-width: 30ch; }
+.ulh-fuss-netz { display: flex; gap: 8px; margin-top: 4px; }
+.ulh-fuss-ic {
+  width: 32px; height: 32px; border-radius: 9px;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: #9a9a9a; background: rgba(255, 255, 255, .05);
+  transition: color 160ms var(--ulh-ease), background 160ms var(--ulh-ease);
+}
+.ulh-fuss-ic:hover { color: #ffffff; background: rgba(255, 255, 255, .1); }
+.ulh-fuss-ic svg { width: 17px; height: 17px; display: block; }
+.ulh-fuss-spalten { display: flex; gap: clamp(40px, 6vw, 88px); flex-wrap: wrap; }
+.ulh-fuss-spalte { display: flex; flex-direction: column; gap: 10px; min-width: 128px; }
+.ulh-fuss-kopf { font-size: 13px; font-weight: 500; color: #6f6f6f; margin-bottom: 2px; }
+.ulh-fuss-link {
+  font-size: 13.5px; font-weight: 400; color: #cfcfcf; text-decoration: none;
+  transition: color 160ms var(--ulh-ease);
+}
+.ulh-fuss-link:hover { color: #ffffff; }
+.ulh-fuss-unten {
+  border-top: 1px solid rgba(255, 255, 255, .08);
+  padding: 18px 0 22px;
+  font-size: 12.5px; color: #6f6f6f;
+}
+@media (max-width: 900px) {
+  .ulh-nav-mitte { display: none; }
+  .ulh-fuss-in { gap: 32px; }
+  .ulh-stimme-satz { max-width: none; }
 }

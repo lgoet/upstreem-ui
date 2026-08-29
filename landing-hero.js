@@ -237,6 +237,7 @@
          Raender an den Sektionen: zwei Sektionen mit je eigenen Raendern haetten an ihrer
          Beruehrung eine doppelte Linie. */
       '<div class="ulh-schienen" aria-hidden="true"></div>' +
+      leiste() +
       /* Die Hero-Sektion ist ab hier ein eigener Kasten. Vorher war ihr Hintergrundbild inset: 0
          an der Wurzel -- mit einer zweiten Sektion darunter waere es ueber die ganze Seite
          gelaufen. */
@@ -322,7 +323,258 @@
       merkmale() +
       quellen() +
       msc() +
-      geo();
+      geo() +
+      stimme() +
+      fuss();
+  }
+
+  /* ---------- Die Leiste oben --------------------------------------------------------------
+     Logo links, drei Punkte in der Mitte, zwei Knoepfe rechts. Zwei der Punkte oeffnen beim
+     Ueberfahren ein Panel, und es ist EIN Panel: es wandert und aendert seine Groesse, wenn man
+     von einem Punkt zum anderen faehrt, statt zu schliessen und neu aufzugehen. Genau das ist der
+     Unterschied zwischen "zwei Menues" und "einem Menue, das folgt".
+     Beide Inhalte stehen dauerhaft darin, uebereinander gelegt und nur ueber die Deckkraft
+     getauscht. Das ist der Grund, warum das Panel seine Zielgroesse KENNT, bevor es faehrt: sie
+     laesst sich am Inhalt messen, der schon da ist. Wer den Inhalt erst beim Oeffnen einsetzt,
+     misst nach dem Einsetzen -- und dann ist die Fahrt schon vorbei.
+
+     STICKY: die Leiste klebt oben, solange die SEITE scrollt. Steckt die Sektion in einem
+     Embed-Rahmen (Framer), kann sie das nicht -- dort scrollt nicht dieses Fenster, sondern das
+     darueber, und ein sticky-Element kennt nur seinen eigenen Scrollkasten. In dem Fall gehoert
+     die Navigation in den Baukasten. */
+  var NAV_PUNKTE = [
+    { k: "platform", t: "Platform" },
+    { k: "resources", t: "Resources" }
+  ];
+  var NAV_MENUES = {
+    /* Die Punkte unter "Platform" zeigen auf Stellen DIESER Seite -- der Klick scrollt dorthin,
+       keine Adresse, kein Neuladen. */
+    platform: { spalte: "Platform", eintraege: [
+      { t: "Overview", s: "What upstreem shows you", ziel: ".ulh-feat" },
+      { t: "Source Insights", s: "Which pages answers are built from", ziel: ".ulh-quell" },
+      { t: "Agentic AEO", s: "Mira does the work for you", ziel: ".ulh-msc" }
+    ]},
+    resources: { spalte: "Resources", eintraege: [
+      { t: "Blog", s: "Notes on AI search", href: "https://upstreem.ai/blog" },
+      { t: "Documentation", s: "How everything works", href: "https://docs.upstreem.ai/welcome" }
+    ]}
+  };
+
+  function navKarte(k){
+    var m = NAV_MENUES[k];
+    return '<div class="ulh-nav-karte" data-menue="' + k + '">' +
+      '<span class="ulh-nav-spalte">' + m.spalte + '</span>' +
+      m.eintraege.map(function(e){
+        var attr = e.href ? ' href="' + e.href + '" target="_blank" rel="noopener"'
+                          : ' href="#" data-ziel="' + e.ziel + '"';
+        return '<a class="ulh-nav-eintrag"' + attr + '>' +
+          '<span class="ulh-nav-e-t">' + e.t + '</span>' +
+          '<span class="ulh-nav-e-s">' + e.s + '</span>' +
+        '</a>';
+      }).join("") +
+    '</div>';
+  }
+
+  function leiste(){
+    return '<header class="ulh-nav">' +
+      '<div class="ulh-spur ulh-nav-in">' +
+        '<a class="ulh-nav-logo" href="https://upstreem.ai">' +
+          '<img src="' + ORBIT_MARKE + '" alt="" width="24" height="24"/>' +
+          '<span>upstreem</span>' +
+        '</a>' +
+        '<nav class="ulh-nav-mitte">' +
+          NAV_PUNKTE.map(function(p){
+            return '<button class="ulh-nav-punkt" type="button" data-menue="' + p.k + '">' +
+              p.t + '</button>';
+          }).join("") +
+          '<a class="ulh-nav-punkt" href="https://upstreem.ai/pricing" target="_blank"' +
+            ' rel="noopener">Pricing</a>' +
+        '</nav>' +
+        '<div class="ulh-nav-rechts">' +
+          '<a class="ulh-btn ulh-btn-sec" href="https://upstreem.ai/login">Sign in</a>' +
+          '<a class="ulh-btn ulh-btn-pri" href="https://upstreem.ai/signup">Start for free</a>' +
+        '</div>' +
+        '<div class="ulh-nav-pop" aria-hidden="true">' +
+          navKarte("platform") + navKarte("resources") +
+        '</div>' +
+      '</div>' +
+    '</header>';
+  }
+
+  /* Das Panel folgt dem Zeiger. Gemessen wird am Inhalt, der schon dasteht -- deshalb kennt es
+     seine Zielgroesse, bevor es faehrt.
+     Geschlossen wird beim Verlassen der GANZEN Leiste und mit einer kurzen Nachfrist: der Weg von
+     einem Punkt zum Panel fuehrt ueber ein paar Pixel Nichts, und ohne Frist faellt es genau dort
+     zu. */
+  function navLauf(root){
+    var nav = root.querySelector(".ulh-nav");
+    var pop = root.querySelector(".ulh-nav-pop");
+    if (!nav || !pop) return;
+    var karten = {};
+    [].forEach.call(pop.querySelectorAll(".ulh-nav-karte"), function(k){
+      karten[k.getAttribute("data-menue")] = k;
+    });
+    var offen = null, uhr = null;
+
+    function zeigen(k, knopf){
+      clearTimeout(uhr);
+      if (offen === k) return;
+      offen = k;
+      var karte = karten[k];
+      if (!karte) return;
+      for (var name in karten) karten[name].classList.toggle("is-da", name === k);
+      /* Die Groesse KOMMT VOM INHALT und wird nicht geschaetzt: die Karte steht schon im Panel,
+         also hat sie eine Groesse -- auch die unsichtbare. */
+      pop.style.width = karte.offsetWidth + "px";
+      pop.style.height = karte.offsetHeight + "px";
+      /* Die Lage folgt dem Punkt, bleibt aber in der Spur. */
+      var innen = root.querySelector(".ulh-nav-in").getBoundingClientRect();
+      var r = knopf.getBoundingClientRect();
+      var x = r.left - innen.left - 20;
+      var max = innen.width - karte.offsetWidth;
+      if (x > max) x = max;
+      if (x < 0) x = 0;
+      pop.style.transform = "translateX(" + Math.round(x) + "px)";
+      pop.classList.add("is-offen");
+      nav.classList.add("is-offen");
+    }
+    function schliessen(){
+      clearTimeout(uhr);
+      uhr = setTimeout(function(){
+        offen = null;
+        pop.classList.remove("is-offen");
+        nav.classList.remove("is-offen");
+      }, 140);
+    }
+
+    [].forEach.call(nav.querySelectorAll(".ulh-nav-punkt[data-menue]"), function(b){
+      b.addEventListener("mouseenter", function(){ zeigen(b.getAttribute("data-menue"), b); });
+      b.addEventListener("focus", function(){ zeigen(b.getAttribute("data-menue"), b); });
+    });
+    /* Ein Punkt OHNE Menue schliesst es -- sonst bliebe es offen, waehrend man auf Pricing steht. */
+    [].forEach.call(nav.querySelectorAll(".ulh-nav-punkt:not([data-menue])"), function(b){
+      b.addEventListener("mouseenter", schliessen);
+    });
+    nav.addEventListener("mouseleave", schliessen);
+    pop.addEventListener("mouseenter", function(){ clearTimeout(uhr); });
+
+    /* Die Punkte unter "Platform" scrollen zu ihrer Sektion. Welches FENSTER dabei scrollt, haengt
+       davon ab, ob die Sektion in einem Rahmen steckt: dann bewegt sich das Fenster darueber und
+       nicht dieses. Derselbe Grund wie beim Lagegeber. */
+    [].forEach.call(pop.querySelectorAll("[data-ziel]"), function(a){
+      a.addEventListener("click", function(e){
+        e.preventDefault();
+        var ziel = root.querySelector(a.getAttribute("data-ziel"));
+        if (!ziel) return;
+        schliessen();
+        var l = lage(ziel);
+        var weg = l.oben - 90;                 /* 90px: die Leiste steht im Weg */
+        try {
+          var rahmen = window.frameElement;
+          var w = rahmen ? rahmen.ownerDocument.defaultView : window;
+          w.scrollBy({ top: weg, behavior: "smooth" });
+        } catch (err){
+          window.scrollBy({ top: weg, behavior: "smooth" });
+        }
+      });
+    });
+  }
+
+  /* ---------- Siebte Sektion: ein Satz, der es zusammenfasst ---------------------------------
+     Ein Zitat, ein Name, ein Knopf. Der Satz ist als Zitat gesetzt (Serifen, gross, mittig) und
+     nicht als weitere Ueberschrift: er soll wie eine Stimme klingen und nicht wie die Seite.
+     Der Grund traegt dasselbe 8er-Raster wie die Seite, hier als Punkte statt Striche -- eine
+     Flaeche, kein Gitter, damit der Satz allein steht. */
+  var STIMME = "AI answers are the new front page. If your pages are not in them, you are not in " +
+    "the conversation.";
+  var STIMME_WER = "Lukas Gotzkes";
+  var STIMME_ROLLE = "Founder · upstreem";
+  var STIMME_CTA = "Start for free";
+
+  function stimme(){
+    return '<section class="ulh-stimme">' +
+      '<div class="ulh-spur ulh-stimme-in">' +
+        '<blockquote class="ulh-stimme-satz ulh-auf">“' + STIMME + '”</blockquote>' +
+        '<div class="ulh-stimme-wer ulh-auf" style="--auf:1">' +
+          '<span class="ulh-stimme-name">' + STIMME_WER + '</span>' +
+          '<span class="ulh-stimme-rolle">' + STIMME_ROLLE + '</span>' +
+        '</div>' +
+        '<a class="ulh-btn ulh-btn-pri ulh-stimme-cta ulh-auf" style="--auf:2"' +
+          ' href="https://upstreem.ai/signup">' + STIMME_CTA + '</a>' +
+      '</div>' +
+    '</section>';
+  }
+
+  /* ---------- Der Fuss ----------------------------------------------------------------------
+     Schwarz, ueber die ganze Breite: das Ende der Seite soll auch wie eines aussehen. Links die
+     Marke und darunter die zwei Netzwerke, rechts die Spalten. Die Adressen sind die echten der
+     Seite -- ein Fuss mit toten Verweisen ist schlimmer als keiner. */
+  var FUSS_SPALTEN = [
+    { t: "Product", e: [
+      { t: "Overview", h: "https://upstreem.ai" },
+      { t: "Pricing", h: "https://upstreem.ai/pricing" },
+      { t: "Sign in", h: "https://upstreem.ai/login" }
+    ]},
+    { t: "Resources", e: [
+      { t: "Blog", h: "https://upstreem.ai/blog" },
+      { t: "Documentation", h: "https://docs.upstreem.ai/welcome" }
+    ]},
+    { t: "Legal", e: [
+      { t: "Terms", h: "https://upstreem.ai/terms" },
+      { t: "Privacy policy", h: "https://upstreem.ai/privacy" },
+      { t: "Imprint", h: "https://upstreem.ai/imprint" }
+    ]}
+  ];
+  var FUSS_NETZ = [
+    { t: "LinkedIn", h: "https://www.linkedin.com/company/upstreem", ic: "linkedin" },
+    { t: "YouTube", h: "https://www.youtube.com/@upstreem", ic: "youtube" }
+  ];
+  /* Die zwei Zeichen stehen HIER als Pfad und kommen nicht aus core: core fuehrt Feather, und
+     Feather hat keine Markenzeichen. Selbst gezeichnet waeren sie falsch -- das sind die
+     offiziellen Umrisse. */
+  var FUSS_IC = {
+    linkedin: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 ' +
+      '2.5 2.5 0 0 1 0-5zM3 9h4v12H3zM10 9h3.8v1.7h.05c.53-1 1.83-2.05 3.76-2.05 4.02 0 4.76 2.6 ' +
+      '4.76 5.98V21h-4v-5.5c0-1.31-.02-3-1.85-3-1.85 0-2.13 1.43-2.13 2.9V21h-4z"/></svg>',
+    youtube: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.45-5.17a2.9 2.9 ' +
+      '0 0 0-2.04-2.05C18.85 4.33 12 4.33 12 4.33s-6.85 0-8.51.45A2.9 2.9 0 0 0 1.45 6.83C1 8.5 1 ' +
+      '12 1 12s0 3.5.45 5.17a2.9 2.9 0 0 0 2.04 2.05c1.66.45 8.51.45 8.51.45s6.85 0 8.51-.45a2.9 ' +
+      '2.9 0 0 0 2.04-2.05C23 15.5 23 12 23 12zM9.8 15.3V8.7l5.7 3.3z"/></svg>'
+  };
+
+  function fuss(){
+    var jahr = new Date().getFullYear();
+    return '<footer class="ulh-fuss">' +
+      '<div class="ulh-spur ulh-fuss-in">' +
+        '<div class="ulh-fuss-marke">' +
+          '<a class="ulh-fuss-logo" href="https://upstreem.ai">' +
+            '<img src="' + ORBIT_MARKE + '" alt="" width="26" height="26"/>' +
+            '<span>upstreem</span>' +
+          '</a>' +
+          '<p class="ulh-fuss-satz">See how AI answers talk about your brand.</p>' +
+          '<div class="ulh-fuss-netz">' +
+            FUSS_NETZ.map(function(n){
+              return '<a class="ulh-fuss-ic" href="' + n.h + '" target="_blank" rel="noopener"' +
+                ' aria-label="' + n.t + '">' + FUSS_IC[n.ic] + '</a>';
+            }).join("") +
+          '</div>' +
+        '</div>' +
+        '<div class="ulh-fuss-spalten">' +
+          FUSS_SPALTEN.map(function(sp){
+            return '<div class="ulh-fuss-spalte">' +
+              '<span class="ulh-fuss-kopf">' + sp.t + '</span>' +
+              sp.e.map(function(e){
+                return '<a class="ulh-fuss-link" href="' + e.h + '" target="_blank"' +
+                  ' rel="noopener">' + e.t + '</a>';
+              }).join("") +
+            '</div>';
+          }).join("") +
+        '</div>' +
+      '</div>' +
+      '<div class="ulh-spur ulh-fuss-unten">' +
+        '<span>© ' + jahr + ' upstreem. All rights reserved.</span>' +
+      '</div>' +
+    '</footer>';
   }
 
   /* ---------- Sechste Sektion: warum es diese App gibt ------------------------------------
@@ -2236,13 +2488,40 @@
     '</div>';
   }
 
-  function antwortFuellen(){
+  /* Drei Antworten im Wechsel statt einer. Sie zeigen dasselbe in drei Modellen -- das ist der
+     Punkt der App, und mit einer einzigen Karte behauptet die Sektion ihn nur.
+     Die Auszuege sind so geschrieben, wie die Modelle wirklich klingen: ChatGPT ausfuehrlich,
+     die Google-Uebersicht knapp und aufzaehlend, Perplexity mit Quellenverweis. */
+  var ANTWORTEN = [
+    { modell: "chatgpt", sent: 82, rang: 1,
+      frage: "Which AI visibility tool should we use to track brand mentions?",
+      text: "For tracking brand mentions across AI answers, **Kestrel** is the strongest option " +
+        "right now: it covers every major model, reports sentiment per answer, and flags the " +
+        "sources behind each one. Vantage and Halden are close behind on prompt coverage" },
+    { modell: "google", sent: 74, rang: 2,
+      frage: "best AI visibility tools for B2B SaaS",
+      text: "AI visibility tools track how often a brand appears in AI-generated answers. " +
+        "Commonly cited options include Vantage, **Kestrel** and Halden. Kestrel is noted for " +
+        "source-level reporting, Vantage for its prompt library" },
+    { modell: "perplexity", sent: 79, rang: 1,
+      frage: "how do I monitor my brand in ChatGPT and Gemini?",
+      text: "You can monitor brand mentions with a dedicated AI visibility platform. **Kestrel** " +
+        "tracks prompts across ChatGPT, Gemini and Perplexity, and shows which sources each " +
+        "answer was built from, so you can see why a competitor is named" }
+  ];
+  var ANTWORT_HALT = 5200;      /* wie lange eine Karte steht */
+  var ANTWORT_BLENDE = 420;     /* Aus- und Einblenden, jeweils */
+
+  function antwortFuellen(k){
     if (!window.renderResponsesTable) return false;
-    /* Das Modell zuerst: der Chip auf der Karte holt Name und Zeichen aus dieser Liste, und ohne
-       sie stuende dort der rohe Schluessel. Das Zeichen ist das echte von OpenAI (siehe
+    var a = ANTWORTEN[(k || 0) % ANTWORTEN.length];
+    /* Die Modelle zuerst: der Chip auf der Karte holt Name und Zeichen aus dieser Liste, und ohne
+       sie stuende dort der rohe Schluessel. Die Zeichen sind die echten der Anbieter (siehe
        quellzeichen) -- ein graues C waere hier dasselbe Raten wie bei den Quellen. */
     if (window.setResponsesTableModels) window.setResponsesTableModels(ID.urt, [
-      { key: "chatgpt", display_name: "ChatGPT", logo_url: quellzeichen("openai.com") }
+      { key: "chatgpt", display_name: "ChatGPT", logo_url: quellzeichen("openai.com") },
+      { key: "google", display_name: "Google AI Overviews", logo_url: quellzeichen("google.com") },
+      { key: "perplexity", display_name: "Perplexity", logo_url: quellzeichen("perplexity.ai") }
     ]);
     if (window.setResponsesTableBrand) window.setResponsesTableBrand(ID.urt, "Kestrel", MARKEN[0].logo);
     var vorhin = new Date(Date.now() - 3 * 3600 * 1000).toISOString();
@@ -2250,19 +2529,16 @@
       instanceId: ID.urt,
       totalCount: 1,
       rows: [{
-        prompt_run_id: "lh-r1",
-        prompt_text: "Which AI visibility tool should we use to track brand mentions?",
+        prompt_run_id: "lh-r" + ((k || 0) + 1),
+        prompt_text: a.frage,
         /* Der Auszug nennt genau die drei Marken, die unten als Chips stehen -- eine Karte, deren
            Text von anderen Marken spricht als ihre Chips, ist der Widerspruch, den man zuerst
            sieht. */
-        response_preview: "For tracking brand mentions across AI answers, **Kestrel** is the " +
-          "strongest option right now: it covers every major model, reports sentiment per " +
-          "answer, and flags the sources behind each one. Vantage and Halden are close behind " +
-          "on prompt coverage",
-        model: "chatgpt",
+        response_preview: a.text,
+        model: a.modell,
         run_at: vorhin,
-        user_sentiment: 82,
-        user_rank: 1,
+        user_sentiment: a.sent,
+        user_rank: a.rang,
         has_user_brand: "yes",
         companies_preview: MARKEN.slice(0, 3).map(function(m){
           return { name: m.name, brand_name_raw: m.name, favicon_url: m.logo };
@@ -2275,6 +2551,29 @@
       }]
     });
     return true;
+  }
+
+  /* Der Wechsel: ausblenden, tauschen, einblenden. Getauscht wird IM ausgeblendeten Zustand --
+     ein Wechsel bei voller Deckkraft ist ein Sprung, und die Karte baut ihren Inhalt neu auf.
+     Die Uhr laeuft erst, wenn die erste Karte steht. */
+  function antwortLauf(root){
+    var fenster = root.querySelector(".ulh-fen-antwort .ulh-fen-view");
+    if (!fenster || fenster.__ulhLauf) return;
+    fenster.__ulhLauf = true;
+    var k = 0;
+    (function weiter(){
+      setTimeout(function(){
+        fenster.classList.add("is-blende");
+        setTimeout(function(){
+          antwortFuellen(++k);
+          /* Die Tooltips kommen mit jeder neuen Karte nach. */
+          ohneTipps(root);
+          hellHalten(root);
+          fenster.classList.remove("is-blende");
+          weiter();
+        }, ANTWORT_BLENDE);
+      }, ANTWORT_HALT);
+    })();
   }
 
   /* Hover ja, Klick nein. Die Knoepfe, Aufklapper und Zeilen im Fenster SOLLEN auf die Maus
@@ -2576,7 +2875,10 @@
     /* Die zwei Nebenfenster, die eigene Daten brauchen. Der Doughnut kommt aus core und braucht
        nur einen Koerper; die Antwortkarte ist eine echte Komponente mit eigenem Setter. */
     donutFuellenSpaeter();
-    antwortFuellen();
+    antwortFuellen(0);
+    /* fuellen() bekommt keine Wurzel mit -- die Sektion ist ein Singleton, und der Lauf braucht
+       sie nur, um Tooltips nachzuraeumen. */
+    antwortLauf(document.querySelector(".ulh-root"));
     /* Die Kurven im Abschnitt darunter. Die drei anderen Vorschauen sind statisch. */
     (function(){ var w = document.querySelector(".ulh-root");
       if (!w) return;
@@ -2587,6 +2889,7 @@
       ulhTakt(w);
       quellFuellen();
       auftritte(w);
+      navLauf(w);
       mscFuellen(w);
     })();
 
