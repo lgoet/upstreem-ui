@@ -910,7 +910,11 @@
               '<span class="uob-label">Business model</span>' +
               /* Vier feste Werte, alle gleich wichtig, keiner erklaerungsbeduerftig -- das ist
                  ein Switcher und kein Kasten, den man erst aufmachen muss. .up-seg aus core. */
-              '<div class="up-seg uob-bseg" role="tablist" aria-label="Business model">' +
+              /* is-lg: derselbe grosse Umschalter wie ueberall sonst, wo er nicht als Werkzeug
+                 in einer Kopfzeile steht -- 32px hoch und mit dem vollen Grundton. Er stand hier
+                 in der kleinen Groesse und damit als einziges Feld des Formulars niedriger und
+                 blasser als seine Nachbarn. */
+              '<div class="up-seg is-lg uob-bseg" role="tablist" aria-label="Business model">' +
                 BUSINESS.map(function (b) {
                   return '<button class="up-seg-btn" type="button" role="tab" aria-selected="false"' +
                          ' data-biz="' + esc(b.value) + '">' + esc(b.label) + '</button>';
