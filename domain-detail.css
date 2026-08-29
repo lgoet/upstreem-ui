@@ -5,7 +5,8 @@
    Positionierung oder etwas, das es in brand-detail nicht gibt -- der Trichter und die
    Abschnittsueberschriften.
 
-   Die drei Karten stehen mit 32px Abstand untereinander (Vorgabe). */
+   Die vier Karten stehen im Raster 50/50 mit 16px Abstand -- dieselbe Anordnung, die die
+   Landingpage von dieser Komponente zeigt. */
 
 /* Zwei Spalten, 16px Abstand in beide Richtungen: Kurve und Trichter oben nebeneinander, darunter
    Typ-Split und Model Breakdown. Vorher stand hier eine Spalte mit 32px Abstand, und die vier
@@ -33,7 +34,7 @@
    Hoehe -- wie in brand-detail, damit zwei Detailseiten gleich aussehen.
    Dieser Umschalter bleibt wie der in brand-detail auf 32px, waehrend .up-seg in core auf 26
    gegangen ist: er ist kein Werkzeug in einer Kopfzeile, sondern die Navigation dieser Seite --
-   zwei gleichwertige Ansichten, und er steht allein ueber dem Inhalt.
+   zwei gleichwertige Ansichten, und er benennt, was die Kurve darunter zeigt.
    Zu .check_reinvention.py, das hier "gesprengt" meldet: die Pille wird nicht angeschnitten,
    sondern auf ihre FRUEHERE Groesse zurueckgestellt. Hoehe und Polster stehen an Leiste UND Knopf
    (32 und 16, die Werte, die .up-seg vor der Verkleinerung hatte), und der Radius bleibt bei 8 --
@@ -43,8 +44,10 @@
    mit 32px das hoechste davon ist. */
 .udd-seg { margin: 0; width: fit-content; height: 32px; align-self: center; }
 .udd-seg[hidden] { display: none; }
-/* Die oberste Zeile mit Umschalter und Zahnrad gibt es nicht mehr -- der Umschalter steht in der
-   Kopfzeile der Chart-Karte, das Zahnrad ist entfallen. */
+/* Die Knoepfe tragen dieselben 32px wie die Leiste und 16px Polster -- die Werte, die .up-seg
+   vor seiner Verkleinerung hatte. Das ist die Begruendung zum Treffer von .check_reinvention.py
+   oben: nichts ist angeschnitten, das Bauteil steht auf seiner frueheren Groesse.
+   Die oberste Zeile mit Umschalter und Zahnrad gibt es nicht mehr. */
 .udd-seg .up-seg-btn { height: 32px; padding-left: 16px; padding-right: 16px; }
 
 /* ---- Karte -----------------------------------------------------------------------------------
