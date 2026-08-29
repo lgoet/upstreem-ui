@@ -485,22 +485,21 @@
      nicht als weitere Ueberschrift: er soll wie eine Stimme klingen und nicht wie die Seite.
      Der Grund traegt dasselbe 8er-Raster wie die Seite, hier als Punkte statt Striche -- eine
      Flaeche, kein Gitter, damit der Satz allein steht. */
-  var STIMME = "AI answers are the new front page. If your pages are not in them, you are not in " +
-    "the conversation.";
-  var STIMME_WER = "Lukas Gotzkes";
-  var STIMME_ROLLE = "Founder · upstreem";
+  var STIMME = "See what AI answers say about you.";
+  var STIMME_SUB = "Connect your brand, pick the prompts that matter, and watch the answers as " +
+    "they change. The first report takes minutes.";
   var STIMME_CTA = "Start for free";
+  var STIMME_CTA2 = "Talk to sales";
 
   function stimme(){
     return '<section class="ulh-stimme">' +
       '<div class="ulh-spur ulh-stimme-in">' +
-        '<blockquote class="ulh-stimme-satz ulh-auf">“' + STIMME + '”</blockquote>' +
-        '<div class="ulh-stimme-wer ulh-auf" style="--auf:1">' +
-          '<span class="ulh-stimme-name">' + STIMME_WER + '</span>' +
-          '<span class="ulh-stimme-rolle">' + STIMME_ROLLE + '</span>' +
+        '<h2 class="ulh-stimme-satz ulh-auf">' + STIMME + '</h2>' +
+        '<p class="ulh-stimme-sub ulh-auf" style="--auf:1">' + STIMME_SUB + '</p>' +
+        '<div class="ulh-stimme-knoepfe ulh-auf" style="--auf:2">' +
+          '<a class="ulh-btn ulh-btn-pri" href="https://upstreem.ai/signup">' + STIMME_CTA + '</a>' +
+          '<a class="ulh-btn ulh-btn-sec" href="https://upstreem.ai/contact">' + STIMME_CTA2 + '</a>' +
         '</div>' +
-        '<a class="ulh-btn ulh-btn-pri ulh-stimme-cta ulh-auf" style="--auf:2"' +
-          ' href="https://upstreem.ai/signup">' + STIMME_CTA + '</a>' +
       '</div>' +
     '</section>';
   }
@@ -2028,8 +2027,30 @@
         }
       }
       if (buchstaben.length && h) schriftTakt(h, buchstaben);
+      leisteKleben(root);
       requestAnimationFrame(takt);
     })();
+  }
+
+  /* Die Leiste klebt oben -- und zwar auch dann, wenn die Sektion in einem Rahmen steckt.
+     position: sticky reicht dafuer nicht: es kennt nur den eigenen Scrollkasten, und in einem
+     Embed-Rahmen scrollt der nie (der Rahmen ist so hoch wie sein Inhalt). Genau daran klebte
+     nichts.
+     Also dasselbe wie beim Scrolleffekt: gemessen wird der RAHMEN im Fenster darueber. Ist er
+     hochgewandert, faehrt die Leiste um denselben Betrag mit -- und hoert auf, wenn unten die
+     Sektion endet, damit sie nicht in den Fuss laeuft.
+     Ohne Rahmen macht sticky die Arbeit, dann passiert hier nichts. */
+  function leisteKleben(root){
+    var nav = root.querySelector(".ulh-nav");
+    if (!nav) return;
+    var rahmen = null;
+    try { rahmen = window.frameElement; } catch (e){ return; }
+    if (!rahmen) return;
+    var oben = rahmen.getBoundingClientRect().top;
+    var y = oben < 0 ? -oben : 0;
+    var grenze = root.getBoundingClientRect().height - nav.offsetHeight;
+    if (y > grenze) y = grenze;
+    nav.style.transform = y ? "translateY(" + Math.round(y) + "px)" : "";
   }
 
   /* Der Stand je Buchstabe, gerechnet aus der echten Lage der Ueberschrift. */

@@ -2297,15 +2297,22 @@
   background: rgba(255, 255, 255, .82);
   -webkit-backdrop-filter: saturate(180%) blur(14px);
           backdrop-filter: saturate(180%) blur(14px);
-  border-bottom: 1px solid transparent;
-  transition: border-color 200ms var(--ulh-ease), background 200ms var(--ulh-ease);
+  /* Die Linie unten laeuft IMMER und ueber die ganze Breite -- sie ist die oberste der
+     waagerechten Linien, mit denen die Seite ihre Abschnitte trennt, und keine Reaktion auf ein
+     offenes Menue. */
+  border-bottom: 1px solid var(--ulh-border);
+  transition: background 200ms var(--ulh-ease);
 }
-/* Die Trennlinie kommt erst, wenn ein Menue offen ist -- vorher soll die Leiste auf der Seite
-   liegen und nicht auf ihr stehen. */
-.ulh-nav.is-offen { border-bottom-color: var(--ulh-border); background: rgba(255, 255, 255, .94); }
+.ulh-nav.is-offen { background: rgba(255, 255, 255, .94); }
+/* Die zwei senkrechten Schienen der Seite laufen durch die Leiste weiter. Sie kommen hier aus
+   eigenen Raendern und nicht aus .ulh-schienen: die Leiste hat einen eigenen Grund und liegt
+   darueber, die durchlaufenden Schienen waeren also verdeckt. */
 .ulh-nav-in {
-  position: relative;
+  position: relative; box-sizing: border-box;
   display: flex; align-items: center; gap: 24px; height: 62px;
+  padding: 0 16px;
+  border-left: 1px solid var(--ulh-schiene);
+  border-right: 1px solid var(--ulh-schiene);
 }
 .ulh-nav-logo {
   display: inline-flex; align-items: center; gap: 9px; text-decoration: none;
@@ -2316,7 +2323,7 @@
    oder rechts etwas laenger wird. */
 .ulh-nav-mitte {
   position: absolute; left: 50%; transform: translateX(-50%);
-  display: flex; align-items: center; gap: 4px;
+  display: flex; align-items: center; gap: 14px;
 }
 /* .check_reinvention.py meldet hier den Segmented-Control-Knopf der App (.up-seg-btn), weil
    background, border, Radius, Hoehe und Uebergang zusammen vorkommen. Fehlalarm: das ist ein
@@ -2324,7 +2331,7 @@
    ohne Nachbarn, an die er sich anschliesst, und ausserhalb jeder .up-root. */
 .ulh-nav-punkt {
   appearance: none; border: 0; background: transparent; cursor: pointer;
-  font-family: inherit; font-size: 14px; font-weight: 500; letter-spacing: -0.01em;
+  font-family: inherit; font-size: 14px; font-weight: 400; letter-spacing: -0.01em;
   color: var(--ulh-sub); text-decoration: none;
   height: 34px; padding: 0 12px; border-radius: 9px;
   display: inline-flex; align-items: center;
@@ -2377,9 +2384,13 @@
    derselbe 8er-Raster wie ueberall. */
 .ulh-stimme {
   position: relative; z-index: 1;
-  padding: clamp(96px, 14vh, 168px) 0 clamp(104px, 15vh, 180px);
+  /* Luft ueber und unter der Sektion: sie steht zwischen zwei waagerechten Linien, und die sollen
+     als eigener Abschnitt lesbar sein und nicht als Fortsetzung der Zahlen darueber. */
+  margin: clamp(72px, 9vh, 120px) 0;
+  padding: clamp(84px, 12vh, 148px) 0;
   background-image: radial-gradient(circle, var(--ulh-schiene) 1px, transparent 1px);
   background-size: 8px 8px;
+  border-top: 1px solid var(--ulh-border);
   border-bottom: 1px solid var(--ulh-border);
 }
 /* Der Grund verlaeuft an beiden Enden ins Weisse -- eine Flaeche, die hart anfaengt, sieht aus wie
@@ -2397,10 +2408,12 @@
   font-size: clamp(30px, 3.6vw, 48px); font-weight: 400; line-height: 1.24;
   letter-spacing: -0.02em; color: var(--ulh-text);
 }
-.ulh-stimme-wer { margin-top: clamp(26px, 3.4vh, 40px); display: flex; flex-direction: column; gap: 3px; }
-.ulh-stimme-name { font-size: 14px; font-weight: 500; color: var(--ulh-text); }
-.ulh-stimme-rolle { font-size: 13.5px; font-weight: 400; color: var(--ulh-sub); }
-.ulh-stimme-cta { margin-top: clamp(28px, 3.6vh, 42px); }
+.ulh-stimme-sub {
+  margin: clamp(18px, 2.4vh, 26px) 0 0; max-width: 52ch;
+  font-size: 16px; font-weight: 400; line-height: 1.55; letter-spacing: -0.01em;
+  color: var(--ulh-sub);
+}
+.ulh-stimme-knoepfe { margin-top: clamp(28px, 3.6vh, 42px); display: flex; gap: 10px; }
 
 /* ---------- Der Fuss --------------------------------------------------------------------------
    Schwarz und ueber die ganze Breite: das Ende der Seite soll auch wie eines aussehen. Die Farben
@@ -2410,11 +2423,11 @@
   position: relative; z-index: 1;
   width: 100vw; margin-left: calc(50% - 50vw);
   background: #0b0b0b; color: #e0e0e0;
-  padding: clamp(56px, 8vh, 88px) 0 0;
+  padding: clamp(84px, 12vh, 132px) 0 0;
 }
 .ulh-fuss-in {
   display: flex; gap: 48px; align-items: flex-start; flex-wrap: wrap;
-  padding-bottom: clamp(48px, 7vh, 76px);
+  padding-bottom: clamp(72px, 10vh, 114px);
 }
 .ulh-fuss-marke { display: flex; flex-direction: column; gap: 14px; margin-right: auto; max-width: 300px; }
 .ulh-fuss-logo {
@@ -2444,7 +2457,7 @@
 .ulh-fuss-link:hover { color: #ffffff; }
 .ulh-fuss-unten {
   border-top: 1px solid rgba(255, 255, 255, .08);
-  padding: 18px 0 22px;
+  padding: 26px 0 34px;
   font-size: 12.5px; color: #6f6f6f;
 }
 @media (max-width: 900px) {
