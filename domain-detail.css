@@ -16,7 +16,7 @@
    und sich darin noch einmal haelftig teilt. Mit Flex braeuchte sie eine Breitenrechnung.
    Die Reihenfolge ist die des DOM -- die frueheren order-Regeln sind mit der Sichtbarkeits-
    einstellung entfallen. */
-.udd-root { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; align-items: stretch; }
+.udd-root { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 100%; align-items: stretch; }
 /* Unter 900px untereinander (is-stack, gesetzt von UC.widthTiers). Zwei Haelften waeren darunter
    je 440px, und darin steht weder der Trichter mit drei Zahlen noch ein Ring neben seiner
    Legende. */
@@ -171,7 +171,7 @@
    Trichter und teilt sich genauso. Vorher 1.15 zu 1 -- das war richtig, solange die Zeile die
    ganze Seitenbreite hatte; im halbierten Raster sind zwei gleiche Haelften ruhiger, und der
    Ring hat seine Legende darunter statt daneben. */
-.udd-row2 { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+.udd-row2 { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
   align-items: stretch; }
 .udd-root.is-stack .udd-row2 { grid-template-columns: 1fr; }
 /* Die Karte ist eine Spalte: Kopf oben, Chart nimmt den Rest und zentriert darin. Dadurch sind
@@ -209,19 +209,20 @@
    Zahl. Beim Typ-Split bleibt sie: dort ist es die Zahl der zitierten Seiten. */
 .udd-modeldonut .up-donut-center { display: none; }
 
-/* Beide Ringe 15% kleiner im Durchmesser: die zwei Zahlen der core-Regel mal 0.85, im
-   eingeklappten Fall (75%/220 -> 63.75%/187) wie im nicht eingeklappten (52%/200 -> 44.2%/170).
+/* Beide Ringe 7.5% kleiner im Durchmesser -- die HALBE Verkleinerung von vorher: 0.85 war zu
+   viel, 1.0 war zu gross, also 0.925 auf die zwei Zahlen der core-Regel. Nicht eingeklappt
+   52%/200 -> 48.1%/185, eingeklappt 75%/220 -> 69.4%/203.
    Prozent UND Deckel ziehen mit, sonst waere der Ring nur auf einer Breite kleiner. Die Skelette
    bekommen dieselben Werte, sonst springt die Karte, wenn die Daten kommen. */
 .udd-typebody .up-donut-wrap, .udd-modelbody .up-donut-wrap,
 .udd-typebody .up-donut-sk .up-sk-chart, .udd-modelbody .up-donut-sk .up-sk-chart {
-  width: min(44.2%, 170px);
+  width: min(48.1%, 185px);
 }
 .udd-typebody .up-donut-layout.is-collapsed .up-donut-wrap,
 .udd-modelbody .up-donut-layout.is-collapsed .up-donut-wrap,
 .udd-typebody .up-donut-sk.is-collapsed .up-sk-chart,
 .udd-modelbody .up-donut-sk.is-collapsed .up-sk-chart {
-  width: min(63.75%, 187px);
+  width: min(69.4%, 203px);
 }
 
 /* ---- Model Breakdown -------------------------------------------------------------------------
@@ -238,7 +239,7 @@
 .udd-root.is-narrow .udd-head { flex-wrap: wrap; }
 .udd-root.is-narrow .udd-tools { width: 100%; justify-content: flex-start; }
 /* Schmal stehen die zwei Karten untereinander -- nebeneinander bliebe fuer den Ring nichts. */
-.udd-root.is-narrow .udd-row2 { grid-template-columns: 1fr; gap: 8px; }
+.udd-root.is-narrow .udd-row2 { grid-template-columns: 1fr; gap: 16px; }
 /* Schmal: die Koepfe brechen auf zwei Spalten um und liegen dann NICHT mehr auf den Dritteln der
    Flaeche -- deshalb steht darunter der 16px-Abstand (weiter unten), der beides klar trennt.
    Kein !important noetig: das JS setzt nur die VARIABLE inline, nicht grid-template-columns, und

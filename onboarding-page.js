@@ -911,7 +911,6 @@
               /* Vier feste Werte, alle gleich wichtig, keiner erklaerungsbeduerftig -- das ist
                  ein Switcher und kein Kasten, den man erst aufmachen muss. .up-seg aus core. */
               '<div class="up-seg uob-bseg" role="tablist" aria-label="Business model">' +
-                '<span class="uob-bseg-ind" data-bseg-ind></span>' +
                 BUSINESS.map(function (b) {
                   return '<button class="up-seg-btn" type="button" role="tab" aria-selected="false"' +
                          ' data-biz="' + esc(b.value) + '">' + esc(b.label) + '</button>';
@@ -2329,47 +2328,13 @@
         btns[i].classList.toggle("is-active", an);
         btns[i].setAttribute("aria-selected", an ? "true" : "false");
       }
-      bsegMarke();
     }
-    /* Die gleitende Marke unter den aktiven Knopf legen. Gemessen statt gerechnet: die vier
-       Beschriftungen sind verschieden breit, und flex verteilt den Rest -- eine Rechnung aus der
-       Zahl der Knoepfe waere falsch, sobald ein Wort laenger wird. */
-    function bsegMarke() {
-      var ind = root.querySelector("[data-bseg-ind]");
-      if (!ind) return;
-      var an = root.querySelector("[data-biz].is-active");
-      if (!an || !an.offsetWidth) { ind.classList.remove("is-bereit"); return; }
-      ind.style.left = an.offsetLeft + "px";
-      ind.style.width = an.offsetWidth + "px";
-      ind.classList.add("is-bereit");
-      bsegBeobachten(root.querySelectorAll("[data-biz]"));
-    }
-    /* EINMAL messen reicht nicht. Die Pille steht auf gemessenen Pixeln, und die aendern sich
-       noch, NACHDEM sie gesetzt wurden: die Hausschrift laedt spaeter nach, und mit ihr werden
-       alle vier Beschriftungen anders breit -- die Pille bleibt dann an der alten Stelle stehen
-       und liegt hinter dem falschen Knopf. Genau so gemeldet am 24.08. ("B2B ist selected, aber
-       der weisse BG ist hinter B2X"), und es passt zusammen: es trat "ab und an" auf, naemlich
-       dann, wenn die Schrift nicht schon im Zwischenspeicher lag.
-       Deshalb zwei Nachmessungen: eine, wenn die Schriften fertig sind, und dauerhaft eine bei
-       jeder Groessenaenderung der Leiste (Fensterbreite, Sprache, Zoom). */
-    var bsegRo = null, bsegSchriftHaengt = false;
-    function bsegBeobachten(knoepfe) {
-      if (!knoepfe || !knoepfe.length) return;
-      if (!bsegSchriftHaengt && document.fonts && document.fonts.ready) {
-        bsegSchriftHaengt = true;
-        document.fonts.ready.then(function () { bsegMarke(); })["catch"](function () {});
-      }
-      if (bsegRo || !window.ResizeObserver) return;
-      /* Beobachtet werden die KNOEPFE, nicht die Leiste um sie herum. Die Leiste ist 100% breit
-         und aendert ihre Groesse nie -- ein Beobachter auf ihr feuert also genau dann nicht, wenn
-         es darauf ankaeme. Gemessen: bei 1100px stand die Pille an der richtigen Stelle, war aber
-         2px statt 100px breit, weil die Knopfbreite sich NACH der einzigen Messung noch aenderte.
-         Der Rueckruf ruft bsegMarke, das wieder hierher fuehrt -- der Beobachter wird aber nur
-         einmal angelegt (bsegRo), und bsegMarke aendert nur die Pille, nie einen Knopf: keine
-         Schleife. */
-      bsegRo = new ResizeObserver(function () { bsegMarke(); });
-      for (var i = 0; i < knoepfe.length; i++) bsegRo.observe(knoepfe[i]);
-    }
+
+    /* Hier stand die gleitende Marke dieses Umschalters -- Markup, Messung, Beobachter auf den
+       Knoepfen und ein Nachmessen, wenn die Schriften fertig geladen sind. Sie ist entfallen,
+       weil core dasselbe jetzt fuer JEDEN Umschalter der App macht (core.js: segLauf,
+       core.css: .up-seg-ind), samt der beiden Lehren von hier: an den Knoepfen messen, nicht an
+       der Leiste, und nach dem Laden der Schriften noch einmal. */
 
     /* ---- Die vier Auswahlfelder ------------------------------------------------------------
        Alle vier teilen denselben Ausklapp-Kasten aus core. Was sie unterscheidet, sind Liste,
@@ -3305,8 +3270,6 @@
          Reihe stehen, die laengst nicht mehr passte. */
       labelsPruefen(sichtbareSteps().length);
       kopfPruefen();
-      /* Die Marke haengt an Pixelmassen, die sich mit der Breite aendern. */
-      bsegMarke();
     }
     messeBreite();
     if (UC.onResize) UC.onResize(root, messeBreite);

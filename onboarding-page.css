@@ -553,34 +553,10 @@
    damit die Pille genauso aussieht wie ueberall sonst.
    left und width statt transform: die vier Beschriftungen sind verschieden breit, eine
    Verschiebung allein koennte die Pille nicht auf ihre Groesse bringen. */
-/* Buendig, ohne Luft und ohne Schatten -- so wie am Anfang. Zwischenstand war 3px Abstand oben
-   und unten, damit ein Schatten ueberhaupt eine Flaeche zum Fallen hat (die Pille deckte die
-   Leiste senkrecht sonst vollstaendig ab). Der Nutzer will beides nicht: "jetzt hat das ding
-   iwie 2-4px padding oben und unten, weg damit" und "der hat auch immernoch shadow".
-   Die Folge ist bewusst in Kauf genommen: ohne diese Luft KANN kein Schatten sichtbar sein, und
-   deshalb steht hier auch keiner mehr -- ein box-shadow, der nichts tut, ist nur eine Zeile, die
-   beim naechsten Lesen Fragen aufwirft. */
-.uob-bseg-ind {
-  position: absolute; top: 0; bottom: 0; left: 0; width: 0; z-index: 0;
-  border-radius: 8px; background: #ffffff;
-  /* --vc-switch-border ist der Rahmen, den core der aktiven Stufe gibt. Hier stand einmal ein
-     Name, den es nicht gibt (--vc-switch-active-border) -- dann faellt der Rueckfall an, und der
-     war transparent: der Rahmen um die aktive Stufe fehlte einfach. */
-  border: 1px solid var(--vc-switch-border);
-  transition: left var(--uob-t) var(--uob-ease), width var(--uob-t) var(--uob-ease),
-              opacity var(--uob-t) var(--uob-ease);
-}
-/* Vor der ersten Messung ist die Marke unsichtbar. Ohne das sah man beim Aufbau kurz zwei
-   aktive Stufen: die Marke lag mit Breite 0 links, waehrend schon eine Beschriftung dunkel war
-   -- und weil die erste Messung erst nach dem Layout kommt, hielt das eine Bildaenderung lang.
-   is-bereit setzt das JS, sobald es gemessen hat. */
-.uob-bseg-ind { opacity: 0; }
-.uob-bseg-ind.is-bereit { opacity: 1; }
-.uob-root[data-theme="dark"] .uob-bseg-ind { background: #121212; border-color: #353535; }
-/* Die Stufen geben ihren eigenen Grund und Rahmen ab -- die Marke traegt beides, und zwei
-   Pillen uebereinander waeren beim Gleiten zwei. */
-.uob-bseg .up-seg-btn.is-active { background: transparent; border-color: transparent;
-  box-shadow: none; color: var(--vc-text); }
+/* Die gleitende Marke dieses Umschalters kommt jetzt aus core (.up-seg-ind) -- sie war hier das
+   Vorbild und ist dort fuer alle Umschalter der App nachgebaut. */
+/* Dass die aktive Stufe ihren Grund abgibt, macht jetzt core fuer alle Umschalter
+   (.up-seg-ind ~ button.is-active). Die Regel hier war die Kopie davon und ist entfallen. */
 
 /* ---------- Formular-Select ----------
    Begruendung im Kopf dieser Datei: core sagt ausdruecklich, dass .up-ddtrigger KEIN

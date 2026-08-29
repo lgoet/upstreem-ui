@@ -3041,7 +3041,100 @@
     }
   }
 
-  function toolbarLauf(){ stampToolbarIcons(); stampGran(); orderToolbars(); }
+  /* ---- Der gleitende Umschalter --------------------------------------------------------------
+     Jeder Umschalter der App bekommt einen Streifen, der unter den Knoepfen an die aktive Stufe
+     faehrt (CSS: .up-seg-ind). Hier steht nur das Messen: wo steht die aktive Stufe, wie breit
+     und wie hoch ist sie.
+     Die Stufen werden ueber "button" gefunden und nicht ueber ihre Klassen: die zehn Umschalter
+     der App nennen ihre Knoepfe zehnmal anders (.up-seg-btn, .vc-gran-btn, .up-pagesize-btn,
+     .tcd-mode-btn ...), und eine Liste davon waere beim naechsten neuen Umschalter wieder
+     unvollstaendig. Der Streifen selbst ist ein span und faellt deshalb nicht mit hinein. */
+  var SEG_BOXEN = ".up-seg, .cc-seg, .ubo-seg, .tcl-seg, .vc-gran, .cc-gran, .up-pagesize-seg," +
+                  " .up-filter-dim, .up-dense, .tcd-mode, .uca-format-seg, .ubo-yaxis";
+
+  function segMessen(box){
+    var ind = box.__upSegInd;
+    /* Baut eine Komponente ihr Markup neu, ist der Streifen weg -- die Kiste kennt ihn dann noch.
+       Also nicht nur auf das Merkmal schauen, sondern ob er wirklich noch im Dokument haengt. */
+    if (!ind || ind.parentNode !== box){
+      ind = document.createElement("span");
+      ind.className = "up-seg-ind";
+      ind.setAttribute("aria-hidden", "true");
+      box.insertBefore(ind, box.firstChild);
+      box.__upSegInd = ind;
+    }
+    var aktiv = box.querySelector("button.is-active");
+    if (!aktiv){
+      if (ind.classList.contains("is-bereit")) ind.classList.remove("is-bereit");
+      return;
+    }
+    var b = aktiv.offsetWidth, h = aktiv.offsetHeight;
+    /* Breite 0 heisst: der Umschalter ist gerade nicht sichtbar (ein Popover, das noch zu ist).
+       Dann NICHT messen -- eine 0 wuerde den Streifen auf null ziehen, und beim Oeffnen faehrt er
+       aus dem Nichts. Der naechste Lauf misst ihn, sobald er wirklich da ist. */
+    if (!b) return;
+    var t = "translate(" + aktiv.offsetLeft + "px," + aktiv.offsetTop + "px)";
+    /* Das ERSTE Mal ohne Fahrt: ein Streifen, der beim Aufbau der Seite aus der Breite 0 an der
+       linken Kante herauswaechst, behauptet einen Wechsel, den es nicht gab. Danach faehrt er. */
+    var erst = !ind.classList.contains("is-bereit");
+    if (erst) ind.style.transition = "none";
+    /* Nur schreiben, was sich geaendert hat: jedes Schreiben ist eine Mutation, und der Beobachter
+       unten haengt an genau diesem Element. */
+    if (ind.style.transform !== t) ind.style.transform = t;
+    if (ind.style.width !== b + "px") ind.style.width = b + "px";
+    if (ind.style.height !== h + "px") ind.style.height = h + "px";
+    if (erst){ void ind.offsetWidth; ind.style.transition = ""; ind.classList.add("is-bereit"); }
+  }
+
+  /* Die Schriften kommen SPAETER als das erste Bild, und mit ihnen werden alle Beschriftungen
+     anders breit -- der Streifen stuende dann hinter dem falschen Knopf. Genau so gemeldet am
+     24.08. am Umschalter im Onboarding ("B2B ist selected, aber der weisse Hintergrund ist hinter
+     B2X"), und es trat "ab und an" auf: naemlich dann, wenn die Schrift nicht schon im
+     Zwischenspeicher lag. Einmal fuer die ganze Seite, nicht je Umschalter. */
+  var SEG_SCHRIFT = false;
+
+  function segEinrichten(box){
+    if (!box.__upSeg){
+      box.__upSeg = true;
+      /* Der Beobachter sitzt an der Kiste selbst und nicht am Dokument: die aktive Stufe wechselt
+         ueber eine Klasse, und wer darauf dokumentweit lauscht, laeuft bei jeder Regung der Seite
+         mit. So laeuft er nur, wenn sich in diesem Umschalter etwas tut. */
+      if (window.MutationObserver){
+        new MutationObserver(function(){ segMessen(box); })
+          .observe(box, { subtree: true, childList: true, attributes: true, attributeFilter: ["class"] });
+      }
+      /* Beobachtet werden die KNOEPFE, nicht die Kiste um sie herum: eine Kiste, die 100% breit
+         ist, aendert ihre Groesse nie -- ein Beobachter auf ihr feuert also genau dann nicht, wenn
+         es darauf ankaeme. Dieselbe Lehre wie im Onboarding. */
+      if (window.ResizeObserver){
+        box.__upSegRo = new ResizeObserver(function(){ segMessen(box); });
+      }
+    }
+    if (box.__upSegRo){
+      /* Bei jedem Lauf neu anmelden: ein Umschalter, der sein Markup neu gebaut hat, hat neue
+         Knoepfe. Ein zweites observe auf dasselbe Element tut nichts. */
+      try { [].forEach.call(box.querySelectorAll("button"), function(b){ box.__upSegRo.observe(b); }); } catch(e){}
+    }
+    if (!SEG_SCHRIFT && document.fonts && document.fonts.ready){
+      SEG_SCHRIFT = true;
+      document.fonts.ready.then(function(){ segLauf(); })["catch"](function(){});
+    }
+    segMessen(box);
+  }
+
+  function segLauf(wurzel){
+    var ziel = wurzel || document, els;
+    try { els = ziel.querySelectorAll(SEG_BOXEN); } catch(e){ return; }
+    for (var i = 0; i < els.length; i++) segEinrichten(els[i]);
+  }
+
+  /* Zwei Anlaesse ausser dem Lauf der Toolbar: eine andere Fensterbreite aendert die Breite der
+     Stufen, und ein Klick irgendwo kann einen Umschalter erst sichtbar machen (Popover, Drawer,
+     Tab). Beides ist billig -- ein querySelectorAll und eine Messung je Umschalter. */
+  window.addEventListener("resize", function(){ segLauf(); }, { passive: true });
+  document.addEventListener("click", function(){ setTimeout(function(){ segLauf(); }, 0); }, true);
+
+  function toolbarLauf(){ stampToolbarIcons(); stampGran(); orderToolbars(); segLauf(); }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function(){ toolbarLauf(); });
   else toolbarLauf();
   [60, 250, 700, 1500, 3000].forEach(function(ms){ setTimeout(function(){ toolbarLauf(); }, ms); });
@@ -3074,8 +3167,13 @@
       stampGeplant = true;
       setTimeout(function(){
         stampGeplant = false;
-        stampToolbarIcons();
-        orderToolbars();
+        /* Der GANZE Lauf und nicht nur die zwei Toolbar-Teile: hier standen stampToolbarIcons und
+           orderToolbars einzeln, und alles, was spaeter dazukam, fehlte -- die kurzen
+           Beschriftungen D/W/M und der gleitende Streifen der Umschalter erreichten damit jeden
+           Umschalter nicht, der erst nach dem Seitenaufbau entsteht (Drawer, View, ein Schritt im
+           Onboarding). Genau so gemessen: im Onboarding hatte der Umschalter des
+           Geschaeftsmodells keinen Streifen, bis irgendwo geklickt wurde. */
+        toolbarLauf();
         /* Die Mutationen, die der Lauf selbst erzeugt hat, verwerfen -- sonst haengt an jedem
            getauschten Icon sofort der naechste Lauf. */
         try { stampObs.takeRecords(); } catch(e){}

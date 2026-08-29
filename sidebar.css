@@ -313,39 +313,11 @@
   transition: background var(--usn-t) var(--usn-ease), color var(--usn-t) var(--usn-ease);
 }
 .usn-item + .usn-item { margin-top: 2px; }
-/* ---- Die gleitende Marke ----
-   Die aktive Flaeche GLEITET zur neuen Zeile, statt in der einen auszugehen und in der anderen
-   anzugehen. Dieselbe Machart wie der Geschaeftsmodell-Switcher im Onboarding (.uob-bseg-ind):
-   ein eigenes Element traegt die Flaeche, die Zeilen geben ihre eigene ab -- zwei Flaechen
-   uebereinander waeren beim Gleiten zwei aktive Zeilen.
-   Gemessen und nicht gerechnet: die Zeilen sind unterschiedlich hoch (Nav-Punkt 34/36, Pin
-   ebenso, im Mini-Zustand quadratisch), und ihr Abstand haengt an der Gruppe, in der sie stehen.
-   transform statt top: die Fahrt laeuft dann ohne Layout, und height bleibt als zweite Groesse
-   uebrig, weil eine hohe Zeile neben einer flachen stehen kann.
-   Die Farbe ist --usn-sel, also genau die, die die aktive Zeile vorher selbst trug. */
-.usn-mark {
-  position: absolute; left: 0; top: 0; width: 0; height: 0; z-index: 0;
-  border-radius: 12px; background: var(--usn-sel); opacity: 0; pointer-events: none;
-  transition: transform var(--usn-t) var(--usn-ease), height var(--usn-t) var(--usn-ease),
-              width var(--usn-t) var(--usn-ease), opacity var(--usn-t) var(--usn-ease);
-}
-/* Vor der ersten Messung unsichtbar -- sonst liegt sie einen Frame lang mit Hoehe 0 oben links,
-   waehrend eine Zeile schon dunkel ist. is-bereit setzt das JS, sobald es gemessen hat. */
-.usn-mark.is-bereit { opacity: 1; }
-/* Die ZEILEN werden positioniert, nicht die Gruppen um sie herum -- und das ist der Kern dieser
-   zwei Zeilen. Positioniert man die Gruppe, wird SIE zum offsetParent ihrer Zeilen: offsetTop
-   faengt dann in jeder Gruppe wieder bei 20 an, und die Marke liegt in der Gruppe richtig und in
-   der Liste falsch. Genau so gemessen -- "Dashboard" und "Performance" und "Teams" standen alle
-   drei auf 20. Die Zeile selbst zu positionieren aendert ihren eigenen offsetParent nicht (das ist
-   weiter .usn-nav), hebt sie aber ueber die Marke. */
+/* Hier stand eine gleitende Marke: ein heller Balken, der beim Wechsel des Menuepunktes an die
+   neue Zeile fuhr, waehrend die Zeilen ihre eigene Flaeche abgaben. Sie ist entfallen -- die
+   aktive Zeile traegt ihre Flaeche wieder selbst. Was bleibt, ist die Positionierung der Zeilen:
+   sie hebt sie ueber den Grund der Gruppe und wird auch von Tooltips und Menues gebraucht. */
 .usn-nav .usn-item { position: relative; z-index: 1; }
-/* Die Zeilen geben ihre Flaeche ab, SOBALD die Marke da ist -- has-marke setzt das JS erst nach
-   der ersten Messung. Ohne diese Bedingung stuende eine aktive Zeile ohne Flaeche da, falls die
-   CSS neu und das JS alt ist (zwei Dateien, ein CDN, zwei Zwischenspeicher).
-   Auch im Hover: die Flaeche kommt von der Marke, und der Hover der aktiven Zeile wuerde sie
-   sonst mit seinem eigenen Ton uebermalen. */
-.usn-bar.has-marke .usn-item.is-active,
-.usn-bar.has-marke .usn-item.is-active:hover { background: transparent; }
 /* Der Hover ist genau die halbe Staerke des aktiven Zustands: dieselbe Farbe, halb
    deckend. Damit bleibt "worauf zeige ich" und "wo bin ich" unterscheidbar, ohne einen
    zweiten Ton zu erfinden. */

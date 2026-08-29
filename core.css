@@ -1917,6 +1917,41 @@
    Visibility-Chart und .tcl-seg im Zitatteil. Ihre Ausnahme steht unten. */
 .up-seg, .cc-seg, .ubo-seg, .tcl-seg { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-soft); border-radius: 8px; border: 0; height: 26px; flex: 0 0 auto; align-self: center; }
 .tcl-seg { align-self: flex-start; }
+
+/* ---- Der gleitende Umschalter --------------------------------------------------------------
+   Die aktive Stufe wird nicht mehr umgefaerbt, sie FAEHRT: ein Streifen liegt unter den Knoepfen
+   und zieht in 200ms an die neue Stelle. Dasselbe Bild, das der Umschalter im Onboarding schon
+   hatte (.uob-bseg-ind) -- hier fuer JEDEN Umschalter der App, gross wie klein, und deshalb in
+   core statt zum sechsten Mal in einer Komponente.
+   Der Streifen wird von core.js eingehaengt und gemessen (segLauf). Er traegt genau die Flaeche,
+   die die aktive Stufe vorher selbst trug: weiss mit dem Schalterrahmen, im Dunkeln #121212.
+   Die Stufe selbst gibt ihre Flaeche ab, SOBALD der Streifen da ist -- ueber den
+   Geschwisterselektor .up-seg-ind ~ button.is-active. Ohne Streifen (kein JS, alte Seite) bleibt
+   alles wie vorher; es gibt also keinen Zustand ohne sichtbare Auswahl. */
+.up-seg, .cc-seg, .ubo-seg, .tcl-seg, .vc-gran, .cc-gran, .up-pagesize-seg, .up-filter-dim,
+.up-dense, .tcd-mode, .uca-format-seg, .ubo-yaxis { position: relative; }
+.up-seg-ind {
+  position: absolute; left: 0; top: 0; width: 0; height: 100%; z-index: 0; box-sizing: border-box;
+  border-radius: 8px; background: #ffffff; border: 1px solid var(--vc-switch-border);
+  opacity: 0; pointer-events: none;
+  transition: transform 200ms ease, width 200ms ease, height 200ms ease, opacity 160ms ease;
+}
+/* Vor der ersten Messung unsichtbar: sonst liegt der Streifen einen Frame lang mit Breite 0 links,
+   waehrend eine Stufe schon dunkel ist. is-bereit setzt core.js, sobald es gemessen hat. */
+.up-seg-ind.is-bereit { opacity: 1; }
+[data-theme="dark"] .up-seg-ind { background: #121212; border-color: #353535; }
+/* Die Knoepfe stehen ueber dem Streifen. */
+.up-seg-ind ~ button { position: relative; z-index: 1; }
+/* Drei Stufen der Spezifitaet, weil die Aktivregeln der Bauteile in drei Stufen stehen:
+   .up-seg-btn.is-active (0,2,0), [data-theme="dark"] ... (0,3,0) und
+   .up-root[data-theme="dark"] .vc-gran-btn.is-active (0,4,0). Ueber die Spezifitaet gewonnen,
+   nicht ueber die Ladereihenfolge. */
+.up-seg-ind ~ button.is-active,
+[data-theme="dark"] .up-seg-ind ~ button.is-active,
+.up-root[data-theme="dark"] .up-seg-ind ~ button.is-active {
+  background: transparent; border-color: transparent;
+}
+@media (prefers-reduced-motion: reduce) { .up-seg-ind { transition: none; } }
 /* ---- Die zweite GROESSE des Umschalters ----------------------------------------------------
    is-lg ist der Umschalter, der nicht als Werkzeug in einer Kopfzeile steht, sondern allein ueber
    dem Inhalt und die Ansicht der ganzen Seite waehlt (brand-detail, domain-detail).
