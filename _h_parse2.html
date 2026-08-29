@@ -1,0 +1,55 @@
+<meta charset="utf-8"><title>parseBubbleJson: Schluessel gegen Wert</title>
+<!-- Messseite fuer UC.readBubble. Die erste Probe ist der reale Payload aus dem Bugreport vom
+     29.08. (url-detail, LeeUP): die Beschreibung traegt selbst Anfuehrungszeichen UND einen
+     Doppelpunkt dahinter. Die anderen Proben sind die Faelle, die frueher schon einmal kaputt
+     waren -- sie muessen weiter durchgehen. -->
+<style>body{font:12px/1.5 ui-monospace,monospace;margin:16px;white-space:pre-wrap}</style>
+<pre id="out">laeuft</pre>
+<script src="core.js"></script>
+<script>
+var PROBEN = [
+  ["realer Bugreport (Anfuehrungszeichen + Doppelpunkt im Wert)", `{
+  "url": "https://www.lee-up.de/",
+  "title": "LeeUP Media GmbH - Digitalisierung für Handwerksbetriebe",
+  "domain": "lee-up.de",
+  "favicon": "https://www.google.com/s2/favicons?domain=lee-up.de&sz=128",
+  "url_type": "homepage",
+  "companies": [
+    { "logo_url": "https://www.google.com/s2/favicons?domain=lee-up.de&sz=64",
+      "company_id": "88640dff-6468-471a-bee4-6c17d2ed0399", "company_name": "LeeUp Media" }
+  ],
+  "last_seen": "Aug 29, 2026 6:15 pm",
+  "first_seen": null,
+  "description": "LeeUP Media GmbH - Digitalisierung für Handwerksbetriebe — title: "LeeUP Media GmbH Digitalisierung für Handwerksbetriebe" meta: "og:title": "LeeUP Me...",
+  "global_rank": 48,
+  "domain_share": 70.21,
+  "global_share": 2.16,
+  "citation_type": "You",
+  "markdown_summary": null
+}`, ["url","description","global_rank","companies"]],
+  ["gueltiges JSON bleibt unangetastet", '{"a":"x","b":[1,2],"c":{"d":"e"}}', ["a","b","c"]],
+  ["nacktes yes/no und leerer Wert", '{"an": yes, "aus": no, "leer": , "n": 3}', ["an","aus","leer","n"]],
+  ["Zeitstempel mit Komma UND Doppelpunkt", '{"t": "May 9, 2026 12:23 pm", "x": 1}', ["t","x"]],
+  ["Anfuehrungszeichen im Text, danach ein Komma", '{"t": "von "Meine Top 3" geht", "x": 1}', ["t","x"]],
+  ["Emoji unquotiert", '{"emoji": 💎, "name": "Pricing"}', ["emoji","name"]],
+  ["Liste von Objekten", '[{"a":1},{"a":2}]', ["a"]],
+  ["abgeschnitten mit Backslash vor dem Anfuehrungszeichen", '{"t": "Text der abbricht\\", "x": 2}', ["t","x"]]
+];
+setTimeout(function(){
+  var UC = window.UpstreemCore, zeilen = [];
+  PROBEN.forEach(function(p){
+    var name = p[0], roh = p[1], erwartet = p[2];
+    var r = null, fehler = "";
+    try { r = UC.readBubble(roh); } catch(e){ fehler = String(e.message || e); }
+    var obj = Array.isArray(r) ? r[0] : r;
+    var fehlt = obj ? erwartet.filter(function(k){
+      return !(k in obj) && !(obj.companies && obj.companies[0] && k in obj.companies[0]);
+    }) : erwartet;
+    zeilen.push((fehlt.length || fehler ? "KAPUTT  " : "ok      ") + name +
+      (fehler ? "   -> " + fehler : "") +
+      (obj ? "   Felder: " + Object.keys(obj).length + (fehlt.length ? "   FEHLT: " + fehlt.join(",") : "") : "   -> null"));
+    if (obj && obj.description) zeilen.push("        description: " + String(obj.description).slice(0, 70) + " ...");
+  });
+  document.getElementById("out").textContent = zeilen.join("\n");
+}, 800);
+</script>

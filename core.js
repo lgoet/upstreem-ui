@@ -546,13 +546,24 @@
     } catch(e){}
     if (src.charAt(0) === "{") src = "[" + src + "]";
     var out = "", i = 0, n = src.length, inStr = false, esc2 = false, ch, c, start, v;
-    /* A real closing quote is always followed (after whitespace) by one of , } ] : or the end of
-       the text. Everything else means the quote is part of the content. */
-    function terminates(from){
+    /* Schluessel oder Wert -- und das entscheidet, was einen String beenden kann.
+       Nach einem SCHLUESSEL kommt ein Doppelpunkt, nach einem WERT ein Komma, eine schliessende
+       Klammer oder das Ende. Frueher stand der Doppelpunkt fuer beide in der Liste, und genau
+       daran ist ein realer Payload zerbrochen: eine Beschreibung enthielt den Text
+         ... — title: "LeeUP Media GmbH ..." meta: "og:title": "LeeUP Me...
+       Das Anfuehrungszeichen hinter og:title steht MITTEN in einem Wert, und weil ein Doppelpunkt
+       folgte, galt es als Ende des Wertes. Danach war jede Klammer verschoben --
+       "Unexpected token ':'", die Seite blieb leer.
+       Der Stapel unten merkt sich nur, ob wir in einem Objekt oder in einer Liste stehen: nach
+       einem Komma folgt im Objekt ein Schluessel, in der Liste ein Wert. */
+    var stapel = [], letztes = "", istWert = false;
+    function terminates(from, wert){
       var p = from;
       while (p < n && /\s/.test(src.charAt(p))) p++;
       var a = p < n ? src.charAt(p) : "";
-      return a === "" || a === "," || a === "}" || a === "]" || a === ":";
+      if (a === "" || a === "," || a === "}" || a === "]") return true;
+      /* Ein Doppelpunkt beendet nur einen SCHLUESSEL. In einem Wert gehoert er zum Text. */
+      return a === ":" && !wert;
     }
     /* Raw control characters are fine in Bubble's output but ILLEGAL inside a JS string literal.
        An LLM answer in response_preview contains line breaks as a matter of course, and copying
@@ -577,7 +588,7 @@
              backslash the result is `…text\"` — that stray backslash escapes the closing quote
              and swallows the rest of the payload. A backslash sitting directly before what is
              unambiguously a terminating quote is that truncation artefact, never a real escape. */
-          if (src.charAt(i + 1) === '"' && terminates(i + 2)){ i++; continue; }
+          if (src.charAt(i + 1) === '"' && terminates(i + 2, istWert)){ i++; continue; }
           out += ch; esc2 = true; i++; continue;
         }
         if (ch === '"'){
@@ -585,15 +596,24 @@
              quote of their own — e.g. a description containing von "Meine Top 3" geht. Blindly
              toggling inStr off at THAT quote corrupts every field after it. */
           out += ch;
-          if (terminates(i + 1)) inStr = false;
+          if (terminates(i + 1, istWert)){ inStr = false; letztes = '"'; }
           else out = out.slice(0, -1) + '\\"';
           i++; continue;
         }
         out += (isCtrl(ch) ? escCtrl(ch) : ch);
         i++; continue;
       }
-      if (ch === '"'){ inStr = true; out += ch; i++; continue; }
-      if (ch !== ":"){ out += ch; i++; continue; }
+      if (ch === '"'){
+        /* Ein String, der auf einen Doppelpunkt folgt, ist ein WERT; einer direkt in einer Liste
+           auch. Alles andere ist ein Schluessel. */
+        istWert = (letztes === ":") || (stapel[stapel.length - 1] === "arr");
+        inStr = true; out += ch; i++; continue;
+      }
+      if (ch === "{"){ stapel.push("obj"); letztes = ch; out += ch; i++; continue; }
+      if (ch === "["){ stapel.push("arr"); letztes = ch; out += ch; i++; continue; }
+      if (ch === "}" || ch === "]"){ stapel.pop(); letztes = ch; out += ch; i++; continue; }
+      if (ch !== ":"){ if (!/\s/.test(ch)) letztes = ch; out += ch; i++; continue; }
+      letztes = ":";
 
       out += ch; i++;                                     // the colon itself
       while (i < n && /\s/.test(src.charAt(i))){ out += src.charAt(i); i++; }
