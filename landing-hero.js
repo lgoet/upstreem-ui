@@ -391,8 +391,10 @@
             ' rel="noopener">Pricing</a>' +
         '</nav>' +
         '<div class="ulh-nav-rechts">' +
-          '<a class="ulh-btn ulh-btn-sec" href="https://upstreem.ai/login">Sign in</a>' +
-          '<a class="ulh-btn ulh-btn-pri" href="https://upstreem.ai/signup">Start for free</a>' +
+          '<a class="ulh-btn ulh-btn-sec"' +
+            ' href="https://app.upstreem.ai/signup?mode=login">Log in</a>' +
+          '<a class="ulh-btn ulh-btn-pri"' +
+            ' href="https://app.upstreem.ai/signup">Start for free</a>' +
         '</div>' +
         '<div class="ulh-nav-pop" aria-hidden="true">' +
           navKarte("platform") + navKarte("resources") +
@@ -516,7 +518,7 @@
         '<h2 class="ulh-stimme-satz ulh-auf">' + STIMME + '</h2>' +
         '<p class="ulh-stimme-sub ulh-auf" style="--auf:1">' + STIMME_SUB + '</p>' +
         '<div class="ulh-stimme-knoepfe ulh-auf" style="--auf:2">' +
-          '<a class="ulh-btn ulh-btn-pri" href="https://upstreem.ai/signup">' + STIMME_CTA + '</a>' +
+          '<a class="ulh-btn ulh-btn-pri" href="https://app.upstreem.ai/signup">' + STIMME_CTA + '</a>' +
           '<a class="ulh-btn ulh-btn-sec" href="https://upstreem.ai/contact">' + STIMME_CTA2 + '</a>' +
         '</div>' +
       '</div>' +
@@ -531,7 +533,7 @@
     { t: "Product", e: [
       { t: "Overview", h: "https://upstreem.ai" },
       { t: "Pricing", h: "https://upstreem.ai/pricing" },
-      { t: "Sign in", h: "https://upstreem.ai/login" }
+      { t: "Log in", h: "https://app.upstreem.ai/signup?mode=login" }
     ]},
     { t: "Resources", e: [
       { t: "Blog", h: "https://upstreem.ai/blog" },

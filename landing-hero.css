@@ -772,7 +772,10 @@
    transform). */
 .ulh-app .uo-scrim { left: 185px; }
 .ulh-app .usn-head { padding-bottom: 2px; }
-.ulh-app .usn-nav { margin-top: 12px; }
+/* Der Kasten der Schnellaktionen 2px flacher und 4px mehr Luft darunter: er ist ein Knopf und
+   keine Zeile der Liste, und mit demselben Abstand wie zwischen zwei Zeilen las er sich als eine. */
+.ulh-app .usn-qa .usn-qa-btn, .ulh-app .usn-qa > * { height: 32px; }
+.ulh-app .usn-nav { margin-top: 16px; }
 .ulh-app .usn-qa:not(:empty) { margin-top: 16px; }
 
 /* Die ausgewaehlte Zeile in der Seitenleiste etwas heller: 7 Prozent Textfarbe waren im
@@ -2109,7 +2112,6 @@
    der ganze Fensterblock in einem Kasten mit "hidden md:block".
    Die Ueberschrift traegt die Sektion auf dem Telefon allein. */
 @media (max-width: 900px) {
-  .ulh-stage { display: none; }
   .ulh-text { padding-bottom: clamp(40px, 8vh, 72px); }
 }
 
@@ -2480,4 +2482,63 @@
   .ulh-nav-mitte { display: none; }
   .ulh-fuss-in { gap: 32px; }
   .ulh-stimme-satz { max-width: none; }
+}
+
+/* ==============================================================================================
+   KLEINE SCHIRME
+   Eine Stelle fuer alles, was auf schmalen Schirmen anders ist -- verteilt auf sechs Bloecke waere
+   es nicht mehr zu ueberblicken.
+
+   Der Grundsatz: die App wird NICHT kleiner gerechnet, bis sie unlesbar ist. Sie behaelt ihre
+   Groesse, steht links an der Kante und laeuft rechts aus dem Bild. Das ist die einzige Art, eine
+   Oberflaeche auf einem Telefon ehrlich zu zeigen -- eine auf 320px gequetschte Tabelle ist keine
+   Tabelle mehr, sondern ein Bild von einer. Abgeschnitten liest man wenigstens, was da steht.
+   ============================================================================================== */
+@media (max-width: 1100px) {
+  /* Die Karten stehen frueher untereinander als der Rest umbricht: zwei Karten nebeneinander
+     brauchen mehr Platz als eine Ueberschrift. */
+  .ulh-cards-row { flex-direction: column; }
+  /* Und ZUSAMMEN damit die Mira-Reihe: in einer Spalte bedeutet flex-basis 0 nicht Breite 0,
+     sondern HOEHE 0 -- das Fenster war weg, nur die drei Karten standen noch da. Gemessen: 2px
+     hoch. Beide Teile nehmen ab hier ihre eigene Groesse. */
+  .ulh-msc-links, .ulh-msc-rechts { flex: 0 0 auto; }
+  .ulh-msc-links { flex-direction: row; }
+}
+@media (max-width: 900px) {
+  /* 16px links und rechts statt 64. Beides steht in einer Zahl: die Spur ist die Kante, an der
+     sich ALLES ausrichtet -- Leiste, Karten, Kasten der Quellen, Kurve. Wer sie aendert, aendert
+     die ganze Seite auf einmal, und genau deshalb steht sie an einer Stelle. */
+  .ulh-root { --ulh-rand: 0px; --ulh-spur: calc(100% - 32px); }
+
+  /* ---- Das Fenster im Hero ----
+     Es bleibt. Vorher war es ab 900px ganz weg -- die Sektion bestand dann aus einer Ueberschrift
+     und sonst nichts.
+     Die drei Nebenfenster gehen dagegen: sie stehen links und rechts NEBEN dem Hauptfenster, und
+     dieser Platz existiert hier nicht mehr.
+     Das Fenster behaelt 900px Breite und steht links. Was rechts nicht mehr passt, schneidet die
+     Wurzel ab (overflow-x: clip) -- gewollt, kein Fehler: so bleibt die Schrift darin lesbar. */
+  .ulh-fen { display: none; }
+  .ulh-buehne { width: 900px; margin-left: 0; margin-right: 0; }
+  .ulh-stage { overflow: visible; }
+
+  /* ---- Die Vorschauen in den Karten ----
+     Feste Breite statt Anteil. Sonst rechnet die Komponente darin ihre schmale Ansicht: die
+     Prompt-Tabelle blendet Spalten aus, die Domain-Tabelle klappt zusammen, und man sieht nicht
+     mehr, wovon die Karte spricht. Mit fester Breite bleibt die Tabelle die Tabelle und wird
+     rechts angeschnitten. */
+  .ulh-vis-in { width: 760px; }
+
+  /* ---- Die Leiste ----
+     Sie steht in derselben Spur wie alles andere; die zwei Knoepfe rechts bekommen weniger
+     Polster, damit sie neben dem Logo Platz haben. */
+  .ulh-nav-in { gap: 12px; }
+  .ulh-nav-rechts .ulh-btn { padding: 0 10px; }
+}
+@media (max-width: 560px) {
+  /* Auf dem Telefon bleibt vom Fenster der linke Teil -- die Seitenleiste und der Anfang des
+     Inhalts. Mehr passt nicht, und mehr braucht es nicht: man sieht, dass da eine App laeuft. */
+  .ulh-vis-in { width: 700px; }
+  .ulh-nav-rechts .ulh-btn-sec { display: none; }
+  .ulh-fuss-in { flex-direction: column; }
+  .ulh-geo-mk-t, .ulh-geo-mk-s { font-size: 10.5px; }
 }

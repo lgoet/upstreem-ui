@@ -1,0 +1,45 @@
+<meta charset="utf-8">
+<title>landing auf schmalen Schirmen</title>
+<!-- Wozu: die Regeln fuer kleine Schirme MESSEN. Der Messbereich laesst sich in dieser Umgebung
+     nicht zuverlaessig verkleinern (window.innerWidth blieb bei 980, egal was eingestellt war) --
+     ein Rahmen mit fester Breite hat aber seine eigene Fensterbreite, und die Media Queries darin
+     richten sich danach. Also drei Rahmen nebeneinander. -->
+<style>
+  body { margin: 0; font: 11px ui-monospace, monospace; background: #ddd; }
+  .sp { display: block; padding: 10px; }
+  iframe { display: block; margin-bottom: 12px; }
+  iframe { border: 0; background: #fff; height: 1200px; }
+  #out { position: fixed; right: 6px; top: 6px; background: #111; color: #0f0; padding: 8px;
+         white-space: pre-wrap; z-index: 9; max-width: 420px; max-height: 96vh; overflow: auto; }
+</style>
+<pre id="out">laedt</pre>
+<div class="sp">
+  <iframe id="a" src="_h_frame_inner.html" width="390" style="width:390px"></iframe>
+  <iframe id="b" src="_h_frame_inner.html" width="620" style="width:620px"></iframe>
+  <iframe id="c" src="_h_frame_inner.html" width="860" style="width:860px"></iframe>
+</div>
+<script>
+function mess(id){
+  var d = document.getElementById(id).contentDocument;
+  var W = d.querySelector(".ulh-root");
+  if (!W) return { fehler: "keine Wurzel" };
+  [].forEach.call(d.querySelectorAll(".ulh-auf"), function(e){ e.style.transition="none"; e.classList.add("is-da"); });
+  function r(s){ var e=W.querySelector(s); if(!e) return null; var b=e.getBoundingClientRect();
+    return [Math.round(b.left), Math.round(b.width)]; }
+  return {
+    breite: d.defaultView.innerWidth,
+    spur: r(".ulh-spur"),
+    buehne: r(".ulh-buehne"),
+    neben: W.querySelector(".ulh-fen") ? getComputedStyle(W.querySelector(".ulh-fen")).display : null,
+    mira_h: W.querySelector(".ulh-msc-rahmen") ? Math.round(W.querySelector(".ulh-msc-rahmen").getBoundingClientRect().height) : null,
+    vis_in: r(".ulh-vis-in"),
+    quell_panel: r(".ulh-quell-panel"),
+    nav: r(".ulh-nav-in"),
+    ueberlauf: d.documentElement.scrollWidth - d.documentElement.clientWidth
+  };
+}
+setTimeout(function(){
+  document.getElementById("out").textContent =
+    JSON.stringify({ klein: mess("a"), mittel: mess("b"), gross: mess("c") }, null, 1);
+}, 7000);
+</script>
