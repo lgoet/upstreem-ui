@@ -517,6 +517,12 @@
    Die Zahl steht als Faktor an EINER Stelle -- performance-radar liest sie fuer den Versatz der
    Zellen und die CSS fuer die Dauer, sonst laufen Versatz und Dauer auseinander. */
 .ulh-perf .uhm-grid { --uhm-pop: 2; }
+/* Keine Karten an den Zellen. Die Szene zeigt zwei Ansichten und braucht keine dritte Bewegung,
+   und was hier ohnehin niemand anfassen kann, soll auch nicht auf eine Maus reagieren, die nur
+   ueber das Fenster faehrt: ohne mouseover kein Tooltip -- genau darauf hoert die Komponente --
+   und ohne hover kein Aufhellen einzelner Zellen. Nur das Raster, nicht der Kopf der Karte: der
+   Umschalter darin gehoert zum Bild. */
+.ulh-perf .uhm-scroll { pointer-events: none; }
 /* Ein leichter Schimmer in den Zellen statt einer flachen Flaeche. Als INNERER Schatten und nicht
    als background-image: die Farbe kommt aus der Komponente als inline "background:" -- eine
    Kurzschreibweise, die jedes background-image aus einer Regel hier ueberschreiben wuerde.

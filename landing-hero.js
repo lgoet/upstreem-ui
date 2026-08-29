@@ -4785,65 +4785,32 @@
     return true;
   }
 
-  /* Die Karte steht FEST, so wie der Tooltip im Chart des Dashboards: sie gehoert zum Bild und
-     wartet nicht darauf, dass jemand mit der Maus kommt. Je Ansicht eine andere Zelle -- in der
-     Sichtbarkeit die eigene Marke in ihrem staerksten Thema, in der Stimmung eine Zelle mit einem
-     Ausreisser. Zwei gleiche Karten hintereinander waeren ein Bild, das sich nicht bewegt.
-     Ausgeloest wird sie ueber mouseover, denn genau darauf hoert die Komponente; ein eigener Weg
-     an ihr vorbei waere beim naechsten Umbau still kaputt.
-     GEHALTEN wird sie von einer Uhr: die Komponente raeumt ihre Karte bei jedem Neuzeichnen weg
-     (hideTip), und das passiert waehrend der Szene mehrfach -- durch das Nachziehen des Themas,
-     durch das Abraeumen der Bauteil-Tooltips, durch den Wechsel der Ansicht. */
-  var PERF_ZELLEN = [
-    { thema: 0, marke: 0 },   /* Sichtbarkeit: Kestrel bei Pricing, der hoechste Wert der Zeile */
-    { thema: 3, marke: 3 }    /* Stimmung: Nimbus bei Integrations, einer der Ausreisser nach oben */
-  ];
-  var perfUhr = null;
-
-  function perfZelle(root, k){
-    var w = PERF_ZELLEN[k] || PERF_ZELLEN[0];
-    var reihen = root.querySelectorAll(".ulh-perf .uhm-rowhead");
-    var spalten = root.querySelectorAll(".ulh-perf .uhm-colhead");
-    var zellen = root.querySelectorAll(".ulh-perf .uhm-cell:not(.is-empty):not(.is-sk)");
-    if (!zellen.length) return null;
-    /* Ueber die Zahl der Spalten gerechnet und nicht ueber einen Index geraten: die Matrix hat
-       eine Kopfzeile und je Zeile einen Kopf, die Zellen selbst stehen dazwischen. */
-    var breite = Math.max(1, spalten.length);
-    var i = w.thema * breite + w.marke;
-    return zellen[Math.min(i, zellen.length - 1)] || zellen[0];
-  }
-
-  function perfTippSetzen(root, k){
-    var zelle = perfZelle(root, k);
-    if (!zelle) return false;
-    /* Steht sie schon an dieser Zelle, nichts tun -- sonst faehrt sie in jedem Uhrschlag neu. */
-    var karte = document.querySelector(".uhm-tip");
-    if (karte && karte.classList.contains("is-on") && zelle.__ulhTipp) return true;
+  /* KEINE Karte mehr in dieser Szene. Sie stand fest an einer Zelle und wurde von einer Uhr
+     gehalten, weil die Komponente sie bei jedem Neuzeichnen wegraeumt -- eine zweite Quelle von
+     Bewegung in einem Bild, das schon zwei Ansichten zeigt, und eine Uhr mehr, die einen Neustart
+     ueberleben konnte. Die Zellen sind hier ausserdem nicht anfassbar (landing-hero.css:
+     .ulh-perf .uhm-scroll { pointer-events: none }), also ruft auch eine echte Maus keine hervor.
+     Der Aufraeumer bleibt: eine Karte aus einer frueheren Runde soll nicht stehen bleiben. */
+  function perfTippWeg(){
     if (window.destroyHeatmapTooltip) window.destroyHeatmapTooltip(ID.uhm);
-    try {
-      zelle.dispatchEvent(new MouseEvent("mouseover", { bubbles: true, cancelable: true }));
-    } catch (e){ return false; }
-    [].forEach.call(root.querySelectorAll(".ulh-perf .uhm-cell"), function(z){ z.__ulhTipp = false; });
-    zelle.__ulhTipp = true;
-    return true;
   }
 
-  function perfTippHalten(root, k){
-    perfTippLoesen(root);
-    perfTippSetzen(root, k);
-    perfUhr = setInterval(function(){ perfTippSetzen(root, k); }, 500);
+  /* Die Uhren dieser Szene an EINER Stelle. Vorher lief jede fuer sich, und beim Neustart der
+     Schleife liefen die alten weiter: eine davon schaltete mitten in der frischen
+     Sichtbarkeits-Ansicht auf Stimmung um. Das war das "manchmal sieht man die Sichtbarkeit gar
+     nicht, oder sie blitzt kurz auf". */
+  var perfUhren = [];
+  function perfNach(fn, ms){ perfUhren.push(setTimeout(fn, ms)); }
+  function perfUhrenAus(){
+    perfUhren.forEach(function(u){ clearTimeout(u); });
+    perfUhren = [];
   }
 
-  function perfTippLoesen(root){
-    if (perfUhr){ clearInterval(perfUhr); perfUhr = null; }
-    if (window.destroyHeatmapTooltip) window.destroyHeatmapTooltip(ID.uhm);
-    if (root) [].forEach.call(root.querySelectorAll(".ulh-perf .uhm-cell"), function(z){ z.__ulhTipp = false; });
-  }
-
-  var PERF_STAND_MS = 3000;      /* so lange steht jede der zwei Ansichten (Vorgabe) */
-  var PERF_ABGANG_MS = 450;      /* der Weg hinaus zwischen den zwei Ansichten (mit der CSS: 390ms
-                                    Bewegung, dann wird getauscht -- die Zugabe deckt den Tausch) */
-  var PERF_SEITE_MS = 380;       /* erst steht die Seite, dann kommen die Daten -- siehe unten */
+  var PERF_AUF_MS    = 1000;  /* der Auftritt der Zellen: 560ms Dauer plus 360ms diagonaler
+                                 Versatz (--uhm-pop: 2 in der landing-hero.css), aufgerundet */
+  var PERF_STAND_MS  = 4000;  /* so lange steht jede der zwei Ansichten -- NACH ihrem Auftritt */
+  var PERF_ABGANG_MS = 450;   /* der Weg hinaus: 390ms Bewegung plus Zugabe fuer den Tausch */
+  var PERF_SEITE_MS  = 380;   /* erst steht die Seite, dann kommen die Daten -- siehe unten */
 
   /* Warten, bis die Matrix ihre Zellen gezeichnet hat, und ERST DANN auftreten lassen. Vorher
      faehrt eine leere Flaeche herauf, und das sieht aus wie gar keine Bewegung. */
@@ -4856,34 +4823,57 @@
     })();
   }
 
-  /* Der Wechsel auf die zweite Ansicht: Sentiment UND die Balken, die zeigen, auf wie vielen
-     Erwaehnungen ein Wert beruht. Beides ueber die Wege der Komponente -- der Klick auf den
-     Umschalter ist der echte Weg, und den Gewichtungsschalter gibt es dafuer jetzt als Setter
-     (performance-radar.js: setPerformanceRadarWeights). Von Hand an den Klassen zu drehen waere
-     ein Bild, das die Komponente selbst nie herstellt. */
-  function perfZweiteAnsicht(root){
-    /* NICHT ueber einen Klick auf den Umschalter: die Buehne schluckt Klicks in der Einfangphase
-       (nurSchauen), damit im Schaustueck nichts bedienbar ist -- der Klick kam also nie an, die
-       Matrix blieb auf Sichtbarkeit stehen, und nur die Balken schalteten sich an. Gemessen.
-       Beide Setter gehen deshalb ueber die API der Komponente. */
+  /* Eine Ansicht aufbauen: Metrik setzen, Balken setzen, LEEREN, fuellen. Keiner der Schritte
+     davor ist Zierde.
+     Die METRIK muss von aussen gesetzt werden: der Wert im Payload gilt nur beim allerersten
+     Render ("an explicit metric in the payload only wins the FIRST time", performance-radar.js),
+     danach gehoert sie dem Umschalter -- und der stand seit der letzten Runde auf Stimmung. Die
+     zweite Runde begann deshalb bei der Stimmung, und die Sichtbarkeit war nie zu sehen. Genau
+     das war gemeldet.
+     GELEERT wird, damit der Auftritt ueberhaupt laeuft: die Komponente baut ihr Raster nur neu,
+     wenn keines mit Daten dasteht (render() geht sonst ueber paintCells), und runAppear haengt am
+     Neubau. Ohne das Leeren wechselten in der zweiten Runde nur die Farben -- das war das
+     "die Appear-Animation ist nicht zuverlaessig".
+     Beides ueber die API der Komponente und nicht ueber einen Klick auf den Umschalter: die
+     Buehne schluckt Klicks in der Einfangphase (nurSchauen), damit im Schaustueck nichts
+     bedienbar ist -- der Klick kam nie an. Gemessen. */
+  function perfAnsicht(root, metrik, balken){
+    if (window.setPerformanceRadarMetric) window.setPerformanceRadarMetric(ID.uhm, metrik);
+    if (window.setPerformanceRadarWeights) window.setPerformanceRadarWeights(ID.uhm, balken ? "yes" : "no");
+    if (window.resetPerformanceRadar) window.resetPerformanceRadar(ID.uhm);
+    perfFuellen();
+    perfTippWeg();
+  }
+
+  /* Die Matrix geht: erst hinaus, dann wird getauscht. Ein Umschalten unter der stehenden Matrix
+     waere ein Wechsel der Zahlen, kein Wechsel der Ansicht; gefragt war das zweite. */
+  function perfHinaus(root){
     var karte = root.querySelector(".ulh-perf .uhm-root");
-    /* Erst geht sie -- samt Karte. Ein Umschalten unter der stehenden Matrix waere ein Wechsel der
-       Zahlen, kein Wechsel der Ansicht; gefragt war das zweite. */
-    perfTippLoesen(root);
     if (karte) karte.classList.add("is-geht");
-    setTimeout(function(){
-      if (window.setPerformanceRadarMetric) window.setPerformanceRadarMetric(ID.uhm, "sentiment");
-      if (window.setPerformanceRadarWeights) window.setPerformanceRadarWeights(ID.uhm, "yes");
-      /* NEU AUFGEBAUT und nicht nur umgefaerbt: der Umschalter der Komponente faerbt die
-         bestehenden Zellen um (das ist dort richtig), aber der Auftritt laeuft nur bei einem
-         Neuaufbau. Reset und wieder fuellen ist der Weg dorthin, den die Komponente selbst
-         anbietet -- und damit ploppt die Sentiment-Ansicht genauso herein wie die erste. */
-      if (window.resetPerformanceRadar) window.resetPerformanceRadar(ID.uhm);
-      perfFuellen();
+    return karte;
+  }
+
+  /* Zweite Ansicht: Stimmung mit den Balken, die zeigen, auf wie vielen Erwaehnungen ein Wert
+     beruht. Der Umschalter in der Karte stellt sich dabei selbst um -- setMetric zieht ihn nach
+     (syncSeg), und der Streifen aus core gleitet hinueber. */
+  function perfZweiteAnsicht(root){
+    var karte = perfHinaus(root);
+    perfNach(function(){
+      perfAnsicht(root, "sentiment", true);
       if (karte) karte.classList.remove("is-geht");
-      perfWennGezeichnet(root, function(){ perfTippHalten(root, 1); });
+      perfWennGezeichnet(root, function(){
+        perfNach(function(){ perfSchluss(root); }, PERF_AUF_MS + PERF_STAND_MS);
+      });
     }, PERF_ABGANG_MS);
     return true;
+  }
+
+  /* Der Schluss der Szene: die Matrix geht hinaus wie zwischen den zwei Ansichten, und ERST DANN
+     wechselt die Seite. Vorher endete die Stimmung mit dem Seitenwechsel, und der Abgang, den die
+     erste Ansicht hatte, fehlte der zweiten. */
+  function perfSchluss(root){
+    perfHinaus(root);
+    perfNach(function(){ neustart(root); }, PERF_ABGANG_MS);
   }
 
   function perfSzene(root){
@@ -4899,25 +4889,31 @@
       alt.classList.add("is-weg");
     });
     if (window.setSidebarActive) window.setSidebarActive(ID.usn, "performance");
-    setTimeout(function(){
+    /* Uhren einer frueheren Runde anhalten, BEVOR neue gestellt werden. Ohne das lief die alte
+       Uhr fuer den Wechsel auf die Stimmung in die neue Runde hinein. */
+    perfUhrenAus();
+    perfTippWeg();
+    /* Und die Matrix wieder sichtbar machen: sie geht am Ende der Szene hinaus (is-geht) und
+       traegt die Klasse sonst in die naechste Runde. */
+    var karte = root.querySelector(".ulh-perf .uhm-root");
+    if (karte) karte.classList.remove("is-geht");
+    perfNach(function(){
       seite.classList.remove("is-weg");
       seite.classList.add("is-da");
       hellHalten(root);
       ohneTipps(root);
       /* GEFUELLT WIRD ERST, WENN DIE SEITE STEHT. Die Matrix hat einen eigenen Auftritt -- die
-         Zellen ploppen diagonal herein (performance-radar.js: runAppear, 280ms je Zelle mit
-         Versatz). Der lief bisher WAEHREND die Seite noch einblendete und war damit vorbei, bevor
-         man sie sehen konnte: "quasi gar keine Animation". Jetzt kommt zuerst die leere Seite,
-         dann die Daten -- und der Auftritt der Komponente ist derselbe wie in der App. */
-      setTimeout(function(){
-        perfFuellen();
+         Zellen ploppen diagonal herein (performance-radar.js: runAppear). Der lief bisher
+         WAEHREND die Seite noch einblendete und war damit vorbei, bevor man sie sehen konnte:
+         "quasi gar keine Animation". Jetzt kommt zuerst die leere Seite, dann die Daten. */
+      perfNach(function(){
+        perfAnsicht(root, "visibility", false);
         ohneTipps(root);
-        setTimeout(function(){ ohneTipps(root); hellHalten(root); }, 400);
+        perfNach(function(){ ohneTipps(root); hellHalten(root); }, 400);
+        /* Auftritt, dann Standzeit, dann der Wechsel. Die Standzeit zaehlt NACH dem Auftritt --
+           sonst ist die Haelfte davon Bewegung. */
         perfWennGezeichnet(root, function(){
-          perfTippHalten(root, 0);
-          setTimeout(function(){ perfZweiteAnsicht(root); }, PERF_STAND_MS);
-          setTimeout(function(){ neustart(root); },
-                     PERF_STAND_MS + PERF_ABGANG_MS + PERF_STAND_MS + 400);
+          perfNach(function(){ perfZweiteAnsicht(root); }, PERF_AUF_MS + PERF_STAND_MS);
         });
       }, PERF_SEITE_MS);
     }, AUSBLENDEN_MS);
@@ -5001,12 +4997,18 @@
       if (prompts) prompts.__ulhPromptsAuf = false;
       chancen.__ulhChancenAuf = false;
       if (perf) perf.__ulhPerfAuf = false;
-      perfTippLoesen(root);          /* die Uhr der festen Karte anhalten */
+      perfUhrenAus();                /* alle Uhren der Szene anhalten */
+      perfTippWeg();
       /* Die Matrix wird geleert und faengt in der naechsten Runde wieder bei der Sichtbarkeit an.
-         Der Gewichtungsschalter ueberlebt sonst -- er liegt in der Ablage (uhm_weights__<id>), und
-         dann stuende die zweite Runde von Anfang an mit Balken da. */
-      if (window.resetPerformanceRadar) window.resetPerformanceRadar(ID.uhm);
+         Gewichtungsschalter UND Metrik ueberleben sonst: der Schalter liegt in der Ablage
+         (uhm_weights__<id>), die Metrik in window.__uhmMetric und damit fuer die ganze Seite.
+         Die zweite Runde stand deshalb von Anfang an auf Stimmung samt Balken -- die
+         Sichtbarkeits-Ansicht war nie zu sehen. */
+      if (window.setPerformanceRadarMetric) window.setPerformanceRadarMetric(ID.uhm, "visibility");
       if (window.setPerformanceRadarWeights) window.setPerformanceRadarWeights(ID.uhm, "no");
+      if (window.resetPerformanceRadar) window.resetPerformanceRadar(ID.uhm);
+      var perfKarte = root.querySelector(".ulh-perf .uhm-root");
+      if (perfKarte) perfKarte.classList.remove("is-geht");
       root.__ulhMiraAn = false;
       root.__ulhSzeneAn = false;
       root.__ulhPromptsAn = false;
