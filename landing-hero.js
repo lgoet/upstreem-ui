@@ -466,9 +466,13 @@
            etwas? worueber rede ich hier?) -- in einer Vorfuehrung sagen sie nichts. */
         '.am-status-pill{display:none;}' +
         '.am-subline{display:none;}' +
-        '.am-wordmark{font-size:19px;}' +
-        '.am-logo-mark{width:18px;height:17px;}' +
-        '.am-logo-mark svg{width:17px;height:16px;}' +
+        /* Zeichen 20x20, 8px Abstand, dann der Schriftzug -- und beide auf einer Mittellinie.
+           Der Versatz von 1px, den das Zeichen in der App traegt, faellt hier weg: er gleicht dort
+           eine groessere Schrift aus. */
+        '.am-brand{gap:8px;align-items:center;}' +
+        '.am-logo-mark{width:20px;height:20px;transform:none;}' +
+        '.am-logo-mark svg{width:20px;height:19px;}' +
+        '.am-wordmark{font-size:21px;line-height:1;}' +
         /* Weniger Luft zwischen Frage und Arbeitsprotokoll, mehr zwischen Protokoll und Antwort:
            das Protokoll gehoert zur Frage (es ist die Arbeit daran) und nicht zur Antwort. */
         '.am-messages{gap:24px;}' +
@@ -507,6 +511,12 @@
         'window.askMiraSetTheme("light");return;}if(n++<60)setTimeout(go,50);})();})();' +
         /* Sehen ja, bedienen nein -- in der Abfangphase, bevor die Komponente es sieht. Ein
            pointer-events: none am Rahmen haette auch das Hovern mitgenommen. */
+        /* Das Mausrad gehoert der SEITE. ask-mira haengt einen eigenen Radgriff an den Chat, der
+           scrollt und dann preventDefault ruft -- in der App richtig, hier steht damit alles: der
+           Chat scrollt nicht (er passt), und die Seite darunter auch nicht mehr. Der Griff wird in
+           der Einfangphase gestoppt, bevor er ueberhaupt laeuft; ohne preventDefault reicht der
+           Browser das Rad an das Fenster darueber weiter. */
+        'document.addEventListener("wheel",function(e){e.stopPropagation();},true);' +
         'document.addEventListener("click",function(e){e.preventDefault();e.stopPropagation();},true);' +
         'document.addEventListener("keydown",function(e){e.preventDefault();e.stopPropagation();},true);' +
         /* KEINE Tooltips, nirgends -- dieselbe Regel wie im Hero-Fenster (ohneTipps). Die
@@ -606,6 +616,10 @@
     /* Der Knopf federt, bevor die Nachricht rausgeht -- sonst erscheint die Frage aus dem Nichts,
        waehrend der Knopf daneben unberuehrt dasteht. */
     function klicken(meine, fertig){
+      /* Der Fokusrahmen faellt MIT dem Knopfdruck ab, nicht erst beim Zuruecksetzen: in der App
+         verlaesst man das Feld beim Abschicken. */
+      var komposer = d.querySelector(".am-composer");
+      if (komposer) komposer.classList.remove("is-tippt");
       var knopf = d.querySelector("#am-send");
       if (!knopf){ fertig(); return; }
       knopf.classList.add("is-klick");
@@ -833,7 +847,9 @@
     { bahn: 0, d: "claude.ai",               n: "Claude" },
     { bahn: 1, d: "gemini.google.com",       n: "Gemini" },
     { bahn: 1, d: "perplexity.ai",           n: "Perplexity" },
-    { bahn: 1, d: "copilot.microsoft.com",   n: "Copilot" },
+    /* copilot.cloud.microsoft und nicht copilot.microsoft.com: die zweite Adresse liefert kein
+       Logo, sondern ein leeres schwarzes Kaestchen -- im Bild geprueft, neben den anderen sieben. */
+    { bahn: 1, d: "copilot.cloud.microsoft",  n: "Copilot" },
     { bahn: 2, d: "x.ai",                    n: "Grok" },
     { bahn: 2, d: "mistral.ai",              n: "Mistral" },
     { bahn: 2, d: "deepseek.com",            n: "DeepSeek" }
@@ -1513,12 +1529,15 @@
   var QUELL_CTA = "Start for free";
   var QUELL_DOMAIN = "g2.com";
 
-  /* Jedes Wort einzeln, damit die Farbe von vorne durchlaufen kann. Woerter und nicht Buchstaben:
-     bei 24 Woertern liegen zwischen zwei Schritten rund 12px Text -- das liest sich als Verlauf,
-     und es sind 24 Elemente statt 150. */
+  /* Jeden BUCHSTABEN einzeln, damit die Farbe wirklich durch den Satz laeuft und nicht in
+     Wortsprüngen. Die Buchstaben stecken in Wortkasten: ein Zeilenumbruch darf zwischen zwei
+     Woertern liegen, nie zwischen zwei Buchstaben -- ohne den Kasten bricht der Browser mitten im
+     Wort um, weil jeder Buchstabe ein eigenes Inline-Element ist. */
   function quellWorte(){
     return (QUELL_H1 + " " + QUELL_H2).split(/\s+/).map(function(w){
-      return '<span class="ulh-qw">' + w + '</span>';
+      return '<span class="ulh-qwort">' + w.split("").map(function(c){
+        return '<span class="ulh-qw">' + (c === "&" ? "&amp;" : c) + '</span>';
+      }).join("") + '</span>';
     }).join(" ");
   }
 
@@ -1550,9 +1569,10 @@
       p = p < 0 ? 0 : (p > 1 ? 1 : p);
       var n = worte.length;
       for (var i = 0; i < n; i++){
-        /* Die Front ist drei Woerter breit: waehrend eines fertig wird, faengt das naechste an.
-           Ein Wort nach dem anderen ganz oder gar nicht waere eine Reihe von Schaltern. */
-        var t = p * (n + 3) - i;
+        /* Die Front ist zwoelf Buchstaben breit -- etwa zwei Woerter. Ein Buchstabe nach dem
+           anderen ganz oder gar nicht waere ein Flimmern; so wandert eine weiche Kante durch den
+           Satz. */
+        var t = (p * (n + 12) - i) / 12;
         t = t < 0 ? 0 : (t > 1 ? 1 : t);
         worte[i].style.setProperty("--t", t.toFixed(3));
       }

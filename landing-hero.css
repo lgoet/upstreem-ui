@@ -749,12 +749,14 @@
    Pinned fehlt die Domain".
    Die fehlenden Pixel kommen aus Abstaenden, keiner aus der Zeilenhoehe: der Abstand ueber der
    Liste (24 -> 12), der ueber den Schnellaktionen (24 -> 16), die drei zwischen den vier Gruppen
-   (32 -> 10) und die Unterkante der vier Gruppenbeschriftungen (6 -> 2).
+   (32 -> 14) und die Unterkante der vier Gruppenbeschriftungen (6 -> 2).
    Zweite Runde: mit 24px Gruppenabstand fehlten wieder 52px -- die Liste ist seither gewachsen.
-   Jetzt 10px zwischen den Gruppen (42) und 4px je Beschriftung (16), zusammen 58, also 6 Reserve.
+   Jetzt 14px zwischen den Gruppen (54 gegenueber den 32 der App) und 4px je Beschriftung (16).
+   Die Gruppen sollen sich absetzen, also so viel Abstand wie moeglich -- gemessen bleibt bei 14px
+   die Liste gerade noch ganz sichtbar.
    Gemessen wird an der Liste selbst: scrollHeight darf clientHeight nicht ueberschreiten. */
 .ulh-app .usn-item { height: 34px; }
-.ulh-app .usn-block + .usn-block { margin-top: 10px; }
+.ulh-app .usn-block + .usn-block { margin-top: 14px; }
 .ulh-app .usn-head { padding-bottom: 2px; }
 .ulh-app .usn-nav { margin-top: 12px; }
 .ulh-app .usn-qa:not(:empty) { margin-top: 16px; }
@@ -1119,6 +1121,7 @@
    Front liest sich als Verlauf statt als Reihe von Schaltern.
    Kein Uebergang an der Farbe: der Stand kommt aus dem Scrollen und ist schon stufenlos -- ein
    zusaetzlicher Uebergang wuerde ihm hinterherlaufen. */
+.ulh-qwort { white-space: nowrap; }
 .ulh-qw { color: color-mix(in srgb, var(--ulh-text) calc(var(--t, 0) * 100%), var(--ulh-sub)); }
 /* Wer keine Bewegung will, bekommt die Ueberschrift fertig. */
 @media (prefers-reduced-motion: reduce) { .ulh-qw { color: var(--ulh-text); } }
