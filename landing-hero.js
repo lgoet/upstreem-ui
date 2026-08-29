@@ -771,8 +771,12 @@
          die Schraffur, und an der tiefen ersten Marke sogar unter die Linie. */
       return '<span class="ulh-geo-mk-linie" style="left:' + links +
         ';height:calc(' + (y * 100).toFixed(2) + '% + 64px)"></span>' +
+        /* --auf ist hier der reine Zaehler 0,1,2 -- die Marken stehen in GEO_MARKEN nach Datum,
+           also von links nach rechts, und ihren Vorlauf gegenueber der Kurve traegt die Regel in
+           der CSS (.ulh-geo-mk.ulh-auf). Vorher stand hier k+2 und damit der Takt der ganzen
+           Seite; drei Punkte auf einer breiten Kurve brauchen mehr Pause dazwischen. */
         '<span class="ulh-geo-mk ulh-auf" style="left:' + links +
-        ';bottom:' + (y * 100).toFixed(2) + '%;--auf:' + (k + 2) + '">' +
+        ';bottom:' + (y * 100).toFixed(2) + '%;--auf:' + k + '">' +
         '<span class="ulh-geo-mk-txt">' +
           '<span class="ulh-geo-mk-t">' + m.t + '</span>' +
           '<span class="ulh-geo-mk-s">' + m.s + '</span>' +
@@ -948,12 +952,18 @@
            etwas? worueber rede ich hier?) -- in einer Vorfuehrung sagen sie nichts. */
         '.am-status-pill{display:none;}' +
         '.am-subline{display:none;}' +
-        /* Zeichen 20x20, 8px Abstand, dann der Schriftzug -- und beide auf einer Mittellinie.
+        /* Zeichen 16x16, 8px Abstand, dann der Schriftzug -- und beide auf einer Mittellinie.
+           Die Hoehe des SVG zieht im Verhaeltnis mit (20/19 -> 16/15.2): das Zeichen ist nicht
+           quadratisch, und eine glatte 16 in beiden Massen haette es gestaucht.
            Der Versatz von 1px, den das Zeichen in der App traegt, faellt hier weg: er gleicht dort
            eine groessere Schrift aus. */
         '.am-brand{gap:8px;align-items:center;}' +
-        '.am-logo-mark{width:20px;height:20px;transform:none;}' +
-        '.am-logo-mark svg{width:20px;height:19px;}' +
+        '.am-logo-mark,.am-logo-mark.is-icon{width:16px;height:16px;transform:none;}' +
+        /* MIT .is-icon: ask-mira.css setzt ".am-logo-mark.is-icon svg" auf 26x26, und das sind
+           zwei Klassen gegen die eine hier. Genau daran ist die Verkleinerung vorher gescheitert
+           -- der Kasten wurde kleiner, das Zeichen darin blieb 26px und stand ueber ihn hinaus
+           (gemessen: Kasten 16x16, SVG 26x26). Quadratisch, weil die Icon-Fassung quadratisch ist. */
+        '.am-logo-mark.is-icon svg,.am-logo-mark svg{width:16px;height:16px;}' +
         '.am-wordmark{font-size:21px;line-height:1;}' +
         /* Weniger Luft zwischen Frage und Arbeitsprotokoll, mehr zwischen Protokoll und Antwort:
            das Protokoll gehoert zur Frage (es ist die Arbeit daran) und nicht zur Antwort. */

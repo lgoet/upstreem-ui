@@ -2318,6 +2318,13 @@
   display: flex; flex-direction: column; gap: 1px; margin-bottom: 64px;
   text-shadow: 0 0 5px #fff, 0 0 5px #fff, 0 0 10px #fff;
 }
+/* Eigener Takt fuer die Marken: sie kommen NACH der Kurve und eine nach der anderen von links
+   nach rechts. 260ms je Schritt statt der 110ms, die sonst auf der Seite gelten -- bei drei
+   Punkten auf einer breiten Kurve liest man die Richtung erst, wenn zwischen ihnen wirklich eine
+   Pause steht. 420ms Vorlauf, damit die erste Marke nicht mit der Kurve zugleich anfaengt.
+   Die Reihenfolge steckt in --auf (landing-hero.js), und die kommt aus dem Datum -- das ist
+   dieselbe Reihenfolge wie von links nach rechts. */
+.ulh-geo-mk.ulh-auf { transition-delay: calc(420ms + var(--auf, 0) * 260ms); }
 .ulh-geo-mk-t { font-weight: 500; color: var(--ulh-text); }
 .ulh-geo-mk-s { color: var(--ulh-sub); }
 .ulh-geo-in { position: relative; z-index: 1; }
