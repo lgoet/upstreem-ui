@@ -321,7 +321,155 @@
       '</section>' +
       merkmale() +
       quellen() +
-      msc();
+      msc() +
+      geo();
+  }
+
+  /* ---------- Sechste Sektion: warum es diese App gibt ------------------------------------
+     Vier Zahlen und eine Kurve zur Verschiebung der Suche. JEDE Zahl ist belegt, und die Quelle
+     steht IM BILD -- nicht in einem Kommentar, den niemand liest. Das ist hier keine Formsache:
+     eine Landingpage, die Marktzahlen ohne Herkunft behauptet, ist an genau der Stelle unglaubwuerdig,
+     an der sie ueberzeugen soll.
+
+     Die vier Zahlen, jede an ihrer Primaerquelle geprueft:
+     - 900 Mio. woechentliche ChatGPT-Nutzer. OpenAI am 27.02.2026, berichtet von TechCrunch
+       ("ChatGPT has reached 900 million weekly active users, OpenAI announced Friday").
+     - Ueber 1 Mrd. monatliche Nutzer von Googles AI Mode. Sundar Pichai in den Bemerkungen zum
+       Quartalsbericht Q2 2026 auf blog.google: "Since expanding AI Mode globally last October,
+       we have surpassed 1 billion monthly active users."
+     - 8 Prozent gegen 15 Prozent. Pew Research Center, 22.07.2025, aus dem Surfverhalten von 900
+       US-Erwachsenen im Maerz 2025 (68.879 Google-Suchen): mit KI-Zusammenfassung wurde in 8
+       Prozent der Besuche ein Suchergebnis angeklickt, ohne in 15.
+     - Plus 1.200 Prozent Verweisverkehr. Adobe Analytics, 17.03.2025: der Verkehr von
+       generativer KI auf US-Handelsseiten lag im Februar 2025 um 1.200 Prozent ueber Juli 2024.
+
+     Die Kurve zeigt die woechentlichen ChatGPT-Nutzer, weil das die einzige Reihe ist, die ueber
+     Jahre aus OFFIZIELLEN Ansagen desselben Anbieters besteht -- 100 Mio. (Nov 2023), 200 (Aug
+     2024), 300 (Dez 2024), 400 (Feb 2025), 700 (Aug 2025), 800 (Okt 2025), 900 (Feb 2026). Eine
+     zusammengesuchte Marktschaetzung waere eine Kurve aus fremden Annahmen.
+     Die zwei Marken darauf sind datierte Ereignisse und keine Deutungen: die Freigabe der AI
+     Overviews fuer alle in den USA (Google I/O, Mai 2024) und der weltweite Start des AI Mode
+     (Oktober 2025, ebenfalls aus Pichais Bemerkungen). */
+  var GEO_CHIP = "Why now";
+  var GEO_H1 = "Search moved.";
+  var GEO_H2 = "Your buyers ask an assistant, and it answers from pages it picked.";
+  var GEO_KPIS = [
+    { v: "900M", l: "weekly ChatGPT users", q: "OpenAI, Feb 2026" },
+    { v: "1B+", l: "monthly users of Google's AI Mode", q: "Alphabet Q2 2026" },
+    { v: "8%", l: "of searches with an AI summary end in a click - against 15% without one",
+      q: "Pew Research Center, 2025" },
+    { v: "+1,200%", l: "referral traffic from AI to US retail sites in seven months",
+      q: "Adobe Analytics, 2025" }
+  ];
+  /* Monate seit November 2023 und woechentliche Nutzer in Millionen. */
+  var GEO_PUNKTE = [[0, 100], [9, 200], [13, 300], [15, 400], [21, 700], [23, 800], [27, 900]];
+  var GEO_MARKEN = [
+    { x: 6,  t: "May 2024", s: "AI Overviews for everyone in the US" },
+    { x: 23, t: "Oct 2025", s: "AI Mode goes global" }
+  ];
+  var GEO_QUELLE = "Weekly ChatGPT users, from OpenAI's own announcements (Nov 2023 to Feb 2026).";
+
+  /* Die Kurve als SVG und nicht ueber das Chart-Kit: das Kit zeichnet Karten mit Achsen, Legende
+     und Tooltip -- hier steht eine Linie als Grund der Sektion, ohne Kasten und ohne Bedienung.
+     Dieselbe Entscheidung wie bei den Bahnen der Modelle: ein eigenes Bild, kein verkleinertes
+     Bauteil.
+     Die Kurve laeuft durch die Punkte mit Catmull-Rom-Glaettung, in Bezier umgerechnet. Eine
+     Gerade von Punkt zu Punkt saehe aus wie ein Chart, das keines ist; eine frei gezeichnete Kurve
+     waere eine erfundene Form. So ist es die Reihe, nur weich. */
+  function geoPfad(pkt, breite, hoehe){
+    var xMax = 27, yMax = 1000;
+    var P = pkt.map(function(p){
+      return [p[0] / xMax * breite, hoehe - p[1] / yMax * hoehe];
+    });
+    var d = "M" + P[0][0].toFixed(1) + " " + P[0][1].toFixed(1);
+    for (var i = 0; i < P.length - 1; i++){
+      var p0 = P[i > 0 ? i - 1 : 0], p1 = P[i], p2 = P[i + 1], p3 = P[i + 2] || P[i + 1];
+      var c1x = p1[0] + (p2[0] - p0[0]) / 6, c1y = p1[1] + (p2[1] - p0[1]) / 6;
+      var c2x = p2[0] - (p3[0] - p1[0]) / 6, c2y = p2[1] - (p3[1] - p1[1]) / 6;
+      d += "C" + c1x.toFixed(1) + " " + c1y.toFixed(1) + "," + c2x.toFixed(1) + " " +
+           c2y.toFixed(1) + "," + p2[0].toFixed(1) + " " + p2[1].toFixed(1);
+    }
+    return d;
+  }
+
+  function geoChart(){
+    var B = 1000, H = 420;
+    var d = geoPfad(GEO_PUNKTE, B, H);
+    var marken = GEO_MARKEN.map(function(m){
+      var x = m.x / 27 * B;
+      return '<line class="ulh-geo-mark" x1="' + x.toFixed(1) + '" y1="0" x2="' + x.toFixed(1) +
+             '" y2="' + H + '"/>';
+    }).join("");
+    return '<svg class="ulh-geo-svg" viewBox="0 0 ' + B + ' ' + H + '" preserveAspectRatio="none" ' +
+      'aria-hidden="true" focusable="false">' +
+      '<defs><pattern id="ulhGeoRaster" width="7" height="7" patternUnits="userSpaceOnUse">' +
+        '<line x1="0" y1="0" x2="0" y2="7" class="ulh-geo-raster"/></pattern></defs>' +
+      /* Die Flaeche unter der Kurve ist schraffiert und nicht gefuellt: gefuellt legt sie sich als
+         Block hinter die Zahlen, schraffiert bleibt der Text lesbar. */
+      '<path class="ulh-geo-flaeche" d="' + d + 'L' + B + ' ' + H + 'L0 ' + H + 'Z"/>' +
+      marken +
+      '<path class="ulh-geo-linie" d="' + d + '"/>' +
+    '</svg>';
+  }
+
+  /* Wo liegt die Kurve bei diesem Monat? Der Punkt der Marke soll AUF der Linie sitzen, und die
+     Linie ist geglaettet -- zwischen zwei Messpunkten liegt sie also nicht auf der Geraden. Also
+     wird das Stueck, in dem der Monat liegt, abgetastet und der Wert genommen, dessen x am
+     naechsten liegt. Sechzig Schritte je Stueck: der Fehler ist damit kleiner als ein Pixel. */
+  function geoY(xm){
+    var B = 1000, H = 420;
+    var d = null;
+    var P = GEO_PUNKTE.map(function(p){ return [p[0] / 27 * B, H - p[1] / 1000 * H]; });
+    var ziel = xm / 27 * B, besteX = 1e9, besteY = P[0][1];
+    for (var i = 0; i < P.length - 1; i++){
+      var p0 = P[i > 0 ? i - 1 : 0], p1 = P[i], p2 = P[i + 1], p3 = P[i + 2] || P[i + 1];
+      var c1x = p1[0] + (p2[0] - p0[0]) / 6, c1y = p1[1] + (p2[1] - p0[1]) / 6;
+      var c2x = p2[0] - (p3[0] - p1[0]) / 6, c2y = p2[1] - (p3[1] - p1[1]) / 6;
+      for (var k = 0; k <= 60; k++){
+        var t = k / 60, u = 1 - t;
+        var x = u*u*u*p1[0] + 3*u*u*t*c1x + 3*u*t*t*c2x + t*t*t*p2[0];
+        var y = u*u*u*p1[1] + 3*u*u*t*c1y + 3*u*t*t*c2y + t*t*t*p2[1];
+        var ab = Math.abs(x - ziel);
+        if (ab < besteX){ besteX = ab; besteY = y; }
+      }
+    }
+    return (H - besteY) / H;      /* Anteil von unten, 0 bis 1 */
+  }
+
+  function geoMarkenHtml(){
+    return GEO_MARKEN.map(function(m){
+      return '<span class="ulh-geo-mk" style="left:' + (m.x / 27 * 100).toFixed(2) + '%;bottom:' +
+        (geoY(m.x) * 100).toFixed(2) + '%">' +
+        '<span class="ulh-geo-mk-punkt"></span>' +
+        '<span class="ulh-geo-mk-txt">' +
+          '<span class="ulh-geo-mk-t">' + m.t + '</span>' +
+          '<span class="ulh-geo-mk-s">' + m.s + '</span>' +
+        '</span>' +
+      '</span>';
+    }).join("");
+  }
+
+  function geo(){
+    return '<section class="ulh-geo">' +
+      '<div class="ulh-geo-bild">' + geoChart() + geoMarkenHtml() + '</div>' +
+      '<div class="ulh-spur ulh-geo-in">' +
+        '<div class="ulh-feat-kopf ulh-geo-kopf">' +
+          '<span class="ulh-feat-chip">' + GEO_CHIP + '</span>' +
+          '<h2 class="ulh-feat-h ulh-geo-h">' + GEO_H1 +
+            '<span class="ulh-geo-h2"> ' + GEO_H2 + '</span></h2>' +
+        '</div>' +
+        '<div class="ulh-geo-kpis">' +
+          GEO_KPIS.map(function(k){
+            return '<div class="ulh-geo-kpi">' +
+              '<span class="ulh-geo-v">' + k.v + '</span>' +
+              '<span class="ulh-geo-l">' + k.l + '</span>' +
+              '<span class="ulh-geo-q">' + k.q + '</span>' +
+            '</div>';
+          }).join("") +
+        '</div>' +
+        '<p class="ulh-geo-fuss">' + GEO_QUELLE + '</p>' +
+      '</div>' +
+    '</section>';
   }
 
   /* ---------- Fuenfte Sektion: Mira bei der Arbeit ----------------------------------------

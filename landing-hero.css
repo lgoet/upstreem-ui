@@ -2126,3 +2126,82 @@
   .ulh-msc-t { padding-top: 20px; }
   .ulh-msc-rahmen { height: 600px; }
 }
+
+/* ---------- Sechste Sektion: warum es diese App gibt ------------------------------------------
+   Aufbau wie im Vorbild: die Kurve liegt als Grund ueber die ganze Breite, links davor stehen Kopf
+   und vier Zahlen. Die Sektion ist der einzige Ort der Seite mit einer FARBIGEN Flaeche -- deshalb
+   nur eine, und die leiseste: das Blau des Chips, stark verduennt. */
+.ulh-geo {
+  position: relative; z-index: 1;
+  /* Unten viel Luft: die Kurve liegt am linken Rand tief, und die Marke darauf braucht Platz fuer
+     ihre zwei Zeilen. Mit dem kleineren Polster stand sie im Quellenhinweis unter den Zahlen. */
+  padding: clamp(80px, 11vh, 132px) 0 clamp(120px, 16vh, 180px);
+  overflow: hidden;
+}
+/* Der Grund: ueber die ganze Breite und hinter allem. Die Kurve steigt nach rechts, also steht der
+   Text links -- unter ihm ist die Flaeche flach und der Text bleibt lesbar. */
+.ulh-geo-bild {
+  position: absolute; left: 50%; bottom: 0; width: 100vw; height: 62%;
+  transform: translateX(-50%); pointer-events: none; z-index: 0;
+}
+.ulh-geo-svg { display: block; width: 100%; height: 100%; }
+.ulh-geo-linie { fill: none; stroke: #2563eb; stroke-width: 1.6; vector-effect: non-scaling-stroke; }
+/* Schraffur statt Fuellung: eine Flaeche legt sich als Block hinter die Zahlen, Striche nicht. */
+.ulh-geo-flaeche { fill: url(#ulhGeoRaster); }
+.ulh-geo-raster { stroke: rgba(37, 99, 235, .18); stroke-width: 1; }
+.ulh-geo-mark {
+  stroke: var(--ulh-border); stroke-width: 1; vector-effect: non-scaling-stroke;
+  stroke-dasharray: 3 4;
+}
+/* Die zwei Marken sitzen AUF der Kurve: die Lage kommt aus landing-hero.js (geoY tastet das
+   Kurvenstueck ab). Sie stehen ausserhalb des SVG, damit die Schrift nicht mitverzerrt wird --
+   preserveAspectRatio: none streckt alles im SVG, auch Buchstaben.
+   Der Punkt liegt auf der Linie, der Text darunter: nach oben waere er im Weg der Kurve. */
+.ulh-geo-mk {
+  position: absolute; transform: translate(-4px, 4px);
+  font-size: 11.5px; line-height: 1.35; white-space: nowrap;
+}
+.ulh-geo-mk-punkt {
+  display: block; width: 7px; height: 7px; border-radius: 999px; background: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, .14);
+}
+/* Ein weicher weisser Hof statt einer Plakette: die Beschriftung liegt auf der Schraffur und
+   stellenweise auf der Linie selbst, und ohne ihn liest sie sich schlecht. Eine Plakette waere ein
+   Kasten mehr im Bild. */
+.ulh-geo-mk-txt {
+  display: flex; flex-direction: column; gap: 1px; margin-top: 10px;
+  text-shadow: 0 0 5px #fff, 0 0 5px #fff, 0 0 10px #fff;
+}
+.ulh-geo-mk-t { font-weight: 500; color: var(--ulh-text); }
+.ulh-geo-mk-s { color: var(--ulh-sub); }
+.ulh-geo-in { position: relative; z-index: 1; }
+.ulh-geo-kopf { max-width: 640px; }
+/* Die Ueberschrift traegt beide Toene wie die der Quellen: erster Satz dunkel, Rest in der zweiten
+   Farbe -- hier ohne Scrolleffekt, denn sie ist kurz und steht neben Zahlen, nicht allein. */
+.ulh-geo-h { max-width: 22ch; }
+.ulh-geo-h2 { color: var(--ulh-sub); }
+/* Vier Zahlen, zwei mal zwei. Der Strich links ist dieselbe Machart wie im Vorbild: eine Kante,
+   kein Kasten -- die Zahl soll stehen, nicht in einer Karte sitzen. */
+.ulh-geo-kpis {
+  margin-top: clamp(34px, 5vh, 54px);
+  display: grid; grid-template-columns: repeat(2, minmax(0, 250px)); gap: 26px 40px;
+}
+.ulh-geo-kpi {
+  display: flex; flex-direction: column; gap: 4px;
+  padding-left: 16px; border-left: 2px solid #2563eb;
+}
+.ulh-geo-v { font-size: 30px; font-weight: 500; letter-spacing: -0.03em; color: var(--ulh-text); }
+.ulh-geo-l { font-size: 13.5px; font-weight: 400; line-height: 1.45; color: var(--ulh-sub); }
+/* Die Quelle steht IM BILD und nicht in einer Fussnote, die man aufklappen muss: eine Zahl ohne
+   Herkunft ist auf einer Landingpage eine Behauptung. Kleiner als die Beschriftung, damit sie den
+   Satz nicht ueberdeckt, aber lesbar. */
+.ulh-geo-q { margin-top: 2px; font-size: 11.5px; font-weight: 400; color: var(--ulh-muted, #9aa0a6); }
+.ulh-geo-fuss {
+  margin: clamp(30px, 4vh, 46px) 0 0; max-width: 62ch;
+  font-size: 11.5px; line-height: 1.5; color: var(--ulh-muted, #9aa0a6);
+}
+@media (max-width: 900px) {
+  .ulh-geo-kpis { grid-template-columns: 1fr; gap: 20px; }
+  .ulh-geo-bild { height: 52%; opacity: .7; }
+  .ulh-geo-mk-s { display: none; }
+}
