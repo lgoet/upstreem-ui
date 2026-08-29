@@ -762,8 +762,18 @@
    Die Gruppen sollen sich absetzen, also so viel Abstand wie moeglich -- gemessen bleibt bei 14px
    die Liste gerade noch ganz sichtbar.
    Gemessen wird an der Liste selbst: scrollHeight darf clientHeight nicht ueberschreiten. */
-.ulh-app .usn-item { height: 34px; }
-.ulh-app .usn-block + .usn-block { margin-top: 14px; }
+/* Und hier die Rechnung dahinter. Die Liste passt genau dann ganz ins Fenster, wenn ihr Inhalt
+   nicht hoeher ist als ihre Flaeche -- und jede Luft, die dazukommt, muss woanders herkommen.
+   Gemessen vor dieser Runde: Inhalt 540, Flaeche 508, also 32 zu viel; dazu 4 fuer die groessere
+   Luft unter den Schnellaktionen und 6 fuer die zwei zusaetzlichen Pixel zwischen den vier
+   Gruppen, abzueglich 2, die der flachere Knopf freigibt -- zusammen 40.
+   Sie kommen aus der Zeilenhoehe (34 -> 31, zwoelf Zeilen: 36) und aus der Unterkante der vier
+   Gruppenbeschriftungen (2 -> 0: 8). Das ist die letzte Stelle, an der noch etwas zu holen war --
+   die Abstaende zwischen den Gruppen sollen ja groesser werden, nicht kleiner.
+   Damit ist die Vorschau enger als die App. Das ist die Wahl zwischen einer etwas engeren Liste
+   und einer, an der die gepinnte Domain fehlt. */
+.ulh-app .usn-item { height: 31px; }
+.ulh-app .usn-block + .usn-block { margin-top: 16px; }
 /* Der Vorhang der Chancen-Schublade blendet nur das BRETT ab, nicht die Seitenleiste. In der App
    ist er "position: fixed; inset: 0" und deckt das ganze Fenster -- dort ist das richtig, denn dort
    IST das Fenster die Seite. Hier steht die App in einem Bild, und eine weichgezeichnete Navigation
@@ -771,11 +781,11 @@
    innerhalb der Buehne, und die Buehne ist der Bezugsrahmen des Vorhangs (sie traegt das
    transform). */
 .ulh-app .uo-scrim { left: 185px; }
-.ulh-app .usn-head { padding-bottom: 2px; }
-/* Der Kasten der Schnellaktionen 2px flacher und 4px mehr Luft darunter: er ist ein Knopf und
-   keine Zeile der Liste, und mit demselben Abstand wie zwischen zwei Zeilen las er sich als eine. */
-.ulh-app .usn-qa .usn-qa-btn, .ulh-app .usn-qa > * { height: 32px; }
-.ulh-app .usn-nav { margin-top: 16px; }
+.ulh-app .usn-head { padding-bottom: 0; }
+/* Der Kasten der Schnellaktionen 30px hoch und 20px Luft darunter: er ist ein Knopf und keine
+   Zeile der Liste, und mit demselben Abstand wie zwischen zwei Zeilen las er sich als eine. */
+.ulh-app .usn-qa > * { height: 30px; }
+.ulh-app .usn-nav { margin-top: 20px; }
 .ulh-app .usn-qa:not(:empty) { margin-top: 16px; }
 
 /* Die ausgewaehlte Zeile in der Seitenleiste etwas heller: 7 Prozent Textfarbe waren im
