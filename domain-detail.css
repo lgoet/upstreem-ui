@@ -17,9 +17,11 @@
    Die Reihenfolge ist die des DOM -- die frueheren order-Regeln sind mit der Sichtbarkeits-
    einstellung entfallen. */
 .udd-root { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 100%; align-items: stretch; }
-/* Unter 900px untereinander (is-stack, gesetzt von UC.widthTiers). Zwei Haelften waeren darunter
-   je 440px, und darin steht weder der Trichter mit drei Zahlen noch ein Ring neben seiner
-   Legende. */
+/* Unter 780px untereinander (is-stack, gesetzt von UC.widthTiers). Vorher lag die Schwelle bei
+   900: die zwei Karten gingen damit schon auf einem gewoehnlichen Laptopfenster untereinander,
+   obwohl sie nebeneinander noch stehen. Gemessen bei 772px Wurzelbreite und zwei Spalten: Kurve
+   324px breit mit lesbarer Achse, Trichter 358px mit seinen drei Stufen, kein Ueberlauf in Kopf,
+   Kennzahl oder Trichterbeschriftung. Darunter wird der Trichter eng -- dort ist die Schwelle. */
 .udd-root.is-stack { grid-template-columns: 1fr; }
 
 .udd-root > * { min-width: 0; }
@@ -62,7 +64,13 @@
    Ueberschrift und Symbol. Das margin-left: auto aus core faellt damit weg -- dort schiebt es das
    Symbol ans rechte Ende einer Kopfzelle, hier soll es direkt neben der Ueberschrift stehen und
    nicht am anderen Ende der Zeile. */
-.udd-info { margin-left: 8px; }
+/* Mit .udd-root davor, und genau darum geht es: core setzt .up-th-info { margin-left: auto } --
+   im Tabellenkopf gehoert das Zeichen an die rechte Kante. Hier steht es hinter dem Umschalter,
+   und beide Regeln waren gleich stark (je eine Klasse). Wer gewinnt, entschied damit die
+   Ladereihenfolge: im Harness die eigene Datei, in der App core -- dort stand das Zeichen ganz
+   rechts. Kein margin: die 8px kommen aus dem gap von .udd-title, so wie bei allem anderen in
+   dieser Zeile. */
+.udd-root .udd-info { margin-left: 0; }
 .udd-title:hover .udd-info { opacity: 1; }
 /* Das Favicon sitzt im Bauteil .up-logo-box aus core (24px, 1px Polsterung, Radius 8). Hier steht
    nur die kleinere Stufe: 18px wie das Logo in der Kopfzeile von brand-detail. Faktor 18/24 auf

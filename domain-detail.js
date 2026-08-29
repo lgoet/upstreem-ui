@@ -275,7 +275,7 @@
        Haelfte: bei 900 ist eine Spalte 442px breit, und darin steht der Trichter mit seinen drei
        Zahlen noch nebeneinander. Darunter nicht mehr. narrow/vnarrow bleiben, wo sie waren -- sie
        regeln das Innere der Karten, nicht ihre Anordnung. */
-    if (UC.widthTiers) UC.widthTiers(root, { narrowAt: 640, vnarrowAt: 480, stackAt: 900 });
+    if (UC.widthTiers) UC.widthTiers(root, { narrowAt: 640, vnarrowAt: 480, stackAt: 780 });
 
     var elSeg     = root.querySelector(".udd-seg");
     var elInfo    = root.querySelector(".udd-info");
