@@ -3177,6 +3177,7 @@
   }
 
   function segLauf(wurzel){
+    if (window.__upOhneToolbar || window.__upOhneStreifen) return;
     var ziel = wurzel || document, els;
     try { els = ziel.querySelectorAll(SEG_BOXEN); } catch(e){ return; }
     for (var i = 0; i < els.length; i++) segEinrichten(els[i]);
@@ -3185,8 +3186,8 @@
   /* Zwei Anlaesse ausser dem Lauf der Toolbar: eine andere Fensterbreite aendert die Breite der
      Stufen, und ein Klick irgendwo kann einen Umschalter erst sichtbar machen (Popover, Drawer,
      Tab). Beides ist billig -- ein querySelectorAll und eine Messung je Umschalter. */
-  window.addEventListener("resize", function(){ segLauf(); }, { passive: true });
-  document.addEventListener("click", function(){ setTimeout(function(){ segLauf(); }, 0); }, true);
+  window.addEventListener("resize", function(){ sicher("segLauf", segLauf); }, { passive: true });
+  document.addEventListener("click", function(){ setTimeout(function(){ sicher("segLauf", segLauf); }, 0); }, true);
 
   /* Jeder Teil fuer sich. Vorher lag alles in einem Zug: stolperte einer, liefen die uebrigen
      nicht mehr -- und weil dieser Lauf auch aus dem Beobachter kommt, waere danach jeder weitere
@@ -3195,7 +3196,20 @@
     try { fn(); }
     catch(e){ if (window.console) console.warn("[UpstreemCore] " + name + " uebersprungen:", e && e.message); }
   }
+  /* ---- Zwei Notschalter fuer die Fehlersuche ---------------------------------------------------
+     Sie stehen hier, weil eine Bubble-Seite sich nicht nachbauen laesst: zehn Views, hundertfuenf
+     Komponenten, dreiundzwanzigtausend Knoten, dazu Bubbles eigenes Zeichnen ueber jQuery.html().
+     Wenn dort etwas haengt, ist die einzige verlaessliche Eingrenzung, EINEN Teil auszuschalten
+     und dieselbe Seite noch einmal zu laden -- ohne neuen Pin, ohne neues Ausrollen.
+
+       window.__upOhneToolbar  = true;   der ganze Lauf bleibt aus (Icons, Reihenfolge, D/W/M,
+                                         Streifen)
+       window.__upOhneStreifen = true;   nur der gleitende Streifen der Umschalter bleibt aus
+
+     Beide werden VOR core.js gesetzt, also im Seitenkopf ueber dem Vorrats-Schnipsel. Steht keiner
+     davon, aendert sich nichts -- das ist der Normalfall. */
   function toolbarLauf(){
+    if (window.__upOhneToolbar) return;
     sicher("stampToolbarIcons", stampToolbarIcons);
     sicher("stampGran", stampGran);
     sicher("orderToolbars", orderToolbars);

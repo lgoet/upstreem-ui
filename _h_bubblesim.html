@@ -1,0 +1,57 @@
+<meta charset="utf-8"><title>Bubble-Nachbau: was macht der Toolbar-Lauf bei staendigem Neuzeichnen</title>
+<!-- Bubble zeichnet seine Gruppen ueber jQuery.html(): der Inhalt eines Bereichs wird als HTML neu
+     gesetzt, immer wieder, auch waehrend die Seite schon steht. Diese Seite baut genau das nach --
+     zehn Bloecke mit Umschaltern, alle 120ms neu gesetzt -- und zaehlt, was core dabei tut.
+     Gemessen wird der Hauptstrang: wie lange braucht ein fester Rechenblock zwischendurch? -->
+<style>
+  body{font:12px/1.6 ui-monospace,monospace;margin:14px}
+  #buehne{opacity:.25;pointer-events:none}
+  #out{position:fixed;right:12px;top:12px;background:#111;color:#eee;padding:10px;white-space:pre;font:11px/1.5 ui-monospace,monospace}
+</style>
+<link rel="stylesheet" href="core.css">
+<div id="out">laeuft</div>
+<div id="buehne"></div>
+<script>
+window.__ev=[]; window.__fehler=[];
+window.addEventListener("error", function(e){ window.__fehler.push(String(e.message)); });
+var BLOCK = '<div class="up-root" data-instance="sim__I__">' +
+  '<div class="up-seg" role="tablist"><button class="up-seg-btn is-active" type="button">A</button><button class="up-seg-btn" type="button">B</button></div>' +
+  '<div class="vc-gran" role="group"><button class="vc-gran-btn is-active" data-gran="day" type="button">Day</button><button class="vc-gran-btn" data-gran="week" type="button">Week</button><button class="vc-gran-btn" data-gran="month" type="button">Month</button></div>' +
+  '<div class="up-pagesize-seg"><button class="up-pagesize-btn is-active" type="button">25</button><button class="up-pagesize-btn" type="button">50</button></div>' +
+  '<div class="up-head"><button class="up-sort-btn up-iconbtn" type="button"></button><button class="up-search-btn up-iconbtn" type="button"></button><button class="up-cols-btn up-iconbtn" type="button"></button></div>' +
+  '</div>';
+function zeichne(){
+  var h = "";
+  for (var i = 0; i < 10; i++) h += BLOCK.replace(/__I__/g, i);
+  document.getElementById("buehne").innerHTML = h;   /* genau das, was Bubble tut */
+}
+</script>
+<script src="core.js"></script>
+<script>
+/* Der Messblock: eine feste Menge synchroner Arbeit. Braucht sie ploetzlich ein Vielfaches,
+   ist der Hauptstrang belegt -- und genau das sieht auf einer Bubble-Seite aus wie "es laedt nicht". */
+function block(){
+  var t0 = performance.now(), s = 0;
+  for (var i = 0; i < 200000; i++) s += i % 7;
+  return performance.now() - t0;
+}
+var runden = 0, zeiten = [], neuzeichnungen = 0;
+var timer = setInterval(function(){
+  zeichne(); neuzeichnungen++;
+  zeiten.push(block());
+  if (++runden >= 40){
+    clearInterval(timer);
+    zeiten.sort(function(a,b){ return a-b; });
+    var mitte = zeiten[Math.floor(zeiten.length/2)], max = zeiten[zeiten.length-1];
+    var streifen = document.querySelectorAll(".up-seg-ind").length;
+    document.getElementById("out").textContent =
+      "Neuzeichnungen: " + neuzeichnungen +
+      "\nMessblock Median: " + mitte.toFixed(1) + "ms" +
+      "\nMessblock Maximum: " + max.toFixed(1) + "ms" +
+      "\nStreifen im Dokument: " + streifen +
+      "\nKnoten gesamt: " + document.querySelectorAll("*").length +
+      "\nFehler: " + (window.__fehler.length ? window.__fehler.join(" | ") : "keine") +
+      "\ncore da: " + (!!window.UpstreemCore);
+  }
+}, 120);
+</script>
