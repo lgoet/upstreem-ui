@@ -1,55 +1,52 @@
-<meta charset="utf-8"><title>uca titel</title>
-<style>body{margin:0;font:12px ui-monospace,monospace;padding:12px}pre{white-space:pre-wrap;background:#111;color:#eee;padding:8px}</style>
-<body>
-<div class="up-root uca-root"
-     data-cdn-pin="CDN_PIN"
-     data-url="URL"
-     data-title="TITLE"
-     data-citation-type="TYPE"
-     data-brand="BRAND"
-     data-summary="SUMMARY"
-     data-isdark="IS_DARK"></div>
+<!doctype html>
+<meta charset="utf-8">
+<title>create-with-ai: Titel aus dem Attribut</title>
+<link rel="stylesheet" href="core.css">
+<link rel="stylesheet" href="create-with-ai.css">
+<style>body{font:13px Geist,system-ui,sans-serif;padding:18px}
+ pre{background:#111;color:#eee;padding:10px;white-space:pre-wrap}</style>
 
-<!-- Das Wurzel-Div ist bewusst leer: die Komponente baut ihren gesamten Innenaufbau selbst. Es
-     gibt hier keine Stelle, an der du etwas einsetzen sollst. Die Platzhalter oben (URL, TITLE,
-     TYPE, BRAND, SUMMARY) ersetzt du mit "Insert dynamic data"; laesst du einen stehen, wird er
-     als leer behandelt und nicht als Text angezeigt. -->
+<!-- Fall A: NUR Attribute, kein Run-JS-Schritt. Genau der Aufbau des Nutzers. -->
+<div class="up-root uca-root" id="a"
+     data-url="https://www.lee-up.de/solar"
+     data-title="Solaranlagen fuer Handwerksbetriebe"
+     data-citation-type="You"
+     data-brand="Kestrel"></div>
 
+<!-- Fall B: Attribut gesetzt UND ein Run-JS-Schritt ohne Titel (setzt _explicit) -->
+<div class="up-root uca-root" id="b" data-instance="b"
+     data-url="https://www.lee-up.de/solar"
+     data-title="Titel aus dem Attribut"
+     data-brand="Kestrel"></div>
 
-<pre id="out">laeuft</pre>
+<!-- Fall C: Attribut gesetzt, Run-JS-Schritt mit LEEREM Titel -->
+<div class="up-root uca-root" id="c" data-instance="c"
+     data-url="https://www.lee-up.de/solar"
+     data-title="Titel aus dem Attribut"
+     data-brand="Kestrel"></div>
+
+<pre id="out">…</pre>
+<script src="core.js"></script>
+<script src="create-with-ai.js"></script>
 <script>
-window.__fehler=[]; window.addEventListener("error",function(e){window.__fehler.push(String(e.message))});
-try{ localStorage.setItem("pref_theme","light"); localStorage.removeItem("uca_ctx"); }catch(e){}
-(function(){
-  var alt=/alt=1/.test(location.search);
-  var files=["core.css","create-with-ai.css", alt?"_alt_core.js":"core.js", alt?"_alt_uca.js":"create-with-ai.js"];
-  var t={};
-  Promise.all(files.map(function(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"})
-    .then(function(r){return r.text()}).then(function(x){t[f]=x}); })).then(function(){
-      files.forEach(function(f){ var e=document.createElement(/\.css$/.test(f)?"style":"script"); e.textContent=t[f]; document.head.appendChild(e); });
-      setTimeout(function(){
-        var root=document.querySelector(".uca-root");
-        var api=null;
-        /* DIE ECHTE REIHENFOLGE: der Workflow ruft setContext mit der URL (setzt _explicit),
-           Bubble schreibt data-title erst danach ins Element. */
-        var setCtx = window.createWithAiSetContext;
-        if (setCtx) setCtx(JSON.stringify({ url:"https://www.spiegel.de/auto/e-auto-test-a-123", citation_type:"You" }));
-        setTimeout(function(){
-          /* Jetzt kommt der Titel als Attribut, so wie Bubble ihn nachschreibt. */
-          root.setAttribute("data-title", "E-Auto im Test: 12 Modelle");
-          setTimeout(function(){
-            if (window.createWithAiOpen) window.createWithAiOpen();
-            setTimeout(function(){
-              var tEl=document.querySelector("[data-source-title]"), uEl=document.querySelector("[data-source-url]");
-              var res={ datei: alt?"alt":"neu", api_da: !!setCtx,
-                titelzeile: tEl?tEl.textContent:null, urlzeile: uEl?uEl.textContent:null,
-                fehler: window.__fehler };
-              res.titel_korrekt = res.titelzeile === "E-Auto im Test: 12 Modelle";
-              document.getElementById("out").textContent=JSON.stringify(res,null,1); window.__fertig=res;
-            }, 500);
-          }, 400);
-        }, 400);
-      }, 900);
-    });
-})();
+function titelVon(id){
+  var r = document.getElementById(id);
+  var t = r.querySelector("[data-source-title]");
+  return t ? t.textContent : "(kein Titelfeld)";
+}
+setTimeout(function(){
+  try { window.createWithAiSetContext("b", '{"url":"https://www.lee-up.de/solar","citation_type":"You"}'); } catch(e){}
+  try { window.createWithAiSetContext("c", '{"url":"https://www.lee-up.de/solar","citation_type":"You","lead_title":""}'); } catch(e){}
+  var wurzeln = document.querySelectorAll(".uca-root");
+  [].forEach.call(wurzeln, function(r){
+    var ctrl = r.__ucaController;
+    if (ctrl && ctrl.open) { try { ctrl.open(); } catch(e){} }
+  });
+  setTimeout(function(){
+    document.getElementById("out").textContent =
+      "A nur Attribut      : " + titelVon("a") + "\n" +
+      "B Run-JS ohne Titel : " + titelVon("b") + "\n" +
+      "C Run-JS Titel leer : " + titelVon("c");
+  }, 400);
+}, 700);
 </script>
