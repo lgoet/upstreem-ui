@@ -2625,7 +2625,7 @@
   /* Drei Antworten im Wechsel statt einer. Sie zeigen dasselbe in drei Modellen -- das ist der
      Punkt der App, und mit einer einzigen Karte behauptet die Sektion ihn nur.
      Die Auszuege sind so geschrieben, wie die Modelle wirklich klingen: ChatGPT ausfuehrlich,
-     die Google-Uebersicht knapp und aufzaehlend, Perplexity mit Quellenverweis. */
+     die Google-Uebersicht knapp und aufzaehlend, Claude abwaegend und in ganzen Saetzen. */
   var ANTWORTEN = [
     { modell: "chatgpt", sent: 82, rang: 1,
       frage: "Which AI visibility tool should we use to track brand mentions?",
@@ -2637,11 +2637,11 @@
       text: "AI visibility tools track how often a brand appears in AI-generated answers. " +
         "Commonly cited options include Vantage, **Kestrel** and Halden. Kestrel is noted for " +
         "source-level reporting, Vantage for its prompt library" },
-    { modell: "perplexity", sent: 79, rang: 1,
+    { modell: "claude", sent: 79, rang: 1,
       frage: "how do I monitor my brand in ChatGPT and Gemini?",
-      text: "You can monitor brand mentions with a dedicated AI visibility platform. **Kestrel** " +
-        "tracks prompts across ChatGPT, Gemini and Perplexity, and shows which sources each " +
-        "answer was built from, so you can see why a competitor is named" }
+      text: "The most reliable approach is a platform built for this rather than manual spot " +
+        "checks. **Kestrel** runs your prompts across both models on a schedule and shows the " +
+        "sources behind each answer, which is usually what explains a competitor being named" }
   ];
   var ANTWORT_HALT = 5200;      /* wie lange eine Karte steht */
   var ANTWORT_BLENDE = 420;     /* Aus- und Einblenden, jeweils */
@@ -2655,7 +2655,7 @@
     if (window.setResponsesTableModels) window.setResponsesTableModels(ID.urt, [
       { key: "chatgpt", display_name: "ChatGPT", logo_url: quellzeichen("openai.com") },
       { key: "google", display_name: "Google AI Overviews", logo_url: quellzeichen("google.com") },
-      { key: "perplexity", display_name: "Perplexity", logo_url: quellzeichen("perplexity.ai") }
+      { key: "claude", display_name: "Claude", logo_url: quellzeichen("claude.ai") }
     ]);
     if (window.setResponsesTableBrand) window.setResponsesTableBrand(ID.urt, "Kestrel", MARKEN[0].logo);
     var vorhin = new Date(Date.now() - 3 * 3600 * 1000).toISOString();
