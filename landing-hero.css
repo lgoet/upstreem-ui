@@ -375,6 +375,11 @@
   pointer-events: none;
   background: linear-gradient(to top, var(--ulh-blende), rgba(240, 240, 240, 0));
 }
+/* 234px sind die AUSGEKLAPPTE Leiste. Klappt sie auf die Zeichenschiene zusammen (is-mini, von
+   sidebar.js nach der Fensterbreite gesetzt), sind es 64 -- und die Blende begann trotzdem dort,
+   wo die breite Leiste geendet HAETTE: ein Streifen ohne Verlauf, genau so breit wie der
+   Unterschied. Gemessen: Blende bei 152.8px, Leiste 42px breit. */
+.ulh-root:has(.usn-bar.is-mini) .ulh-view::after { left: calc(64px * var(--ulh-mass, 1)); }
 
 /* ---------- Das Erscheinen ----------
    Dieselbe Machart wie im Onboarding (uob-rise): von unten heraufziehen und dabei aufblenden, in
@@ -2521,7 +2526,9 @@
      Das Fenster behaelt 900px Breite und steht links. Was rechts nicht mehr passt, schneidet die
      Wurzel ab (overflow-x: clip) -- gewollt, kein Fehler: so bleibt die Schrift darin lesbar. */
   .ulh-fen { display: none; }
-  .ulh-buehne { width: 900px; margin-left: 0; margin-right: 0; }
+  /* 16px von links wie alles andere -- die Buehne haengt nicht in der Spur, also steht die Zahl
+     hier noch einmal. Rechts laeuft sie hinaus, das ist der Sinn. */
+  .ulh-buehne { width: 900px; margin-left: 16px; margin-right: 0; }
   .ulh-stage { overflow: visible; }
 
   /* ---- Die Vorschauen in den Karten ----
@@ -2530,6 +2537,17 @@
      mehr, wovon die Karte spricht. Mit fester Breite bleibt die Tabelle die Tabelle und wird
      rechts angeschnitten. */
   .ulh-vis-in { width: 760px; }
+  /* Und OHNE das seitliche Polster. Auf breiten Schirmen ruecken die zwei Vorschauen damit in die
+     Mitte der Karte; hier schob es die erste Spalte aus dem Ausschnitt -- gemessen begann der
+     Prompt-Text bei 116px statt an der Kante, und genau das war "die Spalte Prompt ist weg". Die
+     Domain-Tabelle hat das Polster nie gehabt, und dort stimmte es. */
+  .ulh-vis-zeilen .ulh-vis-in, .ulh-vis-chancen .ulh-vis-in { padding: 0; }
+  /* Die zwei Bilder in der dritten Reihe sind KEINE Bauteile der App, sondern Zeichnungen: sie
+     brauchen keinen Ausschnitt, sie passen. Also keine feste Breite, sondern etwas kleiner
+     rechnen -- damit werden Schrift, Abstaende und der Kreis gemeinsam kleiner, statt dass eines
+     davon gequetscht wird. */
+  .ulh-vis-sprachen .ulh-vis-in, .ulh-vis-modelle .ulh-vis-in { width: calc(100% / var(--ulh-vs)); }
+  .ulh-vis-sprachen, .ulh-vis-modelle { --ulh-vs: 0.86; }
 
   /* ---- Die Leiste ----
      Sie steht in derselben Spur wie alles andere; die zwei Knoepfe rechts bekommen weniger
@@ -2541,6 +2559,8 @@
   /* Auf dem Telefon bleibt vom Fenster der linke Teil -- die Seitenleiste und der Anfang des
      Inhalts. Mehr passt nicht, und mehr braucht es nicht: man sieht, dass da eine App laeuft. */
   .ulh-vis-in { width: 700px; }
+  /* Die zwei Zeichnungen noch etwas kleiner -- auf dem Telefon ist die Karte 332px breit. */
+  .ulh-vis-sprachen, .ulh-vis-modelle { --ulh-vs: 0.78; }
   .ulh-nav-rechts .ulh-btn-sec { display: none; }
   .ulh-fuss-in { flex-direction: column; }
   .ulh-geo-mk-t, .ulh-geo-mk-s { font-size: 10.5px; }
