@@ -3049,23 +3049,46 @@
      der App nennen ihre Knoepfe zehnmal anders (.up-seg-btn, .vc-gran-btn, .up-pagesize-btn,
      .tcd-mode-btn ...), und eine Liste davon waere beim naechsten neuen Umschalter wieder
      unvollstaendig. Der Streifen selbst ist ein span und faellt deshalb nicht mit hinein. */
+  /* Die Liste ist nicht geraten, sondern aus den Stilen gezogen: es sind genau die Kaesten, die
+     .vc-switch-bg oder .vc-switch-soft als Flaeche tragen und Knoepfe enthalten -- also alles, was
+     in dieser App wie ein Umschalter aussieht. Wer einen neuen baut, traegt ihn hier ein.
+     .upt-status (Active/Inactive in der Prompt-Tabelle), .udt-sub-dispseg und .uap-tabs haben
+     zuerst gefehlt: sie heissen nicht "seg" und sind mir deshalb durchgegangen. */
   var SEG_BOXEN = ".up-seg, .cc-seg, .ubo-seg, .tcl-seg, .vc-gran, .cc-gran, .up-pagesize-seg," +
-                  " .up-filter-dim, .up-dense, .tcd-mode, .uca-format-seg, .ubo-yaxis";
+                  " .up-filter-dim, .up-dense, .tcd-mode, .uca-format-seg, .ubo-yaxis," +
+                  " .upt-status, .udt-sub-dispseg, .uap-tabs";
 
   function segMessen(box){
     var ind = box.__upSegInd;
-    /* Baut eine Komponente ihr Markup neu, ist der Streifen weg -- die Kiste kennt ihn dann noch.
-       Also nicht nur auf das Merkmal schauen, sondern ob er wirklich noch im Dokument haengt. */
-    if (!ind || ind.parentNode !== box){
+    if (!ind){
       ind = document.createElement("span");
       ind.className = "up-seg-ind";
       ind.setAttribute("aria-hidden", "true");
-      box.insertBefore(ind, box.firstChild);
       box.__upSegInd = ind;
+    }
+    /* Baut die Komponente ihr Markup neu (innerHTML), faellt der Streifen mit heraus. Dann wird
+       DASSELBE Element wieder eingehaengt und kein frisches gebaut -- es behaelt seine Inline-Lage
+       und sein is-bereit, und die naechste Messung FAEHRT von dort zur neuen Stufe. Ein frisches
+       Element haette keine Ausgangslage: es wuerde springen, und genau so sah es aus, als gaebe es
+       den Uebergang gar nicht. Dieselbe Lehre wie bei der Marke in der Seitenleiste. */
+    if (ind.parentNode !== box){
+      box.insertBefore(ind, box.firstChild);
+      /* Und einmal Layout erzwingen, BEVOR die neuen Werte kommen. Ein Element, das gerade wieder
+         eingehaengt wurde, hat noch keinen berechneten Stand: Einhaengen und neue Lage im selben
+         Zug landen in EINEM Stildurchgang, und dann gibt es nichts, wovon der Uebergang ausgehen
+         koennte -- der Streifen springt. Mit dem erzwungenen Durchgang ist die alte Lage der
+         Ausgangswert, und er faehrt. */
+      void ind.offsetWidth;
     }
     var aktiv = box.querySelector("button.is-active");
     if (!aktiv){
-      if (ind.classList.contains("is-bereit")) ind.classList.remove("is-bereit");
+      /* Keine aktive Stufe. Der Streifen bleibt STEHEN, wo er ist, und wird nur ausgeblendet,
+         solange er noch nie gemessen wurde. Ihn hier auf unsichtbar zu setzen war ein Fehler mit
+         Folgen: viele Komponenten bauen beim Umschalten ihre Kopfzeile neu, und fuer einen
+         Augenblick gibt es dann keine aktive Stufe -- der Streifen verlor sein is-bereit, die
+         naechste Messung galt als die erste und lief OHNE Uebergang. Genau das war der Grund,
+         warum nirgends etwas glitt. */
+      if (!ind.__upGemessen) ind.classList.remove("is-bereit");
       return;
     }
     var b = aktiv.offsetWidth, h = aktiv.offsetHeight;
@@ -3075,15 +3098,22 @@
     if (!b) return;
     var t = "translate(" + aktiv.offsetLeft + "px," + aktiv.offsetTop + "px)";
     /* Das ERSTE Mal ohne Fahrt: ein Streifen, der beim Aufbau der Seite aus der Breite 0 an der
-       linken Kante herauswaechst, behauptet einen Wechsel, den es nicht gab. Danach faehrt er. */
-    var erst = !ind.classList.contains("is-bereit");
+       linken Kante herauswaechst, behauptet einen Wechsel, den es nicht gab. Danach faehrt er.
+       Gemerkt wird das am Element selbst und NICHT an is-bereit: die Klasse kann zwischendurch
+       fallen (siehe oben), und dann waere jeder Wechsel wieder ein "erstes Mal". */
+    var erst = !ind.__upGemessen;
     if (erst) ind.style.transition = "none";
     /* Nur schreiben, was sich geaendert hat: jedes Schreiben ist eine Mutation, und der Beobachter
        unten haengt an genau diesem Element. */
     if (ind.style.transform !== t) ind.style.transform = t;
     if (ind.style.width !== b + "px") ind.style.width = b + "px";
     if (ind.style.height !== h + "px") ind.style.height = h + "px";
-    if (erst){ void ind.offsetWidth; ind.style.transition = ""; ind.classList.add("is-bereit"); }
+    if (erst){
+      void ind.offsetWidth;
+      ind.style.transition = "";
+      ind.__upGemessen = true;
+    }
+    if (!ind.classList.contains("is-bereit")) ind.classList.add("is-bereit");
   }
 
   /* Die Schriften kommen SPAETER als das erste Bild, und mit ihnen werden alle Beschriftungen

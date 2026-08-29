@@ -1929,7 +1929,8 @@
    Geschwisterselektor .up-seg-ind ~ button.is-active. Ohne Streifen (kein JS, alte Seite) bleibt
    alles wie vorher; es gibt also keinen Zustand ohne sichtbare Auswahl. */
 .up-seg, .cc-seg, .ubo-seg, .tcl-seg, .vc-gran, .cc-gran, .up-pagesize-seg, .up-filter-dim,
-.up-dense, .tcd-mode, .uca-format-seg, .ubo-yaxis { position: relative; }
+.up-dense, .tcd-mode, .uca-format-seg, .ubo-yaxis, .upt-status, .udt-sub-dispseg,
+.uap-tabs { position: relative; }
 .up-seg-ind {
   position: absolute; left: 0; top: 0; width: 0; height: 100%; z-index: 0; box-sizing: border-box;
   border-radius: 8px; background: #ffffff; border: 1px solid var(--vc-switch-border);
