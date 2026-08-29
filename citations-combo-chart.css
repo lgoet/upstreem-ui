@@ -6,8 +6,9 @@
    makeTypeChart and styled by core.css (.up-line-*, .up-legend, .up-donut-*, .up-bars/.up-bar-*).
    The button tooltip is core's .up-tip now, and the filter dropdown's open/close comes from
    UC.makePopover. What is left here is only this component's own frame: the two-panel layout,
-   the header row, the maximize/hide toggles, the granularity switcher, the chart-type switcher
-   and the per-series filter menu.
+   the header row, the maximize/hide toggles, the chart-type switcher and the per-series filter
+   menu. Der Granularitaets-Umschalter steht seit dem Umzug in core.css (.vc-gran mit dem Alias
+   .cc-gran) -- er war hier eine wortgleiche Kopie.
 
    Deliberately NOT reusing .up-iconbtn for .combo-iconbtn — same reasoning already established
    for .vot-iconbtn/.tcd-iconbtn: .up-iconbtn's :hover adds a background this component's icon
@@ -26,6 +27,10 @@
 .combo-heading { font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .combo-head-tools { display: flex; align-items: center; gap: 8px; margin-left: auto; flex: 0 0 auto; }
 
+/* Kein Nachbau von .up-iconbtn, sondern die Absicht von oben an der Stelle, an der der Waechter
+   sie sucht: .up-iconbtn faerbt beim Ueberfahren eine FLAECHE ein, die Zeichenknoepfe dieser
+   Komponente haben nie eine gehabt -- dort wechselt nur die Farbe des Zeichens. Dieselbe
+   Begruendung gilt fuer .vot-iconbtn und .tcd-iconbtn. */
 .combo-iconbtn {
   display: inline-flex; align-items: center; justify-content: center;
   width: 32px; height: 32px; border: 0; border-radius: 8px;
@@ -115,18 +120,9 @@
 .combo-filter-name { flex: 1 1 auto; min-width: 0; max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .combo-filter-empty { padding: 10px; font-size: 12px; color: var(--vc-muted); text-align: center; }
 
-/* ---------- granularity switcher (day / week / month) ---------- */
-/* Dieselbe Groesse wie die uebrigen kleinen Umschalter der App: 26px, 8px Polster, der weiche
-   Grund. Vorher 32px -- er stand als einziger in seiner Zeile eine Stufe groesser da. */
-.cc-gran { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-soft); border-radius: 8px; border: 0; height: 26px; flex: 0 0 auto; align-self: center; }
-.cc-gran-btn { height: 26px; padding: 0 8px; border: 1px solid transparent; border-radius: 8px; background: transparent;
-  color: var(--vc-muted); cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 500; line-height: 1;
-  display: inline-flex; align-items: center; justify-content: center; }
-.cc-gran-btn:hover { color: var(--vc-text); }
-.cc-gran-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
-.up-root[data-theme="dark"] .cc-gran-btn.is-active { background: #121212; border-color: #353535; }
-/* a range too short for the bucket (week needs ≥8 days, month ≥31) */
-.cc-gran-btn.is-disabled { opacity: 0.4; pointer-events: none; cursor: default; }
+/* ---------- granularity switcher (day / week / month) ----------
+   Steht jetzt in core.css als Alias von .vc-gran -- es war eine wortgleiche Kopie, und jede
+   Aenderung am Original (Mindestbreite fuer D/W/M, Farbe) erreichte diesen hier nicht. */
 
 /* ---------- chart-type switcher + total line above the type chart ---------- */
 .cc-type-root { width: 100%; height: 100%; box-sizing: border-box; position: relative; display: flex; flex-direction: column; }

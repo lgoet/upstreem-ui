@@ -16,7 +16,7 @@
    und sich darin noch einmal haelftig teilt. Mit Flex braeuchte sie eine Breitenrechnung.
    Die Reihenfolge ist die des DOM -- die frueheren order-Regeln sind mit der Sichtbarkeits-
    einstellung entfallen. */
-.udd-root { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 100%; align-items: stretch; }
+.udd-root { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; align-items: stretch; }
 /* Unter 900px untereinander (is-stack, gesetzt von UC.widthTiers). Zwei Haelften waeren darunter
    je 440px, und darin steht weder der Trichter mit drei Zahlen noch ein Ring neben seiner
    Legende. */
@@ -30,25 +30,15 @@
 .udd-root > [hidden] { display: none; }
 
 /* ---- Umschalter (Modus) ----------------------------------------------------------------------
-   .up-seg/.up-seg-btn kommen aus core. Hier nur die etwas breitere Polsterung der Knoepfe und die
-   Hoehe -- wie in brand-detail, damit zwei Detailseiten gleich aussehen.
-   Dieser Umschalter bleibt wie der in brand-detail auf 32px, waehrend .up-seg in core auf 26
-   gegangen ist: er ist kein Werkzeug in einer Kopfzeile, sondern die Navigation dieser Seite --
-   zwei gleichwertige Ansichten, und er benennt, was die Kurve darunter zeigt.
-   Zu .check_reinvention.py, das hier "gesprengt" meldet: die Pille wird nicht angeschnitten,
-   sondern auf ihre FRUEHERE Groesse zurueckgestellt. Hoehe und Polster stehen an Leiste UND Knopf
-   (32 und 16, die Werte, die .up-seg vor der Verkleinerung hatte), und der Radius bleibt bei 8 --
-   bei 32px war er derselbe. Es gibt also keinen Wert, der nicht mitgezogen ist. */
-/* Der Schalter sitzt jetzt IN der Kopfzeile der Chart-Karte, an der Stelle der frueheren
-   Ueberschrift. align-self: center, weil die Kopfzeile ihre Kinder mittig fuehrt und der Schalter
-   mit 32px das hoechste davon ist. */
-.udd-seg { margin: 0; width: fit-content; height: 32px; align-self: center; }
+   Groesse und Grund kommen aus core: .up-seg.is-lg -- 32px hoch, 16px Polster, der volle
+   Schalterton. Hier steht nur noch, WO er sitzt. Vorher standen die 32px in dieser Datei und in
+   brand-detail, der Grund aber in core; damit trug der grosse Umschalter den blassen Ton des
+   kleinen, und beim naechsten Mal haette es eine dritte Kopie gegeben.
+   align-self: center, weil die Kopfzeile ihre Kinder mittig fuehrt und der Schalter mit 32px das
+   hoechste davon ist. */
+.udd-seg { margin: 0; width: fit-content; align-self: center; }
 .udd-seg[hidden] { display: none; }
-/* Die Knoepfe tragen dieselben 32px wie die Leiste und 16px Polster -- die Werte, die .up-seg
-   vor seiner Verkleinerung hatte. Das ist die Begruendung zum Treffer von .check_reinvention.py
-   oben: nichts ist angeschnitten, das Bauteil steht auf seiner frueheren Groesse.
-   Die oberste Zeile mit Umschalter und Zahnrad gibt es nicht mehr. */
-.udd-seg .up-seg-btn { height: 32px; padding-left: 16px; padding-right: 16px; }
+/* Die oberste Zeile mit Umschalter und Zahnrad gibt es nicht mehr. */
 
 /* ---- Karte -----------------------------------------------------------------------------------
    Werte 1:1 aus .ubd-card: 16px Radius wie jeder aeussere Container der App, 1px Rahmen,
@@ -77,12 +67,7 @@
 /* Das Favicon sitzt im Bauteil .up-logo-box aus core (24px, 1px Polsterung, Radius 8). Hier steht
    nur die kleinere Stufe: 18px wie das Logo in der Kopfzeile von brand-detail. Faktor 18/24 auf
    ALLE Werte -- Radius 8 -> 6, Bildradius 7 -> 5.3, Buchstabe 11 -> 8.3. */
-.udd-logobox { width: 18px; height: 18px; flex: 0 0 18px; border-radius: 6px; }
-.udd-logobox img { width: 100%; height: 100%; border-radius: 5.3px; object-fit: cover; display: block; }
-.udd-logobox .up-logo-ltr { font-size: 8.3px; }
-/* Solange geladen wird, ist die Kachel selbst das Skelett -- derselbe Ton und derselbe Puls wie
-   .up-tsk-logo in core, nur in der Groesse dieser Kachel (18 statt 24). */
-.udd-logobox.is-sk { background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
+/* Das Favicon in der Kopfzeile ist entfallen -- siehe domain-detail.js. */
 /* Die Ueberschrift der Chart-Karte ist entfallen: an ihrer Stelle steht der Modus-Umschalter,
    und der sagt dasselbe. */
 .udd-tools { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
@@ -133,7 +118,13 @@
    Spaltenkante.
    Die Farbe kommt aus dem Zitationstyp der Domain (im JS gesetzt), die Abstufung ueber die
    Deckkraft: die erste Stufe ist die volle Menge, jede weitere ein Rest davon. */
-.udd-funnel { position: relative; }
+/* Die Karte ist eine Spalte, und der Trichter nimmt darin, was unter der Ueberschrift uebrig
+   bleibt -- mit seinem Inhalt MITTIG darin. Vorher hing er oben, und wenn die Karte neben der
+   hoeheren Kurve stand, blieb unter ihm eine leere Flaeche. Die Ueberschrift bleibt oben: sie
+   gehoert zur Karte, nicht zum Bild. */
+.udd-funnelcard { display: flex; flex-direction: column; }
+.udd-funnel { position: relative; flex: 1 1 auto; display: flex; flex-direction: column;
+  justify-content: center; }
 /* Die Spaltenzahl kommt aus dem JS (--udd-fnc), nicht als feste 4. Genau daran ist es gebrochen:
    der Trichter hat jetzt drei Stufen, das Raster stand weiter auf vier -- die Koepfe nahmen also
    drei Viertel der Breite, waehrend das SVG darunter die ganze zeichnete. Mit der Variablen kann
@@ -180,7 +171,7 @@
    Trichter und teilt sich genauso. Vorher 1.15 zu 1 -- das war richtig, solange die Zeile die
    ganze Seitenbreite hatte; im halbierten Raster sind zwei gleiche Haelften ruhiger, und der
    Ring hat seine Legende darunter statt daneben. */
-.udd-row2 { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+.udd-row2 { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
   align-items: stretch; }
 .udd-root.is-stack .udd-row2 { grid-template-columns: 1fr; }
 /* Die Karte ist eine Spalte: Kopf oben, Chart nimmt den Rest und zentriert darin. Dadurch sind
@@ -218,6 +209,21 @@
    Zahl. Beim Typ-Split bleibt sie: dort ist es die Zahl der zitierten Seiten. */
 .udd-modeldonut .up-donut-center { display: none; }
 
+/* Beide Ringe 15% kleiner im Durchmesser: die zwei Zahlen der core-Regel mal 0.85, im
+   eingeklappten Fall (75%/220 -> 63.75%/187) wie im nicht eingeklappten (52%/200 -> 44.2%/170).
+   Prozent UND Deckel ziehen mit, sonst waere der Ring nur auf einer Breite kleiner. Die Skelette
+   bekommen dieselben Werte, sonst springt die Karte, wenn die Daten kommen. */
+.udd-typebody .up-donut-wrap, .udd-modelbody .up-donut-wrap,
+.udd-typebody .up-donut-sk .up-sk-chart, .udd-modelbody .up-donut-sk .up-sk-chart {
+  width: min(44.2%, 170px);
+}
+.udd-typebody .up-donut-layout.is-collapsed .up-donut-wrap,
+.udd-modelbody .up-donut-layout.is-collapsed .up-donut-wrap,
+.udd-typebody .up-donut-sk.is-collapsed .up-sk-chart,
+.udd-modelbody .up-donut-sk.is-collapsed .up-sk-chart {
+  width: min(63.75%, 187px);
+}
+
 /* ---- Model Breakdown -------------------------------------------------------------------------
    Die Liste selbst ist UC.makeBarList mit dem Markup aus core (.up-bars/.up-bar-*). Hier steht
    nichts ueber ihr Aussehen -- nur, dass sie keine eigene Polsterung braucht, die Karte polstert
@@ -232,7 +238,7 @@
 .udd-root.is-narrow .udd-head { flex-wrap: wrap; }
 .udd-root.is-narrow .udd-tools { width: 100%; justify-content: flex-start; }
 /* Schmal stehen die zwei Karten untereinander -- nebeneinander bliebe fuer den Ring nichts. */
-.udd-root.is-narrow .udd-row2 { grid-template-columns: 1fr; gap: 16px; }
+.udd-root.is-narrow .udd-row2 { grid-template-columns: 1fr; gap: 8px; }
 /* Schmal: die Koepfe brechen auf zwei Spalten um und liegen dann NICHT mehr auf den Dritteln der
    Flaeche -- deshalb steht darunter der 16px-Abstand (weiter unten), der beides klar trennt.
    Kein !important noetig: das JS setzt nur die VARIABLE inline, nicht grid-template-columns, und

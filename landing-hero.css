@@ -789,7 +789,18 @@
 /* Der Kasten der Schnellaktionen 30px hoch und 24px Luft darunter: er ist ein Knopf und keine
    Zeile der Liste, und mit demselben Abstand wie zwischen zwei Zeilen las er sich als eine. */
 .ulh-app .usn-qa > * { height: 30px; }
-.ulh-app .usn-nav { margin-top: 24px; }
+/* Die Liste WAECHST hier nicht ueber ihren Inhalt hinaus (flex 0 1 statt 1 1). Sonst nimmt sie
+   allen freien Platz, der Abstand darunter faellt auf null, und die Konto-Zeile klebt am letzten
+   Menuepunkt. Schrumpfen darf sie weiterhin -- in einem zu niedrigen Fenster ist Scrollen besser
+   als ein abgeschnittener Eintrag. */
+.ulh-app .usn-nav { margin-top: 24px; flex: 0 1 auto; }
+/* Die Konto-Zeile wird nach UNTEN geschoben, statt 64px Mindestabstand ueber sich zu verlangen.
+   In der App ist die Leiste so hoch wie das Fenster, dort sind die 64 Luft. Hier ist sie 742px
+   hoch, und genau diese 64 fehlten der Liste: sie braucht 554 und bekam 498 -- die gepinnte
+   Domain fiel unten heraus, und der Kasten mit den Menuepunkten wurde scrollbar.
+   Mit auto nimmt der Abstand, was uebrig ist: bleibt Platz, steht die Zeile trotzdem unten;
+   bleibt keiner, faellt er auf null, bevor die Liste anfaengt zu scrollen. */
+.ulh-app .usn-accwrap { margin-top: auto; }
 .ulh-app .usn-qa:not(:empty) { margin-top: 16px; }
 
 /* Die ausgewaehlte Zeile in der Seitenleiste etwas heller: 7 Prozent Textfarbe waren im

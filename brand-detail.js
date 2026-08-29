@@ -130,7 +130,7 @@
          derselbe Segmented-Control, den opportunities benutzt, und derselbe
          Granularitaets-Schalter wie in visibility-chart. Hier steht deshalb nur die
          Positionierung, kein eigenes Aussehen. */
-      '<div class="up-seg ubd-seg" role="tablist">' +
+      '<div class="up-seg is-lg ubd-seg" role="tablist">' +
         MODES.map(function (m) {
           return '<button class="up-seg-btn" type="button" role="tab" data-mode="' + m.key + '">' +
                    esc(m.label) + '</button>';

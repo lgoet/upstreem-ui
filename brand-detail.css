@@ -20,8 +20,9 @@
    sondern auf ihre FRUEHERE Groesse zurueckgestellt. Hoehe und Polster stehen an Leiste UND
    Knopf (32 und 16, die Werte, die .up-seg vor der Verkleinerung hatte), und der Radius bleibt
    bei 8, weil er bei 32px derselbe war -- es gibt also keinen Wert, der nicht mitgezogen ist. */
-.ubd-seg { margin: 0 0 16px; width: fit-content; height: 32px; align-self: flex-start; }
-.ubd-seg .up-seg-btn { height: 32px; padding-left: 16px; padding-right: 16px; }
+/* Groesse und Grund aus core (.up-seg.is-lg): 32px, 16px Polster, voller Schalterton. Hier steht
+   nur, wo er sitzt. */
+.ubd-seg { margin: 0 0 16px; width: fit-content; align-self: flex-start; }
 
 /* ---- Karte ----------------------------------------------------------------------------------- */
 /* width:100% ist hier nicht Kosmetik: die Karte hatte vorher keine eigene Breite. Im

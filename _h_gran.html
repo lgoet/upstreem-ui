@@ -1,0 +1,82 @@
+<meta charset="utf-8"><title>Umschalter: D/W/M und die zwei Groessen</title>
+<!-- Messseite fuer die beiden Granularitaets-Umschalter (core .vc-gran und der Alias .cc-gran aus
+     dem Combo-Chart) und fuer die zwei GROESSEN des Segment-Umschalters. Beide Bauteile stehen im
+     handgemachten Bubble-Markup, deshalb steht ihr Markup auch hier von Hand. -->
+<style>
+  body { font-family: Geist, system-ui, sans-serif; margin: 0; padding: 24px; background: #fff; }
+  .up-root[data-theme="dark"] { background: #1b1b1b; }
+  .reihe { display: flex; gap: 24px; align-items: center; margin-bottom: 20px; }
+  #out { position: fixed; left: 12px; bottom: 12px; font: 11px ui-monospace, monospace;
+         background: #111; color: #eee; padding: 8px; max-width: 60vw; white-space: pre-wrap; }
+</style>
+<link rel="stylesheet" href="core.css">
+<link rel="stylesheet" href="citations-combo-chart.css">
+<div class="up-root" id="hell" data-instance="x1" style="padding:16px">
+  <div class="reihe">
+    <div class="vc-gran" role="group">
+      <button class="vc-gran-btn is-active" data-gran="day" type="button">Day</button>
+      <button class="vc-gran-btn" data-gran="week" type="button">Week</button>
+      <button class="vc-gran-btn" data-gran="month" type="button">Month</button>
+    </div>
+    <div class="cc-gran" role="group">
+      <button class="cc-gran-btn is-active" data-gran="day" type="button">Day</button>
+      <button class="cc-gran-btn" data-gran="week" type="button">Week</button>
+      <button class="cc-gran-btn" data-gran="month" type="button">Month</button>
+    </div>
+    <div class="up-seg" role="tablist">
+      <button class="up-seg-btn is-active" type="button">Klein A</button>
+      <button class="up-seg-btn" type="button">Klein B</button>
+    </div>
+    <div class="up-seg is-lg" role="tablist">
+      <button class="up-seg-btn is-active" type="button">Gross A</button>
+      <button class="up-seg-btn" type="button">Gross B</button>
+    </div>
+  </div>
+</div>
+<div class="up-root" id="dunkel" data-theme="dark" data-instance="x2" style="padding:16px">
+  <div class="reihe">
+    <div class="vc-gran" role="group">
+      <button class="vc-gran-btn is-active" data-gran="day" type="button">Day</button>
+      <button class="vc-gran-btn" data-gran="week" type="button">Week</button>
+      <button class="vc-gran-btn" data-gran="month" type="button">Month</button>
+    </div>
+    <div class="cc-gran" role="group">
+      <button class="cc-gran-btn is-active" data-gran="day" type="button">Day</button>
+      <button class="cc-gran-btn" data-gran="week" type="button">Week</button>
+      <button class="cc-gran-btn" data-gran="month" type="button">Month</button>
+    </div>
+    <div class="up-seg" role="tablist">
+      <button class="up-seg-btn is-active" type="button">Klein A</button>
+      <button class="up-seg-btn" type="button">Klein B</button>
+    </div>
+    <div class="up-seg is-lg" role="tablist">
+      <button class="up-seg-btn is-active" type="button">Gross A</button>
+      <button class="up-seg-btn" type="button">Gross B</button>
+    </div>
+  </div>
+</div>
+<pre id="out">laeuft</pre>
+<script src="core.js"></script>
+<script>
+setTimeout(function(){
+  /* core stellt beim Start das Thema auf JEDER .up-root her und nimmt data-theme fuer hell wieder
+     weg -- die dunkle Haelfte dieser Seite verliert ihr Attribut also im Boot. Hier einmal
+     zurueckschreiben, sonst misst man zweimal dieselbe helle Seite. */
+  document.getElementById("dunkel").setAttribute("data-theme", "dark");
+  function lies(wurzel){
+    var w = document.getElementById(wurzel);
+    function ton(sel){ var e=w.querySelector(sel); return e?getComputedStyle(e).backgroundColor:null; }
+    function hoch(sel){ var e=w.querySelector(sel); return e?Math.round(e.getBoundingClientRect().height):null; }
+    return {
+      vc: [].map.call(w.querySelectorAll(".vc-gran-btn"), function(b){ return b.textContent.trim()+"/"+b.getAttribute("data-tip"); }),
+      cc: [].map.call(w.querySelectorAll(".cc-gran-btn"), function(b){ return b.textContent.trim()+"/"+b.getAttribute("data-tip"); }),
+      vc_h: hoch(".vc-gran"), cc_h: hoch(".cc-gran"),
+      vc_bg: ton(".vc-gran"), cc_bg: ton(".cc-gran"),
+      seg_klein: hoch(".up-seg:not(.is-lg)") + "px " + ton(".up-seg:not(.is-lg)"),
+      seg_gross: hoch(".up-seg.is-lg") + "px " + ton(".up-seg.is-lg")
+    };
+  }
+  document.getElementById("out").textContent =
+    JSON.stringify({ hell: lies("hell"), dunkel: lies("dunkel") }, null, 1);
+}, 1200);
+</script>

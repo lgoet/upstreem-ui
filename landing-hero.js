@@ -2944,13 +2944,13 @@
     }
     setzen();
     window.addEventListener("resize", setzen, { passive: true });
+    /* SOFORT im Beobachter, nicht ueber requestAnimationFrame: in einem Tab, der im Hintergrund
+       liegt, laeuft rAF nicht -- die Leiste stand dann in dem Zustand, den sidebar.js zuletzt
+       geschrieben hat, und zwar so lange, bis jemand den Tab wieder ansieht. Eine Schleife
+       entsteht daraus nicht, weil setzen() nur schreibt, was fehlt: der naechste Durchlauf des
+       Beobachters findet alles richtig vor und schreibt nichts mehr. */
     if (window.MutationObserver){
-      var laeuft = false;
-      new MutationObserver(function(){
-        if (laeuft) return;
-        laeuft = true;
-        requestAnimationFrame(function(){ laeuft = false; setzen(); });
-      }).observe(bar, { attributes: true, attributeFilter: ["class"] });
+      new MutationObserver(setzen).observe(bar, { attributes: true, attributeFilter: ["class"] });
     }
   }
 

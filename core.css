@@ -109,9 +109,10 @@
       --up-menu-bg: #151515; --up-sel-bg: rgba(42,42,42,0.60); --up-menu-border: #454545;
       --up-dd-shadow: 0 10px 28px rgba(0,0,0,.32);
       --vc-switch-bg: rgba(42,42,42,0.6); --vc-switch-border: #353535; --vc-third: #808080;
-      /* Im Dunkeln ist die Flaeche schon durchsichtig, also unveraendert -- ein zweites Mal 60
-         Prozent darauf und man saehe sie nicht mehr. */
-      --vc-switch-soft: rgba(42,42,42,0.6);
+      /* 35 statt 60 Prozent. Vorher stand hier derselbe Wert wie in --vc-switch-bg, und damit gab
+         es im Dunkeln keinen Unterschied zwischen dem grossen und dem kleinen Umschalter -- den,
+         den es im Hellen sehr wohl gibt. Weniger als 35 waere nicht mehr zu sehen. */
+      --vc-switch-soft: rgba(42,42,42,0.35);
       --vc-field: #2a2a2a;
       --vt-head-bg: #121212; --vt-logo-bg: #e0e0e0; --vt-row-hover: rgba(42,42,42,0.6);
       --vt-row-hover-solid: #242424;
@@ -1142,17 +1143,24 @@
        Verkleinerung ALLER Schriften, nicht aus dem Bauteil.
        align-self: flex-start, damit der Umschalter oben in seinem Kasten sitzt und nicht mittig --
        neben einer Ueberschrift mit Unterzeile sass er sonst auf halber Hoehe. */
-.vc-gran { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-soft); border-radius: 8px; border: 0; height: 26px; flex: 0 0 auto; align-self: flex-start; }
+/* .cc-gran ist derselbe Umschalter im Combo-Chart und steht hier als ALIAS, genau wie bei
+   .up-seg/.cc-seg weiter unten: sein Markup liegt in der von Hand eingefuegten Bubble-Seite, ein
+   Umbenennen wuerde sie zerlegen. Vorher stand eine wortgleiche Kopie in citations-combo-chart.css
+   -- und jede Aenderung hier (Mindestbreite, Farbe) erreichte ihn deshalb nicht. */
+.vc-gran, .cc-gran { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-soft); border-radius: 8px; border: 0; height: 26px; flex: 0 0 auto; align-self: flex-start; }
+/* Im Combo-Chart steht er in einer Zeile mit Knoepfen und deshalb mittig. */
+.cc-gran { align-self: center; }
 /* min-width 26 = die Hoehe: mit den kurzen Beschriftungen D, W und M (core.js, stampGran) ist
    ein Knopf sonst so breit wie sein Buchstabe, und W waere breiter als D -- der Umschalter
    huepfte beim Wechsel. Quadratisch stehen die drei ruhig nebeneinander. */
-    .vc-gran-btn { height: 26px; min-width: 26px; padding: 0 8px; border: 1px solid transparent; border-radius: 8px; background: transparent;
+    .vc-gran-btn, .cc-gran-btn { height: 26px; min-width: 26px; padding: 0 8px; border: 1px solid transparent; border-radius: 8px; background: transparent;
       color: var(--vc-muted); cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 500; line-height: 1;
       display: inline-flex; align-items: center; justify-content: center; }
-    .vc-gran-btn:hover { color: var(--vc-text); }
-    .vc-gran-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
-    .up-root[data-theme="dark"] .vc-gran-btn.is-active { background: #121212; border-color: #353535; }
-    .vc-gran-btn.is-disabled { opacity: 0.4; pointer-events: none; cursor: default; }
+    .vc-gran-btn:hover, .cc-gran-btn:hover { color: var(--vc-text); }
+    .vc-gran-btn.is-active, .cc-gran-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
+    .up-root[data-theme="dark"] .vc-gran-btn.is-active,
+    .up-root[data-theme="dark"] .cc-gran-btn.is-active { background: #121212; border-color: #353535; }
+    .vc-gran-btn.is-disabled, .cc-gran-btn.is-disabled { opacity: 0.4; pointer-events: none; cursor: default; }
 
     .up-scale-opt { display: flex; flex-direction: column; gap: 8px; padding: 9px 10px; border-radius: 9px; cursor: pointer; }
     .up-scale-opt:hover, .up-scale-opt.is-active { background: var(--up-sel-bg); }
@@ -1909,6 +1917,18 @@
    Visibility-Chart und .tcl-seg im Zitatteil. Ihre Ausnahme steht unten. */
 .up-seg, .cc-seg, .ubo-seg, .tcl-seg { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-soft); border-radius: 8px; border: 0; height: 26px; flex: 0 0 auto; align-self: center; }
 .tcl-seg { align-self: flex-start; }
+/* ---- Die zweite GROESSE des Umschalters ----------------------------------------------------
+   is-lg ist der Umschalter, der nicht als Werkzeug in einer Kopfzeile steht, sondern allein ueber
+   dem Inhalt und die Ansicht der ganzen Seite waehlt (brand-detail, domain-detail).
+   Und die Groesse bestimmt den GRUND: der kleine traegt den durchscheinenden Ton
+   (--vc-switch-soft), der grosse den vollen (--vc-switch-bg, hell #f5f5f5). Vorher stand die Hoehe
+   in den Komponenten und der Grund nur hier -- ein 32px hoher Umschalter bekam damit den Ton des
+   kleinen und stand zu blass da. Beide Werte gehoeren zusammen, also stehen sie zusammen. */
+.up-seg.is-lg, .cc-seg.is-lg, .ubo-seg.is-lg, .tcl-seg.is-lg {
+  height: 32px; background: var(--vc-switch-bg);
+}
+.up-seg.is-lg .up-seg-btn, .cc-seg.is-lg .cc-seg-btn,
+.ubo-seg.is-lg .ubo-seg-btn, .tcl-seg.is-lg .tcl-seg-btn { height: 32px; padding: 0 16px; }
 /* gap + type spec: this control was lifted from an ICON-ONLY switcher, so a button carrying an icon
    AND a label had its two children touching, and its text fell back to whatever the page inherited.
    Both are set here rather than per component -- gap is a no-op on the single-child icon variants

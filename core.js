@@ -3026,7 +3026,10 @@
   var GRAN_LANG = { day: "Day", week: "Week", month: "Month" };
   function stampGran(wurzel){
     var ziel = wurzel || document, els;
-    try { els = ziel.querySelectorAll(".vc-gran-btn[data-gran]"); } catch(e){ return; }
+    /* JEDER Knopf mit data-gran, nicht nur eine Klasse: der Combo-Chart nennt seine cc-gran-btn,
+       und genau der stand deshalb noch auf "Day/Week/Month", waehrend alle anderen schon kurz
+       waren. Ueber das Attribut trifft es auch jede kuenftige Variante. */
+    try { els = ziel.querySelectorAll("button[data-gran]"); } catch(e){ return; }
     for (var i = 0; i < els.length; i++){
       var b = els[i], kurz = GRAN_KURZ[b.getAttribute("data-gran")], lang = GRAN_LANG[b.getAttribute("data-gran")];
       if (!kurz) continue;

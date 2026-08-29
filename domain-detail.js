@@ -177,12 +177,11 @@
       '<div class="udd-card udd-chartcard">' +
         '<div class="udd-head">' +
           '<div class="udd-title">' +
-            '<span class="up-logo-box udd-logobox"><span class="up-logo-ltr"></span></span>' +
             /* Der Umschalter steht an der Stelle, an der die Ueberschrift stand: er sagt
                dasselbe kuerzer. "URL Share over Time" darueber und "URL Share" als aktiver Knopf
                daneben waren zweimal derselbe Satz, und die Zeile darueber, in der er vorher
                stand, war danach leer. */
-            '<div class="up-seg udd-seg" role="tablist" aria-label="Chart mode">' +
+            '<div class="up-seg is-lg udd-seg" role="tablist" aria-label="Chart mode">' +
               MODES.map(function (m) {
                 return '<button class="up-seg-btn" type="button" role="tab" data-mode="' + m.key + '">' +
                          esc(m.label) + '</button>';
@@ -281,7 +280,6 @@
     var elSeg     = root.querySelector(".udd-seg");
     var elInfo    = root.querySelector(".udd-info");
     var elGran    = root.querySelector(".vc-gran");
-    var elLogo    = root.querySelector(".udd-logobox");
     var elKpi     = root.querySelector(".udd-kpi");
     var elVal     = root.querySelector(".udd-kpi-val");
     var elTrend   = root.querySelector(".udd-kpi-trend");
@@ -553,37 +551,10 @@
       root.classList.toggle("is-domainshare", domainModus);
     }
 
-    function renderHead() {
-      var h = state.header || {};
-      var fav = h.favicon || h.favicon_url || "";
-      var name = h.domain || h.id || "";
-      var img = elLogo.querySelector("img");
-      /* Auch das Favicon ist ein Skelett, solange geladen wird: es wechselt mit den Daten wie jede
-         Zahl daneben. Vorher stand hier das "?" des Anfangsbuchstaben-Rueckfalls -- das behauptet
-         "eine Domain, die ich nicht kenne", waehrend die Wahrheit "noch nichts da" ist. */
-      /* Auch ein bereits bekanntes Favicon wird zum Skelett, nicht nur ein fehlendes: es gehoert
-         zu den ALTEN Daten und kann mit den neuen ein anderes sein. Ein Logo stehen zu lassen,
-         waehrend die Zahlen daneben laden, behauptet "diese Domain ist es weiterhin". */
-      var laedt = istLaden() || !state.hasData;
-      elLogo.classList.toggle("is-sk", laedt);
-      if (laedt) {
-        elLogo.querySelector(".up-logo-ltr").textContent = "";
-        if (img) { img.remove(); elLogo.classList.remove("has-img"); }
-        return;
-      }
-      elLogo.querySelector(".up-logo-ltr").textContent = (name || "").charAt(0).toUpperCase();
-      if (fav) {
-        if (!img) {
-          img = document.createElement("img");
-          img.alt = "";
-          img.loading = "lazy";
-          img.onerror = function () { elLogo.classList.remove("has-img"); this.remove(); };
-          elLogo.appendChild(img);
-        }
-        if (img.getAttribute("src") !== fav) img.setAttribute("src", fav);
-        elLogo.classList.add("has-img");
-      } else if (img) { img.remove(); elLogo.classList.remove("has-img"); }
-    }
+    /* Die Kopfzeile der Chart-Karte traegt nur noch den Umschalter. Das Favicon der Domain stand
+       davor und ist entfallen: welche Domain man ansieht, sagt die Seite darueber, und im
+       Umschalter selbst hatte es nichts zu suchen. Damit gibt es hier auch nichts mehr zu
+       zeichnen -- die frueheren Skelett- und Rueckfallwege des Zeichens sind mit ihm weg. */
 
     function renderKpi() {
       if (state.error) {
@@ -866,7 +837,6 @@
       syncSeg();
       syncTypeSeg();
       syncModelSeg();
-      renderHead();
       renderKpi();
       renderChart();
       renderFunnel();
@@ -913,7 +883,7 @@
         state.mode = k; modusSchreiben(instanceId, k);
         /* Der Wechsel nach Domain Share fordert die URL-Serie an: ab hier wird gewartet. */
         if (k === "domain" && !state.urls) urlWarteStarten();
-        syncSeg(); renderHead(); renderKpi(); renderChart();
+        syncSeg(); renderKpi(); renderChart();
         fire("data-mode-fn", "uddMode", { mode: k, gran: state.gran, scope: state.scope });
         return;
       }
