@@ -228,8 +228,25 @@
 
   /* ---------- Buehne bauen ---------------------------------------------------------------- */
 
+  /* Die Prompts-Liste steht im LISTENmodus und nicht in der breiten Gruppenansicht. Der Modus ist
+     eine Ansichtsvorliebe und liegt in der Ablage; die Tabelle liest sie EINMAL beim Start
+     (readGroupsWide in prompts-table.js, Voreinstellung "ja"). Deshalb wird sie hier geschrieben,
+     bevor das Markup steht: die Wurzel der Tabelle gibt es dann noch nicht, die Komponente bootet
+     also erst danach und liest den Wert, der hier steht.
+     Ein Klick auf den Umschalter waere der andere Weg -- aber die Buehne schluckt Klicks in der
+     Einfangphase, und ein Klick, den man erst durchlassen muss, ist keine Einstellung. */
+  function listenmodusSetzen(){
+    try {
+      var k = "upt_groupswide__" + ID.upt;
+      var kern = window.UpstreemCore;
+      if (kern && kern.prefSet && kern.prefKey) kern.prefSet(kern.prefKey(k), "no");
+      else window.localStorage.setItem(k, "no");
+    } catch (e){}
+  }
+
   function bauen(root){
     if (root.querySelector(".ulh-frame")) return;          /* schon gebaut */
+    listenmodusSetzen();
     root.innerHTML =
       /* Die zwei Schienen. Sie laufen ueber die GANZE Seite und nicht je Sektion: die Seite hat
          eine Spur, und alles darin richtet sich an derselben Kante aus -- der Rahmen des Fensters
@@ -1387,7 +1404,12 @@
        Ohne diese Angabe erbt die Zeile die Spalten der zuletzt definierten Tabelle. */
     /* Topics 260: zwei Chips brauchen zusammen bis zu 215px, dazu 28 Polster der Zelle. Bei 200
        waren die Beschriftungen um 7 bis 32px abgeschnitten (gemessen). */
-    var html = '<div class="ulh-vis-tab" style="--up-cols: minmax(0,1fr) 104px 88px 104px minmax(0,260px) 92px;">' +
+    /* Die Prompt-Spalte bekommt mehr Platz: sie ist die einzige, die man wirklich LIEST, und die
+       anderen fuenf zeigen Zahlen und Zeichen. Genommen wird es von den vier festen Spalten und
+       von den Themen (260 -> 210, ein Chip ganz und der zweite angeschnitten -- in einer Vorschau
+       ist das genug). Gerechnet: die festen Spalten waren zusammen 648, jetzt 570; auf einer
+       838px breiten Vorschau waechst die Prompt-Spalte damit von 190 auf 268. */
+    var html = '<div class="ulh-vis-tab" style="--up-cols: minmax(0,1fr) 96px 84px 96px minmax(0,210px) 84px;">' +
       '<div class="up-row up-thead">' + kopf.map(function(t){
         return '<div class="up-td">' + t + '</div>'; }).join("") + '</div>';
     html += VIS_ZEILEN.map(function(z, i){
@@ -2820,6 +2842,26 @@
     });
   }
 
+  /* Und ein Waechter, der es HAELT. hellHalten allein reicht nicht: die Komponenten setzen ihr
+     Thema beim Start selbst, und zwar so, dass sie data-theme ENTFERNEN, wenn sie nicht dunkel
+     sind (prompts-table.js: "if (isDark) setAttribute else removeAttribute"). Ohne das Attribut
+     gilt wieder, was der Rechner des Besuchers eingestellt hat -- und auf einem dunkel gestellten
+     Rechner blitzen dann einzelne Teile dunkel auf, mitten in einer hellen Seite.
+     Der Beobachter sieht jede neue Wurzel und jede Aenderung an data-theme und stellt das helle
+     Thema wieder her. Eine Schleife entsteht daraus nicht: hellHalten schreibt nur, wenn der Wert
+     wirklich falsch ist. */
+  function hellBewachen(root){
+    if (!window.MutationObserver) return;
+    var laeuft = false;
+    var beob = new MutationObserver(function(){
+      if (laeuft) return;
+      laeuft = true;
+      requestAnimationFrame(function(){ laeuft = false; hellHalten(root); });
+    });
+    beob.observe(root, { childList: true, subtree: true,
+      attributes: true, attributeFilter: ["data-theme", "data-isdark", "class"] });
+  }
+
   /* Die Seitenleiste haengt sich SELBST an <body> und ist position: fixed. In der App muss das so
      sein -- sie steht neben allem und scrollt nicht mit. Fuer das Fenster holen wir sie herein:
      liegt ein Vorfahre mit transform darueber, bezieht sich fixed auf DIESEN Vorfahren und nicht
@@ -2977,6 +3019,7 @@
       ulhTakt(w);
       quellFuellen();
       auftritte(w);
+      hellBewachen(w);
       navLauf(w);
       leisteAuslagern(w);
       mscFuellen(w);
@@ -3838,7 +3881,14 @@
          Ueberblendung von "none" auf "scale(.8)" muss ein Browser als Uebergang von der Einheits-
          matrix lesen, und das ist genau die Stelle, an der es hakt, wenn etwas hakt. Zwischen zwei
          echten Transformationen gibt es nichts zu deuten. */
-      var wunsch = soll ? "scale(" + kleinFaktor(root).toFixed(4) + ")" : "scale(1)";
+      /* Auf schmalen Schirmen wird NICHT verkleinert. Die Verkleinerung hat dort keinen Zweck
+         mehr: sie macht Platz fuer die drei Nebenfenster, und die sind ab 900px ausgeblendet.
+         Was bleibt, waere ein Fenster, das beim Scrollen schrumpft und dessen Schrift dabei
+         unlesbar wird -- auf einem Telefon zaehlt jedes Pixel Schriftgroesse.
+         900 ist dieselbe Schwelle wie in der CSS; sie steht hier als Zahl, weil ein Stylesheet
+         seine Medienabfragen nicht herausgibt. */
+      var schmal = (window.innerWidth || document.documentElement.clientWidth || 0) <= 900;
+      var wunsch = (soll && !schmal) ? "scale(" + kleinFaktor(root).toFixed(4) + ")" : "scale(1)";
       /* Nur schreiben, wenn sich etwas aendert -- sonst waere das ein Stilschreiben je Takt, und
          jedes davon macht das Layout schmutzig. */
       if (rahmen.style.transform !== wunsch) rahmen.style.transform = wunsch;

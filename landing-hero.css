@@ -375,11 +375,11 @@
   pointer-events: none;
   background: linear-gradient(to top, var(--ulh-blende), rgba(240, 240, 240, 0));
 }
-/* 234px sind die AUSGEKLAPPTE Leiste. Klappt sie auf die Zeichenschiene zusammen (is-mini, von
-   sidebar.js nach der Fensterbreite gesetzt), sind es 64 -- und die Blende begann trotzdem dort,
-   wo die breite Leiste geendet HAETTE: ein Streifen ohne Verlauf, genau so breit wie der
-   Unterschied. Gemessen: Blende bei 152.8px, Leiste 42px breit. */
-.ulh-root:has(.usn-bar.is-mini) .ulh-view::after { left: calc(64px * var(--ulh-mass, 1)); }
+/* Die Blende beginnt bei 234px mal Massstab -- der Breite der AUSGEKLAPPTEN Leiste. Klappt die
+   Leiste auf die Zeichenschiene zusammen (is-mini, von sidebar.js nach der Fensterbreite gesetzt),
+   faellt die Blende ganz weg: sie soll den Uebergang zum Fensterrand weich machen, und auf einem
+   schmalen Schirm ist von diesem Rand ohnehin nichts mehr zu sehen. */
+.ulh-root:has(.usn-bar.is-mini) .ulh-view::after { display: none; }
 
 /* ---------- Das Erscheinen ----------
    Dieselbe Machart wie im Onboarding (uob-rise): von unten heraufziehen und dabei aufblenden, in
@@ -769,6 +769,8 @@
 /* Die Zeilenhoehe ist die der App -- 34px, unveraendert. Ich hatte sie einmal auf 31 gesetzt, um
    Platz zu schaffen; das war nicht gefragt und ist wieder zurueck. Die Liste ist damit hoeher als
    ihre Flaeche und scrollt am Ende; was das bedeutet, steht in der Uebergabe. */
+/* Die Leiste ist 6px schmaler als in der App: 2px weniger Polster je Seite und 2px weniger
+   Breite. Was sie abgibt, bekommt der Bereich rechts -- er richtet sich an ihrer Breite aus. */
 .ulh-app .usn-item { height: 34px; }
 .ulh-app .usn-block + .usn-block { margin-top: 16px; }
 /* Der Vorhang der Chancen-Schublade blendet nur das BRETT ab, nicht die Seitenleiste. In der App
@@ -1479,24 +1481,10 @@
    daran lag das Hektische: --ulh-aus (.1, 1, .2, 1) startet mit voller Geschwindigkeit und klingt
    nur aus -- der Anfang war der Ruck. --ulh-weich ist an beiden Enden flach, die Zeile setzt sich
    in Ruhe in Bewegung und kommt in Ruhe an. */
-.ulh-vis-tab .up-row, .ulh-vis-chancen .uo-row {
-  transition: transform 714ms var(--ulh-weich), box-shadow 714ms var(--ulh-weich),
-              border-radius 714ms var(--ulh-weich), background-color 714ms var(--ulh-weich);
-}
-/* Der Ruhezustand der gehobenen Zeile steht AUSDRUECKLICH da, sonst gibt es nichts, wovon der
-   Uebergang ausgehen koennte: Rundung 0 und ein durchsichtiges WEISS (nicht "transparent" -- das
-   waere durchsichtiges Schwarz, und der Grund blendete durch Grau). */
-.ulh-vis-tab .up-row.is-mitte { border-radius: 0; background-color: rgba(255, 255, 255, 0); }
-/* Die gehobene Zeile bekommt KEINEN eigenen Radius. Sie nimmt den, den ihr Bauteil ohnehin hat:
-   die Chancenzeile hat 12px von sich aus, die Zeile der Tabelle hat keinen -- ihr Rahmen ist der
-   der Tabelle, und deren 12px stehen hier. */
-.ulh-card:hover .ulh-vis-tab .up-row.is-mitte { border-radius: 12px; }
-/* Der Grund der gehobenen Zeile: WEISS als Zahl. Vorher stand hier var(--vc-bg) -- die Farbe der
-   App, aber sie haengt an .up-root, und diese Vorschau steht darueber: die Angabe war ungueltig,
-   die Zeile blieb durchsichtig, und man sah ihre Nachbarn hindurch. Dieselbe Falle wie beim Kasten
-   der Quellen-Sektion. */
-.ulh-card:hover .ulh-vis-tab .up-row.is-mitte { background-color: #ffffff; }
-/* Der eigene Hover der Bauteile faellt weg. */
+/* KEINE Hervorhebung mehr beim Ueberfahren der Karten. Die gehobene Zeile war eine Runde lang
+   drin, mit Groesse, Rundung, Rahmen und Grund im Uebergang -- und sie hat mehr Unruhe gebracht,
+   als sie gezeigt hat: eine Vorschau ist ein Bild und keine Tabelle, die man bedient.
+   Der eigene Hover der Bauteile faellt weiterhin weg, aus demselben Grund. */
 .ulh-vis .up-row:hover, .ulh-vis .uo-row:hover, .ulh-vis .udt-subrow:hover {
   background: var(--vc-bg); border-color: var(--vc-border);
 }
@@ -1509,17 +1497,7 @@
    .ulh-vis-dom behaelt die Sperre -- dort liegt ein aufgeklappter Drilldown mit Fuellung darin. */
 .ulh-vis-dom { overflow: hidden; }
 .ulh-vis-tab .up-thead { border-radius: 12px 12px 0 0; }
-.ulh-card:hover .ulh-vis-tab .up-row.is-mitte,
-.ulh-card:hover .ulh-vis-chancen .uo-row.is-mitte {
-  transform: scale(1.06);
-  /* Der Rahmen steckt im letzten Schatten und ist kein Rahmen: ein echter braucht Platz und
-     schoebe die Zellen der Zeile um 1px zur Seite -- ein Innenschatten nicht. Und er faehrt mit
-     derselben box-shadow-Kurve heraus wie der Schlagschatten, statt zu springen. Genau das war
-     der Rest der Hektik: Rundung, Rahmen und Grund sprangen, waehrend die Groesse fuhr. */
-  box-shadow: 0 12px 30px rgba(11, 13, 24, .14), 0 2px 6px rgba(11, 13, 24, .06),
-              inset 0 0 0 1px var(--ulh-border);
-  position: relative; z-index: 4;
-}
+
 
 
 /* ---- Karte 3: der aufgeklappte Drilldown ----
@@ -2015,7 +1993,9 @@
    .usn-bar traegt die Klasse .up-root, und sidebar.css setzt --usn-w genau dort auf 250px. Ein
    Wert am eigenen Element schlaegt jeden geerbten -- am Vorfahren gesetzt blieb es bei 250,
    gemessen. Die Spalte daneben misst die Breite ohnehin selbst nach. */
-.ulh-app .usn-bar { --usn-w: 234px; }
+/* 228 statt 234, und 14px Polster statt 16: die Leiste gibt zusammen 6px ab, und die bekommt der
+   Bereich rechts -- er richtet sich an ihrer Breite aus. */
+.ulh-app .usn-bar { --usn-w: 228px; padding-left: 14px; padding-right: 14px; }
 
 /* ---------- Alle Schriften im Fenster eine Stufe kleiner ----------
    Erzeugt aus einer Messung und nicht geschaetzt: alle Textelemente im Fenster durchgezaehlt, nach
@@ -2537,6 +2517,9 @@
      mehr, wovon die Karte spricht. Mit fester Breite bleibt die Tabelle die Tabelle und wird
      rechts angeschnitten. */
   .ulh-vis-in { width: 760px; }
+  /* Die Prompt-Tabelle etwas breiter als die anderen: ihre erste Spalte traegt den ganzen Satz,
+     und der ist auf einem schmalen Schirm das einzige, was zaehlt. */
+  .ulh-vis-zeilen .ulh-vis-in { width: 880px; }
   /* Und OHNE das seitliche Polster. Auf breiten Schirmen ruecken die zwei Vorschauen damit in die
      Mitte der Karte; hier schob es die erste Spalte aus dem Ausschnitt -- gemessen begann der
      Prompt-Text bei 116px statt an der Kante, und genau das war "die Spalte Prompt ist weg". Die
@@ -2546,12 +2529,17 @@
      brauchen keinen Ausschnitt, sie passen. Also keine feste Breite, sondern etwas kleiner
      rechnen -- damit werden Schrift, Abstaende und der Kreis gemeinsam kleiner, statt dass eines
      davon gequetscht wird. */
-  .ulh-vis-sprachen .ulh-vis-in, .ulh-vis-modelle .ulh-vis-in { width: calc(100% / var(--ulh-vs)); }
-  .ulh-vis-sprachen, .ulh-vis-modelle { --ulh-vs: 0.86; }
+  .ulh-vis-sprachen .ulh-vis-in, .ulh-vis-modelle .ulh-vis-in,
+  .ulh-vis-linie .ulh-vis-in { width: calc(100% / var(--ulh-vs)); }
+  .ulh-vis-sprachen, .ulh-vis-modelle, .ulh-vis-linie { --ulh-vs: 0.86; }
 
   /* ---- Die Leiste ----
      Sie steht in derselben Spur wie alles andere; die zwei Knoepfe rechts bekommen weniger
      Polster, damit sie neben dem Logo Platz haben. */
+  /* Die Legende eines echten Charts bleibt: core blendet sie unter 500px FENSTERbreite aus -- in
+     der App richtig, denn dort steht sie unter einem Chart, das die ganze Seite fuellt. */
+  .ulh-vis .up-legend.is-hidden { display: block; }
+
   .ulh-nav-in { gap: 12px; }
   .ulh-nav-rechts .ulh-btn { padding: 0 10px; }
 }
@@ -2560,7 +2548,7 @@
      Inhalts. Mehr passt nicht, und mehr braucht es nicht: man sieht, dass da eine App laeuft. */
   .ulh-vis-in { width: 700px; }
   /* Die zwei Zeichnungen noch etwas kleiner -- auf dem Telefon ist die Karte 332px breit. */
-  .ulh-vis-sprachen, .ulh-vis-modelle { --ulh-vs: 0.78; }
+  .ulh-vis-sprachen, .ulh-vis-modelle, .ulh-vis-linie { --ulh-vs: 0.78; }
   .ulh-nav-rechts .ulh-btn-sec { display: none; }
   .ulh-fuss-in { flex-direction: column; }
   .ulh-geo-mk-t, .ulh-geo-mk-s { font-size: 10.5px; }
