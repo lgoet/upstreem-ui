@@ -498,15 +498,34 @@
    leeren Flaeche sieht aus wie gar keine, und genau so war es gemeldet. Jetzt wird gewartet, bis
    die Zellen stehen, und dann faehrt die fertige Matrix herauf.
    Auch der Seitenkopf zieht mit: er gehoert zum selben Bild. */
-.ulh-perf .uhm-root.is-auftritt,
-.ulh-perf .pfph-root.is-auftritt { animation: ulhRise 690ms var(--ulh-ease) backwards; }
-/* Und der Abgang zwischen den zwei Ansichten: erst weg, dann kommt sie als Sentiment mit
-   Gewichtsbalken zurueck. Kuerzer als der Auftritt -- ein Abgang, der so lange braucht wie ein
-   Auftritt, wirkt wie ein Fehler. */
+/* Der Auftritt kommt aus der Komponente selbst (performance-radar.js: runAppear -- die Zellen
+   ploppen diagonal herein). Hier steht deshalb keine eigene Bewegung mehr; was hier stand, lief
+   ueber die schon fertige Matrix und war doppelt.
+   Der Trichter dieser Seite ist der Zeitpunkt: gefuellt wird erst, wenn die Seite steht. */
+/* Der Abgang zwischen den zwei Ansichten: erst weg, dann kommt sie als Sentiment mit
+   Gewichtsbalken zurueck -- neu aufgebaut, also mit dem Auftritt der Komponente. Kuerzer als der
+   Auftritt: ein Abgang, der so lange braucht wie ein Auftritt, wirkt wie ein Fehler. */
 .ulh-perf .uhm-root {
   transition: opacity 260ms var(--ulh-ease), translate 260ms var(--ulh-ease);
 }
 .ulh-perf .uhm-root.is-geht { opacity: 0; translate: 0 12px; }
+/* Der Kasten der Matrix traegt keinen eigenen Rahmen mehr: er steht im Fenster schon in einem
+   Container, und zwei Rahmen ineinander sind einer zu viel. */
+.ulh-perf .uhm-box { border: 0; padding: 0; }
+/* Die Themen links: ein farbiger Punkt und der Name in der Textfarbe -- kein Chip, kein Emoji.
+   Der Chip aus core (.up-topicchip) bleibt das Markup, hier wird nur sein Aussehen fuer diese
+   eine Stelle umgestellt: seine Farbe steckt in --ust-tag-color und wird zum Punkt. */
+.ulh-perf .uhm-rowhead .up-topicchip {
+  background: none; border: 0; padding: 0; gap: 8px; max-width: 100%;
+}
+.ulh-perf .uhm-rowhead .up-topicchip::before {
+  content: ""; width: 8px; height: 8px; flex: 0 0 8px; border-radius: 999px;
+  background: var(--ust-tag-color, var(--vc-muted));
+}
+.ulh-perf .uhm-rowhead .up-topicchip-e { display: none; }
+.ulh-perf .uhm-rowhead .up-topicchip-lbl {
+  color: var(--vc-text); font-weight: 500; font-size: 12.5px;
+}
 
 /* ---------- Der Auftritt der Prompts-Seite ----------
    Sie steigt NICHT als Ganzes herauf -- ihre Teile tun es nacheinander: erst der Seitenkopf, dann

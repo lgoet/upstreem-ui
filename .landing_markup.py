@@ -108,7 +108,11 @@ def markup(pfad):
         if t.group(1):
             tiefe -= 1
             if tiefe == 0:
-                return rest[:t.end() + len("iv>")].rstrip()
+                # +1 fuer das ">", das der Ausdruck nicht mitnimmt: er endet nach "div".
+                # Hier stand +3 -- damit kam hinter jedem Block noch das Zeilenende und das
+                # ERSTE ZEICHEN der naechsten Zeile mit. Sichtbar wurde das als "<", das im
+                # Fenster an mehreren Stellen mitten im Text stand.
+                return rest[:t.end() + 1].rstrip()
         else:
             tiefe += 1
     return rest.rstrip()

@@ -4216,8 +4216,18 @@
          the same way toggleGroupsWide() itself would. */
       if (cramped && state.groupsWide){
         state.groupsWide = false;
-        writeGroupsWide(false);
+        /* NICHT speichern. Hier stand writeGroupsWide(false) -- und damit hat eine voruebergehende
+           Enge die WAHL des Nutzers ueberschrieben: ein aufgehender Drawer, ein schmaleres Fenster
+           oder auch nur der Augenblick, in dem die Seite noch keine Breite gemessen hat, und die
+           Listenansicht war dauerhaft weg. Gemeldet als "steht schon wieder auf Widemode".
+           Die Enge schaltet die Ansicht also um, aber sie merkt sich nichts. */
         root.classList.remove("is-groups-wide");
+        renderGroups();
+      } else if (!cramped && !state.groupsWide && readGroupsWide()){
+        /* Und zurueck, sobald wieder Platz ist -- sonst waere die Wahl zwar gespeichert, aber bis
+           zum naechsten Laden unsichtbar. */
+        state.groupsWide = true;
+        root.classList.add("is-groups-wide");
         renderGroups();
       }
     }
