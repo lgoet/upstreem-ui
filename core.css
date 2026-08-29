@@ -1143,7 +1143,10 @@
        align-self: flex-start, damit der Umschalter oben in seinem Kasten sitzt und nicht mittig --
        neben einer Ueberschrift mit Unterzeile sass er sonst auf halber Hoehe. */
 .vc-gran { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-soft); border-radius: 8px; border: 0; height: 26px; flex: 0 0 auto; align-self: flex-start; }
-    .vc-gran-btn { height: 26px; padding: 0 8px; border: 1px solid transparent; border-radius: 8px; background: transparent;
+/* min-width 26 = die Hoehe: mit den kurzen Beschriftungen D, W und M (core.js, stampGran) ist
+   ein Knopf sonst so breit wie sein Buchstabe, und W waere breiter als D -- der Umschalter
+   huepfte beim Wechsel. Quadratisch stehen die drei ruhig nebeneinander. */
+    .vc-gran-btn { height: 26px; min-width: 26px; padding: 0 8px; border: 1px solid transparent; border-radius: 8px; background: transparent;
       color: var(--vc-muted); cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 500; line-height: 1;
       display: inline-flex; align-items: center; justify-content: center; }
     .vc-gran-btn:hover { color: var(--vc-text); }

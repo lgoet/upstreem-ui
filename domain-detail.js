@@ -57,7 +57,11 @@
             "period -- so the lines add up to 100%. It answers which pages of the domain the " +
             "models actually cite, not how the domain compares to other domains." }
   ];
-  var GRANS  = [{ key: "day", label: "Day" }, { key: "week", label: "Week" }, { key: "month", label: "Month" }];
+  /* D, W und M statt der ganzen Woerter -- der ganze Name steht im Tooltip. Dieselbe Form,
+     die core allen Umschaltern dieser Art gibt (stampGran); hier steht sie direkt im Markup,
+     damit beim ersten Bild nicht kurz das lange Wort aufblitzt. */
+  var GRANS  = [{ key: "day", label: "D", tip: "Day" }, { key: "week", label: "W", tip: "Week" },
+                { key: "month", label: "M", tip: "Month" }];
   /* Global heisst: der Anteil dieser URL an ALLEN Zitationen. Domain: ihr Anteil innerhalb dieser
      Domain. Beides kommt aus dem Payload (share_pct), der Schalter sagt Bubble nur, welche Zahl
      der naechste Aufruf liefern soll. */
@@ -86,16 +90,11 @@
       unter: function (f) { return UC.fmtPct(f.your_url_presence_pct, 1) + " of cited URLs"; } }
   ];
 
-  /* Die drei Bereiche der Seite. Der Nutzer stellt Reihenfolge und Sichtbarkeit ein, NICHT die
-     Breite: das Raster steht fest, wie es ist. Typ-Split und Breakdown sind darin EIN Bereich --
-     sie stehen ohnehin in einer Zeile, und zwei Menuezeilen fuer eine Zeile der Seite waeren eine
-     Einstellung, die man nur halb ausfuehren kann. */
-  var BEREICHE = [
-    { key: "chart",      label: "Citations over Time" },
-    { key: "funnel",     label: "Source Funnel" },
-    { key: "breakdowns", label: "Breakdowns" }
-  ];
-  var LAYOUT_KEY = "uddLayout";
+  /* Die Bereiche der Seite lassen sich nicht mehr ausblenden. Das Zahnrad und seine Liste sind
+     entfallen: die Anordnung ist eine Entscheidung des Entwurfs, und die vier Karten gehoeren
+     zusammen -- eine Seite, auf der die Haelfte fehlt, beantwortet die Frage nicht mehr, fuer die
+     es sie gibt. Was der frueheren Einstellung noch in der Ablage steht, wird beim Start
+     geloescht (siehe altenLayoutschluesselLoeschen). */
 
   /* Der Modus (Citation Share / URL Share) ueberlebt jetzt den Seitenaufbau: er liegt im
      localStorage ueber UC.prefGet/prefSet, nicht mehr nur im Fenster. Eine Ansichtsvorliebe gehoert
@@ -175,28 +174,20 @@
     return '' +
       /* .up-seg/.up-seg-btn und .vc-gran/.vc-gran-btn sind die Haus-Bauteile aus core.css. Hier
          steht nur die Positionierung, kein eigenes Aussehen. */
-      /* Die oberste Zeile steht AUSSERHALB des Chart-Bereichs und immer an erster Stelle: das
-         Zahnrad darf nicht mit dem Bereich verschwinden, den es ausblendet -- sonst gibt es keinen
-         Weg zurueck. Der Modus-Umschalter darin gehoert dagegen zum Chart und geht mit ihm. */
-      '<div class="udd-toprow">' +
-        '<div class="up-seg udd-seg" data-tie="chart" role="tablist">' +
-          MODES.map(function (m) {
-            return '<button class="up-seg-btn" type="button" role="tab" data-mode="' + m.key + '">' +
-                     esc(m.label) + '</button>';
-          }).join("") +
-        '</div>' +
-        '<span class="udd-lywrap">' +
-          '<button class="up-iconbtn udd-lybtn" type="button" data-tip="Sections"' +
-            ' aria-label="Show, hide and arrange sections"></button>' +
-          '<div class="udd-lypop up-pop"></div>' +
-        '</span>' +
-      '</div>' +
-
-      '<div class="udd-card udd-chartcard" data-bereich="chart">' +
+      '<div class="udd-card udd-chartcard">' +
         '<div class="udd-head">' +
           '<div class="udd-title">' +
             '<span class="up-logo-box udd-logobox"><span class="up-logo-ltr"></span></span>' +
-            '<span class="udd-heading"></span>' +
+            /* Der Umschalter steht an der Stelle, an der die Ueberschrift stand: er sagt
+               dasselbe kuerzer. "URL Share over Time" darueber und "URL Share" als aktiver Knopf
+               daneben waren zweimal derselbe Satz, und die Zeile darueber, in der er vorher
+               stand, war danach leer. */
+            '<div class="up-seg udd-seg" role="tablist" aria-label="Chart mode">' +
+              MODES.map(function (m) {
+                return '<button class="up-seg-btn" type="button" role="tab" data-mode="' + m.key + '">' +
+                         esc(m.label) + '</button>';
+              }).join("") +
+            '</div>' +
             /* Der Erklaerer der Tabellenkoepfe, nicht der kurze Tooltip: .up-th-info mit
                data-explain, und die Karte baut UC.makeExplain. Ein data-tip haette denselben Text
                in der falschen Form gezeigt -- eine Zeile Text an der Maus statt der Karte mit
@@ -208,7 +199,8 @@
           '<div class="udd-tools">' +
             '<div class="vc-gran" role="group" aria-label="Granularity">' +
               GRANS.map(function (g) {
-                return '<button class="vc-gran-btn" type="button" data-gran="' + g.key + '">' + esc(g.label) + '</button>';
+                return '<button class="vc-gran-btn" type="button" data-gran="' + g.key +
+                  '" data-tip="' + esc(g.tip) + '" aria-label="' + esc(g.tip) + '">' + esc(g.label) + '</button>';
               }).join("") +
             '</div>' +
           '</div>' +
@@ -221,7 +213,7 @@
         '<div class="udd-legend up-legend"></div>' +
       '</div>' +
 
-      '<div class="udd-card udd-funnelcard" data-bereich="funnel">' +
+      '<div class="udd-card udd-funnelcard">' +
         '<div class="udd-sec">' +
           '<span class="udd-sec-title">Source Funnel</span>' +
           '<span class="udd-sec-desc">How often this source is cited, how many of its cited URLs ' +
@@ -233,7 +225,7 @@
       /* Typ-Split und Model Breakdown stehen nebeneinander in einer Zeile. Das Typ-Chart ist
          hoeher als die Balkenliste (ein Doughnut braucht seine Flaeche), deshalb richtet die Zeile
          mittig aus statt oben -- sonst haengt die Balkenliste am Kopf der Zeile. */
-      '<div class="udd-row2" data-bereich="breakdowns">' +
+      '<div class="udd-row2">' +
         '<div class="udd-card udd-typecard">' +
           '<div class="udd-sec udd-sec-row">' +
             '<div class="udd-sec-txt">' +
@@ -280,12 +272,15 @@
 
     /* Schmale Breiten ueber die EIGENE Box, nicht ueber eine Media Query auf das Fenster: diese
        Seite kann in einem Drawer stehen, der auf einem breiten Bildschirm schmal ist. */
-    if (UC.widthTiers) UC.widthTiers(root, { narrowAt: 640, vnarrowAt: 480 });
+    /* stackAt 900: DARUNTER stehen die vier Karten untereinander. Der Wert kommt aus der
+       Haelfte: bei 900 ist eine Spalte 442px breit, und darin steht der Trichter mit seinen drei
+       Zahlen noch nebeneinander. Darunter nicht mehr. narrow/vnarrow bleiben, wo sie waren -- sie
+       regeln das Innere der Karten, nicht ihre Anordnung. */
+    if (UC.widthTiers) UC.widthTiers(root, { narrowAt: 640, vnarrowAt: 480, stackAt: 900 });
 
     var elSeg     = root.querySelector(".udd-seg");
     var elInfo    = root.querySelector(".udd-info");
     var elGran    = root.querySelector(".vc-gran");
-    var elHeading = root.querySelector(".udd-heading");
     var elLogo    = root.querySelector(".udd-logobox");
     var elKpi     = root.querySelector(".udd-kpi");
     var elVal     = root.querySelector(".udd-kpi-val");
@@ -335,7 +330,6 @@
       urlsStale: false, urlsError: null,
       /* Der Umschalter des Typ-Charts. Wie in Combo und Topcitations ist der Doughnut der Anfang;
          der Balkenmodus ist die Ansicht fuer viele Typen. Ueberlebt das Neueinspritzen. */
-      layout: null,
       chartMode: CHART_STORE[instanceId] || "doughnut",
       /* Beim Model Breakdown ist der BALKEN der Anfang (Vorgabe): zwei oder drei Modelle sind als
          Balken mit Logo und Prozentwert schneller zu lesen als als Ring. */
@@ -344,84 +338,23 @@
     };
     if (state.brand === "BRAND_NAME") state.brand = "";
 
-    /* ---- Sichtbarkeit und Anordnung der vier Bereiche ----------------------------------------
-       Der Nutzer bestimmt Reihenfolge, Breite und Sichtbarkeit. Gespeichert wird in den
-       Einstellungen (localStorage ueber UC.prefGet/prefSet, teambezogen) -- es ist eine Vorliebe
-       des Nutzers, keine Eigenschaft der Daten, und sie soll die naechste Domain ueberleben.
-       Gelesen wird nachsichtig: ein unbekannter Schluessel wird ignoriert, ein fehlender ergaenzt.
-       Damit kann die Liste der Bereiche wachsen, ohne dass ein gespeichertes Layout ungueltig wird
-       -- ein neuer Bereich taucht dann hinten auf und ist sichtbar. */
-    function layoutLesen() {
-      var roh = null;
-      try { roh = UC.prefGet ? UC.prefGet(UC.prefKey ? UC.prefKey(LAYOUT_KEY) : LAYOUT_KEY) : null; } catch (e) {}
-      var gespeichert = null;
-      try { gespeichert = roh ? JSON.parse(roh) : null; } catch (e) { gespeichert = null; }
-      var nach = {};
-      if (isArr(gespeichert)) gespeichert.forEach(function (e) {
-        if (e && e.key) nach[String(e.key)] = e;
-      });
-      /* Immer in der Reihenfolge von BEREICHE, also der des Entwurfs. Gespeichert wird nur, was
-         ausgeblendet ist -- ein alter Eintrag mit einem Schluessel, den es nicht mehr gibt, wird
-         dabei still uebergangen, und ein neuer Bereich kommt sichtbar dazu. */
-      return BEREICHE.map(function (b) {
-        var e = nach[b.key];
-        return { key: b.key, label: b.label, aus: !!(e && e.aus) };
-      });
-    }
-    function layoutSchreiben() {
+    /* Die frueher gespeicherte Sichtbarkeit der Bereiche wird EINMAL geloescht statt nur
+       ignoriert. Wer damit das Chart oder den Trichter versteckt hatte, saehe die Seite sonst
+       weiterhin halb -- und ohne Zahnrad gaebe es keinen Weg zurueck. Geloescht wird auch die
+       Altform mit angehaengter Kennung: prefGet liest sie noch (Schluessel + "@..."), also muss
+       sie hier genauso weg. */
+    (function altenLayoutschluesselLoeschen() {
       try {
-        if (UC.prefSet) UC.prefSet(UC.prefKey ? UC.prefKey(LAYOUT_KEY) : LAYOUT_KEY,
-          JSON.stringify(state.layout.map(function (e) {
-            return { key: e.key, aus: e.aus ? 1 : 0 };
-          })));
+        var ls = window.localStorage;
+        if (!ls) return;
+        var weg = [];
+        for (var i = 0; i < ls.length; i++) {
+          var n = ls.key(i);
+          if (n && n.indexOf("uddLayout") === 0) weg.push(n);
+        }
+        weg.forEach(function (n) { try { ls.removeItem(n); } catch (e) {} });
       } catch (e) {}
-    }
-    /* Sichtbarkeit ins DOM bringen. */
-    function layoutAnwenden() {
-      state.layout.forEach(function (e) {
-        var el = root.querySelector('[data-bereich="' + e.key + '"]');
-        if (!el) return;
-        el.hidden = !!e.aus;
-        /* Bedienelemente, die zu einem Bereich gehoeren, aber ausserhalb von ihm stehen (der
-           Modus-Umschalter in der obersten Zeile): sie gehen mit ihrem Bereich. */
-        [].forEach.call(root.querySelectorAll('[data-tie="' + e.key + '"]'), function (t) {
-          t.hidden = !!e.aus;
-        });
-        /* Ist der Chart-Bereich aus, schrumpft der Abstand UNTER der obersten Zeile um 32px. Die
-           Zeile selbst bleibt stehen -- sie traegt das Zahnrad, und ein Versatz an der Wurzel hat
-           es aus dem Bild geschoben. */
-        if (e.key === "chart") root.classList.toggle("is-nochart", !!e.aus);
-      });
-      /* Ist die zweite Spalte leer, weil kein halber Bereich sichtbar ist, faellt sie durch die
-         span-2-Regeln von selbst weg -- dafuer braucht es keine eigene Klasse. */
-    }
-
-    /* ---- Das Menue der Bereiche --------------------------------------------------------------
-       Ein Auge je Bereich, sonst nichts. Breite und Reihenfolge standen hier einmal auch drin und
-       sind wieder heraus: die Anordnung der Seite ist eine Entscheidung des Entwurfs und keine
-       Einstellung. Was bleibt, ist das Ausblenden. */
-    var elLyWrap = root.querySelector(".udd-lywrap");
-    var elLyBtn  = root.querySelector(".udd-lybtn");
-    var elLyPop  = root.querySelector(".udd-lypop");
-
-    function lyRowHtml(e) {
-      return '<div class="up-cg-row udd-lyrow" data-ly-key="' + esc(e.key) + '"' +
-               (e.aus ? ' data-aus="1"' : "") + '>' +
-        '<span class="udd-lyname">' + esc(e.label) + "</span>" +
-        '<button class="up-cg-eye udd-lyeye' + (e.aus ? " is-off" : "") + '" type="button"' +
-          ' data-ly-eye="' + esc(e.key) + '" aria-pressed="' + (e.aus ? "true" : "false") + '"' +
-          ' aria-label="' + (e.aus ? "Show section" : "Hide section") + '">' +
-          UC.icon(e.aus ? "eyeOff" : "eye", 2) + "</button>" +
-      "</div>";
-    }
-    function lyMenuHtml() {
-      return '<div class="udd-lyhead">Sections</div>' +
-        '<div class="up-cg-list udd-lylist">' + state.layout.map(lyRowHtml).join("") + "</div>" +
-        '<div class="udd-lyfoot">' +
-          '<button type="button" class="udd-lyreset">Reset to default</button>' +
-        "</div>";
-    }
-    function lyOeffnen() { elLyPop.innerHTML = lyMenuHtml(); }
+    })();
 
     /* ---- Der Erklaerer an der Ueberschrift -----------------------------------------------------
        Dieselbe Karte wie in den Tabellenkoepfen (UC.makeExplain, .up-explain): Ueberschrift,
@@ -622,7 +555,6 @@
 
     function renderHead() {
       var h = state.header || {};
-      elHeading.textContent = modeOf(state.mode).heading;
       var fav = h.favicon || h.favicon_url || "";
       var name = h.domain || h.id || "";
       var img = elLogo.querySelector("img");
@@ -1168,40 +1100,6 @@
       }).observe(root, { attributes: true, attributeFilter: ["data-brand", "data-isdark", "data-theme"] });
     }
 
-    if (elLyBtn) {
-      elLyBtn.innerHTML = UC.icon("settings", 2);
-      var lyPop = UC.makePopover ? UC.makePopover({
-        wrap: elLyWrap, menu: elLyPop, opener: elLyBtn
-      }) : null;
-      elLyBtn.addEventListener("click", function (e) {
-        e.stopPropagation();
-        lyOeffnen();
-        if (lyPop) lyPop.toggle();
-      });
-      elLyPop.addEventListener("click", function (e) {
-        var ey = e.target.closest ? e.target.closest("[data-ly-eye]") : null;
-        if (ey) {
-          var ek = ey.getAttribute("data-ly-eye");
-          /* Der letzte sichtbare Bereich bleibt sichtbar -- eine leere Seite ist kein Zustand, den
-             man versehentlich herstellen koennen soll. */
-          var sichtbar = state.layout.filter(function (x) { return !x.aus; });
-          var ziel = state.layout.filter(function (x) { return x.key === ek; })[0];
-          if (ziel && !ziel.aus && sichtbar.length <= 1) return;
-          if (ziel) ziel.aus = !ziel.aus;
-          layoutSchreiben(); layoutAnwenden(); lyOeffnen();
-          return;
-        }
-        if (e.target.closest && e.target.closest(".udd-lyreset")) {
-          state.layout = BEREICHE.map(function (b) {
-            return { key: b.key, label: b.label, aus: false };
-          });
-          layoutSchreiben(); layoutAnwenden(); lyOeffnen();
-        }
-      });
-    }
-
-    state.layout = layoutLesen();
-    layoutAnwenden();
 
     render();
     return ctrl;

@@ -75,7 +75,11 @@
   }
   var CHART_MODES = { visibility: 1, rank: 1, sentiment: 1 };
 
-  var GRANS = [{ key: "day", label: "Day" }, { key: "week", label: "Week" }, { key: "month", label: "Month" }];
+  /* D, W und M statt der ganzen Woerter -- der ganze Name steht im Tooltip. Dieselbe Form,
+     die core allen Umschaltern dieser Art gibt (stampGran); hier steht sie direkt im Markup,
+     damit beim ersten Bild nicht kurz das lange Wort aufblitzt. */
+  var GRANS = [{ key: "day", label: "D", tip: "Day" }, { key: "week", label: "W", tip: "Week" },
+                { key: "month", label: "M", tip: "Month" }];
 
   /* Der Variations-Abschnitt kommt KOMPLETT aus core: Ueberschrift, Untertitel, Suchfeld und der
      Tabellenkopf mit den drei Erklaer-Rauten. Genau derselbe Aufruf steht im Radar-Detail -- was
@@ -141,7 +145,8 @@
           '</div>' +
           '<div class="vc-gran" role="group" aria-label="Granularity">' +
             GRANS.map(function (g) {
-              return '<button class="vc-gran-btn" type="button" data-gran="' + g.key + '">' +
+              return '<button class="vc-gran-btn" type="button" data-gran="' + g.key +
+                       '" data-tip="' + esc(g.tip) + '" aria-label="' + esc(g.tip) + '">' +
                        esc(g.label) + '</button>';
             }).join("") +
           '</div>' +

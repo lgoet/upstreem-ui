@@ -3013,7 +3013,32 @@
   window.addEventListener("resize", stampScrollbarWidth);
 
   /* Beim Laden und danach: Bubble baut Elemente in Schueben und spaeter erneut auf. */
-  function toolbarLauf(){ stampToolbarIcons(); orderToolbars(); }
+  /* ---- Der Umschalter Tag/Woche/Monat --------------------------------------------------------
+     Gekuerzt auf D, W und M; der ganze Name steht im Tooltip. Er sitzt in Kopfzeilen neben
+     Filtern, Suche und Export, und drei ausgeschriebene Woerter sind dort das breiteste Element
+     der Zeile -- auf schmalen Breiten schiebt es die Werkzeuge um.
+     Warum in core und nicht in den Komponenten: die Knoepfe stehen im handgemachten Bubble-Markup
+     (visibility-chart, brands-overview), und ein bereits eingebautes Element bekommt eine
+     Aenderung an der Vorlage nie. Dieselbe Lage wie bei den Icons, also derselbe Weg.
+     Die Komponenten, die ihre Knoepfe selbst bauen, tragen die kurze Form direkt ein -- sonst
+     blitzte beim ersten Bild kurz das lange Wort auf. */
+  var GRAN_KURZ = { day: "D", week: "W", month: "M" };
+  var GRAN_LANG = { day: "Day", week: "Week", month: "Month" };
+  function stampGran(wurzel){
+    var ziel = wurzel || document, els;
+    try { els = ziel.querySelectorAll(".vc-gran-btn[data-gran]"); } catch(e){ return; }
+    for (var i = 0; i < els.length; i++){
+      var b = els[i], kurz = GRAN_KURZ[b.getAttribute("data-gran")], lang = GRAN_LANG[b.getAttribute("data-gran")];
+      if (!kurz) continue;
+      /* Nur schreiben, wenn es anders steht: jedes Schreiben ist selbst eine Mutation, und der
+         Beobachter oben laeuft auf Mutationen. */
+      if ((b.textContent || "").trim() !== kurz) b.textContent = kurz;
+      if (!b.getAttribute("data-tip")) b.setAttribute("data-tip", lang);
+      if (!b.getAttribute("aria-label")) b.setAttribute("aria-label", lang);
+    }
+  }
+
+  function toolbarLauf(){ stampToolbarIcons(); stampGran(); orderToolbars(); }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function(){ toolbarLauf(); });
   else toolbarLauf();
   [60, 250, 700, 1500, 3000].forEach(function(ms){ setTimeout(function(){ toolbarLauf(); }, ms); });
@@ -3688,6 +3713,12 @@
     function apply(w){
       root.classList.toggle("is-narrow",  w < (cfg.narrowAt  || 768));
       root.classList.toggle("is-vnarrow", w < (cfg.vnarrowAt || 500));
+      /* Dritte Stufe, und nur wenn eine Komponente sie ausdruecklich anfordert: wer zwei Karten
+         nebeneinander stellt, muss frueher untereinander gehen als seine Kopfzeilen schmal
+         werden -- zwei Haelften von 900px sind je 440, und da passt eine Kopfzeile noch, ein
+         Doughnut neben einer Legende aber nicht mehr. Ohne stackAt wird die Klasse nie gesetzt,
+         fuer alle bestehenden Aufrufer aendert sich also nichts. */
+      if (cfg.stackAt) root.classList.toggle("is-stack", w < cfg.stackAt);
     }
     /* Only measure if there IS a measurement. A root that has no layout yet -- booted inside a
        Bubble group that is still hidden, or measured before the first paint -- reports width 0,

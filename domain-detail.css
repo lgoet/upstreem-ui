@@ -7,22 +7,25 @@
 
    Die drei Karten stehen mit 32px Abstand untereinander (Vorgabe). */
 
-/* 32px zwischen den Abschnitten -- Vorgabe. Eine Spalte: das Raster steht fest, der Nutzer stellt
-   nur Reihenfolge und Sichtbarkeit ein.
-   Die Reihenfolge macht order (JS), nicht die Reihenfolge im DOM: ein Umhaengen der Knoten wuerde
-   ein laufendes Chart aus dem Dokument nehmen, und Chart.js verliert dabei seine Canvas-Groesse. */
-.udd-root { display: flex; flex-direction: column; gap: 32px; width: 100%; }
-/* Chart aus: KEIN Versatz. Drei Anlaeufe haben es nur schlimmer gemacht -- an der Wurzel
-   verschwindet das Zahnrad, unter der Zeile liegt es auf der Oberkante der ersten Karte. Die
-   Zeile bleibt also, wo sie ist, und die Klasse is-nochart haengt weiter am Wurzelelement, damit
-   die Regel an EINER Stelle steht, sobald klar ist, welcher Abstand gemeint war. */
+/* Zwei Spalten, 16px Abstand in beide Richtungen: Kurve und Trichter oben nebeneinander, darunter
+   Typ-Split und Model Breakdown. Vorher stand hier eine Spalte mit 32px Abstand, und die vier
+   Karten liefen als langer Streifen untereinander -- auf einem breiten Schirm blieb rechts die
+   halbe Seite leer, waehrend man fuer den Trichter scrollen musste.
+   Grid und nicht Flex: die zweite Zeile ist ein eigener Kasten, der ueber beide Spalten laeuft
+   und sich darin noch einmal haelftig teilt. Mit Flex braeuchte sie eine Breitenrechnung.
+   Die Reihenfolge ist die des DOM -- die frueheren order-Regeln sind mit der Sichtbarkeits-
+   einstellung entfallen. */
+.udd-root { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 100%; align-items: stretch; }
+/* Unter 900px untereinander (is-stack, gesetzt von UC.widthTiers). Zwei Haelften waeren darunter
+   je 440px, und darin steht weder der Trichter mit drei Zahlen noch ein Ring neben seiner
+   Legende. */
+.udd-root.is-stack { grid-template-columns: 1fr; }
 
 .udd-root > * { min-width: 0; }
-/* Ein ausgeblendeter Bereich traegt das hidden-Attribut, und das wirkt nur ueber display:none aus
-   dem Browser-Stylesheet -- jede eigene display-Regel schlaegt es. Genau das ist passiert: die
-   Zeile mit den zwei Charts setzt display:grid und blieb trotz hidden sichtbar (gemessen:
-   hidden=true bei display:flex und 326px Hoehe). Zwei Selektorteile statt einem, also
-   ueber Spezifitaet gewonnen, nicht ueber Ladereihenfolge. */
+/* hidden wirkt nur ueber display:none aus dem Browser-Stylesheet, und jede eigene display-Regel
+   schlaegt es -- eine Zeile mit display:grid blieb trotz hidden sichtbar (gemessen: hidden=true
+   bei 326px Hoehe). Die Bereiche werden nicht mehr ausgeblendet, die Regel bleibt aber als
+   Sicherung fuer jedes Kind, das einmal hidden traegt. */
 .udd-root > [hidden] { display: none; }
 
 /* ---- Umschalter (Modus) ----------------------------------------------------------------------
@@ -35,17 +38,13 @@
    sondern auf ihre FRUEHERE Groesse zurueckgestellt. Hoehe und Polster stehen an Leiste UND Knopf
    (32 und 16, die Werte, die .up-seg vor der Verkleinerung hatte), und der Radius bleibt bei 8 --
    bei 32px war er derselbe. Es gibt also keinen Wert, der nicht mitgezogen ist. */
-/* KEIN align-self: der Schalter steht in .udd-toprow, und die zentriert ihre Kinder. In
-   brand-detail steht er allein ueber dem Inhalt, dort ist flex-start richtig -- hier waere es ein
-   Griff gegen die Zeile, in der er sitzt. */
-.udd-seg { margin: 0; width: fit-content; height: 32px; }
+/* Der Schalter sitzt jetzt IN der Kopfzeile der Chart-Karte, an der Stelle der frueheren
+   Ueberschrift. align-self: center, weil die Kopfzeile ihre Kinder mittig fuehrt und der Schalter
+   mit 32px das hoechste davon ist. */
+.udd-seg { margin: 0; width: fit-content; height: 32px; align-self: center; }
 .udd-seg[hidden] { display: none; }
-/* Die oberste Zeile: Umschalter links, Zahnrad rechts. Sie steht IMMER an erster Stelle (order
-   -1000) und ueber beide Spalten -- das Zahnrad ist der einzige Weg zurueck zu einem ausgeblendeten
-   Bereich und darf deshalb nie mitwandern. -16px unten, weil zwischen Umschalter und der ersten
-   Karte 16 gehoeren und nicht die 32 des Rasters. */
-.udd-toprow { display: flex; flex-direction: row; align-items: center;
-  gap: 16px; margin-bottom: -16px; min-height: 32px; }
+/* Die oberste Zeile mit Umschalter und Zahnrad gibt es nicht mehr -- der Umschalter steht in der
+   Kopfzeile der Chart-Karte, das Zahnrad ist entfallen. */
 .udd-seg .up-seg-btn { height: 32px; padding-left: 16px; padding-right: 16px; }
 
 /* ---- Karte -----------------------------------------------------------------------------------
@@ -81,10 +80,8 @@
 /* Solange geladen wird, ist die Kachel selbst das Skelett -- derselbe Ton und derselbe Puls wie
    .up-tsk-logo in core, nur in der Groesse dieser Kachel (18 statt 24). */
 .udd-logobox.is-sk { background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
-.udd-heading {
-  font-size: 14px; font-weight: 500; color: var(--vc-text);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
+/* Die Ueberschrift der Chart-Karte ist entfallen: an ihrer Stelle steht der Modus-Umschalter,
+   und der sagt dasselbe. */
 .udd-tools { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
 .udd-tools .vc-gran { flex: 0 0 auto; }
 /* Der Global/Domain-Schalter bleibt das Bauteil in seiner Groesse: 32px, wie der Schalter fuer
@@ -176,9 +173,13 @@
    Beide Karten gleich hoch (Vorgabe): align-items: stretch, nicht center. Die Ueberschriften
    stehen damit auf einer Linie oben, und mittig ist nur der Chart INNERHALB seiner Karte -- so
    verhaelt sich der Balkenmodus des Typ-Splits schon, wenn er wenige Balken hat.
-   Der Typ-Split bekommt mehr Breite als der Breakdown -- 1.15 zu 1 --, weil er neben dem Ring auch
-   seine Legende traegt. */
-.udd-row2 { display: grid; grid-template-columns: 1.15fr 1fr; gap: 32px; align-items: stretch; }
+   Beide Haelften gleich breit und ueber beide Spalten der Seite: die Zeile steht unter Kurve und
+   Trichter und teilt sich genauso. Vorher 1.15 zu 1 -- das war richtig, solange die Zeile die
+   ganze Seitenbreite hatte; im halbierten Raster sind zwei gleiche Haelften ruhiger, und der
+   Ring hat seine Legende darunter statt daneben. */
+.udd-row2 { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  align-items: stretch; }
+.udd-root.is-stack .udd-row2 { grid-template-columns: 1fr; }
 /* Die Karte ist eine Spalte: Kopf oben, Chart nimmt den Rest und zentriert darin. Dadurch sind
    beide Karten gleich hoch, ohne dass ein Chart nach oben gezogen wird. */
 .udd-row2 > .udd-card { min-width: 0; }
@@ -228,7 +229,7 @@
 .udd-root.is-narrow .udd-head { flex-wrap: wrap; }
 .udd-root.is-narrow .udd-tools { width: 100%; justify-content: flex-start; }
 /* Schmal stehen die zwei Karten untereinander -- nebeneinander bliebe fuer den Ring nichts. */
-.udd-root.is-narrow .udd-row2 { grid-template-columns: 1fr; gap: 24px; }
+.udd-root.is-narrow .udd-row2 { grid-template-columns: 1fr; gap: 16px; }
 /* Schmal: die Koepfe brechen auf zwei Spalten um und liegen dann NICHT mehr auf den Dritteln der
    Flaeche -- deshalb steht darunter der 16px-Abstand (weiter unten), der beides klar trennt.
    Kein !important noetig: das JS setzt nur die VARIABLE inline, nicht grid-template-columns, und
@@ -268,39 +269,5 @@
    Werte 1:1 aus dem Einstellungsmenue von response-detail (.urd-hl*): gleicher Rahmen, gleicher
    Radius, gleicher Schatten, gleiche Polsterung, gleiche Ueberschrift. Zwei Menues derselben App
    sollen nicht zwei Bauarten sein, auch nicht in der Breite. */
-/* margin-left: auto und nicht justify-content: space-between an der Zeile: mit space-between
-   rutschte das Zahnrad nach LINKS, sobald der Modus-Umschalter ausgeblendet war und es das einzige
-   Kind der Zeile blieb. Der automatische Rand haengt an ihm selbst und schiebt es immer nach
-   rechts, mit Nachbar oder ohne. */
-.udd-lywrap { position: relative; flex: 0 0 auto; margin-left: auto; }
-/* Der Knopf ist .up-iconbtn aus core. Hier nur die Drittfarbe im Ruhezustand und der offene
-   Zustand, den das Bauteil nicht kennt -- beim Hover uebernimmt wieder core. */
-.udd-lybtn { color: var(--vc-third); }
-.udd-lywrap.is-open .up-iconbtn { background: var(--vc-heading-bg); color: var(--vc-text); }
-.udd-lypop { position: absolute; top: calc(100% + 6px); right: 0; z-index: 30; width: 248px;
-  background: var(--up-surface, var(--vc-bg)); border: 1px solid var(--vc-border);
-  border-radius: 12px; box-shadow: 0 12px 32px rgba(0,0,0,0.14); padding: 6px;
-  display: none; flex-direction: column; box-sizing: border-box; }
-.udd-lywrap.is-open .udd-lypop { display: flex; }
-.udd-lyhead { font-size: 11px; font-weight: 600; color: var(--vc-third); letter-spacing: 0.04em;
-  text-transform: uppercase; padding: 6px 8px 4px; }
-.udd-lylist { display: flex; flex-direction: column; gap: 1px; }
-/* 32px, wie jede Menuezeile dieser App: die Zeile traegt nur noch Griff, Name und Auge. Die 40
-   von vorher kamen vom Breitenumschalter darin, und der ist weg. */
-.udd-lyrow { display: flex; flex-direction: row; align-items: center; gap: 8px;
-  height: 32px; padding: 0 4px 0 10px; border-radius: 8px; box-sizing: border-box; }
-.udd-lyrow:hover { background: var(--vc-heading-bg); }
-.udd-lyname { flex: 1 1 auto; min-width: 0; font-size: 13px; font-weight: 500; color: var(--vc-text);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* Ein ausgeblendeter Bereich liest sich auch in der Liste als ausgeblendet -- dasselbe Bild wie
-   bei den Gruppierungen (.up-cg-row mit is-off). */
-.udd-lyrow[data-aus="1"] .udd-lyname { opacity: .45; }
-/* Das Auge ist .up-cg-eye aus core: 24x24, erscheint beim Hover der Zeile. Hier steht es
-   dauerhaft, weil in diesem Menue jede Zeile eine Aktionszeile ist und es nichts zu beruhigen
-   gibt -- die Liste besteht nur aus vier Zeilen. */
-.udd-lyeye { opacity: 1; }
-.udd-lyfoot { display: flex; justify-content: flex-end; padding: 4px 4px 2px; margin-top: 4px;
-  border-top: 1px solid var(--vc-border); }
-.udd-lyreset { border: 0; background: transparent; font: inherit; font-size: 12px;
-  color: var(--vc-muted); cursor: pointer; padding: 6px 6px; border-radius: 6px; }
-.udd-lyreset:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
+/* Hier standen die Regeln des Zahnrads und seiner Bereichsliste (.udd-ly*). Sie sind mit der
+   Einstellung selbst entfallen -- siehe domain-detail.js. */
