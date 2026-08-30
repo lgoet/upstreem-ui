@@ -715,9 +715,10 @@
   .am-run { width: 100%; max-width: min(100%, 782px); }
   .am-run.is-live { padding-bottom: 30px; }        /* Luft unter dem Laufenden, wie beim alten Ladebild */
   /* Nach der Antwort Luft nach unten: die Liste ist ein eigener Block und soll nicht am Text der
-     Antwort kleben. 22 statt 14 -- acht mehr, weil der letzte Punkt der Liste und der erste Satz
-     Miras sonst als ein Absatz gelesen werden. Mit .am-msg-main gap 6 sind es 28 auf dem Schirm. */
-  .am-run:not(.is-live) { margin-bottom: 22px; }
+     Antwort kleben. 30 statt urspruenglich 14, in zwei Schritten je acht: der letzte Punkt der
+     Liste und der erste Satz Miras werden sonst als ein Absatz gelesen. Mit .am-msg-main gap 6
+     sind es 36 auf dem Schirm. */
+  .am-run:not(.is-live) { margin-bottom: 30px; }
   .am-run-head {
     display: flex; align-items: center; min-height: 19px;
     padding-bottom: 11px; border-bottom: 1px solid var(--am-border);
