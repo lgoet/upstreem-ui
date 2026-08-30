@@ -5031,23 +5031,45 @@
      box does not, there is by definition nothing to re-fit.
      The width guard drops the frames where the observer fires for a height-only change (row
      render, popover open) — those cannot affect a horizontal fit. */
+  /* EIN Takt fuer ALLE Komponenten, und darin erst messen, dann schreiben.
+     Vorher hatte jede Komponente ihren eigenen rAF: A misst, A schreibt, B misst, B schreibt --
+     und jede Messung NACH einem Schreibvorgang zwingt den Browser, das Layout sofort neu zu
+     rechnen. Bei zwoelf Komponenten auf einer Seite sind das zwoelf erzwungene Layouts je Bild,
+     und genau die meldet die Konsole als "Forced reflow while executing JavaScript".
+     Jetzt sammelt eine Schlange alle Wurzeln, die der Beobachter gemeldet hat. Der Lauf liest
+     zuerst JEDE Breite -- das kostet ein einziges Layout fuer alle zusammen -- und ruft danach
+     die Rueckmeldungen auf. Was die schreiben, faellt in dieselbe Runde und wird einmal am Ende
+     gerechnet.
+     einmalProBild statt rAF: rAF feuert in einem Hintergrund-Tab und in einem nicht gemalten
+     Rahmen gar nicht, und dann bliebe die Anpassung liegen (derselbe Grund wie ueberall sonst in
+     dieser Datei). */
+  var _resSchlange = [], _resGeplant = null;
+  function _resLauf(){
+    var liste = _resSchlange; _resSchlange = [];
+    var i, e;
+    /* 1. Nur lesen. */
+    for (i = 0; i < liste.length; i++){ e = liste[i]; e.q = 0; e.w = e.root.getBoundingClientRect().width; }
+    /* 2. Nur schreiben. Ein Wurf in einer Komponente darf die anderen nicht mitnehmen. */
+    for (i = 0; i < liste.length; i++){
+      e = liste[i];
+      if (e.w === e.lastW) continue;
+      e.lastW = e.w;
+      try { e.fn(e.w); } catch (err){ if (window.console) console.warn("[upstreem] onResize:", err); }
+    }
+  }
   function onResize(root, fn){
     if (!root || typeof fn !== "function") return;
-    var raf = null, lastW = -1;
-    function run(){
-      raf = null;
-      var w = root.getBoundingClientRect().width;
-      if (w === lastW) return;
-      lastW = w;
-      fn(w);
+    if (!_resGeplant) _resGeplant = einmalProBild(_resLauf);
+    var e = { root: root, fn: fn, lastW: -1, w: 0, q: 0 };
+    function planen(){
+      if (e.q) return;
+      e.q = 1; _resSchlange.push(e);
+      _resGeplant();
     }
     if (window.ResizeObserver){
-      new ResizeObserver(function(){
-        if (raf) return;
-        raf = requestAnimationFrame(run);
-      }).observe(root);
+      new ResizeObserver(planen).observe(root);
     } else {
-      window.addEventListener("resize", rafThrottle(run));
+      window.addEventListener("resize", planen);
     }
   }
 

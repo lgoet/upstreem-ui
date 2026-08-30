@@ -1660,8 +1660,12 @@
     }) : null;
 
     /* ---------- responsive ---------- */
-    function applyResponsive(){
-      var w = root.clientWidth || 0;
+    /* Die Breite kommt VON onResize, wenn sie von dort kommt: der Sammellauf in core hat sie
+       gerade gelesen, und ein zweiter Blick auf clientWidth waere ein zweites erzwungenes Layout
+       -- diesmal nach den Klassen, die diese Funktion selbst schreibt. Nur die Aufrufe ohne
+       Argument (erster Lauf, Fensterwechsel) messen noch selbst. */
+    function applyResponsive(breite){
+      var w = (typeof breite === "number" && breite > 0) ? breite : (root.clientWidth || 0);
       if (w) root.classList.toggle("is-narrow", w < 760);
       root.classList.toggle("ubo-narrow-page", UC.getPageWidth() < 500);
       /* Unter 620px ist der Kit aus und die Leiste verhaelt sich wie vor ihm. Die Breite ist hier

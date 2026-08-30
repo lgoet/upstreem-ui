@@ -1,0 +1,66 @@
+<meta charset="utf-8"><title>onResize: Lesen und Schreiben je Bild</title>
+<!-- Wozu: zaehlt, wie oft bei EINER Breitenaenderung ein Layout-Lesezugriff NACH einem
+     Schreibzugriff kommt. Genau das ist ein erzwungenes Layout ("Forced reflow"). Zehn Wurzeln
+     stehen fuer zehn Komponenten auf einer Seite.
+     rAF wird durch setTimeout ersetzt: im verdeckten Tab feuert es nicht, und die alte Fassung
+     haengt ausschliesslich daran (CLAUDE.md 3). -->
+<style>.k { width: 100%; height: 20px; }</style>
+<body style="margin:0;font-family:system-ui,sans-serif">
+<pre id="out" style="font:12px/1.6 ui-monospace,monospace;background:#f6f6f6;padding:10px;margin:0">laedt</pre>
+<div id="buehne" style="width:1000px"></div>
+<script>
+window.requestAnimationFrame = function(fn){ return setTimeout(function(){ fn(Date.now()); }, 8); };
+/* ResizeObserver feuert im verdeckten Pane NICHT (gemessen: 0 Rueckmeldungen bei geaenderter
+   Breite). Deshalb hier abgeschaltet -- dann nimmt onResize seinen Fallback ueber das
+   resize-Ereignis des Fensters, und die Reihenfolge Lesen/Schreiben ist dieselbe. */
+try { delete window.ResizeObserver; } catch(e){ window.ResizeObserver = undefined; }
+window.cancelAnimationFrame = function(id){ clearTimeout(id); };
+var WELCHE = new URLSearchParams(location.search).get("core") || "core.js";
+document.write('<scr' + 'ipt src="' + WELCHE + '?v=' + Math.random() + '"></scr' + 'ipt>');
+</script>
+<script>
+window.addEventListener("load", function(){
+  var UC = window.UpstreemCore;
+  var buehne = document.getElementById("buehne");
+  var wurzeln = [];
+  for (var i = 0; i < 10; i++){
+    var d = document.createElement("div"); d.className = "k up-root"; d.setAttribute("data-instance", "k" + i);
+    buehne.appendChild(d); wurzeln.push(d);
+  }
+  /* Protokoll: R = Lesezugriff, W = Schreibzugriff. Ein R direkt nach einem W ist ein
+     erzwungenes Layout. */
+  var folge = [], zaehlen = false;
+  var origRect = Element.prototype.getBoundingClientRect;
+  Element.prototype.getBoundingClientRect = function(){ if (zaehlen) folge.push("R"); return origRect.apply(this, arguments); };
+  var dW = Object.getOwnPropertyDescriptor(Element.prototype, "clientWidth");
+  Object.defineProperty(Element.prototype, "clientWidth", { configurable: true, get: function(){ if (zaehlen) folge.push("R"); return dW.get.call(this); } });
+
+  wurzeln.forEach(function(d, i){
+    UC.onResize(d, function(w){
+      /* So arbeitet eine Komponente: sie schreibt eine Klasse und setzt eine Groesse. */
+      folge.push("W");
+      d.classList.toggle("is-narrow", w < 700);
+      d.style.paddingLeft = (w < 700 ? "4px" : "8px");
+    });
+  });
+
+  setTimeout(function(){
+    zaehlen = true; folge.length = 0;
+    buehne.style.width = "640px";
+    window.dispatchEvent(new Event("resize"));
+    setTimeout(function(){
+      zaehlen = false;
+      Element.prototype.getBoundingClientRect = origRect;
+      Object.defineProperty(Element.prototype, "clientWidth", dW);
+      var thrash = 0;
+      for (var i = 1; i < folge.length; i++) if (folge[i] === "R" && folge[i-1] === "W") thrash++;
+      document.getElementById("out").textContent =
+        "Datei: " + WELCHE + "\n" +
+        "Wurzeln: " + wurzeln.length + "\n" +
+        "Zugriffe gesamt: " + folge.length + "  (" + folge.join("") + ")\n" +
+        "ERZWUNGENE LAYOUTS (R direkt nach W): " + thrash;
+      window.__ergebnis = { datei: WELCHE, zugriffe: folge.length, thrash: thrash, folge: folge.join("") };
+    }, 900);
+  }, 400);
+});
+</script>
