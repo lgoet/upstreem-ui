@@ -314,7 +314,7 @@
        ist im naechsten Bild ohnehin schon wieder anders. Der Wachhund __busy faellt damit weg:
        einmalProBild laesst ohnehin nur einen Lauf zu, und ein zweites Schloss davor koennte im
        Fehlerfall dauerhaft zubleiben (frueher blieb __busy stehen, wenn die Schleife warf). */
-    var checkTrendFit = UC.einmalProBild ? UC.einmalProBild(trendFitJetzt)
+    var checkTrendFit = UC.einmalProBild ? UC.einmalProBild(trendFitJetzt, "vot-trendFit")
                                          : function(){ trendFitJetzt(); };
     function trendFitJetzt(){
       if (!tableEl) return;
@@ -755,10 +755,13 @@
       }
       root.classList.toggle("vc-narrow-page", UC.getPageWidth() < 500);
       checkBrandWidth();
+      /* 160 statt 60: chart.resize() rechnet das ganze Chart neu. Bei 60ms lief das waehrend
+         einer Ziehbewegung rund sechzehn Mal je Sekunde -- an Chart.js' eigenem resizeDelay
+         (120ms) vorbei, das genau davor schuetzen soll. Jetzt liegt der Aufruf dahinter. */
       clearTimeout(root.__votRespT);
       root.__votRespT = setTimeout(function(){
         line.resize();
-      }, 60);
+      }, 160);
     }
 
     if (window.MutationObserver){

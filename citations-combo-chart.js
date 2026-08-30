@@ -628,10 +628,13 @@
         if (w){ if (w < NARROW_STACK) root.classList.add("is-narrow"); else root.classList.remove("is-narrow"); }
       }
       root.classList.toggle("cc-narrow-page", UC.getPageWidth() < 500);
+      /* 160 statt 60: chart.resize() rechnet das ganze Chart neu. Bei 60ms lief das waehrend
+         einer Ziehbewegung rund sechzehn Mal je Sekunde -- an Chart.js' eigenem resizeDelay
+         (120ms) vorbei, das genau davor schuetzen soll. Jetzt liegt der Aufruf dahinter. */
       clearTimeout(root.__ccRespT);
       root.__ccRespT = setTimeout(function(){
         typeChart.resize(); line.resize();
-      }, 60);
+      }, 160);
     }
 
     if (window.MutationObserver){

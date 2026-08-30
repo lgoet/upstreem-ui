@@ -377,7 +377,9 @@
   /* Bubble baut die Seite in Schueben auf: die Kopfzeile ueber der Komponente steht erst spaeter,
      und damit verschiebt sich die Oberkante des Kastens noch. */
   [120, 400, 1200].forEach(function(ms){ setTimeout(heldenHoeheSetzen, ms); });
-  window.addEventListener('resize', heldenHoeheSetzen);
+  /* Gedrosselt: die Funktion misst und schreibt eine Hoehe. */
+  if (window.UpstreemCore && window.UpstreemCore.aufResize) window.UpstreemCore.aufResize(heldenHoeheSetzen, { hoehe: true });
+  else window.addEventListener('resize', heldenHoeheSetzen);
 
   /* ---------- state (unchanged from the standalone) ---------- */
   var fallbackMarkets = [
@@ -1079,7 +1081,8 @@
   applyStickyNow();
   /* applySticky decides on/off from a one-off viewport measurement, and the toolbar's height
      changes when the results view appears at all — both need a re-run. */
-  window.addEventListener("resize", applyStickyNow);
+  if (window.UpstreemCore && window.UpstreemCore.aufResize) window.UpstreemCore.aufResize(applyStickyNow);
+  else window.addEventListener("resize", applyStickyNow);
 
   /* ---------- column explainer: Est. Volume ----------
      The results table's thead is static markup (bubble/prompt_research_bubble.html), never

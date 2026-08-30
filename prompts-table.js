@@ -226,13 +226,22 @@
       }) : null;
 
       var rTimer=null;
-      window.addEventListener('resize', function(){
-        clearTimeout(rTimer);
-        rTimer=setTimeout(function(){
-          registry=registry.filter(function(st){ return st.cell.isConnected; });
-          registry.forEach(layout);
-        },120);
-      });
+      /* Der Lauf ueber die REGISTRY misst jede angemeldete Zelle -- bei einer langen Tabelle ist
+         das der teuerste Einzelposten, den diese Komponente beim Ziehen hat. 120ms Debounce gab
+         es schon; ueber UC.aufResize kommt der Breiten-Waechter dazu (eine reine Hoehenaenderung
+         loest gar nichts mehr aus) und der gemeinsame Takt mit allem anderen. */
+      var neuLegen = function(){
+        registry = registry.filter(function(st){ return st.cell.isConnected; });
+        registry.forEach(layout);
+      };
+      if (window.UpstreemCore && window.UpstreemCore.aufResize){
+        window.UpstreemCore.aufResize(neuLegen);
+      } else {
+        window.addEventListener('resize', function(){
+          clearTimeout(rTimer);
+          rTimer = setTimeout(neuLegen, 120);
+        });
+      }
 
       function init(cell){
         cell.__ustInit=true; cell.classList.add('ust-ready');

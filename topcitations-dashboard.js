@@ -689,10 +689,13 @@
       root.classList.toggle("tcd-hide-brand", w > 0 && w < BRAND_MIN_W);
       applyCollapse();
       checkBrandWidth();
+      /* 160 statt 60: chart.resize() rechnet das ganze Chart neu. Bei 60ms lief das waehrend
+         einer Ziehbewegung rund sechzehn Mal je Sekunde -- an Chart.js' eigenem resizeDelay
+         (120ms) vorbei, das genau davor schuetzen soll. Jetzt liegt der Aufruf dahinter. */
       clearTimeout(root.__tcdRespT);
       root.__tcdRespT = setTimeout(function(){
         typeChart.resize();
-      }, 60);
+      }, 160);
     }
 
 

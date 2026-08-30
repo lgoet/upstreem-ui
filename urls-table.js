@@ -1307,7 +1307,9 @@
     var _sticky = UpstreemCore.makeSticky(root, elHead);
     function syncTheadOffset(){ _sticky.syncTheadOffset(); }
     function applySticky(){ _sticky.applySticky(); }
-    window.addEventListener("resize", UpstreemCore.rafThrottle(applySticky));
+    /* Gedrosselt statt an jedem Bild -- siehe UC.aufResize in core.js. */
+    if (UpstreemCore.aufResize) UpstreemCore.aufResize(applySticky);
+    else window.addEventListener("resize", UpstreemCore.rafThrottle(applySticky));
     applySticky();
     /* scroll-repositioning for the portaled dropdowns is handled centrally by
        UpstreemCore.makePortal — see core.js */

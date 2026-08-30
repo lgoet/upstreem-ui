@@ -3030,7 +3030,12 @@
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", stampScrollbarWidth);
   else stampScrollbarWidth();
-  window.addEventListener("resize", stampScrollbarWidth);
+  /* Gedrosselt: die Funktion haengt ein Probe-Element ein, misst es und nimmt es wieder heraus.
+     An jedem Bild einer Ziehbewegung ist das ein DOM-Eingriff plus Messung -- und der Eingriff
+     weckt zusaetzlich die Beobachter, die auf neue Knoten warten. Die Breite der Scrollleiste
+     aendert sich beim Ziehen ohnehin nicht. */
+  if (typeof aufResize === "function") aufResize(stampScrollbarWidth, { ms: 250 });
+  else window.addEventListener("resize", stampScrollbarWidth);
 
   /* Beim Laden und danach: Bubble baut Elemente in Schueben und spaeter erneut auf. */
   /* ---- Der Umschalter Tag/Woche/Monat --------------------------------------------------------
@@ -5162,7 +5167,19 @@
         return;
       }
       e.lastW = e.w;
+      /* Die Zeit JE KOMPONENTE. Ohne sie steht in der Konsole nur "dieser Rueckruf brauchte
+         431ms" -- und darin steckt die Anpassung von einem Dutzend Komponenten. Der Name kommt
+         von der Wurzel (data-instance), also genau die Bezeichnung, unter der die Komponente auch
+         in der Sonde auftaucht. Kostet einen Zeitstempel je Aufruf. */
+      var _t = (window.performance && performance.now) ? performance.now() : 0;
       try { e.fn(e.w); } catch (err){ if (window.console) console.warn("[upstreem] onResize:", err); }
+      if (_t){
+        var _d = performance.now() - _t;
+        var _nm = "onResize: " + ((e.root.getAttribute && e.root.getAttribute("data-instance")) ||
+                                  (e.root.className || "").split(" ").slice(0, 2).join(".") || "?");
+        var _p = _profil[_nm] || (_profil[_nm] = { n: 0, ms: 0, max: 0 });
+        _p.n++; _p.ms += _d; if (_d > _p.max) _p.max = _d;
+      }
     }
   }
   /* Waehrend einer Ziehbewegung reicht ein Lauf je 100ms. An dieser Rueckmeldung haengt die
@@ -5200,7 +5217,7 @@
   var _resWarteUhr = null;
   function onResize(root, fn){
     if (!root || typeof fn !== "function") return;
-    if (!_resGeplant) _resGeplant = einmalProBild(_resLauf);
+    if (!_resGeplant) _resGeplant = einmalProBild(_resLauf, "onResize-Sammellauf");
     var e = { root: root, fn: fn, lastW: -1, w: 0, q: 0, wRO: -1 };
     function planen(){
       if (e.q) return;
@@ -5230,12 +5247,38 @@
      rAF, die Arbeit liegt also weiter am Bild -- der Timer ist nur das Netz darunter.
      Ohne Argumente, im Unterschied zu rafThrottle: die Aufrufer hier messen selbst, sie bekommen
      nichts uebergeben. */
-  function einmalProBild(fn){
+  /* Wer wie lange braucht -- auf Abruf, nicht im Betrieb. Alles, was ueber einmalProBild laeuft,
+     meldet sich in der Konsole des Nutzers unter DERSELBEN Zeile an (der setTimeout hier drin),
+     und das waren zuletzt zwei voellig verschiedene Dinge: der Sammellauf der Groessenanpassung
+     und die Trendspalten-Pruefung des Visibility-Charts. Eine Messung, die beide zusammenwirft,
+     kann die Frage "was dauert 431ms" nicht beantworten.
+     Deshalb traegt jeder Nutzer jetzt einen Namen, und die verbrauchte Zeit wird je Name
+     gezaehlt. Abrufbar mit window.upstreemProfil(); ohne Aufruf kostet es einen Zeitstempel. */
+  var _profil = {};
+  window.upstreemProfil = function(){
+    var out = Object.keys(_profil).map(function(k){
+      var p = _profil[k];
+      return { Name: k, "Summe ms": Math.round(p.ms), Aufrufe: p.n, "laengster ms": Math.round(p.max) };
+    }).sort(function(a, b){ return b["Summe ms"] - a["Summe ms"]; });
+    if (window.console && console.table) console.table(out);
+    return out;
+  };
+  window.upstreemProfilReset = function(){ _profil = {}; return true; };
+  function einmalProBild(fn, name){
     var raf = 0, t = 0;
+    name = name || "(ohne Namen)";
     function lauf(){
       if (raf){ try { cancelAnimationFrame(raf); } catch(e){} raf = 0; }
       if (t){ clearTimeout(t); t = 0; }
-      fn();
+      var t0 = (window.performance && performance.now) ? performance.now() : 0;
+      try { fn(); }
+      finally {
+        if (t0){
+          var d = performance.now() - t0;
+          var p = _profil[name] || (_profil[name] = { n: 0, ms: 0, max: 0 });
+          p.n++; p.ms += d; if (d > p.max) p.max = d;
+        }
+      }
     }
     return function(){
       if (raf || t) return;

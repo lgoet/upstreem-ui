@@ -427,7 +427,8 @@
           raf = requestAnimationFrame(function(){ raf = null; fn(); });
         }).observe(el);
       } else {
-        window.addEventListener("resize", UC.rafThrottle(fn));
+        if (UC.aufResize) UC.aufResize(fn);
+      else window.addEventListener("resize", UC.rafThrottle(fn));
       }
     }
     /* One coalesced responsive pass per frame (core). The old pairing of a

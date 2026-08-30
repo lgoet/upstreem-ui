@@ -628,7 +628,8 @@
     if (window.ResizeObserver){
       try { new ResizeObserver(messeBreite).observe(root); } catch(e){}
     }
-    window.addEventListener("resize", messeBreite);
+    if (UC.aufResize) UC.aufResize(messeBreite);
+    else window.addEventListener("resize", messeBreite);
 
     /* ── Durchlaufende Vorschlaege, Mechanik 1:1 aus ask-mira (phStart/phTick) ──
        4000ms Takt, 240ms bis zum Textwechsel -- das ist der Punkt, an dem die alte Zeile oben

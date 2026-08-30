@@ -670,7 +670,15 @@
       nameEl = null; clearTimeout(nameTimer);
       if (tips && tips.hideTip) tips.hideTip();
     });
-    if (UC.onResize) UC.onResize(root, function(){ try { line.resize(); } catch(e){} });
+    /* NICHT im Sammellauf: chart.resize() rechnet das ganze Chart neu, und dieser Aufruf lief
+       synchron in der Runde, die alle Komponenten der Seite anpasst -- ein einziger langer Block,
+       aus dem die Konsole ihre Meldung macht. Jetzt haengt er an der Drossel und liegt hinter
+       Chart.js' eigenem resizeDelay. */
+    if (UC.aufResize) UC.aufResize(function(){ try { line.resize(); } catch(e){} }, { ms: 160 });
+    else if (UC.onResize) UC.onResize(root, function(){
+      clearTimeout(root.__updRespT);
+      root.__updRespT = setTimeout(function(){ try { line.resize(); } catch(e){} }, 160);
+    });
 
     /* ---------------- Oeffentliche Schnittstelle ---------------- */
     function paarSchluessel(co, tp){

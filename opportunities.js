@@ -968,8 +968,14 @@
       if (S.mode === 'board') clampAllCardTags();
     }, 90);
   }
-  window.addEventListener('resize', onResize);
-  if (typeof ResizeObserver !== 'undefined'){ try { new ResizeObserver(onResize).observe(root); } catch(_){} }
+  /* Beides gedrosselt: onResize misst Karten und schreibt Klassen. */
+  (function(){
+    var kern = window.UpstreemCore;
+    if (kern && kern.aufResize) kern.aufResize(onResize, { hoehe: true });
+    else window.addEventListener('resize', onResize);
+    if (kern && kern.beobachteGroesse) return kern.beobachteGroesse(root, onResize, { hoehe: true });
+    if (typeof ResizeObserver !== 'undefined'){ try { new ResizeObserver(onResize).observe(root); } catch(_){} }
+  })();
 
   /* Theme attribute mirror: Bubble sets data-isdark, core's CSS keys off data-theme. */
   function syncTheme(){
