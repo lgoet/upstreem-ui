@@ -260,8 +260,15 @@
 
 /* ---------- responsive ---------- */
 .ubo-root.is-narrow .ubo-box-chart { height: 380px; }
-.ubo-root.is-narrow .ubo-head { flex-wrap: wrap; row-gap: 8px; }
-.ubo-root.is-narrow .ubo-head-tools { margin-left: 0; width: 100%; }
+/* KEIN Umbruch der Kopfzeile mehr. Diese zwei Zeilen schoben die Werkzeuge ab is-narrow (die
+   eigene Box unter 768px) in eine zweite Reihe unter die Ueberschrift -- in der App passiert das
+   schon bei rund 1050px Fensterbreite, weil links die Leiste steht. Noetig ist der Umbruch nicht:
+   die Werkzeuge des Tabellenkopfs messen zusammen 258px, die des Chartkopfs rund 330, dazu die
+   Ueberschrift -- das passt bis weit unter 600px in eine Zeile.
+   Damit es passt, muss die UEBERSCHRIFT nachgeben und nicht die Werkzeuge: min-width: 0 erlaubt
+   dem Flex-Kind, unter seine Inhaltsbreite zu schrumpfen, und die Ellipse steht schon da. */
+.ubo-root.is-narrow .ubo-heading, .ubo-root.is-narrow .ubo-heading-table { min-width: 0; }
+.ubo-root.is-narrow .ubo-heading-table .ubo-heading { min-width: 0; }
 .ubo-root.is-narrow .ubo-mx-legend-y { display: none; }
 .ubo-root.is-narrow .ubo-mx { grid-template-columns: 1fr; }
 .ubo-root.is-narrow .ubo-mx-wrap { grid-column: 1; }

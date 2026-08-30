@@ -1,0 +1,160 @@
+<meta charset="utf-8"><title>brands-overview: Kopfzeile bei schmaler Breite</title>
+<!-- Wozu: der Umbruch der rechten Werkzeuge in der TABELLEN-Kopfzeile zwischen 1050 und 900 px.
+     Das Markup ist das der Bubble-Vorlage, unveraendert. Die Breite steuert #buehne. -->
+<link rel="stylesheet" href="core.css?v=b1">
+<link rel="stylesheet" href="brands-overview.css?v=b1">
+<body style="margin:0;background:#fff;font-family:system-ui,sans-serif">
+<div style="padding:6px;background:#eee;display:flex;gap:6px;flex-wrap:wrap">
+  <button onclick="breit(1200)">1200</button><button onclick="breit(1050)">1050</button>
+  <button onclick="breit(980)">980</button><button onclick="breit(900)">900</button>
+  <button onclick="breit(820)">820</button><button onclick="messen()">MESSEN</button>
+</div>
+<pre id="out" style="font:11px/1.5 ui-monospace,monospace;background:#f6f6f6;padding:8px;margin:0">bereit</pre>
+<div id="buehne" style="width:1200px">
+<div class="up-root ubo-root"
+     data-instance="INSTANCE_ID"
+     data-cdn-pin="CDN_PIN"
+     data-isdark="IS_DARK"
+     data-export-instance="EXPORT_INSTANCE_ID"
+     data-processing="IS_PROCESSING"
+     data-processing2="IS_PROCESSING_2"
+     data-gran-fn="bubble_fn_uboGranularity"
+     data-submit-fn="bubble_fn_uboSubmitBrands"
+     data-sort-fn="bubble_fn_uboSortTable"
+     data-status-fn="bubble_fn_uboStatus"
+     data-export-fn="bubble_fn_uboExportTable"
+     data-rowclick-fn="bubble_fn_uboRowClick"
+     data-setinactive-fn="bubble_fn_uboSetInactive"
+     data-edit-fn="bubble_fn_uboEdit"
+     data-activate-fn="bubble_fn_uboActivate">
+
+  <!-- ============ chart container ============ -->
+  <div class="ubo-unit">
+    <div class="ubo-head">
+      <div class="ubo-heading">Visibility over Time</div>
+      <div class="ubo-head-tools">
+        <div class="vc-gran" role="tablist" aria-label="Granularity">
+          <button class="vc-gran-btn is-active" data-gran="day" type="button" role="tab" data-tip="Day" aria-label="Day">D</button>
+          <button class="vc-gran-btn" data-gran="week" type="button" role="tab" data-tip="Week" aria-label="Week">W</button>
+          <button class="vc-gran-btn" data-gran="month" type="button" role="tab" data-tip="Month" aria-label="Month">M</button>
+        </div>
+
+        <div class="ubo-filter">
+          <button class="ubo-filter-btn ubo-iconbtn" type="button" data-tip="Filter brands" aria-label="Filter brands">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 17H5"/><path d="M19 7h-9"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>
+            <span class="ubo-filter-badge"></span>
+          </button>
+          <div class="up-ment-menu" role="menu" aria-hidden="true"></div>
+        </div>
+
+        <div class="ubo-yaxis" role="tablist" aria-label="Y axis">
+          <button class="ubo-yaxis-btn is-active" data-yaxis="sentiment" type="button" role="tab">Sentiment</button>
+          <button class="ubo-yaxis-btn" data-yaxis="ranking" type="button" role="tab">Ranking</button>
+        </div>
+        <div class="ubo-seg" role="tablist" aria-label="Chart type">
+          <button class="ubo-seg-btn is-active" data-chartmode="line" type="button" role="tab">Linechart
+          </button>
+          <button class="ubo-seg-btn" data-chartmode="landscape" type="button" role="tab">Landscape
+          </button>
+        </div>
+        <button class="ubo-hide ubo-iconbtn" type="button" data-tip="Hide" aria-label="Hide">
+          <svg class="ic-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /> <circle cx="12" cy="12" r="3" /></svg>
+          <svg class="ic-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" /> <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" /> <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" /> <path d="m2 2 20 20" /></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="ubo-box ubo-box-chart">
+      <div class="ubo-panel-body">
+        <button class="ubo-scale-btn" type="button" data-tip="Chart Settings" aria-label="Chart Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+
+        <div class="ubo-line-holder">
+          <div class="up-line-wrap"><canvas class="up-line-canvas"></canvas></div>
+          <div class="up-legend"></div>
+        </div>
+
+        <div class="ubo-mx-holder">
+          <div class="ubo-mx">
+            <div class="ubo-mx-legend-y">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><path d="M9 9h.01"></path><path d="M15 9h.01"></path></svg>
+              <span>Sentiment</span>
+            </div>
+            <div class="ubo-mx-wrap"><canvas class="ubo-mx-canvas"></canvas></div>
+            <div class="ubo-mx-spacer"></div>
+            <div class="ubo-mx-legend-x">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 7h6v6" /> <path d="m22 7-8.5 8.5-5-5L2 17" /></svg>
+              <span>Visibility</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ table container ============ -->
+  <div class="ubo-unit">
+    <div class="ubo-head">
+      <div class="ubo-seg" role="tablist" aria-label="Brand status">
+        <button class="ubo-seg-btn is-active" data-status="active" type="button" role="tab">Active<span class="ubo-seg-n"></span></button>
+        <button class="ubo-seg-btn" data-status="inactive" type="button" role="tab">Inactive<span class="ubo-seg-n"></span></button>
+      </div>
+
+      <div class="ubo-head-tools">
+        <div class="ubo-sort">
+          <button class="ubo-sort-btn ubo-iconbtn" type="button" data-tip="Sort" aria-label="Sort">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></svg>
+          </button>
+          <div class="up-sort-menu" role="menu" aria-hidden="true"></div>
+        </div>
+
+        <div class="up-search">
+          <button class="up-search-btn ubo-iconbtn" type="button" data-tip="Search" aria-label="Search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34" /> <circle cx="11" cy="11" r="8" /></svg>
+          </button>
+          <div class="up-search-box">
+            <input class="up-search-input" type="text" placeholder="Search brands..." autocomplete="off" spellcheck="false" aria-label="Search brands"/>
+            <button class="up-search-clear" type="button" aria-label="Clear search">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="ubo-cols">
+          <button class="ubo-cols-btn ubo-iconbtn" type="button" data-tip="Table Settings" aria-label="Table settings">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
+            <span class="ubo-cols-badge"></span>
+          </button>
+          <div class="up-cols-menu" role="menu" aria-hidden="true"></div>
+        </div>
+
+        <button class="up-export" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3" /> <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /> <path d="m7 10 5 5 5-5" /></svg>
+          <span>Export</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="ubo-box"><div class="up-table ubo-table"></div></div>
+  </div>
+</div>
+</div>
+<script src="core.js?v=b1"></script>
+<script src="brands-overview.js?v=b1"></script>
+<script>
+function breit(px){ document.getElementById("buehne").style.width = px + "px"; setTimeout(messen, 350); }
+function messen(){
+  var kopf = document.querySelectorAll(".up-head, .ubo-head");
+  var z = [];
+  [].forEach.call(kopf, function(h){
+    var links = h.firstElementChild, rechts = h.lastElementChild;
+    if (!links || !rechts || links === rechts) return;
+    var a = links.getBoundingClientRect(), b = rechts.getBoundingClientRect();
+    z.push(h.className.split(" ")[0] + ": links " + Math.round(a.top) + " / rechts " + Math.round(b.top) +
+           (Math.abs(a.top - b.top) > 4 ? "  << UMGEBROCHEN" : "  ok") + "  (Hoehe " + Math.round(h.getBoundingClientRect().height) + ")");
+  });
+  document.getElementById("out").textContent = "Buehne " + document.getElementById("buehne").offsetWidth + "px\n" + z.join("\n");
+}
+window.addEventListener("load", function(){ setTimeout(messen, 900); });
+</script>
