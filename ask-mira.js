@@ -557,7 +557,10 @@
     if (_typingActive && typeof _startStick === 'function') _startStick();
   });
   elChat.addEventListener('scroll', updateScrollBtn, { passive: true });
-  window.addEventListener('resize', updateScrollBtn);
+  /* Gedrosselt: der Handler liest scrollHeight, scrollTop und clientHeight und schreibt danach
+     eine Klasse -- an jedem Bild einer Ziehbewegung ist das ein erzwungenes Layout. Am Ende der
+     Bewegung reicht es; beim Scrollen (der eigentliche Anlass) laeuft er unveraendert weiter. */
+  amAufResize(updateScrollBtn, { hoehe: true });
   // Action buttons (Create / Confirm) — delegate on root so it works for messages rendered
   // either by this component (messageHtml) OR injected into the DOM elsewhere (Bubble) + askMiraSetExtras.
   root.addEventListener('click', function(e){
@@ -2334,6 +2337,17 @@
     // native placeholder only when not looping (e.g. inside an existing chat)
     elTextarea.setAttribute('placeholder', (!on && !elTextarea.value.trim()) ? L().placeholder : '');
     if (on){ if (!phTimer) phStart(); } else { phStop(); }
+  }
+
+  /* Resize-Zuhoerer mit Drossel. Nimmt UC.aufResize, wenn core da ist -- und laeuft sonst
+     unveraendert weiter, damit ein fehlendes core hier nichts abschaltet. Der Grund fuer die
+     Drossel: die drei Handler lesen Groessen und schreiben danach Klassen. An jedem Bild einer
+     Ziehbewegung ist das je ein erzwungenes Layout; gemessen war ask-mira mit 1138 von 12888
+     Lesezugriffen der zweitgroesste Posten. */
+  function amAufResize(fn, cfg){
+    var k = window.UpstreemCore;
+    if (k && k.aufResize) return k.aufResize(fn, cfg);
+    window.addEventListener('resize', fn);
   }
 
   /* ---- Loading text cycle (every 6s, smooth) ---- */
@@ -4528,7 +4542,7 @@
     });
   }
 
-  window.addEventListener('resize', function(){ moveThumb(); });
+  amAufResize(function(){ moveThumb(); }, { hoehe: true });
 
   /* ---------------- Init ---------------- */
   /* Das Hintergrundbild des Startschirms. Es steht NICHT in der Bubble-Vorlage: bubble/*.html ist
@@ -4611,7 +4625,7 @@
     root.classList.toggle('is-compact', h > 0 && h < 560);
   }
   updateCompact();
-  window.addEventListener('resize', updateCompact);
+  amAufResize(updateCompact, { hoehe: true });
   if (typeof ResizeObserver !== 'undefined'){ try { new ResizeObserver(updateCompact).observe(root); } catch(_){} }
 
   /* HARD RULE: the whole Mira element must NEVER scroll — only the chat area (#am-chat) does.

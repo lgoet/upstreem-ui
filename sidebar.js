@@ -1156,7 +1156,10 @@
     /* Nur am Fenster horchen, NICHT per ResizeObserver an der Leiste: die Leiste aendert ihre
        Breite selbst, ein Beobachter an ihr wuerde anwenden() waehrend des Uebergangs in jedem
        Frame erneut aufrufen. */
-    window.addEventListener("resize", function(){ anwenden(); });
+    /* Gedrosselt: anwenden() misst und schreibt, und die Leiste steht auf JEDER Seite -- an
+       jedem Bild einer Ziehbewegung war das ein erzwungenes Layout mehr. */
+    if (UC.aufResize) UC.aufResize(function(){ anwenden(); });
+    else window.addEventListener("resize", function(){ anwenden(); });
     /* Theme-Wechsel: das Mira-Symbol hat zwei Fassungen, und der Haken im Konto-Menue muss
        mitwandern. */
     UC.onTheme(function(){ renderNav(); qaAufbauen(0); if (popAcc.isOpen()) renderAccMenu(); });

@@ -5128,6 +5128,25 @@
     };
   }
 
+  /* Ein Resize-Zuhoerer, der waehrend des Ziehens NICHT bei jedem Bild laeuft.
+     rafThrottle ist die falsche Drossel dafuer: sie laesst genau ein Mal je BILD durch, also 60
+     Mal in der Sekunde -- und wer darin misst und schreibt, erzwingt 60 Layouts. Fuer alles, was
+     eine Klasse setzt oder eine Groesse nachzieht, reicht das Ende der Bewegung.
+     Der Breiten-Waechter haelt zusaetzlich die Faelle heraus, in denen sich nur die Hoehe aendert
+     (Adressleiste auf dem Telefon, aufgehende Tastatur): dort gibt es fuer eine Breitenlogik
+     nichts zu tun. Wer auch auf Hoehe reagieren muss, gibt hoehe: true mit. */
+  function aufResize(fn, cfg){
+    cfg = cfg || {};
+    var ms = cfg.ms || 150, uhr = null, letzteB = -1, letzteH = -1;
+    window.addEventListener("resize", function(){
+      var b = window.innerWidth, h = window.innerHeight;
+      if (b === letzteB && (!cfg.hoehe || h === letzteH)) return;
+      letzteB = b; letzteH = h;
+      if (uhr) clearTimeout(uhr);
+      uhr = setTimeout(function(){ uhr = null; try { fn(); } catch(e){ if (window.console) console.warn("[upstreem] aufResize:", e); } }, ms);
+    }, { passive: true });
+  }
+
   function rafThrottle(fn){
     var pending = null, lastArgs = null, lastThis = null;
     return function(){
@@ -9562,6 +9581,7 @@
     relativeTime: relativeTime,
     modelChip: modelChip,
     marketChip: marketChip,
+    aufResize: aufResize,
     brandToggleHtml: brandToggleHtml,
     respBody: respBody,
     rbShowUrl: rbShowUrl,

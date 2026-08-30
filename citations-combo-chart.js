@@ -667,10 +667,19 @@
         }).observe(legendEl);
       }
     }
-    window.addEventListener("resize", function(){
-      if (root.__ccWinRaf) return;
-      root.__ccWinRaf = requestAnimationFrame(function(){ root.__ccWinRaf = null; line.relayoutLegend(); applyResponsive(); });
-    });
+    /* Gedrosselt statt an jedem Bild: relayoutLegend misst jeden Legendeneintrag, und
+       applyResponsive schreibt danach Klassen -- 60 Mal je Sekunde waehrend des Ziehens war das
+       einer der teuersten Posten der Messung. Am Ende der Bewegung reicht es; die Legende bricht
+       dann einmal sauber um. */
+    (function(){
+      function nach(){ line.relayoutLegend(); applyResponsive(); }
+      var kern = window.UpstreemCore;
+      if (kern && kern.aufResize) kern.aufResize(nach);
+      else window.addEventListener("resize", function(){
+        if (root.__ccWinRaf) return;
+        root.__ccWinRaf = requestAnimationFrame(function(){ root.__ccWinRaf = null; nach(); });
+      });
+    })();
 
     applyResponsive();
     render();

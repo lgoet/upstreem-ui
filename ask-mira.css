@@ -780,7 +780,13 @@
   /* Nur der laufende Schritt glaenzt: .is-done setzt core auf die Zeile, sobald sie fertig ist.
      Die fertige Zeile bekommt ihre Fuellfarbe ausdruecklich zurueck -- ohne das bliebe sie
      durchsichtig, sobald die Animation nicht mehr greift. */
-  .am-run-step:not(.is-done) .am-run-txt {
+  /* Zwei Selektoren, weil die ERSTE Zeile anders gebaut ist als die uebrigen: dort steht der Text
+     nicht direkt in .am-run-txt, sondern in einem eigenen .am-think-text (absolut gesetzt, mit
+     eigener Farbe, damit er beim Wechsel hoch- und runterfahren kann). Der Glanz am Elternteil
+     traf dessen Glyphen deshalb nicht gleich -- die erste Zeile sah anders aus als die anderen.
+     Jetzt bekommt jede Zeile den Glanz da, wo ihr Text wirklich steht. */
+  .am-run-step:not(.is-done) .am-run-txt:not(.am-think-loop),
+  .am-run-step:not(.is-done) .am-think-text {
     background-image: linear-gradient(100deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.85) 50%, rgba(255,255,255,0) 70%);
     background-color: currentColor;
     background-size: 200% 100%; background-repeat: no-repeat; background-position: -120% 0;
@@ -788,11 +794,12 @@
     -webkit-text-fill-color: transparent;
     animation: amShimmer 1.56s linear infinite reverse;
   }
-  .am-run-step.is-done .am-run-txt {
+  .am-run-step.is-done .am-run-txt, .am-run-step.is-done .am-think-text {
     background: none; animation: none; -webkit-text-fill-color: currentColor;
   }
   @media (prefers-reduced-motion: reduce){
-    .am-run-step:not(.is-done) .am-run-txt {
+    .am-run-step:not(.is-done) .am-run-txt:not(.am-think-loop),
+    .am-run-step:not(.is-done) .am-think-text {
       background: none; animation: none; -webkit-text-fill-color: currentColor;
     }
   }
@@ -802,10 +809,10 @@
      des Hauses im Verhaeltnis zur Groesse: -4px bei 15px, hier -5px bei 20px (4 * 20/15 = 5.3).
      Vorher standen 8px Abstand dazwischen -- das war ein Chip-Satz, kein Stapel. */
   .am-run-lead { display: inline-flex; align-items: center; flex: 0 0 auto; gap: 0; margin-left: 14px; }
-  /* -8, nicht -5: die Chips tragen Rahmen und Polster, deshalb bleibt von einem margin von -5
-     nur 2px sichtbare Ueberlappung. Gemessen sind es mit -8 genau 5px auf 17px Chipbreite, also
-     die 27 Prozent, mit denen auch .up-rb-cg-fav (15px, -4) stapelt. */
-  .am-run-lead > * + * { margin-left: -8px; }
+  /* -6: zwei Pixel weiter als zuvor, so gewuenscht. Gemessen sind das 3px sichtbare Ueberlappung
+     auf 17px Chipbreite (mit -8 waren es 5). Die Chips tragen Rahmen und Polster, deshalb ist der
+     margin groesser als die Ueberlappung, die man am Ende sieht. */
+  .am-run-lead > * + * { margin-left: -6px; }
   .am-run-lead > * { opacity: 0; transform: translateX(7px) scale(.86); transition: opacity 340ms ease, transform 340ms cubic-bezier(.2,.8,.3,1); }
   .am-run-step.is-in .am-run-lead > * { opacity: 1; transform: none; }
   /* Der 24er-Favicon-Kasten des Hauses (.up-logo-box) auf 20px: helle Platte --vt-logo-bg, 1px
