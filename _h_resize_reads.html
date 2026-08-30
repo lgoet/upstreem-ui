@@ -1,0 +1,54 @@
+<meta charset="utf-8"><title>Resize: Layout-Lesezugriffe je Ereignis</title>
+<!-- Wozu: zaehlt, wie viele Layout-Lesezugriffe EIN resize-Ereignis kostet. Gezaehlt werden die
+     vier offset*-Werte, getBoundingClientRect und getComputedStyle -- dieselben, die die Sonde in
+     der echten App zaehlt. Die Seite stellt zwanzig Umschalter auf, wie sie auf einer vollen
+     App-Seite stehen. ?core=core-alt.js laedt die vorige Fassung zum Vergleich. -->
+<link rel="stylesheet" href="core.css?v=r1">
+<body style="margin:0;font-family:system-ui,sans-serif">
+<pre id="out" style="font:12px/1.6 ui-monospace,monospace;background:#f6f6f6;padding:10px;margin:0">laedt</pre>
+<div id="buehne"></div>
+<script>
+var WELCHE = new URLSearchParams(location.search).get("core") || "core.js";
+document.write('<scr' + 'ipt src="' + WELCHE + '?v=' + Math.random() + '"></scr' + 'ipt>');
+</script>
+<script>
+window.addEventListener("load", function(){
+  var b = document.getElementById("buehne");
+  for (var i = 0; i < 20; i++){
+    var d = document.createElement("div");
+    d.className = "up-root";
+    d.setAttribute("data-instance", "k" + i);
+    d.innerHTML = '<div class="up-head"><span class="up-heading">Titel ' + i + '</span>' +
+      '<div class="up-seg" role="tablist"><button class="up-seg-btn is-active" type="button">Eins</button>' +
+      '<button class="up-seg-btn" type="button">Zwei</button></div></div>';
+    b.appendChild(d);
+  }
+  var n = 0, zaehlen = false;
+  var origRect = Element.prototype.getBoundingClientRect;
+  Element.prototype.getBoundingClientRect = function(){ if (zaehlen) n++; return origRect.apply(this, arguments); };
+  var origCS = window.getComputedStyle;
+  window.getComputedStyle = function(){ if (zaehlen) n++; return origCS.apply(window, arguments); };
+  ["offsetWidth","offsetHeight","offsetLeft","offsetTop"].forEach(function(p){
+    var d = Object.getOwnPropertyDescriptor(HTMLElement.prototype, p);
+    if (!d || !d.get) return;
+    Object.defineProperty(HTMLElement.prototype, p, { configurable: true, get: function(){ if (zaehlen) n++; return d.get.call(this); } });
+  });
+  /* Jede Runde eine ANDERE Fensterbreite vortaeuschen: sonst greift der Breiten-Waechter der
+     neuen Fassung, und die Messung waere geschoenkt. Die alte Fassung fragt innerWidth an dieser
+     Stelle gar nicht -- fuer sie aendert sich nichts. */
+  var _bw = 1400;
+  try { Object.defineProperty(window, "innerWidth", { configurable: true, get: function(){ return _bw; } }); } catch(e){}
+  setTimeout(function(){
+    zaehlen = true;
+    for (var k = 0; k < 10; k++){ _bw -= 3; window.dispatchEvent(new Event("resize")); }
+    setTimeout(function(){
+      zaehlen = false;
+      var je = Math.round(n / 10);
+      document.getElementById("out").textContent =
+        "Datei: " + WELCHE + "\nUmschalter: 20\n" +
+        "10 resize-Ereignisse -> " + n + " Layout-Lesezugriffe (" + je + " je Ereignis)";
+      window.__ergebnis = { datei: WELCHE, gesamt: n, jeEreignis: je };
+    }, 700);
+  }, 500);
+});
+</script>

@@ -3232,7 +3232,24 @@
   /* Zwei Anlaesse ausser dem Lauf der Toolbar: eine andere Fensterbreite aendert die Breite der
      Stufen, und ein Klick irgendwo kann einen Umschalter erst sichtbar machen (Popover, Drawer,
      Tab). Beides ist billig -- ein querySelectorAll und eine Messung je Umschalter. */
-  window.addEventListener("resize", function(){ sicher("segLauf", segLauf); }, { passive: true });
+  /* GEBUENDELT, nicht bei jedem Ereignis. Gemessen in der echten App: segLesen war mit 7206 von
+     12888 Layout-Lesezugriffen der groesste Posten beim Ziehen am Fensterrand -- 56 Prozent. Der
+     Grund stand hier: ein resize-Ereignis feuert waehrend des Ziehens mit jedem Bild, und JEDER
+     Lauf misst SAEMTLICHE Umschalter der Seite mit vier Werten je Stueck (offsetWidth, -Height,
+     -Left, -Top). Bei zwanzig Komponenten sind das ueber hundert Messungen pro Mausbewegung --
+     fuer einen Streifen, den in diesem Moment niemand ansieht.
+     Jetzt laeuft er 150ms NACH der letzten Aenderung, also einmal am Ende der Bewegung. Der
+     Streifen traegt seinen eigenen Uebergang und faehrt dann weich an seine Stelle.
+     Zusaetzlich der Breiten-Waechter: aendert sich die Fensterbreite gar nicht (Hoehe, Tastatur,
+     Adressleiste auf dem Telefon), gibt es fuer den Streifen nichts zu tun. */
+  var _segUhr = null, _segBreite = -1;
+  window.addEventListener("resize", function(){
+    var w = window.innerWidth;
+    if (w === _segBreite) return;
+    _segBreite = w;
+    if (_segUhr) clearTimeout(_segUhr);
+    _segUhr = setTimeout(function(){ _segUhr = null; sicher("segLauf", segLauf); }, 150);
+  }, { passive: true });
   document.addEventListener("click", function(){ setTimeout(function(){ sicher("segLauf", segLauf); }, 0); }, true);
 
   /* ---- Globus statt Loch: EIN Zuhoerer fuer alle Favicons der App -----------------------------
@@ -4879,6 +4896,22 @@
     (window.__upScrollRegions = (typeof WeakSet === "function" ? new WeakSet() : null));
 
   function unclipAncestors(root, restore){
+    /* Beim Ziehen am Fensterrand ruft applySticky() diese Funktion mit jedem Bild -- und sie
+       laeuft die ganze Vorfahrenkette hoch und fragt je Ebene getComputedStyle. Gemessen in der
+       echten App: 1198 von 12888 Layout-Lesezugriffen (9 Prozent), und zwar fuer eine Antwort,
+       die sich waehrend einer Mausbewegung nicht aendert -- die Kette ueber der Wurzel bleibt
+       dieselbe, und was einmal entklemmt ist, bleibt es.
+       Also hoechstens alle 500ms erneut, und nur solange die Wurzel am selben Elternteil haengt.
+       Haengt Bubble sie woanders ein, faellt der Vergleich und der Lauf kommt sofort wieder.
+       Der Rueckbau (restore) laeuft immer, der ist selten und muss greifen. */
+    if (!restore && root && root.__upUnclipEltern === root.parentElement){
+      var jetzt = (window.performance && performance.now) ? performance.now() : +new Date();
+      if (jetzt - (root.__upUnclipZeit || 0) < 500) return;
+      root.__upUnclipZeit = jetzt;
+    } else if (!restore && root){
+      root.__upUnclipEltern = root.parentElement;
+      root.__upUnclipZeit = (window.performance && performance.now) ? performance.now() : +new Date();
+    }
     /* Seitenweiter Ruecknahme-Sweep fuer data-up-lifted -- siehe die lange Begruendung weiter
        unten in der Schleife. Der Lift ist raus; dieser Sweep raeumt weg, was eine aeltere
        core.js aus einem anderen data-cdn-pin auf derselben Seite noch schreibt. Er laeuft
