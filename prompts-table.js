@@ -446,7 +446,7 @@
        hat, bekommt seine Einstellung, nicht meine Voreinstellung. */
     function schmaleWurzel(){
       var w = 0;
-      try { w = root.getBoundingClientRect().width || 0; } catch(e){}
+      try { w = root.offsetWidth || root.getBoundingClientRect().width || 0; } catch(e){}   /* Layout-Breite, siehe applyResponsive */
       if (!w) { try { w = window.innerWidth || 0; } catch(e){} }
       return w > 0 && w < 620;   /* dieselbe Grenze wie is-vnarrow in applyResponsive */
     }
@@ -4233,7 +4233,14 @@
     }
     /* responsive: drop columns rather than squeezing them */
     function applyResponsive(){
-      var w = root.getBoundingClientRect().width || 0;
+      /* offsetWidth und nicht getBoundingClientRect: das Rechteck ist die SICHTBARE Breite und
+         damit die skalierte. Steckt die Wurzel in einem transform: scale (die Buehne der
+         Landingpage verkleinert die ganze App auf 0.69 bei 1440px Fensterbreite), meldet das
+         Rechteck rund 790 statt 1150 -- unter der 860er Schwelle. Die Folge war eine Tabelle, die
+         ihre Gruppenliste zuklappte und Spalten fallen liess, obwohl im Layout Platz fuer beides
+         ist. Was hier gefragt ist, ist die LAYOUT-Breite: ob eine Spalte passt, entscheidet sich
+         im Raster und nicht daran, wie gross jemand das Ganze anzeigt. */
+      var w = root.offsetWidth || root.getBoundingClientRect().width || 0;
       if (!w) return;
       var before = root.className;
       search.syncTakeover();

@@ -2602,6 +2602,48 @@
    Schwarz und ueber die ganze Breite: das Ende der Seite soll auch wie eines aussehen. Die Farben
    sind die des dunklen Themas der App, als Zahl -- die Variablen der App gelten hier nicht
    (dieselbe Falle wie beim Kasten der Quellen). */
+/* ---------- Preise -------------------------------------------------------------------------
+   Die Karte ist die des Onboardings (.uob-plan), Wert fuer Wert: 16px Polster oben und an den
+   Seiten, 18 unten, 1px Rahmen, 16px Radius, Name 15/600, Betrag 26/600 mit -.03em, Merkmale
+   12px/1.35 in der gedaempften Farbe, Haken 13px. Was hier anders ist und warum:
+   - 20px Abstand statt 12 zwischen den Karten: die Spur ist 1440 breit, dort verschwinden 12px.
+   - Der Knopf steht UEBER der Merkmalsliste statt darunter. Im Onboarding ist die ganze Karte
+     der Knopf (man waehlt einen Tarif); hier fuehrt sie zur Anmeldung, und der Weg dorthin soll
+     nicht erst hinter acht Zeilen kommen.
+   Kein hervorgehobener mittlerer Tarif: die Preisseite hat keinen, und eine Empfehlung, die es
+   dort nicht gibt, waere eine Behauptung. */
+.ulh-preis { padding: clamp(64px, 9vw, 128px) 0 clamp(48px, 7vw, 96px); }
+.ulh-preis-reihe {
+  margin-top: 40px;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px;
+  padding: 0 24px;                     /* dasselbe Polster wie .ulh-feat-kopf, sonst versetzt */
+}
+.ulh-preis-karte {
+  display: flex; flex-direction: column; text-align: left;
+  padding: 16px 16px 18px; border: 1px solid var(--vc-border); border-radius: 16px;
+  background: var(--vc-bg);
+}
+.ulh-preis-name { font-size: 15px; font-weight: 600; color: var(--vc-text); }
+.ulh-preis-betrag { margin-top: 14px; display: flex; align-items: baseline; gap: 5px; }
+.ulh-preis-zahl { font-size: 26px; font-weight: 600; color: var(--vc-text); letter-spacing: -.03em; }
+.ulh-preis-je { font-size: 12.5px; color: var(--vc-muted); }
+/* Der Knopf traegt die Form der Seite (.ulh-btn-pri) und nur seine Breite hier: eine eigene
+   Farbe waere ein zweiter Hauptknopf mit einem anderen Ton als der im Hero. */
+.ulh-preis-btn { margin-top: 16px; width: 100%; justify-content: center; }
+.ulh-preis-liste { margin: 16px 0 0; padding: 0; list-style: none;
+  display: flex; flex-direction: column; gap: 6px; }
+.ulh-preis-zeile { display: flex; align-items: flex-start; gap: 8px;
+  font-size: 12px; line-height: 1.35; color: var(--vc-muted); }
+.ulh-preis-zeile b { font-weight: 600; color: var(--vc-text); }
+.ulh-preis-ic { display: inline-flex; flex: 0 0 auto; margin-top: 2px; color: var(--vc-text); }
+.ulh-preis-ic svg { width: 13px; height: 13px; display: block; }
+.ulh-preis-fuss { margin: 28px 0 0; padding: 0 24px; font-size: 13px; color: var(--ulh-sub); }
+/* Unter 900px stehen die drei untereinander -- drei 12px-Listen nebeneinander sind auf einem
+   Telefon nicht mehr zu lesen. Dieselbe Grenze wie die uebrigen Sektionen der Seite. */
+@media (max-width: 900px){
+  .ulh-preis-reihe { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+}
+
 .ulh-fuss {
   position: relative; z-index: 1;
   width: 100vw; margin-left: calc(50% - 50vw);

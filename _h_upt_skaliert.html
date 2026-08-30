@@ -1,0 +1,323 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Prompts-Tabelle in einer skalierten Buehne</title>
+<link rel="stylesheet" href="core.css?v=w1">
+<link rel="stylesheet" href="prompts-table.css?v=w1">
+<style>
+ body{font:12px monospace;background:#fff;margin:0;padding:8px}
+ .buehne{width:1150px;transform:scale(0.69);transform-origin:top left;height:420px;overflow:hidden}
+ .normal{width:1150px;height:420px;overflow:hidden;margin-top:-100px}
+ #out{position:fixed;right:8px;top:8px;width:420px;background:#111;color:#eee;padding:10px;white-space:pre-wrap;font:11px monospace;z-index:9}
+</style>
+<div class="buehne" id="skaliert"><div class="up-root upt-root"
+     data-instance="p1"
+     data-cdn-pin="x"
+     data-isdark="no"
+     data-brand-name=""
+     data-brand-logo=""
+     data-sticky-top="171"
+     data-search-fn="bubble_fn_uptSearch"
+     data-sort-fn="bubble_fn_uptSort"
+     data-brand-fn="bubble_fn_uptBrand"
+     data-mentioned-fn="bubble_fn_uptMentioned"
+     data-page-fn="bubble_fn_uptPage"
+     data-rowclick-fn="bubble_fn_uptRowClick"
+     data-groups-fn="bubble_fn_uptGroups"
+     data-groupopen-fn="bubble_fn_uptGroupOpen"
+     data-generatemore-fn="bubble_fn_uptGenerateMore"
+     data-select-fn="bubble_fn_uptSelect"
+     data-topics-fn="bubble_fn_uptTopicsClick"
+     data-edittopics-fn="bubble_fn_uptEditTopics"
+     data-status-fn="bubble_fn_uptStatus"
+     data-bulktopics-fn="bubble_fn_uptBulkTopics"
+     data-applybulktopics-fn="bubble_fn_uptApplyBulkTopics"
+     data-bulkstatus-fn="bubble_fn_uptBulkStatus"
+     data-bulkdelete-fn="bubble_fn_uptBulkDelete"
+     data-addtopics-fn="bubble_fn_uptAddTopics"
+     data-export-instance="EXPORT_p1">
+  <div class="up-head">
+    <div class="up-heading"><span class="up-head-label">Prompts</span><span class="up-head-sep"></span><span class="up-head-count"></span>
+      <span class="upt-selcount"><span class="upt-selcount-n">0 selected</span><button class="upt-selcount-clear" type="button" aria-label="Clear selection"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg></button></span>
+    </div>
+    <div class="upt-status" role="tablist" aria-label="Prompt status"></div>
+    <div class="up-head-tools">
+      <button class="upt-brand-toggle" type="button" data-tip="Filter for your brand mentions">
+        <span class="upt-brand-toggle-lbl">
+          <img class="upt-brand-logo" src="" style="display:none" alt=""/>
+          <span class="upt-brand-label"></span>
+        </span>
+        <span class="upt-brand-check">
+          <svg class="upt-brand-check-yes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+          <svg class="upt-brand-check-no" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /></svg>
+        </span>
+      </button>
+
+      <div class="up-sort">
+        <button class="up-sort-btn up-iconbtn" type="button" data-tip="Sort" aria-label="Sort">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></svg>
+        </button>
+        <div class="up-sort-menu" role="menu" aria-hidden="true"></div>
+      </div>
+
+      <div class="up-search">
+        <button class="up-search-btn up-iconbtn" type="button" data-tip="Search" aria-label="Search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34" /> <circle cx="11" cy="11" r="8" /></svg>
+        </button>
+        <div class="up-search-box">
+          <input class="up-search-input" type="text" placeholder="Search prompts..." autocomplete="off" spellcheck="false" aria-label="Search prompts"/>
+          <button class="up-search-clear" type="button" aria-label="Clear search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="up-cols">
+        <button class="up-cols-btn up-iconbtn" type="button" data-tip="Table Settings" aria-label="Table settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+        <span class="upt-cols-badge"></span>
+        <div class="up-cols-menu" role="menu" aria-hidden="true"></div>
+      </div>
+
+      <button class="up-export" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3" /> <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /> <path d="m7 10 5 5 5-5" /></svg>
+        <span>Export</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="up-box">
+    <div class="up-table">
+      <div class="up-thead">
+        <div class="up-th up-th-prompt is-sortable" data-sortcol="prompt">
+          <span class="upt-check" role="checkbox" tabindex="0" aria-checked="false" data-selectall></span>
+          <span class="up-th-txt">Prompt</span>
+          <span class="up-thsort" data-for="prompt">
+            <svg class="up-thsort-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6" /></svg>
+            <svg class="up-thsort-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+          </span>
+          <span class="up-grip" data-grip="prompt"></span>
+        </div>
+        <div class="up-th up-th-visibility is-sortable" data-sortcol="visibility">
+          <img class="upt-th-brandlogo" src="" alt=""/>
+          <span class="up-th-txt">Visibility</span>
+          <span class="up-th-info" data-explain="visibility"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" /></svg></span>
+          <span class="up-thsort" data-for="visibility">
+            <svg class="up-thsort-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6" /></svg>
+            <svg class="up-thsort-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+          </span>
+        </div>
+        <div class="up-th up-th-rank is-sortable" data-sortcol="rank">
+          <span class="up-th-txt">Rank</span>
+          <span class="up-th-info" data-explain="rank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" /></svg></span>
+          <span class="up-thsort" data-for="rank">
+            <svg class="up-thsort-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6" /></svg>
+            <svg class="up-thsort-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+          </span>
+        </div>
+        <div class="up-th up-th-sentiment is-sortable" data-sortcol="sentiment">
+          <span class="up-th-txt">Sentiment</span>
+          <span class="up-th-info" data-explain="sentiment"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" /></svg></span>
+          <span class="up-thsort" data-for="sentiment">
+            <svg class="up-thsort-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6" /></svg>
+            <svg class="up-thsort-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+          </span>
+        </div>
+        <div class="up-th up-th-brands">Brand Mentions<span class="up-th-info" data-explain="brands"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" /></svg></span></div>
+        <div class="up-th up-th-topics">Topics</div>
+        <div class="up-th up-th-market">Market<span class="up-th-info" data-explain="market"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" /></svg></span></div>
+        <div class="up-th up-th-created is-sortable" data-sortcol="created">
+          <span class="up-th-txt">Created</span>
+          <span class="up-thsort" data-for="created">
+            <svg class="up-thsort-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6" /></svg>
+            <svg class="up-thsort-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+          </span>
+        </div>
+      </div>
+      <div class="up-tbody"></div>
+    </div>
+  </div>
+
+  <div class="up-foot">
+    <div class="up-pagesize">
+      <span class="up-pagesize-lbl">Rows per page</span>
+      <div class="up-pagesize-seg" role="group" aria-label="Rows per page"></div>
+    </div>
+    <div class="up-pager"></div>
+  </div>
+</div></div>
+<div class="normal" id="unskaliert"><div class="up-root upt-root"
+     data-instance="p2"
+     data-cdn-pin="x"
+     data-isdark="no"
+     data-brand-name=""
+     data-brand-logo=""
+     data-sticky-top="171"
+     data-search-fn="bubble_fn_uptSearch"
+     data-sort-fn="bubble_fn_uptSort"
+     data-brand-fn="bubble_fn_uptBrand"
+     data-mentioned-fn="bubble_fn_uptMentioned"
+     data-page-fn="bubble_fn_uptPage"
+     data-rowclick-fn="bubble_fn_uptRowClick"
+     data-groups-fn="bubble_fn_uptGroups"
+     data-groupopen-fn="bubble_fn_uptGroupOpen"
+     data-generatemore-fn="bubble_fn_uptGenerateMore"
+     data-select-fn="bubble_fn_uptSelect"
+     data-topics-fn="bubble_fn_uptTopicsClick"
+     data-edittopics-fn="bubble_fn_uptEditTopics"
+     data-status-fn="bubble_fn_uptStatus"
+     data-bulktopics-fn="bubble_fn_uptBulkTopics"
+     data-applybulktopics-fn="bubble_fn_uptApplyBulkTopics"
+     data-bulkstatus-fn="bubble_fn_uptBulkStatus"
+     data-bulkdelete-fn="bubble_fn_uptBulkDelete"
+     data-addtopics-fn="bubble_fn_uptAddTopics"
+     data-export-instance="EXPORT_p1">
+  <div class="up-head">
+    <div class="up-heading"><span class="up-head-label">Prompts</span><span class="up-head-sep"></span><span class="up-head-count"></span>
+      <span class="upt-selcount"><span class="upt-selcount-n">0 selected</span><button class="upt-selcount-clear" type="button" aria-label="Clear selection"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg></button></span>
+    </div>
+    <div class="upt-status" role="tablist" aria-label="Prompt status"></div>
+    <div class="up-head-tools">
+      <button class="upt-brand-toggle" type="button" data-tip="Filter for your brand mentions">
+        <span class="upt-brand-toggle-lbl">
+          <img class="upt-brand-logo" src="" style="display:none" alt=""/>
+          <span class="upt-brand-label"></span>
+        </span>
+        <span class="upt-brand-check">
+          <svg class="upt-brand-check-yes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+          <svg class="upt-brand-check-no" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /></svg>
+        </span>
+      </button>
+
+      <div class="up-sort">
+        <button class="up-sort-btn up-iconbtn" type="button" data-tip="Sort" aria-label="Sort">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></svg>
+        </button>
+        <div class="up-sort-menu" role="menu" aria-hidden="true"></div>
+      </div>
+
+      <div class="up-search">
+        <button class="up-search-btn up-iconbtn" type="button" data-tip="Search" aria-label="Search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34" /> <circle cx="11" cy="11" r="8" /></svg>
+        </button>
+        <div class="up-search-box">
+          <input class="up-search-input" type="text" placeholder="Search prompts..." autocomplete="off" spellcheck="false" aria-label="Search prompts"/>
+          <button class="up-search-clear" type="button" aria-label="Clear search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="up-cols">
+        <button class="up-cols-btn up-iconbtn" type="button" data-tip="Table Settings" aria-label="Table settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+        <span class="upt-cols-badge"></span>
+        <div class="up-cols-menu" role="menu" aria-hidden="true"></div>
+      </div>
+
+      <button class="up-export" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3" /> <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /> <path d="m7 10 5 5 5-5" /></svg>
+        <span>Export</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="up-box">
+    <div class="up-table">
+      <div class="up-thead">
+        <div class="up-th up-th-prompt is-sortable" data-sortcol="prompt">
+          <span class="upt-check" role="checkbox" tabindex="0" aria-checked="false" data-selectall></span>
+          <span class="up-th-txt">Prompt</span>
+          <span class="up-thsort" data-for="prompt">
+            <svg class="up-thsort-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6" /></svg>
+            <svg class="up-thsort-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+          </span>
+          <span class="up-grip" data-grip="prompt"></span>
+        </div>
+        <div class="up-th up-th-visibility is-sortable" data-sortcol="visibility">
+          <img class="upt-th-brandlogo" src="" alt=""/>
+          <span class="up-th-txt">Visibility</span>
+          <span class="up-th-info" data-explain="visibility"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" /></svg></span>
+          <span class="up-thsort" data-for="visibility">
+            <svg class="up-thsort-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6" /></svg>
+            <svg class="up-thsort-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+          </span>
+        </div>
+        <div class="up-th up-th-rank is-sortable" data-sortcol="rank">
+          <span class="up-th-txt">Rank</span>
+          <span class="up-th-info" data-explain="rank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" /></svg></span>
+          <span class="up-thsort" data-for="rank">
+            <svg class="up-thsort-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6" /></svg>
+            <svg class="up-thsort-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+          </span>
+        </div>
+        <div class="up-th up-th-sentiment is-sortable" data-sortcol="sentiment">
+          <span class="up-th-txt">Sentiment</span>
+          <span class="up-th-info" data-explain="sentiment"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" /></svg></span>
+          <span class="up-thsort" data-for="sentiment">
+            <svg class="up-thsort-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6" /></svg>
+            <svg class="up-thsort-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+          </span>
+        </div>
+        <div class="up-th up-th-brands">Brand Mentions<span class="up-th-info" data-explain="brands"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" /></svg></span></div>
+        <div class="up-th up-th-topics">Topics</div>
+        <div class="up-th up-th-market">Market<span class="up-th-info" data-explain="market"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" /></svg></span></div>
+        <div class="up-th up-th-created is-sortable" data-sortcol="created">
+          <span class="up-th-txt">Created</span>
+          <span class="up-thsort" data-for="created">
+            <svg class="up-thsort-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6" /></svg>
+            <svg class="up-thsort-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+          </span>
+        </div>
+      </div>
+      <div class="up-tbody"></div>
+    </div>
+  </div>
+
+  <div class="up-foot">
+    <div class="up-pagesize">
+      <span class="up-pagesize-lbl">Rows per page</span>
+      <div class="up-pagesize-seg" role="group" aria-label="Rows per page"></div>
+    </div>
+    <div class="up-pager"></div>
+  </div>
+</div></div>
+<pre id="out">…</pre>
+<script>
+try {
+  localStorage.setItem("upt_grouped__p1","yes"); localStorage.setItem("upt_groupswide__p1","yes");
+  localStorage.setItem("upt_groupmode__p1","custom");
+  localStorage.setItem("upt_grouped__p2","yes"); localStorage.setItem("upt_groupswide__p2","yes");
+  localStorage.setItem("upt_groupmode__p2","custom");
+} catch(e){}
+</script>
+<script src="core.js?v=w1"></script>
+<script>document.write('<scr'+'ipt src="' + (/alt=1/.test(location.search) ? "_h_upt_alt.js" : "prompts-table.js") + '?v=w1"></scr'+'ipt>');</script>
+<script>
+var zeilen = [];
+for (var i = 1; i <= 12; i++){
+  zeilen.push({ id: String(i), prompt_text: "Welche Anbieter fuer Thema " + i + "?", status: "active",
+                visibility_pct: 20 + i, rank: 3, sentiment: 70, mentions: i, market: "DE",
+                group_name: (i % 3 === 0 ? "Preise" : i % 3 === 1 ? "Vergleiche" : "Marken") });
+}
+setTimeout(function(){
+  ["renderPromptsTable"].forEach(function(fn){
+    if (window[fn]) { try { window[fn]({ rows: zeilen, totalCount: zeilen.length, instanceId: "p1" }); } catch(e){}
+                      try { window[fn]({ rows: zeilen, totalCount: zeilen.length, instanceId: "p2" }); } catch(e){} }
+  });
+  setTimeout(function(){
+    function s(id){
+      var el = document.querySelector("#" + id + " .upt-root");
+      if (!el) return "(keine Wurzel)";
+      var sp = el.querySelector(".upt-grp-sidepanel");
+      return { rechteckBreite: Math.round(el.getBoundingClientRect().width),
+               layoutBreite: el.offsetWidth,
+               listenansicht: el.classList.contains("is-groups-wide"),
+               engGeschaltet: el.classList.contains("is-groups-cramped"),
+               seitenlisteBreite: sp ? Math.round(sp.getBoundingClientRect().width) : -1 };
+    }
+    document.getElementById("out").textContent = JSON.stringify({ fassung: /alt=1/.test(location.search) ? "ALT" : "NEU", inDerSkaliertenBuehne: s("skaliert"), ohneSkalierung: s("unskaliert") }, null, 1);
+  }, 1200);
+}, 700);
+</script>

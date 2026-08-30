@@ -386,6 +386,7 @@
       msc() +
       geo() +
       stimme() +
+      preise() +
       fuss();
   }
 
@@ -584,6 +585,73 @@
             ' href="https://app.upstreem.ai/signup">' + STIMME_CTA + '</a>' +
           '<a class="ulh-btn ulh-btn-sec" href="https://upstreem.ai/contact">' + STIMME_CTA2 + '</a>' +
         '</div>' +
+      '</div>' +
+    '</section>';
+  }
+
+  /* ---------- Die Preise --------------------------------------------------------------------
+     Die drei Tarife, wie sie auf upstreem.ai/pricing stehen. Zahlen und Wortlaut sind von dort
+     uebernommen und nicht erfunden -- eine Preisseite, die etwas anderes sagt als die Preisseite,
+     ist schlimmer als keine. Aufbau und Maße kommen aus dem Abrechnungsschritt des Onboardings
+     (.uob-plan): dieselbe Karte, damit ein Besucher, der sich anmeldet, dort wiederfindet, was er
+     hier gesehen hat.
+     Kein Monats-/Jahresumschalter: die Jahrespreise stehen mir nicht vor, und ein Umschalter mit
+     gerechneten Zahlen waere geraten. Steht die Zahl bereit, ist er drei Zeilen Arbeit. */
+  var PREIS_CHIP = "Pricing";
+  var PREIS_H = "Simple plans. Every answer engine.";   /* nicht "One price": es sind drei */
+  var PREIS_SUB = "Every plan tracks ChatGPT, Perplexity and Google AI Overviews \u2014 with unlimited " +
+    "seats, unlimited countries and prompts that run every day.";
+  var PREIS_CTA = "Get started";
+  var PREIS_ZIEL = "https://app.upstreem.ai/signup";
+  var PREIS_FUSS = "Prices exclude VAT. Cancel any time.";
+  var TARIFE = [
+    { name: "Essential",    preis: "89",  prompts: "50",  antworten: "4,650",  mehr: false,
+      marken: "6",  hilfe: "Standard email support" },
+    { name: "Professional", preis: "205", prompts: "150", antworten: "13,500", mehr: false,
+      marken: "11", hilfe: "Personal account manager" },
+    { name: "Enterprise",   preis: "429", prompts: "350", antworten: "30,000", mehr: true,
+      marken: "16", hilfe: "Personal account manager" }
+  ];
+  function preisZeile(html){
+    /* Das Zeichen kommt aus core und wird von zeichenSetzen() nachgeliefert -- zum Zeitpunkt des
+       Markups gibt es UC noch nicht. 2.6 ist die Staerke, die auch die Karte im Onboarding fuehrt. */
+    return '<li class="ulh-preis-zeile"><span class="ulh-preis-ic" data-ic="check" data-ic-w="2.6"></span>' +
+           '<span>' + html + '</span></li>';
+  }
+  function preisKarte(t){
+    return '<div class="ulh-preis-karte">' +
+        '<div class="ulh-preis-name">' + t.name + '</div>' +
+        '<div class="ulh-preis-betrag">' +
+          '<span class="ulh-preis-zahl">' + t.preis + '\u20ac</span>' +
+          '<span class="ulh-preis-je">/ month</span>' +
+        '</div>' +
+        '<a class="ulh-btn ulh-btn-pri ulh-preis-btn" href="' + PREIS_ZIEL + '"' +
+          ' target="_blank" rel="noopener">' + PREIS_CTA + '</a>' +
+        '<ul class="ulh-preis-liste">' +
+          preisZeile("Track <b>ChatGPT, Perplexity &amp; Google AI Overviews</b>") +
+          preisZeile("Track up to <b>" + t.prompts + " prompts</b>") +
+          preisZeile("Prompts executed daily") +
+          preisZeile((t.mehr ? "Analyze more than " : "Analyze up to ") +
+                     "<b>" + t.antworten + " AI responses per month</b>") +
+          preisZeile("Unlimited countries / languages") +
+          preisZeile("Unlimited seats for your team") +
+          preisZeile("Track up to <b>" + t.marken + " brands / competitors</b>") +
+          preisZeile(t.hilfe) +
+        '</ul>' +
+      '</div>';
+  }
+  function preise(){
+    return '<section class="ulh-preis" id="pricing">' +
+      '<div class="ulh-spur">' +
+        '<div class="ulh-feat-kopf ulh-auf">' +
+          '<span class="ulh-feat-chip">' + PREIS_CHIP + '</span>' +
+          '<h2 class="ulh-feat-h">' + PREIS_H + '</h2>' +
+          '<p class="ulh-feat-sub">' + PREIS_SUB + '</p>' +
+        '</div>' +
+        '<div class="ulh-preis-reihe ulh-auf" style="--auf:1">' +
+          TARIFE.map(preisKarte).join("") +
+        '</div>' +
+        '<p class="ulh-preis-fuss ulh-auf" style="--auf:2">' + PREIS_FUSS + '</p>' +
       '</div>' +
     '</section>';
   }
