@@ -3193,6 +3193,12 @@
 
   function segLauf(wurzel){
     if (SEG_AUS || window.__upOhneToolbar || window.__upOhneStreifen) return;
+    /* Nicht waehrend einer Ziehbewegung. Der Streifen sitzt dann ohnehin kurz falsch, und niemand
+       sieht ihn dabei an -- gemessen war er mit 26 Prozent aller Lesezugriffe weiterhin der
+       groesste Posten, weil waehrend des Ziehens dauernd Kopfzeilen und Legenden neu entstehen
+       und jede davon einen Umschalter mitbringt. Der Zuhoerer weiter unten laeuft 150ms nach dem
+       letzten Ereignis und holt es dann nach. */
+    if (typeof zieht === "function" && zieht()) return;
     var ziel = wurzel || document, els;
     var t0 = (window.performance && performance.now) ? performance.now() : 0;
     try {
@@ -4939,6 +4945,9 @@
        noch 613 Lesezugriffe, 13 Prozent), und nur solange die Wurzel am selben Elternteil haengt.
        Haengt Bubble sie woanders ein, faellt der Vergleich und der Lauf kommt sofort wieder.
        Der Rueckbau (restore) laeuft immer, der ist selten und muss greifen. */
+    /* Waehrend einer Ziehbewegung gar nicht: die Kette ueber der Wurzel aendert sich dabei nicht,
+       und getComputedStyle je Ebene ist teuer. */
+    if (!restore && typeof zieht === "function" && zieht()) return;
     if (!restore && root && root.__upUnclipEltern === root.parentElement){
       var jetzt = (window.performance && performance.now) ? performance.now() : +new Date();
       if (jetzt - (root.__upUnclipZeit || 0) < 3000) return;
@@ -5142,6 +5151,17 @@
      100ms ist der Kompromiss: schnell genug, dass eine wegfallende Spalte dem Rand folgt, und
      langsam genug, dass zwischen zwei Laeufen echte Bilder liegen. Am ENDE der Bewegung laeuft es
      ohnehin noch einmal, weil der Beobachter dann ein letztes Mal meldet. */
+  /* "Das Fenster wird gerade gezogen." Zwei Pfade duerfen waehrenddessen komplett pausieren --
+     der gleitende Streifen und der Entklemm-Lauf: beide beantworten Fragen, deren Antwort waehrend
+     der Bewegung niemanden interessiert, und beide messen dabei viel. Nach 220ms ohne weiteres
+     Ereignis gilt die Bewegung als beendet, und wer pausiert hat, laeuft dann einmal.
+     Der Zuhoerer steht frueh und passiv: er darf nichts kosten. */
+  var _zieht = 0;
+  function zieht(){ return (((window.performance && performance.now) ? performance.now() : +new Date()) - _zieht) < 220; }
+  window.addEventListener("resize", function(){
+    _zieht = (window.performance && performance.now) ? performance.now() : +new Date();
+  }, { passive: true });
+
   var _resZuletzt = 0, _RES_ABSTAND = 100;
   function _resPlanen(){
     var jetzt = (window.performance && performance.now) ? performance.now() : +new Date();
