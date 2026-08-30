@@ -41,9 +41,25 @@
 .ube-sectitle { font-size: 16px; font-weight: 500; color: var(--vc-text); margin: 0; line-height: 1.3; }
 .ube-secsub { font-size: 13px; font-weight: 400; color: var(--vc-third); margin: 0; line-height: 1.45; }
 
+/* ---------- Eingabefelder ----------
+   .up-field aus core traegt NUR den Fokusring (core.css: "eine ZUSATZKLASSE, keine Ersetzung").
+   Rahmen, Radius, Grund und Schrift gehoeren zur Komponente -- ohne sie stand hier das nackte
+   Browserfeld: 2px inset, kein Radius, eigene Schrift. Die Werte sind die des 40px-Feldes der
+   App (.uau-input in auth-page): 1px Rahmen, Radius 12, Grund --vc-bg, 14px Text. */
+.ube-feld {
+  height: 40px; border: 1px solid var(--vc-border); border-radius: 12px;
+  background: var(--vc-bg); padding: 0 14px; color: var(--vc-text);
+  font-family: inherit; font-size: 14px; outline: none;
+  transition: border-color .16s ease, box-shadow .16s ease;
+}
+.ube-feld::placeholder { color: var(--vc-third); }
+/* Hover NUR ohne Fokus: sonst wechselt der Rahmen die Farbe, waehrend man tippt. Dieselbe
+   Trennung wie in auth-page. */
+.ube-feld:hover:not(:focus) { border-color: var(--vc-hover-border); }
+
 /* ---------- Aliase ---------- */
 .ube-aliasadd { display: flex; align-items: center; gap: 8px; }
-.ube-aliasin { flex: 1 1 auto; min-width: 0; height: 40px; padding: 0 12px; font-size: 13.5px; }
+.ube-aliasin { flex: 1 1 auto; min-width: 0; }
 /* Der Knopf steht auf derselben Hoehe wie das Feld -- 32 neben 40 sieht aus wie hineingerutscht. */
 .ube-aliasbtn { height: 40px; padding: 0 16px; }
 
@@ -86,8 +102,12 @@
     linear-gradient(45deg, var(--vc-border) 25%, transparent 25%, transparent 75%, var(--vc-border) 75%) 5px 5px / 10px 10px,
     var(--vc-bg);
 }
-.ube-farbin { width: 148px; height: 40px; padding: 0 12px 0 36px; font-size: 13.5px;
-  font-variant-numeric: tabular-nums; }
+/* Der Farbkasten steht links IM Feld, also faengt der Text erst bei 36 an -- 10 Rand, 18 Kasten,
+   8 Luft. Die uebrigen Werte sind die des gemeinsamen Feldes darueber. */
+.ube-farbin { width: 148px; padding-left: 36px; font-variant-numeric: tabular-nums; }
+/* Coloris legt seinen Rahmen UM das Feld. Ohne diese Zeile ist er inline-block und traegt die
+   Breite des Feldes nicht mit -- der Kasten links sass dann neben dem Feld statt darin. */
+.ube-farbfeld .clr-field { display: block; }
 .ube-farbsave, .ube-farbreset { height: 40px; }
 .ube-farbreset[hidden] { display: none; }
 /* Coloris legt seinen Waehler an das Dokument und bringt seine eigene CSS mit. Zwei Dinge muessen

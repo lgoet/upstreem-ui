@@ -86,73 +86,83 @@
 
 <!--
   ============================================================================================
-  RUN-JAVASCRIPT-SCHRITT (Toolbox) — die Daten hinein
+  RUN-JAVASCRIPT-SCHRITTE (Toolbox) — die Daten hinein
   ============================================================================================
-  WANN: nachdem die RPC die Marke geliefert hat. Davor einmal setBrandEditorLoading(..., "yes"),
-  damit das Skelett steht statt einer leeren Flaeche.
+  Reines JavaScript, wie in jeder anderen Vorlage: ab "(function () {" bis "})();" markieren.
+  Ein <script> gehoert NICHT hinein -- Bubble wertet den Text als JavaScript aus, und das Tag
+  killt den Schritt mit "Unexpected token '<'" samt aller Setter, die danach kommen.
 
-  Der Payload ist EIN Objekt (die RPC gibt eine Zeile zurueck). Er darf auch als Liste mit einem
-  Eintrag kommen -- die Komponente packt beides aus.
+  Die zwei Ersetzungen sind Pflicht (§46): leeres Feld -> null, nacktes yes/no -> true/false.
+  Namen mit Anfuehrungszeichen, spitzen Klammern oder Emoji brauchen nichts weiter -- die
+  Komponente escapet jeden Text. Geprueft mit Mueller & "Soehne" <GmbH> und Emoji im Alias.
 
-  Die zwei Ersetzungen unten sind Pflicht (§46) und stehen in jedem Run-JS dieser App:
-    :\s*([,}\]])        ->  ": null$1"     macht aus  "key": ,   ein  "key": null
-    :\s*(yes|no)\s*(..) ->  true/false     macht aus  "key": yes ein  "key": true
-  Ohne sie wirft JSON.parse bei jedem leeren Feld und bei jedem Ja/Nein aus Bubble -- und der
-  Fehler reisst den GANZEN Schritt mit, also auch die Setter der anderen Komponenten darunter.
+  ── SCHRITT 1: Skelett an, VOR der RPC ─────────────────────────────────────────────────────
 
-  Namen mit Anfuehrungszeichen, spitzen Klammern oder Emoji brauchen KEINE Sonderbehandlung: die
-  Komponente escapet jeden Text, bevor er ins Markup geht. Geprueft mit
-  Mueller & "Soehne" <GmbH> und einem Emoji im Alias.
--->
-<script>
-/* ---- SCHRITT: Marke anzeigen -------------------------------------------------------------
-   Bubble-Ausdruecke stehen in <>. Alles andere bleibt, wie es ist. */
-var INSTANCE_ID = "INSTANCE_ID";
-
-var ROH = `<Result of step X (Supabase RPC)'s data:formatted as JSON-safe>`;
-
-var payload = ROH
-  .replace(/:\s*([,}\]])/g, ": null$1")
-  .replace(/:\s*(yes|no)\s*([,}\]])/g, function(_, v, t){ return ": " + (v === "yes") + t; });
-
-if (typeof window.setBrandEditor === "function") window.setBrandEditor(INSTANCE_ID, payload);
-</script>
-
-<script>
-/* ---- SCHRITT: Skelett an, bevor die RPC laeuft -------------------------------------------- */
-if (typeof window.setBrandEditorLoading === "function") window.setBrandEditorLoading("INSTANCE_ID", "yes");
-</script>
-
-<script>
-/* ---- SCHRITT: statisch, zum Ausprobieren ohne Datenbank -----------------------------------
-   Genau der Payload aus der Uebergabe, damit man den Editor in Bubble sehen kann, bevor die RPC
-   steht. Derselbe Text laeuft im Harness _h_ube.html gegen die fertige Komponente. */
-var STATISCH = `{
-  "aliases": [
-    {
-      "mode": "exact_ci",
-      "pattern": "anfragenfluss.de",
-      "alias_id": "8f4fcc2c-f61b-414c-92e9-694f64fa7da4",
-      "priority": 100,
-      "is_active": true,
-      "created_at": "2026-02-27T07:20:18.290477+00:00"
+  (function () {
+    if (typeof window.setBrandEditorLoading === "function") {
+      window.setBrandEditorLoading("INSTANCE_ID", "yes");
     }
-  ],
-  "company": {
-    "name": "Anfragenfluss",
-    "domain": "www.anfragenfluss.de",
-    "company_id": "fd2f56a4-d11d-45a3-b10e-bd93a249b75f",
-    "favicon_url": "https://www.google.com/s2/favicons?domain=anfragenfluss.de&sz=64",
-    "default_color": null,
-    "color_override": null,
-    "effective_color": null
-  },
-  "tracking_periods": [
-    { "ended_at": null, "started_at": "2026-02-26T20:59:16.117706+00:00", "start_reason": "created" }
-  ]
-}`
-  .replace(/:\s*([,}\]])/g, ": null$1")
-  .replace(/:\s*(yes|no)\s*([,}\]])/g, function(_, v, t){ return ": " + (v === "yes") + t; });
+  })();
 
-if (typeof window.setBrandEditor === "function") window.setBrandEditor("INSTANCE_ID", STATISCH);
-</script>
+  ── SCHRITT 2: Marke anzeigen, NACH der RPC ────────────────────────────────────────────────
+  Bubble-Ausdruecke stehen in <>. Alles andere bleibt, wie es ist.
+
+  (function () {
+    var INSTANCE_ID = "INSTANCE_ID";
+
+    var ROH = `<Result of step X (Supabase RPC)'s data:formatted as JSON-safe>`;
+
+    var payload = ROH
+      .replace(/:\s*([,}\]])/g, ": null$1")
+      .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+
+    if (typeof window.setBrandEditor === "function") {
+      window.setBrandEditor(INSTANCE_ID, payload);
+    }
+  })();
+
+  ── SCHRITT 3: statisch, zum Ausprobieren ohne Datenbank ───────────────────────────────────
+  Genau der Payload aus der Uebergabe, damit man den Editor in Bubble sehen kann, bevor die RPC
+  steht. Derselbe Text laeuft im Harness _h_ube.html gegen die fertige Komponente.
+
+  (function () {
+    var STATISCH = `{
+      "aliases": [
+        {
+          "mode": "exact_ci",
+          "pattern": "anfragenfluss.de",
+          "alias_id": "8f4fcc2c-f61b-414c-92e9-694f64fa7da4",
+          "priority": 100,
+          "is_active": true,
+          "created_at": "2026-02-27T07:20:18.290477+00:00"
+        }
+      ],
+      "company": {
+        "name": "Anfragenfluss",
+        "domain": "www.anfragenfluss.de",
+        "company_id": "fd2f56a4-d11d-45a3-b10e-bd93a249b75f",
+        "favicon_url": "https://www.google.com/s2/favicons?domain=anfragenfluss.de&sz=64",
+        "default_color": null,
+        "color_override": null,
+        "effective_color": null
+      },
+      "tracking_periods": [
+        { "ended_at": null, "started_at": "2026-02-26T20:59:16.117706+00:00", "start_reason": "created" }
+      ]
+    }`
+      .replace(/:\s*([,}\]])/g, ": null$1")
+      .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+
+    if (typeof window.setBrandEditor === "function") {
+      window.setBrandEditor("INSTANCE_ID", STATISCH);
+    }
+  })();
+
+  ── SCHRITT 4: zuruecksetzen, wenn die Schublade schliesst ─────────────────────────────────
+
+  (function () {
+    if (typeof window.resetBrandEditor === "function") {
+      window.resetBrandEditor("INSTANCE_ID");
+    }
+  })();
+-->

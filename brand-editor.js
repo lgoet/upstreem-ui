@@ -152,7 +152,7 @@
               'Every name entered here is also tracked for this brand in AI answers and citations.</p>' +
           '</div>' +
           '<div class="ube-aliasadd">' +
-            '<input class="up-field ube-aliasin" type="text" placeholder="New alias" ' +
+            '<input class="up-field ube-feld ube-aliasin" type="text" placeholder="New alias" ' +
               'autocomplete="off" spellcheck="false" maxlength="120">' +
             '<button class="up-btn-pri ube-aliasbtn" type="button" data-alias-add disabled></button>' +
           '</div>' +
@@ -165,7 +165,7 @@
           '</div>' +
           '<div class="ube-farbzeile">' +
             '<span class="ube-farbfeld">' +
-              '<input class="up-field ube-farbin" type="text" spellcheck="false" autocomplete="off" ' +
+              '<input class="up-field ube-feld ube-farbin" type="text" spellcheck="false" autocomplete="off" ' +
                 'maxlength="7" placeholder="#000000" aria-label="Brand color">' +
             '</span>' +
             '<button class="up-btn-pri ube-farbsave" type="button" data-color-save disabled></button>' +
@@ -206,8 +206,12 @@
            die er kennt. Deshalb zaehlt hier das Thema der App und nicht das Attribut an dieser
            Wurzel -- sonst gewinnt bei zwei Editoren der zuletzt angemeldete, und der Waehler
            stuende hell in einer dunklen Seite. */
-        var dunkel = UC.getUpstreemTheme ? UC.getUpstreemTheme() === "dark"
-                                         : document.documentElement.getAttribute("data-theme") === "dark";
+        /* Das Thema der SEITE, und nur wenn die keins gesetzt hat, das dieser Wurzel. Gemessen im
+           Harness: dort steht data-theme allein an der Komponente, und der Waehler stand weiss
+           in einem dunklen Editor. */
+        var seite = document.documentElement.getAttribute("data-theme") ||
+                    (UC.getUpstreemTheme ? UC.getUpstreemTheme() : "");
+        var dunkel = (seite || root.getAttribute("data-theme")) === "dark";
         try {
           window.Coloris({
             el: ".ube-farbin", themeMode: dunkel ? "dark" : "light", theme: "polaroid",
