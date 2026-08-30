@@ -2396,7 +2396,9 @@
     url_detail:['Reading what this page actually says','Inspecting that URL up close'],
     source_recommendations:['Spotting sources worth pursuing','Hunting for citation opportunities'],
     response_mentions:['Reading how AI answers describe you','Scanning the actual AI replies'],
-    response_detail:['Studying one response in detail','Going deep on a single reply']
+    /* Nicht "eine einzelne Antwort": Mira liest hier den vollen Wortlaut der Antworten, statt nur
+       ihre Kennzahlen -- "one reply" beschrieb den Schritt falsch. */
+    response_detail:['Reading the full answer text','Looking at what the answers actually say']
   };
   var _STATE_TEXT = {
     brand:['Reading your brand data'],
@@ -2451,11 +2453,23 @@
   var _RUN_MOMENT = 10000;     // kuerzer gedacht -> "a moment" statt einer Zahl
 
   function runClockText(){
+    /* Ohne Startzeit stuende hier fuer immer "0s". Das darf im laufenden Zustand nicht vorkommen
+       -- lieber ab jetzt zaehlen als gar nicht. */
+    if (RUN.live && !RUN.startTs) RUN.startTs = Date.now();
     var ms = RUN.startTs ? ((RUN.endTs || Date.now()) - RUN.startTs) : 0;
     return (RUN.live ? L().runNow : L().runDone) + ' ' + runDauer(ms);
   }
+  /* Der laufende Block, nicht der erste im Chat. root.querySelector('.am-run') traf ab der ZWEITEN
+     Frage die Uhr der schon fertigen Antwort weiter oben (.am-run.is-bare traegt dieselbe Klasse) --
+     die Uhr des Ladeblocks wurde nie angefasst und stand fuer immer auf "0s". Beim ersten Mal fiel
+     es nicht auf, weil oben noch nichts stand. */
+  function runBox(){
+    return elMessages.querySelector('.am-msg-loading .am-run') ||
+           elMessages.querySelector('.am-run:not(.is-bare)');
+  }
   function runClockTick(){
-    var el = root.querySelector('.am-run-clock'); if (el) el.textContent = runClockText();
+    var box = runBox(); if (!box) return;
+    var el = box.querySelector('.am-run-clock'); if (el) el.textContent = runClockText();
   }
   /* Der Text eines Schritts wird EINMAL beim Anlegen gezogen und aendert sich nie wieder: die Zeile
      steht spaeter als Protokoll da, und ein Protokoll, das sich nachtraeglich umschreibt, ist keins.
@@ -2470,10 +2484,14 @@
   }
   /* Die Logos vorn: eine zufaellige Auswahl, EINMAL gezogen und dann fest -- sie rotieren nicht.
      Die Modelle bleiben in ihrer Reihenfolge, die ist eine Rangliste und keine Auswahl. */
+  /* Wie viele Chips die Zeile traegt: 3 bis 5, je Schritt neu gezogen. Eine feste Zahl liess jede
+     Zeile gleich aussehen; mehr als 5 schiebt den Text auf schmalen Breiten weg. */
+  function runLogoZahl(){ return 3 + Math.floor(Math.random() * 3); }
   function runLogos(kind){
-    if (kind === 'brand')     return _tlShuffle(_tlBrandList()).slice(0, 3);
-    if (kind === 'sources')   return _tlShuffle(_tlFaviconList()).slice(0, 3);
-    if (kind === 'responses') return _tlModelList().slice(0, 3);
+    var n = runLogoZahl();
+    if (kind === 'brand')     return _tlShuffle(_tlBrandList()).slice(0, n);
+    if (kind === 'sources')   return _tlShuffle(_tlFaviconList()).slice(0, n);
+    if (kind === 'responses') return _tlModelList().slice(0, n);
     /* Prompts tragen KEINE Chips: ein Thema hat kein Logo, und drei Farbflecken haben nichts
        gesagt ausser "hier waeren Chips". Das Zeichen vor dem Text sagt den Schritt. */
     return [];
@@ -2577,7 +2595,7 @@
      Betrag nachgescrollt -- nicht ans Ende des Verlaufs, denn beim Senden wird darunter Platz
      reserviert, und "ganz nach unten" wuerde in diese Leere springen. */
   function runFollow(){
-    var box = root.querySelector('.am-run'); if (!box) return;
+    var box = runBox(); if (!box) return;
     var r = box.getBoundingClientRect(), c = elChat.getBoundingClientRect();
     if (r.top < c.top || r.top > c.bottom) return;     /* Block nicht im Blick -> der Nutzer liest woanders */
     var fehlt = r.bottom - c.bottom + 22;
@@ -2623,8 +2641,28 @@
     runReset();
     /* Die Uhr laeuft ab dem Absenden und nicht ab diesem Aufruf: dazwischen liegt der Weg durch
        Bubble, und der gehoert zur Wartezeit, die der Nutzer erlebt. */
-    RUN = { valid:true, live:true, startTs:(_sendStartTs || Date.now()), endTs:0, steps:[] };
-    runPush('thought', '');
+    var start = _sendStartTs || Date.now();
+    /* DIESELBE Frage setzt die Uhr NICHT zurueck. setLoading(true) kommt fuer eine Antwort
+       mehrfach, und dazwischen kann ein setLoading(false) stehen: askMiraSetMessages ruft
+       setLoading(letzte Nachricht laeuft noch), und solange die laufende Antwort in einem
+       Durchlauf fehlt, kippt der Wert kurz auf false. Ohne diese Weiche begann RUN dann von vorn
+       -- die Uhr sprang bei jedem Durchlauf auf 0 zurueck und stand damit dauerhaft auf "0s",
+       waehrend die Schritte weiterliefen. Genau das Bild ab der zweiten Frage.
+       Der Anker ist _sendStartTs: er wird je Frage einmal gesetzt (send()), also heisst gleicher
+       Zeitstempel "gleiche Frage". */
+    /* Zweiter Anker fuer den Fall, dass die Frage NICHT ueber das Eingabefeld kam (die App setzt
+       den Zustand auch von aussen, dann gibt es kein _sendStartTs): ein Lauf, der weniger als vier
+       Sekunden nach dem Ende des vorigen beginnt, ist die Fortsetzung desselben und kein neuer.
+       Eine echte neue Frage bringt einen frischen _sendStartTs mit -- und der schlaegt diese
+       Regel, sonst wuerde eine schnell gestellte zweite Frage die Uhr der ersten weiterzaehlen. */
+    var neueFrage = _sendStartTs && _sendStartTs !== RUN.startTs;
+    var kurzNachEnde = RUN.valid && RUN.steps.length && RUN.endTs && (Date.now() - RUN.endTs < 4000);
+    if (!neueFrage && RUN.valid && RUN.steps.length && (RUN.startTs === start || kurzNachEnde)){
+      RUN.live = true; RUN.endTs = 0;
+    } else {
+      RUN = { valid:true, live:true, startTs:start, endTs:0, steps:[] };
+      runPush('thought', '');
+    }
     _runClock = setInterval(runClockTick, 1000);
   }
   function runPush(kind, key){
@@ -2662,7 +2700,7 @@
     if (letzt) runClose(letzt);
     RUN.live = false; RUN.endTs = Date.now();
     runReset();
-    var box = root.querySelector('.am-run'); if (box) box.classList.remove('is-live');
+    var box = runBox(); if (box) box.classList.remove('is-live');
     runClockTick();
   }
   /* Der Typ, der zuletzt gezeigt wurde ODER schon in der Schlange steht. Kommt derselbe noch
@@ -2913,9 +2951,12 @@
     elTextarea.value = ''; clearQuote(); autosize(); refreshSend();
     _pendingAnswer = true;
     _lastSendTs = Date.now();
+    /* VOR setLoading: runStart liest diesen Zeitstempel und erkennt daran, ob es dieselbe Frage
+       ist. Stand er danach, sah der erste Lauf ihn noch nicht -- und jeder weitere Durchlauf sah
+       einen anderen Wert als der Lauf davor. */
+    _sendStartTs = Date.now();
     setLoading(true);
     renderMessages();
-    _sendStartTs = Date.now();
 
     var payload = { chat_id: S.activeChatId, message: full, answer_detail: S.answerDetail, model: S.model };
     if (window.bubble_fn_ask_mira_send) window.bubble_fn_ask_mira_send(JSON.stringify(payload));

@@ -723,9 +723,10 @@
      mit, statt um die Zeilenhoehe zu springen. */
   .am-run { width: 100%; max-width: min(100%, 782px); }
   .am-run.is-live { padding-bottom: 30px; }        /* Luft unter dem Laufenden, wie beim alten Ladebild */
-  /* Nach der Antwort doppelt so viel Luft nach unten wie zuvor (mit .am-msg-main gap: 6px -> 20px):
-     die Liste ist ein eigener Block und soll nicht am Text der Antwort kleben. */
-  .am-run:not(.is-live) { margin-bottom: 14px; }
+  /* Nach der Antwort Luft nach unten: die Liste ist ein eigener Block und soll nicht am Text der
+     Antwort kleben. 22 statt 14 -- acht mehr, weil der letzte Punkt der Liste und der erste Satz
+     Miras sonst als ein Absatz gelesen werden. Mit .am-msg-main gap 6 sind es 28 auf dem Schirm. */
+  .am-run:not(.is-live) { margin-bottom: 22px; }
   .am-run-head {
     display: flex; align-items: center; min-height: 19px;
     padding-bottom: 11px; border-bottom: 1px solid var(--am-border);
@@ -787,9 +788,16 @@
   .am-run-step.is-done .am-think-text { color: var(--am-text); }
   .am-run-step.is-deep .am-think-text { display: none; }
   .am-run-step.is-deep .am-deep { display: inline-flex; }
-  /* Die Logos hinter dem Text: mit Abstand zwischen den Chips, wie jeder andere Chip-Satz im Haus,
-     nicht als Stapel. */
-  .am-run-lead { display: inline-flex; align-items: center; flex: 0 0 auto; gap: 8px; margin-left: 14px; }
+  /* Die Logos hinter dem Text stehen als STAPEL, wie jeder andere Favicon-Satz im Haus
+     (.up-rb-cg-fav, .up-stack-item): leicht ineinandergeschoben, und ein Ring in der Farbe des
+     Grundes trennt sie, damit zwei aehnliche Logos nicht verschmelzen. Die Ueberlappung ist die
+     des Hauses im Verhaeltnis zur Groesse: -4px bei 15px, hier -5px bei 20px (4 * 20/15 = 5.3).
+     Vorher standen 8px Abstand dazwischen -- das war ein Chip-Satz, kein Stapel. */
+  .am-run-lead { display: inline-flex; align-items: center; flex: 0 0 auto; gap: 0; margin-left: 14px; }
+  /* -8, nicht -5: die Chips tragen Rahmen und Polster, deshalb bleibt von einem margin von -5
+     nur 2px sichtbare Ueberlappung. Gemessen sind es mit -8 genau 5px auf 17px Chipbreite, also
+     die 27 Prozent, mit denen auch .up-rb-cg-fav (15px, -4) stapelt. */
+  .am-run-lead > * + * { margin-left: -8px; }
   .am-run-lead > * { opacity: 0; transform: translateX(7px) scale(.86); transition: opacity 340ms ease, transform 340ms cubic-bezier(.2,.8,.3,1); }
   .am-run-step.is-in .am-run-lead > * { opacity: 1; transform: none; }
   /* Der 24er-Favicon-Kasten des Hauses (.up-logo-box) auf 20px: helle Platte --vt-logo-bg, 1px
@@ -798,7 +806,18 @@
   .am-run-lead .am-tload-logo, .am-run-lead .am-tload-ai {
     width: 20px; height: 20px; border-radius: 7px; font-size: 8px;
     background: var(--vt-logo-bg); border: 1px solid var(--am-border); padding: 1px;
+    /* Der Trennring des Stapels. 2px, wie bei den Punkten der Skala -- er haengt nicht an der
+       Groesse der Bilder, sondern soll die Naht zwischen ihnen sichtbar halten. */
+    box-shadow: 0 0 0 2px var(--am-bg, var(--vc-bg));
   }
+  /* Das erste Logo liegt oben, die folgenden dahinter -- so liest sich der Stapel von links nach
+     rechts, statt dass das letzte alle anderen ueberdeckt. */
+  .am-run-lead > *:nth-child(1) { z-index: 5; }
+  .am-run-lead > *:nth-child(2) { z-index: 4; }
+  .am-run-lead > *:nth-child(3) { z-index: 3; }
+  .am-run-lead > *:nth-child(4) { z-index: 2; }
+  .am-run-lead > *:nth-child(5) { z-index: 1; }
+  .am-run-lead > * { position: relative; }
   .am-run-lead .am-tload-logo img, .am-run-lead .am-tload-ai img {
     width: 100%; height: 100%; border-radius: 6px; object-fit: contain;
   }
