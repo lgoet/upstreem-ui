@@ -53,6 +53,17 @@
   var esc = UC.esc;
   function isArr(v) { return Object.prototype.toString.call(v) === "[object Array]"; }
   function txt(v) { return v == null ? "" : String(v); }
+  /* is_active kommt in drei Schreibweisen an: als echter Boolean (nach dem §46-Sanitizer, der
+     nacktes yes/no umschreibt), als TEXT "false" (Bubble schickt Wahrheitswerte gern in
+     Anfuehrungszeichen -- dann ist "false" !== false, und der Schalter stand immer auf an), oder
+     gar nicht. Fehlt das Feld, gilt aktiv: ein Alias ohne Angabe wird mitgezaehlt, so war es
+     schon vorher. Ausgeschaltet wird nur bei einem klaren Nein. */
+  function aktiv(v) {
+    if (v == null || v === "") return true;
+    if (typeof v === "boolean") return v;
+    var s = String(v).trim().toLowerCase();
+    return !(s === "false" || s === "no" || s === "n" || s === "0" || s === "off");
+  }
 
   /* ---- Coloris, einmal pro Seite ------------------------------------------------------------
      Die Datei liegt IM REPO (vendor-coloris.min.js/.css, Coloris 0.25.0 von @melloware, MIT,
@@ -427,7 +438,7 @@
       }
       var zeilen = liste.map(function (a) {
         var id = esc(txt(a.alias_id));
-        var an = a.is_active !== false;
+        var an = aktiv(a.is_active);
         return '<div class="up-row ube-row" data-alias="' + id + '">' +
             '<div class="up-td ube-td-name"><span class="ube-alias">' + esc(txt(a.pattern) || "–") + '</span></div>' +
             '<div class="up-td">' +
