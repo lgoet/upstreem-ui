@@ -590,13 +590,23 @@
   }
 
   /* ---------- Die Preise --------------------------------------------------------------------
-     Die drei Tarife, wie sie auf upstreem.ai/pricing stehen. Zahlen und Wortlaut sind von dort
-     uebernommen und nicht erfunden -- eine Preisseite, die etwas anderes sagt als die Preisseite,
-     ist schlimmer als keine. Aufbau und Maße kommen aus dem Abrechnungsschritt des Onboardings
-     (.uob-plan): dieselbe Karte, damit ein Besucher, der sich anmeldet, dort wiederfindet, was er
-     hier gesehen hat.
-     Kein Monats-/Jahresumschalter: die Jahrespreise stehen mir nicht vor, und ein Umschalter mit
-     gerechneten Zahlen waere geraten. Steht die Zahl bereit, ist er drei Zeilen Arbeit. */
+     Dieselbe Karte wie im Abrechnungsschritt des Onboardings (.uob-plan), nur groesser: dort muss
+     der ganze Ablauf ohne Scrollen auf einen 760px-Schirm passen, hier hat die Seite Platz. Was
+     uebernommen ist: Rahmen und Radius, "Most popular" auf der MITTLEREN Karte, die Ersparnis als
+     Zeile, die beim Jahrestakt aufklappt, der Monats-/Jahresschalter und die Reihenfolge der
+     Merkmale. Was groesser ist: Polster 28/26/30 statt 16/16/18, Radius 18 statt 16, Name 17 statt
+     15, Betrag 38 statt 26, Merkmale 13.5 statt 12.
+
+     Die Zahlen sind die der Tarif-RPC (dieselben, die das Onboarding anzeigt): 89/205/429 im
+     Monat, 948/2220/4380 im Jahr. Die Ersparnis daneben ist GERECHNET und nicht getippt -- ein
+     getippter Prozentwert waere beim naechsten Preis falsch.
+
+     Jahr ist die Vorbelegung: der Jahrespreis ist der guenstigere, und ein Besucher soll die
+     Seite nicht erst umstellen muessen, um den Preis zu sehen, den er am Ende zahlt.
+
+     WICHTIG fuer jede Farbe hier: --vc-* haengt in core an .up-root, und diese Sektion steht
+     ausserhalb. Ohne Rueckfall waere die ganze Regel ungueltig -- genau daran hatte die erste
+     Fassung ihren Rahmen verloren. Also --ulh-* nehmen, wo es einen gibt, sonst var(--vc-x, wert). */
   var PREIS_CHIP = "Pricing";
   var PREIS_H = "Simple plans. Every answer engine.";   /* nicht "One price": es sind drei */
   var PREIS_SUB = "Every plan tracks ChatGPT, Perplexity and Google AI Overviews \u2014 with unlimited " +
@@ -605,30 +615,53 @@
   var PREIS_ZIEL = "https://app.upstreem.ai/signup";
   var PREIS_FUSS = "Prices exclude VAT. Cancel any time.";
   var TARIFE = [
-    { name: "Essential",    preis: "89",  prompts: "50",  antworten: "4,650",  mehr: false,
-      marken: "6",  hilfe: "Standard email support" },
-    { name: "Professional", preis: "205", prompts: "150", antworten: "13,500", mehr: false,
-      marken: "11", hilfe: "Personal account manager" },
-    { name: "Enterprise",   preis: "429", prompts: "350", antworten: "30,000", mehr: true,
-      marken: "16", hilfe: "Personal account manager" }
+    { name: "Essential", mon: 89, jahr: 948,
+      desc: "Get started with basic monitoring and analytics",
+      prompts: "50", antworten: "4,650", mehr: false, marken: "6", hilfe: "Standard email support" },
+    { name: "Professional", mon: 205, jahr: 2220,
+      desc: "Advanced monitoring and AI search insights",
+      prompts: "150", antworten: "13,500", mehr: false, marken: "11", hilfe: "Personal account manager" },
+    { name: "Enterprise", mon: 429, jahr: 4380,
+      desc: "Advanced features for growing businesses",
+      prompts: "350", antworten: "30,000", mehr: true, marken: "16", hilfe: "Personal account manager" }
   ];
+  /* Der angezeigte Betrag ist IMMER ein Monatsbetrag -- beim Jahrestakt der Jahrespreis durch
+     zwoelf. Nur so stehen die drei Karten in einer vergleichbaren Groesse nebeneinander. */
+  function preisMonat(t, jaehrlich){ return jaehrlich ? t.jahr / 12 : t.mon; }
+  function preisSpar(t){ return Math.round(100 - (t.jahr / (t.mon * 12)) * 100); }
+  /* Ganze Euro, wenn die Zahl ganz ist -- 79 statt 79.0. Krumme Betraege bekommen eine Stelle,
+     damit aus 82,5 nicht 83 wird. */
+  function preisGeld(v){
+    var g = Math.round(v * 10) / 10;
+    return (g % 1 === 0 ? String(g) : g.toFixed(1)) + "\u20ac";
+  }
   function preisZeile(html){
     /* Das Zeichen kommt aus core und wird von zeichenSetzen() nachgeliefert -- zum Zeitpunkt des
        Markups gibt es UC noch nicht. 2.6 ist die Staerke, die auch die Karte im Onboarding fuehrt. */
     return '<li class="ulh-preis-zeile"><span class="ulh-preis-ic" data-ic="check" data-ic-w="2.6"></span>' +
            '<span>' + html + '</span></li>';
   }
-  function preisKarte(t){
-    return '<div class="ulh-preis-karte">' +
+  function preisKarte(t, i){
+    /* Empfohlen ist die MITTLERE Karte, wie im Onboarding -- nicht die teuerste. */
+    var top = i === 1;
+    var spar = preisSpar(t);
+    return '<div class="ulh-preis-karte' + (top ? " is-top" : "") + '">' +
+        (top ? '<span class="ulh-preis-tag">Most popular</span>' : "") +
         '<div class="ulh-preis-name">' + t.name + '</div>' +
+        '<p class="ulh-preis-desc">' + t.desc + '</p>' +
         '<div class="ulh-preis-betrag">' +
-          '<span class="ulh-preis-zahl">' + t.preis + '\u20ac</span>' +
+          '<span class="ulh-preis-zahl">' + preisGeld(preisMonat(t, true)) + '</span>' +
           '<span class="ulh-preis-je">/ month</span>' +
         '</div>' +
+        /* Die Ersparnis klappt auf und zu, statt zu erscheinen und zu verschwinden: so schiebt sie
+           die Kartenhoehe weich mit, wie im Onboarding. is-on steht schon hier, weil Jahr die
+           Vorbelegung ist. */
+        '<div class="ulh-preis-notiz is-on"><span>Save ' + spar + '% billed yearly</span></div>' +
         '<a class="ulh-btn ulh-btn-pri ulh-preis-btn" href="' + PREIS_ZIEL + '"' +
           ' target="_blank" rel="noopener">' + PREIS_CTA + '</a>' +
         '<ul class="ulh-preis-liste">' +
           preisZeile("Track <b>ChatGPT, Perplexity &amp; Google AI Overviews</b>") +
+          preisZeile("Track multiple models") +
           preisZeile("Track up to <b>" + t.prompts + " prompts</b>") +
           preisZeile("Prompts executed daily") +
           preisZeile((t.mehr ? "Analyze more than " : "Analyze up to ") +
@@ -648,12 +681,67 @@
           '<h2 class="ulh-feat-h">' + PREIS_H + '</h2>' +
           '<p class="ulh-feat-sub">' + PREIS_SUB + '</p>' +
         '</div>' +
-        '<div class="ulh-preis-reihe ulh-auf" style="--auf:1">' +
+        /* Der Schalter ist .up-seg aus core -- dasselbe Bauteil wie im Onboarding, nur in der
+           32px-Form (is-lg). Seine Farbmarken setzt die CSS hier lokal, weil core sie an .up-root
+           haengt und diese Sektion keine ist. */
+        '<div class="ulh-preis-schalter ulh-auf" style="--auf:1">' +
+          '<div class="up-seg is-lg" role="tablist" aria-label="Billing interval">' +
+            '<button class="up-seg-btn" type="button" role="tab" aria-selected="false"' +
+              ' data-interval="monthly">Monthly</button>' +
+            '<button class="up-seg-btn is-active" type="button" role="tab" aria-selected="true"' +
+              ' data-interval="yearly">Yearly</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="ulh-preis-reihe ulh-auf" style="--auf:2">' +
           TARIFE.map(preisKarte).join("") +
         '</div>' +
-        '<p class="ulh-preis-fuss ulh-auf" style="--auf:2">' + PREIS_FUSS + '</p>' +
+        '<p class="ulh-preis-fuss ulh-auf" style="--auf:3">' + PREIS_FUSS + '</p>' +
       '</div>' +
     '</section>';
+  }
+  /* Der Wechsel zwischen Monat und Jahr. Derselbe Weg wie im Onboarding: Markup bleibt stehen,
+     der Schalter stellt um, die Ersparnis klappt auf oder zu, und der Betrag ZAEHLT auf die neue
+     Zahl. Ein Preis, der umspringt, liest sich wie ein anderer Preis -- ein zaehlender sagt, dass
+     es derselbe Tarif zu anderen Bedingungen ist. */
+  function preiseBinden(root){
+    var sek = root.querySelector(".ulh-preis"); if (!sek || sek.__ulhPreis) return;
+    sek.__ulhPreis = true;
+    var karten = sek.querySelectorAll(".ulh-preis-karte");
+    sek.addEventListener("click", function(e){
+      var b = e.target.closest ? e.target.closest("[data-interval]") : null;
+      if (!b || !sek.contains(b)) return;
+      var jaehrlich = b.getAttribute("data-interval") === "yearly";
+      var sw = sek.querySelectorAll("[data-interval]");
+      for (var i = 0; i < sw.length; i++){
+        var an = (sw[i].getAttribute("data-interval") === "yearly") === jaehrlich;
+        sw[i].classList.toggle("is-active", an);
+        sw[i].setAttribute("aria-selected", an ? "true" : "false");
+      }
+      for (var k = 0; k < karten.length; k++){
+        var t = TARIFE[k]; if (!t) continue;
+        var zahl = karten[k].querySelector(".ulh-preis-zahl");
+        if (zahl) preisZaehlen(zahl, preisMonat(t, jaehrlich));
+        var notiz = karten[k].querySelector(".ulh-preis-notiz");
+        if (notiz) notiz.classList.toggle("is-on", jaehrlich);
+      }
+    });
+  }
+  /* Von der Zahl, die dasteht, auf die neue. Die Ausgangszahl wird aus dem TEXT gelesen und nicht
+     mitgefuehrt: so stimmt sie auch, wenn mitten im Zaehlen erneut umgeschaltet wird. 380ms mit
+     weichem Ausklang, wie im Onboarding. */
+  function preisZaehlen(el, ziel){
+    var von = parseFloat(String(el.textContent || "").replace(/[^0-9.]/g, ""));
+    if (!isFinite(von)) von = ziel;
+    if (el.__uhr) cancelAnimationFrame(el.__uhr);
+    var t0 = 0, DAUER = 380;
+    (function lauf(ts){
+      if (!t0) t0 = ts || 0;
+      var p = Math.min(1, ((ts || 0) - t0) / DAUER);
+      var e = 1 - Math.pow(1 - p, 3);
+      el.textContent = preisGeld(von + (ziel - von) * e);
+      if (p < 1) el.__uhr = requestAnimationFrame(lauf);
+      else { el.__uhr = 0; el.textContent = preisGeld(ziel); }
+    })(0);
   }
 
   /* ---------- Der Fuss ----------------------------------------------------------------------
@@ -5168,6 +5256,9 @@
     promptsVoreinstellen();
     bauen(root);
     nurSchauen(root);
+    /* NACH nurSchauen: das schluckt Klicks nur in .ulh-view (dem nachgebauten App-Fenster), die
+       Preissektion ist davon nicht betroffen. */
+    preiseBinden(root);
     radDurchlassen(root);
     scrollGroesse(root);
     hellHalten(root);
