@@ -1,0 +1,51 @@
+<meta charset="utf-8"><title>Resize: Lesezugriffe im Werkzeugleisten-Pfad</title>
+<!-- Wozu: zaehlt die Layout-Lesezugriffe, die EINE Ziehbewegung im Anpassungspfad der Tabellen
+     kostet (fitToolbar ueber UC.onResize). Zwoelf Wurzeln stehen fuer zwoelf Tabellen.
+     ?core=core-alt.js laedt den Stand von origin/main zum Vergleich.
+     ResizeObserver feuert im verdeckten Pane nicht -- deshalb wird die Rueckmeldung direkt ueber
+     den resize-Fallback ausgeloest, dieselbe Kette. -->
+<body style="margin:0;font-family:system-ui,sans-serif">
+<pre id="out" style="font:12px/1.6 ui-monospace,monospace;background:#f6f6f6;padding:10px;margin:0">laedt</pre>
+<div id="buehne" style="width:1000px"></div>
+<script>
+window.requestAnimationFrame = function(fn){ return setTimeout(function(){ fn(Date.now()); }, 8); };
+window.cancelAnimationFrame = function(id){ clearTimeout(id); };
+try { delete window.ResizeObserver; } catch(e){ window.ResizeObserver = undefined; }
+var WELCHE = new URLSearchParams(location.search).get("core") || "core.js";
+document.write('<scr' + 'ipt src="' + WELCHE + '?v=' + Math.random() + '"></scr' + 'ipt>');
+</script>
+<script>
+window.addEventListener("load", function(){
+  var UC = window.UpstreemCore, b = document.getElementById("buehne");
+  var n = 0, zaehlen = false;
+  var origRect = Element.prototype.getBoundingClientRect;
+  Element.prototype.getBoundingClientRect = function(){ if (zaehlen) n++; return origRect.apply(this, arguments); };
+  for (var i = 0; i < 12; i++){
+    var d = document.createElement("div"); d.className = "up-root"; d.style.height = "20px";
+    b.appendChild(d);
+    UC.onResize(d, function(w){
+      /* So arbeitet fitToolbar: mehrere Messungen, dann Klassen. */
+      this.getBoundingClientRect(); this.getBoundingClientRect();
+      this.classList.toggle("is-narrow", w < 700);
+    }.bind(d));
+  }
+  setTimeout(function(){
+    zaehlen = true;
+    var k = 0;
+    var uhr = setInterval(function(){
+      b.style.width = (1000 - (++k) * 4) + "px";
+      window.dispatchEvent(new Event("resize"));
+      if (k >= 30){
+        clearInterval(uhr);
+        setTimeout(function(){
+          zaehlen = false;
+          Element.prototype.getBoundingClientRect = origRect;
+          document.getElementById("out").textContent =
+            "Datei: " + WELCHE + "\nWurzeln: 12, 30 Bilder Ziehbewegung\nLesezugriffe: " + n;
+          window.__ergebnis = { datei: WELCHE, leseZugriffe: n };
+        }, 500);
+      }
+    }, 16);
+  }, 400);
+});
+</script>

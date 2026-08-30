@@ -1678,7 +1678,11 @@
          schon gemessen -- refit bekommt sie mit, statt sie neu zu lesen. */
       if (typeof toolGroup !== "undefined" && toolGroup && w) toolGroup.refit(w);
       clearTimeout(root.__uboRespT);
-      root.__uboRespT = setTimeout(function(){ line.resize(); matrix.resize(); }, 60);
+      /* 160 statt 60: chart.resize() rechnet das ganze Chart neu, und bei 60ms lief das waehrend
+         einer Ziehbewegung rund sechzehn Mal in der Sekunde -- an Chart.js' eigenem resizeDelay
+         (120ms) vorbei, das genau davor schuetzen soll. Jetzt liegt der Aufruf hinter dessen
+         Fenster, und waehrend des Ziehens skaliert der Browser die Leinwand. */
+      root.__uboRespT = setTimeout(function(){ line.resize(); matrix.resize(); }, 160);
     }
     if (UC.onResize) UC.onResize(root, applyResponsive);
     /* The legend re-flows itself (balanced rows) only when asked to, and it also owns the

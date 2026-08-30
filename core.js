@@ -4935,12 +4935,13 @@
        echten App: 1198 von 12888 Layout-Lesezugriffen (9 Prozent), und zwar fuer eine Antwort,
        die sich waehrend einer Mausbewegung nicht aendert -- die Kette ueber der Wurzel bleibt
        dieselbe, und was einmal entklemmt ist, bleibt es.
-       Also hoechstens alle 500ms erneut, und nur solange die Wurzel am selben Elternteil haengt.
+       Also hoechstens alle drei Sekunden erneut (erst 500ms -- in der Messung standen davon immer
+       noch 613 Lesezugriffe, 13 Prozent), und nur solange die Wurzel am selben Elternteil haengt.
        Haengt Bubble sie woanders ein, faellt der Vergleich und der Lauf kommt sofort wieder.
        Der Rueckbau (restore) laeuft immer, der ist selten und muss greifen. */
     if (!restore && root && root.__upUnclipEltern === root.parentElement){
       var jetzt = (window.performance && performance.now) ? performance.now() : +new Date();
-      if (jetzt - (root.__upUnclipZeit || 0) < 500) return;
+      if (jetzt - (root.__upUnclipZeit || 0) < 3000) return;
       root.__upUnclipZeit = jetzt;
     } else if (!restore && root){
       root.__upUnclipEltern = root.parentElement;
@@ -5132,6 +5133,28 @@
       try { e.fn(e.w); } catch (err){ if (window.console) console.warn("[upstreem] onResize:", err); }
     }
   }
+  /* Waehrend einer Ziehbewegung reicht ein Lauf je 100ms. An dieser Rueckmeldung haengt die
+     ganze Anpassung der Werkzeugleisten und Tabellen -- fitToolbar misst die Ueberschrift, die
+     Werkzeuge, die Suche und die Fusszeile und schreibt danach Klassen. Bei sechzig Bildern in
+     der Sekunde und einem Dutzend Tabellen war das in der Messung des Nutzers der groesste
+     verbliebene Block: headGap, boxWidth, syncTakeover und die Fusszeilenpruefung zusammen ueber
+     ein Viertel aller Lesezugriffe.
+     100ms ist der Kompromiss: schnell genug, dass eine wegfallende Spalte dem Rand folgt, und
+     langsam genug, dass zwischen zwei Laeufen echte Bilder liegen. Am ENDE der Bewegung laeuft es
+     ohnehin noch einmal, weil der Beobachter dann ein letztes Mal meldet. */
+  var _resZuletzt = 0, _RES_ABSTAND = 100;
+  function _resPlanen(){
+    var jetzt = (window.performance && performance.now) ? performance.now() : +new Date();
+    var warte = Math.max(0, _RES_ABSTAND - (jetzt - _resZuletzt));
+    if (warte <= 0){ _resZuletzt = jetzt; _resGeplant(); return; }
+    if (_resWarteUhr) return;
+    _resWarteUhr = setTimeout(function(){
+      _resWarteUhr = null;
+      _resZuletzt = (window.performance && performance.now) ? performance.now() : +new Date();
+      _resGeplant();
+    }, warte);
+  }
+  var _resWarteUhr = null;
   function onResize(root, fn){
     if (!root || typeof fn !== "function") return;
     if (!_resGeplant) _resGeplant = einmalProBild(_resLauf);
@@ -5139,7 +5162,7 @@
     function planen(){
       if (e.q) return;
       e.q = 1; _resSchlange.push(e);
-      _resGeplant();
+      _resPlanen();
     }
     if (window.ResizeObserver){
       new ResizeObserver(function(eintraege){
