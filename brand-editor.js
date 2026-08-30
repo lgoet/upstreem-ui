@@ -197,8 +197,15 @@
               'Every name entered here is also tracked for this brand in AI answers and citations.</p>' +
           '</div>' +
           '<div class="ube-aliasadd">' +
-            '<input class="up-field ube-feld ube-aliasin" type="text" placeholder="New alias" ' +
-              'autocomplete="off" spellcheck="false" maxlength="120">' +
+            /* Der X-Knopf ist .up-search-clear aus core -- dasselbe Zeichen, dieselbe Groesse und
+               derselbe Ton wie in jedem Suchfeld der App. Er sitzt IM Feld rechts, deshalb der
+               Rahmen darum. */
+            '<span class="ube-feldwrap">' +
+              '<input class="up-field ube-feld ube-aliasin" type="text" placeholder="New alias" ' +
+                'autocomplete="off" spellcheck="false" maxlength="120">' +
+              '<button class="up-search-clear ube-clear" type="button" data-alias-clear ' +
+                'aria-label="Clear"></button>' +
+            '</span>' +
             '<button class="up-btn-pri ube-aliasbtn" type="button" data-alias-add disabled></button>' +
           '</div>' +
           '<div class="ube-aliastable"></div>' +
@@ -217,6 +224,8 @@
                 'aria-label="Open color picker"></button>' +
               '<input class="up-field ube-feld ube-farbin" type="text" spellcheck="false" autocomplete="off" ' +
                 'maxlength="7" placeholder="#000000" aria-label="Brand color">' +
+              '<button class="up-search-clear ube-clear" type="button" data-color-clear ' +
+                'aria-label="Clear color"></button>' +
             '</span>' +
             '<button class="up-btn-pri ube-farbsave" type="button" data-color-save disabled></button>' +
             '<button class="up-btn-sec ube-farbreset" type="button" data-color-reset hidden>Reset</button>' +
@@ -250,6 +259,10 @@
 
     elAddBtn.innerHTML = (UC.icon ? UC.icon("plus", 2.2) : "") + "<span>Add</span>";
     elNameBt.innerHTML = (UC.icon ? UC.icon("save", 2) : "") + "<span>Save</span>";
+    /* Das X kommt aus core (derselbe Pfad wie im Suchfeld), nicht selbst gezeichnet. */
+    [].forEach.call(root.querySelectorAll(".ube-clear"), function (b) {
+      b.innerHTML = UC.icon ? UC.icon("up-search-clear", 2) : "";
+    });
     elFarbSv.innerHTML = (UC.icon ? UC.icon("save", 2) : "") + "<span>Save</span>";
 
     /* ---- Farbwaehler ------------------------------------------------------------------------
@@ -338,6 +351,30 @@
         hinweisSichtbar: root.classList.contains("is-nopicker")
       };
     }
+    /* Der zweite Griff aus der Ferne: warum scrollt der Kasten nicht?
+         window.upstreemScrollDiag()
+       Er laeuft die Vorfahren hoch und meldet fuer jeden, wie hoch er ist, wie hoch sein Inhalt
+       ist und was sein overflow sagt. Wer eine Scrollleiste zeigt, ohne dass etwas zu scrollen
+       waere (scrollHoehe == sichtbareHoehe bei overflow: scroll), steht damit fest -- und ebenso
+       der, der den Inhalt abschneidet (overflow: hidden bei groesserem Inhalt). */
+    function scrollDiagnose() {
+      var kette = [], e = root, tiefe = 0;
+      while (e && tiefe < 14) {
+        var c = getComputedStyle(e);
+        kette.push({
+          element: e.tagName + (e.id ? "#" + e.id : "") + "." + String(e.className || "").slice(0, 40),
+          sichtbareHoehe: e.clientHeight, inhaltsHoehe: e.scrollHeight,
+          scrollbar: c.overflowY, hoeheRegel: c.height,
+          kannScrollen: e.scrollHeight - e.clientHeight > 1 &&
+                        (c.overflowY === "auto" || c.overflowY === "scroll")
+        });
+        e = e.parentElement; tiefe++;
+      }
+      return { komponenteHoehe: root.scrollHeight, fenster: window.innerHeight, kette: kette };
+    }
+    root.__ubeScrollDiag = scrollDiagnose;
+    if (!window.upstreemScrollDiag) window.upstreemScrollDiag = scrollDiagnose;
+
     root.__ubeFarbDiag = farbDiagnose;
     /* Global nur setzen, wenn es den Namen noch nicht gibt -- zwei Editoren auf einer Seite sollen
        sich nicht gegenseitig ueberschreiben. */
@@ -484,8 +521,9 @@
         state.farbe = farbeAusDaten(c);
         elFarbIn.value = state.farbe;
       }
+      /* Reset setzt farbeSpiegeln jetzt selbst -- sichtbar, sobald eine Farbe im Feld steht. */
       farbeSpiegeln();
-      elFarbRs.hidden = !txt(c.color_override);
+      clearZeigen(elIn);
       if (UC.makeTooltips) UC.makeTooltips(root);
     }
 
@@ -502,11 +540,24 @@
         traeger.classList.toggle("is-leer", !gut);
       }
       elFarbSv.disabled = !state.farbeDirty || !gut;
+      clearZeigen(elFarbIn);
+      /* Reset steht bereit, sobald ueberhaupt eine Farbe im Feld steht -- nicht erst, wenn der
+         Server eine eigene gespeichert hat. Er schickt den leeren Wert und holt damit die
+         vergebene Farbe zurueck. */
+      elFarbRs.hidden = !gut;
     }
 
     /* ---- Bedienung -------------------------------------------------------------------------- */
     /* Der Save-Knopf steht erst bereit, wenn der Name WIRKLICH ein anderer ist -- ein Knopf, der
        denselben Namen noch einmal schickt, loest einen Serverlauf ohne Wirkung aus. */
+    /* Der X-Knopf erscheint, sobald etwas im Feld steht -- der Platz ist immer reserviert
+       (visibility, nicht display), damit der Text beim Auftauchen nicht springt. Das ist die
+       Mechanik von .up-search, hier nur an einem anderen Traeger. */
+    function clearZeigen(feld) {
+      var w = feld.closest(".ube-feldwrap") || feld.closest(".ube-farbfeld");
+      if (w) w.classList.toggle("has-text", !!String(feld.value || "").length);
+    }
+
     function nameGeaendert() {
       var c = (state.data && state.data.company) || {};
       var v = txt(elNameIn.value).trim();
@@ -521,6 +572,7 @@
     elIn.addEventListener("input", function () {
       state.neu = elIn.value;
       elAddBtn.disabled = !txt(state.neu).trim();
+      clearZeigen(elIn);
     });
     elIn.addEventListener("keydown", function (e) {
       if (e.key === "Enter" && txt(elIn.value).trim()) { e.preventDefault(); aliasAnlegen(); }
@@ -550,6 +602,18 @@
         state.nameDirty = false;
         elNameBt.disabled = true;
         fire("data-rename-fn", "ubeRename", { company_id: txt(c.company_id), name: neuerName });
+        return;
+      }
+      if (t.closest("[data-alias-clear]")) {
+        elIn.value = ""; state.neu = ""; elAddBtn.disabled = true;
+        clearZeigen(elIn); elIn.focus();
+        return;
+      }
+      /* Das X leert nur das FELD -- gespeichert wird dadurch nichts. Wer die vergebene Farbe
+         zurueckholen will, nimmt Reset daneben; das schickt den leeren Wert an den Server. */
+      if (t.closest("[data-color-clear]")) {
+        elFarbIn.value = ""; state.farbeDirty = true;
+        farbeSpiegeln(); elFarbIn.focus();
         return;
       }
       if (t.closest("[data-color-open]")) { farbwaehlerOeffnen(); return; }

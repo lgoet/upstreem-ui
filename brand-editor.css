@@ -6,7 +6,9 @@
    Was hier NICHT steht, weil es aus core kommt: Tabelle, Schalter, alle drei Knopfformen, das
    Eingabefeld, der Favicon-Kasten und der Leerzustand. */
 
-.ube-root { display: block; width: 100%; box-sizing: border-box; }
+/* Oben derselbe Abstand wie zwischen zwei Bloecken (32): von der Oberkante bis zur Kopfzeile
+   ist es dann genauso weit wie von der Kopfzeile bis zur ersten Trennlinie. */
+.ube-root { display: block; width: 100%; box-sizing: border-box; padding-top: 32px; }
 .ube-root * { box-sizing: border-box; }
 
 /* Zwischen den Bloecken eine Linie, wie in url-detail (.uud-root > * + *): 32px darueber wie
@@ -74,7 +76,15 @@
 
 /* ---------- Aliase ---------- */
 .ube-zeile, .ube-aliasadd { display: flex; align-items: center; gap: 8px; }
-.ube-namein, .ube-aliasin { flex: 1 1 auto; min-width: 0; }
+.ube-namein { flex: 1 1 auto; min-width: 0; }
+/* Der Rahmen um Feld und X: das X sitzt IM Feld rechts, also braucht der Traeger die Bezugsgroesse
+   und das Feld rechts Platz (24 Knopf + 2x6 Luft = 36). */
+.ube-feldwrap { position: relative; display: flex; align-items: center; flex: 1 1 auto; min-width: 0; }
+.ube-aliasin { flex: 1 1 auto; min-width: 0; padding-right: 36px; }
+.ube-clear { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); margin: 0; }
+/* Sichtbar, sobald Text drinsteht -- dieselbe Mechanik wie .up-search.has-text, nur an unserem
+   Traeger. visibility statt display, damit beim Auftauchen nichts springt. */
+.ube-feldwrap.has-text .up-search-clear, .ube-farbfeld.has-text .up-search-clear { visibility: visible; }
 .ube-namebtn { height: 40px; padding: 0 16px; }
 /* Der Knopf steht auf derselben Hoehe wie das Feld -- 32 neben 40 sieht aus wie hineingerutscht. */
 .ube-aliasbtn { height: 40px; padding: 0 16px; }
@@ -141,7 +151,8 @@
 }
 /* Der Farbkasten steht links IM Feld, also faengt der Text erst bei 36 an -- 10 Rand, 18 Kasten,
    8 Luft. Die uebrigen Werte sind die des gemeinsamen Feldes darueber. */
-.ube-farbin { width: 152px; padding-left: 38px; font-variant-numeric: tabular-nums; }
+.ube-farbin { width: 178px; padding-left: 38px; padding-right: 36px;
+  font-variant-numeric: tabular-nums; }
 /* Sichtbar nur, wenn der Waehler wirklich nicht geladen hat -- die Klasse setzt colorisSetzen. */
 .ube-farbhinweis { display: none; margin: 0; font-size: 12.5px; color: var(--vc-third); }
 .ube-root.is-nopicker .ube-farbhinweis { display: block; }

@@ -18,6 +18,15 @@
      Komponente zieht mit (gemessen: Waehler, Tabelle und Knopf wechseln mit).
   5. Die fuenf data-*-fn Namen zeigen auf deine Bubble-Funktionen (Toolbox "JavaScript to Bubble").
      Wer einen davon weglaesst, schaltet die Funktion ab -- die Komponente feuert dann nichts.
+  6. FIT HEIGHT am HTML-Element, und "Fit height to content" auch an der Gruppe darum. Der Editor
+     waechst mit der Zahl der Aliase und der Zeitraeume; steht dort eine feste Hoehe, schneidet
+     Bubble den Rest ab, und die Schublade zeigt eine Scrollleiste, die nichts zu scrollen hat --
+     genau das Bild von "man sieht die Leiste, aber es scrollt nicht".
+     Nachpruefen laesst sich das auf der Seite mit
+        window.upstreemScrollDiag()
+     Der Aufruf meldet fuer jeden Vorfahren sichtbare Hoehe, Inhaltshoehe und overflow. Wer den
+     Inhalt abschneidet (Inhaltshoehe groesser, overflow: hidden) oder eine Leiste ohne Inhalt
+     zeigt (beide Hoehen gleich, overflow: scroll), steht damit fest.
 
   DATEN HINEIN (Run javascript, Schritt unten in diesem Kommentar)
      setBrandEditor(INSTANCE_ID, payload)        die ganze Ansicht
