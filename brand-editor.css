@@ -6,9 +6,12 @@
    Was hier NICHT steht, weil es aus core kommt: Tabelle, Schalter, alle drei Knopfformen, das
    Eingabefeld, der Favicon-Kasten und der Leerzustand. */
 
-/* Oben derselbe Abstand wie zwischen zwei Bloecken (32): von der Oberkante bis zur Kopfzeile
-   ist es dann genauso weit wie von der Kopfzeile bis zur ersten Trennlinie. */
-.ube-root { display: block; width: 100%; box-sizing: border-box; padding-top: 32px; }
+/* KEIN eigenes Polster oben. Es stand hier auf 32 und kam ZUSAETZLICH zu dem, was die Schublade
+   ohnehin schon gibt -- oben war es damit sichtbar weiter als von der Kopfzeile bis zur ersten
+   Trennlinie. Genau wie url-detail und domain-detail traegt den Rand der Container, und die
+   Vorlage sagt jetzt, dass er oben 32 sein soll: dann steht ueber und unter der Kopfzeile
+   dasselbe Mass. */
+.ube-root { display: block; width: 100%; box-sizing: border-box; }
 .ube-root * { box-sizing: border-box; }
 
 /* Zwischen den Bloecken eine Linie, wie in url-detail (.uud-root > * + *): 32px darueber wie
