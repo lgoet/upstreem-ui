@@ -5121,6 +5121,15 @@
      Rahmen gar nicht, und dann bliebe die Anpassung liegen (derselbe Grund wie ueberall sonst in
      dieser Datei). */
   var _resSchlange = [], _resGeplant = null;
+  /* ZEITSCHEIBEN. Gemessen in der App des Nutzers: dieser Lauf war mit 696ms in 27 Aufrufen der
+     teuerste Rueckruf ueberhaupt, der laengste einzelne 92ms. Kein Wunder -- er arbeitet die
+     Anpassung SAEMTLICHER Komponenten in einem Stueck ab, und ein Block ueber 50ms ist genau das,
+     was die Konsole als "Forced reflow" meldet.
+     Jetzt bekommt jeder Durchgang ein Budget von 12ms. Was nicht mehr hineinpasst, bleibt in der
+     Schlange und kommt im naechsten Bild dran. Optisch ist das dasselbe -- nach drei, vier Bildern
+     sind alle Komponenten nachgezogen --, aber keine einzelne Aufgabe wird mehr lang genug, um zu
+     ruckeln. */
+  var _RES_BUDGET = 12;
   function _resLauf(){
     var liste = _resSchlange; _resSchlange = [];
     var i, e;
@@ -5134,10 +5143,24 @@
       if (e.wRO >= 0){ e.w = e.wRO; e.wRO = -1; }
       else e.w = e.root.getBoundingClientRect().width;
     }
-    /* 2. Nur schreiben. Ein Wurf in einer Komponente darf die anderen nicht mitnehmen. */
+    /* 2. Nur schreiben, und nur solange das Budget reicht. */
+    var t0 = (window.performance && performance.now) ? performance.now() : 0;
     for (i = 0; i < liste.length; i++){
       e = liste[i];
       if (e.w === e.lastW) continue;
+      if (t0 && i > 0 && (performance.now() - t0) > _RES_BUDGET){
+        /* Rest zurueck in die Schlange -- die Breite ist gemessen und bleibt gueltig, es fehlt
+           nur noch die Reaktion darauf. */
+        for (var r = i; r < liste.length; r++){
+          if (liste[r].q) continue;
+          liste[r].q = 1; _resSchlange.push(liste[r]);
+        }
+        /* Direkt das naechste Bild, nicht ueber _resPlanen: das haelt einen Mindestabstand von
+           100ms ein, und der gilt fuer NEUE Meldungen -- der Rest einer angefangenen Runde soll
+           dagegen sofort weiter. */
+        _resGeplant();
+        return;
+      }
       e.lastW = e.w;
       try { e.fn(e.w); } catch (err){ if (window.console) console.warn("[upstreem] onResize:", err); }
     }

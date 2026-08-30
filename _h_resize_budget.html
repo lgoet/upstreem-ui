@@ -1,0 +1,50 @@
+<meta charset="utf-8"><title>onResize: Dauer eines Sammellaufs</title>
+<!-- Wozu: misst, wie lange EIN Sammellauf braucht, wenn zwanzig Komponenten daran haengen und
+     jede in ihrer Rueckmeldung echte Arbeit macht. Ueber 50ms meldet die Konsole eine Violation;
+     mit Zeitscheiben darf kein einzelner Durchgang mehr so lang werden.
+     rAF ist durch setTimeout ersetzt und ResizeObserver abgeschaltet -- im verdeckten Pane feuert
+     beides nicht (CLAUDE.md 3). -->
+<body style="margin:0;font-family:system-ui,sans-serif">
+<pre id="out" style="font:12px/1.6 ui-monospace,monospace;background:#f6f6f6;padding:10px;margin:0">laedt</pre>
+<div id="buehne" style="width:1000px"></div>
+<script>
+window.requestAnimationFrame = function(fn){ return setTimeout(function(){ fn(Date.now()); }, 8); };
+window.cancelAnimationFrame = function(id){ clearTimeout(id); };
+try { delete window.ResizeObserver; } catch(e){ window.ResizeObserver = undefined; }
+var WELCHE = new URLSearchParams(location.search).get("core") || "core.js";
+document.write('<scr' + 'ipt src="' + WELCHE + '?v=' + Math.random() + '"></scr' + 'ipt>');
+</script>
+<script>
+window.addEventListener("load", function(){
+  var UC = window.UpstreemCore, b = document.getElementById("buehne");
+  var dauern = [];
+  /* Jede Rueckmeldung kostet rund 4ms -- so viel wie fitToolbar in einer echten Tabelle. */
+  function arbeit(){ var t = performance.now(); while (performance.now() - t < 4){} }
+  for (var i = 0; i < 20; i++){
+    var d = document.createElement("div"); d.className = "up-root"; d.style.height = "10px";
+    b.appendChild(d);
+    UC.onResize(d, arbeit);
+  }
+  /* Die Dauer eines Durchgangs messen: um den Lauf herum, ueber den Timer-Rueckruf. */
+  var origTO = window.setTimeout;
+  window.setTimeout = function(fn){
+    if (typeof fn !== "function") return origTO.apply(window, arguments);
+    var args = [].slice.call(arguments);
+    args[0] = function(){ var t = performance.now(); try { return fn.apply(this, arguments); }
+      finally { var dd = performance.now() - t; if (dd > 3) dauern.push(Math.round(dd)); } };
+    return origTO.apply(window, args);
+  };
+  origTO(function(){
+    b.style.width = "700px";
+    window.dispatchEvent(new Event("resize"));
+    origTO(function(){
+      document.getElementById("out").textContent =
+        "Datei: " + WELCHE + "\nKomponenten: 20, je 4ms Arbeit\n" +
+        "Durchgaenge: " + dauern.length + "\nDauern: " + dauern.join(", ") + " ms\n" +
+        "LAENGSTER: " + (dauern.length ? Math.max.apply(null, dauern) : 0) + " ms";
+      window.__ergebnis = { datei: WELCHE, durchgaenge: dauern.length, dauern: dauern,
+                            laengster: dauern.length ? Math.max.apply(null, dauern) : 0 };
+    }, 2000);
+  }, 500);
+});
+</script>

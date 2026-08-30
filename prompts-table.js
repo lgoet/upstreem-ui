@@ -4287,7 +4287,12 @@
     /* sticky header machinery (core) */
     var _sticky = UC.makeSticky(root, elHead);
     function syncTheadOffset(){ _sticky.syncTheadOffset(); }
-    window.addEventListener("resize", UC.rafThrottle(function(){ _sticky.applySticky(); }));
+    /* Nicht mehr an jedem Bild: applySticky misst die Kopfzeile (syncTheadOffset) und laeuft die
+       Vorfahrenkette hoch. In der Messung des Nutzers standen dahinter 703 rAF-Anmeldungen und
+       446 Lesezugriffe allein fuer syncTheadOffset. Am Ende der Bewegung reicht es -- die Leiste
+       klebt waehrend des Ziehens ohnehin da, wo sie war. */
+    if (UC.aufResize) UC.aufResize(function(){ _sticky.applySticky(); });
+    else window.addEventListener("resize", UC.rafThrottle(function(){ _sticky.applySticky(); }));
     _sticky.applySticky();
 
     function render(){

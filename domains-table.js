@@ -1680,7 +1680,12 @@
     var _sticky = UpstreemCore.makeSticky(root, elHead);
     function syncTheadOffset(){ _sticky.syncTheadOffset(); }
     function applySticky(){ _sticky.applySticky(); }
-    window.addEventListener("resize", UpstreemCore.rafThrottle(applySticky));
+    /* Nicht mehr an jedem Bild: applySticky misst die Kopfzeile (syncTheadOffset) und laeuft die
+       Vorfahrenkette hoch. In der Messung des Nutzers standen dahinter 703 rAF-Anmeldungen und
+       446 Lesezugriffe allein fuer syncTheadOffset. Am Ende der Bewegung reicht es -- die Leiste
+       klebt waehrend des Ziehens ohnehin da, wo sie war. */
+    if (UpstreemCore.aufResize) UpstreemCore.aufResize(applySticky);
+    else window.addEventListener("resize", UpstreemCore.rafThrottle(applySticky));
     applySticky();
     /* scroll-repositioning for the portaled dropdowns is handled centrally by
        UpstreemCore.makePortal — see core.js */

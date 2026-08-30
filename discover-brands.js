@@ -328,7 +328,12 @@
          statt darunter -- und loest die Bubble-Wrapper aus ihrem overflow:hidden, in dem sonst
          sowohl das Kleben als auch das Zahnrad-Menue steckenbleibt. */
       var sticky = UC.makeSticky(root, root.querySelector(".up-head"));
-      window.addEventListener("resize", UC.rafThrottle(sticky.applySticky));
+    /* Nicht mehr an jedem Bild: applySticky misst die Kopfzeile (syncTheadOffset) und laeuft die
+       Vorfahrenkette hoch. In der Messung des Nutzers standen dahinter 703 rAF-Anmeldungen und
+       446 Lesezugriffe allein fuer syncTheadOffset. Am Ende der Bewegung reicht es -- die Leiste
+       klebt waehrend des Ziehens ohnehin da, wo sie war. */
+      if (UC.aufResize) UC.aufResize(sticky.applySticky);
+      else window.addEventListener("resize", UC.rafThrottle(sticky.applySticky));
       sticky.applySticky();
 
       /* ---------------- Ladeflaeche ---------------- */
