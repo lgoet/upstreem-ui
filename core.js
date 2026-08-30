@@ -5114,8 +5114,16 @@
   function _resLauf(){
     var liste = _resSchlange; _resSchlange = [];
     var i, e;
-    /* 1. Nur lesen. */
-    for (i = 0; i < liste.length; i++){ e = liste[i]; e.q = 0; e.w = e.root.getBoundingClientRect().width; }
+    /* 1. Lesen -- aber nur, wenn der Beobachter die Breite nicht schon mitgeliefert hat.
+       ResizeObserver gibt sie in entry.contentRect mit, und die ist zum Zeitpunkt des Aufrufs
+       frisch gemessen: ein eigener getBoundingClientRect-Aufruf holt dieselbe Zahl noch einmal
+       und kostet ein Layout. Bei zwanzig Komponenten und sechzig Bildern in der Sekunde war
+       genau das ein Posten von 1138 Lesezugriffen in der Messung des Nutzers. */
+    for (i = 0; i < liste.length; i++){
+      e = liste[i]; e.q = 0;
+      if (e.wRO >= 0){ e.w = e.wRO; e.wRO = -1; }
+      else e.w = e.root.getBoundingClientRect().width;
+    }
     /* 2. Nur schreiben. Ein Wurf in einer Komponente darf die anderen nicht mitnehmen. */
     for (i = 0; i < liste.length; i++){
       e = liste[i];
@@ -5127,14 +5135,22 @@
   function onResize(root, fn){
     if (!root || typeof fn !== "function") return;
     if (!_resGeplant) _resGeplant = einmalProBild(_resLauf);
-    var e = { root: root, fn: fn, lastW: -1, w: 0, q: 0 };
+    var e = { root: root, fn: fn, lastW: -1, w: 0, q: 0, wRO: -1 };
     function planen(){
       if (e.q) return;
       e.q = 1; _resSchlange.push(e);
       _resGeplant();
     }
     if (window.ResizeObserver){
-      new ResizeObserver(planen).observe(root);
+      new ResizeObserver(function(eintraege){
+        /* Die Breite aus dem Eintrag mitnehmen -- siehe _resLauf. borderBoxSize gibt es nicht in
+           jedem Browser, contentRect ueberall. */
+        try {
+          var r = eintraege && eintraege[0] && eintraege[0].contentRect;
+          if (r && typeof r.width === "number") e.wRO = r.width;
+        } catch (err){}
+        planen();
+      }).observe(root);
     } else {
       window.addEventListener("resize", planen);
     }
@@ -5179,6 +5195,29 @@
       if (uhr) clearTimeout(uhr);
       uhr = setTimeout(function(){ uhr = null; try { fn(); } catch(e){ if (window.console) console.warn("[upstreem] aufResize:", e); } }, ms);
     }, { passive: true });
+  }
+
+  /* Ein ResizeObserver, der NICHT an jedem Bild ausloest. Fuer alles, was auf eine
+     Groessenaenderung mit Messen und Schreiben antwortet: der rohe Beobachter feuert waehrend
+     einer Ziehbewegung mit jedem Bild, und drei davon in einer Komponente (Tabelle, Rahmen,
+     Legende) sind dann drei erzwungene Layouts je Bild.
+     Die Breite kommt aus dem Eintrag, nicht aus einer eigenen Messung -- und bleibt sie gleich,
+     passiert gar nichts. */
+  function beobachteGroesse(el, fn, cfg){
+    if (!el || typeof fn !== "function" || !window.ResizeObserver) return;
+    cfg = cfg || {};
+    var ms = cfg.ms || 120, uhr = null, letzte = -1;
+    new ResizeObserver(function(eintraege){
+      var b = -1;
+      try {
+        var r = eintraege && eintraege[0] && eintraege[0].contentRect;
+        if (r && typeof r.width === "number") b = r.width;
+      } catch (e){}
+      if (b >= 0 && b === letzte && !cfg.hoehe) return;
+      if (b >= 0) letzte = b;
+      if (uhr) clearTimeout(uhr);
+      uhr = setTimeout(function(){ uhr = null; try { fn(b); } catch (e){ if (window.console) console.warn("[upstreem] beobachteGroesse:", e); } }, ms);
+    }).observe(el);
   }
 
   function rafThrottle(fn){
@@ -9616,6 +9655,7 @@
     modelChip: modelChip,
     marketChip: marketChip,
     aufResize: aufResize,
+    beobachteGroesse: beobachteGroesse,
     brandToggleHtml: brandToggleHtml,
     respBody: respBody,
     rbShowUrl: rbShowUrl,

@@ -782,20 +782,30 @@
       syncFromAttrs();
     }
 
+    /* Gedrosselt statt an jedem Bild -- applyResponsive misst und schreibt, und drei Beobachter
+       in einer Komponente ergaben waehrend einer Ziehbewegung drei erzwungene Layouts je Bild.
+       In der Messung des Nutzers war diese Komponente damit der groesste Einzelposten. */
     if (window.ResizeObserver){
-      new ResizeObserver(function(){
-        if (root.__votRaf) return;
-        root.__votRaf = requestAnimationFrame(function(){ root.__votRaf = null; applyResponsive(); });
-      }).observe(tableEl.parentElement || tableEl);
-      new ResizeObserver(function(){
-        if (root.__votRespRaf) return;
-        root.__votRespRaf = requestAnimationFrame(function(){ root.__votRespRaf = null; applyResponsive(); });
-      }).observe(inner || root);
-      if (legendEl){
+      var kern = window.UpstreemCore;
+      if (kern && kern.beobachteGroesse){
+        kern.beobachteGroesse(tableEl.parentElement || tableEl, applyResponsive);
+        kern.beobachteGroesse(inner || root, applyResponsive);
+        if (legendEl) kern.beobachteGroesse(legendEl, function(){ line.relayoutLegend(); });
+      } else {
         new ResizeObserver(function(){
-          if (root.__votLegRaf) return;
-          root.__votLegRaf = requestAnimationFrame(function(){ root.__votLegRaf = null; line.relayoutLegend(); });
-        }).observe(legendEl);
+          if (root.__votRaf) return;
+          root.__votRaf = requestAnimationFrame(function(){ root.__votRaf = null; applyResponsive(); });
+        }).observe(tableEl.parentElement || tableEl);
+        new ResizeObserver(function(){
+          if (root.__votRespRaf) return;
+          root.__votRespRaf = requestAnimationFrame(function(){ root.__votRespRaf = null; applyResponsive(); });
+        }).observe(inner || root);
+        if (legendEl){
+          new ResizeObserver(function(){
+            if (root.__votLegRaf) return;
+            root.__votLegRaf = requestAnimationFrame(function(){ root.__votLegRaf = null; line.relayoutLegend(); });
+          }).observe(legendEl);
+        }
       }
     }
     /* Gedrosselt statt an jedem Bild: relayoutLegend misst jeden Legendeneintrag, und

@@ -797,15 +797,24 @@
     render();
     populateFilter();
 
+    /* Gedrosselt statt an jedem Bild -- applyResponsive misst und schreibt, und drei Beobachter
+       in einer Komponente ergaben waehrend einer Ziehbewegung drei erzwungene Layouts je Bild.
+       In der Messung des Nutzers war diese Komponente damit der groesste Einzelposten. */
     if (window.ResizeObserver){
-      new ResizeObserver(function(){
-        if (root.__tcdRaf) return;
-        root.__tcdRaf = requestAnimationFrame(function(){ root.__tcdRaf = null; applyResponsive(); });
-      }).observe(tableEl.parentElement || tableEl);
-      new ResizeObserver(function(){
-        if (root.__tcdRaf2) return;
-        root.__tcdRaf2 = requestAnimationFrame(function(){ root.__tcdRaf2 = null; applyResponsive(); });
-      }).observe(root);
+      var kern = window.UpstreemCore;
+      if (kern && kern.beobachteGroesse){
+        kern.beobachteGroesse(tableEl.parentElement || tableEl, applyResponsive);
+        kern.beobachteGroesse(root, applyResponsive);
+      } else {
+        new ResizeObserver(function(){
+          if (root.__tcdRaf) return;
+          root.__tcdRaf = requestAnimationFrame(function(){ root.__tcdRaf = null; applyResponsive(); });
+        }).observe(tableEl.parentElement || tableEl);
+        new ResizeObserver(function(){
+          if (root.__tcdRaf2) return;
+          root.__tcdRaf2 = requestAnimationFrame(function(){ root.__tcdRaf2 = null; applyResponsive(); });
+        }).observe(root);
+      }
     }
 
     /* Reconcile isDark AND the loading attributes from the DOM too, not only from an explicit

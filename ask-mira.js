@@ -4631,7 +4631,13 @@
   }
   updateCompact();
   amAufResize(updateCompact, { hoehe: true });
-  if (typeof ResizeObserver !== 'undefined'){ try { new ResizeObserver(updateCompact).observe(root); } catch(_){} }
+  /* Auch der Beobachter an der eigenen Wurzel gedrosselt: beim Ziehen aendert sich Miras Kasten
+     mit jedem Bild, und updateCompact misst und schreibt. */
+  (function(){
+    var kern = window.UpstreemCore;
+    if (kern && kern.beobachteGroesse) return kern.beobachteGroesse(root, updateCompact, { hoehe: true });
+    if (typeof ResizeObserver !== 'undefined'){ try { new ResizeObserver(updateCompact).observe(root); } catch(_){} }
+  })();
 
   /* HARD RULE: the whole Mira element must NEVER scroll — only the chat area (#am-chat) does.
      An overflow:hidden ancestor can still be scrolled by the browser (focus / scroll-anchoring),
