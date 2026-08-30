@@ -1,0 +1,158 @@
+<!--
+  ============================================================================================
+  BRAND EDITOR — Bubble-Vorlage
+  ============================================================================================
+  Der Editor fuer EINE getrackte Marke: Name, Aliase, Farbe, Zeitraeume. Er ist das Gegenstueck
+  zu settings-brand (das ist die eigene Marke) und funktioniert fuer jede Marke, auch fuer
+  Wettbewerber.
+
+  EINSETZEN
+  1. HTML-Element auf die Seite, dieses Markup hinein.
+  2. INSTANCE_ID durch eine FESTE Kennung ersetzen (z. B. "brandedit"). Kein dynamischer Ausdruck
+     -- siehe bubble/STATISCHES_MARKUP_PFLICHT.md: ein Element mit dynamischem Inhalt wird von
+     Bubble bei jeder Aenderung komplett neu gebaut. Welche Marke gezeigt wird, entscheidet der
+     Payload, nicht das Markup.
+  3. CDN_PIN durch den Commit-Hash ersetzen, denselben wie an allen anderen Elementen der Seite.
+  4. data-isdark bleibt "no" und wird NICHT dynamisch gesetzt. Das Thema kommt ueber
+     window.setUpstreemTheme("dark") / ("light") -- core stempelt es an jede Wurzel, und die
+     Komponente zieht mit (gemessen: Waehler, Tabelle und Knopf wechseln mit).
+  5. Die fuenf data-*-fn Namen zeigen auf deine Bubble-Funktionen (Toolbox "JavaScript to Bubble").
+     Wer einen davon weglaesst, schaltet die Funktion ab -- die Komponente feuert dann nichts.
+
+  DATEN HINEIN (Run javascript, Schritt unten in diesem Kommentar)
+     setBrandEditor(INSTANCE_ID, payload)        die ganze Ansicht
+     setBrandEditorLoading(INSTANCE_ID, "yes")   Skelett an, waehrend die RPC laeuft
+     resetBrandEditor(INSTANCE_ID)               zurueck auf leer
+
+  EREIGNISSE HERAUS (jedes mit einem JSON-Text als erstem Parameter)
+     ubeRename        {"company_id": "...", "name": "..."}         Umbenennen-Knopf geklickt
+     ubeAliasAdd      {"company_id": "...", "pattern": "..."}      Add geklickt oder Enter
+     ubeAliasToggle   {"company_id": "...", "alias_id": "...", "is_active": true}
+     ubeAliasDelete   {"company_id": "...", "alias_id": "..."}
+     ubeColor         {"company_id": "...", "color": "#1a7f5a"}    leerer color = zuruecksetzen
+
+  WICHTIG, WEIL ES SCHON ZWEIMAL SCHIEFGING
+  - Die Komponente aendert NICHTS von sich aus. Ein Klick auf den Schalter legt ihn optisch um und
+    feuert das Ereignis; die Wahrheit kommt mit dem naechsten setBrandEditor zurueck. Wer den
+    Workflow vergisst, sieht einen Schalter, der beim naechsten Laden wieder zurueckspringt.
+  - Der Umbenennen-Knopf oeffnet KEINEN Dialog. Er feuert ubeRename mit dem aktuellen Namen; der
+    Dialog gehoert auf die Bubble-Seite, wie bei settings-brand.
+  ============================================================================================
+-->
+<div class="up-root ube-root"
+     data-instance="INSTANCE_ID"
+     data-cdn-pin="CDN_PIN"
+     data-isdark="no"
+     data-rename-fn="bubble_fn_ubeRename"
+     data-aliasadd-fn="bubble_fn_ubeAliasAdd"
+     data-aliastoggle-fn="bubble_fn_ubeAliasToggle"
+     data-aliasdelete-fn="bubble_fn_ubeAliasDelete"
+     data-color-fn="bubble_fn_ubeColor"></div>
+
+<script>
+(function(){
+  /* Loader nach STYLEGUIDE §26: den Pin ueber getElementsByClassName lesen, NIEMALS ueber
+     document.currentScript — Bubble fuehrt Scripts nicht in DOM-Reihenfolge aus. */
+  function readPin(cls){
+    var els = document.getElementsByClassName(cls), i, p;
+    for (i = 0; i < els.length; i++){
+      p = (els[i].getAttribute("data-cdn-pin") || "").trim();
+      if (p && p !== "CDN_" + "PIN") return p;
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("ube-root") + "/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  function once(url, make){
+    var name = url.slice(url.lastIndexOf("/") + 1);
+    if (L[name]){
+      if (L[name] !== url && window.console) console.warn("upstreem: " + name +
+        " ist schon von einem anderen Pin geladen. Geladen bleibt " + L[name] +
+        ", ignoriert wird " + url + ". Setzt alle Elemente auf denselben Pin.");
+      return;
+    }
+    L[name] = url; make(url);
+  }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+
+  /* core zuerst, async=false haelt die Reihenfolge ein. Coloris (der Farbwaehler) laedt die
+     Komponente selbst nach, einmal pro Seite -- er steht hier absichtlich nicht: faellt er aus,
+     bleibt das Hexfeld ein Textfeld, und dafuer muss niemand etwas einbauen. */
+  css("core.css");           js("core.js");
+  css("brand-editor.css");   js("brand-editor.js");
+})();
+</script>
+
+<!--
+  ============================================================================================
+  RUN-JAVASCRIPT-SCHRITT (Toolbox) — die Daten hinein
+  ============================================================================================
+  WANN: nachdem die RPC die Marke geliefert hat. Davor einmal setBrandEditorLoading(..., "yes"),
+  damit das Skelett steht statt einer leeren Flaeche.
+
+  Der Payload ist EIN Objekt (die RPC gibt eine Zeile zurueck). Er darf auch als Liste mit einem
+  Eintrag kommen -- die Komponente packt beides aus.
+
+  Die zwei Ersetzungen unten sind Pflicht (§46) und stehen in jedem Run-JS dieser App:
+    :\s*([,}\]])        ->  ": null$1"     macht aus  "key": ,   ein  "key": null
+    :\s*(yes|no)\s*(..) ->  true/false     macht aus  "key": yes ein  "key": true
+  Ohne sie wirft JSON.parse bei jedem leeren Feld und bei jedem Ja/Nein aus Bubble -- und der
+  Fehler reisst den GANZEN Schritt mit, also auch die Setter der anderen Komponenten darunter.
+
+  Namen mit Anfuehrungszeichen, spitzen Klammern oder Emoji brauchen KEINE Sonderbehandlung: die
+  Komponente escapet jeden Text, bevor er ins Markup geht. Geprueft mit
+  Mueller & "Soehne" <GmbH> und einem Emoji im Alias.
+-->
+<script>
+/* ---- SCHRITT: Marke anzeigen -------------------------------------------------------------
+   Bubble-Ausdruecke stehen in <>. Alles andere bleibt, wie es ist. */
+var INSTANCE_ID = "INSTANCE_ID";
+
+var ROH = `<Result of step X (Supabase RPC)'s data:formatted as JSON-safe>`;
+
+var payload = ROH
+  .replace(/:\s*([,}\]])/g, ": null$1")
+  .replace(/:\s*(yes|no)\s*([,}\]])/g, function(_, v, t){ return ": " + (v === "yes") + t; });
+
+if (typeof window.setBrandEditor === "function") window.setBrandEditor(INSTANCE_ID, payload);
+</script>
+
+<script>
+/* ---- SCHRITT: Skelett an, bevor die RPC laeuft -------------------------------------------- */
+if (typeof window.setBrandEditorLoading === "function") window.setBrandEditorLoading("INSTANCE_ID", "yes");
+</script>
+
+<script>
+/* ---- SCHRITT: statisch, zum Ausprobieren ohne Datenbank -----------------------------------
+   Genau der Payload aus der Uebergabe, damit man den Editor in Bubble sehen kann, bevor die RPC
+   steht. Derselbe Text laeuft im Harness _h_ube.html gegen die fertige Komponente. */
+var STATISCH = `{
+  "aliases": [
+    {
+      "mode": "exact_ci",
+      "pattern": "anfragenfluss.de",
+      "alias_id": "8f4fcc2c-f61b-414c-92e9-694f64fa7da4",
+      "priority": 100,
+      "is_active": true,
+      "created_at": "2026-02-27T07:20:18.290477+00:00"
+    }
+  ],
+  "company": {
+    "name": "Anfragenfluss",
+    "domain": "www.anfragenfluss.de",
+    "company_id": "fd2f56a4-d11d-45a3-b10e-bd93a249b75f",
+    "favicon_url": "https://www.google.com/s2/favicons?domain=anfragenfluss.de&sz=64",
+    "default_color": null,
+    "color_override": null,
+    "effective_color": null
+  },
+  "tracking_periods": [
+    { "ended_at": null, "started_at": "2026-02-26T20:59:16.117706+00:00", "start_reason": "created" }
+  ]
+}`
+  .replace(/:\s*([,}\]])/g, ": null$1")
+  .replace(/:\s*(yes|no)\s*([,}\]])/g, function(_, v, t){ return ": " + (v === "yes") + t; });
+
+if (typeof window.setBrandEditor === "function") window.setBrandEditor("INSTANCE_ID", STATISCH);
+</script>

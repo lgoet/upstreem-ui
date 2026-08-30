@@ -1,0 +1,112 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>brand-editor: echter Payload, kaputte Payloads, dunkel</title>
+<link rel="stylesheet" href="core.css?v=ube1">
+<link rel="stylesheet" href="brand-editor.css?v=ube1">
+<style>
+  body { margin:0; font-family: Geist, system-ui, sans-serif; background:#fff; }
+  .halt { padding: 22px 24px; }
+  .dunkel { background:#0f0f0f; }
+  #bar { position: sticky; top:0; z-index: 50; display:flex; gap:6px; flex-wrap:wrap;
+         padding:8px; background:#eee; font:12px ui-monospace,monospace; }
+  #bar button { font:11px ui-monospace,monospace; padding:5px 9px; border-radius:7px;
+                border:1px solid #ccc; background:#fff; cursor:pointer; }
+  #out { font:11px/1.5 ui-monospace,monospace; background:#111; color:#eee; padding:10px;
+         margin:0; white-space:pre-wrap; max-height:220px; overflow:auto; }
+</style>
+<div id="bar">
+  <button onclick="echt()">echter Payload</button>
+  <button onclick="leer()">leer (keine Aliase, kein Zeitraum)</button>
+  <button onclick="kaputt()">kaputter Payload</button>
+  <button onclick="sonder()">Sonderzeichen + Emoji</button>
+  <button onclick="laden()">Ladezustand</button>
+  <button onclick="window.resetBrandEditor('b1')">Reset</button>
+  <button onclick="runjs()">Run-JS-Schritt (statisch)</button>
+  <button onclick="messen()">MESSEN</button>
+</div>
+<div class="halt"><div class="up-root ube-root" data-instance="b1" data-isdark="no"
+     data-rename-fn="bubble_fn_ubeRename"
+     data-aliasadd-fn="bubble_fn_ubeAliasAdd"
+     data-aliastoggle-fn="bubble_fn_ubeAliasToggle"
+     data-aliasdelete-fn="bubble_fn_ubeAliasDelete"
+     data-color-fn="bubble_fn_ubeColor"></div></div>
+<div class="halt dunkel"><div class="up-root ube-root" data-instance="b2" data-isdark="yes"></div></div>
+<pre id="out">…</pre>
+<script>
+  window.EREIGNISSE = [];
+  ["ubeRename","ubeAliasAdd","ubeAliasToggle","ubeAliasDelete","ubeColor"].forEach(function(n){
+    window["bubble_fn_" + n] = function(p){ window.EREIGNISSE.push([n, p]); };
+  });
+</script>
+<script src="core.js?v=ube1"></script>
+<script src="brand-editor.js?v=ube1"></script>
+<script>
+var ECHT = {
+  "aliases": [
+    { "mode":"exact_ci", "pattern":"anfragenfluss.de", "alias_id":"8f4fcc2c-f61b-414c-92e9-694f64fa7da4",
+      "priority":100, "is_active":true, "created_at":"2026-02-27T07:20:18.290477+00:00" },
+    { "mode":"exact_ci", "pattern":"Anfragenfluss GmbH", "alias_id":"22222222-2222-4222-8222-222222222222",
+      "priority":90, "is_active":false, "created_at":"2026-02-27T08:00:00+00:00" }
+  ],
+  "company": {
+    "name":"Anfragenfluss",
+    "domain":"[www.anfragenfluss.de](https://www.anfragenfluss.de)",
+    "company_id":"fd2f56a4-d11d-45a3-b10e-bd93a249b75f",
+    "favicon_url":"https://www.google.com/s2/favicons?domain=anfragenfluss.de&sz=64",
+    "default_color":null, "color_override":null, "effective_color":null
+  },
+  "tracking_periods": [
+    { "ended_at":null, "started_at":"2026-02-26T20:59:16.117706+00:00", "start_reason":"created" },
+    { "ended_at":"2026-02-20T10:00:00+00:00", "started_at":"2026-01-04T09:12:00+00:00", "start_reason":"manual_stop" }
+  ]
+};
+function beide(fn){ ["b1","b2"].forEach(fn); }
+function echt(){ beide(function(id){ window.setBrandEditor(id, JSON.stringify(ECHT)); }); }
+function leer(){
+  var p = JSON.parse(JSON.stringify(ECHT));
+  p.aliases = []; p.tracking_periods = []; p.company.favicon_url = "";
+  p.company.domain = "anfragenfluss.de"; p.company.effective_color = "#1a7f5a";
+  beide(function(id){ window.setBrandEditor(id, JSON.stringify(p)); });
+}
+function kaputt(){ beide(function(id){ window.setBrandEditor(id, '{"company": , "aliases": yes}'); }); }
+function sonder(){
+  var p = JSON.parse(JSON.stringify(ECHT));
+  p.company.name = 'Müller & "Söhne" <GmbH> 🚀';
+  p.aliases[0].pattern = 'a"b<c>&d — 😀';
+  p.company.color_override = "#be185d";
+  beide(function(id){ window.setBrandEditor(id, JSON.stringify(p)); });
+}
+function laden(){ beide(function(id){ window.setBrandEditorLoading(id, "yes"); }); }
+function messen(){
+  var r = document.querySelector('.ube-root[data-instance="b1"]');
+  var t = r.querySelector(".ube-aliaslist");
+  var z = r.querySelector(".ube-zeitlist");
+  var farbfeld = r.querySelector(".ube-farbfeld");
+  var kopfZ = r.querySelector(".ube-kopf .up-thead");
+  var erg = {
+    name: (r.querySelector(".ube-name")||{}).textContent,
+    domainZiel: (r.querySelector(".ube-domain")||{}).getAttribute ? r.querySelector(".ube-domain").getAttribute("href") : null,
+    domainText: (r.querySelector(".ube-domain")||{}).textContent,
+    aliasZeilen: t ? t.querySelectorAll(".up-tbody .up-row").length : -1,
+    ersterSchalterAn: t ? !!t.querySelector(".ube-switch.is-on") : null,
+    zeitZeilen: z ? z.querySelectorAll(".up-tbody .up-row").length : -1,
+    ersteZeitZeile: z ? [].map.call(z.querySelectorAll(".up-tbody .up-row:first-child .up-td"), function(c){ return c.textContent; }) : null,
+    spaltenAlias: t ? getComputedStyle(t).getPropertyValue("--up-cols").trim() : "",
+    zeilenhoehe: t ? Math.round(t.querySelector(".up-row.ube-row").getBoundingClientRect().height) : -1,
+    favGlobus: !!r.querySelector(".up-fav.up-globus-an, .up-fav:not(.has-img)"),
+    colorisDa: typeof window.Coloris,
+    farbe: getComputedStyle(farbfeld).getPropertyValue("--ube-farbe").trim(),
+    speichernAus: r.querySelector(".ube-farbsave").disabled,
+    fehlerSichtbar: !r.querySelector(".ube-loaderr").hidden,
+    fehlertext: r.querySelector(".ube-loaderr").textContent,
+    zeichen: { rename: !!r.querySelector(".ube-rename svg"), del: !!r.querySelector(".ube-del svg"),
+               add: !!r.querySelector(".ube-aliasbtn svg"), save: !!r.querySelector(".ube-farbsave svg") },
+    ereignisse: window.EREIGNISSE
+  };
+  document.getElementById("out").textContent = JSON.stringify(erg, null, 1);
+  return erg;
+}
+function runjs(){ var s = document.createElement("script"); s.src = "_h_ube_runjs.js?v=" + Math.random(); document.body.appendChild(s); }
+setTimeout(echt, 400);
+setTimeout(messen, 1400);
+</script>

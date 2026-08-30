@@ -986,6 +986,21 @@
     .up-btn-sec:disabled { opacity: .45; cursor: default; }
     .up-btn-sec:disabled:hover { border-color: var(--vc-border); background: transparent; }
 
+    /* ---------- primary button ----------
+       Die Gegenstueck zu .up-btn-sec: dieselbe Hoehe, derselbe Radius, gefuellt statt umrandet.
+       Aus settings-brand (.usb-savebtn) hierher gezogen, als brand-editor denselben Knopf
+       brauchte -- zwei Kopien eines Hauptknopfes sind zwei Orte, an denen er sich auseinander
+       entwickelt. settings-brand behaelt seine Klasse vorerst; sie traegt exakt diese Werte. */
+    .up-btn-pri { height: 32px; padding: 0 14px; border-radius: 9px; white-space: nowrap;
+      border: 0; background: var(--vc-text); color: var(--vc-bg);
+      font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      transition: opacity 120ms ease; }
+    .up-btn-pri svg { width: 14px; height: 14px; display: block; }
+    .up-btn-pri:disabled { opacity: .4; cursor: default; }
+    .up-btn-pri:not(:disabled):hover { opacity: .88; }
+    .up-btn-pri:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+
     /* ---------- sort dropdown ---------- */
     .up-sort { position: relative; flex: 0 0 auto; }
     .up-sort-menu { position: absolute; top: calc(100% + var(--up-dd-gap)); right: 0; z-index: 60; width: 220px;

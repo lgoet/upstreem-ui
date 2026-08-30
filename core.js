@@ -8453,6 +8453,15 @@
     search:   '<path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/>',
     plus:     '<path d="M5 12h14"/><path d="M12 5v14"/>',
     minus:    '<path d="M5 12h14"/>',
+    /* Lucide trash-2 und save. Beide kamen mit brand-editor dazu und stehen deshalb hier und
+       nicht dort: ein Papierkorb und ein Speichern-Zeichen sind Vokabular der ganzen App, und
+       zwei selbst gezeichnete Fassungen davon waeren zwei verschiedene Papierkoerbe. */
+    trash:    '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>' +
+              '<path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>' +
+              '<path d="M10 11v6"/><path d="M14 11v6"/>',
+    save:     '<path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>' +
+              '<path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/>' +
+              '<path d="M7 3v4a1 1 0 0 0 1 1h7"/>',
     /* Lucide galaxy. Der gefuellte Kern traegt sein fill selbst: die Huelle von icon() setzt
        fill: none am svg, und ohne die Angabe am Kreis blieb der Kern ein leerer Ring.
        Die Flaggen des letzten Bogens im ersten Pfad sind 01 und nicht 00 -- zwei Abrufe der Datei

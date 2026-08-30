@@ -1,0 +1,97 @@
+/* upstreem brand-editor.css — der Editor fuer eine getrackte Marke.
+
+   Abschnittsaufbau, Karte und Lesebreite sind die von settings-brand (.usb-sec/.usb-sechead/
+   .usb-sectitle/.usb-secsub, 720px, 40px Abstand): die beiden Seiten stehen in derselben Ecke
+   der App, und zwei verschiedene Formulare nebeneinander liest man als zwei Programme.
+   Was hier NICHT steht, weil es aus core kommt: Tabelle, Schalter, alle drei Knopfformen, das
+   Eingabefeld, der Favicon-Kasten und der Leerzustand. */
+
+.ube-root { display: block; width: 100%; box-sizing: border-box; }
+.ube-root * { box-sizing: border-box; }
+
+.ube-body { display: flex; flex-direction: column; gap: 40px; max-width: 720px; }
+/* display:flex schlaegt das eingebaute [hidden] -- dieselbe Zeile wie in settings-brand. */
+.ube-body[hidden] { display: none; }
+.ube-loaderr { max-width: 720px; }
+.ube-loaderr[hidden] { display: none; }
+
+/* ---------- Kopf ---------- */
+.ube-kopf { display: flex; align-items: flex-start; gap: 16px; }
+/* Die Platte ist .up-logo-box aus core, nur groesser: hier ist das Logo die Ueberschrift der
+   Seite und nicht die Marke in einer Zeile. Alle Werte des Bauteils im selben Verhaeltnis
+   mitgezogen (Faktor 56/24): Radius 8 -> 18.7 (auf 18 gerundet), Polster 1 -> 2, Bild 22 -> 52.
+   Der Rest -- Grund, Ausrichtung, der Globus-Rueckfall -- bleibt, wie er ist. */
+.ube-fav.ube-fav { width: 56px; height: 56px; flex: 0 0 56px; border-radius: 18px; padding: 2px; }
+.ube-fav.ube-fav img { width: 52px; height: 52px; border-radius: 16px; }
+/* Der Globus des Rueckfalls sitzt mittig und in derselben Groesse wie ein Logo. */
+.ube-fav.ube-fav::after { width: 26px; height: 26px; }
+.ube-kopftext { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ube-koplabel { margin: 0; font-size: 12.5px; font-weight: 400; color: var(--vc-third); }
+.ube-namezeile { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.ube-name { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em;
+  color: var(--vc-text); line-height: 1.25; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; }
+.ube-domain { font-size: 13px; color: var(--vc-muted); text-decoration: none; }
+.ube-domain:hover { color: var(--vc-text); text-decoration: underline; }
+.ube-domain.is-leer { color: var(--vc-third); }
+
+/* ---------- Abschnitte ---------- */
+.ube-sec { display: flex; flex-direction: column; gap: 12px; }
+.ube-sechead { display: flex; flex-direction: column; gap: 4px; }
+.ube-sectitle { font-size: 16px; font-weight: 500; color: var(--vc-text); margin: 0; line-height: 1.3; }
+.ube-secsub { font-size: 13px; font-weight: 400; color: var(--vc-third); margin: 0; line-height: 1.45; }
+
+/* ---------- Aliase ---------- */
+.ube-aliasadd { display: flex; align-items: center; gap: 8px; }
+.ube-aliasin { flex: 1 1 auto; min-width: 0; height: 40px; padding: 0 12px; font-size: 13.5px; }
+/* Der Knopf steht auf derselben Hoehe wie das Feld -- 32 neben 40 sieht aus wie hineingerutscht. */
+.ube-aliasbtn { height: 40px; padding: 0 16px; }
+
+/* ---------- Tabellen ---------- */
+/* Beide Tabellen sind die Core-Tabelle; hier stehen nur die Spalten und die Zeilenhoehe. Die
+   Spalten muessen an der Tabelle selbst stehen und nicht an der Wurzel: --up-cols wird vererbt,
+   und zwei Tabellen in einer Komponente haetten sonst dieselben Spalten (CLAUDE.md §1).
+   52px statt der 72 aus den Datentabellen: dort steht eine Marke mit Logo und Unterzeile in der
+   Zeile, hier ein Wort und ein Schalter. Dieselbe Ausnahme, die .up-vartable mit 55px macht. */
+.ube-table { border: 1px solid var(--vc-border); border-radius: 12px; overflow: hidden; }
+.ube-table .up-thead { height: 40px; flex: 0 0 40px; }
+.ube-table .up-row.ube-row { height: 52px; flex: 0 0 52px; cursor: default; }
+.ube-table .up-row:last-child { border-bottom: 0; }
+.ube-aliaslist { --up-cols: minmax(0, 1fr) 96px 84px; }
+.ube-zeitlist  { --up-cols: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr); }
+.ube-alias { overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 13.5px; color: var(--vc-text); }
+.ube-table .up-td { font-size: 13px; color: var(--vc-text); }
+/* Der laufende Zeitraum ist kein Datum, sondern ein Zustand -- gedaempft, damit die Spalte mit
+   den echten Daten nicht mit einem Wort konkurriert. */
+.ube-laeuft { color: var(--vc-third); }
+.ube-leer { padding: 18px 12px; }
+
+/* ---------- Farbe ---------- */
+.ube-farbzeile { display: flex; align-items: center; gap: 8px; }
+/* Der Farbkasten sitzt IM Feld, links vom Text: so gehoert er sichtbar zum Wert und nicht daneben.
+   Coloris haengt sich beim Klick genau darauf. */
+.ube-farbfeld { position: relative; display: inline-flex; align-items: center; }
+.ube-farbfeld::before {
+  content: ""; position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+  width: 18px; height: 18px; border-radius: 6px; pointer-events: none;
+  background: var(--ube-farbe, transparent);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.14);
+}
+/* Ohne Farbe ein Karomuster statt einer leeren Flaeche: "nichts gewaehlt" muss anders aussehen
+   als "weiss gewaehlt". */
+.ube-farbfeld.is-leer::before {
+  background:
+    linear-gradient(45deg, var(--vc-border) 25%, transparent 25%, transparent 75%, var(--vc-border) 75%) 0 0 / 10px 10px,
+    linear-gradient(45deg, var(--vc-border) 25%, transparent 25%, transparent 75%, var(--vc-border) 75%) 5px 5px / 10px 10px,
+    var(--vc-bg);
+}
+.ube-farbin { width: 148px; height: 40px; padding: 0 12px 0 36px; font-size: 13.5px;
+  font-variant-numeric: tabular-nums; }
+.ube-farbsave, .ube-farbreset { height: 40px; }
+.ube-farbreset[hidden] { display: none; }
+/* Coloris legt seinen Waehler an das Dokument und bringt seine eigene CSS mit. Zwei Dinge muessen
+   trotzdem hier stehen: er soll ueber den Drawern der App liegen (die reichen bis 9930), und sein
+   eigener Knopf im Feld bleibt weg -- den Kasten zeichnet die Regel darueber. */
+.clr-picker { z-index: 9940; }
+.ube-farbfeld .clr-field button { display: none; }
