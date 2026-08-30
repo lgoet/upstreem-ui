@@ -1,35 +1,34 @@
 <!doctype html>
 <meta charset="utf-8">
-<title>Umschalter im Dropdown vs. in der Werkzeugleiste</title>
-<link rel="stylesheet" href="core.css?v=seg1">
-<style>body{font:12px monospace;background:#fff;padding:16px;display:flex;gap:30px}
- .up-filter-menu{position:static;opacity:1;transform:none;pointer-events:auto;width:220px;padding:8px}</style>
-<div class="up-root" data-isdark="no">
-  <div class="up-filter-menu is-shown">
-    <div class="up-seg" id="imMenue" role="tablist">
-      <button class="up-seg-btn is-active" type="button">Or</button>
-      <button class="up-seg-btn" type="button">And</button>
-    </div>
-  </div>
-</div>
-<div class="up-root" data-isdark="no">
-  <div class="up-seg" id="inLeiste" role="tablist">
-    <button class="up-seg-btn is-active" type="button">Visibility</button>
-    <button class="up-seg-btn" type="button">Rank</button>
-  </div>
+<title>Die drei Filter-Umschalter, Markup wie auf der Seite</title>
+<link rel="stylesheet" href="core.css?v=seg2">
+<style>body{font:12px monospace;background:#fff;padding:16px;display:flex;gap:26px;align-items:flex-start}</style>
+<div class="up-root" data-isdark="no" style="display:flex;gap:26px">
+  <!-- 1:1 aus der App: Topics-Dropdown, or/and -->
+  <span class="up-seg is-gleitend" id="topics" role="group" aria-label="Match mode"><button class="up-seg-btn is-active" type="button" data-mode="or">Or</button><button class="up-seg-btn" type="button" data-mode="and">And</button></span>
+  <!-- Models-Dropdown -->
+  <span class="up-seg umf-seg is-gleitend" id="models" role="group"><button class="up-seg-btn umf-seg-btn is-active" type="button">Single</button><button class="up-seg-btn umf-seg-btn" type="button">Multi</button></span>
+  <!-- Markets-Dropdown -->
+  <span class="up-seg umk-seg is-gleitend" id="markets" role="group"><button class="up-seg-btn umk-seg-btn is-active" type="button">Single</button><button class="up-seg-btn umk-seg-btn" type="button">Multi</button></span>
+  <!-- Gegenprobe: ein Umschalter in einer Werkzeugleiste muss klein bleiben -->
+  <span class="up-seg is-gleitend" id="leiste" role="group"><button class="up-seg-btn is-active" type="button">Visibility</button><button class="up-seg-btn" type="button">Rank</button></span>
+  <!-- Gegenprobe 2: die Ansicht-Umschalter der Tabellen -->
+  <span class="urt-viewswitch up-seg is-gleitend" id="ansicht" role="group"><button class="up-seg-btn is-active" type="button">A</button><button class="up-seg-btn" type="button">B</button></span>
 </div>
 <pre id="out" style="background:#111;color:#eee;padding:10px;white-space:pre-wrap"></pre>
+<script src="core.js?v=seg2"></script>
 <script>
 setTimeout(function(){
   function m(id){
     var el = document.getElementById(id), b = el.querySelector(".up-seg-btn");
     return { hoehe: Math.round(el.getBoundingClientRect().height),
+             knopf: Math.round(b.getBoundingClientRect().height),
              grund: getComputedStyle(el).backgroundColor,
-             knopfHoehe: Math.round(b.getBoundingClientRect().height) };
+             streifen: getComputedStyle(el).getPropertyValue("--up-seg-h").trim() };
   }
   document.getElementById("out").textContent = JSON.stringify({
-    imDropdown: m("imMenue"), inDerWerkzeugleiste: m("inLeiste"),
-    vollerGrund: getComputedStyle(document.documentElement).getPropertyValue("--vc-switch-bg").trim()
+    topicsOrAnd: m("topics"), modelsSingleMulti: m("models"), marketsSingleMulti: m("markets"),
+    gegenprobeWerkzeugleiste: m("leiste"), gegenprobeAnsicht: m("ansicht")
   }, null, 1);
-}, 300);
+}, 900);
 </script>

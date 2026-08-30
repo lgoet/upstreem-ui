@@ -2029,25 +2029,20 @@
    (--vc-switch-soft), der grosse den vollen (--vc-switch-bg, hell #f5f5f5). Vorher stand die Hoehe
    in den Komponenten und der Grund nur hier -- ein 32px hoher Umschalter bekam damit den Ton des
    kleinen und stand zu blass da. Beide Werte gehoeren zusammen, also stehen sie zusammen. */
-.up-seg.is-lg, .cc-seg.is-lg, .ubo-seg.is-lg, .tcl-seg.is-lg {
+.up-seg.is-lg, .cc-seg.is-lg, .ubo-seg.is-lg, .tcl-seg.is-lg,
+/* Die Umschalter der drei Filter-Dropdowns: Models (umf-seg), Markets (umk-seg) und der
+   Match-Modus der Topics, der keine eigene Klasse hat und deshalb an seiner Beschriftung
+   gefasst wird -- aria-label steht so in seinem Markup. Sie stehen in Elementen ausserhalb
+   dieser Bibliothek, tragen aber ihre Klassen: ohne is-lg bekamen sie die kleine Form mit dem
+   durchscheinenden Ton, obwohl sie in einem Dropdown genauso 32 sein sollen wie ueberall sonst. */
+.up-seg.umf-seg, .up-seg.umk-seg, .up-seg[aria-label="Match mode"] {
   height: 32px; background: var(--vc-switch-bg);
 }
 .up-seg.is-lg .up-seg-btn, .cc-seg.is-lg .cc-seg-btn,
-.ubo-seg.is-lg .ubo-seg-btn, .tcl-seg.is-lg .tcl-seg-btn { height: 32px; padding: 0 16px; }
-/* Ein Umschalter, der IN einem Dropdown steht, ist dort das einzige Bedienelement seiner Art und
-   traegt deshalb die grosse Form -- 32px und den vollen Grund, wie jeder 32er in der App. Gemeint
-   sind die drei Filter-Dropdowns der Seite: Topics (or/and), Models und Markets (single/multi).
-   Ihr Markup liegt ausserhalb dieser Bibliothek, benutzt aber ihre Klassen, und ohne is-lg bekam
-   es die kleine Form mit dem durchscheinenden Ton. Geprueft: keine Komponente hier stellt einen
-   .up-seg in ein Menue, die Regel trifft also nur diese Faelle. */
-.up-filter-menu .up-seg, .up-menu .up-seg, .up-pop .up-seg,
-.up-filter-menu .cc-seg, .up-menu .cc-seg, .up-pop .cc-seg {
-  height: 32px; background: var(--vc-switch-bg);
-}
-.up-filter-menu .up-seg .up-seg-btn, .up-menu .up-seg .up-seg-btn, .up-pop .up-seg .up-seg-btn,
-.up-filter-menu .cc-seg .cc-seg-btn, .up-menu .cc-seg .cc-seg-btn, .up-pop .cc-seg .cc-seg-btn {
-  height: 32px; padding: 0 16px;
-}
+.ubo-seg.is-lg .ubo-seg-btn, .tcl-seg.is-lg .tcl-seg-btn,
+.up-seg.umf-seg .up-seg-btn, .up-seg.umk-seg .up-seg-btn,
+.up-seg[aria-label="Match mode"] .up-seg-btn { height: 32px; padding: 0 16px; }
+
 /* gap + type spec: this control was lifted from an ICON-ONLY switcher, so a button carrying an icon
    AND a label had its two children touching, and its text fell back to whatever the page inherited.
    Both are set here rather than per component -- gap is a no-op on the single-child icon variants
