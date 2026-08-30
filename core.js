@@ -5271,6 +5271,76 @@
   }
 
   /* ==========================================================================================
+     BEOBACHTER, DIE NIEMAND MEHR BRAUCHT
+     ==========================================================================================
+     Die Komponenten legen ihre ResizeObserver und MutationObserver beim Anlegen an und geben sie
+     nie zurueck. Bei jedem Ansichtswechsel baut Bubble ihr Markup neu -- die alten Beobachter
+     bleiben auf den abgehaengten Knoten sitzen und halten sie am Leben. Gemessen an EINER
+     Komponente ueber fuenf Wechsel: 15 Groessen- und 9 Dokumentbeobachter angelegt, kein einziger
+     abgeraeumt. Auf einer Seite mit 19 Komponenten waechst damit die Arbeit bei jeder DOM-Aenderung
+     mit der Zahl der Wechsel -- genau die "Forced reflow"- und "requestAnimationFrame handler"-
+     Meldungen, die nach jedem Wechsel mehr wurden.
+
+     Das hier einzeln in 19 Dateien nachzutragen hiesse, es beim naechsten Beobachter wieder zu
+     vergessen. Also einmal zentral: jeder Beobachter merkt sich, WAS er beobachtet, und wer nur
+     noch auf abgehaengten Knoten sitzt, wird abgeraeumt. Erst beim zweiten Mal hintereinander --
+     Bubble haengt einen Knoten auch mal kurz aus und wieder ein, und ein Beobachter, den wir dabei
+     abschalten, waere ein stiller Ausfall.
+     Der Umbau passiert genau einmal pro Seite (nicht pro core.js-Ausfuehrung) und laesst die
+     Schnittstelle unveraendert: observe/unobserve/disconnect/takeRecords verhalten sich wie zuvor. */
+  (function(){
+    if (window.__upBeobachter) return;
+    var reg = window.__upBeobachter = [];
+    function umbauen(name){
+      var Orig = window[name];
+      if (!Orig || Orig.__upWrap) return;
+      function Neu(cb){
+        var o = new Orig(cb);
+        var eintrag = { o: o, ziele: [], tot: 0, weg: false };
+        var obs = o.observe.bind(o), dis = o.disconnect.bind(o);
+        var unobs = o.unobserve ? o.unobserve.bind(o) : null;
+        o.observe = function(ziel){
+          if (ziel && eintrag.ziele.indexOf(ziel) < 0) eintrag.ziele.push(ziel);
+          eintrag.tot = 0;
+          return obs.apply(null, arguments);
+        };
+        if (unobs) o.unobserve = function(ziel){
+          var i = eintrag.ziele.indexOf(ziel); if (i >= 0) eintrag.ziele.splice(i, 1);
+          return unobs.apply(null, arguments);
+        };
+        o.disconnect = function(){ eintrag.ziele.length = 0; eintrag.weg = true; return dis(); };
+        reg.push(eintrag);
+        return o;
+      }
+      Neu.prototype = Orig.prototype;
+      Neu.__upWrap = 1;
+      try { window[name] = Neu; } catch(e){}
+    }
+    umbauen("ResizeObserver");
+    umbauen("MutationObserver");
+
+    setInterval(function(){
+      var rest = [];
+      for (var i = 0; i < reg.length; i++){
+        var e = reg[i];
+        if (e.weg) continue;
+        if (!e.ziele.length){ rest.push(e); continue; }      /* angelegt, aber noch nichts im Blick */
+        var lebt = false;
+        for (var k = 0; k < e.ziele.length; k++){
+          var t = e.ziele[k];
+          /* document und documentElement tragen kein isConnected im ueblichen Sinn -- sie sind
+             per Definition da und duerfen nie abgeraeumt werden. */
+          if (!t || t === document || t === document.documentElement || t.isConnected){ lebt = true; break; }
+        }
+        if (lebt){ e.tot = 0; rest.push(e); continue; }
+        if (++e.tot < 2){ rest.push(e); continue; }
+        try { e.o.disconnect(); } catch(err){}
+      }
+      window.__upBeobachter = reg = rest;
+    }, 5000);
+  })();
+
+  /* ==========================================================================================
      CHART KITS
      ==========================================================================================
      Every chart in this library is one of exactly three shapes: a multi-series line chart, a
