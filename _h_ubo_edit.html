@@ -1,0 +1,41 @@
+<meta charset="utf-8"><title>brands overview: Edit-Knopf in der Markenzelle</title>
+<!-- Wozu: nur der Edit-Knopf. Geprueft werden Geometrie (24px, Rahmen, kein Grund), die Toene
+     (sekundaer, beim Hover primaer), der Uebergang (200ms ohne Verzoegerung) und dass er beim
+     Hover der ZEILE erscheint. Das Markup ist wortgleich das aus brands-overview.js. -->
+<link rel="stylesheet" href="core.css?v=e1">
+<link rel="stylesheet" href="brands-overview.css?v=e1">
+<body style="margin:0;background:#fff;font-family:system-ui,sans-serif">
+<div class="up-root ubo-root" data-theme="light" style="padding:24px;width:900px">
+  <div class="up-table">
+    <div class="up-thead up-row" style="--up-cols:44px minmax(0,1fr) 150px">
+      <div class="up-th">#</div><div class="up-th">Brand</div><div class="up-th">Visibility</div>
+    </div>
+    <div class="up-tbody">
+      <div class="up-row" data-id="a" style="--up-cols:44px minmax(0,1fr) 150px">
+        <div class="up-td up-td-idx">1</div>
+        <div class="up-td up-td-brand">
+          <span class="ubo-brand-name">Anfragenfluss</span>
+          <button class="up-btn-sec ubo-editbtn ubo-row-edit" type="button" data-row-edit="a"></button>
+        </div>
+        <div class="up-td">34.3%</div>
+      </div>
+      <div class="up-row" data-id="b" style="--up-cols:44px minmax(0,1fr) 150px">
+        <div class="up-td up-td-idx">2</div>
+        <div class="up-td up-td-brand">
+          <span class="ubo-brand-name">Mitbewerber</span>
+          <button class="up-btn-sec ubo-editbtn ubo-row-edit" type="button" data-row-edit="b"></button>
+        </div>
+        <div class="up-td">21.0%</div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="core.js?v=e1"></script>
+<script>
+window.addEventListener("load", function(){
+  var UC = window.UpstreemCore;
+  [].forEach.call(document.querySelectorAll(".ubo-editbtn"), function(b){
+    b.innerHTML = UC.icon("panelRight", 2) + "<span>Edit</span>";
+  });
+});
+</script>

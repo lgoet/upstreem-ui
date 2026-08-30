@@ -892,10 +892,6 @@
     var HASH_ICON = UC.HASH_ICON.replace('<svg ', '<svg class="up-hash" ');
     var MORE_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">' +
       '<circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>';
-    /* Real Feather "Edit" (paper + pencil, two paths) -- same icon prompts-table's group-header
-       Edit button uses (GRP_EDIT_SVG), NOT "edit-2" (the bare single-path pencil). */
-    var EDIT_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/></svg>';
-    var GOTO_SVG = UC.GOTO_SVG;
 
     /* The table kit: grid template, column dropping, the Brand column's drag handle and the
        Table Settings menu all come from core now. The Inactive view is a different table (Brand /
@@ -998,17 +994,14 @@
           '<span class="ubo-brand-name">' + highlight(r.name == null ? "" : r.name, state.query) + '</span>' +
           /* Loest genau dasselbe Ereignis aus wie der Eintrag "Edit" im Kebab-Menue
              (data-edit-fn/uboEdit) -- ein zweiter Weg zur gleichen Aktion, keine neue.
-             Der Knopf sitzt jetzt im geteilten Anker aus core (.up-rowswap): der Pfeil kommt beim
-             Hover nach 220ms, nach 1s Verweilen geht er und der Knopf tritt an SEINE Stelle. Das
-             ist Zeit fuer Zeit, Groesse fuer Groesse und Position fuer Position dasselbe, was
-             "Show Pages" in der Domains-Tabelle macht -- eine Vorgabe, deshalb nicht nachgebaut,
-             sondern dasselbe Bauteil. Vorher stand der Knopf INLINE hinter dem Namen und kam ohne
-             Verweildauer, mit eigener Groesse und eigenem Platz. */
-          '<span class="up-rowswap">' +
-            '<span class="up-rowswap-goto">' + GOTO_SVG + '</span>' +
-            '<button class="up-rowswap-act ubo-row-edit" type="button" data-row-edit="' + esc(id) + '">' +
-              EDIT_SVG + '<span>Edit</span></button>' +
-          '</span></div>';
+             Er kommt beim Hover SOFORT und blendet in 200ms ein. Vorher sass er im geteilten
+             Anker .up-rowswap: dort geht erst der Pfeil, und der Knopf kommt nach einer Sekunde
+             Verweilen -- gut fuer "Show Pages" in der Domains-Tabelle, wo der Pfeil der Hauptweg
+             ist, hier aber eine Wartezeit vor der einzigen Handlung der Zeile.
+             Der Knopf ist .up-btn-sec aus core, alle Werte im Verhaeltnis 24/32 mitgezogen. */
+          '<button class="up-btn-sec ubo-editbtn ubo-row-edit" type="button" data-row-edit="' + esc(id) + '">' +
+            (UC.icon ? UC.icon("panelRight", 2) : "") + '<span>Edit</span></button>' +
+          '</div>';
       if (colOn("visibility")) h += '<div class="up-td up-td-visibility">' + vis + '</div>';
       if (colOn("ranking"))    h += '<div class="up-td up-td-ranking">' + rank + '</div>';
       if (colOn("sentiment"))  h += '<div class="up-td up-td-sentiment">' + sent + '</div>';
@@ -1197,9 +1190,8 @@
       });
     }
     UC.makeTooltips(root, darkNow);
-    /* Die Verweildauer, die den Pfeil gegen den Edit-Knopf tauscht -- gleiche Uhr und gleiche
-       Sekunde wie "Show Pages" in der Domains-Tabelle. */
-    if (UC.rowDwell) UC.rowDwell(root, "is-rowswap", 1000);
+    /* KEINE Verweildauer mehr: der Edit-Knopf kommt beim Hover sofort (CSS). UC.rowDwell bleibt
+       fuer die Domains-Tabelle, die den gestaffelten Tausch weiterhin braucht. */
 
     /* ---------- dropdowns ---------- */
     var POP_GROUP = "ubo-" + instanceId;

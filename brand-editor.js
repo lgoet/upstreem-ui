@@ -222,34 +222,66 @@
     elFarbSv.innerHTML = (UC.icon ? UC.icon("save", 2) : "") + "<span>Save</span>";
 
     /* ---- Farbwaehler ------------------------------------------------------------------------
-       Coloris haengt sich an ein Feld mit data-coloris. Die Instanz gehoert der Seite, nicht dem
-       Element: zweimal init() mit denselben Optionen ist harmlos, zweimal geladen waere es nicht. */
+       Die Anmeldung selbst -- synchron, weil sie an mehreren Stellen erneut gebraucht wird: beim
+       Start, beim Themenwechsel und bevor der Knopf oeffnet. */
+    function colorisAnmelden() {
+      if (!window.Coloris) return false;
+      /* Fehlt das Waehler-DOM, einmal anlegen. NUR dann: ein zweites init haengt ein zweites
+         Fenster an die Seite, und dann faehrt der Klick das falsche auf. */
+      if (!document.getElementById("clr-picker") && typeof window.Coloris.init === "function") {
+        try { window.Coloris.init(); } catch (e) {}
+      }
+      /* Das Thema der SEITE, und nur wenn die keins gesetzt hat, das dieser Wurzel: Coloris
+         gehoert der Seite, nicht dem Element. Gemessen im Harness -- dort steht data-theme allein
+         an der Komponente, und der Waehler stand weiss in einem dunklen Editor. */
+      var seite = document.documentElement.getAttribute("data-theme") ||
+                  (UC.getUpstreemTheme ? UC.getUpstreemTheme() : "");
+      var dunkel = (seite || root.getAttribute("data-theme")) === "dark";
+      try {
+        window.Coloris({
+          el: ".ube-farbin", themeMode: dunkel ? "dark" : "light", theme: "polaroid",
+          alpha: false, format: "hex", focusInput: false, selectInput: false,
+          /* Die Vorschlaege sind die Markenfarben der App (dieselben, die die Charts vergeben) --
+             so trifft man mit einem Klick eine Farbe, die neben den anderen funktioniert. */
+          swatches: ["#1f6feb", "#8957e5", "#1a7f5a", "#b3541e", "#be185d", "#0e7490", "#a16207", "#6f737c"]
+        });
+        return true;
+      } catch (e) { return false; }
+    }
+
+    function waehlerOffen() {
+      var p = document.getElementById("clr-picker");
+      return !!(p && p.classList.contains("clr-open"));
+    }
+
+    /* Der Knopf oeffnet den Waehler ueber einen Klick auf das FELD -- daran haengen Coloris'
+       Zuhoerer, ein zweiter Weg hinein waere ein zweiter Zustand, den niemand pflegt.
+       Zwei Dinge muessen davor stimmen: die Datei muss da sein, und DIESES Feld muss angemeldet
+       sein. Coloris legt beim Anmelden einen eigenen Rahmen (.clr-field) um das Feld -- fehlt der,
+       zeigt die Bindung auf ein Feld, das es nicht mehr gibt (Bubble haengt die Wurzel beim
+       Oeffnen der Schublade neu ein), und ein Klick tut nichts. Also pruefen, notfalls neu
+       anmelden, und wenn danach immer noch nichts aufgeht, sagt es die Komponente. */
+    function farbwaehlerOeffnen() {
+      ladeColoris().then(function (da) {
+        if (!da || !window.Coloris) { root.classList.add("is-nopicker"); return; }
+        if (!elFarbIn.closest(".clr-field")) colorisAnmelden();
+        elFarbIn.click(); elFarbIn.focus();
+        window.setTimeout(function () {
+          if (waehlerOffen()) return;
+          colorisAnmelden();
+          elFarbIn.click(); elFarbIn.focus();
+          window.setTimeout(function () { root.classList.toggle("is-nopicker", !waehlerOffen()); }, 140);
+        }, 140);
+      });
+    }
+
     function colorisSetzen() {
       ladeColoris().then(function (da) {
         /* Kein stiller Ausfall: laedt die Datei nicht (gesperrtes CDN, kein Netz), sagt die
-           Komponente das und der Knopf verschwindet. Ein Farbknopf, der nichts oeffnet, ist
+           Komponente das und der Knopf bleibt stumm. Ein Farbknopf, der nichts oeffnet, ist
            schlimmer als keiner -- und das Hex-Feld allein funktioniert weiter. */
         root.classList.toggle("is-nopicker", !(da && window.Coloris));
-        if (!da || !window.Coloris) return;
-        /* Coloris gehoert der SEITE, nicht dem Element: seine Optionen gelten fuer alle Felder,
-           die er kennt. Deshalb zaehlt hier das Thema der App und nicht das Attribut an dieser
-           Wurzel -- sonst gewinnt bei zwei Editoren der zuletzt angemeldete, und der Waehler
-           stuende hell in einer dunklen Seite. */
-        /* Das Thema der SEITE, und nur wenn die keins gesetzt hat, das dieser Wurzel. Gemessen im
-           Harness: dort steht data-theme allein an der Komponente, und der Waehler stand weiss
-           in einem dunklen Editor. */
-        var seite = document.documentElement.getAttribute("data-theme") ||
-                    (UC.getUpstreemTheme ? UC.getUpstreemTheme() : "");
-        var dunkel = (seite || root.getAttribute("data-theme")) === "dark";
-        try {
-          window.Coloris({
-            el: ".ube-farbin", themeMode: dunkel ? "dark" : "light", theme: "polaroid",
-            alpha: false, format: "hex", focusInput: false, selectInput: false,
-            /* Die Vorschlaege sind die Markenfarben der App (dieselben, die die Charts vergeben) --
-               so trifft man mit einem Klick eine Farbe, die neben den anderen funktioniert. */
-            swatches: ["#1f6feb", "#8957e5", "#1a7f5a", "#b3541e", "#be185d", "#0e7490", "#a16207", "#6f737c"]
-          });
-        } catch (e) {}
+        if (da && window.Coloris) colorisAnmelden();
       });
     }
 
@@ -452,13 +484,7 @@
         fire("data-rename-fn", "ubeRename", { company_id: txt(c.company_id), name: neuerName });
         return;
       }
-      /* Der Farbknopf oeffnet den Waehler ueber das Feld: Coloris haengt an DIESEM, und ein
-         zweiter Weg hinein waere ein zweiter Zustand, den niemand pflegt. */
-      if (t.closest("[data-color-open]")) {
-        elFarbIn.click();
-        elFarbIn.focus();
-        return;
-      }
+      if (t.closest("[data-color-open]")) { farbwaehlerOeffnen(); return; }
       var sw = t.closest("[data-alias-toggle]");
       if (sw) {
         var zeile = sw.closest("[data-alias]");

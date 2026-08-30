@@ -9,7 +9,16 @@
 .ube-root { display: block; width: 100%; box-sizing: border-box; }
 .ube-root * { box-sizing: border-box; }
 
-.ube-body { display: flex; flex-direction: column; gap: 40px; max-width: 720px; }
+/* Zwischen den Bloecken eine Linie, wie in url-detail (.uud-root > * + *): 32px darueber wie
+   darunter, der Abstand INNERHALB eines Blocks bleibt bei 12. Die Linie haengt am FOLGENDEN
+   Block -- so traegt der Kopf keine ueber sich, und ein ausgeblendeter Block am Ende keine ins
+   Leere. */
+.ube-body { display: flex; flex-direction: column; gap: 0; max-width: 720px; }
+.ube-body > * + * {
+  margin-top: 32px; padding-top: 32px; border-top: 1px solid var(--vc-border);
+}
+.ube-body > * { min-width: 0; }
+.ube-body > [hidden] { display: none; }
 /* display:flex schlaegt das eingebaute [hidden] -- dieselbe Zeile wie in settings-brand. */
 .ube-body[hidden] { display: none; }
 .ube-loaderr { max-width: 720px; }

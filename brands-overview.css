@@ -183,13 +183,27 @@
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .ubo-deact { font-size: 13px; color: var(--vc-muted); white-space: nowrap; }
 
-/* Der Edit-Knopf je Zeile hat hier KEINE eigene Geometrie mehr. Er sitzt im geteilten Anker aus
-   core (.up-rowswap / .up-rowswap-act) und traegt damit dieselben Zeiten, Groessen und Positionen
-   wie "Show Pages" in der Domains-Tabelle -- so war es verlangt. Vorher stand er inline hinter dem
-   Namen (32px Abstand, 28px hoch, 12.5px Schrift, 200ms ohne Verweildauer) und kaempfte mit dem
-   Pfeil um die rechte Kante.
+/* Der Edit-Knopf je Zeile: .up-btn-sec aus core, alle Werte im Verhaeltnis 24/32 mitgezogen --
+   Hoehe 32 -> 24, Radius 9 -> 7, Abstand 7 -> 6, Zeichen 14 -> 13. Das Polster steht bei 8, so
+   verlangt. Der Ton ist der sekundaere und wird beim Hover der primaere; die Flaeche darunter ist
+   der Hover von .up-btn-sec, unveraendert.
+   Er kommt OHNE Verweildauer: 200ms Einblenden am Zeilen-Hover, sonst nichts. Vorher sass er im
+   geteilten Anker (.up-rowswap), wo erst nach einer Sekunde der Pfeil gegen ihn getauscht wurde --
+   das Verhalten der Domains-Tabelle, wo der Pfeil der Hauptweg ist.
    .ubo-row-edit bleibt am Element: die Klasse steht im Vertrag, und ein Selektor, der von aussen
    auf diesen Knopf zeigt, findet ihn weiter. */
+.ubo-editbtn {
+  margin-left: auto; flex: 0 0 auto;
+  height: 24px; padding: 0 8px; border-radius: 7px; gap: 6px;
+  font-size: 12px; color: var(--vc-muted);
+  opacity: 0; pointer-events: none;
+  transition: opacity 200ms ease, color 140ms ease, border-color 140ms ease, background 140ms ease;
+}
+.ubo-editbtn svg { width: 13px; height: 13px; }
+/* Sichtbar am Hover der ZEILE, nicht des Knopfes -- ein Knopf, der erst erscheint, wenn man ihn
+   trifft, ist keiner. Tastatur: auch beim Fokus, sonst ist er nur mit der Maus erreichbar. */
+.up-row:hover .ubo-editbtn, .ubo-editbtn:focus-visible { opacity: 1; pointer-events: auto; }
+.ubo-editbtn:hover { color: var(--vc-text); }
 
 /* row actions trigger — always visible, not hover-revealed */
 .ubo-actbtn {

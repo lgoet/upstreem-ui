@@ -8522,6 +8522,9 @@
     chevronsUpDownWide: '<path d="m7 15.75 5 5 5-5"/><path d="m7 8.25 5-5 5 5"/>',
     /* Rahmen mit senkrechter Trennlinie -- das Sidebar-Symbol. */
     panelLeft:'<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/>',
+    /* Dasselbe Zeichen gespiegelt: die Leiste rechts. Es steht fuer "oeffnet die Schublade an der
+       rechten Seite" -- genau das tut der Edit-Knopf in der Markentabelle. */
+    panelRight:'<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M15 3v18"/>',
     squareStack:'<path d="M4 10c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2"/>' +
               '<path d="M10 16c-1.1 0-2-.9-2-2v-4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2"/>' +
               '<rect width="8" height="8" x="14" y="14" rx="2"/>',
