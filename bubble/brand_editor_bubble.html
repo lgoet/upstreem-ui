@@ -34,11 +34,42 @@
      resetBrandEditor(INSTANCE_ID)               zurueck auf leer
 
   EREIGNISSE HERAUS (jedes mit einem JSON-Text als erstem Parameter)
-     ubeRename        {"company_id": "...", "name": "..."}         Save neben dem Namensfeld
-     ubeAliasAdd      {"company_id": "...", "pattern": "..."}      Add geklickt oder Enter
-     ubeAliasToggle   {"company_id": "...", "alias_id": "...", "is_active": true}
-     ubeAliasDelete   {"company_id": "...", "alias_id": "..."}
-     ubeColor         {"company_id": "...", "color": "#1a7f5a"}    leerer color = zuruecksetzen
+     Gemessene Werte, so wie sie ankommen. team_id steht VORNE und kommt aus core -- es haengt an
+     jedem Ereignis der App, damit ein Workflow pruefen kann, ob die Antwort zum Team auf dem
+     Bildschirm gehoert. Fehlt kein Team, fehlt auch das Feld.
+
+     ubeRename        Save neben dem Namensfeld
+       {"team_id":"t1","company_id":"fd2f56a4-...","name":"Anfragenfluss GmbH"}
+     ubeAliasAdd      Add geklickt oder Enter im Alias-Feld
+       {"team_id":"t1","company_id":"fd2f56a4-...","pattern":"anfragenfluss.de"}
+     ubeAliasToggle   Schalter in der Alias-Zeile
+       {"team_id":"t1","company_id":"fd2f56a4-...","alias_id":"8f4fcc2c-...","is_active":true}
+     ubeAliasDelete   Papierkorb in der Alias-Zeile
+       {"team_id":"t1","company_id":"fd2f56a4-...","alias_id":"8f4fcc2c-..."}
+     ubeColor         Save neben dem Farbfeld, oder Reset
+       {"team_id":"t1","company_id":"fd2f56a4-...","color":"#1a7f5a"}
+       Reset schickt dasselbe Ereignis mit "color":"" -- leer heisst "zurueck auf die vergebene
+       Farbe". WELCHE das ist, entscheidet der Server; hier eine auszurechnen waere geraten.
+
+  DIE WERTE IN BUBBLE LESEN (extract with Regex)
+     Diese vier sind unbedenklich -- Ids und Hex enthalten kein Anfuehrungszeichen:
+
+         (?<="team_id":")[^"]*
+         (?<="company_id":")[^"]*
+         (?<="alias_id":")[^"]*
+         (?<="color":")[^"]*                 leer = zuruecksetzen
+
+     is_active kommt OHNE Anfuehrungszeichen, es ist ein Wahrheitswert:
+
+         (?<="is_active":)(?:true|false)     ergibt den Text true bzw. false
+
+     Im Workflow also auf = "true" pruefen, nicht auf yes.
+
+     name und pattern NICHT per Regex. Beides ist Freitext: ein Markenname darf Anfuehrungs-
+     zeichen, spitze Klammern und Emoji enthalten, und im Payload stehen Anfuehrungszeichen
+     escaped (\"). (?<="name":")[^"]* schneidet dann genau an der Stelle ab, auf die es ankommt.
+     Der sichere Weg ist derselbe wie bei add-prompts: den GANZEN Payload als einen Text-Parameter
+     an den RPC geben und dort per JSON parsen. Geprueft mit Mueller & "Soehne" <GmbH> und Emoji.
 
   WICHTIG, WEIL ES SCHON ZWEIMAL SCHIEFGING
   - Die Komponente aendert NICHTS von sich aus. Ein Klick auf den Schalter legt ihn optisch um und
@@ -143,11 +174,23 @@
     }
   })();
 
-  ── SCHRITT 2: Skelett an, VOR der RPC ─────────────────────────────────────────────────────
+  ── SCHRITT 2: Skelett AN, vor der RPC ─────────────────────────────────────────────────────
 
   (function () {
     if (typeof window.setBrandEditorLoading === "function") {
       window.setBrandEditorLoading("INSTANCE_ID", "yes");
+    }
+  })();
+
+  ── SCHRITT 2b: Skelett AUS, wenn die RPC NICHT geliefert hat ──────────────────────────────
+  Nur fuer den Fehlerzweig. Im Gutfall beendet setBrandEditor den Ladezustand selbst -- diesen
+  Schritt danach zu rufen, waere ein zweiter Weg zum selben Ziel.
+  Ohne Daten zeigt die Komponente danach "This brand could not be loaded. Please open it again."
+  statt eines Skeletts, das ewig laeuft.
+
+  (function () {
+    if (typeof window.setBrandEditorLoading === "function") {
+      window.setBrandEditorLoading("INSTANCE_ID", "no");
     }
   })();
 

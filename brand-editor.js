@@ -685,7 +685,12 @@
       },
       setLoading: function (v) {
         state.loading = UC.isYes(v);
-        if (state.loading) state.fehler = "";
+        if (state.loading) { state.fehler = ""; render(); return true; }
+        /* "no" OHNE Daten heisst: die RPC ist nicht durchgekommen. Ohne diese Zeile blieb das
+           Skelett stehen (render zeigt es auch bei loading=false, solange data fehlt) -- also
+           endloses Laden, das wie "gleich da" aussieht. Kommen die Daten doch noch, ueber-
+           schreibt setData die Meldung. */
+        if (!state.data) state.fehler = "This brand could not be loaded. Please open it again.";
         render();
         return true;
       },
