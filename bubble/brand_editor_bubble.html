@@ -16,7 +16,7 @@
   4. data-isdark bleibt "no" und wird NICHT dynamisch gesetzt. Das Thema kommt ueber
      window.setUpstreemTheme("dark") / ("light") -- core stempelt es an jede Wurzel, und die
      Komponente zieht mit (gemessen: Waehler, Tabelle und Knopf wechseln mit).
-  5. Die fuenf data-*-fn Namen zeigen auf deine Bubble-Funktionen (Toolbox "JavaScript to Bubble").
+  5. Die sechs data-*-fn Namen zeigen auf deine Bubble-Funktionen (Toolbox "JavaScript to Bubble").
      Wer einen davon weglaesst, schaltet die Funktion ab -- die Komponente feuert dann nichts.
   6. RAND OBEN 32 am Container (Gruppe oder Schublade), links/rechts/unten wie bei den anderen
      Detail-Ansichten. Die Komponente bringt KEIN eigenes Polster mit -- sonst kaeme es zu dem
@@ -50,10 +50,15 @@
        {"team_id":"t1","company_id":"fd2f56a4-...","alias_id":"8f4fcc2c-...","is_active":true}
      ubeAliasDelete   Papierkorb in der Alias-Zeile
        {"team_id":"t1","company_id":"fd2f56a4-...","alias_id":"8f4fcc2c-..."}
-     ubeColor         Save neben dem Farbfeld, oder Reset
+     ubeColor         Save neben dem Farbfeld
        {"team_id":"t1","company_id":"fd2f56a4-...","color":"#1a7f5a"}
-       Reset schickt dasselbe Ereignis mit "color":"" -- leer heisst "zurueck auf die vergebene
-       Farbe". WELCHE das ist, entscheidet der Server; hier eine auszurechnen waere geraten.
+     ubeColorReset    Reset neben dem Farbfeld
+       {"team_id":"t1","company_id":"fd2f56a4-..."}
+       Der Workflow dahinter LOESCHT den color_override dieser Marke -- danach gilt wieder die
+       vergebene Farbe. WELCHE das ist, entscheidet der Server; hier eine auszurechnen waere
+       geraten. Der Knopf steht nur da, wenn color_override im Payload gefuellt ist: ohne
+       Override gibt es nichts zurueckzusetzen.
+       Nicht zu verwechseln mit dem X IM Feld: das leert nur die Eingabe und schickt nichts.
 
   DIE WERTE IN BUBBLE LESEN (extract with Regex)
      Diese vier sind unbedenklich -- Ids und Hex enthalten kein Anfuehrungszeichen:
@@ -92,7 +97,8 @@
      data-aliasadd-fn="bubble_fn_ubeAliasAdd"
      data-aliastoggle-fn="bubble_fn_ubeAliasToggle"
      data-aliasdelete-fn="bubble_fn_ubeAliasDelete"
-     data-color-fn="bubble_fn_ubeColor"></div>
+     data-color-fn="bubble_fn_ubeColor"
+     data-colorreset-fn="bubble_fn_ubeColorReset"></div>
 
 <script>
 (function(){

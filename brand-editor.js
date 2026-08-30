@@ -524,8 +524,8 @@
         state.farbe = farbeAusDaten(c);
         elFarbIn.value = state.farbe;
       }
-      /* Reset setzt farbeSpiegeln jetzt selbst -- sichtbar, sobald eine Farbe im Feld steht. */
       farbeSpiegeln();
+      resetZeigen();
       clearZeigen(elIn);
       if (UC.makeTooltips) UC.makeTooltips(root);
     }
@@ -544,10 +544,14 @@
       }
       elFarbSv.disabled = !state.farbeDirty || !gut;
       clearZeigen(elFarbIn);
-      /* Reset steht bereit, sobald ueberhaupt eine Farbe im Feld steht -- nicht erst, wenn der
-         Server eine eigene gespeichert hat. Er schickt den leeren Wert und holt damit die
-         vergebene Farbe zurueck. */
-      elFarbRs.hidden = !gut;
+    }
+    /* Reset gehoert zum GESPEICHERTEN Override und nicht zum Feld: er loescht die eigene Farbe
+       dieser Marke, damit wieder die vergebene gilt. Das Feld leert das X daneben -- zwei
+       verschiedene Dinge, deshalb zwei Knoepfe und zwei Ereignisse.
+       Steht kein Override in den Daten, gibt es nichts zurueckzusetzen: dann ist der Knopf weg. */
+    function resetZeigen() {
+      var c = (state.data && state.data.company) || {};
+      elFarbRs.hidden = !txt(c.color_override).trim();
     }
 
     /* ---- Bedienung -------------------------------------------------------------------------- */
@@ -652,10 +656,16 @@
         return;
       }
       if (t.closest("[data-color-reset]")) {
-        /* Leerer Wert heisst "zurueck auf die vergebene Farbe" -- der Server entscheidet, welche
-           das ist. Hier eine auszurechnen waere geraten. */
+        /* Eigenes Ereignis, nicht ubeColor mit leerem Wert: der Workflow dahinter ist ein anderer
+           (Override loeschen statt eine Farbe schreiben), und ein leerer Wert waere in einem
+           Speichern-Ablauf nicht von "nichts gewaehlt" zu unterscheiden.
+           Das Feld wird gleich mit geleert -- was da stand, gilt nach dem Zuruecksetzen nicht
+           mehr. Welche Farbe dann greift, entscheidet der Server; hier eine auszurechnen waere
+           geraten. */
         state.farbeDirty = false;
-        fire("data-color-fn", "ubeColor", { company_id: txt(c.company_id), color: "" });
+        elFarbIn.value = "";
+        farbeSpiegeln();
+        fire("data-colorreset-fn", "ubeColorReset", { company_id: txt(c.company_id) });
         return;
       }
     });
