@@ -250,7 +250,6 @@
       oppAdded: 'Added',
       oppExists: 'Already added',
       oppError: 'Couldn\u2019t add the opportunity. Please try again.',
-      deep: 'Deep Research…',
       runNow: 'Working for', runDone: 'Worked for', thoughtMoment: 'Thought for a moment',
       galleryBack: 'All categories',
       gallery: [
@@ -336,7 +335,6 @@
       oppAdded: 'Hinzugefügt',
       oppExists: 'Bereits hinzugefügt',
       oppError: 'Opportunity konnte nicht hinzugefügt werden. Bitte erneut versuchen.',
-      deep: 'Tiefe Suche…',
       runNow: 'Arbeitet seit', runDone: 'Gearbeitet', thoughtMoment: 'Kurz nachgedacht',
       galleryBack: 'Alle Kategorien',
       gallery: [
@@ -2339,7 +2337,7 @@
   }
 
   /* ---- Loading text cycle (every 6s, smooth) ---- */
-  var loadIdx = 0, loadTimer = null, deepTimer = null, deepMode = false;
+  var loadIdx = 0, loadTimer = null;
   function currentThinkText(){ var a = L().loading; return a[loadIdx % a.length] || ''; }
   function nextLoadIdx(){ var n = (L().loading || []).length; if (n <= 1) return 0; var k; do { k = Math.floor(Math.random() * n); } while (k === loadIdx); return k; }
   function setThinkText(txt){
@@ -2355,25 +2353,18 @@
       e.classList.remove('is-in');
     }, 240);
   }
-  function updateLoopText(){ if (!deepMode) setThinkText(currentThinkText()); }
-  function enterDeepLoading(){
-    deepMode = true;
-    var th = root.querySelector('.am-run-step .am-think-text'); th = th ? th.closest('.am-run-step') : null;
-    if (th) th.classList.add('is-deep');
-    var dt = root.querySelector('.am-deep-text'); if (dt) dt.textContent = L().deep;
-  }
+  function updateLoopText(){ setThinkText(currentThinkText()); }
+  /* Der Hinweis "Tiefe Suche" nach 55 Sekunden ist raus. Die Schrittliste sagt inzwischen selbst,
+     woran gearbeitet wird -- ein zweiter Hinweis daneben erklaerte dasselbe noch einmal, nur
+     dramatischer. Sein Glanz ist geblieben und liegt jetzt auf dem Text des laufenden Schritts. */
   function loadStart(){
-    loadStop(); deepMode = false;
-    var th = root.querySelector('.am-run-step.is-deep'); if (th) th.classList.remove('is-deep');
+    loadStop();
     /* the first line is already shown by the render — don't immediately re-set it
        (that produced an instant text-swap animation the moment the loader appeared) */
     loadTimer = setInterval(function(){ loadIdx = nextLoadIdx(); updateLoopText(); }, 7500);
-    deepTimer = setTimeout(enterDeepLoading, 55000);   // after 55s -> "deep search" hint
   }
   function loadStop(){
     if (loadTimer){ clearInterval(loadTimer); loadTimer = null; }
-    if (deepTimer){ clearTimeout(deepTimer); deepTimer = null; }
-    deepMode = false;
   }
 
   /* ---------------- Tool loading states (graphic + typewriter) ---------------- */
@@ -2553,11 +2544,9 @@
     if (st.kind === 'thought'){
       /* Die Denkzeile benutzt die Lauf-Mechanik, die es schon gibt (am-think-loop/-text): der Text
          wechselt waehrend des Denkens und am Ende auf "Thought for ..." -- mit derselben Auf-/Ab-
-         Bewegung wie vorher, statt hart umzuspringen. Der Deep-Hinweis nach 55s haengt daran mit. */
+         Bewegung wie vorher, statt hart umzuspringen. */
       txt.classList.add('am-think-loop');
-      txt.innerHTML = '<span class="am-think-text"></span>' +
-        '<span class="am-deep"><span class="am-deep-ic">' + ICON.telescope + '</span>' +
-        '<span class="am-deep-text">' + esc(L().deep) + '</span></span>';
+      txt.innerHTML = '<span class="am-think-text"></span>';
       txt.querySelector('.am-think-text').textContent = st.endTs ? st.text : (st.text || currentThinkText());
     } else {
       txt.textContent = st.text;
@@ -2575,10 +2564,7 @@
     var el = st.el; if (!el) return;
     el.classList.remove('is-cold');
     el.classList.add('is-done');
-    if (st.kind === 'thought'){
-      el.classList.remove('is-deep');
-      if (umblenden) setThinkText(st.text);
-    }
+    if (st.kind === 'thought' && umblenden) setThinkText(st.text);
     /* Wenn der Spinner unsichtbar ist, hoert er auch auf zu drehen -- eine unsichtbare
        Dauer-Animation je Zeile kostet in einer langen Liste sonst dauerhaft Rechenzeit. */
     setTimeout(function(){ if (st.el === el) el.classList.add('is-cold'); }, 480);

@@ -697,20 +697,11 @@
   }
   .am-think-text.is-out { transform: translateY(-95%); opacity: 0; }
   .am-think-text.is-in  { transform: translateY(95%);  opacity: 0; }
-  /* deep-search hint (after ~55s) — telescope icon + shimmering text, no card/border/bg */
-  .am-deep { display: none; align-items: center; gap: 6px; height: 19px; }
-  .am-deep-ic { display: inline-flex; flex: 0 0 auto; color: #2384E2; }
-  .am-deep-ic svg { width: 14px; height: 14px; display: block; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .am-deep-text {
-    font-size: 13px; font-weight: 500; white-space: nowrap;
-    /* solid base colour fills the glyphs at all times; a soft white glint sweeps across on top */
-    background-image: linear-gradient(100deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.85) 50%, rgba(255,255,255,0) 70%);
-    background-color: #2384E2;
-    background-size: 200% 100%; background-repeat: no-repeat; background-position: -120% 0;
-    -webkit-background-clip: text; background-clip: text;
-    -webkit-text-fill-color: transparent; color: transparent;
-    animation: amShimmer 1.56s linear infinite reverse;
-  }
+  /* Der Glanz, der frueher ueber dem Hinweis "Tiefe Suche" lief. Der Hinweis ist weg; der Glanz
+     liegt jetzt auf dem Text des LAUFENDEN Schritts -- also genau in der Zeile, die auch den
+     Spinner traegt. Die Schriftfarbe bleibt, wie sie ist: background-color: currentColor nimmt den
+     Ton der Zeile (--am-muted), und weil -webkit-text-fill-color transparent ist und color NICHT
+     angefasst wird, faerbt der Verlauf nur die Glyphen. Kein blauer Text, kein blauer Glanz. */
   @keyframes amShimmer { from { background-position: -120% 0; } to { background-position: 220% 0; } }
 
   /* ---- Arbeitsprotokoll: Uhr, Trennlinie, Schrittliste ----------------------------------------
@@ -786,8 +777,25 @@
   .am-run-step .am-think-loop { flex: 1 1 auto; }
   .am-run-step .am-think-text { font-size: inherit; font-weight: inherit; }
   .am-run-step.is-done .am-think-text { color: var(--am-text); }
-  .am-run-step.is-deep .am-think-text { display: none; }
-  .am-run-step.is-deep .am-deep { display: inline-flex; }
+  /* Nur der laufende Schritt glaenzt: .is-done setzt core auf die Zeile, sobald sie fertig ist.
+     Die fertige Zeile bekommt ihre Fuellfarbe ausdruecklich zurueck -- ohne das bliebe sie
+     durchsichtig, sobald die Animation nicht mehr greift. */
+  .am-run-step:not(.is-done) .am-run-txt {
+    background-image: linear-gradient(100deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.85) 50%, rgba(255,255,255,0) 70%);
+    background-color: currentColor;
+    background-size: 200% 100%; background-repeat: no-repeat; background-position: -120% 0;
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: amShimmer 1.56s linear infinite reverse;
+  }
+  .am-run-step.is-done .am-run-txt {
+    background: none; animation: none; -webkit-text-fill-color: currentColor;
+  }
+  @media (prefers-reduced-motion: reduce){
+    .am-run-step:not(.is-done) .am-run-txt {
+      background: none; animation: none; -webkit-text-fill-color: currentColor;
+    }
+  }
   /* Die Logos hinter dem Text stehen als STAPEL, wie jeder andere Favicon-Satz im Haus
      (.up-rb-cg-fav, .up-stack-item): leicht ineinandergeschoben, und ein Ring in der Farbe des
      Grundes trennt sie, damit zwei aehnliche Logos nicht verschmelzen. Die Ueberlappung ist die

@@ -547,6 +547,12 @@
         plugins: [gridPlugin(), quadrantPlugin(), layoutPlugin(), logoPlugin()],
         options: {
           responsive: true, maintainAspectRatio: false,
+          /* Chart.js haengt bei responsive: true einen eigenen Beobachter an den Kasten und
+             zeichnet bei JEDER Aenderung sofort neu -- beim Ziehen am Fensterrand also 60 Mal
+             je Sekunde ein volles Chart-Layout. resizeDelay sammelt das: gezeichnet wird erst
+             120ms nach der letzten Aenderung. Waehrend des Ziehens skaliert der Browser die
+             Leinwand, danach steht sie scharf. */
+          resizeDelay: 120,
           animation: { duration: MX.animMs, easing: "easeOutQuart" },
           layout: { padding: { top: MX.padTop, right: MX.padRight, bottom: 0, left: 0 } },
           interaction: { mode: "nearest", intersect: false },

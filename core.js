@@ -6581,6 +6581,12 @@
           plugins: [dashedYGridPlugin, hoverLinePlugin],
           options: {
             responsive: true, maintainAspectRatio: false,
+            /* Chart.js haengt bei responsive: true einen eigenen Beobachter an den Kasten und
+               zeichnet bei JEDER Aenderung sofort neu -- beim Ziehen am Fensterrand also 60 Mal
+               je Sekunde ein volles Chart-Layout. resizeDelay sammelt das: gezeichnet wird erst
+               120ms nach der letzten Aenderung. Waehrend des Ziehens skaliert der Browser die
+               Leinwand, danach steht sie scharf. */
+            resizeDelay: 120,
             animation: { duration: 600, easing: "easeOutQuart" },
             /* separate, faster curve for the legend-hover cross-highlight than the initial draw */
             transitions: { highlight: { animation: { duration: 200, easing: "easeOutQuad" } } },
@@ -7032,7 +7038,9 @@
                 __realColors: allZero ? [] : d.map(function(x){ return x.__realColor || x.color; }),
                 spacing: 0, borderWidth: 0, borderRadius: CORNER, hoverOffset: HOVER }] },
             plugins: [constantGapPlugin, ringWidthPlugin],
-            options: { responsive: true, maintainAspectRatio: false, layout: { padding: 8 },
+            /* resizeDelay: derselbe Grund wie beim Linienchart -- ohne ihn zeichnet Chart.js
+               waehrend des Ziehens bei jeder Bildaenderung neu. */
+            options: { responsive: true, maintainAspectRatio: false, resizeDelay: 120, layout: { padding: 8 },
               animation: { duration: 200, easing: "easeOutQuad" },
               plugins: { legend: { display:false }, tooltip: { enabled:false, external: donutTooltip } },
               onClick: (clickable && !allZero) ? function(evt, elements){
