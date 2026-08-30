@@ -96,32 +96,7 @@
   Namen mit Anfuehrungszeichen, spitzen Klammern oder Emoji brauchen nichts weiter -- die
   Komponente escapet jeden Text. Geprueft mit Mueller & "Soehne" <GmbH> und Emoji im Alias.
 
-  ── SCHRITT 1: Skelett an, VOR der RPC ─────────────────────────────────────────────────────
-
-  (function () {
-    if (typeof window.setBrandEditorLoading === "function") {
-      window.setBrandEditorLoading("INSTANCE_ID", "yes");
-    }
-  })();
-
-  ── SCHRITT 2: Marke anzeigen, NACH der RPC ────────────────────────────────────────────────
-  Bubble-Ausdruecke stehen in <>. Alles andere bleibt, wie es ist.
-
-  (function () {
-    var INSTANCE_ID = "INSTANCE_ID";
-
-    var ROH = `<Result of step X (Supabase RPC)'s data:formatted as JSON-safe>`;
-
-    var payload = ROH
-      .replace(/:\s*([,}\]])/g, ": null$1")
-      .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
-
-    if (typeof window.setBrandEditor === "function") {
-      window.setBrandEditor(INSTANCE_ID, payload);
-    }
-  })();
-
-  ── SCHRITT 3: statisch, zum Ausprobieren ohne Datenbank ───────────────────────────────────
+  ── SCHRITT 1: statisch, zum Ausprobieren ohne Datenbank ───────────────────────────────────
   Genau der Payload aus der Uebergabe, damit man den Editor in Bubble sehen kann, bevor die RPC
   steht. Derselbe Text laeuft im Harness _h_ube.html gegen die fertige Komponente.
 
@@ -155,6 +130,31 @@
 
     if (typeof window.setBrandEditor === "function") {
       window.setBrandEditor("INSTANCE_ID", STATISCH);
+    }
+  })();
+
+  ── SCHRITT 2: Skelett an, VOR der RPC ─────────────────────────────────────────────────────
+
+  (function () {
+    if (typeof window.setBrandEditorLoading === "function") {
+      window.setBrandEditorLoading("INSTANCE_ID", "yes");
+    }
+  })();
+
+  ── SCHRITT 3: Marke anzeigen, NACH der RPC ────────────────────────────────────────────────
+  Bubble-Ausdruecke stehen in <>. Alles andere bleibt, wie es ist.
+
+  (function () {
+    var INSTANCE_ID = "INSTANCE_ID";
+
+    var ROH = `<Result of step X (Supabase RPC)'s data:formatted as JSON-safe>`;
+
+    var payload = ROH
+      .replace(/:\s*([,}\]])/g, ": null$1")
+      .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+
+    if (typeof window.setBrandEditor === "function") {
+      window.setBrandEditor(INSTANCE_ID, payload);
     }
   })();
 
