@@ -259,9 +259,12 @@
 
     elAddBtn.innerHTML = (UC.icon ? UC.icon("plus", 2.2) : "") + "<span>Add</span>";
     elNameBt.innerHTML = (UC.icon ? UC.icon("save", 2) : "") + "<span>Save</span>";
-    /* Das X kommt aus core (derselbe Pfad wie im Suchfeld), nicht selbst gezeichnet. */
+    /* Das X kommt aus core, nicht selbst gezeichnet. Der Name ist "x": UC.icon liest ICON_PATHS,
+       und "up-search-clear" steht in der ANDEREN Karte (Klassenname -> Pfad, fuer Markup, das
+       core selbst nachtraegt). Beide tragen dasselbe Kreuz -- nur kennt icon() den zweiten Namen
+       nicht und warnte in der Konsole. */
     [].forEach.call(root.querySelectorAll(".ube-clear"), function (b) {
-      b.innerHTML = UC.icon ? UC.icon("up-search-clear", 2) : "";
+      b.innerHTML = UC.icon ? UC.icon("x", 2) : "";
     });
     elFarbSv.innerHTML = (UC.icon ? UC.icon("save", 2) : "") + "<span>Save</span>";
 
