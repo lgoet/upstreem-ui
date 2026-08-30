@@ -4727,7 +4727,12 @@
 
     if (typeof MutationObserver !== 'undefined'){ try { new MutationObserver(function(){ refresh(); }).observe(elMessages, { childList:true }); } catch(_){} }
     elChat.addEventListener('scroll', onScroll, { passive:true });
-    if (typeof ResizeObserver !== 'undefined'){ try { new ResizeObserver(function(){ updateVisible(); onScroll(); }).observe(root); } catch(_){} }
+    (function(){
+      var kern = window.UpstreemCore;
+      function nach(){ updateVisible(); onScroll(); }
+      if (kern && kern.beobachteGroesse) return kern.beobachteGroesse(root, nach, { hoehe: true });
+      if (typeof ResizeObserver !== 'undefined'){ try { new ResizeObserver(nach).observe(root); } catch(_){} }
+    })();
     window.addEventListener('resize', function(){ updateVisible(); onScroll(); });
     refresh();
   })();
@@ -4991,11 +4996,23 @@
     // Deliberately NO window 'scroll' listener and no vv 'scroll' listener: page scrolling must
     // never make us re-measure or re-size. See the feedback-loop note at the top of this block.
     if (window.ResizeObserver){
-      try { new ResizeObserver(watch).observe(document.documentElement); } catch(_){}
-      try { new ResizeObserver(watch).observe(document.body); } catch(_){}
-      // a sibling Bubble element resizing (its own late content, a group toggling) can shift OUR
-      // position without document/body ever changing size -- watch our own host container too.
-      try { if (root.parentElement) new ResizeObserver(watch).observe(root.parentElement); } catch(_){}
+      /* GEDROSSELT. Drei Beobachter auf Dokument, Body und dem Wirtselement, und jeder ruft
+         watch(), das die Hoehe des Elternteils misst -- waehrend einer Ziehbewegung waren das drei
+         Messungen je Bild. In der Messung des Nutzers stand Mira damit auf Platz eins: 595 von
+         3098 Lesezugriffen. Das Intervall alle 300ms bleibt, es faengt alles ab, was ohne
+         Groessenaenderung passiert. */
+      var kern = window.UpstreemCore;
+      if (kern && kern.beobachteGroesse){
+        kern.beobachteGroesse(document.documentElement, watch, { hoehe: true });
+        kern.beobachteGroesse(document.body, watch, { hoehe: true });
+        if (root.parentElement) kern.beobachteGroesse(root.parentElement, watch, { hoehe: true });
+      } else {
+        try { new ResizeObserver(watch).observe(document.documentElement); } catch(_){}
+        try { new ResizeObserver(watch).observe(document.body); } catch(_){}
+        // a sibling Bubble element resizing (its own late content, a group toggling) can shift OUR
+        // position without document/body ever changing size -- watch our own host container too.
+        try { if (root.parentElement) new ResizeObserver(watch).observe(root.parentElement); } catch(_){}
+      }
     }
     window.addEventListener('orientationchange', function(){ setTimeout(fit, 60); setTimeout(fit, 250); });
     if (vv){ vv.addEventListener('resize', scheduleFit); }

@@ -5402,6 +5402,16 @@
        die Chrome als "requestAnimationFrame handler took" und "Forced reflow" meldet.
        Jetzt merkt sich der Beobachter, WELCHE Wurzel aufgetaucht ist, und weckt nur die. */
     function runAll(){
+      /* NICHT waehrend einer Ziehbewegung. onFound() sucht die Wurzel jeder Komponente und laesst
+         sie sich neu einrichten -- in der Konsole des Nutzers stand genau dieser Handler mit 384ms
+         und 305ms als laengste Aufgabe. Waehrend des Ziehens entstehen dauernd Knoten (Legenden,
+         Tooltips, Chart-Flaechen), also lief er Bild um Bild. Eine Komponente, die in diesem
+         Augenblick dazukommt, darf 250ms auf ihre Einrichtung warten; niemand kann sie in dieser
+         Zeit bedienen. G.pending bleibt gesetzt, damit die Anmeldung nicht verlorengeht. */
+      if (typeof zieht === "function" && zieht()){
+        setTimeout(runAll, 250);
+        return;
+      }
       var heiss = G.hot; G.hot = null; G.pending = false;
       for (var k = 0; k < G.watchers.length; k++){
         var w = G.watchers[k];
@@ -9699,6 +9709,7 @@
     marketChip: marketChip,
     aufResize: aufResize,
     beobachteGroesse: beobachteGroesse,
+    zieht: zieht,
     brandToggleHtml: brandToggleHtml,
     respBody: respBody,
     rbShowUrl: rbShowUrl,
