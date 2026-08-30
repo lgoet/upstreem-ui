@@ -34,6 +34,12 @@
   var proKomponente = {};
   var proStelle = {};
   var langeAufgaben = [];
+  /* Wer die Zeit verbraucht -- nicht wer misst. Die Zaehler oben finden Layout-Thrashing; sie
+     sagen aber nichts ueber einen Callback, der schlicht lange RECHNET. Deshalb wird jeder
+     Rueckruf, der ueber setTimeout, setInterval oder requestAnimationFrame angemeldet wird, mit
+     seiner ANMELDESTELLE gemerkt und beim Ausfuehren gestoppt. Der Report nennt danach die
+     teuersten -- mit Datei und Zeile derjenigen Stelle, die den Rueckruf angemeldet hat. */
+  var rueckrufe = {};      /* "Stelle" -> { n, ms, max } */
   var laeuft = false, t0 = 0;
   var obs = null;
 
@@ -134,6 +140,31 @@
       /* getComputedStyle nimmt das Element als erstes Argument, nicht als this. */
       patchMethode(window, "getComputedStyle", function (self, args) { return args[0]; });
 
+      /* Die drei Anmeldewege fuer aufgeschobene Arbeit. Gemessen wird die Ausfuehrung, gemerkt
+         wird die Stelle der ANMELDUNG -- die steht im Stack des Aufrufs von setTimeout & Co. */
+      ["setTimeout", "setInterval", "requestAnimationFrame"].forEach(function (name) {
+        var alt = window[name];
+        if (typeof alt !== "function") return;
+        window[name] = function (fn) {
+          if (typeof fn !== "function") return alt.apply(window, arguments);
+          var stelle = stelleVon();
+          var args = [].slice.call(arguments);
+          args[0] = function () {
+            var t = (window.performance && performance.now) ? performance.now() : 0;
+            try { return fn.apply(this, arguments); }
+            finally {
+              if (t) {
+                var d = performance.now() - t;
+                var r = rueckrufe[stelle] || (rueckrufe[stelle] = { n: 0, ms: 0, max: 0 });
+                r.n++; r.ms += d; if (d > r.max) r.max = d;
+              }
+            }
+          };
+          return alt.apply(window, args);
+        };
+        AUS.push(function () { window[name] = alt; });
+      });
+
       /* Lange Aufgaben sagen, WANN es weh tat -- die Zaehler sagen, wer schuld war. */
       try {
         obs = new PerformanceObserver(function (list) {
@@ -180,8 +211,20 @@
       console.table(rang(zaehler, 20).map(function (r) {
         return { "Komponente | Stelle": r.k, Zugriffe: r.v }; }));
 
+      /* Die eigentliche Antwort auf "was dauert so lange": die teuersten Rueckrufe, nach
+         verbrauchter Zeit. n ist die Zahl der Ausfuehrungen, max die laengste einzelne. */
+      var rl = Object.keys(rueckrufe).map(function (k) { return { k: k, v: rueckrufe[k] }; })
+        .sort(function (a, b) { return b.v.ms - a.v.ms; }).slice(0, 15);
+      if (rl.length) {
+        console.log("\n-- ZEIT nach Rueckruf (setTimeout / rAF / setInterval) ------");
+        console.table(rl.map(function (r) {
+          return { "Angemeldet bei": r.k, "Summe ms": Math.round(r.v.ms),
+                   "Aufrufe": r.v.n, "laengster ms": Math.round(r.v.max) };
+        }));
+      }
+
       return { gesamt: gesamt, dauerMs: dauer, proKomponente: proKomponente,
-               proStelle: proStelle, langeAufgaben: langeAufgaben };
+               proStelle: proStelle, langeAufgaben: langeAufgaben, rueckrufe: rueckrufe };
     },
 
     /* Fuer den Resize-Fall: zieht das Fenster nicht, sondern aendert die Breite der
