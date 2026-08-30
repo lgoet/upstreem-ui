@@ -16,21 +16,27 @@
 .ube-loaderr[hidden] { display: none; }
 
 /* ---------- Kopf ---------- */
-.ube-kopf { display: flex; align-items: flex-start; gap: 16px; }
-/* Die Platte ist .up-logo-box aus core, nur groesser: hier ist das Logo die Ueberschrift der
-   Seite und nicht die Marke in einer Zeile. Alle Werte des Bauteils im selben Verhaeltnis
-   mitgezogen (Faktor 56/24): Radius 8 -> 18.7 (auf 18 gerundet), Polster 1 -> 2, Bild 22 -> 52.
-   Der Rest -- Grund, Ausrichtung, der Globus-Rueckfall -- bleibt, wie er ist. */
-.ube-fav.ube-fav { width: 56px; height: 56px; flex: 0 0 56px; border-radius: 18px; padding: 2px; }
-.ube-fav.ube-fav img { width: 52px; height: 52px; border-radius: 16px; }
+.ube-kopf { display: flex; align-items: center; gap: 14px; }
+/* Die Platte ist .up-logo-box aus core, nur groesser: sie steht neben dem Namen und nicht in
+   einer Tabellenzeile. Alle Werte des Bauteils im selben Verhaeltnis mitgezogen (Faktor 44/24):
+   Radius 8 -> 14.7 (auf 14 gerundet), Polster 1 -> 2, Bild 22 -> 40. Der Rest -- Grund,
+   Ausrichtung, der Globus-Rueckfall -- bleibt, wie er ist. */
+.ube-fav.ube-fav { width: 44px; height: 44px; flex: 0 0 44px; border-radius: 14px; padding: 2px; }
+.ube-fav.ube-fav img { width: 40px; height: 40px; border-radius: 12px; }
 /* Der Globus des Rueckfalls sitzt mittig und in derselben Groesse wie ein Logo. */
-.ube-fav.ube-fav::after { width: 26px; height: 26px; }
+.ube-fav.ube-fav::after { width: 20px; height: 20px; }
 .ube-kopftext { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.ube-koplabel { margin: 0; font-size: 12.5px; font-weight: 400; color: var(--vc-third); }
-.ube-namezeile { display: flex; align-items: center; gap: 6px; min-width: 0; }
-.ube-name { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em;
-  color: var(--vc-text); line-height: 1.25; overflow: hidden; text-overflow: ellipsis;
+/* Der Name steht hier als Kopfzeile und nicht mehr als 26px-Ueberschrift mit Stift daneben:
+   umbenannt wird im Formular darunter, wie Alias und Farbe auch. 20px ist die Groesse, die
+   brand-detail seiner Ueberschrift gibt. */
+.ube-name { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.015em;
+  color: var(--vc-text); line-height: 1.3; overflow: hidden; text-overflow: ellipsis;
   white-space: nowrap; }
+/* Der Balken ist .up-tsk-bar aus core (Ton, Puls, Radius) -- hier stehen nur Breite und Hoehe,
+   die die zwei Zeilen darunter wirklich haben. Vorher trugen die zwei Spans eine Klasse, zu der
+   es KEINE Regel gab: das Kopfskelett war unsichtbar. */
+.ube-sk-name { width: 168px; height: 15px; }
+.ube-sk-dom  { width: 116px; height: 11px; margin-top: 4px; }
 .ube-domain { font-size: 13px; color: var(--vc-muted); text-decoration: none; }
 .ube-domain:hover { color: var(--vc-text); text-decoration: underline; }
 .ube-domain.is-leer { color: var(--vc-third); }
@@ -58,8 +64,9 @@
 .ube-feld:hover:not(:focus) { border-color: var(--vc-hover-border); }
 
 /* ---------- Aliase ---------- */
-.ube-aliasadd { display: flex; align-items: center; gap: 8px; }
-.ube-aliasin { flex: 1 1 auto; min-width: 0; }
+.ube-zeile, .ube-aliasadd { display: flex; align-items: center; gap: 8px; }
+.ube-namein, .ube-aliasin { flex: 1 1 auto; min-width: 0; }
+.ube-namebtn { height: 40px; padding: 0 16px; }
 /* Der Knopf steht auf derselben Hoehe wie das Feld -- 32 neben 40 sieht aus wie hineingerutscht. */
 .ube-aliasbtn { height: 40px; padding: 0 16px; }
 
@@ -70,9 +77,19 @@
    52px statt der 72 aus den Datentabellen: dort steht eine Marke mit Logo und Unterzeile in der
    Zeile, hier ein Wort und ein Schalter. Dieselbe Ausnahme, die .up-vartable mit 55px macht. */
 .ube-table { border: 1px solid var(--vc-border); border-radius: 12px; overflow: hidden; }
-.ube-table .up-thead { height: 40px; flex: 0 0 40px; }
-.ube-table .up-row.ube-row { height: 52px; flex: 0 0 52px; cursor: default; }
-.ube-table .up-row:last-child { border-bottom: 0; }
+/* Die Kopfzeile behaelt die 45px der App -- eine eigene Hoehe waere eine zweite Kopfzeile, die es
+   sonst nirgends gibt. Sie trug hier 52, weil das Markup ihr .ube-row mitgab und damit die
+   Zeilenregel griff; das Markup gibt es jetzt nicht mehr her, und die Regel selbst schliesst den
+   Kopf ausdruecklich aus. */
+.ube-table .up-row.ube-row:not(.up-thead) { height: 52px; flex: 0 0 52px; cursor: default; }
+/* Die Trennlinie unter dem Kopf zeichnet .up-th (border-bottom, core). .up-row bringt eine
+   ZWEITE mit -- zusammen ergab das den doppelten Strich unter beiden Kopfzeilen. */
+.ube-table .up-thead.up-row { border-bottom: 0; }
+/* Die 45px der App ausdruecklich: .up-thead (45) und .up-row (72) stehen in core auf derselben
+   Spezifitaetsstufe, und .up-row steht spaeter -- ohne diese Zeile bekommt der Kopf die Hoehe
+   einer Datenzeile. Genau so macht es .up-vartable. */
+.ube-table .up-thead.up-row { height: 45px; flex: 0 0 45px; }
+.ube-table .up-tbody > .up-row:last-child { border-bottom: 0; }
 .ube-aliaslist { --up-cols: minmax(0, 1fr) 96px 84px; }
 .ube-zeitlist  { --up-cols: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr); }
 .ube-alias { overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -88,15 +105,26 @@
 /* Der Farbkasten sitzt IM Feld, links vom Text: so gehoert er sichtbar zum Wert und nicht daneben.
    Coloris haengt sich beim Klick genau darauf. */
 .ube-farbfeld { position: relative; display: inline-flex; align-items: center; }
-.ube-farbfeld::before {
-  content: ""; position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
-  width: 18px; height: 18px; border-radius: 6px; pointer-events: none;
+/* Der Kasten ist ein Knopf und liegt UEBER dem Feld (z-index), sonst faengt das Feld den Klick
+   ab, bevor er ankommt. 22px statt 18: er soll als Schaltflaeche zu treffen sein.
+   .check_reinvention.py meldet hier den Segmented-Control-Knopf (.up-seg-btn), weil background,
+   border-radius, cursor, height und transition zusammen vorkommen. Fehlalarm: das ist eine
+   Farbflaeche von 22 Pixeln im Feld -- kein Knopf in einer Gruppe, ohne Beschriftung, ohne
+   aktiven Zustand und ohne Nachbarn, an die er sich anschliesst. Ein .up-seg-btn hier waere
+   26 Pixel hoch mit Textpolster und wuerde das Feld sprengen. */
+.ube-farbknopf {
+  position: absolute; left: 8px; top: 50%; transform: translateY(-50%); z-index: 2;
+  width: 22px; height: 22px; border-radius: 7px; border: 0; padding: 0; cursor: pointer;
   background: var(--ube-farbe, transparent);
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.14);
+  transition: box-shadow 140ms ease;
 }
+.ube-farbknopf:hover { box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.28); }
+.ube-farbknopf:focus-visible { outline: 0;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.28), 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 /* Ohne Farbe ein Karomuster statt einer leeren Flaeche: "nichts gewaehlt" muss anders aussehen
    als "weiss gewaehlt". */
-.ube-farbfeld.is-leer::before {
+.ube-farbfeld.is-leer .ube-farbknopf {
   background:
     linear-gradient(45deg, var(--vc-border) 25%, transparent 25%, transparent 75%, var(--vc-border) 75%) 0 0 / 10px 10px,
     linear-gradient(45deg, var(--vc-border) 25%, transparent 25%, transparent 75%, var(--vc-border) 75%) 5px 5px / 10px 10px,
@@ -104,7 +132,11 @@
 }
 /* Der Farbkasten steht links IM Feld, also faengt der Text erst bei 36 an -- 10 Rand, 18 Kasten,
    8 Luft. Die uebrigen Werte sind die des gemeinsamen Feldes darueber. */
-.ube-farbin { width: 148px; padding-left: 36px; font-variant-numeric: tabular-nums; }
+.ube-farbin { width: 152px; padding-left: 38px; font-variant-numeric: tabular-nums; }
+/* Sichtbar nur, wenn der Waehler wirklich nicht geladen hat -- die Klasse setzt colorisSetzen. */
+.ube-farbhinweis { display: none; margin: 0; font-size: 12.5px; color: var(--vc-third); }
+.ube-root.is-nopicker .ube-farbhinweis { display: block; }
+.ube-root.is-nopicker .ube-farbknopf { cursor: default; }
 /* Coloris legt seinen Rahmen UM das Feld. Ohne diese Zeile ist er inline-block und traegt die
    Breite des Feldes nicht mit -- der Kasten links sass dann neben dem Feld statt darin. */
 .ube-farbfeld .clr-field { display: block; }

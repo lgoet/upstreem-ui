@@ -25,7 +25,7 @@
      resetBrandEditor(INSTANCE_ID)               zurueck auf leer
 
   EREIGNISSE HERAUS (jedes mit einem JSON-Text als erstem Parameter)
-     ubeRename        {"company_id": "...", "name": "..."}         Umbenennen-Knopf geklickt
+     ubeRename        {"company_id": "...", "name": "..."}         Save neben dem Namensfeld
      ubeAliasAdd      {"company_id": "...", "pattern": "..."}      Add geklickt oder Enter
      ubeAliasToggle   {"company_id": "...", "alias_id": "...", "is_active": true}
      ubeAliasDelete   {"company_id": "...", "alias_id": "..."}
@@ -35,8 +35,9 @@
   - Die Komponente aendert NICHTS von sich aus. Ein Klick auf den Schalter legt ihn optisch um und
     feuert das Ereignis; die Wahrheit kommt mit dem naechsten setBrandEditor zurueck. Wer den
     Workflow vergisst, sieht einen Schalter, der beim naechsten Laden wieder zurueckspringt.
-  - Der Umbenennen-Knopf oeffnet KEINEN Dialog. Er feuert ubeRename mit dem aktuellen Namen; der
-    Dialog gehoert auf die Bubble-Seite, wie bei settings-brand.
+  - Der Name wird IN der Komponente getippt: Feld plus Save-Knopf, wie Alias und Farbe. ubeRename
+    traegt den NEUEN Namen (nicht mehr den alten) -- der Workflow schreibt ihn und schickt die RPC
+    erneut. Kein Dialog auf der Bubble-Seite noetig.
   ============================================================================================
 -->
 <div class="up-root ube-root"

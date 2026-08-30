@@ -139,12 +139,26 @@
         .observe(root, { attributes: true, attributeFilter: ["data-isdark"] });
     }
 
-    var state = { data: null, loading: true, fehler: "", farbe: "", farbeDirty: false, neu: "" };
+    var state = { data: null, loading: true, fehler: "", farbe: "", farbeDirty: false, nameDirty: false, neu: "" };
 
     root.innerHTML =
       '<div class="ube-loaderr up-empty" hidden></div>' +
       '<div class="ube-body">' +
         '<div class="ube-kopf"></div>' +
+        /* Der Name ist ein Formularfeld wie Alias und Farbe -- nicht mehr eine Ueberschrift mit
+           Stift. Drei Abschnitte, drei Mal dieselbe Zeile aus Feld und Knopf: das ist die Form,
+           die der Rest der App auch hat. */
+        '<section class="ube-sec ube-sec-name">' +
+          '<div class="ube-sechead">' +
+            '<h2 class="ube-sectitle">Primary tracking- and display name</h2>' +
+            '<p class="ube-secsub">Shown everywhere in the app and matched in AI answers.</p>' +
+          '</div>' +
+          '<div class="ube-zeile">' +
+            '<input class="up-field ube-feld ube-namein" type="text" autocomplete="off" ' +
+              'spellcheck="false" maxlength="120" aria-label="Brand name">' +
+            '<button class="up-btn-pri ube-namebtn" type="button" data-name-save disabled></button>' +
+          '</div>' +
+        '</section>' +
         '<section class="ube-sec ube-sec-alias">' +
           '<div class="ube-sechead">' +
             '<h2 class="ube-sectitle">Brand Match Aliases / Products</h2>' +
@@ -165,12 +179,19 @@
           '</div>' +
           '<div class="ube-farbzeile">' +
             '<span class="ube-farbfeld">' +
+              /* Der Kasten links im Feld ist ein KNOPF und kein Ornament: er war vorher ein
+                 ::before mit pointer-events: none, und damit sah die Zeile aus wie ein blosses
+                 Hex-Eingabefeld. Jetzt oeffnet er den Waehler, wie es ein Farbknopf ueberall tut. */
+              '<button class="ube-farbknopf" type="button" data-color-open ' +
+                'aria-label="Open color picker"></button>' +
               '<input class="up-field ube-feld ube-farbin" type="text" spellcheck="false" autocomplete="off" ' +
                 'maxlength="7" placeholder="#000000" aria-label="Brand color">' +
             '</span>' +
             '<button class="up-btn-pri ube-farbsave" type="button" data-color-save disabled></button>' +
             '<button class="up-btn-sec ube-farbreset" type="button" data-color-reset hidden>Reset</button>' +
           '</div>' +
+          '<p class="ube-farbhinweis">The color picker could not be loaded. Type a hex value ' +
+            'like #1f6feb instead.</p>' +
         '</section>' +
         '<section class="ube-sec ube-sec-zeit">' +
           '<div class="ube-sechead">' +
@@ -188,12 +209,16 @@
     var elZeitT  = root.querySelector(".ube-zeittable");
     var elIn     = root.querySelector(".ube-aliasin");
     var elAddBtn = root.querySelector(".ube-aliasbtn");
+    var elNameIn = root.querySelector(".ube-namein");
+    var elNameBt = root.querySelector(".ube-namebtn");
     var elFarbIn = root.querySelector(".ube-farbin");
+    var elFarbKn = root.querySelector(".ube-farbknopf");
     var elFarbSv = root.querySelector(".ube-farbsave");
     var elFarbRs = root.querySelector(".ube-farbreset");
     var elZeitTi = root.querySelector(".ube-zeittitle");
 
     elAddBtn.innerHTML = (UC.icon ? UC.icon("plus", 2.2) : "") + "<span>Add</span>";
+    elNameBt.innerHTML = (UC.icon ? UC.icon("save", 2) : "") + "<span>Save</span>";
     elFarbSv.innerHTML = (UC.icon ? UC.icon("save", 2) : "") + "<span>Save</span>";
 
     /* ---- Farbwaehler ------------------------------------------------------------------------
@@ -201,6 +226,10 @@
        Element: zweimal init() mit denselben Optionen ist harmlos, zweimal geladen waere es nicht. */
     function colorisSetzen() {
       ladeColoris().then(function (da) {
+        /* Kein stiller Ausfall: laedt die Datei nicht (gesperrtes CDN, kein Netz), sagt die
+           Komponente das und der Knopf verschwindet. Ein Farbknopf, der nichts oeffnet, ist
+           schlimmer als keiner -- und das Hex-Feld allein funktioniert weiter. */
+        root.classList.toggle("is-nopicker", !(da && window.Coloris));
         if (!da || !window.Coloris) return;
         /* Coloris gehoert der SEITE, nicht dem Element: seine Optionen gelten fuer alle Felder,
            die er kennt. Deshalb zaehlt hier das Thema der App und nicht das Attribut an dieser
@@ -238,12 +267,7 @@
                (fav ? '<img src="' + esc(fav) + '" alt="" loading="lazy" referrerpolicy="no-referrer">' : "") +
              '</span>' +
              '<div class="ube-kopftext">' +
-               '<p class="ube-koplabel">Primary tracking- and display name</p>' +
-               '<div class="ube-namezeile">' +
-                 '<h1 class="ube-name">' + esc(txt(c.name) || "–") + '</h1>' +
-                 '<button class="up-iconbtn ube-rename" type="button" data-rename ' +
-                   'data-tip="Rename" aria-label="Rename brand">' + (UC.icon ? UC.icon("squarePen", 2) : "") + '</button>' +
-               '</div>' +
+               '<h1 class="ube-name">' + esc(txt(c.name) || "–") + '</h1>' +
                (d ? '<a class="ube-domain" href="' + esc(d.ziel) + '" target="_blank" rel="noopener">' +
                       esc(d.text) + '</a>'
                   : '<span class="ube-domain is-leer">–</span>') +
@@ -251,7 +275,7 @@
     }
 
     function aliasHtml(liste) {
-      var kopf = '<div class="up-thead up-row ube-row">' +
+      var kopf = '<div class="up-thead up-row">' +
           '<div class="up-th">Alias</div>' +
           '<div class="up-th">Active</div>' +
           '<div class="up-th">Delete</div>' +
@@ -267,9 +291,12 @@
         return '<div class="up-row ube-row" data-alias="' + id + '">' +
             '<div class="up-td ube-td-name"><span class="ube-alias">' + esc(txt(a.pattern) || "–") + '</span></div>' +
             '<div class="up-td">' +
-              '<button class="up-switch ube-switch' + (an ? " is-on" : "") + '" type="button" ' +
-                'role="switch" aria-checked="' + (an ? "true" : "false") + '" ' +
-                'data-alias-toggle aria-label="Active"></button>' +
+              /* Genau der Schalter der Table Settings: ein SPAN mit .up-switch. Als <button>
+                 legte der Browser seine eigene Flaeche darueber -- Rahmen, Grund, Polster --,
+                 und die Pille war nicht mehr zu erkennen. tabindex haelt ihn erreichbar. */
+              '<span class="up-switch' + (an ? " is-on" : "") + '" role="switch" tabindex="0" ' +
+                'aria-checked="' + (an ? "true" : "false") + '" ' +
+                'data-alias-toggle aria-label="Active"></span>' +
             '</div>' +
             '<div class="up-td">' +
               '<button class="up-iconbtn ube-del" type="button" data-alias-del ' +
@@ -283,7 +310,7 @@
     }
 
     function zeitHtml(liste) {
-      var kopf = '<div class="up-thead up-row ube-row">' +
+      var kopf = '<div class="up-thead up-row">' +
           '<div class="up-th">Starting date</div>' +
           '<div class="up-th">Ending date</div>' +
           '<div class="up-th">Reason</div>' +
@@ -311,17 +338,18 @@
 
     function skelett() {
       elKopf.innerHTML = '<span class="up-logo-box up-fav ube-fav"></span>' +
-        '<div class="ube-kopftext"><span class="ube-sk ube-sk-lbl"></span>' +
-        '<span class="ube-sk ube-sk-name"></span><span class="ube-sk ube-sk-dom"></span></div>';
+        '<div class="ube-kopftext">' +
+        '<span class="up-tsk-bar ube-sk-name"></span>' +
+        '<span class="up-tsk-bar ube-sk-dom"></span></div>';
       var reihen = UC.skeletonRows
         ? UC.skeletonRows({ count: 2, rowClass: "up-row ube-row", cellClass: "up-td", cells: 3 })
         : "";
       elAliasT.innerHTML = '<div class="up-table ube-table ube-aliaslist">' +
-        '<div class="up-thead up-row ube-row"><div class="up-th">Alias</div>' +
+        '<div class="up-thead up-row"><div class="up-th">Alias</div>' +
         '<div class="up-th">Active</div><div class="up-th">Delete</div></div>' +
         '<div class="up-tbody">' + reihen + '</div></div>';
       elZeitT.innerHTML = '<div class="up-table ube-table ube-zeitlist">' +
-        '<div class="up-thead up-row ube-row"><div class="up-th">Starting date</div>' +
+        '<div class="up-thead up-row"><div class="up-th">Starting date</div>' +
         '<div class="up-th">Ending date</div><div class="up-th">Reason</div></div>' +
         '<div class="up-tbody">' + reihen + '</div></div>';
     }
@@ -346,6 +374,12 @@
       elZeitT.innerHTML = zeitHtml(isArr(d.tracking_periods) ? d.tracking_periods : []);
       elZeitTi.textContent = (txt(c.name) ? txt(c.name) + " " : "") + "Tracking Statistics";
 
+      /* Das Namensfeld nur fuellen, wenn niemand darin tippt -- sonst nimmt ein Payload, der
+         waehrend der Eingabe eintrifft, dem Nutzer das Wort aus der Hand. */
+      if (!state.nameDirty) {
+        elNameIn.value = txt(c.name);
+        elNameBt.disabled = true;
+      }
       if (!state.farbeDirty) {
         state.farbe = farbeAusDaten(c);
         elFarbIn.value = state.farbe;
@@ -371,6 +405,19 @@
     }
 
     /* ---- Bedienung -------------------------------------------------------------------------- */
+    /* Der Save-Knopf steht erst bereit, wenn der Name WIRKLICH ein anderer ist -- ein Knopf, der
+       denselben Namen noch einmal schickt, loest einen Serverlauf ohne Wirkung aus. */
+    function nameGeaendert() {
+      var c = (state.data && state.data.company) || {};
+      var v = txt(elNameIn.value).trim();
+      state.nameDirty = v !== txt(c.name);
+      elNameBt.disabled = !v || !state.nameDirty;
+    }
+    elNameIn.addEventListener("input", nameGeaendert);
+    elNameIn.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && !elNameBt.disabled) elNameBt.click();
+    });
+
     elIn.addEventListener("input", function () {
       state.neu = elIn.value;
       elAddBtn.disabled = !txt(state.neu).trim();
@@ -397,8 +444,19 @@
       var c = (state.data && state.data.company) || {};
 
       if (t.closest("[data-alias-add]")) { aliasAnlegen(); return; }
-      if (t.closest("[data-rename]")) {
-        fire("data-rename-fn", "ubeRename", { company_id: txt(c.company_id), name: txt(c.name) });
+      if (t.closest("[data-name-save]")) {
+        var neuerName = txt(elNameIn.value).trim();
+        if (!neuerName || neuerName === txt(c.name)) return;
+        state.nameDirty = false;
+        elNameBt.disabled = true;
+        fire("data-rename-fn", "ubeRename", { company_id: txt(c.company_id), name: neuerName });
+        return;
+      }
+      /* Der Farbknopf oeffnet den Waehler ueber das Feld: Coloris haengt an DIESEM, und ein
+         zweiter Weg hinein waere ein zweiter Zustand, den niemand pflegt. */
+      if (t.closest("[data-color-open]")) {
+        elFarbIn.click();
+        elFarbIn.focus();
         return;
       }
       var sw = t.closest("[data-alias-toggle]");
