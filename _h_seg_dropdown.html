@@ -1,0 +1,35 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Umschalter im Dropdown vs. in der Werkzeugleiste</title>
+<link rel="stylesheet" href="core.css?v=seg1">
+<style>body{font:12px monospace;background:#fff;padding:16px;display:flex;gap:30px}
+ .up-filter-menu{position:static;opacity:1;transform:none;pointer-events:auto;width:220px;padding:8px}</style>
+<div class="up-root" data-isdark="no">
+  <div class="up-filter-menu is-shown">
+    <div class="up-seg" id="imMenue" role="tablist">
+      <button class="up-seg-btn is-active" type="button">Or</button>
+      <button class="up-seg-btn" type="button">And</button>
+    </div>
+  </div>
+</div>
+<div class="up-root" data-isdark="no">
+  <div class="up-seg" id="inLeiste" role="tablist">
+    <button class="up-seg-btn is-active" type="button">Visibility</button>
+    <button class="up-seg-btn" type="button">Rank</button>
+  </div>
+</div>
+<pre id="out" style="background:#111;color:#eee;padding:10px;white-space:pre-wrap"></pre>
+<script>
+setTimeout(function(){
+  function m(id){
+    var el = document.getElementById(id), b = el.querySelector(".up-seg-btn");
+    return { hoehe: Math.round(el.getBoundingClientRect().height),
+             grund: getComputedStyle(el).backgroundColor,
+             knopfHoehe: Math.round(b.getBoundingClientRect().height) };
+  }
+  document.getElementById("out").textContent = JSON.stringify({
+    imDropdown: m("imMenue"), inDerWerkzeugleiste: m("inLeiste"),
+    vollerGrund: getComputedStyle(document.documentElement).getPropertyValue("--vc-switch-bg").trim()
+  }, null, 1);
+}, 300);
+</script>

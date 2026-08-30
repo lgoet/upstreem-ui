@@ -2034,6 +2034,20 @@
 }
 .up-seg.is-lg .up-seg-btn, .cc-seg.is-lg .cc-seg-btn,
 .ubo-seg.is-lg .ubo-seg-btn, .tcl-seg.is-lg .tcl-seg-btn { height: 32px; padding: 0 16px; }
+/* Ein Umschalter, der IN einem Dropdown steht, ist dort das einzige Bedienelement seiner Art und
+   traegt deshalb die grosse Form -- 32px und den vollen Grund, wie jeder 32er in der App. Gemeint
+   sind die drei Filter-Dropdowns der Seite: Topics (or/and), Models und Markets (single/multi).
+   Ihr Markup liegt ausserhalb dieser Bibliothek, benutzt aber ihre Klassen, und ohne is-lg bekam
+   es die kleine Form mit dem durchscheinenden Ton. Geprueft: keine Komponente hier stellt einen
+   .up-seg in ein Menue, die Regel trifft also nur diese Faelle. */
+.up-filter-menu .up-seg, .up-menu .up-seg, .up-pop .up-seg,
+.up-filter-menu .cc-seg, .up-menu .cc-seg, .up-pop .cc-seg {
+  height: 32px; background: var(--vc-switch-bg);
+}
+.up-filter-menu .up-seg .up-seg-btn, .up-menu .up-seg .up-seg-btn, .up-pop .up-seg .up-seg-btn,
+.up-filter-menu .cc-seg .cc-seg-btn, .up-menu .cc-seg .cc-seg-btn, .up-pop .cc-seg .cc-seg-btn {
+  height: 32px; padding: 0 16px;
+}
 /* gap + type spec: this control was lifted from an ICON-ONLY switcher, so a button carrying an icon
    AND a label had its two children touching, and its text fell back to whatever the page inherited.
    Both are set here rather than per component -- gap is a no-op on the single-child icon variants
