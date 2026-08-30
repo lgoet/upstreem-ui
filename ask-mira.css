@@ -809,10 +809,10 @@
      des Hauses im Verhaeltnis zur Groesse: -4px bei 15px, hier -5px bei 20px (4 * 20/15 = 5.3).
      Vorher standen 8px Abstand dazwischen -- das war ein Chip-Satz, kein Stapel. */
   .am-run-lead { display: inline-flex; align-items: center; flex: 0 0 auto; gap: 0; margin-left: 14px; }
-  /* -6: zwei Pixel weiter als zuvor, so gewuenscht. Gemessen sind das 3px sichtbare Ueberlappung
-     auf 17px Chipbreite (mit -8 waren es 5). Die Chips tragen Rahmen und Polster, deshalb ist der
-     margin groesser als die Ueberlappung, die man am Ende sieht. */
-  .am-run-lead > * + * { margin-left: -6px; }
+  /* -5: drei Pixel weiter als die erste Fassung (-8), in zwei Schritten so gewuenscht. Gemessen
+     sind das 2px sichtbare Ueberlappung auf 17px Chipbreite. Die Chips tragen Rahmen und Polster,
+     deshalb ist der margin groesser als die Ueberlappung, die am Ende zu sehen ist. */
+  .am-run-lead > * + * { margin-left: -5px; }
   .am-run-lead > * { opacity: 0; transform: translateX(7px) scale(.86); transition: opacity 340ms ease, transform 340ms cubic-bezier(.2,.8,.3,1); }
   .am-run-step.is-in .am-run-lead > * { opacity: 1; transform: none; }
   /* Der 24er-Favicon-Kasten des Hauses (.up-logo-box) auf 20px: helle Platte --vt-logo-bg, 1px

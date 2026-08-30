@@ -2768,7 +2768,12 @@
       '<span class="am-prev-item-title">'+esc(title)+'</span>'+
       '<input class="am-prev-item-input" type="text" value="'+escAttr(title)+'" maxlength="120" aria-label="Chat name">'+
       '<span class="am-prev-actions">'+
-        '<button class="am-prev-mini am-prev-menu-btn" type="button" data-prev-act="menu" title="More" aria-label="More">'+ICON.dots+'</button>'+
+        /* Die drei Punkte kommen aus core (moreHorizontal, dasselbe Zeichen wie im Kebab jeder
+           Tabelle und in den Quick Actions). Die eigene Karte hier trug dieselben Pfade, aber
+           ohne fill/stroke -- wie sie aussehen, entschied dann die CSS der Komponente, und das
+           lief auseinander. */
+        '<button class="am-prev-mini am-prev-menu-btn" type="button" data-prev-act="menu" title="More" aria-label="More">'+
+          (window.UpstreemCore && window.UpstreemCore.icon ? window.UpstreemCore.icon('moreHorizontal', 2) : ICON.dots)+'</button>'+
       '</span>'+
       '<span class="am-prev-edit-actions">'+
         '<button class="am-prev-mini" type="button" data-prev-act="save" title="Save">'+ICON.check+'</button>'+

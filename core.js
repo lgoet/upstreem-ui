@@ -3195,7 +3195,15 @@
     if (SEG_AUS || window.__upOhneToolbar || window.__upOhneStreifen) return;
     var ziel = wurzel || document, els;
     var t0 = (window.performance && performance.now) ? performance.now() : 0;
-    try { els = ziel.querySelectorAll(SEG_BOXEN); } catch(e){ return; }
+    try {
+      els = ziel.querySelectorAll(SEG_BOXEN);
+      /* querySelectorAll findet nur NACHFAHREN. Wenn der Beobachter einen Umschalter selbst
+         meldet -- und genau das tut er, wenn eine Komponente ihre Kopfzeile neu baut --, waere er
+         sonst uebersehen worden. */
+      if (ziel !== document && ziel.matches && ziel.matches(SEG_BOXEN)){
+        els = [].slice.call(els); els.push(ziel);
+      }
+    } catch(e){ return; }
     segSchriftUhr();
     var messwerte = [], i;
     for (i = 0; i < els.length; i++){                    /* 1. nur lesen */
@@ -3390,7 +3398,7 @@
 
      Beide werden VOR core.js gesetzt, also im Seitenkopf ueber dem Vorrats-Schnipsel. Steht keiner
      davon, aendert sich nichts -- das ist der Normalfall. */
-  function toolbarLauf(){
+  function toolbarLauf(knoten){
     if (window.__upOhneToolbar) return;
     sicher("stampToolbarIcons", stampToolbarIcons);
     sicher("stampGran", stampGran);
@@ -3398,8 +3406,25 @@
     /* segLauf haengt Elemente EIN und liest Layoutwerte. Beides gehoert nicht in denselben
        Augenblick, in dem die Seite gerade gezeichnet wird -- Bubble baut seine Gruppen ueber
        jQuery.html(), und ein fremder Knoten, der mitten in diesem Durchgang dazukommt, trifft auf
-       eine Buchfuehrung, die gerade laeuft. Deshalb erst im naechsten Zug. */
-    setTimeout(function(){ sicher("segLauf", segLauf); }, 0);
+       eine Buchfuehrung, die gerade laeuft. Deshalb erst im naechsten Zug.
+       NUR die neu dazugekommenen Teilbaeume, wenn welche genannt sind. Der Beobachter feuert
+       waehrend einer Ziehbewegung dauernd -- Legenden, Tooltips und Charts haengen Knoten ein --,
+       und jeder Lauf mass bis hierher SAEMTLICHE Umschalter der Seite mit vier Werten je Stueck.
+       In der Messung des Nutzers war das nach der Resize-Drossel immer noch der groesste Posten:
+       3378 von 6913 Lesezugriffen. Ein frisch eingehaengter Teilbaum enthaelt fast nie einen
+       Umschalter, also kostet der Lauf dann auch nichts. */
+    setTimeout(function(){
+      if (knoten && knoten.length){
+        for (var i = 0; i < knoten.length; i++){
+          (function(k){
+            if (!k || !k.isConnected) return;
+            sicher("segLauf", function(){ segLauf(k); });
+          })(knoten[i]);
+        }
+        return;
+      }
+      sicher("segLauf", segLauf);
+    }, 0);
   }
   /* Die Aufrufe, die kamen, bevor es die Funktionen gab. Der Kopf der Seite legt sie in
      window.__upFrueh (siehe bubble/page_header_preload.html); hier werden sie abgearbeitet, sobald
@@ -3440,6 +3465,9 @@
      takeRecords() wegwerfen, damit der Lauf sich nicht selbst nachtriggert. */
   if (window.MutationObserver){
     var stampGeplant = false;
+    /* Die Teilbaeume, die seit dem letzten Lauf dazugekommen sind. null heisst "zu viele, lauf
+       ueber alles" -- siehe die Deckelung unten. */
+    var segKnoten = [];
     var stampObs = new MutationObserver(function(muts){
       var neueElemente = false;
       for (var i = 0; i < muts.length && !neueElemente; i++){
@@ -3461,6 +3489,11 @@
         for (var n = 0; n < zu.length; n++){
           if (zu[n].nodeType !== 1) continue;
           sicher("stampGran", (function(el){ return function(){ stampGran(el); }; })(zu[n]));
+          /* Fuer den Streifen merken, WAS dazugekommen ist -- gemessen wird gleich nur das,
+             nicht die ganze Seite. Nach oben gedeckelt: wer hundert Knoten auf einmal einhaengt,
+             baut die Seite neu, und dann ist ein Lauf ueber alles billiger als hundert kleine. */
+          if (segKnoten && segKnoten.length < 40) segKnoten.push(zu[n]);
+          else segKnoten = null;
         }
       }
       if (stampGeplant) return;
@@ -3473,7 +3506,8 @@
            Umschalter nicht, der erst nach dem Seitenaufbau entsteht (Drawer, View, ein Schritt im
            Onboarding). Genau so gemessen: im Onboarding hatte der Umschalter des
            Geschaeftsmodells keinen Streifen, bis irgendwo geklickt wurde. */
-        toolbarLauf();
+        var k = segKnoten; segKnoten = [];   /* null = Deckelung erreicht -> Lauf ueber alles */
+        toolbarLauf(k);
         /* Die Mutationen, die der Lauf selbst erzeugt hat, verwerfen -- sonst haengt an jedem
            getauschten Icon sofort der naechste Lauf. */
         try { stampObs.takeRecords(); } catch(e){}
