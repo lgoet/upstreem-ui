@@ -19,11 +19,15 @@ window.addEventListener("load", function(){
   var UC = window.UpstreemCore, b = document.getElementById("buehne");
   var dauern = [];
   /* Jede Rueckmeldung kostet rund 4ms -- so viel wie fitToolbar in einer echten Tabelle. */
-  function arbeit(){ var t = performance.now(); while (performance.now() - t < 4){} }
+  function arbeit(ms){ return function(){ var t = performance.now(); while (performance.now() - t < ms){} }; }
+  /* Wie in der echten App: EINE teure Komponente (55ms, das war prompts_table) und viele billige. */
   for (var i = 0; i < 20; i++){
     var d = document.createElement("div"); d.className = "up-root"; d.style.height = "10px";
+    d.setAttribute("data-instance", i === 10 ? "teuer" : ("billig" + i));
     b.appendChild(d);
-    UC.onResize(d, arbeit);
+    /* Die teure Komponente steht MITTEN in der Liste -- wie prompts_table auf einer
+       Seite mit zwanzig anderen. */
+    UC.onResize(d, arbeit(i === 10 ? 55 : 3));
   }
   /* Die Dauer eines Durchgangs messen: um den Lauf herum, ueber den Timer-Rueckruf. */
   var origTO = window.setTimeout;
@@ -35,8 +39,12 @@ window.addEventListener("load", function(){
     return origTO.apply(window, args);
   };
   origTO(function(){
-    b.style.width = "700px";
-    window.dispatchEvent(new Event("resize"));
+    var k = 0;
+    var uhr = setInterval(function(){
+      b.style.width = (1000 - (++k) * 20) + "px";
+      window.dispatchEvent(new Event("resize"));
+      if (k >= 10) clearInterval(uhr);
+    }, 120);
     origTO(function(){
       document.getElementById("out").textContent =
         "Datei: " + WELCHE + "\nKomponenten: 20, je 4ms Arbeit\n" +
@@ -44,7 +52,7 @@ window.addEventListener("load", function(){
         "LAENGSTER: " + (dauern.length ? Math.max.apply(null, dauern) : 0) + " ms";
       window.__ergebnis = { datei: WELCHE, durchgaenge: dauern.length, dauern: dauern,
                             laengster: dauern.length ? Math.max.apply(null, dauern) : 0 };
-    }, 2000);
+    }, 6000);
   }, 500);
 });
 </script>

@@ -5148,11 +5148,28 @@
       if (e.wRO >= 0){ e.w = e.wRO; e.wRO = -1; }
       else e.w = e.root.getBoundingClientRect().width;
     }
-    /* 2. Nur schreiben, und nur solange das Budget reicht. */
+    /* 2. Nur schreiben, und nur solange das Budget reicht.
+       Die Schaetzung je Eintrag ist der Kern: eine Komponente, die erfahrungsgemaess lange
+       braucht, wird NICHT mehr an das Ende eines schon halb verbrauchten Durchgangs gehaengt.
+       Gemessen in der App: der Sammellauf hatte Spitzen von 65ms, und 55 davon kamen aus EINER
+       Tabelle -- das Budget half nicht, weil es erst NACH einem Eintrag prueft. Jetzt laeuft ein
+       teurer Eintrag allein in seinem Bild, und der Rest folgt im naechsten. */
     var t0 = (window.performance && performance.now) ? performance.now() : 0;
+    var verbraucht = 0;
     for (i = 0; i < liste.length; i++){
       e = liste[i];
       if (e.w === e.lastW) continue;
+      /* Passt der naechste Eintrag nach Erfahrung nicht mehr ins Budget? Dann ins naechste Bild
+         -- aber nur, wenn ueberhaupt schon etwas gelaufen ist: der erste Eintrag muss immer
+         drankommen, sonst steht die Anpassung. */
+      if (t0 && verbraucht > 0 && (verbraucht + (e.avg || 0)) > _RES_BUDGET){
+        for (var v = i; v < liste.length; v++){
+          if (liste[v].q) continue;
+          liste[v].q = 1; _resSchlange.push(liste[v]);
+        }
+        _resGeplant();
+        return;
+      }
       if (t0 && i > 0 && (performance.now() - t0) > _RES_BUDGET){
         /* Rest zurueck in die Schlange -- die Breite ist gemessen und bleibt gueltig, es fehlt
            nur noch die Reaktion darauf. */
@@ -5175,6 +5192,10 @@
       try { e.fn(e.w); } catch (err){ if (window.console) console.warn("[upstreem] onResize:", err); }
       if (_t){
         var _d = performance.now() - _t;
+        verbraucht += _d;
+        /* Gleitender Durchschnitt, damit ein einzelner Ausreisser die Schaetzung nicht auf Dauer
+           verzerrt und ein langsamer gewordener Eintrag trotzdem nachzieht. */
+        e.avg = e.avg ? (e.avg * 0.7 + _d * 0.3) : _d;
         var _nm = "onResize: " + ((e.root.getAttribute && e.root.getAttribute("data-instance")) ||
                                   (e.root.className || "").split(" ").slice(0, 2).join(".") || "?");
         var _p = _profil[_nm] || (_profil[_nm] = { n: 0, ms: 0, max: 0 });
@@ -5218,7 +5239,7 @@
   function onResize(root, fn){
     if (!root || typeof fn !== "function") return;
     if (!_resGeplant) _resGeplant = einmalProBild(_resLauf, "onResize-Sammellauf");
-    var e = { root: root, fn: fn, lastW: -1, w: 0, q: 0, wRO: -1 };
+    var e = { root: root, fn: fn, lastW: -1, w: 0, q: 0, wRO: -1, avg: 0 };
     function planen(){
       if (e.q) return;
       e.q = 1; _resSchlange.push(e);

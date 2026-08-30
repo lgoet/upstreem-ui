@@ -4251,6 +4251,21 @@
          im Raster und nicht daran, wie gross jemand das Ganze anzeigt. */
       var w = root.offsetWidth || root.getBoundingClientRect().width || 0;
       if (!w) return;
+      /* Pixelweise Schritte kosten hier am meisten: gemessen in der App brauchte diese Funktion
+         bis zu 55ms, und beim Ziehen aendert sich die Breite mit jedem Bild um wenige Pixel --
+         fuer ein Ergebnis, das gleich bleibt. Vier Pixel Toleranz, ABER nur solange keine der
+         Schwellen dazwischenliegt: genau an 560, 620 und 860 entscheidet sich, ob Spalten
+         fallen, und diesen Sprung darf die Toleranz nicht verschlucken. */
+      var vorher = root.__uptLastW;
+      if (typeof vorher === "number" && Math.abs(w - vorher) < 4){
+        var schwellen = [560, 620, 860], sprung = false;
+        for (var si = 0; si < schwellen.length; si++){
+          var g = schwellen[si];
+          if ((vorher < g) !== (w < g)){ sprung = true; break; }
+        }
+        if (!sprung) return;
+      }
+      root.__uptLastW = w;
       var before = root.className;
       search.syncTakeover();
       fitToolbar();
