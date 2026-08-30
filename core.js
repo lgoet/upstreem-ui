@@ -5158,7 +5158,7 @@
     var verbraucht = 0;
     for (i = 0; i < liste.length; i++){
       e = liste[i];
-      if (e.w === e.lastW) continue;
+      if (e.w === e.lastW && !e.immer) continue;
       /* Passt der naechste Eintrag nach Erfahrung nicht mehr ins Budget? Dann ins naechste Bild
          -- aber nur, wenn ueberhaupt schon etwas gelaufen ist: der erste Eintrag muss immer
          drankommen, sonst steht die Anpassung. */
@@ -5337,16 +5337,30 @@
     if (!el || typeof fn !== "function" || !window.ResizeObserver) return;
     cfg = cfg || {};
     var ms = cfg.ms || 120, uhr = null, letzte = -1;
+    if (!_resGeplant) _resGeplant = einmalProBild(_resLauf, "onResize-Sammellauf");
+    /* Der Rueckruf laeuft im GEMEINSAMEN Sammellauf und nicht in einem eigenen Timer. Sonst
+       stehen drei Charts mit je einem eigenen setTimeout nebeneinander, jeder ohne Zeitbudget --
+       in der Konsole des Nutzers meldete sich genau dieser Timer (core.js:5326) mit 72ms.
+       In der Schlange gelten dieselben Regeln wie fuer onResize: erst alle messen, dann schreiben,
+       und wer zu lange braucht, bekommt sein eigenes Bild.
+       immer: true, weil hier auch Hoehenaenderungen zaehlen koennen -- die Breitenpruefung des
+       Sammellaufs wuerde solche Eintraege sonst verschlucken. */
+    var e = { root: el, fn: function(){ fn(letzte); }, lastW: -1, w: 0, q: 0, wRO: -1, avg: 0, immer: true };
     new ResizeObserver(function(eintraege){
       var b = -1;
       try {
         var r = eintraege && eintraege[0] && eintraege[0].contentRect;
         if (r && typeof r.width === "number") b = r.width;
-      } catch (e){}
+      } catch (err){}
       if (b >= 0 && b === letzte && !cfg.hoehe) return;
       if (b >= 0) letzte = b;
       if (uhr) clearTimeout(uhr);
-      uhr = setTimeout(function(){ uhr = null; try { fn(b); } catch (e){ if (window.console) console.warn("[upstreem] beobachteGroesse:", e); } }, ms);
+      uhr = setTimeout(function(){
+        uhr = null;
+        if (e.q) return;
+        e.q = 1; _resSchlange.push(e);
+        _resPlanen();
+      }, ms);
     }).observe(el);
   }
 
@@ -5552,7 +5566,12 @@
             (heiss || (heiss = {}))[w.selector] = true;
           }
         }
-        if (heiss){ G.hot = heiss; runAll(); }
+        /* NICHT synchron: runAll richtet Komponenten ein, und das dauert -- in der Konsole des
+           Nutzers stand dieser Intervall-Rueckruf mit 58ms. Ueber scheduleAll landet die Arbeit
+           im naechsten Bild und faellt damit auch unter die Pause waehrend einer Ziehbewegung. */
+        if (heiss){
+          for (var hk in heiss){ if (Object.prototype.hasOwnProperty.call(heiss, hk)) scheduleAll(hk); }
+        }
       }, 1500);
     }
   }
