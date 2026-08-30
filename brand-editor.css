@@ -154,5 +154,11 @@
 /* Coloris legt seinen Waehler an das Dokument und bringt seine eigene CSS mit. Zwei Dinge muessen
    trotzdem hier stehen: er soll ueber den Drawern der App liegen (die reichen bis 9930), und sein
    eigener Knopf im Feld bleibt weg -- den Kasten zeichnet die Regel darueber. */
-.clr-picker { z-index: 9940; }
+/* DOPPELTE Klasse, und das ist der ganze Punkt: Coloris bringt .clr-picker { z-index: 1000 } in
+   seiner eigenen CSS mit, und die wird als <link> IN DEN KOPF gehaengt -- also nach dieser Datei.
+   Bei gleicher Spezifitaet gewinnt die spaeter geladene, und der Waehler stand mit 1000 unter den
+   Schubladen der App (9905-9930): er ging auf und war trotzdem nicht zu sehen. Gemessen, und
+   genau so sah es aus wie "der Waehler oeffnet nicht". Ueber die Spezifitaet gewonnen, nicht
+   ueber die Reihenfolge -- die Regel des Hauses. */
+.clr-picker.clr-picker { z-index: 9940; }
 .ube-farbfeld .clr-field button { display: none; }

@@ -55,27 +55,58 @@
   function txt(v) { return v == null ? "" : String(v); }
 
   /* ---- Coloris, einmal pro Seite ------------------------------------------------------------
-     Zwei Instanzen des Editors auf einer Seite duerfen die Datei nicht zweimal einhaengen; der
-     zweite Aufruf wartet auf denselben Ladevorgang. Genau der Weg, den core fuer Chart.js geht. */
+     Die Datei liegt IM REPO (vendor-coloris.min.js/.css, Coloris 0.25.0 von @melloware, MIT,
+     unveraendert uebernommen). Grund: sie kam ueber das npm-CDN in der App nicht an, und ein
+     Farbwaehler, dessen Datei fehlt, ist kein Farbwaehler. Was von unserem Pin geladen wird, kommt
+     genauso an wie core.js -- dieselbe Herkunft, dieselbe Freigabe, derselbe Cache.
+     Die Basis wird aus dem eigenen <script>-Verweis gelesen und nicht aus data-cdn-pin: der Loader
+     der Bubble-Vorlage haengt die Datei per createElement ein, also steht die volle Adresse dort
+     schon fertig da. Findet sich keine (Harness), wird relativ geladen.
+     Der npm-Weg bleibt als Rueckfall: ein Pin, der VOR dieser Aenderung gebaut wurde, hat die
+     Datei noch nicht, und dann soll der Waehler trotzdem aufgehen.
+     Zwei Instanzen des Editors duerfen die Datei nicht zweimal einhaengen; der zweite Aufruf
+     wartet auf denselben Ladevorgang. Genau der Weg, den core fuer Chart.js geht. */
   var COLORIS_V = "0.25.0";
-  var COLORIS_JS  = "https://cdn.jsdelivr.net/npm/@melloware/coloris@" + COLORIS_V + "/dist/umd/coloris.min.js";
-  var COLORIS_CSS = "https://cdn.jsdelivr.net/npm/@melloware/coloris@" + COLORIS_V + "/dist/coloris.min.css";
+  var COLORIS_NPM_JS  = "https://cdn.jsdelivr.net/npm/@melloware/coloris@" + COLORIS_V + "/dist/umd/coloris.min.js";
+  var COLORIS_NPM_CSS = "https://cdn.jsdelivr.net/npm/@melloware/coloris@" + COLORIS_V + "/dist/coloris.min.css";
+  function eigeneBasis() {
+    var s = document.querySelector('script[src*="brand-editor.js"]');
+    var u = s && s.getAttribute("src");
+    return u ? String(u).split("?")[0].replace(/[^/]*$/, "") : "";
+  }
+  function stilLaden(url) {
+    if (document.querySelector('link[data-ube-coloris]')) return;
+    var l = document.createElement("link");
+    l.rel = "stylesheet"; l.href = url; l.setAttribute("data-ube-coloris", "1");
+    /* Faellt die eigene Datei aus, kommt die vom npm-CDN nach -- eine CSS, die fehlt, macht den
+       Waehler unsichtbar statt abwesend, und das ist der Fehler, den niemand findet. */
+    l.onerror = function () {
+      if (l.getAttribute("data-ube-zweit")) return;
+      l.setAttribute("data-ube-zweit", "1");
+      l.href = COLORIS_NPM_CSS;
+    };
+    document.head.appendChild(l);
+  }
   function ladeColoris() {
     if (window.Coloris) return Promise.resolve(true);
     if (window.__ubeColoris) return window.__ubeColoris;
     window.__ubeColoris = new Promise(function (res) {
-      if (!document.querySelector('link[data-ube-coloris]')) {
-        var l = document.createElement("link");
-        l.rel = "stylesheet"; l.href = COLORIS_CSS; l.setAttribute("data-ube-coloris", "1");
-        document.head.appendChild(l);
-      }
-      var s = document.createElement("script");
-      s.src = COLORIS_JS; s.async = true;
-      s.onload  = function () { res(!!window.Coloris); };
-      /* Kein throw und kein Fehler in der Konsole des Nutzers: das Hex-Feld funktioniert auch
-         ohne die Datei, und der Editor soll deswegen nicht stehenbleiben. */
-      s.onerror = function () { res(false); };
-      document.head.appendChild(s);
+      var basis = eigeneBasis();
+      stilLaden(basis ? basis + "vendor-coloris.min.css" : "vendor-coloris.min.css");
+      var versuche = basis
+        ? [basis + "vendor-coloris.min.js", COLORIS_NPM_JS]
+        : ["vendor-coloris.min.js", COLORIS_NPM_JS];
+      (function naechster(i) {
+        if (i >= versuche.length) { res(false); return; }
+        var s = document.createElement("script");
+        s.src = versuche[i]; s.async = true;
+        s.onload  = function () { window.Coloris ? res(true) : naechster(i + 1); };
+        /* Kein throw und keine Meldung in der Konsole des Nutzers: das Hex-Feld funktioniert auch
+           ohne die Datei, und der Editor soll deswegen nicht stehenbleiben. Dass der Waehler fehlt,
+           sagt die Komponente sichtbar (is-nopicker). */
+        s.onerror = function () { naechster(i + 1); };
+        document.head.appendChild(s);
+      })(0);
     });
     return window.__ubeColoris;
   }
@@ -274,6 +305,43 @@
         }, 140);
       });
     }
+
+    /* Ein Griff fuer den Fall, dass der Waehler in einer echten Seite NICHT aufgeht. Keine
+       Konsolenausgabe im Normalbetrieb -- er antwortet nur, wenn er gerufen wird:
+         window.upstreemFarbDiag()
+       Er sagt, ob die Datei da ist, WELCHE geladen wurde, ob das Feld angemeldet ist, ob der
+       Waehler nach einem Klick aufgeht, wo er steht und WER darueber liegt. Genau die fuenf
+       Fragen, die sich aus der Ferne sonst nicht beantworten lassen. */
+    function farbDiagnose() {
+      var feld = elFarbIn, p = document.getElementById("clr-picker");
+      var quelle = "";
+      var alle = document.querySelectorAll('script[src*="coloris"]');
+      for (var i = 0; i < alle.length; i++) quelle += (quelle ? " | " : "") + alle[i].getAttribute("src");
+      var r = p ? p.getBoundingClientRect() : null;
+      var mitte = r && r.width ? document.elementFromPoint(
+        Math.min(window.innerWidth - 2, Math.max(2, r.left + r.width / 2)),
+        Math.min(window.innerHeight - 2, Math.max(2, r.top + 20))) : null;
+      return {
+        colorisDa: typeof window.Coloris,
+        geladenVon: quelle || "(kein script gefunden)",
+        cssDa: !!document.querySelector("link[data-ube-coloris]"),
+        cssHref: (document.querySelector("link[data-ube-coloris]") || {}).href || "",
+        feldAngemeldet: !!(feld && feld.closest(".clr-field")),
+        waehlerImDom: !!p,
+        waehlerOffen: waehlerOffen(),
+        waehlerKlassen: p ? p.className : "",
+        lage: r ? { oben: Math.round(r.top), links: Math.round(r.left),
+                    breite: Math.round(r.width), hoehe: Math.round(r.height) } : null,
+        imBild: r ? (r.bottom > 0 && r.top < window.innerHeight && r.right > 0 && r.left < window.innerWidth) : null,
+        zIndex: p ? getComputedStyle(p).zIndex : "",
+        deckungDurch: mitte ? (mitte.tagName + "." + String(mitte.className || "").slice(0, 40)) : "",
+        hinweisSichtbar: root.classList.contains("is-nopicker")
+      };
+    }
+    root.__ubeFarbDiag = farbDiagnose;
+    /* Global nur setzen, wenn es den Namen noch nicht gibt -- zwei Editoren auf einer Seite sollen
+       sich nicht gegenseitig ueberschreiben. */
+    if (!window.upstreemFarbDiag) window.upstreemFarbDiag = farbDiagnose;
 
     function colorisSetzen() {
       ladeColoris().then(function (da) {
