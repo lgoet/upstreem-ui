@@ -57,6 +57,10 @@
 .ufb-btn:hover, .ufb-more.is-open .ufb-btn {
   color: var(--vc-text); background: var(--vc-heading-bg); border-color: var(--vc-hover-border);
 }
+/* Der Fokusring des Datumsfilters, wortgleich -- der fehlte hier. Beim Durchtabben durch die
+   Werkzeugzeile bekam der Nachbar einen Ring und dieser Knopf nicht, und im Dunkeln ist das der
+   einzige Hinweis, wo der Fokus steht. */
+.ufb-btn:focus-visible { border-color: var(--vc-hover-border); box-shadow: 0 0 0 2px var(--vc-heading-bg); }
 /* Beschriftung und BEIDE Zeichen in der Primaerfarbe -- genau die Aufteilung des Datumsfilters:
    dort traegt der Knopf selbst --vc-muted, waehrend .udr-label und .udr-trigger svg auf
    --vc-text stehen ("the label is the value"). Die Zeichen kommen aus UC.icon mit
