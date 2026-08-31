@@ -57,9 +57,16 @@
 .ufb-btn:hover, .ufb-more.is-open .ufb-btn {
   color: var(--vc-text); background: var(--vc-heading-bg); border-color: var(--vc-hover-border);
 }
+/* Beschriftung und BEIDE Zeichen in der Primaerfarbe -- genau die Aufteilung des Datumsfilters:
+   dort traegt der Knopf selbst --vc-muted, waehrend .udr-label und .udr-trigger svg auf
+   --vc-text stehen ("the label is the value"). Die Zeichen kommen aus UC.icon mit
+   stroke="currentColor", also genuegt color am Traeger.
+   Vorher war der Chevron leise und wurde erst beim Ueberfahren kraeftig; das ist raus -- er ist
+   Teil derselben Aussage wie das Wort davor. */
+.ufb-btn-lbl { color: var(--vc-text); }
+.ufb-btn svg { color: var(--vc-text); }
 .ufb-btn-ic { display: inline-flex; flex: 0 0 16px; }
-.ufb-btn-chev { display: inline-flex; flex: 0 0 16px; margin-left: 3px; color: var(--vc-muted); }
-.ufb-btn:hover .ufb-btn-chev, .ufb-more.is-open .ufb-btn-chev { color: var(--vc-text); }
+.ufb-btn-chev { display: inline-flex; flex: 0 0 16px; margin-left: 3px; }
 
 .ufb-more { position: relative; display: inline-flex; flex: 0 0 auto; }
 
