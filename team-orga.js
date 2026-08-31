@@ -33,7 +33,8 @@
 
    ── Ereignisse heraus (jedes mit einem JSON-Text als erstem Parameter) ──────
      utoInvite   { team_id, email, role }              Einladen im Dialog bestaetigt
-     utoRevoke   { team_id, invite_id, email }         "Revoke invite" an einer offenen Einladung
+     utoResend   { team_id, invite_id, email, role }   "Resend" an einer offenen Einladung
+     utoRevoke   { team_id, invite_id, email }         "Revoke" an einer offenen Einladung
      utoRemove   { team_id, user_id, email, self }     "Remove from team" bzw. "Leave team"
      utoRole     { team_id, user_id, email, role }     "Set Member" / "Set Admin" / "Set Owner"
 
@@ -461,7 +462,6 @@
         }
         return kopf + state.members.map(function (m, i) {
           var name = feld(m.display_name) || feld(m.email) || "–";
-          var eintraege = menueEintraege(m);
           return '<div class="up-row" data-uto-row="' + i + '">' +
             '<div class="up-td uto-name">' +
               '<span class="uto-nametxt">' + esc(name) + '</span>' +
@@ -475,7 +475,7 @@
                 '<span class="uto-rolelbl">' + esc(rolleName(m.role)) + '</span>' +
               '</span>' +
             '</div>' +
-            (mitAkt ? aktZelle(eintraege.length, i, "member") : "") +
+            (mitAkt ? aktZelle(i) : "") +
           '</div>';
         }).join("");
       }
@@ -483,16 +483,28 @@
       /* Kopf und Zelle der Aktionsspalte an EINER Stelle: beide Tabellen lassen sie unter
          denselben Bedingungen weg, und zwei Kopien waeren zwei Stellen, an denen die Spaltenzahl
          von --up-cols abweichen kann. */
-      function AKT_KOPF() { return '<div class="up-th uto-act"></div>'; }
-      function aktZelle(anzahl, i, art) {
-        if (!anzahl) return '<div class="up-td uto-act"></div>';
+      function AKT_KOPF(kl) { return '<div class="up-th ' + (kl || "uto-act") + '"></div>'; }
+      /* Der Punktknopf steht an JEDER Mitgliederzeile -- so vorgegeben, und ohne Bedingung: was
+         die Zeile erlaubt, entscheidet erst das Menue (menueOeffnen). Erlaubt sie nichts, sagt es
+         das in einem Satz statt leer aufzugehen. */
+      function aktZelle(i) {
         return '<div class="up-td uto-act">' +
           '<span class="uto-menuwrap" data-uto-wrap>' +
             '<button class="up-iconbtn" type="button" aria-haspopup="menu" aria-expanded="false"' +
-              ' aria-label="Actions" data-uto-menubtn="' + art + ':' + i + '">' +
+              ' aria-label="Actions" data-uto-menubtn="member:' + i + '">' +
               UC.icon("moreHorizontal", 2.2) + '</button>' +
             '<div class="up-menu uto-menu" role="menu" aria-hidden="true"></div>' +
           '</span>' +
+        '</div>';
+      }
+      /* Und die Einladungen: ZWEI Knoepfe, kein Menue -- so vorgegeben. Beide aus core
+         (.up-btn-sec.up-rowbtn), nur dauerhaft sichtbar (team-orga.css). */
+      function invZelle(i) {
+        return '<div class="up-td uto-invact">' +
+          '<button class="up-btn-sec up-rowbtn" type="button" data-uto-do="resend"' +
+            ' data-uto-i="' + i + '">' + UC.icon("send", 2) + '<span>Resend</span></button>' +
+          '<button class="up-btn-sec up-rowbtn uto-danger" type="button" data-uto-do="revoke"' +
+            ' data-uto-i="' + i + '">' + UC.icon("x", 2.4) + '<span>Revoke</span></button>' +
         '</div>';
       }
 
@@ -504,7 +516,7 @@
             '<div class="up-th">Role</div>' +
             '<div class="up-th uto-c-when">Expires</div>' +
             '<div class="up-th uto-c-by">Invited by</div>' +
-            (mitAkt ? AKT_KOPF() : "") +
+            (mitAkt ? AKT_KOPF("uto-invact") : "") +
           '</div>';
         if (state.busy) return kopf + UC.skeletonRows(2, mitAkt ? 5 : 4);
         if (!state.invites.length) {
@@ -522,7 +534,7 @@
             '<div class="up-td uto-when"><span class="uto-inv-state' + (alt ? " is-expired" : "") +
               '">' + (alt ? "expired" : esc(fmtDate(feld(v.expires_at)))) + '</span></div>' +
             '<div class="up-td uto-inv-by">' + esc(feld(v.created_by_email) || "–") + '</div>' +
-            (mitAkt ? aktZelle(1, i, "invite") : "") +
+            (mitAkt ? invZelle(i) : "") +
           '</div>';
         }).join("");
       }
@@ -594,13 +606,11 @@
         popovers.forEach(function (p) { try { p.close(false); } catch (e) {} });
         popovers = [];
 
-        /* Die Aktionsspalte faellt weg, sobald KEINE Zeile eine Aktion hat. Der Wert wird EINMAL
-           berechnet und dann sowohl an das Markup als auch an die Klasse gegeben -- das ist die
-           Stelle, an der Spuren und Zellen zusammenbleiben. Waehrend des Ladens bleibt sie da:
-           welche Aktionen es geben wird, weiss man erst mit den Daten, und eine Spalte, die nach
-           dem Laden erscheint, laesst die Tabelle springen. */
-        var mAkt = state.busy ||
-          state.members.some(function (m) { return menueEintraege(m).length > 0; });
+        /* Die Mitgliedertabelle hat die Aktionsspalte IMMER -- der Punktknopf steht an jeder Zeile.
+           Bei den Einladungen faellt sie weg, wenn es keine gibt oder niemand widerrufen darf.
+           Der Wert wird EINMAL berechnet und sowohl an das Markup als auch an die Klasse gegeben:
+           das ist die Stelle, an der Rasterspuren und Zellen zusammenbleiben. */
+        var mAkt = true;
         var iAkt = state.busy || (state.invites.length > 0 && darfWiderrufen());
         elMembers.classList.toggle("no-actions", !mAkt);
         elInvites.classList.toggle("no-actions", !iAkt);
@@ -624,27 +634,25 @@
         var menu = wrap && wrap.querySelector(".uto-menu");
         if (!menu) return;
         var teile = String(btn.getAttribute("data-uto-menubtn") || "").split(":");
-        var art = teile[0], i = parseInt(teile[1], 10);
-        var html = "";
-        if (art === "member") {
-          var m = state.members[i];
-          if (!m) return;
-          var e = menueEintraege(m);
-          if (!e.length) return;
-          html = e.map(function (x, k) {
-            return (x.gefahr && k > 0 ? '<div class="uto-menu-div"></div>' : "") +
-              '<button class="up-optrow' + (x.gefahr ? " uto-danger" : "") + '" type="button"' +
-              ' data-uto-do="' + esc(x.art) + '" data-uto-i="' + i + '"' +
-              (x.ziel ? ' data-uto-target="' + esc(x.ziel) + '"' : "") + '>' +
-              UC.icon(x.ic, 2) + '<span class="uto-menu-lbl">' + esc(x.lbl) + '</span></button>';
-          }).join("");
-        } else {
-          var v = state.invites[i];
-          if (!v || !darfWiderrufen()) return;
-          html = '<button class="up-optrow uto-danger" type="button" data-uto-do="revoke"' +
-            ' data-uto-i="' + i + '">' + UC.icon("x", 2.2) +
-            '<span class="uto-menu-lbl">Revoke invite</span></button>';
-        }
+        var i = parseInt(teile[1], 10);
+        var m = state.members[i];
+        if (!m) return;
+        var e = menueEintraege(m);
+        var html = e.length
+          ? e.map(function (x, k) {
+              return (x.gefahr && k > 0 ? '<div class="uto-menu-div"></div>' : "") +
+                '<button class="up-optrow' + (x.gefahr ? " uto-danger" : "") + '" type="button"' +
+                ' data-uto-do="' + esc(x.art) + '" data-uto-i="' + i + '"' +
+                (x.ziel ? ' data-uto-target="' + esc(x.ziel) + '"' : "") + '>' +
+                UC.icon(x.ic, 2) + '<span class="uto-menu-lbl">' + esc(x.lbl) + '</span></button>';
+            }).join("")
+          /* Kein leeres Kaestchen: der Grund steht drin. Zwei Faelle fuehren hierhin -- der letzte
+             Besitzer, und ein Admin, der einen anderen Admin oder den Besitzer ansieht. */
+          : '<div class="uto-menu-leer">' +
+              (letzterBesitzer(m)
+                ? "The last owner cannot be changed or removed."
+                : "You cannot manage this member.") +
+            '</div>';
         menu.innerHTML = html;
         var zeile = btn.closest(".up-row");
         var pop = UC.makePopover({
@@ -700,9 +708,15 @@
         var was = el.getAttribute("data-uto-do");
         var i = parseInt(el.getAttribute("data-uto-i"), 10);
         popovers.forEach(function (p) { try { p.close(true); } catch (e) {} });
-        if (was === "revoke") {
+        if (was === "revoke" || was === "resend") {
           var v = state.invites[i];
           if (!v || !darfWiderrufen()) return;
+          if (was === "resend") {
+            fire("data-resend-fn", "utoResend",
+                 { invite_id: feld(v.invite_id), email: feld(v.invited_email),
+                   role: rolleName(v.invited_role) });
+            return;
+          }
           fire("data-revoke-fn", "utoRevoke",
                { invite_id: feld(v.invite_id), email: feld(v.invited_email) });
           return;

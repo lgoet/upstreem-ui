@@ -9058,6 +9058,10 @@
     userMinus: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>' +
               '<line x1="22" x2="16" y1="11" y2="11"/>',
     chevronUp: '<path d="m18 15-6-6-6 6"/>',
+    /* Lucide send. Zeichen fuer "Einladung erneut schicken" in der Teamverwaltung -- ein Pfeil,
+       der abgeht, und nicht refresh-cw: das liest sich als "neu laden". */
+    send:     '<path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/>' +
+              '<path d="m21.854 2.147-10.94 10.939"/>',
     crown:    '<path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/>' +
               '<path d="M5 21h14"/>',
     check:    '<path d="M20 6 9 17l-5-5"/>',

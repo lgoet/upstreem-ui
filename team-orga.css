@@ -64,6 +64,11 @@
    Maus und hatte eine DOPPELTE Linie darunter. Ohne .up-row ist beides weg, das Raster bleibt.
    Kopf 45px, Datenzeile 52px -- die Masse der App. */
 .uto-table .up-thead { height: 45px; flex: 0 0 45px; }
+/* Die Zellen. WORTGLEICH aus brand-editor.css (.ube-table .up-td) -- core setzt an .up-td keine
+   Schriftgroesse, die Zelle erbt also die der Wurzel, und das sind 16px. Genau daran lagen die
+   E-Mail und das Beitrittsdatum viel zu gross im Raster, waehrend Name und Rolle ihre eigene
+   Groesse mitbrachten. Eine Tabelle, drei Groessen -- das war der Fehler. */
+.uto-table .up-td { font-size: 13px; color: var(--vc-text); }
 .uto-table .up-row:not(.up-thead) { height: 52px; flex: 0 0 52px; cursor: default; }
 .uto-table .up-row:last-child { border-bottom: 0; }
 /* Die Ecken, die vorher der Ausschnitt gemacht hat. Am Kopf oben, an der letzten Zeile unten --
@@ -77,7 +82,9 @@
 /* Ohne jede Aktion faellt die letzte Spalte weg -- eine Spalte mit leerem Kopf und leeren Zellen
    ist eine Spalte zu viel. */
 .uto-members.no-actions { --up-cols: minmax(0, 1.1fr) minmax(0, 1.2fr) 130px 108px; }
-.uto-invites { --up-cols: minmax(0, 1.4fr) 108px 130px minmax(0, 1fr) 64px; }
+/* 196 fuer die letzte Spalte: zwei Knoepfe mit Zeichen und Wort ("Resend" 82, "Revoke" 82) plus
+   6px Abstand und das Zellpolster. */
+.uto-invites { --up-cols: minmax(0, 1.4fr) 108px 130px minmax(0, 1fr) 196px; }
 .uto-invites.no-actions { --up-cols: minmax(0, 1.4fr) 108px 130px minmax(0, 1fr); }
 
 .uto-name { display: flex; align-items: center; gap: 8px; min-width: 0; }
@@ -103,23 +110,21 @@
    zweite Chipfarbe einzufuehren. */
 .uto-role .up-entchip.is-owner { border-color: var(--vc-text); }
 
-.uto-act { display: flex; align-items: center; justify-content: flex-end; }
+.uto-act { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
 /* Die Aktionszelle darf NICHT abschneiden -- .up-td aus core traegt overflow: hidden (richtig, es
    haelt lange Texte in der Spalte), und das Zeilenmenue faehrt aus der Zelle heraus. Zwei
    Selektorteile, damit es ueber .up-td gewinnt. */
-.uto-table .up-td.uto-act { overflow: visible; }
+.uto-table .up-td.uto-act, .uto-table .up-td.uto-invact { overflow: visible; }
 /* Und die ZEILE muss hoch, solange ihr Menue offen ist. Der Grund ist nicht der Rand, sondern
    contain: layout an .up-row (core, fuer die Layoutkosten bei 100 Zeilen): das macht jede Zeile zu
    einem eigenen Stapelkontext, und darin nuetzt dem Menue sein z-index von 99998 nichts -- die
    NAECHSTE Zeile liegt trotzdem darueber. Ein Kind kann aus einem Stapelkontext nicht heraus, also
    hebt sich die Zeile selbst. Die Klasse setzt team-orga.js beim Oeffnen. */
 .uto-table .up-row.uto-rowopen { position: relative; z-index: 20; }
-/* Der Zeilenknopf erscheint beim Ueberfahren der Zeile -- wie .up-rowbtn in den Tabellen der App.
-   Offen bleibt er sichtbar, sonst verschwindet er unter dem eigenen Menue. */
-.uto-act .up-iconbtn { opacity: 0; transition: opacity 120ms ease; }
-.uto-table .up-row:hover .uto-act .up-iconbtn,
-.uto-act.is-open .up-iconbtn,
-.uto-act .up-iconbtn:focus-visible { opacity: 1; }
+/* IMMER sichtbar, nicht erst beim Ueberfahren. In den grossen Tabellen der App ist der
+   Zeilenknopf ein Randweg und darf sich verstecken; hier ist die Verwaltung der Sinn der Zeile,
+   und ein Knopf, den man erst durch Herumfahren findet, ist keiner. So ausdruecklich vorgegeben. */
+.uto-act .up-iconbtn { opacity: 1; }
 .uto-menuwrap { position: relative; display: inline-flex; }
 /* Das Menue haengt an der rechten Kante des Knopfes. Breite so, dass "Remove from team" in eine
    Zeile passt. */
@@ -133,6 +138,10 @@
 .uto-menu .uto-danger svg { width: 15px; height: 15px; flex: 0 0 15px; }
 .uto-menu .up-optrow svg { width: 15px; height: 15px; flex: 0 0 15px; }
 .uto-menu-lbl { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+/* Erlaubt eine Zeile nichts (der letzte Besitzer, oder ein Admin, der einen anderen Admin sieht),
+   dann sagt das Menue das. Der Knopf steht trotzdem an jeder Zeile -- so vorgegeben --, und ein
+   Knopf, der ein leeres Kaestchen aufklappt, ist schlimmer als einer, der einen Satz zeigt. */
+.uto-menu-leer { padding: 8px 9px; font-size: 12.5px; line-height: 1.4; color: var(--vc-third); }
 
 /* ---------- Einladungen ---------- */
 .uto-inv-mail { overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -142,6 +151,16 @@
 .uto-inv-state { font-size: 12px; font-weight: 500; color: var(--vc-muted); }
 .uto-inv-state.is-expired { color: var(--vc-third); }
 .uto-inv-by { color: var(--vc-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Zwei Knoepfe statt eines Punktmenues -- so vorgegeben. Das Bauteil ist .up-btn-sec.up-rowbtn aus
+   core (24px, Radius 7, Zeichen 13), derselbe kleine Zeilenknopf wie "Show Pages" in der
+   Domains-Tabelle. Geaendert wird daran NUR das Erscheinen: dort blendet er beim Ueberfahren ein,
+   hier stehen die zwei dauerhaft -- bei zwei Aktionen und einer Handvoll Zeilen ist Verstecken
+   kein Gewinn, sondern eine Suche. */
+.uto-invact { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+.uto-invact .up-rowbtn { opacity: 1; pointer-events: auto; }
+/* Widerrufen ist die Aktion, die etwas wegnimmt -- Warnfarbe erst beim Ueberfahren, wie im
+   Zeilenmenue der Mitglieder. */
+.uto-invact .uto-danger:hover { color: var(--vt-down); border-color: var(--vt-down); }
 
 /* ---------- Protokoll: die technische Tabelle ---------- */
 /* Aufklappbar, und der Kopf ist der Schalter. Der Winkel dreht sich NICHT (mehrfach so
@@ -235,7 +254,7 @@
 .uto-root.is-narrow .uto-members.no-actions { --up-cols: minmax(0, 1fr) 108px; }
 .uto-root.is-narrow .uto-mail, .uto-root.is-narrow .uto-when,
 .uto-root.is-narrow .uto-c-mail, .uto-root.is-narrow .uto-c-when { display: none; }
-.uto-root.is-narrow .uto-invites { --up-cols: minmax(0, 1fr) 108px 64px; }
+.uto-root.is-narrow .uto-invites { --up-cols: minmax(0, 1fr) 108px 196px; }
 .uto-root.is-narrow .uto-invites.no-actions { --up-cols: minmax(0, 1fr) 108px; }
 .uto-root.is-narrow .uto-inv-by, .uto-root.is-narrow .uto-c-by { display: none; }
 /* Das Protokoll auf drei Spalten: Ziel und Details fallen weg. Fuenf Spalten auf 372px waeren

@@ -46,6 +46,7 @@
 
   EREIGNISSE HERAUS (jedes mit einem JSON-Text als erstem Parameter)
      utoInvite   { "team_id":"...", "email":"neu@test.de", "role":"member" }
+     utoResend   { "team_id":"...", "invite_id":"...", "email":"...", "role":"member" }
      utoRevoke   { "team_id":"...", "invite_id":"...", "email":"..." }
      utoRemove   { "team_id":"...", "user_id":"...", "email":"...", "self":false }
      utoRole     { "team_id":"...", "user_id":"...", "email":"...", "role":"admin" }
@@ -78,6 +79,7 @@
      data-user="USER_ID"
      data-user-email=""
      data-invite-fn="bubble_fn_utoInvite"
+     data-resend-fn="bubble_fn_utoResend"
      data-revoke-fn="bubble_fn_utoRevoke"
      data-remove-fn="bubble_fn_utoRemove"
      data-role-fn="bubble_fn_utoRole"></div>
@@ -405,11 +407,12 @@
 </script>
 
   ============================================================================================
-  DIE VIER WORKFLOWS
+  DIE FUENF WORKFLOWS
   ============================================================================================
-  Vier JavaScript-to-Bubble-Elemente mit genau diesen Namen:
+  Fuenf JavaScript-to-Bubble-Elemente mit genau diesen Namen:
 
      bubble_fn_utoInvite   -> RPC "invite member" (email, role)     danach: Daten neu holen
+     bubble_fn_utoResend   -> RPC "resend invite" (invite_id)       danach: Daten neu holen
      bubble_fn_utoRevoke   -> RPC "revoke invite" (invite_id)       danach: Daten neu holen
      bubble_fn_utoRemove   -> RPC "remove member" (user_id)         danach: Daten neu holen
      bubble_fn_utoRole     -> RPC "set role" (user_id, role)        danach: Daten neu holen

@@ -8,7 +8,7 @@
 <script>
 window.__ev=[]; window.__fehler=[];
 window.onerror=function(m){ window.__fehler.push(String(m)); };
-["utoInvite","utoRevoke","utoRemove","utoRole"].forEach(function(n){
+["utoInvite","utoResend","utoRevoke","utoRemove","utoRole"].forEach(function(n){
   window["bubble_fn_"+n]=function(a){ window.__ev.push([n,a]); }; });
 </script>
 
@@ -21,6 +21,7 @@ window.onerror=function(m){ window.__fehler.push(String(m)); };
      data-user="aea6e317-d901-419b-b2b2-5ca3573ea2f5"
      data-user-email=""
      data-invite-fn="bubble_fn_utoInvite"
+     data-resend-fn="bubble_fn_utoResend"
      data-revoke-fn="bubble_fn_utoRevoke"
      data-remove-fn="bubble_fn_utoRemove"
      data-role-fn="bubble_fn_utoRole"></div>
