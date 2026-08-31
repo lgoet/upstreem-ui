@@ -1,0 +1,177 @@
+<meta charset="utf-8">
+<title>VIS — Harness: Filterleiste "More Filters"</title>
+<link rel="stylesheet" href="core.css?v=vis1">
+<link rel="stylesheet" href="filters/date-range.css?v=vis1">
+<link rel="stylesheet" href="filters/topics-filter.css?v=vis1">
+<link rel="stylesheet" href="filters/models-filter.css?v=vis1">
+<link rel="stylesheet" href="filters/markets-filter.css?v=vis1">
+<link rel="stylesheet" href="filters/filter-bar.css?v=vis1">
+<style>
+  html, body { margin: 0; }
+  body { font-family: Geist, system-ui, sans-serif; padding: 24px; }
+  h2 { font: 600 13px/1 sans-serif; margin: 0 0 12px; color: #666; }
+  /* Die Werkzeugzeile der echten Seite: Datumsfilter links, dann die Leiste. */
+  #zeile { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  /* Die drei Filterwurzeln liegen VOR der Leiste im Dokument -- genau wie auf einer Bubble-Seite,
+     wo sie eigene Elemente irgendwo sind. Die Leiste zieht sie zu sich. Sichtbar bleiben sie hier
+     absichtlich nicht: ausgeblendet wuerde ich messen, ob sie ueberhaupt einziehbar sind. */
+  #quelle { display: flex; gap: 8px; margin-bottom: 24px; }
+  #out { font: 11px/1.5 ui-monospace, monospace; background: #111; color: #eee; padding: 10px;
+         margin-top: 24px; white-space: pre-wrap; max-height: 260px; overflow: auto; }
+</style>
+
+<script>
+window.__ev = []; window.__fehler = [];
+window.onerror = function(m){ window.__fehler.push(String(m)); };
+["utfTopics","utfTopicsApply","utfNewTopic","umfModels","umkMarkets","ufbReset","udrChange"]
+  .forEach(function(n){
+    /* ?noreset laesst bubble_fn_ufbReset weg -- die Lage einer Seite, auf der dieser eine
+       Workflow nicht verdrahtet ist. Nachtraeglich loeschen geht NICHT: UC.resolveBubbleFn merkt
+       sich eine einmal gefundene Funktion (fuer Seiten mit iframes), und dann antwortet der
+       Zwischenspeicher weiter. Also von Anfang an nicht anlegen. */
+    if (n === "ufbReset" && String(location.search).indexOf("noreset") >= 0) return;
+    window["bubble_fn_"+n] = function(a,b){ window.__ev.push([n, a, b]); };
+  });
+try { localStorage.clear(); } catch(e){}
+</script>
+
+<h2>Die drei Filter, so wie sie heute auf der Seite stehen (werden von der Leiste eingezogen)</h2>
+<div id="quelle">
+  <div class="up-root utf-root" data-instance="topics_v1" data-isdark="no"
+       data-topics-fn="bubble_fn_utfTopics" data-topics-apply-fn="bubble_fn_utfTopicsApply"></div>
+  <div class="up-root umf-root" data-instance="models_v1" data-isdark="no"
+       data-models-fn="bubble_fn_umfModels"></div>
+  <div class="up-root umk-root" data-instance="markets_v1" data-isdark="no"
+       data-markets-fn="bubble_fn_umkMarkets"></div>
+</div>
+
+<h2>Werkzeugzeile: Datumsfilter + More Filters</h2>
+<div id="zeile">
+  <span id="datum" style="display:inline-flex;align-items:center;height:32px;padding:0 10px;
+        border:1px solid #e0e2e6;border-radius:8px;font:500 13px/1 sans-serif;color:#6f737c">
+    Last 30 days
+  </span>
+  <div class="up-root ufb-root"
+       data-instance="bar1"
+       data-isdark="no"
+       data-topics-instance="topics_v1"
+       data-models-instance="models_v1"
+       data-markets-instance="markets_v1"
+       data-reset-fn="bubble_fn_ufbReset"></div>
+</div>
+
+<pre id="out">bereit</pre>
+
+<script src="core.js?v=vis1"></script>
+<script src="filters/topics-filter.js?v=vis1"></script>
+<script src="filters/models-filter.js?v=vis1"></script>
+<script src="filters/markets-filter.js?v=vis1"></script>
+<script src="filters/filter-bar.js?v=vis1"></script>
+<script>
+/* Echte Daten in der Form, die die drei Filter erwarten. */
+window.__topics = [
+  { id: "t1", name: "Leadgen",   color: "#2563eb", emoji: "",  prompt_count: 42 },
+  { id: "t2", name: "Solar",     color: "#059669", emoji: "",  prompt_count: 31 },
+  { id: "t3", name: "Waermepumpe", color: "#d97706", emoji: "", prompt_count: 18 },
+  { id: "t4", name: "Speicher",  color: "#7c3aed", emoji: "",  prompt_count: 9 },
+  { id: "t5", name: "Foerderung", color: "#be123c", emoji: "", prompt_count: 4 }
+];
+window.__models = [
+  { key: "gpt-4o",  display_name: "GPT-4o",        provider: "OpenAI",     is_active: true, logo_url: "" },
+  { key: "claude",  display_name: "Claude Sonnet", provider: "Anthropic",  is_active: true, logo_url: "" },
+  { key: "gemini",  display_name: "Gemini 2.0",    provider: "Google",     is_active: true, logo_url: "" },
+  { key: "perplex", display_name: "Perplexity",    provider: "Perplexity", is_active: true, logo_url: "" }
+];
+window.__markets = [
+  { alpha2: "DE", name: "Germany",     prompt_count: 120 },
+  { alpha2: "AT", name: "Austria",     prompt_count: 40 },
+  { alpha2: "CH", name: "Switzerland", prompt_count: 22 },
+  { alpha2: "NL", name: "Netherlands",  prompt_count: 8 }
+];
+
+window.__load = function(){
+  if (window.setUpstreemTopics)  window.setUpstreemTopics(window.__topics);
+  if (window.setTopicsFilterTopics)  window.setTopicsFilterTopics("topics_v1", window.__topics);
+  if (window.setModelsFilterModels)  window.setModelsFilterModels("models_v1", window.__models);
+  if (window.setMarketsFilterMarkets) window.setMarketsFilterMarkets("markets_v1", window.__markets);
+};
+
+/* Auswahl setzen wie Bubble es tut (still, spiegelt vorhandenen Zustand). */
+window.__waehle = function(topics, models, markets){
+  if (topics != null && window.setTopicsFilterSelected) window.setTopicsFilterSelected("topics_v1", topics);
+  if (models != null && window.setModelsFilterSelected) window.setModelsFilterSelected("models_v1", models);
+  if (markets != null && window.setMarketsFilterSelected) window.setMarketsFilterSelected("markets_v1", markets);
+};
+
+/* Die zwei Faelle aus der Meldung "Dropdown leer": eine Id, die nicht passt, und ein Filter, den
+   es auf der Seite gar nicht gibt. */
+window.__falscheId = function(){
+  var r = document.querySelector('[data-instance="bar1"]');
+  r.setAttribute("data-topics-instance", "gibt_es_nicht");
+  r.setAttribute("data-models-instance", "auch_nicht");
+  /* Neu einziehen erzwingen: Attribute aendern sich in Bubble auch nach dem Mount. */
+  if (r.__ufbCtrl) r.__ufbCtrl.render();
+};
+window.__filterWeg = function(){
+  var w = document.querySelector(".umk-root");
+  if (w && w.parentNode) w.parentNode.removeChild(w);
+};
+
+window.__zustand = function(){
+  var r = document.querySelector(".ufb-root");
+  function txt(e){ return e ? e.textContent.replace(/\s+/g," ").trim() : null; }
+  return {
+    hasFilters: r.classList.contains("has-filters"),
+    punkt: (r.querySelector(".ufb-dot")||{}).className,
+    zeilen: [].map.call(r.querySelectorAll(".up-subwrap"), function(w){
+      return { key: w.getAttribute("data-sub"), leer: w.classList.contains("is-leer"),
+               spiegel: txt(w.querySelector("[data-mirror]")),
+               eingezogen: !!w.querySelector(".utf-root, .umf-root, .umk-root"),
+               offen: w.classList.contains("is-subopen") }; }),
+    chips: [].map.call(r.querySelectorAll(".ufb-chip"), txt),
+    clearDa: getComputedStyle(r.querySelector(".ufb-clear")).display,
+    sepDa: getComputedStyle(r.querySelector(".ufb-sep")).display,
+    resetDa: (function(){ var e=r.querySelector(".ufb-reset"); return e?getComputedStyle(e).display:"(noch kein Markup)"; })(),
+    events: window.__ev.slice(-4),
+    fehler: window.__fehler
+  };
+};
+/* Der Fall aus der Frage: die Gruppierung im Prompts-Table wird umgeschaltet, waehrend die
+   Leiste steht. Bubble setzt dann data-topics-visible auf "no" bzw. "yes". */
+window.__sicht = function(key, wert){
+  document.querySelector('[data-instance="bar1"]')
+          .setAttribute("data-" + key + "-visible", wert);
+};
+/* Die zweite Bauart: Bubble rendert das HTML-Element komplett NEU. Dann ist es eine neue Wurzel,
+   und kein Beobachter der alten kann das sehen -- die Uhr muss es fangen. */
+window.__neuRendern = function(topicsVis){
+  var alt = document.querySelector('[data-instance="bar1"]');
+  var neu = document.createElement("div");
+  neu.className = "up-root ufb-root";   /* wie im echten Markup -- ohne die Klasse findet initAll() sie nicht */
+  neu.setAttribute("data-instance", "bar1");
+  neu.setAttribute("data-isdark", "no");
+  neu.setAttribute("data-topics-instance", "topics_v1");
+  neu.setAttribute("data-models-instance", "models_v1");
+  neu.setAttribute("data-markets-instance", "markets_v1");
+  neu.setAttribute("data-reset-fn", "bubble_fn_ufbReset");
+  if (topicsVis != null) neu.setAttribute("data-topics-visible", topicsVis);
+  alt.parentNode.replaceChild(neu, alt);
+};
+window.__kurz = function(){
+  var r = document.querySelector(".ufb-root");
+  return {
+    zeilen: [].map.call(r.querySelectorAll(".up-subwrap"), function(w){ return w.getAttribute("data-sub"); }),
+    huellen: [].map.call(r.querySelectorAll("[data-sub-host]"), function(h){
+      return h.getAttribute("data-sub-host") + (h.classList.contains("is-on") ? ":on" : "") +
+             (h.querySelector(".utf-root, .umf-root, .umk-root") ? ":drin" : ""); }),
+    chips: [].map.call(r.querySelectorAll(".ufb-chip"), function(c){ return c.textContent.replace(/\s+/g," ").trim(); }),
+    topicsAuswahl: (function(){ var w = document.querySelector(".utf-root");
+      var c = w && w.__utfCtrl; try { return c && c.getSelected ? c.getSelected().topic_ids : "?"; } catch(e){ return "?"; } })(),
+    topicsHatSel: !!(document.querySelector(".utf-root")||{classList:{contains:function(){return false;}}}).classList.contains("has-sel"),
+    resetDa: getComputedStyle(r.querySelector(".ufb-reset")).display,
+    events: window.__ev.slice(-4),
+    fehler: window.__fehler
+  };
+};
+document.getElementById("out").textContent = "geladen — __load(), __waehle(), __sicht(), __neuRendern(), __kurz()";
+</script>

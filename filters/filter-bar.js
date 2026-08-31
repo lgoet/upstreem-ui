@@ -71,6 +71,11 @@
      Filter wissen muss, steht in EINER Zeile -- ein vierter Filter ist damit ein Eintrag hier und
      sonst nichts.
        attr      Attribut am Root dieser Komponente, in dem die Instanz-Id des Filters steht
+       visAttr   Attribut, mit dem die Seite ihn AUSBLENDEN kann: "no"/"false"/"0" versteckt ihn.
+                 Fehlt das Attribut oder ist es leer, ist er sichtbar -- ein Element ohne dieses
+                 Attribut verhaelt sich also genau wie vorher. Das ist die sichere Richtung: ein
+                 Bubble-Ausdruck, der beim ersten Rendern noch leer ist, darf keinen Filter
+                 verschlucken.
        rootSel   Klasse der Filterwurzel
        ctrl      Eigenschaft, unter der der Filter seinen Controller ablegt
        selKey    Feld in getSelected(), das die Auswahl als CSV traegt
@@ -87,17 +92,17 @@
                  ueber diesen einen Filter, "Topics: Leadgen" als eine Liste, die zufaellig eins
                  lang ist */
   var FILTERS = [
-    { key: "topics",  label: "Topics",  attr: "data-topics-instance",  rootSel: ".utf-root",
+    { key: "topics",  label: "Topics",  attr: "data-topics-instance", visAttr: "data-topics-visible",  rootSel: ".utf-root",
       ctrl: "__utfCtrl", selKey: "topic_ids",    opt: ".utf-opt", keyAttr: "data-id",
       nameSel: ".utf-opt-name", clearSel: ".utf-chev-x", evt: "utf-topics",  chip: "Topic",  icon: "tags",
       fnAttrs: [["data-topics-fn", "bubble_fn_utfTopics"], ["data-topics-apply-fn", null]],
       fnMarke: "utf" },
-    { key: "models",  label: "Models",  attr: "data-models-instance",  rootSel: ".umf-root",
+    { key: "models",  label: "Models",  attr: "data-models-instance", visAttr: "data-models-visible",  rootSel: ".umf-root",
       ctrl: "__umfCtrl", selKey: "model_keys",   opt: ".umf-opt", keyAttr: "data-key",
       nameSel: ".umf-opt-name", clearSel: ".umf-chev-x", evt: "umf-models",  chip: "Model",  icon: "layers",
       fnAttrs: [["data-models-fn", "bubble_fn_umfModels"], ["data-models-apply-fn", null]],
       fnMarke: "umf" },
-    { key: "markets", label: "Markets", attr: "data-markets-instance", rootSel: ".umk-root",
+    { key: "markets", label: "Markets", attr: "data-markets-instance", visAttr: "data-markets-visible", rootSel: ".umk-root",
       ctrl: "__umkCtrl", selKey: "market_codes", opt: ".umk-opt", keyAttr: "data-key",
       nameSel: ".umk-opt-name", clearSel: ".umk-chev-x", evt: "umk-markets", chip: "Market", icon: "mapPin",
       fnAttrs: [["data-markets-fn", "bubble_fn_umkMarkets"], ["data-markets-apply-fn", null]],
@@ -170,6 +175,21 @@
           return !!v && !/^[A-Z_]{3,}$/.test(v);
         });
       }
+      /* ZWEITE Frage, unabhaengig von der ersten: der Filter ist eingetragen, soll aber GERADE
+         nicht angeboten werden -- im Prompts-Table etwa der Topics-Filter, solange die Gruppierung
+         nach Topics laeuft. Dafuer traegt die Seite data-<filter>-visible.
+         Nur ein ausdrueckliches Nein blendet aus. Alles andere -- Attribut fehlt, Attribut leer,
+         ein Bubble-Ausdruck, der noch nicht aufgeloest ist -- heisst sichtbar. Andersherum waere
+         es gefaehrlich: ein Ausdruck, der beim ersten Rendern leer ankommt, wuerde den Filter
+         verschlucken, und niemand saehe warum. */
+      function sichtbarLaut(f) {
+        var v = String(root.getAttribute(f.visAttr) || "").trim().toLowerCase();
+        return !(v === "no" || v === "false" || v === "0" || v === "off" || v === "hidden");
+      }
+      /* Eingetragen, aber ausgeblendet -- der Unterschied zu "gar nicht vorgesehen" zaehlt: nur
+         SEINE Auswahl darf diese Leiste raeumen. Einen Filter, der ihr nie gehoerte, fasst sie
+         nicht an. */
+      function nurAusgeblendet(f) { return gewuenscht().indexOf(f) >= 0 && !sichtbarLaut(f); }
       function idVon(f) { return String(root.getAttribute(f.attr) || "").trim(); }
       /* Was schon geklagt bzw. gemeldet wurde -- je Filter einmal, damit die Konsole nicht bei
          jedem Lauf dasselbe wiederholt. */
@@ -188,7 +208,10 @@
               aufgehen, und niemand konnte sehen warum.
          Der Rueckfall passiert NICHT still: sonst ist er beim naechsten Mal eine falsche Zuordnung,
          die keiner sucht. */
-      function findeWurzel(f) {
+      /* streng = ohne den Rueckfall unten. Fuer einen AUSGEBLENDETEN Filter wird nur nach der
+         eingetragenen Id gesucht: "es gibt genau einen freien auf der Seite" ist eine Vermutung,
+         und auf eine Vermutung hin die Auswahl eines fremden Filters zu leeren waere Schaden. */
+      function findeWurzel(f, streng) {
         var id = idVon(f);
         var alle = Array.prototype.slice.call(document.querySelectorAll(f.rootSel));
         if (!alle.length) return null;
@@ -203,6 +226,7 @@
             if (rid && rid.indexOf(id) === 0) return alle[i];
           }
         }
+        if (streng) return null;
         var frei = alle.filter(function (w) {
           return !(w.__ufbHost && w.__ufbHost !== root && document.contains(w.__ufbHost));
         });
@@ -220,7 +244,9 @@
         return null;
       }
 
-      var liste = gewuenscht();
+      /* Kein const: die Liste wird neu bestimmt, sobald sich data-<filter>-visible aendert.
+         Alle Stellen unten lesen die Variable zur Laufzeit, keine hat eine Kopie. */
+      var liste = gewuenscht().filter(sichtbarLaut);
 
       /* Alles Eingezogene dorthin zurueck, wo es hergekommen ist. Ist der alte Elternteil selbst
          weg (Bubble hat ihn ersetzt), geht es an den Koerper: irgendwo im Dokument ist besser als
@@ -762,6 +788,74 @@
         document.addEventListener(f.evt, function () { spiegeln(f); render(); }, false);
       });
 
+      /* ---------------- Ausblenden zur Laufzeit ----------------
+         Die Gruppierung im Prompts-Table wird UMGESCHALTET, waehrend die Leiste steht. Also wird
+         data-<filter>-visible nicht nur beim Start gelesen.
+
+         Zwei Wege, und der zweite ist der wichtige:
+           - ein Beobachter mit attributeFilter auf GENAU diesen Attributen. Eng gefasst mit
+             Absicht: mit attributes:true ohne Filter wuerde jede Klassenaenderung aus render()
+             ihn wecken und render() wieder ausloesen. subtree bleibt aus, damit das Verschieben
+             der Filterknoten in einziehen() ihn nicht weckt -- an genau dieser Stelle hat ein
+             Beobachter in dieser Datei schon einmal die Seite zum Stehen gebracht.
+           - die Uhr unten (700ms). Sie faengt den Fall, den der Beobachter nicht sehen kann:
+             Bubble rendert das HTML-Element bei einer Aenderung oft komplett neu, dann ist es
+             eine NEUE Wurzel mit einem neuen Attribut und keine Aenderung an der alten.
+
+         Beim Ausblenden wird die Auswahl des Filters GELEERT, ueber sein eigenes X -- also mit
+         seinem Ereignis, wie beim Klick auf das X am Chip. Ein Filter, der nicht mehr angeboten
+         wird, darf nicht weiterfiltern: sonst zeigt die Tabelle eine Teilmenge, und in der Leiste
+         steht nichts mehr, was das erklaert. Das ist der Grund, warum es hier nicht reicht, nur
+         die Zeile zu verstecken. */
+      function verstecktGeleert() {
+        FILTERS.forEach(function (f) {
+          if (!nurAusgeblendet(f)) return;
+          /* Streng suchen: lieber nichts leeren als das Falsche. */
+          var w = eingezogen[f.key] || findeWurzel(f, true);
+          if (!w || !w.classList.contains("has-sel")) return;
+          /* Ein Filter, der in einer ANDEREN Leiste haengt, gehoert nicht hierher. */
+          if (w.__ufbHost && w.__ufbHost !== root && document.contains(w.__ufbHost)) return;
+          var x = f.clearSel && w.querySelector(f.clearSel);
+          if (x) { try { x.click(); } catch (e) {} return; }
+          var c = w[f.ctrl];
+          if (c && typeof c.setSelected === "function") {
+            try { c.setSelected(""); } catch (e) {}
+            fire("data-reset-fn", "ufbReset", { action: "clear_one", filter: f.key });
+          }
+        });
+      }
+      function sichtStellen() {
+        var neu = gewuenscht().filter(sichtbarLaut);
+        var gleich = neu.length === liste.length && neu.every(function (f, i) { return f === liste[i]; });
+        /* Auch wenn sich nichts geaendert hat: eine Auswahl kann ERST DANACH entstanden sein
+           (Bubble stellt einen gespeicherten Filter wieder her). Darum immer pruefen -- die
+           Funktion tut nichts, wenn nichts gewaehlt ist. */
+        verstecktGeleert();
+        if (gleich) return;
+        liste = neu;
+        /* Ein Untermenue, dessen Zeile es gleich nicht mehr gibt, muss zu sein, bevor die Zeilen
+           neu gebaut werden -- sonst bleibt eine offene Huelle ueber einer Zeile stehen, die
+           verschwunden ist. */
+        if (sub) sub.close();
+        if (elSub) {
+          Array.prototype.forEach.call(elSub.querySelectorAll("[data-sub-host]"), function (h) {
+            var drin = neu.some(function (f) { return f.key === h.getAttribute("data-sub-host"); });
+            if (!drin) h.classList.remove("is-on");
+          });
+        }
+        zeilenBauen();
+        einziehen();
+        spiegelnAlle();
+        render();
+      }
+      if (window.MutationObserver) {
+        var sichtBeob = new MutationObserver(function () { sichtStellen(); });
+        try {
+          sichtBeob.observe(root, { attributes: true, subtree: false,
+            attributeFilter: FILTERS.map(function (f) { return f.visAttr; }) });
+        } catch (e) {}
+      }
+
       /* Die Filterelemente koennen SPAETER erscheinen -- Bubble baut sie unabhaengig von diesem
          Element. Ein kurzer Anlauf plus der Beobachter aus core holt sie nach. */
       [0, 150, 500, 1200, 2500].forEach(function (ms) { setTimeout(einziehen, ms); });
@@ -779,6 +873,9 @@
 
       var ctrl = {
         reset: function () { alleLeeren(); },
+        /* Die Uhr unten ruft das je Leiste -- der Rueckhalt fuer den Fall, dass Bubble das
+           Element neu rendert statt nur das Attribut zu setzen. */
+        pruefeSicht: function () { try { sichtStellen(); } catch (e) {} },
         setTheme: function (t) { if (UC.setUpstreemTheme) UC.setUpstreemTheme(t); },
         render: render
       };
@@ -843,9 +940,16 @@
           var id = String(r.getAttribute(f.attr) || "").trim();
           var host = r.querySelector('[data-sub-host="' + f.key + '"]');
           var drin = host && host.querySelector(f.rootSel);
+          /* Die dritte Antwort auf "warum sehe ich den Filter nicht": nicht die Id und nicht das
+             fehlende Element, sondern die Seite hat ihn ausdruecklich ausgeblendet. Ohne diese
+             Zeile sucht man an den ersten beiden. */
+          var vis = String(r.getAttribute(f.visAttr) || "").trim();
+          var aus = /^(no|false|0|off|hidden)$/i.test(vis);
           out.push('  Leiste "' + (r.getAttribute("data-instance") || "default") + '": ' +
             f.attr + '="' + id + '"' +
+            (vis ? "  " + f.visAttr + '="' + vis + '"' : "") +
             (!id || /^[A-Z_]{3,}$/.test(id) ? "  -> leer/Platzhalter, also keine Zeile" :
+             aus ? "  -> von der Seite AUSGEBLENDET (" + f.visAttr + "), Auswahl wird geleert" :
              drin ? "  -> eingezogen" : "  -> NICHT gefunden"));
         });
       });
@@ -896,7 +1000,15 @@
        dazukommt (UC.watchRoots hat im Gegentest nicht angeschlagen, siehe die Runde davor).
        initAll richtet nur ein, was noch keinen Controller hat -- der Lauf kostet ein
        querySelectorAll. */
-    setInterval(function () { waechter(); initAll(); }, WAECHTER_MS);
+    setInterval(function () {
+      waechter(); initAll();
+      /* Und einmal je Leiste die Sichtbarkeitsfrage: kostet drei getAttribute und faengt den Fall,
+         den kein Beobachter sehen kann -- eine von Bubble neu gerenderte Wurzel. */
+      for (var i = 0; i < WURZELN.length; i++) {
+        var c = WURZELN[i].__ufbCtrl;
+        if (c && c.pruefeSicht) c.pruefeSicht();
+      }
+    }, WAECHTER_MS);
     /* Eigenes Netz fuer eine Leiste, die SPAETER erscheint. UC.watchRoots ist dafuer gedacht, hat
        im Gegentest aber nicht angeschlagen (eine frisch eingehaengte Wurzel blieb 2,2s
        uneingerichtet, Zaehler 0). Die Zeitstaffel oben faengt den Normalfall -- Bubble baut das
