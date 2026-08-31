@@ -97,11 +97,7 @@
       "Preferred name": "Bevorzugter Name",
       "Your name": "Dein Name",
       "Change your picture": "Bild wechseln",
-      "Upload a picture — square images look best": "Bild hochladen – quadratische Bilder wirken am besten",
-      "You may be asked for this when contacting support.":
-        "Danach wirst du möglicherweise gefragt, wenn du den Support kontaktierst.",
-      "Copy": "Kopieren",
-      "Copied": "Kopiert"
+      "Upload a picture — square images look best": "Bild hochladen – quadratische Bilder wirken am besten"
     });
 
     /* ---- Die Wahlmöglichkeiten ----
@@ -150,6 +146,9 @@
     var M = null;                 /* die gebauten Knoten */
     var seite = "prefs";          /* prefs | profile | charts */
     var offen = false, opener = null;
+    /* userId wird weiter angenommen (setUpstreemProfile nimmt user_id, die Seitenleiste gibt es
+       weiter) und NICHT mehr gezeigt -- die Zeile "User ID" ist auf Wunsch entfallen. Der Wert
+       bleibt im Zustand, damit der Payload derselbe bleibt und die Zeile ohne Umbau zurueckkann. */
     var profil = { name: "", avatar: "", userId: "" };
     var popovers = [];
 
@@ -198,7 +197,6 @@
         if (lw) { if (UC.setLineWidthPref) UC.setLineWidthPref(lw.getAttribute("data-linewidth")); zeichnen(); return; }
         var sw = e.target.closest("[data-ums-toggle]");
         if (sw) { schalten(sw.getAttribute("data-ums-toggle")); return; }
-        if (e.target.closest("[data-ums-copyid]")) { kennungKopieren(e.target.closest("[data-ums-copyid]")); return; }
         if (e.target.closest("[data-ums-avatar]")) { fire("data-avatar-fn", "umsAvatar", { action: "change" }); return; }
 
       });
@@ -323,12 +321,6 @@
         '</div>' +
         '<button class="ums-link" type="button" data-ums-avatar>' +
           esc(t("Upload a picture — square images look best")) + '</button>' +
-        zeileHtml("User ID", "You may be asked for this when contacting support.",
-          '<span class="ums-id">' +
-            '<span class="ums-idtxt">' + esc(profil.userId || "–") + '</span>' +
-            '<button class="up-btn-sec" type="button" data-ums-copyid' +
-              (profil.userId ? "" : " disabled") + '>' + esc(t("Copy")) + '</button>' +
-          '</span>') +
       '</div>';
     }
 
@@ -456,35 +448,6 @@
          nimmt dem naechsten Element den Fokus. Nur die Initiale im Bild wird nachgezogen. */
       var av = M.main.querySelector(".ums-avatar-ltr");
       if (av) av.textContent = (v.charAt(0) || "?").toUpperCase();
-    }
-    function kennungKopieren(btn) {
-      if (!profil.userId) return;
-      var fertig = function () {
-        var alt = btn.textContent;
-        btn.textContent = t("Copied");
-        setTimeout(function () { btn.textContent = alt; }, 1400);
-      };
-      try {
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(profil.userId).then(fertig, ersatz);
-          return;
-        }
-      } catch (e) {}
-      ersatz();
-      /* Rueckfall fuer Browser ohne Zwischenablage-API und fuer Seiten ohne https: ein unsichtbares
-         Feld, markieren, kopieren. Das ist der Weg, der ueberall funktioniert. */
-      function ersatz() {
-        try {
-          var ta = document.createElement("textarea");
-          ta.value = profil.userId;
-          ta.style.cssText = "position:fixed;left:-9999px;top:0";
-          document.body.appendChild(ta);
-          ta.select();
-          document.execCommand("copy");
-          document.body.removeChild(ta);
-          fertig();
-        } catch (e) {}
-      }
     }
 
     /* ---- Oeffnen und Schliessen ---- */

@@ -1247,7 +1247,10 @@
     .up-pop-div { height: 1px; background: var(--vc-border); margin: 7px 4px; }
     .up-pop-sub { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--vc-muted); padding: 8px 10px 14px; }
     .up-dense { display: inline-flex; width: 100%; padding: 0; gap: 0; background: var(--vc-switch-bg); border-radius: 8px; height: 34px; }
-    .up-dense-btn { flex: 1 1 50%; height: 34px; border: 1px solid transparent; border-radius: 8px; background: transparent;
+    /* 0 8px: die Beschriftung steht nicht mehr auf der Kante ihrer Haelfte. Wirkt dort, wo der
+       Schalter sich nach seinem Inhalt richtet (die Zeile im Einstellungsfenster); in einem
+       Chart-Menue hat .up-dense width:100%, dort bleibt die Breite wie sie war. */
+    .up-dense-btn { flex: 1 1 50%; padding: 0 8px; height: 34px; border: 1px solid transparent; border-radius: 8px; background: transparent;
       color: var(--vc-muted); cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 500; line-height: 1;
       display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
     .up-dense-btn svg { width: 15px; height: 15px; }

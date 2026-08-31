@@ -316,23 +316,43 @@
        Fehlerfall dauerhaft zubleiben (frueher blieb __busy stehen, wenn die Schleife warf). */
     var checkTrendFit = UC.einmalProBild ? UC.einmalProBild(trendFitJetzt, "vot-trendFit")
                                          : function(){ trendFitJetzt(); };
+    /* JE SPALTE entschieden, nicht fuer die ganze Tabelle. Die drei Spalten sind Prozentbreiten
+       derselben Tabelle, ihr Inhalt ist aber unterschiedlich breit -- Sentiment ("● 75  ↗ 22.0")
+       laeuft zuerst ueber, Visibility ("5%") zuletzt. Wer alle drei gemeinsam abschaltet,
+       verschenkt zwei Trends, solange nur einer nicht passt.
+       Und je Spalte fuer ALLE Zeilen: innerhalb einer Spalte sind die Werte verschieden lang
+       ("1.4" gegen "22.0"), zeilenweise entschieden staenden in derselben Spalte mal Trends und
+       mal keine. Das liest sich als Fehler, nicht als Anpassung. */
+    var TREND_SPALTEN = ["visibility", "ranking", "sentiment"];
     function trendFitJetzt(){
       if (!tableEl) return;
-      var hadHide = tableEl.classList.contains("vt-hide-trend");
-      if (hadHide) tableEl.classList.remove("vt-hide-trend");
-      var cells = tableEl.querySelectorAll(".vt-td-visibility, .vt-td-ranking, .vt-td-sentiment");
-      var tooTight = false;
-      for (var i = 0; i < cells.length; i++){
-        var c = cells[i];
-        if (getComputedStyle(c).display === "none") continue;
-        var trend = c.querySelector(".up-trend");
-        if (!trend) continue;
-        var cRect = c.getBoundingClientRect();
-        var tRect = trend.getBoundingClientRect();
-        var clearance = cRect.right - tRect.right;
-        if (clearance < 8){ tooTight = true; break; }
-      }
-      tableEl.classList.toggle("vt-hide-trend", tooTight);
+      /* Zum Messen muessen die Trends SICHTBAR sein. Sonst misst der Lauf das Ergebnis des
+         vorigen -- eine Zelle ohne Trend passt immer, und die Entscheidung kippt nie zurueck,
+         wenn das Fenster wieder breiter wird. */
+      TREND_SPALTEN.forEach(function(k){ tableEl.classList.remove("vt-hide-trend-" + k); });
+      tableEl.classList.remove("vt-hide-trend");
+      var eng = {};
+      TREND_SPALTEN.forEach(function(k){
+        var cells = tableEl.querySelectorAll(".vt-td-" + k);
+        for (var i = 0; i < cells.length; i++){
+          var c = cells[i];
+          if (!c.querySelector(".up-trend")) continue;
+          if (getComputedStyle(c).display === "none") continue;
+          /* Passt der Inhalt in die Zelle? scrollWidth ist die Breite, die er BRAUCHT,
+             clientWidth die, die er hat. Hier stand vorher ein Abstand des Trends zur rechten
+             Zellkante ("weniger als 8px = zu eng"): der ist bei voller Breite schon erfuellt
+             (gemessen: Sentiment hat dort 7px) und meldete darum dauerhaft "zu eng".
+             1px Toleranz gegen die Rundung der Prozentspalten. */
+          if (c.scrollWidth > c.clientWidth + 1){ eng[k] = true; break; }
+        }
+      });
+      var irgendeine = false;
+      TREND_SPALTEN.forEach(function(k){
+        tableEl.classList.toggle("vt-hide-trend-" + k, !!eng[k]);
+        if (eng[k]) irgendeine = true;
+      });
+      /* Bleibt als Griff fuer "mindestens eine Spalte hat ihren Trend abgelegt". */
+      tableEl.classList.toggle("vt-hide-trend", irgendeine);
     }
     function checkBrandWidth(){
       var w = tableEl ? tableEl.clientWidth : 0;

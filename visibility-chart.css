@@ -132,6 +132,14 @@
 .vt-table.vt-hide-rank .vt-td-ranking { display: none; }
 .vt-table.vt-hide-rank .vt-thead,
 .vt-table.vt-hide-rank .vt-row { grid-template-columns: 44px minmax(120px,1fr) 32%; }
+/* Der Trend faellt weg, sobald der Inhalt nicht mehr in seine Zelle passt -- je Spalte, gesetzt
+   von trendFitJetzt(). Diese Regel hat GEFEHLT: das JavaScript hat die Klasse seit dem ersten Tag
+   gesetzt und niemand hat sie gelesen, also blieben die Trends stehen und liefen aus der Zelle
+   heraus. Genau so gemeldet ("die Trend-Dinger sollen ausblenden, das passiert aber nicht").
+   display und nicht visibility: der Platz soll frei werden, nicht leer bleiben. */
+.vt-table.vt-hide-trend-visibility .vt-td-visibility .up-trend,
+.vt-table.vt-hide-trend-ranking    .vt-td-ranking    .up-trend,
+.vt-table.vt-hide-trend-sentiment  .vt-td-sentiment  .up-trend { display: none; }
 .vt-thead { height: 45px; flex: 0 0 45px; background: var(--vt-head-bg); }
 .vt-th { font-size: 12px; font-weight: 400; color: var(--vc-muted); padding: 0 16px 0 8px; height: 100%;
   display: flex; align-items: center; border-right: 1px solid var(--vc-border); border-bottom: 1px solid var(--vc-border); }

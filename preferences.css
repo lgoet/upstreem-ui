@@ -209,15 +209,8 @@
 .ums-in:hover { border-color: var(--vc-hover-border); }
 .ums-in:focus { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 
-/* Die Nutzerkennung: Text zum Ansehen, Knopf zum Kopieren. Festbreitenschrift, weil eine UUID
-   nichts ist, was man liest, sondern etwas, das man vergleicht. */
-.ums-id { display: flex; align-items: center; gap: 8px; }
-.ums-idtxt {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 12px; color: var(--vc-muted);
-  background: var(--vc-field); border-radius: 8px; padding: 7px 10px;
-  max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
+/* Hier standen .ums-id und .ums-idtxt (Nutzerkennung mit Kopierknopf). Die Zeile ist auf
+   Wunsch entfallen, also auch ihre Regeln -- Regeln ohne Markup sind Ballast. */
 
 /* ---------- schmal ----------
    Unter 720px steht die Navigation nicht mehr daneben, sondern als Reihe darueber: 232px links

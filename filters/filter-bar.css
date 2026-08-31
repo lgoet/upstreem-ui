@@ -184,12 +184,18 @@
    Sie erscheint nur, solange ueberhaupt etwas gewaehlt ist -- ein Reset ohne etwas zum
    Zuruecksetzen ist ein Knopf, der nichts tut. Darueber ein Trennstrich, damit sie nicht als
    vierter Filter gelesen wird. */
+/* Kein margin-top mehr: der Abstand unter dem Trennstrich gehoert dem Strich (.ufb-div), sonst
+   addieren sich zwei Werte und der gemessene Abstand steht an keiner der beiden Stellen. */
 .ufb-reset { min-height: 34px; padding: 0 9px; font-size: 13px; font-weight: 500;
-  color: var(--vc-muted); margin-top: 4px; }
+  color: var(--vc-muted); }
 .ufb-reset:hover { color: var(--vc-text); }
 .ufb-reset-x { margin-left: auto; flex: 0 0 16px; width: 16px; height: 16px; }
 .ufb-reset-x svg { width: 16px; height: 16px; display: block; }
-.ufb-div { height: 1px; background: var(--vc-border); margin: 6px 4px 2px; }
+/* 8px ueber und 8px unter dem Strich. Vorher 6 darueber und 2 + 4 (margin-top der Zeile)
+   darunter -- also oben und unten gleich viel, aber an drei Stellen verteilt. Die 4px seitlich
+   bleiben: der Strich soll kuerzer sein als das Panel, sonst liest er sich als Panelkante.
+   Der Abstand der Zeile zum Panelrand kommt aus dem Polster des Panels (8px). */
+.ufb-div { height: 1px; background: var(--vc-border); margin: 8px 4px; }
 /* Sie faehrt ein und aus, 200ms, statt ploetzlich da zu sein. Ueber grid-template-rows von 0fr
    auf 1fr -- das ist der einzige Weg, eine Hoehe zu animieren, die man nicht kennt: max-height
    braeuchte eine Zahl, und eine geratene Zahl ist bei zwei Zeilen Text die naechste Meldung.
