@@ -4831,6 +4831,60 @@
 
     var offen = null, gepinnt = false, uhrAuf = null, uhrZu = null;
 
+    /* ---- EINE Schale fuer alle Zeilen (cfg.shell) ----------------------------------------
+       Ohne cfg.shell bleibt es beim alten Bau: ein Kasten JE Zeile, im .up-subwrap. Der
+       Nachteil ist sichtbar, sobald man von einer Zeile zur naechsten faehrt -- der eine
+       Kasten blendet aus, der andere ein. Das ist ein Sprung, kein Rutschen, und genau so
+       wurde es gemeldet.
+       Mit cfg.shell gibt es EINEN Kasten. Er sitzt im Panel (nicht in einer Zeile), rueckt an
+       die offene Zeile und nimmt die Hoehe ihres Inhalts an -- beides mit Uebergang. Der
+       Inhalt liegt in Huellen darin, eine je Zeile, und nur die offene ist sichtbar. Es wird
+       NICHTS umgehaengt: die Huellen bleiben, wo sie sind, und wechseln nur ihre Klasse. Das
+       ist der Grund fuer diesen Bau -- ein Umhaengen des Inhalts (der naheliegende Weg) haette
+       in der Filterleiste die eingezogenen Filterwurzeln bewegt, und die sind genau das, was
+       dort nicht wandern darf. */
+    var SHELL = cfg.shell || null;
+    var HOST_ATTR = cfg.hostAttr || "data-sub-host";
+    /* Muss zur CSS passen (.up-submenu: top/height 200ms). Wird nur zum Aufraeumen der
+       Pixelhoehe gebraucht, darum mit Reserve. */
+    var ZUG_MS = cfg.moveMs == null ? 200 : cfg.moveMs;
+    var zugUhr = null;
+
+    function huellen(){
+      return SHELL ? Array.prototype.slice.call(SHELL.querySelectorAll("[" + HOST_ATTR + "]")) : [];
+    }
+    function polster(){
+      var v = 0;
+      try { v = parseFloat(getComputedStyle(panel).getPropertyValue("--up-dd-pad")); } catch(e){}
+      return isFinite(v) && v > 0 ? v : 8;
+    }
+    /* Die Schale an die offene Zeile setzen. Die Hoehe MUSS in Pixeln stehen, sonst gibt es
+       nichts zu animieren: alte einfrieren, neue messen, neue setzen -- und nach dem Zug
+       zurueck auf auto, damit die Schale einer Liste folgt, die sich beim Suchen verkuerzt.
+       row.offsetTop und die Schale beziehen sich auf dasselbe Elternteil (das Panel ist das
+       naechste positionierte), also ist die Rechnung dieselbe wie das frueher feste
+       top: calc(-1 * var(--up-dd-pad)) an der Zeile. */
+    function schaleStellen(key, animieren){
+      if (!SHELL) return;
+      var row = zeileVon(key);
+      if (!row) return;
+      clearTimeout(zugUhr);
+      var altH = SHELL.offsetHeight;
+      huellen().forEach(function(h){ h.classList.toggle("is-on", h.getAttribute(HOST_ATTR) === key); });
+      if (drill()){ SHELL.style.top = ""; SHELL.style.height = ""; return; }
+      SHELL.style.top = (row.offsetTop - polster()) + "px";
+      if (!animieren || !altH){ SHELL.style.height = ""; return; }
+      SHELL.style.height = "auto";
+      var neuH = SHELL.offsetHeight;
+      if (neuH === altH){ SHELL.style.height = ""; return; }
+      SHELL.style.height = altH + "px";
+      /* Reflow erzwingen: ohne das fasst der Browser beide Zuweisungen zusammen und der
+         Uebergang faellt aus. */
+      void SHELL.offsetHeight;
+      SHELL.style.height = neuH + "px";
+      zugUhr = setTimeout(function(){ SHELL.style.height = ""; }, ZUG_MS + 60);
+    }
+
     var DRILL_FN = typeof cfg.drill === "function" ? cfg.drill : null;
     function drill(){ return DRILL_FN ? !!DRILL_FN() : (getPageWidth() < DRILL_AT); }
     function zeilen(){ return Array.prototype.slice.call(panel.querySelectorAll(ROW)); }
@@ -4845,8 +4899,11 @@
        Messung an einem Element, dessen Inhalt erst beim Oeffnen kommt, liefert sonst eine Breite,
        die gleich nicht mehr gilt. */
     function seiteWaehlen(row){
-      var sub = row.querySelector(".up-submenu");
-      if (!sub) return;
+      /* Im Schalen-Modus traegt die Schale die Klasse, sonst die Zeile -- gemessen wird in
+         beiden Faellen der Kasten, der wirklich herausfaehrt. */
+      var sub = SHELL || (row && row.querySelector(".up-submenu"));
+      var ziel = SHELL || row;
+      if (!sub || !ziel) return;
       var breite = Math.max(sub.offsetWidth || 0, 220);
       var r = panel.getBoundingClientRect();
       var vw = window.innerWidth || document.documentElement.clientWidth || 0;
@@ -4855,9 +4912,9 @@
       var passtLinks = (r.left - luecke - breite) >= 8;
       /* Passt keine Seite, bleibt es bei rechts: dort schneidet das Fenster ab, links waere es
          dasselbe -- und rechts ist die Richtung, die der Winkel ansagt. */
-      row.classList.toggle("is-flipleft", !passtRechts && passtLinks);
+      ziel.classList.toggle("is-flipleft", !passtRechts && passtLinks);
     }
-    function anwenden(){
+    function anwenden(animieren){
       panel.classList.toggle("is-drill", drill());
       panel.classList.toggle("is-inside", !!offen && drill());
       zeilen().forEach(function(r){
@@ -4865,16 +4922,32 @@
         r.classList.toggle("is-subopen", an);
         var b = r.querySelector("[aria-expanded]");
         if (b) b.setAttribute("aria-expanded", an ? "true" : "false");
-        if (an && !drill()) seiteWaehlen(r);
-        if (!an) r.classList.remove("is-flipleft");
+        if (an && !drill() && !SHELL) seiteWaehlen(r);
+        if (!an && !SHELL) r.classList.remove("is-flipleft");
       });
+      if (!SHELL) return;
+      SHELL.classList.toggle("is-shown", !!offen);
+      if (!offen){
+        /* Beim Zugehen bleibt der letzte Inhalt STEHEN. Ihn hier zu verstecken hiesse: der
+           Kasten wird leer und blendet dann aus -- man sieht ein leeres Kaestchen verschwinden.
+           Sichtbar ist er ohnehin nicht mehr (opacity 0, pointer-events none). */
+        clearTimeout(zugUhr);
+        SHELL.style.height = "";
+        SHELL.classList.remove("is-flipleft");
+        return;
+      }
+      if (!drill()) seiteWaehlen(zeileVon(offen));
+      schaleStellen(offen, !!animieren);
     }
     function open(key, pin){
       clearTimeout(uhrAuf); clearTimeout(uhrZu);
       if (offen === key){ if (pin) gepinnt = true; return; }
       var alt = offen, altRow = alt ? zeileVon(alt) : null;
       offen = key; if (pin) gepinnt = true;
-      anwenden();
+      /* Animiert wird nur der WECHSEL von einer offenen Zeile zur naechsten. Beim ersten
+         Oeffnen gibt es keinen Weg zurueckzulegen -- da blendet die Schale ein, wie jedes
+         andere Dropdown der App. */
+      anwenden(!!alt);
       if (alt && cfg.onClose) { try { cfg.onClose(alt, altRow); } catch(e){} }
       if (cfg.onOpen) { try { cfg.onOpen(key, zeileVon(key)); } catch(e){} }
     }
@@ -4893,6 +4966,14 @@
     panel.addEventListener("pointerover", function(e){
       if (drill()) return;
       if (e.pointerType === "touch") return;
+      /* Die Schale liegt im Panel, aber NICHT in einer Zeile -- ohne diese Zeile waere ein
+         Zeiger in der Schale ein Zeiger "irgendwo im Panel", und das offene Untermenue ginge
+         nach ZU ms unter der Hand zu. Genau daran ist der Bau mit einer Schale zu erkennen:
+         beim Kasten je Zeile fand closest(ROW) noch die Zeile. */
+      if (SHELL && e.target.closest && e.target.closest(".up-submenu")){
+        clearTimeout(uhrZu); clearTimeout(uhrAuf);
+        return;
+      }
       var row = e.target.closest ? e.target.closest(ROW) : null;
       clearTimeout(uhrZu);
       if (!row){

@@ -42,7 +42,10 @@
 .dph-trend-sm svg { width: 14px; height: 14px; }
 
 /* ---------- top-right tools: Docs + Refresh ---------- */
-.dph-tools { display: flex; align-items: center; gap: 12px; flex: 0 0 auto; margin-top: 0; }
+/* 8px zwischen den Zeichenknoepfen. Vorher 12 -- das war das Mass fuer eine Reihe aus Knopf MIT
+   Text; drei 32px-Quadrate nebeneinander lesen sich damit als drei einzelne Dinge statt als eine
+   Gruppe. 8 ist der Abstand, den die Werkzeugleisten der App zwischen Zeichenknoepfen halten. */
+.dph-tools { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; margin-top: 0; }
 /* The Refresh button itself is core.css's shared .up-ph-iconbtn (32x32, icon-only, primary color,
    hover background) -- prompts-page-header.js reuses the identical button, so it lives there now
    instead of a page-local class. Docs stays local: no other page header has an icon+label utility

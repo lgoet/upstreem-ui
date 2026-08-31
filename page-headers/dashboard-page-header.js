@@ -193,7 +193,55 @@
         rb.setAttribute("data-dph-ic", "1");
         rb.innerHTML = UC.icon("refreshCw", 2);
       }
+
+      /* 4. Der Suchknopf ZWISCHEN den beiden. Er oeffnet die Palette (Quick Actions) -- und zwar
+            direkt: window.MiraQuickActions.open() ist ihr oeffentlicher Weg, den die Palette
+            selbst anbietet. Damit braucht dieser Knopf KEINEN Bubble-Workflow. Wer trotzdem einen
+            will (etwa um vorher etwas zu laden), setzt data-search-fn -- dann geht zusaetzlich ein
+            Ereignis heraus. Ohne Attribut geht keines, sonst stuende bei jedem Klick eine Warnung
+            in der Konsole ueber einen Workflow, den niemand haben wollte.
+            Eingebaut wird er hier und nicht in der Vorlage: bubble/*.html erreicht ein bestehendes
+            Element nicht mehr, und dieser Knopf soll mit dem Pin ankommen. */
+      var tools = root.querySelector(".dph-tools");
+      if (tools && !tools.querySelector(".dph-searchbtn")){
+        var sb = document.createElement("button");
+        sb.className = "dph-searchbtn up-ph-iconbtn";
+        sb.type = "button";
+        sb.setAttribute("aria-label", "Open Quick Actions");
+        sb.setAttribute("data-tip", "Quick Actions");
+        sb.innerHTML = UC.icon ? UC.icon("search", 2) : "";
+        /* Zwischen Docs und Refresh: vor dem Refresh-Knopf, wenn es einen gibt, sonst ans Ende. */
+        if (rb) tools.insertBefore(sb, rb); else tools.appendChild(sb);
+      }
     })();
+
+    var searchBtn = root.querySelector(".dph-searchbtn");
+    if (searchBtn){
+      searchBtn.addEventListener("click", function(){
+        /* Der Knopf DRUECKT Cmd+K (bzw. Strg+K) -- er ruft nicht die Palette auf. Der Unterschied
+           ist kein Geschmack: auf Cmd+K hoert quick-actions.js schon selbst (keydown am Dokument,
+           Capture-Phase), und dort steht auch, dass ein zweiter Druck wieder schliesst. Wer
+           stattdessen deren open() ruft, baut eine zweite Stelle, die entscheidet, was "Suche
+           oeffnen" heisst -- und die laeuft beim naechsten Mal auseinander.
+           Gesendet wird am FOKUSSIERTEN Element (nach dem Klick ist das dieser Knopf), nicht am
+           Dokument: so laeuft das Ereignis die Capture-Phase durch das Dokument, wie ein echter
+           Tastendruck. */
+        var mac = false;
+        try { mac = /Mac|iPhone|iPad|iPod/.test(navigator.platform || ""); } catch(e){}
+        var genommen = false;
+        try {
+          var ev = new KeyboardEvent("keydown", { key: "k", code: "KeyK",
+            metaKey: mac, ctrlKey: !mac, bubbles: true, cancelable: true });
+          (document.activeElement || document.body).dispatchEvent(ev);
+          /* preventDefault ist die Quittung: jemand hat den Druck genommen. */
+          genommen = ev.defaultPrevented;
+        } catch(e){}
+        /* Hoert niemand auf Cmd+K (die Palette ist auf dieser Seite nicht eingebaut), bleibt der
+           Weg nach Bubble -- dann ist die Warnung von UC.makeFire die richtige Auskunft: geklickt,
+           nichts erreicht. Und wer zusaetzlich einen Workflow will, setzt data-search-fn. */
+        if (root.getAttribute("data-search-fn") || !genommen) fire("data-search-fn", "dphSearch", {});
+      });
+    }
 
     var docsBtn = root.querySelector(".dph-docsbtn");
     if (docsBtn) docsBtn.addEventListener("click", function(){ fire("data-docs-fn", "dphDocs", {}); });

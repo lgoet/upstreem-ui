@@ -24,7 +24,14 @@
 window.__ev = []; window.__fehler = [];
 window.onerror = function(m){ window.__fehler.push(String(m)); };
 ["utfTopics","utfTopicsApply","utfNewTopic","umfModels","umkMarkets","ufbReset","udrChange"]
-  .forEach(function(n){ window["bubble_fn_"+n] = function(a,b){ window.__ev.push([n, a, b]); }; });
+  .forEach(function(n){
+    /* ?noreset laesst bubble_fn_ufbReset weg -- die Lage einer Seite, auf der dieser eine
+       Workflow nicht verdrahtet ist. Nachtraeglich loeschen geht NICHT: UC.resolveBubbleFn merkt
+       sich eine einmal gefundene Funktion (fuer Seiten mit iframes), und dann antwortet der
+       Zwischenspeicher weiter. Also von Anfang an nicht anlegen. */
+    if (n === "ufbReset" && String(location.search).indexOf("noreset") >= 0) return;
+    window["bubble_fn_"+n] = function(a,b){ window.__ev.push([n, a, b]); };
+  });
 try { localStorage.clear(); } catch(e){}
 </script>
 

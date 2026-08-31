@@ -868,12 +868,43 @@
          dann auch das Panel. Nach links nur, wenn rechts kein Platz ist (.is-flipleft, die Klasse
          setzt UC.makeSubmenu nach einer Messung). */
       left: calc(100% + var(--up-dd-pad) + var(--up-dd-gap) + 1px);
-      z-index: 2; min-width: 220px;
+      z-index: 2;
+      /* FESTE Breite. Vorher stand hier nur min-width: 220px, und eine absolut positionierte
+         Schale ohne Breite nimmt die ihres Inhalts -- ein langer Name (die eigenen Gruppierungen
+         der Topics) machte den Kasten breiter, und beim Wechsel der Zeile sprang die Breite.
+         Ueber ein Token, damit ein Aufrufer sie setzen kann, ohne die Regel zu ueberschreiben. */
+      width: var(--up-sub-w, 300px); max-width: calc(100vw - 24px);
       background: var(--vc-bg); border: 1px solid var(--vc-border);
       border-radius: var(--up-dd-radius); box-shadow: var(--up-dd-shadow); padding: var(--up-dd-pad);
       opacity: 0; transform: translateX(-4px) scale(0.985); pointer-events: none;
-      transition: opacity 110ms ease, transform 110ms ease;
+      /* top und height mit 200ms: EINE Schale fuer alle Zeilen rutscht beim Wechsel an ihren
+         neuen Platz statt aus- und wieder einzublenden (UC.makeSubmenu, cfg.shell). Ohne
+         Schalen-Modus stehen die beiden Uebergaenge still -- dort aendert sich weder top noch
+         height. */
+      transition: opacity 110ms ease, transform 110ms ease,
+                  top 200ms ease, height 200ms ease;
+      /* Der Inhalt wird beim Wechsel getauscht, waehrend die Hoehe noch laeuft. Ohne das
+         schaut er waehrend des Zuges unten heraus. */
+      overflow: hidden;
     }
+    /* ── Schalen-Modus: EIN Kasten, Huellen darin ────────────────────────────────────────────
+       Die Schale haengt am Panel und nicht an einer Zeile, also entscheidet ihre eigene Klasse
+       ueber Sichtbarkeit und Seite -- nicht die der Zeile. Beides steht hier zusaetzlich; die
+       Regeln fuer den Bau mit einem Kasten je Zeile bleiben unberuehrt. */
+    .up-submenu.is-shown { opacity: 1; transform: translateX(0) scale(1); pointer-events: auto; }
+    .up-submenu.is-flipleft {
+      left: auto; right: calc(100% + var(--up-dd-pad) + var(--up-dd-gap) + 1px);
+      transform: translateX(4px) scale(0.985);
+    }
+    .up-submenu.is-flipleft.is-shown { transform: translateX(0) scale(1); }
+    .up-submenu.is-flipleft::before {
+      left: auto; right: calc(-1 * (var(--up-dd-pad) + var(--up-dd-gap) + 3px));
+    }
+    /* Die Huellen: genau eine ist sichtbar. display und nicht opacity -- eine unsichtbare
+       Huelle im Fluss wuerde die Hoehe der Schale mitbestimmen, und die Hoehe ist hier die
+       Aussage. */
+    .up-subhost { display: none; }
+    .up-subhost.is-on { display: block; }
     .up-root[data-theme="dark"] .up-submenu { background: var(--up-menu-bg); border-color: #454545; }
     /* Offen wird ueber eine KLASSE, nicht ueber :hover. Der Unterschied ist nicht kosmetisch: die
        Zeile laesst sich auch anklicken und bleibt dann offen, bis eine andere Zeile oder ein Klick
@@ -917,15 +948,27 @@
        Seitenbreite und nicht an der Breite dieses Elements: ob seitlich Platz ist, entscheidet
        das Fenster. */
     .is-drill .up-submenu {
-      position: static; top: auto; right: auto; left: auto; min-width: 0; width: 100%;
+      position: static; min-width: 0;
       border: 0; border-radius: 0; box-shadow: none; padding: 0;
       background: transparent;
       transform: none; transition: opacity 110ms ease;
+      overflow: visible;
+    }
+    /* Doppelte Klasse: hier muessen die INLINE-Werte fallen, die der Schalen-Modus fuer den
+       Zug setzt (top und height in Pixeln). Ein !important waere der andere Weg und ist
+       verboten; eine zweite Klasse reicht, weil Inline nur von !important geschlagen wird --
+       darum setzt UC.makeSubmenu die beiden im Drill-Modus selbst zurueck, und diese Regel ist
+       das Netz fuer den Fall, dass die Stufe zwischen zwei Messungen wechselt. */
+    .is-drill .up-submenu.up-submenu {
+      top: auto; right: auto; left: auto; width: 100%; max-width: none; height: auto;
     }
     .is-drill .up-submenu::before { content: none; }
     /* Zu heisst hier WEG, nicht nur durchsichtig: ein Panel im Fluss belegt sonst seine Hoehe. */
     .is-drill .up-subwrap:not(.is-subopen) > .up-submenu { display: none; }
     .is-drill .up-subwrap.is-subopen > .up-submenu { opacity: 1; pointer-events: auto; }
+    /* Dasselbe fuer die Schale: zu heisst WEG, nicht bloss durchsichtig -- ein Kasten im Fluss
+       belegt sonst seine Hoehe unter den Zeilen. */
+    .is-drill .up-submenu:not(.is-shown) { display: none; }
     /* Und die Zeilen der ersten Ebene treten zurueck, solange man drin ist. */
     .is-drill.is-inside .up-subrow { display: none; }
     .is-drill.is-inside .up-subwrap:not(.is-subopen) { display: none; }

@@ -165,7 +165,14 @@
 .ufb-reset-x { margin-left: auto; flex: 0 0 16px; width: 16px; height: 16px; }
 .ufb-reset-x svg { width: 16px; height: 16px; display: block; }
 .ufb-div { height: 1px; background: var(--vc-border); margin: 6px 4px 2px; }
-.ufb-root:not(.has-filters) .ufb-reset, .ufb-root:not(.has-filters) .ufb-div { display: none; }
+/* Sie faehrt ein und aus, 200ms, statt ploetzlich da zu sein. Ueber grid-template-rows von 0fr
+   auf 1fr -- das ist der einzige Weg, eine Hoehe zu animieren, die man nicht kennt: max-height
+   braeuchte eine Zahl, und eine geratene Zahl ist bei zwei Zeilen Text die naechste Meldung.
+   Die innere Huelle schneidet ab (overflow) und darf schrumpfen (min-height: 0), sonst haelt der
+   Rasterplatz seine Inhaltshoehe. */
+.ufb-resetbox { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 200ms ease; }
+.ufb-resetin { overflow: hidden; min-height: 0; }
+.ufb-root.has-filters .ufb-resetbox { grid-template-rows: 1fr; }
 
 /* ---------- der eingezogene Filter ----------
    Das Panel des Filters IST der Inhalt des Untermenues. Sein Trigger ist weg (das ist meine
@@ -193,24 +200,30 @@
   border: 0; box-shadow: none; border-radius: 0; background: transparent;
   /* Breite kommt vom Untermenue, nicht von der eigenen Vorgabe des Filters. */
   width: 100%; min-width: 0; max-width: none;
+  /* UND kein eigenes Polster. Die Schale polstert schon mit --up-dd-pad (8px); das Panel des
+     Filters bringt dieselben 8 mit, und zwei Mal 8 sind die 16, die gemeldet wurden. Ein Polster
+     je Kasten, und der Kasten ist hier die Schale. */
+  padding: 0;
 }
 /* Und kein eigener Abstand: das Untermenue polstert schon. */
 .ufb-sub > .utf-root, .ufb-sub > .umf-root, .ufb-sub > .umk-root { margin: 0; }
 
-/* ── pointer-events NUR im offenen Untermenue ─────────────────────────────────────────────────
-   Das war der Fehler hinter "sobald man auf das Unterdropdown hovert, wechselt das Dropdown".
-   Gemessen mit elementFromPoint IM offenen Topics-Panel: 30px hinein und 120px tief lag dort
-   .umk-search-in, also das MARKT-Panel. Alle drei Untermenues haengen an je einer Zeile desselben
-   Panels und oeffnen darum an fast derselben Stelle -- sie liegen uebereinander. Die geschlossenen
-   sind unsichtbar (das Untermenue hat opacity: 0) und sollten fuer den Zeiger nicht da sein: es
-   hat pointer-events: none. Hier stand aber ein pointer-events: auto am Panel DES FILTERS, und
-   ein Kind darf das des Elternteils wieder aufheben. Damit waren die geschlossenen Panels
-   unsichtbar, aber trefbar -- der Zeiger landete im Markt-Panel, und meine Zeilenerkennung
-   meldete folgerichtig "markets".
-   Jetzt haengt es an .is-subopen: genau eines ist trefbar, und zwar das, das man sieht. */
-.up-subwrap.is-subopen > .ufb-sub .utf-menu,
-.up-subwrap.is-subopen > .ufb-sub .umf-menu,
-.up-subwrap.is-subopen > .ufb-sub .umk-menu { pointer-events: auto; }
+/* ── pointer-events ───────────────────────────────────────────────────────────────────────────
+   Hier stand einmal der Fehler hinter "sobald man auf das Unterdropdown hovert, wechselt das
+   Dropdown": drei Kaesten, einer je Zeile, alle an fast derselben Stelle und darum uebereinander.
+   Die geschlossenen waren unsichtbar (opacity: 0), aber trefbar, weil ein pointer-events: auto am
+   Panel DES FILTERS das pointer-events: none des Kastens wieder aufhob -- gemessen mit
+   elementFromPoint im offenen Topics-Panel: 120px tief lag dort .umk-search-in.
+   Mit EINER Schale kann das nicht mehr passieren: es gibt nur einen Kasten, und die Huellen der
+   geschlossenen Filter sind display: none. Die Regel bleibt trotzdem noetig -- das Panel des
+   Filters traegt in seiner eigenen CSS pointer-events: none, solange es "zu" ist, und "zu" ist es
+   hier immer (sein eigener Zustand wird absichtlich nicht angefasst). */
+.ufb-sub .up-subhost.is-on .utf-menu,
+.ufb-sub .up-subhost.is-on .umf-menu,
+.ufb-sub .up-subhost.is-on .umk-menu { pointer-events: auto; }
+/* Die Huelle traegt keine eigene Geometrie -- sie ist nur der Schalter zwischen den drei
+   Inhalten. */
+.ufb-host { min-width: 0; }
 
 /* ---------- nichts da ----------
    Solange kein Filter eingezogen ist, gibt es nichts zu oeffnen. Der Knopf bleibt sichtbar (er ist
@@ -221,7 +234,7 @@
 .ufb-empty { display: none; padding: 14px 10px; text-align: center; }
 .ufb-rows.is-empty .ufb-empty { display: block; }
 /* Ohne Zeilen gibt es auch nichts zurueckzusetzen. */
-.ufb-rows.is-empty ~ .ufb-div, .ufb-rows.is-empty ~ .ufb-reset { display: none; }
+.ufb-rows.is-empty ~ .ufb-resetbox { display: none; }
 
 /* ---------- schmal ----------
    Zwei Dinge aendern sich, und beide, weil auf einem Telefon anders gezeigt wird als geklickt:
@@ -233,6 +246,7 @@
       einem 360px-Telefon 248px breit ist, laesst rechts 100px Luft und schneidet trotzdem die
       Namen ab. */
 .ufb-menu.is-drill { width: min(320px, calc(100vw - 32px)); }
+/* Und die Schale ist im Hineingehen so breit wie das Panel -- das steht in core (.is-drill). */
 /* Und die Leiste selbst darf umbrechen: Knopf oben, Chips darunter. Ein Trennstrich zwischen
    zwei ZEILEN sagt nichts, also faellt er weg. Die Chips laufen dann waagerecht, damit eine lange
    Liste nicht "Clear All" aus dem Bild schiebt -- und ohne sichtbare Leiste, die in einer

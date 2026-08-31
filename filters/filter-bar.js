@@ -76,6 +76,8 @@
        selKey    Feld in getSelected(), das die Auswahl als CSV traegt
        optSel    die angehakte Zeile seiner Liste
        nameSel   der Name darin
+       clearSel  SEIN eigenes X am Trigger -- das Bedienelement, das seine Auswahl leert und
+                 danach sein Ereignis feuert. Das X am Chip klickt genau dieses an.
        evt       sein aufsteigendes DOM-Ereignis
        fnAttrs   seine EIGENEN Bubble-Kanaele [Attribut, Rueckfallname] -- nur fuer die Diagnose
                  unten gebraucht. Diese Komponente ruft davon NICHTS: die Filter feuern selbst,
@@ -87,17 +89,17 @@
   var FILTERS = [
     { key: "topics",  label: "Topics",  attr: "data-topics-instance",  rootSel: ".utf-root",
       ctrl: "__utfCtrl", selKey: "topic_ids",    opt: ".utf-opt", keyAttr: "data-id",
-      nameSel: ".utf-opt-name", evt: "utf-topics",  chip: "Topic",  icon: "tags",
+      nameSel: ".utf-opt-name", clearSel: ".utf-chev-x", evt: "utf-topics",  chip: "Topic",  icon: "tags",
       fnAttrs: [["data-topics-fn", "bubble_fn_utfTopics"], ["data-topics-apply-fn", null]],
       fnMarke: "utf" },
     { key: "models",  label: "Models",  attr: "data-models-instance",  rootSel: ".umf-root",
       ctrl: "__umfCtrl", selKey: "model_keys",   opt: ".umf-opt", keyAttr: "data-key",
-      nameSel: ".umf-opt-name", evt: "umf-models",  chip: "Model",  icon: "layers",
+      nameSel: ".umf-opt-name", clearSel: ".umf-chev-x", evt: "umf-models",  chip: "Model",  icon: "layers",
       fnAttrs: [["data-models-fn", "bubble_fn_umfModels"], ["data-models-apply-fn", null]],
       fnMarke: "umf" },
     { key: "markets", label: "Markets", attr: "data-markets-instance", rootSel: ".umk-root",
       ctrl: "__umkCtrl", selKey: "market_codes", opt: ".umk-opt", keyAttr: "data-key",
-      nameSel: ".umk-opt-name", evt: "umk-markets", chip: "Market", icon: "mapPin",
+      nameSel: ".umk-opt-name", clearSel: ".umk-chev-x", evt: "umk-markets", chip: "Market", icon: "mapPin",
       fnAttrs: [["data-markets-fn", "bubble_fn_umkMarkets"], ["data-markets-apply-fn", null]],
       fnMarke: "umk" }
   ];
@@ -272,11 +274,28 @@
                 UC.icon("chevronLeft", 2) + '<span class="ufb-back-lbl">Back</span>' +
               '</button>' +
               '<div class="ufb-rows"></div>' +
-              '<div class="ufb-div"></div>' +
-              '<button class="up-optrow ufb-reset" type="button" data-ufb-reset>' +
-                '<span>Reset Filters</span>' +
-                '<span class="ufb-reset-x">' + UC.icon("x", 2.2) + '</span>' +
-              '</button>' +
+              /* Reset in einer Huelle, die von 0 auf ihre Hoehe faehrt (200ms). Vorher stand hier
+                 display: none -- und daran gibt es nichts zu animieren, die Zeile war einfach
+                 ploetzlich da. */
+              '<div class="ufb-resetbox">' +
+                '<div class="ufb-resetin">' +
+                  '<div class="ufb-div"></div>' +
+                  '<button class="up-optrow ufb-reset" type="button" data-ufb-reset>' +
+                    '<span>Reset Filters</span>' +
+                    '<span class="ufb-reset-x">' + UC.icon("x", 2.2) + '</span>' +
+                  '</button>' +
+                '</div>' +
+              '</div>' +
+              /* EINE Schale fuer alle drei Filter, nicht eine je Zeile. Sie rueckt an die offene
+                 Zeile und nimmt deren Hoehe an -- der weisse Kasten bleibt beim Wechsel sichtbar
+                 und rutscht, statt aus- und wieder einzublenden. Das Verhalten steht in
+                 UC.makeSubmenu (cfg.shell), die Huellen bleiben, wo sie sind: umgehaengt wird
+                 NICHTS, denn darin liegen die eingezogenen Filterwurzeln. */
+              '<div class="up-submenu ufb-sub">' +
+                liste.map(function (f) {
+                  return '<div class="up-subhost ufb-host" data-sub-host="' + esc(f.key) + '"></div>';
+                }).join("") +
+              '</div>' +
             '</div>' +
           '</span>' +
           '<span class="ufb-sep" aria-hidden="true"></span>' +
@@ -288,6 +307,7 @@
       var elMenu  = root.querySelector(".ufb-menu");
       var elMore  = root.querySelector(".ufb-more");
       var elRows  = root.querySelector(".ufb-rows");
+      var elSub   = root.querySelector(".ufb-sub");
       var elChips = root.querySelector(".ufb-chips");
 
       var fire = UC.makeFire(root, { label: "filter-bar", eventPrefix: "ufb" });
@@ -337,7 +357,6 @@
                      '</span>' +
                      '<span class="ufb-caret">' + UC.icon("chevronRight", 2) + '</span>' +
                    '</button>' +
-                   '<div class="up-submenu ufb-sub" data-sub-host="' + esc(f.key) + '"></div>' +
                  '</div>';
         }).join("");
         /* Der Hinweis steht IMMER im Markup und wird ueber eine Klasse gezeigt: er greift nicht nur
@@ -377,7 +396,7 @@
         if (!document.contains(root)) return;
         var etwasNeu = false;
         liste.forEach(function (f) {
-          var host = elRows.querySelector('[data-sub-host="' + f.key + '"]');
+          var host = elSub && elSub.querySelector('[data-sub-host="' + f.key + '"]');
           if (!host) return;
           var da = eingezogen[f.key];
           if (da && document.contains(da) && da.parentNode === host) return;   /* steht schon */
@@ -619,6 +638,8 @@
          kommen komplett aus UC.makeSubmenu. */
       var sub = UC.makeSubmenu({
         panel: elMenu, rowSel: ".up-subwrap", keyAttr: "data-sub", drill: schmal,
+        /* EIN Kasten fuer alle Zeilen -- siehe die Schale im Markup oben. */
+        shell: elSub, hostAttr: "data-sub-host",
         onOpen: function (key) {
           var f = byKey(key);
           if (f) spiegeln(f);
@@ -649,10 +670,44 @@
       /* EINEN Filter leeren -- das X am Chip. Derselbe stille Weg wie bei Clear All, und dasselbe
          Ereignis: der Workflow dahinter laedt neu, und ihn nach action zu verzweigen ist die
          Entscheidung der Bubble-Seite. Der Name des Filters steht mit drin, damit sie es kann. */
+      /* Erreicht dieser Name auf DIESER Seite einen Workflow? Dieselbe Aufloesung wie in
+         UC.makeFire (erst wie eingetragen, dann mit dem Praefix), nur ohne zu senden. Gebraucht
+         fuer die Entscheidung unten: ein Reset, das nichts erreicht, darf nicht die Anzeige
+         leeren und die Tabelle stehen lassen. */
+      function erreichbar(name) {
+        if (!name) return false;
+        try {
+          if (typeof UC.resolveBubbleFn(name) === "function") return true;
+          if (name.indexOf("bubble_fn_") !== 0 &&
+              typeof UC.resolveBubbleFn("bubble_fn_" + name) === "function") return true;
+        } catch (e) {}
+        return false;
+      }
+      function resetName() { return root.getAttribute("data-reset-fn") || "ufbReset"; }
+
+      /* EINEN Filter ueber SEINEN eigenen Weg leeren: das X am Chip klickt das X am Trigger des
+         Filters an -- dasselbe Bedienelement, das der Nutzer sonst selbst trifft. Der Filter
+         raeumt seine Auswahl auf und feuert danach SEIN Ereignis, also laedt die Seite genau so
+         neu wie bei jedem anderen Abwaehlen. Damit braucht das X am Chip KEINEN eigenen
+         Workflow -- gefragt wurde genau das ("kann das nicht out of the box laufen").
+         Dass der Trigger hier display: none ist (meine Zeile IST der Trigger), stoert nicht: ein
+         Klick per JS haengt nicht an der Sichtbarkeit. Und es ist derselbe Griff, mit dem diese
+         Komponente schon das Suchfeld des Filters leert.
+         has-sel wird mitgeprueft, weil der Filter selbst darauf prueft -- ohne die Klasse waere
+         der Klick ein Klick auf den Trigger und wuerde sein Panel umschalten. */
       function einenLeeren(key) {
         var f = byKey(key);
         if (!f) return;
         var w = eingezogen[f.key];
+        var x = w && f.clearSel && w.querySelector(f.clearSel);
+        if (x && w.classList.contains("has-sel")) {
+          try { x.click(); } catch (e) {}
+          spiegeln(f);
+          render();
+          return;
+        }
+        /* Kein X erreichbar (der Filter steckt gar nicht in dieser Leiste): dann der stille Weg
+           und das eigene Ereignis. */
         var c = w && w[f.ctrl];
         if (c && typeof c.setSelected === "function") { try { c.setSelected(""); } catch (e) {} }
         spiegeln(f);
@@ -660,18 +715,36 @@
         fire("data-reset-fn", "ufbReset", { action: "clear_one", filter: f.key });
       }
       function alleLeeren() {
-        /* Still: jeder Filter bekommt setSelected("") -- das raeumt die Auswahl auf und laesst die
-           LISTE stehen (resetXFilter wuerde auch die Liste wegwerfen, das ist der Weg fuer einen
-           Team- oder Projektwechsel und hier falsch). Und es schickt nichts: drei Filter-Ereignisse
-           plus dieses eine wuerden dieselbe Abfrage viermal anstossen. */
-        liste.forEach(function (f) {
-          var w = eingezogen[f.key];
-          var c = w && w[f.ctrl];
-          if (c && typeof c.setSelected === "function") { try { c.setSelected(""); } catch (e) {} }
-        });
+        /* Der Weg: still leeren und EIN Ereignis. setSelected("") raeumt die Auswahl auf und laesst
+           die LISTE stehen (resetXFilter wuerde auch die Liste wegwerfen -- das ist der Weg fuer
+           einen Team- oder Projektwechsel und hier falsch), und es schickt nichts. Drei
+           Filter-Ereignisse plus dieses eine wuerden dieselbe Abfrage viermal anstossen. */
+        if (erreichbar(resetName())) {
+          liste.forEach(function (f) {
+            var w = eingezogen[f.key];
+            var c = w && w[f.ctrl];
+            if (c && typeof c.setSelected === "function") { try { c.setSelected(""); } catch (e) {} }
+          });
+          spiegelnAlle();
+          render();
+          fire("data-reset-fn", "ufbReset", { action: "clear_all" });
+          return;
+        }
+        /* RUECKFALL, wenn dieser eine Workflow (noch) nicht verdrahtet ist: ueber die eigenen
+           Wege der Filter, einer nach dem anderen. Dann laedt die Seite je Filter neu statt
+           einmal -- das ist der Preis, und er ist deutlich kleiner als der andere Ausgang: eine
+           leere Filterleiste ueber einer Tabelle, die noch gefiltert ist. Sagt es einmal, damit
+           der Grund nicht geraten werden muss. */
+        if (!gemeldet.__reset) {
+          gemeldet.__reset = true;
+          if (window.console) console.info("[filter-bar] " + instanceId + ': "' + resetName() +
+            '" erreicht auf dieser Seite keinen Workflow. Clear All laeuft darum ueber die ' +
+            "eigenen Wege der Filter -- das wirkt, laedt aber je Filter einmal neu. Ein " +
+            "JavaScript-to-Bubble-Element mit diesem Namen macht daraus einen Aufruf.");
+        }
+        liste.forEach(function (f) { einenLeeren(f.key); });
         spiegelnAlle();
         render();
-        fire("data-reset-fn", "ufbReset", { action: "clear_all" });
       }
       root.addEventListener("click", function (e) {
         if (!e.target.closest) return;
