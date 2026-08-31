@@ -185,44 +185,14 @@
 
   function makeController(root){
     var UC = window.UpstreemCore;
-    /* Die Uebersetzung. Der Schluessel IST der englische Text (siehe core.js, addMessages) -- eine
-       Beschriftung ohne Eintrag bleibt damit richtiges Englisch und wird nie zu einem Kuerzel. */
-    var t = UC.t || function (x) { return x; };
-    /* Die deutschen Beschriftungen DIESER Datei. Sie stehen hier und nicht in core: jede Komponente
-       bringt ihre eigenen mit, dann kann die Uebersetzung Datei fuer Datei laufen, ohne dass eine
-       1000-Zeilen-Tabelle in core entsteht, die niemand mehr einer Stelle zuordnet.
-       NICHT uebersetzt: "Mira" (Eigenname) und "Citations" -- der Begriff steht als Fachwort auch
-       in Exporten, Filtern und der API; uebersetzt wird die SPALTE, nicht der Wert (siehe die Linie
-       im Kopf von core.js). "Prompt Insights" und "Prompt Research" behalten "Prompt" aus demselben
-       Grund: das Wort ist in dieser App ein Datentyp. */
-    if (UC.addMessages) UC.addMessages("de", {
-      "Database": "Datenbank",
-      "Workspace": "Arbeitsbereich",
-      "Organisation": "Organisation",
-      "Dashboard": "Übersicht",
-      "Prompt Insights": "Prompt-Auswertung",
-      "Citations": "Citations",
-      "Brands": "Marken",
-      "Performance": "Leistung",
-      "Opportunities": "Chancen",
-      "Prompt Research": "Prompt-Recherche",
-      "Mira": "Mira",
-      "Teams": "Teams",
-      "Settings": "Einstellungen",
-      "Account Settings": "Kontoeinstellungen",
-      "Your Brand": "Deine Marke",
-      "Team Organisation": "Teamverwaltung",
-      /* NICHT auch "Einstellungen": "Settings" oben in der Navigation heisst schon so, und der
-         ganze Grund fuer den Namen "Preferences" war, dass es zwei verschiedene Dinge sind.
-         Auf Deutsch traegt dieses hier denselben Namen wie sein Fenstertitel. */
-      "Preferences": "Meine Einstellungen",
-      "Billing": "Abrechnung",
-      "Theme": "Design",
-      "Light": "Hell",
-      "Dark": "Dunkel",
-      "System": "System",
-      "Log out": "Abmelden"
-    });
+    /* Hier stand ein deutscher Katalog fuer die Navigation. Er ist WEG, auf Ansage: die Seitenleiste
+       bleibt englisch. Der Grund ist gut -- die Punkte sind die Landkarte der App, und wer sie
+       einmal gelernt hat, sucht "Prompt Insights" und nicht "Prompt-Auswertung". Dazu waren zwei
+       Uebersetzungen ohnehin falsch: "Domains", "URLs", "Brands" und "Prompts" sind die Namen der
+       Objekte in dieser App und bleiben ueberall englisch, auch in uebersetzten Saetzen.
+       t() bleibt trotzdem um jede Beschriftung: ohne Katalogeintrag gibt es den englischen Text
+       unveraendert zurueck, und wenn hier je etwas uebersetzt werden soll, ist es ein Eintrag und
+       keine Umbaustelle. */
     var esc = UC.esc;
     var instanceId = root.getAttribute("data-instance") || "default";
     /* Erst hier, nicht auf Modulebene: UC steht beim Laden dieser Datei noch nicht fest. */

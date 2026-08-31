@@ -111,6 +111,15 @@
   position: sticky; left: 0; z-index: 2; background: var(--vc-bg);
 }
 .uhm-corner { position: sticky; left: 0; z-index: 3; background: var(--vc-bg); }
+/* Im Dunkeln OHNE eigene Flaeche: --vc-bg ist dort #1b1b1b und liegt HELLER als der Seitengrund
+   (#121212), die Matrix sass also als hellerer Block auf der Seite. Nur die MATRIX -- der
+   Detailbereich darunter ist ein eigenes Element (performance-detail) mit eigener CSS.
+   Die klebenden Kopfzellen bleiben DECKEND, und das ist keine Kosmetik: eine durchsichtige
+   sticky-Zelle laesst beim Querscrollen die Markenspalten unter sich durchlaufen. Sie nehmen
+   deshalb den Grund der SEITE statt den des Kastens, den es jetzt nicht mehr gibt. */
+.up-root[data-theme="dark"] .uhm-box { background: transparent; }
+.up-root[data-theme="dark"] .uhm-rowhead,
+.up-root[data-theme="dark"] .uhm-corner { background: var(--up-surface, #121212); }
 .uhm-rowhead .up-topicchip { max-width: 100%; }
 
 /* ---------- cells ----------
