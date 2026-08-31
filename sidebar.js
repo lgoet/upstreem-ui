@@ -864,6 +864,74 @@
     function menuZu(){ popTeam.close(); popAcc.close(); }
 
     /* ---------------- Klicks ---------------- */
+      /* ---- Das Einstellungsfenster bei Bedarf nachladen ----------------------------------------
+       Es soll KEINE Zeile in Bubble kosten. Der Loader eines Elements steht als Markup IN Bubble
+       und ist von hier unerreichbar -- diese Datei aber kommt vom Pin. Also holt sie sich das
+       Fenster selbst, und zwar erst beim ersten Klick: wer es nie oeffnet, laedt es nie.
+
+       Die Adresse wird NICHT geraten. window.__upAssetsLoaded haelt die volle URL jeder schon
+       geladenen Datei samt Pin (der Loader jedes Elements schreibt sie dort ein), und die Basis
+       kommt ausdruecklich von core.js oder core.css: die liegen im Wurzelverzeichnis des Repos.
+       Aus einer beliebigen Datei zu rechnen waere falsch -- date-range.js liegt in filters/, und
+       daraus entstuende .../filters/preferences.js.
+       Damit laedt das Fenster garantiert vom SELBEN Commit wie core.js. Eine Seite, die zur
+       Haelfte auf einem anderen Stand laeuft, ist genau der Fehler, den der Pin verhindern soll.
+
+       Steht in der Ablage nichts (ein Harness mit direkten script-Tags), passiert nichts: dann ist
+       preferences.js entweder schon da oder auf dieser Seite nicht vorgesehen. Geraten wird nie. */
+    var fensterLaedt = false;
+    function fensterOeffnen(){
+      if (typeof window.openUpstreemPreferences === "function"){
+        try { window.openUpstreemPreferences(); } catch (e) {}
+        return;
+      }
+      if (fensterLaedt) return;
+      var L = window.__upAssetsLoaded;
+      var quelle = L && (L["core.js"] || L["core.css"]);
+      var m = String(quelle || "").match(/^(https?:\/\/.*\/)[^\/]+$/);
+      if (!m){
+        if (window.console) console.info("[sidebar] Preferences: preferences.js ist nicht geladen " +
+          "und die Basis-Adresse steht nicht in __upAssetsLoaded -- es wird nichts nachgeladen. " +
+          "Auf einer Bubble-Seite kommt sie vom Loader; in einem Harness bitte das Skript selbst " +
+          "einsetzen.");
+        return;
+      }
+      var basis = m[1];
+      fensterLaedt = true;
+      /* Ueber DIESELBE Ablage entdoppeln, die der Loader benutzt: traegt eine Vorlage die beiden
+         Dateien schon in ihrer Liste, wird hier nichts ein zweites Mal geholt. */
+      if (!L["preferences.css"]){
+        L["preferences.css"] = basis + "preferences.css";
+        var l = document.createElement("link");
+        l.rel = "stylesheet"; l.href = L["preferences.css"];
+        document.head.appendChild(l);
+      }
+      if (L["preferences.js"]){
+        /* Schon unterwegs, nur noch nicht fertig -- dann kommt es von selbst, und der naechste
+           Klick oeffnet. */
+        fensterLaedt = false;
+        return;
+      }
+      L["preferences.js"] = basis + "preferences.js";
+      var sc = document.createElement("script");
+      sc.src = L["preferences.js"]; sc.async = false;
+      sc.onload = function(){
+        fensterLaedt = false;
+        if (typeof window.openUpstreemPreferences === "function"){
+          try { window.openUpstreemPreferences(); } catch (e) {}
+        }
+      };
+      sc.onerror = function(){
+        fensterLaedt = false;
+        /* Der Eintrag muss WEG, sonst gilt die Datei fuer immer als geladen und ein zweiter Klick
+           versucht es nie wieder. */
+        try { delete L["preferences.js"]; } catch (e) {}
+        if (window.console) console.warn("[sidebar] Preferences: " + sc.src + " liess sich nicht " +
+          "laden. Pin purgen (siehe CLAUDE.md 4) und noch einmal versuchen.");
+      };
+      document.head.appendChild(sc);
+    }
+
     bar.addEventListener("click", function(e){
       var t = e.target;
       if (!t || !t.closest) return;
@@ -928,15 +996,13 @@
              Cmd+K drueckt. Das Ereignis geht trotzdem hinaus: ein Workflow kann zusaetzlich
              reagieren (etwa das Profil nachladen), und ohne preferences.js bleibt der Punkt
              wenigstens verdrahtet. */
-          if (key === "prefs" && typeof window.openUpstreemPreferences === "function") {
-            try { window.openUpstreemPreferences(); } catch (e) {}
-          }
+          if (key === "prefs") fensterOeffnen();
           fire("data-account-fn", "usnAccount", { action: key });
         }
         return;
       }
 
-      var hd = t.closest("[data-head]");
+    var hd = t.closest("[data-head]");
       if (hd){ gruppeSchalten(hd.getAttribute("data-head")); return; }
 
       /* Das X liegt IM Pin-Knopf -- also zuerst pruefen, sonst loest beides aus. */

@@ -1,0 +1,62 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Harness: Sidebar laedt das Einstellungsfenster selbst nach</title>
+<!-- Wozu: beweisen, dass in Bubble KEINE Zeile noetig ist. preferences.css und preferences.js
+     werden hier ABSICHTLICH NICHT eingesetzt -- sidebar.js muss sie sich selbst holen, und zwar
+     aus derselben Basis-Adresse, unter der core.js liegt.
+     __upAssetsLoaded steht hier von Hand, weil auf einer Bubble-Seite der Loader des Elements es
+     schreibt: dieselben zwei Eintraege, dieselben absoluten Adressen. -->
+<script>
+window.__upAssetsLoaded = {
+  "core.css": location.origin + "/core.css",
+  "core.js":  location.origin + "/core.js"
+};
+window.__fehler = [];
+window.onerror = function(m){ window.__fehler.push(String(m)); };
+["usnAccount","usnTheme","usnLogout","usnTeam","usnNewTeam"].forEach(function(n){
+  window["bubble_fn_"+n] = function(a){ (window.__ev = window.__ev || []).push([n, a]); };
+});
+try { localStorage.clear(); } catch(e){}
+</script>
+<link rel="stylesheet" href="core.css">
+<link rel="stylesheet" href="sidebar.css">
+<style>
+  html, body { margin:0; height:100%; font-family: Geist, system-ui, sans-serif; }
+  #main { min-height:100%; padding-left: var(--up-sidebar-w, 250px); box-sizing:border-box; }
+  #inner { padding:24px; }
+  pre { font:11px/1.5 ui-monospace,monospace; background:#111; color:#eee; padding:10px; white-space:pre-wrap; }
+</style>
+<body>
+<div class="up-root usn-root"
+     data-instance="s1"
+     data-cdn-pin=""
+     data-isdark="no"
+     data-team-id="t1"
+     data-user="aea6e317-d901-419b-b2b2-5ca3573ea2f5"
+     data-active="dashboard"
+     data-account-fn="bubble_fn_usnAccount"
+     data-theme-fn="bubble_fn_usnTheme"
+     data-logout-fn="bubble_fn_usnLogout"
+     data-team-fn="bubble_fn_usnTeam"
+     data-newteam-fn="bubble_fn_usnNewTeam"></div>
+<div id="main"><div id="inner">
+  <pre id="out">bereit</pre>
+</div></div>
+<script src="core.js"></script>
+<script src="sidebar.js"></script>
+<script>
+window.__zustand = function(){
+  var back = document.querySelector(".ums-backdrop");
+  return {
+    prefsJsGeladen: typeof window.openUpstreemPreferences,
+    inDerAblage: Object.keys(window.__upAssetsLoaded),
+    cssImDokument: [].some.call(document.styleSheets, function(ss){
+      return String(ss.href || "").indexOf("preferences.css") >= 0; }),
+    fensterDa: !!back,
+    fensterOffen: !!(back && back.classList.contains("is-shown")),
+    titel: back ? (back.querySelector(".ums-title") || {}).textContent : null,
+    fehler: window.__fehler
+  };
+};
+document.getElementById("out").textContent = "geladen — window.__zustand()";
+</script>
