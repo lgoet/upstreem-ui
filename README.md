@@ -22,6 +22,9 @@ upstreem-ui/
 ├─ topcitations-dashboard.css/.js  ausgeliefert (CDN) — Prefix tcd-
 ├─ citations-combo-chart.css/.js   ausgeliefert (CDN) — Prefix combo-
 ├─ topics-manager.css/.js     ausgeliefert (CDN) — Prefix utm-
+├─ teams.css/.js              ausgeliefert (CDN) — Prefix uts-. Seitenkopf UND Tabelle in
+│                             EINEM Element: auf die Teams-Seite kommt KEIN eigenes
+│                             page-headers/*-Element dazu.
 ├─ quick-actions.css/.js      ausgeliefert (CDN) — Prefix mqa- (eigenes Token-Set, siehe unten)
 ├─ landing-hero.css/.js       ausgeliefert (CDN) — Prefix ulh-, für die Landingpage in Framer.
 │                             Setzt die ECHTEN Komponenten in ein Fenster; das Markup dafür
@@ -36,7 +39,7 @@ upstreem-ui/
 
 - **Root** (`core.*`, `<komponente>.*`): wird von jsDelivr ausgeliefert; der
   Pfad muss zur CDN-URL passen (`@main/core.css` = Root). Prefixe: geteilt `up-`,
-  komponenten-spezifisch `uut-` / `udt-` / `upt-` / `vot-` / `tcd-` / `combo-` / `utm-`.
+  komponenten-spezifisch `uut-` / `udt-` / `upt-` / `vot-` / `tcd-` / `combo-` / `utm-` / `uts-`.
   `quick-actions` ist die eine Ausnahme (siehe unten).
 - **`core.js`** stellt `window.UpstreemCore` (kurz `UC`) bereit: Farbtabellen, Utils, Icons,
   `resolveBubbleFn`, Stores, `watchRoots`/`makeMount`, und die Kits `makeTooltips`, `makeFire`,

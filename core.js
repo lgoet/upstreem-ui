@@ -5217,7 +5217,22 @@
      der Bewegung niemanden interessiert, und beide messen dabei viel. Nach 220ms ohne weiteres
      Ereignis gilt die Bewegung als beendet, und wer pausiert hat, laeuft dann einmal.
      Der Zuhoerer steht frueh und passiv: er darf nichts kosten. */
-  var _zieht = 0;
+  /* -Infinity und NICHT 0. Mit 0 hiess zieht() "es wird gerade gezogen" fuer die ersten 220ms
+     JEDER Seite: performance.now() zaehlt ab dem Seitenaufruf, ist in dieser Zeit also selbst
+     kleiner als 220, und 0 als "noch nie gezogen" war damit nicht von "vor einem Augenblick
+     gezogen" zu unterscheiden.
+     Was das gekostet hat, und warum es nicht auffiel: die drei Stellen, die waehrend einer
+     Ziehbewegung pausieren (segLauf, runAll, unclipAncestors), pausierten damit auch beim Laden.
+     Zwei davon holen es selbst nach -- runAll plant sich in 250ms neu, segLauf haengt am
+     MutationObserver. unclipAncestors NICHT: es laeuft nur aus applySticky(), und das rufen die
+     Komponenten beim Init und danach nur noch bei einem Fenster-Resize. Auf einer Seite, die
+     niemand in der Groesse zieht, blieb der zu kurze Bubble-Wrapper darum FUER IMMER geklemmt --
+     und damit klebte der Spaltenkopf am falschen Scrollcontainer (gemessen im Harness: Tabelle
+     ab 220px, Spaltenkopf bei 390px, also mitten in den Zeilen) und Dropdowns der Kopfzeile
+     wurden abgeschnitten. Gegentest: derselbe Aufbau mit unclipAncestors von Hand gerufen
+     setzte den Kopf sofort auf 358, also genau an die Oberkante der Tabelle.
+     Eingeschleppt mit cceae74, der Runde, die diese drei Pausen eingebaut hat. */
+  var _zieht = -Infinity;
   function zieht(){ return (((window.performance && performance.now) ? performance.now() : +new Date()) - _zieht) < 220; }
   window.addEventListener("resize", function(){
     _zieht = (window.performance && performance.now) ? performance.now() : +new Date();

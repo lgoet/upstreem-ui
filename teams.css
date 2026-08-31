@@ -1,0 +1,154 @@
+/* upstreem teams.css — "Teams" (Praefix uts). Braucht core.css.
+
+   Seitenkopf, Kopfzeile, Suche, Zahnrad-Menue, Tabellenrahmen, Leerzustand, Fuss und die
+   Sticky-Mechanik kommen KOMPLETT aus core: .up-ph-* / .up-head / .up-search / .up-cols /
+   .up-table / .up-thead / .up-row / .up-td / .up-empty / .up-foot / .up-sticky. Hier steht nur,
+   was diese Tabelle wirklich eigen hat: der Abstand unter dem Seitenkopf, die zweizeilige
+   Teamzelle, die Kontingentzelle (91 / 150) und der Schmalzustand des Wechselknopfes.
+
+   Was hier BEWUSST NICHT steht, weil es in core schon fertig liegt:
+
+     grid-template-columns   schreibt UC.makeColumns als --up-cols auf die Wurzel, .up-thead und
+                             .up-row lesen es. Eine eigene Rasterrechnung waere eine zweite
+                             Mechanik neben der, die jede andere Tabelle benutzt.
+     Tarif-Pille             .up-sent samt .up-sent-dot und .up-sent-val. Feste 24px, der Punkt
+                             ist ein abgerundetes Quadrat. Nur die FARBE des Punktes kommt von
+                             hier, und die als Inline-Wert je Zeile -- an der Geometrie wird
+                             nichts angefasst, sonst stoesst der Text an den Rahmen (CLAUDE.md 1).
+     Wechselknopf            .up-export, derselbe gefuellte Knopf wie "Export" in den Tabellen
+                             und "+ Add Brand" im Seitenkopf. Er bringt Hoehe, Radius, Polsterung,
+                             Schrift und den Hover mit; unten steht nur der schmale Zustand.
+     "Active"-Pille          ebenfalls .up-sent, mit --vt-up als Punktfarbe. Das ist die Farbe,
+                             die in dieser App "aufwaerts, gut" heisst.
+     Teamlogo                .up-logo-box mit .up-logo-ltr als Rueckfall -- genau wie der
+                             Teamwaehler in der Seitenleiste. OHNE .up-fav: das waere der
+                             Globus-Rueckfall fuer eine SEITE, und ein Team ist eine Marke. Der
+                             Anfangsbuchstabe ist dort eine Aussage, ein Globus nicht.
+*/
+
+/* ---------- Seitenkopf ----------
+   Die Komponente traegt ihren Seitenkopf selbst (siehe Kopf von teams.js). --uts-head-top ist
+   der Abstand ueber der Meta-Zeile und laesst sich per data-head-top je Platzierung setzen --
+   dieselbe Schraube wie --upr-head-top in prompt-research, aus demselben Grund: manche
+   Bubble-Container bringen ihr eigenes Polster mit, andere nicht.
+   Unten 32px, weil 32 in dieser App der Abstand ZWISCHEN ZWEI BLOECKEN ist. .up-head bringt
+   darunter noch seine eigenen 16px zur Tabelle mit. */
+.uts-root { --uts-head-top: 16px; }
+.uts-root .uts-pagehead { padding: var(--uts-head-top) 0 32px; }
+
+/* Der Seitenkopf muss UEBER dem Deckstreifen liegen, den core unter die klebende Werkzeugleiste
+   malt (.up-sticky .up-head::before): ein deckender Streifen von der Hoehe --up-sticky-top,
+   171px in dieser App, NACH OBEN. Sein Zweck ist richtig -- er verdeckt die Zeilen, die beim
+   Scrollen hinter der halbtransparenten Seiten-Topbar hochlaufen. In jeder anderen Tabelle ist
+   .up-head das erste Kind der Wurzel, der Streifen liegt also ausserhalb der Komponente und
+   faellt nicht auf. HIER steht der Seitenkopf davor, und der Streifen malte ihn vollstaendig zu.
+   Gemessen, nicht vermutet: elementFromPoint lieferte ueber Ueberschrift, Beschreibung UND
+   Meta-Zeile jeweils .up-head. Gegentest _h_uts_kontroll.html -- dort passiert dasselbe mit einem
+   Seitenkopf als eigenem Element, der Fall ist also nicht auf diese Komponente beschraenkt.
+
+   z-index 7 gegen die 6 der Werkzeugleiste, und dieselbe Farbe wie der Streifen (--up-surface,
+   die Flaechenfarbe der Seite). Der Kopf scrollt dadurch nichts anders als vorher: sobald die
+   Leiste klebt, liegt er im Bereich des Streifens, traegt dessen Farbe und laesst darum ebenso
+   keine Zeile durch.
+   pointer-events dazu: der Streifen ist reine Dekoration, hat aber die Klicks im ganzen Kopf
+   gefangen -- der "Create a new Team"-Knopf war nicht erreichbar. */
+.uts-root .uts-pagehead { position: relative; z-index: 7; background: var(--up-surface); }
+.uts-root.up-sticky .up-head::before { pointer-events: none; }
+
+/* ---------- Teamzelle ----------
+   Zwei Zeilen: Name, darunter die Domain als Verweis. Der Abstand 5px ist der der anderen
+   zweizeiligen Zellen der App (.udt-dom-wrap, .uut-url-wrap) -- gleiche Zelle, gleiche Zahl. */
+.uts-teamwrap { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.uts-name { font-size: 13.5px; font-weight: 500; color: var(--vc-text); letter-spacing: -0.01em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Das aktive Team wird an der Pille rechts erkannt, nicht am Namen -- eine zweite Auszeichnung
+   fuer dieselbe Aussage laesst die Zeile lauter aussehen als sie ist. */
+
+/* Die Domain ist ein echtes <a> und kein Knopf mit window.open: derselbe Aufbau wie
+   .ube-domain im Brand-Editor. Ein Verweis laesst sich mit der Mitteltaste, mit Cmd und aus dem
+   Kontextmenue oeffnen, ein Knopf nicht.
+   Das Zeichen dahinter erscheint erst beim Ueberfahren der ZEILE, belegt seinen Platz aber
+   immer: erschiene es aus dem Nichts, wuerde der Domaintext bei jedem Hover zur Seite ruecken. */
+.uts-dom { display: inline-flex; align-items: center; gap: 4px; min-width: 0; max-width: 100%;
+  font-size: 12px; color: var(--vc-muted); text-decoration: none; }
+.uts-dom-txt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.uts-dom:hover { color: var(--vc-text); }
+.uts-dom:hover .uts-dom-txt { text-decoration: underline; }
+.uts-dom-ic { width: 12px; height: 12px; flex: 0 0 12px; color: var(--vc-third);
+  opacity: 0; transition: opacity .14s ease; }
+.uts-dom-ic svg { width: 12px; height: 12px; display: block; }
+.up-row:hover .uts-dom-ic, .uts-dom:focus-visible .uts-dom-ic { opacity: 1; }
+.uts-dom:hover .uts-dom-ic { color: var(--vc-text); }
+/* Ohne Domain steht der Strich aus core (.up-num.is-empty), wie in jeder anderen Tabelle. */
+
+/* ---------- Kontingent (91 / 150) ----------
+   Die Zahl selbst ist .up-num aus core (14px, tabellarische Ziffern) -- nur die Grenze dahinter
+   ist eigen, und die ist bewusst kleiner und dritter Farbe: sie ist der Bezug, nicht der Wert.
+   baseline und nicht center, damit Zahl und Grenze auf einer Linie sitzen. */
+.uts-quota { display: inline-flex; align-items: baseline; gap: 4px; min-width: 0; }
+.uts-quota-lim { font-size: 13px; font-weight: 500; color: var(--vc-third);
+  font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* UEBER der Grenze. Kommt in den echten Daten vor (ein Team mit 12 von 10 Marken), und ohne
+   Auszeichnung liest sich "12 / 10" wie ein Tippfehler statt wie ein Zustand, der Handlung
+   braucht. --vt-down ist die Farbe, die in dieser App "abwaerts, schlecht" heisst. */
+.uts-quota.is-over .up-num { color: var(--vt-down); }
+
+/* ---------- Erstellt ----------
+   12px wie .udt-date in der Domains-Tabelle: das ist das Datumsformat dieser App. */
+.uts-date { font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
+
+/* ---------- Tarif ----------
+   Nur Farbe, keine Geometrie -- .up-sent bleibt unangetastet.
+
+   Der GRUNDton des Punktes steht hier und nicht in JS: .up-sent-dot bringt aus core keine
+   Hintergrundfarbe mit (die Sentiment-Zelle setzt sie immer inline), und ein Tarif ohne
+   Farbeintrag hatte damit einen unsichtbaren Punkt -- gemessen als rgba(0,0,0,0) bei
+   "Legacy Free". Der neutrale Ton ist die ehrliche Aussage "keine der bekannten Stufen"; eine
+   Zeile mit Farbeintrag ueberschreibt ihn inline.
+   Ohne laufenden Tarif bleibt es bei genau diesem Grundton (teams.js setzt dann bewusst keinen
+   Inline-Wert) und der Name wird gedaempft. */
+.uts-plan .up-sent-dot { background: var(--vc-third); }
+.uts-plan.is-off .up-sent-val { color: var(--vc-muted); }
+
+/* ---------- Wechselknopf ----------
+   Geometrie: .up-export aus core. Hier nur, was diese Stelle eigen hat.
+   Der Pfeil steht HINTER der Beschriftung, nicht davor: das ist eine "geh dorthin"-Aktion, und
+   der Pfeil zeigt auf das Ziel. Dasselbe Muster wie die Zeilen im Kontextmenue von Mira
+   (Beschriftung, dann Winkel). */
+.uts-switch { flex: 0 0 auto; }
+.uts-switch-chev { margin-left: -2px; }
+/* Schmal: nur noch der Pfeil, quadratisch. Der Knopf faellt NICHT weg -- er ist der Grund,
+   warum diese Tabelle da ist. Gleiche Entscheidung wie beim Track-Knopf in discover-brands.
+   .up-export bringt height: 32px mit, hier kommt nur die Breite dazu. */
+.uts-root.is-narrow .uts-switch { width: 32px; padding: 0; gap: 0; justify-content: center; }
+.uts-root.is-narrow .uts-switch-label { display: none; }
+.uts-root.is-narrow .uts-switch-chev { margin-left: 0; }
+.uts-root.is-narrow .up-td-act { justify-content: center; padding: 0 6px; }
+/* Gesperrt, solange der Wechsel laeuft: Bubble baut die halbe Seite neu, und ein Knopf, der
+   dabei noch klickbar aussieht, wird ein zweites Mal gedrueckt. Die Sperre loest sich nach
+   8 Sekunden von selbst wieder -- ein Workflow, der nie antwortet, darf keinen toten Knopf
+   hinterlassen (teams.js, WECHSEL_FREI_MS). */
+.uts-switch:disabled { background: var(--vc-heading-bg); color: var(--vc-third); cursor: default; }
+.uts-switch:disabled:hover { opacity: 1; }
+
+/* ---------- Zeile ----------
+   Diese Tabelle hat KEINEN Zeilenklick: ein Teamwechsel laedt den ganzen Arbeitsbereich neu,
+   das darf nicht aus Versehen passieren. Anklickbar sind nur der Wechselknopf und der
+   Domainverweis. Der Zeiger darf nichts anderes behaupten -- gleiche Entscheidung wie in
+   discover-brands. Die Zeilenhoehe bleibt bei den 72px aus core: die Teamzelle ist zweizeilig,
+   und das ist genau die Hoehe, fuer die core sie vorsieht. */
+.uts-root .up-row { cursor: default; }
+
+/* ---------- Fuss ----------
+   Der Fuss ist weg, solange alles auf eine Seite passt. Eine Teamliste hat in der Regel eine
+   Handvoll Zeilen; "Rows per page 15 25 50 100" ueber drei Teams ist eine Auswahl ohne Wirkung,
+   und die Zahl steht schon in der Kopfzeile. Umgeschaltet wird ueber eine Klasse, nicht durch
+   Ausbauen des Markups -- makePager schreibt weiter hinein und findet seine Elemente. */
+.uts-root.is-onepage .up-foot { display: none; }
+
+/* ---------- Mobil ----------
+   Gleiche Ausnahme wie in discover-brands: unter 560px darf die Kopfzeile umbrechen, sonst
+   draengen Ueberschrift, Suche und Zahnrad auf einer 32px-Zeile. */
+@media (max-width: 560px) {
+  .uts-root .up-head { flex-wrap: wrap; height: auto; row-gap: 8px; }
+}

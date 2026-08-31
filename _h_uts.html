@@ -1,0 +1,278 @@
+<meta charset="utf-8">
+<title>Harness: teams</title>
+<link rel="stylesheet" href="core.css?v=1">
+<link rel="stylesheet" href="teams.css?v=1">
+<style>
+  /* Form der echten Bubble-Seite: der Koerper scrollt nicht, #main scrollt, darueber schwebt eine
+     171px hohe Topbar -- genau der Wert, den --up-sticky-top annimmt. Ohne diese Form ist ein
+     Sticky-Test wertlos.
+     KEIN padding-top an #main: Chrome rechnet das obere Padding des Scrollcontainers auf den
+     sticky-Versatz drauf (gemessen: 171 + 171 = 342). Der Platz kommt aus einem Abstandhalter. */
+  html, body { margin: 0; height: 100%; }
+  body { font-family: sans-serif; overflow: hidden; }
+  #topbar { position: fixed; top: 0; left: 0; right: 0; height: 171px; z-index: 100;
+    background: #fff; border-bottom: 1px solid #e6e6e6; display: flex; align-items: flex-end;
+    padding: 0 24px 12px; box-sizing: border-box; font: 600 20px/1 sans-serif; color: #111; }
+  #main { height: 100vh; overflow-y: auto; padding: 0 24px 400px; box-sizing: border-box; }
+  #spacer { height: 171px; }
+  /* Der zu kurze Bubble-Wrapper mit overflow:hidden, den unclipAncestors aufmachen muss. */
+  #wrap { overflow: hidden; }
+  /* Haengende Transitions halten computed styles auf dem Startwert und sehen wie kaputte CSS aus.
+     Mit ?notrans=1 aus. */
+  body.notrans * { transition: none !important; animation: none !important; }
+</style>
+<script>
+/* Die Seitenflaeche der echten App ist --up-surface -- daran haengt der Deckstreifen der
+   klebenden Werkzeugleiste (.up-sticky .up-head::before) und der Grund des Seitenkopfes. Ein
+   Harness mit weissem Koerper waere im Dunkelmodus ein anderer Test als die App: der Streifen
+   waere dort #121212 auf weiss und damit als Rechteck sichtbar, obwohl in der App beide dieselbe
+   Farbe haben. Also nach jedem Themenwechsel die Farbe der Wurzel auf Koerper und Topbar
+   uebernehmen. */
+window.addEventListener("DOMContentLoaded", function(){
+  function sync(){
+    var r = document.querySelector(".uts-root");
+    if (!r) return;
+    var c = getComputedStyle(r).getPropertyValue("--up-surface").trim() || "#fff";
+    document.body.style.background = c;
+    var t = document.getElementById("topbar");
+    /* Halbtransparent wie in der App: nur so ist zu sehen, ob Zeilen dahinter hochlaufen. */
+    if (t) t.style.background = "color-mix(in srgb, " + c + " 60%, transparent)";
+  }
+  sync(); setInterval(sync, 500);
+});
+</script>
+
+<div id="topbar">Floating page topbar (171px)</div>
+<div id="main">
+  <div id="spacer"></div>
+  <div id="wrap">
+    <div class="up-root uts-root"
+         data-instance="teams1"
+         data-isdark="no"
+         data-team="ca880309-251e-4513-8901-8c5f8583f624"
+         data-brand-name="LeeUp Media"
+         data-brand-logo="https://www.google.com/s2/favicons?domain=lee-up.de&sz=64"
+         data-sticky-top="171"
+         data-switch-fn="bubble_fn_usnTeam"
+         data-newteam-fn="bubble_fn_usnNewTeam"></div>
+  </div>
+</div>
+
+<script src="core.js?v=1"></script>
+<script src="teams.js?v=1"></script>
+<script>
+if (/[?&]notrans=1/.test(location.search)) document.body.classList.add("notrans");
+
+window.__ev = [];
+["usnTeam", "usnNewTeam"].forEach(function (n) {
+  window["bubble_fn_" + n] = function (p) { window.__ev.push([n, p]); };
+});
+
+/* Die Beispieldaten des Nutzers, WORTGLEICH -- keine erfundenen Testdaten. Derselbe Text steht
+   als statischer Run-JS-Schritt in bubble/teams_bubble.html. */
+window.__ROH = `[
+    {
+        "team_id": "ca880309-251e-4513-8901-8c5f8583f624",
+        "team_name": "LeeUp Media",
+        "domain": "lee-up.de",
+        "active_billing_plan": "yes",
+        "billing_plan": "Legacy Free",
+        "prompts_active": 91,
+        "prompts_limit": 150,
+        "prompts_remaining": 59,
+        "created_at": "2026-02-26T13:07:56.236247+00:00",
+        "logo_url": "https://www.google.com/s2/favicons?domain=lee-up.de&sz=64",
+        "competitors_tracked": 7,
+        "competitors_limit": 10,
+        "competitors_remaining": 3,
+        "total_count": 10
+    },
+    {
+        "team_id": "f95f59c3-4871-49e6-afaf-409bb090e472",
+        "team_name": "Der Sanitätscoach",
+        "domain": "sanitaetscoach.de",
+        "active_billing_plan": "yes",
+        "billing_plan": "Professional",
+        "prompts_active": 32,
+        "prompts_limit": 150,
+        "prompts_remaining": 118,
+        "created_at": "2026-07-09T11:00:28.777259+00:00",
+        "logo_url": "https://www.google.com/s2/favicons?domain=sanitaetscoach.de&sz=64",
+        "competitors_tracked": 7,
+        "competitors_limit": 10,
+        "competitors_remaining": 3,
+        "total_count": 10
+    },
+    {
+        "team_id": "664f8efe-0269-4603-9f94-3312226ad5fc",
+        "team_name": "HUBie",
+        "domain": "sac-hub.com",
+        "active_billing_plan": "yes",
+        "billing_plan": "Professional",
+        "prompts_active": 13,
+        "prompts_limit": 150,
+        "prompts_remaining": 137,
+        "created_at": "2026-05-28T09:13:53.249416+00:00",
+        "logo_url": "https://www.google.com/s2/favicons?domain=sac-hub.com&sz=64",
+        "competitors_tracked": 6,
+        "competitors_limit": 10,
+        "competitors_remaining": 4,
+        "total_count": 10
+    },
+    {
+        "team_id": "772e30a7-3356-4e0d-8edb-5d43717176cb",
+        "team_name": "MotelOne",
+        "domain": "motel-one.com",
+        "active_billing_plan": "yes",
+        "billing_plan": "Enterprise",
+        "prompts_active": 45,
+        "prompts_limit": 350,
+        "prompts_remaining": 305,
+        "created_at": "2026-05-07T12:38:26.020447+00:00",
+        "logo_url": "https://www.google.com/s2/favicons?domain=motel-one.com&sz=64",
+        "competitors_tracked": 10,
+        "competitors_limit": 15,
+        "competitors_remaining": 5,
+        "total_count": 10
+    },
+    {
+        "team_id": "cf31a5d4-8671-4d4e-9c34-29df6d7f3502",
+        "team_name": "digitallotsen",
+        "domain": "digitallotsen.com",
+        "active_billing_plan": "yes",
+        "billing_plan": "Essential",
+        "prompts_active": 3,
+        "prompts_limit": 50,
+        "prompts_remaining": 47,
+        "created_at": "2026-05-05T11:45:48.548668+00:00",
+        "logo_url": "https://www.google.com/s2/favicons?domain=digitallotsen.com&sz=64",
+        "competitors_tracked": 5,
+        "competitors_limit": 5,
+        "competitors_remaining": 0,
+        "total_count": 10
+    },
+    {
+        "team_id": "2735aac6-d2cb-4110-976c-f6ac4dec8d5a",
+        "team_name": "upstreem",
+        "domain": "upstreem.ai",
+        "active_billing_plan": "yes",
+        "billing_plan": "Enterprise",
+        "prompts_active": 26,
+        "prompts_limit": 350,
+        "prompts_remaining": 324,
+        "created_at": "2026-05-01T09:55:02.998837+00:00",
+        "logo_url": "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/upstreem-mark-square-1f1f1f.svg",
+        "competitors_tracked": 12,
+        "competitors_limit": 15,
+        "competitors_remaining": 3,
+        "total_count": 10
+    },
+    {
+        "team_id": "eee8727a-ee98-4d2a-a25e-f3ca8fce8307",
+        "team_name": "Allianz",
+        "domain": "allianz.de",
+        "active_billing_plan": "yes",
+        "billing_plan": "Legacy Free",
+        "prompts_active": 84,
+        "prompts_limit": 150,
+        "prompts_remaining": 66,
+        "created_at": "2026-01-30T19:41:02.773401+00:00",
+        "logo_url": "https://www.google.com/s2/favicons?domain=allianz.de&sz=64",
+        "competitors_tracked": 12,
+        "competitors_limit": 10,
+        "competitors_remaining": 0,
+        "total_count": 10
+    },
+    {
+        "team_id": "15bf54d6-6653-4f6f-bb3e-f7dac654db03",
+        "team_name": "HOLY",
+        "domain": "holy.de",
+        "active_billing_plan": "yes",
+        "billing_plan": "Legacy Free",
+        "prompts_active": 61,
+        "prompts_limit": 150,
+        "prompts_remaining": 89,
+        "created_at": "2026-01-22T10:02:40.299537+00:00",
+        "logo_url": "https://www.google.com/s2/favicons?domain=weareholy.com&sz=64",
+        "competitors_tracked": 10,
+        "competitors_limit": 10,
+        "competitors_remaining": 0,
+        "total_count": 10
+    },
+    {
+        "team_id": "e7755829-5b36-4267-8eb1-69ff47bf0564",
+        "team_name": "Parookaville",
+        "domain": "parookaville.com",
+        "active_billing_plan": "yes",
+        "billing_plan": "Legacy Free",
+        "prompts_active": 64,
+        "prompts_limit": 150,
+        "prompts_remaining": 86,
+        "created_at": "2026-01-20T13:49:28.140202+00:00",
+        "logo_url": "https://www.google.com/s2/favicons?domain=parookaville.com&sz=64",
+        "competitors_tracked": 10,
+        "competitors_limit": 10,
+        "competitors_remaining": 0,
+        "total_count": 10
+    },
+    {
+        "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+        "team_name": "Mercedes Benz",
+        "domain": "mercedes-benz.de",
+        "active_billing_plan": "yes",
+        "billing_plan": "Legacy Free",
+        "prompts_active": 102,
+        "prompts_limit": 150,
+        "prompts_remaining": 48,
+        "created_at": "2026-01-20T10:43:39.93472+00:00",
+        "logo_url": "//49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782914188332x829122730841226800/mercedes-logo-mercedes-benz-logo-png-transparent-svg-vector-bie-13.png",
+        "competitors_tracked": 10,
+        "competitors_limit": 10,
+        "competitors_remaining": 0,
+        "total_count": 10
+    }
+]`;
+
+/* Genau die zwei Sanitizer-Zeilen aus §46, wie im Run-JS-Schritt. */
+window.__payload = function () {
+  return window.__ROH
+    .replace(/:\s*([,}\]])/g, ": null$1")
+    .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+};
+
+window.__load = function () { window.renderTeams({ instanceId: "teams1", rows: window.__payload() }); };
+/* Der GANZE Payload als EIN Text, so wie ein Run-JS-Schritt ihn auch schicken darf --
+   normParams in core muss das lesen. Mit instanceId, sonst landet der Aufruf zurecht in der
+   Warteschlange von makeLate (kein Root mit id "default"). */
+window.__loadWhole = function () {
+  window.renderTeams('{"instanceId":"teams1","current_team_id":"2735aac6-d2cb-4110-976c-f6ac4dec8d5a","rows":' +
+    window.__payload() + '}');
+};
+/* Nackte Liste OHNE instanceId: muss geparkt werden und darf NICHT still verpuffen. */
+window.__loadBare = function () { window.renderTeams(window.__payload()); };
+window.__loadOne  = function () {
+  window.renderTeams({ instanceId: "teams1", rows: JSON.parse(window.__payload()).slice(0, 1) });
+};
+window.__loadEmpty = function () { window.renderTeams({ instanceId: "teams1", rows: [] }); };
+window.__loadMany  = function () {
+  var a = JSON.parse(window.__payload()), out = [], i, j;
+  for (j = 0; j < 3; j++) for (i = 0; i < a.length; i++) {
+    var c = JSON.parse(JSON.stringify(a[i]));
+    c.team_id = c.team_id + "-" + j; c.team_name = c.team_name + " " + (j + 1);
+    c.total_count = a.length * 3;
+    out.push(c);
+  }
+  window.renderTeams({ instanceId: "teams1", rows: out });
+};
+/* Abgeschnittener Payload: muss den Lesefehler ins UI bringen, nicht ins Skelett laufen. */
+window.__loadBroken = function () { window.renderTeams({ instanceId: "teams1", rows: window.__ROH.slice(0, 400) }); };
+window.__loadNoPlan = function () {
+  var a = JSON.parse(window.__payload());
+  a[0].billing_plan = null; a[0].active_billing_plan = "no";
+  a[1].active_billing_plan = "no";
+  a[2].domain = null; a[2].logo_url = null;
+  a[3].prompts_limit = null; a[3].prompts_active = null;
+  a[4].created_at = null;
+  window.renderTeams({ instanceId: "teams1", rows: a });
+};
+</script>

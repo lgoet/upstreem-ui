@@ -1,0 +1,60 @@
+<meta charset="utf-8">
+<title>Harness: teams — Aufruf VOR den Scripts</title>
+<link rel="stylesheet" href="core.css?v=1">
+<link rel="stylesheet" href="teams.css?v=1">
+<style>
+  html, body { margin: 0; } body { font-family: sans-serif; padding: 24px; }
+</style>
+
+<!-- Reihenfolge einer echten Bubble-Seite:
+     1. der Loader des Elements laeuft (hier: nur dessen Stub-Block, wortgleich aus
+        bubble/teams_bubble.html -- die CDN-Includes ersetzt der Harness durch lokale Dateien)
+     2. der Page-Load-Workflow feuert seine Run-JS-Schritte
+     3. core.js und teams.js kommen vom Netz zurueck
+     Ohne Stub-Block ist der erste Aufruf in Schritt 2 WEG, weil der typeof-Waechter des
+     Run-JS-Schritts greift -- gemessen: 0 Aufrufe in der Queue, 5 Skelettzeilen fuer immer. -->
+<script>
+/* --- 1. wortgleich der Stub-Block aus bubble/teams_bubble.html --- */
+window.__utsBootQueue = window.__utsBootQueue || [];
+if (!window.__utsBootStubbed){
+  window.__utsBootStubbed = true;
+  ["renderTeams", "setTeamsLoading", "resetTeams"].forEach(function(n){
+    if (typeof window[n] === "function") return;
+    window[n] = function(){ window.__utsBootQueue.push([n, [].slice.call(arguments)]); };
+  });
+}
+</script>
+<script>
+/* --- 2. der Page-Load-Workflow, so wie die Run-JS-Schritte der Vorlage aussehen --- */
+window.__log = [];
+window.__log.push(["vor core", typeof window.renderTeams, typeof window.setTeamsLoading]);
+if (typeof window.setTeamsLoading === "function") window.setTeamsLoading("teams1", "yes");
+window.__ROH = `[
+  {"team_id":"a1","team_name":"Frueh GmbH","domain":"frueh.de","active_billing_plan":"yes",
+   "billing_plan":"Essential","prompts_active":5,"prompts_limit":50,"created_at":"2026-03-01T10:00:00+00:00",
+   "logo_url":"","competitors_tracked":2,"competitors_limit":5,"total_count":2},
+  {"team_id":"a2","team_name":"Spaet AG","domain":"spaet.de","active_billing_plan":"no",
+   "billing_plan":"Professional","prompts_active":140,"prompts_limit":150,"created_at":"2026-04-02T10:00:00+00:00",
+   "logo_url":"","competitors_tracked":11,"competitors_limit":10,"total_count":2}
+]`;
+if (typeof window.renderTeams === "function") {
+  window.renderTeams({ instanceId: "teams1", rows: window.__ROH, current_team_id: "a2" });
+}
+window.__log.push(["in der Queue", (window.__utsBootQueue||[]).length]);
+</script>
+
+<div class="up-root uts-root"
+     data-instance="teams1"
+     data-isdark="no"
+     data-brand-name="Frueh GmbH"
+     data-sticky="no"
+     data-head-top="0"
+     data-switch-fn="bubble_fn_usnTeam"
+     data-newteam-fn="bubble_fn_usnNewTeam"></div>
+
+<script src="core.js?v=1"></script>
+<script src="teams.js?v=1"></script>
+<script>
+window.__ev = [];
+["usnTeam","usnNewTeam"].forEach(function(n){ window["bubble_fn_"+n] = function(p){ window.__ev.push([n,p]); }; });
+</script>

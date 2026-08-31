@@ -1,0 +1,326 @@
+<!--
+  ============================================================================================
+  TEAMS — Bubble-Vorlage
+  ============================================================================================
+  Alle Teams, in denen der angemeldete Nutzer Mitglied ist, plus der Knopf, mit dem er in eines
+  davon wechselt.
+
+  SEITENKOPF UND TABELLE SIND EIN ELEMENT. Auf diese Seite kommt KEIN eigenes
+  page-headers/*-Element -- Meta-Zeile, Ueberschrift, Beschreibung und der Knopf
+  "+ Create a new Team" baut die Komponente selbst, mit denselben Core-Klassen (.up-ph-*), die
+  jeder andere Seitenkopf der App benutzt. Wer trotzdem einen daneben setzt, hat zwei
+  Ueberschriften.
+
+  EINSETZEN
+  1. HTML-Element auf die Seite, dieses Markup hinein.
+  2. INSTANCE_ID durch eine FESTE Kennung ersetzen (z. B. "teams"). Kein dynamischer Ausdruck --
+     siehe bubble/STATISCHES_MARKUP_PFLICHT.md: ein Element mit dynamischem Inhalt wird von Bubble
+     bei jeder Aenderung komplett neu gebaut. Welche Teams gezeigt werden, entscheidet der Payload.
+  3. CDN_PIN durch den Commit-Hash ersetzen, denselben wie an allen anderen Elementen der Seite.
+  4. data-isdark bleibt "no" und wird NICHT dynamisch gesetzt. Das Thema kommt ueber
+     window.setUpstreemTheme("dark") / ("light") -- core stempelt es an jede Wurzel.
+  5. data-team auf die Id des Teams, in dem der Nutzer GERADE steht (Current User's Team's unique
+     id). Diese Zeile bekommt dann die Pille "Active" statt eines Wechselknopfes. Steht dort
+     nichts, tragen ALLE Zeilen einen Knopf -- der Wechsel in das eigene Team ist ein Neuladen und
+     kein Schaden, aber die Pille an der falschen Zeile waere eine falsche Auskunft, darum wird
+     hier nicht geraten. Der Wert darf auch im Payload stehen (siehe current_team_id unten); dann
+     gewinnt der Payload.
+  6. data-sticky-top auf die Hoehe der Topbar dieser Seite (in der App 171). Damit klebt die
+     Werkzeugleiste beim Scrollen direkt darunter. "no" in data-sticky schaltet das Kleben ab.
+  7. FIT HEIGHT am HTML-Element und "Fit height to content" auch an der Gruppe darum. Die Tabelle
+     waechst mit der Zahl der Teams; steht dort eine feste Hoehe, schneidet Bubble den Rest ab.
+     Nachpruefen laesst sich das auf der Seite mit  window.upstreemScrollDiag()  -- der Aufruf
+     meldet fuer jeden Vorfahren sichtbare Hoehe, Inhaltshoehe und overflow.
+  8. Polsterung links/rechts wie auf den anderen Seiten. OBEN bringt die Komponente 16px mit, das
+     Mass jedes Seitenkopfs der App. Bringt der Container schon eigene Luft mit:
+     data-head-top="0" (jede CSS-Laenge geht, eine nackte Zahl gilt als px).
+
+  DATEN HINEIN (Run javascript, Schritte unten in diesem Kommentar)
+     renderTeams({ instanceId, rows })       die Liste
+     setTeamsLoading(INSTANCE_ID, "yes")     Skelett an, waehrend die RPC laeuft
+     resetTeams(INSTANCE_ID)                 zurueck auf leer
+
+  DIE LISTE KOMMT IN EINEM STUECK -- NICHT SEITENWEISE
+  Suche und Blaettern laufen IM BROWSER. Ein Nutzer ist in einer Handvoll Teams, und die ganze
+  Liste liegt nach dem ersten Aufruf da; ein Suchereignis waere eine Rundreise fuer eine Antwort,
+  die schon vorliegt. Es gibt darum KEIN Such- und KEIN Seitenereignis, und auf der Bubble-Seite
+  ist dafuer nichts zu bauen. Der RPC muss dafuer alle Teams des Nutzers auf einmal liefern.
+  Liefert er weniger Zeilen als total_count sagt, meldet die Komponente das in der Konsole -- dann
+  ist der RPC seitenweise eingestellt und die Zahlen im Fuss sind falsch.
+
+  EREIGNISSE HERAUS (jedes mit einem JSON-Text als erstem Parameter)
+  BEIDE gibt es in der App schon: der Teamwaehler der Seitenleiste (sidebar) feuert seit je
+  genau diese zwei Nutzlasten. Wer die Attribute unten auf bubble_fn_usnTeam und
+  bubble_fn_usnNewTeam zeigt -- so steht es in diesem Markup --, braucht KEINEN neuen Workflow.
+  Ein eigener geht genauso, dann steht ein anderer Name im Attribut.
+
+     usnTeam        Klick auf "Switch" in einer Zeile
+       {"team_id":"2735aac6-d2cb-4110-976c-f6ac4dec8d5a"}
+       Die Id des Teams, in das gewechselt werden soll. Der Knopf sperrt sich sofort selbst und
+       heisst waehrenddessen "Switching…"; nach 8 Sekunden ohne Antwort geht er wieder auf, damit
+       ein Workflow, der nie antwortet, keinen toten Knopf hinterlaesst.
+       Die Zeile des AKTUELLEN Teams hat keinen Knopf, sondern die Pille "Active".
+
+     usnNewTeam     Klick auf "+ Create a new Team" oben rechts
+       {"team_id":"ca880309-...","action":"new_team"}
+       team_id ist hier das AKTUELLE Team (core haengt es an jedes Ereignis der App), nicht ein
+       neues. action ist immer "new_team".
+
+  DIE WERTE IN BUBBLE LESEN (extract with Regex)
+     Beide Felder sind unbedenklich, eine Id und ein festes Wort enthalten kein Anfuehrungszeichen:
+
+         (?<="team_id":")[^"]*
+         (?<="action":")[^"]*
+
+  WAS DIE KOMPONENTE NICHT TUT
+  - Sie wechselt nichts von sich aus. Der Klick feuert das Ereignis; den Wechsel macht der
+    Workflow. Wer ihn vergisst, sieht einen Knopf, der 8 Sekunden lang "Switching…" sagt und
+    danach wieder "Switch".
+  - Sie sortiert nicht. Die Reihenfolge ist die des RPC -- also die Aussage des Servers, in der
+    Regel das eigene Team zuerst.
+  - Sie hat keinen Zeilenklick. Ein Teamwechsel laedt den ganzen Arbeitsbereich neu, das darf
+    nicht durch einen Klick irgendwo in die Zeile passieren. Anklickbar sind der Wechselknopf und
+    die Domain (oeffnet die Seite in einem neuen Tab, ohne Ereignis).
+
+  WELCHE FELDER GELESEN WERDEN
+     team_id              Schluessel der Zeile, und der Wert in usnTeam
+     team_name            Name, erste Zeile der Teamspalte
+     domain               zweite Zeile, als Verweis. "www." und Schema werden abgeschnitten
+     logo_url             Logo. Protokollrelative Adressen ("//cdn...") werden auf https gezogen.
+                          Faellt das Bild aus, steht der Anfangsbuchstabe da
+     billing_plan         Text der Tarif-Pille. Punktfarbe fuer Essential / Professional /
+                          Enterprise; jeder andere Name (auch "Legacy Free") bekommt den
+                          neutralen Ton -- das ist die Aussage "keine der aktuellen Stufen"
+     active_billing_plan  "yes"/"no". Bei "no" wird die Pille gedaempft und traegt den Tooltip
+                          "No active billing plan". Fehlt das Feld, gilt der Tarif als laufend
+     prompts_active       Zahl links in "Active Prompts"
+     prompts_limit        Grenze rechts. Ist die Zahl GROESSER als die Grenze, wird sie rot und
+                          bekommt den Tooltip "Above the plan limit"
+     competitors_tracked  Zahl links in "Active Brands"
+     competitors_limit    Grenze rechts, gleiche Regel
+     created_at           Datum, im Format der App (26. Feb 2026)
+     total_count          nur zur Gegenprobe, siehe oben. Nicht fuer die Anzeige
+
+     prompts_remaining und competitors_remaining werden angenommen und NICHT gezeigt: die Zahl
+     steht schon als Differenz aus Wert und Grenze in derselben Zelle.
+
+  ZUSAETZLICH IM PAYLOAD ERLAUBT
+     current_team_id      (auch currentTeamId oder active_team_id) -- das aktuelle Team, staerker
+                          als data-team am Element. Ein leerer Wert ueberschreibt nicht.
+  ============================================================================================
+-->
+<div class="up-root uts-root"
+     data-instance="INSTANCE_ID"
+     data-cdn-pin="CDN_PIN"
+     data-isdark="no"
+     data-team="TEAM_ID"
+     data-brand-name="BRAND_NAME"
+     data-brand-logo="BRAND_LOGO_URL"
+     data-sticky-top="171"
+     data-switch-fn="bubble_fn_usnTeam"
+     data-newteam-fn="bubble_fn_usnNewTeam"></div>
+
+<script>
+(function(){
+  /* ---- Boot-Stubs, VOR dem Nachladen ------------------------------------------------------
+     Bubble ruft die Setter im Page-Load-Workflow, regelmaessig BEVOR teams.js geladen ist. Die
+     Warteschlange in teams.js entsteht erst mit dieser Datei; davor ist window.renderTeams
+     undefined, der Run-JS-Schritt laeuft in seinen typeof-Waechter und der Aufruf ist WEG -- die
+     Seite steht danach im Skelett, ohne dass irgendwo ein Fehler steht. Gemessen im Harness
+     _h_uts_frueh.html: ohne diesen Block 0 Aufrufe in der Queue und 5 Skelettzeilen fuer immer.
+     Dieselbe Loesung wie beim Marken-Store in domains_table_bubble.html: hier stubben, teams.js
+     erkennt es an __utsBootStubbed und laesst die Namen stehen, makeMount arbeitet die Queue in
+     der Reihenfolge ab, in der Bubble gerufen hat.
+     Wer das Snippet bubble/page_header_preload.html im Seitenkopf hat, ist doppelt abgesichert --
+     dort stehen dieselben drei Namen in UP_API. */
+  window.__utsBootQueue = window.__utsBootQueue || [];
+  if (!window.__utsBootStubbed){
+    window.__utsBootStubbed = true;
+    ["renderTeams", "setTeamsLoading", "resetTeams"].forEach(function(n){
+      if (typeof window[n] === "function") return;   /* das Snippet im Seitenkopf war schneller */
+      window[n] = function(){ window.__utsBootQueue.push([n, [].slice.call(arguments)]); };
+    });
+  }
+
+  /* Loader nach STYLEGUIDE §26: den Pin ueber getElementsByClassName lesen, NIEMALS ueber
+     document.currentScript -- Bubble fuehrt Scripts nicht in DOM-Reihenfolge aus. */
+  function readPin(cls){
+    var els = document.getElementsByClassName(cls), i, p;
+    for (i = 0; i < els.length; i++){
+      p = (els[i].getAttribute("data-cdn-pin") || "").trim();
+      /* Gespaltener Platzhalter: wer "CDN_PIN" global im Element ersetzt, wuerde sonst auch
+         diesen Waechter treffen, und der Loader liefe dauerhaft auf @main. */
+      if (p && p !== "CDN_" + "PIN") return p;
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("uts-root") + "/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  function once(url, make){
+    var name = url.slice(url.lastIndexOf("/") + 1);
+    if (L[name]){
+      if (L[name] !== url && window.console) console.warn("upstreem: " + name +
+        " ist schon von einem anderen Pin geladen. Geladen bleibt " + L[name] +
+        ", ignoriert wird " + url + ". Setzt alle Elemente auf denselben Pin.");
+      return;
+    }
+    L[name] = url; make(url);
+  }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+
+  css("core.css");   js("core.js");
+  css("teams.css");  js("teams.js");
+})();
+</script>
+
+<!--
+  ============================================================================================
+  RUN-JAVASCRIPT-SCHRITTE (Toolbox) — die Daten hinein
+  ============================================================================================
+  Reines JavaScript, wie in jeder anderen Vorlage: ab "(function () {" bis "})();" markieren.
+  Ein <script> gehoert NICHT hinein -- Bubble wertet den Text als JavaScript aus, und das Tag
+  killt den Schritt mit "Unexpected token '<'" samt aller Setter, die danach kommen.
+
+  Die zwei Ersetzungen sind Pflicht (§46): leeres Feld -> null, nacktes yes/no -> true/false.
+  Namen mit Anfuehrungszeichen, spitzen Klammern oder Emoji brauchen nichts weiter -- die
+  Komponente escapet jeden Text.
+
+  ── SCHRITT 1: statisch, zum Ausprobieren ohne Datenbank ───────────────────────────────────
+  Genau der Payload aus der Uebergabe, damit die Seite in Bubble steht, bevor die RPC fertig ist.
+  Derselbe Text laeuft im Harness _h_uts.html gegen die fertige Komponente.
+
+  (function () {
+    var STATISCH = `[
+      {
+        "team_id": "ca880309-251e-4513-8901-8c5f8583f624",
+        "team_name": "LeeUp Media",
+        "domain": "lee-up.de",
+        "active_billing_plan": "yes",
+        "billing_plan": "Legacy Free",
+        "prompts_active": 91,
+        "prompts_limit": 150,
+        "prompts_remaining": 59,
+        "created_at": "2026-02-26T13:07:56.236247+00:00",
+        "logo_url": "https://www.google.com/s2/favicons?domain=lee-up.de&sz=64",
+        "competitors_tracked": 7,
+        "competitors_limit": 10,
+        "competitors_remaining": 3,
+        "total_count": 4
+      },
+      {
+        "team_id": "f95f59c3-4871-49e6-afaf-409bb090e472",
+        "team_name": "Der Sanitätscoach",
+        "domain": "sanitaetscoach.de",
+        "active_billing_plan": "yes",
+        "billing_plan": "Professional",
+        "prompts_active": 32,
+        "prompts_limit": 150,
+        "prompts_remaining": 118,
+        "created_at": "2026-07-09T11:00:28.777259+00:00",
+        "logo_url": "https://www.google.com/s2/favicons?domain=sanitaetscoach.de&sz=64",
+        "competitors_tracked": 7,
+        "competitors_limit": 10,
+        "competitors_remaining": 3,
+        "total_count": 4
+      },
+      {
+        "team_id": "2735aac6-d2cb-4110-976c-f6ac4dec8d5a",
+        "team_name": "upstreem",
+        "domain": "upstreem.ai",
+        "active_billing_plan": "yes",
+        "billing_plan": "Enterprise",
+        "prompts_active": 26,
+        "prompts_limit": 350,
+        "prompts_remaining": 324,
+        "created_at": "2026-05-01T09:55:02.998837+00:00",
+        "logo_url": "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/upstreem-mark-square-1f1f1f.svg",
+        "competitors_tracked": 12,
+        "competitors_limit": 15,
+        "competitors_remaining": 3,
+        "total_count": 4
+      },
+      {
+        "team_id": "eee8727a-ee98-4d2a-a25e-f3ca8fce8307",
+        "team_name": "Allianz",
+        "domain": "allianz.de",
+        "active_billing_plan": "yes",
+        "billing_plan": "Legacy Free",
+        "prompts_active": 84,
+        "prompts_limit": 150,
+        "prompts_remaining": 66,
+        "created_at": "2026-01-30T19:41:02.773401+00:00",
+        "logo_url": "https://www.google.com/s2/favicons?domain=allianz.de&sz=64",
+        "competitors_tracked": 12,
+        "competitors_limit": 10,
+        "competitors_remaining": 0,
+        "total_count": 4
+      }
+    ]`
+      .replace(/:\s*([,}\]])/g, ": null$1")
+      .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+
+    if (typeof window.renderTeams === "function") {
+      window.renderTeams({ instanceId: "INSTANCE_ID", rows: STATISCH });
+    }
+  })();
+
+  ── SCHRITT 2: Skelett AN, vor der RPC ─────────────────────────────────────────────────────
+
+  (function () {
+    if (typeof window.setTeamsLoading === "function") {
+      window.setTeamsLoading("INSTANCE_ID", "yes");
+    }
+  })();
+
+  ── SCHRITT 2b: Skelett AUS, wenn die RPC NICHT geliefert hat ──────────────────────────────
+  Nur fuer den Fehlerzweig. Im Gutfall beendet renderTeams den Ladezustand selbst.
+  Ohne Daten steht danach "No teams yet" statt eines Skeletts, das ewig laeuft.
+
+  (function () {
+    if (typeof window.setTeamsLoading === "function") {
+      window.setTeamsLoading("INSTANCE_ID", "no");
+    }
+  })();
+
+  ── SCHRITT 3: Teams anzeigen, NACH der RPC ────────────────────────────────────────────────
+  Bubble-Ausdruecke stehen in <>. Alles andere bleibt, wie es ist.
+
+  (function () {
+    var INSTANCE_ID = "INSTANCE_ID";
+
+    var ROH = `<Result of step X (Supabase RPC)'s data:formatted as JSON-safe>`;
+
+    var rows = ROH
+      .replace(/:\s*([,}\]])/g, ": null$1")
+      .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+
+    if (typeof window.renderTeams === "function") {
+      window.renderTeams({
+        instanceId: INSTANCE_ID,
+        rows: rows,
+        /* Optional, aber besser als data-team am Element: der Payload gewinnt, und damit steht die
+           "Active"-Pille auch dann richtig, wenn Bubble das Attribut nach einem Wechsel noch
+           nicht nachgezogen hat. Als TEXT einsetzen, nie als Zahl oder yes/no. */
+        current_team_id: "<Current User's Team's unique id>"
+      });
+    }
+  })();
+
+  ── SCHRITT 4: zuruecksetzen, wenn die Seite verlassen wird ────────────────────────────────
+  Nur noetig, wenn die Seite ein Popup oder eine Schublade ist, die wiederkommt. Eine eigene
+  Seite braucht das nicht -- sie wird ohnehin neu geladen.
+
+  (function () {
+    if (typeof window.resetTeams === "function") {
+      window.resetTeams("INSTANCE_ID");
+    }
+  })();
+
+  ── NACH DEM WECHSEL ───────────────────────────────────────────────────────────────────────
+  Der Workflow hinter usnTeam schreibt das neue Team des Nutzers und laedt die Seite neu. Bleibt
+  die Seite stehen (z. B. weil der Wechsel nur die Datenquelle umstellt), gehoert an das Ende
+  desselben Workflows der Refresh-Anhang, den auch die anderen mutierenden Workflows tragen:
+  den Teams-RPC erneut laufen lassen und renderTeams mit dem neuen current_team_id rufen. Ohne
+  das steht die "Active"-Pille weiter an der alten Zeile.
+-->
