@@ -185,18 +185,15 @@
 .ums-avatar:hover .ums-avatar-ov, .ums-avatar:focus-visible .ums-avatar-ov { opacity: 1; }
 .ums-avatar:focus-visible { outline: 0; border-color: var(--up-focus);
   box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
-/* Der Verweis unter dem Bild: Textknopf in der Betonungsfarbe, wie die blauen Verweise der
-   Landingpage. Er tut dasselbe wie das Bild -- fuer alle, die einen Knopf als Text suchen. */
-.ums-link {
-  margin: 12px 0 4px; padding: 0; border: 0; background: none; font: inherit;
-  font-size: 13.5px; font-weight: 450; cursor: pointer; text-align: left;
-  /* #3b82f6 ist der blaue Ton, den die Landingpage-Chips und das "You"-Abzeichen in team-orga
-     schon tragen. Er steht auf hell UND dunkel lesbar, deshalb hier kein zweiter Wert. Ein
-     --vc-Token gibt es dafuer nicht -- bevor ich eines erfinde, nehme ich den Wert, der in der
-     App bereits die Bedeutung "anklickbarer Text" hat. */
-  color: #3b82f6;
+/* Der Satz unter dem Bild ist ein HINWEIS und kein Verweis. Er stand hier als blauer Textknopf,
+   der dasselbe tat wie das Bild -- blau heisst aber "hier geht es weiter", und weiter geht es
+   nirgends: der Klick feuert nur umsAvatar, und ohne Workflow dahinter passiert nichts Sichtbares.
+   Also Drittfarbe, kein Zeiger, kein Unterstreichen. Das Bild bleibt der Knopf.
+   20px oben: die 12 von vorher plus 8. */
+.ums-hint {
+  display: block; margin: 20px 0 4px;
+  font-size: 13.5px; font-weight: 450; color: var(--vc-third);
 }
-.ums-link:hover { text-decoration: underline; }
 
 .ums-in {
   width: 100%; max-width: 320px; height: 40px; padding: 0 12px; box-sizing: border-box;

@@ -319,8 +319,11 @@
               'placeholder="' + esc(t("Your name")) + '" autocomplete="off">' +
           '</div>' +
         '</div>' +
-        '<button class="ums-link" type="button" data-ums-avatar>' +
-          esc(t("Upload a picture — square images look best")) + '</button>' +
+        /* Ein span und kein Knopf: der Satz erklaert das Bild darueber, er ist keine zweite
+           Bedienung dafuer. Ein Knopf, der aussieht wie ein Verweis und nichts sichtbar tut, ist
+           genau das, was gemeldet wurde. */
+        '<span class="ums-hint">' +
+          esc(t("Upload a picture — square images look best")) + '</span>' +
       '</div>';
     }
 
