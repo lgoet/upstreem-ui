@@ -185,7 +185,14 @@
 
   function makeController(root){
     var UC = window.UpstreemCore;
-    /* Hier stand ein deutscher Katalog fuer die Navigation. Er ist WEG, auf Ansage: die Seitenleiste
+    /* KEIN t() in dieser Datei, und das ist Absicht: die Seitenleiste bleibt englisch (Ansage vom
+       31.08.). Sie ist die Landkarte der App -- wer "Prompt Insights" gelernt hat, sucht das, und
+       "Domains", "URLs", "Brands", "Prompts" sind ohnehin die Namen der Objekte.
+       Hart englisch und nicht "durch t(), aber ohne Katalog": der Katalog ist GETEILT. Das
+       Einstellungsfenster uebersetzt "Light"/"Dark"/"System" fuer seine eigene Zeile, und ueber t()
+       waere das Theme-Untermenue hier mit uebersetzt worden -- gemessen: "Hell/Dunkel/System" im
+       Konto-Menue, obwohl die Leiste englisch bleiben soll.
+       Hier stand ein deutscher Katalog fuer die Navigation. Er ist WEG, auf Ansage: die Seitenleiste
        bleibt englisch. Der Grund ist gut -- die Punkte sind die Landkarte der App, und wer sie
        einmal gelernt hat, sucht "Prompt Insights" und nicht "Prompt-Auswertung". Dazu waren zwei
        Uebersetzungen ohnehin falsch: "Domains", "URLs", "Brands" und "Prompts" sind die Namen der
@@ -648,10 +655,10 @@
          ein Sprung von Dashboard auf den richtigen Punkt. Solange die Leiste ihre Skelette zeigt,
          muss auch die Markierung nichts sagen; setSidebarReady() loest beides gemeinsam aus. */
       return '<button class="usn-item' + ((state.enthuellt && it.key === state.aktiv) ? " is-active" : "") + '" ' +
-        'type="button" data-nav-key="' + esc(it.key) + '" data-tiplabel="' + esc(t(it.label)) + '" ' +
+        'type="button" data-nav-key="' + esc(it.key) + '" data-tiplabel="' + esc(it.label) + '" ' +
         'data-tip-place="right">' +
         '<span class="usn-ic">' + ic(it.icon) + '</span>' +
-        '<span class="usn-txt">' + esc(t(it.label)) + '</span>' + extra + '</button>';
+        '<span class="usn-txt">' + esc(it.label) + '</span>' + extra + '</button>';
     }
     function renderNav(){
       aktivPruefen();
@@ -799,7 +806,7 @@
       var th = themaJetzt();
       elAccMenu.innerHTML = KONTO.map(function(s){
         return '<div class="usn-sec">' +
-          (s.head ? '<span class="up-pop-head">' + esc(t(s.head)) + '</span>' : "") +
+          (s.head ? '<span class="up-pop-head">' + esc(s.head) + '</span>' : "") +
           s.items.map(function(it){
             var an = s.theme && it.key === th;
             return '<div class="up-pop-opt' + (an ? " is-active" : "") + '" ' +
@@ -807,7 +814,7 @@
               '<span class="up-pop-opt-l">' +
                 (it.logo ? logoHtml((state.team || {}).name, (state.team || {}).favicon_url, "usn-acc-logo")
                          : (it.icon ? ic(it.icon) : "")) +
-                esc(t(it.label)) +
+                esc(it.label) +
               '</span>' +
               (s.theme ? '<span class="up-check">' + ic("check") + '</span>' : "") +
             '</div>';
@@ -1286,7 +1293,8 @@
        renderAccMenu, also braucht es genau dort einen Anlass. Ohne das stuende die Leiste in der
        alten Sprache, bis der Nutzer etwas anderes anklickt. Derselbe Weg wie beim Thema, nur ein
        anderes Ereignis. */
-    if (UC.onPrefs) UC.onPrefs(function(){ renderNav(); if (popAcc.isOpen()) renderAccMenu(); });
+    /* Der Zuhoerer auf die Spracheinstellung ist weg: diese Datei uebersetzt nichts, also gibt es
+       auch nichts neu zu zeichnen, wenn die Sprache wechselt. */
 
     /* Welches Team gerade in state.pins steht. null heisst: noch nichts geladen. */
     var pinsFuerTeam = null;

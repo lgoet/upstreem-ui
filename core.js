@@ -251,14 +251,98 @@
              Zitationstypen (Brand_Platform, Editorial, ...), die Rollen (owner/admin/member) und
              die URL-Typen. Grund: ein Wert, der exportiert, gefiltert oder von aussen gelesen
              wird, muss in jeder Sprache derselbe sein. Uebersetzt wird dort die SPALTE, nicht der
-             Wert. */
+             Wert.
+
+     DAS GLOSSAR -- diese Woerter bleiben AUCH IN DEUTSCHEN SAETZEN englisch:
+
+       Domain, Domains, URL, URLs, Brand, Brands, Prompt, Prompts, Citation, Citations,
+       Topic, Topics, Mira, Team, Teams, Dashboard,
+       Visibility, Ranking, Sentiment, Share of Voice, Mention Count, Trend
+
+     Die erste Gruppe sind die OBJEKTE dieser App -- so heissen sie in der Navigation, in den
+     Exporten und in jedem Gespraech darueber. "Marken" neben einer Spalte "Brand" zu schreiben
+     macht aus einem Ding zwei.
+     Die zweite Gruppe sind die KENNZAHLEN. Sie stehen als Spaltenkoepfe in jedem CSV-Export und
+     sind der Wortschatz des Produkts; "Sichtbarkeit" waere eine zweite Sprache fuer dieselbe
+     Zahl. Dazu kommt: die SEITENLEISTE bleibt komplett englisch (Ansage vom 31.08.) -- sie ist
+     die Landkarte der App. Ein Menuepunkt "Brands" und darunter eine Tabelle "Marken" waere
+     genau der Bruch, den das Glossar verhindert.
+
+     Was das praktisch heisst: uebersetzt werden SAETZE und Bedienung -- "Keine Ergebnisse",
+     "Zeilen pro Seite", "Suche loeschen", "Diese Auswahl zuruecksetzen" --, und darin stehen die
+     Glossarwoerter unveraendert: "Keine Prompts gefunden", "3 Brands ausgewaehlt". */
   var MSG = {};
+  /* Der deutsche Katalog von core. Er gilt fuer alles, was aus den geteilten Bauteilen kommt --
+     Werkzeugknoepfe, Leerzustaende, die beiden Modale, das Variations-Kit -- also fuer jede
+     Tabelle und jeden Chart der App auf einmal.
+     Das GLOSSAR oben ist hier durchgehalten: Topics, Brands, Prompts, Domains, URLs und die
+     Kennzahlen stehen auch mitten im deutschen Satz englisch. */
+  var MSG_DE = {
+    /* Werkzeugknoepfe (TOOLBAR_TIPS) */
+    "Sort": "Sortieren",
+    "Search": "Suchen",
+    "Table Settings": "Tabelle einstellen",
+    "Chart Settings": "Chart einstellen",
+    "Board Settings": "Board einstellen",
+    "Settings": "Einstellungen",
+    "Filter brands": "Brands filtern",
+    "Filter": "Filtern",
+    "Research settings": "Recherche einstellen",
+    "Show tools": "Werkzeuge zeigen",
+    "Hide tools": "Werkzeuge ausblenden",
+    "Filters and settings": "Filter und Einstellungen",
+    /* Diese drei stehen im Markup der Komponenten, nicht in TOOLBAR_TIPS -- sie werden ueber den
+       Weg "vorhandene Beschriftung uebersetzen" erreicht. */
+    "Export": "Exportieren",
+    "Minimize": "Verkleinern",
+    "Maximize": "Vergrößern",
+    "Open": "Öffnen",
+    /* Zeitraster an den Charts */
+    "Day": "Tag",
+    "Week": "Woche",
+    "Month": "Monat",
+    /* Leerzustaende */
+    "No data": "Keine Daten",
+    /* Themen-Modal */
+    "New Topic": "Neues Topic",
+    "Edit Topic": "Topic bearbeiten",
+    "Confirm delete?": "Wirklich löschen?",
+    "Close": "Schließen",
+    /* Gruppierungs-Modal */
+    "New Grouping": "Neue Gruppierung",
+    "Edit Grouping": "Gruppierung bearbeiten",
+    "Create grouping": "Gruppierung anlegen",
+    "Save": "Speichern",
+    "Group color": "Farbe der Gruppe",
+    "Group name…": "Name der Gruppe…",
+    "Search topics": "Topics suchen",
+    "Search topics…": "Topics suchen…",
+    "Clear search": "Suche löschen",
+    "Show all {n} topics": "Alle {n} Topics zeigen",
+    "Show grouping": "Gruppierung zeigen",
+    "Hide grouping": "Gruppierung ausblenden",
+    /* Variations-Kit */
+    "Variations": "Schreibweisen",
+    "Variation Name": "Schreibweise",
+    "Search variations": "Schreibweisen suchen",
+    "No variations recorded.": "Noch keine Schreibweisen erfasst.",
+    "No variation matches this search.": "Keine Schreibweise passt zu dieser Suche."
+  };
   function addMessages(locale, obj){
     var l = String(locale || "").trim().toLowerCase();
     if (!l || !obj || typeof obj !== "object") return;
     var ziel = MSG[l] || (MSG[l] = {});
     Object.keys(obj).forEach(function(k){ if (typeof obj[k] === "string") ziel[k] = obj[k]; });
   }
+  /* t_ ist derselbe Aufruf unter einem Namen, der in dieser Datei nirgends verschattet ist. "t"
+     ist hier mehrfach belegt: var t = trennzeichen(...) in fmtNum, for (var t = 0; ...) im
+     Themenwechsel, und in der Werkzeugleiste ist t die Laufvariable ueber die Knoepfe. Wer dort
+     t("...") schreibt, ruft ein Objekt auf. Darum ein zweiter Name statt Umbenennen der drei
+     Laufvariablen -- die haben mit Sprache nichts zu tun. */
+  function t_(text){ return t(text); }
+  /* Sofort eintragen: addMessages steht als Deklaration schon fest (hochgezogen), und der Katalog
+     muss stehen, bevor die erste Komponente ihren ersten Text zeichnet. */
+  addMessages("de", MSG_DE);
   function t(text){
     var l = getPref("locale");
     if (l === "en") return text;
@@ -3168,10 +3252,30 @@
       /* Beschriftung nachtragen, falls keine da ist -- siehe TOOLBAR_TIPS. aria-label bekommt
          denselben Text, wenn auch das fehlt: ein Knopf, der nur aus einem Zeichen besteht, hat
          sonst fuer einen Screenreader keinen Namen. */
+      /* t_ am Ort der VERWENDUNG und nicht in der Tabelle: die Tabelle ist die Schluesselliste,
+         und ein Schluessel, der schon uebersetzt ist, findet sich im Katalog nicht wieder. */
       var tip = TOOLBAR_TIPS[t.key];
-      if (tip && !b.getAttribute("data-tip")){
+      if (tip) tip = t_(tip);
+      var vorhanden = b.getAttribute("data-tip");
+      if (tip && !vorhanden){
         b.setAttribute("data-tip", tip);
         if (!b.getAttribute("aria-label")) b.setAttribute("aria-label", tip);
+      } else if (vorhanden){
+        /* Und der Fall, der die Uebersetzung erst wirksam macht: die Komponente bringt ihre eigene
+           Beschriftung mit, und die gewinnt (so soll es sein -- "Chart Settings" ist genauer als
+           "Table Settings"). Steht sie im Katalog, wird sie hier UEBERSETZT statt ersetzt.
+           Das ist der Hebel: die elf Kopfzeilen der App tragen ihre Tooltips im handgemachten
+           Bubble-Markup, das vom Pin aus nicht erreichbar ist. Ohne diese Zeilen bliebe jeder
+           Werkzeugknopf der App englisch, egal was im Katalog steht.
+           Nur wer im Katalog steht, wird angefasst: t_ gibt unbekannten Text unveraendert
+           zurueck, also ist das Setzen dann ein No-op und eine eigene Beschriftung wie
+           "Look for new Opportunities" bleibt, wie die Komponente sie wollte. */
+        var uebersetzt = t_(vorhanden);
+        if (uebersetzt !== vorhanden){
+          b.setAttribute("data-tip", uebersetzt);
+          var al = b.getAttribute("aria-label");
+          if (!al || al === vorhanden) b.setAttribute("aria-label", uebersetzt);
+        }
       }
     }
   }
@@ -3303,8 +3407,8 @@
       /* Nur schreiben, wenn es anders steht: jedes Schreiben ist selbst eine Mutation, und der
          Beobachter oben laeuft auf Mutationen. */
       if ((b.textContent || "").trim() !== kurz) b.textContent = kurz;
-      if (!b.getAttribute("data-tip")) b.setAttribute("data-tip", lang);
-      if (!b.getAttribute("aria-label")) b.setAttribute("aria-label", lang);
+      if (!b.getAttribute("data-tip")) b.setAttribute("data-tip", t_(lang));
+      if (!b.getAttribute("aria-label")) b.setAttribute("aria-label", t_(lang));
     }
   }
 
@@ -3885,7 +3989,12 @@
       if (getComputedStyle(el).opacity === "0") return;
       var host = el.closest ? el.closest(".up-root") : null;
       var dark = host ? host.getAttribute("data-theme") === "dark" : !!(getIsDark && getIsDark());
-      tip.textContent = text;
+      /* Uebersetzt wird HIER, an der einen Stelle, durch die jeder Tooltip der App laeuft
+         (showTip, showTipText, showTipWide muenden alle in paint). Das ist der Grund fuer diese
+         Wahl und nicht Bequemlichkeit: die data-tip-Texte stehen im handgemachten Bubble-Markup
+         der elf Kopfzeilen, und das ist vom Pin aus nicht erreichbar. Wer nicht im Katalog steht,
+         geht unveraendert durch -- t_ gibt unbekannten Text zurueck, wie er kam. */
+      tip.textContent = t_(text);
       tip.classList.toggle("is-wide", !!wide);
 
       S.wide = !!wide;
@@ -4112,7 +4221,7 @@
             '<div class="up-topicmodal-heading">' +
               '<h2 class="up-topicmodal-title"></h2>' +
             '</div>' +
-            '<button type="button" class="up-topicmodal-close" data-modal-close aria-label="Close">' + CLOSE_SVG_TM + '</button>' +
+            '<button type="button" class="up-topicmodal-close" data-modal-close aria-label="' + esc(t_("Close")) + '">' + CLOSE_SVG_TM + '</button>' +
           '</div>' +
           '<div class="up-topicmodal-body">' +
             '<div class="up-topicmodal-field">' +
@@ -4138,7 +4247,7 @@
         if (delBtn){
           if (!deleteArmed()){
             modalBackdrop.querySelector(".up-topicmodal-delete").classList.add("is-armed");
-            modalBackdrop.querySelector(".up-topicmodal-delete").textContent = "Confirm delete?";
+            modalBackdrop.querySelector(".up-topicmodal-delete").textContent = t_("Confirm delete?");
             return;
           }
           fireDelete();
@@ -4185,7 +4294,7 @@
       clearTimeout(modalSaveTimer);
       modalBackdrop.setAttribute("data-theme", getIsDark() ? "dark" : "light");
       var titleEl = modalBackdrop.querySelector(".up-topicmodal-title");
-      if (titleEl) titleEl.textContent = mode === "create" ? "New Topic" : "Edit Topic";
+      if (titleEl) titleEl.textContent = t_(mode === "create" ? "New Topic" : "Edit Topic");
       var nameInput = modalBackdrop.querySelector(".up-topicmodal-name");
       if (nameInput) nameInput.value = draftName;
       var foot = modalBackdrop.querySelector(".up-topicmodal-foot");
@@ -4815,8 +4924,8 @@
         elCol = document.createElement("button");
         elCol.type = "button";
         elCol.className = "up-iconbtn up-tbcol";
-        elCol.setAttribute("data-tip", "Hide tools");
-        elCol.setAttribute("aria-label", "Hide tools");
+        elCol.setAttribute("data-tip", t_("Hide tools"));
+        elCol.setAttribute("aria-label", t_("Hide tools"));
         /* Lucide "x". Vorher stand hier ein Chevron nach rechts, als Hinweis auf die Richtung,
            in die die Leiste zusammenfaehrt -- aber die Richtung ist nicht die Aussage. Die
            Aussage ist "weg damit", und dafuer gibt es im ganzen Haus genau ein Zeichen. */
@@ -4826,8 +4935,8 @@
         elTrig = document.createElement("button");
         elTrig.type = "button";
         elTrig.className = "up-iconbtn up-tbtrig";
-        elTrig.setAttribute("data-tip", cfg.tip || "Filters and settings");
-        elTrig.setAttribute("aria-label", cfg.tip || "Show tools");
+        elTrig.setAttribute("data-tip", cfg.tip || t_("Filters and settings"));
+        elTrig.setAttribute("aria-label", cfg.tip || t_("Show tools"));
         elTrig.setAttribute("aria-expanded", "false");
         elTrig.innerHTML = icon("listFilterPlus", 2);
       }
@@ -7370,7 +7479,7 @@
     function empty(msg){
       stand++;
       destroy(); clearExtras(); clearLegend();
-      wrap.insertAdjacentHTML("beforeend", '<div class="up-line-empty">' + esc(msg || "No data") + '</div>');
+      wrap.insertAdjacentHTML("beforeend", '<div class="up-line-empty">' + esc(msg || t_("No data")) + '</div>');
       if (cfg.watermark !== false) injectWatermark(wrap);
     }
 
@@ -7801,7 +7910,7 @@
       if (sk) sk.classList.toggle("is-collapsed", collapsed);
     }
     function skeleton(){ destroy(); body.innerHTML = (cfg.chartMode && cfg.chartMode() === "bar") ? barSkeletonHtml() : donutSkeletonHtml(); }
-    function empty(msg){ destroy(); body.innerHTML = '<div class="up-chart-empty">' + esc(msg || "No data") + '</div>'; }
+    function empty(msg){ destroy(); body.innerHTML = '<div class="up-chart-empty">' + esc(msg || t_("No data")) + '</div>'; }
     function isEmpty(d){ return !d.length || d.every(function(x){ return !(Number(x.share) > 0); }); }
 
     function renderDonut(d){
@@ -9676,12 +9785,12 @@
     var sub = opts.subtitle == null ? "Different brand names used in AI responses" : opts.subtitle;
     var search = opts.search === false ? "" :
       '<div class="up-search ' + pfx + '-search">' +
-        '<button class="up-iconbtn up-search-btn" type="button" data-tip="Search variations" ' +
-                'aria-label="Search variations">' + icon("search", 2) + '</button>' +
+        '<button class="up-iconbtn up-search-btn" type="button" data-tip="' + esc(t_("Search variations")) + '" ' +
+                'aria-label="' + esc(t_("Search variations")) + '">' + icon("search", 2) + '</button>' +
         '<div class="up-search-box">' +
           '<input class="up-search-input" type="text" autocomplete="off" spellcheck="false" ' +
-                 'placeholder="Search variations">' +
-          '<button class="up-search-clear" type="button" aria-label="Clear search">' +
+                 'placeholder="' + esc(t_("Search variations")) + '">' +
+          '<button class="up-search-clear" type="button" aria-label="' + esc(t_("Clear search")) + '">' +
             icon("x", 2) + '</button>' +
         '</div>' +
       '</div>';
@@ -9694,7 +9803,7 @@
       '<div class="up-varsec ' + pfx + '-varsec">' +
         '<div class="up-sec-head ' + pfx + '-sec-head">' +
           '<div class="up-sec-titles">' +
-            '<span class="up-heading up-sec-h">' + esc(opts.title || "Variations") + '</span>' +
+            '<span class="up-heading up-sec-h">' + esc(opts.title || t_("Variations")) + '</span>' +
             (sub ? '<span class="up-sec-sub">' + esc(sub) + '</span>' : "") +
           '</div>' + search +
         '</div>' +
@@ -9726,8 +9835,8 @@
     }
     if (!rows.length){
       return '<div class="up-empty-mini">' +
-        (q ? "No variation matches this search."
-           : (opts.emptyText || "No variations recorded.")) + '</div>';
+        (q ? t_("No variation matches this search.")
+           : (opts.emptyText || t_("No variations recorded."))) + '</div>';
     }
     return rows.map(function(v){
       var sov = toNum(v.share_of_voice_pct);
@@ -9931,7 +10040,7 @@
     function platzhalter(){
       var names = getTopics().map(function(t){ return String(t.name == null ? "" : t.name); })
                              .filter(Boolean);
-      if (names.length < 2) return "Group name…";
+      if (names.length < 2) return t_("Group name…");
       var i = Math.floor(Math.random() * names.length);
       var j = Math.floor(Math.random() * (names.length - 1));
       if (j >= i) j += 1;
@@ -9976,7 +10085,10 @@
       if (moreBtn){
         var zeigen = verborgen > 0 && !alleZeigen;
         moreBtn.style.display = zeigen ? "" : "none";
-        moreBtn.textContent = zeigen ? ("Show all " + gefunden.length + " topics") : "";
+        /* Der Satz wird GEBAUT und nicht zusammengeklebt: im Deutschen steht die Zahl an
+           anderer Stelle. {n} ist der Platzhalter, den der Katalog mitnimmt. */
+        moreBtn.textContent = zeigen
+          ? t_("Show all {n} topics").replace("{n}", gefunden.length) : "";
       }
       var sw = modal.querySelector(".up-cgm-search");
       if (sw) sw.classList.toggle("is-open", sucheOffen);
@@ -10037,28 +10149,28 @@
       if (getIsDark()) modal.setAttribute("data-theme", "dark");
       modal.innerHTML =
         '<div class="up-topicmodal-card" role="dialog" aria-modal="true" aria-label="' +
-            (bearbeitet ? "Edit Grouping" : "New Grouping") + '">' +
+            esc(t_(bearbeitet ? "Edit Grouping" : "New Grouping")) + '">' +
           '<div class="up-topicmodal-head">' +
             '<div class="up-topicmodal-heading">' +
-              '<h3 class="up-topicmodal-title">' + (bearbeitet ? "Edit Grouping" : "New Grouping") + '</h3>' +
+              '<h3 class="up-topicmodal-title">' + esc(t_(bearbeitet ? "Edit Grouping" : "New Grouping")) + '</h3>' +
               '<p class="up-topicmodal-sub">Combine several topics into one group. A prompt counts ' +
                 'towards the group only if it carries <strong>all</strong> of the topics.</p>' +
             '</div>' +
-            '<button class="up-topicmodal-close" type="button" data-gm-close aria-label="Close">' + CLOSE_SVG_TM + '</button>' +
+            '<button class="up-topicmodal-close" type="button" data-gm-close aria-label="' + esc(t_("Close")) + '">' + CLOSE_SVG_TM + '</button>' +
           '</div>' +
           '<div class="up-topicmodal-body">' +
             '<div class="up-topicmodal-field">' +
               '<div class="up-cgm-labelrow upt-gm-labelrow">' +
                 '<span class="up-topicmodal-label">Topics</span>' +
                 '<span class="up-cgm-right upt-gm-right">' +
-                  '<button class="up-cgm-searchbtn upt-gm-searchbtn" type="button" data-gm-searchtoggle aria-label="Search topics">' +
+                  '<button class="up-cgm-searchbtn upt-gm-searchbtn" type="button" data-gm-searchtoggle aria-label="' + esc(t_("Search topics")) + '">' +
                     SEARCH_SVG + '</button>' +
                   '<span class="up-cgm-count upt-gm-count">0/' + CG_MAX_TOPICS + '</span>' +
                 '</span>' +
               '</div>' +
               '<div class="up-cgm-search upt-gm-search">' +
-                '<input class="up-cgm-search-in upt-gm-search-in" type="text" placeholder="Search topics…" autocomplete="off" spellcheck="false"/>' +
-                '<button class="up-cgm-clear upt-gm-clear" type="button" data-gm-clear aria-label="Clear search">' + CLOSE_SVG_TM + '</button>' +
+                '<input class="up-cgm-search-in upt-gm-search-in" type="text" placeholder="' + esc(t_("Search topics…")) + '" autocomplete="off" spellcheck="false"/>' +
+                '<button class="up-cgm-clear upt-gm-clear" type="button" data-gm-clear aria-label="' + esc(t_("Clear search")) + '">' + CLOSE_SVG_TM + '</button>' +
               '</div>' +
               '<div class="up-cgm-list upt-gm-list up-topiclist"></div>' +
               '<button class="up-cgm-more upt-gm-more" type="button" data-gm-more></button>' +
@@ -10067,7 +10179,7 @@
               '<span class="up-topicmodal-label">Group name</span>' +
               '<div class="up-cgm-namerow upt-gm-namerow">' +
                 '<div class="up-cgm-colorwrap upt-gm-colorwrap">' +
-                  '<button class="up-cgm-dotbtn upt-gm-dotbtn" type="button" data-gm-colorbtn aria-label="Group color">' +
+                  '<button class="up-cgm-dotbtn upt-gm-dotbtn" type="button" data-gm-colorbtn aria-label="' + esc(t_("Group color")) + '">' +
                     '<span class="up-cgm-dot upt-gm-dot"></span></button>' +
                 '</div>' +
                 '<input class="up-topicmodal-name up-cgm-name-in upt-gm-name-in" type="text" placeholder="' +
@@ -10078,7 +10190,7 @@
           '</div>' +
           '<div class="up-topicmodal-foot">' +
             '<button class="up-topicmodal-save up-cgm-submit upt-gm-submit" type="button" data-gm-submit disabled>' +
-              (bearbeitet ? "Save" : "Create grouping") + '</button>' +
+              esc(t_(bearbeitet ? "Save" : "Create grouping")) + '</button>' +
           '</div>' +
         '</div>';
       document.body.appendChild(modal);
@@ -10174,7 +10286,7 @@
   function cgEyeHtml(g){
     var aus = !!(g && g.hidden);
     return '<button class="up-cg-eye upt-group-eye' + (aus ? " is-off" : "") + '" type="button" ' +
-      'data-grp-eye="' + esc(g.key) + '" aria-label="' + (aus ? "Show grouping" : "Hide grouping") +
+      'data-grp-eye="' + esc(g.key) + '" aria-label="' + esc(t_(aus ? "Show grouping" : "Hide grouping")) +
       '" aria-pressed="' + (aus ? "true" : "false") + '">' + icon(aus ? "eyeOff" : "eye", 2) + '</button>';
   }
   /* offen: der Schluessel, dessen Zeilenmenue steht -- oder null. Das Menue oeffnet nach LINKS,
