@@ -122,6 +122,14 @@
 
 /* ---------- Top Brands table ---------- */
 .vt-table { width: 100%; height: 100%; display: flex; flex-direction: column; background: var(--vc-bg); overflow: hidden; }
+/* Im Dunkeln OHNE eigene Flaeche: der Kasten zeigt den Grund der Seite, der Rahmen bleibt. Auf
+   hell bleibt --vc-bg -- dort IST der Kasten die weisse Flaeche vor dem grauen Seitengrund, und
+   ohne sie verschwindet er. Im Dunkeln ist es umgekehrt: --vc-bg (#1b1b1b) liegt heller als der
+   Seitengrund (#121212), der Kasten stand also als hellerer Block darauf.
+   BEIDE Flaechen muessen weg: die Tabelle darin traegt ihre eigene und wuerde die des Kastens
+   sonst wieder verdecken. */
+.up-root[data-theme="dark"] .vot-box,
+.up-root[data-theme="dark"] .vt-table { background: transparent; }
 .vt-thead, .vt-row { display: grid; grid-template-columns: 44px minmax(120px,1fr) 22% 20% 20%; align-items: center; }
 
 .vt-table.vt-hide-sentiment .vt-th-sentiment,

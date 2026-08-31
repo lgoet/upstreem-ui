@@ -34,6 +34,17 @@
   color: var(--vc-text); background: var(--vc-heading-bg); border-color: var(--vc-hover-border);
 }
 .udr-trigger:focus-visible { border-color: var(--vc-hover-border); box-shadow: 0 0 0 2px var(--vc-heading-bg); }
+/* Im Dunkeln ohne Flaeche im RUHEZUSTAND: --vc-bg (#1b1b1b) liegt heller als der Seitengrund, der
+   Knopf sass als hellerer Block in der Werkzeugzeile. Nur der Ruhezustand -- Hover und "Panel
+   offen" behalten ihre Flaeche, sonst bleibt vom Knopf keine Rueckmeldung ausser dem Rahmen.
+   Der More-Filters-Knopf daneben bekommt dieselbe Regel in filter-bar.css. */
+.up-root[data-theme="dark"] .udr-trigger { background: transparent; }
+/* Und Hover/offen wieder ANSCHALTEN: die Regel darueber hat dieselbe Spezifitaet wie
+   .udr-wrap.is-open .udr-trigger (je drei Klassen) und steht spaeter, also hat sie dem offenen
+   Zustand die Flaeche mit weggenommen -- gemessen: rgba(0,0,0,0) auch bei offenem Panel. Ohne sie
+   bleibt als Rueckmeldung nur der Rahmen. */
+.up-root[data-theme="dark"] .udr-trigger:hover,
+.up-root[data-theme="dark"] .udr-wrap.is-open .udr-trigger { background: var(--vc-heading-bg); }
 /* Primary colour, not the button's muted currentColor -- the calendar glyph and the chevron read
    as part of the value next to them, the way the standalone had them. */
 .udr-trigger svg { width: 16px; height: 16px; flex: 0 0 16px; fill: none; stroke: var(--vc-text); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
