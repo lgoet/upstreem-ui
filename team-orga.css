@@ -50,13 +50,26 @@
 .uto-seccount { font-size: 12.5px; font-weight: 500; color: var(--vc-third); flex: 0 0 auto; }
 
 /* ---------- Tabellenschale (Vorbild .ube-table) ---------- */
-.uto-table { border: 1px solid var(--vc-border); border-radius: 12px; overflow: hidden;
+/* KEIN overflow: hidden. Das war der Grund, warum das Zeilenmenue abgeschnitten war -- es ist
+   absolut positioniert und faehrt aus der Zeile heraus, und ein overflow: hidden am Kasten
+   schneidet genau das ab. Die runden Ecken kommen stattdessen von den Zeilen selbst (unten): die
+   Zeilen haben ohnehin keinen eigenen Grund, nur der Kasten hat einen -- nur beim Ueberfahren
+   entsteht eine Flaeche, und die muss an den Ecken mitgerundet werden. */
+.uto-table { border: 1px solid var(--vc-border); border-radius: 12px;
   background: var(--vc-bg); min-width: 0; }
-/* Kopf 45px, Datenzeile 52px -- die Masse der App. Mit .uto-table davor, weil .up-row aus core
-   dieselbe Spezifitaet haette und dann die Ladereihenfolge entscheiden wuerde (STYLEGUIDE). */
-.uto-table .up-thead.up-row { height: 45px; flex: 0 0 45px; }
+/* Die Kopfzeile traegt .up-thead und NICHT .up-row. Das ist der zweite Fehler von vorher: core
+   gibt beiden Klassen dasselbe Raster (".up-thead, .up-row { display: grid }"), .up-row bringt
+   aber zusaetzlich cursor: pointer, die Hoverflaeche (.up-row:hover) UND eine eigene Trennlinie
+   mit -- und .up-th hat seine Trennlinie schon selbst. Ergebnis: die Kopfzeile reagierte auf die
+   Maus und hatte eine DOPPELTE Linie darunter. Ohne .up-row ist beides weg, das Raster bleibt.
+   Kopf 45px, Datenzeile 52px -- die Masse der App. */
+.uto-table .up-thead { height: 45px; flex: 0 0 45px; }
 .uto-table .up-row:not(.up-thead) { height: 52px; flex: 0 0 52px; cursor: default; }
 .uto-table .up-row:last-child { border-bottom: 0; }
+/* Die Ecken, die vorher der Ausschnitt gemacht hat. Am Kopf oben, an der letzten Zeile unten --
+   damit die Hoverflaeche nicht ueber die Rundung des Kastens hinauslaeuft. */
+.uto-table > .up-thead { border-top-left-radius: 11px; border-top-right-radius: 11px; }
+.uto-table > *:last-child { border-bottom-left-radius: 11px; border-bottom-right-radius: 11px; }
 
 /* Die Spalten. Name traegt den Namen UND die "You"-Marke, darf also wachsen; E-Mail ebenso.
    Joined At ist ein Datum fester Laenge, Role ein Chip, Actions ein 32px-Knopf plus Polster. */
@@ -70,11 +83,15 @@
 .uto-name { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .uto-nametxt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   font-size: 13.5px; font-weight: 500; color: var(--vc-text); }
-/* Die Marke fuer die eigene Zeile: der neutrale Chip der App in seiner kleinen Fassung. Rot war
-   sie vorher -- rot heisst in dieser App "schlechter Wert", und die eigene Zeile ist kein Fehler. */
-.uto-you { flex: 0 0 auto; height: 20px; padding: 0 7px; border-radius: 6px;
-  background: var(--vc-heading-bg); color: var(--vc-muted);
-  font-size: 11px; font-weight: 500; line-height: 20px; }
+/* Die Marke fuer die eigene Zeile: BLAU, und zwar mit den Werten des Chips der Landingpage
+   (.ulh-feat-chip) -- rgba(59,130,246,.10) als Flaeche, #3b82f6 als Schrift, Radius 7. Nur die
+   Groesse ist kleiner, weil sie in einer 52px-Zeile neben einem Namen steht und nicht ueber einer
+   Ueberschrift: 20px hoch statt 22, Polster 7 statt 9, Schrift 11 statt 11.5.
+   Derselbe Ton in hell und dunkel: eine 10-prozentige Blaufläche traegt auf beiden Gruenden, und
+   #3b82f6 ist auf beiden lesbar -- deshalb steht hier kein zweiter Satz Werte. */
+.uto-you { flex: 0 0 auto; height: 20px; padding: 0 7px; border-radius: 7px;
+  background: rgba(59, 130, 246, 0.10); color: #3b82f6;
+  font-size: 11px; font-weight: 600; letter-spacing: .02em; line-height: 20px; }
 .uto-mail { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Datum und Rolle sind Angaben zur Zeile, nicht ihre Aussage -- also die leisere Farbe. */
 .uto-when { color: var(--vc-muted); font-variant-numeric: tabular-nums; }
@@ -87,6 +104,16 @@
 .uto-role .up-entchip.is-owner { border-color: var(--vc-text); }
 
 .uto-act { display: flex; align-items: center; justify-content: flex-end; }
+/* Die Aktionszelle darf NICHT abschneiden -- .up-td aus core traegt overflow: hidden (richtig, es
+   haelt lange Texte in der Spalte), und das Zeilenmenue faehrt aus der Zelle heraus. Zwei
+   Selektorteile, damit es ueber .up-td gewinnt. */
+.uto-table .up-td.uto-act { overflow: visible; }
+/* Und die ZEILE muss hoch, solange ihr Menue offen ist. Der Grund ist nicht der Rand, sondern
+   contain: layout an .up-row (core, fuer die Layoutkosten bei 100 Zeilen): das macht jede Zeile zu
+   einem eigenen Stapelkontext, und darin nuetzt dem Menue sein z-index von 99998 nichts -- die
+   NAECHSTE Zeile liegt trotzdem darueber. Ein Kind kann aus einem Stapelkontext nicht heraus, also
+   hebt sich die Zeile selbst. Die Klasse setzt team-orga.js beim Oeffnen. */
+.uto-table .up-row.uto-rowopen { position: relative; z-index: 20; }
 /* Der Zeilenknopf erscheint beim Ueberfahren der Zeile -- wie .up-rowbtn in den Tabellen der App.
    Offen bleibt er sichtbar, sonst verschwindet er unter dem eigenen Menue. */
 .uto-act .up-iconbtn { opacity: 0; transition: opacity 120ms ease; }
@@ -134,9 +161,9 @@
 .uto-log .up-th, .uto-log .up-td { font-size: 12px; }
 /* Ab 14 Zeilen ein eigener Ausschnitt statt einer Seite, die ins Endlose waechst. 476 = 36 Kopf
    + 13 x 34 -- also genau vierzehn Zeilen, danach scrollt es.
-   Zwei Klassen, weil .uto-table oben overflow: hidden setzt (fuer die runden Ecken) und gleiche
-   Spezifitaet die Reihenfolge entscheiden liesse. overflow-x bleibt hidden: waagerecht wird hier
-   nichts geschoben, dafuer fallen auf schmalen Seiten zwei Spalten weg (unten). */
+   Hier darf overflow stehen, im Gegensatz zum Kasten oben: im Protokoll gibt es kein Zeilenmenue,
+   das herausfahren muesste. overflow-x bleibt hidden -- waagerecht wird nichts geschoben, dafuer
+   fallen auf schmalen Seiten zwei Spalten weg (unten). */
 .uto-table.uto-log { max-height: 476px; overflow-x: hidden; overflow-y: auto; }
 /* Zeit und Ereignisname in Festbreitenschrift: in einem Protokoll liest man Spalten, nicht Saetze.
    Die Familie ist die des Systems -- diese App liefert keine eigene Festbreitenschrift aus, und

@@ -363,14 +363,20 @@
       /* ---------------- wer darf was ----------------
          NUR die Sichtbarkeit im Menue. Die Pruefung steht im RPC -- siehe Kopf dieser Datei.
          Die Regeln, wie vorgegeben:
-           - Member duerfen nichts.
+           - Member verwalten niemanden -- koennen aber selbst gehen.
            - Admins verwalten MEMBER: entfernen und zum Admin machen. Admins und Besitzer nicht.
            - Besitzer duerfen alles.
            - Der LETZTE Besitzer kann sich weder entfernen noch seine Rolle abgeben.
-         Dazu kommen die drei Flags aus dem Server (can_invite / can_manage_members /
-         can_manage_roles) -- gezeigt wird nur, was BEIDE erlauben. Das ist die vorsichtige Seite:
-         in der Beispielnutzlast steht viewer_role "admin" MIT can_manage_members, aber OHNE
-         can_manage_roles, und dann gibt es eben kein Befoerdern. */
+           - Die EIGENE Zeile hat immer "Leave team" (ausser man ist der letzte Besitzer).
+
+         Was hier NICHT mehr mitentscheidet: die drei Flags can_invite / can_manage_members /
+         can_manage_roles. Zuerst musste BEIDES zutreffen, Flag und Regel -- und damit war das
+         Zeilenmenue in der echten Nutzlast an jeder Zeile leer: dort steht viewer_role "admin"
+         zusammen mit can_manage_roles: false, waehrend die Vorgabe sagt, dass genau dieser Admin
+         Member befoerdern darf. Zwei Wahrheiten, und die Vorgabe gewinnt.
+         can_invite bleibt: es steuert den Einladen-Knopf, und dort widerspricht nichts.
+         Dass ein Flag hier nichts mehr sperrt, ist unbedenklich -- gesperrt wird im RPC. Wer die
+         Flags wieder mitreden lassen will, muss sie erst mit dieser Regel in Deckung bringen. */
       function besitzerZahl() {
         var n = 0;
         state.members.forEach(function (m) { if (rolleName(m.role) === "owner") n++; });
@@ -386,26 +392,26 @@
         var mail = feld(state.viewerMail);
         return !!mail && txt(m.email).toLowerCase() === mail.toLowerCase();
       }
+      /* Der LETZTE Besitzer ist unantastbar -- weder entfernen noch Rolle abgeben. Sonst steht ein
+         Team ohne Besitzer da, und das kann die Seite nicht wieder heilen. */
+      function letzterBesitzer(m) {
+        return rolleName(m.role) === "owner" && besitzerZahl() <= 1;
+      }
       function darfEntfernen(m) {
-        if (!state.perm.can_manage_members) return false;
+        if (letzterBesitzer(m)) return false;
+        /* Die EIGENE Zeile immer: gehen ist keine Verwaltung von jemand anderem, und ein Mitglied
+           ohne diesen Weg muss jemanden bitten, es hinauszuwerfen. */
+        if (istSelbst(m)) return true;
         var mr = rolleName(m.role), vr = rolleName(state.viewerRole);
-        if (vr === "owner") {
-          /* Der letzte Besitzer bleibt. Sonst steht ein Team ohne Besitzer da, und das kann die
-             Seite nicht wieder heilen. */
-          if (mr === "owner" && besitzerZahl() <= 1) return false;
-          return true;
-        }
+        if (vr === "owner") return true;
         if (vr === "admin") return mr === "member";
         return false;
       }
       function darfRolle(m, ziel) {
-        if (!state.perm.can_manage_roles) return false;
         var mr = rolleName(m.role), vr = rolleName(state.viewerRole), zr = rolleName(ziel);
         if (mr === zr) return false;
-        if (vr === "owner") {
-          if (mr === "owner" && besitzerZahl() <= 1) return false;
-          return true;
-        }
+        if (letzterBesitzer(m)) return false;
+        if (vr === "owner") return true;
         /* Ein Admin fasst nur Member an und kann sie nur nach OBEN bewegen -- alles andere waere
            Verwaltung von Gleichrangigen. */
         if (vr === "admin") return mr === "member" && zr === "admin";
@@ -413,9 +419,9 @@
       }
       function darfEinladen() { return !!state.perm.can_invite; }
       function darfWiderrufen() {
-        /* Eine Einladung zurueckzunehmen ist Mitgliederverwaltung -- wer einladen darf, darf auch
-           zuruecknehmen; sonst haengt eine falsch verschickte Einladung sieben Tage in der Liste. */
-        return !!(state.perm.can_manage_members || state.perm.can_invite);
+        /* Wer einladen darf, darf auch zuruecknehmen -- sonst haengt eine falsch verschickte
+           Einladung sieben Tage in der Liste. */
+        return darfEinladen() || rolleName(state.viewerRole) !== "member";
       }
 
       /* ---------------- Mitgliedertabelle ---------------- */
@@ -442,7 +448,7 @@
          dem Zeilenanfang in einer 52px hohen Zeile. Unsichtbar nur, weil sie leer war. */
       function membersHtml(mitAkt) {
         var kopf =
-          '<div class="up-thead up-row">' +
+          '<div class="up-thead">' +
             '<div class="up-th">Name</div>' +
             '<div class="up-th uto-c-mail">E Mail</div>' +
             '<div class="up-th uto-c-when">Joined At</div>' +
@@ -493,7 +499,7 @@
       /* ---------------- Einladungen ---------------- */
       function invitesHtml(mitAkt) {
         var kopf =
-          '<div class="up-thead up-row">' +
+          '<div class="up-thead">' +
             '<div class="up-th">Email</div>' +
             '<div class="up-th">Role</div>' +
             '<div class="up-th uto-c-when">Expires</div>' +
@@ -524,7 +530,7 @@
       /* ---------------- Protokoll ---------------- */
       function logHtml() {
         var kopf =
-          '<div class="up-thead up-row">' +
+          '<div class="up-thead">' +
             '<div class="up-th">Date</div>' +
             '<div class="up-th">Event</div>' +
             '<div class="up-th">Actor</div>' +
@@ -640,17 +646,24 @@
             '<span class="uto-menu-lbl">Revoke invite</span></button>';
         }
         menu.innerHTML = html;
+        var zeile = btn.closest(".up-row");
         var pop = UC.makePopover({
           wrap: wrap, menu: menu, opener: btn, group: "uto-" + instanceId,
           onClose: function () {
             btn.setAttribute("aria-expanded", "false");
             var z = btn.closest(".uto-act"); if (z) z.classList.remove("is-open");
+            /* Die Hebung wieder wegnehmen -- eine dauerhaft gehobene Zeile liegt ueber dem
+               Menue der naechsten. */
+            if (zeile) zeile.classList.remove("uto-rowopen");
           }
         });
         popovers.push(pop);
         pop.open();
         btn.setAttribute("aria-expanded", "true");
         var zelle = btn.closest(".uto-act"); if (zelle) zelle.classList.add("is-open");
+        /* Hebt die ZEILE, nicht das Menue: .up-row traegt contain: layout und ist damit ein
+           eigener Stapelkontext -- siehe team-orga.css. */
+        if (zeile) zeile.classList.add("uto-rowopen");
       }
 
       /* ---------------- Klicks ---------------- */
