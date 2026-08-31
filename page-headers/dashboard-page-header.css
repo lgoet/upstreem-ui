@@ -15,11 +15,10 @@
 .dph-topright { display: flex; align-items: center; gap: 20px; }
 
 /* ---------- Die Beschreibung ----------
-   Eine Stufe groesser und eine Stufe kraeftiger als der geteilte Wert: 15 -> 16px, 400 -> 450.
-   Nur auf dem Dashboard, darum hier und nicht in core -- .up-ph-desc traegt jeder Seitenkopf der
-   App, und eine Aenderung dort wuerde sechs Seiten mitnehmen, die niemand angefasst hat.
-   Zwei Klassen gegen eine, also ueber die Spezifitaet gewonnen und nicht ueber die Reihenfolge. */
-.dph-root .up-ph-desc { font-size: 16px; font-weight: 450; }
+   Stand hier als Sonderfall (16px/450 gegen die geteilten 15/400) mit der Begruendung, eine
+   Aenderung in core wuerde sechs Seiten mitnehmen, die niemand angefasst hat. Genau das ist
+   inzwischen gewuenscht: die 16/450 stehen jetzt an .up-ph-desc in core.css und gelten fuer alle
+   sieben Seitenkoepfe. Hier bleibt nichts. */
 
 /* ---------- KPI strip: Visibility / Ranking / Sentiment ----------
    AUS. Die drei Zahlen oben rechts sind weg -- dieselben Werte stehen einen Blick weiter unten in

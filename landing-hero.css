@@ -511,7 +511,8 @@
 .ulh-perf .uhm-root.is-geht { opacity: 0; translate: 0 12px; }
 /* Der Kasten der Matrix traegt keinen eigenen Rahmen mehr: er steht im Fenster schon in einem
    Container, und zwei Rahmen ineinander sind einer zu viel. */
-.ulh-perf .uhm-box { border: 0; padding: 0; }
+/* Rahmen und Polster des Kastens: standen hier, stehen jetzt in performance-radar.css und
+   gelten damit auch in der App -- genau das war der Auftrag. Hier bleibt nichts. */
 /* Der Auftritt hier doppelt so lang wie in der App: dort ploppt die Matrix beim Seitenwechsel
    herein und soll aus dem Weg sein, hier ist sie die Vorfuehrung selbst und darf gesehen werden.
    Die Zahl steht als Faktor an EINER Stelle -- performance-radar liest sie fuer den Versatz der
@@ -525,20 +526,9 @@
 .ulh-perf .uhm-scroll { pointer-events: none; }
 /* Der Schimmer in den Zellen steht jetzt in performance-radar.css und gilt damit ueberall --
    hier stand er zuerst, aber er gehoert der Komponente, nicht dieser Seite. */
-/* Die Themen links: ein farbiger Punkt und der Name in der Textfarbe -- kein Chip, kein Emoji.
-   Der Chip aus core (.up-topicchip) bleibt das Markup, hier wird nur sein Aussehen fuer diese
-   eine Stelle umgestellt: seine Farbe steckt in --ust-tag-color und wird zum Punkt. */
-.ulh-perf .uhm-rowhead .up-topicchip {
-  background: none; border: 0; padding: 0; gap: 8px; max-width: 100%;
-}
-.ulh-perf .uhm-rowhead .up-topicchip::before {
-  content: ""; width: 8px; height: 8px; flex: 0 0 8px; border-radius: 999px;
-  background: var(--ust-tag-color, var(--vc-muted));
-}
-.ulh-perf .uhm-rowhead .up-topicchip-e { display: none; }
-.ulh-perf .uhm-rowhead .up-topicchip-lbl {
-  color: var(--vc-text); font-weight: 500; font-size: 12.5px;
-}
+/* Die Themen links (Punkt + Name, kein Chip, kein Emoji): standen hier und stehen jetzt in
+   performance-radar.css. Dieselben Zeilen an zwei Orten waren die naechste Stelle, die
+   auseinanderlaeuft, und die App soll hier ausdruecklich so aussehen wie diese Seite. */
 
 /* ---------- Der Auftritt der Prompts-Seite ----------
    Sie steigt NICHT als Ganzes herauf -- ihre Teile tun es nacheinander: erst der Seitenkopf, dann

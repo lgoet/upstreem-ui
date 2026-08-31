@@ -2,7 +2,7 @@
   UPSTREEM — OPPORTUNITIES PAGE HEADER
 
   Sits at the very top of the Opportunities page: meta row, page heading + description on the
-  left, one "Generate new Opportunities" button top right. Same page-headers/ family as
+  left, one "Look for new Opportunities" button top right. Same page-headers/ family as
   prompts-page-header.js / dashboard-page-header.js / citations-page-header.js /
   brands-page-header.js / performance-page-header.js -- all the actual visual styling lives in
   core.css/core.js's shared Page Header Kit (the ".up-ph-*" classes) so every page header gets it
@@ -10,7 +10,7 @@
   button.
 
   Same bare layout as performance-page-header.js otherwise: NO subpage nav, NO separator row
-  underneath. The Generate button reuses the exact SAME primary-button classes
+  underneath. The button reuses the exact SAME primary-button classes
   brands-page-header.js's "+ Add Brand" button uses (".up-ph-addbtn.up-export" -- filled, bold),
   just with a different icon/label -- and at core's own top offset, so there is no page-specific
   stylesheet to load here at all.
@@ -63,8 +63,8 @@
       <p class="up-ph-desc">Manage tasks, prioritize opportunities, and track progress</p>
     </div>
     <button class="up-ph-addbtn up-export" type="button">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /> <circle cx="12" cy="12" r="6" /> <circle cx="12" cy="12" r="2" /></svg>
-      <span>Generate<span class="up-ph-addbtn-full"> new Opportunities</span></span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2" /> <path d="M17 3h2a2 2 0 0 1 2 2v2" /> <path d="M21 17v2a2 2 0 0 1-2 2h-2" /> <path d="M7 21H5a2 2 0 0 1-2-2v-2" /> <rect width="8" height="8" x="8" y="8" rx="1" /></svg>
+      <span>Look for<span class="up-ph-addbtn-full"> new Opportunities</span></span>
     </button>
   </div>
 </div>

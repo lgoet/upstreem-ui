@@ -72,7 +72,12 @@
      which is `firstKey` and not listed here). `prio` is independent of this order and controls
      drop order when the table runs out of width. */
   var COLUMNS = [
-    { key: "mentioned",  label: "Mentioned?",     w: "minmax(110px, 0.6fr)",  min: 110, dropAt: "vnarrow", prio: 30 },
+    /* 116 und nicht 110: gemessen bei 12px/400 ist "Mentioned?" 65px breit, dazu 28px Polster der
+       Zelle (16 rechts, 12 links) und 21px fuer das Markenlogo davor (16 + 5 Abstand) -- macht
+       114, plus 2px Reserve gegen Rundung. Bei 110 fehlten 4px, und genau das war zu sehen:
+       "Mentioned…". Steht der Markenname davor ("Volkswagen mentioned?", 134px), schneidet es
+       weiter ab -- das ist der gewollte Fall, dafuer gibt es den Tooltip. */
+    { key: "mentioned",  label: "Mentioned?",     w: "minmax(116px, 0.6fr)",  min: 116, dropAt: "vnarrow", prio: 30 },
     { key: "sentiment",  label: "Sentiment",      w: "minmax(120px, 1fr)",    min: 120, dropAt: "narrow",  prio: 70 },
     { key: "rank",       label: "Rank",           w: "minmax(90px, 1fr)",     min: 90,  dropAt: "narrow",  prio: 60 },
     /* Brand Mentions shows 4 chips + "+N" (178px, the app-wide figure). Citations shows FIVE chips
@@ -561,6 +566,24 @@
       root: root, state: state, columns: COLUMNS,
       storePrefix: "urt", instanceId: instanceId,
       firstKey: "prompt", firstMin: PROMPT_MIN, noActions: true,
+      /* 0.18 statt der geteilten 0.30 -- die Prompt-Spalte gibt ab, damit "Date" auf einem
+         normalen Bildschirm ueberhaupt erscheint. Gemeldet: auf 15 Zoll fehlt sie.
+         Gerechnet mit der Formel aus autoFit (Mindestbreiten der anderen sieben = 1000px,
+         Reserve 31px):
+
+             Anteil   Date erscheint ab   Prompt bei 1440px Tabellenbreite
+             0.30     1473px              432px      <- vorher
+             0.22     1322px              316px
+             0.20     1289px              288px
+             0.18     1271px              259px      <- jetzt
+             0.16     1271px              240px      (bringt nichts mehr)
+
+         1271px ist die Untergrenze der Arithmetik: darunter passen die acht Mindestbreiten samt
+         Reserve nicht mehr, egal welcher Anteil. 0.18 erreicht sie, ohne die Prompt-Spalte an
+         ihre eigene Untergrenze zu druecken (PROMPT_MIN 240 gilt weiter).
+         Wer noch tiefer will, muss an eine ANDERE Mindestbreite -- die zwei dicksten sind
+         Citations (216) und Brand Mentions (178). Das ist eine eigene Entscheidung. */
+      firstShare: 0.18,
       rowHeightSwitch: ROW_HEIGHTS, badgeSel: ".urt-cols-badge", cellPrefixes: ["up","urt"],
       onChange: function(){ render(); }
     });

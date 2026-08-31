@@ -1,0 +1,33 @@
+<meta charset="utf-8">
+<title>Harness: opportunities-page-header</title>
+<link rel="stylesheet" href="core.css?v=1">
+<style>html,body{margin:0}body{font-family:Geist,system-ui,sans-serif;padding:24px;background:#fff}</style>
+<script>
+window.__ev=[]; window.__fehler=[];
+window.onerror=function(m){ window.__fehler.push(String(m)); };
+window.bubble_fn_ophSearch = function(a){ window.__ev.push(["ophSearch", a]); };
+</script>
+<!-- Der Knopf steht hier NOCH IN DER ALTEN FASSUNG (drei Kreise, "Generate"): genau so sieht ein
+     Element aus, das in Bubble schon eingebaut ist und die neue Vorlage nie sieht. Was danach im
+     Knopf steht, muss also aus opportunities-page-header.js kommen. Das ist der Punkt der Messung. -->
+<div class="up-root up-ph-root oph-root"
+     data-instance="o1"
+     data-cdn-pin=""
+     data-isdark="no"
+     data-brand-name="Acme"
+     data-brand-logo=""
+     data-search-fn="bubble_fn_ophSearch">
+  <div class="up-ph-top">
+    <div class="up-ph-left">
+      <div class="up-ph-meta"><img class="up-ph-metalogo" alt="" style="display:none"/><span class="up-ph-metatxt"></span></div>
+      <h1 class="up-ph-heading">Opportunities</h1>
+      <p class="up-ph-desc">Manage tasks, prioritize opportunities, and track progress</p>
+    </div>
+    <button class="up-ph-addbtn up-export" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /> <circle cx="12" cy="12" r="6" /> <circle cx="12" cy="12" r="2" /></svg>
+      <span>Generate<span class="up-ph-addbtn-full"> new Opportunities</span></span>
+    </button>
+  </div>
+</div>
+<script src="core.js?v=1"></script>
+<script src="page-headers/opportunities-page-header.js?v=1"></script>

@@ -1837,8 +1837,21 @@
        shrinking, never to the user choosing to spend more of the existing space on the lead
        column. A pinned lead column instead squeezes every other track down toward its own
        minimum (applyCols' own clamp handles that) — it does not make columns disappear. */
+    /* Der Anteil, den die FUEHRENDE Spalte von der Tabellenbreite nimmt. 0.30 ist die Vorgabe und
+       bleibt fuer jede Tabelle, die nichts anderes sagt.
+       Warum es den Schalter gibt: dieser Anteil ist bei breiten Tabellen der GRUND, warum die
+       rechte Spalte wegfaellt -- nicht die Mindestbreiten. In der Responses-Tabelle summieren sich
+       die anderen sieben Spalten auf 1000px; mit 30 Prozent fuer Prompt braucht die Tabelle 1473px,
+       damit "Date" ueberhaupt erscheint, und so breit ist ein 15-Zoll-Bildschirm hinter der
+       250px-Seitenleiste nie. Gerechnet, nicht geschaetzt (dieselbe Formel wie autoFit unten).
+       FIRST_MIN bleibt die harte Untergrenze: ein kleiner Anteil kann die fuehrende Spalte nicht
+       unbrauchbar schmal machen. */
+    function firstShare(){
+      var v = cfg.firstShare;
+      return (typeof v === "number" && v > 0 && v < 1) ? v : 0.30;
+    }
     function firstWidth(cw){
-      return Math.max(FIRST_MIN, (cw - LEAD()) * 0.30);
+      return Math.max(FIRST_MIN, (cw - LEAD()) * firstShare());
     }
     /* Measurement-driven column dropping. The hardcoded is-narrow/is-vnarrow breakpoints below
        only ever knew the ROOT's width, never what the columns actually need — so any table whose
@@ -9029,6 +9042,13 @@
               '<circle cx="6.5" cy="9.5" r=".5" fill="currentColor"/>',
     libraryBig: '<rect width="8" height="18" x="3" y="3" rx="1"/><path d="M7 3v18"/>' +
               '<path d="M20.4 18.9c.2.5-.1 1.1-.6 1.3l-1.9.7c-.5.2-1.1-.1-1.3-.6L11.1 5.1c-.2-.5.1-1.1.6-1.3l1.9-.7c.5-.2 1.1.1 1.3.6Z"/>',
+    /* Lucide scan-square. Zeichen des Knopfes "Look for new Opportunities" im
+       Opportunities-Seitenkopf -- vier Ecken und ein Feld darin, also "durchsuchen", und nicht
+       das Zielkreuz, das dort vorher stand (drei Kreise, gelesen als "zielen"). Woertlich aus
+       lucide-static wie jedes andere Zeichen hier. */
+    scanSquare: '<path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/>' +
+              '<path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/>' +
+              '<rect width="8" height="8" x="8" y="8" rx="1"/>',
     check:    '<path d="M20 6 9 17l-5-5"/>',
     chevronDown:  '<path d="m6 9 6 6 6-6"/>',
     chevronRight: '<path d="m9 18 6-6-6-6"/>',

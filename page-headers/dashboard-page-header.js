@@ -150,14 +150,12 @@
        dem CDN-Pin ankommen. Die Vorlage ist gleichzeitig nachgezogen, fuer die naechste frische
        Seite. Alles idempotent -- initRoot kann mehrfach laufen. */
     (function markupNachziehen(){
-      /* 1. Die Meta-Zeile ist raus. Auf dem Dashboard sagt sie nichts, was die Ueberschrift nicht
-            schon sagt: man ist im Arbeitsbereich, den die Seitenleiste oben nennt.
-            AUSBAUEN und nicht ausblenden: ein leerer Kasten mit 8px Aussenabstand hinterlaesse
-            genau diese 8px ueber der Ueberschrift.
-            UC.makePageHeaderMeta laeuft trotzdem weiter -- es macht auch die
-            data-isdark-Nachsynchronisierung, und seine beiden Elemente sucht es null-sicher. */
-      var meta = root.querySelector(".up-ph-meta");
-      if (meta && meta.parentNode) meta.parentNode.removeChild(meta);
+      /* 1. Die Meta-Zeile: nichts mehr zu tun. Sie stand hier als Sonderfall des Dashboards und
+            wurde ausgebaut; jetzt blendet core sie fuer JEDEN Seitenkopf aus
+            (.up-ph-root .up-ph-meta { display: none }), und ein zweiter Weg fuer dieselbe Sache
+            waere die naechste Stelle, die auseinanderlaeuft. UC.makePageHeaderMeta laeuft
+            weiter -- es macht auch die data-isdark-Nachsynchronisierung. */
+
 
       /* 2. Der Docs-Knopf traegt nur noch sein Zeichen -- library-big aus core, DASSELBE, das im
             Onboarding-Kopf am Begleitkasten "Guide" haengt. Vorher stand dort ein Buch-SVG plus

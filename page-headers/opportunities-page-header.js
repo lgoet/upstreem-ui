@@ -3,7 +3,7 @@
    UC.isYes/UC.makeFire and the shared .up-root CSS variables plus the Page Header Kit's meta/
    heading/description styling (core.css's ".up-ph-*" classes). Same bare layout as
    performance-page-header.js otherwise -- no subpage nav, no separator row -- except for the one
-   top-right "Generate new Opportunities" button, which reuses the SAME primary-button classes
+   top-right "Look for new Opportunities" button, which reuses the SAME primary-button classes
    brands-page-header.js's "+ Add Brand" button uses (".up-ph-addbtn.up-export" -- filled), just
    with a different icon/label -- and at core's own top offset, so this component ships no
    stylesheet of its own.
@@ -64,6 +64,20 @@
 
     var searchBtn = root.querySelector(".up-ph-addbtn");
     if (searchBtn){
+      /* Beschriftung und Zeichen aus JS und nicht aus der Vorlage: page-headers/bubble/*.html ist
+         eine Vorlage fuer NEUINSTALLATIONEN, ein bereits eingebautes Element erreicht sie nie
+         mehr. Also kommt beides mit dem CDN-Pin. Die Vorlage ist gleichzeitig nachgezogen.
+         "Look for new Opportunities" statt "Generate new Opportunities": die Seite sucht, sie
+         erfindet nichts. Zeichen scan-square statt der drei Kreise -- die lasen sich als
+         "zielen", und gezielt wird hier nicht.
+         Der Kurzname bleibt der erste Teil, .up-ph-addbtn-full faellt auf schmalen Seiten weg
+         (core.css) -- also "Look for" allein, was als Anfang eines Satzes noch traegt.
+         Idempotent: initRoot kann mehrfach laufen. */
+      if (!searchBtn.getAttribute("data-oph-btn")){
+        searchBtn.setAttribute("data-oph-btn", "1");
+        searchBtn.innerHTML = (UC.icon ? UC.icon("scanSquare", 2) : "") +
+          '<span>Look for<span class="up-ph-addbtn-full"> new Opportunities</span></span>';
+      }
       searchBtn.addEventListener("click", function(){ fire("data-search-fn", "ophSearch", {}); });
     }
   }

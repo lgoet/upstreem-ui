@@ -2761,6 +2761,17 @@
    directly above the heading, not a peer paragraph, so it stays visually closer to it than the
    heading is to the description below. */
 .up-ph-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+/* ── Keine Meta-Zeile mehr in den SEITENKOEPFEN ──────────────────────────────────────────────
+   Sie sagt nichts, was die Ueberschrift nicht schon sagt: in welchem Arbeitsbereich man steht,
+   nennt die Seitenleiste. Erst am Dashboard entfernt, jetzt fuer alle sieben.
+   display: none und nicht ausbauen -- der Einwand von damals ("ein LEERER Kasten hinterlaesst
+   seine 8px") gilt fuer einen Kasten, der noch da ist. Ohne Kasten gibt es auch keinen
+   Aussenabstand.
+   .up-ph-root ist der Haken, und der ist genau richtig gewaehlt: die sieben Elemente in
+   page-headers/ tragen ihn alle, die Teams-Komponente baut ihren Kopf selbst und traegt ihn
+   NICHT -- ihre Meta-Zeile ("Logo Teamname Organisation") war ausdruecklich gewuenscht und bleibt
+   damit stehen. Geprueft: 7 von 7 Vorlagen mit .up-ph-root, teams.js ohne. */
+.up-ph-root .up-ph-meta { display: none; }
 /* grayscale(1): a brand's own logo colour would otherwise compete with this being a quiet,
    secondary line above the real heading. */
 /* Tuned so pure BLACK lands on --vc-third (#808080, L=128) -- the colour of the label beside it.
@@ -2796,7 +2807,11 @@
   letter-spacing: -0.5px; line-height: 1.2; }
 /* 15px puts the description at ~54% of the 28px heading -- inside the ~50-57% ratio typical for a
    subtitle under an H1; 17px (61%) read a shade too close to the heading's own weight. */
-.up-ph-desc { margin: 0; font-size: 15px; font-weight: 400; color: var(--vc-muted); line-height: 1.4; }
+/* 16/450 statt 15/400 -- erst am Dashboard erprobt, jetzt fuer JEDEN Seitenkopf. Die Zeile ist
+   die einzige Erklaerung, die eine Seite ueber sich abgibt; bei 15/400 stand sie als Kleingedrucktes
+   unter der Ueberschrift. Der Wert stand vorher als Sonderfall in dashboard-page-header.css und ist
+   dort raus: ein Bauteil, zwei Groessen waere die naechste Meldung. */
+.up-ph-desc { margin: 0; font-size: 16px; font-weight: 450; color: var(--vc-muted); line-height: 1.4; }
 
 .up-ph-addbtn { flex: 0 0 auto; margin-top: 0; }
 

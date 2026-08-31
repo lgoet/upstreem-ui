@@ -35,9 +35,17 @@
 
 /* ---------- frame ---------- */
 .up-root.uhm-root { flex-direction: column; }
+/* KEIN Rahmen und KEIN Polster. Die Matrix ist selbst ein Raster mit sichtbaren Kanten -- ein
+   Kasten darum ergibt zwei Rahmen ineinander, und die 16px Polster schoben die erste Spalte von
+   der Kante weg, an der sie klebt.
+   Das ist die Fassung, die auf der Landingpage schon steht (dort als .ulh-perf-Sonderfall) und die
+   jetzt fuer die App gilt -- eine Matrix, ein Aussehen. background und radius bleiben: sie tragen
+   das Thema und die Rundung der Ecken, an denen die Zellen enden.
+   Der Detailbereich ist davon NICHT betroffen: das ist ein eigenes Element (performance-detail)
+   mit eigener Wurzel und eigener CSS. */
 .uhm-box {
-  border: 1px solid var(--vc-border); background: var(--vc-bg); border-radius: 16px;
-  padding: 16px; min-width: 0;
+  border: 0; background: var(--vc-bg); border-radius: 16px;
+  padding: 0; min-width: 0;
 }
 /* overflow-x only. A heatmap whose columns no longer fit at their 60px minimum SCROLLS — it does
    not quietly drop the columns that fell off the end, which is how "the chart looks complete but
@@ -45,6 +53,27 @@
 .uhm-scroll { overflow-x: auto; overflow-y: visible; min-width: 0; }
 
 .uhm-grid { display: grid; align-items: stretch; min-width: min-content; }
+
+/* ---------- die Themen links ----------
+   Ein farbiger Punkt und der Name in der TEXTfarbe -- kein Chip, kein Emoji. Der Chip aus core
+   (.up-topicchip) bleibt das Markup, hier wird nur sein Aussehen fuer diese eine Stelle
+   umgestellt: seine Farbe steckt in --ust-tag-color und wird zum Punkt.
+   Wortgleich uebernommen aus landing-hero.css (.ulh-perf .uhm-rowhead ...), wo es zuerst stand.
+   Dort ist es jetzt raus: dieselben Zeilen an zwei Orten sind die naechste Stelle, die
+   auseinanderlaeuft -- und gewuenscht ist ausdruecklich, dass die App so aussieht wie die Seite.
+   Streng auf .uhm-rowhead begrenzt: derselbe Chip steht auch im Themen-Waehler dieser Komponente
+   (.uhm-pick-col) und ist dort ein Chip mit Flaeche, weil man ihn dort anklickt. */
+.uhm-rowhead .up-topicchip {
+  background: none; border: 0; padding: 0; gap: 8px; max-width: 100%;
+}
+.uhm-rowhead .up-topicchip::before {
+  content: ""; width: 8px; height: 8px; flex: 0 0 8px; border-radius: 999px;
+  background: var(--ust-tag-color, var(--vc-muted));
+}
+.uhm-rowhead .up-topicchip-e { display: none; }
+.uhm-rowhead .up-topicchip-lbl {
+  color: var(--vc-text); font-weight: 500; font-size: 12.5px;
+}
 
 /* ---------- column headers (brands) ---------- */
 .uhm-colhead {

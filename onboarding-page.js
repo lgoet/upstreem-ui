@@ -1453,7 +1453,7 @@
                      weil sie mir gefallen, sondern damit ein Nutzer, der von dort kommt,
                      dieselbe Liste wiederfindet. */
                   '<span class="uob-plan-feats">' +
-                    feat("Track <b>ChatGPT, Perplexity &amp; Google AI Overviews</b>") +
+                    feat("<b>Choose which models to track</b>") +
                     feat("Track up to <b>" + esc(String(pl.prompts_per_day)) + " prompts</b>") +
                     feat("Prompts executed daily") +
                     (antworten(pl) != null

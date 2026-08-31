@@ -660,7 +660,7 @@
         '<a class="ulh-btn ulh-btn-pri ulh-preis-btn" href="' + PREIS_ZIEL + '"' +
           ' target="_blank" rel="noopener">' + PREIS_CTA + '</a>' +
         '<ul class="ulh-preis-liste">' +
-          preisZeile("Track <b>ChatGPT, Perplexity &amp; Google AI Overviews</b>") +
+          preisZeile("<b>Choose which models to track</b>") +
           preisZeile("Track multiple models") +
           preisZeile("Track up to <b>" + t.prompts + " prompts</b>") +
           preisZeile("Prompts executed daily") +
