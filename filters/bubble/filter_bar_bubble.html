@@ -39,17 +39,20 @@
   ihre Zeile weg. Pro Ansicht also eine Leiste und ein Satz Filter.
 
   WAS DIE LEISTE ZEIGT
-  - "More Filters" mit dem Lucide-Zeichen list-filter. Sobald irgendein Filter aktiv ist, sitzt
-    oben rechts am Knopf derselbe Hinweispunkt wie an den Icon-Knoepfen der Werkzeugleisten.
-  - Rechts daneben ein Trennstrich, dann je aktivem Filter ein Chip: "Topic: Leadgen" oder
-    "Topic: Leadgen, Solar, +3". Danach "Clear All".
-  - Im Dropdown eine Zeile je Filter, in der Reihenfolge Topics, Models, Markets. Die Zeile zeigt
-    dasselbe wie der Trigger des Filters heute: bei genau einer Auswahl den Namen mit seinem
-    farbigen Punkt bzw. Logo, ab zwei die Beschriftung mit dem runden Zaehler vor dem Winkel.
+  - "More Filters": das Lucide-Zeichen settings-2, die Beschriftung, dann ein Chevron nach unten.
+    Er dreht sich beim Oeffnen nicht.
+  - Rechts daneben ein Trennstrich (1x16), dann je aktivem Filter ein Chip: "Topic: Leadgen" oder
+    "Topic: Leadgen, Solar, +3". Jeder Chip hat rechts ein X, das GENAU DIESEN Filter leert.
+    Danach "Clear All".
+  - Im Dropdown eine Zeile je Filter, in der Reihenfolge Topics, Models, Markets. Vorne das
+    Zeichen des Filters (tags / layers / map-pin), dann dasselbe, was der Trigger des Filters
+    heute zeigt: bei genau einer Auswahl deren Name samt farbigem Punkt (Topic), Logo (Model) oder
+    Flagge (Market), ab zwei die Beschriftung mit dem runden Zaehler vor dem Winkel.
   - Ganz unten "Reset Filters" -- nur, solange etwas gewaehlt ist.
 
   BEDIENUNG
-  - Zeigen auf eine Zeile faehrt den Filter rechts heraus (links, wenn dort kein Platz ist).
+  - Zeigen auf eine Zeile faehrt den Filter nach RECHTS heraus (nach links nur, wenn rechts kein
+    Platz mehr ist).
   - KLICKEN stellt ihn fest: er bleibt offen, bis eine andere Zeile geklickt wird, bis es nach
     draussen geht oder bis Escape kommt.
   - Auf einem schmalen Bildschirm gibt es kein "daneben": dort geht man HINEIN. Der Filter nimmt
@@ -57,18 +60,29 @@
     weg und die Chips lassen sich waagerecht schieben.
 
   DAS EINZIGE EREIGNIS (jedes mit einem JSON-Text als erstem Parameter)
-     ufbReset   "Reset Filters" im Dropdown ODER "Clear All" in der Leiste
-       {"team_id":"t1","action":"clear_all"}
+     ufbReset   drei Ausloeser, zwei Formen:
 
-       Vorher leert die Leiste die Auswahl JEDES eingezogenen Filters -- still, ueber deren
-       eigenes setSelected(""). Die Filter schicken dabei NICHTS: sonst stiessen drei
-       Filter-Ereignisse und dieses vierte dieselbe Abfrage viermal an. Der Workflow hinter
-       ufbReset ist also der EINE Ort, an dem nach einem Clear neu geladen wird.
+       "Reset Filters" im Dropdown ODER "Clear All" in der Leiste -- alles weg:
+         {"team_id":"t1","action":"clear_all"}
+
+       Das X an einem Chip -- nur dieser eine Filter:
+         {"team_id":"t1","action":"clear_one","filter":"topics"}
+         filter ist "topics", "models" oder "markets".
+
+       Beide Formen sind fuer den Workflow dasselbe: neu laden. Ob er nach action oder filter
+       verzweigt, ist eine Entscheidung der Bubble-Seite -- der Name steht drin, damit sie sie
+       treffen KANN.
+
+       Vorher leert die Leiste die betroffene Auswahl -- still, ueber das eigene setSelected("")
+       des Filters. Die Filter schicken dabei NICHTS: sonst stiessen ihre Ereignisse und dieses
+       dieselbe Abfrage mehrfach an. Der Workflow hinter ufbReset ist also der EINE Ort, an dem
+       nach einem Clear neu geladen wird.
        Die Listen der Filter bleiben dabei stehen; nur die Auswahl geht weg.
 
   DIE WERTE IN BUBBLE LESEN (extract with Regex)
          (?<="team_id":")[^"]*
-         (?<="action":")[^"]*        immer "clear_all"
+         (?<="action":")[^"]*        "clear_all" oder "clear_one"
+         (?<="filter":")[^"]*        nur bei clear_one
 
   ES GIBT KEIN EREIGNIS FUER DIE FILTER SELBST
   Das Auswaehlen laeuft weiter ueber die Filter. Ihre Workflows (utfTopics / utfTopicsApply,

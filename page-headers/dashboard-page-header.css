@@ -14,8 +14,21 @@
    es sind zwei verschiedene Dinge. */
 .dph-topright { display: flex; align-items: center; gap: 20px; }
 
-/* ---------- KPI strip: Visibility / Ranking / Sentiment ---------- */
-.dph-kpis { display: flex; align-items: center; gap: 12px; flex: 0 0 auto; margin-top: 0; }
+/* ---------- Die Beschreibung ----------
+   Eine Stufe groesser und eine Stufe kraeftiger als der geteilte Wert: 15 -> 16px, 400 -> 450.
+   Nur auf dem Dashboard, darum hier und nicht in core -- .up-ph-desc traegt jeder Seitenkopf der
+   App, und eine Aenderung dort wuerde sechs Seiten mitnehmen, die niemand angefasst hat.
+   Zwei Klassen gegen eine, also ueber die Spezifitaet gewonnen und nicht ueber die Reihenfolge. */
+.dph-root .up-ph-desc { font-size: 16px; font-weight: 450; }
+
+/* ---------- KPI strip: Visibility / Ranking / Sentiment ----------
+   AUS. Die drei Zahlen oben rechts sind weg -- dieselben Werte stehen einen Blick weiter unten in
+   den Karten der Seite, und oben nahmen sie der Ueberschrift die Breite (dafuer gab es sogar eine
+   eigene Messung, fitTopRight, die sie auf schmalen Seiten wieder wegnahm).
+   Das Markup bleibt und wird weiter gefuellt: setDashboardPageHeaderKpis ist ein bestehender
+   Setter, und ein Aufruf, der ins Leere laeuft, waere eine stille Aenderung des Vertrags.
+   display: none an EINER Stelle statt Markup ausbauen -- so ist es eine Zeile zurueck. */
+.dph-kpis { display: none; align-items: center; gap: 12px; flex: 0 0 auto; margin-top: 0; }
 .dph-kpi { display: inline-flex; align-items: center; gap: 6px; }
 .dph-kpi-label { font-size: 14px; font-weight: 500; color: var(--vc-third); white-space: nowrap; }
 .dph-kpi-value { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap;
@@ -34,8 +47,8 @@
    hover background) -- prompts-page-header.js reuses the identical button, so it lives there now
    instead of a page-local class. Docs stays local: no other page header has an icon+label utility
    button like it yet. */
-.dph-docsbtn { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 8px;
-  border: 0; border-radius: 8px; background: transparent; color: var(--vc-text); cursor: pointer;
-  font-family: inherit; font-size: 14px; font-weight: 500; flex: 0 0 auto; }
-.dph-docsbtn:hover { background: var(--vc-heading-bg); }
-.dph-docsbtn svg { width: 16px; height: 16px; display: block; }
+/* Der Docs-Knopf traegt nur noch sein Zeichen (graduation-cap) und ist damit derselbe Knopf wie
+   Refresh daneben: .up-ph-iconbtn aus core, 32x32. Die Klasse haengt dashboard-page-header.js beim
+   Init an -- aus JS und nicht aus der Vorlage, weil die Vorlage ein bereits eingebautes Element
+   nicht mehr erreicht. Hier bleibt nur, was .up-ph-iconbtn nicht selbst regelt: nicht schrumpfen. */
+.dph-docsbtn { flex: 0 0 auto; }

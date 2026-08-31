@@ -1,0 +1,57 @@
+<meta charset="utf-8">
+<title>Harness: dashboard-page-header</title>
+<link rel="stylesheet" href="core.css?v=1">
+<link rel="stylesheet" href="page-headers/dashboard-page-header.css?v=1">
+<style>html,body{margin:0}body{font-family:Geist,system-ui,sans-serif;padding:24px;background:#fff}</style>
+<script>
+window.__ev=[]; window.__fehler=[];
+window.onerror=function(m){ window.__fehler.push(String(m)); };
+["dphRefresh","dphDocs","dphNav"].forEach(function(n){ window["bubble_fn_"+n]=function(a){ window.__ev.push([n,a]); }; });
+try{ localStorage.clear(); }catch(e){}
+</script>
+<div class="up-root up-ph-root dph-root"
+     data-instance="d1"
+     data-cdn-pin=""
+     data-isdark="no"
+     data-brand-name="Acme"
+     data-brand-logo=""
+     data-refresh-fn="bubble_fn_dphRefresh"
+     data-docs-fn="bubble_fn_dphDocs">
+  <div class="up-ph-top">
+    <div class="up-ph-left">
+      <!-- KEINE Meta-Zeile auf dem Dashboard. dashboard-page-header.js baut sie zusaetzlich aus,
+           falls sie in einer schon eingebauten Seite noch steht. -->
+      <h1 class="up-ph-heading">Dashboard</h1>
+      <p class="up-ph-desc">Monitor your AI visibility, performance, and latest developments</p>
+    </div>
+    <div class="dph-topright">
+      <!-- dashboard-page-header.js fuellt das weiter bei setDashboardPageHeaderKpis(), SICHTBAR
+           ist es nicht mehr (dashboard-page-header.css: .dph-kpis { display: none }). Das Markup
+           bleibt, damit der bestehende Setter nicht ins Leere laeuft. -->
+      <div class="dph-kpis"></div>
+      <div class="dph-tools">
+        <!-- Nur das Zeichen, kein Wort: graduation-cap. dashboard-page-header.js setzt es beim
+             Init auch in einer schon eingebauten Seite und haengt .up-ph-iconbtn dazu. -->
+        <button class="dph-docsbtn up-ph-iconbtn" type="button" data-tip="Open Documentation"
+                aria-label="Open Documentation">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" /> <path d="M22 10v6" /> <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" /></svg>
+        </button>
+        <button class="dph-refreshbtn up-ph-iconbtn" type="button" aria-label="Refresh" data-tip="Refresh Data">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /> <path d="M21 3v5h-5" /> <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /> <path d="M8 16H3v5" /></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="core.js?v=1"></script>
+<script src="page-headers/dashboard-page-header.js?v=1"></script>
+<script>
+/* Die KPIs KOENNEN weiter geliefert werden -- der Setter bleibt im Vertrag. Sichtbar sein
+   duerfen sie nicht mehr. */
+window.__kpis = function(){
+  if (window.setDashboardPageHeaderKpis) window.setDashboardPageHeaderKpis({ instanceId: "d1",
+    kpis: { avg_visibility_pct: 34.3, avg_visibility_delta_pct: 4.7,
+            avg_rank: 3.1, avg_rank_delta: -0.3,
+            avg_sentiment: 76, avg_sentiment_delta: 2 } });
+};
+</script>

@@ -83,13 +83,13 @@
   var FILTERS = [
     { key: "topics",  label: "Topics",  attr: "data-topics-instance",  rootSel: ".utf-root",
       ctrl: "__utfCtrl", selKey: "topic_ids",    opt: ".utf-opt", keyAttr: "data-id",
-      nameSel: ".utf-opt-name", evt: "utf-topics",  chip: "Topic" },
+      nameSel: ".utf-opt-name", evt: "utf-topics",  chip: "Topic",  icon: "tags" },
     { key: "models",  label: "Models",  attr: "data-models-instance",  rootSel: ".umf-root",
       ctrl: "__umfCtrl", selKey: "model_keys",   opt: ".umf-opt", keyAttr: "data-key",
-      nameSel: ".umf-opt-name", evt: "umf-models",  chip: "Model" },
+      nameSel: ".umf-opt-name", evt: "umf-models",  chip: "Model",  icon: "layers" },
     { key: "markets", label: "Markets", attr: "data-markets-instance", rootSel: ".umk-root",
       ctrl: "__umkCtrl", selKey: "market_codes", opt: ".umk-opt", keyAttr: "data-key",
-      nameSel: ".umk-opt-name", evt: "umk-markets", chip: "Market" }
+      nameSel: ".umk-opt-name", evt: "umk-markets", chip: "Market", icon: "mapPin" }
   ];
   /* Wie viele Namen ein Chip zeigt, bevor er auf "+N" zusammenfasst. Zwei: bei drei Namen ist der
      Chip breiter als der Knopf davor, und dann liest man die Leiste nicht mehr, sondern buchstabiert
@@ -162,11 +162,14 @@
       root.innerHTML =
         '<div class="ufb-bar">' +
           '<span class="ufb-more">' +
+            /* settings-2 vorne, Beschriftung, dann der Chevron nach unten -- er sagt, dass hier
+               ein Menue aufgeht, und er dreht sich NICHT beim Oeffnen (mehrfach so vorgegeben).
+               KEIN Hinweispunkt: er stand hier und ist wieder raus. Dass Filter laufen, sagen die
+               Chips daneben, und die sagen es genauer als ein Punkt. */
             '<button class="up-quietbtn ufb-btn" type="button" aria-haspopup="menu" aria-expanded="false">' +
-              UC.icon("listFilter", 2) + '<span class="ufb-btn-lbl">More Filters</span>' +
-              /* EXAKT das Bauteil der Icon-Trigger in den Werkzeugleisten. Keine Zahl darin: sie
-                 waere die Summe aus Themen, Modellen und Maerkten und beantwortet nichts. */
-              '<span class="up-badge is-dot ufb-dot"></span>' +
+              '<span class="ufb-btn-ic">' + UC.icon("settings2", 2) + '</span>' +
+              '<span class="ufb-btn-lbl">More Filters</span>' +
+              '<span class="ufb-btn-chev">' + UC.icon("chevronDown", 2.2) + '</span>' +
             '</button>' +
             '<div class="up-menu ufb-menu" role="menu" aria-hidden="true">' +
               /* Die Zurueck-Zeile gehoert nach OBEN und gibt es nur im Hineingehen -- core
@@ -192,7 +195,6 @@
       var elMore  = root.querySelector(".ufb-more");
       var elRows  = root.querySelector(".ufb-rows");
       var elChips = root.querySelector(".ufb-chips");
-      var elDot   = root.querySelector(".ufb-dot");
 
       var fire = UC.makeFire(root, { label: "filter-bar", eventPrefix: "ufb" });
       function isDark() {
@@ -208,6 +210,14 @@
           return '<div class="up-subwrap ufb-wrap" data-sub="' + esc(f.key) + '">' +
                    '<button class="up-optrow ufb-row up-subrow" type="button" aria-expanded="false" ' +
                      'aria-haspopup="menu">' +
+                     /* Das Zeichen der Zeile ist FEST und gehoert dieser Komponente: es sind die
+                        Trigger-Zeichen der drei Filter (tags / layers / map-pin), jetzt aus core
+                        statt als Kopie. Gespiegelt wird es NICHT -- der Trigger tauscht sein
+                        Zeichen gegen das Logo bzw. die Flagge des gewaehlten Eintrags, sobald
+                        genau einer gewaehlt ist. Das ist am Trigger richtig (dort ersetzt es die
+                        ganze Beschriftung) und in einer Menuezeile falsch: dort stand dann ein
+                        Modell-Logo, wo das Zeichen fuer "Models" hingehoert. */
+                     '<span class="ufb-row-ic">' + UC.icon(f.icon, 2) + '</span>' +
                      '<span class="ufb-mirror" data-mirror>' +
                        '<span class="ufb-mirror-fallback">' + esc(f.label) + '</span>' +
                      '</span>' +
@@ -290,9 +300,28 @@
         var teile = [];
         Array.prototype.forEach.call(trig.children, function (c) {
           /* Ihr eigener Chevron bleibt draussen: die Zeile hat ihren eigenen, und der zeigt nach
-             rechts (dort kommt das Untermenue heraus) und nicht nach unten. */
+             rechts (dort kommt das Untermenue heraus) und nicht nach unten.
+             Und ihr ZEICHEN ebenso: die Zeile bringt ihr eigenes mit (siehe ufb-row-ic). Der
+             Trigger tauscht das Zeichen gegen Logo bzw. Flagge des gewaehlten Eintrags -- in der
+             Zeile stand damit ein Modell-Logo statt des Zeichens fuer "Models". Ein SVG als
+             direktes Kind ist bei topics das Zeichen, bei models/markets steckt es in
+             .umf-trigger-ic / .umk-trigger-ic. */
           if (c.classList && (c.classList.contains("utf-chev") || c.classList.contains("umf-chev") ||
                               c.classList.contains("umk-chev"))) return;
+          /* Der Zeichenhalter der Filter (.umf-trigger-ic / .umk-trigger-ic) traegt ZWEI Dinge,
+             je nach Zustand: ohne oder mit mehreren Auswahlen das Zeichen des Filters, bei genau
+             einer das LOGO des Modells bzw. die FLAGGE des Marktes. Das Zeichen waere hier
+             doppelt (die Zeile bringt ihr eigenes mit) -- das Logo und die Flagge sind dagegen
+             genau das, was in der Zeile stehen soll.
+             Unterschieden wird am INHALT und nicht am Zustand: enthaelt er ein Bild (oder den
+             Buchstaben-Rueckfall dazu), bleibt er; ist es nur ein SVG, faellt er weg. Ein
+             blosses <svg> als direktes Kind ist bei topics dasselbe. */
+          var nurZeichen = c.tagName && c.tagName.toLowerCase() === "svg";
+          if (!nurZeichen && c.classList &&
+              (c.classList.contains("umf-trigger-ic") || c.classList.contains("umk-trigger-ic"))){
+            nurZeichen = !c.querySelector("img") && !!c.querySelector("svg");
+          }
+          if (nurZeichen) return;
           teile.push(c.cloneNode(true));
         });
         ziel.innerHTML = "";
@@ -375,9 +404,13 @@
         liste.forEach(function (f) {
           var c = chipText(f);
           if (!c) return;
-          teile.push('<span class="up-entchip is-static ufb-chip">' +
+          teile.push('<span class="ufb-chip" data-chip="' + esc(f.key) + '">' +
             '<span class="ufb-chip-lbl"><span class="ufb-chip-key">' + esc(c.key) + ': </span>' +
-            esc(c.wert) + '</span></span>');
+            esc(c.wert) + '</span>' +
+            '<button class="ufb-chip-x" type="button" data-chip-clear="' + esc(f.key) + '" ' +
+              'aria-label="Clear ' + esc(f.label) + ' filter" data-tip="Clear ' + esc(f.label) + '">' +
+              UC.icon("x", 2.6) + '</button>' +
+          '</span>');
         });
         elChips.innerHTML = teile.join("");
       }
@@ -395,8 +428,6 @@
       function render() {
         var an = aktiv().length > 0;
         root.classList.toggle("has-filters", an);
-        /* Der Punkt: genau die Mechanik der Werkzeugleisten -- is-visible an .up-badge. */
-        elDot.classList.toggle("is-visible", an);
         renderChips();
         var eng = schmal();
         root.classList.toggle("is-wrap", eng);
@@ -461,6 +492,19 @@
          Bedeutung. Das Untermenue geht beim Schliessen des Panels ohnehin mit (onClose oben). */
 
       /* ---------------- Reset ---------------- */
+      /* EINEN Filter leeren -- das X am Chip. Derselbe stille Weg wie bei Clear All, und dasselbe
+         Ereignis: der Workflow dahinter laedt neu, und ihn nach action zu verzweigen ist die
+         Entscheidung der Bubble-Seite. Der Name des Filters steht mit drin, damit sie es kann. */
+      function einenLeeren(key) {
+        var f = byKey(key);
+        if (!f) return;
+        var w = eingezogen[f.key];
+        var c = w && w[f.ctrl];
+        if (c && typeof c.setSelected === "function") { try { c.setSelected(""); } catch (e) {} }
+        spiegeln(f);
+        render();
+        fire("data-reset-fn", "ufbReset", { action: "clear_one", filter: f.key });
+      }
       function alleLeeren() {
         /* Still: jeder Filter bekommt setSelected("") -- das raeumt die Auswahl auf und laesst die
            LISTE stehen (resetXFilter wuerde auch die Liste wegwerfen, das ist der Weg fuer einen
@@ -479,6 +523,8 @@
         if (!e.target.closest) return;
         if (e.target.closest("[data-ufb-reset]")) { e.stopPropagation(); alleLeeren(); pop.close(true); return; }
         if (e.target.closest("[data-ufb-clear]")) { alleLeeren(); return; }
+        var cx = e.target.closest("[data-chip-clear]");
+        if (cx) { einenLeeren(cx.getAttribute("data-chip-clear")); return; }
       });
 
       /* ---------------- auf Aenderungen der Filter hoeren ----------------

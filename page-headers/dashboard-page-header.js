@@ -144,6 +144,36 @@
         fire("data-refresh-fn", "dphRefresh", {});
       });
     }
+    /* ---------- drei Aenderungen am gelieferten Markup, aus JS und nicht aus der Vorlage ----------
+       bubble/*.html ist eine Vorlage fuer NEUINSTALLATIONEN: was dort steht, erreicht ein bereits
+       eingebautes Element nie mehr. Diese drei Dinge muessen also von hier kommen, damit sie mit
+       dem CDN-Pin ankommen. Die Vorlage ist gleichzeitig nachgezogen, fuer die naechste frische
+       Seite. Alles idempotent -- initRoot kann mehrfach laufen. */
+    (function markupNachziehen(){
+      /* 1. Die Meta-Zeile ist raus. Auf dem Dashboard sagt sie nichts, was die Ueberschrift nicht
+            schon sagt: man ist im Arbeitsbereich, den die Seitenleiste oben nennt.
+            AUSBAUEN und nicht ausblenden: ein leerer Kasten mit 8px Aussenabstand hinterlaesse
+            genau diese 8px ueber der Ueberschrift.
+            UC.makePageHeaderMeta laeuft trotzdem weiter -- es macht auch die
+            data-isdark-Nachsynchronisierung, und seine beiden Elemente sucht es null-sicher. */
+      var meta = root.querySelector(".up-ph-meta");
+      if (meta && meta.parentNode) meta.parentNode.removeChild(meta);
+
+      /* 2. Der Docs-Knopf traegt nur noch sein Zeichen -- graduation-cap aus core. Vorher stand
+            dort ein Buch-SVG plus das Wort "Docs". Die Beschriftung faellt weg, der Tooltip
+            bleibt (data-tip steht im Markup) und ein aria-label kommt dazu: ein Knopf, der nur
+            aus einem Zeichen besteht, braucht seinen Namen fuer die Vorlesehilfe.
+            .up-ph-iconbtn ist das Bauteil dafuer -- 32x32, dasselbe wie der Refresh-Knopf
+            daneben; .dph-docsbtn bleibt am Element, die Klasse steht im Vertrag. */
+      var db = root.querySelector(".dph-docsbtn");
+      if (db && !db.getAttribute("data-dph-iconly")){
+        db.setAttribute("data-dph-iconly", "1");
+        db.classList.add("up-ph-iconbtn");
+        db.setAttribute("aria-label", "Open Documentation");
+        db.innerHTML = UC.icon ? UC.icon("graduationCap", 2) : db.innerHTML;
+      }
+    })();
+
     var docsBtn = root.querySelector(".dph-docsbtn");
     if (docsBtn) docsBtn.addEventListener("click", function(){ fire("data-docs-fn", "dphDocs", {}); });
 
@@ -158,13 +188,16 @@
        wrap because of it, and if so hide them again -- freeing that width back to .up-ph-left. Runs
        on every resize tick (via UC.onResize below) and once right after setKpis() populates real
        content, since the KPI strip's width appearing at all is not itself a root resize. */
-    function fitTopRight(){
-      if (!kpisEl || !kpisEl.firstChild || !descEl) return;
-      kpisEl.style.display = "";
-      var lineH = parseFloat(getComputedStyle(descEl).lineHeight) || 0;
-      if (lineH && descEl.scrollHeight > lineH * 1.4) kpisEl.style.display = "none";
-    }
-    if (UC.onResize) UC.onResize(root, fitTopRight);
+    /* 3. Die KPI-Leiste oben rechts ist aus. Sie bleibt im Markup und wird weiter gefuellt --
+          setDashboardPageHeaderKpis ist ein bestehender Setter, und ein Aufruf, der ins Leere
+          laeuft, waere eine stille Aenderung des Vertrags. Sichtbar ist sie nicht mehr
+          (dashboard-page-header.css, .dph-kpis { display: none }).
+          fitTopRight hat damit nichts mehr zu messen: es verglich die Hoehe der Beschreibung
+          gegen die Breite der KPI-Leiste, um sie auf schmalen Seiten wieder wegzunehmen. Ohne
+          sichtbare Leiste gibt es keinen Wettbewerb um die Breite -- und ein Zuhoerer, der bei
+          jedem Resize eine Hoehe liest, ohne etwas zu entscheiden, ist genau der Posten, den die
+          Performance-Runde ueberall abgebaut hat. */
+    function fitTopRight(){}
 
     /* cls: "up-trend dph-trend-sm" keeps up-trend's pos/neg color logic (core.css) and just
        overrides icon/font size -- see dashboard-page-header.css's own comment on .dph-trend-sm for

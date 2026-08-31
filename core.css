@@ -864,11 +864,14 @@
     .up-subwrap { position: relative; }
     .up-submenu {
       position: absolute; top: calc(-1 * var(--up-dd-pad));
-      right: calc(100% + var(--up-dd-pad) + var(--up-dd-gap) + 1px);
+      /* RECHTS ist die Vorgabe: der Winkel in der Zeile zeigt nach rechts, und dorthin gehoert
+         dann auch das Panel. Nach links nur, wenn rechts kein Platz ist (.is-flipleft, die Klasse
+         setzt UC.makeSubmenu nach einer Messung). */
+      left: calc(100% + var(--up-dd-pad) + var(--up-dd-gap) + 1px);
       z-index: 2; min-width: 220px;
       background: var(--vc-bg); border: 1px solid var(--vc-border);
       border-radius: var(--up-dd-radius); box-shadow: var(--up-dd-shadow); padding: var(--up-dd-pad);
-      opacity: 0; transform: translateX(4px) scale(0.985); pointer-events: none;
+      opacity: 0; transform: translateX(-4px) scale(0.985); pointer-events: none;
       transition: opacity 110ms ease, transform 110ms ease;
     }
     .up-root[data-theme="dark"] .up-submenu { background: var(--up-menu-bg); border-color: #454545; }
@@ -877,25 +880,32 @@
        nach draussen kommt -- mit :hover waere das nicht ausdrueckbar. Den Zeiger verfolgt
        UC.makeSubmenu und setzt die Klasse; :hover bleibt zusaetzlich drin, damit ein Untermenue
        auch ohne das Kit aufgeht (und damit es bei stehendem Zeiger nicht unter der Maus zugeht). */
-    .up-subwrap.is-subopen > .up-submenu,
-    .up-submenu:hover { opacity: 1; transform: translateX(0) scale(1); pointer-events: auto; }
+    /* NUR die Klasse, kein :hover. Ein :hover-Zweig stand hier als Weg ohne JS -- er kann aber
+       gar nicht greifen: geschlossen ist das Untermenue pointer-events: none, also nie gehovert.
+       Schlimmer, er lud dazu ein, ihn fuer den Grund zu halten, wenn ein geschlossenes Panel
+       trotzdem Zeiger faengt (der wirkliche Grund war ein Kind, das pointer-events wieder
+       aufhob -- siehe filter-bar.css). Eine Sichtbarkeit, eine Quelle. */
+    .up-subwrap.is-subopen > .up-submenu { opacity: 1; transform: translateX(0) scale(1); pointer-events: auto; }
     /* Die Bruecke fuer die Maus muss die Luecke GANZ ueberdecken, sonst schliesst das Untermenue
-       auf dem Weg dorthin. Sie waechst mit den Tokens mit, plus 2px Reserve. */
+       auf dem Weg dorthin. Sie waechst mit den Tokens mit, plus 2px Reserve.
+       Nur die HOEHE DER ZEILE, nicht die des Untermenues: mit height:100% lag ein 300px hoher,
+       unsichtbarer Streifen ueber den Zeilen darunter -- der Zeiger erreichte sie nicht mehr, und
+       auf dem Weg ins Untermenue meldete jede Zeile darunter ihren eigenen Hover. Die Bruecke
+       muss nur den Weg von DIESER Zeile zum Panel decken. */
     .up-submenu::before {
-      content: ""; position: absolute; top: 0; height: 100%;
-      right: calc(-1 * (var(--up-dd-pad) + var(--up-dd-gap) + 3px));
+      content: ""; position: absolute; top: var(--up-dd-pad); height: 34px;
+      left: calc(-1 * (var(--up-dd-pad) + var(--up-dd-gap) + 3px));
       width: calc(var(--up-dd-pad) + var(--up-dd-gap) + 3px);
     }
-    /* Nach rechts, wenn links kein Platz ist. Die Klasse setzt UC.makeSubmenu nach einer Messung. */
-    .up-subwrap.is-flipright > .up-submenu {
-      right: auto; left: calc(100% + var(--up-dd-pad) + var(--up-dd-gap) + 1px);
-      transform: translateX(-4px) scale(0.985);
+    /* Nach links, wenn rechts kein Platz ist. Die Klasse setzt UC.makeSubmenu nach einer Messung. */
+    .up-subwrap.is-flipleft > .up-submenu {
+      left: auto; right: calc(100% + var(--up-dd-pad) + var(--up-dd-gap) + 1px);
+      transform: translateX(4px) scale(0.985);
     }
-    .up-subwrap.is-flipright > .up-submenu::before {
-      right: auto; left: calc(-1 * (var(--up-dd-pad) + var(--up-dd-gap) + 3px));
+    .up-subwrap.is-flipleft > .up-submenu::before {
+      left: auto; right: calc(-1 * (var(--up-dd-pad) + var(--up-dd-gap) + 3px));
     }
-    .up-subwrap.is-flipright.is-subopen > .up-submenu,
-    .up-subwrap.is-flipright > .up-submenu:hover { transform: translateX(0) scale(1); }
+    .up-subwrap.is-flipleft.is-subopen > .up-submenu { transform: translateX(0) scale(1); }
 
     /* ── Schmal: hinein statt heraus ─────────────────────────────────────────────────────────
        Auf einem Telefon gibt es kein "daneben" -- ein Panel, das seitlich herausfaehrt, landet

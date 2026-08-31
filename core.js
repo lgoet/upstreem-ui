@@ -4839,17 +4839,23 @@
       for (var i = 0; i < l.length; i++) if (l[i].getAttribute(KEY) === key) return l[i];
       return null;
     }
-    /* Nach links, ausser links ist kein Platz. Gemessen wird am Panel: das Untermenue selbst ist
-       geschlossen und hat keine brauchbare Breite, solange es nicht offen ist. min-width aus der
-       CSS als Untergrenze -- eine Messung an einem Element mit opacity 0 liefert die Breite, aber
-       nicht ihre endgueltige, wenn der Inhalt erst beim Oeffnen kommt. */
+    /* Nach RECHTS, ausser rechts ist kein Platz -- dann nach links (.is-flipleft). Der Winkel in
+       der Zeile zeigt nach rechts, also gehoert das Panel dorthin; links ist der Ausweg.
+       Gemessen am Panel und an der Fensterbreite. min-width aus der CSS als Untergrenze: eine
+       Messung an einem Element, dessen Inhalt erst beim Oeffnen kommt, liefert sonst eine Breite,
+       die gleich nicht mehr gilt. */
     function seiteWaehlen(row){
       var sub = row.querySelector(".up-submenu");
       if (!sub) return;
       var breite = Math.max(sub.offsetWidth || 0, 220);
-      var links = panel.getBoundingClientRect().left;
+      var r = panel.getBoundingClientRect();
+      var vw = window.innerWidth || document.documentElement.clientWidth || 0;
       var luecke = 24;   /* Polster + Abstand + Rahmen, grosszuegig gerundet */
-      row.classList.toggle("is-flipright", (links - breite - luecke) < 8);
+      var passtRechts = (r.right + luecke + breite) <= (vw - 8);
+      var passtLinks = (r.left - luecke - breite) >= 8;
+      /* Passt keine Seite, bleibt es bei rechts: dort schneidet das Fenster ab, links waere es
+         dasselbe -- und rechts ist die Richtung, die der Winkel ansagt. */
+      row.classList.toggle("is-flipleft", !passtRechts && passtLinks);
     }
     function anwenden(){
       panel.classList.toggle("is-drill", drill());
@@ -4860,7 +4866,7 @@
         var b = r.querySelector("[aria-expanded]");
         if (b) b.setAttribute("aria-expanded", an ? "true" : "false");
         if (an && !drill()) seiteWaehlen(r);
-        if (!an) r.classList.remove("is-flipright");
+        if (!an) r.classList.remove("is-flipleft");
       });
     }
     function open(key, pin){
@@ -9039,6 +9045,22 @@
        Ausloeser der einklappbaren Werkzeugleiste ("Filter hinzufuegen"); dieser hier sagt nur
        "Filter" und steht am "More Filters"-Knopf der Filterleiste. Wortgleich aus Lucide. */
     listFilter: '<path d="M2 5h20"/><path d="M6 12h12"/><path d="M9 19h6"/>',
+    /* settings-2: zwei Schieber. Das Zeichen des "More Filters"-Knopfes -- es sagt "hier wird
+       eingestellt", waehrend settings (das Zahnrad) in dieser App den Tabelleneinstellungen
+       gehoert und listFilter dem Trichter. Wortgleich aus Lucide. */
+    settings2: '<path d="M14 17H5"/><path d="M19 7h-9"/><circle cx="17" cy="17" r="3"/>' +
+              '<circle cx="7" cy="7" r="3"/>',
+    /* layers und mapPin: die Trigger-Zeichen des Modell- und des Markt-Filters. Sie standen dort
+       je als rohes SVG in der Komponente; die Filterleiste braucht dieselben in ihren Zeilen, und
+       zwei Kopien einer Form sind genau der Weg, auf dem sie auseinanderlaufen. */
+    layers:   '<path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/>' +
+              '<path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/>' +
+              '<path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/>',
+    mapPin:   '<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/>' +
+              '<circle cx="12" cy="10" r="3"/>',
+    /* graduation-cap: der Docs-Knopf im Dashboard-Seitenkopf. Wortgleich aus Lucide. */
+    graduationCap: '<path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/>' +
+              '<path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/>',
     listChevronsUpDown: '<path d="M3 5h8"/><path d="M3 12h8"/><path d="M3 19h8"/>' +
               '<path d="m15 8 3-3 3 3"/><path d="m15 16 3 3 3-3"/>',
     listChevronsDownUp: '<path d="M3 5h8"/><path d="M3 12h8"/><path d="M3 19h8"/>' +

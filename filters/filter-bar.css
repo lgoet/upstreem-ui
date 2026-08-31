@@ -29,35 +29,69 @@
 .ufb-bar { display: flex; align-items: center; gap: 8px; min-width: 0; }
 
 /* ---------- der Knopf ----------
-   Text in Primaerfarbe mit dem Zeichen davor, kein Rahmen und keine Flaeche. Das Bauteil dafuer
-   ist .up-quietbtn aus core -- der leise, BESCHRIFTETE Trigger, die Beschriftungs-Fassung von
+   Text in Primaerfarbe, davor settings-2, dahinter der Chevron nach unten. Das Bauteil ist
+   .up-quietbtn aus core -- der leise, BESCHRIFTETE Trigger, die Beschriftungs-Fassung von
    .up-iconbtn: 32px hoch (also auf einer Linie mit dem Datumsfilter daneben), Radius 8, Flaeche
    erst beim Ueberfahren und im offenen Zustand, Zeichen 16.
-   Der Hinweispunkt ist .up-badge.is-dot und sitzt absolut an der Ecke des KNOPFES, nicht an der
-   des Zeichens -- der Knopf ist das Bedienelement, in den Werkzeugleisten sitzt er genauso.
-   Groesse, Lage, Farbe und das Einblenden bringt das Bauteil mit; hier steht nichts davon nochmal.
-   Bleibt also nur: er darf nicht schrumpfen. */
+   Hier steht nur der zweite Abstand: 7px zwischen Zeichen und Wort (die bringt das Bauteil mit),
+   und etwas mehr vor dem Chevron -- er gehoert nicht zur Beschriftung, sondern sagt, dass hier
+   ein Menue aufgeht. Er dreht sich NICHT beim Oeffnen.
+   Einen Hinweispunkt gibt es nicht mehr: dass Filter laufen, sagen die Chips daneben, und die
+   sagen es genauer. */
 .ufb-btn { flex: 0 0 auto; }
+.ufb-btn-ic { display: inline-flex; flex: 0 0 16px; }
+.ufb-btn-chev { display: inline-flex; flex: 0 0 16px; margin-left: 3px; color: var(--vc-muted); }
+.ufb-btn:hover .ufb-btn-chev, .ufb-more.is-open .ufb-btn-chev { color: var(--vc-text); }
 
 .ufb-more { position: relative; display: inline-flex; flex: 0 0 auto; }
 
 /* ---------- Trennstrich ----------
-   24px hoch, 1px breit, Rahmenfarbe. Die 8px links und rechts kommen aus dem gap der Leiste. */
-.ufb-sep { flex: 0 0 1px; width: 1px; height: 24px; background: var(--vc-border); }
+   16px hoch, 1px breit, Rahmenfarbe. Die 8px links und rechts kommen aus dem gap der Leiste.
+   Vorher 24 -- so hoch wie ein Chip abzueglich seiner Rundung; er stand damit als eigene Kante
+   in der Zeile statt als leise Trennung. */
+.ufb-sep { flex: 0 0 1px; width: 1px; height: 16px; background: var(--vc-border); }
 
 /* ---------- Chips ----------
-   .up-entchip aus core, statisch (kein Zeiger, kein Hover): sie SAGEN, was laeuft, sie schalten
-   nichts. Abgewaehlt wird im Filter selbst oder ueber "Clear All".
-   Die Polsterung ist der einzige eigene Wert: .up-entchip hat links 5px, weil dort ein Logo mit
-   eigenem Rand steht. Hier steht Text, und der braucht links dasselbe wie rechts. Hoehe, Radius
-   und Rahmen des Bauteils bleiben unberuehrt. */
+   KEIN Rahmen, nur Flaeche: --vc-field (hell #f5f5f5, dunkel #2a2a2a). Das ist das Token mit dem
+   VOLLEN Ton -- core beschreibt bei ihm, warum es neben --vc-heading-bg existiert: das ist
+   halbtransparent, und zwei Halbtransparenzen uebereinander ergeben einen dritten Ton.
+   Geometrie wie .up-entchip (28px, Radius 8), aber als eigene Klasse und nicht als Ueberschreibung
+   von dessen Rahmen: ein Bauteil, dem man den Rahmen nimmt, ist ein anderes Bauteil.
+   Rechts im Chip ein X, das GENAU DIESEN Filter leert -- mit Abstand zum Text, damit es nicht als
+   Teil des Wortes gelesen wird. */
 .ufb-chips { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.ufb-chip.ufb-chip { padding: 0 10px; cursor: default; }
+.ufb-chip {
+  display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto;
+  height: 28px; padding: 0 5px 0 10px; border-radius: 8px;
+  background: var(--vc-field);
+  white-space: nowrap; overflow: hidden; min-width: 0; max-width: 100%; box-sizing: border-box;
+}
 .ufb-chip-lbl { font-size: 12px; font-weight: 500; color: var(--vc-text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 /* Der Name des Filters davor ist die leisere Haelfte -- "Topic:" ist der Bezug, der Wert ist die
    Aussage. */
 .ufb-chip-key { color: var(--vc-muted); font-weight: 500; }
+/* Das X: 18px, damit es im 28px-Chip Luft hat, und in der dritten Farbe -- es ist der Ausgang,
+   nicht die Aussage. Beim Ueberfahren wird es die primaere.
+
+   .check_reinvention.py meldet hier den Segmented-Control-Knopf (background, border,
+   border-radius, cursor, height, transition). Begruendung: core hat zwei Clear-X, und beide
+   haengen an einem FELD und nicht an einem Chip. .up-search-clear ist 24px und haelt in der
+   Werkzeugleiste dauerhaft seinen Platz frei (visibility statt display), .up-ddsearch-x ist
+   absolut IM Eingabefeld positioniert (right: 7px, translateY). Keines von beiden laesst sich in
+   einen 28px-Chip setzen, ohne genau die Eigenschaften zu ueberschreiben, die es ausmachen. Die
+   Werte hier sind aus dem kleineren der beiden abgeleitet (Radius 5, --vc-third, Hover auf
+   --vc-text), nur die Groesse folgt dem Chip: 18 auf 28 ist dasselbe Verhaeltnis wie 20 auf 32
+   im Feld. */
+.ufb-chip-x {
+  display: inline-flex; align-items: center; justify-content: center; flex: 0 0 18px;
+  width: 18px; height: 18px; padding: 0; border: 0; border-radius: 5px;
+  background: transparent; color: var(--vc-third); cursor: pointer; outline: 0;
+  transition: color 120ms ease, background-color 120ms ease;
+}
+.ufb-chip-x svg { width: 11px; height: 11px; display: block; }
+.ufb-chip-x:hover { color: var(--vc-text); background: var(--vt-row-hover-solid, rgba(0,0,0,.06)); }
+.ufb-chip-x:focus-visible { box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 
 /* ---------- Clear All ----------
    Reiner Text in Sekundaerfarbe, 16px Abstand zu den Chips (der kommt aus margin-left, nicht aus
@@ -94,6 +128,10 @@
    der Name des einzigen gewaehlten Eintrags mit seinem farbigen Punkt, oder die Beschriftung mit
    dem Zaehler. Kein zweiter Renderer, der davon abweichen koennte. */
 .ufb-row { min-height: 34px; padding: 0 9px; font-size: 13px; font-weight: 500; }
+/* Das feste Zeichen der Zeile. In der Sekundaerfarbe wie in jedem Menue der App; die aktive
+   Zeile hebt es nicht hervor -- das tun Zaehler und Winkel. */
+.ufb-row-ic { display: inline-flex; flex: 0 0 16px; color: var(--vc-muted); }
+.ufb-row-ic svg { width: 16px; height: 16px; display: block; }
 .ufb-mirror { flex: 1 1 auto; display: inline-flex; align-items: center; gap: 8px; min-width: 0;
   overflow: hidden; }
 /* Der Zaehler steht am rechten Ende des Spiegels und damit unmittelbar VOR dem Winkel -- genau
@@ -149,7 +187,7 @@
 }
 .ufb-sub .utf-menu, .ufb-sub .umf-menu, .ufb-sub .umk-menu {
   position: static; top: auto; left: auto; right: auto;
-  opacity: 1; transform: none; pointer-events: auto;
+  opacity: 1; transform: none;
   /* Kein zweiter Rahmen und kein zweiter Schatten: das Untermenue aus core bringt beides schon
      mit. Zwei Rahmen ineinander lesen sich als Fehler. */
   border: 0; box-shadow: none; border-radius: 0; background: transparent;
@@ -158,6 +196,21 @@
 }
 /* Und kein eigener Abstand: das Untermenue polstert schon. */
 .ufb-sub > .utf-root, .ufb-sub > .umf-root, .ufb-sub > .umk-root { margin: 0; }
+
+/* ── pointer-events NUR im offenen Untermenue ─────────────────────────────────────────────────
+   Das war der Fehler hinter "sobald man auf das Unterdropdown hovert, wechselt das Dropdown".
+   Gemessen mit elementFromPoint IM offenen Topics-Panel: 30px hinein und 120px tief lag dort
+   .umk-search-in, also das MARKT-Panel. Alle drei Untermenues haengen an je einer Zeile desselben
+   Panels und oeffnen darum an fast derselben Stelle -- sie liegen uebereinander. Die geschlossenen
+   sind unsichtbar (das Untermenue hat opacity: 0) und sollten fuer den Zeiger nicht da sein: es
+   hat pointer-events: none. Hier stand aber ein pointer-events: auto am Panel DES FILTERS, und
+   ein Kind darf das des Elternteils wieder aufheben. Damit waren die geschlossenen Panels
+   unsichtbar, aber trefbar -- der Zeiger landete im Markt-Panel, und meine Zeilenerkennung
+   meldete folgerichtig "markets".
+   Jetzt haengt es an .is-subopen: genau eines ist trefbar, und zwar das, das man sieht. */
+.up-subwrap.is-subopen > .ufb-sub .utf-menu,
+.up-subwrap.is-subopen > .ufb-sub .umf-menu,
+.up-subwrap.is-subopen > .ufb-sub .umk-menu { pointer-events: auto; }
 
 /* ---------- nichts da ----------
    Solange kein Filter eingezogen ist, gibt es nichts zu oeffnen. Der Knopf bleibt sichtbar (er ist
