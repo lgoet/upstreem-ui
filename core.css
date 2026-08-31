@@ -1586,6 +1586,15 @@
        the one column that never hides. Same set of separators either way. */
     .up-th:first-child { border-left: none; }
     .up-th.is-sortable { cursor: pointer; user-select: none; }
+    /* Der Kopftext muss SCHRUMPFEN duerfen. Fuer .up-th-txt gab es keine einzige Regel: der Text
+       war damit unschrumpfbar, der ganze Inhalt lief bei enger Spalte ueber, und weil overflow
+       an der POLSTERKANTE schneidet und nicht an der Inhaltskante, rutschte der Sortierchevron in
+       die 16px rechts hinein und klebte am Rahmen. Genau so gemeldet fuer die Visibility-Spalte.
+       min-width:0 ist der Kern -- ein Flex-Kind schrumpft ohne das nicht unter seine Inhaltsbreite.
+       Der Chevron und das Info-Zeichen bleiben feste Breite, also verliert der TEXT die Pixel und
+       nicht das Bedienelement. */
+    .up-th-txt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .up-th > .up-thsort, .up-th > .up-th-info { flex: 0 0 auto; }
     /* ---------- column resizing ---------- */
     .up-th { position: relative; }
     .up-grip {

@@ -46,6 +46,10 @@
       return;
     }
     var UC = window.UpstreemCore;
+    /* Uebersetzung und Maskierung aus core. Der Schluessel IST der englische Text -- ein Label
+       ohne Katalogeintrag kommt unveraendert zurueck und bleibt richtiges Englisch. */
+    var t = UC.t || function (x) { return x; };
+    var esc = UC.esc || function (x) { return String(x == null ? "" : x); };
 
     /* ---------- dates ----------
        Everything is a local midnight Date. No UTC anywhere: the picker means calendar days, and
@@ -167,11 +171,18 @@
           '</button>' +
           '<div class="udr-menu" role="dialog" aria-label="Choose date range" aria-hidden="true">' +
             '<div class="udr-presets">' +
-              '<div class="udr-presets-head">Date range</div>' +
+              /* data-i18n TRAEGT DEN ENGLISCHEN SCHLUESSEL, obwohl hier schon uebersetzt wird.
+                 Ohne das gibt es zwei Quellen fuer denselben Text und sie widersprechen sich: der
+                 Sprachlauf in core merkt sich sonst den DEUTSCHEN Text als Original, und der Weg
+                 zurueck auf Englisch ist verloren. Gemessen: nach de -> en stand weiter
+                 "Letzte 7 Tage". Uebersetzt wird hier trotzdem, damit beim ersten Zeichnen nicht
+                 kurz Englisch aufblitzt. */
+              '<div class="udr-presets-head" data-i18n="Date range">' + esc(t("Date range")) + '</div>' +
               PRESETS.map(function (p) {
-                return '<button type="button" class="udr-preset" data-preset="' + p.key + '">' + p.label + '</button>';
+                return '<button type="button" class="udr-preset" data-preset="' + p.key + '"' +
+                       ' data-i18n="' + esc(p.label) + '">' + esc(t(p.label)) + '</button>';
               }).join("") +
-              '<button type="button" class="udr-reset">Reset</button>' +
+              '<button type="button" class="udr-reset" data-i18n="Reset">' + esc(t("Reset")) + '</button>' +
             '</div>' +
             '<div class="udr-divider" aria-hidden="true"></div>' +
             '<div class="udr-cal"></div>' +
@@ -350,7 +361,11 @@
         };
       }
       function paint() {
-        labelEl.textContent = committedLabel;
+        /* Uebersetzt beim SCHREIBEN und nicht beim Speichern: committedLabel geht als Text mit
+           dem Ereignis nach Bubble, und dort muss derselbe Wert ankommen wie bisher.
+           data-i18n haelt den englischen Schluessel -- siehe oben, gleiche Begruendung. */
+        labelEl.setAttribute("data-i18n", committedLabel);
+        labelEl.textContent = t(committedLabel);
         trigger.setAttribute("title", rangeLabel(committed.from, committed.to));
         root.setAttribute("data-date-from", iso(committed.from));
         root.setAttribute("data-date-to", iso(committed.to));

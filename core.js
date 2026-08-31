@@ -352,6 +352,59 @@
     "Top URLs": "Top-URLs",
     "Top Brands": "Top-Brands",
     "Responses": "Antworten",
+    "Yes": "Ja",
+    "No": "Nein",
+
+    /* ── Explainer an den Spaltenkoepfen (UC.explainCopy) ──────────────────────────────────────
+       Der Satz steht MIT seinen Platzhaltern im Katalog; gefuellt wird erst danach. */
+    "How positively the brand is described when it's mentioned{scope}{trend}.":
+      "Wie positiv über die Brand gesprochen wird, wenn sie erwähnt wird{scope}{trend}.",
+    "The brand's average position among all brands mentioned{scope}{trend}. A lower number is better.":
+      "Die durchschnittliche Position der Brand unter allen erwähnten Brands{scope}{trend}. Kleiner ist besser.",
+    "How often the brand appears in AI answers{scope}{trend}.":
+      "Wie oft die Brand in KI-Antworten vorkommt{scope}{trend}.",
+    "Which of your tracked brands are mentioned{scope}. Hover a logo to see its name.":
+      "Welche deiner beobachteten Brands erwähnt werden{scope}. Fahre über ein Logo, um den Namen zu sehen.",
+    "How much of all citations in the period went to this {subject}, plus the change against the previous period.":
+      "Wie viel aller Citations im Zeitraum auf diese {subject} entfielen, dazu die Veränderung zum Zeitraum davor.",
+    /* Die Stuecke, die die Komponenten einsetzen -- eigene Eintraege, weil sie eigene Texte sind.
+       Das fuehrende Leerzeichen gehoert dazu: der Satz klebt sie direkt an. */
+    " for this prompt": " für diesen Prompt",
+    " in AI answers for this prompt": " in KI-Antworten auf diesen Prompt",
+    " for the tracked prompts": " für die beobachteten Prompts",
+    " for this domain": " für diese Domain",
+    " for this URL": " für diese URL",
+    "domain": "Domain",
+    "URL": "URL",
+
+    /* ── Beschreibungen der Seitenkoepfe (stehen im Bubble-Markup) ───────────────────────────── */
+    "Monitor your AI visibility, performance, and latest developments":
+      "Beobachte deine KI-Sichtbarkeit, die Performance und die letzten Entwicklungen",
+    "Manage Prompts, Topics and monitor latest Responses":
+      "Prompts und Topics verwalten, neueste Responses ansehen",
+    "Manage tasks, prioritize opportunities, and track progress":
+      "Aufgaben verwalten, Opportunities priorisieren, Fortschritt verfolgen",
+    "Manage the teams you are a member of, and switch between them":
+      "Verwalte die Teams, in denen du Mitglied bist, und wechsle zwischen ihnen",
+    "Manage your brand, your team and your plan.":
+      "Verwalte deine Brand, dein Team und deinen Tarif.",
+    "Find the prompts your audience actually asks AI, and turn the ones worth owning into tracked prompts.":
+      "Finde die Prompts, die dein Publikum der KI wirklich stellt, und mache aus den lohnenden beobachtete Prompts.",
+
+    /* ── Datumsfilter ─────────────────────────────────────────────────────────────────────────
+       "Letzte 7 Tage" und Geschwister. Die Voreinstellungen stehen in filters/date-range.js. */
+    "Last 7 Days": "Letzte 7 Tage",
+    "Last 30 Days": "Letzte 30 Tage",
+    "Last 3 Months": "Letzte 3 Monate",
+    "Last 6 Months": "Letzte 6 Monate",
+    "Last 12 Months": "Letzte 12 Monate",
+    "This Month": "Dieser Monat",
+    "Last Month": "Letzter Monat",
+    "Custom Range": "Eigener Zeitraum",
+    /* Klein geschriebenes "range" -- so steht es im Markup von date-range.js. Ich hatte hier
+       zuerst "Date Range" mit grossem R, und dann traf der Schluessel nicht. Gemessen: der Kopf
+       blieb englisch. */
+    "Date range": "Zeitraum",
     "Cancel": "Abbrechen",
     "Done": "Fertig",
     "Continue": "Weiter",
@@ -1204,8 +1257,17 @@
   function explainCopy(key, vars){
     var e = EXPLAIN_TEXT[key];
     if (!e) return null;
-    var t = e.t.replace(/\{(\w+)\}/g, function(_, k){ return (vars && vars[k] != null) ? vars[k] : ""; });
-    return { h: e.h, t: t };
+    /* Uebersetzt wird der SATZ ALS GANZES, mit seinen Platzhaltern drin, und erst danach werden
+       sie gefuellt. Andersherum waere der fertige Satz kein Katalogschluessel mehr -- und die
+       Reihenfolge im Deutschen ist ohnehin eine andere, das gibt nur ein Satzmuster her.
+       Die eingesetzten Stuecke ({scope}, {trend}, {subject}) kommen aus den Komponenten und gehen
+       ebenfalls durch t_: sie sind eigene Katalogeintraege. */
+    var muster = t_(e.t);
+    var txt = muster.replace(/\{(\w+)\}/g, function(_, k){
+      var v = (vars && vars[k] != null) ? vars[k] : "";
+      return v ? t_(v) : "";
+    });
+    return { h: t_(e.h), t: txt };
   }
 
   /* "<brand> mentioned?" cell — one implementation for every table that has the column. Both
@@ -1221,7 +1283,7 @@
     var yes = isYes(v);
     return '<span class="up-ment-cell ' + (yes ? "is-yes" : "is-no") + '">' +
              '<span class="up-ment-badge">' + (yes ? MENT_YES_SVG : MENT_NO_SVG) + '</span>' +
-             (yes ? "Yes" : "No") +
+             esc(t_(yes ? "Yes" : "No")) +
            '</span>';
   }
   var DONE_SVG = '<svg class="up-ic-done" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>';
@@ -3895,6 +3957,11 @@
     "[class*='filter-title']", "[class*='filter-submit']", "[class*='filter-reset']",
     "[class*='mode-btn']",                        /* Domains/URLs-Umschalter */
     ".up-ment-lbl", ".up-ment-empty", ".up-ment-noresult",
+    /* Datumsfilter. Sein Markup wird EINMAL beim Start gebaut -- ohne diese Zeile wechselt es
+       beim Umschalten der Sprache nicht mit, sondern erst beim naechsten Laden der Seite.
+       .udr-label traegt bei einem eigenen Zeitraum ein Datum ("12 Dec – 18 Dec"); das ist kein
+       Katalogschluessel und geht unveraendert durch. */
+    ".udr-preset", ".udr-presets-head", ".udr-reset", ".udr-label",
     ".upt-status-btn", ".upt-status-tag", ".upt-grp-sidehead-lbl",
     ".up-pop-head",         /* Kopf eines Menues */
     ".up-pop-sub",          /* Zwischentitel darin */
@@ -3906,22 +3973,45 @@
     ".up-empty-h", ".up-empty-t",    /* Leerzustand */
     ".up-btn-sec", ".up-export"      /* Knopfbeschriftungen */
   ].join(",");
+  /* Genau EIN eigener Textknoten mit Inhalt? Dann ist er der Text dieses Elements. Sonst null.
+     Hier stand vorher "Elemente mit Kindern ueberspringen", und das war zu grob: der Kopf
+     "Brand Mentions" ist ein nackter Textknoten NEBEN dem Info-Zeichen (<div class="up-th
+     up-th-brands">Brand Mentions<span class="up-th-info">...</span></div>), genauso "Market".
+     Beide blieben damit englisch. Am Textknoten zu arbeiten statt an textContent laesst die
+     Kinder unangetastet -- ein Kopf mit Sortierpfeil verliert seinen Pfeil nicht. */
+  function eigenerText(el){
+    var gefunden = null, n;
+    var kinder = el.childNodes;
+    for (var i = 0; i < kinder.length; i++){
+      n = kinder[i];
+      if (n.nodeType !== 3) continue;
+      if (!(n.nodeValue || "").trim()) continue;
+      if (gefunden) return null;          /* zwei Textstuecke: nicht anfassen */
+      gefunden = n;
+    }
+    return gefunden;
+  }
   function spracheLauf(scope){
     var wurzel = (scope && scope.querySelectorAll) ? scope : document;
     var els;
     try { els = wurzel.querySelectorAll(SPRACHE_SEL); } catch(e){ return; }
     for (var i = 0; i < els.length; i++){
       var el = els[i];
-      if (el.children && el.children.length) continue;
+      var kn = eigenerText(el);
+      if (!kn) continue;
+      /* Die umgebenden Leerzeichen bleiben, wie sie sind: im Markup steht der Text oft eingerueckt
+         auf eigener Zeile, und sie wegzunehmen aendert den Abstand zum Nachbarn. */
+      var roh = kn.nodeValue;
+      var vorn = roh.match(/^\s*/)[0], hinten = roh.match(/\s*$/)[0];
       var basis = el.getAttribute("data-i18n");
       if (basis == null){
-        basis = (el.textContent || "").trim();
+        basis = roh.trim();
         if (!basis) continue;
       }
       var neu = t(basis);
-      if ((el.textContent || "").trim() === neu) continue;
+      if (roh.trim() === neu) continue;
       if (el.getAttribute("data-i18n") == null) el.setAttribute("data-i18n", basis);
-      el.textContent = neu;
+      kn.nodeValue = vorn + neu + hinten;
     }
   }
 
