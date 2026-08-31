@@ -286,6 +286,26 @@
       }
       if (UC.makeTooltips) UC.makeTooltips(root, isDark);
 
+      /* ---------------- die Vorfahren aufmachen ----------------
+         Bubble legt um jedes HTML-Element eine Gruppe, und steht dort eine Hoehe -- der Normalfall
+         fuer eine 32px hohe Werkzeugzeile --, schneidet sie mit overflow: hidden alles ab, was aus
+         ihrer Box heraus will. Ein absolut positioniertes Panel von 248x118 unter einem 32px hohen
+         Knopf ist genau das.
+         Das ist der Grund, warum diese Leiste im alten Harness aufging und auf der echten Seite
+         nicht: dort steht kein klemmender Container. Gemeldet als "kein Dropdown sichtbar, der
+         Knopf ist aber im offenen Zustand, kein Fehler in der Konsole" -- und so gemessen in
+         _h_ufb_clip.html, der die Form einer Bubble-Seite nachbaut:
+
+             ohne diese Zeile   is-shown: true, Punkt im Menue trifft "bubble-element", overflow
+                                der beiden Gruppen: hidden / hidden
+             mit dieser Zeile   Punkt im Menue trifft das Menue, overflow: visible / visible
+
+         Es fehlte NUR hier: topics-, models-, markets- und date-range-Filter rufen dieselbe Zeile
+         alle vier (gemessen: drei aufgemachte Gruppen im Dokument, keine davon die der Leiste).
+         Dieselbe Form wie dort -- ein Argument, also restore = false. Angefasst wird ausschliesslich
+         overflow, NIEMALS z-index eines fremden Vorfahren (das hat am 11.08. die App lahmgelegt). */
+      if (UC.unclipAncestors) UC.unclipAncestors(root);
+
       /* ---------------- die Zeilen ----------------
          Eine Zeile je vorgesehenem Filter, in der Reihenfolge von FILTERS. Der Spiegel ist leer
          und wird aus dem Trigger des Filters gefuellt, sobald er eingezogen ist. */

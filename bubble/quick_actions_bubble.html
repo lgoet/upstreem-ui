@@ -243,13 +243,39 @@
     window.setUpstreemBrands = function(rows){ window.__upBrandsQueue.push(rows); };
   }
 
-  function readPin(){
-    var el = document.getElementById("mira-quick-actions");
-    var p = el ? (el.getAttribute("data-cdn-pin") || "").trim() : "";
-    /* Gespaltener Platzhalter: wer "CDN_PIN" global im Element ersetzt, wuerde sonst auch diesen
+  function echterPin(p){
+    /* trim: ein Leerzeichen aus der Bubble-Konstante ergaebe sonst .../upstreem-ui@ abc /core.js,
+       jsDelivr antwortet mit 404, und weder CSS noch JS landen.
+       Gespaltener Platzhalter: wer "CDN_PIN" global im Element ersetzt, wuerde sonst auch diesen
        Waechter treffen -- der Vergleich waere dann pin === "<der Hash>" und der Loader liefe
        dauerhaft auf @main, obwohl ein Pin gesetzt ist. */
-    return (p && p !== "CDN_" + "PIN") ? p : "main";
+    p = String(p == null ? "" : p).trim();
+    return (p && p !== "CDN_" + "PIN") ? p : "";
+  }
+  function readPin(){
+    var el = document.getElementById("mira-quick-actions");
+    var p = echterPin(el && el.getAttribute("data-cdn-pin"));
+    if (p) return (window.__upPin = p);
+    /* ---- Rueckfall: einen Pin nehmen, der auf DIESER Seite schon gilt ----------------------
+       Gemeldet am 31.08.: der Loader lief, waehrend sein eigenes Element noch nicht im Dokument
+       stand (Bubble baut ein Element bei jedem Rerender neu und fuehrt Scripts nicht in
+       DOM-Reihenfolge aus). Die alte Fassung fiel dann auf @main zurueck -- core kam durch die
+       Entdoppelung unten noch aus dem Pin, die Dateien DIESER Komponente aber tatsaechlich von
+       @main. Geraten wird nichts: beide Stufen lesen einen Pin, der auf dieser Seite schon in
+       Gebrauch ist. */
+    if (echterPin(window.__upPin)) return window.__upPin;
+    var alle = document.querySelectorAll ? document.querySelectorAll("[data-cdn-pin]") : [], i;
+    for (i = 0; i < alle.length; i++){
+      p = echterPin(alle[i].getAttribute("data-cdn-pin"));
+      if (p) return (window.__upPin = p);
+    }
+    var L0 = window.__upAssetsLoaded, k, m;
+    for (k in L0){
+      if (!Object.prototype.hasOwnProperty.call(L0, k)) continue;
+      m = String(L0[k] || "").match(/upstreem-ui@([^/]+)\//);
+      if (m && m[1] && m[1] !== "main") return (window.__upPin = m[1]);
+    }
+    return "main";
   }
   var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin() + "/";
   var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});

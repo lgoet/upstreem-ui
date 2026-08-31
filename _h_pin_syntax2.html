@@ -1,0 +1,21 @@
+<meta charset="utf-8">
+<title>Harness: Syntax aller Loader (2)</title>
+<style>body{font-family:Geist,system-ui,sans-serif;padding:24px}
+pre{font:11px/1.5 ui-monospace,monospace;background:#111;color:#eee;padding:12px;white-space:pre-wrap}</style>
+<h3>Compilieren alle Loader? (Block serverseitig exakt geschnitten)</h3>
+<pre id="out">laeuft…</pre>
+<script>
+fetch("_h_pin_quellen.json").then(function(r){ return r.json(); }).then(function(liste){
+  var kaputt = [], ohne = [];
+  liste.forEach(function(e){
+    if (!e.src){ kaputt.push(e.f + " -> Block nicht geschnitten"); return; }
+    try { new Function(e.src); } catch(err){ kaputt.push(e.f + " -> " + err); }
+    if (e.src.indexOf("__upPin") < 0) ohne.push(e.f);
+  });
+  document.getElementById("out").textContent =
+    "geprueft: " + liste.length + " Loader\n" +
+    "Syntaxfehler: " + kaputt.length + (kaputt.length ? "\n  " + kaputt.join("\n  ") : "") + "\n" +
+    "ohne Rueckfall: " + ohne.length + (ohne.length ? "\n  " + ohne.join("\n  ") : "");
+  window.__fertig = true;
+}).catch(function(e){ document.getElementById("out").textContent = "Fehler: " + e; window.__fertig = true; });
+</script>

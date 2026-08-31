@@ -128,11 +128,11 @@
            bleibt, damit der bestehende Setter nicht ins Leere laeuft. -->
       <div class="dph-kpis"></div>
       <div class="dph-tools">
-        <!-- Nur das Zeichen, kein Wort: graduation-cap. dashboard-page-header.js setzt es beim
+        <!-- Nur das Zeichen, kein Wort: library-big -- dasselbe wie im Onboarding-Kopf. dashboard-page-header.js setzt es beim
              Init auch in einer schon eingebauten Seite und haengt .up-ph-iconbtn dazu. -->
         <button class="dph-docsbtn up-ph-iconbtn" type="button" data-tip="Open Documentation"
                 aria-label="Open Documentation">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" /> <path d="M22 10v6" /> <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" /></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="8" height="18" x="3" y="3" rx="1" /> <path d="M7 3v18" /> <path d="M20.4 18.9c.2.5-.1 1.1-.6 1.3l-1.9.7c-.5.2-1.1-.1-1.3-.6L11.1 5.1c-.2-.5.1-1.1.6-1.3l1.9-.7c.5-.2 1.1.1 1.3.6Z" /></svg>
         </button>
         <!-- Lucide refresh-cw. dashboard-page-header.js setzt dasselbe Zeichen beim Init aus core
              (UC.icon("refreshCw")) -- hier steht es fuer den Fall, dass das JS noch unterwegs ist,
@@ -150,14 +150,47 @@
    "CDN_PIN" placeholder). Byte-for-byte the same loader every other component in this repo ships —
    see prompts_page_header_bubble.html's own copy for the full reasoning in comments. */
 (function(){
+  function echterPin(p){
+    /* trim: ein Leerzeichen aus der Bubble-Konstante ergaebe sonst .../upstreem-ui@ abc /core.js,
+       jsDelivr antwortet mit 404, und weder CSS noch JS landen. Ohne trim greift auch kein
+       Rueckfall, weil "   " truthy ist.
+       Gespaltener Platzhalter: wer "CDN_PIN" global im Element ersetzt, wuerde sonst auch diesen
+       Waechter treffen, und der Loader liefe dauerhaft auf @main, obwohl ein Pin gesetzt ist. */
+    p = String(p == null ? "" : p).trim();
+    return (p && p !== "CDN_" + "PIN") ? p : "";
+  }
   function readPin(cls){
-    var els = document.getElementsByClassName(cls), i, p;
+    var i, p, els = document.getElementsByClassName(cls);
     for (i = 0; i < els.length; i++){
-      p = (els[i].getAttribute("data-cdn-pin") || "").trim();
-      /* Gespaltener Platzhalter: wer "CDN_PIN" global im Element ersetzt, wuerde sonst auch diesen
-         Waechter treffen -- der Vergleich waere dann pin === "<der Hash>" und der Loader liefe
-         dauerhaft auf @main, obwohl ein Pin gesetzt ist. */
-      if (p && p !== "CDN_" + "PIN") return p;
+      p = echterPin(els[i].getAttribute("data-cdn-pin"));
+      if (p) return (window.__upPin = p);
+    }
+    /* ---- Rueckfall: einen Pin nehmen, der auf DIESER Seite schon gilt ----------------------
+       Gemeldet am 31.08. mit drei Stapelspuren, alle aus einem solchen Loader: "core.css ist
+       schon von einem anderen Pin geladen ... ignoriert wird @main" -- obwohl der Pin am Element
+       stand. Der Grund ist die Reihenfolge: Bubble baut ein Element bei jedem Rerender neu und
+       fuehrt Scripts nicht in DOM-Reihenfolge aus, dieser Loader lief also, waehrend seine eigene
+       Wurzel noch nicht im Dokument stand -- die Klasse oben fand nichts.
+       Und das war mehr als eine Warnung: core kam durch die Entdoppelung unten noch aus dem Pin,
+       die Dateien DIESER Komponente aber tatsaechlich von @main. Eine Seite, die zur Haelfte auf
+       @main laeuft, ist genau das, was ein Pin verhindern soll.
+       Geraten wird nichts: jede der drei Stufen liest einen Pin, der auf dieser Seite schon in
+       Gebrauch ist. */
+    if (echterPin(window.__upPin)) return window.__upPin;
+    var alle = document.querySelectorAll ? document.querySelectorAll("[data-cdn-pin]") : [];
+    for (i = 0; i < alle.length; i++){
+      p = echterPin(alle[i].getAttribute("data-cdn-pin"));
+      if (p) return (window.__upPin = p);
+    }
+    /* Aus einer schon geladenen Datei ablesen. Diese Stufe greift auch dann, wenn alle anderen
+       Elemente der Seite noch die ALTE Fassung dieses Loaders tragen -- die fuellen
+       __upAssetsLoaded genauso. "main" wird NICHT gemerkt: das ist kein Pin, und die naechste
+       Komponente wuerde ihn sonst fuer einen halten. */
+    var L0 = window.__upAssetsLoaded, k, m;
+    for (k in L0){
+      if (!Object.prototype.hasOwnProperty.call(L0, k)) continue;
+      m = String(L0[k] || "").match(/upstreem-ui@([^/]+)\//);
+      if (m && m[1] && m[1] !== "main") return (window.__upPin = m[1]);
     }
     return "main";
   }

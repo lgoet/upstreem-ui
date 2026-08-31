@@ -159,18 +159,28 @@
       var meta = root.querySelector(".up-ph-meta");
       if (meta && meta.parentNode) meta.parentNode.removeChild(meta);
 
-      /* 2. Der Docs-Knopf traegt nur noch sein Zeichen -- graduation-cap aus core. Vorher stand
-            dort ein Buch-SVG plus das Wort "Docs". Die Beschriftung faellt weg, der Tooltip
-            bleibt (data-tip steht im Markup) und ein aria-label kommt dazu: ein Knopf, der nur
-            aus einem Zeichen besteht, braucht seinen Namen fuer die Vorlesehilfe.
+      /* 2. Der Docs-Knopf traegt nur noch sein Zeichen -- library-big aus core, DASSELBE, das im
+            Onboarding-Kopf am Begleitkasten "Guide" haengt. Vorher stand dort ein Buch-SVG plus
+            das Wort "Docs", dann kurz graduation-cap.
+            Warum getauscht: graduation-cap ist breit und flach, refresh-cw daneben fuellt sein
+            Quadrat ganz aus -- bei gleicher Kastengroesse (beide 16 in 32) sahen die zwei
+            Zeichen verschieden gross aus, und genau so wurde es gemeldet. library-big ist hoch
+            und schmal wie refresh-cw rund ist: gleiche Kantenlaenge, gleicher Eindruck. Und es
+            ist ohnehin das Zeichen, das diese App fuer "Anleitung" benutzt.
+            Beschriftung faellt weg, der Tooltip bleibt (data-tip steht im Markup) und ein
+            aria-label kommt dazu: ein Knopf, der nur aus einem Zeichen besteht, braucht seinen
+            Namen fuer die Vorlesehilfe.
             .up-ph-iconbtn ist das Bauteil dafuer -- 32x32, dasselbe wie der Refresh-Knopf
-            daneben; .dph-docsbtn bleibt am Element, die Klasse steht im Vertrag. */
+            daneben; .dph-docsbtn bleibt am Element, die Klasse steht im Vertrag.
+            Strichstaerke 2 wie beim Refresh-Knopf. Das Onboarding zeichnet dasselbe Zeichen mit
+            1.8/1.9 -- dort steht es neben Text, hier neben einem Zeichen mit 2, und gleich
+            aussehen soll es mit seinem Nachbarn. */
       var db = root.querySelector(".dph-docsbtn");
       if (db && !db.getAttribute("data-dph-iconly")){
         db.setAttribute("data-dph-iconly", "1");
         db.classList.add("up-ph-iconbtn");
         db.setAttribute("aria-label", "Open Documentation");
-        db.innerHTML = UC.icon ? UC.icon("graduationCap", 2) : db.innerHTML;
+        db.innerHTML = UC.icon ? UC.icon("libraryBig", 2) : db.innerHTML;
       }
 
       /* 3. Das Refresh-Zeichen aus core statt als Inline-Kopie im Markup. Es IST bereits Lucide

@@ -214,14 +214,47 @@
     window.setUpstreemBrands = function(rows){ window.__upBrandsQueue.push(rows); };
   }
 
+  function echterPin(p){
+    /* trim: ein Leerzeichen aus der Bubble-Konstante ergaebe sonst .../upstreem-ui@ abc /core.js,
+       jsDelivr antwortet mit 404, und weder CSS noch JS landen. Ohne trim greift auch kein
+       Rueckfall, weil "   " truthy ist.
+       Gespaltener Platzhalter: wer "CDN_PIN" global im Element ersetzt, wuerde sonst auch diesen
+       Waechter treffen, und der Loader liefe dauerhaft auf @main, obwohl ein Pin gesetzt ist. */
+    p = String(p == null ? "" : p).trim();
+    return (p && p !== "CDN_" + "PIN") ? p : "";
+  }
   function readPin(cls){
-    var els = document.getElementsByClassName(cls), i, p;
+    var i, p, els = document.getElementsByClassName(cls);
     for (i = 0; i < els.length; i++){
-      p = (els[i].getAttribute("data-cdn-pin") || "").trim();
-      /* Gespaltener Platzhalter: wer "CDN_PIN" global im Element ersetzt, wuerde sonst auch diesen
-         Waechter treffen -- der Vergleich waere dann pin === "<der Hash>" und der Loader liefe
-         dauerhaft auf @main, obwohl ein Pin gesetzt ist. */
-      if (p && p !== "CDN_" + "PIN") return p;
+      p = echterPin(els[i].getAttribute("data-cdn-pin"));
+      if (p) return (window.__upPin = p);
+    }
+    /* ---- Rueckfall: einen Pin nehmen, der auf DIESER Seite schon gilt ----------------------
+       Gemeldet am 31.08. mit drei Stapelspuren, alle aus einem solchen Loader: "core.css ist
+       schon von einem anderen Pin geladen ... ignoriert wird @main" -- obwohl der Pin am Element
+       stand. Der Grund ist die Reihenfolge: Bubble baut ein Element bei jedem Rerender neu und
+       fuehrt Scripts nicht in DOM-Reihenfolge aus, dieser Loader lief also, waehrend seine eigene
+       Wurzel noch nicht im Dokument stand -- die Klasse oben fand nichts.
+       Und das war mehr als eine Warnung: core kam durch die Entdoppelung unten noch aus dem Pin,
+       die Dateien DIESER Komponente aber tatsaechlich von @main. Eine Seite, die zur Haelfte auf
+       @main laeuft, ist genau das, was ein Pin verhindern soll.
+       Geraten wird nichts: jede der drei Stufen liest einen Pin, der auf dieser Seite schon in
+       Gebrauch ist. */
+    if (echterPin(window.__upPin)) return window.__upPin;
+    var alle = document.querySelectorAll ? document.querySelectorAll("[data-cdn-pin]") : [];
+    for (i = 0; i < alle.length; i++){
+      p = echterPin(alle[i].getAttribute("data-cdn-pin"));
+      if (p) return (window.__upPin = p);
+    }
+    /* Aus einer schon geladenen Datei ablesen. Diese Stufe greift auch dann, wenn alle anderen
+       Elemente der Seite noch die ALTE Fassung dieses Loaders tragen -- die fuellen
+       __upAssetsLoaded genauso. "main" wird NICHT gemerkt: das ist kein Pin, und die naechste
+       Komponente wuerde ihn sonst fuer einen halten. */
+    var L0 = window.__upAssetsLoaded, k, m;
+    for (k in L0){
+      if (!Object.prototype.hasOwnProperty.call(L0, k)) continue;
+      m = String(L0[k] || "").match(/upstreem-ui@([^/]+)\//);
+      if (m && m[1] && m[1] !== "main") return (window.__upPin = m[1]);
     }
     return "main";
   }

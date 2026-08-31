@@ -1,0 +1,74 @@
+<meta charset="utf-8">
+<title>Harness: Pin-Rueckfall im Loader</title>
+<style>
+  body { font-family: Geist, system-ui, sans-serif; padding: 24px; }
+  pre { font: 11px/1.5 ui-monospace, monospace; background: #111; color: #eee; padding: 12px;
+        white-space: pre-wrap; }
+</style>
+<h3>Pin-Rueckfall: alte gegen neue Fassung des Loaders, gleiche Lage</h3>
+<pre id="out">laeuft…</pre>
+<script>
+var PIN = "1da2b815b6bf58ba03a09e61b8ab556540491641";
+var BASIS = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@";
+
+/* Ein Lauf: Loadertext, Vorbelegung und ob die Wurzel im Dokument steht. Geladen wird NICHTS --
+   document.head.appendChild wird abgefangen und schreibt nur mit, was der Loader haben wollte.
+   Das ist der Punkt der Messung: welche URL entsteht, nicht ob sie antwortet. */
+function lauf(text, opt){
+  var urls = [], warn = [];
+  var echteAppend = document.head.appendChild;
+  var echterWarn = console.warn;
+  var wurzel = null;
+  /* Alles, was der Loader auf window ablegt, vorher wegraeumen -- sonst messe ich den Vorlauf. */
+  delete window.__upAssetsLoaded; delete window.__upPin;
+  delete window.__utsBootStubbed; delete window.__utsBootQueue;
+  ["renderTeams","setTeamsLoading","resetTeams"].forEach(function(n){ try { delete window[n]; } catch(e){} });
+  if (opt.vorbelegt){
+    window.__upAssetsLoaded = { "core.css": BASIS + PIN + "/core.css",
+                                "core.js":  BASIS + PIN + "/core.js" };
+  }
+  if (opt.wurzelDa){
+    wurzel = document.createElement("div");
+    wurzel.className = "up-root uts-root";
+    wurzel.setAttribute("data-cdn-pin", opt.wurzelPin || PIN);
+    document.body.appendChild(wurzel);
+  }
+  document.head.appendChild = function(el){
+    urls.push((el.href || el.src || "").replace(BASIS, "@"));
+    return el;   /* NICHT einhaengen: es soll nichts wirklich geladen werden */
+  };
+  console.warn = function(){ warn.push([].join.call(arguments, " ")); };
+  var fehler = null;
+  try { (new Function(text))(); } catch(e){ fehler = String(e); }
+  document.head.appendChild = echteAppend;
+  console.warn = echterWarn;
+  if (wurzel && wurzel.parentNode) wurzel.parentNode.removeChild(wurzel);
+  return { urls: urls, warnungen: warn, fehler: fehler, pinGemerkt: window.__upPin || null };
+}
+
+Promise.all([fetch("_h_pin_alt.js").then(function(r){ return r.text(); }),
+             fetch("_h_pin_neu.js").then(function(r){ return r.text(); })])
+.then(function(t){
+  var ALT = t[0], NEU = t[1];
+  var faelle = [
+    ["A  Wurzel NICHT im Dokument, core schon vom Pin geladen (die gemeldete Lage)",
+     { vorbelegt: true,  wurzelDa: false }],
+    ["B  Wurzel mit Pin im Dokument (der Normalfall)",
+     { vorbelegt: false, wurzelDa: true }],
+    ["C  Wurzel mit dem Platzhalter CDN_PIN, sonst nichts bekannt",
+     { vorbelegt: false, wurzelDa: true, wurzelPin: "CDN_PIN" }],
+    ["D  gar nichts bekannt (erstes Element der Seite, kein Pin)",
+     { vorbelegt: false, wurzelDa: false }]
+  ];
+  var z = [];
+  faelle.forEach(function(f){
+    z.push(f[0]);
+    z.push("   ALT " + JSON.stringify(lauf(ALT, f[1])));
+    z.push("   NEU " + JSON.stringify(lauf(NEU, f[1])));
+    z.push("");
+  });
+  document.getElementById("out").textContent = z.join("\n");
+  window.__fertig = true;
+})
+.catch(function(e){ document.getElementById("out").textContent = "Fehler: " + e; window.__fertig = true; });
+</script>

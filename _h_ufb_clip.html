@@ -1,0 +1,128 @@
+<meta charset="utf-8">
+<title>Harness: Filterleiste in einem klemmenden Bubble-Container</title>
+<link rel="stylesheet" href="core.css?v=1">
+<link rel="stylesheet" href="filters/topics-filter.css?v=1">
+<link rel="stylesheet" href="filters/models-filter.css?v=1">
+<link rel="stylesheet" href="filters/markets-filter.css?v=1">
+<link rel="stylesheet" href="filters/filter-bar.css?v=1">
+<style>
+  html, body { margin: 0; }
+  body { font-family: Geist, system-ui, sans-serif; padding: 24px; }
+  h2 { font: 600 13px/1 sans-serif; margin: 0 0 12px; color: #666; }
+  /* ---- DIE FORM EINER BUBBLE-SEITE -------------------------------------------------------
+     Bubble legt um jedes HTML-Element eine Gruppe. Steht dort eine Hoehe (und das ist der
+     Normalfall fuer eine 32px hohe Werkzeugzeile), schneidet sie alles ab, was aus ihrer
+     Box heraus will -- also genau ein absolut positioniertes Dropdown. Das ist der
+     Unterschied zwischen dem alten Harness (_h_ufb.html, kein Container, alles sichtbar)
+     und der echten Seite. */
+  .bubble-element { position: relative; overflow: hidden; }
+  #bgruppe { height: 60px; }
+  #belem   { height: 32px; }
+  #quelle  { display: flex; gap: 8px; margin-bottom: 24px; }
+  #zeile   { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  #out { font: 11px/1.5 ui-monospace, monospace; background: #111; color: #eee; padding: 10px;
+         margin-top: 120px; white-space: pre-wrap; max-height: 300px; overflow: auto; }
+</style>
+
+<script>
+window.__ev = []; window.__fehler = [];
+window.onerror = function(m){ window.__fehler.push(String(m)); };
+["utfTopics","utfTopicsApply","utfNewTopic","umfModels","umkMarkets","ufbReset"]
+  .forEach(function(n){ window["bubble_fn_"+n] = function(a,b){ window.__ev.push([n, a, b]); }; });
+try { localStorage.clear(); } catch(e){}
+</script>
+
+<h2>Die drei Filter (eigene Bubble-Elemente, auch in klemmenden Gruppen)</h2>
+<div id="quelle">
+  <div class="bubble-element" style="height:32px">
+    <div class="up-root utf-root" data-instance="topics_v1" data-isdark="no"
+         data-topics-fn="bubble_fn_utfTopics" data-topics-apply-fn="bubble_fn_utfTopicsApply"></div>
+  </div>
+  <div class="bubble-element" style="height:32px">
+    <div class="up-root umf-root" data-instance="models_v1" data-isdark="no"
+         data-models-fn="bubble_fn_umfModels"></div>
+  </div>
+  <div class="bubble-element" style="height:32px">
+    <div class="up-root umk-root" data-instance="markets_v1" data-isdark="no"
+         data-markets-fn="bubble_fn_umkMarkets"></div>
+  </div>
+</div>
+
+<h2>Werkzeugzeile in zwei geschachtelten Bubble-Gruppen</h2>
+<div class="bubble-element" id="bgruppe">
+  <div class="bubble-element" id="belem">
+    <div id="zeile">
+      <span style="display:inline-flex;align-items:center;height:32px;padding:0 10px;
+            border:1px solid #e0e2e6;border-radius:8px;font:500 13px/1 sans-serif;color:#6f737c">
+        Last 30 days
+      </span>
+      <div class="up-root ufb-root"
+           data-instance="bar1"
+           data-isdark="no"
+           data-topics-instance="topics_v1"
+           data-models-instance="models_v1"
+           data-markets-instance="markets_v1"
+           data-reset-fn="bubble_fn_ufbReset"></div>
+    </div>
+  </div>
+</div>
+
+<pre id="out">bereit</pre>
+
+<script src="core.js?v=1"></script>
+<script src="filters/topics-filter.js?v=1"></script>
+<script src="filters/models-filter.js?v=1"></script>
+<script src="filters/markets-filter.js?v=1"></script>
+<script src="filters/filter-bar.js?v=1"></script>
+<script>
+window.__topics = [
+  { id: "t1", name: "Leadgen",     color: "#2563eb", emoji: "", prompt_count: 42 },
+  { id: "t2", name: "Solar",       color: "#059669", emoji: "", prompt_count: 31 },
+  { id: "t3", name: "Waermepumpe", color: "#d97706", emoji: "", prompt_count: 18 }
+];
+window.__models = [
+  { key: "gpt-4o", display_name: "GPT-4o",        provider: "OpenAI",    is_active: true, logo_url: "" },
+  { key: "claude", display_name: "Claude Sonnet", provider: "Anthropic", is_active: true, logo_url: "" }
+];
+window.__markets = [
+  { alpha2: "DE", name: "Germany", prompt_count: 120 },
+  { alpha2: "AT", name: "Austria", prompt_count: 40 }
+];
+window.__load = function(){
+  if (window.setTopicsFilterTopics)   window.setTopicsFilterTopics("topics_v1", window.__topics);
+  if (window.setModelsFilterModels)   window.setModelsFilterModels("models_v1", window.__models);
+  if (window.setMarketsFilterMarkets) window.setMarketsFilterMarkets("markets_v1", window.__markets);
+};
+
+/* ---- Die Messung ------------------------------------------------------------------------
+   Nicht "hat das Menue is-shown" -- das hatte es auch in der Meldung. Gemessen wird, ob man
+   es SIEHT: liegt der Mittelpunkt der ersten Zeile wirklich beim Menue, oder liefert
+   elementFromPoint dort das, was darueber klemmt. Dazu die overflow-Werte der beiden
+   Bubble-Gruppen, weil genau die der Grund sind. */
+window.__mess = function(){
+  var r = document.querySelector(".ufb-root");
+  var btn = r.querySelector(".ufb-btn");
+  var menu = r.querySelector(".ufb-menu");
+  var more = r.querySelector(".ufb-more");
+  btn.click();
+  var mr = menu.getBoundingClientRect();
+  var px = Math.round(mr.left + mr.width / 2), py = Math.round(mr.top + 20);
+  var tr = document.elementFromPoint(px, py);
+  function ov(id){ var e = document.getElementById(id); return e ? getComputedStyle(e).overflow : "?"; }
+  return {
+    offen:      more.classList.contains("is-open"),
+    isShown:    menu.classList.contains("is-shown"),
+    menuRect:   { t: Math.round(mr.top), l: Math.round(mr.left), w: Math.round(mr.width), h: Math.round(mr.height) },
+    /* DAS ist das Ergebnis: sichtbar heisst, der Punkt im Menue gehoert zum Menue. */
+    trefferImMenue: !!(tr && menu.contains(tr)),
+    treffer:    tr ? (tr.className || tr.tagName) : null,
+    ovGruppe:   ov("bgruppe"),
+    ovElement:  ov("belem"),
+    unclipMark: [].map.call(document.querySelectorAll("[data-up-unclipped]"),
+                            function(e){ return e.id || e.className; }),
+    zeilen:     r.querySelectorAll(".up-subwrap").length,
+    fehler:     window.__fehler
+  };
+};
+document.getElementById("out").textContent = "geladen — window.__load(), window.__mess()";
+</script>
