@@ -127,12 +127,19 @@
       /* Dieselben Zeichen wie die Unterseiten-Navigation im Einstellungs-Seitenkopf: derselbe
          Ort, dieselbe Sache, dasselbe Zeichen. Vorher standen hier folder und creditCard. */
       { key: "team",        label: "Team Organisation",   icon: "users" },
-      /* Das Einstellungsfenster (preferences.js). Es heisst "Preferences" und nicht "Settings" --
-         "Your Brand" darueber IST die Einstellungsseite dieser App, und zwei Dinge mit demselben
-         Namen sind eines zu viel. */
-      { key: "prefs",       label: "Preferences",         icon: "settings2" },
       { key: "billing",     label: "Billing",             icon: "dollarSign" }
     ]},
+    /* Das Einstellungsfenster (preferences.js) steht in einem EIGENEN Abschnitt -- also mit einer
+       Trennlinie ueber und unter sich (.usn-sec + .usn-sec in sidebar.css zieht sie). Es gehoert
+       nicht zu den drei Punkten darueber: die fuehren auf SEITEN, dieses oeffnet ein Fenster.
+       Der Schluessel heisst "prefswin" und NICHT "prefs": "Your Brand" oben traegt seit immer den
+       Schluessel "preferences", und "prefs" ist ein Praefix davon -- eine Bubble-Bedingung mit
+       "contains" trifft dann beide, und genau so ging beim Klick auf Preferences "Your Brand" auf.
+       Umgekehrt gilt es auch: "prefswin" steckt nicht in "preferences" und "preferences" nicht in
+       "prefswin", die zwei koennen sich in keiner Richtung mehr verwechseln.
+       Es heisst "Preferences" und nicht "Settings" -- "Your Brand" darueber IST die
+       Einstellungsseite dieser App, und zwei Dinge mit demselben Namen sind eines zu viel. */
+    { items: [{ key: "prefswin", label: "Preferences", icon: "settings2" }] },
     { head: "Theme", theme: true, items: [
       { key: "light",  label: "Light"  },
       { key: "dark",   label: "Dark"   },
@@ -880,12 +887,14 @@
        Steht in der Ablage nichts (ein Harness mit direkten script-Tags), passiert nichts: dann ist
        preferences.js entweder schon da oder auf dieser Seite nicht vorgesehen. Geraten wird nie. */
     var fensterLaedt = false;
+    /* Gibt true zurueck, wenn dieser Klick hier erledigt ist -- der Aufrufer feuert dann KEIN
+       Bubble-Ereignis. false heisst: konnte nichts tun, bitte den Workflow fragen. */
     function fensterOeffnen(){
       if (typeof window.openUpstreemPreferences === "function"){
         try { window.openUpstreemPreferences(); } catch (e) {}
-        return;
+        return true;
       }
-      if (fensterLaedt) return;
+      if (fensterLaedt) return true;
       var L = window.__upAssetsLoaded;
       var quelle = L && (L["core.js"] || L["core.css"]);
       var m = String(quelle || "").match(/^(https?:\/\/.*\/)[^\/]+$/);
@@ -894,7 +903,7 @@
           "und die Basis-Adresse steht nicht in __upAssetsLoaded -- es wird nichts nachgeladen. " +
           "Auf einer Bubble-Seite kommt sie vom Loader; in einem Harness bitte das Skript selbst " +
           "einsetzen.");
-        return;
+        return false;
       }
       var basis = m[1];
       fensterLaedt = true;
@@ -910,7 +919,7 @@
         /* Schon unterwegs, nur noch nicht fertig -- dann kommt es von selbst, und der naechste
            Klick oeffnet. */
         fensterLaedt = false;
-        return;
+        return true;
       }
       L["preferences.js"] = basis + "preferences.js";
       var sc = document.createElement("script");
@@ -930,6 +939,7 @@
           "laden. Pin purgen (siehe CLAUDE.md 4) und noch einmal versuchen.");
       };
       document.head.appendChild(sc);
+      return true;
     }
 
     bar.addEventListener("click", function(e){
@@ -991,13 +1001,16 @@
            Workflow musste erst per Bedingung auseinandersortieren, was gemeint war. */
         if (key === "logout") fire("data-logout-fn", "usnLogout", { action: "logout" });
         else {
-          /* Preferences oeffnet das Fenster SELBST, wenn preferences.js auf der Seite liegt --
-             kein Bubble-Workflow noetig, dieselbe Bauart wie der Suchknopf im Dashboard-Kopf, der
-             Cmd+K drueckt. Das Ereignis geht trotzdem hinaus: ein Workflow kann zusaetzlich
-             reagieren (etwa das Profil nachladen), und ohne preferences.js bleibt der Punkt
-             wenigstens verdrahtet. */
-          if (key === "prefs") fensterOeffnen();
-          fire("data-account-fn", "usnAccount", { action: key });
+          /* Preferences oeffnet ein FENSTER und schickt darum NICHTS. Genau daran lag der
+             gemeldete Fehler: der Klick feuerte zusaetzlich usnAccount, und der Workflow dahinter
+             wechselt bei jedem usnAccount die Seite -- also ging hinter dem Fenster auch noch
+             "Your Brand" auf. Ein Ereignis, das eine Navigation ausloest, darf nicht mitlaufen,
+             wenn die Aktion gar keine Navigation ist.
+             Gefeuert wird nur, wenn das Fenster NICHT uebernehmen konnte (preferences.js fehlt und
+             laesst sich nicht nachladen) -- dann ist der Klick sonst wirkungslos, und die
+             Bubble-Seite ist die letzte Hoffnung. */
+          if (key === "prefswin"){ if (!fensterOeffnen()) fire("data-account-fn", "usnAccount", { action: key }); }
+          else fire("data-account-fn", "usnAccount", { action: key });
         }
         return;
       }
