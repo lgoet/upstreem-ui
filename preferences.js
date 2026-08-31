@@ -396,21 +396,27 @@
     }
 
     /* ---- Auswahlmenue ---- */
+    /* Ein Popover JE HUELLE, und der zweite Klick schliesst. Vorher baute jeder Klick ein neues
+       makePopover und rief open() -- ein offenes Dropdown ging damit nicht wieder zu, und der Stapel
+       in popovers wuchs bei jedem Klick um einen Eintrag. Gemeldet als "die Dropdowns blenden beim
+       erneuten Klick nicht wieder aus".
+       Warum makePopover nicht selbst schaltet: sein toggle() haengt an EINER Instanz, und die
+       braucht einen Ort, der den Neubau der Seite ueberlebt. Der Ort ist die Huelle selbst
+       (__umsPop) -- sie wird mit dem Panel neu gebaut, also stirbt die Instanz mit ihr. */
     function menueOeffnen(btn) {
       var name = btn.getAttribute("data-ums-selbtn");
       var wrap = btn.closest("[data-ums-wrap]");
       var menu = wrap && wrap.querySelector(".ums-menu");
       if (!menu) return;
+      if (wrap.__umsPop && wrap.classList.contains("is-open")) {
+        try { wrap.__umsPop.close(false); } catch (e) {}
+        btn.setAttribute("aria-expanded", "false");
+        return;
+      }
       if (name === "scale") {
         menu.innerHTML = UC.colorScaleOptionsHtml(
           UC.getColorScalePref ? UC.getColorScalePref() : "default", null);
-        var popS = UC.makePopover({
-          wrap: wrap, menu: menu, opener: btn, group: "ums",
-          onClose: function () { btn.setAttribute("aria-expanded", "false"); }
-        });
-        popovers.push(popS);
-        popS.open();
-        btn.setAttribute("aria-expanded", "true");
+        oeffnen2(wrap, menu, btn);
         return;
       }
       var liste = name === "locale" ? SPRACHEN
@@ -428,15 +434,24 @@
           '<span class="ums-opt-check">' + UC.icon("check", 2.6) + '</span>' +
         '</button>';
       }).join("");
-      var pop = UC.makePopover({
-        wrap: wrap, menu: menu, opener: btn, group: "ums",
-        onClose: function () { btn.setAttribute("aria-expanded", "false"); }
-      });
-      popovers.push(pop);
-      pop.open();
+      oeffnen2(wrap, menu, btn);
       /* Ohne das bleibt das Plaettchen auf dem Laendercode stehen, bis das Bild geladen ist --
          derselbe Aufruf, den der Markets-Filter nach jedem Neubau seiner Liste macht. */
       if (UC.wireFlags) UC.wireFlags(menu);
+    }
+    /* EINE Instanz je Huelle, gemerkt an der Huelle. Zweimal makePopover fuer dieselbe Huelle waere
+       auch ohne den Schaltfehler falsch: makePopover verwaltet eine Liste aller Popover der Seite
+       und wirft eine aeltere Anmeldung derselben Huelle heraus -- die alte Instanz behaelt dann
+       ihren Escape-Zuhoerer, ohne noch geschlossen werden zu koennen. */
+    function oeffnen2(wrap, menu, btn) {
+      if (!wrap.__umsPop) {
+        wrap.__umsPop = UC.makePopover({
+          wrap: wrap, menu: menu, opener: btn, group: "ums",
+          onClose: function () { btn.setAttribute("aria-expanded", "false"); }
+        });
+        popovers.push(wrap.__umsPop);
+      }
+      wrap.__umsPop.open();
       btn.setAttribute("aria-expanded", "true");
     }
 

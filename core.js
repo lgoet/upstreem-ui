@@ -223,6 +223,14 @@
     return v;
   }
   /* Anmelden, ohne das Ereignis selbst zu kennen. Gibt eine Abmeldefunktion zurueck. */
+  /* Ein Sprachwechsel aendert kein DOM von sich aus -- der Lauf oben haengt am Beobachter fuer
+     NEUE Knoten. Also hier ausdruecklich, sobald die Einstellung sich aendert. */
+  try {
+    window.addEventListener("up-prefs-change", function(e){
+      if (e && e.detail && e.detail.name !== "locale") return;
+      try { spracheLauf(); } catch(err){}
+    });
+  } catch(e){}
   function onPrefs(fn){
     if (typeof fn !== "function") return function(){};
     function h(e){ try { fn((e && e.detail) || {}); } catch(err){} }
@@ -291,6 +299,103 @@
     "Show tools": "Werkzeuge zeigen",
     "Hide tools": "Werkzeuge ausblenden",
     "Filters and settings": "Filter und Einstellungen",
+    /* Tabelle einstellen, Sortiermenue, Reiter -- die Menues, die JEDE Tabelle aus core baut */
+    "Columns": "Spalten",
+    "Select all": "Alle auswählen",
+    "Row height": "Zeilenhöhe",
+    "Comfortable": "Komfortabel",
+    "Compact": "Kompakt",
+    "Sort by": "Sortieren nach",
+    /* Lesefehler. {was} ist der Name dessen, was nicht geladen werden konnte. */
+    "Could not load {was}": "{was} konnte nicht geladen werden",
+    "The data could not be read. Please reload the page.":
+      "Die Daten konnten nicht gelesen werden. Bitte lade die Seite neu.",
+    "data": "Die Daten",
+
+    /* ── Spaltenkoepfe, die in mehreren Tabellen vorkommen ─────────────────────────────────────
+       Nach dem Glossar bleiben Prompt, Visibility, Ranking, Sentiment, Brand(s), Domain(s),
+       URL(s), Topics, Citations und Share of Voice ENGLISCH -- sie stehen so in den Exporten und
+       in der Navigation. Uebersetzt wird der Rest. */
+    "Rank": "Rang",
+    "Created": "Erstellt",
+    "Created At": "Erstellt am",
+    "Last Seen": "Zuletzt gesehen",
+    "Date": "Datum",
+    "Name": "Name",
+    "Type": "Typ",
+    "Position": "Position",
+    "Status": "Status",
+    "Market": "Markt",
+    "Markets": "Märkte",
+    "Model": "Modell",
+    "Models": "Modelle",
+    "Share": "Anteil",
+    "Domain Share": "Domain-Anteil",
+    "Mentioned?": "Erwähnt?",
+    "Brand Mentions": "Brand-Erwähnungen",
+    "Citation Type": "Citation-Typ",
+    "Citation Types": "Citation-Typen",
+    "URL Types": "URL-Typen",
+    "Lanes": "Spuren",
+
+    /* ── Fusszeile und Auswahl ─────────────────────────────────────────────────────────────── */
+    "Rows per page": "Zeilen pro Seite",
+    "{from}–{to} of {total}": "{from}–{to} von {total}",
+    "Descending": "Absteigend",
+    "Ascending": "Aufsteigend",
+    "Deselect all": "Auswahl aufheben",
+    "Clear selection": "Auswahl leeren",
+    "Apply": "Übernehmen",
+    "Reset": "Zurücksetzen",
+    "Used": "Verwendet",
+    "Top Domains": "Top-Domains",
+    "Top URLs": "Top-URLs",
+    "Top Brands": "Top-Brands",
+    "Responses": "Antworten",
+    "Cancel": "Abbrechen",
+    "Done": "Fertig",
+    "Continue": "Weiter",
+    "Edit": "Bearbeiten",
+    "Copy": "Kopieren",
+    "Dismiss": "Ausblenden",
+    "Show": "Zeigen",
+    "Hide": "Ausblenden",
+    "Maximize": "Vergrößern",
+    "Open in new tab": "In neuem Tab öffnen",
+
+    /* ── Filter auf Brand-Erwähnungen (vier Tabellen teilen diese Texte) ───────────────────── */
+    "All Brands": "Alle Brands",
+    "All Types": "Alle Typen",
+    "Mentioned brands": "Erwähnte Brands",
+    "Filter for your brand mentions": "Nach Erwähnungen deiner Brand filtern",
+    "Filter for brand mentions": "Nach Brand-Erwähnungen filtern",
+    "Search brands...": "Brands suchen...",
+    "Clear brand search": "Brand-Suche löschen",
+    "Search markets": "Märkte suchen",
+    "Select a market": "Markt wählen",
+    "No brands available": "Keine Brands vorhanden",
+    "No matches": "Keine Treffer",
+    "Search, filters and settings": "Suche, Filter und Einstellungen",
+    "Nothing matches the current search and filters.":
+      "Zu dieser Suche und diesen Filtern gibt es nichts.",
+    "The data could not be read.": "Die Daten konnten nicht gelesen werden.",
+
+    /* ── Zustaende ─────────────────────────────────────────────────────────────────────────── */
+    "Active": "Aktiv",
+    "Inactive": "Inaktiv",
+    "(Inactive)": "(Inaktiv)",
+    "In Progress": "In Arbeit",
+    "Ignored": "Ignoriert",
+    "Group": "Gruppe",
+    "Groups": "Gruppen",
+    "External only": "Nur extern",
+    "Competitors": "Wettbewerber",
+    "Performance Chart": "Performance-Chart",
+    "Why this matters": "Warum das zählt",
+    "How to choose": "Wie du wählst",
+    "No suggested prompts found": "Keine vorgeschlagenen Prompts gefunden",
+    "Start a new prompt research to generate suggestions.":
+      "Starte eine neue Prompt-Recherche, um Vorschläge zu erzeugen.",
     /* Diese drei stehen im Markup der Komponenten, nicht in TOOLBAR_TIPS -- sie werden ueber den
        Weg "vorhandene Beschriftung uebersetzen" erreicht. */
     "Export": "Exportieren",
@@ -2412,23 +2517,26 @@
       var vis = visibleCols().filter(function(c){ return !(cfg.isHidden && cfg.isHidden(c)); });
       var off = listed.length - vis.length;
       var head = '<div class="up-pop-head up-pop-head-row">' +
-        '<span>Columns</span>' +
-        '<button class="up-pop-action' + (off >= 2 ? "" : " is-hidden") + '" type="button" data-colsall>Select all</button>' +
+        '<span>' + esc(t_("Columns")) + '</span>' +
+        '<button class="up-pop-action' + (off >= 2 ? "" : " is-hidden") + '" type="button" data-colsall>' +
+          esc(t_("Select all")) + '</button>' +
       '</div>';
       var rows = listed.map(function(c){
         var on = state.cols[c.key] !== false;
         var locked = on && vis.length === 1;   // the last visible column can't be turned off
         return '<div class="up-pop-row' + (locked ? " is-locked" : "") + '" data-col="' + c.key + '">' +
-                 '<span class="up-pop-label">' + esc(c.label) + '</span>' +
+                 /* c.label kommt aus der Komponente. Uebersetzt wird HIER, damit die
+                    Spaltenliste jeder Tabelle der App auf einmal mitgeht. */
+                 '<span class="up-pop-label">' + esc(t_(c.label)) + '</span>' +
                  '<span class="up-switch' + (on ? " is-on" : "") + '" role="switch"></span>' +
                '</div>';
       }).join("");
       var densePart = cfg.dense
         ? '<div class="up-pop-div"></div>' +
-          '<div class="up-pop-sub">Row height</div>' +
+          '<div class="up-pop-sub">' + esc(t_("Row height")) + '</div>' +
           '<div class="up-dense">' +
-            '<button class="up-dense-btn' + (!state.dense ? " is-active" : "") + '" type="button" data-dense="0">' + COMFY_SVG + 'Comfortable</button>' +
-            '<button class="up-dense-btn' + (state.dense ? " is-active" : "") + '" type="button" data-dense="1">' + COMPACT_SVG + 'Compact</button>' +
+            '<button class="up-dense-btn' + (!state.dense ? " is-active" : "") + '" type="button" data-dense="0">' + COMFY_SVG + esc(t_("Comfortable")) + '</button>' +
+            '<button class="up-dense-btn' + (state.dense ? " is-active" : "") + '" type="button" data-dense="1">' + COMPACT_SVG + esc(t_("Compact")) + '</button>' +
           '</div>'
         : "";
       /* cfg.rowHeightSwitch: [{key,label,icon}, ...] — a 3(+)-way row-height picker instead of
@@ -2437,11 +2545,11 @@
          handling stays local to the component, same as data-dense today. */
       var rowHeightPart = cfg.rowHeightSwitch
         ? '<div class="up-pop-div"></div>' +
-          '<div class="up-pop-sub">Row height</div>' +
+          '<div class="up-pop-sub">' + esc(t_("Row height")) + '</div>' +
           '<div class="up-dense up-dense-3">' +
             cfg.rowHeightSwitch.map(function(o){
               return '<button class="up-dense-btn up-dense-btn-icon' + (state.rowHeight === o.key ? " is-active" : "") +
-                     '" type="button" data-rowheight="' + o.key + '" data-tip="' + esc(o.label) + '">' + o.icon + '</button>';
+                     '" type="button" data-rowheight="' + o.key + '" data-tip="' + esc(t_(o.label)) + '">' + o.icon + '</button>';
             }).join("") +
           '</div>'
         : "";
@@ -2558,7 +2666,12 @@
       if (t != null && t > 0){
         var from = offset() + 1;
         var to = Math.min(offset() + state.pageSize, t);
-        info = '<span class="up-pager-info">' + fmtInt(from) + '–' + fmtInt(to) + ' of ' + fmtTotal(t) + '</span>';
+        /* "1-2 of 2" wird GEBAUT, also braucht der Satz Platzhalter -- im Deutschen steht "von"
+           an derselben Stelle, aber das ist Zufall und gilt nicht fuer jede Sprache. */
+        info = '<span class="up-pager-info">' +
+          esc(t_("{from}–{to} of {total}")
+                .replace("{from}", fmtInt(from)).replace("{to}", fmtInt(to))
+                .replace("{total}", fmtTotal(t))) + '</span>';
       }
       var pages = pageWindow(cur, total).map(function(p){
         if (p === "gap") return '<span class="up-page-gap">…</span>';
@@ -3751,8 +3864,70 @@
 
      Beide werden VOR core.js gesetzt, also im Seitenkopf ueber dem Vorrats-Schnipsel. Steht keiner
      davon, aendert sich nichts -- das ist der Normalfall. */
+  /* ---- Sprachlauf ueber das MARKUP -------------------------------------------------------------
+     Die Spaltenkoepfe der Tabellen stehen nicht im JavaScript, sondern im handgemachten
+     Bubble-Markup jedes Elements (<span class="up-th-txt">Prompt</span>). Vom Pin aus ist das
+     nicht erreichbar -- genau der Grund, aus dem in dieser Datei schon TOOLBAR_ICONS und
+     TOOLBAR_TIPS stehen: was im Markup steht, zieht core zur Laufzeit nach. Dasselbe hier fuer
+     die Sprache.
+
+     Sicher ist das durch EINE Eigenschaft: angefasst wird nur, was WOERTLICH im Katalog steht.
+     Ein Markenname, eine Domain, ein Prompt und jeder andere Nutzertext ist kein Katalogschluessel
+     und geht darum unveraendert durch -- es braucht keine Liste von Ausnahmen.
+
+     data-i18n haelt das englische Original. Ohne es waere der Weg eine Einbahnstrasse: nach dem
+     Umschalten auf Deutsch stuende dort deutscher Text, der kein Schluessel mehr ist, und der
+     Rueckweg auf Englisch waere verloren.
+
+     Elemente mit KINDERN werden uebersprungen. textContent zu setzen wuerde deren Markup
+     wegwerfen -- ein Kopf mit Sortierpfeil und Info-Zeichen bestuende danach nur noch aus Text. */
+  /* Die Liste ist AUS DEM REPO erzeugt und nicht geraten: ein Durchlauf ueber alle .js/.css und
+     bubble/*.html hat die Spaltenkopf-Klassen ergeben (up-th, vt-th, tct-th, ubo-th) und die
+     Kopfzeilen (up-head-label, vot-head-label, tcd-head-label). Die Muster mit [class*=...] decken
+     dazu jede kuenftige Komponente ab, die sich an dieselbe Namensform haelt -- die Konvention ist
+     in diesem Repo durchgehend, gepruefte Beispiele: prompts-table, responses-table,
+     topcitations-dashboard, visibility-chart. */
+  var SPRACHE_SEL = [
+    ".up-th-txt", "[class*='-th-txt']",           /* Spaltenkopf mit eigenem Textknoten */
+    ".up-th", ".vt-th", ".tct-th", ".ubo-th",     /* Spaltenkopf ohne inneres span */
+    "[class*='head-label']",                      /* Ueberschrift einer Kopfzeile */
+    "[class*='pagesize-lbl']",                    /* "Rows per page" */
+    "[class*='filter-title']", "[class*='filter-submit']", "[class*='filter-reset']",
+    "[class*='mode-btn']",                        /* Domains/URLs-Umschalter */
+    ".up-ment-lbl", ".up-ment-empty", ".up-ment-noresult",
+    ".upt-status-btn", ".upt-status-tag", ".upt-grp-sidehead-lbl",
+    ".up-pop-head",         /* Kopf eines Menues */
+    ".up-pop-sub",          /* Zwischentitel darin */
+    ".up-pop-label",        /* Zeile darin */
+    ".up-pop-action",       /* "Select all" und Geschwister */
+    ".up-heading",          /* Ueberschrift einer Komponente */
+    ".up-sec-h",            /* Ueberschrift eines Abschnitts */
+    ".up-ph-title", ".up-ph-desc",   /* Seitenkopf */
+    ".up-empty-h", ".up-empty-t",    /* Leerzustand */
+    ".up-btn-sec", ".up-export"      /* Knopfbeschriftungen */
+  ].join(",");
+  function spracheLauf(scope){
+    var wurzel = (scope && scope.querySelectorAll) ? scope : document;
+    var els;
+    try { els = wurzel.querySelectorAll(SPRACHE_SEL); } catch(e){ return; }
+    for (var i = 0; i < els.length; i++){
+      var el = els[i];
+      if (el.children && el.children.length) continue;
+      var basis = el.getAttribute("data-i18n");
+      if (basis == null){
+        basis = (el.textContent || "").trim();
+        if (!basis) continue;
+      }
+      var neu = t(basis);
+      if ((el.textContent || "").trim() === neu) continue;
+      if (el.getAttribute("data-i18n") == null) el.setAttribute("data-i18n", basis);
+      el.textContent = neu;
+    }
+  }
+
   function toolbarLauf(knoten){
     if (window.__upOhneToolbar) return;
+    sicher("spracheLauf", function(){ spracheLauf(); });
     sicher("stampToolbarIcons", stampToolbarIcons);
     sicher("stampGran", stampGran);
     sicher("orderToolbars", orderToolbars);
@@ -4395,10 +4570,10 @@
      fields is [{key, label}]. Nothing here reads component state; the caller passes the two values
      that vary, which is what keeps this usable from a component with a different state shape. */
   function sortMenuHtml(fields, sortField, sortDir){
-    var html = '<div class="up-pop-head">Sort by</div>';
+    var html = '<div class="up-pop-head">' + esc(t_("Sort by")) + '</div>';
     html += (fields || []).map(function(f){
       return '<div class="up-pop-opt' + (f.key === sortField ? " is-active" : "") + '" data-sortfield="' + f.key + '">' +
-               '<span>' + esc(f.label) + '</span>' +
+               '<span>' + esc(t_(f.label)) + '</span>' +
                '<span class="up-check">' + CHECK_SVG + '</span>' +
              '</div>';
     }).join("");
@@ -4555,7 +4730,7 @@
       return '<div class="up-ph-navitem' + (on ? " is-selected" : "") + '" role="tab" tabindex="0" ' +
         'aria-selected="' + (on ? "true" : "false") + '" data-page="' + esc(p.value) + '">' +
         '<span class="up-ph-navicon">' + p.icon + '</span>' +
-        '<span class="up-ph-navlabel">' + esc(p.label) + '</span>' +
+        '<span class="up-ph-navlabel">' + esc(t_(p.label)) + '</span>' +
       '</div>';
     }).join("") + '<div class="up-ph-navunderline"></div>';
 
@@ -9936,8 +10111,8 @@
   function leseFehlerHtml(was){
     return '<div class="up-empty">' +
       '<div class="up-empty-ic">' + icon("info", 1.6) + '</div>' +
-      '<div class="up-empty-h">Could not load ' + esc(was || "data") + '</div>' +
-      '<div class="up-empty-t">The data could not be read. Please reload the page.</div>' +
+      '<div class="up-empty-h">' + esc(t_("Could not load {was}").replace("{was}", t_(was || "data"))) + '</div>' +
+      '<div class="up-empty-t">' + esc(t_("The data could not be read. Please reload the page.")) + '</div>' +
     '</div>';
   }
 
