@@ -77,19 +77,29 @@
        optSel    die angehakte Zeile seiner Liste
        nameSel   der Name darin
        evt       sein aufsteigendes DOM-Ereignis
+       fnAttrs   seine EIGENEN Bubble-Kanaele [Attribut, Rueckfallname] -- nur fuer die Diagnose
+                 unten gebraucht. Diese Komponente ruft davon NICHTS: die Filter feuern selbst,
+                 genau wie vorher, und ihre Workflows bleiben unberuehrt.
+       fnMarke   Namensteil, an dem die Diagnose die passenden bubble_fn_* der Seite erkennt
        chip      Beschriftung des Chips, Einzahl -- "Topic: Leadgen" liest sich als eine Aussage
                  ueber diesen einen Filter, "Topics: Leadgen" als eine Liste, die zufaellig eins
                  lang ist */
   var FILTERS = [
     { key: "topics",  label: "Topics",  attr: "data-topics-instance",  rootSel: ".utf-root",
       ctrl: "__utfCtrl", selKey: "topic_ids",    opt: ".utf-opt", keyAttr: "data-id",
-      nameSel: ".utf-opt-name", evt: "utf-topics",  chip: "Topic",  icon: "tags" },
+      nameSel: ".utf-opt-name", evt: "utf-topics",  chip: "Topic",  icon: "tags",
+      fnAttrs: [["data-topics-fn", "bubble_fn_utfTopics"], ["data-topics-apply-fn", null]],
+      fnMarke: "utf" },
     { key: "models",  label: "Models",  attr: "data-models-instance",  rootSel: ".umf-root",
       ctrl: "__umfCtrl", selKey: "model_keys",   opt: ".umf-opt", keyAttr: "data-key",
-      nameSel: ".umf-opt-name", evt: "umf-models",  chip: "Model",  icon: "layers" },
+      nameSel: ".umf-opt-name", evt: "umf-models",  chip: "Model",  icon: "layers",
+      fnAttrs: [["data-models-fn", "bubble_fn_umfModels"], ["data-models-apply-fn", null]],
+      fnMarke: "umf" },
     { key: "markets", label: "Markets", attr: "data-markets-instance", rootSel: ".umk-root",
       ctrl: "__umkCtrl", selKey: "market_codes", opt: ".umk-opt", keyAttr: "data-key",
-      nameSel: ".umk-opt-name", evt: "umk-markets", chip: "Market", icon: "mapPin" }
+      nameSel: ".umk-opt-name", evt: "umk-markets", chip: "Market", icon: "mapPin",
+      fnAttrs: [["data-markets-fn", "bubble_fn_umkMarkets"], ["data-markets-apply-fn", null]],
+      fnMarke: "umk" }
   ];
   /* Wie viele Namen ein Chip zeigt, bevor er auf "+N" zusammenfasst. Zwei: bei drei Namen ist der
      Chip breiter als der Knopf davor, und dann liest man die Leiste nicht mehr, sondern buchstabiert
@@ -766,6 +776,41 @@
              drin ? "  -> eingezogen" : "  -> NICHT gefunden"));
         });
       });
+
+      /* ---- Verdrahtung ---------------------------------------------------------------------
+         Die zweite Frage, die diese Leiste bekommt: "muss ich jetzt alles neu verdrahten?"
+         Nein -- und diese Liste beweist es in beide Richtungen. Sie sagt fuer JEDEN Filter auf
+         der Seite, welchen bubble_fn_* er beim Aendern ruft und ob es den gibt. Die Leiste ruft
+         davon nichts und aendert davon nichts: die Filter feuern selbst, wie vorher.
+         Fehlt einer, steht daneben, welche bubble_fn_* mit demselben Namensteil es auf der Seite
+         WIRKLICH gibt -- daran sieht man einen Tippfehler oder einen falschen Namenszusatz sofort,
+         ohne die Bubble-Seite zu durchsuchen. */
+      out.push("");
+      out.push("Verdrahtung der Filter (gehoert IHNEN, nicht der Leiste)");
+      var vorhanden = [];
+      try {
+        for (var k in window) {
+          if (k.indexOf("bubble_fn_") === 0 && typeof window[k] === "function") vorhanden.push(k);
+        }
+      } catch (e) {}
+      FILTERS.forEach(function (f) {
+        Array.prototype.forEach.call(document.querySelectorAll(f.rootSel), function (w) {
+          out.push("  " + f.label + ' "' + (w.getAttribute("data-instance") || "") + '"');
+          f.fnAttrs.forEach(function (paar) {
+            var attr = paar[0], rueck = paar[1];
+            var gesetzt = String(w.getAttribute(attr) || "").trim();
+            var name = gesetzt || rueck;
+            if (!name) { out.push("    " + attr + ': leer -> kein Aufruf (in Ordnung)'); return; }
+            var da = false;
+            try { da = typeof UC.resolveBubbleFn(name) === "function"; } catch (e) {}
+            out.push("    " + attr + ': "' + name + '"' + (gesetzt ? "" : " (Rueckfall)") +
+              (da ? "  -> DA" : "  -> FEHLT auf dieser Seite"));
+          });
+          var aehnlich = vorhanden.filter(function (n) { return n.toLowerCase().indexOf(f.fnMarke) >= 0; });
+          out.push("    auf der Seite vorhanden: " + (aehnlich.length ? aehnlich.join(", ") : "keine mit \"" + f.fnMarke + "\""));
+        });
+      });
+
       var txt = out.join("\n");
       if (window.console) console.log(txt);
       return txt;
