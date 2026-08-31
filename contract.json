@@ -365,6 +365,7 @@
   "upstreemExportResolve",
   "upstreemExportSetContext",
   "upstreemFarbDiag",
+  "upstreemFilterBarDiag",
   "upstreemMarketsChanged",
   "upstreemPinToSidebar",
   "upstreemProfil",
@@ -513,6 +514,7 @@
   "data-dimension-fn",
   "data-domain",
   "data-domain-mode",
+  "data-dph-ic",
   "data-dph-iconly",
   "data-eigen-del",
   "data-eigen-in",
@@ -2739,9 +2741,9 @@
  "_zaehlung": {
   "events": 134,
   "fnattrs": 88,
-  "globals": 150,
+  "globals": 151,
   "payloadkeys": 90,
-  "dataattrs": 207,
+  "dataattrs": 208,
   "klassen": 1996,
   "keyframes": 58
  }

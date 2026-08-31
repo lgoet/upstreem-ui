@@ -172,6 +172,17 @@
         db.setAttribute("aria-label", "Open Documentation");
         db.innerHTML = UC.icon ? UC.icon("graduationCap", 2) : db.innerHTML;
       }
+
+      /* 3. Das Refresh-Zeichen aus core statt als Inline-Kopie im Markup. Es IST bereits Lucide
+            refresh-cw und Pfad fuer Pfad dasselbe wie UC.icon("refreshCw") -- nachgeprueft gegen
+            lucide-static. Genau darum kommt es jetzt von dort: eine Form, die zweimal im Repo
+            steht, ist die naechste, die auseinanderlaeuft. Groesse und Strichstaerke aendern sich
+            nicht (.up-ph-iconbtn svg { 16px }, Strichstaerke 2 wie im Markup). */
+      var rb = root.querySelector(".dph-refreshbtn");
+      if (rb && UC.icon && !rb.getAttribute("data-dph-ic")){
+        rb.setAttribute("data-dph-ic", "1");
+        rb.innerHTML = UC.icon("refreshCw", 2);
+      }
     })();
 
     var docsBtn = root.querySelector(".dph-docsbtn");

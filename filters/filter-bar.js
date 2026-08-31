@@ -121,6 +121,27 @@
 
     var spaet = UC.makeLate ? UC.makeLate("filter-bar", ".ufb-root") : null;
     var CTRLS = [];
+    /* Alle Wurzeln, die je eingerichtet wurden -- auch die, die Bubble inzwischen weggeworfen hat.
+       Genau die sind der Grund fuer die Liste. */
+    var WURZELN = [];
+    /* Der Waechter laeuft auf einer UHR und nicht an einem MutationObserver, und das ist die Lehre
+       aus einem Fehlversuch: ein Beobachter, der auf Knotenbewegungen reagiert und dabei selbst
+       Knoten bewegt, weckt sich wieder -- mit drei Filtern und zwei Leisten reichte das, um den
+       Hauptfaden nicht mehr loszulassen (gemessene stehende Seite). Eine Uhr kann das nicht: sie
+       laeuft alle 700ms, egal was passiert, und tut in der Regel nichts.
+       700ms sind unauffaellig (ein Rerender ist ohnehin nicht schneller sichtbar) und billig: eine
+       Schleife ueber selten mehr als eine Wurzel. */
+    var WAECHTER_MS = 700;
+    function waechter() {
+      for (var i = WURZELN.length - 1; i >= 0; i--) {
+        var w = WURZELN[i];
+        if (document.contains(w)) continue;
+        /* Bubble hat diese Leiste weggeworfen. Die eingezogenen Filter duerfen nicht mit ihr
+           verschwinden -- sie gehen nach Hause, und die naechste Leiste zieht sie erneut ein. */
+        if (typeof w.__ufbHeim === "function") { try { w.__ufbHeim(); } catch (e) {} }
+        WURZELN.splice(i, 1);
+      }
+    }
 
     function initRoot(root) {
       if (root.__ufbCtrl) return root.__ufbCtrl;
@@ -138,26 +159,89 @@
         });
       }
       function idVon(f) { return String(root.getAttribute(f.attr) || "").trim(); }
-      /* Die Wurzel eines Filters auf der Seite finden. Exakt ODER als Praefix -- dieselbe Regel,
-         nach der die Filter selbst ihre Instanzen aufloesen (mehrere Platzierungen einer Ansicht
-         tragen dort "topics_dash", "topics_dash_2", ...). */
+      /* Was schon geklagt bzw. gemeldet wurde -- je Filter einmal, damit die Konsole nicht bei
+         jedem Lauf dasselbe wiederholt. */
+      var gemeldet = {};
+      /* Die Wurzel eines Filters auf der Seite finden. Drei Stufen:
+
+           1. data-instance EXAKT gleich.
+           2. data-instance beginnt mit der eingetragenen Id -- dieselbe Regel, nach der die Filter
+              selbst ihre Instanzen aufloesen (mehrere Platzierungen tragen dort "topics_dash",
+              "topics_dash_2", ...).
+           3. Kein Treffer, aber auf der ganzen Seite gibt es GENAU EINEN freien Filter dieser Art:
+              dann ist er es. Es gibt keinen falschen, wenn es nur einen gibt.
+              Warum das dazugekommen ist: gemeldet als "Dropdown sagt nur 'These filters are not on
+              this page yet', keine Filter sichtbar". Eine Id, die um ein Zeichen abweicht -- oder
+              ein data-instance, in dem noch ein Bubble-Ausdruck steckt --, liess die Leiste leer
+              aufgehen, und niemand konnte sehen warum.
+         Der Rueckfall passiert NICHT still: sonst ist er beim naechsten Mal eine falsche Zuordnung,
+         die keiner sucht. */
       function findeWurzel(f) {
         var id = idVon(f);
-        if (!id) return null;
-        var alle = document.querySelectorAll(f.rootSel);
-        var i, r, rid;
-        for (i = 0; i < alle.length; i++) {
-          rid = String(alle[i].getAttribute("data-instance") || "");
-          if (rid === id) return alle[i];
+        var alle = Array.prototype.slice.call(document.querySelectorAll(f.rootSel));
+        if (!alle.length) return null;
+        var i, rid;
+        if (id) {
+          for (i = 0; i < alle.length; i++) {
+            rid = String(alle[i].getAttribute("data-instance") || "");
+            if (rid === id) return alle[i];
+          }
+          for (i = 0; i < alle.length; i++) {
+            rid = String(alle[i].getAttribute("data-instance") || "");
+            if (rid && rid.indexOf(id) === 0) return alle[i];
+          }
         }
-        for (i = 0; i < alle.length; i++) {
-          rid = String(alle[i].getAttribute("data-instance") || "");
-          if (rid && rid.indexOf(id) === 0) return alle[i];
+        var frei = alle.filter(function (w) {
+          return !(w.__ufbHost && w.__ufbHost !== root && document.contains(w.__ufbHost));
+        });
+        if (frei.length === 1) {
+          if (!gemeldet[f.key]) {
+            gemeldet[f.key] = true;
+            if (window.console) console.info("[filter-bar] " + instanceId + ": " + f.attr +
+              ' ist "' + id + '", so heisst hier aber kein ' + f.label + '-Filter. Auf der Seite ' +
+              'gibt es genau EINEN (data-instance="' +
+              (frei[0].getAttribute("data-instance") || "") + '") -- der wird genommen. ' +
+              'Trage die Id ein, dann ist es keine Vermutung mehr.');
+          }
+          return frei[0];
         }
         return null;
       }
 
       var liste = gewuenscht();
+
+      /* Alles Eingezogene dorthin zurueck, wo es hergekommen ist. Ist der alte Elternteil selbst
+         weg (Bubble hat ihn ersetzt), geht es an den Koerper: irgendwo im Dokument ist besser als
+         nirgends -- dort findet die naechste Leiste es wieder, und der Filter selbst lebt weiter.
+         Ausdruecklich OHNE Beobachter und ohne Automatik hier: gerufen wird das von genau einer
+         Stelle, dem Waechter unten, und zwar nur fuer eine Wurzel, die nicht mehr im Dokument
+         steht. Mein erster Anlauf hatte daraus einen Mechanismus mit zwei Beobachtern gemacht --
+         das Ergebnis war eine stehende Seite. */
+      function heimschicken() {
+        /* Ueber die LISTE und nicht ueber die gemerkten Heimatadressen: der Heimweg darf nicht
+           daran haengen, dass die Buchfuehrung stimmt. Gemessen, warum das noetig ist -- beim
+           ZWEITEN Ersetzen der Wurzel hintereinander war heim leer, und die Filter verschwanden
+           trotz Heimweg aus dem Dokument ("im Dokument: ---").
+           Und der Koerper als Rueckfall: irgendwo im Dokument ist immer besser als nirgends. Von
+           dort holt die naechste Leiste sie wieder, und der Filter selbst laeuft weiter. Ein
+           Element, das aus dem Dokument fliegt, ist unwiederbringlich -- ein Element an der
+           falschen Stelle ist ein Schoenheitsfehler fuer 700ms. */
+        liste.forEach(function (f) {
+          var w = eingezogen[f.key];
+          if (!w) return;
+          var h = heim[f.key];
+          var ziel = (h && h.eltern && document.contains(h.eltern)) ? h.eltern : document.body;
+          try {
+            if (ziel === document.body) ziel.appendChild(w);
+            else ziel.insertBefore(w, (h.nachbar && h.nachbar.parentNode === ziel) ? h.nachbar : null);
+          } catch (e) {
+            try { document.body.appendChild(w); } catch (e2) {}
+          }
+          if (w.__ufbHost === root) w.__ufbHost = null;
+          delete eingezogen[f.key];
+        });
+      }
+      root.__ufbHeim = heimschicken;
 
       root.innerHTML =
         '<div class="ufb-bar">' +
@@ -231,9 +315,9 @@
            (Element noch nicht da, oder es haengt schon in einer anderen Leiste). Ein Panel, das
            ohne Grund leer aufgeht, ist der Zustand, den es hier nicht geben soll. */
         elRows.insertAdjacentHTML("beforeend",
-          '<div class="up-empty-mini ufb-empty">' +
+          '<div class="up-empty-mini ufb-empty"><span data-empty-txt>' +
             (liste.length ? "These filters are not on this page yet" : "No filters on this page") +
-          '</div>');
+          '</span></div>');
       }
       zeilenBauen();
 
@@ -244,7 +328,23 @@
          Untermenue fuehrt, ist die schlechtere Auskunft. */
       var eingezogen = {};
       var geklagt = {};
+      /* Wo der Filter HERKAM. Ohne das ist das Einziehen eine Einbahnstrasse, und die endet in
+         echtem Schaden: nimmt Bubble das Element dieser Leiste aus dem Dokument, gehen die
+         eingezogenen Filter MIT -- sie sind dann nicht bloss nicht eingezogen, sie sind weg.
+         Gemessen im Harness (_h_ufb_neu.html): nach dem Ersetzen der Wurzel stand dort
+         "im Dokument: ---", also kein einziger Filter mehr. Danach sagt das Panel "These filters
+         are not on this page yet", und genau so wurde es gemeldet. */
+      var heim = {};
       function einziehen() {
+        /* Steht DIESE Wurzel nicht mehr im Dokument, ist sie eine Leiche -- und eine Leiche darf
+           keine Filterelemente an sich ziehen. Genau daran haben die Filter zweimal das Dokument
+           verlassen: nach einem Rerender lebt der Abschluss der alten Wurzel weiter (seine Uhren
+           und sein aufResize-Zuhoerer laufen), und sein `host` liegt in einem abgehaengten Baum.
+           Ein appendChild dorthin nimmt den Filter aus dem Dokument, und danach findet ihn
+           niemand mehr -- auch die neue Leiste nicht, denn die sucht mit querySelectorAll.
+           Gemessen: ohne diese Zeile "im Dokument: ---" nach dem Ersetzen der Wurzel, mit ihr
+           "tmk". Der Heimweg allein reicht nicht; er raeumt nur auf, was diese Zeile verhindert. */
+        if (!document.contains(root)) return;
         var etwasNeu = false;
         liste.forEach(function (f) {
           var host = elRows.querySelector('[data-sub-host="' + f.key + '"]');
@@ -258,6 +358,14 @@
              eine zweite Leiste auf dieselben Instanz-Ids zeigen liess: die zweite zog Topics und
              Markets zu sich, und in der ersten standen die Zeilen danach leer. Ein stiller
              Diebstahl ist der schlechteste Ausgang, also wird er verweigert und benannt. */
+          /* Ein Filter gehoert genau EINER Leiste. Liegt er schon in der eines anderen Elements,
+             wird er NICHT weggenommen -- ein stiller Diebstahl ist der schlechteste Ausgang.
+             Der Vergleich laeuft ueber die KNOTENGLEICHHEIT und nicht ueber data-instance. Das ist
+             gemessen und nicht Geschmack: der Versuch, die eigene vorige Ausgabe an der gleichen
+             data-instance zu erkennen und durchzulassen, hat den Heimweg gebrochen -- nach dem
+             Ersetzen der Wurzel standen die Filter wieder ausserhalb des Dokuments. Der Preis
+             dafuer ist eine Warnung, die nach einem Rerender einmal ueber die eigene Vorgaengerin
+             klagt. Laerm in der Konsole gegen verlorene Elemente: der Laerm gewinnt. */
           if (w.__ufbHost && w.__ufbHost !== root && document.contains(w.__ufbHost)){
             if (!geklagt[f.key]){
               geklagt[f.key] = true;
@@ -268,6 +376,11 @@
                 "das Attribut hier leer.");
             }
             return;
+          }
+          /* Heimatadresse EINMAL merken, beim ersten Einziehen. Danach nicht mehr ueberschreiben:
+             die "Heimat" waere sonst mein eigenes Untermenue. */
+          if (!heim[f.key] && w.parentNode && w.parentNode !== host) {
+            heim[f.key] = { eltern: w.parentNode, nachbar: w.nextSibling };
           }
           w.__ufbHost = root;
           host.appendChild(w);
@@ -284,6 +397,17 @@
           if (!leer) sichtbar++;
         });
         elRows.classList.toggle("is-empty", sichtbar === 0);
+        /* Der Hinweis BENENNT, was fehlt. "These filters are not on this page yet" allein liess
+           den Nutzer im Dunkeln -- und die Antwort ist immer eine von zwei: die Id passt nicht,
+           oder das Filterelement ist in Bubble ausgeblendet und darum gar nicht im Dokument. */
+        var txtEl = elRows.querySelector("[data-empty-txt]");
+        if (txtEl && liste.length){
+          var fehlen = liste.filter(function (f) { return !eingezogen[f.key]; })
+                            .map(function (f) { return f.label; });
+          txtEl.textContent = fehlen.length
+            ? fehlen.join(", ") + (fehlen.length === 1 ? " is" : " are") + " not on this page yet"
+            : "These filters are not on this page yet";
+        }
         if (etwasNeu) { spiegelnAlle(); render(); }
       }
 
@@ -538,17 +662,16 @@
       /* Die Filterelemente koennen SPAETER erscheinen -- Bubble baut sie unabhaengig von diesem
          Element. Ein kurzer Anlauf plus der Beobachter aus core holt sie nach. */
       [0, 150, 500, 1200, 2500].forEach(function (ms) { setTimeout(einziehen, ms); });
-      if (window.MutationObserver) {
-        var obs = new MutationObserver(function () {
-          /* Nur wenn wirklich etwas fehlt -- sonst laeuft der Beobachter bei jeder Mutation der
-             Seite durch drei querySelectorAll. */
-          for (var i = 0; i < liste.length; i++) {
-            var w = eingezogen[liste[i].key];
-            if (!w || !document.contains(w)) { einziehen(); return; }
-          }
-        });
-        obs.observe(document.body, { childList: true, subtree: true });
-      }
+      /* Hier stand ein MutationObserver auf document.body, der einziehen() rief, sobald ein
+         eingezogener Filter aus dem Dokument verschwand. Er ist raus, und das ist der Kern der
+         Lehre aus dieser Runde: einziehen() BEWEGT Knoten, und der Beobachter hoerte auf genau
+         das. Mit zwei Leisten (oder einer ersetzten Wurzel und ihrem noch lebenden Abschluss)
+         zogen zwei solche Beobachter dasselbe Element abwechselnd zu sich -- die Seite stand, und
+         zwar so gruendlich, dass selbst die Vorschau nicht mehr antwortete.
+         Dieselbe Arbeit macht jetzt die Uhr unten (WAECHTER_MS, alle 700ms): sie kann sich nicht
+         selbst wecken. Ein Filter, den Bubble spaeter nachliefert, kommt also bis zu 700ms
+         spaeter in die Leiste -- das ist der Preis, und er ist unsichtbar. */
+      if (UC.aufResize) UC.aufResize(function () { einziehen(); });
       if (UC.aufResize) UC.aufResize(render);
 
       var ctrl = {
@@ -557,6 +680,7 @@
         render: render
       };
       root.__ufbCtrl = ctrl;
+      if (WURZELN.indexOf(root) < 0) WURZELN.push(root);
       /* Ein ATTRIBUT und nicht nur die Eigenschaft: der Beobachter oben prueft mit einem
          Selektor, und das ist eine Abfrage statt einer Schleife ueber alle Wurzeln. */
       root.setAttribute("data-ufb-init", "1");
@@ -587,9 +711,54 @@
     window.resetFilterBar = function (id) { return forEachInstance(id, function (c) { c.reset(); }); };
     window.setFilterBarTheme = function (id, t) { return forEachInstance(id, function (c) { c.setTheme(t); }); };
 
+    /* ---- Diagnose auf Zuruf ---------------------------------------------------------------
+       window.upstreemFilterBarDiag() in der Konsole. Sie beantwortet die EINE Frage, die bei
+       "das Dropdown ist leer" gestellt wird: was hat die Leiste gesucht, und was liegt wirklich
+       auf der Seite. Beides nebeneinander, dann sieht man den Unterschied in einer Zeile.
+       Zwei Gruende, und die Ausgabe unterscheidet sie:
+         "im Dokument: 0"    -> das Filterelement ist in Bubble AUSGEBLENDET. Ein ausgeblendetes
+                                Element rendert Bubble gar nicht ins Dokument, dann gibt es nichts
+                                einzuziehen. Die Filter muessen sichtbar bleiben -- unsichtbar
+                                macht sie die Leiste selbst, indem sie sie zu sich holt.
+         "-> NICHT gefunden" -> die Id passt nicht (oder in data-instance steckt noch ein
+                                unaufgeloester Bubble-Ausdruck).
+       Dieselbe Bauart wie upstreemScrollDiag und upstreemFarbDiag in core. */
+    window.upstreemFilterBarDiag = function () {
+      var out = [];
+      var leisten = Array.prototype.slice.call(document.querySelectorAll(".ufb-root"));
+      out.push("Filterleisten auf der Seite: " + leisten.length);
+      FILTERS.forEach(function (f) {
+        var alle = Array.prototype.slice.call(document.querySelectorAll(f.rootSel));
+        out.push("");
+        out.push(f.label + "  (" + f.rootSel + ")");
+        out.push("  im Dokument: " + alle.length +
+          (alle.length ? "  ids: " + alle.map(function (w) {
+            return '"' + (w.getAttribute("data-instance") || "") + '"' +
+                   (w.__ufbHost ? " [belegt]" : ""); }).join(", ")
+                       : "  -> KEINE. Das Element ist in Bubble ausgeblendet oder nicht auf dieser Seite."));
+        leisten.forEach(function (r) {
+          var id = String(r.getAttribute(f.attr) || "").trim();
+          var host = r.querySelector('[data-sub-host="' + f.key + '"]');
+          var drin = host && host.querySelector(f.rootSel);
+          out.push('  Leiste "' + (r.getAttribute("data-instance") || "default") + '": ' +
+            f.attr + '="' + id + '"' +
+            (!id || /^[A-Z_]{3,}$/.test(id) ? "  -> leer/Platzhalter, also keine Zeile" :
+             drin ? "  -> eingezogen" : "  -> NICHT gefunden"));
+        });
+      });
+      var txt = out.join("\n");
+      if (window.console) console.log(txt);
+      return txt;
+    };
+
     initAll();
     if (UC.watchRoots) UC.watchRoots("ufb-root", initAll);
     [100, 300, 800, 1800].forEach(function (ms) { setTimeout(initAll, ms); });
+    /* Eine Uhr fuer beides: weggeworfene Leisten aufraeumen und eine neue einrichten, die spaeter
+       dazukommt (UC.watchRoots hat im Gegentest nicht angeschlagen, siehe die Runde davor).
+       initAll richtet nur ein, was noch keinen Controller hat -- der Lauf kostet ein
+       querySelectorAll. */
+    setInterval(function () { waechter(); initAll(); }, WAECHTER_MS);
     /* Eigenes Netz fuer eine Leiste, die SPAETER erscheint. UC.watchRoots ist dafuer gedacht, hat
        im Gegentest aber nicht angeschlagen (eine frisch eingehaengte Wurzel blieb 2,2s
        uneingerichtet, Zaehler 0). Die Zeitstaffel oben faengt den Normalfall -- Bubble baut das
@@ -597,17 +766,8 @@
        nach einem Ansichtswechsel, ein Drawer, der erst spaeter aufgeht.
        Gebuendelt auf einen Lauf je 200ms, und nur wenn wirklich eine Wurzel ohne Controller
        dasteht: sonst laeuft er bei jeder Mutation der Seite durch ein querySelectorAll. */
-    if (window.MutationObserver){
-      var uhr = null;
-      new MutationObserver(function(){
-        if (uhr) return;
-        uhr = setTimeout(function(){
-          uhr = null;
-          var offen = document.querySelector(".ufb-root:not([data-ufb-init])");
-          if (offen) initAll();
-        }, 200);
-      }).observe(document.body, { childList: true, subtree: true });
-    }
+    /* Hier stand ein zweiter Modul-Beobachter, der auf neue Leisten wartete. Die Uhr oben tut
+       dasselbe und kann sich nicht selbst wecken -- ein Beobachter weniger auf document.body. */
 
     /* Die Warteschlange abarbeiten, in der Reihenfolge, in der Bubble gerufen hat. */
     var q = window.__ufbBootQueue;

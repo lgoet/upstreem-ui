@@ -28,9 +28,29 @@
      heisst "diesen Filter gibt es hier nicht" -- dann gibt es auch keine Zeile dafuer. Genau so
      erkennt die Leiste, was auf der Seite vorhanden ist.
      Die Id darf ein PRAEFIX sein: steht am Filter "topics_dash_2", findet "topics_dash" ihn.
-  5. Die drei Filterelemente selbst BLEIBEN auf der Seite und behalten ihre Attribute. Sie muessen
-     nicht ausgeblendet werden -- die Leiste holt sie zu sich, sobald sie da sind. Setze sie
-     bevorzugt VOR die Leiste in der Seitenreihenfolge; noetig ist es nicht.
+     Und wenn es auf der Seite GENAU EINEN Filter dieser Art gibt, nimmt die Leiste ihn auch bei
+     einer nicht passenden Id -- sie sagt das dann in der Konsole. Es gibt keinen falschen, wenn
+     es nur einen gibt.
+  5. DIE DREI FILTERELEMENTE MUESSEN SICHTBAR BLEIBEN. Nicht ausblenden, nicht "This element is
+     visible on page load" abwaehlen: ein ausgeblendetes Element rendert Bubble GAR NICHT ins
+     Dokument, und dann gibt es fuer die Leiste nichts einzuziehen. Unsichtbar werden sie von
+     selbst, sobald die Leiste sie zu sich holt -- sie stehen danach in ihrem Untermenue.
+     Setze sie bevorzugt VOR die Leiste in der Seitenreihenfolge; noetig ist es nicht.
+
+  WENN DAS DROPDOWN LEER AUFGEHT
+  Es sagt dann, WELCHER Filter fehlt ("Models, Markets are not on this page yet"). Die Antwort ist
+  immer eine von zwei, und diese Zeile in der Konsole unterscheidet sie:
+
+        window.upstreemFilterBarDiag()
+
+  Sie schreibt nebeneinander, was die Leiste gesucht hat und was wirklich auf der Seite liegt:
+     "im Dokument: 0"     -> das Filterelement ist ausgeblendet oder nicht auf dieser Seite
+                             (siehe Punkt 5)
+     "-> NICHT gefunden"  -> die Id passt nicht. In der Zeile darueber stehen die Ids, die es
+                             wirklich gibt; eine davon gehoert in das Attribut.
+                             Steckt in data-instance des Filters noch ein Bubble-Ausdruck, der
+                             nicht aufloest, steht dort der rohe Platzhalter -- dann ist DAS das
+                             Problem, nicht die Leiste.
   6. Der Datumsfilter wird NICHT eingetragen. Er bleibt eigenstaendig sichtbar.
 
   EIN FILTER GEHOERT GENAU EINER LEISTE

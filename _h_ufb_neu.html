@@ -1,0 +1,72 @@
+<meta charset="utf-8">
+<title>warte</title>
+<link rel="stylesheet" href="core.css?v=2">
+<link rel="stylesheet" href="filters/topics-filter.css?v=2">
+<link rel="stylesheet" href="filters/models-filter.css?v=2">
+<link rel="stylesheet" href="filters/markets-filter.css?v=2">
+<link rel="stylesheet" href="filters/filter-bar.css?v=2">
+<style>html,body{margin:0}body{font-family:sans-serif;padding:16px}
+ #out{font:11px/1.5 ui-monospace,monospace;background:#111;color:#eee;padding:10px;white-space:pre-wrap}</style>
+<script>
+window.__ev=[]; window.__fehler=[];
+window.onerror=function(m){ window.__fehler.push(String(m)); };
+["utfTopics","umfModels","umkMarkets","ufbReset"].forEach(function(n){
+  window["bubble_fn_"+n]=function(a){ window.__ev.push([n,a]); }; });
+try{ localStorage.clear(); }catch(e){}
+</script>
+<div id="quelle" style="display:flex;gap:8px;margin-bottom:16px">
+  <div class="up-root utf-root" data-instance="topics_v1" data-isdark="no" data-topics-fn="bubble_fn_utfTopics"></div>
+  <div class="up-root umf-root" data-instance="models_v1" data-isdark="no" data-models-fn="bubble_fn_umfModels"></div>
+  <div class="up-root umk-root" data-instance="markets_v1" data-isdark="no" data-markets-fn="bubble_fn_umkMarkets"></div>
+</div>
+<div id="leiste">
+  <div class="up-root ufb-root" data-instance="bar1" data-isdark="no"
+       data-topics-instance="topics_v1" data-models-instance="models_v1"
+       data-markets-instance="markets_v1" data-reset-fn="bubble_fn_ufbReset"></div>
+</div>
+<pre id="out">warte</pre>
+<script src="core.js?v=2"></script>
+<script src="filters/topics-filter.js?v=2"></script>
+<script src="filters/models-filter.js?v=2"></script>
+<script src="filters/markets-filter.js?v=2"></script>
+<script src="filters/filter-bar.js?v=2"></script>
+<script>
+var T=[{id:"t1",name:"Leadgen",color:"#2563eb",prompt_count:4}];
+var M=[{key:"gpt-4o",display_name:"GPT-4o",provider:"OpenAI",is_active:true}];
+var K=[{alpha2:"DE",name:"Germany",prompt_count:9}];
+function w(ms){ return new Promise(function(r){ setTimeout(r,ms); }); }
+function da(){ return (document.querySelector(".utf-root")?"t":"-") +
+  (document.querySelector(".umf-root")?"m":"-") + (document.querySelector(".umk-root")?"k":"-"); }
+function drin(){ var r=document.querySelector(".ufb-root"); if(!r) return "keine Leiste";
+  return [].map.call(r.querySelectorAll(".up-subwrap"), function(x){
+    return x.getAttribute("data-sub")+(x.querySelector(".utf-root,.umf-root,.umk-root")?"+":"-"); }).join(" "); }
+(async function(){
+  var log=[];
+  function sag(s){ log.push(s); document.getElementById("out").textContent=log.join("\n");
+                   document.title = "schritt " + log.length; }
+  await w(700);
+  if (window.setTopicsFilterTopics) window.setTopicsFilterTopics("topics_v1", T);
+  if (window.setModelsFilterModels) window.setModelsFilterModels("models_v1", M);
+  if (window.setMarketsFilterMarkets) window.setMarketsFilterMarkets("markets_v1", K);
+  await w(400);
+  sag("1 normal:            " + drin() + "   im Dokument: " + da());
+
+  /* Bubble ERSETZT die Wurzel: alte weg, neue rein -- der reale Rerender-Fall. */
+  var alt = document.querySelector(".ufb-root");
+  var neu = alt.cloneNode(false);          /* gleiche Attribute, leer, ohne Controller */
+  alt.parentNode.replaceChild(neu, alt);
+  await w(1200);
+  sag("2 Wurzel ersetzt:    " + drin() + "   im Dokument: " + da());
+
+  /* Falsche Id -> Rueckfall auf den einzigen Kandidaten */
+  var b = document.querySelector(".ufb-root");
+  var neu2 = b.cloneNode(false);
+  neu2.setAttribute("data-topics-instance", "gibt_es_nicht");
+  b.parentNode.replaceChild(neu2, b);
+  await w(1400);
+  sag("3 falsche Id:        " + drin() + "   im Dokument: " + da());
+
+  sag("FEHLER: " + JSON.stringify(window.__fehler));
+  document.title = "fertig";
+})();
+</script>

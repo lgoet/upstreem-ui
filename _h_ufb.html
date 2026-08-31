@@ -96,6 +96,20 @@ window.__waehle = function(topics, models, markets){
   if (markets != null && window.setMarketsFilterSelected) window.setMarketsFilterSelected("markets_v1", markets);
 };
 
+/* Die zwei Faelle aus der Meldung "Dropdown leer": eine Id, die nicht passt, und ein Filter, den
+   es auf der Seite gar nicht gibt. */
+window.__falscheId = function(){
+  var r = document.querySelector('[data-instance="bar1"]');
+  r.setAttribute("data-topics-instance", "gibt_es_nicht");
+  r.setAttribute("data-models-instance", "auch_nicht");
+  /* Neu einziehen erzwingen: Attribute aendern sich in Bubble auch nach dem Mount. */
+  if (r.__ufbCtrl) r.__ufbCtrl.render();
+};
+window.__filterWeg = function(){
+  var w = document.querySelector(".umk-root");
+  if (w && w.parentNode) w.parentNode.removeChild(w);
+};
+
 window.__zustand = function(){
   var r = document.querySelector(".ufb-root");
   function txt(e){ return e ? e.textContent.replace(/\s+/g," ").trim() : null; }
