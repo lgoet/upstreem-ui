@@ -28,14 +28,14 @@
 .tcd-unit-left  { flex: 0 0 35%; max-width: 35%; }
 .tcd-unit-right { flex: 1 1 65%; max-width: 65%; }
 .tcd-root.is-max .tcd-unit, .tcd-root.is-narrow .tcd-unit { flex: 0 0 auto; width: 100%; max-width: 100%; }
-/* Hier standen zwei Regeln mit padding-right: 0 an der Kopfzeile (links, und noch einmal
-   fuer is-max/is-narrow). Sie hatten einen Sinn, solange die Kopfzeile AUSSERHALB des
-   Kastens stand: sie sollte an dessen Kante ausgerichtet sein. Jetzt steht sie DARIN und
-   braucht ihr Polster auf beiden Seiten -- die Regeln sind darum raus und nicht
-   ueberschrieben. Ueberschrieben haetten sie ueber die Spezifitaet gewonnen (zwei Klassen
-   gegen eine), und dann waere rechts weiter kein Polster. */
+/* Hier standen zwei Regeln mit padding-right: 0 an der Kopfzeile (einmal links, einmal fuer
+   is-max/is-narrow). Sie hatten Sinn, solange die Kopfzeile AUSSERHALB des Kastens stand und
+   an dessen Kante ausgerichtet sein sollte. Jetzt steht sie DARIN und braucht ihr Polster auf
+   allen vier Seiten -- die Regeln sind raus und nicht ueberschrieben: die is-max-Fassung hat
+   drei Klassen und haette ueber die Spezifitaet gewonnen, und dann waere rechts genau in
+   dieser Stufe weiter kein Polster. */
 .tcd-head { display: flex; align-items: center; height: 32px; margin-bottom: 16px; padding: 0; }
-.tcd-root.is-max .tcd-unit-left .tcd-head, .tcd-root.is-narrow .tcd-heading { font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tcd-heading { font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tcd-head-tools { display: flex; align-items: center; gap: 8px; margin-left: auto; flex: 0 0 auto; }
 .tcd-box {
   flex: 1 1 auto; min-height: 0; height: 430px;   /* 45px table head + 7×55px rows, fits exactly */
@@ -193,7 +193,7 @@
 .tcd-chart-reset:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); color: var(--vc-text); }
 .tcd-chart-reset svg { width: 13px; height: 13px; flex: 0 0 13px; display: block; }
 
-/* ══ TEST: Kopfzeile IM Rahmen ══════════════════════════════════════════════════════════════════
+/* ══ Kopfzeile IM Rahmen ════════════════════════════════════════════════════════════════════════
    Vorher stand die Kopfzeile (Ueberschrift + Werkzeuge) AUSSERHALB des umrandeten Kastens, und der
    Rahmen umschloss nur Tabellenkopf und Chart. Jetzt umschliesst EIN Rahmen beides.
 
@@ -204,23 +204,35 @@
 
    Die Zahlen:
      Rahmen und Radius   von .tcd-box an .tcd-unit, 1px und 16 -- unveraendert, nur eine Ebene hoeher
-     Kopfzeile           32px Inhalt wie bisher, dazu 12px oben und unten und 16px links/rechts.
-                         Das sind 56px Streifen; die 16px margin-bottom von vorher fallen weg, sie
-                         waren der Abstand ZWISCHEN zwei Kaesten und den gibt es nicht mehr.
-     Kasten              kein eigener Rahmen, keine eigene Flaeche mehr (beides traegt die Einheit)
-                         und nur noch UNTEN gerundet -- 15 statt 16, weil er innerhalb des 1px
-                         Rahmens sitzt und die Rundung sonst um genau diesen Pixel zu weit waere.
+     Kopfzeile           8px auf JEDER Seite. Gleiches Polster ringsum war ausdruecklich verlangt:
+                         mit 12 oben und 16 seitlich stand der Domain/URL-Umschalter links weiter
+                         von der Kante als von der Oberkante, und das sieht man. 32px Inhalt plus
+                         2 x 8 sind 48px Streifen; die 16px margin-bottom von vorher fallen weg,
+                         sie waren der Abstand ZWISCHEN zwei Kaesten und den gibt es nicht mehr.
+     Trennlinie          border-top am Kasten. Sie fehlte, und genau das war zu sehen: die Zeile
+                         mit den Spaltenueberschriften hatte keine Linie mehr ueber sich, weil die
+                         vorher der Rahmen des Kastens war.
+     Kasten              kein eigener Rahmen (ausser der Linie oben), keine eigene Flaeche mehr
+                         (beides traegt die Einheit) und nur noch UNTEN gerundet -- 15 statt 16,
+                         weil er innerhalb des 1px Rahmens sitzt und die Rundung sonst um genau
+                         diesen Pixel zu weit waere.
      overflow            bleibt am Kasten, NICHT an der Einheit: in der Kopfzeile stehen Dropdowns
                          (Sortierung, Markenfilter), und die muessen heraus.
 
-   KEINE Trennlinie zwischen Kopfzeile und Inhalt. Rechts folgt ohnehin ein Tabellenkopf mit
-   eigener Linie; links waere sie eine Erfindung. Nachgereicht ist sie eine Zeile.
+   Die Schriftgroessen der Kopfzeile sind NICHT angefasst -- .tcd-heading bleibt bei 14/500.
+   (Beim ersten Anlauf war das anders, und zwar nicht mit Absicht: eine Aufraeumung hat den
+   Selektor .tcd-heading verschluckt, die Ueberschrift fiel auf die 16px der Wurzel zurueck und
+   sah dadurch groesser aus. Die Regel steht wieder unangetastet weiter oben.)
    ═══════════════════════════════════════════════════════════════════════════════════════════════ */
 .tcd-unit {
   border: 1px solid var(--vc-border); background: var(--vc-bg); border-radius: 16px;
 }
-.tcd-head { height: 56px; padding: 12px 16px; margin-bottom: 0; }
+/* Zwei Klassen, damit die Regel auch in den Stufen is-max und is-narrow greift -- dort steht
+   ohnehin nichts mehr dagegen (die alten padding-right-Regeln sind entfernt, siehe oben),
+   aber eine Kopfzeile, deren Polster von der Fensterbreite abhaengt, waere die naechste
+   Meldung. */
+.tcd-unit .tcd-head { height: 48px; padding: 8px; margin-bottom: 0; }
 .tcd-box {
-  border: 0; background: transparent;
+  border: 0; border-top: 1px solid var(--vc-border); background: transparent;
   border-radius: 0 0 15px 15px;
 }

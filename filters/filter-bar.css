@@ -38,7 +38,25 @@
    ein Menue aufgeht. Er dreht sich NICHT beim Oeffnen.
    Einen Hinweispunkt gibt es nicht mehr: dass Filter laufen, sagen die Chips daneben, und die
    sagen es genauer. */
-.ufb-btn { flex: 0 0 auto; }
+/* Umrandet wie der Datumsfilter daneben -- so ausdruecklich verlangt. Das Bauteil bleibt
+   .up-quietbtn aus core (32px, Radius 8, Schrift 13/500, dieselbe Hoverflaeche, dieselbe
+   Offen-Regel ueber .is-open); dazukommen die vier Werte, die den Datumsfilter umrandet machen,
+   und zwar WORTGLEICH aus filters/date-range.css (.udr-trigger):
+
+       border          1px solid var(--vc-border)
+       background      var(--vc-bg)
+       color           var(--vc-muted)
+       padding         0 10px
+
+   Und sein Hover-/Offen-Zustand ebenso wortgleich: Rahmen auf --vc-hover-border, Flaeche
+   --vc-heading-bg, Schrift --vc-text. Die beiden stehen nebeneinander in derselben Zeile; jeder
+   abweichende Pixel faellt dort auf, deshalb die Zahlen von dort und nicht von .up-btn-sec (das
+   hat Radius 9 und 12.5px Schrift). */
+.ufb-btn { flex: 0 0 auto; padding: 0 10px;
+  border: 1px solid var(--vc-border); background: var(--vc-bg); color: var(--vc-muted); }
+.ufb-btn:hover, .ufb-more.is-open .ufb-btn {
+  color: var(--vc-text); background: var(--vc-heading-bg); border-color: var(--vc-hover-border);
+}
 .ufb-btn-ic { display: inline-flex; flex: 0 0 16px; }
 .ufb-btn-chev { display: inline-flex; flex: 0 0 16px; margin-left: 3px; color: var(--vc-muted); }
 .ufb-btn:hover .ufb-btn-chev, .ufb-more.is-open .ufb-btn-chev { color: var(--vc-text); }
