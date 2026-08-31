@@ -97,7 +97,13 @@
       "Preferred name": "Bevorzugter Name",
       "Your name": "Dein Name",
       "Change your picture": "Bild wechseln",
-      "Upload a picture — square images look best": "Bild hochladen – quadratische Bilder wirken am besten"
+      "Upload a picture — square images look best": "Bild hochladen – quadratische Bilder wirken am besten",
+      "Theme": "Design",
+      "System follows the setting of your operating system.":
+        "System übernimmt die Einstellung deines Betriebssystems.",
+      "Light": "Hell",
+      "Dark": "Dunkel",
+      "System": "System"
     });
 
     /* ---- Die Wahlmöglichkeiten ----
@@ -117,6 +123,16 @@
     var ZAHLEN = [
       { wert: "en", name: "1,234.56" },
       { wert: "de", name: "1.234,56" }
+    ];
+    /* Das Thema gehoert in dieselbe Liste wie Sprache und Formate: es ist dieselbe Art
+       Entscheidung. Es liegt NICHT im Vorrat von core (PREF_KEY), sondern in localStorage
+       pref_theme -- dort lag es schon, bevor es dieses Fenster gab, und das Konto-Menue der
+       Seitenleiste schreibt in denselben Schluessel. Zwei Speicherorte fuer eine Einstellung
+       waeren zwei Wahrheiten. */
+    var THEMEN = [
+      { wert: "light",  name: "Light" },
+      { wert: "dark",   name: "Dark" },
+      { wert: "system", name: "System" }
     ];
     var DATEN = [
       { wert: "d-mon-y", name: "12. Dec 2025" },
@@ -269,7 +285,7 @@
         '<button class="ums-sel" type="button" aria-haspopup="menu" aria-expanded="false"' +
           ' data-ums-selbtn="' + esc(name) + '">' +
           flagge(akt, "ums-flag") +
-          '<span class="ums-sel-val">' + esc(akt ? akt.name : jetzt) + '</span>' +
+          '<span class="ums-sel-val">' + esc(akt ? t(akt.name) : jetzt) + '</span>' +
           UC.icon("chevronDown", 2.2) +
         '</button>' +
         '<div class="up-menu ums-menu" role="menu" aria-hidden="true"></div>' +
@@ -291,6 +307,8 @@
           "charts and tooltips.", selHtml("num", ZAHLEN, UC.getPref("num"))) +
         zeileHtml("Date format", "Used everywhere a date appears, including chart axes.",
           selHtml("date", DATEN, UC.getPref("date"))) +
+        zeileHtml("Theme", "System follows the setting of your operating system.",
+          selHtml("theme", THEMEN, themaJetzt())) +
       '</div>';
     }
 
@@ -358,6 +376,9 @@
           schalterHtml("legend", legende)) +
       '</div>';
     }
+    function themaJetzt() {
+      return UC.getUpstreemThemeChoice ? UC.getUpstreemThemeChoice() : "system";
+    }
     function schemaName(key) {
       if (key === "default") return "Default";
       var sc = UC.COLOR_SCALES && UC.COLOR_SCALES[key];
@@ -392,15 +413,17 @@
         btn.setAttribute("aria-expanded", "true");
         return;
       }
-      var liste = name === "locale" ? SPRACHEN : (name === "num" ? ZAHLEN : DATEN);
-      var jetzt = UC.getPref(name);
+      var liste = name === "locale" ? SPRACHEN
+                : name === "num"    ? ZAHLEN
+                : name === "theme"  ? THEMEN : DATEN;
+      var jetzt = name === "theme" ? themaJetzt() : UC.getPref(name);
       menu.innerHTML = liste.map(function (o) {
         var bsp = name === "num" ? zahlBeispiel(o.wert)
                 : (name === "date" ? datumBeispiel(o.wert) : "");
         return '<button class="up-optrow' + (o.wert === jetzt ? " is-on" : "") + '" type="button"' +
           ' data-ums-set="' + esc(name) + '" data-ums-val="' + esc(o.wert) + '">' +
           flagge(o, "ums-flag") +
-          '<span>' + esc(o.name) + '</span>' +
+          '<span>' + esc(t(o.name)) + '</span>' +
           (bsp && bsp !== o.name ? '<span class="ums-opt-bsp">' + esc(bsp) + '</span>' : "") +
           '<span class="ums-opt-check">' + UC.icon("check", 2.6) + '</span>' +
         '</button>';
@@ -419,13 +442,32 @@
 
     function setzen(name, wert) {
       popovers.forEach(function (p) { try { p.close(true); } catch (e) {} });
-      UC.setPref(name, wert);
-      /* HIER waere die Zeile, die den Wert zusaetzlich nach Bubble meldet, wenn er einmal am
-         Nutzer gespeichert werden soll:
-             fire("data-prefs-fn", "umsPrefs", { name: name, value: wert });
-         Sie steht bewusst nicht drin -- gewaehlt wurde "im Browser, wie das Thema", und ein
-         Ereignis, das kein Workflow hoert, ist nur eine Warnung in der Konsole. */
+      if (name === "theme") {
+        /* Der Weg von core, derselbe, den das Konto-Menue der Seitenleiste geht: er faerbt jede
+           Wurzel der Seite um, merkt die Wahl und loest "System" nach der Systemeinstellung auf. */
+        if (window.setUpstreemTheme) window.setUpstreemTheme(wert);
+      } else {
+        UC.setPref(name, wert);
+      }
+      nachBubble(name, wert);
       zeichnen();
+    }
+    /* Jede Aenderung geht ZUSAETZLICH nach Bubble -- aber nur, wenn es dort einen Empfaenger gibt.
+       Der Vorrat liegt im Browser (wie das Thema seit immer), das genuegt fuer ein Geraet. Wer die
+       Einstellung am NUTZER speichern will, damit sie auf dem naechsten Rechner wieder da ist,
+       legt ein JavaScript-to-Bubble-Element namens umsPrefs an -- und ab dann kommt sie.
+       Vorher geprueft statt einfach gefeuert: makeFire klagt in der Konsole ueber jeden Namen, den
+       es nicht auflosen kann, und eine Warnung fuer eine Sache, die niemand bestellt hat, ist
+       Laerm. */
+    function nachBubble(name, wert) {
+      var da = false;
+      try {
+        da = typeof UC.resolveBubbleFn("umsPrefs") === "function" ||
+             typeof UC.resolveBubbleFn("bubble_fn_umsPrefs") === "function";
+      } catch (e) {}
+      if (!da) return;
+      fireBauen();
+      fire("data-prefs-fn", "umsPrefs", { name: name, value: wert });
     }
     function schemaSetzen(key) {
       popovers.forEach(function (p) { try { p.close(true); } catch (e) {} });

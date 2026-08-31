@@ -788,12 +788,10 @@
     }
 
     /* ---------------- Menues ---------------- */
+    /* Aus core, seit das Einstellungsfenster dieselbe Frage stellt. Hier standen dieselben
+       fuenf Zeilen ein zweites Mal. */
     function themaJetzt(){
-      try {
-        var g = localStorage.getItem("pref_theme");
-        if (g === "dark" || g === "light") return g;
-      } catch(e){}
-      return "system";
+      return UC.getUpstreemThemeChoice ? UC.getUpstreemThemeChoice() : "system";
     }
     function renderTeamMenu(){
       var such = state.suche.toLowerCase();

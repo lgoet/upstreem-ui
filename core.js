@@ -9125,9 +9125,23 @@
   }
 
   function getUpstreemTheme(){ return THEME.value || readPrefTheme() || "light"; }
+  /* Die WAHL des Nutzers, nicht das aufgeloeste Thema. getUpstreemTheme() gibt zurueck, was
+     gerade gemalt wird ("light" oder "dark") -- eine Einstellungszeile muss aber "System" zeigen
+     koennen, und das ist genau der Fall, in dem nichts gespeichert ist.
+     Zwei Abnehmer: das Konto-Menue der Seitenleiste und die Zeile im Einstellungsfenster. Die
+     Seitenleiste hatte diese fuenf Zeilen als eigene Kopie -- eine Regel an zwei Orten laeuft
+     irgendwann auseinander. */
+  function getUpstreemThemeChoice(){
+    try {
+      var v = String(window.localStorage.getItem("pref_theme") || "").trim().toLowerCase();
+      if (v === "dark" || v === "light") return v;
+    } catch(e){}
+    return "system";
+  }
 
   window.setUpstreemTheme = setUpstreemTheme;
   window.getUpstreemTheme = getUpstreemTheme;
+  window.getUpstreemThemeChoice = getUpstreemThemeChoice;
 
   /* Schalter fuer die Event-Diagnose in makeFire. Global, weil er aus der Konsole und aus einem
      Run-JS-Schritt erreichbar sein muss; standardmaessig aus. Rueckgabe ist der neue Zustand,
@@ -10522,7 +10536,7 @@
     /* Die Einstellungen des Nutzers und ihre Werkzeuge. getPref/setPref sind der ganze Zugang --
        die Ablage selbst bleibt privat, damit niemand einen Wert hineinschreibt, den kein
        Formatierer kennt. */
-    getPref: getPref, setPref: setPref, onPrefs: onPrefs,
+    getPref: getPref, setPref: setPref, onPrefs: onPrefs, getUpstreemThemeChoice: getUpstreemThemeChoice,
     PREF_DEFAULT: PREF_DEFAULT, PREF_ERLAUBT: PREF_ERLAUBT,
     fmtNum: fmtNum, fmtDateMuster: fmtDateMuster, datumsTeile: datumsTeile,
     addMessages: addMessages, t: t,
