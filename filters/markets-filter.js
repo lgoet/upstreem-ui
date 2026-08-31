@@ -66,11 +66,9 @@
   /* Survives a Bubble re-render of the element, keyed by instance: a rebuilt element must continue
      the filter, not restart it. */
   var STATE = (window.__umkStore = window.__umkStore || {});
-  /* URLs, die schon einmal erfolgreich geladen haben. Auf window, weil zwei data-cdn-pin-Werte
-     diese Datei zweimal laden koennen und beide Kopien vom selben Wissen profitieren sollen.
-     Beim echten Neuaufbau (neue Marketliste) wird die Kachel damit gar nicht erst gezeigt: das
-     Bild liegt im Browser-Cache, hat aber trotzdem keinen Zustand, den das frische Markup kennt. */
-  var FLAG_OK = (window.__umkFlagOk = window.__umkFlagOk || {});
+  /* Der Merker "diese Flagge hat schon einmal geladen" liegt jetzt in core (window.__upFlagOk),
+     zusammen mit dem Plaettchen selbst -- ein Zustand fuer alle Abnehmer statt einer je Datei. */
+
 
   var ICON = {
     /* Feather "map-pin". Taken from the set, not drawn here. */
@@ -285,39 +283,18 @@
        Wired in JS rather than as an inline onerror/onload attribute: the handlers have to cope
        with an image that is ALREADY complete by the time the markup lands (a cached logo fires
        neither event), and that check has nowhere to live in an attribute. */
-    /* flagcdn is the app's flag source everywhere else (prompts-table, prompt-research and the
-       quick-actions palette all build their URLs from it), so a row that arrives without a
-       flag_url gets the same URL derived from its alpha2 rather than falling back to the bare
-       country code. The code fallback stays for the case that URL fails too. */
-    function flagUrlFor(m) {
-      var u = fixUrl(m.flag_url);
-      if (u) return u;
-      var k = keyOf(m).toLowerCase();
-      return k.length === 2 ? "https://flagcdn.com/" + k + ".svg" : "";
-    }
+    /* Das Plaettchen kommt aus core (UC.flagHtml) -- dort steht es, seit die Sprachauswahl im
+       Einstellungsfenster dasselbe braucht. Hier bleibt nur der Sonderfall dieses Filters:
+       flag_url aus dem Payload schlaegt den aus dem Laendercode abgeleiteten Link. Die Klasse
+       .umk-flag bleibt am Element, denn die Groessenregeln (.umk-opt-flag/.umk-trigger-flag)
+       haengen daran. */
     function flagHtml(m, cls) {
-      var url = flagUrlFor(m);
-      /* The country code, not a first letter: a failed flag still tells you which market this is. */
-      var initial = esc(keyOf(m) || "?");
-      if (url && FLAG_OK[url]) cls += " has-img";
-      return '<span class="' + cls + ' umk-flag">' +
-               '<span class="umk-flag-fb">' + initial + '</span>' +
-               (url ? '<img class="umk-flag-img" src="' + esc(url) + '" alt="" loading="lazy">' : '') +
-             '</span>';
+      var eigen = fixUrl(m.flag_url);
+      var h = UC.flagHtml(keyOf(m), cls + " umk-flag");
+      if (eigen) h = h.replace(/src="[^"]*"/, 'src="' + esc(eigen) + '"');
+      return h;
     }
-    function wireFlags(scope) {
-      if (!scope) return;
-      var imgs = scope.querySelectorAll(".umk-flag-img");
-      for (var i = 0; i < imgs.length; i++) (function (img) {
-        if (img.__umkWired) return;
-        img.__umkWired = true;
-        function ok(){ var p = img.parentNode; if (p) p.classList.add("has-img"); FLAG_OK[img.src] = 1; }
-        function bad(){ img.style.display = "none"; var p = img.parentNode; if (p) p.classList.remove("has-img"); }
-        if (img.complete) { if (img.naturalWidth > 0) ok(); else bad(); return; }
-        img.addEventListener("load", ok);
-        img.addEventListener("error", bad);
-      })(imgs[i]);
-    }
+    function wireFlags(scope) { UC.wireFlags(scope); }
     function optHtml(m, idx) {
       var k = keyOf(m);
       var on = isSel(k);

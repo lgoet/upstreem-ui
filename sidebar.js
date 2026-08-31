@@ -212,7 +212,10 @@
       "Account Settings": "Kontoeinstellungen",
       "Your Brand": "Deine Marke",
       "Team Organisation": "Teamverwaltung",
-      "Preferences": "Einstellungen",
+      /* NICHT auch "Einstellungen": "Settings" oben in der Navigation heisst schon so, und der
+         ganze Grund fuer den Namen "Preferences" war, dass es zwei verschiedene Dinge sind.
+         Auf Deutsch traegt dieses hier denselben Namen wie sein Fenstertitel. */
+      "Preferences": "Meine Einstellungen",
       "Billing": "Abrechnung",
       "Theme": "Design",
       "Light": "Hell",
@@ -889,8 +892,27 @@
     var fensterLaedt = false;
     /* Gibt true zurueck, wenn dieser Klick hier erledigt ist -- der Aufrufer feuert dann KEIN
        Bubble-Ereignis. false heisst: konnte nichts tun, bitte den Workflow fragen. */
+    /* Das Fenster kennt den Nutzer nicht -- die Leiste kennt ihn. Also gibt sie ihn weiter, bevor
+       sie oeffnet. Damit stehen Name, Bild UND Kennung im Profil-Tab ohne einen einzigen
+       Bubble-Schritt: es ist derselbe Payload, den setSidebarUser ohnehin bekommt.
+       Das Fenster liest den Namen zwar auch aus dem Markup der Leiste -- aber nur den. Die
+       Kennung steht dort nirgends, die kann nur dieser Weg liefern. */
+    function profilUebergeben(){
+      if (typeof window.setUpstreemProfile !== "function") return;
+      var u = state.user || {};
+      if (!u.name && !u.email && !u.avatar && !u.id) return;
+      try {
+        window.setUpstreemProfile({
+          display_name: u.name || "",
+          email: u.email || "",
+          avatar_url: u.avatar || "",
+          user_id: u.id || ""
+        });
+      } catch (e) {}
+    }
     function fensterOeffnen(){
       if (typeof window.openUpstreemPreferences === "function"){
+        profilUebergeben();
         try { window.openUpstreemPreferences(); } catch (e) {}
         return true;
       }
@@ -926,6 +948,7 @@
       sc.src = L["preferences.js"]; sc.async = false;
       sc.onload = function(){
         fensterLaedt = false;
+        profilUebergeben();
         if (typeof window.openUpstreemPreferences === "function"){
           try { window.openUpstreemPreferences(); } catch (e) {}
         }
@@ -1520,7 +1543,11 @@
         state.user = {
           name: String(p.name || p.full_name || ""),
           email: String(p.email || ""),
-          avatar: String(p.avatar_url || p.avatar || "")
+          avatar: String(p.avatar_url || p.avatar || ""),
+          /* Die Kennung wird hier nicht gebraucht, nur weitergegeben: das Einstellungsfenster
+             zeigt sie unter "User ID" zum Kopieren. Schickt der Workflow sie nicht mit, bleibt
+             das Feld dort leer -- ein Grund weniger, dafuer einen zweiten Setter zu bauen. */
+          id: String(p.id || p.user_id || p.unique_id || "")
         };
         vorrat.user = state.user; vorrat.userDa = true;
         renderAcc();

@@ -111,9 +111,9 @@
      Schreibweise steht dort 1,24k statt 1.24k. Die Stufen und das Abschneiden der Nullen bleiben
      unveraendert; nur das eine Zeichen wird getauscht, und zwar ZULETZT, damit die Rechnung mit
      toFixed weiter auf dem Punkt arbeitet. */
-  function fmtTotal(n){
+  function fmtTotal(n, muster){
     n = Number(n) || 0;
-    var dez = trennzeichen().dez;
+    var dez = trennzeichen(muster).dez;
     function um(s){ return dez === "." ? s : s.replace(".", dez); }
     if (n < 1000) return String(Math.round(n));
     var k = n / 1000;
@@ -123,6 +123,43 @@
   }
 
   function isYes(v){ return /^(1|true|yes|y)$/i.test(String(v == null ? "" : v).trim()); }
+
+  /* ---- Flaggenplaettchen -----------------------------------------------------------------------
+     Woertlich aus filters/markets-filter.js hierher gezogen, weil es dort einen zweiten Abnehmer
+     bekommen hat (die Sprachauswahl im Einstellungsfenster). Der Aufbau bleibt genau derselbe: der
+     Laendercode liegt UNTEN und die Flagge darueber, damit eine Flagge, die 404 liefert, "DE"
+     zeigt statt eines kaputten Bildes.
+     FLAG_OK behaelt, welche Adressen schon einmal geladen haben -- sonst blitzt bei jedem Neubau
+     einer Liste erst der Code auf und danach das Bild. */
+  var FLAG_OK = (window.__upFlagOk = window.__upFlagOk || {});
+  function flagUrl(alpha2){
+    var k = String(alpha2 || "").trim().toLowerCase();
+    /* flagcdn ist die Flaggenquelle der ganzen App (prompts-table, prompt-research, der
+       Markets-Filter) -- eine zweite Quelle waere ein zweiter Stil. */
+    return k.length === 2 ? "https://flagcdn.com/" + k + ".svg" : "";
+  }
+  function flagHtml(alpha2, cls){
+    var url = flagUrl(alpha2);
+    var initial = esc(String(alpha2 || "?").trim().toUpperCase() || "?");
+    var c = "up-flag" + (cls ? " " + cls : "") + (url && FLAG_OK[url] ? " has-img" : "");
+    return '<span class="' + c + '">' +
+             '<span class="up-flag-fb">' + initial + '</span>' +
+             (url ? '<img class="up-flag-img" src="' + esc(url) + '" alt="" loading="lazy">' : '') +
+           '</span>';
+  }
+  function wireFlags(scope){
+    if (!scope) return;
+    var imgs = scope.querySelectorAll(".up-flag-img");
+    for (var i = 0; i < imgs.length; i++) (function(img){
+      if (img.__upFlagWired) return;
+      img.__upFlagWired = true;
+      function ok(){ var p = img.parentNode; if (p) p.classList.add("has-img"); FLAG_OK[img.src] = 1; }
+      function bad(){ img.style.display = "none"; var p = img.parentNode; if (p) p.classList.remove("has-img"); }
+      if (img.complete) { if (img.naturalWidth > 0) ok(); else bad(); return; }
+      img.addEventListener("load", ok);
+      img.addEventListener("error", bad);
+    })(imgs[i]);
+  }
 
   /* ══ Die Einstellungen des Nutzers ═══════════════════════════════════════════════════════════
      EINE Ablage fuer alles, was im Einstellungsfenster (preferences.js) gewaehlt wird: Sprache,
@@ -233,8 +270,17 @@
   /* ---- Zahlen ----
      EIN Ort fuer die zwei Trennzeichen. Wer eine Zahl formatiert, ruft nicht toLocaleString: das
      haengt an der Spracheinstellung des BROWSERS, und genau die soll hier nicht entscheiden. */
-  function trennzeichen(){
-    return getPref("num") === "de" ? { dez: ",", tsd: "." } : { dez: ".", tsd: "," };
+  /* muster (optional) ueberschreibt die Einstellung -- fuer eine VORSCHAU: "so wuerde es mit dem
+     anderen Format aussehen". Ohne diesen Weg musste der Aufrufer die Einstellung kurz umschalten
+     und zuruecksetzen, und das ist teuer und falsch: setPref schreibt in die Ablage und feuert
+     up-prefs-change, also zeichnet die ganze Seite neu. Im Einstellungsfenster hat genau das die
+     Beispieltexte zum Problem gemacht -- beim Aufbau des Auswahlmenues lief zweimal setPref, jeder
+     Chart der Seite lud neu, und der onPrefs-Zuhoerer des Fensters hat dabei das gerade gebaute
+     Menue aus dem Dokument geworfen. Dieselbe Bauart wie fmtDateMuster, das den Wert schon immer
+     mitnimmt. */
+  function trennzeichen(muster){
+    var m = muster || getPref("num");
+    return m === "de" ? { dez: ",", tsd: "." } : { dez: ".", tsd: "," };
   }
   /* Tausenderpunkte in eine bereits fertige Ganzzahl-Zeichenkette setzen. */
   function tausender(ganz, tsd){
@@ -242,10 +288,10 @@
   }
   /* Die eine Stelle, durch die JEDE Zahl dieser App geht. nachkomma == null heisst: so viele
      Stellen, wie die Zahl schon hat (also keine erzwungene Genauigkeit). */
-  function fmtNum(v, nachkomma, mitTausender){
+  function fmtNum(v, nachkomma, mitTausender, muster){
     var n = Number(v);
     if (!isFinite(n)) return "–";
-    var t = trennzeichen();
+    var t = trennzeichen(muster);
     var s = (nachkomma == null) ? String(n) : n.toFixed(nachkomma);
     var teile = s.split(".");
     if (mitTausender !== false) teile[0] = tausender(teile[0], t.tsd);
@@ -943,6 +989,10 @@
   var TREND_UP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10v10" /> <path d="M7 17 17 7" /></svg>';
   var TREND_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m7 7 10 10" /> <path d="M17 7v10H7" /></svg>';
   var CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>';
+  /* Der Haken der Farbschema-Zeilen. Stand in der Huelle des Chart-Zahnrads -- dort konnte
+     colorScaleOptionsHtml() ihn nicht sehen, und der Aufruf aus dem Einstellungsfenster lief in
+     einen ReferenceError: das Menue kam leer heraus. Gemessen als "0 Zeilen, 18px hoch". */
+  var SCALE_CHECK = CHECK_SVG.replace('<svg ', '<svg class="up-check" ');
   var COPY_SVG = '<svg class="up-ic-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /> <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>';
   var GOTO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10v10" /> <path d="M7 17 17 7" /></svg>';
   var HASH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="9" y2="9" /> <line x1="4" x2="20" y1="15" y2="15" /> <line x1="10" x2="8" y1="3" y2="21" /> <line x1="16" x2="14" y1="3" y2="21" /></svg>';
@@ -6542,14 +6592,37 @@
      that has a Line Width switch should look like the same kind of control, not two different
      idioms for "pick one of two". Every line-chart component's settings menu gets this same
      section appended; only visibility-chart's menu additionally offers Colors above it. */
-  function lineWidthSectionHtml(){
+  /* Nur der Schalter, ohne Trennlinie und Ueberschrift: das Einstellungsfenster setzt ihn in seine
+     eigene Zeile (die hat den Titel schon links), das Zahnradmenue eines Charts in seinen
+     Abschnitt darunter. EIN Markup fuer beide -- ein zweites waere ein zweites Aussehen. */
+  function lineWidthSwitchHtml(){
     var pref = getLineWidthPref();
-    return '<div class="up-pop-div"></div>' +
-      '<div class="up-pop-sub">Line Width</div>' +
-      '<div class="up-dense">' +
+    return '<div class="up-dense">' +
         '<button class="up-dense-btn' + (pref === "thin" ? " is-active" : "") + '" type="button" data-linewidth="thin">' + LW_THIN_SVG + 'Thin</button>' +
         '<button class="up-dense-btn' + (pref === "thick" ? " is-active" : "") + '" type="button" data-linewidth="thick">' + LW_THICK_SVG + 'Thick</button>' +
       '</div>';
+  }
+  function lineWidthSectionHtml(){
+    return '<div class="up-pop-div"></div>' +
+      '<div class="up-pop-sub">Line Width</div>' +
+      lineWidthSwitchHtml();
+  }
+  /* Die Farbschema-Zeilen des Chart-Zahnrads, damit das Einstellungsfenster GENAU dieselbe Auswahl
+     zeigen kann -- gleiche Reihenfolge, gleiche Punkte, gleicher Haken.
+     defs sind die Farben, die "Default" gerade wirklich malt. Im Chart weiss das nur der Chart
+     selbst (er leitet sie aus buildLineDatasets ab); wo es keinen gibt, ist LINE_PALETTE die
+     ehrliche Antwort, denn genau daraus fuellt Default die Luecken. */
+  function colorScaleOptionsHtml(cur, defs){
+    var d = (defs && defs.length) ? defs : LINE_PALETTE;
+    return SCALE_ORDER.map(function(key){
+      var def = key === "default" ? { label: "Default", colors: d } : COLOR_SCALES[key];
+      return '<div class="up-scale-opt' + (cur === key ? " is-active" : "") + '" data-scale="' + key + '">' +
+          '<span class="up-scale-opt-head"><span class="up-scale-opt-lbl">' + esc(def.label) + '</span>' + SCALE_CHECK + '</span>' +
+          '<span class="up-scale-dots">' + (def.colors || []).map(function(hx){
+            return '<span class="up-scale-dot" style="background:' + esc(hx) + '"></span>';
+          }).join("") + '</span>' +
+        '</div>';
+    }).join("");
   }
 
   /* Die Zeile im Chart-Settings-Menue. .up-pop-row / .up-pop-label / .up-switch sind die
@@ -7022,12 +7095,6 @@
     if (!btn) return { open: function(){}, close: function(){}, isOpen: function(){ return false; },
                        populate: function(){}, reposition: function(){} };
     var menu = null, open = false;
-    var SCALE_CHECK = CHECK_SVG.replace('<svg ', '<svg class="up-check" ');
-    function swatches(colors){
-      return '<span class="up-scale-dots">' + (colors || []).map(function(hx){
-        return '<span class="up-scale-dot" style="background:' + esc(hx) + '"></span>';
-      }).join("") + '</span>';
-    }
     function ensure(){
       if (menu && document.body.contains(menu)) return menu;
       menu = document.createElement("div");
@@ -7069,14 +7136,7 @@
          caller derives them from buildLineDatasets itself so this cannot drift from the chart. */
       var defs = (cfg.defaultColors && cfg.defaultColors()) || [];
       if (!defs.length) defs = LINE_PALETTE;
-      var cur = cfg.getScale();
-      var rows = SCALE_ORDER.map(function(key){
-        var def = key === "default" ? { label: "Default", colors: defs } : COLOR_SCALES[key];
-        return '<div class="up-scale-opt' + (cur === key ? " is-active" : "") + '" data-scale="' + key + '">' +
-            '<span class="up-scale-opt-head"><span class="up-scale-opt-lbl">' + esc(def.label) + '</span>' + SCALE_CHECK + '</span>' +
-            swatches(def.colors) +
-          '</div>';
-      }).join("");
+      var rows = colorScaleOptionsHtml(cfg.getScale(), defs);
       menu.innerHTML = '<div class="up-pop-head">Chart Settings</div>' + rows +
                        lineWidthSectionHtml() + legendSectionHtml();
     }
@@ -9232,6 +9292,10 @@
        ohne dass sich am Bild etwas aendert.
        Die Pfade sind woertlich aus lucide-static uebernommen, nicht nachgezeichnet. */
     x:        '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+    /* camera: woertlich aus lucide-static. Fuer die Ueberblendung auf dem Profilbild -- die
+       Bildmaschine ist das Zeichen fuer "Bild wechseln", ein Stift waere "Text bearbeiten". */
+    camera:   '<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>' +
+              '<circle cx="12" cy="13" r="3"/>',
     /* tags und libraryBig: woertlich aus lucide-static wie alle anderen. tags stand bisher als
        Inline-SVG im Prompts-Seitenkopf und wird jetzt auch vom Onboarding gebraucht -- zweiter
        Verbraucher, also hierher. libraryBig ist das Zeichen des Begleitkastens im Onboarding. */
@@ -10463,7 +10527,9 @@
     fmtNum: fmtNum, fmtDateMuster: fmtDateMuster, datumsTeile: datumsTeile,
     addMessages: addMessages, t: t,
     lineWidthSectionHtml: lineWidthSectionHtml,
-    getColorScalePref: getColorScalePref, setColorScalePref: setColorScalePref
+    getColorScalePref: getColorScalePref, setColorScalePref: setColorScalePref,
+    lineWidthSwitchHtml: lineWidthSwitchHtml, colorScaleOptionsHtml: colorScaleOptionsHtml,
+    flagHtml: flagHtml, flagUrl: flagUrl, wireFlags: wireFlags
   };
 
   /* ---- Verdraengungssperre -------------------------------------------------------------------

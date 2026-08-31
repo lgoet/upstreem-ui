@@ -59,6 +59,51 @@
         "fehlen: " + MISSING.join(", ") + ". Alle Elemente der Seite auf denselben Commit pinnen.");
     }
 
+    /* Die eigenen Texte dieses Fensters auf Deutsch. Es ist der Ort, AN dem man die Sprache
+       umstellt -- ein Fenster, das danach als einziges englisch bleibt, sieht aus, als haette die
+       Einstellung nicht gewirkt.
+       Nicht uebersetzt: "Charts" (steht in der App durchgehend so, auch in den Menuenamen),
+       "User ID" (ein Feldname, den der Support so nennt) und "Default" (der Name der Farbskala,
+       der in den Chart-Menues ebenfalls so steht). Die Regel ist dieselbe wie in der Seitenleiste:
+       Oberflaeche ja, Eigennamen und Fachbegriffe der Ausgabe nein. */
+    if (UC.addMessages) UC.addMessages("de", {
+      "My Preferences": "Meine Einstellungen",
+      "Choose how upstreem looks and formats your data": "Wie upstreem aussieht und deine Daten darstellt",
+      "Profile": "Profil",
+      "Your name and picture, as your team sees them": "Dein Name und Bild, so wie dein Team sie sieht",
+      "How lines and legends are drawn across every chart": "Wie Linien und Legenden in allen Charts gezeichnet werden",
+      "Account": "Konto",
+      "Display": "Darstellung",
+      "Close": "Schließen",
+      "Language and formats": "Sprache und Formate",
+      "Language": "Sprache",
+      "The language of the interface. Your own data — prompts, brands, domains — is never translated.":
+        "Die Sprache der Oberfläche. Deine eigenen Daten – Prompts, Marken, Domains – werden nie übersetzt.",
+      "Number format": "Zahlenformat",
+      "How numbers and percentages are written across tables, charts and tooltips.":
+        "Wie Zahlen und Prozentwerte in Tabellen, Charts und Tooltips geschrieben werden.",
+      "Date format": "Datumsformat",
+      "Used everywhere a date appears, including chart axes.":
+        "Gilt überall, wo ein Datum steht, auch an den Chart-Achsen.",
+      "Chart appearance": "Aussehen der Charts",
+      "Line width": "Linienstärke",
+      "The stroke of every line chart.": "Die Strichstärke aller Liniencharts.",
+      "Colors": "Farben",
+      "The palette for the lines in Visibility Chart. Brand colours from your own data are used when this is set to Default.":
+        "Die Farben der Linien im Visibility Chart. Bei Default gelten die Markenfarben aus deinen eigenen Daten.",
+      "Show legend": "Legende zeigen",
+      "The legend under a line chart, with one entry per brand.":
+        "Die Legende unter einem Linienchart, ein Eintrag je Marke.",
+      "Preferred name": "Bevorzugter Name",
+      "Your name": "Dein Name",
+      "Change your picture": "Bild wechseln",
+      "Upload a picture — square images look best": "Bild hochladen – quadratische Bilder wirken am besten",
+      "You may be asked for this when contacting support.":
+        "Danach wirst du möglicherweise gefragt, wenn du den Support kontaktierst.",
+      "Copy": "Kopieren",
+      "Copied": "Kopiert"
+    });
+
     /* ---- Die Wahlmöglichkeiten ----
        Ein Eintrag je Wert, mit dem Namen und -- wo es hilft -- einem BEISPIEL. Das Beispiel ist der
        eigentliche Trick dieser Seite: "Numeric" sagt niemandem etwas, "12.12.2025" sofort alles.
@@ -67,9 +112,11 @@
     var BEISPIEL_DATUM = "2025-12-12T10:30:00Z";
     var BEISPIEL_ZAHL = 1234.56;
 
+    /* land: der Laendercode fuer das Flaggenplaettchen aus core (UC.flagHtml, dasselbe Bauteil wie
+       im Markets-Filter). GB und nicht US fuer Englisch -- die App schreibt britisches Englisch. */
     var SPRACHEN = [
-      { wert: "en", name: "English" },
-      { wert: "de", name: "Deutsch" }
+      { wert: "en", name: "English", land: "gb" },
+      { wert: "de", name: "Deutsch", land: "de" }
     ];
     var ZAHLEN = [
       { wert: "en", name: "1,234.56" },
@@ -86,15 +133,13 @@
       /* Der NAME der Zeile ist bei den Zahlen schon das Beispiel ("1,234.56"). Das Beispiel rechts
          zeigt darum nur, was der Wert an der ANDEREN Stelle bedeutet: die kompakte Schreibweise,
          die in jeder Kopfzeile und jedem Tooltip steht.
-         Es muss mit DEM Wert der Zeile rechnen und nicht mit dem eingestellten -- also kurz
-         umschalten, messen, zuruecksetzen. Das schreibt in den localStorage, deshalb nur beim
-         Aufbau des Menues und nicht bei jedem Zeichnen. */
-      var alt = UC.getPref("num");
-      if (alt === wert) return UC.fmtTotal(1240);
-      UC.setPref("num", wert);
-      var s = UC.fmtTotal(1240);
-      UC.setPref("num", alt);
-      return s;
+         fmtTotal nimmt das Format als zweiten Wert -- die Einstellung wird dafuer NICHT angefasst.
+         Hier stand vorher genau das: umschalten, messen, zuruecksetzen. Das hat zweimal setPref
+         gerufen, also zweimal up-prefs-change gefeuert (jeder Chart der Seite lud neu), und der
+         onPrefs-Zuhoerer dieses Fensters hat dabei das gerade im Aufbau befindliche Auswahlmenue
+         aus dem Dokument geworfen -- gemeldet als "der Klick auf Number Format oeffnet kein
+         Dropdown, im Hintergrund laden nur die Charts neu". */
+      return UC.fmtTotal(1240, wert);
     }
     function datumBeispiel(wert) {
       /* Hier geht es ohne Umschalten: core rechnet das Muster auf Zuruf. */
@@ -145,11 +190,28 @@
         if (sel) { e.stopPropagation(); menueOeffnen(sel); return; }
         var opt = e.target.closest("[data-ums-set]");
         if (opt) { setzen(opt.getAttribute("data-ums-set"), opt.getAttribute("data-ums-val")); return; }
+        var sc = e.target.closest("[data-scale]");
+        if (sc) { schemaSetzen(sc.getAttribute("data-scale")); return; }
+        /* Der Zwei-Wege-Schalter aus core traegt data-linewidth, nicht data-ums-toggle -- es ist
+           SEIN Markup, also auch sein Attribut. */
+        var lw = e.target.closest("[data-linewidth]");
+        if (lw) { if (UC.setLineWidthPref) UC.setLineWidthPref(lw.getAttribute("data-linewidth")); zeichnen(); return; }
         var sw = e.target.closest("[data-ums-toggle]");
         if (sw) { schalten(sw.getAttribute("data-ums-toggle")); return; }
         if (e.target.closest("[data-ums-copyid]")) { kennungKopieren(e.target.closest("[data-ums-copyid]")); return; }
         if (e.target.closest("[data-ums-avatar]")) { fire("data-avatar-fn", "umsAvatar", { action: "change" }); return; }
-        if (e.target.closest("[data-ums-savename]")) { namenSpeichern(); return; }
+
+      });
+      /* Gespeichert wird beim Verlassen des Feldes und bei Enter. blur mit CAPTURE, weil blur
+         nicht aufsteigt -- ohne capture:true kommt hier nichts an. */
+      back.addEventListener("blur", function (e) {
+        if (e.target && e.target.hasAttribute && e.target.hasAttribute("data-ums-name")) namenSpeichern();
+      }, true);
+      back.addEventListener("keydown", function (e) {
+        if (e.key !== "Enter") return;
+        if (!e.target || !e.target.hasAttribute || !e.target.hasAttribute("data-ums-name")) return;
+        e.preventDefault();
+        namenSpeichern();
       });
       if (UC.makeTooltips) UC.makeTooltips(back, function () {
         return back.getAttribute("data-theme") === "dark";
@@ -197,12 +259,18 @@
         '<div class="ums-rowctl">' + regler + '</div>' +
       '</div>';
     }
+    /* Die Flagge steht am Knopf UND in der Liste -- wie der Markets-Filter es tut: sein Trigger
+       tauscht das Zeichen gegen die Flagge des gewaehlten Landes. */
+    function flagge(o, cls) {
+      return o && o.land ? UC.flagHtml(o.land, cls) : "";
+    }
     function selHtml(name, liste, jetzt) {
       var akt = null;
       liste.forEach(function (o) { if (o.wert === jetzt) akt = o; });
       return '<span class="ums-selwrap" data-ums-wrap>' +
         '<button class="ums-sel" type="button" aria-haspopup="menu" aria-expanded="false"' +
           ' data-ums-selbtn="' + esc(name) + '">' +
+          flagge(akt, "ums-flag") +
           '<span class="ums-sel-val">' + esc(akt ? akt.name : jetzt) + '</span>' +
           UC.icon("chevronDown", 2.2) +
         '</button>' +
@@ -231,23 +299,30 @@
     function profileHtml() {
       var buchst = (profil.name || "?").trim().charAt(0).toUpperCase() || "?";
       return '<div class="ums-sec">' +
-        '<h3 class="ums-sectitle">' + esc(t("Your account")) + '</h3>' +
+        '<h3 class="ums-sectitle">' + esc(t("Profile")) + '</h3>' +
         '<div class="ums-secline"></div>' +
-        '<div class="ums-row"><div class="ums-rowtext"><div class="ums-prof">' +
-          '<span class="ums-avatar">' +
+        /* Bild links, daneben die beschriftete Eingabe -- die Anordnung aus der Vorlage. Das Bild
+           ist SELBST der Knopf: ein zweiter daneben waere ein zweiter Weg zur gleichen Sache. */
+        '<div class="ums-profile">' +
+          '<button class="ums-avatar" type="button" data-ums-avatar ' +
+            'aria-label="' + esc(t("Change your picture")) + '" ' +
+            'data-tip="' + esc(t("Change your picture")) + '">' +
             (profil.avatar ? '<img src="' + esc(profil.avatar) + '" alt="" referrerpolicy="no-referrer"' +
-              ' onerror="this.remove()"/>' : esc(buchst)) +
-          '</span>' +
-          '<span class="ums-profbtns">' +
-            '<button class="up-btn-sec" type="button" data-ums-avatar>' +
-              esc(t("Change picture")) + '</button>' +
-            '<span class="ums-profhint">' + esc(t("Square images look best.")) + '</span>' +
-          '</span>' +
-        '</div></div><div class="ums-rowctl"></div></div>' +
-        zeileHtml("Name", "The name your team sees next to your activity.",
-          '<input class="ums-in" type="text" maxlength="80" data-ums-name value="' +
-            esc(profil.name) + '" placeholder="' + esc(t("Your name")) + '">' +
-          '<button class="up-export" type="button" data-ums-savename>' + esc(t("Save")) + '</button>') +
+              ' onerror="this.remove()"/>' : '<span class="ums-avatar-ltr">' + esc(buchst) + '</span>') +
+            '<span class="ums-avatar-ov">' + UC.icon("camera", 2) + '</span>' +
+          '</button>' +
+          '<div class="ums-field">' +
+            '<label class="ums-flabel" for="ums-name">' + esc(t("Preferred name")) + '</label>' +
+            /* Kein Speichern-Knopf: gespeichert wird beim Verlassen des Feldes und bei Enter --
+               wie in der Vorlage. Ein Knopf, der nur bei Aenderung etwas tut, ist die Haelfte der
+               Zeit ein Knopf, der nichts tut. */
+            '<input class="ums-in ums-in-name" id="ums-name" type="text" maxlength="80" ' +
+              'data-ums-name value="' + esc(profil.name) + '" ' +
+              'placeholder="' + esc(t("Your name")) + '" autocomplete="off">' +
+          '</div>' +
+        '</div>' +
+        '<button class="ums-link" type="button" data-ums-avatar>' +
+          esc(t("Upload a picture — square images look best")) + '</button>' +
         zeileHtml("User ID", "You may be asked for this when contacting support.",
           '<span class="ums-id">' +
             '<span class="ums-idtxt">' + esc(profil.userId || "–") + '</span>' +
@@ -258,18 +333,40 @@
     }
 
     function chartsHtml() {
-      /* Beide Werte kommen aus core und werden dort auch gesetzt -- dieselben Setter, die das
-         Zahnradmenue eines Charts benutzt. Ein zweiter Speicherort waere ein zweiter Zustand. */
-      var duenn = UC.getLineWidthPref ? UC.getLineWidthPref() === "thin" : false;
+      /* Alle drei Werte kommen aus core und werden dort auch gesetzt -- dieselben Setter, die das
+         Zahnradmenue eines Charts benutzt. Ein zweiter Speicherort waere ein zweiter Zustand.
+         Auch das MARKUP kommt aus core: der Zwei-Wege-Schalter und die Farbzeilen sind woertlich
+         die des Zahnrads (UC.lineWidthSwitchHtml, UC.colorScaleOptionsHtml). Ein Nachbau waere ein
+         zweites Aussehen fuer dieselbe Wahl. */
       var legende = UC.getLegendPref ? UC.getLegendPref() === "on" : true;
+      var schema = UC.getColorScalePref ? UC.getColorScalePref() : "default";
+      var name = schemaName(schema);
       return '<div class="ums-sec">' +
         '<h3 class="ums-sectitle">' + esc(t("Chart appearance")) + '</h3>' +
         '<div class="ums-secline"></div>' +
-        zeileHtml("Thin lines", "Draws every line chart with a thinner stroke.",
-          schalterHtml("linewidth", duenn)) +
+        zeileHtml("Line width", "The stroke of every line chart.",
+          UC.lineWidthSwitchHtml ? UC.lineWidthSwitchHtml() : "") +
+        /* Die Farbskala wirkt nur dort, wo sie auch heute schon waehlbar ist: an den
+           Linien-Charts, also am Visibility Chart. Das steht in der Beschreibung, damit niemand
+           sie an einem Doughnut sucht. */
+        zeileHtml("Colors", "The palette for the lines in Visibility Chart. Brand colours from " +
+          "your own data are used when this is set to Default.",
+          '<span class="ums-selwrap" data-ums-wrap>' +
+            '<button class="ums-sel ums-sel-scale" type="button" aria-haspopup="menu"' +
+              ' aria-expanded="false" data-ums-selbtn="scale">' +
+              '<span class="ums-sel-val">' + esc(t(name)) + '</span>' +
+              UC.icon("chevronDown", 2.2) +
+            '</button>' +
+            '<div class="up-menu ums-menu ums-menu-scale" role="menu" aria-hidden="true"></div>' +
+          '</span>') +
         zeileHtml("Show legend", "The legend under a line chart, with one entry per brand.",
           schalterHtml("legend", legende)) +
       '</div>';
+    }
+    function schemaName(key) {
+      if (key === "default") return "Default";
+      var sc = UC.COLOR_SCALES && UC.COLOR_SCALES[key];
+      return sc ? sc.label : "Default";
     }
 
     function zeichnen() {
@@ -288,6 +385,18 @@
       var wrap = btn.closest("[data-ums-wrap]");
       var menu = wrap && wrap.querySelector(".ums-menu");
       if (!menu) return;
+      if (name === "scale") {
+        menu.innerHTML = UC.colorScaleOptionsHtml(
+          UC.getColorScalePref ? UC.getColorScalePref() : "default", null);
+        var popS = UC.makePopover({
+          wrap: wrap, menu: menu, opener: btn, group: "ums",
+          onClose: function () { btn.setAttribute("aria-expanded", "false"); }
+        });
+        popovers.push(popS);
+        popS.open();
+        btn.setAttribute("aria-expanded", "true");
+        return;
+      }
       var liste = name === "locale" ? SPRACHEN : (name === "num" ? ZAHLEN : DATEN);
       var jetzt = UC.getPref(name);
       menu.innerHTML = liste.map(function (o) {
@@ -295,6 +404,7 @@
                 : (name === "date" ? datumBeispiel(o.wert) : "");
         return '<button class="up-optrow' + (o.wert === jetzt ? " is-on" : "") + '" type="button"' +
           ' data-ums-set="' + esc(name) + '" data-ums-val="' + esc(o.wert) + '">' +
+          flagge(o, "ums-flag") +
           '<span>' + esc(o.name) + '</span>' +
           (bsp && bsp !== o.name ? '<span class="ums-opt-bsp">' + esc(bsp) + '</span>' : "") +
           '<span class="ums-opt-check">' + UC.icon("check", 2.6) + '</span>' +
@@ -306,6 +416,9 @@
       });
       popovers.push(pop);
       pop.open();
+      /* Ohne das bleibt das Plaettchen auf dem Laendercode stehen, bis das Bild geladen ist --
+         derselbe Aufruf, den der Markets-Filter nach jedem Neubau seiner Liste macht. */
+      if (UC.wireFlags) UC.wireFlags(menu);
       btn.setAttribute("aria-expanded", "true");
     }
 
@@ -319,10 +432,13 @@
          Ereignis, das kein Workflow hoert, ist nur eine Warnung in der Konsole. */
       zeichnen();
     }
+    function schemaSetzen(key) {
+      popovers.forEach(function (p) { try { p.close(true); } catch (e) {} });
+      if (UC.setColorScalePref) UC.setColorScalePref(key);
+      zeichnen();
+    }
     function schalten(name) {
-      if (name === "linewidth" && UC.setLineWidthPref) {
-        UC.setLineWidthPref(UC.getLineWidthPref() === "thin" ? "thick" : "thin");
-      } else if (name === "legend" && UC.setLegendPref) {
+      if (name === "legend" && UC.setLegendPref) {
         UC.setLegendPref(UC.getLegendPref() === "on" ? "off" : "on");
       }
       zeichnen();
@@ -336,7 +452,10 @@
       profil.name = v;
       fireBauen();
       fire("data-name-fn", "umsName", { display_name: v });
-      zeichnen();
+      /* NICHT neu zeichnen: der Wert steht schon im Feld, und ein Neubau waehrend des Verlassens
+         nimmt dem naechsten Element den Fokus. Nur die Initiale im Bild wird nachgezogen. */
+      var av = M.main.querySelector(".ums-avatar-ltr");
+      if (av) av.textContent = (v.charAt(0) || "?").toUpperCase();
     }
     function kennungKopieren(btn) {
       if (!profil.userId) return;
@@ -404,16 +523,33 @@
       schliessen();
     }
 
-    /* Name, Bild und Kennung stehen in der Seitenleiste am Konto-Knopf bzw. an ihrer Wurzel. */
+    /* Name und Bild stehen in der Seitenleiste am Konto-Knopf. Gesucht wird im DOKUMENT und NICHT
+       in .usn-root: die Leiste haengt ihren .usn-bar aus der eigenen Wurzel heraus (sie muss am
+       Bildschirmrand kleben, nicht im Kasten des Bubble-Elements). Genau daran lag der leere
+       Namen -- .usn-root gab es, aber [data-acc-name] lag nicht darin. Gemessen:
+       usnRootDa true, barInRoot FALSE, accNameGefunden FALSE.
+       Der verlaesslichere Weg ist trotzdem der andere: sidebar.js ruft beim Oeffnen
+       setUpstreemProfile() mit dem Payload, den es von Bubble ohnehin hat -- inklusive Kennung,
+       die im Markup gar nicht steht. Das hier ist der Rueckfall, wenn das Fenster von woanders
+       geoeffnet wird. */
     function profilLesen() {
-      var sn = document.querySelector(".usn-root");
-      if (!sn) return;
+      var sn = document.querySelector(".usn-bar") || document;
       var n = sn.querySelector("[data-acc-name]");
       if (n && !profil.name) profil.name = String(n.textContent || "").trim();
-      profil.userId = profil.userId ||
-        String(sn.getAttribute("data-user") || sn.getAttribute("data-user-id") || "").trim();
-      var img = sn.querySelector(".usn-acc-logo img, .usn-acc img");
+      var wurzel = document.querySelector(".usn-root");
+      if (wurzel) profil.userId = profil.userId ||
+        String(wurzel.getAttribute("data-user") || wurzel.getAttribute("data-user-id") || "").trim();
+      /* .usn-av ist die Kachel am Konto-Knopf der Leiste (data-av im Markup). Die alte Fassung
+         suchte .usn-acc-logo -- das ist die TEAM-Kachel, also war hier das falsche Bild gemeint
+         und meistens gar keines. */
+      var img = sn.querySelector(".usn-av img");
       if (img && img.getAttribute("src")) profil.avatar = profil.avatar || img.getAttribute("src");
+      /* Die E-Mail traegt der Knopf ebenfalls -- als Rueckfall fuer den Namen, genau wie es die
+         Leiste selbst macht (u.name || u.email). */
+      if (!profil.name) {
+        var m = sn.querySelector("[data-acc-mail]");
+        if (m) profil.name = String(m.textContent || "").trim();
+      }
     }
 
     /* ---- Der oeffentliche Weg ---- */
@@ -430,7 +566,16 @@
     };
 
     /* Das Fenster selbst muss auf einen Sprachwechsel reagieren -- er passiert IN ihm. */
-    if (UC.onPrefs) UC.onPrefs(function () { if (offen) zeichnen(); });
+    /* Nicht zeichnen, solange ein Auswahlmenue offen steht: der Neubau wirft es aus dem Dokument,
+       und der Nutzer klickt danach auf ein Menue, das nicht mehr im Baum haengt. setzen() zeichnet
+       ohnehin selbst, nachdem es die Menues geschlossen hat. */
+    if (UC.onPrefs) UC.onPrefs(function () {
+      if (!offen) return;
+      var offenesMenue = popovers.some(function (p) {
+        try { return p.isOpen && p.isOpen(); } catch (e) { return false; }
+      });
+      if (!offenesMenue) zeichnen();
+    });
   }
 
   umsBoot(50);
