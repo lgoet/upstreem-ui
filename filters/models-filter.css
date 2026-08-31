@@ -137,7 +137,10 @@
 .umf-opt { min-height: 34px; padding-right: 16px; }
 .umf-opt.is-checked, .umf-opt.is-cursor { background: var(--up-sel-bg); }
 .umf-opt-main { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; }
-.umf-opt-name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 500; }
+/* 13px, dasselbe Mass wie die Zeilen des More-Filters-Dropdowns (.ufb-row). Vorher 14 -- und
+   sobald beide Kaesten nebeneinander stehen, sieht man den einen Pixel: die Liste wirkte groesser
+   als das Menue, aus dem sie kommt. Gemessen: Zeile im Menue 13, Option hier 14. */
+.umf-opt-name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 500; }
 /* Where the topics picker puts a usage count. A model has none, and the provider is the thing that
    actually disambiguates two similarly named models. */
 /* Free text, unlike the counts the other two pickers put here, so it needs its own ceiling: a
@@ -161,7 +164,7 @@
    nicht ueber die Ladereihenfolge. */
 .umf-seg { flex: 0 0 auto; margin-left: auto; }
 .up-seg.umf-seg .up-seg-btn.umf-seg-btn {
-  flex: 0 0 32px; width: 32px; padding: 0;
+  flex: 0 0 32px; width: 32px; padding: 4px;
 }
 /* Icon only, no label: the two states are Single and Multi, the icons say that on their own, and
    the tooltip carries the sentence. */
@@ -171,7 +174,11 @@
    against three) and forcing them into one square would squash the triple. The dots are FILLED, so
    the stroke rule the other icons in this file carry must not reach them -- with it every circle
    grew a 2px outline and the three ran together. */
-.umf-seg-ic svg { height: 15px; width: auto; display: block; }
+/* 12 statt 15. Das Polster von 4px allein haette nichts geaendert: der Mehrfach-Punkt ist
+   23x15 (viewBox 0 0 23 15), die Inhaltsflaeche eines 32px-Knopfes mit 4px Polster ist 22 breit
+   -- er waere von 23 auf 22 geschrumpft, also unsichtbar. Mit 12 sind es 18.4x12 in 22x22, und
+   das Polster ist wirklich Luft. max-width als Netz, falls jemand die Hoehe wieder anhebt. */
+.umf-seg-ic svg { height: 12px; width: auto; max-width: 100%; display: block; }
 
 /* Inactive models: shown for context, greyed, not selectable. The checkbox goes too, because a
    checkbox that cannot be ticked is an invitation to try. */

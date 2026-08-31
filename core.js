@@ -4847,7 +4847,7 @@
     var HOST_ATTR = cfg.hostAttr || "data-sub-host";
     /* Muss zur CSS passen (.up-submenu: top/height 200ms). Wird nur zum Aufraeumen der
        Pixelhoehe gebraucht, darum mit Reserve. */
-    var ZUG_MS = cfg.moveMs == null ? 200 : cfg.moveMs;
+    var ZUG_MS = cfg.moveMs == null ? 100 : cfg.moveMs;
     var zugUhr = null;
 
     function huellen(){
@@ -4872,8 +4872,28 @@
       var altH = SHELL.offsetHeight;
       huellen().forEach(function(h){ h.classList.toggle("is-on", h.getAttribute(HOST_ATTR) === key); });
       if (drill()){ SHELL.style.top = ""; SHELL.style.height = ""; return; }
+      /* OHNE Zug: den Platz SOFORT einnehmen, ohne Uebergang. Das ist der gemeldete Fall --
+         Markets oeffnen, weghovern, dann Topics: die Schale stand noch unten (die letzte
+         Position bleibt beim Zugehen stehen, damit der Inhalt nicht vorher leer wird), und beim
+         Einblenden rutschte sie nach oben. Rutschen soll sie nur beim WECHSEL, nicht beim
+         Aufgehen -- und die CSS-Regel kennt den Unterschied nicht, sie animiert jedes top.
+         Also den Uebergang fuer diesen einen Wechsel abschalten. Der Reflow dazwischen ist
+         Pflicht: ohne ihn fasst der Browser Abschalten, Setzen und Wiederanschalten zusammen,
+         und der Uebergang laeuft doch. */
+      if (!animieren || !altH){
+        SHELL.style.height = "";
+        /* NUR top und height stillstellen, nicht den ganzen Uebergang: is-shown ist eine Zeile
+           vorher gesetzt worden, das Einblenden von opacity und transform laeuft also schon.
+           Ein transition: none haette es mitgerissen, und die Schale waere ohne Ueberblenden
+           da gewesen. Die Dauern aus der CSS bleiben ueber die Reihenfolge zugeordnet:
+           opacity und transform stehen dort als erste zwei. */
+        SHELL.style.transitionProperty = "opacity, transform";
+        SHELL.style.top = (row.offsetTop - polster()) + "px";
+        void SHELL.offsetHeight;
+        SHELL.style.transitionProperty = "";
+        return;
+      }
       SHELL.style.top = (row.offsetTop - polster()) + "px";
-      if (!animieren || !altH){ SHELL.style.height = ""; return; }
       SHELL.style.height = "auto";
       var neuH = SHELL.offsetHeight;
       if (neuH === altH){ SHELL.style.height = ""; return; }

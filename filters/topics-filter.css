@@ -132,8 +132,11 @@
 .utf-opt-main { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; }
 /* Rounded SQUARE, 11px — a topic looks like this everywhere else in the product. */
 .utf-opt-dot { flex: 0 0 auto; width: 10px; height: 10px; border-radius: 4px; background: var(--utf-tc, var(--vc-muted)); }
-.utf-opt-emoji { flex: 0 0 auto; font-size: 14px; line-height: 1; }
-.utf-opt-name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 500; }
+.utf-opt-emoji { flex: 0 0 auto; font-size: 13px; line-height: 1; }
+/* 13px, dasselbe Mass wie die Zeilen des More-Filters-Dropdowns (.ufb-row). Vorher 14 -- und
+   sobald beide Kaesten nebeneinander stehen, sieht man den einen Pixel: die Liste wirkte groesser
+   als das Menue, aus dem sie kommt. Gemessen: Zeile im Menue 13, Option hier 14. */
+.utf-opt-name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 500; }
 .utf-opt-count { flex: 0 0 auto; font-size: 12px; font-weight: 500; color: var(--vc-third); }
 .utf-pinsep { height: 1px; margin: 5px 9px; background: var(--vc-border); }
 .utf-empty { padding: 14px 10px; text-align: center; color: var(--vc-third); font-size: 12.5px; }

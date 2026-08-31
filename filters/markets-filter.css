@@ -142,7 +142,10 @@
 .umk-opt { min-height: 34px; padding-right: 16px; }
 .umk-opt.is-checked, .umk-opt.is-cursor { background: var(--up-sel-bg); }
 .umk-opt-main { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; }
-.umk-opt-name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 500; }
+/* 13px, dasselbe Mass wie die Zeilen des More-Filters-Dropdowns (.ufb-row). Vorher 14 -- und
+   sobald beide Kaesten nebeneinander stehen, sieht man den einen Pixel: die Liste wirkte groesser
+   als das Menue, aus dem sie kommt. Gemessen: Zeile im Menue 13, Option hier 14. */
+.umk-opt-name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 500; }
 /* Where the topics picker puts a usage count. A model has none, and the provider is the thing that
    actually disambiguates two similarly named markets. */
 .umk-opt-count { flex: 0 0 auto; font-size: 12px; font-weight: 500; color: var(--vc-third); }
@@ -162,7 +165,7 @@
    nicht ueber die Ladereihenfolge. */
 .umk-seg { flex: 0 0 auto; margin-left: auto; }
 .up-seg.umk-seg .up-seg-btn.umk-seg-btn {
-  flex: 0 0 32px; width: 32px; padding: 0;
+  flex: 0 0 32px; width: 32px; padding: 4px;
 }
 /* Icon only, no label: the two states are Single and Multi, the icons say that on their own, and
    the tooltip carries the sentence. */
@@ -172,7 +175,11 @@
    against three) and forcing them into one square would squash the triple. The dots are FILLED, so
    the stroke rule the other icons in this file carry must not reach them -- with it every circle
    grew a 2px outline and the three ran together. */
-.umk-seg-ic svg { height: 15px; width: auto; display: block; }
+/* 12 statt 15. Das Polster von 4px allein haette nichts geaendert: der Mehrfach-Punkt ist
+   23x15 (viewBox 0 0 23 15), die Inhaltsflaeche eines 32px-Knopfes mit 4px Polster ist 22 breit
+   -- er waere von 23 auf 22 geschrumpft, also unsichtbar. Mit 12 sind es 18.4x12 in 22x22, und
+   das Polster ist wirklich Luft. max-width als Netz, falls jemand die Hoehe wieder anhebt. */
+.umk-seg-ic svg { height: 12px; width: auto; max-width: 100%; display: block; }
 
 /* No inactive state here, unlike the models picker: this list only ever contains markets the team
    actually has prompts for, so every row is by definition selectable. A market that loses its last
