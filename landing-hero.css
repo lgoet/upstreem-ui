@@ -2759,6 +2759,13 @@
      hier noch einmal. Rechts laeuft sie hinaus, das ist der Sinn. */
   .ulh-buehne { width: 900px; margin-left: 16px; margin-right: 0; }
   .ulh-stage { overflow: visible; }
+  /* Und das Fenster hoeher: 0.605 ist an einer 1058x640-Vorlage gemessen, also fuer ein Fenster
+     im Breitformat. Auf einem Telefon steht daneben nichts mehr, und ein flaches Fenster zeigt
+     dort vom Inhalt zu wenig -- gemeldet als "unten abgeschnitten". 0.72 macht es ein Fuenftel
+     hoeher; zusammen mit dem um 10 Prozent kleineren Mass (landing-hero.js, mass()) passt damit
+     deutlich mehr hinein, ohne dass die Schrift darin unlesbar wird.
+     Der Schnitt unten BLEIBT -- er ist gewollt. Er faellt nur nicht mehr mitten in eine Karte. */
+  .ulh-root { --ulh-verhaeltnis: 0.72; }
 
   /* ---- Die Vorschauen in den Karten ----
      Feste Breite statt Anteil. Sonst rechnet die Komponente darin ihre schmale Ansicht: die
@@ -2824,8 +2831,18 @@
      Die drei Karten untereinander: nebeneinander sind sie je 108px breit, und darin steht ein
      Zweizeiler als Wortsalat. */
   .ulh-msc-links { flex-direction: column; }
-  /* Und das Fenster hoeher. 600px reichten fuer die Eingabe und den Anfang der Antwort; die
-     Bauteile darunter standen halb im Bild. */
+  /* UND die Karten nehmen ihre eigene Hoehe. Das war der Grund, warum von ihnen nur ein Zeichen
+     uebrig war: .ulh-msc-karte traegt flex: 1 1 0 -- in einer REIHE heisst die 0 "Breite 0, dann
+     gleichmaessig wachsen", in einer SPALTE aber "HOEHE 0". Und die Spalte hat hier keine Hoehe
+     zu verteilen (.ulh-msc-links ist flex: 0 0 auto, sie richtet sich nach ihrem Inhalt), also
+     blieb jede Karte auf ihrem Polster stehen.
+     Derselbe Fehler ist der Reihe schon einmal passiert -- siehe der 1100px-Block weiter oben, wo
+     genau das fuer .ulh-msc-links selbst behoben wurde. Hier sind es ihre Kinder. */
+  .ulh-msc-karte { flex: 0 0 auto; min-height: auto; }
+  /* Das Fenster: die feste Hoehe ist nur noch der ANFANG. Sie reichte nicht -- 600 nicht und 820
+     auch nicht --, weil die Antwort auf einem Telefon in mehr Zeilen umbricht. landing-hero.js
+     misst darum den Ueberhang des Chats und schlaegt ihn dem Rahmen zu (hoeheNachfuehren); die
+     Zahl hier ist die Untergrenze, unter die er nie faellt. */
   .ulh-msc-rahmen { height: 820px; }
 
   /* ---- Die Quellen-Sektion ----

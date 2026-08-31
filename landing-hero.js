@@ -1339,8 +1339,37 @@
         if (w.askMiraSetMessages) w.askMiraSetMessages([frage, antwort]);
         if (w.askMiraTypeLastAnswer) w.askMiraTypeLastAnswer();
         obenHalten(meine);
+        /* Drei Messungen waehrend der Haltezeit: Mira baut die Antwort beim Tippen Block fuer
+           Block ein, ein einzelner Blick trifft also einen Zwischenstand. */
+        [300, 1000, 2000].forEach(function(ms){ planen(meine, hoeheNachfuehren, ms); });
         planen(meine, naechster, MSC_HALTEN_MS);
       }, denkt);
+    }
+
+    /* ---- Auf schmalen Schirmen: die Hoehe des Rahmens dem Inhalt nachfuehren ----
+       Ein iframe hat immer die Hoehe, die man ihm gibt -- und die feste Hoehe aus der CSS ist fuer
+       die Breite eines Notebooks gerechnet. Auf einem Telefon bricht in der Antwort jede Zeile
+       zusaetzlich um, also wird der Inhalt hoeher als der Rahmen: gemeldet als "abgeschnitten" und
+       "scrollbar im Mobile".
+       Statt eine zweite Zahl zu raten, wird der UEBERHANG des Chats gemessen (scrollHeight minus
+       clientHeight) und dem Rahmen zugeschlagen. Danach passt der Inhalt genau, und im Chat gibt es
+       nichts mehr zu scrollen -- genau das war die Vorgabe.
+       Nur nach OBEN und nie zurueck: die drei Faelle sind unterschiedlich lang, und ein Rahmen, der
+       zwischen ihnen wieder schrumpft, laesst die Karte auf und ab springen. Er waechst also auf
+       den laengsten Fall und bleibt dort. Die Obergrenze ist eine Sicherung gegen eine Messung, die
+       aus dem Ruder laeuft (ein Chat, der sich selbst nachscrollt), kein gewuenschtes Mass. */
+    var MSC_MOBIL_AT = 900;
+    var MSC_MAX_H = 2400;
+    function hoeheNachfuehren(){
+      if ((window.innerWidth || 0) > MSC_MOBIL_AT) return;
+      var chat = d.querySelector(".am-chat");
+      if (!chat) return;
+      var ueberhang = chat.scrollHeight - chat.clientHeight;
+      if (ueberhang <= 2) return;
+      var jetzt = fr.offsetHeight || 0;
+      if (!jetzt) return;
+      var neu = Math.min(MSC_MAX_H, jetzt + ueberhang + 8);
+      if (neu > jetzt) fr.style.height = neu + "px";
     }
 
     /* Frage OBEN, Antwort darunter -- und beides zu sehen.
@@ -2369,11 +2398,21 @@
      Leiste gehoert in den Baukasten, der die Seite baut. */
 
   /* Der Stand je Buchstabe, gerechnet aus der echten Lage der Ueberschrift. */
+  /* Ueber welche Strecke sich der Satz vollstaendig einfaerbt, als Anteil der Fensterhoehe.
+     0.28 bei 900px sind 252px -- von der Mitte bis knapp unter den oberen Rand. */
+  var SATZ_LAUF = 0.28;
   function schriftTakt(h, buchstaben){
     var l = lage(h);
-    /* 0, wenn die Oberkante noch bei 92 Prozent der Fensterhoehe steht; 1, wenn sie 52 Prozent
-       weiter gewandert ist -- also etwa in der Mitte des Fensters. */
-    var p = (l.hoehe * 0.92 - l.oben) / (l.hoehe * 0.52);
+    /* Los geht es, wenn der Satz MITTIG steht -- vorher gar nicht.
+       Vorher lief es von "Oberkante bei 92 Prozent der Fensterhoehe" bis "40 Prozent", und das
+       war der Fehler: gemessen ist der Satz 157px hoch in einem 900px-Fenster, mittig steht seine
+       Oberkante also bei 372px (41.3 Prozent) -- und dort war er nach der alten Rechnung schon zu
+       97 Prozent eingefaerbt. Man sah also nie, wie es passiert, sondern nur das Ergebnis.
+       Die Mitte wird GERECHNET und nicht als Anteil festgeschrieben: der Satz ist auf einem
+       schmalen Fenster hoeher (er bricht anders um), und dann liegt seine Mitte anderswo.
+       l.hoch ist seine eigene Hoehe, l.hoehe die des Fensters -- beides kommt aus lage(). */
+    var mitte = (l.hoehe - l.hoch) / 2;
+    var p = (mitte - l.oben) / (l.hoehe * SATZ_LAUF);
     p = p < 0 ? 0 : (p > 1 ? 1 : p);
     var n = buchstaben.length;
     for (var i = 0; i < n; i++){
@@ -3204,6 +3243,17 @@
     var soll = Math.max(basis, b);
     root.style.setProperty("--ulh-buehne-ist", soll + "px");
     var m = b / soll;
+    /* Auf schmalen Schirmen zusaetzlich 10 Prozent kleiner. Gemeldet: im Mobilemodus ist unten
+       Inhalt abgeschnitten. Das ist dort BEABSICHTIGT (das Fenster ist flacher als die Buehne, der
+       Schnitt laesst es wie eine laufende App aussehen) -- aber nicht so weit, dass eine ganze
+       Karte fehlt. Zehn Prozent weniger Mass heissen zehn Prozent mehr Buehne im selben
+       Ausschnitt, in beiden Richtungen.
+       Warum hier und nicht in der CSS: --ulh-mass schreibt diese Funktion als Inline-Angabe an die
+       Wurzel, und eine CSS-Regel kaeme nie dagegen an (ausser mit !important, und das ist
+       verboten). Der Faktor gehoert also dorthin, wo das Mass entsteht.
+       Die Grenze ist dieselbe 900px wie in der CSS -- steht sie an zwei Stellen verschieden, hat
+       das Fenster einen Bereich, in dem Layout und Mass nicht zusammenpassen. */
+    if ((window.innerWidth || 0) <= 900) m *= 0.90;
     root.style.setProperty("--ulh-mass", m.toFixed(4));
     verkleinerungSetzen(root, m);
     /* Und derselbe Wert an <html>, fuer alles, was ausserhalb der Buehne haengt und ihren Massstab

@@ -1,4 +1,10 @@
 <meta charset="utf-8">
+<!-- OHNE diese Zeile ist auf einem Telefon nichts zu pruefen: der Browser legt dann einen
+     980px breiten Layout-Ausschnitt an und skaliert ihn herunter -- die Medienabfragen der
+     Seite sehen 980 und nicht 390, und keine einzige schmale Regel greift. Gemessen:
+     window.innerWidth 980 bei einem 390px-Geraet. Die echte Framer-Seite bringt die Zeile
+     mit; dieses Harness hatte sie nicht. -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>landing hero: statisches Dashboard im Fenster</title>
 <!-- Wozu: die Hero-Sektion der Landingpage, Schritt 1 -- Ueberschrift, Unterzeile und das Fenster
      mit dem Dashboard im Anfangszustand. Geprueft wird, ob die VIER ECHTEN Komponenten darin
