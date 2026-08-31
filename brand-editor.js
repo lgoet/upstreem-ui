@@ -433,7 +433,7 @@
         '</div>';
       if (!liste.length) {
         return '<div class="up-table ube-table ube-aliaslist">' + kopf +
-          '<div class="up-tbody"><div class="up-empty ube-leer">No aliases yet. ' +
+          '<div class="up-tbody"><div class="up-empty-mini ube-leer">No aliases yet. ' +
           'The brand is matched by its primary name.</div></div></div>';
       }
       var zeilen = liste.map(function (a) {
@@ -468,7 +468,7 @@
         '</div>';
       if (!liste.length) {
         return '<div class="up-table ube-table ube-zeitlist">' + kopf +
-          '<div class="up-tbody"><div class="up-empty ube-leer">No tracking periods yet.</div></div></div>';
+          '<div class="up-tbody"><div class="up-empty-mini ube-leer">No tracking periods yet.</div></div></div>';
       }
       /* Neueste zuerst: der letzte Wechsel ist der, nach dem hier jemand sucht. */
       var sortiert = liste.slice().sort(function (a, b) {

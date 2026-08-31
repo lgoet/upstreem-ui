@@ -1371,6 +1371,8 @@
   "udt-row-affordance",
   "udt-row-goto",
   "udt-row-showpages",
+  "udt-rowpages",
+  "udt-rowpages-lbl",
   "udt-sk-bar",
   "udt-sk-date",
   "udt-sk-logo",
@@ -1987,6 +1989,7 @@
   "up-root-",
   "up-row",
   "up-row-goto",
+  "up-rowbtn",
   "up-rowswap",
   "up-rowswap-act",
   "up-rowswap-goto",
@@ -2725,7 +2728,7 @@
   "globals": 148,
   "payloadkeys": 89,
   "dataattrs": 205,
-  "klassen": 1987,
+  "klassen": 1990,
   "keyframes": 58
  }
 }

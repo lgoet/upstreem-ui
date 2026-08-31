@@ -608,13 +608,6 @@
       var list = listKeys.map(function(k){ return { type: k }; });
       var sel = dimension === "url_type" ? state.filterUrlTypeSel : state.filterTypeSel;
 
-      var dimSwitch = "";
-      if (state.mode === "url"){
-        dimSwitch = '<div class="up-filter-dim" role="tablist">' +
-          '<button class="up-filter-dim-btn' + (dimension === "citation_type" ? " is-active" : "") + '" data-dim="citation_type" type="button">Citation Type</button>' +
-          '<button class="up-filter-dim-btn' + (dimension === "url_type" ? " is-active" : "") + '" data-dim="url_type" type="button">URL Type</button>' +
-        '</div>';
-      }
       var head = '<div class="up-filter-head"><span class="up-filter-title">' + (dimension === "url_type" ? "URL Types" : "Citation Types") + '</span>' +
         '<button class="up-filter-reset" type="button">Reset</button></div>';
       var items = !list.length
@@ -630,7 +623,45 @@
               '</div>';
           }).join("");
 
-      filterMenu.innerHTML = dimSwitch + head + '<div class="up-filter-list">' + items + '</div>' + '<button class="up-filter-submit" type="button">Apply</button>';
+      var rest = head + '<div class="up-filter-list">' + items + '</div>' +
+                 '<button class="up-filter-submit" type="button">Apply</button>';
+
+      /* ── Der Umschalter bleibt stehen ──────────────────────────────────────────────────────
+         Er wurde bisher bei jedem Klick mit dem ganzen Menue neu gebaut. Der gleitende Streifen
+         der Umschalter ist ein ::before am Kasten, und core faehrt ihn ueber vier Zahlen daran
+         (segLauf/segSchreiben) -- ein ersetzter Kasten ist ein ANDERES Element ohne is-gleitend,
+         also steht bis zum naechsten segLauf (ein setTimeout(0)) die eigene weisse Flaeche des
+         aktiven Knopfes hart am neuen Platz, statt dass der Streifen dorthin faehrt. Auf einer
+         belebten Seite liegt dazwischen ein Bild. Gemessen im Harness _h_dd_dim.html: direkt nach
+         dem Klick ohne is-gleitend, aktiver Knopf backgroundColor rgb(255,255,255), Streifen
+         opacity 0 -- im Ruhezustand genau umgekehrt.
+         Bleibt der Kasten derselbe Knoten, erkennt core den Wechsel und faehrt.
+         Ersetzt wird nur, was danach kommt, und zwar FLACH: .up-filter-menu ist ein
+         Flex-Container, .up-filter-list holt sich daraus ihre Hoehe (flex: 1 1 auto,
+         min-height: 0, overflow-y: auto). In einer Huelle waere sie kein Flex-Kind mehr. */
+      var brauchtDim = state.mode === "url";
+      var dimBox = filterMenu.querySelector(".up-filter-dim");
+      if (brauchtDim !== !!dimBox){
+        /* Der Modus hat gewechselt: Umschalter kommt dazu oder faellt weg. Nur DANN ein
+           Neuaufbau -- und dann ist ein Sprung des Streifens ohnehin richtig, weil er vorher
+           nicht dastand. */
+        filterMenu.innerHTML = brauchtDim
+          ? '<div class="up-filter-dim" role="tablist">' +
+              '<button class="up-filter-dim-btn" data-dim="citation_type" type="button">Citation Type</button>' +
+              '<button class="up-filter-dim-btn" data-dim="url_type" type="button">URL Type</button>' +
+            '</div>'
+          : "";
+        dimBox = filterMenu.querySelector(".up-filter-dim");
+      }
+      if (dimBox){
+        Array.prototype.forEach.call(dimBox.children, function(b){
+          b.classList.toggle("is-active", b.getAttribute("data-dim") === dimension);
+        });
+        while (dimBox.nextSibling) filterMenu.removeChild(dimBox.nextSibling);
+        dimBox.insertAdjacentHTML("afterend", rest);
+      } else {
+        filterMenu.innerHTML = rest;
+      }
 
       var resetBtn = filterMenu.querySelector(".up-filter-reset");
       if (resetBtn) resetBtn.addEventListener("click", function(ev){
@@ -639,16 +670,21 @@
         setFilterOpen(false);   // Reset is a decision, not a staging step — closes like Apply
       });
 
-      var dimBtns = Array.prototype.slice.call(filterMenu.querySelectorAll("[data-dim]"));
-      dimBtns.forEach(function(btn){
-        btn.addEventListener("click", function(ev){
+      /* Nur EINMAL binden: der Kasten ueberlebt den Neuaufbau, ein zweiter Zuhoerer am selben
+         Knopf wuerde populateFilter und fireDimension doppelt laufen lassen. Der Merker haengt am
+         Kasten und geht mit ihm, wenn der Modus ihn doch einmal ersetzt. */
+      if (dimBox && !dimBox.__tcdDimBound){
+        dimBox.__tcdDimBound = true;
+        dimBox.addEventListener("click", function(ev){
+          var btn = ev.target.closest ? ev.target.closest("[data-dim]") : null;
+          if (!btn) return;
           ev.stopPropagation();
           state.filterDimension = btn.getAttribute("data-dim");
           persistState();
           populateFilter();
           fireDimension();
         });
-      });
+      }
       Array.prototype.slice.call(filterMenu.querySelectorAll(".up-filter-item")).forEach(function(it){
         it.addEventListener("click", function(ev){
           ev.stopPropagation();

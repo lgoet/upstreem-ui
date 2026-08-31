@@ -139,7 +139,12 @@
       appliedSel: saved.appliedSel || {},      // what was last submitted
       filterUrlSel: saved.filterUrlSel || {},  // live checkbox state (url types)
       appliedUrlSel: saved.appliedUrlSel || {},
-      filterDim: saved.filterDim || "citation_type",
+      /* URL Types ist die Vorgabe -- das ist eine URL-Tabelle, und die Frage "was fuer eine
+         Seite ist das" ist hier die naehere. Im Domain-Modus dreht es sich: eine Domain hat einen
+         Zitationstyp, ein Seitentyp gehoert zu einer einzelnen Seite. Genau dieselbe Regel wie
+         defaultDim(mode) im Top Citations Dashboard, wo derselbe Dropdown steht.
+         Eine GESPEICHERTE Wahl gewinnt: das ist die Entscheidung des Nutzers, keine Vorgabe. */
+      filterDim: saved.filterDim || vorgabeDim(),
       brandMentioned: saved.brandMentioned || "",
       pageSize: saved.pageSize || DEFAULT_PAGE_SIZE,
       page: saved.page || 1,                   // 1-based; offset is derived, never stored
@@ -235,6 +240,10 @@
     /* Domain-Modus: die Tabelle steht auf einer Domain-Detailseite und zeigt den Anteil AN DIESER
        DOMAIN statt am Gesamtmarkt. Als TEXT gelesen, wie data-isdark -- Bubble liefert "yes"/"no",
        und der unersetzte Platzhalter aus der Vorlage zaehlt als nein. */
+    /* Dieselbe Regel wie defaultDim(mode) im Top Citations Dashboard. Als Funktion und nicht als
+       Konstante: data-domain-mode ist ein Attribut der Platzierung, und Bubble loest es
+       gelegentlich erst nach dem Mount auf. */
+    function vorgabeDim(){ return domainModus() ? "citation_type" : "url_type"; }
     function domainModus(){
       var v = String(root.getAttribute("data-domain-mode") || "").trim();
       if (!v || v === "DOMAIN_MODE") return false;
@@ -447,17 +456,13 @@
       /* Two dimensions in one dropdown, exactly like the TopCitations URL mode: a URL has both a
          citation type (what kind of source) and a url type (what kind of page). Each keeps its own
          selection, so switching the tab back and forth doesn't lose anything. */
-      var dim = state.filterDim || "citation_type";
+      var dim = state.filterDim || vorgabeDim();
       var isUrlDim = dim === "url_type";
       var sel = isUrlDim ? state.filterUrlSel : state.filterSel;
       var keys = isUrlDim ? ALL_URL_TYPES : ALL_CITATION_TYPES;
-      var dimSwitch = '<div class="up-filter-dim">' +
-        '<button class="up-filter-dim-btn' + (!isUrlDim ? " is-active" : "") + '" type="button" data-dim="citation_type">Citation Type</button>' +
-        '<button class="up-filter-dim-btn' + (isUrlDim ? " is-active" : "") + '" type="button" data-dim="url_type">URL Type</button>' +
-      '</div>';
       var anyFilterSel = Object.keys(state.filterSel).filter(function(k){ return state.filterSel[k]; }).length
                        + Object.keys(state.filterUrlSel).filter(function(k){ return state.filterUrlSel[k]; }).length;
-      var html = dimSwitch + '<div class="up-filter-head">' +
+      var html = '<div class="up-filter-head">' +
           '<span class="up-filter-title">' + (isUrlDim ? "URL Types" : "Citation Types") + '</span>' +
           (anyFilterSel
             ? '<button class="up-filter-reset" type="button">Reset</button>' : "") +
@@ -475,7 +480,39 @@
                '</div>';
       }).join("");
       html += '</div><button class="up-filter-submit" type="button" data-typeapply>Apply</button>';
-      elFilterMenu.innerHTML = html;
+
+      /* ── Der Umschalter wird NICHT mit neu gebaut ──────────────────────────────────────────
+         Genau das war das Flackern. Der gleitende Streifen der Umschalter ist ein ::before am
+         Kasten, und core faehrt ihn, indem es vier Zahlen daran schreibt (segLauf/segSchreiben).
+         Ein Kasten, den ein innerHTML gerade ersetzt hat, ist ein ANDERES Element: er hat die
+         Klasse is-gleitend nicht, also greift auch nicht die Regel, die dem aktiven Knopf seine
+         eigene weisse Flaeche abnimmt -- fuer die Zeit bis segLauf (ein setTimeout(0)) steht die
+         Flaeche darum HART am neuen Platz, dann verschwindet sie, der Streifen erscheint am alten
+         und faehrt los. Auf einer belebten Seite liegt dazwischen ein Bild, und das sieht man.
+         Gemessen im Harness _h_dd_dim.html: direkt nach dem Klick ist der Kasten ohne
+         is-gleitend, der aktive Knopf hat backgroundColor rgb(255,255,255) und der Streifen
+         opacity 0 -- im Ruhezustand ist es genau umgekehrt.
+
+         Bleibt der Kasten stehen, ist es derselbe Knoten: core erkennt den Wechsel, faehrt den
+         Streifen von der alten Stufe zur neuen, und es gibt nichts zu flackern.
+         Ersetzt wird darum nur, was nach dem Umschalter kommt -- und zwar FLACH, ohne Huelle
+         darum: .up-filter-menu ist ein Flex-Container, und .up-filter-list holt sich daraus ihre
+         Hoehe (flex: 1 1 auto, min-height: 0, overflow-y: auto). In einer Huelle waere sie kein
+         Flex-Kind mehr und der Scrollbereich der Liste haette keine Grenze. */
+      var dimBox = elFilterMenu.querySelector(".up-filter-dim");
+      if (!dimBox){
+        elFilterMenu.innerHTML =
+          '<div class="up-filter-dim">' +
+            '<button class="up-filter-dim-btn" type="button" data-dim="citation_type">Citation Type</button>' +
+            '<button class="up-filter-dim-btn" type="button" data-dim="url_type">URL Type</button>' +
+          '</div>';
+        dimBox = elFilterMenu.querySelector(".up-filter-dim");
+      }
+      Array.prototype.forEach.call(dimBox.children, function(b){
+        b.classList.toggle("is-active", b.getAttribute("data-dim") === dim);
+      });
+      while (dimBox.nextSibling) elFilterMenu.removeChild(dimBox.nextSibling);
+      dimBox.insertAdjacentHTML("afterend", html);
     }
     function syncFilterBadge(){
       /* The button names the selection instead of showing a count badge — the point of a labelled
@@ -959,7 +996,7 @@
         elSearchIn.value = ""; state.query = "";
         elSearch.classList.remove("has-text");
         state.filterSel = {}; state.appliedSel = {};
-        state.filterUrlSel = {}; state.appliedUrlSel = {}; state.filterDim = "citation_type";
+        state.filterUrlSel = {}; state.appliedUrlSel = {}; state.filterDim = vorgabeDim();
         state.brandMentioned = ""; state.mentionSel = {}; state.mentionApplied = {};
         state.page = 1;
         state.softReload = false; dim.end();
@@ -1415,7 +1452,7 @@
       reset: function(){
         state.query = ""; elSearchIn.value = ""; elSearch.classList.remove("is-open");
         state.filterSel = {}; state.appliedSel = {};
-        state.filterUrlSel = {}; state.appliedUrlSel = {}; state.filterDim = "citation_type";
+        state.filterUrlSel = {}; state.appliedUrlSel = {}; state.filterDim = vorgabeDim();
         state.brandMentioned = "";
         state.sortField = DEFAULT_SORT.field; state.sortDir = DEFAULT_SORT.dir;
         state.pageSize = DEFAULT_PAGE_SIZE; state.page = 1;

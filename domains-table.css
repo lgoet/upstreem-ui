@@ -29,10 +29,18 @@
 .udt-logo-ltr { font-size: 11px; font-weight: 600; color: var(--vc-muted); line-height: 1; text-transform: uppercase; }
 .udt-logo-box.has-img .udt-logo-ltr { display: none; }
 
-/* Pfeil, Anker und "Show Pages" stehen seit 18.08. in core.css als geteiltes Bauteil
-   (.up-rowswap*, mit den .udt-*-Klassen in jeder Regel daneben): brands-overview braucht fuer
-   seinen Edit-Knopf genau dieselben Zeiten, Groessen und Positionen, und zwei Kopien davon
-   laufen beim naechsten Nachziehen auseinander. Das Markup hier bleibt unveraendert. */
+/* Der "Show Pages"-Knopf je Zeile ist .up-rowbtn aus core -- dasselbe 24px-Bauteil wie "Edit" in
+   brands-overview. Er kommt beim Hover der ZEILE sofort, ohne Verweildauer und ohne Pfeil davor.
+   Hier steht nur, was diese Tabelle eigen hat: die Beschriftung faellt schmal weg.
+
+   Was davor hier stand: der geteilte Anker .up-rowswap (Pfeil, der nach einer Sekunde Verweilen
+   gegen den Knopf getauscht wurde). Der Block liegt weiter in core.css, hat aber seit dieser
+   Runde keinen Verbraucher mehr -- brands-overview ist schon vorher ausgestiegen. */
+/* Schmal traegt der Knopf nur noch das Zeichen: die Domainspalte ist dort auf ihrer
+   Mindestbreite, und Beschriftung plus Domainname passen nicht nebeneinander. Ganz schmal faellt
+   er ganz weg, das macht core (.up-root.is-vnarrow .up-rowbtn). */
+.up-root.is-narrow .udt-rowpages { padding: 0 5px; gap: 0; }
+.up-root.is-narrow .udt-rowpages-lbl { display: none; }
 .udt-dom-wrap { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .udt-dom-title { font-size: 13.5px; font-weight: 500; color: var(--vc-text); letter-spacing: -0.01em;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

@@ -89,10 +89,6 @@
   var CHEV_SVG = '<svg class="udt-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>';
   var SUB_SEARCH_SVG = UC.icon("search", 2);
   var SUB_X_SVG = UC.icon("x", 2.2);
-  /* Feather's "link" icon — the hover-reveal "Show Pages" row control (item 10). Chosen over the
-     GOTO_SVG diagonal arrow already used elsewhere because that arrow means "leave this page /
-     open the domain", and this control means the opposite: stay here, open the drilldown. */
-  var LINK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /> <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>';
 
   function makeController(root){
     var instanceId = root.getAttribute("data-instance") || "default";
@@ -278,6 +274,34 @@
       }
       return null;
     }
+    /* Der Zeilenknopf in EINER Funktion, weil er an zwei Stellen entsteht: beim Rendern der Zeile
+       und beim Umschalten des Aufklappers, wo nur er getauscht wird und nicht die ganze Zeile
+       (ein frischer Knoten unter einem stehenden Zeiger laesst den Browser :hover neu bewerten --
+       genau das Flackern, das renderSubBlockOnly vermeidet). */
+    function rowPagesBtnHtml(open){
+      return (open ? UC.icon("listChevronsDownUp", 2) : UC.icon("listChevronsUpDown", 2)) +
+             '<span class="udt-rowpages-lbl">' + (open ? "Hide Pages" : "Show Pages") + '</span>';
+    }
+    function rowPagesBtn(open){
+      return '<button class="up-btn-sec up-rowbtn udt-rowpages" type="button" data-pages-toggle' +
+               ' aria-expanded="' + (open ? "true" : "false") + '"' +
+               ' aria-label="' + (open ? "Hide pages" : "Show pages") + '">' +
+               rowPagesBtnHtml(open) + '</button>';
+    }
+    /* Beide Ausloeser einer Zeile nachziehen: die "N pages"-Pille (Chevron dreht sich nicht, sie
+       traegt nur is-open) UND der Zeilenknopf, der zusaetzlich Zeichen und Beschriftung tauscht.
+       Vorher stand hier ein querySelector -- das fand nur den ERSTEN der beiden. */
+    function syncPagesBtns(row, open){
+      if (!row) return;
+      Array.prototype.forEach.call(row.querySelectorAll("[data-pages-toggle]"), function(b){
+        b.classList.toggle("is-open", !!open);
+        b.setAttribute("aria-expanded", open ? "true" : "false");
+        if (!b.classList.contains("udt-rowpages")) return;
+        b.setAttribute("aria-label", open ? "Hide pages" : "Show pages");
+        b.innerHTML = rowPagesBtnHtml(open);
+      });
+    }
+
     function rowHtml(r){
       var dom = String(r.domain == null ? "" : r.domain);
       var fav = domainFavUrl(r);
@@ -310,21 +334,17 @@
             '<span class="udt-dom-title">' + highlight(dom, state.query) + '</span>' +
             pagesBtn +
           '</span>' +
-          /* Both the goto arrow and the "Show Pages" affordance anchor to this ONE wrapper
-             (position:absolute inside it, see the CSS) rather than each carrying its own
-             margin-left:auto — two auto-margin siblings split the row's free space between them,
-             which is what put the arrow somewhere in the middle of the cell instead of flush
-             against the edge. Second, longer-dwell affordance: a 1s hover on the row fades the
-             plain goto arrow out and fades an explicit "Show Pages" control in, staggered so one
-             finishes leaving before the other arrives (see the row-hover-timer below and both
-             elements' transition-delay). Same data-pages-toggle trigger as the "N pages" chevron,
-             so the existing click handler opens it for free — only rendered when there is
-             something to show. */
-          '<span class="udt-row-affordance">' +
-            '<span class="udt-row-goto">' + GOTO_SVG + '</span>' +
-            (pages > 0 ? '<button class="udt-row-showpages" type="button" data-pages-toggle aria-label="Show pages">' +
-               LINK_SVG + '<span>Show Pages</span></button>' : "") +
-          '</span>' +
+          /* Der Zeilenknopf: .up-rowbtn aus core, dasselbe Bauteil wie "Edit" in brands-overview.
+             Er kommt beim Hover der ZEILE sofort und blendet in 200ms ein.
+             Vorher stand hier der geteilte Anker .up-rowswap: erst der Pfeil, und nach einer
+             Sekunde Verweilen tauschte UC.rowDwell ihn gegen einen "Show Pages"-Knopf. Das war
+             eine Wartezeit vor der Handlung, um die es in dieser Zeile geht -- und der Pfeil
+             daneben sagte "geh zur Domain", also das Gegenteil.
+             Beschriftung und Zeichen folgen dem Zustand des Aufklappers: zu -> "Show Pages" mit
+             nach aussen zeigenden Chevrons, offen -> "Hide Pages" mit nach innen zeigenden.
+             Derselbe data-pages-toggle-Ausloeser wie die "N pages"-Pille, der Klick-Zuhoerer
+             greift also unveraendert. */
+          (pages > 0 ? rowPagesBtn(isOpen) : "") +
         '</div>' +
         '<div class="up-td up-td-share"><span class="udt-num">' + fmt1(share) + '%</span>' + trendChip(r.share_delta_pct, "%") + '</div>' +
         '<div class="up-td up-td-used"><span class="udt-used">' + fmtTotal(used || 0) + '</span></div>' +
@@ -679,8 +699,7 @@
       if (state.expandedDomain === dom){
         var host = root.querySelector('.udt-subrows[data-sub-for="' + cssEsc(dom) + '"]');
         var row = root.querySelector('.up-row[data-domain="' + cssEsc(dom) + '"]');
-        var btn = row && row.querySelector("[data-pages-toggle]");
-        if (btn){ btn.classList.remove("is-open"); btn.setAttribute("aria-expanded", "false"); }
+        syncPagesBtns(row, false);
         if (host){
           host.classList.add("is-closing");
           setTimeout(function(){
@@ -701,8 +720,7 @@
         var prevRow = root.querySelector('.up-row[data-domain="' + cssEsc(prevDom) + '"]');
         if (prevRow){
           prevRow.classList.remove("is-expanded");
-          var prevBtn = prevRow.querySelector("[data-pages-toggle]");
-          if (prevBtn){ prevBtn.classList.remove("is-open"); prevBtn.setAttribute("aria-expanded", "false"); }
+          syncPagesBtns(prevRow, false);
           var prevSub = prevRow.nextElementSibling;
           if (prevSub && prevSub.classList.contains("udt-subrows")) prevSub.remove();
         }
@@ -713,8 +731,7 @@
       var newRow = root.querySelector('.up-row[data-domain="' + cssEsc(dom) + '"]');
       if (newRow){
         newRow.classList.add("is-expanded");
-        var newBtn = newRow.querySelector("[data-pages-toggle]");
-        if (newBtn){ newBtn.classList.add("is-open"); newBtn.setAttribute("aria-expanded", "true"); }
+        syncPagesBtns(newRow, true);
       }
       /* Delayed: the panel's own entrance animation gets to finish uninterrupted before the
          response can possibly land and force a second render mid-flight — see fetchSubPage. */
@@ -1182,9 +1199,9 @@
        DISAPPEAR-after-appear on the SAME hover is two different endpoints for one continuous
        :hover state, which plain CSS transitions can't express without reaching for keyframes tied
        to a fixed total duration — a JS timer is simpler and exactly as reliable. */
-    /* Die Uhr steht in core (UC.rowDwell) -- brands-overview braucht dieselbe fuer seinen
-       Edit-Knopf, und zwei Kopien laufen auseinander. Klasse und Dauer bleiben, wie sie waren. */
-    UC.rowDwell(root, "is-showpages-hover", 1000);
+    /* KEINE Verweildauer mehr: der "Show Pages"-Knopf kommt beim Hover der Zeile sofort (CSS,
+       .up-rowbtn in core). UC.rowDwell hat damit keinen Verbraucher mehr -- das Kit bleibt in
+       core, es ist allgemein und kostet dort nichts. */
 
     /* ---------------- events ---------------- */
     function cloneSel(o){ var n = {}; for (var k in o){ if (Object.prototype.hasOwnProperty.call(o, k) && o[k]) n[k] = true; } return n; }

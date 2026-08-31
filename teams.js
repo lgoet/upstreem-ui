@@ -194,9 +194,13 @@
           /* Derselbe gefuellte Knopf wie "+ Add Brand" im Marken-Seitenkopf: .up-ph-addbtn
              positioniert, .up-export ist der Knopf. .up-ph-addbtn-full ist der Teil der
              Beschriftung, den core auf schmalen Komponenten selbst wegnimmt. */
+          /* Nur "New Team". Kein .up-ph-addbtn-full darin: die Beschriftung ist schon so kurz,
+             dass sie nicht in zwei Stufen abgebaut werden muss -- und "New" allein waere keine.
+             Auf der schmalsten Stufe nimmt core dem .up-export ohnehin die ganze Beschriftung ab
+             und laesst das Zeichen stehen. Gleicher Wortlaut wie der Eintrag unten im
+             Teamwaehler der Seitenleiste. */
           '<button class="up-ph-addbtn up-export uts-newteam" type="button">' +
-            UC.icon("plus", 1.8) +
-            '<span>Create<span class="up-ph-addbtn-full"> a new Team</span></span>' +
+            UC.icon("plus", 1.8) + '<span>New Team</span>' +
           '</button>' +
         '</div>';
 
@@ -625,12 +629,14 @@
       }
 
       function renderFoot() {
-        /* Der Fuss verschwindet, solange alles auf eine Seite passt -- siehe teams.css. Das
-           Markup bleibt stehen, damit makePager weiter hineinschreiben kann. */
-        var n = gefiltert().length;
-        /* Waehrend des Ladens ebenfalls weg: die Zahl der Zeilen ist dann unbekannt, und ein
+        /* Der Fuss steht IMMER da, sobald Daten da sind -- wie in jeder anderen Tabelle der App.
+           Er war hier bis zum 31.08. versteckt, solange alles auf eine Seite passte; das war meine
+           Entscheidung und die falsche: "Rows per page" und "1-15 of N" sind Auskunft und keine
+           Zierde, und eine Tabelle, die ihren Fuss je nach Zeilenzahl weglaesst, verhaelt sich
+           anders als ihre Nachbarn.
+           NUR waehrend des Ladens bleibt er weg: die Zahl der Zeilen ist dann unbekannt, und ein
            Blaetterer ueber einer unbekannten Menge behauptet eine Auskunft, die es nicht gibt. */
-        root.classList.toggle("is-onepage", state.busy || n <= UC.PAGE_SIZES[0]);
+        root.classList.toggle("is-onepage", state.busy);
         pager.renderPageSize();
         pager.renderPager();
       }

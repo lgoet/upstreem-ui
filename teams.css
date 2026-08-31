@@ -140,10 +140,12 @@
 .uts-root .up-row { cursor: default; }
 
 /* ---------- Fuss ----------
-   Der Fuss ist weg, solange alles auf eine Seite passt. Eine Teamliste hat in der Regel eine
-   Handvoll Zeilen; "Rows per page 15 25 50 100" ueber drei Teams ist eine Auswahl ohne Wirkung,
-   und die Zahl steht schon in der Kopfzeile. Umgeschaltet wird ueber eine Klasse, nicht durch
-   Ausbauen des Markups -- makePager schreibt weiter hinein und findet seine Elemente. */
+   Nur waehrend des Ladens weg, sonst immer da -- wie in jeder anderen Tabelle der App. Vorher
+   verschwand er, solange alles auf eine Seite passte; das war eine Sonderregel, die diese Tabelle
+   anders aussehen liess als ihre Nachbarn, und die Zeilenzahl ist eine Auskunft, die man auch bei
+   zehn Teams haben will.
+   Umgeschaltet wird ueber eine Klasse, nicht durch Ausbauen des Markups -- makePager schreibt
+   weiter hinein und findet seine Elemente. */
 .uts-root.is-onepage .up-foot { display: none; }
 
 /* ---------- Mobil ----------

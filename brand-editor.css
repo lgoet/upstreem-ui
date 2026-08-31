@@ -22,6 +22,11 @@
 .ube-body > * + * {
   margin-top: 32px; padding-top: 32px; border-top: 1px solid var(--vc-border);
 }
+/* AUSSER unter dem Kopf. Die Kopfzeile ist keine Sektion, sondern die Ueberschrift der ganzen
+   Ansicht -- eine Linie darunter trennt sie von dem, wozu sie gehoert. Der Abstand von 32
+   bleibt, nur die Linie und deren zweite 32 fallen weg. Ein Selektor mit zwei Klassen gegen
+   einen mit einer, also ueber die Spezifitaet gewonnen und nicht ueber die Reihenfolge. */
+.ube-body > .ube-kopf + * { padding-top: 0; border-top: 0; }
 .ube-body > * { min-width: 0; }
 .ube-body > [hidden] { display: none; }
 /* display:flex schlaegt das eingebaute [hidden] -- dieselbe Zeile wie in settings-brand. */
@@ -120,7 +125,14 @@
 /* Der laufende Zeitraum ist kein Datum, sondern ein Zustand -- gedaempft, damit die Spalte mit
    den echten Daten nicht mit einem Wort konkurriert. */
 .ube-laeuft { color: var(--vc-third); }
-.ube-leer { padding: 18px 12px; }
+/* Der Leerzustand dieser beiden Tabellen ist .up-empty-mini aus core -- die knappe
+   "No data"-Zeile, die auch prompts-table, brands-overview, visibility-chart und
+   topcitations benutzen: 13px in der Sekundaerfarbe.
+   Vorher stand hier .up-empty, und das ist die GROSSE, illustrierte Flaeche: sie bringt nur
+   Polsterung und Zentrierung mit, keine Schrift -- der Text erbte damit die 16px der Wurzel in
+   der Primaerfarbe und stand als groesster Text des Abschnitts da, obwohl er der leiseste sein
+   soll. Nur das Polster bleibt eigen: 24 aus core waeren in diesen kleinen Kaesten zu viel. */
+.ube-leer.ube-leer { padding: 18px 12px; }
 
 /* ---------- Farbe ---------- */
 .ube-farbzeile { display: flex; align-items: center; gap: 8px; }

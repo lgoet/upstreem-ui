@@ -775,7 +775,7 @@
           }).join("") : '<div class="usn-none">No teams found</div>') +
         '</div>' +
         '<div class="usn-menu-foot">' +
-          '<button class="usn-newteam" type="button" data-newteam>' + ic("plus") + 'Create a new team</button>' +
+          '<button class="usn-newteam" type="button" data-newteam>' + ic("plus") + 'New Team</button>' +
         '</div>';
     }
     function renderAccMenu(){

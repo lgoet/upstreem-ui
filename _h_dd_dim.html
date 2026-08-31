@@ -1,0 +1,263 @@
+<meta charset="utf-8">
+<title>Harness: Dim-Umschalter im Types-Dropdown</title>
+<link rel="stylesheet" href="core.css?v=1">
+<link rel="stylesheet" href="urls-table.css?v=1">
+<link rel="stylesheet" href="topcitations-dashboard.css?v=1">
+<style>
+  html, body { margin: 0; }
+  body { font-family: sans-serif; padding: 24px; width: 1400px; }
+  h2 { font: 600 14px/1 sans-serif; margin: 32px 0 12px; }
+</style>
+<script>
+/* Gleicher Aufbau fuer BEIDE Komponenten, damit der Vergleich etwas wert ist: dasselbe Dokument,
+   dieselbe core.js, derselbe Klick. Gemessen wird der gleitende Streifen (--up-seg-*) und die
+   Klassen am Umschalter -- Bild fuer Bild. */
+window.__fehler = []; window.__ev = [];
+window.onerror = function(m){ window.__fehler.push(String(m)); };
+["uutSearch","uutSort","uutFilter","uutBrand","uutRowClick","uutPage","uutMentioned",
+ "tcdMode","tcdRowClick","tcdGoTo","tcdExportTable","tcdApplyTypeFilter","tcdFilterDimension","tcdBrandMentioned"]
+  .forEach(function(n){ window["bubble_fn_"+n] = function(a,b){ window.__ev.push([n,a,b]); }; });
+try { localStorage.clear(); } catch(e){}
+</script>
+
+<h2>urls-table</h2>
+<div class="up-root uut-root"
+     data-instance="u1"
+     data-cdn-pin=""
+     data-isdark="no"
+     data-domain-mode="no"
+     data-brand-name="Acme"
+     data-brand-logo=""
+     data-export-instance="EXPORT_u1"
+     data-sticky-top="171"
+     data-search-fn="bubble_fn_uutSearch"
+     data-sort-fn="bubble_fn_uutSort"
+     data-filter-fn="bubble_fn_uutFilter"
+     data-brand-fn="bubble_fn_uutBrand"
+     data-rowclick-fn="bubble_fn_uutRowClick"
+     data-page-fn="bubble_fn_uutPage"
+     data-mentioned-fn="bubble_fn_uutMentioned">
+  <div class="up-head">
+    <div class="up-heading"><span class="up-head-label">URLs</span><span class="up-head-sep"></span><span class="up-head-count"></span></div>
+    <div class="up-head-tools">
+      <button class="uut-brand-toggle" type="button" data-tip="Filter for your brand mentions">
+        <span class="uut-brand-toggle-lbl">
+          <img class="uut-brand-logo" src="" style="display:none" alt=""/>
+          <span class="uut-brand-label"></span>
+        </span>
+        <span class="uut-brand-check">
+          <svg class="uut-brand-check-yes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+          <svg class="uut-brand-check-no" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /></svg>
+        </span>
+      </button>
+
+      <div class="up-ment">
+        <button class="up-ment-btn" type="button" data-tip="Filter for brand mentions" aria-haspopup="menu" aria-expanded="false">
+          <span class="up-ment-lbl">All Brands</span>
+          <svg class="up-ment-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+          <svg class="up-ment-clear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>
+        </button>
+        <div class="up-ment-menu" role="menu" aria-hidden="true"></div>
+      </div>
+
+      <div class="up-filter">
+        <button class="up-filter-btn" type="button" data-tip="Filter Citation and URL Types" aria-haspopup="menu" aria-expanded="false">
+          <span class="up-filter-btn-lbl">All Types</span>
+          <svg class="up-filter-btn-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+          <svg class="up-filter-btn-clear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>
+        </button>
+        <div class="up-filter-menu" role="menu" aria-hidden="true"></div>
+      </div>
+
+      <div class="up-sort">
+        <button class="up-sort-btn up-iconbtn" type="button" data-tip="Sort" aria-label="Sort">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></svg>
+        </button>
+        <div class="up-sort-menu" role="menu" aria-hidden="true"></div>
+      </div>
+
+      <div class="up-search">
+        <button class="up-search-btn up-iconbtn" type="button" data-tip="Search" aria-label="Search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34" /> <circle cx="11" cy="11" r="8" /></svg>
+        </button>
+        <div class="up-search-box">
+          <input class="up-search-input" type="text" placeholder="Type in url..." autocomplete="off" spellcheck="false" aria-label="Search URLs"/>
+          <button class="up-search-clear" type="button" aria-label="Clear search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="up-cols">
+        <button class="up-cols-btn up-iconbtn" type="button" data-tip="Table Settings" aria-label="Table settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+        <span class="uut-cols-badge"></span>
+        <div class="up-cols-menu" role="menu" aria-hidden="true"></div>
+      </div>
+
+      <button class="up-export" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3" /> <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /> <path d="m7 10 5 5 5-5" /></svg>
+        <span>Export</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="up-box">
+    <div class="up-table">
+      <div class="up-thead">
+        <div class="up-th up-th-domain">URL<span class="up-grip" data-grip="domain"></span></div>
+        <div class="up-th up-th-share is-sortable" data-sortcol="share">
+          <span class="up-th-txt">Share</span>
+          <span class="up-th-info" data-explain="share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" /></svg></span>
+          <span class="up-thsort" data-for="share">
+            <svg class="up-thsort-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6" /></svg>
+            <svg class="up-thsort-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+          </span>
+
+        </div>
+        <div class="up-th up-th-type">Type<span class="up-th-info" data-explain="type"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" /></svg></span></div>
+        <div class="up-th up-th-ment">
+          <img class="up-th-brandlogo" src="" alt="" style="display:none"/>
+          <span class="up-th-mentlbl">mentioned?</span>
+
+        </div>
+        <div class="up-th up-th-brands">Brands mentioned<span class="up-th-info" data-explain="brands"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" /></svg></span></div>
+        <div class="up-th up-th-lastseen is-sortable" data-sortcol="last_seen">
+          <span class="up-th-txt">Last Seen</span>
+          <span class="up-thsort" data-for="last_seen">
+            <svg class="up-thsort-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6" /></svg>
+            <svg class="up-thsort-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+          </span>
+
+        </div>
+        <div class="up-th uut-th-actions">Actions</div>
+      </div>
+      <div class="up-tbody"></div>
+    </div>
+  </div>
+
+  <div class="up-foot">
+    <div class="up-pagesize">
+      <span class="up-pagesize-lbl">Rows per page</span>
+      <div class="up-pagesize-seg" role="group" aria-label="Rows per page"></div>
+    </div>
+    <div class="up-pager"></div>
+  </div>
+</div>
+<h2>topcitations-dashboard (URL-Modus)</h2>
+<div class="up-root tcd-root"
+     data-instance="t1"
+     data-cdn-pin=""
+     data-isdark="no"
+     data-export-instance="EXPORT_t1"
+     data-processing="no"
+     data-processing2="no"
+     data-mode-fn="bubble_fn_tcdMode"
+     data-rowclick-fn="bubble_fn_tcdRowClick"
+     data-goto-fn="bubble_fn_tcdGoTo"
+     data-export-fn="bubble_fn_tcdExportTable"
+     data-types-fn="bubble_fn_tcdApplyTypeFilter"
+     data-dimension-fn="bubble_fn_tcdFilterDimension"
+     data-brand-fn="bubble_fn_tcdBrandMentioned">
+
+  <div class="tcd-unit tcd-unit-left">
+    <div class="tcd-head">
+      <div class="tcd-mode" role="tablist" aria-label="Mode">
+        <button class="tcd-mode-btn is-active" data-mode="domain" type="button" role="tab">Domains</button>
+        <button class="tcd-mode-btn" data-mode="url" type="button" role="tab">URLs</button>
+      </div>
+      <div class="tcd-head-tools">
+        <div class="tcl-seg" role="tablist" aria-label="Chart type">
+          <button class="tcl-seg-btn is-active" data-chart="doughnut" role="tab" aria-selected="true" data-tip="Doughnut" aria-label="Doughnut">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12c.552 0 1.005-.449.95-.998a10 10 0 0 0-8.953-8.951c-.55-.055-.998.398-.998.95v8a1 1 0 0 0 1 1z" /> <path d="M21.21 15.89A10 10 0 1 1 8 2.83" /></svg>
+          </button>
+          <button class="tcl-seg-btn" data-chart="bar" role="tab" aria-selected="false" data-tip="Bars" aria-label="Bars">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><rect x="7" y="13" width="9" height="4" rx="1"/><rect x="7" y="5" width="12" height="4" rx="1"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="tcd-box">
+      <div class="tcd-panel-body">
+        <div class="tcl-top-total"><span class="n">0</span><span class="lbl">Citations</span></div>
+        <div class="up-donut-body"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tcd-unit tcd-unit-right">
+    <div class="tcd-head">
+      <div class="tcd-heading tcd-heading-right"><span class="tcd-head-label">Top Domains</span><span class="tcd-head-sep"></span><span class="tcd-head-count"></span></div>
+      <div class="tcd-head-tools">
+        <button class="tcd-brand-toggle" type="button" data-tip="Filter for your brand mentions">
+          <span class="tcd-brand-toggle-lbl">
+            <img class="tcd-brand-logo" src="" style="display:none"/>
+            <span class="tcd-brand-label"></span>
+          </span>
+          <span class="tcd-brand-check">
+            <svg class="tcd-brand-check-yes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+            <svg class="tcd-brand-check-no" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /></svg>
+          </span>
+        </button>
+        <div class="tcd-filter">
+          <button class="tcd-filter-btn tcd-iconbtn" type="button" data-tip="Filter" aria-label="Filter">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 17H5"/><path d="M19 7h-9"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>
+            <span class="tcd-filter-badge"></span>
+          </button>
+          <div class="up-filter-menu" role="menu" aria-hidden="true"></div>
+        </div>
+        <button class="tcd-export tcd-iconbtn" type="button" data-tip="Export" aria-label="Export">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3" /> <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /> <path d="m7 10 5 5 5-5" /></svg>
+        </button>
+        <button class="tcd-goto tcd-iconbtn" type="button" data-tip="Open" aria-label="Open">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10v10" /> <path d="M7 17 17 7" /></svg>
+        </button>
+      </div>
+    </div>
+    <div class="tcd-box">
+      <div class="tct-table"></div>
+    </div>
+  </div>
+</div>
+<script src="core.js?v=1"></script>
+<script src="urls-table.js?v=1"></script>
+<script src="topcitations-dashboard.js?v=1"></script>
+<script>
+window.__uutRows = [
+  { url:"https://dbaudio.com/pricing", title:"Pricing", domain:"dbaudio.com", favicon:"",
+    global_share_pct:6.1, share_delta_pct:0.3, used_total:22, url_type:"guide",
+    citation_type:"Editorial", last_seen:"2026-08-01T10:00:00+00:00", total_count:2 },
+  { url:"https://rcf.it/blog/guide", title:"Guide", domain:"rcf.it", favicon:"",
+    global_share_pct:4.4, share_delta_pct:-0.2, used_total:15, url_type:"review",
+    citation_type:"Competition", last_seen:"2026-07-20T10:00:00+00:00", total_count:2 }
+];
+window.__load = function(){
+  window.renderUrlsTable({ instanceId:"u1", rows: window.__uutRows, totalCount: 2 });
+  window.renderTopCitations({ instanceId:"t1", mode:"url", totalCountUrl:2, citations_total:100,
+    top_urls: window.__uutRows.map(function(r){ return { url:r.url, title:r.title, favicon:"",
+      global_share_pct:r.global_share_pct, share_delta_pct:r.share_delta_pct,
+      used_total:r.used_total, url_type:r.url_type }; }),
+    types_breakdown:[{type:"guide",share_pct:55},{type:"review",share_pct:45}] });
+};
+
+/* Liest den Zustand des Streifens an EINEM Umschalter. */
+window.__seg = function(box){
+  if (!box) return null;
+  var cs = getComputedStyle(box);
+  var aktiv = box.querySelector("button.is-active");
+  return {
+    klassen: box.className,
+    gleitend: box.classList.contains("is-gleitend"),
+    sofort: box.classList.contains("is-sofort"),
+    x: cs.getPropertyValue("--up-seg-x").trim(),
+    w: cs.getPropertyValue("--up-seg-w").trim(),
+    aktiv: aktiv ? aktiv.getAttribute("data-dim") : null,
+    aktivGrund: aktiv ? getComputedStyle(aktiv).backgroundColor : null,
+    vorGrund: getComputedStyle(box, "::before").backgroundColor,
+    vorOpacity: getComputedStyle(box, "::before").opacity,
+    vorTransform: getComputedStyle(box, "::before").transform
+  };
+};
+window.__dimBox = function(sel){ return document.querySelector(sel + " .up-filter-dim"); };
+</script>

@@ -8880,6 +8880,14 @@
               '<rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>',
     listIcon: '<path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/>' +
               '<path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/>',
+    /* list-chevrons-up-down / -down-up: das Paar fuer eine Liste, die sich aufklappen bzw.
+       zuklappen laesst -- "Show Pages" / "Hide Pages" in der Domains-Tabelle. Die Chevrons zeigen
+       nach AUSSEN, solange zu ist (hier geht etwas auf), und nach INNEN, solange offen ist (hier
+       geht etwas zu). Wortgleich aus dem Lucide-Bestand geholt, nicht nachgezeichnet. */
+    listChevronsUpDown: '<path d="M3 5h8"/><path d="M3 12h8"/><path d="M3 19h8"/>' +
+              '<path d="m15 8 3-3 3 3"/><path d="m15 16 3 3 3-3"/>',
+    listChevronsDownUp: '<path d="M3 5h8"/><path d="M3 12h8"/><path d="M3 19h8"/>' +
+              '<path d="m15 5 3 3 3-3"/><path d="m15 19 3-3 3 3"/>',
     arrowUpDown: PFAD_SORT,
     chartColumnUp:'<path d="M13 17V9"/><path d="M18 17V5"/>' +
               '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M8 17v-3"/>',

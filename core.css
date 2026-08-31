@@ -1001,6 +1001,38 @@
     .up-btn-pri:not(:disabled):hover { opacity: .88; }
     .up-btn-pri:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 
+    /* ---------- Zeilenknopf: die kleine Fassung von .up-btn-sec, die beim Zeilen-Hover kommt ----
+       Entstanden als .ubo-editbtn in brands-overview ("Edit" je Marke). Zweiter Verbraucher ist
+       "Show Pages" / "Hide Pages" in der Domains-Tabelle, und damit gehoert es hierher: zwei
+       Kopien derselben Geometrie laufen beim naechsten Nachziehen auseinander. Die alte Klasse
+       steht in jeder Regel mit, damit das Markup von brands-overview unangetastet bleibt --
+       derselbe Kniff wie bei .up-seg und .cc-seg.
+
+       Alle Werte von .up-btn-sec im Verhaeltnis 24/32 mitgezogen: Hoehe 32 -> 24, Radius 9 -> 7,
+       Innenabstand 7 -> 6, Zeichen 14 -> 13. Das Polster steht bei 8, so vorgegeben. Der Ton ist
+       der sekundaere und wird beim Hover der primaere; die Flaeche darunter ist der Hover von
+       .up-btn-sec, unveraendert.
+       Er kommt OHNE Verweildauer: 200ms Einblenden am Hover der ZEILE, sonst nichts. Der Vorlaeufer
+       (.up-rowswap, weiter unten) tauschte erst nach einer Sekunde einen Pfeil gegen den Knopf --
+       eine Wartezeit vor der Handlung, um die es in der Zeile geht. */
+    .up-rowbtn, .ubo-editbtn {
+      margin-left: auto; flex: 0 0 auto;
+      height: 24px; padding: 0 8px; border-radius: 7px; gap: 6px;
+      font-size: 12px; color: var(--vc-muted);
+      opacity: 0; pointer-events: none;
+      transition: opacity 200ms ease, color 140ms ease, border-color 140ms ease, background 140ms ease;
+    }
+    .up-rowbtn svg, .ubo-editbtn svg { width: 13px; height: 13px; }
+    /* Sichtbar am Hover der ZEILE, nicht des Knopfes -- ein Knopf, der erst erscheint, wenn man
+       ihn trifft, ist keiner. Tastatur: auch beim Fokus, sonst ist er nur mit der Maus da. */
+    .up-row:hover .up-rowbtn, .up-rowbtn:focus-visible,
+    .up-row:hover .ubo-editbtn, .ubo-editbtn:focus-visible { opacity: 1; pointer-events: auto; }
+    .up-rowbtn:hover, .ubo-editbtn:hover { color: var(--vc-text); }
+    /* Ganz schmal faellt er weg: dort ist die fuehrende Zelle schon auf ihre Mindestbreite
+       gestrichen, und ein Knopf darin schiebt den Namen aus dem Bild. Dieselbe Stufe, an der
+       auch der Pfeil des Vorlaeufers verschwindet. */
+    .up-root.is-vnarrow .up-rowbtn { display: none; }
+
     /* ---------- sort dropdown ---------- */
     .up-sort { position: relative; flex: 0 0 auto; }
     .up-sort-menu { position: absolute; top: calc(100% + var(--up-dd-gap)); right: 0; z-index: 60; width: 220px;
@@ -1832,7 +1864,18 @@
     .up-fav:not(.has-img) .udt-logo-ltr,
     .up-fav:not(.has-img) .udt-sub-ltr,
     .up-fav:not(.has-img) .uut-logo-ltr { display: none; }
-    .up-fav:not(.has-img)::after {
+    /* Der Globus haengt normalerweise am KASTEN. Im Stapel-Chip nicht: dort ist der Kasten
+       (.up-stack-item) mit Absicht unbeweglich -- er traegt die Trefferflaeche, und nur die
+       Sichtebene .up-stack-vis darin hebt und schiebt sich beim Hover. Ein Globus am Kasten blieb
+       damit stehen, waehrend Platte, Rahmen und Ring um ihn herum wegfuhren: gemeldet als
+       "das Globe-Icon verschiebt sich nicht mit". Ein Buchstabe hat das Problem nie gehabt, der
+       liegt schon IN der Sichtebene.
+       Also zeichnet ihn im Stapel die Sichtebene, und der Kasten laesst es. Dieselben
+       Deklarationen, nur ein zweiter Selektor -- kein zweiter Globusblock, der auseinanderlaufen
+       koennte. Die Zahlen (62 Prozent, mittig) beziehen sich auf die Sichtebene, und die fuellt
+       den Kasten zu 100 Prozent: derselbe Kreis an derselben Stelle wie vorher. */
+    .up-fav:not(.has-img)::after,
+    .up-stack-item.up-fav:not(.has-img) .up-stack-vis::after {
       content: ""; position: absolute; left: 50%; top: 50%;
       width: 62%; height: 62%; transform: translate(-50%, -50%);
       background: var(--vc-third);
@@ -1840,6 +1883,7 @@
       mask: var(--up-globus) center / contain no-repeat;
       pointer-events: none;
     }
+    .up-stack-item.up-fav:not(.has-img)::after { content: none; }
 
     /* ---------- Globus, wo ein Favicon gescheitert ist ----------
        Zwei Faelle, beide bedient vom Zuhoerer in core.js (faviconRueckfall):
@@ -2283,6 +2327,10 @@
   border-radius: 8px; padding: 2px; background: var(--vt-logo-bg); box-shadow: 0 0 0 4px var(--vc-bg);
   border: 1px solid var(--vc-border);
   transition: transform .16s ease;
+  /* Bezug fuer den Globus des Favicon-Rueckfalls (siehe .up-fav weiter oben). In Ruhe traegt die
+     Sichtebene keine transform, ohne position waere der Bezug also der Kasten -- und der bewegt
+     sich nicht. Eine Zeile, damit die Rechnung in beiden Zustaenden dieselbe ist. */
+  position: relative;
 }
 /* Im Dunkeln kein Rahmen, aber dieselbe Geometrie: der Rahmen wird durchsichtig UND die Platte
    endet an der Polsterungskante (background-clip). Ohne das Zweite liefe der Grund unter den
