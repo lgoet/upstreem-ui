@@ -22,6 +22,9 @@ upstreem-ui/
 ├─ topcitations-dashboard.css/.js  ausgeliefert (CDN) — Prefix tcd-
 ├─ citations-combo-chart.css/.js   ausgeliefert (CDN) — Prefix combo-
 ├─ topics-manager.css/.js     ausgeliefert (CDN) — Prefix utm-
+├─ filters/filter-bar.css/.js ausgeliefert (CDN) — Prefix ufb-. "More Filters": EIN Knopf statt
+│                             vier sichtbarer Filter-Dropdowns. Baut keinen Filter nach, sondern
+│                             ZIEHT die vorhandenen (topics/models/markets) in ihr Untermenue.
 ├─ teams.css/.js              ausgeliefert (CDN) — Prefix uts-. Seitenkopf UND Tabelle in
 │                             EINEM Element: auf die Teams-Seite kommt KEIN eigenes
 │                             page-headers/*-Element dazu.
@@ -39,7 +42,7 @@ upstreem-ui/
 
 - **Root** (`core.*`, `<komponente>.*`): wird von jsDelivr ausgeliefert; der
   Pfad muss zur CDN-URL passen (`@main/core.css` = Root). Prefixe: geteilt `up-`,
-  komponenten-spezifisch `uut-` / `udt-` / `upt-` / `vot-` / `tcd-` / `combo-` / `utm-` / `uts-`.
+  komponenten-spezifisch `uut-` / `udt-` / `upt-` / `vot-` / `tcd-` / `combo-` / `utm-` / `uts-` / `ufb-`.
   `quick-actions` ist die eine Ausnahme (siehe unten).
 - **`core.js`** stellt `window.UpstreemCore` (kurz `UC`) bereit: Farbtabellen, Utils, Icons,
   `resolveBubbleFn`, Stores, `watchRoots`/`makeMount`, und die Kits `makeTooltips`, `makeFire`,

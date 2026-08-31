@@ -1,0 +1,176 @@
+<!--
+  ============================================================================================
+  FILTER BAR — "More Filters" — Bubble-Vorlage
+  ============================================================================================
+  EIN Knopf statt vier dauerhaft sichtbarer Filter-Dropdowns. Der Datumsfilter bleibt daneben
+  stehen; Topics, Models und Markets ziehen in ein Dropdown, dessen Zeilen die BESTEHENDEN
+  Filter-Dropdowns seitlich herausfahren lassen.
+
+  DIE FILTER BLEIBEN, WIE SIE SIND
+  Es wird kein Filter nachgebaut und keiner ersetzt. Die drei Elemente (topics-filter,
+  models-filter, markets-filter) bleiben genau da, wo sie heute liegen, mit denselben
+  data-*-fn-Namen und denselben Workflows. Diese Leiste ZIEHT sie in ihr Untermenue ein und liest
+  ihren Zustand -- Auswaehlen, Abwaehlen, Suchen, Sortieren, Match-Modus und jedes ihrer
+  Bubble-Ereignisse laufen unveraendert weiter.
+
+  EINSETZEN
+  1. HTML-Element in die Werkzeugzeile, RECHTS neben den Datumsfilter. Dieses Markup hinein.
+  2. INSTANCE_ID durch eine FESTE Kennung ersetzen (z. B. "filterbar_dash"). Kein dynamischer
+     Ausdruck -- siehe bubble/STATISCHES_MARKUP_PFLICHT.md.
+  3. CDN_PIN durch den Commit-Hash ersetzen, denselben wie an allen anderen Elementen der Seite.
+  4. Die drei Instanz-Attribute auf die data-instance der Filter dieser Seite zeigen lassen:
+
+        data-topics-instance   = die data-instance des topics-filter-Elements
+        data-models-instance   = die data-instance des models-filter-Elements
+        data-markets-instance  = die data-instance des markets-filter-Elements
+
+     WAS ES NICHT GIBT, LEER LASSEN. Ein leeres Attribut (oder der stehengebliebene Platzhalter)
+     heisst "diesen Filter gibt es hier nicht" -- dann gibt es auch keine Zeile dafuer. Genau so
+     erkennt die Leiste, was auf der Seite vorhanden ist.
+     Die Id darf ein PRAEFIX sein: steht am Filter "topics_dash_2", findet "topics_dash" ihn.
+  5. Die drei Filterelemente selbst BLEIBEN auf der Seite und behalten ihre Attribute. Sie muessen
+     nicht ausgeblendet werden -- die Leiste holt sie zu sich, sobald sie da sind. Setze sie
+     bevorzugt VOR die Leiste in der Seitenreihenfolge; noetig ist es nicht.
+  6. Der Datumsfilter wird NICHT eingetragen. Er bleibt eigenstaendig sichtbar.
+
+  EIN FILTER GEHOERT GENAU EINER LEISTE
+  Ein Filter-Dropdown ist EIN Element und kann nur an einer Stelle stehen. Zeigen zwei Leisten auf
+  dieselbe Instanz-Id, nimmt die zweite ihn NICHT weg -- sie meldet es in der Konsole und laesst
+  ihre Zeile weg. Pro Ansicht also eine Leiste und ein Satz Filter.
+
+  WAS DIE LEISTE ZEIGT
+  - "More Filters" mit dem Lucide-Zeichen list-filter. Sobald irgendein Filter aktiv ist, sitzt
+    oben rechts am Knopf derselbe Hinweispunkt wie an den Icon-Knoepfen der Werkzeugleisten.
+  - Rechts daneben ein Trennstrich, dann je aktivem Filter ein Chip: "Topic: Leadgen" oder
+    "Topic: Leadgen, Solar, +3". Danach "Clear All".
+  - Im Dropdown eine Zeile je Filter, in der Reihenfolge Topics, Models, Markets. Die Zeile zeigt
+    dasselbe wie der Trigger des Filters heute: bei genau einer Auswahl den Namen mit seinem
+    farbigen Punkt bzw. Logo, ab zwei die Beschriftung mit dem runden Zaehler vor dem Winkel.
+  - Ganz unten "Reset Filters" -- nur, solange etwas gewaehlt ist.
+
+  BEDIENUNG
+  - Zeigen auf eine Zeile faehrt den Filter rechts heraus (links, wenn dort kein Platz ist).
+  - KLICKEN stellt ihn fest: er bleibt offen, bis eine andere Zeile geklickt wird, bis es nach
+    draussen geht oder bis Escape kommt.
+  - Auf einem schmalen Bildschirm gibt es kein "daneben": dort geht man HINEIN. Der Filter nimmt
+    die Stelle der Liste ein, oben steht "Back". Die Leiste bricht dann um, der Trennstrich faellt
+    weg und die Chips lassen sich waagerecht schieben.
+
+  DAS EINZIGE EREIGNIS (jedes mit einem JSON-Text als erstem Parameter)
+     ufbReset   "Reset Filters" im Dropdown ODER "Clear All" in der Leiste
+       {"team_id":"t1","action":"clear_all"}
+
+       Vorher leert die Leiste die Auswahl JEDES eingezogenen Filters -- still, ueber deren
+       eigenes setSelected(""). Die Filter schicken dabei NICHTS: sonst stiessen drei
+       Filter-Ereignisse und dieses vierte dieselbe Abfrage viermal an. Der Workflow hinter
+       ufbReset ist also der EINE Ort, an dem nach einem Clear neu geladen wird.
+       Die Listen der Filter bleiben dabei stehen; nur die Auswahl geht weg.
+
+  DIE WERTE IN BUBBLE LESEN (extract with Regex)
+         (?<="team_id":")[^"]*
+         (?<="action":")[^"]*        immer "clear_all"
+
+  ES GIBT KEIN EREIGNIS FUER DIE FILTER SELBST
+  Das Auswaehlen laeuft weiter ueber die Filter. Ihre Workflows (utfTopics / utfTopicsApply,
+  umfModels, umkMarkets) bleiben unveraendert verdrahtet -- die Leiste haengt sich nirgends
+  dazwischen. Auf Bubble-Seite ist fuer diese Komponente also genau EIN neues Element anzulegen:
+  ein JavaScript-to-Bubble namens bubble_fn_ufbReset.
+
+  DATEN HINEIN
+  Keine. Die Leiste hat keine eigenen Daten -- sie liest die der Filter. Es gibt nur zwei Setter,
+  und beide braucht man selten:
+     resetFilterBar(INSTANCE_ID)          wie "Clear All", inklusive Ereignis
+     setFilterBarTheme(INSTANCE_ID, "dark" | "light")
+  Das Thema kommt normalerweise ueber window.setUpstreemTheme() und braucht das hier nicht.
+
+  ============================================================================================
+-->
+<div class="up-root ufb-root"
+     data-instance="INSTANCE_ID"
+     data-cdn-pin="CDN_PIN"
+     data-isdark="no"
+     data-topics-instance="TOPICS_INSTANCE"
+     data-models-instance="MODELS_INSTANCE"
+     data-markets-instance="MARKETS_INSTANCE"
+     data-reset-fn="bubble_fn_ufbReset"></div>
+
+<script>
+(function(){
+  /* ---- Boot-Stubs, VOR dem Nachladen ------------------------------------------------------
+     Bubble kann die Setter im Page-Load-Workflow rufen, bevor filter-bar.js geladen ist. Ohne
+     Stub ist der Aufruf weg, ohne dass irgendwo ein Fehler steht. Dieselbe Loesung wie in den
+     anderen Vorlagen. */
+  window.__ufbBootQueue = window.__ufbBootQueue || [];
+  if (!window.__ufbBootStubbed){
+    window.__ufbBootStubbed = true;
+    ["resetFilterBar", "setFilterBarTheme"].forEach(function(n){
+      if (typeof window[n] === "function") return;
+      window[n] = function(){ window.__ufbBootQueue.push([n, [].slice.call(arguments)]); };
+    });
+  }
+
+  /* Loader nach STYLEGUIDE §26: den Pin ueber getElementsByClassName lesen, NIEMALS ueber
+     document.currentScript -- Bubble fuehrt Scripts nicht in DOM-Reihenfolge aus. */
+  function readPin(cls){
+    var els = document.getElementsByClassName(cls), i, p;
+    for (i = 0; i < els.length; i++){
+      p = (els[i].getAttribute("data-cdn-pin") || "").trim();
+      if (p && p !== "CDN_" + "PIN") return p;
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("ufb-root") + "/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  function once(url, make){
+    var name = url.slice(url.lastIndexOf("/") + 1);
+    if (L[name]){
+      if (L[name] !== url && window.console) console.warn("upstreem: " + name +
+        " ist schon von einem anderen Pin geladen. Geladen bleibt " + L[name] +
+        ", ignoriert wird " + url + ". Setzt alle Elemente auf denselben Pin.");
+      return;
+    }
+    L[name] = url; make(url);
+  }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+
+  /* Nur core und diese Leiste. Die CSS der drei Filter laedt jedes Filterelement selbst -- sie
+     wird hier gebraucht (ihre Panels stehen in diesem Untermenue), aber sie ist schon da, weil
+     die Elemente auf derselben Seite liegen. */
+  css("core.css");                  js("core.js");
+  css("filters/filter-bar.css");    js("filters/filter-bar.js");
+})();
+</script>
+
+<!--
+  ============================================================================================
+  RUN-JAVASCRIPT-SCHRITTE (Toolbox)
+  ============================================================================================
+  Reines JavaScript, ab "(function () {" bis "})();" markieren. Ein <script> gehoert NICHT
+  hinein -- Bubble wertet den Text als JavaScript aus, und das Tag killt den Schritt mit
+  "Unexpected token '<'" samt aller Schritte dahinter.
+
+  Diese Komponente braucht KEINEN Schritt zum Fuellen: sie hat keine eigenen Daten. Die zwei
+  Schritte unten sind Ausnahmefaelle.
+
+  ── SCHRITT 1: alles zuruecksetzen, von aussen ─────────────────────────────────────────────
+  Fuer einen Team- oder Ansichtswechsel, bei dem die alten Filter nicht mehr gelten. Wirkt wie
+  "Clear All", also inklusive ufbReset -- der Workflow dahinter laedt neu.
+
+  (function () {
+    if (typeof window.resetFilterBar === "function") {
+      window.resetFilterBar("INSTANCE_ID");
+    }
+  })();
+
+  ── SCHRITT 2: Thema setzen ────────────────────────────────────────────────────────────────
+  Normalerweise NICHT noetig: window.setUpstreemTheme("dark") stempelt das Thema an jede Wurzel
+  der Seite, und diese Leiste zieht mit. Nur fuer den Fall, dass eine einzelne Platzierung
+  abweichen soll.
+
+  (function () {
+    if (typeof window.setFilterBarTheme === "function") {
+      window.setFilterBarTheme("INSTANCE_ID", "dark");
+    }
+  })();
+-->

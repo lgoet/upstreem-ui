@@ -1,0 +1,201 @@
+/* upstreem filter-bar.css — die Filterleiste "More Filters" (Praefix ufb). Braucht core.css.
+
+   Was diese Komponente ist: EIN Knopf statt vier dauerhaft sichtbarer Filter-Dropdowns. Der
+   Datumsfilter bleibt daneben stehen (eigenes Element, wird hier nicht angefasst), alles andere
+   zieht in ein Dropdown, dessen Zeilen die BESTEHENDEN Filter-Dropdowns seitlich herausfahren
+   lassen.
+
+   Was hier BEWUSST NICHT steht, weil es in core schon fertig liegt:
+
+     Panel-Schale        .up-menu (Rahmen, Radius, Schatten, Polster, Ein- und Ausblenden)
+     Untermenue          .up-subwrap / .up-submenu samt Bruecke, Umklappen und dem
+                         Hineingehen auf schmalen Seiten -- Geometrie in core.css,
+                         Verhalten in UC.makeSubmenu
+     Zeilenform          .up-optrow (Hover und ausgewaehlt im gleichen Ton)
+     Hinweispunkt        .up-badge.is-dot -- EXAKT das Bauteil der Icon-Trigger in den
+                         Werkzeugleisten, nicht eine Kopie davon
+     Chip                .up-entchip.is-static (der neutrale Chip der App)
+     Zeichen             UC.icon("listFilter" / "chevronRight" / "x" / "chevronLeft")
+
+   Und was aus den FILTERN kommt und darum hier nur neutralisiert wird: ihr Panel positioniert
+   sich selbst absolut an seinem eigenen Trigger. In diesem Untermenue ist der Trigger weg und
+   das Panel IST der Inhalt -- also steht es im Fluss. Ihr Inneres bleibt unberuehrt.
+*/
+
+/* ---------- die Leiste ----------
+   Ein Flex mit 8px, wie jede Werkzeugreihe der App. min-width: 0 an allem, was Text traegt,
+   sonst schiebt eine lange Chipliste die Leiste aus ihrem Container. */
+.ufb-root { display: block; min-width: 0; }
+.ufb-bar { display: flex; align-items: center; gap: 8px; min-width: 0; }
+
+/* ---------- der Knopf ----------
+   Text in Primaerfarbe mit dem Zeichen davor, kein Rahmen und keine Flaeche. Das Bauteil dafuer
+   ist .up-quietbtn aus core -- der leise, BESCHRIFTETE Trigger, die Beschriftungs-Fassung von
+   .up-iconbtn: 32px hoch (also auf einer Linie mit dem Datumsfilter daneben), Radius 8, Flaeche
+   erst beim Ueberfahren und im offenen Zustand, Zeichen 16.
+   Der Hinweispunkt ist .up-badge.is-dot und sitzt absolut an der Ecke des KNOPFES, nicht an der
+   des Zeichens -- der Knopf ist das Bedienelement, in den Werkzeugleisten sitzt er genauso.
+   Groesse, Lage, Farbe und das Einblenden bringt das Bauteil mit; hier steht nichts davon nochmal.
+   Bleibt also nur: er darf nicht schrumpfen. */
+.ufb-btn { flex: 0 0 auto; }
+
+.ufb-more { position: relative; display: inline-flex; flex: 0 0 auto; }
+
+/* ---------- Trennstrich ----------
+   24px hoch, 1px breit, Rahmenfarbe. Die 8px links und rechts kommen aus dem gap der Leiste. */
+.ufb-sep { flex: 0 0 1px; width: 1px; height: 24px; background: var(--vc-border); }
+
+/* ---------- Chips ----------
+   .up-entchip aus core, statisch (kein Zeiger, kein Hover): sie SAGEN, was laeuft, sie schalten
+   nichts. Abgewaehlt wird im Filter selbst oder ueber "Clear All".
+   Die Polsterung ist der einzige eigene Wert: .up-entchip hat links 5px, weil dort ein Logo mit
+   eigenem Rand steht. Hier steht Text, und der braucht links dasselbe wie rechts. Hoehe, Radius
+   und Rahmen des Bauteils bleiben unberuehrt. */
+.ufb-chips { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ufb-chip.ufb-chip { padding: 0 10px; cursor: default; }
+.ufb-chip-lbl { font-size: 12px; font-weight: 500; color: var(--vc-text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+/* Der Name des Filters davor ist die leisere Haelfte -- "Topic:" ist der Bezug, der Wert ist die
+   Aussage. */
+.ufb-chip-key { color: var(--vc-muted); font-weight: 500; }
+
+/* ---------- Clear All ----------
+   Reiner Text in Sekundaerfarbe, 16px Abstand zu den Chips (der kommt aus margin-left, nicht aus
+   dem gap der Leiste -- der gap ist 8 und gilt fuer alles andere). */
+.ufb-clear {
+  flex: 0 0 auto; margin-left: 8px;
+  border: 0; background: transparent; padding: 0 2px;
+  color: var(--vc-muted); font-family: inherit; font-size: 12.5px; font-weight: 500;
+  white-space: nowrap; cursor: pointer; outline: 0;
+  transition: color 120ms ease;
+}
+.ufb-clear:hover { color: var(--vc-text); }
+.ufb-clear:focus-visible { box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); border-radius: 6px; }
+
+/* Ohne aktiven Filter gibt es weder Strich noch Chips noch Clear All -- und zwar display: none
+   und nicht bloss durchsichtig, sonst belegt die leere Leiste weiter ihre Breite. */
+.ufb-root:not(.has-filters) .ufb-sep,
+.ufb-root:not(.has-filters) .ufb-chips,
+.ufb-root:not(.has-filters) .ufb-clear { display: none; }
+
+/* ---------- das Panel ----------
+   .up-menu aus core traegt alles; hier nur die Breite und die linke Ausrichtung. Die Schale ist
+   rechts ausgerichtet (right: 0), weil sie in den Werkzeugleisten am rechten Rand haengt -- dieser
+   Knopf steht links, also klappt sein Panel unter ihm nach rechts auf. */
+.ufb-menu.ufb-menu { left: 0; right: auto; width: 248px; }
+/* Kippt an der rechten Fensterkante zurueck auf rechts ausgerichtet. Die Klasse setzt das JS
+   nach einer Messung. */
+.ufb-menu.is-right { left: auto; right: 0; }
+
+/* ---------- die Zeilen ----------
+   .up-optrow aus core, hier nur Hoehe, Polster und die drei Plaetze: Spiegel des Filter-Triggers
+   links, Winkel rechts. Der Spiegel ist woertlich das Innere des Triggers, den der Filter selbst
+   rendert (ohne dessen Chevron) -- so steht in der Zeile genau das, was am Trigger stehen wuerde:
+   der Name des einzigen gewaehlten Eintrags mit seinem farbigen Punkt, oder die Beschriftung mit
+   dem Zaehler. Kein zweiter Renderer, der davon abweichen koennte. */
+.ufb-row { min-height: 34px; padding: 0 9px; font-size: 13px; font-weight: 500; }
+.ufb-mirror { flex: 1 1 auto; display: inline-flex; align-items: center; gap: 8px; min-width: 0;
+  overflow: hidden; }
+/* Der Zaehler steht am rechten Ende des Spiegels und damit unmittelbar VOR dem Winkel -- genau
+   die Stelle, an der er auch am Trigger des Filters sitzt. Dass er dorthin rutscht, macht der
+   Text: er ist das einzige Kind, das waechst. */
+.ufb-mirror-fallback { overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  min-width: 0; flex: 1 1 auto; color: var(--vc-text); }
+.ufb-mirror > * { flex: 0 0 auto; }
+.ufb-mirror svg { width: 16px; height: 16px; display: block; color: var(--vc-muted); }
+/* Der Text darf schrumpfen, alles andere nicht. Die Klassen sind die der Filter -- ihr Trigger
+   wird hier gespiegelt, also stehen sie auch hier. */
+.ufb-mirror .utf-label, .ufb-mirror .umf-label, .ufb-mirror .umk-label {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1 1 auto;
+}
+.ufb-caret { margin-left: 2px; flex: 0 0 16px; width: 16px; height: 16px; color: var(--vc-third); }
+/* Eine Zeile, deren Filter (noch) nicht auf der Seite steht, gibt es nicht. Ein Eintrag, der auf
+   ein leeres Untermenue fuehrt, ist die schlechtere Auskunft -- und sobald das Element erscheint,
+   zieht einziehen() sie wieder herein. */
+.ufb-wrap.is-leer { display: none; }
+.ufb-caret svg { width: 16px; height: 16px; display: block; }
+/* Der Winkel dreht sich NICHT. Er zeigt, wo das Untermenue herauskommt, und das wechselt nicht. */
+.up-subwrap.is-subopen > .ufb-row .ufb-caret { color: var(--vc-text); }
+
+/* ---------- Reset-Zeile ----------
+   Sie erscheint nur, solange ueberhaupt etwas gewaehlt ist -- ein Reset ohne etwas zum
+   Zuruecksetzen ist ein Knopf, der nichts tut. Darueber ein Trennstrich, damit sie nicht als
+   vierter Filter gelesen wird. */
+.ufb-reset { min-height: 34px; padding: 0 9px; font-size: 13px; font-weight: 500;
+  color: var(--vc-muted); margin-top: 4px; }
+.ufb-reset:hover { color: var(--vc-text); }
+.ufb-reset-x { margin-left: auto; flex: 0 0 16px; width: 16px; height: 16px; }
+.ufb-reset-x svg { width: 16px; height: 16px; display: block; }
+.ufb-div { height: 1px; background: var(--vc-border); margin: 6px 4px 2px; }
+.ufb-root:not(.has-filters) .ufb-reset, .ufb-root:not(.has-filters) .ufb-div { display: none; }
+
+/* ---------- der eingezogene Filter ----------
+   Das Panel des Filters IST der Inhalt des Untermenues. Sein Trigger ist weg (das ist meine
+   Zeile), und sein Panel steht im Fluss statt absolut an einem Trigger, den es nicht mehr gibt.
+   Angefasst wird nur die POSITIONIERUNG und die Sichtbarkeit -- Rahmen, Polster, Liste,
+   Suchfeld, Fusszeile und jede Farbe darin bleiben, wie der Filter sie baut. */
+.ufb-sub .utf-trigger, .ufb-sub .umf-trigger, .ufb-sub .umk-trigger { display: none; }
+/* Wurzel und Huelle des Filters tragen in ihrer eigenen CSS eine FESTE Hoehe von 32px -- die des
+   Triggers, weil in einer Werkzeugleiste genau das ihr Kasten ist und das Panel darueber
+   hinausfliegt. Hier IST das Panel der Inhalt, also muss die Hoehe dem Inhalt folgen. Gemessen,
+   bevor das hier stand: Huelle 268x32, Panel darin 268x289 -- das Panel hing 257px aus seinem
+   eigenen Elternteil heraus, und das Untermenue war 49px hoch statt 297.
+   width: max-content an der Wurzel gilt hier ebenso nicht: die Breite gibt das Untermenue vor. */
+.ufb-sub .utf-root, .ufb-sub .umf-root, .ufb-sub .umk-root {
+  display: block; width: 100%; max-width: none; height: auto;
+}
+.ufb-sub .utf-wrap, .ufb-sub .umf-wrap, .ufb-sub .umk-wrap {
+  display: block; position: static; height: auto; width: 100%;
+}
+.ufb-sub .utf-menu, .ufb-sub .umf-menu, .ufb-sub .umk-menu {
+  position: static; top: auto; left: auto; right: auto;
+  opacity: 1; transform: none; pointer-events: auto;
+  /* Kein zweiter Rahmen und kein zweiter Schatten: das Untermenue aus core bringt beides schon
+     mit. Zwei Rahmen ineinander lesen sich als Fehler. */
+  border: 0; box-shadow: none; border-radius: 0; background: transparent;
+  /* Breite kommt vom Untermenue, nicht von der eigenen Vorgabe des Filters. */
+  width: 100%; min-width: 0; max-width: none;
+}
+/* Und kein eigener Abstand: das Untermenue polstert schon. */
+.ufb-sub > .utf-root, .ufb-sub > .umf-root, .ufb-sub > .umk-root { margin: 0; }
+
+/* ---------- nichts da ----------
+   Solange kein Filter eingezogen ist, gibt es nichts zu oeffnen. Der Knopf bleibt sichtbar (er ist
+   die Ansage, dass es Filter gibt), aber das Panel SAGT, dass noch nichts da ist, statt leer
+   aufzugehen -- .up-empty-mini aus core, dieselbe knappe Zeile wie in den Tabellen.
+   Die Zeile steht immer im Markup und wird ueber .is-empty an der Liste gezeigt: sie gilt fuer
+   beide Faelle -- kein Filter eingetragen UND eingetragen, aber keiner erreichbar. */
+.ufb-empty { display: none; padding: 14px 10px; text-align: center; }
+.ufb-rows.is-empty .ufb-empty { display: block; }
+/* Ohne Zeilen gibt es auch nichts zurueckzusetzen. */
+.ufb-rows.is-empty ~ .ufb-div, .ufb-rows.is-empty ~ .ufb-reset { display: none; }
+
+/* ---------- schmal ----------
+   Zwei Dinge aendern sich, und beide, weil auf einem Telefon anders gezeigt wird als geklickt:
+
+   1. Das Untermenue faehrt nicht heraus, sondern man geht HINEIN. Die Regeln dafuer stehen in
+      core.css (.is-drill), die Stufe setzt UC.makeSubmenu an der SEITENbreite -- ob seitlich
+      Platz ist, entscheidet das Fenster und nicht die Breite dieses Elements.
+   2. Das Panel ist so breit wie die Seite es zulaesst, statt 248px. Ein Filterpanel, das auf
+      einem 360px-Telefon 248px breit ist, laesst rechts 100px Luft und schneidet trotzdem die
+      Namen ab. */
+.ufb-menu.is-drill { width: min(320px, calc(100vw - 32px)); }
+/* Und die Leiste selbst darf umbrechen: Knopf oben, Chips darunter. Ein Trennstrich zwischen
+   zwei ZEILEN sagt nichts, also faellt er weg. Die Chips laufen dann waagerecht, damit eine lange
+   Liste nicht "Clear All" aus dem Bild schiebt -- und ohne sichtbare Leiste, die in einer
+   Werkzeugzeile nur Laerm waere. */
+.ufb-root.is-wrap .ufb-bar { flex-wrap: wrap; row-gap: 8px; }
+.ufb-root.is-wrap .ufb-sep { display: none; }
+.ufb-root.is-wrap .ufb-chips {
+  flex: 1 1 100%; overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none;
+  padding-bottom: 1px;
+}
+.ufb-root.is-wrap .ufb-chips::-webkit-scrollbar { display: none; }
+.ufb-root.is-wrap .ufb-clear { margin-left: 0; }
+
+/* Der Finger braucht mehr Flaeche als der Zeiger: 34 -> 40px, und dieselbe Stufe, an der core
+   seine Tooltips abschaltet. */
+@media (hover: none) {
+  .ufb-row, .ufb-reset { min-height: 40px; }
+  .up-subback { min-height: 40px; }
+}

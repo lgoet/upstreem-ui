@@ -360,6 +360,35 @@
     .up-iconbtn:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
     .up-iconbtn svg { width: 16px; height: 16px; display: block; }
 
+    /* ---------- der LEISE Trigger: derselbe Knopf wie .up-iconbtn, nur mit Beschriftung --------
+       core unterscheidet weiter unten schon zwei Sorten Trigger: einen BESCHRIFTETEN mit Rahmen
+       (.up-filter-btn, .up-ment-btn), der im aktiven Zustand eine Flaeche traegt, und einen
+       ICON-Knopf ohne Rahmen, bei dem das Badge sagt, dass etwas gesetzt ist. Was fehlte, ist der
+       Dritte: beschriftet UND leise -- ein Einstieg in ein Menue, der selbst kein Zustand ist.
+       Der "More Filters"-Knopf der Filterleiste ist der erste Verbraucher.
+
+       Alle Werte sind die von .up-iconbtn: 32px hoch, Radius 8, kein Rahmen, keine Flaeche in
+       Ruhe, --vc-heading-bg beim Ueberfahren, Zeichen 16. Nur zwei Zahlen kommen dazu, weil ein
+       Text da ist: 8px Polster links und rechts und 7px zwischen Zeichen und Wort.
+       position: relative, damit .up-badge (absolut) an seiner Ecke sitzt -- genau wie bei
+       .up-iconbtn. */
+    .up-quietbtn {
+      position: relative; flex: 0 0 auto;
+      display: inline-flex; align-items: center; gap: 7px;
+      height: 32px; padding: 0 8px; border: 0; border-radius: 8px; background: transparent;
+      color: var(--vc-text); font-family: inherit; font-size: 13px; font-weight: 500; line-height: 1;
+      white-space: nowrap; cursor: pointer; outline: 0;
+      transition: background-color 120ms ease, color 120ms ease;
+    }
+    .up-quietbtn:hover { background: var(--vc-heading-bg); }
+    /* Offen: dieselbe Flaeche wie jeder andere offene Trigger. Der Wrapper traegt .is-open, das
+       setzt UC.makePopover -- also gilt die Regel fuer jedes kuenftige leise Dropdown mit. */
+    .is-open > .up-quietbtn { background: var(--vc-heading-bg); }
+    .up-quietbtn:focus-visible { box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+    .up-quietbtn svg { width: 16px; height: 16px; flex: 0 0 16px; display: block; }
+    .up-quietbtn:disabled { opacity: .45; cursor: default; }
+    .up-quietbtn:disabled:hover { background: transparent; }
+
     /* export: a real filled button, identical to the one in the export popup component */
     .up-export {
       display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 8px;
@@ -813,6 +842,92 @@
       opacity: 0; transform: translateY(-4px) scale(0.985); pointer-events: none; transition: opacity 140ms ease, transform 140ms ease; }
     .up-menu.is-shown, .up-cols-menu.is-shown { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
     .up-root[data-theme="dark"] .up-menu, .up-root[data-theme="dark"] .up-cols-menu { background: var(--up-menu-bg); }
+
+    /* ══ Untermenue: ein Dropdown NEBEN einem Dropdown ═══════════════════════════════════════
+       Die Bauart kommt aus ask-mira ("Move to Project" im Chat-Menue) und steht jetzt hier, weil
+       die Filterleiste genau dasselbe braucht -- eine Zeile im Panel, aus der seitlich ein
+       zweites Panel herausfaehrt. Mira behaelt seine eigenen Klassen: es faehrt mit einem eigenen
+       Token-Satz (--am-*), und die beiden zu EINER Regel zu machen wuerde dort die Farben
+       aendern. Die GEOMETRIE ist das Geteilte, und die steht ab hier einmal.
+
+       Die Zahl, auf die es ankommt: der Versatz ist NICHT der Abstand allein. Die 100% beziehen
+       sich auf die ZEILE, und zwischen deren Kante und der Kante des Panels liegen noch dessen
+       Polster und Rahmen. Mit blossen 6px sass das Untermenue in Mira genau auf dem Menue --
+       gemessen 1px Ueberlappung, also keine Luecke, kein Schatten dazwischen, und ein Rahmen, der
+       auf der weissen Nachbarkarte nicht zu sehen war. Genau das war dort "dieses Dropdown hat
+       keine border". Darum: Polster + Abstand + 1px Rahmen.
+       Hier aus den Tokens gerechnet statt als feste 13, damit es mitgeht, wenn jemand
+       --up-dd-pad oder --up-dd-gap aendert.
+
+       top: negativ um das Polster -- so steht die erste Zeile des Untermenues auf einer Linie mit
+       der Zeile, aus der es kommt, und nicht um das Polster tiefer. */
+    .up-subwrap { position: relative; }
+    .up-submenu {
+      position: absolute; top: calc(-1 * var(--up-dd-pad));
+      right: calc(100% + var(--up-dd-pad) + var(--up-dd-gap) + 1px);
+      z-index: 2; min-width: 220px;
+      background: var(--vc-bg); border: 1px solid var(--vc-border);
+      border-radius: var(--up-dd-radius); box-shadow: var(--up-dd-shadow); padding: var(--up-dd-pad);
+      opacity: 0; transform: translateX(4px) scale(0.985); pointer-events: none;
+      transition: opacity 110ms ease, transform 110ms ease;
+    }
+    .up-root[data-theme="dark"] .up-submenu { background: var(--up-menu-bg); border-color: #454545; }
+    /* Offen wird ueber eine KLASSE, nicht ueber :hover. Der Unterschied ist nicht kosmetisch: die
+       Zeile laesst sich auch anklicken und bleibt dann offen, bis eine andere Zeile oder ein Klick
+       nach draussen kommt -- mit :hover waere das nicht ausdrueckbar. Den Zeiger verfolgt
+       UC.makeSubmenu und setzt die Klasse; :hover bleibt zusaetzlich drin, damit ein Untermenue
+       auch ohne das Kit aufgeht (und damit es bei stehendem Zeiger nicht unter der Maus zugeht). */
+    .up-subwrap.is-subopen > .up-submenu,
+    .up-submenu:hover { opacity: 1; transform: translateX(0) scale(1); pointer-events: auto; }
+    /* Die Bruecke fuer die Maus muss die Luecke GANZ ueberdecken, sonst schliesst das Untermenue
+       auf dem Weg dorthin. Sie waechst mit den Tokens mit, plus 2px Reserve. */
+    .up-submenu::before {
+      content: ""; position: absolute; top: 0; height: 100%;
+      right: calc(-1 * (var(--up-dd-pad) + var(--up-dd-gap) + 3px));
+      width: calc(var(--up-dd-pad) + var(--up-dd-gap) + 3px);
+    }
+    /* Nach rechts, wenn links kein Platz ist. Die Klasse setzt UC.makeSubmenu nach einer Messung. */
+    .up-subwrap.is-flipright > .up-submenu {
+      right: auto; left: calc(100% + var(--up-dd-pad) + var(--up-dd-gap) + 1px);
+      transform: translateX(-4px) scale(0.985);
+    }
+    .up-subwrap.is-flipright > .up-submenu::before {
+      right: auto; left: calc(-1 * (var(--up-dd-pad) + var(--up-dd-gap) + 3px));
+    }
+    .up-subwrap.is-flipright.is-subopen > .up-submenu,
+    .up-subwrap.is-flipright > .up-submenu:hover { transform: translateX(0) scale(1); }
+
+    /* ── Schmal: hinein statt heraus ─────────────────────────────────────────────────────────
+       Auf einem Telefon gibt es kein "daneben" -- ein Panel, das seitlich herausfaehrt, landet
+       ausserhalb des Bildes. Und es gibt keinen Zeiger, der ueber einer Zeile stehen bleiben
+       kann. Darum wird aus dem Nebeneinander ein Hineingehen: das Untermenue nimmt die Stelle der
+       Liste ein, darueber steht eine Zurueck-Zeile. Das ist das Muster, das jede Filterleiste auf
+       dem Telefon benutzt, und es braucht keine zweite Mechanik -- nur andere Regeln fuer
+       dieselben Klassen. Die Stufe setzt UC.makeSubmenu als .is-drill am PANEL, gemessen an der
+       Seitenbreite und nicht an der Breite dieses Elements: ob seitlich Platz ist, entscheidet
+       das Fenster. */
+    .is-drill .up-submenu {
+      position: static; top: auto; right: auto; left: auto; min-width: 0; width: 100%;
+      border: 0; border-radius: 0; box-shadow: none; padding: 0;
+      background: transparent;
+      transform: none; transition: opacity 110ms ease;
+    }
+    .is-drill .up-submenu::before { content: none; }
+    /* Zu heisst hier WEG, nicht nur durchsichtig: ein Panel im Fluss belegt sonst seine Hoehe. */
+    .is-drill .up-subwrap:not(.is-subopen) > .up-submenu { display: none; }
+    .is-drill .up-subwrap.is-subopen > .up-submenu { opacity: 1; pointer-events: auto; }
+    /* Und die Zeilen der ersten Ebene treten zurueck, solange man drin ist. */
+    .is-drill.is-inside .up-subrow { display: none; }
+    .is-drill.is-inside .up-subwrap:not(.is-subopen) { display: none; }
+    /* Die Zurueck-Zeile gibt es nur drinnen. Sie ist eine .up-optrow wie jede andere Zeile -- und
+       genau daran haengt der Grund fuer die doppelte Klasse: .up-optrow setzt display: flex, hat
+       dieselbe Spezifitaet und steht in dieser Datei WEITER UNTEN. Bei Gleichstand entscheidet die
+       Reihenfolge, und die hat gewonnen: die Zeile stand auch auf einer breiten Seite da, wo es
+       kein Drinnen gibt (im Bild als "Back" ueber den drei Filtern zu sehen). Ueber die
+       Spezifitaet gewonnen, nicht ueber die Reihenfolge -- STYLEGUIDE. */
+    .up-subback.up-subback { display: none; }
+    .is-drill.is-inside .up-subback.up-subback { display: flex; }
+    .up-subback svg { width: 16px; height: 16px; flex: 0 0 16px; display: block; }
 
     /* ---------------- shared selected row (sorters and any option list) ----------------
        Put .up-optrow on a row that can be picked and .is-on when it is. Hover and selected are

@@ -4785,6 +4785,152 @@
                 always closes every other one on the page regardless of group: two open dropdowns
                 is never a state we want. */
   var POPOVERS = (window.__upPopovers = window.__upPopovers || []);
+  /* ---------- makeSubmenu ----------
+     Ein Dropdown NEBEN einem Dropdown: eine Zeile im Panel, aus der ein zweites Panel
+     herausfaehrt. Die Geometrie steht in core.css (.up-subwrap / .up-submenu), hier steht das
+     Verhalten -- und das ist der Teil, der sich nicht in CSS ausdruecken laesst:
+
+       - Zeigen OEFFNET nach einer kurzen Verweildauer, aber es SCHLIESST erst nach einer
+         Nachlaufzeit. Ohne die Nachlaufzeit reisst der Weg vom Panel ins Untermenue ab, sobald
+         der Zeiger die Luecke zwischen beiden ueberquert (die CSS-Bruecke deckt sie, die
+         Nachlaufzeit ist der Guertel dazu).
+       - KLICKEN stellt fest: das Untermenue bleibt offen, bis eine andere Zeile geklickt wird,
+         bis es nach draussen geht oder bis Escape kommt. Mit :hover allein waere das nicht
+         ausdrueckbar, und genau das wollte der Fall hier.
+       - Auf einer schmalen Seite gibt es kein "daneben" und keinen Zeiger, der stehen bleibt.
+         Dort wird aus dem Herausfahren ein HINEINGEHEN: .is-drill am Panel, .is-inside solange
+         eine Zeile offen ist, und die erste Ebene tritt zurueck. Die Regeln dafuer stehen in
+         core.css; hier fallen nur die Klassen und der Hover-Weg weg.
+       - Nach LINKS, und nach rechts nur wenn links kein Platz ist. Gemessen am Fenster, nicht
+         geraten.
+
+     cfg:
+       panel      das Panel, in dem die Zeilen stehen (traegt is-drill / is-inside)
+       rowSel     Selektor der Zeilen MIT Untermenue (Vorgabe ".up-subwrap")
+       keyAttr    Attribut, aus dem der Schluessel der Zeile kommt (Vorgabe "data-sub")
+       openDelay  Verweildauer bis zum Oeffnen (Vorgabe 90)
+       closeDelay Nachlaufzeit bis zum Schliessen (Vorgabe 260)
+       drillAt    Seitenbreite, unter der hineingegangen statt herausgefahren wird (Vorgabe 768)
+       drill      Funktion -> true, wenn hineingegangen werden soll. Ueberschreibt drillAt.
+                  Der Grund fuer diesen Haken: die Komponente entscheidet dasselbe oft noch ein
+                  zweites Mal (die Leiste bricht um, das Panel wird breiter). Zwei Rechnungen aus
+                  derselben Zahl laufen auseinander -- also gibt es EINE, und die gehoert dem
+                  Aufrufer, wenn er sie ohnehin braucht.
+       onOpen(key, row) / onClose(key, row)
+     Rueckgabe: { open(key), close(), current(), gepinnt(), sync(), drill() } */
+  function makeSubmenu(cfg){
+    cfg = cfg || {};
+    var panel = cfg.panel;
+    if (!panel) return { open: function(){}, close: function(){}, current: function(){ return null; },
+                         gepinnt: function(){ return false; }, sync: function(){}, drill: function(){ return false; } };
+    var ROW = cfg.rowSel || ".up-subwrap";
+    var KEY = cfg.keyAttr || "data-sub";
+    var AUF = cfg.openDelay == null ? 90 : cfg.openDelay;
+    var ZU  = cfg.closeDelay == null ? 260 : cfg.closeDelay;
+    var DRILL_AT = cfg.drillAt == null ? 768 : cfg.drillAt;
+
+    var offen = null, gepinnt = false, uhrAuf = null, uhrZu = null;
+
+    var DRILL_FN = typeof cfg.drill === "function" ? cfg.drill : null;
+    function drill(){ return DRILL_FN ? !!DRILL_FN() : (getPageWidth() < DRILL_AT); }
+    function zeilen(){ return Array.prototype.slice.call(panel.querySelectorAll(ROW)); }
+    function zeileVon(key){
+      var l = zeilen();
+      for (var i = 0; i < l.length; i++) if (l[i].getAttribute(KEY) === key) return l[i];
+      return null;
+    }
+    /* Nach links, ausser links ist kein Platz. Gemessen wird am Panel: das Untermenue selbst ist
+       geschlossen und hat keine brauchbare Breite, solange es nicht offen ist. min-width aus der
+       CSS als Untergrenze -- eine Messung an einem Element mit opacity 0 liefert die Breite, aber
+       nicht ihre endgueltige, wenn der Inhalt erst beim Oeffnen kommt. */
+    function seiteWaehlen(row){
+      var sub = row.querySelector(".up-submenu");
+      if (!sub) return;
+      var breite = Math.max(sub.offsetWidth || 0, 220);
+      var links = panel.getBoundingClientRect().left;
+      var luecke = 24;   /* Polster + Abstand + Rahmen, grosszuegig gerundet */
+      row.classList.toggle("is-flipright", (links - breite - luecke) < 8);
+    }
+    function anwenden(){
+      panel.classList.toggle("is-drill", drill());
+      panel.classList.toggle("is-inside", !!offen && drill());
+      zeilen().forEach(function(r){
+        var an = !!offen && r.getAttribute(KEY) === offen;
+        r.classList.toggle("is-subopen", an);
+        var b = r.querySelector("[aria-expanded]");
+        if (b) b.setAttribute("aria-expanded", an ? "true" : "false");
+        if (an && !drill()) seiteWaehlen(r);
+        if (!an) r.classList.remove("is-flipright");
+      });
+    }
+    function open(key, pin){
+      clearTimeout(uhrAuf); clearTimeout(uhrZu);
+      if (offen === key){ if (pin) gepinnt = true; return; }
+      var alt = offen, altRow = alt ? zeileVon(alt) : null;
+      offen = key; if (pin) gepinnt = true;
+      anwenden();
+      if (alt && cfg.onClose) { try { cfg.onClose(alt, altRow); } catch(e){} }
+      if (cfg.onOpen) { try { cfg.onOpen(key, zeileVon(key)); } catch(e){} }
+    }
+    function close(){
+      clearTimeout(uhrAuf); clearTimeout(uhrZu);
+      if (!offen) { gepinnt = false; anwenden(); return; }
+      var alt = offen, altRow = zeileVon(alt);
+      offen = null; gepinnt = false;
+      anwenden();
+      if (cfg.onClose) { try { cfg.onClose(alt, altRow); } catch(e){} }
+    }
+
+    /* Zeigen: nur wenn es einen Zeiger gibt UND nicht hineingegangen wird. pointerenter statt
+       mouseenter, damit ein Stift dieselbe Behandlung bekommt; ein Finger meldet sich als "touch"
+       und wird uebergangen -- dort entscheidet der Klick. */
+    panel.addEventListener("pointerover", function(e){
+      if (drill()) return;
+      if (e.pointerType === "touch") return;
+      var row = e.target.closest ? e.target.closest(ROW) : null;
+      clearTimeout(uhrZu);
+      if (!row){
+        /* Innerhalb des Panels, aber nicht auf einer Zeile mit Untermenue: das offene stehen
+           lassen, solange es festgestellt ist -- sonst ginge es zu, waehrend man nur zum
+           Reset-Knopf darunter faehrt. */
+        if (!gepinnt && offen) uhrZu = setTimeout(close, ZU);
+        return;
+      }
+      var key = row.getAttribute(KEY);
+      if (key === offen) return;
+      clearTimeout(uhrAuf);
+      uhrAuf = setTimeout(function(){ open(key, false); }, AUF);
+    });
+    panel.addEventListener("pointerleave", function(e){
+      if (drill()) return;
+      if (e.pointerType === "touch") return;
+      clearTimeout(uhrAuf);
+      if (gepinnt) return;
+      uhrZu = setTimeout(close, ZU);
+    });
+    /* Klick: feststellen. Ein zweiter Klick auf dieselbe Zeile geht wieder zu -- das ist die
+       Erwartung an einen Aufklapper, und im Hineingehen ist es der Weg zurueck. */
+    panel.addEventListener("click", function(e){
+      if (!e.target.closest) return;
+      if (e.target.closest(".up-subback")){ close(); return; }
+      /* Ein Klick IM Untermenue gehoert dem Untermenue -- er darf die Zeile nicht umschalten. */
+      if (e.target.closest(".up-submenu")) return;
+      var row = e.target.closest(ROW);
+      if (!row) return;
+      var key = row.getAttribute(KEY);
+      if (offen === key && gepinnt){ close(); return; }
+      open(key, true);
+    });
+
+    /* Die Stufe kann sich aendern, ohne dass jemand klickt (Drehen des Telefons, Fenster ziehen).
+       Ueber aufResize, also entprellt und mit Breitenwaechter. */
+    if (typeof aufResize === "function") aufResize(function(){ anwenden(); });
+    anwenden();
+
+    return { open: open, close: close, current: function(){ return offen; },
+             gepinnt: function(){ return gepinnt; }, sync: anwenden, drill: drill };
+  }
+
   function makePopover(cfg){
     var wrap = cfg.wrap, menu = cfg.menu;
     if (!wrap || !menu) return { open: function(){}, close: function(){}, toggle: function(){}, isOpen: function(){ return false; } };
@@ -8779,6 +8925,11 @@
     check:    '<path d="M20 6 9 17l-5-5"/>',
     chevronDown:  '<path d="m6 9 6 6 6-6"/>',
     chevronRight: '<path d="m9 18 6-6-6-6"/>',
+    /* Lucide chevron-left. Bisher gab es ihn nicht und onboarding-page dreht den rechten per CSS
+       -- das ist ein anderer Fall als "der Chevron dreht sich beim Oeffnen" (das tut hier keiner),
+       aber ein gedrehtes Zeichen ist eine Form, die man nicht suchen kann. Erster Verbraucher ist
+       die Zurueck-Zeile im hineingegangenen Untermenue der Filterleiste. */
+    chevronLeft: '<path d="m15 18-6-6 6-6"/>',
     search:   '<path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/>',
     plus:     '<path d="M5 12h14"/><path d="M12 5v14"/>',
     minus:    '<path d="M5 12h14"/>',
@@ -8884,6 +9035,10 @@
        zuklappen laesst -- "Show Pages" / "Hide Pages" in der Domains-Tabelle. Die Chevrons zeigen
        nach AUSSEN, solange zu ist (hier geht etwas auf), und nach INNEN, solange offen ist (hier
        geht etwas zu). Wortgleich aus dem Lucide-Bestand geholt, nicht nachgezeichnet. */
+    /* Lucide list-filter: der Trichter mit drei Linien, OHNE Plus. listFilterPlus daneben ist der
+       Ausloeser der einklappbaren Werkzeugleiste ("Filter hinzufuegen"); dieser hier sagt nur
+       "Filter" und steht am "More Filters"-Knopf der Filterleiste. Wortgleich aus Lucide. */
+    listFilter: '<path d="M2 5h20"/><path d="M6 12h12"/><path d="M9 19h6"/>',
     listChevronsUpDown: '<path d="M3 5h8"/><path d="M3 12h8"/><path d="M3 19h8"/>' +
               '<path d="m15 8 3-3 3 3"/><path d="m15 16 3 3 3-3"/>',
     listChevronsDownUp: '<path d="M3 5h8"/><path d="M3 12h8"/><path d="M3 19h8"/>' +
@@ -9870,6 +10025,7 @@
     makePortal: makePortal,
     placeMenu: placeMenu,
     makePopover: makePopover,
+    makeSubmenu: makeSubmenu,
     closePopovers: closeAll,
     menuEscape: menuEscape,
     dropEscape: dropEscape,
