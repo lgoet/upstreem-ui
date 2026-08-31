@@ -1,0 +1,161 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Harness: team-orga</title>
+<link rel="stylesheet" href="core.css?v=1">
+<link rel="stylesheet" href="team-orga.css?v=1">
+<style>
+  html, body { margin: 0; }
+  body { font-family: Geist, system-ui, sans-serif; background: #fff; }
+  #bar { padding: 8px; background: #eee; display: flex; gap: 6px; flex-wrap: wrap;
+         font: 11px ui-monospace, monospace; }
+  #buehne { padding: 24px; }
+  #out { font: 11px/1.5 ui-monospace, monospace; background: #111; color: #eee; padding: 10px;
+         margin: 0; white-space: pre-wrap; max-height: 220px; overflow: auto; }
+</style>
+<script>
+window.__ev = []; window.__fehler = [];
+window.onerror = function(m){ window.__fehler.push(String(m)); };
+["utoInvite","utoRevoke","utoRemove","utoRole"].forEach(function(n){
+  window["bubble_fn_"+n] = function(a){ window.__ev.push([n, a]); };
+});
+try { localStorage.clear(); } catch(e){}
+</script>
+
+<div id="bar">
+  <button onclick="window.__load()">LADEN (echte Nutzlast)</button>
+  <button onclick="window.__rolle('member')">viewer=member</button>
+  <button onclick="window.__rolle('admin')">viewer=admin (Vorgabe)</button>
+  <button onclick="window.__rolle('owner')">viewer=owner</button>
+  <button onclick="window.__einOwner()">nur EIN owner</button>
+  <button onclick="window.__mitMember('admin')">+1 member, viewer=admin</button>
+  <button onclick="window.__zweiOwner()">zwei owner</button>
+  <button onclick="window.__loading()">loading</button>
+  <button onclick="window.__reset()">reset</button>
+  <button onclick="window.__kaputt()">kaputter payload</button>
+  <button onclick="document.getElementById('out').textContent=JSON.stringify(window.__zustand(),null,1)">MESSEN</button>
+</div>
+
+<div id="buehne">
+  <!-- data-user: die Kennung des angemeldeten Nutzers. Ohne sie gibt es keine "You"-Marke. -->
+  <div class="up-root uto-root"
+       data-instance="t1"
+       data-cdn-pin=""
+       data-isdark="no"
+       data-team="ca880309-1111-2222-3333-444455556666"
+       data-user="aea6e317-d901-419b-b2b2-5ca3573ea2f5"
+       data-user-email="lukas@upstreem.ai"
+       data-invite-fn="bubble_fn_utoInvite"
+       data-revoke-fn="bubble_fn_utoRevoke"
+       data-remove-fn="bubble_fn_utoRemove"
+       data-role-fn="bubble_fn_utoRole"></div>
+</div>
+
+<pre id="out">bereit</pre>
+
+<script src="core.js?v=1"></script>
+<script src="team-orga.js?v=1"></script>
+<script src="_h_uto_daten.js?v=1"></script>
+<script>
+/* Genau der Run-JS-Schritt aus bubble/team_orga_bubble.html, mit denselben Daten. */
+window.__load = function(){
+  window.renderTeamOrga(Object.assign({ instanceId: "t1" }, window.__UTO_MAIN));
+  window.setTeamOrgaInvites("t1", window.__UTO_INVITES);
+  window.setTeamOrgaLog("t1", window.__UTO_LOG);
+};
+window.__rolle = function(r){
+  var p = JSON.parse(JSON.stringify(window.__UTO_MAIN));
+  p.instanceId = "t1";
+  p.viewer_role = r;
+  /* Die Flags kommen in der App vom Server. Hier werden sie zur Rolle passend gesetzt, damit man
+     die drei Faelle wirklich sieht: ein Member darf nichts, ein Admin verwaltet Member, ein
+     Besitzer alles. */
+  p.permissions = r === "member"
+    ? { can_invite: false, can_manage_roles: false, can_manage_members: false }
+    : (r === "admin"
+        ? { can_invite: true, can_manage_roles: true, can_manage_members: true }
+        : { can_invite: true, can_manage_roles: true, can_manage_members: true });
+  window.renderTeamOrga(p);
+  window.setTeamOrgaInvites("t1", window.__UTO_INVITES);
+  window.setTeamOrgaLog("t1", window.__UTO_LOG);
+};
+/* Der Grenzfall: genau ein Besitzer. Der darf sich weder entfernen noch die Rolle abgeben. */
+window.__einOwner = function(){
+  var p = JSON.parse(JSON.stringify(window.__UTO_MAIN));
+  p.instanceId = "t1";
+  p.viewer_role = "owner";
+  p.permissions = { can_invite: true, can_manage_roles: true, can_manage_members: true };
+  p.viewer_user_id = "7bedb728-e252-493d-b5c6-f9bed0b0b2d3";   /* der einzige owner */
+  window.renderTeamOrga(p);
+};
+/* Zwei Lagen, die in der echten Nutzlast nicht vorkommen und ohne die zwei Regeln ungeprueft
+   blieben. Die Zeilen sind ERGAENZT, nicht erfunden: dieselben Felder, dieselbe Form.
+     __mitMember   ein Member im Team -> hier darf ein ADMIN etwas (befoerdern, entfernen)
+     __zweiOwner   zwei Besitzer -> dann ist keiner mehr "der letzte" */
+window.__mitMember = function(rolle){
+  var p = JSON.parse(JSON.stringify(window.__UTO_MAIN));
+  p.instanceId = "t1";
+  p.viewer_role = rolle || "admin";
+  p.permissions = { can_invite: true, can_manage_roles: true, can_manage_members: true };
+  p.members.push({ role: "member", email: "neu@lee-up.de",
+                   user_id: "11111111-2222-3333-4444-555555555555",
+                   joined_at: "2026-06-01T09:00:00+00:00", display_name: "Neues Mitglied" });
+  window.renderTeamOrga(p);
+};
+window.__zweiOwner = function(){
+  var p = JSON.parse(JSON.stringify(window.__UTO_MAIN));
+  p.instanceId = "t1";
+  p.viewer_role = "owner";
+  p.permissions = { can_invite: true, can_manage_roles: true, can_manage_members: true };
+  p.members[1].role = "owner";
+  window.renderTeamOrga(p);
+};
+window.__loading = function(){ window.setTeamOrgaLoading("t1", "yes"); };
+window.__reset = function(){ window.resetTeamOrga("t1"); };
+window.__kaputt = function(){ window.renderTeamOrga('{"members": , "viewer_role": admin}'); };
+
+/* Was gemessen wird: Zeilen, Rollen, die Menueeintraege JE Zeile, die Zustaende der Abschnitte. */
+window.__zustand = function(){
+  var r = document.querySelector(".uto-root");
+  function t(e){ return e ? e.textContent.replace(/\s+/g," ").trim() : null; }
+  var mrows = [].slice.call(r.querySelectorAll("[data-uto-members] .up-row:not(.up-thead)"));
+  return {
+    fehlerBox: !r.querySelector("[data-uto-loaderr]").hidden,
+    canInvite: r.classList.contains("can-invite"),
+    einladenKnopfSichtbar: getComputedStyle(r.querySelector("[data-uto-invite]")).display,
+    mitglieder: mrows.map(function(row){
+      return { name: t(row.querySelector(".uto-nametxt")),
+               du: !!row.querySelector(".uto-you"),
+               rolle: t(row.querySelector(".uto-rolelbl")),
+               knopf: !!row.querySelector("[data-uto-menubtn]") };
+    }),
+    membersNoActions: r.querySelector("[data-uto-members]").classList.contains("no-actions"),
+    einladungen: [].map.call(r.querySelectorAll("[data-uto-invites] .up-row:not(.up-thead)"), function(row){
+      return { mail: t(row.querySelector(".uto-inv-mail")), rolle: t(row.querySelector(".uto-rolelbl")),
+               zustand: t(row.querySelector(".uto-inv-state")), knopf: !!row.querySelector("[data-uto-menubtn]") };
+    }),
+    einladungLeer: t(r.querySelector("[data-uto-invites] .up-empty-mini")),
+    logOffen: !r.querySelector("[data-uto-logbox]").hidden,
+    logZeilen: r.querySelectorAll("[data-uto-log] .up-row:not(.up-thead)").length,
+    logZaehler: t(r.querySelector("[data-uto-logcount]")),
+    logErste: [].map.call(r.querySelectorAll("[data-uto-log] .up-row:not(.up-thead)"), function(row){
+      return [].map.call(row.querySelectorAll(".up-td"), function(c){ return t(c); }).join(" | ");
+    }).slice(0, 3),
+    events: window.__ev.slice(-3),
+    fehler: window.__fehler
+  };
+};
+/* Das Menue einer Zeile oeffnen und seine Eintraege lesen -- ohne Maus. */
+window.__menue = function(i){
+  var r = document.querySelector(".uto-root");
+  var rows = [].slice.call(r.querySelectorAll("[data-uto-members] .up-row:not(.up-thead)"));
+  var btn = rows[i] && rows[i].querySelector("[data-uto-menubtn]");
+  if (!btn) return { keinKnopf: true };
+  btn.click();
+  var menu = rows[i].querySelector(".uto-menu");
+  return { offen: rows[i].querySelector(".uto-menuwrap").classList.contains("is-open"),
+           eintraege: [].map.call(menu.querySelectorAll(".up-optrow"), function(b){
+             return b.getAttribute("data-uto-do") + (b.getAttribute("data-uto-target") ? ":" + b.getAttribute("data-uto-target") : "") +
+                    " | " + b.textContent.replace(/\s+/g," ").trim(); }) };
+};
+document.getElementById("out").textContent = "geladen — window.__load(), __zustand(), __menue(i)";
+</script>

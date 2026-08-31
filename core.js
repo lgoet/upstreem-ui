@@ -9049,6 +9049,17 @@
     scanSquare: '<path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/>' +
               '<path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/>' +
               '<rect width="8" height="8" x="8" y="8" rx="1"/>',
+    /* Vier Zeichen fuer die Teamverwaltung (team-orga): einladen, aufklappen, entfernen und die
+       Besitzerrolle. Woertlich aus lucide-static wie jedes andere hier.
+       chevronUp gehoert dazu, weil der Winkel am Protokoll sein ZEICHEN wechselt und sich nicht
+       dreht -- Drehen ist in dieser App mehrfach ausgeschlossen worden. */
+    userPlus: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>' +
+              '<line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/>',
+    userMinus: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>' +
+              '<line x1="22" x2="16" y1="11" y2="11"/>',
+    chevronUp: '<path d="m18 15-6-6-6 6"/>',
+    crown:    '<path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/>' +
+              '<path d="M5 21h14"/>',
     check:    '<path d="M20 6 9 17l-5-5"/>',
     chevronDown:  '<path d="m6 9 6 6 6-6"/>',
     chevronRight: '<path d="m9 18 6-6-6-6"/>',

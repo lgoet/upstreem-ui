@@ -1,0 +1,227 @@
+/* upstreem team-orga.css — Team-Verwaltung im Settings-Bereich (Praefix uto). Braucht core.css.
+
+   ── Vorbilder, deren Masse hier 1:1 uebernommen sind ───────────────────────
+   Diese Datei erfindet keine Geometrie. Sie steht in derselben Settings-Seite wie
+   settings-brand und zeigt Tabellen wie brand-editor, also gelten deren Zahlen:
+
+     Abschnitt          settings-brand.css  .usb-sec / .usb-sechead / .usb-sectitle (16/500)
+                        / .usb-secsub (13/400, Drittfarbe), Abstand 12 im Abschnitt, 40 zwischen
+                        Abschnitten
+     Tabellenschale     brand-editor.css    .ube-table -- Rahmen 1px, Radius 12, overflow hidden
+     Kopf- und Datenzeile  core              .up-thead / .up-th / .up-row / .up-td mit --up-cols,
+                        Kopf 45px wie in der ganzen App, Datenzeile 52px wie .ube-row
+     Chip               core                .up-entchip.is-static (der neutrale Chip)
+     Zeichenknopf       core                .up-iconbtn (32x32) + .up-menu + .up-optrow
+     Modal              core                .up-topicmodal-backdrop / -card / .up-popup-close,
+                        Innenmasse aus add-brand.css (.uab-*)
+     Leerzustand        core                .up-empty-mini
+
+   Was ABWEICHT und warum: das Protokoll. Es ist ausdruecklich "technischer" gewuenscht -- kleinere
+   Zeilen, Tabelle statt Schaustueck. Es bekommt darum eine eigene Zeilenhoehe (34 statt 52), 12px
+   Schrift und die Zeitangabe sowie den Ereignisnamen in der Festbreitenschrift des Systems. Alles
+   andere bleibt dasselbe Bauteil.
+*/
+
+.uto-root { display: block; width: 100%; box-sizing: border-box; }
+.uto-root * { box-sizing: border-box; }
+
+/* Abstand zwischen den drei Abschnitten: 40, wie in settings-brand. KEINE max-width hier -- die
+   Tabellen zeigen fuenf Spalten und sollen die Seite nutzen; settings-brand kappt bei 720, weil
+   dort Zeilen mit Text und einem Schalter stehen. */
+.uto-body { display: flex; flex-direction: column; gap: 40px; }
+.uto-body[hidden] { display: none; }
+.uto-loaderr[hidden] { display: none; }
+
+/* ---------- Abschnitt ---------- */
+.uto-sec { display: flex; flex-direction: column; gap: 12px; }
+.uto-sechead { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.uto-sectext { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.uto-sectitle { font-size: 16px; font-weight: 500; color: var(--vc-text); margin: 0; line-height: 1.3; }
+.uto-secsub { font-size: 13px; font-weight: 400; color: var(--vc-third); margin: 0; line-height: 1.45; }
+
+/* Der Knopf im Abschnittskopf ist .up-export aus core (gefuellt, fett) -- derselbe Knopf, mit dem
+   jede Seite der App ihre Hauptaktion anbietet. Hier steht nur, dass er nicht schrumpfen darf. */
+.uto-secbtn { flex: 0 0 auto; }
+/* Ohne Recht zum Einladen gibt es den Knopf nicht. display: none und nicht ausgegraut: ein Knopf,
+   den man nie druecken darf, ist kein Knopf, sondern eine Frage. */
+.uto-root:not(.can-invite) .uto-secbtn { display: none; }
+
+/* Die Zusammenfassung rechts im Kopf des Protokolls -- Anzahl der Eintraege, leise. */
+.uto-seccount { font-size: 12.5px; font-weight: 500; color: var(--vc-third); flex: 0 0 auto; }
+
+/* ---------- Tabellenschale (Vorbild .ube-table) ---------- */
+.uto-table { border: 1px solid var(--vc-border); border-radius: 12px; overflow: hidden;
+  background: var(--vc-bg); min-width: 0; }
+/* Kopf 45px, Datenzeile 52px -- die Masse der App. Mit .uto-table davor, weil .up-row aus core
+   dieselbe Spezifitaet haette und dann die Ladereihenfolge entscheiden wuerde (STYLEGUIDE). */
+.uto-table .up-thead.up-row { height: 45px; flex: 0 0 45px; }
+.uto-table .up-row:not(.up-thead) { height: 52px; flex: 0 0 52px; cursor: default; }
+.uto-table .up-row:last-child { border-bottom: 0; }
+
+/* Die Spalten. Name traegt den Namen UND die "You"-Marke, darf also wachsen; E-Mail ebenso.
+   Joined At ist ein Datum fester Laenge, Role ein Chip, Actions ein 32px-Knopf plus Polster. */
+.uto-members { --up-cols: minmax(0, 1.1fr) minmax(0, 1.2fr) 130px 108px 64px; }
+/* Ohne jede Aktion faellt die letzte Spalte weg -- eine Spalte mit leerem Kopf und leeren Zellen
+   ist eine Spalte zu viel. */
+.uto-members.no-actions { --up-cols: minmax(0, 1.1fr) minmax(0, 1.2fr) 130px 108px; }
+.uto-invites { --up-cols: minmax(0, 1.4fr) 108px 130px minmax(0, 1fr) 64px; }
+.uto-invites.no-actions { --up-cols: minmax(0, 1.4fr) 108px 130px minmax(0, 1fr); }
+
+.uto-name { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.uto-nametxt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 13.5px; font-weight: 500; color: var(--vc-text); }
+/* Die Marke fuer die eigene Zeile: der neutrale Chip der App in seiner kleinen Fassung. Rot war
+   sie vorher -- rot heisst in dieser App "schlechter Wert", und die eigene Zeile ist kein Fehler. */
+.uto-you { flex: 0 0 auto; height: 20px; padding: 0 7px; border-radius: 6px;
+  background: var(--vc-heading-bg); color: var(--vc-muted);
+  font-size: 11px; font-weight: 500; line-height: 20px; }
+.uto-mail { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Datum und Rolle sind Angaben zur Zeile, nicht ihre Aussage -- also die leisere Farbe. */
+.uto-when { color: var(--vc-muted); font-variant-numeric: tabular-nums; }
+.uto-role { display: flex; align-items: center; min-width: 0; }
+/* Der Chip traegt kein Logo, also faellt sein linkes Polster fuer eines weg: 0 10px statt 0 10 0 5. */
+.uto-role .up-entchip { padding: 0 10px; }
+.uto-rolelbl { font-size: 12.5px; font-weight: 500; text-transform: capitalize; }
+/* Der Besitzer ist die einzige Rolle mit Gewicht -- ein Punkt in der Textfarbe sagt das, ohne eine
+   zweite Chipfarbe einzufuehren. */
+.uto-role .up-entchip.is-owner { border-color: var(--vc-text); }
+
+.uto-act { display: flex; align-items: center; justify-content: flex-end; }
+/* Der Zeilenknopf erscheint beim Ueberfahren der Zeile -- wie .up-rowbtn in den Tabellen der App.
+   Offen bleibt er sichtbar, sonst verschwindet er unter dem eigenen Menue. */
+.uto-act .up-iconbtn { opacity: 0; transition: opacity 120ms ease; }
+.uto-table .up-row:hover .uto-act .up-iconbtn,
+.uto-act.is-open .up-iconbtn,
+.uto-act .up-iconbtn:focus-visible { opacity: 1; }
+.uto-menuwrap { position: relative; display: inline-flex; }
+/* Das Menue haengt an der rechten Kante des Knopfes. Breite so, dass "Remove from team" in eine
+   Zeile passt. */
+.uto-menu.uto-menu { width: 196px; }
+.uto-menu .up-optrow { min-height: 34px; padding: 0 9px; font-size: 13px; font-weight: 500; }
+.uto-menu-div { height: 1px; background: var(--vc-border); margin: 6px 4px; }
+/* Entfernen ist die einzige Zeile, die etwas wegnimmt -- sie traegt darum die Warnfarbe der App,
+   und zwar erst beim Ueberfahren: eine dauerhaft rote Zeile im Menue liest sich als Fehler. */
+.uto-menu .uto-danger { color: var(--vc-muted); }
+.uto-menu .uto-danger:hover { color: var(--vt-down); }
+.uto-menu .uto-danger svg { width: 15px; height: 15px; flex: 0 0 15px; }
+.uto-menu .up-optrow svg { width: 15px; height: 15px; flex: 0 0 15px; }
+.uto-menu-lbl { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---------- Einladungen ---------- */
+.uto-inv-mail { overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 13.5px; font-weight: 500; color: var(--vc-text); }
+/* Der Zustand einer Einladung: pending / expired. Zwei Zustaende, zwei Toene -- expired ist keine
+   Warnung, sondern eine Feststellung, also die dritte Farbe und kein Rot. */
+.uto-inv-state { font-size: 12px; font-weight: 500; color: var(--vc-muted); }
+.uto-inv-state.is-expired { color: var(--vc-third); }
+.uto-inv-by { color: var(--vc-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- Protokoll: die technische Tabelle ---------- */
+/* Aufklappbar, und der Kopf ist der Schalter. Der Winkel dreht sich NICHT (mehrfach so
+   vorgegeben) -- er wechselt sein Zeichen, chevron-down zu chevron-up. */
+.uto-logtoggle { display: inline-flex; align-items: center; gap: 6px; padding: 0;
+  border: 0; background: transparent; cursor: pointer; color: inherit; font: inherit; }
+.uto-logtoggle:focus-visible { outline: 0; border-radius: 6px;
+  box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+.uto-logtoggle svg { width: 16px; height: 16px; display: block; color: var(--vc-muted); }
+.uto-logbox[hidden] { display: none; }
+
+/* Kleiner, dichter, sachlich. 34px Zeile gegen 52 in den Tabellen darueber, 12px Schrift gegen
+   13.5, und ueber 14 Zeilen ein eigener Ausschnitt statt einer Seite, die ins Endlose waechst. */
+.uto-log { --up-cols: 152px 168px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.9fr); }
+.uto-log .up-thead.up-row { height: 36px; flex: 0 0 36px; }
+.uto-log .up-row:not(.up-thead) { height: 34px; flex: 0 0 34px; }
+.uto-log .up-th, .uto-log .up-td { font-size: 12px; }
+/* Ab 14 Zeilen ein eigener Ausschnitt statt einer Seite, die ins Endlose waechst. 476 = 36 Kopf
+   + 13 x 34 -- also genau vierzehn Zeilen, danach scrollt es.
+   Zwei Klassen, weil .uto-table oben overflow: hidden setzt (fuer die runden Ecken) und gleiche
+   Spezifitaet die Reihenfolge entscheiden liesse. overflow-x bleibt hidden: waagerecht wird hier
+   nichts geschoben, dafuer fallen auf schmalen Seiten zwei Spalten weg (unten). */
+.uto-table.uto-log { max-height: 476px; overflow-x: hidden; overflow-y: auto; }
+/* Zeit und Ereignisname in Festbreitenschrift: in einem Protokoll liest man Spalten, nicht Saetze.
+   Die Familie ist die des Systems -- diese App liefert keine eigene Festbreitenschrift aus, und
+   eine nachgeladene waere ein Netzabruf fuer fuenf Zellen. */
+.uto-log-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11.5px; letter-spacing: -0.01em; color: var(--vc-muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.uto-log-ev { color: var(--vc-text); }
+/* Die drei Ereignisarten bekommen einen Punkt davor, damit man das Protokoll ueberfliegen kann:
+   eingeladen, angenommen, zurueckgezogen. Die Toene sind die vorhandenen der App: --vt-up fuer
+   angenommen, --vt-brand fuer eingeladen, die dritte Farbe fuer zurueckgezogen. Kein Rot: eine
+   zurueckgezogene Einladung ist kein Fehler, sondern eine Entscheidung. */
+.uto-log-evwrap { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.uto-log-dot { flex: 0 0 6px; width: 6px; height: 6px; border-radius: 999px; background: var(--vc-third); }
+.uto-log-dot.is-ok { background: var(--vt-up); }
+.uto-log-dot.is-off { background: var(--vc-third); }
+.uto-log-dot.is-new { background: var(--vt-brand, var(--vc-muted)); }
+.uto-log-txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--vc-muted); }
+
+/* ---------- der Einladen-Dialog ---------- */
+/* Schale, Overlay, Scrim, Radius und Schatten kommen aus core (.up-topicmodal-backdrop / -card).
+   Die Innenmasse sind die von add-brand: 520px breit, 16px Polster, 32px zwischen Kopf und Koerper,
+   Kopf 22/500 mit 16/400 in Drittfarbe. */
+.uto-card { animation: uto-rise-in 160ms cubic-bezier(.2,.7,.3,1); }
+.uto-backdrop.is-closing { animation: uto-fade-out 140ms ease forwards; }
+@keyframes uto-rise-in { from { opacity: 0; transform: translateY(8px) scale(.985); } to { opacity: 1; transform: none; } }
+@keyframes uto-fade-out { to { opacity: 0; } }
+/* Zwei Klassen, weil core's .up-topicmodal-card eine eigene Breite setzt. */
+.uto-backdrop .uto-card {
+  width: 100%; max-width: 520px; box-sizing: border-box;
+  padding: 16px; display: flex; flex-direction: column; gap: 32px; overflow: visible;
+}
+.uto-card.is-saving { pointer-events: none; opacity: .6; }
+.uto-head { display: flex; align-items: flex-start; gap: 12px; }
+.uto-heading { display: flex; flex-direction: column; gap: 8px; min-width: 0; flex: 1 1 auto; }
+.uto-title { font-size: 22px; font-weight: 500; line-height: 1.2; }
+.uto-sub { font-size: 16px; font-weight: 400; color: var(--vc-third); line-height: 1.3; }
+.uto-dlgbody { display: flex; flex-direction: column; gap: 24px; }
+.uto-field { display: flex; flex-direction: column; gap: 8px; }
+.uto-label { font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.2; }
+.uto-hint { font-size: 12.5px; font-weight: 400; color: var(--vc-third); line-height: 1.4; }
+.uto-in {
+  width: 100%; height: 44px; padding: 0 12px; box-sizing: border-box;
+  border: 1px solid var(--vc-border); border-radius: 10px;
+  background: var(--vc-bg); color: var(--vc-text);
+  font-family: inherit; font-size: 14px; font-weight: 400; outline: 0;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+.uto-in::placeholder { color: var(--vc-third); }
+.uto-in:hover { border-color: var(--vc-hover-border); }
+.uto-in:focus { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+/* Fehler am Feld: rot am Rahmen und ein Satz darunter, beides erst nach dem ersten Absenden. */
+.uto-err { display: none; font-size: 12.5px; font-weight: 400; color: var(--vt-down); line-height: 1.4; }
+.uto-field.is-err .uto-err { display: block; }
+.uto-field.is-err .uto-in { border-color: var(--vt-down); }
+.uto-field.is-err .uto-in:focus { border-color: var(--vt-down); box-shadow: 0 0 0 var(--up-focus-w) rgba(176,32,12,0.16); }
+
+/* Die Rollenwahl ist ein Umschalter mit zwei Seiten -- .up-seg aus core, dieselbe Bauart wie der
+   Single/Multi-Schalter in den Filtern. Ein Auswahlfeld waere fuer zwei Werte ein Klick zu viel. */
+.uto-seg { align-self: flex-start; }
+.uto-seg .up-seg-btn { padding: 0 18px; }
+.uto-dlgfoot { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+.uto-formerr { margin-right: auto; font-size: 12.5px; color: var(--vt-down); line-height: 1.4; }
+
+/* ---------- schmal ---------- */
+/* Zwei Spalten fallen weg, bevor die Zeilen zu Wortsalat werden: das Beitrittsdatum steht in
+   jedem Protokolleintrag ohnehin, und die E-Mail ist der Name schon halb. */
+.uto-root.is-narrow .uto-members { --up-cols: minmax(0, 1fr) 108px 64px; }
+.uto-root.is-narrow .uto-members.no-actions { --up-cols: minmax(0, 1fr) 108px; }
+.uto-root.is-narrow .uto-mail, .uto-root.is-narrow .uto-when,
+.uto-root.is-narrow .uto-c-mail, .uto-root.is-narrow .uto-c-when { display: none; }
+.uto-root.is-narrow .uto-invites { --up-cols: minmax(0, 1fr) 108px 64px; }
+.uto-root.is-narrow .uto-invites.no-actions { --up-cols: minmax(0, 1fr) 108px; }
+.uto-root.is-narrow .uto-inv-by, .uto-root.is-narrow .uto-c-by { display: none; }
+/* Das Protokoll auf drei Spalten: Ziel und Details fallen weg. Fuenf Spalten auf 372px waeren
+   fuenf Spalten, in denen nichts mehr steht -- und waagerecht schieben kann diese Tabelle nicht
+   (ihre fr-Spalten rechnen gegen die Containerbreite, es entstuende also gar kein Ueberlauf,
+   sondern nur schmale Zellen). Weglassen ist die ehrlichere Antwort; wer die zwei Spalten braucht,
+   dreht das Telefon oder sieht am Rechner nach. */
+.uto-root.is-narrow .uto-log { --up-cols: 112px minmax(0, 1fr) minmax(0, 1fr); }
+.uto-root.is-narrow .uto-c-target, .uto-root.is-narrow .uto-c-meta { display: none; }
+.uto-root.is-narrow .uto-sechead { flex-direction: column; }
+/* Der Finger braucht mehr Flaeche als der Zeiger -- dieselbe Stufe, an der core seine Tooltips
+   abschaltet. Der Zeilenknopf steht dann dauerhaft, weil es kein Ueberfahren gibt. */
+@media (hover: none) {
+  .uto-menu .up-optrow { min-height: 40px; }
+  .uto-act .up-iconbtn { opacity: 1; }
+}

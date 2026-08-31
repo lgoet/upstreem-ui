@@ -1,0 +1,50 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Harness: team-orga aus der VORLAGE</title>
+<link rel="stylesheet" href="core.css?v=1">
+<link rel="stylesheet" href="team-orga.css?v=1">
+<style>html,body{margin:0}body{font-family:Geist,system-ui,sans-serif;padding:24px;background:#fff}
+#out{font:11px/1.5 ui-monospace,monospace;background:#111;color:#eee;padding:10px;margin-top:24px;white-space:pre-wrap}</style>
+<script>
+window.__ev=[]; window.__fehler=[];
+window.onerror=function(m){ window.__fehler.push(String(m)); };
+["utoInvite","utoRevoke","utoRemove","utoRole"].forEach(function(n){
+  window["bubble_fn_"+n]=function(a){ window.__ev.push([n,a]); }; });
+</script>
+
+<!-- Markup WOERTLICH aus bubble/team_orga_bubble.html, nur die Platzhalter ersetzt. -->
+<div class="up-root uto-root"
+     data-instance="t1"
+     data-cdn-pin=""
+     data-isdark="no"
+     data-team="ca880309-1111-2222-3333-444455556666"
+     data-user="aea6e317-d901-419b-b2b2-5ca3573ea2f5"
+     data-user-email=""
+     data-invite-fn="bubble_fn_utoInvite"
+     data-revoke-fn="bubble_fn_utoRevoke"
+     data-remove-fn="bubble_fn_utoRemove"
+     data-role-fn="bubble_fn_utoRole"></div>
+
+<pre id="out">bereit</pre>
+<script src="core.js?v=1"></script>
+<script src="team-orga.js?v=1"></script>
+<!-- Und der Run-JS-Schritt der Vorlage, wortgleich. -->
+<script src="_h_uto_runjs.js?v=1"></script>
+<script>
+window.__zustand = function(){
+  var r = document.querySelector(".uto-root");
+  function t(e){ return e ? e.textContent.replace(/\s+/g," ").trim() : null; }
+  return {
+    mitglieder: [].map.call(r.querySelectorAll("[data-uto-members] .up-row:not(.up-thead)"), function(row){
+      return t(row.querySelector(".uto-nametxt")) + " / " + t(row.querySelector(".uto-rolelbl")) +
+             (row.querySelector(".uto-you") ? " / You" : ""); }),
+    einladungen: [].map.call(r.querySelectorAll("[data-uto-invites] .up-row:not(.up-thead)"), function(row){
+      return t(row.querySelector(".uto-inv-mail")); }),
+    logZeilen: r.querySelectorAll("[data-uto-log] .up-row:not(.up-thead)").length,
+    logZaehler: t(r.querySelector("[data-uto-logcount]")),
+    fehlerBox: !r.querySelector("[data-uto-loaderr]").hidden,
+    fehler: window.__fehler
+  };
+};
+document.getElementById("out").textContent = "geladen — window.__zustand()";
+</script>

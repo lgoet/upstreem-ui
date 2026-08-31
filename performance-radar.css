@@ -45,7 +45,10 @@
    mit eigener Wurzel und eigener CSS. */
 .uhm-box {
   border: 0; background: var(--vc-bg); border-radius: 16px;
-  padding: 0; min-width: 0;
+  /* 8px und nicht 0: ohne Polster klebte die erste Spalte an der Kante und die Rundung schnitt
+     die Eckzellen an. 16 war zu viel (die Matrix stand als Insel im Kasten), 8 ist der Wert, den
+     jede andere Schale der App als kleines Polster benutzt (--up-dd-pad). */
+  padding: 8px; min-width: 0;
 }
 /* overflow-x only. A heatmap whose columns no longer fit at their 60px minimum SCROLLS — it does
    not quietly drop the columns that fell off the end, which is how "the chart looks complete but

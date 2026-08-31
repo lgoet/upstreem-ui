@@ -1,0 +1,110 @@
+/* WOERTLICH der Run-JS-Schritt 1 aus bubble/team_orga_bubble.html, nur INSTANCE_ID ersetzt.
+   Er wird hier gegen die fertige Komponente ausgefuehrt -- sonst ist die Vorlage eine
+   Behauptung und kein geprueftes Stueck (CLAUDE.md 1b, Punkt 3). */
+
+(function(){
+  var ID = "t1";
+
+  var MAIN = {
+  "members": [
+    { "role": "owner", "email": "l.goetzkes@online.de",
+      "user_id": "7bedb728-e252-493d-b5c6-f9bed0b0b2d3",
+      "joined_at": "2026-02-26T13:07:56.236247+00:00", "display_name": "Lukas Götzkes" },
+    { "role": "admin", "email": "software@lee-up.de",
+      "user_id": "3c8b76c7-5ce7-4015-a42c-e2a5fe2bba1f",
+      "joined_at": "2026-02-26T13:37:27.011772+00:00", "display_name": "Software | LeeUP Media" },
+    { "role": "admin", "email": "lukas@upstreem.ai",
+      "user_id": "aea6e317-d901-419b-b2b2-5ca3573ea2f5",
+      "joined_at": "2026-05-04T07:48:22.518918+00:00", "display_name": "Lukas Götzkes" }
+  ],
+  "permissions": { "can_invite": true, "can_manage_roles": false, "can_manage_members": true },
+  "viewer_role": "admin",
+  "pending_invites": []
+};
+
+  var INVITES = {
+  "count": 1,
+  "invites": [
+    { "status": "pending", "invite_id": "480291d9-80c4-4f0f-9269-24ee59c0130b",
+      "created_at": "2026-08-31T13:42:33.011787+00:00",
+      "created_by": "aea6e317-d901-419b-b2b2-5ca3573ea2f5",
+      "expires_at": "2026-09-07T13:42:33.011787+00:00",
+      "revoked_at": null, "revoked_by": null, "accepted_at": null, "accepted_by": null,
+      "invited_role": "member", "invited_email": "l.test@test.de",
+      "created_by_email": "lukas@upstreem.ai" }
+  ]
+};
+
+  var LOG = [
+  { "log_id": "e6f049cd-44c3-4217-b674-19c082116fa1", "created_at": "2026-08-31T13:42:33.011787+00:00",
+    "event_type": "member_invited", "actor_user_id": "aea6e317-d901-419b-b2b2-5ca3573ea2f5",
+    "actor_email": "lukas@upstreem.ai", "actor_display_name": "Lukas Götzkes",
+    "target_user_id": null, "target_email": "l.test@test.de",
+    "meta": { "invite_id": "480291d9-80c4-4f0f-9269-24ee59c0130b", "invited_role": "member" } },
+  { "log_id": "9a040189-306b-40bb-bd7b-4d75810e41c9", "created_at": "2026-05-04T07:48:22.518918+00:00",
+    "event_type": "invite_accepted", "actor_user_id": "aea6e317-d901-419b-b2b2-5ca3573ea2f5",
+    "actor_email": "lukas@upstreem.ai", "actor_display_name": "Lukas Götzkes",
+    "target_user_id": "aea6e317-d901-419b-b2b2-5ca3573ea2f5", "target_email": "lukas@upstreem.ai",
+    "meta": { "invite_id": "866e76cd-1bd7-4911-bae8-5923d09d6a40", "invited_role": "admin", "already_member": false } },
+  { "log_id": "56480978-60da-470a-a099-6f39a158cbad", "created_at": "2026-05-04T07:46:59.004152+00:00",
+    "event_type": "member_invited", "actor_user_id": "7bedb728-e252-493d-b5c6-f9bed0b0b2d3",
+    "actor_email": "l.goetzkes@online.de", "actor_display_name": "Lukas Götzkes",
+    "target_user_id": null, "target_email": "lukas@upstreem.ai",
+    "meta": { "invite_id": "866e76cd-1bd7-4911-bae8-5923d09d6a40", "invited_role": "admin" } },
+  { "log_id": "6f2cf486-cf48-423d-916e-5aa5b2bf8a48", "created_at": "2026-04-21T07:41:01.240969+00:00",
+    "event_type": "invite_revoked", "actor_user_id": "7bedb728-e252-493d-b5c6-f9bed0b0b2d3",
+    "actor_email": "l.goetzkes@online.de", "actor_display_name": "Lukas Götzkes",
+    "target_user_id": null, "target_email": "lukas@upstreem.ai",
+    "meta": { "reason": null, "invite_id": "956db986-dd6e-4c9d-9e5a-2b00ac1a4e66" } },
+  { "log_id": "d959fe82-0df4-404d-837b-5d4cf5567243", "created_at": "2026-04-20T19:59:09.613095+00:00",
+    "event_type": "member_invited", "actor_user_id": "7bedb728-e252-493d-b5c6-f9bed0b0b2d3",
+    "actor_email": "l.goetzkes@online.de", "actor_display_name": "Lukas Götzkes",
+    "target_user_id": null, "target_email": "lukas@upstreem.ai",
+    "meta": { "invite_id": "956db986-dd6e-4c9d-9e5a-2b00ac1a4e66", "invited_role": "member" } },
+  { "log_id": "88276a67-f17b-47b1-879b-094263a5a080", "created_at": "2026-04-20T19:57:57.443185+00:00",
+    "event_type": "invite_revoked", "actor_user_id": "7bedb728-e252-493d-b5c6-f9bed0b0b2d3",
+    "actor_email": "l.goetzkes@online.de", "actor_display_name": "Lukas Götzkes",
+    "target_user_id": null, "target_email": "lukas@upstreem.ai",
+    "meta": { "reason": null, "invite_id": "70062b3b-ce80-4b0a-86e4-773c7ac0ab2a" } },
+  { "log_id": "10f4c555-9b9c-4e11-a7d6-e8f89ce885c2", "created_at": "2026-04-20T19:44:41.228845+00:00",
+    "event_type": "member_invited", "actor_user_id": "7bedb728-e252-493d-b5c6-f9bed0b0b2d3",
+    "actor_email": "l.goetzkes@online.de", "actor_display_name": "Lukas Götzkes",
+    "target_user_id": null, "target_email": "lukas@upstreem.ai",
+    "meta": { "invite_id": "70062b3b-ce80-4b0a-86e4-773c7ac0ab2a", "invited_role": "member" } },
+  { "log_id": "ce675dd7-02f5-4d81-91ed-00b7736509cd", "created_at": "2026-04-20T19:44:16.749336+00:00",
+    "event_type": "invite_revoked", "actor_user_id": "7bedb728-e252-493d-b5c6-f9bed0b0b2d3",
+    "actor_email": "l.goetzkes@online.de", "actor_display_name": "Lukas Götzkes",
+    "target_user_id": null, "target_email": "lukas@upstreem.ai",
+    "meta": { "reason": null, "invite_id": "618ad166-ed63-478d-ab0a-bab31ae75b81" } },
+  { "log_id": "7b16403c-71de-4ee9-85cc-1204923b0f7f", "created_at": "2026-04-20T19:34:47.817068+00:00",
+    "event_type": "member_invited", "actor_user_id": "7bedb728-e252-493d-b5c6-f9bed0b0b2d3",
+    "actor_email": "l.goetzkes@online.de", "actor_display_name": "Lukas Götzkes",
+    "target_user_id": null, "target_email": "lukas@upstreem.ai",
+    "meta": { "invite_id": "618ad166-ed63-478d-ab0a-bab31ae75b81", "invited_role": "member" } },
+  { "log_id": "c3945259-43fd-4748-b705-176f2c55ec4a", "created_at": "2026-04-20T19:34:32.939216+00:00",
+    "event_type": "invite_revoked", "actor_user_id": "7bedb728-e252-493d-b5c6-f9bed0b0b2d3",
+    "actor_email": "l.goetzkes@online.de", "actor_display_name": "Lukas Götzkes",
+    "target_user_id": null, "target_email": "leenen@lee-up.de",
+    "meta": { "reason": null, "invite_id": "aca0c4b2-8335-443a-b221-c17da42bcad7" } },
+  { "log_id": "81f73770-db19-45d5-81ba-082578679718", "created_at": "2026-02-26T13:37:27.011772+00:00",
+    "event_type": "invite_accepted", "actor_user_id": "3c8b76c7-5ce7-4015-a42c-e2a5fe2bba1f",
+    "actor_email": "software@lee-up.de", "actor_display_name": "Software | LeeUP Media",
+    "target_user_id": "3c8b76c7-5ce7-4015-a42c-e2a5fe2bba1f", "target_email": "software@lee-up.de",
+    "meta": { "invite_id": "bb8225cc-82ec-4094-aca4-72bd23a6acff", "invited_role": "admin", "already_member": false } },
+  { "log_id": "5dca5db3-9160-45f7-a577-eaaab9cde420", "created_at": "2026-02-26T13:35:34.065746+00:00",
+    "event_type": "member_invited", "actor_user_id": "7bedb728-e252-493d-b5c6-f9bed0b0b2d3",
+    "actor_email": "l.goetzkes@online.de", "actor_display_name": "Lukas Götzkes",
+    "target_user_id": null, "target_email": "software@lee-up.de",
+    "meta": { "invite_id": "bb8225cc-82ec-4094-aca4-72bd23a6acff", "invited_role": "admin" } },
+  { "log_id": "d8646f0c-82c7-4efd-951c-a2becaa8f783", "created_at": "2026-02-26T13:30:54.919107+00:00",
+    "event_type": "member_invited", "actor_user_id": "7bedb728-e252-493d-b5c6-f9bed0b0b2d3",
+    "actor_email": "l.goetzkes@online.de", "actor_display_name": "Lukas Götzkes",
+    "target_user_id": null, "target_email": "leenen@lee-up.de",
+    "meta": { "invite_id": "aca0c4b2-8335-443a-b221-c17da42bcad7", "invited_role": "admin" } }
+];
+
+  MAIN.instanceId = ID;
+  window.renderTeamOrga(MAIN);
+  window.setTeamOrgaInvites(ID, INVITES);
+  window.setTeamOrgaLog(ID, LOG);
+})();
