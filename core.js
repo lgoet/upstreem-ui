@@ -106,17 +106,151 @@
   var PAGE_SIZES = [15, 25, 50, 100];
 
   var DEFAULT_PAGE_SIZE = 15;
-  /* Compact count format shared with the other components: 1.23k / 12.3k / 1.2m */
+  /* Compact count format shared with the other components: 1.23k / 12.3k / 1.2m
+     Das Trennzeichen kommt aus den Einstellungen des Nutzers (getPref("num")) -- in der deutschen
+     Schreibweise steht dort 1,24k statt 1.24k. Die Stufen und das Abschneiden der Nullen bleiben
+     unveraendert; nur das eine Zeichen wird getauscht, und zwar ZULETZT, damit die Rechnung mit
+     toFixed weiter auf dem Punkt arbeitet. */
   function fmtTotal(n){
     n = Number(n) || 0;
+    var dez = trennzeichen().dez;
+    function um(s){ return dez === "." ? s : s.replace(".", dez); }
     if (n < 1000) return String(Math.round(n));
     var k = n / 1000;
-    if (n < 10000) return (Math.round(k * 100) / 100).toFixed(2).replace(/0+$/,"").replace(/\.$/,"") + "k";
-    if (n < 1000000) return (Math.round(k * 10) / 10).toFixed(1).replace(/\.0$/,"") + "k";
-    return (Math.round((n/1000000) * 10) / 10).toFixed(1).replace(/\.0$/,"") + "m";
+    if (n < 10000) return um((Math.round(k * 100) / 100).toFixed(2).replace(/0+$/,"").replace(/\.$/,"")) + "k";
+    if (n < 1000000) return um((Math.round(k * 10) / 10).toFixed(1).replace(/\.0$/,"")) + "k";
+    return um((Math.round((n/1000000) * 10) / 10).toFixed(1).replace(/\.0$/,"")) + "m";
   }
 
   function isYes(v){ return /^(1|true|yes|y)$/i.test(String(v == null ? "" : v).trim()); }
+
+  /* ══ Die Einstellungen des Nutzers ═══════════════════════════════════════════════════════════
+     EINE Ablage fuer alles, was im Einstellungsfenster (preferences.js) gewaehlt wird: Sprache,
+     Zahlenformat und Datumsformat. Gebaut nach dem Muster, das das Thema hier schon geht
+     (setUpstreemTheme): im localStorage, TEAMBEZOGEN ueber storeKey, und jede Aenderung meldet
+     sich mit einem Fensterereignis -- damit jede Komponente der Seite neu zeichnen kann, ohne dass
+     eine von der anderen wissen muss.
+
+     Warum in core und nicht im Fenster selbst: die Werte werden nicht dort gebraucht, wo sie
+     gewaehlt werden, sondern in jeder Tabelle, jedem Chart und jedem Tooltip. Die Formatierer
+     darunter (fmtInt, fmtTotal, fmtPct, fmtDate, chartDateFmt) lesen sie, und damit wirkt eine
+     Aenderung ueberall, wo diese App schon durch core formatiert -- gemessen sind das alle bis auf
+     acht Stellen in sechs Dateien, und die sind mitgezogen.
+
+     Die VORGABEN sind ausdruecklich der heutige Stand: Englisch, 1,234.56 / 1.24k, 12. Dec 2025.
+     Wer nichts einstellt, sieht nichts Neues.
+
+     Die Chart-Einstellungen (Linienstaerke, Legende) haben ihre eigenen Schluessel weiter unten und
+     bleiben dort -- sie gab es vorher, sie funktionieren, und ein Umzug haette nur die gespeicherte
+     Wahl jedes Nutzers weggeworfen. Das Fenster stellt sie ueber ihre vorhandenen Setter. */
+  var PREF_KEY = "prefs";
+  var PREF_DEFAULT = { locale: "en", num: "en", date: "d-mon-y" };
+  var PREF_ERLAUBT = {
+    locale: { en: 1, de: 1 },
+    /* "en": 1,234.56 und 1.24k -- Punkt trennt die Nachkommastellen.
+       "de": 1.234,56 und 1,24k -- Komma trennt sie. Mehr braucht es nicht: die zwei Sprachen
+       decken beide Schreibweisen ab, und eine dritte waere eine Kombination, die niemand liest. */
+    num:    { en: 1, de: 1 },
+    date:   { "d-mon-y": 1, "mon-d-y": 1, "d-m-y": 1, iso: 1 }
+  };
+  var _prefs = null;
+  function prefsLesen(){
+    if (_prefs) return _prefs;
+    var o = {};
+    try {
+      var roh = window.localStorage.getItem(storeKey(PREF_KEY));
+      if (roh) o = JSON.parse(roh) || {};
+    } catch(e){ o = {}; }
+    _prefs = {};
+    /* Nur bekannte Werte uebernehmen. Ein fremder Eintrag in der Ablage -- eine aeltere Fassung,
+       ein zweiter Tab, ein Tippfehler von Hand -- darf die App nicht in einen Zustand bringen, den
+       kein Formatierer kennt. */
+    Object.keys(PREF_DEFAULT).forEach(function(k){
+      var v = o && typeof o[k] === "string" ? o[k] : "";
+      _prefs[k] = (PREF_ERLAUBT[k] && PREF_ERLAUBT[k][v]) ? v : PREF_DEFAULT[k];
+    });
+    return _prefs;
+  }
+  function getPref(name){ var p = prefsLesen(); return p[name] != null ? p[name] : PREF_DEFAULT[name]; }
+  function setPref(name, value){
+    if (!PREF_ERLAUBT[name]) return getPref(name);
+    var v = PREF_ERLAUBT[name][value] ? value : PREF_DEFAULT[name];
+    var p = prefsLesen();
+    if (p[name] === v) return v;
+    p[name] = v;
+    try { window.localStorage.setItem(storeKey(PREF_KEY), JSON.stringify(p)); } catch(e){}
+    /* Ein Ereignis am FENSTER und nicht an einer Wurzel: die Empfaenger sind alle Komponenten der
+       Seite, und keine davon kennt das Einstellungsfenster. Dasselbe Muster wie
+       up-linewidth-change weiter unten. */
+    try { window.dispatchEvent(new CustomEvent("up-prefs-change", { detail: { name: name, value: v } })); } catch(e){}
+    return v;
+  }
+  /* Anmelden, ohne das Ereignis selbst zu kennen. Gibt eine Abmeldefunktion zurueck. */
+  function onPrefs(fn){
+    if (typeof fn !== "function") return function(){};
+    function h(e){ try { fn((e && e.detail) || {}); } catch(err){} }
+    window.addEventListener("up-prefs-change", h);
+    return function(){ window.removeEventListener("up-prefs-change", h); };
+  }
+
+  /* ---- Sprache ----
+     Der SCHLUESSEL ist der englische Text selbst. Das ist die Entscheidung, an der alles andere
+     haengt, und sie ist bewusst so:
+
+       - Eine Komponente, die noch nicht uebersetzt ist, zeigt weiter richtiges Englisch. Es gibt
+         keinen Zustand "Schluessel nicht gefunden", der als kryptisches Kuerzel im UI landet.
+       - Es gibt keinen zweiten Namensraum, den man mit dem Markup synchron halten muesste. Bei
+         gemessen ~1076 sichtbaren Texten in 40 Dateien waere genau das die Stelle, an der es
+         auseinanderlaeuft.
+       - Die Extraktion kann Datei fuer Datei laufen: UC.addMessages("de", {...}) je Komponente,
+         und was noch fehlt, faellt still auf Englisch zurueck.
+
+     WAS UEBERSETZT WIRD und was nicht -- die Linie, die Notion, Linear, Stripe und Figma ziehen:
+       JA    die Oberflaeche: Menues, Knoepfe, Spaltenkoepfe, Leerzustaende, Fehlermeldungen,
+             Tooltips, Beschreibungen.
+       NEIN  Nutzerdaten (Prompts, Markennamen, Domains, Themennamen).
+       NEIN  Eigennamen (ChatGPT, Perplexity, Google AI Overviews).
+       NEIN  die FACHTAXONOMIE, die auch in Exporten und ueber die API erscheint: die
+             Zitationstypen (Brand_Platform, Editorial, ...), die Rollen (owner/admin/member) und
+             die URL-Typen. Grund: ein Wert, der exportiert, gefiltert oder von aussen gelesen
+             wird, muss in jeder Sprache derselbe sein. Uebersetzt wird dort die SPALTE, nicht der
+             Wert. */
+  var MSG = {};
+  function addMessages(locale, obj){
+    var l = String(locale || "").trim().toLowerCase();
+    if (!l || !obj || typeof obj !== "object") return;
+    var ziel = MSG[l] || (MSG[l] = {});
+    Object.keys(obj).forEach(function(k){ if (typeof obj[k] === "string") ziel[k] = obj[k]; });
+  }
+  function t(text){
+    var l = getPref("locale");
+    if (l === "en") return text;
+    var tab = MSG[l];
+    var v = tab && tab[text];
+    return typeof v === "string" && v ? v : text;
+  }
+
+  /* ---- Zahlen ----
+     EIN Ort fuer die zwei Trennzeichen. Wer eine Zahl formatiert, ruft nicht toLocaleString: das
+     haengt an der Spracheinstellung des BROWSERS, und genau die soll hier nicht entscheiden. */
+  function trennzeichen(){
+    return getPref("num") === "de" ? { dez: ",", tsd: "." } : { dez: ".", tsd: "," };
+  }
+  /* Tausenderpunkte in eine bereits fertige Ganzzahl-Zeichenkette setzen. */
+  function tausender(ganz, tsd){
+    return String(ganz).replace(/\B(?=(\d{3})+(?!\d))/g, tsd);
+  }
+  /* Die eine Stelle, durch die JEDE Zahl dieser App geht. nachkomma == null heisst: so viele
+     Stellen, wie die Zahl schon hat (also keine erzwungene Genauigkeit). */
+  function fmtNum(v, nachkomma, mitTausender){
+    var n = Number(v);
+    if (!isFinite(n)) return "–";
+    var t = trennzeichen();
+    var s = (nachkomma == null) ? String(n) : n.toFixed(nachkomma);
+    var teile = s.split(".");
+    if (mitTausender !== false) teile[0] = tausender(teile[0], t.tsd);
+    return teile.length > 1 ? teile[0] + t.dez + teile[1] : teile[0];
+  }
 
   /* ---------------------------------------------------------------------------------------------
      parseLoose(raw, label) -- parse a string Bubble built, not a string a JSON encoder built.
@@ -704,15 +838,37 @@
     return isFinite(n) ? n : null;
   }
   function fmt1(v){ var n = toNum(v); return n == null ? "–" : (Math.round(n * 10) / 10).toFixed(1); }
-  function fmtInt(v){ var n = toNum(v); return n == null ? "–" : String(Math.round(n)); }
+  /* Ganze Zahlen MIT Tausendertrennung nach der Einstellung des Nutzers -- 12.345 statt 12345.
+     Vorher stand hier String(Math.round(n)) ohne jede Trennung; bei vierstelligen Mention Counts
+     ist das der Unterschied zwischen einer Zahl und einer Ziffernfolge. */
+  function fmtInt(v){ var n = toNum(v); return n == null ? "–" : fmtNum(Math.round(n), 0); }
   /* App-wide date format: "24. Jul 2026". Parses the RPC's ISO timestamps; anything
      unparseable renders as an em dash rather than "Invalid Date". */
-  function fmtDate(v){
-    if (v == null || v === "") return "–";
+  /* Das Datumsformat des Nutzers. Die VORGABE ist der heutige Stand ("12. Dec 2025"), die drei
+     anderen sind die Schreibweisen, nach denen in einer solchen App wirklich gefragt wird:
+     amerikanisch, deutsch-numerisch und ISO. Mehr nicht -- jede weitere Variante ist eine Zeile
+     hier und eine Zeile im Fenster, aber auch ein Format mehr, das in Tabellen unterschiedlich
+     breit ist.
+     EIN Ort fuer alle vier, damit Tabellen, Charts und Tooltips nicht auseinanderlaufen. */
+  function datumsTeile(v){
+    if (v == null || v === "") return null;
     var d = new Date(String(v));
-    if (isNaN(d.getTime())) return "–";
-    return String(d.getDate()).padStart(2, "0") + ". " + MONTHS[d.getMonth()] + " " + d.getFullYear();
+    if (isNaN(d.getTime())) return null;
+    function z(n){ return String(n).padStart(2, "0"); }
+    return { t: d.getDate(), tt: z(d.getDate()), m: d.getMonth(), mm: z(d.getMonth() + 1),
+             j: d.getFullYear(), mon: MONTHS[d.getMonth()] };
   }
+  function fmtDateMuster(p, muster){
+    if (!p) return "–";
+    switch (muster){
+      case "mon-d-y": return p.mon + " " + p.t + ", " + p.j;
+      /* Punkt und keine Schraegstriche: die deutsche Schreibweise ist 12.12.2025. */
+      case "d-m-y":   return p.tt + "." + p.mm + "." + p.j;
+      case "iso":     return p.j + "-" + p.mm + "-" + p.tt;
+      default:        return p.tt + ". " + p.mon + " " + p.j;
+    }
+  }
+  function fmtDate(v){ return fmtDateMuster(datumsTeile(v), getPref("date")); }
   function foldDiacritics(s){
     var t = String(s == null ? "" : s);
     try { t = t.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); } catch(e){}
@@ -2650,6 +2806,25 @@
       return out;
     }
     function initAll(){ var all = roots(); for (var i = 0; i < all.length; i++) cfg.initRoot(all[i]); }
+
+    /* ---- Neuzeichnen, wenn der Nutzer sein Zahlen- oder Datumsformat aendert ----
+       cfg.redraw ist eine Funktion, die die Komponente AUS IHREM VORHANDENEN ZUSTAND neu zeichnet.
+       Sie ist freiwillig: eine Komponente ohne sie zeigt das neue Format beim naechsten Zeichnen,
+       eine mit ihr sofort.
+       Warum nicht einfach ctrl.render() rufen: dessen Form ist je Komponente verschieden -- in
+       teams.js und team-orga.js nimmt render(p) die NUTZLAST entgegen, ein Aufruf ohne Argument
+       wuerde die Daten loeschen. Ein eigener, gleich benannter Weg ist die einzige Art, das von
+       aussen sicher zu tun. */
+    if (typeof cfg.redraw === "function"){
+      window.addEventListener("up-prefs-change", function(){
+        var all = roots();
+        for (var i = 0; i < all.length; i++){
+          var c = cfg.ctrlProp ? all[i][cfg.ctrlProp] : null;
+          if (!c) continue;
+          try { cfg.redraw(c, all[i]); } catch(e){}
+        }
+      });
+    }
 
     /* Expose the real implementations, then replay whatever Bubble queued against the stubs —
        in the order Bubble called them. */
@@ -6138,14 +6313,16 @@
      ist. Wer eine Stelle braucht (Visibility in der Brands-Tabelle und im Landscape-Tooltip),
      gibt sie mit. Die "<1%"-Regel gilt nur ohne Nachkommastellen: mit einer Stelle steht dort
      ohnehin 0.4% statt einer irreleitenden 0. */
+  /* Prozentwerte: die Genauigkeit entscheidet der Aufrufer (CLAUDE.md 2b), das TRENNZEICHEN der
+     Nutzer. Ohne Nachkommastellen gibt es nichts zu trennen -- dann bleibt es bei Math.round. */
   function fmtPct(v, nachkomma){
     v = Number(v) || 0;
     var n = nachkomma > 0 ? nachkomma : 0;
     if (!n){
       if (v > 0 && Math.round(v) === 0) return "<1%";
-      return Math.round(v) + "%";
+      return fmtNum(Math.round(v), 0) + "%";
     }
-    return v.toFixed(n) + "%";
+    return fmtNum(v, n) + "%";
   }
 
   /* Turns a raw [{type, share_pct}] breakdown into the [{name, share, color}] the doughnut/bar
@@ -6246,10 +6423,20 @@
     return d.getFullYear() + "-" + zwei(d.getMonth() + 1) + "-" + zwei(d.getDate());
   }
 
+  /* Die Achsen- und Tooltipbeschriftung der Charts folgt demselben Format wie die Tabellen -- sonst
+     steht auf einer Seite zweimal dasselbe Datum verschieden. Die Achse laesst dabei die fuehrende
+     Null weg (Platz), das Muster bestimmt aber der Nutzer. */
   function chartDateFmt(day){
     var m = dayKey(day).match(/^(\d{4})-(\d{2})-(\d{2})/);
     if (!m) return String(day || "");
-    return parseInt(m[3],10) + " " + MONTHS[parseInt(m[2],10)-1] + " " + m[1];
+    var p = { t: parseInt(m[3],10), tt: m[3], m: parseInt(m[2],10)-1, mm: m[2],
+              j: m[1], mon: MONTHS[parseInt(m[2],10)-1] };
+    var muster = getPref("date");
+    /* Die Vorgabe der Achse bleibt "12 Dec 2025" OHNE Punkt hinter dem Tag -- so stand es hier
+       schon, und in einer Achse zaehlt jeder Buchstabe. Die anderen drei Muster sind dieselben
+       wie in fmtDate. */
+    if (muster === "d-mon-y") return p.t + " " + p.mon + " " + p.j;
+    return fmtDateMuster(p, muster);
   }
   /* Tooltip header date. At month granularity a full "1 Jul 2026" reads wrong for what is really
      a whole-month bucket, so it collapses to just the month name. */
@@ -6993,6 +7180,17 @@
        preference. Bound once per instance, not per render: this closure lives as long as the
        component does, same as the resize/click listeners the color-scale dropdown binds below. */
     window.addEventListener("up-linewidth-change", function(){
+      if (!isOwner() || !chart || !lastBuilt) return;
+      build(lastBuilt);
+    });
+    /* Und dasselbe beim Wechsel von Zahlen- oder Datumsformat: Achsenbeschriftung und Tooltip
+       entstehen in build() aus chartDateFmt und fmtNum, also aus den Einstellungen des Nutzers.
+       Ohne einen Anlass zum Neuzeichnen stuende der Chart in der alten Schreibweise da, waehrend
+       die Tabelle darunter schon in der neuen steht -- und ZWEI Schreibweisen auf einer Seite sind
+       schlimmer als die falsche.
+       EIN Zuhoerer fuer jeden Chart der Seite: makeLine laeuft je Chart, das Ereignis kommt vom
+       Fenster. Die Sprache steht ausdruecklich mit drin, weil die Monatsnamen daran haengen. */
+    window.addEventListener("up-prefs-change", function(){
       if (!isOwner() || !chart || !lastBuilt) return;
       build(lastBuilt);
     });
@@ -9291,7 +9489,7 @@
     if (v == null || isNaN(v)) return "-";
     var n = Number(v);
     if (absolut && n > 0 && Math.round(n) === 0) return "<1%";
-    return (Math.abs(n - Math.round(n)) < 0.05 ? String(Math.round(n)) : fmt1(n)) + "%";
+    return (Math.abs(n - Math.round(n)) < 0.05 ? fmtNum(Math.round(n), 0) : fmtNum(n, 1)) + "%";
   }
 
   var VAR_RING_R = 6, VAR_RING_C = 2 * Math.PI * VAR_RING_R;
@@ -10257,6 +10455,13 @@
     getLegendPref: getLegendPref,
     setLegendPref: setLegendPref,
     legendSectionHtml: legendSectionHtml,
+    /* Die Einstellungen des Nutzers und ihre Werkzeuge. getPref/setPref sind der ganze Zugang --
+       die Ablage selbst bleibt privat, damit niemand einen Wert hineinschreibt, den kein
+       Formatierer kennt. */
+    getPref: getPref, setPref: setPref, onPrefs: onPrefs,
+    PREF_DEFAULT: PREF_DEFAULT, PREF_ERLAUBT: PREF_ERLAUBT,
+    fmtNum: fmtNum, fmtDateMuster: fmtDateMuster, datumsTeile: datumsTeile,
+    addMessages: addMessages, t: t,
     lineWidthSectionHtml: lineWidthSectionHtml,
     getColorScalePref: getColorScalePref, setColorScalePref: setColorScalePref
   };

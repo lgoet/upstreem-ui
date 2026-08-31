@@ -1,0 +1,80 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Harness: Einstellungsfenster</title>
+<link rel="stylesheet" href="core.css?v=1">
+<link rel="stylesheet" href="preferences.css?v=1">
+<style>
+  html, body { margin: 0; }
+  body { font-family: Geist, system-ui, sans-serif; background: #fff; padding: 24px; }
+  #bar { margin-bottom: 20px; display: flex; gap: 6px; flex-wrap: wrap; font: 11px ui-monospace, monospace; }
+  table.w { border-collapse: collapse; font: 13px Geist, system-ui, sans-serif; }
+  table.w td { padding: 4px 14px 4px 0; }
+  table.w td:first-child { color: #6f737c; }
+  #out { font: 11px/1.5 ui-monospace, monospace; background: #111; color: #eee; padding: 10px;
+         margin-top: 20px; white-space: pre-wrap; }
+</style>
+<script>
+window.__ev = []; window.__fehler = [];
+window.onerror = function(m){ window.__fehler.push(String(m)); };
+["umsName","umsAvatar"].forEach(function(n){ window["bubble_fn_"+n] = function(a){ window.__ev.push([n, a]); }; });
+try { localStorage.clear(); } catch(e){}
+</script>
+
+<div id="bar">
+  <button onclick="window.openUpstreemPreferences()">Fenster oeffnen</button>
+  <button onclick="window.openUpstreemPreferences('profile')">... auf Profile</button>
+  <button onclick="window.openUpstreemPreferences('charts')">... auf Charts</button>
+  <button onclick="zeigen()">MESSEN</button>
+</div>
+
+<!-- Eine Wurzel, damit core ein Team und damit einen Ablageschluessel hat. -->
+<div class="up-root" data-team="t1" data-isdark="no" style="display:block">
+  <table class="w">
+    <tr><td>fmtInt(12345)</td><td data-f="i"></td></tr>
+    <tr><td>fmtNum(1234.56, 2)</td><td data-f="n"></td></tr>
+    <tr><td>fmtPct(12.41, 2)</td><td data-f="p"></td></tr>
+    <tr><td>fmtTotal(1240)</td><td data-f="k"></td></tr>
+    <tr><td>fmtTotal(12000)</td><td data-f="k2"></td></tr>
+    <tr><td>fmtDate(2025-12-12)</td><td data-f="d"></td></tr>
+    <tr><td>chartDateFmt(2025-12-12)</td><td data-f="c"></td></tr>
+    <tr><td>t("Search")</td><td data-f="t"></td></tr>
+  </table>
+</div>
+
+<pre id="out">bereit</pre>
+
+<script src="core.js?v=1"></script>
+<script src="preferences.js?v=1"></script>
+<script>
+var UC = window.UpstreemCore;
+/* Eine Handvoll deutscher Texte, um die Mechanik zu pruefen -- die vollstaendige Uebersetzung
+   kommt Datei fuer Datei. */
+UC.addMessages("de", { "Search": "Suchen" });
+
+function werte(){
+  return {
+    fmtInt: UC.fmtInt(12345),
+    fmtNum: UC.fmtNum(1234.56, 2),
+    fmtPct: UC.fmtPct(12.41, 2),
+    fmtTotal_1240: UC.fmtTotal(1240),
+    fmtTotal_12000: UC.fmtTotal(12000),
+    fmtDate: UC.fmtDate("2025-12-12T10:30:00Z"),
+    chartDateFmt: UC.chartDateFmt("2025-12-12"),
+    t_Search: UC.t("Search"),
+    prefs: { locale: UC.getPref("locale"), num: UC.getPref("num"), date: UC.getPref("date") }
+  };
+}
+function malen(){
+  var w = werte();
+  var m = { i:"fmtInt", n:"fmtNum", p:"fmtPct", k:"fmtTotal_1240", k2:"fmtTotal_12000",
+            d:"fmtDate", c:"chartDateFmt", t:"t_Search" };
+  Object.keys(m).forEach(function(k){
+    var e = document.querySelector('[data-f="'+k+'"]'); if (e) e.textContent = w[m[k]];
+  });
+}
+function zeigen(){ document.getElementById("out").textContent = JSON.stringify(werte(), null, 1); }
+UC.onPrefs(malen);
+malen();
+window.__werte = werte;
+document.getElementById("out").textContent = "geladen — window.__werte(), openUpstreemPreferences()";
+</script>

@@ -328,7 +328,8 @@
       }
       if (m.fmt === "rank") {
         return '<span class="up-rank-group">' + HASH + '<span class="up-num">' +
-                 (Math.round(v * 10) / 10).toFixed(1) + '</span></span>';
+                 /* Durch core, damit das Trennzeichen dem Zahlenformat des Nutzers folgt. */
+                 (UC.fmtNum ? UC.fmtNum(Math.round(v * 10) / 10, 1) : (Math.round(v * 10) / 10).toFixed(1)) + '</span></span>';
       }
       /* fmtPctShort wie im Radar-Detail: unter einem Prozent steht "<1%" statt eines
          gerundeten "0%", das nach "gar nicht" aussieht. */

@@ -62,7 +62,7 @@ window.bubble_fn_theme_pref = function(v){ window.__ev.push("theme_pref "+v); lo
      Genau so kam es auf der Bubble-Seite an, und genau so fiel die Leiste um -- .up-portal
      (display:contents) und .up-root (position:relative) gewannen ueber die Reihenfolge.
      Wer hier die bequeme Reihenfolge misst, misst sein eigenes Glueck. */
-  var files = ["sidebar.css","core.css","quick-actions.css","core.js","sidebar.js","quick-actions.js"];
+  var files = ["sidebar.css","core.css","quick-actions.css","preferences.css","core.js","sidebar.js","quick-actions.js","preferences.js"];
   var texts = {};
   Promise.all(files.map(function(f){
     return fetch(f + "?nocache=" + Math.random(), { cache: "no-store" })

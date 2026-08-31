@@ -127,6 +127,10 @@
       /* Dieselben Zeichen wie die Unterseiten-Navigation im Einstellungs-Seitenkopf: derselbe
          Ort, dieselbe Sache, dasselbe Zeichen. Vorher standen hier folder und creditCard. */
       { key: "team",        label: "Team Organisation",   icon: "users" },
+      /* Das Einstellungsfenster (preferences.js). Es heisst "Preferences" und nicht "Settings" --
+         "Your Brand" darueber IST die Einstellungsseite dieser App, und zwei Dinge mit demselben
+         Namen sind eines zu viel. */
+      { key: "prefs",       label: "Preferences",         icon: "settings2" },
       { key: "billing",     label: "Billing",             icon: "dollarSign" }
     ]},
     { head: "Theme", theme: true, items: [
@@ -174,6 +178,41 @@
 
   function makeController(root){
     var UC = window.UpstreemCore;
+    /* Die Uebersetzung. Der Schluessel IST der englische Text (siehe core.js, addMessages) -- eine
+       Beschriftung ohne Eintrag bleibt damit richtiges Englisch und wird nie zu einem Kuerzel. */
+    var t = UC.t || function (x) { return x; };
+    /* Die deutschen Beschriftungen DIESER Datei. Sie stehen hier und nicht in core: jede Komponente
+       bringt ihre eigenen mit, dann kann die Uebersetzung Datei fuer Datei laufen, ohne dass eine
+       1000-Zeilen-Tabelle in core entsteht, die niemand mehr einer Stelle zuordnet.
+       NICHT uebersetzt: "Mira" (Eigenname) und "Citations" -- der Begriff steht als Fachwort auch
+       in Exporten, Filtern und der API; uebersetzt wird die SPALTE, nicht der Wert (siehe die Linie
+       im Kopf von core.js). "Prompt Insights" und "Prompt Research" behalten "Prompt" aus demselben
+       Grund: das Wort ist in dieser App ein Datentyp. */
+    if (UC.addMessages) UC.addMessages("de", {
+      "Database": "Datenbank",
+      "Workspace": "Arbeitsbereich",
+      "Organisation": "Organisation",
+      "Dashboard": "Übersicht",
+      "Prompt Insights": "Prompt-Auswertung",
+      "Citations": "Citations",
+      "Brands": "Marken",
+      "Performance": "Leistung",
+      "Opportunities": "Chancen",
+      "Prompt Research": "Prompt-Recherche",
+      "Mira": "Mira",
+      "Teams": "Teams",
+      "Settings": "Einstellungen",
+      "Account Settings": "Kontoeinstellungen",
+      "Your Brand": "Deine Marke",
+      "Team Organisation": "Teamverwaltung",
+      "Preferences": "Einstellungen",
+      "Billing": "Abrechnung",
+      "Theme": "Design",
+      "Light": "Hell",
+      "Dark": "Dunkel",
+      "System": "System",
+      "Log out": "Abmelden"
+    });
     var esc = UC.esc;
     var instanceId = root.getAttribute("data-instance") || "default";
     /* Erst hier, nicht auf Modulebene: UC steht beim Laden dieser Datei noch nicht fest. */
@@ -629,10 +668,10 @@
          ein Sprung von Dashboard auf den richtigen Punkt. Solange die Leiste ihre Skelette zeigt,
          muss auch die Markierung nichts sagen; setSidebarReady() loest beides gemeinsam aus. */
       return '<button class="usn-item' + ((state.enthuellt && it.key === state.aktiv) ? " is-active" : "") + '" ' +
-        'type="button" data-nav-key="' + esc(it.key) + '" data-tiplabel="' + esc(it.label) + '" ' +
+        'type="button" data-nav-key="' + esc(it.key) + '" data-tiplabel="' + esc(t(it.label)) + '" ' +
         'data-tip-place="right">' +
         '<span class="usn-ic">' + ic(it.icon) + '</span>' +
-        '<span class="usn-txt">' + esc(it.label) + '</span>' + extra + '</button>';
+        '<span class="usn-txt">' + esc(t(it.label)) + '</span>' + extra + '</button>';
     }
     function renderNav(){
       aktivPruefen();
@@ -782,7 +821,7 @@
       var th = themaJetzt();
       elAccMenu.innerHTML = KONTO.map(function(s){
         return '<div class="usn-sec">' +
-          (s.head ? '<span class="up-pop-head">' + esc(s.head) + '</span>' : "") +
+          (s.head ? '<span class="up-pop-head">' + esc(t(s.head)) + '</span>' : "") +
           s.items.map(function(it){
             var an = s.theme && it.key === th;
             return '<div class="up-pop-opt' + (an ? " is-active" : "") + '" ' +
@@ -790,7 +829,7 @@
               '<span class="up-pop-opt-l">' +
                 (it.logo ? logoHtml((state.team || {}).name, (state.team || {}).favicon_url, "usn-acc-logo")
                          : (it.icon ? ic(it.icon) : "")) +
-                esc(it.label) +
+                esc(t(it.label)) +
               '</span>' +
               (s.theme ? '<span class="up-check">' + ic("check") + '</span>' : "") +
             '</div>';
@@ -883,7 +922,17 @@
            Theme und Abmelden haben ihr eigenes. Vorher lief alles ueber usnProfile, und der
            Workflow musste erst per Bedingung auseinandersortieren, was gemeint war. */
         if (key === "logout") fire("data-logout-fn", "usnLogout", { action: "logout" });
-        else fire("data-account-fn", "usnAccount", { action: key });
+        else {
+          /* Preferences oeffnet das Fenster SELBST, wenn preferences.js auf der Seite liegt --
+             kein Bubble-Workflow noetig, dieselbe Bauart wie der Suchknopf im Dashboard-Kopf, der
+             Cmd+K drueckt. Das Ereignis geht trotzdem hinaus: ein Workflow kann zusaetzlich
+             reagieren (etwa das Profil nachladen), und ohne preferences.js bleibt der Punkt
+             wenigstens verdrahtet. */
+          if (key === "prefs" && typeof window.openUpstreemPreferences === "function") {
+            try { window.openUpstreemPreferences(); } catch (e) {}
+          }
+          fire("data-account-fn", "usnAccount", { action: key });
+        }
         return;
       }
 
@@ -1163,6 +1212,11 @@
     /* Theme-Wechsel: das Mira-Symbol hat zwei Fassungen, und der Haken im Konto-Menue muss
        mitwandern. */
     UC.onTheme(function(){ renderNav(); qaAufbauen(0); if (popAcc.isOpen()) renderAccMenu(); });
+    /* Und dasselbe beim Sprachwechsel -- die Beschriftungen entstehen in renderNav und
+       renderAccMenu, also braucht es genau dort einen Anlass. Ohne das stuende die Leiste in der
+       alten Sprache, bis der Nutzer etwas anderes anklickt. Derselbe Weg wie beim Thema, nur ein
+       anderes Ereignis. */
+    if (UC.onPrefs) UC.onPrefs(function(){ renderNav(); if (popAcc.isOpen()) renderAccMenu(); });
 
     /* Welches Team gerade in state.pins steht. null heisst: noch nichts geladen. */
     var pinsFuerTeam = null;

@@ -1627,7 +1627,10 @@
          Monatsumrechnung eines Jahrespreises ist die Nachkommastelle keine Information, sondern
          ein Rundungsrest. */
       var g = Math.round(v);
-      return "€" + (Math.abs(v - g) < 0.005 ? String(g) : v.toFixed(0));
+      /* Durch core: in der deutschen Schreibweise steht 1.234 statt 1234. */
+      var z = UC.fmtNum ? UC.fmtNum(Math.abs(v - g) < 0.005 ? g : Math.round(v), 0)
+                        : String(Math.abs(v - g) < 0.005 ? g : Math.round(v));
+      return "€" + z;
     }
     function farbeVon(t) {
       if (!t) return "";

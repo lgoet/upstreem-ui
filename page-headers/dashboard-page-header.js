@@ -111,11 +111,14 @@
 
   function fmtRank(v){
     var n = Number(v);
-    return isFinite(n) ? (Math.round(n * 10) / 10).toFixed(1) : "–";
+    /* Durch core, damit das Trennzeichen dem Zahlenformat des Nutzers folgt. */
+    return isFinite(n) ? (UC.fmtNum ? UC.fmtNum(Math.round(n * 10) / 10, 1)
+                                    : (Math.round(n * 10) / 10).toFixed(1)) : "–";
   }
   function fmtInt(v){
     var n = Number(v);
-    return isFinite(n) ? String(Math.round(n)) : "–";
+    /* Ebenfalls durch core: eine vierstellige Zahl ohne Tausendertrennung ist eine Ziffernfolge. */
+    return isFinite(n) ? (UC.fmtInt ? UC.fmtInt(n) : String(Math.round(n))) : "–";
   }
 
   function buildController(root){
