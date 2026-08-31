@@ -2805,11 +2805,27 @@
    this is its own third state a page header can reuse wherever it needs an icon-only utility
    action next to its Add/tool buttons. First used by dashboard-page-header.js's Refresh button,
    promoted here once prompts-page-header.js needed the identical one. */
+/* Der Zeichenknopf oben rechts in JEDEM Seitenkopf (Refresh, Docs, Suche) -- und ab jetzt
+   derselbe Knopf wie die Ausgaenge oben rechts im Onboarding-Kopf (.uob-link). Die Geometrie war
+   dort schon woertlich diese: 32x32, Radius 8, kein Rahmen, durchsichtig, Polster 0. Verschieden
+   waren nur drei Dinge, und sie sind der Grund fuer diese Aenderung:
+
+     Farbe        --vc-text        ->  --vc-muted, und erst beim Ueberfahren --vc-text. Ein
+                                      Ausgang oder ein Nachladen ist nicht die Aussage der Seite;
+                                      die Ueberschrift daneben ist es.
+     Zeichen      16               ->  15, dasselbe Mass wie dort
+     Fokusring    fehlte           ->  wie ueberall sonst
+
+   Die Hoverflaeche bleibt --vc-heading-bg (das Onboarding hat dafuer ein eigenes #f7f8fa): das
+   ist der Ton, den jeder ruhige Zeichenknopf der App beim Ueberfahren zeigt -- .up-iconbtn und
+   .up-quietbtn eingeschlossen. Zwei Hovertoene im selben Kopf waeren der schlechtere Tausch. */
 .up-ph-iconbtn { display: inline-flex; align-items: center; justify-content: center;
   width: 32px; height: 32px; border: 0; border-radius: 8px; background: transparent;
-  color: var(--vc-text); cursor: pointer; padding: 0; flex: 0 0 auto; }
-.up-ph-iconbtn:hover { background: var(--vc-heading-bg); }
-.up-ph-iconbtn svg { width: 16px; height: 16px; display: block; }
+  color: var(--vc-muted); cursor: pointer; padding: 0; flex: 0 0 auto;
+  transition: color 120ms ease, background-color 120ms ease; }
+.up-ph-iconbtn:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
+.up-ph-iconbtn:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+.up-ph-iconbtn svg { width: 15px; height: 15px; display: block; }
 /* One full turn, ease-in-out, on click -- triggered via UC.spinOnce(btn) (core.js), which
    toggles this class off/on with a forced reflow in between so a second click mid-spin restarts
    the animation instead of doing nothing (the class name alone wouldn't change, so a plain

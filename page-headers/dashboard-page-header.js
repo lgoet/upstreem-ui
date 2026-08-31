@@ -172,26 +172,27 @@
             Namen fuer die Vorlesehilfe.
             .up-ph-iconbtn ist das Bauteil dafuer -- 32x32, dasselbe wie der Refresh-Knopf
             daneben; .dph-docsbtn bleibt am Element, die Klasse steht im Vertrag.
-            Strichstaerke 2 wie beim Refresh-Knopf. Das Onboarding zeichnet dasselbe Zeichen mit
-            1.8/1.9 -- dort steht es neben Text, hier neben einem Zeichen mit 2, und gleich
-            aussehen soll es mit seinem Nachbarn. */
+            Strichstaerke 1.8 wie im Onboarding-Kopf -- dort haengt dasselbe Zeichen, und die
+            drei Knoepfe hier sind jetzt dasselbe Bauteil (.up-ph-iconbtn, siehe core.css). Bei
+            15px Zeichen ist 2 sichtbar schwerer. */
       var db = root.querySelector(".dph-docsbtn");
       if (db && !db.getAttribute("data-dph-iconly")){
         db.setAttribute("data-dph-iconly", "1");
         db.classList.add("up-ph-iconbtn");
         db.setAttribute("aria-label", "Open Documentation");
-        db.innerHTML = UC.icon ? UC.icon("libraryBig", 2) : db.innerHTML;
+        db.innerHTML = UC.icon ? UC.icon("libraryBig", 1.8) : db.innerHTML;
       }
 
       /* 3. Das Refresh-Zeichen aus core statt als Inline-Kopie im Markup. Es IST bereits Lucide
             refresh-cw und Pfad fuer Pfad dasselbe wie UC.icon("refreshCw") -- nachgeprueft gegen
             lucide-static. Genau darum kommt es jetzt von dort: eine Form, die zweimal im Repo
             steht, ist die naechste, die auseinanderlaeuft. Groesse und Strichstaerke aendern sich
-            nicht (.up-ph-iconbtn svg { 16px }, Strichstaerke 2 wie im Markup). */
+            nicht mehr aus dem Markup, sondern aus dem Bauteil (.up-ph-iconbtn svg { 15px }),
+            und die Strichstaerke ist 1.8 wie bei seinen zwei Nachbarn. */
       var rb = root.querySelector(".dph-refreshbtn");
       if (rb && UC.icon && !rb.getAttribute("data-dph-ic")){
         rb.setAttribute("data-dph-ic", "1");
-        rb.innerHTML = UC.icon("refreshCw", 2);
+        rb.innerHTML = UC.icon("refreshCw", 1.8);
       }
 
       /* 4. Der Suchknopf ZWISCHEN den beiden. Er oeffnet die Palette (Quick Actions) -- und zwar
@@ -209,7 +210,7 @@
         sb.type = "button";
         sb.setAttribute("aria-label", "Open Quick Actions");
         sb.setAttribute("data-tip", "Quick Actions");
-        sb.innerHTML = UC.icon ? UC.icon("search", 2) : "";
+        sb.innerHTML = UC.icon ? UC.icon("search", 1.8) : "";
         /* Zwischen Docs und Refresh: vor dem Refresh-Knopf, wenn es einen gibt, sonst ans Ende. */
         if (rb) tools.insertBefore(sb, rb); else tools.appendChild(sb);
       }
