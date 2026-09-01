@@ -4706,15 +4706,25 @@
                <div class="up-root utf-root" data-nurfunktion="yes" …>
            isYes nimmt yes/true/1, also auch einen Bubble-Ja/Nein-Ausdruck als Text. */
         if (isYes(el.getAttribute("data-nurfunktion"))) winzig = true;
-        else if (wirt){
-          /* Der Rueckfall bleibt: wer das Attribut nicht setzt, aber sein Element wirklich klein
-             macht, bekommt dasselbe. offsetWidth/offsetHeight und nicht getBoundingClientRect --
-             Layoutwerte, unabhaengig von einem transform an einem Vorfahren.
-             Bis 8px statt bis 4: eine Bubble-Gruppe um ein 1x1-Element traegt oft ein paar Pixel
-             Polster. Unter 1 wird weiter NICHT gegriffen -- ein Container, der noch nicht ausgelegt
-             ist, misst 0x0, und ein Filter, der deswegen kurz verschwindet, blinkt sichtbar. */
-          var w = wirt.offsetWidth, h = wirt.offsetHeight;
-          winzig = w >= 1 && w <= 8 && h >= 1 && h <= 8;
+        else {
+          /* Der Rueckfall, jetzt ueber die GANZE Kette nach oben und nicht nur ueber den direkten
+             Elternknoten. Genau daran ist er gescheitert: Bubble legt um den Inhalt eines
+             HTML-Elements mehrere Huellen, und die eine, die wirklich 1x1 ist, sitzt zwei oder drei
+             Ebenen darueber. Gemeldet als "die liegen 1x1 auf der Seite, SICHTBAR, und ein Klick in
+             dem Bereich setzt den Filter" -- der Trigger laeuft aus dem kleinen Kasten heraus, weil
+             der overflow nicht klemmt.
+             Sechs Ebenen reichen: mehr Huellen legt Bubble um ein Element nicht.
+             Bis 12px, weil eine solche Huelle Polster tragen kann. Unter 1 wird weiter NICHT
+             gegriffen -- ein Container, der noch nicht ausgelegt ist, misst 0x0, und ein Filter, der
+             deswegen kurz verschwindet, blinkt sichtbar.
+             offsetWidth/offsetHeight und nicht getBoundingClientRect: Layoutwerte, unabhaengig von
+             einem transform an einem Vorfahren. */
+          var v = el.parentElement, tiefe = 0;
+          while (v && tiefe < 6 && v !== document.body && v !== document.documentElement){
+            var w = v.offsetWidth, h = v.offsetHeight;
+            if (w >= 1 && w <= 12 && h >= 1 && h <= 12){ winzig = true; break; }
+            v = v.parentElement; tiefe++;
+          }
         }
       }
       if (el.classList.contains("up-nurfunktion") !== winzig) el.classList.toggle("up-nurfunktion", winzig);
@@ -8517,6 +8527,38 @@
       if (cfg.watermark !== false) injectWatermark(wrap);
     }
 
+    /* Die eigentliche Antwort auf "warum fehlt beim Viewwechsel ein Punkt der Zeitachse":
+       die x-Achse laeuft mit autoSkip. Chart.js entscheidet aus der VERFUEGBAREN BREITE, wie viele
+       Beschriftungen es unterbringt, und verwirft dabei welche -- auch die letzte. Wird das Chart
+       gezeichnet, waehrend sein Kasten noch nicht seine endgueltige Breite hat, rechnet es mit der
+       falschen und muss danach noch einmal ran. Das ist das Nachrutschen.
+
+       Auf 0 Breite zu warten reicht NICHT, und genau das tat buildWhenSized schon: es prueft
+       clientWidth > 0. Ein View, der gerade eingeblendet wird, hat aber oft schon eine Breite --
+       nur noch nicht die endgueltige. Deshalb hier keine zweite Warteschleife (mein erster Versuch
+       war genau das, ein Nachbau von buildWhenSized), sondern eine NACHKONTROLLE hinter dem
+       Zeichnen: hat sich die Breite danach noch geaendert, wird einmal still nachgerechnet.
+       "still" heisst update("none") -- ohne das liefe die 600ms-Einblendanimation ein zweites Mal,
+       und das war das Rumruckeln, wenn die Legende an ist. */
+    var nachUhr = null;
+    function nachkontrolle(){
+      if (nachUhr) { window.clearTimeout(nachUhr); nachUhr = null; }
+      var breiteBeimZeichnen = wrap ? (wrap.clientWidth || 0) : 0;
+      var meinStand = stand, versuche = 0;
+      function pruef(){
+        nachUhr = null;
+        if (meinStand !== stand || !chart) return;
+        var jetzt = wrap ? (wrap.clientWidth || 0) : 0;
+        if (jetzt !== breiteBeimZeichnen && jetzt > 0){
+          breiteBeimZeichnen = jetzt;
+          try { chart.resize(); chart.update("none"); } catch(e){}
+        }
+        /* Drei Blicke ueber eine halbe Sekunde: das deckt das Einblenden eines Views ab, ohne
+           danach noch eine Uhr laufen zu lassen. */
+        if (++versuche < 3) nachUhr = window.setTimeout(pruef, 160);
+      }
+      nachUhr = window.setTimeout(pruef, 60);
+    }
     function build(built){
       destroy();
       lastSig = builtSig(built);   // after destroy(), which clears it
@@ -8589,6 +8631,9 @@
         });
         chart.$upGridColor = tc.border;
         chart.$upHoverLineColor = tc.border;
+        /* Und die Nachkontrolle anwerfen: setzt sich die Breite erst NACH dem Zeichnen (ein View,
+           der gerade eingeblendet wird), wird einmal still nachgerechnet. Siehe oben. */
+        nachkontrolle();
       } catch(err){}
     }
 

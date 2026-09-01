@@ -1447,10 +1447,22 @@
 }
 /* Die Wurzel selbst nimmt keinen Platz mehr ein: sonst steht in dem 1x1-Kasten ein 32px hoher
    Block, der ueber den Rand hinausragt und darunterliegende Bedienelemente abfaengt. */
-.up-nurfunktion { width: 1px; height: 1px; overflow: visible; pointer-events: none; }
-/* overflow bleibt visible und pointer-events wird am MENUE wieder eingeschaltet -- sonst waere ein
-   Filter, den doch jemand programmatisch oeffnet, sichtbar aber nicht bedienbar. */
-.up-nurfunktion .utf-menu, .up-nurfunktion .umf-menu, .up-nurfunktion .umk-menu { pointer-events: auto; }
+/* Die Wurzel KLEMMT jetzt (overflow:hidden). Vorher stand hier visible, damit ein Menue
+   herausragen darf -- aber genau dadurch ragte auch alles andere heraus und war sichtbar und
+   treffbar. Ein Filter, der nur als Funktion daliegt, oeffnet sein Menue nie an dieser Stelle:
+   geoeffnet wird er, nachdem die Filterleiste ihn zu sich geholt hat, und dann ist diese Klasse
+   weg. */
+.up-nurfunktion { width: 1px; height: 1px; overflow: hidden; pointer-events: none; }
+/* Am MENUE nur, wenn es OFFEN ist. Hier stand pointer-events:auto ohne Bedingung -- und das war
+   ein Fehler mit Folgen: ein geschlossenes Menue traegt pointer-events:none, damit es nicht im Weg
+   ist, und diese Regel hat das aufgehoben. Der Filter liegt als 1x1 auf der Seite, sein Menue
+   haengt absolut und ragt darueber hinaus, und ein Klick irgendwo in dem Bereich landete in einer
+   unsichtbaren Menuezeile -- gemeldet als "ich klicke da irgendwo und der Models-Filter setzt
+   sich". Genau das.
+   is-shown setzt makePopover beim Oeffnen; solange es fehlt, faengt das Menue nichts. */
+.up-nurfunktion .utf-menu.is-shown,
+.up-nurfunktion .umf-menu.is-shown,
+.up-nurfunktion .umk-menu.is-shown { pointer-events: auto; }
 
 /* ---------- Flaggenplaettchen ----------
    Aus filters/markets-filter.css hierher gezogen, als die Sprachauswahl im Einstellungsfenster den

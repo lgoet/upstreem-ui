@@ -108,15 +108,36 @@
    koennte man nicht animieren, und ein Sprung waere genau das, was hier nicht sein soll. */
 .up-root.up-portal.usn-bar.is-hidden { transform: translateX(-100%); }
 
-/* Was im Mini-Zustand verschwindet. Die Deckkraft geht in 60% der Zeit, die Breite ueber die
-   volle -- sonst quetscht sich der Text noch sichtbar zusammen, bevor er geht. */
+/* Was im Mini-Zustand verschwindet.
+   HIER LAG DAS RUCKELN: die Deckkraft war animiert, flex und width aber NICHT -- die schalteten
+   sofort um. Der Text war damit im ersten Bild weg, die Leiste brauchte fuer ihre Breite aber die
+   volle Zeit. Genau der beschriebene Zwischenzustand: 250px breit und nur Icons darin, danach
+   klappt sie ein.
+
+   Der Kniff ist die VERZOEGERUNG, nicht eine zweite Animation: width und flex-basis lassen sich
+   von auto aus nicht weich rechnen, aber ihr Umschalten laesst sich nach hinten legen. Also
+   Dauer 0s mit einer Verzoegerung von der ganzen Zeit -- der Text behaelt seine Breite, schrumpft
+   mit der Leiste (er ist flex mit min-width 0 und schneidet ohnehin ab) und blendet dabei aus.
+   Erst wenn die Leiste steht, faellt seine Breite auf 0, und da ist er schon unsichtbar.
+
+   Und ASYMMETRISCH: eine Uebergangsangabe gilt fuer den Zustand, in DEN gewechselt wird. Beim
+   Einklappen zaehlt also die Regel unten, beim Aufklappen die hier. Dort darf die Breite NICHT
+   verzoegert zuruecckommen, sonst stuende die Leiste offen und leer, bevor der Text erscheint --
+   derselbe Fehler in der anderen Richtung. */
 .usn-txt, .usn-fade {
-  transition: opacity calc(var(--usn-t) * .6) var(--usn-ease);
+  transition: opacity calc(var(--usn-t) * .55) var(--usn-ease) calc(var(--usn-t) * .4),
+              flex-basis 0s linear 0s,
+              width 0s linear 0s;
 }
 /* flex: 0 0 0 und nicht nur width: 0 -- ohne das waechst .usn-txt (flex: 1 1 auto) wieder in
    den freien Platz, und das Icon steht dann nicht mittig in den 64px, sondern links am Rand. */
 .usn-bar.is-mini .usn-txt,
-.usn-bar.is-mini .usn-fade { opacity: 0; flex: 0 0 0; width: 0; overflow: hidden; pointer-events: none; }
+.usn-bar.is-mini .usn-fade {
+  opacity: 0; flex: 0 0 0; width: 0; overflow: hidden; pointer-events: none;
+  transition: opacity calc(var(--usn-t) * .5) var(--usn-ease) 0s,
+              flex-basis 0s linear var(--usn-t),
+              width 0s linear var(--usn-t);
+}
 /* Die Abschnittsueberschrift ist ein Block: Breite 0 nimmt ihr nicht die Hoehe, sie muss
    zusaetzlich zusammenfallen. Die Bloecke bleiben trotzdem getrennt -- das macht der Abstand
    zwischen ihnen. */
