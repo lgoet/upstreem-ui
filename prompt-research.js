@@ -191,6 +191,31 @@
   var tableMenuPopover    = root.querySelector('#upr-table-menu-popover');
   var acceptWithTagsBtn   = root.querySelector('#upr-accept-with-tags');
   var tableMenuTrigger    = root.querySelector('#upr-table-menu-trigger');
+  /* "Accept all Prompts <span data-count-label>(0)</span>": Text und Zahl liegen im SELBEN
+     Element, der Text als eigener Knoten neben dem Zaehler. Der Sprachlauf laesst so etwas
+     absichtlich liegen -- ein Satz aus zwei Knoten laesst sich nicht Knoten fuer Knoten
+     uebersetzen, das war der Fehler hinter "Hinzufügen Prompts". Die zwei Menuepunkte blieben
+     dadurch englisch, obwohl ihr Eintrag im Katalog stand.
+     Also bekommt der Text hier sein eigenes Element, einmal beim Aufbau; danach traegt jeder
+     Knoten genau einen Text und der Lauf kommt heran. Die Vorlage ist mitgezogen, aber die
+     erreicht ein bereits eingebautes Element nicht -- dieser Weg schon. */
+  (function etikettTrennen(){
+    var zaehler = root.querySelectorAll('[data-count-label]');
+    for (var i = 0; i < zaehler.length; i++){
+      var p = zaehler[i].parentNode;
+      if (!p || !p.getAttribute || p.getAttribute('data-etikett') === '1') continue;
+      for (var k = 0; k < p.childNodes.length; k++){
+        var n = p.childNodes[k];
+        if (n.nodeType !== 3 || !(n.nodeValue || '').trim()) continue;
+        var s = document.createElement('span');
+        s.textContent = n.nodeValue.trim();
+        p.replaceChild(s, n);
+        p.insertBefore(document.createTextNode(' '), s.nextSibling);
+        break;
+      }
+      p.setAttribute('data-etikett', '1');
+    }
+  })();
   var acceptAllButton     = root.querySelector('#upr-accept-all-prompts');
   var deleteAllButton     = root.querySelector('#upr-delete-all-prompts');
   var historyList         = root.querySelector('#upr-history-list');

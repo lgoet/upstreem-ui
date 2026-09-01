@@ -1,0 +1,87 @@
+<meta charset="utf-8"><title>Deutsch: Brands-Flaechen und Prompt Recherche, jeder Text</title>
+<style>html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif;background:#fff}
+.b{padding:16px;width:1200px}#out{padding:10px;font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap}</style>
+<body><div id="b1" class="b"></div><div id="b2" class="b"></div><div id="b3" class="b"></div>
+<div id="b4" class="b"></div><pre id="out">laeuft…</pre>
+<script>
+/* Testrunde: JEDER sichtbare Text der fuenf Flaechen, Sprache von Anfang an deutsch. Gemessen wird
+   das gerenderte Ergebnis, nicht der Katalog -- ein Eintrag beweist nicht, dass er im richtigen
+   Knoten landet. Attribute laufen mit, sie sind ebenfalls Text, den der Nutzer liest. */
+window.__err=[]; window.addEventListener("error",function(e){ window.__err.push(String(e.message)); });
+try{ localStorage.removeItem("pref_theme"); localStorage.setItem("up_prefs", JSON.stringify({locale:"de"})); }catch(e){}
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var D=["core.css","core.js",
+ "page-headers/brands-page-header.css","page-headers/brands-page-header.js","page-headers/bubble/brands_page_header_bubble.html",
+ "brands-overview.css","brands-overview.js","bubble/brands_overview_bubble.html",
+ "discover-brands.css","discover-brands.js","bubble/discover_brands_bubble.html",
+ "add-brand.css","add-brand.js",
+ "prompt-research.css","prompt-research.js","bubble/prompt_research_bubble.html"];
+Promise.all(D.map(hol)).then(function(t){
+  var m={}; D.forEach(function(f,i){ m[f]=t[i]; });
+  D.filter(function(f){ return /\.css$/.test(f); }).forEach(function(f){
+    var s=document.createElement("style"); s.textContent=m[f]; document.head.appendChild(s); });
+  var s2=document.createElement("style");
+  s2.textContent="*,*::before,*::after{transition:none !important;animation:none !important}";
+  document.head.appendChild(s2);
+  [["page-headers/bubble/brands_page_header_bubble.html",".bph-root","b1","ph"],
+   ["bubble/brands_overview_bubble.html",".ubo-root","b2","bo"],
+   ["bubble/discover_brands_bubble.html",".udb-root","b3","db"],
+   ["bubble/prompt_research_bubble.html",".upr-root","b4","pr"]].forEach(function(k){
+    var w=document.createElement("div"); w.innerHTML=wurzelAus(m[k[0]]);
+    var r=w.querySelector(k[1]);
+    if(!r){ window.__err.push("keine Wurzel: "+k[0]); return; }
+    r.setAttribute("data-instance",k[3]); r.setAttribute("data-cdn-pin","x"); r.setAttribute("data-isdark","no");
+    document.getElementById(k[2]).appendChild(r);
+  });
+  D.filter(function(f){ return /\.js$/.test(f); }).forEach(function(f){
+    var j=document.createElement("script"); j.textContent=m[f]; document.head.appendChild(j); });
+  return new Promise(function(ok){ setTimeout(ok,1600); });
+}).then(function(){
+  var BR=[{ company_id:"c1", name:"Carwow", logo_url:"", visibility_pct:34.3, visibility_delta_pct:1.2,
+            avg_rank:2.4, avg_rank_delta:-0.3, sentiment:76, sentiment_delta:4, active:true },
+          { company_id:"c2", name:"ADAC", logo_url:"", visibility_pct:22.1, visibility_delta_pct:-0.8,
+            avg_rank:3.1, avg_rank_delta:0.2, sentiment:64, sentiment_delta:-2, active:true }];
+  try{ window.renderBrandsOverview({ instanceId:"bo", rows:BR, totalCount:2,
+        series:BR.map(function(b){ return { company_id:b.company_id, name:b.name,
+          points:[{date:"2026-08-01",value:30},{date:"2026-08-02",value:34}] }; }) }); }
+  catch(e){ window.__err.push("bo: "+e.message); }
+  try{ window.renderDiscoverBrands({ instanceId:"db", totalCount:2, rows:[
+        { name:"Auto Motor Sport", domain:"auto-motor-und-sport.de", visibility_pct:12, mentioned_count:8 },
+        { name:"Mobile.de", domain:"mobile.de", visibility_pct:9, mentioned_count:5 } ]}); }
+  catch(e){ window.__err.push("db: "+e.message); }
+  return new Promise(function(ok){ setTimeout(ok,800); });
+}).then(function(){
+  function texte(w){ if(!w) return []; var r=[],tw=document.createTreeWalker(w,NodeFilter.SHOW_TEXT,null),k;
+    while((k=tw.nextNode())){ var s=(k.nodeValue||"").replace(/\s+/g," ").trim();
+      if(!s||!/[A-Za-zÀ-ÿ]/.test(s)) continue; var p=k.parentNode;
+      if(p&&(p.nodeName==="SCRIPT"||p.nodeName==="STYLE")) continue;
+      if(r.indexOf(s)<0) r.push(s); } return r; }
+  function attr(w){ if(!w) return []; var r=[];
+    Array.prototype.forEach.call(w.querySelectorAll("[aria-label],[placeholder],[title],[data-tip]"),function(e){
+      ["aria-label","placeholder","title","data-tip"].forEach(function(a){ var v=e.getAttribute(a);
+        if(v && /[A-Za-zÀ-ÿ]{2}/.test(v) && r.indexOf(v)<0) r.push(v); }); }); return r; }
+  /* Nur was NOCH englisch aussieht ist interessant -- ein Wort ohne Umlaut, das im Katalog als
+     SCHLUESSEL steht, ist ein Rest. Deshalb wird gegen den Katalog geprueft: t(x) !== x heisst,
+     es gaebe eine Uebersetzung, sie ist aber nicht angekommen. */
+  var t=window.UpstreemCore && UpstreemCore.t ? UpstreemCore.t : function(x){return x;};
+  function reste(liste){ return liste.filter(function(x){ return t(x) !== x; }); }
+  var R={};
+  [["seitenkopf","ph"],["overview","bo"],["discover","db"],["recherche","pr"]].forEach(function(k){
+    var w=document.querySelector('[data-instance="'+k[1]+'"]');
+    var tx=texte(w), at=attr(w);
+    R[k[0]] = { texte:tx, attribute:at, RESTE_TEXT:reste(tx), RESTE_ATTR:reste(at) };
+  });
+  if (window.openAddBrand){ try{ window.openAddBrand(); }catch(e){ window.__err.push("ab: "+e.message); } }
+  return new Promise(function(ok){ setTimeout(ok,600); }).then(function(){
+    var ab=document.querySelector(".uab-card");
+    var tx=texte(ab), at=attr(ab);
+    R.add_brand={ texte:tx, attribute:at, RESTE_TEXT:reste(tx), RESTE_ATTR:reste(at) };
+    R.fehler=window.__err;
+    document.getElementById("out").textContent=JSON.stringify(R,null,1);
+    window.__R=R; window.__fertig=true;
+  });
+}).catch(function(e){ document.getElementById("out").textContent="FEHLER: "+e.message+"\n"+(e.stack||"");
+  window.__R={fehler:[String(e.message)]}; window.__fertig=true; });
+</script>

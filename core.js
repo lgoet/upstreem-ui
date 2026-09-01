@@ -832,7 +832,10 @@
     "List": "Liste",
 
     /* ── Prompt Research ────────────────────────────────────────────────────────────────────── */
-    "Prompt research": "Prompt-Recherche",
+    /* Ohne Bindestrich, wie der Bereich selbst heisst -- zwei Schreibweisen desselben Begriffs
+       in einer App sind schlimmer als die strengere Rechtschreibung. Im SATZ bleibt der
+       Bindestrich stehen ("eine neue Prompt-Recherche"), dort ist es ein Kompositum. */
+    "Prompt research": "Prompt Recherche",
     "Start Research": "Recherche starten",
     "Delete research": "Recherche löschen",
     "Previous Researches": "Frühere Recherchen",
@@ -1541,6 +1544,117 @@
     "We could not load the {what}. Please reload the page.":
       "Wir konnten die {what} nicht laden. Bitte lade die Seite neu.",
     "competitors": "Wettbewerber"
+  });
+
+  /* Neunter Nachtrag: die Brand-Flaechen (Discover, Add Brand, Seitenkopf, Overview), die
+     Prompt Recherche -- und vier Woerter aus dem Konto-Menue der Seitenleiste.
+     DIE VIER SIND DER INTERESSANTE FALL: "Preferences", "Theme", "Light", "Dark" standen im
+     Katalog von preferences.js. Der laedt aber SPAET NACH, erst wenn das Fenster geoeffnet wird --
+     bis dahin gab es fuer die Seitenleiste keinen Eintrag, und genau deshalb blieb "Preferences"
+     im Konto-Menue englisch, waehrend "Billing" und "Log out" daneben schon deutsch waren.
+     Sie gehoeren also nach core: die Seitenleiste ist immer da. Aus preferences.js sind sie raus,
+     damit nicht zwei Fassungen desselben Wortes auseinanderlaufen.
+     Die Menuepunkte der Navigation bleiben englisch, wie besprochen -- das sind Glossarwoerter
+     (Domains, URLs, Brand, Prompt) und die haben schlicht keinen Eintrag. */
+  addMessages("de", {
+    /* ---- Konto-Menue der Seitenleiste, und das Einstellungsfenster nutzt dieselben ---- */
+    "Preferences": "Einstellungen",
+    "Theme": "Design",
+    "Light": "Hell",
+    "Dark": "Dunkel",
+    "Display": "Darstellung",
+
+    /* ---- Discover Brands ---- */
+    "Scanning your AI answers": "Deine KI-Antworten werden durchsucht",
+    "Matching names against cited domains…": "Namen werden mit zitierten Domains abgeglichen…",
+    "Removing brands you already track…": "Brands, die du schon beobachtest, werden entfernt…",
+    "Ranking by visibility…": "Nach Visibility sortiert…",
+    /* "Zugeordnete" und nicht "Gematchte": der Schalter sagt, ob eine zitierte DOMAIN dem Namen
+       zugeordnet werden konnte. */
+    "Matched Brands": "Zugeordnete Brands",
+    "On: only brands where a cited domain could be assigned to the name, the safer list. Off: brands are matched on the name alone, which finds more but also catches look-alikes.":
+      "An: nur Brands, bei denen eine zitierte Domain dem Namen zugeordnet werden konnte — die sichere Liste. Aus: die Zuordnung läuft allein über den Namen, das findet mehr, fängt aber auch Namensvetter ein.",
+    "Every brand we could match to a domain is already tracked. Turn off Matched Brands to match on names alone.":
+      "Jede Brand, die wir einer Domain zuordnen konnten, wird schon beobachtet. Schalte „Zugeordnete Brands“ ab, um allein über den Namen zuzuordnen.",
+
+    /* ---- Add Brand ---- */
+    "Add a new Brand to track in your AI answers":
+      "Eine neue Brand hinzufügen, die in deinen KI-Antworten beobachtet wird",
+    "The main domain. Primary path - not a subpage":
+      "Die Haupt-Domain. Der Hauptpfad, keine Unterseite",
+    "e.g. Apple": "z. B. Apple",
+    "e.g. apple.com": "z. B. apple.com",
+    "No answer from the server. The brand may still have been created — close this and refresh before trying again.":
+      "Keine Antwort vom Server. Die Brand kann trotzdem angelegt worden sein — schließe das Fenster und lade neu, bevor du es erneut versuchst.",
+
+    /* ---- Brands: Seitenkopf und Overview ---- */
+    "Manage tracked brands, compare performance, and discover untracked competitors":
+      "Beobachtete Brands verwalten, Leistung vergleichen und unbeobachtete Wettbewerber entdecken",
+    "Search brands": "Brands suchen",
+    "Linechart": "Linienchart",
+    "Landscape": "Landschaft",
+    "How often the brand appears in AI answers for the tracked prompts, plus the change against the previous period.":
+      "Wie oft die Brand in KI-Antworten auf die beobachteten Prompts vorkommt, plus die Änderung gegenüber dem vorigen Zeitraum.",
+    "The brand's average position among all brands mentioned, plus the change against the previous period. A lower number is better.":
+      "Die durchschnittliche Position der Brand unter allen erwähnten Brands, plus die Änderung gegenüber dem vorigen Zeitraum. Kleiner ist besser.",
+    "How positively the brand is described when it's mentioned, plus the change against the previous period.":
+      "Wie positiv über die Brand gesprochen wird, wenn sie erwähnt wird, plus die Änderung gegenüber dem vorigen Zeitraum.",
+    /* Die Bausteine, aus denen core den Erklaersatz mit {scope} und {trend} zusammensetzt. */
+    " for the tracked prompts": " auf die beobachteten Prompts",
+    ", plus the change against the previous period": ", plus die Änderung gegenüber dem vorigen Zeitraum",
+
+    /* ---- Prompt Recherche ---- */
+    "Prompt Research": "Prompt Recherche",
+    "Start your prompt research": "Starte deine Prompt Recherche",
+    "Enter keywords, topics, or context to uncover high-intent prompt themes and related opportunities.":
+      "Gib Keywords, Themen oder Kontext ein, um kaufnahe Prompt-Themen und passende Opportunities zu finden.",
+    "Enter keywords, topics, or context for prompt research...":
+      "Keywords, Themen oder Kontext für die Prompt Recherche…",
+    "Tip: Be specific for better results. You can enter multiple keywords or a full topic description.":
+      "Tipp: Je genauer, desto besser. Du kannst mehrere Keywords oder eine ganze Themenbeschreibung eingeben.",
+    "Configure market, business model and optional persona for generated prompt themes.":
+      "Markt, Geschäftsmodell und optional eine Persona für die erzeugten Prompt-Themen einstellen.",
+    "Loading markets…": "Märkte werden geladen…",
+    "Search for Markets": "Märkte suchen",
+    "No options found": "Keine Auswahl gefunden",
+    "No personas found": "Keine Personas gefunden",
+    "No specific persona": "Keine bestimmte Persona",
+    /* Die Personas: der gespeicherte Wert ist der Slug (student, smb_owner, ...), die
+       Beschriftung ist Oberflaeche -- die darf uebersetzt werden. */
+    "Entrepreneur": "Unternehmer",
+    "SMB owner": "KMU-Inhaber",
+    "Parent / Family": "Eltern / Familie",
+    "Tech enthusiast": "Technik-Fan",
+    "Suggested keywords": "Vorgeschlagene Keywords",
+    "Suggested prompts": "Vorgeschlagene Prompts",
+    "Accept with Tags": "Mit Tags übernehmen",
+    "Accept all Prompts": "Alle Prompts übernehmen",
+    "Delete all Prompts": "Alle Prompts löschen",
+    "Track accepted prompts with their suggested tags":
+      "Übernommene Prompts mit ihren vorgeschlagenen Tags beobachten",
+    "Est. Volume": "Gesch. Volumen",
+    "Estimated volume:": "Geschätztes Volumen:",
+    "Business model:": "Geschäftsmodell:",
+    "Remove tag:": "Tag entfernen:",
+    "Previous researches": "Frühere Recherchen",
+    "Close previous researches": "Frühere Recherchen schließen",
+    "Back to start": "Zurück zum Anfang",
+    "Clear input": "Eingabe leeren",
+    "More actions": "Weitere Aktionen",
+    "Open suggested prompt actions": "Aktionen für vorgeschlagene Prompts öffnen",
+    "Model n/a": "Modell k. A.",
+    "Workspace": "Arbeitsbereich",
+    "No completed researches yet": "Noch keine abgeschlossenen Recherchen",
+    "Finished researches show up here so you can reopen them.":
+      "Abgeschlossene Recherchen erscheinen hier, damit du sie wieder öffnen kannst.",
+
+    /* ---- beim Durchlesen der Testrunde noch gefunden ---- */
+    "No brands": "Keine Brands",
+    "Discover Untracked Brands": "Unbeobachtete Brands entdecken",
+    /* Der Knopf in der Zeile von Discover: dasselbe Verb wie "Tracked" -> "Beobachtet". */
+    "Track": "Beobachten",
+    "The primary brand name - exclude legal forms like GmbH, Inc., Ltd, etc.":
+      "Der Hauptname der Brand — ohne Rechtsformen wie GmbH, Inc., Ltd."
   });
 
   addMessages("de", {

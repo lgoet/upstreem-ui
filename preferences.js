@@ -73,7 +73,7 @@
       "Your name and picture, as your team sees them": "Dein Name und Bild, so wie dein Team sie sieht",
       "How lines and legends are drawn across every chart": "Wie Linien und Legenden in allen Charts gezeichnet werden",
       "Account": "Konto",
-      "Display": "Darstellung",
+
       "Close": "Schließen",
       "Language and formats": "Sprache und Formate",
       "Language": "Sprache",
@@ -99,11 +99,12 @@
       "Your name": "Dein Name",
       "Change your picture": "Bild wechseln",
       "Upload a picture — square images look best": "Bild hochladen – quadratische Bilder wirken am besten",
-      "Theme": "Design",
+      /* "Theme", "Light", "Dark" und "Display" stehen jetzt in core: das Konto-Menue der
+         Seitenleiste braucht sie, und dieses Modul laedt erst nach, wenn das Fenster aufgeht --
+         bis dahin gab es fuer die Seitenleiste keinen Eintrag. Hier stehen sie deshalb nicht
+         mehr, sonst laufen zwei Fassungen desselben Wortes auseinander. */
       "System follows the setting of your operating system.":
         "System übernimmt die Einstellung deines Betriebssystems.",
-      "Light": "Hell",
-      "Dark": "Dunkel",
       "System": "System"
     });
 
