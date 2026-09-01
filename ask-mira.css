@@ -484,6 +484,23 @@
   .am-bubble th a, .am-bubble td a { overflow-wrap: anywhere; }
 
   /* ===== Mobile: keep tables horizontally scrollable instead of squashing columns ===== */
+  /* ---------- Telefon: dort bleibt sie eine Ueberlagerung ----------
+     250px feste Leiste neben dem Inhalt heisst auf einem 375px breiten Schirm 125px fuer den Chat.
+     Also liegt sie dort wieder darueber, mit Blende, wie vorher -- und der Sprung von rechts
+     bleibt eine Bewegung ueber transform, nicht ueber das Layout. */
+  @media (max-width: 720px) {
+    #ask-mira { display: block; }
+    .am-shell { width: 100%; }
+    .am-prev-panel {
+      position: absolute; top: 0; right: 0; bottom: 0; z-index: 9;
+      width: min(320px, 86%); flex: none; margin: 0;
+      transform: translateX(100%);
+    }
+    #ask-mira.side-ready .am-prev-panel { transition: transform 200ms ease; }
+    #ask-mira.prev-open .am-prev-panel { transform: translateX(0); margin-right: 0; }
+    .am-prev-scrim { display: block; }
+  }
+
   @media (max-width: 720px) {
     /* size the table to its content (at least full width, at most 2x -> scroll), don't force-fit */
     #ask-mira .am-bubble table { width: auto; min-width: 100%; max-width: 200%; }
@@ -1422,27 +1439,57 @@
 
   .am-hint { max-width: 920px; margin: 10px auto 0; width: 100%; font-size: 11.5px; color: var(--am-muted-2); text-align: center; }
 
-  /* ===================== PREVIOUS CHATS ===================== */
+  /* ===================== PREVIOUS CHATS -- die Seitenleiste =====================
+     Eine ECHTE Leiste: sie draengt den Inhalt zur Seite, statt ihn zu ueberdecken. Deshalb ist
+     die Wurzel eine Flex-ZEILE und die Leiste ein Geschwister der Schale (ask-mira.js haengt sie
+     dorthin um -- als Kind der Schale koennte sie nur darueber liegen).
+
+     Die Bewegung laeuft ueber margin-right und NICHT ueber width: die Leiste behaelt immer ihre
+     250px, das negative Aussenmass zieht sie nur aus dem Fluss. Mit einer wandernden Breite
+     wuerde ihr Inhalt 200ms lang umbrechen -- Ueberschriften, die waehrend der Animation
+     zweizeilig werden und wieder zurueckspringen. So bewegt sich nichts im Inneren.
+     #ask-mira hat overflow: hidden, die geschlossene Leiste ist damit sauber abgeschnitten. */
   .am-prev-scrim {
+    /* Kein Verwischen mehr: eine Leiste, die Teil des Layouts ist, hat keinen Hintergrund, den
+       sie abdunkeln muesste. Am Telefon liegt sie weiterhin darueber -- dort kommt die Blende
+       im Medienblock unten zurueck. */
+    display: none;
     position: absolute; inset: 0; z-index: 8; background: transparent;
     backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); opacity: 0; pointer-events: none;
     transition: opacity 220ms ease;
   }
-  #ask-mira.prev-open .am-prev-scrim { opacity: 1; pointer-events: auto; }
+  #ask-mira { display: flex; flex-direction: row; align-items: stretch; }
+  .am-shell { flex: 1 1 auto; min-width: 0; width: auto; }
   .am-prev-panel {
-    position: absolute; top: 6px; right: 6px; bottom: 6px; z-index: 9;
-    width: min(360px, 86%); background: var(--am-bg);
-    border: 1px solid var(--am-border-strong); border-radius: 16px;
-    box-shadow: 0 0 6px rgba(0,0,0,0.12); overflow: hidden;
+    position: static; flex: 0 0 250px; width: 250px; z-index: auto;
+    margin: 0 -250px 0 0; background: var(--am-bg);
+    border: 0; border-left: 1px solid var(--am-border-strong); border-radius: 0;
+    box-shadow: none; overflow: hidden; transform: none;
     display: flex; flex-direction: column;
-    transform: translateX(120%); transition: transform 260ms cubic-bezier(0.22,0.61,0.36,1);
   }
-  #ask-mira.prev-open .am-prev-panel { transform: translateX(0); }
+  /* Der Uebergang haengt an side-ready, nicht an der Regel selbst: der Anfangszustand kommt aus
+     dem localStorage und wird in derselben Zeit gesetzt, in der die Seite aufbaut. Ohne diese
+     Klasse faehrt die offene Leiste beim Laden einmal herein, und das sieht aus wie ein Fehler
+     statt wie eine gespeicherte Einstellung. ask-mira.js setzt sie nach zwei Bildern. */
+  #ask-mira.side-ready .am-prev-panel { transition: margin-right 200ms ease; }
+  #ask-mira.prev-open .am-prev-panel { margin-right: 0; }
   .am-prev-head {
-    height: 52px; flex: 0 0 auto; padding: 0 10px 0 18px;
+    height: 52px; flex: 0 0 auto; padding: 0 10px;
     display: flex; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid var(--am-border);
+    border-bottom: 0;
   }
+  /* Umschalter links, Logo rechts -- gespiegelt zu einer linken Leiste, weil diese rechts sitzt.
+     Das Zeichen ist dasselbe wie in der Hauptleiste (UC.icon("sidebarPanels")), samt Groesse und
+     Deckkraft: ein Umschalter, der an zwei Orten anders aussieht, liest sich als zwei Dinge. */
+  .am-prev-panel .am-side-toggle { color: var(--am-muted); }
+  .am-prev-panel .am-side-toggle:hover { background: var(--am-soft); color: var(--am-text); }
+  .am-prev-panel .am-side-toggle svg { width: 16px; height: 16px; opacity: .8; }
+  .am-prev-panel .am-side-toggle:hover svg { opacity: 1; }
+  .am-side-logo {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; flex: 0 0 auto; color: var(--am-text);
+  }
+  .am-side-logo svg { width: 20px; height: 20px; fill: currentColor; }
   .am-prev-title { margin: 0; font-size: 14px; font-weight: 600; }
   .am-icon-btn {
     width: 34px; height: 34px; border: 1px solid transparent; border-radius: 10px;
@@ -1460,6 +1507,45 @@
   }
   .am-prev-toolbar { display: flex; align-items: stretch; gap: 8px; margin: 16px 16px 16px; }
   .am-prev-toolbar .am-newchat { margin: 0; flex: 1 1 auto; }
+
+  /* ---------- Menuezeilen: "New Chat" und "Settings" ----------
+     Keine Karten mehr, sondern Zeilen. Die FORM kommt aus core: .up-filter-item ist die geteilte
+     Menuezeile (Polster, Radius, Abstand, Zeiger, Hover) -- dasselbe Bauteil, das die Menuepunkte
+     in prompt-research tragen. Beide Knoepfe bekommen die Klasse in ask-mira.js dazu.
+     HIER STEHT NUR DER REST, und zwar aus zwei Gruenden:
+       - Ein <button> bringt eigene Vorgaben mit (Rahmen, Flaeche, Schrift, Zentrierung), die
+         .up-filter-item nicht anfasst. prompt-research hat dafuer dieselben Zeilen in
+         .upr-menu-item; das hier ist die gleiche Ergaenzung, nicht ein zweiter Nachbau.
+       - Die zwei Knoepfe tragen weiterhin ihre alten Klassen (.am-newchat, .am-settings-btn), weil
+         ihre Zuhoerer an genau diesen Elementen haengen. Deren Karten-Regeln stehen in DIESER
+         Datei und damit NACH core -- .up-filter-item allein kaeme nicht gegen sie an. Deshalb
+         .am-prev-panel davor (0,2,0) und deshalb die Nullwerte fuer Hoehe und Aussenmass. */
+  .am-prev-panel .am-side-nav {
+    display: flex; flex-direction: column; align-items: stretch; gap: 2px;
+    margin: 2px 8px 10px; }
+  .am-prev-panel .am-side-item {
+    flex: 0 0 auto; width: 100%; height: auto; margin: 0;
+    border: 0; background: transparent; color: var(--am-text);
+    justify-content: flex-start; text-align: left;
+    font-family: inherit; font-size: 13px; font-weight: 500;
+    /* gap gehoert eigentlich core (.up-filter-item: 10px), aber .am-newchat setzt 7px und steht
+       in DIESER Datei, also nach core. Gemessen: 7px an "New Chat" gegen 10px an "Settings" --
+       zwei Zeilen uebereinander mit verschiedenem Abstand zwischen Zeichen und Text. */
+    gap: 10px;
+  }
+  /* Der offene Zustand des Einstellungsknopfes: dieselbe Flaeche wie im Hover, damit "offen" und
+     "Zeiger darauf" nicht zwei verschiedene Dinge sagen. --am-soft ist in Mira auf
+     --vc-heading-bg abgebildet, also genau die Farbe, die .up-filter-item:hover ohnehin nimmt. */
+  .am-prev-panel .am-side-item.is-open { background: var(--am-soft); }
+  .am-prev-panel .am-side-item svg { width: 16px; height: 16px; flex: 0 0 auto; display: block; }
+  .am-side-lbl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ---------- Laufender Text bei abgeschnittenen Namen ----------
+     Im Ruhezustand traegt das Etikett seinen Text direkt, damit die Auslassungspunkte erscheinen.
+     Nur solange der Zeiger darauf steht, liegt der Text in .am-lauf und wird geschoben; dann
+     muessen die Punkte weg, sonst kleben sie am Rand und wandern mit. ask-mira.js baut das um. */
+  .am-prev-item-title.is-laufen, .am-prev-proj-title.is-laufen { text-overflow: clip; }
+  .am-lauf { display: inline-block; white-space: nowrap; will-change: transform; }
   .am-settings-btn {
     flex: 0 0 auto; width: 32px; height: 32px; border: 1px solid var(--am-border);
     border-radius: 8px; background: var(--am-card); color: var(--am-text);

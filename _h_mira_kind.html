@@ -1,0 +1,131 @@
+<meta charset="utf-8"><title>Mira: echte Seitenleiste, Speicher, Lauftext</title>
+<style>html,body{margin:0;background:#fff;font:13px/1.5 Geist,system-ui,sans-serif}
+#buehne{width:1100px;height:620px}#out{padding:10px;font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap}</style>
+<body><div id="buehne"></div><pre id="out">laeuft…</pre>
+<script>
+/* Vier Fragen:
+   1. DRAENGT sie den Inhalt zur Seite? Also: ist die Leiste ein Geschwister der Schale, und wird
+      die Schale schmaler, wenn die Leiste auf ist. Ein Ueberlagern erkennt man daran, dass die
+      Schale gleich breit bleibt.
+   2. Sitzt sie randlos und 250px breit, mit Rand links.
+   3. Ueberlebt der Zustand einen Neuaufbau, und ist die Vorgabe OFFEN.
+   4. Laeuft der Text eines abgeschnittenen Namens beim Hover, und kommt danach der normale
+      abgeschnittene Text mit Punkten zurueck.
+   KEIN Abschalten der Uebergaenge in diesem Aufbau -- die 200ms sind Teil der Messung. */
+window.__err=[]; window.addEventListener("error",function(e){ window.__err.push(String(e.message)); });
+/* ?zu=1 stellt den Speicher auf "geschlossen", damit der zweite Lauf pruefen kann, ob der
+   Zustand den Neuaufbau ueberlebt. Ohne den Parameter wird der Schluessel geleert -- dann ist
+   die Vorgabe zu pruefen, und die ist OFFEN. */
+try{
+  if (/[?&]zu=1/.test(location.search)) localStorage.setItem("am_side_open","0");
+  else localStorage.removeItem("am_side_open");
+  localStorage.removeItem("pref_theme");
+}catch(e){}
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var D=["core.css","core.js","ask-mira.css","ask-mira.js","bubble/ask_mira_bubble.html"];
+var M={};
+Promise.all(D.map(hol)).then(function(t){
+  D.forEach(function(f,i){ M[f]=t[i]; });
+  ["core.css","ask-mira.css"].forEach(function(f){
+    var s=document.createElement("style"); s.textContent=M[f]; document.head.appendChild(s); });
+  var w=document.createElement("div"); w.innerHTML=wurzelAus(M["bubble/ask_mira_bubble.html"]);
+  var r=w.querySelector("#ask-mira");
+  r.setAttribute("data-instance","m1"); r.setAttribute("data-cdn-pin","x"); r.setAttribute("data-isdark","no");
+  document.getElementById("buehne").appendChild(r);
+  ["core.js","ask-mira.js"].forEach(function(f){
+    var j=document.createElement("script"); j.textContent=M[f]; document.head.appendChild(j); });
+  return new Promise(function(ok){ setTimeout(ok,1500); });
+}).then(function(){
+  window.askMiraSetProjects([{ id:"p1", title:"Ein Projekt mit einem sehr langen Namen der nicht passt" }]);
+  window.askMiraSetPreviousChats([
+    { id:"c1", title:"Kurz", project_id:"" },
+    { id:"c2", title:"Ein ausgesprochen langer Chatname der garantiert abgeschnitten wird", project_id:"" }
+  ]);
+  return new Promise(function(ok){ setTimeout(ok,700); });
+}).then(function(){
+  var root=document.querySelector("#ask-mira");
+  var panel=root.querySelector("#am-prev-panel"), schale=root.querySelector(".am-shell");
+  /* Uebergaenge zwingend beenden, BEVOR gelesen wird. In einer eingeklappten Browser-Flaeche
+     laufen CSSTransitions nicht, und der berechnete Wert bleibt auf dem STARTWERT stehen -- der
+     erste Lauf hier meldete "Schale 850 offen wie zu" und das sah nach kaputter CSS aus. */
+  function fertigAnim(){ if (document.getAnimations) document.getAnimations().forEach(function(a){ try{ a.finish(); }catch(e){} }); }
+  function b(el){ fertigAnim(); return el ? +el.getBoundingClientRect().width.toFixed(1) : null; }
+  function r4(el){ if(!el) return null; var x=el.getBoundingClientRect();
+    return [Math.round(x.left),Math.round(x.top),Math.round(x.width),Math.round(x.height)]; }
+  var R={};
+  R.aufbau = { panel_ist_geschwister_der_schale: panel && panel.parentNode === root,
+               schale_geschwister: schale && schale.parentNode === root,
+               wurzel_flex: getComputedStyle(root).flexDirection,
+               scrim_display: getComputedStyle(root.querySelector("#am-prev-scrim")).display };
+  var c=panel?getComputedStyle(panel):null;
+  R.leiste = { offen_beim_start: root.classList.contains("prev-open"),
+               breite: b(panel), rechteck: r4(panel), wurzel_rechteck: r4(root),
+               rand_links: c ? c.borderLeftWidth+" "+c.borderLeftStyle+" "+c.borderLeftColor : null,
+               rand_rechts: c ? c.borderRightWidth : null,
+               radius: c ? c.borderRadius : null, aussen: c ? c.margin : null,
+               bg: c ? c.backgroundColor : null,
+               uebergang: c ? c.transitionProperty+" "+c.transitionDuration+" "+c.transitionTimingFunction : null };
+  /* Draengt sie? Schalenbreite offen gegen geschlossen. */
+  R.draengt = { schale_offen: b(schale) };
+  root.querySelector(".am-side-toggle").click();
+  return new Promise(function(ok){ setTimeout(ok,320); }).then(function(){
+    R.draengt.schale_zu = b(schale);
+    R.draengt.differenz = +(R.draengt.schale_zu - R.draengt.schale_offen).toFixed(1);
+    R.draengt.offen_jetzt = root.classList.contains("prev-open");
+    R.speicher_nach_zu = (function(){ try{ return localStorage.getItem("am_side_open"); }catch(e){ return "?"; } })();
+    /* Kopfbereich: Umschalter links, Logo rechts. */
+    var kopf=root.querySelector(".am-prev-head");
+    var um=kopf.querySelector(".am-side-toggle"), lg=kopf.querySelector(".am-side-logo");
+    R.kopf = { reihenfolge: [].map.call(kopf.children, function(e){ return (e.className||"").split(" ").pop(); }),
+               umschalter_svg: !!(um && um.querySelector("svg")), logo_svg: !!(lg && lg.querySelector("svg")),
+               umschalter_links_von_logo: um && lg ? um.getBoundingClientRect().left < lg.getBoundingClientRect().left : null,
+               trennlinie: getComputedStyle(kopf).borderBottomWidth };
+    /* Menuezeilen. */
+    function zeile(sel){ var e=root.querySelector(sel); if(!e) return null; var s=getComputedStyle(e);
+      return { hoehe:Math.round(e.getBoundingClientRect().height), rand:s.borderTopWidth,
+               radius:s.borderRadius, ausrichtung:s.justifyContent, text:(e.textContent||"").trim() }; }
+    R.zeilen = { neuer_chat: zeile("#am-new-chat"), einstellungen: zeile("#am-settings-btn") };
+    root.querySelector("#am-open-prev").click();
+    return new Promise(function(ok){ setTimeout(ok,320); });
+  }).then(function(){
+    R.wieder_offen = { offen: root.classList.contains("prev-open"),
+                       speicher: (function(){ try{ return localStorage.getItem("am_side_open"); }catch(e){ return "?"; } })(),
+                       schale: b(schale) };
+    /* Der Lauftext. */
+    var lang = [].slice.call(root.querySelectorAll(".am-prev-item-title"))
+                 .filter(function(e){ return e.scrollWidth - e.clientWidth > 1; })[0];
+    if (!lang){ R.lauftext = { kein_abgeschnittener_name: true }; return; }
+    var vorher = { text:(lang.textContent||"").trim(), ueberlauf: lang.scrollWidth - lang.clientWidth,
+                   punkte: getComputedStyle(lang).textOverflow };
+    lang.dispatchEvent(new MouseEvent("mouseover", { bubbles:true }));
+    return new Promise(function(ok){ setTimeout(ok,140); }).then(function(){
+      var frueh = { span_da: !!lang.querySelector(".am-lauf") };   /* vor Ablauf der Wartezeit: nichts */
+      return new Promise(function(ok){ setTimeout(ok,420); }).then(function(){
+        var innen = lang.querySelector(".am-lauf");
+        var mitte = { span_da: !!innen, klasse: lang.classList.contains("is-laufen"),
+                      punkte: getComputedStyle(lang).textOverflow,
+                      uebergang: innen ? getComputedStyle(innen).transitionDuration+" "+getComputedStyle(innen).transitionTimingFunction : null,
+                      ziel: innen ? innen.style.transform : null };
+        return new Promise(function(ok){ setTimeout(ok,300); }).then(function(){
+          var innen2 = lang.querySelector(".am-lauf");
+          mitte.verschoben_px = innen2 ? Math.round(Math.abs(new DOMMatrixReadOnly(getComputedStyle(innen2).transform).m41)) : null;
+          lang.dispatchEvent(new MouseEvent("mouseout", { bubbles:true, relatedTarget: document.body }));
+          return new Promise(function(ok){ setTimeout(ok,80); }).then(function(){
+            R.lauftext = { vorher: vorher, nach_140ms: frueh, waehrend: mitte,
+              danach: { span_weg: !lang.querySelector(".am-lauf"), text:(lang.textContent||"").trim(),
+                        punkte: getComputedStyle(lang).textOverflow,
+                        klasse: lang.classList.contains("is-laufen") } };
+          });
+        });
+      });
+    });
+  }).then(function(){
+    R.fehler = window.__err;
+    document.getElementById("out").textContent=JSON.stringify(R,null,1);
+    window.__R=R; window.__fertig=true;
+  });
+}).catch(function(e){ document.getElementById("out").textContent="FEHLER: "+e.message+"\n"+(e.stack||"");
+  window.__R={fehler:[String(e.message)]}; window.__fertig=true; });
+</script>

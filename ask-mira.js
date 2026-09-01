@@ -3966,12 +3966,153 @@
     });
   }
 
-  function openPrev(){ renderPrevious(); root.classList.add('prev-open'); elPrevPanel.setAttribute('aria-hidden','false'); elPrevScrim.hidden = false; if (elPrevList) elPrevList.scrollTop = 0; }
-  function closePrev(){ root.classList.remove('prev-open'); elPrevPanel.setAttribute('aria-hidden','true'); if (typeof openHlPanel === 'function') openHlPanel(false); }
-  elOpenPrev.addEventListener('click', openPrev);
+  /* Die Leiste ist eine ECHTE Seitenleiste: sie draengt den Inhalt zur Seite, statt ihn zu
+     ueberdecken. Ihr Zustand ueberlebt den Seitenwechsel, und die Vorgabe ist OFFEN -- deshalb
+     "kein Eintrag" ausdruecklich als offen gelesen und nicht als geschlossen. */
+  var SIDE_KEY = 'am_side_open';
+  function seiteOffen(){
+    try { var v = localStorage.getItem(SIDE_KEY); return v === null ? true : v === '1'; }
+    catch(e){ return true; }   /* privates Fenster wirft schon beim Lesen */
+  }
+  function seiteMerken(offen){ try { localStorage.setItem(SIDE_KEY, offen ? '1' : '0'); } catch(e){} }
+
+  function openPrev(){ renderPrevious(); root.classList.add('prev-open'); elPrevPanel.setAttribute('aria-hidden','false'); elPrevScrim.hidden = false; if (elPrevList) elPrevList.scrollTop = 0; seiteMerken(true); }
+  function closePrev(){ root.classList.remove('prev-open'); elPrevPanel.setAttribute('aria-hidden','true'); if (typeof openHlPanel === 'function') openHlPanel(false); seiteMerken(false); }
+  function togglePrev(){ if (root.classList.contains('prev-open')) closePrev(); else openPrev(); }
+  /* Der Knopf im Kopfbereich UMSCHALTET jetzt. Vorher hat er nur geoeffnet, und das war richtig,
+     solange die Leiste ueber dem Inhalt lag und sich immer selbst wieder schloss. Jetzt ist sie
+     standardmaessig offen -- ein Knopf, der bei offener Leiste nichts tut, sieht kaputt aus. */
+  elOpenPrev.addEventListener('click', togglePrev);
   elClosePrev.addEventListener('click', closePrev);
   elPrevScrim.addEventListener('click', closePrev);
-  document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && root.classList.contains('prev-open')) closePrev(); });
+  /* Escape schliesst nur, solange die Leiste ueber dem Inhalt liegt -- am Telefon. Auf dem Schirm
+     ist sie Teil des Layouts, und dort waere Escape ein Layoutwechsel aus dem Nichts. */
+  document.addEventListener('keydown', function(e){
+    if (e.key !== 'Escape' || !root.classList.contains('prev-open')) return;
+    if (window.matchMedia && window.matchMedia('(max-width: 720px)').matches) closePrev();
+  });
+
+  /* ---------------- die Leiste zur echten Leiste machen ----------------
+     Drei Dinge, und alle drei hier und nicht in bubble/*.html: die Vorlage ist die Vorlage fuer
+     eine NEUinstallation, ein bereits eingebautes Element bekaeme neues Markup nie.
+       1. Die Leiste steht als Kind IN der Schale. Als Geschwister der Schale kann die Wurzel
+          beide als Flex-Zeile nebeneinander legen -- das ist der ganze Unterschied zwischen
+          "liegt darueber" und "draengt zur Seite".
+       2. Der Kopfbereich wird neu gebaut: Umschalter links, Logo rechts. Gespiegelt zu einer
+          linken Leiste, weil diese hier rechts sitzt.
+       3. Die zwei Knoepfe der Werkzeugleiste werden zu Menuezeilen. Ihre KNOTEN bleiben
+          dieselben -- ihre Zuhoerer haengen an genau diesen Elementen, ein Neubau haette sie
+          stumm gemacht. */
+  (function seitenleiste(){
+    var schale = root.querySelector('.am-shell');
+    if (!elPrevPanel || !schale) return;
+    if (elPrevPanel.parentNode !== root) root.appendChild(elPrevPanel);
+
+    var kopf = elPrevPanel.querySelector('.am-prev-head');
+    if (kopf && !kopf.getAttribute('data-side')){
+      kopf.setAttribute('data-side', '1');
+      kopf.innerHTML = '';
+      var um = document.createElement('button');
+      um.type = 'button'; um.className = 'up-iconbtn am-side-toggle';
+      um.setAttribute('aria-label', 'Collapse sidebar');
+      /* window.UpstreemCore und nicht UC: das Kuerzel gilt nur im Bootblock oben, hier nicht --
+         der erste Versuch hat an dieser Zeile geworfen und den Kopfbereich leer gelassen. Die
+         Nachbarschaft macht es genauso (siehe moreHorizontal weiter oben). */
+      var kern = window.UpstreemCore;
+      um.innerHTML = (kern && kern.icon) ? kern.icon('sidebarPanels') : '';
+      um.addEventListener('click', closePrev);
+      var logo = document.createElement('span');
+      logo.className = 'am-side-logo'; logo.setAttribute('aria-hidden', 'true');
+      logo.innerHTML = (kern && kern.icon) ? kern.icon('galaxy') : '';
+      kopf.appendChild(um); kopf.appendChild(logo);
+    }
+
+    var leiste = elPrevPanel.querySelector('.am-prev-toolbar');
+    if (leiste) leiste.classList.add('am-side-nav');
+    /* up-filter-item ist die geteilte Menuezeile aus core -- dasselbe Bauteil wie in den
+       Menuepunkten von prompt-research. am-side-item ergaenzt nur, was ein <button> selbst
+       mitbringt und was die alten Karten-Regeln dieser zwei Knoepfe ueberschreiben muss. */
+    if (elNewChat) elNewChat.classList.add('up-filter-item', 'am-side-item');
+    if (elHlBtn) elHlBtn.classList.add('up-filter-item', 'am-side-item');
+
+    /* Die Blende erst freigeben, wenn der Anfangszustand steht: sonst faehrt die Leiste beim
+       Laden einmal herein, und das sieht aus wie ein Fehler statt wie eine Einstellung.
+       Uhr neben requestAnimationFrame, weil rAF in einem VERDECKTEN Tab gar nicht laeuft und
+       Mira in Bubble regelmaessig in einem noch nicht vorderen Tab haengt -- dieselbe Lektion
+       wie beim Hintergrundbild. classList.add ist idempotent. */
+    if (seiteOffen()){
+      root.classList.add('prev-open');
+      elPrevPanel.setAttribute('aria-hidden', 'false');
+    }
+    function frei(){ root.classList.add('side-ready'); }
+    requestAnimationFrame(function(){ requestAnimationFrame(frei); });
+    setTimeout(frei, 120);
+  })();
+
+  /* ---------------- Laufender Text bei abgeschnittenen Namen ----------------
+     Warum nicht als CSS-Animation: die Strecke haengt vom Text ab. Eine Keyframe-Prozentangabe
+     laeuft bei kurzen Namen zu weit und bei langen nicht weit genug -- also wird die Strecke
+     gemessen und als transform gesetzt, mit einer Dauer, die zur Strecke passt.
+     Und warum der Text erst im Hover eingepackt wird, statt dauerhaft in einem Span zu stecken:
+     die Auslassungspunkte. text-overflow: ellipsis greift nur an Inline-Inhalt, den es
+     abschneiden kann -- steckt der Text in einem inline-block, bleibt der Ruhezustand ohne
+     Punkte. Also traegt das Etikett im Ruhezustand seinen Text direkt (Punkte da), und nur
+     solange der Zeiger darauf steht, liegt er in einem Span, der sich schieben laesst.
+     Nebenwirkung, die dafuer spricht: an anderer Stelle wird titleEl.textContent neu gesetzt
+     (Umbenennen) -- ein dauerhafter Span waere dabei stillschweigend verschwunden. */
+  var LAUF_WARTE = 380;        /* nicht jeder Zeiger, der ueber die Liste streicht, soll etwas bewegen */
+  var LAUF_PX_PRO_S = 120;     /* lesbares Tempo, unabhaengig von der Laenge. 55 waren gemessen
+                                  3,9 Sekunden fuer einen 216px langen Ueberhang -- der Name war
+                                  vorbei, bevor er ankam. */
+  var LAUF_MIN_MS = 480;
+  var _laufUhr = null, _laufEl = null;
+  function laufStop(){
+    if (_laufUhr){ clearTimeout(_laufUhr); _laufUhr = null; }
+    var el = _laufEl; _laufEl = null;
+    if (!el) return;
+    el.classList.remove('is-laufen');
+    var innen = el.querySelector('.am-lauf');
+    if (innen) el.textContent = innen.textContent;
+  }
+  function laufStart(el){
+    if (!el || el.querySelector('.am-lauf')) return;
+    /* Passt der Text hinein, gibt es nichts zu schieben. Gemessen am Etikett selbst, VOR dem
+       Umbau -- danach ist scrollWidth die Breite des Spans und die Frage waere eine andere. */
+    if (el.scrollWidth - el.clientWidth <= 1) return;
+    var text = el.textContent || '';
+    var innen = document.createElement('span');
+    innen.className = 'am-lauf'; innen.textContent = text;
+    el.textContent = ''; el.appendChild(innen);
+    el.classList.add('is-laufen');
+    _laufEl = el;
+    var ueber = innen.scrollWidth - el.clientWidth;
+    if (ueber <= 1){ laufStop(); return; }
+    var dauer = Math.max(LAUF_MIN_MS, Math.round(ueber / LAUF_PX_PRO_S * 1000));
+    innen.style.transition = 'transform ' + dauer + 'ms ease-out';
+    /* Ein Bild warten: der Span ist gerade erst eingesetzt, sein Startwert ist noch nicht
+       angewandt, und ein im selben Bild gesetzter Uebergang laeuft nicht. */
+    /* Uhr NEBEN requestAnimationFrame, aus demselben Grund wie beim Hintergrundbild: rAF laeuft
+       in einem verdeckten Tab gar nicht. Beides setzt denselben Wert, der zweite Aufruf ist ein
+       Nichts. */
+    function los(){ if (_laufEl === el) innen.style.transform = 'translateX(-' + ueber + 'px)'; }
+    requestAnimationFrame(los);
+    setTimeout(los, 24);
+  }
+  var LAUF_SEL = '.am-prev-item-title, .am-prev-proj-title';
+  elPrevPanel.addEventListener('mouseover', function(e){
+    var ziel = e.target && e.target.closest ? e.target.closest(LAUF_SEL) : null;
+    if (!ziel || ziel === _laufEl) return;
+    laufStop();
+    _laufUhr = setTimeout(function(){ _laufUhr = null; laufStart(ziel); }, LAUF_WARTE);
+  });
+  elPrevPanel.addEventListener('mouseout', function(e){
+    var ziel = e.target && e.target.closest ? e.target.closest(LAUF_SEL) : null;
+    if (!ziel) return;
+    /* Nur wenn der Zeiger das Etikett wirklich verlaesst -- mouseout feuert auch beim Wechsel
+       zwischen dem Etikett und einem Kind darin. */
+    if (e.relatedTarget && ziel.contains(e.relatedTarget)) return;
+    laufStop();
+  });
 
   /* ---------------- events helper ---------------- */
   function amFire(fn, payload, dom){
@@ -4471,7 +4612,10 @@
   window.__amHeroReady = function(){ _heroReady = true; };
 
   /* ---------------- Highlight settings ---------------- */
-  if (elHlBtn) elHlBtn.innerHTML = ICON.settings;
+  /* Zeichen UND Etikett in einem: der Knopf ist jetzt eine Menuezeile wie "New Chat" darueber,
+     und diese Zeile ist die einzige Stelle, die seinen Inhalt setzt -- ein zweiter Ort haette
+     das Etikett beim naechsten Aufbau wieder weggeworfen. */
+  if (elHlBtn) elHlBtn.innerHTML = ICON.settings + '<span class="am-side-lbl">Settings</span>';
   var DD_LABELS = { logo:'Logo', icon:'Icon', none:'No Highlight', favicon:'Favicon' };
   function ddSync(dd, value){
     if (!dd) return;

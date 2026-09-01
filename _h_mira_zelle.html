@@ -1,0 +1,37 @@
+<meta charset="utf-8"><title>Mira in festem Rahmen</title>
+<style>html,body{margin:0;background:#fff;font:13px/1.5 Geist,system-ui,sans-serif}#b{width:1100px;height:560px}</style>
+<body><div id="b"></div>
+<script>
+window.__err=[]; window.addEventListener("error",function(e){ window.__err.push(String(e.message)); });
+try{ localStorage.removeItem("am_side_open"); }catch(e){}
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){ return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+Promise.all(["core.css","core.js","ask-mira.css","ask-mira.js","bubble/ask_mira_bubble.html"].map(hol))
+.then(function(t){
+  [t[0],t[2]].forEach(function(c){ var s=document.createElement("style"); s.textContent=c; document.head.appendChild(s); });
+  var w=document.createElement("div"); w.innerHTML=wurzelAus(t[4]);
+  var r=w.querySelector("#ask-mira");
+  r.setAttribute("data-instance","m1"); r.setAttribute("data-cdn-pin","x"); r.setAttribute("data-isdark","no");
+  document.getElementById("b").appendChild(r);
+  [t[1],t[3]].forEach(function(j){ var s=document.createElement("script"); s.textContent=j; document.head.appendChild(s); });
+  return new Promise(function(ok){ setTimeout(ok,1500); });
+}).then(function(){
+  if (document.getAnimations) document.getAnimations().forEach(function(a){ try{a.finish();}catch(e){} });
+  var root=document.querySelector("#ask-mira");
+  function zeile(sel){ var e=root.querySelector(sel); if(!e) return null; var s=getComputedStyle(e);
+    return { klassen:e.className, hoehe:Math.round(e.getBoundingClientRect().height),
+             polster:s.paddingTop+" "+s.paddingRight+" "+s.paddingBottom+" "+s.paddingLeft,
+             radius:s.borderRadius, rand:s.borderTopWidth, aussen:s.margin,
+             bg:s.backgroundColor, abstand:s.gap, zeiger:s.cursor,
+             ausrichtung:s.justifyContent, schrift:s.fontSize+"/"+s.fontWeight,
+             text:(e.textContent||"").trim() }; }
+  var panel=root.querySelector("#am-prev-panel");
+  window.__R = { neuer_chat: zeile("#am-new-chat"), einstellungen: zeile("#am-settings-btn"),
+    leiste: { breite: Math.round(panel.getBoundingClientRect().width),
+              rechteck: [Math.round(panel.getBoundingClientRect().left), Math.round(panel.getBoundingClientRect().top)],
+              offen: root.classList.contains("prev-open"),
+              schale: Math.round(root.querySelector(".am-shell").getBoundingClientRect().width) },
+    innerWidth: window.innerWidth, fehler: window.__err };
+  window.__fertig = true;
+}).catch(function(e){ window.__R={fehler:[String(e.message)]}; window.__fertig=true; });
+</script>
