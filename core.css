@@ -1410,14 +1410,15 @@
     .up-scale-opt:hover, .up-scale-opt.is-active { background: var(--up-sel-bg); }
     .up-scale-opt-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
     .up-scale-opt-lbl { font-size: 13.5px; font-weight: 500; color: var(--vc-text); }
-    /* Das Info-Zeichen an "Brand Colors". .up-th-info bringt Groesse und Farbe schon mit -- dort
-       ist es aber nur beim Ueberfahren der Kopfzeile sichtbar (.up-th:hover .up-th-info). In einer
-       Menuezeile waere das falsch: man soll sehen, DASS es eine Erklaerung gibt, bevor man mit dem
-       Zeiger darauf steht. Also dauerhaft sichtbar und links vom Haken.
-       margin-right: auto schiebt den Haken an die rechte Kante, wie ohne Zeichen. */
-    .up-scale-opt-info { opacity: 1; margin-left: 6px; margin-right: auto; flex: 0 0 auto;
-      color: var(--vc-third); cursor: help; }
-    .up-scale-opt-info:hover { color: var(--vc-text); }
+    /* Das Info-Zeichen an "Brand Colors". Es IST .up-th-info -- Groesse, Farbe und Hover kommen
+       von dort, damit es dasselbe Zeichen ist wie an jedem Spaltenkopf. Hier stehen nur die zwei
+       Unterschiede, die eine Menuezeile braucht:
+         - dauerhaft sichtbar (am Spaltenkopf erscheint es erst beim Ueberfahren der Zeile) -- man
+           soll sehen, DASS es eine Erklaerung gibt, bevor der Zeiger darauf steht,
+         - margin-right: auto, damit der Haken an der rechten Kante bleibt wie ohne Zeichen.
+       KEIN cursor: help. Der Zeiger wird in dieser App nie zum Fragezeichen -- das gilt hier
+       genauso wie an den Spaltenkoepfen, die ebenfalls keinen setzen. */
+    .up-scale-opt-info { opacity: 1; margin-left: 6px; margin-right: auto; flex: 0 0 auto; }
     .up-scale-opt .up-check { width: 16px; height: 16px; color: var(--vc-text); opacity: 0; flex: 0 0 auto;
       transform: scale(.7); transition: opacity var(--up-cb-t) var(--up-cb-ease), transform var(--up-cb-t) var(--up-cb-ease); }
     .up-scale-opt .up-check svg { width: 16px; height: 16px; display: block; }

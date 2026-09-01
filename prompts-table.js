@@ -298,6 +298,9 @@
   var UC = window.UpstreemCore;
   var MONTHS = UC.MONTHS, DEBOUNCE = UC.DEBOUNCE, MIN = UC.MIN, SORT_DEBOUNCE = UC.SORT_DEBOUNCE,
       PAGE_SIZES = UC.PAGE_SIZES, DEFAULT_PAGE_SIZE = UC.DEFAULT_PAGE_SIZE,
+      /* t: Uebersetzung aus core. Der Schluessel IST der englische Text; ohne Katalogeintrag kommt
+         er unveraendert zurueck und bleibt richtiges Englisch. */
+      t = UC.t || function (x) { return x; },
       isYes = UC.isYes, highlight = UC.highlight, esc = UC.esc, toNum = UC.toNum, fmt1 = UC.fmt1,
       fmtDate = UC.fmtDate, foldDiacritics = UC.foldDiacritics, germanExpand = UC.germanExpand,
       resolveBubbleFn = UC.resolveBubbleFn, CHECK_SVG = UC.CHECK_SVG, GOTO_SVG = UC.GOTO_SVG,
@@ -1081,7 +1084,11 @@
          disappeared. It keeps its last real count all the way out. */
       if (n > 0){
         var nEl = el.querySelector(".upt-selcount-n");
-        if (nEl) nEl.textContent = n === 1 ? "1 selected" : (n + " selected");
+        /* Platzhaltersatz statt Zusammenkleben: im Deutschen steht die Zahl an derselben Stelle,
+           aber das ist Zufall und gilt nicht fuer jede Sprache. Einzahl und Mehrzahl getrennt. */
+        if (nEl) nEl.textContent = n === 1
+          ? t("1 selected")
+          : t("{n} selected").replace("{n}", UC.fmtInt(n));
       }
     }
     function syncSelectAll(){
@@ -1448,12 +1455,14 @@
          Auswahl ab. "Undo" versprach ein Zurueckspulen, das es hier nie gab -- und genau daran
          hat sich der Zustand aufgehaengt, den es frueher stehen liess. */
       if (isAll) escape = '<button class="upt-bulkbar-link" type="button" data-bulk-undoall>Reset</button>';
-      else if (hasMorePages() && pageFullySelected()) escape = '<button class="upt-bulkbar-link" type="button" data-bulk-all>Select all ' +
-        /* fmtInt, not fmtTotal: fmtTotal abbreviates (1000 -> "1k"), and "Select all 1k prompts"
-           reads like a rounded guess when it is in fact an exact figure. */
-        UC.fmtInt(currentTotal()) + ' prompts</button>';
-      else if (groupHasMorePages() && groupPageFullySelected()) escape = '<button class="upt-bulkbar-link" type="button" data-bulk-group-all>Select all ' +
-        UC.fmtInt(toNum(state.gTotal)) + ' prompts</button>';
+      /* fmtInt, not fmtTotal: fmtTotal abbreviates (1000 -> "1k"), and "Select all 1k prompts"
+         reads like a rounded guess when it is in fact an exact figure.
+         Ein Platzhaltersatz und kein Zusammenkleben -- "Select all" und "prompts" waren zwei
+         Stuecke um eine Zahl, und Stuecke lassen sich nicht uebersetzen. */
+      else if (hasMorePages() && pageFullySelected()) escape = '<button class="upt-bulkbar-link" type="button" data-bulk-all>' +
+        esc(t("Select all {n} prompts").replace("{n}", UC.fmtInt(currentTotal()))) + '</button>';
+      else if (groupHasMorePages() && groupPageFullySelected()) escape = '<button class="upt-bulkbar-link" type="button" data-bulk-group-all>' +
+        esc(t("Select all {n} prompts").replace("{n}", UC.fmtInt(toNum(state.gTotal)))) + '</button>';
 
       var statusLabel = state.status === "inactive" ? "Set Active" : "Set Inactive";
       /* Inactive prompts aren't tagged — Topics management only ever makes sense for the active

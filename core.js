@@ -375,14 +375,17 @@
 
     /* ── Explainer an den Spaltenkoepfen (UC.explainCopy) ──────────────────────────────────────
        Der Satz steht MIT seinen Platzhaltern im Katalog; gefuellt wird erst danach. */
+    /* {scope} steht im Deutschen VOR dem Verb -- "wenn sie für diesen Prompt erwähnt wird" und
+       nicht "wenn sie erwähnt wird für diesen Prompt". Genau dafuer wird das Muster uebersetzt und
+       nicht der fertige Satz. Mit leerem scope liest es sich unveraendert richtig. */
     "How positively the brand is described when it's mentioned{scope}{trend}.":
-      "Wie positiv über die Brand gesprochen wird, wenn sie erwähnt wird{scope}{trend}.",
+      "Wie positiv über die Brand gesprochen wird, wenn sie{scope} erwähnt wird{trend}.",
     "The brand's average position among all brands mentioned{scope}{trend}. A lower number is better.":
-      "Die durchschnittliche Position der Brand unter allen erwähnten Brands{scope}{trend}. Kleiner ist besser.",
+      "Die durchschnittliche Position der Brand unter allen{scope} erwähnten Brands{trend}. Kleiner ist besser.",
     "How often the brand appears in AI answers{scope}{trend}.":
-      "Wie oft die Brand in KI-Antworten vorkommt{scope}{trend}.",
+      "Wie oft die Brand{scope} in KI-Antworten vorkommt{trend}.",
     "Which of your tracked brands are mentioned{scope}. Hover a logo to see its name.":
-      "Welche deiner beobachteten Brands erwähnt werden{scope}. Fahre über ein Logo, um den Namen zu sehen.",
+      "Welche deiner beobachteten Brands{scope} erwähnt werden. Fahre über ein Logo, um den Namen zu sehen.",
     "How much of all citations in the period went to this {subject}, plus the change against the previous period.":
       "Wie viel aller Citations im Zeitraum auf diese {subject} entfielen, dazu die Veränderung zum Zeitraum davor.",
     /* Die Stuecke, die die Komponenten einsetzen -- eigene Eintraege, weil sie eigene Texte sind.
@@ -498,15 +501,16 @@
     "Show grouping": "Gruppierung zeigen",
     "Hide grouping": "Gruppierung ausblenden",
     /* Variations-Kit */
-    "Variations": "Schreibweisen",
-    "Variation Name": "Schreibweise",
-    "Search variations": "Schreibweisen suchen",
-    "No variations recorded.": "Noch keine Schreibweisen erfasst.",
-    "No variation matches this search.": "Keine Schreibweise passt zu dieser Suche."
+    "Variations": "Variationen",
+    "Variation Name": "Variation",
+    "Search variations": "Variationen suchen",
+    "No variations recorded.": "Noch keine Variationen erfasst.",
+    "No variation matches this search.": "Keine Variation passt zu dieser Suche."
   };
   function addMessages(locale, obj){
     var l = String(locale || "").trim().toLowerCase();
     if (!l || !obj || typeof obj !== "object") return;
+    _rueckIndex = null;   /* der umgekehrte Index ist veraltet, sobald der Katalog waechst */
     var ziel = MSG[l] || (MSG[l] = {});
     Object.keys(obj).forEach(function(k){ if (typeof obj[k] === "string") ziel[k] = obj[k]; });
   }
@@ -764,7 +768,7 @@
     "No topics match your search.": "Keine Topics passen zu deiner Suche.",
     "No topics yet.": "Noch keine Topics.",
     "No variations recorded for this combination.":
-      "Für diese Kombination sind noch keine Schreibweisen erfasst.",
+      "Für diese Kombination sind noch keine Variationen erfasst.",
     "No keywords": "Keine Keywords",
     "No persona": "Keine Persona",
     "No industries found": "Keine Branchen gefunden",
@@ -953,6 +957,96 @@
       "Jede Brand wird in ihrer eigenen Farbe gezeichnet statt in einer festen Palette. Diese Farbe " +
       "setzt du je Brand in den Einstellungen unter Your Brand, im Abschnitt Brand Color. Brands " +
       "ohne eigene Farbe bekommen eine neutrale."
+  });
+  /* ── Prompts Table und Prompts-Seitenkopf, VOLLSTAENDIG ───────────────────────────────────────
+     Gesammelt wurde nicht aus dem Quelltext, sondern aus allem, was diese zwei Dateien und ihre
+     Bubble-Vorlage an Text enthalten -- Tabelle, Kopfzeile, Werkzeuge, alle Menues, die
+     Gruppierung, die Sammelleiste, die Topic-Verwaltung, jeder Leerzustand.
+     Das GLOSSAR gilt: Prompt(s), Brand(s), Topic(s), Visibility, Sentiment bleiben englisch, auch
+     mitten im deutschen Satz. Darum "Keine passenden Prompts" und nicht "Keine passenden Eingaben".
+     Saetze mit Zahlen tragen {n} -- sie werden in prompts-table gebaut und dort eingesetzt. */
+  addMessages("de", {
+    /* Kopfzeile und Zustand */
+    "All Prompts": "Alle Prompts",
+    "Prompt status": "Status des Prompts",
+    "Search prompts": "Prompts suchen",
+    "Search prompts...": "Prompts suchen...",
+    "Search, filters and settings": "Suche, Filter und Einstellungen",
+
+    /* Auswahl und Sammelleiste */
+    "1 selected": "1 ausgewählt",
+    /* Wortwoertlich, zusaetzlich zum Muster: dieser Text steht im Bubble-Markup als Startwert der
+       Sammelleiste. Sichtbar ist er nie (die Leiste erscheint erst ab einer Auswahl), aber solange
+       er dasteht, ist er englischer Text auf einer deutschen Seite. */
+    "0 selected": "0 ausgewählt",
+    "{n} selected": "{n} ausgewählt",
+    "Select all {n} prompts": "Alle {n} Prompts auswählen",
+    "Clear selection": "Auswahl aufheben",
+    "Bulk actions": "Sammelaktionen",
+    "Set Active": "Auf aktiv setzen",
+    "Set Inactive": "Auf inaktiv setzen",
+
+    /* Gruppierung */
+    "Grouping": "Gruppierung",
+    "Group by topics": "Nach Topics gruppieren",
+    "Custom groupings": "Eigene Gruppierungen",
+    "Only show custom groupings": "Nur eigene Gruppierungen zeigen",
+    "No custom grouping yet.": "Noch keine eigene Gruppierung.",
+    "Sort groups by": "Gruppen sortieren nach",
+    "Sort Groups": "Gruppen sortieren",
+    "Sort groups": "Gruppen sortieren",
+    "Search groups": "Gruppen suchen",
+    "Search groups…": "Gruppen suchen…",
+    "No groups": "Keine Gruppen",
+    "No prompts in this group": "Keine Prompts in dieser Gruppe",
+    "No group data available.": "Keine Gruppendaten vorhanden.",
+    "No topic group matches the current search.": "Keine Topic-Gruppe passt zu dieser Suche.",
+    "Active view only – inactive prompts stay ungrouped.":
+      "Gilt nur für die aktive Ansicht – inaktive Prompts bleiben ungruppiert.",
+    "Group Open": "Gruppe offen",
+
+    /* Topics am Prompt */
+    "Edit Topics": "Topics bearbeiten",
+    "Add Topic": "Topic hinzufügen",
+    "Search or create topics...": "Topics suchen oder anlegen...",
+    "No topics available": "Keine Topics vorhanden",
+    "No topics on this prompt yet": "Noch keine Topics an diesem Prompt",
+    "No more topics to add": "Keine weiteren Topics zum Hinzufügen",
+    "No topic": "Kein Topic",
+    "Generate More": "Mehr erzeugen",
+
+    /* Filter auf Brand-Erwähnungen */
+    "Mentioned brands": "Erwähnte Brands",
+    "No brands available": "Keine Brands vorhanden",
+    "Clear filters": "Filter zurücksetzen",
+
+    /* Leerzustaende der Tabelle */
+    "No prompts yet": "Noch keine Prompts",
+    "No matching prompts": "Keine passenden Prompts",
+    "Prompts appear here once your team has added them.":
+      "Prompts erscheinen hier, sobald dein Team sie angelegt hat.",
+    "Nothing matches the current search and filters.":
+      "Zu dieser Suche und diesen Filtern gibt es nichts.",
+
+    /* Ansicht und Zeilen */
+    "Rows": "Zeilen",
+    /* Die Zeilenhoehen dieser Tabelle (data-tip an den drei Knoepfen). "Default" heisst hier
+       Standardhoehe -- nicht zu verwechseln mit der Farbskala, die inzwischen "Brand Colors"
+       heisst. */
+    "Default": "Standard",
+    "Dynamic": "Dynamisch",
+    /* Kleingeschrieben, wie es im Markup steht -- der Schluessel ist der Text, nicht seine
+       Bedeutung. Beide Schreibweisen kommen vor. */
+    "Table settings": "Tabelle einstellen",
+    "Sort, search and table settings": "Sortieren, suchen und Tabelle einstellen",
+    "List view": "Listenansicht",
+    "Wide view": "Breite Ansicht",
+    "Switch to list view": "Zur Listenansicht",
+    "Switch to wide view": "Zur breiten Ansicht",
+
+    /* Seitenkopf */
+    "Manage Prompts, Topics and monitor latest Responses":
+      "Prompts und Topics verwalten, neueste Responses ansehen"
   });
   /* ── Vierter Teil: GANZE Absaetze, so wie sie auf dem Schirm stehen ───────────────────────────
      Diese Liste ist nicht aus dem Quelltext gegriffen, sondern von der laufenden Seite gelesen:
@@ -4575,6 +4669,19 @@
     var kinder = el.childNodes;
     for (var i = 0; i < kinder.length; i++){
       n = kinder[i];
+      if (n.nodeType === 1){
+        /* EIN KIND MIT TEXT heisst: der eigene Textknoten ist nur ein STUECK eines Satzes, und ein
+           Stueck darf nie einzeln uebersetzt werden. Genau daran ist "Hinzufügen Prompts"
+           entstanden: der Knopf traegt den Textknoten "Add" und daneben ein <span>Prompts</span>.
+           "Add" allein wird zu "Hinzufügen", das Glossarwort bleibt -- und im Deutschen steht das
+           Verb hinten, also ist die Reihenfolge falsch. Ein Satz, der aus zwei Knoten besteht,
+           laesst sich nicht Knoten fuer Knoten uebersetzen; er braucht einen Eintrag fuer das
+           GANZE, und den kann nur die Komponente setzen.
+           Zeichen ohne Text (ein SVG, ein Haken, ein Info-Zeichen) stoeren nicht -- die haben
+           keinen Textinhalt. */
+        if ((n.textContent || "").trim()) return null;
+        continue;
+      }
       if (n.nodeType !== 3) continue;
       if (!(n.nodeValue || "").trim()) continue;
       if (gefunden) return null;          /* zwei Textstuecke: nicht anfassen */
@@ -4621,6 +4728,51 @@
     } catch(e){ return false; }
     return true;
   }
+  /* ---- Beschriftungen, die in ATTRIBUTEN stehen ------------------------------------------------
+     aria-label, placeholder, title und data-tip sind Text, den der Nutzer liest (oder hoert), und
+     der Lauf ueber die Textknoten kommt nicht an sie heran. Gemessen an der prompts-table: nach
+     dem Umstellen standen dort noch ein Dutzend englische Beschriftungen -- "Switch to list view",
+     "Clear selection", "Search prompts", "Rows per page", "Previous page" und so weiter.
+
+     KEIN zweites data-Attribut zum Merken. Der Rueckweg laeuft ueber einen umgekehrten Index des
+     Katalogs: aus {englisch: deutsch} wird {deutsch: englisch}, und damit ist zu jedem Wert die
+     Vorlage bekannt, ohne sie irgendwo abzulegen. Bei zwei Eintraegen mit derselben Uebersetzung
+     gewinnt der erste -- das ist harmlos, beide fuehren auf denselben deutschen Text zurueck. */
+  var I18N_ATTR = ["aria-label", "placeholder", "title", "data-tip", "data-tiplabel"];
+  var _rueckIndex = null;
+  function rueckIndex(){
+    if (_rueckIndex) return _rueckIndex;
+    var r = {};
+    Object.keys(MSG).forEach(function(l){
+      var m = MSG[l] || {};
+      Object.keys(m).forEach(function(k){ if (r[m[k]] == null) r[m[k]] = k; });
+    });
+    _rueckIndex = r;
+    return r;
+  }
+  /* Der englische Schluessel zu einem beliebigen Wert: entweder ist er selbst einer, oder er ist
+     eine Uebersetzung und der umgekehrte Index kennt seine Vorlage. */
+  function englischVon(v){
+    if (t(v) !== v) return v;
+    var r = rueckIndex();
+    return r[v] != null ? r[v] : v;
+  }
+  function attributeStellen(wurzel){
+    var sel = I18N_ATTR.map(function(a){ return "[" + a + "]"; }).join(",");
+    var els;
+    try { els = wurzel.querySelectorAll(sel); } catch(e){ return; }
+    for (var i = 0; i < els.length; i++){
+      var el = els[i];
+      for (var a = 0; a < I18N_ATTR.length; a++){
+        var name = I18N_ATTR[a], v = el.getAttribute(name);
+        if (!v) continue;
+        v = String(v);
+        if (v.length > 200) continue;
+        var neu = t(englischVon(v));
+        if (neu !== v) el.setAttribute(name, neu);
+      }
+    }
+  }
   function spracheLauf(scope){
     var wurzel = (scope && scope.querySelectorAll) ? scope : document;
     var els;
@@ -4635,6 +4787,7 @@
     var schon;
     try { schon = wurzel.querySelectorAll("[data-i18n]"); } catch(e){ schon = []; }
     for (var z = 0; z < schon.length; z++) knotenStellen(schon[z]);
+    attributeStellen(wurzel === document ? document.body || document : wurzel);
     if (getPref("locale") === "en") return;
     breiterLauf(wurzel);
   }
