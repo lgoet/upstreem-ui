@@ -59,7 +59,7 @@
         '.ust-row{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;width:100%;min-width:0;min-height:28px;overflow:hidden;}',
         /* Masse woertlich von .up-topicchip in core: 0 8px 0 11px und gap 6. Hier standen 0 10px
            und gap 7 -- derselbe Chip in zwei Groessen, und das faellt nebeneinander auf. */
-        '.ust-tag{height:28px;padding:0 8px 0 11px;border-radius:8px;display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;border:1px solid transparent;background:color-mix(in srgb,var(--ust-tag-color,#6b7280) 10%,transparent);color:var(--ust-tag-color,#4b5563);font-size:12px;line-height:1;font-weight:500;white-space:nowrap;cursor:pointer;user-select:none;}',
+        '.ust-tag{height:28px;padding:0 9px 0 12px;border-radius:8px;display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;border:0;background:color-mix(in srgb,var(--ust-tag-color,#6b7280) 10%,transparent);color:var(--ust-tag-color,#4b5563);font-size:12px;line-height:1;font-weight:500;white-space:nowrap;cursor:pointer;user-select:none;}',
         '.ust-tag-emoji{font-size:12px;line-height:1;}',
         '.ust-tag-label{white-space:nowrap;}',
         '.ust-empty{display:inline-flex;align-items:center;color:#a0a5ad;font-size:13px;line-height:1;}',
@@ -267,7 +267,11 @@
 
         tags.forEach(function(t){
           var el=document.createElement('span');
-          el.className='ust-tag up-chiphover'; el.style.setProperty('--ust-tag-color', t.color);
+          /* Kein up-chiphover: die Klasse malt border-color #6f6f6f, und ueber die Chips
+             einer Tabellenzeile faehrt der Zeiger bei jeder Zeile. In der Zelle sind sie
+             reine Anzeige. Der Zwilling in tagHtml war schon umgestellt, DIESER Bauweg --
+             der die Chips der Zelle wirklich baut -- nicht: die Randlinie blieb. */
+          el.className='ust-tag'; el.style.setProperty('--ust-tag-color', t.color);
           el.innerHTML=(t.emoji?'<span class="ust-tag-emoji">'+esc(t.emoji)+'</span>':'')+'<span class="ust-tag-label">'+esc(t.name)+'</span>';
 
           row.appendChild(el); st.tagEls.push(el);

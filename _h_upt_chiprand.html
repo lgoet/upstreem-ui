@@ -1,0 +1,60 @@
+<meta charset="utf-8"><title>prompts-table: Rand an den Topic-Chips</title>
+<style>html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif}#buehne{padding:16px;width:1240px}
+#out{padding:10px;font:11px/1.5 ui-monospace,monospace;white-space:pre-wrap}</style>
+<body><div id="buehne"></div><pre id="out">laeuft…</pre>
+<script>
+/* Die gemeldete Randlinie an den Topic-Chips, an BEIDEN Stellen: in der Topics-Zelle und in der
+   Gruppen-Leiste. Zwei Dinge werden getrennt gemessen, weil es zwei Ursachen sind:
+   a) traegt der Chip in der Zelle .up-chiphover? Dann malt jeder Zeigerdurchgang einen Rand.
+   b) welchen Rand hat der Chip im RUHEZUSTAND? 1px transparent ist auf Windows bei 125 Prozent
+      Skalierung als Naht sichtbar, weil die halbtransparente Fuellung an der Grenze
+      Rahmenkasten/Polsterkasten zweimal gerundet wird.
+   Der Hover laesst sich nicht per Skript erzwingen -- statt eines Scheinbeweises wird geprueft,
+   ob die Regel .up-chiphover:hover existiert UND ob der Chip sie trifft. */
+window.__err=[]; window.addEventListener("error",function(e){ window.__err.push(String(e.message)); });
+try{ for(var i=localStorage.length-1;i>=0;i--){ var k=localStorage.key(i); if(k&&/upt_/.test(k)) localStorage.removeItem(k); }
+     localStorage.setItem("upt_grouped__tb","yes"); }catch(e){}
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var D=["core.css","core.js","prompts-table.css","prompts-table.js","bubble/prompts_table_bubble.html"];
+Promise.all(D.map(hol)).then(function(t){
+  var m={}; D.forEach(function(f,i){ m[f]=t[i]; });
+  ["core.css","prompts-table.css"].forEach(function(f){ var s=document.createElement("style"); s.textContent=m[f]; document.head.appendChild(s); });
+  var s2=document.createElement("style"); s2.textContent="*,*::before,*::after{transition:none !important;animation:none !important}"; document.head.appendChild(s2);
+  var w=document.createElement("div"); w.innerHTML=wurzelAus(m["bubble/prompts_table_bubble.html"]);
+  var r=w.querySelector(".upt-root");
+  r.setAttribute("data-instance","tb"); r.setAttribute("data-cdn-pin","tb"); r.setAttribute("data-isdark","no");
+  document.getElementById("buehne").appendChild(r);
+  var j=document.createElement("script"); j.textContent=m["core.js"]; document.head.appendChild(j);
+  var j2=document.createElement("script"); j2.textContent=m["prompts-table.js"]; document.head.appendChild(j2);
+  return new Promise(function(ok){ setTimeout(ok,1400); });
+}).then(function(){
+  var TAGS=[{id:"t1",name:"Preise",emoji:"💰",hex_light:"#2f6fdb"},{id:"t2",name:"Vergleich",hex_light:"#c2410c"}];
+  window.renderPromptsTable(JSON.stringify({ instanceId:"tb", view_active:"yes", totalCount:2,
+    rows:[{id:"1",prompt_text:"Was ist X?",status:"active",tags:TAGS},
+          {id:"2",prompt_text:"Was ist Y?",status:"active",tags:[TAGS[0]]}] }));
+  window.setPromptsTableGroups("tb",[
+    {group_key:"g1",group_label:"Preise",tag_emoji:"💰",tag_hex_light:"#2f6fdb",prompts_count:2,prompts_count_inactive:0},
+    {group_key:"g2",group_label:"Vergleich",tag_hex_light:"#c2410c",prompts_count:1,prompts_count_inactive:0}]);
+  return new Promise(function(ok){ setTimeout(ok,700); });
+}).then(function(){
+  function trifft(sel,el){ try{ return el.matches(sel); }catch(e){ return null; } }
+  /* Existiert die Hover-Regel wirklich im geladenen Stylesheet? Sonst messe ich meine Annahme. */
+  function regelDa(txt){ return [].some.call(document.styleSheets,function(ss){
+    try{ return [].some.call(ss.cssRules,function(rl){ return (rl.cssText||"").indexOf(txt)>=0; }); }catch(e){ return false; } }); }
+  function masse(el){ if(!el) return null; var c=getComputedStyle(el), b=el.getBoundingClientRect();
+    return { klassen:el.className, hoehe_box:+b.height.toFixed(2), hoehe_css:c.height,
+             rand:c.borderTopWidth+" "+c.borderTopStyle+" "+c.borderTopColor,
+             polster:c.paddingLeft+"/"+c.paddingRight,
+             traegt_chiphover:trifft(".up-chiphover",el) }; }
+  var R={};
+  R.hoverregel_im_stylesheet = regelDa(".up-chiphover:hover");
+  R.zelle = masse(document.querySelector(".upt-td-topics .ust-tag"));
+  R.gruppenleiste = masse(document.querySelector(".upt-grp-sidechip .up-topicchip"));
+  R.popover_schalter = masse(document.querySelector(".up-topicmenu .up-topicchip, .upt-topiclist .up-topicchip"));
+  R.fehler = window.__err;
+  document.getElementById("out").textContent = JSON.stringify(R,null,1);
+  window.__R=R; window.__fertig=true;
+}).catch(function(e){ document.getElementById("out").textContent="FEHLER: "+e.message; window.__fertig=true; });
+</script>

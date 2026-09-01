@@ -1112,7 +1112,13 @@
        Detailbereich und in einer Tabellenzelle sind sie reine Anzeige. Die Regel stand bisher nur
        in prompts-table.css -- der Radar gab die Klasse also schon aus und bekam sie nur dann, wenn
        zufaellig auch die Prompts-Table auf der Seite lag. Dritter Verbraucher, also hierher. */
-    .up-topicchip.is-static { cursor: default; }
+    /* Randlos, und zwar 0 statt transparent: ein transparenter Rand bleibt ein Rand, den
+       jede Hover- oder Themenregel wieder faerben kann -- und bei 125-Prozent-Skalierung
+       (Windows) wird die halbtransparente Fuellung an der Grenze Rahmenkasten/Polsterkasten
+       zweimal gerundet und die Naht sichtbar. Polster um denselben 1px nach, damit der Text
+       an derselben Stelle steht und die 28px Hoehe unangetastet bleiben. Nur an der reinen
+       Anzeige: die Schalter im Popover brauchen den Rahmen als is-on-Marke. */
+    .up-topicchip.is-static { cursor: default; border: 0; padding: 0 9px 0 12px; }
 
     /* ---------- Heat-Rampe ----------
        Fuenf Stufen, in JS interpoliert (UC.heatAt). Sie stehen in CSS statt in einem JS-Blob,
