@@ -516,7 +516,9 @@
         "</button>";
       }).join("");
     }
-    function renderPrimary(){ elPLabel.textContent = "Open in " + (ASSISTANTS[S.assistant] || ASSISTANTS.chatgpt).name; }
+    /* Muster: im Deutschen steht das Verb hinten ("In ChatGPT öffnen"). */
+    function renderPrimary(){ elPLabel.textContent =
+      UC.t("Open in {assistant}").replace("{assistant}", (ASSISTANTS[S.assistant] || ASSISTANTS.chatgpt).name); }
     function renderTags(){
       elTags.innerHTML = S.tags.map(function(t, i){
         return '<span class="uca-tag"><span>' + esc(t) + "</span>" +

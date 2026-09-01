@@ -1,0 +1,74 @@
+<meta charset="utf-8"><title>Deutsch: laden alle geaenderten Dateien, und greift der Katalog?</title>
+<style>body{margin:0;font:12px/1.6 ui-monospace,monospace;padding:10px;white-space:pre-wrap}</style>
+<body><pre id="out">laeuft…</pre>
+<script>
+/* Zwei Fragen, und die erste ist die wichtigere: LAEDT jede geaenderte Datei noch? Ein Tippfehler
+   in einer davon reisst in Bubble die halbe Seite mit, und das faellt an einem Katalogeintrag
+   nicht auf. Deshalb werden alle Dateien wirklich ausgefuehrt und jeder Fehler gesammelt.
+   Danach die Stichprobe: schlaegt t() die neuen Saetze nach, und setzen die Muster ihre Zahl
+   richtig ein. */
+window.__err=[]; window.addEventListener("error",function(e){ window.__err.push(String(e.message)); });
+try{ localStorage.removeItem("pref_theme"); localStorage.setItem("up_prefs", JSON.stringify({locale:"de"})); }catch(e){}
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+var D=["core.js","domains-table.js","settings-brand.js","brand-detail.js",
+       "onboarding-page.js","create-with-ai.js","add-prompts.js","quick-actions.js",
+       "team-orga.js","ask-mira.js","url-detail.js","domain-detail.js","response-detail.js",
+       "brand-editor.js","urls-table.js","responses-table.js","brands-overview.js","teams.js",
+       "filters/topics-filter.js","filters/models-filter.js","filters/markets-filter.js",
+       "filters/date-range.js","filters/filter-bar.js","page-headers/prompts-page-header.js",
+       "page-headers/dashboard-page-header.js","page-headers/settings-page-header.js",
+       "page-headers/brands-page-header.js","preferences.js","prompts-table.js","export-data.js",
+       "discover-brands.js","topcitations-dashboard.js","visibility-chart.js","prompt-research.js",
+       "opportunities.js","performance-radar.js","citations-combo-chart.js","topics-manager.js"];
+var R={ geladen:[], gescheitert:[] };
+Promise.all(D.map(function(f){ return hol(f).then(function(t){ return [f,t]; },
+  function(e){ R.gescheitert.push(f+": "+e.message); return null; }); })).then(function(paare){
+  paare.filter(Boolean).forEach(function(p){
+    try { (new Function(p[1]))(); R.geladen.push(p[0]); }
+    catch(e){ R.gescheitert.push(p[0]+": "+e.message); }
+  });
+  var UC=window.UpstreemCore;
+  if(!UC){ R.kein_core=true; fertig(); return; }
+  var t=UC.t;
+  /* Stichprobe: je ein Satz aus jedem Nachtrag, plus alle Muster mit Platzhalter. */
+  R.stichprobe = {
+    filter_match: t("Match mode"),
+    filter_einzeln: t("Single select. Picking another model replaces the current one."),
+    zeitraum: t("Choose date range"),
+    seiten_1: t("1 page"),
+    seiten_n: t("{n} pages").replace("{n}","1.204"),
+    urls_tip: t("How much of all citations this domain received in the period went to this URL. The URLs of one domain add up to 100%.").slice(0,60),
+    quick_share: t("Share is the percentage of all citations in the selected period that point to one URL, domain or brand. Shares across all rows sum to 100%. A rising share means gaining ground relative to everything else, not simply being cited more often. Domain Share applies the same calculation inside a single domain: the percentage of that domain's own citations carried by one URL.").slice(0,58),
+    quick_prompt: t("A Prompt is the question you track. A Response is one model's answer to that prompt at one point in time. Each prompt collects one response per model per run, so the relationship is one to many. All aggregates in the app are computed across responses and displayed against the prompt. This is why a prompt's numbers change without the prompt itself being edited.").slice(0,52),
+    sb_datei: t("That file is {n} KB. The limit is 1 MB.").replace("{n}","1340"),
+    sb_modelle: t("Select the AI models you want to track. Your plan currently supports up to {n} active models.").replace("{n}","5"),
+    sb_limit: t("Your plan allows {n} active models. Turn one off first.").replace("{n}","3"),
+    bd_warten: t("Waiting for {mode} data.").replace("{mode}","Visibility"),
+    dd_urls: t("URLs mentioning {brand}").replace("{brand}","Volkswagen"),
+    dd_ring: t("Doughnut"), dd_balken: t("Bars"), dd_aufl: t("Granularity"),
+    ud_typ: t("What kind of page this is: the format the models found at this address.").slice(0,42),
+    mira: t("Ask Mira") + " · " + t("Show more") + " · " + t("Export to PDF"),
+    ca_oeffnen: t("Open in {assistant}").replace("{assistant}","ChatGPT"),
+    ca_titel: t("Create with AI"),
+    ob_tarif: t("Every plan starts with a {n}-day free trial. No charge until it ends.").replace("{n}","14"),
+    ob_prompts: t("Track up to <b>{n} prompts</b>").replace("{n}","250"),
+    ob_antworten: t("Analyze up to <b>{n} AI responses per month</b>").replace("{n}","7.500"),
+    ob_zeichen: t("Maximum of {n} characters reached.").replace("{n}","120"),
+    ob_liste: t("We could not load the {what}. Please reload the page.").replace("{what}", t("competitors")),
+    ob_neustart: t("The next one is available on {when}.").replace("{when}","3. Sep 2026"),
+    kopf_billing: t("Billing interval") + " · " + t("Book a call") + " · " + t("Log out")
+  };
+  /* Was NICHT uebersetzt sein darf. */
+  R.bleibt_englisch = { editorial: t("Editorial"), ugc: t("UGC_Community"),
+    saas: t("SaaS & Software"), berlin: t("Europe/Berlin"), deutschland: t("Germany"),
+    chatgpt: t("ChatGPT"), markdown: t("Markdown"), du: t("You") };
+  fertig();
+  function fertig(){
+    R.fehler=window.__err;
+    R.zahl_geladen=R.geladen.length; delete R.geladen;
+    document.getElementById("out").textContent=JSON.stringify(R,null,1);
+    window.__R=R; window.__fertig=true;
+  }
+});
+</script>

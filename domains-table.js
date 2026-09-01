@@ -319,7 +319,11 @@
       var pagesBtn = pages > 0
         ? '<button class="up-pages udt-pagesbtn' + (isOpen ? " is-open" : "") + '" type="button"' +
             ' data-pages-toggle aria-expanded="' + (isOpen ? "true" : "false") + '">' +
-            '<span class="udt-pagesbtn-lbl">' + fmtTotal(pages) + (pages === 1 ? " page" : " pages") + '</span>' +
+            /* Muster statt Stueck: "12" + " pages" laesst sich nicht uebersetzen, der Satz schon.
+               Die Zahl bleibt formatiert (fmtTotal), nur der Rahmen kommt aus dem Katalog. */
+            '<span class="udt-pagesbtn-lbl">' +
+              (pages === 1 ? UC.t("1 page")
+                           : UC.t("{n} pages").replace("{n}", fmtTotal(pages))) + '</span>' +
             CHEV_SVG +
           '</button>'
         : '<span class="up-pages">' + fmtTotal(pages || 0) + " pages" + '</span>';

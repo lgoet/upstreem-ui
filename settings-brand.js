@@ -594,7 +594,9 @@
       var okType = LOGO_TYPES.indexOf(f.type) !== -1 || /\.(png|svg)$/i.test(f.name);
       if (!okType){ logoError("Only PNG and SVG files are supported."); elFileIn.value = ""; return; }
       if (f.size > MAX_LOGO_BYTES){
-        logoError("That file is " + Math.round(f.size / 1024) + " KB. The limit is 1 MB.");
+        /* Muster: die Zahl bleibt gerechnet, der Satz kommt aus dem Katalog. */
+        logoError(UC.t("That file is {n} KB. The limit is 1 MB.")
+                    .replace("{n}", Math.round(f.size / 1024)));
         elFileIn.value = ""; return;
       }
       logoError("");
@@ -626,8 +628,12 @@
       var full = lim > 0 && on >= lim;
       elModelCount.textContent = on + "/" + lim;
       elModelCount.classList.toggle("is-full", full);
-      elModelDesc.textContent = "Select the AI models you want to track. Your plan currently " +
-        "supports up to " + lim + " active model" + (lim === 1 ? "" : "s") + ".";
+      /* Ein- und Mehrzahl als je EIGENER Satz: das angehaengte "s" ist im Deutschen nicht das
+         Problem, die Satzstellung ist es. */
+      elModelDesc.textContent = lim === 1
+        ? UC.t("Select the AI models you want to track. Your plan currently supports up to 1 active model.")
+        : UC.t("Select the AI models you want to track. Your plan currently supports up to {n} active models.")
+            .replace("{n}", lim);
 
       elModels.innerHTML = draft.models.length
         ? draft.models.map(function(m){
@@ -636,7 +642,8 @@
             var why = "";
             if (!meta.canManage) why = "Only admins can change the tracked models.";
             else if (m.canToggle === false) why = REASON[m.reason] || REASON_FALLBACK;
-            else if (full && !m.active) why = "Your plan allows " + lim + " active models. Turn one off first.";
+            else if (full && !m.active) why = UC.t("Your plan allows {n} active models. Turn one off first.")
+                                                 .replace("{n}", lim);
 
             /* NICHT schaltbar und NICHT verfuegbar sind zwei verschiedene Dinge, und sie duerfen
                nicht gleich aussehen. Das letzte aktive Modell ist beides: aktiv getrackt und

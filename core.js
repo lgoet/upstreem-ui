@@ -1139,6 +1139,410 @@
     "expired": "abgelaufen"
   });
 
+  /* Fuenfter Nachtrag: die Alltagsflaechen -- die drei Filter, der Zeitraum, die Tabellen und die
+     Diagramme. Nicht uebersetzt bleiben hier bewusst zwei Sorten: die GESPEICHERTEN Werte
+     (Editorial, UGC_Community, Institutional, Knowledge-Base -- das sind Datenbankwerte, kein UI)
+     und die Glossarwoerter (Topics, Prompts, Brands, URLs, Domains, Citations, Visibility,
+     Sentiment, Ranking). "Uncategorized" ist der einzige dieser Typen, der KEIN gespeicherter
+     Wert ist, sondern die Anzeige fuer "kein Typ gesetzt" -- der wird uebersetzt. */
+  addMessages("de", {
+    /* ---- Topics-Filter ---- */
+    /* "Verknüpfung" und nicht "Übereinstimmungsart": es geht darum, WIE die gewaehlten Topics
+       verknuepft werden (alle / eines davon). */
+    "Match mode": "Verknüpfung",
+    "Sort topics": "Topics sortieren",
+    "Most used": "Am häufigsten genutzt",
+    "No topics match": "Kein Topic passt",
+    "No topics yet": "Noch keine Topics",
+    "No groupings match": "Keine Gruppierung passt",
+    "None apply to these topics": "Keine passt zu diesen Topics",
+    "None saved yet": "Noch keine gespeichert",
+    "Show your saved groupings": "Gespeicherte Gruppierungen zeigen",
+
+    /* ---- Modelle-Filter ---- */
+    "Selection mode": "Auswahlart",
+    "Single select": "Einzelauswahl",
+    "Multi select": "Mehrfachauswahl",
+    "Single select. Picking another model replaces the current one.":
+      "Einzelauswahl. Ein anderes Modell ersetzt das aktuelle.",
+    "Multi select. Combine several models in one filter.":
+      "Mehrfachauswahl. Mehrere Modelle in einem Filter kombinieren.",
+    "Search models": "Modelle suchen",
+    "Sort models": "Modelle sortieren",
+    "No models match": "Kein Modell passt",
+    "No models yet": "Noch keine Modelle",
+    "Provider": "Anbieter",
+
+    /* ---- Markets-Filter ---- */
+    "Single select. Picking another market replaces the current one.":
+      "Einzelauswahl. Ein anderer Markt ersetzt den aktuellen.",
+    "Multi select. Combine several markets in one filter.":
+      "Mehrfachauswahl. Mehrere Märkte in einem Filter kombinieren.",
+    "Sort markets": "Märkte sortieren",
+    "No markets match": "Kein Markt passt",
+    "No markets yet": "Noch keine Märkte",
+    "Recently used": "Zuletzt genutzt",
+
+    /* ---- Zeitraum ---- */
+    "Choose date range": "Zeitraum wählen",
+    "Previous month": "Voriger Monat",
+    "Next month": "Nächster Monat",
+
+    /* ---- Domains- und URLs-Tabelle ---- */
+    "Search pages": "Seiten suchen",
+    "Search pages…": "Seiten suchen…",
+    "Show title or URL": "Titel oder URL zeigen",
+    "Uncategorized": "Ohne Kategorie",
+    /* Muster: die Zahl kommt formatiert aus fmtTotal, der Satz aus dem Katalog. */
+    "1 page": "1 Seite",
+    "{n} pages": "{n} Seiten",
+    "How much of all citations this domain received in the period went to this URL. The URLs of one domain add up to 100%.":
+      "Wie viel von allen Citations, die diese Domain im Zeitraum bekommen hat, auf diese URL entfiel. Die URLs einer Domain ergeben zusammen 100%.",
+
+    /* ---- Responses-Tabelle ---- */
+    "Your brand is mentioned": "Deine Brand wird erwähnt",
+
+    /* ---- Brands-Overview ---- */
+    "Brand status": "Brand-Status",
+    "Chart type": "Diagrammart",
+
+    /* ---- Teams ---- */
+    "Above the plan limit": "Über dem Tarif-Limit",
+    "Search teams": "Teams suchen",
+    "Search teams…": "Teams suchen…",
+
+    /* ---- Visibility Chart ---- */
+    "Clear company search": "Brand-Suche löschen",
+
+    /* ---- Prompts-Tabelle, Reste ---- */
+    "Don't show custom groupings": "Eigene Gruppierungen ausblenden",
+    "Group actions": "Gruppen-Aktionen",
+    /* Die zwei Erklaertexte stehen in prompts-table.js woertlich, waehrend core sie sonst aus
+       einem Muster mit {scope} baut. Beide Wege fuehren zu demselben deutschen Satz. */
+    "How often the brand appears in AI answers for this prompt.":
+      "Wie oft die Brand für diesen Prompt in KI-Antworten vorkommt.",
+    "How positively the brand is described when it's mentioned for this prompt.":
+      "Wie positiv über die Brand gesprochen wird, wenn sie für diesen Prompt erwähnt wird.",
+
+    /* ---- prompt-research und Opportunities ---- */
+    "Open research": "Recherche öffnen",
+    "Column actions": "Spalten-Aktionen"
+  });
+
+  /* Sechster Nachtrag: die Quick Actions samt ihrer Hilfetexte, die Seitenkoepfe, Export und
+     Discover. Die langen Texte stehen in quick-actions.js als mehrzeilige Verkettung -- zur
+     Laufzeit ist das EIN Text, der Schluessel ist deshalb der ganze Satz in einer Zeile.
+     Nicht uebersetzt: die Typlisten (You, Competition, Brand_Platform, Editorial, Institutional,
+     Knowledge_Base, UGC_Community und die URL-Typen). Das sind gespeicherte Werte -- wer sie
+     uebersetzt, bricht den Filter, weil der Text zum Wert der Datenbank gehoert. */
+  addMessages("de", {
+    /* ---- Quick Actions, Oberflaeche ---- */
+    "Quick Actions": "Schnellaktionen",
+    "Quick actions": "Schnellaktionen",
+    "Open Quick Actions": "Schnellaktionen öffnen",
+    "Open quick actions": "Schnellaktionen öffnen",
+    "Open Documentation": "Dokumentation öffnen",
+    "Remove filter": "Filter entfernen",
+    "Pick a type first – URLs, Brands, Domains or Prompts":
+      "Erst eine Art wählen – URLs, Brands, Domains oder Prompts",
+
+    /* ---- Quick Actions, die Hilfetexte ---- */
+    "Citation Type classifies the SOURCE of a cited URL. Every URL an AI answer cites receives exactly one type. Use it to see which kinds of sources the answers about you are built from.":
+      "Citation Type ordnet die QUELLE einer zitierten URL ein. Jede URL, die eine KI-Antwort zitiert, bekommt genau einen Typ. Damit siehst du, auf welchen Arten von Quellen die Antworten über dich aufbauen.",
+    "URL Type classifies the cited PAGE itself, independently of who published it. A competitor's pricing page and a magazine's ranking list are both citations, but they are different kinds of page and different opportunities. Citation Type describes the source, URL Type describes the page.":
+      "URL Type ordnet die zitierte SEITE selbst ein, unabhängig davon, wer sie veröffentlicht hat. Die Preisseite eines Wettbewerbers und die Rangliste eines Magazins sind beide Citations, aber verschiedene Arten von Seite und verschiedene Gelegenheiten. Citation Type beschreibt die Quelle, URL Type die Seite.",
+    "Share is the percentage of all citations in the selected period that point to one URL, domain or brand. Shares across all rows sum to 100%. A rising share means gaining ground relative to everything else, not simply being cited more often. Domain Share applies the same calculation inside a single domain: the percentage of that domain's own citations carried by one URL.":
+      "Share ist der Anteil aller Citations im gewählten Zeitraum, die auf eine URL, eine Domain oder eine Brand zeigen. Die Shares aller Zeilen ergeben zusammen 100%. Ein steigender Share heißt, gegenüber allem anderen Boden zu gewinnen, nicht einfach häufiger zitiert zu werden. Domain Share rechnet genauso innerhalb einer einzelnen Domain: der Anteil der Citations dieser Domain, der auf eine URL entfällt.",
+    "Trend compares the selected period against the preceding period of equal length. A 30 day range is compared against the 30 days before it. Values are percentage points, not percent of the previous value: a move from 6% to 8% is shown as +2, never as +33%. No chip is shown when the change rounds to zero.":
+      "Trend vergleicht den gewählten Zeitraum mit dem gleich langen Zeitraum davor. Ein Bereich von 30 Tagen wird mit den 30 Tagen vor ihm verglichen. Die Werte sind Prozentpunkte, nicht Prozent des vorigen Werts: aus 6% auf 8% wird +2, niemals +33%. Rundet die Änderung auf null, wird kein Chip gezeigt.",
+    "Rank is the average position your brand takes within an answer that mentions it. Position 1 is the first brand named. Lower is better, so the trend chip is inverted: a falling rank number is displayed as a positive move. Values are shown to one decimal because typical changes are smaller than a full position.":
+      "Rank ist die durchschnittliche Position, die deine Brand in einer Antwort einnimmt, die sie erwähnt. Position 1 ist die erste genannte Brand. Kleiner ist besser, deshalb ist der Trend-Chip umgekehrt: eine fallende Rangzahl wird als positive Bewegung gezeigt. Die Werte haben eine Nachkommastelle, weil übliche Änderungen kleiner als eine ganze Position sind.",
+    "Sentiment scores how positively your brand is described, on a scale from 0 to 100, where 50 is neutral. It is measured only in answers that mention your brand, so it carries no information about how often that happens. Read it alongside Visibility, not instead of it.":
+      "Sentiment bewertet, wie positiv über deine Brand gesprochen wird, auf einer Skala von 0 bis 100, wobei 50 neutral ist. Gemessen wird nur in Antworten, die deine Brand erwähnen — der Wert sagt also nichts darüber, wie oft das passiert. Lies ihn neben Visibility, nicht anstelle davon.",
+    "Visibility is the percentage of runs for a prompt in which your brand was mentioned at all. 20% means one answer in five named you. Visibility measures reach. Rank and Sentiment describe what happened inside the answers that did mention you.":
+      "Visibility ist der Anteil der Durchläufe eines Prompts, in denen deine Brand überhaupt erwähnt wurde. 20% heißt, jede fünfte Antwort hat dich genannt. Visibility misst die Reichweite. Rank und Sentiment beschreiben, was innerhalb der Antworten passiert ist, die dich erwähnt haben.",
+    "A Prompt is the question you track. A Response is one model's answer to that prompt at one point in time. Each prompt collects one response per model per run, so the relationship is one to many. All aggregates in the app are computed across responses and displayed against the prompt. This is why a prompt's numbers change without the prompt itself being edited.":
+      "Ein Prompt ist die Frage, die du beobachtest. Eine KI-Antwort ist, was ein Modell auf diesen Prompt zu einem Zeitpunkt antwortet. Jeder Prompt sammelt pro Durchlauf eine KI-Antwort je Modell, das Verhältnis ist also eins zu viele. Alle Kennzahlen der App werden über die KI-Antworten gerechnet und am Prompt angezeigt. Deshalb ändern sich die Zahlen eines Prompts, ohne dass der Prompt selbst bearbeitet wurde.",
+    "Brand Mentions lists which tracked brands appear on a cited page. Your own brand and your competitors are stored the same way and differ only by role, so a single page can carry both. Pages that mention competitors but not you are usually the ones worth acting on.":
+      "Brand Mentions listet, welche beobachteten Brands auf einer zitierten Seite vorkommen. Deine eigene Brand und deine Wettbewerber liegen gleich gespeichert und unterscheiden sich nur in der Rolle — eine Seite kann also beide tragen. Seiten, die Wettbewerber erwähnen und dich nicht, sind meist die, bei denen sich Handeln lohnt.",
+    "Topics are your own labels on prompts. The app never creates them. Filtering by two topics in Or mode returns prompts carrying either topic. And mode returns only prompts carrying both, which is usually a much smaller set.":
+      "Topics sind deine eigenen Etiketten an Prompts. Die App legt keine an. Filterst du nach zwei Topics mit Oder, kommen Prompts mit dem einen oder dem anderen Topic. Mit Und kommen nur Prompts mit beiden, und das ist meist eine deutlich kleinere Menge.",
+    "Model identifies which LLM produced a response. Single select compares one model against the full picture. Multi select pools several models into one number. Models often disagree about which sources to cite, so a metric that looks flat across all models can hide a large movement inside one of them.":
+      "Model sagt, welches LLM eine KI-Antwort erzeugt hat. Einzelauswahl vergleicht ein Modell mit dem Gesamtbild. Mehrfachauswahl fasst mehrere Modelle zu einer Zahl zusammen. Modelle sind oft unterschiedlicher Meinung darüber, welche Quellen sie zitieren — eine Kennzahl, die über alle Modelle flach aussieht, kann eine große Bewegung in einem einzelnen verbergen.",
+
+    /* ---- Seitenkoepfe ---- */
+    "Billing": "Abrechnung",
+    "Team Organisation": "Team-Organisation",
+    "Your Brand": "Deine Brand",
+    "Discover": "Entdecken",
+    "Tracked": "Beobachtet",
+
+    /* ---- Discover Brands ---- */
+    "Search brands…": "Brands suchen…"
+  });
+
+  /* Siebter Nachtrag: die Detailbereiche, die Einstellungen einer Brand, der Brand-Editor und
+     Mira. Nicht uebersetzt bleibt die BRANCHENLISTE in settings-brand (Agriculture & Food,
+     SaaS & Software, ...) -- das sind gespeicherte Werte, kein UI. Ebenso die Plattformnamen in
+     url-detail (Facebook, Reddit, YouTube, ...): Eigennamen. */
+  addMessages("de", {
+    /* ---- Einstellungen der Brand ---- */
+    "Your industry": "Deine Branche",
+    "Custom industry": "Eigene Branche",
+    "Logo image URL": "URL des Logo-Bilds",
+    "Delete": "Löschen",
+    "Leave": "Verlassen",
+    "That file is {n} KB. The limit is 1 MB.":
+      "Die Datei hat {n} KB. Erlaubt ist 1 MB.",
+    "Select the AI models you want to track. Your plan currently supports up to 1 active model.":
+      "Wähle die KI-Modelle, die du beobachten willst. Dein Tarif erlaubt derzeit 1 aktives Modell.",
+    "Select the AI models you want to track. Your plan currently supports up to {n} active models.":
+      "Wähle die KI-Modelle, die du beobachten willst. Dein Tarif erlaubt derzeit bis zu {n} aktive Modelle.",
+    "Your plan allows {n} active models. Turn one off first.":
+      "Dein Tarif erlaubt {n} aktive Modelle. Schalte erst eines ab.",
+
+    /* ---- Brand-Editor ---- */
+    "Brand name": "Brand-Name",
+    "New alias": "Neuer Alias",
+    "Delete alias": "Alias löschen",
+    "Open color picker": "Farbwähler öffnen",
+    "Clear color": "Farbe entfernen",
+
+    /* ---- URL-Detail ---- */
+    "What kind of page this is: the format the models found at this address.":
+      "Was für eine Seite das ist: das Format, das die Modelle unter dieser Adresse gefunden haben.",
+    "The most recent run in which a model cited this exact URL. A date far in the past means the page still counts in totals but is no longer being picked up.":
+      "Der letzte Durchlauf, in dem ein Modell genau diese URL zitiert hat. Ein weit zurückliegendes Datum heißt: die Seite zählt weiter in den Summen, wird aber nicht mehr aufgegriffen.",
+    "This URL's share of all citations its own domain received. High here means the page carries its domain: the models reach for this one rather than the rest of the site.":
+      "Der Anteil dieser URL an allen Citations, die ihre eigene Domain bekommen hat. Ein hoher Wert heißt, die Seite trägt ihre Domain: die Modelle greifen zu dieser und nicht zum Rest der Website.",
+    "This URL's share of every citation in the period, across all domains. It answers how much of the whole citation landscape this single page holds.":
+      "Der Anteil dieser URL an allen Citations im Zeitraum, über alle Domains hinweg. Er sagt, wie viel der gesamten Citation-Landschaft diese eine Seite hält.",
+    "Where this page sits among all cited URLs, by citation count. #1 is the most cited page in the period.":
+      "Wo diese Seite unter allen zitierten URLs steht, nach Anzahl der Citations. #1 ist die am häufigsten zitierte Seite im Zeitraum.",
+
+    /* ---- Domain-Detail ---- */
+    "Chart mode": "Diagramm-Modus",
+    "Bars": "Balken",
+    "Doughnut": "Ring",
+    /* Zeitliche Auflösung, nicht Bildauflösung -- im Zusammenhang mit Tag/Woche/Monat eindeutig. */
+    "Granularity": "Auflösung",
+    "Cited Pages / URLs": "Zitierte Seiten / URLs",
+    "URLs mentioning {brand}": "URLs, die {brand} erwähnen",
+    "Share:": "Share:",
+    "Rank:": "Rang:",
+    "Sentiment:": "Sentiment:",
+    "How much of all citations in the period went to this domain, day by day. It compares this domain against every other domain, so the value falls when others are cited more.":
+      "Wie viel von allen Citations im Zeitraum auf diese Domain entfiel, Tag für Tag. Verglichen wird diese Domain mit jeder anderen, der Wert fällt also, wenn andere häufiger zitiert werden.",
+    "How this domain's citations are split across its own URLs. Each line is one URL, and its value is that URL's share of all citations this domain received in the period -- so the lines add up to 100%. It answers which pages of the domain the models actually cite, not how the domain compares to other domains.":
+      "Wie sich die Citations dieser Domain auf ihre eigenen URLs verteilen. Jede Linie ist eine URL, ihr Wert ist der Anteil dieser URL an allen Citations, die die Domain im Zeitraum bekommen hat -- die Linien ergeben zusammen 100%. Die Antwort sagt, welche Seiten der Domain die Modelle wirklich zitieren, nicht wie die Domain gegen andere Domains steht.",
+    "How this domain's citations are split across its own URLs. Each line is one URL, and its value is that URL's share of all citations this domain received -- so the lines add up to 100%. It says which pages get cited, not how the domain compares to others.":
+      "Wie sich die Citations dieser Domain auf ihre eigenen URLs verteilen. Jede Linie ist eine URL, ihr Wert ist der Anteil dieser URL an allen Citations der Domain -- die Linien ergeben zusammen 100%. Der Wert sagt, welche Seiten zitiert werden, nicht wie die Domain gegen andere steht.",
+
+    /* ---- Brand-Detail ---- */
+    "Visibility over Time": "Visibility im Zeitverlauf",
+    "Ranking over Time": "Ranking im Zeitverlauf",
+    "Sentiment over Time": "Sentiment im Zeitverlauf",
+    "No variations recorded for this brand.": "Für diese Brand sind keine Variationen erfasst.",
+    "The chart data could not be read.": "Die Chart-Daten konnten nicht gelesen werden.",
+    "The chart data arrived without a series.": "Die Chart-Daten kamen ohne Datenreihe an.",
+    "Waiting for {mode} data.": "Warte auf {mode}-Daten.",
+
+    /* ---- Response-Detail ---- */
+    "Highlights": "Hervorhebungen",
+    "Highlight settings": "Hervorhebungen einstellen",
+    "Citations view": "Citations-Ansicht",
+
+    /* ---- Mira ---- */
+    "Ask Mira": "Mira fragen",
+    "New Message": "Neue Nachricht",
+    "New project": "Neues Projekt",
+    "Project name": "Projektname",
+    "Rename project": "Projekt umbenennen",
+    "Delete project": "Projekt löschen",
+    "Chat name": "Chat-Name",
+    "Change status": "Status ändern",
+    "Add as opportunity": "Als Opportunity hinzufügen",
+    "Export to PDF": "Als PDF exportieren",
+    "Bad response": "Schlechte Antwort",
+    "Discard": "Verwerfen",
+    "Pinned": "Angepinnt",
+    "More": "Mehr",
+    "Show more": "Mehr zeigen",
+    "Show less": "Weniger zeigen",
+    "Mira answers based on...": "Mira antwortet auf Basis von…",
+    "Reading your brand's visibility data": "Die Visibility-Daten deiner Brand werden gelesen",
+    "Transcribing voice message": "Sprachnachricht wird transkribiert"
+  });
+
+  /* Achter Nachtrag: Create with AI und die Oberflaeche des Onboardings.
+     NICHT hier drin, und das ist Absicht:
+       - die Zeitzonen (Europe/Berlin, America/New_York, ...) und die Laendernamen. Beides sind
+         Werte, keine Beschriftungen.
+       - die HILFEKAESTEN des Onboardings. Die haben ihren eigenen, aelteren Weg: onboarding-page.js
+         haelt sie als HILFE = { en, de } und waehlt nach MARKT, nicht nach Spracheinstellung. So
+         war es vorgegeben, und die deutschen Texte dort sind geschrieben, nicht uebersetzt. Wer
+         das auf die Spracheinstellung umstellen will, muss diese Entscheidung aendern -- eine
+         zweite Uebersetzung daneben waeren zwei Wahrheiten.
+       - die Namen der KI-Anbieter (ChatGPT, Claude, Grok, Google AI Studio) und "Markdown". */
+  addMessages("de", {
+    /* ---- Create with AI ---- */
+    "Create with AI": "Mit KI erstellen",
+    "How Create with AI works": "Wie „Mit KI erstellen“ funktioniert",
+    "Create": "Erstellen",
+    "Improve": "Verbessern",
+    "Improve this page": "Diese Seite verbessern",
+    "Create your own version": "Eigene Fassung erstellen",
+    "Selected source": "Gewählte Quelle",
+    "No source passed yet": "Noch keine Quelle übergeben",
+    "Search your pages or paste a URL…": "Seiten durchsuchen oder eine URL einfügen…",
+    "Show suggestions": "Vorschläge zeigen",
+    "Already added": "Schon hinzugefügt",
+    "Add instructions…": "Anweisungen ergänzen…",
+    "Nothing is published automatically. You stay in control.":
+      "Es wird nichts automatisch veröffentlicht. Du behältst die Kontrolle.",
+    "Open in {assistant}": "In {assistant} öffnen",
+    "Plain text": "Reiner Text",
+    "No formatting at all. Best if you will style the content yourself in Google Docs or Word.":
+      "Ganz ohne Formatierung. Am besten, wenn du den Inhalt selbst in Google Docs oder Word gestaltest.",
+    "Balanced writing and structure": "Ausgewogen in Text und Aufbau",
+    "Best for long-form, nuanced writing": "Am besten für lange, differenzierte Texte",
+    "Great for research-heavy drafts": "Stark bei recherchelastigen Entwürfen",
+    "Clear drafts with a direct tone": "Klare Entwürfe in direktem Ton",
+    "Fast setup": "Schnell eingerichtet",
+    /* Beispielhafte Anweisungen -- Vorschlaege, die der Nutzer anklickt. */
+    "Keep the tone factual": "Sachlich im Ton bleiben",
+    "Do not mention pricing": "Preise nicht erwähnen",
+    "Add a short FAQ": "Kurze FAQ ergänzen",
+    "Focus on SMEs": "Auf KMU ausrichten",
+    "Max 3 links": "Höchstens 3 Links",
+    "Task:": "Aufgabe:",
+    "Use this upstreem template:": "Diese upstreem-Vorlage verwenden:",
+    "See pricing": "Preise ansehen",
+
+    /* ---- Onboarding, Oberflaeche ---- */
+    "Set up your brand": "Deine Brand einrichten",
+    "Your brand": "Deine Brand",
+    "Your setup": "Deine Einrichtung",
+    "Setup progress": "Fortschritt der Einrichtung",
+    "The brand we start tracking for you.": "Die Marke, die wir ab jetzt für dich beobachten.",
+    "Help us understand what your business does and who it serves.":
+      "Hilf uns zu verstehen, was dein Unternehmen macht und für wen.",
+    "Industry is optional and only sharpens the suggestions on the next screens.":
+      "Die Branche ist freiwillig und schärft nur die Vorschläge auf den nächsten Schritten.",
+    "Website: the domain you want to be found for, not a landing page.":
+      "Website: die Domain, für die du gefunden werden willst, keine Landingpage.",
+    "Market: where your buyers are, not where your office is.":
+      "Markt: wo deine Käufer sind, nicht wo dein Büro steht.",
+    "Areas where a buying decision happens, not everything you do.":
+      "Bereiche, in denen eine Kaufentscheidung fällt, nicht alles, was du tust.",
+    "Select a time zone": "Zeitzone wählen",
+    "Time zones": "Zeitzonen",
+    "Hybrid": "Hybrid",
+    "Other": "Andere",
+    "Save": "Speichern",
+    "Confirm": "Bestätigen",
+    "Log out": "Abmelden",
+    "Need help?": "Brauchst du Hilfe?",
+    "Book a call": "Termin buchen",
+    "Pick a slot of up to 30 minutes and we will walk through your setup together.":
+      "Wähle einen Termin von bis zu 30 Minuten, dann gehen wir deine Einrichtung zusammen durch.",
+    "What to watch for": "Worauf es ankommt",
+    "Last updated": "Zuletzt geändert",
+
+    /* Prüfmeldungen der Formulare */
+    "Please enter your brand name.": "Bitte gib den Namen deiner Brand ein.",
+    "Please enter your website.": "Bitte gib deine Website ein.",
+    "That does not look like a website address.": "Das sieht nicht nach einer Website-Adresse aus.",
+    "Please pick a business model.": "Bitte wähle ein Geschäftsmodell.",
+    "Please pick a market.": "Bitte wähle einen Markt.",
+    "Please pick a time zone.": "Bitte wähle eine Zeitzone.",
+    "Pick at least one topic": "Wähle mindestens ein Topic",
+    "Maximum of {n} characters reached.": "Höchstens {n} Zeichen.",
+
+    /* Topics und Wettbewerber */
+    "Topics group the questions we ask the models.":
+      "Topics fassen die Fragen zusammen, die wir den Modellen stellen.",
+    "Name your topic": "Benenne dein Topic",
+    "Remove topic": "Topic entfernen",
+    "Three to six is a good start. Missing one? Add your own at the bottom.":
+      "Drei bis sechs sind ein guter Start. Fehlt eins? Unten kannst du eigene ergänzen.",
+    "Three to five is plenty to start. You can add more from your dashboard.":
+      "Drei bis fünf reichen zum Start. Weitere kannst du später im Dashboard ergänzen.",
+    "Name them the way a customer would say them, not the way your catalogue does.":
+      "Benenne sie so, wie ein Kunde sie sagen würde, nicht wie dein Katalog sie nennt.",
+    "Locked: your prompts are already built on these topics.":
+      "Gesperrt: deine Prompts sind schon auf diesen Topics aufgebaut.",
+    "Your prompts are already built on these topics, so they cannot be changed here.":
+      "Deine Prompts sind schon auf diesen Topics aufgebaut, hier lassen sie sich deshalb nicht ändern.",
+    "Pick the brands closest to yours for sharper benchmarking. You can add more later.":
+      "Wähle die Brands, die deiner am nächsten stehen — das schärft den Vergleich. Weitere kannst du später ergänzen.",
+    "Pick brands that show up in the same kind of questions as you.":
+      "Wähle Brands, die in denselben Fragen auftauchen wie du.",
+    "These are the questions we will ask the models for you. Keep the ones that matter.":
+      "Das sind die Fragen, die wir für dich an die Modelle stellen. Behalte die, auf die es ankommt.",
+    "Keep the ones a real customer would type into ChatGPT.":
+      "Behalte die, die ein echter Kunde so bei ChatGPT eintippen würde.",
+
+    /* Tarife */
+    "Choose your plan": "Tarif wählen",
+    "Pick the plan that fits your team.": "Wähle den Tarif, der zu deinem Team passt.",
+    "Pick the plan that fits your team. Not every plan includes a free trial.":
+      "Wähle den Tarif, der zu deinem Team passt. Nicht jeder Tarif hat eine Testphase.",
+    "Billing interval": "Abrechnungszeitraum",
+    "Every plan starts with a free trial. No charge until it ends.":
+      "Jeder Tarif beginnt mit einer kostenlosen Testphase. Bis sie endet, wird nichts berechnet.",
+    "Every plan starts with a {n}-day free trial. No charge until it ends.":
+      "Jeder Tarif beginnt mit {n} Tagen kostenloser Testphase. Bis sie endet, wird nichts berechnet.",
+    "Start free trial": "Testphase starten",
+    "Proceed to checkout": "Weiter zur Kasse",
+    "Choose which models to track": "Wähle die Modelle, die beobachtet werden",
+    "Track up to <b>{n} prompts</b>": "Bis zu <b>{n} Prompts</b>",
+    "Prompts executed daily": "Prompts werden täglich ausgeführt",
+    "Analyze up to <b>{n} AI responses per month</b>":
+      "Bis zu <b>{n} KI-Antworten pro Monat</b> auswerten",
+    "Analyze more than <b>{n} AI responses per month</b>":
+      "Mehr als <b>{n} KI-Antworten pro Monat</b> auswerten",
+    "Unlimited countries / languages": "Unbegrenzt Länder und Sprachen",
+    "Unlimited seats for your team": "Unbegrenzt Plätze für dein Team",
+    "Track up to <b>{n} brands / competitors</b>": "Bis zu <b>{n} Brands und Wettbewerber</b>",
+    "Standard email support": "Support per E-Mail",
+    "Personal account manager": "Persönliche Betreuung",
+
+    /* Warten, Neustart, Fehler */
+    "Reading your website": "Deine Website wird gelesen",
+    "Analyzing your market": "Dein Markt wird ausgewertet",
+    "Going through your pages to learn what you do":
+      "Deine Seiten werden durchgesehen, um zu lernen, was du tust",
+    "Comparing you with every brand you compete against":
+      "Du wirst mit jeder Brand verglichen, gegen die du antrittst",
+    "Putting your competitors and topics together":
+      "Wettbewerber und Topics werden zusammengestellt",
+    "Setting up your workspace": "Dein Arbeitsbereich wird eingerichtet",
+    "Creating the space your team will work in":
+      "Der Bereich wird angelegt, in dem dein Team arbeitet",
+    "Finalizing your setup": "Die Einrichtung wird abgeschlossen",
+    "This replaces your current setup. It is deleted when you submit this form.":
+      "Das ersetzt deine aktuelle Einrichtung. Sie wird gelöscht, sobald du dieses Formular abschickst.",
+    "Starting over deletes this setup with everything it found.":
+      "Ein Neustart löscht diese Einrichtung mit allem, was sie gefunden hat.",
+    "This is your last restart for now.": "Das ist vorerst dein letzter Neustart.",
+    "You have used all your restarts for now.": "Du hast vorerst alle Neustarts verbraucht.",
+    "The next one is available on {when}.": "Der nächste ist am {when} möglich.",
+    "Starting over is not possible right now. Please try again later.":
+      "Ein Neustart ist gerade nicht möglich. Bitte versuche es später noch einmal.",
+    "We are still setting this one up. You can start over once it is done.":
+      "Diese Einrichtung läuft noch. Sobald sie fertig ist, kannst du neu starten.",
+    "Something went wrong while setting up your workspace. Please try again.":
+      "Beim Einrichten deines Arbeitsbereichs ist etwas schiefgelaufen. Bitte versuche es noch einmal.",
+    "We could not load your onboarding. Please reload the page.":
+      "Wir konnten deine Einrichtung nicht laden. Bitte lade die Seite neu.",
+    "We could not load the plans. Please reload the page.":
+      "Wir konnten die Tarife nicht laden. Bitte lade die Seite neu.",
+    "We could not load the {what}. Please reload the page.":
+      "Wir konnten die {what} nicht laden. Bitte lade die Seite neu.",
+    "competitors": "Wettbewerber"
+  });
+
   addMessages("de", {
     "Brand Settings": "Brand-Einstellungen",
     "Your brand identity as it appears across the workspace.":

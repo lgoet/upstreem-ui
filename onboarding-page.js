@@ -1100,7 +1100,8 @@
            Ein Feld je Zeile statt eines \n oder eines <br>: der Text laeuft durch esc(), dort
            waere ein Umbruch entweder unwirksam oder ein Zeichen im Text. */
         hinweis = ["You have used all your restarts for now.",
-                   "The next one is available on " + zeitpunkt(rs.next_allowed_at) + "."];
+                   UC.t("The next one is available on {when}.")
+                     .replace("{when}", zeitpunkt(rs.next_allowed_at))];
       } else {
         hinweis = "Starting over is not possible right now. Please try again later.";
       }
@@ -1454,15 +1455,21 @@
                      dieselbe Liste wiederfindet. */
                   '<span class="uob-plan-feats">' +
                     feat("<b>Choose which models to track</b>") +
-                    feat("Track up to <b>" + esc(String(pl.prompts_per_day)) + " prompts</b>") +
+                    /* Muster MIT der Auszeichnung: die fette Zahl steht im Deutschen an anderer
+                       Stelle im Satz, der Satz muss also als Ganzes aus dem Katalog kommen. */
+                    feat(UC.t("Track up to <b>{n} prompts</b>")
+                           .replace("{n}", esc(String(pl.prompts_per_day)))) +
                     feat("Prompts executed daily") +
                     (antworten(pl) != null
-                      ? feat((pl.ai_responses_more === true ? "Analyze more than " : "Analyze up to ") +
-                             "<b>" + esc(zahl(antworten(pl))) + " AI responses per month</b>")
+                      ? feat(UC.t(pl.ai_responses_more === true
+                                    ? "Analyze more than <b>{n} AI responses per month</b>"
+                                    : "Analyze up to <b>{n} AI responses per month</b>")
+                               .replace("{n}", esc(zahl(antworten(pl)))))
                       : "") +
                     feat("Unlimited countries / languages") +
                     feat("Unlimited seats for your team") +
-                    feat("Track up to <b>" + esc(marken(pl)) + " brands / competitors</b>") +
+                    feat(UC.t("Track up to <b>{n} brands / competitors</b>")
+                           .replace("{n}", esc(marken(pl)))) +
                     feat(esc(hilfe(pl))) +
                   '</span>' +
                 '</button>';
@@ -1585,8 +1592,9 @@
       if (!mit) return "Pick the plan that fits your team.";
       if (ohne) return "Pick the plan that fits your team. Not every plan includes a free trial.";
       return (gleich && tage)
-        ? "Every plan starts with a " + Math.round(tage) + "-day free trial. No charge until it ends."
-        : "Every plan starts with a free trial. No charge until it ends.";
+        ? UC.t("Every plan starts with a {n}-day free trial. No charge until it ends.")
+            .replace("{n}", Math.round(tage))
+        : UC.t("Every plan starts with a free trial. No charge until it ends.");
     }
 
     function feat(html) { return '<span class="uob-plan-feat">' + ic("check", 2.6) + '<span>' + html + '</span></span>'; }
@@ -2698,7 +2706,7 @@
            Tippen ab. Der Fehler verschwindet von selbst, sobald wieder Platz ist. */
         if (f === "website") favZeichnen();
         if (MAX[f] && String(e.target.value).length >= MAX[f]) {
-          state.fehler[f] = "Maximum of " + MAX[f] + " characters reached.";
+          state.fehler[f] = UC.t("Maximum of {n} characters reached.").replace("{n}", MAX[f]);
         } else if (state.fehler[f]) {
           delete state.fehler[f];
         }
@@ -3881,7 +3889,8 @@
            "brands" heisst in der Oberflaeche Competitors -- der Nutzer saehe ein Wort, das auf
            seinem Bildschirm nirgends steht. Interne Bezeichner haben in sichtbarem Text nichts
            zu suchen, so angemahnt am 24.08. */
-        state.banner = "We could not load the " + LISTENNAME[welche] + ". Please reload the page.";
+        state.banner = UC.t("We could not load the {what}. Please reload the page.")
+                           .replace("{what}", UC.t(LISTENNAME[welche]));
         render(); return true;
       }
       var rein = [];

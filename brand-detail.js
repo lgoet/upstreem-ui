@@ -393,7 +393,11 @@
          Skelett, das nichts mehr beendet); gab es noch keine, steht dort Text. Das ist der Fall,
          der vorher endlos geladen hat. */
       if (p && p.mode && p.mode !== state.mode) {
-        if (!letzteKurve) line.empty("Waiting for " + modeOf(state.mode).label.toLowerCase() + " data.");
+        /* Muster, und die Beschriftung bleibt gross: Visibility, Ranking und Sentiment sind
+           Glossarwoerter, kein Kleinschreiben. Vorher stand hier toLowerCase() -- im Deutschen
+           waere daraus "warte auf visibility-Daten" geworden. */
+        if (!letzteKurve) line.empty(UC.t("Waiting for {mode} data.")
+                                       .replace("{mode}", modeOf(state.mode).label));
         return;
       }
       letzteKurve = true;
