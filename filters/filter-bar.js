@@ -40,11 +40,14 @@
                       vollen Zustand: utf-topics, umf-models, umk-markets, aufsteigend am Root.
                       Dafuer musste an den Filtern nichts geaendert werden.
 
-   ── Das einzige Ereignis dieser Komponente ──────────────────────────────────
-     ufbReset   Reset Filters im Panel ODER Clear All in der Leiste. Beide leeren vorher die
-                Auswahl JEDES eingezogenen Filters ueber dessen setSelected("") -- das ist der
-                stille Weg (die Filter schicken dann nichts), damit nicht drei Ereignisse und
-                dieses vierte gleichzeitig dieselbe Abfrage neu anstossen.
+   ── Diese Komponente sendet NICHTS ──────────────────────────────────────────
+   Reset Filters im Panel und Clear All in der Leiste gehen ueber die eigenen Wege der Filter:
+   jeder raeumt seine Auswahl auf und feuert sein eigenes Ereignis, genau wie beim Abwaehlen von
+   Hand. Es braucht also keinen Workflow fuer diese Leiste.
+   Hier stand ein Ereignis "ufbReset", das aus drei Filter-Ereignissen eines machen sollte. Es ist
+   RAUS, auf Ansage: es lief auf keiner Seite ein Workflow darauf, der Weg ueber die Filter hat
+   ohnehin alles richtig gemacht, und uebrig blieben nur Warnungen in der Konsole -- eine von hier
+   und je eine von makeFire ueber den Namen, den es nicht auflosen konnte.
 
    ── Was aus core kommt ──────────────────────────────────────────────────────
      Panel-Schale      .up-menu + UC.makePopover
@@ -697,19 +700,11 @@
          Ereignis: der Workflow dahinter laedt neu, und ihn nach action zu verzweigen ist die
          Entscheidung der Bubble-Seite. Der Name des Filters steht mit drin, damit sie es kann. */
       /* Erreicht dieser Name auf DIESER Seite einen Workflow? Dieselbe Aufloesung wie in
-         UC.makeFire (erst wie eingetragen, dann mit dem Praefix), nur ohne zu senden. Gebraucht
-         fuer die Entscheidung unten: ein Reset, das nichts erreicht, darf nicht die Anzeige
-         leeren und die Tabelle stehen lassen. */
-      function erreichbar(name) {
-        if (!name) return false;
-        try {
-          if (typeof UC.resolveBubbleFn(name) === "function") return true;
-          if (name.indexOf("bubble_fn_") !== 0 &&
-              typeof UC.resolveBubbleFn("bubble_fn_" + name) === "function") return true;
-        } catch (e) {}
-        return false;
-      }
-      function resetName() { return root.getAttribute("data-reset-fn") || "ufbReset"; }
+         UC.makeFire, nur ohne zu senden.
+         Hier standen erreichbar() und resetName(): sie haben geprueft, ob ein Workflow namens
+         ufbReset auf der Seite liegt. Das Ereignis ist raus, damit haben beide keinen Abnehmer
+         mehr -- und Funktionen ohne Abnehmer sind Ballast, den der Naechste zu verstehen versucht.
+         Die Diagnose unten prueft die Kanaele der FILTER, und die gibt es weiter. */
 
       /* EINEN Filter ueber SEINEN eigenen Weg leeren: das X am Chip klickt das X am Trigger des
          Filters an -- dasselbe Bedienelement, das der Nutzer sonst selbst trifft. Der Filter
@@ -733,41 +728,22 @@
           return;
         }
         /* Kein X erreichbar (der Filter steckt gar nicht in dieser Leiste): dann der stille Weg
-           und das eigene Ereignis. */
+           ueber seinen Controller. KEIN eigenes Ereignis mehr -- siehe alleLeeren() darunter. */
         var c = w && w[f.ctrl];
         if (c && typeof c.setSelected === "function") { try { c.setSelected(""); } catch (e) {} }
         spiegeln(f);
         render();
-        fire("data-reset-fn", "ufbReset", { action: "clear_one", filter: f.key });
       }
+      /* Clear All geht ausschliesslich ueber die EIGENEN Wege der Filter -- jeder raeumt seine
+         Auswahl auf und feuert sein eigenes Ereignis, genau wie beim Abwaehlen von Hand.
+
+         Hier stand davor ein zweiter Weg ueber ein Ereignis "ufbReset": es sollte aus drei
+         Filter-Ereignissen eines machen, damit die Seite einmal statt dreimal neu laedt. Das ist
+         RAUS, auf Ansage: es lief auf keiner Seite ein Workflow darauf, und der Rueckfall hat
+         ohnehin alles richtig gemacht. Uebrig blieben nur Meldungen in der Konsole -- eine von
+         hier und je eine von makeFire, das ueber jeden Namen klagt, den es nicht auflosen kann.
+         Eine Warnung fuer eine Sache, die niemand bestellt hat, ist Laerm. */
       function alleLeeren() {
-        /* Der Weg: still leeren und EIN Ereignis. setSelected("") raeumt die Auswahl auf und laesst
-           die LISTE stehen (resetXFilter wuerde auch die Liste wegwerfen -- das ist der Weg fuer
-           einen Team- oder Projektwechsel und hier falsch), und es schickt nichts. Drei
-           Filter-Ereignisse plus dieses eine wuerden dieselbe Abfrage viermal anstossen. */
-        if (erreichbar(resetName())) {
-          liste.forEach(function (f) {
-            var w = eingezogen[f.key];
-            var c = w && w[f.ctrl];
-            if (c && typeof c.setSelected === "function") { try { c.setSelected(""); } catch (e) {} }
-          });
-          spiegelnAlle();
-          render();
-          fire("data-reset-fn", "ufbReset", { action: "clear_all" });
-          return;
-        }
-        /* RUECKFALL, wenn dieser eine Workflow (noch) nicht verdrahtet ist: ueber die eigenen
-           Wege der Filter, einer nach dem anderen. Dann laedt die Seite je Filter neu statt
-           einmal -- das ist der Preis, und er ist deutlich kleiner als der andere Ausgang: eine
-           leere Filterleiste ueber einer Tabelle, die noch gefiltert ist. Sagt es einmal, damit
-           der Grund nicht geraten werden muss. */
-        if (!gemeldet.__reset) {
-          gemeldet.__reset = true;
-          if (window.console) console.info("[filter-bar] " + instanceId + ': "' + resetName() +
-            '" erreicht auf dieser Seite keinen Workflow. Clear All laeuft darum ueber die ' +
-            "eigenen Wege der Filter -- das wirkt, laedt aber je Filter einmal neu. Ein " +
-            "JavaScript-to-Bubble-Element mit diesem Namen macht daraus einen Aufruf.");
-        }
         liste.forEach(function (f) { einenLeeren(f.key); });
         spiegelnAlle();
         render();
@@ -818,10 +794,9 @@
           var x = f.clearSel && w.querySelector(f.clearSel);
           if (x) { try { x.click(); } catch (e) {} return; }
           var c = w[f.ctrl];
-          if (c && typeof c.setSelected === "function") {
-            try { c.setSelected(""); } catch (e) {}
-            fire("data-reset-fn", "ufbReset", { action: "clear_one", filter: f.key });
-          }
+          /* Nur setSelected. Der Filter feuert danach SEIN eigenes Ereignis, und das genuegt --
+             das frueher hier zusaetzlich gesendete ufbReset ist raus (siehe alleLeeren). */
+          if (c && typeof c.setSelected === "function"){ try { c.setSelected(""); } catch (e) {} }
         });
       }
       function sichtStellen() {
