@@ -89,8 +89,9 @@
       "Line width": "Linienstärke",
       "The stroke of every line chart.": "Die Strichstärke aller Liniencharts.",
       "Colors": "Farben",
-      "The palette for the lines in Visibility Chart. Brand colours from your own data are used when this is set to Default.":
-        "Die Farben der Linien im Visibility Chart. Bei Default gelten die Markenfarben aus deinen eigenen Daten.",
+      "The palette for the lines in Visibility Chart. Pick Brand Colors to use each brand's own color instead.":
+        "Die Farben der Linien im Visibility Chart. Wähle Brand-Farben, um stattdessen die eigene " +
+        "Farbe jeder Brand zu nehmen.",
       "Show legend": "Legende zeigen",
       "The legend under a line chart, with one entry per brand.":
         "Die Legende unter einem Linienchart, ein Eintrag je Marke.",
@@ -227,6 +228,21 @@
         e.preventDefault();
         namenSpeichern();
       });
+      /* Der Erklaerkasten aus core, dieselbe Karte wie an den Spaltenkoepfen der Tabellen. Der
+         Text kommt ebenfalls aus core (UC.explainCopy) -- die Farbauswahl selbst wird dort gebaut,
+         also gehoert die Erklaerung dazu und nicht hierher.
+         An M.back und nicht an eine Wurzel: das Fenster liegt im <body>, ausserhalb jeder
+         Komponentenwurzel. */
+      if (UC.makeExplain) UC.makeExplain({
+        root: back, triggerSel: "[data-explain]", cls: "ums-explain",
+        getIsDark: function () { return back.getAttribute("data-theme") === "dark"; },
+        html: function (key) {
+          var e = UC.explainCopy && UC.explainCopy(key, {});
+          if (!e) return "";
+          return '<div class="up-explain-h">' + esc(e.h) + '</div>' +
+                 '<div class="up-explain-t">' + esc(e.t) + '</div>';
+        }
+      });
       if (UC.makeTooltips) UC.makeTooltips(back, function () {
         return back.getAttribute("data-theme") === "dark";
       });
@@ -362,8 +378,11 @@
         /* Die Farbskala wirkt nur dort, wo sie auch heute schon waehlbar ist: an den
            Linien-Charts, also am Visibility Chart. Das steht in der Beschreibung, damit niemand
            sie an einem Doughnut sucht. */
-        zeileHtml("Colors", "The palette for the lines in Visibility Chart. Brand colours from " +
-          "your own data are used when this is set to Default.",
+        /* "Brand Colors" und nicht mehr "Default" -- der Eintrag heisst so, seit Tableau die
+           Vorgabe ist. Zwei Namen fuer dieselbe Zeile waren genau der Grund fuer das Info-Zeichen
+           daneben. */
+        zeileHtml("Colors", "The palette for the lines in Visibility Chart. Pick Brand Colors to " +
+          "use each brand's own color instead.",
           '<span class="ums-selwrap" data-ums-wrap>' +
             '<button class="ums-sel ums-sel-scale" type="button" aria-haspopup="menu"' +
               ' aria-expanded="false" data-ums-selbtn="scale">' +

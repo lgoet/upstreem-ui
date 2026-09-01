@@ -238,9 +238,22 @@
               '<button class="up-search-clear ube-clear" type="button" data-color-clear ' +
                 'aria-label="Clear color"></button>' +
             '</span>' +
+            /* Holt die Hausfarbe aus dem LOGO der Marke -- dieselbe Ermittlung, mit der die
+               Domains im Citations-Chart ihre Farbe bekommen (UC.bildFarbe -> dominantVon).
+               Neben dem Waehler und nicht darin: es ist eine Abkuerzung zu einem Wert, keine
+               dritte Art, eine Farbe zu waehlen. */
+            /* Ohne disabled im Markup: dieses Stueck ist das STATISCHE Skelett, hier gibt es
+               noch keine Company (mein erster Anlauf las c.favicon_url und warf "c is not
+               defined" -- der ganze Editor blieb leer). Den Zustand setzt farbeSpiegeln(), sobald
+               Daten da sind. */
+            '<button class="up-btn-sec ube-farblogo" type="button" data-color-logo>' +
+              'Use logo color</button>' +
             '<button class="up-btn-pri ube-farbsave" type="button" data-color-save disabled></button>' +
             '<button class="up-btn-sec ube-farbreset" type="button" data-color-reset hidden>Reset</button>' +
           '</div>' +
+          /* Eigene Zeile fuer die Rueckmeldung des Logo-Knopfes. Ohne Diagnose und ohne interne
+             Namen -- nur, was der Nutzer tun kann. */
+          '<p class="ube-farblogohinweis" data-logohint hidden></p>' +
           '<p class="ube-farbhinweis">The color picker could not be loaded. Type a hex value ' +
             'like #1f6feb instead.</p>' +
         '</section>' +
@@ -409,6 +422,53 @@
       return hexOk(v) ? v.toLowerCase() : "";
     }
 
+    /* Hausfarbe aus dem Logo. Der Ablauf ist bewusst der eines Knopfes, der etwas HOLT und dann
+       SPEICHERT -- gefragt war "ermitteln, in den Waehler schreiben und Add ausloesen":
+         1. Knopf sperren und sagen, dass es laeuft. UC.bildFarbe kann bis zu acht Sekunden
+            brauchen (Frist im Kern), und ein Knopf, der in der Zeit noch klickbar ist, holt
+            dasselbe Bild mehrfach.
+         2. Farbe in das Feld schreiben und spiegeln -- damit sieht man, was gespeichert wird.
+         3. Dasselbe Ereignis feuern wie der Speichern-Knopf. Nicht seinen Klick simulieren: der
+            haengt an disabled, und der ist in diesem Augenblick gesetzt.
+       Findet sich keine Farbe (ein rein schwarz-weisses Logo, eine Adresse, die nicht laedt),
+       bleibt das Feld unangetastet und die Zeile darunter sagt es. */
+    var logoLaeuft = false;
+    function logoFarbeHolen(btn) {
+      if (logoLaeuft) return;
+      /* Derselbe Griff wie in den anderen Zweigen dieser Datei (state.data.company). state.company
+         gibt es nicht -- das war mein erster Griff und er waere still ins Leere gelaufen: {} hat
+         kein favicon_url, der Knopf haette immer "kein Logo" gemeldet. */
+      var c = (state.data && state.data.company) || {};
+      var url = txt(c.favicon_url).trim();
+      var hint = root.querySelector("[data-logohint]");
+      function melden(satz) {
+        if (!hint) return;
+        hint.textContent = satz || "";
+        if (satz) hint.removeAttribute("hidden"); else hint.setAttribute("hidden", "");
+      }
+      if (!url) { melden("This brand has no logo yet."); return; }
+      if (!UC.bildFarbe) { melden("Please reload the page and try again."); return; }
+      logoLaeuft = true;
+      var alt = btn ? btn.textContent : "";
+      if (btn) { btn.disabled = true; btn.textContent = "Reading logo…"; }
+      melden("");
+      UC.bildFarbe(url, function (hex) {
+        logoLaeuft = false;
+        if (btn) { btn.disabled = false; btn.textContent = alt || "Use logo color"; }
+        if (!hex || !hexOk(hex)) {
+          melden("No clear color found in this logo. Pick one by hand.");
+          return;
+        }
+        elFarbIn.value = hex;
+        state.farbeDirty = true;
+        farbeSpiegeln();
+        fire("data-color-fn", "ubeColor", { company_id: txt(c.company_id), color: hex });
+        state.farbeDirty = false;
+        farbeSpiegeln();
+        melden("");
+      });
+    }
+
     function kopfHtml(c) {
       var d = domainTeile(c.domain);
       var fav = txt(c.favicon_url).trim();
@@ -554,6 +614,14 @@
         traeger.classList.toggle("is-leer", !gut);
       }
       elFarbSv.disabled = !state.farbeDirty || !gut;
+      /* Der Logo-Knopf haengt nicht am Feld, sondern an den DATEN: ohne Logo gibt es nichts zu
+         lesen. Hier und nicht im Skelett -- dort sind noch keine Daten da. Waehrend des Lesens
+         nicht anfassen, sonst nimmt dieser Lauf dem laufenden Abruf seine Sperre weg. */
+      var logoBtn = root.querySelector("[data-color-logo]");
+      if (logoBtn && !logoLaeuft){
+        var cc = (state.data && state.data.company) || {};
+        logoBtn.disabled = !txt(cc.favicon_url).trim();
+      }
       clearZeigen(elFarbIn);
     }
     /* Reset gehoert zum GESPEICHERTEN Override und nicht zum Feld: er loescht die eigene Farbe
@@ -635,6 +703,7 @@
         return;
       }
       if (t.closest("[data-color-open]")) { farbwaehlerOeffnen(); return; }
+      if (t.closest("[data-color-logo]")) { logoFarbeHolen(t.closest("[data-color-logo]")); return; }
       var sw = t.closest("[data-alias-toggle]");
       if (sw) {
         var zeile = sw.closest("[data-alias]");

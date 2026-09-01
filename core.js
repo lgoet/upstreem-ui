@@ -941,7 +941,18 @@
     "Competitors stay plain": "Wettbewerber bleiben neutral",
     "Monochrome": "Einfarbig",
     "Solid": "Durchgezogen",
-    "Brand Colors": "Brand-Farben"
+    "Brand Colors": "Brand-Farben",
+    "Use logo color": "Farbe aus dem Logo",
+    "Reading logo…": "Logo wird gelesen…",
+    "This brand has no logo yet.": "Diese Brand hat noch kein Logo.",
+    "No clear color found in this logo. Pick one by hand.":
+      "In diesem Logo ist keine klare Farbe zu finden. Wähle eine von Hand.",
+    "Please reload the page and try again.": "Bitte lade die Seite neu und versuche es noch einmal.",
+    "What are Brand Colors?": "Was sind Brand-Farben?",
+    "Every brand is drawn in its own color instead of a fixed palette. You set that color per brand in Settings under Your Brand, in the Brand Color section. Brands without one fall back to a neutral color.":
+      "Jede Brand wird in ihrer eigenen Farbe gezeichnet statt in einer festen Palette. Diese Farbe " +
+      "setzt du je Brand in den Einstellungen unter Your Brand, im Abschnitt Brand Color. Brands " +
+      "ohne eigene Farbe bekommen eine neutrale."
   });
   /* ── Vierter Teil: GANZE Absaetze, so wie sie auf dem Schirm stehen ───────────────────────────
      Diese Liste ist nicht aus dem Quelltext gegriffen, sondern von der laufenden Seite gelesen:
@@ -1800,7 +1811,12 @@
     rank:       { h: "Rank", t: "The brand's average position among all brands mentioned{scope}{trend}. A lower number is better." },
     visibility: { h: "Visibility", t: "How often the brand appears in AI answers{scope}{trend}." },
     brands:     { h: "Brand Mentions", t: "Which of your tracked brands are mentioned{scope}. Hover a logo to see its name." },
-    share:      { h: "Share", t: "How much of all citations in the period went to this {subject}, plus the change against the previous period." }
+    share:      { h: "Share", t: "How much of all citations in the period went to this {subject}, plus the change against the previous period." },
+    /* Die Zeile "Brand Colors" in der Farbauswahl. Sie steht hier und nicht im Einstellungsfenster,
+       weil die Auswahl aus core kommt (colorScaleOptionsHtml) und der Erklaerkasten derselbe ist,
+       den die Spaltenkoepfe benutzen -- eine Quelle fuer beide. */
+    brandcolors: { h: "Brand Colors",
+                   t: "Every brand is drawn in its own color instead of a fixed palette. You set that color per brand in Settings under Your Brand, in the Brand Color section. Brands without one fall back to a neutral color." }
   };
   function explainCopy(key, vars){
     var e = EXPLAIN_TEXT[key];
@@ -2704,8 +2720,16 @@
        nach unten um, und waehrend die Karte noch sichtbar ist, sieht man diesen Wechsel als
        Aufblitzen an der falschen Kante. Also erst nach dem Ausblenden aufraeumen -- und der Timer
        wird beim naechsten Zeigen abgebrochen, sonst raeumt er in eine schon wieder offene Karte. */
+    /* Aus der obersten Ebene wieder heraus -- sonst faengt die Karte, auch unsichtbar, Klicks ab
+       und liegt ueber allem. */
+    function obenRaus(){
+      if (!el.hasAttribute("popover")) return;
+      try { el.hidePopover(); } catch(e){}
+      el.removeAttribute("popover");
+    }
     function hide(){
       el.classList.remove("is-on");
+      obenRaus();
       openFor = null;
       clearTimeout(aufraeumT);
       aufraeumT = setTimeout(function(){
@@ -2729,6 +2753,25 @@
          einem vorigen Verschwinden noch laeuft -- blitzt sie an der falschen Stelle auf. visibility
          nimmt sie fuer diesen Augenblick vollstaendig aus dem Bild, ohne die Masse zu aendern. */
       el.style.visibility = "hidden";
+      /* IN DIE OBERSTE EBENE. Der z-index der Karte ist 2147483001, und das reicht trotzdem nicht:
+         die Menues dieser App liegen im TOP LAYER (makePopover ruft showPopover), und der schlaegt
+         jeden z-index. Ein Erklaerkasten, der aus einem Menue heraus geoeffnet wird -- das
+         Info-Zeichen an "Brand Colors" in der Farbauswahl -- lag deshalb HINTER dem Menue.
+         Gemessen: Karte sichtbar, Text richtig, aber im Bild nur eine dunkle Ecke unter dem Menue.
+         Eine spaeter gezeigte popover-Ebene liegt ueber einer frueheren, also genuegt es, die Karte
+         beim Zeigen dorthin zu heben. Wo es popover nicht gibt, bleibt es beim alten Verhalten. */
+      if (!el.hasAttribute("popover") && typeof el.showPopover === "function"){
+        try {
+          el.setAttribute("popover", "manual");
+          el.showPopover();
+          /* Der UA-Stylesheet gibt jedem [popover] margin:auto und inset:0 -- ohne das
+             Zuruecksetzen landet die Karte zentriert in der Mitte des Bildschirms. Dieselbe Stelle
+             steht in core schon einmal, beim Panel-Ausbruch. */
+          el.style.margin = "0";
+          el.style.right = "auto";
+          el.style.bottom = "auto";
+        } catch(e){ el.removeAttribute("popover"); }
+      }
       el.classList.add("is-on");
       el.classList.remove("is-flipped");
       el.style.left = "0px"; el.style.top = "0px";
@@ -7440,6 +7483,41 @@
     var h = favHost(domainOderUrl);
     return h ? favCache[h] : null;
   }
+  /* Dieselbe Ermittlung fuer ein BELIEBIGES Bild statt fuer ein Favicon: der Company Editor braucht
+     die Hausfarbe aus dem Logo der Marke, und das ist eine Adresse und keine Domain.
+     Gerechnet wird mit demselben dominantVon() -- also derselbe Mechanismus, dieselben Schwellen,
+     dieselben Ergebnisse wie bei den Domains im Citations-Chart. Neu ist nur, WOHER das Bild kommt.
+
+     UEBER DENSELBEN PROXY, und das ist nicht Bequemlichkeit: getImageData wirft SecurityError,
+     sobald ein fremdes Bild ohne CORS-Kopf auf der Leinwand liegt. wsrv.nl liefert den Kopf mit,
+     verkleinert auf 64x64 und wandelt nach PNG -- ohne ihn waere die Farbe bei den meisten
+     Logo-Adressen gar nicht zu lesen.
+
+     Eigener Zwischenspeicher, mit der ADRESSE als Schluessel (nicht mit dem Host wie beim
+     Favicon): zwei Marken koennen Logos auf demselben Host haben. */
+  var bildCache = {}, bildWarten = {};
+  function bildFarbe(url, cb){
+    var u = String(url == null ? "" : url).trim();
+    if (!u){ if (cb) cb(null); return; }
+    if (bildCache.hasOwnProperty(u)){ if (cb) cb(bildCache[u]); return; }
+    if (bildWarten[u]){ if (cb) bildWarten[u].push(cb); return; }
+    bildWarten[u] = cb ? [cb] : [];
+    function fertig(hex){
+      bildCache[u] = hex || null;
+      var liste = bildWarten[u] || []; delete bildWarten[u];
+      liste.forEach(function(f){ try { f(bildCache[u]); } catch (e) {} });
+    }
+    var img = new Image();
+    img.crossOrigin = "anonymous";
+    var erledigt = false;
+    img.onload = function(){ if (erledigt) return; erledigt = true; fertig(dominantVon(img)); };
+    img.onerror = function(){ if (erledigt) return; erledigt = true; fertig(null); };
+    setTimeout(function(){ if (!erledigt){ erledigt = true; fertig(null); } }, 8000);
+    /* Das Protokoll muss weg, bevor es in den Proxy geht -- wsrv.nl erwartet die Adresse ohne
+       "https://". Eine Adresse ohne Protokoll laeuft unveraendert durch. */
+    img.src = FAV_PROXY + encodeURIComponent(u.replace(/^https?:\/\//i, "")) +
+              "&w=64&h=64&output=png";
+  }
   function faviconColor(domainOderUrl, cb){
     var h = favHost(domainOderUrl);
     if (!h){ if (cb) cb(null); return; }
@@ -7764,8 +7842,17 @@
     var d = (defs && defs.length) ? defs : LINE_PALETTE;
     return SCALE_ORDER.map(function(key){
       var def = key === "default" ? { label: "Brand Colors", colors: d } : COLOR_SCALES[key];
+      /* Nur an "Brand Colors" ein Info-Zeichen: die drei anderen sind fertige Paletten und
+         erklaeren sich mit ihren Punkten selbst. Diese eine Zeile bedeutet etwas anderes -- sie
+         malt KEINE Palette, sondern nimmt die Farbe, die jede Marke selbst hat -- und dazu gehoert,
+         WO man die setzt. data-explain ist der Aufhaenger, den UC.makeExplain ueberall benutzt. */
+      var info = key === "default"
+        ? '<span class="up-th-info up-scale-opt-info" data-explain="brandcolors" role="button" tabindex="0"' +
+          ' aria-label="' + esc(t_("What are Brand Colors?")) + '">' + icon("info", 2) + '</span>'
+        : "";
       return '<div class="up-scale-opt' + (cur === key ? " is-active" : "") + '" data-scale="' + key + '">' +
-          '<span class="up-scale-opt-head"><span class="up-scale-opt-lbl">' + esc(def.label) + '</span>' + SCALE_CHECK + '</span>' +
+          '<span class="up-scale-opt-head"><span class="up-scale-opt-lbl">' + esc(def.label) + '</span>' +
+            info + SCALE_CHECK + '</span>' +
           '<span class="up-scale-dots">' + (def.colors || []).map(function(hx){
             return '<span class="up-scale-dot" style="background:' + esc(hx) + '"></span>';
           }).join("") + '</span>' +
@@ -11763,6 +11850,7 @@
     MAX_URL_SLICES: MAX_URL_SLICES,
     typeColor: typeColor,
     faviconColor: faviconColor,
+    bildFarbe: bildFarbe,
     faviconColorCached: faviconColorCached,
     readableHex: readableHex,
     prepTypeData: prepTypeData,

@@ -175,8 +175,18 @@
 /* Coloris legt seinen Rahmen UM das Feld. Ohne diese Zeile ist er inline-block und traegt die
    Breite des Feldes nicht mit -- der Kasten links sass dann neben dem Feld statt darin. */
 .ube-farbfeld .clr-field { display: block; }
-.ube-farbsave, .ube-farbreset { height: 40px; }
+.ube-farbsave, .ube-farbreset, .ube-farblogo { height: 40px; }
 .ube-farbreset[hidden] { display: none; }
+/* Der Logo-Knopf steht zwischen Feld und Speichern und darf nicht schrumpfen -- seine Beschriftung
+   wechselt beim Laden auf "Reading logo…" und ist dann laenger. white-space, damit sie dabei nicht
+   umbricht und die Zeile hoeher wird. */
+.ube-farblogo { flex: 0 0 auto; white-space: nowrap; }
+.ube-farblogo:disabled { opacity: .55; cursor: not-allowed; }
+/* Die Rueckmeldung des Logo-Knopfes. Dieselben Werte wie .ube-farbhinweis daneben -- es ist
+   dieselbe Art Zeile, nur mit einem anderen Anlass -- aber sie haengt nicht an is-nopicker,
+   sondern wird vom Skript ein- und ausgeblendet. */
+.ube-farblogohinweis { margin: 6px 0 0; font-size: 12.5px; color: var(--vc-third); }
+.ube-farblogohinweis[hidden] { display: none; }
 /* Coloris legt seinen Waehler an das Dokument und bringt seine eigene CSS mit. Zwei Dinge muessen
    trotzdem hier stehen: er soll ueber den Drawern der App liegen (die reichen bis 9930), und sein
    eigener Knopf im Feld bleibt weg -- den Kasten zeichnet die Regel darueber. */
