@@ -1657,6 +1657,26 @@
     .up-root[data-theme="dark"] .urt-card,
     .up-root[data-theme="dark"] .usb-card:not(.usb-card-danger) { border-color: transparent; }
 
+    /* ---------- Dark: an den SEITEN Breite 0, nicht nur farblos ----------
+       Ein farbloser Rahmen ist immer noch ein 1px-Streifen, und er zeigt die Flaeche des Elements,
+       das ihn traegt: bei .up-box ist das --vc-bg (#1b1b1b). Neben den Zeilen faellt das nicht auf,
+       sie haben dieselbe Farbe -- neben einer FLAECHE MIT ANDERER FARBE liest er sich als feine
+       helle Linie. Gemeldet am offenen Drilldown der Domains-Tabelle: das Panel ist dort #171717,
+       gemessen, und links wie rechts stand 1px #1b1b1b daneben.
+       Ueber das Panel legen laesst sich der Streifen nicht: .up-box hat overflow:hidden, und das
+       beschneidet am POLSTERkasten -- Inhalt kommt nie in den Rahmenbereich. Also muss der
+       Streifen selbst weg.
+       NUR links und rechts. Oben und unten bleibt der 1px stehen (farblos), damit keine Hoehe
+       springt und der Sticky-Kopf seinen Platz behaelt.
+       Und ZWINGEND alle drei zusammen: im Sticky-Modus zeichnen Kopf und Koerper den Rand selbst,
+       und schon 1px Unterschied zwischen Kopf und Koerper verschiebt die Spalten gegeneinander --
+       davor warnt der Kommentar am Sticky-Block ausdruecklich. */
+    .up-root[data-theme="dark"] .up-box,
+    .up-root[data-theme="dark"].up-sticky .up-thead,
+    .up-root[data-theme="dark"].up-sticky .up-tbody {
+      border-left-width: 0; border-right-width: 0;
+    }
+
     /* ---------- Rang-/Indexspalte ("#") ----------
        Die feste, nie ausblendbare Spalte ganz links, die UC.makeColumns ueber cfg.leadWidth als
        eigenen Track anlegt. Stand bis eben nur in brands-overview.css; discover-brands ist der

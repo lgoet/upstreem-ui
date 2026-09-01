@@ -1,0 +1,88 @@
+<meta charset="utf-8"><title>domains-table: die Seitenstreifen am offenen Drilldown</title>
+<style>html,body{margin:0;background:#121212;font:13px/1.5 Geist,system-ui,sans-serif}
+#buehne{padding:24px;width:1180px}#out{padding:10px;color:#e0e0e0;font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap}</style>
+<body><div id="buehne"></div><pre id="out">laeuft…</pre>
+<script>
+/* Der Nutzer sieht links und rechts am offenen Drilldown eine feine Linie. In domains-table.css
+   gibt es keinen Seitenrand -- sie muss also von einem VORFAHREN kommen. Statt zu raten wird
+   gemessen, WELCHES Element den Streifen malt und welche zwei Farben dort aneinanderstossen:
+   die Kanten des Panels gegen die Inhaltskanten von .up-tbody und .up-box, plus die berechneten
+   Farben. Erst dann steht fest, ob der Rand weg muss oder das Panel darueber. */
+window.__err=[]; window.addEventListener("error",function(e){ window.__err.push(String(e.message)); });
+try{ localStorage.removeItem("pref_theme"); localStorage.setItem("up_prefs", JSON.stringify({locale:"en"})); }catch(e){}
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var D=["core.css","core.js","domains-table.css","domains-table.js","bubble/domains_table_bubble.html"];
+Promise.all(D.map(hol)).then(function(t){
+  var m={}; D.forEach(function(f,i){ m[f]=t[i]; });
+  ["core.css","domains-table.css"].forEach(function(f){
+    var s=document.createElement("style"); s.textContent=m[f]; document.head.appendChild(s); });
+  var s2=document.createElement("style");
+  s2.textContent="*,*::before,*::after{transition:none !important;animation:none !important}";
+  document.head.appendChild(s2);
+  var w=document.createElement("div"); w.innerHTML=wurzelAus(m["bubble/domains_table_bubble.html"]);
+  var r=w.querySelector(".udt-root");
+  r.setAttribute("data-instance","d1"); r.setAttribute("data-cdn-pin","x"); r.setAttribute("data-isdark","yes");
+  document.getElementById("buehne").appendChild(r);
+  ["core.js","domains-table.js"].forEach(function(f){
+    var j=document.createElement("script"); j.textContent=m[f]; document.head.appendChild(j); });
+  return new Promise(function(ok){ setTimeout(ok,1300); });
+}).then(function(){
+  window.renderDomainsTable({ instanceId:"d1", totalCount:2, rows:[
+    { domain:"carwow.de", citations:93, urls_count:7, share_pct:14.2, share_delta_pct:1.1 },
+    { domain:"adac.de",   citations:81, urls_count:4, share_pct:11.8, share_delta_pct:-0.6 } ]});
+  return new Promise(function(ok){ setTimeout(ok,600); });
+}).then(function(){
+  var root=document.querySelector(".udt-root");
+  var knopf=root.querySelector(".udt-pagesbtn");
+  if(knopf) knopf.click();
+  return new Promise(function(ok){ setTimeout(ok,600); });
+}).then(function(){
+  var root=document.querySelector(".udt-root");
+  var panel=root.querySelector(".udt-subrows");
+  var tbody=root.querySelector(".up-tbody"), box=root.querySelector(".up-box");
+  function kante(el){ if(!el) return null; var b=el.getBoundingClientRect(), c=getComputedStyle(el);
+    return { links:+b.left.toFixed(2), rechts:+b.right.toFixed(2), breite:+b.width.toFixed(2),
+             bg:c.backgroundColor,
+             rand_links:c.borderLeftWidth+" "+c.borderLeftStyle+" "+c.borderLeftColor,
+             rand_rechts:c.borderRightWidth+" "+c.borderRightStyle+" "+c.borderRightColor }; }
+  function innen(el){ if(!el) return null; var b=el.getBoundingClientRect(), c=getComputedStyle(el);
+    return { inhalt_links:+(b.left+parseFloat(c.borderLeftWidth)).toFixed(2),
+             inhalt_rechts:+(b.right-parseFloat(c.borderRightWidth)).toFixed(2) }; }
+  /* Sticky erzwingen und BEIDE Faelle messen: die Ausrichtung von Kopf und Koerper ist die
+     Nebenwirkung, auf die es ankommt -- 1px Unterschied verschiebt die Spalten. */
+  function streifen(){
+    var pa=root.querySelector(".udt-subrows"), tb=root.querySelector(".up-tbody"),
+        th=root.querySelector(".up-thead"), bx=root.querySelector(".up-box");
+    function l(e){ return e ? +e.getBoundingClientRect().left.toFixed(2) : null; }
+    function r(e){ return e ? +e.getBoundingClientRect().right.toFixed(2) : null; }
+    function ii(e){ if(!e) return null; var c=getComputedStyle(e), b=e.getBoundingClientRect();
+      return [ +(b.left+parseFloat(c.borderLeftWidth)).toFixed(2),
+               +(b.right-parseFloat(c.borderRightWidth)).toFixed(2) ]; }
+    return { panel_links_gegen_box_kante: pa&&bx ? +(l(pa)-l(bx)).toFixed(2) : null,
+             panel_rechts_gegen_box_kante: pa&&bx ? +(r(bx)-r(pa)).toFixed(2) : null,
+             box_rand: getComputedStyle(bx).borderLeftWidth+"/"+getComputedStyle(bx).borderRightWidth,
+             kopf_inhalt: ii(th), koerper_inhalt: ii(tb),
+             kopf_und_koerper_gleich: JSON.stringify(ii(th))===JSON.stringify(ii(tb)),
+             panel_bg: pa ? getComputedStyle(pa).backgroundColor : null,
+             box_bg: getComputedStyle(bx).backgroundColor };
+  }
+  var ohneSticky = streifen();
+  root.classList.add("up-sticky");
+  var mitSticky = streifen();
+  root.classList.remove("up-sticky");
+  var R={ OHNE_STICKY: ohneSticky, MIT_STICKY: mitSticky,
+          sticky: root.classList.contains("up-sticky"),
+          panel_da: !!panel, panel: kante(panel),
+          tbody: kante(tbody), tbody_innen: innen(tbody),
+          box: kante(box), box_innen: innen(box),
+          /* Der eigentliche Beweis: liegt links vom Panel eine ANDERE Farbe, und welche. */
+          streifen_links: panel && tbody ? +(panel.getBoundingClientRect().left - tbody.getBoundingClientRect().left).toFixed(2) : null,
+          streifen_rechts: panel && tbody ? +(tbody.getBoundingClientRect().right - panel.getBoundingClientRect().right).toFixed(2) : null,
+          fehler: window.__err };
+  document.getElementById("out").textContent=JSON.stringify(R,null,1);
+  window.__R=R; window.__fertig=true;
+}).catch(function(e){ document.getElementById("out").textContent="FEHLER: "+e.message+"\n"+(e.stack||"");
+  window.__R={fehler:[String(e.message)]}; window.__fertig=true; });
+</script>

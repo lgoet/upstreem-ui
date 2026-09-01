@@ -164,7 +164,11 @@
   transition: opacity 140ms ease, transform 180ms ease; }
 .udt-pagesbtn:hover .udt-chev, .udt-pagesbtn:focus-visible .udt-chev, .udt-pagesbtn.is-open .udt-chev {
   opacity: 1; }
-.udt-pagesbtn.is-open .udt-chev { transform: rotate(180deg); }
+/* KEINE Drehung. Das ist eine stehende Vorgabe fuer die ganze App -- Chevrons drehen sich beim
+   Oeffnen nicht. Der Kommentar in domains-table.js sagt seit laengerem "Chevron dreht sich nicht",
+   diese Regel hat es trotzdem getan; die zwei widersprachen sich. Der offene Zustand ist ohnehin
+   markiert: .udt-pagesbtn.is-open faerbt Text und Zeichen auf die Primaerfarbe und setzt das
+   Gewicht auf 500. */
 @media (prefers-reduced-motion: reduce){ .udt-chev { transition: none; } }
 
 /* ---------- expanded parent row ----------
