@@ -155,7 +155,12 @@
   margin-top: 34px; width: min(100%, 620px);
   display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;
 }
-.upr-chip { border: 1px solid color-mix(in srgb, var(--ust-tag-color, #6f737c) 40%, transparent); }
+/* KEIN dauerhafter Rand mehr. Hier stand einer in 40% der Topicfarbe -- das ist das alte
+   Chip-Design, das es in der App sonst nirgends mehr gibt: core zeichnet .up-topicchip mit
+   border:1px solid transparent, also unsichtbar, und faerbt ihn nur im gewaehlten Zustand
+   (.is-on). Gemeldet am 01.09.: "in Prompt Research bei der Topic-Auswahl sind die auch noch so
+   falsch". Der Hover bleibt -- diese Chips SIND Schalter, und ein Schalter darf zeigen, dass er
+   einer ist. */
 .upr-chip:hover { border-color: var(--vc-hover-border); }
 .upr-showmore {
   height: 28px; padding: 0 10px; border: 1px solid var(--vc-border); border-radius: 8px;

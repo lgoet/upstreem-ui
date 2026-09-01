@@ -885,8 +885,12 @@
         });
       } catch (e) {}
     }
-    function fensterOeffnen(){
+    /* stillLaden = nur holen, nicht oeffnen. Als PARAMETER und nicht als Merker: fertig() laeuft
+       im onload, also asynchron -- ein Merker, den der Aufrufer danach zuruecksetzt, ist dort
+       schon wieder false, und das Vorabholen haette das Fenster von selbst aufgemacht. */
+    function fensterOeffnen(stillLaden){
       if (typeof window.openUpstreemPreferences === "function"){
+        if (stillLaden) return true;                 /* schon da, nichts zu holen */
         profilUebergeben();
         try { window.openUpstreemPreferences(); } catch (e) {}
         return true;
@@ -904,41 +908,81 @@
       }
       var basis = m[1];
       fensterLaedt = true;
-      /* Ueber DIESELBE Ablage entdoppeln, die der Loader benutzt: traegt eine Vorlage die beiden
-         Dateien schon in ihrer Liste, wird hier nichts ein zweites Mal geholt. */
-      if (!L["preferences.css"]){
-        L["preferences.css"] = basis + "preferences.css";
-        var l = document.createElement("link");
-        l.rel = "stylesheet"; l.href = L["preferences.css"];
-        document.head.appendChild(l);
-      }
-      if (L["preferences.js"]){
-        /* Schon unterwegs, nur noch nicht fertig -- dann kommt es von selbst, und der naechste
-           Klick oeffnet. */
-        fensterLaedt = false;
-        return true;
-      }
-      L["preferences.js"] = basis + "preferences.js";
-      var sc = document.createElement("script");
-      sc.src = L["preferences.js"]; sc.async = false;
-      sc.onload = function(){
+
+      /* BEIDE Dateien, und geoeffnet wird erst, wenn BEIDE da sind. Vorher wurde die CSS nur
+         eingehaengt und niemand hat auf sie gewartet: das Skript war oft zuerst fertig, das Fenster
+         ging unformatiert auf, und man sah eine Sekunde lang riesige Zeichen und Buchstaben.
+         Genau so gemeldet am 01.09. Ein <link> feuert onload/onerror, also ist das messbar und
+         nicht geraten.
+         Auch bei FEHLER wird geoeffnet: ein Fenster ohne sein Stylesheet ist haesslich, aber ein
+         Klick, der gar nichts tut, ist schlimmer -- und die Konsole sagt, was fehlt. */
+      var offenCss = false, offenJs = false, schonGeoeffnet = false;
+      function fertig(){
+        if (!offenCss || !offenJs || schonGeoeffnet) return;
+        schonGeoeffnet = true;
         fensterLaedt = false;
         profilUebergeben();
+        if (stillLaden) return;                     /* Vorabholen: nichts oeffnen */
         if (typeof window.openUpstreemPreferences === "function"){
           try { window.openUpstreemPreferences(); } catch (e) {}
         }
-      };
-      sc.onerror = function(){
+      }
+
+      /* Ueber DIESELBE Ablage entdoppeln, die der Loader benutzt: traegt eine Vorlage die beiden
+         Dateien schon in ihrer Liste, wird hier nichts ein zweites Mal geholt. */
+      if (L["preferences.css"]){
+        offenCss = true;
+      } else {
+        L["preferences.css"] = basis + "preferences.css";
+        var l = document.createElement("link");
+        l.rel = "stylesheet"; l.href = L["preferences.css"];
+        l.onload = function(){ offenCss = true; fertig(); };
+        l.onerror = function(){
+          offenCss = true;
+          if (window.console) console.warn("[sidebar] Preferences: " + l.href + " liess sich nicht " +
+            "laden -- das Fenster geht ohne sein Stylesheet auf. Pin purgen (CLAUDE.md 4).");
+          fertig();
+        };
+        document.head.appendChild(l);
+      }
+
+      if (typeof window.openUpstreemPreferences === "function"){
+        offenJs = true;
+      } else if (L["preferences.js"]){
+        /* Schon unterwegs, nur noch nicht fertig. Der laufende Abruf bringt es; dieser Klick
+           wartet nicht darauf, sonst haengen zwei Warteschlangen am selben Skript. */
         fensterLaedt = false;
-        /* Der Eintrag muss WEG, sonst gilt die Datei fuer immer als geladen und ein zweiter Klick
-           versucht es nie wieder. */
-        try { delete L["preferences.js"]; } catch (e) {}
-        if (window.console) console.warn("[sidebar] Preferences: " + sc.src + " liess sich nicht " +
-          "laden. Pin purgen (siehe CLAUDE.md 4) und noch einmal versuchen.");
-      };
-      document.head.appendChild(sc);
+        return true;
+      } else {
+        L["preferences.js"] = basis + "preferences.js";
+        var sc = document.createElement("script");
+        sc.src = L["preferences.js"]; sc.async = false;
+        sc.onload = function(){ offenJs = true; fertig(); };
+        sc.onerror = function(){
+          fensterLaedt = false;
+          /* Der Eintrag muss WEG, sonst gilt die Datei fuer immer als geladen und ein zweiter
+             Klick versucht es nie wieder. */
+          try { delete L["preferences.js"]; } catch (e) {}
+          if (window.console) console.warn("[sidebar] Preferences: " + sc.src + " liess sich nicht " +
+            "laden. Pin purgen (siehe CLAUDE.md 4) und noch einmal versuchen.");
+        };
+        document.head.appendChild(sc);
+      }
+      fertig();
       return true;
     }
+
+    /* VORABHOLEN, damit der erste Klick nicht auf zwei Abrufe warten muss. Auf einem kalten Windows
+       ohne Cache waren das 1-2 Sekunden (gemeldet am 01.09.). Nicht beim Mounten, sondern wenn die
+       Seite zur Ruhe gekommen ist: waehrend des Aufbaus konkurriert der Abruf mit allem, was die
+       Seite wirklich braucht.
+       requestIdleCallback, wo es das gibt, sonst eine Uhr -- und in beiden Faellen mit Abstand. */
+    function fensterVorabholen(){
+      if (typeof window.openUpstreemPreferences === "function") return;
+      fensterOeffnen(true);
+    }
+    if (window.requestIdleCallback) window.requestIdleCallback(fensterVorabholen, { timeout: 6000 });
+    else setTimeout(fensterVorabholen, 3000);
 
     bar.addEventListener("click", function(e){
       var t = e.target;

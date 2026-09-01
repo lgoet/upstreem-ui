@@ -316,16 +316,7 @@
   width: 100%; display: flex; align-items: center; gap: 10px;
   height: 36px; padding: 0 8px;
   border: 0; border-radius: 12px; background: transparent;
-  /* 520 statt 500. Ich hatte hier zuerst 550 gesetzt -- das sind rechnerisch die bestellten
-     "50 mehr", und Geist ist eine variable Schrift, die den Wert auch wirklich rendert (gemessen:
-     "Prompt Insights" ist bei 500 99,83px breit, bei 550 101,07px, bei 600 102,31px -- 550 liegt
-     genau dazwischen und schnappt nicht auf 600).
-     Zu fett wurde es trotzdem, und der Grund steht zwei Regeln weiter unten: der AKTIVE Punkt
-     traegt ebenfalls 550. Mit 550 im Ruhezustand war die ganze Liste gleich schwer, und ihr
-     leichter Grundton war weg -- nicht ein Punkt zu fett, sondern alle.
-     520 ist der halbe Schritt: sichtbar kraeftiger als 500, und der aktive Punkt hebt sich mit
-     550 wieder ab. Wenn es doch mehr sein soll, sind die Zahlen jetzt gemessen: 500, 520, 550. */
-  font: inherit; font-size: 13.5px; font-weight: 520; color: var(--vc-text);
+  font: inherit; font-size: 13.5px; font-weight: 500; color: var(--vc-text);
   cursor: pointer; text-align: left;
   transition: background var(--usn-t) var(--usn-ease), color var(--usn-t) var(--usn-ease);
 }

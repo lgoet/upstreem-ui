@@ -768,13 +768,28 @@
     }
 
     var NARROW_STACK = 880;
+    /* Die letzte Breite, mit der dieses Element ausgelegt war. 0 heisst: es war unsichtbar. */
+    var letzteBreite = 0;
     function applyResponsive(){
+      var w = 0;
       if (inner){
-        var w = inner.clientWidth || root.clientWidth || 0;
+        w = inner.clientWidth || root.clientWidth || 0;
         if (w){ if (w < NARROW_STACK) root.classList.add("is-narrow"); else root.classList.remove("is-narrow"); }
       }
       root.classList.toggle("vc-narrow-page", UC.getPageWidth() < 500);
       checkBrandWidth();
+      /* WURDE DAS ELEMENT GERADE SICHTBAR? Dann sofort und ohne Verzoegerung. Ein View, der
+         eingeblendet wird, war vorher 0 breit; das Chart steht dann noch in der alten Groesse, und
+         weil die zu klein ist, fehlt rechts der letzte Punkt der Zeitachse -- er kommt erst, wenn
+         die Verzoegerung abgelaufen ist, und das Chart springt sichtbar. Genau so gemeldet.
+         Hier ist nichts zu sammeln: das ist ein einmaliger Sprung, kein Ziehen am Fensterrand. */
+      var wurdeSichtbar = w > 0 && letzteBreite === 0;
+      if (w) letzteBreite = w;
+      if (wurdeSichtbar){
+        clearTimeout(root.__votRespT);
+        try { line.resize(); } catch(e){}
+        return;
+      }
       /* 160 statt 60: chart.resize() rechnet das ganze Chart neu. Bei 60ms lief das waehrend
          einer Ziehbewegung rund sechzehn Mal je Sekunde -- an Chart.js' eigenem resizeDelay
          (120ms) vorbei, das genau davor schuetzen soll. Jetzt liegt der Aufruf dahinter. */

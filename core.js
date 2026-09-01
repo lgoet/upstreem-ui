@@ -8317,6 +8317,9 @@
     var isDark = cfg.isDark || function(){ return false; };
     var isOwner = cfg.isOwner || function(){ return true; };
     var chart = null, legendCompanies = [], verifyT = null, sizeIv = null, lastBuilt = null, lastSig = null;
+    /* Der Waechter fuer "der View wird eingeblendet". Angelegt EINMAL je makeLine und nicht je
+       Zeichnung -- er haengt am Kasten, nicht am Chart, und den Kasten gibt es hier schon. */
+    chartBeiSichtbarwerden(wrap, function(){ return chart; });
     /* Ein Zaehler fuer den Stand. Jeder Aufruf von render/skeleton/empty erhoeht ihn, und jede
        verzoegerte Zeichnung prueft, ob ihr Stand noch der aktuelle ist.
        Ohne ihn zeichnete ein alter Datensatz UEBER das Skelett: render() haengt seine Zeichnung an
@@ -8697,6 +8700,38 @@
       resize: function(){ try { if (chart) chart.resize(); } catch(e){} },
       chart: function(){ return chart; }
     };
+  }
+
+  /* ---------- Ein Chart, das SICHTBAR wird ------------------------------------------------------
+     Wird ein View eingeblendet, war sein Kasten vorher 0 breit. Chart.js merkt die neue Breite
+     ueber seinen eigenen Beobachter, zeichnet aber erst resizeDelay (120ms) spaeter -- bis dahin
+     steht das Chart in der ALTEN Groesse, und weil die zu klein ist, fehlt rechts der letzte
+     Punkt der Zeitachse. Danach springt es. Genau so gemeldet: "beim Viewwechsel fehlt der ganz
+     rechte x-Achsen-Punkt und kommt erst nach 200-300ms rein, dadurch verschiebt sich das Chart".
+
+     resizeDelay bleibt -- er ist fuer das ZIEHEN am Fensterrand richtig und dort gemessen. Was
+     fehlte, ist der Sonderfall "von 0 auf sichtbar": dort gibt es nichts zu sammeln, es ist ein
+     einmaliger Sprung, und er gehoert in denselben Augenblick.
+     update("none") dahinter, damit die 600ms-Einblendanimation nicht ein zweites Mal laeuft --
+     genau die war das "2, 3 Mal rumruckeln", wenn die Legende an ist.
+     Der Waechter gegen die Rekursion ist nicht Vorsicht, sondern noetig: chart.resize() aendert
+     die Leinwand, und die liegt IM beobachteten Kasten. */
+  function chartBeiSichtbarwerden(wrap, holChart){
+    if (!wrap || !window.ResizeObserver) return null;
+    var warBreit = wrap.clientWidth || 0, laeuft = false;
+    var ro = new ResizeObserver(function(){
+      var b = wrap.clientWidth || 0;
+      var vorher = warBreit;
+      warBreit = b;
+      if (laeuft || b <= 0 || vorher > 0) return;
+      var c = holChart && holChart();
+      if (!c) return;
+      laeuft = true;
+      try { c.resize(); c.update("none"); } catch(e){}
+      laeuft = false;
+    });
+    try { ro.observe(wrap); } catch(e){ return null; }
+    return ro;
   }
 
   /* ---------- doughnut + bars ---------- */

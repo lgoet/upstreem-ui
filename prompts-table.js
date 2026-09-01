@@ -57,7 +57,9 @@
         '.ust-cell{width:100%;height:100%;min-width:0;display:flex;align-items:center;background:transparent;border:0;overflow:hidden;font-family:Geist,Inter,system-ui,-apple-system,sans-serif;}',
         '.ust-cell *,.ust-topics-popup *{box-sizing:border-box;}',
         '.ust-row{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;width:100%;min-width:0;min-height:28px;overflow:hidden;}',
-        '.ust-tag{height:28px;padding:0 10px;border-radius:8px;display:inline-flex;align-items:center;gap:7px;flex:0 0 auto;border:1px solid transparent;background:color-mix(in srgb,var(--ust-tag-color,#6b7280) 10%,transparent);color:var(--ust-tag-color,#4b5563);font-size:12px;line-height:1;font-weight:500;white-space:nowrap;cursor:pointer;user-select:none;}',
+        /* Masse woertlich von .up-topicchip in core: 0 8px 0 11px und gap 6. Hier standen 0 10px
+           und gap 7 -- derselbe Chip in zwei Groessen, und das faellt nebeneinander auf. */
+        '.ust-tag{height:28px;padding:0 8px 0 11px;border-radius:8px;display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;border:1px solid transparent;background:color-mix(in srgb,var(--ust-tag-color,#6b7280) 10%,transparent);color:var(--ust-tag-color,#4b5563);font-size:12px;line-height:1;font-weight:500;white-space:nowrap;cursor:pointer;user-select:none;}',
         '.ust-tag-emoji{font-size:12px;line-height:1;}',
         '.ust-tag-label{white-space:nowrap;}',
         '.ust-empty{display:inline-flex;align-items:center;color:#a0a5ad;font-size:13px;line-height:1;}',
@@ -103,7 +105,12 @@
         return { id:t.id||t.tag_id||null, name:name, emoji:t.emoji?String(t.emoji):'', color:normHex(hex) };
       }
       function tagHtml(t){
-        return '<span class="ust-tag up-chiphover" style="--ust-tag-color:'+esc(t.color)+';">'+(t.emoji?'<span class="ust-tag-emoji">'+esc(t.emoji)+'</span>':'')+'<span class="ust-tag-label">'+esc(t.name)+'</span></span>';
+        /* KEIN up-chiphover an den Chips IN DER ZELLE. Das war die gemeldete Randlinie: die
+           Klasse gibt .up-chiphover:hover { border-color:#6f6f6f } -- und ueber die Chips in einer
+           Tabellenzeile faehrt der Zeiger bei JEDER Zeile, die man ueberstreicht. Im Popover und
+           im Topics-Management sind es Schalter, dort ist der Hover richtig; in der Zelle sind sie
+           reine Anzeige. Genau so war es beschrieben: "nur an einer Stelle, in der Topic-Zelle". */
+        return '<span class="ust-tag" style="--ust-tag-color:'+esc(t.color)+';">'+(t.emoji?'<span class="ust-tag-emoji">'+esc(t.emoji)+'</span>':'')+'<span class="ust-tag-label">'+esc(t.name)+'</span></span>';
       }
 
       /* Dieselbe Entscheidung wie vorher, nur nicht mehr pro Zelle einzeln.
