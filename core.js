@@ -7662,6 +7662,20 @@
      und sah aus wie ein anderer Strich. */
   var LINE_TENSION = 0.3, LINE_POINT_HOVER = 4, LINE_POINT_HIT = 6;
   var X_MAX_TICKS = 7, Y_PAD = 1.15;
+  /* Welche x-Beschriftungen stehen? Entschieden aus der ANZAHL der Werte und nicht aus der Breite
+     -- siehe die Begruendung an ticks.autoSkip in makeLine.
+     Erste und letzte immer, dazwischen gleichmaessig verteilt. Die Rundung kann zwei Indizes auf
+     denselben Platz legen; das ist harmlos, es stehen dann eben weniger als X_MAX_TICKS. */
+  var _xTickCache = { n: -1, set: null };
+  function xTickZeigen(i, n){
+    if (!n || n <= X_MAX_TICKS) return true;
+    if (_xTickCache.n !== n){
+      var set = {}, k = X_MAX_TICKS - 1;
+      for (var j = 0; j <= k; j++) set[Math.round(j * (n - 1) / k)] = 1;
+      _xTickCache = { n: n, set: set };
+    }
+    return !!_xTickCache.set[i];
+  }
   /* Line width is a page-wide preference, not per-component/per-instance — one localStorage key
      read by every makeLine() chart, changeable from any of their own Chart Settings dropdowns.
      "thick" is the default (explicit user request) — the stored key only ever needs to hold "thin"
@@ -8603,8 +8617,27 @@
             plugins: { legend: { display: false }, tooltip: { enabled: false, external: makeLineTooltip(wrap, isDark, cfg.gran, einheit, cfg.tipLabel, cfg.decimals) } },
             scales: {
               x: { grid: { display:false }, offset: single, border: { display:true, color: tc.border, width:1 },
-                   ticks: { autoSkip:true, maxTicksLimit:X_MAX_TICKS, maxRotation:0, color: tc.muted,
+                   /* autoSkip AUS. Das ist die Ursache des Nachrutschens, und sie ist gemessen:
+                      autoSkip laesst Chart.js aus der VERFUEGBAREN BREITE entscheiden, welche
+                      Beschriftungen es zeigt -- also aendert sich bei jeder Breitenaenderung, WELCHE
+                      dastehen. Beim Einblenden eines Views (die Seite wird hoeher, ein Scrollbalken
+                      kommt dazu, der Kasten wird um dessen Breite schmaler) hat es damit die Achse
+                      neu geordnet, und weil die letzte Beschriftung Platz braucht, ruckte das Chart
+                      von rechts nach innen. Gemessen an derselben Datenreihe:
+                          Kasten 1100px -> Achse 449px, 7 Ticks, letzte "08-03"
+                          Kasten  560px -> Achse 197px, 5 Ticks, letzte "08-02"
+                      Auf die Reihenfolge zu warten oder danach nachzurechnen behandelt nur den
+                      Zeitpunkt, nicht den Grund -- das waren meine zwei ersten Anlaeufe.
+
+                      Jetzt entscheidet die DATENLAENGE, welche Beschriftungen stehen, und die
+                      aendert sich mit der Breite nicht. Gewaehlt werden hoechstens X_MAX_TICKS
+                      gleichmaessig verteilte, und die ERSTE und die LETZTE sind immer dabei -- der
+                      fehlende rechte Punkt kann damit nicht mehr vorkommen.
+                      Die uebrigen geben "" zurueck: sie bleiben als Gitterposition erhalten (das
+                      Raster und die Fuehrungslinie haengen daran), messen aber keine Breite. */
+                   ticks: { autoSkip:false, maxRotation:0, color: tc.muted,
                             callback: function(v, i){
+                              if (!xTickZeigen(i, labels.length)) return "";
                               /* dayKey ZUERST. Der Rohwert ist nicht immer ISO: ein Bubble-Ausdruck
                                  schickt auch "Aug 6, 2026 12:00 am", und slice(5) machte daraus
                                  "6, 2026 12:00 am" -- genau so stand es in der Achse. dayKey bringt
