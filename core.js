@@ -686,6 +686,318 @@
     "How positively the brand is described when it's mentioned for this response.":
       "Wie positiv über die Brand gesprochen wird, wenn sie in dieser Response erwähnt wird."
   });
+  /* ── Dritter Teil: Drawer, Einstellungen, Opportunities, Recherche, Anmeldung ─────────────────
+     NICHT dabei und mit Absicht:
+       - die BRANCHENLISTE (Agriculture & Food, SaaS & Software, ...). Das ist ein Wert, der in der
+         Datenbank landet; wer ihn nur in der Anzeige uebersetzt, riskiert, dass ein Abgleich auf
+         den englischen Text nicht mehr trifft. Das gehoert am Datenmodell entschieden, nicht hier.
+       - LAENDERNAMEN (Germany, United States, ...). Sie kommen aus den Marktdaten, sind also
+         Nutzerdaten.
+       - PLATTFORMNAMEN (LinkedIn, Reddit, YouTube, ...) und Modellnamen -- Eigennamen. */
+  addMessages("de", {
+    /* ── Kennzahlen und Erklaerungen in den Drawern ─────────────────────────────────────────── */
+    "Avg. Rank": "Ø Rang",
+    "Avg. Competitor Conv.": "Ø Wettbewerber-Konv.",
+    "Your Conversion": "Deine Konversion",
+    "Citation Share": "Citation-Anteil",
+    "Citation Type Split": "Citation-Typen im Vergleich",
+    "URL Type Split": "URL-Typen im Vergleich",
+    "URL Share": "URL-Anteil",
+    "URL Rank": "URL-Rang",
+    "URL Share over Time": "URL-Anteil über Zeit",
+    "Citations Share over Time": "Citation-Anteil über Zeit",
+    "Global Share": "Globaler Anteil",
+    "Competitor Gap": "Abstand zum Wettbewerb",
+    "Mentioned competitors": "Erwähnte Wettbewerber",
+    "Mentions": "Erwähnungen",
+    "All mentions": "Alle Erwähnungen",
+    "First mention only": "Nur erste Erwähnung",
+    "Once per brand": "Einmal je Brand",
+    "Every time a brand appears": "Jedes Mal, wenn eine Brand vorkommt",
+    "Supporting URLs": "Stützende URLs",
+    "URLs mentioning tracked brands": "URLs, die beobachtete Brands erwähnen",
+    "Across all tracked prompts": "Über alle beobachteten Prompts",
+    "Average across all topics in the radar": "Durchschnitt über alle Topics im Radar",
+    "Average position among the brands named in a response.":
+      "Die durchschnittliche Position unter den Brands, die in einer Response genannt werden.",
+    "Share of responses this brand appears in.":
+      "Anteil der Responses, in denen diese Brand vorkommt.",
+    "How positively the brand is described, 0 to 100.":
+      "Wie positiv über die Brand gesprochen wird, 0 bis 100.",
+    "How many times the brand was named. Higher means the other numbers rest on more data.":
+      "Wie oft die Brand genannt wurde. Mehr heißt: die anderen Zahlen stehen auf breiterer Grundlage.",
+    "How many tracked competitors are mentioned alongside this source.":
+      "Wie viele beobachtete Wettbewerber neben dieser Quelle erwähnt werden.",
+    "How often a citation of this source turns into a mention of your brand.":
+      "Wie oft aus einer Citation dieser Quelle eine Erwähnung deiner Brand wird.",
+    "The same conversion rate, averaged across the competitors mentioned for this source.":
+      "Dieselbe Rate, gemittelt über die Wettbewerber, die zu dieser Quelle erwähnt werden.",
+    "Pick a cell in the Performance Radar to see the details for that brand and topic.":
+      "Wähle eine Zelle im Performance Radar, um die Details zu dieser Brand und diesem Topic zu sehen.",
+    "No cell selected": "Keine Zelle gewählt",
+    "Could not load this cell": "Diese Zelle konnte nicht geladen werden",
+
+    /* ── Leerzustaende der Drawer und Charts ────────────────────────────────────────────────── */
+    "No data for this domain.": "Keine Daten zu dieser Domain.",
+    "No URL data for this period.": "Keine URL-Daten für diesen Zeitraum.",
+    "No URL types for this period.": "Keine URL-Typen für diesen Zeitraum.",
+    "No model data for this period.": "Keine Modelldaten für diesen Zeitraum.",
+    "No citation share for this period.": "Kein Citation-Anteil für diesen Zeitraum.",
+    "No citations for this response.": "Keine Citations zu dieser Response.",
+    "No citations match this filter.": "Keine Citations passen zu diesem Filter.",
+    "No topics match your search.": "Keine Topics passen zu deiner Suche.",
+    "No topics yet.": "Noch keine Topics.",
+    "No variations recorded for this combination.":
+      "Für diese Kombination sind noch keine Schreibweisen erfasst.",
+    "No keywords": "Keine Keywords",
+    "No persona": "Keine Persona",
+    "No industries found": "Keine Branchen gefunden",
+    "No markets found": "Keine Märkte gefunden",
+    "No file selected": "Keine Datei gewählt",
+    "No usable rows found.": "Keine verwertbaren Zeilen gefunden.",
+    "That file has no rows.": "Diese Datei hat keine Zeilen.",
+    "That file could not be read.": "Diese Datei konnte nicht gelesen werden.",
+    "The file could not be read.": "Die Datei konnte nicht gelesen werden.",
+    "The rows could not be loaded.": "Die Zeilen konnten nicht geladen werden.",
+    "The domain data could not be read.": "Die Domain-Daten konnten nicht gelesen werden.",
+    "The response data could not be read.": "Die Response-Daten konnten nicht gelesen werden.",
+    "The conversion data could not be read.": "Die Konversionsdaten konnten nicht gelesen werden.",
+    "No header row recognised, first column read as the prompt.":
+      "Keine Kopfzeile erkannt, die erste Spalte wird als Prompt gelesen.",
+
+    /* ── Details, Drawer, Bedienung ─────────────────────────────────────────────────────────── */
+    "Details": "Details",
+    "Close details": "Details schließen",
+    "Summary": "Zusammenfassung",
+    "Source": "Quelle",
+    "Pages": "Seiten",
+    "Open": "Öffnen",
+    "Open URL": "URL öffnen",
+    "All Domains": "Alle Domains",
+    "All URLs": "Alle URLs",
+    "Top Domains": "Top-Domains",
+    "Top URLs": "Top-URLs",
+    "Newest": "Neueste",
+    "Later": "Später",
+    "Add": "Hinzufügen",
+    "Set": "Setzen",
+    "Off": "Aus",
+    "Copied": "Kopiert",
+    "Unsaved changes": "Nicht gespeicherte Änderungen",
+    "Usage": "Nutzung",
+    "Security": "Sicherheit",
+    "What's new": "Neu",
+    "Announcement": "Ankündigung",
+    "Notice": "Hinweis",
+    "Tip": "Tipp",
+    "Feature": "Funktion",
+    "Maintenance": "Wartung",
+    "That was me": "Das war ich",
+    "Switch theme": "Design wechseln",
+    "Switch to dark mode": "Zu dunkel wechseln",
+    "Switch to light mode": "Zu hell wechseln",
+    "Brands, topics and settings": "Brands, Topics und Einstellungen",
+
+    /* ── Opportunities ──────────────────────────────────────────────────────────────────────── */
+    "Opportunity": "Opportunity",
+    "Pending": "Offen",
+    "Priority": "Priorität",
+    "Top priority": "Höchste Priorität",
+    "Potential": "Potenzial",
+    "Quick win": "Schneller Gewinn",
+    "Strong": "Stark",
+    "Ignore": "Ignorieren",
+    "Ignore opportunity": "Opportunity ignorieren",
+    "Grid": "Raster",
+    "List": "Liste",
+
+    /* ── Prompt Research ────────────────────────────────────────────────────────────────────── */
+    "Prompt research": "Prompt-Recherche",
+    "Start Research": "Recherche starten",
+    "Delete research": "Recherche löschen",
+    "Previous Researches": "Frühere Recherchen",
+    "Untitled research": "Recherche ohne Namen",
+    "Researching": "Recherchiert",
+    "Running": "Läuft",
+    "Discovery": "Entdeckung",
+    "Buying intent": "Kaufabsicht",
+    "Alternatives": "Alternativen",
+    "Best-of": "Best-of",
+    "How-to": "Anleitung",
+    "Reviews": "Bewertungen",
+    "Open research settings": "Recherche-Einstellungen öffnen",
+    "Close research settings": "Recherche-Einstellungen schließen",
+    "Understanding your intent…": "Deine Absicht wird verstanden…",
+    "Building prompt variations…": "Prompt-Varianten werden gebaut…",
+    "Matching intent patterns…": "Absichtsmuster werden abgeglichen…",
+    "Estimating search volume…": "Suchvolumen wird geschätzt…",
+    "Scoring & tagging prompts…": "Prompts werden bewertet und getaggt…",
+    "That took longer than expected. Please try again.":
+      "Das hat länger gedauert als erwartet. Bitte versuche es noch einmal.",
+
+    /* ── Prompts und Brands hinzufuegen ─────────────────────────────────────────────────────── */
+    "Add prompts": "Prompts hinzufügen",
+    "Add this prompt": "Diesen Prompt hinzufügen",
+    "Adding…": "Wird hinzugefügt…",
+    "Add Brand": "Brand hinzufügen",
+    "Add brand": "Brand hinzufügen",
+    "Could not add this brand. Please try again.":
+      "Diese Brand konnte nicht hinzugefügt werden. Bitte versuche es noch einmal.",
+    "This brand could not be loaded. Please open it again.":
+      "Diese Brand konnte nicht geladen werden. Bitte öffne sie noch einmal.",
+    "Enter a domain.": "Gib eine Domain ein.",
+    "This domain is too long.": "Diese Domain ist zu lang.",
+    "Search companies...": "Firmen suchen...",
+    "Search industries": "Branchen suchen",
+    "Select an industry": "Branche wählen",
+    "Brand industry": "Branche der Brand",
+    "Brand Summary": "Beschreibung der Brand",
+    "Brand summary": "Beschreibung der Brand",
+    "Describe what your company does…": "Beschreibe, was dein Unternehmen tut…",
+    "Business model": "Geschäftsmodell",
+    "Hybrid (B2B & B2C)": "Gemischt (B2B und B2C)",
+    "Default market": "Standardmarkt",
+    "Market for all new prompts": "Markt für alle neuen Prompts",
+    "Topics for all new prompts": "Topics für alle neuen Prompts",
+
+    /* ── Einstellungen: Marke, Logo, Modelle, Team ──────────────────────────────────────────── */
+    "Paste a direct link to your image file.": "Füge einen direkten Link zu deiner Bilddatei ein.",
+    "Square images work best.": "Quadratische Bilder wirken am besten.",
+    "PNG or SVG, up to 1 MB.": "PNG oder SVG, bis 1 MB.",
+    "Only PNG and SVG files are supported.": "Es werden nur PNG- und SVG-Dateien unterstützt.",
+    "Select the AI models you want to track. Your plan currently":
+      "Wähle die KI-Modelle, die du beobachten willst. Dein Tarif erlaubt derzeit",
+    "Only admins can change the tracked models.":
+      "Nur Admins können die beobachteten Modelle ändern.",
+    "At least one model has to stay active. Turn on another one first.":
+      "Mindestens ein Modell muss aktiv bleiben. Schalte zuerst ein anderes ein.",
+    "This model cannot be changed right now.":
+      "Dieses Modell kann gerade nicht geändert werden.",
+    "This model is not available yet.": "Dieses Modell gibt es noch nicht.",
+    "Your plan does not include this model.": "Dein Tarif enthält dieses Modell nicht.",
+    "Your plan allows": "Dein Tarif erlaubt",
+    "Invite new members": "Neue Mitglieder einladen",
+    "Remove from team": "Aus dem Team entfernen",
+    "Leave": "Verlassen",
+    "Leave team": "Team verlassen",
+    "Delete team": "Team löschen",
+    "Click again to delete": "Zum Löschen noch einmal klicken",
+    "You lose access to this workspace. Other members keep theirs.":
+      "Du verlierst den Zugang zu diesem Arbeitsbereich. Die anderen Mitglieder behalten ihren.",
+    "This deletes the workspace and everything in it, for every member. It cannot be undone.":
+      "Das löscht den Arbeitsbereich und alles darin, für jedes Mitglied. Es lässt sich nicht zurückholen.",
+    "The last owner cannot be changed or removed.":
+      "Der letzte Besitzer kann nicht geändert oder entfernt werden.",
+    "You cannot manage this member.": "Dieses Mitglied kannst du nicht verwalten.",
+    "This element is not connected yet. Please reload the page.":
+      "Dieses Element ist noch nicht verbunden. Bitte lade die Seite neu.",
+
+    /* ── Anmeldung ──────────────────────────────────────────────────────────────────────────── */
+    "Sign in": "Anmelden",
+    "Sign up": "Registrieren",
+    "Signing in": "Wird angemeldet",
+    "Create account": "Konto anlegen",
+    "Creating account": "Konto wird angelegt",
+    "Sign in to win AI Search.": "Melde dich an und gewinne die KI-Suche.",
+    "Sign up to win AI Search.": "Registriere dich und gewinne die KI-Suche.",
+    "Welcome Back": "Willkommen zurück",
+    "Let’s get you set up": "Richten wir dich ein",
+    "You’re all set": "Alles fertig",
+    "Already have an account?": "Du hast schon ein Konto?",
+    "Don’t have an account?": "Du hast noch kein Konto?",
+    "Your password": "Dein Passwort",
+    "At least 8 characters": "Mindestens 8 Zeichen",
+    "At least 8 characters.": "Mindestens 8 Zeichen.",
+    "Please enter a password.": "Bitte gib ein Passwort ein.",
+    "Please enter an email address.": "Bitte gib eine E-Mail-Adresse ein.",
+    "Please enter your email address.": "Bitte gib deine E-Mail-Adresse ein.",
+    "Please enter your name.": "Bitte gib deinen Namen ein.",
+    "That does not look like an email address.": "Das sieht nicht wie eine E-Mail-Adresse aus.",
+    "Check your inbox to confirm your email address.":
+      "Sieh in dein Postfach, um deine E-Mail-Adresse zu bestätigen.",
+    "Send me product updates": "Schick mir Produktneuigkeiten",
+    "Something went wrong. Please try again.":
+      "Da ist etwas schiefgegangen. Bitte versuche es noch einmal.",
+
+    /* ── Brand-Hervorhebung in den Charts ───────────────────────────────────────────────────── */
+    "Your brand only": "Nur deine Brand",
+    "No brand highlighting": "Keine Hervorhebung",
+    "Competitors stay plain": "Wettbewerber bleiben neutral",
+    "Monochrome": "Einfarbig",
+    "Solid": "Durchgezogen"
+  });
+  /* ── Vierter Teil: GANZE Absaetze, so wie sie auf dem Schirm stehen ───────────────────────────
+     Diese Liste ist nicht aus dem Quelltext gegriffen, sondern von der laufenden Seite gelesen:
+     ein Durchlauf ueber die Textknoten, der ausgibt, was NICHT im Katalog steht. Das war noetig,
+     weil mehrere Saetze im Markup zu EINEM Textknoten zusammenstehen -- "Change your logo to
+     personalize your workspace. Square images work best. Paste a direct link to your image file."
+     ist ein Knoten, und drei einzelne Schluessel dafuer treffen nie.
+     Nicht dabei: Eigennamen (ChatGPT, OpenAI, Google AI Overviews, Perplexity, Gemini, DeepSeek),
+     die Reiter des Seitenkopfs (siehe Seitenleiste) und die Branchenliste. */
+  addMessages("de", {
+    "Brand Settings": "Brand-Einstellungen",
+    "Your brand identity as it appears across the workspace.":
+      "Wie deine Brand im ganzen Arbeitsbereich erscheint.",
+    "Brand Name & Matching Aliases": "Brand-Name und passende Aliase",
+    "To edit your primary tracking and display name, or to add matching aliases, use the button on the right.":
+      "Um den Namen zu ändern, unter dem beobachtet und angezeigt wird, oder um Aliase zu ergänzen, " +
+      "benutze den Knopf rechts.",
+    "Brand Logo": "Brand-Logo",
+    "Change your logo to personalize your workspace. Square images work best. Paste a direct link to your image file.":
+      "Ändere dein Logo, um den Arbeitsbereich persönlicher zu machen. Quadratische Bilder wirken " +
+      "am besten. Füge einen direkten Link zu deiner Bilddatei ein.",
+    "Upload": "Hochladen",
+    "Use an image link instead": "Stattdessen einen Bildlink verwenden",
+    "Use link": "Link verwenden",
+    "Model Settings": "Modell-Einstellungen",
+    "Which AI models your prompts run against.": "Gegen welche KI-Modelle deine Prompts laufen.",
+    "Manage AI Models": "KI-Modelle verwalten",
+    "Select the AI models you want to track. Your plan currently supports up to 3 active models.":
+      "Wähle die KI-Modelle, die du beobachten willst. Dein Tarif erlaubt derzeit bis zu 3 aktive Modelle.",
+    "Save models": "Modelle speichern",
+    "Meta Settings": "Grundeinstellungen",
+    "Context the system uses when it generates prompts and analyses.":
+      "Der Kontext, den das System beim Erzeugen von Prompts und Analysen verwendet.",
+    "Default Market": "Standardmarkt",
+    "Your preset primary market focus. New prompts start here unless you pick a different one.":
+      "Dein voreingestellter Hauptmarkt. Neue Prompts starten hier, wenn du keinen anderen wählst.",
+    "Business Model": "Geschäftsmodell",
+    "Your target audience.": "Deine Zielgruppe.",
+    "Brand Industry": "Branche der Brand",
+    "Your preset primary brand industry.": "Die voreingestellte Hauptbranche deiner Brand.",
+    "Not listed? Add your own": "Nicht dabei? Eigene ergänzen",
+    "Save settings": "Einstellungen speichern",
+    "Danger Zone": "Kritischer Bereich",
+    "These actions affect the whole team and cannot be undone.":
+      "Diese Aktionen betreffen das ganze Team und lassen sich nicht zurückholen.",
+    "Leave Team": "Team verlassen",
+    "Delete Team": "Team löschen",
+    "Deletes the workspace and every brand, prompt and report in it, for everyone. This cannot be undone.":
+      "Löscht den Arbeitsbereich und jede Brand, jeden Prompt und jeden Report darin, für alle. " +
+      "Das lässt sich nicht zurückholen.",
+
+    /* ── team-orga: die drei Abschnitte und ihre Spalten ─────────────────────────────────────── */
+    "Team Members": "Teammitglieder",
+    "Manage who has access to this team and what they can do":
+      "Verwalte, wer Zugang zu diesem Team hat und was er darf",
+    "Invite new Members": "Neue Mitglieder einladen",
+    "E Mail": "E-Mail",
+    "Email": "E-Mail",
+    "Joined At": "Beigetreten",
+    "Role": "Rolle",
+    "Pending Invites": "Offene Einladungen",
+    "Invitations that have been sent but not accepted yet":
+      "Einladungen, die verschickt, aber noch nicht angenommen wurden",
+    "Expires": "Läuft ab",
+    "Invited by": "Eingeladen von",
+    "Activity Log": "Verlauf",
+    "Every change to this team, newest first": "Jede Änderung an diesem Team, neueste zuerst",
+    "Event": "Ereignis",
+    "Actor": "Wer",
+    "Target": "Wen",
+    "Resend": "Erneut senden",
+    "Revoke": "Zurückziehen"
+  });
   function t(text){
     var l = getPref("locale");
     if (l === "en") return text;
@@ -4231,8 +4543,24 @@
      data-i18n am ELTERNELEMENT haelt das englische Original, damit der Weg zurueck auf Englisch
      nicht verloren ist. Genau dafuer gibt es die zwei Durchgaenge: der schnelle setzt es an den
      bekannten Stellen, der breite an allen uebrigen. */
-  var SPRACHE_AUS = ".up-td, [class*='-td'], [class*='-cell'], [class*='-chip'], [class*='-tag']," +
-                    "input, textarea, [contenteditable], script, style, code, pre";
+  /* Zwei Listen, weil es zwei Gruende gibt.
+     HART: hier steht NIE Oberflaeche -- Eingabefelder, Chips, Tags, Skript. Nicht anfassen, Punkt.
+     ZELLE: dort steht Nutzertext, ABER auch Bedienung. Die Aktionsspalte einer Tabelle enthaelt
+     Knoepfe ("Resend", "Revoke"), und die sind Oberflaeche. Gemessen in team-orga: mit einer
+     einzigen Liste blieben genau diese zwei Knoepfe englisch, waehrend alles um sie herum
+     uebersetzt war. Ein Knopf in einer Zelle wird darum durchgelassen -- ein Markenname steht nie
+     in einem Knopf, und wo er es doch tut (ein Chip), greift die HART-Liste. */
+  var SPRACHE_HART = "[class*='-chip'], [class*='-tag'], input, textarea, [contenteditable]," +
+                     "script, style, code, pre";
+  var SPRACHE_ZELLE = ".up-td, [class*='-td'], [class*='-cell']";
+  var SPRACHE_KNOPF = "button, [role='button']";
+  function spracheDarf(el){
+    try {
+      if (el.closest(SPRACHE_HART)) return false;
+      if (el.closest(SPRACHE_ZELLE) && !el.closest(SPRACHE_KNOPF)) return false;
+    } catch(e){ return false; }
+    return true;
+  }
   function spracheLauf(scope){
     var wurzel = (scope && scope.querySelectorAll) ? scope : document;
     var els;
@@ -4284,7 +4612,7 @@
       var el = kn.parentElement;
       if (!el) continue;
       if (el.getAttribute("data-i18n") != null) continue;   /* macht schon der schnelle Weg */
-      try { if (el.closest(SPRACHE_AUS)) continue; } catch(e){ continue; }
+      if (!spracheDarf(el)) continue;
       if (!eigenerText(el)) continue;                       /* zwei Textstuecke: nicht anfassen */
       el.setAttribute("data-i18n", text);
       kn.nodeValue = roh.match(/^\s*/)[0] + neu + roh.match(/\s*$/)[0];
