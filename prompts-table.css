@@ -648,8 +648,11 @@
    forces the list closed and hides its own toggle -- see .is-groups-cramped below -- so this
    floor is never fighting an impossibly narrow root, only trimming the percentage within the
    range where 256px genuinely still leaves the table enough room.) */
+/* Und nie breiter als 310: bei 20% nimmt die Liste auf einem grossen Bildschirm Platz weg, den
+   die Tabelle daneben braucht -- 20% von 1600px waeren 320, von 2200px schon 440. clamp statt
+   max, damit unten die 256 und oben die 310 in EINER Zeile stehen. */
 .up-root.is-grouped.is-groups-wide .upt-grp-sidepanel {
-  width: max(256px, 20%); opacity: 1; border-color: var(--vc-border);
+  width: clamp(256px, 20%, 310px); opacity: 1; border-color: var(--vc-border);
 }
 /* Below GRP_SIDELIST_MIN_ROOT (prompts-table.js), there is no longer room for a 256px list plus a
    usable table -- the list has already been forced closed by then, and this just hides the ONE

@@ -2823,11 +2823,12 @@
    display: none und nicht ausbauen -- der Einwand von damals ("ein LEERER Kasten hinterlaesst
    seine 8px") gilt fuer einen Kasten, der noch da ist. Ohne Kasten gibt es auch keinen
    Aussenabstand.
-   .up-ph-root ist der Haken, und der ist genau richtig gewaehlt: die sieben Elemente in
-   page-headers/ tragen ihn alle, die Teams-Komponente baut ihren Kopf selbst und traegt ihn
-   NICHT -- ihre Meta-Zeile ("Logo Teamname Organisation") war ausdruecklich gewuenscht und bleibt
-   damit stehen. Geprueft: 7 von 7 Vorlagen mit .up-ph-root, teams.js ohne. */
-.up-ph-root .up-ph-meta { display: none; }
+   Hier stand .up-ph-root als Haken, mit der Begruendung, die Meta-Zeile von teams.js sei
+   ausdruecklich gewuenscht. Das war ein Missverstaendnis: gewuenscht war die Zeile UEBERALL weg.
+   Und der Haken hat genau das verhindert -- prompt-research und teams bauen ihren Kopf selbst und
+   tragen .up-ph-root nicht, also stand die Zeile dort weiter. Gemeldet am 01.09. fuer genau diese
+   zwei Seiten. Jetzt ohne Haken. */
+.up-ph-meta { display: none; }
 /* grayscale(1): a brand's own logo colour would otherwise compete with this being a quiet,
    secondary line above the real heading. */
 /* Tuned so pure BLACK lands on --vc-third (#808080, L=128) -- the colour of the label beside it.

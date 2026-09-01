@@ -940,7 +940,8 @@
     "No brand highlighting": "Keine Hervorhebung",
     "Competitors stay plain": "Wettbewerber bleiben neutral",
     "Monochrome": "Einfarbig",
-    "Solid": "Durchgezogen"
+    "Solid": "Durchgezogen",
+    "Brand Colors": "Brand-Farben"
   });
   /* ── Vierter Teil: GANZE Absaetze, so wie sie auf dem Schirm stehen ───────────────────────────
      Diese Liste ist nicht aus dem Quelltext gegriffen, sondern von der laufenden Seite gelesen:
@@ -4697,11 +4698,24 @@
     try { els = document.querySelectorAll(NURFUNKTION_SEL); } catch(e){ return; }
     for (var i = 0; i < els.length; i++){
       var el = els[i], wirt = el.parentElement, winzig = false;
-      if (!el.__ufbHost && wirt){
-        /* offsetWidth/offsetHeight und nicht getBoundingClientRect: Layoutwerte, unabhaengig von
-           einem transform an einem Vorfahren. */
-        var w = wirt.offsetWidth, h = wirt.offsetHeight;
-        winzig = w >= 1 && w <= 4 && h >= 1 && h <= 4;
+      if (!el.__ufbHost){
+        /* ZUERST der ausdrueckliche Weg. Die Groessenerkennung darunter hat auf der echten Seite
+           nicht gegriffen (gemeldet am 01.09.: "noch seh ich die und die sind anklickbar"), und
+           das ist auch kein Wunder -- was Bubble um ein Element herum baut, ist eine Gruppe mit
+           eigenem Polster, und die ist selten wirklich 1x1. Ein Attribut raet nicht.
+               <div class="up-root utf-root" data-nurfunktion="yes" …>
+           isYes nimmt yes/true/1, also auch einen Bubble-Ja/Nein-Ausdruck als Text. */
+        if (isYes(el.getAttribute("data-nurfunktion"))) winzig = true;
+        else if (wirt){
+          /* Der Rueckfall bleibt: wer das Attribut nicht setzt, aber sein Element wirklich klein
+             macht, bekommt dasselbe. offsetWidth/offsetHeight und nicht getBoundingClientRect --
+             Layoutwerte, unabhaengig von einem transform an einem Vorfahren.
+             Bis 8px statt bis 4: eine Bubble-Gruppe um ein 1x1-Element traegt oft ein paar Pixel
+             Polster. Unter 1 wird weiter NICHT gegriffen -- ein Container, der noch nicht ausgelegt
+             ist, misst 0x0, und ein Filter, der deswegen kurz verschwindet, blinkt sichtbar. */
+          var w = wirt.offsetWidth, h = wirt.offsetHeight;
+          winzig = w >= 1 && w <= 8 && h >= 1 && h <= 8;
+        }
       }
       if (el.classList.contains("up-nurfunktion") !== winzig) el.classList.toggle("up-nurfunktion", winzig);
     }
@@ -7674,11 +7688,11 @@
   function getColorScalePref(){
     try {
       var v = window.localStorage.getItem(COLOR_SCALE_KEY);
-      return (SCALE_ORDER.indexOf(v) > -1) ? v : "default";
-    } catch(e){ return "default"; }
+      return (SCALE_ORDER.indexOf(v) > -1) ? v : SCALE_VORGABE;
+    } catch(e){ return SCALE_VORGABE; }
   }
   function setColorScalePref(v){
-    if (SCALE_ORDER.indexOf(v) < 0) v = "default";
+    if (SCALE_ORDER.indexOf(v) < 0) v = SCALE_VORGABE;
     try { window.localStorage.setItem(COLOR_SCALE_KEY, v); } catch(e){}
     try { window.dispatchEvent(new CustomEvent("up-colorscale-change", { detail: { value: v } })); } catch(e){}
   }
@@ -7712,7 +7726,7 @@
   function colorScaleOptionsHtml(cur, defs){
     var d = (defs && defs.length) ? defs : LINE_PALETTE;
     return SCALE_ORDER.map(function(key){
-      var def = key === "default" ? { label: "Default", colors: d } : COLOR_SCALES[key];
+      var def = key === "default" ? { label: "Brand Colors", colors: d } : COLOR_SCALES[key];
       return '<div class="up-scale-opt' + (cur === key ? " is-active" : "") + '" data-scale="' + key + '">' +
           '<span class="up-scale-opt-head"><span class="up-scale-opt-lbl">' + esc(def.label) + '</span>' + SCALE_CHECK + '</span>' +
           '<span class="up-scale-dots">' + (def.colors || []).map(function(hx){
@@ -8001,7 +8015,12 @@
   };
   /* "default" is not in COLOR_SCALES on purpose — it means "each company's own colour, backfilled
      from LINE_PALETTE", which is what a null colorScale already produces below. */
-  var SCALE_ORDER = ["default", "vivid", "tableau", "colorblind"];
+  /* TABLEAU steht vorn und ist die Vorgabe. "default" bleibt als SCHLUESSEL, damit gespeicherte
+     Werte weiter gelten -- umbenannt ist nur die Beschriftung: "Brand Colors", denn genau das ist
+     es, jede Marke in ihrer eigenen Farbe. "Default" war irrefuehrend, sobald es nicht mehr die
+     Vorgabe ist. */
+  var SCALE_ORDER = ["tableau", "default", "vivid", "colorblind"];
+  var SCALE_VORGABE = "tableau";
   var MAX_LINE_SERIES = 7;
   function buildLineDatasets(series, companies, colorScale){
     series = Array.isArray(series) ? series : [];

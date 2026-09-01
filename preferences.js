@@ -380,7 +380,10 @@
       return UC.getUpstreemThemeChoice ? UC.getUpstreemThemeChoice() : "system";
     }
     function schemaName(key) {
-      if (key === "default") return "Default";
+      /* "Brand Colors" und nicht mehr "Default": Vorgabe ist jetzt Tableau, und "Default" waere
+         damit der Name fuer etwas, das nicht die Vorgabe ist. Derselbe Text wie in
+         UC.colorScaleOptionsHtml -- ein zweiter waere ein zweiter Name fuer dieselbe Zeile. */
+      if (key === "default") return "Brand Colors";
       var sc = UC.COLOR_SCALES && UC.COLOR_SCALES[key];
       return sc ? sc.label : "Default";
     }
