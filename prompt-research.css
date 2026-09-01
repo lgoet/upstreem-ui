@@ -223,7 +223,15 @@
    also zwei Grautoene eine Stufe heller -- dasselbe Feld sah in den zwei Komponenten verschieden
    aus. Hell bleibt es, wie es ist. */
 .up-root[data-theme="dark"].upr-root .upr-composer-shell { background: #1e1e1e; }
-.up-root[data-theme="dark"].upr-root .upr-composer { background: var(--up-surface); }
+/* Dark: Feldfarbe statt Seitenfarbe, und im Ruhezustand kein Rand -- dieselbe Aenderung wie am
+   Eingabefeld von Mira, aus demselben Grund. --up-surface ist #121212, die Farbe der SEITE; das
+   Feld lag damit dunkler als seine Schale (#1e1e1e). --vc-field ist #2a2a2a.
+   Die Fuellung gilt IMMER, der fehlende Rand nur ohne Fokus: mit :not(:focus-within) an der
+   Fuellung waere die Farbe beim Hineinklicken auf --vc-bg zurueckgefallen. Die Ausnahme braucht
+   es, weil diese Regel mit (0,4,0) spezifischer ist als .upr-composer:focus-within (0,2,0).
+   border-color statt border: 0, damit der 1px als Platz stehen bleibt. */
+.up-root[data-theme="dark"].upr-root .upr-composer { background: var(--vc-field); }
+.up-root[data-theme="dark"].upr-root .upr-composer:not(:focus-within) { border-color: transparent; }
 .upr-composer {
   width: 100%; min-height: 130px;
   border: 1px solid var(--vc-border); border-radius: 24px; background: var(--vc-bg);

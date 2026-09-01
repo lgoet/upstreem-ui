@@ -1,0 +1,83 @@
+<meta charset="utf-8"><title>Mira + prompt-research: Feldfarbe, Rand, Hintergrundbild</title>
+<style>html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif;background:#121212}
+#out{padding:10px;color:#e0e0e0;font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap}
+.buehne{padding:16px}</style>
+<body><div id="b1" class="buehne"></div><div id="b2" class="buehne"></div><pre id="out">laeuft…</pre>
+<script>
+/* Drei Behauptungen:
+   1. Mira hat kein Hintergrundbild mehr -- keine .am-bgart im DOM, in KEINEM Thema. Und das feine
+      44px-Raster der Schale ist auf dem Startschirm wieder sichtbar (Deckkraft 0.5 statt 0).
+   2. Beide Eingabefelder tragen im DUNKELN die Feldfarbe (#2a2a2a) und keinen Rand.
+   3. Der Fokus bleibt: Rand --up-focus plus Ring, und die FUELLUNG wechselt dabei NICHT.
+   Dazu die Gegenprobe im hellen Thema: dort aendert sich nichts.
+   Mira traegt eine ID (#ask-mira), es kann also nur EINE Instanz auf der Seite geben -- deshalb
+   wird das Thema umgeschaltet und zweimal gemessen, statt zwei Instanzen zu stellen.
+   pref_theme wird geleert: der Schluessel schlaegt data-isdark, und im letzten Aufbau waren damit
+   alle Instanzen dunkel und die Hell-Spalte wertlos. */
+window.__err=[]; window.addEventListener("error",function(e){ window.__err.push(String(e.message)); });
+try{ localStorage.removeItem("pref_theme"); localStorage.removeItem("up_prefs"); }catch(e){}
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var D=["core.css","core.js","ask-mira.css","ask-mira.js","prompt-research.css","prompt-research.js",
+       "bubble/ask_mira_bubble.html","bubble/prompt_research_bubble.html"];
+Promise.all(D.map(hol)).then(function(t){
+  var m={}; D.forEach(function(f,i){ m[f]=t[i]; });
+  ["core.css","ask-mira.css","prompt-research.css"].forEach(function(f){
+    var s=document.createElement("style"); s.textContent=m[f]; document.head.appendChild(s); });
+  var s2=document.createElement("style");
+  s2.textContent="*,*::before,*::after{transition:none !important;animation:none !important}";
+  document.head.appendChild(s2);
+  [["bubble/ask_mira_bubble.html","#ask-mira","b1","m1"],
+   ["bubble/prompt_research_bubble.html",".upr-root","b2","p1"]].forEach(function(k){
+    var w=document.createElement("div"); w.innerHTML=wurzelAus(m[k[0]]);
+    var r=w.querySelector(k[1]);
+    r.setAttribute("data-instance",k[3]); r.setAttribute("data-cdn-pin","x"); r.setAttribute("data-isdark","yes");
+    document.getElementById(k[2]).appendChild(r);
+  });
+  ["core.js","ask-mira.js","prompt-research.js"].forEach(function(f){
+    var j=document.createElement("script"); j.textContent=m[f]; document.head.appendChild(j); });
+  return new Promise(function(ok){ setTimeout(ok,1500); });
+}).then(function(){
+  function regelDa(txt){ return [].some.call(document.styleSheets,function(ss){
+    try{ return [].some.call(ss.cssRules,function(rl){ return (rl.cssText||"").indexOf(txt)>=0; }); }catch(e){ return false; } }); }
+  function feld(sel){ var el=document.querySelector(sel); if(!el) return null; var c=getComputedStyle(el);
+    return { bg:c.backgroundColor, rand:c.borderTopWidth+" "+c.borderTopStyle+" "+c.borderTopColor,
+             ring:(c.boxShadow||"").slice(0,46) }; }
+  function raster(){ var sh=document.querySelector("#ask-mira .am-shell"); if(!sh) return null;
+    var c=getComputedStyle(sh,"::before");
+    return { deckkraft:c.opacity, groesse:c.backgroundSize }; }
+  function bild(){ return { im_dom: document.querySelectorAll("#ask-mira .am-bgart").length,
+                            klasse_is_bgart: document.querySelector("#ask-mira").classList.contains("is-bgart") }; }
+  function fokus(sel){ var el=document.querySelector(sel); if(!el) return null;
+    var ta=el.querySelector("textarea,input"); if(!ta) return {kein_feld:true};
+    ta.focus(); var c=getComputedStyle(el);
+    var r={ bg:c.backgroundColor, rand:c.borderTopWidth+" "+c.borderTopStyle+" "+c.borderTopColor,
+            ring:(c.boxShadow||"").slice(0,46) }; ta.blur(); return r; }
+  function satz(){ return {
+    mira_feld_ruhe: feld("#ask-mira .am-composer"),
+    mira_feld_fokus: fokus("#ask-mira .am-composer"),
+    mira_bild: bild(), mira_schalenraster: raster(),
+    pr_feld_ruhe: feld(".upr-root .upr-composer"),
+    pr_feld_fokus: fokus(".upr-root .upr-composer") }; }
+  function thema(t){
+    if (window.setUpstreemTheme) window.setUpstreemTheme(t);
+    [".am-root",".upr-root"].forEach(function(s){ var r=document.querySelector(s);
+      if(r) r.setAttribute("data-isdark", t==="dark" ? "yes" : "no"); });
+    return new Promise(function(ok){ setTimeout(ok,320); });
+  }
+  var R={ frische: { mira_feldfarbe: regelDa('#ask-mira[data-theme="dark"] .am-composer'),
+                     pr_feldfarbe: regelDa(".upr-composer:not(:focus-within)"),
+                     bgart_regel_weg: !regelDa(".am-bgart") } };
+  return thema("dark").then(function(){
+    R.thema_dunkel = document.querySelector("#ask-mira").getAttribute("data-theme");
+    R.DUNKEL = satz(); return thema("light");
+  }).then(function(){
+    R.thema_hell = document.querySelector("#ask-mira").getAttribute("data-theme")||"(hell)";
+    R.HELL = satz(); R.fehler = window.__err;
+    document.getElementById("out").textContent=JSON.stringify(R,null,1);
+    window.__R=R; window.__fertig=true;
+  });
+}).catch(function(e){ document.getElementById("out").textContent="FEHLER: "+e.message+"\n"+(e.stack||"");
+  window.__R={fehler:[String(e.message)]}; window.__fertig=true; });
+</script>

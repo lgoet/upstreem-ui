@@ -4550,34 +4550,13 @@
   amAufResize(function(){ moveThumb(); }, { hoehe: true });
 
   /* ---------------- Init ---------------- */
-  /* Das Hintergrundbild des Startschirms. Es steht NICHT in der Bubble-Vorlage: bubble/*.html ist
-     die Vorlage fuer eine NEUinstallation, ein bereits eingebautes Element bekaeme neues Markup
-     nie. Also baut es die Komponente selbst -- idempotent, weil UC.watchRoots diese Init erneut
-     durchlaeuft, sobald Bubble die Auszeichnung austauscht.
-     Die Ebenen und ihr Gewicht kommen aus core.css; dieselbe Grafik liegt hinter dem Onboarding. */
-  (function bildEinsetzen(){
-    var schale = root.querySelector('.am-shell');
-    if (!schale || schale.querySelector('.am-bgart')) return;
-    var d = document.createElement('div');
-    d.className = 'am-bgart';
-    d.setAttribute('aria-hidden', 'true');
-    d.innerHTML = '<span class="up-bgart-licht"></span><span class="up-bgart-bogen"></span>'
-                + '<span class="up-bgart-raster"></span><span class="up-bgart-marken"></span>';
-    schale.insertBefore(d, schale.firstChild);
-    /* Die Blende erst danach freigeben. Zwei Bilder warten und nicht eines: nach dem ersten steht
-       das Markup, aber der Stil ist noch nicht angewandt, und eine im selben Bild gesetzte Blende
-       laeuft trotzdem los.
-       Die Uhr daneben ist kein Guertel-und-Hosentraeger: requestAnimationFrame laeuft in einem
-       VERDECKTEN Tab gar nicht, und Mira haengt in Bubble regelmaessig in einem Tab, der noch nicht
-       vorne ist -- gemessen im Harness, wo nach fuenf Sekunden noch keine einzige Stufe erreicht
-       war (document.visibilityState war "hidden"). Ohne die Uhr bliebe die Klasse dort aus. Beides
-       ruft dasselbe, classList.add ist idempotent. */
-    function blendeFrei(){ root.classList.add('is-bgart'); }
-    requestAnimationFrame(function(){ requestAnimationFrame(blendeFrei); });
-    setTimeout(blendeFrei, 120);
-  })();
-  /* Das Logo im Kopf: dasselbe Symbol wie in der Leiste. Aus demselben Grund hier gebaut wie das
-     Hintergrundbild -- die Bubble-Vorlage erreicht ein bereits eingebautes Element nicht.
+  /* Das Hintergrundbild des Startschirms ist entfernt, in beiden Themen. Es wurde hier gebaut und
+     nicht in bubble/*.html, also verschwindet es mit dieser Datei auch aus einem bereits
+     eingebauten Element -- ohne Handgriff in Bubble. Die Klasse is-bgart entfaellt damit ebenso;
+     sie gab nur die Blende frei. Die Ebenen .up-bgart-* in core.css bleiben: dieselbe Grafik
+     liegt hinter dem Onboarding. */
+  /* Das Logo im Kopf: dasselbe Symbol wie in der Leiste. Hier gebaut und nicht in der
+     Bubble-Vorlage -- die erreicht ein bereits eingebautes Element nicht.
      Liefert der Kern kein galaxy (eine aeltere core.js an einem anderen Pin), bleibt die Klasse
      aus und das gezeichnete Zeichen der Vorlage wird sichtbar. Ein leeres Feld waere die
      schlechtere Antwort auf eine alte Datei. */

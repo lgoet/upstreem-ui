@@ -94,31 +94,12 @@
     z-index: 0;
   }
 
-  /* Der Startschirm bekommt dasselbe Bild wie das Onboarding: Raster, Bogen, vier Kreuzmarken,
-     vier Lichter. Bild und Gewicht stehen in core.css (.up-bgart-*) -- hier steht nur, WO es
-     liegt und WANN es geht.
-
-     z-index: 0 und nicht -1: die drei Kinder der Schale sind alle positioniert und liegen selbst
-     auf 1 oder 2 (.am-hero 2, .am-chat 1, .am-composer-area 2), also genuegt 0, um unter allem zu
-     bleiben. Ein negativer Wert braeuchte einen eigenen Stapelkontext an der Schale, und ohne den
-     faellt er hinter die Seite der fremden Bubble-Anwendung -- an deren Stapelung wird nichts
-     angefasst (11.08.).
-
-     Das Markup baut ask-mira.js, nicht die Bubble-Vorlage: die ist nur die Vorlage fuer eine
-     NEUinstallation, ein bereits eingebautes Element bekaeme es nie. */
-  #ask-mira .am-bgart { position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: 1; }
-  /* Weg, sobald ein Chat offen ist -- gestartet oder ausgewaehlt, beides setzt has-messages. */
-  #ask-mira.has-messages .am-bgart { opacity: 0; }
-  /* Die Blende erst NACH dem ersten Bild. Sonst laeuft sie schon beim Laden: die Komponente
-     startet ohne Nachrichten, und der zuletzt geoeffnete Chat kommt erst ein paar hundert
-     Millisekunden spaeter -- das saehe aus wie ein Flackern, nicht wie ein Uebergang.
-     is-bgart setzt ask-mira.js nach zwei Bildern. */
-  #ask-mira.is-bgart .am-bgart,
-  #ask-mira.is-bgart .am-shell::before { transition: opacity 320ms ease; }
-  /* Beide tragen ein Raster -- das feine 44px-Raster der Schale und das 80px-Raster des Bildes.
-     Uebereinander gibt das ein Moire, also gilt auf dem Startschirm das Bild. Im Chat bleibt
-     alles, wie es war. */
-  #ask-mira:not(.has-messages) .am-shell::before { opacity: 0; }
+  /* Das Hintergrundbild ist entfernt -- Raster, Bogen, vier Kreuzmarken, vier Lichter, in beiden
+     Themen. Damit gilt auf dem Startschirm wieder das feine 44px-Raster der Schale (.am-shell
+     ::before, Deckkraft 0.5), so wie im Chat und wie in prompt-research: die Regel, die es hier
+     ausgeschaltet hat, gab es nur wegen des Moires mit dem 80px-Raster des Bildes und ist mit
+     dem Bild gegangen. Die Ebenen .up-bgart-* in core.css bleiben stehen -- dieselbe Grafik
+     liegt hinter dem Onboarding, und das war nicht gefragt. */
 
   /* ===================== HERO ===================== */
   .am-hero {
@@ -504,11 +485,6 @@
 
   /* ===== Mobile: keep tables horizontally scrollable instead of squashing columns ===== */
   @media (max-width: 720px) {
-    /* Auf dem Telefon nicht: dort fuellt der Inhalt den Schirm, und ein Bild dahinter macht die
-       Beschriftungen schlechter lesbar, ohne etwas zu zeigen. Dieselbe Entscheidung wie im
-       Onboarding. */
-    #ask-mira .am-bgart { display: none; }
-    #ask-mira:not(.has-messages) .am-shell::before { opacity: 0.5; }
     /* size the table to its content (at least full width, at most 2x -> scroll), don't force-fit */
     #ask-mira .am-bubble table { width: auto; min-width: 100%; max-width: 200%; }
     /* don't break column headers at "-" / spaces */
@@ -1206,7 +1182,19 @@
   .am-composer-shell.is-settings-open { padding-bottom: 16px; }   /* grey only overhangs while the tray is open */
   #ask-mira[data-theme="dark"] .am-composer-shell,
   #ask-mira[data-theme="dark"] #am-composer-shell { background: #1e1e1e; }
-  #ask-mira[data-theme="dark"] .am-composer { background: var(--am-bg); }   /* input matches the page bg */
+  /* Dark: das Eingabefeld traegt die FELDfarbe und im Ruhezustand keinen Rand.
+     --am-bg ist #121212, die Farbe der SEITE -- das Feld lag damit dunkler als die Schale hinter
+     ihm (#1e1e1e) und sank darin ein, statt sich abzuheben. --vc-field (#2a2a2a) ist die
+     Feldfarbe der App, dieselbe, die core an jedem anderen dunklen Feld setzt.
+     ZWEI Regeln und nicht eine, und das ist der Punkt: die Fuellung gilt IMMER, der fehlende Rand
+     nur ohne Fokus. Haette :not(:focus-within) auch die Fuellung getragen, waere das Feld beim
+     Hineinklicken auf --am-card zurueckgefallen und haette die Farbe gewechselt.
+     Der Fokus braucht die Ausnahme ueberhaupt, weil diese Regel mit der ID spezifischer ist
+     (1,2,0) als .am-composer:focus-within (0,2,0) und den Fokusrand sonst schluckt.
+     border-color statt border: 0 -- der 1px bleibt als Platz stehen, sonst springt die Zeile
+     beim Hineinklicken um 2px. */
+  #ask-mira[data-theme="dark"] .am-composer { background: var(--vc-field); }
+  #ask-mira[data-theme="dark"] .am-composer:not(:focus-within) { border-color: transparent; }
   /* settings tray inside the shell — slides open/closed smoothly */
   .am-settings-panel {
     width: 100%; background: transparent; overflow: hidden; max-height: 0; opacity: 0; pointer-events: none;
