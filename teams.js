@@ -289,22 +289,24 @@
          feuern) und hier waere jedes davon falsch. Gleiche Aufteilung wie im topics-manager.
          onFire feuert trotzdem einen Zweck: das Zuklappen der Suche loescht den Text, und dann
          muss die Tabelle neu gezeichnet werden. */
+      /* onFire GEHT NACH BUBBLE, wie in jeder anderen Tabelle (uutSearch, udtSearch, uptSearch).
+         Hier stand vorher nur render() -- die Suche filterte also ausschliesslich die Zeilen, die
+         schon geladen waren. Bei einer Tabelle mit Seiten heisst das: gesucht wurde in der
+         aktuellen SEITE und nicht in den Teams. Wer auf Seite 1 stand und ein Team von Seite 3
+         suchte, bekam "keine Treffer".
+         Der Name folgt dem Muster der anderen: <prefix>Search, hier utsSearch. */
       var search = UC.makeSearch({
         root: root, box: elSearch, input: elSearchIn, state: state,
         prefix: "uts", mobileMax: 560,
-        onRender: function () {},
-        onFire: function () { render(); }
+        onRender: function () { render(); },
+        /* Kein state.page = 1 hier: das setzt makeSearch selbst, bevor es feuert. */
+        onFire: function (payload) { fire("data-search-fn", "utsSearch", payload); }
       });
-      var suchUhr = null;
-      elSearchIn.addEventListener("input", function () {
-        state.query = String(elSearchIn.value || "").trim();
-        elSearch.classList.toggle("has-text", !!elSearchIn.value.length);
-        state.page = 1;                 /* ein neuer Suchtext ist eine neue Ergebnismenge */
-        clearTimeout(suchUhr);
-        /* 150ms, nicht die 400ms des Kits: es wird nichts angefragt, nur neu gezeichnet. Ganz
-           ohne Entprellung wuerde bei jedem Tastendruck die ganze Tabelle neu gebaut. */
-        suchUhr = setTimeout(render, 150);
-      });
+      /* Der eigene input-Zuhoerer ist WEG. Er lief neben dem Kit und rief render() nach 150ms --
+         damit war die Suche schon fertig, bevor das Kit sein Ereignis feuern konnte, und es sah
+         aus, als waere die Suche eine reine Anzeigesache. Das Kit macht beides: es zeichnet
+         (onRender) und feuert entprellt (onFire). */
+      elSearchIn.addEventListener("input", function () { search.onInput(); });
       elSearchIn.addEventListener("keydown", function (e) {
         if (e.key === "Escape") { e.stopPropagation(); search.toggle(); }
       });

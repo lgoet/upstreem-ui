@@ -1,0 +1,67 @@
+<meta charset="utf-8"><title>Harness: Filter als 1x1-Funktion</title>
+<link rel="stylesheet" href="core.css?v=nf1">
+<link rel="stylesheet" href="filters/topics-filter.css?v=nf1">
+<link rel="stylesheet" href="filters/models-filter.css?v=nf1">
+<link rel="stylesheet" href="filters/markets-filter.css?v=nf1">
+<link rel="stylesheet" href="filters/filter-bar.css?v=nf1">
+<body style="margin:0;padding:20px;font-family:sans-serif;background:#fff">
+<script>
+window.__ev = []; window.__fehler = [];
+window.addEventListener("error", function(e){ window.__fehler.push(String(e.message)); });
+["utfTopics","utfTopicsApply","umfModels","umkMarkets","ufbReset"].forEach(function(n){
+  window["bubble_fn_"+n] = function(a){ window.__ev.push([n, a]); };
+});
+</script>
+
+<h3>A) Wirt 1x1 -- der Trigger soll unsichtbar und nicht klickbar sein</h3>
+<div id="winzig" style="width:1px;height:1px;overflow:hidden;outline:1px solid #f00">
+  <div class="up-root utf-root" data-instance="topics_klein" data-isdark="no"
+       data-topics-fn="bubble_fn_utfTopics" data-topics-apply-fn="bubble_fn_utfTopicsApply"></div>
+</div>
+
+<h3 style="margin-top:40px">B) Wirt normal (wie Mira im Reporting) -- muss ganz normal gehen</h3>
+<div id="normal" style="width:320px;padding:8px;outline:1px solid #0a0">
+  <div class="up-root utf-root" data-instance="topics_gross" data-isdark="no"
+       data-models-fn="bubble_fn_umfModels"></div>
+</div>
+
+<pre id="out" style="margin-top:30px">laedt…</pre>
+
+<script src="core.js?v=nf1"></script>
+<script src="filters/topics-filter.js?v=nf1"></script>
+<script>
+window.__topics = [
+  { id:"t1", name:"Leadgen", color:"#2563eb", emoji:"", prompt_count:42 },
+  { id:"t2", name:"Solar",   color:"#059669", emoji:"", prompt_count:31 }
+];
+window.__mess = function(){
+  function pruef(id){
+    var wirt = document.getElementById(id);
+    var root = wirt.querySelector(".utf-root");
+    var trig = root && root.querySelector(".utf-trigger");
+    if (!trig) return { wirt: id, fehler: "kein Trigger" };
+    var r = trig.getBoundingClientRect();
+    var cs = getComputedStyle(trig);
+    /* Der harte Test: was liegt an der Stelle, wo der Trigger waere? */
+    var mitte = document.elementFromPoint(Math.max(1, r.left + r.width/2), Math.max(1, r.top + r.height/2));
+    return { wirt: id,
+             klasseGesetzt: root.classList.contains("up-nurfunktion"),
+             wirtGroesse: wirt.offsetWidth + "x" + wirt.offsetHeight,
+             triggerGroesse: Math.round(r.width) + "x" + Math.round(r.height),
+             sichtbar: trig.checkVisibility ? trig.checkVisibility({opacityProperty:true, visibilityProperty:true}) : "?",
+             pointerEvents: cs.pointerEvents,
+             trefferAnDerStelle: mitte ? (mitte === trig || trig.contains(mitte) ? "DER TRIGGER" : "etwas anderes") : "nichts" };
+  }
+  return { A_winzig: pruef("winzig"), B_normal: pruef("normal"), fehler: window.__fehler };
+};
+setTimeout(function(){
+  if (window.setTopicsFilterTopics){
+    window.setTopicsFilterTopics("topics_klein", window.__topics);
+    window.setTopicsFilterTopics("topics_gross", window.__topics);
+  }
+  setTimeout(function(){
+    document.getElementById("out").textContent = JSON.stringify(window.__mess(), null, 1);
+    window.__fertig = true;
+  }, 900);
+}, 400);
+</script>

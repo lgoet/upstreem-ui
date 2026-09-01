@@ -1418,6 +1418,31 @@
        the previous by a third, with a background-colored ring (border) standing in for the gap, so the
        seam between colors stays visible even though the dots physically overlap (the same idiom as an
        avatar stack). */
+/* ---------- Filter nur als Funktion ----------
+   Gesetzt von core (nurFunktionLauf), wenn der Wirt des Filters 1x1 gross ist: dann liegt er nur
+   als Funktion auf der Seite, damit die Filterleiste ihn einziehen kann, und sein eigener Trigger
+   soll weder zu sehen noch zu treffen sein.
+   Nicht display:none -- ein Element ohne Kasten laesst sich nicht messen, und die Leiste prueft
+   beim Einziehen die Groesse des Triggers. Also die uebliche Form fuer "da, aber unsichtbar":
+   1x1, weggeschnitten, ohne Zeiger. Das MENUE bleibt unberuehrt: es haengt absolut und wird von
+   der Leiste geoeffnet, sobald sie den Filter zu sich geholt hat -- und dann ist diese Klasse
+   ohnehin wieder weg. */
+.up-nurfunktion > .utf-trigger,
+.up-nurfunktion > .umf-trigger,
+.up-nurfunktion > .umk-trigger,
+.up-nurfunktion .utf-trigger,
+.up-nurfunktion .umf-trigger,
+.up-nurfunktion .umk-trigger {
+  position: absolute; width: 1px; height: 1px; min-width: 0; padding: 0; border: 0;
+  opacity: 0; pointer-events: none; overflow: hidden; clip-path: inset(50%);
+}
+/* Die Wurzel selbst nimmt keinen Platz mehr ein: sonst steht in dem 1x1-Kasten ein 32px hoher
+   Block, der ueber den Rand hinausragt und darunterliegende Bedienelemente abfaengt. */
+.up-nurfunktion { width: 1px; height: 1px; overflow: visible; pointer-events: none; }
+/* overflow bleibt visible und pointer-events wird am MENUE wieder eingeschaltet -- sonst waere ein
+   Filter, den doch jemand programmatisch oeffnet, sichtbar aber nicht bedienbar. */
+.up-nurfunktion .utf-menu, .up-nurfunktion .umf-menu, .up-nurfunktion .umk-menu { pointer-events: auto; }
+
 /* ---------- Flaggenplaettchen ----------
    Aus filters/markets-filter.css hierher gezogen, als die Sprachauswahl im Einstellungsfenster den
    zweiten Abnehmer bekam. Werte unveraendert.

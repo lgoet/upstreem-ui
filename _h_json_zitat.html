@@ -1,0 +1,59 @@
+<meta charset="utf-8"><title>Harness: kaputter Payload mit nacktem Anfuehrungszeichen</title>
+<body style="margin:0;padding:20px;font:13px/1.5 ui-monospace,Menlo,monospace;background:#fff">
+<h3 style="font-family:sans-serif">parseLoose / readBubble gegen den Payload der URLs-Tabelle</h3>
+<pre id="out">laedt…</pre>
+<script src="core.js?v=jz1"></script>
+<script>
+/* GENAU die Schadensform aus der Meldung vom 01.09.: der Wert traegt ein escaptes UND ein nacktes
+   Anfuehrungszeichen, und hinter dem nackten steht ein Komma. Die Quelle kuerzt die description
+   auf 50 Zeichen und escapt dabei nicht mehr sauber. */
+var KAPUTT = '[{\n' +
+  '        "url": "https://www.youtube.com/watch?v=abc",\n' +
+  '        "title": "Würth Connect Folge 3",\n' +
+  '        "domain": "youtube.com",\n' +
+  '        "mentions": [],\n' +
+  '        "url_type": "video",\n' +
+  '        "description": "In dieser Folge von \\"Würth Connect", füh",\n' +
+  '        "total_count": 94,\n' +
+  '        "is_mentioned": "no",\n' +
+  '        "used_total": 12\n' +
+  '      },\n' +
+  '      { "url": "https://omr.com/x", "title": "Zweite Zeile", "description": "ohne Zitat",\n' +
+  '        "total_count": 94, "is_mentioned": "yes", "used_total": 3 }]';
+
+/* Kontrollfaelle, die WEITER funktionieren muessen -- sonst hat die Schaerfe etwas kaputt gemacht. */
+var GUT = {
+  "gueltiges JSON":            '[{"a":1,"b":"x, y","c":"sagt \\"hallo\\", dann geht er"}]',
+  "Liste aus Strings":         '{"tags":["eins","zwei, drei","vier"]}',
+  "leerer Wert (Bubble)":      '[{"a": , "b": 3}]',
+  "nackte Schluessel":         '[{ id: "0e62", name: "SHK" }]',
+  "yes/no unquotiert":         '[{"a": yes, "b": no}]',
+  "Emoji im Text":             '[{"name":"Solar ☀️","t":"a, b"}]',
+  "Komma im Text, kein Zitat": '[{"t":"Hamburg, Deutschland"}]',
+  "Zitat am Ende":             '[{"t":"er sagte \\"ja\\""}]'
+};
+
+function zeig(){
+  var UC = window.UpstreemCore;
+  var L = [];
+  var r = UC.parseLoose(KAPUTT, "test-kaputt");
+  L.push("KAPUTTER PAYLOAD");
+  L.push("  gelesen: " + (r ? "JA, " + r.length + " Zeilen" : "NEIN (null)"));
+  if (r) {
+    L.push("  Zeile 1 description: " + JSON.stringify(r[0].description));
+    L.push("  Zeile 1 total_count: " + JSON.stringify(r[0].total_count) +
+           "   is_mentioned: " + JSON.stringify(r[0].is_mentioned) +
+           "   used_total: " + JSON.stringify(r[0].used_total));
+    L.push("  Zeile 2 title: " + JSON.stringify(r[1] && r[1].title));
+  }
+  L.push("");
+  L.push("KONTROLLFAELLE (muessen alle JA sein)");
+  Object.keys(GUT).forEach(function(k){
+    var v = UC.parseLoose(GUT[k], "kontrolle");
+    L.push("  " + (v ? "JA " : "NEIN") + "  " + k + "   -> " + JSON.stringify(v));
+  });
+  document.getElementById("out").textContent = L.join("\n");
+  window.__fertig = true;
+}
+setTimeout(zeig, 300);
+</script>

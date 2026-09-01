@@ -347,7 +347,9 @@
     "Clear selection": "Auswahl leeren",
     "Apply": "Übernehmen",
     "Reset": "Zurücksetzen",
-    "Used": "Verwendet",
+    /* "Zitiert" und nicht "Verwendet": die Spalte zaehlt, wie oft die URL als Citation auftrat --
+       das ist im Deutschen zitiert, und es haelt die Naehe zum Wort Citation, das stehen bleibt. */
+    "Used": "Zitiert",
     "Top Domains": "Top-Domains",
     "Top URLs": "Top-URLs",
     "Top Brands": "Top-Brands",
@@ -681,6 +683,23 @@
        Beim inneren "og:title" folgte ein : , das galt als Ende, und ab da war die Struktur hin.
        Der Fehler in der Konsole zeigte auf Position 9557 -- vierhundert Zeichen hinter der
        eigentlichen Stelle, weil der Parser bis dahin munter weiterlief. */
+    /* Was in gueltigem JSON nach einem Komma stehen DARF: ein Schluessel oder ein String (beides
+       beginnt mit "), ein Objekt, eine Liste, eine Zahl oder true/false/null. Alles andere heisst:
+       dieses Komma steht im Text. */
+    function fortsetzungOk(t, k){
+      var n = t.length;
+      while (k < n && /\s/.test(t.charAt(k))) k++;
+      if (k >= n) return true;                       /* Ende der Eingabe -- abgeschnittener Payload */
+      var c = t.charAt(k);
+      if (c === '"' || DQUOTE.indexOf(c) >= 0) return true;
+      if (c === "{" || c === "[" || c === "-" || (c >= "0" && c <= "9")) return true;
+      if (t.substr(k, 4) === "true" || t.substr(k, 4) === "null") return true;
+      if (t.substr(k, 5) === "false") return true;
+      /* Ein unquotierter Schluessel, den repair() selbst noch reparieren wuerde:
+         Buchstabe/Unterstrich, gefolgt von Wortzeichen und einem Doppelpunkt. */
+      if (/^[A-Za-z_$][\w$]*\s*:/.test(t.substr(k, 64))) return true;
+      return false;
+    }
     function scanString(t, i, curly, istWert){
       var n = t.length, j = i + 1, body = "";
       while (j < n){
@@ -700,8 +719,25 @@
           var k = j + 1;
           while (k < n && /\s/.test(t.charAt(k))) k++;
           var nxt = t.charAt(k);
-          var strukturell = k >= n || nxt === "," || nxt === "}" || nxt === "]" ||
-                            (nxt === ":" && !istWert);
+          /* Bei einem KOMMA reicht das Komma allein nicht. Genau daran ist der Payload der
+             URLs-Tabelle am 01.09. gescheitert:
+
+                 "description": "In dieser Folge von \"Würth Connect", füh",
+
+             Der Wert enthaelt ein escaptes UND ein nacktes Anfuehrungszeichen (die Quelle kuerzt
+             den Text auf 50 Zeichen und escapt dabei nicht mehr sauber). Am nackten stand ein
+             Komma dahinter, also galt es als Ende des Wertes -- der Rest ", füh" landete in
+             Code-Position und riss die ganze Liste mit. Gemeldet als "position 10052".
+
+             Also einen Schritt weiter schauen: NACH einem echten Komma folgt in gueltigem JSON
+             immer ein Schluessel oder ein Wert. "füh" ist keins von beiden, das Komma steht also
+             im Text und das Anfuehrungszeichen davor gehoert dazu.
+             Bei } und ] bleibt es beim einfachen Test: dort ist die Lage eindeutig genug, und ein
+             Text, der auf "} endet, ist selten genug, um ihn nicht gegen Schaerfe zu tauschen. */
+          var strukturell;
+          if (k >= n || nxt === "}" || nxt === "]" || (nxt === ":" && !istWert)) strukturell = true;
+          else if (nxt === ",") strukturell = fortsetzungOk(t, k + 1);
+          else strukturell = false;
           if (strukturell){
             return { end: j + 1, text: '"' + body + '"' };
           }
@@ -4015,9 +4051,39 @@
     }
   }
 
+  /* ---- Filter, der NUR als Funktion auf der Seite liegt ---------------------------------------
+     Die drei Filter-Dropdowns werden von der Filterleiste eingezogen; auf der Seite selbst muessen
+     sie nur noch DA sein, damit es sie gibt. Wer sie als 1x1-Element platziert, will ihren
+     Trigger nicht sehen und nicht anklicken koennen.
+
+     Erkannt wird das am WIRT und nicht an einer Einstellung: ist der Elternknoten 1 bis 4 Pixel
+     gross, ist das Absicht. Unter 1 wird ausdruecklich NICHT gegriffen -- ein Container, der noch
+     nicht ausgelegt ist, misst 0x0, und ein Filter, der deswegen fuer einen Augenblick
+     verschwindet, blinkt sichtbar.
+
+     Ein Filter, den eine Leiste eingezogen hat, ist nie gemeint: __ufbHost steht dann an ihm, und
+     sein Trigger ist dort ohnehin ausgeblendet (die Zeile der Leiste IST der Trigger). Damit
+     bleibt auch der Topics-Filter in Mira unberuehrt -- er sitzt in einem normal grossen Kasten. */
+  var NURFUNKTION_SEL = ".utf-root, .umf-root, .umk-root";
+  function nurFunktionLauf(){
+    var els;
+    try { els = document.querySelectorAll(NURFUNKTION_SEL); } catch(e){ return; }
+    for (var i = 0; i < els.length; i++){
+      var el = els[i], wirt = el.parentElement, winzig = false;
+      if (!el.__ufbHost && wirt){
+        /* offsetWidth/offsetHeight und nicht getBoundingClientRect: Layoutwerte, unabhaengig von
+           einem transform an einem Vorfahren. */
+        var w = wirt.offsetWidth, h = wirt.offsetHeight;
+        winzig = w >= 1 && w <= 4 && h >= 1 && h <= 4;
+      }
+      if (el.classList.contains("up-nurfunktion") !== winzig) el.classList.toggle("up-nurfunktion", winzig);
+    }
+  }
+
   function toolbarLauf(knoten){
     if (window.__upOhneToolbar) return;
     sicher("spracheLauf", function(){ spracheLauf(); });
+    sicher("nurFunktionLauf", nurFunktionLauf);
     sicher("stampToolbarIcons", stampToolbarIcons);
     sicher("stampGran", stampGran);
     sicher("orderToolbars", orderToolbars);

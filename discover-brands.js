@@ -52,7 +52,11 @@
             '<circle cx="12" cy="12" r="3"/></svg>',
     search: '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="1.9"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>',
     x:      '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="2"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>',
-    radar:  '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="1.8"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
+    /* Der KOMPASS und nicht mehr die drei Ringe. Die Ringe waren ein Zielscheiben-Zeichen, und die
+       Unterseite, auf der diese Suche laeuft, heisst "Discover" -- ihr Reiter im Seitenkopf traegt
+       genau diesen Kompass (page-headers/brands-page-header.js, PAGES). Zwei Bilder fuer eine
+       Sache waren es vorher. Pfad woertlich von dort uebernommen, nicht nachgezeichnet. */
+    radar:  '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="1.8"><circle cx="12" cy="12" r="10" /> <path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z" /></svg>',
     empty:  '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="1.7"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>',
     /* Feather "box" als neutrales Markenlogo im Erklaerbeispiel. Nichts selbstgezeichnetes und
        nichts, was nach einer echten Firma aussieht -- es steht nur fuer "irgendeine Marke". */
