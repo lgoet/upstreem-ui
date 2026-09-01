@@ -1,0 +1,89 @@
+<meta charset="utf-8"><title>Deutsch: Seitenkopf, Add-Prompts, Filterleiste, Mention-Schalter</title>
+<style>html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif;background:#fff}
+.buehne{padding:16px;width:1200px}#out{padding:10px;font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap}</style>
+<body><div id="b1" class="buehne"></div><div id="b2" class="buehne"></div><pre id="out">laeuft…</pre>
+<script>
+/* Die Testrunde zu den gemeldeten Stellen. Gemessen wird der SICHTBARE Text, nicht der Katalog --
+   ein Eintrag beweist nicht, dass er im richtigen Knoten landet, und genau daran ist der
+   Add-Prompts-Knopf zuletzt gescheitert (zwei Knoten, "Hinzufügen Prompts").
+   Sprache VOR dem Aufbau setzen, sonst messe ich das englische Aufblitzen. */
+window.__err=[]; window.addEventListener("error",function(e){ window.__err.push(String(e.message)); });
+try{ localStorage.removeItem("pref_theme");
+     localStorage.setItem("up_prefs", JSON.stringify({locale:"de"})); }catch(e){}
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var D=["core.css","core.js","add-prompts.css","add-prompts.js",
+       "page-headers/prompts-page-header.css","page-headers/prompts-page-header.js",
+       "filters/filter-bar.css","filters/filter-bar.js",
+       "page-headers/bubble/prompts_page_header_bubble.html","filters/bubble/filter_bar_bubble.html"];
+Promise.all(D.map(hol)).then(function(t){
+  var m={}; D.forEach(function(f,i){ m[f]=t[i]; });
+  ["core.css","add-prompts.css","page-headers/prompts-page-header.css","filters/filter-bar.css"]
+    .forEach(function(f){ var s=document.createElement("style"); s.textContent=m[f]; document.head.appendChild(s); });
+  var s2=document.createElement("style");
+  s2.textContent="*,*::before,*::after{transition:none !important;animation:none !important}";
+  document.head.appendChild(s2);
+  [["page-headers/bubble/prompts_page_header_bubble.html",".up-root","b1","ph1"],
+   ["filters/bubble/filter_bar_bubble.html",".up-root","b2","fb1"]].forEach(function(k){
+    var w=document.createElement("div"); w.innerHTML=wurzelAus(m[k[0]]);
+    var r=w.querySelector(k[1]);
+    if(!r) { window.__err.push("keine Wurzel in "+k[0]); return; }
+    r.setAttribute("data-instance",k[3]); r.setAttribute("data-cdn-pin","x"); r.setAttribute("data-isdark","no");
+    document.getElementById(k[2]).appendChild(r);
+  });
+  ["core.js","add-prompts.js","page-headers/prompts-page-header.js","filters/filter-bar.js"]
+    .forEach(function(f){ var j=document.createElement("script"); j.textContent=m[f]; document.head.appendChild(j); });
+  return new Promise(function(ok){ setTimeout(ok,1500); });
+}).then(function(){
+  if (window.openAddPrompts) { try { window.openAddPrompts({ market:"de" }); }catch(e){ window.__err.push("open: "+e.message); } }
+  return new Promise(function(ok){ setTimeout(ok,900); });
+}).then(function(){
+  function txt(el){ return el ? (el.textContent||"").replace(/\s+/g," ").trim() : null; }
+  function sichtbar(wurzel){
+    if(!wurzel) return [];
+    var raus=[], w=document.createTreeWalker(wurzel, NodeFilter.SHOW_TEXT, null), k;
+    while((k=w.nextNode())){
+      var s=(k.nodeValue||"").replace(/\s+/g," ").trim();
+      if(!s || !/[A-Za-zÀ-ÿ]/.test(s)) continue;
+      var p=k.parentNode;
+      if(p && (p.nodeName==="SCRIPT"||p.nodeName==="STYLE")) continue;
+      if(p && getComputedStyle(p).display==="none") continue;
+      if(raus.indexOf(s)<0) raus.push(s);
+    }
+    return raus;
+  }
+  var ph=document.querySelector('[data-instance="ph1"]');
+  var knopf=ph && ph.querySelector(".up-ph-addbtn");
+  var R={ sprache_marke: document.documentElement.getAttribute("data-up-locale") };
+  R.add_knopf = { breit: txt(knopf),
+                  voll: txt(knopf && knopf.querySelector(".up-ph-addbtn-full")),
+                  kurz: txt(knopf && knopf.querySelector(".up-ph-addbtn-kurz")),
+                  kurz_sichtbar_breit: knopf && knopf.querySelector(".up-ph-addbtn-kurz")
+                    ? getComputedStyle(knopf.querySelector(".up-ph-addbtn-kurz")).display : null };
+  if (ph){ ph.classList.add("is-narrow"); }
+  R.add_knopf_schmal = knopf ? { sichtbar: txt(knopf),
+      voll_display: getComputedStyle(knopf.querySelector(".up-ph-addbtn-full")).display,
+      kurz_display: getComputedStyle(knopf.querySelector(".up-ph-addbtn-kurz")).display } : null;
+  if (ph){ ph.classList.remove("is-narrow"); }
+  R.seitenkopf_texte = sichtbar(ph);
+  R.filterleiste_texte = sichtbar(document.querySelector('[data-instance="fb1"]'));
+  R.add_prompts_fenster = sichtbar(document.querySelector(".uap-card, .uap-modal, [class*='uap-']"));
+  /* Der Mention-Schalter aus core, so wie jede Toolbar ihn baut. */
+  R.mention_schalter = (function(){
+    if (!window.UpstreemCore || !UpstreemCore.brandToggleHtml) return "(kein Zugang zu brandToggleHtml)";
+    var d=document.createElement("div"); d.className="up-root";
+    d.innerHTML = UpstreemCore.brandToggleHtml({ name:"Volkswagen" })
+                + UpstreemCore.brandToggleHtml({});
+    document.body.appendChild(d);
+    var b=d.querySelectorAll(".up-brandtoggle"), l=d.querySelectorAll(".up-brandlabel");
+    var r={ mit_name: txt(l[0]), mit_name_aria: b[0] ? b[0].getAttribute("aria-label") : null,
+            ohne_name: txt(l[1]), ohne_name_aria: b[1] ? b[1].getAttribute("aria-label") : null };
+    d.remove(); return r;
+  })();
+  R.fehler = window.__err;
+  document.getElementById("out").textContent=JSON.stringify(R,null,1);
+  window.__R=R; window.__fertig=true;
+}).catch(function(e){ document.getElementById("out").textContent="FEHLER: "+e.message+"\n"+(e.stack||"");
+  window.__R={fehler:[String(e.message)]}; window.__fertig=true; });
+</script>

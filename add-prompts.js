@@ -59,7 +59,9 @@
   function uapStart(){
   var UC = window.UpstreemCore;
 
-  var esc = UC.esc, toNum = UC.toNum;
+  /* tr und nicht t: t ist in dieser Datei mehrfach eine lokale Textvariable (r.text), ein
+     zweites t waere ein Fehler, der erst zur Laufzeit auffaellt. */
+  var esc = UC.esc, toNum = UC.toNum, tr = UC.t || function (s) { return s; };
   /* One batch is capped. 100 is not a technical limit -- it is the point past which a single
      Bubble workflow run stops being a sensible unit of work, and a 10.000-row import would sit
      there building a payload nobody wants to debug. Nothing about the cap is shown until it is
@@ -362,9 +364,13 @@
       S.rows.push({ id: "r" + (++seq), text: t, market: r.market || "" });
     });
     var notes = [];
-    if (dupes)   notes.push(dupes + (dupes === 1 ? " duplicate skipped" : " duplicates skipped"));
-    if (dropped) notes.push(dropped + (dropped === 1 ? " more row left out" : " more rows left out") +
-                            " — " + MAX_PROMPTS + " prompts per batch");
+    /* Muster statt Stuecke: "3" + " duplicates skipped" laesst sich nicht uebersetzen, der Satz
+       als Ganzes schon -- und nur so steht das Verb im Deutschen richtig. */
+    if (dupes)   notes.push(dupes === 1 ? tr("1 duplicate skipped")
+                                        : tr("{n} duplicates skipped").replace("{n}", dupes));
+    if (dropped) notes.push((dropped === 1 ? tr("1 more row left out")
+                                           : tr("{n} more rows left out").replace("{n}", dropped)) +
+                            " — " + tr("{n} prompts per batch").replace("{n}", MAX_PROMPTS));
     S.capNote = notes.join(" · ");
     return dropped + dupes;
   }
@@ -481,11 +487,12 @@
       el.innerHTML = S.rows.map(rowHtml).join("");
     }
     M.count.textContent = S.rows.length
-      ? S.rows.length + (S.rows.length === 1 ? " prompt" : " prompts")
-      : "No prompts yet";
+      ? (S.rows.length === 1 ? tr("1 prompt") : tr("{n} prompts").replace("{n}", S.rows.length))
+      : tr("No prompts yet");
     M.save.disabled = !S.rows.length || S.saving;
-    M.save.textContent = S.rows.length ? "Add " + S.rows.length + (S.rows.length === 1 ? " prompt" : " prompts")
-                                       : "Add prompts";
+    M.save.textContent = S.rows.length
+      ? (S.rows.length === 1 ? tr("Add 1 prompt") : tr("Add {n} prompts").replace("{n}", S.rows.length))
+      : tr("Add prompts");
     M.capnote.hidden = !S.capNote;
     if (S.capNote) M.capnote.innerHTML = ICON.alert + '<span>' + esc(S.capNote) + '</span>';
 
@@ -610,7 +617,8 @@
     M.csvnote.hidden = false;
     var bits = [];
     if (S.csvName) bits.push(esc(S.csvName));
-    if (S.csvSkipped) bits.push(S.csvSkipped + (S.csvSkipped === 1 ? " row skipped" : " rows skipped"));
+    if (S.csvSkipped) bits.push(S.csvSkipped === 1 ? tr("1 row skipped")
+                                                    : tr("{n} rows skipped").replace("{n}", S.csvSkipped));
     if (S.csvNote) bits.push(esc(S.csvNote));
     M.csvnote.innerHTML = ICON.file + '<span>' + bits.join(" · ") + '</span>';
   }
@@ -669,7 +677,11 @@
         '<div class="uap-input-csv">' +
           '<div class="uap-drop" tabindex="0">' +
             ICON.upload +
-            '<div class="uap-droptext"><b>Drop a CSV here</b> or click to choose a file</div>' +
+            /* Zwei Elemente, nicht ein Element mit eigenem Text neben einem <b>: ein Satz aus
+               zwei Knoten laesst sich nicht uebersetzen (der Lauf schuetzt solche Bruchstuecke,
+               seit daraus "Hinzufügen Prompts" wurde). So traegt jede Haelfte ihren eigenen
+               Text und beide kommen aus dem Katalog. */
+            '<div class="uap-droptext"><b>Drop a CSV here</b> <span>or click to choose a file</span></div>' +
             '<input type="file" class="uap-file" accept=".csv,text/csv" hidden>' +
           '</div>' +
           '<button type="button" class="uap-tmpl" data-act="template">' + ICON.download + 'Download template</button>' +

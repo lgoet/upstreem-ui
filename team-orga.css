@@ -85,6 +85,11 @@
 /* 196 fuer die letzte Spalte: zwei Knoepfe mit Zeichen und Wort ("Resend" 82, "Revoke" 82) plus
    6px Abstand und das Zellpolster. */
 .uto-invites { --up-cols: minmax(0, 1.4fr) 108px 130px minmax(0, 1fr) 196px; }
+/* Deutsch braucht mehr Platz: "Erneut senden" und "Zurückziehen" gegen "Resend" und "Revoke".
+   196px reichten fuer die englischen Woerter, im Deutschen brach der Knopf um. Die Marke setzt
+   core.js im Sprachlauf (data-up-locale am <html>), damit die Breite nicht in JS gerechnet werden
+   muss. Der Wert ist gemessen, nicht geraten -- siehe die Uebergabe. */
+:root[data-up-locale="de"] .uto-invites { --up-cols: minmax(0, 1.4fr) 108px 130px minmax(0, 1fr) 268px; }
 .uto-invites.no-actions { --up-cols: minmax(0, 1.4fr) 108px 130px minmax(0, 1fr); }
 
 .uto-name { display: flex; align-items: center; gap: 8px; min-width: 0; }
@@ -255,6 +260,7 @@
 .uto-root.is-narrow .uto-mail, .uto-root.is-narrow .uto-when,
 .uto-root.is-narrow .uto-c-mail, .uto-root.is-narrow .uto-c-when { display: none; }
 .uto-root.is-narrow .uto-invites { --up-cols: minmax(0, 1fr) 108px 196px; }
+:root[data-up-locale="de"] .uto-root.is-narrow .uto-invites { --up-cols: minmax(0, 1fr) 108px 268px; }
 .uto-root.is-narrow .uto-invites.no-actions { --up-cols: minmax(0, 1fr) 108px; }
 .uto-root.is-narrow .uto-inv-by, .uto-root.is-narrow .uto-c-by { display: none; }
 /* Das Protokoll auf drei Spalten: Ziel und Details fallen weg. Fuenf Spalten auf 372px waeren

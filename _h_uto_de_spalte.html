@@ -1,0 +1,75 @@
+<meta charset="utf-8"><title>team-orga: Aktionsspalte der Einladungen, deutsch gegen englisch</title>
+<link rel="stylesheet" href="core.css">
+<link rel="stylesheet" href="team-orga.css">
+<style>html,body{margin:0;font-family:Geist,system-ui,sans-serif;background:#fff}
+#buehne{padding:24px;width:1100px}#out{font:11px/1.6 ui-monospace,monospace;padding:10px;white-space:pre-wrap}</style>
+<body><div id="buehne"></div><pre id="out">laeuft…</pre>
+<script>
+/* "Erneut senden" und "Zurückziehen" sind laenger als "Resend" und "Revoke" -- die Frage ist, WIE
+   viel laenger, und die 268px sollen gemessen sein, nicht geschaetzt.
+   Gemessen wird beides: der Platzbedarf des Inhalts (scrollWidth der Zelle bei max-content) und
+   ob er in die Spur passt (scrollWidth gegen clientWidth). Zwei Sprachen im selben Aufbau, damit
+   der englische Wert die Gegenprobe ist. */
+window.__err=[]; window.addEventListener("error",function(e){ window.__err.push(String(e.message)); });
+try{ localStorage.removeItem("pref_theme"); localStorage.setItem("up_prefs", JSON.stringify({locale:"de"})); }catch(e){}
+["utoInvite","utoResend","utoRevoke","utoRemove","utoRole"].forEach(function(n){
+  window["bubble_fn_"+n]=function(){}; });
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var D=["core.js","team-orga.js","bubble/team_orga_bubble.html"];
+Promise.all(D.map(hol)).then(function(t){
+  var m={}; D.forEach(function(f,i){ m[f]=t[i]; });
+  var w=document.createElement("div"); w.innerHTML=wurzelAus(m["bubble/team_orga_bubble.html"]);
+  var r=w.querySelector(".uto-root")||w.querySelector(".up-root");
+  r.setAttribute("data-instance","t1"); r.setAttribute("data-cdn-pin","x"); r.setAttribute("data-isdark","no");
+  document.getElementById("buehne").appendChild(r);
+  ["core.js","team-orga.js"].forEach(function(f){
+    var j=document.createElement("script"); j.textContent=m[f]; document.head.appendChild(j); });
+  return new Promise(function(ok){ setTimeout(ok,1200); });
+}).then(function(){
+  /* Die Einladungen kommen ueber ihren EIGENEN Setter, und mit den Feldnamen, die die Komponente
+     liest (invited_email/invited_role/expires_at/created_by_email). Im ersten Lauf hingen sie in
+     renderTeamOrga und unter falschen Namen: state.busy blieb wahr, gemessen wurde eine
+     Skelettzeile ohne Knoepfe -- Platzbedarf 29px. Das war meine eigene Messung, nicht die Zelle. */
+  window.renderTeamOrga({ instanceId:"t1", viewer_role:"owner",
+    members:[{user_id:"u1",name:"Lukas",email:"l@x.de",role:"owner"}] });
+  window.setTeamOrgaInvites("t1", [{ invite_id:"i1", invited_email:"neu@beispiel.de",
+    invited_role:"admin", created_by_email:"lukas@upstreem.de", expires_at:"2026-09-20T10:00:00Z" }]);
+  return new Promise(function(ok){ setTimeout(ok,700); });
+}).then(function(){
+  function messe(){
+    var zelle=document.querySelector(".uto-invites .uto-invact");
+    if(!zelle) return { fehlt:true };
+    var tab=document.querySelector(".uto-invites");
+    var knoepfe=zelle.querySelectorAll("button");
+    /* Der Platzbedarf: Zelle kurz auf max-content, dann die Summe messen. */
+    var altDisplay=zelle.style.width; zelle.style.width="max-content";
+    var bedarf=Math.ceil(zelle.getBoundingClientRect().width);
+    zelle.style.width=altDisplay;
+    var spur=Math.round(zelle.getBoundingClientRect().width);
+    return { spalten: getComputedStyle(tab).getPropertyValue("--up-cols").trim(),
+             spur_breite: spur, platzbedarf: bedarf, passt: bedarf <= spur,
+             ueberlauf: Math.max(0, zelle.scrollWidth - zelle.clientWidth),
+             knopf1: (knoepfe[0]&&knoepfe[0].textContent||"").trim(),
+             knopf1_breite: knoepfe[0]?Math.ceil(knoepfe[0].getBoundingClientRect().width):null,
+             knopf2: (knoepfe[1]&&knoepfe[1].textContent||"").trim(),
+             knopf2_breite: knoepfe[1]?Math.ceil(knoepfe[1].getBoundingClientRect().width):null,
+             hoehe_zeile: Math.round(document.querySelector(".uto-invites .up-row").getBoundingClientRect().height) };
+  }
+  function sprache(l){
+    if (window.UpstreemCore && UpstreemCore.setPref) UpstreemCore.setPref("locale", l);
+    else { try{ localStorage.setItem("up_prefs", JSON.stringify({locale:l})); }catch(e){} }
+    return new Promise(function(ok){ setTimeout(ok,450); });
+  }
+  var R={};
+  return sprache("de").then(function(){ R.marke_de=document.documentElement.getAttribute("data-up-locale");
+    R.DEUTSCH=messe(); return sprache("en");
+  }).then(function(){ R.marke_en=document.documentElement.getAttribute("data-up-locale");
+    R.ENGLISCH=messe(); R.fehler=window.__err;
+    document.getElementById("out").textContent=JSON.stringify(R,null,1);
+    window.__R=R; window.__fertig=true;
+  });
+}).catch(function(e){ document.getElementById("out").textContent="FEHLER: "+e.message+"\n"+(e.stack||"");
+  window.__R={fehler:[String(e.message)]}; window.__fertig=true; });
+</script>

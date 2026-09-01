@@ -369,7 +369,7 @@
     "Top Domains": "Top-Domains",
     "Top URLs": "Top-URLs",
     "Top Brands": "Top-Brands",
-    "Responses": "Antworten",
+    "Responses": "KI-Antworten",
     "Yes": "Ja",
     "No": "Nein",
 
@@ -402,7 +402,7 @@
     "Monitor your AI visibility, performance, and latest developments":
       "Beobachte deine KI-Sichtbarkeit, die Performance und die letzten Entwicklungen",
     "Manage Prompts, Topics and monitor latest Responses":
-      "Prompts und Topics verwalten, neueste Responses ansehen",
+      "Prompts und Topics verwalten, neueste KI-Antworten ansehen",
     "Manage tasks, prioritize opportunities, and track progress":
       "Aufgaben verwalten, Opportunities priorisieren, Fortschritt verfolgen",
     "Manage the teams you are a member of, and switch between them":
@@ -595,8 +595,8 @@
     "Y axis": "Y-Achse",
     "Top": "Top",
     "Trending": "Im Trend",
-    "Prompts vs Responses": "Prompts gegen Responses",
-    "Total Responses analyzed:": "Ausgewertete Responses:",
+    "Prompts vs Responses": "Prompts gegen KI-Antworten",
+    "Total Responses analyzed:": "Ausgewertete KI-Antworten:",
     "Next page": "Nächste Seite",
     "Previous page": "Vorige Seite",
 
@@ -633,13 +633,13 @@
     "No URLs yet": "Noch keine URLs",
     "No domains yet": "Noch keine Domains",
     "No prompts yet": "Noch keine Prompts",
-    "No responses yet": "Noch keine Responses",
+    "No responses yet": "Noch keine KI-Antworten",
     "No teams yet": "Noch keine Teams",
     "No results yet": "Noch keine Ergebnisse",
     "No matching URLs": "Keine passenden URLs",
     "No matching domains": "Keine passenden Domains",
     "No matching prompts": "Keine passenden Prompts",
-    "No matching responses": "Keine passenden Responses",
+    "No matching responses": "Keine passenden KI-Antworten",
     "No match": "Kein Treffer",
     "No command": "Kein Befehl",
     "No brand matches your search": "Keine Brand passt zu deiner Suche",
@@ -1046,7 +1046,7 @@
 
     /* Seitenkopf */
     "Manage Prompts, Topics and monitor latest Responses":
-      "Prompts und Topics verwalten, neueste Responses ansehen"
+      "Prompts und Topics verwalten, neueste KI-Antworten ansehen"
   });
   /* ── Vierter Teil: GANZE Absaetze, so wie sie auf dem Schirm stehen ───────────────────────────
      Diese Liste ist nicht aus dem Quelltext gegriffen, sondern von der laufenden Seite gelesen:
@@ -1056,6 +1056,89 @@
      ist ein Knoten, und drei einzelne Schluessel dafuer treffen nie.
      Nicht dabei: Eigennamen (ChatGPT, OpenAI, Google AI Overviews, Perplexity, Gemini, DeepSeek),
      die Reiter des Seitenkopfs (siehe Seitenleiste) und die Branchenliste. */
+  /* Vierter Nachtrag: was in der Runde davor noch englisch stand. Drei Gruppen, und die ersten
+     zwei sind keine fehlenden Woerter, sondern fehlende MUSTER -- Saetze, die aus Stuecken um eine
+     Zahl oder einen Namen gebaut wurden und sich deshalb nicht Stueck fuer Stueck uebersetzen
+     lassen. Die Stellen sind mit umgestellt (add-prompts.js, brandToggle in core). */
+  addMessages("de", {
+    /* ---- Seitenkopf der Prompts-Seite ---- */
+    "Add Prompts": "Prompts hinzufügen",
+    "Add Brand": "Brand hinzufügen",
+    "Look for new Opportunities": "Neue Opportunities suchen",
+    /* Die schmale Fassung der drei Knoepfe: ein eigenes Wort, kein abgeschnittener Satz. */
+    "Add": "Hinzufügen",
+    "Look for": "Suchen",
+    "Database": "Datenbank",
+    "Prompt Insights": "Prompt-Auswertung",
+    "Refresh": "Aktualisieren",
+    "Refresh Data": "Daten aktualisieren",
+
+    /* ---- Filterleiste ---- */
+    "More Filters": "Mehr Filter",
+    "No filters on this page": "Keine Filter auf dieser Seite",
+    "These filters are not on this page yet": "Diese Filter gibt es auf dieser Seite noch nicht",
+
+    /* ---- Topic-Editor ---- */
+    /* "Darstellung" und nicht "Aussehen": darunter stehen Emoji und Farbe, also wie das Topic
+       DARGESTELLT wird. "Aussehen" klingt nach dem Topic selbst. */
+    "Appearance": "Darstellung",
+    "Search topics...": "Topics suchen...",
+    "This topic no longer exists": "Dieses Topic gibt es nicht mehr",
+
+    /* ---- Der Mention-Schalter in jeder Toolbar und jedem Tabellenkopf ----
+       Muster mit {brand}: im Deutschen steht der Name vor dem Verb. Zusammengesetzt blieb hier
+       ueberall "mentioned" stehen -- das war die Meldung. */
+    "{brand} mentioned?": "{brand} erwähnt?",
+    "{brand} mentioned": "{brand} erwähnt",
+    "Own brand": "Eigene Brand",
+
+    /* ---- Das Fenster "Prompts hinzufügen" ---- */
+    "Type them one by one, or import a spreadsheet.":
+      "Einzeln eintippen oder eine Tabelle importieren.",
+    "Manual": "Manuell",
+    "Import CSV": "CSV importieren",
+    "Drop a CSV here": "CSV hier ablegen",
+    "or click to choose a file": "oder klicken, um eine Datei zu wählen",
+    "Clear all": "Alle entfernen",
+    "Clear": "Leeren",
+    "Remove": "Entfernen",
+    "Type a prompt and press Enter": "Prompt eintippen und Enter drücken",
+    "Add this prompt": "Diesen Prompt hinzufügen",
+    "Market for all new prompts": "Markt für alle neuen Prompts",
+    "Topics for all new prompts": "Topics für alle neuen Prompts",
+    "No markets found": "Keine Märkte gefunden",
+    "No topics found": "Keine Topics gefunden",
+    "No prompts yet": "Noch keine Prompts",
+    "No usable rows found.": "Keine verwertbaren Zeilen gefunden.",
+    "That file could not be read.": "Die Datei konnte nicht gelesen werden.",
+    "That file has no rows.": "Die Datei enthält keine Zeilen.",
+    "No header row recognised, first column read as the prompt.":
+      "Keine Kopfzeile erkannt, die erste Spalte wird als Prompt gelesen.",
+    /* Muster mit {n}. Ein und Mehrzahl sind eigene Eintraege, weil das Deutsche sie anders bildet
+       als das Englische -- und weil "1 Prompt" ohne Zahlwort besser liest. */
+    "1 prompt": "1 Prompt",
+    "{n} prompts": "{n} Prompts",
+    "Add 1 prompt": "1 Prompt hinzufügen",
+    "Add {n} prompts": "{n} Prompts hinzufügen",
+    "1 duplicate skipped": "1 Doppelter übersprungen",
+    "{n} duplicates skipped": "{n} Doppelte übersprungen",
+    "1 row skipped": "1 Zeile übersprungen",
+    "{n} rows skipped": "{n} Zeilen übersprungen",
+    "1 more row left out": "1 weitere Zeile ausgelassen",
+    "{n} more rows left out": "{n} weitere Zeilen ausgelassen",
+    "{n} prompts per batch": "{n} Prompts pro Durchgang",
+    "Download template": "Vorlage herunterladen",
+
+    /* ---- Filterleiste, zweiter Durchgang ---- */
+    "Back": "Zurück",
+    "Reset Filters": "Filter zurücksetzen",
+
+    /* ---- Einladungstabelle in team-orga ----
+       Beim Messen der Spaltenbreite aufgefallen: die Tabelle war sonst deutsch, diese drei nicht. */
+    "No pending invites": "Keine offenen Einladungen",
+    "expired": "abgelaufen"
+  });
+
   addMessages("de", {
     "Brand Settings": "Brand-Einstellungen",
     "Your brand identity as it appears across the workspace.":
@@ -2036,11 +2119,15 @@
                   ' stroke-width="3" stroke-linecap="round" stroke-linejoin="round">' +
                   '<path d="M5 12h14" /></svg>';
     return '<button type="button" class="up-brandtoggle' + (cfg.cls ? " " + cfg.cls : "") + '"' +
-             ' aria-label="' + esc(name ? name + " mentioned" : "Own brand mentioned") + '">' +
+             /* Muster und nicht zusammengesetzt: der Markenname steht im Deutschen VOR dem Verb,
+                also muss der ganze Satz aus dem Katalog kommen. Zusammengesetzt blieb hier
+                "mentioned" stehen, in jeder Toolbar und in jedem Tabellenkopf. */
+             ' aria-label="' + esc(t("{brand} mentioned").replace("{brand}", name || t("Own brand"))) + '">' +
              '<span class="up-brandtoggle-lbl">' +
                (logo ? '<img class="up-brandlogo" src="' + esc(logo) + '" alt="" loading="lazy"' +
                        ' referrerpolicy="no-referrer" onerror="this.remove()"/>' : "") +
-               '<span class="up-brandlabel">' + esc(name || "Own brand") + " mentioned?</span>" +
+               '<span class="up-brandlabel">' +
+                 esc(t("{brand} mentioned?").replace("{brand}", name || t("Own brand"))) + "</span>" +
              "</span>" +
              '<span class="up-brandcheck">' + svgJa + svgNein + "</span>" +
            "</button>";
@@ -4773,8 +4860,53 @@
       }
     }
   }
+  /* Die drei Knoepfe in den Seitenkoepfen tragen ihr Etikett als ZWEI Knoten: den eigenen Text
+     ("Add ", "Look for") und ein <span class="up-ph-addbtn-full"> mit dem Rest ("Prompts",
+     "Brand", " new Opportunities"). Der Span ist der Griff, mit dem die schmale Ansicht das
+     letzte Wort weglaesst (.up-root.is-narrow .up-ph-addbtn-full { display: none }).
+     Zwei Knoten lassen sich nicht Knoten fuer Knoten uebersetzen -- im Deutschen steht das Verb
+     hinten, und genau daraus wurde das gemeldete "Hinzufügen Prompts". Seit eigenerText() solche
+     Bruchstuecke schuetzt, blieb der Knopf ganz englisch.
+     Also wird das Etikett hier NEU gebaut: ein Span mit der vollen Fassung, ein Span mit der
+     schmalen. Beide kommen als GANZER Satz aus dem Katalog, das Verb steht damit richtig, und
+     die schmale Fassung ist ein eigenes Wort statt eines abgeschnittenen Satzes.
+     Hier und nicht in den Vorlagen: bubble/*.html erreicht ein bereits eingebautes Element nie,
+     dieser Lauf schon. Die zwei Attribute halten die englischen Originale, damit der Weg zurueck
+     nach en geht -- ohne sie waere nach einem Wechsel die deutsche Fassung die Vorlage. */
+  function knopfEtikett(wurzel){
+    var knoepfe;
+    try { knoepfe = wurzel.querySelectorAll(".up-ph-addbtn"); } catch(e){ return; }
+    for (var i = 0; i < knoepfe.length; i++){
+      var voll = knoepfe[i].querySelector(".up-ph-addbtn-full");
+      if (!voll || !voll.parentNode || !voll.parentNode.getAttribute) continue;
+      var h = voll.parentNode;
+      var oVoll = h.getAttribute("data-i18n-btn"), oKurz = h.getAttribute("data-i18n-btnkurz");
+      if (oVoll == null || oKurz == null){
+        oVoll = (h.textContent || "").replace(/\s+/g, " ").trim();
+        /* Der eigene Text der Huelle ist das Verb -- alles ausser dem Span. */
+        var eigen = "";
+        for (var k = 0; k < h.childNodes.length; k++){
+          if (h.childNodes[k].nodeType === 3) eigen += h.childNodes[k].nodeValue || "";
+        }
+        oKurz = eigen.replace(/\s+/g, " ").trim();
+        if (!oVoll || !oKurz) continue;
+        h.setAttribute("data-i18n-btn", oVoll);
+        h.setAttribute("data-i18n-btnkurz", oKurz);
+      }
+      var nVoll = t(oVoll), nKurz = t(oKurz);
+      var neu = '<span class="up-ph-addbtn-kurz">' + esc(nKurz) + "</span>" +
+                '<span class="up-ph-addbtn-full">' + esc(nVoll) + "</span>";
+      if (h.innerHTML !== neu) h.innerHTML = neu;
+    }
+  }
   function spracheLauf(scope){
     var wurzel = (scope && scope.querySelectorAll) ? scope : document;
+    /* Die Sprache als Marke am Dokument, damit CSS sie sehen kann. Ein deutsches Wort ist laenger
+       als das englische, und eine Spalte mit fester Pixelbreite passt dann nicht mehr -- die
+       Einladungstabelle in team-orga ist der erste Fall ("Erneut senden"/"Zurückziehen" gegen
+       "Resend"/"Revoke"). Ohne diese Marke muesste jede solche Breite in JS gerechnet werden. */
+    try { document.documentElement.setAttribute("data-up-locale", getPref("locale") || "en"); } catch(e){}
+    try { knopfEtikett(wurzel); } catch(e){}
     var els;
     try { els = wurzel.querySelectorAll(SPRACHE_SEL); } catch(e){ els = []; }
     for (var i = 0; i < els.length; i++) knotenStellen(els[i]);

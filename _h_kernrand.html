@@ -23,8 +23,9 @@ Promise.all(D.map(hol)).then(function(t){
      Regel sie braucht -- .up-sticky etwa). */
   var ERFASST = [
     ["up-box",              '<div class="up-box"></div>'],
-    ["up-sticky .up-thead", '<div class="up-sticky"><div class="up-table"><div class="up-thead"></div></div></div>', ".up-thead"],
-    ["up-sticky .up-tbody", '<div class="up-sticky"><div class="up-table"><div class="up-tbody"></div></div></div>', ".up-tbody"],
+    /* KEIN eigener Eintrag mehr: up-sticky liegt auf DERSELBEN Wurzel wie up-root. Verschachtelt
+       gebaut messe ich einen Fall, den es in der App nicht gibt -- genau der Fehler, der die
+       sechs grossen Tabellen durchrutschen liess. Er wird unten mit sticky an der Wurzel geprueft. */
     ["vot-box",             '<div class="vot-box vot-box-left"></div>'],
     ["tcd-box",             '<div class="tcd-box"></div>'],
     ["ubo-box",             '<div class="ubo-box"></div>'],
@@ -69,8 +70,22 @@ Promise.all(D.map(hol)).then(function(t){
             box_bg: getComputedStyle(bx).backgroundColor };
     wurzel.remove(); return r;
   }
-  var R={ DUNKEL:{ kopfleiste:kopf("dark"), erfasst:messe(ERFASST,"dark"), ausnahmen:messe(AUSNAHMEN,"dark") },
-          HELL:{ kopfleiste:kopf("light"), erfasst:messe(ERFASST,"light"), ausnahmen:messe(AUSNAHMEN,"light") },
+  /* Sticky wie in der App: die Klasse an der WURZEL, so wie core.js sie setzt (makeSticky). */
+  function sticky(thema){
+    var w=document.createElement("div"); w.className="up-root up-sticky";
+    if(thema==="dark") w.setAttribute("data-theme","dark");
+    w.innerHTML='<div class="up-box"><div class="up-table"><div class="up-thead"></div><div class="up-tbody"></div></div></div>';
+    document.getElementById("buehne").appendChild(w);
+    var th=w.querySelector(".up-thead"), tb=w.querySelector(".up-tbody"), bx=w.querySelector(".up-box");
+    function s(el,seite){ var c=getComputedStyle(el);
+      return c["border"+seite+"Width"]+" "+c["border"+seite+"Style"]+" "+c["border"+seite+"Color"]; }
+    var r={ box: s(bx,"Top"), thead_oben: s(th,"Top"), thead_links: s(th,"Left"),
+            tbody_links: s(tb,"Left"), tbody_unten: s(tb,"Bottom"),
+            tbody_oben_absicht: getComputedStyle(tb).borderTopStyle };
+    w.remove(); return r;
+  }
+  var R={ DUNKEL:{ kopfleiste:kopf("dark"), sticky:sticky("dark"), erfasst:messe(ERFASST,"dark"), ausnahmen:messe(AUSNAHMEN,"dark") },
+          HELL:{ kopfleiste:kopf("light"), sticky:sticky("light"), erfasst:messe(ERFASST,"light"), ausnahmen:messe(AUSNAHMEN,"light") },
           fehler:window.__err };
   document.getElementById("out").textContent=JSON.stringify(R,null,1);
   window.__R=R; window.__fertig=true;

@@ -1637,8 +1637,13 @@
        border-color und nicht border: 0 -- der 1px bleibt als Platz stehen, damit keine Flaeche um
        2px waechst und kein Sticky-Kopf um einen Pixel springt. */
     .up-root[data-theme="dark"] .up-box,
-    .up-root[data-theme="dark"] .up-sticky .up-thead,
-    .up-root[data-theme="dark"] .up-sticky .up-tbody,
+    /* .up-sticky liegt auf DERSELBEN Wurzel, nicht darunter -- core.js toggelt die Klasse an
+       root (makeSticky). Als Nachfahrenselektor geschrieben traf die Regel nichts, und genau die
+       sechs grossen Tabellen behielten im Dunkeln ihre Umrandung: Prompts, Responses, Domains,
+       URLs, prompt-research, Teams. Sie sind sticky, sobald die Seite 1000px breit ist, und dort
+       zeichnen Kopf und Koerper den Rand selbst. */
+    .up-root[data-theme="dark"].up-sticky .up-thead,
+    .up-root[data-theme="dark"].up-sticky .up-tbody,
     .up-root[data-theme="dark"] .vot-box,
     .up-root[data-theme="dark"] .tcd-box,
     .up-root[data-theme="dark"] .ubo-box,
@@ -3034,6 +3039,11 @@
    button can drop its trailing word here by wrapping it in a child with class up-ph-addbtn-full. */
 .up-root.is-narrow .up-ph-navitem { flex: 1 1 0; }
 .up-root.is-narrow .up-ph-addbtn-full { display: none; }
+/* Die schmale Fassung des Etiketts. Sie ist ein eigener Satz aus dem Katalog und nicht der Rest
+   eines abgeschnittenen -- im Deutschen steht das Verb hinten, ein abgeschnittener Satz waere
+   dort das falsche Wort. knopfEtikett() in core.js baut beide Spans. */
+.up-ph-addbtn-kurz { display: none; }
+.up-root.is-narrow .up-ph-addbtn-kurz { display: inline; }
 /* Hier stand bis 18.08. eine Zusatzpolsterung: unter 500px bekamen Seitenkoepfe (.up-ph-root) und
    Komponenten mit eigener Kopfzeile (.up-sidebar-clear -- ask-mira, prompt-research) 32px Luft
    nach oben, damit Bubbles mobiler Sidebar-Schalter oben links nicht auf der Ueberschrift lag.
