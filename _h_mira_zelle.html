@@ -16,6 +16,13 @@ Promise.all(["core.css","core.js","ask-mira.css","ask-mira.js","bubble/ask_mira_
   [t[1],t[3]].forEach(function(j){ var s=document.createElement("script"); s.textContent=j; document.head.appendChild(s); });
   return new Promise(function(ok){ setTimeout(ok,1500); });
 }).then(function(){
+  /* Daten fuer die Liste, damit es einen abgeschnittenen Namen zu ueberstreichen gibt. */
+  window.askMiraSetProjects([{ id:"p1", title:"Ein Projekt mit einem sehr langen Namen der nicht passt" }]);
+  window.askMiraSetPreviousChats([
+    { id:"c1", title:"Kurz", project_id:"" },
+    { id:"c2", title:"Ein ausgesprochen langer Chatname der garantiert abgeschnitten wird", project_id:"" }]);
+  return new Promise(function(ok){ setTimeout(ok,600); });
+}).then(function(){
   if (document.getAnimations) document.getAnimations().forEach(function(a){ try{a.finish();}catch(e){} });
   var root=document.querySelector("#ask-mira");
   function zeile(sel){ var e=root.querySelector(sel); if(!e) return null; var s=getComputedStyle(e);
@@ -26,12 +33,56 @@ Promise.all(["core.css","core.js","ask-mira.css","ask-mira.js","bubble/ask_mira_
              ausrichtung:s.justifyContent, schrift:s.fontSize+"/"+s.fontWeight,
              text:(e.textContent||"").trim() }; }
   var panel=root.querySelector("#am-prev-panel");
-  window.__R = { neuer_chat: zeile("#am-new-chat"), einstellungen: zeile("#am-settings-btn"),
+  /* Das Markenzeichen: sind es DIE Klassen des Kopfes, und wie gross. */
+  var lg=root.querySelector(".am-side-logo");
+  var mk=lg&&lg.querySelector(".am-logo-mark"), wd=lg&&lg.querySelector(".am-wordmark");
+  var logo = lg ? { klassen:lg.className, abstand:getComputedStyle(lg).gap,
+    zeichen_klassen: mk?mk.className:null, zeichen_svg: !!(mk&&mk.querySelector("svg")),
+    zeichen_masse: mk?getComputedStyle(mk).width+"x"+getComputedStyle(mk).height:null,
+    svg_masse: mk&&mk.querySelector("svg")?getComputedStyle(mk.querySelector("svg")).width+"x"+getComputedStyle(mk.querySelector("svg")).height:null,
+    schriftzug: wd?wd.textContent:null, schriftgroesse: wd?getComputedStyle(wd).fontSize:null,
+    hoehe_gesamt: Math.round(lg.getBoundingClientRect().height) } : null;
+  /* All-Chats-Knopf: nur bei geschlossener Leiste. */
+  var ac=root.querySelector(".am-prev-btn");
+  var acOffen=ac?getComputedStyle(ac).display:null;
+  root.classList.remove("prev-open");
+  var acZu=ac?getComputedStyle(ac).display:null;
+  root.classList.add("prev-open");
+  window.__R = { logo: logo, all_chats: { bei_offener_leiste: acOffen, bei_geschlossener: acZu },
+    neuer_chat: zeile("#am-new-chat"), einstellungen: zeile("#am-settings-btn"),
     leiste: { breite: Math.round(panel.getBoundingClientRect().width),
               rechteck: [Math.round(panel.getBoundingClientRect().left), Math.round(panel.getBoundingClientRect().top)],
               offen: root.classList.contains("prev-open"),
               schale: Math.round(root.querySelector(".am-shell").getBoundingClientRect().width) },
     innerWidth: window.innerWidth, fehler: window.__err };
-  window.__fertig = true;
+  /* Der Lauftext, ueber die ZEILE ausgeloest -- so wie ein Zeiger es tut. */
+  var zeileEl = [].slice.call(root.querySelectorAll(".am-prev-item"))
+    .filter(function(z){ var t=z.querySelector(".am-prev-item-title"); return t && t.scrollWidth - t.clientWidth > 1; })[0];
+  if (!zeileEl){ window.__R.lauf = { keine_abgeschnittene_zeile: true }; window.__fertig = true; return; }
+  var lbl = zeileEl.querySelector(".am-prev-item-title");
+  var ueberhang = lbl.scrollWidth - lbl.clientWidth;
+  zeileEl.dispatchEvent(new MouseEvent("mouseover", { bubbles:true }));
+  setTimeout(function(){
+    var frueh = { span_da: !!lbl.querySelector(".am-lauf") };   /* 400ms: Wartezeit 700 noch nicht um */
+    setTimeout(function(){
+      var innen = lbl.querySelector(".am-lauf");
+      window.__R.lauf = { ueberhang: ueberhang, nach_400ms: frueh,
+        nach_1100ms: { span_da: !!innen, klasse: lbl.classList.contains("is-laufen"),
+          punkte: getComputedStyle(lbl).textOverflow,
+          dauer: innen?getComputedStyle(innen).transitionDuration:null,
+          kurve: innen?getComputedStyle(innen).transitionTimingFunction:null,
+          ziel: innen?innen.style.transform:null } };
+      /* Und das Zurueck: Zeiger weg. */
+      zeileEl.dispatchEvent(new MouseEvent("mouseout", { bubbles:true, relatedTarget: document.body }));
+      setTimeout(function(){
+        window.__R.lauf.danach = { span_weg: !lbl.querySelector(".am-lauf"),
+          text: (lbl.textContent||"").trim().slice(0,40),
+          punkte: getComputedStyle(lbl).textOverflow,
+          klasse: lbl.classList.contains("is-laufen") };
+        window.__fertig = true;
+      }, 120);
+    }, 700);
+  }, 400);
+  return;
 }).catch(function(e){ window.__R={fehler:[String(e.message)]}; window.__fertig=true; });
 </script>

@@ -1473,6 +1473,10 @@
      statt wie eine gespeicherte Einstellung. ask-mira.js setzt sie nach zwei Bildern. */
   #ask-mira.side-ready .am-prev-panel { transition: margin-right 200ms ease; }
   #ask-mira.prev-open .am-prev-panel { margin-right: 0; }
+  /* Der Knopf "All Chats" oeffnet die Leiste. Steht sie offen, hat er nichts zu tun -- und ein
+     Knopf, der sichtbar nichts tut, ist schlimmer als keiner. Zugeklappt kommt er zurueck und ist
+     der Weg zurueck in die Leiste (der Umschalter darin ist dann ja mit ihr weg). */
+  #ask-mira.prev-open .am-prev-btn { display: none; }
   .am-prev-head {
     height: 52px; flex: 0 0 auto; padding: 0 10px;
     display: flex; align-items: center; justify-content: space-between;
@@ -1485,11 +1489,15 @@
   .am-prev-panel .am-side-toggle:hover { background: var(--am-soft); color: var(--am-text); }
   .am-prev-panel .am-side-toggle svg { width: 16px; height: 16px; opacity: .8; }
   .am-prev-panel .am-side-toggle:hover svg { opacity: 1; }
-  .am-side-logo {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 26px; height: 26px; flex: 0 0 auto; color: var(--am-text);
-  }
-  .am-side-logo svg { width: 20px; height: 20px; fill: currentColor; }
+  /* Das Markenzeichen der Leiste IST das des Kopfes (.am-brand mit .am-logo-mark und
+     .am-wordmark) -- hier stehen nur die kleineren Masse. Faktor etwa 0,53 auf alles, damit das
+     Verhaeltnis von Zeichen zu Schrift bleibt: 34 -> 18 an der Schrift, 28 -> 16 am Zeichen,
+     26x25 -> 15x14 am svg, Abstand 7 -> 5. Kein translateY: der Versatz im Kopf sitzt gegen eine
+     34px-Schrift, bei 18px waere er sichtbar zu viel. */
+  .am-side-logo { flex: 0 0 auto; gap: 5px; }
+  .am-side-logo .am-logo-mark { width: 16px; height: 16px; transform: none; }
+  .am-side-logo .am-logo-mark svg { width: 15px; height: 14px; }
+  .am-side-logo .am-wordmark { font-size: 18px; letter-spacing: -0.01em; }
   .am-prev-title { margin: 0; font-size: 14px; font-weight: 600; }
   .am-icon-btn {
     width: 34px; height: 34px; border: 1px solid transparent; border-radius: 10px;

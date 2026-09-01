@@ -4021,9 +4021,15 @@
       var kern = window.UpstreemCore;
       um.innerHTML = (kern && kern.icon) ? kern.icon('sidebarPanels') : '';
       um.addEventListener('click', closePrev);
+      /* DASSELBE Markenzeichen wie oben links im Kopf: .am-brand aus Zeichen (blend) und
+         Schriftzug "mira". Nicht ein anderes Zeichen in kleiner -- die Klassen sind die des
+         Kopfes, die Leiste setzt nur die Groessen herunter. Ein zweites Logo waere ein zweites
+         Logo, auch wenn es aehnlich aussieht. */
       var logo = document.createElement('span');
-      logo.className = 'am-side-logo'; logo.setAttribute('aria-hidden', 'true');
-      logo.innerHTML = (kern && kern.icon) ? kern.icon('galaxy') : '';
+      logo.className = 'am-brand am-side-logo';
+      var zeichen = (kern && kern.icon) ? kern.icon('blend', 1.8) : '';
+      logo.innerHTML = '<span class="am-logo-mark' + (zeichen ? ' is-icon' : '') + '" aria-hidden="true">' +
+                       zeichen + '</span><span class="am-wordmark">mira</span>';
       kopf.appendChild(um); kopf.appendChild(logo);
     }
 
@@ -4060,14 +4066,15 @@
      solange der Zeiger darauf steht, liegt er in einem Span, der sich schieben laesst.
      Nebenwirkung, die dafuer spricht: an anderer Stelle wird titleEl.textContent neu gesetzt
      (Umbenennen) -- ein dauerhafter Span waere dabei stillschweigend verschwunden. */
-  var LAUF_WARTE = 380;        /* nicht jeder Zeiger, der ueber die Liste streicht, soll etwas bewegen */
-  var LAUF_PX_PRO_S = 120;     /* lesbares Tempo, unabhaengig von der Laenge. 55 waren gemessen
-                                  3,9 Sekunden fuer einen 216px langen Ueberhang -- der Name war
-                                  vorbei, bevor er ankam. */
+  var LAUF_WARTE = 700;        /* nicht jeder Zeiger, der ueber die Liste streicht, soll etwas bewegen */
+  var LAUF_PX_PRO_S = 85;      /* lesbares Tempo, unabhaengig von der Laenge: 216px Ueberhang
+                                  brauchen damit 2,5s. 55 waren mit 3,9s zu langsam, 120 mit
+                                  1,8s zu schnell. */
   var LAUF_MIN_MS = 480;
   var _laufUhr = null, _laufEl = null;
   function laufStop(){
     if (_laufUhr){ clearTimeout(_laufUhr); _laufUhr = null; }
+    _laufWartetAuf = null;
     var el = _laufEl; _laufEl = null;
     if (!el) return;
     el.classList.remove('is-laufen');
@@ -4099,18 +4106,30 @@
     setTimeout(los, 24);
   }
   var LAUF_SEL = '.am-prev-item-title, .am-prev-proj-title';
+  /* Ausgeloest wird ueber die ZEILE, nicht ueber das Etikett. Zwei Gruende, und beide waren im
+     ersten Anlauf der Grund fuer das unzuverlaessige Verhalten:
+       - Das Etikett ist ein schmales Ziel. Wer die Zeile ueberstreicht, trifft es oft nur kurz
+         oder gar nicht, und der Lauf blieb aus.
+       - Der Umbau des Etiketts entfernt den Textknoten UNTER dem Zeiger und loest damit selbst
+         ein mouseout aus. relatedTarget ist dabei null -- die alte Pruefung hat den Lauf also
+         im Moment des Starts wieder abgeschaltet. Deshalb wird jetzt gefragt, ob der Zeiger noch
+         auf der Zeile steht (:hover), statt relatedTarget zu deuten. */
+  var LAUF_ZEILE = '.am-prev-item, .am-prev-proj-head';
+  var _laufWartetAuf = null;
   elPrevPanel.addEventListener('mouseover', function(e){
-    var ziel = e.target && e.target.closest ? e.target.closest(LAUF_SEL) : null;
-    if (!ziel || ziel === _laufEl) return;
+    var zeile = e.target && e.target.closest ? e.target.closest(LAUF_ZEILE) : null;
+    if (!zeile) return;
+    var ziel = zeile.querySelector(LAUF_SEL);
+    if (!ziel || ziel === _laufEl || ziel === _laufWartetAuf) return;
     laufStop();
-    _laufUhr = setTimeout(function(){ _laufUhr = null; laufStart(ziel); }, LAUF_WARTE);
+    _laufWartetAuf = ziel;
+    _laufUhr = setTimeout(function(){ _laufUhr = null; _laufWartetAuf = null; laufStart(ziel); }, LAUF_WARTE);
   });
   elPrevPanel.addEventListener('mouseout', function(e){
-    var ziel = e.target && e.target.closest ? e.target.closest(LAUF_SEL) : null;
-    if (!ziel) return;
-    /* Nur wenn der Zeiger das Etikett wirklich verlaesst -- mouseout feuert auch beim Wechsel
-       zwischen dem Etikett und einem Kind darin. */
-    if (e.relatedTarget && ziel.contains(e.relatedTarget)) return;
+    var zeile = e.target && e.target.closest ? e.target.closest(LAUF_ZEILE) : null;
+    if (!zeile) return;
+    try { if (zeile.matches(':hover')) return; } catch(err){}
+    _laufWartetAuf = null;
     laufStop();
   });
 
