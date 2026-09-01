@@ -191,11 +191,27 @@
     date:   { "d-mon-y": 1, "mon-d-y": 1, "d-m-y": 1, iso: 1 }
   };
   var _prefs = null;
+  /* OHNE Team-Suffix, und das ist eine Korrektur. Diese Werte liefen ueber storeKey, und storeKey
+     haengt die Team-Id an -- die beim BOOT noch nicht bekannt ist. Gelesen wurde also unter
+     "prefs@_", geschrieben spaeter unter "prefs@<team>": zwei Schluessel, und nach einem Neuladen
+     kam nichts zurueck. Gemeldet als "wenn man auf deutsch stellt, haelt das nur bis zum reload".
+     Genau derselbe Fehler stand hier schon einmal fuer die Ansichts-Einstellungen, mit derselben
+     Begruendung im Kommentar bei storeKey -- ich habe ihn beim Bau des Vorrats wiederholt.
+     Team-Bindung ist auch inhaltlich falsch: Sprache, Zahlen- und Datumsformat sind Vorlieben
+     eines GERAETS, keine Teamdaten. Welche Sprache jemand liest, ist dieselbe Entscheidung, egal
+     in welchem Team er steht.
+     Der Rueckfall holt einmalig, was unter dem alten Suffix liegengeblieben ist, und schreibt es
+     nach vorn -- sonst verliert jeder, der die Sprache schon einmal umgestellt hat, seine Wahl. */
+  var PREF_STORE = "up_prefs";
   function prefsLesen(){
     if (_prefs) return _prefs;
     var o = {};
     try {
-      var roh = window.localStorage.getItem(storeKey(PREF_KEY));
+      var roh = window.localStorage.getItem(PREF_STORE);
+      if (!roh){
+        var alt = window.localStorage.getItem(storeKey(PREF_KEY));
+        if (alt){ roh = alt; try { window.localStorage.setItem(PREF_STORE, alt); } catch(e2){} }
+      }
       if (roh) o = JSON.parse(roh) || {};
     } catch(e){ o = {}; }
     _prefs = {};
@@ -215,7 +231,7 @@
     var p = prefsLesen();
     if (p[name] === v) return v;
     p[name] = v;
-    try { window.localStorage.setItem(storeKey(PREF_KEY), JSON.stringify(p)); } catch(e){}
+    try { window.localStorage.setItem(PREF_STORE, JSON.stringify(p)); } catch(e){}
     /* Ein Ereignis am FENSTER und nicht an einer Wurzel: die Empfaenger sind alle Komponenten der
        Seite, und keine davon kennt das Einstellungsfenster. Dasselbe Muster wie
        up-linewidth-change weiter unten. */
@@ -4566,32 +4582,75 @@
     var els;
     try { els = wurzel.querySelectorAll(SPRACHE_SEL); } catch(e){ els = []; }
     for (var i = 0; i < els.length; i++) knotenStellen(els[i]);
-    if (getPref("locale") === "en"){
-      /* Zurueck auf Englisch: nur die Elemente, die schon einmal uebersetzt wurden -- sie tragen
-         data-i18n, und das ist eine Abfrage statt eines Durchlaufs ueber die ganze Seite. */
-      var zurueck;
-      try { zurueck = wurzel.querySelectorAll("[data-i18n]"); } catch(e){ zurueck = []; }
-      for (var z = 0; z < zurueck.length; z++) knotenStellen(zurueck[z]);
-      return;
-    }
+    /* Alles, was SCHON EINMAL angefasst wurde, in JEDER Sprache erneut pruefen -- nicht nur beim
+       Zurueckschalten auf Englisch. Der breite Lauf unten ueberspringt diese Elemente ausdruecklich
+       (er nimmt an, der schnelle Weg habe sie), und der schnelle Weg kennt nur seine Selektoren.
+       Ein Knopf ausserhalb beider Listen blieb dadurch in der Sprache stehen, in die er zuletzt
+       geraten war: gemessen "Hide pages" nach de -> en -> de. Eine Abfrage auf [data-i18n] ist
+       billig, weil das Attribut nur dort steht, wo wirklich uebersetzt wurde. */
+    var schon;
+    try { schon = wurzel.querySelectorAll("[data-i18n]"); } catch(e){ schon = []; }
+    for (var z = 0; z < schon.length; z++) knotenStellen(schon[z]);
+    if (getPref("locale") === "en") return;
     breiterLauf(wurzel);
+  }
+  /* data-i18n haelt den englischen Text, aus dem der aktuelle entstanden ist. Der Knackpunkt ist
+     der WECHSEL: eine Komponente schreibt "Hide pages" in einen Knopf, an dem noch
+     data-i18n="Show pages" haengt. Wer dann stumpf t("Show pages") schreibt, macht aus "Hide"
+     wieder "Show" -- die Beschriftung waere falsch, nicht nur englisch.
+     Also drei Faelle, in dieser Reihenfolge:
+       - der Text ist die Uebersetzung der Vorlage -> nichts zu tun,
+       - der Text ist die Vorlage selbst           -> uebersetzen,
+       - der Text ist etwas DRITTES                -> er ist neu, also neu schluesseln.
+     Damit stimmt es auch beim Zurueckschalten auf Englisch: dort ist t(basis) === basis, und ein
+     Text, den die Komponente inzwischen ersetzt hat, wird nicht mit dem alten ueberschrieben. */
+  /* Stammt der aktuelle Text von dieser Vorlage ab -- in IRGENDEINER Sprache?
+     Gefragt wird der Katalog und nicht t(): t() antwortet nur fuer die GERADE eingestellte
+     Sprache, und genau daran ist der Rueckweg gescheitert. Gemessen: nach dem Umschalten auf
+     Englisch stand am Knopf "Seiten zeigen"; t("Show pages") gab dann "Show pages" zurueck, also
+     galt der deutsche Text als etwas Drittes, wurde neu geschluesselt -- und blieb deutsch. */
+  function istAbleitung(basis, jetzt){
+    if (jetzt === basis) return true;
+    for (var l in MSG){
+      if (MSG[l] && MSG[l][basis] === jetzt) return true;
+    }
+    return false;
   }
   function knotenStellen(el){
     var kn = eigenerText(el);
     if (!kn) return;
+    var roh = kn.nodeValue;
+    var jetzt = roh.trim();
+    if (!jetzt) return;
+    var basis = el.getAttribute("data-i18n");
+    if (basis == null || !istAbleitung(basis, jetzt)) basis = jetzt;
+    var neu = t(basis);
+    if (jetzt === neu){
+      /* Schon richtig. Den Schluessel nur nachziehen, wenn er ueberhaupt schon dransteht -- sonst
+         bekaeme jedes Element der Seite ein Attribut, nur weil der Beobachter es gestreift hat. */
+      if (el.getAttribute("data-i18n") != null && el.getAttribute("data-i18n") !== basis)
+        el.setAttribute("data-i18n", basis);
+      return;
+    }
     /* Die umgebenden Leerzeichen bleiben, wie sie sind: im Markup steht der Text oft eingerueckt
        auf eigener Zeile, und sie wegzunehmen aendert den Abstand zum Nachbarn. */
-    var roh = kn.nodeValue;
-    var vorn = roh.match(/^\s*/)[0], hinten = roh.match(/\s*$/)[0];
-    var basis = el.getAttribute("data-i18n");
-    if (basis == null){
-      basis = roh.trim();
-      if (!basis) return;
-    }
-    var neu = t(basis);
-    if (roh.trim() === neu) return;
-    if (el.getAttribute("data-i18n") == null) el.setAttribute("data-i18n", basis);
-    kn.nodeValue = vorn + neu + hinten;
+    el.setAttribute("data-i18n", basis);
+    kn.nodeValue = roh.match(/^\s*/)[0] + neu + roh.match(/\s*$/)[0];
+  }
+  /* EIN Element pruefen -- fuer den characterData-Zweig des Beobachters. Dieselben Regeln wie im
+     breiten Lauf, nur ohne den Durchlauf: das ist der billige Fall und er muss billig bleiben. */
+  /* EIN Element, fuer den Beobachter. Traegt es schon einen Schluessel, wird es immer geprueft --
+     auch bei englischer Sprache, denn dort muss der englische Text zurueck. */
+  function spracheEinen(el){
+    if (!el || !el.getAttribute) return;
+    if (el.getAttribute("data-i18n") != null){ knotenStellen(el); return; }
+    if (getPref("locale") === "en") return;
+    if (!spracheDarf(el)) return;
+    var kn = eigenerText(el);
+    if (!kn) return;
+    var text = (kn.nodeValue || "").trim();
+    if (!text || text.length > 200 || t(text) === text) return;
+    knotenStellen(el);
   }
   function breiterLauf(wurzel){
     var start = (wurzel === document) ? document.body : wurzel;
@@ -4721,6 +4780,29 @@
        ueber alles" -- siehe die Deckelung unten. */
     var segKnoten = [];
     var stampObs = new MutationObserver(function(muts){
+      /* TEXTaenderungen zuerst, und getrennt von allem anderen. Eine Komponente, die nur ihren
+         Knopftext tauscht ("Show pages" -> "Hide pages"), haengt keinen Knoten ein -- das ist eine
+         characterData-Mutation. Ohne diesen Zweig lief der Sprachlauf erst beim naechsten
+         beliebigen Umbau, und der Knopf stand solange englisch da. Genau so gemeldet.
+         Keine Schleife: der Lauf schreibt nur, wenn der Text noch nicht uebersetzt ist -- die
+         Mutation aus seinem eigenen Schreiben findet nichts mehr zu tun. */
+      for (var c = 0; c < muts.length; c++){
+        var mz = null;
+        if (muts[c].type === "characterData"){
+          mz = muts[c].target && muts[c].target.parentElement;
+        } else {
+          /* UND der Fall, der wirklich vorkommt: textContent = "…" ERSETZT den Textknoten, das ist
+             also keine characterData-Mutation, sondern eine childList mit einem neuen TEXTknoten.
+             Gemessen am Show/Hide-Knopf: mit dem characterData-Zweig allein blieb er englisch. */
+          var neuT = muts[c].addedNodes;
+          for (var nt = 0; nt < neuT.length; nt++){
+            if (neuT[nt].nodeType !== 3) continue;
+            var p3 = neuT[nt].parentElement;
+            if (p3) sicher("spracheKnoten", (function(el){ return function(){ spracheEinen(el); }; })(p3));
+          }
+        }
+        if (mz) sicher("spracheKnoten", (function(el){ return function(){ spracheEinen(el); }; })(mz));
+      }
       var neueElemente = false;
       for (var i = 0; i < muts.length && !neueElemente; i++){
         var an = muts[i].addedNodes;
@@ -4741,6 +4823,12 @@
         for (var n = 0; n < zu.length; n++){
           if (zu[n].nodeType !== 1) continue;
           sicher("stampGran", (function(el){ return function(){ stampGran(el); }; })(zu[n]));
+          /* Die SPRACHE aus demselben Grund sofort und nicht in 250ms. Genau das war gemeldet:
+             "alle englischen Texte stehen beim Laden noch drin und wechseln kurz danach zu
+             deutsch". Der Rueckruf eines Beobachters ist ein Microtask und laeuft VOR dem
+             naechsten Bild -- wer hier uebersetzt, laesst nichts aufblitzen. Nur der frische Ast,
+             nicht das ganze Dokument. */
+          sicher("spracheLauf", (function(el){ return function(){ spracheLauf(el); }; })(zu[n]));
           /* Fuer den Streifen merken, WAS dazugekommen ist -- gemessen wird gleich nur das,
              nicht die ganze Seite. Nach oben gedeckelt: wer hundert Knoten auf einmal einhaengt,
              baut die Seite neu, und dann ist ein Lauf ueber alles billiger als hundert kleine. */
@@ -4765,7 +4853,8 @@
         try { stampObs.takeRecords(); } catch(e){}
       }, 250);
     });
-    stampObs.observe(document.documentElement, { childList: true, subtree: true });
+    stampObs.observe(document.documentElement,
+                     { childList: true, subtree: true, characterData: true });
   }
 
   /* Tooltip for text that is clamped/ellipsised — shows the full string only when it actually
