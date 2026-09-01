@@ -1,0 +1,83 @@
+<meta charset="utf-8"><title>Dark: Kopfleiste heller, Kartenrand weg</title>
+<style>html,body{margin:0;background:#121212;font:13px/1.5 Geist,system-ui,sans-serif}
+.buehne{padding:16px;width:1180px}#out{padding:10px;color:#e0e0e0;font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap}</style>
+<body><div id="hell" class="buehne"></div><div id="dunkel" class="buehne"></div><pre id="out">laeuft…</pre>
+<script>
+/* Zwei Behauptungen, beide nur fuer Dark:
+   1. Die Kopfleiste der Tabelle ist HELLER als die Tabelle -- vorher war sie mit #121212 dunkler.
+   2. Die aeussere Karte hat keinen sichtbaren Rand mehr.
+   Und die Gegenprobe, die den Auftrag erst belegt: im HELLEN Thema aendert sich NICHTS. Deshalb
+   laufen beide Themen im selben Aufbau, aus denselben Dateien, mit denselben Daten. */
+window.__err=[]; window.addEventListener("error",function(e){ window.__err.push(String(e.message)); });
+/* pref_theme SCHLAEGT data-isdark (getUpstreemTheme: THEME.value || readPrefTheme()). Im ersten
+   Lauf stand hier noch "dark" aus der Arbeit am Einstellungsfenster -- und damit waren alle vier
+   Instanzen dunkel, die Hell-Gegenprobe also wertlos. Deshalb wird der Schluessel geleert, und
+   das aufgeloeste Thema wird pro Instanz mitgemessen statt angenommen. */
+try{ localStorage.removeItem("pref_theme"); localStorage.removeItem("up_prefs"); }catch(e){}
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var D=["core.css","core.js","visibility-chart.css","visibility-chart.js","topcitations-dashboard.css",
+       "topcitations-dashboard.js","bubble/visibility_chart_bubble.html","bubble/topcitations_dashboard_bubble.html"];
+Promise.all(D.map(hol)).then(function(t){
+  var m={}; D.forEach(function(f,i){ m[f]=t[i]; });
+  ["core.css","visibility-chart.css","topcitations-dashboard.css"].forEach(function(f){
+    var s=document.createElement("style"); s.textContent=m[f]; document.head.appendChild(s); });
+  var s2=document.createElement("style"); s2.textContent="*,*::before,*::after{transition:none !important;animation:none !important}";
+  document.head.appendChild(s2);
+  [["hell","no","h"],["dunkel","yes","d"]].forEach(function(p){
+    var ziel=document.getElementById(p[0]);
+    [["bubble/visibility_chart_bubble.html",".vot-root","vc"],["bubble/topcitations_dashboard_bubble.html",".tcd-root","tc"]]
+    .forEach(function(k){
+      var w=document.createElement("div"); w.innerHTML=wurzelAus(m[k[0]]);
+      var r=w.querySelector(k[1]);
+      r.setAttribute("data-instance", k[2]+p[2]); r.setAttribute("data-cdn-pin","x");
+      r.setAttribute("data-isdark", p[1]); ziel.appendChild(r);
+    });
+  });
+  ["core.js","visibility-chart.js","topcitations-dashboard.js"].forEach(function(f){
+    var j=document.createElement("script"); j.textContent=m[f]; document.head.appendChild(j); });
+  return new Promise(function(ok){ setTimeout(ok,1200); });
+}).then(function(){
+  var COMP=[1,2,3,4].map(function(i){ return { company_id:"c"+i, name:"Brand "+i, favicon_url:"",
+    visibility_window_pct:40-i*6 }; });
+  var TAB=COMP.map(function(c,i){ return { company_id:c.company_id, name:c.name, logo_url:"", position:i+1,
+    visibility_pct:c.visibility_window_pct, visibility_delta_pct:(i%2?-1:1)*(2+i),
+    avg_rank:1.4+i, avg_rank_delta:(i%2?0.4:-0.3), sentiment:78-i*11, sentiment_delta:(i%2?-3:5) }; });
+  var SER=COMP.map(function(c){ return { company_id:c.company_id, name:c.name,
+    points:[{date:"2026-08-01",value:30},{date:"2026-08-02",value:34}] }; });
+  var ROWS=[1,2,3].map(function(i){ return { rank:i, name:"domain"+i+".de", domain:"domain"+i+".de",
+    favicon:"", citations:90-i*8, used_in_prompts:19-i, citation_type:"Blog", share:14-i, total_count:3 }; });
+  ["vch","vcd"].forEach(function(id){ try{ window.renderVisibilityChart({ instanceId:id, series:SER,
+    companies:COMP, filterCompanies:COMP, table:TAB, totalCount:4, granularity:"day" }); }
+    catch(e){ window.__err.push("vis "+id+": "+e.message); } });
+  ["tch","tcd"].forEach(function(id){ try{ window.renderTopCitations({ instanceId:id, rows:ROWS }); }
+    catch(e){ window.__err.push("tcd "+id+": "+e.message); } });
+  return new Promise(function(ok){ setTimeout(ok,900); });
+}).then(function(){
+  /* Erst BEWEISEN, dass die geaenderten Regeln im geladenen Stylesheet stehen -- ein ?v= hat in
+     dieser Sitzung mehrfach nicht gewirkt, also am Ergebnis pruefen, nicht an der Version. */
+  function regelDa(txt){ return [].some.call(document.styleSheets,function(ss){
+    try{ return [].some.call(ss.cssRules,function(rl){ return (rl.cssText||"").indexOf(txt)>=0; }); }catch(e){ return false; } }); }
+  function f(sel, wurzel){ var el=(wurzel||document).querySelector(sel); if(!el) return null;
+    var c=getComputedStyle(el);
+    return { bg:c.backgroundColor, rand:c.borderTopWidth+" "+c.borderTopStyle+" "+c.borderTopColor }; }
+  function satz(id){
+    var r=document.querySelector('[data-instance="'+id+'"]'); if(!r) return {fehlt:id};
+    var istVis=/^vc/.test(id);
+    return { thema: r.getAttribute("data-theme")||"(hell)",
+      kopfleiste: f(istVis?".vt-thead":".tct-thead", r),
+      tabellenflaeche: f(istVis?".vt-table":".tct-table", r),
+      karte_links: f(istVis?".vot-box-left":".tcd-unit-left .tcd-box", r),
+      karte_rechts: f(istVis?".vot-box-right":".tcd-unit-right .tcd-box", r),
+      token_head_bg: getComputedStyle(r).getPropertyValue("--vt-head-bg").trim() };
+  }
+  var R={ frische: { kopf_regel: regelDa("--vt-head-bg: #2a2a2a"),
+                     rand_regel: regelDa("border-color: transparent") },
+          visibility_hell: satz("vch"), visibility_dunkel: satz("vcd"),
+          topcitations_hell: satz("tch"), topcitations_dunkel: satz("tcd"),
+          fehler: window.__err };
+  document.getElementById("out").textContent=JSON.stringify(R,null,1);
+  window.__R=R; window.__fertig=true;
+}).catch(function(e){ document.getElementById("out").textContent="FEHLER: "+e.message; window.__fertig=true; });
+</script>
