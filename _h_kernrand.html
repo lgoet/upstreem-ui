@@ -1,0 +1,79 @@
+<meta charset="utf-8"><title>core: Kopfleiste und Kartenrand im Dunkeln, alle Tabellen</title>
+<style>html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif;background:#121212}
+#out{padding:10px;color:#e0e0e0;font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap}</style>
+<body><div id="buehne" style="position:absolute;left:-4000px;top:0;width:1200px"></div><pre id="out">laeuft…</pre>
+<script>
+/* Die Regel steht in core und trifft Klassen aus vielen Komponenten. Statt zwoelf Komponenten zu
+   starten wird hier gegen die KASKADE gemessen: je ein Probeknoten mit genau den Klassen, die die
+   Komponenten ausgeben, in einer .up-root mit data-theme. Das ist genau die Frage, die die Regel
+   stellt -- welchen Rand berechnet der Browser fuer diese Klasse in diesem Thema.
+   Dazu die Ausnahmen als Gegenprobe: was seinen Rand BEHALTEN muss, muss ihn auch behalten.
+   Und core.js laeuft mit, damit die Palette wirklich aus der lebenden Kaskade kommt. */
+window.__err=[]; window.addEventListener("error",function(e){ window.__err.push(String(e.message)); });
+try{ localStorage.removeItem("pref_theme"); localStorage.removeItem("up_prefs"); }catch(e){}
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+var D=["core.css","visibility-chart.css","topcitations-dashboard.css","brands-overview.css",
+       "citations-combo-chart.css","team-orga.css","brand-editor.css","brand-detail.css",
+       "domain-detail.css","response-detail.css","responses-table.css","settings-brand.css",
+       "opportunities.css","notification-card.css"];
+Promise.all(D.map(hol)).then(function(t){
+  D.forEach(function(f,i){ var s=document.createElement("style"); s.textContent=t[i]; document.head.appendChild(s); });
+  /* ERFASST: Klasse -> Markup, so wie die Komponente es ausgibt (Elternklassen mitgegeben, wo die
+     Regel sie braucht -- .up-sticky etwa). */
+  var ERFASST = [
+    ["up-box",              '<div class="up-box"></div>'],
+    ["up-sticky .up-thead", '<div class="up-sticky"><div class="up-table"><div class="up-thead"></div></div></div>', ".up-thead"],
+    ["up-sticky .up-tbody", '<div class="up-sticky"><div class="up-table"><div class="up-tbody"></div></div></div>', ".up-tbody"],
+    ["vot-box",             '<div class="vot-box vot-box-left"></div>'],
+    ["tcd-box",             '<div class="tcd-box"></div>'],
+    ["ubo-box",             '<div class="ubo-box"></div>'],
+    ["combo-box",           '<div class="combo-box"></div>'],
+    ["uto-table",           '<div class="uto-table uto-members"></div>'],
+    ["ube-table",           '<div class="up-table ube-table ube-aliaslist"></div>'],
+    ["ubd-card",            '<div class="ubd-card"></div>'],
+    ["udd-card",            '<div class="udd-card udd-chartcard"></div>'],
+    ["urd-card",            '<div class="urd-card urd-body"></div>'],
+    ["urd-cite-card",       '<div class="urd-cite-card"></div>'],
+    ["urt-card",            '<div class="urt-card"></div>'],
+    ["urt-card (Skelett)",  '<div class="urt-card urt-card-sk"></div>'],
+    ["usb-card",            '<div class="usb-card"></div>']
+  ];
+  var AUSNAHMEN = [
+    ["usb-card-danger",  '<div class="usb-card usb-card-danger"></div>'],
+    ["uo-card",          '<div class="uo-card"></div>'],
+    ["uo-row",           '<div class="uo-row"></div>'],
+    ["unc-card",         '<div class="unc-card"></div>']
+  ];
+  function messe(liste, thema){
+    var wurzel=document.createElement("div"); wurzel.className="up-root";
+    if (thema==="dark") wurzel.setAttribute("data-theme","dark");
+    document.getElementById("buehne").appendChild(wurzel);
+    var r={};
+    liste.forEach(function(k){
+      var w=document.createElement("div"); w.innerHTML=k[1]; wurzel.appendChild(w);
+      var el = k[2] ? w.querySelector(k[2]) : w.firstElementChild;
+      var c=getComputedStyle(el);
+      r[k[0]] = c.borderTopWidth+" "+c.borderTopStyle+" "+c.borderTopColor;
+    });
+    wurzel.remove(); return r;
+  }
+  function kopf(thema){
+    var wurzel=document.createElement("div"); wurzel.className="up-root";
+    if (thema==="dark") wurzel.setAttribute("data-theme","dark");
+    wurzel.innerHTML='<div class="up-box"><div class="up-table"><div class="up-thead"></div></div></div>';
+    document.getElementById("buehne").appendChild(wurzel);
+    var th=wurzel.querySelector(".up-thead"), bx=wurzel.querySelector(".up-box");
+    var r={ token: getComputedStyle(wurzel).getPropertyValue("--vt-head-bg").trim(),
+            thead_bg: getComputedStyle(th).backgroundColor,
+            box_bg: getComputedStyle(bx).backgroundColor };
+    wurzel.remove(); return r;
+  }
+  var R={ DUNKEL:{ kopfleiste:kopf("dark"), erfasst:messe(ERFASST,"dark"), ausnahmen:messe(AUSNAHMEN,"dark") },
+          HELL:{ kopfleiste:kopf("light"), erfasst:messe(ERFASST,"light"), ausnahmen:messe(AUSNAHMEN,"light") },
+          fehler:window.__err };
+  document.getElementById("out").textContent=JSON.stringify(R,null,1);
+  window.__R=R; window.__fertig=true;
+}).catch(function(e){ document.getElementById("out").textContent="FEHLER: "+e.message;
+  window.__R={fehler:[String(e.message)]}; window.__fertig=true; });
+</script>

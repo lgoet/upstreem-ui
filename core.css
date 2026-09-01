@@ -127,7 +127,14 @@
          den es im Hellen sehr wohl gibt. Weniger als 35 waere nicht mehr zu sehen. */
       --vc-switch-soft: rgba(42,42,42,0.35);
       --vc-field: #2a2a2a;
-      --vt-head-bg: #121212; --vt-logo-bg: #e0e0e0; --vt-row-hover: rgba(42,42,42,0.6);
+      /* Die Kopfleiste jeder Tabelle: eine Stufe HELLER als die Tabellenflaeche (--vc-bg
+         #1b1b1b), nicht dunkler. Hier stand #121212 -- die Farbe der SEITE, die Leiste sass
+         damit optisch hinter der Karte statt darauf. #242424 steht ohnehin in dieser Palette
+         (--vt-row-hover-solid), es bleibt also eine abgeleitete Farbe. Dass eine
+         ueberstrichene Zeile fast denselben Wert traegt (Mischwert etwa #232323), kostet
+         nichts: die Kante zwischen Leiste und Koerper zeichnet die Kopfzelle selbst mit
+         border-bottom 1px --vc-border. */
+      --vt-head-bg: #242424; --vt-logo-bg: #e0e0e0; --vt-row-hover: rgba(42,42,42,0.6);
       --vt-row-hover-solid: #242424;
       --vt-up: #60d25d; --vt-down: #d25d5d;
       /* Im Dunkeln ein aufgehellter Ton mit weniger Deckung -- auch das wortgleich aus den alten
@@ -1591,6 +1598,60 @@
          `clip` sidesteps the conflict entirely instead of working around it with corner masks. */
       overflow: clip;
     }
+    /* ---------- Dark: kein Rand um die aeusseren Flaechen ----------
+       Im Dunkeln traegt die FUELLUNG die Flaeche: --vc-bg (#1b1b1b) auf der Seite (--up-surface
+       #121212). Der Rahmen aus --vc-border (#353535) ist dann eine zweite, hellere Linie um eine
+       Form, die man ohnehin sieht -- im Hellen ist er noetig, dort liegt Weiss auf Weiss.
+
+       DAS IST DAS KRITERIUM, und es ist der Grund fuer jede Ausnahme unten: der Rand darf nur dort
+       weg, wo die Fuellung die Flaeche schon von ihrem Grund trennt.
+
+       Erfasst sind die aeusseren Flaechen -- Tabellenkaesten, Diagrammkaesten, Karten:
+         .up-box            der geteilte Tabellenkasten (Prompts, URLs, Domains, Responses,
+                            prompt-research)
+         .up-sticky .up-thead / .up-tbody
+                            im Sticky-Modus zeichnen Kopf und Koerper den Rand SELBST, weil
+                            .up-box dort overflow:visible braucht. Ohne diese zwei Zeilen bliebe
+                            genau bei den grossen Tabellen die Umrandung stehen.
+         .vot-box .tcd-box .ubo-box .combo-box    die vier Diagramm-/Tabellenkaesten
+         .uto-table .ube-table                    Team-Protokoll und Alias-Tabelle
+         .ubd-card .udd-card .urd-card            die Karten der Detailbereiche
+         .urd-cite-card .urt-card                 Quellen- und Antwortkarten (auch die
+                                                  Skelettfassung, sie traegt dieselbe Klasse)
+         .usb-card                                die Karten der Einstellungen
+
+       NICHT ERFASST, jede mit ihrem Grund:
+         .uo-card .uo-row   Opportunities. Die Bahnen sind im Dunkeln #181818, die Karte #1b1b1b --
+                            drei Werte Unterschied. Dort TRAEGT der Rand die Karte. In Mira liegen
+                            dieselben Karten auf --am-card (#1b1b1b), also auf ihrer eigenen Farbe;
+                            ohne Rand waeren sie unsichtbar.
+         .usb-card-danger   faerbt den Rand absichtlich rot (color-mix mit --vt-down). Deshalb
+                            :not(...) an .usb-card -- diese Regel ist spezifischer und haette das
+                            Warnsignal sonst geschluckt.
+         .unc-card          die Meldung schwebt ueber fremdem Inhalt, ihr Rand IST ihre Kante.
+         Menues, Popover, Modale, Eingabefelder, Knoepfe, Chips
+                            schweben oder sind Bedienelemente, keine Flaechen.
+         .up-rb-table       dort ist der Rand die Trennlinie ZWISCHEN Zellen, nicht die Kante des
+                            Kastens.
+
+       border-color und nicht border: 0 -- der 1px bleibt als Platz stehen, damit keine Flaeche um
+       2px waechst und kein Sticky-Kopf um einen Pixel springt. */
+    .up-root[data-theme="dark"] .up-box,
+    .up-root[data-theme="dark"] .up-sticky .up-thead,
+    .up-root[data-theme="dark"] .up-sticky .up-tbody,
+    .up-root[data-theme="dark"] .vot-box,
+    .up-root[data-theme="dark"] .tcd-box,
+    .up-root[data-theme="dark"] .ubo-box,
+    .up-root[data-theme="dark"] .combo-box,
+    .up-root[data-theme="dark"] .uto-table,
+    .up-root[data-theme="dark"] .ube-table,
+    .up-root[data-theme="dark"] .ubd-card,
+    .up-root[data-theme="dark"] .udd-card,
+    .up-root[data-theme="dark"] .urd-card,
+    .up-root[data-theme="dark"] .urd-cite-card,
+    .up-root[data-theme="dark"] .urt-card,
+    .up-root[data-theme="dark"] .usb-card:not(.usb-card-danger) { border-color: transparent; }
+
     /* ---------- Rang-/Indexspalte ("#") ----------
        Die feste, nie ausblendbare Spalte ganz links, die UC.makeColumns ueber cfg.leadWidth als
        eigenen Track anlegt. Stand bis eben nur in brands-overview.css; discover-brands ist der

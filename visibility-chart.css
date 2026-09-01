@@ -45,23 +45,9 @@
 }
 .vot-box-left  { border-radius: 16px; }
 .vot-box-right { border-radius: 16px; }
-/* ---------- Dark: Kopfleiste heller als die Tabelle, und kein Rand um die Karte ----------
-   Die Kopfleiste war mit --vt-head-bg #121212 DUNKLER als die Tabelle (--vc-bg #1b1b1b), und
-   #121212 ist die Seitenfarbe -- die Leiste sass optisch HINTER der Karte statt darauf. Eine
-   Stufe heller also, und zwar #2a2a2a: der Wert steht schon in der Palette (Basis von
-   --vc-heading-bg und --vt-row-hover), ist damit abgeleitet und nicht erfunden.
-   #2a2a2a war zu hell -- also #242424, die naechste Stufe darunter und ohnehin schon in der
-   Palette (--vt-row-hover-solid). Dass eine ueberstrichene Zeile damit fast denselben Wert hat
-   (Mischwert etwa #232323), kostet nichts: die Kante zwischen Leiste und Koerper zeichnet die
-   Kopfzelle selbst mit border-bottom 1px --vc-border, nicht der Fuellungsunterschied.
-   Nur an DIESER Wurzel gesetzt: --vt-head-bg gilt sonst fuer jede Tabelle der App (.up-thead
-   in core), und gefragt waren zwei Komponenten.
-   Der Rand kommt ueber border-color, nicht ueber border: 0 -- die Fuellung ist hier DECKEND
-   (#1b1b1b), der Rahmenstreifen zeigt also dieselbe Farbe wie die Flaeche, und Hoehe wie
-   16px-Radius bleiben unangetastet. Bei halbtransparenter Fuellung waere das der falsche Weg:
-   dort wird die Grenze Rahmenkasten/Polsterkasten als Naht sichtbar. */
-.up-root.vot-root[data-theme="dark"] { --vt-head-bg: #242424; }
-.up-root.vot-root[data-theme="dark"] .vot-box { border-color: transparent; }
+/* Kopfleiste und Kartenrand im Dunkeln stehen jetzt in core.css und gelten fuer JEDE Tabelle und
+   Karte der App -- hier bewusst keine lokale Fassung mehr: derselbe Wert an zwei Orten laeuft
+   irgendwann auseinander. Siehe dort "Dark: kein Rand um die aeusseren Flaechen". */
 
 .vot-panel-body { flex: 1 1 auto; min-height: 0; padding: 16px; position: relative; display: flex; flex-direction: column; transition: opacity 200ms ease; }
 .vot-box-left .vot-panel-body { padding-top: 24px; }
