@@ -1,0 +1,75 @@
+<meta charset="utf-8"><title>Harness: create-with-ai ZWEIMAL auf einer Seite</title>
+<link rel="stylesheet" href="core.css?v=uz1">
+<link rel="stylesheet" href="create-with-ai.css?v=uz1">
+<body style="margin:0;padding:20px;font-family:sans-serif;background:#fff">
+<h3>Zwei Elemente, je eines "in einem Reusable"</h3>
+
+<!-- A: gefuellt UEBER DIE ATTRIBUTE, wie der Nutzer es macht -->
+<div style="outline:1px solid #0a0;padding:8px;margin-bottom:12px">
+  <b>A — data-instance="uca_a", Titel im Attribut</b>
+  <div class="up-root uca-root" data-instance="uca_a" data-isdark="no"
+       data-url="https://omr.com/de/reviews/contenthub/zeiterfassung-app-handwerk"
+       data-title="Zeiterfassungsapp für Handwerker*innen im Vergleich"
+       data-citation-type="listicle"
+       data-brand="LeeUp Media"></div>
+</div>
+
+<!-- B: leer im Markup, wird per Run-JS gefuellt -->
+<div style="outline:1px solid #06c;padding:8px">
+  <b>B — data-instance="uca_b", leer, wird per Aufruf gefuellt</b>
+  <div class="up-root uca-root" data-instance="uca_b" data-isdark="no"></div>
+</div>
+
+<!-- C: KEIN data-instance und noch der Platzhalter -- der gemeldete Fehlerfall -->
+<div style="outline:1px solid #c00;padding:8px;margin-top:12px">
+  <b>C — ohne data-instance, data-title noch der Platzhalter "TITLE"</b>
+  <div class="up-root uca-root" data-isdark="no"
+       data-url="https://example.com/x" data-title="TITLE"></div>
+</div>
+
+<pre id="out" style="margin-top:24px">laedt…</pre>
+<script src="core.js?v=uz1"></script>
+<script src="create-with-ai.js?v=uz1"></script>
+<script>
+window.__mess = function(){
+  /* Das Popup haengt im <body>, nicht in der Wurzel. Gemessen wird darum ueber die API: der
+     erzeugte Prompt traegt den Titel woertlich als "source_title:". */
+  function titel(inst){
+    var p = "";
+    try { p = inst.getPrompt() || ""; } catch(e){ return "(Fehler)"; }
+    var m = /source_title:[ \t]*(.*)/.exec(p);
+    return m ? (m[1].trim() || "(leer)") : "(kein source_title im Prompt)";
+  }
+  var reg = window.createWithAi || {};
+  var nach = {};
+  Object.keys(reg).forEach(function(k){
+    var i = reg[k];
+    nach[String(i.root.getAttribute("data-instance") || "(ohne)")] = titel(i);
+  });
+  return nach;
+};
+setTimeout(function(){
+  var L = [];
+  L.push("1) Nach dem Mounten, nur aus den Attributen:");
+  L.push("   " + JSON.stringify(window.__mess(), null, 1).replace(/\n/g, "\n   "));
+
+  /* Der Punkt: B gezielt fuellen, ohne A anzufassen. */
+  window.createWithAiSetContext("uca_b", '{ "url": "https://youtube.com/watch?v=abc", ' +
+    '"lead_title": "Würth Connect Folge 3", "citation_type": "video" }');
+  setTimeout(function(){
+    L.push("");
+    L.push("2) Nach createWithAiSetContext(\"uca_b\", …) -- A muss UNVERAENDERT sein:");
+    L.push("   " + JSON.stringify(window.__mess(), null, 1).replace(/\n/g, "\n   "));
+
+    /* Und der alte Weg ohne erstes Argument: er trifft irgendeine Instanz. */
+    window.createWithAiSetContext('{ "url": "https://ohne-adresse.example", "lead_title": "OHNE ADRESSE" }');
+    setTimeout(function(){
+      L.push("");
+      L.push("3) Nach createWithAiSetContext(…) OHNE erstes Argument -- trifft die zuletzt lebende:");
+      L.push("   " + JSON.stringify(window.__mess(), null, 1).replace(/\n/g, "\n   "));
+      document.getElementById("out").textContent = L.join("\n");
+      window.__fertig = true;
+    }, 400);
+  }, 400);
+}, 900);
+</script>

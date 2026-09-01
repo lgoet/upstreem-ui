@@ -5,11 +5,17 @@
    fertigen Prompt und oeffnet den Assistenten damit.
 
    ── Was diese Komponente anders macht als die uebrigen ───────────────────────
-   Sie liegt in einer Repeating Group: dieselbe data-instance steckt in JEDER Zeile. Die anderen
-   Komponenten adressieren ihre Controller ueber data-instance -- das ginge hier schief, alle
-   Zeilen waeren derselbe Empfaenger. Jede Wurzel bekommt darum beim Mounten eine eigene UID und
-   traegt sich unter window.createWithAi[UID] ein. Die globalen Funktionen nehmen wahlweise eine
-   UID als erstes Argument oder gar keine und treffen dann die zuletzt lebende Instanz.
+   Sie kann in einer Repeating Group liegen: dann steckt dieselbe data-instance in JEDER Zeile, und
+   eine Adressierung nur ueber data-instance ginge schief -- alle Zeilen waeren derselbe Empfaenger.
+   Jede Wurzel bekommt darum beim Mounten eine eigene UID und traegt sich unter
+   window.createWithAi[UID] ein.
+
+   DAS IST ABER NICHT DER EINZIGE FALL, und diese Datei hat lange nur ihn beschrieben. Genauso
+   normal ist: das Element liegt ZWEIMAL auf einer Seite, je einmal in einem eigenen Reusable
+   (gemeldet am 01.09.). Dann gibt es keine Repeating Group, sondern zwei feste Empfaenger -- und
+   ein Aufruf ohne erstes Argument trifft "die zuletzt lebende Instanz", also mal den einen und mal
+   den anderen. Fuer diesen Fall gibt es jetzt data-instance: die globalen Funktionen nehmen als
+   erstes Argument eine UID ODER eine data-instance.
 
    Das Mounten selbst (Erstlauf, Bubble-Nachrender, Stub-Replay, Cross-Frame-Forwarder) kommt
    trotzdem aus UC.makeMount -- nur die Zuordnung Aufruf -> Instanz ist eigen.
@@ -381,7 +387,16 @@
          Kopien der Reparatur, und nur eine wurde geflickt. */
       if (UC && UC.readBubble){
         var p = UC.readBubble(v);
-        if (p && typeof p === "object") return p;
+        /* AUSPACKEN. readBubble ist der LISTEN-Leser der App: ein einzelnes Objekt kommt als Liste
+           mit einem Eintrag zurueck. Ohne diese Zeile gab looseParse die LISTE zurueck, setContext
+           las p.url daran -- undefined -- und setzte nichts. Der Aufruf meldete trotzdem true.
+           Damit hat createWithAiSetContext/Open mit einem Text-Payload seit dem Umstieg auf
+           readBubble gar nichts getan; nur die data-Attribute kamen noch an. Gemessen: readBubble
+           auf {"url":…} gibt [object Array] der Laenge 1 zurueck, und setContext liess den Titel
+           in ALLEN Instanzen unveraendert -- auch in der, die ihre Attribute korrekt las.
+           brand-editor und url-detail packen an derselben Stelle schon aus; hier fehlte es. */
+        if (Array.isArray(p) && p.length === 1 && p[0] && typeof p[0] === "object") p = p[0];
+        if (p && typeof p === "object" && !Array.isArray(p)) return p;
       }
       try { return JSON.parse(v); } catch(e){
         try { return JSON.parse(v.replace(/'/g, '"')); } catch(e2){ return {}; }
@@ -468,6 +483,25 @@
       /* KEIN Rueckfall auf die Domain: die steht eine Zeile tiefer, und zweimal dasselbe sieht aus
          wie ein verlorener Titel -- genau so ist es gemeldet worden ("da steht die Domain, wo der
          Titel stand"). Fehlt der Titel wirklich, sagt die Zeile das neutral. */
+      /* Wenn hier der Rueckfall steht, will man WISSEN warum -- sonst sucht man an der falschen
+         Stelle (gemeldet als "bei title steht selected source, nicht der title"). Einmal je
+         Wurzel, damit eine Mutation nicht dauernd schreibt. */
+      if (!S.lead_title && !titelGemeldet && window.console){
+        titelGemeldet = true;
+        var rohTitel = root.getAttribute("data-title");
+        console.info("[create-with-ai] Kein Titel da, es steht der Rueckfall \"Selected source\". " +
+          "data-title am Element: " + JSON.stringify(rohTitel) +
+          (rohTitel && (PLATZHALTER[rohTitel] || rohTitel.indexOf("INSERT") !== -1)
+            ? "  -> das ist noch der PLATZHALTER aus der Vorlage und wird ignoriert; dort gehoert " +
+              "der dynamische Bubble-Ausdruck hinein."
+            : (rohTitel ? "" : "  -> Attribut fehlt oder ist leer.")) +
+          "  Ein Aufruf hat den Zustand gesetzt: " + (_explicit ? "ja" : "nein") +
+          (_explicit ? "  -> ein setContext/open ohne lead_title ueberschreibt den Titel nicht, " +
+                       "aber es setzt auch keinen. Gib lead_title mit oder trage data-title ein."
+                     : "") +
+          "  Instanz: uid=" + UID + ", data-instance=" +
+          JSON.stringify(root.getAttribute("data-instance") || ""));
+      }
       elSTitle.textContent = S.lead_title || "Selected source";
       elSUrl.textContent = S.lead_domain || domainOf(S.url) || S.url || "";
     }
@@ -689,6 +723,7 @@
       } catch(e){}
     }
     var _explicit = false;   // sobald Daten per run-JS kamen, duerfen Attribute sie nicht ueberschreiben
+    var titelGemeldet = false;
     var PLATZHALTER = { SOURCE_URL: 1, SOURCE_TITLE: 1, BRAND_NAME: 1, CITATION_TYPE: 1, BRAND_SUMMARY: 1,
                         URL: 1, TITLE: 1, BRAND: 1, TYPE: 1, SUMMARY: 1 };
     /* Ein Platzhalter, der stehengeblieben ist, wird ignoriert -- und das wird EINMAL gesagt.
@@ -962,13 +997,33 @@
     }
     return null;
   }
-  function resolve(a){
+  /* Adressiert wird ueber die UID ODER ueber data-instance. Die UID ist der Weg fuer die
+     Repeating Group (jede Zeile bekommt eine eigene, und der Workflow erfaehrt sie ueber
+     bubble_fn_create_with_ai_ready). data-instance ist der Weg fuer den anderen Fall, der genauso
+     vorkommt: ZWEI Elemente auf einer normalen Seite. Dort gab es bisher keinen -- ohne erstes
+     Argument trifft ein Aufruf "die zuletzt lebende Instanz", und das ist bei zwei Elementen mal
+     das eine und mal das andere. Genau so gemeldet am 01.09.: die eine Fassung ging, die andere
+     nicht.
+     Reihenfolge: UID zuerst (sie ist eindeutig), dann data-instance, dann die zuletzt lebende. */
+  function nachInstanz(a){
+    var reg = window.createWithAi || {}, ks = Object.keys(reg);
+    for (var i = ks.length - 1; i >= 0; i--){
+      var inst = reg[ks[i]];
+      if (!inst || !inst.root || !document.documentElement.contains(inst.root)) continue;
+      if (String(inst.root.getAttribute("data-instance") || "") === a) return inst;
+    }
+    return null;
+  }
+  function adressiert(a){
+    if (typeof a !== "string" || !a) return null;
     var reg = window.createWithAi || {};
-    return (typeof a === "string" && reg[a]) ? reg[a] : live();
+    return reg[a] || nachInstanz(a);
+  }
+  function resolve(a){
+    return adressiert(a) || live();
   }
   function zweitesArg(a, b){
-    var reg = window.createWithAi || {};
-    return (typeof a === "string" && reg[a]) ? b : a;
+    return adressiert(a) ? b : a;
   }
   function ruf(a, b, fn){
     var inst = resolve(a);

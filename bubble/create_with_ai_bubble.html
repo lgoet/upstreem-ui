@@ -26,6 +26,9 @@
   | Attribut            | Pflicht | Bedeutung                                              |
   |---------------------|---------|--------------------------------------------------------|
   | data-cdn-pin        | ja      | Commit-Hash, identisch mit allen anderen Komponenten   |
+  | data-instance       | nein    | Nur wenn MEHRERE Elemente auf einer Seite liegen: der  |
+  |                     |         | Name, mit dem die Funktionen dieses Element treffen.   |
+  |                     |         | In einer Repeating Group weglassen.                    |
   | data-url            | nein    | Quell-URL dieser Empfehlung                            |
   | data-title          | nein    | Seitentitel der Quelle                                 |
   | data-citation-type  | nein    | "You" = diese Seite verbessern, sonst = eigene Version |
@@ -46,6 +49,17 @@
   bekommt beim Mounten eine eigene UID. Adressierbar sind die Instanzen ueber
   window.createWithAi[UID]; ohne UID trifft ein Aufruf die zuletzt lebende Instanz -- was fuer
   "oeffne das Popup fuer die Zeile, auf die gerade geklickt wurde" genau richtig ist.
+
+  ── ZWEI ELEMENTE AUF EINER NORMALEN SEITE ───────────────────────────────────
+  Dann gib jedem eine data-instance und schicke sie als ERSTES Argument mit:
+
+      createWithAiSetContext("uca_detail", `{ "url": ..., "lead_title": ... }`)
+      createWithAiOpen("uca_detail")
+
+  Ohne dieses erste Argument trifft der Aufruf "die zuletzt lebende Instanz", und bei zwei
+  Elementen ist das mal das eine und mal das andere -- daran hat am 01.09. eine Runde Suche
+  gehangen ("die eine Fassung geht, die andere nicht"). In einer Repeating Group bleibt
+  data-instance weg, dort ist die UID der richtige Weg.
 
   ── FUNKTIONEN IN DIE KOMPONENTE ─────────────────────────────────────────────
   Payloads nach STYLEGUIDE 47 in BACKTICKS, nicht in eckigen Klammern.
@@ -150,6 +164,7 @@
 
 <div class="up-root uca-root"
      data-cdn-pin="CDN_PIN"
+     data-instance="INSTANCE"
      data-url="URL"
      data-title="TITLE"
      data-citation-type="TYPE"

@@ -581,7 +581,12 @@
     /* Damit Bubble Name, Bild und Kennung setzen kann, wenn die Seitenleiste sie nicht traegt. */
     window.setUpstreemProfile = function (p) {
       p = (p && typeof p === "object") ? p : (UC.readBubble ? UC.readBubble(p) : null);
-      if (!p) return;
+      /* readBubble gibt IMMER eine Liste zurueck, auch fuer ein einzelnes Objekt. Ohne das
+         Auspacken laesen die Zeilen darunter p.display_name an einem Array ab -- undefined, und
+         das Fenster bliebe leer, ohne dass etwas fehlschlaegt. Bisher fiel es nicht auf, weil die
+         Seitenleiste ein OBJEKT uebergibt; ein Run-JS-Schritt mit Text-Payload waere gescheitert. */
+      if (Array.isArray(p) && p.length === 1 && p[0] && typeof p[0] === "object") p = p[0];
+      if (!p || Array.isArray(p)) return;
       if (typeof p.display_name === "string") profil.name = p.display_name.trim();
       if (typeof p.avatar_url === "string") profil.avatar = p.avatar_url.trim();
       if (typeof p.user_id === "string") profil.userId = p.user_id.trim();
