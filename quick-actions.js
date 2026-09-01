@@ -539,11 +539,37 @@
     return true;
   }
   // one distinct event per static action (no value)
+  /* Aktion -> Fenster, das sie SELBST oeffnen kann. Dieselbe Bauart wie beim Export darunter, den
+     es hier schon gab: liegt die Komponente auf der Seite, macht Quick Actions das Fenster direkt
+     auf, statt einen Workflow darum zu bitten. Der Workflow entfaellt damit -- gefragt war genau
+     das ("kannst du die Actions direkt so verknuepfen"). */
+  var DIREKT = { add_new_prompt: "openAddPrompts", add_new_brand: "openAddBrand" };
+  function oeffneDirekt(action){
+    var name = DIREKT[action];
+    if (!name) return false;
+    /* Auch im Elternfenster suchen: Quick Actions laeuft in manchen Aufbauten in einem iframe --
+     dieselbe Suche macht oeffneExport darunter, mit derselben Begruendung. */
+    var fn = window[name] || (window.parent && window.parent[name]) || (window.top && window.top[name]);
+    if (typeof fn !== "function"){
+      if (window.console) console.warn("[quick-actions] window." + name + " nicht gefunden -- liegt " +
+        "die Komponente auf dieser Seite, und ist ihr Element SICHTBAR? Es bleibt beim Bubble-Event.");
+      return false;
+    }
+    try { fn(); } catch(_){ return false; }
+    return true;
+  }
   function fireStatic(action){
     var base = { add_new_prompt:"qa_add_prompt", add_new_brand:"qa_add_brand", export_data:"qa_export_data", edit_your_brand:"qa_edit_brand" }[action];
     if (!base) return;
     /* Entweder Dialog ODER altes Event -- nie beides, sonst laeuft der Export doppelt. */
     if (action === "export_data" && oeffneExport()){
+      try { window.dispatchEvent(new CustomEvent("mira_" + base)); } catch(_){}
+      return;
+    }
+    if (oeffneDirekt(action)){
+      /* Das DOM-Ereignis geht trotzdem hinaus -- daran haengt moeglicherweise eine Auswertung.
+         Der bubble_fn_* Aufruf NICHT: sonst oeffnet sich das Fenster zweimal, einmal von hier und
+         einmal aus dem Workflow. */
       try { window.dispatchEvent(new CustomEvent("mira_" + base)); } catch(_){}
       return;
     }
@@ -1395,7 +1421,9 @@
     else return;
     close();
   }
-  function selectStatic(action){ if (!action) return; fireStatic(action); close(); }
+  /* ZUERST schliessen, dann handeln. Vorher lief es andersherum, und bei einer Aktion, die ein
+     Fenster aufmacht, lag Quick Actions einen Augenblick darueber. */
+  function selectStatic(action){ if (!action) return; close(); fireStatic(action); }
 
   /* ---------- search ---------- */
   function onInput(){

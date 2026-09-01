@@ -6018,8 +6018,21 @@
         });
         /* focusin/focusout statt focus/blur: die beiden ersten steigen auf, die beiden anderen
            nicht -- damit haette die Leiste jeden Tabulatorsprung IN sie hinein verpasst. */
-        tools.addEventListener("focusin", function(){
-          window.clearTimeout(uhrZu); uhrZu = null; fokus = true; sync();
+        tools.addEventListener("focusin", function(e){
+          window.clearTimeout(uhrZu); uhrZu = null;
+          /* NUR bei Tastaturfokus. Ein KLICK fokussiert den Knopf ebenfalls, und der Fokus bleibt
+             danach auf ihm liegen -- focusout kommt also nie. Damit stand fokus dauerhaft auf true,
+             pointerleave allein konnte die Leiste nicht mehr schliessen, und sie blieb offen stehen:
+             der Ausloeser sichtbar, die Werkzeuge sichtbar, kein x. Genau so gemeldet fuer den
+             Active/Inactive-Umschalter.
+             :focus-visible unterscheidet die beiden Faelle -- es steht nach einem Mausklick nicht
+             am Knopf. Wo es das nicht gibt, bleibt es beim alten Verhalten: eine offene Leiste ist
+             besser als eine, die einem beim Tabulator unter den Fingern zufaellt. */
+          var perTastatur = true;
+          try { perTastatur = !e.target || !e.target.matches || e.target.matches(":focus-visible"); }
+          catch(err){ perTastatur = true; }
+          if (perTastatur) fokus = true;
+          sync();
         });
         tools.addEventListener("focusout", function(e){
           if (e.relatedTarget && tools.contains(e.relatedTarget)) return;
@@ -8206,9 +8219,20 @@
      cfg: { btn, getIsDark(), getScale(), setScale(key), defaultColors() -> [hex],
             onChange(), closeOthers() }
      Returns { open, close, isOpen, populate, reposition }. */
+  /* Das Chart-Settings-Menue am Chart selbst ist AUSSER BETRIEB. Dieselbe Wahl -- Farben,
+     Linienstaerke, Legende -- steht jetzt im Einstellungsfenster (preferences.js, Seite "Charts"),
+     und dort gehoert sie hin: es sind seitenweite Vorlieben und keine Eigenschaft des einen
+     Charts, dessen Zahnrad man gerade erwischt hat. Zwei Orte fuer dieselbe Einstellung waren der
+     Grund, sie hier wegzunehmen.
+     Die FABRIK bleibt stehen und gibt eine leere Huelle zurueck: die vier Charts rufen sie, geben
+     ihr einen Knopf und binden ihre eigenen Klicks daran. Ein Ausbau in vier Dateien haette
+     denselben Effekt und viermal so viel Fehlerflaeche. Der Knopf selbst wird in core.css
+     ausgeblendet -- er steht im handgemachten Bubble-Markup und ist von hier aus nicht erreichbar.
+     Wer sie zurueckholen will: diesen Riegel entfernen und die Regel in core.css. */
+  var CHART_SETTINGS_AUS = true;
   function makeScaleMenu(cfg){
     var btn = cfg.btn;
-    if (!btn) return { open: function(){}, close: function(){}, isOpen: function(){ return false; },
+    if (CHART_SETTINGS_AUS || !btn) return { open: function(){}, close: function(){}, isOpen: function(){ return false; },
                        populate: function(){}, reposition: function(){} };
     var menu = null, open = false;
     function ensure(){

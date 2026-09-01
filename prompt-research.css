@@ -104,8 +104,14 @@
 .upr-root.is-results .upr-loading-stage { display: none; }
 .upr-root.is-results .upr-shell { justify-content: flex-start; padding: 0; }
 
-/* ---------- hero mark ---------- */
-.upr-research-mark { width: 156px; height: 106px; position: relative; display: grid; place-items: center; margin-bottom: 16px; }
+/* ---------- hero mark ----------
+   AUSGEBLENDET auf Ansage: das Zeichen samt Kasten und den treibenden Punkten ist weg, der Rest
+   der Startansicht bleibt. Ueber CSS und nicht im Markup, weil das Markup im Bubble-Element steht
+   und vom Pin aus nicht erreichbar ist -- dieselbe Lage wie bei der Meta-Zeile der Seitenkoepfe.
+   Die Regeln darunter bleiben stehen: sie kosten nichts, solange nichts sie zeigt, und wer die
+   Marke zurueckholen will, entfernt genau diese eine Zeile. */
+.upr-research-mark { display: none !important; }
+.upr-research-mark-aus { width: 156px; height: 106px; position: relative; display: grid; place-items: center; margin-bottom: 16px; }
 .upr-research-orb {
   width: 56px; height: 56px; border-radius: 18px;
   background: linear-gradient(180deg, var(--vc-bg), var(--vc-heading-bg));
@@ -467,7 +473,10 @@
    No scrollport here any more: the page scrolls, so core's .up-sticky .up-box (overflow:visible)
    applies and the column header pins to the viewport under the toolbar instead of to this box. */
 .upr-box {
-  --up-cols: minmax(0, 2.4fr) minmax(0, 1.7fr) 150px 200px;
+  /* 236 statt 200 fuer die Aktionsspalte: auf Deutsch heisst der Knopf "Ignorieren" statt
+     "Ignore", und zusammen mit dem zweiten Knopf passte das nicht mehr. Die 36px kommen aus der
+     ersten Spalte, die als fr-Anteil ohnehin die flexible ist. */
+  --up-cols: minmax(0, 2.4fr) minmax(0, 1.7fr) 150px 236px;
   flex: 0 0 auto;
 }
 /* --vt-head-bg is semi-transparent, which is fine for a header that never has anything behind it.
@@ -503,7 +512,13 @@
 .upr-volume-seg.is-filled.level-4 { background: var(--upr-vol-4); }
 
 .upr-td-actions { justify-content: flex-end; }
-.upr-row-actions { display: flex; align-items: center; gap: 8px; }
+/* min-width:0 an BEIDEN Stellen, sonst schrumpft nichts: ein Flex-Kind faellt ohne das nicht
+   unter seine Inhaltsbreite, und die Zelle traegt overflow:hidden bei justify-content:flex-end --
+   was ueberlaeuft, wird also LINKS abgeschnitten. Genau so gemeldet fuer "Ignorieren". Jetzt
+   kuerzt die Beschriftung mit Auslassungspunkten, das Zeichen daneben bleibt ganz. */
+.upr-row-actions { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.upr-row-btn { flex: 0 1 auto; min-width: 0; overflow: hidden; }
+.upr-row-btn > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .upr-row-btn {
   height: 32px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   font-family: inherit; font-size: 12.5px; line-height: 1; font-weight: 500; cursor: pointer;
@@ -660,12 +675,12 @@
 
 /* ---------- responsive ---------- */
 @media (max-width: 1040px) {
-  .upr-box { --up-cols: minmax(0, 2.2fr) minmax(0, 1.4fr) 120px 180px; }
+  .upr-box { --up-cols: minmax(0, 2.2fr) minmax(0, 1.4fr) 120px 206px; }
   .upr-results-context { display: none; }
 }
 @media (max-width: 860px) {
   .upr-settings-grid { grid-template-columns: 1fr; }
-  .upr-box { --up-cols: minmax(0, 2fr) 110px 170px; }
+  .upr-box { --up-cols: minmax(0, 2fr) 110px 196px; }
   .upr-box .up-th:nth-child(2), .upr-box .up-td:nth-child(2) { display: none; }
 }
 @media (max-width: 560px) {

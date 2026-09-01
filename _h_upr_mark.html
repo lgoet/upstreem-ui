@@ -1,0 +1,31 @@
+<meta charset="utf-8"><title>Harness: Hero-Marke in Prompt Research</title>
+<link rel="stylesheet" href="core.css?v=hm1">
+<link rel="stylesheet" href="prompt-research.css?v=hm1">
+<body style="margin:0;padding:20px;font-family:sans-serif">
+<div class="up-root upr-root">
+  <div class="upr-shell"><div class="upr-content">
+    <div class="upr-research-mark">
+      <div class="upr-research-orb"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg></div>
+      <span class="upr-float-point p1"></span><span class="upr-float-point p2"></span>
+      <span class="upr-float-spark s1">✦</span>
+    </div>
+    <div class="upr-title-line" style="font-size:20px">Prompt Research</div>
+    <div class="upr-sub">Der Rest der Startansicht bleibt.</div>
+  </div></div>
+</div>
+<pre id="out">laedt…</pre>
+<script>
+setTimeout(function(){
+  var m = document.querySelector(".upr-research-mark");
+  var cs = getComputedStyle(m);
+  var pkt = document.querySelectorAll(".upr-float-point, .upr-float-spark");
+  document.getElementById("out").textContent = JSON.stringify({
+    marke: { display: cs.display, hoehe: m.offsetHeight, breite: m.offsetWidth,
+             sichtbar: m.checkVisibility ? m.checkVisibility({opacityProperty:true, visibilityProperty:true}) : "?" },
+    punkteUndFunken: [].map.call(pkt, function(p){ return p.offsetWidth + "x" + p.offsetHeight; }),
+    restSichtbar: { titel: document.querySelector(".upr-title-line").offsetHeight > 0,
+                    unterzeile: document.querySelector(".upr-sub").offsetHeight > 0 }
+  }, null, 1);
+  window.__fertig = true;
+}, 500);
+</script>

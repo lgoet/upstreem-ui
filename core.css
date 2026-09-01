@@ -1418,6 +1418,15 @@
        the previous by a third, with a background-colored ring (border) standing in for the gap, so the
        seam between colors stays visible even though the dots physically overlap (the same idiom as an
        avatar stack). */
+/* ---------- Chart-Settings am Chart: weg ----------
+   Die Wahl steht im Einstellungsfenster (Seite "Charts"). Der Knopf hier stammt aus dem
+   handgemachten Bubble-Markup der Chart-Elemente und ist vom Pin aus nicht zu entfernen -- also
+   wird er ausgeblendet. NUR das Chart-Zahnrad: .uhm-set-btn (Performance Radar) und
+   .uo-settings-btn (Opportunities-Board) sind andere Menues und bleiben.
+   display:none und nicht visibility: der Knopf soll auch keinen Platz in der Werkzeugzeile
+   beanspruchen. */
+.vot-scale-btn, .ubo-scale-btn, .ccl-settings-btn { display: none !important; }
+
 /* ---------- Filter nur als Funktion ----------
    Gesetzt von core (nurFunktionLauf), wenn der Wirt des Filters 1x1 gross ist: dann liegt er nur
    als Funktion auf der Seite, damit die Filterleiste ihn einziehen kann, und sein eigener Trigger
