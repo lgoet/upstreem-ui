@@ -503,6 +503,189 @@
   /* Sofort eintragen: addMessages steht als Deklaration schon fest (hochgezogen), und der Katalog
      muss stehen, bevor die erste Komponente ihren ersten Text zeichnet. */
   addMessages("de", MSG_DE);
+  /* ── Zweiter Teil des Katalogs: die Texte der KOMPONENTEN ────────────────────────────────────
+     Sie stehen hier und nicht je Datei, weil der breite Lauf oben nach dem TEXT sucht und nicht
+     nach der Datei -- ein Eintrag wirkt damit an jeder Stelle, an der derselbe Satz steht, und die
+     vier Tabellen teilen die meisten davon woertlich.
+     Das Glossar gilt weiter: Prompt(s), Brand(s), Domain(s), URL(s), Topic(s), Citation(s) und die
+     Kennzahlen bleiben englisch, auch mitten im deutschen Satz. */
+  addMessages("de", {
+    /* ── Monate. Sie stehen an jeder Chart-Achse und im Kalender. ───────────────────────────── */
+    "Jan": "Jan", "Feb": "Feb", "Mar": "Mär", "Apr": "Apr", "May": "Mai", "Jun": "Jun",
+    "Jul": "Jul", "Aug": "Aug", "Sep": "Sep", "Oct": "Okt", "Nov": "Nov", "Dec": "Dez",
+    "January": "Januar", "February": "Februar", "March": "März", "April": "April", "June": "Juni",
+    "July": "Juli", "August": "August", "September": "September", "October": "Oktober",
+    "November": "November", "December": "Dezember",
+
+    /* ── Zustaende und Knoepfe ──────────────────────────────────────────────────────────────── */
+    "Actions": "Aktionen",
+    "Activate": "Aktivieren",
+    "Deactivated": "Deaktiviert",
+    "Set Active": "Auf aktiv setzen",
+    "Set Inactive": "Auf inaktiv setzen",
+    "Active Brands": "Aktive Brands",
+    "Active Prompts": "Aktive Prompts",
+    "Add New Brand": "Neue Brand",
+    "Add New Prompt": "Neuer Prompt",
+    "Bulk actions": "Sammelaktionen",
+    "Delete": "Löschen",
+    "Edit Your Brand": "Deine Brand bearbeiten",
+    "More options": "Weitere Optionen",
+    "Switch": "Wechseln",
+    "Switching…": "Wird gewechselt…",
+    "Exporting…": "Wird exportiert…",
+    "Export data": "Daten exportieren",
+    "Export Your Data": "Deine Daten exportieren",
+    "Copy URL": "URL kopieren",
+    "Copy domain": "Domain kopieren",
+    "Copied to clipboard": "In die Zwischenablage kopiert",
+    "Save as Favorite": "Als Favorit speichern",
+    "Remove Favorite": "Favorit entfernen",
+    "Favorites": "Favoriten",
+    "Recent": "Zuletzt",
+    "Recent Searches": "Zuletzt gesucht",
+    "Something went wrong": "Da ist etwas schiefgegangen",
+    "Plan": "Tarif",
+    "Metrics": "Kennzahlen",
+    "Performance": "Performance",
+    "Grouping": "Gruppierung",
+    "New grouping": "Neue Gruppierung",
+    "Sort Groups": "Gruppen sortieren",
+    "Sort groups": "Gruppen sortieren",
+    "Search groups": "Gruppen suchen",
+    "Search groups…": "Gruppen suchen…",
+    "Only show custom groupings": "Nur eigene Gruppierungen zeigen",
+    "No group data available.": "Keine Gruppendaten vorhanden.",
+    "No topic group matches the current search.": "Keine Topic-Gruppe passt zu dieser Suche.",
+    "No topic": "Kein Topic",
+    "Search or create topics...": "Topics suchen oder anlegen...",
+
+    /* ── Ansichten und Umschalter ───────────────────────────────────────────────────────────── */
+    "List view": "Listenansicht",
+    "Wide view": "Breite Ansicht",
+    "Switch to list view": "Zur Listenansicht",
+    "Switch to wide view": "Zur breiten Ansicht",
+    "Show Pages": "Seiten zeigen",
+    "Hide Pages": "Seiten ausblenden",
+    "Show pages": "Seiten zeigen",
+    "Hide pages": "Seiten ausblenden",
+    "Close pages": "Seiten schließen",
+    "Close search": "Suche schließen",
+    "Reset search": "Suche zurücksetzen",
+    "Y axis": "Y-Achse",
+    "Top": "Top",
+    "Trending": "Im Trend",
+    "Prompts vs Responses": "Prompts gegen Responses",
+    "Total Responses analyzed:": "Ausgewertete Responses:",
+    "Next page": "Nächste Seite",
+    "Previous page": "Vorige Seite",
+
+    /* ── Sortierung ─────────────────────────────────────────────────────────────────────────── */
+    "Name A–Z": "Name A–Z",
+    "Best performing first": "Beste zuerst",
+    "Biggest risers first": "Stärkster Anstieg zuerst",
+    "Custom range": "Eigener Zeitraum",
+    "Custom range is unavailable. Please reload the page.":
+      "Eigener Zeitraum ist nicht verfügbar. Bitte lade die Seite neu.",
+
+    /* ── Filter ─────────────────────────────────────────────────────────────────────────────── */
+    "Filter Citation Types": "Citation-Typen filtern",
+    "Filter Citation and URL Types": "Citation- und URL-Typen filtern",
+    "Filter by URL type": "Nach URL-Typ filtern",
+    "Filter by citation type": "Nach Citation-Typ filtern",
+    "Filter by market": "Nach Markt filtern",
+    "Brands mentioned": "Erwähnte Brands",
+    "Mentioning": "Erwähnt",
+    "Mentions a brand": "Erwähnt eine Brand",
+    "Mentioned Count": "Anzahl Erwähnungen",
+    "Only URLs": "Nur URLs",
+    "Only brands": "Nur Brands",
+    "Only domains": "Nur Domains",
+    "Only prompts": "Nur Prompts",
+    "All URL Types": "Alle URL-Typen",
+    "Citation type": "Citation-Typ",
+    "URL Type": "URL-Typ",
+    "URL type": "URL-Typ",
+    "Types": "Typen",
+    "Share Trend": "Anteil-Trend",
+
+    /* ── Leerzustaende. Sie sind das, was man am haeufigsten sieht, wenn etwas fehlt. ───────── */
+    "No URLs yet": "Noch keine URLs",
+    "No domains yet": "Noch keine Domains",
+    "No prompts yet": "Noch keine Prompts",
+    "No responses yet": "Noch keine Responses",
+    "No teams yet": "Noch keine Teams",
+    "No results yet": "Noch keine Ergebnisse",
+    "No matching URLs": "Keine passenden URLs",
+    "No matching domains": "Keine passenden Domains",
+    "No matching prompts": "Keine passenden Prompts",
+    "No matching responses": "Keine passenden Responses",
+    "No match": "Kein Treffer",
+    "No command": "Kein Befehl",
+    "No brand matches your search": "Keine Brand passt zu deiner Suche",
+    "No team matches your search": "Kein Team passt zu deiner Suche",
+    "No untracked brands found": "Keine unbeobachteten Brands gefunden",
+    "No pages found for this domain": "Keine Seiten zu dieser Domain gefunden",
+    "No pages match those filters": "Keine Seiten passen zu diesen Filtern",
+    "No brands set on this page": "Auf dieser Seite sind keine Brands gesetzt",
+    "No brand names were found in your AI answers for this period.":
+      "In deinen KI-Antworten wurden für diesen Zeitraum keine Brand-Namen gefunden.",
+    "Try a shorter search term.": "Versuche einen kürzeren Suchbegriff.",
+    "You are not a member of any team": "Du bist in keinem Team",
+    "Create a team to start tracking a brand.":
+      "Lege ein Team an, um eine Brand zu beobachten.",
+    "Domains appear here once your prompts have been run.":
+      "Domains erscheinen hier, sobald deine Prompts gelaufen sind.",
+    "URLs appear here once your prompts have been run.":
+      "URLs erscheinen hier, sobald deine Prompts gelaufen sind.",
+    "Responses appear here once your prompts have been run.":
+      "Responses erscheinen hier, sobald deine Prompts gelaufen sind.",
+    "Prompts appear here once your team has added them.":
+      "Prompts erscheinen hier, sobald dein Team sie angelegt hat.",
+    "The list has not arrived yet. Reload the page if this stays empty.":
+      "Die Liste ist noch nicht da. Lade die Seite neu, wenn das leer bleibt.",
+    "The scan has not returned anything yet. Refresh the page if this stays empty.":
+      "Der Suchlauf hat noch nichts geliefert. Lade die Seite neu, wenn das leer bleibt.",
+    "Could not load brands": "Brands konnten nicht geladen werden",
+    "Brand list could not be read": "Die Brand-Liste konnte nicht gelesen werden",
+    "The page-wide store is empty": "Der seitenweite Vorrat ist leer",
+
+    /* ── Ladezustaende des Brand-Suchlaufs ──────────────────────────────────────────────────── */
+    "Reading your AI answers…": "Deine KI-Antworten werden gelesen…",
+    "Collecting mentioned brand names…": "Erwähnte Brand-Namen werden gesammelt…",
+    "Matching names against cited domains…": "Namen werden mit zitierten Domains abgeglichen…",
+    "Removing brands you already track…": "Bereits beobachtete Brands werden entfernt…",
+    "Ranking by visibility…": "Wird nach Visibility sortiert…",
+
+    /* ── Stufen im Performance-Raster ───────────────────────────────────────────────────────── */
+    "At Risk": "Gefährdet",
+    "Broad but Unranked": "Breit, aber ohne Rang",
+    "Category Leaders": "Kategorieführer",
+    "Controversial": "Umstritten",
+    "Dominant & Trusted": "Dominant und vertraut",
+    "High-Potential Players": "Mit hohem Potenzial",
+    "Low Presence": "Kaum präsent",
+    "Rising Challengers": "Aufsteiger",
+    "Brands not reaching the palette": "Brands, die die Palette nicht erreichen",
+
+    /* ── Erklaerungen an den Spaltenkoepfen ─────────────────────────────────────────────────── */
+    "How many of this domain's pages were cited across all responses in the period.":
+      "Wie viele Seiten dieser Domain im Zeitraum über alle Responses zitiert wurden.",
+    "What kind of page this is: an article, a comparison, a product page, and so on.":
+      "Um welche Art Seite es sich handelt: ein Artikel, ein Vergleich, eine Produktseite und so weiter.",
+    "What kind of source this domain is: editorial, UGC, institutional, and so on.":
+      "Um welche Art Quelle diese Domain ist: redaktionell, UGC, institutionell und so weiter.",
+    "The market this prompt is tracked in.": "Der Markt, in dem dieser Prompt beobachtet wird.",
+    "The model that produced this response.": "Das Modell, das diese Response erzeugt hat.",
+    "The sources the model cited for this response.":
+      "Die Quellen, die das Modell für diese Response zitiert hat.",
+    "Which of your tracked brands are mentioned in this response. Hover a logo to see its name.":
+      "Welche deiner beobachteten Brands in dieser Response erwähnt werden. Fahre über ein Logo, um den Namen zu sehen.",
+    "Which of your tracked brands are mentioned on this page. Hover a logo to see its name.":
+      "Welche deiner beobachteten Brands auf dieser Seite erwähnt werden. Fahre über ein Logo, um den Namen zu sehen.",
+    "How positively the brand is described when it's mentioned for this response.":
+      "Wie positiv über die Brand gesprochen wird, wenn sie in dieser Response erwähnt wird."
+  });
   function t(text){
     var l = getPref("locale");
     if (l === "en") return text;
@@ -4027,27 +4210,84 @@
     }
     return gefunden;
   }
+  /* Die Selektorliste oben BLEIBT als schneller Weg fuer die Faelle, die sicher zaehlen. Darunter
+     laeuft ein zweiter, BREITER Durchgang: ein TreeWalker ueber die Textknoten der Seite.
+
+     Warum breit und nicht Datei fuer Datei: die sichtbaren Texte stehen zu einem grossen Teil im
+     handgemachten Bubble-Markup der Elemente, und das ist vom Pin aus nicht erreichbar. Eine
+     Uebersetzung, die nur im JavaScript ansetzt, laesst genau die Stellen englisch, die der Nutzer
+     zaehlt -- Spaltenkoepfe, Knoepfe, Beschreibungen in den Seitenkoepfen.
+
+     Sicher ist der Durchgang durch DREI Dinge, nicht durch eine Ausnahmeliste:
+       1. Angefasst wird nur, was WOERTLICH im Katalog steht. Ein Markenname, eine Domain, ein
+          Prompt, ein Topicname ist kein Schluessel und geht unveraendert durch.
+       2. DATENZELLEN werden uebersprungen. Dort steht Nutzertext, und ein Markenname, der zufaellig
+          "Share" heisst, soll nicht zu "Anteil" werden. Die Klassenformen dieser App sind dafuer
+          eindeutig (-td, -cell, -chip, -tag), dazu Eingabefelder und alles mit
+          contenteditable.
+       3. Bei locale "en" laeuft er GAR NICHT. Das ist der Normalfall, und dort gibt es nichts zu
+          tun -- t() gibt englischen Text unveraendert zurueck.
+
+     data-i18n am ELTERNELEMENT haelt das englische Original, damit der Weg zurueck auf Englisch
+     nicht verloren ist. Genau dafuer gibt es die zwei Durchgaenge: der schnelle setzt es an den
+     bekannten Stellen, der breite an allen uebrigen. */
+  var SPRACHE_AUS = ".up-td, [class*='-td'], [class*='-cell'], [class*='-chip'], [class*='-tag']," +
+                    "input, textarea, [contenteditable], script, style, code, pre";
   function spracheLauf(scope){
     var wurzel = (scope && scope.querySelectorAll) ? scope : document;
     var els;
-    try { els = wurzel.querySelectorAll(SPRACHE_SEL); } catch(e){ return; }
-    for (var i = 0; i < els.length; i++){
-      var el = els[i];
-      var kn = eigenerText(el);
-      if (!kn) continue;
-      /* Die umgebenden Leerzeichen bleiben, wie sie sind: im Markup steht der Text oft eingerueckt
-         auf eigener Zeile, und sie wegzunehmen aendert den Abstand zum Nachbarn. */
+    try { els = wurzel.querySelectorAll(SPRACHE_SEL); } catch(e){ els = []; }
+    for (var i = 0; i < els.length; i++) knotenStellen(els[i]);
+    if (getPref("locale") === "en"){
+      /* Zurueck auf Englisch: nur die Elemente, die schon einmal uebersetzt wurden -- sie tragen
+         data-i18n, und das ist eine Abfrage statt eines Durchlaufs ueber die ganze Seite. */
+      var zurueck;
+      try { zurueck = wurzel.querySelectorAll("[data-i18n]"); } catch(e){ zurueck = []; }
+      for (var z = 0; z < zurueck.length; z++) knotenStellen(zurueck[z]);
+      return;
+    }
+    breiterLauf(wurzel);
+  }
+  function knotenStellen(el){
+    var kn = eigenerText(el);
+    if (!kn) return;
+    /* Die umgebenden Leerzeichen bleiben, wie sie sind: im Markup steht der Text oft eingerueckt
+       auf eigener Zeile, und sie wegzunehmen aendert den Abstand zum Nachbarn. */
+    var roh = kn.nodeValue;
+    var vorn = roh.match(/^\s*/)[0], hinten = roh.match(/\s*$/)[0];
+    var basis = el.getAttribute("data-i18n");
+    if (basis == null){
+      basis = roh.trim();
+      if (!basis) return;
+    }
+    var neu = t(basis);
+    if (roh.trim() === neu) return;
+    if (el.getAttribute("data-i18n") == null) el.setAttribute("data-i18n", basis);
+    kn.nodeValue = vorn + neu + hinten;
+  }
+  function breiterLauf(wurzel){
+    var start = (wurzel === document) ? document.body : wurzel;
+    if (!start || !window.NodeFilter || !document.createTreeWalker) return;
+    var w;
+    try { w = document.createTreeWalker(start, NodeFilter.SHOW_TEXT, null); } catch(e){ return; }
+    var kn;
+    while ((kn = w.nextNode())){
       var roh = kn.nodeValue;
-      var vorn = roh.match(/^\s*/)[0], hinten = roh.match(/\s*$/)[0];
-      var basis = el.getAttribute("data-i18n");
-      if (basis == null){
-        basis = roh.trim();
-        if (!basis) continue;
-      }
-      var neu = t(basis);
-      if (roh.trim() === neu) continue;
-      if (el.getAttribute("data-i18n") == null) el.setAttribute("data-i18n", basis);
-      kn.nodeValue = vorn + neu + hinten;
+      if (!roh) continue;
+      var text = roh.trim();
+      /* Erst der billige Test: steht der Text ueberhaupt im Katalog? Er ist ein Zugriff auf ein
+         Objekt und faellt fuer die ueberwaeltigende Mehrheit der Knoten sofort durch. Alles
+         Teurere -- closest() den Baum hinauf -- kommt erst danach. */
+      if (!text || text.length > 200) continue;
+      var neu = t(text);
+      if (neu === text) continue;
+      var el = kn.parentElement;
+      if (!el) continue;
+      if (el.getAttribute("data-i18n") != null) continue;   /* macht schon der schnelle Weg */
+      try { if (el.closest(SPRACHE_AUS)) continue; } catch(e){ continue; }
+      if (!eigenerText(el)) continue;                       /* zwei Textstuecke: nicht anfassen */
+      el.setAttribute("data-i18n", text);
+      kn.nodeValue = roh.match(/^\s*/)[0] + neu + roh.match(/\s*$/)[0];
     }
   }
 
