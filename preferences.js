@@ -760,7 +760,20 @@
     }
 
     /* ---- Der oeffentliche Weg ---- */
-    window.openUpstreemPreferences = function (welche) { oeffnen(welche); };
+    window.openUpstreemPreferences = function (welche) {
+      /* Kamen Name, Bild und Kennung ueber die data-up-*-Attribute, hat core sie schon, dieses
+         Modul aber nicht: es laedt erst nach, wenn das Fenster zum ersten Mal aufgeht, und der
+         Aufruf von setUpstreemProfile lief damals gegen eine Funktion, die es noch nicht gab.
+         Also beim Oeffnen einmal nachfragen. Nur was noch leer ist -- ein bereits gesetzter Wert
+         ist der neuere (er kam ueber setUpstreemProfile oder aus einem Upload von gerade). */
+      if (UC.getUpstreemUser) {
+        var u = UC.getUpstreemUser();
+        if (!profil.name && u.display_name) profil.name = u.display_name;
+        if (!profil.avatar && u.avatar_url) profil.avatar = u.avatar_url;
+        if (!profil.userId && u.user_id) profil.userId = u.user_id;
+      }
+      oeffnen(welche);
+    };
     window.closeUpstreemPreferences = function () { schliessen(); };
     /* Damit Bubble Name, Bild und Kennung setzen kann, wenn die Seitenleiste sie nicht traegt. */
     window.setUpstreemProfile = function (p) {

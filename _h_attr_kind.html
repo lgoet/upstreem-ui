@@ -1,0 +1,83 @@
+<meta charset="utf-8"><title>Attributweg: Token, Key und Profil ohne Setter</title>
+<style>html,body{margin:0;background:#fff;font:13px/1.5 Geist,system-ui,sans-serif}#b{width:1000px;height:600px}</style>
+<body>
+<!-- Eine Komponentenwurzel, die die Werte traegt -- so wuerde es im Bubble-Element stehen. -->
+<div id="b"><div class="up-root usn-root"
+     data-up-token="token-A" data-up-key="sb_publishable_xyz"
+     data-up-uid="uid-777" data-up-name="Lukas Götzkes"
+     data-up-avatar="https://beispiel.test/a.png"></div></div>
+<script>
+/* Gemessen wird, was der Nutzer davon hat:
+   1. Kommen Token und Key ohne einen einzigen Setter-Aufruf an?
+   2. Ist das Token nach dem Lesen aus dem Elementebaum VERSCHWUNDEN, der Key aber noch da?
+   3. Zieht ein NEUER Attributwert nach -- so wie Bubble es tut, wenn der Ausdruck sich aendert?
+   4. Bekommt das spaet nachladende Einstellungsfenster Name, Bild und Kennung?
+   5. Und der Gegentest: leert der wiederholte Lauf die Warteschlange, obwohl sich nichts
+      geaendert hat? (Dann waere ein wartender Upload mit dem ALTEN Token neu gestartet.) */
+window.__err=[]; window.addEventListener("error",function(e){ window.__err.push(String(e.message)); });
+var ANFRAGEN=[];
+var echtesFetch=window.fetch;
+window.fetch=function(u,o){
+  if(String(u).indexOf("/auth/v1/user")>=0){
+    ANFRAGEN.push({ apikey:(o&&o.headers&&o.headers.apikey)||"", auth:(o&&o.headers&&o.headers.Authorization)||"" });
+    return Promise.resolve({ ok:true, status:200 });
+  }
+  return echtesFetch.apply(window,arguments);
+};
+function hol(f){ return echtesFetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){ return r.text(); }); }
+Promise.all(["core.css","core.js","preferences.css","preferences.js"].map(hol)).then(function(t){
+  [t[0],t[2]].forEach(function(c){ var s=document.createElement("style"); s.textContent=c; document.head.appendChild(s); });
+  var j=document.createElement("script"); j.textContent=t[1]; document.head.appendChild(j);
+  window.__prefsQuelle=t[3];
+  return new Promise(function(ok){ setTimeout(ok,900); });
+}).then(function(){
+  var UC=window.UpstreemCore, R={}, wurzel=document.querySelector(".up-root");
+  R.ohne_setter = { token_gelesen: !!UC && UC.profilSpeichern ? "helfer da" : "?",
+    token_attr_weg: !wurzel.hasAttribute("data-up-token"),
+    key_attr_noch_da: wurzel.hasAttribute("data-up-key"),
+    nutzer: UC.getUpstreemUser() };
+  /* Beweis, dass das Token wirklich angekommen ist: einmal etwas damit schreiben. */
+  return new Promise(function(ok){ UC.profilSpeichern({ display_name:"X" }, function(r){ ok(r); }); })
+  .then(function(r){
+    R.schreiben_mit_attr_token = { ergebnis:r, gesendet:ANFRAGEN[0] };
+    /* 3. Bubble baut neu -> neues Token im Attribut. */
+    wurzel.setAttribute("data-up-token","token-B");
+    wurzel.setAttribute("data-up-name","Neuer Name");
+    /* Der Lauf haengt am Beobachter; ein Anstoss genuegt. */
+    document.body.appendChild(document.createElement("span"));
+    return new Promise(function(o){ setTimeout(o,500); });
+  }).then(function(){
+    ANFRAGEN.length=0;
+    return new Promise(function(ok){ UC.profilSpeichern({ display_name:"Y" }, function(r){ ok(r); }); });
+  }).then(function(r){
+    R.nach_neuem_attribut = { gesendet:ANFRAGEN[0], nutzer:UC.getUpstreemUser(),
+      token_attr_weg: !document.querySelector(".up-root").hasAttribute("data-up-token") };
+    /* 5. Gegentest zur Warteschlange: eine Wartefunktion anmelden, dann NUR die Laeufe
+       weiterlaufen lassen -- ohne Attributwechsel darf sie NICHT feuern. */
+    var gefeuert = 0;
+    UC.authWartet(function(){ gefeuert++; });
+    document.body.appendChild(document.createElement("span"));
+    return new Promise(function(o){ setTimeout(o,700); }).then(function(){
+      R.warteschlange_ohne_wechsel = { gefeuert: gefeuert };
+      /* und MIT Wechsel muss sie feuern */
+      document.querySelector(".up-root").setAttribute("data-up-token","token-C");
+      document.body.appendChild(document.createElement("span"));
+      return new Promise(function(o2){ setTimeout(o2,600); });
+    }).then(function(){
+      R.warteschlange_mit_wechsel = { gefeuert: gefeuert };
+      /* 4. Jetzt erst das Einstellungsfenster laden -- der spaete Fall. */
+      var j2=document.createElement("script"); j2.textContent=window.__prefsQuelle; document.head.appendChild(j2);
+      return new Promise(function(o){ setTimeout(o,700); });
+    }).then(function(){
+      window.openUpstreemPreferences("profile");
+      return new Promise(function(o){ setTimeout(o,600); });
+    }).then(function(){
+      var feld=document.querySelector("[data-ums-name]");
+      R.spaetes_fenster = { name_im_feld: feld?feld.value:null,
+        bild_da: !!document.querySelector(".ums-avatar img") };
+      R.fehler=window.__err;
+      window.__R=R; window.__fertig=true;
+    });
+  });
+}).catch(function(e){ window.__R={fehler:[String(e.message)+" | "+(e.stack||"").slice(0,200)]}; window.__fertig=true; });
+</script>

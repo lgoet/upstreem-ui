@@ -5594,6 +5594,9 @@
 
   function toolbarLauf(knoten){
     if (window.__upOhneToolbar) return;
+    /* ZUERST: die Werte aus den Attributen. Bubble baut das Element bei jeder Aenderung eines
+       dynamischen Ausdrucks neu, dieser Lauf sieht die Aenderung also mit. */
+    sicher("attrLesen", attrLesen);
     sicher("spracheLauf", function(){ spracheLauf(); });
     sicher("nurFunktionLauf", nurFunktionLauf);
     sicher("stampToolbarIcons", stampToolbarIcons);
@@ -11466,6 +11469,77 @@
   }
   function authWartet(fn){ if (typeof fn === "function") AUTH.warten.push(fn); }
   window.setUpstreemAuth = setUpstreemAuth;
+
+  /* ---- Der ERKLAERENDE Weg: alles an Attributen -----------------------------------------------
+     Dasselbe Muster wie data-team darunter -- irgendeine Komponentenwurzel traegt die Werte, und
+     wer sie im Property Editor an einen dynamischen Ausdruck bindet, braucht keinen einzigen
+     Run-JS-Schritt.
+     DER GRUND, WARUM DAS DEM SETTER VORZUZIEHEN IST: Bubble baut das Element neu, sobald sich ein
+     dynamischer Ausdruck aendert. Das Token ist damit von selbst aktuell. Ueber einen Setter
+     muesste jede Auffrischung an einen Workflow gehaengt werden, und die Fehlerklasse "Token
+     veraltet, weil der Workflow nicht lief" gibt es hier gar nicht.
+
+       data-up-token    Access-Token des Nutzers
+       data-up-key      Publishable key (frueher anon public)
+       data-up-uid      Supabase-Auth-UID -- die, gegen die die Storage-Policy prueft
+       data-up-name     Anzeigename
+       data-up-avatar   URL des Profilbilds
+
+     Das TOKEN wird nach dem Lesen aus dem Attribut ENTFERNT. Das ist kein Schutz -- es liegt
+     ohnehin im Browser, und ein fremdes Skript im selben Origin kaeme auch so daran. Es nimmt nur
+     die billige Gelegenheit: es steht nicht dauerhaft im Elementebaum, wo es bei jedem Blick in
+     die Devtools und auf jedem Bildschirmfoto mitliest. Bubble setzt es beim naechsten Neubau
+     wieder, dieser Lauf liest es wieder -- die Frische bleibt.
+     Der KEY bleibt stehen: er ist oeffentlich, ihn zu verstecken waere ein falsches Signal. */
+  var USER = { name: "", avatar: "", uid: "" };
+  function attrLesen(){
+    /* ERST die Sperre, und sie ist keine Vorsicht auf Verdacht: toolbarLauf steht WEITER OBEN in
+       dieser Datei und laeuft synchron, also BEVOR das var AUTH hier unten zugewiesen ist. Der
+       erste Durchgang las das Attribut, ENTFERNTE es und warf danach an AUTH.token -- das Token
+       war weg, bevor es irgendwo ankam, und der erste Schreibversuch meldete unauthorized.
+       Genau so gemessen. Beide Namen sind var-Deklarationen, ein Zugriff auf sie ist also
+       gefahrlos undefined und wirft nicht. */
+    if (!AUTH || !USER) return;
+    try {
+      var t = document.querySelector("[data-up-token]");
+      if (t){
+        var tv = String(t.getAttribute("data-up-token") || "").trim();
+        /* Entfernt wird ERST, wenn der Wert sicher angekommen ist. Ein Platzhalter aus der
+           Vorlage bleibt stehen -- sonst waere er nach dem ersten Lauf weg und ein spaeter
+           gesetzter echter Wert haette nichts, woran er sich zeigen koennte. */
+        if (tv && tv.indexOf("TOKEN") !== 0){
+          /* Nur ein WECHSEL geht durch setUpstreemAuth: sonst wuerde jeder der fuenf
+             nachgelagerten Laeufe die Warteschlange leeren und einen wartenden Upload mit
+             demselben alten Token neu starten. */
+          if (tv !== AUTH.token) setUpstreemAuth(tv);
+          t.removeAttribute("data-up-token");
+        }
+      }
+      var k = document.querySelector("[data-up-key]");
+      if (k){
+        var kv = String(k.getAttribute("data-up-key") || "").trim();
+        if (kv && kv !== AUTH.key && kv.indexOf("KEY") !== 0) AUTH.key = kv;
+      }
+      var neu = false, e;
+      e = document.querySelector("[data-up-uid]");
+      if (e){ var u = String(e.getAttribute("data-up-uid") || "").trim();
+        if (u && u !== USER.uid && u.indexOf("USER") !== 0){ USER.uid = u; neu = true; } }
+      e = document.querySelector("[data-up-name]");
+      if (e){ var n = String(e.getAttribute("data-up-name") || "").trim();
+        if (n && n !== USER.name){ USER.name = n; neu = true; } }
+      e = document.querySelector("[data-up-avatar]");
+      if (e){ var a = String(e.getAttribute("data-up-avatar") || "").trim();
+        if (a !== USER.avatar && a.indexOf("AVATAR") !== 0){ USER.avatar = a; neu = true; } }
+      /* Das Einstellungsfenster laedt SPAET nach. Ist es schon da, bekommt es die Werte sofort;
+         ist es noch nicht da, holt es sie beim Oeffnen ueber getUpstreemUser(). Beide Wege, weil
+         keiner allein beide Reihenfolgen abdeckt. */
+      if (neu && typeof window.setUpstreemProfile === "function"){
+        window.setUpstreemProfile({ display_name: USER.name, avatar_url: USER.avatar, user_id: USER.uid });
+      }
+    } catch(e2){}
+  }
+  function getUpstreemUser(){ return { display_name: USER.name, avatar_url: USER.avatar, user_id: USER.uid }; }
+  window.getUpstreemUser = getUpstreemUser;
   function setUpstreemSupabaseKey(k){ AUTH.key = String(k == null ? "" : k).trim(); }
   window.setUpstreemSupabaseKey = setUpstreemSupabaseKey;
 
@@ -12855,7 +12929,7 @@
     faviconColor: faviconColor,
     bildFarbe: bildFarbe,
     bildVerkleinern: bildVerkleinern, bildHochladen: bildHochladen, authWartet: authWartet,
-    profilSpeichern: profilSpeichern,
+    profilSpeichern: profilSpeichern, getUpstreemUser: getUpstreemUser,
     faviconColorCached: faviconColorCached,
     readableHex: readableHex,
     prepTypeData: prepTypeData,
