@@ -12,17 +12,27 @@ window.__err=[]; window.addEventListener("error",function(e){ window.__err.push(
 try{ localStorage.removeItem("pref_theme"); localStorage.setItem("up_prefs", JSON.stringify({locale:"de"})); }catch(e){}
 window.__ereignisse=[];
 window.bubble_fn_umsAvatar = function(json){ window.__ereignisse.push(json); };
-var ANTWORT = { status: 200 };
-var ANFRAGEN = [];
+var ANTWORT = { status: 200 };      /* Storage */
+var META = { status: 200 };         /* /auth/v1/user */
+var ANFRAGEN = [], METAS = [];
 var echtesFetch = window.fetch;
 window.fetch = function(url, opt){
-  if (String(url).indexOf("/storage/v1/object/") >= 0){
-    ANFRAGEN.push({ url:String(url), method:opt&&opt.method,
+  var u = String(url);
+  if (u.indexOf("/storage/v1/object/") >= 0){
+    ANFRAGEN.push({ url:u, method:opt&&opt.method,
       auth:(opt&&opt.headers&&opt.headers.Authorization)||"", upsert:(opt&&opt.headers&&opt.headers["x-upsert"])||"",
       typ:(opt&&opt.headers&&opt.headers["Content-Type"])||"",
       bytes:(opt&&opt.body&&opt.body.size)||0 });
     if (ANTWORT.wurf) return Promise.reject(new Error("kein Netz"));
     return Promise.resolve({ ok: ANTWORT.status >= 200 && ANTWORT.status < 300, status: ANTWORT.status });
+  }
+  if (u.indexOf("/auth/v1/user") >= 0){
+    METAS.push({ url:u, method:opt&&opt.method,
+      apikey:(opt&&opt.headers&&opt.headers.apikey)||"",
+      auth:(opt&&opt.headers&&opt.headers.Authorization)||"",
+      body:(opt&&opt.body)||"" });
+    if (META.wurf) return Promise.reject(new Error("kein Netz"));
+    return Promise.resolve({ ok: META.status >= 200 && META.status < 300, status: META.status });
   }
   return echtesFetch.apply(window, arguments);
 };
@@ -33,7 +43,7 @@ Promise.all(["core.css","core.js","preferences.css","preferences.js"].map(hol)).
   return new Promise(function(ok){ setTimeout(ok,900); });
 }).then(function(){
   var UC=window.UpstreemCore;
-  window.setUpstreemAuth("token-alt");
+  window.setUpstreemAuth("token-alt", "anon-key-xyz");
   window.setUpstreemProfile({ display_name:"Lukas", avatar_url:"", user_id:"u-123" });
   window.openUpstreemPreferences("profile");
   return new Promise(function(ok){ setTimeout(ok,700); });
@@ -86,8 +96,8 @@ Promise.all(["core.css","core.js","preferences.css","preferences.js"].map(hol)).
     /* --- 3. Der Gutfall ueber die Oberflaeche --- */
     ANTWORT={status:200}; ANFRAGEN.length=0; window.__ereignisse.length=0;
     return ueberUI(datei).then(function(){ return warte(500); }).then(function(){
-      R.gutfall={ anfrage:ANFRAGEN[0], ereignis:window.__ereignisse[0], hinweis:hinweis(),
-                  bild_im_fenster:!!document.querySelector(".ums-avatar img") };
+      R.gutfall={ anfrage:ANFRAGEN[0], meta:METAS[0], ereignis:window.__ereignisse[0],
+                  hinweis:hinweis() };
       return datei; });
   }).then(function(datei){
     /* --- 4. 401, dann frisches Token: muss von selbst weiterlaufen --- */
@@ -100,6 +110,23 @@ Promise.all(["core.css","core.js","preferences.css","preferences.js"].map(hol)).
     }).then(function(){
       R.nach_auffrischung={ ereignisse:window.__ereignisse.slice(), anfragen:ANFRAGEN.length,
         letztes_token:ANFRAGEN.length?ANFRAGEN[ANFRAGEN.length-1].auth:null, hinweis:hinweis() };
+      return datei; });
+  }).then(function(datei){
+    /* --- 4b. Upload geht durch, das SCHREIBEN scheitert: darf nicht "uploaded" melden --- */
+    ANTWORT={status:200}; META={status:500}; ANFRAGEN.length=0; METAS.length=0; window.__ereignisse.length=0;
+    return ueberUI(datei).then(function(){ return warte(450); }).then(function(){
+      R.speichern_scheitert={ ereignis:window.__ereignisse[0], hinweis:hinweis(),
+                              upload_lief:ANFRAGEN.length, meta_lief:METAS.length };
+      META={status:200};
+      return datei; });
+  }).then(function(datei){
+    /* --- 4c. Der Name: schreibt er in user_metadata und meldet er danach? --- */
+    METAS.length=0; window.__ereignisse.length=0; window.__namen=[];
+    window.bubble_fn_umsName=function(j){ window.__namen.push(j); };
+    var feld=document.querySelector("[data-ums-name]");
+    feld.value="Neuer Name"; feld.dispatchEvent(new Event("blur",{bubbles:true}));
+    return warte(350).then(function(){
+      R.name={ meta:METAS[0], ereignis:(window.__namen||[])[0], hinweis:hinweis() };
       return datei; });
   }).then(function(datei){
     /* --- 5. Die drei uebrigen Fehlzweige --- */

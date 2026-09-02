@@ -11447,16 +11447,27 @@
      Das Token IST fuer den Browser gedacht -- Supabase ist so gebaut, und die Grenze ist die RLS,
      nicht die Geheimhaltung. Die drei Dinge, die wirklich zaehlen, stehen ausserhalb dieser Datei:
      RLS auf jeder Tabelle, eine kurze Ablaufzeit, und niemals ein Token in einer URL. */
-  var AUTH = { token: "" };
-  function setUpstreemAuth(token){
+  var AUTH = { token: "", key: "", warten: [] };
+  /* Zweiter Parameter: der anon key. Er ist oeffentlich (er steckt in jedem Supabase-Client), aber
+     er steht NICHT in dieser Datei -- die liegt in einem oeffentlichen Repo und wird per Pin
+     ausgeliefert. Ein Schluesselwechsel waere sonst eine neue Auslieferung. */
+  function setUpstreemAuth(token, anonKey){
     AUTH.token = String(token == null ? "" : token).trim();
-    /* Ein Upload, der auf ein frisches Token gewartet hat, laeuft jetzt weiter. Die Komponente
-       meldet dafuer eine Funktion an -- so muss dieser Kern nichts ueber Profilbilder wissen. */
-    var w = AUTH.warten; AUTH.warten = null;
-    if (AUTH.token && typeof w === "function"){ try { w(); } catch(e){} }
+    if (anonKey != null) AUTH.key = String(anonKey).trim();
+    /* Wer auf ein frisches Token gewartet hat, laeuft jetzt weiter. Eine WARTESCHLANGE und kein
+       einzelner Platz: es warten zwei Dinge unabhaengig voneinander -- ein Bild-Upload und ein
+       Namensspeichern -- und mit einem Platz haette das zweite das erste ueberschrieben. Genau
+       der Fall, in dem ein Name still verloren geht.
+       Die Liste wird VOR dem Ausfuehren geleert, damit ein Aufruf, der selbst wieder wartet,
+       sich nicht in dieselbe Runde einreiht. */
+  var w = AUTH.warten; AUTH.warten = [];
+    if (!AUTH.token) return;
+    for (var i = 0; i < w.length; i++){ try { w[i](); } catch(e){} }
   }
-  function authWartet(fn){ AUTH.warten = (typeof fn === "function") ? fn : null; }
+  function authWartet(fn){ if (typeof fn === "function") AUTH.warten.push(fn); }
   window.setUpstreemAuth = setUpstreemAuth;
+  function setUpstreemSupabaseKey(k){ AUTH.key = String(k == null ? "" : k).trim(); }
+  window.setUpstreemSupabaseKey = setUpstreemSupabaseKey;
 
   /* Die Basis steht hier EINMAL. ask-mira und create-with-ai tragen sie noch selbst; wer die
      naechste Datei anfasst, holt sie von hier. Ueberschreibbar, weil eine zweite Umgebung
@@ -11534,6 +11545,46 @@
      geaendert werden. Was ihn haelt, ist die Storage-Policy, die ihn gegen auth.uid() prueft.
      Ohne die kann jeder Angemeldete jedes fremde Bild ersetzen -- der Client kann das nicht
      verhindern, und diese Funktion tut auch nicht so. */
+  /* ---- Profil in user_metadata schreiben ------------------------------------------------------
+     PUT /auth/v1/user mit { data: {...} } schreibt user_metadata. Der Nutzer schreibt sein
+     eigenes -- deshalb braucht es hier keinen Bubble-Call und keine Tabelle.
+
+     ZWEI DINGE, DIE MAN WISSEN MUSS, und das erste ist eine Sicherheitsregel:
+       1. user_metadata ist VOM NUTZER BESCHREIBBAR, so ist es gedacht. Anzeigename und Bild sind
+          genau der richtige Inhalt. Was dort NIE hingehoert: Rolle, Tarif, Team, Rechte -- wer
+          das aus user_metadata liest und darauf vertraut, laesst jeden sich selbst befoerdern.
+       2. Das JWT traegt die metadata vom Zeitpunkt seiner Ausstellung. Nach einem Save zeigen
+          erst getUser() oder ein Token-Refresh die neuen Werte. Fuer die Anzeige im Fenster gilt
+          deshalb der Wert, der GERADE gespeichert wurde, nicht der aus dem Token -- die
+          Komponente zeichnet ihn selbst und wartet nicht auf eine Bestaetigung von aussen. */
+  function profilSpeichern(felder, cb){
+    function fertig(ok, grund){ if (cb) cb({ ok: !!ok, grund: grund || null }); }
+    if (!felder || typeof felder !== "object") return fertig(false, "server");
+    if (!AUTH.token) return fertig(false, "unauthorized");
+    /* Ohne apikey antwortet GoTrue mit 401, und das saehe aus wie ein abgelaufenes Token --
+       ein Fehler, der eine Token-Auffrischung ausloest, die nichts aendert. Also vorher pruefen
+       und deutlich sagen, was fehlt. */
+    if (!AUTH.key){
+      if (window.console) console.warn("[core] profilSpeichern braucht den anon key: " +
+        "setUpstreemAuth(token, anonKey) oder setUpstreemSupabaseKey(key).");
+      return fertig(false, "server");
+    }
+    var f;
+    try {
+      f = window.fetch(SUPA + "/auth/v1/user", {
+        method: "PUT",
+        headers: { "apikey": AUTH.key, "Authorization": "Bearer " + AUTH.token,
+                   "Content-Type": "application/json" },
+        body: JSON.stringify({ data: felder })
+      });
+    } catch(e){ return fertig(false, "network"); }
+    if (!f || !f.then) return fertig(false, "network");
+    f.then(function(r){
+      if (r.status === 401 || r.status === 403) return fertig(false, "unauthorized");
+      fertig(!!r.ok, r.ok ? null : "server");
+    }, function(){ fertig(false, "network"); });
+  }
+
   function bildHochladen(cfg, cb){
     cfg = cfg || {};
     function fertig(ok, grund, url){ if (cb) cb({ ok: !!ok, grund: grund || null, url: url || null }); }
@@ -12804,6 +12855,7 @@
     faviconColor: faviconColor,
     bildFarbe: bildFarbe,
     bildVerkleinern: bildVerkleinern, bildHochladen: bildHochladen, authWartet: authWartet,
+    profilSpeichern: profilSpeichern,
     faviconColorCached: faviconColorCached,
     readableHex: readableHex,
     prepTypeData: prepTypeData,

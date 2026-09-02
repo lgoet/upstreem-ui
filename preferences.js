@@ -117,7 +117,11 @@
         "Das hat nicht funktioniert. Bitte lade die Seite neu und versuche es noch einmal.",
       "No connection. Please try again.": "Keine Verbindung. Bitte versuche es noch einmal.",
       "The upload failed. Please try again.":
-        "Der Upload ist fehlgeschlagen. Bitte versuche es noch einmal."
+        "Der Upload ist fehlgeschlagen. Bitte versuche es noch einmal.",
+      "The picture was uploaded, but saving it failed. Please try again.":
+        "Das Bild wurde hochgeladen, aber nicht gespeichert. Bitte versuche es noch einmal.",
+      "Your name could not be saved. Please try again.":
+        "Dein Name konnte nicht gespeichert werden. Bitte versuche es noch einmal."
     });
 
     /* ---- Die Wahlmöglichkeiten ----
@@ -537,12 +541,15 @@
       var v = String((feld && feld.value) || "").trim();
       if (!v || v === profil.name) return;
       profil.name = v;
-      fireBauen();
-      fire("data-name-fn", "umsName", { display_name: v });
       /* NICHT neu zeichnen: der Wert steht schon im Feld, und ein Neubau waehrend des Verlassens
          nimmt dem naechsten Element den Fokus. Nur die Initiale im Bild wird nachgezogen. */
       var av = M.main.querySelector(".ums-avatar-ltr");
       if (av) av.textContent = (v.charAt(0) || "?").toUpperCase();
+      /* Der Name geht denselben Weg wie das Bild: die Komponente schreibt ihn selbst in
+         user_metadata. Das Ereignis geht trotzdem raus -- ein Workflow kann daran haengen (etwa
+         die Seitenleiste nachziehen), er MUSS aber nichts mehr speichern.
+         Gemeldet wird erst nach dem Schreiben, aus demselben Grund wie beim Bild. */
+      namenSchreiben(v, false);
     }
 
     /* ---- Profilbild: die Komponente laedt selbst hoch ----------------------------------------
@@ -569,7 +576,9 @@
       too_large:    "That image is too large. Please pick a smaller one.",
       unauthorized: "That did not work. Please reload the page and try again.",
       network:      "No connection. Please try again.",
-      server:       "The upload failed. Please try again."
+      server:       "The upload failed. Please try again.",
+      save_failed:  "The picture was uploaded, but saving it failed. Please try again.",
+      name_failed:  "Your name could not be saved. Please try again."
     };
     function avMelden(text, laeuft) {
       var h = M && M.main ? M.main.querySelector(".ums-hint") : null;
@@ -609,37 +618,80 @@
         avSchieben(blob);
       });
     }
+    /* Abgelaufenes Token: EINMAL um ein frisches bitten und dann von selbst weitermachen. Das
+       Plugin frischt auf, der Nutzer soll davon nichts merken. Nur einmal -- sonst drehen zwei
+       Seiten sich im Kreis, wenn die Auffrischung selbst scheitert.
+       Eine eigene Funktion, weil jetzt ZWEI Schritte darauf laufen koennen: der Upload und das
+       Schreiben des Profils danach. */
+    function avTokenHolen(blob) {
+      avWartend = blob;
+      if (UC.authWartet) UC.authWartet(function () {
+        var b = avWartend; if (!b) return;
+        avMelden("Uploading…", true);
+        avSchieben(b);
+      });
+      fireBauen();
+      fire("data-avatar-fn", "umsAvatar", { action: "token_expired" });
+    }
+    /* Ein Weg fuer beide Felder. Ohne core (eine Seite ohne core.js) faellt es still auf "nicht
+       gespeichert" -- besser als ein Wurf mitten im Verlassen eines Feldes. */
+    function profilSchreiben(felder, cb) {
+      if (!UC.profilSpeichern) return cb(false, "server");
+      UC.profilSpeichern(felder, function (r) { cb(r.ok, r.grund); });
+    }
     function avSchieben(blob) {
       UC.bildHochladen({ bucket: AV_EIMER, path: avPfad(), blob: blob, contentType: "image/png" },
         function (r) {
           if (r.ok) {
-            avLaeuft = false; avWartend = null;
-            profil.avatar = r.url;
-            if (offen) zeichnen();
-            avMelden(null);
-            fireBauen();
-            fire("data-avatar-fn", "umsAvatar", { action: "uploaded", avatar_url: r.url });
-            return;
-          }
-          /* Abgelaufenes Token: EINMAL um ein frisches bitten und dann von selbst weitermachen.
-             Das Plugin frischt auf, der Nutzer soll davon nichts merken. Nur einmal -- sonst
-             drehen zwei Seiten sich gegenseitig im Kreis, wenn die Auffrischung selbst scheitert. */
-          if (r.grund === "unauthorized" && !avWartend) {
-            avWartend = blob;
-            if (UC.authWartet) UC.authWartet(function () {
-              var b = avWartend; if (!b) return;
-              avMelden("Uploading…", true);
-              avSchieben(b);
+            /* Erst das Bild liegt im Speicher, JETZT muss das Profil noch darauf zeigen. Gemeldet
+               wird "uploaded" erst, wenn BEIDES steht -- sonst sagt die Komponente Erfolg, und der
+               Nutzer sieht beim naechsten Laden wieder das alte Bild.
+               Schlaegt nur der zweite Schritt fehl, ist die Datei im Speicher verwaist. Das ist
+               harmlos: derselbe Pfad, der naechste Versuch ueberschreibt sie. */
+            profilSchreiben({ avatar_url: r.url }, function (ok, grund) {
+              if (!ok) {
+                if (grund === "unauthorized" && !avWartend) return avTokenHolen(blob);
+                avLaeuft = false; avWartend = null;
+                avMelden(AV_TEXT.save_failed);
+                fireBauen();
+                fire("data-avatar-fn", "umsAvatar", { action: "failed", reason: "save_failed" });
+                return;
+              }
+              avLaeuft = false; avWartend = null;
+              profil.avatar = r.url;
+              if (offen) zeichnen();
+              avMelden(null);
+              fireBauen();
+              fire("data-avatar-fn", "umsAvatar", { action: "uploaded", avatar_url: r.url });
             });
-            fireBauen();
-            fire("data-avatar-fn", "umsAvatar", { action: "token_expired" });
             return;
           }
+          if (r.grund === "unauthorized" && !avWartend) return avTokenHolen(blob);
           avLaeuft = false; avWartend = null;
           avMelden(AV_TEXT[r.grund] || AV_TEXT.server);
           fireBauen();
           fire("data-avatar-fn", "umsAvatar", { action: "failed", reason: r.grund || "server" });
         });
+    }
+
+    function namenSchreiben(v, zweiterVersuch) {
+      profilSchreiben({ display_name: v }, function (ok, grund) {
+        if (ok) {
+          avMelden(null);
+          fireBauen();
+          fire("data-name-fn", "umsName", { display_name: v });
+          return;
+        }
+        if (grund === "unauthorized" && !zweiterVersuch) {
+          if (UC.authWartet) UC.authWartet(function () { namenSchreiben(v, true); });
+          fireBauen();
+          fire("data-avatar-fn", "umsAvatar", { action: "token_expired" });
+          return;
+        }
+        /* Die Meldung steht in derselben Zeile wie die des Bildes. Der Abschnitt hat EINE
+           Meldungszeile, und zwei waeren zwei Orte, an denen man nachsehen muesste. */
+        avMelden(AV_TEXT.name_failed);
+      });
     }
 
     /* ---- Oeffnen und Schliessen ---- */
