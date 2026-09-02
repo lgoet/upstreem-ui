@@ -11609,7 +11609,17 @@
              nachgelagerten Laeufe die Warteschlange leeren und einen wartenden Upload mit
              demselben alten Token neu starten. */
           if (tv !== AUTH.token) setUpstreemAuth(tv);
-          t.removeAttribute("data-up-token");
+          /* NICHT MEHR ENTFERNEN. Das Attribut gehoert Bubble: es steht dort, weil ein dynamischer
+             Ausdruck es hineinschreibt. Wer es wegnimmt, aendert das Element eines fremden
+             Baukastens -- und jede solche Aenderung ist eine Mutation, die den Wurzel-Beobachter
+             weckt, der daraufhin Komponenten neu einrichtet. In der Konsole des Nutzers stand
+             genau dieser Handler (core.js:8106) mit 893ms und 1556ms, im Sekundentakt.
+             Der Gewinn war ohnehin klein: das Token liegt im selben Browser in einem Bubble-State,
+             ein fremdes Skript im selben Origin kommt an beides. Es aus dem Elementebaum zu nehmen
+             hat nur die Gelegenheit genommen, nicht die Moeglichkeit -- und dafuer ist eine
+             Mutation im heissen Pfad zu teuer.
+             Das ist die Ruecknahme einer Entscheidung, die ich zwei Commits vorher selbst
+             getroffen habe. */
         }
       }
       var k = document.querySelector("[data-up-key]");
