@@ -1,0 +1,53 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Praefix-Falle</title></head><body>
+<div class="up-root utf-root" data-instance="topics_v1_prompts"></div>
+<div class="up-root utf-root" data-instance="topics_v1_promptspotlight"></div>
+<pre id="out" style="font:12px monospace">…</pre>
+<script>
+  var p = new URLSearchParams(location.search);
+  var alt = p.get("alt") === "1";
+  var modus = p.get("modus") || "genau";
+  var ruf = modus === "genau" ? "topics_v1_prompts" : "topics_v1_";
+  function log(t){ document.getElementById("out").textContent += "\n" + t; }
+  function laden(src, cb){
+    var s = document.createElement("script");
+    s.src = src + "?t=" + Date.now();
+    s.onload = cb;
+    s.onerror = function(){ log("LUD NICHT: " + src); };
+    document.head.appendChild(s);
+  }
+  document.getElementById("out").textContent =
+    "Fassung: " + (alt ? "ALT (HEAD)" : "NEU") + "   Aufruf: setTopicsFilterTopics(\"" + ruf + "\", 3 Themen)";
+  laden("core.js", function(){
+    laden(alt ? "_h_praefix_alt.js" : "filters/topics-filter.js", function(){ setTimeout(los, 120); });
+  });
+
+  function los(){
+    /* Frischebeweis: der neue Zweig existiert nur in der neuen Fassung */
+    var q = document.querySelector('script[src*="topics-filter"], script[src*="praefix_alt"]');
+    log("geladen: " + (q ? q.src.split("/").pop().split("?")[0] : "?"));
+    if (typeof window.setTopicsFilterTopics !== "function"){ log("KEIN SETTER -- Abbruch"); return; }
+    var rows = [{ id:"t1", name:"ZebraTopic", prompt_count:3 },
+                { id:"t2", name:"YakTopic",   prompt_count:2 },
+                { id:"t3", name:"XenonTopic", prompt_count:1 }];
+    var hit = window.setTopicsFilterTopics(ruf, rows);
+    setTimeout(function(){
+      var wurzeln = document.querySelectorAll(".utf-root");
+      var zeilen = [];
+      for (var i = 0; i < wurzeln.length; i++){
+        var r = wurzeln[i];
+        zeilen.push("  " + r.getAttribute("data-instance") +
+                    "  ctrl=" + (!!r.__utfCtrl) +
+                    "  .utf-opt=" + r.querySelectorAll(".utf-opt").length +
+                    "  Zebra im Text=" + (r.textContent.indexOf("ZebraTopic") >= 0));
+      }
+      log("Rueckgabe hit=" + hit);
+      log(zeilen.join("\n"));
+      var bedient = 0;
+      for (var k = 0; k < wurzeln.length; k++){
+        if (wurzeln[k].querySelectorAll(".utf-opt").length > 0) bedient++;
+      }
+      log("BEDIENT: " + bedient + " von " + wurzeln.length);
+      log("FERTIG");
+    }, 250);
+  }
+</script></body></html>

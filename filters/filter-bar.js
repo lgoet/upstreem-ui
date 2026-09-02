@@ -871,9 +871,16 @@
     function forEachInstance(id, fn) {
       initAll();
       var roots = Array.prototype.slice.call(document.querySelectorAll(".ufb-root"));
+      /* Genauer Name schlaegt Praefix. Auf der echten Seite heisst ein Filter "..._prompts" und
+         ein zweiter "..._promptspotlight" -- der erste Name ist ein Praefix des zweiten, und der
+         Aufruf fuer die Prompts-Seite bediente damit STILL auch das Prompt-Spotlight (gemessen
+         02.09. auf der laufenden App). Die dokumentierte Praefix-Form (etwa "dates_v2_") bleibt
+         erhalten: sie greift weiter, sobald es keinen genauen Treffer gibt. */
+      var genau = id ? roots.some(function (r) {
+        return String(r.getAttribute("data-instance") || "default") === String(id); }) : false;
       var ziel = roots.filter(function (r) {
         var rid = String(r.getAttribute("data-instance") || "default");
-        return !id || rid === id || rid.indexOf(String(id)) === 0;
+        return !id || (genau ? rid === String(id) : rid.indexOf(String(id)) === 0);
       });
       if (!ziel.length) {
         if (spaet) spaet.park(id || "default", fn);

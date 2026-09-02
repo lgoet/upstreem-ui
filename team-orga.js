@@ -833,9 +833,16 @@
 
     function each(id, fn) {
       var roots = Array.prototype.slice.call(document.querySelectorAll(".uto-root, [data-uto-root]"));
+      /* Genauer Name schlaegt Praefix. Auf der echten Seite heisst ein Filter "..._prompts" und
+         ein zweiter "..._promptspotlight" -- der erste Name ist ein Praefix des zweiten, und der
+         Aufruf fuer die Prompts-Seite bediente damit STILL auch das Prompt-Spotlight (gemessen
+         02.09. auf der laufenden App). Die dokumentierte Praefix-Form (etwa "dates_v2_") bleibt
+         erhalten: sie greift weiter, sobald es keinen genauen Treffer gibt. */
+      var genau = id !== "default" && roots.some(function (r) {
+        return String(r.getAttribute("data-instance") || "default") === id; });
       roots = roots.filter(function (r) {
         var rid = String(r.getAttribute("data-instance") || "default");
-        return id === "default" ? true : (rid === id || rid.indexOf(id) === 0);
+        return id === "default" ? true : (genau ? rid === id : rid.indexOf(id) === 0);
       });
       /* Erst einrichten, dann rufen -- makeMount arbeitet die Warteschlange ab, bevor initAll
          gelaufen ist, und ein Aufruf aus der Warteschlange darf nicht ins Leere gehen. */

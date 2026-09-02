@@ -792,8 +792,14 @@
     var id = String(instanceId || "").trim();
     var hit = false;
     CONTROLLERS = CONTROLLERS.filter(function (c) { return c.root && c.root.isConnected; });
+    /* Genauer Name schlaegt Praefix. Auf der echten Seite heisst ein Filter "..._prompts" und
+       ein zweiter "..._promptspotlight" -- der erste Name ist ein Praefix des zweiten, und der
+       Aufruf fuer die Prompts-Seite bediente damit STILL auch das Prompt-Spotlight (gemessen
+       02.09. auf der laufenden App). Die dokumentierte Praefix-Form (etwa "dates_v2_") bleibt
+       erhalten: sie greift weiter, sobald es keinen genauen Treffer gibt. */
+    var genau = id ? CONTROLLERS.some(function (c) { return c.instanceId === id; }) : false;
     CONTROLLERS.forEach(function (c) {
-      if (!id || c.instanceId === id || c.instanceId.indexOf(id) === 0) { fn(c); hit = true; }
+      if (!id || (genau ? c.instanceId === id : c.instanceId.indexOf(id) === 0)) { fn(c); hit = true; }
     });
     if (!hit && id && spaet) spaet.park(id, fn);
     return hit;
