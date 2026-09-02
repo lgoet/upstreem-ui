@@ -91,13 +91,21 @@ Promise.all(["core.css","core.js","prompts-table.css","prompts-table.js","bubble
   return new Promise(function(ok){ setTimeout(ok,1200); });
 }).then(function(){
   Z = {}; AN = true;
+  /* Neuaufbauten zaehlen: jede childList-Mutation am Tabellenkoerper, bei der Knoten weggehen. */
+  window.__neu = 0;
+  var tbz = document.querySelector(".upt-root .up-tbody");
+  if (tbz) new MutationObserver(function(ms){
+    for (var q=0;q<ms.length;q++) if (ms[q].removedNodes.length) { window.__neu++; break; }
+  }).observe(tbz, { childList: true });
   var t0 = performance.now();
   /* 12 Neuaufbauten der Tabelle -- genau das, was ein Filterklick auslöst. Mit Pausen, damit die
      250ms-Drossel wie im Betrieb greift und nicht alles in einen Lauf fällt. */
   var i = 0;
   function runde(){
     if (i >= 12) return Promise.resolve();
-    var versatz = (++i) * 60;
+    /* Wie beim Nutzer: dieselbe Nutzlast kommt mehrfach. Jede dritte Runde ist NEU, die zwei
+       dazwischen sind Wiederholungen -- genau das Muster aus seiner Konsole (50 rows dreimal). */
+    var versatz = Math.floor((i++) / 3) * 60;
     window.renderPromptsTable(JSON.stringify({ instanceId:"tb", view_active:"yes", totalCount:60,
       rows: (function(){ var o=[]; for (var k=0;k<60;k++) o.push({ id:"r"+(k+versatz),
         prompt_text:"Welcher Anbieter ist der beste fuer Fall "+(k+versatz)+"?", status:"active",
@@ -123,6 +131,8 @@ Promise.all(["core.css","core.js","prompts-table.css","prompts-table.js","bubble
     var gerendert = document.querySelectorAll(".upt-root .up-row").length;
     var zellen = document.querySelectorAll(".upt-root .up-td").length;
     window.__R = { gerendert_zeilen: gerendert, gerendert_zellen: zellen,
+      /* Wie oft hat die Tabelle wirklich neu gebaut? Gezaehlt an den Mutationen des Koerpers. */
+      neuaufbauten: window.__neu || 0,
       leerzustand: !!document.querySelector(".upt-root .up-empty, .upt-root [class*='empty']"),
       dauer_ms: dauer, zeilen: 60, runden: 12,
       textknoten_im_dokument: (function(){ var n=0, w=document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null); while(w.nextNode()) n++; return n; })(),

@@ -4452,8 +4452,35 @@
           state.leseFehler = true; state.rows = []; state.hasData = true;
           state.loading = false; state.softReload = false; endSoftReload();
           state.extLoading = false;
+          state.letzteNutzlast = null;
           persist(); render(); return;
         }
+
+        /* ---------- IDENTISCHE NUTZLAST -> NICHTS TUN ----------
+           GEMESSEN an der Konsole des Nutzers, nach fuenf bis acht Filterklicks:
+               [prompts-table] sending 50 rows, total 91     dreimal
+               [prompts-table] sending 15 rows, total 80     zweimal
+               [prompts-table] sending 4 rows,  total 4      dreimal
+           Bubble reiht bei mehreren Klicks die Workflows auf, jeder faehrt seinen RPC bis zum
+           Ende, und jede Antwort baute die Tabelle KOMPLETT neu -- auch wenn sie Wort fuer Wort
+           dieselbe war wie die vorige. Dazu die eigenen Warnungen von Bubble ("status bar still
+           waiting on Running action"): der Hauptthread kam nicht frei, und am Ende lief Bubbles
+           30-Sekunden-Zeitablauf.
+           Ein Vergleich der Nutzlast kostet einen stringify, ein Neuaufbau kostet fuenfzig
+           Zeilen mit Chips, Trendpfeilen und Logos. Zwei von drei Neuaufbauten aendern nichts.
+           Dasselbe Muster wie die Signaturpruefung in applyCols (core), aus demselben Grund.
+
+           NUR wenn wirklich schon Daten stehen und nichts laedt. Sonst wuerde ein zweiter
+           identischer Aufruf ein Skelett stehen lassen -- und ein Ladezustand muss IMMER enden
+           (CLAUDE.md 2). */
+        var sig = null;
+        try { sig = JSON.stringify(params); } catch(e){ sig = null; }
+        if (sig && sig === state.letzteNutzlast &&
+            state.hasData && !state.loading && !state.extLoading && !state.softReload){
+          return;
+        }
+        state.letzteNutzlast = sig;
+
         /* NUR dieses Feld oeffnet den Riegel. Gemessen wurde, warum jedes andere Kriterium
            versagt: renderPromptsTable laeuft auf jeder Seite, und die Tabelle ist dabei technisch
            voll sichtbar (1756x1131, display:flex, visibility:visible, kein versteckender Vorfahr)
@@ -4554,6 +4581,9 @@
         persist(); render();
       },
       reset: function(){
+        /* Die Signatur mit zuruecksetzen: nach einem reset ist dieselbe Nutzlast wieder eine
+           echte Aenderung, und ohne diese Zeile wuerde sie uebersprungen. */
+        state.letzteNutzlast = null;
         /* Deliberately narrow: only the bulk-topic popover state + selection, per explicit user
            request — NOT search/sort/paging/status/widths, which used to also get wiped here and
            surprised the user by silently flipping the table back to the Active tab. */
