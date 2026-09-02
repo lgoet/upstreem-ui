@@ -36,19 +36,40 @@ Promise.all(["core.css","core.js","ask-mira.css","ask-mira.js","bubble/ask_mira_
   /* Das Markenzeichen: sind es DIE Klassen des Kopfes, und wie gross. */
   var lg=root.querySelector(".am-side-logo");
   var mk=lg&&lg.querySelector(".am-logo-mark"), wd=lg&&lg.querySelector(".am-wordmark");
-  var logo = lg ? { klassen:lg.className, abstand:getComputedStyle(lg).gap,
-    zeichen_klassen: mk?mk.className:null, zeichen_svg: !!(mk&&mk.querySelector("svg")),
-    zeichen_masse: mk?getComputedStyle(mk).width+"x"+getComputedStyle(mk).height:null,
-    svg_masse: mk&&mk.querySelector("svg")?getComputedStyle(mk.querySelector("svg")).width+"x"+getComputedStyle(mk.querySelector("svg")).height:null,
+  var logo = lg ? { klassen:lg.className, zeichen_da: !!mk,
     schriftzug: wd?wd.textContent:null, schriftgroesse: wd?getComputedStyle(wd).fontSize:null,
     hoehe_gesamt: Math.round(lg.getBoundingClientRect().height) } : null;
+  /* Der Zieher: Griff aus core, Grenzen 200 bis 350, und der Wert bleibt gespeichert. */
+  var griff=root.querySelector(".am-side-grip"), panel0=root.querySelector("#am-prev-panel");
+  function ziehen(dx){
+    griff.dispatchEvent(new PointerEvent("pointerdown", { bubbles:true, clientX:600, button:0 }));
+    document.dispatchEvent(new PointerEvent("pointermove", { bubbles:true, clientX:600-dx }));
+    document.dispatchEvent(new PointerEvent("pointerup", { bubbles:true }));
+    if (document.getAnimations) document.getAnimations().forEach(function(a){ try{a.finish();}catch(e){} });
+    return Math.round(panel0.getBoundingClientRect().width);
+  }
+  var zieher = griff ? { griff_klassen: griff.className,
+    zeiger: getComputedStyle(griff).cursor,
+    links: getComputedStyle(griff).left, breite: getComputedStyle(griff).width,
+    start: Math.round(panel0.getBoundingClientRect().width),
+    nach_60px_links: ziehen(60), nach_400px_links_deckel: ziehen(400),
+    nach_400px_rechts_boden: ziehen(-400),
+    gespeichert: (function(){ try{ return localStorage.getItem("am_side_w"); }catch(e){ return "?"; } })() } : null;
+  /* Das Skelett: die Zeilen sollen leer sein und die Textzeile darin das Schimmern tragen. */
+  var liste=root.querySelector("#am-prev-list");
+  var skelHtml = null, skel = null;
+  if (liste){
+    liste.innerHTML = ''; /* Platz fuer das Skelett */
+  }
   /* All-Chats-Knopf: nur bei geschlossener Leiste. */
   var ac=root.querySelector(".am-prev-btn");
   var acOffen=ac?getComputedStyle(ac).display:null;
   root.classList.remove("prev-open");
   var acZu=ac?getComputedStyle(ac).display:null;
   root.classList.add("prev-open");
-  window.__R = { logo: logo, all_chats: { bei_offener_leiste: acOffen, bei_geschlossener: acZu },
+  window.__R = { logo: logo, zieher: zieher,
+    schale_polster_rechts: getComputedStyle(root.querySelector(".am-shell")).paddingRight,
+    all_chats: { bei_offener_leiste: acOffen, bei_geschlossener: acZu },
     neuer_chat: zeile("#am-new-chat"), einstellungen: zeile("#am-settings-btn"),
     leiste: { breite: Math.round(panel.getBoundingClientRect().width),
               rechteck: [Math.round(panel.getBoundingClientRect().left), Math.round(panel.getBoundingClientRect().top)],

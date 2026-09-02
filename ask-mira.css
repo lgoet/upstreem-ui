@@ -490,7 +490,11 @@
      bleibt eine Bewegung ueber transform, nicht ueber das Layout. */
   @media (max-width: 720px) {
     #ask-mira { display: block; }
-    .am-shell { width: 100%; }
+    /* Kein Polster und kein Griff am Telefon: die Leiste liegt dort ueber dem Inhalt, es gibt
+       also keinen Rand, von dem eine Bildlaufleiste wegrutschen muesste -- und eine Breite, die
+       man mit dem Finger zieht, gibt es auf 375px auch nicht zu verteilen. */
+    .am-shell { width: 100%; padding-right: 0; }
+    .am-prev-panel .am-side-grip { display: none; }
     .am-prev-panel {
       position: absolute; top: 0; right: 0; bottom: 0; z-index: 9;
       width: min(320px, 86%); flex: none; margin: 0;
@@ -1458,11 +1462,18 @@
     backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); opacity: 0; pointer-events: none;
     transition: opacity 220ms ease;
   }
-  #ask-mira { display: flex; flex-direction: row; align-items: stretch; }
-  .am-shell { flex: 1 1 auto; min-width: 0; width: auto; }
+  /* Die Breite steht in einer Variablen, weil sie an DREI Stellen gebraucht wird: Spur, Breite
+     und das negative Aussenmass fuer den geschlossenen Zustand. Ohne sie muesste der Zieher drei
+     Werte im Gleichschritt setzen. ask-mira.js schreibt sie an die Wurzel (200 bis 350px). */
+  #ask-mira { display: flex; flex-direction: row; align-items: stretch; --am-side-w: 250px; }
+  /* 16px Luft zwischen dem Inhalt und der Leiste: die Bildlaufleiste des Chats sass sonst direkt
+     auf dem Rand der Leiste. Am SCHALENpolster und nicht am Chat, damit Kopf, Chat und Eingabe
+     zusammen einruecken und untereinander ausgerichtet bleiben -- ein Aussenmass nur am Chat
+     haette seine Mitte um 8px gegen die Eingabezeile verschoben. */
+  .am-shell { flex: 1 1 auto; min-width: 0; width: auto; padding-right: 16px; }
   .am-prev-panel {
-    position: static; flex: 0 0 250px; width: 250px; z-index: auto;
-    margin: 0 -250px 0 0; background: var(--am-bg);
+    position: relative; flex: 0 0 var(--am-side-w); width: var(--am-side-w); z-index: auto;
+    margin: 0 calc(-1 * var(--am-side-w)) 0 0; background: var(--am-bg);
     border: 0; border-left: 1px solid var(--am-border-strong); border-radius: 0;
     box-shadow: none; overflow: hidden; transform: none;
     display: flex; flex-direction: column;
@@ -1473,6 +1484,13 @@
      statt wie eine gespeicherte Einstellung. ask-mira.js setzt sie nach zwei Bildern. */
   #ask-mira.side-ready .am-prev-panel { transition: margin-right 200ms ease; }
   #ask-mira.prev-open .am-prev-panel { margin-right: 0; }
+  /* Waehrend des Ziehens KEIN Uebergang: 200ms Nachlauf an jedem Bild eines Zuges heisst, dass
+     die Leiste dem Zeiger hinterherhinkt. */
+  .up-root.is-resizing .am-prev-panel { transition: none; }
+  /* Der Griff: derselbe wie an der ersten Spalte einer Tabelle (.up-grip aus core), nur an der
+     LINKEN Kante -- die Leiste sitzt rechts. left: 0 und nicht -4px, weil .am-prev-panel
+     overflow: hidden traegt und alles ausserhalb des Polsterkastens abschneiden wuerde. */
+  .am-prev-panel .am-side-grip { left: 0; right: auto; }
   /* Der Knopf "All Chats" oeffnet die Leiste. Steht sie offen, hat er nichts zu tun -- und ein
      Knopf, der sichtbar nichts tut, ist schlimmer als keiner. Zugeklappt kommt er zurueck und ist
      der Weg zurueck in die Leiste (der Umschalter darin ist dann ja mit ihr weg). */
@@ -1494,10 +1512,11 @@
      Verhaeltnis von Zeichen zu Schrift bleibt: 34 -> 18 an der Schrift, 28 -> 16 am Zeichen,
      26x25 -> 15x14 am svg, Abstand 7 -> 5. Kein translateY: der Versatz im Kopf sitzt gegen eine
      34px-Schrift, bei 18px waere er sichtbar zu viel. */
-  .am-side-logo { flex: 0 0 auto; gap: 5px; }
-  .am-side-logo .am-logo-mark { width: 16px; height: 16px; transform: none; }
-  .am-side-logo .am-logo-mark svg { width: 15px; height: 14px; }
-  .am-side-logo .am-wordmark { font-size: 18px; letter-spacing: -0.01em; }
+  /* Nur der Schriftzug, und der ist die Klasse des Kopfes (.am-wordmark). Hier steht nur die
+     Groesse: 22px gegen 34px oben -- gross genug, um in einem 52px hohen Kopfbereich als Marke
+     zu lesen, klein genug, um neben dem Umschalter nicht zu drueckend zu werden. */
+  .am-side-logo { flex: 0 0 auto; }
+  .am-side-logo .am-wordmark { font-size: 22px; letter-spacing: -0.01em; }
   .am-prev-title { margin: 0; font-size: 14px; font-weight: 600; }
   .am-icon-btn {
     width: 34px; height: 34px; border: 1px solid transparent; border-radius: 10px;
@@ -1619,10 +1638,15 @@
   .am-newchat:hover { background: var(--am-soft); border-color: #6f6f6f; }
   #ask-mira .am-newchat .am-ic { width: 14px; height: 14px; }
   .am-prev-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 6px 10px 16px; display: flex; flex-direction: column; gap: 2px; }
-  .am-prev-skel { display: flex; flex-direction: column; gap: 8px; padding: 4px 4px; }
-  .am-prev-skel-head { height: 12px; width: 42%; border-radius: 6px; margin: 6px 4px 2px; }
-  .am-prev-skel-row { height: 36px; border-radius: 9px; }
-  .am-prev-skel-head, .am-prev-skel-row { background: linear-gradient(90deg, var(--am-soft-2) 25%, var(--am-soft) 50%, var(--am-soft-2) 75%); background-size: 300% 100%; animation: amSkelShimmer 1.25s ease-in-out infinite; }
+  /* Feiner als vorher, und nach dem Inhalt gebaut, der kommt: die Zeile ist 34px hoch wie
+     .am-prev-item, aber sie ist LEER -- das Schimmern liegt auf einer 10px-Textzeile darin. Vorher
+     waren es sieben ausgefuellte 36px-Bloecke, und das las sich als Kachelwand statt als Liste
+     von Namen. */
+  .am-prev-skel { display: flex; flex-direction: column; gap: 2px; padding: 2px 0; }
+  .am-prev-skel-head { height: 10px; width: 34%; border-radius: 5px; margin: 8px 8px 6px; }
+  .am-prev-skel-row { height: 34px; display: flex; align-items: center; padding: 0 8px; }
+  .am-prev-skel-line { height: 10px; border-radius: 5px; display: block; }
+  .am-prev-skel-head, .am-prev-skel-line { background: linear-gradient(90deg, var(--am-soft-2) 25%, var(--am-soft) 50%, var(--am-soft-2) 75%); background-size: 300% 100%; animation: amSkelShimmer 1.25s ease-in-out infinite; }
   /* chat-loading skeleton (shown while a clicked chat is still loading) */
   .am-msg-skel .am-bubble { min-width: 130px; }
   .am-skel-line { display: block; height: 13px; border-radius: 6px; margin: 0 0 10px; background: linear-gradient(90deg, var(--am-soft-2) 25%, var(--am-soft) 50%, var(--am-soft-2) 75%); background-size: 300% 100%; animation: amSkelShimmer 1.25s ease-in-out infinite; }

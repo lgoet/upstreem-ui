@@ -150,9 +150,16 @@
   var elPrevPanel  = root.querySelector('#am-prev-panel');
   var elPrevList   = root.querySelector('#am-prev-list');
   var _prevLoaded  = false;   // becomes true once the app receives its chat sessions (or a timeout fallback)
+  /* Das Skelett soll aussehen wie der Inhalt, der kommt: Zeilen von 34px mit EINER Textzeile
+     darin, nicht sieben ausgefuellte Bloecke. Die Breiten wechseln, weil Chatnamen verschieden
+     lang sind -- gleich lange Balken lesen sich als Tabelle, nicht als Liste. */
+  var SKEL_BREITEN = [78, 62, 84, 55, 71, 66, 48];
   function _prevSkeletonHTML(){
     var rows = '';
-    for (var i = 0; i < 7; i++){ rows += '<div class="am-prev-skel-row"></div>'; }
+    for (var i = 0; i < SKEL_BREITEN.length; i++){
+      rows += '<div class="am-prev-skel-row"><span class="am-prev-skel-line" style="width:' +
+              SKEL_BREITEN[i] + '%"></span></div>';
+    }
     return '<div class="am-prev-skel"><div class="am-prev-skel-head"></div>' + rows + '</div>';
   }
   var elPrevScrim  = root.querySelector('#am-prev-scrim');
@@ -4025,11 +4032,12 @@
          Schriftzug "mira". Nicht ein anderes Zeichen in kleiner -- die Klassen sind die des
          Kopfes, die Leiste setzt nur die Groessen herunter. Ein zweites Logo waere ein zweites
          Logo, auch wenn es aehnlich aussieht. */
+      /* NUR der Schriftzug, ohne Zeichen: in einer 250px-Leiste neben einem Umschalter ist das
+         Zeichen ein zweites Signal fuer dieselbe Sache. Die Klasse bleibt die des Kopfes
+         (.am-wordmark), die Leiste setzt nur die Groesse. */
       var logo = document.createElement('span');
       logo.className = 'am-brand am-side-logo';
-      var zeichen = (kern && kern.icon) ? kern.icon('blend', 1.8) : '';
-      logo.innerHTML = '<span class="am-logo-mark' + (zeichen ? ' is-icon' : '') + '" aria-hidden="true">' +
-                       zeichen + '</span><span class="am-wordmark">mira</span>';
+      logo.innerHTML = '<span class="am-wordmark">mira</span>';
       kopf.appendChild(um); kopf.appendChild(logo);
     }
 
@@ -4041,6 +4049,60 @@
     if (elNewChat) elNewChat.classList.add('up-filter-item', 'am-side-item');
     if (elHlBtn) elHlBtn.classList.add('up-filter-item', 'am-side-item');
 
+    /* ---- Breite verstellbar, wie die erste Spalte einer Tabelle ----
+       Der GRIFF ist der aus core (.up-grip): dieselbe Trefferzone von 9px, derselbe col-resize,
+       derselbe 2px-Strich im Hover. Die LOGIK ist eine eigene -- die des Kits haengt an
+       Spaltenspuren, Mindestbreiten und autoFit, davon gibt es hier nichts. Was uebernommen ist,
+       ist ihr Muster: pointermove auf ein Bild pro Rahmen zusammenfassen (ein Trackpad feuert
+       bis 120 Hz, also mehrmals je Bild), die letzte Position beim Loslassen noch schreiben, und
+       is-resizing an die Wurzel, damit der Zeiger ueberall col-resize bleibt.
+       Nach LINKS ziehen macht breiter, weil die Leiste rechts sitzt -- daher das Minus. */
+    var W_KEY = 'am_side_w', W_MIN = 200, W_MAX = 350, W_VOR = 250;
+    function breiteLesen(){
+      var v = NaN;
+      try { v = parseInt(localStorage.getItem(W_KEY), 10); } catch(e){}
+      if (!isFinite(v)) return W_VOR;
+      return Math.max(W_MIN, Math.min(W_MAX, v));
+    }
+    function breiteSetzen(px, merken){
+      var w = Math.max(W_MIN, Math.min(W_MAX, Math.round(px)));
+      root.style.setProperty('--am-side-w', w + 'px');
+      if (merken){ try { localStorage.setItem(W_KEY, String(w)); } catch(e){} }
+      return w;
+    }
+    breiteSetzen(breiteLesen(), false);
+    if (!elPrevPanel.querySelector('.am-side-grip')){
+      var griff = document.createElement('span');
+      griff.className = 'up-grip am-side-grip';
+      griff.setAttribute('aria-hidden', 'true');
+      elPrevPanel.appendChild(griff);
+      griff.addEventListener('pointerdown', function(e){
+        if (e.button !== 0) return;
+        var startX = e.clientX, startW = elPrevPanel.getBoundingClientRect().width;
+        griff.classList.add('is-active');
+        root.classList.add('is-resizing');
+        var raf = null, letztesX = null;
+        function schreiben(){ if (letztesX == null) return; breiteSetzen(startW - (letztesX - startX), false); }
+        function bewegen(ev){
+          letztesX = ev.clientX;
+          if (raf) return;
+          raf = requestAnimationFrame(function(){ raf = null; schreiben(); });
+        }
+        function los(){
+          if (raf){ cancelAnimationFrame(raf); raf = null; }
+          schreiben();
+          document.removeEventListener('pointermove', bewegen);
+          document.removeEventListener('pointerup', los);
+          root.classList.remove('is-resizing');
+          griff.classList.remove('is-active');
+          breiteSetzen(elPrevPanel.getBoundingClientRect().width, true);
+        }
+        document.addEventListener('pointermove', bewegen);
+        document.addEventListener('pointerup', los);
+        e.preventDefault();
+      });
+    }
+
     /* Die Blende erst freigeben, wenn der Anfangszustand steht: sonst faehrt die Leiste beim
        Laden einmal herein, und das sieht aus wie ein Fehler statt wie eine Einstellung.
        Uhr neben requestAnimationFrame, weil rAF in einem VERDECKTEN Tab gar nicht laeuft und
@@ -4049,6 +4111,10 @@
     if (seiteOffen()){
       root.classList.add('prev-open');
       elPrevPanel.setAttribute('aria-hidden', 'false');
+      /* UND einmal zeichnen. Vorher lief das nur ueber openPrev(), also erst beim Klick -- mit
+         standardmaessig offener Leiste haette die Liste bis zum ersten Datenpaket LEER gestanden,
+         nicht einmal das Skelett waere da gewesen. Gemessen: keine .am-prev-skel im DOM. */
+      renderPrevious();
     }
     function frei(){ root.classList.add('side-ready'); }
     requestAnimationFrame(function(){ requestAnimationFrame(frei); });
