@@ -675,7 +675,13 @@
     }
 
     function namenSchreiben(v, zweiterVersuch) {
-      profilSchreiben({ display_name: v }, function (ok, grund) {
+      /* BEIDE Schluessel. In einer Metadata, die aus einer Google-Anmeldung kommt, stehen "name"
+         und "full_name" -- ein "display_name" gibt es dort nicht, und ein Plugin, das den Namen
+         als "Metadata name" anbietet, liest genau den einen, den wir sonst nie schreiben.
+         Gemessen an einer echten Zeile: raw_user_meta_data trug name und full_name, kein
+         display_name. Deshalb beide -- GoTrue MISCHT die Felder, der Rest der Metadata bleibt
+         unberuehrt. */
+      profilSchreiben({ display_name: v, name: v }, function (ok, grund) {
         if (ok) {
           avMelden(null);
           fireBauen();
