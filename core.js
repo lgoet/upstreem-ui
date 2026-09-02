@@ -5715,7 +5715,12 @@
   if (window.MutationObserver){
     var stampGeplant = false;
     /* Die Teilbaeume, die seit dem letzten Lauf dazugekommen sind. null heisst "zu viele, lauf
-       ueber alles" -- siehe die Deckelung unten. */
+       ueber alles" -- siehe die Deckelung unten.
+       ACHT und nicht vierzig: die Deckelung begrenzt, wie viele volle Laeufe ein Takt kostet, und
+       jeder Lauf sind fuenf DOM-Abfragen plus ein TreeWalker. Mit vierzig waren das im
+       schlimmsten Fall zweihundert Abfragen je Takt. Der Wert ist jetzt gemessen und nicht
+       geschaetzt -- siehe die Zahlen am Beobachter darunter. */
+    var SAMMEL_MAX = 8;
     var segKnoten = [];
     var stampObs = new MutationObserver(function(muts){
       /* TEXTaenderungen zuerst, und getrennt von allem anderen. Eine Komponente, die nur ihren
@@ -5756,22 +5761,64 @@
          Wechsel zwischen Domain- und URL-Modus auf der Citations-Seite.
          Nur die betroffenen Aeste und nicht das ganze Dokument: stampGran nimmt eine Wurzel, und
          teurer als ein querySelectorAll auf einem frischen Knoten ist das nicht. */
+      /* ---------- Die frischen Aeste EINMAL behandeln, nicht je Knoten ----------
+         DIE MESSUNG, die diesen Block umgeschrieben hat. Auf einer 4-fach gebremsten CPU, ein
+         paar Filterklicks:
+             breiterLauf   177296 Zugriffe   4313 Laeufe   172983 Schritte durch Textknoten
+             spracheLauf     8626 Suchen  (= 2 je Lauf)
+             knopfEtikett    4313          attributeStellen 4313
+         84 Prozent der gesamten DOM-Arbeit, und der Preis lag NICHT in der Tiefe, sondern in der
+         ANZAHL: 4313 Sprachlaeufe, jeder mit zwei querySelectorAll, einem TreeWalker und zwei
+         weiteren Suchen darin -- rund 21000 Abfragen fuer eine Handvoll Klicks.
+         Woher die 4313 kamen: dieser Zweig rief pro HINZUGEKOMMENEM KNOTEN. Eine Tabelle mit 60
+         Zeilen haengt sechshundert Knoten ein, und jeder bekam seinen eigenen vollen Lauf. Am
+         Ende lief sogar Bubbles eigener Workflow in seinen 30-Sekunden-Zeitablauf, weil der
+         Hauptthread nicht mehr freikam.
+
+         Jetzt: alle Aeste einer Runde sammeln, dann zusammenfassen.
+         Ab AECHT Aesten wird auf die ELTERN gefaltet -- sechzig Zeilen einer Tabelle haben einen
+         gemeinsamen Koerper, und EIN Lauf darueber besucht dieselben Textknoten wie sechzig
+         einzelne, zahlt den Weg drumherum aber einmal statt sechzigmal. Bleiben auch dann zu
+         viele, ist ein Lauf ueber alles wirklich billiger.
+         Der synchrone Lauf BLEIBT -- er ist der Grund, warum keine englischen Texte aufblitzen
+         (der Rueckruf eines Beobachters ist ein Microtask und laeuft vor dem naechsten Bild).
+         Gebuendelt kostet er das, was er wert ist. */
+      var frisch = null;
       for (var m = 0; m < muts.length; m++){
         var zu = muts[m].addedNodes;
         for (var n = 0; n < zu.length; n++){
           if (zu[n].nodeType !== 1) continue;
-          sicher("stampGran", (function(el){ return function(){ stampGran(el); }; })(zu[n]));
-          /* Die SPRACHE aus demselben Grund sofort und nicht in 250ms. Genau das war gemeldet:
-             "alle englischen Texte stehen beim Laden noch drin und wechseln kurz danach zu
-             deutsch". Der Rueckruf eines Beobachters ist ein Microtask und laeuft VOR dem
-             naechsten Bild -- wer hier uebersetzt, laesst nichts aufblitzen. Nur der frische Ast,
-             nicht das ganze Dokument. */
-          sicher("spracheLauf", (function(el){ return function(){ spracheLauf(el); }; })(zu[n]));
-          /* Fuer den Streifen merken, WAS dazugekommen ist -- gemessen wird gleich nur das,
-             nicht die ganze Seite. Nach oben gedeckelt: wer hundert Knoten auf einmal einhaengt,
-             baut die Seite neu, und dann ist ein Lauf ueber alles billiger als hundert kleine. */
-          if (segKnoten && segKnoten.length < 40) segKnoten.push(zu[n]);
-          else segKnoten = null;
+          (frisch || (frisch = [])).push(zu[n]);
+        }
+      }
+      if (frisch){
+        var ziele = frisch;
+        if (frisch.length > SAMMEL_MAX){
+          var eltern = [];
+          for (var f = 0; f < frisch.length; f++){
+            var pe = frisch[f].parentNode;
+            if (!pe || pe.nodeType !== 1) pe = frisch[f];
+            if (eltern.indexOf(pe) < 0){
+              eltern.push(pe);
+              if (eltern.length > SAMMEL_MAX) break;
+            }
+          }
+          ziele = (eltern.length <= SAMMEL_MAX) ? eltern : [document];
+        }
+        for (var t2 = 0; t2 < ziele.length; t2++){
+          (function(el){
+            sicher("stampGran", function(){ stampGran(el); });
+            sicher("spracheLauf", function(){ spracheLauf(el); });
+          })(ziele[t2]);
+        }
+        /* Fuer den 250ms-Lauf dasselbe merken. Dieselbe Deckelung, damit dort nicht doch wieder
+           vierzig Laeufe je Takt stehen. */
+        if (segKnoten){
+          for (var g = 0; g < ziele.length; g++){
+            if (ziele[g] === document){ segKnoten = null; break; }
+            if (segKnoten.length < SAMMEL_MAX) segKnoten.push(ziele[g]);
+            else { segKnoten = null; break; }
+          }
         }
       }
       if (stampGeplant) return;
