@@ -55,19 +55,37 @@ Promise.all(["core.css","core.js","ask-mira.css","ask-mira.js","bubble/ask_mira_
     nach_60px_links: ziehen(60), nach_400px_links_deckel: ziehen(400),
     nach_400px_rechts_boden: ziehen(-400),
     gespeichert: (function(){ try{ return localStorage.getItem("am_side_w"); }catch(e){ return "?"; } })() } : null;
-  /* Das Skelett: die Zeilen sollen leer sein und die Textzeile darin das Schimmern tragen. */
-  var liste=root.querySelector("#am-prev-list");
-  var skelHtml = null, skel = null;
-  if (liste){
-    liste.innerHTML = ''; /* Platz fuer das Skelett */
-  }
+  /* Das Skelett wird in _h_mira_blitz/_h_mira_zelle FRUEH gemessen (vor den Daten) -- hier NICHT
+     mehr die Liste leeren. Genau das hat im letzten Lauf die Zeilen weggeraeumt, und danach fand
+     der Test fuer Punktemenue und Chat-Klick nichts vor. Wieder eine Messung, die sich selbst
+     kaputt gemacht hat. */
   /* All-Chats-Knopf: nur bei geschlossener Leiste. */
   var ac=root.querySelector(".am-prev-btn");
   var acOffen=ac?getComputedStyle(ac).display:null;
   root.classList.remove("prev-open");
   var acZu=ac?getComputedStyle(ac).display:null;
   root.classList.add("prev-open");
+  /* Das gespiegelte Zeichen und das Punktemenue. */
+  var umsch=root.querySelector(".am-side-toggle");
+  var umschSvg=umsch&&umsch.querySelector("svg");
+  /* Das Punktemenue: den Knopf am Chat suchen, der drei Kreise traegt -- unabhaengig von seiner
+     Klasse, damit der Test nicht an einem Namen haengt. */
+  var pSvg=null, punkteBtn=null;
+  [].forEach.call(root.querySelectorAll(".am-prev-item button, .am-prev-proj-head button"), function(b){
+    var sv=b.querySelector("svg");
+    if (!pSvg && sv && sv.querySelectorAll("circle").length === 3){ pSvg=sv; punkteBtn=b; }
+  });
   window.__R = { logo: logo, zieher: zieher,
+    umschalter: umschSvg ? { transform: getComputedStyle(umschSvg).transform,
+                             masse: getComputedStyle(umschSvg).width+"x"+getComputedStyle(umschSvg).height } : null,
+    punktemenue: pSvg ? { kreise: pSvg.querySelectorAll("circle").length,
+      mittelpunkte: [].map.call(pSvg.querySelectorAll("circle"), function(c){ return c.getAttribute("cx")+"/"+c.getAttribute("cy")+"/r"+c.getAttribute("r"); }),
+      strichbreite: pSvg.getAttribute("stroke-width"),
+      /* Der Punkt entsteht aus dem STRICH, nicht aus der Fuellung -- deshalb beides messen. */
+      fuellung: getComputedStyle(pSvg).fill, strich: getComputedStyle(pSvg).stroke,
+      strichbreite_berechnet: getComputedStyle(pSvg).strokeWidth,
+      masse: getComputedStyle(pSvg).width+"x"+getComputedStyle(pSvg).height,
+      knopf_klassen: punkteBtn.className } : null,
     schale_polster_rechts: getComputedStyle(root.querySelector(".am-shell")).paddingRight,
     all_chats: { bei_offener_leiste: acOffen, bei_geschlossener: acZu },
     neuer_chat: zeile("#am-new-chat"), einstellungen: zeile("#am-settings-btn"),
@@ -77,6 +95,14 @@ Promise.all(["core.css","core.js","ask-mira.css","ask-mira.js","bubble/ask_mira_
               schale: Math.round(root.querySelector(".am-shell").getBoundingClientRect().width) },
     innerWidth: window.innerWidth, fehler: window.__err };
   /* Der Lauftext, ueber die ZEILE ausgeloest -- so wie ein Zeiger es tut. */
+  /* Ein Chat oeffnen darf die Leiste auf dem Schirm nicht schliessen. */
+  var ersteZeile = root.querySelector(".am-prev-item");
+  if (ersteZeile){
+    ersteZeile.click();
+    window.__R.chat_klick = { leiste_noch_offen: root.classList.contains("prev-open"),
+                              speicher: (function(){ try{ return localStorage.getItem("am_side_open"); }catch(e){ return "?"; } })(),
+                              schmal: window.matchMedia("(max-width: 720px)").matches };
+  }
   var zeileEl = [].slice.call(root.querySelectorAll(".am-prev-item"))
     .filter(function(z){ var t=z.querySelector(".am-prev-item-title"); return t && t.scrollWidth - t.clientWidth > 1; })[0];
   if (!zeileEl){ window.__R.lauf = { keine_abgeschnittene_zeile: true }; window.__fertig = true; return; }

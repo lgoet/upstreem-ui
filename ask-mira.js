@@ -3986,6 +3986,14 @@
   function openPrev(){ renderPrevious(); root.classList.add('prev-open'); elPrevPanel.setAttribute('aria-hidden','false'); elPrevScrim.hidden = false; if (elPrevList) elPrevList.scrollTop = 0; seiteMerken(true); }
   function closePrev(){ root.classList.remove('prev-open'); elPrevPanel.setAttribute('aria-hidden','true'); if (typeof openHlPanel === 'function') openHlPanel(false); seiteMerken(false); }
   function togglePrev(){ if (root.classList.contains('prev-open')) closePrev(); else openPrev(); }
+  /* Einen Chat oeffnen schliesst die Leiste NICHT mehr. Sie ist jetzt Teil des Layouts -- sie
+     verdeckt nichts, also gibt es nichts zuzuklappen, und wer durch mehrere Chats geht, musste
+     sie bisher jedes Mal neu aufmachen.
+     Am Telefon bleibt es beim Zuklappen: dort liegt sie UEBER dem Chat, den man gerade geoeffnet
+     hat -- offen zu bleiben hiesse, das Ziel zu verdecken. */
+  function closePrevWennSchmal(){
+    if (window.matchMedia && window.matchMedia('(max-width: 720px)').matches) closePrev();
+  }
   /* Der Knopf im Kopfbereich UMSCHALTET jetzt. Vorher hat er nur geoeffnet, und das war richtig,
      solange die Leiste ueber dem Inhalt lag und sich immer selbst wieder schloss. Jetzt ist sie
      standardmaessig offen -- ein Knopf, der bei offener Leiste nichts tut, sieht kaputt aus. */
@@ -3996,7 +4004,7 @@
      ist sie Teil des Layouts, und dort waere Escape ein Layoutwechsel aus dem Nichts. */
   document.addEventListener('keydown', function(e){
     if (e.key !== 'Escape' || !root.classList.contains('prev-open')) return;
-    if (window.matchMedia && window.matchMedia('(max-width: 720px)').matches) closePrev();
+    closePrevWennSchmal();
   });
 
   /* ---------------- die Leiste zur echten Leiste machen ----------------
@@ -4014,6 +4022,8 @@
     var schale = root.querySelector('.am-shell');
     if (!elPrevPanel || !schale) return;
     if (elPrevPanel.parentNode !== root) root.appendChild(elPrevPanel);
+    /* Erst JETZT darf sie sichtbar werden -- siehe den Kommentar an .am-prev-panel in der CSS. */
+    root.classList.add('side-mounted');
 
     var kopf = elPrevPanel.querySelector('.am-prev-head');
     if (kopf && !kopf.getAttribute('data-side')){
@@ -4386,7 +4396,7 @@
     renderMessages(); renderChatTitlebar();
     if (window.bubble_fn_ask_mira_select_chat) window.bubble_fn_ask_mira_select_chat(id);
     else window.dispatchEvent(new CustomEvent('askmira:select-chat', { detail: { chat_id: id } }));
-    closePrev();
+    closePrevWennSchmal();
   });
   elPrevList.addEventListener('keydown', function(e){
     var inp = e.target.closest('.am-prev-item-input');
@@ -4548,7 +4558,7 @@
     renderMessages();
     if (window.bubble_fn_ask_mira_new_chat) window.bubble_fn_ask_mira_new_chat();
     else window.dispatchEvent(new CustomEvent('askmira:new-chat', {}));
-    closePrev();
+    closePrevWennSchmal();
   }
   elNewChat.addEventListener('click', goToStart);
   /* The component always dispatches this, whether or not it also calls Bubble -- in local mode it

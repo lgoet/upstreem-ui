@@ -1,0 +1,38 @@
+<meta charset="utf-8"><title>Mira ohne Skript</title>
+<style>html,body{margin:0;background:#fff;font:13px/1.5 Geist,system-ui,sans-serif}#b{width:1000px;height:520px}</style>
+<body><div id="b"></div>
+<script>
+/* Der gemeldete Ausschnitt entsteht in dem Fenster, in dem CSS und Markup schon da sind, das
+   SKRIPT aber noch nicht. Also wird genau dieser Zustand gestellt: Stile und Auszeichnung laden,
+   ask-mira.js NICHT. Gemessen wird, ob die Leiste dann ueberhaupt Platz belegt und wo.
+   Gegentest gegen die alte Fassung: dieselbe Messung mit display:flex am Panel -- dann muss der
+   Kasten unten links wieder auftauchen, sonst messe ich meine eigene Messung. */
+window.__err=[]; window.addEventListener("error",function(e){ window.__err.push(String(e.message)); });
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){ return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+Promise.all(["core.css","ask-mira.css","bubble/ask_mira_bubble.html"].map(hol)).then(function(t){
+  [t[0],t[1]].forEach(function(c){ var s=document.createElement("style"); s.textContent=c; document.head.appendChild(s); });
+  var w=document.createElement("div"); w.innerHTML=wurzelAus(t[2]);
+  var r=w.querySelector("#ask-mira");
+  r.setAttribute("data-instance","m1"); r.setAttribute("data-isdark","no");
+  document.getElementById("b").appendChild(r);
+  return new Promise(function(ok){ setTimeout(ok,300); });
+}).then(function(){
+  var root=document.querySelector("#ask-mira"), panel=root.querySelector("#am-prev-panel");
+  var schale=root.querySelector(".am-shell");
+  function lage(){ var c=getComputedStyle(panel), b=panel.getBoundingClientRect();
+    return { display:c.display, eltern:panel.parentNode.className,
+             rechteck:[Math.round(b.left),Math.round(b.top),Math.round(b.width),Math.round(b.height)],
+             sichtbare_flaeche: Math.round(b.width*b.height),
+             schale_hoehe: Math.round(schale.getBoundingClientRect().height) }; }
+  var R = { OHNE_SKRIPT: lage(), wurzel_hat_side_mounted: root.classList.contains("side-mounted") };
+  /* Gegentest: so war es vorher. */
+  var s=document.createElement("style");
+  s.textContent="#ask-mira .am-prev-panel{display:flex !important}";
+  document.head.appendChild(s);
+  R.ALTE_FASSUNG = lage();
+  s.remove();
+  R.fehler=window.__err;
+  window.__R=R; window.__fertig=true;
+}).catch(function(e){ window.__R={fehler:[String(e.message)]}; window.__fertig=true; });
+</script>

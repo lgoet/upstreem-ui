@@ -1476,8 +1476,16 @@
     margin: 0 calc(-1 * var(--am-side-w)) 0 0; background: var(--am-bg);
     border: 0; border-left: 1px solid var(--am-border-strong); border-radius: 0;
     box-shadow: none; overflow: hidden; transform: none;
-    display: flex; flex-direction: column;
+    /* NICHT DA, bis ask-mira.js die Leiste an die Wurzel umgehaengt hat. Vorher liegt sie als
+       Kind der Schale in einer SPALTEN-Flexbox, und dort wird flex-basis zur HOEHE: sie stand
+       damit als 250x250-Kasten unten links im Bauteil, so lange das Skript noch unterwegs war.
+       Genau der gemeldete Ausschnitt beim Seitenaufbau -- und er dauerte so lange, wie die
+       Datei brauchte, war also je Verbindung anders lang.
+       display: none und nicht visibility: hidden, damit sie in der Spalte auch keinen Platz
+       belegt und die Schale nicht kuerzer macht. */
+    display: none; flex-direction: column;
   }
+  #ask-mira.side-mounted .am-prev-panel { display: flex; }
   /* Der Uebergang haengt an side-ready, nicht an der Regel selbst: der Anfangszustand kommt aus
      dem localStorage und wird in derselben Zeit gesetzt, in der die Seite aufbaut. Ohne diese
      Klasse faehrt die offene Leiste beim Laden einmal herein, und das sieht aus wie ein Fehler
@@ -1505,7 +1513,10 @@
      Deckkraft: ein Umschalter, der an zwei Orten anders aussieht, liest sich als zwei Dinge. */
   .am-prev-panel .am-side-toggle { color: var(--am-muted); }
   .am-prev-panel .am-side-toggle:hover { background: var(--am-soft); color: var(--am-text); }
-  .am-prev-panel .am-side-toggle svg { width: 16px; height: 16px; opacity: .8; }
+  /* Gespiegelt: das Zeichen zeigt eine Leiste an der linken Kante, diese hier sitzt rechts.
+     scaleX(-1) wie am Zeichen des "All Chats"-Knopfes daneben -- dieselbe Drehung, damit die zwei
+     nicht in verschiedene Richtungen deuten. */
+  .am-prev-panel .am-side-toggle svg { width: 16px; height: 16px; opacity: .8; transform: scaleX(-1); }
   .am-prev-panel .am-side-toggle:hover svg { opacity: 1; }
   /* Das Markenzeichen der Leiste IST das des Kopfes (.am-brand mit .am-logo-mark und
      .am-wordmark) -- hier stehen nur die kleineren Masse. Faktor etwa 0,53 auf alles, damit das
@@ -1733,7 +1744,16 @@
   .am-prev-mini[data-prev-act="save"]:hover, .am-prev-mini[data-proj-act="save"]:hover { color: #1a7f4b; }
   .am-prev-mini[data-prev-act="delete"]:hover, .am-prev-mini[data-proj-act="delete"]:hover { color: #c0392b; }
   .am-prev-mini.is-on { color: var(--am-accent); }
-  .am-prev-menu-btn svg { fill: currentColor; stroke: none; }
+  /* Diese Zeile stand hier, seit die drei Punkte ein gefuellter Glyph waren. Das Zeichen kommt
+     inzwischen aus core (UC.icon("moreHorizontal")), und das ist Lucide "ellipsis": drei
+     <circle r="1">, die ihre Groesse aus dem STRICH nehmen. Mit fill: currentColor und
+     stroke: none blieb davon ein 2px-Punkt statt eines 3px-Punktes -- dasselbe Zeichen, aber
+     feiner als der Kebab in jeder anderen Tabelle. Gemessen: Punktdurchmesser 2px hier gegen 3px
+     in prompts-table, bei identischen 14x14.
+     Die Werte stehen jetzt richtig da, statt zu fehlen: .am-prev-mini svg gibt dasselbe, aber die
+     Klasse bleibt im Vertrag (das Markup gibt sie weiter aus, und JS greift sie), und an genau
+     dieser Zeile stand der falsche Wert -- hier gehoert der richtige hin, nicht eine Luecke. */
+  .am-prev-menu-btn svg { fill: none; stroke: currentColor; }
   .am-prev-empty { padding: 28px 12px; text-align: center; color: var(--am-muted); font-size: 13px; }
 
   /* ---- chat context menu (three-dots) ---- */
