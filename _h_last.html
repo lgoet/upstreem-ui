@@ -1,0 +1,32 @@
+<meta charset="utf-8"><title>Last: deutsch gegen englisch</title>
+<style>html,body{margin:0;font:12px/1.6 ui-monospace,monospace}iframe{width:1240px;height:520px;border:0;display:block}#out{padding:10px;white-space:pre-wrap}</style>
+<body><iframe id="r"></iframe><pre id="out">laeuft…</pre>
+<script>
+/* Beide Laeufe hintereinander im selben Rahmen -- gleiche Maschine, gleiche Breite, gleicher
+   Zustand. Ein Vergleich zwischen zwei Fenstern waere kein Vergleich. */
+var r=document.getElementById("r"), E={};
+function lauf(url, name){
+  return new Promise(function(ok){
+    r.addEventListener("load", function ein(){
+      r.removeEventListener("load", ein);
+      var w=r.contentWindow;
+      var t=setInterval(function(){ if(!w.__fertig) return; clearInterval(t); E[name]=w.__R; ok(); },300);
+      setTimeout(function(){ clearInterval(t); if(!E[name]) E[name]={offen:"Zeit abgelaufen"}; ok(); }, 40000);
+    });
+    r.src = url;
+  });
+}
+lauf("_h_last_kind.html?n="+Math.random(), "DEUTSCH")
+  .then(function(){ return lauf("_h_last_kind.html?en=1&n="+Math.random(), "ENGLISCH"); })
+  .then(function(){
+    if (E.DEUTSCH && E.ENGLISCH && E.DEUTSCH.dauer_ms && E.ENGLISCH.dauer_ms){
+      E.DIFFERENZ = {
+        blockiert_ms: E.DEUTSCH.blockiert_ms_gesamt - E.ENGLISCH.blockiert_ms_gesamt,
+        luecke_max_ms: E.DEUTSCH.luecke_max_ms - E.ENGLISCH.luecke_max_ms,
+        luecken_ueber_50ms: E.DEUTSCH.luecken_ueber_50ms - E.ENGLISCH.luecken_ueber_50ms
+      };
+    }
+    document.getElementById("out").textContent=JSON.stringify(E,null,1);
+    window.__R=E; window.__fertig=true;
+  });
+</script>

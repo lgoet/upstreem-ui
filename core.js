@@ -4708,9 +4708,20 @@
     }
     return null;
   }
+  /* Der frische Ast KANN selbst das gesuchte Element sein -- querySelectorAll findet nur
+     NACHFAHREN. Solange diese Laeufe ueber das ganze Dokument gingen, fiel das nie auf: dort ist
+     die Wurzel nie das Gesuchte. Seit sie auf Teilbaeumen arbeiten, waere jeder Knopf und jede
+     Leiste uebersprungen worden, die Bubble als eigenen Knoten einhaengt. */
+  function mitWurzel(ziel, sel){
+    var out = [];
+    try { if (ziel && ziel !== document && ziel.matches && ziel.matches(sel)) out.push(ziel); } catch(e){}
+    try { var d = (ziel || document).querySelectorAll(sel);
+          for (var i = 0; i < d.length; i++) out.push(d[i]); } catch(e){}
+    return out;
+  }
   function stampToolbarIcons(wurzel){
     var ziel = wurzel || document, els;
-    try { els = ziel.querySelectorAll(toolbarSelektor()); } catch(e){ return; }
+    try { els = mitWurzel(ziel, toolbarSelektor()); } catch(e){ return; }
     for (var i = 0; i < els.length; i++){
       var b = els[i];
       var t = toolbarSchluessel(b);
@@ -4803,7 +4814,7 @@
   }
   function orderToolbars(wurzel){
     var ziel = wurzel || document, leisten;
-    try { leisten = ziel.querySelectorAll(TOOLBAR_LEISTEN); } catch(e){ return; }
+    try { leisten = mitWurzel(ziel, TOOLBAR_LEISTEN); } catch(e){ return; }
     for (var i = 0; i < leisten.length; i++){
       var box = leisten[i], kinder = box.children;
       var plaetze = [], rollen = [], j;
@@ -4876,7 +4887,7 @@
     /* JEDER Knopf mit data-gran, nicht nur eine Klasse: der Combo-Chart nennt seine cc-gran-btn,
        und genau der stand deshalb noch auf "Day/Week/Month", waehrend alle anderen schon kurz
        waren. Ueber das Attribut trifft es auch jede kuenftige Variante. */
-    try { els = ziel.querySelectorAll("button[data-gran]"); } catch(e){ return; }
+    try { els = mitWurzel(ziel, "button[data-gran]"); } catch(e){ return; }
     els = Array.prototype.slice.call(els);
     /* Die Wurzel selbst zaehlt mit: der Beobachter uebergibt den hinzugekommenen Knoten, und der
        KANN der Knopf sein. querySelectorAll findet nur Nachfahren. */
@@ -5597,11 +5608,50 @@
     /* ZUERST: die Werte aus den Attributen. Bubble baut das Element bei jeder Aenderung eines
        dynamischen Ausdrucks neu, dieser Lauf sieht die Aenderung also mit. */
     sicher("attrLesen", attrLesen);
-    sicher("spracheLauf", function(){ spracheLauf(); });
+
+    /* ---------- NUR die frischen Aeste ----------
+       Dasselbe Muster, das segLauf weiter unten schon benutzt, und aus demselben Grund. Bis
+       hierher liefen diese fuenf Laeufe ueber das GANZE Dokument -- 250ms nach JEDER Aenderung.
+       Bei einer Tabelle, die sich beim Filtern neu aufbaut, heisst das: einmal alles, fuer jeden
+       Klick. Und doppelt, denn der Beobachter hat spracheLauf(el) fuer denselben Ast schon
+       synchron gerufen; der zweite Lauf fand nichts mehr zu tun und zahlte trotzdem den Weg
+       ueber jeden Textknoten der Seite.
+       Gemessen im Lastaufbau: 240 TreeWalker ueber die ganze Seite fuer 12 Neuaufbauten, also 20
+       je Klick, und breiterLauf war mit 2652 von 4532 DOM-Zugriffen der groesste Posten.
+
+       Die vier Faelle, und jeder hat einen Grund:
+         undefined  Aufbau und die fuenf nachgelagerten Uhren -- da gibt es noch keine "frischen"
+                    Aeste, es muss ueber alles gehen.
+         null       Die Deckelung von 40 ist gerissen, es kam zu viel auf einmal. Dann ist ein
+                    Lauf ueber alles wirklich billiger als hundert kleine.
+         Liste      Der Normalfall im Betrieb: nur diese Aeste.
+         LEERE Liste  Es ist nichts dazugekommen -- eine reine Textaenderung oder eine Entfernung.
+                    Dann gibt es hier nichts zu tun: der Beobachter hat den characterData-Fall
+                    schon synchron ueber spracheEinen bedient (siehe dort). Vorher lief genau
+                    dafuer ein Volllauf ueber die Seite. */
+    var voll = (knoten === undefined || knoten === null);
+    if (!voll && !knoten.length) return;
+    if (voll) {
+      sicher("spracheLauf", function(){ spracheLauf(); });
+      sicher("stampToolbarIcons", stampToolbarIcons);
+      sicher("stampGran", stampGran);
+      sicher("orderToolbars", orderToolbars);
+    } else {
+      for (var a = 0; a < knoten.length; a++){
+        (function(k){
+          if (!k || !k.isConnected) return;
+          sicher("spracheLauf", function(){ spracheLauf(k); });
+          sicher("stampToolbarIcons", function(){ stampToolbarIcons(k); });
+          sicher("stampGran", function(){ stampGran(k); });
+          sicher("orderToolbars", function(){ orderToolbars(k); });
+        })(knoten[a]);
+      }
+    }
+    /* nurFunktionLauf nimmt keine Wurzel -- es prueft die Filter der Seite gegen ihre Groesse,
+       und das ist eine Frage an die ganze Seite, nicht an einen Ast. Es steht in der Messung
+       nicht unter den groessten Posten, und mit der Sperre oben laeuft es nur noch, wenn
+       wirklich etwas dazugekommen ist. */
     sicher("nurFunktionLauf", nurFunktionLauf);
-    sicher("stampToolbarIcons", stampToolbarIcons);
-    sicher("stampGran", stampGran);
-    sicher("orderToolbars", orderToolbars);
     /* segLauf haengt Elemente EIN und liest Layoutwerte. Beides gehoert nicht in denselben
        Augenblick, in dem die Seite gerade gezeichnet wird -- Bubble baut seine Gruppen ueber
        jQuery.html(), und ein fremder Knoten, der mitten in diesem Durchgang dazukommt, trifft auf

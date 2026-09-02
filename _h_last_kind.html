@@ -1,0 +1,86 @@
+<meta charset="utf-8"><title>Last: derselbe Ablauf auf deutsch und auf englisch</title>
+<style>html,body{margin:0;background:#fff;font:13px/1.5 Geist,system-ui,sans-serif}#b{width:1240px}</style>
+<body><div id="b"></div>
+<script>
+/* OHNE Instrumentierung. Der erste Versuch umhuellte querySelectorAll und createTreeWalker, um
+   Zugriffe zu zaehlen -- und die Tabelle rannte danach nur noch ins Skelett. Ich habe mein
+   Messwerkzeug gemessen.
+   Statt dessen ein A/B, das keinen Haken braucht: spracheLauf kehrt bei locale "en" ZURUECK, und
+   zwar direkt VOR breiterLauf -- dem Lauf ueber alle Textknoten. Dieselbe Last zweimal, einmal
+   deutsch, einmal englisch, und die Differenz IST der Preis dieses Laufs.
+   Gemessen wird die Wanduhr UND die laengste blockierte Zeitspanne: eine Anwendung, die "in die
+   Knie geht", hat lange Blockaden, nicht bloss eine hohe Summe. */
+window.__err=[]; window.addEventListener("error",function(e){ window.__err.push(String(e.message)); });
+var LOC = /[?&]en=1/.test(location.search) ? "en" : "de";
+try{ localStorage.clear(); localStorage.setItem("up_prefs", JSON.stringify({locale:LOC})); }catch(e){}
+
+/* Blockaden messen: eine Uhr, die alle 16ms schlagen SOLL. Was sie zu spaet kommt, hat der
+   Hauptthread woanders verbracht. */
+var LUECKEN = [], letzte = 0, misst = false;
+function takt(){
+  var jetzt = performance.now();
+  if (misst && letzte) LUECKEN.push(jetzt - letzte);
+  letzte = jetzt;
+  setTimeout(takt, 16);
+}
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){ return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+function zeilen(n, versatz){
+  var o = [];
+  for (var i = 0; i < n; i++) o.push({ id:"r"+(i+versatz),
+    prompt_text:"Welcher Anbieter ist der beste fuer Fall "+(i+versatz)+"?", status:"active" });
+  return o;
+}
+Promise.all(["core.css","core.js","prompts-table.css","prompts-table.js","bubble/prompts_table_bubble.html"].map(hol))
+.then(function(t){
+  [t[0],t[2]].forEach(function(c){ var s=document.createElement("style"); s.textContent=c; document.head.appendChild(s); });
+  var w=document.createElement("div"); w.innerHTML=wurzelAus(t[4]);
+  var r=w.querySelector(".upt-root");
+  r.setAttribute("data-instance","tb"); r.setAttribute("data-cdn-pin","tb"); r.setAttribute("data-isdark","no");
+  document.getElementById("b").appendChild(r);
+  var j=document.createElement("script"); j.textContent=t[1]; document.head.appendChild(j);
+  var j2=document.createElement("script"); j2.textContent=t[3]; document.head.appendChild(j2);
+  return new Promise(function(ok){ setTimeout(ok,1400); });
+}).then(function(){
+  /* Wortgleich die Form, die im Harness _h_upt_reihenfolge nachweislich Zeilen gerendert hat. */
+  window.renderPromptsTable(JSON.stringify({ instanceId:"tb", view_active:"yes",
+    totalCount:60, rows:zeilen(60,0) }));
+  return new Promise(function(ok){ setTimeout(ok,1200); });
+}).then(function(){
+  /* GEGENTEST vor dem Messen: stehen echte Zeilen da, oder das Skelett? */
+  var echte = document.querySelectorAll(".upt-root .up-tbody > .up-row:not(.up-tsk)").length;
+  var skel  = document.querySelectorAll(".upt-root .up-tsk").length;
+  var knoten = (function(){ var n=0,tw=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,null); while(tw.nextNode())n++; return n; })();
+  takt();
+  misst = true; LUECKEN.length = 0;
+  var t0 = performance.now();
+  var i = 0;
+  function runde(){
+    if (i >= 12) return Promise.resolve();
+    var versatz = (++i) * 60;
+    window.renderPromptsTable(JSON.stringify({ instanceId:"tb", view_active:"yes",
+      totalCount:60, rows:zeilen(60, versatz) }));
+    return new Promise(function(ok){ setTimeout(ok,300); }).then(runde);
+  }
+  return runde().then(function(){ return new Promise(function(ok){ setTimeout(ok,600); }); })
+  .then(function(){
+    misst = false;
+    var dauer = performance.now() - t0;
+    LUECKEN.sort(function(a,b){ return b-a; });
+    var summe = LUECKEN.reduce(function(s,x){ return s+x; }, 0);
+    var lang = LUECKEN.filter(function(x){ return x > 50; });
+    window.__R = {
+      sprache: LOC,
+      GEGENTEST: { echte_zeilen: echte, skelettzeilen: skel, textknoten: knoten },
+      dauer_ms: Math.round(dauer),
+      takte: LUECKEN.length,
+      luecke_max_ms: Math.round(LUECKEN[0] || 0),
+      luecke_p95_ms: Math.round(LUECKEN[Math.floor(LUECKEN.length * 0.05)] || 0),
+      luecken_ueber_50ms: lang.length,
+      blockiert_ms_gesamt: Math.round(summe - LUECKEN.length * 16),
+      fehler: window.__err
+    };
+    window.__fertig = true;
+  });
+}).catch(function(e){ window.__R={fehler:[String(e.message)+" | "+(e.stack||"").slice(0,300)]}; window.__fertig=true; });
+</script>

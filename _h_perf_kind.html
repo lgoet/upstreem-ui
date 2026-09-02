@@ -1,0 +1,133 @@
+<meta charset="utf-8"><title>Lastmessung: was kostet ein Filterklick</title>
+<style>html,body{margin:0;background:#fff;font:13px/1.5 Geist,system-ui,sans-serif}#b{width:1240px}</style>
+<body><div id="b"></div>
+<script>
+/* WAS HIER GEMESSEN WIRD, und warum so:
+   Die teuren Funktionen liegen in der IIFE von core.js, von aussen nicht greifbar. Gemessen wird
+   deshalb, was sie ANFASSEN -- die globalen DOM-Zugriffe -- und zugeordnet wird ueber den
+   Aufrufstapel. Genau die Art Messung, die in dieser App schon einmal den groessten Posten
+   gefunden hat (3378 von 6913 Lesezugriffen).
+   Gezaehlt wird pro AUFRUFER:
+     createTreeWalker + jeder nextNode  -> der Sprachlauf ueber alle Textknoten
+     querySelectorAll                   -> die Selektorlaeufe
+     getComputedStyle / getBoundingClientRect -> Layoutlesezugriffe (Reflow-Verdacht)
+   Danach wird eine echte Last gefahren: eine Tabelle mit 60 Zeilen mehrfach neu rendern, so wie
+   es ein Filterklick tut. */
+window.__err=[]; window.addEventListener("error",function(e){ window.__err.push(String(e.message)); });
+try{ localStorage.clear(); localStorage.setItem("up_prefs", JSON.stringify({locale:"de"})); }catch(e){}
+
+var Z = {};          /* zaehler[aufrufer][was] = n */
+var AN = false;      /* Messung erst nach dem Aufbau einschalten */
+var WRAPPER = { "wer":1, "buch":1, "haken":1,
+  "Element.querySelectorAll":1, "Document.querySelectorAll":1, "window.getComputedStyle":1,
+  "Element.getBoundingClientRect":1, "Document.createTreeWalker":1, "w.nextNode":1 };
+function wer(){
+  var st = (new Error()).stack || "";
+  var z = st.split("\n");
+  /* Die eigenen Rahmen ueberspringen -- im ersten Lauf hiess der groesste Posten
+     "Element.querySelectorAll", und das war MEIN Wrapper, nicht der Aufrufer. Chrome benennt eine
+     anonyme Funktion nach der Eigenschaft, an die sie gehaengt wurde. */
+  for (var i = 1; i < z.length; i++){
+    var m = /at (?:new )?([A-Za-z_$][\w$.]*)/.exec(z[i]);
+    if (!m) continue;
+    if (WRAPPER[m[1]]) continue;
+    return m[1];
+  }
+  return "(oberste Ebene)";
+}
+function buch(was){
+  if (!AN) return;
+  var k = wer();
+  var e = Z[k] || (Z[k] = {});
+  e[was] = (e[was] || 0) + 1;
+}
+(function haken(){
+  var ctw = Document.prototype.createTreeWalker;
+  Document.prototype.createTreeWalker = function(){
+    buch("treeWalker");
+    var w = ctw.apply(this, arguments);
+    /* Die WALKS sind der eigentliche Preis, nicht das Anlegen. */
+    var nn = w.nextNode, k = wer();
+    w.nextNode = function(){
+      if (AN){ var e = Z[k] || (Z[k] = {}); e.walkKnoten = (e.walkKnoten || 0) + 1; }
+      return nn.call(w);
+    };
+    return w;
+  };
+  var qsa = Element.prototype.querySelectorAll, dqsa = Document.prototype.querySelectorAll;
+  Element.prototype.querySelectorAll = function(){ buch("qsa"); return qsa.apply(this, arguments); };
+  Document.prototype.querySelectorAll = function(){ buch("qsa"); return dqsa.apply(this, arguments); };
+  var gcs = window.getComputedStyle;
+  window.getComputedStyle = function(){ buch("computedStyle"); return gcs.apply(window, arguments); };
+  var gbcr = Element.prototype.getBoundingClientRect;
+  Element.prototype.getBoundingClientRect = function(){ buch("rect"); return gbcr.apply(this, arguments); };
+})();
+
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){ return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+Promise.all(["core.css","core.js","prompts-table.css","prompts-table.js","bubble/prompts_table_bubble.html"].map(hol))
+.then(function(t){
+  [t[0],t[2]].forEach(function(c){ var s=document.createElement("style"); s.textContent=c; document.head.appendChild(s); });
+  var w=document.createElement("div"); w.innerHTML=wurzelAus(t[4]);
+  var r=w.querySelector(".upt-root");
+  r.setAttribute("data-instance","tb"); r.setAttribute("data-cdn-pin","x"); r.setAttribute("data-isdark","no");
+  document.getElementById("b").appendChild(r);
+  [t[1],t[3]].forEach(function(j){ var s=document.createElement("script"); s.textContent=j; document.head.appendChild(s); });
+  return new Promise(function(ok){ setTimeout(ok,1600); });
+}).then(function(){
+  function zeilen(n, versatz){
+    var out = [];
+    for (var i = 0; i < n; i++){
+      out.push({ id:"r"+(i+versatz), prompt_text:"Welcher Anbieter ist der beste fuer Fall "+(i+versatz)+"?",
+        status:"active", visibility_pct:20+(i%40), visibility_delta_pct:(i%2?-1:1)*(i%5),
+        avg_rank:1+(i%6), avg_rank_delta:(i%3)-1, sentiment:50+(i%40), sentiment_delta:(i%2?-2:3),
+        market:"de",
+        tags:[{id:"t"+(i%4), name:["Preise","Vergleich","Anbieter","Technik"][i%4], hex_light:"#2f6fdb"}] });
+    }
+    return out;
+  }
+  /* Erster Aufbau NICHT mitzaehlen -- gefragt ist die Last WAEHREND der Bedienung. */
+  window.renderPromptsTable(JSON.stringify({ instanceId:"tb", view_active:"yes", totalCount:60, rows:zeilen(60,0) }));
+  return new Promise(function(ok){ setTimeout(ok,1200); });
+}).then(function(){
+  Z = {}; AN = true;
+  var t0 = performance.now();
+  /* 12 Neuaufbauten der Tabelle -- genau das, was ein Filterklick auslöst. Mit Pausen, damit die
+     250ms-Drossel wie im Betrieb greift und nicht alles in einen Lauf fällt. */
+  var i = 0;
+  function runde(){
+    if (i >= 12) return Promise.resolve();
+    var versatz = (++i) * 60;
+    window.renderPromptsTable(JSON.stringify({ instanceId:"tb", view_active:"yes", totalCount:60,
+      rows: (function(){ var o=[]; for (var k=0;k<60;k++) o.push({ id:"r"+(k+versatz),
+        prompt_text:"Welcher Anbieter ist der beste fuer Fall "+(k+versatz)+"?", status:"active",
+        visibility_pct:20+(k%40), visibility_delta_pct:(k%2?-1:1)*(k%5), avg_rank:1+(k%6),
+        avg_rank_delta:(k%3)-1, sentiment:50+(k%40), sentiment_delta:(k%2?-2:3), market:"de",
+        tags:[{id:"t"+(k%4), name:["Preise","Vergleich","Anbieter","Technik"][k%4], hex_light:"#2f6fdb"}] }); return o; })() }));
+    return new Promise(function(ok){ setTimeout(ok,320); }).then(runde);
+  }
+  return runde().then(function(){
+    return new Promise(function(ok){ setTimeout(ok,700); });
+  }).then(function(){
+    AN = false;
+    var dauer = Math.round(performance.now() - t0);
+    /* Nach Gesamtzugriffen sortieren -- der groesste Posten zuerst. */
+    var liste = Object.keys(Z).map(function(k){
+      var e = Z[k], s = 0; for (var w in e) s += e[w];
+      return { aufrufer:k, gesamt:s, treeWalker:e.treeWalker||0, walkKnoten:e.walkKnoten||0,
+               qsa:e.qsa||0, computedStyle:e.computedStyle||0, rect:e.rect||0 };
+    }).sort(function(a,b){ return b.gesamt - a.gesamt; }).slice(0, 12);
+    var summe = liste.reduce(function(s,x){ return s + x.gesamt; }, 0);
+    /* GEGENTEST: 170 Textknoten waren im ersten Lauf zu wenig fuer 60 Zeilen. Ohne diese Zahl
+       messe ich vielleicht eine leere Tabelle -- dann sagt das Ergebnis nichts ueber den Betrieb. */
+    var gerendert = document.querySelectorAll(".upt-root .up-row").length;
+    var zellen = document.querySelectorAll(".upt-root .up-td").length;
+    window.__R = { gerendert_zeilen: gerendert, gerendert_zellen: zellen,
+      leerzustand: !!document.querySelector(".upt-root .up-empty, .upt-root [class*='empty']"),
+      dauer_ms: dauer, zeilen: 60, runden: 12,
+      textknoten_im_dokument: (function(){ var n=0, w=document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null); while(w.nextNode()) n++; return n; })(),
+      summe_zugriffe: summe, top: liste, fehler: window.__err };
+    window.__fertig = true;
+  });
+}).catch(function(e){ window.__R={fehler:[String(e.message)+" | "+(e.stack||"").slice(0,300)]}; window.__fertig=true; });
+</script>
