@@ -1,0 +1,121 @@
+<meta charset="utf-8"><title>prompts-table: Render ohne Datenaenderung</title>
+<style>html,body{margin:0;font:13px/1.5 system-ui,sans-serif}#buehne{padding:16px;width:1240px}
+#out{padding:10px;font:11px/1.5 ui-monospace,monospace;white-space:pre-wrap}</style>
+<body><div id="buehne"></div><pre id="out">laeuft…</pre>
+<script>
+/* Behauptung: ein render() ohne Datenaenderung baut den Tabellenrumpf nicht mehr neu.
+   Zwei Messgroessen, weil eine allein taeuschen kann:
+   1. Wie oft wird .up-tbody per innerHTML belegt.
+   2. Ist die erste Zeile danach DASSELBE Element -- Identitaet, nicht Aussehen. Ein Neuaufbau
+      mit gleichem HTML sieht identisch aus, liefert aber neue Knoten. */
+window.__err = []; window.addEventListener("error", function(e){ window.__err.push(String(e.message)); });
+try { for (var i=window.localStorage.length-1;i>=0;i--){ var k=window.localStorage.key(i);
+  if (k && /upt_/.test(k)) window.localStorage.removeItem(k); } } catch(e){}
+/* Gruppierung ist die Voreinstellung, und die Gruppenansicht besitzt den Rumpf selbst -- dann
+   messe ich ein Skelett statt 50 Zeilen. Der Schluessel muss NACH dem Loeschen oben gesetzt
+   werden, sonst raeumt die Schleife ihn gleich wieder weg. */
+try { window.localStorage.setItem("upt_grouped__tb", "no"); } catch(e){}
+var P = new URLSearchParams(location.search), ALT = P.get("alt") === "1";
+var TBJS = ALT ? "_h_wiederholt_alt.js" : "prompts-table.js";
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var D = ["core.css","core.js","prompts-table.css",TBJS,"bubble/prompts_table_bubble.html"];
+var L = [];
+function log(t){ L.push(t); document.getElementById("out").textContent = L.join("\n"); }
+log("Fassung: " + (ALT ? "ALT (HEAD)" : "NEU") + "   Datei: " + TBJS);
+
+Promise.all(D.map(hol)).then(function(t){
+  var m = {}; D.forEach(function(f,i){ m[f]=t[i]; });
+  /* Frischebeweis am ERGEBNIS, nicht am Dateinamen: der Riegel existiert nur in der neuen Fassung. */
+  log("Riegel im geladenen Text: " + (m[TBJS].indexOf("html === letztesBody") >= 0));
+  ["core.css","prompts-table.css"].forEach(function(f){
+    var s=document.createElement("style"); s.textContent=m[f]; document.head.appendChild(s); });
+  var s2=document.createElement("style");
+  s2.textContent="*,*::before,*::after{transition:none !important;animation:none !important}";
+  document.head.appendChild(s2);
+  var w=document.createElement("div"); w.innerHTML=wurzelAus(m["bubble/prompts_table_bubble.html"]);
+  var r=w.querySelector(".upt-root");
+  r.setAttribute("data-instance","tb"); r.setAttribute("data-cdn-pin","tb"); r.setAttribute("data-isdark","no");
+  document.getElementById("buehne").appendChild(r);
+  var j=document.createElement("script"); j.textContent=m["core.js"]; document.head.appendChild(j);
+  var j2=document.createElement("script"); j2.textContent=m[TBJS]; document.head.appendChild(j2);
+  return new Promise(function(ok){ setTimeout(ok, 1400); });
+}).then(function(){
+  var reihen = [];
+  for (var i=1;i<=50;i++){
+    reihen.push({ id:String(i), prompt_id:String(i), prompt_text:"Frage Nummer "+i+" zu irgendwas",
+      status:"active", visibility: i%100, rank: 3, mention_count: i,
+      tags:[{id:"t1",name:"Preise",emoji:"",hex_light:"#e0e",hex_dark:"#404"},
+            {id:"t2",name:"Wettbewerb",emoji:"",hex_light:"#0ee",hex_dark:"#044"},
+            {id:"t3",name:"Technik",emoji:"",hex_light:"#ee0",hex_dark:"#440"}] });
+  }
+  window.renderPromptsTable(JSON.stringify({ instanceId:"tb", view_active:"yes",
+    totalCount:50, rows:reihen }));
+  return new Promise(function(ok){ setTimeout(ok, 700); });
+}).then(function(){
+  var tb = document.querySelector(".up-tbody");
+  log("Zeilen im Rumpf: " + document.querySelectorAll(".up-row").length +
+      "   Chips: " + document.querySelectorAll(".ust-tag").length);
+  if (!tb || !document.querySelectorAll(".up-row").length){ log("KEINE ZEILEN -- Messung ungueltig"); return; }
+
+  /* Zaehler erst JETZT, damit der erste Aufbau nicht mitgezaehlt wird */
+  window.__body = 0;
+  var d = Object.getOwnPropertyDescriptor(Element.prototype, "innerHTML");
+  Object.defineProperty(Element.prototype, "innerHTML", { configurable:true, get:d.get,
+    set:function(v){
+      if (this.classList && this.classList.contains("up-tbody")) window.__body++;
+      return d.set.call(this, v);
+    } });
+
+  var ersteVor = document.querySelector(".up-row");
+  var chipVor  = document.querySelector(".ust-tag");
+  for (var n=0;n<10;n++) window.setPromptsTableViewActive("tb","yes");
+  return new Promise(function(ok){ setTimeout(function(){
+    var ersteNach = document.querySelector(".up-row");
+    var chipNach  = document.querySelector(".ust-tag");
+    log("10 x setPromptsTableViewActive(\"yes\")  ->  .up-tbody neu belegt: " + window.__body);
+    log("erste Zeile ist DASSELBE Element: " + (ersteVor === ersteNach));
+    log("erster Chip ist DASSELBE Element:  " + (chipVor === chipNach));
+    log("Zeilen danach: " + document.querySelectorAll(".up-row").length +
+        "   Chips danach: " + document.querySelectorAll(".ust-tag").length);
+    log("Fehler: " + (window.__err.length ? window.__err.join(" | ") : "keine"));
+    ok();
+  }, 600); });
+}).then(function(){
+  /* GEGENPROBE. Ohne sie hiesse "0 Neuaufbauten" nur, dass nichts mehr gezeichnet wird. */
+  window.__body = 0;
+  var neu = [];
+  for (var i=1;i<=25;i++) neu.push({ id:"n"+i, prompt_id:"n"+i, prompt_text:"Geaendert "+i,
+    status:"active", visibility:i, rank:2, mention_count:i, tags:[] });
+  window.renderPromptsTable(JSON.stringify({ instanceId:"tb", view_active:"yes",
+    totalCount:25, rows:neu }));
+  return new Promise(function(ok){ setTimeout(function(){
+    log("B) 25 ANDERE Zeilen  ->  neu belegt: " + window.__body +
+        "   Zeilen: " + document.querySelectorAll(".up-row").length +
+        "   Text angekommen: " + (document.body.textContent.indexOf("Geaendert 1") >= 0));
+    ok();
+  }, 700); });
+}).then(function(){
+  window.__body = 0;
+  window.setPromptsTableLoading("tb", "yes");
+  return new Promise(function(ok){ setTimeout(function(){
+    var imSkelett = document.querySelectorAll(".up-row").length !== 25;
+    window.setPromptsTableLoading("tb", "no");
+    var gleich = [];
+    for (var i=1;i<=25;i++) gleich.push({ id:"n"+i, prompt_id:"n"+i, prompt_text:"Geaendert "+i,
+      status:"active", visibility:i, rank:2, mention_count:i, tags:[] });
+    window.renderPromptsTable(JSON.stringify({ instanceId:"tb", view_active:"yes",
+      totalCount:25, rows:gleich }));
+    setTimeout(function(){
+      log("C) Skelett dazwischen, dann DIESELBEN 25 Zeilen  ->  war im Skelett: " + imSkelett +
+          "   neu belegt: " + window.__body +
+          "   Zeilen: " + document.querySelectorAll(".up-row").length +
+          "   Text wieder da: " + (document.body.textContent.indexOf("Geaendert 1") >= 0));
+      log("Fehler gesamt: " + (window.__err.length ? window.__err.join(" | ") : "keine"));
+      log("FERTIG");
+      ok();
+    }, 800);
+  }, 500); });
+}).catch(function(e){ log("ABBRUCH: " + e.message); });
+</script>

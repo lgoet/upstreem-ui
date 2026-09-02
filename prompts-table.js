@@ -2064,6 +2064,7 @@
     var emptyGraceTimer = null;
     function clearEmptyGrace(){ if (emptyGraceTimer){ clearTimeout(emptyGraceTimer); emptyGraceTimer = null; } }
     function renderEmptyState(filtered){
+      letztesBody = null;
       elTbody.innerHTML = '<div class="up-empty">' +
         '<div class="up-empty-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' +
           '<path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg></div>' +
@@ -2768,6 +2769,7 @@
 
 
     function renderGroups(){
+      letztesBody = null;                 /* die Gruppenansicht besitzt den Rumpf komplett */
       /* ONLY state.groupsLoading (set exclusively by fetchGroups() -- i.e. this component KNOWING
          it just asked for fresh groups) and !state.groupsHasData gate this skeleton. A tempting-
          looking earlier version also gated on state.extLoading (setPromptsTableLoading), reasoning
@@ -3241,6 +3243,12 @@
        between the plain (non-grouped) view and the grouped-wide view's "All Prompts" selection
        (see renderGroupWideBody) -- same state.rows/state.pageSize, same skeleton/empty rules,
        same everything, just rendered in a different place in the DOM. */
+    /* Der zuletzt AUS DEN ZEILEN gebaute Rumpf. Steht dieselbe Ausgabe schon im DOM, wird sie
+       nicht neu gesetzt -- ein innerHTML wirft 50 Zeilen mit allen Zellen und Chips weg und laesst
+       sie neu bauen, in der Konsole des Nutzers als rAF-Handler mit 489-844ms gemessen. Jede
+       andere Belegung des Rumpfs (Skelett, Leerzustand, Lesefehler, Gruppenansicht) loescht den
+       Merker, sonst wuerde ein spaeterer Render mit gleichen Daten das Skelett stehen lassen. */
+    var letztesBody = null;
     function renderFlatBody(){
       /* Two kinds of reload, deliberately shown differently (see setSoftReload):
          SOFT (sort, paging) reorders or re-windows the SAME result set — the rows on screen are
@@ -3252,15 +3260,16 @@
         clearEmptyGrace(); return;   // leave the rows exactly as they are; CSS dims them
       }
       if (isBusy() || !state.hasData){
-        clearEmptyGrace(); elTbody.innerHTML = skeletonRows(state.pageSize); applyCols(); return;
+        clearEmptyGrace(); letztesBody = null; elTbody.innerHTML = skeletonRows(state.pageSize); applyCols(); return;
       }
       /* Der Lesefehler kommt VOR dem Leerzustand. Andersherum liest sich ein zerrissener
          Payload als leeres Ergebnis, und der Nutzer sucht den Fehler in seinen Filtern. */
-      if (state.leseFehler){ clearEmptyGrace(); elTbody.innerHTML = UC.leseFehlerHtml("prompts"); applyCols(); return; }
+      if (state.leseFehler){ clearEmptyGrace(); letztesBody = null; elTbody.innerHTML = UC.leseFehlerHtml("prompts"); applyCols(); return; }
       if (!state.rows.length){
         var filtered = !!state.query || !!state.brandMentioned;
         if (filtered){ clearEmptyGrace(); renderEmptyState(true); return; }
         if (!emptyGraceTimer){
+          letztesBody = null;
           elTbody.innerHTML = skeletonRows(state.pageSize);
           applyCols();
           emptyGraceTimer = setTimeout(function(){
@@ -3272,7 +3281,13 @@
         return;
       }
       clearEmptyGrace();
-      elTbody.innerHTML = state.rows.map(rowHtml).join("");
+      var html = state.rows.map(rowHtml).join("");
+      /* Die Kinderzahl als zweites Merkmal: rowHtml liefert genau ein .up-row je Zeile, also
+         verraet eine abweichende Zahl, dass den Rumpf jemand anders belegt hat. Ohne das haenge
+         der Riegel allein an einer Variablen, die eine kuenftige Stelle zu setzen vergessen kann. */
+      if (html === letztesBody && elTbody.children.length === state.rows.length){ applyCols(); return; }
+      letztesBody = html;
+      elTbody.innerHTML = html;
       applyCols();
       initTopicsCells();
     }
