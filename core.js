@@ -11433,6 +11433,140 @@
   window.setUpstreemTeam = setUpstreemTeam;
   window.getUpstreemTeam = getTeam;
 
+  /* ============================================================================================
+     BILD-UPLOAD NACH SUPABASE STORAGE
+     ============================================================================================
+     Zwei Helfer, weil zwei Stellen sie brauchen: das Profilbild im Einstellungsfenster und, sobald
+     es dran ist, das Brand-Logo in settings-brand (dort steht seit einer Weile "bis der Upload
+     nach Supabase steht"). Deshalb hier und nicht in preferences.js.
+
+     DAS TOKEN. Der Access-Token des angemeldeten Nutzers liegt in einer Closure, NICHT auf window
+     und NICHT in einem Attribut. Das ist kein Versteck -- ein fremdes Skript im selben Origin
+     koennte fetch ersetzen oder den Setter abfangen, im Browser gibt es kein Geheimnis. Es haelt
+     nur den billigen Fall auf: was im DOM steht, lesen fremde Bubble-Plugins im Vorbeigehen.
+     Das Token IST fuer den Browser gedacht -- Supabase ist so gebaut, und die Grenze ist die RLS,
+     nicht die Geheimhaltung. Die drei Dinge, die wirklich zaehlen, stehen ausserhalb dieser Datei:
+     RLS auf jeder Tabelle, eine kurze Ablaufzeit, und niemals ein Token in einer URL. */
+  var AUTH = { token: "" };
+  function setUpstreemAuth(token){
+    AUTH.token = String(token == null ? "" : token).trim();
+    /* Ein Upload, der auf ein frisches Token gewartet hat, laeuft jetzt weiter. Die Komponente
+       meldet dafuer eine Funktion an -- so muss dieser Kern nichts ueber Profilbilder wissen. */
+    var w = AUTH.warten; AUTH.warten = null;
+    if (AUTH.token && typeof w === "function"){ try { w(); } catch(e){} }
+  }
+  function authWartet(fn){ AUTH.warten = (typeof fn === "function") ? fn : null; }
+  window.setUpstreemAuth = setUpstreemAuth;
+
+  /* Die Basis steht hier EINMAL. ask-mira und create-with-ai tragen sie noch selbst; wer die
+     naechste Datei anfasst, holt sie von hier. Ueberschreibbar, weil eine zweite Umgebung
+     (Staging) eine andere Kennung hat und dafuer keine neue Auslieferung faellig sein soll. */
+  var SUPA = "https://tgdossbsevnonssyuewp.supabase.co";
+  function setUpstreemSupabaseUrl(u){
+    u = String(u == null ? "" : u).trim().replace(/\/+$/, "");
+    if (/^https:\/\/[a-z0-9.-]+$/i.test(u)) SUPA = u;
+  }
+  window.setUpstreemSupabaseUrl = setUpstreemSupabaseUrl;
+
+  /* ---- Verkleinern ----------------------------------------------------------------------------
+     Auf KANTE kantePx, mittig beschnitten, als PNG. Zwei Gruende, und der zweite ist der
+     wichtigere:
+       1. Groesse. Ein Handyfoto sind 4 MB, hier kommen ~40 kB heraus.
+       2. Es ist eine Desinfektion. Was den Canvas verlaesst, sind NEU erzeugte Pixel: EXIF weg,
+          angehaengte Nutzlast weg, ein als PNG getarntes SVG kann gar nicht entstehen. Deshalb
+          wird auch dann neu gezeichnet, wenn das Bild schon klein ist.
+     createImageBitmap wo vorhanden (schneller, laeuft ohne Layout), sonst ein Image-Objekt. */
+  function bildVerkleinern(datei, kantePx, cb){
+    var kante = Math.max(16, Math.min(1024, parseInt(kantePx, 10) || 256));
+    function fertig(blob, grund){ if (cb) cb(blob || null, grund || null); }
+    if (!datei || !datei.type || String(datei.type).indexOf("image/") !== 0) return fertig(null, "wrong_type");
+    /* Eine Obergrenze auf die EINGABE, nicht auf das Ergebnis: eine 80-MB-Datei zu dekodieren
+       kostet Speicher, bevor irgendetwas kleiner wird. */
+    if (datei.size > 12 * 1024 * 1024) return fertig(null, "too_large");
+
+    function zeichnen(quelle, breite, hoehe){
+      try {
+        var c = document.createElement("canvas");
+        c.width = kante; c.height = kante;
+        var g = c.getContext("2d");
+        if (!g) return fertig(null, "server");
+        /* Mittig beschneiden: ein Avatar ist quadratisch, ein Foto ist es nicht. Verzerren waere
+           die schlechtere Antwort -- Gesichter werden dann breit. */
+        var s = Math.min(breite, hoehe);
+        var sx = Math.round((breite - s) / 2), sy = Math.round((hoehe - s) / 2);
+        g.imageSmoothingEnabled = true;
+        try { g.imageSmoothingQuality = "high"; } catch(e){}
+        g.drawImage(quelle, sx, sy, s, s, 0, 0, kante, kante);
+        if (c.toBlob) c.toBlob(function(b){ fertig(b, b ? null : "server"); }, "image/png");
+        else fertig(null, "server");
+      } catch(e){ fertig(null, "server"); }
+    }
+
+    if (window.createImageBitmap){
+      window.createImageBitmap(datei).then(function(bm){
+        zeichnen(bm, bm.width, bm.height);
+        try { bm.close(); } catch(e){}
+      }, function(){ ueberImage(); });
+      return;
+    }
+    ueberImage();
+    function ueberImage(){
+      var url = null;
+      try { url = URL.createObjectURL(datei); } catch(e){ return fertig(null, "wrong_type"); }
+      var img = new Image();
+      img.onload = function(){
+        zeichnen(img, img.naturalWidth || img.width, img.naturalHeight || img.height);
+        try { URL.revokeObjectURL(url); } catch(e){}
+      };
+      /* Ein Bild, das der Browser nicht dekodieren kann, ist fuer den Nutzer kein Bild -- egal,
+         was im Content-Type stand. */
+      img.onerror = function(){ try { URL.revokeObjectURL(url); } catch(e){} fertig(null, "wrong_type"); };
+      img.src = url;
+    }
+  }
+
+  /* ---- Hochladen -----------------------------------------------------------------------------
+     Ein Aufruf, ein Ergebnis, und das Ergebnis sagt IMMER, was war. Kein Zweig, der still
+     zurueckkommt: cb({ ok, grund, url }).
+     x-upsert ersetzt das alte Bild statt ein zweites anzulegen -- ein Nutzer hat ein Avatar, keine
+     Sammlung.
+     Der Pfad kommt vom Aufrufer und ist KEIN Sicherheitsmerkmal: er steht im Browser, also kann er
+     geaendert werden. Was ihn haelt, ist die Storage-Policy, die ihn gegen auth.uid() prueft.
+     Ohne die kann jeder Angemeldete jedes fremde Bild ersetzen -- der Client kann das nicht
+     verhindern, und diese Funktion tut auch nicht so. */
+  function bildHochladen(cfg, cb){
+    cfg = cfg || {};
+    function fertig(ok, grund, url){ if (cb) cb({ ok: !!ok, grund: grund || null, url: url || null }); }
+    var eimer = String(cfg.bucket || "").replace(/^\/+|\/+$/g, "");
+    var pfad  = String(cfg.path || "").replace(/^\/+/, "");
+    if (!eimer || !pfad || !cfg.blob) return fertig(false, "server");
+    if (!AUTH.token) return fertig(false, "unauthorized");
+    var typ = String(cfg.contentType || (cfg.blob && cfg.blob.type) || "image/png");
+    var ziel = SUPA + "/storage/v1/object/" + eimer + "/" + pfad;
+    var f;
+    try {
+      f = window.fetch(ziel, {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + AUTH.token, "x-upsert": "true", "Content-Type": typ },
+        body: cfg.blob
+      });
+    } catch(e){ return fertig(false, "network"); }
+    if (!f || !f.then) return fertig(false, "network");
+    f.then(function(r){
+      /* DIE STATUSPRUEFUNG IST DER PUNKT. Ohne sie baut der Aufrufer eine oeffentliche URL
+         zusammen, meldet sie, und ein Workflow schreibt einen Link in die Datenbank, der 404
+         liefert -- der Fehlschlag waere unsichtbar, bis jemand das Bild sehen will. */
+      if (r.status === 401 || r.status === 403) return fertig(false, "unauthorized");
+      if (r.status === 413) return fertig(false, "too_large");
+      if (r.status === 415) return fertig(false, "wrong_type");
+      if (!r.ok) return fertig(false, "server");
+      /* Der Puffer haengt an der URL und nicht am Pfad: der Pfad ist derselbe (x-upsert), also
+         wuerde der Browser sonst das alte Bild aus seinem Zwischenspeicher zeigen. */
+      fertig(true, null, SUPA + "/storage/v1/object/public/" + eimer + "/" + pfad + "?v=" + Date.now());
+    }, function(){ fertig(false, "network"); });
+  }
+
+
   /* BUILD steht ganz oben in dieser Datei, zusammen mit der Sperre, die eine zweite Ausfuehrung
      verhindert. Hier stand die Zuweisung frueher -- an dieser Stelle ist es zu spaet, da haben die
      Beobachter und Boot-Laeufe schon gearbeitet. */
@@ -12669,6 +12803,7 @@
     typeColor: typeColor,
     faviconColor: faviconColor,
     bildFarbe: bildFarbe,
+    bildVerkleinern: bildVerkleinern, bildHochladen: bildHochladen, authWartet: authWartet,
     faviconColorCached: faviconColorCached,
     readableHex: readableHex,
     prepTypeData: prepTypeData,

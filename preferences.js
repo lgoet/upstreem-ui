@@ -105,7 +105,19 @@
          mehr, sonst laufen zwei Fassungen desselben Wortes auseinander. */
       "System follows the setting of your operating system.":
         "System übernimmt die Einstellung deines Betriebssystems.",
-      "System": "System"
+      "System": "System",
+
+      /* Die Meldungen des Profilbild-Uploads. Ohne Diagnose und ohne interne Namen -- nur, was
+         der Nutzer tun kann. */
+      "Uploading…": "Wird hochgeladen…",
+      "Please pick an image file.": "Bitte wähle eine Bilddatei.",
+      "That image is too large. Please pick a smaller one.":
+        "Das Bild ist zu groß. Bitte wähle ein kleineres.",
+      "That did not work. Please reload the page and try again.":
+        "Das hat nicht funktioniert. Bitte lade die Seite neu und versuche es noch einmal.",
+      "No connection. Please try again.": "Keine Verbindung. Bitte versuche es noch einmal.",
+      "The upload failed. Please try again.":
+        "Der Upload ist fehlgeschlagen. Bitte versuche es noch einmal."
     });
 
     /* ---- Die Wahlmöglichkeiten ----
@@ -215,7 +227,7 @@
         if (lw) { if (UC.setLineWidthPref) UC.setLineWidthPref(lw.getAttribute("data-linewidth")); zeichnen(); return; }
         var sw = e.target.closest("[data-ums-toggle]");
         if (sw) { schalten(sw.getAttribute("data-ums-toggle")); return; }
-        if (e.target.closest("[data-ums-avatar]")) { fire("data-avatar-fn", "umsAvatar", { action: "change" }); return; }
+        if (e.target.closest("[data-ums-avatar]")) { bildWaehlen(); return; }
 
       });
       /* Gespeichert wird beim Verlassen des Feldes und bei Enter. blur mit CAPTURE, weil blur
@@ -531,6 +543,103 @@
          nimmt dem naechsten Element den Fokus. Nur die Initiale im Bild wird nachgezogen. */
       var av = M.main.querySelector(".ums-avatar-ltr");
       if (av) av.textContent = (v.charAt(0) || "?").toUpperCase();
+    }
+
+    /* ---- Profilbild: die Komponente laedt selbst hoch ----------------------------------------
+       Der Ablauf, und die Reihenfolge ist nicht beliebig:
+         Klick -> Dateidialog (MUSS im Klick passieren, der Browser laesst ihn nur als direkte
+                  Folge einer Nutzeraktion zu -- nach einem await ist die Geste verbraucht)
+               -> verkleinern auf 256px
+               -> hochladen, Status pruefen
+               -> Ereignis mit dem Ergebnis.
+       Es wird NIE eine URL gemeldet, die nicht mit einem 2xx bestaetigt wurde. Sonst schreibt der
+       Workflow einen Link in die Datenbank, der 404 liefert, und der Fehlschlag bleibt unsichtbar,
+       bis jemand das Bild sehen will. */
+    var AV_KANTE = 256, AV_EIMER = "avatars";
+    var avLaeuft = false, avWartend = null;
+    function avPfad() {
+      var id = String(profil.userId || "").trim();
+      /* Ordner je Nutzer, weil die Storage-Policy so am klarsten zu schreiben ist:
+         (storage.foldername(name))[1] = auth.uid()::text */
+      return id ? id + "/avatar.png" : "";
+    }
+    /* Die Meldungen sagen, was der Nutzer TUN kann -- keine Statuscodes, keine internen Namen. */
+    var AV_TEXT = {
+      wrong_type:   "Please pick an image file.",
+      too_large:    "That image is too large. Please pick a smaller one.",
+      unauthorized: "That did not work. Please reload the page and try again.",
+      network:      "No connection. Please try again.",
+      server:       "The upload failed. Please try again."
+    };
+    function avMelden(text, laeuft) {
+      var h = M && M.main ? M.main.querySelector(".ums-hint") : null;
+      if (!h) return;
+      h.textContent = text ? t(text) : t("Upload a picture — square images look best");
+      h.classList.toggle("is-fehler", !!text && !laeuft);
+      h.classList.toggle("is-laeuft", !!laeuft);
+    }
+    function bildWaehlen() {
+      if (avLaeuft) return;
+      var inp = document.createElement("input");
+      inp.type = "file";
+      inp.accept = "image/png,image/jpeg,image/webp";
+      inp.style.cssText = "position:fixed;left:-9999px;top:-9999px";
+      document.body.appendChild(inp);
+      inp.addEventListener("change", function () {
+        var datei = inp.files && inp.files[0];
+        try { inp.remove(); } catch (e) {}
+        if (datei) bildSenden(datei);
+      });
+      inp.click();
+    }
+    function bildSenden(datei) {
+      if (!avPfad()) {
+        /* Ohne Kennung gibt es keinen Pfad. Das ist ein Einrichtungsfehler auf der Bubble-Seite
+           (setSidebarUser oder setUpstreemProfile ohne user_id) und kein Fehler des Nutzers --
+           also die allgemeine Meldung und ein Wort in der Konsole fuer den, der es baut. */
+        avMelden(AV_TEXT.server);
+        if (window.console) console.warn("[preferences] Kein Profilbild-Upload ohne user_id. " +
+          "setUpstreemProfile({ user_id }) oder setSidebarUser mit id/user_id nachziehen.");
+        return;
+      }
+      avLaeuft = true;
+      avMelden("Uploading…", true);
+      UC.bildVerkleinern(datei, AV_KANTE, function (blob, grund) {
+        if (!blob) { avLaeuft = false; avMelden(AV_TEXT[grund] || AV_TEXT.server); return; }
+        avSchieben(blob);
+      });
+    }
+    function avSchieben(blob) {
+      UC.bildHochladen({ bucket: AV_EIMER, path: avPfad(), blob: blob, contentType: "image/png" },
+        function (r) {
+          if (r.ok) {
+            avLaeuft = false; avWartend = null;
+            profil.avatar = r.url;
+            if (offen) zeichnen();
+            avMelden(null);
+            fireBauen();
+            fire("data-avatar-fn", "umsAvatar", { action: "uploaded", avatar_url: r.url });
+            return;
+          }
+          /* Abgelaufenes Token: EINMAL um ein frisches bitten und dann von selbst weitermachen.
+             Das Plugin frischt auf, der Nutzer soll davon nichts merken. Nur einmal -- sonst
+             drehen zwei Seiten sich gegenseitig im Kreis, wenn die Auffrischung selbst scheitert. */
+          if (r.grund === "unauthorized" && !avWartend) {
+            avWartend = blob;
+            if (UC.authWartet) UC.authWartet(function () {
+              var b = avWartend; if (!b) return;
+              avMelden("Uploading…", true);
+              avSchieben(b);
+            });
+            fireBauen();
+            fire("data-avatar-fn", "umsAvatar", { action: "token_expired" });
+            return;
+          }
+          avLaeuft = false; avWartend = null;
+          avMelden(AV_TEXT[r.grund] || AV_TEXT.server);
+          fireBauen();
+          fire("data-avatar-fn", "umsAvatar", { action: "failed", reason: r.grund || "server" });
+        });
     }
 
     /* ---- Oeffnen und Schliessen ---- */

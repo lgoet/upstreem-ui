@@ -1,0 +1,131 @@
+<meta charset="utf-8"><title>Profilbild im festen Rahmen</title>
+<style>html,body{margin:0;background:#fff;font:13px/1.5 Geist,system-ui,sans-serif}#b{width:1000px;height:640px}</style>
+<body><div id="b"></div>
+<script>
+/* Der Storage-Server wird VORGETAEUSCHT: fetch wird ersetzt, damit jeder Statuscode einzeln
+   geprueft werden kann -- 200, 401 mit anschliessender Auffrischung, 413, 415, ein Wurf (kein
+   Netz) und 500. Ohne das waere nur der Gutfall messbar, und genau die Fehlzweige sind der Grund,
+   warum diese Funktion existiert.
+   Gemessen wird an DREI Dingen: dem Ergebnis des Helfers, dem Ereignis, das an Bubble geht, und
+   dem Text, der im Fenster steht. */
+window.__err=[]; window.addEventListener("error",function(e){ window.__err.push(String(e.message)); });
+try{ localStorage.removeItem("pref_theme"); localStorage.setItem("up_prefs", JSON.stringify({locale:"de"})); }catch(e){}
+window.__ereignisse=[];
+window.bubble_fn_umsAvatar = function(json){ window.__ereignisse.push(json); };
+var ANTWORT = { status: 200 };
+var ANFRAGEN = [];
+var echtesFetch = window.fetch;
+window.fetch = function(url, opt){
+  if (String(url).indexOf("/storage/v1/object/") >= 0){
+    ANFRAGEN.push({ url:String(url), method:opt&&opt.method,
+      auth:(opt&&opt.headers&&opt.headers.Authorization)||"", upsert:(opt&&opt.headers&&opt.headers["x-upsert"])||"",
+      typ:(opt&&opt.headers&&opt.headers["Content-Type"])||"",
+      bytes:(opt&&opt.body&&opt.body.size)||0 });
+    if (ANTWORT.wurf) return Promise.reject(new Error("kein Netz"));
+    return Promise.resolve({ ok: ANTWORT.status >= 200 && ANTWORT.status < 300, status: ANTWORT.status });
+  }
+  return echtesFetch.apply(window, arguments);
+};
+function hol(f){ return echtesFetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){ return r.text(); }); }
+Promise.all(["core.css","core.js","preferences.css","preferences.js"].map(hol)).then(function(t){
+  [t[0],t[2]].forEach(function(c){ var s=document.createElement("style"); s.textContent=c; document.head.appendChild(s); });
+  [t[1],t[3]].forEach(function(j){ var s=document.createElement("script"); s.textContent=j; document.head.appendChild(s); });
+  return new Promise(function(ok){ setTimeout(ok,900); });
+}).then(function(){
+  var UC=window.UpstreemCore;
+  window.setUpstreemAuth("token-alt");
+  window.setUpstreemProfile({ display_name:"Lukas", avatar_url:"", user_id:"u-123" });
+  window.openUpstreemPreferences("profile");
+  return new Promise(function(ok){ setTimeout(ok,700); });
+}).then(function(){
+  var UC=window.UpstreemCore;
+  var R={};
+  /* Ein echtes Bild bauen: 8x8 rot, als PNG-Blob, damit der Canvas-Weg wirklich laeuft. */
+  function testBild(){
+    var c=document.createElement("canvas"); c.width=8; c.height=8;
+    var g=c.getContext("2d"); g.fillStyle="#c00"; g.fillRect(0,0,8,8);
+    return new Promise(function(ok){ c.toBlob(function(b){
+      ok(new File([b], "x.png", { type:"image/png" })); }, "image/png"); });
+  }
+  function hinweis(){ var h=document.querySelector(".ums-hint");
+    return h ? { text:h.textContent.trim(), klassen:h.className } : null; }
+  function warte(ms){ return new Promise(function(o){ setTimeout(o,ms); }); }
+  /* Der ECHTE Weg, kein Testhaken in der ausgelieferten Datei: auf das Bild klicken, den
+     Dateidialog finden, den er anlegt, ihm ueber DataTransfer eine Datei geben und change
+     feuern. Damit laeuft genau der Pfad, den ein Nutzer nimmt. */
+  function ueberUI(datei){
+    var knopf=document.querySelector("[data-ums-avatar]");
+    if(!knopf) return Promise.reject(new Error("kein Avatar-Knopf"));
+    knopf.click();
+    var inp=document.querySelector('input[type="file"]');
+    if(!inp) return Promise.reject(new Error("kein Dateidialog"));
+    var dt=new DataTransfer(); dt.items.add(datei); inp.files=dt.files;
+    inp.dispatchEvent(new Event("change",{bubbles:true}));
+    return Promise.resolve();
+  }
+
+  return testBild().then(function(datei){
+    /* --- 1. Verkleinern: aus 8x8 muessen 256x256 PNG werden --- */
+    return new Promise(function(ok){
+      UC.bildVerkleinern(datei, 256, function(blob, grund){
+        if (!blob) return ok({ fehlt:true, grund:grund });
+        var img=new Image(), u=URL.createObjectURL(blob);
+        img.onload=function(){ ok({ typ:blob.type, bytes:blob.size, breite:img.naturalWidth, hoehe:img.naturalHeight }); URL.revokeObjectURL(u); };
+        img.onerror=function(){ ok({ nicht_lesbar:true }); };
+        img.src=u;
+      });
+    }).then(function(v){ R.verkleinern=v; return datei; });
+  }).then(function(datei){
+    /* --- 2. Falscher Typ und zu gross, ohne Netz --- */
+    return new Promise(function(ok){ UC.bildVerkleinern(new File(["abc"],"a.txt",{type:"text/plain"}), 256, function(b,g){ ok(g); }); })
+      .then(function(g){ R.falscher_typ=g;
+        var gross=new File([new Uint8Array(13*1024*1024)],"g.png",{type:"image/png"});
+        return new Promise(function(ok){ UC.bildVerkleinern(gross, 256, function(b,g2){ ok(g2); }); }); })
+      .then(function(g){ R.zu_gross=g; return datei; });
+  }).then(function(datei){
+    /* --- 3. Der Gutfall ueber die Oberflaeche --- */
+    ANTWORT={status:200}; ANFRAGEN.length=0; window.__ereignisse.length=0;
+    return ueberUI(datei).then(function(){ return warte(500); }).then(function(){
+      R.gutfall={ anfrage:ANFRAGEN[0], ereignis:window.__ereignisse[0], hinweis:hinweis(),
+                  bild_im_fenster:!!document.querySelector(".ums-avatar img") };
+      return datei; });
+  }).then(function(datei){
+    /* --- 4. 401, dann frisches Token: muss von selbst weiterlaufen --- */
+    ANTWORT={status:401}; ANFRAGEN.length=0; window.__ereignisse.length=0;
+    return ueberUI(datei).then(function(){ return warte(400); }).then(function(){
+      R.nach_401={ ereignis:window.__ereignisse[0], hinweis:hinweis(), anfragen:ANFRAGEN.length };
+      ANTWORT={status:200};
+      window.setUpstreemAuth("token-neu");
+      return warte(400);
+    }).then(function(){
+      R.nach_auffrischung={ ereignisse:window.__ereignisse.slice(), anfragen:ANFRAGEN.length,
+        letztes_token:ANFRAGEN.length?ANFRAGEN[ANFRAGEN.length-1].auth:null, hinweis:hinweis() };
+      return datei; });
+  }).then(function(datei){
+    /* --- 5. Die drei uebrigen Fehlzweige --- */
+    var faelle=[["413",{status:413}],["415",{status:415}],["500",{status:500}],["wurf",{wurf:true}]];
+    var i=0; R.fehlzweige={};
+    function naechster(){
+      if (i>=faelle.length) return Promise.resolve();
+      var f=faelle[i++]; ANTWORT=f[1]; window.__ereignisse.length=0;
+      return ueberUI(datei).then(function(){ return warte(350); }).then(function(){
+        R.fehlzweige[f[0]]={ ereignis:window.__ereignisse[0], hinweis:hinweis() };
+        return naechster(); });
+    }
+    return naechster();
+  }).then(function(){
+    /* Der Renderweg getrennt geprueft. Im Gutfall oben stand kein <img> im Fenster, und das ist
+       ein ARTEFAKT der Messung: das Markup traegt onerror="this.remove()", und die vorgetaeuschte
+       Storage-URL laedt nicht. Also einmal mit einer Daten-URL, die sicher laedt. */
+    var punkt = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==";
+    window.setUpstreemProfile({ display_name:"Lukas", avatar_url:punkt, user_id:"u-123" });
+    return warte(300).then(function(){
+      var img=document.querySelector(".ums-avatar img");
+      R.renderweg = { img_da: !!img, quelle_ist_gesetzt: !!(img && img.getAttribute("src") === punkt),
+                      buchstabe_weg: !document.querySelector(".ums-avatar-ltr") };
+      R.fehler=window.__err;
+      window.__R=R; window.__fertig=true;
+    });
+  });
+}).catch(function(e){ window.__R={fehler:[String(e.message)+" | "+(e.stack||"").slice(0,240)]}; window.__fertig=true; });
+</script>

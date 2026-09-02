@@ -190,6 +190,12 @@
    nirgends: der Klick feuert nur umsAvatar, und ohne Workflow dahinter passiert nichts Sichtbares.
    Also Drittfarbe, kein Zeiger, kein Unterstreichen. Das Bild bleibt der Knopf.
    20px oben: die 12 von vorher plus 8. */
+/* Zwei Zustaende an derselben Zeile, statt einer zweiten Meldung woanders: der Satz erklaert das
+   Bild darueber, also gehoert auch die Antwort auf einen Upload dorthin. "laeuft" nur eine Stufe
+   heller (--vc-muted statt --vc-third) -- ein Ladehinweis, der schreit, ist schlimmer als keiner.
+   Der Fehler in --vt-down, derselben Farbe, in der die App jede negative Zahl schreibt. */
+.ums-hint.is-laeuft { color: var(--vc-muted); }
+.ums-hint.is-fehler { color: var(--vt-down); font-weight: 500; }
 .ums-hint {
   display: block; margin: 20px 0 4px;
   font-size: 13.5px; font-weight: 450; color: var(--vc-third);
