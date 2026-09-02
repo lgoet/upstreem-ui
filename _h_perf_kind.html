@@ -116,7 +116,10 @@ Promise.all(["core.css","core.js","prompts-table.css","prompts-table.js","bubble
     var versatz = Math.floor((i++) / 3) * 60;
     /* Genau die Reihenfolge aus der Konsole des Nutzers: der Workflow setzt den Ladezustand,
        schickt die Zeilen und danach die Markenliste -- und das mehrfach mit demselben Inhalt. */
-    if (window.setPromptsTableLoading) window.setPromptsTableLoading("tb","no");
+    /* Ladezustand AN vor dem Aufruf -- so kommt es beim Nutzer: der Workflow schaltet auf
+       Laden, holt den RPC, und die Brands treffen ein, WAEHREND geladen wird. Genau dieser
+       Zustand hat den Riegel bisher blockiert. */
+    if (window.setPromptsTableLoading) window.setPromptsTableLoading("tb","yes");
     window.renderPromptsTable(JSON.stringify({ instanceId:"tb", view_active:"yes", totalCount:60,
       rows: (function(){ var o=[]; for (var k=0;k<60;k++) o.push({ id:"r"+(k+versatz),
         prompt_text:"Welcher Anbieter ist der beste fuer Fall "+(k+versatz)+"?", status:"active",
@@ -125,6 +128,7 @@ Promise.all(["core.css","core.js","prompts-table.css","prompts-table.js","bubble
         tags:[{id:"t"+(k%4), name:["Preise","Vergleich","Anbieter","Technik"][k%4], hex_light:"#2f6fdb"}] }); return o; })() }));
     if (window.setPromptsTableBrands) window.setPromptsTableBrands("tb",
       [{company_id:"c1",name:"Carwow",logo_url:""},{company_id:"c2",name:"ADAC",logo_url:""}]);
+    if (window.setPromptsTableLoading) window.setPromptsTableLoading("tb","no");
     return new Promise(function(ok){ setTimeout(ok,320); }).then(runde);
   }
   return runde().then(function(){

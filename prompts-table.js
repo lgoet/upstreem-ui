@@ -737,6 +737,14 @@
        threw away. Same instanceId means literally the same table, and Bubble delivers fresh rows
        through render() regardless, so the worst case is one frame of the previous rows instead
        of a skeleton -- strictly better than re-running every RPC on the page. */
+    var zeichenPlan = false;
+    function renderBald(){
+      if (zeichenPlan) return;
+      zeichenPlan = true;
+      function los(){ if (!zeichenPlan) return; zeichenPlan = false; render(); }
+      if (window.requestAnimationFrame) window.requestAnimationFrame(los);
+      setTimeout(los, 24);
+    }
     function persist(){
       STORE[instanceId] = {
         loading: state.extLoading, query: state.query,
@@ -4441,6 +4449,22 @@
            die Tabelle ihre Gruppen erst beim naechsten beliebigen Neuzeichnen geholt. */
         if (state.darfHolen) render();
       },
+      /* ---------- EIN ZEICHNEN JE BILD, NICHT JE SETTER ----------
+         GEMESSEN. Eine RPC-Runde des Workflows macht vier Dinge: Ladezustand an, Zeilen schicken,
+         Marken schicken, Ladezustand aus. Vier ECHTE Zustandsaenderungen -- deduplizieren hilft
+         hier also nichts --, vier volle Neuaufbauten, und DREI davon sieht niemand, weil der
+         vierte sie im selben Augenblick ueberschreibt. Im Lastaufbau: 12 Runden ergaben 12
+         Neuaufbauten. Auf der Maschine des Nutzers kostet ein Neuaufbau rund 540ms.
+         Also wird das Zeichnen auf das naechste Bild verschoben und dabei zusammengefasst: was in
+         derselben Runde noch kommt, wird mitgezeichnet.
+         Sicher ist das, weil KEINE der zehn render()-Stellen danach das DOM liest -- nachgesehen,
+         nicht angenommen. Die interaktiven Stellen (Sortieren, Spalten, Status, Suche) rufen
+         weiter direkt: dort gibt es keinen Schwall, und ein Bild Verzoegerung waere dort das
+         einzige, was man merken koennte.
+         requestAnimationFrame UND eine Uhr: rAF laeuft in einem VERDECKTEN Tab nicht, und diese
+         Tabelle liegt in Bubble regelmaessig in einem Tab, der noch nicht vorne ist -- dieselbe
+         Lektion wie beim Hintergrundbild von Mira. Beide rufen dasselbe, der zweite ist ein
+         Nichts. */
       update: function(params){
         params = params || {};
         /* Der Payload kam an, war aber nicht lesbar -- normParams in core.js haengt dafuer
@@ -4453,7 +4477,7 @@
           state.loading = false; state.softReload = false; endSoftReload();
           state.extLoading = false;
           state.letzteNutzlast = null;   /* Objekt je Schluesselsatz */
-          persist(); render(); return;
+          persist(); renderBald(); return;
         }
 
         /* ---------- IDENTISCHE NUTZLAST -> NICHTS TUN ----------
@@ -4484,9 +4508,21 @@
           schluessel = Object.keys(params).sort().join(",");
           sig = JSON.stringify(params);
         } catch(e){ schluessel = null; sig = null; }
+        /* DIE STRENGE BEDINGUNG GILT NUR FUER ZEILEN, und das war der zweite Fehler.
+           Gemessen nach dem letzten Commit: setPromptsTableBrands kostete weiter 584ms je Aufruf,
+           dreimal. Der Grund war dieser Riegel selbst -- er verlangt !extLoading, und waehrend
+           einer Klickserie laedt die Tabelle fast immer. Es griff also nie.
+           Fuer ZEILEN muss die Bedingung streng bleiben: kommt derselbe Zeilen-Payload noch
+           einmal, waehrend ein Skelett laeuft, MUSS er angewandt werden -- er ist das, was den
+           Ladezustand beendet, und ein Ladezustand muss immer enden (CLAUDE.md 2).
+           Ein Aufruf OHNE rows kann den Ladezustand gar nicht beenden. Eine identische
+           Markenliste zweimal anzuwenden aendert nichts -- weder am Zustand noch am Bild. Also
+           darf sie ohne Bedingung durchfallen. */
+        var mitZeilen = !!(params.rows != null);
         if (schluessel && sig && state.letzteNutzlast &&
             state.letzteNutzlast[schluessel] === sig &&
-            state.hasData && !state.loading && !state.extLoading && !state.softReload){
+            (!mitZeilen ||
+             (state.hasData && !state.loading && !state.extLoading && !state.softReload))){
           return;
         }
         if (schluessel && sig){
@@ -4579,7 +4615,7 @@
           state.extLoading = false;
         }
         if (!explicitOverride && hasProcessingAttr()) state.extLoading = readProcessing();
-        persist(); render();
+        persist(); renderBald();
       },
       setLoading: function(on){
         var an = isYes(on);
@@ -4608,7 +4644,7 @@
            unterwegs waren. Gemessen am 24.08. -- der Fehler stand nach einem reset() noch da. */
         if (an) state.leseFehler = false;
         if (!state.extLoading){ state.loading = false; endSoftReload(); }
-        persist(); render();
+        persist(); renderBald();
       },
       reset: function(){
         /* Die Signatur mit zuruecksetzen: nach einem reset ist dieselbe Nutzlast wieder eine
