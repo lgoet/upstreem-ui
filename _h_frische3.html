@@ -1,0 +1,21 @@
+<meta charset="utf-8"><title>Selbsttest Werkzeug A2 gegen echte jsDelivr-URLs</title>
+<pre id="out" style="font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap">laeuft…</pre>
+<!-- type verhindert das Ausfuehren; querySelectorAll("script[src]") findet sie trotzdem,
+     und genau das ist der Weg, den das Werkzeug geht. Vier .min und zwei roh, wie in der App. -->
+<script type="text/x-probe" src="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@d8d7e1d62ba412fe06a947a66c2545f1aaefc30b/prompts-table.min.js"></script>
+<script type="text/x-probe" src="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@d8d7e1d62ba412fe06a947a66c2545f1aaefc30b/urls-table.min.js"></script>
+<script type="text/x-probe" src="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@d8d7e1d62ba412fe06a947a66c2545f1aaefc30b/domains-table.min.js"></script>
+<script type="text/x-probe" src="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@d8d7e1d62ba412fe06a947a66c2545f1aaefc30b/domains-table.min.js"></script>
+<script type="text/x-probe" src="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@d8d7e1d62ba412fe06a947a66c2545f1aaefc30b/responses-table.min.js"></script>
+<script type="text/x-probe" src="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@d8d7e1d62ba412fe06a947a66c2545f1aaefc30b/core.js"></script>
+<script type="text/x-probe" src="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@d8d7e1d62ba412fe06a947a66c2545f1aaefc30b/filters/topics-filter.js"></script>
+<script>
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+var lg=console.log, tb=console.table;
+console.log=function(){ log([].map.call(arguments,String).join(" ")); return lg.apply(console,arguments); };
+console.table=function(x){ try{ log(JSON.stringify(x,null,1)); }catch(e){ log("(nicht serialisierbar)"); } return tb.apply(console,arguments); };
+fetch("_h_tA3.js?n="+Math.random(),{cache:"no-store"}).then(function(r){return r.text();}).then(function(code){
+  var f = new Function("return ("+code+");");   /* echter Syntaxtest */
+  return f();
+}).then(function(){ log("FERTIG"); }).catch(function(e){ log("ABBRUCH: "+e.message); });
+</script>

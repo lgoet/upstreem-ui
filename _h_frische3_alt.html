@@ -5,6 +5,7 @@
 <script type="text/x-probe" src="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@47645e83ac5c571bebc147f34cab5b069dd03ba2/prompts-table.min.js"></script>
 <script type="text/x-probe" src="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@47645e83ac5c571bebc147f34cab5b069dd03ba2/urls-table.min.js"></script>
 <script type="text/x-probe" src="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@47645e83ac5c571bebc147f34cab5b069dd03ba2/domains-table.min.js"></script>
+<script type="text/x-probe" src="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@47645e83ac5c571bebc147f34cab5b069dd03ba2/domains-table.min.js"></script>
 <script type="text/x-probe" src="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@47645e83ac5c571bebc147f34cab5b069dd03ba2/responses-table.min.js"></script>
 <script type="text/x-probe" src="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@47645e83ac5c571bebc147f34cab5b069dd03ba2/core.js"></script>
 <script type="text/x-probe" src="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@47645e83ac5c571bebc147f34cab5b069dd03ba2/filters/topics-filter.js"></script>
@@ -13,7 +14,7 @@ var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent
 var lg=console.log, tb=console.table;
 console.log=function(){ log([].map.call(arguments,String).join(" ")); return lg.apply(console,arguments); };
 console.table=function(x){ try{ log(JSON.stringify(x,null,1)); }catch(e){ log("(nicht serialisierbar)"); } return tb.apply(console,arguments); };
-fetch("_h_tA2.js?n="+Math.random(),{cache:"no-store"}).then(function(r){return r.text();}).then(function(code){
+fetch("_h_tA3.js?n="+Math.random(),{cache:"no-store"}).then(function(r){return r.text();}).then(function(code){
   var f = new Function("return ("+code+");");   /* echter Syntaxtest */
   return f();
 }).then(function(){ log("FERTIG"); }).catch(function(e){ log("ABBRUCH: "+e.message); });
