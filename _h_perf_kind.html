@@ -93,6 +93,14 @@ Promise.all(["core.css","core.js","prompts-table.css","prompts-table.js","bubble
   Z = {}; AN = true;
   /* Neuaufbauten zaehlen: jede childList-Mutation am Tabellenkoerper, bei der Knoten weggehen. */
   window.__neu = 0;
+  /* Wie oft kommt ein Aufruf DURCH bis zum Zeichnen? Gezaehlt an den Neuaufbauten; die Aufrufe
+     selbst zaehlt der Aufbau unten mit. */
+  window.__rufe = { render:0, loading:0, brands:0 };
+  ["renderPromptsTable","setPromptsTableLoading","setPromptsTableBrands"].forEach(function(n,ix){
+    var o = window[n]; if (typeof o !== "function") return;
+    var k = ["render","loading","brands"][ix];
+    window[n] = function(){ window.__rufe[k]++; return o.apply(this, arguments); };
+  });
   var tbz = document.querySelector(".upt-root .up-tbody");
   if (tbz) new MutationObserver(function(ms){
     for (var q=0;q<ms.length;q++) if (ms[q].removedNodes.length) { window.__neu++; break; }
@@ -106,12 +114,17 @@ Promise.all(["core.css","core.js","prompts-table.css","prompts-table.js","bubble
     /* Wie beim Nutzer: dieselbe Nutzlast kommt mehrfach. Jede dritte Runde ist NEU, die zwei
        dazwischen sind Wiederholungen -- genau das Muster aus seiner Konsole (50 rows dreimal). */
     var versatz = Math.floor((i++) / 3) * 60;
+    /* Genau die Reihenfolge aus der Konsole des Nutzers: der Workflow setzt den Ladezustand,
+       schickt die Zeilen und danach die Markenliste -- und das mehrfach mit demselben Inhalt. */
+    if (window.setPromptsTableLoading) window.setPromptsTableLoading("tb","no");
     window.renderPromptsTable(JSON.stringify({ instanceId:"tb", view_active:"yes", totalCount:60,
       rows: (function(){ var o=[]; for (var k=0;k<60;k++) o.push({ id:"r"+(k+versatz),
         prompt_text:"Welcher Anbieter ist der beste fuer Fall "+(k+versatz)+"?", status:"active",
         visibility_pct:20+(k%40), visibility_delta_pct:(k%2?-1:1)*(k%5), avg_rank:1+(k%6),
         avg_rank_delta:(k%3)-1, sentiment:50+(k%40), sentiment_delta:(k%2?-2:3), market:"de",
         tags:[{id:"t"+(k%4), name:["Preise","Vergleich","Anbieter","Technik"][k%4], hex_light:"#2f6fdb"}] }); return o; })() }));
+    if (window.setPromptsTableBrands) window.setPromptsTableBrands("tb",
+      [{company_id:"c1",name:"Carwow",logo_url:""},{company_id:"c2",name:"ADAC",logo_url:""}]);
     return new Promise(function(ok){ setTimeout(ok,320); }).then(runde);
   }
   return runde().then(function(){
@@ -132,7 +145,7 @@ Promise.all(["core.css","core.js","prompts-table.css","prompts-table.js","bubble
     var zellen = document.querySelectorAll(".upt-root .up-td").length;
     window.__R = { gerendert_zeilen: gerendert, gerendert_zellen: zellen,
       /* Wie oft hat die Tabelle wirklich neu gebaut? Gezaehlt an den Mutationen des Koerpers. */
-      neuaufbauten: window.__neu || 0,
+      neuaufbauten: window.__neu || 0, aufrufe: window.__rufe,
       leerzustand: !!document.querySelector(".upt-root .up-empty, .upt-root [class*='empty']"),
       dauer_ms: dauer, zeilen: 60, runden: 12,
       textknoten_im_dokument: (function(){ var n=0, w=document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null); while(w.nextNode()) n++; return n; })(),

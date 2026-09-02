@@ -4452,7 +4452,7 @@
           state.leseFehler = true; state.rows = []; state.hasData = true;
           state.loading = false; state.softReload = false; endSoftReload();
           state.extLoading = false;
-          state.letzteNutzlast = null;
+          state.letzteNutzlast = null;   /* Objekt je Schluesselsatz */
           persist(); render(); return;
         }
 
@@ -4472,14 +4472,26 @@
 
            NUR wenn wirklich schon Daten stehen und nichts laedt. Sonst wuerde ein zweiter
            identischer Aufruf ein Skelett stehen lassen -- und ein Ladezustand muss IMMER enden
-           (CLAUDE.md 2). */
-        var sig = null;
-        try { sig = JSON.stringify(params); } catch(e){ sig = null; }
-        if (sig && sig === state.letzteNutzlast &&
+           (CLAUDE.md 2).
+
+           Und die Signatur haengt am SCHLUESSELSATZ des Aufrufs, nicht global: die Aufrufe
+           wechseln sich ab (Zeilen, Brands, Zeilen, Brands), und mit einer einzigen Signatur
+           haette jeder den vorigen ueberschrieben -- es haette NIE etwas gegriffen. Gemessen:
+           setPromptsTableBrands kam viermal und kostete 2752ms, 688ms je Aufruf, obwohl sich die
+           Liste der beobachteten Brands waehrend einer Klickserie nie aendert. */
+        var schluessel = null, sig = null;
+        try {
+          schluessel = Object.keys(params).sort().join(",");
+          sig = JSON.stringify(params);
+        } catch(e){ schluessel = null; sig = null; }
+        if (schluessel && sig && state.letzteNutzlast &&
+            state.letzteNutzlast[schluessel] === sig &&
             state.hasData && !state.loading && !state.extLoading && !state.softReload){
           return;
         }
-        state.letzteNutzlast = sig;
+        if (schluessel && sig){
+          (state.letzteNutzlast || (state.letzteNutzlast = {}))[schluessel] = sig;
+        }
 
         /* NUR dieses Feld oeffnet den Riegel. Gemessen wurde, warum jedes andere Kriterium
            versagt: renderPromptsTable laeuft auf jeder Seite, und die Tabelle ist dabei technisch
@@ -4570,20 +4582,38 @@
         persist(); render();
       },
       setLoading: function(on){
+        var an = isYes(on);
         explicitOverride = true;
         LOADING_EXPLICIT[instanceId] = true;
-        state.extLoading = isYes(on);
+        /* ---------- AENDERT SICH NICHTS, WIRD NICHT GEZEICHNET ----------
+           GEMESSEN auf der Maschine des Nutzers, 4-fache CPU-Bremse, sechs bis acht
+           Filterklicks: setPromptsTableLoading kam ZWOELF mal und kostete 7885ms -- 657ms je
+           Aufruf, und damit der groesste Einzelposten von 21797ms Blockade in 82 langen
+           Aufgaben. Der Grund stand hier drei Zeilen weiter unten: persist() und render()
+           liefen BEDINGUNGSLOS. Zwoelf Aufrufe waren zwoelf volle Neuaufbauten der Tabelle,
+           obwohl ein Ladezustand nur ein Schalter ist.
+           Die drei Buchhaltungszeilen darueber bleiben vor dem Riegel: explicitOverride muss
+           auch dann fallen, wenn der Wert derselbe ist -- sonst greift wieder der Attributweg,
+           und genau das war der Grund, warum es diesen Riegel gibt.
+           Was sich aendern KANN, steht in der Bedingung, und zwar vollstaendig:
+             der Zustand selbst; der Lesefehler (nur beim Einschalten); das Laden und ein
+             laufender Soft-Reload (nur beim Ausschalten -- endSoftReload ist sonst ein Nichts). */
+        var aendert = (an !== state.extLoading) ||
+                      (an && state.leseFehler) ||
+                      (!an && (state.loading || state.softReload));
+        if (!aendert) return;
+        state.extLoading = an;
         /* Ein NEUER Ladeversuch raeumt den Lesefehler weg. Ohne das ueberlebt er jeden weiteren
            Versuch: die Komponente zeigte den Fehler dann auch, nachdem laengst frische Daten
            unterwegs waren. Gemessen am 24.08. -- der Fehler stand nach einem reset() noch da. */
-        if (isYes(on)) state.leseFehler = false;
+        if (an) state.leseFehler = false;
         if (!state.extLoading){ state.loading = false; endSoftReload(); }
         persist(); render();
       },
       reset: function(){
         /* Die Signatur mit zuruecksetzen: nach einem reset ist dieselbe Nutzlast wieder eine
            echte Aenderung, und ohne diese Zeile wuerde sie uebersprungen. */
-        state.letzteNutzlast = null;
+        state.letzteNutzlast = null;   /* Objekt je Schluesselsatz */
         /* Deliberately narrow: only the bulk-topic popover state + selection, per explicit user
            request — NOT search/sort/paging/status/widths, which used to also get wiped here and
            surprised the user by silently flipping the table back to the Active tab. */
