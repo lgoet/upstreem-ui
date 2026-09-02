@@ -1,34 +1,101 @@
-<meta charset="utf-8"><title>upCheck gegen echte Wurzeln</title>
-<style>body{margin:0;font:12px ui-monospace,monospace;padding:10px}pre{white-space:pre-wrap;background:#111;color:#eee;padding:10px}</style>
-<body>
-<!-- Zwei Wurzeln, absichtlich mit ZWEI verschiedenen Pins, einer toten Verdrahtung,
-     einer doppelten data-instance und einer Komponente im falschen Thema. -->
-<div class="up-root utm-root" data-instance="t9" data-isdark="no" data-cdn-pin="aaaaaaa"
-     data-add-fn="bubble_fn_utmAdd" data-edit-fn="bubble_fn_gibtsNicht">
-  <div class="up-head"><div class="up-heading"><span class="up-head-label">Topics</span><span class="up-head-sep"></span><span class="up-head-count"></span></div>
-    <div class="up-head-tools">
-      <div class="up-sort"><button class="up-sort-btn up-iconbtn" type="button"></button><div class="up-sort-menu" role="menu" aria-hidden="true"></div></div>
-      <div class="up-search"><button class="up-search-btn up-iconbtn" type="button"></button>
-        <div class="up-search-box"><input class="up-search-input" type="text"/><button class="up-search-clear" type="button"></button></div></div>
-    </div></div>
-  <div class="utm-chipgrid"></div>
+<!doctype html><html><head><meta charset="utf-8"><title>Instanz-Pruefung</title></head><body>
+<div class="bubble-element Group" id="popup_prompts">
+  <div class="bubble-element Group"><div class="up-root udr-root" data-instance="dates_v2_export"></div></div>
 </div>
-<div class="up-root vot-root" data-instance="t9" data-isdark="yes" data-theme="dark" data-cdn-pin="bbbbbbb"></div>
-<pre id="out">laeuft</pre>
+<div class="bubble-element Group" id="popup_citations">
+  <div class="up-root udr-root" data-instance="dates_v2_export"></div>
+</div>
+<div class="bubble-element Group" id="popup_urls">
+  <div class="up-root udr-root" data-instance="dates_v2_export"></div>
+</div>
+<div class="udr-root up-root" data-instance="dates_v2_prompts"></div>
+<div class="udr-root up-root" data-instance="dates_v2_"></div>
+<div class="up-root"></div>
+<div class="up-ph-root up-root" data-instance="ROOTID_[dynamic id]"></div>
+<div class="utf-root up-root" data-instance=""></div>
+<div class="upt-root up-root" data-instance="prompts_table"></div>
+<div class="bubble-element Group" id="filterleiste_a"><div class="ufb-root up-root" data-instance="filterbar_prompts"></div></div>
+<div class="bubble-element Group" id="filterleiste_b"><div class="ufb-root up-root" data-instance="filterbar_prompts"></div></div>
+<pre id="out">…</pre>
 <script>
-window.bubble_fn_utmAdd = function(){};
-try{ localStorage.setItem("pref_theme","light"); }catch(e){}
-/* Registry wie der Loader sie hinterlaesst: eine echte Datei und eine, die es nicht gibt. */
-window.__upAssetsLoaded = {
-  "core.js": "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@7331c5c/core.js",
-  "gibtsnicht.js": "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@0000000000000000000000000000000000000000/gibtsnicht.js"
-};
-(function(){
-  var files=["core.css","topics-manager.css","core.js","topics-manager.js","bubble/diagnostics/_check_console.js"], t={};
-  Promise.all(files.map(function(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"})
-    .then(function(r){return r.text()}).then(function(x){t[f]=x}); })).then(function(){
-      files.forEach(function(f){ var e=document.createElement(/\.css$/.test(f)?"style":"script"); e.textContent=t[f]; document.head.appendChild(e); });
-      setTimeout(function(){ window.__bereit = true; document.getElementById("out").textContent="bereit -- upCheck.* aufrufen"; }, 900);
-    });
-})();
+  var alt = console.table, zeilen = [];
+  console.table = function(x){ zeilen.push(JSON.stringify(x)); return alt.apply(console, arguments); };
+  var altLog = console.log;
+  console.log = function(){ zeilen.push([].join.call(arguments, " ")); return altLog.apply(console, arguments); };
 </script>
+<script>
+(function(){
+  /* Komponenten, die ihre Instanz per PRAEFIX suchen -- dort trifft ein kurzer Name mehrere */
+  var PRAEFIX = {"udr-root":1,"utf-root":1,"umf-root":1,"umk-root":1,"ufb-root":1,"uto-root":1};
+  function klasse(e){
+    var t = (e.getAttribute("class")||"").split(/\s+/), fall = null;
+    for (var i=0;i<t.length;i++){
+      if (!/-root$/.test(t[i])) continue;
+      if (t[i]==="up-root"){ fall = t[i]; continue; }
+      return t[i];
+    }
+    return fall || (e.id ? "#"+e.id : "?");
+  }
+  function wo(e){
+    var teile = [], n = e.parentElement, tief = 0;
+    while (n && n !== document.body && tief < 6){
+      var c = (n.getAttribute("class")||"").split(/\s+/).filter(function(x){
+        return x && x!=="bubble-element" && !/^(clickable-element|entry-\d)$/.test(x); }).slice(0,2);
+      var st = n.tagName.toLowerCase() + (n.id ? "#"+n.id : "") + (c.length ? "."+c.join(".") : "");
+      if (n.id || c.length) teile.push(st);
+      n = n.parentElement; tief++;
+    }
+    return teile.join(" < ") || "(body)";
+  }
+  var alle = [].slice.call(document.querySelectorAll("[class*='-root']"));
+  var gruppen = {}, ohne = [], proKlasse = {};
+  alle.forEach(function(e){
+    var k = klasse(e);
+    var roh = e.getAttribute("data-instance");
+    var inst = roh == null ? null : String(roh);
+    var g = k + " | " + (inst == null ? "(fehlt)" : inst);
+    (gruppen[g] || (gruppen[g] = [])).push(e);
+    var grund = null;
+    if (inst == null) grund = "Attribut fehlt";
+    else if (!inst.trim()) grund = "leer";
+    else if (/[\[\]]/.test(inst)) grund = "Platzhalter nicht gefuellt";
+    else if (/ROOTID|dynamic id|Current User|%/i.test(inst)) grund = "Ausdruck nicht aufgeloest";
+    else if (inst !== inst.trim()) grund = "Leerzeichen am Rand";
+    if (grund) ohne.push({ wurzel:k, instanz: inst==null?"(fehlt)":JSON.stringify(inst), grund:grund, wo: wo(e) });
+    if (inst && inst.trim() && !grund) (proKlasse[k] || (proKlasse[k] = {}))[inst] = 1;
+  });
+
+  var doppelt = [];
+  Object.keys(gruppen).forEach(function(g){
+    var l = gruppen[g]; if (l.length < 2) return;
+    var p = g.split(" | ");
+    doppelt.push({ wurzel:p[0], instanz:p[1], anzahl:l.length,
+                   wo_1: wo(l[0]), wo_2: wo(l[1]), wo_3: l[2] ? wo(l[2]) : "" });
+  });
+  doppelt.sort(function(a,b){ return b.anzahl - a.anzahl; });
+
+  var falle = [];
+  Object.keys(proKlasse).forEach(function(k){
+    if (!PRAEFIX[k]) return;
+    var ids = Object.keys(proKlasse[k]);
+    ids.forEach(function(a){ ids.forEach(function(b){
+      if (a !== b && b.indexOf(a) === 0) falle.push({ wurzel:k, kurzer_name:a, trifft_auch:b });
+    }); });
+  });
+
+  console.log("WURZELN GESAMT: " + alle.length + "   |   verschiedene Instanzen: " + Object.keys(gruppen).length);
+  console.log("A) MEHRFACH VORHANDEN  (" + doppelt.length + ")");
+  doppelt.length ? console.table(doppelt) : console.log("   keine");
+  console.log("B) INSTANZ FEHLT ODER IST EIN UNGEFUELLTER AUSDRUCK  (" + ohne.length + ")");
+  ohne.length ? console.table(ohne) : console.log("   keine");
+  console.log("C) PRAEFIX-FALLE: ein Aufruf mit dem kurzen Namen bedient AUCH die rechte Spalte  (" + falle.length + ")");
+  falle.length ? console.table(falle) : console.log("   keine");
+  return { gesamt: alle.length, doppelt: doppelt, ohne: ohne, praefix: falle };
+})()
+
+</script>
+<script>
+  console.log = altLog; console.table = alt;
+  document.getElementById("out").textContent = zeilen.join("\n");
+</script>
+</body></html>
