@@ -1,0 +1,107 @@
+<meta charset="utf-8"><title>Streifen-Lauf: Layout-Lesungen je Mutationsschwung</title>
+<style>html,body{margin:0;font:13px/1.5 system-ui,sans-serif}
+.up-seg{display:inline-flex;gap:4px;padding:3px}
+.up-seg button{height:24px;padding:0 10px;white-space:nowrap}
+#out{font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap;padding:10px}</style>
+<body><div id="kaesten"></div><div id="buehne"></div><pre id="out">laeuft…</pre>
+<script>
+window.__err=[]; window.addEventListener("error",function(e){window.__err.push(String(e.message));});
+var ALT=(new URLSearchParams(location.search)).get("alt")==="1";
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+/* 50 Umschalter wie auf der echten Seite */
+var k=document.getElementById("kaesten");
+for (var i=0;i<50;i++){
+  var b=document.createElement("div"); b.className="up-root up-seg"; b.setAttribute("data-instance","s"+i);
+  for (var j=0;j<3;j++){ var t=document.createElement("button");
+    t.className="up-seg-btn"+(j===0?" is-active":""); t.textContent="S"+j; b.appendChild(t); }
+  k.appendChild(b);
+}
+/* Layout-Lesungen zaehlen, zugeordnet auf segLesen */
+window.__lay=0; window.__laySeg=0; window.__layBody=0;
+[[HTMLElement.prototype,"offsetWidth"],[HTMLElement.prototype,"offsetHeight"],
+ [HTMLElement.prototype,"offsetLeft"],[HTMLElement.prototype,"offsetTop"]].forEach(function(pp){
+  var d=Object.getOwnPropertyDescriptor(pp[0],pp[1]);
+  Object.defineProperty(pp[0],pp[1],{configurable:true,get:function(){
+    window.__lay++;
+    if (this === document.body) window.__layBody++;
+    var st=(new Error()).stack||"";
+    if (st.indexOf("segLesen")>=0) window.__laySeg++;
+    return d.get.call(this); }});
+});
+fetch((ALT?"_h_seg_alt.js":"core.js")+"?n="+Math.random(),{cache:"no-store"}).then(function(r){return r.text();}).then(function(t){
+  log("Fassung: "+(ALT?"ALT":"NEU")+"   Drossel im Text: "+(t.indexOf("SEG_VOLL_MS")>=0));
+  var s=document.createElement("script"); s.textContent=t; document.head.appendChild(s);
+  return new Promise(function(ok){ setTimeout(ok,600); });
+}).then(function(){
+  window.__lay=0; window.__laySeg=0; window.__layBody=0;
+  /* Sechs Mutationsschwuenge wie sechs Tabellenrender, je 60 Knoten OHNE Umschalter darin */
+  var runde=0;
+  return new Promise(function(fertig){
+    (function naechste(){
+      if (runde++ >= 6) return setTimeout(fertig, 700);
+      var b=document.getElementById("buehne");
+      for (var r=0;r<60;r++){ var row=document.createElement("div"); row.className="up-row";
+        for (var c=0;c<6;c++){ var cell=document.createElement("div"); cell.className="up-cell";
+          cell.appendChild(document.createTextNode("x")); row.appendChild(cell); }
+        b.appendChild(row); }
+      setTimeout(naechste, 120);
+    })();
+  });
+}).then(function(){
+  log("6 Mutationsschwuenge (je 60 Zeilen, keine Umschalter darin), 50 Umschalter auf der Seite:");
+  log("   Layout-Lesungen in segLesen: " + window.__laySeg + "   (gesamt " + window.__lay + ")");
+  log("   ganzseitige Zwangsumbrueche (document.body): " + window.__layBody);
+  /* GEGENPROBE: ein Klick muss den Streifen SOFORT bewegen, nicht erst nach der Drossel */
+  var box=document.querySelector(".up-seg");
+  box.querySelector("button.is-active").classList.remove("is-active");
+  box.querySelectorAll("button")[2].classList.add("is-active");
+  var vorX=box.style.getPropertyValue("--up-seg-x");
+  box.querySelectorAll("button")[2].click();
+  setTimeout(function(){
+    var nachX=box.style.getPropertyValue("--up-seg-x");
+    log("Klick auf die dritte Stufe:  --up-seg-x  \"" + vorX + "\" -> \"" + nachX + "\"" +
+        "   ==> " + (nachX && nachX !== vorX ? "SOFORT GESETZT" : "NICHT GESETZT"));
+    /* GEGENPROBE 2: der Ast-Lauf. Ein Umschalter, dessen Beschriftung breiter wird, muss neu
+       gemessen werden, obwohl dieselbe Stufe aktiv bleibt. Der Anstoss ist eine Mutation IM
+       Kasten -- so kommt er in der App auch: eine Komponente baut ihre Kopfzeile neu.
+       Der Groessenwaechter ist hier nicht pruefbar (verdeckter Tab, er feuert nie), diese Zeile
+       ist die Sicherung, die es auch ohne ihn tut. */
+    var b2 = document.querySelectorAll(".up-seg")[7];
+    var w2vor = b2.style.getPropertyValue("--up-seg-w");
+    var akt2 = b2.querySelector("button.is-active");
+    var bBreiteVor = akt2.offsetWidth;
+    akt2.textContent = "Eine viel breitere Beschriftung";
+    var bBreiteNach = akt2.offsetWidth;
+    log("   Voraussetzung: aktiver Knopf " + bBreiteVor + "px -> " + bBreiteNach + "px" +
+        (bBreiteNach === bBreiteVor ? "   !! KONTROLLE UNGUELTIG, Breite haengt nicht am Text" : ""));
+    /* ELEMENT, kein Kommentar und kein Textknoten: der Beobachter filtert alles ausser
+       nodeType 1 aus der Astliste. Eine neu gebaute Kopfzeile haengt Elemente ein, so kommt es
+       in der App auch. Der Ast-Lauf haengt an einer 250ms-Uhr, deshalb 600ms warten. */
+    b2.appendChild(document.createElement("i"));
+    setTimeout(function(){
+      var w2nach = b2.style.getPropertyValue("--up-seg-w");
+      log("Ast-Lauf (Element eingehaengt), Beschriftung breiter, gleiche Stufe:  --up-seg-w  \"" + w2vor + "\" -> \"" + w2nach + "\"" +
+          "   ==> " + (w2nach && w2nach !== w2vor ? "NEU GEMESSEN" : "VERSCHLUCKT"));
+      /* GEGENPROBE 3: Sprachwechsel. Aendert jede Breite, laesst die Stufe gleich. */
+      var b3 = document.querySelectorAll(".up-seg")[12];
+      var w3vor = b3.style.getPropertyValue("--up-seg-w");
+      var akt3 = b3.querySelector("button.is-active");
+      var cVor = akt3.offsetWidth;
+      akt3.textContent = "Noch eine deutlich laengere Stufe";
+      log("   Voraussetzung: aktiver Knopf " + cVor + "px -> " + akt3.offsetWidth + "px");
+      window.dispatchEvent(new CustomEvent("up-prefs-change", { detail:{ name:"lang", value:"de" } }));
+      setTimeout(function(){
+        var w3nach = b3.style.getPropertyValue("--up-seg-w");
+        log("up-prefs-change, Stufe unveraendert:  --up-seg-w  \"" + w3vor + "\" -> \"" + w3nach + "\"" +
+            "   ==> " + (w3nach && w3nach !== w3vor ? "NEU GEMESSEN" : "VERSCHLUCKT"));
+        log("Layout-Lesungen in segLesen am Ende: " + window.__laySeg);
+        log("Fehler: "+(window.__err.length?window.__err.join(" | "):"keine"));
+        log("FERTIG");
+      }, 500);
+      /* 1800ms und nicht 600: der Ast-Lauf haengt an einer 250ms-Uhr, und in einem verdeckten
+         Tab drosselt der Browser Uhren auf etwa eine Sekunde. Mit 600ms war der Test zu frueh und
+         meldete VERSCHLUCKT, obwohl der Wert kurz danach stand. */
+    }, 1800);
+  }, 60);
+}).catch(function(e){ log("ABBRUCH: "+e.message); });
+</script>

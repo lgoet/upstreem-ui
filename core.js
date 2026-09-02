@@ -4927,24 +4927,48 @@
      Klick und an jeder Mutation. Genau diese Meldung stand reihenweise in der Konsole eines
      Nutzers ("Forced reflow while executing JavaScript took 186ms"). Getrennt bleibt EIN Umbruch
      je Lauf uebrig. */
-  /* ZWEI Durchgaenge, und das ist der Punkt: erst wird an ALLEN Umschaltern gelesen, dann an
-     allen geschrieben. Vorher lag beides ineinander -- lesen an Kasten A, schreiben an A, lesen
-     an B -- und jedes Lesen nach einem Schreiben zwingt den Browser, das Layout neu zu rechnen.
-     Bei zehn Umschaltern sind das zehn erzwungene Umbrueche je Lauf, und der Lauf haengt an jedem
-     Klick und an jeder Mutation. Getrennt bleibt EIN Umbruch je Lauf uebrig. */
-  function segLesen(box){
+  /* Ein Groessenwaechter je Kasten. Er ist der Grund, warum der Riegel unten sicher ist: ohne ihn
+     muesste jeder Lauf messen, um zu merken, dass sich die Groesse geaendert hat -- und genau das
+     Messen ist der Posten. Der Waechter meldet es stattdessen, und nur der gemeldete Kasten wird
+     neu gemessen. Er feuert beim Beobachten einmal von selbst, damit der erste Lauf misst. */
+  var SEG_RO = null;
+  function segBeobachten(box){
+    if (box.__segRO || !window.ResizeObserver) return;
+    box.__segRO = true;
+    if (!SEG_RO){
+      SEG_RO = new ResizeObserver(function(eintraege){
+        for (var i = 0; i < eintraege.length; i++) eintraege[i].target.__segNeu = true;
+        /* Gedrosselt: der Streifen ist Zierde, und beim Ziehen feuert der Waechter Bild um Bild. */
+        segLauf(null, false);
+      });
+    }
+    SEG_RO.observe(box);
+  }
+
+  function segLesen(box, zwingen){
     if (!box.isConnected) return null;
+    segBeobachten(box);
     var aktiv = box.querySelector("button.is-active");
     if (!aktiv) return null;
+    /* DER RIEGEL. Vier Layout-Lesungen je Kasten und Lauf waren gemessen 8932 Zugriffe und damit
+       der groesste Posten der ganzen App (02.09., segLesen kam 2808 mal dran). Bewegen kann sich
+       der Streifen nur, wenn eine ANDERE Stufe aktiv ist oder der Kasten seine Groesse geaendert
+       hat. Das Erste steht in der Reihenfolge der Kinder, das Zweite meldet der Waechter oben --
+       beides ohne einen einzigen Layoutwert. Aendert sich keins von beiden, gibt es nichts zu
+       schreiben, und dann bleibt auch der ganzseitige Zwangsumbruch in segLauf aus, den bisher
+       JEDER Lauf ausloeste, weil sein Auftragsbuch immer voll war. */
+    var key = segSchluessel(box);
+    var idx = Array.prototype.indexOf.call(box.children, aktiv);
+    var frueher = SEG_STAND[key];
+    if (!zwingen && !box.__segNeu && frueher && frueher.idx === idx) return null;
+    box.__segNeu = false;
     var b = aktiv.offsetWidth, h = aktiv.offsetHeight;
     /* Breite 0 heisst: der Umschalter ist gerade nicht sichtbar (ein Popover, das noch zu ist).
        Dann NICHT messen -- eine 0 wuerde den Streifen auf null ziehen, und beim Oeffnen faehrt er
        aus dem Nichts. Der naechste Lauf misst ihn, sobald er wirklich da ist. */
     if (!b) return null;
     return { box: box, x: aktiv.offsetLeft + "px", y: aktiv.offsetTop + "px",
-             w: b + "px", h: h + "px",
-             idx: Array.prototype.indexOf.call(box.children, aktiv),
-             key: segSchluessel(box) };
+             w: b + "px", h: h + "px", idx: idx, key: key };
   }
 
   /* Der Streifen muss einen NEUAUFBAU ueberleben. Mehrere Menues zeichnen sich bei jedem Klick
@@ -5011,7 +5035,9 @@
   function segSchriftUhr(){
     if (SEG_SCHRIFT || !document.fonts || !document.fonts.ready) return;
     SEG_SCHRIFT = true;
-    document.fonts.ready.then(function(){ segLauf(); })["catch"](function(){});
+    /* Geladene Schriften machen JEDE Beschriftung anders breit -- da hilft kein Vergleich der
+       aktiven Stufe, es muss neu gemessen werden. Dasselbe bei geaenderter Fensterbreite. */
+    document.fonts.ready.then(function(){ segLauf(null, true, true); })["catch"](function(){});
   }
 
   /* ---- Die Notbremse ---------------------------------------------------------------------------
@@ -5029,14 +5055,47 @@
      24.08. am Umschalter im Onboarding. Einmal fuer die ganze Seite, nicht je Umschalter. */
   var SEG_SCHRIFT = false;
 
-  function segLauf(wurzel){
+  /* Der Lauf ueber die GANZE Seite wird gedrosselt, der ueber einen Ast nicht.
+     GEMESSEN auf der laufenden App am 02.09.: segLesen kam 2808 mal dran und stand damit mit
+     11740 von 17916 Zugriffen bei 65 Prozent der DOM-Arbeit -- davon 8932 LAYOUT-Lesungen, also
+     genau die erzwungenen Reflows, die Chrome mit bis zu 1422ms gemeldet hat. Der Grund: der
+     Beobachter fasst mehr als acht Ziele zu [document] zusammen (und das tut er bei jedem
+     Tabellenrender), und dann misst ein Lauf SAEMTLICHE Umschalter der Seite mit vier Werten je
+     Stueck. 2808 / rund 50 Kaesten sind ueber fuenfzig volle Durchgaenge fuer eine Handvoll Klicks.
+     Der Streifen ist Zierde, traegt seinen eigenen Uebergang und darf 250ms spaeter sitzen. Was
+     ihn WIRKLICH bewegt -- ein Klick, geladene Schriften, eine geaenderte Fensterbreite -- laeuft
+     weiter sofort und gibt sofort=true mit. */
+  var _segVollUhr = null, _segVollZeit = 0;
+  var SEG_VOLL_MS = 250;
+  function segLauf(wurzel, sofort, zwingen){
     if (SEG_AUS || window.__upOhneToolbar || window.__upOhneStreifen) return;
+    if (!sofort && (!wurzel || wurzel === document)){
+      var rest = SEG_VOLL_MS - (Date.now() - _segVollZeit);
+      if (rest > 0){
+        /* Nicht verwerfen, nachholen: der letzte Anstoss im Fenster gewinnt, aber er kommt an. */
+        if (!_segVollUhr) _segVollUhr = setTimeout(function(){
+          _segVollUhr = null; segLauf(null, true);
+        }, rest);
+        return;
+      }
+      _segVollZeit = Date.now();
+    } else if (!wurzel || wurzel === document){
+      _segVollZeit = Date.now();
+    }
     /* Nicht waehrend einer Ziehbewegung. Der Streifen sitzt dann ohnehin kurz falsch, und niemand
        sieht ihn dabei an -- gemessen war er mit 26 Prozent aller Lesezugriffe weiterhin der
        groesste Posten, weil waehrend des Ziehens dauernd Kopfzeilen und Legenden neu entstehen
        und jede davon einen Umschalter mitbringt. Der Zuhoerer weiter unten laeuft 150ms nach dem
        letzten Ereignis und holt es dann nach. */
     if (typeof zieht === "function" && zieht()) return;
+    /* Ein Lauf ueber einen ECHTEN Ast heisst: genau dieser Teilbaum ist gerade neu entstanden
+       oder umgebaut worden. Dann koennen die Beschriftungen andere sein, und der Vergleich der
+       aktiven Stufe wuerde das verschlucken -- also messen. Der Lauf ist auf den Ast begrenzt und
+       enthaelt fast nie einen Umschalter, kostet also nichts.
+       Diese Zeile traegt den Fix mit: der Groessenwaechter allein reicht NICHT als Sicherung, er
+       feuert in einem verdeckten Tab nie (hier gemessen: null Aufrufe, auch nicht beim Anmelden --
+       er haengt wie rAF am Zeichenzyklus). */
+    if (wurzel && wurzel !== document) zwingen = true;
     var ziel = wurzel || document, els;
     var t0 = (window.performance && performance.now) ? performance.now() : 0;
     try {
@@ -5047,11 +5106,25 @@
       if (ziel !== document && ziel.matches && ziel.matches(SEG_BOXEN)){
         els = [].slice.call(els); els.push(ziel);
       }
+      /* Und NACH OBEN. Der Beobachter uebergibt den eingehaengten KNOTEN, nicht den Kasten: baut
+         eine Komponente ihre Kopfzeile um, liegen die neuen Knoten IM Umschalter, und von dort
+         aus findet ihn weder querySelectorAll (nur Nachfahren) noch matches. Bis hierher heilten
+         das die bedingungslosen Ganzseiten-Laeufe -- mit dem Riegel in segLesen tun sie das nicht
+         mehr, und ein Umschalter, dessen Beschriftung sich aendert, ohne dass die Stufe wechselt
+         ("Day" wird zu "D", "Show pages" zu "Hide pages"), behielte seinen alten Streifen.
+         Im Harness genau so gemessen: ohne diese Zeile VERSCHLUCKT. */
+      if (ziel !== document && ziel.closest){
+        var oben = ziel.closest(SEG_BOXEN);
+        if (oben){
+          els = [].slice.call(els);
+          if (els.indexOf(oben) < 0) els.push(oben);
+        }
+      }
     } catch(e){ return; }
     segSchriftUhr();
     var messwerte = [], i;
     for (i = 0; i < els.length; i++){                    /* 1. nur lesen */
-      var m = segLesen(els[i]);
+      var m = segLesen(els[i], zwingen);
       if (m) messwerte.push(m);
     }
     var wartend = [];
@@ -5100,9 +5173,16 @@
     if (w === _segBreite) return;
     _segBreite = w;
     if (_segUhr) clearTimeout(_segUhr);
-    _segUhr = setTimeout(function(){ _segUhr = null; sicher("segLauf", segLauf); }, 150);
+    _segUhr = setTimeout(function(){ _segUhr = null; sicher("segLauf", function(){ segLauf(null, true, true); }); }, 150);
   }, { passive: true });
-  document.addEventListener("click", function(){ setTimeout(function(){ sicher("segLauf", segLauf); }, 0); }, true);
+  document.addEventListener("click", function(){
+    setTimeout(function(){ sicher("segLauf", function(){ segLauf(null, true); }); }, 0); }, true);
+  /* Sprachwechsel und Zahlenformat aendern jede Beschriftung und damit jede Breite -- die aktive
+     Stufe bleibt aber dieselbe, der Riegel wuerde es also verschlucken. Aufgefallen beim
+     Umstellen der App auf Deutsch: "Active" und "Aktiv" sind nicht gleich breit. */
+  window.addEventListener("up-prefs-change", function(){
+    sicher("segLauf", function(){ segLauf(null, true, true); });
+  });
 
   /* ---- Globus statt Loch: EIN Zuhoerer fuer alle Favicons der App -----------------------------
      Favicons kommen von fremden Diensten, und die antworten regelmaessig mit 404 oder ohne
