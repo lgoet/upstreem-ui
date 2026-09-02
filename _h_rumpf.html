@@ -1,0 +1,98 @@
+<meta charset="utf-8"><title>Rumpf-Riegel: urls / domains / responses</title>
+<style>html,body{margin:0;font:13px/1.5 system-ui,sans-serif}#buehne{padding:16px;width:1240px}
+#out{padding:10px;font:11px/1.5 ui-monospace,monospace;white-space:pre-wrap}</style>
+<body><div id="buehne"></div><pre id="out">laeuft…</pre>
+<script>
+window.__err=[]; window.addEventListener("error",function(e){window.__err.push(String(e.message));});
+var P=new URLSearchParams(location.search), ALT=P.get("alt")==="1", K=P.get("k")||"urls";
+var KOMP={
+  urls:{js:"urls-table.js",css:"urls-table.css",tpl:"bubble/urls_table_bubble.html",wurzel:"uut-root",
+        setter:"renderUrlsTable",
+        zeile:function(i){ return {url:"https://a.de/seite-"+i, title:"Seite "+i, domain:"a.de", favicon:""}; }},
+  domains:{js:"domains-table.js",css:"domains-table.css",tpl:"bubble/domains_table_bubble.html",wurzel:"udt-root",
+        setter:"renderDomainsTable",
+        zeile:function(i){ return {domain:"d"+i+".de", used:i, used_total:i, total_used:i,
+                                   urls_count:i, share_pct:i/2, runs_with_domain:i}; }},
+  responses:{js:"responses-table.js",css:"responses-table.css",tpl:"bubble/responses_table_bubble.html",wurzel:"urt-root",
+        setter:"renderResponsesTable",
+        zeile:function(i){ return {prompt_run_id:"r"+i, prompt_text:"Frage "+i, model:"gpt", run_at:"2026-09-01",
+                                   user_rank:2, user_sentiment:70, has_user_brand:"yes",
+                                   companies_preview:[], companies_preview_totalcount:0,
+                                   sources_preview:[], sources_totalcount:0}; }}
+};
+var C=KOMP[K];
+var JS = ALT ? ("_h_rumpf_alt_"+K+".js") : C.js;
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+log("Komponente: "+K+"   Fassung: "+(ALT?"ALT (HEAD)":"NEU")+"   Datei: "+JS);
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var D=["core.css","core.js",C.css,JS,C.tpl];
+Promise.all(D.map(hol)).then(function(t){
+  var m={}; D.forEach(function(f,i){ m[f]=t[i]; });
+  log("Riegel im geladenen Text: " + (m[JS].indexOf("letztesBody") >= 0));
+  ["core.css",C.css].forEach(function(f){ var s=document.createElement("style"); s.textContent=m[f]; document.head.appendChild(s); });
+  var s2=document.createElement("style"); s2.textContent="*,*::before,*::after{transition:none !important;animation:none !important}"; document.head.appendChild(s2);
+  var w=document.createElement("div"); w.innerHTML=wurzelAus(m[C.tpl]);
+  var r=w.querySelector("."+C.wurzel);
+  if(!r) throw new Error("keine Wurzel ."+C.wurzel+" in der Vorlage");
+  r.setAttribute("data-instance","tb"); r.setAttribute("data-cdn-pin","tb"); r.setAttribute("data-isdark","no");
+  document.getElementById("buehne").appendChild(r);
+  var j=document.createElement("script"); j.textContent=m["core.js"]; document.head.appendChild(j);
+  var j2=document.createElement("script"); j2.textContent=m[JS]; document.head.appendChild(j2);
+  return new Promise(function(ok){ setTimeout(ok,1400); });
+}).then(function(){
+  var reihen=[]; for(var i=1;i<=50;i++) reihen.push(C.zeile(i));
+  window.__nutz = JSON.stringify({ instanceId:"tb", view_active:"yes", totalCount:50, rows:reihen });
+  window[C.setter](window.__nutz);
+  return new Promise(function(ok){ setTimeout(ok,800); });
+}).then(function(){
+  var n = document.querySelectorAll(".up-row, .urt-card").length;
+  log("Zeilen/Karten im Rumpf: " + n);
+  if(!n){ log("NICHTS GEZEICHNET -- Messung ungueltig"); return; }
+  window.__body=0;
+  var d=Object.getOwnPropertyDescriptor(Element.prototype,"innerHTML");
+  Object.defineProperty(Element.prototype,"innerHTML",{configurable:true,get:d.get,
+    set:function(v){ if(this.classList&&(this.classList.contains("up-tbody")||this.classList.contains("urt-cards"))) window.__body++;
+                     return d.set.call(this,v); }});
+  var vor=document.querySelector(".up-row, .urt-card");
+  for(var q=0;q<10;q++) window[C.setter](window.__nutz);
+  return new Promise(function(ok){ setTimeout(function(){
+    log("10 x "+C.setter+" mit DERSELBEN Nutzlast  ->  Rumpf neu belegt: "+window.__body);
+    log("erste Zeile ist DASSELBE Element: "+(vor===document.querySelector(".up-row, .urt-card")));
+    /* GEGENPROBE: geaenderte Daten muessen ankommen */
+    window.__body=0;
+    var and=[]; for(var i=1;i<=20;i++){ var z=C.zeile(i); z.__x="Geaendert"+i;
+      if(z.title) z.title="Geaendert "+i; if(z.domain) z.domain="geaendert"+i+".de";
+      if(z.prompt_text) z.prompt_text="Geaendert "+i; and.push(z); }
+    window[C.setter](JSON.stringify({ instanceId:"tb", view_active:"yes", totalCount:20, rows:and }));
+    setTimeout(function(){
+      log("Gegenprobe, 20 ANDERE Zeilen  ->  neu belegt: "+window.__body+
+          "   Zeilen: "+document.querySelectorAll(".up-row, .urt-card").length+
+          "   Text da: "+(document.body.textContent.indexOf("eaendert 1")>=0));
+      /* Nur responses: der Wechsel Zeilen <-> Karten bei GLEICHEN Daten. Der Riegel merkt sich
+         den Traeger mit; ohne das ginge der Wechsel als "steht schon da" durch und die neue
+         Ansicht blieb leer. Genau das muss hier auffallen. */
+      if (K === "responses"){
+        var knopf = document.querySelector('[data-view="cards"]');
+        if (!knopf){ log("Ansichtswechsel: KEIN Knopf [data-view=cards] gefunden -- ungeprueft"); }
+        else {
+          window.__body = 0;
+          knopf.click();
+          setTimeout(function(){
+            var karten = document.querySelectorAll(".urt-card").length;
+            log("Ansichtswechsel zu Karten bei gleichen Daten  ->  neu belegt: "+window.__body+
+                "   Karten: "+karten+
+                "   Text da: "+(document.body.textContent.indexOf("eaendert 1")>=0));
+            log("Fehler: "+(window.__err.length?window.__err.join(" | "):"keine"));
+            log("FERTIG"); ok();
+          }, 800);
+          return;
+        }
+      }
+      log("Fehler: "+(window.__err.length?window.__err.join(" | "):"keine"));
+      log("FERTIG"); ok();
+    },800);
+  },700); });
+}).catch(function(e){ log("ABBRUCH: "+e.message); });
+</script>

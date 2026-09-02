@@ -492,6 +492,11 @@
         (filtered ? '<button class="up-empty-btn" type="button" data-clearall>Clear filters</button>' : "") +
       '</div>';
     }
+    /* Wie in prompts-table: derselbe Rumpf wird nicht neu gesetzt. Hier zusaetzlich der
+       TRAEGER im Merker, denn diese Tabelle hat zwei -- Karten und Zeilen. Ohne ihn wuerde ein
+       Wechsel der Ansicht mit gleichen Daten als "steht schon da" durchgehen und die neue
+       Ansicht leer bleiben. */
+    var letztesBody = null, letzterTraeger = null;
     function renderBody(){
       var isCards = state.view === "cards";
       var container = isCards ? elCards : elTbody;
@@ -499,26 +504,35 @@
       if (isBusy() && state.softReload && state.hasData && state.rows.length){ clearEmptyGrace(); return; }
       if (isBusy() || !state.hasData){
         clearEmptyGrace();
+        letztesBody = null;
         container.innerHTML = isCards ? skeletonCardsHtml(state.pageSize) : skeletonRowsHtml(state.pageSize);
         return;
       }
       /* Der Lesefehler kommt VOR dem Leerzustand. Andersherum liest sich ein zerrissener
          Payload als leeres Ergebnis, und der Nutzer sucht den Fehler in seinen Filtern. */
-      if (state.leseFehler){ clearEmptyGrace(); container.innerHTML = UC.leseFehlerHtml("responses"); return; }
+      if (state.leseFehler){ clearEmptyGrace(); letztesBody = null; container.innerHTML = UC.leseFehlerHtml("responses"); return; }
       if (!state.rows.length){
-        if (anyFilterActive()){ clearEmptyGrace(); container.innerHTML = emptyHtml(true); return; }
+        if (anyFilterActive()){ clearEmptyGrace(); letztesBody = null; container.innerHTML = emptyHtml(true); return; }
         if (!emptyGraceTimer){
+          letztesBody = null;
           container.innerHTML = isCards ? skeletonCardsHtml(state.pageSize) : skeletonRowsHtml(state.pageSize);
           emptyGraceTimer = setTimeout(function(){
             emptyGraceTimer = null;
             if (isBusy() || !state.hasData || state.rows.length) return;
+            letztesBody = null;
             container.innerHTML = emptyHtml(false);
           }, (UC.EMPTY_GRACE_MS || 500));
         }
         return;
       }
       clearEmptyGrace();
-      container.innerHTML = state.rows.map(isCards ? cardHtml : rowHtml).join("");
+      var html = state.rows.map(isCards ? cardHtml : rowHtml).join("");
+      /* Die Kinderzahl als zweites Merkmal: rowHtml liefert genau ein Element je Zeile, also
+         verraet eine abweichende Zahl, dass den Rumpf jemand anders belegt hat. */
+      if (html === letztesBody && container === letzterTraeger &&
+          container.children.length === state.rows.length) return;
+      letztesBody = html; letzterTraeger = container;
+      container.innerHTML = html;
     }
     function renderCount(){
       elHeading.classList.add("has-count");

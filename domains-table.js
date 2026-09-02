@@ -764,7 +764,14 @@
     });
     var emptyGraceTimer = null;
     function clearEmptyGrace(){ if (emptyGraceTimer){ clearTimeout(emptyGraceTimer); emptyGraceTimer = null; } }
+    /* Der zuletzt AUS DEN ZEILEN gebaute Rumpf. Steht dieselbe Ausgabe schon im DOM, wird sie
+       nicht neu gesetzt -- ein innerHTML wirft alle Zeilen samt Zellen weg und laesst sie neu
+       bauen, und render() laeuft auch dann, wenn sich an den Daten nichts geaendert hat. Jede
+       andere Belegung des Rumpfs (Skelett, Leerzustand, Lesefehler) loescht den Merker, sonst
+       wuerde ein spaeterer Render mit gleichen Daten das Skelett stehen lassen. */
+    var letztesBody = null;
     function renderEmptyState(filtered){
+      letztesBody = null;
       elTbody.innerHTML = '<div class="up-empty">' +
         '<div class="up-empty-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' +
           '<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>' +
@@ -783,10 +790,10 @@
         clearEmptyGrace(); return;
       }
       // skeleton matches the CURRENT page size, so the table doesn't visibly resize when data lands
-      if (isBusy() || !state.hasData){ clearEmptyGrace(); elTbody.innerHTML = skeletonRows(state.pageSize); return; }
+      if (isBusy() || !state.hasData){ clearEmptyGrace(); letztesBody = null; elTbody.innerHTML = skeletonRows(state.pageSize); return; }
       /* Der Lesefehler kommt VOR dem Leerzustand. Andersherum liest sich ein zerrissener
          Payload als leeres Ergebnis, und der Nutzer sucht den Fehler in seinen Filtern. */
-      if (state.leseFehler){ clearEmptyGrace(); elTbody.innerHTML = UC.leseFehlerHtml("domains"); return; }
+      if (state.leseFehler){ clearEmptyGrace(); letztesBody = null; elTbody.innerHTML = UC.leseFehlerHtml("domains"); return; }
       if (!state.rows.length){
         var filtered = !!state.query ||
           Object.keys(state.appliedSel).some(function(k){ return state.appliedSel[k]; }) ||
@@ -800,6 +807,7 @@
            committing to the empty view; any subsequent render() (loading again, or real rows)
            cancels it via clearEmptyGrace() above. */
         if (!emptyGraceTimer){
+          letztesBody = null;
           elTbody.innerHTML = skeletonRows(state.pageSize);
           emptyGraceTimer = setTimeout(function(){
             emptyGraceTimer = null;
@@ -810,7 +818,12 @@
         return;
       }
       clearEmptyGrace();
-      elTbody.innerHTML = state.rows.map(rowHtml).join("");
+      var html = state.rows.map(rowHtml).join("");
+      /* Die Kinderzahl als zweites Merkmal: rowHtml liefert genau ein Element je Zeile, also
+         verraet eine abweichende Zahl, dass den Rumpf jemand anders belegt hat. */
+      if (html === letztesBody && elTbody.children.length === state.rows.length) return;
+      letztesBody = html;
+      elTbody.innerHTML = html;
     }
     function renderCount(){
       elHeading.classList.add("has-count");
