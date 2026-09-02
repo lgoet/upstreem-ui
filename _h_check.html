@@ -16,6 +16,10 @@
 <div class="upt-root up-root" data-instance="prompts_table"></div>
 <div class="bubble-element Group" id="filterleiste_a"><div class="ufb-root up-root" data-instance="filterbar_prompts"></div></div>
 <div class="bubble-element Group" id="filterleiste_b"><div class="ufb-root up-root" data-instance="filterbar_prompts"></div></div>
+<div class="up-root up-portal usn-bar"></div>
+<div class="combo-root up-root" data-instance="insightschart_v2">
+  <div class="combo-panel-body"><div class="cc-type-root"></div></div>
+</div>
 <pre id="out">…</pre>
 <script>
   var alt = console.table, zeilen = [];
@@ -47,7 +51,19 @@
     }
     return teile.join(" < ") || "(body)";
   }
-  var alle = [].slice.call(document.querySelectorAll("[class*='-root']"));
+  /* Zwei Sorten Wurzeln sind KEINE Bubble-Platzierung und gehoeren nicht in den Bericht:
+     Portale (Sidebar, Overlays, Backdrops -- sie hängen per Bauart im body und tragen up-root,
+     damit der Theme-Durchgang sie findet) und Wurzeln INNERHALB einer anderen Wurzel, also
+     Markup, das eine Komponente selbst erzeugt (etwa cc-type-root im Combo-Chart). Beide werden
+     gezaehlt und die Zahl ausgegeben, damit nichts still wegfaellt. */
+  var roh = [].slice.call(document.querySelectorAll("[class*='-root']"));
+  var alle = [], portale = 0, innen = 0;
+  roh.forEach(function(e){
+    if (e.closest(".up-portal, .uo-portal, .upr-portal")){ portale++; return; }
+    var v = e.parentElement && e.parentElement.closest("[class*='-root']");
+    if (v && roh.indexOf(v) >= 0){ innen++; return; }
+    alle.push(e);
+  });
   var gruppen = {}, ohne = [], proKlasse = {};
   alle.forEach(function(e){
     var k = klasse(e);
@@ -83,12 +99,14 @@
     }); });
   });
 
-  console.log("WURZELN GESAMT: " + alle.length + "   |   verschiedene Instanzen: " + Object.keys(gruppen).length);
+  console.log("VON BUBBLE PLATZIERTE WURZELN: " + alle.length +
+              "   |   verschiedene Instanzen: " + Object.keys(gruppen).length +
+              "   |   uebersprungen: " + portale + " Portale, " + innen + " komponenteneigene");
   console.log("A) MEHRFACH VORHANDEN  (" + doppelt.length + ")");
   doppelt.length ? console.table(doppelt) : console.log("   keine");
   console.log("B) INSTANZ FEHLT ODER IST EIN UNGEFUELLTER AUSDRUCK  (" + ohne.length + ")");
   ohne.length ? console.table(ohne) : console.log("   keine");
-  console.log("C) PRAEFIX-FALLE: ein Aufruf mit dem kurzen Namen bedient AUCH die rechte Spalte  (" + falle.length + ")");
+  console.log("C) NUR NOCH BEI KURZFORM: ein Aufruf mit dem linken Namen bedient auch die rechte Spalte.\n   Der GENAUE Name ist sicher (Fix e6123fa). Zeilen hier = Namen, die einander als Praefix enthalten  (" + falle.length + ")");
   falle.length ? console.table(falle) : console.log("   keine");
   return { gesamt: alle.length, doppelt: doppelt, ohne: ohne, praefix: falle };
 })()
