@@ -10404,18 +10404,22 @@
     try {
       new MutationObserver(function(recs){
         if (readPrefTheme() !== "dark") return;
+        /* EIN Durchgang je Schwung statt einer Teilbaumsuche je hinzugefuegtem Knoten. Vorher lief
+           hier n.querySelectorAll(".up-root") fuer JEDEN neuen Knoten -- im Selbsttest 181 Suchen
+           fuer eine Handvoll Renders, und das skaliert mit allem, was Bubble an DOM erzeugt.
+           stampTheme fuellt ohnehin nur Luecken, ist also fuer die schon gestempelten Wurzeln ein
+           Nichts; ueber alle zu laufen kostet damit weniger als eine einzige Teilbaumsuche. */
+        var zuwachs = false;
         for (var i = 0; i < recs.length; i++){
           var r = recs[i];
           if (r.type === "attributes"){ stampTheme(r.target); continue; }
           for (var j = 0; j < r.addedNodes.length; j++){
-            var n = r.addedNodes[j];
-            if (n.nodeType !== 1) continue;
-            stampTheme(n);
-            if (n.querySelectorAll){
-              var kids = n.querySelectorAll(".up-root");
-              for (var k = 0; k < kids.length; k++) stampTheme(kids[k]);
-            }
+            if (r.addedNodes[j].nodeType === 1){ zuwachs = true; break; }
           }
+        }
+        if (zuwachs){
+          var alle = document.getElementsByClassName("up-root");
+          for (var q = 0; q < alle.length; q++) stampTheme(alle[q]);
         }
       }).observe(document.documentElement, {
         subtree: true, childList: true, attributes: true, attributeFilter: ["data-theme"]
@@ -11264,6 +11268,12 @@
 
   function applyThemeTo(el, dark){
     if (!el || !el.classList || !el.classList.contains("up-root")) return;
+    /* Nichts schreiben, was schon dasteht. Der Kommentar unten sagt es selbst: die Komponenten
+       haengen mit eigenen Beobachtern an data-isdark. Ein Schreiben mit dem GLEICHEN Wert weckt
+       sie trotzdem alle -- auf der Prompts-Seite sind das 85 Wurzeln, deren Waechter fuer nichts
+       anlaufen. Und das Attribut-Schreiben weckt zusaetzlich den Theme-Waechter weiter oben. */
+    if (el.getAttribute("data-theme") === (dark ? "dark" : null) &&
+        el.getAttribute("data-isdark") === (dark ? "yes" : "no")) return;
     if (dark) el.setAttribute("data-theme", "dark");
     else el.removeAttribute("data-theme");
     /* Components read data-isdark in their own MutationObservers; keeping it in step means every
@@ -11353,16 +11363,19 @@
       new MutationObserver(function(muts){
         if (THEME.value == null) return;
         var isDark = THEME.value === "dark";
-        for (var m = 0; m < muts.length; m++){
+        /* Wie beim Waechter darueber: ein Durchgang je Schwung. applyThemeTo schreibt seit dem
+           Riegel oben nur noch, wo sich etwas aendert, also kostet der Durchgang ueber alle
+           Wurzeln nichts ausser dem Lesen zweier Attribute je Wurzel. */
+        var zuwachs = false;
+        for (var m = 0; m < muts.length && !zuwachs; m++){
           var added = muts[m].addedNodes;
           for (var n = 0; n < added.length; n++){
-            var el = added[n];
-            if (!el || el.nodeType !== 1) continue;
-            applyThemeTo(el, isDark);
-            var inner = el.querySelectorAll ? el.querySelectorAll(".up-root") : [];
-            for (var q = 0; q < inner.length; q++) applyThemeTo(inner[q], isDark);
+            if (added[n] && added[n].nodeType === 1){ zuwachs = true; break; }
           }
         }
+        if (!zuwachs) return;
+        var alle = document.getElementsByClassName("up-root");
+        for (var q = 0; q < alle.length; q++) applyThemeTo(alle[q], isDark);
       }).observe(document.documentElement, { childList: true, subtree: true });
     }
     return THEME.value;

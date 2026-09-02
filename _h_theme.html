@@ -1,29 +1,49 @@
-<meta charset="utf-8">
-<link rel="stylesheet" href="core.css?v=t3">
-<link rel="stylesheet" href="urls-table.css?v=t3">
-<link rel="stylesheet" href="performance-detail.css?v=t3">
-<body style="margin:0;padding:20px;font-family:system-ui,sans-serif">
-<div style="margin-bottom:12px;display:flex;gap:6px">
-  <button onclick="window.setUpstreemTheme('dark')">dark</button>
-  <button onclick="window.setUpstreemTheme('light')">light</button>
-</div>
-<pre id="out" style="font:11px/1.6 ui-monospace,monospace;background:#f6f6f6;padding:10px;white-space:pre-wrap">bereit</pre>
-
-<!-- data-processing steht auf "yes" und wird NIE zurueckgesetzt: der Zustand, in dem der
-     alte Beobachter beim Themewechsel in den Ladezustand kippte. -->
-<div class="up-root uut-root" data-instance="u1" data-isdark="no" data-processing="yes"></div>
-<div class="up-root upd-root" data-instance="d1" data-isdark="no"></div>
-
-<script src="core.js?v=t3"></script>
-<script src="urls-table.js?v=t3"></script>
-<script src="performance-detail.js?v=t3"></script>
-
+<meta charset="utf-8"><title>Theme-Waechter nach dem Zusammenfassen</title>
+<style>#out{font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap;padding:10px}</style>
+<body><div id="buehne"></div><pre id="out">laeuft…</pre>
 <script>
-window.setUrlsTableBrands("u1", [
-  {"company_id":"vw","name":"Volkswagen","logo_url":""},
-  {"company_id":"bmw","name":"BMW","logo_url":""},
-  {"company_id":"mb","name":"Mercedes-Benz","logo_url":""}
-]);
-window.renderUrlsTable({ instanceId: "u1", rows: [], totalCount: 0 });
-window.setUrlsTableLoading("u1", "no");
+window.__err=[]; window.addEventListener("error",function(e){window.__err.push(String(e.message));});
+try{ window.localStorage.removeItem("up_prefs"); }catch(e){}
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+var ALT=(new URLSearchParams(location.search)).get("alt")==="1";
+fetch((ALT?"_h_theme_alt.js":"core.js")+"?n="+Math.random(),{cache:"no-store"}).then(function(r){return r.text();}).then(function(t){
+  log("Fassung: "+(ALT?"ALT":"NEU")+"   Riegel drin: "+(t.indexOf("var zuwachs = false")>=0));
+  var s=document.createElement("script"); s.textContent=t; document.head.appendChild(s);
+  return new Promise(function(ok){ setTimeout(ok,300); });
+}).then(function(){
+  window.setUpstreemTheme("dark");
+  /* Zaehler ab hier: wie viele Teilbaumsuchen kostet das Hinzufuegen von DOM ohne Wurzeln */
+  window.__qsa=0;
+  var o=Element.prototype.querySelectorAll;
+  Element.prototype.querySelectorAll=function(){ window.__qsa++; return o.apply(this,arguments); };
+  var b=document.getElementById("buehne");
+  /* 1) 200 Knoten OHNE Wurzel -- reine Last, wie eine Tabellenzeile */
+  for (var i=0;i<200;i++){ var d=document.createElement("div"); d.className="up-cell";
+    d.appendChild(document.createElement("span")); b.appendChild(d); }
+  /* 2) eine NEUE Wurzel, tief verschachtelt -- die muss gestempelt werden */
+  var huelle=document.createElement("div");
+  huelle.innerHTML='<div class="bubble-element Group"><div class="up-root xy-root" data-instance="neu"></div></div>';
+  b.appendChild(huelle);
+  /* 3) eine Wurzel, die AUSDRUECKLICH hell ist -- die darf stampTheme nicht drehen */
+  var hell=document.createElement("div");
+  hell.className="up-root zz-root"; hell.setAttribute("data-theme","light");
+  b.appendChild(hell);
+  return new Promise(function(ok){ setTimeout(ok,500); });
+}).then(function(){
+  var neu=document.querySelector(".xy-root"), hell=document.querySelector(".zz-root");
+  log("Teilbaumsuchen fuer 200 wurzellose Knoten + 2 Wurzeln: "+window.__qsa);
+  log("neue Wurzel  data-theme=" + neu.getAttribute("data-theme") +
+      "  data-isdark=" + neu.getAttribute("data-isdark") +
+      "   ==> " + (neu.getAttribute("data-theme")==="dark" ? "GESTEMPELT" : "NICHT GESTEMPELT"));
+  log("helle Wurzel data-theme=" + hell.getAttribute("data-theme") +
+      "   ==> " + (hell.getAttribute("data-theme")==="dark" ? "ueberschrieben (erwartet, applyThemeTo)" : "hell geblieben"));
+  /* Gegenprobe: Wechsel auf hell muss auch ankommen */
+  window.setUpstreemTheme("light");
+  setTimeout(function(){
+    log("nach Wechsel auf hell: neue Wurzel data-theme=" + neu.getAttribute("data-theme") +
+        "  data-isdark=" + neu.getAttribute("data-isdark"));
+    log("Fehler: "+(window.__err.length?window.__err.join(" | "):"keine"));
+    log("FERTIG");
+  }, 400);
+}).catch(function(e){ log("ABBRUCH: "+e.message); });
 </script>

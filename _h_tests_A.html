@@ -1,0 +1,68 @@
+<meta charset="utf-8"><title>Selbsttest der drei Messwerkzeuge</title>
+<style>html,body{margin:0;font:13px/1.5 system-ui,sans-serif}#buehne{padding:16px;width:1240px}
+#out{padding:10px;font:11px/1.5 ui-monospace,monospace;white-space:pre-wrap;background:#f6f6f6}</style>
+<body><div id="buehne"></div><pre id="out">laeuft…</pre>
+<script>
+window.__err=[]; window.addEventListener("error",function(e){window.__err.push(String(e.message));});
+try { for (var i=window.localStorage.length-1;i>=0;i--){ var k=window.localStorage.key(i);
+  if (k && /upt_/.test(k)) window.localStorage.removeItem(k); } } catch(e){}
+try { window.localStorage.setItem("upt_grouped__tb","no"); } catch(e){}
+var T = (new URLSearchParams(location.search)).get("t") || "A";
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+log("Selbsttest Werkzeug " + T);
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function skript(src){ return new Promise(function(ok,fail){
+  var s=document.createElement("script"); s.src=src; s.onload=ok; s.onerror=function(){fail(new Error(src));};
+  document.head.appendChild(s); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+
+Promise.all([hol("core.css"),hol("prompts-table.css"),hol("bubble/prompts_table_bubble.html")]).then(function(t){
+  [t[0],t[1]].forEach(function(c){ var s=document.createElement("style"); s.textContent=c; document.head.appendChild(s); });
+  var s2=document.createElement("style"); s2.textContent="*,*::before,*::after{transition:none!important;animation:none!important}";
+  document.head.appendChild(s2);
+  var w=document.createElement("div"); w.innerHTML=wurzelAus(t[2]);
+  var r=w.querySelector(".upt-root");
+  r.setAttribute("data-instance","tb"); r.setAttribute("data-cdn-pin","selbsttest"); r.setAttribute("data-isdark","no");
+  document.getElementById("buehne").appendChild(r);
+  /* per src laden, damit Werkzeug A die Dateien ueber script[src] findet */
+  return skript("core.js").then(function(){ return skript("prompts-table.js"); });
+}).then(function(){ return new Promise(function(ok){ setTimeout(ok,1400); }); }).then(function(){
+  var reihen=[]; for(var i=1;i<=50;i++) reihen.push({ id:String(i), prompt_id:String(i),
+    prompt_text:"Frage "+i, status:"active", visibility:i, rank:3, mention_count:i,
+    tags:[{id:"t1",name:"Preise",hex_light:"#e0e",hex_dark:"#404"},
+          {id:"t2",name:"Technik",hex_light:"#ee0",hex_dark:"#440"}] });
+  window.__nutz = JSON.stringify({ instanceId:"tb", view_active:"yes", totalCount:50, rows:reihen });
+  window.renderPromptsTable(window.__nutz);
+  return new Promise(function(ok){ setTimeout(ok,900); });
+}).then(function(){
+  log("Zeilen: " + document.querySelectorAll(".up-row").length +
+      "   Chips: " + document.querySelectorAll(".ust-tag").length);
+  /* Konsole in die Seite spiegeln */
+  var lg=console.log, tb=console.table;
+  console.log=function(){ log("  " + [].map.call(arguments,String).join(" ")); return lg.apply(console,arguments); };
+  console.table=function(x){ try { log("  " + JSON.stringify(x)); } catch(e){ log("  (nicht serialisierbar)"); } return tb.apply(console,arguments); };
+  return hol("_h_tA.js").then(function(code){
+    var f;
+    try { f = new Function("return (" + code + ");"); } catch(e){ log("SYNTAXFEHLER: " + e.message); throw e; }
+    var erg = f();
+    return Promise.resolve(erg);
+  });
+}).then(function(){
+  /* Alltag nachstellen: Render ohne Datenaenderung, Render mit Aenderung, ein Sortierklick */
+  for (var q=0;q<10;q++) window.setPromptsTableViewActive("tb","yes");
+  var and=[]; for (var i=1;i<=20;i++) and.push({ id:"n"+i, prompt_id:"n"+i, prompt_text:"Anders "+i,
+    status:"active", visibility:i, rank:2, mention_count:i, tags:[] });
+  window.renderPromptsTable(JSON.stringify({ instanceId:"tb", view_active:"yes", totalCount:20, rows:and }));
+  var s = document.querySelector("[data-sort], .up-th[data-field], .up-hcell");
+  if (s) { try { s.click(); } catch(e){} }
+  return new Promise(function(ok){ setTimeout(ok,1500); });
+}).then(function(){
+  var f = T === "B" ? window.upB : (T === "C" ? window.upC : null);
+  if (T === "A"){ log("(A liefert sein Ergebnis direkt oben)"); }
+  else if (typeof f !== "function"){ log("!! " + (T==="B"?"upB":"upC") + " wurde nicht angelegt"); }
+  else { var r = f(); log("Rueckgabe da: " + !!r); }
+  log("Fehler: " + (window.__err.length ? window.__err.join(" | ") : "keine"));
+  log("FERTIG");
+}).catch(function(e){ log("ABBRUCH: " + e.message); });
+</script>
