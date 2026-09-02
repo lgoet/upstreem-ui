@@ -8088,15 +8088,26 @@
   function watchRoots(rootSelector, onRootsFound){
     var G = window.__upRootWatch;
     if (!G) G = window.__upRootWatch = { watchers: [], obs: null, iv: null, pending: false };
+    if (G.seq == null) G.seq = 0;              /* ++undefined ist NaN, dann vergleicht sich nichts mehr */
     for (var e = 0; e < G.watchers.length; e++){
       if (G.watchers[e].selector === rootSelector) return;   // already registered by some core.js execution
     }
+
+    /* Kennung je Wurzel. Anzahl plus erstes und letztes Element war zu grob: auf der
+       Prompts-Seite liegen 18 Kopien derselben Datumskomponente (gemessen 02.09.), und wird die
+       neunte ausgetauscht, bleiben Anzahl, erstes und letztes gleich -- die Komponente haette
+       sich nie neu eingerichtet. Die Kennung ist eine Eigenschaft am Knoten, keine
+       DOM-Aenderung, weckt den Beobachter also nicht. */
+    function stempel(el){ return el.__upSeq || (el.__upSeq = ++G.seq); }
+    function sigOf(sel){
+      var els = document.getElementsByClassName(sel), n = els.length, s = n;
+      for (var i = 0; i < n; i++) s = (s * 31 + stempel(els[i])) | 0;
+      return s;
+    }
+
     /* Der Stand beim Anmelden wird gleich mitgeschrieben: sonst sieht der erste Lauf des
        Auffangnetzes bei jeder Wurzel eine "Aenderung" gegen undefined und weckt einmal alle. */
-    var da = document.getElementsByClassName(rootSelector);
-    G.watchers.push({ selector: rootSelector, onFound: onRootsFound,
-                      _n: da.length, _erste: da.length ? da[0] : null,
-                      _letzte: da.length ? da[da.length - 1] : null });
+    G.watchers.push({ selector: rootSelector, onFound: onRootsFound, _sig: sigOf(rootSelector) });
 
     /* Frueher lief bei JEDER Aenderung im Dokument JEDE Komponente an: eine Zeile, die in der
        Sidebar aufklappt, liess Ask Mira, alle Tabellen und alle Charts ihr initAll fahren. Auf
@@ -8121,30 +8132,58 @@
         try { w.onFound(); } catch(e){}
       }
     }
+    /* Eine Pruefung fuer ALLE Beobachter, statt einer Teilbaumsuche je hinzugefuegtem Knoten.
+       Vorher lief im Beobachter je Knoten × je Komponente ein querySelector(".xy-root") ueber den
+       ganzen neuen Teilbaum. Beim Zeichnen von 50 Tabellenzeilen sind das 950 Teilbaumsuchen --
+       fuer null Treffer, denn in einer Tabellenzeile steckt keine Komponentenwurzel. Und der
+       G.hot-Riegel darunter half genau dann nicht, wenn nichts gefunden wurde, also im
+       Normalfall. Jetzt kostet ein Schwung Aenderungen einen Durchgang ueber die Live-Listen:
+       so viele Eigenschaftslesungen wie es Wurzeln gibt (gemessen 184 auf der Prompts-Seite),
+       kein Layout, keine Suche. */
+    function pruefen(){
+      var heiss = null;
+      for (var k = 0; k < G.watchers.length; k++){
+        var w = G.watchers[k], si = sigOf(w.selector);
+        if (si === w._sig) continue;
+        w._sig = si;
+        (heiss || (heiss = {}))[w.selector] = true;
+      }
+      if (!heiss) return;
+      for (var hk in heiss){ if (Object.prototype.hasOwnProperty.call(heiss, hk)) scheduleAll(hk); }
+    }
+    function pruefeBald(){
+      if (G.check) return;
+      G.check = true;
+      function los(){ if (!G.check) return; G.check = false; try { pruefen(); } catch(e){} }
+      /* Beide Wege, nicht einer: in einem verdeckten Tab feuert rAF NIE. Die Flagge macht den
+         zweiten Anlauf zum Nichts, es zeichnet also nichts doppelt. */
+      if (window.requestAnimationFrame) window.requestAnimationFrame(los);
+      setTimeout(los, 24);
+    }
+
     function scheduleAll(sel){
       if (sel){ (G.hot || (G.hot = {}))[sel] = true; }
       else G.hot = null;                       /* ohne Angabe: alle, wie bisher */
       if (G.pending) return;
       G.pending = true;
-      if (window.requestAnimationFrame) window.requestAnimationFrame(runAll); else setTimeout(runAll, 16);
+      /* Auch hier beide Wege. Feuert rAF nicht (verdeckter Tab), blieb G.pending fuer immer auf
+         true -- und damit war JEDE weitere Anmeldung ein Nichts: das Auffangnetz meldete brav,
+         kam aber nie durch. Eine Komponente, die in einem Hintergrund-Tab dazukam, richtete sich
+         dann bis zum Tabwechsel nicht ein. runAll selbst ist gegen Doppelaufruf sicher, es setzt
+         G.pending zurueck und arbeitet nur die vorgemerkten Wurzeln ab. */
+      if (window.requestAnimationFrame) window.requestAnimationFrame(runAll);
+      setTimeout(runAll, 24);
     }
 
     if (!G.obs && window.MutationObserver){
+      /* Der Rueckruf haelt beim ERSTEN Elementknoten an: was genau dazukam, entscheidet die
+         Pruefung im naechsten Bild. Damit ist die Arbeit hier unabhaengig davon, wie viel DOM
+         Bubble oder eine unserer Tabellen gerade erzeugt. */
       G.obs = new MutationObserver(function(muts){
         for (var i = 0; i < muts.length; i++){
           var added = muts[i].addedNodes;
           for (var j = 0; j < added.length; j++){
-            var n = added[j];
-            if (n.nodeType !== 1) continue;
-            for (var w = 0; w < G.watchers.length; w++){
-              var sel = G.watchers[w].selector;
-              /* Schon vorgemerkt? Dann kostet dieser Knoten fuer diese Wurzel nichts mehr -- das
-                 querySelector darunter ist der teure Teil, und in einem Schwung (Bubble zeichnet
-                 einen ganzen Teilbaum) faellt es damit nach dem ersten Treffer weg. */
-              if (G.hot && G.hot[sel]) continue;
-              if ((n.classList && n.classList.contains(sel)) ||
-                  (n.querySelector && n.querySelector("." + sel))) scheduleAll(sel);
-            }
+            if (added[j].nodeType === 1){ pruefeBald(); return; }
           }
         }
       });
@@ -8156,24 +8195,12 @@
        erstes und letztes Element. Ein Neuaufbau durch Bubble tauscht die Knoten aus, also faellt
        er hier auf, auch wenn die Anzahl gleich bleibt. Nur wer sich geaendert hat, laeuft an. */
     if (!G.iv){
-      G.iv = setInterval(function(){
-        var heiss = null;
-        for (var k = 0; k < G.watchers.length; k++){
-          var w = G.watchers[k];
-          var els = document.getElementsByClassName(w.selector);
-          var n = els.length, erste = n ? els[0] : null, letzte = n ? els[n - 1] : null;
-          if (n !== w._n || erste !== w._erste || letzte !== w._letzte){
-            w._n = n; w._erste = erste; w._letzte = letzte;
-            (heiss || (heiss = {}))[w.selector] = true;
-          }
-        }
-        /* NICHT synchron: runAll richtet Komponenten ein, und das dauert -- in der Konsole des
-           Nutzers stand dieser Intervall-Rueckruf mit 58ms. Ueber scheduleAll landet die Arbeit
-           im naechsten Bild und faellt damit auch unter die Pause waehrend einer Ziehbewegung. */
-        if (heiss){
-          for (var hk in heiss){ if (Object.prototype.hasOwnProperty.call(heiss, hk)) scheduleAll(hk); }
-        }
-      }, 1500);
+      /* Das Auffangnetz fuer alles, was der Beobachter nicht sieht -- dieselbe Pruefung, nur
+         getaktet. Es lief bisher alle 1,5s ueber ALLE Komponenten und weckte sie; jetzt vergleicht
+         es nur Signaturen und weckt, wer sich geaendert hat. Die Arbeit selbst landet ueber
+         scheduleAll im naechsten Bild und faellt damit auch unter die Pause waehrend einer
+         Ziehbewegung -- in der Konsole des Nutzers stand dieser Rueckruf mit 58ms. */
+      G.iv = setInterval(function(){ try { pruefen(); } catch(e){} }, 1500);
     }
   }
 

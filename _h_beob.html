@@ -1,0 +1,133 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Beobachter-Last</title>
+<script>
+/* Zaehler VOR core.js: der Beobachter nutzt querySelector, nicht querySelectorAll */
+window.__qs = 0; window.__qsa = 0;
+var _qs = Element.prototype.querySelector;
+Element.prototype.querySelector = function(){ window.__qs++; return _qs.apply(this, arguments); };
+var _qsa = Element.prototype.querySelectorAll;
+Element.prototype.querySelectorAll = function(){ window.__qsa++; return _qsa.apply(this, arguments); };
+var _dqsa = Document.prototype.querySelectorAll;
+Document.prototype.querySelectorAll = function(){ window.__qsa++; return _dqsa.apply(this, arguments); };
+window.__gebc = 0;
+var _gebc = Document.prototype.getElementsByClassName;
+Document.prototype.getElementsByClassName = function(){ window.__gebc++; return _gebc.apply(this, arguments); };
+window.__wach = {};
+</script></head><body>
+<div id="buehne"></div>
+<pre id="out">…</pre>
+<script>
+  var p = new URLSearchParams(location.search);
+  var datei = p.get("alt") === "1" ? "_h_beob_alt.js" : "core.js";
+  var s = document.createElement("script");
+  s.src = datei + "?t=" + Date.now();
+  s.onload = function(){ setTimeout(los, 50); };
+  s.onerror = function(){ document.getElementById("out").textContent = "core.js LUD NICHT: " + datei; };
+  document.head.appendChild(s);
+
+  function log(t){ document.getElementById("out").textContent += "\n" + t; }
+
+  function los(){
+    var UC = window.UpstreemCore;
+    document.getElementById("out").textContent =
+      "Datei: " + datei + "  |  UC: " + (!!UC) + "  |  watchRoots: " + (UC && typeof UC.watchRoots);
+    if (!UC || !UC.watchRoots) return;
+    /* 19 Beobachter wie auf einer echten Seite */
+    for (var i = 0; i < 19; i++){
+      (function(k){
+        var sel = "t" + k + "-root";
+        window.__wach[sel] = 0;
+        UC.watchRoots(sel, function(){ window.__wach[sel]++; });
+      })(i);
+    }
+    /* Frischebeweis: _sig gibt es nur in der neuen Fassung, _erste nur in der alten. */
+    var w0 = window.__upRootWatch.watchers[0];
+    log("Beobachter angemeldet: 19  |  FASSUNG: " +
+        (("_sig" in w0) ? "NEU (_sig da)" : (("_erste" in w0) ? "ALT (_erste da)" : "unbekannt")));
+    setTimeout(teil1, 300);
+  }
+
+  /* --- Teil 1: 50 Tabellenzeilen erzeugen, KEINE Komponentenwurzel darin --- */
+  function teil1(){
+    var b = document.getElementById("buehne");
+    window.__qs = 0; window.__qsa = 0;
+    var frag = document.createDocumentFragment();
+    for (var r = 0; r < 50; r++){
+      var row = document.createElement("div");
+      row.className = "up-row up-prow";
+      for (var c = 0; c < 8; c++){
+        var cell = document.createElement("div");
+        cell.className = "up-cell";
+        var span = document.createElement("span"); span.textContent = "x" + c;
+        var i2 = document.createElement("i"); i2.className = "ust-tag";
+        cell.appendChild(span); cell.appendChild(i2);
+        row.appendChild(cell);
+      }
+      frag.appendChild(row);
+    }
+    /* Einzeln anhaengen, so wie eine Tabelle es tut (je Zeile ein Mutationsdatensatz) */
+    var kinder = [].slice.call(frag.childNodes);
+    for (var q = 0; q < kinder.length; q++) b.appendChild(kinder[q]);
+    setTimeout(function(){
+      log("TEIL 1  50 Zeilen (400 Zellen, 0 Wurzeln):  querySelector=" + window.__qs + "  querySelectorAll=" + window.__qsa);
+      teil2();
+    }, 600);
+  }
+
+  /* --- Teil 2: 18 Kopien derselben Wurzel, dann die NEUNTE austauschen --- */
+  function teil2(){
+    var b = document.getElementById("buehne");
+    var haus = document.createElement("div"); haus.id = "haus"; b.appendChild(haus);
+    for (var i = 0; i < 18; i++){
+      var d = document.createElement("div");
+      d.className = "t5-root"; d.setAttribute("data-instance", "dates_v2_export");
+      haus.appendChild(d);
+    }
+    setTimeout(function(){
+      var vorher = window.__wach["t5-root"];
+      log("TEIL 2a 18 Kopien angelegt:  Weckrufe t5-root=" + vorher);
+      /* Die NEUNTE austauschen: Anzahl, erstes und letztes bleiben gleich */
+      var alle = haus.getElementsByClassName("t5-root");
+      var alt = alle[8];
+      var neu = document.createElement("div");
+      neu.className = "t5-root"; neu.setAttribute("data-instance", "dates_v2_export");
+      var G = window.__upRootWatch;
+      var merk = window.__wach["t5-root"];
+      haus.replaceChild(neu, alt);
+      /* Der Beobachter-Rueckruf ist ein Microtask, der laeuft auch in der gedrosselten Flaeche.
+         Geweckt wird ueber rAF -- das feuert hier nicht, also lese ich den Zustand statt der Wirkung. */
+      setTimeout(function(){
+        var w = null;
+        for (var i = 0; i < G.watchers.length; i++) if (G.watchers[i].selector === "t5-root") w = G.watchers[i];
+        var gemerkt = !!(G.hot && G.hot["t5-root"]);
+        var nach = window.__wach["t5-root"];
+        log("TEIL 2b neunte Kopie ausgetauscht (Anzahl/erstes/letztes unveraendert):");
+        log("        vorgemerkt(G.hot)=" + gemerkt + "  pending=" + G.pending +
+            "  Weckrufe " + merk + " -> " + nach);
+        log("        ==> " + ((gemerkt || nach > merk) ? "ERKANNT" : "NICHT ERKANNT"));
+        teil3();
+      }, 3200);
+    }, 800);
+  }
+
+  /* --- Teil 3: derselbe Schwung, aber die 18 Wurzeln liegen jetzt auf der Seite.
+         Zeigt, ob die neue Pruefung die Kosten nur verschoben hat. --- */
+  function teil3(){
+    var b = document.getElementById("buehne");
+    window.__qs = 0; window.__gebc = 0;
+    for (var r = 0; r < 50; r++){
+      var row = document.createElement("div"); row.className = "up-row";
+      for (var c = 0; c < 8; c++){
+        var cell = document.createElement("div"); cell.className = "up-cell";
+        cell.appendChild(document.createTextNode("y" + c));
+        cell.appendChild(document.createElement("i"));
+        row.appendChild(cell);
+      }
+      b.appendChild(row);
+    }
+    setTimeout(function(){
+      log("TEIL 3  nochmal 50 Zeilen, 18 Wurzeln liegen da:  querySelector=" + window.__qs +
+          "  getElementsByClassName=" + window.__gebc);
+      log("FERTIG");
+    }, 900);
+  }
+</script></body></html>
