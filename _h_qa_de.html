@@ -1,0 +1,14 @@
+<meta charset="utf-8"><title>Quick Actions auf Deutsch: jeder Text</title>
+<style>html,body{margin:0;font:12px/1.6 ui-monospace,monospace}
+iframe{width:1100px;height:640px;border:0;display:block}#out{padding:10px;white-space:pre-wrap}</style>
+<body><iframe id="r" src="_h_qa_de_kind.html"></iframe><pre id="out">laeuft…</pre>
+<script>
+/* Rahmen mit fester Breite: die Browser-Flaeche ist eingeklappt, window.innerWidth steht dort auf
+   0 und JEDE max-width-Abfrage trifft -- gemessen wuerde sonst der Telefon-Zweig. */
+document.getElementById("r").addEventListener("load", function(){
+  var w=this.contentWindow;
+  var t=setInterval(function(){ if(!w.__fertig) return; clearInterval(t);
+    document.getElementById("out").textContent=JSON.stringify(w.__R,null,1);
+    window.__R=w.__R; window.__fertig=true; },250);
+});
+</script>

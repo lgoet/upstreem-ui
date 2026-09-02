@@ -26,6 +26,17 @@
     }
     return false;
   }
+  /* Uebersetzung fuer die Stellen, die diese Datei SELBST setzt: Attribute und die Beschriftung
+     der eigenen Tooltips. Der breite Sprachlauf von core kommt an Textknoten heran, aber nicht an
+     einen Wert, den ein Zustandswechsel gleich wieder ueberschreibt -- genau das passiert am
+     Favoritenknopf bei jedem Tastendruck, und deshalb blieb sein Eintrag im Katalog ohne Wirkung.
+     Ueber window.UpstreemCore und nicht ueber ein Kuerzel: diese Komponente laeuft ausdruecklich
+     auch auf Seiten, auf denen core NICHT liegt (siehe ensureCore darunter). Dann bleibt es
+     englisch, und das ist richtig -- ohne core gibt es keinen Katalog. */
+  function tx(s){
+    var k = window.UpstreemCore;
+    try { return (k && k.t) ? k.t(s) : s; } catch(e){ return s; }
+  }
   function ensureCore(){
     if (coreDa()) return;
     var m = /^(.*\/)quick-actions\.js(?:\?.*)?$/.exec(SELF_SRC);
@@ -104,9 +115,16 @@
             '<svg viewBox="0 0 24 24"><path d="M10 11v6" /> <path d="M14 11v6" /> <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /> <path d="M3 6h18" /> <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>' +
           '</button>' +
         '</div>' +
-        '<button class="mqa-entercta is-hidden" type="button" id="mqa-entercta">Press' +
+        /* Die zwei Woerter in EIGENEN Spans. Vorher trug der Knopf sie als eigene Textknoten
+           links und rechts der Taste -- ein Satz aus drei Knoten, und den laesst der Sprachlauf
+           absichtlich liegen: Knoten fuer Knoten uebersetzt ergibt im Deutschen Unsinn. So
+           traegt jedes Stueck seinen eigenen Text, und "Drücke [Enter] zum Suchen" steht in der
+           richtigen Reihenfolge. */
+        '<button class="mqa-entercta is-hidden" type="button" id="mqa-entercta">' +
+          '<span>Press</span>' +
           '<span class="mqa-kbd"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4v7a4 4 0 0 1-4 4H4" /> <path d="m9 10-5 5 5 5" /></svg>Enter</span>' +
-        'to search</button>' +
+          '<span>to search</span>' +
+        '</button>' +
         '<div class="mqa-scroll"><div class="mqa-results" aria-live="polite"></div></div>' +
         '<div class="mqa-recent-wrap" id="mqa-recent"></div>' +
         '<div class="mqa-actions-wrap"></div>' +
@@ -921,7 +939,7 @@
     var saved = on && isFav(currentEntry());
     favEl.classList.toggle("is-on", saved);
     favEl.setAttribute("aria-pressed", saved ? "true" : "false");
-    favEl.setAttribute("aria-label", saved ? "Remove Favorite" : "Save as Favorite");
+    favEl.setAttribute("aria-label", tx(saved ? "Remove Favorite" : "Save as Favorite"));
   }
   if (favEl) favEl.addEventListener("click", function(e){ e.stopPropagation(); toggleFav(); input.focus(); });
 
@@ -1041,6 +1059,28 @@
      it. It only ever applies in the idle state — while the command list or a brand/type sub-list
      is open a row is highlighted, and Enter belongs to that row. */
   var ctaEl = overlay.querySelector("#mqa-entercta");
+  /* "Press [Enter] to search" traegt seine zwei Woerter als NACKTE Textknoten links und rechts
+     der Taste. Ein Satz aus drei Knoten laesst sich nicht Knoten fuer Knoten uebersetzen -- der
+     Sprachlauf laesst so etwas absichtlich liegen, und der Knopf blieb englisch, obwohl beide
+     Woerter im Katalog stehen.
+     Die Auszeichnung ist in der Vorlage UND im Bauweg dieser Datei nachgezogen, aber ein bereits
+     eingebautes Bubble-Element bringt die ALTE mit und der Bauweg ueberspringt sie dann. Also
+     hier: jeden eigenen Textknoten des Knopfes in ein Span packen. Einmal, idempotent -- danach
+     traegt jedes Stueck seinen eigenen Text und der Lauf kommt heran. */
+  (function ctaTrennen(){
+    if (!ctaEl || ctaEl.getAttribute("data-worte") === "1") return;
+    var kinder = [].slice.call(ctaEl.childNodes);
+    for (var i = 0; i < kinder.length; i++){
+      var n = kinder[i];
+      if (n.nodeType !== 3) continue;
+      var txt = (n.nodeValue || "").trim();
+      if (!txt) continue;
+      var s = document.createElement("span");
+      s.textContent = txt;
+      ctaEl.replaceChild(s, n);
+    }
+    ctaEl.setAttribute("data-worte", "1");
+  })();
   function enterSearchOn(){ return state === "idle" && anyFilter() && !FILTERS.rank; }
   function enterSearch(){
     if (!enterSearchOn()) return;
@@ -1636,8 +1676,8 @@
     el.addEventListener("blur", hideBtip);
     el.addEventListener("click", hideBtip);   // the button's own state just changed under the cursor
   }
-  attachBtip(favEl, function(){ return favEl.classList.contains("is-on") ? "Remove Favorite" : "Save as Favorite"; });
-  attachBtip(clearEl, function(){ return "Reset"; });
+  attachBtip(favEl, function(){ return tx(favEl.classList.contains("is-on") ? "Remove Favorite" : "Save as Favorite"); });
+  attachBtip(clearEl, function(){ return tx("Reset"); });
 
   /* ---------- wiring ---------- */
   if (trigger) trigger.addEventListener("click", open);

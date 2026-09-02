@@ -213,10 +213,13 @@
           <svg viewBox="0 0 24 24"><path d="M10 11v6" /> <path d="M14 11v6" /> <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /> <path d="M3 6h18" /> <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
         </button>
       </div>
-      <button class="mqa-entercta is-hidden" type="button" id="mqa-entercta">
-        Press
+      <!-- Die zwei Woerter in EIGENEN Spans: ein Satz aus drei Knoten laesst sich nicht
+           uebersetzen. quick-actions.js zieht das bei bereits eingebauten Elementen zur
+           Laufzeit nach (ctaTrennen). -->
+      <button class="mqa-entercta is-hidden" type="button" id="mqa-entercta" data-worte="1">
+        <span>Press</span>
         <span class="mqa-kbd"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4v7a4 4 0 0 1-4 4H4" /> <path d="m9 10-5 5 5 5" /></svg>Enter</span>
-        to search
+        <span>to search</span>
       </button>
       <div class="mqa-scroll">
         <div class="mqa-results" aria-live="polite"></div>

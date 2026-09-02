@@ -1643,6 +1643,21 @@
     "More actions": "Weitere Aktionen",
     "Open suggested prompt actions": "Aktionen für vorgeschlagene Prompts öffnen",
     "Model n/a": "Modell k. A.",
+
+    /* ---- Quick Actions, zweiter Durchgang: was die Testrunde im offenen Fenster noch fand ----
+       "Type You" bleibt, wie es ist: der Chip zeigt die SCHREIBWEISE eines Filters, /type ist ein
+       Befehlsname und "You" ein gespeicherter Citation-Typ. Uebersetzt waere es eine Anleitung,
+       die nicht funktioniert. */
+    "Search brands, domains, URLs, prompts…": "Brands, Domains, URLs, Prompts durchsuchen…",
+    "/ for filters": "/ für Filter",
+    "Press": "Drücke",
+    "to search": "zum Suchen",
+    "Reference": "Referenz",
+    "Filters": "Filter",
+    "Save as Favorite": "Als Favorit speichern",
+    "Remove Favorite": "Favorit entfernen",
+    "Type / to pick what you are looking for, then stack filters like /type, /market or /mentioning. Every pick becomes a chip; keep typing to search inside them, backspace removes the last one.":
+      "Tippe /, um zu wählen, wonach du suchst, und staple dann Filter wie /type, /market oder /mentioning. Jede Wahl wird ein Chip; tippe weiter, um darin zu suchen, die Rücktaste entfernt den letzten.",
     "Workspace": "Arbeitsbereich",
     "No completed researches yet": "Noch keine abgeschlossenen Recherchen",
     "Finished researches show up here so you can reopen them.":

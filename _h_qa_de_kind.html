@@ -1,0 +1,84 @@
+<meta charset="utf-8"><title>Quick Actions im festen Rahmen</title>
+<style>html,body{margin:0;background:#fff;font:13px/1.5 Geist,system-ui,sans-serif}#b{width:1100px;height:640px}</style>
+<body><div id="b"></div>
+<script>
+/* Sprache VOR dem Aufbau, sonst misst man das englische Aufblitzen. Danach wird das Fenster
+   geoeffnet und durch seine Zustaende geschaltet, weil ein Grossteil der Texte erst dort
+   entsteht: der Referenzteil, die Filterzeile, die Leerzustaende. */
+window.__err=[]; window.addEventListener("error",function(e){ window.__err.push(String(e.message)); });
+try{ localStorage.removeItem("pref_theme"); localStorage.setItem("up_prefs", JSON.stringify({locale:"de"})); }catch(e){}
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){ return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+Promise.all(["core.css","core.js","quick-actions.css","quick-actions.js","bubble/quick_actions_bubble.html"].map(hol))
+.then(function(t){
+  [t[0],t[2]].forEach(function(c){ var s=document.createElement("style"); s.textContent=c; document.head.appendChild(s); });
+  var w=document.createElement("div"); w.innerHTML=wurzelAus(t[4]);
+  var el=w.firstElementChild;
+  if (el) document.getElementById("b").appendChild(el);
+  [t[1],t[3]].forEach(function(j){ var s=document.createElement("script"); s.textContent=j; document.head.appendChild(s); });
+  return new Promise(function(ok){ setTimeout(ok,1400); });
+}).then(function(){
+  if (window.MiraQuickActions && window.MiraQuickActions.open) window.MiraQuickActions.open();
+  return new Promise(function(ok){ setTimeout(ok,700); });
+}).then(function(){
+  var UC=window.UpstreemCore, t=(UC&&UC.t)?UC.t:function(x){return x;};
+  /* ZWEI Wurzeln: der Ausloeser sitzt in #mira-quick-actions, das Fenster selbst ist ein
+     eigenes .mqa-overlay direkt am body. Im ersten Lauf habe ich nur die erste durchsucht und
+     zwei Texte gefunden -- das ganze Fenster lag ausserhalb. */
+  var wurzeln = [document.getElementById("mira-quick-actions"), document.querySelector(".mqa-overlay")]
+                  .filter(Boolean);
+  function texte(w){ var r=[],tw=document.createTreeWalker(w,NodeFilter.SHOW_TEXT,null),k;
+    while((k=tw.nextNode())){ var s=(k.nodeValue||"").replace(/\s+/g," ").trim();
+      if(!s||!/[A-Za-zÀ-ÿ]/.test(s)) continue; var p=k.parentNode;
+      if(p&&(p.nodeName==="SCRIPT"||p.nodeName==="STYLE")) continue;
+      if(r.indexOf(s)<0) r.push(s); } return r; }
+  function attr(w){ var r=[];
+    Array.prototype.forEach.call(w.querySelectorAll("[aria-label],[placeholder],[title],[data-tip]"),function(e){
+      ["aria-label","placeholder","title","data-tip"].forEach(function(a){ var v=e.getAttribute(a);
+        if(v && /[A-Za-zÀ-ÿ]{2}/.test(v) && r.indexOf(v)<0) r.push(v); }); }); return r; }
+  /* Zwei Filter. Der erste: Eintrag da, kommt aber nicht an. Der zweite: gar kein Eintrag --
+     den hatte ich beim letzten Mal nicht, und er hat sofort geliefert, was der erste verschwieg
+     (t(x) === x gilt auch fuer ein fehlendes Wort). */
+  function mitEintrag(l){ return l.filter(function(x){ return t(x) !== x; }); }
+  var EN=/\b(the|a|an|and|or|of|to|in|for|with|your|you|this|that|are|is|no|not|show|shows|up|here|so|can|yet|all|each|every|from|by|on|at|it|its|we|our|be|more|less|than|when|which|what|how|why|see|add|type|search|filter|open|close|clear|select|results?|loading|none|found|recent|recently)\b/i;
+  function ohneEintrag(l){ return l.filter(function(x){
+    if (t(x) !== x) return false;
+    if (/[äöüÄÖÜß]/.test(x)) return false;
+    if (x.length < 3 || !/[A-Za-z]{3}/.test(x)) return false;
+    if (/^[A-Z]{1,3}$|^\(|^[0-9]/.test(x)) return false;
+    return EN.test(x) || /^[A-Z][a-z]+( [A-Z][a-z]*)*$/.test(x); }); }
+  var R={ zustaende:{} };
+  function schnappschuss(name){
+    var tx=[], at=[];
+    wurzeln.forEach(function(w){ texte(w).forEach(function(x){ if(tx.indexOf(x)<0) tx.push(x); });
+                                 attr(w).forEach(function(x){ if(at.indexOf(x)<0) at.push(x); }); });
+    R.zustaende[name] = { texte:tx, attribute:at,
+      NICHT_ANGEKOMMEN: mitEintrag(tx).concat(mitEintrag(at)),
+      OHNE_EINTRAG: ohneEintrag(tx).concat(ohneEintrag(at)) };
+  }
+  schnappschuss("offen_leer");
+  /* Etwas tippen -> Ergebnisliste und Leerzustand. */
+  var feld=document.querySelector(".mqa-input") || document.querySelector(".mqa-overlay input");
+  function tippen(v){ if(!feld) return; feld.value=v;
+    feld.dispatchEvent(new Event("input",{bubbles:true}));
+    feld.dispatchEvent(new KeyboardEvent("keyup",{key:"a",bubbles:true})); }
+  tippen("zzzqqq");
+  return new Promise(function(ok){ setTimeout(ok,400); }).then(function(){
+    schnappschuss("suche_ohne_treffer");
+    tippen("/");
+    return new Promise(function(ok){ setTimeout(ok,400); });
+  }).then(function(){
+    schnappschuss("befehlsliste");
+    tippen("/mentioning");
+    return new Promise(function(ok){ setTimeout(ok,400); });
+  }).then(function(){
+    schnappschuss("mentioning");
+    tippen("");
+    return new Promise(function(ok){ setTimeout(ok,400); });
+  }).then(function(){
+    schnappschuss("zurueck_leer");
+    R.fehler=window.__err; R.innerWidth=window.innerWidth;
+    window.__R=R; window.__fertig=true;
+  });
+}).catch(function(e){ window.__R={fehler:[String(e.message)+" | "+(e.stack||"").slice(0,200)]}; window.__fertig=true; });
+</script>
