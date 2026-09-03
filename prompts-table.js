@@ -4415,6 +4415,10 @@
       if (root.classList.contains("up-sticky")) syncTheadOffset();
       /* Die Themen-Fusszeile haengt an state.totalCount, das erst mit den Zeilen kommt. */
       kpiTopicsFuss();
+      /* Hat die Tabelle jetzt ihre Daten, sind die drei Karten dran: gemerkte Nutzlast rein,
+         Skelett raus. Der Aufruf steht am Ende von render(), weil genau hier state.hasData
+         umschlaegt -- und er kostet nach dem ersten Mal nichts (kpiWartet ist dann false). */
+      kpiNachziehen();
     }
 
 
@@ -4431,6 +4435,17 @@
        Modus "Beschriftung links, Balken rechts") und UC.makeTypeChart fuer den Ring. Nachgebaut
        wird nichts, nur andere Masse -- die stehen in prompts-table.css. */
     var kpiZeile = null, kpiBars = null, kpiRing = null, kpiAb = [];
+    /* Die drei Karten zeigen beim ERSTEN Aufbau ein Skelett, bis die Tabelle ihre Daten hat --
+       auch wenn die Karten-Daten laengst da sind (Themen und Maerkte liegen beim Seitenaufbau
+       meist schon im Speicher). Grund: drei fertige Karten ueber einer noch ladenden Tabelle
+       lesen sich falsch, als waere die Tabelle haengengeblieben. So gemeldet am 03.09.
+       Nur beim ersten Mal: bei jedem spaeteren Laden (Filter, Seitenwechsel) sind die Karten
+       richtig und sollen stehen bleiben -- sie haengen nicht an der Tabellenabfrage. */
+    var kpiWartet = true;
+    /* Die letzten Nutzlasten der drei Ablagen. Waehrend das Skelett steht, kommen sie schon an --
+       ohne sie zu merken waere die Karte nach dem Warten leer, bis die Ablage ZUFAELLIG noch
+       einmal etwas schickt. Genau die Sorte stiller Ausfall, die hier nicht mehr vorkommen soll. */
+    var kpiRohTopics = null, kpiRohMarkets = null, kpiRohQuota = null;
     function kpiBauen(){
       if (kpiZeile || !elHead || !elHead.parentNode) return;
       kpiZeile = document.createElement("div");
@@ -4500,6 +4515,86 @@
       if (kpiRing && kpiRing.resize) setTimeout(function(){ kpiRing.resize(); }, 230);
     }
 
+    /* Solange die Tabelle beim ERSTEN Mal laedt: Skelett in alle drei Karten und sonst nichts.
+       Gibt true zurueck, wenn der Aufrufer aufhoeren soll. */
+    function kpiWartend(){
+      if (!kpiWartet) return false;
+      /* state.hasData ist das Signal, das die Tabelle selbst benutzt: es steht, sobald eine
+         Nutzlast angekommen ist -- auch eine leere und auch ein Lesefehler (Zeile 4846). Genau
+         das ist gemeint, nicht "es sind Zeilen da". */
+      if (state.hasData && !state.loading){ kpiWartet = false; return false; }
+      return true;
+    }
+    function kpiSkelette(){
+      /* Signatur loeschen: nach einem Skelett MUSS das naechste Zeichnen laufen, auch wenn die
+         Daten dieselben sind wie beim letzten echten Zeichnen. */
+      kpiBarsSig = null;
+      if (kpiBars) kpiBars.skeleton(5);
+      if (kpiRing) kpiRing.skeleton();
+      var qk = kpiTeil("upt-kpi-quota", "body");
+      if (qk) qk.innerHTML = '<div class="up-bars-sk"><div class="up-bar-sk-row"></div>' +
+                             '<div class="up-bar-sk-row"></div></div>';
+      kpiFuss("upt-kpi-topics", "", ""); kpiFuss("upt-kpi-markets", "", "");
+      kpiFuss("upt-kpi-quota", "", "");
+      var n1 = kpiTeil("upt-kpi-topics", "note"), n2 = kpiTeil("upt-kpi-markets", "note"),
+          n3 = kpiTeil("upt-kpi-quota", "note");
+      if (n1) n1.textContent = ""; if (n2) n2.textContent = ""; if (n3) n3.textContent = "";
+    }
+    /* Die zwei Kits werden VOR dem Wartetor gebaut, nicht erst beim ersten echten Zeichnen.
+       Sonst hat kpiSkelette() nichts, womit es zeichnen koennte: gemessen als leere Topics- und
+       Markets-Karte im Ladezustand, waehrend das Kontingent (eigenes Markup) sein Skelett zeigte.
+       Beide Aufbauten sind unveraendert hierher gezogen -- der Koerper ist derselbe. */
+    function kpiKits(){
+      var kTop = kpiTeil("upt-kpi-topics", "body");
+      var kMar = kpiTeil("upt-kpi-markets", "body");
+      if (!kpiBars && kTop){
+        var koerper = kTop;
+        kpiBars = UC.makeBarList({
+          mount: koerper,
+          isDark: function(){ return isDark; },
+          labelCol: function(){ return true; },       /* Beschriftung links, Balken rechts */
+          /* Der Zaehler bekommt eine EIGENE Spalte hinter der Balkenspur. Der erste Anlauf
+             nahm pctOutside -- das setzt den Wert absolut IN die Spur, 16px hinter dem
+             Balkenende, und genau das las der Nutzer als "immer noch im bar selber". Mit der
+             Spalte endet die Spur davor und alle Zahlen stehen untereinander. Die 16px Abstand
+             kommen jetzt aus dem Zeilenabstand in prompts-table.css. */
+          pctCol: 34,
+          fmt: function(v){ return UC.fmtTotal(toNum(v) || 0); }   /* ganze Zahl, kein Prozent */
+        });
+      }
+      if (!kpiRing && kMar){
+        var koerper2 = kMar;
+        kpiRing = UC.makeTypeChart({
+          body: koerper2,
+          isDark: function(){ return isDark; },
+          mode: "donut",
+          /* Ohne Zaehler in der Mitte -- die CSS blendet .up-donut-center aus, total() muss aber
+             etwas liefern, weil makeTypeChart es ruft. */
+          total: function(){ return 0; },
+          decimals: 0,
+          /* Flagge vor den Namen. UC.flagHtml baut ein span mit Bild UND Rueckfallbuchstaben --
+             darum ueber legendPrefix und nicht ueber it.logo, das eine URL erwartet. */
+          legendPrefix: function(it){ return it.alpha2 ? UC.flagHtml(it.alpha2) : ""; },
+          ringPx: 10,          /* 15 Prozent duenner als 12 -- so gemeldet (12 x 0,85 = 10,2) */
+          /* NIE umklappen. GEMESSEN auf der Seite des Nutzers: mit 240 klappte die Karte um --
+             ihr Koerper ist schmaler als das --, und im umgeklappten Modus wird der Ring 220px
+             gross und die Legende wandert UNTER ihn. Genau das war die Meldung "das Chart ist viel
+             zu gross und die Legende rechts fehlt". Hier ist Ring links und Legende rechts
+             ausdruecklich gewuenscht, in jeder Breite: der Ring nimmt 37 Prozent, die Legende den
+             Rest, das traegt auch bei 190px Kartenbreite. */
+          collapseAt: 0
+        });
+      }
+    }
+    /* Einmal, sobald das Warten vorbei ist. Danach ein Nullvorgang -- die Karten haengen an
+       ihren eigenen Ablagen, nicht an der Tabellenabfrage. */
+    function kpiNachziehen(){
+      if (!kpiZeile || !kpiWartet) return;
+      if (kpiWartend()) return;                  /* setzt kpiWartet auf false, wenn es soweit ist */
+      kpiTopics(kpiRohTopics != null ? kpiRohTopics : (UC.getTopics ? UC.getTopics() : []));
+      kpiMarkets(kpiRohMarkets != null ? kpiRohMarkets : (UC.getMarkets ? UC.getMarkets() : []));
+      kpiQuota(kpiRohQuota != null ? kpiRohQuota : (UC.getQuota ? UC.getQuota() : null));
+    }
     function kpiTeil(kl, teil){
       return kpiZeile ? kpiZeile.querySelector("." + kl + " .upt-kpi-" + teil) : null;
     }
@@ -4517,6 +4612,9 @@
     function kpiTopics(rows){
       var koerper = kpiTeil("upt-kpi-topics", "body");
       if (!koerper) return;
+      kpiRohTopics = rows;                  /* fuer den Nachzug, wenn die Tabelle fertig ist */
+      kpiKits();
+      if (kpiWartend()){ kpiSkelette(); return; }
       var liste = Array.isArray(rows) ? rows.filter(Boolean) : [];
       /* toNum und nicht Number: ein fehlender Zaehler ist null, nicht NaN -- sonst sortiert NaN
          die Liste durcheinander und "NaN" stuende in der Karte. */
@@ -4532,24 +4630,11 @@
       if (note) note.textContent = liste.length
         ? UC.t("{n} topics").replace("{n}", UC.fmtTotal(liste.length)) : "";
 
-      if (!kpiBars){
-        kpiBars = UC.makeBarList({
-          mount: koerper,
-          isDark: function(){ return isDark; },
-          labelCol: function(){ return true; },       /* Beschriftung links, Balken rechts */
-          /* Der Zaehler bekommt eine EIGENE Spalte hinter der Balkenspur. Der erste Anlauf
-             nahm pctOutside -- das setzt den Wert absolut IN die Spur, 16px hinter dem
-             Balkenende, und genau das las der Nutzer als "immer noch im bar selber". Mit der
-             Spalte endet die Spur davor und alle Zahlen stehen untereinander. Die 16px Abstand
-             kommen jetzt aus dem Zeilenabstand in prompts-table.css. */
-          pctCol: 34,
-          fmt: function(v){ return UC.fmtTotal(toNum(v) || 0); }   /* ganze Zahl, kein Prozent */
-        });
-      }
       if (!liste.length){
         /* Noch nichts da: das Skelett DER BALKENLISTE, nicht ein eigenes. Ein LEERER
            Themenspeicher heisst "noch nicht geladen", nicht "keine Themen" --
            setUpstreemTopics kommt beim Seitenaufbau, oft nach uns. */
+        kpiBarsSig = null;
         kpiBars.skeleton(5);
         kpiFuss("upt-kpi-topics", "", "");
         return;
@@ -4560,7 +4645,19 @@
          Kartenhoehe kann sich zwischen Zeichnen und Fusszeile geaendert haben (schmale Ansicht),
          und dann stand "+2 weitere" unter sieben von acht gezeigten Balken. So gemessen. */
       kpiLetztePlatz = platz;
-      kpiBars.render(mitZahl.slice(0, platz));
+      /* Unveraenderte Daten werden NICHT neu gezeichnet. makeBarList laesst die Balken bei jedem
+         render() einfahren, und der Themenspeicher wird auf dieser Seite mehrfach beschickt
+         (die Prompts-Seite haelt viele Kopien derselben Wurzel, ein Setter trifft alle). Sichtbar
+         war das als zwei Einfahr-Animationen hintereinander -- so gemeldet am 03.09.
+         Verglichen wird der fertige, sortierte Auszug samt Platz: sonst bliebe eine Aenderung der
+         Kartenhoehe (schmale Ansicht) unbemerkt. */
+      var zeigen = mitZahl.slice(0, platz);
+      var sig = platz + "|" + zeigen.map(function(x){
+        return x.key + ":" + x.share + ":" + x.color; }).join(",");
+      if (sig !== kpiBarsSig){
+        kpiBarsSig = sig;
+        kpiBars.render(zeigen);
+      }
       kpiTopicsFuss();
 
     }
@@ -4569,7 +4666,7 @@
        meist vorher da. render() zieht sie deshalb nach -- ohne die Balken neu zu bauen, denn die
        haengen nur an den Themen. Genau so gemessen: die Zeile blieb leer, obwohl zehn Prompts
        kein Thema hatten. */
-    var kpiLetzteTopics = null, kpiLetztePlatz = 0;
+    var kpiLetzteTopics = null, kpiLetztePlatz = 0, kpiBarsSig = null;
     function kpiTopicsFuss(){
       if (!kpiLetzteTopics) return;
       var rest = kpiLetzteTopics.length - kpiLetztePlatz;
@@ -4598,6 +4695,9 @@
     }
 
     function kpiMarkets(rows){
+      kpiRohMarkets = rows;
+      kpiKits();
+      if (kpiWartend()){ kpiSkelette(); return; }
       var koerper = kpiTeil("upt-kpi-markets", "body");
       if (!koerper) return;
       var liste = Array.isArray(rows) ? rows.filter(Boolean) : [];
@@ -4626,33 +4726,14 @@
       if (note) note.textContent = liste.length
         ? UC.t("{n} markets").replace("{n}", UC.fmtTotal(liste.length)) : "";
 
-      if (!kpiRing){
-        kpiRing = UC.makeTypeChart({
-          body: koerper,
-          isDark: function(){ return isDark; },
-          mode: "donut",
-          /* Ohne Zaehler in der Mitte -- die CSS blendet .up-donut-center aus, total() muss aber
-             etwas liefern, weil makeTypeChart es ruft. */
-          total: function(){ return 0; },
-          decimals: 0,
-          /* Flagge vor den Namen. UC.flagHtml baut ein span mit Bild UND Rueckfallbuchstaben --
-             darum ueber legendPrefix und nicht ueber it.logo, das eine URL erwartet. */
-          legendPrefix: function(it){ return it.alpha2 ? UC.flagHtml(it.alpha2) : ""; },
-          ringPx: 10,          /* 15 Prozent duenner als 12 -- so gemeldet (12 x 0,85 = 10,2) */
-          /* NIE umklappen. GEMESSEN auf der Seite des Nutzers: mit 240 klappte die Karte um --
-             ihr Koerper ist schmaler als das --, und im umgeklappten Modus wird der Ring 220px
-             gross und die Legende wandert UNTER ihn. Genau das war die Meldung "das Chart ist viel
-             zu gross und die Legende rechts fehlt". Hier ist Ring links und Legende rechts
-             ausdruecklich gewuenscht, in jeder Breite: der Ring nimmt 37 Prozent, die Legende den
-             Rest, das traegt auch bei 190px Kartenbreite. */
-          collapseAt: 0
-        });
-      }
       if (!liste.length){ kpiRing.skeleton(); return; }
       kpiRing.renderDonut(mitZahl);
     }
 
     function kpiQuota(q){
+      kpiRohQuota = q;
+      kpiKits();
+      if (kpiWartend()){ kpiSkelette(); return; }
       var koerper = kpiTeil("upt-kpi-quota", "body");
       var karte = kpiZeile ? kpiZeile.querySelector(".upt-kpi-quota") : null;
       if (!koerper || !karte) return;

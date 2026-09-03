@@ -10,6 +10,39 @@ function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(fun
   if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
 function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
 var D=null, W=[];
+var TT=null;
+/* FRISCHES iframe-Element: document.open() legt ein neues Dokument an, aber dasselbe window --
+   window.UpstreemCore ueberlebt, core.js laeuft beim zweiten Mal nicht (Verdraengungssperre) und
+   der erste Ladezustand waere nicht mehr herstellbar. */
+function bauenFrisch(){
+  return (TT ? Promise.resolve(TT) : Promise.all([hol("core.css"),hol("prompts-table.css"),
+          hol("core.js"),hol("prompts-table.js"),hol("bubble/prompts_table_bubble.html")]))
+  .then(function(t){
+    TT=t;
+    var alt=document.getElementById("rahmen");
+    var f=document.createElement("iframe");
+    f.id="rahmen"; f.setAttribute("style", alt.getAttribute("style"));
+    alt.parentNode.replaceChild(f, alt);
+    var d=f.contentDocument; D=d;
+    d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0'></body></html>"); d.close();
+    var v=d.defaultView;
+    try { v.localStorage.removeItem("up_prefs"); v.localStorage.removeItem("pref_theme");
+          v.localStorage.setItem("upt_grouped__tb2","no"); } catch(e){}
+    [t[0],t[1]].forEach(function(c){ var st=d.createElement("style"); st.textContent=c; d.head.appendChild(st); });
+    var st2=d.createElement("style"); st2.textContent="*,*::before,*::after{transition:none!important;animation:none!important}";
+    d.head.appendChild(st2);
+    var w=d.createElement("div"); w.innerHTML=wurzelAus(t[4]);
+    var r=w.querySelector(".upt-root");
+    r.setAttribute("data-instance","tb2"); r.setAttribute("data-cdn-pin","tb");
+    r.setAttribute("data-isdark","no");
+    d.body.appendChild(r);
+    var cj=d.createElement("script"); cj.src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js";
+    d.head.appendChild(cj);
+    var j=d.createElement("script"); j.textContent=t[2]; d.head.appendChild(j);
+    var j2=d.createElement("script"); j2.textContent=t[3]; d.head.appendChild(j2);
+    return new Promise(function(ok){ setTimeout(function(){ ok({d:d,v:v}); },2200); });
+  });
+}
 var ALT=(new URLSearchParams(location.search)).get("alt")==="1";
 Promise.all([hol("core.css"),hol(ALT?"_h_kpi_alt_css.css":"prompts-table.css"),hol("core.js"),hol(ALT?"_h_kpi_alt_js.js":"prompts-table.js"),
              hol("bubble/prompts_table_bubble.html")]).then(function(t){
@@ -238,6 +271,88 @@ Promise.all([hol("core.css"),hol(ALT?"_h_kpi_alt_css.css":"prompts-table.css"),h
       "   ==> "+(Math.abs(h-st.vorH)<2 && koerper.getBoundingClientRect().height>20
         ? "RICHTIG (genau der Stand von vorher)" : "FALSCH"));
   log("   Merker am window: "+JSON.stringify(d.defaultView.__uptKpiZu));
+  log("FERTIG");
+}).then(function(){
+  /* ---- NEU: Skelett beim ERSTEN Aufbau, und keine zweite Einfahr-Animation --------------- */
+  return bauenFrisch();
+}).then(function(o){
+  var d=o.d, v=o.v;
+  var zeile=d.querySelector(".upt-kpis");
+  function sk(){ return {
+    topics: d.querySelectorAll(".upt-kpi-topics .up-bar-sk-row").length,
+    /* makeTypeChart zeichnet sein Doughnut-Skelett als .up-sk-row-Legende (donutSkeletonHtml).
+       Der erste Anlauf suchte .up-donut-sk und fand nichts -- eine geratene Klasse, die die
+       Messung wertlos gemacht haette. */
+    markets: d.querySelectorAll(".upt-kpi-markets .up-sk-row").length,
+    quota: d.querySelectorAll(".upt-kpi-quota .up-bar-sk-row").length }; }
+  /* Die Karten-Daten sind DA, die Tabelle hat noch nichts -- genau der gemeldete Fall. */
+  v.setUpstreemTopics([
+    {id:"t1",name:"Pricing",hex_light:"#3b82f6",prompt_count:42},
+    {id:"t2",name:"Support",hex_light:"#22c55e",prompt_count:31},
+    {id:"t3",name:"Security",hex_light:"#f59e0b",prompt_count:18}]);
+  v.setUpstreemMarkets([{alpha2:"DE",name:"Germany",prompt_count:60},
+                        {alpha2:"US",name:"United States",prompt_count:31}]);
+  v.setUpstreemQuota({used:102,total:150,plan:"Pro"});
+  return new Promise(function(ok){ setTimeout(function(){ ok({d:d,v:v,sk:sk}); },700); });
+}).then(function(o){
+  var d=o.d, sk=o.sk();
+  log("PHASE 9  erster Aufbau: Karten-Daten da, Tabelle noch nicht");
+  log("   Skelett-Zeilen: topics="+sk.topics+"  markets="+sk.markets+"  quota="+sk.quota);
+  log("   Balken gezeichnet: "+d.querySelectorAll(".upt-kpi-topics .up-bar-row").length+
+      "   Notiz: \""+(d.querySelector(".upt-kpi-topics .upt-kpi-note")||{}).textContent+"\"");
+  log("   ==> "+(sk.topics>0 && sk.markets>0 && sk.quota>0 &&
+                 d.querySelectorAll(".upt-kpi-topics .up-bar-row").length===0
+        ? "RICHTIG (alle drei im Skelett, solange die Tabelle laedt)"
+        : "FALSCH -- die Karten stehen fertig ueber einer ladenden Tabelle"));
+  /* Jetzt die Tabellendaten. Danach muessen die Karten stehen -- OHNE dass die Ablagen noch
+     einmal etwas schicken (die gemerkte Nutzlast ist der Punkt). */
+  o.v.renderPromptsTable(JSON.stringify({instanceId:"tb2",view_active:"yes",totalCount:2,
+    without_topic:0,
+    rows:[{id:"p1",prompt_id:"p1",prompt_text:"Was kostet X?",status:"active"},
+          {id:"p2",prompt_id:"p2",prompt_text:"Wer ist der beste?",status:"active"}]}));
+  return new Promise(function(ok){ setTimeout(function(){ ok(o); },900); });
+}).then(function(o){
+  var d=o.d, sk=o.sk();
+  var reihen=d.querySelectorAll(".upt-kpi-topics .up-bar-row").length;
+  log("PHASE 10  Tabellendaten da: die Karten ziehen nach");
+  log("   Skelett-Zeilen: topics="+sk.topics+"  quota="+sk.quota+"   Balken: "+reihen);
+  log("   Kontingent: \""+(d.querySelector(".upt-kpi-quota-used")||{}).textContent+"\""+
+      "   Notiz: \""+(d.querySelector(".upt-kpi-topics .upt-kpi-note")||{}).textContent+"\"");
+  log("   ==> "+(sk.topics===0 && reihen===3 &&
+                 (d.querySelector(".upt-kpi-quota-used")||{}).textContent==="102"
+        ? "RICHTIG (gemerkte Nutzlast, kein zweiter Setter noetig)"
+        : "FALSCH -- die Karten bleiben leer, bis die Ablage zufaellig noch einmal schickt"));
+  /* DIE DOPPELTE ANIMATION: dieselben Themen ein zweites Mal schicken (auf der echten Seite
+     passiert das, weil viele Kopien derselben Wurzel im DOM liegen). Es darf NICHT neu
+     gezeichnet werden -- makeBarList laesst die Balken bei jedem render() einfahren. */
+  var vorher=d.querySelector(".upt-kpi-topics .up-bar-row");
+  o.__marke = vorher;
+  o.v.setUpstreemTopics([
+    {id:"t1",name:"Pricing",hex_light:"#3b82f6",prompt_count:42},
+    {id:"t2",name:"Support",hex_light:"#22c55e",prompt_count:31},
+    {id:"t3",name:"Security",hex_light:"#f59e0b",prompt_count:18}]);
+  return new Promise(function(ok){ setTimeout(function(){ ok(o); },600); });
+}).then(function(o){
+  var d=o.d;
+  var jetzt=d.querySelector(".upt-kpi-topics .up-bar-row");
+  log("PHASE 11  dieselben Themen ein zweites Mal");
+  log("   Zeilen neu gebaut: "+(jetzt!==o.__marke)+
+      "   ==> "+(jetzt===o.__marke
+        ? "RICHTIG (nicht neu gezeichnet, also keine zweite Einfahr-Animation)"
+        : "FALSCH -- zweite Animation"));
+  /* GEGENPROBE: GEAENDERTE Themen MUESSEN neu gezeichnet werden. */
+  o.v.setUpstreemTopics([
+    {id:"t1",name:"Pricing",hex_light:"#3b82f6",prompt_count:99},
+    {id:"t2",name:"Support",hex_light:"#22c55e",prompt_count:31}]);
+  return new Promise(function(ok){ setTimeout(function(){ ok(o); },600); });
+}).then(function(o){
+  var d=o.d;
+  var jetzt=d.querySelector(".upt-kpi-topics .up-bar-row");
+  var reihen=d.querySelectorAll(".upt-kpi-topics .up-bar-row").length;
+  log("   Gegenprobe mit GEAENDERTEN Zahlen: neu gebaut="+(jetzt!==o.__marke)+"  Balken="+reihen);
+  log("   ==> "+(jetzt!==o.__marke && reihen===2
+        ? "RICHTIG (aendert sich etwas, wird gezeichnet -- Phase 11 hat also den Vergleich gemessen)"
+        : "FALSCH"));
   log("FERTIG");
 }).catch(function(e){ log("ABBRUCH: "+e.message+"\n"+(e.stack||"").split("\n").slice(0,3).join("\n")); });
 </script>
