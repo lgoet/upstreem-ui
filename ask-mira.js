@@ -3062,6 +3062,10 @@
     var rects = range.getClientRects();
     var r = (rects && rects.length) ? rects[0] : range.getBoundingClientRect();
     var rootRect = root.getBoundingClientRect();
+    /* Scrollt die Markierung aus dem Chat heraus, gehoert der Knopf weg -- sonst klebte er
+       oben an der Kante ueber fremdem Inhalt. Erst hier, wo die Rechtecke schon gelesen sind. */
+    var chatRect = elChat.getBoundingClientRect();
+    if (r.bottom < chatRect.top || r.top > chatRect.bottom){ hideAskSel(); return; }
     _askSelText = text;
     elAskSel.classList.add('is-on');
     var bw = elAskSel.offsetWidth || 96, bh = elAskSel.offsetHeight || 30;
@@ -3087,14 +3091,23 @@
   /* EIN Durchgang je Bild. selectionchange kommt beim Ziehen einer Auswahl in Stroemen, und
      jeder Aufruf plante bisher sein eigenes rAF. */
   var _selPlan = false;
-  document.addEventListener('selectionchange', function(){
+  function planeAskSel(){
     if (_selPlan) return;
     _selPlan = true;
     requestAnimationFrame(function(){ _selPlan = false; showAskSel(); });
-  });
+  }
+  document.addEventListener('selectionchange', planeAskSel);
   elChat.addEventListener('mouseup', function(){ setTimeout(showAskSel, 0); });
-  elChat.addEventListener('scroll', hideAskSel, { passive: true });
-  window.addEventListener('resize', hideAskSel);
+  /* MITWANDERN statt verstecken. Hier stand hideAskSel, und das war der Grund fuer "der Knopf
+     verschwindet beim Loslassen der Maus, sehr oft aber nicht immer" (gemeldet 03.09.): wer Text
+     mit der Maus markiert, laesst den Browser mitscrollen -- beim Ziehen und oft noch beim
+     Loslassen. Scroll-Ereignisse kommen asynchron, also auch NACH dem mouseup, das den Knopf
+     gerade gezeigt hat. Ob es passierte, hing daran, ob die Markierung gescrollt hat; daher
+     "nicht immer".
+     Der Knopf haengt an der Stelle der Markierung, also muss er beim Scrollen dorthin nachgefuehrt
+     werden. _askSelText ist die billige Sperre: ist nichts offen, kostet das Scrollen nichts. */
+  elChat.addEventListener('scroll', function(){ if (_askSelText) planeAskSel(); }, { passive: true });
+  window.addEventListener('resize', function(){ if (_askSelText) planeAskSel(); });
   document.addEventListener('mousedown', function(e){
     if (e.target.closest && e.target.closest('.am-ask-sel')) return;
     setTimeout(function(){ if (!selInAssistant(window.getSelection())) hideAskSel(); }, 0);
@@ -3446,7 +3459,14 @@
       chats = parsed;
     }
     S.previousChats = Array.isArray(chats) ? chats.slice() : [];
-    _prevLoaded = true;
+    /* Eine LEERE Liste beendet das Laden NICHT. Bubble ruft diesen Setter regelmaessig einmal mit
+       einer leeren Liste, bevor der RPC zurueck ist -- und das machte aus dem Skelett augenblicklich
+       eine leere Leiste. Genau so gemeldet (03.09.): "beim initial Load gibt es in der sidebar
+       keinen skeleton, bis die chats alle da sind".
+       Der wirklich leere Fall -- ein neuer Nutzer ohne Chats -- faellt nach sechs Sekunden ins
+       Auffangnetz am Ende der Datei und zeigt dann die leere Leiste. Sechs Sekunden Skelett fuer
+       einen neuen Nutzer sind besser als gar keins fuer alle anderen. */
+    if (S.previousChats.length) _prevLoaded = true;
     renderPrevious();
   };
   window.askMiraSetProjects = function(projects){

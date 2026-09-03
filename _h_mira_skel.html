@@ -1,0 +1,80 @@
+<meta charset="utf-8"><title>Mira: Skelett der Seitenleiste beim Aufbau</title>
+<style>#out{font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap;padding:10px}</style>
+<body><iframe id="rahmen" style="width:1280px;height:800px;border:0"></iframe><pre id="out">laeuft…</pre>
+<script>
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+/* Leiste offen: der Zustand liegt in localStorage des RAHMENS, deshalb erst schreiben, dann laden */
+var ALT=(new URLSearchParams(location.search)).get("alt")==="1";
+Promise.all([hol("core.css"),hol("ask-mira.css"),hol("core.js"),hol(ALT?"_h_mira_alt2.js":"ask-mira.js"),hol("bubble/ask_mira_bubble.html")])
+.then(function(t){
+  var d=document.getElementById("rahmen").contentDocument;
+  d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body></body></html>"); d.close();
+  try { d.defaultView.localStorage.setItem("am_side_open","1"); } catch(e){}
+  [t[0],t[1]].forEach(function(c){ var s=d.createElement("style"); s.textContent=c; d.head.appendChild(s); });
+  var w=d.createElement("div"); w.innerHTML=wurzelAus(t[4]);
+  var r=w.querySelector("#ask-mira");
+  r.setAttribute("data-cdn-pin","m"); r.setAttribute("data-isdark","no");
+  d.body.appendChild(r);
+  var j=d.createElement("script"); j.textContent=t[2]; d.head.appendChild(j);
+  var j2=d.createElement("script"); j2.textContent=t[3]; d.head.appendChild(j2);
+  log("Fassung: "+(ALT?"ALT":"NEU")+"   leere Liste haelt Skelett: "+(t[3].indexOf("if (S.previousChats.length) _prevLoaded = true;")>=0)+
+      "   Scroll wandert mit: "+(t[3].indexOf("if (_askSelText) planeAskSel()")>=0));
+  return new Promise(function(ok){ setTimeout(function(){ ok(d); },2200); });
+}).then(function(d){
+  /* KEINE Chats geschickt -- genau der Zustand direkt nach dem Aufbau */
+  var wurzel=d.querySelector("#ask-mira");
+  var panel=d.querySelector("#am-prev-panel");
+  var liste=d.querySelector("#am-prev-list");
+  var skel=d.querySelector(".am-prev-skel");
+  var zeilen=d.querySelectorAll(".am-prev-skel-row").length;
+  function sicht(el){ if(!el) return "(fehlt)"; var cs=d.defaultView.getComputedStyle(el);
+    var r=el.getBoundingClientRect();
+    return cs.display+"/"+cs.visibility+"/op"+cs.opacity+"  "+Math.round(r.width)+"x"+Math.round(r.height); }
+  log("Wurzelklassen: "+wurzel.className);
+  log("Panel   : "+sicht(panel));
+  log("Liste   : "+sicht(liste)+"   Kinder: "+(liste?liste.children.length:"-"));
+  log("Skelett : "+sicht(skel)+"   Zeilen: "+zeilen);
+  log("Liste-HTML (Anfang): "+(liste?liste.innerHTML.slice(0,90):"-"));
+  var sichtbar = skel && skel.getBoundingClientRect().height > 4;
+  log("PHASE 1 nach dem Aufbau, keine Setter gerufen  ==> Skelett sichtbar: "+(!!sichtbar));
+  return d;
+}).then(function(d){
+  /* PHASE 2: der leere Frueh-Aufruf von Bubble */
+  d.defaultView.askMiraSetPreviousChats([]);
+  return new Promise(function(ok){ setTimeout(function(){ ok(d); },600); });
+}).then(function(d){
+  var skel=d.querySelector(".am-prev-skel");
+  var h=skel?Math.round(skel.getBoundingClientRect().height):0;
+  log("PHASE 2 askMiraSetPreviousChats([])  ==> Skelett "+(h>4?("noch da, "+h+"px"):"WEG")+
+      "   "+(h>4?"RICHTIG":"FALSCH"));
+  return d;
+}).then(function(d){
+  /* PHASE 3: die echten Chats */
+  d.defaultView.askMiraSetPreviousChats([
+    {id:"a",title:"Erster Chat",updated_at:"2026-09-01"},
+    {id:"b",title:"Zweiter Chat",updated_at:"2026-09-02"},
+    {id:"c",title:"Dritter Chat",updated_at:"2026-09-03"}]);
+  return new Promise(function(ok){ setTimeout(function(){ ok(d); },600); });
+}).then(function(d){
+  var skel=d.querySelector(".am-prev-skel");
+  var eintraege=d.querySelectorAll("#am-prev-list .am-prev-item").length;
+  log("PHASE 3 drei echte Chats  ==> Skelett "+(skel?"noch da (FALSCH)":"weg (richtig)")+
+      "   Eintraege: "+eintraege+"   "+(eintraege===3?"RICHTIG":"FALSCH"));
+  return d;
+}).then(function(d){
+  /* PHASE 4: der Scroll-Fall. is-on von Hand setzen, dann scrollen. */
+  var knopf=d.querySelector(".am-ask-sel");
+  if (!knopf){ log("PHASE 4 kein .am-ask-sel gefunden -- ungeprueft"); log("FERTIG"); return; }
+  knopf.classList.add("is-on");
+  var chat=d.querySelector(".am-chat");
+  chat.dispatchEvent(new d.defaultView.Event("scroll"));
+  return new Promise(function(ok){ setTimeout(function(){
+    log("PHASE 4 is-on gesetzt, dann scroll  ==> Knopf noch an: "+knopf.classList.contains("is-on")+
+        "   "+(knopf.classList.contains("is-on")?"RICHTIG (wandert mit)":"FALSCH (versteckt)"));
+    log("FERTIG"); ok();
+  },500); });
+}).catch(function(e){ log("ABBRUCH: "+e.message); });
+</script>
