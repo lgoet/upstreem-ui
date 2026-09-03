@@ -1,0 +1,51 @@
+<meta charset="utf-8"><title>Kontingent-Speicher</title>
+<style>#out{font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap;padding:10px}</style>
+<body><pre id="out">laeuft…</pre>
+<script>
+window.__err=[]; window.addEventListener("error",function(e){window.__err.push(String(e.message));});
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+var W=[]; var alteWarn=console.warn; console.warn=function(){ W.push([].join.call(arguments," ")); return alteWarn.apply(console,arguments); };
+fetch("core.js?n="+Math.random(),{cache:"no-store"}).then(function(r){return r.text();}).then(function(t){
+  log("setUpstreemQuota im Text: "+(t.indexOf("window.setUpstreemQuota")>=0));
+  var s=document.createElement("script"); s.textContent=t; document.head.appendChild(s);
+  return new Promise(function(ok){ setTimeout(ok,300); });
+}).then(function(){
+  var UC=window.UpstreemCore;
+  var got=[]; var ab=UC.onQuota(function(q){ got.push(q); }, document.body);
+  function p(name, wert, erwartet){
+    W=[];
+    var r=window.setUpstreemQuota(wert);
+    var q=UC.getQuota();
+    var ok = (r===erwartet.rueck) && (JSON.stringify(q)===JSON.stringify(erwartet.stand));
+    log((ok?"ok   ":"!!   ")+name);
+    log("       Rueckgabe="+r+"   Stand="+JSON.stringify(q)+"   Warnungen="+W.length);
+    return ok;
+  }
+  var fehler=0;
+  if (!p("1. saubere Nutzlast", {used:102,total:150,plan:"Pro"},
+        {rueck:true, stand:{used:102,total:150,plan:"Pro"}})) fehler++;
+  if (!p("2. als Text (Bubble schickt Text)", '{"used": 40, "total": 150, "plan": "Pro"}',
+        {rueck:true, stand:{used:40,total:150,plan:"Pro"}})) fehler++;
+  if (!p("3. in ein Array verpackt", [{used:7,total:150,plan:"Pro"}],
+        {rueck:true, stand:{used:7,total:150,plan:"Pro"}})) fehler++;
+  if (!p("4. leerer Wert (Bubble-Ausdruck leer)", "",
+        {rueck:false, stand:{used:7,total:150,plan:"Pro"}})) fehler++;
+  /* KEIN Fehlerfall: parseLoose repariert den leeren Wert absichtlich zu null (die dokumentierte
+     Sanitizer-Zeile aus §46). Der Speicher nimmt das an -- und die KARTE muss dann erkennen, dass
+     "used" unbekannt ist, statt "null / 150" hinzuschreiben. Genau dafuer gibt es toNum(). */
+  if (!p("5. leerer Zahlenwert -> parseLoose macht null daraus", '{"used": , "total": 150}',
+        {rueck:true, stand:{used:null,total:150}})) fehler++;
+  if (!p("6. unquotiertes yes (Bubble-Klassiker)", '{"used": 12, "total": 150, "aktiv": yes}',
+        {rueck:true, stand:{used:12,total:150,aktiv:true}})) fehler++;
+  log("Abonnent bekam "+got.length+" Aktualisierungen (erwartet 5: vier saubere plus die Reparatur)   "+
+      (got.length===5?"RICHTIG":"FALSCH"));
+  ab();
+  window.setUpstreemQuota({used:1,total:2});
+  log("nach Abmeldung: "+got.length+" (unveraendert)   "+(got.length===5?"RICHTIG":"FALSCH"));
+  var diag=window.__upQuota;
+  log("Diagnose: calls="+diag.calls+"  rejected="+diag.rejected+"  lastShape="+diag.lastShape);
+  log("Fehler in der Konsole: "+(window.__err.length?window.__err.join(" | "):"keine"));
+  log(fehler?("!! "+fehler+" FAELLE FALSCH"):"Alle Faelle richtig.");
+  log("FERTIG");
+}).catch(function(e){ log("ABBRUCH: "+e.message); });
+</script>

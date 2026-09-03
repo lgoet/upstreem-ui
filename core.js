@@ -11189,6 +11189,58 @@
      setUpstreemMarkets again, so no mutation site has to know which pickers exist.
      The model store deliberately has no such counterpart: models are near-static config that
      nothing in the app creates. */
+  /* ---- PROMPT-KONTINGENT -----------------------------------------------------------------
+     Ein OBJEKT, nicht eine Liste -- deshalb kein list/slice wie bei Themen und Maerkten, sondern
+     ein flacher Stand. Auf window, wie alle Ablagen hier: core.js laeuft einmal JE Komponente,
+     ein Speicher im Modul-Scope waere also je Komponente ein eigener.
+     Erwartete Felder: used (genutzt), total (Kontingent), plan (Name des Tarifs, frei).
+     Alles andere kommt durch, ohne dass diese Ablage es kennen muss -- dieselbe Regel wie bei
+     den Themen (TOPICS.list = list, ohne Feldfilter). */
+  var QUOTA = (window.__upQuota = window.__upQuota || { data: null, at: 0, seq: 0, subs: [],
+                                                        calls: 0, rejected: 0, lastShape: "" });
+  function getQuota(){ return QUOTA.data ? kopie(QUOTA.data) : null; }
+  function quotaAge(){ return QUOTA.at ? (nowMs() - QUOTA.at) : Infinity; }
+  function onQuota(fn, owner){
+    var sub = { fn: fn, owner: owner || null };
+    QUOTA.subs.push(sub);
+    return function(){
+      var i = QUOTA.subs.indexOf(sub);
+      if (i >= 0) QUOTA.subs.splice(i, 1);
+    };
+  }
+  /* Eine flache Kopie, damit ein Empfaenger den Stand nicht fuer alle anderen aendern kann. */
+  function kopie(o){
+    var out = {};
+    for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) out[k] = o[k];
+    return out;
+  }
+  function setQuota(roh, label){
+    QUOTA.calls++;
+    QUOTA.lastShape = shapeOf(roh);
+    var o = parseLoose(roh, label || "quota");
+    /* Ein Array mit einem Objekt darin ist immer ein Verpackungsfehler an der Aufrufstelle --
+       setUpstreemQuota([RESULT]) statt setUpstreemQuota(RESULT). Dieselbe Nachsicht wie
+       unwrapOnce bei den Listen, nur fuer den Einzelfall. */
+    if (isArray(o) && o.length === 1 && o[0] && typeof o[0] === "object") o = o[0];
+    if (!o || typeof o !== "object" || isArray(o)){
+      QUOTA.rejected++;
+      if (window.console) console.warn("[quota] " + (label || "setUpstreemQuota") +
+        ": Payload nicht lesbar oder kein Objekt. Erwartet {used, total, plan}. Form: " + QUOTA.lastShape);
+      return false;
+    }
+    QUOTA.data = kopie(o);
+    QUOTA.at = nowMs();
+    QUOTA.seq++;
+    for (var i = QUOTA.subs.length - 1; i >= 0; i--){
+      var sub = QUOTA.subs[i];
+      if (sub.owner && !document.contains(sub.owner)){ QUOTA.subs.splice(i, 1); continue; }
+      try { sub.fn(getQuota()); } catch(e){
+        if (window.console) console.warn("[quota] a subscriber threw while updating:", e);
+      }
+    }
+    return true;
+  }
+
   var MARKETS = (window.__upMarkets = window.__upMarkets || { list: [], at: 0, seq: 0, subs: [] });
 
   function getMarkets(){ return MARKETS.list.slice(); }
@@ -11285,6 +11337,8 @@
     }
     return false;
   }
+  window.setUpstreemQuota = function(o){ return setQuota(o, "setUpstreemQuota"); };
+  window.getUpstreemQuota = getQuota;
   window.setUpstreemMarkets = function(rows){ return setMarkets(rows, "setUpstreemMarkets"); };
   /* Die VOLLE Marktliste, unabhaengig davon, ob es dort schon Prompts gibt. Wer sie nicht setzt,
      bekommt ueberall weiter die gefilterte Liste -- getAllMarkets faellt darauf zurueck. */
@@ -13130,6 +13184,10 @@
     getModels: getModels,
     setModels: setModels,
     onModels: onModels,
+    getQuota: getQuota,
+    setQuota: setQuota,
+    onQuota: onQuota,
+    quotaAge: quotaAge,
     getMarkets: getMarkets,
     setMarkets: setMarkets,
     setAllMarkets: setAllMarkets,
