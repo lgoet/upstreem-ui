@@ -1,0 +1,35 @@
+<meta charset="utf-8"><title>Selbsttest: Views aushaengen und zurueckholen</title>
+<style>#out{font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap;padding:10px}
+.weg{display:none}</style>
+<body>
+<div id="main">
+  <div id="viewbody-prompts"><div><div><span>a</span><span>b</span></div></div></div>
+  <div id="viewbody-dashboard" class="weg"><div><div><span>c</span><span>d</span><span>e</span></div></div></div>
+  <div id="viewbody-citations" class="weg"><div><span>f</span></div></div>
+  <div id="view-dashboard" class="weg"><div id="viewbody-innen"><span>g</span></div></div>
+</div>
+<pre id="out">laeuft…</pre>
+<script>
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+var lg=console.log, tb=console.table;
+console.log=function(){ log([].map.call(arguments,String).join(" ")); return lg.apply(console,arguments); };
+console.table=function(x){ try{ log(JSON.stringify(x)); }catch(e){ log("(nicht serialisierbar)"); } return tb.apply(console,arguments); };
+fetch("_h_tV.js?n="+Math.random(),{cache:"no-store"}).then(function(r){return r.text();}).then(function(code){
+  var vorher = document.getElementsByTagName("*").length;
+  var erg = (new Function("return ("+code+");"))();
+  var nach = document.getElementsByTagName("*").length;
+  log("--- Selbsttest ---");
+  log("viewbody-prompts noch da: " + !!document.getElementById("viewbody-prompts") + "  (muss true sein)");
+  log("viewbody-dashboard weg:   " + !document.getElementById("viewbody-dashboard") + "  (muss true sein)");
+  /* Fuenf Elemente passen auf den Selektor, eines davon (viewbody-innen) liegt IN view-dashboard.
+     Richtig sind also 4 aeussere -- die Verschachtelten muessen wegfallen, sonst wird ein Ast
+     zweimal behandelt. */
+  log("verschachteltes viewbody-innen uebersprungen: " +
+      (erg.views === 4 ? "ok (4 aeussere von 5 Treffern)" : "FALSCH, " + erg.views + " gezaehlt"));
+  var n = window.upViewsZurueck();
+  log("nach Zurueckholen: Knoten " + n + " (vorher " + vorher + ")   " +
+      (n === vorher ? "==> VOLLSTAENDIG" : "==> FEHLT WAS"));
+  log("Reihenfolge stimmt: " + (document.getElementById("main").children[1].id === "viewbody-dashboard"));
+  log("FERTIG");
+}).catch(function(e){ log("ABBRUCH: "+e.message); });
+</script>
