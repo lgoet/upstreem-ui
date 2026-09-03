@@ -93,9 +93,6 @@ function bauen(prefs, ohneBootFn, ohneBruecke, urlPreset){
       var r=w.querySelector(".udr-root");
       r.setAttribute("data-instance", id); r.setAttribute("data-cdn-pin","t");
       r.setAttribute("data-range-apply-fn", "bubble_fn_udr_apply");
-      /* Der Ansichtswechsel uebergibt nur auf Ansage. Der Prueftand setzt sie, weil er genau das
-         prueft -- und Phase 6b prueft danach den Standard OHNE das Attribut. */
-      r.setAttribute("data-activate", "on");
       r.setAttribute("data-range-apply-delay", "0");
       r.setAttribute("data-isdark","no");
       d.body.appendChild(r);
@@ -231,10 +228,10 @@ bauen(null).then(function(d){
 }).then(function(d){
   var r=d.defaultView.__ruf;
   log("PHASE 5  upstreemDatesActivate(\"brands\")");
-  log("   Bubble-Aufrufe: SUMME="+(r.from+r.to+r.range)+
-      "   ==> "+(r.from===1&&r.to===1&&r.range===1?"RICHTIG (genau drei)":"FALSCH"));
-  log("   apply="+r.apply+"  Grund=\""+(d.defaultView.__letzte&&d.defaultView.__letzte.reason)+"\""+
-      "   ==> "+(r.apply===0?"RICHTIG (die Ansicht laedt ueber ihren eigenen Workflow)":"FALSCH"));
+  log("   Bubble-Aufrufe: boot="+r.boot+" from="+r.from+" to="+r.to+" range="+r.range+" apply="+r.apply+
+      "   Grund=\""+(d.defaultView.__letzte&&d.defaultView.__letzte.reason)+"\"");
+  log("   ==> "+(r.boot===1&&r.from===0&&r.to===0&&r.range===0&&r.apply===0
+        ? "RICHTIG (EIN Aufruf ueber den Aufbau-Kanal -- States, kein Nachladen)":"FALSCH"));
   /* PHASE 6: Ansichtswechsel ueber showView -- ohne jeden Bubble-Schritt */
   var v=d.defaultView;
   v.__ruf={from:0,to:0,range:0,apply:0,boot:0}; v.__views=[];
@@ -243,8 +240,10 @@ bauen(null).then(function(d){
 }).then(function(d){
   var v=d.defaultView, r=v.__ruf;
   log("PHASE 6  showView(\"citations\") -- kein Bubble-Schritt, core umschliesst showView");
-  log("   Bubble-Aufrufe: SUMME="+(r.from+r.to+r.range)+
-      "   ==> "+(r.from===1&&r.to===1&&r.range===1?"RICHTIG (genau drei)":"FALSCH"));
+  log("   boot="+r.boot+" from="+r.from+" to="+r.to+" range="+r.range+" apply="+r.apply);
+  log("   ==> "+(r.boot===1&&r.range===0&&r.apply===0&&r.from===0&&r.to===0
+        ? "RICHTIG (EIN stiller Aufruf: States der Ansicht, kein Nachladen)"
+        : "FALSCH -- "+(r.range>0?"Nachlade-Kanal":"keine Uebergabe: die Ansicht laedt mit null")));
   log("   Original-showView lief weiter: "+JSON.stringify(v.__views)+
       "   ==> "+(v.__views.length===1&&v.__views[0]==="citations"?"RICHTIG":"FALSCH"));
   v.__ruf={from:0,to:0,range:0,apply:0,boot:0};
@@ -261,19 +260,6 @@ bauen(null).then(function(d){
   var r=d.defaultView.__ruf;
   log("   Spotlight aktiviert: SUMME="+(r.from+r.to+r.range)+
       "   ==> "+(r.from+r.to+r.range===0?"RICHTIG (nimmt nicht teil)":"FALSCH"));
-  /* PHASE 6b: OHNE data-activate -- der Standard. Da darf ein Wechsel nichts ausloesen. */
-  var w2=d.querySelectorAll(".udr-root");
-  for (var q=0;q<w2.length;q++) w2[q].removeAttribute("data-activate");
-  d.defaultView.__ruf={from:0,to:0,range:0,apply:0,boot:0};
-  d.defaultView.showView("performance");
-  return new Promise(function(ok){ setTimeout(function(){ ok(d); },500); });
-}).then(function(d){
-  var v=d.defaultView, r=v.__ruf;
-  var g=((v.__udrLog||[]).filter(function(e){ return e.art==="ansicht-uebersprungen"; }).pop()||{}).warum;
-  log("   OHNE data-activate (der Standard): SUMME="+(r.from+r.to+r.range+r.apply));
-  log("   Spur: "+(g||"(nichts)"));
-  log("   ==> "+(r.from+r.to+r.range+r.apply===0 && /data-activate/.test(g||"")
-        ? "RICHTIG (ein Wechsel loest von sich aus nichts aus)" : "FALSCH"));
 }).then(function(){
   return bauen(null);           /* Schalter aus */
 }).then(function(d){

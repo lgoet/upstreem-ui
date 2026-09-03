@@ -658,7 +658,16 @@
            Die zwei Datums-Funktionen sind dabei ueberfluessig: date_from und date_to stehen als
            ISO-Text IM JSON des Aufbau-Kanals, sein Workflow setzt beide States daraus. Ein Kanal
            ist das Minimum, und weniger als einmal kann nichts doppelt laufen. */
-        if (grund !== "boot") {
+        /* NUR-STATES: der Seitenaufbau und der Ansichtswechsel. Beide sollen die Datums-States
+           setzen und NICHTS ausloesen -- sie gehen deshalb ueber denselben Kanal (data-boot-fn)
+           und rufen weder from/to noch den Nachlade-Kanal.
+           Der Ansichtswechsel war zwischenzeitlich ganz still, weil ich annahm, die States seien
+           seitenweit und stuenden schon. Gemessen: sie sind es NICHT -- die Citations-Ansicht lud
+           mit p_date_from: null. Jede Ansicht hat eigene States, jede braucht ihre Uebergabe.
+           Ueber den Range-Kanal darf sie nicht gehen: dort haengt der Nachlade-Workflow, und der
+           war der zweite Durchlauf beim Wechsel. */
+        var nurStates = grund === "boot" || grund === "activate";
+        if (!nurStates) {
           callFn("data-date-from-fn", "bubble_fn_udr_date_from", new Date(from.getFullYear(), from.getMonth(), from.getDate()), grund);
           callFn("data-date-to-fn",   "bubble_fn_udr_date_to",   new Date(to.getFullYear(), to.getMonth(), to.getDate()), grund);
         }
@@ -693,12 +702,12 @@
            beim Aufbau NICHTS. Laeuft der Durchlauf dann noch zweimal, liegt es nicht an dieser
            Datei; laeuft er einmal (mit dem Zeitraum, den die Seite selbst gesetzt hat), dann
            kommt der zweite von der Zustandsaenderung, die unsere Uebergabe ausloest. */
-        if (grund === "boot" && bootModus === "off"){
+        if (nurStates && bootModus === "off"){
           spur("aufbau-abgeschaltet", { instanz: instanceId,
                 warum: 'data-boot-mode="off" an der Wurzel' });
           return false;
         }
-        var istBoot = grund === "boot" && bootModus !== "full";
+        var istBoot = nurStates && bootModus !== "full";
         if (istBoot) {
           if (callFn("data-boot-fn", "bubble_fn_udr_date_boot", json, grund)) return true;
           /* Der Hinweis auf das fehlende Element NUR, wenn der Range-Kanal wirklich da ist.
@@ -718,7 +727,7 @@
           }
         }
         var rangeGetroffen = callFn("data-range-fn", "bubble_fn_udr_date_range", json, grund);
-        if (!rangeGetroffen && grund !== "boot" && window.console) {
+        if (!rangeGetroffen && !nurStates && window.console) {
           console.warn("[date-range] " + (root.getAttribute("data-range-fn") || "bubble_fn_udr_date_range") +
             " not found on window/parent/top — this change reached no Bubble workflow.");
         }
@@ -1339,24 +1348,11 @@
       spurGlobal("ansicht-uebersprungen", { view: name, instanz: c.instanceId, warum: "nimmt nicht teil" });
       return;
     }
-    /* STANDARDMAESSIG NICHTS. Gemessen auf der echten Seite: beim Wechsel auf Citations liefen
-       from, to und range mit Grund "activate" -- und der erste Ladevorgang der Ansicht hatte den
-       Zeitraum bereits (last30). Die Uebergabe war also ueberfluessig und hat allein den zweiten
-       Durchlauf ausgeloest.
-       Der Grund ist die Bauart des globalen Kalenders: bei aktivem Schalter zeigen ALLE Picker
-       denselben Zeitraum, und die States stehen schon. Es gibt beim Wechsel nichts zu
-       korrigieren.
-       Wer es doch braucht -- weil jede Ansicht eigene Datums-States hat, die einzeln gesetzt
-       werden muessen --, setzt data-activate="on" an der Wurzel oder ruft
-       upstreemDatesActivate(name) aus dem eigenen View-Workflow. Beides ist eine Ansage, kein
-       Standardverhalten: an data-range-fn haengt der Nachlade-Workflow, und jedes Ereignis dort
-       ist ein Ladevorgang. */
-    if (String(c.root && c.root.getAttribute("data-activate") || "").toLowerCase() !== "on"){
-      spurGlobal("ansicht-uebersprungen", { view: name, instanz: c.instanceId,
-        warum: 'ohne data-activate="on" wird beim Wechsel nichts uebergeben -- der Zeitraum ' +
-               'steht schon, und ein Ereignis am Nachlade-Kanal waere ein Ladevorgang zu viel' });
-      return;
-    }
+    /* Der Wechsel uebergibt -- und zwar ueber den Aufbau-Kanal, also NUR States, ohne Nachladen.
+       Zwei Fehlgriffe davor: erst ging er ueber den Range-Kanal (das war der zweite Durchlauf beim
+       Wechsel), dann war er ganz abgeschaltet, weil ich die States fuer seitenweit hielt. Gemessen
+       ist beides widerlegt: die Citations-Ansicht lud danach mit p_date_from: null. Jede Ansicht
+       hat eigene Datums-States, jede braucht ihre Uebergabe -- nur eben eine stille. */
     spurGlobal("ansicht", { view: name, instanz: c.instanceId,
                             schonUebergeben: !!UEBERGEBEN[c.instanceId] });
     uebergeben(c);
