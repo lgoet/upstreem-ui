@@ -1,0 +1,65 @@
+<meta charset="utf-8"><title>Kalender: die Wache an den Bubble-Funktionen</title>
+<style>html,body{margin:0;font:13px/1.5 system-ui,sans-serif;padding:8px}
+#out{font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap;padding:10px;background:#f6f6f6;margin-top:12px}</style>
+<body><div id="halter"></div><pre id="out">laeuft…</pre>
+<script>
+/* Die Wache soll JEDEN Aufruf der bubble_fn_* mitschreiben -- auch die, die NICHT von dieser
+   Bibliothek kommen. Genau das ist die Frage, um die sich alles gedreht hat: wer ruft
+   udr_apply_dashboard? Also wird hier ein FREMDER Aufruf gestellt und geprueft, ob er in der Spur
+   landet und als "VON DER SEITE" erkannt wird.
+   Im obersten Fenster, weil die Wache am window haengt. */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+try { localStorage.setItem("up_dates_trace","1");
+      localStorage.setItem("up_prefs", JSON.stringify({date_sync:"on",date_preset:"last30"})); } catch(e){}
+var RUF={boot:0,range:0,apply:0};
+/* Die Bruecke kommt SPAET, wie bei Bubble (dort 3400ms). Vorher existiert keine Funktion --
+   deshalb kann die Wache lueckenlos sein. */
+setTimeout(function(){
+  window.bubble_fn_udr_date_boot_x  = function(){ RUF.boot++; };
+  window.bubble_fn_udr_date_range_x = function(){ RUF.range++; };
+  window.bubble_fn_udr_apply_x      = function(){ RUF.apply++; };
+}, 1200);
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+Promise.all([hol("core.css"),hol("filters/date-range.css"),hol("core.js"),
+             hol("filters/date-range.js"),hol("filters/bubble/date_range_bubble.html")])
+.then(function(t){
+  [t[0],t[1]].forEach(function(c){ var s=document.createElement("style"); s.textContent=c; document.head.appendChild(s); });
+  var w=document.createElement("div"); w.innerHTML=wurzelAus(t[4]);
+  var r=w.querySelector(".udr-root");
+  r.setAttribute("data-instance","dates_v2_dashboard"); r.setAttribute("data-cdn-pin","t");
+  r.setAttribute("data-isdark","no");
+  r.setAttribute("data-boot-fn","bubble_fn_udr_date_boot_x");
+  r.setAttribute("data-range-fn","bubble_fn_udr_date_range_x");
+  r.setAttribute("data-range-apply-fn","bubble_fn_udr_apply_x");
+  r.setAttribute("data-range-apply-delay","0");
+  document.getElementById("halter").appendChild(r);
+  var j=document.createElement("script"); j.textContent=t[2]; document.head.appendChild(j);
+  var j2=document.createElement("script"); j2.textContent=t[3]; document.head.appendChild(j2);
+  return new Promise(function(ok){ setTimeout(ok,3000); });
+}).then(function(){
+  /* EIN FREMDER AUFRUF, wie die Seite ihn machen wuerde. */
+  window.bubble_fn_udr_apply_x('{"von":"der Seite"}');
+  return new Promise(function(ok){ setTimeout(ok,300); });
+}).then(function(){
+  var spur=window.__udrLog||[];
+  var aufrufe=spur.filter(function(e){ return e.art==="aufruf"; });
+  var unser=aufrufe.filter(function(e){ return e.vonUns; });
+  var fremd=aufrufe.filter(function(e){ return !e.vonUns; });
+  log("Bubble-Aufrufe gezaehlt: "+JSON.stringify(RUF));
+  log("Spur-Eintraege \"aufruf\": "+aufrufe.length+
+      "   davon VON UNS: "+unser.length+"   VON DER SEITE: "+fremd.length);
+  aufrufe.forEach(function(e){
+    log("   "+e.fn+"  "+(e.vonUns?"VON UNS":"VON DER SEITE")+"  "+String(e.wert).slice(0,40));
+  });
+  log("   ==> "+(unser.length>=1 && fremd.length===1 && /apply/.test(fremd[0].fn)
+        ? "RICHTIG (die Wache faengt auch den fremden Aufruf und trennt ihn vom eigenen)"
+        : "FALSCH -- "+(fremd.length===0?"der fremde Aufruf fehlt in der Spur"
+                       :(unser.length===0?"der eigene fehlt":"falsch zugeordnet"))));
+  /* GEGENPROBE: ohne up_dates_trace darf NICHTS umgeschlossen werden. */
+  log("   Wache aktiv (Funktion ersetzt): "+(!!window.bubble_fn_udr_apply_x.__udrWache)+
+      "   ==> "+(window.bubble_fn_udr_apply_x.__udrWache?"RICHTIG (Diagnosemodus ist an)":"FALSCH"));
+  log("FERTIG");
+}).catch(function(e){ log("ABBRUCH: "+e.message); });
+</script>

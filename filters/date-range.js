@@ -70,6 +70,11 @@
   function spurAn(){
     try { return window.localStorage.getItem("up_dates_trace") === "1"; } catch(e){ return false; }
   }
+  /* Zaehler, solange DIESE Datei eine bubble_fn ruft. Die Wache liest ihn und weiss damit sicher,
+     ob ein Aufruf von uns kommt -- vorher stand das am Dateinamen im Stack, und der stimmt nur,
+     wenn die Datei auch als Datei geladen wurde (im Prueftand ist sie inline, und schon dort war
+     die Zuordnung falsch). */
+  var RUFEN_WIR = 0;
   function spurGlobal(art, daten){
     var e = { ms: Date.now() - LOG_T0, art: art };
     if (daten) for (var k in daten) if (Object.prototype.hasOwnProperty.call(daten, k)) e[k] = daten[k];
@@ -81,11 +86,25 @@
   /* Eine ZEILE je Ereignis, nicht eine Tabelle mit zwoelf halbleeren Spalten. Die Tabelle war
      der erste Anlauf und zu Recht als unlesbar gemeldet: jedes Ereignis traegt andere Felder,
      console.table macht daraus eine Spaltenwueste. */
+  /* Die Wache von Hand legen, wenn die Seite laengst laeuft -- fuer einen Ansichtswechsel oder
+     einen Klick, ohne die Seite neu zu laden. Braucht up_dates_trace=1. */
+  window.upstreemDatesWatch = function(){
+    var n = 0, w = document.querySelectorAll(".udr-root, [data-udr-root]");
+    for (var i = 0; i < w.length; i++){
+      if (w[i].__udrKanalWache) { w[i].__udrKanalWache(); n++; }
+    }
+    if (window.console) window.console.log("[dates] Wache gelegt an " + n + " Kalender(n)" +
+      (n ? "" : " -- kein Kalender gefunden oder up_dates_trace ist aus"));
+    return n;
+  };
   window.upstreemDatesLog = function(){
     if (!window.console) return LOG;
     for (var i = 0; i < LOG.length; i++){
       var e = LOG[i], z = "+" + e.ms + "ms  " + e.art;
-      if (e.art === "kanal"){
+      if (e.art === "aufruf"){
+        z += "  " + e.fn + "  " + (e.vonUns ? "VON UNS" : "VON DER SEITE") + "  " + e.wert +
+             "\n            " + e.stack;
+      } else if (e.art === "kanal"){
         z += "  " + e.kanal + " -> " + e.fn + "  " + (e.getroffen ? "OK" : "NICHT DA") +
              "  (" + e.grund + ")  " + e.wert;
         if (e.fehler) z += "  FEHLER: " + e.fehler;
@@ -607,7 +626,11 @@
         var fn = UC.resolveBubbleFn(name);
         var da = typeof fn === "function";
         var fehler = null;
-        if (da) { try { fn(value); } catch (e) { fehler = String(e && e.message || e); } }
+        if (da) {
+          RUFEN_WIR++;
+          try { fn(value); } catch (e) { fehler = String(e && e.message || e); }
+          finally { RUFEN_WIR--; }
+        }
         /* Der Wert kommt in die Spur, nicht nur der Name: "gerufen" allein hat in dieser Sache
            schon zweimal in die falsche Richtung gezeigt -- einmal war der Kanal richtig und der
            Zeitraum falsch, einmal umgekehrt. */
@@ -1077,6 +1100,8 @@
         emitAt: function (von, bis, grund) { return emit(von, bis, grund || "boot"); }
       };
       root.__udrCtrl = ctrl;
+      /* Griff fuer upstreemDatesWatch(): die Wache braucht die Attributnamen DIESER Wurzel. */
+      root.__udrKanalWache = function(){ kanalWachen(root); };
       CONTROLLERS.push(ctrl);
       /* Der Aufbau-Fall: der erste teilnehmende Kalender der Seite gibt seinen Zeitraum an
          Bubble. setTimeout(0) und nicht sofort: dieser Aufruf loest einen Bubble-Workflow aus,
@@ -1414,6 +1439,50 @@
     /* Steht der Kanal, ueber den der Aufbau gehen wird? Reine Abfrage, kein Aufruf.
        Der Aufbau-Kanal zuerst, der Range-Kanal als dokumentierter Rueckfall -- dieselbe
        Reihenfolge wie in emit(), damit hier nicht auf etwas anderes gewartet wird als gerufen. */
+    /* ---- WACHE AN DEN BUBBLE-FUNKTIONEN ----------------------------------------------------
+       Die Frage, um die sich vier Runden gedreht haben, war nie "was rufen WIR?" -- das stand
+       laengst in der Spur -- sondern "wer ruft udr_apply_dashboard?". Und die ist beantwortbar:
+       wir legen uns um jede dieser Funktionen und schreiben JEDEN Aufruf mit, samt Aufrufer.
+
+       Das ist lueckenlos, und zwar aus einem Grund, der vorher nicht klar war: die Funktionen
+       existieren vor Bubbles Bruecke gar nicht (im Log der echten Seite bis 3400ms alle "NICHT
+       DA"). Wer die Wache in dem Moment legt, in dem sie erscheinen, hat damit jeden Aufruf, den
+       es ueberhaupt geben kann.
+
+       vonUns liest sich aus dem Stack: steht date-range.js darin, kommt der Aufruf aus dieser
+       Datei; steht Bubbles run.js oder gar nichts darin, kommt er von der Seite.
+
+       NUR im Diagnosemodus (up_dates_trace=1). Ohne den Schalter wird nichts umgeschlossen -- eine
+       fremde Funktion im Betrieb zu ersetzen ist ein Eingriff, den eine Bibliothek nicht
+       stillschweigend macht. */
+    function kanalWachen(root){
+      if (!spurAn() || !root) return;
+      var namen = [
+        root.getAttribute("data-boot-fn")        || "bubble_fn_udr_date_boot",
+        root.getAttribute("data-range-fn")       || "bubble_fn_udr_date_range",
+        root.getAttribute("data-date-from-fn")   || "bubble_fn_udr_date_from",
+        root.getAttribute("data-date-to-fn")     || "bubble_fn_udr_date_to",
+        root.getAttribute("data-range-apply-fn") || ""
+      ];
+      for (var i = 0; i < namen.length; i++){
+        var n = namen[i];
+        if (!n) continue;
+        var f = null;
+        try { f = window[n]; } catch(e){}
+        if (typeof f !== "function" || f.__udrWache) continue;
+        (function(name, echt){
+          var w = function(){
+            var stack = "";
+            try { stack = String(new Error().stack || "").split("\n").slice(2, 7).join(" <- "); } catch(e){}
+            spur("aufruf", { fn: name, vonUns: RUFEN_WIR > 0,
+                             wert: String(arguments[0]).slice(0, 80), stack: stack });
+            return echt.apply(this, arguments);
+          };
+          w.__udrWache = true;
+          try { window[name] = w; } catch(e){}
+        })(n, f);
+      }
+    }
     function bootKanal(root){
       var b = root.getAttribute("data-boot-fn") || "bubble_fn_udr_date_boot";
       if (typeof UC.resolveBubbleFn(b) === "function") return "boot";
@@ -1442,6 +1511,9 @@
       }
       var kanal = bootKanal(c.root);
       if (kanal){
+        /* Wache legen, BEVOR wir selbst rufen: dann steht unser eigener Aufruf als erste Zeile
+           drin, und alles danach ist fremd. */
+        kanalWachen(c.root);
         bootMerken();
         spur("aufbau", { instanz: c.instanceId, kanal: kanal, sync: syncAn() ? "on" : "off",
                          preset: syncAn() ? syncPreset() : "(eigener Stand)",
