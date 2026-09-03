@@ -493,20 +493,46 @@
         try { window.dispatchEvent(new CustomEvent("upstreem:date-range", { detail: payload })); } catch (e) {}
         callFn("data-date-from-fn", "bubble_fn_udr_date_from", new Date(from.getFullYear(), from.getMonth(), from.getDate()));
         callFn("data-date-to-fn",   "bubble_fn_udr_date_to",   new Date(to.getFullYear(), to.getMonth(), to.getDate()));
-        /* BEIM AUFBAU wird der Range-Kanal NICHT gerufen -- und das ist die Korrektur eines
-           Denkfehlers von mir. Ich hatte den Grund "boot" ins JSON gelegt und erwartet, dass die
-           Seite darauf verzweigt. Das war die falsche Richtung: an diesem Kanal haengt auf einer
-           eingerichteten Seite der Workflow, der NACHLAEDT. Jedes Ereignis dort ist also ein
-           Ladevorgang, egal was im JSON steht -- gemeldet als "alle RPCs laufen zweimal", und der
-           zweite Lauf war unser Aufbau-Ereignis.
-           Beim Aufbau ist nur EINE Sache noetig: die zwei Datums-States muessen stimmen, bevor die
-           Seite von sich aus laedt. Genau das tun die zwei Aufrufe darueber. Der Range-Kanal
-           traegt keine Information, die dabei fehlt.
-           Wer seinen Ladevorgang bewusst am Aufbau-Ereignis haengen will, setzt
-           data-boot-mode="full" an der Wurzel; dann kommt der Kanal wie bei einem Klick. */
-        var bootNurStates = grund === "boot" &&
+        /* ---- DER AUFBAU HAT EINEN EIGENEN KANAL -------------------------------------------
+           Zwei Anlaeufe daneben, und beide Male aus derselben falschen Annahme.
+
+           Erst legte ich den Grund "boot" ins JSON und erwartete, dass die Seite darauf
+           verzweigt. Falsche Richtung: an data-range-fn haengt der Workflow, der NACHLAEDT --
+           jedes Ereignis dort ist ein Ladevorgang, egal was im JSON steht. Ergebnis: jeder RPC
+           lief zweimal.
+           Dann rief der Aufbau nur noch die zwei Datums-Funktionen. Auch falsch, und diesmal war
+           es eine Auskunft, die ich schon hatte: auf DIESER Seite setzt der Range-Workflow die
+           States, from und to haben dort gar keinen Abnehmer. Ergebnis: keine Doppelung mehr,
+           aber auch keine Daten -- die RPCs liefen ohne Zeitraum.
+
+           Der Aufbau braucht also beides: die States setzen UND nicht nachladen. Zwei
+           Anforderungen an EINEN Kanal, die sich widersprechen -- solange es nur einen gibt. Also
+           hat der Aufbau seinen eigenen:
+
+             data-range-fn  (bubble_fn_udr_date_range)  Auswahl im Kalender -> States + Nachladen
+             data-boot-fn   (bubble_fn_udr_date_boot)   Seitenaufbau        -> NUR States
+
+           Dieselbe Trennung, die dieses Bauteil zwischen Reusable und Seite schon hat
+           (data-range-apply-fn), nur eine Ebene tiefer. Beide bekommen das identische JSON.
+
+           Fehlt der Aufbau-Kanal, wird der Range-Kanal gerufen und EINMAL gesagt, was zu tun ist:
+           eine Seite ohne Zeitraum ist schlimmer als eine, die zweimal laedt, und still wollen
+           wir keins von beidem. */
+        var istBoot = grund === "boot" &&
           String(root.getAttribute("data-boot-mode") || "").toLowerCase() !== "full";
-        if (!bootNurStates && !callFn("data-range-fn", "bubble_fn_udr_date_range", json) && window.console) {
+        if (istBoot) {
+          if (callFn("data-boot-fn", "bubble_fn_udr_date_boot", json)) return;
+          if (!window.__udrBootFnGesagt && window.console) {
+            window.__udrBootFnGesagt = true;
+            console.warn("[date-range] " + (root.getAttribute("data-boot-fn") ||
+              "bubble_fn_udr_date_boot") + " gibt es nicht. Der Zeitraum geht deshalb ueber " +
+              "bubble_fn_udr_date_range an Bubble -- und weil daran der Nachlade-Workflow haengt, " +
+              "laedt die Seite beim Aufbau womoeglich zweimal. Abhilfe: ein JavaScriptToBubble " +
+              "mit diesem Namen anlegen und in seinem Workflow NUR die beiden Datums-States aus " +
+              "date_from und date_to setzen, ohne Refresh.");
+          }
+        }
+        if (!callFn("data-range-fn", "bubble_fn_udr_date_range", json) && window.console) {
           console.warn("[date-range] " + (root.getAttribute("data-range-fn") || "bubble_fn_udr_date_range") +
             " not found on window/parent/top — this change reached no Bubble workflow.");
         }
@@ -1071,13 +1097,15 @@
       try { fn(wert); } catch(e){}
       return true;
     }
-    var t1 = ruf("bubble_fn_udr_date_from", new Date(sp.from.getFullYear(), sp.from.getMonth(), sp.from.getDate()));
-    var t2 = ruf("bubble_fn_udr_date_to",   new Date(sp.to.getFullYear(),   sp.to.getMonth(),   sp.to.getDate()));
-    /* Dieselbe Regel wie in emit(): der Range-Kanal ist der Nachlade-Kanal und bleibt beim
-       Aufbau still. Ohne Picker gibt es keine Wurzel, an der data-boot-mode stehen koennte --
-       dann gilt die Vorgabe. */
-    if (!t1 && !t2 && window.console) console.warn("[date-range] upstreemDatesBoot: " +
-      "bubble_fn_udr_date_from/_to sind nicht auffindbar -- die Datums-States wurden nicht gesetzt.");
+    ruf("bubble_fn_udr_date_from", new Date(sp.from.getFullYear(), sp.from.getMonth(), sp.from.getDate()));
+    ruf("bubble_fn_udr_date_to",   new Date(sp.to.getFullYear(),   sp.to.getMonth(),   sp.to.getDate()));
+    /* Dieselbe Reihenfolge wie in emit(): erst der Aufbau-Kanal, sonst der Range-Kanal. Ohne
+       Picker gibt es keine Wurzel, an der eigene Namen stehen koennten -- dann die Vorgabenamen. */
+    var traf = ruf("bubble_fn_udr_date_boot", JSON.stringify(payload)) ||
+               ruf("bubble_fn_udr_date_range", JSON.stringify(payload));
+    if (!traf && window.console) console.warn("[date-range] upstreemDatesBoot: weder " +
+      "bubble_fn_udr_date_boot noch bubble_fn_udr_date_range sind auffindbar -- die " +
+      "Datums-States wurden nicht gesetzt.");
     return payload;
   };
   if (UC.onViewChange) UC.onViewChange(function (name) {

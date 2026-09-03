@@ -60,9 +60,29 @@
                             {"instance_id":"...","date_from":"YYYY-MM-DD",
                              "date_to":"YYYY-MM-DD","event_id":"..."}
        data-range-apply-fn  receives the SAME JSON TEXT string   (type: text)   OPTIONAL
+       data-boot-fn         receives the SAME JSON TEXT string   (type: text)   OPTIONAL,
+                            but see "Why the page load has its own channel" below — on a page
+                            whose range workflow reloads data, you want this one.
 
      event_id is unique per change — use it as the trigger for your filter version counter if you
      want to be certain two identical ranges in a row still count as two events.
+
+     ── Why the page load has its own channel ───────────────────────────────────
+     On page load the picker hands Bubble the range ONCE, so the date states are right before the
+     page runs its own queries. That handover has two requirements at the same time: SET THE
+     STATES, and DO NOT RELOAD. On a set-up page those two live on the same function — the
+     workflow behind data-range-fn writes the states AND refreshes — so a single channel cannot
+     satisfy both. Measured on the real app: routing the handover through data-range-fn made every
+     RPC run twice; routing it through the two date functions instead set no states at all,
+     because on that page they have no workflow behind them.
+
+     So the page load calls data-boot-fn instead, with the identical JSON (reason: "boot"). Its
+     workflow should set the two date states and NOTHING else — no refresh. Create it by copying
+     the two "Set state" actions out of your data-range-fn workflow.
+
+     Leave data-boot-fn off and the handover falls back to data-range-fn, with one console line
+     saying so: a page without a date range is worse than a page that loads twice, and neither
+     should happen silently.
 
      ── Why there are two JSON channels ──────────────────────────────────────────
      Same split the topics, markets and models filters already use, and for the same reason:
@@ -135,6 +155,7 @@
      data-range-fn="bubble_fn_udr_date_range"
      data-date-from-fn="bubble_fn_udr_date_from"
      data-date-to-fn="bubble_fn_udr_date_to"
+     data-boot-fn="bubble_fn_udr_date_boot"
      data-range-apply-fn="bubble_fn_udr_apply_dashboard"
      data-range-apply-delay="120"></div>
 

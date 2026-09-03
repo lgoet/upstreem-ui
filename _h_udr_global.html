@@ -12,7 +12,7 @@ function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(fun
 function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
 var T=null, ladungen=0;
 function prefs(){ try { return JSON.parse(window.localStorage.getItem("up_prefs")||"{}"); } catch(e){ return {}; } }
-function bauen(prefs){
+function bauen(prefs, ohneBootFn){
   return Promise.all([hol("core.css"),hol("filters/date-range.css"),hol("core.js"),
                       hol("filters/date-range.js"),hol("filters/bubble/date_range_bubble.html")])
   .then(function(t){
@@ -40,7 +40,7 @@ function bauen(prefs){
        load-Ereignis des Rahmens gezaehlt, und die Einstellungen liest der ELTERN-Kontext: ein
        about:blank-Rahmen erbt den Ursprung, localStorage ist also derselbe Speicher. */
     /* Die drei Bubble-Funktionen zaehlen -- das ist die Zahl, um die es geht */
-    v.__ruf = { from:0, to:0, range:0, apply:0 };
+    v.__ruf = { from:0, to:0, range:0, apply:0, boot:0 };
     v.__letzte = null;             /* das JSON des letzten range-Aufrufs, fuer Grund und Datum */
     v.bubble_fn_udr_date_from  = function(d2){ v.__ruf.from++; v.__von = d2; };
     v.bubble_fn_udr_date_to    = function(d2){ v.__ruf.to++;   v.__bis = d2; };
@@ -49,6 +49,10 @@ function bauen(prefs){
     /* Der ZWEITE Kanal -- der, der auf der Seite nachlaedt. Er ist die Zahl, um die es hier geht:
        beim Aufbau und beim Ansichtswechsel muss er 0 bleiben, sonst laedt die Seite zweimal. */
     v.bubble_fn_udr_apply = function(){ v.__ruf.apply++; };
+    /* Der AUFBAU-Kanal: setzt auf der echten Seite nur die zwei States, ohne Refresh.
+       ohneBootFn laesst ihn weg -- fuer den Rueckfall-Test. */
+    if (!ohneBootFn) v.bubble_fn_udr_date_boot = function(j){ v.__ruf.boot++;
+      try { v.__letzte = JSON.parse(j); } catch(e){ v.__letzte = { kaputt: String(j) }; } };
     v.__warn=[]; var aw=v.console.warn;
     v.console.warn=function(){ v.__warn.push([].join.call(arguments," ")); return aw.apply(this,arguments); };
     /* showView der Host-App nachstellen -- MUSS vor core.js stehen, core umschliesst es beim
@@ -74,6 +78,8 @@ function bauen(prefs){
     return new Promise(function(ok){ setTimeout(function(){ ok(d); },1600); });
   });
 }
+/* Wie bauen(), nur ohne den Aufbau-Kanal am window -- fuer den Rueckfall-Test. */
+function bauenOhneBootFn(prefs){ return bauen(prefs, true); }
 function schalter(d,id){ return d.querySelector('[data-instance="'+id+'"] [data-udr-sync]'); }
 function label(d,id){ var e=d.querySelector('[data-instance="'+id+'"] .udr-label'); return e?e.textContent.trim():"?"; }
 
@@ -89,11 +95,13 @@ bauen(null).then(function(d){
   log("   von="+v.__von+"   bis="+v.__bis);
   /* Der Range-Kanal MUSS beim Aufbau still sein: an ihm haengt auf der Seite der Workflow, der
      nachlaedt. Nur die zwei Datums-States werden gesetzt. */
-  log("   ==> "+(v.__ruf.from===1&&v.__ruf.to===1&&v.__ruf.range===0&&v.__ruf.apply===0&&
-                 v.__von&&isoA(new Date(v.__von))===isoA(s7a)
-        ? "RICHTIG (nur die zwei States, kein Range-Kanal, kein Nachladen)"
-        : "FALSCH -- "+(v.__ruf.range>0?"der Range-Kanal feuert und die Seite laedt doppelt"
-                       :(v.__ruf.from===0?"keine States: Bubble laeuft mit null in die RPCs"
+  log("   Aufbau-Kanal="+v.__ruf.boot+"  Range="+v.__ruf.range+"  Apply="+v.__ruf.apply+
+      "   JSON: "+JSON.stringify(v.__letzte));
+  log("   ==> "+(v.__ruf.boot===1&&v.__ruf.range===0&&v.__ruf.apply===0&&
+                 v.__letzte&&v.__letzte.date_from===isoA(s7a)&&v.__letzte.reason==="boot"
+        ? "RICHTIG (Aufbau-Kanal mit Zeitraum, Nachlade-Kanal still)"
+        : "FALSCH -- "+(v.__ruf.range>0?"der Nachlade-Kanal feuert, die Seite laedt doppelt"
+                       :(v.__ruf.boot===0?"kein Zeitraum: die RPCs laufen ohne Datum"
                                          :"falsches Datum"))));
   var mit=IDS.filter(function(id){ return !!schalter(d,id); });
   var ohne=IDS.filter(function(id){ return !schalter(d,id); });
@@ -121,10 +129,10 @@ bauen(null).then(function(d){
   /* DER GEMELDETE FEHLER: das Datum, das bei Bubble ankommt. 30 Tage muessen 30 Tage sein. */
   var soll30 = new Date(); soll30.setHours(0,0,0,0); soll30.setDate(soll30.getDate()-29);
   function isoV(d2){ return d2.getFullYear()+"-"+String(d2.getMonth()+1).padStart(2,"0")+"-"+String(d2.getDate()).padStart(2,"0"); }
-  log("   von="+v.__von+"   bis="+v.__bis);
-  log("   date_from soll "+isoV(soll30)+" (30 Tage)   ist "+(v.__von?isoV(new Date(v.__von)):"(nichts)"));
-  log("   ==> "+(v.__von&&isoV(new Date(v.__von))===isoV(soll30)
-        ? "RICHTIG (30 Tage, nicht 7)" : "FALSCH -- das ist der gemeldete Fehler"));
+  log("   JSON am Aufbau-Kanal: "+JSON.stringify(v.__letzte));
+  log("   date_from soll "+isoV(soll30)+" (30 Tage)   ist "+(v.__letzte&&v.__letzte.date_from));
+  log("   ==> "+(v.__letzte&&v.__letzte.date_from===isoV(soll30)&&v.__ruf.boot===1
+        ? "RICHTIG (30 Tage, ueber den Aufbau-Kanal)" : "FALSCH -- der gemeldete Fehler"));
   log("   Range-Kanal="+v.__ruf.range+"  Apply-Kanal="+v.__ruf.apply+
       "   ==> "+(v.__ruf.range===0&&v.__ruf.apply===0
         ? "RICHTIG (beide still -- kein zweiter Ladevorgang)"
@@ -138,7 +146,7 @@ bauen(null).then(function(d){
   log("   last6 gesperrt="+b6.disabled+"   last30 gesperrt="+b30.disabled+
       "   ==> "+(b6.disabled && !b30.disabled?"RICHTIG":"FALSCH"));
   /* DER KERNTEST: ein Preset-Klick bei zehn Pickern */
-  v.__ruf={from:0,to:0,range:0,apply:0};
+  v.__ruf={from:0,to:0,range:0,apply:0,boot:0};
   d.querySelector('[data-instance="dates_v2_prompts"] .udr-trigger').click();
   return new Promise(function(ok){ setTimeout(function(){
     d.querySelector('[data-instance="dates_v2_prompts"] [data-preset="last7"]').click();
@@ -161,7 +169,7 @@ bauen(null).then(function(d){
       "\"  citations=\""+label(d,"dates_v2_citations")+"\"  (Export bleibt) export=\""+
       label(d,"dates_v2_export")+"\"");
   /* upstreemDatesActivate: genau drei Aufrufe */
-  v.__ruf={from:0,to:0,range:0,apply:0};
+  v.__ruf={from:0,to:0,range:0,apply:0,boot:0};
   v.upstreemDatesActivate("brands");
   return new Promise(function(ok){ setTimeout(function(){ ok(d); },400); });
 }).then(function(d){
@@ -173,7 +181,7 @@ bauen(null).then(function(d){
       "   ==> "+(r.apply===0?"RICHTIG (die Ansicht laedt ueber ihren eigenen Workflow)":"FALSCH"));
   /* PHASE 6: Ansichtswechsel ueber showView -- ohne jeden Bubble-Schritt */
   var v=d.defaultView;
-  v.__ruf={from:0,to:0,range:0,apply:0}; v.__views=[];
+  v.__ruf={from:0,to:0,range:0,apply:0,boot:0}; v.__views=[];
   v.showView("citations");
   return new Promise(function(ok){ setTimeout(function(){ ok(d); },400); });
 }).then(function(d){
@@ -183,14 +191,14 @@ bauen(null).then(function(d){
       "   ==> "+(r.from===1&&r.to===1&&r.range===1?"RICHTIG (genau drei)":"FALSCH"));
   log("   Original-showView lief weiter: "+JSON.stringify(v.__views)+
       "   ==> "+(v.__views.length===1&&v.__views[0]==="citations"?"RICHTIG":"FALSCH"));
-  v.__ruf={from:0,to:0,range:0,apply:0};
+  v.__ruf={from:0,to:0,range:0,apply:0,boot:0};
   v.showView("citations");
   return new Promise(function(ok){ setTimeout(function(){ ok(d); },400); });
 }).then(function(d){
   var v=d.defaultView, r=v.__ruf;
   log("   zweites Mal dieselbe Ansicht: SUMME="+(r.from+r.to+r.range)+
       "   ==> "+(r.from+r.to+r.range===0?"RICHTIG (schon uebergeben, kein zweiter Workflow)":"FALSCH"));
-  v.__ruf={from:0,to:0,range:0,apply:0};
+  v.__ruf={from:0,to:0,range:0,apply:0,boot:0};
   v.showView("prompt_spotlight");
   return new Promise(function(ok){ setTimeout(function(){ ok(d); },400); });
 }).then(function(d){
@@ -201,7 +209,7 @@ bauen(null).then(function(d){
   return bauen(null);           /* Schalter aus */
 }).then(function(d){
   var v=d.defaultView;
-  v.__ruf={from:0,to:0,range:0,apply:0};
+  v.__ruf={from:0,to:0,range:0,apply:0,boot:0};
   v.showView("citations");
   return new Promise(function(ok){ setTimeout(function(){ ok(d); },400); });
 }).then(function(d){
@@ -213,7 +221,7 @@ bauen(null).then(function(d){
   /* PHASE 8: DER GEMELDETE DOPPELDURCHLAUF. Beim Aufbau hat die automatische Uebergabe schon
      gefeuert; ruft Bubbles Startup-Event danach upstreemDatesBoot(), darf NICHTS mehr passieren.
      Vorher feuerte es ein zweites Mal, und der ganze Page-Load-Durchlauf lief zweimal. */
-  v.__ruf={from:0,to:0,range:0,apply:0}; v.__letzte=null; v.__warn=[];
+  v.__ruf={from:0,to:0,range:0,apply:0,boot:0}; v.__letzte=null; v.__warn=[];
   var erg=v.upstreemDatesBoot("dashboard");
   return new Promise(function(ok){ setTimeout(function(){ ok({d:d,erg:erg}); },400); });
 }).then(function(st){
@@ -221,7 +229,7 @@ bauen(null).then(function(d){
   log("PHASE 8  upstreemDatesBoot() NACH der automatischen Uebergabe (der Doppeldurchlauf)");
   log("   Aufrufe: from="+r.from+" to="+r.to+" range="+r.range+" apply="+r.apply);
   log("   Rueckgabe: "+JSON.stringify(st.erg));
-  log("   ==> "+(r.from+r.to+r.range+r.apply===0
+  log("   ==> "+(r.from+r.to+r.range+r.apply+r.boot===0
         ? "RICHTIG (Nullvorgang -- kein zweiter Durchlauf)"
         : "FALSCH -- der ganze Page-Load laeuft zweimal"));
   log("   Konsole: "+(v.__warn.filter(function(w){ return /zu spaet/.test(w); })[0]||"(nichts)"));
@@ -229,15 +237,15 @@ bauen(null).then(function(d){
         ? "RICHTIG (sagt, dass der Schritt raus kann)" : "FALSCH -- still verpufft"));
   /* PHASE 9: date-range.js ZWEIMAL geladen -- zwei Komponenten, zwei CDN-Einbindungen. Jeder
      Lauf baut seine eigene CONTROLLERS-Liste und uebergab vorher jeweils einmal. */
-  v.__ruf={from:0,to:0,range:0,apply:0}; v.__warn=[];
+  v.__ruf={from:0,to:0,range:0,apply:0,boot:0}; v.__warn=[];
   var j=d.createElement("script"); j.textContent=T[3]; d.head.appendChild(j);
   return new Promise(function(ok){ setTimeout(function(){ ok(d); },900); });
 }).then(function(d){
   var v=d.defaultView, r=v.__ruf;
   log("PHASE 9  date-range.js ein ZWEITES Mal geladen");
-  log("   Aufrufe: from="+r.from+" to="+r.to+" range="+r.range+" apply="+r.apply+
+  log("   Aufrufe: from="+r.from+" to="+r.to+" range="+r.range+" apply="+r.apply+" boot="+r.boot+
       "   Picker im Dokument: "+d.querySelectorAll(".udr-root").length);
-  log("   ==> "+(r.from+r.to+r.range+r.apply===0
+  log("   ==> "+(r.from+r.to+r.range+r.apply+r.boot===0
         ? "RICHTIG (der zweite Lauf uebergibt nicht noch einmal)"
         : "FALSCH -- doppelte Einbindung = doppelter Durchlauf"));
   /* PHASE 10: der frische Aufbau mit Schalter AN muss weiter genau EINMAL uebergeben --
@@ -248,11 +256,24 @@ bauen(null).then(function(d){
   function isoV(x){ return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0"); }
   var s3=new Date(); s3.setHours(0,0,0,0); s3.setMonth(s3.getMonth()-3);
   log("PHASE 10  Gegenprobe: frischer Aufbau, Schalter AN (last3)");
-  log("   Aufrufe: from="+r.from+" to="+r.to+" range="+r.range+" apply="+r.apply);
-  log("   date_from soll "+isoV(s3)+"   ist "+(v.__von?isoV(new Date(v.__von)):"(nichts)"));
-  log("   ==> "+(r.from===1&&r.to===1&&r.range===0&&r.apply===0&&
-                 v.__von&&isoV(new Date(v.__von))===isoV(s3)
+  log("   Aufrufe: from="+r.from+" to="+r.to+" boot="+r.boot+" range="+r.range+" apply="+r.apply);
+  log("   date_from soll "+isoV(s3)+"   ist "+(v.__letzte&&v.__letzte.date_from));
+  log("   ==> "+(r.boot===1&&r.range===0&&r.apply===0&&
+                 v.__letzte&&v.__letzte.date_from===isoV(s3)&&v.__letzte.preset==="last3"
         ? "RICHTIG (genau eine Uebergabe -- der Merker sperrt nicht die neue Seite)" : "FALSCH"));
+  /* PHASE 11: OHNE Aufbau-Kanal. Dann muss der Range-Kanal einspringen -- eine Seite ohne
+     Zeitraum ist schlimmer als eine, die zweimal laedt -- und die Konsole muss sagen, was fehlt. */
+  return bauenOhneBootFn({ date_sync:"on", date_preset:"last30" });
+}).then(function(d){
+  var v=d.defaultView, r=v.__ruf;
+  log("PHASE 11  ohne bubble_fn_udr_date_boot: Rueckfall auf den Range-Kanal");
+  log("   Aufrufe: boot="+r.boot+" range="+r.range+" apply="+r.apply+
+      "   JSON: "+JSON.stringify(v.__letzte));
+  log("   ==> "+(r.boot===0&&r.range===1&&r.apply===0&&v.__letzte&&v.__letzte.reason==="boot"
+        ? "RICHTIG (Zeitraum kommt an, statt still auszufallen)" : "FALSCH"));
+  var w=(v.__warn||[]).filter(function(x){ return /date_boot/.test(x); })[0];
+  log("   Konsole: "+(w?w.slice(0,150)+" ...":"(nichts)"));
+  log("   ==> "+(w?"RICHTIG (sagt, welches Element fehlt)":"FALSCH -- still"));
   log("FERTIG");
 }).catch(function(e){ log("ABBRUCH: "+e.message+"\n"+(e.stack||"").split("\n").slice(0,3).join("\n")); });
 </script>
