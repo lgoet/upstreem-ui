@@ -34,6 +34,11 @@ function bauen(prefs){
     v.bubble_fn_udr_date_from  = function(){ v.__ruf.from++; };
     v.bubble_fn_udr_date_to    = function(){ v.__ruf.to++; };
     v.bubble_fn_udr_date_range = function(){ v.__ruf.range++; };
+    /* showView der Host-App nachstellen -- MUSS vor core.js stehen, core umschliesst es beim
+       Start. Der Stub merkt sich die Aufrufe, damit auch bewiesen ist, dass das Original
+       weiterhin laeuft und nicht vom Wrapper geschluckt wird. */
+    v.__views = [];
+    v.showView = function(n){ v.__views.push(String(n)); };
     [t[0],t[1]].forEach(function(c){ var s=d.createElement("style"); s.textContent=c; d.head.appendChild(s); });
     var s2=d.createElement("style"); s2.textContent="*,*::before,*::after{transition:none!important;animation:none!important}";
     d.head.appendChild(s2);
@@ -81,8 +86,12 @@ bauen(null).then(function(d){
 }).then(function(d){
   var v=d.defaultView;
   log("PHASE 3  nach dem Reload, Schalter AN, gespeichert last30");
-  log("   Bubble-Aufrufe beim Aufbau: "+JSON.stringify(v.__ruf)+
-      "   ==> "+(v.__ruf.from+v.__ruf.to+v.__ruf.range===0?"RICHTIG (still)":"FALSCH"));
+  log("   Bubble-Aufrufe beim Aufbau: "+JSON.stringify(v.__ruf)+"  SUMME="+
+      (v.__ruf.from+v.__ruf.to+v.__ruf.range));
+  log("   ==> "+(v.__ruf.from===1&&v.__ruf.to===1&&v.__ruf.range===1
+        ? "RICHTIG (genau eine Uebergabe vom sichtbaren Picker, nicht zehn)"
+        : "FALSCH -- "+(v.__ruf.range===0?"keine Uebergabe, Bubble kennt den Zeitraum nicht"
+                                          :"mehr als ein Picker hat gefeuert")));
   log("   Beschriftungen: prompts=\""+label(d,"dates_v2_prompts")+"\"  brands=\""+
       label(d,"dates_v2_brands")+"\"  export=\""+label(d,"dates_v2_export")+"\"");
   log("   getUpstreemDateRange(): "+JSON.stringify(v.getUpstreemDateRange()));
@@ -118,6 +127,44 @@ bauen(null).then(function(d){
   log("PHASE 5  upstreemDatesActivate(\"brands\")");
   log("   Bubble-Aufrufe: SUMME="+(r.from+r.to+r.range)+
       "   ==> "+(r.from===1&&r.to===1&&r.range===1?"RICHTIG (genau drei)":"FALSCH"));
+  /* PHASE 6: Ansichtswechsel ueber showView -- ohne jeden Bubble-Schritt */
+  var v=d.defaultView;
+  v.__ruf={from:0,to:0,range:0}; v.__views=[];
+  v.showView("citations");
+  return new Promise(function(ok){ setTimeout(function(){ ok(d); },400); });
+}).then(function(d){
+  var v=d.defaultView, r=v.__ruf;
+  log("PHASE 6  showView(\"citations\") -- kein Bubble-Schritt, core umschliesst showView");
+  log("   Bubble-Aufrufe: SUMME="+(r.from+r.to+r.range)+
+      "   ==> "+(r.from===1&&r.to===1&&r.range===1?"RICHTIG (genau drei)":"FALSCH"));
+  log("   Original-showView lief weiter: "+JSON.stringify(v.__views)+
+      "   ==> "+(v.__views.length===1&&v.__views[0]==="citations"?"RICHTIG":"FALSCH"));
+  v.__ruf={from:0,to:0,range:0};
+  v.showView("citations");
+  return new Promise(function(ok){ setTimeout(function(){ ok(d); },400); });
+}).then(function(d){
+  var v=d.defaultView, r=v.__ruf;
+  log("   zweites Mal dieselbe Ansicht: SUMME="+(r.from+r.to+r.range)+
+      "   ==> "+(r.from+r.to+r.range===0?"RICHTIG (schon uebergeben, kein zweiter Workflow)":"FALSCH"));
+  v.__ruf={from:0,to:0,range:0};
+  v.showView("prompt_spotlight");
+  return new Promise(function(ok){ setTimeout(function(){ ok(d); },400); });
+}).then(function(d){
+  var r=d.defaultView.__ruf;
+  log("   Spotlight aktiviert: SUMME="+(r.from+r.to+r.range)+
+      "   ==> "+(r.from+r.to+r.range===0?"RICHTIG (nimmt nicht teil)":"FALSCH"));
+}).then(function(){
+  return bauen(null);           /* Schalter aus */
+}).then(function(d){
+  var v=d.defaultView;
+  v.__ruf={from:0,to:0,range:0};
+  v.showView("citations");
+  return new Promise(function(ok){ setTimeout(function(){ ok(d); },400); });
+}).then(function(d){
+  var v=d.defaultView, r=v.__ruf;
+  log("PHASE 7  Schalter AUS: Aufbau und Ansichtswechsel muessen still bleiben");
+  log("   Bubble-Aufrufe: SUMME="+(r.from+r.to+r.range)+
+      "   ==> "+(r.from+r.to+r.range===0?"RICHTIG (keine neue Nebenwirkung)":"FALSCH"));
   log("FERTIG");
 }).catch(function(e){ log("ABBRUCH: "+e.message+"\n"+(e.stack||"").split("\n").slice(0,3).join("\n")); });
 </script>

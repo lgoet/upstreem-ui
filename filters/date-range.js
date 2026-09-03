@@ -817,13 +817,19 @@
       return forEachInstance(instanceId, function (c) { c.setPreset(key, emitToo); });
     };
     /* ---- Fuer Bubble ------------------------------------------------------------------------
+     BEIDE Funktionen sind Handgriffe fuer Sonderfaelle. Im Normalbetrieb ist in Bubble NICHTS zu
+     tun: der Picker gibt den geteilten Zeitraum beim Seitenaufbau und bei jedem Ansichtswechsel
+     von selbst weiter (siehe den Block bei uebergeben() weiter unten).
+
      getUpstreemDateRange()  liest den GETEILTEN Zeitraum, oder null wenn der Schalter aus ist.
-                             Im Page-Load-Workflow lesen und die Datums-States damit setzen,
-                             BEVOR der erste RPC laeuft -- sonst zeigt der Kalender den
-                             gespeicherten Zeitraum und die Abfrage nimmt einen anderen.
-     upstreemDatesActivate(name)  sagt "diese Ansicht ist jetzt dran". Der zugehoerige Picker
-                             feuert seinen Zeitraum EINMAL an Bubble, damit die States stimmen,
-                             bevor die Ansicht laedt. In bubble_fn_view_changed aufrufen. */
+                             Fuer die Konsole und fuer den Fall, dass die Datums-States lieber
+                             direkt gesetzt werden sollen. ACHTUNG: ein "Run javascript"-Schritt
+                             in Bubble gibt keinen Wert an den Workflow zurueck -- der Rueckgabe-
+                             wert muss ueber ein JavaScriptToBubble-Element hinein.
+     upstreemDatesActivate(name)  sagt "diese Ansicht ist jetzt dran": der Picker dieser Ansicht
+                             feuert seinen Zeitraum einmal. Nur noetig, wenn die Seite die
+                             Ansicht OHNE showView() umschaltet -- dann sieht core den Wechsel
+                             nicht. Feuert immer, auch wenn schon uebergeben wurde. */
   window.getUpstreemDateRange = function () {
     if (!(UC.getPref && UC.getPref("date_sync") === "on")) return null;
     var p = UC.getPref("date_preset");
@@ -838,20 +844,74 @@
        Die Daten daraus zu rechnen ist Sache des Kalenders, nicht dieser Zeile. */
     return { preset: p, from: null, to: null };
   };
-  window.upstreemDatesActivate = function (name) {
-    var id = String(name || "");
-    var traf = false;
-    for (var i = 0; i < CONTROLLERS.length; i++) {
-      var c = CONTROLLERS[i];
-      if (!c || !c.instanceId) continue;
-      /* Der Name der Ansicht steckt im Instanznamen: view "prompts" -> dates_v2_prompts.
-         Genauer Vergleich waere hier falsch -- der Aufrufer kennt den View-Namen, nicht die
-         volle Instanz-Id. */
-      if (c.instanceId.indexOf(id) < 0) continue;
-      if (!traf && typeof c.emitCurrent === "function") { c.emitCurrent(); traf = true; }
+  /* Der Picker einer Ansicht: der View-Name steckt im Instanznamen (view "prompts" ->
+     dates_v2_prompts). Ein genauer Vergleich waere falsch -- der Aufrufer kennt den View-Namen,
+     nicht die volle Instanz-Id. Ein reines "enthaelt" ist aber auch falsch, und das ist derselbe
+     Praefix-Stolperstein wie in forEachInstance: "prompts" steckt AUCH in
+     "dates_v2_prompt_spotlight". Darum zuerst das Ende vergleichen -- der Instanzname endet auf
+     den View-Namen -- und nur wenn das nichts findet, auf "enthaelt" zurueckfallen. */
+  function pickerFuer(name){
+    var id = String(name || "").trim(), i, c;
+    if (!id) return null;
+    var da = [];
+    for (i = 0; i < CONTROLLERS.length; i++){
+      c = CONTROLLERS[i];
+      if (c && c.instanceId && c.root && c.root.isConnected) da.push(c);
     }
-    return traf;
+    for (i = 0; i < da.length; i++) if (da[i].instanceId.slice(-id.length) === id) return da[i];
+    for (i = 0; i < da.length; i++) if (da[i].instanceId.indexOf(id) >= 0) return da[i];
+    return null;
+  }
+
+  /* ---------- Wer sagt Bubble den geteilten Zeitraum? ----------
+     Bis hierher stand in der Doku: "lies getUpstreemDateRange() im Page-Load-Workflow und rufe
+     upstreemDatesActivate(name) in bubble_fn_view_changed". Beides ist Handarbeit in Bubble, und
+     beides ist unnoetig -- die Seite kann es selbst:
+
+       Seitenaufbau   der SICHTBARE Picker gibt seinen Zeitraum einmal an Bubble. Sichtbar heisst
+                      offsetParent != null; Bubble rendert das Markup einer verborgenen Gruppe
+                      ohnehin nicht, es gibt beim Aufbau also praktisch nur einen.
+       Ansichtswechsel core umschliesst showView der Host-App und meldet den Wechsel VOR dem
+                      Original (UC.onViewChange). Der Picker dieser Ansicht gibt seinen Zeitraum.
+
+     Gegeben wird er ueber dieselben drei Funktionen wie bei einem Klick im Kalender
+     (bubble_fn_udr_date_from/to/range). Der Workflow, der heute auf eine Datumsauswahl reagiert,
+     reagiert also auch hier -- ohne neuen State, ohne neues JavaScriptToBubble-Element. Und weil
+     dieser Workflow selbst laedt, gibt es kein Wettrennen mit showView: der Ladevorgang haengt am
+     Aufruf, nicht an der Reihenfolge zweier Bubble-Ereignisse.
+
+     NUR BEI AKTIVEM SCHALTER. Ist er aus, feuert ein Ansichtswechsel wie bisher nichts -- ein
+     Kalender, der beim Umschalten ploetzlich Workflows startet, waere eine neue Nebenwirkung fuer
+     jeden, der die Funktion nie eingeschaltet hat.
+
+     UND NUR EINMAL JE PICKER. Sind die Datums-States der Seite global, reicht der erste Aufruf
+     fuer alle Ansichten; sind sie je Ansicht getrennt, braucht jede genau einen. Ohne den Merker
+     waeren es drei Bubble-Aufrufe bei JEDEM Umschalten, auch wenn sich nichts geaendert hat. Der
+     Merker haelt hoechstens fuenf Eintraege und wird geleert, sobald sich der geteilte Zeitraum
+     aendert -- danach holt sich jede Ansicht die neuen Daten beim naechsten Aktivieren. */
+  var UEBERGEBEN = {};
+  function uebergeben(c){
+    if (!c || UEBERGEBEN[c.instanceId] || typeof c.emitCurrent !== "function") return false;
+    UEBERGEBEN[c.instanceId] = 1;
+    return c.emitCurrent();
+  }
+  /* Ein Aufruf von aussen ist eine ausdrueckliche Anweisung und feuert IMMER -- der Merker haelt
+     nur die automatischen Uebergaben auseinander. */
+  window.upstreemDatesActivate = function (name) {
+    var c = pickerFuer(name);
+    if (!c || typeof c.emitCurrent !== "function") return false;
+    UEBERGEBEN[c.instanceId] = 1;
+    return c.emitCurrent();
   };
+  if (UC.onViewChange) UC.onViewChange(function (name) {
+    if (!name || !syncAn() || !nimmtTeil(name)) return;
+    var c = pickerFuer(name);
+    if (c && nimmtTeil(c.instanceId)) uebergeben(c);
+  });
+  window.addEventListener("up-prefs-change", function (e) {
+    var n = e && e.detail && e.detail.name;
+    if (!n || n === "date_preset" || n === "date_sync") UEBERGEBEN = {};
+  });
   window.setDateRangeTheme = function (instanceId, theme) {
       initAll();
       return forEachInstance(instanceId, function (c) { c.setTheme(theme); });
@@ -859,6 +919,20 @@
 
     initAll();
     if (UC.watchRoots) UC.watchRoots("udr-root", initAll);
+
+    /* Der Aufbau-Fall von oben. setTimeout(0) und nicht sofort: initAll baut alle Wurzeln in
+       einem Durchgang, und der sichtbare Picker ist nicht zwingend der erste. Ein Makrotask
+       spaeter stehen alle Controller, und Bubbles JavaScriptToBubble-Elemente sind bereit.
+       Das offsetParent ist EIN Layout-Lesezugriff, einmal je Seitenaufbau. */
+    if (syncAn()) setTimeout(function () {
+      for (var i = 0; i < CONTROLLERS.length; i++) {
+        var c = CONTROLLERS[i];
+        if (!c || !c.root || !c.root.isConnected || !nimmtTeil(c.instanceId)) continue;
+        if (c.root.offsetParent === null) continue;
+        uebergeben(c);
+        return;
+      }
+    }, 0);
 
     var q = window.__udrBootQueue;
     if (q && q.length) {
