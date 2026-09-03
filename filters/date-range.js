@@ -232,7 +232,7 @@
               (nimmtTeil(instanceId)
                 ? '<button type="button" class="udr-sync" role="switch" aria-checked="' +
                     (syncAn() ? "true" : "false") + '" data-tip="' +
-                    esc(t("Uses this range on every page. Reloads the page. Only the three relative ranges can be shared.")) + '">' +
+                    esc(t("Reloads the page")) + '">' +
                     '<span class="udr-sync-lbl" data-i18n="Apply everywhere">' +
                       esc(t("Apply everywhere")) + '</span>' +
                     /* Der Schalter ist hier nur noch das BILD des Zustands -- role und
@@ -584,14 +584,14 @@
            nicht an den Tagen, weil die keine Zeiger-Ereignisse mehr nehmen (siehe CSS). */
         if (calEl) {
           if (an) calEl.setAttribute("data-tip",
-            t("A custom range cannot be shared — turn off \u201eApply everywhere\u201c to pick one"));
+            t("Custom range not shareable"));
           else calEl.removeAttribute("data-tip");
         }
         Array.prototype.forEach.call(menu.querySelectorAll(".udr-preset"), function (b) {
           var teilbar = !!TEILBAR[b.getAttribute("data-preset")];
           var aus = an && !teilbar;
           b.disabled = aus;
-          if (aus) b.setAttribute("data-tip", t("Not shareable — turn off \u201eApply everywhere\u201c to use it"));
+          if (aus) b.setAttribute("data-tip", t("Not shareable"));
           else b.removeAttribute("data-tip");
         });
       }

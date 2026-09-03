@@ -87,8 +87,11 @@ bauen(null).then(oeffnen).then(function(d){
       "   ==> "+(cs(zeile).paddingTop==="4px"&&cs(zeile).paddingBottom==="4px"?"RICHTIG (4px)":"FALSCH"));
   log("   Trennlinie: "+Math.round(zumReset)+"px zum Reset, "+Math.round(zurZeile)+"px zur Zeile"+
       "   ==> "+(Math.round(zumReset)===8&&Math.round(zurZeile)===8?"RICHTIG (8px beidseitig)":"FALSCH"));
-  log("   data-tip: \""+zeile.getAttribute("data-tip")+"\""+
-      "   ==> "+(/[Rr]eload/.test(zeile.getAttribute("data-tip")||"")?"RICHTIG":"FALSCH"));
+  var tp=zeile.getAttribute("data-tip")||"";
+  log("   data-tip: \""+tp+"\"  ("+tp.split(/\s+/).length+" Worte)"+
+      "   ==> "+(/[Rr]eload/.test(tp)&&tp.split(/\s+/).length<=4
+        ? "RICHTIG (nennt den Reload, hoechstens vier Worte)"
+        : "FALSCH -- "+(/[Rr]eload/.test(tp)?"zu lang":"kein Hinweis auf den Reload")));
   var sw=d.querySelector("[data-udr-sync]");
   log("   Schalter: pointer-events="+cs(sw).pointerEvents+"  role="+(sw.getAttribute("role")||"(keine)")+
       "   ==> "+(cs(sw).pointerEvents==="none"&&!sw.getAttribute("role")?"RICHTIG":"FALSCH"));
@@ -124,9 +127,10 @@ bauen(null).then(oeffnen).then(function(d){
   log("PHASE 3  gesperrter Kalender bei aktivem Schalter");
   log("   is-syncon="+menu.classList.contains("is-syncon")+"   Tage: "+tage.length+
       "   pointer-events am Tag: "+(tag?cs(tag).pointerEvents:"?"));
-  log("   Hinweis am Kalender: \""+(cal.getAttribute("data-tip")||"(keiner)")+"\"");
+  var ct=cal.getAttribute("data-tip")||"";
+  log("   Hinweis am Kalender: \""+(ct||"(keiner)")+"\"  ("+(ct?ct.split(/\s+/).length:0)+" Worte)");
   log("   ==> "+(menu.classList.contains("is-syncon")&&tag&&cs(tag).pointerEvents==="none"&&
-                 /Apply everywhere|Überall/.test(cal.getAttribute("data-tip")||"")
+                 /not shareable|nicht teilbar/i.test(cal.getAttribute("data-tip")||"")
         ? "RICHTIG (taub, mit Begruendung)" : "FALSCH"));
   /* Der Riegel dahinter: ein Klick, der trotzdem ankommt, darf nichts bewaffnen. Erkannt am
      aktiven Preset -- ein bewaffneter erster Klick setzt committedPreset auf null, und dann ist

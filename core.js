@@ -479,15 +479,15 @@
     "Active": "Aktiv",
     /* Der globale Kalender (03.09.). */
     "Apply everywhere": "Überall anwenden",
-    /* "Reloads the page" gehoert in den Hinweis und nicht in einen Bestaetigungsdialog: der
-       Reload ist die Folge des Klicks, keine Entscheidung -- und ein Dialog vor einem Schalter,
-       der einmal im Monat betaetigt wird, waere mehr im Weg als der Reload selbst. */
-    "Uses this range on every page. Reloads the page. Only the three relative ranges can be shared.":
-      "Verwendet diesen Zeitraum auf jeder Seite. Lädt die Seite neu. Nur die drei relativen Zeiträume sind teilbar.",
-    "A custom range cannot be shared \u2014 turn off \u201eApply everywhere\u201c to pick one":
-      "Ein eigener Zeitraum ist nicht teilbar \u2014 schalte \u201eÜberall anwenden\u201c aus, um einen zu wählen",
-    "Not shareable — turn off \u201eApply everywhere\u201c to use it":
-      "Nicht teilbar — schalte „Überall anwenden“ aus, um ihn zu nutzen",
+    /* Die Hinweise im Kalender sind KURZ. Der erste Anlauf schrieb ganze Saetze ("Uses this
+       range on every page. Reloads the page. Only the three relative ranges can be shared.") --
+       ein Tooltip, den man lesen MUSS, ist keiner mehr, und der Nutzer hat es sofort gemeldet.
+       Was hier steht, ist die eine Sache, die man vorher nicht sieht: dass ein Klick die Seite
+       neu laedt, und dass ein Eintrag nicht teilbar ist. Das Warum steht am ausgegrauten Knopf
+       selbst -- er ist ausgegraut, waehrend "Apply everywhere" an ist. */
+    "Reloads the page": "Lädt die Seite neu",
+    "Not shareable": "Nicht teilbar",
+    "Custom range not shareable": "Eigener Zeitraum nicht teilbar",
     /* Die drei Kennzahlen-Karten ueber der Prompts-Tabelle (03.09.). */
     "Distribution by topic": "Verteilung nach Topics",
     "Distribution by market": "Verteilung nach Märkten",
