@@ -86,12 +86,15 @@ bauen(null).then(function(d){
      Erwartet: genau eine (drei Funktionen), Grund "boot", Vorgabe-Zeitraum, kein Nachladen. */
   var s7a=new Date(); s7a.setHours(0,0,0,0); s7a.setDate(s7a.getDate()-6);
   function isoA(x){ return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0"); }
-  log("   JSON: "+JSON.stringify(v.__letzte));
-  log("   ==> "+(v.__ruf.range===1&&v.__ruf.apply===0&&v.__letzte&&v.__letzte.reason==="boot"&&
-                 v.__letzte.date_from===isoA(s7a)
-        ? "RICHTIG (eine Uebergabe, Vorgabe 7 Tage, kein Nachladen)"
-        : "FALSCH -- "+(v.__ruf.range===0?"keine Uebergabe: Bubble laeuft mit null in die RPCs"
-                                         :"falsches Datum oder es wurde nachgeladen")));
+  log("   von="+v.__von+"   bis="+v.__bis);
+  /* Der Range-Kanal MUSS beim Aufbau still sein: an ihm haengt auf der Seite der Workflow, der
+     nachlaedt. Nur die zwei Datums-States werden gesetzt. */
+  log("   ==> "+(v.__ruf.from===1&&v.__ruf.to===1&&v.__ruf.range===0&&v.__ruf.apply===0&&
+                 v.__von&&isoA(new Date(v.__von))===isoA(s7a)
+        ? "RICHTIG (nur die zwei States, kein Range-Kanal, kein Nachladen)"
+        : "FALSCH -- "+(v.__ruf.range>0?"der Range-Kanal feuert und die Seite laedt doppelt"
+                       :(v.__ruf.from===0?"keine States: Bubble laeuft mit null in die RPCs"
+                                         :"falsches Datum"))));
   var mit=IDS.filter(function(id){ return !!schalter(d,id); });
   var ohne=IDS.filter(function(id){ return !schalter(d,id); });
   log("   Schalter DA bei:    "+mit.join(", "));
@@ -114,23 +117,18 @@ bauen(null).then(function(d){
 }).then(function(d){
   var v=d.defaultView;
   log("PHASE 3  nach dem Reload, Schalter AN, gespeichert last30");
-  log("   Bubble-Aufrufe beim Aufbau: "+JSON.stringify(v.__ruf)+"  SUMME="+
-      (v.__ruf.from+v.__ruf.to+v.__ruf.range));
-  log("   ==> "+(v.__ruf.from===1&&v.__ruf.to===1&&v.__ruf.range===1
-        ? "RICHTIG (genau eine Uebergabe vom sichtbaren Picker, nicht zehn)"
-        : "FALSCH -- "+(v.__ruf.range===0?"keine Uebergabe, Bubble kennt den Zeitraum nicht"
-                                          :"mehr als ein Picker hat gefeuert")));
+  log("   Bubble-Aufrufe beim Aufbau: "+JSON.stringify(v.__ruf));
   /* DER GEMELDETE FEHLER: das Datum, das bei Bubble ankommt. 30 Tage muessen 30 Tage sein. */
   var soll30 = new Date(); soll30.setHours(0,0,0,0); soll30.setDate(soll30.getDate()-29);
   function isoV(d2){ return d2.getFullYear()+"-"+String(d2.getMonth()+1).padStart(2,"0")+"-"+String(d2.getDate()).padStart(2,"0"); }
-  log("   Was bei Bubble ankommt: "+JSON.stringify(v.__letzte));
-  log("   date_from soll "+isoV(soll30)+" (30 Tage)   ist "+(v.__letzte&&v.__letzte.date_from));
-  log("   ==> "+(v.__letzte&&v.__letzte.date_from===isoV(soll30)
+  log("   von="+v.__von+"   bis="+v.__bis);
+  log("   date_from soll "+isoV(soll30)+" (30 Tage)   ist "+(v.__von?isoV(new Date(v.__von)):"(nichts)"));
+  log("   ==> "+(v.__von&&isoV(new Date(v.__von))===isoV(soll30)
         ? "RICHTIG (30 Tage, nicht 7)" : "FALSCH -- das ist der gemeldete Fehler"));
-  log("   Grund im JSON: \""+(v.__letzte&&v.__letzte.reason)+"\"   Preset: \""+(v.__letzte&&v.__letzte.preset)+"\"");
-  log("   ==> "+(v.__letzte&&v.__letzte.reason==="boot"&&v.__letzte.preset==="last30"?"RICHTIG":"FALSCH"));
-  log("   seitenweiter Kanal (apply) beim Aufbau: "+v.__ruf.apply+
-      "   ==> "+(v.__ruf.apply===0?"RICHTIG (kein zweiter Ladevorgang)":"FALSCH -- die Seite laedt doppelt"));
+  log("   Range-Kanal="+v.__ruf.range+"  Apply-Kanal="+v.__ruf.apply+
+      "   ==> "+(v.__ruf.range===0&&v.__ruf.apply===0
+        ? "RICHTIG (beide still -- kein zweiter Ladevorgang)"
+        : "FALSCH -- die Seite laedt doppelt"));
   log("   Beschriftungen: prompts=\""+label(d,"dates_v2_prompts")+"\"  brands=\""+
       label(d,"dates_v2_brands")+"\"  export=\""+label(d,"dates_v2_export")+"\"");
   log("   getUpstreemDateRange(): "+JSON.stringify(v.getUpstreemDateRange()));
@@ -251,10 +249,9 @@ bauen(null).then(function(d){
   var s3=new Date(); s3.setHours(0,0,0,0); s3.setMonth(s3.getMonth()-3);
   log("PHASE 10  Gegenprobe: frischer Aufbau, Schalter AN (last3)");
   log("   Aufrufe: from="+r.from+" to="+r.to+" range="+r.range+" apply="+r.apply);
-  log("   date_from soll "+isoV(s3)+"   ist "+(v.__letzte&&v.__letzte.date_from)+
-      "   Preset \""+(v.__letzte&&v.__letzte.preset)+"\"");
-  log("   ==> "+(r.range===1&&r.apply===0&&v.__letzte&&v.__letzte.date_from===isoV(s3)&&
-                 v.__letzte.preset==="last3"
+  log("   date_from soll "+isoV(s3)+"   ist "+(v.__von?isoV(new Date(v.__von)):"(nichts)"));
+  log("   ==> "+(r.from===1&&r.to===1&&r.range===0&&r.apply===0&&
+                 v.__von&&isoV(new Date(v.__von))===isoV(s3)
         ? "RICHTIG (genau eine Uebergabe -- der Merker sperrt nicht die neue Seite)" : "FALSCH"));
   log("FERTIG");
 }).catch(function(e){ log("ABBRUCH: "+e.message+"\n"+(e.stack||"").split("\n").slice(0,3).join("\n")); });

@@ -127,19 +127,40 @@ bauen(null).then(oeffnen).then(function(d){
   log("PHASE 3  gesperrter Kalender bei aktivem Schalter");
   log("   is-syncon="+menu.classList.contains("is-syncon")+"   Tage: "+tage.length+
       "   pointer-events am Tag: "+(tag?cs(tag).pointerEvents:"?"));
-  var ct=cal.getAttribute("data-tip")||"";
-  log("   Hinweis am Kalender: \""+(ct||"(keiner)")+"\"  ("+(ct?ct.split(/\s+/).length:0)+" Worte)");
-  log("   ==> "+(menu.classList.contains("is-syncon")&&tag&&cs(tag).pointerEvents==="none"&&
-                 /not shareable|nicht teilbar/i.test(cal.getAttribute("data-tip")||"")
-        ? "RICHTIG (taub, mit Begruendung)" : "FALSCH"));
-  /* Der Riegel dahinter: ein Klick, der trotzdem ankommt, darf nichts bewaffnen. Erkannt am
+  var ct=tag?(tag.getAttribute("data-tip")||""):"";
+  log("   Hinweis am TAG: \""+(ct||"(keiner)")+"\"  ("+(ct?ct.split(/\s+/).length:0)+" Worte)"+
+      "   am Kalender: \""+(cal.getAttribute("data-tip")||"(keiner)")+"\"");
+  log("   ==> "+(menu.classList.contains("is-syncon")&&tag&&cs(tag).pointerEvents!=="none"&&
+                 /Turn off|ausschalten/i.test(ct) && ct.split(/\s+/).length<=4 &&
+                 !cal.getAttribute("data-tip")
+        ? "RICHTIG (Hinweis am Tag, Zeiger kommt an, hoechstens vier Worte)"
+        : "FALSCH -- "+(cs(tag).pointerEvents==="none"?"Tag ist taub, es kann kein Tooltip kommen"
+                        :(cal.getAttribute("data-tip")?"haengt noch am ganzen Kalender":"Text falsch"))));
+  /* Und wo der Tooltip LANDET: er wird am Rechteck des Elements ausgerichtet, unter dem der
+     Zeiger steht. Am Tag muss er also beim Tag stehen und nicht unter dem Dropdown -- genau das
+     war die Meldung. Gemessen wird der Abstand seiner Mitte zur Mitte des Tages. */
+  try { tag.dispatchEvent(new v.MouseEvent("mouseover", { bubbles: true })); } catch(e){}
+  /* Der Riegel: ein Klick darf nichts bewaffnen. Erkannt am
      aktiven Preset -- ein bewaffneter erster Klick setzt committedPreset auf null, und dann ist
      KEIN Preset mehr markiert. Die Tagesklassen taugen nicht: eine Vorschau sieht aus wie eine
      fertige Auswahl. */
   var vorher=d.querySelectorAll(".udr-preset.is-active").length;
   var lblVor=d.querySelector(".udr-label").textContent.trim();
-  if (tag) tag.click();
-  return new Promise(function(ok){ setTimeout(function(){ ok({d:d,vorher:vorher,lblVor:lblVor}); },500); });
+  return new Promise(function(ok){ setTimeout(function(){
+    var tip=d.querySelector(".up-tip");
+    var tr=tip?tip.getBoundingClientRect():null, dr=tag.getBoundingClientRect();
+    var mr=menu.getBoundingClientRect();
+    log("   Tooltip: \""+(tip?tip.textContent.trim():"(keiner)")+"\"");
+    if (tr) log("      Tag-Mitte y="+Math.round(dr.top+dr.height/2)+
+                "   Tooltip-Mitte y="+Math.round(tr.top+tr.height/2)+
+                "   Unterkante Dropdown y="+Math.round(mr.bottom));
+    log("   ==> "+(tip && tr && Math.abs((tr.top+tr.height/2)-(dr.top+dr.height/2)) < 60 &&
+                   tr.top < mr.bottom
+          ? "RICHTIG (steht am Tag, nicht unter dem Dropdown)"
+          : "FALSCH -- "+(tip?"steht woanders":"kein Tooltip")));
+    if (tag) tag.click();
+    setTimeout(function(){ ok({d:d,vorher:vorher,lblVor:lblVor}); },500);
+  },1500); });
 }).then(function(st){
   var d=st.d;
   var nachher=d.querySelectorAll(".udr-preset.is-active").length;

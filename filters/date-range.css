@@ -228,6 +228,11 @@
    pointer-events sitzt an den TAGEN und den Monatspfeilen, nicht am ganzen .udr-cal: der Rahmen
    muss weiter mouseover bekommen, sonst kann kein Hinweis erscheinen (ein Element ohne
    Zeiger-Ereignisse erzeugt kein mouseover, und der Tooltip haengt genau daran). */
-.udr-menu.is-syncon .udr-cal { opacity: .5; cursor: not-allowed; }
-.udr-menu.is-syncon .udr-day,
-.udr-menu.is-syncon .udr-nav { pointer-events: none; }
+.udr-menu.is-syncon .udr-cal { opacity: .5; }
+/* KEIN pointer-events: none. Der erste Anlauf hatte es, und damit war der Hinweis unerreichbar:
+   ein Element ohne Zeiger-Ereignisse erzeugt kein mouseover, und der Tooltip haengt genau daran.
+   Dass ein Klick nichts tut, besorgt der Riegel im JS -- er steht vor dem ERSTEN Klick, es kann
+   also gar keine Auswahl entstehen. Die Monatspfeile bleiben bedienbar: Blaettern waehlt nichts
+   aus, und ein toter Pfeil im halb sichtbaren Kalender wirkt kaputt. */
+.udr-menu.is-syncon .udr-day { cursor: not-allowed; }
+.udr-menu.is-syncon .udr-day:hover { background: transparent; }

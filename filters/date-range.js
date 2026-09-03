@@ -370,6 +370,9 @@
         var floor = new Date(MIN_DATE.getFullYear(), MIN_DATE.getMonth(), 1);
         var ceil = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1);
 
+        /* Bei aktivem Schalter ist die Auswahl im Kalender gesperrt (ein eigener Zeitraum ist
+           nicht teilbar). Jeder Tag traegt dann den Hinweis, was zu tun ist. */
+        var gesperrt = syncAn() && nimmtTeil(instanceId);
         var html = "";
         for (var m = 0; m < 2; m++) {
           var ms = new Date(first.getFullYear(), first.getMonth() + m, 1);
@@ -402,7 +405,10 @@
                 if (d > range.from && d < range.to) cls += " is-in";
               }
               return '<button type="button" class="' + cls + '" data-d="' + iso(d) + '"' +
-                     (disabled ? " disabled" : "") + ' tabindex="' + (out ? -1 : 0) + '">' +
+                     (disabled ? " disabled" : "") + ' tabindex="' + (out ? -1 : 0) + '"' +
+                     /* Der Hinweis gleich mit ins Markup: das Raster wird bei jedem Monatswechsel
+                        neu gebaut, ein Nachtrag von aussen kaeme jedes Mal zu spaet. */
+                     (gesperrt ? ' data-tip="' + esc(t("Turn off Apply everywhere")) + '"' : "") + '>' +
                      d.getDate() + "</button>";
             }).join("") + "</div>" +
           "</div>";
@@ -487,7 +493,20 @@
         try { window.dispatchEvent(new CustomEvent("upstreem:date-range", { detail: payload })); } catch (e) {}
         callFn("data-date-from-fn", "bubble_fn_udr_date_from", new Date(from.getFullYear(), from.getMonth(), from.getDate()));
         callFn("data-date-to-fn",   "bubble_fn_udr_date_to",   new Date(to.getFullYear(), to.getMonth(), to.getDate()));
-        if (!callFn("data-range-fn", "bubble_fn_udr_date_range", json) && window.console) {
+        /* BEIM AUFBAU wird der Range-Kanal NICHT gerufen -- und das ist die Korrektur eines
+           Denkfehlers von mir. Ich hatte den Grund "boot" ins JSON gelegt und erwartet, dass die
+           Seite darauf verzweigt. Das war die falsche Richtung: an diesem Kanal haengt auf einer
+           eingerichteten Seite der Workflow, der NACHLAEDT. Jedes Ereignis dort ist also ein
+           Ladevorgang, egal was im JSON steht -- gemeldet als "alle RPCs laufen zweimal", und der
+           zweite Lauf war unser Aufbau-Ereignis.
+           Beim Aufbau ist nur EINE Sache noetig: die zwei Datums-States muessen stimmen, bevor die
+           Seite von sich aus laedt. Genau das tun die zwei Aufrufe darueber. Der Range-Kanal
+           traegt keine Information, die dabei fehlt.
+           Wer seinen Ladevorgang bewusst am Aufbau-Ereignis haengen will, setzt
+           data-boot-mode="full" an der Wurzel; dann kommt der Kanal wie bei einem Klick. */
+        var bootNurStates = grund === "boot" &&
+          String(root.getAttribute("data-boot-mode") || "").toLowerCase() !== "full";
+        if (!bootNurStates && !callFn("data-range-fn", "bubble_fn_udr_date_range", json) && window.console) {
           console.warn("[date-range] " + (root.getAttribute("data-range-fn") || "bubble_fn_udr_date_range") +
             " not found on window/parent/top — this change reached no Bubble workflow.");
         }
@@ -577,21 +596,31 @@
       /* Bei aktivem Schalter sind die nicht teilbaren Zeitraeume ausgegraut: "Letzte 6 Monate"
          und die Auswahl im Kalender. Sonst zeigte diese Ansicht einen Zeitraum, den die naechste
          nicht kennt -- zwei Zeitraeume, waehrend der Schalter behauptet, es waere einer. */
+      /* Ein Attribut je Tag. Kein pointer-events: none mehr -- ein Element ohne Zeiger-Ereignisse
+         erzeugt kein mouseover, und dann gibt es auch keinen Hinweis. Dass der Klick nichts tut,
+         besorgt der Riegel im Klick-Handler (vor dem ERSTEN Klick, siehe dort). */
+      function tageSperren(an){
+        var tip = t("Turn off Apply everywhere");
+        Array.prototype.forEach.call(root.querySelectorAll(".udr-day"), function (d2) {
+          if (an) d2.setAttribute("data-tip", tip); else d2.removeAttribute("data-tip");
+        });
+      }
       function syncSperren(){
         var an = syncAn() && nimmtTeil(instanceId);
         menu.classList.toggle("is-syncon", an);
-        /* Der Hinweis am Kalender selbst: "ausgegraut" allein sagt nicht, WARUM. Am .udr-cal und
-           nicht an den Tagen, weil die keine Zeiger-Ereignisse mehr nehmen (siehe CSS). */
-        if (calEl) {
-          if (an) calEl.setAttribute("data-tip",
-            t("Custom range not shareable"));
-          else calEl.removeAttribute("data-tip");
-        }
+        /* Der Hinweis haengt an den TAGEN, nicht am ganzen .udr-cal. Der Tooltip wird am
+           Rechteck des Elements ausgerichtet, unter dem der Zeiger steht -- bei .udr-cal ist das
+           das ganze Monatsraster, und der Hinweis erschien deshalb unter dem Dropdown statt dort,
+           wo man hovert. Gemeldet am 03.09.
+           Gesetzt wird er beim Zeichnen (render), weil das Raster bei jedem Monatswechsel neu
+           entsteht; hier nur der Nachzug fuer das Raster, das gerade steht. */
+        if (calEl) calEl.removeAttribute("data-tip");
+        tageSperren(an);
         Array.prototype.forEach.call(menu.querySelectorAll(".udr-preset"), function (b) {
           var teilbar = !!TEILBAR[b.getAttribute("data-preset")];
           var aus = an && !teilbar;
           b.disabled = aus;
-          if (aus) b.setAttribute("data-tip", t("Not shareable"));
+          if (aus) b.setAttribute("data-tip", t("Turn off Apply everywhere"));
           else b.removeAttribute("data-tip");
         });
       }
@@ -1042,11 +1071,13 @@
       try { fn(wert); } catch(e){}
       return true;
     }
-    ruf("bubble_fn_udr_date_from", new Date(sp.from.getFullYear(), sp.from.getMonth(), sp.from.getDate()));
-    ruf("bubble_fn_udr_date_to",   new Date(sp.to.getFullYear(),   sp.to.getMonth(),   sp.to.getDate()));
-    var traf = ruf("bubble_fn_udr_date_range", JSON.stringify(payload));
-    if (!traf && window.console) console.warn("[date-range] upstreemDatesBoot: " +
-      "bubble_fn_udr_date_range ist nicht auffindbar -- die Datums-States wurden nicht gesetzt.");
+    var t1 = ruf("bubble_fn_udr_date_from", new Date(sp.from.getFullYear(), sp.from.getMonth(), sp.from.getDate()));
+    var t2 = ruf("bubble_fn_udr_date_to",   new Date(sp.to.getFullYear(),   sp.to.getMonth(),   sp.to.getDate()));
+    /* Dieselbe Regel wie in emit(): der Range-Kanal ist der Nachlade-Kanal und bleibt beim
+       Aufbau still. Ohne Picker gibt es keine Wurzel, an der data-boot-mode stehen koennte --
+       dann gilt die Vorgabe. */
+    if (!t1 && !t2 && window.console) console.warn("[date-range] upstreemDatesBoot: " +
+      "bubble_fn_udr_date_from/_to sind nicht auffindbar -- die Datums-States wurden nicht gesetzt.");
     return payload;
   };
   if (UC.onViewChange) UC.onViewChange(function (name) {

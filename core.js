@@ -486,8 +486,11 @@
        neu laedt, und dass ein Eintrag nicht teilbar ist. Das Warum steht am ausgegrauten Knopf
        selbst -- er ist ausgegraut, waehrend "Apply everywhere" an ist. */
     "Reloads the page": "Lädt die Seite neu",
-    "Not shareable": "Nicht teilbar",
-    "Custom range not shareable": "Eigener Zeitraum nicht teilbar",
+    /* Der Hinweis an den gesperrten Tagen und Presets sagt, WAS ZU TUN IST, und nicht, was der
+       Fall ist. "Eigener Zeitraum nicht teilbar" stand hier zuerst und war fuer den Nutzer
+       schlicht unverstaendlich -- zu Recht: es beschreibt eine Eigenschaft unseres Modells, nicht
+       seinen naechsten Schritt. */
+    "Turn off Apply everywhere": "„Überall anwenden“ ausschalten",
     /* Die drei Kennzahlen-Karten ueber der Prompts-Tabelle (03.09.). */
     "Distribution by topic": "Verteilung nach Topics",
     "Distribution by market": "Verteilung nach Märkten",
