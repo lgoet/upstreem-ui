@@ -1180,13 +1180,13 @@
    fehlen wuerden. Gemessen: mit shrink war die Beschriftung bei 166px Koerper 0px breit. */
 .upt-kpi-markets .up-donut-legend { gap: 7px; font-size: 12px; flex: 0 0 auto; }
 /* gap 0 und die Abstaende einzeln: zwischen Flagge und Kuerzel 7px, zwischen Kuerzel und
-   Prozentwert 64px (so angefordert). Vorher schob margin-left: auto den Wert an die rechte
+   Prozentwert 40px (nachjustiert von 64). Vorher schob margin-left: auto den Wert an die rechte
    Kante -- bei einer schmalen Karte sah das nach einer riesigen Luecke aus. */
 .upt-kpi-markets .up-donut-legend-row { display: flex; align-items: center; gap: 0; min-width: 0; }
 /* Kein Kuerzen: der Name ist der Alpha-2-Code, zwei Zeichen. Etwas zu kuerzen gibt es da nicht,
    und mit min-width: 0 wurde er unter Druck auf null gestaucht. */
 .upt-kpi-markets .up-donut-legend-name { flex: 0 0 auto; white-space: nowrap; }
-.upt-kpi-markets .up-donut-legend-pct { margin-left: 64px; flex: 0 0 auto; }
+.upt-kpi-markets .up-donut-legend-pct { margin-left: 40px; flex: 0 0 auto; }
 /* Der Farbfleck klebte an der Flagge -- der Zeilenabstand steht auf 0, damit die 64px vor dem
    Prozentwert genau stimmen, also braucht jeder Abstand seinen eigenen Wert. */
 .upt-kpi-markets .up-donut-legend-chip { margin-right: 8px; }
