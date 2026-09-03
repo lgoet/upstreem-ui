@@ -1137,8 +1137,20 @@
    rechts -- letzteres ist die Vorgabe von .up-donut-layout, hier wird nur die Groesse gestellt. */
 .upt-kpi-markets .up-donut-center { display: none; }
 .upt-kpi-markets .up-donut-layout { gap: 16px; justify-content: flex-start; }
-/* 20 Prozent kleiner als der erste Anlauf (46%/130px) -- so gemeldet. */
-.upt-kpi-markets .up-donut-wrap { width: min(37%, 104px); }
+/* 20 Prozent kleiner als der erste Anlauf (46%/130px) -- so gemeldet.
+   DREI Regeln und nicht eine, und zwar wegen der SPEZIFITAET (§1: Konflikte ueber Spezifitaet
+   loesen, nie ueber Ladereihenfolge): core hat fuer den umgeklappten Modus
+   ".up-donut-layout.is-collapsed .up-donut-wrap" mit 220px, und das ist (0,3,0) -- eine einzelne
+   Regel mit ".upt-kpi-markets .up-donut-wrap" (0,2,0) verliert dagegen. Genau so gemessen auf der
+   Seite des Nutzers: der Ring war 220px.
+   collapseAt: 0 im JS verhindert das Umklappen bereits; diese Regeln sind das Netz darunter,
+   falls die Klasse doch einmal von woanders kommt. */
+.upt-kpi-markets .up-donut-layout .up-donut-wrap { width: min(37%, 104px); }
+.upt-kpi-markets .up-donut-layout.is-collapsed .up-donut-wrap { width: min(37%, 104px); }
+.upt-kpi-markets .up-donut-layout.is-collapsed { flex-direction: row; gap: 16px; }
+.upt-kpi-markets .up-donut-layout.is-collapsed .up-donut-legend {
+  flex-direction: column; flex-wrap: nowrap; justify-content: center; gap: 7px;
+}
 /* Flagge, Alpha-2, Prozentwert. Der Prozentwert rechts, damit die Zahlen untereinander stehen;
    die Namensspalte darf schrumpfen, die Zahl nicht. */
 .upt-kpi-markets .up-donut-legend { gap: 7px; font-size: 12px; flex: 1 1 auto; min-width: 0; }

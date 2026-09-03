@@ -10,7 +10,8 @@ function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(fun
   if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
 function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
 var D=null, W=[];
-Promise.all([hol("core.css"),hol("prompts-table.css"),hol("core.js"),hol("prompts-table.js"),
+var ALT=(new URLSearchParams(location.search)).get("alt")==="1";
+Promise.all([hol("core.css"),hol(ALT?"_h_kpi_alt_css.css":"prompts-table.css"),hol("core.js"),hol(ALT?"_h_kpi_alt_js.js":"prompts-table.js"),
              hol("bubble/prompts_table_bubble.html")]).then(function(t){
   var d=document.getElementById("rahmen").contentDocument; D=d;
   d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0'></body></html>"); d.close();
@@ -129,11 +130,26 @@ Promise.all([hol("core.css"),hol("prompts-table.css"),hol("core.js"),hol("prompt
 }).then(function(){
   var d=D;
   var t=(d.querySelector(".upt-kpi-quota .up-chart-empty")||{}).textContent;
+  /* PHASE 4: SCHMALE Karte -- genau der Fall, in dem der alte Stand umklappte */
+  var mk=D.querySelector(".upt-kpi-markets");
+  mk.style.flex="0 0 200px"; mk.style.width="200px";
+  D.defaultView.setUpstreemMarkets([
+    {id:"de",alpha2:"DE",name:"Germany",prompt_count:40},
+    {id:"us",alpha2:"US",name:"United States",prompt_count:25}]);
   log("PHASE 3 Kontingent mit leerem Zahlenwert  ==> \""+(t||"(kein Fehlertext)")+"\"   "+
       (t?"RICHTIG":"FALSCH"));
   log("SPRACHE locale="+d.documentElement.getAttribute("data-up-locale")+
       "   Titel 1=\""+(d.querySelector(".upt-kpi-topics .upt-kpi-title")||{}).textContent+
       "\"   Titel 3=\""+(d.querySelector(".upt-kpi-quota .upt-kpi-title")||{}).textContent+"\"");
+  var lay=D.querySelector(".upt-kpi-markets .up-donut-layout");
+  var wr=D.querySelector(".upt-kpi-markets .up-donut-wrap");
+  var lgd=D.querySelector(".upt-kpi-markets .up-donut-legend");
+  var csD=D.defaultView.getComputedStyle;
+  log("PHASE 4 Karte auf 200px verengt (Koerper < collapseAt der ersten Fassung):");
+  log("   Klasse is-collapsed: "+(lay?lay.classList.contains("is-collapsed"):"(kein Layout)")+
+      "   Richtung="+(lay?csD(lay).flexDirection:"-"));
+  log("   Ringbreite="+(wr?Math.round(wr.getBoundingClientRect().width):"-")+"px"+
+      "   Legende rechts daneben="+(wr&&lgd ? (lgd.getBoundingClientRect().left >= wr.getBoundingClientRect().right - 1) : "-"));
   log("Warnungen im Rahmen: "+W.length+(W.length?("  erste: "+W[0].slice(0,70)):""));
   log("FERTIG");
 }).catch(function(e){ log("ABBRUCH: "+e.message+"\n"+(e.stack||"").split("\n").slice(0,3).join("\n")); });

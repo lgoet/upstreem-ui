@@ -4586,7 +4586,13 @@
              darum ueber legendPrefix und nicht ueber it.logo, das eine URL erwartet. */
           legendPrefix: function(it){ return it.alpha2 ? UC.flagHtml(it.alpha2) : ""; },
           ringPx: 12,          /* 10 Prozent duenner als der erste Anlauf (14) -- so gemeldet */
-          collapseAt: 240      /* die Karte ist schmal; erst darunter untereinander */
+          /* NIE umklappen. GEMESSEN auf der Seite des Nutzers: mit 240 klappte die Karte um --
+             ihr Koerper ist schmaler als das --, und im umgeklappten Modus wird der Ring 220px
+             gross und die Legende wandert UNTER ihn. Genau das war die Meldung "das Chart ist viel
+             zu gross und die Legende rechts fehlt". Hier ist Ring links und Legende rechts
+             ausdruecklich gewuenscht, in jeder Breite: der Ring nimmt 37 Prozent, die Legende den
+             Rest, das traegt auch bei 190px Kartenbreite. */
+          collapseAt: 0
         });
       }
       if (!liste.length){ kpiRing.skeleton(); return; }
