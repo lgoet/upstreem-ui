@@ -456,6 +456,18 @@
 
     /* ── Zustaende ─────────────────────────────────────────────────────────────────────────── */
     "Active": "Aktiv",
+    /* Die drei Kennzahlen-Karten ueber der Prompts-Tabelle (03.09.). */
+    "Distribution by topic": "Verteilung nach Topics",
+    "Distribution by market": "Verteilung nach Märkten",
+    "Prompt allowance": "Prompt-Kontingent",
+    "{n} topics": "{n} Topics",
+    "{n} markets": "{n} Märkte",
+    "+{n} more": "+{n} weitere",
+    "{n} without topic": "{n} ohne Topic",
+    "{n} used": "{n} genutzt",
+    "{n} left": "{n} frei",
+    "Plan {name}": "Plan {name}",
+    "The allowance could not be read.": "Das Kontingent konnte nicht gelesen werden.",
     "Inactive": "Inaktiv",
     "(Inactive)": "(Inaktiv)",
     "In Progress": "In Arbeit",
@@ -10071,11 +10083,27 @@
 
   /* ---------- doughnut + bars ---------- */
   var RING_PX = 12, SEG_GAP = 6, CORNER = 4, HOVER = 12;
+  /* ---- Blau-Abstufungen fuer Maerkte ------------------------------------------------------
+     Unser Blau ist #3b82f6 -- derselbe Ton wie die "You"-Marke in team-orga, und laut dem
+     Kommentar dort traegt er auf hellem UND dunklem Grund. Diese Skala ist seine eigene Leiter,
+     aber NICHT in Reihenfolge: stark, hell, dunkel, mittel. Nebeneinanderliegende Segmente eines
+     Rings muessen sich unterscheiden lassen, und eine gleichmaessige Leiter von hell nach dunkel
+     tut das an den Enden gerade nicht.
+     Reihenfolge der Vergabe: nach Anzahl absteigend, damit der groesste Markt den staerksten Ton
+     bekommt. */
+  var MARKT_FARBEN = ["#3b82f6", "#93c5fd", "#1d4ed8", "#60a5fa",
+                      "#1e3a8a", "#bfdbfe", "#2563eb", "#7ea8f8"];
+  function marktFarbe(i){ return MARKT_FARBEN[i % MARKT_FARBEN.length]; }
+
   var ringWidthPlugin = {
     id: "upRingWidth",
     beforeDatasetDraw: function(chart, args){
+      /* Die Ringbreite kann je Chart abweichen: die kleinen Kennzahlen-Karten brauchen einen
+         duenneren Ring als die grossen Charts. Steht nichts in den Optionen, gilt RING_PX wie
+         bisher -- kein bestehender Aufrufer aendert sich damit. */
+      var px = (chart.options && chart.options.upRingPx) || RING_PX;
       var meta = chart.getDatasetMeta(args.index);
-      meta.data.forEach(function(arc){ arc.innerRadius = Math.max(1, arc.outerRadius - RING_PX); });
+      meta.data.forEach(function(arc){ arc.innerRadius = Math.max(1, arc.outerRadius - px); });
     }
   };
   /* Chart.js spaces slices proportionally, so a 1% slice gets a hairline gap and a 40% slice a
@@ -10350,6 +10378,8 @@
             /* resizeDelay: derselbe Grund wie beim Linienchart -- ohne ihn zeichnet Chart.js
                waehrend des Ziehens bei jeder Bildaenderung neu. */
             options: { responsive: true, maintainAspectRatio: false, resizeDelay: 120, layout: { padding: 8 },
+              /* Eigener Schluessel fuer ringWidthPlugin -- Chart.js laesst fremde Optionen durch. */
+              upRingPx: cfg.ringPx || null,
               animation: { duration: 200, easing: "easeOutQuad" },
               plugins: { legend: { display:false }, tooltip: { enabled:false, external: donutTooltip } },
               onClick: (clickable && !allZero) ? function(evt, elements){
@@ -13266,6 +13296,8 @@
     makeMount: makeMount,
     makeLate: makeLate,
     istSichtbar: istSichtbar,
+    MARKT_FARBEN: MARKT_FARBEN,
+    marktFarbe: marktFarbe,
     makeBarList: makeBarList,
     rowDwell: rowDwell,
     makePager: makePager,

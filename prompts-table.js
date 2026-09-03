@@ -4412,8 +4412,230 @@
          einen Aufruf aus Bubble. */
       if (toolGroup) toolGroup.sync();
       if (root.classList.contains("up-sticky")) syncTheadOffset();
+      /* Die Themen-Fusszeile haengt an state.totalCount, das erst mit den Zeilen kommt. */
+      kpiTopicsFuss();
     }
 
+
+    /* ══ DREI KENNZAHLEN-KARTEN UEBER DER TABELLE ═════════════════════════════════════════════
+       Gebaut HIER und nicht in bubble/prompts_table_bubble.html: die Vorlage ist die Vorlage fuer
+       eine NEUinstallation, ein bereits eingebautes Element bekaeme neues Markup nie. Dasselbe
+       Muster wie die Seitenleiste in ask-mira.
+
+       Die Daten kommen komplett aus den bestehenden Ablagen -- kein neuer Setter fuer Themen oder
+       Maerkte noetig. UC.getTopics()/UC.getMarkets() liefern die Zeilen unveraendert, wie Bubble
+       sie geschickt hat, mit prompt_count. Nur das Kontingent war neu (UC.getQuota, siehe core).
+
+       Die Charts sind die vorhandenen Bauteile: UC.makeBarList fuer die Balken (es hat schon den
+       Modus "Beschriftung links, Balken rechts") und UC.makeTypeChart fuer den Ring. Nachgebaut
+       wird nichts, nur andere Masse -- die stehen in prompts-table.css. */
+    var kpiZeile = null, kpiBars = null, kpiRing = null, kpiAb = [];
+    function kpiBauen(){
+      if (kpiZeile || !elHead || !elHead.parentNode) return;
+      kpiZeile = document.createElement("div");
+      kpiZeile.className = "upt-kpis";
+      kpiZeile.innerHTML =
+        karteHtml("upt-kpi-topics", UC.t("Distribution by topic")) +
+        karteHtml("upt-kpi-markets", UC.t("Distribution by market")) +
+        karteHtml("upt-kpi-quota",   UC.t("Prompt allowance"));
+      elHead.parentNode.insertBefore(kpiZeile, elHead);
+      /* Die Ablagen benachrichtigen, wenn sich etwas aendert. owner ist die Wurzel: Bubble wirft
+         diese Wurzeln staendig weg und baut sie neu, und ohne owner waechst die Abonnentenliste
+         mit jedem Neuaufbau um einen toten Eintrag (siehe onTopics in core). */
+      if (UC.onTopics)  kpiAb.push(UC.onTopics(kpiTopics, root));
+      if (UC.onMarkets) kpiAb.push(UC.onMarkets(kpiMarkets, root));
+      if (UC.onQuota)   kpiAb.push(UC.onQuota(kpiQuota, root));
+      kpiTopics(UC.getTopics ? UC.getTopics() : []);
+      kpiMarkets(UC.getMarkets ? UC.getMarkets() : []);
+      kpiQuota(UC.getQuota ? UC.getQuota() : null);
+    }
+    function karteHtml(kl, titel){
+      return '<div class="upt-kpi ' + kl + '">' +
+        '<div class="upt-kpi-head"><span class="upt-kpi-title">' + esc(titel) + '</span>' +
+        '<span class="upt-kpi-note"></span></div>' +
+        '<div class="upt-kpi-body"></div>' +
+        '<div class="upt-kpi-foot"><span class="upt-kpi-foot-left"></span>' +
+        '<span class="upt-kpi-foot-right"></span></div></div>';
+    }
+    function kpiTeil(kl, teil){
+      return kpiZeile ? kpiZeile.querySelector("." + kl + " .upt-kpi-" + teil) : null;
+    }
+    /* Wie viele Zeilen in eine Karte passen: 280px minus Kopf, Fuss und Polster, geteilt durch
+       die Zeilenhoehe aus der CSS (16px Balken + 2x3px Polster = 22). Gerechnet und nicht
+       geraten, damit eine Aenderung der Kartenhoehe hier nicht stillschweigend abschneidet. */
+    var KPI_ZEILE_PX = 22;
+    function kpiPlatz(){
+      var koerper = kpiTeil("upt-kpi-topics", "body");
+      if (!koerper) return 6;
+      var h = koerper.clientHeight;
+      return Math.max(3, Math.min(9, Math.floor((h || 176) / KPI_ZEILE_PX)));
+    }
+
+    function kpiTopics(rows){
+      var koerper = kpiTeil("upt-kpi-topics", "body");
+      if (!koerper) return;
+      var liste = Array.isArray(rows) ? rows.filter(Boolean) : [];
+      /* toNum und nicht Number: ein fehlender Zaehler ist null, nicht NaN -- sonst sortiert NaN
+         die Liste durcheinander und "NaN" stuende in der Karte. */
+      var mitZahl = liste.map(function(t){
+        return { key: String(t.id == null ? (t.name || "") : t.id),
+                 name: String(t.name == null ? "" : t.name),
+                 color: t.hex_light || t.hex_dark || "#3b82f6",
+                 share: toNum(t.prompt_count) };
+      }).filter(function(x){ return x.share != null && x.share > 0; });
+      mitZahl.sort(function(a, b){ return b.share - a.share || a.name.localeCompare(b.name); });
+
+      var note = kpiTeil("upt-kpi-topics", "note");
+      if (note) note.textContent = liste.length
+        ? UC.t("{n} topics").replace("{n}", UC.fmtTotal(liste.length)) : "";
+
+      if (!kpiBars){
+        kpiBars = UC.makeBarList({
+          mount: koerper,
+          isDark: function(){ return isDark; },
+          labelCol: function(){ return true; },       /* Beschriftung links, Balken rechts */
+          fmt: function(v){ return UC.fmtTotal(toNum(v) || 0); }   /* ganze Zahl, kein Prozent */
+        });
+      }
+      if (!liste.length){
+        /* Noch nichts da: das Skelett DER BALKENLISTE, nicht ein eigenes. Ein LEERER
+           Themenspeicher heisst "noch nicht geladen", nicht "keine Themen" --
+           setUpstreemTopics kommt beim Seitenaufbau, oft nach uns. */
+        kpiBars.skeleton(5);
+        kpiFuss("upt-kpi-topics", "", "");
+        return;
+      }
+      var platz = kpiPlatz();
+      kpiLetzteTopics = mitZahl;
+      /* Den TATSAECHLICH benutzten Platz merken und nicht in der Fusszeile neu rechnen: die
+         Kartenhoehe kann sich zwischen Zeichnen und Fusszeile geaendert haben (schmale Ansicht),
+         und dann stand "+2 weitere" unter sieben von acht gezeigten Balken. So gemessen. */
+      kpiLetztePlatz = platz;
+      kpiBars.render(mitZahl.slice(0, platz));
+      kpiTopicsFuss();
+
+    }
+    /* Die Fusszeile GETRENNT, weil sie an einer Zahl haengt, die spaeter kommt als die Themen:
+       state.totalCount steht erst, wenn Bubble die Zeilen geschickt hat, und die Themen sind
+       meist vorher da. render() zieht sie deshalb nach -- ohne die Balken neu zu bauen, denn die
+       haengen nur an den Themen. Genau so gemessen: die Zeile blieb leer, obwohl zehn Prompts
+       kein Thema hatten. */
+    var kpiLetzteTopics = null, kpiLetztePlatz = 0;
+    function kpiTopicsFuss(){
+      if (!kpiLetzteTopics) return;
+      var rest = kpiLetzteTopics.length - kpiLetztePlatz;
+      var links = rest > 0 ? UC.t("+{n} more").replace("{n}", UC.fmtTotal(rest)) : "";
+      /* Wie viele Prompts kein Thema haben, steht in keinem Speicher: es ist die Gesamtzahl der
+         Prompts minus der Summe aller Themenzaehler. Ohne belegte Gesamtzahl wird die Angabe
+         WEGGELASSEN und nicht geschaetzt -- eine falsche Zahl ist schlimmer als keine. */
+      var summe = 0;
+      for (var i = 0; i < kpiLetzteTopics.length; i++) summe += kpiLetzteTopics[i].share;
+      var gesamt = toNum(state.totalCount);
+      var ohne = (gesamt != null && gesamt >= summe) ? (gesamt - summe) : null;
+      var rechts = ohne != null && ohne > 0
+        ? UC.t("{n} without topic").replace("{n}", UC.fmtTotal(ohne)) : "";
+      kpiFuss("upt-kpi-topics", links, rechts);
+    }
+
+    function kpiMarkets(rows){
+      var koerper = kpiTeil("upt-kpi-markets", "body");
+      if (!koerper) return;
+      var liste = Array.isArray(rows) ? rows.filter(Boolean) : [];
+      var mitZahl = liste.map(function(m){
+        return { key: String(m.id == null ? (m.code || m.name || "") : m.id),
+                 name: String(m.name == null ? (m.code || "") : m.name),
+                 anzahl: toNum(m.prompt_count) };
+      }).filter(function(x){ return x.anzahl != null && x.anzahl > 0; });
+      mitZahl.sort(function(a, b){ return b.anzahl - a.anzahl || a.name.localeCompare(b.name); });
+      /* renderDonut nimmt "share" fuer den Ring UND fuer die Legende (dort durch fmtPct), es muss
+         also der PROZENTWERT sein und nicht die Anzahl -- sonst stuende "29 %" fuer 29 Prompts in
+         der Legende. Genauigkeit 0, wie fuer jeden Doughnut der App festgelegt (CLAUDE.md §2b). */
+      var summeM = 0;
+      for (var mi = 0; mi < mitZahl.length; mi++) summeM += mitZahl[mi].anzahl;
+      mitZahl.forEach(function(x){ x.share = summeM > 0 ? (x.anzahl / summeM) * 100 : 0; });
+      /* Farbe NACH der Sortierung: der groesste Markt bekommt den staerksten Ton. */
+      mitZahl.forEach(function(x, i){ x.color = UC.marktFarbe(i); });
+
+      var note = kpiTeil("upt-kpi-markets", "note");
+      if (note) note.textContent = liste.length
+        ? UC.t("{n} markets").replace("{n}", UC.fmtTotal(liste.length)) : "";
+
+      if (!kpiRing){
+        kpiRing = UC.makeTypeChart({
+          body: koerper,
+          isDark: function(){ return isDark; },
+          mode: "donut",
+          /* Ohne Zaehler in der Mitte -- die CSS blendet .up-donut-center aus, total() muss aber
+             etwas liefern, weil makeTypeChart es ruft. */
+          total: function(){ return 0; },
+          decimals: 0,
+          ringPx: 14,          /* duenner als die Vorgabe der grossen Charts */
+          collapseAt: 240      /* die Karte ist schmal; erst darunter untereinander */
+        });
+      }
+      if (!liste.length){ kpiRing.skeleton(); return; }
+      kpiRing.renderDonut(mitZahl);
+    }
+
+    function kpiQuota(q){
+      var koerper = kpiTeil("upt-kpi-quota", "body");
+      var karte = kpiZeile ? kpiZeile.querySelector(".upt-kpi-quota") : null;
+      if (!koerper || !karte) return;
+      var note = kpiTeil("upt-kpi-quota", "note");
+      /* toNum, nicht Number: parseLoose macht aus einem leeren Bubble-Wert null, und "null / 150"
+         darf hier nicht stehen (siehe der Kommentar an setQuota in core). */
+      var genutzt = q ? toNum(q.used) : null;
+      var kontingent = q ? toNum(q.total) : null;
+
+      if (note) note.textContent = (q && q.plan)
+        ? UC.t("Plan {name}").replace("{name}", String(q.plan)) : "";
+
+      /* Reihenfolge nach §2: Fehlerzustand VOR dem Skelett. Ein Payload, der da war, aber keine
+         Zahlen trug, ist etwas anderes als "noch nichts da" -- sonst sieht endloses Laden aus wie
+         "gleich da". */
+      if (q && (genutzt == null || kontingent == null || kontingent <= 0)){
+        koerper.innerHTML = '<div class="up-chart-empty">' +
+          esc(UC.t("The allowance could not be read.")) + '</div>';
+        kpiFuss("upt-kpi-quota", "", "");
+        karte.classList.remove("is-over");
+        return;
+      }
+      if (!q){
+        koerper.innerHTML = '<div class="up-bars-sk"><div class="up-bar-sk-row"></div>' +
+                            '<div class="up-bar-sk-row"></div></div>';
+        kpiFuss("upt-kpi-quota", "", "");
+        return;
+      }
+      var anteil = Math.max(0, Math.min(100, (genutzt / kontingent) * 100));
+      koerper.innerHTML =
+        '<div class="upt-kpi-quota-num">' +
+          '<span class="upt-kpi-quota-used">' + esc(UC.fmtTotal(genutzt)) + '</span>' +
+          '<span class="upt-kpi-quota-total">/ ' + esc(UC.fmtTotal(kontingent)) + '</span>' +
+        '</div>' +
+        '<div class="upt-kpi-quota-bar"><div class="upt-kpi-quota-fill"></div></div>';
+      karte.classList.toggle("is-over", genutzt > kontingent);
+      /* Die Breite im naechsten Bild, damit die Fahrt sichtbar ist -- ein Wert, der zugleich mit
+         dem Element kommt, springt ohne Uebergang. BEIDE Wege, nicht nur rAF: in einem verdeckten
+         Tab feuert rAF nie, und dann stuende der Balken fuer immer auf 0. Im Harness genau so
+         gemessen (leere Breite). Der zweite Anlauf setzt denselben Wert, das kostet nichts. */
+      var fill = koerper.querySelector(".upt-kpi-quota-fill");
+      if (fill){
+        var setzeBreite = function(){ fill.style.width = anteil + "%"; };
+        if (window.requestAnimationFrame) window.requestAnimationFrame(setzeBreite);
+        setTimeout(setzeBreite, 24);
+      }
+      kpiFuss("upt-kpi-quota",
+        UC.t("{n} used").replace("{n}", Math.round(anteil) + " %"),
+        UC.t("{n} left").replace("{n}", UC.fmtTotal(Math.max(0, kontingent - genutzt))));
+    }
+
+    function kpiFuss(kl, links, rechts){
+      var l = kpiZeile ? kpiZeile.querySelector("." + kl + " .upt-kpi-foot-left") : null;
+      var r = kpiZeile ? kpiZeile.querySelector("." + kl + " .upt-kpi-foot-right") : null;
+      if (l) l.textContent = links || "";
+      if (r) r.textContent = rechts || "";
+    }
+    kpiBauen();
 
     if (state.query){ elSearchIn.value = state.query; elSearch.classList.add("is-open", "has-text"); }
     populateSort(); populateCols(); populateMent(); render();

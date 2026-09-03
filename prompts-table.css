@@ -1077,3 +1077,85 @@
 
 /* Ausloeser und Einklapper stehen jetzt in core.css (.up-tbtrig / .up-tbcol): sechs Komponenten
    benutzen dieselbe Leiste, und die Sichtbarkeitsregeln unterscheiden sich zwischen ihnen nicht. */
+
+/* ══ DREI KENNZAHLEN-KARTEN UEBER DER TABELLE ════════════════════════════════════════════════
+   Sie liegen VOR .up-head, also ueber Ueberschrift, Zaehler und Werkzeugleiste. Gebaut wird die
+   Zeile in prompts-table.js und nicht in der Vorlage: bubble/*.html ist die Vorlage fuer eine
+   NEUinstallation, ein bereits eingebautes Element bekaeme neues Markup nie.
+
+   Die Kartenmasse sind NICHT neu erfunden, sondern die der bestehenden Chart-Karten
+   (topcitations-dashboard.css .tcd-box): 1px Rand in --vc-border, Fuellung --vc-bg, 16px Radius.
+   Nur die Hoehe ist eigen -- 280px statt 430px, weil hier eine Kennzahl steht und kein Chart in
+   voller Groesse. Kopfzeile wie .tcd-head: 32px hoch, Titel 14px/500. */
+.upt-kpis { display: flex; gap: 16px; margin-bottom: 16px; align-items: stretch; }
+.upt-kpi {
+  flex: 1 1 0; min-width: 0; height: 280px; box-sizing: border-box;
+  border: 1px solid var(--vc-border); background: var(--vc-bg); border-radius: 16px;
+  padding: 16px; display: flex; flex-direction: column; overflow: hidden;
+  transition: background 200ms ease;
+}
+.upt-kpi-head { display: flex; align-items: center; height: 32px; flex: 0 0 auto; gap: 8px; }
+.upt-kpi-title {
+  font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.2;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+/* Die Angabe rechts im Kopf ("12 Topics", "Plan Pro") ist eine Angabe ZUR Karte, nicht ihre
+   Aussage -- also die leisere Farbe, dieselbe Ueberlegung wie bei .uto-when in team-orga. */
+.upt-kpi-note { margin-left: auto; flex: 0 0 auto; font-size: 12px; color: var(--vc-muted); white-space: nowrap; }
+.upt-kpi-body { flex: 1 1 auto; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
+.upt-kpi-foot {
+  flex: 0 0 auto; margin-top: 10px; display: flex; align-items: center; gap: 8px;
+  font-size: 11.5px; color: var(--vc-muted);
+}
+.upt-kpi-foot-right { margin-left: auto; }
+
+/* ---- Karte 1: Balkenliste nach Topics ----
+   UC.makeBarList baut die Liste, hier stehen nur die abweichenden Masse. Die Vorgabe in core ist
+   32px Balkenhoehe; hier sind es 16, also gehen ALLE zusammenhaengenden Werte im selben
+   Verhaeltnis mit (§1): Radius 8 -> 4, Innenabstand 10 -> 5, Abstand 8 -> 4, Zeilenpolster 5 -> 3.
+   Die Beschriftungsspalte bleibt bei 148px: sie haengt an der Textlaenge, nicht an der
+   Balkenhoehe -- damit fangen alle Balken auf derselben Breite an, genau wie gewuenscht. */
+.upt-kpi-topics .up-bar-track { height: 16px; border-radius: 4px; }
+.upt-kpi-topics .up-bar-fill { border-radius: 4px; padding: 0 5px; gap: 4px; }
+.upt-kpi-topics .up-bar-row { padding: 3px 0; }
+.upt-kpi-topics .up-bar-labeltxt { font-size: 12.5px; }
+/* Der Zaehler rechts: eigene Spalte mit fester Breite, damit die Zahlen untereinander stehen.
+   tabular-nums, sonst wandern die Ziffern -- dieselbe Regel wie bei .uto-when. */
+.upt-kpi-topics .up-bar-outside { flex: 0 0 auto; margin-left: 10px; min-width: 34px; text-align: right; justify-content: flex-end; }
+.upt-kpi-topics .up-bar-pct-out { font-size: 13px; font-weight: 600; color: var(--vc-text); font-variant-numeric: tabular-nums; }
+.up-root[data-theme="dark"] .upt-kpi-topics .up-bar-pct-out { color: rgba(255,255,255,0.92); }
+
+/* ---- Karte 2: Doughnut nach Maerkten ----
+   Kein Zaehler in der Mitte (ausdruecklich gewuenscht), kleinerer Ring, Chart links und Legende
+   rechts -- letzteres ist die Vorgabe von .up-donut-layout, hier wird nur die Groesse gestellt. */
+.upt-kpi-markets .up-donut-center { display: none; }
+.upt-kpi-markets .up-donut-layout { gap: 16px; justify-content: flex-start; }
+.upt-kpi-markets .up-donut-wrap { width: min(46%, 130px); }
+.upt-kpi-markets .up-donut-legend { gap: 7px; font-size: 12px; }
+.upt-kpi-markets .up-donut-legend-pct { font-variant-numeric: tabular-nums; }
+
+/* ---- Karte 3: Prompt-Kontingent ----
+   Die Zahl ist die Aussage der Karte, deshalb 38px -- deutlich groesser als jede andere Zahl in
+   der Komponente. Der Nenner steht daneben in der leisen Farbe und kleiner: er ist der Rahmen,
+   nicht die Aussage. */
+.upt-kpi-quota-num { display: flex; align-items: baseline; gap: 8px; }
+.upt-kpi-quota-used { font-size: 38px; font-weight: 600; line-height: 1; color: var(--vc-text); font-variant-numeric: tabular-nums; }
+.upt-kpi-quota-total { font-size: 20px; font-weight: 500; line-height: 1; color: var(--vc-muted); font-variant-numeric: tabular-nums; }
+.upt-kpi-quota-bar { margin-top: 16px; height: 8px; border-radius: 4px; background: var(--vc-heading-bg); overflow: hidden; }
+/* Gruen NICHT neu gewaehlt: --vt-up ist derselbe Wert, den die Trend-Chips fuer "besser" nehmen
+   (#2ea84a hell, #60d25d dunkel) -- eine dritte gruene Farbe in der App waere eine zu viel. */
+.upt-kpi-quota-fill { height: 100%; border-radius: 4px; background: var(--vt-up); width: 0;
+  transition: width .5s cubic-bezier(.4,0,.2,1); }
+/* Ueber der Grenze der Warnton, ebenfalls aus dem Trend-Paar. */
+.upt-kpi-quota.is-over .upt-kpi-quota-fill { background: var(--vt-down); }
+
+/* ---- schmal: die drei Karten untereinander ----
+   Unter 900px reicht die Breite fuer drei Karten nicht mehr; die Balkenbeschriftung waere dann
+   breiter als ihr Balken. Die Zeile bricht um, und die Karten werden flacher, weil sie
+   untereinander sonst die halbe Seite fuellen. */
+.up-root.is-narrow .upt-kpis, .up-root.is-vnarrow .upt-kpis { flex-direction: column; }
+/* flex: 0 0 auto ist hier PFLICHT und nicht Geschmack: in einer Spalten-Flexbox gilt flex-basis
+   in der Hoehe, und die 0 aus "flex: 1 1 0" schlaegt jede height-Angabe. Ohne diese Zeile fielen
+   die Karten auf 34px zusammen -- so gemessen, bevor sie hier stand. */
+.up-root.is-narrow .upt-kpi, .up-root.is-vnarrow .upt-kpi { flex: 0 0 auto; height: 232px; }
+.up-root.is-vnarrow .upt-kpi-topics .up-bars.has-labelcol .up-bar-label { flex-basis: 108px; width: 108px; }

@@ -1,0 +1,113 @@
+<meta charset="utf-8"><title>prompts-table: die drei Kennzahlen-Karten</title>
+<style>html,body{margin:0;font:13px/1.5 system-ui,sans-serif}
+#out{font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap;padding:10px;background:#f6f6f6}</style>
+<body><iframe id="rahmen" style="width:1280px;height:900px;border:0"></iframe><pre id="out">laeuft…</pre>
+<script>
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+var DUNKEL=(new URLSearchParams(location.search)).get("dunkel")==="1";
+var SCHMAL=(new URLSearchParams(location.search)).get("schmal")==="1";
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var D=null, W=[];
+Promise.all([hol("core.css"),hol("prompts-table.css"),hol("core.js"),hol("prompts-table.js"),
+             hol("bubble/prompts_table_bubble.html")]).then(function(t){
+  var d=document.getElementById("rahmen").contentDocument; D=d;
+  d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0'></body></html>"); d.close();
+  try { d.defaultView.localStorage.setItem("upt_grouped__tb","no"); } catch(e){}
+  /* pref_theme im Speicher SCHLAEGT data-isdark -- ohne das Loeschen lief der Harness dunkel,
+     obwohl er hell messen sollte. Erst loeschen, dann bei Bedarf ausdruecklich dunkel setzen. */
+  try { d.defaultView.localStorage.removeItem("up_prefs"); d.defaultView.localStorage.removeItem("pref_theme"); } catch(e){}
+  if (DUNKEL){ try { d.defaultView.localStorage.setItem("up_prefs", JSON.stringify({theme:"dark"})); } catch(e){} }
+  if ((new URLSearchParams(location.search)).get("de")==="1"){
+    try { d.defaultView.localStorage.setItem("up_prefs", JSON.stringify({locale:"de"})); } catch(e){}
+  }
+  var aw=d.defaultView.console.warn; d.defaultView.console.warn=function(){ W.push([].join.call(arguments," ")); return aw.apply(this,arguments); };
+  [t[0],t[1]].forEach(function(c){ var s=d.createElement("style"); s.textContent=c; d.head.appendChild(s); });
+  var s2=d.createElement("style"); s2.textContent="*,*::before,*::after{transition:none!important;animation:none!important}";
+  d.head.appendChild(s2);
+  var w=d.createElement("div"); w.innerHTML=wurzelAus(t[4]);
+  var r=w.querySelector(".upt-root");
+  r.setAttribute("data-instance","tb"); r.setAttribute("data-cdn-pin","tb");
+  r.setAttribute("data-isdark", DUNKEL?"yes":"no");
+  d.body.appendChild(r);
+  /* Chart.js, sonst kann der Doughnut nicht zeichnen */
+  var cj=d.createElement("script"); cj.src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js";
+  d.head.appendChild(cj);
+  var j=d.createElement("script"); j.textContent=t[2]; d.head.appendChild(j);
+  var j2=d.createElement("script"); j2.textContent=t[3]; d.head.appendChild(j2);
+  return new Promise(function(ok){ setTimeout(ok,2200); });
+}).then(function(){
+  var d=D, v=d.defaultView;
+  if (SCHMAL) d.querySelector(".upt-root").classList.add("is-vnarrow");
+  /* PHASE 1: die Zeile muss da sein, VOR .up-head, drei Karten, Skelette */
+  var zeile=d.querySelector(".upt-kpis"), head=d.querySelector(".up-head");
+  log("PHASE 1 Aufbau");
+  log("   Zeile da: "+!!zeile+"   drei Karten: "+(zeile?zeile.children.length:0));
+  log("   liegt VOR .up-head: "+(!!zeile && !!head && zeile.nextElementSibling===head));
+  log("   Skelett Topics: "+d.querySelectorAll(".upt-kpi-topics .up-bars-sk").length+
+      "   Skelett Ring: "+d.querySelectorAll(".upt-kpi-markets .up-chart-sk, .upt-kpi-markets .up-donut-sk").length);
+  /* PHASE 2: Daten schicken */
+  v.setUpstreemTopics([
+    {id:"1",name:"SUV",hex_light:"#3b9bf6",prompt_count:29},
+    {id:"2",name:"EV",hex_light:"#2fd0c0",prompt_count:14},
+    {id:"3",name:"Station Wagon",hex_light:"#dcd06a",prompt_count:12},
+    {id:"4",name:"Familycar",hex_light:"#cf9ad6",prompt_count:11},
+    {id:"5",name:"Sedans",hex_light:"#ef7f72",prompt_count:10},
+    {id:"6",name:"Luxury",hex_light:"#8f97d6",prompt_count:8},
+    {id:"7",name:"Vans",hex_light:"#7fd6a1",prompt_count:5},
+    {id:"8",name:"Coupe",hex_light:"#d6b07f",prompt_count:3}]);
+  v.setUpstreemMarkets([
+    {id:"de",name:"Germany",prompt_count:40},{id:"us",name:"United States",prompt_count:25},
+    {id:"fr",name:"France",prompt_count:18},{id:"uk",name:"United Kingdom",prompt_count:12}]);
+  v.setUpstreemQuota({used:102,total:150,plan:"Pro"});
+  v.renderPromptsTable(JSON.stringify({instanceId:"tb",view_active:"yes",totalCount:102,
+    rows:[{id:"1",prompt_id:"1",prompt_text:"Frage",status:"active"}]}));
+  return new Promise(function(ok){ setTimeout(ok,1400); });
+}).then(function(){
+  var d=D, v=d.defaultView, cs=v.getComputedStyle;
+  log("PHASE 2 mit Daten");
+  var reihen=d.querySelectorAll(".upt-kpi-topics .up-bar-row");
+  log("   Topics: "+reihen.length+" Balken   Notiz=\""+(d.querySelector(".upt-kpi-topics .upt-kpi-note")||{}).textContent+"\"");
+  if (reihen.length){
+    var spur=cs(reihen[0].querySelector(".up-bar-track"));
+    var fill=reihen[0].querySelector(".up-bar-fill");
+    var lbl=cs(reihen[0].querySelector(".up-bar-label"));
+    log("   Balkenhoehe="+spur.height+"   Radius="+spur.borderTopLeftRadius+
+        "   Labelspalte="+lbl.width+"   erste Fuellung="+cs(fill).backgroundColor);
+    log("   erster Name=\""+reihen[0].querySelector(".up-bar-labeltxt").textContent+"\""+
+        "   Zahl rechts=\""+reihen[0].querySelector(".up-bar-pct-out").textContent+"\"");
+  }
+  log("   Fuss links=\""+(d.querySelector(".upt-kpi-topics .upt-kpi-foot-left")||{}).textContent+
+      "\"  rechts=\""+(d.querySelector(".upt-kpi-topics .upt-kpi-foot-right")||{}).textContent+"\"");
+  var leg=d.querySelectorAll(".upt-kpi-markets .up-donut-legend-row");
+  log("   Maerkte: Legendenzeilen="+leg.length+
+      "   Mitte sichtbar="+(d.querySelector(".upt-kpi-markets .up-donut-center") ?
+        cs(d.querySelector(".upt-kpi-markets .up-donut-center")).display : "(kein Element)"));
+  if (leg.length) log("   erste Legende: \""+leg[0].querySelector(".up-donut-legend-name").textContent+
+      "\"  "+leg[0].querySelector(".up-donut-legend-pct").textContent+
+      "  Chip="+cs(leg[0].querySelector(".up-donut-legend-chip")).backgroundColor);
+  var q=d.querySelector(".upt-kpi-quota");
+  log("   Kontingent: \""+(q.querySelector(".upt-kpi-quota-used")||{}).textContent+"\" / \""+
+      (q.querySelector(".upt-kpi-quota-total")||{}).textContent+"\"   Notiz=\""+
+      q.querySelector(".upt-kpi-note").textContent+"\"");
+  log("   Balken Breite="+(q.querySelector(".upt-kpi-quota-fill")?q.querySelector(".upt-kpi-quota-fill").style.width:"-")+
+      "   Farbe="+(q.querySelector(".upt-kpi-quota-fill")?cs(q.querySelector(".upt-kpi-quota-fill")).backgroundColor:"-"));
+  log("   Fuss=\""+q.querySelector(".upt-kpi-foot-left").textContent+"\"  \""+
+      q.querySelector(".upt-kpi-foot-right").textContent+"\"");
+  log("   Kartenhoehe="+cs(d.querySelector(".upt-kpi")).height+"   Hintergrund="+cs(d.querySelector(".upt-kpi")).backgroundColor);
+  /* PHASE 3: kaputtes Kontingent */
+  v.setUpstreemQuota('{"used": , "total": 150}');
+  return new Promise(function(ok){ setTimeout(ok,700); });
+}).then(function(){
+  var d=D;
+  var t=(d.querySelector(".upt-kpi-quota .up-chart-empty")||{}).textContent;
+  log("PHASE 3 Kontingent mit leerem Zahlenwert  ==> \""+(t||"(kein Fehlertext)")+"\"   "+
+      (t?"RICHTIG":"FALSCH"));
+  log("SPRACHE locale="+d.documentElement.getAttribute("data-up-locale")+
+      "   Titel 1=\""+(d.querySelector(".upt-kpi-topics .upt-kpi-title")||{}).textContent+
+      "\"   Titel 3=\""+(d.querySelector(".upt-kpi-quota .upt-kpi-title")||{}).textContent+"\"");
+  log("Warnungen im Rahmen: "+W.length+(W.length?("  erste: "+W[0].slice(0,70)):""));
+  log("FERTIG");
+}).catch(function(e){ log("ABBRUCH: "+e.message+"\n"+(e.stack||"").split("\n").slice(0,3).join("\n")); });
+</script>
