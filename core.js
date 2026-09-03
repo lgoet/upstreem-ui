@@ -9420,7 +9420,16 @@
               (spalte ? '' : '<span class="up-bar-name-out" style="color:' + ausFarbe + '">' + esc(it.name) + '</span>') +
               '<span class="up-bar-pct-out" style="color:' + ausPct + '">' + esc(fmt(it.share)) + '</span>' +
             '</span>' +
-          '</div></div>';
+          '</div>' +
+          /* cfg.pctCol: der Wert bekommt eine EIGENE dritte Spalte hinter der Balkenspur, statt
+             in ihr zu liegen. .up-bar-outside sitzt absolut IN der Spur (position: absolute,
+             left: 0) -- 16px hinter dem Balkenende heisst dort "im grauen Bereich der Spur" und
+             nicht "rechts neben dem Chart". Fuer eine Liste mit rechts ausgerichteten Zahlen ist
+             die Spalte das Richtige: die Spur endet vor ihr, und alle Zahlen stehen untereinander.
+             Der Wert ist die Breite in px. */
+          (cfg.pctCol ? '<span class="up-bar-pctcol" style="flex:0 0 ' + cfg.pctCol + 'px;width:' +
+                        cfg.pctCol + 'px">' + esc(fmt(it.share)) + '</span>' : '') +
+          '</div>';
       }).join("") + '</div>';
       mount.innerHTML = html;
 
@@ -9438,6 +9447,13 @@
             aus  = row.querySelector(".up-bar-outside");
         if (!fill || !aus) return;
         var breit = fill.offsetWidth, noetig = m.nameW + m.pctW + 12 + 20;
+        /* Mit eigener Spalte gibt es innen und aussen nicht mehr: beide bleiben unsichtbar, der
+           Wert steht in .up-bar-pctcol. */
+        if (cfg.pctCol){
+          if (name) name.style.opacity = "0";
+          pin.style.opacity = "0"; aus.style.opacity = "0";
+          return;
+        }
         /* cfg.pctOutside: der Wert steht IMMER daneben, egal wie breit der Balken ist. Ohne das
            entscheidet die Rechnung darunter je Zeile neu, und dann steht dieselbe Spalte in einer
            Zeile drin und in der naechsten daneben -- fuer eine Liste mit rechts ausgerichteten

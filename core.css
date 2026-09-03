@@ -2132,6 +2132,10 @@
   display: block; background: var(--vt-logo-bg); }
 .up-bar-name-out { font-size: 11px; font-weight: 600; }
 .up-bar-pct-out { font-size: 11px; font-weight: 600; }
+/* Die eigene Wertspalte (cfg.pctCol). Rechts ausgerichtet und mit tabellarischen Ziffern, damit
+   die Zahlen untereinander stehen -- eine Zahlenspalte, die wandert, liest sich als Fehler. */
+.up-bar-pctcol { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap;
+  color: var(--vc-text); font-size: 13px; font-weight: 600; }
 
 /* ---------- doughnut skeleton ----------
    Sized to match .up-donut-wrap/.up-donut-layout exactly (200px cap, 220px once collapsed) —

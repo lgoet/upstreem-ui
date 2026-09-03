@@ -65,6 +65,7 @@ Promise.all([hol("core.css"),hol(ALT?"_h_kpi_alt_css.css":"prompts-table.css"),h
     {id:"uk",alpha2:"GB",name:"United Kingdom",prompt_count:12}]);
   v.setUpstreemQuota({used:102,total:150,plan:"Pro"});
   v.renderPromptsTable(JSON.stringify({instanceId:"tb",view_active:"yes",totalCount:102,
+    without_topic:23,
     rows:[{id:"1",prompt_id:"1",prompt_text:"Frage",status:"active"}]}));
   return new Promise(function(ok){ setTimeout(ok,1400); });
 }).then(function(){
@@ -99,14 +100,21 @@ Promise.all([hol("core.css"),hol(ALT?"_h_kpi_alt_css.css":"prompts-table.css"),h
   }
   var wrap=d.querySelector(".upt-kpi-markets .up-donut-wrap");
   log("   Ringflaeche="+(wrap?Math.round(wrap.getBoundingClientRect().width):"-")+"px");
-  /* Zaehler MUSS aussen stehen, mit 16px Abstand */
+  /* Der Zaehler MUSS in einer eigenen Spalte RECHTS der Balkenspur stehen */
   if (reihen.length){
-    var pin=reihen[0].querySelector(".up-bar-pct-in"), aus=reihen[0].querySelector(".up-bar-outside");
-    var fillB=Math.round(reihen[0].querySelector(".up-bar-fill").getBoundingClientRect().width);
-    log("   Zaehler innen opacity="+pin.style.opacity+"   aussen opacity="+aus.style.opacity+
-        "   aussen left="+aus.style.left+"   Balkenbreite="+fillB+
-        "   ==> Abstand="+(parseInt(aus.style.left,10)-fillB)+"px");
+    var sp=reihen[0].querySelector(".up-bar-pctcol");
+    var spur=reihen[0].querySelector(".up-bar-track");
+    log("   Wertspalte da: "+!!sp+
+        (sp ? ("   Text=\""+sp.textContent+"\"   Breite="+cs(sp).width+
+               "   Abstand zur Spur="+Math.round(sp.getBoundingClientRect().left-spur.getBoundingClientRect().right)+"px"+
+               "   rechts von der Spur="+(sp.getBoundingClientRect().left>=spur.getBoundingClientRect().right-1)) : ""));
+    log("   innen/aussen unsichtbar: "+reihen[0].querySelector(".up-bar-pct-in").style.opacity+
+        " / "+reihen[0].querySelector(".up-bar-outside").style.opacity);
   }
+  var koerp=d.querySelector(".upt-kpi-topics .upt-kpi-body");
+  log("   Koerper-Abstand oben/unten="+cs(koerp).marginTop+" / "+cs(koerp).marginBottom);
+  var lg2=d.querySelector(".upt-kpi-markets .up-donut-legend-pct");
+  if (lg2) log("   Legende: Abstand vor dem Prozentwert="+cs(lg2).marginLeft);
   var kpis=d.querySelector(".upt-kpis");
   var karte1=d.querySelector(".upt-kpi");
   var titel=d.querySelector(".upt-kpi-title");

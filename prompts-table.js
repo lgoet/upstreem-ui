@@ -604,6 +604,7 @@
          instead of restarting it -- see persist()'s own note for why that matters. */
       rows: Array.isArray(saved.rows) ? saved.rows : [],
       totalCount: saved.totalCount != null ? saved.totalCount : null,
+      ohneTopic: saved.ohneTopic != null ? saved.ohneTopic : null,
       hasData: !!saved.hasData,
       /* "the automatic All-Prompts fetch has already gone out once" — see
          ensureFlatDataForAllPrompts(). Deliberately NOT derivable from loading/hasData: it has to
@@ -753,7 +754,7 @@
         selected: state.selected, brandMentioned: state.brandMentioned,
         brands: state.brands, mentionSel: state.mentionSel, mentionApplied: state.mentionApplied,
         status: state.status, topics: state.topics,
-        rows: state.rows, totalCount: state.totalCount, hasData: state.hasData,
+        rows: state.rows, totalCount: state.totalCount, ohneTopic: state.ohneTopic, hasData: state.hasData,
         flatAsked: state.flatAsked,
         groups: state.groups, groupsHasData: state.groupsHasData
       };
@@ -4494,10 +4495,12 @@
           mount: koerper,
           isDark: function(){ return isDark; },
           labelCol: function(){ return true; },       /* Beschriftung links, Balken rechts */
-          /* Der Zaehler steht IMMER rechts neben dem Balken, nie darin: sonst entscheidet die
-             Breite je Zeile neu, und dieselbe Spalte stuende in einer Zeile drin und in der
-             naechsten daneben. 16px Abstand zwischen Balkenende und Zahl (so angefordert). */
-          pctOutside: true, pctGap: 16,
+          /* Der Zaehler bekommt eine EIGENE Spalte hinter der Balkenspur. Der erste Anlauf
+             nahm pctOutside -- das setzt den Wert absolut IN die Spur, 16px hinter dem
+             Balkenende, und genau das las der Nutzer als "immer noch im bar selber". Mit der
+             Spalte endet die Spur davor und alle Zahlen stehen untereinander. Die 16px Abstand
+             kommen jetzt aus dem Zeilenabstand in prompts-table.css. */
+          pctCol: 34,
           fmt: function(v){ return UC.fmtTotal(toNum(v) || 0); }   /* ganze Zahl, kein Prozent */
         });
       }
@@ -4534,11 +4537,19 @@
          WEGGELASSEN und nicht geschaetzt -- eine falsche Zahl ist schlimmer als keine. */
       var summe = 0;
       for (var i = 0; i < kpiLetzteTopics.length; i++) summe += kpiLetzteTopics[i].share;
-      /* currentTotal() und nicht state.totalCount roh: es beruecksichtigt den Statusfilter
-         (Active/Inactive) und ist dieselbe Zahl, die im Kopf der Tabelle steht. Ohne belegte
-         Gesamtzahl bleibt die Angabe WEG -- eine falsche Zahl ist schlimmer als keine. */
-      var gesamt = currentTotal();
-      var ohne = (gesamt != null && gesamt >= summe) ? (gesamt - summe) : null;
+      /* Die Zahl der Prompts OHNE Thema kann diese Komponente nicht zuverlaessig rechnen: ein
+         Prompt kann MEHRERE Themen tragen, also ist die Summe aller Themenzaehler regelmaessig
+         GROESSER als die Gesamtzahl der Prompts. Genau daran ist der erste Anlauf gescheitert --
+         die Bedingung "gesamt >= summe" traf nie zu und die Angabe fiel still weg.
+         Deshalb kommt sie jetzt aus der Nutzlast (without_topic in renderPromptsTable). Nur wenn
+         sie fehlt UND die Summe kleiner als die Gesamtzahl ist, wird sie gerechnet -- das ist der
+         Fall, in dem jeder Prompt hoechstens ein Thema hat. Sonst bleibt sie WEG: eine falsche
+         Zahl ist schlimmer als keine. */
+      var ohne = toNum(state.ohneTopic);
+      if (ohne == null){
+        var gesamt = currentTotal();
+        ohne = (gesamt != null && gesamt >= summe) ? (gesamt - summe) : null;
+      }
       var rechts = ohne != null && ohne > 0
         ? UC.t("{n} without topic").replace("{n}", UC.fmtTotal(ohne)) : "";
       kpiFuss("upt-kpi-topics", links, rechts);
@@ -4871,6 +4882,12 @@
         if (params.totalCount != null) state.totalCount = toNum(params.totalCount);
         /* Not in the payload yet — the Inactive tab simply renders without a count until it is. */
         if (params.totalCountInactive != null) state.totalCountInactive = toNum(params.totalCountInactive);
+        /* Prompts OHNE Thema, fuer die Fusszeile der Topics-Karte. Rechnen kann die Komponente das
+           nicht: ein Prompt kann mehrere Themen tragen, damit ist die Summe der Themenzaehler
+           regelmaessig groesser als die Gesamtzahl. Beide Schreibweisen, weil ein Bubble-Feld
+           gern anders heisst als der Schluessel im Kopf des Entwicklers. */
+        var _ot = params.without_topic != null ? params.without_topic : params.withoutTopic;
+        if (_ot != null) state.ohneTopic = toNum(_ot);
         if (params.brands != null){
           var _b = Array.isArray(params.brands) ? params.brands : [];
           if (_b.length) state.brands = _b;   // an empty list is a failed/not-yet-loaded fetch, not "no brands"

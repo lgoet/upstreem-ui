@@ -1091,7 +1091,7 @@
    Bereiche, der zwischen den Karten trennt Geschwister. Zwei Aufgaben, zwei Werte. */
 .upt-kpis { display: flex; gap: 16px; margin-bottom: 32px; align-items: stretch; }
 .upt-kpi {
-  flex: 1 1 0; min-width: 0; height: 280px; box-sizing: border-box;
+  flex: 1 1 0; min-width: 0; height: 256px; box-sizing: border-box;
   border: 1px solid var(--vc-border); background: var(--vc-bg); border-radius: 16px;
   padding: 16px; display: flex; flex-direction: column; overflow: hidden;
   transition: background 200ms ease;
@@ -1109,9 +1109,12 @@
 /* Die Angabe rechts im Kopf ("12 Topics", "Plan Pro") ist eine Angabe ZUR Karte, nicht ihre
    Aussage -- also die leisere Farbe, dieselbe Ueberlegung wie bei .uto-when in team-orga. */
 .upt-kpi-note { margin-left: auto; flex: 0 0 auto; font-size: 12px; color: var(--vc-muted); white-space: nowrap; }
-.upt-kpi-body { flex: 1 1 auto; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
+/* 16px unter der Kopfzeile und 16px vor der Fusszeile -- so angefordert. Beides als Aussenabstand
+   am Koerper und nicht als Polster an der Karte: die Karte hat rundum 16px, und ein zweiter Wert
+   an derselben Kante liesse die drei Karten spaeter auseinanderlaufen. */
+.upt-kpi-body { flex: 1 1 auto; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: center; margin: 16px 0; }
 .upt-kpi-foot {
-  flex: 0 0 auto; margin-top: 10px; display: flex; align-items: center; gap: 8px;
+  flex: 0 0 auto; display: flex; align-items: center; gap: 8px;
   font-size: 11.5px; color: var(--vc-muted);
 }
 .upt-kpi-foot-right { margin-left: auto; }
@@ -1128,9 +1131,9 @@
 .upt-kpi-topics .up-bar-labeltxt { font-size: 12.5px; }
 /* Der Zaehler rechts: eigene Spalte mit fester Breite, damit die Zahlen untereinander stehen.
    tabular-nums, sonst wandern die Ziffern -- dieselbe Regel wie bei .uto-when. */
-.upt-kpi-topics .up-bar-outside { flex: 0 0 auto; margin-left: 10px; min-width: 34px; text-align: right; justify-content: flex-end; }
-.upt-kpi-topics .up-bar-pct-out { font-size: 13px; font-weight: 600; color: var(--vc-text); font-variant-numeric: tabular-nums; }
-.up-root[data-theme="dark"] .upt-kpi-topics .up-bar-pct-out { color: rgba(255,255,255,0.92); }
+/* Die Wertspalte (cfg.pctCol) mit 16px Abstand zur Balkenspur -- so angefordert. */
+.upt-kpi-topics .up-bar-pctcol { margin-left: 16px; }
+.up-root[data-theme="dark"] .upt-kpi-topics .up-bar-pctcol { color: rgba(255,255,255,0.92); }
 
 /* ---- Karte 2: Doughnut nach Maerkten ----
    Kein Zaehler in der Mitte (ausdruecklich gewuenscht), kleinerer Ring, Chart links und Legende
@@ -1145,8 +1148,9 @@
    Seite des Nutzers: der Ring war 220px.
    collapseAt: 0 im JS verhindert das Umklappen bereits; diese Regeln sind das Netz darunter,
    falls die Klasse doch einmal von woanders kommt. */
-.upt-kpi-markets .up-donut-layout .up-donut-wrap { width: min(37%, 104px); }
-.upt-kpi-markets .up-donut-layout.is-collapsed .up-donut-wrap { width: min(37%, 104px); }
+/* 20 Prozent groesser als der zweite Anlauf (37%/104px) -- so gemeldet. Ringbreite bleibt 12. */
+.upt-kpi-markets .up-donut-layout .up-donut-wrap { width: min(44%, 125px); }
+.upt-kpi-markets .up-donut-layout.is-collapsed .up-donut-wrap { width: min(44%, 125px); }
 .upt-kpi-markets .up-donut-layout.is-collapsed { flex-direction: row; gap: 16px; }
 .upt-kpi-markets .up-donut-layout.is-collapsed .up-donut-legend {
   flex-direction: column; flex-wrap: nowrap; justify-content: center; gap: 7px;
@@ -1154,10 +1158,13 @@
 /* Flagge, Alpha-2, Prozentwert. Der Prozentwert rechts, damit die Zahlen untereinander stehen;
    die Namensspalte darf schrumpfen, die Zahl nicht. */
 .upt-kpi-markets .up-donut-legend { gap: 7px; font-size: 12px; flex: 1 1 auto; min-width: 0; }
-.upt-kpi-markets .up-donut-legend-row { display: flex; align-items: center; gap: 7px; min-width: 0; }
+/* gap 0 und die Abstaende einzeln: zwischen Flagge und Kuerzel 7px, zwischen Kuerzel und
+   Prozentwert 64px (so angefordert). Vorher schob margin-left: auto den Wert an die rechte
+   Kante -- bei einer schmalen Karte sah das nach einer riesigen Luecke aus. */
+.upt-kpi-markets .up-donut-legend-row { display: flex; align-items: center; gap: 0; min-width: 0; }
 .upt-kpi-markets .up-donut-legend-name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.upt-kpi-markets .up-donut-legend-pct { margin-left: auto; flex: 0 0 auto; }
-.upt-kpi-markets .up-flag { width: 16px; height: 12px; flex: 0 0 16px; }
+.upt-kpi-markets .up-donut-legend-pct { margin-left: 64px; flex: 0 0 auto; }
+.upt-kpi-markets .up-flag { width: 16px; height: 12px; flex: 0 0 16px; margin-right: 7px; }
 .upt-kpi-markets .up-donut-legend-pct { font-variant-numeric: tabular-nums; }
 
 /* ---- Karte 3: Prompt-Kontingent ----
@@ -1183,5 +1190,5 @@
 /* flex: 0 0 auto ist hier PFLICHT und nicht Geschmack: in einer Spalten-Flexbox gilt flex-basis
    in der Hoehe, und die 0 aus "flex: 1 1 0" schlaegt jede height-Angabe. Ohne diese Zeile fielen
    die Karten auf 34px zusammen -- so gemessen, bevor sie hier stand. */
-.up-root.is-narrow .upt-kpi, .up-root.is-vnarrow .upt-kpi { flex: 0 0 auto; height: 232px; }
+.up-root.is-narrow .upt-kpi, .up-root.is-vnarrow .upt-kpi { flex: 0 0 auto; height: 256px; }
 .up-root.is-vnarrow .upt-kpi-topics .up-bars.has-labelcol .up-bar-label { flex-basis: 108px; width: 108px; }
