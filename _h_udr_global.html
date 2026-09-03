@@ -12,7 +12,7 @@ function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(fun
 function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
 var T=null, ladungen=0;
 function prefs(){ try { return JSON.parse(window.localStorage.getItem("up_prefs")||"{}"); } catch(e){ return {}; } }
-function bauen(prefs, ohneBootFn, ohneBruecke){
+function bauen(prefs, ohneBootFn, ohneBruecke, urlPreset){
   return Promise.all([hol("core.css"),hol("filters/date-range.css"),hol("core.js"),
                       hol("filters/date-range.js"),hol("filters/bubble/date_range_bubble.html")])
   .then(function(t){
@@ -28,8 +28,18 @@ function bauen(prefs, ohneBootFn, ohneBruecke){
     neu.id="rahmen"; neu.setAttribute("style", alt.getAttribute("style"));
     neu.addEventListener("load", function(){ ladungen++; });
     alt.parentNode.replaceChild(neu, alt);
+    /* Mit urlPreset braucht der Rahmen eine ECHTE URL: about:blank hat kein location.search,
+       und genau das liest der Kalender. Also eine leere Datei vom Server, mit Query. */
+    if (urlPreset !== undefined){
+      neu.src = "_h_leer.html" + (urlPreset ? "?up_range=" + urlPreset : "?leer=1");
+      return new Promise(function(ok){
+        neu.addEventListener("load", function(){ ok(bestuecken(neu.contentDocument)); }, { once:true });
+      });
+    }
     var d=neu.contentDocument;
     d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0;padding:8px'></body></html>"); d.close();
+    return bestuecken(d);
+    function bestuecken(d){
     var v=d.defaultView;
     try { if (prefs) v.localStorage.setItem("up_prefs", JSON.stringify(prefs));
           else v.localStorage.removeItem("up_prefs"); } catch(e){}
@@ -90,10 +100,16 @@ function bauen(prefs, ohneBootFn, ohneBruecke){
     var j=d.createElement("script"); j.textContent=t[2]; d.head.appendChild(j);
     var j2=d.createElement("script"); j2.textContent=t[3]; d.head.appendChild(j2);
     return new Promise(function(ok){ setTimeout(function(){ ok(d); },1600); });
+    }
   });
 }
 /* Wie bauen(), nur ohne den Aufbau-Kanal am window -- fuer den Rueckfall-Test. */
 function bauenOhneBootFn(prefs){ return bauen(prefs, true); }
+/* Der Rahmen mit einem ?up_range= in der URL. about:blank nimmt kein replaceState mit Pfad, also
+   bekommt der Rahmen eine echte Datei mit Query -- eine leere Seite aus dem Server. */
+function bauenMitUrl(prefs, preset){
+  return bauen(prefs, false, false, preset).then(function(d){ return { d:d, v:d.defaultView }; });
+}
 /* Wie bauen(), aber die bubble_fn_* kommen erst, wenn bruecke() gerufen wird -- so verhaelt sich
    Bubble beim Seitenaufbau (gemessen auf der echten Seite: bei ms 229 existierte keine einzige). */
 function bauenOhneBruecke(prefs){
@@ -127,13 +143,16 @@ bauen(null).then(function(d){
      nachlaedt. Nur die zwei Datums-States werden gesetzt. */
   log("   Aufbau-Kanal="+v.__ruf.boot+"  Range="+v.__ruf.range+"  Apply="+v.__ruf.apply+
       "   JSON: "+JSON.stringify(v.__letzte));
-  log("   ==> "+(v.__ruf.boot===1&&v.__ruf.range===0&&v.__ruf.apply===0&&
-                 v.__ruf.from===0&&v.__ruf.to===0&&
-                 v.__letzte&&v.__letzte.date_from===isoA(s7a)&&v.__letzte.reason==="boot"
-        ? "RICHTIG (GENAU EIN Bubble-Aufruf: der Aufbau-Kanal)"
-        : "FALSCH -- "+(v.__ruf.range>0?"der Nachlade-Kanal feuert, die Seite laedt doppelt"
-                       :(v.__ruf.boot===0?"kein Zeitraum: die RPCs laufen ohne Datum"
-                                         :"falsches Datum"))));
+  /* Schalter AUS heisst jetzt: KEINE Uebergabe. Die Seite hat ihren eigenen Vorgabe-Zeitraum,
+     der Picker steht nach einem Reload auf derselben Vorgabe -- es gibt nichts zu korrigieren, und
+     jede Uebergabe waere eine Zustandsaenderung, die Bubble seine Abfragen neu bewerten laesst. */
+  var g1=((v.__udrLog||[]).filter(function(e){ return e.art==="aufbau-nicht-noetig"; })[0]||{}).warum;
+  log("   Spur sagt: "+(g1||"(nichts)"));
+  log("   ==> "+(v.__ruf.boot===0&&v.__ruf.range===0&&v.__ruf.from===0&&v.__ruf.to===0&&
+                 /Schalter aus/.test(g1||"")
+        ? "RICHTIG (kein Bubble-Aufruf, weil nichts zu korrigieren ist)"
+        : "FALSCH -- "+(v.__ruf.boot+v.__ruf.range>0?"es wurde uebergeben, obwohl der Schalter aus ist"
+                                                    :"die Spur sagt nicht warum")));
   var mit=IDS.filter(function(id){ return !!schalter(d,id); });
   var ohne=IDS.filter(function(id){ return !schalter(d,id); });
   log("   Schalter DA bei:    "+mit.join(", "));
@@ -345,6 +364,9 @@ bauen(null).then(function(d){
   var uebersprungen=log2.filter(function(e){ return e.art==="ansicht-uebersprungen"; }).length;
   log("   uebersprungene Ansichtswechsel: "+uebersprungen+
       "   ==> "+(uebersprungen===0?"RICHTIG (kein Fehlversuch hat sich als erledigt vermerkt)":"FALSCH"));
+  /* Die URL-Mechanik wird NICHT hier geprueft: der Kalender liest die URL nur im obersten
+     Fenster (window === window.top), und in einem Rahmen-Prueftand ist das nie der Fall. Sie hat
+     einen eigenen Prueftand, der selbst das oberste Fenster ist: _h_udr_url.html. */
   log("FERTIG");
 }).catch(function(e){ log("ABBRUCH: "+e.message+"\n"+(e.stack||"").split("\n").slice(0,3).join("\n")); });
 </script>

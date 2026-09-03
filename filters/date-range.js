@@ -195,6 +195,74 @@
     }
     var TEILBAR = { last7: 1, last30: 1, last3: 1 };
     function syncAn(){ return UC.getPref && UC.getPref("date_sync") === "on"; }
+
+    /* ---- DER ZEITRAUM IN DER URL ------------------------------------------------------------
+       Das Log der echten Seite hat gezeigt, dass diese Datei beim Aufbau genau EINEN Bubble-Aufruf
+       macht, mit genau einem Abnehmer -- und die RPCs trotzdem zweimal laufen. Der zweite kommt
+       nicht von einem zweiten Aufruf, sondern von der ZUSTANDSAENDERUNG: Bubble bewertet eine
+       Abfrage neu, wenn ein State, den sie liest, sich aendert. Und Bubbles
+       JavaScriptToBubble-Bruecke stand im Log erst bei 3503ms, also lange nach dem
+       Page-Load-Workflow. Erster Durchlauf mit dem Vorgabe-Zeitraum, zweiter nach unserer
+       Uebergabe. Das kann kein JavaScript gewinnen: wer erst nach 3,5 Sekunden reden darf, kommt
+       nach der ersten Abfrage.
+
+       Also muss der Zeitraum an einem Ort stehen, den Bubble OHNE JavaScript liest -- in der URL.
+       Ein Parameter, der PRESET heisst und nicht Datum: ein absolutes Datum in der URL ist morgen
+       falsch, ein Lesezeichen von letzter Woche waere eine Zeitreise. "last30" bleibt richtig, und
+       Bubble rechnet daraus zwei Datumsangaben (current date/time minus 29 days).
+
+       Geschrieben wird ohne Reload (replaceState), damit ein Preset-Klick nicht die Seite kostet.
+       Und beim Aufbau wird die URL nachgezogen, wenn sie nicht zum gespeicherten Stand passt:
+       damit heilt sich der Zustand nach EINEM Seitenaufbau selbst, auch wenn niemand den Schalter
+       anfasst. */
+    var URL_PARAM = "up_range";
+    function urlPreset(){
+      if (!urlNutzbar()) return null;
+      try {
+        var m = new RegExp("[?&]" + URL_PARAM + "=([^&#]*)").exec(window.location.search);
+        var v = m ? decodeURIComponent(m[1]) : "";
+        return TEILBAR[v] ? v : null;
+      } catch (e) { return null; }
+    }
+    /* Gibt die neue URL zurueck, ohne sie zu setzen -- der Aufrufer entscheidet zwischen
+       replaceState (still) und reload (der Schalter). Vorhandene Parameter bleiben, insbesondere
+       ?view= und ?detail=, an denen das View-System der Seite haengt. */
+    /* Nur auf einer echten Seite. In einem about:blank-Rahmen loest window.location.href die URL
+       des ERZEUGERS auf -- ein location.replace darauf laedt dann die Elternseite in den Rahmen.
+       Genau so im eigenen Prueftand passiert: der Rahmen lud den Prueftand rekursiv und dessen
+       erster Schritt loeschte die Einstellungen, die der Klick gerade geschrieben hatte. Auf der
+       echten Bubble-Seite faellt das nicht auf, falsch ist es trotzdem. */
+    function urlNutzbar(){
+      try {
+        var pr = window.location.protocol;
+        if (pr !== "http:" && pr !== "https:") return false;
+        if (!window.history || typeof window.history.replaceState !== "function") return false;
+        /* Nur im OBERSTEN Fenster. Bubble laedt die Seite dort, und dort steht die URL, die beim
+           naechsten Aufbau gelesen wird -- die URL eines eingebetteten Rahmens interessiert
+           niemanden. Und ein about:blank-Rahmen meldet in Chrome die URL seines Erzeugers, also
+           haette ein Protokoll-Test allein nicht gereicht: der eigene Prueftand hat sich damit
+           rekursiv selbst in den Rahmen geladen. */
+        return window === window.top;
+      } catch (e) { return false; }
+    }
+    function urlMit(preset){
+      if (!urlNutzbar()) return null;
+      try {
+        var u = new URL(window.location.href);
+        if (preset) u.searchParams.set(URL_PARAM, preset);
+        else u.searchParams.delete(URL_PARAM);
+        return u.href;
+      } catch (e) { return null; }
+    }
+    function urlSchreiben(preset){
+      if (!urlNutzbar()) return false;
+      var href = urlMit(preset);
+      if (!href || href === window.location.href) return false;
+      try { window.history.replaceState(window.history.state, "", href); }
+      catch (e) { spur("url-fehler", { warum: String(e && e.message || e) }); return false; }
+      spur("url", { param: URL_PARAM, wert: preset || "(entfernt)" });
+      return true;
+    }
     function syncPreset(){
       var p = UC.getPref ? UC.getPref("date_preset") : null;
       return TEILBAR[p] ? p : DEFAULT_PRESET;
@@ -790,7 +858,15 @@
              nachzuziehen waere ein Netz aus Sonderfaellen. Der Reload stellt Views und Drawer aus
              der URL wieder her (?view= und ?detail=) und jeder Picker liest den gespeicherten
              Stand. Der Schalter wird selten geklickt; das darf einen Aufbau kosten. */
-          try { window.location.reload(); } catch (e2) {}
+          /* Mit dem Parameter neu laden, nicht bloss neu laden: beim naechsten Aufbau soll Bubble
+             den Zeitraum aus der URL kennen, bevor die erste Abfrage laeuft. Beim Ausschalten
+             faellt der Parameter weg. Schlaegt das Bauen der URL fehl, bleibt es beim einfachen
+             Reload -- der Schalter muss wirken, auch ohne URL-Trick. */
+          var ziel = urlMit(an ? (TEILBAR[committedPreset] ? committedPreset : DEFAULT_PRESET) : null);
+          try {
+            if (ziel && ziel !== window.location.href) window.location.replace(ziel);
+            else window.location.reload();
+          } catch (e2) { try { window.location.reload(); } catch (e3) {} }
           return;
         }
         var preset = e.target.closest(".udr-preset");
@@ -802,6 +878,7 @@
           applyPreset(key, true);
           if (syncAn() && nimmtTeil(instanceId) && TEILBAR[key]) {
             UC.setPref("date_preset", key);
+            urlSchreiben(key);
             syncWeitergeben(key);
           }
           pop.close(true);
@@ -815,6 +892,7 @@
              einen -- alles andere waere ein Zustand, in dem der Schalter luegt. */
           if (syncAn() && nimmtTeil(instanceId)) {
             UC.setPref("date_preset", DEFAULT_PRESET);
+            urlSchreiben(DEFAULT_PRESET);
             syncWeitergeben(DEFAULT_PRESET);
           }
           pop.close(true);
@@ -934,7 +1012,10 @@
          so: zehn Picker mal drei Bubble-Aufrufe bei jedem Seitenaufbau waere die Lawine an der
          teuersten Stelle. Die Datums-States setzt dein Page-Load-Workflow, indem er
          getUpstreemDateRange() liest -- eine Zeile, einmal. */
-      if (syncAn() && nimmtTeil(instanceId)) applyPreset(syncPreset(), false);
+      /* urlPreset() zuerst: es ist der Zeitraum, mit dem Bubble diesen Aufbau gefahren hat.
+         Anzeige und Daten muessen zusammenpassen, sonst zeigt der Kalender "Last 30 Days" ueber
+         Zahlen aus sieben Tagen. */
+      if (syncAn() && nimmtTeil(instanceId)) applyPreset(urlPreset() || syncPreset(), false);
       syncSperren();
       /* Aendert die Einstellung woanders (anderer Picker, Einstellungen), zieht dieser mit. */
       window.addEventListener("up-prefs-change", function (e) {
@@ -1307,9 +1388,42 @@
       if (typeof UC.resolveBubbleFn(r) === "function") return "range";
       return null;
     }
+    /* Muss ueberhaupt uebergeben werden? Die Uebergabe ist der teuerste Schritt hier -- sie
+       aendert States, und JEDE Aenderung laesst Bubble seine Abfragen neu bewerten. Sie darf also
+       nur laufen, wenn Bubble den Zeitraum nicht schon hat.
+
+         Schalter AUS   -> nein. Die Seite hat ihren eigenen Vorgabe-Zeitraum, und der Picker steht
+                           nach einem Reload auf derselben Vorgabe. Es gibt nichts zu korrigieren.
+         URL trug ihn   -> nein. Bubble hat ihn dann VOR der ersten Abfrage gelesen; unsere
+                           Uebergabe waere eine Zustandsaenderung ohne neuen Inhalt und wuerde nur
+                           einen zweiten Durchlauf ausloesen. Das ist der gemeldete Fehler.
+         sonst          -> ja, und danach wird die URL geschrieben, damit der naechste Aufbau
+                           ohne diesen Umweg auskommt. Der Zustand heilt sich nach einem Aufbau.
+
+       Steht in der URL ein anderes teilbares Preset als in den Einstellungen (zwei Tabs), gewinnt
+       die URL: sie ist, was Bubble fuer DIESEN Aufbau benutzt hat, und Anzeige und Daten muessen
+       zusammenpassen. */
+    function aufbauNoetig(){
+      if (!syncAn()) return "Schalter aus -- die Seite hat ihren eigenen Vorgabe-Zeitraum";
+      var u = urlPreset();
+      if (!u) return null;
+      if (u !== syncPreset()){
+        UC.setPref("date_preset", u);
+        spur("url-gewinnt", { url: u, warum: "Bubble hat DIESEN Zeitraum fuer den Aufbau benutzt" });
+      }
+      return "die URL trug " + u + " -- Bubble hatte den Zeitraum vor der ersten Abfrage";
+    }
     function aufbauUebergeben(c, rest){
       if (bootGetan() || !c || !c.instanceId || !nimmtTeil(c.instanceId)) return;
       if (rest == null) rest = AUFBAU_MAX;
+      if (rest === AUFBAU_MAX){
+        var unnoetig = aufbauNoetig();
+        if (unnoetig){
+          bootMerken();
+          spur("aufbau-nicht-noetig", { instanz: c.instanceId, warum: unnoetig });
+          return;
+        }
+      }
       if (!c.root || !c.root.isConnected){
         /* Bubble hat das Element ersetzt. Den Platz freigeben, sonst wartet niemand mehr:
            die neue Wurzel mountet gleich und soll die Schleife uebernehmen duerfen. */
@@ -1325,6 +1439,9 @@
                          preset: syncAn() ? syncPreset() : "(eigener Stand)",
                          wartete_ms: (AUFBAU_MAX - rest) * AUFBAU_MS });
         uebergeben(c, "boot");
+        /* Ab jetzt steht der Zeitraum in der URL. Der naechste Aufbau braucht diese Uebergabe
+           deshalb nicht mehr -- und damit auch keinen zweiten Abfragedurchlauf. */
+        if (syncAn()) urlSchreiben(syncPreset());
         return;
       }
       if (rest > 0){

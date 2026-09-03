@@ -1,0 +1,70 @@
+<meta charset="utf-8"><title>Kalender: Zeitraum in der URL</title>
+<style>html,body{margin:0;font:13px/1.5 system-ui,sans-serif;padding:8px}
+#out{font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap;padding:10px;background:#f6f6f6;margin-top:12px}</style>
+<body>
+<div id="halter"></div><pre id="out">laeuft…</pre>
+<script>
+/* Dieser Prueftand laeuft im OBERSTEN Fenster und mountet den Kalender direkt hier -- kein
+   iframe. Grund: der Kalender liest den Zeitraum nur aus der URL des obersten Fensters
+   (window === window.top), weil nur die beim naechsten Seitenaufbau gelesen wird. In einem
+   Rahmen ist window !== window.top, dort waere die Mechanik gar nicht pruefbar.
+
+   Aufruf:
+     _h_udr_url.html?up_range=last30   Bubble haette den Zeitraum vor der ersten Abfrage
+     _h_udr_url.html                   ohne Parameter, die Gegenprobe
+
+   Die Einstellungen werden VOR core.js gesetzt, danach liest core sie einmal und cacht sie. */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+var P=new URLSearchParams(location.search);
+var MIT=P.get("up_range");
+try { localStorage.setItem("up_prefs", JSON.stringify({ date_sync:"on", date_preset:"last30" })); } catch(e){}
+var RUF={from:0,to:0,range:0,boot:0,apply:0}, LETZTE=null;
+window.bubble_fn_udr_date_from=function(){ RUF.from++; };
+window.bubble_fn_udr_date_to=function(){ RUF.to++; };
+window.bubble_fn_udr_date_range=function(j){ RUF.range++; try{LETZTE=JSON.parse(j);}catch(e){} };
+window.bubble_fn_udr_date_boot=function(j){ RUF.boot++; try{LETZTE=JSON.parse(j);}catch(e){} };
+window.bubble_fn_udr_apply=function(){ RUF.apply++; };
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+
+Promise.all([hol("core.css"),hol("filters/date-range.css"),hol("core.js"),
+             hol("filters/date-range.js"),hol("filters/bubble/date_range_bubble.html")])
+.then(function(t){
+  [t[0],t[1]].forEach(function(c){ var s=document.createElement("style"); s.textContent=c; document.head.appendChild(s); });
+  var w=document.createElement("div"); w.innerHTML=wurzelAus(t[4]);
+  var r=w.querySelector(".udr-root");
+  r.setAttribute("data-instance","dates_v2_dashboard"); r.setAttribute("data-cdn-pin","t");
+  r.setAttribute("data-isdark","no");
+  r.setAttribute("data-range-apply-fn","bubble_fn_udr_apply");
+  r.setAttribute("data-range-apply-delay","0");
+  document.getElementById("halter").appendChild(r);
+  var j=document.createElement("script"); j.textContent=t[2]; document.head.appendChild(j);
+  var j2=document.createElement("script"); j2.textContent=t[3]; document.head.appendChild(j2);
+  return new Promise(function(ok){ setTimeout(ok,1800); });
+}).then(function(){
+  var spur=window.__udrLog||[];
+  var grund=(spur.filter(function(e){ return e.art==="aufbau-nicht-noetig"; })[0]||{}).warum;
+  var lbl=(document.querySelector(".udr-label")||{}).textContent||"";
+  log(MIT ? "MIT ?up_range="+MIT : "OHNE Parameter (Gegenprobe)");
+  log("   window===window.top: "+(window===window.top)+"   location.search: \""+location.search+"\"");
+  log("   Bubble-Aufrufe: "+JSON.stringify(RUF));
+  log("   Spur: "+(grund||"(keine Zeile aufbau-nicht-noetig)"));
+  log("   Beschriftung: \""+lbl.trim()+"\"");
+  if (MIT){
+    log("   ==> "+(RUF.boot===0&&RUF.range===0&&RUF.from===0&&RUF.to===0&&/URL trug/.test(grund||"")
+          ? "RICHTIG (keine Uebergabe -- also kein zweiter Abfragedurchlauf)"
+          : "FALSCH -- es wurde uebergeben, obwohl Bubble den Zeitraum schon hatte"));
+    log("   ==> "+(lbl.indexOf("30")>=0 ? "RICHTIG (Anzeige passt zur URL)" : "FALSCH"));
+  } else {
+    log("   ==> "+(RUF.boot===1&&RUF.range===0
+          ? "RICHTIG (ohne Parameter wird genau einmal uebergeben)"
+          : "FALSCH -- "+(RUF.boot===0?"gar keine Uebergabe":"mehr als ein Kanal")));
+    log("   URL danach: \""+location.search+"\""+
+        "   ==> "+(/up_range=last30/.test(location.search)
+          ? "RICHTIG (nachgezogen -- der naechste Aufbau braucht die Uebergabe nicht mehr)"
+          : "FALSCH -- die URL wurde nicht geschrieben"));
+  }
+  log("FERTIG");
+}).catch(function(e){ log("ABBRUCH: "+e.message); });
+</script>
