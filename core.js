@@ -8231,7 +8231,8 @@
   function watchRoots(rootSelector, onRootsFound){
     var G = window.__upRootWatch;
     if (!G) G = window.__upRootWatch = { watchers: [], obs: null, iv: null, pending: false };
-    if (G.seq == null) G.seq = 0;              /* ++undefined ist NaN, dann vergleicht sich nichts mehr */
+    if (G.seq == null) G.seq = 0;
+    if (G.pruefZeit == null) G.pruefZeit = 0;              /* ++undefined ist NaN, dann vergleicht sich nichts mehr */
     for (var e = 0; e < G.watchers.length; e++){
       if (G.watchers[e].selector === rootSelector) return;   // already registered by some core.js execution
     }
@@ -8302,14 +8303,30 @@
       if (!heiss) return;
       for (var hk in heiss){ if (Object.prototype.hasOwnProperty.call(heiss, hk)) scheduleAll(hk); }
     }
+    /* GEMESSEN am 03.09.: sigOf stand in der DevTools-Aufnahme mit 832ms bei 4,5 Prozent. Der
+       Grund ist nicht die Rechnung, sondern die Live-Liste: els.length auf einer
+       getElementsByClassName-Sammlung laesst den Browser die Sammlung gegen den aktuellen Stand
+       des Dokuments pruefen, und nach jeder DOM-Aenderung heisst das ein Durchlauf ueber alle
+       23604 Knoten -- mal 19 Beobachter, mal jeder Schwung.
+       Eine Pruefung je BILD war zu oft. Eine neu aufgetauchte Komponente darf 200ms auf ihre
+       Einrichtung warten; niemand kann sie in dieser Zeit bedienen, und das Auffangnetz lief
+       vorher mit 1500ms. */
+    var PRUEF_MS = 200;
     function pruefeBald(){
       if (G.check) return;
+      var rest = PRUEF_MS - (Date.now() - (G.pruefZeit || 0));
+      if (rest < 0) rest = 0;
       G.check = true;
-      function los(){ if (!G.check) return; G.check = false; try { pruefen(); } catch(e){} }
-      /* Beide Wege, nicht einer: in einem verdeckten Tab feuert rAF NIE. Die Flagge macht den
-         zweiten Anlauf zum Nichts, es zeichnet also nichts doppelt. */
-      if (window.requestAnimationFrame) window.requestAnimationFrame(los);
-      setTimeout(los, 24);
+      function los(){
+        if (!G.check) return;
+        G.check = false; G.pruefZeit = Date.now();
+        try { pruefen(); } catch(e){}
+      }
+      /* Ist der Abstand voll, ueber rAF (dann liegt es vor dem naechsten Zeichnen); sonst ueber
+         die Uhr. Die Uhr in JEDEM Fall, weil rAF in einem verdeckten Tab nie feuert -- die
+         Flagge macht den zweiten Anlauf zum Nichts. */
+      if (!rest && window.requestAnimationFrame) window.requestAnimationFrame(los);
+      setTimeout(los, rest || 24);
     }
 
     function scheduleAll(sel){

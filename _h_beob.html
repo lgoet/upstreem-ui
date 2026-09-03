@@ -11,6 +11,16 @@ Document.prototype.querySelectorAll = function(){ window.__qsa++; return _dqsa.a
 window.__gebc = 0;
 var _gebc = Document.prototype.getElementsByClassName;
 Document.prototype.getElementsByClassName = function(){ window.__gebc++; return _gebc.apply(this, arguments); };
+/* Der teure Teil ist NICHT das Erzeugen der Sammlung (die wird gecacht), sondern jeder Zugriff
+   auf .length: der laesst den Browser die Live-Sammlung gegen den aktuellen Stand des Dokuments
+   pruefen. Genau das zaehlen. */
+window.__len = 0;
+(function(){
+  var d = Object.getOwnPropertyDescriptor(HTMLCollection.prototype, "length");
+  if (!d || !d.get) return;
+  Object.defineProperty(HTMLCollection.prototype, "length", { configurable:true,
+    get:function(){ window.__len++; return d.get.call(this); } });
+})();
 window.__wach = {};
 </script></head><body>
 <div id="buehne"></div>
@@ -127,7 +137,37 @@ window.__wach = {};
     setTimeout(function(){
       log("TEIL 3  nochmal 50 Zeilen, 18 Wurzeln liegen da:  querySelector=" + window.__qs +
           "  getElementsByClassName=" + window.__gebc);
-      log("FERTIG");
+      teil4();
     }, 900);
+  }
+
+  /* --- Teil 4: zwoelf Mutationsschwuenge ueber 1,2 Sekunden. Zaehlt, wie oft die Pruefung
+         ueber die Live-Listen laeuft. Vorher: einmal je Bild. --- */
+  function teil4(){
+    var b = document.getElementById("buehne");
+    window.__gebc = 0; window.__len = 0;
+    var n = 0;
+    (function schwung(){
+      if (n++ >= 12){
+        setTimeout(function(){
+          log("TEIL 4  zwoelf Schwuenge ueber 1,2s:  HTMLCollection.length=" + window.__len +
+              "   (19 Beobachter, also etwa " + Math.round(window.__len / 19) + " Pruefungen)");
+          var w5 = null, G = window.__upRootWatch;
+          for (var i = 0; i < G.watchers.length; i++) if (G.watchers[i].selector === "t5-root") w5 = G.watchers[i];
+          /* GEGENPROBE: eine NEUE Wurzel muss trotz Drossel ankommen. */
+          var vor = window.__wach["t7-root"];
+          var d = document.createElement("div"); d.className = "t7-root"; b.appendChild(d);
+          setTimeout(function(){
+            log("Gegenprobe: neue t7-root Wurzel  Weckrufe " + vor + " -> " + window.__wach["t7-root"] +
+                "   ==> " + (window.__wach["t7-root"] > vor ? "ERKANNT" : "NICHT ERKANNT"));
+            log("FERTIG");
+          }, 1500);
+        }, 400);
+        return;
+      }
+      for (var r = 0; r < 20; r++){ var row = document.createElement("div"); row.className = "up-row";
+        row.appendChild(document.createElement("span")); b.appendChild(row); }
+      setTimeout(schwung, 100);
+    })();
   }
 </script></body></html>
