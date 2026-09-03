@@ -1,14 +1,19 @@
-<meta charset="utf-8"><title>Theme: kein Echo an Bubble beim Pageload</title>
+<meta charset="utf-8"><title>Theme: der Rueckkanal muss beim Pageload feuern</title>
 <style>html,body{margin:0;font:13px/1.5 system-ui,sans-serif;padding:8px}
 #out{font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap;padding:10px;background:#f6f6f6}</style>
 <body><pre id="out">laeuft…</pre>
 <script>
-/* Der Fund aus dem Bubble-Stack des Nutzers (03.09.):
-     Pageload -> Supabase-Fetch -> Run javascript -> setUpstreemTheme(<Wert aus der DB>)
-       -> bubble_fn_theme_pref -> Bubble-State -> Datenquelle neu -> ZWEITE Abfragerunde
-   Die Seite sagt uns das Theme, wir sagen es zurueck. Das darf nicht passieren.
-   Ein ECHTER Wechsel muss aber weiter gemeldet werden -- sonst erfaehrt die Datenbank nichts vom
-   Schalter im Konto-Menue. Beides wird hier geprueft, im obersten Fenster. */
+/* Dieser Prueftand haelt eine ZURUECKNAHME fest. Ich hatte den Rueckkanal
+   bubble_fn_theme_pref auf "nur bei echter Aenderung" verengt, weil in einem Bubble-Stack die
+   Kette setUpstreemTheme -> theme_pref -> State -> Datenquelle -> zweiter Fetch auftauchte und
+   ich sie fuer ein sinnloses Echo hielt.
+
+   Sie ist kein Echo: die Seite SETZT ihren is_dark-State ueber genau diesen Rueckkanal. Mit dem
+   Riegel blieb er beim Aufbau aus, und der State wurde nie gesetzt -- gemeldet als "mein
+   Theme-Workflow ist kaputt". Der Aufruf der Seite ist eine Anweisung, keine Wiederholung.
+
+   Geprueft wird deshalb das GEGENTEIL von vorher: setUpstreemTheme MUSS melden, auch wenn der
+   Wert derselbe ist. Nur core's eigene Wiederherstellung beim Start bleibt still. */
 var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
 var RUF=[];
 window.bubble_fn_theme_pref = function(v){ RUF.push(String(v)); };
@@ -18,44 +23,32 @@ fetch("core.js?n="+Math.random(),{cache:"no-store"}).then(function(r){ return r.
   var s=document.createElement("script"); s.textContent=js; document.head.appendChild(s);
   return new Promise(function(ok){ setTimeout(ok,600); });
 }).then(function(){
-  var UC=window.UpstreemCore;
-  log("Start: gespeichert war \"dark\", core hat wiederhergestellt auf \""+UC.getUpstreemTheme?"":"" );
-  log("Meldungen nach dem Aufbau: "+JSON.stringify(RUF)+
-      "   ==> "+(RUF.length===0?"RICHTIG (core meldet seine eigene Wiederherstellung nicht)":"FALSCH"));
-
-  /* DER GEMELDETE FALL: die Seite ruft setUpstreemTheme mit dem Wert, den core schon hat. */
-  RUF=[];
-  window.setUpstreemTheme("dark");
-  return new Promise(function(ok){ setTimeout(function(){ ok(); },200); });
-}).then(function(){
-  log("Pageload-Fall  setUpstreemTheme(\"dark\") bei bereits dunkel:");
+  log("Nach dem Aufbau (core stellt \"dark\" aus dem Speicher wieder her):");
   log("   Meldungen: "+JSON.stringify(RUF)+
       "   ==> "+(RUF.length===0
-        ? "RICHTIG (kein Echo -- keine zweite Abfragerunde)"
-        : "FALSCH -- das Echo loest den zweiten Durchlauf aus"));
-  /* Dieselbe Form, die Bubble liefert. */
-  RUF=[];
-  window.setUpstreemTheme("yes");
-  return new Promise(function(ok){ setTimeout(function(){ ok(); },200); });
-}).then(function(){
-  log("   nochmal in Bubble-Form (\"yes\", also auch dunkel): "+JSON.stringify(RUF)+
-      "   ==> "+(RUF.length===0?"RICHTIG (kein Echo)":"FALSCH"));
-  /* GEGENPROBE: ein ECHTER Wechsel MUSS gemeldet werden. Ohne sie waere "keine Meldung" auch
-     mit einem toten Rueckkanal wahr. */
-  RUF=[];
-  window.setUpstreemTheme("light");
-  return new Promise(function(ok){ setTimeout(function(){ ok(); },200); });
-}).then(function(){
-  log("GEGENPROBE  echter Wechsel auf hell: "+JSON.stringify(RUF)+
-      "   ==> "+(RUF.length===1&&RUF[0]==="light"
-        ? "RICHTIG (der Rueckkanal lebt -- der Test oben hat also den Riegel gemessen)"
-        : "FALSCH -- der Rueckkanal ist tot, der Schalter erreicht die Datenbank nicht"));
+        ? "RICHTIG (die eigene Wiederherstellung meldet core nicht -- sie wuerde den Wert aus der Datenbank ueberschreiben)"
+        : "FALSCH"));
   RUF=[];
   window.setUpstreemTheme("dark");
-  return new Promise(function(ok){ setTimeout(function(){ ok(); },200); });
+  return new Promise(function(ok){ setTimeout(ok,200); });
 }).then(function(){
-  log("   und zurueck auf dunkel: "+JSON.stringify(RUF)+
-      "   ==> "+(RUF.length===1&&RUF[0]==="dark"?"RICHTIG (beide Richtungen)":"FALSCH"));
+  log("Der PAGELOAD-FALL  setUpstreemTheme(\"dark\") bei bereits dunkel:");
+  log("   Meldungen: "+JSON.stringify(RUF)+
+      "   ==> "+(RUF.length===1&&RUF[0]==="dark"
+        ? "RICHTIG (meldet -- die Seite setzt is_dark hierueber)"
+        : "FALSCH -- der Rueckkanal bleibt aus, is_dark wird nie gesetzt"));
+  RUF=[];
+  window.setUpstreemTheme("yes");
+  return new Promise(function(ok){ setTimeout(ok,200); });
+}).then(function(){
+  log("   in Bubble-Form (\"yes\"): "+JSON.stringify(RUF)+
+      "   ==> "+(RUF.length===1&&RUF[0]==="dark"?"RICHTIG":"FALSCH"));
+  RUF=[];
+  window.setUpstreemTheme("light");
+  return new Promise(function(ok){ setTimeout(ok,200); });
+}).then(function(){
+  log("   echter Wechsel auf hell: "+JSON.stringify(RUF)+
+      "   ==> "+(RUF.length===1&&RUF[0]==="light"?"RICHTIG":"FALSCH"));
   log("FERTIG");
 }).catch(function(e){ log("ABBRUCH: "+e.message); });
 </script>

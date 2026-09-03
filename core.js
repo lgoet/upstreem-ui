@@ -11716,9 +11716,6 @@
     } else {
       dark = /^dark$/i.test(roh) || /^(yes|y|true|1)$/i.test(roh);
     }
-    /* Den vorigen Stand festhalten -- der Rueckkanal unten darf nur bei einer ECHTEN Aenderung
-       feuern. Siehe die Begruendung dort. */
-    var vorher = THEME.value;
     THEME.value = dark ? "dark" : "light";
     try {
       if (systemWahl) localStorage.removeItem("pref_theme");
@@ -11762,24 +11759,20 @@
        NICHT beim Start: dort stellt core nur wieder her, was ohnehin gespeichert war, und ein
        Event wuerde den Wert aus der Datenbank ueberschreiben, bevor der Pageload-Workflow ihn
        ueberhaupt gesetzt hat. Nur echte Wechsel melden. */
-    /* NUR bei einer echten Aenderung, und das ist die Behebung eines ECHO-Effekts, den der
-       Nutzer am 03.09. in einem Bubble-Stack gefunden hat:
+    /* Rueckkanal nach Bubble. Ohne ihn kennt die App den Zustand nicht: der Schalter auf der
+       Anmeldeseite schreibt den localStorage, aber ein Bubble-State oder ein Feld in der
+       Datenbank erfaehrt davon nichts.
+       NICHT beim Start: dort stellt core nur wieder her, was ohnehin gespeichert war, und ein
+       Event wuerde den Wert aus der Datenbank ueberschreiben, bevor der Pageload-Workflow ihn
+       ueberhaupt gesetzt hat. Nur echte Wechsel melden.
 
-         initialize_data (Pageload)
-           -> Supabase-Database-Fetch
-             -> Run javascript  ->  setUpstreemTheme(<Wert aus der Datenbank>)
-               -> bubble_fn_theme_pref  ->  fn_publish  ->  Bubble-State gesetzt
-                 -> invalidate -> Datenquelle neu ausgewertet -> zweiter Supabase-Fetch
-
-       Die Seite sagt uns beim Aufbau, welches Theme gespeichert ist; wir sagen es ihr postwendend
-       zurueck; ihr State-Wechsel loest eine zweite Abfragerunde aus. Der vorhandene Riegel
-       (THEME.booting) deckt nur core's EIGENE Wiederherstellung ab, nicht den Aufruf der Seite --
-       und genau dieser Aufruf ist der Normalfall beim Pageload.
-
-       Ein Wert, der sich nicht geaendert hat, ist keine Meldung wert: der Empfaenger weiss ihn
-       schon, er kommt von ihm. Ein echter Wechsel -- der Schalter im Konto-Menue, die
-       Anmeldeseite -- geht weiter hinaus, denn dort ist vorher != nachher. */
-    if (!THEME.booting && vorher !== THEME.value){
+       ZURUECKGENOMMEN am 03.09.: ich hatte hier zusaetzlich "nur wenn sich der Wert geaendert hat"
+       eingebaut, weil in einem Bubble-Stack eine Kette
+       setUpstreemTheme -> bubble_fn_theme_pref -> State -> Datenquelle neu -> zweiter Fetch
+       auftauchte, und ich sie fuer ein sinnloses Echo hielt. Sie ist es nicht: die Seite SETZT
+       ihren is_dark-State ueber genau diesen Rueckkanal. Mit dem Riegel blieb er beim Aufbau aus
+       und der State wurde nie gesetzt -- gemeldet als "mein Theme-Workflow ist kaputt". Der
+       Aufruf der Seite ist eine Anweisung, keine Wiederholung, und wird beantwortet. */    if (!THEME.booting){
       try {
         var meld = resolveBubbleFn("bubble_fn_theme_pref");
         if (typeof meld === "function") meld(THEME.value);
