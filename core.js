@@ -484,6 +484,8 @@
        der einmal im Monat betaetigt wird, waere mehr im Weg als der Reload selbst. */
     "Uses this range on every page. Reloads the page. Only the three relative ranges can be shared.":
       "Verwendet diesen Zeitraum auf jeder Seite. Lädt die Seite neu. Nur die drei relativen Zeiträume sind teilbar.",
+    "A custom range cannot be shared \u2014 turn off \u201eApply everywhere\u201c to pick one":
+      "Ein eigener Zeitraum ist nicht teilbar \u2014 schalte \u201eÜberall anwenden\u201c aus, um einen zu wählen",
     "Not shareable — turn off \u201eApply everywhere\u201c to use it":
       "Nicht teilbar — schalte „Überall anwenden“ aus, um ihn zu nutzen",
     /* Die drei Kennzahlen-Karten ueber der Prompts-Tabelle (03.09.). */

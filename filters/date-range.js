@@ -573,6 +573,13 @@
       function syncSperren(){
         var an = syncAn() && nimmtTeil(instanceId);
         menu.classList.toggle("is-syncon", an);
+        /* Der Hinweis am Kalender selbst: "ausgegraut" allein sagt nicht, WARUM. Am .udr-cal und
+           nicht an den Tagen, weil die keine Zeiger-Ereignisse mehr nehmen (siehe CSS). */
+        if (calEl) {
+          if (an) calEl.setAttribute("data-tip",
+            t("A custom range cannot be shared — turn off \u201eApply everywhere\u201c to pick one"));
+          else calEl.removeAttribute("data-tip");
+        }
         Array.prototype.forEach.call(menu.querySelectorAll(".udr-preset"), function (b) {
           var teilbar = !!TEILBAR[b.getAttribute("data-preset")];
           var aus = an && !teilbar;
@@ -661,6 +668,14 @@
         if (day && !day.disabled) {
           e.stopPropagation();
           if (isProcessing()) return;
+          /* Bei aktivem Schalter gilt kein eigener Zeitraum: er ist nicht teilbar, und ihn hier
+             still zu erlauben ergaebe zwei Zeitraeume gleichzeitig.
+             DER RIEGEL STEHT VOR DEM ERSTEN KLICK und nicht erst vor dem zweiten. Vorher stand er
+             beim zweiten: der erste Klick bewaffnete die Auswahl, der zweite lief in diesen return
+             -- die Auswahl liess sich also weder abschliessen noch abbrechen. Genau so gemeldet
+             am 03.09. Die CSS macht die Tage zusaetzlich taub; das hier ist der Riegel dahinter,
+             fuer den Fall, dass ein Klick doch ankommt (Tastatur, fremdes Skript). */
+          if (syncAn() && nimmtTeil(instanceId)) return;
           var d = parseIso(day.getAttribute("data-d"));
           if (!d) return;
           if (!pendingStart) {
@@ -671,10 +686,6 @@
             render();
           } else {
             var from = minD(pendingStart, d), to = maxD(pendingStart, d);
-            /* Bei aktivem Schalter gilt der eigene Zeitraum nicht: er ist nicht teilbar, und
-               ihn hier still zu erlauben ergaebe zwei Zeitraeume gleichzeitig. Die Tage im
-               Kalender sind dann ausgegraut (CSS .is-syncon), das hier ist der Riegel dahinter. */
-            if (syncAn() && nimmtTeil(instanceId)) return;
             commit(from, to, null, rangeLabel(from, to), true);
             pop.close(true);
           }
@@ -793,6 +804,15 @@
       };
       root.__udrCtrl = ctrl;
       CONTROLLERS.push(ctrl);
+
+      /* Tooltips. Dieser Kalender hat sie NIE eingeschaltet -- data-tip stand an den Presets seit
+         langem, ohne dass jemals einer erschien, und beim neuen Schalter fiel es auf. Dieselbe
+         eine Zeile wie in den drei Geschwister-Filtern (topics/markets/models), dieselbe
+         geteilte Umsetzung in core. Das Panel liegt IM Element (position: absolute, kein Portal),
+         der Beobachter an der Wurzel erreicht es also. */
+      if (UC.makeTooltips) UC.makeTooltips(root, function () {
+        return root.getAttribute("data-theme") === "dark";
+      });
 
       syncConfig(); paint(); render();
 
@@ -1017,7 +1037,17 @@
        einem Durchgang, und der sichtbare Picker ist nicht zwingend der erste. Ein Makrotask
        spaeter stehen alle Controller, und Bubbles JavaScriptToBubble-Elemente sind bereit.
        Das offsetParent ist EIN Layout-Lesezugriff, einmal je Seitenaufbau. */
-    if (syncAn()) setTimeout(function () {
+    /* IMMER, nicht nur bei aktivem Schalter. Vorher hing diese Uebergabe an syncAn(), und damit
+       gab es keinen verlaesslichen Moment, an dem Bubble den Anfangszeitraum erfaehrt: mit
+       Schalter aus kam nichts, also musste die Seite ihn selbst setzen -- und genau dieses
+       Startup-Event hat dann die Uebergabe mit Schalter AN wieder ueberschrieben. Gemeldet am
+       03.09.: die RPCs liefen mal mit null, mal doppelt (erst null, dann richtig).
+       Mit dieser Zeile gibt es EINEN Moment fuer beide Faelle: Schalter an -> der geteilte
+       Zeitraum, Schalter aus -> der eigene Stand des Pickers. Ein Workflow, der am
+       reason "boot" haengt, laedt damit genau einmal und immer mit gesetzten Datumsangaben.
+       Der seitenweite Kanal bleibt dabei still (siehe emit), es entsteht also kein zweiter
+       Ladevorgang fuer den, der weiter beim Seitenaufbau laedt. */
+    setTimeout(function () {
       /* Hat der Page-Load-Workflow upstreemDatesBoot() schon gerufen, ist hier nichts zu tun --
          sonst stuenden zwei Uebergaben hintereinander und Bubble saehe zwei Ereignisse. */
       if (BOOT_GETAN) return;

@@ -174,7 +174,7 @@
 .udr-menu.is-stacked .udr-reset { grid-column: 1 / -1; margin-top: 2px; }
 /* Im gestapelten Bild ist die Preset-Spalte ein zweispaltiges Raster -- ohne diese Zeile stuende
    die Zeile in einer halben Spalte und die Trennlinie darueber ginge nur halb durch. */
-.udr-menu.is-stacked .udr-sync { grid-column: 1 / -1; margin-top: 9px; }
+.udr-menu.is-stacked .udr-sync { grid-column: 1 / -1; margin-top: 17px; }
 
 @media (prefers-reduced-motion: reduce){
   .udr-menu, .udr-trigger, .udr-day { transition: none; }
@@ -186,8 +186,15 @@
    selbst ist .up-switch aus core, unveraendert (38x22). */
 .udr-sync {
   position: relative;
-  display: flex; align-items: center; gap: 8px; width: 100%; height: 34px; margin-top: 9px;
-  padding: 0 9px; border: 0; border-radius: 8px; background: transparent;
+  display: flex; align-items: center; gap: 8px; width: 100%; min-height: 42px;
+  /* 34px Inhalt wie der Reset-Knopf, plus 4px Luft oben und unten -- so angefordert. Ueber
+     Polster und nicht ueber eine groessere Hoehe, damit die Hover-Flaeche mitwaechst: sie ist das
+     Ziel des Klicks, und ein Ziel, das enger ist als der Text, fuehlt sich falsch an. */
+  padding: 4px 9px; box-sizing: border-box;
+  /* 17px = 8px Luft, 1px Linie, 8px Luft. Beide Abstaende gleich, sonst haengt die Linie an
+     einer der beiden Zeilen und liest sich als deren Unterstreichung. */
+  margin-top: 17px;
+  border: 0; border-radius: 8px; background: transparent;
   font-family: inherit; text-align: left; cursor: pointer;
 }
 /* Die Trennlinie liegt IN der Luecke ueber der Zeile und nicht als border-top am Element: als
@@ -195,7 +202,7 @@
    muss dieselbe 34px-Pille sein wie der Reset-Knopf direkt darueber -- eine Zeile, die beim
    Ueberfahren anders aussieht als ihr Nachbar, liest sich wie ein anderes Bauteil. */
 .udr-sync::before {
-  content: ""; position: absolute; left: 0; right: 0; top: -5px; height: 1px;
+  content: ""; position: absolute; left: 0; right: 0; top: -9px; height: 1px;
   background: var(--vc-border);
 }
 /* Farbe wie .udr-reset: gedaempft im Ruhezustand, primaer beim Ueberfahren. */
@@ -215,5 +222,12 @@
 .udr-preset:disabled { opacity: .38; cursor: not-allowed; }
 .udr-preset:disabled:hover { background: transparent; }
 /* Und die Tage im Kalender: ein eigener Zeitraum ist bei aktivem Schalter nicht waehlbar. */
-.udr-menu.is-syncon .udr-cal { opacity: .5; }
-.udr-menu.is-syncon .udr-day { cursor: not-allowed; }
+/* Der gesperrte Kalender: ausgegraut UND taub. Nur ausgegraut war er weiter anklickbar, und der
+   erste Klick bewaffnete eine Auswahl, die sich nicht mehr beenden liess -- der zweite Klick war
+   ja gesperrt. Gemeldet am 03.09.
+   pointer-events sitzt an den TAGEN und den Monatspfeilen, nicht am ganzen .udr-cal: der Rahmen
+   muss weiter mouseover bekommen, sonst kann kein Hinweis erscheinen (ein Element ohne
+   Zeiger-Ereignisse erzeugt kein mouseover, und der Tooltip haengt genau daran). */
+.udr-menu.is-syncon .udr-cal { opacity: .5; cursor: not-allowed; }
+.udr-menu.is-syncon .udr-day,
+.udr-menu.is-syncon .udr-nav { pointer-events: none; }

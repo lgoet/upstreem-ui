@@ -79,8 +79,17 @@ bauen(null).then(function(d){
   var v=d.defaultView;
   log("PHASE 1  Schalter AUS (Vorgabe)");
   log("   Picker gebaut: "+d.querySelectorAll(".udr-root").length+
-      "   Bubble-Aufrufe beim Aufbau: "+JSON.stringify(v.__ruf)+
-      "   ==> "+(v.__ruf.from+v.__ruf.to+v.__ruf.range===0?"RICHTIG (keine)":"FALSCH"));
+      "   Bubble-Aufrufe beim Aufbau: "+JSON.stringify(v.__ruf));
+  /* Die Uebergabe laeuft jetzt AUCH mit ausgeschaltetem Schalter -- ein Moment fuer beide Faelle.
+     Erwartet: genau eine (drei Funktionen), Grund "boot", Vorgabe-Zeitraum, kein Nachladen. */
+  var s7a=new Date(); s7a.setHours(0,0,0,0); s7a.setDate(s7a.getDate()-6);
+  function isoA(x){ return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0"); }
+  log("   JSON: "+JSON.stringify(v.__letzte));
+  log("   ==> "+(v.__ruf.range===1&&v.__ruf.apply===0&&v.__letzte&&v.__letzte.reason==="boot"&&
+                 v.__letzte.date_from===isoA(s7a)
+        ? "RICHTIG (eine Uebergabe, Vorgabe 7 Tage, kein Nachladen)"
+        : "FALSCH -- "+(v.__ruf.range===0?"keine Uebergabe: Bubble laeuft mit null in die RPCs"
+                                         :"falsches Datum oder es wurde nachgeladen")));
   var mit=IDS.filter(function(id){ return !!schalter(d,id); });
   var ohne=IDS.filter(function(id){ return !schalter(d,id); });
   log("   Schalter DA bei:    "+mit.join(", "));
@@ -197,9 +206,10 @@ bauen(null).then(function(d){
   return new Promise(function(ok){ setTimeout(function(){ ok(d); },400); });
 }).then(function(d){
   var v=d.defaultView, r=v.__ruf;
-  log("PHASE 7  Schalter AUS: Aufbau und Ansichtswechsel muessen still bleiben");
-  log("   Bubble-Aufrufe: SUMME="+(r.from+r.to+r.range)+
-      "   ==> "+(r.from+r.to+r.range===0?"RICHTIG (keine neue Nebenwirkung)":"FALSCH"));
+  log("PHASE 7  Schalter AUS: der Ansichtswechsel muss still bleiben");
+  log("   Bubble-Aufrufe beim Ansichtswechsel: SUMME="+(r.from+r.to+r.range)+
+      "   ==> "+(r.from+r.to+r.range===0
+        ? "RICHTIG (ohne Schalter loest ein Ansichtswechsel nichts aus)" : "FALSCH"));
   /* PHASE 8: upstreemDatesBoot() -- der Aufruf, der das hart verdrahtete Startup-Event ersetzt.
      Schalter ist hier AUS, es muss also der Vorgabe-Zeitraum kommen (sieben Tage). */
   v.__ruf={from:0,to:0,range:0,apply:0}; v.__letzte=null;

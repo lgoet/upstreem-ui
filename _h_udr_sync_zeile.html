@@ -1,97 +1,165 @@
 <meta charset="utf-8"><title>Kalender: die Zeile "Apply everywhere"</title>
 <style>html,body{margin:0;font:13px/1.5 system-ui,sans-serif}
 #out{font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap;padding:10px;background:#f6f6f6}</style>
-<body><iframe id="rahmen" style="width:900px;height:520px;border:0"></iframe><pre id="out">laeuft…</pre>
+<body><div id="halter"><iframe id="rahmen" style="width:900px;height:520px;border:0"></iframe></div>
+<pre id="out">laeuft…</pre>
 <script>
 var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
 function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
   if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
 function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
-var D=null, RUF={from:0,to:0,range:0}, RELOAD=0;
-document.getElementById("rahmen").addEventListener("load", function(){ RELOAD++; });
+var D=null, RELOAD=0, T=null;
 
-/* Die Uebergaenge bleiben AN: der Hover-Zustand wird hier ueber :hover-Regeln im Stylesheet
-   gelesen, nicht ueber einen echten Zeiger -- der Rahmen ist verdeckt, ein synthetisches
-   mouseover erzeugt keinen :hover. Gelesen wird also die REGEL, und dass sie auf dieses Element
-   passt (matches), nicht ein computed style unter der Maus. Genau der Unterschied, an dem eine
-   frueher schon einmal gemessene "Farbe stimmt" nichts wert war. */
-Promise.all([hol("core.css"),hol("filters/date-range.css"),hol("core.js"),
-             hol("filters/date-range.js"),hol("filters/bubble/date_range_bubble.html")])
-.then(function(t){
-  var d=document.getElementById("rahmen").contentDocument; D=d;
-  d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0;padding:8px'></body></html>"); d.close();
-  var v=d.defaultView;
-  try { v.localStorage.removeItem("up_prefs"); } catch(e){}
-  v.bubble_fn_udr_date_from=function(){ RUF.from++; };
-  v.bubble_fn_udr_date_to=function(){ RUF.to++; };
-  v.bubble_fn_udr_date_range=function(){ RUF.range++; };
-  [t[0],t[1]].forEach(function(c){ var s=d.createElement("style"); s.textContent=c; d.head.appendChild(s); });
-  var w=d.createElement("div"); w.innerHTML=wurzelAus(t[4]);
-  var r=w.querySelector(".udr-root");
-  r.setAttribute("data-instance","dates_v2_prompts"); r.setAttribute("data-cdn-pin","t");
-  r.setAttribute("data-isdark","no");
-  d.body.appendChild(r);
-  var j=d.createElement("script"); j.textContent=t[2]; d.head.appendChild(j);
-  var j2=d.createElement("script"); j2.textContent=t[3]; d.head.appendChild(j2);
-  return new Promise(function(ok){ setTimeout(ok,1600); });
-}).then(function(){
-  var d=D, v=d.defaultView;
+/* FRISCHES iframe-Element je Aufbau, nicht document.open() im alten: das legt ein neues DOKUMENT
+   an, aber dasselbe WINDOW -- window.UpstreemCore ueberlebt, core.js laeuft beim zweiten Mal gar
+   nicht (Verdraengungssperre), und sein Einstellungs-Cache bleibt auf dem alten Stand. Zweimal in
+   dieser Sitzung darauf hereingefallen. */
+function bauen(prefs){
+  return (T ? Promise.resolve(T) : Promise.all([
+    hol("core.css"), hol("filters/date-range.css"), hol("core.js"),
+    hol("filters/date-range.js"), hol("filters/bubble/date_range_bubble.html")
+  ])).then(function(t){
+    T=t;
+    var halter=document.getElementById("halter");
+    halter.innerHTML="";
+    var f=document.createElement("iframe");
+    f.id="rahmen"; f.setAttribute("style","width:900px;height:520px;border:0");
+    f.addEventListener("load", function(){ RELOAD++; });
+    halter.appendChild(f);
+    var d=f.contentDocument; D=d;
+    d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0;padding:8px'></body></html>"); d.close();
+    var v=d.defaultView;
+    try { if (prefs) v.localStorage.setItem("up_prefs", JSON.stringify(prefs));
+          else v.localStorage.removeItem("up_prefs"); } catch(e){}
+    v.bubble_fn_udr_date_from=function(){}; v.bubble_fn_udr_date_to=function(){};
+    v.bubble_fn_udr_date_range=function(){};
+    [t[0],t[1]].forEach(function(c){ var s=d.createElement("style"); s.textContent=c; d.head.appendChild(s); });
+    var w=d.createElement("div"); w.innerHTML=wurzelAus(t[4]);
+    var r=w.querySelector(".udr-root");
+    r.setAttribute("data-instance","dates_v2_prompts"); r.setAttribute("data-cdn-pin","t");
+    r.setAttribute("data-isdark","no");
+    d.body.appendChild(r);
+    var j=d.createElement("script"); j.textContent=t[2]; d.head.appendChild(j);
+    var j2=d.createElement("script"); j2.textContent=t[3]; d.head.appendChild(j2);
+    return new Promise(function(ok){ setTimeout(function(){ ok(d); },1600); });
+  });
+}
+function oeffnen(d){
   d.querySelector(".udr-trigger").click();
-  return new Promise(function(ok){ setTimeout(ok,600); });
-}).then(function(){
-  var d=D, v=d.defaultView, cs=v.getComputedStyle;
+  return new Promise(function(ok){ setTimeout(function(){ ok(d); },700); });
+}
+function regel(d, sel, prop){
+  var t=null;
+  [].forEach.call(d.styleSheets, function(ss){
+    try { [].forEach.call(ss.cssRules, function(r){
+      if (r.selectorText && r.selectorText.indexOf(sel)>=0 && r.style && r.style[prop])
+        t = prop + ": " + r.style[prop];
+    }); } catch(e){}
+  });
+  return t;
+}
+
+bauen(null).then(oeffnen).then(function(d){
+  var v=d.defaultView, cs=v.getComputedStyle;
   var zeile=d.querySelector(".udr-sync"), lbl=d.querySelector(".udr-sync-lbl");
   var reset=d.querySelector(".udr-reset");
-  log("PHASE 1  Sitz und Ruhezustand");
+  log("PHASE 1  Sitz, Farbe, Polster, Trennlinie");
   log("   Element: <"+zeile.tagName.toLowerCase()+"> role="+zeile.getAttribute("role")+
-      "  aria-checked="+zeile.getAttribute("aria-checked"));
-  log("   ==> "+(zeile.tagName==="BUTTON"&&zeile.getAttribute("role")==="switch"?"RICHTIG":"FALSCH"));
+      "  aria-checked="+zeile.getAttribute("aria-checked")+
+      "   ==> "+(zeile.tagName==="BUTTON"&&zeile.getAttribute("role")==="switch"?"RICHTIG":"FALSCH"));
   var zr=zeile.getBoundingClientRect(), rr=reset.getBoundingClientRect();
-  log("   Hoehe Zeile "+Math.round(zr.height)+"px  Reset "+Math.round(rr.height)+"px"+
-      "   linke Kante "+Math.round(zr.left)+" / "+Math.round(rr.left)+
-      "   Breite "+Math.round(zr.width)+" / "+Math.round(rr.width));
-  log("   ==> "+(Math.round(zr.height)===Math.round(rr.height)&&Math.round(zr.left)===Math.round(rr.left)
-        &&Math.round(zr.width)===Math.round(rr.width)?"RICHTIG (dieselbe Pille)":"FALSCH"));
+  log("   linke Kante "+Math.round(zr.left)+" / "+Math.round(rr.left)+
+      "   Breite "+Math.round(zr.width)+" / "+Math.round(rr.width)+" (Reset)"+
+      "   ==> "+(Math.round(zr.left)===Math.round(rr.left)&&Math.round(zr.width)===Math.round(rr.width)
+        ? "RICHTIG (gleiche Spalte)":"FALSCH"));
   log("   Schriftfarbe: Zeile "+cs(lbl).color+"   Reset "+cs(reset).color+
       "   ==> "+(cs(lbl).color===cs(reset).color?"RICHTIG (gleich)":"FALSCH"));
-  /* Der Hover-Zustand: die Regel suchen und pruefen, dass sie auf dieses Element passt. */
-  function regel(sel, prop){
-    var t=null;
-    [].forEach.call(d.styleSheets, function(ss){
-      try { [].forEach.call(ss.cssRules, function(r){
-        if (r.selectorText && r.selectorText.indexOf(sel)>=0 && r.style && r.style[prop])
-          t = r.selectorText + " { " + prop + ": " + r.style[prop] + " }";
-      }); } catch(e){}
-    });
-    return t;
-  }
-  log("   Hover-Regeln:");
-  log("     "+(regel(".udr-sync:hover","background")||"FEHLT"));
-  log("     "+(regel(".udr-sync:hover .udr-sync-lbl","color")||"FEHLT"));
-  log("     Reset zum Vergleich: "+(regel(".udr-reset:hover","background")||"FEHLT")+" / "+
-      (regel(".udr-reset:hover","color")||"FEHLT"));
-  var g1=regel(".udr-sync:hover","background"), g2=regel(".udr-reset:hover","background");
-  var f1=regel(".udr-sync:hover .udr-sync-lbl","color"), f2=regel(".udr-reset:hover","color");
-  log("   ==> "+(g1&&g2&&g1.split("{")[1]===g2.split("{")[1]&&f1&&f2&&f1.split("{")[1]===f2.split("{")[1]
-        ? "RICHTIG (gleicher Hover wie Reset)" : "FALSCH"));
-  log("   Tooltip: \""+zeile.getAttribute("data-tip")+"\"");
-  log("   ==> "+(/[Rr]eload/.test(zeile.getAttribute("data-tip")||"")
-        ? "RICHTIG (der Reload steht drin)" : "FALSCH -- kein Hinweis auf den Reload"));
-  /* Der Schalter selbst darf keine Zeiger-Ereignisse nehmen: sonst gibt es zwei Klickwege. */
+  log("   Hover: Zeile "+regel(d,".udr-sync:hover","background")+" / "+
+      regel(d,".udr-sync:hover .udr-sync-lbl","color")+
+      "   Reset "+regel(d,".udr-reset:hover","background")+" / "+regel(d,".udr-reset:hover","color"));
+  log("   ==> "+(regel(d,".udr-sync:hover","background")===regel(d,".udr-reset:hover","background")&&
+                 regel(d,".udr-sync:hover .udr-sync-lbl","color")===regel(d,".udr-reset:hover","color")
+        ? "RICHTIG (gleicher Hover wie Reset)":"FALSCH"));
+  /* Polster und die Abstaende um die Trennlinie -- gemessen, nicht aus der CSS gelesen. */
+  var linie=cs(zeile,"::before"), lTop=parseFloat(linie.top);
+  var zurZeile=-lTop-1, zumReset=parseFloat(cs(zeile).marginTop)+lTop;
+  log("   Polster "+cs(zeile).paddingTop+" / "+cs(zeile).paddingBottom+"   Hoehe "+Math.round(zr.height)+"px"+
+      "   ==> "+(cs(zeile).paddingTop==="4px"&&cs(zeile).paddingBottom==="4px"?"RICHTIG (4px)":"FALSCH"));
+  log("   Trennlinie: "+Math.round(zumReset)+"px zum Reset, "+Math.round(zurZeile)+"px zur Zeile"+
+      "   ==> "+(Math.round(zumReset)===8&&Math.round(zurZeile)===8?"RICHTIG (8px beidseitig)":"FALSCH"));
+  log("   data-tip: \""+zeile.getAttribute("data-tip")+"\""+
+      "   ==> "+(/[Rr]eload/.test(zeile.getAttribute("data-tip")||"")?"RICHTIG":"FALSCH"));
   var sw=d.querySelector("[data-udr-sync]");
   log("   Schalter: pointer-events="+cs(sw).pointerEvents+"  role="+(sw.getAttribute("role")||"(keine)")+
-      "  aria-hidden="+sw.getAttribute("aria-hidden")+
       "   ==> "+(cs(sw).pointerEvents==="none"&&!sw.getAttribute("role")?"RICHTIG":"FALSCH"));
-  /* PHASE 2: Klick auf die BESCHRIFTUNG, also nicht auf den Schalter */
+  /* TOOLTIP: geprueft wird das ELEMENT am body, nicht die Regel -- nur wenn es erscheint und den
+     Text traegt, hat der Nutzer etwas davon. Dieser Kalender hatte makeTooltips nie eingeschaltet.
+     mouseover von Hand: der Rahmen ist verdeckt, es gibt keinen echten Zeiger. */
+  try { lbl.dispatchEvent(new v.MouseEvent("mouseover", { bubbles: true })); } catch(e){}
+  return new Promise(function(ok){ setTimeout(function(){ ok(d); },1500); });
+}).then(function(d){
+  var tip=d.querySelector(".up-tip");
+  log("   Tooltip erscheint: "+(!!tip)+"   Text \""+(tip?tip.textContent.trim():"")+"\"");
+  log("   ==> "+(tip&&/[Rr]eload/.test(tip.textContent||"")
+        ? "RICHTIG (erscheint und nennt den Reload)"
+        : "FALSCH -- "+(tip?"ohne den Hinweis":"kein Tooltip: makeTooltips laeuft nicht")));
+  /* PHASE 2: Klick auf die BESCHRIFTUNG, nicht auf den Schalter. */
   RELOAD=0;
-  lbl.click();
-  return new Promise(function(ok){ setTimeout(ok,900); });
+  d.querySelector(".udr-sync-lbl").click();
+  return new Promise(function(ok){ setTimeout(function(){ ok(null); },1000); });
 }).then(function(){
   var p={}; try { p=JSON.parse(window.localStorage.getItem("up_prefs")||"{}"); } catch(e){}
-  log("PHASE 2  Klick auf die BESCHRIFTUNG (nicht auf den Schalter)");
+  log("PHASE 2  Klick auf die BESCHRIFTUNG");
   log("   gespeichert: date_sync="+p.date_sync+"  date_preset="+p.date_preset+
       "   ==> "+(p.date_sync==="on"?"RICHTIG (die ganze Zeile schaltet)":"FALSCH"));
   log("   Rahmen hat neu geladen: "+RELOAD+"   ==> "+(RELOAD>0?"RICHTIG":"FALSCH"));
+  /* PHASE 3: der gesperrte Kalender. Eigener Aufbau mit aktivem Schalter -- der Reload aus
+     Phase 2 laesst den alten Rahmen leer zurueck. */
+  return bauen({ date_sync:"on", date_preset:"last7" });
+}).then(oeffnen).then(function(d){
+  var v=d.defaultView, cs=v.getComputedStyle;
+  var menu=d.querySelector(".udr-menu"), cal=d.querySelector(".udr-cal");
+  var tage=d.querySelectorAll(".udr-day:not(.is-out):not([disabled])");
+  var tag=tage[10];
+  log("PHASE 3  gesperrter Kalender bei aktivem Schalter");
+  log("   is-syncon="+menu.classList.contains("is-syncon")+"   Tage: "+tage.length+
+      "   pointer-events am Tag: "+(tag?cs(tag).pointerEvents:"?"));
+  log("   Hinweis am Kalender: \""+(cal.getAttribute("data-tip")||"(keiner)")+"\"");
+  log("   ==> "+(menu.classList.contains("is-syncon")&&tag&&cs(tag).pointerEvents==="none"&&
+                 /Apply everywhere|Überall/.test(cal.getAttribute("data-tip")||"")
+        ? "RICHTIG (taub, mit Begruendung)" : "FALSCH"));
+  /* Der Riegel dahinter: ein Klick, der trotzdem ankommt, darf nichts bewaffnen. Erkannt am
+     aktiven Preset -- ein bewaffneter erster Klick setzt committedPreset auf null, und dann ist
+     KEIN Preset mehr markiert. Die Tagesklassen taugen nicht: eine Vorschau sieht aus wie eine
+     fertige Auswahl. */
+  var vorher=d.querySelectorAll(".udr-preset.is-active").length;
+  var lblVor=d.querySelector(".udr-label").textContent.trim();
+  if (tag) tag.click();
+  return new Promise(function(ok){ setTimeout(function(){ ok({d:d,vorher:vorher,lblVor:lblVor}); },500); });
+}).then(function(st){
+  var d=st.d;
+  var nachher=d.querySelectorAll(".udr-preset.is-active").length;
+  var lbl=d.querySelector(".udr-label").textContent.trim();
+  log("   Klick auf einen Tag: aktives Preset "+st.vorher+" -> "+nachher+
+      "   Beschriftung \""+st.lblVor+"\" -> \""+lbl+"\"");
+  log("   ==> "+(nachher===1&&lbl===st.lblVor
+        ? "RICHTIG (nichts bewaffnet, nichts verloren)"
+        : "FALSCH -- die Auswahl ist bewaffnet und nicht mehr beendbar"));
+  /* GEGENPROBE: ohne Schalter muss derselbe Klick sehr wohl etwas bewaffnen. Ohne sie waere
+     "nichts passiert" auch mit einem kaputten Kalender wahr. */
+  return bauen(null).then(oeffnen);
+}).then(function(d){
+  var tage=d.querySelectorAll(".udr-day:not(.is-out):not([disabled])");
+  var vorher=d.querySelectorAll(".udr-preset.is-active").length;
+  if (tage[10]) tage[10].click();
+  return new Promise(function(ok){ setTimeout(function(){ ok({d:d,vorher:vorher}); },500); });
+}).then(function(st){
+  var nachher=st.d.querySelectorAll(".udr-preset.is-active").length;
+  log("PHASE 4  Gegenprobe ohne Schalter: derselbe Klick MUSS bewaffnen");
+  log("   aktives Preset "+st.vorher+" -> "+nachher+
+      "   ==> "+(st.vorher===1&&nachher===0
+        ? "RICHTIG (der Kalender funktioniert, Phase 3 hat also den Riegel gemessen)"
+        : "FALSCH -- der Kalender reagiert auch ohne Schalter nicht"));
   log("FERTIG");
 }).catch(function(e){ log("ABBRUCH: "+e.message+"\n"+(e.stack||"").split("\n").slice(0,3).join("\n")); });
 </script>
