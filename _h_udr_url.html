@@ -17,6 +17,10 @@
 var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
 var P=new URLSearchParams(location.search);
 var MIT=P.get("up_range");
+/* Die URL beim Start festhalten. "unberuehrt" heisst UNVERAENDERT, nicht "ohne Parameter" -- der
+   erste Anlauf verglich auf Abwesenheit und meldete deshalb FALSCH fuer eine URL, die der Test
+   selbst mit dem Parameter aufgerufen hatte. */
+var SEARCH0=location.search;
 try { localStorage.setItem("up_prefs", JSON.stringify({ date_sync:"on", date_preset:"last30" })); } catch(e){}
 var RUF={from:0,to:0,range:0,boot:0,apply:0}, LETZTE=null;
 window.bubble_fn_udr_date_from=function(){ RUF.from++; };
@@ -36,6 +40,9 @@ Promise.all([hol("core.css"),hol("filters/date-range.css"),hol("core.js"),
   var r=w.querySelector(".udr-root");
   r.setAttribute("data-instance","dates_v2_dashboard"); r.setAttribute("data-cdn-pin","t");
   r.setAttribute("data-isdark","no");
+  /* AUSDRUECKLICH einschalten -- ohne dieses Attribut fasst der Kalender die URL nicht an.
+     So ist es jetzt richtig: die URL der App wird nur geaendert, wenn die Seite es sagt. */
+  if (P.get("urlmodus") !== "aus") r.setAttribute("data-url-range","on");
   r.setAttribute("data-range-apply-fn","bubble_fn_udr_apply");
   r.setAttribute("data-range-apply-delay","0");
   document.getElementById("halter").appendChild(r);
@@ -51,6 +58,13 @@ Promise.all([hol("core.css"),hol("filters/date-range.css"),hol("core.js"),
   log("   Bubble-Aufrufe: "+JSON.stringify(RUF));
   log("   Spur: "+(grund||"(keine Zeile aufbau-nicht-noetig)"));
   log("   Beschriftung: \""+lbl.trim()+"\"");
+  if (P.get("urlmodus") === "aus"){
+    log("   URL beim Start: \""+SEARCH0+"\"   jetzt: \""+location.search+"\"");
+    log("   ==> "+(RUF.boot===1 && location.search===SEARCH0
+          ? "RICHTIG (ohne data-url-range: URL unveraendert, und es wird uebergeben)"
+          : "FALSCH -- "+(RUF.boot!==1?"keine Uebergabe":"die URL wurde veraendert")));
+    log("FERTIG"); return;
+  }
   if (MIT){
     log("   ==> "+(RUF.boot===0&&RUF.range===0&&RUF.from===0&&RUF.to===0&&/URL trug/.test(grund||"")
           ? "RICHTIG (keine Uebergabe -- also kein zweiter Abfragedurchlauf)"

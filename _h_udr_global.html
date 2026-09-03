@@ -93,6 +93,9 @@ function bauen(prefs, ohneBootFn, ohneBruecke, urlPreset){
       var r=w.querySelector(".udr-root");
       r.setAttribute("data-instance", id); r.setAttribute("data-cdn-pin","t");
       r.setAttribute("data-range-apply-fn", "bubble_fn_udr_apply");
+      /* Der Ansichtswechsel uebergibt nur auf Ansage. Der Prueftand setzt sie, weil er genau das
+         prueft -- und Phase 6b prueft danach den Standard OHNE das Attribut. */
+      r.setAttribute("data-activate", "on");
       r.setAttribute("data-range-apply-delay", "0");
       r.setAttribute("data-isdark","no");
       d.body.appendChild(r);
@@ -143,16 +146,18 @@ bauen(null).then(function(d){
      nachlaedt. Nur die zwei Datums-States werden gesetzt. */
   log("   Aufbau-Kanal="+v.__ruf.boot+"  Range="+v.__ruf.range+"  Apply="+v.__ruf.apply+
       "   JSON: "+JSON.stringify(v.__letzte));
-  /* Schalter AUS heisst jetzt: KEINE Uebergabe. Die Seite hat ihren eigenen Vorgabe-Zeitraum,
-     der Picker steht nach einem Reload auf derselben Vorgabe -- es gibt nichts zu korrigieren, und
-     jede Uebergabe waere eine Zustandsaenderung, die Bubble seine Abfragen neu bewerten laesst. */
-  var g1=((v.__udrLog||[]).filter(function(e){ return e.art==="aufbau-nicht-noetig"; })[0]||{}).warum;
-  log("   Spur sagt: "+(g1||"(nichts)"));
-  log("   ==> "+(v.__ruf.boot===0&&v.__ruf.range===0&&v.__ruf.from===0&&v.__ruf.to===0&&
-                 /Schalter aus/.test(g1||"")
-        ? "RICHTIG (kein Bubble-Aufruf, weil nichts zu korrigieren ist)"
-        : "FALSCH -- "+(v.__ruf.boot+v.__ruf.range>0?"es wurde uebergeben, obwohl der Schalter aus ist"
-                                                    :"die Spur sagt nicht warum")));
+  /* Auch mit ausgeschaltetem Schalter wird uebergeben, genau einmal. Zwischenzeitlich hatte ich
+     hier eine Ausnahme eingebaut ("Schalter aus -> nichts zu korrigieren"). Sie war falsch: auf
+     der echten Seite gibt es kein Startup-Event mehr, das den Anfangszeitraum setzt, also lief
+     ohne Uebergabe gar keiner (gemessen: p_date_from: null). Ein doppelter Ladevorgang mit
+     richtigen Daten ist schlimm, ein einzelner ohne Daten schlimmer. */
+  log("   ==> "+(v.__ruf.boot===1&&v.__ruf.range===0&&v.__ruf.apply===0&&
+                 v.__ruf.from===0&&v.__ruf.to===0&&
+                 v.__letzte&&v.__letzte.date_from===isoA(s7a)&&v.__letzte.reason==="boot"
+        ? "RICHTIG (GENAU EIN Bubble-Aufruf: der Aufbau-Kanal, Vorgabe 7 Tage)"
+        : "FALSCH -- "+(v.__ruf.range>0?"der Nachlade-Kanal feuert"
+                       :(v.__ruf.boot===0?"kein Zeitraum: die RPCs laufen ohne Datum"
+                                         :"falsches Datum"))));
   var mit=IDS.filter(function(id){ return !!schalter(d,id); });
   var ohne=IDS.filter(function(id){ return !schalter(d,id); });
   log("   Schalter DA bei:    "+mit.join(", "));
@@ -256,6 +261,19 @@ bauen(null).then(function(d){
   var r=d.defaultView.__ruf;
   log("   Spotlight aktiviert: SUMME="+(r.from+r.to+r.range)+
       "   ==> "+(r.from+r.to+r.range===0?"RICHTIG (nimmt nicht teil)":"FALSCH"));
+  /* PHASE 6b: OHNE data-activate -- der Standard. Da darf ein Wechsel nichts ausloesen. */
+  var w2=d.querySelectorAll(".udr-root");
+  for (var q=0;q<w2.length;q++) w2[q].removeAttribute("data-activate");
+  d.defaultView.__ruf={from:0,to:0,range:0,apply:0,boot:0};
+  d.defaultView.showView("performance");
+  return new Promise(function(ok){ setTimeout(function(){ ok(d); },500); });
+}).then(function(d){
+  var v=d.defaultView, r=v.__ruf;
+  var g=((v.__udrLog||[]).filter(function(e){ return e.art==="ansicht-uebersprungen"; }).pop()||{}).warum;
+  log("   OHNE data-activate (der Standard): SUMME="+(r.from+r.to+r.range+r.apply));
+  log("   Spur: "+(g||"(nichts)"));
+  log("   ==> "+(r.from+r.to+r.range+r.apply===0 && /data-activate/.test(g||"")
+        ? "RICHTIG (ein Wechsel loest von sich aus nichts aus)" : "FALSCH"));
 }).then(function(){
   return bauen(null);           /* Schalter aus */
 }).then(function(d){

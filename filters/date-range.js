@@ -215,6 +215,22 @@
        Und beim Aufbau wird die URL nachgezogen, wenn sie nicht zum gespeicherten Stand passt:
        damit heilt sich der Zustand nach EINEM Seitenaufbau selbst, auch wenn niemand den Schalter
        anfasst. */
+    /* ---- Der Zeitraum in der URL: NUR auf ausdrueckliche Ansage --------------------------
+       data-url-range="on" an der Wurzel schaltet es ein. Ohne das Attribut wird die URL nicht
+       angefasst -- weder gelesen noch geschrieben.
+
+       Ich hatte das ungefragt zum Standardverhalten gemacht. Das war zweimal falsch: es ist eine
+       Aenderung an der URL der App, um die niemand gebeten hat, und es hat den Zustand
+       verschlechtert, weil das Ueberspringen der Uebergabe einen Bubble-Schritt voraussetzt, den
+       es nicht gibt.
+
+       Wer den Schritt hat -- Page-Load-Workflow liest up_range und setzt die zwei Datums-States,
+       bevor die erste Abfrage laeuft --, schaltet es ein und bekommt dafuer: einen Ladevorgang
+       beim Aufbau statt zwei, weil Bubble den Zeitraum dann schon vor der ersten Abfrage kennt
+       und unsere Uebergabe entfaellt. */
+    function urlAn(root){
+      return String(root && root.getAttribute("data-url-range") || "").toLowerCase() === "on";
+    }
     var URL_PARAM = "up_range";
     function urlPreset(){
       if (!urlNutzbar()) return null;
@@ -862,7 +878,9 @@
              den Zeitraum aus der URL kennen, bevor die erste Abfrage laeuft. Beim Ausschalten
              faellt der Parameter weg. Schlaegt das Bauen der URL fehl, bleibt es beim einfachen
              Reload -- der Schalter muss wirken, auch ohne URL-Trick. */
-          var ziel = urlMit(an ? (TEILBAR[committedPreset] ? committedPreset : DEFAULT_PRESET) : null);
+          var ziel = urlAn(root)
+            ? urlMit(an ? (TEILBAR[committedPreset] ? committedPreset : DEFAULT_PRESET) : null)
+            : null;
           try {
             if (ziel && ziel !== window.location.href) window.location.replace(ziel);
             else window.location.reload();
@@ -878,7 +896,7 @@
           applyPreset(key, true);
           if (syncAn() && nimmtTeil(instanceId) && TEILBAR[key]) {
             UC.setPref("date_preset", key);
-            urlSchreiben(key);
+            if (urlAn(root)) urlSchreiben(key);
             syncWeitergeben(key);
           }
           pop.close(true);
@@ -892,7 +910,7 @@
              einen -- alles andere waere ein Zustand, in dem der Schalter luegt. */
           if (syncAn() && nimmtTeil(instanceId)) {
             UC.setPref("date_preset", DEFAULT_PRESET);
-            urlSchreiben(DEFAULT_PRESET);
+            if (urlAn(root)) urlSchreiben(DEFAULT_PRESET);
             syncWeitergeben(DEFAULT_PRESET);
           }
           pop.close(true);
@@ -1015,7 +1033,8 @@
       /* urlPreset() zuerst: es ist der Zeitraum, mit dem Bubble diesen Aufbau gefahren hat.
          Anzeige und Daten muessen zusammenpassen, sonst zeigt der Kalender "Last 30 Days" ueber
          Zahlen aus sieben Tagen. */
-      if (syncAn() && nimmtTeil(instanceId)) applyPreset(urlPreset() || syncPreset(), false);
+      if (syncAn() && nimmtTeil(instanceId))
+        applyPreset((urlAn(root) && urlPreset()) || syncPreset(), false);
       syncSperren();
       /* Aendert die Einstellung woanders (anderer Picker, Einstellungen), zieht dieser mit. */
       window.addEventListener("up-prefs-change", function (e) {
@@ -1320,6 +1339,24 @@
       spurGlobal("ansicht-uebersprungen", { view: name, instanz: c.instanceId, warum: "nimmt nicht teil" });
       return;
     }
+    /* STANDARDMAESSIG NICHTS. Gemessen auf der echten Seite: beim Wechsel auf Citations liefen
+       from, to und range mit Grund "activate" -- und der erste Ladevorgang der Ansicht hatte den
+       Zeitraum bereits (last30). Die Uebergabe war also ueberfluessig und hat allein den zweiten
+       Durchlauf ausgeloest.
+       Der Grund ist die Bauart des globalen Kalenders: bei aktivem Schalter zeigen ALLE Picker
+       denselben Zeitraum, und die States stehen schon. Es gibt beim Wechsel nichts zu
+       korrigieren.
+       Wer es doch braucht -- weil jede Ansicht eigene Datums-States hat, die einzeln gesetzt
+       werden muessen --, setzt data-activate="on" an der Wurzel oder ruft
+       upstreemDatesActivate(name) aus dem eigenen View-Workflow. Beides ist eine Ansage, kein
+       Standardverhalten: an data-range-fn haengt der Nachlade-Workflow, und jedes Ereignis dort
+       ist ein Ladevorgang. */
+    if (String(c.root && c.root.getAttribute("data-activate") || "").toLowerCase() !== "on"){
+      spurGlobal("ansicht-uebersprungen", { view: name, instanz: c.instanceId,
+        warum: 'ohne data-activate="on" wird beim Wechsel nichts uebergeben -- der Zeitraum ' +
+               'steht schon, und ein Ereignis am Nachlade-Kanal waere ein Ladevorgang zu viel' });
+      return;
+    }
     spurGlobal("ansicht", { view: name, instanz: c.instanceId,
                             schonUebergeben: !!UEBERGEBEN[c.instanceId] });
     uebergeben(c);
@@ -1388,42 +1425,17 @@
       if (typeof UC.resolveBubbleFn(r) === "function") return "range";
       return null;
     }
-    /* Muss ueberhaupt uebergeben werden? Die Uebergabe ist der teuerste Schritt hier -- sie
-       aendert States, und JEDE Aenderung laesst Bubble seine Abfragen neu bewerten. Sie darf also
-       nur laufen, wenn Bubble den Zeitraum nicht schon hat.
-
-         Schalter AUS   -> nein. Die Seite hat ihren eigenen Vorgabe-Zeitraum, und der Picker steht
-                           nach einem Reload auf derselben Vorgabe. Es gibt nichts zu korrigieren.
-         URL trug ihn   -> nein. Bubble hat ihn dann VOR der ersten Abfrage gelesen; unsere
-                           Uebergabe waere eine Zustandsaenderung ohne neuen Inhalt und wuerde nur
-                           einen zweiten Durchlauf ausloesen. Das ist der gemeldete Fehler.
-         sonst          -> ja, und danach wird die URL geschrieben, damit der naechste Aufbau
-                           ohne diesen Umweg auskommt. Der Zustand heilt sich nach einem Aufbau.
-
-       Steht in der URL ein anderes teilbares Preset als in den Einstellungen (zwei Tabs), gewinnt
-       die URL: sie ist, was Bubble fuer DIESEN Aufbau benutzt hat, und Anzeige und Daten muessen
-       zusammenpassen. */
-    function aufbauNoetig(){
-      if (!syncAn()) return "Schalter aus -- die Seite hat ihren eigenen Vorgabe-Zeitraum";
-      var u = urlPreset();
-      if (!u) return null;
-      if (u !== syncPreset()){
-        UC.setPref("date_preset", u);
-        spur("url-gewinnt", { url: u, warum: "Bubble hat DIESEN Zeitraum fuer den Aufbau benutzt" });
-      }
-      return "die URL trug " + u + " -- Bubble hatte den Zeitraum vor der ersten Abfrage";
-    }
+    /* KEINE Bedingung mehr vor der Uebergabe -- und das ist die Ruecknahme eines Fehlers von mir.
+       Ich hatte zwei Ausnahmen eingebaut ("Schalter aus" und "der Zeitraum steht in der URL"), die
+       beide davon ausgingen, dass die Seite ihren Anfangszeitraum selbst kennt. Gemessen auf der
+       echten Seite: sie kennt ihn nicht mehr -- das hart verdrahtete Startup-Event ist raus, und
+       den URL-Parameter liest dort niemand. Ergebnis: p_date_from: null, also gar kein Zeitraum.
+       Ein doppelter Ladevorgang mit richtigen Daten ist schlimm; ein einzelner ohne Daten ist
+       schlimmer. Also uebergibt der Aufbau IMMER, genau einmal, ueber den Aufbau-Kanal. */
     function aufbauUebergeben(c, rest){
       if (bootGetan() || !c || !c.instanceId || !nimmtTeil(c.instanceId)) return;
       if (rest == null) rest = AUFBAU_MAX;
-      if (rest === AUFBAU_MAX){
-        var unnoetig = aufbauNoetig();
-        if (unnoetig){
-          bootMerken();
-          spur("aufbau-nicht-noetig", { instanz: c.instanceId, warum: unnoetig });
-          return;
-        }
-      }
+
       if (!c.root || !c.root.isConnected){
         /* Bubble hat das Element ersetzt. Den Platz freigeben, sonst wartet niemand mehr:
            die neue Wurzel mountet gleich und soll die Schleife uebernehmen duerfen. */
@@ -1441,7 +1453,7 @@
         uebergeben(c, "boot");
         /* Ab jetzt steht der Zeitraum in der URL. Der naechste Aufbau braucht diese Uebergabe
            deshalb nicht mehr -- und damit auch keinen zweiten Abfragedurchlauf. */
-        if (syncAn()) urlSchreiben(syncPreset());
+        if (syncAn() && urlAn(c.root)) urlSchreiben(syncPreset());
         return;
       }
       if (rest > 0){
