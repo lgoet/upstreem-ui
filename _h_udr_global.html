@@ -11,14 +11,24 @@ function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(fun
   if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
 function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
 var T=null, ladungen=0;
-document.getElementById("rahmen").addEventListener("load", function(){ ladungen++; });
 function prefs(){ try { return JSON.parse(window.localStorage.getItem("up_prefs")||"{}"); } catch(e){ return {}; } }
 function bauen(prefs){
   return Promise.all([hol("core.css"),hol("filters/date-range.css"),hol("core.js"),
                       hol("filters/date-range.js"),hol("filters/bubble/date_range_bubble.html")])
   .then(function(t){
     T=t;
-    var d=document.getElementById("rahmen").contentDocument;
+    /* NEUES iframe-Element und nicht document.open() im alten. document.open() legt ein neues
+       DOKUMENT an, aber dasselbe WINDOW: window.UpstreemCore aus dem vorigen Aufbau ueberlebt,
+       die Verdraengungssperre in core.js laesst das zweite core.js gar nicht laufen, und dessen
+       Einstellungs-Cache (_prefs) steht noch auf dem alten Stand. Gemessen: Phase 9 schrieb
+       date_preset=last3 in den Speicher und bekam last7 zurueck -- und Phase 8 bestand aus
+       demselben Grund mit der richtigen Zahl aus dem falschen Grund. */
+    var alt=document.getElementById("rahmen");
+    var neu=document.createElement("iframe");
+    neu.id="rahmen"; neu.setAttribute("style", alt.getAttribute("style"));
+    neu.addEventListener("load", function(){ ladungen++; });
+    alt.parentNode.replaceChild(neu, alt);
+    var d=neu.contentDocument;
     d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0;padding:8px'></body></html>"); d.close();
     var v=d.defaultView;
     try { if (prefs) v.localStorage.setItem("up_prefs", JSON.stringify(prefs));
@@ -30,10 +40,15 @@ function bauen(prefs){
        load-Ereignis des Rahmens gezaehlt, und die Einstellungen liest der ELTERN-Kontext: ein
        about:blank-Rahmen erbt den Ursprung, localStorage ist also derselbe Speicher. */
     /* Die drei Bubble-Funktionen zaehlen -- das ist die Zahl, um die es geht */
-    v.__ruf = { from:0, to:0, range:0 };
-    v.bubble_fn_udr_date_from  = function(){ v.__ruf.from++; };
-    v.bubble_fn_udr_date_to    = function(){ v.__ruf.to++; };
-    v.bubble_fn_udr_date_range = function(){ v.__ruf.range++; };
+    v.__ruf = { from:0, to:0, range:0, apply:0 };
+    v.__letzte = null;             /* das JSON des letzten range-Aufrufs, fuer Grund und Datum */
+    v.bubble_fn_udr_date_from  = function(d2){ v.__ruf.from++; v.__von = d2; };
+    v.bubble_fn_udr_date_to    = function(d2){ v.__ruf.to++;   v.__bis = d2; };
+    v.bubble_fn_udr_date_range = function(j){ v.__ruf.range++;
+      try { v.__letzte = JSON.parse(j); } catch(e){ v.__letzte = { kaputt: String(j) }; } };
+    /* Der ZWEITE Kanal -- der, der auf der Seite nachlaedt. Er ist die Zahl, um die es hier geht:
+       beim Aufbau und beim Ansichtswechsel muss er 0 bleiben, sonst laedt die Seite zweimal. */
+    v.bubble_fn_udr_apply = function(){ v.__ruf.apply++; };
     /* showView der Host-App nachstellen -- MUSS vor core.js stehen, core umschliesst es beim
        Start. Der Stub merkt sich die Aufrufe, damit auch bewiesen ist, dass das Original
        weiterhin laeuft und nicht vom Wrapper geschluckt wird. */
@@ -47,6 +62,8 @@ function bauen(prefs){
       var w=d.createElement("div"); w.innerHTML=vorlage;
       var r=w.querySelector(".udr-root");
       r.setAttribute("data-instance", id); r.setAttribute("data-cdn-pin","t");
+      r.setAttribute("data-range-apply-fn", "bubble_fn_udr_apply");
+      r.setAttribute("data-range-apply-delay", "0");
       r.setAttribute("data-isdark","no");
       d.body.appendChild(r);
     });
@@ -92,6 +109,17 @@ bauen(null).then(function(d){
         ? "RICHTIG (genau eine Uebergabe vom sichtbaren Picker, nicht zehn)"
         : "FALSCH -- "+(v.__ruf.range===0?"keine Uebergabe, Bubble kennt den Zeitraum nicht"
                                           :"mehr als ein Picker hat gefeuert")));
+  /* DER GEMELDETE FEHLER: das Datum, das bei Bubble ankommt. 30 Tage muessen 30 Tage sein. */
+  var soll30 = new Date(); soll30.setHours(0,0,0,0); soll30.setDate(soll30.getDate()-29);
+  function isoV(d2){ return d2.getFullYear()+"-"+String(d2.getMonth()+1).padStart(2,"0")+"-"+String(d2.getDate()).padStart(2,"0"); }
+  log("   Was bei Bubble ankommt: "+JSON.stringify(v.__letzte));
+  log("   date_from soll "+isoV(soll30)+" (30 Tage)   ist "+(v.__letzte&&v.__letzte.date_from));
+  log("   ==> "+(v.__letzte&&v.__letzte.date_from===isoV(soll30)
+        ? "RICHTIG (30 Tage, nicht 7)" : "FALSCH -- das ist der gemeldete Fehler"));
+  log("   Grund im JSON: \""+(v.__letzte&&v.__letzte.reason)+"\"   Preset: \""+(v.__letzte&&v.__letzte.preset)+"\"");
+  log("   ==> "+(v.__letzte&&v.__letzte.reason==="boot"&&v.__letzte.preset==="last30"?"RICHTIG":"FALSCH"));
+  log("   seitenweiter Kanal (apply) beim Aufbau: "+v.__ruf.apply+
+      "   ==> "+(v.__ruf.apply===0?"RICHTIG (kein zweiter Ladevorgang)":"FALSCH -- die Seite laedt doppelt"));
   log("   Beschriftungen: prompts=\""+label(d,"dates_v2_prompts")+"\"  brands=\""+
       label(d,"dates_v2_brands")+"\"  export=\""+label(d,"dates_v2_export")+"\"");
   log("   getUpstreemDateRange(): "+JSON.stringify(v.getUpstreemDateRange()));
@@ -101,7 +129,7 @@ bauen(null).then(function(d){
   log("   last6 gesperrt="+b6.disabled+"   last30 gesperrt="+b30.disabled+
       "   ==> "+(b6.disabled && !b30.disabled?"RICHTIG":"FALSCH"));
   /* DER KERNTEST: ein Preset-Klick bei zehn Pickern */
-  v.__ruf={from:0,to:0,range:0};
+  v.__ruf={from:0,to:0,range:0,apply:0};
   d.querySelector('[data-instance="dates_v2_prompts"] .udr-trigger').click();
   return new Promise(function(ok){ setTimeout(function(){
     d.querySelector('[data-instance="dates_v2_prompts"] [data-preset="last7"]').click();
@@ -113,13 +141,18 @@ bauen(null).then(function(d){
   log("   Bubble-Aufrufe: from="+r.from+"  to="+r.to+"  range="+r.range+"  SUMME="+(r.from+r.to+r.range));
   log("   ==> "+(r.from===1&&r.to===1&&r.range===1
         ? "RICHTIG (drei, nicht dreissig)" : "FALSCH -- Lawine oder nichts gefeuert"));
+  /* GEGENPROBE zu Phase 3: ein echter Klick MUSS den seitenweiten Kanal treffen und den Grund
+     "user" tragen. Ohne diese Zeile waere "apply=0" oben nur der Beweis, dass der Kanal tot ist. */
+  log("   seitenweiter Kanal (apply): "+r.apply+"   Grund: \""+(v.__letzte&&v.__letzte.reason)+"\"");
+  log("   ==> "+(r.apply===1&&v.__letzte&&v.__letzte.reason==="user"
+        ? "RICHTIG (der Klick laedt nach, der Aufbau nicht)" : "FALSCH"));
   var p={}; try { p=JSON.parse(v.localStorage.getItem("up_prefs")||"{}"); } catch(e){}
   log("   gespeichert: date_preset="+p.date_preset);
   log("   Beschriftungen still nachgezogen: brands=\""+label(d,"dates_v2_brands")+
       "\"  citations=\""+label(d,"dates_v2_citations")+"\"  (Export bleibt) export=\""+
       label(d,"dates_v2_export")+"\"");
   /* upstreemDatesActivate: genau drei Aufrufe */
-  v.__ruf={from:0,to:0,range:0};
+  v.__ruf={from:0,to:0,range:0,apply:0};
   v.upstreemDatesActivate("brands");
   return new Promise(function(ok){ setTimeout(function(){ ok(d); },400); });
 }).then(function(d){
@@ -127,9 +160,11 @@ bauen(null).then(function(d){
   log("PHASE 5  upstreemDatesActivate(\"brands\")");
   log("   Bubble-Aufrufe: SUMME="+(r.from+r.to+r.range)+
       "   ==> "+(r.from===1&&r.to===1&&r.range===1?"RICHTIG (genau drei)":"FALSCH"));
+  log("   apply="+r.apply+"  Grund=\""+(d.defaultView.__letzte&&d.defaultView.__letzte.reason)+"\""+
+      "   ==> "+(r.apply===0?"RICHTIG (die Ansicht laedt ueber ihren eigenen Workflow)":"FALSCH"));
   /* PHASE 6: Ansichtswechsel ueber showView -- ohne jeden Bubble-Schritt */
   var v=d.defaultView;
-  v.__ruf={from:0,to:0,range:0}; v.__views=[];
+  v.__ruf={from:0,to:0,range:0,apply:0}; v.__views=[];
   v.showView("citations");
   return new Promise(function(ok){ setTimeout(function(){ ok(d); },400); });
 }).then(function(d){
@@ -139,14 +174,14 @@ bauen(null).then(function(d){
       "   ==> "+(r.from===1&&r.to===1&&r.range===1?"RICHTIG (genau drei)":"FALSCH"));
   log("   Original-showView lief weiter: "+JSON.stringify(v.__views)+
       "   ==> "+(v.__views.length===1&&v.__views[0]==="citations"?"RICHTIG":"FALSCH"));
-  v.__ruf={from:0,to:0,range:0};
+  v.__ruf={from:0,to:0,range:0,apply:0};
   v.showView("citations");
   return new Promise(function(ok){ setTimeout(function(){ ok(d); },400); });
 }).then(function(d){
   var v=d.defaultView, r=v.__ruf;
   log("   zweites Mal dieselbe Ansicht: SUMME="+(r.from+r.to+r.range)+
       "   ==> "+(r.from+r.to+r.range===0?"RICHTIG (schon uebergeben, kein zweiter Workflow)":"FALSCH"));
-  v.__ruf={from:0,to:0,range:0};
+  v.__ruf={from:0,to:0,range:0,apply:0};
   v.showView("prompt_spotlight");
   return new Promise(function(ok){ setTimeout(function(){ ok(d); },400); });
 }).then(function(d){
@@ -157,7 +192,7 @@ bauen(null).then(function(d){
   return bauen(null);           /* Schalter aus */
 }).then(function(d){
   var v=d.defaultView;
-  v.__ruf={from:0,to:0,range:0};
+  v.__ruf={from:0,to:0,range:0,apply:0};
   v.showView("citations");
   return new Promise(function(ok){ setTimeout(function(){ ok(d); },400); });
 }).then(function(d){
@@ -165,6 +200,43 @@ bauen(null).then(function(d){
   log("PHASE 7  Schalter AUS: Aufbau und Ansichtswechsel muessen still bleiben");
   log("   Bubble-Aufrufe: SUMME="+(r.from+r.to+r.range)+
       "   ==> "+(r.from+r.to+r.range===0?"RICHTIG (keine neue Nebenwirkung)":"FALSCH"));
+  /* PHASE 8: upstreemDatesBoot() -- der Aufruf, der das hart verdrahtete Startup-Event ersetzt.
+     Schalter ist hier AUS, es muss also der Vorgabe-Zeitraum kommen (sieben Tage). */
+  v.__ruf={from:0,to:0,range:0,apply:0}; v.__letzte=null;
+  var erg=v.upstreemDatesBoot("dashboard");
+  return new Promise(function(ok){ setTimeout(function(){ ok({d:d,erg:erg}); },400); });
+}).then(function(st){
+  var d=st.d, v=d.defaultView, r=v.__ruf;
+  function isoV(x){ return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0"); }
+  var s7=new Date(); s7.setHours(0,0,0,0); s7.setDate(s7.getDate()-6);
+  log("PHASE 8  upstreemDatesBoot() bei AUSGESCHALTETEM Schalter");
+  log("   Rueckgabe: "+JSON.stringify(st.erg));
+  log("   Aufrufe: from="+r.from+" to="+r.to+" range="+r.range+" apply="+r.apply);
+  log("   date_from soll "+isoV(s7)+" (Vorgabe 7 Tage)   ist "+(v.__letzte&&v.__letzte.date_from));
+  log("   ==> "+(r.from===1&&r.to===1&&r.range===1&&r.apply===0&&
+                 v.__letzte&&v.__letzte.date_from===isoV(s7)&&v.__letzte.reason==="boot"
+        ? "RICHTIG (ersetzt das hart verdrahtete Event, ohne Nachladen)" : "FALSCH"));
+  /* Und derselbe Aufruf bei EINGESCHALTETEM Schalter: dann der geteilte Zeitraum. */
+  try { v.localStorage.setItem("up_prefs", JSON.stringify({date_sync:"on",date_preset:"last3"})); } catch(e){}
+  return null;
+}).then(function(){
+  return bauen({ date_sync:"on", date_preset:"last3" });
+}).then(function(d){
+  var v=d.defaultView;
+  v.__ruf={from:0,to:0,range:0,apply:0}; v.__letzte=null;
+  v.upstreemDatesBoot("dashboard");
+  return new Promise(function(ok){ setTimeout(function(){ ok(d); },400); });
+}).then(function(d){
+  var v=d.defaultView, r=v.__ruf;
+  function isoV(x){ return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0"); }
+  var s3=new Date(); s3.setHours(0,0,0,0); s3.setMonth(s3.getMonth()-3);
+  log("PHASE 9  upstreemDatesBoot() bei EINGESCHALTETEM Schalter (last3)");
+  log("   Aufrufe: from="+r.from+" to="+r.to+" range="+r.range+" apply="+r.apply);
+  log("   date_from soll "+isoV(s3)+"   ist "+(v.__letzte&&v.__letzte.date_from)+
+      "   Preset \""+(v.__letzte&&v.__letzte.preset)+"\"");
+  log("   ==> "+(r.range===1&&r.apply===0&&v.__letzte&&v.__letzte.date_from===isoV(s3)&&
+                 v.__letzte.preset==="last3"
+        ? "RICHTIG (der geteilte Zeitraum, genau einmal, ohne Nachladen)" : "FALSCH"));
   log("FERTIG");
 }).catch(function(e){ log("ABBRUCH: "+e.message+"\n"+(e.stack||"").split("\n").slice(0,3).join("\n")); });
 </script>

@@ -109,6 +109,22 @@
        falsch, und "Letzte 6 Monate" ist ausdruecklich nicht dabei. Bei aktivem Schalter sind
        beide deshalb ausgegraut, mit einem Hinweis -- ausgeblendet wirkten sie wie ein Fehler. */
     function nimmtTeil(id){ return !/export|spotlight/i.test(String(id || "")); }
+    /* Dieselbe Rechnung wie presetRange() im Picker, nur ohne Picker -- der geteilte Zeitraum
+       steht in den Einstellungen, nicht im Element. Damit ist er schon bekannt, BEVOR die erste
+       Kalender-Wurzel gemountet ist, und genau das braucht der Seitenaufbau: Bubble rendert das
+       Markup einer verborgenen Gruppe nicht, der Page-Load-Workflow laeuft aber trotzdem.
+       MIN_DATE bleibt hier aussen vor: das Attribut haengt an der Wurzel, und die gibt es an
+       dieser Stelle noch nicht. Die drei teilbaren Presets liegen alle weit innerhalb der
+       Untergrenze (2024-01-01), der Unterschied waere also nur bei last3 im Januar 2024 sichtbar
+       -- und dort deckelt der Picker beim Mounten selbst. */
+    function presetSpanne(key){
+      var heute = startOfDay(new Date()), von;
+      if (key === "last30") von = addDays(heute, -29);
+      else if (key === "last3") von = addMonths(heute, -3);
+      else if (key === "last6") von = addMonths(heute, -6);
+      else von = addDays(heute, -6);
+      return { from: von, to: heute };
+    }
     var TEILBAR = { last7: 1, last30: 1, last3: 1 };
     function syncAn(){ return UC.getPref && UC.getPref("date_sync") === "on"; }
     function syncPreset(){
@@ -434,13 +450,28 @@
         if (typeof fn === "function") { try { fn(value); } catch (e) {} return true; }
         return false;
       }
-      function emit(from, to) {
+      /* grund sagt, WARUM dieser Zeitraum kommt -- und das entscheidet, ob die Seite nachlaedt:
+
+           "user"      jemand hat im Kalender geklickt (auch Reset). Nur hier laeuft der zweite
+                       Kanal (data-range-apply-fn), also der seitenweite Workflow.
+           "boot"      Seitenaufbau: die States sollen stimmen, BEVOR die Seite von sich aus laedt.
+                       Ein Nachladen waere hier ein zweiter Ladevorgang direkt neben dem ersten.
+           "activate"  Ansichtswechsel: die Ansicht laedt ueber ihren eigenen Workflow.
+           "sync"      ein anderer Picker hat den geteilten Zeitraum geaendert; diese Ansicht wird
+                       nur nachgezogen und laedt beim naechsten Aktivieren.
+
+         Der Grund steht IM JSON, damit ein Workflow ihn lesen kann -- ohne ihn kann Bubble einen
+         Aufbau nicht von einem Klick unterscheiden, und genau daran hing der doppelte Aufruf. */
+      function emit(from, to, grund) {
         if (isProcessing()) return;
+        grund = grund || "user";
         emitSeq += 1;
         var payload = {
           instance_id: instanceId,
           date_from: iso(from),
           date_to: iso(to),
+          preset: committedPreset || "",
+          reason: grund,
           event_id: instanceId + "_" + Date.now() + "_" + emitSeq
         };
         var json = JSON.stringify(payload);
@@ -470,7 +501,7 @@
            Optional: ohne Attribut kein Aufruf und keine Warnung -- wer weiter mit dem Zaehler
            arbeitet, merkt von der Erweiterung nichts. Kein Standardname als Rueckfall, denn ein
            erfundener Name wuerde auf einer Seite, die ihn nicht kennt, still ins Leere laufen. */
-        var applyName = root.getAttribute("data-range-apply-fn");
+        var applyName = grund === "user" ? root.getAttribute("data-range-apply-fn") : null;
         if (applyName) {
           /* Aufschub, und zwar mit Absicht. Die drei Aufrufe darueber stossen je einen
              Bubble-Workflow an; die laufen ASYNCHRON in Bubbles eigener Warteschlange, waehrend
@@ -753,8 +784,12 @@
           if (dark) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
         },
         getRange: function () { return { from: iso(committed.from), to: iso(committed.to), preset: committedPreset }; },
-        /* Feuert den aktuellen Stand, ohne ihn zu aendern -- fuer upstreemDatesActivate. */
-        emitCurrent: function () { emit(committed.from, committed.to); return true; }
+        /* Feuert den aktuellen Stand, ohne ihn zu aendern -- fuer upstreemDatesActivate und die
+           Uebergabe beim Aufbau. Der Grund geht mit, damit kein seitenweiter Workflow anspringt. */
+        emitCurrent: function (grund) { emit(committed.from, committed.to, grund || "activate"); return true; },
+        /* Feuert einen Zeitraum, den der Aufrufer schon berechnet hat -- fuer upstreemDatesBoot,
+           damit der Aufbau die Attributnamen DIESES Pickers benutzt und nicht die Vorgabenamen. */
+        emitAt: function (von, bis, grund) { emit(von, bis, grund || "boot"); return true; }
       };
       root.__udrCtrl = ctrl;
       CONTROLLERS.push(ctrl);
@@ -823,9 +858,11 @@
       return forEachInstance(instanceId, function (c) { c.setPreset(key, emitToo); });
     };
     /* ---- Fuer Bubble ------------------------------------------------------------------------
-     BEIDE Funktionen sind Handgriffe fuer Sonderfaelle. Im Normalbetrieb ist in Bubble NICHTS zu
-     tun: der Picker gibt den geteilten Zeitraum beim Seitenaufbau und bei jedem Ansichtswechsel
-     von selbst weiter (siehe den Block bei uebergeben() weiter unten).
+     Der Ansichtswechsel braucht keinen Bubble-Schritt: core umschliesst showView, der Picker der
+     neuen Ansicht gibt seinen Zeitraum von selbst weiter (siehe den Block bei uebergeben()).
+     Der SEITENAUFBAU braucht einen, und zwar genau einen -- upstreemDatesBoot(). Grund steht
+     dort: eine Seite, die ihre Datums-States selbst setzt, ueberschreibt sonst jede Uebergabe,
+     und eine Seite, die es nicht tut, laeuft mit null in die RPCs.
 
      getUpstreemDateRange()  liest den GETEILTEN Zeitraum, oder null wenn der Schalter aus ist.
                              Fuer die Konsole und fuer den Fall, dass die Datums-States lieber
@@ -896,10 +933,10 @@
      Merker haelt hoechstens fuenf Eintraege und wird geleert, sobald sich der geteilte Zeitraum
      aendert -- danach holt sich jede Ansicht die neuen Daten beim naechsten Aktivieren. */
   var UEBERGEBEN = {};
-  function uebergeben(c){
+  function uebergeben(c, grund){
     if (!c || UEBERGEBEN[c.instanceId] || typeof c.emitCurrent !== "function") return false;
     UEBERGEBEN[c.instanceId] = 1;
-    return c.emitCurrent();
+    return c.emitCurrent(grund || "activate");
   }
   /* Ein Aufruf von aussen ist eine ausdrueckliche Anweisung und feuert IMMER -- der Merker haelt
      nur die automatischen Uebergaben auseinander. */
@@ -908,6 +945,56 @@
     if (!c || typeof c.emitCurrent !== "function") return false;
     UEBERGEBEN[c.instanceId] = 1;
     return c.emitCurrent();
+  };
+  /* ---- upstreemDatesBoot(): die States beim Seitenaufbau setzen -----------------------------
+     Der Fall, an dem die erste Fassung gescheitert ist. Gemeldet am 03.09.: Dashboard auf 30 Tage,
+     "Apply everywhere" an, Reload -- und die RPCs liefen mit 2026-08-28, also sieben Tagen.
+     Grund war nicht der Schalter, sondern ein Startup-Event in Bubble, das die Datums-States
+     HART auf "heute minus 6" setzte. Das lief nach unserer Uebergabe und hat sie ueberschrieben.
+     Ohne dieses Event laufen die RPCs mit null und fallen auf sieben Tage zurueck -- also braucht
+     es dort einen Aufruf, der die States setzt, und zwar genau EINEN.
+
+     Diese Funktion ist dieser Aufruf. Sie braucht KEINEN gemounteten Kalender: der geteilte
+     Zeitraum steht in den Einstellungen. Sie feuert die drei Bubble-Funktionen mit
+     reason: "boot" und ruft den seitenweiten Kanal NICHT -- der Seitenaufbau laedt schon selbst.
+     Ist der Schalter aus, kommt der Vorgabe-Zeitraum: dann ersetzt sie das hart verdrahtete
+     Startup-Event ohne Verhaltensaenderung, und es gibt nur noch eine Stelle, an der der
+     Anfangszeitraum steht.
+
+     Der Name der Instanz ist optional und dient nur der Zuordnung im Workflow. */
+  var BOOT_GETAN = false;
+  window.upstreemDatesBoot = function (name) {
+    BOOT_GETAN = true;
+    var key = syncAn() ? syncPreset() : DEFAULT_PRESET;
+    var sp = presetSpanne(key);
+    var id = String(name || "") || "boot";
+    var payload = {
+      instance_id: id, date_from: iso(sp.from), date_to: iso(sp.to),
+      preset: key, reason: "boot",
+      event_id: id + "_" + Date.now() + "_boot"
+    };
+    /* Ueber einen vorhandenen Picker, wenn es ihn schon gibt -- dann greifen dessen eigene
+       Attributnamen (data-date-from-fn und Geschwister), die eine Seite ueberschreiben kann.
+       Sonst direkt an die Standardnamen: besser ein Aufruf mit den Vorgabenamen als keiner. */
+    var c = pickerFuer(id) || null;
+    if (!c) for (var i = 0; i < CONTROLLERS.length; i++){
+      if (CONTROLLERS[i] && nimmtTeil(CONTROLLERS[i].instanceId)) { c = CONTROLLERS[i]; break; }
+    }
+    /* Immer den Zeitraum zurueckgeben, nie ein blankes true -- der Rueckgabewert ist das, was in
+       der Konsole beim Nachsehen hilft ("was hat Bubble bekommen?"). */
+    if (c && typeof c.emitAt === "function"){ c.emitAt(sp.from, sp.to, "boot"); return payload; }
+    function ruf(nm, wert){
+      var fn = UC.resolveBubbleFn(nm);
+      if (typeof fn !== "function") return false;
+      try { fn(wert); } catch(e){}
+      return true;
+    }
+    ruf("bubble_fn_udr_date_from", new Date(sp.from.getFullYear(), sp.from.getMonth(), sp.from.getDate()));
+    ruf("bubble_fn_udr_date_to",   new Date(sp.to.getFullYear(),   sp.to.getMonth(),   sp.to.getDate()));
+    var traf = ruf("bubble_fn_udr_date_range", JSON.stringify(payload));
+    if (!traf && window.console) console.warn("[date-range] upstreemDatesBoot: " +
+      "bubble_fn_udr_date_range ist nicht auffindbar -- die Datums-States wurden nicht gesetzt.");
+    return payload;
   };
   if (UC.onViewChange) UC.onViewChange(function (name) {
     if (!name || !syncAn() || !nimmtTeil(name)) return;
@@ -931,11 +1018,14 @@
        spaeter stehen alle Controller, und Bubbles JavaScriptToBubble-Elemente sind bereit.
        Das offsetParent ist EIN Layout-Lesezugriff, einmal je Seitenaufbau. */
     if (syncAn()) setTimeout(function () {
+      /* Hat der Page-Load-Workflow upstreemDatesBoot() schon gerufen, ist hier nichts zu tun --
+         sonst stuenden zwei Uebergaben hintereinander und Bubble saehe zwei Ereignisse. */
+      if (BOOT_GETAN) return;
       for (var i = 0; i < CONTROLLERS.length; i++) {
         var c = CONTROLLERS[i];
         if (!c || !c.root || !c.root.isConnected || !nimmtTeil(c.instanceId)) continue;
         if (c.root.offsetParent === null) continue;
-        uebergeben(c);
+        uebergeben(c, "boot");
         return;
       }
     }, 0);
