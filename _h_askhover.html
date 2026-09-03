@@ -1,0 +1,43 @@
+<meta charset="utf-8"><title>Ask-Knopf: Hover-Fuellung deckend?</title>
+<style>#out{font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap;padding:10px}</style>
+<body><div id="buehne"></div><pre id="out">laeuft…</pre>
+<script>
+var ALT=(new URLSearchParams(location.search)).get("alt")==="1";
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+Promise.all([hol("core.css"), hol(ALT?"_h_askhover_alt.css":"ask-mira.css")]).then(function(t){
+  [t[0],t[1]].forEach(function(c){ var s=document.createElement("style"); s.textContent=c; document.head.appendChild(s); });
+  /* Dunkle Wurzel, so wie die App sie setzt */
+  var r=document.createElement("div"); r.className="up-root am-root"; r.id="ask-mira";
+  r.setAttribute("data-theme","dark");
+  var k=document.createElement("button"); k.className="am-ask-sel is-on"; k.textContent="Ask Mira";
+  r.appendChild(k); document.getElementById("buehne").appendChild(r);
+  /* Die Hover-Regel aus dem geladenen Stylesheet holen und ihre Fuellung aufloesen */
+  var regel=null;
+  [].forEach.call(document.styleSheets, function(ss){
+    try { [].forEach.call(ss.cssRules, function(cr){
+      if (cr.selectorText && cr.selectorText.indexOf(".am-ask-sel:hover")>=0) regel=cr;
+      if (cr.cssRules) [].forEach.call(cr.cssRules, function(c2){
+        if (c2.selectorText && c2.selectorText.indexOf(".am-ask-sel:hover")>=0) regel=c2; });
+    }); } catch(e){}
+  });
+  var cs=getComputedStyle(r);
+  function loese(v){ /* var(--x, fallback) auf den Wert bringen */
+    var m=/var\(\s*(--[\w-]+)\s*(?:,\s*([^)]*))?\)/.exec(v||"");
+    if (!m) return (v||"").trim();
+    var w=cs.getPropertyValue(m[1]).trim();
+    return w || (m[2]||"").trim();
+  }
+  var rohBg = regel ? regel.style.getPropertyValue("background") : "(keine Regel gefunden)";
+  var bg = loese(rohBg);
+  function deckend(c){ return !/rgba?\([^)]*,\s*0?\.\d+\s*\)/.test(c) && c.indexOf("transparent")<0; }
+  log("Fassung: "+(ALT?"ALT":"NEU"));
+  log("Regel   : .am-ask-sel:hover { background: "+rohBg+" }");
+  log("aufgeloest im Dunkelmodus: "+bg);
+  log("--am-soft            = "+cs.getPropertyValue("--am-soft").trim());
+  log("--vt-row-hover-solid = "+cs.getPropertyValue("--vt-row-hover-solid").trim());
+  log("==> Fuellung deckend: "+deckend(bg)+"   "+(deckend(bg)?"RICHTIG":"FALSCH, scheint durch"));
+  log("FERTIG");
+}).catch(function(e){ log("ABBRUCH: "+e.message); });
+</script>

@@ -1371,7 +1371,15 @@
     font-size: 12.5px; font-weight: 600; white-space: nowrap;
   }
   .am-ask-sel.is-on { display: inline-flex; animation: amAskSelIn 120ms ease both; }
-  .am-ask-sel:hover { background: var(--am-soft); border-color: #6f6f6f; }
+  /* --vt-row-hover-solid und NICHT --am-soft, aus demselben Grund wie zwoelf Zeilen unter
+     .am-scroll-bottom: --am-soft ist --vc-heading-bg, und das ist im Dunkeln rgba(42,42,42,0.6),
+     also durchsichtig. Dieser Knopf SCHWEBT ueber dem Chat (position: absolute), und beim
+     Ueberfahren schien der Text darunter durch ihn hindurch -- als Nutzer liest sich das als
+     "der Knopf wird beim Hover blasser". Gemeldet am 03.09., und der Nutzer sagt richtig, dass es
+     dieselbe Sache schon mehrfach war.
+     --vt-row-hover-solid ist das DECKENDE Paar aus core, genau fuer diesen Fall (#f7f7f7 hell,
+     #242424 dunkel). Aussehen und Kontrast bleiben, nur die Durchsicht ist weg. */
+  .am-ask-sel:hover { background: var(--vt-row-hover-solid, var(--am-soft)); border-color: var(--vc-hover-border, #6f6f6f); }
   .am-ask-sel .am-ic { width: 14px; height: 14px; }
   @keyframes amAskSelIn { from { opacity: 0; transform: translate(-50%, calc(-100% + 4px)); } to { opacity: 1; transform: translate(-50%, -100%); } }
 
