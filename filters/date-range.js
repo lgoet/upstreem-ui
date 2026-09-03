@@ -28,7 +28,14 @@
   /* ---------- stubs ----------
      Bubble can call these before core.js has finished loading. Queue and replay in call order
      (STYLEGUIDE §25 step 2). */
-  var API_NAMES = ["resetUpstreemDateRangePicker", "setDateRangePreset", "setDateRangeTheme"];
+  /* upstreemDatesBoot und upstreemDatesActivate stehen mit in der Liste: ein "Run javascript"
+     in Bubble laeuft oft, bevor date-range.js vom CDN da ist. Der Aufruf war dann ein
+     TypeError, den Bubble schluckt -- kein Eintrag in der Konsole, keine States, und die RPCs
+     liefen mit null. Genau die Haelfte der Faelle von "manchmal geht es nicht".
+     getUpstreemDateRange ist NICHT dabei: es gibt einen Wert zurueck, und ein Stub, der
+     stattdessen true liefert, waere schlimmer als der Fehler. */
+  var API_NAMES = ["resetUpstreemDateRangePicker", "setDateRangePreset", "setDateRangeTheme",
+                   "upstreemDatesBoot", "upstreemDatesActivate"];
   var __udrQueue = window.__udrBootQueue = window.__udrBootQueue || [];
   if (!window.__udrBootStubbed) {
     window.__udrBootStubbed = true;
@@ -982,9 +989,21 @@
      Anfangszeitraum steht.
 
      Der Name der Instanz ist optional und dient nur der Zuordnung im Workflow. */
-  var BOOT_GETAN = false;
+  /* EINMAL JE SEITENAUFBAU, und der Merker sitzt am WINDOW statt im Modul. Zwei Wege fuehrten
+     sonst zum doppelten Durchlauf, und der Nutzer hat am 03.09. beide getroffen:
+
+       a) Bubbles Startup-Event ruft upstreemDatesBoot(), waehrend die automatische Uebergabe
+          schon gelaufen ist (sie haengt an einem setTimeout(0), das Event kommt spaeter).
+       b) date-range.js wird ZWEIMAL geladen -- zwei Komponenten, zwei CDN-Einbindungen. Dann
+          laeuft udrBoot zweimal, jeder Lauf baut seine eigene CONTROLLERS-Liste (initRoot haengt
+          den vorhandenen Controller ausdruecklich in die neue Liste, Zeile 173), und jeder Lauf
+          uebergibt. Ein Merker im Modul haette das nicht gesehen.
+
+     Welcher Weg zuerst kommt, ist gleichgueltig: das Ergebnis ist identisch (dasselbe Preset,
+     dieselben Daten). Darum gewinnt einfach der erste, und der zweite ist ein Nullvorgang. */
+  function bootGetan(){ return !!window.__udrBootGetan; }
+  function bootMerken(){ try { window.__udrBootGetan = true; } catch(e){} }
   window.upstreemDatesBoot = function (name) {
-    BOOT_GETAN = true;
     var key = syncAn() ? syncPreset() : DEFAULT_PRESET;
     var sp = presetSpanne(key);
     var id = String(name || "") || "boot";
@@ -1000,6 +1019,20 @@
     if (!c) for (var i = 0; i < CONTROLLERS.length; i++){
       if (CONTROLLERS[i] && nimmtTeil(CONTROLLERS[i].instanceId)) { c = CONTROLLERS[i]; break; }
     }
+    /* Schon uebergeben: nichts feuern, aber den Zeitraum zurueckgeben -- der Aufrufer soll
+       sehen, was gilt. Und EINMAL sagen, dass dieser Schritt nichts mehr tut: ein Aufruf, der
+       still verpufft, ist genau das, was hier nicht mehr passieren soll. Kein Fehler, ein
+       Hinweis zum Aufraeumen. */
+    if (bootGetan()){
+      if (!window.__udrBootGesagt && window.console){
+        window.__udrBootGesagt = true;
+        console.warn("[date-range] upstreemDatesBoot() kam zu spaet: der Zeitraum wurde beim " +
+          "Aufbau schon an Bubble uebergeben (" + payload.preset + ", " + payload.date_from +
+          " bis " + payload.date_to + "). Dieser Schritt tut nichts mehr und kann raus.");
+      }
+      return payload;
+    }
+    bootMerken();
     /* Immer den Zeitraum zurueckgeben, nie ein blankes true -- der Rueckgabewert ist das, was in
        der Konsole beim Nachsehen hilft ("was hat Bubble bekommen?"). */
     if (c && typeof c.emitAt === "function"){ c.emitAt(sp.from, sp.to, "boot"); return payload; }
@@ -1048,13 +1081,15 @@
        Der seitenweite Kanal bleibt dabei still (siehe emit), es entsteht also kein zweiter
        Ladevorgang fuer den, der weiter beim Seitenaufbau laedt. */
     setTimeout(function () {
-      /* Hat der Page-Load-Workflow upstreemDatesBoot() schon gerufen, ist hier nichts zu tun --
-         sonst stuenden zwei Uebergaben hintereinander und Bubble saehe zwei Ereignisse. */
-      if (BOOT_GETAN) return;
+      /* Hat der Page-Load-Workflow upstreemDatesBoot() schon gerufen -- oder ein zweiter Lauf
+         dieser Datei --, ist hier nichts zu tun. Sonst stuenden zwei Uebergaben hintereinander
+         und Bubble liefe seinen ganzen Aufbau zweimal. */
+      if (bootGetan()) return;
       for (var i = 0; i < CONTROLLERS.length; i++) {
         var c = CONTROLLERS[i];
         if (!c || !c.root || !c.root.isConnected || !nimmtTeil(c.instanceId)) continue;
         if (c.root.offsetParent === null) continue;
+        bootMerken();
         uebergeben(c, "boot");
         return;
       }

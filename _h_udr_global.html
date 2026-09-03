@@ -49,6 +49,8 @@ function bauen(prefs){
     /* Der ZWEITE Kanal -- der, der auf der Seite nachlaedt. Er ist die Zahl, um die es hier geht:
        beim Aufbau und beim Ansichtswechsel muss er 0 bleiben, sonst laedt die Seite zweimal. */
     v.bubble_fn_udr_apply = function(){ v.__ruf.apply++; };
+    v.__warn=[]; var aw=v.console.warn;
+    v.console.warn=function(){ v.__warn.push([].join.call(arguments," ")); return aw.apply(this,arguments); };
     /* showView der Host-App nachstellen -- MUSS vor core.js stehen, core umschliesst es beim
        Start. Der Stub merkt sich die Aufrufe, damit auch bewiesen ist, dass das Original
        weiterhin laeuft und nicht vom Wrapper geschluckt wird. */
@@ -210,43 +212,50 @@ bauen(null).then(function(d){
   log("   Bubble-Aufrufe beim Ansichtswechsel: SUMME="+(r.from+r.to+r.range)+
       "   ==> "+(r.from+r.to+r.range===0
         ? "RICHTIG (ohne Schalter loest ein Ansichtswechsel nichts aus)" : "FALSCH"));
-  /* PHASE 8: upstreemDatesBoot() -- der Aufruf, der das hart verdrahtete Startup-Event ersetzt.
-     Schalter ist hier AUS, es muss also der Vorgabe-Zeitraum kommen (sieben Tage). */
-  v.__ruf={from:0,to:0,range:0,apply:0}; v.__letzte=null;
+  /* PHASE 8: DER GEMELDETE DOPPELDURCHLAUF. Beim Aufbau hat die automatische Uebergabe schon
+     gefeuert; ruft Bubbles Startup-Event danach upstreemDatesBoot(), darf NICHTS mehr passieren.
+     Vorher feuerte es ein zweites Mal, und der ganze Page-Load-Durchlauf lief zweimal. */
+  v.__ruf={from:0,to:0,range:0,apply:0}; v.__letzte=null; v.__warn=[];
   var erg=v.upstreemDatesBoot("dashboard");
   return new Promise(function(ok){ setTimeout(function(){ ok({d:d,erg:erg}); },400); });
 }).then(function(st){
   var d=st.d, v=d.defaultView, r=v.__ruf;
-  function isoV(x){ return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0"); }
-  var s7=new Date(); s7.setHours(0,0,0,0); s7.setDate(s7.getDate()-6);
-  log("PHASE 8  upstreemDatesBoot() bei AUSGESCHALTETEM Schalter");
-  log("   Rueckgabe: "+JSON.stringify(st.erg));
+  log("PHASE 8  upstreemDatesBoot() NACH der automatischen Uebergabe (der Doppeldurchlauf)");
   log("   Aufrufe: from="+r.from+" to="+r.to+" range="+r.range+" apply="+r.apply);
-  log("   date_from soll "+isoV(s7)+" (Vorgabe 7 Tage)   ist "+(v.__letzte&&v.__letzte.date_from));
-  log("   ==> "+(r.from===1&&r.to===1&&r.range===1&&r.apply===0&&
-                 v.__letzte&&v.__letzte.date_from===isoV(s7)&&v.__letzte.reason==="boot"
-        ? "RICHTIG (ersetzt das hart verdrahtete Event, ohne Nachladen)" : "FALSCH"));
-  /* Und derselbe Aufruf bei EINGESCHALTETEM Schalter: dann der geteilte Zeitraum. */
-  try { v.localStorage.setItem("up_prefs", JSON.stringify({date_sync:"on",date_preset:"last3"})); } catch(e){}
-  return null;
-}).then(function(){
-  return bauen({ date_sync:"on", date_preset:"last3" });
+  log("   Rueckgabe: "+JSON.stringify(st.erg));
+  log("   ==> "+(r.from+r.to+r.range+r.apply===0
+        ? "RICHTIG (Nullvorgang -- kein zweiter Durchlauf)"
+        : "FALSCH -- der ganze Page-Load laeuft zweimal"));
+  log("   Konsole: "+(v.__warn.filter(function(w){ return /zu spaet/.test(w); })[0]||"(nichts)"));
+  log("   ==> "+(v.__warn.some(function(w){ return /zu spaet/.test(w); })
+        ? "RICHTIG (sagt, dass der Schritt raus kann)" : "FALSCH -- still verpufft"));
+  /* PHASE 9: date-range.js ZWEIMAL geladen -- zwei Komponenten, zwei CDN-Einbindungen. Jeder
+     Lauf baut seine eigene CONTROLLERS-Liste und uebergab vorher jeweils einmal. */
+  v.__ruf={from:0,to:0,range:0,apply:0}; v.__warn=[];
+  var j=d.createElement("script"); j.textContent=T[3]; d.head.appendChild(j);
+  return new Promise(function(ok){ setTimeout(function(){ ok(d); },900); });
 }).then(function(d){
-  var v=d.defaultView;
-  v.__ruf={from:0,to:0,range:0,apply:0}; v.__letzte=null;
-  v.upstreemDatesBoot("dashboard");
-  return new Promise(function(ok){ setTimeout(function(){ ok(d); },400); });
+  var v=d.defaultView, r=v.__ruf;
+  log("PHASE 9  date-range.js ein ZWEITES Mal geladen");
+  log("   Aufrufe: from="+r.from+" to="+r.to+" range="+r.range+" apply="+r.apply+
+      "   Picker im Dokument: "+d.querySelectorAll(".udr-root").length);
+  log("   ==> "+(r.from+r.to+r.range+r.apply===0
+        ? "RICHTIG (der zweite Lauf uebergibt nicht noch einmal)"
+        : "FALSCH -- doppelte Einbindung = doppelter Durchlauf"));
+  /* PHASE 10: der frische Aufbau mit Schalter AN muss weiter genau EINMAL uebergeben --
+     die Gegenprobe zu 8 und 9. Ohne sie waere "0 Aufrufe" auch mit einem toten Merker wahr. */
+  return bauen({ date_sync:"on", date_preset:"last3" });
 }).then(function(d){
   var v=d.defaultView, r=v.__ruf;
   function isoV(x){ return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0"); }
   var s3=new Date(); s3.setHours(0,0,0,0); s3.setMonth(s3.getMonth()-3);
-  log("PHASE 9  upstreemDatesBoot() bei EINGESCHALTETEM Schalter (last3)");
+  log("PHASE 10  Gegenprobe: frischer Aufbau, Schalter AN (last3)");
   log("   Aufrufe: from="+r.from+" to="+r.to+" range="+r.range+" apply="+r.apply);
   log("   date_from soll "+isoV(s3)+"   ist "+(v.__letzte&&v.__letzte.date_from)+
       "   Preset \""+(v.__letzte&&v.__letzte.preset)+"\"");
   log("   ==> "+(r.range===1&&r.apply===0&&v.__letzte&&v.__letzte.date_from===isoV(s3)&&
                  v.__letzte.preset==="last3"
-        ? "RICHTIG (der geteilte Zeitraum, genau einmal, ohne Nachladen)" : "FALSCH"));
+        ? "RICHTIG (genau eine Uebergabe -- der Merker sperrt nicht die neue Seite)" : "FALSCH"));
   log("FERTIG");
 }).catch(function(e){ log("ABBRUCH: "+e.message+"\n"+(e.stack||"").split("\n").slice(0,3).join("\n")); });
 </script>
