@@ -5767,9 +5767,16 @@
       for (var a = 0; a < knoten.length; a++){
         (function(k){
           if (!k || !k.isConnected) return;
-          sicher("spracheLauf", function(){ spracheLauf(k); });
+          /* KEIN spracheLauf und KEIN stampGran hier. Beide sind fuer genau diese Knoten schon
+             gelaufen: der Beobachter ruft sie synchron fuer jedes Element aus "ziele", und
+             dieselbe Liste ist es, die als segKnoten hierher kommt (siehe dort). Der zweite Lauf
+             fand nichts mehr zu tun und zahlte trotzdem den ganzen Weg.
+             GEMESSEN im Trace des Nutzers (03.09., ohne Selector Stats): spracheLauf stand auf
+             ZWEI Wegen in der Zuordnung -- 343ms ueber toolbarLauf und 308ms ueber den
+             Beobachter, plus 73ms fuer attributeStellen darin. Der Kommentar oben nannte die
+             Doppelung schon; entfernt war sie nicht.
+             Der voll-Fall darunter behaelt spracheLauf: dort war kein Beobachter im Spiel. */
           sicher("stampToolbarIcons", function(){ stampToolbarIcons(k); });
-          sicher("stampGran", function(){ stampGran(k); });
           sicher("orderToolbars", function(){ orderToolbars(k); });
         })(knoten[a]);
       }

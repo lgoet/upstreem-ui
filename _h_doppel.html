@@ -1,0 +1,82 @@
+<meta charset="utf-8"><title>spracheLauf: einmal statt zweimal</title>
+<style>#out{font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap;padding:10px}</style>
+<body><div id="buehne"></div><pre id="out">laeuft…</pre>
+<script>
+window.__err=[]; window.addEventListener("error",function(e){window.__err.push(String(e.message));});
+var ALT=(new URLSearchParams(location.search)).get("alt")==="1";
+var CORE = ALT ? "_h_dopp_alt.js" : "core.js";
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+/* Deutsch, sonst hat der Sprachlauf nichts zu tun */
+/* Der Schluessel heisst "locale" im Speicher "up_prefs" (core: getPref("locale")). Beim ersten
+   Anlauf stand hier "pref_lang" -- die Ablage nimmt nur bekannte Schluessel, also blieb die
+   Sprache Englisch und die Uebersetzungskontrolle lief ins Leere. */
+try { window.localStorage.setItem("up_prefs", JSON.stringify({ locale: "de" })); } catch(e){}
+/* querySelectorAll zaehlen, zugeordnet ueber den Aufrufstapel */
+var Z={};
+function wer(){
+  var z=((new Error()).stack||"").split("\n");
+  for (var i=1;i<z.length;i++){
+    var m=/at\s+(?:new\s+)?([^\s(]+)?\s*\(?([^\s()]*?:\d+:\d+)\)?\s*$/.exec(z[i]);
+    if(!m) continue;
+    var name=String(m[1]||"").replace(/^Object\./,"");
+    if (/^(wer|zaehl)$/.test(name)||/querySelectorAll|createTreeWalker/.test(name)) continue;
+    if (String(m[2]||"").indexOf("_h_doppel")===0) continue;
+    return name||"(?)";
+  }
+  return "(oben)";
+}
+function zaehl(a){ var k=wer()+" "+a; Z[k]=(Z[k]||0)+1; }
+[Document.prototype,Element.prototype].forEach(function(o){
+  var q=o.querySelectorAll;
+  o.querySelectorAll=function(){ zaehl("qsa"); return q.apply(this,arguments); };
+});
+var tw=document.createTreeWalker.bind(document);
+document.createTreeWalker=function(){ zaehl("treewalker"); return tw.apply(null,arguments); };
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+Promise.all([hol("core.css"),hol(CORE)]).then(function(t){
+  log("Fassung: "+(ALT?"ALT":"NEU")+"   Doppelung entfernt: "+(t[1].indexOf("KEIN spracheLauf und KEIN stampGran hier")>=0));
+  var s=document.createElement("style"); s.textContent=t[0]; document.head.appendChild(s);
+  var j=document.createElement("script"); j.textContent=t[1]; document.head.appendChild(j);
+  return new Promise(function(ok){ setTimeout(ok,1200); });
+}).then(function(){
+  /* Eine Wurzel mit uebersetzbarem Text und einer Werkzeugleiste */
+  var w=document.createElement("div"); w.className="up-root";
+  w.innerHTML='<div class="up-head"><div class="up-heading">Prompts</div>'+
+              '<div class="up-head-tools"><button class="up-iconbtn">Export</button></div></div>'+
+              '<div class="up-box"><div class="up-thead"><div class="up-row"></div></div>'+
+              '<div class="up-tbody"></div></div>';
+  document.getElementById("buehne").appendChild(w);
+  return new Promise(function(ok){ setTimeout(ok,1500); });
+}).then(function(){
+  Z={};
+  /* Sechs Mutationsschwuenge in einen Ast, wie ein Tabellenrender */
+  var tb=document.querySelector(".up-tbody");
+  var n=0;
+  return new Promise(function(fertig){
+    (function schwung(){
+      if (n++>=6){ setTimeout(fertig, 2500); return; }
+      var frag=document.createDocumentFragment();
+      for (var r=0;r<20;r++){ var row=document.createElement("div"); row.className="up-row";
+        var c=document.createElement("div"); c.className="up-cell"; c.textContent="Active";
+        row.appendChild(c); frag.appendChild(row); }
+      tb.appendChild(frag);
+      setTimeout(schwung, 120);
+    })();
+  });
+}).then(function(){
+  var l=Object.keys(Z).filter(function(k){ return /spracheLauf|attributeStellen|breiterLauf|stampGran|stampToolbarIcons|orderToolbars/.test(k); })
+        .sort(function(a,b){ return Z[b]-Z[a]; }).map(function(k){ return "   "+k+" = "+Z[k]; });
+  log("Sechs Schwuenge in einen Ast:");
+  log(l.join("\n")||"   (keine dieser Aufrufer)");
+  log("   Summe aller gezaehlten: "+Object.keys(Z).reduce(function(s,k){return s+Z[k];},0));
+  /* GEGENPROBE: die Uebersetzung muss weiter greifen. "Active" steht im Katalog als "Aktiv". */
+  var z=document.querySelector(".up-tbody .up-cell");
+  var h=document.querySelector(".up-heading");
+  log("Sprache: locale="+document.documentElement.getAttribute("data-up-locale")+
+      "   erste Zelle=\""+(z?z.textContent:"?")+"\"   Ueberschrift=\""+(h?h.textContent:"?")+"\"");
+  log("   ==> "+(z && z.textContent.trim()==="Aktiv" ? "UEBERSETZT" : "NICHT UEBERSETZT"));
+  log("Fehler: "+(window.__err.length?window.__err.slice(0,2).join(" | "):"keine"));
+  log("FERTIG");
+}).catch(function(e){ log("ABBRUCH: "+e.message); });
+</script>
