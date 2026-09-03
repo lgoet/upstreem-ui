@@ -67,8 +67,18 @@
      nichts -- genau daran sind vier Runden Diagnose vorbeigelaufen. */
   var LOG = window.__udrLog = window.__udrLog || [];
   var LOG_T0 = window.__udrLogT0 = window.__udrLogT0 || Date.now();
+  /* ---- DIAGNOSESTAND: die Spur ist AN, ohne dass jemand etwas setzen muss ------------------
+     Voruebergehend. Der Nutzer soll fuer eine Diagnose keine Konsolenbefehle geben muessen -- er
+     laedt die Seite und hat alles. Sobald die Ursache des doppelten RPC-Durchlaufs gefunden ist,
+     wird die Vorgabe hier auf "aus" gedreht (eine Zeile) oder der ganze Block entfernt.
+
+     Ausschalten ohne neuen Stand: localStorage.setItem("up_dates_trace","off")
+     Wieder an:                     localStorage.removeItem("up_dates_trace")
+
+     ACHTUNG beim Zurueckdrehen: mit der Spur ist auch die WACHE an, und die schliesst fremde
+     Funktionen um (kanalWachen). Das gehoert nicht in einen Dauerbetrieb. */
   function spurAn(){
-    try { return window.localStorage.getItem("up_dates_trace") === "1"; } catch(e){ return false; }
+    try { return window.localStorage.getItem("up_dates_trace") !== "off"; } catch(e){ return true; }
   }
   /* Zaehler, solange DIESE Datei eine bubble_fn ruft. Die Wache liest ihn und weiss damit sicher,
      ob ein Aufruf von uns kommt -- vorher stand das am Dateinamen im Stack, und der stimmt nur,
@@ -89,13 +99,24 @@
   /* Die Wache von Hand legen, wenn die Seite laengst laeuft -- fuer einen Ansichtswechsel oder
      einen Klick, ohne die Seite neu zu laden. Braucht up_dates_trace=1. */
   window.upstreemDatesWatch = function(){
-    var n = 0, w = document.querySelectorAll(".udr-root, [data-udr-root]");
+    var w = document.querySelectorAll(".udr-root, [data-udr-root]"), gelegt = 0, zeilen = [];
     for (var i = 0; i < w.length; i++){
-      if (w[i].__udrKanalWache) { w[i].__udrKanalWache(); n++; }
+      if (!w[i].__udrKanalWache) continue;
+      var e = w[i].__udrKanalWache(true) || { gelegt: 0, namen: [] };
+      gelegt += e.gelegt;
+      zeilen.push((w[i].getAttribute("data-instance") || "(ohne id)") + ": " + e.namen.join(", "));
     }
-    if (window.console) window.console.log("[dates] Wache gelegt an " + n + " Kalender(n)" +
-      (n ? "" : " -- kein Kalender gefunden oder up_dates_trace ist aus"));
-    return n;
+    /* Melden, was WIRKLICH bewacht wird, und nicht wie viele Kalender es gibt. Die erste Fassung
+       zaehlte die Kalender und meldete "Wache gelegt an 9" -- waehrend sie wegen des
+       Diagnose-Schalters nichts umgeschlossen hatte. Eine Meldung, die nicht stimmt, ist
+       schlimmer als keine. */
+    if (window.console){
+      window.console.log("[dates] " + gelegt + " Funktion(en) neu bewacht:");
+      for (var z = 0; z < zeilen.length; z++) window.console.log("   " + zeilen[z]);
+      if (!gelegt) window.console.log("   (nichts Neues -- entweder schon bewacht, oder die " +
+        "bubble_fn_* stehen noch nicht am Fenster)");
+    }
+    return gelegt;
   };
   window.upstreemDatesLog = function(){
     if (!window.console) return LOG;
@@ -108,6 +129,9 @@
         z += "  " + e.kanal + " -> " + e.fn + "  " + (e.getroffen ? "OK" : "NICHT DA") +
              "  (" + e.grund + ")  " + e.wert;
         if (e.fehler) z += "  FEHLER: " + e.fehler;
+      } else if (e.art === "bruecke"){
+        z += "  " + e.instanz + "  Kanal=" + e.kanal + "  neu bewacht=" + e.bewacht +
+             "\n            " + (e.funktionen || []).join("\n            ");
       } else {
         if (e.instanz) z += "  " + e.instanz;
         if (e.view) z += "  view=" + e.view;
@@ -1101,7 +1125,7 @@
       };
       root.__udrCtrl = ctrl;
       /* Griff fuer upstreemDatesWatch(): die Wache braucht die Attributnamen DIESER Wurzel. */
-      root.__udrKanalWache = function(){ kanalWachen(root); };
+      root.__udrKanalWache = function(erzwingen){ return kanalWachen(root, erzwingen); };
       CONTROLLERS.push(ctrl);
       /* Der Aufbau-Fall: der erste teilnehmende Kalender der Seite gibt seinen Zeitraum an
          Bubble. setTimeout(0) und nicht sofort: dieser Aufruf loest einen Bubble-Workflow aus,
@@ -1455,8 +1479,13 @@
        NUR im Diagnosemodus (up_dates_trace=1). Ohne den Schalter wird nichts umgeschlossen -- eine
        fremde Funktion im Betrieb zu ersetzen ist ein Eingriff, den eine Bibliothek nicht
        stillschweigend macht. */
-    function kanalWachen(root){
-      if (!spurAn() || !root) return;
+    function kanalWachen(root, erzwingen){
+      if (!root) return { gelegt: 0, namen: [] };
+      /* Automatisch nur im Diagnosemodus. Ein ausdruecklicher Aufruf von upstreemDatesWatch()
+         legt sie IMMER -- er ist die Anweisung, und ohne diese Ausnahme meldete die Funktion
+         "Wache gelegt an 9 Kalender" und hatte nichts getan. Genau so passiert. */
+      if (!spurAn() && !erzwingen) return { gelegt: 0, namen: [] };
+      var gelegt = 0, gefunden = [];
       var namen = [
         root.getAttribute("data-boot-fn")        || "bubble_fn_udr_date_boot",
         root.getAttribute("data-range-fn")       || "bubble_fn_udr_date_range",
@@ -1469,7 +1498,10 @@
         if (!n) continue;
         var f = null;
         try { f = window[n]; } catch(e){}
-        if (typeof f !== "function" || f.__udrWache) continue;
+        if (typeof f !== "function"){ gefunden.push(n + " (nicht da)"); continue; }
+        if (f.__udrWache){ gefunden.push(n + " (schon bewacht)"); continue; }
+        gefunden.push(n + " (bewacht)");
+        gelegt++;
         (function(name, echt){
           var w = function(){
             var stack = "";
@@ -1482,6 +1514,7 @@
           try { window[name] = w; } catch(e){}
         })(n, f);
       }
+      return { gelegt: gelegt, namen: gefunden };
     }
     function bootKanal(root){
       var b = root.getAttribute("data-boot-fn") || "bubble_fn_udr_date_boot";
@@ -1513,7 +1546,9 @@
       if (kanal){
         /* Wache legen, BEVOR wir selbst rufen: dann steht unser eigener Aufruf als erste Zeile
            drin, und alles danach ist fremd. */
-        kanalWachen(c.root);
+        var wache = kanalWachen(c.root);
+        spur("bruecke", { instanz: c.instanceId, kanal: kanal,
+                          bewacht: wache && wache.gelegt, funktionen: wache && wache.namen });
         bootMerken();
         spur("aufbau", { instanz: c.instanceId, kanal: kanal, sync: syncAn() ? "on" : "off",
                          preset: syncAn() ? syncPreset() : "(eigener Stand)",

@@ -9,7 +9,10 @@
    landet und als "VON DER SEITE" erkannt wird.
    Im obersten Fenster, weil die Wache am window haengt. */
 var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
-try { localStorage.setItem("up_dates_trace","1");
+/* Der Schalter wird NICHT gesetzt: geprueft wird die Vorgabe des Diagnosestands (Spur an, ohne
+   dass jemand etwas setzen muss). Das ist die Aussage, um die es geht -- ein Prueftand, der den
+   Schalter selbst setzt, haette sie nicht gemessen. */
+try { localStorage.removeItem("up_dates_trace");
       localStorage.setItem("up_prefs", JSON.stringify({date_sync:"on",date_preset:"last30"})); } catch(e){}
 var RUF={boot:0,range:0,apply:0};
 /* Die Bruecke kommt SPAET, wie bei Bubble (dort 3400ms). Vorher existiert keine Funktion --
@@ -59,7 +62,22 @@ Promise.all([hol("core.css"),hol("filters/date-range.css"),hol("core.js"),
                        :(unser.length===0?"der eigene fehlt":"falsch zugeordnet"))));
   /* GEGENPROBE: ohne up_dates_trace darf NICHTS umgeschlossen werden. */
   log("   Wache aktiv (Funktion ersetzt): "+(!!window.bubble_fn_udr_apply_x.__udrWache)+
-      "   ==> "+(window.bubble_fn_udr_apply_x.__udrWache?"RICHTIG (Diagnosemodus ist an)":"FALSCH"));
+      "   ==> "+(window.bubble_fn_udr_apply_x.__udrWache
+        ?"RICHTIG (ohne jeden Konsolenbefehl -- die Vorgabe ist an)":"FALSCH"));
+  /* GEGENPROBE ZUR MELDUNG: upstreemDatesWatch() darf nur zaehlen, was es WIRKLICH bewacht.
+     Alles ist hier schon bewacht, also muss die Antwort 0 sein -- die erste Fassung meldete die
+     Zahl der Kalender und behauptete damit eine Wache, die sie nicht gelegt hatte. */
+  var nochmal = window.upstreemDatesWatch();
+  log("   upstreemDatesWatch() bei schon bewachten Funktionen: "+nochmal+
+      "   ==> "+(nochmal===0 ? "RICHTIG (zaehlt nur echte Zugaenge)" : "FALSCH -- meldet zu viel"));
+  /* Und ohne Diagnosemodus: der ausdrueckliche Aufruf muss trotzdem wirken. */
+  try { localStorage.setItem("up_dates_trace","off"); } catch(e){}
+  window.bubble_fn_udr_neu_x = function(){};
+  var r2=document.querySelector(".udr-root");
+  r2.setAttribute("data-range-apply-fn","bubble_fn_udr_neu_x");
+  var erzwungen = window.upstreemDatesWatch();
+  log("   mit up_dates_trace=off, ausdruecklich gerufen: "+erzwungen+" neu bewacht"+
+      "   ==> "+(erzwungen===1 ? "RICHTIG (die Anweisung wirkt auch ohne Schalter)" : "FALSCH"));
   log("FERTIG");
 }).catch(function(e){ log("ABBRUCH: "+e.message); });
 </script>
