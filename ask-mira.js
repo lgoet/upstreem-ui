@@ -5198,18 +5198,53 @@
     // refits when that happens -- and it compares only scroll-INDEPENDENT numbers (an element's
     // own height, the viewport), so merely scrolling the page can never trigger a refit. That is
     // what makes a plain 300ms poll safe here.
-    var _lp = null, _lh = null;
-    function watch(){
-      if (!visible()) return;
-      var p = root.parentElement ? Math.round(root.parentElement.getBoundingClientRect().height) : 0;
+    /* GEMESSEN am 03.09. in einer DevTools-Aufnahme des Nutzers: dieser Takt stand als groesster
+       Einzelposten mit 9350ms Gesamtzeit da -- bei 258ms Eigenzeit. Der Preis ist nicht die
+       Rechnung, sondern die Messungen: getBoundingClientRect am Elternelement UND visible(), das
+       selbst drei Layoutwerte liest. Auf einer Seite mit 24054 Knoten erzwingt jede dieser
+       Lesungen eine komplette Style-Neuberechnung -- dreimal je Sekunde, dauerhaft, auch wenn
+       Mira gar nicht offen ist.
+       Der Kommentar oben sagt, ein einfacher 300ms-Takt sei hier SICHER. Gegen eine Rueckkopplung
+       ist er das, gegen die Kosten nicht. Die Hoehe des Elternelements meldet jetzt ein
+       Groessenwaechter, ohne dass jemand misst. Der Takt bleibt als Auffangnetz, aber langsam --
+       er faengt nur noch den Fall ab, dass Bubble uns umhaengt, das Elternelement also ein
+       anderes ist. */
+    var _lp = null, _lh = null, _roZiel = null, _ro = null;
+    function hoeheMelden(p){
       var h = Math.round(vv ? vv.height : window.innerHeight);
       if (p !== _lp || h !== _lh){ _lp = p; _lh = h; scheduleFit(); }
     }
+    function elternBeobachten(){
+      var el = root.parentElement;
+      if (!el || el === _roZiel || !window.ResizeObserver) return;
+      _roZiel = el;
+      if (_ro){ try { _ro.disconnect(); } catch(e){} }
+      _ro = new ResizeObserver(function(eintraege){
+        if (!visible()) return;
+        var e = eintraege[eintraege.length - 1];
+        hoeheMelden(e && e.contentRect ? Math.round(e.contentRect.height) : 0);
+      });
+      _ro.observe(el);
+    }
+    var _takt = 0;
+    function watch(){
+      elternBeobachten();
+      /* Steht der Waechter, macht ER die Arbeit -- aber nicht blind darauf verlassen: jeder
+         zehnte Takt misst trotzdem. Das sind zwanzig Sekunden statt dreimal je Sekunde und
+         faengt den Fall ab, dass der Waechter aus irgendeinem Grund stumm bleibt. */
+      if (_ro && (++_takt % 10) !== 0) return;
+      if (!visible()) return;
+      var p = root.parentElement ? Math.round(root.parentElement.getBoundingClientRect().height) : 0;
+      hoeheMelden(p);
+    }
+    /* Der sichtbare Bereich aendert sich ohne Groessenaenderung des Elternelements -- Tastatur auf
+       dem Telefon, Adressleiste. Das meldet visualViewport selbst. */
+    if (vv && vv.addEventListener) vv.addEventListener("resize", scheduleFit);
     fit();
     requestAnimationFrame(fit);
     window.addEventListener('load', function(){ fit(); setTimeout(fit, 60); setTimeout(fit, 200); setTimeout(fit, 450); });
     setTimeout(fit, 120); setTimeout(fit, 400);
-    setInterval(watch, 300);
+    setInterval(watch, 2000);
     window.addEventListener('resize', scheduleFit);
     // Deliberately NO window 'scroll' listener and no vv 'scroll' listener: page scrolling must
     // never make us re-measure or re-size. See the feedback-loop note at the top of this block.

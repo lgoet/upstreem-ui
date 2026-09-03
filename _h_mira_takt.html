@@ -1,0 +1,66 @@
+<meta charset="utf-8"><title>ask-mira: Layoutlesungen im Ruhezustand</title>
+<style>#out{font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap;padding:10px}</style>
+<body><div id="buehne"></div><pre id="out">laeuft…</pre>
+<script>
+window.__err=[]; window.addEventListener("error",function(e){window.__err.push(String(e.message));});
+var ALT=(new URLSearchParams(location.search)).get("alt")==="1";
+var MIRA = ALT ? "_h_mira_alt.js" : "ask-mira.js";
+/* GEGENPROBE mit ?kein_ro=1: ohne ResizeObserver MUSS der Takt weiter messen, sonst haengt die
+   Anpassung an einem Waechter, der auch ausfallen kann. */
+if ((new URLSearchParams(location.search)).get("kein_ro")==="1"){ try { delete window.ResizeObserver; } catch(e){ window.ResizeObserver = undefined; } }
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+/* Zaehler mit Zuordnung -- nur die Lesungen, die aus ask-mira kommen */
+var Z={};
+function wer(){
+  var z=((new Error()).stack||"").split("\n");
+  for (var i=1;i<z.length;i++){
+    var m=/at\s+(?:new\s+)?([^\s(]+)?\s*\(?([^\s()]*?:\d+:\d+)\)?\s*$/.exec(z[i]);
+    if(!m) continue;
+    var name=String(m[1]||"").replace(/^Object\./,"");
+    if (/(^|\.)(get|set)$/.test(name)||/^(wer|zaehl)$/.test(name)) continue;
+    if (/getBoundingClientRect|getClientRects/.test(name)) continue;
+    if (String(m[2]||"").indexOf("_h_mira_takt")===0) continue;
+    return name||"(?)";
+  }
+  return "(oben)";
+}
+function zaehl(a){ var k=wer()+" "+a; Z[k]=(Z[k]||0)+1; }
+[["offsetWidth",HTMLElement.prototype],["offsetHeight",HTMLElement.prototype]].forEach(function(pp){
+  var d=Object.getOwnPropertyDescriptor(pp[1],pp[0]);
+  Object.defineProperty(pp[1],pp[0],{configurable:true,get:function(){ zaehl(pp[0]); return d.get.call(this); }});
+});
+var rO=Element.prototype.getBoundingClientRect;
+Element.prototype.getBoundingClientRect=function(){ zaehl("rect"); return rO.apply(this,arguments); };
+var cO=Element.prototype.getClientRects;
+Element.prototype.getClientRects=function(){ zaehl("clientRects"); return cO.apply(this,arguments); };
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+Promise.all([hol("core.css"),hol("ask-mira.css"),hol("core.js"),hol(MIRA),hol("bubble/ask_mira_bubble.html")])
+.then(function(t){
+  log("Fassung: "+(ALT?"ALT":"NEU")+"   Waechter im Text: "+(t[3].indexOf("elternBeobachten")>=0)+
+      "   ResizeObserver da: "+!!window.ResizeObserver);
+  [t[0],t[1]].forEach(function(c){ var s=document.createElement("style"); s.textContent=c; document.head.appendChild(s); });
+  var w=document.createElement("div"); w.innerHTML=wurzelAus(t[4]);
+  var r=w.querySelector("#ask-mira") || w.querySelector(".am-root") || w.firstElementChild;
+  if(!r) throw new Error("keine Mira-Wurzel in der Vorlage");
+  r.setAttribute("data-cdn-pin","m"); r.setAttribute("data-isdark","no");
+  document.getElementById("buehne").appendChild(r);
+  var j=document.createElement("script"); j.textContent=t[2]; document.head.appendChild(j);
+  var j2=document.createElement("script"); j2.textContent=t[3]; document.head.appendChild(j2);
+  return new Promise(function(ok){ setTimeout(ok,2000); });
+}).then(function(){
+  /* Ab jetzt RUHE: keine Interaktion, nur warten. Was hier gezaehlt wird, ist der Dauerpreis. */
+  Z={};
+  return new Promise(function(ok){ setTimeout(ok,6000); });
+}).then(function(){
+  var l=Object.keys(Z).sort(function(a,b){ return Z[b]-Z[a]; }).slice(0,8)
+        .map(function(k){ return "   "+k+" = "+Z[k]; });
+  var summe=Object.keys(Z).reduce(function(s,k){ return s+Z[k]; },0);
+  log("SECHS SEKUNDEN RUHE, keine Interaktion:");
+  log(l.join("\n")||"   (keine Lesungen)");
+  log("   Summe: "+summe);
+  log("Fehler: "+(window.__err.length?window.__err.slice(0,2).join(" | "):"keine"));
+  log("FERTIG");
+}).catch(function(e){ log("ABBRUCH: "+e.message); });
+</script>
