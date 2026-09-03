@@ -80,7 +80,9 @@
   -webkit-font-smoothing: antialiased;
   box-sizing: border-box;
 }
-.usn-bar *, .usn-bar *::before, .usn-bar *::after { box-sizing: border-box; }
+/* Nur noch die Pseudo-Elemente. .usn-bar traegt selbst up-root up-portal (sidebar.js), die
+   Elemente darin sind also von .up-root * aus core gedeckt. */
+.usn-bar *::before, .usn-bar *::after { box-sizing: border-box; }
 .usn-bar[data-theme="dark"], .usn-fab[data-theme="dark"], .usn-scrim[data-theme="dark"] {
   --usn-bg: #1b1b1b; --usn-sel: var(--up-sel-bg); --usn-akt: var(--up-sel-bg);
 }

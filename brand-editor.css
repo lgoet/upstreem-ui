@@ -12,7 +12,10 @@
    Vorlage sagt jetzt, dass er oben 32 sein soll: dann steht ueber und unter der Kopfzeile
    dasselbe Mass. */
 .ube-root { display: block; width: 100%; box-sizing: border-box; }
-.ube-root * { box-sizing: border-box; }
+/* box-sizing kommt aus core: .up-root traegt es selbst (core.css) und .up-root * fuer alles
+   darin. Eine eigene universelle Regel hier war doppelt -- und universelle Selektoren sind der
+   Posten: jeder kostet einen vollen Durchlauf ueber das Dokument je Style-Neuberechnung,
+   gemessen am 03.09. rund 8ms pro Regel, unabhaengig von den Treffern. */
 
 /* Zwischen den Bloecken eine Linie, wie in url-detail (.uud-root > * + *): 32px darueber wie
    darunter, der Abstand INNERHALB eines Blocks bleibt bei 12. Die Linie haengt am FOLGENDEN

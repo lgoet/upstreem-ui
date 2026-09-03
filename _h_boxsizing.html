@@ -1,0 +1,59 @@
+<meta charset="utf-8"><title>box-sizing nach dem Aufraeumen</title>
+<style>#out{font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap;padding:10px}</style>
+<body><div id="buehne"></div><pre id="out">laeuft…</pre>
+<script>
+var ALT=(new URLSearchParams(location.search)).get("alt")==="1";
+var DAT=["core.css","ask-mira.css","brand-editor.css","settings-brand.css","team-orga.css",
+         "prompts-table.css","export-data.css","onboarding-page.css","auth-page.css",
+         "sidebar.css","landing-hero.css"];
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+var FAELLE=[
+  ["up-root ube-root","brand-editor Wurzel"],
+  ["up-root am-root","ask-mira Wurzel",  "ask-mira"],
+  ["up-root up-portal usn-bar","Sidebar-Portal"],
+  ["up-root usb-root","settings-brand Wurzel"],
+  ["up-root uto-root","team-orga Wurzel"],
+  ["up-root up-portal uex-overlay","Export-Overlay"],
+  ["up-root uob-root","Onboarding Wurzel"],
+  ["up-root uau-root","Auth Wurzel"],
+  ["ulh-root","Landingpage Wurzel (Regel BLEIBT)"]
+];
+Promise.all(DAT.map(function(f){ return hol(ALT ? "_h_bs_alt_"+f.replace(/[.\-]/g,"")+".js" : f); }))
+.then(function(t){
+  log("Fassung: "+(ALT?"ALT":"NEU")+"   core traegt Begruendung: "+(t[0].indexOf("DIE EINE universelle")>=0));
+  t.forEach(function(c){ var s=document.createElement("style"); s.textContent=c; document.head.appendChild(s); });
+  var b=document.getElementById("buehne");
+  FAELLE.forEach(function(f,i){
+    var w=document.createElement("div"); w.className=f[0]; if (f[2]) w.id=f[2];
+    var tief=document.createElement("div"); tief.className="tief-"+i;
+    var noch=document.createElement("span"); noch.className="tiefer-"+i;
+    tief.appendChild(noch); w.appendChild(tief);
+    /* upt-bulkbar zusaetzlich, das lag in der Tabelle */
+    if (f[0].indexOf("ube-root")>=0){
+      var bulk=document.createElement("div"); bulk.className="upt-bulkbar";
+      var bk=document.createElement("i"); bk.className="bulkkind"; bulk.appendChild(bk); w.appendChild(bulk);
+    }
+    b.appendChild(w);
+  });
+  return new Promise(function(ok){ setTimeout(ok,200); });
+}).then(function(){
+  var schlecht=0;
+  FAELLE.forEach(function(f,i){
+    var w=document.querySelector("."+f[0].split(" ").join("."));
+    var tief=w.querySelector(".tief-"+i), noch=w.querySelector(".tiefer-"+i);
+    var cs=getComputedStyle, r=cs(w).boxSizing, a=cs(tief).boxSizing, c=cs(noch).boxSizing;
+    var pb=cs(noch,"::before").boxSizing;
+    var ok = r==="border-box" && a==="border-box" && c==="border-box";
+    if (!ok) schlecht++;
+    log((ok?"ok   ":"!!   ")+f[1]);
+    log("       Wurzel="+r+"  Kind="+a+"  Enkel="+c+"  Enkel::before="+pb);
+  });
+  var bk=document.querySelector(".bulkkind");
+  if (bk){ var v=getComputedStyle(bk).boxSizing;
+    log((v==="border-box"?"ok   ":"!!   ")+"upt-bulkbar-Kind = "+v); if(v!=="border-box") schlecht++; }
+  log(schlecht ? ("!! "+schlecht+" FAELLE FALSCH") : "Alle Faelle border-box.");
+  log("FERTIG");
+}).catch(function(e){ log("ABBRUCH: "+e.message); });
+</script>

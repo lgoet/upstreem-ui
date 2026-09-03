@@ -45,7 +45,8 @@
   -webkit-font-smoothing: antialiased;
   box-sizing: border-box;
 }
-.uau-root *, .uau-root *::before, .uau-root *::after { box-sizing: border-box; }
+/* Nur noch die Pseudo-Elemente -- s. den Kommentar an .up-root * in core.css. */
+.uau-root *::before, .uau-root *::after { box-sizing: border-box; }
 
 /* ---------- Karte ---------- */
 .uau-card {

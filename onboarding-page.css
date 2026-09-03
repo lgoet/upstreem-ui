@@ -63,7 +63,9 @@
   --uob-px: clamp(16px, 3vw, 32px);
   padding: clamp(16px, 2.4vh, 24px) var(--uob-px) clamp(16px, 2.4vh, 28px);
 }
-.uob-root *, .uob-root *::before, .uob-root *::after { box-sizing: border-box; }
+/* Nur noch die Pseudo-Elemente: box-sizing wird NICHT geerbt, ::before/::after brauchen es
+   eigens. Der Teil fuer die Elemente selbst kam doppelt zu .up-root * aus core (s. dort). */
+.uob-root *::before, .uob-root *::after { box-sizing: border-box; }
 .uob-root[data-theme="dark"] { --uob-hover: var(--vc-heading-bg); }
 
 /* ---------- Weltkarte im Hintergrund ----------

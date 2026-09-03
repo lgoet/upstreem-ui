@@ -75,6 +75,15 @@
       font-family: Geist, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
       color: var(--vc-text); width: 100%; box-sizing: border-box; -webkit-font-smoothing: antialiased;
     }
+/* DIE EINE universelle box-sizing-Regel der App. .up-root selbst traegt es im Block darueber,
+   hier stehen seine Nachfahren -- und jede Komponentenwurzel traegt up-root (siehe die Vorlagen
+   in bubble/), ebenso jedes Portal (up-root up-portal). Damit ist eine zweite universelle Regel
+   je Komponente doppelt, und neun davon sind am 03.09. entfernt worden.
+   Warum das zaehlt: eine universelle rechte Seite macht JEDES Element der Seite zum Kandidaten.
+   Im Trace des Nutzers 124283 Versuche je Selektor -- ein voller Durchlauf ueber das Dokument,
+   je Style-Neuberechnung, rund 8ms pro Regel unabhaengig von den Treffern. 53 unserer Selektoren
+   dieser Bauform kosteten zusammen 458 von 1205ms.
+   Wer eine neue Komponente baut, braucht hier nichts: up-root an der Wurzel genuegt. */
 .up-root * { box-sizing: border-box; }
 
 /* ---------- [data-align] Ausrichtung in einer zu breiten Wirtsbox ----------
