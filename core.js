@@ -9438,6 +9438,17 @@
             aus  = row.querySelector(".up-bar-outside");
         if (!fill || !aus) return;
         var breit = fill.offsetWidth, noetig = m.nameW + m.pctW + 12 + 20;
+        /* cfg.pctOutside: der Wert steht IMMER daneben, egal wie breit der Balken ist. Ohne das
+           entscheidet die Rechnung darunter je Zeile neu, und dann steht dieselbe Spalte in einer
+           Zeile drin und in der naechsten daneben -- fuer eine Liste mit rechts ausgerichteten
+           Zahlen ist das falsch. Der Abstand kommt aus cfg.pctGap (Vorgabe 8). */
+        if (cfg.pctOutside){
+          if (name) name.style.opacity = "0";
+          pin.style.opacity = "0";
+          aus.style.left = Math.round(breit + (cfg.pctGap || 8)) + "px";
+          aus.style.opacity = "1";
+          return;
+        }
         if (breit >= noetig){
           if (name) name.style.opacity = "1";
           pin.style.opacity = "1"; aus.style.opacity = "0";
@@ -10332,18 +10343,27 @@
           '</div><div class="up-donut-legend"></div>' +
         '</div>';
       var clickable = !!cfg.onSliceClick;
-      body.querySelector(".up-donut-legend").innerHTML = d.map(function(it){
+      var legendeEl = body.querySelector(".up-donut-legend");
+      legendeEl.innerHTML = d.map(function(it){
         /* Bringt ein Eintrag ein Logo mit (it.logo), steht es zwischen Farbfleck und Name:
            Fleck, Luecke, Logo, Luecke, Name. Gebraucht vom Model Breakdown -- ein Modell erkennt
            man am Zeichen schneller als am Namen. Ohne logo bleibt die Zeile wie bisher. */
         var lg = it.logo ? String(it.logo) : "";
         if (lg.indexOf("//") === 0) lg = "https:" + lg;
-        return '<div class="up-donut-legend-row' + (clickable && it.key !== "other" ? " is-clickable" : "") + '" data-type-key="' + esc(it.key || "") + '"><span class="up-donut-legend-chip" style="background:' + it.color + '"></span>' +
+        /* cfg.legendPrefix liefert FERTIGES Markup, das zwischen Farbfleck und Name kommt --
+           gebraucht fuer Landesflaggen, die UC.flagHtml als span mit Bild und Rueckfallbuchstaben
+           baut und die deshalb nicht durch it.logo passen (das ist eine URL). */
+        var vorn = cfg.legendPrefix ? String(cfg.legendPrefix(it) || "") : "";
+        return '<div class="up-donut-legend-row' + (clickable && it.key !== "other" ? " is-clickable" : "") + '" data-type-key="' + esc(it.key || "") + '"><span class="up-donut-legend-chip" style="background:' + it.color + '"></span>' + vorn +
           (lg ? '<img class="up-donut-legend-logo" src="' + esc(lg) + '" alt="" loading="lazy"' +
                 ' referrerpolicy="no-referrer" onerror="this.remove()"/>' : "") +
           '<span class="up-donut-legend-name">' + esc(it.name) + '</span>' +
-          '<span class="up-donut-legend-pct">' + esc(fmtPct(it.share)) + '</span></div>';
+          '<span class="up-donut-legend-pct">' + esc(fmtPct(it.share, cfg.decimals)) + '</span></div>';
       }).join("");
+      /* Flaggen aus legendPrefix brauchen ihre Verdrahtung: das Bild kommt spaeter vom Netz, und
+         ohne diesen Aufruf bliebe der Rueckfallbuchstabe stehen, wenn es ankommt (oder das Bild
+         stehen, wenn es 404 gibt). Kostet nichts, wenn keine Flagge drin ist. */
+      try { wireFlags(legendeEl); } catch(e){}
       if (clickable){
         Array.prototype.forEach.call(body.querySelectorAll(".up-donut-legend-row.is-clickable"), function(row){
           row.addEventListener("click", function(){ cfg.onSliceClick(row.getAttribute("data-type-key")); });

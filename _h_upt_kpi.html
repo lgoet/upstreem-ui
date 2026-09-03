@@ -58,8 +58,10 @@ Promise.all([hol("core.css"),hol("prompts-table.css"),hol("core.js"),hol("prompt
     {id:"7",name:"Vans",hex_light:"#7fd6a1",prompt_count:5},
     {id:"8",name:"Coupe",hex_light:"#d6b07f",prompt_count:3}]);
   v.setUpstreemMarkets([
-    {id:"de",name:"Germany",prompt_count:40},{id:"us",name:"United States",prompt_count:25},
-    {id:"fr",name:"France",prompt_count:18},{id:"uk",name:"United Kingdom",prompt_count:12}]);
+    {id:"de",alpha2:"DE",name:"Germany",prompt_count:40},
+    {id:"us",alpha2:"US",name:"United States",prompt_count:25},
+    {id:"fr",alpha2:"FR",name:"France",prompt_count:18},
+    {id:"uk",alpha2:"GB",name:"United Kingdom",prompt_count:12}]);
   v.setUpstreemQuota({used:102,total:150,plan:"Pro"});
   v.renderPromptsTable(JSON.stringify({instanceId:"tb",view_active:"yes",totalCount:102,
     rows:[{id:"1",prompt_id:"1",prompt_text:"Frage",status:"active"}]}));
@@ -84,9 +86,34 @@ Promise.all([hol("core.css"),hol("prompts-table.css"),hol("core.js"),hol("prompt
   log("   Maerkte: Legendenzeilen="+leg.length+
       "   Mitte sichtbar="+(d.querySelector(".upt-kpi-markets .up-donut-center") ?
         cs(d.querySelector(".upt-kpi-markets .up-donut-center")).display : "(kein Element)"));
-  if (leg.length) log("   erste Legende: \""+leg[0].querySelector(".up-donut-legend-name").textContent+
-      "\"  "+leg[0].querySelector(".up-donut-legend-pct").textContent+
-      "  Chip="+cs(leg[0].querySelector(".up-donut-legend-chip")).backgroundColor);
+  if (leg.length){
+    var r0=leg[0];
+    log("   erste Legende: Flagge="+!!r0.querySelector(".up-flag")+
+        "   Name=\""+r0.querySelector(".up-donut-legend-name").textContent+"\""+
+        "   Prozent=\""+r0.querySelector(".up-donut-legend-pct").textContent+"\""+
+        "   Chip="+cs(r0.querySelector(".up-donut-legend-chip")).backgroundColor);
+    var lb=r0.getBoundingClientRect(), kb=d.querySelector(".upt-kpi-markets").getBoundingClientRect();
+    log("   Legende sichtbar: Breite="+Math.round(lb.width)+"   rechts innerhalb der Karte="+
+        (lb.right <= kb.right + 1));
+  }
+  var wrap=d.querySelector(".upt-kpi-markets .up-donut-wrap");
+  log("   Ringflaeche="+(wrap?Math.round(wrap.getBoundingClientRect().width):"-")+"px");
+  /* Zaehler MUSS aussen stehen, mit 16px Abstand */
+  if (reihen.length){
+    var pin=reihen[0].querySelector(".up-bar-pct-in"), aus=reihen[0].querySelector(".up-bar-outside");
+    var fillB=Math.round(reihen[0].querySelector(".up-bar-fill").getBoundingClientRect().width);
+    log("   Zaehler innen opacity="+pin.style.opacity+"   aussen opacity="+aus.style.opacity+
+        "   aussen left="+aus.style.left+"   Balkenbreite="+fillB+
+        "   ==> Abstand="+(parseInt(aus.style.left,10)-fillB)+"px");
+  }
+  var kpis=d.querySelector(".upt-kpis");
+  var karte1=d.querySelector(".upt-kpi");
+  var titel=d.querySelector(".upt-kpi-title");
+  log("   Abstand zur Tabelle="+cs(kpis).marginBottom+
+      "   Kopfhoehe="+cs(d.querySelector(".upt-kpi-head")).height+
+      "   Titel-Abstand oben="+Math.round(titel.getBoundingClientRect().top-karte1.getBoundingClientRect().top)+"px"+
+      "   links="+cs(karte1).paddingLeft);
+  log("   Kartenrand="+cs(karte1).borderTopColor+"   (dunkel muss transparent sein)");
   var q=d.querySelector(".upt-kpi-quota");
   log("   Kontingent: \""+(q.querySelector(".upt-kpi-quota-used")||{}).textContent+"\" / \""+
       (q.querySelector(".upt-kpi-quota-total")||{}).textContent+"\"   Notiz=\""+

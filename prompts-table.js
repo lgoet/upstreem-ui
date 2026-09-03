@@ -4494,6 +4494,10 @@
           mount: koerper,
           isDark: function(){ return isDark; },
           labelCol: function(){ return true; },       /* Beschriftung links, Balken rechts */
+          /* Der Zaehler steht IMMER rechts neben dem Balken, nie darin: sonst entscheidet die
+             Breite je Zeile neu, und dieselbe Spalte stuende in einer Zeile drin und in der
+             naechsten daneben. 16px Abstand zwischen Balkenende und Zahl (so angefordert). */
+          pctOutside: true, pctGap: 16,
           fmt: function(v){ return UC.fmtTotal(toNum(v) || 0); }   /* ganze Zahl, kein Prozent */
         });
       }
@@ -4530,7 +4534,10 @@
          WEGGELASSEN und nicht geschaetzt -- eine falsche Zahl ist schlimmer als keine. */
       var summe = 0;
       for (var i = 0; i < kpiLetzteTopics.length; i++) summe += kpiLetzteTopics[i].share;
-      var gesamt = toNum(state.totalCount);
+      /* currentTotal() und nicht state.totalCount roh: es beruecksichtigt den Statusfilter
+         (Active/Inactive) und ist dieselbe Zahl, die im Kopf der Tabelle steht. Ohne belegte
+         Gesamtzahl bleibt die Angabe WEG -- eine falsche Zahl ist schlimmer als keine. */
+      var gesamt = currentTotal();
       var ohne = (gesamt != null && gesamt >= summe) ? (gesamt - summe) : null;
       var rechts = ohne != null && ohne > 0
         ? UC.t("{n} without topic").replace("{n}", UC.fmtTotal(ohne)) : "";
@@ -4541,9 +4548,15 @@
       var koerper = kpiTeil("upt-kpi-markets", "body");
       if (!koerper) return;
       var liste = Array.isArray(rows) ? rows.filter(Boolean) : [];
+      /* alpha2 ist die Identitaet eines Marktes -- so steht es in markets-filter, und alpha3 ist
+         dort nur der Rueckfall fuer eine Nutzlast, die ihn mitschickt. Die Legende zeigt genau
+         das: Flagge, Alpha-2, Prozentwert. Der volle Name steht im Tooltip des Rings. */
       var mitZahl = liste.map(function(m){
-        return { key: String(m.id == null ? (m.code || m.name || "") : m.id),
-                 name: String(m.name == null ? (m.code || "") : m.name),
+        var a2 = String((m && (m.alpha2 || m.alpha3 || m.code)) || "").toUpperCase();
+        return { key: a2 || String(m.id == null ? (m.name || "") : m.id),
+                 alpha2: a2,
+                 name: a2 || String(m.name == null ? "" : m.name),
+                 voll: String(m.name == null ? a2 : m.name),
                  anzahl: toNum(m.prompt_count) };
       }).filter(function(x){ return x.anzahl != null && x.anzahl > 0; });
       mitZahl.sort(function(a, b){ return b.anzahl - a.anzahl || a.name.localeCompare(b.name); });
@@ -4569,7 +4582,10 @@
              etwas liefern, weil makeTypeChart es ruft. */
           total: function(){ return 0; },
           decimals: 0,
-          ringPx: 14,          /* duenner als die Vorgabe der grossen Charts */
+          /* Flagge vor den Namen. UC.flagHtml baut ein span mit Bild UND Rueckfallbuchstaben --
+             darum ueber legendPrefix und nicht ueber it.logo, das eine URL erwartet. */
+          legendPrefix: function(it){ return it.alpha2 ? UC.flagHtml(it.alpha2) : ""; },
+          ringPx: 12,          /* 10 Prozent duenner als der erste Anlauf (14) -- so gemeldet */
           collapseAt: 240      /* die Karte ist schmal; erst darunter untereinander */
         });
       }

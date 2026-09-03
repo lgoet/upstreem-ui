@@ -1671,6 +1671,11 @@
     .up-root[data-theme="dark"] .urd-card,
     .up-root[data-theme="dark"] .urd-cite-card,
     .up-root[data-theme="dark"] .urt-card,
+    /* Die drei Kennzahlen-Karten ueber der Prompts-Tabelle. Sie sind Chart-Karten wie .combo-box
+       und .tcd-box, also gehoeren sie in DIESE Liste und nicht in eine eigene Regel: derselbe
+       Wert an zwei Orten laeuft irgendwann auseinander. Gemeldet am 03.09. -- die Karten hatten
+       im Dunkeln noch ihren Rand. */
+    .up-root[data-theme="dark"] .upt-kpi,
     .up-root[data-theme="dark"] .usb-card:not(.usb-card-danger) { border-color: transparent; }
 
     /* ---------- Dark: an den SEITEN Breite 0, nicht nur farblos ----------

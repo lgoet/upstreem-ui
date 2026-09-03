@@ -1087,14 +1087,21 @@
    (topcitations-dashboard.css .tcd-box): 1px Rand in --vc-border, Fuellung --vc-bg, 16px Radius.
    Nur die Hoehe ist eigen -- 280px statt 430px, weil hier eine Kennzahl steht und kein Chart in
    voller Groesse. Kopfzeile wie .tcd-head: 32px hoch, Titel 14px/500. */
-.upt-kpis { display: flex; gap: 16px; margin-bottom: 16px; align-items: stretch; }
+/* 32px zur Tabelle und nur 16px zwischen den Karten: der Abstand nach unten trennt zwei
+   Bereiche, der zwischen den Karten trennt Geschwister. Zwei Aufgaben, zwei Werte. */
+.upt-kpis { display: flex; gap: 16px; margin-bottom: 32px; align-items: stretch; }
 .upt-kpi {
   flex: 1 1 0; min-width: 0; height: 280px; box-sizing: border-box;
   border: 1px solid var(--vc-border); background: var(--vc-bg); border-radius: 16px;
   padding: 16px; display: flex; flex-direction: column; overflow: hidden;
   transition: background 200ms ease;
 }
-.upt-kpi-head { display: flex; align-items: center; height: 32px; flex: 0 0 auto; gap: 8px; }
+/* height: auto und nicht 32px wie bei .tcd-head: dort steht die Kopfzeile ueber einem Chart in
+   voller Hoehe und traegt Knoepfe. Hier ist sie nur Text, und eine feste Hoehe mit zentriertem
+   Inhalt liess oben mehr Luft als links -- gemeldet als "padding top scheint groesser als left".
+   Gemessen: 32px ergaben 23px oben gegen 16px links, 20px noch 19px. Mit auto ist die Zeile so
+   hoch wie ihr Titel, und der sitzt genau auf den 16px Polster wie links und rechts. */
+.upt-kpi-head { display: flex; align-items: center; height: auto; flex: 0 0 auto; gap: 8px; }
 .upt-kpi-title {
   font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.2;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
@@ -1130,8 +1137,15 @@
    rechts -- letzteres ist die Vorgabe von .up-donut-layout, hier wird nur die Groesse gestellt. */
 .upt-kpi-markets .up-donut-center { display: none; }
 .upt-kpi-markets .up-donut-layout { gap: 16px; justify-content: flex-start; }
-.upt-kpi-markets .up-donut-wrap { width: min(46%, 130px); }
-.upt-kpi-markets .up-donut-legend { gap: 7px; font-size: 12px; }
+/* 20 Prozent kleiner als der erste Anlauf (46%/130px) -- so gemeldet. */
+.upt-kpi-markets .up-donut-wrap { width: min(37%, 104px); }
+/* Flagge, Alpha-2, Prozentwert. Der Prozentwert rechts, damit die Zahlen untereinander stehen;
+   die Namensspalte darf schrumpfen, die Zahl nicht. */
+.upt-kpi-markets .up-donut-legend { gap: 7px; font-size: 12px; flex: 1 1 auto; min-width: 0; }
+.upt-kpi-markets .up-donut-legend-row { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.upt-kpi-markets .up-donut-legend-name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.upt-kpi-markets .up-donut-legend-pct { margin-left: auto; flex: 0 0 auto; }
+.upt-kpi-markets .up-flag { width: 16px; height: 12px; flex: 0 0 16px; }
 .upt-kpi-markets .up-donut-legend-pct { font-variant-numeric: tabular-nums; }
 
 /* ---- Karte 3: Prompt-Kontingent ----
