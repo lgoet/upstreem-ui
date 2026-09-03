@@ -8302,7 +8302,23 @@
        Normalfall. Jetzt kostet ein Schwung Aenderungen einen Durchgang ueber die Live-Listen:
        so viele Eigenschaftslesungen wie es Wurzeln gibt (gemessen 184 auf der Prompts-Seite),
        kein Layout, keine Suche. */
-    function pruefen(){
+    /* EIN Tor vor neunzehn Pruefungen. GEMESSEN im Trace des Nutzers (03.09.): sigOf stand mit
+       738ms in der JS-Selbstzeit und war damit der groesste Posten, der uns gehoert. Der Preis
+       ist nicht die Rechnung: jede Lesung von els.length auf einer Live-Sammlung laesst den
+       Browser die Sammlung gegen den aktuellen Stand pruefen -- bei 24054 Knoten ein voller
+       Durchlauf, und das neunzehnmal je Durchgang.
+       Es genuegt EINE Liste: jede Komponentenwurzel traegt up-root (in allen Vorlagen unter
+       bubble/ nachgesehen), jedes Portal ebenso (up-root up-portal). Aendert sich die Signatur
+       ueber alle up-root nicht, kann sich fuer keinen einzelnen Beobachter etwas geaendert haben.
+       Das Auffangnetz alle 1,5s ruft pruefen(true) und geht die neunzehn trotzdem durch -- damit
+       faellt eine Wurzel ohne up-root hoechstens 1,5s spaeter auf, statt gar nicht. */
+    function sigWurzeln(){ return sigOf(G.tor || (G.tor = { selector: "up-root" })); }
+    function pruefen(alles){
+      if (!alles){
+        var sg = sigWurzeln();
+        if (sg === G.sigWurzeln) return;
+        G.sigWurzeln = sg;
+      }
       var heiss = null;
       for (var k = 0; k < G.watchers.length; k++){
         var w = G.watchers[k], si = sigOf(w);
@@ -8378,7 +8394,7 @@
          es nur Signaturen und weckt, wer sich geaendert hat. Die Arbeit selbst landet ueber
          scheduleAll im naechsten Bild und faellt damit auch unter die Pause waehrend einer
          Ziehbewegung -- in der Konsole des Nutzers stand dieser Rueckruf mit 58ms. */
-      G.iv = setInterval(function(){ try { pruefen(); } catch(e){} }, 1500);
+      G.iv = setInterval(function(){ try { pruefen(true); } catch(e){} }, 1500);
     }
   }
 

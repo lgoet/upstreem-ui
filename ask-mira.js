@@ -3030,7 +3030,15 @@
   var _askSelText = '';
   function hideAskSel(){ elAskSel.classList.remove('is-on'); _askSelText = ''; }
   function selInAssistant(sel){
-    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return null;
+    /* Reihenfolge ist hier der ganze Fix. GEMESSEN im Trace des Nutzers (03.09.): "get
+       isCollapsed" stand mit 1035ms in der JS-Selbstzeit -- der zweitgroesste Posten der Seite.
+       Der Grund: sel.isCollapsed zwingt den Browser, die Auswahl-Geometrie aufzuloesen, und
+       selectionchange feuert am DOCUMENT, also bei jedem Cursorsprung in JEDEM Eingabefeld der
+       Seite -- auch in Bubbles eigenen Feldern, die mit Mira nichts zu tun haben.
+       bubbleOf ist dagegen ein Gang durch die Vorfahren und kostet kein Layout. Steht die
+       Auswahl nicht in einer Antwortblase, ist hier Schluss, bevor irgendetwas gemessen wird.
+       Das Ergebnis ist unveraendert: beide Bedingungen muessen ohnehin zutreffen. */
+    if (!sel || sel.rangeCount === 0) return null;
     function bubbleOf(n){
       var e = n && (n.nodeType === 1 ? n : n.parentElement);
       if (!e || !e.closest) return null;
@@ -3038,13 +3046,18 @@
       return e.closest('.am-msg.is-assistant .am-bubble');
     }
     var b1 = bubbleOf(sel.anchorNode), b2 = bubbleOf(sel.focusNode);
-    return (b1 && b2) ? b1 : null;
+    if (!(b1 && b2)) return null;
+    if (sel.isCollapsed) return null;
+    return b1;
   }
   function showAskSel(){
     var sel = window.getSelection();
     var inBubble = selInAssistant(sel);
-    var text = sel ? String(sel.toString()).replace(/\s+/g, ' ').trim() : '';
-    if (!inBubble || text.length < 2){ hideAskSel(); return; }
+    /* toString() erst NACH der Zugehoerigkeit: es loest den Text der Auswahl auf und kostet
+       damit dasselbe wie isCollapsed. Vorher stand es davor und lief bei jeder fremden Auswahl. */
+    if (!inBubble){ hideAskSel(); return; }
+    var text = String(sel.toString()).replace(/\s+/g, ' ').trim();
+    if (text.length < 2){ hideAskSel(); return; }
     var range = sel.getRangeAt(0);
     var rects = range.getClientRects();
     var r = (rects && rects.length) ? rects[0] : range.getBoundingClientRect();
@@ -3071,7 +3084,14 @@
     autosize(); refreshSend(); updateLoopState();
     elTextarea.focus();
   });
-  document.addEventListener('selectionchange', function(){ requestAnimationFrame(showAskSel); });
+  /* EIN Durchgang je Bild. selectionchange kommt beim Ziehen einer Auswahl in Stroemen, und
+     jeder Aufruf plante bisher sein eigenes rAF. */
+  var _selPlan = false;
+  document.addEventListener('selectionchange', function(){
+    if (_selPlan) return;
+    _selPlan = true;
+    requestAnimationFrame(function(){ _selPlan = false; showAskSel(); });
+  });
   elChat.addEventListener('mouseup', function(){ setTimeout(showAskSel, 0); });
   elChat.addEventListener('scroll', hideAskSel, { passive: true });
   window.addEventListener('resize', hideAskSel);

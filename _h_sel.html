@@ -1,0 +1,72 @@
+<meta charset="utf-8"><title>Mira: Auswahl-Pruefung</title>
+<style>#out{font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap;padding:10px}</style>
+<body>
+<div id="fremd"><input id="feld" value="Ein fremdes Eingabefeld mit Text"><p id="ptext">Fremder Absatz mit Text zum Auswaehlen.</p></div>
+<div id="buehne"></div><pre id="out">laeuft…</pre>
+<script>
+window.__err=[]; window.addEventListener("error",function(e){window.__err.push(String(e.message));});
+var ALT=(new URLSearchParams(location.search)).get("alt")==="1";
+var MIRA = ALT ? "_h_sel_alt.js" : "ask-mira.js";
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+/* isCollapsed und toString zaehlen -- das sind die Layout-Kosten */
+window.__ic=0; window.__ts=0;
+(function(){
+  var d=Object.getOwnPropertyDescriptor(Selection.prototype,"isCollapsed");
+  if (d&&d.get) Object.defineProperty(Selection.prototype,"isCollapsed",{configurable:true,
+    get:function(){ window.__ic++; return d.get.call(this); }});
+  var o=Selection.prototype.toString;
+  Selection.prototype.toString=function(){ window.__ts++; return o.apply(this,arguments); };
+})();
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+Promise.all([hol("core.css"),hol("ask-mira.css"),hol("core.js"),hol(MIRA),hol("bubble/ask_mira_bubble.html")])
+.then(function(t){
+  log("Fassung: "+(ALT?"ALT":"NEU")+"   Reihenfolge gedreht: "+(t[3].indexOf("if (!(b1 && b2)) return null;")>=0));
+  [t[0],t[1]].forEach(function(c){ var s=document.createElement("style"); s.textContent=c; document.head.appendChild(s); });
+  var w=document.createElement("div"); w.innerHTML=wurzelAus(t[4]);
+  var r=w.querySelector("#ask-mira");
+  r.setAttribute("data-cdn-pin","m"); r.setAttribute("data-isdark","no");
+  document.getElementById("buehne").appendChild(r);
+  var j=document.createElement("script"); j.textContent=t[2]; document.head.appendChild(j);
+  var j2=document.createElement("script"); j2.textContent=t[3]; document.head.appendChild(j2);
+  return new Promise(function(ok){ setTimeout(ok,1600); });
+}).then(function(){
+  /* FREMDE Auswahl: im Absatz ausserhalb von Mira, 30 selectionchange-Ereignisse */
+  window.__ic=0; window.__ts=0;
+  /* NICHT ueber selectionchange: dessen Rueckruf haengt an requestAnimationFrame, und rAF feuert
+     in dieser verdeckten Flaeche nie -- der erste Anlauf zaehlte deshalb in BEIDEN Fassungen
+     null. Der mousedown-Weg am document ruft selInAssistant ueber eine Uhr, und Uhren feuern. */
+  var p=document.getElementById("ptext");
+  for (var i=0;i<30;i++){
+    var rg=document.createRange(); rg.setStart(p.firstChild,0); rg.setEnd(p.firstChild, 5+(i%20));
+    var s=window.getSelection(); s.removeAllRanges(); s.addRange(rg);
+    p.dispatchEvent(new MouseEvent("mousedown",{bubbles:true}));
+  }
+  return new Promise(function(ok){ setTimeout(ok,900); });
+}).then(function(){
+  log("30 FREMDE Auswahlen (Absatz ausserhalb Mira):");
+  log("   isCollapsed gelesen: "+window.__ic+"   toString gerufen: "+window.__ts);
+  /* Gegenprobe: Auswahl IN einer Antwortblase muss den Knopf zeigen */
+  var chat=document.querySelector(".am-chat")||document.querySelector("#ask-mira");
+  window.__chatKlasse = chat.className || chat.id;
+  var msg=document.createElement("div"); msg.className="am-msg is-assistant";
+  var bub=document.createElement("div"); bub.className="am-bubble";
+  bub.textContent="Eine Antwort von Mira, aus der man Text auswaehlen kann.";
+  msg.appendChild(bub); chat.appendChild(msg);
+  window.__ic=0; window.__ts=0;
+  var rg=document.createRange(); rg.setStart(bub.firstChild,0); rg.setEnd(bub.firstChild,20);
+  var s=window.getSelection(); s.removeAllRanges(); s.addRange(rg);
+  /* mouseup am Chat: dieser Weg laeuft ueber setTimeout, nicht ueber rAF. */
+  chat.dispatchEvent(new MouseEvent("mouseup",{bubbles:true}));
+  return new Promise(function(ok){ setTimeout(ok,900); });
+}).then(function(){
+  var knopf=document.querySelector(".am-ask-sel");
+  var an = knopf && knopf.classList.contains("is-on");
+  log("Gegenprobe, Auswahl IN einer Antwortblase (Chat: "+window.__chatKlasse+"):");
+  log("   Knopf sichtbar: "+(!!an)+"   isCollapsed gelesen: "+window.__ic+"   toString: "+window.__ts+
+      "   ==> "+(an?"GREIFT":"GREIFT NICHT"));
+  log("Fehler: "+(window.__err.length?window.__err.slice(0,2).join(" | "):"keine"));
+  log("FERTIG");
+}).catch(function(e){ log("ABBRUCH: "+e.message); });
+</script>

@@ -156,11 +156,20 @@ window.__wach = {};
           for (var i = 0; i < G.watchers.length; i++) if (G.watchers[i].selector === "t5-root") w5 = G.watchers[i];
           /* GEGENPROBE: eine NEUE Wurzel muss trotz Drossel ankommen. */
           var vor = window.__wach["t7-root"];
-          var d = document.createElement("div"); d.className = "t7-root"; b.appendChild(d);
+          var d = document.createElement("div"); d.className = "up-root t7-root"; b.appendChild(d);
           setTimeout(function(){
-            log("Gegenprobe: neue t7-root Wurzel  Weckrufe " + vor + " -> " + window.__wach["t7-root"] +
+            log("Gegenprobe A: neue Wurzel MIT up-root  Weckrufe " + vor + " -> " + window.__wach["t7-root"] +
                 "   ==> " + (window.__wach["t7-root"] > vor ? "ERKANNT" : "NICHT ERKANNT"));
-            log("FERTIG");
+            /* Gegenprobe B: eine Wurzel OHNE up-root. Das Tor sieht sie nicht -- das Auffangnetz
+               alle 1,5s muss sie trotzdem finden, sonst richtet sie sich nie ein. */
+            var vorB = window.__wach["t9-root"];
+            var d2 = document.createElement("div"); d2.className = "t9-root";
+            document.getElementById("buehne").appendChild(d2);
+            setTimeout(function(){
+              log("Gegenprobe B: neue Wurzel OHNE up-root  Weckrufe " + vorB + " -> " + window.__wach["t9-root"] +
+                  "   ==> " + (window.__wach["t9-root"] > vorB ? "ERKANNT (Auffangnetz)" : "NICHT ERKANNT"));
+              log("FERTIG");
+            }, 4000);
           }, 1500);
         }, 400);
         return;
