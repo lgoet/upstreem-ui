@@ -7019,6 +7019,16 @@
         elIn = document.createElement("div");
         elIn.className = "up-toolgroup-in";
         elGroup.appendChild(elIn);
+        /* Zwei Klassen statt zwei :has()-Regeln. GEMESSEN am 03.09. in den Selector Stats des
+           Nutzers: ".up-root :has(> .up-toolgroup)" war mit 81ms der zweitteuerste Selektor der
+           ganzen Seite -- fuer 78 Treffer. Der Grund ist die Bauform: ".up-root :has(...)" macht
+           JEDEN Nachfahren jeder Wurzel zum Kandidaten, und fuer jeden muss der Browser dessen
+           Kinder durchsehen. Bei 24054 Knoten ist das der Preis.
+           Die Klasse sagt dasselbe, ohne Suche: tools IST der Elternteil der Gruppe, das steht
+           in der Zeile darunter. Beide Selektoren behalten ihre Spezifitaet ((0,2,0) und
+           (0,3,0)), die Regeln greifen also unveraendert. */
+        tools.classList.add("up-toolhost");
+        if (root && root.classList) root.classList.add("has-toolgroup");
         tools.insertBefore(elGroup, tools.firstChild);
 
         elCol = document.createElement("button");

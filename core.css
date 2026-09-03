@@ -246,7 +246,10 @@
        (.up-head-tools, .ubo-head-tools), aber sie ist immer der ELTERNTEIL der Gruppe. Die
        Ausrichtung (margin-left: auto) bleibt unangetastet -- ein Wert dort statt auto schoebe die
        ganze Leiste nach links. */
-    .up-root :has(> .up-toolgroup) {
+    /* .up-toolhost setzt makeToolGroup an tools, dem Elternteil der Gruppe (siehe dort). Vorher
+       stand hier ":has(> .up-toolgroup)" -- in den Selector Stats des Nutzers 81ms fuer 78
+       Treffer, zweitteuerster Selektor der Seite. Gleiche Spezifitaet (0,2,0), gleiche Wirkung. */
+    .up-root .up-toolhost {
       /* Nach RECHTS ausdruecklich nicht. Dort ist die Kante der Komponente -- es gibt nichts,
          wohin man hineinfahren koennte, und die 16px kosten dort etwas: margin-right: -16px zieht
          zwar das Layout zurueck, aber scrollWidth zaehlt die Polsterung mit. Gemessen an allen
@@ -267,7 +270,8 @@
        ueber einem unpositionierten Geschwister liegt, ist eine Zusage der Spezifikation und
        braucht keine Messung. In dieser Testumgebung liesse sich der Klick auch gar nicht pruefen
        (das Fenster ist dort 0x0, elementFromPoint gibt fuer jeden Punkt null). */
-    .up-root:has(.up-toolgroup) .up-heading { position: relative; z-index: 1; }
+    /* .has-toolgroup an der Wurzel, aus demselben Grund. Spezifitaet bleibt (0,3,0). */
+    .up-root.has-toolgroup .up-heading { position: relative; z-index: 1; }
 
     /* ── Ausloeser und Einklapper ────────────────────────────────────────────────────────────
        Beide SIND .up-iconbtn -- 32x32, Radius 8, Farben und Hover kommen von dort. Hier steht
@@ -339,8 +343,11 @@
     .up-tbcol.up-tbcol { width: 0; opacity: 0; transform: translateX(6px); pointer-events: none; }
     .up-root.is-tools-open .up-tbcol.up-tbcol { width: 32px; }
     /* Hover: NUR Deckkraft und Verschiebung. Kein Layout, keine Gridspur, kein Ruckeln. */
-    .up-root.is-tools-open :has(> .up-toolgroup):hover .up-tbcol,
-    .up-root.is-tools-open :has(> .up-toolgroup):has(:focus-visible) .up-tbcol {
+    /* .up-toolhost statt :has(> .up-toolgroup) -- s. den Kommentar oben. In der zweiten Zeile
+       bleibt EIN :has() (fuer :focus-visible gibt es keine Klasse), aber es haengt jetzt an einem
+       Kandidaten statt an jedem Nachfahren der Wurzel. Spezifitaet unveraendert (0,5,0). */
+    .up-root.is-tools-open .up-toolhost:hover .up-tbcol,
+    .up-root.is-tools-open .up-toolhost:has(:focus-visible) .up-tbcol {
       opacity: 1; transform: none; pointer-events: auto;
     }
     /* Haelt ein aktiver Filter die Leiste offen, gibt es keinen Ausgang -- ihn trotzdem
@@ -356,7 +363,7 @@
        Polsterung waeren auf einer engen Leiste nur ein Kasten, der ueber seine Nachbarn reicht. */
     .up-root.is-tools-off .up-tbtrig, .up-root.is-tools-off .up-tbcol { display: none; }
     .up-root.is-tools-off .up-toolgroup { transition: none; }
-    .up-root.is-tools-off :has(> .up-toolgroup) { padding: 0; margin-top: 0; margin-bottom: 0; }
+    .up-root.is-tools-off .up-toolhost { padding: 0; margin-top: 0; margin-bottom: 0; }
 
     .up-iconbtn {
       display: inline-flex; align-items: center; justify-content: center;

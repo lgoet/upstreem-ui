@@ -1,0 +1,61 @@
+<meta charset="utf-8"><title>:has() gegen Klasse -- gleiche Wirkung?</title>
+<style>#out{font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap;padding:10px}</style>
+<body><iframe id="rahmen" style="width:1280px;height:800px;border:0"></iframe><pre id="out">laeuft…</pre>
+<script>
+/* Fester Rahmen: innerWidth ist in dieser Flaeche 0, und die Werkzeuggruppe klappt breitenabhaengig. */
+var ALT=(new URLSearchParams(location.search)).get("alt")==="1";
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var CORE_JS  = ALT ? "_h_hasfix_alt_core_js.js"  : "core.js";
+var CORE_CSS = ALT ? "_h_hasfix_alt_core_css.js" : "core.css";
+Promise.all([hol(CORE_CSS),hol("prompts-table.css"),hol(CORE_JS),hol("prompts-table.js"),
+             hol("bubble/prompts_table_bubble.html")]).then(function(t){
+  log("Fassung: "+(ALT?"ALT (:has)":"NEU (Klasse)")+
+      "   :has im CSS: "+(t[0].indexOf(":has(> .up-toolgroup)")>=0)+
+      "   Klasse im JS: "+(t[2].indexOf('classList.add("up-toolhost")')>=0));
+  var d=document.getElementById("rahmen").contentDocument;
+  d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body></body></html>"); d.close();
+  [t[0],t[1]].forEach(function(c){ var s=d.createElement("style"); s.textContent=c; d.head.appendChild(s); });
+  var s2=d.createElement("style"); s2.textContent="*,*::before,*::after{transition:none!important;animation:none!important}";
+  d.head.appendChild(s2);
+  var w=d.createElement("div"); w.innerHTML=wurzelAus(t[4]);
+  var r=w.querySelector(".upt-root");
+  r.setAttribute("data-instance","tb"); r.setAttribute("data-cdn-pin","tb"); r.setAttribute("data-isdark","no");
+  d.body.appendChild(r);
+  var j=d.createElement("script"); j.textContent=t[2]; d.head.appendChild(j);
+  var j2=d.createElement("script"); j2.textContent=t[3]; d.head.appendChild(j2);
+  return new Promise(function(ok){ setTimeout(function(){ ok(d); },1800); });
+}).then(function(d){
+  var reihen=[]; for(var i=1;i<=12;i++) reihen.push({ id:String(i), prompt_id:String(i),
+    prompt_text:"Frage "+i, status:"active", visibility:i, rank:3, mention_count:i, tags:[] });
+  d.defaultView.renderPromptsTable(JSON.stringify({ instanceId:"tb", view_active:"yes", totalCount:12, rows:reihen }));
+  return new Promise(function(ok){ setTimeout(function(){ ok(d); },900); });
+}).then(function(d){
+  var grp=d.querySelector(".up-toolgroup");
+  var host=grp ? grp.parentElement : null;
+  var heading=d.querySelector(".upt-root .up-heading");
+  var wurzel=d.querySelector(".upt-root");
+  if(!grp){ log("KEINE .up-toolgroup gebaut -- Messung ungueltig"); log("FERTIG"); return; }
+  var cs=d.defaultView.getComputedStyle(host);
+  log("Traeger: "+host.className.slice(0,60));
+  log("   padding      = "+cs.paddingTop+" "+cs.paddingRight+" "+cs.paddingBottom+" "+cs.paddingLeft);
+  log("   margin-top   = "+cs.marginTop+"   margin-bottom = "+cs.marginBottom);
+  log("   hat up-toolhost: "+host.classList.contains("up-toolhost"));
+  log("   Wurzel hat has-toolgroup: "+wurzel.classList.contains("has-toolgroup"));
+  if (heading){
+    var hs=d.defaultView.getComputedStyle(heading);
+    log("Ueberschrift: position = "+hs.position+"   z-index = "+hs.zIndex);
+  } else log("Ueberschrift: nicht gefunden");
+  /* Die zustandsgebundenen Regeln: is-tools-off muss die Polsterung auf 0 ziehen. Ohne diese
+     Gegenprobe waere nur der Grundzustand geprueft. */
+  wurzel.classList.add("is-tools-off");
+  var csOff=d.defaultView.getComputedStyle(host);
+  log("mit is-tools-off:  padding = "+csOff.paddingTop+" "+csOff.paddingLeft+
+      "   margin-top = "+csOff.marginTop+
+      "   ==> "+(csOff.paddingTop==="0px"&&csOff.paddingLeft==="0px"&&csOff.marginTop==="0px" ? "GREIFT" : "GREIFT NICHT"));
+  wurzel.classList.remove("is-tools-off");
+  log("FERTIG");
+}).catch(function(e){ log("ABBRUCH: "+e.message); });
+</script>
