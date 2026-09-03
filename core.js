@@ -3658,10 +3658,31 @@
        split between panel and box. Budgeting against root there would keep columns that no longer
        fit the now-narrower box, running the row content past the box's real right edge. Every
        other table has no such sibling, so .up-box's width there already equals root's. */
+    /* GEMESSEN am 03.09. in einer DevTools-Aufnahme des Nutzers: boxWidth stand mit 2425ms
+       Selbstzeit bei 9,6 Prozent -- bei 52 Aufrufen. Nicht die Anzahl ist der Preis, sondern dass
+       ein getBoundingClientRect auf einer Seite mit 23604 Knoten eine komplette
+       Style-Neuberechnung erzwingt, und applyCols laeuft bei jedem Zeichnen.
+       Die Breite kann sich nur aendern, wenn der Kasten seine Groesse aendert -- und genau das
+       meldet ein Groessenwaechter, ohne dass jemand messen muss. */
+    var _bwWert = null, _bwEl = null;
     function boxWidth(){
-      var box = root.querySelector(".up-box");
-      return (box || root).getBoundingClientRect().width || 0;
+      var box = root.querySelector(".up-box") || root;
+      if (_bwWert != null && _bwEl === box) return _bwWert;
+      if (window.ResizeObserver && !box.__upBwRO){
+        box.__upBwRO = true;
+        /* Der Waechter feuert beim Anmelden einmal von selbst; das verwirft den Wert, den wir
+           gleich schreiben, und der naechste Aufruf misst neu. Einmal zu viel, nie zu wenig. */
+        new ResizeObserver(function(){ _bwWert = null; }).observe(box);
+      }
+      _bwEl = box;
+      _bwWert = box.getBoundingClientRect().width || 0;
+      return _bwWert;
     }
+    /* Zwei Sicherungen neben dem Waechter, weil ein ResizeObserver in einem verdeckten Tab nie
+       feuert: die Fensterbreite und ein Wechsel von Sprache oder Zahlenformat. Beides aendert
+       Spaltenbreiten, beides ist ohne Messung zu erfahren. */
+    window.addEventListener("resize", function(){ _bwWert = null; }, { passive: true });
+    window.addEventListener("up-prefs-change", function(){ _bwWert = null; });
     /* what is actually on screen right now: user-hidden columns minus the ones this width drops */
     function effectiveCols(){
       var narrow = root.classList.contains("is-narrow");
@@ -3964,11 +3985,24 @@
        rather than a fixed width breakpoint, because what wraps depends on how many page-number
        buttons are actually showing, not just the container's width. Shared here so it applies to
        every table that uses this pager, not just whichever one asked for it first. */
-    function syncFootWrap(){
+    /* GEMESSEN am 03.09.: syncFootWrap war mit 5222ms Selbstzeit der GROESSTE einzelne Posten
+       der ganzen Anwendung, 20,7 Prozent -- bei 58 Aufrufen. Der Grund steht in den drei Zeilen
+       unten: erst classList.remove (macht den Stil der ganzen Seite ungueltig), dann
+       getBoundingClientRect (erzwingt die komplette Neuberechnung), dann wieder schreiben. Und
+       renderPager ruft es bei JEDEM Zeichnen.
+       Umbrechen kann die Fusszeile nur, wenn sich ihr INHALT aendert (andere Zahl an
+       Seitenknoepfen, andere Beschriftungen) oder ihre BREITE -- das Erste steht im DOM, das
+       Zweite meldet der Groessenwaechter weiter unten mit zwingen=true. */
+    var _fussSig = null;
+    function syncFootWrap(zwingen){
       if (!elFoot) return;
       var pagesize = elFoot.querySelector(".up-pagesize");
       var pager = elFoot.querySelector(".up-pager");
       if (!pagesize || !pager) return;
+      var sig = pagesize.children.length + "|" + pager.children.length + "|" +
+                pagesize.textContent.length + "|" + pager.textContent.length;
+      if (!zwingen && sig === _fussSig) return;
+      _fussSig = sig;
       /* Self-locking bug: .is-wrapped forces both children to flex:1 1 100%, which by itself
          puts them on two separate lines — so once this class is set (even wrongly, e.g. from a
          transient skeleton-width measurement before real data settled), every future measurement
@@ -3980,11 +4014,15 @@
       var wrapped = Math.round(pagesize.getBoundingClientRect().top) !== Math.round(pager.getBoundingClientRect().top);
       elFoot.classList.toggle("is-wrapped", wrapped);
     }
+    /* Sprache und Zahlenformat aendern die Beschriftungen der Fusszeile, ohne die Zahl der
+       Knoepfe zu aendern -- die Signatur unten wuerde das verschlucken. (Die Fensterbreite deckt
+       der Groessenwaechter darunter ab, der auf elFoot sitzt.) */
+    window.addEventListener("up-prefs-change", function(){ _fussSig = null; });
     if (elFoot && window.ResizeObserver){
       var footRaf = null;
       new ResizeObserver(function(){
         if (footRaf) return;
-        footRaf = requestAnimationFrame(function(){ footRaf = null; syncFootWrap(); });
+        footRaf = requestAnimationFrame(function(){ footRaf = null; syncFootWrap(true); });
       }).observe(elFoot);
     }
     /* state.totalCount is the generic field every table using this pager has — prompts-table is
@@ -8179,8 +8217,16 @@
        sich nie neu eingerichtet. Die Kennung ist eine Eigenschaft am Knoten, keine
        DOM-Aenderung, weckt den Beobachter also nicht. */
     function stempel(el){ return el.__upSeq || (el.__upSeq = ++G.seq); }
-    function sigOf(sel){
-      var els = document.getElementsByClassName(sel), n = els.length, s = n;
+    /* Die Live-Liste EINMAL holen und behalten. getElementsByClassName liefert eine lebende
+       Sammlung -- sie aktualisiert sich selbst, es gibt also keinen Grund, sie je Durchgang neu
+       zu erzeugen. In der DevTools-Aufnahme des Nutzers stand sigOf mit 1109ms bei 4,4 Prozent,
+       und das Erzeugen der Sammlung auf einer Seite mit 23604 Knoten ist daran der teure Teil. */
+    function listeVon(w){
+      return w._els || (w._els = document.getElementsByClassName(w.selector));
+    }
+    function sigOf(w){
+      var els = typeof w === "string" ? document.getElementsByClassName(w) : listeVon(w);
+      var n = els.length, s = n;
       for (var i = 0; i < n; i++) s = (s * 31 + stempel(els[i])) | 0;
       return s;
     }
@@ -8223,7 +8269,7 @@
     function pruefen(){
       var heiss = null;
       for (var k = 0; k < G.watchers.length; k++){
-        var w = G.watchers[k], si = sigOf(w.selector);
+        var w = G.watchers[k], si = sigOf(w);
         if (si === w._sig) continue;
         w._sig = si;
         (heiss || (heiss = {}))[w.selector] = true;

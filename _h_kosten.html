@@ -1,0 +1,93 @@
+<meta charset="utf-8"><title>Kosten der Zwangsumbrueche</title>
+<style>html,body{margin:0;font:13px/1.5 system-ui,sans-serif}#buehne{padding:16px;width:1240px}
+#out{font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap;padding:10px}</style>
+<body><div id="buehne"></div><pre id="out">laeuft…</pre>
+<script>
+window.__err=[]; window.addEventListener("error",function(e){window.__err.push(String(e.message));});
+try { for (var i=window.localStorage.length-1;i>=0;i--){ var k=window.localStorage.key(i);
+  if (k && /upt_/.test(k)) window.localStorage.removeItem(k); } } catch(e){}
+try { window.localStorage.setItem("upt_grouped__tb","no"); } catch(e){}
+var ALT=(new URLSearchParams(location.search)).get("alt")==="1";
+var CORE = ALT ? "_h_kosten_alt.js" : "core.js";
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+/* Zaehler mit Zuordnung: WER ruft getBoundingClientRect / getElementsByClassName */
+var Z={};
+function wer(){
+  var z=((new Error()).stack||"").split("\n");
+  for (var i=1;i<z.length;i++){
+    var m=/at\s+(?:new\s+)?([^\s(]+)?\s*\(?([^\s()]*?:\d+:\d+)\)?\s*$/.exec(z[i]);
+    if(!m) continue;
+    var name=String(m[1]||"").replace(/^Object\./,"");
+    /* Die eigenen Huellen ueberspringen, sonst zeigt jede Zeile auf den Zaehler statt auf den
+       Aufrufer -- genau daran ist der erste Anlauf gescheitert. */
+    if (/(^|\.)(get|set)$/.test(name)||/^(wer|zaehl)$/.test(name)) continue;
+    if (/getBoundingClientRect|getElementsByClassName/.test(name)) continue;
+    if (String(m[2]||"").indexOf("_h_kosten")===0) continue;
+    return name||"(?)";
+  }
+  return "(oben)";
+}
+function zaehl(art){ var k=wer()+" "+art; Z[k]=(Z[k]||0)+1; }
+var rectO=Element.prototype.getBoundingClientRect;
+Element.prototype.getBoundingClientRect=function(){ zaehl("rect"); return rectO.apply(this,arguments); };
+var gebcO=Document.prototype.getElementsByClassName;
+Document.prototype.getElementsByClassName=function(){ zaehl("gebc"); return gebcO.apply(this,arguments); };
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+Promise.all([hol("core.css"),hol("prompts-table.css"),hol(CORE),hol("prompts-table.js"),
+             hol("bubble/prompts_table_bubble.html")]).then(function(t){
+  log("Fassung: "+(ALT?"ALT":"NEU")+"   Riegel drin: "+(t[2].indexOf("_fussSig")>=0));
+  [t[0],t[1]].forEach(function(c){ var s=document.createElement("style"); s.textContent=c; document.head.appendChild(s); });
+  var s2=document.createElement("style"); s2.textContent="*,*::before,*::after{transition:none!important;animation:none!important}";
+  document.head.appendChild(s2);
+  var w=document.createElement("div"); w.innerHTML=wurzelAus(t[4]);
+  var r=w.querySelector(".upt-root");
+  r.setAttribute("data-instance","tb"); r.setAttribute("data-cdn-pin","tb"); r.setAttribute("data-isdark","no");
+  document.getElementById("buehne").appendChild(r);
+  var j=document.createElement("script"); j.textContent=t[2]; document.head.appendChild(j);
+  var j2=document.createElement("script"); j2.textContent=t[3]; document.head.appendChild(j2);
+  return new Promise(function(ok){ setTimeout(ok,1400); });
+}).then(function(){
+  var reihen=[]; for(var i=1;i<=50;i++) reihen.push({ id:String(i), prompt_id:String(i),
+    prompt_text:"Frage "+i, status:"active", visibility:i, rank:3, mention_count:i, tags:[] });
+  window.__reihen=reihen;
+  window.renderPromptsTable(JSON.stringify({ instanceId:"tb", view_active:"yes", totalCount:500, rows:reihen }));
+  return new Promise(function(ok){ setTimeout(ok,900); });
+}).then(function(){
+  log("Zeilen: "+document.querySelectorAll(".up-row").length+
+      "   Fusszeile: "+(document.querySelector(".up-foot")?"da":"fehlt")+
+      "   umgebrochen: "+(document.querySelector(".up-foot.is-wrapped")?"ja":"nein"));
+  Z={};
+  for (var q=0;q<10;q++) window.setPromptsTableViewActive("tb","yes");
+  return new Promise(function(ok){ setTimeout(ok,900); });
+}).then(function(){
+  var l=Object.keys(Z).filter(function(k){ return /syncFootWrap|boxWidth|sigOf|pruefen/.test(k); })
+        .map(function(k){ return k+" = "+Z[k]; }).sort();
+  var summe=Object.keys(Z).reduce(function(s,k){ return s+Z[k]; },0);
+  log("10 Render ohne Datenaenderung:");
+  log("   "+(l.join("\n   ")||"(keine dieser Aufrufer)"));
+  log("   alle gezaehlten Zugriffe: "+summe);
+  /* GEGENPROBE 1: Seitenzahl aendert sich -> Fusszeile muss neu gemessen werden */
+  Z={};
+  window.renderPromptsTable(JSON.stringify({ instanceId:"tb", view_active:"yes", totalCount:3, rows:window.__reihen.slice(0,3) }));
+  return new Promise(function(ok){ setTimeout(function(){
+    var f=Object.keys(Z).filter(function(k){ return /syncFootWrap/.test(k); }).map(function(k){ return k+"="+Z[k]; });
+    log("Gegenprobe 1, Seitenzahl 500 -> 3:  "+(f.join(", ")||"syncFootWrap KEINE Messung")+
+        "   ==> "+(f.length?"NEU GEMESSEN":"VERSCHLUCKT"));
+    ok();
+  },800); });
+}).then(function(){
+  /* GEGENPROBE 2: Fensterbreite -> boxWidth darf nicht auf dem alten Wert sitzen */
+  Z={};
+  window.dispatchEvent(new Event("resize"));
+  window.setPromptsTableViewActive("tb","yes");
+  return new Promise(function(ok){ setTimeout(function(){
+    var b=Object.keys(Z).filter(function(k){ return /boxWidth/.test(k); }).map(function(k){ return k+"="+Z[k]; });
+    log("Gegenprobe 2, resize dann Render:  "+(b.join(", ")||"boxWidth KEINE Messung")+
+        "   ==> "+(b.length?"NEU GEMESSEN":"VERSCHLUCKT"));
+    log("Fehler: "+(window.__err.length?window.__err.join(" | "):"keine"));
+    log("FERTIG"); ok();
+  },700); });
+}).catch(function(e){ log("ABBRUCH: "+e.message); });
+</script>
