@@ -694,7 +694,25 @@
           event_id: instanceId + "_" + Date.now() + "_" + emitSeq
         };
         var json = JSON.stringify(payload);
-        root.setAttribute("data-range-json", json);
+        /* data-range-json ist der letzte Zeitraum, den EIN MENSCH ausgewaehlt hat -- und nur der.
+           Der Nutzer hat am 03.09. gezeigt, was auf seiner Seite am Ende des
+           date_range-Workflows laeuft:
+
+             var el = document.querySelector('.udr-root[data-instance="dates_v2_dashboard"]');
+             if (el) window.bubble_fn_udr_apply_dashboard(el.getAttribute("data-range-json"));
+
+           Das Attribut ist dort der Bote: es traegt die Auswahl aus dem Reusable auf die Seite,
+           die daraufhin nachlaedt. Es beim AUFBAU zu schreiben machte den Aufbau von einer
+           Nutzerauswahl ununterscheidbar -- steht dieses Snippet auch im boot-Workflow, ruft der
+           Seitenaufbau darueber apply, und das ist die zweite RPC-Runde.
+           Also nur bei "user". Ein Aufbau und ein Ansichtswechsel hinterlassen nichts, was wie
+           eine Auswahl aussieht.
+
+           data-range-reason steht IMMER da, damit ein Workflow, der das Snippet an einer
+           ungewollten Stelle hat, sich selbst absichern kann:
+             if (el && el.getAttribute("data-range-reason") === "user") ... */
+        root.setAttribute("data-range-reason", grund);
+        if (grund === "user") root.setAttribute("data-range-json", json);
         try { root.dispatchEvent(new CustomEvent("change", { detail: payload, bubbles: true })); } catch (e) {}
         try { window.dispatchEvent(new CustomEvent("upstreem:date-range", { detail: payload })); } catch (e) {}
         /* Beim AUFBAU wird genau EIN Kanal gerufen, der Aufbau-Kanal, und sonst keiner.
@@ -1493,6 +1511,22 @@
         root.getAttribute("data-date-to-fn")     || "bubble_fn_udr_date_to",
         root.getAttribute("data-range-apply-fn") || ""
       ];
+      /* Und ALLE weiteren bubble_fn_* am Fenster. Der Nutzer hat zehnmal gesagt, was die
+         Architektur ist: der Workflow von udr_date_range ruft am Ende das apply_-Event. Es gibt
+         also Bubble-Funktionen, die BUBBLE selbst ruft und die ueber den Refresh entscheiden --
+         deren Namen kennt diese Datei nicht und muss sie nicht kennen.
+         Eine Aufzaehlung der Fenster-Eigenschaften, EINMAL in dem Moment, in dem die Bruecke
+         erscheint. Damit steht im Log jeder Aufruf jeder JavaScriptToBubble-Funktion samt
+         Aufrufer, und die Frage "wer ruft apply?" beantwortet sich selbst.
+         NACH der Liste oben, nicht davor: dort waere namen wegen var-Hoisting noch undefined
+         gewesen, der Zugriff haette geworfen und mein try/catch haette es still verschluckt --
+         eine Wache, die nichts bewacht und es nicht sagt. */
+      try {
+        var alle = Object.keys(window);
+        for (var a2 = 0; a2 < alle.length; a2++){
+          if (/^bubble_fn_/.test(alle[a2]) && namen.indexOf(alle[a2]) < 0) namen.push(alle[a2]);
+        }
+      } catch(e){}
       for (var i = 0; i < namen.length; i++){
         var n = namen[i];
         if (!n) continue;

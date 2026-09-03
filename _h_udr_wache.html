@@ -18,6 +18,10 @@ var RUF={boot:0,range:0,apply:0};
 /* Die Bruecke kommt SPAET, wie bei Bubble (dort 3400ms). Vorher existiert keine Funktion --
    deshalb kann die Wache lueckenlos sein. */
 setTimeout(function(){
+  /* Eine Bubble-Funktion, die in KEINEM data-*-fn-Attribut steht -- so wie das apply_-Event, das
+     der date_range-Workflow im Reusable am Ende ruft. Sie muss trotzdem bewacht werden, sonst
+     bleibt genau die Frage offen, um die es geht. */
+  window.bubble_fn_irgendwas_fremdes = function(){ RUF.fremd = (RUF.fremd||0)+1; };
   window.bubble_fn_udr_date_boot_x  = function(){ RUF.boot++; };
   window.bubble_fn_udr_date_range_x = function(){ RUF.range++; };
   window.bubble_fn_udr_apply_x      = function(){ RUF.apply++; };
@@ -44,6 +48,8 @@ Promise.all([hol("core.css"),hol("filters/date-range.css"),hol("core.js"),
 }).then(function(){
   /* EIN FREMDER AUFRUF, wie die Seite ihn machen wuerde. */
   window.bubble_fn_udr_apply_x('{"von":"der Seite"}');
+  /* Und die, die in keinem Attribut steht: der eigentliche Fall. */
+  window.bubble_fn_irgendwas_fremdes('{"von":"einem Bubble-Workflow"}');
   return new Promise(function(ok){ setTimeout(ok,300); });
 }).then(function(){
   var spur=window.__udrLog||[];
@@ -56,10 +62,12 @@ Promise.all([hol("core.css"),hol("filters/date-range.css"),hol("core.js"),
   aufrufe.forEach(function(e){
     log("   "+e.fn+"  "+(e.vonUns?"VON UNS":"VON DER SEITE")+"  "+String(e.wert).slice(0,40));
   });
-  log("   ==> "+(unser.length>=1 && fremd.length===1 && /apply/.test(fremd[0].fn)
-        ? "RICHTIG (die Wache faengt auch den fremden Aufruf und trennt ihn vom eigenen)"
-        : "FALSCH -- "+(fremd.length===0?"der fremde Aufruf fehlt in der Spur"
-                       :(unser.length===0?"der eigene fehlt":"falsch zugeordnet"))));
+  var ungenannt = fremd.filter(function(e){ return e.fn==="bubble_fn_irgendwas_fremdes"; });
+  log("   ==> "+(unser.length>=1 && fremd.length===2 && ungenannt.length===1
+        ? "RICHTIG (auch eine Funktion, die in keinem Attribut steht, wird bewacht)"
+        : "FALSCH -- "+(ungenannt.length===0
+            ? "die nicht in einem Attribut genannte Funktion fehlt -- genau die, um die es geht"
+            : (unser.length===0?"der eigene fehlt":"falsch zugeordnet"))));
   /* GEGENPROBE: ohne up_dates_trace darf NICHTS umgeschlossen werden. */
   log("   Wache aktiv (Funktion ersetzt): "+(!!window.bubble_fn_udr_apply_x.__udrWache)+
       "   ==> "+(window.bubble_fn_udr_apply_x.__udrWache
@@ -78,6 +86,33 @@ Promise.all([hol("core.css"),hol("filters/date-range.css"),hol("core.js"),
   var erzwungen = window.upstreemDatesWatch();
   log("   mit up_dates_trace=off, ausdruecklich gerufen: "+erzwungen+" neu bewacht"+
       "   ==> "+(erzwungen===1 ? "RICHTIG (die Anweisung wirkt auch ohne Schalter)" : "FALSCH"));
+  /* DER GEMELDETE MECHANISMUS: das Snippet am Ende des date_range-Workflows liest
+     data-range-json vom Element und ruft damit apply. Beim AUFBAU darf dort nichts stehen --
+     sonst ist der Aufbau von einer Nutzerauswahl nicht zu unterscheiden. */
+  var el=document.querySelector(".udr-root");
+  log("Nach dem Aufbau (Grund \"boot\"):");
+  log("   data-range-reason = \""+el.getAttribute("data-range-reason")+"\"");
+  log("   data-range-json   = "+(el.getAttribute("data-range-json")===null?"(nicht gesetzt)":el.getAttribute("data-range-json").slice(0,40)));
+  log("   ==> "+(el.getAttribute("data-range-json")===null && el.getAttribute("data-range-reason")==="boot"
+        ? "RICHTIG (der Bote bleibt leer -- das Snippet kann den Aufbau nicht als Auswahl lesen)"
+        : "FALSCH -- der Aufbau hinterlaesst eine scheinbare Nutzerauswahl"));
+  /* GEGENPROBE: eine echte Auswahl MUSS den Boten setzen, sonst laedt die Seite nach einem Klick
+     nicht mehr nach. */
+  document.querySelector(".udr-trigger").click();
+  return new Promise(function(ok){ setTimeout(ok,400); });
+}).then(function(){
+  var p2=document.querySelector('.udr-preset[data-preset="last7"]');
+  if (p2) p2.click();
+  return new Promise(function(ok){ setTimeout(ok,400); });
+}).then(function(){
+  var el=document.querySelector(".udr-root");
+  var j=el.getAttribute("data-range-json");
+  log("GEGENPROBE  Klick auf ein Preset (Grund \"user\"):");
+  log("   data-range-reason = \""+el.getAttribute("data-range-reason")+"\"");
+  log("   data-range-json   = "+(j?j.slice(0,50)+"…":"(nicht gesetzt)"));
+  log("   ==> "+(j && el.getAttribute("data-range-reason")==="user"
+        ? "RICHTIG (der Bote traegt die Auswahl -- das Snippet auf der Seite funktioniert weiter)"
+        : "FALSCH -- eine echte Auswahl erreicht die Seite nicht mehr"));
   log("FERTIG");
 }).catch(function(e){ log("ABBRUCH: "+e.message); });
 </script>
