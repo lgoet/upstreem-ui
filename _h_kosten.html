@@ -28,6 +28,10 @@ function wer(){
   return "(oben)";
 }
 function zaehl(art){ var k=wer()+" "+art; Z[k]=(Z[k]||0)+1; }
+[["offsetWidth",HTMLElement.prototype],["offsetHeight",HTMLElement.prototype]].forEach(function(pp){
+  var d=Object.getOwnPropertyDescriptor(pp[1],pp[0]);
+  Object.defineProperty(pp[1],pp[0],{configurable:true,get:function(){ zaehl(pp[0]); return d.get.call(this); }});
+});
 var rectO=Element.prototype.getBoundingClientRect;
 Element.prototype.getBoundingClientRect=function(){ zaehl("rect"); return rectO.apply(this,arguments); };
 var gebcO=Document.prototype.getElementsByClassName;
@@ -35,7 +39,7 @@ Document.prototype.getElementsByClassName=function(){ zaehl("gebc"); return gebc
 function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
   if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
 function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
-Promise.all([hol("core.css"),hol("prompts-table.css"),hol(CORE),hol("prompts-table.js"),
+Promise.all([hol("core.css"),hol("prompts-table.css"),hol(CORE),hol(ALT ? "_h_kosten_alt_pt.js" : "prompts-table.js"),
              hol("bubble/prompts_table_bubble.html")]).then(function(t){
   log("Fassung: "+(ALT?"ALT":"NEU")+"   Riegel drin: "+(t[2].indexOf("_fussSig")>=0));
   [t[0],t[1]].forEach(function(c){ var s=document.createElement("style"); s.textContent=c; document.head.appendChild(s); });
@@ -58,11 +62,15 @@ Promise.all([hol("core.css"),hol("prompts-table.css"),hol(CORE),hol("prompts-tab
   log("Zeilen: "+document.querySelectorAll(".up-row").length+
       "   Fusszeile: "+(document.querySelector(".up-foot")?"da":"fehlt")+
       "   umgebrochen: "+(document.querySelector(".up-foot.is-wrapped")?"ja":"nein"));
+  /* up-sticky von Hand: applySticky verlangt window.innerWidth >= 1000, und in dieser Flaeche
+     ist innerWidth 0. Ohne die Klasse ruft render() syncTheadOffset gar nicht, und der groesste
+     der drei Posten waere ungemessen durchgegangen. */
+  document.querySelector(".upt-root").classList.add("up-sticky");
   Z={};
   for (var q=0;q<10;q++) window.setPromptsTableViewActive("tb","yes");
   return new Promise(function(ok){ setTimeout(ok,900); });
 }).then(function(){
-  var l=Object.keys(Z).filter(function(k){ return /syncFootWrap|boxWidth|sigOf|pruefen/.test(k); })
+  var l=Object.keys(Z).filter(function(k){ return /syncFootWrap|boxWidth|sigOf|applyResponsive|syncTheadOffset|schaleStellen/.test(k); })
         .map(function(k){ return k+" = "+Z[k]; }).sort();
   var summe=Object.keys(Z).reduce(function(s,k){ return s+Z[k]; },0);
   log("10 Render ohne Datenaenderung:");
@@ -86,8 +94,23 @@ Promise.all([hol("core.css"),hol("prompts-table.css"),hol(CORE),hol("prompts-tab
     var b=Object.keys(Z).filter(function(k){ return /boxWidth/.test(k); }).map(function(k){ return k+"="+Z[k]; });
     log("Gegenprobe 2, resize dann Render:  "+(b.join(", ")||"boxWidth KEINE Messung")+
         "   ==> "+(b.length?"NEU GEMESSEN":"VERSCHLUCKT"));
-    log("Fehler: "+(window.__err.length?window.__err.join(" | "):"keine"));
-    log("FERTIG"); ok();
+    /* GEGENPROBE 3: Sprachwechsel. Andere Beschriftungen heissen andere Leistenhoehe und andere
+       Spaltenbreiten -- beide Merker muessen fallen. Der Groessenwaechter ist hier nicht pruefbar
+       (verdeckter Tab, er feuert nie), das sind die Sicherungen, die es auch ohne ihn tun. */
+    Z={};
+    window.dispatchEvent(new CustomEvent("up-prefs-change",{detail:{name:"lang",value:"de"}}));
+    /* applySticky nimmt die Klasse bei innerWidth 0 wieder ab, und ohne sie ruft render()
+       syncTheadOffset nicht. Also direkt vor dem Render erneut setzen. */
+    document.querySelector(".upt-root").classList.add("up-sticky");
+    window.setPromptsTableViewActive("tb","yes");
+    setTimeout(function(){
+      var t=Object.keys(Z).filter(function(k){ return /syncTheadOffset|applyResponsive/.test(k); })
+            .map(function(k){ return k+"="+Z[k]; });
+      log("Gegenprobe 3, up-prefs-change dann Render:  "+(t.join(", ")||"KEINE Messung")+
+          "   ==> "+(t.length>=2?"BEIDE NEU GEMESSEN":(t.length?"nur eine":"VERSCHLUCKT")));
+      log("Fehler: "+(window.__err.length?window.__err.join(" | "):"keine"));
+      log("FERTIG"); ok();
+    },600);
   },700); });
 }).catch(function(e){ log("ABBRUCH: "+e.message); });
 </script>

@@ -4292,7 +4292,35 @@
          ihre Gruppenliste zuklappte und Spalten fallen liess, obwohl im Layout Platz fuer beides
          ist. Was hier gefragt ist, ist die LAYOUT-Breite: ob eine Spalte passt, entscheidet sich
          im Raster und nicht daran, wie gross jemand das Ganze anzeigt. */
-      var w = root.offsetWidth || root.getBoundingClientRect().width || 0;
+      /* GEMESSEN am 03.09. in der DevTools-Aufnahme des Nutzers: diese eine Zeile stand mit
+         1365ms bei 7,2 Prozent -- applyResponsive laeuft bei JEDEM Zeichnen, und eine
+         Breitenmessung erzwingt auf einer Seite mit 23604 Knoten eine Style-Neuberechnung. Die
+         Toleranzpruefung darunter kam zu spaet: sie sparte das Umsortieren, nicht die Messung.
+         Die Breite der Wurzel kann sich nur aendern, wenn die Wurzel ihre Groesse aendert -- das
+         meldet der Waechter, ohne dass jemand misst. Nur bei geaenderter BREITE, denn er feuert
+         auch bei jeder hinzugefuegten Zeile. */
+      if (!root.__uptWSicher){
+        root.__uptWSicher = true;
+        /* Sicherungen fuer den Fall, dass der Waechter nicht feuert (verdeckter Tab, kein
+           ResizeObserver): beides aendert die verfuegbare Breite, beides ohne Messung zu erfahren. */
+        window.addEventListener("resize", function(){ root.__uptWFrisch = false; }, { passive: true });
+        window.addEventListener("up-prefs-change", function(){ root.__uptWFrisch = false; });
+      }
+      if (window.ResizeObserver && !root.__uptWRO){
+        root.__uptWRO = true;
+        root.__uptWFrisch = false;
+        new ResizeObserver(function(eintraege){
+          var e = eintraege[eintraege.length - 1];
+          var b = e && e.contentRect ? e.contentRect.width : null;
+          if (b === root.__uptRoBreite) return;
+          root.__uptRoBreite = b;
+          root.__uptWFrisch = false;
+        }).observe(root);
+      }
+      var w = (root.__uptWFrisch && typeof root.__uptLastW === "number")
+              ? root.__uptLastW
+              : (root.offsetWidth || root.getBoundingClientRect().width || 0);
+      root.__uptWFrisch = true;
       if (!w) return;
       /* Pixelweise Schritte kosten hier am meisten: gemessen in der App brauchte diese Funktion
          bis zu 55ms, und beim Ziehen aendert sich die Breite mit jedem Bild um wenige Pixel --

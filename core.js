@@ -3664,15 +3664,24 @@
        Style-Neuberechnung erzwingt, und applyCols laeuft bei jedem Zeichnen.
        Die Breite kann sich nur aendern, wenn der Kasten seine Groesse aendert -- und genau das
        meldet ein Groessenwaechter, ohne dass jemand messen muss. */
-    var _bwWert = null, _bwEl = null;
+    var _bwWert = null, _bwEl = null, _bwRoBreite = null;
     function boxWidth(){
       var box = root.querySelector(".up-box") || root;
       if (_bwWert != null && _bwEl === box) return _bwWert;
       if (window.ResizeObserver && !box.__upBwRO){
         box.__upBwRO = true;
-        /* Der Waechter feuert beim Anmelden einmal von selbst; das verwirft den Wert, den wir
-           gleich schreiben, und der naechste Aufruf misst neu. Einmal zu viel, nie zu wenig. */
-        new ResizeObserver(function(){ _bwWert = null; }).observe(box);
+        /* NUR bei geaenderter BREITE verwerfen. Der erste Anlauf verwarf bei jedem Feuern, und
+           ein ResizeObserver feuert auch, wenn sich nur die HOEHE aendert -- also bei jeder
+           hinzugefuegten Tabellenzeile. Der Merker war damit im Zeichnen dauernd leer, und in der
+           Aufnahme des Nutzers stand boxWidth danach immer noch mit 1342ms bei 7,1 Prozent.
+           Die Breite kommt aus dem Eintrag selbst, das kostet keine Messung. */
+        new ResizeObserver(function(eintraege){
+          var e = eintraege[eintraege.length - 1];
+          var w = e && e.contentRect ? e.contentRect.width : null;
+          if (w === _bwRoBreite) return;
+          _bwRoBreite = w;
+          _bwWert = null;
+        }).observe(box);
       }
       _bwEl = box;
       _bwWert = box.getBoundingClientRect().width || 0;
@@ -8134,7 +8143,21 @@
   }
 
   function makeSticky(root, headEl){
-    function syncTheadOffset(){ if (headEl) root.style.setProperty("--up-thead-off", headEl.offsetHeight + "px"); }
+    /* GEMESSEN am 03.09.: syncTheadOffset stand mit 1569ms bei 8,4 Prozent -- es liest bei JEDEM
+       Zeichnen die Hoehe der Werkzeugleiste und erzwingt damit ein Layout. Die Hoehe kann sich
+       nur aendern, wenn sich die Leiste aendert, und genau darauf sitzt schon ein Waechter weiter
+       unten. Der Wert wird jetzt gemerkt; der Waechter macht ihn ungueltig. */
+    var _theadH = null;
+    function syncTheadOffset(){
+      if (!headEl || _theadH != null) return;
+      _theadH = headEl.offsetHeight;
+      root.style.setProperty("--up-thead-off", _theadH + "px");
+    }
+    /* Zwei Sicherungen fuer den Fall, dass der Waechter nicht feuert (verdeckter Tab): eine
+       geaenderte Fensterbreite und ein Wechsel von Sprache oder Zahlenformat aendern die Hoehe
+       der Leiste, weil ihre Beschriftungen anders umbrechen. */
+    window.addEventListener("resize", function(){ _theadH = null; }, { passive: true });
+    window.addEventListener("up-prefs-change", function(){ _theadH = null; });
     function applySticky(){
       var pageW = window.innerWidth || document.documentElement.clientWidth || 0;
       var on = root.getAttribute("data-sticky") !== "no" && pageW >= 1000;
@@ -8168,12 +8191,14 @@
        toolbar itself re-measures the instant its real height changes for ANY reason, removing the
        race instead of relying on it resolving by coincidence on some later render. */
     if (headEl && window.ResizeObserver){
-      var lastTheadOffH = null;
-      new ResizeObserver(function(){
+      new ResizeObserver(function(eintraege){
         if (!root.classList.contains("up-sticky")) return;
-        var h = headEl.offsetHeight;
-        if (h === lastTheadOffH) return;
-        lastTheadOffH = h;
+        /* Die Hoehe kommt aus dem Eintrag, nicht aus einer neuen Messung. */
+        var e = eintraege[eintraege.length - 1];
+        var h = e && e.contentRect ? Math.round(e.contentRect.height) : null;
+        if (h == null){ _theadH = null; syncTheadOffset(); return; }
+        if (h === _theadH) return;
+        _theadH = null;
         syncTheadOffset();
       }).observe(headEl);
     }
