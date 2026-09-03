@@ -93,6 +93,29 @@
     ];
     var DEFAULT_PRESET = "last7";
 
+    /* ---- DER GLOBALE KALENDER --------------------------------------------------------------
+       "Apply everywhere": ein Zeitraum fuer alle Ansichten. Der Schalter sitzt unter Reset, ist
+       standardmaessig AUS und liegt in core's Einstellungsspeicher (up_prefs), damit er einen
+       Reload uebersteht und alle Picker ueber up-prefs-change davon erfahren.
+
+       WER TEILNIMMT: eine Regel, keine Liste -- sonst muss sie bei jeder neuen Ansicht gepflegt
+       werden und wird es nicht. Ausgenommen sind der Export-Kalender (ein Export ist eine eigene
+       Handlung mit eigenem Zeitraum) und die Spotlight-Kalender in den Drawern (ein Spotlight ist
+       die Detailansicht EINER Sache; dort einen anderen Zeitraum zu haben ist nicht falsch).
+       Wer nicht teilnimmt, bekommt den Schalter gar nicht zu sehen -- ein ausgegrauter Schalter
+       ohne Wirkung ist schlechter als keiner.
+
+       WAS SPEICHERBAR IST: nur die drei RELATIVEN Presets. Ein absoluter Zeitraum waere morgen
+       falsch, und "Letzte 6 Monate" ist ausdruecklich nicht dabei. Bei aktivem Schalter sind
+       beide deshalb ausgegraut, mit einem Hinweis -- ausgeblendet wirkten sie wie ein Fehler. */
+    function nimmtTeil(id){ return !/export|spotlight/i.test(String(id || "")); }
+    var TEILBAR = { last7: 1, last30: 1, last3: 1 };
+    function syncAn(){ return UC.getPref && UC.getPref("date_sync") === "on"; }
+    function syncPreset(){
+      var p = UC.getPref ? UC.getPref("date_preset") : null;
+      return TEILBAR[p] ? p : DEFAULT_PRESET;
+    }
+
     var ICON_CAL  = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>';
     var ICON_CHEV = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
     function navIcon(dir) {
@@ -183,6 +206,16 @@
                        ' data-i18n="' + esc(p.label) + '">' + esc(t(p.label)) + '</button>';
               }).join("") +
               '<button type="button" class="udr-reset" data-i18n="Reset">' + esc(t("Reset")) + '</button>' +
+              (nimmtTeil(instanceId)
+                ? '<div class="udr-sync" data-tip="' +
+                    esc(t("Uses this range on every page. Only the three relative ranges can be shared.")) + '">' +
+                    '<span class="udr-sync-lbl" data-i18n="Apply everywhere">' +
+                      esc(t("Apply everywhere")) + '</span>' +
+                    '<span class="up-switch' + (syncAn() ? " is-on" : "") + '" role="switch" ' +
+                      'tabindex="0" aria-checked="' + (syncAn() ? "true" : "false") + '" ' +
+                      'data-udr-sync></span>' +
+                  '</div>'
+                : "") +
             '</div>' +
             '<div class="udr-divider" aria-hidden="true"></div>' +
             '<div class="udr-cal"></div>' +
@@ -499,12 +532,68 @@
         }
       });
 
+      /* Bei aktivem Schalter sind die nicht teilbaren Zeitraeume ausgegraut: "Letzte 6 Monate"
+         und die Auswahl im Kalender. Sonst zeigte diese Ansicht einen Zeitraum, den die naechste
+         nicht kennt -- zwei Zeitraeume, waehrend der Schalter behauptet, es waere einer. */
+      function syncSperren(){
+        var an = syncAn() && nimmtTeil(instanceId);
+        menu.classList.toggle("is-syncon", an);
+        Array.prototype.forEach.call(menu.querySelectorAll(".udr-preset"), function (b) {
+          var teilbar = !!TEILBAR[b.getAttribute("data-preset")];
+          var aus = an && !teilbar;
+          b.disabled = aus;
+          if (aus) b.setAttribute("data-tip", t("Not shareable — turn off \u201eApply everywhere\u201c to use it"));
+          else b.removeAttribute("data-tip");
+        });
+      }
+      /* Nur die ANZEIGE der anderen Picker nachziehen, ohne deren Bubble-Ereignisse. Alle zehn
+         Kalender liegen gleichzeitig im DOM (die Views werden nur versteckt), ein Klick wuerde
+         sonst zehn Workflows starten -- genau die Lawine, gegen die die ganze Leistungsrunde
+         gelaufen ist. Der geaenderte Picker feuert fuer SEINE Ansicht, die anderen bleiben still.
+         Ihre DATEN holen sie sich, wenn ihre Ansicht dran ist: resetView() unten laesst
+         bubble_fn_view_first_<name> beim naechsten Oeffnen wieder laufen. */
+      function syncWeitergeben(key){
+        for (var i = 0; i < CONTROLLERS.length; i++) {
+          var c = CONTROLLERS[i];
+          if (!c || c.instanceId === instanceId || !nimmtTeil(c.instanceId)) continue;
+          try { c.setPreset(key, false); } catch (e) {}
+        }
+        /* Die anderen Ansichten muessen neu laden, wenn sie wieder dran sind. resetView gehoert
+           dem View-System der Seite; fehlt es (Landingpage, Harness), passiert nichts -- dann gibt
+           es auch keine anderen Ansichten. */
+        try { if (typeof window.resetView === "function") window.resetView(); } catch (e) {}
+      }
+
       menu.addEventListener("click", function (e) {
+        var sw = e.target.closest("[data-udr-sync]");
+        if (sw) {
+          e.stopPropagation();
+          if (isProcessing()) return;
+          var an = !syncAn();
+          /* Beim Einschalten wird der aktuelle Zeitraum uebernommen, wenn er teilbar ist --
+             sonst die Vorgabe. Ein eigener Zeitraum kann nicht global gelten, und ihn stumm
+             gegen etwas anderes zu tauschen, ohne es zu zeigen, waere schlimmer. */
+          if (an) UC.setPref("date_preset", TEILBAR[committedPreset] ? committedPreset : DEFAULT_PRESET);
+          UC.setPref("date_sync", an ? "on" : "off");
+          /* NEU LADEN und nicht weitergeben. Beim Umschalten sind womoeglich alle Ansichten und
+             mehrere Drawer offen, jeder mit eigenem Zustand in Bubble -- die alle einzeln
+             nachzuziehen waere ein Netz aus Sonderfaellen. Der Reload stellt Views und Drawer aus
+             der URL wieder her (?view= und ?detail=) und jeder Picker liest den gespeicherten
+             Stand. Der Schalter wird selten geklickt; das darf einen Aufbau kosten. */
+          try { window.location.reload(); } catch (e2) {}
+          return;
+        }
         var preset = e.target.closest(".udr-preset");
         if (preset) {
           e.stopPropagation();
           if (isProcessing()) return;
-          applyPreset(preset.getAttribute("data-preset"), true);
+          if (preset.disabled) return;
+          var key = preset.getAttribute("data-preset");
+          applyPreset(key, true);
+          if (syncAn() && nimmtTeil(instanceId) && TEILBAR[key]) {
+            UC.setPref("date_preset", key);
+            syncWeitergeben(key);
+          }
           pop.close(true);
           return;
         }
@@ -512,6 +601,12 @@
           e.stopPropagation();
           if (isProcessing()) return;
           applyPreset(DEFAULT_PRESET, true);
+          /* Bei aktivem Schalter setzt Reset den GETEILTEN Zeitraum zurueck, nicht nur diesen
+             einen -- alles andere waere ein Zustand, in dem der Schalter luegt. */
+          if (syncAn() && nimmtTeil(instanceId)) {
+            UC.setPref("date_preset", DEFAULT_PRESET);
+            syncWeitergeben(DEFAULT_PRESET);
+          }
           pop.close(true);
           return;
         }
@@ -538,6 +633,10 @@
             render();
           } else {
             var from = minD(pendingStart, d), to = maxD(pendingStart, d);
+            /* Bei aktivem Schalter gilt der eigene Zeitraum nicht: er ist nicht teilbar, und
+               ihn hier still zu erlauben ergaebe zwei Zeitraeume gleichzeitig. Die Tage im
+               Kalender sind dann ausgegraut (CSS .is-syncon), das hier ist der Riegel dahinter. */
+            if (syncAn() && nimmtTeil(instanceId)) return;
             commit(from, to, null, rangeLabel(from, to), true);
             pop.close(true);
           }
@@ -616,6 +715,25 @@
         attributes: true, attributeFilter: ["data-isdark", "data-isprocessing"]
       });
 
+      /* Beim Aufbau den gespeicherten Stand uebernehmen -- STILL. Der Picker feuert grundsaetzlich
+         nicht beim Mounten (emit laeuft nur bei Klick, Reset und eigener Auswahl), und das bleibt
+         so: zehn Picker mal drei Bubble-Aufrufe bei jedem Seitenaufbau waere die Lawine an der
+         teuersten Stelle. Die Datums-States setzt dein Page-Load-Workflow, indem er
+         getUpstreemDateRange() liest -- eine Zeile, einmal. */
+      if (syncAn() && nimmtTeil(instanceId)) applyPreset(syncPreset(), false);
+      syncSperren();
+      /* Aendert die Einstellung woanders (anderer Picker, Einstellungen), zieht dieser mit. */
+      window.addEventListener("up-prefs-change", function (e) {
+        var name = e && e.detail && e.detail.name;
+        if (name && name !== "date_sync" && name !== "date_preset") return;
+        var sw2 = menu.querySelector("[data-udr-sync]");
+        if (sw2) {
+          sw2.classList.toggle("is-on", syncAn());
+          sw2.setAttribute("aria-checked", syncAn() ? "true" : "false");
+        }
+        syncSperren();
+      });
+
       var ctrl = {
         root: root,
         instanceId: instanceId,
@@ -628,7 +746,9 @@
           var dark = String(t || "").toLowerCase() === "dark";
           if (dark) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
         },
-        getRange: function () { return { from: iso(committed.from), to: iso(committed.to), preset: committedPreset }; }
+        getRange: function () { return { from: iso(committed.from), to: iso(committed.to), preset: committedPreset }; },
+        /* Feuert den aktuellen Stand, ohne ihn zu aendern -- fuer upstreemDatesActivate. */
+        emitCurrent: function () { emit(committed.from, committed.to); return true; }
       };
       root.__udrCtrl = ctrl;
       CONTROLLERS.push(ctrl);
@@ -696,7 +816,43 @@
       initAll();
       return forEachInstance(instanceId, function (c) { c.setPreset(key, emitToo); });
     };
-    window.setDateRangeTheme = function (instanceId, theme) {
+    /* ---- Fuer Bubble ------------------------------------------------------------------------
+     getUpstreemDateRange()  liest den GETEILTEN Zeitraum, oder null wenn der Schalter aus ist.
+                             Im Page-Load-Workflow lesen und die Datums-States damit setzen,
+                             BEVOR der erste RPC laeuft -- sonst zeigt der Kalender den
+                             gespeicherten Zeitraum und die Abfrage nimmt einen anderen.
+     upstreemDatesActivate(name)  sagt "diese Ansicht ist jetzt dran". Der zugehoerige Picker
+                             feuert seinen Zeitraum EINMAL an Bubble, damit die States stimmen,
+                             bevor die Ansicht laedt. In bubble_fn_view_changed aufrufen. */
+  window.getUpstreemDateRange = function () {
+    if (!(UC.getPref && UC.getPref("date_sync") === "on")) return null;
+    var p = UC.getPref("date_preset");
+    for (var i = 0; i < CONTROLLERS.length; i++) {
+      var c = CONTROLLERS[i];
+      if (c && c.root && c.root.isConnected && typeof c.getRange === "function"){
+        var r = c.getRange();
+        if (r && r.preset === p) return { preset: p, from: r.from, to: r.to };
+      }
+    }
+    /* Kein Picker im Dokument, der schon auf dem Preset steht -- dann nur den Namen zurueckgeben.
+       Die Daten daraus zu rechnen ist Sache des Kalenders, nicht dieser Zeile. */
+    return { preset: p, from: null, to: null };
+  };
+  window.upstreemDatesActivate = function (name) {
+    var id = String(name || "");
+    var traf = false;
+    for (var i = 0; i < CONTROLLERS.length; i++) {
+      var c = CONTROLLERS[i];
+      if (!c || !c.instanceId) continue;
+      /* Der Name der Ansicht steckt im Instanznamen: view "prompts" -> dates_v2_prompts.
+         Genauer Vergleich waere hier falsch -- der Aufrufer kennt den View-Namen, nicht die
+         volle Instanz-Id. */
+      if (c.instanceId.indexOf(id) < 0) continue;
+      if (!traf && typeof c.emitCurrent === "function") { c.emitCurrent(); traf = true; }
+    }
+    return traf;
+  };
+  window.setDateRangeTheme = function (instanceId, theme) {
       initAll();
       return forEachInstance(instanceId, function (c) { c.setTheme(theme); });
     };

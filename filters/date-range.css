@@ -176,3 +176,24 @@
 @media (prefers-reduced-motion: reduce){
   .udr-menu, .udr-trigger, .udr-day { transition: none; }
 }
+
+/* ══ DER GLOBALE KALENDER ═════════════════════════════════════════════════════════════════════
+   "Apply everywhere" unter dem Reset-Knopf. Die Zeile nimmt die Masse der Preset-Knoepfe auf
+   (34px hoch, 9px Innenabstand, 13px Text), damit die Spalte eine Spalte bleibt -- der Schalter
+   selbst ist .up-switch aus core, unveraendert (38x22). */
+.udr-sync {
+  display: flex; align-items: center; gap: 8px; margin-top: 8px; padding: 0 9px;
+  min-height: 34px; border-top: 1px solid var(--vc-border); padding-top: 10px;
+}
+.udr-sync-lbl { font-size: 13px; font-weight: 500; color: var(--vc-text); line-height: 1.25; }
+/* Der Schalter nach rechts: die Beschriftung ist die Aussage, der Schalter der Zustand. */
+.udr-sync .up-switch { margin-left: auto; }
+
+/* Bei aktivem Schalter: was nicht teilbar ist, ist ausgegraut -- nicht ausgeblendet. Ein
+   verschwundener Knopf wirkt wie ein Fehler, ein ausgegrauter erklaert sich (der Hinweis am
+   Knopf sagt, warum). Der Riegel dahinter steht im JS; das hier ist nur das Bild. */
+.udr-preset:disabled { opacity: .38; cursor: not-allowed; }
+.udr-preset:disabled:hover { background: transparent; }
+/* Und die Tage im Kalender: ein eigener Zeitraum ist bei aktivem Schalter nicht waehlbar. */
+.udr-menu.is-syncon .udr-cal { opacity: .5; }
+.udr-menu.is-syncon .udr-day { cursor: not-allowed; }

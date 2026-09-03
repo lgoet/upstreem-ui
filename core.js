@@ -181,14 +181,21 @@
      bleiben dort -- sie gab es vorher, sie funktionieren, und ein Umzug haette nur die gespeicherte
      Wahl jedes Nutzers weggeworfen. Das Fenster stellt sie ueber ihre vorhandenen Setter. */
   var PREF_KEY = "prefs";
-  var PREF_DEFAULT = { locale: "en", num: "en", date: "d-mon-y" };
+  /* date_sync / date_preset: der globale Kalender. AUS ist die Vorgabe -- eine Einstellung, die
+     alle Ansichten auf einen Zeitraum zwingt, darf niemand ungefragt bekommen.
+     Gespeichert wird das PRESET und nicht der Zeitraum: "1.-31. August" ist morgen falsch,
+     "letzte 30 Tage" bleibt richtig. Deshalb stehen hier nur die drei relativen Presets --
+     "Letzte 6 Monate" und ein eigener Zeitraum sind bewusst NICHT global speicherbar. */
+  var PREF_DEFAULT = { locale: "en", num: "en", date: "d-mon-y", date_sync: "off", date_preset: "last7" };
   var PREF_ERLAUBT = {
     locale: { en: 1, de: 1 },
     /* "en": 1,234.56 und 1.24k -- Punkt trennt die Nachkommastellen.
        "de": 1.234,56 und 1,24k -- Komma trennt sie. Mehr braucht es nicht: die zwei Sprachen
        decken beide Schreibweisen ab, und eine dritte waere eine Kombination, die niemand liest. */
     num:    { en: 1, de: 1 },
-    date:   { "d-mon-y": 1, "mon-d-y": 1, "d-m-y": 1, iso: 1 }
+    date:   { "d-mon-y": 1, "mon-d-y": 1, "d-m-y": 1, iso: 1 },
+    date_sync:   { on: 1, off: 1 },
+    date_preset: { last7: 1, last30: 1, last3: 1 }
   };
   var _prefs = null;
   /* OHNE Team-Suffix, und das ist eine Korrektur. Diese Werte liefen ueber storeKey, und storeKey
@@ -456,6 +463,12 @@
 
     /* ── Zustaende ─────────────────────────────────────────────────────────────────────────── */
     "Active": "Aktiv",
+    /* Der globale Kalender (03.09.). */
+    "Apply everywhere": "Überall anwenden",
+    "Uses this range on every page. Only the three relative ranges can be shared.":
+      "Verwendet diesen Zeitraum auf jeder Seite. Nur die drei relativen Zeiträume sind teilbar.",
+    "Not shareable — turn off \u201eApply everywhere\u201c to use it":
+      "Nicht teilbar — schalte „Überall anwenden“ aus, um ihn zu nutzen",
     /* Die drei Kennzahlen-Karten ueber der Prompts-Tabelle (03.09.). */
     "Distribution by topic": "Verteilung nach Topics",
     "Distribution by market": "Verteilung nach Märkten",

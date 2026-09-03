@@ -1,0 +1,123 @@
+<meta charset="utf-8"><title>Globaler Kalender: zehn Picker, ein Klick</title>
+<style>html,body{margin:0;font:13px/1.5 system-ui,sans-serif}
+#out{font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap;padding:10px;background:#f6f6f6}</style>
+<body><iframe id="rahmen" style="width:1280px;height:520px;border:0"></iframe><pre id="out">laeuft…</pre>
+<script>
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+var IDS=["dates_v2_dashboard","dates_v2_prompts","dates_v2_citations","dates_v2_brands",
+         "dates_v2_performance","dates_v2_prompt_spotlight","dates_v2_domainspotlight",
+         "dates_v2_urlspotlight","dates_v2_company_spotlight","dates_v2_export"];
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var T=null, ladungen=0;
+document.getElementById("rahmen").addEventListener("load", function(){ ladungen++; });
+function prefs(){ try { return JSON.parse(window.localStorage.getItem("up_prefs")||"{}"); } catch(e){ return {}; } }
+function bauen(prefs){
+  return Promise.all([hol("core.css"),hol("filters/date-range.css"),hol("core.js"),
+                      hol("filters/date-range.js"),hol("filters/bubble/date_range_bubble.html")])
+  .then(function(t){
+    T=t;
+    var d=document.getElementById("rahmen").contentDocument;
+    d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0;padding:8px'></body></html>"); d.close();
+    var v=d.defaultView;
+    try { if (prefs) v.localStorage.setItem("up_prefs", JSON.stringify(prefs));
+          else v.localStorage.removeItem("up_prefs"); } catch(e){}
+    /* Reload beobachten statt zulassen: die Fassung im Rahmen ruft location.reload() -- wir
+       zaehlen den Aufruf und laden von Hand neu, damit der Test in der Hand bleibt. */
+    /* location.reload laesst sich NICHT ueberschreiben -- der erste Anlauf tat es und der Rahmen
+       lud danach wirklich neu, wodurch alle Referenzen starben. Der Reload wird stattdessen am
+       load-Ereignis des Rahmens gezaehlt, und die Einstellungen liest der ELTERN-Kontext: ein
+       about:blank-Rahmen erbt den Ursprung, localStorage ist also derselbe Speicher. */
+    /* Die drei Bubble-Funktionen zaehlen -- das ist die Zahl, um die es geht */
+    v.__ruf = { from:0, to:0, range:0 };
+    v.bubble_fn_udr_date_from  = function(){ v.__ruf.from++; };
+    v.bubble_fn_udr_date_to    = function(){ v.__ruf.to++; };
+    v.bubble_fn_udr_date_range = function(){ v.__ruf.range++; };
+    [t[0],t[1]].forEach(function(c){ var s=d.createElement("style"); s.textContent=c; d.head.appendChild(s); });
+    var s2=d.createElement("style"); s2.textContent="*,*::before,*::after{transition:none!important;animation:none!important}";
+    d.head.appendChild(s2);
+    var vorlage=wurzelAus(t[4]);
+    IDS.forEach(function(id){
+      var w=d.createElement("div"); w.innerHTML=vorlage;
+      var r=w.querySelector(".udr-root");
+      r.setAttribute("data-instance", id); r.setAttribute("data-cdn-pin","t");
+      r.setAttribute("data-isdark","no");
+      d.body.appendChild(r);
+    });
+    var j=d.createElement("script"); j.textContent=t[2]; d.head.appendChild(j);
+    var j2=d.createElement("script"); j2.textContent=t[3]; d.head.appendChild(j2);
+    return new Promise(function(ok){ setTimeout(function(){ ok(d); },1600); });
+  });
+}
+function schalter(d,id){ return d.querySelector('[data-instance="'+id+'"] [data-udr-sync]'); }
+function label(d,id){ var e=d.querySelector('[data-instance="'+id+'"] .udr-label'); return e?e.textContent.trim():"?"; }
+
+bauen(null).then(function(d){
+  var v=d.defaultView;
+  log("PHASE 1  Schalter AUS (Vorgabe)");
+  log("   Picker gebaut: "+d.querySelectorAll(".udr-root").length+
+      "   Bubble-Aufrufe beim Aufbau: "+JSON.stringify(v.__ruf)+
+      "   ==> "+(v.__ruf.from+v.__ruf.to+v.__ruf.range===0?"RICHTIG (keine)":"FALSCH"));
+  var mit=IDS.filter(function(id){ return !!schalter(d,id); });
+  var ohne=IDS.filter(function(id){ return !schalter(d,id); });
+  log("   Schalter DA bei:    "+mit.join(", "));
+  log("   Schalter FEHLT bei: "+ohne.join(", "));
+  log("   ==> "+(ohne.length===5 && ohne.every(function(id){return /export|spotlight/.test(id);})
+        ? "RICHTIG (Export und die vier Spotlights nehmen nicht teil)" : "FALSCH"));
+  /* Schalter klicken -> speichern + Reload anfordern */
+  ladungen=0;
+  schalter(d,"dates_v2_prompts").click();
+  return new Promise(function(ok){ setTimeout(ok,900); });
+}).then(function(d){
+  var p=prefs();
+  log("PHASE 2  Klick auf den Schalter");
+  log("   gespeichert: date_sync="+p.date_sync+"  date_preset="+p.date_preset+
+      "   ==> "+(p.date_sync==="on"&&p.date_preset?"RICHTIG":"FALSCH"));
+  log("   Rahmen hat neu geladen: "+(ladungen>0?"ja ("+ladungen+")":"NEIN")+
+      "   ==> "+(ladungen>0?"RICHTIG":"FALSCH"));
+}).then(function(){
+  return bauen({ date_sync:"on", date_preset:"last30" });
+}).then(function(d){
+  var v=d.defaultView;
+  log("PHASE 3  nach dem Reload, Schalter AN, gespeichert last30");
+  log("   Bubble-Aufrufe beim Aufbau: "+JSON.stringify(v.__ruf)+
+      "   ==> "+(v.__ruf.from+v.__ruf.to+v.__ruf.range===0?"RICHTIG (still)":"FALSCH"));
+  log("   Beschriftungen: prompts=\""+label(d,"dates_v2_prompts")+"\"  brands=\""+
+      label(d,"dates_v2_brands")+"\"  export=\""+label(d,"dates_v2_export")+"\"");
+  log("   getUpstreemDateRange(): "+JSON.stringify(v.getUpstreemDateRange()));
+  /* Presets pruefen: last6 muss gesperrt sein */
+  var men=d.querySelector('[data-instance="dates_v2_prompts"] .udr-menu');
+  var b6=men.querySelector('[data-preset="last6"]'), b30=men.querySelector('[data-preset="last30"]');
+  log("   last6 gesperrt="+b6.disabled+"   last30 gesperrt="+b30.disabled+
+      "   ==> "+(b6.disabled && !b30.disabled?"RICHTIG":"FALSCH"));
+  /* DER KERNTEST: ein Preset-Klick bei zehn Pickern */
+  v.__ruf={from:0,to:0,range:0};
+  d.querySelector('[data-instance="dates_v2_prompts"] .udr-trigger').click();
+  return new Promise(function(ok){ setTimeout(function(){
+    d.querySelector('[data-instance="dates_v2_prompts"] [data-preset="last7"]').click();
+    setTimeout(function(){ ok(d); },500);
+  },300); });
+}).then(function(d){
+  var v=d.defaultView, r=v.__ruf;
+  log("PHASE 4  EIN Preset-Klick bei zehn Pickern");
+  log("   Bubble-Aufrufe: from="+r.from+"  to="+r.to+"  range="+r.range+"  SUMME="+(r.from+r.to+r.range));
+  log("   ==> "+(r.from===1&&r.to===1&&r.range===1
+        ? "RICHTIG (drei, nicht dreissig)" : "FALSCH -- Lawine oder nichts gefeuert"));
+  var p={}; try { p=JSON.parse(v.localStorage.getItem("up_prefs")||"{}"); } catch(e){}
+  log("   gespeichert: date_preset="+p.date_preset);
+  log("   Beschriftungen still nachgezogen: brands=\""+label(d,"dates_v2_brands")+
+      "\"  citations=\""+label(d,"dates_v2_citations")+"\"  (Export bleibt) export=\""+
+      label(d,"dates_v2_export")+"\"");
+  /* upstreemDatesActivate: genau drei Aufrufe */
+  v.__ruf={from:0,to:0,range:0};
+  v.upstreemDatesActivate("brands");
+  return new Promise(function(ok){ setTimeout(function(){ ok(d); },400); });
+}).then(function(d){
+  var r=d.defaultView.__ruf;
+  log("PHASE 5  upstreemDatesActivate(\"brands\")");
+  log("   Bubble-Aufrufe: SUMME="+(r.from+r.to+r.range)+
+      "   ==> "+(r.from===1&&r.to===1&&r.range===1?"RICHTIG (genau drei)":"FALSCH"));
+  log("FERTIG");
+}).catch(function(e){ log("ABBRUCH: "+e.message+"\n"+(e.stack||"").split("\n").slice(0,3).join("\n")); });
+</script>
