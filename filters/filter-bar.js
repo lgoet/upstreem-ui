@@ -649,16 +649,27 @@
       elBtn.addEventListener("click", function (e) {
         e.stopPropagation();
         if (pop.isOpen()) { pop.close(false); return; }
+        /* Kippt an der rechten Fensterkante auf rechts ausgerichtet. Einmal beim Oeffnen, nicht
+           beim Scrollen: das Panel ist absolut und wandert mit seinem Knopf mit.
+           GEMESSEN am 03.09.: diese Entscheidung stand in der DevTools-Aufnahme des Nutzers mit
+           718ms unter getBoundingClientRect. Sie lief vorher NACH render() und begann mit
+           classList.remove -- also schreiben, dann lesen, und das erzwingt auf einer Seite mit
+           23604 Knoten eine komplette Style-Neuberechnung.
+           Jetzt zuerst und ohne Schreiben davor: die ungekippte rechte Kante ist die linke Kante
+           der Schale (plus deren Rahmen, denn "left: 0" zaehlt ab der Polsterkante) plus die
+           Breite des Panels. Die Breite haengt NICHT an is-right -- die Klasse setzt nur left und
+           right. Im Harness gegen die alte Messung geprueft: 256 gegen 256, null Abweichung.
+           (Am GESCHLOSSENEN Panel weichen die Werte um 2px ab, weil core.css es mit
+           transform: scale(0.985) kleiner haelt; offsetWidth ist davon unberuehrt, die Rechnung
+           also trotzdem richtig.) */
+        var vw = window.innerWidth || document.documentElement.clientWidth || 0;
+        var kippen = (elMore.getBoundingClientRect().left + elMore.clientLeft +
+                      elMenu.offsetWidth) > (vw - 8);
         einziehen();
         spiegelnAlle();
         render();
         pop.open();
-        /* Kippt an der rechten Fensterkante auf rechts ausgerichtet. Einmal beim Oeffnen, nicht
-           beim Scrollen: das Panel ist absolut und wandert mit seinem Knopf mit. */
-        elMenu.classList.remove("is-right");
-        var r = elMenu.getBoundingClientRect();
-        var vw = window.innerWidth || document.documentElement.clientWidth || 0;
-        if (r.right > vw - 8) elMenu.classList.add("is-right");
+        elMenu.classList.toggle("is-right", kippen);
         elBtn.setAttribute("aria-expanded", "true");
       });
 

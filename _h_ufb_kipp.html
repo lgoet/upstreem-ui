@@ -1,0 +1,47 @@
+<meta charset="utf-8"><title>Filterleiste: Kipp-Entscheidung ohne Schreiben davor</title>
+<style>#out{font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap;padding:10px}</style>
+<body><iframe id="rahmen" style="width:1280px;height:700px;border:0"></iframe><pre id="out">laeuft…</pre>
+<script>
+/* Im Rahmen mit FESTER Breite, weil window.innerWidth in dieser Flaeche 0 ist -- ohne das ist
+   jede Entscheidung, die an der Fensterbreite haengt, wertlos. */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+Promise.all([hol("core.css"),hol("filters/filter-bar.css"),hol("core.js"),hol("filters/filter-bar.js"),
+             hol("filters/bubble/filter_bar_bubble.html")]).then(function(t){
+  var d=document.getElementById("rahmen").contentDocument;
+  d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body></body></html>"); d.close();
+  [t[0],t[1]].forEach(function(c){ var s=d.createElement("style"); s.textContent=c; d.head.appendChild(s); });
+  var s2=d.createElement("style"); s2.textContent="*,*::before,*::after{transition:none!important;animation:none!important}";
+  d.head.appendChild(s2);
+  var w=d.createElement("div"); w.innerHTML=wurzelAus(t[4]);
+  var r=w.querySelector(".ufb-root");
+  if(!r) throw new Error("keine .ufb-root in der Vorlage");
+  r.setAttribute("data-instance","fb"); r.setAttribute("data-cdn-pin","fb"); r.setAttribute("data-isdark","no");
+  d.body.appendChild(r);
+  var j=d.createElement("script"); j.textContent=t[2]; d.head.appendChild(j);
+  var j2=d.createElement("script"); j2.textContent=t[3]; d.head.appendChild(j2);
+  return new Promise(function(ok){ setTimeout(function(){ ok(d); },1500); });
+}).then(function(d){
+  var menu=d.querySelector(".ufb-menu");
+  var wrap=menu ? menu.parentElement : null;
+  log("Menue: "+(menu?"da":"fehlt")+"   Rahmenbreite: "+d.defaultView.innerWidth);
+  if(!menu){ log("ABBRUCH"); return; }
+  menu.classList.remove("is-right");
+  /* ALTE Eingabe: die rechte Kante des ungekippten Menues. */
+  var altRechts = menu.getBoundingClientRect().right;
+  /* NEUE Eingabe: linke Kante der Schale plus Menuebreite -- ohne Schreiben davor messbar. */
+  /* clientLeft ist die Rahmenbreite der Schale: "left: 0" eines absolut positionierten Kindes
+     zaehlt ab der POLSTERkante, getBoundingClientRect ab der Rahmenkante. */
+  var neuRechts = wrap.getBoundingClientRect().left + wrap.clientLeft + menu.offsetWidth;
+  log("ungekippt:  rechte Kante gemessen = "+Math.round(altRechts)+
+      "   berechnet (Schale.left + Breite) = "+Math.round(neuRechts)+
+      "   Abweichung = "+Math.round(Math.abs(altRechts-neuRechts))+"px");
+  log("   ==> "+(Math.abs(altRechts-neuRechts)<=1 ? "GLEICHWERTIG" : "NICHT GLEICHWERTIG"));
+  log("Menuebreite mit is-right: "+(function(){ menu.classList.add("is-right");
+      var b=menu.offsetWidth; menu.classList.remove("is-right"); return b; })()+
+      "   ohne: "+menu.offsetWidth+"   (muss gleich sein, sonst taugt die Rechnung nicht)");
+  log("FERTIG");
+}).catch(function(e){ log("ABBRUCH: "+e.message); });
+</script>
