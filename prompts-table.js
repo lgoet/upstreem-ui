@@ -4438,8 +4438,9 @@
       kpiZeile.innerHTML =
         karteHtml("upt-kpi-topics", UC.t("Distribution by topic")) +
         karteHtml("upt-kpi-markets", UC.t("Distribution by market")) +
-        karteHtml("upt-kpi-quota",   UC.t("Prompt allowance"));
+        karteHtml("upt-kpi-quota",   UC.t("Prompt allowance"), true);
       elHead.parentNode.insertBefore(kpiZeile, elHead);
+      kpiAugeBinden();
       /* Die Ablagen benachrichtigen, wenn sich etwas aendert. owner ist die Wurzel: Bubble wirft
          diese Wurzeln staendig weg und baut sie neu, und ohne owner waechst die Abonnentenliste
          mit jedem Neuaufbau um einen toten Eintrag (siehe onTopics in core). */
@@ -4450,14 +4451,55 @@
       kpiMarkets(UC.getMarkets ? UC.getMarkets() : []);
       kpiQuota(UC.getQuota ? UC.getQuota() : null);
     }
-    function karteHtml(kl, titel){
+    /* mitAuge: nur die letzte Karte traegt den Umschalter -- er klappt ALLE DREI zu, und drei
+       Knoepfe fuer dieselbe Handlung waeren drei Fragen an den Nutzer, welcher davon was tut.
+       Das Auge selbst ist UC.icon("eye"/"eyeOff"), nicht gezeichnet. */
+    function karteHtml(kl, titel, mitAuge){
       return '<div class="upt-kpi ' + kl + '">' +
         '<div class="upt-kpi-head"><span class="upt-kpi-title">' + esc(titel) + '</span>' +
-        '<span class="upt-kpi-note"></span></div>' +
+        '<span class="upt-kpi-note"></span>' +
+        (mitAuge
+          ? '<button type="button" class="upt-kpi-eye" data-kpi-eye ' +
+              'data-tip="' + esc(UC.t("Hide")) + '" aria-label="' + esc(UC.t("Hide")) + '" ' +
+              'aria-expanded="true">' +
+              '<span class="ic-hide">' + UC.icon("eye", 2) + '</span>' +
+              '<span class="ic-show">' + UC.icon("eyeOff", 2) + '</span>' +
+            '</button>'
+          : "") +
+        '</div>' +
         '<div class="upt-kpi-body"></div>' +
         '<div class="upt-kpi-foot"><span class="upt-kpi-foot-left"></span>' +
         '<span class="upt-kpi-foot-right"></span></div></div>';
     }
+    /* Zugeklappt bleibt zugeklappt, auch wenn Bubble diese Wurzel wegwirft und neu baut -- und
+       das tut Bubble bei jedem Ansichtswechsel. Darum am window und nach Instanz, genau wie
+       __ccHidden im Citations Combo Chart. Nicht in den Einstellungen: das ist ein Blick auf die
+       Seite, keine Vorliebe, und ueber einen Reload hinweg zugeklappte Karten waeren beim
+       naechsten Besuch eine verschwundene Funktion. */
+    function kpiAugeStand(){ return (window.__uptKpiZu = window.__uptKpiZu || {}); }
+    function kpiAugeBinden(){
+      var btn = kpiZeile && kpiZeile.querySelector("[data-kpi-eye]");
+      if (!btn) return;
+      kpiAugeSetzen(!!kpiAugeStand()[instanceId]);
+      btn.addEventListener("click", function(){
+        kpiAugeSetzen(!kpiZeile.classList.contains("is-hidden-view"));
+      });
+    }
+    function kpiAugeSetzen(zu){
+      var btn = kpiZeile && kpiZeile.querySelector("[data-kpi-eye]");
+      if (!kpiZeile || !btn) return;
+      kpiZeile.classList.toggle("is-hidden-view", zu);
+      kpiAugeStand()[instanceId] = zu;
+      btn.setAttribute("aria-expanded", zu ? "false" : "true");
+      var txt = UC.t(zu ? "Show" : "Hide");
+      btn.setAttribute("data-tip", txt);
+      btn.setAttribute("aria-label", txt);
+      /* Der Ring muss nach dem Zuklappen neu messen: sein Canvas haengt an der Kartenhoehe, und
+         Chart.js merkt eine Aenderung des Behaelters nicht von selbst. Nach der Uebergangszeit
+         der CSS (200ms), sonst misst er die halbe Hoehe von unterwegs. */
+      if (kpiRing && kpiRing.resize) setTimeout(function(){ kpiRing.resize(); }, 230);
+    }
+
     function kpiTeil(kl, teil){
       return kpiZeile ? kpiZeile.querySelector("." + kl + " .upt-kpi-" + teil) : null;
     }

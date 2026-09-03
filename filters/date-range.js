@@ -207,14 +207,18 @@
               }).join("") +
               '<button type="button" class="udr-reset" data-i18n="Reset">' + esc(t("Reset")) + '</button>' +
               (nimmtTeil(instanceId)
-                ? '<div class="udr-sync" data-tip="' +
-                    esc(t("Uses this range on every page. Only the three relative ranges can be shared.")) + '">' +
+                ? '<button type="button" class="udr-sync" role="switch" aria-checked="' +
+                    (syncAn() ? "true" : "false") + '" data-tip="' +
+                    esc(t("Uses this range on every page. Reloads the page. Only the three relative ranges can be shared.")) + '">' +
                     '<span class="udr-sync-lbl" data-i18n="Apply everywhere">' +
                       esc(t("Apply everywhere")) + '</span>' +
-                    '<span class="up-switch' + (syncAn() ? " is-on" : "") + '" role="switch" ' +
-                      'tabindex="0" aria-checked="' + (syncAn() ? "true" : "false") + '" ' +
+                    /* Der Schalter ist hier nur noch das BILD des Zustands -- role und
+                       aria-checked sitzen an der Zeile, weil die Zeile das Bedienelement ist.
+                       Zwei Elemente mit role="switch" uebereinander waeren fuer einen Screenreader
+                       zwei Schalter fuer dieselbe Sache. */
+                    '<span class="up-switch' + (syncAn() ? " is-on" : "") + '" aria-hidden="true" ' +
                       'data-udr-sync></span>' +
-                  '</div>'
+                  '</button>'
                 : "") +
             '</div>' +
             '<div class="udr-divider" aria-hidden="true"></div>' +
@@ -565,7 +569,10 @@
       }
 
       menu.addEventListener("click", function (e) {
-        var sw = e.target.closest("[data-udr-sync]");
+        /* Die ganze Zeile, nicht nur der Schalter: ein 38px breites Ziel neben einer 34px
+           breiten Zeile, die genauso aussieht wie die anklickbaren Presets darueber, ist eine
+           Falle. */
+        var sw = e.target.closest(".udr-sync");
         if (sw) {
           e.stopPropagation();
           if (isProcessing()) return;
@@ -727,10 +734,9 @@
         var name = e && e.detail && e.detail.name;
         if (name && name !== "date_sync" && name !== "date_preset") return;
         var sw2 = menu.querySelector("[data-udr-sync]");
-        if (sw2) {
-          sw2.classList.toggle("is-on", syncAn());
-          sw2.setAttribute("aria-checked", syncAn() ? "true" : "false");
-        }
+        if (sw2) sw2.classList.toggle("is-on", syncAn());
+        var zeile = menu.querySelector(".udr-sync");
+        if (zeile) zeile.setAttribute("aria-checked", syncAn() ? "true" : "false");
         syncSperren();
       });
 

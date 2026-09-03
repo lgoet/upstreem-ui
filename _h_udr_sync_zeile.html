@@ -1,0 +1,97 @@
+<meta charset="utf-8"><title>Kalender: die Zeile "Apply everywhere"</title>
+<style>html,body{margin:0;font:13px/1.5 system-ui,sans-serif}
+#out{font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap;padding:10px;background:#f6f6f6}</style>
+<body><iframe id="rahmen" style="width:900px;height:520px;border:0"></iframe><pre id="out">laeuft…</pre>
+<script>
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var D=null, RUF={from:0,to:0,range:0}, RELOAD=0;
+document.getElementById("rahmen").addEventListener("load", function(){ RELOAD++; });
+
+/* Die Uebergaenge bleiben AN: der Hover-Zustand wird hier ueber :hover-Regeln im Stylesheet
+   gelesen, nicht ueber einen echten Zeiger -- der Rahmen ist verdeckt, ein synthetisches
+   mouseover erzeugt keinen :hover. Gelesen wird also die REGEL, und dass sie auf dieses Element
+   passt (matches), nicht ein computed style unter der Maus. Genau der Unterschied, an dem eine
+   frueher schon einmal gemessene "Farbe stimmt" nichts wert war. */
+Promise.all([hol("core.css"),hol("filters/date-range.css"),hol("core.js"),
+             hol("filters/date-range.js"),hol("filters/bubble/date_range_bubble.html")])
+.then(function(t){
+  var d=document.getElementById("rahmen").contentDocument; D=d;
+  d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0;padding:8px'></body></html>"); d.close();
+  var v=d.defaultView;
+  try { v.localStorage.removeItem("up_prefs"); } catch(e){}
+  v.bubble_fn_udr_date_from=function(){ RUF.from++; };
+  v.bubble_fn_udr_date_to=function(){ RUF.to++; };
+  v.bubble_fn_udr_date_range=function(){ RUF.range++; };
+  [t[0],t[1]].forEach(function(c){ var s=d.createElement("style"); s.textContent=c; d.head.appendChild(s); });
+  var w=d.createElement("div"); w.innerHTML=wurzelAus(t[4]);
+  var r=w.querySelector(".udr-root");
+  r.setAttribute("data-instance","dates_v2_prompts"); r.setAttribute("data-cdn-pin","t");
+  r.setAttribute("data-isdark","no");
+  d.body.appendChild(r);
+  var j=d.createElement("script"); j.textContent=t[2]; d.head.appendChild(j);
+  var j2=d.createElement("script"); j2.textContent=t[3]; d.head.appendChild(j2);
+  return new Promise(function(ok){ setTimeout(ok,1600); });
+}).then(function(){
+  var d=D, v=d.defaultView;
+  d.querySelector(".udr-trigger").click();
+  return new Promise(function(ok){ setTimeout(ok,600); });
+}).then(function(){
+  var d=D, v=d.defaultView, cs=v.getComputedStyle;
+  var zeile=d.querySelector(".udr-sync"), lbl=d.querySelector(".udr-sync-lbl");
+  var reset=d.querySelector(".udr-reset");
+  log("PHASE 1  Sitz und Ruhezustand");
+  log("   Element: <"+zeile.tagName.toLowerCase()+"> role="+zeile.getAttribute("role")+
+      "  aria-checked="+zeile.getAttribute("aria-checked"));
+  log("   ==> "+(zeile.tagName==="BUTTON"&&zeile.getAttribute("role")==="switch"?"RICHTIG":"FALSCH"));
+  var zr=zeile.getBoundingClientRect(), rr=reset.getBoundingClientRect();
+  log("   Hoehe Zeile "+Math.round(zr.height)+"px  Reset "+Math.round(rr.height)+"px"+
+      "   linke Kante "+Math.round(zr.left)+" / "+Math.round(rr.left)+
+      "   Breite "+Math.round(zr.width)+" / "+Math.round(rr.width));
+  log("   ==> "+(Math.round(zr.height)===Math.round(rr.height)&&Math.round(zr.left)===Math.round(rr.left)
+        &&Math.round(zr.width)===Math.round(rr.width)?"RICHTIG (dieselbe Pille)":"FALSCH"));
+  log("   Schriftfarbe: Zeile "+cs(lbl).color+"   Reset "+cs(reset).color+
+      "   ==> "+(cs(lbl).color===cs(reset).color?"RICHTIG (gleich)":"FALSCH"));
+  /* Der Hover-Zustand: die Regel suchen und pruefen, dass sie auf dieses Element passt. */
+  function regel(sel, prop){
+    var t=null;
+    [].forEach.call(d.styleSheets, function(ss){
+      try { [].forEach.call(ss.cssRules, function(r){
+        if (r.selectorText && r.selectorText.indexOf(sel)>=0 && r.style && r.style[prop])
+          t = r.selectorText + " { " + prop + ": " + r.style[prop] + " }";
+      }); } catch(e){}
+    });
+    return t;
+  }
+  log("   Hover-Regeln:");
+  log("     "+(regel(".udr-sync:hover","background")||"FEHLT"));
+  log("     "+(regel(".udr-sync:hover .udr-sync-lbl","color")||"FEHLT"));
+  log("     Reset zum Vergleich: "+(regel(".udr-reset:hover","background")||"FEHLT")+" / "+
+      (regel(".udr-reset:hover","color")||"FEHLT"));
+  var g1=regel(".udr-sync:hover","background"), g2=regel(".udr-reset:hover","background");
+  var f1=regel(".udr-sync:hover .udr-sync-lbl","color"), f2=regel(".udr-reset:hover","color");
+  log("   ==> "+(g1&&g2&&g1.split("{")[1]===g2.split("{")[1]&&f1&&f2&&f1.split("{")[1]===f2.split("{")[1]
+        ? "RICHTIG (gleicher Hover wie Reset)" : "FALSCH"));
+  log("   Tooltip: \""+zeile.getAttribute("data-tip")+"\"");
+  log("   ==> "+(/[Rr]eload/.test(zeile.getAttribute("data-tip")||"")
+        ? "RICHTIG (der Reload steht drin)" : "FALSCH -- kein Hinweis auf den Reload"));
+  /* Der Schalter selbst darf keine Zeiger-Ereignisse nehmen: sonst gibt es zwei Klickwege. */
+  var sw=d.querySelector("[data-udr-sync]");
+  log("   Schalter: pointer-events="+cs(sw).pointerEvents+"  role="+(sw.getAttribute("role")||"(keine)")+
+      "  aria-hidden="+sw.getAttribute("aria-hidden")+
+      "   ==> "+(cs(sw).pointerEvents==="none"&&!sw.getAttribute("role")?"RICHTIG":"FALSCH"));
+  /* PHASE 2: Klick auf die BESCHRIFTUNG, also nicht auf den Schalter */
+  RELOAD=0;
+  lbl.click();
+  return new Promise(function(ok){ setTimeout(ok,900); });
+}).then(function(){
+  var p={}; try { p=JSON.parse(window.localStorage.getItem("up_prefs")||"{}"); } catch(e){}
+  log("PHASE 2  Klick auf die BESCHRIFTUNG (nicht auf den Schalter)");
+  log("   gespeichert: date_sync="+p.date_sync+"  date_preset="+p.date_preset+
+      "   ==> "+(p.date_sync==="on"?"RICHTIG (die ganze Zeile schaltet)":"FALSCH"));
+  log("   Rahmen hat neu geladen: "+RELOAD+"   ==> "+(RELOAD>0?"RICHTIG":"FALSCH"));
+  log("FERTIG");
+}).catch(function(e){ log("ABBRUCH: "+e.message+"\n"+(e.stack||"").split("\n").slice(0,3).join("\n")); });
+</script>

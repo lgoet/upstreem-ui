@@ -172,6 +172,9 @@
 .udr-menu.is-stacked .udr-preset + .udr-preset { margin-top: 0; }
 .udr-menu.is-stacked .udr-presets-head { grid-column: 1 / -1; }
 .udr-menu.is-stacked .udr-reset { grid-column: 1 / -1; margin-top: 2px; }
+/* Im gestapelten Bild ist die Preset-Spalte ein zweispaltiges Raster -- ohne diese Zeile stuende
+   die Zeile in einer halben Spalte und die Trennlinie darueber ginge nur halb durch. */
+.udr-menu.is-stacked .udr-sync { grid-column: 1 / -1; margin-top: 9px; }
 
 @media (prefers-reduced-motion: reduce){
   .udr-menu, .udr-trigger, .udr-day { transition: none; }
@@ -182,12 +185,29 @@
    (34px hoch, 9px Innenabstand, 13px Text), damit die Spalte eine Spalte bleibt -- der Schalter
    selbst ist .up-switch aus core, unveraendert (38x22). */
 .udr-sync {
-  display: flex; align-items: center; gap: 8px; margin-top: 8px; padding: 0 9px;
-  min-height: 34px; border-top: 1px solid var(--vc-border); padding-top: 10px;
+  position: relative;
+  display: flex; align-items: center; gap: 8px; width: 100%; height: 34px; margin-top: 9px;
+  padding: 0 9px; border: 0; border-radius: 8px; background: transparent;
+  font-family: inherit; text-align: left; cursor: pointer;
 }
-.udr-sync-lbl { font-size: 13px; font-weight: 500; color: var(--vc-text); line-height: 1.25; }
-/* Der Schalter nach rechts: die Beschriftung ist die Aussage, der Schalter der Zustand. */
-.udr-sync .up-switch { margin-left: auto; }
+/* Die Trennlinie liegt IN der Luecke ueber der Zeile und nicht als border-top am Element: als
+   Rahmen waere sie Teil der Flaeche, und der Hover-Hintergrund faerbte sie mit ein. Die Zeile
+   muss dieselbe 34px-Pille sein wie der Reset-Knopf direkt darueber -- eine Zeile, die beim
+   Ueberfahren anders aussieht als ihr Nachbar, liest sich wie ein anderes Bauteil. */
+.udr-sync::before {
+  content: ""; position: absolute; left: 0; right: 0; top: -5px; height: 1px;
+  background: var(--vc-border);
+}
+/* Farbe wie .udr-reset: gedaempft im Ruhezustand, primaer beim Ueberfahren. */
+.udr-sync-lbl { font-size: 13px; font-weight: 500; color: var(--vc-muted); line-height: 1.25; }
+.udr-sync:hover { background: var(--vc-heading-bg); }
+.udr-sync:hover .udr-sync-lbl { color: var(--vc-text); }
+.udr-sync:focus-visible { outline: 2px solid var(--vc-focus, var(--vc-text)); outline-offset: -2px; }
+/* Der Schalter nach rechts: die Beschriftung ist die Aussage, der Schalter der Zustand.
+   Zeiger-Ereignisse aus: geklickt wird die ganze Zeile, und ein eigener Treffer auf dem Schalter
+   waere ein zweiter Weg zum selben Ziel -- mit e.stopPropagation() im Weg genau die Art
+   Doppelweg, die spaeter einmal als "der Klick zaehlt manchmal nicht" zurueckkommt. */
+.udr-sync .up-switch { margin-left: auto; pointer-events: none; }
 
 /* Bei aktivem Schalter: was nicht teilbar ist, ist ausgegraut -- nicht ausgeblendet. Ein
    verschwundener Knopf wirkt wie ein Fehler, ein ausgegrauter erklaert sich (der Hinweis am

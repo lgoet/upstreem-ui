@@ -286,8 +286,10 @@
 
      DAS GLOSSAR -- diese Woerter bleiben AUCH IN DEUTSCHEN SAETZEN englisch:
 
-       Domain, Domains, URL, URLs, Brand, Brands, Prompt, Prompts, Citation, Citations,
+       Domain, Domains, URL, URLs, Brand, Brands, Prompt, Prompts,
        Topic, Topics, Mira, Team, Teams, Dashboard,
+       (Citation/Citations NICHT mehr -- das heisst "Web-Quelle(n)", siehe den Eintrag unten.
+        Die Zusammensetzungen "Citation Type" und "Citation Share" bleiben englisch.)
        Visibility, Ranking, Sentiment, Share of Voice, Mention Count, Trend
 
      Die erste Gruppe sind die OBJEKTE dieser App -- so heissen sie in der Navigation, in den
@@ -337,8 +339,10 @@
 
     /* ── Spaltenkoepfe, die in mehreren Tabellen vorkommen ─────────────────────────────────────
        Nach dem Glossar bleiben Prompt, Visibility, Ranking, Sentiment, Brand(s), Domain(s),
-       URL(s), Topics, Citations und Share of Voice ENGLISCH -- sie stehen so in den Exporten und
-       in der Navigation. Uebersetzt wird der Rest. */
+       URL(s), Topics und Share of Voice ENGLISCH -- sie stehen so in den Exporten und in der
+       Navigation. Citations nicht mehr: das heisst "Web-Quellen", auch in der Navigation und
+       damit auch in einem Export, der seine Spaltenkoepfe aus t() nimmt. Uebersetzt wird der
+       Rest. */
     "Rank": "Rang",
     "Created": "Erstellt",
     "Created At": "Erstellt am",
@@ -356,6 +360,16 @@
     "Domain Share": "Domain-Anteil",
     "Mentioned?": "Erwähnt?",
     "Brand Mentions": "Brand-Erwähnungen",
+    /* Citations heisst auf Deutsch "Web-Quellen" -- so angefordert, und damit faellt dieses eine
+       Wort aus dem Glossar heraus. Der breite Lauf (breiterLauf) greift damit ueberall, wo das
+       Wort als eigener Textknoten steht: Seitenkopf, Sidebar, Spaltenkoepfe, Ring-Mitte. Es
+       braucht dafuer kein data-i18n im Bubble-Markup und keine Aenderung an einem eingebauten
+       Element.
+       Die ZUSAMMENSETZUNGEN bleiben: "Citation Type" und "Citation Share" sind Namen einer
+       Einordnung und einer Kennzahl, sie stehen so in den Filtern, in den Exporten und in der
+       Datenbank. "Web-Quellen-Typ-Anteil" waere kein Fortschritt. */
+    "Citations": "Web-Quellen",
+    "Citation": "Web-Quelle",
     "Citation Type": "Citation-Typ",
     "Citation Types": "Citation-Typen",
     "URL Types": "URL-Typen",
@@ -465,8 +479,11 @@
     "Active": "Aktiv",
     /* Der globale Kalender (03.09.). */
     "Apply everywhere": "Überall anwenden",
-    "Uses this range on every page. Only the three relative ranges can be shared.":
-      "Verwendet diesen Zeitraum auf jeder Seite. Nur die drei relativen Zeiträume sind teilbar.",
+    /* "Reloads the page" gehoert in den Hinweis und nicht in einen Bestaetigungsdialog: der
+       Reload ist die Folge des Klicks, keine Entscheidung -- und ein Dialog vor einem Schalter,
+       der einmal im Monat betaetigt wird, waere mehr im Weg als der Reload selbst. */
+    "Uses this range on every page. Reloads the page. Only the three relative ranges can be shared.":
+      "Verwendet diesen Zeitraum auf jeder Seite. Lädt die Seite neu. Nur die drei relativen Zeiträume sind teilbar.",
     "Not shareable — turn off \u201eApply everywhere\u201c to use it":
       "Nicht teilbar — schalte „Überall anwenden“ aus, um ihn zu nutzen",
     /* Die drei Kennzahlen-Karten ueber der Prompts-Tabelle (03.09.). */
@@ -552,8 +569,9 @@
      Sie stehen hier und nicht je Datei, weil der breite Lauf oben nach dem TEXT sucht und nicht
      nach der Datei -- ein Eintrag wirkt damit an jeder Stelle, an der derselbe Satz steht, und die
      vier Tabellen teilen die meisten davon woertlich.
-     Das Glossar gilt weiter: Prompt(s), Brand(s), Domain(s), URL(s), Topic(s), Citation(s) und die
-     Kennzahlen bleiben englisch, auch mitten im deutschen Satz. */
+     Das Glossar gilt weiter: Prompt(s), Brand(s), Domain(s), URL(s), Topic(s) und die Kennzahlen
+     bleiben englisch, auch mitten im deutschen Satz -- Citation(s) nicht mehr, das heisst
+     "Web-Quelle(n)". */
   addMessages("de", {
     /* ── Monate. Sie stehen an jeder Chart-Achse und im Kalender. ───────────────────────────── */
     "Jan": "Jan", "Feb": "Feb", "Mar": "Mär", "Apr": "Apr", "May": "Mai", "Jun": "Jun",
@@ -788,8 +806,8 @@
     "No URL types for this period.": "Keine URL-Typen für diesen Zeitraum.",
     "No model data for this period.": "Keine Modelldaten für diesen Zeitraum.",
     "No citation share for this period.": "Kein Citation-Anteil für diesen Zeitraum.",
-    "No citations for this response.": "Keine Citations zu dieser Response.",
-    "No citations match this filter.": "Keine Citations passen zu diesem Filter.",
+    "No citations for this response.": "Keine Web-Quellen zu dieser Response.",
+    "No citations match this filter.": "Keine Web-Quellen passen zu diesem Filter.",
     "No topics match your search.": "Keine Topics passen zu deiner Suche.",
     "No topics yet.": "Noch keine Topics.",
     "No variations recorded for this combination.":
@@ -1097,6 +1115,31 @@
     "Add": "Hinzufügen",
     "Look for": "Suchen",
     "Database": "Datenbank",
+    /* Das dritte Wort der Meta-Zeile. "Workspace" steht schon weiter oben, "Organisation" ist im
+       Deutschen dasselbe Wort mit derselben Schreibung -- der Eintrag steht trotzdem hier, weil
+       ein fehlender Eintrag im breiten Lauf nicht von einem absichtlichen "bleibt englisch" zu
+       unterscheiden ist. */
+    "Organisation": "Organisation",
+    /* ---- Die Beschreibungen unter den Seitentiteln -----------------------------------------
+       Sie standen in KEINER Sprache im Katalog, also war jeder der sechs Seitenkoepfe auf
+       Deutsch englisch. Angefordert war Citations; die anderen fuenf sind derselbe Satz an
+       derselben Stelle, und einer davon deutsch und fuenf englisch waere schlechter als beides
+       einheitlich. Das Glossar gilt: Domains, URLs, Prompts, Topics, Responses, Brands und
+       Opportunities bleiben stehen. */
+    "Analyze the domains and URLs influencing your visibility in AI responses":
+      "Untersuche die Domains und URLs, die deine Visibility in KI-Antworten beeinflussen",
+    "Monitor your AI visibility, performance, and latest developments":
+      "Beobachte deine AI Visibility, die Performance und die neuesten Entwicklungen",
+    "Manage tasks, prioritize opportunities, and track progress":
+      "Aufgaben verwalten, Opportunities priorisieren und den Fortschritt verfolgen",
+    "Manage tracked brands, compare performance, and discover untracked competitors":
+      "Verfolgte Brands verwalten, Leistung vergleichen und unbeobachtete Wettbewerber entdecken",
+    "Explore topic performance, compare brands, and uncover strengths and gaps":
+      "Themen-Performance erkunden, Brands vergleichen, Stärken und Lücken aufdecken",
+    "Manage Prompts, Topics and monitor latest Responses":
+      "Prompts und Topics verwalten, neueste Responses beobachten",
+    "Manage your brand, your team and your plan.":
+      "Verwalte deine Brand, dein Team und deinen Plan.",
     "Prompt Insights": "Prompt-Auswertung",
     "Refresh": "Aktualisieren",
     "Refresh Data": "Daten aktualisieren",
@@ -1170,8 +1213,8 @@
   /* Fuenfter Nachtrag: die Alltagsflaechen -- die drei Filter, der Zeitraum, die Tabellen und die
      Diagramme. Nicht uebersetzt bleiben hier bewusst zwei Sorten: die GESPEICHERTEN Werte
      (Editorial, UGC_Community, Institutional, Knowledge-Base -- das sind Datenbankwerte, kein UI)
-     und die Glossarwoerter (Topics, Prompts, Brands, URLs, Domains, Citations, Visibility,
-     Sentiment, Ranking). "Uncategorized" ist der einzige dieser Typen, der KEIN gespeicherter
+     und die Glossarwoerter (Topics, Prompts, Brands, URLs, Domains, Visibility, Sentiment,
+     Ranking -- Citations gehoert nicht mehr dazu, siehe "Web-Quellen"). "Uncategorized" ist der einzige dieser Typen, der KEIN gespeicherter
      Wert ist, sondern die Anzeige fuer "kein Typ gesetzt" -- der wird uebersetzt. */
   addMessages("de", {
     /* ---- Topics-Filter ---- */
@@ -1378,7 +1421,7 @@
     /* ---- Response-Detail ---- */
     "Highlights": "Hervorhebungen",
     "Highlight settings": "Hervorhebungen einstellen",
-    "Citations view": "Citations-Ansicht",
+    "Citations view": "Web-Quellen-Ansicht",
 
     /* ---- Mira ---- */
     "Ask Mira": "Mira fragen",
@@ -6604,6 +6647,34 @@
       }
     }
     syncFromAttrs();
+    /* Das Wort hinter dem Brandnamen ("Database", "Workspace", "Organisation") blieb in JEDEM
+       Seitenkopf englisch, in allen sechs. Grund: es ist ein nackter Textknoten NEBEN dem span
+       mit dem Brandnamen, und der breite Uebersetzungslauf fasst nur Elemente mit genau einem
+       eigenen Textknoten an (eigenerText) -- zwei Textstuecke sind ihm zu unsicher, zu Recht.
+       Also wird das Wort hier einmal in ein eigenes span gepackt. Danach greift der normale
+       [data-i18n]-Lauf, und zwar auch auf einer LAENGST eingebauten Seite: das Markup in
+       page-headers/bubble/*.html ist nur die Vorlage fuer Neuinstallationen, dieser Code kommt
+       ueber den CDN-Pin. Das fuehrende Leerzeichen bleibt ein eigener Textknoten, sonst klebt das
+       Wort am Namen. */
+    try {
+      var metaEl = root.querySelector(".up-ph-metatxt");
+      if (metaEl && !metaEl.__upMetaWort){
+        metaEl.__upMetaWort = true;
+        for (var mi = 0; mi < metaEl.childNodes.length; mi++){
+          var kn = metaEl.childNodes[mi];
+          if (kn.nodeType !== 3) continue;
+          var roh = kn.nodeValue || "", wort = roh.trim();
+          if (!wort) continue;
+          var sp = document.createElement("span");
+          sp.className = "up-ph-metaword";
+          sp.setAttribute("data-i18n", wort);
+          sp.textContent = t_(wort);
+          metaEl.replaceChild(sp, kn);
+          if (roh.match(/^\s/)) metaEl.insertBefore(document.createTextNode(" "), sp);
+          break;
+        }
+      }
+    } catch(e){}
     try {
       new MutationObserver(syncFromAttrs).observe(root, {
         attributes: true, attributeFilter: ["data-isdark", "data-brand-name", "data-brand-logo"]

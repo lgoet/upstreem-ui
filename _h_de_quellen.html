@@ -1,0 +1,92 @@
+<meta charset="utf-8"><title>Deutsch: Web-Quellen und der Seitenkopf</title>
+<style>html,body{margin:0;font:13px/1.5 system-ui,sans-serif}
+#out{font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap;padding:10px;background:#f6f6f6}</style>
+<body><iframe id="rahmen" style="width:1100px;height:340px;border:0"></iframe><pre id="out">laeuft…</pre>
+<script>
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var T=null;
+/* EIN Aufbau, danach im Betrieb umschalten -- und das ist kein Kompromiss, sondern der echte Weg
+   (der Nutzer schaltet die Sprache in den Einstellungen, ohne die Seite neu zu laden).
+   Der zweite Aufbau war ein Fehlgriff von mir: document.open() legt ein neues DOKUMENT an, aber
+   dasselbe WINDOW -- window.UpstreemCore aus dem ersten Aufbau ueberlebt, die Verdraengungssperre
+   in core.js laesst das zweite core.js gar nicht erst laufen, und dessen Einstellungs-Cache stand
+   noch auf der alten Sprache. Gemessen: up_prefs sagte "de", getPref("locale") sagte "en". */
+function bauen(locale){
+  return Promise.all([
+    hol("core.css"), hol("page-headers/citations-page-header.css"),
+    hol("core.js"), hol("page-headers/citations-page-header.js"),
+    hol("page-headers/bubble/citations_page_header_bubble.html")
+  ]).then(function(t){
+    T=t;
+    var d=document.getElementById("rahmen").contentDocument;
+    d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0'></body></html>"); d.close();
+    var v=d.defaultView;
+    try { v.localStorage.removeItem("pref_theme");
+          v.localStorage.setItem("up_prefs", JSON.stringify({ locale: locale })); } catch(e){}
+    [t[0],t[1]].forEach(function(c){ var s=d.createElement("style"); s.textContent=c; d.head.appendChild(s); });
+    var w=d.createElement("div"); w.innerHTML=wurzelAus(t[4]);
+    var r=w.querySelector(".up-root") || w.firstElementChild;
+    r.setAttribute("data-instance","cph"); r.setAttribute("data-cdn-pin","t");
+    r.setAttribute("data-isdark","no"); r.setAttribute("data-brand-name","Acme");
+    d.body.appendChild(r);
+    var j=d.createElement("script"); j.textContent=t[2]; d.head.appendChild(j);
+    var j2=d.createElement("script"); j2.textContent=t[3]; d.head.appendChild(j2);
+    return new Promise(function(ok){ setTimeout(function(){ ok(d); },1600); });
+  });
+}
+function lesen(d){
+  function txt(sel){ var e=d.querySelector(sel); return e ? e.textContent.trim() : "(fehlt)"; }
+  return { kopf: txt(".up-ph-heading"), beschr: txt(".up-ph-desc"),
+           meta: txt(".up-ph-metatxt"), wort: txt(".up-ph-metaword"),
+           /* Die Reiter tragen keinen eigenen Text-Span -- der Text steht direkt im
+              .up-ph-navitem neben dem Icon. Der erste Anlauf suchte "[class*='-txt']" und meldete
+              deshalb eine leere Nav, was wie ein Fehler aussah und keiner war. */
+           nav: [].map.call(d.querySelectorAll(".up-ph-nav .up-ph-navitem"),
+                            function(e){ return e.textContent.trim(); }).join(" / ") };
+}
+function sprache(d, l){
+  d.defaultView.UpstreemCore.setPref("locale", l);
+  return new Promise(function(ok){ setTimeout(function(){ ok(d); },700); });
+}
+/* ZUERST Englisch -- als Gegenprobe. Ohne sie waere "steht Deutsch da" nicht von "steht
+   irgendetwas da" zu unterscheiden. */
+bauen("en").then(function(d){
+  var a=lesen(d);
+  log("PHASE 1  Englisch (Gegenprobe)");
+  log("   Titel:        \""+a.kopf+"\"");
+  log("   Beschreibung: \""+a.beschr+"\"");
+  log("   Meta:         \""+a.meta+"\"   (eigenes Wort: \""+a.wort+"\")");
+  log("   Nav:          "+a.nav);
+  log("   ==> "+(a.kopf==="Citations" && /Analyze the domains/.test(a.beschr) && a.wort==="Database"
+        ? "RICHTIG (englisch, und das Meta-Wort steckt in einem eigenen span)" : "FALSCH"));
+  return sprache(d, "de");
+}).then(function(d){
+  var b=lesen(d);
+  log("PHASE 2  Deutsch");
+  log("   Titel:        \""+b.kopf+"\"");
+  log("   Beschreibung: \""+b.beschr+"\"");
+  log("   Meta:         \""+b.meta+"\"   (eigenes Wort: \""+b.wort+"\")");
+  log("   Nav:          "+b.nav);
+  log("   ==> Titel   "+(b.kopf==="Web-Quellen"?"RICHTIG":"FALSCH -- steht noch \""+b.kopf+"\""));
+  log("   ==> Beschr. "+(/Untersuche die Domains/.test(b.beschr)?"RICHTIG":"FALSCH"));
+  log("   ==> Meta    "+(b.wort==="Datenbank"?"RICHTIG":"FALSCH -- steht noch \""+b.wort+"\""));
+  log("   ==> Nav     "+(b.nav.indexOf("Domains")>=0?"RICHTIG (Domains/URLs bleiben englisch, Glossar)":"?"));
+  /* Und der Rueckweg: umschalten OHNE Neuaufbau, wie es der Nutzer in den Einstellungen tut. */
+  return sprache(d, "en");
+}).then(function(d){
+  var c=lesen(d);
+  log("PHASE 3  im Betrieb zurueck auf Englisch (ohne Neuaufbau)");
+  log("   Titel: \""+c.kopf+"\"   Meta-Wort: \""+c.wort+"\"   Beschr.: \""+c.beschr.slice(0,40)+"…\"");
+  log("   ==> "+(c.kopf==="Citations" && c.wort==="Database" && /Analyze/.test(c.beschr)
+        ? "RICHTIG (kein Einwegweg)" : "FALSCH -- haengt in einer Sprache fest"));
+  return sprache(d, "de");
+}).then(function(d){
+  var e=lesen(d);
+  log("   und wieder deutsch: \""+e.kopf+"\" / \""+e.wort+"\"" +
+      "   ==> "+(e.kopf==="Web-Quellen"&&e.wort==="Datenbank"?"RICHTIG":"FALSCH"));
+  log("FERTIG");
+}).catch(function(e){ log("ABBRUCH: "+e.message+"\n"+(e.stack||"").split("\n").slice(0,3).join("\n")); });
+</script>

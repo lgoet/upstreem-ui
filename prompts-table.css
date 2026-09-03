@@ -1094,7 +1094,9 @@
   flex: 1 1 0; min-width: 0; height: 256px; box-sizing: border-box;
   border: 1px solid var(--vc-border); background: var(--vc-bg); border-radius: 16px;
   padding: 16px; display: flex; flex-direction: column; overflow: hidden;
-  transition: background 200ms ease;
+  /* height im Uebergang, weil das Auge die Karte auf ihre Kopfzeile schrumpft -- ohne das
+     springt die Tabelle darunter. */
+  transition: background 200ms ease, height 200ms ease;
 }
 /* height: auto und nicht 32px wie bei .tcd-head: dort steht die Kopfzeile ueber einem Chart in
    voller Hoehe und traegt Knoepfe. Hier ist sie nur Text, und eine feste Hoehe mit zentriertem
@@ -1118,6 +1120,46 @@
   font-size: 11.5px; color: var(--vc-muted);
 }
 .upt-kpi-foot-right { margin-left: auto; }
+
+/* ---- Auge: alle drei Karten zuklappen ----------------------------------------------------
+   Dieselbe Familie wie .combo-iconbtn/.vot-iconbtn/.tcd-iconbtn und mit Absicht NICHT
+   .up-iconbtn: dessen :hover legt einen Hintergrund unter das Icon, den diese Knoepfe nie
+   hatten -- es aendert sich nur die Farbe. Die Begruendung steht schon am Kopf von
+   citations-combo-chart.css; hier ist derselbe Knopf an derselben Stelle. */
+.upt-kpi-eye {
+  display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
+  width: 32px; height: 32px; margin: -6px -6px -6px 0; padding: 0;
+  border: 0; border-radius: 8px; background: transparent; color: #6f6f6f; cursor: pointer;
+}
+/* Negativer Aussenabstand: die Kopfzeile ist nur so hoch wie ihr Titel (siehe oben), ein 32px
+   hoher Knopf wuerde sie also aufziehen und die 16px Polster oben brechen. Rechts ebenso, damit
+   das Icon optisch auf der Kante des Polsters sitzt und nicht 6px eingerueckt. */
+.up-root[data-theme="dark"] .upt-kpi-eye { color: #a0a0a0; }
+.upt-kpi-eye:hover { color: var(--vc-text); }
+.upt-kpi-eye svg { width: 16px; height: 16px; display: block; }
+.upt-kpi-eye .ic-show { display: none; }
+.upt-kpis.is-hidden-view .upt-kpi-eye .ic-hide { display: none; }
+.upt-kpis.is-hidden-view .upt-kpi-eye .ic-show { display: block; }
+
+/* Zugeklappt: die Karten bleiben Karten, nur ihr Inhalt geht auf 0. height:auto statt der
+   festen 256px, damit die Karte auf ihre Kopfzeile schrumpft; die Ueberschriften bleiben
+   ausgegraut stehen (0.4, wie die Kopfknoepfe im Citations Combo Chart), damit sichtbar ist,
+   WAS hier zugeklappt ist. Das Auge selbst behaelt volle Deckkraft -- es ist der Weg zurueck. */
+/* Mit .up-root davor, weil ".up-root.is-narrow .upt-kpi { height: 256px }" weiter unten
+   dieselbe Spezifitaet hat (0,3,0) und dann die Reihenfolge entscheidet -- gemessen: im schmalen
+   Bild blieben die Karten 256px hoch mit leerem Koerper. Ueber die Spezifitaet geloest und nicht
+   ueber die Position, sonst kippt es beim naechsten Verschieben einer Regel wieder. */
+.up-root .upt-kpis.is-hidden-view .upt-kpi { height: auto; }
+/* flex: 0 0 0 und nicht nur height: 0 -- der Koerper hat sonst weiter flex-grow: 1 und zieht
+   sich aus der Restverteilung 3,2px zurueck (gemessen). Sichtbar ist das nichts, aber es macht
+   aus "die Karte ist zu" ein "fast zu", und die naechste Messung glaubt es dann nicht. */
+.upt-kpis.is-hidden-view .upt-kpi-body,
+.upt-kpis.is-hidden-view .upt-kpi-foot {
+  height: 0; flex: 0 0 0; margin: 0; opacity: 0; overflow: hidden;
+}
+.upt-kpis.is-hidden-view .upt-kpi-title,
+.upt-kpis.is-hidden-view .upt-kpi-note { opacity: .4; }
+.upt-kpi-body, .upt-kpi-foot { transition: opacity 160ms ease; }
 
 /* ---- Karte 1: Balkenliste nach Topics ----
    UC.makeBarList baut die Liste, hier stehen nur die abweichenden Masse. Die Vorgabe in core ist

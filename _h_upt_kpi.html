@@ -174,5 +174,70 @@ Promise.all([hol("core.css"),hol(ALT?"_h_kpi_alt_css.css":"prompts-table.css"),h
       "   Legende rechts daneben="+(wr&&lgd ? (lgd.getBoundingClientRect().left >= wr.getBoundingClientRect().right - 1) : "-"));
   log("Warnungen im Rahmen: "+W.length+(W.length?("  erste: "+W[0].slice(0,70)):""));
   log("FERTIG");
+}).then(function(){
+  /* ---- NEU: das Auge in der Kontingent-Karte klappt alle drei Karten zu ------------------- */
+  var d=D, v=d.defaultView;
+  /* Erst wieder gueltige Daten, damit die Karten voll stehen -- die Phase davor hat absichtlich
+     einen kaputten Payload geschickt. */
+  v.setUpstreemQuota({used:102,total:150,plan:"Pro"});
+  return new Promise(function(ok){ setTimeout(ok,400); }).then(function(){
+    var zeile=d.querySelector(".upt-kpis");
+    var augen=d.querySelectorAll(".upt-kpi-eye");
+    var wo=[].map.call(d.querySelectorAll(".upt-kpi"), function(k){
+      return (k.className.match(/upt-kpi-(topics|markets|quota)/)||[])[1] +
+             (k.querySelector(".upt-kpi-eye")?":AUGE":"");
+    });
+    log("PHASE 8  Auge: Sitz und Zuklappen");
+    log("   (Karte 2 haengt seit PHASE 4 auf einem Inline-Style flex:0 0 200px -- der schlaegt jede");
+    log("    Regel, ihre Hoehe bleibt hier also 200px. Kein CSS-Befund, ein Rest des Prueftands.)");
+    log("   Augen gesamt: "+augen.length+"   Karten: "+wo.join(", "));
+    log("   ==> "+(augen.length===1 && /quota:AUGE/.test(wo.join(","))
+          ? "RICHTIG (genau eines, in der Kontingent-Karte)" : "FALSCH"));
+    /* Sitzt es rechts NEBEN dem Plan-Etikett? Ueber die Reihenfolge im Kopf, nicht ueber
+       Koordinaten -- der Rahmen ist verdeckt, und ein Vergleich von Rechtecken waere hier eine
+       Messung der Messung. */
+    var kopf=d.querySelector(".upt-kpi-quota .upt-kpi-head");
+    var reihe=[].map.call(kopf.children, function(c){ return c.className.split(" ")[0]; });
+    log("   Kopfzeile: "+reihe.join(" | ")+
+        "   ==> "+(reihe.join(",")==="upt-kpi-title,upt-kpi-note,upt-kpi-eye"?"RICHTIG":"FALSCH"));
+    var vorH=d.querySelector(".upt-kpi-quota").getBoundingClientRect().height;
+    augen[0].click();
+    return new Promise(function(ok2){ setTimeout(function(){ ok2({zeile:zeile,vorH:vorH,btn:augen[0]}); },500); });
+  });
+}).then(function(st){
+  var d=D, cs=d.defaultView.getComputedStyle;
+  var karte=d.querySelector(".upt-kpi-quota");
+  var koerper=d.querySelector(".upt-kpi-quota .upt-kpi-body");
+  var titel=d.querySelector(".upt-kpi-quota .upt-kpi-title");
+  var nachH=karte.getBoundingClientRect().height;
+  log("   zugeklappt: Klasse is-hidden-view="+st.zeile.classList.contains("is-hidden-view")+
+      "   Kartenhoehe "+Math.round(st.vorH)+"px -> "+Math.round(nachH)+"px");
+  log("   ==> "+(st.zeile.classList.contains("is-hidden-view") && nachH < st.vorH-100
+        ? "RICHTIG (Karte auf die Kopfzeile geschrumpft)" : "FALSCH"));
+  log("   Koerper: Hoehe="+Math.round(koerper.getBoundingClientRect().height)+
+      "px  Deckkraft="+cs(koerper).opacity+
+      "   Titel-Deckkraft="+cs(titel).opacity+
+      "   ==> "+(koerper.getBoundingClientRect().height<1 && cs(titel).opacity==="0.4"
+        ? "RICHTIG (Koerper weg, Titel ausgegraut)" : "FALSCH"));
+  log("   alle drei zugeklappt: "+[].every.call(d.querySelectorAll(".upt-kpi-body"),
+        function(b){ return b.getBoundingClientRect().height < 1; })+
+      "   Titel noch sichtbar: "+[].map.call(d.querySelectorAll(".upt-kpi-title"),
+        function(t2){ return t2.textContent.trim().slice(0,14); }).join(" / "));
+  log("   Etikett am Knopf: data-tip=\""+st.btn.getAttribute("data-tip")+"\""+
+      "   aria-expanded="+st.btn.getAttribute("aria-expanded")+
+      "   ==> "+(st.btn.getAttribute("data-tip")==="Show"&&st.btn.getAttribute("aria-expanded")==="false"?"RICHTIG":"FALSCH"));
+  /* Gegenprobe: wieder auf. Ohne sie waere "Hoehe 0" nur der Beweis, dass irgendetwas kaputt ist. */
+  st.btn.click();
+  return new Promise(function(ok){ setTimeout(function(){ ok(st); },500); });
+}).then(function(st){
+  var d=D;
+  var koerper=d.querySelector(".upt-kpi-quota .upt-kpi-body");
+  var h=d.querySelector(".upt-kpi-quota").getBoundingClientRect().height;
+  log("   wieder auf: Kartenhoehe "+Math.round(h)+"px  Koerperhoehe "+
+      Math.round(koerper.getBoundingClientRect().height)+"px"+
+      "   ==> "+(Math.abs(h-st.vorH)<2 && koerper.getBoundingClientRect().height>20
+        ? "RICHTIG (genau der Stand von vorher)" : "FALSCH"));
+  log("   Merker am window: "+JSON.stringify(d.defaultView.__uptKpiZu));
+  log("FERTIG");
 }).catch(function(e){ log("ABBRUCH: "+e.message+"\n"+(e.stack||"").split("\n").slice(0,3).join("\n")); });
 </script>
