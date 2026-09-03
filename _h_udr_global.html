@@ -12,7 +12,7 @@ function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(fun
 function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
 var T=null, ladungen=0;
 function prefs(){ try { return JSON.parse(window.localStorage.getItem("up_prefs")||"{}"); } catch(e){ return {}; } }
-function bauen(prefs, ohneBootFn){
+function bauen(prefs, ohneBootFn, ohneBruecke){
   return Promise.all([hol("core.css"),hol("filters/date-range.css"),hol("core.js"),
                       hol("filters/date-range.js"),hol("filters/bubble/date_range_bubble.html")])
   .then(function(t){
@@ -41,6 +41,20 @@ function bauen(prefs, ohneBootFn){
        about:blank-Rahmen erbt den Ursprung, localStorage ist also derselbe Speicher. */
     /* Die drei Bubble-Funktionen zaehlen -- das ist die Zahl, um die es geht */
     v.__ruf = { from:0, to:0, range:0, apply:0, boot:0 };
+    if (ohneBruecke){
+      /* Nichts am Fenster: genau der Zustand, in dem der Kalender auf der echten Seite mountet. */
+      [t[0],t[1]].forEach(function(c){ var st=d.createElement("style"); st.textContent=c; d.head.appendChild(st); });
+      var w0=d.createElement("div"); w0.innerHTML=wurzelAus(t[4]);
+      var r0=w0.querySelector(".udr-root");
+      r0.setAttribute("data-instance","dates_v2_dashboard"); r0.setAttribute("data-cdn-pin","t");
+      r0.setAttribute("data-range-apply-fn","bubble_fn_udr_apply");
+      r0.setAttribute("data-range-apply-delay","0");
+      r0.setAttribute("data-isdark","no");
+      d.body.appendChild(r0);
+      var jA=d.createElement("script"); jA.textContent=t[2]; d.head.appendChild(jA);
+      var jB=d.createElement("script"); jB.textContent=t[3]; d.head.appendChild(jB);
+      return new Promise(function(ok){ setTimeout(function(){ ok(d); },900); });
+    }
     v.__letzte = null;             /* das JSON des letzten range-Aufrufs, fuer Grund und Datum */
     v.bubble_fn_udr_date_from  = function(d2){ v.__ruf.from++; v.__von = d2; };
     v.bubble_fn_udr_date_to    = function(d2){ v.__ruf.to++;   v.__bis = d2; };
@@ -80,6 +94,22 @@ function bauen(prefs, ohneBootFn){
 }
 /* Wie bauen(), nur ohne den Aufbau-Kanal am window -- fuer den Rueckfall-Test. */
 function bauenOhneBootFn(prefs){ return bauen(prefs, true); }
+/* Wie bauen(), aber die bubble_fn_* kommen erst, wenn bruecke() gerufen wird -- so verhaelt sich
+   Bubble beim Seitenaufbau (gemessen auf der echten Seite: bei ms 229 existierte keine einzige). */
+function bauenOhneBruecke(prefs){
+  return bauen(prefs, false, true).then(function(d){
+    var v=d.defaultView;
+    return { d:d, v:v, bruecke: function(){
+      v.bubble_fn_udr_date_from  = function(x){ v.__ruf.from++; v.__von=x; };
+      v.bubble_fn_udr_date_to    = function(x){ v.__ruf.to++;   v.__bis=x; };
+      v.bubble_fn_udr_date_range = function(j){ v.__ruf.range++;
+        try { v.__letzte=JSON.parse(j); } catch(e){} };
+      v.bubble_fn_udr_apply      = function(){ v.__ruf.apply++; };
+      v.bubble_fn_udr_date_boot  = function(j){ v.__ruf.boot++;
+        try { v.__letzte=JSON.parse(j); } catch(e){} };
+    } };
+  });
+}
 function schalter(d,id){ return d.querySelector('[data-instance="'+id+'"] [data-udr-sync]'); }
 function label(d,id){ var e=d.querySelector('[data-instance="'+id+'"] .udr-label'); return e?e.textContent.trim():"?"; }
 
@@ -274,6 +304,45 @@ bauen(null).then(function(d){
   var w=(v.__warn||[]).filter(function(x){ return /date_boot/.test(x); })[0];
   log("   Konsole: "+(w?w.slice(0,150)+" ...":"(nichts)"));
   log("   ==> "+(w?"RICHTIG (sagt, welches Element fehlt)":"FALSCH -- still"));
+  /* PHASE 12: BUBBLES BRUECKE KOMMT SPAET -- der gemeldete Fall. Beim Mounten des Kalenders gibt
+     es noch keine bubble_fn_*; sie erscheinen erst 1,2s spaeter. Erwartet: der Kalender wartet und
+     uebergibt dann GENAU EINMAL ueber den Aufbau-Kanal -- kein Range, kein Apply, also auch kein
+     zweiter Ladevorgang. Das ist die Sorge "wenn wir spaeter feuern, feuert der RPC doppelt". */
+  return bauenOhneBruecke({ date_sync:"on", date_preset:"last30" });
+}).then(function(o){
+  var v=o.v;
+  log("PHASE 12  Bubbles Bruecke erscheint erst nach 1,2s");
+  log("   direkt nach dem Mount: "+JSON.stringify(v.__ruf)+
+      "   ==> "+(v.__ruf.boot+v.__ruf.range+v.__ruf.apply===0
+        ? "RICHTIG (nichts ins Leere gefeuert)" : "FALSCH"));
+  /* Jetzt die Bruecke aufsetzen, wie Bubble es tut. */
+  o.bruecke();
+  return new Promise(function(ok){ setTimeout(function(){ ok(o); },1400); });
+}).then(function(o){
+  var v=o.v, r=v.__ruf;
+  var soll=new Date(); soll.setHours(0,0,0,0); soll.setDate(soll.getDate()-29);
+  function isoZ(x){ return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0"); }
+  log("   nachdem sie da ist: boot="+r.boot+" range="+r.range+" apply="+r.apply);
+  log("   JSON: "+JSON.stringify(v.__letzte));
+  log("   ==> "+(r.boot===1&&r.range===0&&r.apply===0&&
+                 v.__letzte&&v.__letzte.date_from===isoZ(soll)
+        ? "RICHTIG (einmal, ueber den Aufbau-Kanal -- kein zweiter Ladevorgang)"
+        : "FALSCH -- "+(r.range>0?"der Nachlade-Kanal hat gefeuert":"keine Uebergabe")));
+  var log2=(v.__udrLog||[]);
+  var wartete=log2.filter(function(e){ return e.art==="aufbau-wartet"; }).length;
+  var fertig=log2.filter(function(e){ return e.art==="aufbau"; })[0];
+  log("   Spur: "+wartete+"x aufbau-wartet, dann aufbau nach "+(fertig?fertig.wartete_ms:"?")+"ms");
+  /* >=250, nicht >=1000: gewartet wird ab dem Mount des Pickers, und der liegt im Prueftand
+     schon 900ms vor dem Aufsetzen der Bruecke -- die Erwartung 1000 war meine, nicht die des
+     Codes. Was zaehlt: es wurde MINDESTENS eine Runde gewartet und die Spur sagt es. */
+  log("   ==> "+(wartete===1&&fertig&&fertig.wartete_ms>=250
+        ? "RICHTIG (hat gewartet und es steht in der Spur)"
+        : "FALSCH -- "+(fertig?"wartete_ms="+fertig.wartete_ms:"kein aufbau-Eintrag")));
+  /* GEGENPROBE: der Merker darf einen GESCHEITERTEN Versuch nicht als erledigt zaehlen.
+     Genau das war der zweite Fehler -- der Ansichtswechsel wurde danach uebersprungen. */
+  var uebersprungen=log2.filter(function(e){ return e.art==="ansicht-uebersprungen"; }).length;
+  log("   uebersprungene Ansichtswechsel: "+uebersprungen+
+      "   ==> "+(uebersprungen===0?"RICHTIG (kein Fehlversuch hat sich als erledigt vermerkt)":"FALSCH"));
   log("FERTIG");
 }).catch(function(e){ log("ABBRUCH: "+e.message+"\n"+(e.stack||"").split("\n").slice(0,3).join("\n")); });
 </script>

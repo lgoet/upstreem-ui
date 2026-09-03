@@ -78,8 +78,28 @@
     if (spurAn() && window.console) window.console.log("[dates +" + e.ms + "ms] " + art, e);
     return e;
   }
+  /* Eine ZEILE je Ereignis, nicht eine Tabelle mit zwoelf halbleeren Spalten. Die Tabelle war
+     der erste Anlauf und zu Recht als unlesbar gemeldet: jedes Ereignis traegt andere Felder,
+     console.table macht daraus eine Spaltenwueste. */
   window.upstreemDatesLog = function(){
-    if (window.console && window.console.table){ try { window.console.table(LOG); } catch(e){} }
+    if (!window.console) return LOG;
+    for (var i = 0; i < LOG.length; i++){
+      var e = LOG[i], z = "+" + e.ms + "ms  " + e.art;
+      if (e.art === "kanal"){
+        z += "  " + e.kanal + " -> " + e.fn + "  " + (e.getroffen ? "OK" : "NICHT DA") +
+             "  (" + e.grund + ")  " + e.wert;
+        if (e.fehler) z += "  FEHLER: " + e.fehler;
+      } else {
+        if (e.instanz) z += "  " + e.instanz;
+        if (e.view) z += "  view=" + e.view;
+        if (e.sync) z += "  sync=" + e.sync;
+        if (e.preset) z += "  preset=" + e.preset;
+        if (e.schonUebergeben != null) z += "  schonUebergeben=" + e.schonUebergeben;
+        if (e.wartete_ms != null) z += "  wartete=" + e.wartete_ms + "ms";
+        if (e.warum) z += "  -- " + e.warum;
+      }
+      window.console.log(z);
+    }
     return LOG;
   };
 
@@ -525,8 +545,13 @@
 
          Der Grund steht IM JSON, damit ein Workflow ihn lesen kann -- ohne ihn kann Bubble einen
          Aufbau nicht von einem Klick unterscheiden, und genau daran hing der doppelte Aufruf. */
+      /* Rueckgabe: hat MINDESTENS EIN Bubble-Kanal getroffen? Ohne diese Auskunft war eine
+         Uebergabe ins Leere von einer erfolgreichen nicht zu unterscheiden -- und genau daran
+         hing der Fehler vom 03.09.: der Aufbau feuerte, bevor Bubbles
+         JavaScriptToBubble-Elemente existierten, vermerkte sich trotzdem als erledigt und
+         blockierte damit auch noch den Ansichtswechsel. */
       function emit(from, to, grund) {
-        if (isProcessing()) return;
+        if (isProcessing()) return false;
         grund = grund || "user";
         emitSeq += 1;
         var payload = {
@@ -571,8 +596,14 @@
         var istBoot = grund === "boot" &&
           String(root.getAttribute("data-boot-mode") || "").toLowerCase() !== "full";
         if (istBoot) {
-          if (callFn("data-boot-fn", "bubble_fn_udr_date_boot", json, grund)) return;
-          if (!window.__udrBootFnGesagt && window.console) {
+          if (callFn("data-boot-fn", "bubble_fn_udr_date_boot", json, grund)) return true;
+          /* Der Hinweis auf das fehlende Element NUR, wenn der Range-Kanal wirklich da ist.
+             Sonst ist nicht ein Element unvollstaendig, sondern die Bruecke nach Bubble steht
+             noch gar nicht -- und die Meldung schickte den Nutzer auf die falsche Spur (genau so
+             passiert: sie nannte das boot-Element, waehrend keine einzige bubble_fn existierte). */
+          var rangeDa = typeof UC.resolveBubbleFn(
+            root.getAttribute("data-range-fn") || "bubble_fn_udr_date_range") === "function";
+          if (rangeDa && !window.__udrBootFnGesagt && window.console) {
             window.__udrBootFnGesagt = true;
             console.warn("[date-range] " + (root.getAttribute("data-boot-fn") ||
               "bubble_fn_udr_date_boot") + " gibt es nicht. Der Zeitraum geht deshalb ueber " +
@@ -582,7 +613,8 @@
               "date_from und date_to setzen, ohne Refresh.");
           }
         }
-        if (!callFn("data-range-fn", "bubble_fn_udr_date_range", json, grund) && window.console) {
+        var rangeGetroffen = callFn("data-range-fn", "bubble_fn_udr_date_range", json, grund);
+        if (!rangeGetroffen && grund !== "boot" && window.console) {
           console.warn("[date-range] " + (root.getAttribute("data-range-fn") || "bubble_fn_udr_date_range") +
             " not found on window/parent/top — this change reached no Bubble workflow.");
         }
@@ -630,6 +662,7 @@
             }
           }, verzug);
         }
+        return rangeGetroffen;
       }
 
       /* ---------- interaction ---------- */
@@ -909,10 +942,10 @@
         getRange: function () { return { from: iso(committed.from), to: iso(committed.to), preset: committedPreset }; },
         /* Feuert den aktuellen Stand, ohne ihn zu aendern -- fuer upstreemDatesActivate und die
            Uebergabe beim Aufbau. Der Grund geht mit, damit kein seitenweiter Workflow anspringt. */
-        emitCurrent: function (grund) { emit(committed.from, committed.to, grund || "activate"); return true; },
+        emitCurrent: function (grund) { return emit(committed.from, committed.to, grund || "activate"); },
         /* Feuert einen Zeitraum, den der Aufrufer schon berechnet hat -- fuer upstreemDatesBoot,
            damit der Aufbau die Attributnamen DIESES Pickers benutzt und nicht die Vorgabenamen. */
-        emitAt: function (von, bis, grund) { emit(von, bis, grund || "boot"); return true; }
+        emitAt: function (von, bis, grund) { return emit(von, bis, grund || "boot"); }
       };
       root.__udrCtrl = ctrl;
       CONTROLLERS.push(ctrl);
@@ -1072,10 +1105,15 @@
      Merker haelt hoechstens fuenf Eintraege und wird geleert, sobald sich der geteilte Zeitraum
      aendert -- danach holt sich jede Ansicht die neuen Daten beim naechsten Aktivieren. */
   var UEBERGEBEN = {};
+  /* Der Merker wird erst NACH dem Erfolg gesetzt. Vorher stand er davor -- eine Uebergabe, die
+     keinen einzigen Bubble-Kanal traf, galt damit als erledigt: der Aufbau lief ins Leere UND der
+     spaetere Ansichtswechsel wurde uebersprungen ("schonUebergeben: true" bei falschem Zeitraum).
+     Gemeldet am 03.09., und im Log der Seite genau so zu sehen. */
   function uebergeben(c, grund){
     if (!c || UEBERGEBEN[c.instanceId] || typeof c.emitCurrent !== "function") return false;
-    UEBERGEBEN[c.instanceId] = 1;
-    return c.emitCurrent(grund || "activate");
+    var ok = c.emitCurrent(grund || "activate");
+    if (ok) UEBERGEBEN[c.instanceId] = 1;
+    return !!ok;
   }
   /* Ein Aufruf von aussen ist eine ausdrueckliche Anweisung und feuert IMMER -- der Merker haelt
      nur die automatischen Uebergaben auseinander. */
@@ -1223,12 +1261,43 @@
        unter zehn Pickern den richtigen finden. Sie ist unnoetig: Bubble rendert das Markup einer
        verborgenen Gruppe nicht, beim Aufbau ist also ohnehin nur der Kalender der Startansicht da.
        Und sind doch mehrere da, zeigen sie bei aktivem Schalter denselben Zeitraum. */
-    function aufbauUebergeben(c){
+    /* WARTEN AUF BUBBLES BRUECKE, und nur darauf.
+       Im Log der echten Seite standen bei ms 229 alle vier Kanaele auf getroffen:false -- keine
+       einzige bubble_fn_* existierte. Wir feuerten also, bevor Bubble seine
+       JavaScriptToBubble-Elemente aufgesetzt hat. Beim Mount des Kalenders ist die Bruecke noch
+       nicht da; wann sie kommt, sagt Bubble niemandem.
+
+       Also nachsehen -- aber NUR mit einem window[name]-Zugriff. Kein offsetParent, kein
+       querySelector, kein Beobachter: eine Eigenschaftsabfrage kostet nichts und erzwingt
+       insbesondere kein Layout. Das ist der Unterschied zum ersten Anlauf, der alle 150ms ein
+       offsetParent lesen wollte (auf 24000 Knoten je 6ms) und zu Recht sofort abgelehnt wurde.
+
+       250ms, hoechstens 40 Runden -- zehn Sekunden. Es endet SOFORT, sobald ein Kanal trifft,
+       im Normalfall also nach einer oder zwei Runden. Bleibt es bis zum Schluss leer, steht das
+       in der Spur: dann fehlen die Elemente wirklich, und das ist eine Aussage, keine Vermutung. */
+    var AUFBAU_MS = 250, AUFBAU_MAX = 40;
+    function aufbauUebergeben(c, rest){
       if (bootGetan() || !c || !c.instanceId || !nimmtTeil(c.instanceId)) return;
-      bootMerken();
-      spur("aufbau", { instanz: c.instanceId, sync: syncAn() ? "on" : "off",
-                       preset: syncAn() ? syncPreset() : "(eigener Stand)" });
-      uebergeben(c, "boot");
+      if (rest == null) rest = AUFBAU_MAX;
+      if (!c.root || !c.root.isConnected) return;         /* Bubble hat das Element ersetzt */
+      if (uebergeben(c, "boot")){
+        bootMerken();
+        spur("aufbau", { instanz: c.instanceId, sync: syncAn() ? "on" : "off",
+                         preset: syncAn() ? syncPreset() : "(eigener Stand)",
+                         wartete_ms: (AUFBAU_MAX - rest) * AUFBAU_MS });
+        return;
+      }
+      if (rest > 0){
+        if (rest === AUFBAU_MAX)
+          spur("aufbau-wartet", { instanz: c.instanceId,
+                warum: "noch keine bubble_fn_* am Fenster -- Bubbles JavaScriptToBubble-Elemente " +
+                       "stehen beim Mounten des Kalenders noch nicht" });
+        setTimeout(function(){ aufbauUebergeben(c, rest - 1); }, AUFBAU_MS);
+        return;
+      }
+      spur("aufbau-gescheitert", { instanz: c.instanceId,
+            warum: "nach 10s hat kein Bubble-Kanal getroffen -- die JavaScriptToBubble-Elemente " +
+                   "fehlen oder heissen anders als in den data-*-fn-Attributen" });
     }
 
     var q = window.__udrBootQueue;
