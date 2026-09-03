@@ -115,6 +115,20 @@ Promise.all([hol("core.css"),hol(ALT?"_h_kpi_alt_css.css":"prompts-table.css"),h
   log("   Koerper-Abstand oben/unten="+cs(koerp).marginTop+" / "+cs(koerp).marginBottom);
   var lg2=d.querySelector(".upt-kpi-markets .up-donut-legend-pct");
   if (lg2) log("   Legende: Abstand vor dem Prozentwert="+cs(lg2).marginLeft);
+  /* Ring, Legende und die Lage der Gruppe in der Karte */
+  var lay2=d.querySelector(".upt-kpi-markets .up-donut-layout");
+  var wr2=d.querySelector(".upt-kpi-markets .up-donut-wrap");
+  var lgd2=d.querySelector(".upt-kpi-markets .up-donut-legend");
+  var chip=d.querySelector(".upt-kpi-markets .up-donut-legend-chip");
+  var fl=d.querySelector(".upt-kpi-markets .up-flag");
+  if (lay2 && wr2 && lgd2){
+    var kb2=d.querySelector(".upt-kpi-markets .upt-kpi-body").getBoundingClientRect();
+    var wb=wr2.getBoundingClientRect(), lb2=lgd2.getBoundingClientRect();
+    log("   Ring="+Math.round(wb.width)+"px   Abstand Ring->Legende="+Math.round(lb2.left-wb.right)+"px");
+    log("   Gruppe: links="+Math.round(wb.left-kb2.left)+"px  rechts="+Math.round(kb2.right-lb2.right)+
+        "px   ==> mittig="+(Math.abs((wb.left-kb2.left)-(kb2.right-lb2.right))<=2));
+    if (chip && fl) log("   Farbfleck->Flagge="+Math.round(fl.getBoundingClientRect().left-chip.getBoundingClientRect().right)+"px");
+  }
   var kpis=d.querySelector(".upt-kpis");
   var karte1=d.querySelector(".upt-kpi");
   var titel=d.querySelector(".upt-kpi-title");

@@ -4596,7 +4596,7 @@
           /* Flagge vor den Namen. UC.flagHtml baut ein span mit Bild UND Rueckfallbuchstaben --
              darum ueber legendPrefix und nicht ueber it.logo, das eine URL erwartet. */
           legendPrefix: function(it){ return it.alpha2 ? UC.flagHtml(it.alpha2) : ""; },
-          ringPx: 12,          /* 10 Prozent duenner als der erste Anlauf (14) -- so gemeldet */
+          ringPx: 10,          /* 15 Prozent duenner als 12 -- so gemeldet (12 x 0,85 = 10,2) */
           /* NIE umklappen. GEMESSEN auf der Seite des Nutzers: mit 240 klappte die Karte um --
              ihr Koerper ist schmaler als das --, und im umgeklappten Modus wird der Ring 220px
              gross und die Legende wandert UNTER ihn. Genau das war die Meldung "das Chart ist viel
