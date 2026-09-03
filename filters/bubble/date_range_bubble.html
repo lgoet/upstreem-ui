@@ -84,6 +84,16 @@
      saying so: a page without a date range is worse than a page that loads twice, and neither
      should happen silently.
 
+     data-boot-mode on the root steers the handover:
+       (unset)  the boot channel, one single call. What you want.
+       "full"   from + to + range, like a click. For a page that deliberately loads off it.
+       "off"    no handover at all. The proof switch: if the page still runs its queries twice
+                with this on, the second run is not coming from this file.
+
+     ONE call, not three. from/to are NOT fired on page load: date_from and date_to are in the
+     boot channel's JSON as ISO text, so its workflow sets both states from there. Three calls
+     meant three Bubble events for one handover, and that was measured on the real app.
+
      ── Why there are two JSON channels ──────────────────────────────────────────
      Same split the topics, markets and models filters already use, and for the same reason:
 

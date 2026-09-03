@@ -566,8 +566,18 @@
         root.setAttribute("data-range-json", json);
         try { root.dispatchEvent(new CustomEvent("change", { detail: payload, bubbles: true })); } catch (e) {}
         try { window.dispatchEvent(new CustomEvent("upstreem:date-range", { detail: payload })); } catch (e) {}
-        callFn("data-date-from-fn", "bubble_fn_udr_date_from", new Date(from.getFullYear(), from.getMonth(), from.getDate()), grund);
-        callFn("data-date-to-fn",   "bubble_fn_udr_date_to",   new Date(to.getFullYear(), to.getMonth(), to.getDate()), grund);
+        /* Beim AUFBAU wird genau EIN Kanal gerufen, der Aufbau-Kanal, und sonst keiner.
+           Im Log der echten Seite standen bei +4156ms drei Treffer nebeneinander:
+           date_from_dashboard OK, date_to_dashboard OK, boot_dashboard OK. Also drei
+           Bubble-Workflows fuer eine Uebergabe -- und einer davon laedt nach. Genau das war der
+           doppelte RPC-Durchlauf, den der Nutzer von Anfang an vorhergesagt hat.
+           Die zwei Datums-Funktionen sind dabei ueberfluessig: date_from und date_to stehen als
+           ISO-Text IM JSON des Aufbau-Kanals, sein Workflow setzt beide States daraus. Ein Kanal
+           ist das Minimum, und weniger als einmal kann nichts doppelt laufen. */
+        if (grund !== "boot") {
+          callFn("data-date-from-fn", "bubble_fn_udr_date_from", new Date(from.getFullYear(), from.getMonth(), from.getDate()), grund);
+          callFn("data-date-to-fn",   "bubble_fn_udr_date_to",   new Date(to.getFullYear(), to.getMonth(), to.getDate()), grund);
+        }
         /* ---- DER AUFBAU HAT EINEN EIGENEN KANAL -------------------------------------------
            Zwei Anlaeufe daneben, und beide Male aus derselben falschen Annahme.
 
@@ -593,8 +603,18 @@
            Fehlt der Aufbau-Kanal, wird der Range-Kanal gerufen und EINMAL gesagt, was zu tun ist:
            eine Seite ohne Zeitraum ist schlimmer als eine, die zweimal laedt, und still wollen
            wir keins von beidem. */
-        var istBoot = grund === "boot" &&
-          String(root.getAttribute("data-boot-mode") || "").toLowerCase() !== "full";
+        var bootModus = String(root.getAttribute("data-boot-mode") || "").toLowerCase();
+        /* "off" schaltet die Aufbau-Uebergabe ganz ab -- der Beweis-Schalter fuer die Frage
+           "kommt der zweite RPC-Durchlauf von uns oder von Bubble?". Mit off feuert der Kalender
+           beim Aufbau NICHTS. Laeuft der Durchlauf dann noch zweimal, liegt es nicht an dieser
+           Datei; laeuft er einmal (mit dem Zeitraum, den die Seite selbst gesetzt hat), dann
+           kommt der zweite von der Zustandsaenderung, die unsere Uebergabe ausloest. */
+        if (grund === "boot" && bootModus === "off"){
+          spur("aufbau-abgeschaltet", { instanz: instanceId,
+                warum: 'data-boot-mode="off" an der Wurzel' });
+          return false;
+        }
+        var istBoot = grund === "boot" && bootModus !== "full";
         if (istBoot) {
           if (callFn("data-boot-fn", "bubble_fn_udr_date_boot", json, grund)) return true;
           /* Der Hinweis auf das fehlende Element NUR, wenn der Range-Kanal wirklich da ist.
@@ -954,7 +974,13 @@
          und der soll nicht mitten im Mounten dieses Elements laufen.
          Die Abfrage steht VOR dem setTimeout, nicht nur darin: sonst legen zehn Picker zehn
          Timer, von denen neun sofort wieder aussteigen. Einer reicht. */
-      if (!bootGetan() && nimmtTeil(instanceId)) setTimeout(function(){ aufbauUebergeben(ctrl); }, 0);
+      /* Genau EINE Warteschleife fuer die Seite. Vorher startete jeder teilnehmende Picker eine
+         eigene -- bei fuenf Ansichten fuenf Schleifen, und im Log der echten Seite entsprechend
+         fuenf Bloecke pro Runde. */
+      if (!aufbauLaeuft && !bootGetan() && nimmtTeil(instanceId)){
+        aufbauLaeuft = true;
+        setTimeout(function(){ aufbauUebergeben(ctrl); }, 0);
+      }
 
       /* Tooltips. Dieser Kalender hat sie NIE eingeschaltet -- data-tip stand an den Presets seit
          langem, ohne dass jemals einer erschien, und beim neuen Schalter fiel es auf. Dieselbe
@@ -1193,10 +1219,9 @@
       try { fn(wert); } catch(e){}
       return true;
     }
-    ruf("bubble_fn_udr_date_from", new Date(sp.from.getFullYear(), sp.from.getMonth(), sp.from.getDate()));
-    ruf("bubble_fn_udr_date_to",   new Date(sp.to.getFullYear(),   sp.to.getMonth(),   sp.to.getDate()));
-    /* Dieselbe Reihenfolge wie in emit(): erst der Aufbau-Kanal, sonst der Range-Kanal. Ohne
-       Picker gibt es keine Wurzel, an der eigene Namen stehen koennten -- dann die Vorgabenamen. */
+    /* Nur der Aufbau-Kanal, wie in emit(): date_from und date_to stehen als ISO-Text im JSON,
+       zwei zusaetzliche Workflows waeren zwei zusaetzliche Ladevorgaenge. Ohne Picker gibt es
+       keine Wurzel, an der eigene Namen stehen koennten -- dann die Vorgabenamen. */
     var traf = ruf("bubble_fn_udr_date_boot", JSON.stringify(payload)) ||
                ruf("bubble_fn_udr_date_range", JSON.stringify(payload));
     if (!traf && window.console) console.warn("[date-range] upstreemDatesBoot: weder " +
@@ -1261,43 +1286,59 @@
        unter zehn Pickern den richtigen finden. Sie ist unnoetig: Bubble rendert das Markup einer
        verborgenen Gruppe nicht, beim Aufbau ist also ohnehin nur der Kalender der Startansicht da.
        Und sind doch mehrere da, zeigen sie bei aktivem Schalter denselben Zeitraum. */
-    /* WARTEN AUF BUBBLES BRUECKE, und nur darauf.
-       Im Log der echten Seite standen bei ms 229 alle vier Kanaele auf getroffen:false -- keine
-       einzige bubble_fn_* existierte. Wir feuerten also, bevor Bubble seine
-       JavaScriptToBubble-Elemente aufgesetzt hat. Beim Mount des Kalenders ist die Bruecke noch
-       nicht da; wann sie kommt, sagt Bubble niemandem.
+    /* WARTEN AUF BUBBLES BRUECKE -- PRUEFEN, NICHT RUFEN.
+       Im Log der echten Seite standen 16 Runden mit je 20 Aufrufen ins Leere: der erste Anlauf
+       hat in jeder Runde die ganze Uebergabe gefeuert und erst hinterher gemerkt, dass niemand
+       zuhoert -- und das fuenffach, weil JEDER teilnehmende Picker seine eigene Schleife fuhr.
+       Daher die Logflut, und daher der Eindruck, es passiere staendig etwas.
 
-       Also nachsehen -- aber NUR mit einem window[name]-Zugriff. Kein offsetParent, kein
-       querySelector, kein Beobachter: eine Eigenschaftsabfrage kostet nichts und erzwingt
-       insbesondere kein Layout. Das ist der Unterschied zum ersten Anlauf, der alle 150ms ein
-       offsetParent lesen wollte (auf 24000 Knoten je 6ms) und zu Recht sofort abgelehnt wurde.
-
-       250ms, hoechstens 40 Runden -- zehn Sekunden. Es endet SOFORT, sobald ein Kanal trifft,
-       im Normalfall also nach einer oder zwei Runden. Bleibt es bis zum Schluss leer, steht das
-       in der Spur: dann fehlen die Elemente wirklich, und das ist eine Aussage, keine Vermutung. */
+       Jetzt wird nur nachgesehen, ob die Funktion am Fenster STEHT: ein resolveBubbleFn, also ein
+       window[name]-Zugriff. Kein Aufruf, kein Layout, kein Beobachter. Und es laeuft genau EINE
+       Schleife fuer die ganze Seite -- der erste teilnehmende Picker uebernimmt sie. */
     var AUFBAU_MS = 250, AUFBAU_MAX = 40;
+    var aufbauLaeuft = false;
+    /* Steht der Kanal, ueber den der Aufbau gehen wird? Reine Abfrage, kein Aufruf.
+       Der Aufbau-Kanal zuerst, der Range-Kanal als dokumentierter Rueckfall -- dieselbe
+       Reihenfolge wie in emit(), damit hier nicht auf etwas anderes gewartet wird als gerufen. */
+    function bootKanal(root){
+      var b = root.getAttribute("data-boot-fn") || "bubble_fn_udr_date_boot";
+      if (typeof UC.resolveBubbleFn(b) === "function") return "boot";
+      var r = root.getAttribute("data-range-fn") || "bubble_fn_udr_date_range";
+      if (typeof UC.resolveBubbleFn(r) === "function") return "range";
+      return null;
+    }
     function aufbauUebergeben(c, rest){
       if (bootGetan() || !c || !c.instanceId || !nimmtTeil(c.instanceId)) return;
       if (rest == null) rest = AUFBAU_MAX;
-      if (!c.root || !c.root.isConnected) return;         /* Bubble hat das Element ersetzt */
-      if (uebergeben(c, "boot")){
+      if (!c.root || !c.root.isConnected){
+        /* Bubble hat das Element ersetzt. Den Platz freigeben, sonst wartet niemand mehr:
+           die neue Wurzel mountet gleich und soll die Schleife uebernehmen duerfen. */
+        aufbauLaeuft = false;
+        spur("aufbau-abgebrochen", { instanz: c.instanceId,
+              warum: "Bubble hat diese Wurzel ersetzt -- die naechste uebernimmt" });
+        return;
+      }
+      var kanal = bootKanal(c.root);
+      if (kanal){
         bootMerken();
-        spur("aufbau", { instanz: c.instanceId, sync: syncAn() ? "on" : "off",
+        spur("aufbau", { instanz: c.instanceId, kanal: kanal, sync: syncAn() ? "on" : "off",
                          preset: syncAn() ? syncPreset() : "(eigener Stand)",
                          wartete_ms: (AUFBAU_MAX - rest) * AUFBAU_MS });
+        uebergeben(c, "boot");
         return;
       }
       if (rest > 0){
         if (rest === AUFBAU_MAX)
           spur("aufbau-wartet", { instanz: c.instanceId,
-                warum: "noch keine bubble_fn_* am Fenster -- Bubbles JavaScriptToBubble-Elemente " +
-                       "stehen beim Mounten des Kalenders noch nicht" });
+                warum: "Bubbles JavaScriptToBubble-Elemente stehen beim Mounten des Kalenders " +
+                       "noch nicht -- wird alle 250ms geprueft, ohne etwas zu rufen" });
         setTimeout(function(){ aufbauUebergeben(c, rest - 1); }, AUFBAU_MS);
         return;
       }
       spur("aufbau-gescheitert", { instanz: c.instanceId,
-            warum: "nach 10s hat kein Bubble-Kanal getroffen -- die JavaScriptToBubble-Elemente " +
-                   "fehlen oder heissen anders als in den data-*-fn-Attributen" });
+            warum: "nach 10s steht kein Bubble-Kanal am Fenster -- die " +
+                   "JavaScriptToBubble-Elemente fehlen oder heissen anders als in den " +
+                   "data-*-fn-Attributen" });
     }
 
     var q = window.__udrBootQueue;

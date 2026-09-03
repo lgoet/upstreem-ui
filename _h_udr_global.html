@@ -128,8 +128,9 @@ bauen(null).then(function(d){
   log("   Aufbau-Kanal="+v.__ruf.boot+"  Range="+v.__ruf.range+"  Apply="+v.__ruf.apply+
       "   JSON: "+JSON.stringify(v.__letzte));
   log("   ==> "+(v.__ruf.boot===1&&v.__ruf.range===0&&v.__ruf.apply===0&&
+                 v.__ruf.from===0&&v.__ruf.to===0&&
                  v.__letzte&&v.__letzte.date_from===isoA(s7a)&&v.__letzte.reason==="boot"
-        ? "RICHTIG (Aufbau-Kanal mit Zeitraum, Nachlade-Kanal still)"
+        ? "RICHTIG (GENAU EIN Bubble-Aufruf: der Aufbau-Kanal)"
         : "FALSCH -- "+(v.__ruf.range>0?"der Nachlade-Kanal feuert, die Seite laedt doppelt"
                        :(v.__ruf.boot===0?"kein Zeitraum: die RPCs laufen ohne Datum"
                                          :"falsches Datum"))));
@@ -161,8 +162,9 @@ bauen(null).then(function(d){
   function isoV(d2){ return d2.getFullYear()+"-"+String(d2.getMonth()+1).padStart(2,"0")+"-"+String(d2.getDate()).padStart(2,"0"); }
   log("   JSON am Aufbau-Kanal: "+JSON.stringify(v.__letzte));
   log("   date_from soll "+isoV(soll30)+" (30 Tage)   ist "+(v.__letzte&&v.__letzte.date_from));
-  log("   ==> "+(v.__letzte&&v.__letzte.date_from===isoV(soll30)&&v.__ruf.boot===1
-        ? "RICHTIG (30 Tage, ueber den Aufbau-Kanal)" : "FALSCH -- der gemeldete Fehler"));
+  log("   ==> "+(v.__letzte&&v.__letzte.date_from===isoV(soll30)&&v.__ruf.boot===1&&
+                 v.__ruf.from===0&&v.__ruf.to===0
+        ? "RICHTIG (30 Tage, GENAU EIN Aufruf)" : "FALSCH -- der gemeldete Fehler"));
   log("   Range-Kanal="+v.__ruf.range+"  Apply-Kanal="+v.__ruf.apply+
       "   ==> "+(v.__ruf.range===0&&v.__ruf.apply===0
         ? "RICHTIG (beide still -- kein zweiter Ladevorgang)"
@@ -324,9 +326,9 @@ bauen(null).then(function(d){
   function isoZ(x){ return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0"); }
   log("   nachdem sie da ist: boot="+r.boot+" range="+r.range+" apply="+r.apply);
   log("   JSON: "+JSON.stringify(v.__letzte));
-  log("   ==> "+(r.boot===1&&r.range===0&&r.apply===0&&
+  log("   ==> "+(r.boot===1&&r.range===0&&r.apply===0&&r.from===0&&r.to===0&&
                  v.__letzte&&v.__letzte.date_from===isoZ(soll)
-        ? "RICHTIG (einmal, ueber den Aufbau-Kanal -- kein zweiter Ladevorgang)"
+        ? "RICHTIG (GENAU EIN Aufruf -- kein zweiter Ladevorgang moeglich)"
         : "FALSCH -- "+(r.range>0?"der Nachlade-Kanal hat gefeuert":"keine Uebergabe")));
   var log2=(v.__udrLog||[]);
   var wartete=log2.filter(function(e){ return e.art==="aufbau-wartet"; }).length;
