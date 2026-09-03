@@ -46,6 +46,43 @@
     });
   }
 
+  /* ---- SPUR -------------------------------------------------------------------------------
+     Vier Runden Korrekturen an der Aufbau-Uebergabe, und der Nutzer hatte kein einziges Mal ein
+     Mittel, auf der eigenen Seite zu sehen, was passiert. Das war der eigentliche Fehler, nicht
+     eine der einzelnen Ursachen.
+
+     Es wird IMMER mitgeschrieben, in einen Ring im Speicher (200 Eintraege) -- keine
+     Konsolenausgabe, also auch keine Debug-Ausgabe in der ausgelieferten App. Abrufbar mit
+     upstreemDatesLog().
+
+     Fuer den SEITENAUFBAU reicht das nicht: dort ist alles vorbei, bevor jemand die Konsole
+     oeffnet. Deshalb ein Schalter im Speicher der Seite -- einmal setzen, neu laden, und jede
+     Zeile erscheint ab der ersten Millisekunde:
+
+       localStorage.setItem("up_dates_trace","1")   an, ueberlebt den Reload
+       localStorage.removeItem("up_dates_trace")    aus
+
+     Protokolliert wird nicht nur, WAS gerufen wurde, sondern auch, was NICHT und warum. Ein
+     ausgebliebener Aufruf ist hier die haeufigere Ursache, und der hinterlaesst von sich aus
+     nichts -- genau daran sind vier Runden Diagnose vorbeigelaufen. */
+  var LOG = window.__udrLog = window.__udrLog || [];
+  var LOG_T0 = window.__udrLogT0 = window.__udrLogT0 || Date.now();
+  function spurAn(){
+    try { return window.localStorage.getItem("up_dates_trace") === "1"; } catch(e){ return false; }
+  }
+  function spurGlobal(art, daten){
+    var e = { ms: Date.now() - LOG_T0, art: art };
+    if (daten) for (var k in daten) if (Object.prototype.hasOwnProperty.call(daten, k)) e[k] = daten[k];
+    LOG.push(e);
+    if (LOG.length > 200) LOG.shift();
+    if (spurAn() && window.console) window.console.log("[dates +" + e.ms + "ms] " + art, e);
+    return e;
+  }
+  window.upstreemDatesLog = function(){
+    if (window.console && window.console.table){ try { window.console.table(LOG); } catch(e){} }
+    return LOG;
+  };
+
   function udrBoot(triesLeft) {
     if (!window.UpstreemCore) {
       if (triesLeft > 0) { setTimeout(function () { udrBoot(triesLeft - 1); }, 100); return; }
@@ -115,6 +152,10 @@
        WAS SPEICHERBAR IST: nur die drei RELATIVEN Presets. Ein absoluter Zeitraum waere morgen
        falsch, und "Letzte 6 Monate" ist ausdruecklich nicht dabei. Bei aktivem Schalter sind
        beide deshalb ausgegraut, mit einem Hinweis -- ausgeblendet wirkten sie wie ein Fehler. */
+    /* Die Spur selbst liegt auf Modulebene (spurGlobal), weil die Uebergabe-Funktionen dort
+       stehen. Hier nur der kurze Name fuer den Gebrauch innerhalb dieser Funktion. */
+    var spur = spurGlobal;
+
     function nimmtTeil(id){ return !/export|spotlight/i.test(String(id || "")); }
     /* Dieselbe Rechnung wie presetRange() im Picker, nur ohne Picker -- der geteilte Zeitraum
        steht in den Einstellungen, nicht im Element. Damit ist er schon bekannt, BEVOR die erste
@@ -457,11 +498,20 @@
          The two date functions get a real Date object, the range function gets JSON. That split is
          the standalone's contract and the existing workflows depend on it, so this cannot go
          through UC.makeFire (which JSON-stringifies everything). */
-      function callFn(attr, fallback, value) {
+      function callFn(attr, fallback, value, grund) {
         var name = root.getAttribute(attr) || fallback;
         var fn = UC.resolveBubbleFn(name);
-        if (typeof fn === "function") { try { fn(value); } catch (e) {} return true; }
-        return false;
+        var da = typeof fn === "function";
+        var fehler = null;
+        if (da) { try { fn(value); } catch (e) { fehler = String(e && e.message || e); } }
+        /* Der Wert kommt in die Spur, nicht nur der Name: "gerufen" allein hat in dieser Sache
+           schon zweimal in die falsche Richtung gezeigt -- einmal war der Kanal richtig und der
+           Zeitraum falsch, einmal umgekehrt. */
+        spur("kanal", { kanal: attr.replace(/^data-|-fn$/g, ""), fn: name, getroffen: da,
+                        grund: grund || "", instanz: instanceId,
+                        wert: (value instanceof Date) ? iso(value) : String(value).slice(0, 120),
+                        fehler: fehler });
+        return da;
       }
       /* grund sagt, WARUM dieser Zeitraum kommt -- und das entscheidet, ob die Seite nachlaedt:
 
@@ -491,8 +541,8 @@
         root.setAttribute("data-range-json", json);
         try { root.dispatchEvent(new CustomEvent("change", { detail: payload, bubbles: true })); } catch (e) {}
         try { window.dispatchEvent(new CustomEvent("upstreem:date-range", { detail: payload })); } catch (e) {}
-        callFn("data-date-from-fn", "bubble_fn_udr_date_from", new Date(from.getFullYear(), from.getMonth(), from.getDate()));
-        callFn("data-date-to-fn",   "bubble_fn_udr_date_to",   new Date(to.getFullYear(), to.getMonth(), to.getDate()));
+        callFn("data-date-from-fn", "bubble_fn_udr_date_from", new Date(from.getFullYear(), from.getMonth(), from.getDate()), grund);
+        callFn("data-date-to-fn",   "bubble_fn_udr_date_to",   new Date(to.getFullYear(), to.getMonth(), to.getDate()), grund);
         /* ---- DER AUFBAU HAT EINEN EIGENEN KANAL -------------------------------------------
            Zwei Anlaeufe daneben, und beide Male aus derselben falschen Annahme.
 
@@ -521,7 +571,7 @@
         var istBoot = grund === "boot" &&
           String(root.getAttribute("data-boot-mode") || "").toLowerCase() !== "full";
         if (istBoot) {
-          if (callFn("data-boot-fn", "bubble_fn_udr_date_boot", json)) return;
+          if (callFn("data-boot-fn", "bubble_fn_udr_date_boot", json, grund)) return;
           if (!window.__udrBootFnGesagt && window.console) {
             window.__udrBootFnGesagt = true;
             console.warn("[date-range] " + (root.getAttribute("data-boot-fn") ||
@@ -532,7 +582,7 @@
               "date_from und date_to setzen, ohne Refresh.");
           }
         }
-        if (!callFn("data-range-fn", "bubble_fn_udr_date_range", json) && window.console) {
+        if (!callFn("data-range-fn", "bubble_fn_udr_date_range", json, grund) && window.console) {
           console.warn("[date-range] " + (root.getAttribute("data-range-fn") || "bubble_fn_udr_date_range") +
             " not found on window/parent/top — this change reached no Bubble workflow.");
         }
@@ -574,7 +624,7 @@
           var verzug = parseInt(root.getAttribute("data-range-apply-delay"), 10);
           if (!isFinite(verzug) || verzug < 0) verzug = 120;
           setTimeout(function () {
-            if (!callFn("data-range-apply-fn", null, json) && window.console) {
+            if (!callFn("data-range-apply-fn", null, json, grund) && window.console) {
               console.warn("[date-range] " + applyName + " ist gesetzt, aber nicht auffindbar — " +
                 "diese Aenderung hat keinen seitenweiten Workflow erreicht.");
             }
@@ -866,6 +916,12 @@
       };
       root.__udrCtrl = ctrl;
       CONTROLLERS.push(ctrl);
+      /* Der Aufbau-Fall: der erste teilnehmende Kalender der Seite gibt seinen Zeitraum an
+         Bubble. setTimeout(0) und nicht sofort: dieser Aufruf loest einen Bubble-Workflow aus,
+         und der soll nicht mitten im Mounten dieses Elements laufen.
+         Die Abfrage steht VOR dem setTimeout, nicht nur darin: sonst legen zehn Picker zehn
+         Timer, von denen neun sofort wieder aussteigen. Einer reicht. */
+      if (!bootGetan() && nimmtTeil(instanceId)) setTimeout(function(){ aufbauUebergeben(ctrl); }, 0);
 
       /* Tooltips. Dieser Kalender hat sie NIE eingeschaltet -- data-tip stand an den Presets seit
          langem, ohne dass jemals einer erschien, und beim neuen Schalter fiel es auf. Dieselbe
@@ -993,9 +1049,10 @@
      upstreemDatesActivate(name) in bubble_fn_view_changed". Beides ist Handarbeit in Bubble, und
      beides ist unnoetig -- die Seite kann es selbst:
 
-       Seitenaufbau   der SICHTBARE Picker gibt seinen Zeitraum einmal an Bubble. Sichtbar heisst
-                      offsetParent != null; Bubble rendert das Markup einer verborgenen Gruppe
-                      ohnehin nicht, es gibt beim Aufbau also praktisch nur einen.
+       Seitenaufbau   der erste teilnehmende Picker gibt seinen Zeitraum einmal an Bubble, und
+                      zwar SOBALD ER GEMOUNTET IST (initRoot ruft aufbauUebergeben). Nicht nach
+                      einer Frist und nicht abhaengig von Sichtbarkeit -- daran ist der erste
+                      Anlauf gescheitert.
        Ansichtswechsel core umschliesst showView der Host-App und meldet den Wechsel VOR dem
                       Original (UC.onViewChange). Der Picker dieser Ansicht gibt seinen Zeitraum.
 
@@ -1059,6 +1116,7 @@
   function bootGetan(){ return !!window.__udrBootGetan; }
   function bootMerken(){ try { window.__udrBootGetan = true; } catch(e){} }
   window.upstreemDatesBoot = function (name) {
+    spurGlobal("upstreemDatesBoot", { name: String(name || ""), schonUebergeben: bootGetan() });
     var key = syncAn() ? syncPreset() : DEFAULT_PRESET;
     var sp = presetSpanne(key);
     var id = String(name || "") || "boot";
@@ -1109,9 +1167,18 @@
     return payload;
   };
   if (UC.onViewChange) UC.onViewChange(function (name) {
-    if (!name || !syncAn() || !nimmtTeil(name)) return;
+    if (!name) return;
+    if (!syncAn()){ spurGlobal("ansicht-uebersprungen", { view: name, warum: "Schalter aus" }); return; }
+    if (!nimmtTeil(name)){ spurGlobal("ansicht-uebersprungen", { view: name, warum: "nimmt nicht teil" }); return; }
     var c = pickerFuer(name);
-    if (c && nimmtTeil(c.instanceId)) uebergeben(c);
+    if (!c){ spurGlobal("ansicht-uebersprungen", { view: name, warum: "kein Picker mit diesem Namen" }); return; }
+    if (!nimmtTeil(c.instanceId)){
+      spurGlobal("ansicht-uebersprungen", { view: name, instanz: c.instanceId, warum: "nimmt nicht teil" });
+      return;
+    }
+    spurGlobal("ansicht", { view: name, instanz: c.instanceId,
+                            schonUebergeben: !!UEBERGEBEN[c.instanceId] });
+    uebergeben(c);
   });
   window.addEventListener("up-prefs-change", function (e) {
     var n = e && e.detail && e.detail.name;
@@ -1125,11 +1192,8 @@
     initAll();
     if (UC.watchRoots) UC.watchRoots("udr-root", initAll);
 
-    /* Der Aufbau-Fall von oben. setTimeout(0) und nicht sofort: initAll baut alle Wurzeln in
-       einem Durchgang, und der sichtbare Picker ist nicht zwingend der erste. Ein Makrotask
-       spaeter stehen alle Controller, und Bubbles JavaScriptToBubble-Elemente sind bereit.
-       Das offsetParent ist EIN Layout-Lesezugriff, einmal je Seitenaufbau. */
-    /* IMMER, nicht nur bei aktivem Schalter. Vorher hing diese Uebergabe an syncAn(), und damit
+    /* Die Aufbau-Uebergabe steht jetzt in initRoot -- hier ist nichts mehr zu tun.
+       IMMER, nicht nur bei aktivem Schalter. Vorher hing diese Uebergabe an syncAn(), und damit
        gab es keinen verlaesslichen Moment, an dem Bubble den Anfangszeitraum erfaehrt: mit
        Schalter aus kam nichts, also musste die Seite ihn selbst setzen -- und genau dieses
        Startup-Event hat dann die Uebergabe mit Schalter AN wieder ueberschrieben. Gemeldet am
@@ -1139,20 +1203,33 @@
        reason "boot" haengt, laedt damit genau einmal und immer mit gesetzten Datumsangaben.
        Der seitenweite Kanal bleibt dabei still (siehe emit), es entsteht also kein zweiter
        Ladevorgang fuer den, der weiter beim Seitenaufbau laedt. */
-    setTimeout(function () {
-      /* Hat der Page-Load-Workflow upstreemDatesBoot() schon gerufen -- oder ein zweiter Lauf
-         dieser Datei --, ist hier nichts zu tun. Sonst stuenden zwei Uebergaben hintereinander
-         und Bubble liefe seinen ganzen Aufbau zweimal. */
-      if (bootGetan()) return;
-      for (var i = 0; i < CONTROLLERS.length; i++) {
-        var c = CONTROLLERS[i];
-        if (!c || !c.root || !c.root.isConnected || !nimmtTeil(c.instanceId)) continue;
-        if (c.root.offsetParent === null) continue;
-        bootMerken();
-        uebergeben(c, "boot");
-        return;
-      }
-    }, 0);
+    /* ---- DER AUFBAU HAENGT AM MOUNT, NICHT AN DER UHR --------------------------------------
+       Der Defekt hinter "bei Seitenwechsel geht es, beim Seitenaufbau nicht": diese Uebergabe
+       lief EINMAL, einen Makrotask nach dem Laden dieser Datei, und verlangte einen SICHTBAREN
+       Picker. Beim Seitenaufbau ist zu diesem Zeitpunkt keiner sichtbar -- Bubble blendet seine
+       Gruppen erst danach ein --, also passierte nichts, nie wieder. Beim Ansichtswechsel greift
+       UC.onViewChange, der spaeter laeuft; darum ging das eine und das andere nicht.
+
+       KEIN Warten und KEIN Nachsehen im Takt. Ein Anlauf mit 150ms-Runden waeren bis zu 54 Timer
+       gewesen, jeder mit einem offsetParent -- also erzwungenem Layout auf einer Seite mit 24000
+       Knoten, wo ein Durchlauf 6ms kostet. Genau die Bauart, die in der Leistungsrunde
+       herausgeworfen wurde.
+
+       Stattdessen haengt die Uebergabe am MOUNT: initRoot ruft sie, sobald ein teilnehmender
+       Kalender fertig ist. Das ist genau der Moment, in dem es etwas zu uebergeben gibt, und er
+       kommt ohne Timer und ohne Beobachter -- UC.watchRoots gibt es ohnehin schon.
+
+       Die Sichtbarkeitspruefung ist ganz weg, und damit auch der Layout-Lesezugriff. Sie sollte
+       unter zehn Pickern den richtigen finden. Sie ist unnoetig: Bubble rendert das Markup einer
+       verborgenen Gruppe nicht, beim Aufbau ist also ohnehin nur der Kalender der Startansicht da.
+       Und sind doch mehrere da, zeigen sie bei aktivem Schalter denselben Zeitraum. */
+    function aufbauUebergeben(c){
+      if (bootGetan() || !c || !c.instanceId || !nimmtTeil(c.instanceId)) return;
+      bootMerken();
+      spur("aufbau", { instanz: c.instanceId, sync: syncAn() ? "on" : "off",
+                       preset: syncAn() ? syncPreset() : "(eigener Stand)" });
+      uebergeben(c, "boot");
+    }
 
     var q = window.__udrBootQueue;
     if (q && q.length) {
