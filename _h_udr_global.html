@@ -377,32 +377,32 @@ bauen(null).then(function(d){
      laeuft der Nachlade-Kanal EINMAL fuer das Dashboard, und nur fuer das. */
   return bauen({ date_sync:"on", date_preset:"last30" });
 }).then(function(d){
+  /* DIE STARTANSICHT ist die, die beim Aufbau sichtbar ist -- hier alle, also nimmt der Nachtrag
+     sie alle mit. Auf der echten Seite ist genau eine sichtbar. Wichtig ist: KEIN showView fuer
+     sie, denn genau daran ist der erste Anlauf gescheitert. */
   var v=d.defaultView;
   v.showView("dashboard");
   return new Promise(function(ok){ setTimeout(function(){ ok(d); },500); });
 }).then(function(d){
-  var v=d.defaultView;
-  v.showView("citations");
-  return new Promise(function(ok){ setTimeout(function(){ ok(d); },500); });
-}).then(function(d){
-  /* In Citations auf last3 wechseln -- ein echter Klick. */
-  var v=d.defaultView;
-  d.querySelector('[data-instance="dates_v2_citations"] .udr-trigger').click();
+  /* Im Dashboard auf last3 wechseln -- ein echter Klick. */
+  d.querySelector('[data-instance="dates_v2_dashboard"] .udr-trigger').click();
   return new Promise(function(ok){ setTimeout(function(){
-    d.querySelector('[data-instance="dates_v2_citations"] [data-preset="last3"]').click();
+    d.querySelector('[data-instance="dates_v2_dashboard"] [data-preset="last3"]').click();
     setTimeout(function(){ ok(d); },500);
   },300); });
 }).then(function(d){
   var v=d.defaultView;
-  log("VERALTET  Dashboard(last30) -> Citations -> last3 -> zurueck zum Dashboard");
-  log("   Beschriftung Dashboard jetzt: \""+label(d,"dates_v2_dashboard")+"\" (still nachgezogen)");
+  log("VERALTET  Aufbau auf Citations -> Dashboard -> last3 -> ZURUECK zu Citations");
+  log("   Beschriftung Citations jetzt: \""+label(d,"dates_v2_citations")+"\" (still nachgezogen)");
+  var st=(v.__udrLog||[]).filter(function(e){ return e.art==="startansicht"; });
+  log("   Startansicht nachgetragen fuer: "+(st.map(function(e){ return e.instanz; }).join(", ")||"(keine)"));
   v.__ruf={from:0,to:0,range:0,apply:0,boot:0};
-  v.showView("dashboard");
+  v.showView("citations");
   return new Promise(function(ok){ setTimeout(function(){ ok(d); },600); });
 }).then(function(d){
   var v=d.defaultView, r=v.__ruf;
   var sp=(v.__udrLog||[]).filter(function(e){ return e.art==="veraltet"; }).pop();
-  log("   beim Zurueckkehren: boot="+r.boot+" apply="+r.apply+" range="+r.range);
+  log("   beim Zurueckkehren zu Citations: boot="+r.boot+" apply="+r.apply+" range="+r.range);
   log("   Spur: "+(sp?("geladen_mit="+sp.geladen_mit+"  jetzt="+sp.jetzt):"(keine veraltet-Zeile)"));
   log("   ==> "+(r.boot===1 && r.apply===1 && r.range===0 && sp
         ? "RICHTIG (States gesetzt UND einmal nachgeladen -- nur diese Ansicht)"
@@ -411,9 +411,9 @@ bauen(null).then(function(d){
   /* GEGENPROBE: NOCHMAL zum Dashboard, ohne Aenderung dazwischen. Jetzt darf NICHT nachgeladen
      werden -- sonst laedt jeder Ansichtswechsel nach und wir sind wieder beim Doppel. */
   v.__ruf={from:0,to:0,range:0,apply:0,boot:0};
-  v.showView("citations");
+  v.showView("dashboard");
   return new Promise(function(ok){ setTimeout(function(){
-    v.showView("dashboard");
+    v.showView("citations");
     setTimeout(function(){ ok(d); },600);
   },500); });
 }).then(function(d){

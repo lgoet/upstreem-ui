@@ -1504,8 +1504,35 @@
       "Datums-States wurden nicht gesetzt.");
     return payload;
   };
+  /* Die STARTANSICHT hat beim Seitenaufbau geladen, ohne dass wir davon etwas mitbekommen --
+     sie kommt in keinem onViewChange vor. Ihr Stand blieb deshalb unbekannt, und beim
+     Zurueckkehren galt sie als "erstmals aktiviert": kein Nachladen, obwohl ihre Zahlen von einem
+     anderen Zeitraum waren. Genau der gemeldete Fall (Aufbau auf Citations, Wechsel zum
+     Dashboard, dort umstellen, zurueck zu Citations).
+
+     Nachgetragen wird er beim ERSTEN Ansichtswechsel, und das ist der richtige Moment: core
+     meldet den Wechsel VOR dem Original von showView, die verlassende Ansicht ist also noch
+     sichtbar. Ein einziger offsetParent-Lesezugriff, einmal je Seite -- und diesmal mit einem
+     Zweck, den nichts anderes erfuellt. */
+  var STARTANSICHT_GEKLAERT = false;
+  function startansichtNachtragen(){
+    if (STARTANSICHT_GEKLAERT) return;
+    STARTANSICHT_GEKLAERT = true;
+    for (var i = 0; i < CONTROLLERS.length; i++){
+      var c = CONTROLLERS[i];
+      if (!c || !c.root || !c.root.isConnected || !nimmtTeil(c.instanceId)) continue;
+      if (STAND[c.instanceId]) continue;
+      if (c.root.offsetParent === null) continue;
+      var sg = sigVon(c);
+      if (!sg) continue;
+      STAND[c.instanceId] = sg;
+      spurGlobal("startansicht", { instanz: c.instanceId, geladen_mit: sg,
+        warum: "war beim Seitenaufbau sichtbar, hat also mit diesem Zeitraum geladen" });
+    }
+  }
   if (UC.onViewChange) UC.onViewChange(function (name) {
     if (!name) return;
+    startansichtNachtragen();
     if (!syncAn()){ spurGlobal("ansicht-uebersprungen", { view: name, warum: "Schalter aus" }); return; }
     if (!nimmtTeil(name)){ spurGlobal("ansicht-uebersprungen", { view: name, warum: "nimmt nicht teil" }); return; }
     var c = pickerFuer(name);
