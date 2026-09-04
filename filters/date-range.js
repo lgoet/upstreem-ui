@@ -739,6 +739,11 @@
            ungewollten Stelle hat, sich selbst absichern kann:
              if (el && el.getAttribute("data-range-reason") === "user") ... */
         root.setAttribute("data-range-reason", grund);
+        /* data-range-apply sagt in einem Wort, was ein Snippet auf der Seite wissen muss:
+           weiterreichen oder nicht. Der Grund allein reicht dafuer nicht -- "user" und "stale"
+           sollen beide nachladen, "boot" und "activate" nicht, und diese Liste im Snippet zu
+           pflegen waere die Art Wissen, die auseinanderlaeuft. */
+        root.setAttribute("data-range-apply", grund === "user" ? "yes" : "no");
         if (grund === "user") root.setAttribute("data-range-json", json);
         try { root.dispatchEvent(new CustomEvent("change", { detail: payload, bubbles: true })); } catch (e) {}
         try { window.dispatchEvent(new CustomEvent("upstreem:date-range", { detail: payload })); } catch (e) {}
@@ -1185,24 +1190,30 @@
              ist harmlos und haeufig: wer sein Apply-Event aus dem date_range-Workflow heraus
              ruft, hat das Attribut nie gebraucht. Fuer das Nachladen einer veralteten Ansicht
              braucht es es aber, denn dort gibt es keinen date_range-Aufruf. */
-          if (!root.getAttribute("data-range-apply-fn")){
-            if (!window.__udrApplyFnGesagt && window.console){
-              window.__udrApplyFnGesagt = true;
-              console.warn("[date-range] Diese Ansicht zeigt Zahlen aus einem anderen Zeitraum " +
-                "und muesste neu laden, aber am Datums-Element fehlt data-range-apply-fn -- es " +
-                "gibt keinen Kanal dafuer. Abhilfe: data-range-apply-fn=\"bubble_fn_udr_apply_" +
-                "<id>\" an die Wurzel, mit dem Namen des Apply-Elements, das auch der " +
-                "date_range-Workflow ruft.");
-            }
-            return false;
-          }
           var p2 = {
             instance_id: instanceId,
             date_from: iso(committed.from), date_to: iso(committed.to),
             preset: committedPreset || "", reason: "stale",
             event_id: instanceId + "_" + Date.now() + "_stale"
           };
-          return callFn("data-range-apply-fn", null, JSON.stringify(p2), "stale");
+          var j2 = JSON.stringify(p2);
+          /* Der saubere Weg: der eigene Nachlade-Kanal. */
+          if (root.getAttribute("data-range-apply-fn"))
+            return callFn("data-range-apply-fn", null, j2, "stale");
+
+          /* Sonst der Weg, den die Seite ohnehin hat. Gemessen am 03.09.: auf der echten Seite
+             ist data-range-apply-fn nicht gesetzt -- das Apply-Event wird dort am ENDE des
+             date_range-Workflows gerufen, aus einem Snippet, das data-range-json vom Element
+             liest. Fuer eine veraltete Ansicht gibt es keinen date_range-Aufruf, an den man sich
+             haengen koennte, also wird hier einer gemacht: die Attribute wie bei einer Auswahl
+             setzen und den Range-Kanal rufen. Der Workflow setzt dann States (dieselben Werte,
+             kostet nichts) und ruft sein Apply -- genau ein Ladevorgang.
+             data-range-apply steht dabei auf "yes": das ist die Bedingung, an der das Snippet
+             erkennt, dass es weiterreichen soll. */
+          root.setAttribute("data-range-json", j2);
+          root.setAttribute("data-range-reason", "stale");
+          root.setAttribute("data-range-apply", "yes");
+          return callFn("data-range-fn", "bubble_fn_udr_date_range", j2, "stale");
         }
       };
       root.__udrCtrl = ctrl;

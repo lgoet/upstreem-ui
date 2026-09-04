@@ -433,16 +433,26 @@ bauen(null).then(function(d){
   d.querySelector('[data-instance="dates_v2_dashboard"] .udr-trigger').click();
   return new Promise(function(ok){ setTimeout(function(){
     d.querySelector('[data-instance="dates_v2_dashboard"] [data-preset="last7"]').click();
-    setTimeout(function(){ v3.showView("citations"); setTimeout(function(){ ok(d); },700); },500);
+    /* Zaehler NACH dem Klick zurueck: der Klick feuert den Range-Kanal selbst, und der erste
+       Anlauf hat ihn mitgezaehlt und deshalb range=2 gemeldet. Gezaehlt werden soll nur, was der
+       Ansichtswechsel ausloest. */
+    setTimeout(function(){
+      v3.__ruf={from:0,to:0,range:0,apply:0,boot:0};
+      v3.showView("citations"); setTimeout(function(){ ok(d); },700);
+    },500);
   },300); });
 }).then(function(d){
-  var v3=d.defaultView;
-  var w=(v3.__warn||[]).filter(function(x){ return /data-range-apply-fn/.test(x); })[0];
+  var v3=d.defaultView, r=v3.__ruf, el=d.querySelector('[data-instance="dates_v2_citations"]');
   log("OHNE data-range-apply-fn  (der Fall auf der echten Seite)");
-  log("   Konsole: "+(w?w.slice(0,120)+" ...":"(nichts)"));
-  log("   ==> "+(w
-        ? "RICHTIG (sagt, welches Attribut fehlt -- statt still stehenzubleiben)"
-        : "FALSCH -- stiller Ausfall"));
+  log("   Aufrufe beim Wechsel: boot="+r.boot+"  range="+r.range+"  apply="+r.apply);
+  log("   Attribute an der Wurzel: data-range-apply=\""+el.getAttribute("data-range-apply")+
+      "\"  data-range-reason=\""+el.getAttribute("data-range-reason")+"\"");
+  var j=el.getAttribute("data-range-json")||"";
+  log("   data-range-json: "+(j?j.slice(0,60)+"…":"(leer)"));
+  log("   ==> "+(r.boot===1 && r.range===1 && el.getAttribute("data-range-apply")==="yes" && /"last7"/.test(j)
+        ? "RICHTIG (Rueckfall auf den Range-Kanal -- der Weg, den die Seite ohnehin hat)"
+        : "FALSCH -- "+(r.range===0?"kein Nachladen: die Ansicht bleibt beim alten Zeitraum"
+                       :"Attribute stimmen nicht")));
   log("FERTIG");
 }).catch(function(e){ log("ABBRUCH: "+e.message+"\n"+(e.stack||"").split("\n").slice(0,3).join("\n")); });
 </script>
