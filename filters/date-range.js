@@ -1179,6 +1179,23 @@
            einem anderen Zeitraum sind. Die States hat die Uebergabe davor schon gesetzt; hier
            fehlt allein der Ladevorgang. */
         nachladen: function () {
+          /* Ohne data-range-apply-fn gibt es nichts zu rufen -- und das darf nicht stumm bleiben.
+             Genau so gemeldet am 03.09.: in der Spur stand "range-apply  fn: null  getroffen:
+             false", und die Ansicht blieb mit den Zahlen des alten Zeitraums stehen. Der Grund
+             ist harmlos und haeufig: wer sein Apply-Event aus dem date_range-Workflow heraus
+             ruft, hat das Attribut nie gebraucht. Fuer das Nachladen einer veralteten Ansicht
+             braucht es es aber, denn dort gibt es keinen date_range-Aufruf. */
+          if (!root.getAttribute("data-range-apply-fn")){
+            if (!window.__udrApplyFnGesagt && window.console){
+              window.__udrApplyFnGesagt = true;
+              console.warn("[date-range] Diese Ansicht zeigt Zahlen aus einem anderen Zeitraum " +
+                "und muesste neu laden, aber am Datums-Element fehlt data-range-apply-fn -- es " +
+                "gibt keinen Kanal dafuer. Abhilfe: data-range-apply-fn=\"bubble_fn_udr_apply_" +
+                "<id>\" an die Wurzel, mit dem Namen des Apply-Elements, das auch der " +
+                "date_range-Workflow ruft.");
+            }
+            return false;
+          }
           var p2 = {
             instance_id: instanceId,
             date_from: iso(committed.from), date_to: iso(committed.to),

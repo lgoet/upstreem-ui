@@ -422,6 +422,27 @@ bauen(null).then(function(d){
       "   ==> "+(r.apply===0
         ? "RICHTIG (kein Nachladen ohne Grund -- der Vergleich ist also echt)"
         : "FALSCH -- jeder Wechsel laedt nach"));
+  /* OHNE data-range-apply-fn: das Nachladen kann nicht gehen -- aber es muss es SAGEN.
+     Auf der echten Seite stand in der Spur nur "range-apply  fn: null  getroffen: false", und die
+     Ansicht blieb still mit den alten Zahlen stehen. */
+  var v3=d.defaultView;
+  [].forEach.call(d.querySelectorAll(".udr-root"), function(r3){ r3.removeAttribute("data-range-apply-fn"); });
+  v3.__warn=[]; var aw=v3.console.warn; v3.console.warn=function(){ v3.__warn.push([].join.call(arguments," ")); return aw.apply(this,arguments); };
+  v3.__udrApplyFnGesagt = false;
+  v3.__ruf={from:0,to:0,range:0,apply:0,boot:0};
+  d.querySelector('[data-instance="dates_v2_dashboard"] .udr-trigger').click();
+  return new Promise(function(ok){ setTimeout(function(){
+    d.querySelector('[data-instance="dates_v2_dashboard"] [data-preset="last7"]').click();
+    setTimeout(function(){ v3.showView("citations"); setTimeout(function(){ ok(d); },700); },500);
+  },300); });
+}).then(function(d){
+  var v3=d.defaultView;
+  var w=(v3.__warn||[]).filter(function(x){ return /data-range-apply-fn/.test(x); })[0];
+  log("OHNE data-range-apply-fn  (der Fall auf der echten Seite)");
+  log("   Konsole: "+(w?w.slice(0,120)+" ...":"(nichts)"));
+  log("   ==> "+(w
+        ? "RICHTIG (sagt, welches Attribut fehlt -- statt still stehenzubleiben)"
+        : "FALSCH -- stiller Ausfall"));
   log("FERTIG");
 }).catch(function(e){ log("ABBRUCH: "+e.message+"\n"+(e.stack||"").split("\n").slice(0,3).join("\n")); });
 </script>
