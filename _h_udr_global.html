@@ -273,23 +273,8 @@ bauen(null).then(function(d){
   log("   Bubble-Aufrufe beim Ansichtswechsel: SUMME="+(r.from+r.to+r.range)+
       "   ==> "+(r.from+r.to+r.range===0
         ? "RICHTIG (ohne Schalter loest ein Ansichtswechsel nichts aus)" : "FALSCH"));
-  /* PHASE 8: DER GEMELDETE DOPPELDURCHLAUF. Beim Aufbau hat die automatische Uebergabe schon
-     gefeuert; ruft Bubbles Startup-Event danach upstreemDatesBoot(), darf NICHTS mehr passieren.
-     Vorher feuerte es ein zweites Mal, und der ganze Page-Load-Durchlauf lief zweimal. */
-  v.__ruf={from:0,to:0,range:0,apply:0,boot:0}; v.__letzte=null; v.__warn=[];
-  var erg=v.upstreemDatesBoot("dashboard");
-  return new Promise(function(ok){ setTimeout(function(){ ok({d:d,erg:erg}); },400); });
-}).then(function(st){
-  var d=st.d, v=d.defaultView, r=v.__ruf;
-  log("PHASE 8  upstreemDatesBoot() NACH der automatischen Uebergabe (der Doppeldurchlauf)");
-  log("   Aufrufe: from="+r.from+" to="+r.to+" range="+r.range+" apply="+r.apply);
-  log("   Rueckgabe: "+JSON.stringify(st.erg));
-  log("   ==> "+(r.from+r.to+r.range+r.apply+r.boot===0
-        ? "RICHTIG (Nullvorgang -- kein zweiter Durchlauf)"
-        : "FALSCH -- der ganze Page-Load laeuft zweimal"));
-  log("   Konsole: "+(v.__warn.filter(function(w){ return /zu spaet/.test(w); })[0]||"(nichts)"));
-  log("   ==> "+(v.__warn.some(function(w){ return /zu spaet/.test(w); })
-        ? "RICHTIG (sagt, dass der Schritt raus kann)" : "FALSCH -- still verpufft"));
+  /* PHASE 8 ist entfallen: sie prueft upstreemDatesBoot(), und das gibt es nicht mehr (der
+     Zeitraum kommt aus der URL, sonst uebergibt der Kalender beim Mounten von selbst). */
   /* PHASE 9: date-range.js ZWEIMAL geladen -- zwei Komponenten, zwei CDN-Einbindungen. Jeder
      Lauf baut seine eigene CONTROLLERS-Liste und uebergab vorher jeweils einmal. */
   v.__ruf={from:0,to:0,range:0,apply:0,boot:0}; v.__warn=[];
@@ -353,21 +338,9 @@ bauen(null).then(function(d){
                  v.__letzte&&v.__letzte.date_from===isoZ(soll)
         ? "RICHTIG (GENAU EIN Aufruf -- kein zweiter Ladevorgang moeglich)"
         : "FALSCH -- "+(r.range>0?"der Nachlade-Kanal hat gefeuert":"keine Uebergabe")));
-  var log2=(v.__udrLog||[]);
-  var wartete=log2.filter(function(e){ return e.art==="aufbau-wartet"; }).length;
-  var fertig=log2.filter(function(e){ return e.art==="aufbau"; })[0];
-  log("   Spur: "+wartete+"x aufbau-wartet, dann aufbau nach "+(fertig?fertig.wartete_ms:"?")+"ms");
-  /* >=250, nicht >=1000: gewartet wird ab dem Mount des Pickers, und der liegt im Prueftand
-     schon 900ms vor dem Aufsetzen der Bruecke -- die Erwartung 1000 war meine, nicht die des
-     Codes. Was zaehlt: es wurde MINDESTENS eine Runde gewartet und die Spur sagt es. */
-  log("   ==> "+(wartete===1&&fertig&&fertig.wartete_ms>=250
-        ? "RICHTIG (hat gewartet und es steht in der Spur)"
-        : "FALSCH -- "+(fertig?"wartete_ms="+fertig.wartete_ms:"kein aufbau-Eintrag")));
-  /* GEGENPROBE: der Merker darf einen GESCHEITERTEN Versuch nicht als erledigt zaehlen.
-     Genau das war der zweite Fehler -- der Ansichtswechsel wurde danach uebersprungen. */
-  var uebersprungen=log2.filter(function(e){ return e.art==="ansicht-uebersprungen"; }).length;
-  log("   uebersprungene Ansichtswechsel: "+uebersprungen+
-      "   ==> "+(uebersprungen===0?"RICHTIG (kein Fehlversuch hat sich als erledigt vermerkt)":"FALSCH"));
+  /* Dass GEWARTET wurde, steht jetzt nicht mehr in einer Spur (die ist raus) -- es steht in der
+     Zeit: direkt nach dem Mount waren es 0 Aufrufe, nach dem Aufsetzen der Bruecke genau einer.
+     Beide Zahlen oben sind der Beweis, und sie sind unabhaengig von jeder Diagnose-Ausgabe. */
   /* Die URL-Mechanik wird NICHT hier geprueft: der Kalender liest die URL nur im obersten
      Fenster (window === window.top), und in einem Rahmen-Prueftand ist das nie der Fall. Sie hat
      einen eigenen Prueftand, der selbst das oberste Fenster ist: _h_udr_url.html. */
@@ -394,21 +367,17 @@ bauen(null).then(function(d){
   var v=d.defaultView;
   log("VERALTET  Aufbau auf Citations -> Dashboard -> last3 -> ZURUECK zu Citations");
   log("   Beschriftung Citations jetzt: \""+label(d,"dates_v2_citations")+"\" (still nachgezogen)");
-  var st=(v.__udrLog||[]).filter(function(e){ return e.art==="startansicht"; });
-  log("   Startansicht nachgetragen fuer: "+(st.map(function(e){ return e.instanz; }).join(", ")||"(keine)"));
   v.__ruf={from:0,to:0,range:0,apply:0,boot:0};
   v.showView("citations");
   /* 900ms: das Nachladen kommt jetzt bewusst 250ms NACH dem Umschalten (siehe nachladen). */
   return new Promise(function(ok){ setTimeout(function(){ ok(d); },900); });
 }).then(function(d){
   var v=d.defaultView, r=v.__ruf;
-  var sp=(v.__udrLog||[]).filter(function(e){ return e.art==="veraltet"; }).pop();
   log("   beim Zurueckkehren zu Citations: boot="+r.boot+" apply="+r.apply+" range="+r.range);
-  log("   Spur: "+(sp?("geladen_mit="+sp.geladen_mit+"  jetzt="+sp.jetzt):"(keine veraltet-Zeile)"));
   /* EIN Bubble-Ereignis, nicht zwei: kein Boot-Aufruf mehr, wenn die Ansicht veraltet ist --
      der Nachlade-Kanal setzt die States selbst. Zwei Ereignisse hiessen auf der echten Seite:
      einmal laden mit alten Daten, dann noch einmal richtig. */
-  log("   ==> "+(r.boot===0 && r.apply===1 && r.range===0 && sp
+  log("   ==> "+(r.boot===0 && r.apply===1 && r.range===0
         ? "RICHTIG (EIN Aufruf: setzt die States und laedt -- kein Laden mit alten Daten davor)"
         : "FALSCH -- "+(r.apply===0?"kein Nachladen: die Zahlen bleiben vom alten Zeitraum"
                        :(r.boot>0?"der Aufbau-Kanal feuert zusaetzlich -- ein Ereignis zu viel"
@@ -432,8 +401,6 @@ bauen(null).then(function(d){
      Ansicht blieb still mit den alten Zahlen stehen. */
   var v3=d.defaultView;
   [].forEach.call(d.querySelectorAll(".udr-root"), function(r3){ r3.removeAttribute("data-range-apply-fn"); });
-  v3.__warn=[]; var aw=v3.console.warn; v3.console.warn=function(){ v3.__warn.push([].join.call(arguments," ")); return aw.apply(this,arguments); };
-  v3.__udrApplyFnGesagt = false;
   v3.__ruf={from:0,to:0,range:0,apply:0,boot:0};
   d.querySelector('[data-instance="dates_v2_dashboard"] .udr-trigger').click();
   return new Promise(function(ok){ setTimeout(function(){

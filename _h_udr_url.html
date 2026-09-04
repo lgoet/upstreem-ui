@@ -50,13 +50,13 @@ Promise.all([hol("core.css"),hol("filters/date-range.css"),hol("core.js"),
   var j2=document.createElement("script"); j2.textContent=t[3]; document.head.appendChild(j2);
   return new Promise(function(ok){ setTimeout(ok,1800); });
 }).then(function(){
-  var spur=window.__udrLog||[];
-  var grund=(spur.filter(function(e){ return e.art==="aufbau-nicht-noetig"; })[0]||{}).warum;
+  /* Die Spur ist raus. Geprueft wird jetzt die WIRKUNG: kein Bubble-Aufruf, wenn die URL den
+     Zeitraum schon trug -- und genau einer, wenn nicht. Das ist ohnehin die Aussage; die
+     Spur-Zeile war nur ihre Begleitung. */
   var lbl=(document.querySelector(".udr-label")||{}).textContent||"";
   log(MIT ? "MIT ?range="+MIT : "OHNE Parameter (Gegenprobe)");
   log("   window===window.top: "+(window===window.top)+"   location.search: \""+location.search+"\"");
   log("   Bubble-Aufrufe: "+JSON.stringify(RUF));
-  log("   Spur: "+(grund||"(keine Zeile aufbau-nicht-noetig)"));
   log("   Beschriftung: \""+lbl.trim()+"\"");
   if (P.get("urlmodus") === "aus"){
     log("   URL beim Start: \""+SEARCH0+"\"   jetzt: \""+location.search+"\"");
@@ -66,7 +66,7 @@ Promise.all([hol("core.css"),hol("filters/date-range.css"),hol("core.js"),
     log("FERTIG"); return;
   }
   if (MIT){
-    log("   ==> "+(RUF.boot===0&&RUF.range===0&&RUF.from===0&&RUF.to===0&&/URL trug/.test(grund||"")
+    log("   ==> "+(RUF.boot===0&&RUF.range===0&&RUF.from===0&&RUF.to===0
           ? "RICHTIG (keine Uebergabe -- also kein zweiter Abfragedurchlauf)"
           : "FALSCH -- es wurde uebergeben, obwohl Bubble den Zeitraum schon hatte"));
     log("   ==> "+(lbl.indexOf("30")>=0 ? "RICHTIG (Anzeige passt zur URL)" : "FALSCH"));
