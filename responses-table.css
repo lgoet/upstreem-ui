@@ -235,7 +235,12 @@
 /* Die Citations bleiben rechts, auch wenn sie umgebrochen sind. Ohne diese Zeile steht auf der
    zweiten Zeile nur ein Kind, und space-between schiebt es nach links -- gemessen 87px vom
    rechten Polster weg. Der Entwurf will sie am rechten Rand, umgebrochen oder nicht. */
-.urt-card-citations { margin-left: auto; }
+/* 4px Einzug rechts, und der ist gerechnet, nicht geschmackssache: jeder Chip traegt einen
+   4px-Ring (box-shadow an .up-stack-vis, der ABSTAND zum Nachbarn). Der Ring steht in keinem
+   Rechteck, ist aber gemalt -- ohne diesen Einzug liegt er beim letzten Chip 4px IM Polster, und
+   das "+N" schliesst hart mit der Polsterkante ab. Gemessen: 4px drueber ohne "+N", 0px mit dem
+   Einzug. Damit hat auch das "+N" dieselbe Luft wie der Ring der Chips. */
+.urt-card-citations { margin-left: auto; padding-right: 4px; }
 .urt-card-ment { flex: 0 0 auto; }
 
 /* skeleton cards */

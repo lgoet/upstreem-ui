@@ -819,6 +819,21 @@
            resetView mit alten Daten, dann unser Nachladen mit den richtigen.
            Gemeldet als "triggert dann wieder alle rpcs doppelt, einmal mit alten daten". Zwei
            Mechanismen fuer eine Aufgabe, und einer davon war meiner von vorhin. */
+
+        /* Und jetzt laden alle NACH, die man sieht: die Ansicht dahinter und jeder offene Drawer.
+           Diese Zeile steht hier und nicht in emit, und das ist der Unterschied zwischen
+           "funktioniert" und "tut nichts": der Klick ruft erst applyPreset(key, true) -- mit dem
+           emit darin -- und DANACH setPref/syncWeitergeben. In emit tragen die anderen Kalender
+           also noch den ALTEN Zeitraum, der Vergleich mit STAND fand keinen Unterschied, und es
+           passierte nichts. Gemessen: apply=1 statt 3. Hier, nach der Schleife oben, stehen sie
+           auf dem neuen. */
+        sichtbareBedienen(instanceId, eigenApplyVerzug());
+      }
+      /* Der Aufschub des EIGENEN Apply -- die anderen kommen danach, damit die Reihenfolge
+         stimmt: erst der Kalender, in dem geklickt wurde. */
+      function eigenApplyVerzug(){
+        var v2 = parseInt(root.getAttribute("data-range-apply-delay"), 10);
+        return (!isFinite(v2) || v2 < 0) ? 120 : v2;
       }
 
       menu.addEventListener("click", function (e) {
@@ -860,6 +875,12 @@
              Ausschalten aendert keinen Zeitraum -- da passiert nichts weiter, nur die Sperren
              fallen weg. */
           if (an && !teilbar) applyPreset(DEFAULT_PRESET, true);
+          /* Einschalten aendert den Zeitraum jedes Pickers, der auf etwas anderem stand -- also
+             laden auch hier alle nach, die man sieht. Der Schalter-Weg laeuft nicht ueber
+             syncWeitergeben (die anderen ziehen ueber das prefs-Ereignis nach), darum diese
+             eigene Zeile. Wessen Zeitraum sich nicht geaendert hat, wird nicht angefasst: der
+             STAND-Vergleich in sichtbareBedienen entscheidet das je Picker. */
+          if (an) sichtbareBedienen(instanceId, eigenApplyVerzug());
           return;
         }
         var preset = e.target.closest(".udr-preset");
@@ -1341,6 +1362,46 @@
      ERSTES Oeffnen heisst NICHT nachladen: dann laedt der Drawer ueber seinen eigenen Workflow,
      und ein zweiter Aufruf waere der doppelte Durchlauf. Festgehalten wird nur, mit welchem
      Zeitraum. */
+  /* ---- EINE AENDERUNG BEDIENT ALLES, WAS MAN SIEHT ----------------------------------------
+     Wer im Drawer den Zeitraum umstellt, meint die ganze Seite -- die Hauptansicht dahinter
+     gehoert dazu, und jeder weitere offene Drawer auch. Vorher lud nur der Kalender nach, in dem
+     geklickt wurde; alles andere blieb mit den alten Zahlen stehen, bis man es neu oeffnete.
+     Fuer einen zugeklappten Drawer ist das richtig (er laedt beim Oeffnen), fuer etwas
+     SICHTBARES ist es falsch: da stehen zwei Zeitraeume gleichzeitig auf dem Schirm.
+
+     Sichtbar heisst sichtbar, nicht "in der URL": gefragt wird offsetParent, einmal je Klick,
+     bei hoechstens zehn Kalendern. Was zu ist, wird hier nicht angefasst -- das erledigt der
+     openDrawer- bzw. der Ansichtsweg beim naechsten Oeffnen.
+
+     In der Schleife wird NICHTS ins DOM geschrieben -- STAND ist eine JS-Tabelle, und das
+     Nachladen liegt im setTimeout. Der Browser rechnet das Layout deshalb EINMAL, beim ersten
+     offsetParent, und nicht zehnmal: gelesen wird nur, solange nichts dazwischen schreibt. Auf
+     der Seite mit 24000 Knoten ist genau das der Unterschied zwischen 6ms und 60ms.
+
+     GESTAFFELT, nicht alle in derselben Millisekunde: ein JavaScriptToBubble-Element traegt EINEN
+     Wert, und Bubble startet den Workflow an der Zustandsaenderung. Zwei Aufrufe im selben Task
+     koennen zu einem verschmelzen -- dann laedt einer der Kalender nicht. 150ms Abstand, und der
+     erste kommt nach dem eigenen Apply, damit die Reihenfolge stimmt: erst der Kalender, in dem
+     geklickt wurde, dann die anderen. */
+  function sichtbareBedienen(ausserId, abVerzug){
+    if (!syncAn()) return;
+    var n = 0;
+    for (var i = 0; i < CONTROLLERS.length; i++){
+      var c = CONTROLLERS[i];
+      if (!c || !c.root || !c.root.isConnected) continue;
+      if (!c.instanceId || c.instanceId === ausserId) continue;
+      if (!nimmtTeil(c.instanceId)) continue;
+      if (c.root.offsetParent === null) continue;   /* zu: der laedt beim Oeffnen */
+      var sig = sigVon(c);
+      if (!sig || STAND[c.instanceId] === sig) continue;   /* schon mit diesem Zeitraum bedient */
+      STAND[c.instanceId] = sig;
+      if (typeof c.nachladen !== "function") continue;
+      n++;
+      (function(k, verzug){ setTimeout(function(){
+        if (k.root && k.root.isConnected) k.nachladen();
+      }, verzug); })(c, (abVerzug || 0) + n * 150);
+    }
+  }
   function drawerBedienen(){
     if (!syncAn()) return;            /* ohne Schalter gehoert der Zeitraum jedem selbst */
     for (var i = 0; i < CONTROLLERS.length; i++){

@@ -193,6 +193,29 @@ H.bau({ date_sync:"on", date_preset:"last7" }, "dashboard", true).then(function(
                  wer.join().indexOf("stale")>=0
         ? "RICHTIG (jeder Drawer genau einmal, jeder mit seiner eigenen Instanz)"
         : "FALSCH -- "+(st.ruf.apply<2?"ein Drawer bleibt auf alten Zahlen":"einer laedt doppelt")));
+  /* DIE AENDERUNG KOMMT AUS DEM DRAWER -- und muss ALLES bedienen, was offen ist: die Ansicht
+     dahinter und den zweiten Drawer. Beide sind gerade sichtbar, Citations ist zu. */
+  H.nullen();
+  return H.preset("dates_v2_domainspotlight","last7");
+}).then(function(){
+  return H.mess(900);
+}).then(function(j){
+  var st = JSON.parse(j), wer = st.wer.slice().sort();
+  log("DRAWER 7  im Drawer umgestellt, Ansicht + zweiter Drawer sind offen");
+  log("   range="+st.ruf.range+"  apply="+st.ruf.apply+"  bedient: "+JSON.stringify(wer));
+  log("   Beschriftungen: Ansicht \""+st.labels.dash+"\"  Drawer1 \""+st.labels.dom+
+      "\"  Drawer2 \""+st.labels.url+"\"");
+  var hatAnsicht = wer.join().indexOf("dates_v2_dashboard") >= 0;
+  var hatZweiten = wer.join().indexOf("dates_v2_urlspotlight") >= 0;
+  var hatZu      = wer.join().indexOf("dates_v2_citations") >= 0;
+  log("   ==> "+(st.ruf.range===1 && hatAnsicht && hatZweiten && !hatZu && st.ruf.apply===3
+        ? "RICHTIG (der Drawer selbst ueber seinen Kanal, Ansicht und zweiter Drawer je einmal)"
+        : "FALSCH -- "+(!hatAnsicht ? "die Hauptansicht bleibt auf den alten Zahlen stehen"
+                       : (hatZu ? "eine ZUGEKLAPPTE Ansicht wurde bedient -- unnoetiger Durchlauf"
+                                : (!hatZweiten ? "der zweite offene Drawer bleibt stehen"
+                                               : "unerwartete Anzahl Aufrufe")))));
+  log("   ==> Gleichstand: "+(st.labels.dash===st.labels.dom && st.labels.dom===st.labels.url
+        ? "RICHTIG (alle sichtbaren Kalender zeigen denselben Zeitraum)" : "FALSCH"));
   H.nullen(); H.zu("urlspotlight");
   /* last30, nicht last7: der Export steht auf der Vorgabe (7 Tage), und die Aussage unten ist
      "er ist NICHT mitgezogen" -- die waere bei gleichem Zeitraum nicht zu erkennen. */

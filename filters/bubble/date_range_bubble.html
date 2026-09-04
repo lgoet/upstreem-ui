@@ -119,9 +119,28 @@
      it the first time never reloads: the drawer loads through its own workflow, and a second
      call would be the double run.
 
-     Nothing is required on Bubble's side for this — no new attribute, no new event, no workflow
-     step. Two drawers stacked on top of each other work the same way: each has its own instance
-     and its own states, so each reloads at most once per change.
+     ── One change serves everything that is VISIBLE ─────────────────────────────
+     Change the range in a drawer and the view behind it changes too — anything on screen with a
+     different range would otherwise show two ranges side by side. So a change fires:
+
+       the calendar that was clicked   the normal channels (date_from/date_to/range + apply),
+                                       reason "user"
+       every OTHER visible calendar    one apply per instance, reason "stale", 150ms apart
+       everything that is closed       nothing: it reloads when it opens
+
+     Visible means visible, not "listed in the URL" — the picker asks the browser once per click.
+     Closed drawers and background views are never called, so no hidden RPC runs.
+
+     WHAT THIS NEEDS ON BUBBLE'S SIDE: the workflow behind the reload must refresh the component
+     that instance_id names, not "the current view". With a main view and two drawers open, three
+     calls arrive with three different instance_ids — if the workflow ignores instance_id, it
+     refreshes the same thing three times and the drawers keep their old numbers. The 150ms
+     spacing exists for the same reason: a JavaScriptToBubble element carries ONE value and
+     Bubble starts the workflow on the value CHANGE, so two calls in the same tick can collapse
+     into one.
+
+     Two drawers stacked on top of each other work the same way: each has its own instance and
+     its own states, so each reloads at most once per change.
 
      Then read it in the page-load workflow, as the first action, into your two date states:
 

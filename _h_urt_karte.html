@@ -32,6 +32,13 @@ Promise.all([hol("core.css"),hol("responses-table.css"),hol("core.js"),hol("resp
   var v=d.defaultView;
   try { v.localStorage.removeItem("up_prefs"); v.localStorage.removeItem("pref_theme"); } catch(e){}
   [t[0],t[1]].forEach(function(c){ var s=d.createElement("style"); s.textContent=c; d.head.appendChild(s); });
+  /* TRANSITIONS AUS. Ohne diese Zeile hat der Prueftand dreimal denselben Fehlschluss gebaut:
+     .up-stack-vis traegt transition: transform .16s -- unmittelbar nach dem Setzen der Klasse
+     liefert getComputedStyle den STARTWERT, also identity, und jede Messung sagt "Hover = Ruhe".
+     Genau so sind die falschen RICHTIGs von vorhin entstanden. */
+  var sT=d.createElement("style");
+  sT.textContent="*,*::before,*::after{transition:none!important;animation:none!important}";
+  d.head.appendChild(sT);
   var w=d.createElement("div"); w.innerHTML=wurzelAus(t[4]);
   var r=w.querySelector(".urt-root")||w.querySelector(".up-root");
   r.setAttribute("data-instance","k"); r.setAttribute("data-cdn-pin","k"); r.setAttribute("data-isdark","no");
@@ -81,49 +88,118 @@ Promise.all([hol("core.css"),hol("responses-table.css"),hol("core.js"),hol("resp
     [].forEach.call(d.querySelectorAll(".urt-card-brands .up-stack-more, .urt-card-brands .up-stack-tail"),
       function(e){ e.style.transform=""; });
   }
-  /* Der Fall, den die erste Messung verfehlt hat: ECHTE Kartenbreiten. Bei 1100px passt alles,
-     bei 265px nicht -- und nur dort ragte der Stapel heraus (33px, bei 209px sogar 61px).
-     Geprueft werden alle Spaltenzahlen, die das Raster wirklich annimmt. */
-  log("b) CITATION-CHIPS: Polster bei ECHTEN Kartenbreiten");
-  var karten=d.querySelector(".urt-cards");
-  var falsch=0;
-  ["2","3","4","5"].forEach(function(sp){
-    karten.style.setProperty("--urt-cols", sp);
-    var k2=d.querySelector(".urt-card"), cs2=v.getComputedStyle(k2);
-    var iR=k2.getBoundingClientRect().right-parseFloat(cs2.paddingRight);
-    var iU=k2.getBoundingClientRect().bottom-parseFloat(cs2.paddingBottom);
-    var m2=d.querySelector(".urt-card-citations .up-stack-more");
-    var fuss=d.querySelector(".urt-card-foot");
-    var ueberR=Math.round((m2?m2.getBoundingClientRect().right:0)-iR);
-    var ueberU=Math.round(fuss.getBoundingClientRect().bottom-iU);
-    var ok = ueberR<=0 && ueberU<=0;
-    if (!ok) falsch++;
-    log("   "+sp+" Spalten ("+Math.round(k2.getBoundingClientRect().width)+"px Karte):"+
-        "   ueber rechts "+ueberR+"px   ueber unten "+ueberU+"px   "+
-        (ok?"RICHTIG":"FALSCH -- ragt aus der Karte"));
-  });
-  log("   ==> "+(falsch===0
-    ? "RICHTIG (in jeder Kartenbreite innerhalb des Polsters)"
-    : "FALSCH -- "+falsch+" Breite(n) ragen heraus"));
-  karten.style.setProperty("--urt-cols","3");
-  log("b2) alte Messung, nur zur Vollstaendigkeit");
-  if (!cMore){ log("   kein +N im Citations-Stapel -- Testdaten zu klein"); }
-  else {
-    var ruhe=Math.round(innenRechts - cMore.getBoundingClientRect().right);
-    /* Der schlimmste Fall: der Chip GANZ RECHTS wird angefasst. Er hebt sich um 3px und traegt
-       einen 4px-Ring; nach links verschiebt sich nichts, was rechts herausragen koennte. */
-    var chips=d.querySelectorAll(".urt-card-citations .up-stack-item");
-    var letzter=chips[chips.length-1];
-    letzter.style.zIndex="3";
-    letzter.querySelector(".up-stack-vis").style.transform="translateY(-3px)";
-    var rechteKante=Math.max(cMore.getBoundingClientRect().right,
-                             letzter.getBoundingClientRect().right + 4 /* der Ring */);
-    var hover=Math.round(innenRechts - rechteKante);
-    log("   Abstand zur Innenkante der Karte:  ohne Hover "+ruhe+"px   mit Hover "+hover+"px");
-    log("   ==> "+(ruhe>=0 && hover>=0
-      ? "RICHTIG (nichts ragt ueber das Polster hinaus)"
-      : "FALSCH -- ragt "+Math.min(ruhe,hover)+"px in das Polster"));
+  /* ---- b) DIE CITATION-CHIPS, MIT ECHTEM HOVER ---------------------------------------------
+     Die erste Fassung hat hier die Hover-WIRKUNG von Hand nachgebaut ("dieselbe Verschiebung,
+     die :hover setzt") und dabei genau das nicht gemessen, worum es geht -- sie hat zwei
+     Ruhezustaende verglichen und "ohne Hover 744px / mit Hover 744px" gemeldet. Zwei gleiche
+     Zahlen waren der Hinweis, und ich habe ihn als Bestaetigung gelesen.
+
+     Jetzt werden die ECHTEN Regeln benutzt: jede geladene Regel, deren Selektor ":hover"
+     enthaelt, wird einmal geklont, mit ".uhov" statt ":hover", und angehaengt. Damit gelten
+     dieselben Deklarationen, dieselben Kombinatoren (~) und dieselben :has()-Ketten -- nur
+     ausgeloest durch eine Klasse, die auch ein verdecktes Panel setzen kann, wo es keinen Zeiger
+     und kein :hover gibt.
+     Gegenprobe direkt darunter: ohne die Klasse MUSS eine andere Zahl herauskommen. */
+  var regeln = 0;
+  (function hoverAlsKlasse(){
+    var aus = [];
+    [].forEach.call(d.styleSheets, function(ss){
+      var rs; try { rs = ss.cssRules; } catch(e){ return; }
+      [].forEach.call(rs || [], function(r){
+        if (!r.selectorText || r.selectorText.indexOf(":hover") < 0) return;
+        aus.push(r.selectorText.replace(/:hover/g, ".uhov") + "{" + r.style.cssText + "}");
+      });
+    });
+    regeln = aus.length;
+    var st = d.createElement("style"); st.textContent = aus.join("\n"); d.head.appendChild(st);
+  })();
+  log("b) CITATION-CHIPS mit echtem Hover (" + regeln + " Hover-Regeln geklont)");
+
+  var karten = d.querySelector(".urt-cards");
+  /* Die rechte Kante von allem, was man SIEHT. Der 4px-Ring der Chips (box-shadow) zaehlt mit:
+     er steht in keinem Rechteck, ist aber gemalt -- und genau er beruehrt sonst das Polster. */
+  /* .up-stack-vis, NICHT .up-stack-item: die Verschiebung beim Hover sitzt auf der Sichtebene
+     INNEN. Der zweite Fehlgriff derselben Sorte -- die erste Fassung las die Chip-Kaesten, die
+     sich nie bewegen, und meldete darum "Hover = Ruhe" fuer jede Breite. Erst die Gegenprobe an
+     der linken Kante hat es gezeigt: zwei gleiche Zahlen, wo eine Verschiebung sein muss.
+     Der 4px-Ring (box-shadow) zaehlt mit: er steht in keinem Rechteck, ist aber gemalt. */
+  function rechtesteKante(){
+    var max = -1e9;
+    [].forEach.call(d.querySelectorAll(".urt-card-citations .up-stack-vis"), function(c){
+      max = Math.max(max, c.getBoundingClientRect().right + 4);
+    });
+    var m = d.querySelector(".urt-card-citations .up-stack-more");
+    if (m) max = Math.max(max, m.getBoundingClientRect().right);
+    return max;
   }
+  function linkesteKante(){
+    var min = 1e9;
+    [].forEach.call(d.querySelectorAll(".urt-card-citations .up-stack-vis"), function(c){
+      min = Math.min(min, c.getBoundingClientRect().left - 4);
+    });
+    return min;
+  }
+  function innenRechtsVon(k){
+    var cs = v.getComputedStyle(k);
+    return k.getBoundingClientRect().right - parseFloat(cs.paddingRight) - parseFloat(cs.borderRightWidth || 0);
+  }
+  function messen(){
+    var k = d.querySelector(".urt-card");
+    var chips = d.querySelectorAll(".urt-card-citations .up-stack-item");
+    var iR = innenRechtsVon(k), schlimm = 0, wer = -1;
+    for (var i = 0; i < chips.length; i++){
+      chips[i].classList.add("uhov");
+      var ueber = rechtesteKante() - iR;
+      if (ueber > schlimm){ schlimm = ueber; wer = i; }
+      chips[i].classList.remove("uhov");
+    }
+    return { ueber: Math.round(schlimm), chip: wer, ruhe: Math.round(rechtesteKante() - iR),
+             breite: Math.round(k.getBoundingClientRect().width), chips: chips.length };
+  }
+
+  /* GEGENPROBE ZUM MESSINSTRUMENT: die Klasse muss ueberhaupt etwas verschieben. Im
+     links-spreizenden Stapel wandert beim Anfassen eines Chips alles VOR ihm nach links -- also
+     wird die linke Kante beobachtet. Bewegt sie sich nicht, sind die geklonten Regeln nicht
+     angekommen und jede Zahl darunter ist wertlos. */
+  var chipsG = d.querySelectorAll(".urt-card-citations .up-stack-item");
+  var linksRuhe = Math.round(linkesteKante());
+  chipsG[chipsG.length - 1].classList.add("uhov");
+  var linksHover = Math.round(linkesteKante());
+  chipsG[chipsG.length - 1].classList.remove("uhov");
+  log("   GEGENPROBE: linke Kante ohne Hover " + linksRuhe + "px, mit Hover " + linksHover + "px");
+  log("   ==> " + (linksRuhe !== linksHover
+        ? "RICHTIG (die geklonten Regeln wirken, die Messung ist echt)"
+        : "FALSCH -- kein Unterschied: hier wurde nur zweimal der Ruhezustand gemessen"));
+
+  /* Die Kartenbreiten, die die Komponente WIRKLICH annimmt: computeCardCols laesst keine Karte
+     unter CARD_MIN_W (424px) zu -- mehr Spalten heisst nicht engere Karten, sondern gar keine
+     weitere Spalte. Die 265px und 209px der ersten Fassung gibt es also nie; sie bleiben
+     trotzdem stehen, als Reserve nach unten. 37 Quellen geben das breiteste Schild, 5 Quellen
+     gar keins (dann ist der letzte CHIP das rechteste Ding, samt Ring). */
+  var falsch = 0;
+  [["1",12],["2",12],["2",37],["3",12],["4",12],["5",12],["2",5],["3",5],["4",5],["5",37]].forEach(function(fall){
+    var sp = fall[0], gesamt = fall[1];
+    karten.style.setProperty("--urt-cols", sp);
+    /* Mit gesamt === Anzahl der Chips gibt es KEIN "+N" -- dann ist der letzte CHIP das
+       rechteste Ding, samt Ring. Der Fall fehlte oben ganz. gesamt 37 gibt ein breites Schild. */
+    v.renderResponsesTable(JSON.stringify({ instanceId:"k", view_active:"yes", totalCount:1,
+      rows:[{ id:"1", run_at:new Date().toISOString(), prompt_text:"Was kostet X?",
+        response_preview:"Antwort…", has_user_brand:"yes",
+        companies_preview:[marke(1),marke(2),marke(3),marke(4)], companies_preview_totalcount:9,
+        sources_preview:[quelle(1),quelle(2),quelle(3),quelle(4),quelle(5)],
+        sources_totalcount:gesamt }] }));
+    var m = messen();
+    var ok = m.ueber <= 0;
+    if (!ok) falsch++;
+    log("   " + sp + " Spalten (" + m.breite + "px Karte), " + gesamt + " Quellen" +
+        (gesamt === m.chips ? " (kein +N)" : "") + ":  Ruhe " + m.ruhe + "px" +
+        "   schlimmster Hover " + m.ueber + "px" + (m.chip >= 0 ? " (Chip " + (m.chip + 1) + ")" : "") +
+        "   " + (ok ? "RICHTIG" : "FALSCH -- ragt in das Polster"));
+  });
+  log("   ==> " + (falsch === 0
+    ? "RICHTIG (in jeder Kartenbreite und in jedem Hover-Zustand innerhalb des Polsters)"
+    : "FALSCH -- " + falsch + " Fall/Faelle ragen heraus"));
+  karten.style.setProperty("--urt-cols","3");
   log("FERTIG");
 }).catch(function(e){ log("ABBRUCH: "+e.message+"\n"+(e.stack||"").split("\n")[1]); });
 </script>

@@ -12,7 +12,13 @@ function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(fun
 function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
 var T=null, ladungen=0;
 function prefs(){ try { return JSON.parse(window.localStorage.getItem("up_prefs")||"{}"); } catch(e){ return {}; } }
+/* startAnsicht ist NICHT optional-egal: seit dem 04.09. laedt eine Aenderung alles nach, was
+   SICHTBAR ist (die Ansicht dahinter, jeder offene Drawer). Waeren im Prueftand alle zehn Picker
+   gleichzeitig sichtbar -- so war er gebaut --, dann feuerte ein Klick neun Nachladungen, und die
+   Zahlen sagten nichts ueber die echte Seite, auf der genau eine Ansicht offen ist.
+   Ohne Angabe ist deshalb "prompts" offen: der Picker, auf den die Phasen klicken. */
 function bauen(prefs, ohneBootFn, ohneBruecke, urlPreset, startAnsicht){
+  if (startAnsicht === undefined) startAnsicht = "prompts";
   return Promise.all([hol("core.css"),hol("filters/date-range.css"),hol("core.js"),
                       hol("filters/date-range.js"),hol("filters/bubble/date_range_bubble.html")])
   .then(function(t){
