@@ -1593,7 +1593,19 @@
     if (alt && sig && alt !== sig && typeof c.nachladen === "function"){
       spurGlobal("veraltet", { view: name, instanz: c.instanceId,
         geladen_mit: alt, jetzt: sig, warum: "Daten sind von einem anderen Zeitraum -- nachladen" });
-      c.nachladen();
+      /* NACH dem Umschalten, nicht davor. core meldet den Ansichtswechsel VOR dem Original von
+         showView -- die neue Ansicht ist in diesem Moment noch versteckt. Die Uebergabe der
+         States darf und soll dort liegen (sie muss vor dem Laden stehen), ein REFRESH aber nicht:
+         eine Bubble-Gruppe, die noch nicht sichtbar ist, laedt nicht oder verwirft das Ergebnis.
+         Genau das Bild: der Range-Kanal traf (getroffen: true), der Workflow lief, und nichts
+         aenderte sich.
+         250ms, nicht 0: showView blendet die Gruppe im naechsten Task ein, und Bubble braucht
+         danach noch einen Durchgang, bis sie als sichtbar gilt. */
+      setTimeout(function(){
+        if (!c.root || !c.root.isConnected) return;
+        spurGlobal("nachladen", { instanz: c.instanceId, warum: "Ansicht ist jetzt sichtbar" });
+        c.nachladen();
+      }, 250);
     }
     if (sig) STAND[c.instanceId] = sig;
   });
