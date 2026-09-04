@@ -125,6 +125,44 @@ Promise.all([hol("core.css"),hol("filters/date-range.css"),hol("core.js"),
   try { o2=JSON.parse(akt2||"{}"); } catch(e){}
   log("   data-range-current zieht mit: preset=\""+o2.preset+"\""+
       "   ==> "+(o2.preset==="last7"?"RICHTIG (folgt der Auswahl)":"FALSCH -- steht auf dem alten Stand"));
+  /* DOPPELUNG: unsere automatische Aufbau-Uebergabe ist schon gelaufen. Ein view_first-Schritt,
+     der upstreemDatesActivate mit DEMSELBEN Zeitraum ruft, darf keinen zweiten Workflow-Lauf
+     ausloesen -- im Log der echten Seite standen genau diese zwei wortgleichen Uebergaben
+     (4423ms und 5272ms). */
+  /* ZWEIMAL hintereinander, ohne Aenderung dazwischen. Der erste Anlauf pruefte gegen die
+     Aufbau-Uebergabe -- aber der Prueftand hatte zwischendurch ein Preset geklickt, der Zeitraum
+     war also wirklich neu und das Feuern richtig. Meine Erwartung war falsch, nicht der Code. */
+  RUF.boot=0;
+  window.upstreemDatesActivate("dashboard");
+  return new Promise(function(ok){ setTimeout(function(){
+    RUF.boot=0;
+    ok(window.upstreemDatesActivate("dashboard"));
+  },400); });
+}).then(function(r1){
+  return new Promise(function(ok){ setTimeout(function(){ ok(r1); },300); });
+}).then(function(r1){
+  var spur=(window.__udrLog||[]);
+  var uebersprungen=spur.filter(function(e){ return e.art==="activate-uebersprungen"; }).length;
+  log("DOPPELUNG  upstreemDatesActivate mit demselben Zeitraum:");
+  log("   Rueckgabe="+r1+"   neue boot-Aufrufe="+RUF.boot+"   uebersprungen="+uebersprungen);
+  log("   ==> "+(RUF.boot===0 && uebersprungen===1 && r1===true
+        ? "RICHTIG (kein zweiter Workflow-Lauf fuer dieselbe Information)"
+        : "FALSCH -- "+(RUF.boot>0?"es wurde ein zweites Mal uebergeben":"falsche Rueckgabe")));
+  /* GEGENPROBE: nach einer ECHTEN Aenderung muss activate wieder feuern. */
+  var m=document.querySelector('.udr-preset[data-preset="last3"]');
+  document.querySelector(".udr-trigger").click();
+  return new Promise(function(ok){ setTimeout(function(){
+    var m2=document.querySelector('.udr-preset[data-preset="last3"]');
+    if (m2) m2.click();
+    setTimeout(function(){ RUF.boot=0; ok(window.upstreemDatesActivate("dashboard")); },400);
+  },300); });
+}).then(function(r2){
+  return new Promise(function(ok){ setTimeout(function(){ ok(r2); },300); });
+}).then(function(r2){
+  log("   GEGENPROBE nach einem Preset-Wechsel: neue boot-Aufrufe="+RUF.boot+
+      "   ==> "+(RUF.boot===1
+        ? "RICHTIG (bei neuem Zeitraum wird uebergeben -- der Vergleich ist also echt)"
+        : "FALSCH -- activate feuert auch bei einer Aenderung nicht mehr"));
   log("FERTIG");
 }).catch(function(e){ log("ABBRUCH: "+e.message); });
 </script>

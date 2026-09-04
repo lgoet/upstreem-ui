@@ -1345,11 +1345,26 @@
   function uebergeben(c, grund){
     if (!c || UEBERGEBEN[c.instanceId] || typeof c.emitCurrent !== "function") return false;
     var ok = c.emitCurrent(grund || "activate");
-    if (ok) UEBERGEBEN[c.instanceId] = 1;
+    if (ok){
+      UEBERGEBEN[c.instanceId] = 1;
+      /* Denselben Merker fuehren wie upstreemDatesActivate, sonst kann dessen Vergleich die
+         automatische Uebergabe nicht erkennen -- und genau die Dopplung stand im Log. */
+      try {
+        var r = typeof c.getRange === "function" ? c.getRange() : null;
+        if (r) ZULETZT[c.instanceId] = r.from + "|" + r.to + "|" + (r.preset || "");
+      } catch(e){}
+    }
     return !!ok;
   }
   /* Ein Aufruf von aussen ist eine ausdrueckliche Anweisung und feuert IMMER -- der Merker haelt
      nur die automatischen Uebergaben auseinander. */
+  /* Was zuletzt je Instanz an Bubble uebergeben wurde. Im Log der echten Seite standen zwei
+     Uebergaben mit WORTGLEICHEM Inhalt: unsere automatische bei 4423ms und der view_first-Schritt
+     bei 5272ms. Zwei Bubble-Workflow-Laeufe fuer dieselbe Information.
+     Eine Uebergabe, die nichts Neues sagt, wird uebersprungen -- egal wer sie anstoesst. Ein
+     KLICK ist davon nicht betroffen: der laeuft ueber den Range-Kanal und wird hier nicht
+     gemessen. */
+  var ZULETZT = {};
   window.upstreemDatesActivate = function (name) {
     var c = pickerFuer(name);
     /* In die Spur, mit Ergebnis. Der Aufruf steht auf der echten Seite in view_first_<name>, also
@@ -1362,6 +1377,15 @@
     spurGlobal("activate", { name: String(name || ""),
       instanz: c ? c.instanceId : "(kein Picker mit diesem Namen)" });
     if (!c || typeof c.emitCurrent !== "function") return false;
+    var r = typeof c.getRange === "function" ? c.getRange() : null;
+    var sig = r ? (r.from + "|" + r.to + "|" + (r.preset || "")) : String(Math.random());
+    if (ZULETZT[c.instanceId] === sig){
+      spurGlobal("activate-uebersprungen", { instanz: c.instanceId, zeitraum: sig,
+        warum: "genau dieser Zeitraum wurde schon uebergeben -- ein zweiter Workflow-Lauf mit " +
+               "derselben Information" });
+      return true;
+    }
+    ZULETZT[c.instanceId] = sig;
     UEBERGEBEN[c.instanceId] = 1;
     return c.emitCurrent();
   };
