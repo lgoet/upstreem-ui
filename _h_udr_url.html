@@ -22,12 +22,20 @@ var MIT=P.get("range");
    selbst mit dem Parameter aufgerufen hatte. */
 var SEARCH0=location.search;
 try { localStorage.setItem("up_prefs", JSON.stringify({ date_sync:"on", date_preset:"last30" })); } catch(e){}
-var RUF={from:0,to:0,range:0,boot:0,apply:0}, LETZTE=null;
+var RUF={from:0,to:0,range:0,boot:0,apply:0}, LETZTE=null, WER=[];
+/* Die Aufrufe der Host-App, VOR core.js -- core umschliesst sie beim Start und beantwortet
+   daraus "welche Ansicht ist offen" bzw. "welcher Drawer". showView wird hier absichtlich NIE
+   gerufen: geprueft wird der Fall Seitenaufbau/Deeplink, in dem es nur die Adresse gibt. */
+window.__views=[]; window.__drawer=[];
+window.showView=function(n){ window.__views.push(String(n)); };
+window.openDrawer=function(art,id){ window.__drawer.push("auf:"+art); };
+window.closeDrawer=function(art){ window.__drawer.push("zu:"+art); };
 window.bubble_fn_udr_date_from=function(){ RUF.from++; };
 window.bubble_fn_udr_date_to=function(){ RUF.to++; };
 window.bubble_fn_udr_date_range=function(j){ RUF.range++; try{LETZTE=JSON.parse(j);}catch(e){} };
 window.bubble_fn_udr_date_boot=function(j){ RUF.boot++; try{LETZTE=JSON.parse(j);}catch(e){} };
-window.bubble_fn_udr_apply=function(){ RUF.apply++; };
+window.bubble_fn_udr_apply=function(j){ RUF.apply++;
+  try { var o=JSON.parse(j); WER.push(o.instance_id+":"+o.reason); } catch(e){ WER.push("?"); } };
 function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
   if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
 function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
@@ -46,6 +54,19 @@ Promise.all([hol("core.css"),hol("filters/date-range.css"),hol("core.js"),
   r.setAttribute("data-range-apply-fn","bubble_fn_udr_apply");
   r.setAttribute("data-range-apply-delay","0");
   document.getElementById("halter").appendChild(r);
+  /* Zwei weitere Kalender fuer die Phase "wer ist offen": eine zweite ANSICHT und ein DRAWER.
+     Die Reihenfolge ist Absicht -- dates_v2_dashboard mountet zuerst und macht damit die
+     Aufbau-Uebergabe, obwohl die Adresse eine ANDERE Ansicht nennt. Genau daran muss sich
+     zeigen, ob ?view= gelesen wird oder ob der erste Kalender gewinnt. */
+  ["dates_v2_citations","dates_v2_domainspotlight"].forEach(function(id){
+    var w2=document.createElement("div"); w2.innerHTML=wurzelAus(t[4]);
+    var r2=w2.querySelector(".udr-root");
+    r2.setAttribute("data-instance", id); r2.setAttribute("data-cdn-pin","t");
+    r2.setAttribute("data-isdark","no");
+    r2.setAttribute("data-range-apply-fn","bubble_fn_udr_apply");
+    r2.setAttribute("data-range-apply-delay","0");
+    document.getElementById("halter").appendChild(r2);
+  });
   var j=document.createElement("script"); j.textContent=t[2]; document.head.appendChild(j);
   var j2=document.createElement("script"); j2.textContent=t[3]; document.head.appendChild(j2);
   return new Promise(function(ok){ setTimeout(ok,1800); });
@@ -79,6 +100,66 @@ Promise.all([hol("core.css"),hol("filters/date-range.css"),hol("core.js"),
           ? "RICHTIG (nachgezogen -- der naechste Aufbau braucht die Uebergabe nicht mehr)"
           : "FALSCH -- die URL wurde nicht geschrieben"));
   }
+  return ansichtAusDerUrl();
+}).then(function(){
   log("FERTIG");
-}).catch(function(e){ log("ABBRUCH: "+e.message); });
+}).catch(function(e){ log("ABBRUCH: "+e.message+"\n"+(e.stack||"").split("\n").slice(0,3).join("\n")); });
+
+/* ---- WER IST OFFEN, WENN showView NOCH NIE GEFEUERT HAT? ----------------------------------
+   Der Fall: Seitenaufbau oder Reload auf einer Ansicht, dazu ein offener Drawer, und darin wird
+   der Zeitraum umgestellt. Bedient werden muessen der DRAWER (sein eigener Klick) und die
+   ANSICHT dahinter -- und die steht nur in der Adresse: ?view=.
+
+   Die Probe ist scharf gestellt: dates_v2_dashboard mountet ZUERST und macht die
+   Aufbau-Uebergabe, die Adresse nennt aber citations. Wird das Dashboard bedient, ist die
+   Adresse nicht gelesen worden. */
+function warte(ms,w){ return new Promise(function(ok){ setTimeout(function(){ ok(w); },ms); }); }
+function ansichtAusDerUrl(){
+  var u = new URL(location.href);
+  u.searchParams.set("view", "citations");
+  history.replaceState(null, "", u.href);
+  log("ANSICHT AUS DER ADRESSE  \"" + location.search + "\"");
+  log("   showView gerufen: " + JSON.stringify(window.__views) + " (absichtlich nie)");
+  /* Drawer auf, wie die App es tut. */
+  window.openDrawer("domainspotlight", "ID1");
+  return warte(1300).then(function(){
+    RUF={from:0,to:0,range:0,boot:0,apply:0}; WER=[];
+    var sel = '[data-instance="dates_v2_domainspotlight"] ';
+    document.querySelector(sel + ".udr-trigger").click();
+    return warte(300).then(function(){
+      document.querySelector(sel + '[data-preset="last3"]').click();
+      return warte(1400);
+    });
+  }).then(function(){
+    var wer = WER.slice().sort();
+    var hatAnsicht = wer.join().indexOf("dates_v2_citations") >= 0;
+    var hatDash    = wer.join().indexOf("dates_v2_dashboard") >= 0;
+    log("   im Drawer umgestellt: apply=" + RUF.apply + "  bedient: " + JSON.stringify(wer));
+    log("   ==> " + (hatAnsicht && !hatDash
+      ? "RICHTIG (der Drawer und die Ansicht aus ?view= -- nicht der Kalender, der zuerst mountete)"
+      : "FALSCH -- " + (hatDash ? "das Dashboard wurde bedient: die Adresse wurde nicht gelesen"
+                                : "die Ansicht aus ?view= wurde nicht bedient")));
+    /* GEGENPROBE: showView schlaegt die Adresse. Ein Wechsel auf brands, dann derselbe Klick --
+       jetzt muss brands bedient werden und citations nicht mehr. */
+    var w3=document.createElement("div");
+    return warte(50).then(function(){
+      window.showView("citations");   /* damit currentView() gesetzt ist */
+      return warte(600);
+    }).then(function(){
+      RUF={from:0,to:0,range:0,boot:0,apply:0}; WER=[];
+      var sel2 = '[data-instance="dates_v2_domainspotlight"] ';
+      document.querySelector(sel2 + ".udr-trigger").click();
+      return warte(300).then(function(){
+        document.querySelector(sel2 + '[data-preset="last7"]').click();
+        return warte(1400);
+      });
+    }).then(function(){
+      var wer2 = WER.slice().sort();
+      log("   GEGENPROBE mit showView(\"citations\"): bedient " + JSON.stringify(wer2));
+      log("   ==> " + (wer2.join().indexOf("dates_v2_citations") >= 0
+        ? "RICHTIG (dieselbe Ansicht, jetzt ueber showView -- beide Quellen zeigen dorthin)"
+        : "FALSCH"));
+    });
+  });
+}
 </script>

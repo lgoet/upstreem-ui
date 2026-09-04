@@ -131,9 +131,15 @@
      "Visible" is never read off the DOM, and that is the whole point. This app leaves a view in
      the document after you have visited it (184 calendar roots measured on the Prompts page), so
      a DOM test cannot tell "closed" from "still there" — one range change fired 25 RPCs that
-     way. The app's own three calls answer it exactly: showView says which view is open,
-     openDrawer/closeDrawer say which drawers are. Nothing else is ever called, so there are no
-     hidden RPC runs.
+     way. The app's own signals answer it exactly:
+
+       which VIEW is open      showView(name), and ?view= in the address for the page load,
+                               where showView has not fired yet (a reload or a deep link on a
+                               view is answered by the address alone)
+       which DRAWERS are open  openDrawer(kind, id) / closeDrawer(kind)
+
+     Nothing else is ever called, so there are no hidden RPC runs. ?view= is only READ — the
+     address is still written only for ?range=, and only with data-url-range="on".
 
      WHAT THIS NEEDS ON BUBBLE'S SIDE: the workflow behind the reload must refresh the component
      that instance_id names, not "the current view". With a main view and two drawers open, three

@@ -175,6 +175,28 @@
         return TEILBAR[v] ? v : null;
       } catch (e) { return null; }
     }
+    /* ---- WELCHE ANSICHT IST OFFEN? DIE URL WEISS ES AUCH -------------------------------
+       Die App fuehrt ?view= in der Adresse mit (dasselbe, was urlMit unten ausdruecklich stehen
+       laesst). Das ist die zweite Quelle neben showView -- und die einzige, die schon beim
+       Seitenaufbau da ist: showView hat dann noch nicht gefeuert, ein Deeplink oder ein Reload
+       auf einer Ansicht liefert also nur ueber die URL eine Antwort.
+
+       Reihenfolge: showView schlaegt die URL. Der Aufruf ist das frischere Ereignis (die App
+       koennte die Adresse spaeter oder gar nicht nachziehen), die URL ist der Anfangswert.
+
+       Kein Attribut noetig, anders als bei ?range: hier wird nur GELESEN. Geschrieben wird die
+       Adresse der App nur mit data-url-range="on", und daran aendert das nichts.
+       Ohne den Fenster-Test von urlNutzbar: der ist dort noetig, weil ein about:blank-Rahmen die
+       URL seines Erzeugers meldet und ein SCHREIBEN darauf die Elternseite in den Rahmen laedt.
+       Beim Lesen ist derselbe Effekt harmlos -- schlimmstenfalls steht dort der Name einer
+       Ansicht, zu der es in diesem Dokument keinen Kalender gibt, und pickerFuer findet nichts. */
+    function urlAnsicht(){
+      try {
+        var m = /[?&]view=([^&#]*)/.exec(window.location.search || "");
+        var v = m ? decodeURIComponent(m[1]).trim() : "";
+        return v || "";
+      } catch (e) { return ""; }
+    }
     /* Gibt die neue URL zurueck, ohne sie zu setzen -- der Aufrufer entscheidet zwischen
        replaceState (still) und reload (der Schalter). Vorhandene Parameter bleiben, insbesondere
        ?view= und ?detail=, an denen das View-System der Seite haengt. */
@@ -1458,10 +1480,15 @@
 
      Die Liste der Kandidaten ist darum kurz, und sie kommt nicht aus dem DOM:
 
-       die offene Ansicht   UC.currentView() -- der Name, mit dem die App zuletzt showView
-                            gerufen hat. Vor dem ersten Wechsel gibt es keinen: dann zaehlt, wer
-                            eine Flaeche im Fenster hat, und das ist dort belastbar (es gibt noch
-                            keine besuchte Ansicht, die nur noch im Dokument steht).
+       die offene Ansicht   DREI Quellen, in dieser Reihenfolge:
+                              1. UC.currentView() -- der Name des letzten showView. Das
+                                 frischeste Ereignis, also zuerst.
+                              2. ?view= in der Adresse. Die Antwort fuer den Seitenaufbau und
+                                 fuer einen Reload/Deeplink auf eine Ansicht -- da hat showView
+                                 noch nicht gefeuert.
+                              3. nur wenn beides schweigt: wer eine Flaeche im Fenster hat. Das
+                                 ist hier belastbar, denn ohne Ansichtswechsel gibt es keine
+                                 besuchte Ansicht, die nur noch im Dokument steht.
        die offenen Drawer   OFFENE_DRAWER, gefuehrt von openDrawer/closeDrawer.
 
      GESTAFFELT, nicht alle in derselben Millisekunde: ein JavaScriptToBubble-Element traegt EINEN
@@ -1481,12 +1508,14 @@
       gesehen[c.instanceId] = 1;
       ziele.push(c);
     }
-    var name = (UC.currentView && UC.currentView()) || "";
+    var name = (UC.currentView && UC.currentView()) || urlAnsicht();
     if (name) dazu(pickerFuer(name));
     else {
-      /* Noch kein Ansichtswechsel -- dann gibt es auch keine Spukansicht, die einer waere: eine
-         Ansicht steht erst im Dokument, nachdem man sie besucht hat. Hier ist der DOM-Test also
-         belastbar, und die Startansicht ist die einzige mit einer Flaeche. */
+      /* WEDER showView gerufen NOCH ?view= in der Adresse. Dann -- und nur dann -- der Blick ins
+         Fenster: ohne Ansichtswechsel gibt es auch keine Spukansicht, denn eine Ansicht steht
+         erst im Dokument, nachdem man sie besucht hat. Genau dieser Fall ist im Prueftand
+         aufgefallen (Drawer auf, Zeitraum darin umgestellt, kein showView, keine Adresse -- die
+         Hauptansicht blieb auf den alten Zahlen). */
       for (var i2 = 0; i2 < CONTROLLERS.length; i2++){
         var c2 = CONTROLLERS[i2];
         if (!c2 || !c2.root || !c2.root.isConnected) continue;
@@ -1533,6 +1562,16 @@
      und damit wurden sie nie nachgeladen. Gemeldet als "der date range state dort wird nicht
      geupdated". */
   function startlageFesthalten(){
+    /* ERST die Adresse fragen: ?view= nennt die offene Ansicht beim Aufbau, und damit ist es
+       genau EIN Kalender statt eines Suchlaufs durch alle. */
+    var name = urlAnsicht(), c0 = name ? pickerFuer(name) : null;
+    if (c0 && nimmtTeil(c0.instanceId) && !STAND[c0.instanceId]){
+      var s0 = sigVon(c0);
+      if (s0){ STAND[c0.instanceId] = s0; return; }
+    }
+    if (name) return;   /* Die Adresse hat geantwortet -- dann nicht zusaetzlich raten. */
+    /* Ohne ?view= bleibt der Blick ins Fenster. Er ist NUR hier belastbar, beim Aufbau: eine
+       besuchte Ansicht, die nur noch im Dokument steht, gibt es zu diesem Zeitpunkt nicht. */
     for (var i = 0; i < CONTROLLERS.length; i++){
       var c = CONTROLLERS[i];
       if (!c || !c.root || !c.root.isConnected || !c.instanceId) continue;
