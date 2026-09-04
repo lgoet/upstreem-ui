@@ -447,6 +447,14 @@ bauen(null).then(function(d){
   log("   Aufrufe beim Wechsel: boot="+r.boot+"  range="+r.range+"  apply="+r.apply);
   log("   Attribute an der Wurzel: data-range-apply=\""+el.getAttribute("data-range-apply")+
       "\"  data-range-reason=\""+el.getAttribute("data-range-reason")+"\"");
+  /* reason MUSS "user" sein: ein Snippet mit der Bedingung reason === "user" haette ein "stale"
+     geblockt -- der Range-Kanal feuert dann richtig und trotzdem laedt nichts nach. */
+  log("   ==> reason "+(el.getAttribute("data-range-reason")==="user"
+        ? "RICHTIG (\"user\" -- eine Bedingung auf reason blockt das Nachladen nicht)"
+        : "FALSCH -- \""+el.getAttribute("data-range-reason")+"\" wuerde ein Snippet blocken"));
+  var jr={}; try { jr=JSON.parse(el.getAttribute("data-range-json")||"{}"); } catch(e){}
+  log("   ==> JSON traegt den echten Grund: \""+jr.reason+"\" "+
+      (jr.reason==="stale"?"RICHTIG":"FALSCH"));
   var j=el.getAttribute("data-range-json")||"";
   log("   data-range-json: "+(j?j.slice(0,60)+"…":"(leer)"));
   log("   ==> "+(r.boot===1 && r.range===1 && el.getAttribute("data-range-apply")==="yes" && /"last7"/.test(j)

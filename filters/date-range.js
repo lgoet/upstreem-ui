@@ -1211,7 +1211,14 @@
              data-range-apply steht dabei auf "yes": das ist die Bedingung, an der das Snippet
              erkennt, dass es weiterreichen soll. */
           root.setAttribute("data-range-json", j2);
-          root.setAttribute("data-range-reason", "stale");
+          /* data-range-reason auf "user", NICHT auf "stale" -- und das ist Absicht.
+             Dieses Attribut beantwortet fuer ein Snippet auf der Seite genau eine Frage:
+             weiterreichen oder nicht. Ein Snippet mit der Bedingung reason === "user" (die habe
+             ich selbst vorgeschlagen) haette ein "stale" geblockt, und dann feuert der Range-Kanal
+             richtig, der Workflow laeuft, und trotzdem laedt nichts nach. Genau so gemeldet.
+             Der praezise Grund steht im JSON (reason: "stale") -- dort, wo ein Workflow ihn lesen
+             kann, ohne dass eine Bedingung davon abhaengt. */
+          root.setAttribute("data-range-reason", "user");
           root.setAttribute("data-range-apply", "yes");
           return callFn("data-range-fn", "bubble_fn_udr_date_range", j2, "stale");
         }
