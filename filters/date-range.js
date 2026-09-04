@@ -867,6 +867,10 @@
             }
           }, verzug);
         }
+        /* Mit diesem Zeitraum ist die Ansicht jetzt bedient: der Klick hat den Nachlade-Kanal
+           gerufen. Ohne diese Zeile haette ein spaeteres Aktivieren sie fuer veraltet gehalten
+           und ein zweites Mal nachgeladen. */
+        if (grund === "user") STAND[instanceId] = iso(from) + "|" + iso(to) + "|" + (committedPreset || "");
         return rangeGetroffen;
       }
 
@@ -1170,7 +1174,19 @@
         emitCurrent: function (grund) { return emit(committed.from, committed.to, grund || "activate"); },
         /* Feuert einen Zeitraum, den der Aufrufer schon berechnet hat -- fuer upstreemDatesBoot,
            damit der Aufbau die Attributnamen DIESES Pickers benutzt und nicht die Vorgabenamen. */
-        emitAt: function (von, bis, grund) { return emit(von, bis, grund || "boot"); }
+        emitAt: function (von, bis, grund) { return emit(von, bis, grund || "boot"); },
+        /* NUR den Nachlade-Kanal, ohne die States anzufassen -- fuer eine Ansicht, deren Daten von
+           einem anderen Zeitraum sind. Die States hat die Uebergabe davor schon gesetzt; hier
+           fehlt allein der Ladevorgang. */
+        nachladen: function () {
+          var p2 = {
+            instance_id: instanceId,
+            date_from: iso(committed.from), date_to: iso(committed.to),
+            preset: committedPreset || "", reason: "stale",
+            event_id: instanceId + "_" + Date.now() + "_stale"
+          };
+          return callFn("data-range-apply-fn", null, JSON.stringify(p2), "stale");
+        }
       };
       root.__udrCtrl = ctrl;
       /* Griff fuer upstreemDatesWatch(): die Wache braucht die Attributnamen DIESER Wurzel. */
@@ -1365,6 +1381,22 @@
      KLICK ist davon nicht betroffen: der laeuft ueber den Range-Kanal und wird hier nicht
      gemessen. */
   var ZULETZT = {};
+  /* Mit WELCHEM Zeitraum sind die Daten einer Ansicht geladen? Der gemeldete Fall (03.09.):
+     Dashboard mit last30 aufgebaut, in Citations auf last3 gewechselt, zurueck zum Dashboard --
+     Kalender und URL stehen auf last3, die Zahlen im Dashboard sind aber noch die von last30.
+     Die States stimmen (die Uebergabe setzt sie), es fehlt allein der Ladevorgang: State-Setzen
+     laedt nichts nach, und das ist Absicht -- sonst haetten wir den doppelten Durchlauf zurueck.
+     Also wird mitgeschrieben, mit welchem Zeitraum jede Ansicht zuletzt bedient wurde. Weicht er
+     beim Aktivieren ab, wird EINMAL nachgeladen, und zwar nur diese Ansicht. Eine Alternative
+     waere, bei jeder Aenderung die ganze Seite neu zu laden -- der Aufbau kostet dort 9 Sekunden,
+     also nein. */
+  var STAND = {};
+  function sigVon(c){
+    try {
+      var r = typeof c.getRange === "function" ? c.getRange() : null;
+      return r ? (r.from + "|" + r.to + "|" + (r.preset || "")) : null;
+    } catch(e){ return null; }
+  }
   window.upstreemDatesActivate = function (name) {
     var c = pickerFuer(name);
     /* In die Spur, mit Ergebnis. Der Aufruf steht auf der echten Seite in view_first_<name>, also
@@ -1487,9 +1519,21 @@
        Wechsel), dann war er ganz abgeschaltet, weil ich die States fuer seitenweit hielt. Gemessen
        ist beides widerlegt: die Citations-Ansicht lud danach mit p_date_from: null. Jede Ansicht
        hat eigene Datums-States, jede braucht ihre Uebergabe -- nur eben eine stille. */
+    var sig = sigVon(c), alt = STAND[c.instanceId];
     spurGlobal("ansicht", { view: name, instanz: c.instanceId,
-                            schonUebergeben: !!UEBERGEBEN[c.instanceId] });
+                            schonUebergeben: !!UEBERGEBEN[c.instanceId],
+                            geladen_mit: alt || "(noch nie)", jetzt: sig });
     uebergeben(c);
+    /* Veraltet: diese Ansicht wurde schon einmal mit einem ANDEREN Zeitraum bedient. Dann fehlt
+       nach der Uebergabe nur noch der Ladevorgang -- und den kennt der Nachlade-Kanal.
+       Beim ERSTEN Aktivieren (alt ist leer) nicht: dort laedt die Ansicht ueber ihren eigenen
+       Workflow, und ein zweiter Aufruf waere der doppelte Durchlauf. */
+    if (alt && sig && alt !== sig && typeof c.nachladen === "function"){
+      spurGlobal("veraltet", { view: name, instanz: c.instanceId,
+        geladen_mit: alt, jetzt: sig, warum: "Daten sind von einem anderen Zeitraum -- nachladen" });
+      c.nachladen();
+    }
+    if (sig) STAND[c.instanceId] = sig;
   });
   window.addEventListener("up-prefs-change", function (e) {
     var n = e && e.detail && e.detail.name;
@@ -1654,6 +1698,9 @@
         var unnoetig = urlHatIhnSchon(c.root);
         if (unnoetig){
           bootMerken();
+          /* Die Startansicht laedt gleich mit genau diesem Zeitraum -- festhalten, sonst gilt sie
+             beim ersten Zurueckkehren als veraltet und wird ohne Not nachgeladen. */
+          var s0 = sigVon(c); if (s0) STAND[c.instanceId] = s0;
           spur("aufbau-nicht-noetig", { instanz: c.instanceId, warum: unnoetig });
           return;
         }
@@ -1679,6 +1726,7 @@
                          preset: syncAn() ? syncPreset() : "(eigener Stand)",
                          wartete_ms: (AUFBAU_MAX - rest) * AUFBAU_MS });
         uebergeben(c, "boot");
+        var s1 = sigVon(c); if (s1) STAND[c.instanceId] = s1;
         /* Ab jetzt steht der Zeitraum in der URL. Der naechste Aufbau braucht diese Uebergabe
            deshalb nicht mehr -- und damit auch keinen zweiten Abfragedurchlauf. */
         if (syncAn() && urlAn(c.root)) urlSchreiben(syncPreset());

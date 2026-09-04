@@ -371,6 +371,57 @@ bauen(null).then(function(d){
   /* Die URL-Mechanik wird NICHT hier geprueft: der Kalender liest die URL nur im obersten
      Fenster (window === window.top), und in einem Rahmen-Prueftand ist das nie der Fall. Sie hat
      einen eigenen Prueftand, der selbst das oberste Fenster ist: _h_udr_url.html. */
+  /* DER GEMELDETE FALL (03.09.): Dashboard mit last30 aufgebaut, Wechsel zu Citations, dort auf
+     last3, dann ZURUECK zum Dashboard. Kalender und URL stehen auf last3, die Zahlen im Dashboard
+     sind aber die von last30 -- weil State-Setzen nichts nachlaedt. Erwartet: beim Zurueckkehren
+     laeuft der Nachlade-Kanal EINMAL fuer das Dashboard, und nur fuer das. */
+  return bauen({ date_sync:"on", date_preset:"last30" });
+}).then(function(d){
+  var v=d.defaultView;
+  v.showView("dashboard");
+  return new Promise(function(ok){ setTimeout(function(){ ok(d); },500); });
+}).then(function(d){
+  var v=d.defaultView;
+  v.showView("citations");
+  return new Promise(function(ok){ setTimeout(function(){ ok(d); },500); });
+}).then(function(d){
+  /* In Citations auf last3 wechseln -- ein echter Klick. */
+  var v=d.defaultView;
+  d.querySelector('[data-instance="dates_v2_citations"] .udr-trigger').click();
+  return new Promise(function(ok){ setTimeout(function(){
+    d.querySelector('[data-instance="dates_v2_citations"] [data-preset="last3"]').click();
+    setTimeout(function(){ ok(d); },500);
+  },300); });
+}).then(function(d){
+  var v=d.defaultView;
+  log("VERALTET  Dashboard(last30) -> Citations -> last3 -> zurueck zum Dashboard");
+  log("   Beschriftung Dashboard jetzt: \""+label(d,"dates_v2_dashboard")+"\" (still nachgezogen)");
+  v.__ruf={from:0,to:0,range:0,apply:0,boot:0};
+  v.showView("dashboard");
+  return new Promise(function(ok){ setTimeout(function(){ ok(d); },600); });
+}).then(function(d){
+  var v=d.defaultView, r=v.__ruf;
+  var sp=(v.__udrLog||[]).filter(function(e){ return e.art==="veraltet"; }).pop();
+  log("   beim Zurueckkehren: boot="+r.boot+" apply="+r.apply+" range="+r.range);
+  log("   Spur: "+(sp?("geladen_mit="+sp.geladen_mit+"  jetzt="+sp.jetzt):"(keine veraltet-Zeile)"));
+  log("   ==> "+(r.boot===1 && r.apply===1 && r.range===0 && sp
+        ? "RICHTIG (States gesetzt UND einmal nachgeladen -- nur diese Ansicht)"
+        : "FALSCH -- "+(r.apply===0?"kein Nachladen: die Zahlen bleiben vom alten Zeitraum"
+                       :(r.apply>1?"mehr als einmal nachgeladen":"unerwartete Aufrufe"))));
+  /* GEGENPROBE: NOCHMAL zum Dashboard, ohne Aenderung dazwischen. Jetzt darf NICHT nachgeladen
+     werden -- sonst laedt jeder Ansichtswechsel nach und wir sind wieder beim Doppel. */
+  v.__ruf={from:0,to:0,range:0,apply:0,boot:0};
+  v.showView("citations");
+  return new Promise(function(ok){ setTimeout(function(){
+    v.showView("dashboard");
+    setTimeout(function(){ ok(d); },600);
+  },500); });
+}).then(function(d){
+  var r=d.defaultView.__ruf;
+  log("   GEGENPROBE zweiter Wechsel ohne Aenderung: apply="+r.apply+
+      "   ==> "+(r.apply===0
+        ? "RICHTIG (kein Nachladen ohne Grund -- der Vergleich ist also echt)"
+        : "FALSCH -- jeder Wechsel laedt nach"));
   log("FERTIG");
 }).catch(function(e){ log("ABBRUCH: "+e.message+"\n"+(e.stack||"").split("\n").slice(0,3).join("\n")); });
 </script>
