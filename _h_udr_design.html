@@ -127,6 +127,23 @@ bau({ date_sync:"on", date_preset:"last30" }).then(function(){
   log("   ==> "+(hover !== ruhe && hover !== spc.backgroundColor
         ? "RICHTIG (sichtbar, und nicht der Grund der Spalte)"
         : "FALSCH -- unsichtbarer Hover"));
+  /* Das Zeichen rechts ist raus. Damit muss der aktive Zustand allein aus Flaeche UND Gewicht
+     lesbar sein -- also wird BEIDES geprueft, und dazu, dass wirklich kein ::after mehr
+     gezeichnet wird. Ein Test nur auf "kein Punkt" haette auch bestanden, wenn "gewaehlt"
+     danach gar nicht mehr zu erkennen waere. */
+  var aktiv = D.querySelector(".udr-preset.is-active");
+  var acs = V.getComputedStyle(aktiv), ics = V.getComputedStyle(el);
+  var marke = V.getComputedStyle(aktiv, "::after");
+  log("   AKTIVE ZEILE  Zeichen rechts: content "+marke.content+", Breite "+marke.width);
+  log("   Flaeche: aktiv "+acs.backgroundColor+"  inaktiv "+ics.backgroundColor+
+      "   Gewicht: aktiv "+acs.fontWeight+"  inaktiv "+ics.fontWeight);
+  var keinPunkt = (marke.content === "none" || marke.content === "" || parseFloat(marke.width) === 0 || isNaN(parseFloat(marke.width)));
+  log("   ==> "+(keinPunkt && acs.backgroundColor !== ics.backgroundColor &&
+                 parseFloat(acs.fontWeight) > parseFloat(ics.fontWeight)
+        ? "RICHTIG (kein Punkt mehr, und \"gewaehlt\" bleibt an Flaeche UND Gewicht lesbar)"
+        : "FALSCH -- "+(!keinPunkt ? "das Zeichen ist noch da"
+                       : (acs.backgroundColor === ics.backgroundColor ? "keine eigene Flaeche"
+                                                                      : "kein Gewichtsunterschied"))));
   return warte(100);
 }).then(function(){
   /* ---- PUNKT 3: DIE ECKEN ------------------------------------------------------------------

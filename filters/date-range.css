@@ -120,16 +120,21 @@
    "worauf zeige ich", 5% fuer "was ist gewaehlt" -- der Hover ist die halbe Staerke, so bleiben
    beide unterscheidbar, ohne einen dritten Ton zu erfinden. */
 .udr-preset:hover { background: color-mix(in srgb, var(--vc-text) 3.5%, transparent); }
+/* Die aktive Zeile traegt FLAECHE UND GEWICHT, kein Zeichen mehr. Das rechts ausgerichtete
+   Quadrat in Primaerfarbe (.is-active::after, 6x6) ist raus -- angefordert, und es war ohnehin
+   der Rest aus der Zeit vor der gefuellten Spalte: damals war die Flaeche --vc-heading-bg, also
+   derselbe Ton wie der Panelgrund, und ohne das Zeichen war "gewaehlt" kaum zu sehen.
+   550 statt 500 ist derselbe Sprung wie bei .ums-nav.is-on, und er ist noetig: Flaeche allein
+   ist zu wenig fuer jemanden, der die 5%-Mischung nicht unterscheiden kann. */
 .udr-preset.is-active,
-.udr-preset.is-active:hover { background: color-mix(in srgb, var(--vc-text) 5%, transparent); }
+.udr-preset.is-active:hover {
+  background: color-mix(in srgb, var(--vc-text) 5%, transparent); font-weight: 550;
+}
 /* Im Dunkeln waere dieselbe Mischung ein fast weisser Schleier -- dort dieselbe eigene
    Auswahlflaeche wie in der Hauptsidebar und im Einstellungsfenster. */
 .up-root[data-theme="dark"] .udr-preset:hover { background: color-mix(in srgb, var(--up-sel-bg) 50%, transparent); }
 .up-root[data-theme="dark"] .udr-preset.is-active,
 .up-root[data-theme="dark"] .udr-preset.is-active:hover { background: var(--up-sel-bg); }
-.udr-preset.is-active::after {
-  content: ""; width: 6px; height: 6px; margin-left: auto; border-radius: 2px; background: var(--vc-text);
-}
 /* Farbe SEKUNDAER (--vc-muted) -- ausdruecklich so bestellt und schon vorher so: Reset ist die
    Ausweichhandlung, "Ueberall anwenden" die Aussage. Beim Ueberfahren primaer, wie jede
    gedaempfte Zeile der App. */
