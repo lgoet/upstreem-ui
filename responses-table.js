@@ -462,13 +462,22 @@
         '<div class="urt-card-preview">' + mdPreview(preview) + '</div>' +
         '<div class="urt-card-foot">' +
           '<div class="urt-card-footleft">' +
-            '<div class="urt-card-brands">' + brandStack(r.companies_preview, r.companies_preview_totalcount, { max: 4, tipKey: "brand_name_raw" }) + '</div>' +
             /* Same icon box the table's Mentioned? column uses, minus the "Yes" label -- a card
                foot is tight on room, and the color alone (green box) already reads as "mentioned"
                next to the brand chips it sits beside. Only rendered when true: "not mentioned"
-               isn't worth a foot slot on every card. */
-            (UC.isYes(r.has_user_brand) ? '<span class="up-ment-cell is-yes urt-card-ment" data-tip="Your brand is mentioned">' +
-              '<span class="up-ment-badge">' + MENT_CHECK_SVG + '</span></span>' : "") +
+               isn't worth a foot slot on every card.
+               Als tailHtml IM Stapel und nicht als eigenes Kind daneben: sonst schiebt sich das
+               "+N" beim Hover darueber, weil die Hover-Regeln nur Geschwister der Chips
+               verschieben. Gemeldet am 04.09. */
+            '<div class="urt-card-brands">' +
+              brandStack(r.companies_preview, r.companies_preview_totalcount, {
+                max: 4, tipKey: "brand_name_raw",
+                tailHtml: UC.isYes(r.has_user_brand)
+                  ? '<span class="up-ment-cell is-yes urt-card-ment" data-tip="Your brand is mentioned">' +
+                    '<span class="up-ment-badge">' + MENT_CHECK_SVG + '</span></span>'
+                  : ""
+              }) +
+            '</div>' +
           '</div>' +
           '<div class="urt-card-citations">' + citationsChips(r.sources_preview, r.sources_totalcount, true) + '</div>' +
         '</div>' +

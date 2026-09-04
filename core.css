@@ -2733,6 +2733,13 @@
   font-size: 12px; font-weight: 500; color: var(--vc-muted); white-space: nowrap;
   transition: transform .16s ease;
 }
+/* Der Anhang hinter dem Stapel (brandStack opts.tailHtml). Dieselbe Uebergangszeit wie das "+N",
+   damit beide zusammen gehen und nicht zwei Bewegungen zu sehen sind. Der Abstand kommt aus dem
+   Fuss, der ihn vorher als eigenes Kind hatte -- 8px, wie die Luecke in .urt-card-footleft. */
+.up-stack-tail {
+  display: inline-flex; align-items: center; margin-left: 8px; flex: 0 0 auto;
+  transition: transform .16s ease;
+}
 /* Hovering a logo lifts it, brings it to front, and opens a gap on both sides — created by
    shifting the hovered item's visual layer and everything AFTER it to the right. Items BEFORE
    it never move (so the first brand can't drift left). Following items shift twice as far so
@@ -2741,9 +2748,11 @@
 .up-stack-item:hover .up-stack-vis { transform: translateX(8px) translateY(-3px); }
 .up-stack-item:first-child:hover .up-stack-vis { transform: translateY(-3px); }
 .up-stack-item:hover ~ .up-stack-item .up-stack-vis,
-.up-stack-item:hover ~ .up-stack-more { transform: translateX(16px); }
+.up-stack-item:hover ~ .up-stack-more,
+.up-stack-item:hover ~ .up-stack-tail { transform: translateX(16px); }
 .up-stack-item:first-child:hover ~ .up-stack-item .up-stack-vis,
-.up-stack-item:first-child:hover ~ .up-stack-more { transform: translateX(8px); }
+.up-stack-item:first-child:hover ~ .up-stack-more,
+.up-stack-item:first-child:hover ~ .up-stack-tail { transform: translateX(8px); }
 
 /* Mirror image of the four rules above, for a stack pinned to the RIGHT edge of its container
    (Citations in the responses table, and the same stack in a card footer): spreading rightwards
@@ -2759,8 +2768,10 @@
    right, so the trailing items (and the "+N" badge, which sits at the right edge) stay put. */
 .up-stack.is-spread-left .up-stack-item:hover ~ .up-stack-item .up-stack-vis,
 .up-stack.is-spread-left .up-stack-item:hover ~ .up-stack-more,
+.up-stack.is-spread-left .up-stack-item:hover ~ .up-stack-tail,
 .up-stack.is-spread-left .up-stack-item:first-child:hover ~ .up-stack-item .up-stack-vis,
-.up-stack.is-spread-left .up-stack-item:first-child:hover ~ .up-stack-more { transform: none; }
+.up-stack.is-spread-left .up-stack-item:first-child:hover ~ .up-stack-more,
+.up-stack.is-spread-left .up-stack-item:first-child:hover ~ .up-stack-tail { transform: none; }
 
 .up-stack.is-spread-left .up-stack-item:hover .up-stack-vis { transform: translateX(-8px) translateY(-3px); }
 .up-stack.is-spread-left .up-stack-item.is-last:hover .up-stack-vis { transform: translateY(-3px); }

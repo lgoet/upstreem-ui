@@ -221,9 +221,21 @@
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; flex: 1 1 auto; }
 
 /* no separator line: the footer is already set apart by its own whitespace */
-.urt-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; }
+/* flex-wrap ist hier PFLICHT und nicht Geschmack. GEMESSEN am 04.09.: bei drei Spalten passen
+   Marken (144px) und Citations (145px) in die 325px Innenbreite, bei VIER (265px-Karten) nicht
+   mehr -- der Citations-Stapel lief 33px ueber das rechte Polster hinaus, bei fuenf Spalten 61px.
+   Die Chips koennen nicht schrumpfen (flex: 0 0 28px, so gehoert es sich fuer ein Logo), also
+   muss die Zeile umbrechen. Genau so gemeldet: "da muss unbedingt auch das padding eingehalten
+   werden".
+   row-gap 8px und nicht die 10px der Spalte: uebereinander wirkt derselbe Abstand groesser. */
+.urt-card-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  column-gap: 10px; row-gap: 8px; margin-top: 12px; }
 .urt-card-footleft { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .urt-card-brands, .urt-card-citations { min-width: 0; }
+/* Die Citations bleiben rechts, auch wenn sie umgebrochen sind. Ohne diese Zeile steht auf der
+   zweiten Zeile nur ein Kind, und space-between schiebt es nach links -- gemessen 87px vom
+   rechten Polster weg. Der Entwurf will sie am rechten Rand, umgebrochen oder nicht. */
+.urt-card-citations { margin-left: auto; }
 .urt-card-ment { flex: 0 0 auto; }
 
 /* skeleton cards */

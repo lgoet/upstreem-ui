@@ -1,0 +1,129 @@
+<meta charset="utf-8"><title>Responses-Karte: Hover an den Raendern</title>
+<style>html,body{margin:0;font:13px/1.5 system-ui,sans-serif}
+#out{font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap;padding:10px;background:#f6f6f6}</style>
+<body><div id="halter"></div><pre id="out">laeuft…</pre>
+<script>
+/* Zwei Meldungen vom 04.09. zum Karten-Modus:
+   a) der gruene Haken (eigene Marke erwaehnt) geht beim Hover nicht mit, das "+N" schiebt sich
+      darueber
+   b) bei den Citation-Chips steht das "+N" im Hover-Zustand am rechten Rand, ohne Polster
+
+   Gemessen wird mit echten Rechtecken -- Ueberlappung in Pixeln und Abstand zur Innenkante der
+   Karte. Der Hover wird ueber :hover gebraucht, den ein synthetisches mouseover NICHT erzeugt;
+   im verdeckten Panel gibt es keinen Zeiger. Deshalb wird die Hover-WIRKUNG gemessen, indem die
+   Transform-Regel von Hand angewandt wird -- dieselbe, die :hover setzt. Was dabei geprueft wird,
+   ist die Geometrie, nicht die Frage, ob :hover feuert. */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var D=null;
+function marke(n){ return { name:"Brand "+n, brand_name_raw:"Brand "+n }; }
+/* citationsChips liest title und favicon -- nicht domain/favicon_url. Der erste Anlauf gab die
+   falschen Felder, brandStack filterte alle Chips als "ohne Namen und ohne Logo" weg, und der
+   Prueftand meldete "Testdaten zu klein". Eine leere Messung, kein Befund. */
+function quelle(n){ return { title:"Seite "+n, favicon:"" }; }
+Promise.all([hol("core.css"),hol("responses-table.css"),hol("core.js"),hol("responses-table.js"),
+             hol("bubble/responses_table_bubble.html")]).then(function(t){
+  var f=document.createElement("iframe"); f.setAttribute("style","width:1100px;height:620px;border:0");
+  document.getElementById("halter").appendChild(f);
+  var d=f.contentDocument; D=d;
+  d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0'></body></html>"); d.close();
+  var v=d.defaultView;
+  try { v.localStorage.removeItem("up_prefs"); v.localStorage.removeItem("pref_theme"); } catch(e){}
+  [t[0],t[1]].forEach(function(c){ var s=d.createElement("style"); s.textContent=c; d.head.appendChild(s); });
+  var w=d.createElement("div"); w.innerHTML=wurzelAus(t[4]);
+  var r=w.querySelector(".urt-root")||w.querySelector(".up-root");
+  r.setAttribute("data-instance","k"); r.setAttribute("data-cdn-pin","k"); r.setAttribute("data-isdark","no");
+  /* Der Karten-Modus haengt an data-default-view, nicht an der Klasse: das MARKUP ist ein anderes
+     (renderCards statt Tabellenzeilen). Der erste Anlauf setzte nur is-cards-view und fand keine
+     Karte -- eine leere Messung, kein Befund. */
+  r.setAttribute("data-default-view","cards");
+  d.body.appendChild(r);
+  var j=d.createElement("script"); j.textContent=t[2]; d.head.appendChild(j);
+  var j2=d.createElement("script"); j2.textContent=t[3]; d.head.appendChild(j2);
+  return new Promise(function(ok){ setTimeout(ok,1800); });
+}).then(function(){
+  var d=D, v=d.defaultView;
+  var reihen=[{ id:"1", run_at:new Date().toISOString(), prompt_text:"Was kostet X?",
+    response_preview:"Antwort…", has_user_brand:"yes",
+    companies_preview:[marke(1),marke(2),marke(3),marke(4)], companies_preview_totalcount:9,
+    sources_preview:[quelle(1),quelle(2),quelle(3),quelle(4),quelle(5)], sources_totalcount:12 }];
+  v.renderResponsesTable(JSON.stringify({ instanceId:"k", view_active:"yes", totalCount:1, rows:reihen }));
+  return new Promise(function(ok){ setTimeout(ok,1200); });
+}).then(function(){
+  return new Promise(function(ok){ setTimeout(function(){ ok(); },600); });
+}).then(function(){
+  var d=D, v=d.defaultView;
+  var karte=d.querySelector(".urt-card");
+  if (!karte){ log("ABBRUCH: keine Karte gerendert -- Karten-Modus nicht aktiv"); log("FERTIG"); return; }
+  var cs=v.getComputedStyle(karte);
+  var innenRechts = karte.getBoundingClientRect().right - parseFloat(cs.paddingRight);
+  var bStack=d.querySelector(".urt-card-brands .up-stack");
+  var bMore=d.querySelector(".urt-card-brands .up-stack-more");
+  var tail=d.querySelector(".urt-card-brands .up-stack-tail");
+  var cMore=d.querySelector(".urt-card-citations .up-stack-more");
+  log("a) GRUENER HAKEN im Marken-Stapel");
+  log("   Haken liegt IM Stapel: "+(!!tail)+"   (up-stack-tail)");
+  log("   ==> "+(tail?"RICHTIG (die Geschwister-Regeln erreichen ihn)":"FALSCH -- er steht daneben"));
+  if (tail && bMore){
+    /* Die Hover-Wirkung von Hand: dieselbe Verschiebung, die .up-stack-item:hover setzt. */
+    var vorMore=bMore.getBoundingClientRect(), vorTail=tail.getBoundingClientRect();
+    var lueckeVor=Math.round(vorTail.left-vorMore.right);
+    [].forEach.call(d.querySelectorAll(".urt-card-brands .up-stack-more, .urt-card-brands .up-stack-tail"),
+      function(e){ e.style.transform="translateX(16px)"; });
+    var nachMore=bMore.getBoundingClientRect(), nachTail=tail.getBoundingClientRect();
+    var lueckeNach=Math.round(nachTail.left-nachMore.right);
+    log("   Luecke +N -> Haken:  ohne Hover "+lueckeVor+"px   mit Hover "+lueckeNach+"px");
+    log("   ==> "+(lueckeVor===lueckeNach
+      ? "RICHTIG (beide gehen gleich weit, nichts schiebt sich darueber)"
+      : "FALSCH -- die Luecke aendert sich um "+(lueckeNach-lueckeVor)+"px"));
+    [].forEach.call(d.querySelectorAll(".urt-card-brands .up-stack-more, .urt-card-brands .up-stack-tail"),
+      function(e){ e.style.transform=""; });
+  }
+  /* Der Fall, den die erste Messung verfehlt hat: ECHTE Kartenbreiten. Bei 1100px passt alles,
+     bei 265px nicht -- und nur dort ragte der Stapel heraus (33px, bei 209px sogar 61px).
+     Geprueft werden alle Spaltenzahlen, die das Raster wirklich annimmt. */
+  log("b) CITATION-CHIPS: Polster bei ECHTEN Kartenbreiten");
+  var karten=d.querySelector(".urt-cards");
+  var falsch=0;
+  ["2","3","4","5"].forEach(function(sp){
+    karten.style.setProperty("--urt-cols", sp);
+    var k2=d.querySelector(".urt-card"), cs2=v.getComputedStyle(k2);
+    var iR=k2.getBoundingClientRect().right-parseFloat(cs2.paddingRight);
+    var iU=k2.getBoundingClientRect().bottom-parseFloat(cs2.paddingBottom);
+    var m2=d.querySelector(".urt-card-citations .up-stack-more");
+    var fuss=d.querySelector(".urt-card-foot");
+    var ueberR=Math.round((m2?m2.getBoundingClientRect().right:0)-iR);
+    var ueberU=Math.round(fuss.getBoundingClientRect().bottom-iU);
+    var ok = ueberR<=0 && ueberU<=0;
+    if (!ok) falsch++;
+    log("   "+sp+" Spalten ("+Math.round(k2.getBoundingClientRect().width)+"px Karte):"+
+        "   ueber rechts "+ueberR+"px   ueber unten "+ueberU+"px   "+
+        (ok?"RICHTIG":"FALSCH -- ragt aus der Karte"));
+  });
+  log("   ==> "+(falsch===0
+    ? "RICHTIG (in jeder Kartenbreite innerhalb des Polsters)"
+    : "FALSCH -- "+falsch+" Breite(n) ragen heraus"));
+  karten.style.setProperty("--urt-cols","3");
+  log("b2) alte Messung, nur zur Vollstaendigkeit");
+  if (!cMore){ log("   kein +N im Citations-Stapel -- Testdaten zu klein"); }
+  else {
+    var ruhe=Math.round(innenRechts - cMore.getBoundingClientRect().right);
+    /* Der schlimmste Fall: der Chip GANZ RECHTS wird angefasst. Er hebt sich um 3px und traegt
+       einen 4px-Ring; nach links verschiebt sich nichts, was rechts herausragen koennte. */
+    var chips=d.querySelectorAll(".urt-card-citations .up-stack-item");
+    var letzter=chips[chips.length-1];
+    letzter.style.zIndex="3";
+    letzter.querySelector(".up-stack-vis").style.transform="translateY(-3px)";
+    var rechteKante=Math.max(cMore.getBoundingClientRect().right,
+                             letzter.getBoundingClientRect().right + 4 /* der Ring */);
+    var hover=Math.round(innenRechts - rechteKante);
+    log("   Abstand zur Innenkante der Karte:  ohne Hover "+ruhe+"px   mit Hover "+hover+"px");
+    log("   ==> "+(ruhe>=0 && hover>=0
+      ? "RICHTIG (nichts ragt ueber das Polster hinaus)"
+      : "FALSCH -- ragt "+Math.min(ruhe,hover)+"px in das Polster"));
+  }
+  log("FERTIG");
+}).catch(function(e){ log("ABBRUCH: "+e.message+"\n"+(e.stack||"").split("\n")[1]); });
+</script>

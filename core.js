@@ -3418,6 +3418,16 @@
              '</span>';
     }).join("");
     if (rest > 0) html += '<span class="up-stack-more">+' + rest + '</span>';
+    /* opts.tailHtml: etwas, das HINTER dem Stapel steht und beim Hover mitgehen muss -- in
+       responses-table der gruene Haken "deine Marke ist erwaehnt" im Karten-Fuss.
+       Warum es IM Stapel liegen muss und nicht daneben: die Hover-Regeln verschieben "alles nach
+       dem angefassten Chip" ueber den Geschwister-Kombinator (~), und der erreicht nur Kinder
+       desselben Elternteils. Draussen blieb der Haken stehen, waehrend das "+N" nach rechts
+       glitt und sich darueber schob -- genau so gemeldet am 04.09.
+       Die Alternative waere ein :has(...:hover) am Fuss gewesen. Das ist auf einer Seite mit
+       24000 Knoten der Fall, den die Leistungsrunde ausgebaut hat: jeder Zeigerwechsel bewertet
+       den Selektor neu. */
+    if (opts.tailHtml) html += '<span class="up-stack-tail">' + opts.tailHtml + '</span>';
     /* opts.spread:"left" — for a stack pinned to the right edge of its cell/card, where the
        default rightward hover spread would push chips outside the container. */
     return '<span class="up-stack' + (opts.spread === "left" ? " is-spread-left" : "") + '">' + html + '</span>';
