@@ -145,9 +145,12 @@ Promise.all([hol("core.css"),hol("filters/date-range.css"),hol("core.js"),
   var uebersprungen=spur.filter(function(e){ return e.art==="activate-uebersprungen"; }).length;
   log("DOPPELUNG  upstreemDatesActivate mit demselben Zeitraum:");
   log("   Rueckgabe="+r1+"   neue boot-Aufrufe="+RUF.boot+"   uebersprungen="+uebersprungen);
-  log("   ==> "+(RUF.boot===0 && uebersprungen===1 && r1===true
-        ? "RICHTIG (kein zweiter Workflow-Lauf fuer dieselbe Information)"
-        : "FALSCH -- "+(RUF.boot>0?"es wurde ein zweites Mal uebergeben":"falsche Rueckgabe")));
+  /* ZURUECKGENOMMEN: der zweite Aufruf MUSS feuern. Er ist die Absicherung des
+     view_first-Workflows ("setz den Zeitraum, egal was vorher war") -- ob Bubble unseren Wert von
+     vorhin noch hat, kann diese Datei nicht wissen, und die States nicht lesen. */
+  log("   ==> "+(RUF.boot===1 && uebersprungen===0 && r1===true
+        ? "RICHTIG (feuert auch beim zweiten Mal -- die Absicherung bleibt eine)"
+        : "FALSCH -- "+(RUF.boot===0?"der zweite Aufruf wurde wegoptimiert":"falsche Rueckgabe")));
   /* GEGENPROBE: nach einer ECHTEN Aenderung muss activate wieder feuern. */
   var m=document.querySelector('.udr-preset[data-preset="last3"]');
   document.querySelector(".udr-trigger").click();

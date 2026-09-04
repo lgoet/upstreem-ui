@@ -1377,15 +1377,18 @@
     spurGlobal("activate", { name: String(name || ""),
       instanz: c ? c.instanceId : "(kein Picker mit diesem Namen)" });
     if (!c || typeof c.emitCurrent !== "function") return false;
-    var r = typeof c.getRange === "function" ? c.getRange() : null;
-    var sig = r ? (r.from + "|" + r.to + "|" + (r.preset || "")) : String(Math.random());
-    if (ZULETZT[c.instanceId] === sig){
-      spurGlobal("activate-uebersprungen", { instanz: c.instanceId, zeitraum: sig,
-        warum: "genau dieser Zeitraum wurde schon uebergeben -- ein zweiter Workflow-Lauf mit " +
-               "derselben Information" });
-      return true;
-    }
-    ZULETZT[c.instanceId] = sig;
+    /* KEIN Ueberspringen, auch nicht bei gleichem Zeitraum. Ich hatte das eingebaut, weil im Log
+       zwei wortgleiche Uebergaben standen (unsere automatische bei 4423ms und der
+       view_first-Schritt bei 5272ms) -- und damit den Zweck des zweiten Aufrufs zerstoert.
+
+       Er ist die ABSICHERUNG: der Workflow der Ansicht sagt "setz den Zeitraum, egal was vorher
+       war". Ob Bubble unseren Wert von 4423ms noch hat, wissen wir nicht -- ein eigener
+       Ladevorgang oder ein Vorgabewert kann ihn dazwischen ueberschrieben haben, und die States
+       koennen wir nicht lesen. Ein Aufruf, der genau dafuer da ist, darf sich nicht selbst
+       wegoptimieren.
+       Zwei Aufrufe kosten zwei State-Zuweisungen mit demselben Wert. Das ist billig; ein falscher
+       Zeitraum ist teuer. */
+    ZULETZT[c.instanceId] = "";
     UEBERGEBEN[c.instanceId] = 1;
     return c.emitCurrent();
   };
