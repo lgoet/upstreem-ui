@@ -624,12 +624,39 @@
         root.setAttribute("data-date-from", iso(committed.from));
         root.setAttribute("data-date-to", iso(committed.to));
       }
+      /* ---- data-range-current: der Zeitraum ZUM ABHOLEN ---------------------------------
+         Das Gegenstueck zu data-range-json: dort liegt eine Nutzerauswahl (ein Bote, der die
+         Seite zum Nachladen bringt), hier liegt einfach der Stand, den der Kalender GERADE zeigt.
+         Kein Bubble-Aufruf, keine Wirkung -- nur ein Attribut.
+
+         Der Grund: die Uebergabe an Bubble kann erst laufen, wenn dessen
+         JavaScriptToBubble-Bruecke steht, und die stand auf der echten Seite erst bei 3,3
+         Sekunden -- also NACH den view_first-Workflows. Beim Ansichtswechsel spaeter ist das kein
+         Problem, beim Seitenaufbau schon: dort kam der Zeitraum zu spaet.
+         Mit diesem Attribut braucht niemand auf uns zu warten. Es steht ab dem Mount da, und ein
+         Workflow kann es jederzeit lesen:
+
+           var el = document.querySelector('.udr-root[data-instance="dates_v2_dashboard"]');
+           if (el) window.bubble_fn_udr_date_boot_dashboard(el.getAttribute("data-range-current"));
+
+         Geschrieben bei JEDER Aenderung des Stands, also auch bei der stillen Uebernahme des
+         gespeicherten Presets beim Aufbau. */
+      function standSchreiben(from, to, preset) {
+        try {
+          root.setAttribute("data-range-current", JSON.stringify({
+            instance_id: instanceId,
+            date_from: iso(from), date_to: iso(to),
+            preset: preset || ""
+          }));
+        } catch (e) {}
+      }
       function commit(from, to, preset, text, shouldEmit) {
         committed = { from: from, to: to };
         committedPreset = preset;
         committedLabel = text;
         pendingStart = null; hoverDate = null;
         viewMonth = monthOf(to, -1);
+        standSchreiben(from, to, preset);
         persist(); paint(); render();
         if (shouldEmit) emit(from, to);
       }
@@ -1109,6 +1136,10 @@
          Zahlen aus sieben Tagen. */
       if (syncAn() && nimmtTeil(instanceId))
         applyPreset((urlAn(root) && urlPreset()) || syncPreset(), false);
+      /* Auch ohne Schalter muss der Stand am Element stehen -- dann laeuft kein applyPreset, und
+         ohne diese Zeile waere das Attribut auf genau den Seiten leer, die es am dringendsten
+         brauchen. */
+      standSchreiben(committed.from, committed.to, committedPreset);
       syncSperren();
       /* Aendert die Einstellung woanders (anderer Picker, Einstellungen), zieht dieser mit. */
       window.addEventListener("up-prefs-change", function (e) {

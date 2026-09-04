@@ -96,6 +96,14 @@ Promise.all([hol("core.css"),hol("filters/date-range.css"),hol("core.js"),
   log("   ==> "+(el.getAttribute("data-range-json")===null && el.getAttribute("data-range-reason")==="boot"
         ? "RICHTIG (der Bote bleibt leer -- das Snippet kann den Aufbau nicht als Auswahl lesen)"
         : "FALSCH -- der Aufbau hinterlaesst eine scheinbare Nutzerauswahl"));
+  /* data-range-current: der Stand ZUM ABHOLEN. Er muss ab dem Mount dastehen, damit ein
+     view_first-Workflow nicht auf Bubbles Bruecke warten muss (auf der echten Seite 3,3s). */
+  var akt=el.getAttribute("data-range-current");
+  var o={}; try { o=JSON.parse(akt||"{}"); } catch(e){}
+  log("   data-range-current = "+(akt?akt.slice(0,70)+"…":"(nicht gesetzt)"));
+  log("   ==> "+(akt && /^\d{4}-\d{2}-\d{2}$/.test(o.date_from||"") && o.preset==="last30"
+        ? "RICHTIG (abholbar, ohne dass wir etwas gerufen haben)"
+        : "FALSCH -- ein view_first-Workflow findet keinen Zeitraum"));
   /* GEGENPROBE: eine echte Auswahl MUSS den Boten setzen, sonst laedt die Seite nach einem Klick
      nicht mehr nach. */
   document.querySelector(".udr-trigger").click();
@@ -113,6 +121,10 @@ Promise.all([hol("core.css"),hol("filters/date-range.css"),hol("core.js"),
   log("   ==> "+(j && el.getAttribute("data-range-reason")==="user"
         ? "RICHTIG (der Bote traegt die Auswahl -- das Snippet auf der Seite funktioniert weiter)"
         : "FALSCH -- eine echte Auswahl erreicht die Seite nicht mehr"));
+  var akt2=el.getAttribute("data-range-current"), o2={};
+  try { o2=JSON.parse(akt2||"{}"); } catch(e){}
+  log("   data-range-current zieht mit: preset=\""+o2.preset+"\""+
+      "   ==> "+(o2.preset==="last7"?"RICHTIG (folgt der Auswahl)":"FALSCH -- steht auf dem alten Stand"));
   log("FERTIG");
 }).catch(function(e){ log("ABBRUCH: "+e.message); });
 </script>
