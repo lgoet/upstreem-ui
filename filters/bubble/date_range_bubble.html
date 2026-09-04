@@ -94,10 +94,17 @@
      first query must already have the right range, Bubble has to learn it from somewhere that
      needs no JavaScript — the URL.
 
-     Put data-url-range="on" on the root. The picker then keeps ?range=<preset> in the URL:
-     it reloads with it when "Apply everywhere" is switched on, and rewrites it on every preset
-     change (replaceState, no reload). A PRESET, not a date — an absolute date in a URL is wrong
+     Put data-url-range="on" on the root. The picker then keeps ?range=<preset> in the URL and
+     rewrites it on every change — via replaceState, so nothing ever reloads, not even when
+     "Apply everywhere" is switched on. A PRESET, not a date — an absolute date in a URL is wrong
      tomorrow, and a bookmark from last week would be a time machine.
+
+     Switching "Apply everywhere" on or off costs no page load. Every picker picks the shared
+     preset up through core's prefs event, the URL is rewritten in place, and views whose data is
+     from another range reload one at a time when you open them. The single exception: switching
+     it ON while this calendar sits on a non-shareable range ("Last 6 Months" or a custom range)
+     drops it to the default, so the view you are looking at reloads — that one view, through the
+     normal apply channel.
 
      Then read it in the page-load workflow, as the first action, into your two date states:
 

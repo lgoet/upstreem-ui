@@ -89,9 +89,9 @@ bauen(null).then(oeffnen).then(function(d){
       "   ==> "+(Math.round(zumReset)===8&&Math.round(zurZeile)===8?"RICHTIG (8px beidseitig)":"FALSCH"));
   var tp=zeile.getAttribute("data-tip")||"";
   log("   data-tip: \""+tp+"\"  ("+tp.split(/\s+/).length+" Worte)"+
-      "   ==> "+(/[Rr]eload/.test(tp)&&tp.split(/\s+/).length<=4
-        ? "RICHTIG (nennt den Reload, hoechstens vier Worte)"
-        : "FALSCH -- "+(/[Rr]eload/.test(tp)?"zu lang":"kein Hinweis auf den Reload")));
+      "   ==> "+(/everywhere|überall/i.test(tp)&&tp.split(/\s+/).length<=4
+        ? "RICHTIG (sagt was der Schalter tut, hoechstens vier Worte)"
+        : "FALSCH -- "+(tp.split(/\s+/).length>4?"zu lang":"sagt nicht, was er tut")));
   var sw=d.querySelector("[data-udr-sync]");
   log("   Schalter: pointer-events="+cs(sw).pointerEvents+"  role="+(sw.getAttribute("role")||"(keine)")+
       "   ==> "+(cs(sw).pointerEvents==="none"&&!sw.getAttribute("role")?"RICHTIG":"FALSCH"));
@@ -103,9 +103,9 @@ bauen(null).then(oeffnen).then(function(d){
 }).then(function(d){
   var tip=d.querySelector(".up-tip");
   log("   Tooltip erscheint: "+(!!tip)+"   Text \""+(tip?tip.textContent.trim():"")+"\"");
-  log("   ==> "+(tip&&/[Rr]eload/.test(tip.textContent||"")
-        ? "RICHTIG (erscheint und nennt den Reload)"
-        : "FALSCH -- "+(tip?"ohne den Hinweis":"kein Tooltip: makeTooltips laeuft nicht")));
+  log("   ==> "+(tip&&/everywhere|überall/i.test(tip.textContent||"")
+        ? "RICHTIG (erscheint und sagt, was der Schalter tut)"
+        : "FALSCH -- "+(tip?"falscher Text":"kein Tooltip: makeTooltips laeuft nicht")));
   /* PHASE 2: Klick auf die BESCHRIFTUNG, nicht auf den Schalter. */
   RELOAD=0;
   d.querySelector(".udr-sync-lbl").click();
@@ -115,9 +115,12 @@ bauen(null).then(oeffnen).then(function(d){
   log("PHASE 2  Klick auf die BESCHRIFTUNG");
   log("   gespeichert: date_sync="+p.date_sync+"  date_preset="+p.date_preset+
       "   ==> "+(p.date_sync==="on"?"RICHTIG (die ganze Zeile schaltet)":"FALSCH"));
-  log("   Rahmen hat neu geladen: "+RELOAD+"   ==> "+(RELOAD>0?"RICHTIG":"FALSCH"));
-  /* PHASE 3: der gesperrte Kalender. Eigener Aufbau mit aktivem Schalter -- der Reload aus
-     Phase 2 laesst den alten Rahmen leer zurueck. */
+  /* Kein Reload mehr: der Schalter wirkt sofort. Er hiess einmal "kostet einen Aufbau" -- das
+     war der erste Entwurf, als jede Ansicht nur so in den richtigen Zustand kam. */
+  log("   Rahmen hat neu geladen: "+RELOAD+
+      "   ==> "+(RELOAD===0?"RICHTIG (wirkt sofort)":"FALSCH -- laedt immer noch neu"));
+  /* PHASE 3: der gesperrte Kalender. Eigener Aufbau, damit der Schalter von Anfang an an ist --
+     der Zustand nach einem Seitenaufbau, nicht der direkt nach dem Klick. */
   return bauen({ date_sync:"on", date_preset:"last7" });
 }).then(oeffnen).then(function(d){
   var v=d.defaultView, cs=v.getComputedStyle;

@@ -299,7 +299,7 @@
               (nimmtTeil(instanceId)
                 ? '<button type="button" class="udr-sync" role="switch" aria-checked="' +
                     (syncAn() ? "true" : "false") + '" data-tip="' +
-                    esc(t("Reloads the page")) + '">' +
+                    esc(t("Same range everywhere")) + '">' +
                     '<span class="udr-sync-lbl" data-i18n="Apply everywhere">' +
                       esc(t("Apply everywhere")) + '</span>' +
                     /* Der Schalter ist hier nur noch das BILD des Zustands -- role und
@@ -821,24 +821,33 @@
           /* Beim Einschalten wird der aktuelle Zeitraum uebernommen, wenn er teilbar ist --
              sonst die Vorgabe. Ein eigener Zeitraum kann nicht global gelten, und ihn stumm
              gegen etwas anderes zu tauschen, ohne es zu zeigen, waere schlimmer. */
-          if (an) UC.setPref("date_preset", TEILBAR[committedPreset] ? committedPreset : DEFAULT_PRESET);
+          var teilbar = !!TEILBAR[committedPreset];
+          var neuesPreset = teilbar ? committedPreset : DEFAULT_PRESET;
+
+          /* KEIN RELOAD MEHR. Er war der erste Entwurf: damals kam jede Ansicht nur ueber einen
+             Seitenaufbau in den richtigen Zustand. Inzwischen erledigt das anderes, und der
+             Aufbau kostet auf dieser Seite neun Sekunden:
+
+               Schalter-Optik und gesperrte Presets  der up-prefs-change-Empfaenger unten
+               der Zeitraum in allen Pickern         derselbe Empfaenger, er wendet ihn jetzt an
+               ?range= in der URL                    urlSchreiben(), per replaceState
+               andere Ansichten auf den neuen Stand  der STAND-Vergleich beim Aktivieren, der
+                                                     laedt genau die veralteten, einzeln
+
+             setPref feuert up-prefs-change synchron, also stehen alle Picker schon richtig, bevor
+             die naechste Zeile laeuft. */
+          if (an) UC.setPref("date_preset", neuesPreset);
           UC.setPref("date_sync", an ? "on" : "off");
-          /* NEU LADEN und nicht weitergeben. Beim Umschalten sind womoeglich alle Ansichten und
-             mehrere Drawer offen, jeder mit eigenem Zustand in Bubble -- die alle einzeln
-             nachzuziehen waere ein Netz aus Sonderfaellen. Der Reload stellt Views und Drawer aus
-             der URL wieder her (?view= und ?detail=) und jeder Picker liest den gespeicherten
-             Stand. Der Schalter wird selten geklickt; das darf einen Aufbau kosten. */
-          /* Mit dem Parameter neu laden, nicht bloss neu laden: beim naechsten Aufbau soll Bubble
-             den Zeitraum aus der URL kennen, bevor die erste Abfrage laeuft. Beim Ausschalten
-             faellt der Parameter weg. Schlaegt das Bauen der URL fehl, bleibt es beim einfachen
-             Reload -- der Schalter muss wirken, auch ohne URL-Trick. */
-          var ziel = urlAn(root)
-            ? urlMit(an ? (TEILBAR[committedPreset] ? committedPreset : DEFAULT_PRESET) : null)
-            : null;
-          try {
-            if (ziel && ziel !== window.location.href) window.location.replace(ziel);
-            else window.location.reload();
-          } catch (e2) { try { window.location.reload(); } catch (e3) {} }
+          if (urlAn(root)) urlSchreiben(an ? neuesPreset : null);
+
+          /* Der EINZIGE Fall, der einen Ladevorgang braucht: einschalten, waehrend dieser
+             Kalender auf etwas Nicht-Teilbarem stand (eigener Zeitraum oder "Letzte 6 Monate").
+             Dann aendert sich der Zeitraum der Ansicht, in der der Nutzer gerade steht, und ihre
+             Zahlen sind sofort falsch. applyPreset mit true ist genau der Klick-Pfad: States und
+             Nachladen, eine Ansicht.
+             Ausschalten aendert keinen Zeitraum -- da passiert nichts weiter, nur die Sperren
+             fallen weg. */
+          if (an && !teilbar) applyPreset(DEFAULT_PRESET, true);
           return;
         }
         var preset = e.target.closest(".udr-preset");
@@ -999,6 +1008,17 @@
         var zeile = menu.querySelector(".udr-sync");
         if (zeile) zeile.setAttribute("aria-checked", syncAn() ? "true" : "false");
         syncSperren();
+        /* Und den geteilten Zeitraum UEBERNEHMEN. Vorher stellte dieser Empfaenger nur Optik und
+           Sperren nach -- die Beschriftung zog ein anderer Picker per setPreset nach, was nur die
+           Picker erreichte, die es zu diesem Zeitpunkt schon gab. Jetzt zieht sich jeder Picker
+           selbst nach, sobald sich date_sync oder date_preset aendert: der eine Weg fuer den
+           Schalter, fuer einen Preset-Klick in einer anderen Ansicht und fuer einen zweiten Tab.
+           Still (kein Emit): die Daten dieser Ansicht holt der STAND-Vergleich beim Aktivieren
+           nach, und ein Emit hier waere ein Ladevorgang je Picker. */
+        if (syncAn() && nimmtTeil(instanceId)) {
+          var soll = syncPreset();
+          if (committedPreset !== soll) applyPreset(soll, false);
+        }
       });
 
       var ctrl = {

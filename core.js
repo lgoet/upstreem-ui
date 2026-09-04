@@ -485,7 +485,10 @@
        Was hier steht, ist die eine Sache, die man vorher nicht sieht: dass ein Klick die Seite
        neu laedt, und dass ein Eintrag nicht teilbar ist. Das Warum steht am ausgegrauten Knopf
        selbst -- er ist ausgegraut, waehrend "Apply everywhere" an ist. */
-    "Reloads the page": "Lädt die Seite neu",
+    /* Der Hinweis am Schalter. Er hiess "Reloads the page", solange das Umschalten einen
+       Seitenaufbau kostete -- das tut es nicht mehr (siehe den Block am Schalter in
+       date-range.js). Jetzt sagt er, was der Schalter TUT. */
+    "Same range everywhere": "Gleicher Zeitraum überall",
     /* Der Hinweis an den gesperrten Tagen und Presets sagt, WAS ZU TUN IST, und nicht, was der
        Fall ist. "Eigener Zeitraum nicht teilbar" stand hier zuerst und war fuer den Nutzer
        schlicht unverstaendlich -- zu Recht: es beschreibt eine Eigenschaft unseres Modells, nicht

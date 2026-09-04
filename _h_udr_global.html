@@ -161,17 +161,51 @@ bauen(null).then(function(d){
   log("   Schalter FEHLT bei: "+ohne.join(", "));
   log("   ==> "+(ohne.length===5 && ohne.every(function(id){return /export|spotlight/.test(id);})
         ? "RICHTIG (Export und die vier Spotlights nehmen nicht teil)" : "FALSCH"));
-  /* Schalter klicken -> speichern + Reload anfordern */
+  /* Schalter klicken. Der Kalender stand vorher auf der Vorgabe (last7), also einem TEILBAREN
+     Preset -- dann darf nichts nachladen und die Seite darf nicht neu laden. */
   ladungen=0;
+  d.defaultView.__ruf={from:0,to:0,range:0,apply:0,boot:0};
   schalter(d,"dates_v2_prompts").click();
-  return new Promise(function(ok){ setTimeout(ok,900); });
+  return new Promise(function(ok){ setTimeout(function(){ ok(d); },900); });
 }).then(function(d){
-  var p=prefs();
-  log("PHASE 2  Klick auf den Schalter");
+  var p=prefs(), v=d.defaultView, r=v.__ruf;
+  log("PHASE 2  Klick auf den Schalter -- OHNE Seiten-Reload");
   log("   gespeichert: date_sync="+p.date_sync+"  date_preset="+p.date_preset+
       "   ==> "+(p.date_sync==="on"&&p.date_preset?"RICHTIG":"FALSCH"));
-  log("   Rahmen hat neu geladen: "+(ladungen>0?"ja ("+ladungen+")":"NEIN")+
-      "   ==> "+(ladungen>0?"RICHTIG":"FALSCH"));
+  log("   Rahmen hat neu geladen: "+ladungen+
+      "   ==> "+(ladungen===0?"RICHTIG (kein Seitenaufbau mehr)":"FALSCH -- laedt immer noch neu"));
+  log("   Bubble-Aufrufe: "+JSON.stringify(r)+
+      "   ==> "+(r.range===0&&r.apply===0&&r.boot===0
+        ? "RICHTIG (teilbares Preset -- nichts zu laden)" : "FALSCH"));
+  /* Die anderen Picker muessen den Zeitraum uebernommen haben, ohne dass jemand sie anfasst --
+     das ist der up-prefs-change-Empfaenger. */
+  log("   Beschriftungen: dashboard=\""+label(d,"dates_v2_dashboard")+"\"  brands=\""+
+      label(d,"dates_v2_brands")+"\"  (Export bleibt) export=\""+label(d,"dates_v2_export")+"\"");
+  log("   ==> "+(label(d,"dates_v2_dashboard")===label(d,"dates_v2_prompts")
+        ? "RICHTIG (alle Teilnehmer stehen gleich)" : "FALSCH"));
+  /* GEGENPROBE: einschalten, waehrend der Kalender auf einem NICHT teilbaren Zeitraum steht.
+     Dann aendert sich der Zeitraum dieser Ansicht, und genau dann muss sie nachladen. */
+  return bauen(null);
+}).then(function(d){
+  var v=d.defaultView;
+  d.querySelector('[data-instance="dates_v2_prompts"] .udr-trigger').click();
+  return new Promise(function(ok){ setTimeout(function(){
+    d.querySelector('[data-instance="dates_v2_prompts"] [data-preset="last6"]').click();
+    setTimeout(function(){
+      v.__ruf={from:0,to:0,range:0,apply:0,boot:0}; ladungen=0;
+      d.querySelector('[data-instance="dates_v2_prompts"] [data-udr-sync]').click();
+      setTimeout(function(){ ok(d); },900);
+    },500);
+  },300); });
+}).then(function(d){
+  var v=d.defaultView, r=v.__ruf;
+  log("   GEGENPROBE einschalten auf \"Last 6 Months\" (nicht teilbar):");
+  log("   Beschriftung jetzt: \""+label(d,"dates_v2_prompts")+"\"   Aufrufe: "+JSON.stringify(r)+
+      "   Reloads: "+ladungen);
+  log("   ==> "+(label(d,"dates_v2_prompts")==="Last 7 Days" && r.range===1 && r.apply===1 && ladungen===0
+        ? "RICHTIG (faellt auf die Vorgabe und laedt DIESE Ansicht nach, ohne Seitenaufbau)"
+        : "FALSCH -- "+(r.apply===0?"kein Nachladen: die Zahlen bleiben vom alten Zeitraum"
+                       :"unerwartet")));
 }).then(function(){
   return bauen({ date_sync:"on", date_preset:"last30" });
 }).then(function(d){
