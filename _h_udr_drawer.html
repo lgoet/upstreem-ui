@@ -1,0 +1,264 @@
+<meta charset="utf-8"><title>Drawer: openDrawer ist der Melder</title>
+<style>html,body{margin:0;font:13px/1.5 system-ui,sans-serif}
+#out{font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap;padding:10px;background:#f6f6f6}</style>
+<body><iframe id="rahmen" style="width:1000px;height:420px;border:0"></iframe><pre id="out">laeuft…</pre>
+<script>
+/* Die Drawer der Host-App gehen ALLE ueber openDrawer(art, id) -- vom Nutzer bestaetigt. core
+   umschliesst diese Funktion wie showView; der Kalender haengt sein Nachladen daran.
+   Der Prueftand stellt genau das nach: eine Huelle je Drawer, die auf- und zugeht, und ein
+   openDrawer-Stub, der ausserdem beweist, dass das ORIGINAL weiterlaeuft (sonst wuerde in der
+   echten App kein Drawer mehr aufgehen).
+   Kein erzwungenes Bild noetig: hier laeuft kein Beobachter, sondern ein Lesezugriff nach einer
+   Handlung -- der geht auch in einer Flaeche, die keine Bilder rechnet. */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+var IDS=["dates_v2_dashboard","dates_v2_citations","dates_v2_domainspotlight",
+         "dates_v2_urlspotlight","dates_v2_export"];
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+function warte(ms,w){ return new Promise(function(ok){ setTimeout(function(){ ok(w); },ms); }); }
+var D=null, V=null, reloads=0;
+
+var H = {
+  /* Der echte Seitenaufbau: EINE Ansicht offen, alles andere zu -- auch die Drawer.
+     drawerZuerst stellt die gefaehrliche Mount-Reihenfolge her (ein Drawer mountet vor der
+     Ansicht): die Aufbau-Uebergabe muss trotzdem die ANSICHT machen. */
+  bau: function(prefs, startAnsicht, drawerZuerst){
+    L=[]; reloads=0;
+    var ids = drawerZuerst
+      ? ["dates_v2_domainspotlight"].concat(IDS.filter(function(x){ return x!=="dates_v2_domainspotlight"; }))
+      : IDS.slice();
+    return Promise.all([hol("core.css"),hol("filters/date-range.css"),hol("core.js"),
+                        hol("filters/date-range.js"),hol("filters/bubble/date_range_bubble.html")])
+    .then(function(t){
+      /* NEUES iframe-Element, nicht document.open(): das legt ein neues Dokument an, aber
+         dasselbe window -- core.js aus dem vorigen Aufbau ueberlebt samt Einstellungs-Cache. */
+      var alt=document.getElementById("rahmen"), neu=document.createElement("iframe");
+      neu.id="rahmen"; neu.setAttribute("style", alt.getAttribute("style"));
+      neu.addEventListener("load", function(){ reloads++; });
+      alt.parentNode.replaceChild(neu, alt);
+      var d=neu.contentDocument;
+      d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0;padding:8px'></body></html>"); d.close();
+      var v=d.defaultView; D=d; V=v;
+      try { if (prefs) v.localStorage.setItem("up_prefs", JSON.stringify(prefs));
+            else v.localStorage.removeItem("up_prefs"); } catch(e){}
+      v.__ruf={from:0,to:0,range:0,apply:0,boot:0}; v.__letzte=null; v.__wer=[];
+      v.bubble_fn_udr_date_from=function(){ v.__ruf.from++; };
+      v.bubble_fn_udr_date_to  =function(){ v.__ruf.to++; };
+      v.bubble_fn_udr_date_range=function(j){ v.__ruf.range++; try{ v.__letzte=JSON.parse(j); }catch(e){} };
+      v.bubble_fn_udr_date_boot =function(j){ v.__ruf.boot++;  try{ v.__letzte=JSON.parse(j); }catch(e){} };
+      /* Der Nachlade-Kanal traegt das JSON -- also wird mitgeschrieben, WER nachlaedt. Ohne das
+         waere "2 Aufrufe" auch wahr, wenn ein Drawer zweimal laedt und der andere gar nicht. */
+      v.bubble_fn_udr_apply    =function(j){ v.__ruf.apply++;
+        try { var o=JSON.parse(j); v.__wer.push(o.instance_id+":"+o.reason); } catch(e){ v.__wer.push("?"); } };
+      /* showView UND openDrawer der Host-App -- beide MUESSEN vor core.js stehen, core
+         umschliesst sie beim Start. Beide Stubs merken sich ihre Aufrufe, damit bewiesen ist,
+         dass das Original weiterlaeuft und nicht im Wrapper verschwindet. */
+      v.__views=[]; v.__drawer=[];
+      v.showView=function(n){ v.__views.push(String(n));
+        [].forEach.call(d.querySelectorAll("[data-vw]"), function(w){
+          var vw=w.getAttribute("data-vw");
+          if (vw===n){ w.style.display=""; return; }
+          if (!/spotlight|export/.test(vw)) w.style.display="none";
+        });
+      };
+      v.openDrawer=function(art, id){ v.__drawer.push(String(art)+":"+String(id)); };
+      [t[0],t[1]].forEach(function(c){ var st=d.createElement("style"); st.textContent=c; d.head.appendChild(st); });
+      /* Haengende Transitions halten computed styles auf dem Startwert -- aus. */
+      var s2=d.createElement("style"); s2.textContent="*,*::before,*::after{transition:none!important;animation:none!important}";
+      d.head.appendChild(s2);
+      var vorlage=wurzelAus(t[4]);
+      ids.forEach(function(id){
+        var vw=id.replace(/^dates_v2_/,"");
+        var h=d.createElement("div"); h.setAttribute("data-vw", vw);
+        if (vw!==startAnsicht) h.style.display="none";
+        var w=d.createElement("div"); w.innerHTML=vorlage;
+        var r=w.querySelector(".udr-root");
+        r.setAttribute("data-instance", id); r.setAttribute("data-cdn-pin","t");
+        r.setAttribute("data-range-apply-fn","bubble_fn_udr_apply");
+        r.setAttribute("data-range-apply-delay","0");
+        r.setAttribute("data-isdark","no");
+        h.appendChild(r); d.body.appendChild(h);
+      });
+      var j1=d.createElement("script"); j1.textContent=t[2]; d.head.appendChild(j1);
+      var j2=d.createElement("script"); j2.textContent=t[3]; d.head.appendChild(j2);
+      return warte(1500, "gebaut");
+    });
+  },
+  nullen: function(){ V.__ruf={from:0,to:0,range:0,apply:0,boot:0}; V.__wer=[]; return "genullt"; },
+  /* Ein Drawer geht auf: Huelle sichtbar UND openDrawer gerufen -- so wie die Host-App es tut.
+     Beides zusammen, denn nur eines von beidem waere kein Drawer. */
+  auf: function(vw, art){
+    D.querySelector('[data-vw="'+vw+'"]').style.display="";
+    V.openDrawer(art || vw, "ID123");
+    return "auf: "+vw;
+  },
+  /* Nur sichtbar machen, OHNE openDrawer -- die Gegenprobe: dann darf nichts nachladen, denn so
+     geht in der echten App kein Drawer auf. */
+  aufOhneRuf: function(vw){ D.querySelector('[data-vw="'+vw+'"]').style.display=""; return "auf (ohne openDrawer): "+vw; },
+  zu: function(){ for (var i=0;i<arguments.length;i++) D.querySelector('[data-vw="'+arguments[i]+'"]').style.display="none"; return "zu: "+[].join.call(arguments,","); },
+  view: function(n){ V.showView(n); return "showView("+n+")"; },
+  preset: function(id,key){
+    D.querySelector('[data-instance="'+id+'"] .udr-trigger').click();
+    return warte(300).then(function(){
+      D.querySelector('[data-instance="'+id+'"] [data-preset="'+key+'"]').click();
+      return warte(600, "preset "+key+" auf "+id);
+    });
+  },
+  sync: function(id){ D.querySelector('[data-instance="'+id+'"] [data-udr-sync]').click(); return warte(500,"Schalter geklickt in "+id); },
+  label: function(id){ var e=D.querySelector('[data-instance="'+id+'"] .udr-label'); return e?e.textContent.trim():"?"; },
+  hatSchalter: function(id){ return !!D.querySelector('[data-instance="'+id+'"] [data-udr-sync]'); },
+  sichtbar: function(id){ return D.querySelector('[data-instance="'+id+'"]').offsetParent !== null; },
+  stand: function(){
+    return JSON.stringify({ ruf: V.__ruf, wer: V.__wer,
+      letzte: V.__letzte && V.__letzte.instance_id+":"+V.__letzte.reason,
+      drawer: V.__drawer, reloads: reloads,
+      prefs: JSON.parse(V.localStorage.getItem("up_prefs")||"{}"),
+      labels: { dash: H.label("dates_v2_dashboard"), dom: H.label("dates_v2_domainspotlight"),
+                url: H.label("dates_v2_urlspotlight"), exp: H.label("dates_v2_export") } });
+  },
+  mess: function(ms){ return warte(ms||1200).then(function(){ return H.stand(); }); },
+  log: log
+};
+window.H = H;
+
+/* 1200ms nach jedem Oeffnen: die zwei Blicke des Kalenders liegen auf 300ms und 900ms. */
+H.bau({ date_sync:"on", date_preset:"last7" }, "dashboard", true).then(function(){
+  var st = JSON.parse(H.stand());
+  log("DRAWER 1  Aufbau: Dashboard offen, Drawer zu -- und ein DRAWER mountet ZUERST");
+  log("   Uebergabe: boot="+st.ruf.boot+" range="+st.ruf.range+" apply="+st.ruf.apply+
+      "   fuer: "+st.letzte);
+  log("   ==> "+(st.ruf.boot===1 && st.ruf.apply===0 && st.letzte==="dates_v2_dashboard:boot"
+        ? "RICHTIG (die ANSICHT uebergibt, nicht der Drawer)"
+        : "FALSCH -- "+(/spotlight/.test(st.letzte||"") ? "ein Drawer hat das Rennen gewonnen"
+                                                        : "keine oder doppelte Uebergabe")));
+  log("   Schalter im Drawer: "+H.hatSchalter("dates_v2_domainspotlight")+
+      "   im Export: "+H.hatSchalter("dates_v2_export")+
+      "   ==> "+(H.hatSchalter("dates_v2_domainspotlight") && !H.hatSchalter("dates_v2_export")
+        ? "RICHTIG (der Drawer darf schalten, der Export nimmt nicht teil)" : "FALSCH"));
+  log("   Kalender im zugeklappten Drawer sichtbar: "+H.sichtbar("dates_v2_domainspotlight")+
+      "   in der offenen Ansicht: "+H.sichtbar("dates_v2_dashboard"));
+  log("   ==> "+(!H.sichtbar("dates_v2_domainspotlight") && H.sichtbar("dates_v2_dashboard")
+        ? "RICHTIG (das Messinstrument unterscheidet auf und zu -- Gegenprobe zum offsetParent)"
+        : "FALSCH -- der Lesezugriff taugt hier nicht, alle Zahlen unten waeren wertlos"));
+  H.nullen(); H.auf("domainspotlight", "domain");
+  return H.mess();
+}).then(function(j){
+  var st = JSON.parse(j);
+  log("DRAWER 2  erstes Oeffnen, nichts geaendert");
+  log("   apply="+st.ruf.apply+"  openDrawer kam an: "+JSON.stringify(st.drawer)+
+      "  Beschriftung: \""+st.labels.dom+"\"");
+  log("   ==> "+(st.ruf.apply===0 && st.labels.dom===st.labels.dash && st.drawer.length===1
+        ? "RICHTIG (Original laeuft weiter, geteilter Zeitraum steht, KEIN zweiter Ladevorgang)"
+        : "FALSCH -- "+(st.ruf.apply>0?"zweiter Ladevorgang beim Oeffnen":"falscher Zeitraum")));
+  H.zu("domainspotlight");
+  return warte(300).then(function(){ return H.preset("dates_v2_dashboard","last30"); });
+}).then(function(){
+  H.nullen(); H.auf("domainspotlight", "domain");
+  return H.mess();
+}).then(function(j){
+  var st = JSON.parse(j);
+  log("DRAWER 3  Zeitraum aendert sich, WAEHREND der Drawer zu ist -> wieder auf");
+  log("   apply="+st.ruf.apply+" boot="+st.ruf.boot+"  nachgeladen: "+JSON.stringify(st.wer));
+  log("   ==> "+(st.ruf.apply===1 && st.ruf.boot===0 &&
+                 st.wer.join()==="dates_v2_domainspotlight:stale"
+        ? "RICHTIG (GENAU EIN Nachladen, fuer diesen Drawer, Grund stale)"
+        : "FALSCH -- "+(st.ruf.apply===0?"der Drawer zeigt die Zahlen des alten Zeitraums"
+                                        :"zu viele Aufrufe -- die zwei Blicke laden doppelt")));
+  /* GEGENPROBE 1: zu und auf, ohne dass sich etwas geaendert hat. */
+  H.nullen(); H.zu("domainspotlight");
+  return warte(300).then(function(){ H.auf("domainspotlight","domain"); return H.mess(); });
+}).then(function(j){
+  var st = JSON.parse(j);
+  log("   GEGENPROBE zu und auf OHNE Aenderung: apply="+st.ruf.apply+
+      "   ==> "+(st.ruf.apply===0 ? "RICHTIG (kein Nachladen ohne Grund -- der Vergleich ist echt)"
+                                  : "FALSCH -- jedes Oeffnen laedt nach"));
+  /* Der zweite Drawer wird zum ersten Mal geoeffnet -- nur merken. */
+  H.nullen(); H.auf("urlspotlight","url");
+  return H.mess();
+}).then(function(){
+  H.nullen(); H.zu("domainspotlight","urlspotlight");
+  return warte(300).then(function(){ return H.preset("dates_v2_dashboard","last3"); });
+}).then(function(){
+  /* ZWEI DRAWER UEBEREINANDER: erste Ebene auf, darauf die zweite. Beide waren zu, waehrend sich
+     der Zeitraum geaendert hat, beide muessen GENAU EINMAL nachladen -- jeder fuer sich. */
+  H.nullen(); H.auf("domainspotlight","domain");
+  return warte(150).then(function(){ H.auf("urlspotlight","url"); return H.mess(1400); });
+}).then(function(j){
+  var st = JSON.parse(j), wer = st.wer.slice().sort();
+  log("DRAWER 4  zwei Drawer uebereinander (2. Ebene ueber der 1.)");
+  log("   apply="+st.ruf.apply+"  nachgeladen: "+JSON.stringify(wer)+
+      "  openDrawer: "+JSON.stringify(st.drawer.slice(-2)));
+  log("   ==> "+(st.ruf.apply===2 && wer.length===2 && wer[0]!==wer[1] &&
+                 wer.join().indexOf("stale")>=0
+        ? "RICHTIG (jeder Drawer genau einmal, jeder mit seiner eigenen Instanz)"
+        : "FALSCH -- "+(st.ruf.apply<2?"ein Drawer bleibt auf alten Zahlen":"einer laedt doppelt")));
+  H.nullen(); H.zu("urlspotlight");
+  /* last30, nicht last7: der Export steht auf der Vorgabe (7 Tage), und die Aussage unten ist
+     "er ist NICHT mitgezogen" -- die waere bei gleichem Zeitraum nicht zu erkennen. */
+  return warte(300).then(function(){ return H.preset("dates_v2_dashboard","last30"); });
+}).then(function(){
+  H.nullen(); H.auf("export","export");
+  return H.mess();
+}).then(function(j){
+  var st = JSON.parse(j);
+  log("DRAWER 5  der Export-Drawer geht auf, nachdem sich der Zeitraum geaendert hat");
+  log("   apply="+st.ruf.apply+"  nachgeladen: "+JSON.stringify(st.wer)+
+      "   Beschriftung Export: \""+st.labels.exp+"\"  (Ansicht: \""+st.labels.dash+"\")");
+  /* Der Export selbst laedt NICHT nach und behaelt seinen Zeitraum -- das ist die Aussage.
+     Dass in derselben Zeile der Domain-Drawer nachlaedt, ist richtig und keine Nebenwirkung:
+     der war beim Zeitraumwechsel OFFEN, also veraltet, und die Runde bedient jeden offenen
+     Drawer, der es ist. Genau der Fall, den der Nutzer verziehen haette ("nicht schlimm, wenn
+     der darunterliegende Drawer nicht sofort mit geupdatet wird") -- er wird trotzdem bedient,
+     sobald irgendein Drawer aufgeht. Hoechstens einmal je Aenderung: STAND wird vorher
+     geschrieben. */
+  log("   ==> "+(st.wer.join().indexOf("export")<0 && st.labels.exp!==st.labels.dash
+        ? "RICHTIG (der Export nimmt nicht teil: kein Nachladen fuer ihn, eigener Zeitraum)"
+        : "FALSCH -- der Export haengt am geteilten Zeitraum"));
+  /* GEGENPROBE 2: sichtbar werden OHNE openDrawer. So geht in der App kein Drawer auf, also
+     darf auch nichts nachladen -- und die Zahl beweist, dass oben wirklich openDrawer die
+     Ursache war und nicht irgendein anderer Melder. */
+  H.nullen(); H.aufOhneRuf("urlspotlight");
+  return H.mess();
+}).then(function(j){
+  var st = JSON.parse(j);
+  log("   GEGENPROBE nur sichtbar, kein openDrawer: apply="+st.ruf.apply+
+      "   ==> "+(st.ruf.apply===0 ? "RICHTIG (der Melder ist openDrawer, nichts sonst)"
+                                  : "FALSCH -- irgendetwas anderes laedt hier nach"));
+  /* Und jetzt derselbe Drawer MIT Aufruf: er ist veraltet, also muss er genau einmal laden.
+     Ohne diese Zeile waere die Gegenprobe darueber auch mit einer toten Regel wahr. */
+  H.nullen(); H.zu("urlspotlight");
+  return warte(300).then(function(){ H.auf("urlspotlight","url"); return H.mess(); });
+}).then(function(j){
+  var st = JSON.parse(j);
+  log("   dieselbe Lage MIT openDrawer: apply="+st.ruf.apply+"  "+JSON.stringify(st.wer)+
+      "   ==> "+(st.ruf.apply===1 ? "RICHTIG (die Regel lebt)" : "FALSCH"));
+  /* Erst VERALTET machen, dann den Schalter umlegen -- sonst prueft die letzte Zahl nichts:
+     mit ausgeschaltetem Schalter zieht der Drawer den Zeitraum gar nicht mehr mit, waere also
+     auch ohne Sperre nicht veraltet. Also: Drawer zu, Zeitraum aendern (Schalter noch AN, der
+     Drawer zieht still mit), dann AUS. */
+  H.nullen(); H.zu("urlspotlight");
+  return warte(300).then(function(){ return H.preset("dates_v2_dashboard","last3"); });
+}).then(function(){
+  /* Umgeschaltet wird AUS DEM DRAWER der offenen Ebene -- ausdruecklich angefordert. */
+  return H.sync("dates_v2_domainspotlight");
+}).then(function(){
+  var st = JSON.parse(H.stand());
+  log("DRAWER 6  \"ueberall anwenden\" AUS dem Drawer umgeschaltet");
+  log("   date_sync="+st.prefs.date_sync+"   Seitenaufbau ausgeloest: "+(st.reloads-2));
+  log("   ==> "+(st.prefs.date_sync==="off" && st.reloads===2
+        ? "RICHTIG (der Drawer darf schalten, und es kostet keinen Seitenaufbau)" : "FALSCH"));
+  H.nullen();
+  return warte(100);
+}).then(function(){
+  H.nullen(); H.auf("urlspotlight","url");
+  return H.mess();
+}).then(function(j){
+  var st = JSON.parse(j);
+  log("   Drawer geht auf, Schalter ist AUS: apply="+st.ruf.apply+
+      "   Beschriftung Drawer \""+st.labels.url+"\"  Ansicht \""+st.labels.dash+"\"");
+  log("   ==> "+(st.ruf.apply===0 ? "RICHTIG (ohne Schalter laedt kein Drawer nach)"
+                                  : "FALSCH -- laedt trotz Schalter aus"));
+  log("FERTIG");
+}).catch(function(e){ log("ABBRUCH: "+e.message+"\n"+(e.stack||"").split("\n").slice(0,3).join("\n")); });
+</script>

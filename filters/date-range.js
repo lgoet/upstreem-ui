@@ -115,7 +115,19 @@
        WAS SPEICHERBAR IST: nur die drei RELATIVEN Presets. Ein absoluter Zeitraum waere morgen
        falsch, und "Letzte 6 Monate" ist ausdruecklich nicht dabei. Bei aktivem Schalter sind
        beide deshalb ausgegraut, mit einem Hinweis -- ausgeblendet wirkten sie wie ein Fehler. */
-    function nimmtTeil(id){ return !/export|spotlight/i.test(String(id || "")); }
+    /* Der Export-Kalender bleibt aussen vor: ein Export ist eine eigene Handlung mit eigenem
+       Zeitraum. Die Spotlight-Kalender in den Drawern nehmen seit dem 04.09. teil -- angefordert,
+       und es ist auch das erwartbare Verhalten: "ueberall anwenden" heisst ueberall. */
+    function nimmtTeil(id){ return !/export/i.test(String(id || "")); }
+    /* Die Uebergabe beim Seitenaufbau darf NUR ein Ansichts-Kalender machen, nie ein Drawer.
+       Sonst gewinnt der Kalender, der zufaellig zuerst mountet, das Rennen -- und ein
+       Drawer-Kalender hat keinen data-boot-fn, also wartet die Schleife 40 Runden vergeblich und
+       blockiert dabei (aufbauLaeuft) die Uebergabe der wirklich sichtbaren Ansicht. Seit die
+       Drawer am geteilten Zeitraum teilnehmen, ist das kein Randfall mehr, sondern
+       Mount-Reihenfolge. */
+    function istStartkandidat(id){
+      return nimmtTeil(id) && !/spotlight|drawer/i.test(String(id || ""));
+    }
     var TEILBAR = { last7: 1, last30: 1, last3: 1 };
     function syncAn(){ return UC.getPref && UC.getPref("date_sync") === "on"; }
 
@@ -1090,7 +1102,7 @@
       /* Genau EINE Warteschleife fuer die Seite. Vorher startete jeder teilnehmende Picker eine
          eigene -- bei fuenf Ansichten fuenf Schleifen, und im Log der echten Seite entsprechend
          fuenf Bloecke pro Runde. */
-      if (!aufbauLaeuft && !bootGetan() && nimmtTeil(instanceId)){
+      if (!aufbauLaeuft && !bootGetan() && istStartkandidat(instanceId)){
         aufbauLaeuft = true;
         setTimeout(function(){ aufbauUebergeben(ctrl); }, 0);
       }
@@ -1300,6 +1312,61 @@
      ("kam zu spaet: der Zeitraum wurde beim Aufbau schon uebergeben") -- er war ein Nullvorgang
      mit einer Konsolenzeile. Wer den Zeitraum von aussen setzen will, nimmt
      upstreemDatesActivate(view). */
+  /* ---- DIE DRAWER: openDrawer ist der Melder ----------------------------------------------
+     Ein Drawer ist keine Ansicht -- er laeuft nicht ueber showView, es gab also keinen Moment,
+     an dem "veraltet -> einmal nachladen" haengen konnte. Es gibt aber einen: die Host-App
+     oeffnet JEDEN Drawer ueber openDrawer(art, id), ausnahmslos. core umschliesst das (wie
+     showView) und meldet es weiter.
+
+     KEIN Beobachter und KEIN Takt. Der erste Entwurf hing an einem IntersectionObserver -- die
+     falsche Bauart fuer diese App, und ausserdem nicht messbar: in einer Flaeche, die keine
+     Bilder rechnet, feuert er nie (gemessen: innerHeight 0, null Aufrufe).
+
+     Nachgesehen wird nur bei den DRAWER-Kalendern (vier), nur wenn ein Drawer aufgeht, und
+     hoechstens zweimal je Oeffnen. Welcher Kalender zu welchem Drawer gehoert, wird NICHT aus
+     "art" geraten: gefragt wird, wer jetzt sichtbar ist. Das ist ein Lesezugriff auf vier
+     Elemente nach einer Nutzerhandlung -- nicht zu vergleichen mit demselben Zugriff in einer
+     Schleife, an der die Leistungsrunde haengengeblieben ist.
+
+     ZWEI Blicke, 300ms und 900ms: Bubble blendet den Drawer nach seinem eigenen Zeitplan ein
+     (Animation), ein einziger Zeitpunkt waere geraten. Beim zweiten Blick ist der Stand schon
+     festgehalten, es passiert also nichts mehr -- die Wiederholung kann nicht doppelt laden.
+
+     MEHRERE DRAWER UEBEREINANDER sind kein Sonderfall: jeder sichtbare Drawer-Kalender wird
+     einzeln geprueft, jeder hat seine eigene Instanz und seine eigenen States. Ein Drawer, der
+     schon offen WAR, wurde beim Oeffnen bedient und bleibt bis zum naechsten Oeffnen auf seinen
+     Zahlen -- ausdruecklich abgesprochen ("es waere nicht schlimm, wenn der darunterliegende
+     Drawer nicht sofort mit geupdatet wird").
+
+     ERSTES Oeffnen heisst NICHT nachladen: dann laedt der Drawer ueber seinen eigenen Workflow,
+     und ein zweiter Aufruf waere der doppelte Durchlauf. Festgehalten wird nur, mit welchem
+     Zeitraum. */
+  function drawerBedienen(){
+    if (!syncAn()) return;            /* ohne Schalter gehoert der Zeitraum jedem selbst */
+    for (var i = 0; i < CONTROLLERS.length; i++){
+      var c = CONTROLLERS[i];
+      if (!c || !c.root || !c.root.isConnected) continue;
+      if (!c.instanceId || !nimmtTeil(c.instanceId)) continue;
+      if (istStartkandidat(c.instanceId)) continue;   /* Ansichten haben ihren eigenen Weg */
+      if (c.root.offsetParent === null) continue;     /* dieser Drawer ist zu */
+      var sig = sigVon(c);
+      if (!sig) continue;
+      var alt = STAND[c.instanceId];
+      STAND[c.instanceId] = sig;
+      if (!alt || alt === sig) continue;              /* erstes Oeffnen bzw. unveraendert */
+      if (typeof c.nachladen === "function") c.nachladen();
+    }
+  }
+  if (UC.onDrawerOpen) UC.onDrawerOpen(function(){
+    setTimeout(drawerBedienen, 300);
+    setTimeout(drawerBedienen, 900);
+  });
+
+  /* ZWEI MELDER, EINE REGEL: showView fuer die Ansichten (hier), openDrawer fuer die Drawer
+     (darueber). Beide fragen dasselbe -- "ist der Zeitraum ein anderer als der, mit dem hier
+     zuletzt geladen wurde?" -- und beide schreiben STAND, bevor sie rufen. Ueberschneiden
+     koennen sie sich nicht: die Drawer-Runde ueberspringt jeden Ansichts-Kalender, der
+     Ansichtswechsel findet nur den Kalender seiner Ansicht. */
   var STARTANSICHT_GEKLAERT = false;
   function startansichtNachtragen(){
     if (STARTANSICHT_GEKLAERT) return;
@@ -1453,7 +1520,7 @@
              'kannte den Zeitraum vor der ersten Abfrage';
     }
     function aufbauUebergeben(c, rest){
-      if (bootGetan() || !c || !c.instanceId || !nimmtTeil(c.instanceId)) return;
+      if (bootGetan() || !c || !c.instanceId || !istStartkandidat(c.instanceId)) return;
       if (rest == null) rest = AUFBAU_MAX;
       if (rest === AUFBAU_MAX){
         var unnoetig = urlHatIhnSchon(c.root);

@@ -12,7 +12,7 @@ function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(fun
 function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
 var T=null, ladungen=0;
 function prefs(){ try { return JSON.parse(window.localStorage.getItem("up_prefs")||"{}"); } catch(e){ return {}; } }
-function bauen(prefs, ohneBootFn, ohneBruecke, urlPreset){
+function bauen(prefs, ohneBootFn, ohneBruecke, urlPreset, startAnsicht){
   return Promise.all([hol("core.css"),hol("filters/date-range.css"),hol("core.js"),
                       hol("filters/date-range.js"),hol("filters/bubble/date_range_bubble.html")])
   .then(function(t){
@@ -83,19 +83,37 @@ function bauen(prefs, ohneBootFn, ohneBruecke, urlPreset){
        Start. Der Stub merkt sich die Aufrufe, damit auch bewiesen ist, dass das Original
        weiterhin laeuft und nicht vom Wrapper geschluckt wird. */
     v.__views = [];
-    v.showView = function(n){ v.__views.push(String(n)); };
+    /* Der Stub BLENDET WIRKLICH UM -- und das ist seit dem 04.09. der Kern des Prueftands.
+       Das Nachladen einer veralteten Ansicht haengt jetzt an der Sichtbarkeit (ein
+       IntersectionObserver), nicht mehr an einer Frist nach dem Umschalten. Ein showView, das
+       nur seinen Namen notiert, koennte das nicht mehr pruefen: es wuerde nie etwas sichtbar
+       machen, der Beobachter schwieg, und "apply=0" haette wie ein Fehler ausgesehen.
+       Drawer bleiben unberuehrt: die Host-App kennt sie in showView nicht. */
+    v.showView = function(n){ v.__views.push(String(n));
+      [].forEach.call(d.querySelectorAll("[data-vw]"), function(w){
+        var vw = w.getAttribute("data-vw");
+        if (vw === n){ w.style.display = ""; return; }
+        if (!/spotlight|export/.test(vw)) w.style.display = "none";
+      });
+    };
     [t[0],t[1]].forEach(function(c){ var s=d.createElement("style"); s.textContent=c; d.head.appendChild(s); });
     var s2=d.createElement("style"); s2.textContent="*,*::before,*::after{transition:none!important;animation:none!important}";
     d.head.appendChild(s2);
     var vorlage=wurzelAus(t[4]);
+    /* Jede Wurzel steckt in einer HUELLE mit data-vw -- die Bubble-Gruppe der Ansicht bzw. der
+       Drawer. Ohne startAnsicht sind alle sichtbar (so waren die Phasen 1-11 gebaut); mit
+       startAnsicht ist nur diese eine offen, alles andere ist zu -- der echte Seitenaufbau. */
     IDS.forEach(function(id){
+      var vw = id.replace(/^dates_v2_/, "");
+      var h=d.createElement("div"); h.setAttribute("data-vw", vw);
+      if (startAnsicht && vw !== startAnsicht) h.style.display = "none";
       var w=d.createElement("div"); w.innerHTML=vorlage;
       var r=w.querySelector(".udr-root");
       r.setAttribute("data-instance", id); r.setAttribute("data-cdn-pin","t");
       r.setAttribute("data-range-apply-fn", "bubble_fn_udr_apply");
       r.setAttribute("data-range-apply-delay", "0");
       r.setAttribute("data-isdark","no");
-      d.body.appendChild(r);
+      h.appendChild(r); d.body.appendChild(h);
     });
     var j=d.createElement("script"); j.textContent=t[2]; d.head.appendChild(j);
     var j2=d.createElement("script"); j2.textContent=t[3]; d.head.appendChild(j2);
@@ -105,6 +123,23 @@ function bauen(prefs, ohneBootFn, ohneBruecke, urlPreset){
 }
 /* Wie bauen(), nur ohne den Aufbau-Kanal am window -- fuer den Rueckfall-Test. */
 function bauenOhneBootFn(prefs){ return bauen(prefs, true); }
+/* Der Seitenaufbau, wie er wirklich ist: EINE Ansicht offen, alle anderen und alle Drawer zu. */
+function bauenMitStart(prefs, view){ return bauen(prefs, false, false, undefined, view); }
+/* Eine Ansichts- oder Drawer-Huelle auf- bzw. zumachen. Genau das, was ein Bubble-Drawer tut --
+   ohne showView, denn Drawer laufen nicht darueber. */
+function huelle(d, vw){ return d.querySelector('[data-vw="'+vw+'"]'); }
+function oeffnen(d, vw){ huelle(d, vw).style.display = ""; }
+function schliessen(d, vw){ huelle(d, vw).style.display = "none"; }
+function warte(ms, wert){ return new Promise(function(ok){ setTimeout(function(){ ok(wert); }, ms); }); }
+function nullen(v){ v.__ruf={from:0,to:0,range:0,apply:0,boot:0}; }
+/* Ein echter Klick auf ein Preset -- Trigger auf, Preset klicken, warten. */
+function preset(d, id, key){
+  d.querySelector('[data-instance="'+id+'"] .udr-trigger').click();
+  return warte(300).then(function(){
+    d.querySelector('[data-instance="'+id+'"] [data-preset="'+key+'"]').click();
+    return warte(600, d);
+  });
+}
 /* Der Rahmen mit einem ?range= in der URL. about:blank nimmt kein replaceState mit Pfad, also
    bekommt der Rahmen eine echte Datei mit Query -- eine leere Seite aus dem Server. */
 function bauenMitUrl(prefs, preset){
@@ -159,8 +194,11 @@ bauen(null).then(function(d){
   var ohne=IDS.filter(function(id){ return !schalter(d,id); });
   log("   Schalter DA bei:    "+mit.join(", "));
   log("   Schalter FEHLT bei: "+ohne.join(", "));
-  log("   ==> "+(ohne.length===5 && ohne.every(function(id){return /export|spotlight/.test(id);})
-        ? "RICHTIG (Export und die vier Spotlights nehmen nicht teil)" : "FALSCH"));
+  /* Seit dem 04.09. nehmen die Spotlight-Kalender in den Drawern teil, also tragen sie auch den
+     Schalter -- angefordert, und noetig: der Nutzer will "ueberall anwenden" auch AUS einem
+     Drawer der zweiten Ebene umschalten koennen. Nur der Export bleibt aussen vor. */
+  log("   ==> "+(ohne.length===1 && /export/.test(ohne[0])
+        ? "RICHTIG (nur der Export nimmt nicht teil, die Drawer schon)" : "FALSCH"));
   /* Schalter klicken. Der Kalender stand vorher auf der Vorgabe (last7), also einem TEILBAREN
      Preset -- dann darf nichts nachladen und die Seite darf nicht neu laden. */
   ladungen=0;
@@ -292,8 +330,9 @@ bauen(null).then(function(d){
   return new Promise(function(ok){ setTimeout(function(){ ok(d); },400); });
 }).then(function(d){
   var r=d.defaultView.__ruf;
-  log("   Spotlight aktiviert: SUMME="+(r.from+r.to+r.range)+
-      "   ==> "+(r.from+r.to+r.range===0?"RICHTIG (nimmt nicht teil)":"FALSCH"));
+  log("   Spotlight aktiviert: boot="+r.boot+" range="+r.range+" apply="+r.apply+
+      "   ==> "+(r.boot===1&&r.range===0&&r.apply===0
+        ? "RICHTIG (nimmt jetzt teil: States, kein Nachladen)" : "FALSCH"));
 }).then(function(){
   return bauen(null);           /* Schalter aus */
 }).then(function(d){
@@ -382,14 +421,26 @@ bauen(null).then(function(d){
      last3, dann ZURUECK zum Dashboard. Kalender und URL stehen auf last3, die Zahlen im Dashboard
      sind aber die von last30 -- weil State-Setzen nichts nachlaedt. Erwartet: beim Zurueckkehren
      laeuft der Nachlade-Kanal EINMAL fuer das Dashboard, und nur fuer das. */
-  return bauen({ date_sync:"on", date_preset:"last30" });
+  /* Ab hier der ECHTE Seitenaufbau: NUR Citations ist offen, alle anderen Ansichten und alle
+     Drawer sind zu. Vorher waren im Prueftand alle zehn Picker gleichzeitig sichtbar -- damit war
+     der gemeldete Fall gar nicht darstellbar, denn er lebt genau davon, dass eine Ansicht beim
+     Aufbau NICHT sichtbar ist. */
+  return bauenMitStart({ date_sync:"on", date_preset:"last30" }, "citations");
 }).then(function(d){
-  /* DIE STARTANSICHT ist die, die beim Aufbau sichtbar ist -- hier alle, also nimmt der Nachtrag
-     sie alle mit. Auf der echten Seite ist genau eine sichtbar. Wichtig ist: KEIN showView fuer
-     sie, denn genau daran ist der erste Anlauf gescheitert. */
+  /* Erstmals zum Dashboard: es wird sichtbar, laedt ueber seinen eigenen Workflow -- und darf
+     deshalb NICHT nachladen. Festgehalten wird nur, mit welchem Zeitraum. */
   var v=d.defaultView;
+  nullen(v);
   v.showView("dashboard");
-  return new Promise(function(ok){ setTimeout(function(){ ok(d); },500); });
+  return warte(600, d);
+}).then(function(d){
+  var r=d.defaultView.__ruf;
+  log("ERSTMALS SICHTBAR  Wechsel auf eine Ansicht, die noch nie offen war");
+  log("   boot="+r.boot+" range="+r.range+" apply="+r.apply+
+      "   ==> "+(r.apply===0&&r.range===0
+        ? "RICHTIG (kein Nachladen -- die Ansicht laedt selbst, ein zweiter Aufruf waere der Doppel)"
+        : "FALSCH -- der erste Blick auf eine Ansicht laedt zweimal"));
+  return d;
 }).then(function(d){
   /* Im Dashboard auf last3 wechseln -- ein echter Klick. */
   d.querySelector('[data-instance="dates_v2_dashboard"] .udr-trigger').click();
@@ -436,8 +487,12 @@ bauen(null).then(function(d){
   var v3=d.defaultView;
   [].forEach.call(d.querySelectorAll(".udr-root"), function(r3){ r3.removeAttribute("data-range-apply-fn"); });
   v3.__ruf={from:0,to:0,range:0,apply:0,boot:0};
-  d.querySelector('[data-instance="dates_v2_dashboard"] .udr-trigger').click();
-  return new Promise(function(ok){ setTimeout(function(){
+  /* Zuerst wieder aufs Dashboard umschalten: der Zeitraum muss sich aendern, WAEHREND Citations
+     zu ist -- sonst gibt es beim Zurueckkehren nichts, das veraltet waere. */
+  v3.showView("dashboard");
+  return warte(400, d).then(function(){ return new Promise(function(ok){ setTimeout(function(){
+    d.querySelector('[data-instance="dates_v2_dashboard"] .udr-trigger').click();
+    setTimeout(function(){
     d.querySelector('[data-instance="dates_v2_dashboard"] [data-preset="last7"]').click();
     /* Zaehler NACH dem Klick zurueck: der Klick feuert den Range-Kanal selbst, und der erste
        Anlauf hat ihn mitgezaehlt und deshalb range=2 gemeldet. Gezaehlt werden soll nur, was der
@@ -446,7 +501,8 @@ bauen(null).then(function(d){
       v3.__ruf={from:0,to:0,range:0,apply:0,boot:0};
       v3.showView("citations"); setTimeout(function(){ ok(d); },1000);
     },500);
-  },300); });
+    },300);
+  },300); }); });
 }).then(function(d){
   var v3=d.defaultView, r=v3.__ruf, el=d.querySelector('[data-instance="dates_v2_citations"]');
   log("OHNE data-range-apply-fn  (der Fall auf der echten Seite)");
@@ -484,6 +540,11 @@ bauen(null).then(function(d){
       "   ==> "+(o.zahl()===0
         ? "RICHTIG (der Kalender raeumt den Merker des View-Systems nicht mehr ab)"
         : "FALSCH -- die Ansicht laedt dann zusaetzlich ueber ihren eigenen Weg, mit alten States"));
+  /* DIE DRAWER haben einen eigenen Prueftand: _h_udr_drawer.html. Sie muessen HIER nicht
+     geprueft werden, und sie KOENNEN es nicht -- ihr Melder ist ein IntersectionObserver, und
+     der schweigt, solange der Browser fuer diese Flaeche keine Bilder rechnet (gemessen:
+     innerHeight 0, kein einziger Aufruf). Der andere Prueftand wird darum Schritt fuer Schritt
+     von aussen getrieben, mit einem erzwungenen Bild zwischen Oeffnen und Messen. */
   log("FERTIG");
 }).catch(function(e){ log("ABBRUCH: "+e.message+"\n"+(e.stack||"").split("\n").slice(0,3).join("\n")); });
 </script>

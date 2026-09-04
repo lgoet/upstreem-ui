@@ -106,6 +106,23 @@
      drops it to the default, so the view you are looking at reloads — that one view, through the
      normal apply channel.
 
+     ── Drawers: nothing to do ───────────────────────────────────────────────────
+     The calendars inside the drawers (domain, URL, prompt, brand spotlight) share the range too —
+     "Apply everywhere" means everywhere, and the switch is available in them, so it can be
+     toggled from a second-level drawer as well. Only the EXPORT calendar stays out: an export is
+     its own action with its own range.
+
+     A drawer has no view change to hang a reload on, so the picker listens to the app's own
+     openDrawer(kind, id) instead — core wraps it the same way it wraps showView, before the
+     original, and the original keeps running untouched. When a drawer opens whose data is from
+     another range, that drawer reloads once through the apply channel (reason "stale"). Opening
+     it the first time never reloads: the drawer loads through its own workflow, and a second
+     call would be the double run.
+
+     Nothing is required on Bubble's side for this — no new attribute, no new event, no workflow
+     step. Two drawers stacked on top of each other work the same way: each has its own instance
+     and its own states, so each reloads at most once per change.
+
      Then read it in the page-load workflow, as the first action, into your two date states:
 
        date_from =

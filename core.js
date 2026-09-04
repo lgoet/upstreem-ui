@@ -11110,6 +11110,43 @@
     setTimeout(function(){ watchForShowView(triesLeft - 1); }, 200);
   })(50);
 
+  /* ---- DRAWER: derselbe Griff wie showView ---------------------------------------------------
+     Die Host-App oeffnet JEDEN Drawer ueber openDrawer(art, id) -- ausnahmslos. Damit hat auch
+     der Drawer einen Melder, genau wie eine Ansicht ihren showView hat, und niemand muss die
+     Sichtbarkeit im Takt nachsehen oder einen Beobachter mitlaufen lassen.
+     Wie bei showView: der Aufruf geht VOR dem Original durch, und das Original laeuft unberuehrt
+     weiter -- wer sich hier eintraegt, kann den Drawer nicht verhindern und nicht verzoegern.
+     Die Argumente gehen unveraendert mit (art, id), damit ein Empfaenger weiss, WAS aufgeht. */
+  var DRAWER_SUBS = [];
+  function onDrawerOpen(fn){
+    if (typeof fn === "function") DRAWER_SUBS.push(fn);
+    return function(){ var i = DRAWER_SUBS.indexOf(fn); if (i >= 0) DRAWER_SUBS.splice(i, 1); };
+  }
+  function fireDrawerOpen(args){
+    for (var i = DRAWER_SUBS.length - 1; i >= 0; i--){
+      try { DRAWER_SUBS[i].apply(null, args); }
+      catch(e){ if (window.console) console.warn("[drawer] ein Empfaenger hat geworfen:", e); }
+    }
+  }
+  function wrapOpenDrawer(){
+    var orig = window.openDrawer;
+    if (typeof orig !== "function") return false;
+    if (orig.__upWrapped) return true;
+    var wrapped = function(){
+      try { fireDrawerOpen([].slice.call(arguments)); } catch(e){}
+      return orig.apply(this, arguments);
+    };
+    wrapped.__upWrapped = true;
+    wrapped.__upOriginal = orig;
+    try { window.openDrawer = wrapped; } catch(e){ return false; }
+    return true;
+  }
+  (function watchForOpenDrawer(triesLeft){
+    if (wrapOpenDrawer()) return;
+    if (triesLeft <= 0) return;
+    setTimeout(function(){ watchForOpenDrawer(triesLeft - 1); }, 200);
+  })(50);
+
   function closeAllDropdowns(){
     var list = OPEN_DD.slice();
     OPEN_DD.length = 0;
@@ -13330,6 +13367,7 @@
     dropdownOpened: dropdownOpened,
     closeAllDropdowns: closeAllDropdowns,
     onViewChange: onViewChange,
+    onDrawerOpen: onDrawerOpen,
     fireViewChange: fireViewChange,
     CITE_COLOR: CITE_COLOR,
     CITE_ALIAS: CITE_ALIAS,
