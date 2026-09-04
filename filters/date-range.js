@@ -1582,17 +1582,33 @@
        ist beides widerlegt: die Citations-Ansicht lud danach mit p_date_from: null. Jede Ansicht
        hat eigene Datums-States, jede braucht ihre Uebergabe -- nur eben eine stille. */
     var sig = sigVon(c), alt = STAND[c.instanceId];
+    var veraltet = !!(alt && sig && alt !== sig);
     spurGlobal("ansicht", { view: name, instanz: c.instanceId,
                             schonUebergeben: !!UEBERGEBEN[c.instanceId],
-                            geladen_mit: alt || "(noch nie)", jetzt: sig });
-    uebergeben(c);
+                            geladen_mit: alt || "(noch nie)", jetzt: sig,
+                            veraltet: veraltet });
+    /* Bei einer VERALTETEN Ansicht wird der Aufbau-Kanal uebersprungen. Zwei Bubble-Ereignisse
+       fuer einen Wechsel waren einer zu viel, und im Log des Nutzers stand genau das:
+
+         +17995  kanal boot  -> States setzen
+         +18259  kanal range -> States setzen UND nachladen
+
+       Der Boot-Aufruf loest auf dieser Seite einen Ladevorgang aus, und zwar mit States, die noch
+       nicht angekommen sind -- also mit den ALTEN Daten. Danach laedt der Range-Aufruf noch einmal
+       richtig. Gemeldet als "einmal mit alten Daten, voellig unnoetig".
+       Der Range-Kanal kann beides in EINEM Workflow, in der richtigen Reihenfolge: erst die States
+       setzen, dann das Apply. Fuer eine veraltete Ansicht ist er also der ganze Vorgang.
+       Ist die Ansicht NICHT veraltet, bleibt es beim Aufbau-Kanal allein: dort soll nichts laden. */
+    if (!veraltet) uebergeben(c);
     /* Veraltet: diese Ansicht wurde schon einmal mit einem ANDEREN Zeitraum bedient. Dann fehlt
        nach der Uebergabe nur noch der Ladevorgang -- und den kennt der Nachlade-Kanal.
        Beim ERSTEN Aktivieren (alt ist leer) nicht: dort laedt die Ansicht ueber ihren eigenen
        Workflow, und ein zweiter Aufruf waere der doppelte Durchlauf. */
-    if (alt && sig && alt !== sig && typeof c.nachladen === "function"){
+    if (veraltet && typeof c.nachladen === "function"){
+      UEBERGEBEN[c.instanceId] = 1;
       spurGlobal("veraltet", { view: name, instanz: c.instanceId,
-        geladen_mit: alt, jetzt: sig, warum: "Daten sind von einem anderen Zeitraum -- nachladen" });
+        geladen_mit: alt, jetzt: sig,
+        warum: "Daten sind von einem anderen Zeitraum -- ein Aufruf, der States setzt UND laedt" });
       /* NACH dem Umschalten, nicht davor. core meldet den Ansichtswechsel VOR dem Original von
          showView -- die neue Ansicht ist in diesem Moment noch versteckt. Die Uebergabe der
          States darf und soll dort liegen (sie muss vor dem Laden stehen), ein REFRESH aber nicht:

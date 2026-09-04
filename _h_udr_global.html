@@ -405,10 +405,14 @@ bauen(null).then(function(d){
   var sp=(v.__udrLog||[]).filter(function(e){ return e.art==="veraltet"; }).pop();
   log("   beim Zurueckkehren zu Citations: boot="+r.boot+" apply="+r.apply+" range="+r.range);
   log("   Spur: "+(sp?("geladen_mit="+sp.geladen_mit+"  jetzt="+sp.jetzt):"(keine veraltet-Zeile)"));
-  log("   ==> "+(r.boot===1 && r.apply===1 && r.range===0 && sp
-        ? "RICHTIG (States gesetzt UND einmal nachgeladen -- nur diese Ansicht)"
+  /* EIN Bubble-Ereignis, nicht zwei: kein Boot-Aufruf mehr, wenn die Ansicht veraltet ist --
+     der Nachlade-Kanal setzt die States selbst. Zwei Ereignisse hiessen auf der echten Seite:
+     einmal laden mit alten Daten, dann noch einmal richtig. */
+  log("   ==> "+(r.boot===0 && r.apply===1 && r.range===0 && sp
+        ? "RICHTIG (EIN Aufruf: setzt die States und laedt -- kein Laden mit alten Daten davor)"
         : "FALSCH -- "+(r.apply===0?"kein Nachladen: die Zahlen bleiben vom alten Zeitraum"
-                       :(r.apply>1?"mehr als einmal nachgeladen":"unerwartete Aufrufe"))));
+                       :(r.boot>0?"der Aufbau-Kanal feuert zusaetzlich -- ein Ereignis zu viel"
+                                 :"unerwartete Aufrufe"))));
   /* GEGENPROBE: NOCHMAL zum Dashboard, ohne Aenderung dazwischen. Jetzt darf NICHT nachgeladen
      werden -- sonst laedt jeder Ansichtswechsel nach und wir sind wieder beim Doppel. */
   v.__ruf={from:0,to:0,range:0,apply:0,boot:0};
@@ -458,7 +462,7 @@ bauen(null).then(function(d){
       (jr.reason==="stale"?"RICHTIG":"FALSCH"));
   var j=el.getAttribute("data-range-json")||"";
   log("   data-range-json: "+(j?j.slice(0,60)+"…":"(leer)"));
-  log("   ==> "+(r.boot===1 && r.range===1 && el.getAttribute("data-range-apply")==="yes" && /"last7"/.test(j)
+  log("   ==> "+(r.boot===0 && r.range===1 && el.getAttribute("data-range-apply")==="yes" && /"last7"/.test(j)
         ? "RICHTIG (Rueckfall auf den Range-Kanal -- der Weg, den die Seite ohnehin hat)"
         : "FALSCH -- "+(r.range===0?"kein Nachladen: die Ansicht bleibt beim alten Zeitraum"
                        :"Attribute stimmen nicht")));
