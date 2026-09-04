@@ -267,14 +267,14 @@
        verschlechtert, weil das Ueberspringen der Uebergabe einen Bubble-Schritt voraussetzt, den
        es nicht gibt.
 
-       Wer den Schritt hat -- Page-Load-Workflow liest up_range und setzt die zwei Datums-States,
+       Wer den Schritt hat -- Page-Load-Workflow liest range und setzt die zwei Datums-States,
        bevor die erste Abfrage laeuft --, schaltet es ein und bekommt dafuer: einen Ladevorgang
        beim Aufbau statt zwei, weil Bubble den Zeitraum dann schon vor der ersten Abfrage kennt
        und unsere Uebergabe entfaellt. */
     function urlAn(root){
       return String(root && root.getAttribute("data-url-range") || "").toLowerCase() === "on";
     }
-    var URL_PARAM = "up_range";
+    var URL_PARAM = "range";
     function urlPreset(){
       if (!urlNutzbar()) return null;
       try {
@@ -1631,9 +1631,33 @@
        den URL-Parameter liest dort niemand. Ergebnis: p_date_from: null, also gar kein Zeitraum.
        Ein doppelter Ladevorgang mit richtigen Daten ist schlimm; ein einzelner ohne Daten ist
        schlimmer. Also uebergibt der Aufbau IMMER, genau einmal, ueber den Aufbau-Kanal. */
+    /* Traegt die URL den geteilten Zeitraum SCHON -- und liest die Seite ihn auch? Dann ist die
+       Uebergabe ueberfluessig: Bubble hat ihn dann bei 0ms aus dem URL-Parameter, lange vor der
+       ersten Abfrage, und unsere waere ein zweiter Zustandswechsel ohne neue Information.
+
+       BEIDE Bedingungen, und das ist der Unterschied zum ersten Anlauf: der sprang schon bei
+       einem Parameter in der URL ab, ohne zu wissen, ob die Seite ihn ueberhaupt abfragt. Auf der
+       echten Seite tat sie es nicht -- Ergebnis: p_date_from: null, gemeldet als "das hat
+       ueberhaupt nicht funktioniert". data-url-range="on" ist die Zusage der Seite, dass sie den
+       Parameter im Page-Load-Workflow liest. Ohne die Zusage wird uebergeben. */
+    function urlHatIhnSchon(root){
+      if (!syncAn() || !urlAn(root)) return null;
+      var u = urlPreset();
+      if (!u || u !== syncPreset()) return null;
+      return 'die URL trug "' + u + '" und data-url-range="on" steht am Element -- Bubble ' +
+             'kannte den Zeitraum vor der ersten Abfrage';
+    }
     function aufbauUebergeben(c, rest){
       if (bootGetan() || !c || !c.instanceId || !nimmtTeil(c.instanceId)) return;
       if (rest == null) rest = AUFBAU_MAX;
+      if (rest === AUFBAU_MAX){
+        var unnoetig = urlHatIhnSchon(c.root);
+        if (unnoetig){
+          bootMerken();
+          spur("aufbau-nicht-noetig", { instanz: c.instanceId, warum: unnoetig });
+          return;
+        }
+      }
 
       if (!c.root || !c.root.isConnected){
         /* Bubble hat das Element ersetzt. Den Platz freigeben, sonst wartet niemand mehr:

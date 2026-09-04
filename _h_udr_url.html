@@ -10,13 +10,13 @@
    Rahmen ist window !== window.top, dort waere die Mechanik gar nicht pruefbar.
 
    Aufruf:
-     _h_udr_url.html?up_range=last30   Bubble haette den Zeitraum vor der ersten Abfrage
+     _h_udr_url.html?range=last30   Bubble haette den Zeitraum vor der ersten Abfrage
      _h_udr_url.html                   ohne Parameter, die Gegenprobe
 
    Die Einstellungen werden VOR core.js gesetzt, danach liest core sie einmal und cacht sie. */
 var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
 var P=new URLSearchParams(location.search);
-var MIT=P.get("up_range");
+var MIT=P.get("range");
 /* Die URL beim Start festhalten. "unberuehrt" heisst UNVERAENDERT, nicht "ohne Parameter" -- der
    erste Anlauf verglich auf Abwesenheit und meldete deshalb FALSCH fuer eine URL, die der Test
    selbst mit dem Parameter aufgerufen hatte. */
@@ -53,7 +53,7 @@ Promise.all([hol("core.css"),hol("filters/date-range.css"),hol("core.js"),
   var spur=window.__udrLog||[];
   var grund=(spur.filter(function(e){ return e.art==="aufbau-nicht-noetig"; })[0]||{}).warum;
   var lbl=(document.querySelector(".udr-label")||{}).textContent||"";
-  log(MIT ? "MIT ?up_range="+MIT : "OHNE Parameter (Gegenprobe)");
+  log(MIT ? "MIT ?range="+MIT : "OHNE Parameter (Gegenprobe)");
   log("   window===window.top: "+(window===window.top)+"   location.search: \""+location.search+"\"");
   log("   Bubble-Aufrufe: "+JSON.stringify(RUF));
   log("   Spur: "+(grund||"(keine Zeile aufbau-nicht-noetig)"));
@@ -75,7 +75,7 @@ Promise.all([hol("core.css"),hol("filters/date-range.css"),hol("core.js"),
           ? "RICHTIG (ohne Parameter wird genau einmal uebergeben)"
           : "FALSCH -- "+(RUF.boot===0?"gar keine Uebergabe":"mehr als ein Kanal")));
     log("   URL danach: \""+location.search+"\""+
-        "   ==> "+(/up_range=last30/.test(location.search)
+        "   ==> "+(/range=last30/.test(location.search)
           ? "RICHTIG (nachgezogen -- der naechste Aufbau braucht die Uebergabe nicht mehr)"
           : "FALSCH -- die URL wurde nicht geschrieben"));
   }

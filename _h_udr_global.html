@@ -31,7 +31,7 @@ function bauen(prefs, ohneBootFn, ohneBruecke, urlPreset){
     /* Mit urlPreset braucht der Rahmen eine ECHTE URL: about:blank hat kein location.search,
        und genau das liest der Kalender. Also eine leere Datei vom Server, mit Query. */
     if (urlPreset !== undefined){
-      neu.src = "_h_leer.html" + (urlPreset ? "?up_range=" + urlPreset : "?leer=1");
+      neu.src = "_h_leer.html" + (urlPreset ? "?range=" + urlPreset : "?leer=1");
       return new Promise(function(ok){
         neu.addEventListener("load", function(){ ok(bestuecken(neu.contentDocument)); }, { once:true });
       });
@@ -105,7 +105,7 @@ function bauen(prefs, ohneBootFn, ohneBruecke, urlPreset){
 }
 /* Wie bauen(), nur ohne den Aufbau-Kanal am window -- fuer den Rueckfall-Test. */
 function bauenOhneBootFn(prefs){ return bauen(prefs, true); }
-/* Der Rahmen mit einem ?up_range= in der URL. about:blank nimmt kein replaceState mit Pfad, also
+/* Der Rahmen mit einem ?range= in der URL. about:blank nimmt kein replaceState mit Pfad, also
    bekommt der Rahmen eine echte Datei mit Query -- eine leere Seite aus dem Server. */
 function bauenMitUrl(prefs, preset){
   return bauen(prefs, false, false, preset).then(function(d){ return { d:d, v:d.defaultView }; });

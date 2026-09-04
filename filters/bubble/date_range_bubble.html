@@ -89,6 +89,27 @@
      saying so: a page without a date range is worse than a page that loads twice, and neither
      should happen silently.
 
+     ── The range in the URL: one page-load step, no waiting ─────────────────────
+     Bubble's JavaScriptToBubble bridge is not up until seconds into the page load (measured on
+     the real app: 3.8s), so the handover above can never beat the page's FIRST query. If that
+     first query must already have the right range, Bubble has to learn it from somewhere that
+     needs no JavaScript — the URL.
+
+     Put data-url-range="on" on the root. The picker then keeps ?range=<preset> in the URL:
+     it reloads with it when "Apply everywhere" is switched on, and rewrites it on every preset
+     change (replaceState, no reload). A PRESET, not a date — an absolute date in a URL is wrong
+     tomorrow, and a bookmark from last week would be a time machine.
+
+     Then read it in the page-load workflow, as the first action, into your two date states:
+
+       date_from =
+         Get data from page URL: range  is "last30"  ->  Current date/time minus 29 days
+                                        is "last3"   ->  Current date/time minus 3 months
+                                        else         ->  Current date/time minus 6 days
+       date_to   =  Current date/time
+
+     Only the three relative presets are shareable, so those three cases are all of them.
+
      data-boot-mode on the root steers the handover:
        (unset)  the boot channel, one single call. What you want.
        "full"   from + to + range, like a click. For a page that deliberately loads off it.
