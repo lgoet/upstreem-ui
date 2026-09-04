@@ -61,6 +61,11 @@
                              "date_to":"YYYY-MM-DD","event_id":"..."}
        data-range-apply-fn  receives the SAME JSON TEXT string   (type: text)   OPTIONAL
        data-boot-fn         receives the SAME JSON TEXT string   (type: text)   OPTIONAL,
+                          -- and to push into it from a page workflow, call
+                          upstreemDatesActivate('<view name>'). Do NOT read data-range-current
+                          from the DOM and pass it yourself: measured on the real app, that
+                          snippet delivered null and overwrote the correct dates the picker had
+                          just handed over.
                             but see "Why the page load has its own channel" below — on a page
                             whose range workflow reloads data, you want this one.
 

@@ -1352,6 +1352,15 @@
      nur die automatischen Uebergaben auseinander. */
   window.upstreemDatesActivate = function (name) {
     var c = pickerFuer(name);
+    /* In die Spur, mit Ergebnis. Der Aufruf steht auf der echten Seite in view_first_<name>, also
+       an einer Stelle, an der ein stilles false teuer ist: dann laeuft die Ansicht ohne Zeitraum.
+       Und er ersetzt dort einen DOM-Umweg, der genau daran gescheitert ist -- im Log des Nutzers
+       kam bubble_fn_udr_date_boot_dashboard ein zweites Mal an, mit dem Wert null, und
+       ueberschrieb die richtigen Datumsangaben von einer Sekunde davor. Diese Funktion kann kein
+       null schicken: sie liest den Stand des Pickers, nicht ein Attribut, das erst geschrieben
+       werden muss. */
+    spurGlobal("activate", { name: String(name || ""),
+      instanz: c ? c.instanceId : "(kein Picker mit diesem Namen)" });
     if (!c || typeof c.emitCurrent !== "function") return false;
     UEBERGEBEN[c.instanceId] = 1;
     return c.emitCurrent();
