@@ -65,7 +65,10 @@
 .udr-menu {
   position: absolute; top: calc(100% + var(--up-dd-gap)); left: 0; z-index: 60;
   display: flex; align-items: stretch; width: max-content;
-  padding: var(--up-dd-pad); border: 1px solid var(--vc-border); border-radius: var(--up-dd-radius);
+  /* KEIN Polster am Panel: die Preset-Spalte traegt jetzt Grund und Kante und muss dafuer bis an
+     den Panelrand reichen (wie die Navigationsspalte im Einstellungsfenster, .ums-aside). Das
+     Polster sitzt darum in den beiden Haelften -- Spalte und Kalender bringen es selbst mit. */
+  padding: 0; border: 1px solid var(--vc-border); border-radius: var(--up-dd-radius);
   background: var(--up-menu-bg); color: var(--vc-text);
   box-shadow: 0 10px 28px rgba(0,0,0,.14);
   opacity: 0; transform: translateY(-4px) scale(0.985); pointer-events: none;
@@ -77,32 +80,77 @@
 .udr-menu.is-right { left: auto; right: 0; }
 .udr-menu, .udr-menu * { -webkit-user-select: none; user-select: none; }
 
-/* ---------- presets ---------- */
-.udr-presets { display: flex; flex-direction: column; width: 148px; flex: 0 0 148px; padding: 8px 6px; }
+/* ---------- presets ----------
+   .check_reinvention.py meldet fuer diese Datei fuenf Verdachtsfaelle, und keiner ist einer:
+   .udr-preset und .udr-reset sind TEXTZEILEN einer Navigationsspalte -- ihre Masse kommen aus
+   .ums-nav (Einstellungsfenster) und .usn-item (Hauptsidebar), nicht aus .up-iconbtn, mit dem sie
+   nur "Hoehe, Radius, Hintergrund" gemeinsam haben. .udr-trigger und .udr-day sind kein
+   Segmented Control (der Kalender ist ein Raster aus 42 Zellen, kein Umschalter mit zwei
+   Optionen), .udr-nav ist der Monatspfeil im Kopf des Rasters. Die Meldungen erscheinen, sobald
+   diese Datei angefasst wird -- der Pruefer sieht nur geaenderte CSS. */
+/* Die Spalte ist die Navigationsspalte des Einstellungsfensters (.ums-aside in preferences.css):
+   derselbe Grund (--vc-heading-bg), dieselbe Kante rechts, dieselben Zeilen (36px, 12px Radius,
+   13.5px/500, 2px Abstand) und dieselben ZWEI Zustaende (siehe unten). Uebernommen ist auch der
+   Grund fuer die Kante: eine gefuellte Spalte braucht keinen zweiten Trenner.
+   Das Polster ist das des Dropdowns (--up-dd-pad) und nicht die 16px des Fensters -- 16px waeren
+   in einer 188px breiten Spalte ein Sechstel der Breite.
+   188px, damit "Apply everywhere" / "Ueberall anwenden" mit dem Schalter in EINE Zeile passt:
+   105px Text (12px Schrift, deutsche Fassung) + 8px Luecke + 38px Schalter + 2x9px Polster der
+   Zeile + 2x8px Polster der Spalte = 185px. */
+.udr-presets {
+  display: flex; flex-direction: column; width: 188px; flex: 0 0 188px;
+  padding: var(--up-dd-pad) 8px;
+  background: var(--vc-heading-bg);
+  border-right: 1px solid var(--vc-border);
+  /* Innen ein Pixel weniger als aussen, sonst schneidet die Ecke der Spalte die des Panels. */
+  border-radius: calc(var(--up-dd-radius) - 1px) 0 0 calc(var(--up-dd-radius) - 1px);
+}
 .udr-presets-head {
   padding: 3px 9px 9px; color: var(--vc-muted);
   font-size: 11px; font-weight: 600; line-height: 1; letter-spacing: .04em; text-transform: uppercase;
 }
 .udr-preset {
-  display: flex; align-items: center; width: 100%; height: 34px; padding: 0 9px;
-  border: 0; border-radius: 8px; background: transparent; color: var(--vc-text);
-  font-family: inherit; font-size: 13px; font-weight: 500; text-align: left; cursor: pointer;
+  display: flex; align-items: center; width: 100%; height: 36px; padding: 0 8px;
+  border: 0; border-radius: 12px; background: transparent; color: var(--vc-text);
+  font-family: inherit; font-size: 13.5px; font-weight: 500; text-align: left; cursor: pointer;
 }
-.udr-preset + .udr-preset { margin-top: 4px; }
-.udr-preset:hover, .udr-preset.is-active { background: var(--vc-heading-bg); }
+.udr-preset + .udr-preset { margin-top: 2px; }
+/* ZWEI Zustaende auf gefuelltem Grund, und darum nicht mehr --vc-heading-bg: das IST jetzt der
+   Grund der Spalte, ein Hover darin waere unsichtbar. Dieselben Werte wie .ums-nav: 3.5% fuer
+   "worauf zeige ich", 5% fuer "was ist gewaehlt" -- der Hover ist die halbe Staerke, so bleiben
+   beide unterscheidbar, ohne einen dritten Ton zu erfinden. */
+.udr-preset:hover { background: color-mix(in srgb, var(--vc-text) 3.5%, transparent); }
+.udr-preset.is-active,
+.udr-preset.is-active:hover { background: color-mix(in srgb, var(--vc-text) 5%, transparent); }
+/* Im Dunkeln waere dieselbe Mischung ein fast weisser Schleier -- dort dieselbe eigene
+   Auswahlflaeche wie in der Hauptsidebar und im Einstellungsfenster. */
+.up-root[data-theme="dark"] .udr-preset:hover { background: color-mix(in srgb, var(--up-sel-bg) 50%, transparent); }
+.up-root[data-theme="dark"] .udr-preset.is-active,
+.up-root[data-theme="dark"] .udr-preset.is-active:hover { background: var(--up-sel-bg); }
 .udr-preset.is-active::after {
   content: ""; width: 6px; height: 6px; margin-left: auto; border-radius: 2px; background: var(--vc-text);
 }
+/* Farbe SEKUNDAER (--vc-muted) -- ausdruecklich so bestellt und schon vorher so: Reset ist die
+   Ausweichhandlung, "Ueberall anwenden" die Aussage. Beim Ueberfahren primaer, wie jede
+   gedaempfte Zeile der App. */
 .udr-reset {
-  display: flex; align-items: center; width: 100%; height: 34px; margin-top: auto; padding: 0 9px;
-  border: 0; border-radius: 8px; background: transparent; color: var(--vc-muted);
-  font-family: inherit; font-size: 13px; font-weight: 500; text-align: left; cursor: pointer;
+  display: flex; align-items: center; width: 100%; height: 36px; margin-top: auto; padding: 0 8px;
+  border: 0; border-radius: 12px; background: transparent; color: var(--vc-muted);
+  font-family: inherit; font-size: 13.5px; font-weight: 500; text-align: left; cursor: pointer;
 }
-.udr-reset:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
-.udr-divider { width: 1px; flex: 0 0 1px; margin: 6px 4px; background: var(--vc-border); }
+.udr-reset:hover { background: color-mix(in srgb, var(--vc-text) 3.5%, transparent); color: var(--vc-text); }
+.up-root[data-theme="dark"] .udr-reset:hover { background: color-mix(in srgb, var(--up-sel-bg) 50%, transparent); }
+/* Der Trenner zwischen Spalte und Kalender ist die KANTE der Spalte (border-right). Das Element
+   bleibt im Markup, weil es im gestapelten Bild gebraucht wird -- dort liegt die Spalte unter dem
+   Kalender und hat keine rechte Kante mehr. */
+.udr-divider { display: none; }
+.udr-menu.is-stacked .udr-divider { display: block; }
 
 /* ---------- calendar ---------- */
-.udr-cal { display: flex; gap: 16px; padding: 4px 2px 2px; }
+/* Das Polster des Panels sitzt seit dem 04.09. in den Haelften (siehe .udr-menu): oben/rechts
+   das Dropdown-Polster, links 2px mehr Abstand zur Kante der Spalte, unten das Polster des
+   Rasters (.udr-grid bringt 4px mit). */
+.udr-cal { display: flex; gap: 16px; padding: var(--up-dd-pad) var(--up-dd-pad) 4px 10px; }
 .udr-month { width: 288px; flex: 0 0 288px; }
 .udr-month-head { position: relative; display: flex; align-items: center; justify-content: center; height: 44px; }
 .udr-month-title { color: var(--vc-text); font-size: 14px; font-weight: 500; }
@@ -142,12 +190,21 @@
 .udr-day.is-in { border-radius: 0; background: var(--vc-heading-bg); }
 .udr-day.is-start, .udr-day.is-end {
   border-color: var(--vc-text); background: var(--vc-text); color: var(--vc-bg);
+  border-radius: 0;
 }
-.udr-day.is-start:not(.is-end) { border-radius: 8px 0 0 8px; }
-.udr-day.is-end:not(.is-start) { border-radius: 0 8px 8px 0; }
-/* A range end landing on a row edge would otherwise show a half-open bar pointing at nothing. */
-.udr-day.is-start:nth-child(7n):not(.is-end),
-.udr-day.is-end:nth-child(7n+1):not(.is-start) { border-radius: 8px; }
+/* ---- NUR DIE SICHTBAREN AUSSENECKEN, 12px -------------------------------------------------
+   Eine Ecke ist sichtbar, wenn auf dieser Seite nichts Gefaerbtes anschliesst. Genau das
+   entscheiden is-edge-l / is-edge-r, und die setzt das JS beim Bauen des Rasters: der linke Nachbar
+   IN DERSELBEN ZEILE ist ungefaerbt (oder es ist die erste Spalte) -> linke Ecken; rechts
+   entsprechend. Die Zeile ist die Einheit, weil das Raster nach sieben Spalten umbricht -- eine
+   volle Woche zeigt links und rechts eine Kante, und mitten in der Woche gibt es keine.
+   NICHT jeder gefaerbte Kasten wird abgerundet, und an einem Kasten nie beide Seiten, wenn nur
+   eine aussen liegt: sonst zerfaellt das Band in eine Perlenkette.
+   Warum im JS und nicht per :has(+ …) in CSS: das Raster ueberspringt Platzhalter fremder Monate
+   (die sind nie gefaerbt), und das JS kennt beim Bauen ohnehin schon jede Zelle. Ein
+   Geschwister-Selektor waere eine zweite Wahrheit ueber dasselbe. */
+.udr-day.is-edge-l { border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+.udr-day.is-edge-r { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
 .udr-day.is-today { color: var(--vt-down); }
 .udr-day.is-today:not(.is-start):not(.is-end) { border-color: var(--vc-border); }
 .udr-day.is-today.is-start, .udr-day.is-today.is-end { color: var(--vt-down); }
@@ -168,6 +225,10 @@
 .udr-menu.is-stacked .udr-presets {
   order: 3; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
   column-gap: 2px; row-gap: 4px; width: auto; flex: 0 0 auto; padding: var(--up-dd-pad);
+  /* Unten statt links: kein Grund und keine rechte Kante, sonst liegt eine gefuellte Flaeche mit
+     einer Kante ins Nichts unter dem Kalender. Der waagerechte Trenner uebernimmt (er ist im
+     gestapelten Bild wieder sichtbar, siehe .udr-divider). */
+  background: transparent; border-right: 0; border-radius: 0;
 }
 .udr-menu.is-stacked .udr-preset + .udr-preset { margin-top: 0; }
 .udr-menu.is-stacked .udr-presets-head { grid-column: 1 / -1; }
@@ -205,10 +266,13 @@
   content: ""; position: absolute; left: 0; right: 0; top: -9px; height: 1px;
   background: var(--vc-border);
 }
-/* Farbe wie .udr-reset: gedaempft im Ruhezustand, primaer beim Ueberfahren. */
-.udr-sync-lbl { font-size: 13px; font-weight: 500; color: var(--vc-muted); line-height: 1.25; }
-.udr-sync:hover { background: var(--vc-heading-bg); }
-.udr-sync:hover .udr-sync-lbl { color: var(--vc-text); }
+/* PRIMAER, und einen Punkt kleiner als die Preset-Zeilen (12.5 statt 13.5) -- beides so
+   bestellt. Die Aussage steht immer da, auch ohne Zeiger darauf; der Reset darueber bleibt
+   gedaempft. Kleiner UND primaer ist kein Widerspruch: die Zeile ist die laengste der Spalte und
+   muss mit dem Schalter in eine Zeile passen. */
+.udr-sync-lbl { font-size: 12.5px; font-weight: 500; color: var(--vc-text); line-height: 1.25; }
+.udr-sync:hover { background: color-mix(in srgb, var(--vc-text) 3.5%, transparent); }
+.up-root[data-theme="dark"] .udr-sync:hover { background: color-mix(in srgb, var(--up-sel-bg) 50%, transparent); }
 .udr-sync:focus-visible { outline: 2px solid var(--vc-focus, var(--vc-text)); outline-offset: -2px; }
 /* Der Schalter nach rechts: die Beschriftung ist die Aussage, der Schalter der Zustand.
    Zeiger-Ereignisse aus: geklickt wird die ganze Zeile, und ein eigener Treffer auf dem Schalter

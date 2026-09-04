@@ -113,11 +113,11 @@
      its own action with its own range.
 
      A drawer has no view change to hang a reload on, so the picker listens to the app's own
-     openDrawer(kind, id) instead — core wraps it the same way it wraps showView, before the
-     original, and the original keeps running untouched. When a drawer opens whose data is from
-     another range, that drawer reloads once through the apply channel (reason "stale"). Opening
-     it the first time never reloads: the drawer loads through its own workflow, and a second
-     call would be the double run.
+     openDrawer(kind, id) and closeDrawer(kind) instead — core wraps both the same way it wraps
+     showView, before the original, and the originals keep running untouched. When a drawer opens
+     whose data is from another range, that drawer reloads once through the apply channel (reason
+     "stale"). Opening it the first time never reloads: the drawer loads through its own workflow,
+     and a second call would be the double run.
 
      ── One change serves everything that is VISIBLE ─────────────────────────────
      Change the range in a drawer and the view behind it changes too — anything on screen with a
@@ -128,8 +128,12 @@
        every OTHER visible calendar    one apply per instance, reason "stale", 150ms apart
        everything that is closed       nothing: it reloads when it opens
 
-     Visible means visible, not "listed in the URL" — the picker asks the browser once per click.
-     Closed drawers and background views are never called, so no hidden RPC runs.
+     "Visible" is never read off the DOM, and that is the whole point. This app leaves a view in
+     the document after you have visited it (184 calendar roots measured on the Prompts page), so
+     a DOM test cannot tell "closed" from "still there" — one range change fired 25 RPCs that
+     way. The app's own three calls answer it exactly: showView says which view is open,
+     openDrawer/closeDrawer say which drawers are. Nothing else is ever called, so there are no
+     hidden RPC runs.
 
      WHAT THIS NEEDS ON BUBBLE'S SIDE: the workflow behind the reload must refresh the component
      that instance_id names, not "the current view". With a main view and two drawers open, three

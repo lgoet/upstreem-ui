@@ -62,7 +62,10 @@ var H = {
           if (!/spotlight|export/.test(vw)) w.style.display="none";
         });
       };
-      v.openDrawer=function(art, id){ v.__drawer.push(String(art)+":"+String(id)); };
+      v.openDrawer =function(art, id){ v.__drawer.push("auf:"+String(art)); };
+      /* closeDrawer gehoert dazu: ohne sie bleibt ein Drawer in der Liste des Kalenders und
+         wuerde bei jeder Aenderung mitbedient -- unsichtbar, also ein Ladevorgang fuer nichts. */
+      v.closeDrawer=function(art){ v.__drawer.push("zu:"+String(art)); };
       [t[0],t[1]].forEach(function(c){ var st=d.createElement("style"); st.textContent=c; d.head.appendChild(st); });
       /* Haengende Transitions halten computed styles auf dem Startwert -- aus. */
       var s2=d.createElement("style"); s2.textContent="*,*::before,*::after{transition:none!important;animation:none!important}";
@@ -88,15 +91,21 @@ var H = {
   nullen: function(){ V.__ruf={from:0,to:0,range:0,apply:0,boot:0}; V.__wer=[]; return "genullt"; },
   /* Ein Drawer geht auf: Huelle sichtbar UND openDrawer gerufen -- so wie die Host-App es tut.
      Beides zusammen, denn nur eines von beidem waere kein Drawer. */
-  auf: function(vw, art){
+  /* Die "art" ist hier der Huellenname (domainspotlight), damit H.zu(vw) mit closeDrawer(art)
+     denselben Eintrag trifft. In der App ist es das Wort, das im Instanznamen steckt -- der
+     Kalender findet seinen Drawer darueber (drawerKalender). */
+  auf: function(vw){
     D.querySelector('[data-vw="'+vw+'"]').style.display="";
-    V.openDrawer(art || vw, "ID123");
+    V.openDrawer(vw, "ID123");
     return "auf: "+vw;
   },
   /* Nur sichtbar machen, OHNE openDrawer -- die Gegenprobe: dann darf nichts nachladen, denn so
      geht in der echten App kein Drawer auf. */
   aufOhneRuf: function(vw){ D.querySelector('[data-vw="'+vw+'"]').style.display=""; return "auf (ohne openDrawer): "+vw; },
-  zu: function(){ for (var i=0;i<arguments.length;i++) D.querySelector('[data-vw="'+arguments[i]+'"]').style.display="none"; return "zu: "+[].join.call(arguments,","); },
+  zu: function(){ for (var i=0;i<arguments.length;i++){
+        D.querySelector('[data-vw="'+arguments[i]+'"]').style.display="none";
+        V.closeDrawer(arguments[i]);
+      } return "zu: "+[].join.call(arguments,","); },
   view: function(n){ V.showView(n); return "showView("+n+")"; },
   preset: function(id,key){
     D.querySelector('[data-instance="'+id+'"] .udr-trigger').click();
@@ -141,7 +150,7 @@ H.bau({ date_sync:"on", date_preset:"last7" }, "dashboard", true).then(function(
   log("   ==> "+(!H.sichtbar("dates_v2_domainspotlight") && H.sichtbar("dates_v2_dashboard")
         ? "RICHTIG (das Messinstrument unterscheidet auf und zu -- Gegenprobe zum offsetParent)"
         : "FALSCH -- der Lesezugriff taugt hier nicht, alle Zahlen unten waeren wertlos"));
-  H.nullen(); H.auf("domainspotlight", "domain");
+  H.nullen(); H.auf("domainspotlight");
   return H.mess();
 }).then(function(j){
   var st = JSON.parse(j);
@@ -154,7 +163,7 @@ H.bau({ date_sync:"on", date_preset:"last7" }, "dashboard", true).then(function(
   H.zu("domainspotlight");
   return warte(300).then(function(){ return H.preset("dates_v2_dashboard","last30"); });
 }).then(function(){
-  H.nullen(); H.auf("domainspotlight", "domain");
+  H.nullen(); H.auf("domainspotlight");
   return H.mess();
 }).then(function(j){
   var st = JSON.parse(j);
@@ -167,14 +176,14 @@ H.bau({ date_sync:"on", date_preset:"last7" }, "dashboard", true).then(function(
                                         :"zu viele Aufrufe -- die zwei Blicke laden doppelt")));
   /* GEGENPROBE 1: zu und auf, ohne dass sich etwas geaendert hat. */
   H.nullen(); H.zu("domainspotlight");
-  return warte(300).then(function(){ H.auf("domainspotlight","domain"); return H.mess(); });
+  return warte(300).then(function(){ H.auf("domainspotlight"); return H.mess(); });
 }).then(function(j){
   var st = JSON.parse(j);
   log("   GEGENPROBE zu und auf OHNE Aenderung: apply="+st.ruf.apply+
       "   ==> "+(st.ruf.apply===0 ? "RICHTIG (kein Nachladen ohne Grund -- der Vergleich ist echt)"
                                   : "FALSCH -- jedes Oeffnen laedt nach"));
   /* Der zweite Drawer wird zum ersten Mal geoeffnet -- nur merken. */
-  H.nullen(); H.auf("urlspotlight","url");
+  H.nullen(); H.auf("urlspotlight");
   return H.mess();
 }).then(function(){
   H.nullen(); H.zu("domainspotlight","urlspotlight");
@@ -182,8 +191,8 @@ H.bau({ date_sync:"on", date_preset:"last7" }, "dashboard", true).then(function(
 }).then(function(){
   /* ZWEI DRAWER UEBEREINANDER: erste Ebene auf, darauf die zweite. Beide waren zu, waehrend sich
      der Zeitraum geaendert hat, beide muessen GENAU EINMAL nachladen -- jeder fuer sich. */
-  H.nullen(); H.auf("domainspotlight","domain");
-  return warte(150).then(function(){ H.auf("urlspotlight","url"); return H.mess(1400); });
+  H.nullen(); H.auf("domainspotlight");
+  return warte(150).then(function(){ H.auf("urlspotlight"); return H.mess(1400); });
 }).then(function(j){
   var st = JSON.parse(j), wer = st.wer.slice().sort();
   log("DRAWER 4  zwei Drawer uebereinander (2. Ebene ueber der 1.)");
@@ -221,7 +230,7 @@ H.bau({ date_sync:"on", date_preset:"last7" }, "dashboard", true).then(function(
      "er ist NICHT mitgezogen" -- die waere bei gleichem Zeitraum nicht zu erkennen. */
   return warte(300).then(function(){ return H.preset("dates_v2_dashboard","last30"); });
 }).then(function(){
-  H.nullen(); H.auf("export","export");
+  H.nullen(); H.auf("export");
   return H.mess();
 }).then(function(j){
   var st = JSON.parse(j);
@@ -251,7 +260,7 @@ H.bau({ date_sync:"on", date_preset:"last7" }, "dashboard", true).then(function(
   /* Und jetzt derselbe Drawer MIT Aufruf: er ist veraltet, also muss er genau einmal laden.
      Ohne diese Zeile waere die Gegenprobe darueber auch mit einer toten Regel wahr. */
   H.nullen(); H.zu("urlspotlight");
-  return warte(300).then(function(){ H.auf("urlspotlight","url"); return H.mess(); });
+  return warte(300).then(function(){ H.auf("urlspotlight"); return H.mess(); });
 }).then(function(j){
   var st = JSON.parse(j);
   log("   dieselbe Lage MIT openDrawer: apply="+st.ruf.apply+"  "+JSON.stringify(st.wer)+
@@ -274,7 +283,7 @@ H.bau({ date_sync:"on", date_preset:"last7" }, "dashboard", true).then(function(
   H.nullen();
   return warte(100);
 }).then(function(){
-  H.nullen(); H.auf("urlspotlight","url");
+  H.nullen(); H.auf("urlspotlight");
   return H.mess();
 }).then(function(j){
   var st = JSON.parse(j);

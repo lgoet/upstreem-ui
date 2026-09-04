@@ -467,7 +467,19 @@
                 (canNext ? "" : " disabled") + ">" + navIcon("right") + "</button>" +
             "</div>" +
             '<div class="udr-dows">' + DOWS.map(function (d) { return '<span class="udr-dow">' + d + "</span>"; }).join("") + "</div>" +
-            '<div class="udr-grid">' + gridCells(ms).map(function (d) {
+            '<div class="udr-grid">' + (function(){
+            var zellen = gridCells(ms);
+            /* ERST alle gefaerbten Zellen bestimmen, DANN die Ecken. Eine Ecke ist nur sichtbar,
+               wenn auf dieser Seite nichts Gefaerbtes anschliesst -- das laesst sich an einer
+               einzelnen Zelle nicht entscheiden, also braucht es die Nachbarn.
+               Die Platzhalter fremder Monate sind nie gefaerbt (siehe unten) und wirken damit als
+               Kante: das ist richtig, denn dort ist das Band wirklich zu Ende. */
+            var gefaerbt = zellen.map(function(d){
+              if (d.getMonth() !== ms.getMonth()) return false;
+              if (d < b.lo || d > b.hi) return false;
+              return !!(range && d >= range.from && d <= range.to);
+            });
+            return zellen.map(function (d, i) {
               var out = d.getMonth() !== ms.getMonth();
               /* Leading/trailing days are blank placeholders, not dates. In a two-month view the
                  same day otherwise appears in both grids -- July's trailing cells ARE early
@@ -483,13 +495,19 @@
                 if (sameDay(d, range.to)) cls += " is-end";
                 if (d > range.from && d < range.to) cls += " is-in";
               }
+              /* Sieben Spalten, danach bricht die Zeile um: der linke Nachbar der ersten Spalte
+                 steht in der Zeile DARUEBER und ist hier kein Nachbar. */
+              if (gefaerbt[i]) {
+                if (i % 7 === 0 || !gefaerbt[i - 1]) cls += " is-edge-l";
+                if (i % 7 === 6 || !gefaerbt[i + 1]) cls += " is-edge-r";
+              }
               return '<button type="button" class="' + cls + '" data-d="' + iso(d) + '"' +
                      (disabled ? " disabled" : "") + ' tabindex="' + (out ? -1 : 0) + '"' +
                      /* Der Hinweis gleich mit ins Markup: das Raster wird bei jedem Monatswechsel
                         neu gebaut, ein Nachtrag von aussen kaeme jedes Mal zu spaet. */
                      (gesperrt ? ' data-tip="' + esc(t("Turn off Apply everywhere")) + '"' : "") + '>' +
                      d.getDate() + "</button>";
-            }).join("") + "</div>" +
+            }).join(""); })() + "</div>" +
           "</div>";
         }
         calEl.innerHTML = html;
@@ -1278,9 +1296,23 @@
      keinen einzigen Bubble-Kanal traf, galt damit als erledigt: der Aufbau lief ins Leere UND der
      spaetere Ansichtswechsel wurde uebersprungen ("schonUebergeben: true" bei falschem Zeitraum).
      Gemeldet am 03.09., und im Log der Seite genau so zu sehen. */
+  /* Der Merker sperrt den AUFBAU, nicht den Ansichtswechsel. Er hat einmal beides gesperrt, und
+     das war ein Fehlerherd: nach dem ersten Besuch einer Ansicht kam bei jedem weiteren Wechsel
+     dorthin keine Uebergabe mehr, die Datums-States blieben also auf dem Stand des letzten
+     Aufrufs. Solange sich der Zeitraum nicht aendert, faellt das nicht auf -- sobald er sich
+     woanders aendert, sind sie falsch, und der STAND-Vergleich merkt es nicht (er vergleicht den
+     Zeitraum des Pickers, nicht den der States). Gemeldet am 04.09.: "man wechselt State, dann
+     View, und der date range state dort wird nicht geupdated".
+     Ein Ansichtswechsel kostet dafuer EINEN Bubble-Aufruf, den Aufbau-Kanal, und der laedt nichts
+     nach (siehe emit). Zwei States setzen ist billiger als zwei falsche States. */
   function uebergeben(c, grund){
-    if (!c || UEBERGEBEN[c.instanceId] || typeof c.emitCurrent !== "function") return false;
-    var ok = c.emitCurrent(grund || "activate");
+    if (!c || typeof c.emitCurrent !== "function") return false;
+    /* Grund ZUERST setzen, dann die Sperre pruefen. Umgekehrt lief der Ansichtswechsel (der ohne
+       Grund ruft, also "activate" meint) in die Aufbau-Sperre und uebergab nichts -- gemessen:
+       boot=0 beim zweiten Wechsel auf dieselbe Ansicht. */
+    grund = grund || "activate";
+    if (grund !== "activate" && UEBERGEBEN[c.instanceId]) return false;
+    var ok = c.emitCurrent(grund);
     if (ok){
       UEBERGEBEN[c.instanceId] = 1;
     }
@@ -1333,118 +1365,185 @@
      ("kam zu spaet: der Zeitraum wurde beim Aufbau schon uebergeben") -- er war ein Nullvorgang
      mit einer Konsolenzeile. Wer den Zeitraum von aussen setzen will, nimmt
      upstreemDatesActivate(view). */
-  /* ---- DIE DRAWER: openDrawer ist der Melder ----------------------------------------------
+  /* ---- WER IST ZU SEHEN? NICHT DAS DOM FRAGEN --------------------------------------------
+     Die teuerste Zeile dieser Datei war ein offsetParent-Test. Auf der echten Seite ist er fast
+     ueberall wahr: die Host-App laesst besuchte Ansichten im Dokument stehen (184 Wurzeln auf
+     der Prompts-Seite gemessen). EIN Zeitraumwechsel loeste damit 25 RPCs aus -- "jeden Refresh,
+     alles was in der Session schonmal offen war", gemeldet am 04.09. Ein DOM-Test kann "zu"
+     nicht von "steht noch da" unterscheiden.
+
+     Die App kann es. Sie sagt es sogar zweimal:
+
+       showView(name)                welche ANSICHT offen ist  -> UC.currentView()
+       openDrawer(art, id)           welcher DRAWER aufgeht
+       closeDrawer(art)              und welcher wieder zugeht
+
+     Daraus fuehrt dieser Abschnitt die Liste der offenen Drawer. Das DOM wird nur noch fuer eine
+     einzige Frage benutzt, und nur bei einem Drawer-Kalender: welcher von ihnen gehoert zu dem
+     Drawer, der gerade aufgegangen ist (siehe drawerKalender). */
+  function sichtbarImFenster(el){
+    if (!el || el.offsetParent === null) return false;
+    var r = el.getBoundingClientRect();
+    if (r.width <= 0 || r.height <= 0) return false;
+    var h = window.innerHeight || 0, w = window.innerWidth || 0;
+    return r.bottom > 0 && r.top < h && r.right > 0 && r.left < w;
+  }
+
+  /* ---- DIE DRAWER ---------------------------------------------------------------------------
      Ein Drawer ist keine Ansicht -- er laeuft nicht ueber showView, es gab also keinen Moment,
-     an dem "veraltet -> einmal nachladen" haengen konnte. Es gibt aber einen: die Host-App
-     oeffnet JEDEN Drawer ueber openDrawer(art, id), ausnahmslos. core umschliesst das (wie
-     showView) und meldet es weiter.
+     an dem "veraltet -> einmal nachladen" haengen konnte. openDrawer ist dieser Moment.
 
      KEIN Beobachter und KEIN Takt. Der erste Entwurf hing an einem IntersectionObserver -- die
      falsche Bauart fuer diese App, und ausserdem nicht messbar: in einer Flaeche, die keine
      Bilder rechnet, feuert er nie (gemessen: innerHeight 0, null Aufrufe).
 
-     Nachgesehen wird nur bei den DRAWER-Kalendern (vier), nur wenn ein Drawer aufgeht, und
-     hoechstens zweimal je Oeffnen. Welcher Kalender zu welchem Drawer gehoert, wird NICHT aus
-     "art" geraten: gefragt wird, wer jetzt sichtbar ist. Das ist ein Lesezugriff auf vier
-     Elemente nach einer Nutzerhandlung -- nicht zu vergleichen mit demselben Zugriff in einer
-     Schleife, an der die Leistungsrunde haengengeblieben ist.
+     WELCHER Kalender zu welchem Drawer gehoert, wird zuerst am NAMEN entschieden: openDrawer
+     ("domain") und die Instanz dates_v2_domainspotlight teilen das Wort. Findet das nichts (etwa
+     "brand" gegen ein anders benanntes Spotlight), zaehlt, wer eine Flaeche im Fenster hat -- bei
+     einem Overlay ist das belastbar, anders als bei einer weggeschalteten Ansicht. Trifft es
+     einen zu viel, ist der Schaden gedeckelt: geladen wird nur, was wirklich einen anderen
+     Zeitraum hat, und je Instanz hoechstens einmal.
 
-     ZWEI Blicke, 300ms und 900ms: Bubble blendet den Drawer nach seinem eigenen Zeitplan ein
-     (Animation), ein einziger Zeitpunkt waere geraten. Beim zweiten Blick ist der Stand schon
-     festgehalten, es passiert also nichts mehr -- die Wiederholung kann nicht doppelt laden.
+     ZWEI Blicke, 300ms und 900ms: Bubble blendet den Drawer nach eigenem Zeitplan ein
+     (Animation), ein einziger Zeitpunkt waere geraten. Beim zweiten Blick steht der Stand schon,
+     die Wiederholung kann also nicht doppelt laden.
 
-     MEHRERE DRAWER UEBEREINANDER sind kein Sonderfall: jeder sichtbare Drawer-Kalender wird
-     einzeln geprueft, jeder hat seine eigene Instanz und seine eigenen States. Ein Drawer, der
-     schon offen WAR, wurde beim Oeffnen bedient und bleibt bis zum naechsten Oeffnen auf seinen
-     Zahlen -- ausdruecklich abgesprochen ("es waere nicht schlimm, wenn der darunterliegende
-     Drawer nicht sofort mit geupdatet wird").
+     MEHRERE DRAWER UEBEREINANDER sind kein Sonderfall: jeder hat seine eigene Instanz und seine
+     eigenen States, jeder wird einzeln geprueft.
 
      ERSTES Oeffnen heisst NICHT nachladen: dann laedt der Drawer ueber seinen eigenen Workflow,
      und ein zweiter Aufruf waere der doppelte Durchlauf. Festgehalten wird nur, mit welchem
      Zeitraum. */
+  var OFFENE_DRAWER = {};            /* art -> [instanceId, ...] */
+  function drawerKalender(art){
+    var wort = String(art || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    var nachName = [], mitFlaeche = [];
+    for (var i = 0; i < CONTROLLERS.length; i++){
+      var c = CONTROLLERS[i];
+      if (!c || !c.root || !c.root.isConnected || !c.instanceId) continue;
+      if (!nimmtTeil(c.instanceId) || istStartkandidat(c.instanceId)) continue;
+      if (wort && c.instanceId.toLowerCase().indexOf(wort) >= 0) nachName.push(c);
+      else if (sichtbarImFenster(c.root)) mitFlaeche.push(c);
+    }
+    return nachName.length ? nachName : mitFlaeche;
+  }
+  function drawerBedienen(art){
+    var liste = drawerKalender(art), ids = [];
+    for (var i = 0; i < liste.length; i++){
+      var c = liste[i], sig = sigVon(c);
+      if (!sig) continue;
+      ids.push(c.instanceId);
+      var alt = STAND[c.instanceId];
+      STAND[c.instanceId] = sig;
+      if (!alt || alt === sig) continue;              /* erstes Oeffnen bzw. unveraendert */
+      if (!syncAn()) continue;                        /* ohne Schalter gehoert der Zeitraum ihm */
+      if (typeof c.nachladen === "function") c.nachladen();
+    }
+    if (ids.length) OFFENE_DRAWER[String(art || "")] = ids;
+  }
+  if (UC.onDrawerOpen) UC.onDrawerOpen(function(art){
+    setTimeout(function(){ drawerBedienen(art); }, 300);
+    setTimeout(function(){ drawerBedienen(art); }, 900);
+  });
+  /* Zu heisst RAUS aus der Liste. Ohne diese Zeile bliebe der Drawer fuer immer "offen" und
+     wuerde bei jeder Aenderung mitbedient -- unsichtbar, also ein Ladevorgang fuer nichts. */
+  if (UC.onDrawerClose) UC.onDrawerClose(function(art){
+    delete OFFENE_DRAWER[String(art || "")];
+  });
+
   /* ---- EINE AENDERUNG BEDIENT ALLES, WAS MAN SIEHT ----------------------------------------
-     Wer im Drawer den Zeitraum umstellt, meint die ganze Seite -- die Hauptansicht dahinter
-     gehoert dazu, und jeder weitere offene Drawer auch. Vorher lud nur der Kalender nach, in dem
-     geklickt wurde; alles andere blieb mit den alten Zahlen stehen, bis man es neu oeffnete.
-     Fuer einen zugeklappten Drawer ist das richtig (er laedt beim Oeffnen), fuer etwas
-     SICHTBARES ist es falsch: da stehen zwei Zeitraeume gleichzeitig auf dem Schirm.
+     Wer im Drawer den Zeitraum umstellt, meint die ganze Seite -- die Ansicht dahinter gehoert
+     dazu, und jeder weitere offene Drawer auch. Aber NUR die: was zu ist, laedt beim naechsten
+     Oeffnen (openDrawer-Weg) bzw. beim naechsten Aktivieren (Ansichtsweg).
 
-     Sichtbar heisst sichtbar, nicht "in der URL": gefragt wird offsetParent, einmal je Klick,
-     bei hoechstens zehn Kalendern. Was zu ist, wird hier nicht angefasst -- das erledigt der
-     openDrawer- bzw. der Ansichtsweg beim naechsten Oeffnen.
+     Die Liste der Kandidaten ist darum kurz, und sie kommt nicht aus dem DOM:
 
-     In der Schleife wird NICHTS ins DOM geschrieben -- STAND ist eine JS-Tabelle, und das
-     Nachladen liegt im setTimeout. Der Browser rechnet das Layout deshalb EINMAL, beim ersten
-     offsetParent, und nicht zehnmal: gelesen wird nur, solange nichts dazwischen schreibt. Auf
-     der Seite mit 24000 Knoten ist genau das der Unterschied zwischen 6ms und 60ms.
+       die offene Ansicht   UC.currentView() -- der Name, mit dem die App zuletzt showView
+                            gerufen hat. Vor dem ersten Wechsel gibt es keinen: dann zaehlt, wer
+                            eine Flaeche im Fenster hat, und das ist dort belastbar (es gibt noch
+                            keine besuchte Ansicht, die nur noch im Dokument steht).
+       die offenen Drawer   OFFENE_DRAWER, gefuehrt von openDrawer/closeDrawer.
 
      GESTAFFELT, nicht alle in derselben Millisekunde: ein JavaScriptToBubble-Element traegt EINEN
      Wert, und Bubble startet den Workflow an der Zustandsaenderung. Zwei Aufrufe im selben Task
      koennen zu einem verschmelzen -- dann laedt einer der Kalender nicht. 150ms Abstand, und der
      erste kommt nach dem eigenen Apply, damit die Reihenfolge stimmt: erst der Kalender, in dem
-     geklickt wurde, dann die anderen. */
+     geklickt wurde, dann die anderen.
+
+     Je Instanz-Id hoechstens EINMAL: von derselben Id gibt es auf der Seite mehrere Kopien
+     (dates_v2_export 18x gemessen), und die teilen sich ihre Bubble-States. */
   function sichtbareBedienen(ausserId, abVerzug){
     if (!syncAn()) return;
+    var ziele = [], gesehen = {};
+    function dazu(c){
+      if (!c || !c.instanceId || c.instanceId === ausserId || gesehen[c.instanceId]) return;
+      if (!nimmtTeil(c.instanceId) || typeof c.nachladen !== "function") return;
+      gesehen[c.instanceId] = 1;
+      ziele.push(c);
+    }
+    var name = (UC.currentView && UC.currentView()) || "";
+    if (name) dazu(pickerFuer(name));
+    else {
+      /* Noch kein Ansichtswechsel -- dann gibt es auch keine Spukansicht, die einer waere: eine
+         Ansicht steht erst im Dokument, nachdem man sie besucht hat. Hier ist der DOM-Test also
+         belastbar, und die Startansicht ist die einzige mit einer Flaeche. */
+      for (var i2 = 0; i2 < CONTROLLERS.length; i2++){
+        var c2 = CONTROLLERS[i2];
+        if (!c2 || !c2.root || !c2.root.isConnected) continue;
+        if (!istStartkandidat(c2.instanceId)) continue;
+        if (sichtbarImFenster(c2.root)) dazu(c2);
+      }
+    }
+    for (var art in OFFENE_DRAWER){
+      if (!Object.prototype.hasOwnProperty.call(OFFENE_DRAWER, art)) continue;
+      var ids = OFFENE_DRAWER[art];
+      for (var k2 = 0; k2 < ids.length; k2++) dazu(pickerFuer(ids[k2]));
+    }
     var n = 0;
-    for (var i = 0; i < CONTROLLERS.length; i++){
-      var c = CONTROLLERS[i];
-      if (!c || !c.root || !c.root.isConnected) continue;
-      if (!c.instanceId || c.instanceId === ausserId) continue;
-      if (!nimmtTeil(c.instanceId)) continue;
-      if (c.root.offsetParent === null) continue;   /* zu: der laedt beim Oeffnen */
-      var sig = sigVon(c);
-      if (!sig || STAND[c.instanceId] === sig) continue;   /* schon mit diesem Zeitraum bedient */
-      STAND[c.instanceId] = sig;
-      if (typeof c.nachladen !== "function") continue;
+    for (var k = 0; k < ziele.length; k++){
+      var z = ziele[k], sig = sigVon(z);
+      if (!sig || STAND[z.instanceId] === sig) continue;  /* schon mit diesem Zeitraum bedient */
+      STAND[z.instanceId] = sig;
       n++;
-      (function(k, verzug){ setTimeout(function(){
-        if (k.root && k.root.isConnected) k.nachladen();
-      }, verzug); })(c, (abVerzug || 0) + n * 150);
+      (function(c2, verzug){ setTimeout(function(){
+        if (c2.root && c2.root.isConnected) c2.nachladen();
+      }, verzug); })(z, (abVerzug || 0) + n * 150);
     }
   }
-  function drawerBedienen(){
-    if (!syncAn()) return;            /* ohne Schalter gehoert der Zeitraum jedem selbst */
-    for (var i = 0; i < CONTROLLERS.length; i++){
-      var c = CONTROLLERS[i];
-      if (!c || !c.root || !c.root.isConnected) continue;
-      if (!c.instanceId || !nimmtTeil(c.instanceId)) continue;
-      if (istStartkandidat(c.instanceId)) continue;   /* Ansichten haben ihren eigenen Weg */
-      if (c.root.offsetParent === null) continue;     /* dieser Drawer ist zu */
-      var sig = sigVon(c);
-      if (!sig) continue;
-      var alt = STAND[c.instanceId];
-      STAND[c.instanceId] = sig;
-      if (!alt || alt === sig) continue;              /* erstes Oeffnen bzw. unveraendert */
-      if (typeof c.nachladen === "function") c.nachladen();
-    }
-  }
-  if (UC.onDrawerOpen) UC.onDrawerOpen(function(){
-    setTimeout(drawerBedienen, 300);
-    setTimeout(drawerBedienen, 900);
-  });
 
-  /* ZWEI MELDER, EINE REGEL: showView fuer die Ansichten (hier), openDrawer fuer die Drawer
-     (darueber). Beide fragen dasselbe -- "ist der Zeitraum ein anderer als der, mit dem hier
-     zuletzt geladen wurde?" -- und beide schreiben STAND, bevor sie rufen. Ueberschneiden
-     koennen sie sich nicht: die Drawer-Runde ueberspringt jeden Ansichts-Kalender, der
-     Ansichtswechsel findet nur den Kalender seiner Ansicht. */
-  var STARTANSICHT_GEKLAERT = false;
-  function startansichtNachtragen(){
-    if (STARTANSICHT_GEKLAERT) return;
-    STARTANSICHT_GEKLAERT = true;
+  /* DREI MELDER, EINE REGEL: showView fuer die Ansichten (hier), openDrawer fuer die Drawer
+     (darueber), und der Klick im Kalender fuer alles, was gerade offen ist (sichtbareBedienen).
+     Alle drei fragen dasselbe -- "ist der Zeitraum ein anderer als der, mit dem hier zuletzt
+     geladen wurde?" -- und alle drei schreiben STAND, bevor sie rufen. Ueberschneiden koennen sie
+     sich nicht: die Drawer-Runde ueberspringt jeden Ansichts-Kalender, der Ansichtswechsel findet
+     nur den Kalender seiner Ansicht, und wer schon bedient ist, hat denselben STAND. */
+  /* ---- DIE STARTANSICHT: EINMAL, BEIM AUFBAU ----------------------------------------------
+     Welche Ansicht beim Seitenaufbau offen ist, weiss der Kalender nicht: showView hat noch nicht
+     gefeuert, und die Aufbau-Uebergabe macht der Kalender, der ZUERST mountet -- das ist nicht
+     zwingend der sichtbare (im Prueftand gemessen: Startansicht "citations", Uebergabe von
+     "dashboard"). Ihr Zeitraum muss aber festgehalten werden, sonst gilt sie beim ersten
+     Zurueckkehren als "noch nie geladen" und wird NICHT nachgeladen, obwohl ihre Zahlen von
+     einem anderen Zeitraum sind.
+
+     Also EINMAL, genau hier: wer jetzt eine Flaeche im Fenster hat, ist offen. Zu diesem
+     Zeitpunkt ist der DOM-Test belastbar -- die Seite hat gerade geladen, es gibt noch keine
+     besuchte Ansicht, die nur noch im Dokument steht. Genau daran ist die Vorgaengerfassung
+     gescheitert: sie lief beim ERSTEN ANSICHTSWECHSEL, und da war der Spuk schon da (184
+     Wurzeln, fast alle "sichtbar"). Sie schrieb Ansichten ein STAND, die nie geladen hatten --
+     und damit wurden sie nie nachgeladen. Gemeldet als "der date range state dort wird nicht
+     geupdated". */
+  function startlageFesthalten(){
     for (var i = 0; i < CONTROLLERS.length; i++){
       var c = CONTROLLERS[i];
-      if (!c || !c.root || !c.root.isConnected || !nimmtTeil(c.instanceId)) continue;
-      if (STAND[c.instanceId]) continue;
-      if (c.root.offsetParent === null) continue;
+      if (!c || !c.root || !c.root.isConnected || !c.instanceId) continue;
+      if (!nimmtTeil(c.instanceId) || STAND[c.instanceId]) continue;
+      if (!sichtbarImFenster(c.root)) continue;
       var sg = sigVon(c);
-      if (!sg) continue;
-      STAND[c.instanceId] = sg;
+      if (sg) STAND[c.instanceId] = sg;
     }
   }
   if (UC.onViewChange) UC.onViewChange(function (name) {
     if (!name) return;
-    startansichtNachtragen();
     if (!syncAn()){ return; }
     if (!nimmtTeil(name)){ return; }
     var c = pickerFuer(name);
@@ -1590,6 +1689,7 @@
           /* Die Startansicht laedt gleich mit genau diesem Zeitraum -- festhalten, sonst gilt sie
              beim ersten Zurueckkehren als veraltet und wird ohne Not nachgeladen. */
           var s0 = sigVon(c); if (s0) STAND[c.instanceId] = s0;
+          startlageFesthalten();
           return;
         }
       }
@@ -1607,6 +1707,7 @@
         bootMerken();
         uebergeben(c, "boot");
         var s1 = sigVon(c); if (s1) STAND[c.instanceId] = s1;
+        startlageFesthalten();
         /* Ab jetzt steht der Zeitraum in der URL. Der naechste Aufbau braucht diese Uebergabe
            deshalb nicht mehr -- und damit auch keinen zweiten Abfragedurchlauf. */
         if (syncAn() && urlAn(c.root)) urlSchreiben(syncPreset());

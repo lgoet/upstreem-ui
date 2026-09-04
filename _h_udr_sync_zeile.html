@@ -72,14 +72,19 @@ bauen(null).then(oeffnen).then(function(d){
       "   Breite "+Math.round(zr.width)+" / "+Math.round(rr.width)+" (Reset)"+
       "   ==> "+(Math.round(zr.left)===Math.round(rr.left)&&Math.round(zr.width)===Math.round(rr.width)
         ? "RICHTIG (gleiche Spalte)":"FALSCH"));
+  /* Die Farben sind seit dem 04.09. AUSDRUECKLICH verschieden: die Zeile primaer, der Reset
+     sekundaer. Vorher stand hier "gleich = RICHTIG" -- das war der damalige Auftrag ("font color
+     gleich wie Reset"), und er ist ersetzt. */
+  var preset1=d.querySelector(".udr-preset");
   log("   Schriftfarbe: Zeile "+cs(lbl).color+"   Reset "+cs(reset).color+
-      "   ==> "+(cs(lbl).color===cs(reset).color?"RICHTIG (gleich)":"FALSCH"));
-  log("   Hover: Zeile "+regel(d,".udr-sync:hover","background")+" / "+
-      regel(d,".udr-sync:hover .udr-sync-lbl","color")+
-      "   Reset "+regel(d,".udr-reset:hover","background")+" / "+regel(d,".udr-reset:hover","color"));
-  log("   ==> "+(regel(d,".udr-sync:hover","background")===regel(d,".udr-reset:hover","background")&&
-                 regel(d,".udr-sync:hover .udr-sync-lbl","color")===regel(d,".udr-reset:hover","color")
-        ? "RICHTIG (gleicher Hover wie Reset)":"FALSCH"));
+      "   Preset (primaer) "+cs(preset1).color);
+  log("   ==> "+(cs(lbl).color===cs(preset1).color && cs(reset).color!==cs(preset1).color
+        ? "RICHTIG (Zeile primaer, Reset sekundaer)"
+        : "FALSCH -- "+(cs(lbl).color!==cs(preset1).color?"Zeile nicht primaer":"Reset nicht sekundaer")));
+  log("   Hover-Flaeche: Zeile "+regel(d,".udr-sync:hover","background")+
+      "   Reset "+regel(d,".udr-reset:hover","background"));
+  log("   ==> "+(regel(d,".udr-sync:hover","background")===regel(d,".udr-reset:hover","background")
+        ? "RICHTIG (gleiche Hover-Flaeche wie Reset)":"FALSCH"));
   /* Polster und die Abstaende um die Trennlinie -- gemessen, nicht aus der CSS gelesen. */
   var linie=cs(zeile,"::before"), lTop=parseFloat(linie.top);
   var zurZeile=-lTop-1, zumReset=parseFloat(cs(zeile).marginTop)+lTop;

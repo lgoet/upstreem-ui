@@ -11084,7 +11084,15 @@
     if (typeof fn === "function") VIEW_SUBS.push(fn);
     return function(){ var i = VIEW_SUBS.indexOf(fn); if (i >= 0) VIEW_SUBS.splice(i, 1); };
   }
+  /* WELCHE Ansicht ist offen? Die Frage ist nicht am DOM zu beantworten -- die Host-App laesst
+     besuchte Ansichten im Dokument stehen, ein offsetParent-Test haelt sie fuer sichtbar (auf der
+     Prompts-Seite stehen 184 Wurzeln). Der einzige verlaessliche Zeuge ist showView selbst: die
+     App ruft es bei jedem Wechsel, core umschliesst es ohnehin, also wird der Name hier
+     festgehalten. */
+  var LETZTE_ANSICHT = "";
+  function currentView(){ return LETZTE_ANSICHT; }
   function fireViewChange(name){
+    if (name) LETZTE_ANSICHT = name;
     closeAllDropdowns();
     for (var i = VIEW_SUBS.length - 1; i >= 0; i--){
       try { VIEW_SUBS[i](name); }
@@ -11117,34 +11125,45 @@
      Wie bei showView: der Aufruf geht VOR dem Original durch, und das Original laeuft unberuehrt
      weiter -- wer sich hier eintraegt, kann den Drawer nicht verhindern und nicht verzoegern.
      Die Argumente gehen unveraendert mit (art, id), damit ein Empfaenger weiss, WAS aufgeht. */
-  var DRAWER_SUBS = [];
+  /* BEIDE Richtungen, auf und zu. Nur "auf" zu kennen reicht nicht: wer wissen will, welche
+     Drawer JETZT offen sind, muss auch erfahren, wenn einer geht -- sonst bleibt er fuer immer in
+     der Liste und wird bei jeder Aenderung mitbedient. Am DOM ist die Frage nicht sicher zu
+     beantworten (siehe currentView), also fuehren die zwei Aufrufe der App die Liste. */
+  var DRAWER_SUBS = [], DRAWER_ZU_SUBS = [];
   function onDrawerOpen(fn){
     if (typeof fn === "function") DRAWER_SUBS.push(fn);
     return function(){ var i = DRAWER_SUBS.indexOf(fn); if (i >= 0) DRAWER_SUBS.splice(i, 1); };
   }
-  function fireDrawerOpen(args){
-    for (var i = DRAWER_SUBS.length - 1; i >= 0; i--){
-      try { DRAWER_SUBS[i].apply(null, args); }
-      catch(e){ if (window.console) console.warn("[drawer] ein Empfaenger hat geworfen:", e); }
+  function onDrawerClose(fn){
+    if (typeof fn === "function") DRAWER_ZU_SUBS.push(fn);
+    return function(){ var i = DRAWER_ZU_SUBS.indexOf(fn); if (i >= 0) DRAWER_ZU_SUBS.splice(i, 1); };
+  }
+  function feuern(liste, args, was){
+    for (var i = liste.length - 1; i >= 0; i--){
+      try { liste[i].apply(null, args); }
+      catch(e){ if (window.console) console.warn("[drawer] ein Empfaenger von " + was + " hat geworfen:", e); }
     }
   }
-  function wrapOpenDrawer(){
-    var orig = window.openDrawer;
+  function wrapDrawerFn(name, liste){
+    var orig = window[name];
     if (typeof orig !== "function") return false;
     if (orig.__upWrapped) return true;
     var wrapped = function(){
-      try { fireDrawerOpen([].slice.call(arguments)); } catch(e){}
+      var args = [].slice.call(arguments);
+      try { feuern(liste, args, name); } catch(e){}
       return orig.apply(this, arguments);
     };
     wrapped.__upWrapped = true;
     wrapped.__upOriginal = orig;
-    try { window.openDrawer = wrapped; } catch(e){ return false; }
+    try { window[name] = wrapped; } catch(e){ return false; }
     return true;
   }
-  (function watchForOpenDrawer(triesLeft){
-    if (wrapOpenDrawer()) return;
+  (function watchForDrawerFns(triesLeft){
+    var a = wrapDrawerFn("openDrawer", DRAWER_SUBS);
+    var b = wrapDrawerFn("closeDrawer", DRAWER_ZU_SUBS);
+    if (a && b) return;
     if (triesLeft <= 0) return;
-    setTimeout(function(){ watchForOpenDrawer(triesLeft - 1); }, 200);
+    setTimeout(function(){ watchForDrawerFns(triesLeft - 1); }, 200);
   })(50);
 
   function closeAllDropdowns(){
@@ -13367,7 +13386,9 @@
     dropdownOpened: dropdownOpened,
     closeAllDropdowns: closeAllDropdowns,
     onViewChange: onViewChange,
+    currentView: currentView,
     onDrawerOpen: onDrawerOpen,
+    onDrawerClose: onDrawerClose,
     fireViewChange: fireViewChange,
     CITE_COLOR: CITE_COLOR,
     CITE_ALIAS: CITE_ALIAS,

@@ -1,0 +1,206 @@
+<meta charset="utf-8"><title>Kalender: Spalte, Zeile, Ecken</title>
+<style>html,body{margin:0;font:13px/1.5 system-ui,sans-serif}
+#out{font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap;padding:10px;background:#f6f6f6}</style>
+<body><iframe id="rahmen" style="width:1000px;height:520px;border:0"></iframe><pre id="out">laeuft…</pre>
+<script>
+/* Die fuenf Bestellungen vom 04.09. zum Aussehen des Kalenders:
+   1 Spalte breiter, "Apply everywhere" muss mit dem Schalter in EINE Zeile
+   2 Spalte wie die Navigation im Einstellungsfenster (Grund, Kante)
+   3 nur die SICHTBAREN AUSSENECKEN des gewaehlten Zeitraums abrunden, 12px
+   4 Reset in Sekundaerfarbe
+   5 "Ueberall anwenden" in Primaerfarbe
+
+   Punkt 3 ist der, der leicht falsch herauskommt: "jeden gewaehlten Kasten abrunden" ist die
+   naheliegende und falsche Umsetzung. Darum wird hier ZEILENWEISE geprueft -- pro Woche genau
+   eine linke und eine rechte Aussenkante, und in der Mitte keine. */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+function warte(ms,w){ return new Promise(function(ok){ setTimeout(function(){ ok(w); },ms); }); }
+var D=null, V=null;
+
+function bau(prefs, locale){
+  return Promise.all([hol("core.css"),hol("filters/date-range.css"),hol("core.js"),
+                      hol("filters/date-range.js"),hol("filters/bubble/date_range_bubble.html")])
+  .then(function(t){
+    var alt=document.getElementById("rahmen"), neu=document.createElement("iframe");
+    neu.id="rahmen"; neu.setAttribute("style", alt.getAttribute("style"));
+    alt.parentNode.replaceChild(neu, alt);
+    var d=neu.contentDocument; D=d;
+    d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0;padding:10px'></body></html>"); d.close();
+    var v=d.defaultView; V=v;
+    var p = prefs || {}; if (locale) p.locale = locale;
+    try { v.localStorage.setItem("up_prefs", JSON.stringify(p)); } catch(e){}
+    v.bubble_fn_udr_date_boot=function(){}; v.bubble_fn_udr_date_range=function(){};
+    [t[0],t[1]].forEach(function(c){ var st=d.createElement("style"); st.textContent=c; d.head.appendChild(st); });
+    /* Transitions AUS -- sonst liefert getComputedStyle direkt nach einer Klassenaenderung den
+       Startwert, und jede Hover-Messung vergleicht zwei Ruhezustaende. */
+    var s2=d.createElement("style");
+    s2.textContent="*,*::before,*::after{transition:none!important;animation:none!important}";
+    d.head.appendChild(s2);
+    var w=d.createElement("div"); w.innerHTML=wurzelAus(t[4]);
+    var r=w.querySelector(".udr-root");
+    r.setAttribute("data-instance","dates_v2_dashboard"); r.setAttribute("data-cdn-pin","t");
+    r.setAttribute("data-isdark","no");
+    d.body.appendChild(r);
+    var j1=d.createElement("script"); j1.textContent=t[2]; d.head.appendChild(j1);
+    var j2=d.createElement("script"); j2.textContent=t[3]; d.head.appendChild(j2);
+    return warte(1200, d);
+  });
+}
+function auf(){ D.querySelector(".udr-trigger").click(); return warte(400); }
+function cs(sel){ var e=D.querySelector(sel); return e ? V.getComputedStyle(e) : null; }
+function rect(sel){ var e=D.querySelector(sel); return e ? e.getBoundingClientRect() : null; }
+/* Die echten Hover-Regeln als Klasse -- dieselbe Technik wie im Karten-Prueftand: jede geladene
+   Regel mit :hover einmal geklont, ".uhov" statt ":hover". Damit gelten die ECHTEN
+   Deklarationen; ein selbst nachgebauter Hover wuerde nur sich selbst pruefen. */
+function hoverAlsKlasse(){
+  var aus=[];
+  [].forEach.call(D.styleSheets, function(ss){
+    var rs; try { rs=ss.cssRules; } catch(e){ return; }
+    [].forEach.call(rs||[], function(r){
+      if (!r.selectorText || r.selectorText.indexOf(":hover")<0) return;
+      aus.push(r.selectorText.replace(/:hover/g,".uhov")+"{"+r.style.cssText+"}");
+    });
+  });
+  var st=D.createElement("style"); st.textContent=aus.join("\n"); D.head.appendChild(st);
+  return aus.length;
+}
+
+bau({ date_sync:"on", date_preset:"last30" }).then(function(){
+  return auf();
+}).then(function(){
+  var menu=rect(".udr-menu"), sp=rect(".udr-presets"), spc=cs(".udr-presets");
+  log("1+2) DIE SPALTE");
+  log("   Breite: "+Math.round(sp.width)+"px   Grund: "+spc.backgroundColor+
+      "   Kante rechts: "+spc.borderRightWidth+" "+spc.borderRightColor);
+  var flush = Math.round(sp.left - menu.left) <= 1 && Math.round(menu.bottom - sp.bottom) <= 1;
+  log("   sitzt sie an der Panelkante? links "+Math.round(sp.left-menu.left)+"px, unten "+
+      Math.round(menu.bottom-sp.bottom)+"px   Ecken links: "+spc.borderTopLeftRadius);
+  /* Der Grund muss ein anderer sein als der des Panels -- sonst ist die Spalte nicht zu sehen. */
+  var menuBg = cs(".udr-menu").backgroundColor;
+  log("   Panelgrund: "+menuBg);
+  log("   ==> "+(spc.backgroundColor !== menuBg && parseFloat(spc.borderRightWidth) === 1 && flush
+        ? "RICHTIG (eigener Grund, 1px Kante, bis an den Panelrand -- wie .ums-aside)"
+        : "FALSCH -- "+(spc.backgroundColor===menuBg ? "kein eigener Grund"
+                       : (!flush ? "haengt im Polster statt an der Kante" : "keine Kante"))));
+  /* Der alte Trenner darf nicht ZUSAETZLICH stehen -- zwei Linien nebeneinander. */
+  var trenner = cs(".udr-divider");
+  log("   alter Trenner: display "+trenner.display+
+      "   ==> "+(trenner.display === "none" ? "RICHTIG (die Kante der Spalte ist die Trennung)"
+                                            : "FALSCH -- zwei Linien"));
+  /* Punkt 1: EINE Zeile. Gemessen an der Hoehe des Textkastens (eine Zeile = eine
+     line-height) UND daran, dass der Text den Schalter nicht ueberlappt. */
+  var lbl=rect(".udr-sync-lbl"), sw=rect(".udr-sync .up-switch"), lc=cs(".udr-sync-lbl");
+  var zeilen = Math.round(lbl.height / (parseFloat(lc.lineHeight) || 16));
+  log("1) DIE ZEILE \"" + D.querySelector(".udr-sync-lbl").textContent + "\"");
+  log("   Schrift: "+lc.fontSize+"   Farbe: "+lc.color+"   Textkasten: "+Math.round(lbl.width)+
+      "x"+Math.round(lbl.height)+"px = "+zeilen+" Zeile(n)");
+  log("   Luecke Text -> Schalter: "+Math.round(sw.left-lbl.right)+"px");
+  log("   ==> "+(zeilen===1 && sw.left >= lbl.right
+        ? "RICHTIG (eine Zeile, und der Schalter steht frei daneben)"
+        : "FALSCH -- "+(zeilen>1?"umgebrochen":"Text laeuft in den Schalter")));
+  /* 4 und 5: Reset sekundaer, "Ueberall anwenden" primaer -- gegeneinander geprueft, nicht
+     gegen einen Hexwert: die Namen der Toene stehen in core, die Zuordnung hier. */
+  var pc=cs(".udr-preset"), rc=cs(".udr-reset");
+  log("4+5) DIE FARBEN");
+  log("   Preset (primaer): "+pc.color);
+  log("   Reset:            "+rc.color);
+  log("   Ueberall anwenden:"+lc.color);
+  log("   ==> Reset "+(rc.color !== pc.color ? "RICHTIG (sekundaer, anders als primaer)"
+                                             : "FALSCH -- primaer"));
+  log("   ==> Ueberall anwenden "+(lc.color === pc.color ? "RICHTIG (primaer)"
+                                                         : "FALSCH -- nicht primaer"));
+  log("   ==> Schrift "+(parseFloat(lc.fontSize) < parseFloat(pc.fontSize)
+        ? "RICHTIG (kleiner als die Preset-Zeilen: "+lc.fontSize+" gegen "+pc.fontSize+")"
+        : "FALSCH"));
+  /* Der Hover muss auf dem gefuellten Grund SICHTBAR sein -- vorher war er --vc-heading-bg,
+     also genau der neue Grund der Spalte, und damit unsichtbar. */
+  var n = hoverAlsKlasse();
+  var el = D.querySelector(".udr-preset:not(.is-active)");
+  var ruhe = V.getComputedStyle(el).backgroundColor;
+  el.classList.add("uhov");
+  var hover = V.getComputedStyle(el).backgroundColor;
+  el.classList.remove("uhov");
+  log("   Hover auf gefuelltem Grund ("+n+" Regeln geklont): Ruhe "+ruhe+" -> Hover "+hover);
+  log("   ==> "+(hover !== ruhe && hover !== spc.backgroundColor
+        ? "RICHTIG (sichtbar, und nicht der Grund der Spalte)"
+        : "FALSCH -- unsichtbarer Hover"));
+  return warte(100);
+}).then(function(){
+  /* ---- PUNKT 3: DIE ECKEN ------------------------------------------------------------------
+     30 Tage sind fuenf bis sechs Wochen -- also volle Zeilen mit Kanten links UND rechts, dazu
+     der Anfang mitten in einer Woche und das Ende am heutigen Tag. Genau die Lage, in der
+     "jeden Kasten abrunden" auffliegt. */
+  var zellen = [].slice.call(D.querySelectorAll(".udr-month:first-child .udr-grid .udr-day"));
+  var raster = zellen.map(function(e,i){
+    return { i:i, spalte:i%7, zeile:Math.floor(i/7),
+             gefaerbt: /is-in|is-start|is-end/.test(e.className),
+             l: /is-edge-l/.test(e.className), r: /is-edge-r/.test(e.className),
+             cs: V.getComputedStyle(e), txt: e.textContent };
+  });
+  log("3) DIE ECKEN  (erster Monat, " + raster.filter(function(z){return z.gefaerbt;}).length +
+      " gefaerbte Zellen)");
+  var fehler = [], bild = [];
+  for (var z = 0; z < 6; z++){
+    var reihe = raster.filter(function(x){ return x.zeile === z; });
+    var g = reihe.filter(function(x){ return x.gefaerbt; });
+    var zeichen = reihe.map(function(x){
+      return !x.gefaerbt ? "." : (x.l && x.r ? "O" : x.l ? "[" : x.r ? "]" : "=");
+    }).join("");
+    bild.push("   Woche "+(z+1)+"  "+zeichen+"   gefaerbt "+g.length);
+    if (!g.length) continue;
+    for (var k = 0; k < g.length; k++){
+      var x = g[k];
+      /* Aussen ist eine Kante nur, wenn in DERSELBEN Zeile nichts Gefaerbtes anschliesst. */
+      var linksAussen  = x.spalte === 0 || !raster[x.i-1] || !raster[x.i-1].gefaerbt || raster[x.i-1].zeile !== x.zeile;
+      var rechtsAussen = x.spalte === 6 || !raster[x.i+1] || !raster[x.i+1].gefaerbt || raster[x.i+1].zeile !== x.zeile;
+      if (x.l !== linksAussen)  fehler.push("Woche "+(z+1)+" Tag "+x.txt+": links "+(x.l?"abgerundet, ist aber innen":"nicht abgerundet, liegt aber aussen"));
+      if (x.r !== rechtsAussen) fehler.push("Woche "+(z+1)+" Tag "+x.txt+": rechts "+(x.r?"abgerundet, ist aber innen":"nicht abgerundet, liegt aber aussen"));
+      /* Und die Zahl am Ende: 12px aussen, 0 innen. */
+      var tl=parseFloat(x.cs.borderTopLeftRadius), bl=parseFloat(x.cs.borderBottomLeftRadius);
+      var tr=parseFloat(x.cs.borderTopRightRadius), br=parseFloat(x.cs.borderBottomRightRadius);
+      var sollL = linksAussen ? 12 : 0, sollR = rechtsAussen ? 12 : 0;
+      if (tl !== sollL || bl !== sollL) fehler.push("Woche "+(z+1)+" Tag "+x.txt+": linke Ecken "+tl+"/"+bl+"px, erwartet "+sollL);
+      if (tr !== sollR || br !== sollR) fehler.push("Woche "+(z+1)+" Tag "+x.txt+": rechte Ecken "+tr+"/"+br+"px, erwartet "+sollR);
+    }
+  }
+  bild.forEach(log);
+  log("   Zeichen: [ = linke Aussenkante   ] = rechte   O = beide   = = mitten im Band   . = leer");
+  log("   ==> "+(fehler.length === 0
+        ? "RICHTIG (pro Woche genau die Kanten, die man sieht -- und 12px nur dort)"
+        : "FALSCH -- " + fehler.length + " Abweichung(en):\n      " + fehler.slice(0,8).join("\n      ")));
+  /* GEGENPROBE ZUM MESSINSTRUMENT: EIN Tag gewaehlt. Dann muss GENAU dieser Kasten rundherum
+     12px haben -- findet der Test das nicht, prueft er nichts. */
+  V.setUpstreemDateRange && 0;
+  var heute = D.querySelector(".udr-day.is-end") || D.querySelector(".udr-day:not(.is-out)");
+  return warte(50).then(function(){ return { }; });
+}).then(function(){
+  /* Ein einzelner Tag: Klick auf denselben Tag zweimal (Anfang = Ende). */
+  var tage = [].slice.call(D.querySelectorAll(".udr-month:first-child .udr-day:not(.is-out)"))
+               .filter(function(e){ return !e.disabled; });
+  var ziel = tage[Math.min(10, tage.length-1)];
+  if (!ziel){ log("   GEGENPROBE: kein waehlbarer Tag -- Schalter sperrt den Kalender"); log("FERTIG"); return; }
+  /* Mit aktivem Schalter ist der Kalender gesperrt (Absicht) -- also erst aus, dann klicken. */
+  V.UpstreemCore.setPref("date_sync","off");
+  return warte(300).then(function(){
+    var t2 = [].slice.call(D.querySelectorAll(".udr-month:first-child .udr-day:not(.is-out)"))
+               .filter(function(e){ return !e.disabled; });
+    var z2 = t2[Math.min(10, t2.length-1)];
+    z2.click();
+    return warte(200).then(function(){ z2.click(); return warte(400); });
+  }).then(function(){
+    var e = D.querySelector(".udr-month:first-child .udr-day.is-start");
+    if (!e){ log("   GEGENPROBE: kein Anfang gesetzt -- Klick kam nicht an"); log("FERTIG"); return; }
+    var c = V.getComputedStyle(e);
+    var alle = [c.borderTopLeftRadius, c.borderBottomLeftRadius, c.borderTopRightRadius, c.borderBottomRightRadius]
+                 .map(parseFloat);
+    log("   GEGENPROBE ein einzelner Tag ("+e.textContent+"): Ecken "+alle.join("/")+"px");
+    log("   ==> "+(alle.every(function(x){ return x === 12; })
+          ? "RICHTIG (rundherum 12px -- der Test sieht Ecken wirklich)"
+          : "FALSCH -- ein einzelner Tag muss vier Aussenecken haben"));
+    log("FERTIG");
+  });
+}).catch(function(e){ log("ABBRUCH: "+e.message+"\n"+(e.stack||"").split("\n").slice(0,3).join("\n")); });
+</script>

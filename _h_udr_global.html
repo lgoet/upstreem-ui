@@ -78,7 +78,15 @@ function bauen(prefs, ohneBootFn, ohneBruecke, urlPreset, startAnsicht){
       try { v.__letzte = JSON.parse(j); } catch(e){ v.__letzte = { kaputt: String(j) }; } };
     /* Der ZWEITE Kanal -- der, der auf der Seite nachlaedt. Er ist die Zahl, um die es hier geht:
        beim Aufbau und beim Ansichtswechsel muss er 0 bleiben, sonst laedt die Seite zweimal. */
-    v.bubble_fn_udr_apply = function(){ v.__ruf.apply++; };
+    /* Der Kanal traegt das JSON -- also wird mitgeschrieben, WER nachlaedt. Ohne das waere
+       "apply=1" auch wahr, wenn der falsche Kalender laedt. */
+    v.__wer = [];
+    v.bubble_fn_udr_apply = function(j){ v.__ruf.apply++;
+      try { var o = JSON.parse(j); v.__wer.push(o.instance_id + ":" + o.reason); } catch(e){ v.__wer.push("?"); } };
+    /* Die Drawer der Host-App: der Kalender haengt sein Nachladen an genau diese zwei Aufrufe. */
+    v.__drawer = [];
+    v.openDrawer  = function(art, id){ v.__drawer.push("auf:" + art); };
+    v.closeDrawer = function(art){ v.__drawer.push("zu:" + art); };
     /* Der AUFBAU-Kanal: setzt auf der echten Seite nur die zwei States, ohne Refresh.
        ohneBootFn laesst ihn weg -- fuer den Rueckfall-Test. */
     if (!ohneBootFn) v.bubble_fn_udr_date_boot = function(j){ v.__ruf.boot++;
@@ -137,7 +145,7 @@ function huelle(d, vw){ return d.querySelector('[data-vw="'+vw+'"]'); }
 function oeffnen(d, vw){ huelle(d, vw).style.display = ""; }
 function schliessen(d, vw){ huelle(d, vw).style.display = "none"; }
 function warte(ms, wert){ return new Promise(function(ok){ setTimeout(function(){ ok(wert); }, ms); }); }
-function nullen(v){ v.__ruf={from:0,to:0,range:0,apply:0,boot:0}; }
+function nullen(v){ v.__ruf={from:0,to:0,range:0,apply:0,boot:0}; v.__wer=[]; }
 /* Ein echter Klick auf ein Preset -- Trigger auf, Preset klicken, warten. */
 function preset(d, id, key){
   d.querySelector('[data-instance="'+id+'"] .udr-trigger').click();
@@ -329,8 +337,13 @@ bauen(null).then(function(d){
   return new Promise(function(ok){ setTimeout(function(){ ok(d); },400); });
 }).then(function(d){
   var v=d.defaultView, r=v.__ruf;
-  log("   zweites Mal dieselbe Ansicht: SUMME="+(r.from+r.to+r.range)+
-      "   ==> "+(r.from+r.to+r.range===0?"RICHTIG (schon uebergeben, kein zweiter Workflow)":"FALSCH"));
+  /* Seit dem 04.09. uebergibt JEDER Wechsel die States -- auch der zweite auf dieselbe Ansicht.
+     Vorher sperrte der Merker das, und genau daran hing "der date range state wird nicht
+     geupdated": nach dem ersten Besuch kam nie wieder eine Uebergabe, die States blieben stehen.
+     Was hier NICHT passieren darf, ist ein Nachladen -- der Aufbau-Kanal setzt nur States. */
+  log("   zweites Mal dieselbe Ansicht: boot="+r.boot+" range="+r.range+" apply="+r.apply+
+      "   ==> "+(r.boot===1&&r.range===0&&r.apply===0
+        ? "RICHTIG (States wieder gesetzt, kein zweiter Ladevorgang)":"FALSCH"));
   v.__ruf={from:0,to:0,range:0,apply:0,boot:0};
   v.showView("prompt_spotlight");
   return new Promise(function(ok){ setTimeout(function(){ ok(d); },400); });
@@ -551,6 +564,73 @@ bauen(null).then(function(d){
      der schweigt, solange der Browser fuer diese Flaeche keine Bilder rechnet (gemessen:
      innerHeight 0, kein einziger Aufruf). Der andere Prueftand wird darum Schritt fuer Schritt
      von aussen getrieben, mit einem erzwungenen Bild zwischen Oeffnen und Messen. */
+  /* ================= SPUKANSICHTEN =======================================================
+     DER GEMELDETE FEHLER vom 04.09.: ein Zeitraumwechsel in EINER Ansicht, kein Drawer offen --
+     und in der Konsole feuerten 25 RPCs, "alles was in der Session schonmal offen war".
+
+     Die Ursache ist hier nachgebaut: die Host-App laesst besuchte Ansichten IM DOKUMENT stehen.
+     Sie sind nicht weggeschaltet, sie stehen nur nicht mehr im Blick -- offsetParent ist also
+     nicht null, und der alte Sichtbarkeits-Test hielt jede davon fuer offen. Zehn Picker, zehn
+     Nachladungen fuer einen Klick.
+     Erwartet: der Klick bedient GENAU den Kalender, in dem geklickt wurde. Kein Spuk. */
+  return bauenMitStart({ date_sync:"on", date_preset:"last7" }, "prompts");
+}).then(function(d){
+  var v=d.defaultView;
+  v.showView("prompts");
+  return warte(400, d);
+}).then(function(d){
+  /* Alle Huellen offen lassen -- der Zustand nach einer Sitzung mit vielen Ansichten. */
+  [].forEach.call(d.querySelectorAll("[data-vw]"), function(w){ w.style.display = ""; });
+  var v=d.defaultView;
+  nullen(v);
+  return warte(200, d).then(function(){ return preset(d, "dates_v2_prompts", "last30"); });
+}).then(function(d){
+  return warte(900, d);
+}).then(function(d){
+  var v=d.defaultView, r=v.__ruf;
+  var fremde = (v.__wer||[]).filter(function(x){ return x.indexOf("dates_v2_prompts:") !== 0; });
+  log("SPUKANSICHTEN  10 Picker im Dokument, EINE Ansicht offen, kein Drawer");
+  log("   sichtbare Wurzeln (offsetParent): "+
+      [].filter.call(d.querySelectorAll(".udr-root"), function(el){ return el.offsetParent !== null; }).length +
+      " von " + d.querySelectorAll(".udr-root").length);
+  log("   range="+r.range+"  apply="+r.apply+"  bedient: "+JSON.stringify(v.__wer));
+  log("   ==> "+(r.range===1 && r.apply===1 && fremde.length===0
+        ? "RICHTIG (genau der Kalender, in dem geklickt wurde -- kein Spuk)"
+        : "FALSCH -- "+fremde.length+" fremde Ansicht(en) mitbedient: "+JSON.stringify(fremde)));
+  /* GEGENPROBE, damit "1" nicht die Zahl einer toten Regel ist: EIN Drawer geht auf (ueber
+     openDrawer, wie in der App), dann derselbe Klick. Jetzt muessen es ZWEI sein -- der Kalender
+     und der offene Drawer -- und weiter keine Spukansicht. */
+  var v2=d.defaultView;
+  v2.openDrawer("domainspotlight", "ID1");
+  return warte(1200, d);
+}).then(function(d){
+  var v=d.defaultView;
+  nullen(v);
+  return preset(d, "dates_v2_prompts", "last3");
+}).then(function(d){
+  return warte(1200, d);
+}).then(function(d){
+  var v=d.defaultView, r=v.__ruf, wer=(v.__wer||[]).slice().sort();
+  var hatDrawer = wer.join().indexOf("dates_v2_domainspotlight") >= 0;
+  var fremde = wer.filter(function(x){
+    return x.indexOf("dates_v2_prompts:") !== 0 && x.indexOf("dates_v2_domainspotlight:") !== 0; });
+  log("   GEGENPROBE mit EINEM offenen Drawer: apply="+r.apply+"  bedient: "+JSON.stringify(wer));
+  log("   ==> "+(r.apply===2 && hatDrawer && fremde.length===0
+        ? "RICHTIG (Kalender + offener Drawer, sonst nichts -- die Regel lebt)"
+        : "FALSCH -- "+(!hatDrawer?"der offene Drawer wird nicht bedient":"zu viel bedient: "+JSON.stringify(fremde))));
+  /* Und zu heisst zu: derselbe Klick nach closeDrawer darf den Drawer NICHT mehr bedienen. */
+  var v2=d.defaultView;
+  v2.closeDrawer("domainspotlight");
+  nullen(v2);
+  return preset(d, "dates_v2_prompts", "last7");
+}).then(function(d){
+  return warte(1200, d);
+}).then(function(d){
+  var v=d.defaultView, r=v.__ruf, wer=(v.__wer||[]).slice();
+  log("   nach closeDrawer: apply="+r.apply+"  bedient: "+JSON.stringify(wer));
+  log("   ==> "+(r.apply===1 && wer.length===1 && wer[0].indexOf("dates_v2_prompts:")===0
+        ? "RICHTIG (der geschlossene Drawer ist aus der Liste)"
+        : "FALSCH -- ein zugeklappter Drawer wird weiter bedient"));
   log("FERTIG");
 }).catch(function(e){ log("ABBRUCH: "+e.message+"\n"+(e.stack||"").split("\n").slice(0,3).join("\n")); });
 </script>
