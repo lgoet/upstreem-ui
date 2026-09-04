@@ -1250,13 +1250,16 @@
 /* Ueber der Grenze der Warnton, ebenfalls aus dem Trend-Paar. */
 .upt-kpi-quota.is-over .upt-kpi-quota-fill { background: var(--vt-down); }
 
-/* ---- schmal: die drei Karten untereinander ----
-   Unter 900px reicht die Breite fuer drei Karten nicht mehr; die Balkenbeschriftung waere dann
-   breiter als ihr Balken. Die Zeile bricht um, und die Karten werden flacher, weil sie
-   untereinander sonst die halbe Seite fuellen. */
-.up-root.is-narrow .upt-kpis, .up-root.is-vnarrow .upt-kpis { flex-direction: column; }
-/* flex: 0 0 auto ist hier PFLICHT und nicht Geschmack: in einer Spalten-Flexbox gilt flex-basis
-   in der Hoehe, und die 0 aus "flex: 1 1 0" schlaegt jede height-Angabe. Ohne diese Zeile fielen
-   die Karten auf 34px zusammen -- so gemessen, bevor sie hier stand. */
-.up-root.is-narrow .upt-kpi, .up-root.is-vnarrow .upt-kpi { flex: 0 0 auto; height: 256px; }
-.up-root.is-vnarrow .upt-kpi-topics .up-bars.has-labelcol .up-bar-label { flex-basis: 108px; width: 108px; }
+/* ---- schmal: eine Karte nach der anderen weg, in dieser Reihenfolge ----
+   So angefordert (04.09.): zuerst die Maerkte, dann das Kontingent, zuletzt die Themen. Der Grund
+   fuer die Reihenfolge ist der Informationswert je Pixel -- der Ring braucht am meisten Platz und
+   sagt am wenigsten, die Balkenliste sagt am meisten.
+
+   AUSBLENDEN und nicht umbrechen. Vorher gingen die drei Karten untereinander; drei mal 256px
+   ergaben 800px Kartenstapel ueber einer Tabelle, die man eigentlich sehen will. Die Grenzen sind
+   die, die diese Tabelle ohnehin misst (applyResponsive: 860 / 620 / 560) -- keine vierte Messung
+   und keine neue Klasse. */
+.up-root.is-narrow  .upt-kpi-markets { display: none; }
+.up-root.is-vnarrow .upt-kpi-quota   { display: none; }
+.up-root.is-t1      .upt-kpis        { display: none; }
+

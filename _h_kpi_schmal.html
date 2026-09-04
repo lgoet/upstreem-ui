@@ -1,0 +1,87 @@
+<meta charset="utf-8"><title>Prompts: die drei Karten bei schmalen Breiten</title>
+<style>html,body{margin:0;font:13px/1.5 system-ui,sans-serif}
+#out{font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap;padding:10px;background:#f6f6f6}</style>
+<body><div id="halter"></div><pre id="out">laeuft…</pre>
+<script>
+/* Reihenfolge des Ausblendens bei kleiner werdender Breite (angefordert 04.09.):
+   zuerst Maerkte, dann Kontingent, zuletzt Themen.
+   Gemessen wird die SICHTBARKEIT (offsetParent), nicht die CSS-Regel: eine Regel, die von einer
+   spaeteren mit gleicher Spezifitaet ueberschrieben wird, sieht im Stylesheet richtig aus und
+   wirkt nicht. Genau das ist in dieser Datei schon zweimal passiert.
+   Die Tier-Klassen setzt applyResponsive nach der Breite der WURZEL, also wird der Behaelter
+   verengt und nicht das Fenster. */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var D=null;
+Promise.all([hol("core.css"),hol("prompts-table.css"),hol("core.js"),hol("prompts-table.js"),
+             hol("bubble/prompts_table_bubble.html")]).then(function(t){
+  var f=document.createElement("iframe"); f.id="rahmen";
+  f.setAttribute("style","width:1280px;height:700px;border:0");
+  document.getElementById("halter").appendChild(f);
+  var d=f.contentDocument; D=d;
+  d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0'></body></html>"); d.close();
+  var v=d.defaultView;
+  try { v.localStorage.removeItem("up_prefs"); v.localStorage.removeItem("pref_theme");
+        v.localStorage.setItem("upt_grouped__ks","no"); } catch(e){}
+  [t[0],t[1]].forEach(function(c){ var s=d.createElement("style"); s.textContent=c; d.head.appendChild(s); });
+  var s2=d.createElement("style"); s2.textContent="*,*::before,*::after{transition:none!important;animation:none!important}";
+  d.head.appendChild(s2);
+  var w=d.createElement("div"); w.innerHTML=wurzelAus(t[4]);
+  var r=w.querySelector(".upt-root");
+  r.setAttribute("data-instance","ks"); r.setAttribute("data-cdn-pin","ks"); r.setAttribute("data-isdark","no");
+  /* Der Behaelter, den wir verengen -- die Wurzel misst SICH, nicht das Fenster. */
+  var box=d.createElement("div"); box.id="box"; box.style.width="1240px";
+  box.appendChild(r); d.body.appendChild(box);
+  var cj=d.createElement("script"); cj.src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js";
+  d.head.appendChild(cj);
+  var j=d.createElement("script"); j.textContent=t[2]; d.head.appendChild(j);
+  var j2=d.createElement("script"); j2.textContent=t[3]; d.head.appendChild(j2);
+  return new Promise(function(ok){ setTimeout(ok,2200); });
+}).then(function(){
+  var d=D, v=d.defaultView;
+  v.setUpstreemTopics([{id:"t1",name:"Pricing",hex_light:"#3b82f6",prompt_count:42},
+                       {id:"t2",name:"Support",hex_light:"#22c55e",prompt_count:31}]);
+  v.setUpstreemMarkets([{id:"de",alpha2:"DE",name:"Germany",prompt_count:40},
+                        {id:"us",alpha2:"US",name:"United States",prompt_count:25}]);
+  v.setUpstreemQuota({used:102,total:150,plan:"Pro"});
+  v.renderPromptsTable(JSON.stringify({instanceId:"ks",view_active:"yes",totalCount:2,without_topic:0,
+    rows:[{id:"1",prompt_id:"1",prompt_text:"Frage",status:"active"}]}));
+  return new Promise(function(ok){ setTimeout(ok,1200); });
+}).then(function(){
+  var d=D;
+  function sichtbar(kl){ var e=d.querySelector("."+kl); return !!(e && e.offsetParent !== null); }
+  function stand(){ return { topics:sichtbar("upt-kpi-topics"), markets:sichtbar("upt-kpi-markets"),
+                             quota:sichtbar("upt-kpi-quota"),
+                             klassen:(d.querySelector(".upt-root").className.match(/is-(narrow|vnarrow|t1)/g)||[]).join(" ") }; }
+  /* Die Stufen-Klassen werden von HAND gesetzt, nicht ueber eine Breitenaenderung. Grund: der
+     ResizeObserver feuert in einem verdeckten Browser-Panel nicht (in dieser Sitzung gemessen),
+     applyResponsive laeuft also nie, und der erste Anlauf meldete vier Mal "Klassen: (keine)" --
+     eine Messung der Messung. Geaendert hat sich die CSS; die Schwellen in applyResponsive
+     (860 / 620 / 560) sind unveraendert und stehen hier als Kommentar an der Stufe. */
+  var stufen=[
+    { kl:[],                                soll:{topics:1,markets:1,quota:1}, was:"breit, keine Stufe" },
+    { kl:["is-narrow"],                     soll:{topics:1,markets:0,quota:1}, was:"< 860: Maerkte weg" },
+    { kl:["is-narrow","is-vnarrow"],        soll:{topics:1,markets:0,quota:0}, was:"< 620: Kontingent auch weg" },
+    { kl:["is-narrow","is-vnarrow","is-t1"],soll:{topics:0,markets:0,quota:0}, was:"< 560: alle weg" }
+  ];
+  var i=0;
+  function naechste(){
+    if (i>=stufen.length){ log("FERTIG"); return; }
+    var st=stufen[i++];
+    var wurzel=d.querySelector(".upt-root");
+    ["is-narrow","is-vnarrow","is-t1"].forEach(function(k){ wurzel.classList.remove(k); });
+    st.kl.forEach(function(k){ wurzel.classList.add(k); });
+    setTimeout(function(){
+      var s=stand();
+      var ok = (!!s.topics===!!st.soll.topics) && (!!s.markets===!!st.soll.markets) && (!!s.quota===!!st.soll.quota);
+      log(st.was+"   Klassen: "+(s.klassen||"(keine)"));
+      log("   topics="+s.topics+"  markets="+s.markets+"  quota="+s.quota+
+          "   ==> "+(ok?"RICHTIG":"FALSCH -- soll topics="+!!st.soll.topics+" markets="+!!st.soll.markets+" quota="+!!st.soll.quota));
+      naechste();
+    }, 700);
+  }
+  naechste();
+}).catch(function(e){ log("ABBRUCH: "+e.message); });
+</script>

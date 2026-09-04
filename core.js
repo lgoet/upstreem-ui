@@ -8830,11 +8830,17 @@
   function fmtPct(v, nachkomma){
     v = Number(v) || 0;
     var n = nachkomma > 0 ? nachkomma : 0;
-    if (!n){
-      if (v > 0 && Math.round(v) === 0) return "<1%";
-      return fmtNum(Math.round(v), 0) + "%";
-    }
-    return fmtNum(v, n) + "%";
+    /* "<x%" bei JEDER Genauigkeit, nicht nur bei ganzen Prozenten. Die Regel stand hier nur fuer
+       n = 0, mit der Begruendung "mit einer Stelle steht dort ohnehin 0.4% statt einer
+       irreleitenden 0". Das gilt bis 0,05 -- darunter zeigt eine Stelle 0.0%, und das ist genau
+       die irreleitende Null, um die es ging. Gemeldet am 04.09. fuer den Doughnut und die Balken
+       im Citations Combo Chart, der mit einer Stelle rechnet.
+       Die Schwelle ist die kleinste Zahl, die diese Genauigkeit noch zeigen kann: 1 bei keiner
+       Stelle, 0,1 bei einer, 0,01 bei zwei. Was darunter liegt und groesser als 0 ist, kann
+       nicht als Zahl dargestellt werden, ohne zu luegen. */
+    var schwelle = n ? Math.pow(10, -n) : 1;
+    if (v > 0 && v < schwelle) return "<" + fmtNum(schwelle, n) + "%";
+    return n ? fmtNum(v, n) + "%" : fmtNum(Math.round(v), 0) + "%";
   }
 
   /* Turns a raw [{type, share_pct}] breakdown into the [{name, share, color}] the doughnut/bar
