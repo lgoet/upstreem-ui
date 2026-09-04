@@ -951,18 +951,28 @@
          Kalender liegen gleichzeitig im DOM (die Views werden nur versteckt), ein Klick wuerde
          sonst zehn Workflows starten -- genau die Lawine, gegen die die ganze Leistungsrunde
          gelaufen ist. Der geaenderte Picker feuert fuer SEINE Ansicht, die anderen bleiben still.
-         Ihre DATEN holen sie sich, wenn ihre Ansicht dran ist: resetView() unten laesst
-         bubble_fn_view_first_<name> beim naechsten Oeffnen wieder laufen. */
+         Ihre DATEN holen sie sich, wenn ihre Ansicht dran ist: beim Aktivieren erkennt der
+         Kalender, dass ihr Zeitraum abweicht, und laedt sie einmal nach (siehe "veraltet" im
+         Ansichtswechsel). */
       function syncWeitergeben(key){
         for (var i = 0; i < CONTROLLERS.length; i++) {
           var c = CONTROLLERS[i];
           if (!c || c.instanceId === instanceId || !nimmtTeil(c.instanceId)) continue;
           try { c.setPreset(key, false); } catch (e) {}
         }
-        /* Die anderen Ansichten muessen neu laden, wenn sie wieder dran sind. resetView gehoert
-           dem View-System der Seite; fehlt es (Landingpage, Harness), passiert nichts -- dann gibt
-           es auch keine anderen Ansichten. */
-        try { if (typeof window.resetView === "function") window.resetView(); } catch (e) {}
+        /* HIER STAND EIN resetView() -- und es war der zweite Ladevorgang.
+           Es sollte dafuer sorgen, dass die anderen Ansichten neu laden, wenn sie wieder dran
+           sind: es raeumt den "schon geladen"-Merker des View-Systems ab, und beim naechsten
+           Oeffnen laeuft view_first_<name> erneut. Das war der erste Entwurf, als es noch keine
+           Erkennung fuer veraltete Ansichten gab.
+
+           Inzwischen gibt es sie, und sie ist besser: sie laedt nur, wenn der Zeitraum wirklich
+           abweicht, und sie setzt die States im SELBEN Workflow vor dem Laden. resetView dagegen
+           liess die Ansicht ueber ihren eigenen Weg laden -- mit den States, die zu diesem
+           Zeitpunkt noch die alten waren. Beides zusammen ergab zwei Ladevorgaenge: erst der von
+           resetView mit alten Daten, dann unser Nachladen mit den richtigen.
+           Gemeldet als "triggert dann wieder alle rpcs doppelt, einmal mit alten daten". Zwei
+           Mechanismen fuer eine Aufgabe, und einer davon war meiner von vorhin. */
       }
 
       menu.addEventListener("click", function (e) {

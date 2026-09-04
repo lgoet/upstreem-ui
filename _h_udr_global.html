@@ -466,6 +466,23 @@ bauen(null).then(function(d){
         ? "RICHTIG (Rueckfall auf den Range-Kanal -- der Weg, den die Seite ohnehin hat)"
         : "FALSCH -- "+(r.range===0?"kein Nachladen: die Ansicht bleibt beim alten Zeitraum"
                        :"Attribute stimmen nicht")));
+  /* resetView DARF NICHT MEHR GERUFEN WERDEN. Es raeumte den "schon geladen"-Merker des
+     View-Systems ab, wodurch die Ansicht beim naechsten Oeffnen ueber ihren EIGENEN Weg laedt --
+     mit den States, die dann noch die alten sind. Zusammen mit dem Nachladen waren das zwei
+     Ladevorgaenge, der erste mit alten Daten. Gemeldet am 03.09. */
+  var v4=d.defaultView, gerufen=0;
+  v4.resetView = function(){ gerufen++; };
+  d.querySelector('[data-instance="dates_v2_dashboard"] .udr-trigger').click();
+  return new Promise(function(ok){ setTimeout(function(){
+    d.querySelector('[data-instance="dates_v2_dashboard"] [data-preset="last3"]').click();
+    setTimeout(function(){ ok({d:d,zahl:function(){ return gerufen; }}); },600);
+  },300); });
+}).then(function(o){
+  log("KEIN resetView  (es war der zweite Ladevorgang)");
+  log("   window.resetView gerufen: "+o.zahl()+
+      "   ==> "+(o.zahl()===0
+        ? "RICHTIG (der Kalender raeumt den Merker des View-Systems nicht mehr ab)"
+        : "FALSCH -- die Ansicht laedt dann zusaetzlich ueber ihren eigenen Weg, mit alten States"));
   log("FERTIG");
 }).catch(function(e){ log("ABBRUCH: "+e.message+"\n"+(e.stack||"").split("\n").slice(0,3).join("\n")); });
 </script>
