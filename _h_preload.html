@@ -110,11 +110,25 @@ function messen(){
     : "FALSCH: window.__upPin fehlt (" + window.__upPin + ")");
   var dp = window.__doppelProbe || {};
   urteil.push(dp.gelaufen === 0
-    ? "RICHTIG: die Datei eines alten Loaders wurde NICHT ausgefuehrt"
+    ? "RICHTIG: die Datei eines alten Loaders wurde NICHT ausgefuehrt (nacktes Script im Kopf)"
     : "FALSCH: \"" + dp.name + "\" ist " + dp.gelaufen + "x GELAUFEN" +
       (dp.nochImDokument ? " -- und der Waechter hat den Tag nicht einmal entfernt"
                          : " -- OBWOHL der Waechter den Tag entfernt hat: Entfernen bricht die " +
                            "Ausfuehrung eines dynamisch eingehaengten Scripts nicht ab"));
+  /* DIE SORTE, DIE AUF DER ECHTEN SEITE VORKOMMT. Der Bericht vom 05.09. zeigte 17 abgewehrte
+     core.js -- und ALLE 17 in der Form, die der Beobachter NACH dem Einhaengen entfernt, keine
+     einzige vor dem Einhaengen verweigert. Der Grund steht in der Sperre selbst: sie prueft den
+     eingehaengten Knoten, und Bubble haengt das Script nicht nackt ein, sondern als Kind eines
+     Teilbaums (Stack cleanChildren/insertExpression). Ein Container hat keine src, also greift
+     die Sperre nicht -- und der Beobachter kommt zu spaet, weil ein eingehaengtes Script sich
+     durch Entfernen nicht mehr anhalten laesst.
+     Drei Formen, alle drei kommen in Bubble vor. */
+  (window.__teilbaumProben || []).forEach(function(pr){
+    urteil.push(pr.gelaufen === 0
+      ? "RICHTIG: " + pr.was + " -- nicht ausgefuehrt"
+      : "FALSCH: " + pr.was + " -- " + pr.gelaufen + "x GELAUFEN" +
+        (pr.nochImDokument ? " (Tag steht noch im Dokument)" : " (Tag wurde entfernt, zu spaet)"));
+  });
   urteil.push(document.querySelectorAll('script[src*="/core."]').length === 1
     ? "RICHTIG: genau EIN core-Script im Kopf"
     : "FALSCH: " + document.querySelectorAll('script[src*="/core."]').length + " core-Scripts");
@@ -153,6 +167,18 @@ function alteGeneration(){
   document.head.appendChild(s);
   return s;
 }
+/* Die drei Formen, in denen ein Script als Teil eines Teilbaums hereinkommt. Gezaehlt wird immer
+   dasselbe: hat die Datei GELAUFEN. window.__coreLaeufe erhoeht sich in der Datei selbst. */
+function teilbaumProbe(was, einhaengen){
+  var vorher = window.__coreLaeufe || 0;
+  var s = document.createElement("script");
+  s.src = "_h_fake/upstreem-ui@testpin/core.js";
+  var traeger = einhaengen(s);
+  return function(){
+    return { was: was, gelaufen: (window.__coreLaeufe || 0) - vorher,
+             nochImDokument: !!(s.parentNode), traeger: traeger };
+  };
+}
 window.addEventListener("load", function(){
   /* Wie in Bubble: die Element-Loader laufen NACH dem Seitenaufbau. Zwei Elemente der alten
      Generation, zwei der neuen -- alle vier fordern Dateien, die das Snippet schon geholt hat. */
@@ -173,6 +199,29 @@ window.addEventListener("load", function(){
       };
     }, 900);
   }, 1200);
-  setTimeout(messen, 6000);
+  /* Nach der nackten Probe, damit die Zaehler sich nicht ueberlagern. */
+  /* EINE NACH DER ANDEREN, mit Pause. Der erste Anlauf hat alle drei im selben Tick eingehaengt
+     und danach abgelesen -- jede Probe sah dann die Laeufe der anderen mit und meldete 3 statt 1.
+     Die Aussage war dieselbe, die Zahl war Unsinn. */
+  var FORMEN = [
+    ["Script als Kind eines DIV, in den Kopf", function(s){
+      var d = document.createElement("div"); d.appendChild(s); document.head.appendChild(d); }],
+    ["Script in einem DocumentFragment, in den Kopf", function(s){
+      var f = document.createDocumentFragment(); f.appendChild(s); document.head.appendChild(f); }],
+    ["Script als Kind eines DIV, in den Koerper", function(s){
+      var d = document.createElement("div"); d.appendChild(s); document.body.appendChild(d); }]
+  ];
+  window.__teilbaumProben = [];
+  setTimeout(function(){
+    (function naechste(i){
+      if (i >= FORMEN.length) return;
+      var lesen = teilbaumProbe(FORMEN[i][0], function(s){ FORMEN[i][1](s); return ""; });
+      setTimeout(function(){
+        window.__teilbaumProben.push(lesen());
+        naechste(i + 1);
+      }, 700);
+    })(0);
+  }, 2200);
+  setTimeout(messen, 7000);
 });
 </script>

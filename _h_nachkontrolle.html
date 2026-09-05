@@ -44,8 +44,14 @@ function baue(lage){
   if (lage.zweiterPin) tag("_h_fake/upstreem-ui@zweiterpin/urls-table.js", false);
   /* Und die Liste, die der Waechter im Kopf-Snippet fuehrt: beide Formen, wie er sie schreibt. */
   if (lage.abgewehrt){
-    v.__upDoppel = [ "domains-table.js",
-      { datei:"core.js", zeit:412, spur:["at HTMLElement.appendChild","at loadAsset (elementloader:12)"] } ];
+    /* Beide Formen, wie der Waechter sie wirklich schreibt: "vor" = vor der Einhaengung
+       herausgenommen (kein Parse), "nach" = erst danach entfernt (gelaufen und geparst). Genau
+       diese Trennung ist die Aussage des Berichts -- am 05.09. waren alle 64 vom spaeten Typ. */
+    v.__upDoppel = [
+      { datei:"core.js", wann:"vor",  wo:"teilbaum",    zeit:120, spur:["at loader (element:12)"] },
+      { datei:"core.js", wann:"vor",  wo:"nackt",       zeit:130, spur:["at loader (element:12)"] },
+      { datei:"domains-table.js", wann:"nach", wo:"beobachter", zeit:900, spur:[] }
+    ];
   }
   /* A) Der ausgefuehrte Zustand, nicht ein Dateitext. */
   if (lage.build != null) v.UpstreemCore = { BUILD: lage.build };
@@ -84,13 +90,15 @@ hol(QUELLE).then(function(code){
     log("LAGE 1  eine Seite, auf der alles schiefliegt");
     log("   A) BUILD 20260901 (zu alt):  frisch=" + z.frische.frisch + "   " + ja(z.frische.frisch === false));
     log("   B) Tags=" + z.einhaengen.tags + "  mehrfach=" + z.einhaengen.mehrfach +
-        "  Pins=" + z.einhaengen.pins + "  abgewehrt=" + z.einhaengen.abgewehrt);
+        "  Pins=" + z.einhaengen.pins + "  verhindert=" + z.einhaengen.verhindert +
+        "  zu spaet=" + z.einhaengen.zuSpaet);
     /* ZWEI mehrfach geholte Dateien, nicht eine: core.js haengt zweimal am selben Pin, und
        urls-table.js liegt an zwei verschiedenen Pins -- also wird auch die zweimal geholt. Genau
        das ist der Befund, um den es auf der echten Seite geht. Die erste Erwartung hier stand auf
        1 und war schlicht falsch gezaehlt. */
-    log("      " + ja(z.einhaengen.mehrfach === 2 && z.einhaengen.pins === 2 && z.einhaengen.abgewehrt === 2) +
-        " (core.js doppelt, urls-table an zwei Pins, zwei Abwehrfaelle -- alles benannt)");
+    log("      " + ja(z.einhaengen.mehrfach === 2 && z.einhaengen.pins === 2 &&
+                        z.einhaengen.verhindert === 2 && z.einhaengen.zuSpaet === 1) +
+        " (core.js doppelt, urls-table an zwei Pins, 2 verhindert und 1 zu spaet -- getrennt)");
     log("   C) offen " + z.lazy.offen + "/" + z.lazy.knotenOffen + "   geparkt " + z.lazy.geparkt +
         "/" + z.lazy.knotenGeparkt + "   geparkt+gemountet " + z.lazy.geparktGemountet +
         "/" + z.lazy.knotenGeparktGemountet);
@@ -106,8 +114,10 @@ hol(QUELLE).then(function(code){
       log("LAGE 2  GEGENPROBE: dieselbe Messung auf einer sauberen Seite");
       log("   A) BUILD 20260909:  frisch=" + y.frische.frisch + "   " + ja(y.frische.frisch === true));
       log("   B) Tags=" + y.einhaengen.tags + "  mehrfach=" + y.einhaengen.mehrfach +
-          "  Pins=" + y.einhaengen.pins + "  abgewehrt=" + y.einhaengen.abgewehrt);
-      log("      " + ja(y.einhaengen.mehrfach === 0 && y.einhaengen.pins === 1 && y.einhaengen.abgewehrt === 0) +
+          "  Pins=" + y.einhaengen.pins + "  verhindert=" + y.einhaengen.verhindert +
+          "  zu spaet=" + y.einhaengen.zuSpaet);
+      log("      " + ja(y.einhaengen.mehrfach === 0 && y.einhaengen.pins === 1 &&
+                          y.einhaengen.verhindert === 0 && y.einhaengen.zuSpaet === 0) +
           " (nichts gemeldet, wo nichts ist -- die Meldungen oben sind damit echt)");
       log("   C) offen " + y.lazy.offen + "/" + y.lazy.knotenOffen + "   geparkt " + y.lazy.geparkt);
       log("      " + ja(y.lazy.offen === 3 && y.lazy.geparkt === 0) +

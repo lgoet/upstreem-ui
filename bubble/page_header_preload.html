@@ -400,8 +400,51 @@
      NEBENBEI die zweite Meldung derselben Probe: die Namensermittlung schnitt Query und Fragment
      nicht ab. Eine URL mit "?n=..." hiess damit "core.js?n=0.49..." und stand in keiner Liste --
      der Waechter fasste sie gar nicht an. Beide Stellen kuerzen jetzt. */
+  /* Ein Script, das als KIND eines Teilbaums hereinkommt, aus diesem Teilbaum herausnehmen --
+     VOR der Einhaengung. Danach waere es zu spaet (siehe oben). Der Teilbaum selbst wird
+     eingehaengt wie vorgesehen: hier wird nichts verweigert, was der Host wirklich braucht.
+     getElementsByTagName statt querySelectorAll, und nur wenn ueberhaupt Kinder da sind: dieser
+     Pfad liegt in jedem appendChild an head/body, und die Wurzelsuche in core hat in dieser
+     Sitzung schon gezeigt, was der Unterschied ausmacht (479ms -> 0,7ms bei 198 Suchen).
+     Ein DocumentFragment kennt getElementsByTagName nicht, nur querySelectorAll -- Bubble haengt
+     in dieser Form ein, also muss beides bedient werden. */
+  function saeubern(n, wo){
+    if (!n) return;
+    var art = n.nodeType;
+    if (art !== 1 && art !== 11) return;
+    var drin;
+    if (art === 11){
+      if (!n.querySelectorAll) return;
+      drin = [].slice.call(n.querySelectorAll("script[src], link[href]"));
+    } else {
+      if (!n.getElementsByTagName || !n.childElementCount) return;
+      drin = [].slice.call(n.getElementsByTagName("script"))
+               .concat([].slice.call(n.getElementsByTagName("link")));
+    }
+    for (var i = 0; i < drin.length; i++){
+      if (!schonDa(drin[i])) continue;
+      notiereDoppel(drin[i], wo, true);
+      if (drin[i].parentNode) drin[i].parentNode.removeChild(drin[i]);
+    }
+  }
+  /* EINE Stelle fuer beide Faelle, und sie haelt fest, WELCHER es war: "vor" heisst verhindert
+     (die Datei ist nie gelaufen), "nach" heisst nur entfernt (sie ist gelaufen und geparst).
+     Der Bericht vom 05.09. konnte die beiden nicht unterscheiden und sah darum 64 Abwehrfaelle,
+     von denen in Wahrheit keiner einen Parse gespart hat. */
+  function notiereDoppel(n, wo, vorher){
+    var u = quelleVon(n);
+    (window.__upDoppel || (window.__upDoppel = [])).push({
+      datei: dateiname(u), wann: vorher ? "vor" : "nach", wo: wo || "?",
+      zeit: Math.round(window.performance && performance.now ? performance.now() : 0),
+      spur: (function(){ try { return (new Error().stack || "").split("\n").slice(3, 6)
+              .map(function(x){ return x.trim(); }); } catch(e){ return []; } })()
+    });
+  }
   function einhaengeSperre(){
-    var ziele = [document.head, document.documentElement];
+    /* Auch der Koerper: auf der echten Seite haengt Bubble seine Teilbaeume nicht nur in den
+       Kopf. Drei Ziele, mehr nicht -- Node.prototype global zu patchen wuerde jede Einhaengung
+       der ganzen Seite durch diese Pruefung schicken. */
+    var ziele = [document.head, document.body, document.documentElement];
     ["appendChild", "insertBefore"].forEach(function(m){
       ziele.forEach(function(z){
         if (!z || z["__upGesperrt_" + m]) return;
@@ -410,18 +453,11 @@
         z["__upGesperrt_" + m] = 1;
         z[m] = function(n){
           try {
-            if (schonDa(n)){
-              (window.__upDoppel || (window.__upDoppel = [])).push({
-                datei: dateiname(quelleVon(n)),
-                zeit: Math.round(window.performance && performance.now ? performance.now() : 0),
-                /* SYNCHRON, also steht der Einhaenger wirklich im Stapel -- anders als im
-                   Beobachter unten, dessen Rueckruf losgeloest davon laeuft und nur die eigenen
-                   Rahmen zeigt (genau daran ist die erste Diagnose gescheitert). */
-                spur: (function(){ try { return (new Error().stack || "").split("\n").slice(2, 6)
-                        .map(function(x){ return x.trim(); }); } catch(e){ return []; } })()
-              });
-              return n;
-            }
+            /* SYNCHRON, also steht der Einhaenger wirklich im Stapel -- anders als im Beobachter
+               unten, dessen Rueckruf losgeloest davon laeuft und nur die eigenen Rahmen zeigt
+               (genau daran ist die erste Diagnose gescheitert). */
+            if (schonDa(n)){ notiereDoppel(n, "nackt", true); return n; }
+            saeubern(n, "teilbaum");
           } catch(e){}
           return orig.apply(this, arguments);
         };
@@ -438,12 +474,31 @@
     return String(u || "").slice(String(u || "").lastIndexOf("/") + 1)
       .replace(/[?#].*$/, "").replace(".min.", ".");
   }
+  /* Steht fuer diese Datei schon ein Tag im Dokument? Die Liste "geladen" enthaelt nur, was
+     DIESES Snippet selbst geholt hat -- und in Welle 2 steht das Snippet zurueck, wenn ein
+     Element-Loader die Datei schon in der Registry eingetragen hat. Genau dann ist die Datei fuer
+     "geladen" unbekannt, obwohl sie laengst laedt: auf der echten Seite kam topics-manager so
+     ZWEIMAL ins Dokument, beide Male von einem Element-Loader, beide Male ausgefuehrt.
+     Gefragt wird darum das Dokument selbst. Der ERSTE Tag einer Datei findet dabei nichts und
+     wird nicht angefasst -- geblockt wird nur, wer einen Vorgaenger hat. */
+  function tagImDokument(name){
+    var listen = [document.getElementsByTagName("script"), document.getElementsByTagName("link")];
+    for (var l = 0; l < listen.length; l++){
+      var els = listen[l];
+      for (var i = 0; i < els.length; i++){
+        var u = els[i].getAttribute("src") || els[i].getAttribute("href");
+        if (u && u.indexOf("upstreem-ui@") >= 0 && dateiname(u) === name) return true;
+      }
+    }
+    return false;
+  }
   function schonDa(n){
     if (!n || n.nodeType !== 1 || !n.getAttribute) return false;
     if (n.getAttribute("data-up-preload")) return false;      /* unsere eigenen Knoten */
     var u = quelleVon(n);
     if (!u || u.indexOf("upstreem-ui@") < 0) return false;
-    return !!geladen[dateiname(u)];
+    var name = dateiname(u);
+    return !!geladen[name] || tagImDokument(name);
   }
 
   function doppelWaechter(){
@@ -466,7 +521,7 @@
                abstellbar -- eine Meldung bei jedem Seitenaufbau waere damit reine Debug-Ausgabe in
                einer ausgelieferten App. Die Namen liegen auf einer Handhabe: window.__upDoppel in
                der Konsole zeigt, welche Elemente ihre Dateien doppelt anfordern. */
-            (window.__upDoppel || (window.__upDoppel = [])).push(name);
+            notiereDoppel(n, "beobachter", false);
             return;
           }
         }
@@ -486,6 +541,17 @@
      anderen Weg hereinkommt (etwa ein Stylesheet aus innerHTML -- Scripts von dort laufen
      ohnehin nicht). */
   einhaengeSperre();
+  /* Der Koerper existiert im Kopf der Seite noch NICHT -- der erste Aufruf laesst ihn also aus
+     (die Schleife ueberspringt einen leeren Eintrag). Sobald es ihn gibt, wird nachgefasst; die
+     Sperre merkt sich je Ziel und Methode, dass sie schon liegt, also ist der zweite Aufruf fuer
+     Kopf und documentElement wirkungslos. */
+  if (!document.body){
+    document.addEventListener("DOMContentLoaded", einhaengeSperre);
+    var koerperUhr = setInterval(function(){
+      if (!document.body) return;
+      clearInterval(koerperUhr); einhaengeSperre();
+    }, 50);
+  }
   doppelWaechter();
 
   function pinWaechter(){

@@ -54,12 +54,12 @@
   function teilB(){
     var tags = [].slice.call(document.querySelectorAll(
       'script[src*="upstreem-ui@"], link[href*="upstreem-ui@"]'));
-    var nach = {}, pins = {};
+    var nach2 = {}, pins = {};
     tags.forEach(function(t){
       var u = t.getAttribute("src") || t.getAttribute("href");
       var n = dateiname(u), p = pinAus(u);
       pins[p] = (pins[p] || 0) + 1;
-      var e = nach[n] || (nach[n] = { anzahl:0, ausKopf:0, fremd:[] });
+      var e = nach2[n] || (nach2[n] = { anzahl:0, ausKopf:0, fremd:[] });
       e.anzahl++;
       if (t.getAttribute("data-up-preload")) e.ausKopf++;
       else e.fremd.push(p.slice(0, 7));
@@ -68,32 +68,47 @@
        Dokument -- ohne diese Liste zaehlt man sie also faelschlich als "gibt es nicht". Der
        Waechter schreibt zwei Formen hinein: Objekte mit Stapelspur (verweigertes Einhaengen) und
        blosse Dateinamen (nachtraeglich entfernter Tag). */
-    var abgewehrt = {};
+    /* DIE EIGENTLICHE FRAGE, und die erste Fassung dieses Berichts hat sie nicht gestellt: ein
+       Doppel, das VOR der Einhaengung verhindert wurde, spart den Parse -- eines, das erst danach
+       aus dem Dokument genommen wurde, ist trotzdem gelaufen und geparst (ein eingehaengtes
+       Script laesst sich durch Entfernen nicht mehr anhalten). Am 05.09. meldete der Bericht 64
+       Abwehrfaelle, darunter core.js 17x, und liess dabei offen, dass KEINER davon einen Parse
+       gespart hat. Ohne diese Trennung sieht die Zahl nach einem Erfolg aus.
+       Drei Formen liegen in der Liste: die neue mit "wann", die vorige Objektform (die gab es nur
+       fuer den frueh verweigerten Fall) und blosse Namen aus dem Beobachter, also der spaete. */
+    var abgewehrt = {}, vor = 0, nachZahl = 0;
     (window.__upDoppel || []).forEach(function(d){
       var n = typeof d === "string" ? d : (d && d.datei) || "?";
-      var e = abgewehrt[n] || (abgewehrt[n] = { anzahl:0, spuren:[] });
-      e.anzahl++;
+      var wann = (d && d.wann) || (d && d.spur ? "vor" : "nach");
+      if (wann === "vor") vor++; else nachZahl++;
+      var e = abgewehrt[n] || (abgewehrt[n] = { anzahl:0, vor:0, nach:0, wo:{}, spuren:[] });
+      e.anzahl++; e[wann === "vor" ? "vor" : "nach"]++;
+      if (d && d.wo) e.wo[d.wo] = 1;
       if (d && d.spur && e.spuren.length < 2) e.spuren.push(d.spur.join(" | "));
     });
-    var mehrfach = Object.keys(nach).filter(function(n){ return nach[n].anzahl > 1; });
+    var mehrfach = Object.keys(nach2).filter(function(n){ return nach2[n].anzahl > 1; });
     var pinListe = Object.keys(pins);
-    var sauber = mehrfach.length === 0 && pinListe.length <= 1;
+    var sauber = mehrfach.length === 0 && pinListe.length <= 1 && nachZahl === 0;
     kopf("B) WIRD ETWAS DOPPELT GEHOLT?  " + tags.length + " Tags im Dokument, " +
-         Object.keys(nach).length + " Dateien, " +
-         (window.__upDoppel || []).length + " vom Waechter abgewehrt   " +
-         (sauber ? "SAUBER" : "NEIN"), sauber ? "#1a7f37" : "#b0200c");
+         Object.keys(nach2).length + " Dateien   " + (sauber ? "SAUBER" : "NEIN"),
+         sauber ? "#1a7f37" : "#b0200c");
+    console.log("   Doppelanforderungen: " + vor + " VOR der Einhaengung verhindert (nie geladen, " +
+                "kein Parse)  |  " + nachZahl + " erst DANACH entfernt (gelaufen und geparst" +
+                (nachZahl ? " -- diese kosten weiter Zeit)" : ")"));
     console.log("   Pins auf der Seite: " + pinListe.map(function(p){
       return p.slice(0,7) + " (" + pins[p] + ")"; }).join(",  ") +
       (pinListe.length > 1 ? "   ZWEI PINS = jede Datei wird zweimal geholt, das ist die Ursache" : ""));
-    mehrfach.sort(function(a,b){ return nach[b].anzahl - nach[a].anzahl; }).forEach(function(n){
-      var e = nach[n];
+    mehrfach.sort(function(a,b){ return nach2[b].anzahl - nach2[a].anzahl; }).forEach(function(n){
+      var e = nach2[n];
       console.log("   " + n + "  x" + e.anzahl + "   davon aus dem Kopf-Snippet: " + e.ausKopf +
                   "   von Element-Loadern: " + e.fremd.length +
                   (e.fremd.length ? "  Pins " + e.fremd.join(",") : ""));
     });
     Object.keys(abgewehrt).forEach(function(n){
       var e = abgewehrt[n];
-      console.log("   [abgewehrt] " + n + "  x" + e.anzahl +
+      console.log("   [doppelt angefordert] " + n + "  x" + e.anzahl +
+                  "   verhindert: " + e.vor + "   zu spaet: " + e.nach +
+                  "   Weg: " + Object.keys(e.wo).join(",") +
                   (e.spuren.length ? "\n        " + e.spuren.join("\n        ") : ""));
     });
     /* Die zweite Spur, unabhaengig vom DOM: der Browser zaehlt jede Anforderung mit. Ein Tag, den
@@ -112,8 +127,8 @@
     console.log("   Resource-Timing: " + Object.keys(res).length + " upstreem-Dateien geladen" +
       (resMehr.length ? ",  mehrfach angefordert: " + resMehr.map(function(n){
         return n + " x" + res[n]; }).join(", ") : ",  keine doppelt angefordert"));
-    return { tags: tags.length, dateien: Object.keys(nach).length,
-             mehrfach: mehrfach.length, abgewehrt: (window.__upDoppel || []).length,
+    return { tags: tags.length, dateien: Object.keys(nach2).length,
+             mehrfach: mehrfach.length, verhindert: vor, zuSpaet: nachZahl,
              pins: pinListe.length };
   }
 
