@@ -390,6 +390,7 @@
   "showMacToast",
   "showView",
   "upCheck",
+  "upCoreReport",
   "upstreemBrandsChanged",
   "upstreemDatesActivate",
   "upstreemExportClose",
@@ -2848,7 +2849,7 @@
  "_zaehlung": {
   "events": 145,
   "fnattrs": 96,
-  "globals": 164,
+  "globals": 165,
   "payloadkeys": 95,
   "dataattrs": 238,
   "klassen": 2032,

@@ -1,0 +1,138 @@
+<meta charset="utf-8"><title>DOM-Budget: statisches Markup gegen gerendertes</title>
+<style>html,body{margin:0;font:13px/1.5 system-ui,sans-serif}
+#out{font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap;padding:10px;background:#f6f6f6}
+#rahmen{width:1200px;height:420px;border:0}</style>
+<body><iframe id="rahmen"></iframe><pre id="out">laeuft…</pre>
+<script>
+/* DIE FRAGE, die vor jedem Lazy-Mount steht: wie viel des Start-DOM baut unser JS, und wie viel
+   ist Markup, das Bubble ohnehin ins Dokument stellt?
+
+   Denn nur das ERSTE spart ein Lazy-Mount. Das statische Markup einer Komponente steht im
+   Bubble-HTML-Element und ist da, sobald Bubble die View baut -- ob unser initRoot laeuft oder
+   nicht. Wer 156000 Knoten auf 15000 druecken will, muss also wissen, welcher Anteil ueberhaupt
+   uns gehoert. Gemessen wird je Komponente: Knoten der Vorlage (nur Markup, kein JS), dann
+   Knoten nach dem Rendern mit einer realistischen Nutzlast. */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+function warte(ms,w){ return new Promise(function(ok){ setTimeout(function(){ ok(w); },ms); }); }
+
+/* Alle Vorlagen, die auf der echten Seite in den 14 Ansichten stecken. */
+var VORLAGEN = [
+  "bubble/prompts_table_bubble.html","bubble/responses_table_bubble.html",
+  "bubble/urls_table_bubble.html","bubble/domains_table_bubble.html",
+  "bubble/visibility_chart_bubble.html","bubble/citations_combo_chart_bubble.html",
+  "bubble/topcitations_dashboard_bubble.html","bubble/brands_overview_bubble.html",
+  "bubble/ask_mira_bubble.html","bubble/settings_brand_bubble.html",
+  "bubble/domain_detail_bubble.html","bubble/brand_detail_bubble.html",
+  "bubble/response_detail_bubble.html","bubble/url_detail_bubble.html",
+  "filters/bubble/date_range_bubble.html","filters/bubble/filter_bar_bubble.html",
+  "page-headers/bubble/dashboard_page_header_bubble.html"
+];
+
+function knotenVon(html){
+  var d = document.implementation.createHTMLDocument("x");
+  var w = d.createElement("div");
+  w.innerHTML = wurzelAus(html);
+  return w.querySelectorAll("*").length;
+}
+
+var statisch = {}, summe = 0;
+Promise.all(VORLAGEN.map(function(f){
+  return hol(f).then(function(t){ statisch[f] = knotenVon(t); return null; })
+               .catch(function(){ statisch[f] = -1; return null; });
+})).then(function(){
+  log("A) STATISCHES MARKUP je Vorlage (ohne JS, ohne Daten)");
+  VORLAGEN.forEach(function(f){
+    var n = statisch[f];
+    if (n >= 0) summe += n;
+    log("   " + (n < 0 ? "(fehlt)  " : String(n).padStart(6," ")) + "  " + f.replace(/^.*\//,""));
+  });
+  log("   SUMME der Vorlagen: " + summe + " Knoten");
+  /* Jetzt der andere Teil: was ein Rendern mit Daten DAZULEGT. Zwei Tabellen, beide mit einer
+     vollen Seite (15 Zeilen) -- das ist die Lage auf der echten Seite. */
+  return gerendert();
+});
+
+function bauen(dateien, vorlage, attrs){
+  return Promise.all([hol("core.css"), hol("core.js")].concat(dateien.map(hol)).concat([hol(vorlage)]))
+  .then(function(t){
+    var alt=document.getElementById("rahmen"), neu=document.createElement("iframe");
+    neu.id="rahmen"; neu.setAttribute("style","width:1200px;height:420px;border:0");
+    alt.parentNode.replaceChild(neu, alt);
+    var d=neu.contentDocument, v=d.defaultView;
+    d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0'></body></html>"); d.close();
+    try { v.localStorage.removeItem("up_prefs"); } catch(e){}
+    var st=d.createElement("style"); st.textContent=t[0]; d.head.appendChild(st);
+    /* die CSS der Komponente(n) */
+    for (var i=2;i<t.length-1;i+=2){ var s2=d.createElement("style"); s2.textContent=t[i]; d.head.appendChild(s2); }
+    var w=d.createElement("div"); w.innerHTML=wurzelAus(t[t.length-1]);
+    var r=w.querySelector(".up-root") || w.firstElementChild;
+    Object.keys(attrs).forEach(function(k){ r.setAttribute(k, attrs[k]); });
+    d.body.appendChild(r);
+    var leer = d.body.querySelectorAll("*").length;
+    var j=d.createElement("script"); j.textContent=t[1]; d.head.appendChild(j);
+    for (var k=3;k<t.length-1;k+=2){ var j2=d.createElement("script"); j2.textContent=t[k]; d.head.appendChild(j2); }
+    return warte(1500).then(function(){
+      return { d:d, v:v, leer:leer, nachMount: d.body.querySelectorAll("*").length };
+    });
+  });
+}
+
+function zeile(i){
+  return { prompt_run_id:"r"+i, prompt_text:"Was kostet Produkt "+i+"?", run_at:new Date().toISOString(),
+           response_preview:"Eine Antwort mit etwas Text darin, wie sie wirklich kommt.",
+           has_user_brand: i%2?"yes":"no", user_sentiment: 70+i, user_rank: (i%5)+1,
+           model:{ name:"gpt-4o" },
+           companies_preview:[{name:"A",brand_name_raw:"A"},{name:"B",brand_name_raw:"B"},
+                              {name:"C",brand_name_raw:"C"},{name:"D",brand_name_raw:"D"}],
+           companies_preview_totalcount: 9,
+           sources_preview:[{title:"Seite 1",favicon:""},{title:"Seite 2",favicon:""},
+                            {title:"Seite 3",favicon:""},{title:"Seite 4",favicon:""},
+                            {title:"Seite 5",favicon:""}],
+           sources_totalcount: 12 };
+}
+
+function gerendert(){
+  log("");
+  log("B) WAS DAS RENDERN DAZULEGT (eine volle Seite, 15 Zeilen)");
+  return bauen(["responses-table.css","responses-table.js"], "bubble/responses_table_bubble.html",
+               { "data-instance":"m", "data-cdn-pin":"m", "data-isdark":"no" })
+  .then(function(o){
+    var reihen=[]; for (var i=1;i<=15;i++) reihen.push(zeile(i));
+    o.v.renderResponsesTable(JSON.stringify({ instanceId:"m", view_active:"yes", totalCount:102, rows:reihen }));
+    return warte(1400, o);
+  }).then(function(o){
+    var voll = o.d.body.querySelectorAll("*").length;
+    log("   responses-table   Vorlage " + o.leer + "  nach Mount (Skelett) " + o.nachMount +
+        "  mit 15 Zeilen " + voll);
+    log("   ==> unser Rendern legt " + (voll - o.leer) + " Knoten dazu, davon " +
+        (o.nachMount - o.leer) + " schon beim Mounten ohne Daten");
+    return null;
+  }).then(function(){
+    return bauen(["prompts-table.css","prompts-table.js"], "bubble/prompts_table_bubble.html",
+                 { "data-instance":"tb", "data-cdn-pin":"tb", "data-isdark":"no" });
+  }).then(function(o){
+    var reihen=[]; for (var i=1;i<=15;i++) reihen.push({
+      prompt_id:"p"+i, prompt_text:"Welche Anbieter gibt es fuer Produkt "+i+"?",
+      topic:"Thema "+(i%4), market:"DE", visibility_pct: 20+i, share_pct: 10+i,
+      rank_avg: (i%5)+1, sentiment: 60+i, mentions: 100+i, runs: 30, models:["gpt-4o","claude"] });
+    o.v.renderPromptsTable(JSON.stringify({ instanceId:"tb", view_active:"yes", totalCount:102, rows:reihen }));
+    return warte(1400, o);
+  }).then(function(o){
+    var voll = o.d.body.querySelectorAll("*").length;
+    log("   prompts-table     Vorlage " + o.leer + "  nach Mount (Skelett) " + o.nachMount +
+        "  mit 15 Zeilen " + voll);
+    log("   ==> unser Rendern legt " + (voll - o.leer) + " Knoten dazu, davon " +
+        (o.nachMount - o.leer) + " schon beim Mounten ohne Daten");
+    log("");
+    log("C) RECHNUNG");
+    log("   Die Seite meldet 155881 Knoten. Die Vorlagen oben summieren " + summe + ".");
+    log("   Was ein Lazy-Mount sparen KANN, ist nur der gerenderte Teil der 13 unsichtbaren");
+    log("   Seiten -- nicht ihr Markup: das steht im Bubble-Element und ist da, sobald Bubble");
+    log("   die View baut. Die Zahlen oben sagen, wie gross dieser Anteil je Komponente ist.");
+    log("FERTIG");
+  }).catch(function(e){ log("ABBRUCH: "+e.message+"\n"+(e.stack||"").split("\n").slice(0,3).join("\n")); });
+}
+</script>
