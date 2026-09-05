@@ -344,6 +344,14 @@
       var stepIdx = 0, stepTimer = null;
       function stepTick() {
         var t = elLText;
+        /* Nicht in einer geparkten Ansicht. Der Ticker laeuft im Takt weiter, aber das
+           void t.offsetWidth unten ist ein Reflow-Ausloeser -- und in einem Teilbaum, den der
+           Browser wegen content-visibility auslaesst, zwingt er ihn, ihn doch zu layouten.
+           Auf der echten Seite war das mit 15 Zugriffen in 20 Sekunden Ruhe der groesste Posten
+           (gemessen mit bubble/diagnostics/_diagnose_parkleser.js). Zu sehen ist die Animation
+           dort ohnehin nicht. */
+        if (window.UpstreemCore && window.UpstreemCore.messbar &&
+            !window.UpstreemCore.messbar(t)) return;
         t.classList.add("is-out");
         setTimeout(function () {
           stepIdx = (stepIdx + 1) % STEPS.length;

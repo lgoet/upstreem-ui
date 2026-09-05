@@ -54,7 +54,7 @@
       /* Die eigenen Rahmen ueberspringen -- nach FUNKTIONSNAMEN, denn dieses Script wird per
          eval eingesetzt und hat keinen Dateinamen, an dem man es erkennen koennte. Ohne das
          meldete der Bericht sich selbst ("at zaehle") als Quelle. */
-      if (/\bquelle\b|\bzaehle\b|\bgeparkt\b|upParkDiag|\[as (client|offset|scroll)/.test(t)) continue;
+      if (/\bquelle\b|\bzaehle\b|\bgeparkt\b|upParkDiag|\[as (client|offset|scroll)|Element\.getBoundingClientRect/.test(t)) continue;
       return t.replace(/^at\s+/, "").slice(0, 140);
     }
     return "(unbekannt)";

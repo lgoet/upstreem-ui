@@ -414,6 +414,18 @@
     if (S.mode !== 'board'){ root.classList.remove('is-stacked'); return; }
     var stage = root.querySelector('.uo-stage');
     if (!stage) return;
+    /* NICHT ueber das UC dieser Datei: das lebt in der Boot-Funktion und ist hier nicht im Scope
+       (der Kommentar weiter unten in dieser Datei sagt es fuer eine andere Stelle genauso).
+       window.UpstreemCore ist in jedem Scope dasselbe und kostet einen Zugriff. Dieselbe Form
+       steht in ask-mira und discover-brands -- dort waere UC zwar im Scope, aber eine Zeile, die
+       in drei Dateien gleich aussieht, wird beim naechsten Verschieben nicht falsch.
+       Geparkt nicht messen: das clientWidth unten layoutet sonst einen Teilbaum, den der Browser
+       gerade auslaesst. Es gibt auch nichts zu entscheiden -- welche Spaltenzahl passt, haengt an
+       einer Breite, die es erst gibt, wenn die Ansicht offen ist. Der naechste Lauf holt es nach:
+       updateLayout haengt an render, an applySticky und am Groessenwaechter, und alle drei feuern
+       beim Aufgehen. */
+    if (window.UpstreemCore && window.UpstreemCore.messbar &&
+        !window.UpstreemCore.messbar(stage)) return;
     var n = visibleColumns().length || 1;
     var avail = stage.clientWidth;
     var needed = n * 300 + (n - 1) * 16;

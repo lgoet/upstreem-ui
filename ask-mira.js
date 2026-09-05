@@ -2327,6 +2327,12 @@
   function phTick(){
     var items = L().suggested; if (!items.length) return;
     var t = elPhText;
+    /* Nicht in einer geparkten Ansicht -- dasselbe wie in discover-brands' stepTick: das
+       void t.offsetWidth unten ist ein Reflow-Ausloeser, und in einem per content-visibility
+       ausgelassenen Teilbaum zwingt er ein Layout, das niemand sieht. Gemessen: 10 Zugriffe in
+       20 Sekunden Ruhe. */
+    if (window.UpstreemCore && window.UpstreemCore.messbar &&
+        !window.UpstreemCore.messbar(t)) return;
     t.classList.add('is-out');                 // current slides up + fades out
     setTimeout(function(){
       phIdx = (phIdx + 1) % items.length;
@@ -5207,7 +5213,17 @@
     function isSmall(){ return !window.matchMedia || window.matchMedia('(max-width: 720px)').matches; }
     // A hidden element (Bubble group not shown yet) reports rect 0 -> measuring then would compute the
     // height against top:0 and leave it TOO TALL once shown (footer/hint pushed below the screen).
-    function visible(){ return !!(root.offsetWidth || root.offsetHeight || root.getClientRects().length); }
+    /* messbar() ZUERST, und das ist keine Ergaenzung, sondern genau die Frage dieser Funktion:
+       "wird das hier gerendert". Sie beantwortet sie OHNE Layoutwert. Die drei Lesungen dahinter
+       bleiben als Rueckfall fuer Browser ohne checkVisibility -- und fuer den Fall, dass die
+       Ansicht offen ist und der Kasten trotzdem noch keine Groesse hat (der Fall, fuer den der
+       Kommentar darueber geschrieben wurde).
+       Gemessen: 3 Zugriffe in 20 Sekunden Ruhe, aus dem 2s-Waechter unten. */
+    function visible(){
+      if (window.UpstreemCore && window.UpstreemCore.messbar &&
+          !window.UpstreemCore.messbar(root)) return false;
+      return !!(root.offsetWidth || root.offsetHeight || root.getClientRects().length);
+    }
     function fit(){
       if (!visible()) return;
       // Phone with the keyboard open: visualViewport shrinks, so take exactly that and the composer

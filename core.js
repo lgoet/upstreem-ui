@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20260907;
+  var BUILD = 20260908;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -3770,6 +3770,10 @@
         }).observe(box);
       }
       _bwEl = box;
+      /* Geparkt: 0 zurueckgeben, aber NICHTS merken -- sonst gilt die 0 bis zum naechsten
+         Ungueltigmachen weiter, und die Tabelle rechnet ihre Spalten gegen eine Breite von null.
+         Der Waechter oben feuert beim Aufgehen und macht den Wert dann von selbst neu. */
+      if (!messbar(box)) return 0;
       _bwWert = box.getBoundingClientRect().width || 0;
       return _bwWert;
     }
@@ -6806,7 +6810,10 @@
        classes onto a component that may well be full width. It then sits wrong until something
        resizes it. The ResizeObserver below delivers the first real width on its own; letting it
        do that is both simpler and correct. */
-    var w0 = root.getBoundingClientRect().width;
+    /* Und in einer geparkten Ansicht gar nicht erst lesen: dort ist die Antwort ohnehin 0 (die
+       Begruendung darueber gilt weiter), aber der Lesezugriff selbst zwingt den Browser, den
+       ausgelassenen Teilbaum zu layouten. Im Prueftand war das eine der zwei letzten Lesungen. */
+    var w0 = messbar(root) ? root.getBoundingClientRect().width : 0;
     if (w0 > 0) apply(w0);
     if (onResize) onResize(root, apply);
   }
@@ -13497,6 +13504,10 @@
     closeAllDropdowns: closeAllDropdowns,
     onViewChange: onViewChange,
     currentView: currentView,
+    /* Fuer die Komponenten: "darf ich hier messen?" ohne Layoutwert. Gebraucht wird das ueberall,
+       wo ein Takt oder ein Beobachter etwas ausmisst -- in einer geparkten Ansicht zwingt jeder
+       Lesezugriff den Browser, den Teilbaum trotzdem zu layouten. */
+    messbar: messbar,
     onDrawerOpen: onDrawerOpen,
     onDrawerClose: onDrawerClose,
     fireViewChange: fireViewChange,

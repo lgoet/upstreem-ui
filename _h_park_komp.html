@@ -1,0 +1,108 @@
+<meta charset="utf-8"><title>Drei Komponenten: laufen sie noch, und lesen sie im Geparkten?</title>
+<style>html,body{margin:0;font:13px/1.5 system-ui,sans-serif}
+#out{font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap;padding:10px;background:#f6f6f6}
+#rahmen{width:1200px;height:300px;border:0}</style>
+<body><iframe id="rahmen"></iframe><pre id="out">laeuft…</pre>
+<script>
+/* Drei Riegel sind am 06.09. in discover-brands, ask-mira und opportunities eingezogen -- an
+   Stellen, die auf der echten Seite in geparkten Ansichten Layout gelesen haben (gemessen mit
+   bubble/diagnostics/_diagnose_parkleser.js: 15, 10, 3 und 1 Zugriffe in 20 Sekunden Ruhe).
+
+   Zwei Dinge muessen danach stimmen, und beide sind hier geprueft:
+
+   1. DIE DATEIEN LAUFEN NOCH. Der Riegel steht in Funktionen, die tief in eigenen Closures
+      liegen; ein "UC" waere dort nicht ueberall im Scope gewesen (opportunities.js sagt das
+      selbst in einem Kommentar). Darum window.UpstreemCore -- und darum dieser Test: Markup
+      einsetzen, Datei laden, und danach muss die Komponente ihr DOM gebaut haben. Eine
+      ReferenceError in einem Ticker faellt sonst niemandem auf.
+   2. IM GEPARKTEN WIRD NICHT GELESEN. Dieselbe Diagnose wie auf der echten Seite laeuft hier
+      mit, ueber eine geparkte Kopie jeder Komponente. */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+function warte(ms,w){ return new Promise(function(ok){ setTimeout(function(){ ok(w); },ms); }); }
+
+var KOMP = [
+  { name:"discover-brands", css:"discover-brands.css", js:"discover-brands.js",
+    vorlage:"bubble/discover_brands_bubble.html" },
+  { name:"opportunities",   css:"opportunities.css",   js:"opportunities.js",
+    vorlage:"bubble/opportunities_bubble.html" },
+  { name:"ask-mira",        css:"ask-mira.css",        js:"ask-mira.js",
+    vorlage:"bubble/ask_mira_bubble.html" }
+];
+
+var D=null, V=null;
+Promise.all([hol("core.css"), hol("core.js"), hol("bubble/diagnostics/_diagnose_parkleser.js")]
+  .concat(KOMP.map(function(k){ return hol(k.css); }))
+  .concat(KOMP.map(function(k){ return hol(k.js); }))
+  .concat(KOMP.map(function(k){ return hol(k.vorlage); })))
+.then(function(t){
+  var d = document.getElementById("rahmen").contentDocument; D = d;
+  d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0'></body></html>"); d.close();
+  var v = d.defaultView; V = v;
+  try { v.localStorage.removeItem("up_prefs"); } catch(e){}
+  var st=d.createElement("style"); st.textContent=t[0]; d.head.appendChild(st);
+  /* So parkt die Host-App: die Ansicht bleibt im Dokument, wird aber nicht gerendert. */
+  var sp=d.createElement("style");
+  sp.textContent='[id^="view-"]{display:block}[id^="view-"]:not(.view-on)' +
+                 '{content-visibility:hidden;contain-intrinsic-size:900px 400px}';
+  d.head.appendChild(sp);
+  for (var i=0;i<KOMP.length;i++){ var c=d.createElement("style"); c.textContent=t[3+i]; d.head.appendChild(c); }
+  /* Jede Komponente ZWEIMAL: einmal in der offenen Ansicht (dort muss sie bauen), einmal in der
+     geparkten (dort darf sie nicht messen). Verschiedene data-instance, sonst bedient ein Setter
+     beide. */
+  var offen = d.createElement("div"); offen.id="view-offen"; offen.className="view-on";
+  var park  = d.createElement("div"); park.id="view-geparkt";
+  KOMP.forEach(function(k, n){
+    [["offen", offen], ["park", park]].forEach(function(paar){
+      var w=d.createElement("div"); w.innerHTML=wurzelAus(t[3+KOMP.length*2+n]);
+      var r=w.querySelector(".up-root") || w.firstElementChild;
+      if (!r) return;
+      r.setAttribute("data-instance", k.name + "-" + paar[0]);
+      r.setAttribute("data-cdn-pin", "t"); r.setAttribute("data-isdark", "no");
+      paar[1].appendChild(r);
+    });
+  });
+  d.body.appendChild(offen); d.body.appendChild(park);
+  var vorher = {};
+  KOMP.forEach(function(k){
+    var r = d.querySelector('[data-instance="' + k.name + '-offen"]');
+    vorher[k.name] = r ? r.querySelectorAll("*").length : -1;
+  });
+  V.__fehler = [];
+  v.addEventListener("error", function(e){ V.__fehler.push(String(e.message)); });
+  var j=d.createElement("script"); j.textContent=t[1]; d.head.appendChild(j);
+  /* Die Diagnose NACH core, aber VOR den Komponenten: dann sieht sie deren erste Laeufe. */
+  v.eval(t[2]);
+  for (var m=0;m<KOMP.length;m++){ var s2=d.createElement("script"); s2.textContent=t[3+KOMP.length+m]; d.head.appendChild(s2); }
+  return warte(3000, vorher);
+}).then(function(vorher){
+  log("1) LAUFEN DIE DATEIEN NOCH?  (Knoten im Wurzelelement, offene Ansicht)");
+  var kaputt = 0;
+  KOMP.forEach(function(k){
+    var r = D.querySelector('[data-instance="' + k.name + '-offen"]');
+    var jetzt = r ? r.querySelectorAll("*").length : -1;
+    var gebaut = jetzt > vorher[k.name];
+    if (!gebaut) kaputt++;
+    log("   " + k.name.padEnd(17," ") + " vorher " + String(vorher[k.name]).padStart(4," ") +
+        "  nach dem Mounten " + String(jetzt).padStart(4," ") + "   " +
+        (gebaut ? "gebaut" : "NICHTS GEBAUT"));
+  });
+  log("   Fehler im Rahmen: " + JSON.stringify((V.__fehler||[]).slice(0,3)));
+  log("   ==> " + (kaputt === 0 && !(V.__fehler||[]).length
+        ? "RICHTIG (alle drei bauen ihr DOM, kein Fehler)"
+        : "FALSCH -- " + kaputt + " ohne DOM" +
+          ((V.__fehler||[]).length ? ", dazu " + V.__fehler.length + " Fehler" : "")));
+  log("");
+  log("2) LESEN SIE IM GEPARKTEN?");
+  var t2 = V.__upParkDiag || {}, summe = 0, quellen = Object.keys(t2);
+  quellen.forEach(function(q){ summe += t2[q]; });
+  log("   Layout-Lesezugriffe in der geparkten Ansicht: " + summe);
+  quellen.slice(0,6).forEach(function(q){ log("      " + t2[q] + "  " + q.slice(0,110)); });
+  log("   ==> " + (summe === 0
+        ? "RICHTIG (keine Messung im Geparkten)"
+        : "FALSCH -- " + summe + " Zugriffe, Quellen oben"));
+  log("FERTIG");
+}).catch(function(e){ log("ABBRUCH: "+e.message+"\n"+(e.stack||"").split("\n").slice(0,3).join("\n")); });
+</script>
