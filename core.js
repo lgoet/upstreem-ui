@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20260905;
+  var BUILD = 20260906;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -4493,6 +4493,32 @@
     return el.getClientRects().length > 0;
   }
 
+  /* ---- MESSEN NUR, WO GEMESSEN WERDEN KANN --------------------------------------------------
+     checkVisibility() beantwortet OHNE Layoutwert, ob ein Element ueberhaupt gerendert wird:
+     display:none, visibility:hidden, ein leerer Kasten -- und, mit dem Flag unten, ein Vorfahr,
+     den der Browser wegen content-visibility auslaesst.
+
+     Warum das hier steht: die Host-App parkt inaktive Ansichten genau so. Ein offsetWidth darin
+     ZWINGT den Browser, den geparkten Teilbaum trotzdem zu layouten, und er sagt es auch --
+     "Rendering was performed in a subtree hidden by content-visibility". Im Log der echten Seite
+     stand diese Zeile HUNDERTE Male, die letzte davon aus segLesen, im Knoten
+     <div id="view-opportunities">. Das ist der Grossteil der 4,8s Style-Recalc im Trace vom
+     05.09.: 13 geparkte Ansichten, in denen wir bei jedem Durchgang messen.
+
+     istSichtbar() daneben bleibt, was es ist: getClientRects() IST ein Layoutzugriff und taugt
+     deshalb nicht als Riegel VOR einem Layoutzugriff -- es beantwortet eine andere Frage (hat
+     dieses Element ueberhaupt Kaesten) an einer Stelle, an der ohnehin gelesen wird.
+
+     Kennt ein Browser die Methode nicht, gilt messbar: lieber einmal zu viel gemessen als eine
+     Komponente, die ihren Streifen nie setzt. */
+  function messbar(el){
+    if (!el) return false;
+    if (typeof el.checkVisibility !== "function") return true;
+    try {
+      return el.checkVisibility({ contentVisibilityAuto: true, visibilityProperty: true });
+    } catch(e){ return true; }
+  }
+
   function makeLate(name, rootSel){
     var wartend = {};
     function park(id, fn){
@@ -5119,6 +5145,10 @@
     segBeobachten(box);
     var aktiv = box.querySelector("button.is-active");
     if (!aktiv) return null;
+    /* Nicht in einer geparkten Ansicht messen (siehe messbar). Es wird auch nichts festgehalten:
+       ohne Eintrag in SEG_STAND misst der naechste Lauf neu -- und der kommt, sobald die Ansicht
+       oder der Drawer aufgeht (fireViewChange / onDrawerOpen stossen ihn an). */
+    if (!messbar(aktiv)) return null;
     /* DER RIEGEL. Vier Layout-Lesungen je Kasten und Lauf waren gemessen 8932 Zugriffe und damit
        der groesste Posten der ganzen App (02.09., segLesen kam 2808 mal dran). Bewegen kann sich
        der Streifen nur, wenn eine ANDERE Stufe aktiv ist oder der Kasten seine Groesse geaendert
@@ -8317,6 +8347,9 @@
     var _theadH = null;
     function syncTheadOffset(){
       if (!headEl || _theadH != null) return;
+      /* Geparkte Ansicht: nicht messen und nichts merken. Der Groessenwaechter unten feuert
+         wieder, sobald sie aufgeht -- dann steht auch eine echte Hoehe zur Verfuegung. */
+      if (!messbar(headEl)) return;
       _theadH = headEl.offsetHeight;
       root.style.setProperty("--up-thead-off", _theadH + "px");
     }
@@ -11130,6 +11163,12 @@
   function fireViewChange(name){
     if (name) LETZTE_ANSICHT = name;
     closeAllDropdowns();
+    /* Ein Wechsel macht Umschalter sichtbar, die vorher geparkt waren -- und geparkte messen
+       nicht (siehe messbar). Ohne diesen Lauf haetten sie keinen Streifen, bis irgendetwas
+       anderes einen Durchgang ausloest. 250ms, weil showView die Gruppe erst im naechsten Task
+       einblendet; das ist dieselbe Frist, mit der auch das Nachladen der Daten arbeitet.
+       EIN Timer je Wechsel, und er liest nur noch in der Ansicht, die wirklich offen ist. */
+    setTimeout(function(){ sicher("segLauf", function(){ segLauf(null, true, true); }); }, 250);
     for (var i = VIEW_SUBS.length - 1; i >= 0; i--){
       try { VIEW_SUBS[i](name); }
       catch(e){ if (window.console) console.warn("[view] ein Aufraeumer hat geworfen:", e); }
@@ -11194,6 +11233,11 @@
     try { window[name] = wrapped; } catch(e){ return false; }
     return true;
   }
+  /* Dasselbe fuer einen Drawer: er bringt eigene Umschalter mit, und geparkt haben sie nicht
+     gemessen. 350ms, weil die Host-App den Drawer mit einer Animation einblendet. */
+  onDrawerOpen(function(){
+    setTimeout(function(){ sicher("segLauf", function(){ segLauf(null, true, true); }); }, 350);
+  });
   (function watchForDrawerFns(triesLeft){
     var a = wrapDrawerFn("openDrawer", DRAWER_SUBS);
     var b = wrapDrawerFn("closeDrawer", DRAWER_ZU_SUBS);

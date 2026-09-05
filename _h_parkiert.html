@@ -1,0 +1,129 @@
+<meta charset="utf-8"><title>Geparkte Ansichten: kein Layout-Lesezugriff darin</title>
+<style>html,body{margin:0;font:13px/1.5 system-ui,sans-serif}
+#out{font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap;padding:10px;background:#f6f6f6}
+#rahmen{width:1100px;height:260px;border:0}</style>
+<body><iframe id="rahmen"></iframe><pre id="out">laeuft…</pre>
+<script>
+/* WAS HIER GEMESSEN WIRD
+   Im Log der echten Seite standen HUNDERTE Zeilen "Rendering was performed in a subtree hidden
+   by content-visibility", die letzte davon aus core.js:5134 -- segLesen -- im Knoten
+   <div id="view-opportunities">. Die Host-App parkt inaktive Ansichten mit content-visibility;
+   ein offsetWidth darin zwingt den Browser, den geparkten Teilbaum trotzdem zu layouten. Das ist
+   der Grossteil der 4,8s Style-Recalc im Trace.
+
+   Gezaehlt wird darum nicht die Zeit (die schwankt), sondern der LESEZUGRIFF selbst: auf dem
+   aktiven Knopf jedes Umschalters wird offsetWidth durch einen eigenen Getter ersetzt, der
+   mitzaehlt. Damit ist die Frage exakt beantwortbar:
+
+     geparkte Ansicht   -> 0 Lesezugriffe
+     offene Ansicht     -> mehr als 0   (die Gegenprobe: ohne sie wuerde eine Fassung, die GAR
+                                         nicht mehr misst, als Erfolg durchgehen)
+     nach dem Wechsel   -> der vorher geparkte Umschalter wird gemessen und bekommt seinen
+                           Streifen (sonst waere der Riegel ein neuer Fehler) */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function warte(ms,w){ return new Promise(function(ok){ setTimeout(function(){ ok(w); },ms); }); }
+var D=null, V=null, Z={};
+
+function segMarkup(id){
+  return '<div class="up-seg" data-probe="' + id + '">' +
+           '<button type="button" class="up-seg-btn is-active">Day</button>' +
+           '<button type="button" class="up-seg-btn">Week</button>' +
+           '<button type="button" class="up-seg-btn">Month</button>' +
+         '</div>';
+}
+
+Promise.all([hol("core.css"), hol("core.js")]).then(function(t){
+  var d = document.getElementById("rahmen").contentDocument; D = d;
+  d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0;padding:10px'></body></html>"); d.close();
+  var v = d.defaultView; V = v;
+  try { v.localStorage.removeItem("up_prefs"); } catch(e){}
+  var st = d.createElement("style"); st.textContent = t[0]; d.head.appendChild(st);
+  /* Die Host-App parkt so: die inaktive Ansicht bleibt im Dokument, wird aber nicht gerendert. */
+  var st2 = d.createElement("style");
+  st2.textContent = '[id^="view-"],[id^="drawer-"]{display:block}' +
+                    '[id^="view-"]:not(.view-on),[id^="drawer-"]:not(.open)' +
+                    '{content-visibility:hidden;contain-intrinsic-size:800px 400px}';
+  d.head.appendChild(st2);
+  d.body.innerHTML =
+    '<div id="view-dashboard" class="view-on up-root">' + segMarkup("offen") + '</div>' +
+    '<div id="view-opportunities" class="up-root">' + segMarkup("geparkt") + '</div>' +
+    '<div id="drawer-domain" class="up-root">' + segMarkup("drawer") + '</div>';
+  /* showView der Host-App: sie schaltet die Klasse um. core umschliesst es. */
+  v.__views = [];
+  v.showView = function(n){
+    v.__views.push(n);
+    [].forEach.call(d.querySelectorAll('[id^="view-"]'), function(el){
+      el.classList.toggle("view-on", el.id === "view-" + n);
+    });
+  };
+  /* DIE ZAEHLER: der aktive Knopf jedes Umschalters bekommt einen eigenen offsetWidth-Getter.
+     Der echte Wert wird ueber den Prototyp geholt, damit die Messung nichts veraendert -- sie
+     zaehlt nur mit, WANN gelesen wird. */
+  v.__drawer = [];
+  v.openDrawer = function(art){ v.__drawer.push(art);
+    d.querySelector('[id^="drawer-"]').classList.add("open"); };
+  v.closeDrawer = function(){ d.querySelector('[id^="drawer-"]').classList.remove("open"); };
+  Z = { offen: 0, geparkt: 0, drawer: 0 };
+  var proto = v.HTMLElement.prototype;
+  var echt = Object.getOwnPropertyDescriptor(proto, "offsetWidth");
+  ["offen", "geparkt", "drawer"].forEach(function(k){
+    var btn = d.querySelector('[data-probe="' + k + '"] .is-active');
+    Object.defineProperty(btn, "offsetWidth", {
+      configurable: true,
+      get: function(){ Z[k]++; return echt.get.call(this); }
+    });
+  });
+  var j = d.createElement("script"); j.textContent = t[1]; d.head.appendChild(j);
+  return warte(2200);
+}).then(function(){
+  log("PHASE 1  Aufbau: eine Ansicht offen, eine per content-visibility geparkt");
+  log("   offsetWidth gelesen:  offen " + Z.offen + "   geparkte Ansicht " + Z.geparkt +
+      "   geparkter Drawer " + Z.drawer);
+  log("   ==> " + (Z.offen > 0 && Z.geparkt === 0 && Z.drawer === 0
+        ? "RICHTIG (nur im Sichtbaren gemessen)"
+        : (Z.offen === 0 ? "FALSCH -- es wird NIRGENDS gemessen, der Test prueft nichts"
+                         : "FALSCH -- " + (Z.geparkt + Z.drawer) + " Lesezugriffe im Geparkten")));
+  /* Und der Streifen der offenen Ansicht muss stehen -- sonst waere "0 im Geparkten" nur der
+     Beweis, dass die Mechanik ganz aus ist. */
+  var box = D.querySelector('[data-probe="offen"]');
+  var vs = V.getComputedStyle(box);
+  log("   Streifen offen: --w=" + (vs.getPropertyValue("--up-seg-w") || "(leer)") +
+      "   Klassen: " + box.className);
+  log("   ==> " + (/is-gleitend|is-sofort/.test(box.className)
+        ? "RICHTIG (die offene Ansicht hat ihren Streifen)" : "FALSCH"));
+  /* PHASE 2: Wechsel. Danach muss der vorher geparkte Umschalter gemessen sein. */
+  /* ERST die Kaskade auslaufen lassen. Der letzte ihrer Timer liegt bei 3000ms, und der wuerde
+     einen Wechsel danach ohnehin nachmessen -- dann waere Phase 2 gruen, ohne dass der Lauf am
+     Ansichtswechsel etwas taete. Genau so war es beim ersten Durchgang. */
+  return warte(2200);
+}).then(function(){
+  Z.geparkt = 0;
+  V.showView("opportunities");
+  return warte(900);
+}).then(function(){
+  var box = D.querySelector('[data-probe="geparkt"]');
+  log("PHASE 2  showView(\"opportunities\") -- die geparkte Ansicht wird offen");
+  log("   offsetWidth gelesen im vormals Geparkten: " + Z.geparkt);
+  log("   Klassen: " + box.className);
+  log("   ==> " + (Z.geparkt > 0 && /is-gleitend|is-sofort/.test(box.className)
+        ? "RICHTIG (wird jetzt gemessen und bekommt seinen Streifen)"
+        : "FALSCH -- " + (Z.geparkt === 0
+            ? "nach dem Wechsel wird NICHT nachgemessen: der Streifen bleibt leer"
+            : "gemessen, aber kein Streifen gesetzt")));
+  /* PHASE 3: der Drawer. Er laeuft nicht ueber showView -- core haengt seinen Nachlauf an
+     openDrawer (dieselbe Stelle, an der auch das Nachladen der Daten haengt). */
+  Z.drawer = 0;
+  V.openDrawer("domain", "ID1");
+  return warte(900);
+}).then(function(){
+  var box = D.querySelector('[data-probe="drawer"]');
+  log("PHASE 3  openDrawer(\"domain\") -- der geparkte Drawer geht auf");
+  log("   offsetWidth gelesen im Drawer: " + Z.drawer + "   Klassen: " + box.className);
+  log("   ==> " + (Z.drawer > 0 && /is-gleitend|is-sofort/.test(box.className)
+        ? "RICHTIG (auch der Drawer wird nachgemessen)"
+        : "FALSCH -- " + (Z.drawer === 0 ? "kein Nachlauf am openDrawer" : "kein Streifen gesetzt")));
+  log("FERTIG");
+}).catch(function(e){ log("ABBRUCH: " + e.message + "\n" + (e.stack||"").split("\n").slice(0,3).join("\n")); });
+</script>
