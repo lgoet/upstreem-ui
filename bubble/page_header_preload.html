@@ -374,6 +374,78 @@
      heraus -- das geschieht im Mikrotask direkt nach dem Einhaengen, also lange bevor die Datei
      vom Netz zurueck ist und ausgefuehrt wird. Eigene Knoten tragen data-up-preload und bleiben.
      Der Vergleich laeuft ueber den Namen OHNE .min: core.js und core.min.js sind dieselbe Datei. */
+  /* ---- DIE EINHAENGE-SPERRE (05.09.) -----------------------------------------------------
+     Der Doppel-Waechter unten nimmt einen doppelten Tag wieder aus dem Dokument. Gemessen
+     (_h_preload.html, eigene Probe): DAS REICHT NICHT. Ein dynamisch eingehaengtes Script laeuft,
+     sobald es geholt ist -- ein removeChild danach bricht die Ausfuehrung NICHT ab (so steht es
+     auch in der HTML-Spezifikation: der Knoten ist bereits in der Liste "scripts that will
+     execute as soon as possible"). Der Prueftand sagte woertlich: "core.js ist 1x GELAUFEN --
+     OBWOHL der Waechter den Tag entfernt hat".
+
+     Auf der echten Seite waren das 17 Evaluierungen von core.js (1x Kopf-Snippet, 16x
+     Element-Loader), 812 KB Parse je Lauf, zusammen 850 ms Hauptstrang -- bei genau EINER
+     Ausfuehrung, denn die BUILD-Sperre oben in core.js laesst die anderen sofort zurueckkehren.
+     Die Arbeit war also vollstaendig umsonst.
+
+     Also eine Stufe frueher ansetzen: appendChild und insertBefore an head und documentElement
+     nehmen einen doppelten Tag NICHT mehr an. Was nie im Dokument war, laeuft auch nicht.
+     Der Knoten wird unveraendert zurueckgegeben -- der Aufrufer merkt nichts, er haengt danach
+     hoechstens noch ein onerror daran, und das feuert nie.
+
+     Warum ueberhaupt gepatcht wird, statt die 45 Element-Loader zu erneuern: das ist die
+     Reparatur an der Ursache und gehoert gemacht (der aktuelle Loader in bubble/*.html fragt die
+     Registry). Bis dahin ist dies die einzige Stelle, die alle erreicht -- und sie kostet zwei
+     Funktionsaufrufe je eingehaengtem Element.
+
+     NEBENBEI die zweite Meldung derselben Probe: die Namensermittlung schnitt Query und Fragment
+     nicht ab. Eine URL mit "?n=..." hiess damit "core.js?n=0.49..." und stand in keiner Liste --
+     der Waechter fasste sie gar nicht an. Beide Stellen kuerzen jetzt. */
+  function einhaengeSperre(){
+    var ziele = [document.head, document.documentElement];
+    ["appendChild", "insertBefore"].forEach(function(m){
+      ziele.forEach(function(z){
+        if (!z || z["__upGesperrt_" + m]) return;
+        var orig = z[m];
+        if (typeof orig !== "function") return;
+        z["__upGesperrt_" + m] = 1;
+        z[m] = function(n){
+          try {
+            if (schonDa(n)){
+              (window.__upDoppel || (window.__upDoppel = [])).push({
+                datei: dateiname(quelleVon(n)),
+                zeit: Math.round(window.performance && performance.now ? performance.now() : 0),
+                /* SYNCHRON, also steht der Einhaenger wirklich im Stapel -- anders als im
+                   Beobachter unten, dessen Rueckruf losgeloest davon laeuft und nur die eigenen
+                   Rahmen zeigt (genau daran ist die erste Diagnose gescheitert). */
+                spur: (function(){ try { return (new Error().stack || "").split("\n").slice(2, 6)
+                        .map(function(x){ return x.trim(); }); } catch(e){ return []; } })()
+              });
+              return n;
+            }
+          } catch(e){}
+          return orig.apply(this, arguments);
+        };
+      });
+    });
+  }
+  function quelleVon(n){
+    if (!n || n.nodeType !== 1 || !n.getAttribute) return null;
+    if (n.tagName === "SCRIPT") return n.getAttribute("src");
+    if (n.tagName === "LINK" && (n.getAttribute("rel") || "").indexOf("stylesheet") >= 0) return n.getAttribute("href");
+    return null;
+  }
+  function dateiname(u){
+    return String(u || "").slice(String(u || "").lastIndexOf("/") + 1)
+      .replace(/[?#].*$/, "").replace(".min.", ".");
+  }
+  function schonDa(n){
+    if (!n || n.nodeType !== 1 || !n.getAttribute) return false;
+    if (n.getAttribute("data-up-preload")) return false;      /* unsere eigenen Knoten */
+    var u = quelleVon(n);
+    if (!u || u.indexOf("upstreem-ui@") < 0) return false;
+    return !!geladen[dateiname(u)];
+  }
+
   function doppelWaechter(){
     if (!window.MutationObserver) return;
     /* Ein Knoten wird geprueft UND in ihn hinein gesehen. Bubble haengt ganze Teilbaeume auf
@@ -387,7 +459,7 @@
         if (n.tagName === "SCRIPT") u = n.getAttribute("src");
         else if (n.tagName === "LINK" && (n.getAttribute("rel") || "").indexOf("stylesheet") >= 0) u = n.getAttribute("href");
         if (u && u.indexOf("upstreem-ui@") >= 0){
-          var name = u.slice(u.lastIndexOf("/") + 1).replace(".min.", ".");
+          var name = dateiname(u);
           if (geladen[name]){
             if (n.parentNode) n.parentNode.removeChild(n);
             /* STILL. Der Zustand ist normal und ohne Handarbeit an den betroffenen Elementen nicht
@@ -410,6 +482,10 @@
       }
     }).observe(document.documentElement, { childList: true, subtree: true });
   }
+  /* Die Sperre ZUERST: sie verhindert, der Beobachter raeumt nur noch auf, was auf einem
+     anderen Weg hereinkommt (etwa ein Stylesheet aus innerHTML -- Scripts von dort laufen
+     ohnehin nicht). */
+  einhaengeSperre();
   doppelWaechter();
 
   function pinWaechter(){

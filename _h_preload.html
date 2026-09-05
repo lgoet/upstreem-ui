@@ -108,6 +108,13 @@ function messen(){
   urteil.push(window.__upPin === PIN_EL
     ? "RICHTIG: window.__upPin steht -- ein Element mit leerem data-cdn-pin erbt ihn"
     : "FALSCH: window.__upPin fehlt (" + window.__upPin + ")");
+  var dp = window.__doppelProbe || {};
+  urteil.push(dp.gelaufen === 0
+    ? "RICHTIG: die Datei eines alten Loaders wurde NICHT ausgefuehrt"
+    : "FALSCH: \"" + dp.name + "\" ist " + dp.gelaufen + "x GELAUFEN" +
+      (dp.nochImDokument ? " -- und der Waechter hat den Tag nicht einmal entfernt"
+                         : " -- OBWOHL der Waechter den Tag entfernt hat: Entfernen bricht die " +
+                           "Ausfuehrung eines dynamisch eingehaengten Scripts nicht ab"));
   urteil.push(document.querySelectorAll('script[src*="/core."]').length === 1
     ? "RICHTIG: genau EIN core-Script im Kopf"
     : "FALSCH: " + document.querySelectorAll('script[src*="/core."]').length + " core-Scripts");
@@ -127,6 +134,25 @@ function messen(){
     kern_einmal: document.querySelectorAll('script[src*="core"]').length
   }, null, 1);
 }
+/* ---- DIE FRAGE AUS DEM REPORT VOM 05.09. ---------------------------------------------------
+   Auf der echten Seite wurde core.js 17x eingehaengt: 1x vom Kopf-Snippet, 16x von
+   Element-Loadern, die die Registry nicht benutzen. Der Doppel-Waechter im Snippet NIMMT diese
+   Tags wieder aus dem Dokument -- und trotzdem meldete der Trace 17 Evaluierungen.
+
+   Also die Probe: ein Loader der aeltesten Sorte haengt eine Datei ein, deren Name das Snippet
+   schon geholt hat. Danach wird gezaehlt, ob sie GELAUFEN ist. Die Datei liegt lokal unter einem
+   Pfad mit "upstreem-ui@" darin, damit der Waechter sie fuer eine unserer haelt. */
+function alteGeneration(){
+  var s = document.createElement("script");
+  /* OHNE Query. Der erste Anlauf hatte "?n=..." dran -- damit heisst die Datei fuer den
+     Waechter "core.js?n=0.49..." und stand nicht in seiner Liste: er hat sie gar nicht
+     angefasst. Das ist ein eigener Fund (die Namensermittlung schneidet den Query nicht ab),
+     aber nicht die Frage hier. Ohne Query trifft der Waechter zu -- und erst dann sagt die
+     Zahl, ob Entfernen die Ausfuehrung verhindert. */
+  s.src = "_h_fake/upstreem-ui@testpin/core.js";
+  document.head.appendChild(s);
+  return s;
+}
 window.addEventListener("load", function(){
   /* Wie in Bubble: die Element-Loader laufen NACH dem Seitenaufbau. Zwei Elemente der alten
      Generation, zwei der neuen -- alle vier fordern Dateien, die das Snippet schon geholt hat. */
@@ -136,6 +162,17 @@ window.addEventListener("load", function(){
     window.__neuGeladen = loaderNeu(["core.css","core.js","ask-mira.css","ask-mira.js"])
       .concat(loaderNeu(["core.css","core.js","sidebar.css","sidebar.js"]));
   }, 60);
+  setTimeout(function(){
+    window.__coreLaeufe = 0;
+    var tag = alteGeneration();
+    setTimeout(function(){
+      window.__doppelProbe = {
+        gelaufen: window.__coreLaeufe || 0,
+        nochImDokument: !!(tag.parentNode),
+        name: tag.src.slice(tag.src.lastIndexOf("/") + 1)
+      };
+    }, 900);
+  }, 1200);
   setTimeout(messen, 6000);
 });
 </script>
