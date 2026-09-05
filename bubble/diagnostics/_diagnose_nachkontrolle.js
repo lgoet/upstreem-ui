@@ -22,7 +22,10 @@
               upLazyReport()             nur C, falls schon geladen aus der anderen Datei */
 (function(){
   var ERWARTET_BUILD = 20260910;   /* Lazy-Mount. Mit jeder core-Fassung hier mitziehen. */
-  var ERWARTET_PRELOAD = 4;        /* Sperre greift in Teilbaeume, Stapelspur gedeckelt. */
+  /* 3, nicht 4: Fassung 3 bringt die Sperre in Teilbaeume, und daran haengt der Nutzen. Fassung 4
+     deckelt nur die Stapelspur auf zwei je Datei -- Kosmetik. Wer 3 im Kopf hat, soll deswegen
+     keine Warnung sehen; sonst ruft eine Meldung zum Handeln auf, wo nichts zu handeln ist. */
+  var ERWARTET_PRELOAD = 3;
 
   function dateiname(u){
     u = String(u || "").split("?")[0].split("#")[0];
