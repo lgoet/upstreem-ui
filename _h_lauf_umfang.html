@@ -1,0 +1,117 @@
+<!doctype html><meta charset="utf-8">
+<title>Sprach- und Werkzeuglauf: wie viele Knoten fassen sie noch an?</title>
+<pre id="out" style="font:12px/1.5 ui-monospace,Menlo,monospace;padding:12px;white-space:pre-wrap"></pre>
+<div id="rahmen"></div>
+<script>
+/* Aus dem Trace des Nutzers (4x gedrosselt): spracheLauf 1,64s, toolbarLauf 1,17s,
+   querySelectorAll 1,98s -- alles Laeufe ueber document, also ueber 100 bis 140 Tausend Knoten,
+   und das jede Sekunde erneut. 93 Prozent dieser Knoten stehen in Ansichten, die der Browser
+   nicht rendert.
+
+   Gemessen wird hier nicht die ZEIT (im verdeckten Panel sind Uhren gedrosselt und wertlos),
+   sondern die ARBEIT: wie viele Elemente liefern die querySelectorAll-Aufrufe der Laeufe
+   zusammen. Das ist die Groesse, die im Trace 2 Sekunden gekostet hat, und sie ist hier exakt
+   zaehlbar.
+
+   Aufbau wie die echte Seite: eine offene Ansicht und drei geparkte, die zusammen ein
+   Vielfaches der offenen tragen. Drei Fragen:
+     1. Wie viel Arbeit faellt beim Volllauf an -- vorher gegen nachher?
+     2. Wird in der OFFENEN Ansicht noch alles uebersetzt? (sonst ist die Ersparnis wertlos)
+     3. Wird eine geparkte Ansicht nachgeholt, sobald sie aufgeht? */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function warte(ms){ return new Promise(function(ok){ setTimeout(ok, ms); }); }
+function ja(b){ return b ? "RICHTIG" : "FALSCH"; }
+
+/* Eine Ansicht mit vielen Knoten und einigen uebersetzbaren Texten darin. "Rows per page" steht
+   im Katalog von core und ist damit ein echter Treffer fuer den Sprachlauf. */
+function ansichtHtml(name, bloecke){
+  var s = '';
+  for (var i = 0; i < bloecke; i++){
+    s += '<div class="karte"><div class="up-th"><span class="up-th-txt">Rows per page</span></div>' +
+         '<div class="up-heading">Search pages</div>' +
+         '<div class="fuellung"><span>a</span><span>b</span><span>c</span><span>d</span></div></div>';
+  }
+  return '<div id="view-' + name + '">' + s + '</div>';
+}
+
+Promise.all(["core.css","core.js"].map(hol)).then(function(t){
+  var f = document.createElement("iframe");
+  f.style.cssText = "width:1100px;height:220px;border:1px solid #ccc;display:block";
+  document.getElementById("rahmen").appendChild(f);
+  var d = f.contentDocument, v = f.contentWindow;
+  d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0'></body></html>"); d.close();
+  try { v.localStorage.setItem("up_prefs", JSON.stringify({ locale:"de" })); } catch(e){}
+  try { v.localStorage.setItem("pref_theme", "light"); } catch(e){}
+  var st = d.createElement("style"); st.textContent = t[0]; d.head.appendChild(st);
+  var sp = d.createElement("style");
+  sp.textContent = '[id^="view-"]{display:block}[id^="view-"]:not(.view-on)' +
+                   '{content-visibility:hidden;contain-intrinsic-size:900px 400px}' +
+                   '.karte{padding:4px}';
+  d.head.appendChild(sp);
+  /* Ein Wrapper wie #main auf der echten Seite, darunter die Ansichten. */
+  d.body.innerHTML = '<div id="main">' + ansichtHtml("offen", 20) +
+    ansichtHtml("a", 120) + ansichtHtml("b", 120) + ansichtHtml("c", 120) + '</div>';
+  d.getElementById("view-offen").className = "view-on";
+  v.showView = function(n){
+    [].forEach.call(d.querySelectorAll('[id^="view-"]'), function(el){
+      el.classList.toggle("view-on", el.id === "view-" + n); });
+  };
+  /* DER ZAEHLER: jedes querySelectorAll im Rahmen zaehlt, wie viele Elemente es zurueckgibt.
+     Nicht die Aufrufe zaehlen, sondern die Treffer -- ein Aufruf ueber 100.000 Knoten und einer
+     ueber 500 sind derselbe Aufruf und nicht dieselbe Arbeit. Zusaetzlich die durchsuchten
+     Knoten, geschaetzt ueber die Groesse des Astes, auf dem gesucht wird. */
+  v.__qsa = { aufrufe: 0, durchsucht: 0 };
+  ["Element","Document","DocumentFragment"].forEach(function(art){
+    var proto = v[art] && v[art].prototype;
+    if (!proto || !proto.querySelectorAll) return;
+    var orig = proto.querySelectorAll;
+    proto.querySelectorAll = function(sel){
+      v.__qsa.aufrufe++;
+      var n = (this === v.document) ? (v.document.getElementsByTagName("*").length)
+                                    : (this.getElementsByTagName ? this.getElementsByTagName("*").length : 0);
+      v.__qsa.durchsucht += n;
+      return orig.apply(this, arguments);
+    };
+  });
+  var js = d.createElement("script"); js.textContent = t[1]; d.head.appendChild(js);
+  return warte(2600).then(function(){ return { d:d, v:v }; });
+}).then(function(u){
+  var d = u.d, v = u.v;
+  var knotenGesamt = d.querySelectorAll("*").length;
+  var offen = d.getElementById("view-offen"), park = d.getElementById("view-a");
+  function deutsch(wo){
+    var n = 0, els = wo.querySelectorAll(".up-th-txt, .up-heading");
+    for (var i = 0; i < els.length; i++){
+      if (/Zeilen pro Seite|Seiten suchen/.test(els[i].textContent)) n++;
+    }
+    return n;
+  }
+  log("Aufbau: " + knotenGesamt + " Knoten, eine offene Ansicht und drei geparkte");
+  log("");
+  log("1) ARBEIT DER LAEUFE (querySelectorAll)");
+  log("   Aufrufe: " + v.__qsa.aufrufe + "   durchsuchte Knoten zusammen: " + v.__qsa.durchsucht);
+  log("");
+  log("2) WIRD IN DER OFFENEN ANSICHT UEBERSETZT?");
+  log("   offen: " + deutsch(offen) + " von " + offen.querySelectorAll(".up-th-txt, .up-heading").length +
+      "   geparkt: " + deutsch(park) + " von " + park.querySelectorAll(".up-th-txt, .up-heading").length);
+  log("   ==> " + ja(deutsch(offen) === offen.querySelectorAll(".up-th-txt, .up-heading").length) +
+      " (die sichtbare Ansicht ist vollstaendig deutsch)");
+  log("   ==> " + ja(deutsch(park) === 0) +
+      " (die geparkte wurde nicht angefasst -- das ist die Ersparnis)");
+  log("");
+  var vorherAufrufe = v.__qsa.aufrufe;
+  v.showView("a");
+  return warte(1500).then(function(){
+    log("3) NACH showView(\"a\") -- die geparkte Ansicht geht auf");
+    log("   deutsch darin: " + deutsch(park) + " von " +
+        park.querySelectorAll(".up-th-txt, .up-heading").length +
+        "   (Aufrufe seither: " + (v.__qsa.aufrufe - vorherAufrufe) + ")");
+    log("   ==> " + ja(deutsch(park) === park.querySelectorAll(".up-th-txt, .up-heading").length) +
+        " (nachgeholt, sobald sie sichtbar ist -- nichts geht verloren)");
+    log("FERTIG");
+    v.__ergebnis = { aufrufe: v.__qsa.aufrufe, durchsucht: v.__qsa.durchsucht };
+  });
+}).catch(function(e){ log("ABBRUCH: " + e.message + "\n" + (e.stack||"").split("\n").slice(0,3).join("\n")); });
+</script>

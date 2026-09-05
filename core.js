@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20260912;
+  var BUILD = 20260913;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -4897,6 +4897,17 @@
        pointerdown fallback rescues a root that somehow escaped both the moment it is touched. */
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initAll);
     else initAll();
+    /* SECHS UHREN, UND SIE BLEIBEN -- obwohl sie als Posten gemeldet sind (24 Komponententypen
+       mal sechs = 144 Weckrufe im Aufbau). Der Versuch, sie auf zwei zu kuerzen, ist gemessen
+       gescheitert: diese Laeufe sind zugleich die VERSUCHE, an denen die Frist des Lazy-Mount
+       haengt (zuFrueh oben). Mit zwei Uhren kommt eine Seite ohne Parken erst ueber den
+       1,5s-Herzschlag auf ihre sechs Versuche und stuende bis dahin leer -- und mit einer
+       Freigabe am load-Ereignis statt dessen baute die geparkte Ansicht wieder mit, weil load
+       auf einer schlanken Seite vor dem Parken kommt (_h_spaetes_parken.html, Lage A und B
+       schlugen beide fehl).
+       Teuer ist an ihnen ohnehin nicht der Aufruf: initAll ist seit dem Lazy-Mount ein Blick auf
+       eine lebende Sammlung. Der grosse Posten waren die fuenf VOLLLAEUFE von toolbarLauf, und
+       die sind weg (siehe dort). */
     [30, 100, 250, 500, 1000, 1800].forEach(function(ms){ setTimeout(initAll, ms); });
     document.addEventListener("pointerdown", function(e){
       var r = e.target && e.target.closest ? e.target.closest(rootSel) : null;
@@ -5866,17 +5877,78 @@
       if (h.innerHTML !== neu) h.innerHTML = neu;
     }
   }
+  /* ---- WO EIN DOKUMENTWEITER LAUF WIRKLICH HINMUSS (07.09.) ---------------------------------
+     Aus dem Trace des Nutzers, 4x gedrosselt: spracheLauf 1,64s, toolbarLauf 1,17s, und
+     querySelectorAll insgesamt 1,98s -- alles Laeufe ueber document, also ueber 100 bis 140
+     Tausend Knoten, und das JEDE Sekunde von +4s bis +25s erneut. 93 Prozent dieser Knoten
+     stehen in Ansichten, die der Browser gar nicht rendert.
+
+     Diese Funktion liefert statt document die Aeste, die wirklich gezeichnet werden. Sie steigt
+     vom Koerper hinab und laesst einen Ast fallen, sobald er nicht messbar ist -- derselbe Test
+     wie beim Lazy-Mount, also ohne Layoutzugriff und ohne ein einziges Wort ueber die Ids der
+     Host-App. Sie steigt nur so lange ab, wie ein Element wenige Kinder hat: die geparkten
+     Ansichten liegen als Handvoll grosser Container weit oben, und je tiefer man geht, desto
+     mehr Wurzeln kostet die Ersparnis wieder. Ein paar Dutzend checkVisibility gegen
+     hunderttausend Knoten -- das ist der Tausch.
+
+     WICHTIG, damit nichts verlorengeht: was hier wegfaellt, ist nicht vergessen, sondern
+     vertagt. Geht eine Ansicht auf, laeuft fuer sie einmal nach (siehe fireViewChange und
+     onDrawerOpen); ein neu eingehaengter Ast kommt ohnehin ueber den Beobachter. */
+  var BEREICH_TIEFE = 4, BEREICH_KINDER = 12;
+  /* EIN KIND FRAGEN, NICHT DEN CONTAINER. content-visibility:hidden nimmt die NACHKOMMEN aus dem
+     Rendering; der Container selbst gilt weiter als sichtbar und meldet messbar() = true. Der
+     erste Anlauf fragte den Container -- und weil eine geparkte Ansicht viele Kinder hat, wurde
+     sie zum Suchbereich erklaert statt verworfen: im Prueftand danach 240 von 240 Texten in der
+     geparkten Ansicht uebersetzt, also null Ersparnis. Genau diese Verwechslung steht schon im
+     Kommentar der Lazy-Mount-Diagnose; hier ist sie mir trotzdem passiert. */
+  function astSichtbar(el){
+    if (!el || el.nodeType !== 1) return true;
+    return messbar(el.firstElementChild || el);
+  }
+  function sichtbareBereiche(start){
+    var koerper = start || document.body;
+    if (!koerper) return [document];
+    if (koerper.nodeType === 1 && !astSichtbar(koerper)) return [];
+    var raus = [], reihe = [koerper], tiefe = 0;
+    while (reihe.length && tiefe <= BEREICH_TIEFE){
+      var naechste = [];
+      for (var i = 0; i < reihe.length; i++){
+        var el = reihe[i];
+        if (!astSichtbar(el)) continue;                 /* geparkt: der ganze Ast faellt weg */
+        var kinder = el.childElementCount || 0;
+        if (tiefe === BEREICH_TIEFE || !kinder || kinder > BEREICH_KINDER){ raus.push(el); continue; }
+        for (var k = 0; k < el.children.length; k++) naechste.push(el.children[k]);
+      }
+      reihe = naechste; tiefe++;
+    }
+    for (var r = 0; r < reihe.length; r++){ if (astSichtbar(reihe[r])) raus.push(reihe[r]); }
+    return raus;
+  }
+  /* Die Grenze gilt fuer BEIDE Wege, und das war beim ersten Anlauf nicht so: nur der Volllauf
+     ging ueber die sichtbaren Aeste, der Beobachter aber rief spracheLauf(ast) fuer den frisch
+     eingehaengten Teilbaum -- und Bubble haengt ganze Seitenbereiche auf einmal ein, geparkte
+     Ansichten mittendrin. Im Prueftand war die geparkte Ansicht danach vollstaendig uebersetzt:
+     240 von 240 Texten, also gar keine Ersparnis. */
   function spracheLauf(scope){
-    var wurzel = (scope && scope.querySelectorAll) ? scope : document;
-    /* Die Sprache als Marke am Dokument, damit CSS sie sehen kann. Ein deutsches Wort ist laenger
-       als das englische, und eine Spalte mit fester Pixelbreite passt dann nicht mehr -- die
-       Einladungstabelle in team-orga ist der erste Fall ("Erneut senden"/"Zurückziehen" gegen
-       "Resend"/"Revoke"). Ohne diese Marke muesste jede solche Breite in JS gerechnet werden. */
+    var start = (scope && scope.querySelectorAll) ? scope : document.body;
     try { document.documentElement.setAttribute("data-up-locale", getPref("locale") || "en"); } catch(e){}
+    var bereiche = sichtbareBereiche(start);
+    for (var b = 0; b < bereiche.length; b++) spracheImAst(bereiche[b]);
+  }
+  function spracheImAst(scope){
+    var wurzel = scope;
+    /* Die Sprache als Marke am Dokument steht in spracheLauf -- sie gehoert einmal je Lauf
+       gesetzt, nicht einmal je Ast. (Ein deutsches Wort ist laenger als das englische, und eine
+       Spalte mit fester Pixelbreite passt dann nicht mehr; die Einladungstabelle in team-orga
+       ist der erste Fall. Ohne diese Marke muesste jede solche Breite in JS gerechnet werden.) */
     try { knopfEtikett(wurzel); } catch(e){}
     var els;
     try { els = wurzel.querySelectorAll(SPRACHE_SEL); } catch(e){ els = []; }
     for (var i = 0; i < els.length; i++) knotenStellen(els[i]);
+    /* Die Wurzel SELBST mitpruefen -- querySelectorAll tut das nicht. Solange hier document
+       stand, war das egal; seit die Wurzel ein sichtbarer Ast ist, kann sie selbst ein Element
+       aus der Liste sein. mitWurzel loest dasselbe Problem seit langem genauso. */
+    try { if (wurzel.matches && wurzel.matches(SPRACHE_SEL)) knotenStellen(wurzel); } catch(e){}
     /* Alles, was SCHON EINMAL angefasst wurde, in JEDER Sprache erneut pruefen -- nicht nur beim
        Zurueckschalten auf Englisch. Der breite Lauf unten ueberspringt diese Elemente ausdruecklich
        (er nimmt an, der schnelle Weg habe sie), und der schnelle Weg kennt nur seine Selektoren.
@@ -5887,6 +5959,8 @@
     try { schon = wurzel.querySelectorAll("[data-i18n]"); } catch(e){ schon = []; }
     for (var z = 0; z < schon.length; z++) knotenStellen(schon[z]);
     attributeStellen(wurzel === document ? document.body || document : wurzel);
+    /* wurzel ist seit dem 07.09. im Regelfall ein sichtbarer Ast und nicht mehr document -- der
+       Zweig oben bleibt fuer die Aufrufer stehen, die document ausdruecklich uebergeben. */
     if (getPref("locale") === "en") return;
     breiterLauf(wurzel);
   }
@@ -6055,14 +6129,25 @@
     var voll = (knoten === undefined || knoten === null);
     if (!voll && !knoten.length) return;
     if (voll) {
+      /* Auch hier die sichtbaren Aeste statt des ganzen Dokuments (Begruendung bei
+         sichtbareBereiche). Die vier Laeufe nehmen alle eine Wurzel entgegen -- der Zweig
+         darunter benutzt genau diese Form seit langem. */
+      var bereiche = sichtbareBereiche();
       sicher("spracheLauf", function(){ spracheLauf(); });
-      sicher("stampToolbarIcons", stampToolbarIcons);
-      sicher("stampGran", stampGran);
-      sicher("orderToolbars", orderToolbars);
+      for (var v = 0; v < bereiche.length; v++){
+        (function(w){
+          sicher("stampToolbarIcons", function(){ stampToolbarIcons(w); });
+          sicher("stampGran", function(){ stampGran(w); });
+          sicher("orderToolbars", function(){ orderToolbars(w); });
+        })(bereiche[v]);
+      }
     } else {
       for (var a = 0; a < knoten.length; a++){
         (function(k){
           if (!k || !k.isConnected) return;
+          /* Auch hier die Grenze: ein frisch eingehaengter Ast kann geparkte Ansichten
+             enthalten -- Bubble haengt ganze Seitenbereiche auf einmal ein. */
+          if (k.nodeType === 1 && !astSichtbar(k)) return;
           /* KEIN spracheLauf und KEIN stampGran hier. Beide sind fuer genau diese Knoten schon
              gelaufen: der Beobachter ruft sie synchron fuer jedes Element aus "ziele", und
              dieselbe Liste ist es, die als segKnoten hierher kommt (siehe dort). Der zweite Lauf
@@ -6126,8 +6211,22 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function(){ toolbarLauf(); });
   else toolbarLauf();
   frueheNachholen();
+  /* frueheNachholen bleibt gestaffelt: es arbeitet nur eine Warteschlange ab und kostet nichts,
+     wenn sie leer ist. Die Komponenten kommen zu verschiedenen Zeiten an, und ein Aufruf, der
+     ins Leere faellt, ist billiger als ein verlorener Setter. */
   [60, 250, 700, 1500, 3000].forEach(function(ms){ setTimeout(frueheNachholen, ms); });
-  [60, 250, 700, 1500, 3000].forEach(function(ms){ setTimeout(function(){ toolbarLauf(); }, ms); });
+  /* DIE FUENF VOLLLAEUFE SIND WEG. Sie standen hier, weil Bubble sein Markup nach und nach
+     einhaengt -- aber genau dafuer gibt es den Beobachter darunter, und der laeuft seither auf
+     den frischen Aesten statt ueber alles. Im Trace des Nutzers (4x gedrosselt) waren die
+     Volllaeufe der groesste Einzelposten: spracheLauf 1,64s und toolbarLauf 1,17s, jede Sekunde
+     von +4s bis +25s erneut.
+     Was bleibt: einer sofort (oben), und einer, wenn die Seite fertig geladen ist -- der faengt
+     alles ein, was zwischen dem ersten Lauf und dem Ende des Aufbaus ohne Mutation entstanden
+     ist (Attributwechsel an schon stehenden Knoten zum Beispiel). Ist die Seite beim Laden von
+     core schon fertig, ersetzt ein einzelner Nachlauf das load-Ereignis. */
+  function seiteFertig(){ sicher("toolbarLauf", function(){ toolbarLauf(); }); }
+  if (document.readyState === "complete") setTimeout(seiteFertig, 1200);
+  else window.addEventListener("load", function(){ setTimeout(seiteFertig, 200); });
   /* ── Der Beobachter, und warum er so aussieht ─────────────────────────────────────────────
      Hier stand ein MutationObserver auf document.documentElement mit childList+subtree, der bei
      JEDER Mutation sofort stampToolbarIcons() rief. Das war eine echte Bremse fuer die ganze App,
@@ -11384,6 +11483,13 @@
          erst gebaut worden (Lazy-Mount), und ein Streifen-Lauf davor faende ihre Umschalter noch
          nicht. */
       if (window.__upWecken) sicher("wecken", window.__upWecken);
+      /* UND DER NACHLAUF fuer die Ansicht, die gerade aufgegangen ist. Sprach- und Werkzeuglauf
+         gehen seit dem 07.09. nur noch ueber die gerenderten Aeste (sichtbareBereiche) -- was
+         geparkt war, hat also weder Uebersetzung noch Symbole bekommen. Ohne diese Zeile stuende
+         eine Ansicht nach dem Aufmachen englisch da; im Prueftand genau so gemessen (0 von 240
+         Texten). toolbarLauf() ohne Argument nimmt den Vollfall, und der ist jetzt billig: er
+         laeuft ueber die sichtbaren Aeste, und der neue ist einer davon. */
+      sicher("toolbarLauf", function(){ toolbarLauf(); });
       sicher("segLauf", function(){ segLauf(null, true, true); });
     }, 250);
     for (var i = VIEW_SUBS.length - 1; i >= 0; i--){
@@ -11455,6 +11561,7 @@
   onDrawerOpen(function(){
     setTimeout(function(){
       if (window.__upWecken) sicher("wecken", window.__upWecken);
+      sicher("toolbarLauf", function(){ toolbarLauf(); });   /* siehe fireViewChange */
       sicher("segLauf", function(){ segLauf(null, true, true); });
     }, 350);
   });

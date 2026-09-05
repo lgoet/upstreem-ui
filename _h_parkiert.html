@@ -170,7 +170,11 @@ Promise.all([hol("core.css"), hol("core.js")]).then(function(t){
             (window.__chartSpur ? "\n      " + window.__chartSpur : "")));
     Z.chart = 0;
     v.showView("charts");
-    return warte(1200);
+    /* 2,5s statt 1,2s. Der Takt von buildWhenSized liegt bei 200ms, aber im verdeckten
+       Browser-Panel sind Timer auf ueber eine Sekunde gedrosselt -- und seit dem Ansichtswechsel
+       auch der Nachlauf von Sprache und Werkzeugleisten dazwischenliegt, fiel der Bau knapp aus
+       dem alten Fenster. Nachgeprueft: der Chart WAR gebaut, nur 1,3s spaeter als gemessen. */
+    return warte(2500);
   }).then(function(){
     var lebt = false;
     try { lebt = !!(v.Chart && v.Chart.getChart && v.Chart.getChart(canvas)); } catch(e){}
