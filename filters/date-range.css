@@ -119,22 +119,31 @@
    Grund der Spalte, ein Hover darin waere unsichtbar. Dieselben Werte wie .ums-nav: 3.5% fuer
    "worauf zeige ich", 5% fuer "was ist gewaehlt" -- der Hover ist die halbe Staerke, so bleiben
    beide unterscheidbar, ohne einen dritten Ton zu erfinden. */
-.udr-preset:hover { background: color-mix(in srgb, var(--vc-text) 3.5%, transparent); }
+.udr-preset:hover { background: color-mix(in srgb, var(--vc-text) 5%, transparent); }
 /* Die aktive Zeile traegt FLAECHE UND GEWICHT, kein Zeichen mehr. Das rechts ausgerichtete
    Quadrat in Primaerfarbe (.is-active::after, 6x6) ist raus -- angefordert, und es war ohnehin
    der Rest aus der Zeit vor der gefuellten Spalte: damals war die Flaeche --vc-heading-bg, also
    derselbe Ton wie der Panelgrund, und ohne das Zeichen war "gewaehlt" kaum zu sehen.
    550 statt 500 ist derselbe Sprung wie bei .ums-nav.is-on, und er ist noetig: Flaeche allein
    ist zu wenig fuer jemanden, der die 5%-Mischung nicht unterscheiden kann. */
+/* 9 statt 5 Prozent: gemeldet am 06.09. als "die Selected States muessen besser zu erkennen
+   sein". 5% auf dem Spaltengrund (#f5f5f5) ergab #e9e9e7 -- vier Stufen Unterschied, und der
+   Nutzer sass davor und sah keinen. Der Hover darunter zieht mit (3.5 -> 5), sonst liegen
+   "darauf gezeigt" und "gewaehlt" wieder aufeinander. */
 .udr-preset.is-active,
 .udr-preset.is-active:hover {
-  background: color-mix(in srgb, var(--vc-text) 5%, transparent); font-weight: 550;
+  background: color-mix(in srgb, var(--vc-text) 9%, transparent); font-weight: 550;
 }
 /* Im Dunkeln waere dieselbe Mischung ein fast weisser Schleier -- dort dieselbe eigene
    Auswahlflaeche wie in der Hauptsidebar und im Einstellungsfenster. */
-.up-root[data-theme="dark"] .udr-preset:hover { background: color-mix(in srgb, var(--up-sel-bg) 50%, transparent); }
+/* Im Dunkeln war es schlimmer als hell: --up-sel-bg ist rgba(42,42,42,.6), und GENAU DAS ist
+   auch der Grund der Spalte (--vc-heading-bg). Die aktive Zeile trug also die Farbe ihres
+   Untergrunds und war unsichtbar -- kein zu schwacher Kontrast, sondern gar keiner. Jetzt eine
+   eigene Flaeche aus der Textfarbe, wie hell auch, nur staerker: #e0e0e0 mit 12% auf ~#212121
+   ergibt ~#3a3a3a. */
+.up-root[data-theme="dark"] .udr-preset:hover { background: color-mix(in srgb, var(--vc-text) 6%, transparent); }
 .up-root[data-theme="dark"] .udr-preset.is-active,
-.up-root[data-theme="dark"] .udr-preset.is-active:hover { background: var(--up-sel-bg); }
+.up-root[data-theme="dark"] .udr-preset.is-active:hover { background: color-mix(in srgb, var(--vc-text) 12%, transparent); }
 /* Farbe SEKUNDAER (--vc-muted) -- ausdruecklich so bestellt und schon vorher so: Reset ist die
    Ausweichhandlung, "Ueberall anwenden" die Aussage. Beim Ueberfahren primaer, wie jede
    gedaempfte Zeile der App. */
@@ -192,7 +201,12 @@
 .udr-day:focus-visible { border-color: var(--vc-hover-border); }
 .udr-day:disabled { color: var(--vc-third); opacity: .42; cursor: default; }
 /* The range is the cell background only. Square middle, rounded ends -- no overlapping shadows. */
-.udr-day.is-in { border-radius: 0; background: var(--vc-heading-bg); }
+/* Das Band zwischen Anfang und Ende trug --vc-heading-bg, also denselben Ton wie jede
+   Kopfzeile der App -- hell kaum vom Panelgrund zu trennen, dunkel gar nicht. Dieselbe Leiter
+   wie bei den Preset-Zeilen, eine Stufe schwaecher als deren Auswahl: das Band ist eine Flaeche
+   ueber sieben Zellen, es traegt schon durch seine Groesse. */
+.udr-day.is-in { border-radius: 0; background: color-mix(in srgb, var(--vc-text) 8%, transparent); }
+.up-root[data-theme="dark"] .udr-day.is-in { background: color-mix(in srgb, var(--vc-text) 14%, transparent); }
 .udr-day.is-start, .udr-day.is-end {
   border-color: var(--vc-text); background: var(--vc-text); color: var(--vc-bg);
   border-radius: 0;
@@ -260,9 +274,16 @@
   /* 17px = 8px Luft, 1px Linie, 8px Luft. Beide Abstaende gleich, sonst haengt die Linie an
      einer der beiden Zeilen und liest sich als deren Unterstreichung. */
   margin-top: 17px;
-  border: 0; border-radius: 8px; background: transparent;
+  border: 0; border-radius: 8px;
+  /* EIGENE FLAECHE statt transparent. Gemeldet am 06.09.: "der Hintergrund dieses Switchers ist
+     kaum vom Hintergrund der Sidebar zu unterscheiden" -- er WAR der Hintergrund der Sidebar.
+     Die Zeile ist der einzige Schalter der Spalte und muss als Flaeche erkennbar sein, bevor
+     jemand darauf zeigt; die Preset-Zeilen darueber bekommen ihre Flaeche erst beim Waehlen.
+     Darum liegt sie zwischen deren Ruhe (nichts) und deren Auswahl (9 bzw. 12 Prozent). */
+  background: color-mix(in srgb, var(--vc-text) 6%, transparent);
   font-family: inherit; text-align: left; cursor: pointer;
 }
+.up-root[data-theme="dark"] .udr-sync { background: color-mix(in srgb, var(--vc-text) 9%, transparent); }
 /* Die Trennlinie liegt IN der Luecke ueber der Zeile und nicht als border-top am Element: als
    Rahmen waere sie Teil der Flaeche, und der Hover-Hintergrund faerbte sie mit ein. Die Zeile
    muss dieselbe 34px-Pille sein wie der Reset-Knopf direkt darueber -- eine Zeile, die beim
@@ -276,8 +297,8 @@
    gedaempft. Kleiner UND primaer ist kein Widerspruch: die Zeile ist die laengste der Spalte und
    muss mit dem Schalter in eine Zeile passen. */
 .udr-sync-lbl { font-size: 12.5px; font-weight: 500; color: var(--vc-text); line-height: 1.25; }
-.udr-sync:hover { background: color-mix(in srgb, var(--vc-text) 3.5%, transparent); }
-.up-root[data-theme="dark"] .udr-sync:hover { background: color-mix(in srgb, var(--up-sel-bg) 50%, transparent); }
+.udr-sync:hover { background: color-mix(in srgb, var(--vc-text) 10%, transparent); }
+.up-root[data-theme="dark"] .udr-sync:hover { background: color-mix(in srgb, var(--vc-text) 14%, transparent); }
 .udr-sync:focus-visible { outline: 2px solid var(--vc-focus, var(--vc-text)); outline-offset: -2px; }
 /* Der Schalter nach rechts: die Beschriftung ist die Aussage, der Schalter der Zustand.
    Zeiger-Ereignisse aus: geklickt wird die ganze Zeile, und ein eigener Treffer auf dem Schalter

@@ -1,0 +1,164 @@
+<!doctype html><meta charset="utf-8">
+<title>Domain Detail auf Deutsch: welcher Text steht noch englisch da?</title>
+<pre id="out" style="font:12px/1.5 ui-monospace,Menlo,monospace;padding:12px;white-space:pre-wrap"></pre>
+<div id="rahmen"></div>
+<script>
+/* Gemeldet am 06.09.: "Domain Detail: da sind noch viele Sachen wo die deutsche Sprache fehlt.
+   Jeden Text da checken!" Also wird jeder Text geprueft, und zwar am gerenderten Bild -- nicht
+   an den Zeichenketten im Quelltext, denn ob ein Satz uebersetzt ankommt, entscheidet sich erst
+   im DOM.
+
+   ZWEI verschiedene Fehler, und sie brauchen verschiedene Reparaturen:
+   DER TEST IST DER VERGLEICH BEIDER SPRACHEN. Die Seite wird zweimal aufgebaut, einmal mit
+   locale=en und einmal mit locale=de, und danach Text fuer Text verglichen: was in beiden gleich
+   steht, ist nicht uebersetzt.
+
+   Der erste Anlauf fragte stattdessen UC.t(text) -- und lag damit falsch in der Richtung. Der
+   Katalog bildet ENGLISCH auf DEUTSCH ab; ein bereits uebersetztes "Diagramm-Modus" findet dort
+   nichts und wurde als "fehlt im Katalog" gemeldet. Von 32 Meldungen waren zwei Drittel schon
+   deutsch. Ein Test, der Richtiges anzeigt, ist schlimmer als keiner: man repariert, was steht.
+
+   Daten und Run-JS-Schritt sind die echten aus _h_udd_daten.js / _h_udd_runjs.js -- was aus der
+   Nutzlast kommt (Domainnamen, Modelle, Zahlen), ist kein Uebersetzungsfehler und wird
+   ausgefiltert. */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function warte(ms){ return new Promise(function(ok){ setTimeout(ok, ms); }); }
+
+/* Alles, was als Wert in der Nutzlast steht -- Domainnamen, Modellnamen, Typen. */
+function datenWoerter(obj, raus){
+  raus = raus || {};
+  if (obj == null) return raus;
+  if (typeof obj === "string"){ raus[obj.trim()] = 1; return raus; }
+  if (typeof obj === "object"){
+    for (var k in obj){ if (Object.prototype.hasOwnProperty.call(obj, k)) datenWoerter(obj[k], raus); }
+  }
+  return raus;
+}
+
+/* GLOSSAR: was auch mitten im deutschen Satz englisch bleibt (siehe CLAUDE.md). Diese Worte
+   duerfen in beiden Sprachen gleich sein, ohne dass es ein Fehler ist. */
+var GLOSSAR = {
+  "URLs":1, "URL":1, "Topics":1, "Topic":1, "Brands":1, "Brand":1, "Prompts":1, "Prompt":1,
+  "Domains":1, "Domain":1, "Sentiment":1, "Rank":1, "Share of Voice":1, "Visibility":1,
+  "Mentions":1, "Citations":1, "Citation":1,
+  /* Diese zwei stehen im Katalog und sind im Deutschen BUCHSTABENGLEICH -- "Forum" und "Video".
+     Ohne diesen Eintrag meldet der Vergleich sie ewig als "nicht uebersetzt", und eine Meldung,
+     die nie weggeht, wird ueberlesen. Sie stehen ausdruecklich im Katalog (core.js), damit
+     niemand sie fuer vergessen haelt. */
+  "Forum":1, "Video":1
+};
+var DATEIEN = ["core.css","domain-detail.css","core.js","domain-detail.js",
+               "_h_udd_daten.js","_h_udd_runjs.js"];
+function bau(sprache, t){
+  return new Promise(function(fertig){
+  /* JE SPRACHE EIN NEUER RAHMEN -- mit document.open() im selben bleibt das window und damit
+     window.UpstreemCore stehen, die BUILD-Sperre laesst die zweite Auswertung sofort
+     zurueckkehren, und der zweite Aufbau ist in Wahrheit noch der erste. Zweimal in dieser
+     Sitzung darauf getreten. */
+  var f = document.createElement("iframe");
+  f.style.cssText = "width:1280px;height:520px;border:1px solid #ccc;display:block;margin-bottom:8px";
+  document.getElementById("rahmen").appendChild(f);
+  var d = f.contentDocument, v = f.contentWindow;
+  d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0;padding:16px'></body></html>"); d.close();
+  try { v.localStorage.setItem("up_prefs", JSON.stringify({ locale: sprache })); } catch(e){}
+  try { v.localStorage.setItem("pref_theme", "light"); } catch(e){}
+  ["uddMode","uddGran","uddScope"].forEach(function(n){ v["bubble_fn_"+n] = function(){}; });
+  [t[0],t[1]].forEach(function(c){ var st=d.createElement("style"); st.textContent=c; d.head.appendChild(st); });
+  var r = d.createElement("div");
+  r.className = "up-root udd-root";
+  r.setAttribute("data-instance","domain_detail_page");
+  r.setAttribute("data-isdark","no"); r.setAttribute("data-brand","LeeUp Media");
+  r.setAttribute("data-cdn-pin","t");
+  r.setAttribute("data-mode-fn","bubble_fn_uddMode");
+  r.setAttribute("data-gran-fn","bubble_fn_uddGran");
+  r.setAttribute("data-scope-fn","bubble_fn_uddScope");
+  d.body.appendChild(r);
+  [t[2],t[3],t[4]].forEach(function(c){ var s=d.createElement("script"); s.textContent=c; d.head.appendChild(s); });
+  warte(900).then(function(){
+    var s=d.createElement("script"); s.textContent=t[5]; d.head.appendChild(s);   /* der Run-JS-Schritt */
+    return warte(1800);
+  }).then(function(){ fertig({ d:d, v:v }); });
+  });
+}
+
+var ATTRS = ["aria-label","placeholder","title","data-tip","data-tiplabel"];
+/* Jeder Text mit einem STABILEN Schluessel, damit sich die beiden Sprachlaeufe zuordnen lassen:
+   Pfad plus laufende Nummer. Ueber den Text selbst geht es nicht -- der ist ja gerade das, was
+   sich unterscheiden soll. */
+function texte(d){
+  var raus = {}, zaehler = {};
+  var alle = d.querySelectorAll(".udd-root *");
+  for (var i = 0; i < alle.length; i++){
+    var el = alle[i];
+    function merk(text, woher){
+      text = (text || "").trim();
+      if (!text) return;
+      var p = pfad(el) + "|" + woher;
+      zaehler[p] = (zaehler[p] || 0) + 1;
+      raus[p + "#" + zaehler[p]] = text;
+    }
+    for (var c = 0; c < el.childNodes.length; c++){
+      if (el.childNodes[c].nodeType === 3) merk(el.childNodes[c].nodeValue, "Text");
+    }
+    for (var a = 0; a < ATTRS.length; a++){
+      if (el.hasAttribute(ATTRS[a])) merk(el.getAttribute(ATTRS[a]), ATTRS[a]);
+    }
+  }
+  return raus;
+}
+function pfad(el){
+  var p = [];
+  for (var n = el; n && n.nodeType === 1 && p.length < 3; n = n.parentElement){
+    p.unshift(n.className && String(n.className).split(" ")[0] || n.tagName.toLowerCase());
+  }
+  return p.join(">");
+}
+
+Promise.all(DATEIEN.map(hol)).then(function(t){
+  return bau("en", t).then(function(en){
+    return bau("de", t).then(function(de){ return { en:en, de:de }; });
+  });
+}).then(function(u){
+  var UC = u.de.v.UpstreemCore;
+  if (!UC || !UC.t) throw new Error("core nicht da");
+  if (UC.getPref("locale") !== "de") throw new Error("Sprache steht auf " + UC.getPref("locale"));
+  var daten = datenWoerter([u.de.v.UDD_MAIN, u.de.v.UDD_URLS]);
+
+  /* Was zaehlt als pruefbarer Text: mindestens drei Buchstaben, keine reine Zahl, kein Datum,
+     nichts, was aus der Nutzlast kommt. */
+  function pruefbar(s){
+    s = (s || "").trim();
+    if (s.length < 3) return false;
+    if (!/[A-Za-z]{3}/.test(s)) return false;
+    if (/^[\d.,%\s+–-]+$/.test(s)) return false;
+    if (/^\d{1,2}\s\w{3}/.test(s)) return false;          /* "12 Dec" */
+    if (daten[s]) return false;
+    return true;
+  }
+  var tEn = texte(u.en.d), tDe = texte(u.de.d);
+  var offen = [], uebersetzt = 0, uebersprungen = 0;
+  Object.keys(tEn).forEach(function(k){
+    var e = tEn[k], g = tDe[k];
+    if (g == null) return;                       /* Stelle nur in einer Sprache -- kein Vergleich */
+    if (e !== g){ uebersetzt++; return; }
+    if (!pruefbar(e) || GLOSSAR[e]){ uebersprungen++; return; }
+    /* Steht der Satz im Katalog? Dann ist es die Abdeckung, sonst der Eintrag. */
+    offen.push({ text: e, wo: k, imKatalog: UC.t(e) !== e });
+  });
+  log("Stellen verglichen: " + Object.keys(tEn).length +
+      "   uebersetzt: " + uebersetzt + "   uebergangen (Zahlen, Daten, Glossar): " + uebersprungen);
+  log("");
+  log("GLEICH IN BEIDEN SPRACHEN -- also nicht uebersetzt (" + offen.length + ")");
+  offen.forEach(function(e){
+    log("   \"" + e.text + "\"" + (e.imKatalog ? "   [im Katalog, Lauf erreicht die Stelle nicht]" : "") +
+        "\n        " + e.wo);
+  });
+  log("");
+  log("==> " + (offen.length === 0
+        ? "RICHTIG (kein englischer Text mehr in Domain Detail)"
+        : "OFFEN -- " + offen.length + " Stellen"));
+  log("FERTIG");
+}).catch(function(e){ log("ABBRUCH: " + e.message + "\n" + (e.stack||"").split("\n").slice(0,3).join("\n")); });
+</script>

@@ -1,0 +1,90 @@
+<!doctype html><meta charset="utf-8">
+<title>Doughnut: steht im Tooltip dieselbe Zahl wie in der Legende?</title>
+<pre id="out" style="font:12px/1.5 ui-monospace,Menlo,monospace;padding:12px;white-space:pre-wrap"></pre>
+<div id="rahmen"></div>
+<script>
+/* Gemeldet am 06.09.: "Citations Combo Chart: ich seh im Doughnut immer noch 0.0% statt <1%".
+   In der LEGENDE stand die Regel schon (fmtPct: was zu klein fuer die eingestellte Genauigkeit
+   ist, wird "<0.1%"), im TOOLTIP nicht -- der formatierte mit toFixed und zeigte damit fuer
+   0,04 Prozent eine 0.0. Zwei Zahlen fuer denselben Wert, eine davon eine irrefuehrende Null.
+
+   Geprueft wird beides am selben Segment, und der Tooltip wird nicht mit der Maus geoeffnet
+   (im verdeckten Panel gibt es kein :hover), sondern ueber die Schnittstelle von Chart.js:
+   setActiveElements zwingt ihn auf, danach steht der Text im DOM.
+   Die Gegenprobe ist ein NORMALER Wert im selben Ring -- ohne sie koennte "<0.1%" auch heissen,
+   dass der Tooltip jeden Wert so schreibt. */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function warte(ms){ return new Promise(function(ok){ setTimeout(ok, ms); }); }
+function ja(b){ return b ? "RICHTIG" : "FALSCH"; }
+
+Promise.all(["core.css","core.js"].map(hol)).then(function(t){
+  var f = document.createElement("iframe");
+  f.style.cssText = "width:900px;height:380px;border:1px solid #ccc;display:block";
+  document.getElementById("rahmen").appendChild(f);
+  var d = f.contentDocument, v = f.contentWindow;
+  d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0;padding:12px'></body></html>"); d.close();
+  try { v.localStorage.setItem("up_prefs", JSON.stringify({ locale:"en" })); } catch(e){}
+  try { v.localStorage.setItem("pref_theme", "light"); } catch(e){}
+  var st = d.createElement("style"); st.textContent = t[0]; d.head.appendChild(st);
+  var box = d.createElement("div");
+  box.className = "up-root"; box.setAttribute("data-cdn-pin","t");
+  box.innerHTML = '<div id="ziel" style="width:520px;height:300px"></div>';
+  d.body.appendChild(box);
+  var js = d.createElement("script"); js.textContent = t[1]; d.head.appendChild(js);
+  return warte(400).then(function(){ return { d:d, v:v }; });
+}).then(function(u){
+  var d = u.d, v = u.v, UC = v.UpstreemCore;
+  if (!UC || !UC.makeTypeChart) throw new Error("makeTypeChart fehlt");
+  /* Ein Ring mit DREI Anteilen: ein normaler, ein winziger, und einer, der auffuellt. 0,04 ist
+     der Fall aus dem Bericht -- mit einer Nachkommastelle nicht darstellbar. */
+  /* Die Namen aus dem echten Aufrufer (citations-combo-chart.js:327): body, nicht host, und die
+     Daten laufen erst durch prepTypeData -- renderDonut nimmt fertige Segmente, keine Rohzeilen.
+     Der erste Anlauf rief chart.render(rohdaten) und brach mit "render is not a function" ab. */
+  var chart = UC.makeTypeChart({
+    body: d.getElementById("ziel"),
+    mode: function(){ return "url"; },
+    chartMode: function(){ return "doughnut"; },
+    total: function(){ return 1000; },
+    isDark: function(){ return false; },
+    decimals: 1
+  });
+  chart.renderDonut(UC.prepTypeData("url", [
+    { type: "article",   share_pct: 58.76 },
+    { type: "video",     share_pct: 41.2  },
+    { type: "forum",     share_pct: 0.04  }
+  ], false));
+  return warte(1600).then(function(){
+    var legende = [].map.call(d.querySelectorAll(".up-donut-legend-pct"), function(e){
+      return e.textContent.trim(); });
+    log("DIE LEGENDE (sie hatte die Regel schon)");
+    log("   " + JSON.stringify(legende));
+    var winzig = legende[legende.length - 1];
+    log("   ==> " + ja(winzig === "<0.1%") + " (der Anteil 0,04 steht als \"" + winzig + "\")");
+    log("");
+
+    /* Den Tooltip ueber die Schnittstelle aufzwingen -- Segment 2 ist der winzige. */
+    var cv = d.querySelector(".up-donut-wrap canvas") || d.querySelector("canvas");
+    var ch = v.Chart.getChart(cv);
+    if (!ch) throw new Error("kein Chart auf dem Canvas");
+    function tooltipText(i){
+      ch.setActiveElements([{ datasetIndex: 0, index: i }]);
+      ch.tooltip.setActiveElements([{ datasetIndex: 0, index: i }], { x: 100, y: 100 });
+      ch.update();
+      var el = d.querySelector(".up-donut-tt .up-tt-val");
+      return el ? el.textContent.trim() : "(kein Tooltip)";
+    }
+    var klein = tooltipText(2);
+    var normal = tooltipText(1);
+    log("DER TOOLTIP (die Stelle, die roh formatierte)");
+    log("   winziges Segment (0,04): \"" + klein + "\"");
+    log("   normales Segment (41,2): \"" + normal + "\"");
+    log("   ==> " + ja(klein === "<0.1%") + " (keine irrefuehrende 0.0 mehr)");
+    log("   ==> " + ja(normal === "41.2%") +
+        " GEGENPROBE (ein normaler Wert steht unveraendert da -- die Regel greift nur, wo sie muss)");
+    log("   ==> " + ja(klein === winzig) + " (Tooltip und Legende sagen dasselbe)");
+    log("FERTIG");
+  });
+}).catch(function(e){ log("ABBRUCH: " + e.message + "\n" + (e.stack||"").split("\n").slice(0,3).join("\n")); });
+</script>

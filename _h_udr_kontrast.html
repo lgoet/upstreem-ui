@@ -1,0 +1,143 @@
+<!doctype html><meta charset="utf-8">
+<title>Kalender: sind die gewaehlten Flaechen ueberhaupt zu sehen?</title>
+<pre id="out" style="font:12px/1.5 ui-monospace,Menlo,monospace;padding:12px;white-space:pre-wrap"></pre>
+<iframe id="rahmen" style="width:1100px;height:520px;border:1px solid #ccc"></iframe>
+<script>
+/* Gemeldet am 06.09.: "die Selected States, die Backgrounds in den Zeitraum-Containern muessen
+   besser zu erkennen sein -- im Lightmode etwas dunkler, im Darkmode etwas heller", und dasselbe
+   fuer den "Ueberall anwenden"-Schalter, dessen Grund "kaum vom Grund der Sidebar zu
+   unterscheiden" war.
+
+   "Besser zu erkennen" ist messbar: der Abstand in der Helligkeit zwischen einer Flaeche und
+   ihrem Untergrund. Gemessen wird die TATSAECHLICH gezeichnete Farbe -- color-mix mit
+   Transparenz sieht in der Regel anders aus als das, was danach auf dem Schirm steht, weil der
+   Untergrund durchscheint. Darum wird jede Flaeche ueber ihrem echten Elternteil aufgebaut und
+   die Mischung selbst gerechnet.
+
+   Die Schwelle: 4 Punkte Helligkeitsunterschied (auf 255) sind das, was auf einem durchschnitt-
+   lichen Schirm gerade eben verschwindet -- unter 4 war der alte Zustand, und genau der wurde
+   gemeldet. Verlangt werden hier 10. */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+function warte(ms,w){ return new Promise(function(ok){ setTimeout(function(){ ok(w); },ms); }); }
+
+/* ZWEI Schreibweisen, und die zweite hat den ersten Anlauf still ruiniert: eine mit color-mix()
+   gesetzte Flaeche serialisiert Chrome NICHT als rgba(), sondern als
+   "color(srgb 0.878431 0.878431 0.878431 / 0.12)" -- Anteile von 0 bis 1. Der Parser sah nur
+   rgba(), warf diese Werte weg, und die Messung verglich die Flaeche mit sich selbst: drei Mal
+   "Abstand 0.0", was genau wie der gemeldete Fehler aussah und keiner war. */
+function rgb(s){
+  s = String(s || "");
+  var c = /color\(srgb\s+([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)(?:\s*\/\s*([0-9.]+))?\s*\)/.exec(s);
+  if (c) return { r:+c[1]*255, g:+c[2]*255, b:+c[3]*255, a:(c[4] == null ? 1 : +c[4]) };
+  var m = /rgba?\(([^)]+)\)/.exec(s); if (!m) return null;
+  var p = m[1].split(",").map(function(x){ return parseFloat(x); });
+  return { r:p[0], g:p[1], b:p[2], a:(p.length>3 ? p[3] : 1) };
+}
+/* Eine halbdurchsichtige Flaeche ueber ihren Untergrund legen -- so steht sie auf dem Schirm. */
+function ueber(vorn, hinten){
+  if (!vorn) return hinten;
+  if (vorn.a >= 1) return vorn;
+  return { r: vorn.r*vorn.a + hinten.r*(1-vorn.a),
+           g: vorn.g*vorn.a + hinten.g*(1-vorn.a),
+           b: vorn.b*vorn.a + hinten.b*(1-vorn.a), a:1 };
+}
+function hell(c){ return 0.2126*c.r + 0.7152*c.g + 0.0722*c.b; }
+function abstand(a, b){ return Math.abs(hell(a) - hell(b)); }
+function zeig(c){ return "rgb(" + [c.r,c.g,c.b].map(Math.round).join(",") + ")"; }
+
+var D=null, V=null;
+function bau(dunkel){
+  return Promise.all([hol("core.css"), hol("filters/date-range.css"), hol("core.js"),
+                      hol("filters/date-range.js"), hol("filters/bubble/date_range_bubble.html")])
+  .then(function(t){
+    /* JE THEMA EIN NEUER RAHMEN. Mit document.open() im selben Rahmen bleibt das WINDOW dasselbe
+       -- window.UpstreemCore aus dem ersten Durchgang ueberlebt, die BUILD-Sperre oben in core.js
+       laesst die zweite Auswertung sofort zurueckkehren, und der zweite Durchgang misst in
+       Wahrheit noch den ersten. Der Bericht sah dabei ordentlich aus: zwei Blocks, identische
+       Zahlen, beide "RICHTIG" -- und beide hell. */
+    var alt = document.getElementById("rahmen");
+    var neu = document.createElement("iframe");
+    neu.id = "rahmen"; neu.setAttribute("style", alt.getAttribute("style"));
+    alt.parentNode.replaceChild(neu, alt);
+    var d = neu.contentDocument; D = d;
+    d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0;padding:10px'></body></html>"); d.close();
+    var v = d.defaultView; V = v;
+    try { v.localStorage.setItem("up_prefs", JSON.stringify({ date_sync:"on", date_preset:"last30" })); } catch(e){}
+    /* DAS THEMA FESTNAGELN. Der erste Anlauf setzte nur data-isdark und meldete fuer BEIDE
+       Durchgaenge dieselben dunklen Farben: core liest localStorage.pref_theme und schreibt
+       data-isdark danach um -- und dort stand noch "dark" aus einer frueheren Prueftandsrunde
+       (alle Prueftaende teilen die Herkunft und damit den Speicher). Ohne diese Zeile misst der
+       Prueftand, was zuletzt jemand anderes eingestellt hat. */
+    try { v.localStorage.setItem("pref_theme", dunkel ? "dark" : "light"); } catch(e){}
+    v.bubble_fn_udr_date_boot = function(){}; v.bubble_fn_udr_date_range = function(){};
+    [t[0], t[1]].forEach(function(c){ var st=d.createElement("style"); st.textContent=c; d.head.appendChild(st); });
+    var s2 = d.createElement("style");
+    s2.textContent = "*,*::before,*::after{transition:none!important;animation:none!important}";
+    d.head.appendChild(s2);
+    var w = d.createElement("div"); w.innerHTML = wurzelAus(t[4]);
+    var r = w.querySelector(".udr-root");
+    r.setAttribute("data-instance","dates_v2_dashboard"); r.setAttribute("data-cdn-pin","t");
+    r.setAttribute("data-isdark", dunkel ? "yes" : "no");
+    d.body.appendChild(r);
+    var j1=d.createElement("script"); j1.textContent=t[2]; d.head.appendChild(j1);
+    var j2=d.createElement("script"); j2.textContent=t[3]; d.head.appendChild(j2);
+    return warte(1300);
+  }).then(function(){
+    D.querySelector(".udr-trigger").click();
+    return warte(500);
+  });
+}
+
+/* Der gezeichnete Grund eines Elements: die erste Flaeche, die nicht durchsichtig ist, plus
+   alles, was darueber liegt. Ohne diese Kette misst man rgba(0,0,0,0) und haelt es fuer schwarz. */
+function grund(el){
+  var kette = [];
+  for (var n = el; n && n.nodeType === 1; n = n.parentElement){
+    var c = rgb(V.getComputedStyle(n).backgroundColor);
+    if (c && c.a > 0){ kette.push(c); if (c.a >= 1) break; }
+  }
+  var farbe = { r:255, g:255, b:255, a:1 };
+  for (var i = kette.length - 1; i >= 0; i--) farbe = ueber(kette[i], farbe);
+  return farbe;
+}
+
+function messen(name){
+  var spalte = D.querySelector(".udr-presets");
+  var aktiv  = D.querySelector(".udr-preset.is-active");
+  var sync   = D.querySelector(".udr-sync");
+  var band   = D.querySelector(".udr-day.is-in");
+  var kal    = band ? band.parentElement : null;
+  var gSpalte = grund(spalte), gAktiv = grund(aktiv), gSync = grund(sync);
+  var gKal = kal ? grund(kal) : null, gBand = band ? grund(band) : null;
+  log(name + "   (data-isdark=" + D.querySelector(".udr-root").getAttribute("data-isdark") +
+      ", data-theme=" + D.querySelector(".udr-root").getAttribute("data-theme") + ")");
+  log("   Spaltengrund        " + zeig(gSpalte));
+  log("   aktive Zeitraumzeile" + zeig(gAktiv) + "   Abstand " + abstand(gAktiv, gSpalte).toFixed(1));
+  log("   Ueberall-anwenden   " + zeig(gSync)  + "   Abstand " + abstand(gSync, gSpalte).toFixed(1));
+  if (gBand) log("   Band im Zeitraum    " + zeig(gBand) + "   Abstand " + abstand(gBand, gKal).toFixed(1));
+  return { aktiv: abstand(gAktiv, gSpalte), sync: abstand(gSync, gSpalte),
+           band: gBand ? abstand(gBand, gKal) : -1 };
+}
+
+var SCHWELLE = 10;
+bau(false).then(function(){
+  var hellM = messen("HELL");
+  log("");
+  return bau(true).then(function(){
+    var dunkelM = messen("DUNKEL");
+    log("");
+    [["aktive Zeitraumzeile","aktiv"],["Ueberall anwenden","sync"],["Band im Zeitraum","band"]]
+      .forEach(function(paar){
+        var h = hellM[paar[1]], t = dunkelM[paar[1]];
+        var ok = h >= SCHWELLE && t >= SCHWELLE;
+        log("==> " + (ok ? "RICHTIG" : "FALSCH") + "  " + paar[0] +
+            ": hell " + h.toFixed(1) + ", dunkel " + t.toFixed(1) +
+            "   (verlangt >= " + SCHWELLE + ")");
+      });
+    log("FERTIG");
+  });
+}).catch(function(e){ log("ABBRUCH: " + e.message + "\n" + (e.stack||"").split("\n")[1]); });
+</script>

@@ -1664,6 +1664,41 @@
      .am-prev-item, aber sie ist LEER -- das Schimmern liegt auf einer 10px-Textzeile darin. Vorher
      waren es sieben ausgefuellte 36px-Bloecke, und das las sich als Kachelwand statt als Liste
      von Namen. */
+  /* DASSELBE SKELETT, ABER OHNE JAVASCRIPT. Gemeldet am 06.09.: "bei pageload sehe ich in der
+     Chatleiste rechts keinen Skeleton, dann ist die Leiste einfach leer, bis die Chats
+     reinkommen". Das Skelett unten entsteht in renderPrevious(), also erst wenn ask-mira.js
+     geladen, geparst und ausgefuehrt ist -- die Datei ist die groesste der Bibliothek, und auf
+     einer gedrosselten Maschine liegt dazwischen mehr als eine Sekunde. Bis dahin steht die
+     Liste leer da, mit ihrem Rahmen und ihrer Polsterung, und sieht aus wie ein Nutzer ohne
+     Chats. CSS kommt aus dem Kopf der Seite und gilt sofort; damit ist die Luecke zu.
+     Die Bedingung ist :not(:has(*)) und nicht :empty -- ein Leerzeichen im eingefuegten Markup
+     wuerde :empty schon nicht mehr treffen, und das Markup steht in einem Bubble-Element, an dem
+     niemand mehr etwas anfasst. Sobald renderPrevious() laeuft, stehen Elemente darin: auch fuer
+     einen Nutzer OHNE Chats (dort "No recent chats"), also bleibt hier nichts haengen.
+     Kein Schimmern, sondern ein Pulsieren: das Schimmern unten bewegt background-position, und
+     dieselbe Eigenschaft traegt hier die Anordnung der acht Balken. */
+  .am-prev-list:not(:has(*))::before {
+    content: ""; display: block; height: 288px;
+    background-image:
+      linear-gradient(0deg, var(--am-soft-2), var(--am-soft-2)),
+      linear-gradient(0deg, var(--am-soft-2), var(--am-soft-2)),
+      linear-gradient(0deg, var(--am-soft-2), var(--am-soft-2)),
+      linear-gradient(0deg, var(--am-soft-2), var(--am-soft-2)),
+      linear-gradient(0deg, var(--am-soft-2), var(--am-soft-2)),
+      linear-gradient(0deg, var(--am-soft-2), var(--am-soft-2)),
+      linear-gradient(0deg, var(--am-soft-2), var(--am-soft-2)),
+      linear-gradient(0deg, var(--am-soft-2), var(--am-soft-2));
+    /* Kopfzeile 34%, dann die sieben Namenszeilen in denselben Breiten wie SKEL_BREITEN in
+       ask-mira.js -- 78, 62, 84, 55, 71, 66, 48. Zwei Listen fuer dasselbe Bild, aber die eine
+       muss ohne JS auskommen und die andere ohne CSS-Trickserei. */
+    background-size: 34% 10px, 78% 10px, 62% 10px, 84% 10px, 55% 10px, 71% 10px, 66% 10px, 48% 10px;
+    background-position:
+      8px 8px, 8px 36px, 8px 72px, 8px 108px, 8px 144px, 8px 180px, 8px 216px, 8px 252px;
+    background-repeat: no-repeat;
+    border-radius: 5px;
+    animation: amSkelPuls 1.25s ease-in-out infinite;
+  }
+  @keyframes amSkelPuls { 0%, 100% { opacity: 1 } 50% { opacity: .5 } }
   .am-prev-skel { display: flex; flex-direction: column; gap: 2px; padding: 2px 0; }
   .am-prev-skel-head { height: 10px; width: 34%; border-radius: 5px; margin: 8px 8px 6px; }
   .am-prev-skel-row { height: 34px; display: flex; align-items: center; padding: 0 8px; }

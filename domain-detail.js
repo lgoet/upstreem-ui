@@ -78,16 +78,24 @@
      die drei anderen zaehlen URLs. Ein Trichter, dessen erste Stufe eine andere Einheit hat als
      der Rest, behauptet ein Verhaeltnis, das es nicht gibt -- und weil die Hoehe jeder Stufe ihr
      Anteil an der ERSTEN ist, war die Verjuengung danach willkuerlich. */
+  /* DER EINZIGE SATZ DIESER KOMPONENTE, DER UC.t BRAUCHT. Alles andere hier ist ein fester Text
+     und wird vom Sprachlauf in core uebersetzt -- der greift aber nur, wenn der GANZE Textknoten
+     im Katalog steht. "2.1% of cited URLs" enthaelt eine Zahl, steht damit in keinem Katalog und
+     blieb englisch (gemeldet am 06.09. fuer Domain Detail). Also ein Muster mit Platzhalter,
+     genau wie "{n} pages" in core. Dasselbe gilt fuer "URLs mentioning {brand}" weiter unten. */
+  function anteilSatz(pct){
+    return UC.t("{pct} of cited URLs").replace("{pct}", UC.fmtPct(pct, 1));
+  }
   var STUFEN = [
     { key: "urls", label: "Cited Pages / URLs",
       wert: function (f) { return f.cited_urls_count; },
       unter: function () { return "URLs"; } },
     { key: "tracked", label: "URLs mentioning tracked brands",
       wert: function (f) { return f.urls_with_tracked_brands; },
-      unter: function (f) { return UC.fmtPct(f.tracked_brand_presence_pct, 1) + " of cited URLs"; } },
+      unter: function (f) { return anteilSatz(f.tracked_brand_presence_pct); } },
     { key: "you", label: "URLs mentioning {brand}",
       wert: function (f) { return f.urls_mentioning_you; },
-      unter: function (f) { return UC.fmtPct(f.your_url_presence_pct, 1) + " of cited URLs"; } }
+      unter: function (f) { return anteilSatz(f.your_url_presence_pct); } }
   ];
 
   /* Die Bereiche der Seite lassen sich nicht mehr ausblenden. Das Zahnrad und seine Liste sind
@@ -482,7 +490,9 @@
         var v = num(s.wert(f));
         return {
           key: s.key,
-          label: s.label.replace("{brand}", state.brand || "your brand"),
+          /* Erst uebersetzen, dann den Markennamen einsetzen: umgekehrt stuende im Text ein
+             Name, und der Satz waere in keinem Katalog mehr zu finden. */
+          label: UC.t(s.label).replace("{brand}", state.brand || UC.t("your brand")),
           wert: v == null ? 0 : v,
           unter: s.unter(f)
         };

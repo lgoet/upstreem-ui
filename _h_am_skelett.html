@@ -1,0 +1,81 @@
+<!doctype html><meta charset="utf-8">
+<title>Mira: das Skelett der Chatleiste, bevor JavaScript laeuft</title>
+<pre id="out" style="font:12px/1.5 ui-monospace,Menlo,monospace;padding:12px;white-space:pre-wrap"></pre>
+<div id="rahmen"></div>
+<script>
+/* Gemeldet am 06.09.: "bei pageload sehe ich in der Chatleiste rechts keinen Skeleton, dann ist
+   die Leiste einfach leer, bis die Chats reinkommen." Das Skelett entstand in renderPrevious(),
+   also erst NACH dem Laden, Parsen und Ausfuehren von ask-mira.js -- der groessten Datei der
+   Bibliothek. Der Fix ist eine CSS-Regel, die greift, solange die Liste keine Kinder hat.
+
+   Darum laeuft hier ask-mira.js ABSICHTLICH NICHT: geprueft wird der Zustand, den der Nutzer
+   sieht, bevor die Datei da ist. Drei Fragen, jede mit ihrer Gegenprobe:
+     1. Steht das Skelett ohne JS im leeren Zustand?
+     2. Verschwindet es, sobald ein Kind darin steht (also sobald renderPrevious lief)?
+     3. Bleibt es weg bei einem Nutzer OHNE Chats -- dort schreibt renderPrevious Elemente
+        hinein ("No recent chats"), also darf die Regel nicht wieder zuschlagen. */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function ja(b){ return b ? "RICHTIG" : "FALSCH"; }
+
+Promise.all([hol("core.css"), hol("ask-mira.css"), hol("bubble/ask_mira_bubble.html")])
+.then(function(t){
+  var f = document.createElement("iframe");
+  f.style.cssText = "width:1200px;height:420px;border:1px solid #ccc;display:block";
+  document.getElementById("rahmen").appendChild(f);
+  var d = f.contentDocument;
+  d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0'></body></html>"); d.close();
+  [t[0], t[1]].forEach(function(css){
+    var st = d.createElement("style"); st.textContent = css; d.head.appendChild(st);
+  });
+  /* Nur das Markup, ohne die <script>-Bloecke der Vorlage -- genau der Zustand vor der Datei. */
+  var roh = t[2].replace(/<!--[\s\S]*?-->/g, "").replace(/<script[\s\S]*?<\/script>/gi, "");
+  d.body.innerHTML = roh;
+  var liste = d.querySelector(".am-prev-list");
+  if (!liste) throw new Error(".am-prev-list steht nicht in der Vorlage");
+
+  function skelett(){
+    var v = f.contentWindow.getComputedStyle(liste, "::before");
+    return { inhalt: v.content, hoehe: v.height,
+             balken: (v.backgroundImage || "none").split("linear-gradient").length - 1,
+             animation: (v.animationName || "none") };
+  }
+  var a = skelett();
+  log("1) LEERE LISTE, ask-mira.js laeuft nicht");
+  log("   Kinder: " + liste.children.length + "   ::before content=" + a.inhalt +
+      "  Hoehe=" + a.hoehe + "  Balken=" + a.balken + "  Animation=" + a.animation);
+  log("   ==> " + ja(liste.children.length === 0 && a.inhalt === '""' && a.balken === 8) +
+      " (acht Balken: eine Kopfzeile und sieben Namenszeilen, wie SKEL_BREITEN in der JS)");
+  log("");
+
+  /* 2) Sobald renderPrevious laeuft, stehen Sektionen in der Liste. Hier von Hand nachgestellt,
+     denn die JS laeuft in diesem Prueftand nicht -- geprueft wird die Regel, nicht die JS. */
+  var kind = d.createElement("div"); kind.className = "am-prev-section";
+  liste.appendChild(kind);
+  var b = skelett();
+  log("2) EIN KIND darin (so sieht es nach renderPrevious aus)");
+  log("   Kinder: " + liste.children.length + "   ::before content=" + b.inhalt);
+  log("   ==> " + ja(b.inhalt === "none") +
+      " (die Regel ist aus -- kein Skelett unter dem echten Inhalt)");
+  log("");
+
+  /* 3) Der Nutzer OHNE Chats: renderPrevious schreibt auch dann Elemente hinein. Wuerde die
+     Regel hier wieder greifen, pulsierte bei ihm dauerhaft ein Skelett unter der Meldung. */
+  liste.innerHTML = '<div class="am-prev-section"><div class="am-prev-proj-empty">No recent chats</div></div>';
+  var c = skelett();
+  log("3) NUTZER OHNE CHATS (Meldung statt Liste)");
+  log("   Kinder: " + liste.children.length + "   ::before content=" + c.inhalt);
+  log("   ==> " + ja(c.inhalt === "none") + " (kein Dauer-Skelett bei einem neuen Nutzer)");
+  log("");
+
+  /* GEGENPROBE AM INSTRUMENT: wieder leer -- meldet der Test das Skelett erneut? Ohne diesen
+     Schritt koennte "none" auch heissen, dass getComputedStyle hier ueberhaupt nichts sieht. */
+  liste.innerHTML = "";
+  var e = skelett();
+  log("GEGENPROBE  wieder geleert: ::before content=" + e.inhalt + "  Balken=" + e.balken);
+  log("   ==> " + ja(e.inhalt === '""' && e.balken === 8) +
+      " (das Messgeraet sieht die Regel wirklich -- die Nullen oben sind echt)");
+  log("FERTIG");
+}).catch(function(e){ log("ABBRUCH: " + e.message); });
+</script>

@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20260910;
+  var BUILD = 20260912;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -1272,6 +1272,44 @@
     "Search pages…": "Seiten suchen…",
     "Show title or URL": "Titel oder URL zeigen",
     "Uncategorized": "Ohne Kategorie",
+    /* ---- DIE URL-TYPEN (07.09.) -------------------------------------------------------------
+       URL_LABEL weiter unten haelt vierzehn Typen, und nur "Uncategorized" stand hier -- die
+       anderen dreizehn blieben in jeder Sprache englisch. Aufgefallen ist es in der Legende des
+       Ring-Diagramms von Domain Detail ("Article", "Homepage", "Video" neben "Ohne Kategorie"),
+       gilt aber ueberall, wo ein URL-Typ steht: Chips in der URLs-Tabelle, URL Detail, die
+       Balkenliste. Die Typen sind KEINE Glossarwoerter -- sie beschreiben eine Seitenart und
+       haben eine deutsche Entsprechung; Topics und Brands bleiben dagegen englisch. */
+    "Homepage": "Startseite",
+    "Product / Service": "Produkt / Leistung",
+    "Marketplace": "Marktplatz",
+    "Company Info": "Unternehmensinfo",
+    "Article": "Artikel",
+    "Listicle": "Listenartikel",
+    "Guide": "Leitfaden",
+    "Comparison": "Vergleich",
+    "Review": "Testbericht",
+    "Documentation": "Dokumentation",
+    "Directory": "Verzeichnis",
+    "Social Post": "Social-Beitrag",
+    /* "Forum" und "Video" heissen im Deutschen genauso -- sie stehen hier trotzdem, damit die
+       Liste vollstaendig ist und niemand sie fuer vergessen haelt. */
+    "Forum": "Forum",
+    "Video": "Video",
+    /* ---- DOMAIN DETAIL: die Abschnitte (07.09.) ---------------------------------------------
+       Gemeldet als "da sind noch viele Sachen wo die deutsche Sprache fehlt". Gemessen in
+       _h_udd_deutsch.html, der die Seite zweimal aufbaut -- englisch und deutsch -- und Text fuer
+       Text vergleicht: was in beiden gleich steht, ist nicht uebersetzt. Das waren diese. */
+    "Source Funnel": "Quellen-Trichter",
+    "How often this source is cited, how many of its cited URLs mention brands, and where your brand is still missing":
+      "Wie oft diese Quelle zitiert wird, wie viele ihrer zitierten URLs Brands erwähnen und wo deine Brand noch fehlt",
+    "What kind of pages of this domain get cited": "Welche Art von Seiten dieser Domain zitiert wird",
+    "Model Breakdown": "Verteilung je Modell",
+    "Distribution of this domain in AI models": "Verteilung dieser Domain in den KI-Modellen",
+    /* Zwei Muster, weil ein Name bzw. eine Zahl darin steht: der ganze Textknoten waere sonst in
+       keinem Katalog zu finden. domain-detail.js setzt sie ueber UC.t ein. */
+    "URLs mentioning {brand}": "URLs, die {brand} erwähnen",
+    "{pct} of cited URLs": "{pct} der zitierten URLs",
+    "your brand": "deine Brand",
     /* Muster: die Zahl kommt formatiert aus fmtTotal, der Satz aus dem Katalog. */
     "1 page": "1 Seite",
     "{n} pages": "{n} Seiten",
@@ -9456,9 +9494,17 @@
            zuerst gesucht habe. fmtPct haengt fest ein Prozentzeichen an; Rang und Sentiment
            sind keine Prozentwerte. Ohne Angabe bleibt es bei fmtPct, damit sich fuer die
            bestehenden Charts nichts aendert. */
-        var val = (einheitFn || nachkommaFn)
-          ? Number(dp.parsed.y).toFixed(ttNachkomma()) + ttEinheit()
-          : fmtPct(dp.parsed.y);
+        /* Dieselbe Regel auch hier -- ABER nur, wenn die Einheit wirklich Prozent ist. Bei Rang
+           und Sentiment ist eine 0,0 ein gueltiger Wert und kein zu kleiner Anteil; ein "<0.1"
+           waere dort schlicht falsch. */
+        var val;
+        if (einheitFn || nachkommaFn){
+          val = ttEinheit() === "%"
+            ? fmtPct(dp.parsed.y, ttNachkomma())
+            : Number(dp.parsed.y).toFixed(ttNachkomma()) + ttEinheit();
+        } else {
+          val = fmtPct(dp.parsed.y);
+        }
         /* Klassen und data-id an den Zeilen. Keine CSS haengt daran -- die Formatierung steht
            weiter inline. Sie sind da, damit ein Aufrufer die Zeilen von aussen ANSPRECHEN kann:
            die Hero-Sektion der Landingpage laesst sie beim Filterwechsel wandern und ihre Zahlen
@@ -10572,7 +10618,12 @@
           : "display:none;";
         kLbl.style.color = nameColor;
         kLbl.textContent = chart.data.labels[i] || "";
-        kVal.textContent = Number(val).toFixed(ttNachkomma()) + "%";
+        /* fmtPct, nicht toFixed: die Regel "was zu klein fuer diese Genauigkeit ist, zeigt <x%"
+           steckt dort drin, und die Legende darunter benutzt sie laengst. Der Tooltip war die
+           letzte Stelle, die noch roh formatierte -- gemeldet als "im Doughnut steht 0.0%,
+           obwohl in der Legende <0.1% steht". Zwei Zahlen fuer denselben Wert, eine davon eine
+           irrefuehrende Null. */
+        kVal.textContent = fmtPct(val, ttNachkomma());
         /* Genau EINMAL messen, direkt nach der Aenderung -- ein Aufruf fuer beide Maasse. Der
            laufende translate3d faelscht sie nicht: verschieben veraendert keine Groesse, das
            Zuruecksetzen von left/top vorher ist damit ueberfluessig. */
