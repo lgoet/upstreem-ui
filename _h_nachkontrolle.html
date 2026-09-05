@@ -1,0 +1,120 @@
+<!doctype html><meta charset="utf-8">
+<title>Die Nachkontrolle: findet sie, was sie finden soll -- und schweigt sie sonst?</title>
+<pre id="out" style="font:12px/1.5 ui-monospace,Menlo,monospace;padding:12px;white-space:pre-wrap"></pre>
+<div id="rahmen"></div>
+<script>
+/* Die Nachkontrolle (bubble/diagnostics/_diagnose_nachkontrolle.js) beantwortet nach dem Deploy
+   drei Fragen aus dem, was der Seitenaufbau hinterlassen hat. Jede ihrer Antworten ist erst dann
+   ein Ergebnis, wenn sie im GEGENFALL das Gegenteil sagt -- eine Diagnose, die immer "sauber"
+   meldet, ist schlimmer als keine. Darum laeuft hier jede Frage zweimal: einmal in einer Lage,
+   die sie melden MUSS, und einmal in einer sauberen, in der sie schweigen muss. */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function warte(ms,w){ return new Promise(function(ok){ setTimeout(function(){ ok(w); },ms); }); }
+function ja(b){ return b ? "RICHTIG" : "FALSCH"; }
+
+/* Ein Rahmen mit einer Lage, die man vorher kennt. Die URLs tragen "upstreem-ui@<pin>/", denn
+   genau daran erkennt die Nachkontrolle unsere Dateien -- lokale Pfade wie "core.js" wuerde sie
+   zu Recht ignorieren. */
+function baue(lage){
+  /* JE LAGE EIN NEUER RAHMEN. Der erste Anlauf schrieb denselben Rahmen mit document.open() neu
+     -- das tauscht das Dokument, aber NICHT das window. window.__upDoppel aus der kaputten Lage
+     stand damit auch in der sauberen noch da, und die Gegenprobe meldete zwei Abwehrfaelle, die
+     es dort nicht gab. Ein eigenes iframe je Lage hat dieses Problem nicht. */
+  var f = document.createElement("iframe");
+  f.style.cssText = "width:1200px;height:180px;border:1px solid #ccc;display:block;margin-bottom:6px";
+  document.getElementById("rahmen").appendChild(f);
+  var d = f.contentDocument;
+  d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0'></body></html>"); d.close();
+  var v = d.defaultView;
+  var st = d.createElement("style");
+  st.textContent = '[id^="view-"]{display:block}[id^="view-"]:not(.view-on)' +
+                   '{content-visibility:hidden;contain-intrinsic-size:900px 400px}';
+  d.head.appendChild(st);
+  /* B) Die Tags. "vorbereitet" heisst: aus dem Kopf-Snippet (data-up-preload). */
+  function tag(pfad, ausKopf){
+    var s = d.createElement("script"); s.src = pfad;
+    if (ausKopf) s.setAttribute("data-up-preload","1");
+    d.head.appendChild(s);
+  }
+  tag("_h_fake/upstreem-ui@testpin/core.js", true);
+  tag("_h_fake/upstreem-ui@testpin/urls-table.js", true);
+  if (lage.doppelt) tag("_h_fake/upstreem-ui@testpin/core.js", false);
+  if (lage.zweiterPin) tag("_h_fake/upstreem-ui@zweiterpin/urls-table.js", false);
+  /* Und die Liste, die der Waechter im Kopf-Snippet fuehrt: beide Formen, wie er sie schreibt. */
+  if (lage.abgewehrt){
+    v.__upDoppel = [ "domains-table.js",
+      { datei:"core.js", zeit:412, spur:["at HTMLElement.appendChild","at loadAsset (elementloader:12)"] } ];
+  }
+  /* A) Der ausgefuehrte Zustand, nicht ein Dateitext. */
+  if (lage.build != null) v.UpstreemCore = { BUILD: lage.build };
+  if (lage.weckruf){ v.__upWecken = function(){}; v.__upNachholen = [function(){}, function(){}]; }
+  /* C) Zwei Ansichten, eine offen, eine geparkt -- mit Wurzeln, die Knoten tragen. */
+  var koerper = '<div class="up-card"><span>a</span><span>b</span><span>c</span></div>';
+  var offen = d.createElement("div"); offen.id = "view-offen"; offen.className = "view-on";
+  var park  = d.createElement("div"); park.id = "view-geparkt";
+  for (var i = 0; i < lage.offen; i++){
+    var r = d.createElement("div"); r.className = "up-root"; r.innerHTML = koerper;
+    r.__uutController = {}; offen.appendChild(r);
+  }
+  for (var j = 0; j < lage.geparkt; j++){
+    var g = d.createElement("div"); g.className = "up-root"; g.innerHTML = koerper;
+    /* Nur die Haelfte traegt einen Controller -- so muss die Nachkontrolle "geparkt" von
+       "geparkt UND gemountet" trennen koennen, und genau diese Trennung ist ihre Aussage. */
+    if (j % 2 === 0) g.__uutController = {};
+    park.appendChild(g);
+  }
+  d.body.appendChild(offen); d.body.appendChild(park);
+  return { d:d, v:v };
+}
+
+/* ?datei= erlaubt es, die FASSUNG zu pruefen, die der Nutzer wirklich einfuegt -- die
+   kommentarfreie. Ohne diesen Schalter waere sie das einzige Stueck, das nie gemessen wurde. */
+var QUELLE = (/[?&]datei=([^&]+)/.exec(location.search) || [])[1]
+             || "bubble/diagnostics/_diagnose_nachkontrolle.js";
+log("Geprueft wird: " + QUELLE + "\n");
+hol(QUELLE).then(function(code){
+  /* ---- LAGE 1: alles kaputt, alles muss gemeldet werden --------------------------------- */
+  var A = baue({ build: 20260901, weckruf:false, doppelt:true, zweiterPin:true,
+                 abgewehrt:true, offen:2, geparkt:4 });
+  return warte(700).then(function(){
+    A.v.eval(code);
+    var z = A.v.upNachkontrolle();
+    log("LAGE 1  eine Seite, auf der alles schiefliegt");
+    log("   A) BUILD 20260901 (zu alt):  frisch=" + z.frische.frisch + "   " + ja(z.frische.frisch === false));
+    log("   B) Tags=" + z.einhaengen.tags + "  mehrfach=" + z.einhaengen.mehrfach +
+        "  Pins=" + z.einhaengen.pins + "  abgewehrt=" + z.einhaengen.abgewehrt);
+    /* ZWEI mehrfach geholte Dateien, nicht eine: core.js haengt zweimal am selben Pin, und
+       urls-table.js liegt an zwei verschiedenen Pins -- also wird auch die zweimal geholt. Genau
+       das ist der Befund, um den es auf der echten Seite geht. Die erste Erwartung hier stand auf
+       1 und war schlicht falsch gezaehlt. */
+    log("      " + ja(z.einhaengen.mehrfach === 2 && z.einhaengen.pins === 2 && z.einhaengen.abgewehrt === 2) +
+        " (core.js doppelt, urls-table an zwei Pins, zwei Abwehrfaelle -- alles benannt)");
+    log("   C) offen " + z.lazy.offen + "/" + z.lazy.knotenOffen + "   geparkt " + z.lazy.geparkt +
+        "/" + z.lazy.knotenGeparkt + "   geparkt+gemountet " + z.lazy.geparktGemountet +
+        "/" + z.lazy.knotenGeparktGemountet);
+    log("      " + ja(z.lazy.offen === 2 && z.lazy.geparkt === 4 && z.lazy.geparktGemountet === 2) +
+        " (die Wurzeln stimmen, und sie trennt gemountet von nicht gemountet)");
+    log("");
+    /* ---- LAGE 2: die GEGENPROBE. Ohne sie waere jede Meldung oben nur eine Behauptung. --- */
+    var B = baue({ build: 20260909, weckruf:true, doppelt:false, zweiterPin:false,
+                   abgewehrt:false, offen:3, geparkt:0 });
+    return warte(700).then(function(){
+      B.v.eval(code);
+      var y = B.v.upNachkontrolle();
+      log("LAGE 2  GEGENPROBE: dieselbe Messung auf einer sauberen Seite");
+      log("   A) BUILD 20260909:  frisch=" + y.frische.frisch + "   " + ja(y.frische.frisch === true));
+      log("   B) Tags=" + y.einhaengen.tags + "  mehrfach=" + y.einhaengen.mehrfach +
+          "  Pins=" + y.einhaengen.pins + "  abgewehrt=" + y.einhaengen.abgewehrt);
+      log("      " + ja(y.einhaengen.mehrfach === 0 && y.einhaengen.pins === 1 && y.einhaengen.abgewehrt === 0) +
+          " (nichts gemeldet, wo nichts ist -- die Meldungen oben sind damit echt)");
+      log("   C) offen " + y.lazy.offen + "/" + y.lazy.knotenOffen + "   geparkt " + y.lazy.geparkt);
+      log("      " + ja(y.lazy.offen === 3 && y.lazy.geparkt === 0) +
+          " (drei offene Wurzeln, keine geparkte)");
+      log("");
+      log("FERTIG");
+    });
+  });
+}).catch(function(e){ log("ABBRUCH: "+e.message+"\n"+(e.stack||"").split("\n").slice(0,3).join("\n")); });
+</script>
