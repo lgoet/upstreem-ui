@@ -1,0 +1,49 @@
+<!doctype html><html><head><meta charset="utf-8">
+<title>Unterseite fuer _h_spaetes_parken.html</title>
+<!-- EIN ECHTES DOKUMENT, kein per document.write() gebauter Rahmen: write()+close() setzt
+     readyState sofort auf "complete", und der Riegel in core hing an genau dieser Angabe.
+     Die Frist des Riegels zaehlt VERSUCHE, nicht Millisekunden -- darum braucht diese Seite
+     keine gefaelschte Uhr mehr. Der Prueftand loest die Versuche selbst aus (__upWecken), und
+     damit haengt die Messung an nichts, was ein verstecktes Browser-Panel drosseln koennte. -->
+<link rel="stylesheet" href="core.css">
+<link rel="stylesheet" href="discover-brands.css">
+<style>
+  body { margin:0 }
+  [id^="view-"] { display:block }
+</style>
+<script>
+window.parkregelSetzen = function(){
+  if (document.getElementById("parkregel")) return;
+  var st = document.createElement("style"); st.id = "parkregel";
+  st.textContent = '[id^="view-"]:not(.view-on){content-visibility:hidden;' +
+                   'contain-intrinsic-size:900px 400px}';
+  document.head.appendChild(st);
+};
+if (/[?&]parken=sofort/.test(location.search)) parkregelSetzen();
+window.showView = function(n){
+  [].forEach.call(document.querySelectorAll('[id^="view-"]'), function(el){
+    el.classList.toggle("view-on", el.id === "view-" + n);
+  });
+};
+</script>
+</head><body>
+<div id="view-offen" class="view-on"></div>
+<div id="view-geparkt"></div>
+<script>
+(function(){
+  var x = new XMLHttpRequest();
+  x.open("GET", "bubble/discover_brands_bubble.html", false); x.send(null);
+  var roh = x.responseText.replace(/<!--[\s\S]*?-->/g, "").replace(/<script[\s\S]*?<\/script>/gi, "");
+  [["offen","view-offen"], ["park","view-geparkt"]].forEach(function(paar){
+    var w = document.createElement("div"); w.innerHTML = roh.trim();
+    var r = w.querySelector(".up-root") || w.firstElementChild;
+    if (!r) return;
+    r.setAttribute("data-instance", "discover-brands-" + paar[0]);
+    r.setAttribute("data-cdn-pin", "t"); r.setAttribute("data-isdark", "no");
+    document.getElementById(paar[1]).appendChild(r);
+  });
+})();
+</script>
+<script src="core.js"></script>
+<script src="discover-brands.js"></script>
+</body></html>

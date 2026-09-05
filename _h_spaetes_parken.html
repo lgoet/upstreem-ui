@@ -1,0 +1,93 @@
+<!doctype html><meta charset="utf-8">
+<title>Wann parkt der Host? Die Kaskade laeuft frueher als die Ansichten zugehen</title>
+<pre id="out" style="font:12px/1.5 ui-monospace,Menlo,monospace;padding:12px;white-space:pre-wrap"></pre>
+<div id="rahmen"></div>
+<script>
+/* DIE FRAGE, DIE VOM LAZY-MOUNT UEBRIG WAR.
+   Nach dem Riegel in makeMount standen auf der laufenden Seite immer noch 103 von 137 geparkten
+   Wurzeln gemountet, mit 13928 Knoten. messbar() arbeitet richtig -- schuld war die ZEIT: die
+   Anlaufkaskade laeuft bei 30..1800ms, und die Host-App parkt ihre Ansichten erst, nachdem sie
+   ihr Markup aufgebaut hat. Zu jedem dieser Zeitpunkte ist noch alles sichtbar.
+
+   Der Riegel wartet darum jetzt auf ein Signal ("irgendeine Wurzel ist nicht messbar") und faellt
+   nach einer Frist von sechs Versuchen auf den alten Aufbau zurueck. Beides wird hier geprueft,
+   und zwar ohne jede Uhr: __upWecken() loest einen Mount-Durchgang sofort aus, der Prueftand
+   zaehlt die Versuche also selbst. Drei Lagen:
+     A  ein Versuch, nichts geparkt      -> nichts mounten (nicht ins Blaue bauen)
+     B  geparkt, dann ein Versuch        -> nur die offene Ansicht
+     C  nie geparkt, Frist aufgebraucht  -> beide, sonst bleibt die Seite leer */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function warte(ms){ return new Promise(function(ok){ setTimeout(ok, ms); }); }
+function ja(b){ return b ? "RICHTIG" : "FALSCH"; }
+
+function seite(parken){
+  var f = document.createElement("iframe");
+  f.style.cssText = "width:1100px;height:90px;border:1px solid #ccc;display:block;margin-bottom:6px";
+  f.src = "_h_spaetes_parken_seite.html?parken=" + parken + "&n=" + Math.random();
+  document.getElementById("rahmen").appendChild(f);
+  return f;
+}
+/* Warten, bis core und die Komponente wirklich laufen -- der Weckruf ist der Beweis dafuer. */
+function bereit(f){
+  return new Promise(function(ok, fehler){
+    var n = 0;
+    (function schauen(){
+      var w = null; try { w = f.contentWindow; } catch(e){}
+      if (w && typeof w.__upWecken === "function" && w.UpstreemCore) return ok(w);
+      if (++n > 120) return fehler(new Error("core im Rahmen nicht bereit"));
+      setTimeout(schauen, 50);
+    })();
+  });
+}
+function stand(w, name){
+  var r = w.document.querySelector('[data-instance="discover-brands-' + name + '"]');
+  return { knoten: r ? r.querySelectorAll("*").length : -1, ctrl: !!(r && r.__udbController) };
+}
+
+var A = seite("manuell"), B = seite("manuell"), C = seite("manuell");
+Promise.all([bereit(A), bereit(B), bereit(C)]).then(function(w){
+  var wa = w[0], wb = w[1], wc = w[2];
+
+  /* LAGE A: die Uhr steht auf 0, also ist die Frist nicht abgelaufen, und nichts ist geparkt --
+     genau der Zustand waehrend der Kaskade auf der echten Seite. */
+  wa.__upWecken();
+  return warte(300).then(function(){
+    var ap = stand(wa, "park"), ao = stand(wa, "offen");
+    log("LAGE A  ein Mount-Durchgang, waehrend nichts geparkt ist");
+    log("   geparkt " + ap.knoten + " Knoten (" + (ap.ctrl ? "ja" : "nein") + ")   offen " +
+        ao.knoten + " Knoten (" + (ao.ctrl ? "ja" : "nein") + ")");
+    log("   ==> " + ja(!ap.ctrl && !ao.ctrl) +
+        " (nichts gebaut -- der Riegel wartet auf das Parken, statt ins Blaue zu bauen)");
+    log("");
+
+    /* LAGE B: jetzt parkt der Host, die Frist ist abgelaufen. Die offene Ansicht MUSS bauen. */
+    wb.parkregelSetzen(); wb.__upWecken();
+    return warte(400).then(function(){
+      var bp = stand(wb, "park"), bo = stand(wb, "offen");
+      log("LAGE B  der Host hat geparkt, danach ein Mount-Durchgang");
+      log("   geparkt " + bp.knoten + " Knoten (" + (bp.ctrl ? "ja" : "nein") + ")   offen " +
+          bo.knoten + " Knoten (" + (bo.ctrl ? "ja" : "nein") + ")");
+      log("   ==> " + ja(!bp.ctrl && bo.ctrl) +
+          " (nur die offene Ansicht gebaut -- das ist die Ersparnis)");
+      log("");
+
+      /* LAGE C: die Gegenprobe, die ueber Erfolg oder Totalausfall entscheidet. Eine Seite ohne
+         Ansichtssystem parkt nie -- sie darf nicht leer bleiben. */
+      /* Die Frist aufbrauchen: zehn Versuche, mehr als die sechs der Kaskade. Auf einer Seite
+         ohne Parken kommen die von der Kaskade selbst -- hier vom Prueftand, damit die Messung
+         nicht an gedrosselten Timern haengt. */
+      for (var i = 0; i < 10; i++) wc.__upWecken();
+      return warte(400).then(function(){
+        var cp = stand(wc, "park"), co = stand(wc, "offen");
+        log("LAGE C  GEGENPROBE: nie geparkt, Frist aufgebraucht");
+        log("   beide " + cp.knoten + " / " + co.knoten + " Knoten (" +
+            (cp.ctrl ? "ja" : "nein") + " / " + (co.ctrl ? "ja" : "nein") + ")");
+        log("   ==> " + ja(cp.ctrl && co.ctrl) +
+            " (ohne Parken baut die Seite normal -- sonst waere das ein Totalausfall)");
+        log("");
+        log("FERTIG");
+      });
+    });
+  });
+}).catch(function(e){ log("ABBRUCH: " + e.message); });
+</script>

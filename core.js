@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20260909;
+  var BUILD = 20260910;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -4644,8 +4644,59 @@
          - als Auffangnetz      der 1,5s-Herzschlag von watchRoots weckt jede Komponente, deren
                                 Wurzelmenge sich geaendert hat.
        Der pointerdown-Rueckfall unten bleibt ungefiltert: wer angefasst werden kann, ist da. */
+    /* ---- UND DAS ZWEITE HALB DES PROBLEMS: DIE KASKADE KOMMT ZU FRUEH (06.09.) --------------
+       Nach dem Riegel oben standen auf der laufenden Seite immer noch 103 von 137 geparkten
+       Wurzeln gemountet, mit 13928 Knoten. messbar() arbeitet richtig -- schuld ist die ZEIT.
+       Die Anlaufkaskade unten laeuft bei 30, 100, 250, 500, 1000 und 1800ms, und die Host-App
+       parkt ihre Ansichten erst, nachdem sie das Markup aufgebaut hat. Zu jedem dieser Zeitpunkte
+       ist also noch alles sichtbar, alles mountet -- nach der Regel voellig richtig und im
+       Ergebnis trotzdem falsch. In _h_spaetes_parken.html nachgestellt: parkt der Aufbau erst
+       nach 900ms, baut die geparkte Kopie 61 Knoten; parkt er von Anfang an, baut sie keine.
+
+       Gebraucht wird ein Signal "der Host parkt jetzt". Es darf kein Selektor auf seine Ids sein
+       (dasselbe Argument wie oben), und es muss ohne Layoutzugriff auskommen. Es gibt eines, und
+       es beschreibt sich selbst: IRGENDEINE Wurzel auf der Seite ist nicht messbar. Dann ist das
+       Parken in Kraft, und ab da ist messbar() je Wurzel die richtige Antwort.
+
+       Vorher wird NICHT gemountet -- aber nur fuer eine Frist. Eine Seite, die gar nichts parkt,
+       darf nicht ewig leer bleiben; nach PARK_FRIST oder sobald das Dokument fertig ist, laeuft
+       der Aufbau wie vorher. 1200ms, weil Bubble seine Ansichtsklassen deutlich darunter setzt --
+       die sichtbare Ansicht wartet damit auf das Parken, nicht auf die Frist. */
+    /* Die Frist zaehlt VERSUCHE, nicht Millisekunden. Der erste Anlauf nahm performance.now() --
+       und war damit weder im Prueftand pruefbar (ein verstecktes Browser-Panel drosselt Timer auf
+       ueber eine Sekunde, die Kaskade bei 30..1800ms verschwimmt zu zwei Punkten) noch auf der
+       echten Seite vorhersagbar, weil niemand weiss, wann Bubble fertig aufgebaut hat. Die
+       Kaskade unten hat sechs Laeufe; wer bis dahin kein Parken gesehen hat, baut auf wie frueher.
+       Damit haengt die Entscheidung an der Anzahl der Gelegenheiten, nicht an der Uhr. */
+    var VERSUCHE_FRIST = 6;
+    var versuche = 0;
+    var ALLE_WURZELN = null;
+    function parkenErkannt(){
+      if (window.__upParkErkannt) return true;
+      /* Ueber ALLE Komponenten, nicht nur die eigene: parkt der Host irgendwo, gilt das fuer die
+         ganze Seite. Eine Komponente, deren Wurzeln alle in der offenen Ansicht liegen, wuesste
+         es sonst nie. Lebende Sammlung, einmal geholt -- siehe roots(). */
+      if (!ALLE_WURZELN) ALLE_WURZELN = document.getElementsByClassName("up-root");
+      for (var i = 0; i < ALLE_WURZELN.length; i++){
+        if (!messbar(ALLE_WURZELN[i])){ try { window.__upParkErkannt = 1; } catch(e){} return true; }
+      }
+      return false;
+    }
+    /* Und KEIN Ausweg ueber document.readyState. Der stand hier zuerst ("die Seite ist fertig,
+       also sofort mounten"), damit eine Seite ohne Parken nicht wartet -- er feuert aber genau
+       falsch: eine schnelle Seite ist fertig, BEVOR der Host seine Ansichten parkt, und dann
+       mountet wieder alles. In _h_spaetes_parken.html mit einer echten Unterseite gemessen, die
+       nach 200ms fertig ist und danach parkt: 61 Knoten in der geparkten Ansicht.
+       Der Preis ohne ihn: eine Seite, die NIE parkt, baut erst beim siebten Versuch auf. Das ist
+       das Ende der Kaskade, also derselbe Moment, in dem sie frueher spaetestens fertig war. */
+    function zuFrueh(){
+      if (parkenErkannt()) return false;
+      return (++versuche) <= VERSUCHE_FRIST;
+    }
     var uebersprungen = false;
     function initAll(){
+      /* Zurueckgestellt, nicht verworfen: uebersprungen setzt das Auffangnetz unten in Gang. */
+      if (zuFrueh()){ uebersprungen = true; return; }
       var all = roots(), rest = false;
       for (var i = 0; i < all.length; i++){
         if (messbar(all[i])) cfg.initRoot(all[i]);
