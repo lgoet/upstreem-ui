@@ -54,6 +54,11 @@ Promise.all([hol("core.css"), hol("core.js"), hol("bubble/diagnostics/_diagnose_
      beide. */
   var offen = d.createElement("div"); offen.id="view-offen"; offen.className="view-on";
   var park  = d.createElement("div"); park.id="view-geparkt";
+  /* Eine ZWEITE geparkte Ansicht, nur fuer die Herzschlag-Probe: sie wird spaeter ohne jede
+     Meldung aufgemacht, und daran muss eine noch NICHT gemountete Wurzel haengen. Der erste
+     Anlauf hat dafuer opportunities genommen -- das mountet sich selbst und war laengst gebaut,
+     die Probe verglich 179 mit 179 und war damit trivial wahr. */
+  var park2 = d.createElement("div"); park2.id="view-geparkt2";
   KOMP.forEach(function(k, n){
     [["offen", offen], ["park", park]].forEach(function(paar){
       var w=d.createElement("div"); w.innerHTML=wurzelAus(t[3+KOMP.length*2+n]);
@@ -64,12 +69,27 @@ Promise.all([hol("core.css"), hol("core.js"), hol("bubble/diagnostics/_diagnose_
       paar[1].appendChild(r);
     });
   });
-  d.body.appendChild(offen); d.body.appendChild(park);
+  var w3=d.createElement("div"); w3.innerHTML=wurzelAus(t[3+KOMP.length*2]);   /* discover-brands */
+  var r3=w3.querySelector(".up-root") || w3.firstElementChild;
+  if (r3){
+    r3.setAttribute("data-instance","discover-brands-herz");
+    r3.setAttribute("data-cdn-pin","t"); r3.setAttribute("data-isdark","no");
+    park2.appendChild(r3);
+  }
+  d.body.appendChild(offen); d.body.appendChild(park); d.body.appendChild(park2);
   var vorher = {};
   KOMP.forEach(function(k){
     var r = d.querySelector('[data-instance="' + k.name + '-offen"]');
     vorher[k.name] = r ? r.querySelectorAll("*").length : -1;
   });
+  /* showView der Host-App: core umschliesst es beim Start und weckt darueber die Wurzeln der
+     neuen Ansicht. Der Prueftand hatte es nicht -- und hat damit versehentlich den Fall
+     "showView ist nicht umschlossen" geprueft. Der gehoert geprueft, aber getrennt (unten). */
+  v.showView = function(n){
+    [].forEach.call(d.querySelectorAll('[id^="view-"]'), function(el){
+      el.classList.toggle("view-on", el.id === "view-" + n);
+    });
+  };
   V.__fehler = [];
   v.addEventListener("error", function(e){ V.__fehler.push(String(e.message)); });
   var j=d.createElement("script"); j.textContent=t[1]; d.head.appendChild(j);
@@ -104,6 +124,63 @@ Promise.all([hol("core.css"), hol("core.js"), hol("bubble/diagnostics/_diagnose_
         ? "RICHTIG (keine Messung im Geparkten)"
         : "FALSCH -- " + summe + " Zugriffe, Quellen oben"));
   log("");
+  /* ---- 2b) LAZY-MOUNT: WIRD IN DER GEPARKTEN ANSICHT UEBERHAUPT NOCH GEBAUT? --------------
+     Seit dem 06.09. mountet makeMount nur, was der Browser rendert. Zwei Zahlen entscheiden, ob
+     das stimmt UND ob es nicht zu weit geht:
+       - in der GEPARKTEN Ansicht darf die Komponente ihr DOM NICHT gebaut haben
+       - in der OFFENEN muss sie es (das steht schon in Teil 1)
+     discover-brands ist die Probe: sie laeuft ueber makeMount, die anderen zwei mounten selbst
+     und sind von dieser Aenderung nicht betroffen. */
+  var udbOffen  = D.querySelector('[data-instance="discover-brands-offen"]');
+  var udbPark   = D.querySelector('[data-instance="discover-brands-park"]');
+  log("2b) LAZY-MOUNT (discover-brands, die makeMount-Komponente im Test)");
+  log("   offen:   " + (udbOffen ? udbOffen.querySelectorAll("*").length : -1) + " Knoten" +
+      "   Controller: " + (udbOffen && udbOffen.__udbController ? "ja" : "nein"));
+  log("   geparkt: " + (udbPark ? udbPark.querySelectorAll("*").length : -1) + " Knoten" +
+      "   Controller: " + (udbPark && udbPark.__udbController ? "ja" : "nein"));
+  var lazyOk = udbOffen && udbOffen.__udbController && udbPark && !udbPark.__udbController;
+  log("   ==> " + (lazyOk
+        ? "RICHTIG (offen gebaut, geparkt nicht angefasst)"
+        : "FALSCH -- " + (udbPark && udbPark.__udbController
+            ? "die geparkte Kopie wurde trotzdem gemountet"
+            : "die OFFENE wurde nicht gemountet -- der Riegel greift zu weit")));
+  /* Und der Weg zurueck: Ansicht aufmachen, dann MUSS sie mounten. Ohne diese Probe waere ein
+     Riegel, der nie wieder aufgeht, gruen. */
+  V.showView("geparkt");
+  return warte(900).then(function(){
+    log("   nach showView: " + udbPark.querySelectorAll("*").length + " Knoten" +
+        "   Controller: " + (udbPark.__udbController ? "ja" : "nein"));
+    log("   ==> " + (udbPark.__udbController
+          ? "RICHTIG (der Weckruf am Ansichtswechsel mountet nach)"
+          : "FALSCH -- bleibt leer, die Ansicht waere nach dem Aufmachen tot"));
+    /* UND DER FALL OHNE showView -- auf einer Seite ohne umschlossenes showView der Normalfall:
+       die Klasse wird umgelegt, niemand meldet etwas. Dann muss der 1,5s-Herzschlag nachmounten.
+       Gemessen an der dritten Kopie, die noch NIE gemountet war -- sonst vergleicht die Probe
+       einen Wert mit sich selbst. */
+    var herz = D.querySelector('[data-instance="discover-brands-herz"]');
+    var vorher = herz ? herz.querySelectorAll("*").length : -1;
+    var ctrlVorher = !!(herz && herz.__udbController);
+    D.querySelector("#view-geparkt2").className = "view-on";
+    return warte(2400).then(function(){
+      var jetzt = herz ? herz.querySelectorAll("*").length : -1;
+      log("   OHNE showView (nur Klasse umgelegt), nach 2,4s: " + vorher + " -> " + jetzt +
+          " Knoten   Controller vorher " + (ctrlVorher ? "ja" : "nein") +
+          ", jetzt " + (herz && herz.__udbController ? "ja" : "nein"));
+      log("   ==> " + (!ctrlVorher && herz && herz.__udbController && jetzt > vorher
+            ? "RICHTIG (der Herzschlag ist das zweite Netz -- eine Ansicht bleibt nie leer)"
+            : "FALSCH -- " + (ctrlVorher ? "die Probe war schon gemountet, sie prueft nichts"
+                                         : "nach 2,4s immer noch nicht gemountet")));
+      /* Aufraeumen fuer Teil 3: die Lage wiederherstellen, in der gemessen werden soll --
+         view-offen offen, view-geparkt und view-geparkt2 zu. Ohne das meldete Teil 3
+         "offen 0 Wurzeln", weil showView("geparkt") die Klasse ueberall sonst abgeraeumt hat. */
+      D.querySelector("#view-geparkt2").className = "";
+      V.showView("offen");
+      return warte(400);
+    });
+  }).then(function(){ return teil3(); });
+}).catch(function(e){ log("ABBRUCH: "+e.message+"\n"+(e.stack||"").split("\n").slice(0,3).join("\n")); });
+
+function teil3(){
   /* ---- 3) DAS POTENZIAL-MESSGERAET GEGENPRUEFEN -------------------------------------------
      bubble/diagnostics/_diagnose_lazy_potenzial.js soll auf der echten Seite sagen, wie viele
      Wurzeln in geparkten Ansichten trotzdem gemountet sind -- die Zahl, an der haengt, ob sich
@@ -127,5 +204,5 @@ Promise.all([hol("core.css"), hol("core.js"), hol("bubble/diagnostics/_diagnose_
           : "FALSCH -- die geparkte Seite zeigt 0 Knoten, dann misst es nichts"));
     log("FERTIG");
   });
-}).catch(function(e){ log("ABBRUCH: "+e.message+"\n"+(e.stack||"").split("\n").slice(0,3).join("\n")); });
+}
 </script>

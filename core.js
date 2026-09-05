@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20260908;
+  var BUILD = 20260909;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -4618,7 +4618,58 @@
       }
       return out;
     }
-    function initAll(){ var all = roots(); for (var i = 0; i < all.length; i++) cfg.initRoot(all[i]); }
+    /* ---- LAZY-MOUNT: WER GEPARKT IST, WIRD NICHT GEBAUT (06.09.) -----------------------------
+       Gemessen auf der laufenden Seite (bubble/diagnostics/_diagnose_lazy_potenzial.js):
+
+           geparkt   136 Wurzeln / 22087 Knoten     davon gemountet 123 / 21210
+           offen      26 Wurzeln /  3448 Knoten
+           Dokument                  23808 Knoten
+
+       93 Prozent des DOM stehen in Ansichten und Drawern, die der Browser gar nicht rendert --
+       und fast alles davon haben wir selbst gebaut. Eine Komponente legt beim Mounten ihr Markup
+       an (responses-table: 114 Knoten Vorlage, 505 nach dem Mounten, 1164 mit einer Seite Daten,
+       gemessen in _h_dom_budget.html). In einer geparkten Ansicht baut sie das fuer niemanden --
+       und bezahlt dafuer Style-Recalc und Speicher, bei jedem Aufbau der Seite.
+
+       Der Test ist messbar(): "rendert der Browser das hier". KEINE Selektoren auf die Ids der
+       Host-App -- die waeren das Schema EINER App in der geteilten Bibliothek, und beim naechsten
+       Umbenennen mountet nichts mehr, ohne dass jemand versteht warum. messbar() beantwortet
+       genau die Frage, kostet keinen Layoutzugriff und gilt fuer Views, Drawer, Popover und alles
+       weitere, was der Host noch parken mag.
+
+       WER MOUNTET DANN? Drei Wege, alle vorhanden:
+         - beim Aufgehen        fireViewChange und onDrawerOpen wecken die Wurzeln (siehe dort)
+         - beim ersten Datensatz  ein Setter ruft ueber each() -> initRoot direkt, das laeuft
+                                  ungehindert weiter. Wer Daten bekommt, wird gebaut.
+         - als Auffangnetz      der 1,5s-Herzschlag von watchRoots weckt jede Komponente, deren
+                                Wurzelmenge sich geaendert hat.
+       Der pointerdown-Rueckfall unten bleibt ungefiltert: wer angefasst werden kann, ist da. */
+    var uebersprungen = false;
+    function initAll(){
+      var all = roots(), rest = false;
+      for (var i = 0; i < all.length; i++){
+        if (messbar(all[i])) cfg.initRoot(all[i]);
+        else rest = true;
+      }
+      uebersprungen = rest;
+    }
+    /* ---- DAS AUFFANGNETZ, UND WARUM ES SEIN MUSS ---------------------------------------------
+       Der Weckruf beim Ansichtswechsel haengt an showView. Ist es nicht umschlossen -- weil die
+       Host-App es erst nach dem Wartefenster von core anlegt, oder weil eine Seite es gar nicht
+       benutzt --, dann geht eine Ansicht auf und bleibt LEER. Im Prueftand ist genau das
+       passiert: kein showView, also kein Weckruf, also 0 Knoten nach dem Aufmachen.
+       Ein Riegel, der sich nur ueber einen einzigen Weg wieder oeffnet, ist keiner.
+
+       Also haengt hier ein zweiter Weg am 1,5s-Herzschlag von watchRoots -- aber nur fuer
+       Komponenten, die WIRKLICH etwas uebersprungen haben. Sonst kostet er einen booleschen
+       Vergleich je Komponente und Runde, und die Rueckkehr zum alten "alle 1,5s alles wecken"
+       (die aus guten Gruenden abgeschafft wurde) bleibt aus.
+       Kein Layoutzugriff dabei: uebersprungene Wurzeln werden ueber messbar() geprueft. */
+    function nachholen(){
+      if (!uebersprungen) return;
+      initAll();
+    }
+    (window.__upNachholen || (window.__upNachholen = [])).push(nachholen);
 
     /* ---- Neuzeichnen, wenn der Nutzer sein Zahlen- oder Datumsformat aendert ----
        cfg.redraw ist eine Funktion, die die Komponente AUS IHREM VORHANDENEN ZUSTAND neu zeichnet.
@@ -8585,13 +8636,34 @@
        Jetzt schaut es erst nach, ob sich fuer eine Wurzel ueberhaupt etwas geaendert hat: Anzahl,
        erstes und letztes Element. Ein Neuaufbau durch Bubble tauscht die Knoten aus, also faellt
        er hier auf, auch wenn die Anzahl gleich bleibt. Nur wer sich geaendert hat, laeuft an. */
+    /* Ein WECKRUF fuer alle: pruefen() vergleicht Signaturen, und beim Umschalten einer Ansicht
+       aendert sich keine (es sind dieselben Knoten, nur wird sie jetzt gerendert). Genau dann
+       muss aber gemountet werden, was vorher geparkt war -- also ein Weg, der ohne Vergleich
+       weckt. Er liegt am Fenster, weil core mehrfach ausgewertet werden kann und die Liste dort
+       liegt. */
+    if (!window.__upWecken){
+      window.__upWecken = function(){
+        var g = window.__upRootWatch;
+        if (!g || !g.watchers) return;
+        for (var i = 0; i < g.watchers.length; i++){
+          try { g.watchers[i].onFound(); } catch(e){}
+        }
+      };
+    }
     if (!G.iv){
       /* Das Auffangnetz fuer alles, was der Beobachter nicht sieht -- dieselbe Pruefung, nur
          getaktet. Es lief bisher alle 1,5s ueber ALLE Komponenten und weckte sie; jetzt vergleicht
          es nur Signaturen und weckt, wer sich geaendert hat. Die Arbeit selbst landet ueber
          scheduleAll im naechsten Bild und faellt damit auch unter die Pause waehrend einer
          Ziehbewegung -- in der Konsole des Nutzers stand dieser Rueckruf mit 58ms. */
-      G.iv = setInterval(function(){ try { pruefen(true); } catch(e){} }, 1500);
+      G.iv = setInterval(function(){
+        try { pruefen(true); } catch(e){}
+        /* Und die Nachzuegler des Lazy-Mount: Komponenten, die eine geparkte Wurzel
+           uebersprungen haben, schauen nach, ob sie inzwischen gerendert wird. Wer nichts
+           uebersprungen hat, kostet hier einen booleschen Vergleich. */
+        var n = window.__upNachholen;
+        if (n) for (var i = 0; i < n.length; i++){ try { n[i](); } catch(e){} }
+      }, 1500);
     }
   }
 
@@ -11205,7 +11277,13 @@
        anderes einen Durchgang ausloest. 250ms, weil showView die Gruppe erst im naechsten Task
        einblendet; das ist dieselbe Frist, mit der auch das Nachladen der Daten arbeitet.
        EIN Timer je Wechsel, und er liest nur noch in der Ansicht, die wirklich offen ist. */
-    setTimeout(function(){ sicher("segLauf", function(){ segLauf(null, true, true); }); }, 250);
+    setTimeout(function(){
+      /* ZUERST mounten, dann messen: die Komponenten dieser Ansicht sind moeglicherweise gerade
+         erst gebaut worden (Lazy-Mount), und ein Streifen-Lauf davor faende ihre Umschalter noch
+         nicht. */
+      if (window.__upWecken) sicher("wecken", window.__upWecken);
+      sicher("segLauf", function(){ segLauf(null, true, true); });
+    }, 250);
     for (var i = VIEW_SUBS.length - 1; i >= 0; i--){
       try { VIEW_SUBS[i](name); }
       catch(e){ if (window.console) console.warn("[view] ein Aufraeumer hat geworfen:", e); }
@@ -11273,7 +11351,10 @@
   /* Dasselbe fuer einen Drawer: er bringt eigene Umschalter mit, und geparkt haben sie nicht
      gemessen. 350ms, weil die Host-App den Drawer mit einer Animation einblendet. */
   onDrawerOpen(function(){
-    setTimeout(function(){ sicher("segLauf", function(){ segLauf(null, true, true); }); }, 350);
+    setTimeout(function(){
+      if (window.__upWecken) sicher("wecken", window.__upWecken);
+      sicher("segLauf", function(){ segLauf(null, true, true); });
+    }, 350);
   });
   (function watchForDrawerFns(triesLeft){
     var a = wrapDrawerFn("openDrawer", DRAWER_SUBS);
