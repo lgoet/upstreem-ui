@@ -103,6 +103,29 @@ Promise.all([hol("core.css"), hol("core.js"), hol("bubble/diagnostics/_diagnose_
   log("   ==> " + (summe === 0
         ? "RICHTIG (keine Messung im Geparkten)"
         : "FALSCH -- " + summe + " Zugriffe, Quellen oben"));
-  log("FERTIG");
+  log("");
+  /* ---- 3) DAS POTENZIAL-MESSGERAET GEGENPRUEFEN -------------------------------------------
+     bubble/diagnostics/_diagnose_lazy_potenzial.js soll auf der echten Seite sagen, wie viele
+     Wurzeln in geparkten Ansichten trotzdem gemountet sind -- die Zahl, an der haengt, ob sich
+     Lazy-Mount lohnt. Hier ist die Antwort bekannt: drei Komponenten offen, dieselben drei
+     geparkt. Findet es das nicht, ist sein Bericht auf der echten Seite wertlos. */
+  return hol("bubble/diagnostics/_diagnose_lazy_potenzial.js").then(function(code){
+    V.eval(code);
+    var z = V.upLazyReport();
+    log("3) DAS POTENZIAL-MESSGERAET");
+    log("   offen: " + z.offen + " Wurzeln / " + z.knotenOffen + " Knoten" +
+        "   geparkt: " + z.geparkt + " Wurzeln / " + z.knotenGeparkt + " Knoten");
+    log("   geparkt UND gemountet: " + z.geparktGemountet + " Wurzeln / " +
+        z.knotenGeparktGemountet + " Knoten");
+    /* Die Gegenprobe ist die Trennung selbst: es muss BEIDE Seiten finden. Sieht es nur eine,
+       zaehlt es auf der echten Seite entweder alles oder nichts. */
+    log("   ==> " + (z.offen >= 3 && z.geparkt >= 3
+          ? "RICHTIG (es trennt offen von geparkt und findet beide Seiten)"
+          : "FALSCH -- offen " + z.offen + ", geparkt " + z.geparkt + " (erwartet je >= 3)"));
+    log("   ==> " + (z.knotenGeparkt > 0
+          ? "RICHTIG (die geparkten Wurzeln tragen messbar DOM -- genau das waere die Ersparnis)"
+          : "FALSCH -- die geparkte Seite zeigt 0 Knoten, dann misst es nichts"));
+    log("FERTIG");
+  });
 }).catch(function(e){ log("ABBRUCH: "+e.message+"\n"+(e.stack||"").split("\n").slice(0,3).join("\n")); });
 </script>

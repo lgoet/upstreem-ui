@@ -391,6 +391,7 @@
   "showView",
   "upCheck",
   "upCoreReport",
+  "upLazyReport",
   "upParkReport",
   "upstreemBrandsChanged",
   "upstreemDatesActivate",
@@ -2850,7 +2851,7 @@
  "_zaehlung": {
   "events": 145,
   "fnattrs": 96,
-  "globals": 166,
+  "globals": 167,
   "payloadkeys": 95,
   "dataattrs": 238,
   "klassen": 2032,
