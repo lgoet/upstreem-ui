@@ -1529,8 +1529,26 @@
     .up-pop-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 10px; border-radius: 9px; }
     .up-pop-row:hover { background: var(--vc-heading-bg); }
     .up-pop-label { font-size: 13.5px; font-weight: 500; color: var(--vc-text); }
-    .up-switch { width: 38px; height: 22px; border-radius: 999px; background: var(--vc-border); position: relative; flex: 0 0 auto; transition: background 160ms ease; cursor: pointer; }
-    .up-root[data-theme="dark"] .up-switch { background: rgba(42,42,42,0.6); }
+    /* DIE AUSGESCHALTETE SCHIENE, und warum sie nicht mehr --vc-border bzw. rgba(42,42,42,.6)
+       ist: im Dunkeln war dieser Wert BUCHSTABENGLEICH mit --vc-heading-bg -- also mit dem Grund
+       jeder Kopfzeile, jeder Seitenspalte und jedes Menuegrunds, auf dem ein Schalter sitzt. Der
+       ausgeschaltete Schalter war dort unsichtbar; gemeldet am 06.09. fuer die Spalte des
+       Kalenders ("kaum vom Hintergrund der Sidebar zu unterscheiden"), gilt aber ueberall.
+       Hier und nicht im Kalender, weil es EIN Bauteil ist: ein Schalter, der an einer Stelle
+       anders aussieht als an der naechsten, ist der Anfang des Auseinanderlaufens.
+       16 bzw. 18 Prozent der Textfarbe -- in beiden Themen rund 34 Stufen Abstand zum Grund, und
+       weit genug von der eingeschalteten Schiene entfernt (die traegt volle Textfarbe). */
+    /* FESTE WERTE, KEIN color-mix(var(...)). Der erste Anlauf hier mischte aus --vc-text, und das
+       ist in Chrome nicht verlaesslich: ein Element, das VOR dem Setzen des Themas gerendert
+       wurde, behaelt den alten Wert -- auch dann noch, wenn data-theme von Hand weg und wieder
+       hin gesetzt wird. Gemessen im Prueftand: derselbe Schalter meldete oklab(0.238 / 0.16),
+       ein frischer Klon an derselben Stelle color(srgb 0.878 / 0.18). Auf der Seite heisst das:
+       jeder Schalter, der beim Themenwechsel schon da ist, bleibt in der alten Farbe stehen.
+       Deshalb steht im Bestand ringsum ueberall ein fester Wert je Thema -- das war kein Zufall.
+       Die Zahlen sind die gemessenen Mischungen von vorher: #d6d6d4 liegt 41 Stufen unter Weiss
+       und 31 unter dem Kopfzeilengrund, #444 liegt 41 ueber dem dunklen Panelgrund. */
+    .up-switch { width: 38px; height: 22px; border-radius: 999px; background: #d6d6d4; position: relative; flex: 0 0 auto; transition: background 160ms ease; cursor: pointer; }
+    .up-root[data-theme="dark"] .up-switch { background: #444444; }
     .up-switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 999px; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.2); transition: transform 160ms ease; }
     .up-switch.is-on { background: var(--vc-text); }
     /* dark base .up-switch rule out-specifies .up-switch.is-on, so the ON track needs an

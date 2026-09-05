@@ -1,0 +1,152 @@
+<!doctype html><meta charset="utf-8">
+<title>Der Schalter an allen Orten: bleibt er ueberall lesbar?</title>
+<pre id="out" style="font:12px/1.5 ui-monospace,Menlo,monospace;padding:12px;white-space:pre-wrap"></pre>
+<div id="rahmen"></div>
+<script>
+/* .up-switch ist ein geteiltes Bauteil -- zwoelf Dateien benutzen es. Die ausgeschaltete Schiene
+   war rgba(42,42,42,.6) im Dunkeln, also derselbe Wert wie --vc-heading-bg, und damit unsichtbar
+   auf jedem Kopfzeilen- und Spaltengrund. Gemeldet wurde es fuer die Spalte des Kalenders;
+   repariert ist es am Bauteil, weil ein Schalter nicht an zwei Orten verschieden aussehen darf.
+
+   Also die Gegenrichtung pruefen: der neue Ton muss auf JEDEM Untergrund tragen, auf dem ein
+   Schalter vorkommt, und er darf sich nirgends dem EINGESCHALTETEN annaehern. Drei Untergruende,
+   beide Themen. */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function warte(ms){ return new Promise(function(ok){ setTimeout(ok, ms); }); }
+function neu(fn){ return new Promise(fn); }
+/* FARBEN NICHT SELBST PARSEN. Chrome serialisiert eine mit color-mix() gesetzte Flaeche mal als
+   "color(srgb 0.87 0.87 0.87 / 0.12)", mal als "oklab(0.23779 -0.0021 0.0071 / 0.16)" -- welche
+   Form kommt, haengt an der Mischung. Ein Parser, der eine Form kennt, meldet fuer die andere
+   still "kein Wert" und damit Abstand 0,0: genau der Fehler, den er finden soll, sieht dann aus
+   wie ein Erfolg. Beide Formen sind hier schon aufgetreten.
+   Also mischt der Browser selbst: die Farben werden in dieser Reihenfolge auf ein Canvas gelegt
+   und der fertige Bildpunkt ausgelesen. Das kann jede Schreibweise, die CSS kennt, und es rechnet
+   die Transparenz gleich mit. */
+var _cv = null, _ctx = null;
+function mische(farben){
+  if (!_ctx){ _cv = document.createElement("canvas"); _cv.width = _cv.height = 8;
+              _ctx = _cv.getContext("2d", { willReadFrequently: true }); }
+  _ctx.clearRect(0, 0, 8, 8);
+  _ctx.fillStyle = "#ffffff"; _ctx.fillRect(0, 0, 8, 8);   /* Papierweiss ganz unten */
+  for (var i = 0; i < farben.length; i++){
+    if (!farben[i]) continue;
+    try { _ctx.fillStyle = farben[i]; } catch(e){ continue; }
+    _ctx.fillRect(0, 0, 8, 8);
+  }
+  var p = _ctx.getImageData(4, 4, 1, 1).data;
+  return { r: p[0], g: p[1], b: p[2] };
+}
+function hell(c){ return 0.2126*c.r + 0.7152*c.g + 0.0722*c.b; }
+function abstand(a, b){ return Math.abs(hell(a) - hell(b)); }
+function zeig(c){ return "rgb(" + [c.r,c.g,c.b].map(Math.round).join(",") + ")"; }
+/* Die Kette der Hintergruende von aussen nach innen -- das ist das, was der Browser uebereinander
+   legt. Beim ersten undurchsichtigen Grund ist Schluss, alles darunter ist verdeckt. */
+function kette(el, v){
+  var raus = [];
+  for (var n = el; n && n.nodeType === 1; n = n.parentElement){
+    var c = v.getComputedStyle(n).backgroundColor;
+    if (!c || c === "rgba(0, 0, 0, 0)" || c === "transparent") continue;
+    raus.unshift(c);
+    if (!/\/\s*0?\.\d|,\s*0?\.\d+\s*\)/.test(c)) break;
+  }
+  return raus;
+}
+
+var GRUENDE = [
+  { name: "Panelgrund (--vc-bg)",        v: "--vc-bg" },
+  { name: "Kopfzeile (--vc-heading-bg)", v: "--vc-heading-bg" },
+  { name: "Menuegrund (--up-menu-bg)",   v: "--up-menu-bg" }
+];
+var NOETIG = 25;
+
+Promise.all(["core.css","core.js"].map(hol)).then(function(t){
+  function lauf(dunkel){
+    var f = document.createElement("iframe");
+    f.style.cssText = "width:760px;height:150px;border:1px solid #ccc;display:block;margin-bottom:6px";
+    document.getElementById("rahmen").appendChild(f);
+    var d = f.contentDocument, v = f.contentWindow;
+    d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0;padding:8px'></body></html>"); d.close();
+    try { v.localStorage.setItem("pref_theme", dunkel ? "dark" : "light"); } catch(e){}
+    var st = d.createElement("style"); st.textContent = t[0]; d.head.appendChild(st);
+    var root = d.createElement("div");
+    root.className = "up-root"; root.setAttribute("data-cdn-pin","t");
+    root.setAttribute("data-isdark", dunkel ? "yes" : "no");
+    d.body.appendChild(root);
+    var js = d.createElement("script"); js.textContent = t[1]; d.head.appendChild(js);
+    /* DIE SCHALTER ERST, WENN DAS THEMA STEHT -- so arbeitet jede Komponente der App: core setzt
+       data-theme, danach zeichnen die Komponenten ihr Markup, und beim Themenwechsel zeichnen sie
+       es neu. Der erste Anlauf legte sie vorher an, und dann behielten sie im Dunkeln die helle
+       Farbe: der Selektor traf (matches() sagte true), die Regel griff trotzdem nicht. Chrome
+       rechnet den Stil dieser Knoten nach dem Setzen des Attributs nicht neu, auch nicht beim
+       Hin- und Herschalten von Hand -- ein frischer Knoten an derselben Stelle bekommt sofort den
+       richtigen Wert. Das ist eine echte Grenze, aber keine, die die App trifft; sie baut ihr
+       Markup immer nach dem Thema. Gemessen wird darum der Weg, den es wirklich gibt. */
+    function markup(){
+      root.innerHTML = GRUENDE.map(function(g, i){
+        return '<div id="g' + i + '" style="padding:8px;background:var(' + g.v + ')">' +
+               '<span class="up-switch" id="aus' + i + '"></span>' +
+               '<span class="up-switch is-on" id="an' + i + '"></span></div>';
+      }).join("");
+    }
+    /* WARTEN, BIS core das Thema wirklich gesetzt hat -- und es nachher pruefen, nicht annehmen.
+       Mit 500ms fester Wartezeit lief die Messung davor: die --vc-Werte waren schon dunkel (die
+       kommen aus prefers-color-scheme, und das Panel steht auf dunkel), die Regeln mit
+       [data-theme="dark"] griffen aber noch nicht. Ergebnis war ein heller Schalter auf dunklem
+       Grund -- ein Befund, den es nicht gab. */
+    return neu(function(pruefe){
+      var n = 0;
+      (function schauen(){
+        var soll = dunkel ? "dark" : "light";
+        var ist = root.getAttribute("data-theme");
+        if (ist === soll || (!dunkel && ist == null) || ++n > 60){
+          markup();
+          return setTimeout(function(){ pruefe({ d:d, v:v, ist:ist }); }, 60);
+        }
+        setTimeout(schauen, 50);
+      })();
+    });
+  }
+  function messen(u, name){
+    var d = u.d, v = u.v;
+    /* Nicht die Wurzel fragen, die ich selbst angelegt habe, sondern DAS ELEMENT: welche Wurzel
+       ist seine naechste, und traegt die das Thema? Der Unterschied hat hier eine halbe Stunde
+       gekostet -- die Wurzel meldete "dark", und trotzdem griff keine einzige Regel mit
+       [data-theme="dark"], auch die nicht, die ich nie angefasst habe. */
+    var probe = d.getElementById("aus0");
+    log(name + "   Wurzel meldet " + u.ist +
+        "   Wurzel DES SCHALTERS: " + (probe.closest(".up-root")
+          ? probe.closest(".up-root").getAttribute("data-theme") : "(keine)") +
+        "   trifft die Dunkelregel: " + probe.matches('.up-root[data-theme="dark"] .up-switch') +
+        "   Wurzeln im Dokument: " + d.querySelectorAll(".up-root").length);
+    var schlimmster = 999, engster = 999;
+    GRUENDE.forEach(function(g, i){
+      var grund = mische(kette(d.getElementById("g"+i), v));
+      var aus = mische(kette(d.getElementById("aus"+i), v));
+      var an  = mische(kette(d.getElementById("an"+i), v));
+      var dAus = Math.abs(hell(aus) - hell(grund)), dAn = Math.abs(hell(aus) - hell(an));
+      if (dAus < schlimmster) schlimmster = dAus;
+      if (dAn < engster) engster = dAn;
+      log("   " + g.name.padEnd(30," ") + " Grund " + zeig(grund) +
+          "   aus " + zeig(aus) + "  Abstand " + dAus.toFixed(1) +
+          "   aus/an " + dAn.toFixed(1));
+    });
+    return { schlimmster: schlimmster, engster: engster };
+  }
+  return lauf(false).then(function(h){
+    var mh = messen(h, "HELL");
+    return lauf(true).then(function(dk){
+      var md = messen(dk, "DUNKEL");
+      log("");
+      log("==> " + (mh.schlimmster >= NOETIG && md.schlimmster >= NOETIG ? "RICHTIG" : "FALSCH") +
+          "  schlechtester Untergrund: hell " + mh.schlimmster.toFixed(1) +
+          ", dunkel " + md.schlimmster.toFixed(1) + " (verlangt >= " + NOETIG + ")");
+      log("==> " + (mh.engster >= 60 && md.engster >= 60 ? "RICHTIG" : "FALSCH") +
+          "  aus und an bleiben ueberall zu trennen: hell " + mh.engster.toFixed(1) +
+          ", dunkel " + md.engster.toFixed(1));
+      log("FERTIG");
+    });
+  });
+}).catch(function(e){ log("ABBRUCH: " + e.message); });
+</script>

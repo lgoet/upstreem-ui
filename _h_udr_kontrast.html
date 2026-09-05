@@ -23,30 +23,43 @@ function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(fun
 function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
 function warte(ms,w){ return new Promise(function(ok){ setTimeout(function(){ ok(w); },ms); }); }
 
-/* ZWEI Schreibweisen, und die zweite hat den ersten Anlauf still ruiniert: eine mit color-mix()
-   gesetzte Flaeche serialisiert Chrome NICHT als rgba(), sondern als
-   "color(srgb 0.878431 0.878431 0.878431 / 0.12)" -- Anteile von 0 bis 1. Der Parser sah nur
-   rgba(), warf diese Werte weg, und die Messung verglich die Flaeche mit sich selbst: drei Mal
-   "Abstand 0.0", was genau wie der gemeldete Fehler aussah und keiner war. */
-function rgb(s){
-  s = String(s || "");
-  var c = /color\(srgb\s+([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)(?:\s*\/\s*([0-9.]+))?\s*\)/.exec(s);
-  if (c) return { r:+c[1]*255, g:+c[2]*255, b:+c[3]*255, a:(c[4] == null ? 1 : +c[4]) };
-  var m = /rgba?\(([^)]+)\)/.exec(s); if (!m) return null;
-  var p = m[1].split(",").map(function(x){ return parseFloat(x); });
-  return { r:p[0], g:p[1], b:p[2], a:(p.length>3 ? p[3] : 1) };
-}
-/* Eine halbdurchsichtige Flaeche ueber ihren Untergrund legen -- so steht sie auf dem Schirm. */
-function ueber(vorn, hinten){
-  if (!vorn) return hinten;
-  if (vorn.a >= 1) return vorn;
-  return { r: vorn.r*vorn.a + hinten.r*(1-vorn.a),
-           g: vorn.g*vorn.a + hinten.g*(1-vorn.a),
-           b: vorn.b*vorn.a + hinten.b*(1-vorn.a), a:1 };
+/* FARBEN NICHT SELBST PARSEN. Chrome serialisiert eine mit color-mix() gesetzte Flaeche mal als
+   "color(srgb 0.87 0.87 0.87 / 0.12)", mal als "oklab(0.23779 -0.0021 0.0071 / 0.16)" -- welche
+   Form kommt, haengt an der Mischung. Ein Parser, der eine Form kennt, meldet fuer die andere
+   still "kein Wert" und damit Abstand 0,0: genau der Fehler, den er finden soll, sieht dann aus
+   wie ein Erfolg. Beide Formen sind hier schon aufgetreten.
+   Also mischt der Browser selbst: die Farben werden in dieser Reihenfolge auf ein Canvas gelegt
+   und der fertige Bildpunkt ausgelesen. Das kann jede Schreibweise, die CSS kennt, und es rechnet
+   die Transparenz gleich mit. */
+var _cv = null, _ctx = null;
+function mische(farben){
+  if (!_ctx){ _cv = document.createElement("canvas"); _cv.width = _cv.height = 8;
+              _ctx = _cv.getContext("2d", { willReadFrequently: true }); }
+  _ctx.clearRect(0, 0, 8, 8);
+  _ctx.fillStyle = "#ffffff"; _ctx.fillRect(0, 0, 8, 8);   /* Papierweiss ganz unten */
+  for (var i = 0; i < farben.length; i++){
+    if (!farben[i]) continue;
+    try { _ctx.fillStyle = farben[i]; } catch(e){ continue; }
+    _ctx.fillRect(0, 0, 8, 8);
+  }
+  var p = _ctx.getImageData(4, 4, 1, 1).data;
+  return { r: p[0], g: p[1], b: p[2] };
 }
 function hell(c){ return 0.2126*c.r + 0.7152*c.g + 0.0722*c.b; }
 function abstand(a, b){ return Math.abs(hell(a) - hell(b)); }
 function zeig(c){ return "rgb(" + [c.r,c.g,c.b].map(Math.round).join(",") + ")"; }
+/* Die Kette der Hintergruende von aussen nach innen -- das ist das, was der Browser uebereinander
+   legt. Beim ersten undurchsichtigen Grund ist Schluss, alles darunter ist verdeckt. */
+function kette(el, v){
+  var raus = [];
+  for (var n = el; n && n.nodeType === 1; n = n.parentElement){
+    var c = v.getComputedStyle(n).backgroundColor;
+    if (!c || c === "rgba(0, 0, 0, 0)" || c === "transparent") continue;
+    raus.unshift(c);
+    if (!/\/\s*0?\.\d|,\s*0?\.\d+\s*\)/.test(c)) break;
+  }
+  return raus;
+}
 
 var D=null, V=null;
 function bau(dunkel){
@@ -91,51 +104,74 @@ function bau(dunkel){
   });
 }
 
-/* Der gezeichnete Grund eines Elements: die erste Flaeche, die nicht durchsichtig ist, plus
-   alles, was darueber liegt. Ohne diese Kette misst man rgba(0,0,0,0) und haelt es fuer schwarz. */
-function grund(el){
-  var kette = [];
-  for (var n = el; n && n.nodeType === 1; n = n.parentElement){
-    var c = rgb(V.getComputedStyle(n).backgroundColor);
-    if (c && c.a > 0){ kette.push(c); if (c.a >= 1) break; }
-  }
-  var farbe = { r:255, g:255, b:255, a:1 };
-  for (var i = kette.length - 1; i >= 0; i--) farbe = ueber(kette[i], farbe);
-  return farbe;
-}
+function grund(el){ return mische(kette(el, V)); }
 
 function messen(name){
   var spalte = D.querySelector(".udr-presets");
   var aktiv  = D.querySelector(".udr-preset.is-active");
-  var sync   = D.querySelector(".udr-sync");
+  var zeile  = D.querySelector(".udr-sync");
+  /* DER SCHALTER, nicht die Zeile. Der erste Anlauf mass die Zeile und gab ihr eine Flaeche --
+     gemeldet war aber der Schalter darin ("der Switcher hebt sich kaum vom Grund der Sidebar
+     ab"). Die Zeile wird jetzt mitgemessen, aber mit der umgekehrten Erwartung: sie darf KEINE
+     eigene Flaeche haben, sonst sieht sie aus wie dauerhaft ausgewaehlt. */
+  var schalter = D.querySelector(".udr-sync .up-switch");
   var band   = D.querySelector(".udr-day.is-in");
   var kal    = band ? band.parentElement : null;
-  var gSpalte = grund(spalte), gAktiv = grund(aktiv), gSync = grund(sync);
+  /* BEIDE STELLUNGEN. Der erste Anlauf mass nur die, die gerade da war -- und der Prueftand
+     startet mit eingeschaltetem Schalter, also die volle Textfarbe: 214 Stufen Abstand, ein
+     glaenzendes Ergebnis fuer den Fall, um den es nicht geht. Gemeldet war der AUSGESCHALTETE,
+     der auf dem Spaltengrund verschwand. */
+  var warAn = schalter.classList.contains("is-on");
+  schalter.classList.remove("is-on");
+  var gAus = grund(schalter);
+  schalter.classList.add("is-on");
+  var gAn = grund(schalter);
+  if (!warAn) schalter.classList.remove("is-on");
+  var gSpalte = grund(spalte), gAktiv = grund(aktiv), gSchalter = gAus;
+  var eigeneFlaeche = V.getComputedStyle(zeile).backgroundColor;
+  var zeileLeer = /rgba\(0, 0, 0, 0\)|transparent/.test(eigeneFlaeche);
   var gKal = kal ? grund(kal) : null, gBand = band ? grund(band) : null;
   log(name + "   (data-isdark=" + D.querySelector(".udr-root").getAttribute("data-isdark") +
       ", data-theme=" + D.querySelector(".udr-root").getAttribute("data-theme") + ")");
   log("   Spaltengrund        " + zeig(gSpalte));
   log("   aktive Zeitraumzeile" + zeig(gAktiv) + "   Abstand " + abstand(gAktiv, gSpalte).toFixed(1));
-  log("   Ueberall-anwenden   " + zeig(gSync)  + "   Abstand " + abstand(gSync, gSpalte).toFixed(1));
+  log("   Schalter AUS        " + zeig(gAus) + "   Abstand " + abstand(gAus, gSpalte).toFixed(1));
+  log("   Schalter AN         " + zeig(gAn) + "   Abstand " + abstand(gAn, gSpalte).toFixed(1) +
+      "   (zur Kontrolle: die beiden Stellungen muessen weit auseinander liegen)");
+  log("   aus gegen an        Abstand " + abstand(gAus, gAn).toFixed(1));
+  log("   Zeile selbst: " + eigeneFlaeche + "   " + (zeileLeer ? "ohne eigene Flaeche (richtig)"
+      : "MIT eigener Flaeche -- die gehoert dort nicht hin"));
   if (gBand) log("   Band im Zeitraum    " + zeig(gBand) + "   Abstand " + abstand(gBand, gKal).toFixed(1));
-  return { aktiv: abstand(gAktiv, gSpalte), sync: abstand(gSync, gSpalte),
-           band: gBand ? abstand(gBand, gKal) : -1 };
+  return { aktiv: abstand(gAktiv, gSpalte), sync: abstand(gAus, gSpalte),
+           stellungen: abstand(gAus, gAn),
+           band: gBand ? abstand(gBand, gKal) : -1, zeileLeer: zeileLeer };
 }
 
-var SCHWELLE = 10;
+/* Zwei Schwellen, und die zweite ist aus Schaden gelernt: der gemeldete Schalter lag im Dunkeln
+   bei 11,9 -- also UEBER der allgemeinen Schwelle von 10 und trotzdem nicht zu sehen. Ein Test,
+   den der gemeldete Fehler besteht, ist keiner. Fuer den Schalter gilt darum 25: er ist ein
+   kleines Element mit runder Form, und kleine Flaechen brauchen mehr Abstand als grosse. */
+var SCHWELLE = 10, SCHWELLE_SCHALTER = 25;
 bau(false).then(function(){
   var hellM = messen("HELL");
   log("");
   return bau(true).then(function(){
     var dunkelM = messen("DUNKEL");
     log("");
-    [["aktive Zeitraumzeile","aktiv"],["Ueberall anwenden","sync"],["Band im Zeitraum","band"]]
+    log("==> " + (hellM.zeileLeer && dunkelM.zeileLeer ? "RICHTIG" : "FALSCH") +
+        "  die Zeile \"Ueberall anwenden\" hat keine eigene Flaeche");
+    log("==> " + (hellM.stellungen >= 60 && dunkelM.stellungen >= 60 ? "RICHTIG" : "FALSCH") +
+        "  aus und an bleiben klar zu trennen: hell " + hellM.stellungen.toFixed(1) +
+        ", dunkel " + dunkelM.stellungen.toFixed(1));
+    [["Schalter AUS gegen den Spaltengrund","sync"],["aktive Zeitraumzeile","aktiv"],
+     ["Band im Zeitraum","band"]]
       .forEach(function(paar){
         var h = hellM[paar[1]], t = dunkelM[paar[1]];
-        var ok = h >= SCHWELLE && t >= SCHWELLE;
+        var noetig = (paar[1] === "sync") ? SCHWELLE_SCHALTER : SCHWELLE;
+        var ok = h >= noetig && t >= noetig;
         log("==> " + (ok ? "RICHTIG" : "FALSCH") + "  " + paar[0] +
             ": hell " + h.toFixed(1) + ", dunkel " + t.toFixed(1) +
-            "   (verlangt >= " + SCHWELLE + ")");
+            "   (verlangt >= " + noetig + ")");
       });
     log("FERTIG");
   });
