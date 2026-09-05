@@ -2,158 +2,34 @@
 <body style="font:12px ui-monospace,monospace;padding:14px">
 <pre id="out">laeuft</pre>
 <script>
+/* ---- DAS ECHTE SNIPPET, NICHT EINE KOPIE ----------------------------------------------------
+   Hier stand bis zum 05.09. eine ABSCHRIFT von bubble/page_header_preload.html. Damit hat dieser
+   Prueftand seine eigene Kopie geprueft: die Abschrift war zwei Fassungen alt (noch mit dem
+   media="print"-Trick), und eine Aenderung an der echten Datei konnte er gar nicht sehen.
+   Gemerkt daran, dass er nach dem Erweitern der Welle 2 unveraendert "42 Dateien" meldete.
+
+   Jetzt wird die Datei geholt und ihr Script ausgefuehrt. SYNCHRON, und das ist Absicht: die
+   Reihenfolge IST der Test -- das Snippet muss vor den Element-Loadern laufen, so wie im
+   Seitenkopf. Ein fetch().then() waere ein Makrotask spaeter, und die Loader unten haengen an
+   window.load. */
+var PIN_EL = "05a22abe655051e26ffef86522e8d3c2be8a0839";
 (function(){
-  var PIN = "9aaa087123d6e19634a5030532d8f5870ec6161b";   // <-- exakt derselbe Wert wie data-cdn-pin auf den Komponenten
-  if (!PIN || PIN === "CDN_" + "PIN") PIN = "main";
-  /* "sofort": der Vorrat wird gleich mitgeladen. Richtig, solange die Seite ohnehin alle Views
-     baut -- dann kommen die Dateien so oder so, und hier kommen sie minifiziert.
-     "idle": der Vorrat wartet auf den Leerlauf nach dem load-Ereignis. Richtig, sobald eine Seite
-     nur noch ihre eigenen Komponenten baut. */
-  var VORRAT = "sofort";
-  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + PIN + "/";
-
-  /* Die Verbindung zum CDN vorbereiten, bevor die erste Datei angefragt wird: DNS, TCP und TLS
-     kosten auf einer frischen Verbindung ein paar hundert Millisekunden, und die liegen sonst vor
-     dem ersten Byte von core.css. dns-prefetch daneben fuer Browser ohne preconnect. */
-  ["preconnect", "dns-prefetch"].forEach(function(rel){
-    var l = document.createElement("link");
-    l.rel = rel; l.href = "https://cdn.jsdelivr.net";
-    if (rel === "preconnect") l.crossOrigin = "anonymous";
-    document.head.appendChild(l);
-  });
-
-  /* Dieselbe Registry, die die Loader in den Komponenten benutzen -- und ZWEI Schluesselformen.
-     Warum: die Loader in den eingebauten Elementen gibt es in zwei Generationen. Die aeltere
-     entdoppelt nach der GANZEN URL, die neuere nach dem DATEINAMEN. In der laufenden App gemessen:
-     67 Eintraege, davon 59 ganze URLs und 8 Dateinamen. Wer nur eine der beiden Formen eintraegt,
-     trifft die andere Generation nie -- die laedt dann ihre rohe Datei zusaetzlich. Genau das ist
-     passiert: 119 Dateien statt 77, 5314 statt 3914 KB, und core lief zweimal.
-     Deshalb wird BEIDES eingetragen, und beim Nachsehen wird BEIDES geprueft. */
-  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
-  function once(rohUrl, make){
-    var name = rohUrl.slice(rohUrl.lastIndexOf("/") + 1);
-    var da = L[name] || L[rohUrl];
-    if (da){
-      if (da !== rohUrl && String(da).indexOf("http") === 0 && window.console) console.warn("upstreem: " + name +
-        " ist schon von einem anderen Pin geladen. Geladen bleibt " + da +
-        ", ignoriert wird " + rohUrl + ". Setzt alle Elemente auf denselben Pin.");
-      return;
-    }
-    L[name] = rohUrl; L[rohUrl] = rohUrl; make();
-  }
-  function minUrl(f){ return base + f.replace(/\.(js|css)$/, ".min.$1"); }
-
-  /* CSS: media="print" nimmt das Blatt aus der Bildschirm-Auswertung, es laedt also ohne das
-     Zeichnen anzuhalten; onload schaltet auf "all". Der Timer ist die Absicherung -- feuert onload
-     nicht, waere das Blatt dauerhaft nur fuer den Druck gueltig und die Komponente stuende
-     ungestylt da. Der Rueckfall auf die rohe Datei ist fuer responses-table.min.css, das einzige
-     404 unter 72 Dateien. */
-  function css(f){ once(base + f, function(){
-    var l = document.createElement("link"); l.rel = "stylesheet"; l.href = minUrl(f);
-    l.media = "print";
-    var an = function(){ l.media = "all"; };
-    l.onload = an;
-    l.onerror = function(){
-      var r = document.createElement("link"); r.rel = "stylesheet"; r.href = base + f;
-      r.media = "print"; r.onload = function(){ r.media = "all"; };
-      setTimeout(function(){ r.media = "all"; }, 2000);
-      document.head.appendChild(r);
-      if (l.parentNode) l.parentNode.removeChild(l);
-    };
-    setTimeout(an, 2000);
-    document.head.appendChild(l);
-  }); }
-  /* async=false haelt die Reihenfolge der eingehaengten Skripte ein -- die Komponenten brauchen
-     core.js vor ihrem eigenen. Der Rueckfall wird sofort im Fehlerfall eingehaengt, also lange
-     bevor Bubble das erste Element baut; die Reihenfolge bleibt damit gewahrt. */
-  function js(f){ once(base + f, function(){
-    var s = document.createElement("script"); s.src = minUrl(f); s.async = false;
-    s.onerror = function(){
-      var r = document.createElement("script"); r.src = base + f; r.async = false;
-      document.head.appendChild(r);
-    };
-    document.head.appendChild(s);
-  }); }
-
-  /* ── Boot-Stubs für die vier seitenweiten Stores ────────────────────────────
-     core.js kommt über das Netz, der Page-Load-Workflow nicht. Ruft Bubble also setUpstreemTopics/
-     Markets/Brands, bevor core.js durch ist, ist die Funktion noch undefined: der Run-JS-Schritt
-     wirft, und der GANZE Aufruf ist weg. Die Seite sieht danach aus wie eine ohne Daten, und
-     nirgends steht ein Fehler.
-
-     Diese Stubs schreiben den Aufruf in eine Queue, die core.js beim Start leert. Sie stehen hier
-     und nicht in einer Komponente, weil hier der einzige Code der Seite läuft, der garantiert vor
-     jedem CDN-Script dran ist. Drei davon teilen sich die Mechanik; der vierte,
-     setUpstreemAllMarkets, braucht eine eigene Form und steht darum darunter. */
-  ["Topics","Markets","Brands"].forEach(function(n){
-    var q = "__up" + n + "Queue";
-    window[q] = window[q] || [];
-    if (typeof window["setUpstreem" + n] !== "function"){
-      window["setUpstreem" + n] = function(rows){ window[q].push(rows); };
-    }
-  });
-  /* setUpstreemAllMarkets ist ein VIERTER Store, nicht dieselbe Mechanik: er hat eine eigene
-     Warteschlange mit einer anderen Form ({all:true, rows}), weil core.js darin gefilterte und
-     volle Marktliste auseinanderhalten muss. Die Schleife oben kann ihn deshalb nicht mitnehmen.
-     Fehlt er, zeigt jede Auswahl mit voller Marktliste kommentarlos die GEFILTERTE Liste, und die
-     Diagnose meldet "Aufrufe 0". */
-  window.__upstreemMarketQueue = window.__upstreemMarketQueue || [];
-  if (typeof window.setUpstreemAllMarkets !== "function"){
-    window.setUpstreemAllMarkets = function(rows){
-      window.__upstreemMarketQueue.push({ all: true, rows: rows }); return true;
-    };
-  }
-
-  /* ── WELLE 1: was JEDE Seite braucht ───────────────────────────────────────
-     core zuerst, dann die Leiste -- sie steht auf jeder Seite und ihr Loader wuerde sie sonst
-     ungekuerzt holen. Wer die Hauptseite noch schneller haben will, traegt HIER die zwei bis drei
-     Komponenten ein, die auf ihr wirklich sichtbar sind; alles andere gehoert in Welle 2. */
-  css("core.css");     js("core.js");
-  css("sidebar.css");  js("sidebar.js");
-
-  /* ── WELLE 2: der Vorrat ───────────────────────────────────────────────────
-     Wann sie laeuft, entscheidet VORRAT oben. Bei "idle" requestIdleCallback mit Frist, damit es
-     auch auf einer dauerbeschaeftigten Seite laeuft; ohne die Funktion ein Timer. */
-  function welle2(){
-    css("visibility-chart.css");        js("visibility-chart.js");
-    css("topcitations-dashboard.css");  js("topcitations-dashboard.js");
-    css("citations-combo-chart.css");   js("citations-combo-chart.js");
-    css("prompts-table.css");           js("prompts-table.js");
-    css("urls-table.css");              js("urls-table.js");
-    css("domains-table.css");           js("domains-table.js");
-    css("topics-manager.css");          js("topics-manager.js");
-    css("responses-table.css");         js("responses-table.js");
-    css("brands-overview.css");         js("brands-overview.js");
-    css("performance-radar.css");       js("performance-radar.js");
-    css("quick-actions.css");           js("quick-actions.js");
-    css("performance-detail.css");      js("performance-detail.js");
-    css("discover-brands.css");         js("discover-brands.js");
-    css("settings-brand.css");          js("settings-brand.js");
-    css("opportunities.css");           js("opportunities.js");
-    css("ask-mira.css");                js("ask-mira.js");
-    css("prompt-research.css");         js("prompt-research.js");
-    css("add-prompts.css");             js("add-prompts.js");
-    css("create-with-ai.css");          js("create-with-ai.js");
-
-    /* Chart.js vorwärmen. Ohne das wird es erst beim ERSTEN Chart-Render geholt -- also mitten im
-       Öffnen des ersten Drawers, der einen Chart enthält. Das data-Attribut ist genau das, worauf
-       core.js' loadChartJs() prüft: findet es dieses Script schon vor, lädt es nichts nach.
-       Es ist bereits minifiziert, hier gibt es also nichts zu holen. */
-    once("chartjs", function(){
-      var c = document.createElement("script");
-      c.src = "https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js";
-      c.setAttribute("data-upstreem-chartjs", "1");
-      c.async = false;
-      document.head.appendChild(c);
-    });
-  }
-  function welle2Planen(){
-    if (window.requestIdleCallback) window.requestIdleCallback(welle2, { timeout: 2500 });
-    else setTimeout(welle2, 1200);
-  }
-  if (VORRAT === "sofort") welle2();
-  else if (document.readyState === "complete") welle2Planen();
-  else window.addEventListener("load", welle2Planen);
+  var x = new XMLHttpRequest();
+  x.open("GET", "bubble/page_header_preload.html?n=" + Math.random(), false);
+  x.send(null);
+  var t = x.responseText;
+  var a = t.indexOf("<" + "script>"), b = t.lastIndexOf("</" + "script>");
+  var code = t.slice(a + 8, b);
+  /* FRISCHE BEWEISEN, nicht hoffen: zwei Marker, die es in der alten Fassung nicht gab. Fehlt
+     einer, ist jede Zahl darunter wertlos -- und der Prueftand sagt es, statt gruen zu melden. */
+  window.__snippet = {
+    zeichen: code.length,
+    hatUpPin: code.indexOf("window.__upPin") >= 0,
+    hatFilter: code.indexOf('filters/date-range.css') >= 0
+  };
+  code = code.replace('var PIN = "CDN_' + 'PIN";', 'var PIN = "' + PIN_EL + '";');
+  window.__snippet.pinGesetzt = code.indexOf(PIN_EL) >= 0;
+  (new Function(code))();
 })();
 </script>
 
@@ -166,7 +42,6 @@
 window.__warnungen = [];
 var echteWarnung = console.warn;
 console.warn = function(){ window.__warnungen.push([].join.call(arguments, " ")); echteWarnung.apply(console, arguments); };
-var PIN_EL = "9aaa087123d6e19634a5030532d8f5870ec6161b";
 var BASE_EL = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + PIN_EL + "/";
 
 function hole(url){
@@ -205,7 +80,28 @@ function messen(){
   var roh = r.filter(function(e){ return e.name.indexOf(".min.") < 0; });
   var reg = window.__upAssetsLoaded || {};
   var UC = window.UpstreemCore;
-  document.getElementById("out").textContent = JSON.stringify({
+  /* ROH duerfen GENAU ZWEI sein: core.css und core.js holt das Snippet absichtlich
+     unminifiziert (Begruendung dort). Jede weitere rohe Datei heisst, dass ein Element-Loader
+     nachgeladen hat -- und genau das soll dieser Prueftand fangen. */
+  var rohOhneKern = roh.map(kurz).filter(function(n){ return n !== "core.css" && n !== "core.js"; });
+  var urteil = [];
+  urteil.push((window.__snippet && window.__snippet.hatUpPin && window.__snippet.hatFilter)
+    ? "FRISCH: das echte Snippet ist geladen"
+    : "ABBRUCH: das geladene Snippet ist zu alt (Marker fehlen) -- alle Zahlen wertlos");
+  urteil.push(rohOhneKern.length === 0
+    ? "RICHTIG: kein Element-Loader hat eine rohe Datei nachgeholt"
+    : "FALSCH: roh nachgeladen -> " + rohOhneKern.join(", "));
+  urteil.push((window.__altGeladen||[]).length === 0 && (window.__neuGeladen||[]).length === 0
+    ? "RICHTIG: beide Loader-Generationen laden null Dateien"
+    : "FALSCH: ALT " + JSON.stringify(window.__altGeladen) + "  NEU " + JSON.stringify(window.__neuGeladen));
+  urteil.push(window.__upPin === PIN_EL
+    ? "RICHTIG: window.__upPin steht -- ein Element mit leerem data-cdn-pin erbt ihn"
+    : "FALSCH: window.__upPin fehlt (" + window.__upPin + ")");
+  urteil.push(document.querySelectorAll('script[src*="/core."]').length === 1
+    ? "RICHTIG: genau EIN core-Script im Kopf"
+    : "FALSCH: " + document.querySelectorAll('script[src*="/core."]').length + " core-Scripts");
+  document.getElementById("out").textContent = urteil.join("\n") + "\n\n" + JSON.stringify({
+    snippet: window.__snippet,
     dateien_gesamt: r.length,
     minifiziert: r.filter(function(e){ return e.name.indexOf(".min.") >= 0; }).length,
     roh: roh.length,

@@ -83,6 +83,15 @@
      nur noch ihre eigenen Komponenten baut. */
   var VORRAT = "sofort";
   var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + PIN + "/";
+  /* Den Pin auch AM FENSTER hinterlassen. Die Loader in den Komponenten lesen ihn in dieser
+     Reihenfolge: eigenes data-cdn-pin -> window.__upPin -> irgendein data-cdn-pin auf der Seite
+     -> aus einer schon geladenen Datei. Steht er hier, kann ein Element sein data-cdn-pin LEER
+     lassen und erbt diesen -- dann gibt es den Pin genau einmal auf der Seite statt an jedem
+     Element, und die Falle "Kopf und Element weichen ab" ist strukturell weg.
+     ABER NUR fuer Elemente mit dem aktuellen Loader. Ein aelterer ohne diese Rueckfallkette
+     landet mit leerem Pin auf @main -- wer ein Element nicht angefasst hat, laesst den Pin dort
+     also stehen. */
+  try { window.__upPin = PIN; } catch(e){}
 
   /* Die Verbindung zum CDN vorbereiten, bevor die erste Datei angefragt wird: DNS, TCP und TLS
      kosten auf einer frischen Verbindung ein paar hundert Millisekunden, und die liegen sonst vor
@@ -290,6 +299,49 @@
     css("add-prompts.css");             js("add-prompts.js");
     css("create-with-ai.css");          js("create-with-ai.js");
     css("teams.css");                   js("teams.js");
+
+    /* ---- WAS HIER AM 05.09. DAZUGEKOMMEN IST UND WARUM ----------------------
+       In der laufenden App gemessen (Resource Timing, warmer Pin): die Dateien dieses Snippets
+       starten alle bei 1440-1447ms und sind nach 90ms durch -- core.js 262kb in 72ms, die
+       laengste Wartezeit in der Warteschlange 14ms. Am Laden liegt es also nicht.
+       Danach folgt aber eine ZWEITE Welle von 2200 bis 3520ms: 27 Komponenten, 517kb, ROH,
+       geholt von den Loadern der Elemente. Genau die Komponenten, die hier fehlten.
+
+       Roh und spaet ist zweimal falsch: der doppelte Umfang (unminifiziert) und der Zeitpunkt
+       (mitten im Bau der Seite statt im Vorlauf). Also gehoeren sie hierher. Die Registry
+       entdoppelt nach DATEINAMEN, der Unterordner (filters/, page-headers/) aendert daran
+       nichts: der Loader des Elements findet "date-range.js" schon eingetragen und laedt nicht
+       nach.
+
+       Zwei Kopf-Dateien haben KEINE eigene CSS im Repo (performance-, opportunities-page-header)
+       -- die alten Element-Loader in der App fragen sie trotzdem an, das sind zwei 404 je
+       Seitenaufbau (gegen den Pin geprueft). Hier stehen sie deshalb nur mit ihrer JS.
+
+       vendor-coloris ist im Repo schon minifiziert (der Name traegt .min), also ueber
+       cssRoh/jsRoh -- minUrl haette .min.min.css daraus gemacht: ein 404 und ein Rueckfall. */
+    css("filters/date-range.css");      js("filters/date-range.js");
+    css("filters/filter-bar.css");      js("filters/filter-bar.js");
+    css("filters/models-filter.css");   js("filters/models-filter.js");
+    css("filters/topics-filter.css");   js("filters/topics-filter.js");
+    css("filters/markets-filter.css");  js("filters/markets-filter.js");
+    css("export-data.css");             js("export-data.js");
+    css("notification-card.css");       js("notification-card.js");
+    css("team-orga.css");               js("team-orga.js");
+    css("add-brand.css");               js("add-brand.js");
+    css("brand-editor.css");            js("brand-editor.js");
+    css("brand-detail.css");            js("brand-detail.js");
+    css("response-detail.css");         js("response-detail.js");
+    css("domain-detail.css");           js("domain-detail.js");
+    css("url-detail.css");              js("url-detail.js");
+    css("preferences.css");             js("preferences.js");
+    css("page-headers/dashboard-page-header.css");  js("page-headers/dashboard-page-header.js");
+    css("page-headers/prompts-page-header.css");    js("page-headers/prompts-page-header.js");
+    css("page-headers/citations-page-header.css");  js("page-headers/citations-page-header.js");
+    css("page-headers/brands-page-header.css");     js("page-headers/brands-page-header.js");
+    css("page-headers/settings-page-header.css");   js("page-headers/settings-page-header.js");
+    js("page-headers/performance-page-header.js");
+    js("page-headers/opportunities-page-header.js");
+    cssRoh("vendor-coloris.min.css");   jsRoh("vendor-coloris.min.js");
 
     /* Chart.js vorwärmen. Ohne das wird es erst beim ERSTEN Chart-Render geholt -- also mitten im
        Öffnen des ersten Drawers, der einen Chart enthält. Das data-Attribut ist genau das, worauf
