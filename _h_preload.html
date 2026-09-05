@@ -15,7 +15,11 @@
 var PIN_EL = "05a22abe655051e26ffef86522e8d3c2be8a0839";
 (function(){
   var x = new XMLHttpRequest();
-  x.open("GET", "bubble/page_header_preload.html?n=" + Math.random(), false);
+  /* Welche Datei geprueft wird, sagt ?datei= -- so kann derselbe Prueftand auch eine Fassung
+     pruefen, die zur Weitergabe entsteht (etwa die kommentarfreie). Ohne Angabe: die echte. */
+  var DATEI = (/[?&]datei=([^&]+)/.exec(location.search) || [])[1];
+  DATEI = DATEI ? decodeURIComponent(DATEI) : "bubble/page_header_preload.html";
+  x.open("GET", DATEI + "?n=" + Math.random(), false);
   x.send(null);
   var t = x.responseText;
   var a = t.indexOf("<" + "script>"), b = t.lastIndexOf("</" + "script>");
@@ -23,11 +27,17 @@ var PIN_EL = "05a22abe655051e26ffef86522e8d3c2be8a0839";
   /* FRISCHE BEWEISEN, nicht hoffen: zwei Marker, die es in der alten Fassung nicht gab. Fehlt
      einer, ist jede Zahl darunter wertlos -- und der Prueftand sagt es, statt gruen zu melden. */
   window.__snippet = {
+    datei: DATEI,
     zeichen: code.length,
     hatUpPin: code.indexOf("window.__upPin") >= 0,
     hatFilter: code.indexOf('filters/date-range.css') >= 0
   };
   code = code.replace('var PIN = "CDN_' + 'PIN";', 'var PIN = "' + PIN_EL + '";');
+  /* Eine fertige Fassung traegt den Pin schon -- dann steht dort ein anderer als der des
+     Prueftands, und die Element-Loader unten muessen denselben benutzen, sonst prueft der Test
+     nicht die Entdoppelung, sondern zwei verschiedene Pins. */
+  var mPin = /upstreem-ui@" \+ PIN|var PIN = "([0-9a-f]{7,40})"/.exec(code);
+  if (mPin && mPin[1]) PIN_EL = mPin[1];
   window.__snippet.pinGesetzt = code.indexOf(PIN_EL) >= 0;
   (new Function(code))();
 })();
@@ -42,8 +52,9 @@ var PIN_EL = "05a22abe655051e26ffef86522e8d3c2be8a0839";
 window.__warnungen = [];
 var echteWarnung = console.warn;
 console.warn = function(){ window.__warnungen.push([].join.call(arguments, " ")); echteWarnung.apply(console, arguments); };
-var BASE_EL = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + PIN_EL + "/";
+var BASE_EL;
 
+BASE_EL = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + PIN_EL + "/";
 function hole(url){
   if (/\.css$/.test(url)){ var l=document.createElement("link"); l.rel="stylesheet"; l.href=url; document.head.appendChild(l); }
   else { var s=document.createElement("script"); s.src=url; s.async=false; document.head.appendChild(s); }
