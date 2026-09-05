@@ -92,6 +92,11 @@
      landet mit leerem Pin auf @main -- wer ein Element nicht angefasst hat, laesst den Pin dort
      also stehen. */
   try { window.__upPin = PIN; } catch(e){}
+  /* WELCHE FASSUNG DIESES SNIPPETS IM KOPF STEHT. Das Snippet wird nicht vom CDN geladen, es wird
+     in Bubble eingefuegt -- ein neuer Pin bringt es also NICHT mit. Am 05.09. hat genau das eine
+     Runde gekostet: der Bericht sah aus wie vorher, und es war nicht klar, ob der Fix nicht
+     wirkt oder das alte Snippet noch im Kopf steht. Die Nachkontrolle liest diese Zahl. */
+  try { window.__upPreloadFassung = 3; } catch(e){}
 
   /* Die Verbindung zum CDN vorbereiten, bevor die erste Datei angefragt wird: DNS, TCP und TLS
      kosten auf einer frischen Verbindung ein paar hundert Millisekunden, und die liegen sonst vor

@@ -56,6 +56,7 @@ function baue(lage){
   /* A) Der ausgefuehrte Zustand, nicht ein Dateitext. */
   if (lage.build != null) v.UpstreemCore = { BUILD: lage.build };
   if (lage.weckruf){ v.__upWecken = function(){}; v.__upNachholen = [function(){}, function(){}]; }
+  if (lage.preload != null) v.__upPreloadFassung = lage.preload;
   /* C) Zwei Ansichten, eine offen, eine geparkt -- mit Wurzeln, die Knoten tragen. */
   var koerper = '<div class="up-card"><span>a</span><span>b</span><span>c</span></div>';
   var offen = d.createElement("div"); offen.id = "view-offen"; offen.className = "view-on";
@@ -83,12 +84,15 @@ log("Geprueft wird: " + QUELLE + "\n");
 hol(QUELLE).then(function(code){
   /* ---- LAGE 1: alles kaputt, alles muss gemeldet werden --------------------------------- */
   var A = baue({ build: 20260901, weckruf:false, doppelt:true, zweiterPin:true,
-                 abgewehrt:true, offen:2, geparkt:4 });
+                 abgewehrt:true, offen:2, geparkt:4 });   /* kein __upPreloadFassung: alter Kopf */
   return warte(700).then(function(){
     A.v.eval(code);
     var z = A.v.upNachkontrolle();
     log("LAGE 1  eine Seite, auf der alles schiefliegt");
-    log("   A) BUILD 20260901 (zu alt):  frisch=" + z.frische.frisch + "   " + ja(z.frische.frisch === false));
+    log("   A) BUILD 20260901 (zu alt):  frisch=" + z.frische.frisch +
+        "   Kopf-Snippet=" + z.frische.preload + "   " +
+        ja(z.frische.frisch === false && z.frische.preloadOk === false) +
+        " (beides gemeldet: alte core UND altes Kopf-Snippet)");
     log("   B) Tags=" + z.einhaengen.tags + "  mehrfach=" + z.einhaengen.mehrfach +
         "  Pins=" + z.einhaengen.pins + "  verhindert=" + z.einhaengen.verhindert +
         "  zu spaet=" + z.einhaengen.zuSpaet);
@@ -107,12 +111,14 @@ hol(QUELLE).then(function(code){
     log("");
     /* ---- LAGE 2: die GEGENPROBE. Ohne sie waere jede Meldung oben nur eine Behauptung. --- */
     var B = baue({ build: 20260909, weckruf:true, doppelt:false, zweiterPin:false,
-                   abgewehrt:false, offen:3, geparkt:0 });
+                   abgewehrt:false, offen:3, geparkt:0, preload:3 });
     return warte(700).then(function(){
       B.v.eval(code);
       var y = B.v.upNachkontrolle();
       log("LAGE 2  GEGENPROBE: dieselbe Messung auf einer sauberen Seite");
-      log("   A) BUILD 20260909:  frisch=" + y.frische.frisch + "   " + ja(y.frische.frisch === true));
+      log("   A) BUILD 20260909:  frisch=" + y.frische.frisch +
+          "   Kopf-Snippet=" + y.frische.preload + "   " +
+          ja(y.frische.frisch === true && y.frische.preloadOk === true));
       log("   B) Tags=" + y.einhaengen.tags + "  mehrfach=" + y.einhaengen.mehrfach +
           "  Pins=" + y.einhaengen.pins + "  verhindert=" + y.einhaengen.verhindert +
           "  zu spaet=" + y.einhaengen.zuSpaet);

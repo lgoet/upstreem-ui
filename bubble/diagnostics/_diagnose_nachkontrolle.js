@@ -22,6 +22,7 @@
               upLazyReport()             nur C, falls schon geladen aus der anderen Datei */
 (function(){
   var ERWARTET_BUILD = 20260909;   /* Lazy-Mount. Mit jeder core-Fassung hier mitziehen. */
+  var ERWARTET_PRELOAD = 3;        /* Sperre greift in Teilbaeume. Siehe page_header_preload.html. */
 
   function dateiname(u){
     u = String(u || "").split("?")[0].split("#")[0];
@@ -47,7 +48,15 @@
        Ansichtswechsel mountet nichts nach -- eine Ansicht bliebe leer. */
     console.log("   Weckruf vorhanden: __upWecken " + (typeof window.__upWecken === "function" ? "ja" : "NEIN") +
                 "   Nachzuegler-Liste: " + ((window.__upNachholen || []).length) + " Komponenten");
-    return { build: b || 0, frisch: ok };
+    /* Das Kopf-Snippet kommt NICHT ueber den Pin -- es steht in Bubble und muss von Hand ersetzt
+       werden. Ohne diese Zahl sieht ein alter Kopf genauso aus wie ein Fix, der nicht wirkt. */
+    var f = window.__upPreloadFassung || 0;
+    var fOk = f >= ERWARTET_PRELOAD;
+    console.log("   Kopf-Snippet: Fassung " + (f || "(aelter als 3, kennt den Marker nicht)") +
+                "   erwartet >= " + ERWARTET_PRELOAD + "   " + (fOk ? "JA" : "NEIN -- das alte " +
+                "Snippet steht noch im Kopf, es muss im Ganzen ersetzt werden (der Pin allein " +
+                "reicht nicht)"));
+    return { build: b || 0, frisch: ok, preload: f, preloadOk: fOk };
   }
 
   /* ---- B) DOPPELT GEHOLT? ------------------------------------------------------------------ */
