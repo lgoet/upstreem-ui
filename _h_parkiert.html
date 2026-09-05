@@ -179,7 +179,34 @@ Promise.all([hol("core.css"), hol("core.js")]).then(function(t){
           ? "RICHTIG (sobald die Ansicht offen ist, wird gemessen und gebaut)"
           : "FALSCH -- " + (Z.chart === 0 ? "der Takt misst auch offen nicht mehr"
                                           : "gemessen, aber kein Chart gebaut")));
-    log("FERTIG");
+    return phase5();
   });
 }).catch(function(e){ log("ABBRUCH: " + e.message + "\n" + (e.stack||"").split("\n").slice(0,3).join("\n")); });
+
+/* ---- PHASE 5: DIE DIAGNOSE SELBST GEGENPRUEFEN --------------------------------------------
+   bubble/diagnostics/_diagnose_parkleser.js soll auf der echten Seite beantworten, WER in
+   geparkten Ansichten Layout liest. Bevor sie dort jemand einsetzt, muss sie hier zeigen, dass
+   sie (a) einen Lesezugriff im Geparkten wirklich faengt und (b) einen im Offenen NICHT zaehlt.
+   Ohne (a) meldet sie faelschlich "nichts", ohne (b) meldet sie alles. */
+function phase5(){
+  return hol("bubble/diagnostics/_diagnose_parkleser.js").then(function(code){
+    V.eval(code);
+    var geparktEl = D.querySelector('#view-dashboard .up-seg');     /* zu, seit Phase 2 */
+    var offenEl   = D.querySelector('#view-charts .probe-chart');   /* offen, seit Phase 4 */
+    void (geparktEl && geparktEl.offsetWidth);
+    void (offenEl && offenEl.getBoundingClientRect().width);
+    var t = V.__upParkDiag || {}, summe = 0, quellen = Object.keys(t);
+    quellen.forEach(function(k){ summe += t[k]; });
+    log("PHASE 5  die Parkleser-Diagnose gegengeprueft");
+    log("   gezaehlte Zugriffe: " + summe + "   Quellen: " + quellen.length +
+        (quellen.length ? "   erste: " + quellen[0].slice(0, 60) : ""));
+    log("   ==> " + (summe >= 1
+          ? "RICHTIG (sie faengt einen Lesezugriff im Geparkten)"
+          : "FALSCH -- sie faengt nichts, ein Bericht von ihr waere wertlos"));
+    log("   ==> " + (summe === 1
+          ? "RICHTIG (die Lesung in der OFFENEN Ansicht wurde nicht gezaehlt)"
+          : "FALSCH -- sie zaehlt auch im Offenen (" + summe + " statt 1)"));
+    log("FERTIG");
+  });
+}
 </script>
