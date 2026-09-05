@@ -90,9 +90,20 @@
       namen.length + " Quellen",
       "color:#fff;background:" + (gesamt ? "#b0200c" : "#1a7f37") + ";padding:2px 6px;border-radius:3px");
     namen.forEach(function(n){
-      var unser = /core\.js|core\.min\.js|table\.js|chart\.js:|sidebar\.js|filter|page-header|detail\.js|mira/.test(n)
-                  && n.indexOf("pre_run") < 0 && n.indexOf("run.js") < 0;
-      console.log("  " + String(treffer[n]).padStart(6, " ") + "  " + (unser ? "[UNS] " : "[fremd] ") + n);
+      /* UNSER ist, was vom gepinnten CDN-Pfad kommt -- daran ist jede unserer Dateien zu
+         erkennen, ohne eine Liste zu pflegen. Der erste Anlauf hatte eine Namensliste, und die
+         war unvollstaendig: discover-brands und opportunities standen nicht darin und wurden im
+         Bericht als "[fremd]" gefuehrt, obwohl sie die zwei groessten Posten waren. Eine Liste,
+         die man pflegen muss, ist beim naechsten Dateinamen wieder falsch.
+         FREMD ist ausdruecklich Bubbles eigener Code (run.js, pre_run_jquery, static.js, die
+         Plugin-Dateien) und alles, was gar keine Quelle traegt. */
+      var fremd = /run\.js|pre_run|static\.js|supabase|Toolbox|-element_action|\(unbekannt\)/.test(n);
+      var unser = !fremd && /upstreem-ui@|core\.js|\.min\.js/.test(n);
+      /* Drei Marken, nicht zwei: was keine Quelle traegt (ein per eval eingesetztes Script, und
+         davon hat Bubble viele), ist WEDER unser noch fremd -- es ist unbekannt, und das muss
+         dastehen. Sonst zaehlt der Leser es der falschen Seite zu. */
+      var marke = unser ? "[UNS]  " : (fremd ? "[fremd]" : "[?]    ");
+      console.log("  " + String(treffer[n]).padStart(6, " ") + "  " + marke + " " + n);
     });
     if (!gesamt) console.log("  nichts -- in geparkten Ansichten wird kein Layout gelesen");
     return gesamt;
