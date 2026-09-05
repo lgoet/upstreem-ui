@@ -1,0 +1,89 @@
+<meta charset="utf-8"><title>Wurzelsuche: querySelectorAll gegen lebende Sammlung</title>
+<style>html,body{margin:0;font:13px/1.5 system-ui,sans-serif}
+#out{font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap;padding:10px;background:#f6f6f6}
+#gross{display:none}</style>
+<body><div id="gross"></div><pre id="out">laeuft…</pre>
+<script>
+/* WAS HIER GEMESSEN WIRD
+   makeMount in core.js sucht die Wurzeln einer Komponente mit
+       document.querySelectorAll("." + cfg.rootClass)
+   und tut das oft: DOMContentLoaded, dann die Kaskade [30,100,250,500,1000,1800]ms, dazu jeder
+   Weckruf des Wurzel-Beobachters. 33 Komponenten benutzen makeMount, das sind allein aus der
+   Kaskade 198 Volltextsuchen in den ersten 1,8 Sekunden -- genau waehrend Bubble die Seite baut.
+
+   watchRoots macht es daneben schon anders: es haelt EINE lebende Sammlung
+   (getElementsByClassName) je Wurzelklasse und liest nur deren Laenge und Elemente. Die Frage
+   dieses Prueftands ist, was der Unterschied auf einer Seite von der Groesse der echten kostet.
+
+   GEGENPROBE eingebaut: beide Wege muessen dieselbe Anzahl Wurzeln finden. Ein schnellerer Weg,
+   der weniger findet, ist kein Ergebnis. */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+var KLASSEN = 33, WURZELN_JE_KLASSE = 6, KNOTEN_ZIEL = 150000;
+
+function bauen(){
+  var g = document.getElementById("gross"), teil = document.createDocumentFragment();
+  var i, j, d;
+  /* Erst die Wurzeln, verteilt -- dann liegen sie nicht alle am Anfang, wo eine Suche sie
+     frueh findet. querySelectorAll laeuft ohnehin immer durch alles, aber die lebende Sammlung
+     soll es nicht leichter haben als noetig. */
+  var gemacht = 0;
+  for (i = 0; i < KNOTEN_ZIEL / 3; i++){
+    d = document.createElement("div");
+    d.appendChild(document.createElement("span"));
+    d.appendChild(document.createTextNode("x"));
+    if (i % Math.floor((KNOTEN_ZIEL/3) / (KLASSEN*WURZELN_JE_KLASSE)) === 0 && gemacht < KLASSEN*WURZELN_JE_KLASSE){
+      var w = document.createElement("div");
+      w.className = "k" + (gemacht % KLASSEN) + "-root up-root";
+      d.appendChild(w); gemacht++;
+    }
+    teil.appendChild(d);
+  }
+  g.appendChild(teil);
+  return { knoten: document.querySelectorAll("*").length, wurzeln: gemacht };
+}
+
+/* Weg A: wie makeMount heute -- eine Volltextsuche je Aufruf. */
+function wegA(kl){ return document.querySelectorAll("." + kl + "-root:not(.up-portal)"); }
+
+/* Weg B: wie watchRoots -- die lebende Sammlung EINMAL holen, danach nur lesen. Der
+   Portal-Filter wandert dabei ins JS: er trifft hoechstens eine Handvoll Knoten, und dafuer eine
+   Volltextsuche zu bezahlen ist der falsche Tausch. */
+var CACHE = {};
+function wegB(kl){
+  var els = CACHE[kl] || (CACHE[kl] = document.getElementsByClassName(kl + "-root"));
+  var out = [];
+  for (var i = 0; i < els.length; i++){
+    if (els[i].classList.contains("up-portal")) continue;
+    out.push(els[i]);
+  }
+  return out;
+}
+function runde(fn){
+  /* 198 Aufrufe = 33 Komponenten x 6 Stufen der Kaskade. Genau die Zahl, um die es geht. */
+  var n = 0, t0 = performance.now();
+  for (var s = 0; s < 6; s++)
+    for (var k = 0; k < KLASSEN; k++) n += fn("k" + k).length;
+  return { ms: performance.now() - t0, gefunden: n };
+}
+
+setTimeout(function(){
+  var b = bauen();
+  log("Dokument: " + b.knoten + " Knoten, " + b.wurzeln + " Wurzeln in " + KLASSEN + " Klassen");
+  log("(die echte Seite: 156000 Knoten gemeldet, 135 Komponenten, 184 Kalender-Wurzeln gemessen)");
+  /* Einmal warmlaufen, damit nicht der erste Aufruf beide Messungen traegt. */
+  runde(wegA); runde(wegB);
+  var A = runde(wegA), B = runde(wegB), A2 = runde(wegA), B2 = runde(wegB);
+  log("");
+  log("198 Wurzelsuchen (33 Komponenten x 6 Kaskadenstufen):");
+  log("   A  querySelectorAll (heute):     " + A.ms.toFixed(1) + " ms / " + A2.ms.toFixed(1) + " ms" +
+      "   gefunden " + A.gefunden);
+  log("   B  lebende Sammlung (watchRoots): " + B.ms.toFixed(1) + " ms / " + B2.ms.toFixed(1) + " ms" +
+      "   gefunden " + B.gefunden);
+  log("   ==> " + (A.gefunden === B.gefunden
+        ? "gleiches Ergebnis, Faktor " + (A.ms / Math.max(B.ms, 0.001)).toFixed(1) + "x"
+        : "FALSCH -- die Wege finden VERSCHIEDEN viel (" + A.gefunden + " gegen " + B.gefunden + "), damit ist B kein Ersatz"));
+  log("");
+  log("Je einzelner Suche: A " + (A.ms/198).toFixed(2) + " ms, B " + (B.ms/198).toFixed(3) + " ms");
+  log("FERTIG");
+}, 50);
+</script>

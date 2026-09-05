@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20260817;
+  var BUILD = 20260905;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -4543,7 +4543,43 @@
   function makeMount(cfg){
     var rootSel = "." + cfg.rootClass + (cfg.notPortal ? ":not(.up-portal)" : "");
 
-    function roots(){ return document.querySelectorAll(rootSel); }
+    /* ---- DIE WURZELSUCHE KOSTET NICHTS MEHR --------------------------------------------------
+       Hier stand document.querySelectorAll(rootSel), und das war die teuerste Zeile der Datei.
+       Nicht wegen dieser einen Suche, sondern wegen ihrer Anzahl: 33 Komponenten benutzen
+       makeMount, jede laeuft beim Aufbau ueber DOMContentLoaded plus die Kaskade unten
+       ([30,100,250,500,1000,1800]ms), dazu bei jedem Weckruf des Wurzel-Beobachters. Allein die
+       Kaskade sind 198 Volltextsuchen in den ersten 1,8 Sekunden -- und zwar genau waehrend
+       Bubble die Seite baut.
+
+       Gemessen (_h_kaskade.html) auf einem Dokument mit 100207 Knoten, also kleiner als die
+       echte Seite (dort 156000):
+
+           querySelectorAll   479 ms fuer die 198 Suchen   (2,42 ms je Suche)
+           lebende Sammlung   0,7 ms                        (0,004 ms je Suche)
+
+       Der Unterschied ist nicht die Suche selbst, sondern dass getElementsByClassName eine LEBENDE
+       Sammlung liefert: einmal geholt, haelt der Browser sie selbst aktuell, und ein Lesezugriff
+       laeuft nicht mehr durch das Dokument. Genau so macht es watchRoots weiter unten seit dem
+       02.09. schon -- hier fehlte es noch.
+
+       Zwei Feinheiten, beide noetig:
+       - KOPIE in ein Array, nicht die lebende Sammlung zurueckgeben. Der Aufrufer richtet die
+         Wurzeln ein, und initRoot schreibt in den Baum; eine Sammlung, die sich waehrend der
+         Schleife aendert, ist eine Falle, die genau einmal im Jahr zuschlaegt.
+       - Der :not(.up-portal)-Teil wandert ins JS. Er trifft hoechstens eine Handvoll Knoten --
+         dafuer eine Volltextsuche zu bezahlen ist der falsche Tausch. rootSel bleibt trotzdem
+         stehen: der pointerdown-Rueckfall unten braucht ihn fuer closest(). */
+    var LEBEND = null;
+    function roots(){
+      if (!LEBEND) LEBEND = document.getElementsByClassName(cfg.rootClass);
+      var out = [];
+      for (var i = 0; i < LEBEND.length; i++){
+        var el = LEBEND[i];
+        if (cfg.notPortal && el.classList && el.classList.contains("up-portal")) continue;
+        out.push(el);
+      }
+      return out;
+    }
     function rootsWithId(id){
       id = id || "default";
       var out = [], all = roots();
