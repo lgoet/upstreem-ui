@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20260906;
+  var BUILD = 20260907;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -10128,14 +10128,34 @@
        Deliberately setInterval, not rAF/ResizeObserver: both of those are tied to the rendering
        pipeline, which browsers pause for a backgrounded or hidden tab — exactly when a Bubble
        popup sits unopened. setInterval keeps ticking (throttled, not paused). */
+    /* ---- UND NICHT MESSEN, WAS GEPARKT IST (06.09.) --------------------------------------
+       Dieser Takt war die Quelle der Meldung, die auf der echten Seite OHNE JEDE HANDLUNG
+       hochzaehlte: "Rendering was performed in a subtree hidden by content-visibility", 321 Mal
+       und weiter steigend. Die Rechnung dahinter: jeder Chart in einer geparkten Ansicht liest
+       hier fuenfmal pro Sekunde clientWidth, und jeder dieser Lesezugriffe zwingt den Browser,
+       den geparkten Teilbaum zu layouten. Bei zehn Charts sind das fuenfzig erzwungene Layouts
+       je Sekunde, dauerhaft, fuer nichts -- der Kasten kann nicht breit werden, solange seine
+       Ansicht zu ist.
+
+       messbar() beantwortet das OHNE Layoutwert. Ist der Kasten geparkt, wird nicht gemessen --
+       und der Zaehler laeuft auch nicht weiter: die zwei Minuten Frist gelten fuer "sichtbar,
+       aber noch ohne Groesse" (der Fall, fuer den dieser Takt gebaut wurde), nicht fuer eine
+       Ansicht, die der Nutzer erst in zehn Minuten oeffnet. Vorher lief die Frist auch geparkt
+       ab, und danach baute der Chart nie mehr -- ein stiller Fehler, der mit dieser Zeile
+       gleich mit verschwindet.
+
+       Der Takt selbst BLEIBT (und bleibt setInterval): die Begruendung darueber gilt weiter --
+       rAF und ResizeObserver haengen am Zeichenzyklus, den ein verdeckter Tab anhaelt. Er kostet
+       jetzt nur noch ein checkVisibility() je 200ms und keinen Layoutzugriff mehr. */
     function buildWhenSized(built, meinStand){
       if (meinStand != null && meinStand !== stand) return;
-      if (wrap.clientWidth > 0 && wrap.clientHeight > 0){ build(built); return; }
+      if (messbar(wrap) && wrap.clientWidth > 0 && wrap.clientHeight > 0){ build(built); return; }
       var ticks = 0;
       if (sizeIv) clearInterval(sizeIv);
       sizeIv = setInterval(function(){
         if (meinStand != null && meinStand !== stand){ clearInterval(sizeIv); sizeIv = null; return; }
         if (!isOwner() || !canvas || !canvas.isConnected){ clearInterval(sizeIv); sizeIv = null; return; }
+        if (!messbar(wrap)) return;                 /* geparkt: nicht messen, nicht zaehlen */
         if ((wrap.clientWidth > 0 && wrap.clientHeight > 0) || ++ticks > 600){   // ~2 min cap
           clearInterval(sizeIv); sizeIv = null;
           build(built);
@@ -10269,8 +10289,18 @@
      die Leinwand, und die liegt IM beobachteten Kasten. */
   function chartBeiSichtbarwerden(wrap, holChart){
     if (!wrap || !window.ResizeObserver) return null;
-    var warBreit = wrap.clientWidth || 0, laeuft = false;
+    /* Der Startwert wird nur gelesen, wenn es etwas zu lesen gibt. Geparkt ist er 0 -- und das
+       ist genau der richtige Anfangswert, der Kasten hat dort keine Breite. Diese eine Zeile war
+       im Prueftand der letzte Lesezugriff im Geparkten; der Stapel zeigte sie beim Anlegen
+       (makeLine -> chartBeiSichtbarwerden), nicht im Rueckruf. */
+    var warBreit = messbar(wrap) ? (wrap.clientWidth || 0) : 0, laeuft = false;
     var ro = new ResizeObserver(function(){
+      /* Geparkt: nicht messen. Der Beobachter feuert beim Parken (Groesse wird 0) -- und dieser
+         eine Lesezugriff layoutete den geparkten Teilbaum. Im Prueftand als letzte verbliebene
+         Lesung sichtbar, mit diesem Rueckruf im Stapel. Beim Aufgehen feuert er wieder, dann ist
+         messbar() wahr und der Vergleich 0 -> Breite laeuft wie vorher: warBreit bleibt in der
+         Zwischenzeit stehen, es geht also keine Flanke verloren. */
+      if (!messbar(wrap)) return;
       var b = wrap.clientWidth || 0;
       var vorher = warBreit;
       warBreit = b;

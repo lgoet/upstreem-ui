@@ -124,6 +124,62 @@ Promise.all([hol("core.css"), hol("core.js")]).then(function(t){
   log("   ==> " + (Z.drawer > 0 && /is-gleitend|is-sofort/.test(box.className)
         ? "RICHTIG (auch der Drawer wird nachgemessen)"
         : "FALSCH -- " + (Z.drawer === 0 ? "kein Nachlauf am openDrawer" : "kein Streifen gesetzt")));
-  log("FERTIG");
+  /* ---- PHASE 4: DER CHART-TAKT --------------------------------------------------------------
+     Die Meldung auf der echten Seite zaehlte OHNE jede Handlung hoch -- 321 Mal und weiter. Das
+     kann kein Ansichtswechsel und kein Mutationsschwung sein, das ist ein Takt. Er steckt in
+     makeLine: buildWhenSized wartet fuenfmal pro Sekunde darauf, dass der Kasten eine Breite
+     bekommt, und liest dazu clientWidth. In einer geparkten Ansicht kann er nie eine bekommen --
+     jeder dieser Lesezugriffe layoutet den geparkten Teilbaum, dauerhaft, fuer nichts.
+     Gezaehlt wird wieder der Zugriff selbst, ueber einen eigenen clientWidth-Getter. */
+  var d = D, v = V;
+  var view = d.createElement("div");
+  view.id = "view-charts"; view.className = "up-root";
+  view.innerHTML = '<div class="probe-chart" style="width:600px;height:200px"><canvas></canvas></div>';
+  d.body.appendChild(view);
+  var wrap = view.querySelector(".probe-chart"), canvas = view.querySelector("canvas");
+  /* clientWidth sitzt auf Element.prototype, nicht auf HTMLElement.prototype (offsetWidth oben
+     schon). Der erste Anlauf griff daneben und der Getter warf -- gefangen vom catch, sichtbar
+     als ABBRUCH mitten im Lauf. */
+  var protoW = Object.getOwnPropertyDescriptor(v.Element.prototype, "clientWidth");
+  Z.chart = 0;
+  /* Und WER liest: beim ersten Zugriff im Geparkten wird der Stapel mitgeschrieben. Ohne das
+     bleibt "1 Lesezugriff" eine Zahl ohne Adresse -- und die Adresse ist hier die ganze Arbeit. */
+  window.__chartSpur = null;
+  Object.defineProperty(wrap, "clientWidth", {
+    configurable: true,
+    get: function(){
+      Z.chart++;
+      if (!window.__chartSpur){
+        try { window.__chartSpur = (new Error().stack || "").split("\n").slice(1, 5)
+                .map(function(x){ return x.trim(); }).join("\n      "); } catch(e){}
+      }
+      return protoW.get.call(this);
+    }
+  });
+  var linie = v.UpstreemCore.makeLine({
+    wrap: wrap, canvas: canvas, isDark: function(){ return false; }
+  });
+  linie.render({ labels: ["2026-09-01","2026-09-02","2026-09-03"],
+                 datasets: [{ label:"A", data:[1,2,3], borderColor:"#3b82f6" }] });
+  return warte(1800).then(function(){
+    log("PHASE 4  ein Chart in einer geparkten Ansicht, 1,8s Ruhe");
+    log("   clientWidth gelesen: " + Z.chart + "   (der Takt liegt bei 200ms, also waeren es ~9)");
+    log("   ==> " + (Z.chart === 0
+          ? "RICHTIG (der Takt laeuft, misst aber nicht -- kein Layout im Geparkten)"
+          : "FALSCH -- " + Z.chart + " Lesezugriffe in einer Ansicht, die zu ist" +
+            (window.__chartSpur ? "\n      " + window.__chartSpur : "")));
+    Z.chart = 0;
+    v.showView("charts");
+    return warte(1200);
+  }).then(function(){
+    var lebt = false;
+    try { lebt = !!(v.Chart && v.Chart.getChart && v.Chart.getChart(canvas)); } catch(e){}
+    log("   nach showView(\"charts\"): clientWidth gelesen " + Z.chart + "   Chart gebaut: " + lebt);
+    log("   ==> " + (Z.chart > 0 && lebt
+          ? "RICHTIG (sobald die Ansicht offen ist, wird gemessen und gebaut)"
+          : "FALSCH -- " + (Z.chart === 0 ? "der Takt misst auch offen nicht mehr"
+                                          : "gemessen, aber kein Chart gebaut")));
+    log("FERTIG");
+  });
 }).catch(function(e){ log("ABBRUCH: " + e.message + "\n" + (e.stack||"").split("\n").slice(0,3).join("\n")); });
 </script>
