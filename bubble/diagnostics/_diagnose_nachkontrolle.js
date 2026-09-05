@@ -22,7 +22,7 @@
               upLazyReport()             nur C, falls schon geladen aus der anderen Datei */
 (function(){
   var ERWARTET_BUILD = 20260910;   /* Lazy-Mount. Mit jeder core-Fassung hier mitziehen. */
-  var ERWARTET_PRELOAD = 3;        /* Sperre greift in Teilbaeume. Siehe page_header_preload.html. */
+  var ERWARTET_PRELOAD = 4;        /* Sperre greift in Teilbaeume, Stapelspur gedeckelt. */
 
   function dateiname(u){
     u = String(u || "").split("?")[0].split("#")[0];

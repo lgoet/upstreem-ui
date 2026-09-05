@@ -96,7 +96,7 @@
      in Bubble eingefuegt -- ein neuer Pin bringt es also NICHT mit. Am 05.09. hat genau das eine
      Runde gekostet: der Bericht sah aus wie vorher, und es war nicht klar, ob der Fix nicht
      wirkt oder das alte Snippet noch im Kopf steht. Die Nachkontrolle liest diese Zahl. */
-  try { window.__upPreloadFassung = 3; } catch(e){}
+  try { window.__upPreloadFassung = 4; } catch(e){}
 
   /* Die Verbindung zum CDN vorbereiten, bevor die erste Datei angefragt wird: DNS, TCP und TLS
      kosten auf einer frischen Verbindung ein paar hundert Millisekunden, und die liegen sonst vor
@@ -436,13 +436,23 @@
      (die Datei ist nie gelaufen), "nach" heisst nur entfernt (sie ist gelaufen und geparst).
      Der Bericht vom 05.09. konnte die beiden nicht unterscheiden und sah darum 64 Abwehrfaelle,
      von denen in Wahrheit keiner einen Parse gespart hat. */
+  /* Die Stapelspur nur fuer die ersten zwei je Datei. Sie beantwortet "WER haengt das ein", und
+     dafuer reichen zwei Beispiele -- auf der laufenden Seite fallen 80 Doppelanforderungen an,
+     und 80 Stapelspuren sind Diagnose-Buchhaltung in einer ausgelieferten App. Gezaehlt wird
+     weiter jede einzelne: an dieser Zahl haengt die Nachkontrolle. */
+  var SPUR_JE_DATEI = {};
   function notiereDoppel(n, wo, vorher){
-    var u = quelleVon(n);
+    var u = quelleVon(n), name = dateiname(u);
+    var wieOft = (SPUR_JE_DATEI[name] = (SPUR_JE_DATEI[name] || 0) + 1);
+    var spur = [];
+    if (wieOft <= 2){
+      try { spur = (new Error().stack || "").split("\n").slice(3, 6)
+              .map(function(x){ return x.trim(); }); } catch(e){}
+    }
     (window.__upDoppel || (window.__upDoppel = [])).push({
-      datei: dateiname(u), wann: vorher ? "vor" : "nach", wo: wo || "?",
+      datei: name, wann: vorher ? "vor" : "nach", wo: wo || "?",
       zeit: Math.round(window.performance && performance.now ? performance.now() : 0),
-      spur: (function(){ try { return (new Error().stack || "").split("\n").slice(3, 6)
-              .map(function(x){ return x.trim(); }); } catch(e){ return []; } })()
+      spur: spur
     });
   }
   function einhaengeSperre(){

@@ -110,13 +110,13 @@ hol(QUELLE).then(function(code){
         " (die Wurzeln stimmen, und sie trennt gemountet von nicht gemountet)");
     log("");
     /* ---- LAGE 2: die GEGENPROBE. Ohne sie waere jede Meldung oben nur eine Behauptung. --- */
-    var B = baue({ build: 20260909, weckruf:true, doppelt:false, zweiterPin:false,
-                   abgewehrt:false, offen:3, geparkt:0, preload:3 });
+    var B = baue({ build: 20260910, weckruf:true, doppelt:false, zweiterPin:false,
+                   abgewehrt:false, offen:3, geparkt:0, preload:4 });
     return warte(700).then(function(){
       B.v.eval(code);
       var y = B.v.upNachkontrolle();
       log("LAGE 2  GEGENPROBE: dieselbe Messung auf einer sauberen Seite");
-      log("   A) BUILD 20260909:  frisch=" + y.frische.frisch +
+      log("   A) BUILD 20260910:  frisch=" + y.frische.frisch +
           "   Kopf-Snippet=" + y.frische.preload + "   " +
           ja(y.frische.frisch === true && y.frische.preloadOk === true));
       log("   B) Tags=" + y.einhaengen.tags + "  mehrfach=" + y.einhaengen.mehrfach +
