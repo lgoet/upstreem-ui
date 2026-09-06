@@ -281,6 +281,14 @@
 /* Waehrend des Aufklappens ist der Knopf einen Moment zu schmal fuer "Quick Actions" plus
    Tastenkuerzel -- der Text brach dann sichtbar in eine zweite Zeile um und der Knopf wuchs mit.
    Nichts umbrechen, ueberzaehliges abschneiden: die Breite steht nach 200ms ohnehin. */
+/* Die Beschriftung wie eine Blockueberschrift, nur ohne Grossbuchstaben (08.09. angefordert):
+   dieselben 11px/600, dieselbe Laufweite von .04em, dieselbe dritte Textfarbe wie ".usn-head".
+   text-transform bleibt aus -- "Quick Actions" ist ein Name, keine Rubrik. */
+.usn-bar .mqa-trigger-label {
+  font-size: 11px; font-weight: 600; letter-spacing: .04em; color: var(--vc-third);
+  text-transform: none;
+}
+.usn-bar .mqa-trigger:hover .mqa-trigger-label { color: var(--vc-muted); }
 .usn-bar .mqa-trigger { white-space: nowrap; overflow: hidden; }
 .usn-bar .mqa-trigger-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .usn-bar .mqa-trigger-ic { color: inherit; }
@@ -338,11 +346,14 @@
    Weg zurueck. Die Hoehe raeumt das JS aus dem inline-Stil (hoehenSetzen) -- eine Regel hier
    koennte den inline-Wert nur mit !important schlagen, und das ist verboten. */
 .usn-bar.is-mini .usn-block-body { overflow: visible; }
+/* 9px Luecke und 14px Text (08.09.): das Zeichen rueckt einen Punkt naeher an sein Wort, und die
+   Zeile traegt einen halben Punkt mehr. Beides zusammen, damit die Zeile nicht laenger wird --
+   der halbe Punkt Text holt sich genau den Pixel, den die Luecke abgibt. */
 .usn-item {
-  width: 100%; display: flex; align-items: center; gap: 10px;
+  width: 100%; display: flex; align-items: center; gap: 9px;
   height: 36px; padding: 0 8px;
   border: 0; border-radius: 12px; background: transparent;
-  font: inherit; font-size: 13.5px; font-weight: 500; color: var(--vc-text);
+  font: inherit; font-size: 14px; font-weight: 500; color: var(--vc-text);
   cursor: pointer; text-align: left;
   transition: background var(--usn-t) var(--usn-ease), color var(--usn-t) var(--usn-ease);
 }
