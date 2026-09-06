@@ -39,7 +39,13 @@
   --uo-pot-a: #c4c9d0;
   --uo-pot-b: var(--vc-text);
 }
-.up-root[data-theme="dark"].uo-root { --uo-col-bg: #1c1c1f; --uo-pot-a: #4a4f56; }
+/* #ffffff0d ist Linears --color-bg-translucent, ausgelesen von linear.app: Weiss bei 5 Prozent.
+   Es ist die LEISESTE Flaeche, die ihr System ueber dem Grund kennt -- ueber #08090a ergibt es
+   etwa #151517, also 12 Helligkeitsstufen statt der 19 von bg-secondary (#1c1c1f). Genau so
+   angefordert: "den leichtesten im Kontrast zum Page-BG, den das Linear Design System hergibt".
+   Halbdurchsichtig und nicht ausgerechnet: so steht es bei Linear, und so traegt es auf jedem
+   Untergrund, auf dem das Brett spaeter liegen mag. */
+.up-root[data-theme="dark"].uo-root { --uo-col-bg: #ffffff0d; --uo-pot-a: #4a4f56; }
 
 /* ---------- toolbar ----------
    .up-head / .up-heading / .up-head-tools / .up-search / .up-iconbtn / .up-seg all come from
@@ -163,14 +169,12 @@
 .uo-root.is-stacked .uo-col-head { position: static; }
 
 /* ---------- card ---------- */
-/* Die Karte traegt den Ton, den die Ueberschriften abgegeben haben -- den Grund der Seite
-   (--up-surface). Angefordert am 08.09.: "die Cards selber: mach die in genau diesem Background,
-   den du da entfernst."
-   Damit ist die Karte DUNKLER als die Flaeche, auf der das Brett liegt, und ihr Rahmen ist das,
-   was sie abgrenzt. Das ist eine Umkehrung der ueblichen Richtung (oben heller) und ausdruecklich
-   so bestellt. */
+/* Die Karte traegt eine EIGENE, sehr leise Flaeche: Linears --color-bg-translucent (siehe oben
+   beim Token). Zwischenstand war der Grund der Seite selbst -- die Karte war damit genauso dunkel
+   wie alles ringsum und haing nur am Rahmen. Jetzt hebt sie sich um zwoelf Stufen ab, ohne eine
+   zweite Ebene aufzumachen. */
 .uo-card {
-  position: relative; background: var(--up-surface); border: 1px solid var(--vc-border);
+  position: relative; background: var(--uo-col-bg); border: 1px solid var(--vc-border);
   border-radius: 16px; padding: 16px; cursor: pointer; user-select: none;
   transition: border-color 140ms ease, background 140ms ease;
 }

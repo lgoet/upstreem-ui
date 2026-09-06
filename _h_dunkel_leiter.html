@@ -74,8 +74,36 @@ hol("core.css").then(function(css){
     log("   ==> " + ja(textOk) + " (Text und gedaempfter Text ueber 4.5 auf jeder Flaeche;" +
         " die dritte Farbe ist Beiwerk und darf darunter liegen)");
     log("");
+    /* RAHMEN AUF IHREM UNTERGRUND. Linear hat zwei: #23252a liegt auf dem Grund, #34343a auf
+       erhoehten Flaechen. Ein Rahmen, der weniger als 10 Stufen ueber seinem Untergrund liegt,
+       ist keiner -- gemeldet als "die Border macht einen komischen Eindruck". */
+    log("RAHMEN GEGEN IHREN UNTERGRUND");
+    var rahmen = [
+      ["--vc-border auf der Karte",   tok("--vc-border"),      tok("--vc-bg")],
+      ["--vc-border auf dem Grund",   tok("--vc-border"),      tok("--up-surface")],
+      ["--up-menu-border im Menue",   tok("--up-menu-border"), tok("--up-menu-bg")]
+    ];
+    var rOk = true;
+    rahmen.forEach(function(r){
+      var ab = Math.abs(hell(rgb(r[1])) - hell(rgb(r[2])));
+      if (ab < 10) rOk = false;
+      log("   " + r[0].padEnd(30," ") + r[1] + " auf " + r[2] + "   Abstand " + ab.toFixed(1));
+    });
+    log("   ==> " + ja(rOk) + " (jeder Rahmen mindestens 10 Stufen ueber seinem Untergrund)");
+    log("");
+    /* DER TABELLENKOPF: er sitzt auf einer Karte und muss sich von ihr abheben, ohne zu
+       schreien. Hier stand bis zum 08.09. ein Waise (#242424) aus der Zeit vor dieser Leiter. */
+    var kopf = tok("--vt-head-bg"), karte = tok("--vc-bg");
+    var kAb = Math.abs(hell(rgb(kopf)) - hell(rgb(karte)));
+    log("TABELLENKOPF");
+    log("   --vt-head-bg " + kopf + " auf der Karte " + karte + "   Abstand " + kAb.toFixed(1));
+    var aufLeiter = ["#08090a","#1c1c1f","#232326","#28282c"].indexOf(kopf) >= 0;
+    log("   ==> " + ja(kAb >= 5 && aufLeiter) +
+        " (sichtbar, UND ein Wert aus Linears Leiter -- kein eigener Ton)");
+    log("");
     log("ZUM VERGLEICH, Linears eigene Werte (ausgelesen von linear.app):");
     log("   Grund #08090a   Panel #1c1c1f   erhoeht #232326   noch hoeher #28282c");
+    log("   Rahmen: primary #23252a (auf dem Grund)   secondary #34343a (auf Flaechen)   tertiary #3e3e44");
     log("FERTIG");
   });
 }).catch(function(e){ log("ABBRUCH: " + e.message); });

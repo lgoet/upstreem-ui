@@ -63,11 +63,21 @@ Promise.all(["core.css","opportunities.css","core.js","opportunities.js",
     ["Kopfzeile ohne Rundung oben",       parseFloat(kopf.borderTopLeftRadius) === 0],
     /* Die Karte traegt jetzt den Grund der Seite -- den Ton, den die Ueberschriften abgegeben
        haben. Verglichen wird gegen den Token, nicht gegen einen Zahlenwert im Test. */
-    ["Karte traegt --up-surface",         karte.backgroundColor ===
-                                          "rgb(8, 9, 10)".replace("8, 9, 10", (function(){
-                                            var h = wurzel.getPropertyValue("--up-surface").trim().replace("#","");
-                                            return [0,2,4].map(function(i){ return parseInt(h.substr(i,2),16); }).join(", ");
-                                          })())],
+    ["Karte traegt eine leise eigene Flaeche", (function(){
+        /* Halbdurchsichtiges Weiss ueber dem Grund: gemessen wird die MISCHUNG, nicht der
+           Deklarationswert -- der sagt nichts darueber, was man sieht. Verlangt: sichtbar (>=8)
+           und leiser als Linears bg-secondary, das 19 Stufen ueber dem Grund liegt. */
+        var m = /rgba?\(([^)]+)\)/.exec(karte.backgroundColor);
+        if (!m) return false;
+        var p = m[1].split(",").map(parseFloat), a = p.length > 3 ? p[3] : 1;
+        var g = 8.9;   /* Helligkeit von #08090a */
+        var hell = 0.2126*p[0] + 0.7152*p[1] + 0.0722*p[2];
+        var wirkung = a * hell + (1 - a) * g;
+        var ab = wirkung - g;
+        log("   (Kartenflaeche wirkt wie Helligkeit " + wirkung.toFixed(1) +
+            ", also " + ab.toFixed(1) + " ueber dem Grund)");
+        return ab >= 8 && ab < 19;
+      })()],
     ["Kopfzeile der Spalte OHNE Flaeche", durchsichtig(kopf.backgroundColor)],
     ["Zeile mit Titel+Werkzeugen OHNE Flaeche", (function(){
         var h = d.querySelector(".up-head");

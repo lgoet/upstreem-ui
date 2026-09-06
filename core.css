@@ -132,7 +132,13 @@
    von der Ladereihenfolge, weil beide Seiten `!important` verwenden. */
 .up-root.up-root, .up-root.up-root * { overscroll-behavior: auto !important; }
     .up-root[data-theme="dark"] {
-      --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-border: #23252a;
+      /* DER RAHMEN IST border-SECONDARY, nicht -primary. Linear benutzt beide: #23252a liegt auf
+         dem Grund (#08090a) und ist dort deutlich, auf einer Karte (#1c1c1f) sind es noch vier
+         Helligkeitsstufen -- also praktisch nichts. Unsere Rahmen sitzen fast alle AUF Karten
+         (Tabellen, Panels, Felder), darum ist #34343a der richtige der beiden: 24 Stufen ueber
+         der Karte. Gemeldet als "die Border-Color macht einen komischen Eindruck", und das war
+         sie auch: sichtbar auf dem Grund, verschwunden auf allem anderen. */
+      --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-border: #34343a;
       --vc-bg: #1c1c1f; --vc-heading-bg: #232326; --vc-sk: #28282c; --up-surface: #08090a;
       /* ---- DIE DUNKLE LEITER (08.09.) --------------------------------------------------------
          An Linears dunklem Thema ausgerichtet, ausgelesen aus deren eigener Seite:
@@ -154,9 +160,9 @@
          angefordert. Linears Toene sind heller (#f7f8f8 / #d0d6e0 / #8a8f98) und leicht
          blaustichig; wer das auch will, aendert die drei --vc-Werte, aber das ist eine eigene
          Entscheidung und keine Folge dieser hier. */
-      --up-menu-bg: #232326; --up-sel-bg: #28282c; --up-menu-border: #34343a;
+      --up-menu-bg: #232326; --up-sel-bg: #28282c; --up-menu-border: #3e3e44;
       --up-dd-shadow: 0 10px 28px rgba(0,0,0,.32);
-      --vc-switch-bg: #232326; --vc-switch-border: #23252a; --vc-third: #808080;
+      --vc-switch-bg: #232326; --vc-switch-border: #34343a; --vc-third: #808080;
       --up-switch-off: #444444;   /* siehe hell */
       /* 35 statt 60 Prozent. Vorher stand hier derselbe Wert wie in --vc-switch-bg, und damit gab
          es im Dunkeln keinen Unterschied zwischen dem grossen und dem kleinen Umschalter -- den,
@@ -170,8 +176,13 @@
          ueberstrichene Zeile fast denselben Wert traegt (Mischwert etwa #232323), kostet
          nichts: die Kante zwischen Leiste und Koerper zeichnet die Kopfzelle selbst mit
          border-bottom 1px --vc-border. */
-      --vt-head-bg: #242424; --vt-logo-bg: #e0e0e0; --vt-row-hover: #232326;
-      --vt-row-hover-solid: #242424;
+      /* #242424 war ein Waise: ein Ton aus der Zeit vor Linears Leiter, den der Farbtausch am
+         08.09. nicht erfasst hat, weil er in keiner der getauschten Zeichenketten vorkam. Auf
+         einer Karte (#1c1c1f) sass damit ein Kopf, der zu keiner Stufe gehoerte -- genau der
+         "komische Eindruck", der gemeldet wurde. Jetzt tertiary, also dieselbe Stufe wie jede
+         andere Kopfzeile und jeder Hover. */
+      --vt-head-bg: #232326; --vt-logo-bg: #e0e0e0; --vt-row-hover: #232326;
+      --vt-row-hover-solid: #232326;
       --vt-up: #60d25d; --vt-down: #d25d5d;
       /* Im Dunkeln ein aufgehellter Ton mit weniger Deckung -- auch das wortgleich aus den alten
          Elementen. Der Hintergrund darf hier etwas mehr tragen, sonst verschwindet er im Grund. */
@@ -1425,7 +1436,7 @@
     .up-scale-menu[data-theme="dark"] {
       --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-third: #808080; --vc-border: #34343a;
       --vc-heading-bg: #232326; --vc-hover-border: #707070; --vc-bg: #1c1c1f; --up-switch-off: #444444;
-      --vc-switch-bg: #232326; --vc-switch-border: #23252a;
+      --vc-switch-bg: #232326; --vc-switch-border: #34343a;
       --up-dd-shadow: 0 10px 28px rgba(0,0,0,.32); --up-sel-bg: #28282c;
     }
     /* .up-dense-btn.is-active's own dark override above is scoped to .up-root — this menu lives
@@ -2936,7 +2947,7 @@
 }
 .up-topicmodal-backdrop.is-shown .up-topicmodal-card { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
 .up-topicmodal-backdrop[data-theme="dark"] .up-topicmodal-card {
-  --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-third: #808080; --vc-border: #23252a;
+  --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-third: #808080; --vc-border: #34343a;
   --vc-heading-bg: #232326; --vc-hover-border: #707070; --up-surface: #1c1c1f; --vc-sk: #28282c; --up-switch-off: #444444;
   --up-focus: #6DB2FF; --up-focus-ring: rgba(109,178,255,0.28);
 }
