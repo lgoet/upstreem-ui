@@ -270,11 +270,14 @@
    auf dieser Flaeche KEINEN eigenen Hintergrund -- sein weisses --am-trigger-bg stach als
    Kachel heraus. Sichtbar bleibt der Rahmen; beim Hover geht Text und Icon auf die
    Primaerfarbe, wie bei den Menuepunkten. */
+/* OHNE RAHMEN, angefordert am 08.09. Er war das letzte Kastenelement in einer Leiste, die sonst
+   nur aus Flaechen besteht -- die Menuepunkte darueber haben keinen. Der Hoverzustand ist damit
+   derselbe wie bei ihnen: eine Flaeche, kein Rahmenwechsel. */
 .usn-bar .mqa-trigger {
   height: 36px; border-radius: 12px; background: transparent;
-  border-color: var(--vc-border); color: var(--vc-muted);
+  border: 0; color: var(--vc-muted);
 }
-.usn-bar .mqa-trigger:hover { background: transparent; border-color: var(--vc-hover-border); color: var(--vc-text); }
+.usn-bar .mqa-trigger:hover { background: var(--up-sel-bg); color: var(--vc-text); }
 /* Waehrend des Aufklappens ist der Knopf einen Moment zu schmal fuer "Quick Actions" plus
    Tastenkuerzel -- der Text brach dann sichtbar in eine zweite Zeile um und der Knopf wuchs mit.
    Nichts umbrechen, ueberzaehliges abschneiden: die Breite steht nach 200ms ohnehin. */

@@ -61,9 +61,13 @@
 .uo-stage { flex: 1 1 auto; position: relative; }
 .uo-board { display: flex; gap: 16px; align-items: stretch; }
 
+/* KEINE FLAECHE MEHR AN DER SPALTE (08.09. angefordert). Das Brett bestand aus drei grossen
+   grauen Kaesten, in denen weisse Karten lagen -- zwei Ebenen Flaeche fuer eine Ordnung, die
+   schon durch die Ueberschriften da ist. Die Karten behalten ihre eigene, die Spalte gibt sie
+   ab. Die Ziel-Markierung beim Ziehen bleibt: dort ist eine Flaeche eine Aussage. */
 .uo-col {
   flex: 1 1 0; min-width: 300px; display: flex; flex-direction: column;
-  background: var(--uo-col-bg); border: 0; border-radius: 16px; padding-bottom: 12px;
+  background: transparent; border: 0; border-radius: 16px; padding-bottom: 12px;
   transition: background 140ms ease, box-shadow 140ms ease;
 }
 /* Drop target: the lane tints and gets an inset ring rather than a real border, so the column does
@@ -108,13 +112,22 @@
 .up-sticky:not(.is-stacked) .uo-col-head::after {
   right: 0; background: radial-gradient(circle at bottom left,  rgba(0,0,0,0) 16px, var(--up-surface) 16.5px);
 }
-.uo-col-dot { width: 8px; height: 8px; border-radius: 999px; flex: 0 0 auto; }
+/* 10 statt 8 (08.09.). "In Arbeit" bekommt denselben Aussenkreis, aber innen hohl: die Farbe
+   sitzt im 2px-Ring, die Mitte bleibt der Untergrund. Ueber einen inneren Schatten und nicht
+   ueber einen Rahmen -- ein Rahmen wuerde den Kreis bei krummer Skalierung wieder ausfransen,
+   dieselbe Falle wie bei den Topic-Chips. */
+.uo-col-dot { width: 10px; height: 10px; border-radius: 999px; flex: 0 0 auto; }
+.uo-col-dot.is-hollow { background: transparent !important; box-shadow: inset 0 0 0 2px currentColor; }
 /* Same 14px/500 as .up-heading -- a column title is a heading, and the standalone version's
    13.5px/600 was the single biggest reason the board read as a different app. */
-.uo-col-title { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
+/* 15 statt 14 (08.09. angefordert: einen Punkt groesser). */
+.uo-col-title { font-size: 15px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
 /* Count follows the app-wide "heading, dot, count" pattern (.up-head-sep + .up-head-count) instead
    of the bordered pill the standalone version drew. */
-.uo-col-count { font-size: 14px; font-weight: 500; color: var(--vc-muted); font-variant-numeric: tabular-nums; }
+/* Zwei Punkte groesser als der Titel wollte der Vergleich mit dem alten Wert (14): 16, und ein
+   Gewicht leichter (400 statt 500). Der Trenner davor ist weg -- Titel, Zahl, fertig. */
+.uo-col-count { font-size: 16px; font-weight: 400; color: var(--vc-muted); font-variant-numeric: tabular-nums; }
+.uo-col-head .up-head-sep, .uo-list-sechead .up-head-sep { display: none !important; }
 .uo-col-menu-wrap { margin-left: auto; position: relative; }
 
 .uo-col-body {
@@ -142,6 +155,19 @@
   transition: border-color 140ms ease, background 140ms ease;
 }
 .uo-card:hover { border-color: var(--vc-hover-border); background: var(--vt-row-hover); }
+/* Der Typ oben ohne eigene Flaeche (08.09.): er stand als graue Pille auf einer Karte, die selbst
+   schon eine Flaeche ist -- drei Ebenen uebereinander. Groesse, Gewicht und Laufweite bleiben, es
+   faellt nur der Grund weg. */
+.uo-eyebrow { background: transparent; padding-left: 0; padding-right: 0; }
+/* Die Beschreibung steht nicht mehr auf der Karte -- sie steht in der Detailansicht, und auf der
+   Karte kostete sie zwei Zeilen fuer einen Satz, den man dort ohnehin nur anliest. */
+.uo-card-reason { display: none; }
+/* Das Datum unten links faellt weg: es beantwortet keine Frage, die man vor dem Oeffnen stellt. */
+.uo-card-foot { display: none; }
+/* Titel in Sekundaerfarbe, Domain in der dritten -- angefordert. Vorher trug der Titel die
+   Primaerfarbe und stand damit gleichrangig neben der Ueberschrift der Karte. */
+.uo-source-title { color: var(--vc-muted); }
+.uo-source-domain { color: var(--vc-third); }
 .uo-card.is-dragging { opacity: 0.45; }
 
 .uo-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }

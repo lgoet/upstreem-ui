@@ -373,7 +373,7 @@
         '</div>'+
       '</div>';
       return '<section class="uo-col" data-status-key="'+col.key+'">'+
-        '<div class="uo-col-head"><span class="uo-col-dot" style="background:'+col.dot+';"></span><span class="uo-col-title">'+col.label+'</span><span class="up-head-sep" style="display:block"></span><span class="uo-col-count">'+items.length+'</span>'+menu+'</div>'+
+        '<div class="uo-col-head"><span class="uo-col-dot'+(col.key==='in_progress'?' is-hollow':'')+'" style="'+(col.key==='in_progress'?'color:':'background:')+col.dot+';"></span><span class="uo-col-title">'+col.label+'</span><span class="up-head-sep" style="display:block"></span><span class="uo-col-count">'+items.length+'</span>'+menu+'</div>'+
         '<div class="uo-col-body">'+body+'</div>'+
       '</section>';
     }).join('') + '</div>';
@@ -390,7 +390,7 @@
     cols.forEach(function(col){
       var items = pool.filter(function(it){ return statusKeyOf(it) === col.key; });
       if (!items.length) return;
-      html += '<div class="uo-list-section"><div class="uo-list-sechead"><span class="uo-col-dot" style="background:'+col.dot+';"></span><span class="uo-col-title">'+col.label+'</span><span class="up-head-sep" style="display:block"></span><span class="uo-col-count">'+items.length+'</span></div><div class="uo-list-rows">';
+      html += '<div class="uo-list-section"><div class="uo-list-sechead"><span class="uo-col-dot'+(col.key==='in_progress'?' is-hollow':'')+'" style="'+(col.key==='in_progress'?'color:':'background:')+col.dot+';"></span><span class="uo-col-title">'+col.label+'</span><span class="up-head-sep" style="display:block"></span><span class="uo-col-count">'+items.length+'</span></div><div class="uo-list-rows">';
       html += items.map(function(item){
         return '<div class="uo-row" data-id="'+esc(item.id)+'">'+
           '<div class="uo-row-main">'+
@@ -454,7 +454,7 @@
       var n = per[ci] != null ? per[ci] : 1, cards = '';
       for (var i = 0; i < n; i++) cards += skelCard();
       return '<section class="uo-col" data-status-key="'+col.key+'">'+
-        '<div class="uo-col-head"><span class="uo-col-dot" style="background:'+col.dot+';"></span><span class="uo-col-title">'+col.label+'</span><span class="up-head-sep" style="display:block"></span><span class="uo-skel uo-skel-cnt"></span></div>'+
+        '<div class="uo-col-head"><span class="uo-col-dot'+(col.key==='in_progress'?' is-hollow':'')+'" style="'+(col.key==='in_progress'?'color:':'background:')+col.dot+';"></span><span class="uo-col-title">'+col.label+'</span><span class="up-head-sep" style="display:block"></span><span class="uo-skel uo-skel-cnt"></span></div>'+
         '<div class="uo-col-body">'+cards+'</div>'+
       '</section>';
     }).join('') + '</div>';

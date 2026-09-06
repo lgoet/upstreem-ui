@@ -86,8 +86,10 @@
 .utm-cg-chip { cursor: default; pointer-events: none; }
 /* Ein Thema, das es nicht mehr gibt: gedaempft und ohne Farbe, damit es nicht wie ein echtes
    aussieht. Benannt wird es im JS ("Deleted topic"). */
-.utm-cg-chip.is-gone { border-style: dashed; color: var(--vc-muted);
-  border-color: var(--vc-border); background: transparent; }
+/* Ohne Rahmen -- der Chip hat seit dem 08.09. keinen mehr (core.css). Ein gestrichelter Rahmen
+   war die Marke fuer "dieses Thema gibt es nicht mehr"; sie wird jetzt von der Flaeche getragen:
+   keine Farbe, nur der Panelgrund, und der Text gedaempft. */
+.utm-cg-chip.is-gone { color: var(--vc-muted); background: var(--vc-heading-bg); }
 /* Auge und Kebab als ein Paar rechts. Der auto-Rand sitzt am Behaelter, nicht am Auge -- anders als
    im Popover der prompts-table, wo es keinen Behaelter gibt. */
 .utm-cg-actions { flex: 0 0 auto; margin-left: auto; display: inline-flex; align-items: center; gap: 2px; }

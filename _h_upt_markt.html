@@ -1,0 +1,88 @@
+<!doctype html><meta charset="utf-8">
+<title>Prompts Table: die Markt-Karte bei genau einem Markt</title>
+<pre id="out" style="font:12px/1.5 ui-monospace,Menlo,monospace;padding:12px;white-space:pre-wrap"></pre>
+<div id="rahmen"></div>
+<script>
+/* Zweimal gemeldet: "im Prompts Table ist immer noch die Karte Verteilung nach Maerkten sichtbar
+   bei Accounts, die nur einen Market haben". Der erste Anlauf entschied nur im echten Zeichnen --
+   und das laeuft nicht, solange die Tabelle noch laedt. Also wird hier JEDER Zustand geprueft:
+   direkt nach dem Aufbau (Skelett), nach einem Markt, nach zweien, und wieder zurueck auf einen.
+   Und die Gegenprobe: bei zwei Maerkten MUSS sie da sein, sonst hat man sie nur abgeschaltet. */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function warte(ms){ return new Promise(function(ok){ setTimeout(ok, ms); }); }
+function ja(b){ return b ? "RICHTIG" : "FALSCH"; }
+
+Promise.all(["core.css","prompts-table.css","core.js","prompts-table.js",
+             "bubble/prompts_table_bubble.html"].map(hol)).then(function(t){
+  var f = document.createElement("iframe");
+  f.style.cssText = "width:1240px;height:420px;border:1px solid #ccc;display:block";
+  document.getElementById("rahmen").appendChild(f);
+  var d = f.contentDocument, v = f.contentWindow;
+  d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0'></body></html>"); d.close();
+  try { v.localStorage.clear(); v.localStorage.setItem("up_prefs", JSON.stringify({ locale:"de" })); } catch(e){}
+  try { v.localStorage.setItem("pref_theme","light"); } catch(e){}
+  v.__fehler = [];
+  v.addEventListener("error", function(e){ v.__fehler.push(String(e.message)); });
+  [t[0],t[1]].forEach(function(c){ var st=d.createElement("style"); st.textContent=c; d.head.appendChild(st); });
+  var roh = t[4].replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim();
+  var w = d.createElement("div"); w.innerHTML = roh;
+  var r = w.querySelector(".upt-root") || w.firstElementChild;
+  r.setAttribute("data-instance","upt_markt"); r.setAttribute("data-cdn-pin","t");
+  r.setAttribute("data-isdark","no");
+  d.body.appendChild(r);
+  var j1=d.createElement("script"); j1.textContent=t[2]; d.head.appendChild(j1);
+  var j2=d.createElement("script"); j2.textContent=t[3]; d.head.appendChild(j2);
+  return warte(2200).then(function(){ return { d:d, v:v }; });
+}).then(function(u){
+  var d = u.d, v = u.v;
+  function sichtbar(){
+    var k = d.querySelector(".upt-kpi-markets");
+    if (!k) return null;
+    return !k.hidden && v.getComputedStyle(k).display !== "none";
+  }
+  function karten(){
+    return [].filter.call(d.querySelectorAll(".upt-kpi"), function(k){
+      return !k.hidden && v.getComputedStyle(k).display !== "none"; }).length;
+  }
+  var schritte = [];
+  function schritt(name, fn, erwartet){
+    return Promise.resolve(fn()).then(function(){
+      return warte(700).then(function(){
+        var s = sichtbar(), ok = (s === erwartet);
+        schritte.push(ok);
+        log("   " + name.padEnd(42," ") + " Karte sichtbar: " + s +
+            "   sichtbare Karten: " + karten() + "   " + ja(ok));
+      });
+    });
+  }
+  log("Erwartung: bei EINEM Markt weg, bei ZWEI da -- in jedem Zustand");
+  return schritt("direkt nach dem Aufbau (noch kein Markt)", function(){}, false)
+    .then(function(){ return schritt("EIN Markt gesetzt", function(){
+      v.setUpstreemMarkets([{ id:"1", alpha2:"DE", name:"Deutschland", prompt_count:12 }]);
+    }, false); })
+    .then(function(){ return schritt("Zeilen kommen an (Wartetor faellt)", function(){
+      v.renderPromptsTable(JSON.stringify({ instance_id:"upt_markt", total_count:1,
+        rows:[{ id:"p1", prompt:"Test", topics:"", market:"DE" }] }));
+    }, false); })
+    .then(function(){ return schritt("ZWEI Maerkte -- GEGENPROBE", function(){
+      v.setUpstreemMarkets([{ id:"1", alpha2:"DE", name:"Deutschland", prompt_count:12 },
+                            { id:"2", alpha2:"FR", name:"Frankreich", prompt_count:3 }]);
+    }, true); })
+    .then(function(){ return schritt("zweiter Markt OHNE Prompts", function(){
+      v.setUpstreemMarkets([{ id:"1", alpha2:"DE", name:"Deutschland", prompt_count:12 },
+                            { id:"2", alpha2:"FR", name:"Frankreich", prompt_count:0 }]);
+    }, true); })
+    .then(function(){ return schritt("wieder nur EINER", function(){
+      v.setUpstreemMarkets([{ id:"1", alpha2:"DE", name:"Deutschland", prompt_count:12 }]);
+    }, false); })
+    .then(function(){
+      log("");
+      log("Fehler im Rahmen: " + v.__fehler.length);
+      log("==> " + ja(schritte.every(Boolean) && !v.__fehler.length) +
+          " (in jedem Zustand richtig, und zwei Maerkte bringen sie zurueck)");
+      log("FERTIG");
+    });
+}).catch(function(e){ log("ABBRUCH: " + e.message + "\n" + (e.stack||"").split("\n").slice(0,3).join("\n")); });
+</script>

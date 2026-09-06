@@ -1122,15 +1122,28 @@
        identity. border stays declared at 1px solid transparent (not dropped entirely) purely so
        .is-on below can still show a real border colour as its selected-state indicator without
        the chip shifting size by 2px the moment it's picked. */
-    .up-topicchip { height: 28px; padding: 0 8px 0 11px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;
+    /* EIN Topic-Chip fuer die ganze App, und ohne Rahmen -- angefordert am 08.09.: "Topics muessen
+       ueberall exakt gleich gestylt sein. 28px Hoehe, nur der Hintergrund gefaerbt, keine Border."
+       Der Rahmen war 1px solid transparent und trug die is-on-Marke. Genau er war auch die
+       Ursache des Windows-Befundes: bei 125-Prozent-Skalierung wird die halbtransparente Fuellung
+       an der Grenze zwischen Rahmen- und Polsterkasten zweimal gerundet, und die Naht wird
+       sichtbar -- auf einem Mac mit ganzzahliger Skalierung faellt das nie auf. Die Variante
+       .is-static hatte ihn deshalb schon nicht mehr; jetzt hat ihn keiner mehr, und damit sind
+       Anzeige und Schalter buchstabengleich.
+       Die gewaehlte Marke traegt der Haken (.up-topicchip-check), der ohnehin schon einfaehrt --
+       eine zweite Marke daneben war nie noetig. */
+    .up-topicchip { height: 28px; padding: 0 9px 0 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;
       cursor: pointer; font-family: inherit;
-      border: 1px solid transparent;
+      border: 0;
       background: color-mix(in srgb, var(--ust-tag-color, #6b7280) 10%, transparent);
       color: var(--ust-tag-color, #4b5563); font-size: 12px; font-weight: 500; line-height: 1;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
-      transition: border-color 200ms cubic-bezier(.2,0,.38,.9); }
+      transition: background 200ms cubic-bezier(.2,0,.38,.9); }
     .up-topicchip-e { font-size: 12px; line-height: 1; }
-    .up-topicchip.is-on { border-color: var(--vc-text); }
+    /* is-on bleibt als Klasse (das JS setzt sie, und Fremdregeln koennen daran haengen), traegt
+       aber keinen Rahmen mehr. Die Fuellung wird stattdessen eine Stufe kraeftiger -- sichtbar,
+       ohne die Geometrie anzufassen. */
+    .up-topicchip.is-on { background: color-mix(in srgb, var(--ust-tag-color, #6b7280) 20%, transparent); }
     /* Nicht anklickbare Variante: im Prompts-Popover sind die Chips Schalter, im Radar, im
        Detailbereich und in einer Tabellenzelle sind sie reine Anzeige. Die Regel stand bisher nur
        in prompts-table.css -- der Radar gab die Klasse also schon aus und bekam sie nur dann, wenn
@@ -1141,7 +1154,9 @@
        zweimal gerundet und die Naht sichtbar. Polster um denselben 1px nach, damit der Text
        an derselben Stelle steht und die 28px Hoehe unangetastet bleiben. Nur an der reinen
        Anzeige: die Schalter im Popover brauchen den Rahmen als is-on-Marke. */
-    .up-topicchip.is-static { cursor: default; border: 0; padding: 0 9px 0 12px; }
+    /* Bleibt als eigene Klasse -- sie sagt "nicht anklickbar" und nichts sonst mehr: Rahmen und
+       Polster sind jetzt oben schon so. */
+    .up-topicchip.is-static { cursor: default; }
 
     /* ---------- Heat-Rampe ----------
        Fuenf Stufen, in JS interpoliert (UC.heatAt). Sie stehen in CSS statt in einem JS-Blob,
@@ -2823,12 +2838,12 @@
    reads the same everywhere regardless of which colour the tag happens to carry.
    Applied by adding .up-chiphover next to the chip's own class. */
 .up-chiphover { transition: background 120ms ease, border-color 120ms ease, color 120ms ease; }
-.up-chiphover:hover { background: #f5f5f5; border-color: #6f6f6f; color: #1f1f1b; box-shadow: none; }
+.up-chiphover:hover { background: #f5f5f5; color: #1f1f1b; box-shadow: none; }
 /* Matches on the component root OR on a body-level surface (the bulk bar) that carries the
    attribute itself — the chip can live in either. */
 .up-root[data-theme="dark"] .up-chiphover:hover,
 [data-theme="dark"] .up-chiphover:hover {
-  background: #2a2a2a; border-color: #707070; color: #e0e0e0; box-shadow: none;
+  background: #2a2a2a; color: #e0e0e0; box-shadow: none;
 }
 
 /* compact "No data" line for tables that live in a fixed-height box and have no room for the

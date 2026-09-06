@@ -4490,6 +4490,7 @@
       if (UC.onQuota)   kpiAb.push(UC.onQuota(kpiQuota, root));
       kpiTopics(UC.getTopics ? UC.getTopics() : []);
       kpiMarkets(UC.getMarkets ? UC.getMarkets() : []);
+      marktKarte();                       /* auch wenn das Wartetor noch zu ist */
       kpiQuota(UC.getQuota ? UC.getQuota() : null);
     }
     /* mitAuge: nur die letzte Karte traegt den Umschalter -- er klappt ALLE DREI zu, und drei
@@ -4543,6 +4544,18 @@
 
     /* Solange die Tabelle beim ERSTEN Mal laedt: Skelett in alle drei Karten und sonst nichts.
        Gibt true zurueck, wenn der Aufrufer aufhoeren soll. */
+    /* EINE STELLE fuer "gibt es mehr als einen Markt", und sie wird aus JEDEM Renderpfad
+       gerufen: Aufbau, Skelett und echtes Zeichnen. Der erste Anlauf entschied nur im echten
+       Zeichnen von kpiMarkets -- und das laeuft nicht, solange das Wartetor zu ist. Bei einem
+       Konto mit einem Markt stand die Karte deshalb waehrend des ganzen Ladens da, und wenn
+       danach kein Markt-Ereignis mehr kam, blieb sie stehen. Zweimal gemeldet. */
+    function marktKarte(){
+      var karte = kpiZeile ? kpiZeile.querySelector(".upt-kpi-markets") : null;
+      if (!karte) return;
+      var eigene = [];
+      try { eigene = (UC.getMarkets ? UC.getMarkets() : []) || []; } catch(e){}
+      karte.hidden = eigene.length < 2;
+    }
     function kpiWartend(){
       if (!kpiWartet) return false;
       /* state.hasData ist das Signal, das die Tabelle selbst benutzt: es steht, sobald eine
@@ -4565,6 +4578,7 @@
       var n1 = kpiTeil("upt-kpi-topics", "note"), n2 = kpiTeil("upt-kpi-markets", "note"),
           n3 = kpiTeil("upt-kpi-quota", "note");
       if (n1) n1.textContent = ""; if (n2) n2.textContent = ""; if (n3) n3.textContent = "";
+      marktKarte();                       /* im Skelett gilt dieselbe Regel */
     }
     /* Die zwei Kits werden VOR dem Wartetor gebaut, nicht erst beim ersten echten Zeichnen.
        Sonst hat kpiSkelette() nichts, womit es zeichnen koennte: gemessen als leere Topics- und
@@ -4751,9 +4765,7 @@
          angefordert: "der soll einfach in setUpstreemMarkets reinschauen, da wo nicht die
          Fulllist drin ist". Genau das ist UC.getMarkets() -- getAllMarkets() waere die volle
          Liste aller existierenden Maerkte, die ist hier nicht gemeint. */
-      var eigene = (UC.getMarkets ? UC.getMarkets() : []) || [];
-      var karteMarkets = kpiZeile ? kpiZeile.querySelector(".upt-kpi-markets") : null;
-      if (karteMarkets) karteMarkets.hidden = eigene.length < 2;
+      marktKarte();
       /* renderDonut nimmt "share" fuer den Ring UND fuer die Legende (dort durch fmtPct), es muss
          also der PROZENTWERT sein und nicht die Anzahl -- sonst stuende "29 %" fuer 29 Prompts in
          der Legende. Genauigkeit 0, wie fuer jeden Doughnut der App festgelegt (CLAUDE.md §2b). */
