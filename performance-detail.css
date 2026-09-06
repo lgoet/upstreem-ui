@@ -243,7 +243,7 @@
 .upd-explain-vis .up-varring-fill  { stroke: #1f1f1b; }
 /* Dark: die Platte ist dunkel, also drehen sich Ring und Nebentext mit. */
 .up-explain[data-theme="dark"] .upd-explain-vis .up-var-of { color: rgba(240,240,240,0.55); }
-.up-explain[data-theme="dark"] .upd-explain-vis .up-varring-track { stroke: #3a3a3a; }
+.up-explain[data-theme="dark"] .upd-explain-vis .up-varring-track { stroke: #28282c; }
 .up-explain[data-theme="dark"] .upd-explain-vis .up-varring-fill  { stroke: #f0f0f0; }
 
 /* ---------- Loading ---------- */

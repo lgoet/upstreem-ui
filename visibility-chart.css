@@ -194,11 +194,11 @@
 .vot-explain-sentdot { width: 6px; height: 6px; border-radius: 2px; flex: 0 0 auto; }
 .up-explain[data-theme="dark"] .vot-explain-h { color: #1f1f1b; }
 .up-explain[data-theme="dark"] .vot-explain-t { color: rgba(31,31,27,0.66); }
-.up-explain[data-theme="dark"] .vot-explain-vis { background: #1b1b1b; }
+.up-explain[data-theme="dark"] .vot-explain-vis { background: #1c1c1f; }
 .up-explain[data-theme="dark"] .vot-explain-row { color: #f0f0f0; }
 .up-explain[data-theme="dark"] .vot-explain-up { color: #6ee7b7; }
 .up-explain[data-theme="dark"] .vot-explain-down { color: #fca5a5; }
-.up-explain[data-theme="dark"] .vot-explain-sent { border-color: #353535; }
+.up-explain[data-theme="dark"] .vot-explain-sent { border-color: #23252a; }
 
 /* ============================================================
    Chart settings — hover-reveal gear button over the line chart + its dropdown (colors here, PLUS

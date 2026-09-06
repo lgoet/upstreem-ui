@@ -92,7 +92,7 @@
 .udt-explain-down { color: #b0200c; }
 .up-explain[data-theme="dark"] .udt-explain-h { color: #1f1f1b; }
 .up-explain[data-theme="dark"] .udt-explain-t { color: rgba(31,31,27,0.66); }
-.up-explain[data-theme="dark"] .udt-explain-vis { background: #1b1b1b; }
+.up-explain[data-theme="dark"] .udt-explain-vis { background: #1c1c1f; }
 .up-explain[data-theme="dark"] .udt-explain-row { color: #f0f0f0; }
 .up-explain[data-theme="dark"] .udt-explain-up { color: #6ee7b7; }
 .up-explain[data-theme="dark"] .udt-explain-down { color: #fca5a5; }
@@ -302,7 +302,7 @@
   display: inline-flex; align-items: center; justify-content: center; }
 .udt-sub-disp-btn:hover:not(.is-active) { color: var(--vc-text); }
 .udt-sub-disp-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
-.up-root[data-theme="dark"] .udt-sub-disp-btn.is-active { background: #121212; border-color: #353535; }
+.up-root[data-theme="dark"] .udt-sub-disp-btn.is-active { background: #08090a; border-color: #23252a; }
 .udt-sub-closebtn { margin-left: auto; flex: 0 0 auto; }
 
 .udt-sub-search { display: inline-flex; align-items: center; gap: 6px; height: 32px;

@@ -182,14 +182,14 @@
     function theme(){
       var dark = isDark();
       return {
-        grid:    tok("--vc-border", dark ? "#454545" : "#e0e2e6"),
+        grid:    tok("--vc-border", dark ? "#2c2e33" : "#e0e2e6"),
         gridSoft: dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)",
         font:    tok("--vc-muted",  dark ? "#a0a0a0" : "#6f737c"),
-        axis:    tok("--vc-border", dark ? "#454545" : "#e0e2e6"),
-        quad:    tok("--vc-border", dark ? "#454545" : "#e0e2e6"),
+        axis:    tok("--vc-border", dark ? "#2c2e33" : "#e0e2e6"),
+        quad:    tok("--vc-border", dark ? "#2c2e33" : "#e0e2e6"),
         quadTxt: tok("--vc-third",  dark ? "#808080" : "#9e9e9e"),
         logoBg:  tok("--vt-logo-bg", "#ffffff"),
-        logoBd:  tok("--vc-border", dark ? "#454545" : "#e0e2e6")
+        logoBd:  tok("--vc-border", dark ? "#2c2e33" : "#e0e2e6")
       };
     }
 

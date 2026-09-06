@@ -314,8 +314,8 @@
 }
 .usb-dlg-backdrop.is-shown .usb-dlg { transform: translateY(0) scale(1); }
 .usb-dlg-backdrop[data-theme="dark"] .usb-dlg {
-  --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-third: #808080; --vc-border: #353535;
-  --vc-heading-bg: rgba(42,42,42,0.6); --vc-hover-border: #707070; --up-surface: #1b1b1b;
+  --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-third: #808080; --vc-border: #23252a;
+  --vc-heading-bg: #232326; --vc-hover-border: #707070; --up-surface: #1c1c1f;
   --vt-down: #c8321c;
   --up-focus: #6DB2FF; --up-focus-ring: rgba(109,178,255,0.28);
 }

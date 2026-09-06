@@ -84,7 +84,7 @@
    Elemente darin sind also von .up-root * aus core gedeckt. */
 .usn-bar *::before, .usn-bar *::after { box-sizing: border-box; }
 .usn-bar[data-theme="dark"], .usn-fab[data-theme="dark"], .usn-scrim[data-theme="dark"] {
-  --usn-bg: #1b1b1b; --usn-sel: var(--up-sel-bg); --usn-akt: var(--up-sel-bg);
+  --usn-bg: #1c1c1f; --usn-sel: var(--up-sel-bg); --usn-akt: var(--up-sel-bg);
 }
 
 /* ---------- die Leiste ---------- */

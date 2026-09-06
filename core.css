@@ -126,16 +126,36 @@
    von der Ladereihenfolge, weil beide Seiten `!important` verwenden. */
 .up-root.up-root, .up-root.up-root * { overscroll-behavior: auto !important; }
     .up-root[data-theme="dark"] {
-      --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-border: #353535;
-      --vc-bg: #1b1b1b; --vc-heading-bg: rgba(42,42,42,0.6); --vc-sk: #3a3a3a; --up-surface: #121212;
-      --up-menu-bg: #151515; --up-sel-bg: rgba(42,42,42,0.60); --up-menu-border: #454545;
+      --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-border: #23252a;
+      --vc-bg: #1c1c1f; --vc-heading-bg: #232326; --vc-sk: #28282c; --up-surface: #08090a;
+      /* ---- DIE DUNKLE LEITER (08.09.) --------------------------------------------------------
+         An Linears dunklem Thema ausgerichtet, ausgelesen aus deren eigener Seite:
+             Grund #08090a  <  Karte/Panel #1c1c1f  <  Menue/Kopfzeile #232326  <  Auswahl #28282c
+         Vorher lag der Grund bei #121212 und die Karte bei #1b1b1b -- neun Stufen Abstand. Jetzt
+         sind es zwanzig, und genau das ist der Unterschied, den man sieht: die Karten stehen auf
+         der Seite statt in ihr zu verschwimmen.
+         EINE Umkehrung steckt darin, und sie ist Absicht: das Menue war mit #151515 DUNKLER als
+         die Karte, jetzt ist es heller. Ein Menue liegt ueber allem, und was oben liegt, ist bei
+         Linear heller -- sonst braucht es den Schatten, um ueberhaupt als eigene Ebene zu gelten.
+         Auswahl und Menuegrund muessen auseinanderliegen: mit beiden auf #232326 waere eine
+         gewaehlte Zeile im Menue unsichtbar gewesen.
+         ALLE Werte sind Linears eigene, ausgelesen von linear.app:
+             bg-primary #08090a   bg-secondary #1c1c1f   bg-tertiary #232326
+             bg-quaternary #28282c   border-primary #23252a   border-secondary #34343a
+         Auch die Auswahlflaeche ist ihre (quaternary) -- ausdruecklich so angefordert: "nimm
+         einfach alles aus Linear, also auch die selected bg states".
+         Die SCHRIFTFARBEN sind unveraendert (#e0e0e0 / #a0a0a0 / #808080) -- ebenfalls so
+         angefordert. Linears Toene sind heller (#f7f8f8 / #d0d6e0 / #8a8f98) und leicht
+         blaustichig; wer das auch will, aendert die drei --vc-Werte, aber das ist eine eigene
+         Entscheidung und keine Folge dieser hier. */
+      --up-menu-bg: #232326; --up-sel-bg: #28282c; --up-menu-border: #34343a;
       --up-dd-shadow: 0 10px 28px rgba(0,0,0,.32);
-      --vc-switch-bg: rgba(42,42,42,0.6); --vc-switch-border: #353535; --vc-third: #808080;
+      --vc-switch-bg: #232326; --vc-switch-border: #23252a; --vc-third: #808080;
       /* 35 statt 60 Prozent. Vorher stand hier derselbe Wert wie in --vc-switch-bg, und damit gab
          es im Dunkeln keinen Unterschied zwischen dem grossen und dem kleinen Umschalter -- den,
          den es im Hellen sehr wohl gibt. Weniger als 35 waere nicht mehr zu sehen. */
       --vc-switch-soft: rgba(42,42,42,0.35);
-      --vc-field: #2a2a2a;
+      --vc-field: #232326;
       /* Die Kopfleiste jeder Tabelle: eine Stufe HELLER als die Tabellenflaeche (--vc-bg
          #1b1b1b), nicht dunkler. Hier stand #121212 -- die Farbe der SEITE, die Leiste sass
          damit optisch hinter der Karte statt darauf. #242424 steht ohnehin in dieser Palette
@@ -143,7 +163,7 @@
          ueberstrichene Zeile fast denselben Wert traegt (Mischwert etwa #232323), kostet
          nichts: die Kante zwischen Leiste und Koerper zeichnet die Kopfzelle selbst mit
          border-bottom 1px --vc-border. */
-      --vt-head-bg: #242424; --vt-logo-bg: #e0e0e0; --vt-row-hover: rgba(42,42,42,0.6);
+      --vt-head-bg: #242424; --vt-logo-bg: #e0e0e0; --vt-row-hover: #232326;
       --vt-row-hover-solid: #242424;
       --vt-up: #60d25d; --vt-down: #d25d5d;
       /* Im Dunkeln ein aufgehellter Ton mit weniger Deckung -- auch das wortgleich aus den alten
@@ -643,11 +663,11 @@
     .up-explain-more { background: #f0f0f0; }
     .up-explain[data-theme="dark"] .up-explain-h { color: #1f1f1b; }
     .up-explain[data-theme="dark"] .up-explain-t { color: rgba(31,31,27,0.66); }
-    .up-explain[data-theme="dark"] .up-explain-vis { background: #1b1b1b; }
+    .up-explain[data-theme="dark"] .up-explain-vis { background: #1c1c1f; }
     .up-explain[data-theme="dark"] .up-explain-row { color: #f0f0f0; }
     .up-explain[data-theme="dark"] .up-explain-up { color: #6ee7b7; }
     .up-explain[data-theme="dark"] .up-explain-down { color: #fca5a5; }
-    .up-explain[data-theme="dark"] .up-explain-dot { background: #3a3a3a; border-color: #4a4a4a; box-shadow: 0 0 0 4px #1b1b1b; color: #b8b8b8; }
+    .up-explain[data-theme="dark"] .up-explain-dot { background: #28282c; border-color: #4a4a4a; box-shadow: 0 0 0 4px #1c1c1f; color: #b8b8b8; }
     .up-explain[data-theme="dark"] .up-explain-more { background: #2c2c2c; }
 
     
@@ -669,7 +689,7 @@
       display: inline-flex; align-items: center; justify-content: center; }
     .up-pagesize-btn:hover:not(.is-active) { color: var(--vc-text); }
     .up-pagesize-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
-    .up-root[data-theme="dark"] .up-pagesize-btn.is-active { background: #121212; border-color: #353535; }
+    .up-root[data-theme="dark"] .up-pagesize-btn.is-active { background: #08090a; border-color: #23252a; }
 
     .up-pager { display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto; margin-left: auto; }
     .up-pager-info { font-size: 12px; font-weight: 400; color: var(--vc-muted); white-space: nowrap; margin-right: 8px; }
@@ -741,7 +761,7 @@
       display: inline-flex; align-items: center; justify-content: center; flex: 1 1 50%; }
     .up-filter-dim-btn:hover { color: var(--vc-text); }
     .up-filter-dim-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
-    .up-root[data-theme="dark"] .up-filter-dim-btn.is-active { background: #121212; border-color: #353535; }
+    .up-root[data-theme="dark"] .up-filter-dim-btn.is-active { background: #08090a; border-color: #23252a; }
     /* Fixed height so the row doesn't grow when the Reset button appears — otherwise the whole
        menu jumps a few pixels the moment you tick the first item. */
     .up-filter-head { flex: 0 0 auto; height: 26px; display: flex; align-items: center; justify-content: space-between; padding: 0 9px; margin-bottom: 6px; }
@@ -935,7 +955,7 @@
        Aussage. */
     .up-subhost { display: none; }
     .up-subhost.is-on { display: block; }
-    .up-root[data-theme="dark"] .up-submenu { background: var(--up-menu-bg); border-color: #454545; }
+    .up-root[data-theme="dark"] .up-submenu { background: var(--up-menu-bg); border-color: #34343a; }
     /* Offen wird ueber eine KLASSE, nicht ueber :hover. Der Unterschied ist nicht kosmetisch: die
        Zeile laesst sich auch anklicken und bleibt dann offen, bis eine andere Zeile oder ein Klick
        nach draussen kommt -- mit :hover waere das nicht ausdrueckbar. Den Zeiger verfolgt
@@ -1268,7 +1288,7 @@
     .up-root[data-theme="dark"] .up-ment-menu,
     .up-root[data-theme="dark"] .up-cols-menu,
     .up-root[data-theme="dark"] .up-sort-menu,
-    .up-root[data-theme="dark"] .up-filter-menu { border-color: #454545; }
+    .up-root[data-theme="dark"] .up-filter-menu { border-color: #34343a; }
     .up-root[data-theme="dark"] .up-sort-menu { background: var(--up-menu-bg); }
     .up-sort.is-open .up-sort-btn { color: var(--vc-text); background: var(--vc-heading-bg); }
     .up-pop-head-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 18px; }   /* reserve the Select-all button height up front so nothing resizes */
@@ -1300,7 +1320,7 @@
     .up-dense-btn svg { width: 15px; height: 15px; }
     .up-dense-btn:hover { color: var(--vc-text); }
     .up-dense-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
-    .up-root[data-theme="dark"] .up-dense-btn.is-active { background: #121212; border-color: #353535; }
+    .up-root[data-theme="dark"] .up-dense-btn.is-active { background: #08090a; border-color: #23252a; }
     /* icon-only variant (row-height 3-way switch): no label, so it never outgrows the menu */
     .up-dense-btn-icon { flex: 1 1 33.333%; padding: 0; gap: 0; }
     .up-dense-btn-icon svg { width: 16px; height: 16px; }
@@ -1396,14 +1416,14 @@
     /* Same brightened dark border as every other dropdown menu in the app — a plain --vc-border
        black-ish tone reads as blurry/edgeless against a dark surface. */
     .up-scale-menu[data-theme="dark"] {
-      --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-third: #808080; --vc-border: #454545;
-      --vc-heading-bg: rgba(42,42,42,0.6); --vc-hover-border: #707070; --vc-bg: #1b1b1b;
-      --vc-switch-bg: rgba(42,42,42,0.6); --vc-switch-border: #353535;
-      --up-dd-shadow: 0 10px 28px rgba(0,0,0,.32); --up-sel-bg: rgba(42,42,42,0.60);
+      --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-third: #808080; --vc-border: #34343a;
+      --vc-heading-bg: #232326; --vc-hover-border: #707070; --vc-bg: #1c1c1f;
+      --vc-switch-bg: #232326; --vc-switch-border: #23252a;
+      --up-dd-shadow: 0 10px 28px rgba(0,0,0,.32); --up-sel-bg: #28282c;
     }
     /* .up-dense-btn.is-active's own dark override above is scoped to .up-root — this menu lives
        outside it, so the Line Width switch needs its own copy of the same colors. */
-    .up-scale-menu[data-theme="dark"] .up-dense-btn.is-active { background: #121212; border-color: #353535; }
+    .up-scale-menu[data-theme="dark"] .up-dense-btn.is-active { background: #08090a; border-color: #23252a; }
     /* Und aus demselben Grund der Knopf des Schalters: seine dunklen Farben haengen an
        .up-root[data-theme="dark"], und dieses Menue haengt am <body>. Ohne die zwei Zeilen bliebe
        der Knopf im Dunklen weiss -- auf der hellen Bahn des eingeschalteten Zustands ist er dann
@@ -1447,7 +1467,7 @@
     .vc-gran-btn:hover, .cc-gran-btn:hover { color: var(--vc-text); }
     .vc-gran-btn.is-active, .cc-gran-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
     .up-root[data-theme="dark"] .vc-gran-btn.is-active,
-    .up-root[data-theme="dark"] .cc-gran-btn.is-active { background: #121212; border-color: #353535; }
+    .up-root[data-theme="dark"] .cc-gran-btn.is-active { background: #08090a; border-color: #23252a; }
     .vc-gran-btn.is-disabled, .cc-gran-btn.is-disabled { opacity: 0.4; pointer-events: none; cursor: default; }
 
     .up-scale-opt { display: flex; flex-direction: column; gap: 8px; padding: 9px 10px; border-radius: 9px; cursor: pointer; }
@@ -2476,7 +2496,7 @@
 [data-theme="dark"] .up-dense::before, [data-theme="dark"] .tcd-mode::before,
 [data-theme="dark"] .uca-format-seg::before, [data-theme="dark"] .ubo-yaxis::before,
 [data-theme="dark"] .upt-status::before, [data-theme="dark"] .udt-sub-dispseg::before,
-[data-theme="dark"] .uap-tabs::before { background: #121212; border-color: #353535; }
+[data-theme="dark"] .uap-tabs::before { background: #08090a; border-color: #23252a; }
 /* Die Knoepfe stehen ueber dem Streifen. */
 .is-gleitend > button { position: relative; z-index: 1; }
 /* Und die aktive Stufe gibt ihre eigene Flaeche ab, SOBALD der Streifen misst. Drei Stufen der
@@ -2537,7 +2557,7 @@
 [data-theme="dark"] .up-seg-btn.is-active,
 [data-theme="dark"] .cc-seg-btn.is-active,
 [data-theme="dark"] .ubo-seg-btn.is-active,
-[data-theme="dark"] .tcl-seg-btn.is-active { background: #121212; border-color: #353535; }
+[data-theme="dark"] .tcl-seg-btn.is-active { background: #08090a; border-color: #23252a; }
 
 /* ---------- "X mentioned?" yes/no cell ----------
    Shared by urls-table and responses-table (both had their own byte-identical copy under a local
@@ -2576,7 +2596,7 @@
 .up-root[data-theme="dark"] .up-brandtoggle.is-no .up-brandcheck,
 .up-root[data-theme="dark"] .uut-brand-toggle.is-yes .uut-brand-check,
 .up-root[data-theme="dark"] .uut-brand-toggle.is-no .uut-brand-check {
-  color: var(--up-surface, #1b1b1b); }
+  color: var(--up-surface, #1c1c1f); }
 .up-brandtoggle.is-yes .up-brandcheck .up-brandcheck-yes,
 .uut-brand-toggle.is-yes .uut-brand-check .uut-brand-check-yes { display: block; }
 .up-brandtoggle.is-no .up-brandcheck .up-brandcheck-no,
@@ -2843,7 +2863,7 @@
    attribute itself — the chip can live in either. */
 .up-root[data-theme="dark"] .up-chiphover:hover,
 [data-theme="dark"] .up-chiphover:hover {
-  background: #2a2a2a; color: #e0e0e0; box-shadow: none;
+  background: #232326; color: #e0e0e0; box-shadow: none;
 }
 
 /* compact "No data" line for tables that live in a fixed-height box and have no room for the
@@ -2896,8 +2916,8 @@
 }
 .up-topicmodal-backdrop.is-shown .up-topicmodal-card { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
 .up-topicmodal-backdrop[data-theme="dark"] .up-topicmodal-card {
-  --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-third: #808080; --vc-border: #353535;
-  --vc-heading-bg: rgba(42,42,42,0.6); --vc-hover-border: #707070; --up-surface: #1b1b1b; --vc-sk: #3a3a3a;
+  --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-third: #808080; --vc-border: #23252a;
+  --vc-heading-bg: #232326; --vc-hover-border: #707070; --up-surface: #1c1c1f; --vc-sk: #28282c;
   --up-focus: #6DB2FF; --up-focus-ring: rgba(109,178,255,0.28);
 }
 @media (prefers-reduced-motion: reduce){ .up-topicmodal-backdrop, .up-topicmodal-card { transition-duration: 1ms; } }

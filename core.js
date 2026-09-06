@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20260920;
+  var BUILD = 20260921;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -6947,7 +6947,7 @@
     var h = String(hex).replace("#", "");
     function lin(c){ c = parseInt(c, 16) / 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }
     var y = 0.2126 * lin(h.slice(0,2)) + 0.7152 * lin(h.slice(2,4)) + 0.0722 * lin(h.slice(4,6));
-    return y > 0.179 ? "#151515" : "#ffffff";
+    return y > 0.179 ? "#232326" : "#ffffff";
   }
   var EMOJI_LIB_URL = "https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js";
   var emojiLibPromise = null;
@@ -9562,7 +9562,7 @@
     if (!selectedKeys.length) return prepped;
     var selSet = {};
     selectedKeys.forEach(function(k){ selSet[k] = true; });
-    var grey = isDark ? "#3a3a3a" : "#e0e2e6";
+    var grey = isDark ? "#28282c" : "#e0e2e6";
     return prepped.map(function(it){
       return (it.key != null && selSet[it.key]) ? it : { key: it.key, name: it.name, share: it.share, color: grey, __dimmed: true, __realColor: it.color };
     });
@@ -9908,7 +9908,7 @@
          kein innerHTML, kein Layout, kein Neuaufbau der Bilder. */
       var kennung = dps[0].dataIndex + "|" + (dark ? "d" : "l") + "|" +
         dps.map(function(dp){ return dp.datasetIndex + ":" + dp.parsed.y; }).join(",");
-      var boxBg = dark ? "#121212" : "#ffffff";
+      var boxBg = dark ? "#08090a" : "#ffffff";
       var boxBorder = dark ? "" : "border:1px solid #e0e2e6;";
       var boxShadow = dark ? "box-shadow:0 4px 14px rgba(0,0,0,.25);" : "box-shadow:0 4px 14px rgba(0,0,0,.10);";
       var textColor = dark ? "#e6e6e6" : "#1f1f1b";
@@ -10498,7 +10498,7 @@
 
     function themeColors(){
       return isDark()
-        ? { text:"#e0e0e0", muted:"#a0a0a0", border:"#353535", bg:"#1b1b1b" }
+        ? { text:"#e0e0e0", muted:"#a0a0a0", border:"#23252a", bg:"#1c1c1f" }
         : { text:"#1f1f1b", muted:"#6f737c", border:"#e0e2e6", bg:"#ffffff" };
     }
     function clearExtras(){
@@ -11018,7 +11018,7 @@
          sondern beim Wechsel. */
       if (letztesTheme !== (dark ? "d" : "l")){
         letztesTheme = dark ? "d" : "l";
-        var boxBg = dark ? "#121212" : "#ffffff";
+        var boxBg = dark ? "#08090a" : "#ffffff";
         var boxBorder = dark ? "" : "border:1px solid #e0e2e6;";
         var boxShadow = dark ? "box-shadow:0 4px 14px rgba(0,0,0,.25);" : "box-shadow:0 4px 14px rgba(0,0,0,.10);";
         var mutedColor = dark ? "#8a8a8a" : "#6f737c";

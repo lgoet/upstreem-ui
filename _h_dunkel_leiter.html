@@ -1,0 +1,82 @@
+<!doctype html><meta charset="utf-8">
+<title>Die dunkle Leiter: liegen die Flaechen wirklich auseinander?</title>
+<pre id="out" style="font:12px/1.5 ui-monospace,Menlo,monospace;padding:12px;white-space:pre-wrap"></pre>
+<div id="rahmen"></div>
+<script>
+/* Die dunklen Flaechen sind auf Linears Leiter umgestellt. Eine Palette ist erst dann in Ordnung,
+   wenn die Stufen WIRKLICH auseinanderliegen -- und das ist eine Zahl, keine Ansicht. Gemessen
+   wird der Helligkeitsabstand jeder Stufe zur naechsten und der Abstand der drei Schriftfarben
+   zu der Flaeche, auf der sie stehen.
+   Die Schwelle zwischen zwei Flaechen ist 5 und nicht 6. Der erste Anlauf verlangte 6 und meldete
+   FALSCH -- an Linears eigener Leiter, die zwischen tertiary (#232326) und quaternary (#28282c)
+   selbst nur 5.1 Punkte auseinanderliegt. Eine Schwelle, die die Vorlage nicht besteht, ist eine
+   Behauptung und keine Messung; die Zahl kommt jetzt aus der Vorlage.
+   Fuer Text gilt weiter 4.5:1 (WCAG AA). Die dritte Textfarbe ist Beiwerk und darf
+   darunter liegen; sie wird trotzdem ausgewiesen, damit niemand raet. */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function warte(ms){ return new Promise(function(ok){ setTimeout(ok, ms); }); }
+function ja(b){ return b ? "RICHTIG" : "FALSCH"; }
+function rgb(h){ h=h.trim().replace("#",""); if(h.length===3) h=h.split("").map(function(c){return c+c;}).join("");
+  return { r:parseInt(h.slice(0,2),16), g:parseInt(h.slice(2,4),16), b:parseInt(h.slice(4,6),16) }; }
+function hell(c){ return 0.2126*c.r + 0.7152*c.g + 0.0722*c.b; }
+/* Kontrastverhaeltnis nach WCAG -- die relative Leuchtdichte, nicht die einfache Helligkeit. */
+function lum(c){
+  function k(v){ v/=255; return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4); }
+  return 0.2126*k(c.r) + 0.7152*k(c.g) + 0.0722*k(c.b);
+}
+function verhaeltnis(a,b){ var x=lum(a)+0.05, y=lum(b)+0.05; return x>y ? x/y : y/x; }
+
+hol("core.css").then(function(css){
+  var f = document.createElement("iframe");
+  f.style.cssText = "width:900px;height:120px;border:1px solid #ccc;display:block";
+  document.getElementById("rahmen").appendChild(f);
+  var d = f.contentDocument, v = f.contentWindow;
+  d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0'></body></html>"); d.close();
+  var st = d.createElement("style"); st.textContent = css; d.head.appendChild(st);
+  var r = d.createElement("div"); r.className = "up-root";
+  r.setAttribute("data-theme","dark"); r.setAttribute("data-isdark","yes");
+  d.body.appendChild(r);
+  return warte(300).then(function(){
+    var cs = v.getComputedStyle(r);
+    function tok(n){ return cs.getPropertyValue(n).trim(); }
+    var leiter = [
+      ["Grund der Seite   --up-surface", tok("--up-surface")],
+      ["Karte / Panel     --vc-bg",      tok("--vc-bg")],
+      ["Kopfzeile/Menue   --vc-heading-bg", tok("--vc-heading-bg")],
+      ["Auswahl           --up-sel-bg",  tok("--up-sel-bg")]
+    ];
+    log("DIE LEITER");
+    var ok = true;
+    leiter.forEach(function(e, i){
+      var h = hell(rgb(e[1]));
+      var ab = i ? (h - hell(rgb(leiter[i-1][1]))) : null;
+      if (ab !== null && ab < 5) ok = false;
+      log("   " + e[0].padEnd(34," ") + e[1].padEnd(9," ") + " Helligkeit " + h.toFixed(1) +
+          (ab === null ? "" : "   Abstand zur vorigen " + ab.toFixed(1)));
+    });
+    log("   ==> " + ja(ok) + " (jede Stufe mindestens 5 Punkte ueber der darunter -- Linears eigener kleinster Abstand)");
+    log("");
+    log("SCHRIFT AUF DEN FLAECHEN (Kontrastverhaeltnis, AA verlangt 4.5)");
+    var texte = [["Text  --vc-text", tok("--vc-text")], ["gedaempft --vc-muted", tok("--vc-muted")],
+                 ["dritte --vc-third", tok("--vc-third")]];
+    var textOk = true;
+    texte.forEach(function(t){
+      var zeile = "   " + t[0].padEnd(22," ") + t[1] + "  ";
+      leiter.forEach(function(fl){
+        var vh = verhaeltnis(rgb(t[1]), rgb(fl[1]));
+        if (t[0].indexOf("dritte") < 0 && vh < 4.5) textOk = false;
+        zeile += fl[0].split(" ")[0].slice(0,6) + " " + vh.toFixed(1) + "   ";
+      });
+      log(zeile);
+    });
+    log("   ==> " + ja(textOk) + " (Text und gedaempfter Text ueber 4.5 auf jeder Flaeche;" +
+        " die dritte Farbe ist Beiwerk und darf darunter liegen)");
+    log("");
+    log("ZUM VERGLEICH, Linears eigene Werte (ausgelesen von linear.app):");
+    log("   Grund #08090a   Panel #1c1c1f   erhoeht #232326   noch hoeher #28282c");
+    log("FERTIG");
+  });
+}).catch(function(e){ log("ABBRUCH: " + e.message); });
+</script>

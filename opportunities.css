@@ -39,7 +39,7 @@
   --uo-pot-a: #c4c9d0;
   --uo-pot-b: var(--vc-text);
 }
-.up-root[data-theme="dark"].uo-root { --uo-col-bg: #181818; --uo-pot-a: #4a4f56; }
+.up-root[data-theme="dark"].uo-root { --uo-col-bg: #1c1c1f; --uo-pot-a: #4a4f56; }
 
 /* ---------- toolbar ----------
    .up-head / .up-heading / .up-head-tools / .up-search / .up-iconbtn / .up-seg all come from
@@ -255,7 +255,7 @@
 /* Die Erklaerkarte haengt am body und wird im Dark Mode zu #1b1b1b (core.css). Mit den Hellwerten
    oben kehrt sich die Ableseregel um: die LEEREN Balken werden zum hellsten Element der Platte,
    und die gefuellten laufen gegen #1f1f1b aus, sind also am rechten Ende praktisch weg. */
-.up-explain[data-theme="dark"] .uo-pot-bar { background-color: #353535; }
+.up-explain[data-theme="dark"] .uo-pot-bar { background-color: #23252a; }
 .up-explain[data-theme="dark"] .uo-pot-bar.is-on { background-image: linear-gradient(90deg, #4a4a4a, #e0e0e0); }
 
 /* ---------- list mode ---------- */

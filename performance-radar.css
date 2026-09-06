@@ -119,7 +119,7 @@
    deshalb den Grund der SEITE statt den des Kastens, den es jetzt nicht mehr gibt. */
 .up-root[data-theme="dark"] .uhm-box { background: transparent; }
 .up-root[data-theme="dark"] .uhm-rowhead,
-.up-root[data-theme="dark"] .uhm-corner { background: var(--up-surface, #121212); }
+.up-root[data-theme="dark"] .uhm-corner { background: var(--up-surface, #08090a); }
 .uhm-rowhead .up-topicchip { max-width: 100%; }
 
 /* ---------- cells ----------
@@ -290,8 +290,8 @@
 }
 .uhm-tip.is-on { opacity: 1; }
 .uhm-tip[data-theme="dark"] {
-  --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-third: #808080; --vc-border: #454545;
-  --vc-bg: #1b1b1b; --vt-logo-bg: #e0e0e0;
+  --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-third: #808080; --vc-border: #2c2e33;
+  --vc-bg: #1c1c1f; --vt-logo-bg: #e0e0e0;
   --vt-up: #60d25d; --vt-down: #d25d5d;
 }
 .uhm-tip * { box-sizing: border-box; }

@@ -202,7 +202,7 @@
   display: inline-flex; align-items: center; gap: 6px; }
 .upt-status-btn:hover { color: var(--vc-text); }
 .upt-status-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
-.up-root[data-theme="dark"] .upt-status-btn.is-active { background: #121212; border-color: #353535; }
+.up-root[data-theme="dark"] .upt-status-btn.is-active { background: #08090a; border-color: #23252a; }
 .up-root.is-searchtakeover .upt-status { display: none; }
 /* "(Inactive)" qualifier before the "Prompts" heading label -- built once in JS (see the same
    IIFE above), text never changes, only its visibility does. Secondary/muted, matching the
@@ -314,9 +314,9 @@
 }
 @media (prefers-reduced-motion: reduce){ .upt-bulkbar { transition-duration: 1ms; } }
 .upt-bulkbar[data-theme="dark"] {
-  --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-border: #353535;
-  --vc-heading-bg: rgba(42,42,42,0.6); --vc-switch-bg: rgba(42,42,42,0.6); --vc-third: #808080;
-  --vc-hover-border: #707070; --up-surface: #151515;
+  --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-border: #23252a;
+  --vc-heading-bg: #232326; --vc-switch-bg: #232326; --vc-third: #808080;
+  --vc-hover-border: #707070; --up-surface: #232326;
   --up-focus: #6DB2FF; --up-focus-ring: rgba(109,178,255,0.28);
   /* This is the actual "blurry border" — the frosted ::before ring, not any dropdown menu's plain
      border (those live in core.css and were already fixed separately). A BLACK tint at any opacity

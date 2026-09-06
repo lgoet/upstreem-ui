@@ -77,7 +77,7 @@
   cursor: pointer; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; }
 .ubo-yaxis-btn:hover { color: var(--vc-text); }
 .ubo-yaxis-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
-.up-root[data-theme="dark"] .ubo-yaxis-btn.is-active { background: #121212; border-color: #353535; }
+.up-root[data-theme="dark"] .ubo-yaxis-btn.is-active { background: #08090a; border-color: #23252a; }
 
 /* Hide/Show the whole chart container — same behaviour and same icon pair as citations-combo-chart */
 .ubo-hide .ic-show { display: none; }
@@ -149,7 +149,7 @@
   opacity: 0; transition: opacity 120ms ease;
 }
 .ubo-mxtip.is-on { opacity: 1; }
-.ubo-mxtip[data-theme="dark"] { --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-border: #454545; --vc-bg: #1b1b1b;
+.ubo-mxtip[data-theme="dark"] { --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-border: #34343a; --vc-bg: #1c1c1f;
   --vt-logo-bg: #e0e0e0; --vc-third: #808080; }
 .ubo-mxtip * { box-sizing: border-box; }
 .ubo-mxtip-head { display: flex; align-items: center; gap: 8px; }
@@ -219,8 +219,8 @@
   display: flex; flex-direction: column; gap: 2px;
 }
 .ubo-actmenu.is-shown { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
-.ubo-actmenu[data-theme="dark"] { --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-border: #454545;
-  --vc-bg: #1b1b1b; --vc-heading-bg: rgba(42,42,42,0.6); --up-sel-bg: rgba(42,42,42,0.60); }
+.ubo-actmenu[data-theme="dark"] { --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-border: #34343a;
+  --vc-bg: #1c1c1f; --vc-heading-bg: #232326; --up-sel-bg: #232326; }
 .ubo-actmenu * { box-sizing: border-box; }
 @media (prefers-reduced-motion: reduce){ .ubo-actmenu { transition-duration: 1ms; } }
 

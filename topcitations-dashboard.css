@@ -72,7 +72,7 @@
   display: inline-flex; align-items: center; justify-content: center; }
 .tcd-mode-btn:hover { color: var(--vc-text); }
 .tcd-mode-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
-.up-root[data-theme="dark"] .tcd-mode-btn.is-active { background: #121212; border-color: #353535; }
+.up-root[data-theme="dark"] .tcd-mode-btn.is-active { background: #08090a; border-color: #23252a; }
 
 /* right heading with total-count */
 .tcd-heading-right { display: flex; align-items: center; }

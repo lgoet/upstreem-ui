@@ -941,7 +941,7 @@
     transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
   }
   .am-suggest-card:hover { border-color: #6f6f6f; background: #f5f5f5; }
-  #ask-mira[data-theme="dark"] .am-suggest-card:hover { border-color: #707070; background: #2a2a2a; }
+  #ask-mira[data-theme="dark"] .am-suggest-card:hover { border-color: #707070; background: #232326; }
   .am-suggest-card > span:nth-child(2) { min-width: 0; flex: 1 1 auto; }
   .am-suggest-ic {
     width: 22px; height: 22px; flex: 0 0 auto;
@@ -994,7 +994,7 @@
   .am-cat-card:hover .am-cat-ic { transform: rotate(-4deg) scale(1.02); box-shadow: 0 3px 9px rgba(20,22,28,.10); color: var(--am-text); }
   .am-cat-ic svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
   .am-cat-name { flex: 1 1 auto; min-width: 0; }
-  #ask-mira[data-theme="dark"] .am-cat-ic { background: rgba(42,42,42,0.3); border-color: #3a3a3a; box-shadow: 0 1px 4px rgba(0,0,0,.28); }
+  #ask-mira[data-theme="dark"] .am-cat-ic { background: rgba(42,42,42,0.3); border-color: #28282c; box-shadow: 0 1px 4px rgba(0,0,0,.28); }
   #ask-mira[data-theme="dark"] .am-cat-card:hover .am-cat-ic { background: rgba(53,54,56,0.3); color: #ececec; box-shadow: 0 3px 10px rgba(0,0,0,.38); }
   .am-cat-chev { flex: 0 0 auto; display: grid; place-items: center; color: var(--am-muted-2); }
   .am-cat-chev svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -1131,13 +1131,13 @@
   .am-rep-edit:hover { color: var(--am-text); border-color: var(--am-muted-2); background: var(--am-soft); }
   .am-rep-card.is-editable .am-rep-edit { opacity: 1; pointer-events: auto; }
   .am-rep-card.is-editable .am-rep-go { opacity: 0; pointer-events: none; }
-  #ask-mira[data-theme="dark"] .am-rep-edit { background: #2a2a2a; border-color: #3a3a3a; }
+  #ask-mira[data-theme="dark"] .am-rep-edit { background: #232326; border-color: #28282c; }
   #ask-mira[data-theme="dark"] .am-rep-edit:hover { color: #ececec; border-color: #707070; background: #353638; }
   /* dark mode: report cards without background, like the category cards */
   /* Die zwei dunklen Sonderzeilen fuer die Reportkarte sind weg: --am-bg und
      --vt-row-hover-solid drehen sich mit dem Thema, und #2a2a2a war deckend, aber zu hell --
      dieselbe Meldung wie bei den Kategoriekarten. */
-  #ask-mira[data-theme="dark"] .am-rep-ic { background: rgba(42,42,42,0.3); border-color: #3a3a3a; box-shadow: 0 1px 4px rgba(0,0,0,.28); }
+  #ask-mira[data-theme="dark"] .am-rep-ic { background: rgba(42,42,42,0.3); border-color: #28282c; box-shadow: 0 1px 4px rgba(0,0,0,.28); }
   #ask-mira[data-theme="dark"] .am-rep-card:hover .am-rep-ic { background: rgba(53,54,56,0.3); color: #ececec; box-shadow: 0 3px 10px rgba(0,0,0,.38); }
 
   /* ===================== COMPOSER ===================== */
@@ -1259,7 +1259,7 @@
   .am-model-opt:not(.is-active) { opacity: 0.6; }
   .am-model-opt:not(.is-active):hover { opacity: 1; }
   .am-model-opt:hover { background: var(--am-soft); }
-  #ask-mira[data-theme="dark"] .am-model-opt:hover { background: #2a2a2a; }
+  #ask-mira[data-theme="dark"] .am-model-opt:hover { background: #232326; }
   #ask-mira[data-theme="dark"] .am-model-opt.is-active { background: #252525; }
   .am-model-opt-ic { width: 22px; height: 22px; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; color: var(--am-text); }
   .am-model-opt[data-model="pro"] .am-model-opt-ic svg { width: 20px; height: 20px; display: block; }
@@ -1628,7 +1628,7 @@
   .am-dd-trigger:hover { border-color: #6f6f6f; background: var(--am-soft); }
   .am-dd.is-open .am-dd-trigger,
   .am-dd.is-open .am-dd-trigger:hover { border-color: #6f6f6f; background: var(--am-card); box-shadow: none; }
-  #ask-mira[data-theme="dark"] .am-dd-trigger:hover { border-color: #707070; background: #2a2a2a; }
+  #ask-mira[data-theme="dark"] .am-dd-trigger:hover { border-color: #707070; background: #232326; }
   #ask-mira[data-theme="dark"] .am-dd.is-open .am-dd-trigger,
   #ask-mira[data-theme="dark"] .am-dd.is-open .am-dd-trigger:hover { border-color: #707070; background: var(--am-card); box-shadow: none; }
   .am-dd-value { display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
@@ -1654,7 +1654,7 @@
   }
   .am-dd-opt.is-selected .am-dd-check { background: var(--am-primary); border-color: var(--am-primary); color: #fff; }
   .am-dd-opt.is-selected .am-dd-check::before { content: "✓"; font-size: 10px; line-height: 1; }
-  #ask-mira[data-theme="dark"] .am-dd-opt:hover { background: #2a2a2a; }
+  #ask-mira[data-theme="dark"] .am-dd-opt:hover { background: #232326; }
   #ask-mira[data-theme="dark"] .am-dd-opt.is-selected { background: #252525; }
   #ask-mira[data-theme="dark"] .am-dd-opt.is-selected .am-dd-check { background: #e0e0e0; border-color: #e0e0e0; color: #1f1f1b; }
   .am-newchat:hover { background: var(--am-soft); border-color: #6f6f6f; }
@@ -2058,19 +2058,19 @@
   }
   #ask-mira[data-theme="dark"] .am-send:hover { background: #a0a0a0; box-shadow: none; }
   #ask-mira[data-theme="dark"] .am-bubble tbody tr:nth-child(even) td { background: rgba(255,255,255,0.022); }
-  #ask-mira[data-theme="dark"] .am-ev-pill { background: transparent; border-color: #353535; color: #a0a0a0; }
+  #ask-mira[data-theme="dark"] .am-ev-pill { background: transparent; border-color: #23252a; color: #a0a0a0; }
   #ask-mira[data-theme="dark"] .am-ev-pill:hover { background: #1e1e1e; border-color: #555; }
 
   /* Inline markers — dark mode. Explicit data-theme only; the OS-preference twins that used
      to sit next to every one of these are gone, see the token block above. */
-  #ask-mira[data-theme="dark"] .am-bubble blockquote { border-left-color: #3a3a3a; }
+  #ask-mira[data-theme="dark"] .am-bubble blockquote { border-left-color: #28282c; }
   #ask-mira[data-theme="dark"] .am-bubble span[data-mira-sentiment="positive"]    { background: rgba(34,197,94,0.12);  color:#86efac; }
   #ask-mira[data-theme="dark"] .am-bubble span[data-mira-sentiment="negative"]    { background: rgba(248,113,113,0.18); color:#fecaca; }
   #ask-mira[data-theme="dark"] .am-bubble span[data-mira-source-signal="likely"]  { background: rgba(96,165,250,0.12);  color:#bfdbfe; }
   #ask-mira[data-theme="dark"] .am-bubble span[data-mira-source-signal="unclear"] { background: rgba(251,191,36,0.13);  color:#fde68a; }
 
   /* Dark-mode hover / focus parity with prompt research */
-  #ask-mira[data-theme="dark"] .am-icon-action:hover { background: #2a2a2a; color: #e0e0e0; }
+  #ask-mira[data-theme="dark"] .am-icon-action:hover { background: #232326; color: #e0e0e0; }
   #ask-mira[data-theme="dark"] .am-icon-action[aria-expanded="true"] { background: #242424; color: #e0e0e0; }
   /* topic chips — dark mode (1:1 with the Opportunities page: white text, deeper tints) */
   #ask-mira[data-theme="dark"] .uo-tag { color: #e0e0e0; background: color-mix(in srgb, var(--uo-tag, #6b7280) 22%, transparent); border-color: color-mix(in srgb, var(--uo-tag, #6b7280) 45%, transparent); }
