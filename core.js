@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20260915;
+  var BUILD = 20260916;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -1299,6 +1299,127 @@
     "Show title or URL": "Titel oder URL zeigen",
     "Uncategorized": "Ohne Kategorie",
     "All Types": "Alle Typen",
+
+    /* ---- BESTANDSAUFNAHME 07.09.: was in den Komponenten noch englisch stand ------------------
+       Gefunden mit .finde_untexte.py -- es holt aus jedem Quelltext die Zeichenketten, die als
+       Text im DOM landen koennen, und haelt sie gegen diesen Katalog. Glossarwoerter (Brands,
+       Topics, Prompts, Domains, URLs, Visibility, Sentiment, Ranking) stehen ausdruecklich NICHT
+       hier: sie bleiben auch im deutschen Satz englisch. */
+
+    /* team-orga */
+    "Admin": "Admin",
+    "Member": "Mitglied",
+    "No entries yet": "Noch keine Einträge",
+    "No members yet": "Noch keine Mitglieder",
+    "Send invite": "Einladung senden",
+    "They get an email with a link to join this team":
+      "Sie bekommen eine E-Mail mit einem Link, um diesem Team beizutreten",
+
+    /* opportunities */
+    "Create this with AI": "Mit KI erstellen",
+    "No matching opportunities": "Keine passenden Opportunities",
+    "Nothing here yet": "Hier ist noch nichts",
+
+    /* performance */
+    "Color scale": "Farbskala",
+    "Mentions weight": "Gewichtung der Mentions",
+    "Nothing to pick yet": "Noch nichts zur Auswahl",
+    "Shows how many mentions a value is based on.":
+      "Zeigt, auf wie vielen Mentions ein Wert beruht.",
+    "Visibility over time": "Visibility im Zeitverlauf",
+    "Leading": "Führend",
+
+    /* brand-editor */
+    "Alias": "Alias",
+    "Brand Color": "Brand-Farbe",
+    "Brand color": "Brand-Farbe",
+    "Brand Match Aliases / Products": "Alias-Treffer / Produkte der Brand",
+    "Change the primary color for this brand. It is used in every chart.":
+      "Ändert die Hauptfarbe dieser Brand. Sie wird in jedem Chart verwendet.",
+    "Ending date": "Enddatum",
+    "Starting date": "Startdatum",
+    "No tracking periods yet.": "Noch keine Beobachtungszeiträume.",
+    "Primary tracking- and display name": "Haupt-Beobachtungs- und Anzeigename",
+    "Reason": "Grund",
+    "Shown everywhere in the app and matched in AI answers.":
+      "Wird überall in der App gezeigt und in KI-Antworten gesucht.",
+    "The periods during which this brand was tracked in AI responses.":
+      "Die Zeiträume, in denen diese Brand in KI-Antworten beobachtet wurde.",
+    "Tracking Statistics": "Beobachtungs-Statistik",
+
+    /* ask-mira */
+    "Create new Project": "Neues Projekt anlegen",
+    "Edit prompt": "Prompt bearbeiten",
+    "Good response": "Gute Antwort",
+    "Move to Project": "In ein Projekt verschieben",
+    "No chats yet": "Noch keine Chats",
+    "No recent chats": "Keine letzten Chats",
+    "Projects": "Projekte",
+    "Recents": "Zuletzt",
+    "Rename": "Umbenennen",
+
+    /* preferences */
+    "Charts": "Charts",
+    "Choose how upstreem looks and formats your data":
+      "Wähle, wie upstreem aussieht und deine Daten formatiert",
+    "How lines and legends are drawn across every chart":
+      "Wie Linien und Legenden in allen Charts gezeichnet werden",
+    "My Preferences": "Meine Einstellungen",
+    "Profile": "Profil",
+    "Your name and picture, as your team sees them":
+      "Dein Name und Bild, so wie dein Team sie sieht",
+
+    /* topics-manager */
+    "Custom Groupings": "Eigene Gruppierungen",
+    "Deleted topic": "Gelöschtes Topic",
+    "No custom groupings yet": "Noch keine eigenen Gruppierungen",
+
+    /* export-data */
+    "Export Data": "Daten exportieren",
+    "Time range": "Zeitraum",
+    "What to export": "Was exportiert wird",
+
+    /* prompt-research */
+    "Show Less": "Weniger zeigen",
+    "The estimated frequency that users actually use this or a very similar prompt.":
+      "Die geschätzte Häufigkeit, mit der Nutzer diesen oder einen sehr ähnlichen Prompt wirklich verwenden.",
+
+    /* create-with-ai */
+    "AI assistant": "KI-Assistent",
+    "Add schema markup (JSON-LD)": "Schema-Markup hinzufügen (JSON-LD)",
+    "Copy prompt": "Prompt kopieren",
+    "Internal Links": "Interne Links",
+    "No pages found. Paste a URL above to add it.":
+      "Keine Seiten gefunden. Füge oben eine URL ein, um sie hinzuzufügen.",
+    "Output format": "Ausgabeformat",
+    "Preview .md file": ".md-Datei ansehen",
+    "Structured data snippet for your CMS, generated to match the content.":
+      "Strukturierte Daten für dein CMS, passend zum Inhalt erzeugt.",
+    "What should the AI consider?": "Was soll die KI berücksichtigen?",
+    "You need to be logged in to the selected AI provider for this to work!":
+      "Dafür musst du beim gewählten KI-Anbieter angemeldet sein!",
+    "Your pages the content should link to (max 3)":
+      "Deine Seiten, auf die der Inhalt verlinken soll (max. 3)",
+
+    /* core: Chart-Einstellungen und Topic-Bearbeitung */
+    "Colorblind Safe": "Farbenblind-sicher",
+    "Vivid": "Kräftig",
+    "Tableau": "Tableau",
+    "Line Width": "Linienstärke",
+    "Show Legend": "Legende zeigen",
+    "Group name": "Name der Gruppe",
+    "Topic Color": "Topic-Farbe",
+    "Topic color": "Topic-Farbe",
+    "Topic Emoji": "Topic-Emoji",
+    "Topic emoji": "Topic-Emoji",
+    /* Das Konto-Menue der Seitenleiste (07.09. ausdruecklich angefordert). */
+    "Account Settings": "Kontoeinstellungen",
+    "System": "System",
+    "URL Types": "URL-Typen",
+    "Citation Types": "Citation-Typen",
+    "URL Type": "URL-Typ",
+    "Citation Type": "Citation-Typ",
+    "Apply": "Anwenden",
     "{n} Types": "{n} Typen",
     /* ---- DIE URL-TYPEN (07.09.) -------------------------------------------------------------
        URL_LABEL weiter unten haelt vierzehn Typen, und nur "Uncategorized" stand hier -- die

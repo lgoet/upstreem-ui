@@ -611,7 +611,11 @@
 .usn-pop { position: relative; }
 .usn-bar .usn-menu { width: 300px; min-width: 0; max-width: calc(100vw - 32px); }
 .usn-bar .usn-menu.is-team { top: calc(100% + 6px); bottom: auto; left: 0; right: auto; }
-.usn-bar .usn-menu.is-acc { top: auto; bottom: calc(100% + 6px); left: 0; right: auto; }
+/* 8px mehr Luft oben -- ausdruecklich angefordert (07.09.). Nur an DIESEM Menue: es beginnt mit
+   einer Ueberschrift, und die sass zu dicht am Rand; die anderen Dropdowns beginnen mit einer
+   Zeile und brauchen es nicht. */
+.usn-bar .usn-menu.is-acc { top: auto; bottom: calc(100% + 6px); left: 0; right: auto;
+  padding-top: calc(var(--up-dd-pad) + 8px); }
 /* Im Mini-Zustand ist links kein Platz -- die Panels klappen nach rechts neben die Leiste.
    20px und nicht 8px: das Prozent bezieht sich auf den Wrapper, und der endet 12px vor der
    Kante der Leiste (deren Polsterung im Mini-Zustand). 12 + 8 ergibt die 8px Luft, die auch

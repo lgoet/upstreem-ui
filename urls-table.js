@@ -170,7 +170,13 @@
          Zitationstyp, ein Seitentyp gehoert zu einer einzelnen Seite. Genau dieselbe Regel wie
          defaultDim(mode) im Top Citations Dashboard, wo derselbe Dropdown steht.
          Eine GESPEICHERTE Wahl gewinnt: das ist die Entscheidung des Nutzers, keine Vorgabe. */
-      filterDim: saved.filterDim || vorgabeDim(),
+      /* NICHT aus dem Gespeicherten. Der Umschalter im Filter-Dropdown folgt dem MODUS der
+         Tabelle: eine URL-Tabelle fragt zuerst "was fuer eine Seite ist das" (URL Type), eine
+         Domain-Tabelle "was fuer eine Quelle ist das" (Citation Type). Bis hierher gewann eine
+         frueher getroffene Wahl -- wer einmal auf Citation gestellt hatte, sah das beim naechsten
+         Seitenaufbau wieder, und genau das wurde gemeldet. Die AUSWAHL in beiden Listen bleibt
+         weiter gespeichert; nur welche Liste offen ist, entscheidet der Modus. */
+      filterDim: vorgabeDim(),
       brandMentioned: saved.brandMentioned || "",
       pageSize: saved.pageSize || DEFAULT_PAGE_SIZE,
       page: saved.page || 1,                   // 1-based; offset is derived, never stored
@@ -517,9 +523,9 @@
       var anyFilterSel = Object.keys(state.filterSel).filter(function(k){ return state.filterSel[k]; }).length
                        + Object.keys(state.filterUrlSel).filter(function(k){ return state.filterUrlSel[k]; }).length;
       var html = '<div class="up-filter-head">' +
-          '<span class="up-filter-title">' + (isUrlDim ? "URL Types" : "Citation Types") + '</span>' +
+          '<span class="up-filter-title">' + esc(UC.t(isUrlDim ? "URL Types" : "Citation Types")) + '</span>' +
           (anyFilterSel
-            ? '<button class="up-filter-reset" type="button">Reset</button>' : "") +
+            ? '<button class="up-filter-reset" type="button">' + esc(UC.t("Reset")) + '</button>' : "") +
         '</div><div class="up-filter-list">';
       html += keys.map(function(key){
         var label, color, base;
@@ -537,7 +543,8 @@
                    '<span class="up-filter-tag-lbl">' + esc(label) + '</span></span>' +
                '</div>';
       }).join("");
-      html += '</div><button class="up-filter-submit" type="button" data-typeapply>Apply</button>';
+      html += '</div><button class="up-filter-submit" type="button" data-typeapply>' +
+              esc(UC.t("Apply")) + '</button>';
 
       /* ── Der Umschalter wird NICHT mit neu gebaut ──────────────────────────────────────────
          Genau das war das Flackern. Der gleitende Streifen der Umschalter ist ein ::before am
@@ -561,8 +568,10 @@
       if (!dimBox){
         elFilterMenu.innerHTML =
           '<div class="up-filter-dim">' +
-            '<button class="up-filter-dim-btn" type="button" data-dim="citation_type">Citation Type</button>' +
-            '<button class="up-filter-dim-btn" type="button" data-dim="url_type">URL Type</button>' +
+            '<button class="up-filter-dim-btn" type="button" data-dim="citation_type">' +
+              esc(UC.t("Citation Type")) + '</button>' +
+            '<button class="up-filter-dim-btn" type="button" data-dim="url_type">' +
+              esc(UC.t("URL Type")) + '</button>' +
           '</div>';
         dimBox = elFilterMenu.querySelector(".up-filter-dim");
       }

@@ -4739,6 +4739,15 @@
                  anzahl: toNum(m.prompt_count) };
       }).filter(function(x){ return x.anzahl != null && x.anzahl > 0; });
       mitZahl.sort(function(a, b){ return b.anzahl - a.anzahl || a.name.localeCompare(b.name); });
+      /* NUR EIN MARKT: die Karte faellt weg, angefordert am 07.09. Ein Ring mit einem einzigen
+         Segment sagt "100% Deutschland" -- das ist keine Verteilung, sondern eine Tautologie, und
+         sie kostet ein Drittel der Zeile. Dann stehen oben zwei Karten, und die Zeile verteilt
+         sich darauf (die Karten sind flexibel, es bleibt keine Luecke).
+         Die Karte wird ausgeblendet und nicht entfernt: kommt spaeter ein zweiter Markt dazu --
+         beim Wechsel des Teams etwa --, ist sie sofort wieder da, ohne Neuaufbau der Zeile. */
+      /* kpiTeil sucht ein KIND der Karte -- hier ist die Karte selbst gemeint. */
+      var karteMarkets = kpiZeile ? kpiZeile.querySelector(".upt-kpi-markets") : null;
+      if (karteMarkets) karteMarkets.hidden = mitZahl.length < 2;
       /* renderDonut nimmt "share" fuer den Ring UND fuer die Legende (dort durch fmtPct), es muss
          also der PROZENTWERT sein und nicht die Anzahl -- sonst stuende "29 %" fuer 29 Prompts in
          der Legende. Genauigkeit 0, wie fuer jeden Doughnut der App festgelegt (CLAUDE.md §2b). */

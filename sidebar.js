@@ -185,8 +185,16 @@
 
   function makeController(root){
     var UC = window.UpstreemCore;
-    /* KEIN t() in dieser Datei, und das ist Absicht: die Seitenleiste bleibt englisch (Ansage vom
-       31.08.). Sie ist die Landkarte der App -- wer "Prompt Insights" gelernt hat, sucht das, und
+    /* NACHTRAG 07.09.: das KONTO-MENUE wird jetzt doch uebersetzt -- ausdruecklich angefordert
+       ("das Account Dropdown; Preferences ist wieder englisch, account settings und die drei
+       Einstellungen auch"). Es steht damit anders da als die Navigation darueber, und das ist
+       gewollt: die Navigation nennt OBJEKTE der App (Domains, URLs, Brands, Prompts), das
+       Konto-Menue nennt HANDLUNGEN und Einstellungen. Die Theme-Zeilen kommen ueber denselben
+       Weg mit -- "Hell/Dunkel/System" ist hier richtig, weil das Einstellungsfenster daneben
+       genauso schreibt.
+
+       Der urspruengliche Beschluss, und warum er nur fuer die Navigation gilt: die Seitenleiste
+       bleibt englisch (Ansage vom 31.08.). Sie ist die Landkarte der App -- wer "Prompt Insights" gelernt hat, sucht das, und
        "Domains", "URLs", "Brands", "Prompts" sind ohnehin die Namen der Objekte.
        Hart englisch und nicht "durch t(), aber ohne Katalog": der Katalog ist GETEILT. Das
        Einstellungsfenster uebersetzt "Light"/"Dark"/"System" fuer seine eigene Zeile, und ueber t()
@@ -806,7 +814,7 @@
       var th = themaJetzt();
       elAccMenu.innerHTML = KONTO.map(function(s){
         return '<div class="usn-sec">' +
-          (s.head ? '<span class="up-pop-head">' + esc(s.head) + '</span>' : "") +
+          (s.head ? '<span class="up-pop-head">' + esc(UC.t(s.head)) + '</span>' : "") +
           s.items.map(function(it){
             var an = s.theme && it.key === th;
             return '<div class="up-pop-opt' + (an ? " is-active" : "") + '" ' +
@@ -814,7 +822,7 @@
               '<span class="up-pop-opt-l">' +
                 (it.logo ? logoHtml((state.team || {}).name, (state.team || {}).favicon_url, "usn-acc-logo")
                          : (it.icon ? ic(it.icon) : "")) +
-                esc(it.label) +
+                esc(UC.t(it.label)) +
               '</span>' +
               (s.theme ? '<span class="up-check">' + ic("check") + '</span>' : "") +
             '</div>';
