@@ -96,7 +96,15 @@
    keine Grenze mehr zwischen Navigation und Inhalt. Angefordert am 08.09. NUR an der Leiste und
    nur im Dunkeln: der Block darueber trifft auch die Blende und den Aufklappknopf, und die
    brauchen keinen Rahmen. Im Hellen liegt die Leiste weiter auf #f5f5f5 und trennt sich selbst. */
-.usn-bar[data-theme="dark"] { border-right: 1px solid var(--vc-border); }
+/* SPEZIFITAET, und deshalb stand die Kante zweimal in der Datei, ohne je zu erscheinen: der
+   Block ".up-root.up-portal.usn-bar" weiter unten setzt "border: 0" und traegt drei Klassen
+   (0,3,0). Ein Selektor aus einer Klasse und einem Attribut hat (0,2,0) und verliert damit --
+   unabhaengig davon, wer weiter unten steht. Gemeldet als "Border right bei der Sidebar hast du
+   wieder vergessen": vergessen war sie nicht, sie war wirkungslos.
+   Die Kante MUSS auf einem Selektor stehen, der die drei Klassen mitfuehrt. Sie hier direkt in
+   den Block darunter zu schreiben ginge nicht: der gilt in beiden Themen, die Kante nur im
+   Dunkeln. */
+.up-root.up-portal.usn-bar[data-theme="dark"] { border-right: 1px solid var(--vc-border); }
 
 /* ---------- die Leiste ---------- */
 /* z-index 9900: knapp UNTER dem Drawer-Band der App (9905-9930). Ein Drawer, der ueber der
@@ -646,12 +654,13 @@
 /* 8px mehr Luft oben -- ausdruecklich angefordert (07.09.). Nur an DIESEM Menue: es beginnt mit
    einer Ueberschrift, und die sass zu dicht am Rand; die anderen Dropdowns beginnen mit einer
    Zeile und brauchen es nicht. */
-/* Oben UND unten dieselbe Luft. Der Zusatz stand erst nur oben, und dadurch stiess die letzte
-   Zeile (Logout) unten an den Rand -- gemeldet als "der Logout-Button wird abgeschnitten". Die
-   Grundpolsterung kommt aus .up-filter-menu (--up-dd-pad); hier kommen 8px dazu, weil das Menue
-   mit einer Ueberschrift beginnt und mit einem Knopf endet. */
+/* Oben 8px zusaetzlich, unten die Grundpolsterung. Das ist NICHT symmetrisch, und das ist der
+   Punkt: oben beginnt das Menue mit einer Ueberschrift, die Luft ueber sich braucht, unten endet
+   es mit einem Knopf, der seine eigene Hoehe schon mitbringt. Mit 8px auf beiden Seiten stand
+   unten sichtbar mehr Rand als oben -- "8px bottom padding weniger, dann ist top" (08.09.).
+   Die Grundpolsterung kommt aus .up-filter-menu (--up-dd-pad). */
 .usn-bar .usn-menu.is-acc { top: auto; bottom: calc(100% + 6px); left: 0; right: auto;
-  padding-top: calc(var(--up-dd-pad) + 8px); padding-bottom: calc(var(--up-dd-pad) + 8px);
+  padding-top: calc(var(--up-dd-pad) + 8px); padding-bottom: var(--up-dd-pad);
   /* DREIMAL WAR DIE POLSTERUNG NICHT DIE URSACHE. Sie steht seit dem 07.09. oben und unten
      gleich da -- und der Logout war trotzdem angeschnitten. Der Grund steckt in .up-filter-menu
      aus core: das Menue ist eine FLEXSPALTE mit max-height 400px, und Flex-Kinder schrumpfen

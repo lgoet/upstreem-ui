@@ -139,7 +139,7 @@
          der Karte. Gemeldet als "die Border-Color macht einen komischen Eindruck", und das war
          sie auch: sichtbar auf dem Grund, verschwunden auf allem anderen. */
       --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-border: #34343a;
-      --vc-bg: #1c1c1f; --vc-heading-bg: #232326; --vc-sk: #28282c; --up-surface: #08090a;
+      --vc-bg: #1c1c1f; --vc-heading-bg: #232326; --vc-sk: #28282c; --up-surface: #101114;
       /* ---- DIE DUNKLE LEITER (08.09.) --------------------------------------------------------
          An Linears dunklem Thema ausgerichtet, ausgelesen aus deren eigener Seite:
              Grund #08090a  <  Karte/Panel #1c1c1f  <  Menue/Kopfzeile #232326  <  Auswahl #28282c
@@ -154,6 +154,12 @@
          ALLE Werte sind Linears eigene, ausgelesen von linear.app:
              bg-primary #08090a   bg-secondary #1c1c1f   bg-tertiary #232326
              bg-quaternary #28282c   border-primary #23252a   border-secondary #34343a
+         DER GRUND IST EINE SPUR HELLER ALS LINEARS EIGENER. Deren bg-primary ist #08090a, also
+         fast Schwarz; angefordert am 08.09. wurde "#0f0f11 oder ein kleines kleines bisschen
+         heller, so dass es aber noch super als Page-BG haelt". #101114 ist dieses bisschen: die
+         Karte hebt sich weiterhin ab (Kontrast 1.11 statt 1.17 gegen #1c1c1f, also gut ein
+         Zehntel weniger Abstand), und der Text bleibt bei 14.3 gegen den Grund -- weit ueber
+         allem, was AA verlangt. Alles andere in dieser Leiter ist unveraendert Linears Wert.
          Auch die Auswahlflaeche ist ihre (quaternary) -- ausdruecklich so angefordert: "nimm
          einfach alles aus Linear, also auch die selected bg states".
          Die SCHRIFTFARBEN sind unveraendert (#e0e0e0 / #a0a0a0 / #808080) -- ebenfalls so
@@ -1643,10 +1649,16 @@
        through while scrolling underneath. */
     .up-sticky .up-head {
       position: sticky; top: var(--up-sticky-top); z-index: 6;
-      background: var(--up-surface);
-      /* the 16px between head and table becomes opaque padding while stuck, so the gap stays but
-         no rows show through it. height grows to match (border-box), otherwise the padding would
-         eat into the 32px content box and clip the toolbar buttons. */
+      /* KEINE FLAECHE (08.09.). Hier stand var(--up-surface) -- unser Wert fuer "die Farbe der
+         Seite". Der ist aber nur dann unsichtbar, wenn die Seite WIRKLICH diese Farbe hat, und in
+         Bubble wird sie dort eingestellt, nicht hier. Nach der Umstellung auf Linears Leiter
+         passte sie nicht mehr, und der Streifen wurde in sieben Komponenten als
+         "dunkler Hintergrund hinter Heading und Toolbar" sichtbar -- genau so gemeldet.
+         Die Folge, und sie gehoert dazu: beim Scrollen laufen Zeilen jetzt SICHTBAR hinter der
+         angehefteten Kopfzeile durch. Der Streifen war dagegen gedacht. Wer ihn zurueck will,
+         setzt die Seitenfarbe in Bubble auf denselben Wert wie --up-surface; dann ist er
+         unsichtbar und tut wieder seine Arbeit. */
+      background: transparent;
       margin-bottom: 0; height: 48px; padding-bottom: 16px;
     }
     /* Rows scroll up past the pinned header; without this they'd show behind a transparent page
@@ -1661,7 +1673,7 @@
          pseudo-element is unconditionally part of .up-head's box, not scroll-triggered). If a sliver
          of a row ever peeks through above a stuck header again, fix it with a couple of px here, not
          a flat +16 that stops matching the configured offset at all. */
-      height: var(--up-sticky-top); background: var(--up-surface);
+      height: var(--up-sticky-top); background: transparent;
     }
     /* In sticky mode the box's visible border is dropped (kept transparent so layout doesn't
        shift) and drawn on the header and body instead. Both span the full width and align exactly,
@@ -2528,8 +2540,8 @@
 [data-theme="dark"] .uca-format-seg::before, [data-theme="dark"] .ubo-yaxis::before,
 [data-theme="dark"] .upt-status::before, [data-theme="dark"] .udt-sub-dispseg::before,
 /* DIE GLEITENDE PILLE UND JEDER AKTIVE KNOPF EINES UMSCHALTERS liegen HOEHER als ihre Schiene,
-   nicht tiefer. Nach dem Farbtausch stand hier ueberall #08090a -- der Grund der Seite, also die
-   dunkelste Flaeche der App, mitten auf einem helleren Umschalter. Der Wert kam nicht aus einer
+   nicht tiefer. Nach dem Farbtausch stand hier ueberall der Grund der Seite, also die dunkelste
+   Flaeche der App, mitten auf einem helleren Umschalter. Der Wert kam nicht aus einer
    Entscheidung: die alte Pille trug #121212, und der Tausch machte daraus stumpf #08090a.
    Gemeldet als "die Switcher in Dropdowns sind jetzt kaputt", und das waren sie.
    Jetzt bg-quaternary (#28282c) auf border-secondary -- eine Stufe ueber der Schiene, wie ueberall

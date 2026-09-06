@@ -1,0 +1,57 @@
+<!doctype html><meta charset="utf-8">
+<title>Steht die Skala Linear wirklich in beiden Menues -- und ueberlebt eine alte Themenfarbe?</title>
+<pre id="out" style="font:12px/1.5 ui-monospace,Menlo,monospace;padding:12px;white-space:pre-wrap"></pre>
+<script>
+/* Zwei Dinge, die man am Code nicht sieht: ob die neue Skala in der FERTIGEN Zeile auftaucht (das
+   Zahnrad und das Einstellungsfenster bauen beide aus derselben Funktion), und ob ein Thema mit
+   einer Farbe aus der Zeit vor dem OKLCh-Umbau in der Farbwahl noch seinen Haken bekommt. */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function ja(b){ return b ? "RICHTIG" : "FALSCH "; }
+fetch("core.js?n="+Math.random(),{cache:"no-store"}).then(function(r){ return r.text(); }).then(function(js){
+  var f=document.createElement("iframe"); f.style.cssText="width:10px;height:10px;border:0;position:absolute;left:-4000px";
+  document.body.appendChild(f);
+  var d=f.contentDocument; d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body></body></html>"); d.close();
+  var s=d.createElement("script"); s.textContent=js; d.head.appendChild(s);
+  setTimeout(function(){
+    var UC=f.contentWindow.UpstreemCore;
+    if(!UC){ log("ABBRUCH: core.js hat nicht geladen"); return; }
+    var html = UC.colorScaleOptionsHtml("tableau", null);
+    var box=d.createElement("div"); box.innerHTML=html; d.body.appendChild(box);
+    var zeilen=[].map.call(box.querySelectorAll(".up-scale-opt"), function(e){
+      return e.getAttribute("data-scale") + " (" + (e.querySelector(".up-scale-opt-lbl")||{}).textContent +
+             ", " + e.querySelectorAll(".up-scale-dot").length + " Punkte)"; });
+    log("Die fertige Auswahlzeile (dieselbe Funktion fuer Zahnrad und Einstellungsfenster):");
+    zeilen.forEach(function(z){ log("   " + z); });
+    var lin=[].filter.call(box.querySelectorAll(".up-scale-opt"), function(e){ return e.getAttribute("data-scale")==="linear"; })[0];
+    log("   " + ja(!!lin) + " 'Linear' ist eine eigene Zeile");
+    log("   " + ja(lin && lin.querySelectorAll(".up-scale-dot").length===7) + " mit sieben Punkten");
+    log("   " + ja(!/is-active/.test(lin ? lin.className : "")) + " und ist nicht vorausgewaehlt");
+    var punkte=lin ? [].map.call(lin.querySelectorAll(".up-scale-dot"), function(p){ return p.style.background; }) : [];
+    log("   Punkte: " + punkte.join(" "));
+    log("");
+    log("Ein Thema mit einer Farbe von VOR dem Umbau:");
+    var alt="#de1b22";   /* das alte Rot der ersten Reihe */
+    var pal=UC.TOPIC_COLOR_PALETTE;
+    log("   " + ja(pal.indexOf(alt)<0) + " die alte Farbe steht nicht mehr in der Palette");
+    var mod=UC.makeTopicModal ? UC.makeTopicModal({ getIsDark:function(){return true;} }) : null;
+    if(!mod){ log("   ABBRUCH: kein UC.makeTopicModal"); log("FERTIG"); return; }
+    mod.open("edit", { id:"t1", name:"Altes Thema", emoji:"", hex_light: alt, hex_dark: alt });
+    setTimeout(function(){
+      var karte=d.querySelector(".up-topicmodal-card");
+      if(!karte){ log("   ABBRUCH: das Fenster hat nicht geoeffnet (" + Object.keys(mod).join(",") + ")"); log("FERTIG"); return; }
+      var knopf=karte.querySelector('[data-pick="color"]');
+      if(knopf) knopf.click();
+      setTimeout(function(){
+        var zellen=[].map.call(d.querySelectorAll(".up-topicmodal-colorcell"), function(c){ return c.getAttribute("data-color"); });
+        var gewaehlt=[].filter.call(d.querySelectorAll(".up-topicmodal-colorcell"), function(c){ return c.getAttribute("aria-pressed")==="true"; })
+                       .map(function(c){ return c.getAttribute("data-color"); });
+        log("   Felder in der Farbwahl: " + zellen.length + " (Palette " + pal.length + ")");
+        log("   " + ja(zellen.length===pal.length+1) + " die alte Farbe ist zusaetzlich da");
+        log("   " + ja(zellen[zellen.length-1]===alt) + " und zwar HINTEN, damit die drei Reihen Reihen bleiben");
+        log("   " + ja(gewaehlt.length===1 && gewaehlt[0]===alt) + " sie traegt den Haken: " + gewaehlt.join(","));
+        log("FERTIG");
+      }, 300);
+    }, 400);
+  }, 900);
+}).catch(function(e){ log("ABBRUCH: "+e.message); });
+</script>

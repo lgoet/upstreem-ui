@@ -111,15 +111,21 @@
   position: sticky; left: 0; z-index: 2; background: var(--vc-bg);
 }
 .uhm-corner { position: sticky; left: 0; z-index: 3; background: var(--vc-bg); }
-/* Im Dunkeln OHNE eigene Flaeche: --vc-bg ist dort #1b1b1b und liegt HELLER als der Seitengrund
-   (#121212), die Matrix sass also als hellerer Block auf der Seite. Nur die MATRIX -- der
+/* Im Dunkeln OHNE eigene Flaeche: der Kasten der Matrix malt nichts mehr. Nur die MATRIX -- der
    Detailbereich darunter ist ein eigenes Element (performance-detail) mit eigener CSS.
-   Die klebenden Kopfzellen bleiben DECKEND, und das ist keine Kosmetik: eine durchsichtige
-   sticky-Zelle laesst beim Querscrollen die Markenspalten unter sich durchlaufen. Sie nehmen
-   deshalb den Grund der SEITE statt den des Kastens, den es jetzt nicht mehr gibt. */
+
+   DIE LINKE SPALTE ist der Fall, der am 08.09. als "komisches Grid-Muster als Background"
+   gemeldet wurde: die klebenden Kopfzellen trugen var(--up-surface), also unseren Wert fuer die
+   Farbe der Seite. Solange die Bubble-Seite denselben Wert hat, sieht man sie nicht; seit der
+   Umstellung auf Linears Leiter passt das nicht mehr, und jede Zelle zeichnete sich als eigener
+   dunkler Kasten ab -- neben- und untereinander ergibt das genau ein Gitter.
+   Sie muessen DECKEND bleiben: eine durchsichtige sticky-Zelle laesst beim Querscrollen die
+   Markenspalten unter sich durchlaufen. Also nicht die Farbe der Seite, sondern die des Kastens,
+   in dem sie liegen -- und der ist im Dunkeln der Grund der Karte darunter. Damit sind sie
+   unsichtbar, egal was in Bubble eingestellt ist. */
 .up-root[data-theme="dark"] .uhm-box { background: transparent; }
 .up-root[data-theme="dark"] .uhm-rowhead,
-.up-root[data-theme="dark"] .uhm-corner { background: var(--up-surface, #08090a); }
+.up-root[data-theme="dark"] .uhm-corner { background: var(--vc-bg); }
 .uhm-rowhead .up-topicchip { max-width: 100%; }
 
 /* ---------- cells ----------

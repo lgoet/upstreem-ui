@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20260924;
+  var BUILD = 20260925;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -6938,11 +6938,47 @@
      consumer). Rows are tone bands (vibrant/muted/deep), columns are hues — scanning down picks a
      mood, across picks a color. Only hex_light is ever rendered anywhere in the app, so these are
      tuned to read acceptably in BOTH themes at once rather than getting a per-theme pass. */
+  /* ---------- Themenfarben, gerechnet statt gesammelt (08.09.) ----------
+     Angefordert nach Linears Umbau-Artikel: "Die Farben fuer die Topics -- LCH Color Space".
+     Vorher waren die dreissig Werte von Hand gesucht, und man sah es: in einer Reihe, die
+     gleich hell sein sollte, sprang das Gelb heraus und das Blau versank. Der Grund ist, dass
+     Hex und HSL nicht sagen, wie hell eine Farbe WIRKT -- ein gesaettigtes Gelb und ein
+     gesaettigtes Blau mit derselben HSL-Helligkeit trennen zwei Wahrnehmungsstufen.
+
+     Jede Farbe hier ist ein Punkt in OKLCh (der heute uebliche, perzeptuell gleichabstaendige
+     Nachfolger von CIE LCh) und in sRGB umgerechnet: Helligkeit L und Buntheit C sind je Reihe
+     KONSTANT, nur der Farbton dreht sich in acht Schritten. Deshalb wirkt jede Reihe als eine
+     Reihe.
+         vibrant  L 0.62  C 0.165     die Reihe fuer den Regelfall
+         muted    L 0.70  C 0.070     heller und blasser, fuer Nebenthemen
+         deep     L 0.50  C 0.135     dunkler und satter
+     Farbtoene: 25 55 92 145 195 255 300 350 Grad (rot, orange, gelb, gruen, tuerkis, blau,
+     violett, pink), dazu je Reihe zwei neutrale Grau mit C = 0 auf derselben Helligkeit.
+     Wo ein Ton bei dieser Buntheit nicht in sRGB passt (Gelb und Gruen sind dort am engsten),
+     ist C so weit verkleinert, bis er passt -- der FARBTON bleibt dabei stehen. Das uebliche
+     Abschneiden der Kanaele wuerde ihn drehen, und dann waere die Reihe wieder krumm.
+     Erzeugt und nachgerechnet mit dem Skript in der Uebergabe; die Werte stehen hier fest im
+     Code, weil Chart.js' Farbparser kein oklch() liest und ein Chip die Farbe an color-mix
+     weiterreicht. */
   var TOPIC_COLOR_PALETTE = [
-    /* vibrant */ "#de1b22", "#b65616", "#8d6a11", "#108440", "#107c84", "#1b6eda", "#9145e8", "#d51a8b", "#666666", "#7d7d7d",
-    /* muted   */ "#b47476", "#a87b5d", "#988552", "#4f926b", "#509195", "#6a88af", "#977ab8", "#b27098", "#787878", "#949494",
-    /* deep    */ "#ab2b2f", "#8b4c23", "#725a1d", "#1b6a3c", "#1b656a", "#295ea3", "#7a33cc", "#a32972", "#575757", "#6f6f6f"
+    /* vibrant */ "#d75551", "#ca6800", "#a28300", "#349f40", "#009a9a", "#3586e6", "#976ad9", "#cc5594", "#868686", "#9e9e9e",
+    /* muted   */ "#c68e88", "#c19375", "#ae9e6c", "#83aa84", "#67acac", "#81a1ca", "#a595c4", "#c18da5", "#9e9e9e", "#b7b7b7",
+    /* deep    */ "#a23d3a", "#974c00", "#786000", "#23762c", "#007272", "#2463ae", "#704ea4", "#993d6e", "#636363", "#7a7a7a"
   ];
+  /* Ein Thema, das VOR diesem Umbau angelegt wurde, traegt einen Hex, den es in der Palette nicht
+     mehr gibt -- und weil der Haken ueber "ist gleich" gesetzt wird, sah die Farbwahl dann so aus,
+     als haette das Thema gar keine Farbe. Die alte Farbe wird darum HINTEN angehaengt, statt sie
+     wegzuraten: sie bleibt sichtbar, bleibt waehlbar, und wer eine der neuen nimmt, verliert sie
+     bewusst. Auf die naechstgelegene neue umzubiegen waere eine stille Aenderung an Nutzerdaten.
+     Hinten und nicht vorn, weil das Gitter zehn Felder je Reihe hat: vorn eingeschoben verschoebe
+     die eine Farbe alle dreissig und die drei Reihen (vibrant, muted, deep) waeren keine Reihen
+     mehr. Hinten steht sie allein in einer vierten Zeile, und genau so ist sie auch gemeint. */
+  function paletteMit(hex, palette){
+    var h = String(hex || "").toLowerCase();
+    if (!/^#[0-9a-f]{6}$/.test(h)) return palette;
+    for (var i = 0; i < palette.length; i++){ if (String(palette[i]).toLowerCase() === h) return palette; }
+    return palette.concat([h]);
+  }
   function swatchInk(hex){
     var h = String(hex).replace("#", "");
     function lin(c){ c = parseInt(c, 16) / 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }
@@ -7005,7 +7041,7 @@
         panel = '<div class="up-topicmodal-pickpanel"><emoji-picker class="up-topicmodal-emojipicker ' + (getIsDark() ? "dark" : "light") + '"></emoji-picker></div>';
       } else if (colorOpen){
         panel = '<div class="up-topicmodal-pickpanel"><div class="up-topicmodal-colorgrid">' +
-          palette.map(function(hx){
+          paletteMit(color, palette).map(function(hx){
             var on = hx === color;
             return '<button type="button" class="up-topicmodal-colorcell" data-color="' + esc(hx) + '"' +
               ' aria-label="' + esc(hx) + '" aria-pressed="' + (on ? "true" : "false") + '">' +
@@ -9826,24 +9862,48 @@
       ctx.stroke(); ctx.restore();
     }
   };
-  /* dashed horizontal grid at every y tick, drawn behind the lines (Chart.js's own grid can't do
-     the zero-line exception this design wants) */
-  var dashedYGridPlugin = {
-    id: "upDashedYGrid",
+  /* Gestricheltes Raster hinter den Linien. Chart.js' eigenes Raster kann die Ausnahme auf der
+     Nulllinie nicht (dort laeuft schon die Achse), darum von Hand.
+
+     GLEICHMAESSIGES NETZ, angefordert am 08.09.: "eine zusaetzliche horizontale plus gleich viele
+     vertikale Linien". Vorher waren es drei waagerechte (die y-Achse lieferte 0, m/3, 2m/3, m --
+     die Null bekommt keine Linie) und gar keine senkrechten.
+     Jetzt RASTER_N in beide Richtungen: vier waagerechte aus den y-Ticks (0, m/4, m/2, 3m/4, m)
+     und vier senkrechte an denselben Bruchteilen der Breite. Beide zaehlen vom jeweiligen
+     Nullpunkt (unten, links) und lassen ihn aus, weil dort die Achse liegt -- die obere und die
+     rechte Linie fallen damit auf den Rand der Zeichenflaeche, und die Maschen sind quadratisch
+     im Verhaeltnis, nicht in Pixeln.
+
+     Die senkrechten haengen ABSICHTLICH nicht an den x-Ticks. Deren Zahl richtet sich nach der
+     Datenlaenge (xTickZeigen, siehe makeLine) und schwankt zwischen 5 und 7 -- ein Raster, dessen
+     Maschenweite sich mit der Anzahl der Tage aendert, ist kein gleichmaessiges Raster. */
+  var RASTER_N = 4;
+  var dashedGridPlugin = {
+    id: "upDashedGrid",
     beforeDatasetsDraw: function(chart){
       var y = chart.scales.y, ca = chart.chartArea, ctx = chart.ctx;
-      if (!y || !ca) return;
-      var ticks = (y.getTicks && y.getTicks()) || y.ticks || [];
-      if (!ticks.length) return;
+      if (!ca) return;
+      var breite = ca.right - ca.left, hoehe = ca.bottom - ca.top;
+      if (breite <= 0 || hoehe <= 0) return;
       ctx.save();
       ctx.setLineDash([6,6]); ctx.lineWidth = 1; ctx.strokeStyle = chart.$upGridColor || "rgba(0,0,0,0.08)";
+      /* waagerecht: aus den echten y-Ticks, damit die Linien auf den Beschriftungen sitzen */
+      var ticks = (y && ((y.getTicks && y.getTicks()) || y.ticks)) || [];
       ticks.forEach(function(t){
-        if (t.value <= 0) return;   // no gridline on the zero line
+        if (t.value <= 0) return;   // auf der Nulllinie liegt die Achse
         var yp = y.getPixelForValue(t.value);
         if (yp == null || isNaN(yp)) return;
         if (yp < ca.top - 0.5 || yp > ca.bottom + 0.5) return;
         ctx.beginPath(); ctx.moveTo(ca.left, Math.round(yp) + 0.5); ctx.lineTo(ca.right, Math.round(yp) + 0.5); ctx.stroke();
       });
+      /* senkrecht: gleiche Anzahl, gleiche Bruchteile */
+      for (var i = 1; i <= RASTER_N; i++){
+        var xp = ca.left + breite * (i / RASTER_N);
+        /* die letzte Linie liegt auf ca.right; ein halbes Pixel nach innen, sonst laege die
+           Haelfte des Strichs ausserhalb der Zeichenflaeche und sieht duenner aus als die uebrigen */
+        if (i === RASTER_N) xp -= 1;
+        ctx.beginPath(); ctx.moveTo(Math.round(xp) + 0.5, ca.top); ctx.lineTo(Math.round(xp) + 0.5, ca.bottom); ctx.stroke();
+      }
       ctx.restore();
     }
   };
@@ -9908,8 +9968,13 @@
          kein innerHTML, kein Layout, kein Neuaufbau der Bilder. */
       var kennung = dps[0].dataIndex + "|" + (dark ? "d" : "l") + "|" +
         dps.map(function(dp){ return dp.datasetIndex + ":" + dp.parsed.y; }).join(",");
-      var boxBg = dark ? "#08090a" : "#ffffff";
-      var boxBorder = dark ? "" : "border:1px solid #e0e2e6;";
+      /* MENUEFLAECHE, nicht Seitengrund. Hier stand #08090a: der Tooltip lag damit dunkler als die
+         Karte, auf der das Chart steht (#1c1c1f) -- ein Loch statt einer Ebene darueber. Was oben
+         liegt, ist in dieser Leiter heller; #232326 ist dieselbe Flaeche, die jedes Dropdown
+         traegt, und der Rahmen dazu ist derselbe (--up-menu-border, #3e3e44). Im Hellen bleibt
+         alles wie es war. */
+      var boxBg = dark ? "#232326" : "#ffffff";
+      var boxBorder = dark ? "border:1px solid #3e3e44;" : "border:1px solid #e0e2e6;";
       var boxShadow = dark ? "box-shadow:0 4px 14px rgba(0,0,0,.25);" : "box-shadow:0 4px 14px rgba(0,0,0,.10);";
       var textColor = dark ? "#e6e6e6" : "#1f1f1b";
       var mutedColor = dark ? "#8a8a8a" : "#6f737c";
@@ -9977,7 +10042,11 @@
 
   function lineSkeletonHtml(){
     var hlines = "", xlabels = "", i;
-    for (i = 0; i < 4; i++) hlines += '<div class="sk-lc-hline"></div>';
+    /* RASTER_N + 1 Striche, nicht vier: die Skelettstriche liegen mit justify-content: space-between
+       gleichmaessig verteilt, und das fertige Chart zeigt RASTER_N Rasterlinien PLUS die Achse
+       unten. Mit vier Strichen sass das Skelett auf einer anderen Teilung als das Bild danach --
+       ein sichtbarer Sprung genau in dem Moment, in dem die Daten ankommen. */
+    for (i = 0; i < RASTER_N + 1; i++) hlines += '<div class="sk-lc-hline"></div>';
     for (i = 0; i < 6; i++) xlabels += '<div class="sk-lc-xlabel"></div>';
     var d = "M0,125 C60,115 100,70 150,58 C200,46 230,90 280,74 C330,58 390,22 460,14";
     var agId = "up-sk-ag-" + Math.random().toString(36).slice(2);
@@ -10072,13 +10141,26 @@
                      colour, black, is dropped — it doesn't read as a distinct "brand" line and
                      disappears against a dark chart background)
        vivid       — D3/matplotlib "tab10"/Category10
+       linear      — die einzige selbst gerechnete: siehe unten
      All three are mid-toned by design, which is what lets them work unchanged on a white AND a
      dark chart background — no separate light/dark variant needed. */
   var LINE_PALETTE = ["#14b8a6","#0ea5e9","#6366f1","#d946ef","#f97316","#f43f5e","#64748b"];
   var COLOR_SCALES = {
     tableau:    { label: "Tableau",         colors: ["#5778a4","#e49444","#d1615d","#85b6b2","#6a9f58","#e7ca60","#a87c9f"] },
     colorblind: { label: "Colorblind Safe", colors: ["#e69f00","#56b4e9","#009e73","#f0e442","#0072b2","#d55e00","#cc79a7"] },
-    vivid:      { label: "Vivid",           colors: ["#1f77b4","#ff7f0e","#2ca02c","#d62728","#9467bd","#8c564b","#e377c2"] }
+    vivid:      { label: "Vivid",           colors: ["#1f77b4","#ff7f0e","#2ca02c","#d62728","#9467bd","#8c564b","#e377c2"] },
+    /* "Linear" -- angefordert am 08.09.: eine Palette in Linears Farbraum, "mehrere Abstufungen
+       einer Familie (Blau -> Tuerkis -> Gruen -> Orange)", ausdruecklich NICHT als Vorgabe.
+       Dieselbe Rechnung wie bei TOPIC_COLOR_PALETTE, nur andersherum benutzt: dort dreht der
+       Farbton in Spruengen ueber den ganzen Kreis, hier laeuft er in sieben GLEICHEN Schritten
+       von 255 Grad (Blau) bis 62 Grad (Orange) -- ueber Cyan, Tuerkis, Gruen und Gelbgruen. L und
+       C sind konstant (0.685 / 0.145, verkleinert wo sRGB enger wird), und genau das macht den
+       Unterschied zu einem Verlauf in Hex: keine Linie ist heller als ihre Nachbarn, also draengt
+       sich keine vor.
+       Gemessen auf beiden Gruenden: Kontrast 5.78 bis 6.40 auf der dunklen Karte (#1c1c1f),
+       2.66 bis 2.94 auf Weiss -- mitteltonig wie die drei anderen Skalen, damit sie ohne eine
+       zweite Fassung in beiden Themen laeuft. */
+    linear:     { label: "Linear",          colors: ["#579cf1","#00aad3","#00b1ab","#2db477","#83a93a","#b69700","#d88225"] }
   };
   /* "default" is not in COLOR_SCALES on purpose — it means "each company's own colour, backfilled
      from LINE_PALETTE", which is what a null colorScale already produces below. */
@@ -10086,7 +10168,7 @@
      Werte weiter gelten -- umbenannt ist nur die Beschriftung: "Brand Colors", denn genau das ist
      es, jede Marke in ihrer eigenen Farbe. "Default" war irrefuehrend, sobald es nicht mehr die
      Vorgabe ist. */
-  var SCALE_ORDER = ["tableau", "default", "vivid", "colorblind"];
+  var SCALE_ORDER = ["tableau", "linear", "default", "vivid", "colorblind"];
   var SCALE_VORGABE = "tableau";
   var MAX_LINE_SERIES = 7;
   function buildLineDatasets(series, companies, colorScale){
@@ -10496,10 +10578,20 @@
       build(lastBuilt);
     });
 
+    /* Zwei verschiedene Toene, und das ist der Kern der Meldung "die Rasterfarbe gegen die neuen
+       Flaechen pruefen" (08.09.):
+         border  Achsenrahmen und Fuehrungslinie -- muessen gegen die KARTE lesbar sein, auf der
+                 das Chart liegt (#1c1c1f im Dunkeln). Hier stand #23252a, Linears border-primary:
+                 der ist fuer den Seitengrund gemacht und liegt nur vier Helligkeitsstufen ueber
+                 der Karte, also praktisch unsichtbar. Jetzt derselbe Wert wie --vc-border.
+         grid    das gestrichelte Raster -- ausdruecklich SCHWAECHER als der Rahmen, sonst liest
+                 sich das Netz so schwer wie die Achse. 8% Weiss auf der Karte ergibt rund #2a2b2d,
+                 das ist genau der Ton, den die Landschaft in brands-overview schon benutzt; damit
+                 sehen beide Charts das erste Mal gleich aus. */
     function themeColors(){
       return isDark()
-        ? { text:"#e0e0e0", muted:"#a0a0a0", border:"#23252a", bg:"#1c1c1f" }
-        : { text:"#1f1f1b", muted:"#6f737c", border:"#e0e2e6", bg:"#ffffff" };
+        ? { text:"#e0e0e0", muted:"#a0a0a0", border:"#34343a", bg:"#1c1c1f", grid:"rgba(255,255,255,0.08)" }
+        : { text:"#1f1f1b", muted:"#6f737c", border:"#e0e2e6", bg:"#ffffff", grid:"rgba(0,0,0,0.08)" };
     }
     function clearExtras(){
       var sk = wrap.querySelector(".up-line-sk"); if (sk) sk.remove();
@@ -10657,7 +10749,7 @@
           /* Raster ZUERST. Beide zeichnen in beforeDatasetsDraw, und dort entscheidet die
              Reihenfolge in dieser Liste: so liegt die Fuehrungslinie ueber dem gestrichelten
              Raster und beide unter den Linien und Punkten. */
-          plugins: [dashedYGridPlugin, hoverLinePlugin],
+          plugins: [dashedGridPlugin, hoverLinePlugin],
           options: {
             responsive: true, maintainAspectRatio: false,
             /* Chart.js haengt bei responsive: true einen eigenen Beobachter an den Kasten und
@@ -10709,7 +10801,15 @@
                               return lab.slice(5);   // day / week → "MM-DD"
                             } } },
               y: { min:0, max:yMax, beginAtZero:true,
-                   afterBuildTicks: function(scale){ var m = scale.max || 1; scale.ticks = [{value:0},{value:m/3},{value:2*m/3},{value:m}]; },
+                   /* RASTER_N + 1 Ticks: die Null und dann jeder Bruchteil bis zum Maximum. Vorher
+                      drei Schritte (0, m/3, 2m/3, m), jetzt vier -- die "zusaetzliche waagerechte
+                      Linie" der Meldung ist genau dieser Schritt, und weil die Beschriftungen
+                      dieselben Ticks sind, wandert sie automatisch mit. */
+                   afterBuildTicks: function(scale){
+                     var m = scale.max || 1, tk = [{value:0}];
+                     for (var i = 1; i <= RASTER_N; i++) tk.push({ value: m * i / RASTER_N });
+                     scale.ticks = tk;
+                   },
                    /* Die Einheit kommt vom Aufrufer. Rang und Sentiment sind KEINE Prozente --
                       ein hart verdrahtetes "%" schrieb an jede Achse ein Zeichen, das dort nicht
                       hingehoert. Ohne Angabe bleibt es Prozent, das ist der haeufigste Fall. */
@@ -10719,7 +10819,7 @@
             elements: { point: { radius: 0 } }
           }
         });
-        chart.$upGridColor = tc.border;
+        chart.$upGridColor = tc.grid;      /* schwaecher als die Achse, siehe themeColors */
         chart.$upHoverLineColor = tc.border;
         /* Und die Nachkontrolle anwerfen: setzt sich die Breite erst NACH dem Zeichnen (ein View,
            der gerade eingeblendet wird), wird einmal still nachgerechnet. Siehe oben. */
@@ -11018,8 +11118,9 @@
          sondern beim Wechsel. */
       if (letztesTheme !== (dark ? "d" : "l")){
         letztesTheme = dark ? "d" : "l";
-        var boxBg = dark ? "#08090a" : "#ffffff";
-        var boxBorder = dark ? "" : "border:1px solid #e0e2e6;";
+        /* Dieselbe Korrektur wie am Linien-Tooltip weiter oben: Menueflaeche statt Seitengrund. */
+        var boxBg = dark ? "#232326" : "#ffffff";
+        var boxBorder = dark ? "border:1px solid #3e3e44;" : "border:1px solid #e0e2e6;";
         var boxShadow = dark ? "box-shadow:0 4px 14px rgba(0,0,0,.25);" : "box-shadow:0 4px 14px rgba(0,0,0,.10);";
         var mutedColor = dark ? "#8a8a8a" : "#6f737c";
         kBox.style.cssText = "background:" + boxBg + ";color:" + textColor + ";" + boxBorder + "border-radius:16px;padding:12px 14px;font-family:Geist,system-ui,-apple-system,Segoe UI,Roboto,Arial;font-size:13px;line-height:1.35;" + boxShadow + "white-space:nowrap;";
@@ -13806,7 +13907,7 @@
       var panel = modal.querySelector(".up-cgm-colorpanel");
       if (panel){
         if (farbOffen){
-          panel.innerHTML = '<div class="up-cgm-colorgrid upt-colorgrid">' + TOPIC_COLOR_PALETTE.map(function(hx){
+          panel.innerHTML = '<div class="up-cgm-colorgrid upt-colorgrid">' + paletteMit(col, TOPIC_COLOR_PALETTE).map(function(hx){
               var on = hx === col;
               return '<button type="button" class="up-cgm-colorcell upt-colorcell" data-gm-color="' + esc(hx) + '"' +
                 ' aria-label="' + esc(hx) + '" aria-pressed="' + (on ? "true" : "false") + '">' +

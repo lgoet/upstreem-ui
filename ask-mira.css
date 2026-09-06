@@ -48,13 +48,18 @@
     height: 100%;
     min-height: 0;
     box-sizing: border-box;
-    /* The root paints the surface itself, like every other component's .up-root does. It used to
-       be transparent and let .am-shell inside it carry the colour -- which looks identical right
-       up until the host page's own background differs from --vc-bg, and then Mira is the only
-       component on the page showing the PAGE's dark grey instead of the palette's. That is the
-       "Mira is lighter than Prompt Research" case: same token on both sides, but only one of them
-       was actually painting it. */
-    background: var(--am-bg);
+    /* KEINE eigene Flaeche mehr (08.09.): "auch bei Mira den Background entfernen im Darkmode".
+       Hier stand var(--am-bg), also --up-surface -- unser Wert fuer "die Farbe der Seite". Der
+       Kommentar darunter beschrieb den umgekehrten Fall und hatte damals recht: solange die
+       Seitenfarbe der App und --up-surface derselbe Wert waren, war Malen richtig und die
+       durchsichtige Fassung fiel auf. Seit der Umstellung auf Linears Leiter stimmen die beiden
+       nicht mehr ueberein, und dieselbe Regel macht jetzt genau den Fehler, den sie verhindern
+       sollte -- Mira ist das einzige Bauteil mit einem dunklen Block darunter.
+       Die alte Begruendung, damit sie nicht verlorengeht: "The root paints the surface itself...
+       which looks identical right up until the host page's own background differs from --vc-bg,
+       and then Mira is the only component on the page showing the PAGE's dark grey instead of
+       the palette's." Beides ist wahr; welche Seite gilt, entscheidet die Seitenfarbe in Bubble. */
+    background: transparent;
     color: var(--am-text);
     position: relative;
     overflow: hidden;
@@ -78,7 +83,7 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
-    background: var(--am-bg);
+    background: transparent;   /* siehe die Wurzel oben */
     position: relative;
     overflow: hidden;
   }

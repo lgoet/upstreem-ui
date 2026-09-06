@@ -1,0 +1,26 @@
+<!doctype html><meta charset="utf-8">
+<title>Das neue Raster zum Ansehen</title>
+<body style="margin:0;background:#101114;padding:24px;font-family:Geist,system-ui,sans-serif">
+<div id="ziel" class="up-root" data-theme="dark"
+     style="background:#1c1c1f;border:1px solid #34343a;border-radius:14px;padding:18px;width:760px">
+  <div style="color:#e0e0e0;font-size:15px;font-weight:600;margin-bottom:12px">Visibility over time</div>
+  <div class="up-line-wrap" style="width:720px;height:280px;position:relative"><canvas class="up-line-canvas"></canvas></div>
+  <div class="up-legend"></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="core.css">
+<script src="core.js"></script>
+<script>
+/* Nur zum Hinsehen: das Raster in der Skala "Linear", auf der Karte, im Dunkeln. */
+setTimeout(function(){
+  var UC = window.UpstreemCore, z = document.getElementById("ziel");
+  var line = UC.makeLine({ wrap: z.querySelector(".up-line-wrap"), canvas: z.querySelector(".up-line-canvas"),
+                           legend: z.querySelector(".up-legend"), isDark: function(){ return true; }, decimals: 0 });
+  var f = UC.COLOR_SCALES.linear.colors;
+  var tage = ["2026-08-01","2026-08-02","2026-08-03","2026-08-04","2026-08-05","2026-08-06","2026-08-07"];
+  line.render({ labels: tage, datasets: f.slice(0,5).map(function(c,i){
+    return { label:"Reihe "+(i+1), __id:"r"+i, __baseColor:c, borderColor:c,
+             data: tage.map(function(_,j){ return 10 + i*6 + Math.sin((j+i)*1.1)*5; }) };
+  })});
+}, 700);
+</script>

@@ -1,0 +1,210 @@
+<!doctype html><meta charset="utf-8">
+<title>Raster, Palette und die vier kleinen Meldungen vom 08.09.</title>
+<pre id="out" style="font:12px/1.55 ui-monospace,Menlo,monospace;padding:12px;white-space:pre-wrap"></pre>
+<div id="buehne" style="position:absolute;left:-4000px;top:0"></div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+/* Fuenf Behauptungen dieser Fassung, jede einzeln nachgerechnet:
+     1  der Grund der Seite ist heller geworden, die Karte hebt sich weiter ab
+     2  die Leiste hat im Dunkeln eine rechte Kante (die Regel stand da, verlor aber die Spezifitaet)
+     3  das Kontomenue hat oben mehr Luft als unten, nicht gleich viel
+     4  das Chart-Raster ist gleichmaessig: gleich viele waagerechte wie senkrechte Linien
+     5  die Themenfarben sind in OKLCh gerechnet -- je Reihe eine Helligkeit
+   Kontrolle fuer 4 und 5 laeuft ueber _alt/ (der Stand vor dieser Fassung), damit ein RICHTIG
+   nicht bloss heisst, dass die Messung nichts findet. */
+var L=[], PFAD = (location.pathname.indexOf("/_alt/") >= 0) ? "" : "";
+function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function ja(b){ return b ? "RICHTIG" : "FALSCH "; }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function warte(ms){ return new Promise(function(ok){ setTimeout(ok,ms); }); }
+
+/* OKLab-Helligkeit aus sRGB -- die Zahl, an der "wirkt gleich hell" haengt. */
+function oklabL(hex){
+  var h = String(hex).replace("#","");
+  function lin(c){ c = parseInt(c,16)/255; return c <= 0.04045 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4); }
+  var r = lin(h.slice(0,2)), g = lin(h.slice(2,4)), b = lin(h.slice(4,6));
+  var l = Math.cbrt(0.4122214708*r + 0.5363325363*g + 0.0514459929*b);
+  var m = Math.cbrt(0.2119034982*r + 0.6806995451*g + 0.1073969566*b);
+  var s = Math.cbrt(0.0883024619*r + 0.2817188376*g + 0.6299787005*b);
+  return 0.2104542553*l + 0.7936177850*m - 0.0040720468*s;
+}
+function wcag(hex){
+  var h = String(hex).replace("#","");
+  function lin(c){ c = parseInt(c,16)/255; return c <= 0.03928 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4); }
+  return 0.2126*lin(h.slice(0,2)) + 0.7152*lin(h.slice(2,4)) + 0.0722*lin(h.slice(4,6));
+}
+function kontrast(a,b){ var x=wcag(a), y=wcag(b); if (x<y){ var t=x; x=y; y=t; } return (x+0.05)/(y+0.05); }
+function rgbHex(s){
+  var m = String(s).match(/(\d+),\s*(\d+),\s*(\d+)/); if (!m) return null;
+  function z(n){ n = (+n).toString(16); return n.length<2 ? "0"+n : n; }
+  return "#" + z(m[1]) + z(m[2]) + z(m[3]);
+}
+
+function rahmen(){
+  var f = document.createElement("iframe");
+  f.style.cssText = "width:1000px;height:520px;border:0";
+  document.getElementById("buehne").appendChild(f);
+  var d = f.contentDocument;
+  d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0'></body></html>"); d.close();
+  try { f.contentWindow.localStorage.setItem("pref_theme","dark"); } catch(e){}
+  return f;
+}
+function stil(d, txt){ var s=d.createElement("style"); s.textContent=txt; d.head.appendChild(s); }
+function skript(d, txt){ var s=d.createElement("script"); s.textContent=txt; d.head.appendChild(s); }
+
+Promise.all([hol("core.css"), hol("core.js"), hol("sidebar.css")]).then(function(t){
+  var kernCss=t[0], kernJs=t[1], sbCss=t[2];
+
+  /* ---------- 1 Grund und Leiter ---------- */
+  var f1 = rahmen(), d1 = f1.contentDocument, v1 = f1.contentWindow;
+  stil(d1, kernCss);
+  var probe = d1.createElement("div"); probe.className="up-root"; probe.setAttribute("data-theme","dark");
+  d1.body.appendChild(probe);
+  var cs = v1.getComputedStyle(probe);
+  var grund = cs.getPropertyValue("--up-surface").trim();
+  var karte = cs.getPropertyValue("--vc-bg").trim();
+  var text  = cs.getPropertyValue("--vc-text").trim();
+  log("1  Der Grund der Seite");
+  log("     --up-surface " + grund + "   --vc-bg " + karte);
+  log("     " + ja(grund.toLowerCase() === "#101114") + " Grund ist #101114 (angefordert: #0f0f11 oder eine Spur heller)");
+  log("     " + ja(kontrast(grund,karte) > 1.08) + " Karte hebt sich ab: Kontrast " + kontrast(grund,karte).toFixed(3) + " (Schwelle 1.08)");
+  log("     " + ja(kontrast(grund,text) > 12) + " Text auf dem Grund: " + kontrast(grund,text).toFixed(2) + " (Schwelle 12)");
+  log("");
+
+  /* ---------- 2 rechte Kante der Leiste ---------- */
+  stil(d1, sbCss);
+  var bar = d1.createElement("div");
+  bar.className = "up-root up-portal usn-bar"; bar.setAttribute("data-theme","dark");
+  d1.body.appendChild(bar);
+  var bs = v1.getComputedStyle(bar);
+  var kante = bs.borderRightWidth, kfarbe = rgbHex(bs.borderRightColor);
+  log("2  Rechte Kante der Leiste (dunkel)");
+  log("     borderRight " + kante + " " + bs.borderRightStyle + " " + bs.borderRightColor);
+  log("     " + ja(parseFloat(kante) >= 1) + " Kante ist da (vorher gewann 'border: 0' ueber die Spezifitaet)");
+  log("     " + ja(kfarbe && kontrast(kfarbe, grund) > 1.15) + " und sie ist sichtbar: Kontrast zur Leiste " +
+      (kfarbe ? kontrast(kfarbe, grund).toFixed(2) : "?"));
+  var hell = d1.createElement("div"); hell.className="up-root up-portal usn-bar"; hell.setAttribute("data-theme","light");
+  d1.body.appendChild(hell);
+  log("     " + ja(parseFloat(v1.getComputedStyle(hell).borderRightWidth) === 0) + " im Hellen KEINE Kante (dort traegt sie ihre eigene Flaeche)");
+  log("");
+
+  /* ---------- 3 Polsterung des Kontomenues ---------- */
+  var menu = d1.createElement("div");
+  menu.className = "up-filter-menu usn-menu is-acc";
+  bar.appendChild(menu);
+  var ms = v1.getComputedStyle(menu);
+  var oben = parseFloat(ms.paddingTop), unten = parseFloat(ms.paddingBottom);
+  log("3  Kontomenue");
+  log("     paddingTop " + oben + "px   paddingBottom " + unten + "px");
+  log("     " + ja(Math.abs((oben - unten) - 8) < 0.6) + " oben genau 8px mehr als unten (angefordert: 8px weniger unten)");
+  log("     " + ja(ms.overflowY === "auto") + " scrollt statt zu quetschen (overflowY " + ms.overflowY + ")");
+  log("");
+
+  /* ---------- 4 Chart-Raster ---------- */
+  var f2 = rahmen(), d2 = f2.contentDocument, v2 = f2.contentWindow;
+  stil(d2, kernCss);
+  v2.Chart = window.Chart;
+  var host = d2.createElement("div");
+  host.className = "up-root"; host.setAttribute("data-theme","dark");
+  host.innerHTML = '<div class="up-line-wrap" style="width:760px;height:300px;position:relative">' +
+                   '<canvas class="up-line-canvas"></canvas></div><div class="up-legend"></div>';
+  d2.body.appendChild(host);
+  skript(d2, kernJs);
+  return warte(400).then(function(){
+    var UC = v2.UpstreemCore;
+    if (!UC || !UC.makeLine){ log("4  ABBRUCH: kein UC.makeLine (core.js hat nicht geladen oder wirft)"); return null; }
+    var wrap = host.querySelector(".up-line-wrap");
+    var line = UC.makeLine({ wrap: wrap, canvas: host.querySelector(".up-line-canvas"),
+                             legend: host.querySelector(".up-legend"),
+                             isDark: function(){ return true; }, decimals: 0 });
+    var labels = ["2026-08-01","2026-08-02","2026-08-03","2026-08-04","2026-08-05","2026-08-06","2026-08-07"];
+    line.render({ labels: labels, datasets: [
+      { label:"A", data:[12,18,15,22,19,25,21], __id:"a", __baseColor:"#579cf1", borderColor:"#579cf1" },
+      { label:"B", data:[8,9,14,11,16,13,18],  __id:"b", __baseColor:"#d88225", borderColor:"#d88225" }
+    ]});
+    return warte(1400).then(function(){
+      var ch = v2.Chart.getChart(host.querySelector(".up-line-canvas"));
+      if (!ch){ log("4  ABBRUCH: kein Chart auf der Leinwand"); return; }
+      /* Aufzeichnen, was mit gestricheltem Stift gezogen wird. Der echte Kontext bleibt in Betrieb,
+         nur die vier Methoden merken sich zusaetzlich, was durch sie lief. */
+      var ctx = ch.ctx, spuren = [], mx=null, my=null, gestrichelt=false;
+      var oM = ctx.moveTo, oL = ctx.lineTo, oS = ctx.stroke, oD = ctx.setLineDash;
+      var letzteL = null;
+      ctx.setLineDash = function(a){ gestrichelt = !!(a && a.length); return oD.apply(this, arguments); };
+      ctx.moveTo = function(x,y){ mx=x; my=y; return oM.apply(this, arguments); };
+      ctx.lineTo = function(x,y){ letzteL = [x,y]; return oL.apply(this, arguments); };
+      ctx.stroke = function(){
+        if (gestrichelt && mx != null && letzteL) spuren.push([mx,my,letzteL[0],letzteL[1]]);
+        letzteL = null;
+        return oS.apply(this, arguments);
+      };
+      ch.draw();
+      ctx.moveTo=oM; ctx.lineTo=oL; ctx.stroke=oS; ctx.setLineDash=oD;
+      var waag = spuren.filter(function(s){ return Math.abs(s[1]-s[3]) < 0.6 && Math.abs(s[0]-s[2]) > 5; });
+      var senk = spuren.filter(function(s){ return Math.abs(s[0]-s[2]) < 0.6 && Math.abs(s[1]-s[3]) > 5; });
+      /* Gleichmaessig heisst: die Abstaende zwischen benachbarten Linien sind gleich. */
+      function gleichmaessig(werte){
+        if (werte.length < 2) return false;
+        var w = werte.slice().sort(function(a,b){ return a-b; }), ab = [];
+        for (var i=1;i<w.length;i++) ab.push(w[i]-w[i-1]);
+        return (Math.max.apply(null,ab) - Math.min.apply(null,ab)) < 2.5;
+      }
+      log("4  Chart-Raster");
+      log("     waagerecht " + waag.length + "   senkrecht " + senk.length);
+      log("     " + ja(waag.length === 4) + " vier waagerechte (vorher drei -- 'eine zusaetzliche')");
+      log("     " + ja(senk.length === waag.length) + " gleich viele senkrechte wie waagerechte");
+      log("     " + ja(gleichmaessig(waag.map(function(s){ return s[1]; }))) + " waagerechte gleichmaessig verteilt");
+      log("     " + ja(gleichmaessig(senk.map(function(s){ return s[0]; }))) + " senkrechte gleichmaessig verteilt");
+      var rf = rgbHex(ch.$upGridColor) || ch.$upGridColor;
+      /* Der Rasterton ist halbdurchsichtig; auf der Karte ausgerechnet, weil dort das Chart liegt. */
+      var auf = ch.$upGridColor.indexOf("rgba") === 0
+        ? (function(){ var m = ch.$upGridColor.match(/[\d.]+/g), a = +m[3];
+            function z(i){ var v = Math.round(+m[i]*a + parseInt("1c1c1f".substr(i*2,2),16)*(1-a)).toString(16);
+                           return v.length<2 ? "0"+v : v; }
+            return "#"+z(0)+z(1)+z(2); })()
+        : rf;
+      log("     Rasterton auf der Karte: " + ch.$upGridColor + " ergibt " + auf +
+          "   Kontrast zur Karte " + kontrast(auf,"#1c1c1f").toFixed(3));
+      log("     " + ja(kontrast(auf,"#1c1c1f") > 1.05 && kontrast(auf,"#1c1c1f") < 1.6) +
+          " sichtbar, aber leiser als die Achse (Fenster 1.05 bis 1.60)");
+      log("     " + ja(kontrast(ch.$upHoverLineColor,"#1c1c1f") > kontrast(auf,"#1c1c1f")) +
+          " Achse/Fuehrungslinie staerker: " + kontrast(ch.$upHoverLineColor,"#1c1c1f").toFixed(2));
+      log("");
+
+      /* ---------- 5 Farben ---------- */
+      var pal = UC.TOPIC_COLOR_PALETTE || [];
+      log("5  Farben");
+      log("     " + ja(pal.length === 30) + " dreissig Themenfarben (" + pal.length + ")");
+      var reihen = [["vibrant",0,8],["muted",10,18],["deep",20,28]];
+      var allesGleich = true;
+      reihen.forEach(function(r){
+        var Ls = pal.slice(r[1], r[2]).map(oklabL);
+        var spanne = Math.max.apply(null,Ls) - Math.min.apply(null,Ls);
+        if (spanne > 0.02) allesGleich = false;
+        log("     " + ja(spanne <= 0.02) + " Reihe " + r[0] + ": OKLab-L von " +
+            Math.min.apply(null,Ls).toFixed(3) + " bis " + Math.max.apply(null,Ls).toFixed(3) +
+            "  Spanne " + spanne.toFixed(3) + " (Schwelle 0.020)");
+      });
+      var sk = UC.COLOR_SCALES && UC.COLOR_SCALES.linear;
+      log("     " + ja(!!sk) + " Skala 'Linear' vorhanden" + (sk ? " (" + sk.colors.length + " Farben)" : ""));
+      if (sk){
+        var sl = sk.colors.map(oklabL);
+        var sp = Math.max.apply(null,sl) - Math.min.apply(null,sl);
+        log("     " + ja(sp <= 0.02) + " ihre sieben Farben gleich hell: Spanne " + sp.toFixed(3));
+        var kd = sk.colors.map(function(h){ return kontrast(h,"#1c1c1f"); });
+        var kh = sk.colors.map(function(h){ return kontrast(h,"#ffffff"); });
+        log("     " + ja(Math.min.apply(null,kd) > 3 && Math.min.apply(null,kh) > 2) +
+            " auf beiden Gruenden brauchbar: dunkel " + Math.min.apply(null,kd).toFixed(2) + " bis " +
+            Math.max.apply(null,kd).toFixed(2) + ", hell " + Math.min.apply(null,kh).toFixed(2) + " bis " +
+            Math.max.apply(null,kh).toFixed(2));
+      }
+      var ord = UC.SCALE_ORDER || [];
+      log("     " + ja(ord.indexOf("linear") > -1) + " steht in der Auswahl: " + ord.join(", "));
+      log("     " + ja(ord.indexOf("linear") !== 0) + " ist NICHT die Vorgabe (vorn steht " + ord[0] + ")");
+      log("");
+      log("FERTIG");
+    });
+  });
+}).catch(function(e){ log("ABBRUCH: " + e.message + "\n" + (e.stack||"")); });
+</script>

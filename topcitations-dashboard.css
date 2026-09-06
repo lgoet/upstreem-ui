@@ -72,7 +72,12 @@
   display: inline-flex; align-items: center; justify-content: center; }
 .tcd-mode-btn:hover { color: var(--vc-text); }
 .tcd-mode-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
-.up-root[data-theme="dark"] .tcd-mode-btn.is-active { background: #08090a; border-color: #23252a; }
+/* Derselbe Fall wie die gleitende Pille in core.css: der aktive Knopf liegt UEBER seiner
+   Schiene, nicht darunter. Hier stand #08090a, der Grund der Seite -- ein Rest des
+   Farbtauschs, nicht eine Entscheidung. Diese Regel greift, solange der gleitende Streifen
+   noch nicht gemessen hat (danach uebernimmt .is-gleitend), also genau beim ersten Bild.
+   #28282c auf #34343a, wie ueberall sonst das Gewaehlte. */
+.up-root[data-theme="dark"] .tcd-mode-btn.is-active { background: #28282c; border-color: #34343a; }
 
 /* right heading with total-count */
 .tcd-heading-right { display: flex; align-items: center; }
