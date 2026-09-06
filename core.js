@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20260913;
+  var BUILD = 20260914;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -5901,12 +5901,33 @@
      sie zum Suchbereich erklaert statt verworfen: im Prueftand danach 240 von 240 Texten in der
      geparkten Ansicht uebersetzt, also null Ersparnis. Genau diese Verwechslung steht schon im
      Kommentar der Lazy-Mount-Diagnose; hier ist sie mir trotzdem passiert. */
+  /* Als Probe taugt nur ein Kind, das ueberhaupt gerendert werden KANN. Der erste Anlauf nahm
+     firstElementChild -- und damit fiel am 07.09. die ganze Seite auf Englisch zurueck: der
+     Beobachter ruft bei vielen Aenderungen spracheLauf(document), die Probe war dann <head>, und
+     der ist nie gerendert. Ergebnis: kein einziger sichtbarer Ast, also kein Lauf, also blieb
+     jede neu gezeichnete Sidebar-Zeile englisch stehen (die Sidebar baut ihre Liste ueber
+     innerHTML neu und schreibt dabei die englischen Beschriftungen).
+     Darum: Kinder ueberspringen, die ihrer Art nach nicht gerendert werden, und bis zu vier
+     echte Kinder fragen -- eine geparkte Ansicht hat keins davon messbar, eine offene das erste. */
+  var PROBE_AUS = { SCRIPT:1, STYLE:1, LINK:1, META:1, TEMPLATE:1, HEAD:1, TITLE:1, NOSCRIPT:1 };
   function astSichtbar(el){
     if (!el || el.nodeType !== 1) return true;
-    return messbar(el.firstElementChild || el);
+    var k = el.firstElementChild, gefragt = 0;
+    while (k && gefragt < 4){
+      if (!PROBE_AUS[k.tagName]){
+        if (messbar(k)) return true;
+        gefragt++;
+      }
+      k = k.nextElementSibling;
+    }
+    /* Kein befragbares Kind -- dann entscheidet das Element selbst. */
+    return gefragt ? false : messbar(el);
   }
   function sichtbareBereiche(start){
-    var koerper = start || document.body;
+    /* document ist keine brauchbare Wurzel fuer diese Suche -- ihr erstes Kind ist <html> und
+       dessen erstes <head>. Aufrufer, die document uebergeben (der Beobachter tut es bei
+       gedeckelten Sammlungen), meinen den Koerper. */
+    var koerper = (start && start.nodeType === 1) ? start : document.body;
     if (!koerper) return [document];
     if (koerper.nodeType === 1 && !astSichtbar(koerper)) return [];
     var raus = [], reihe = [koerper], tiefe = 0;

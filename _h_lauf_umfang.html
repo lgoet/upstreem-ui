@@ -51,7 +51,14 @@ Promise.all(["core.css","core.js"].map(hol)).then(function(t){
                    '.karte{padding:4px}';
   d.head.appendChild(sp);
   /* Ein Wrapper wie #main auf der echten Seite, darunter die Ansichten. */
-  d.body.innerHTML = '<div id="main">' + ansichtHtml("offen", 20) +
+  /* Eine Leiste ausserhalb der Ansichten, wie die Sidebar der App: sie bleibt immer sichtbar
+     und wird von der Komponente selbst neu gezeichnet.
+     UND DAVOR ZWEI KINDER, DIE NICHT GERENDERT WERDEN -- genau so sieht eine Bubble-Seite aus:
+     ein Script und ein verstecktes Datenelement stehen vor dem Inhalt. Daran ist die erste
+     Fassung der Sichtbarkeitsprobe gescheitert (sie fragte nur das ERSTE Kind), und ohne diese
+     zwei Zeilen besteht der Prueftand die Pruefung, die er stellen soll. */
+  d.body.innerHTML = '<script></' + 'script><div id="versteckt" style="display:none">x</div>' +
+    '<div id="leiste"></div><div id="main">' + ansichtHtml("offen", 20) +
     ansichtHtml("a", 120) + ansichtHtml("b", 120) + ansichtHtml("c", 120) + '</div>';
   d.getElementById("view-offen").className = "view-on";
   v.showView = function(n){
@@ -110,7 +117,49 @@ Promise.all(["core.css","core.js"].map(hol)).then(function(t){
         "   (Aufrufe seither: " + (v.__qsa.aufrufe - vorherAufrufe) + ")");
     log("   ==> " + ja(deutsch(park) === park.querySelectorAll(".up-th-txt, .up-heading").length) +
         " (nachgeholt, sobald sie sichtbar ist -- nichts geht verloren)");
-    log("FERTIG");
+    log("");
+    /* ---- 4) DIE SIDEBAR, DIE SICH NEU ZEICHNET -------------------------------------------
+       Gemeldet am 07.09.: "bei pageload ist die Sidebar korrekt deutsch, dann mache ich einen
+       Ansichtswechsel und alle Sidebar-Items gehen wieder auf Englisch". Die Sidebar baut ihre
+       Liste ueber innerHTML neu und schreibt dabei ihre englischen Beschriftungen; die Sprache
+       kommt erst durch den Lauf darueber. Zwei Wege muessen das einfangen:
+       der Beobachter (er sieht die neuen Knoten) und der Nachlauf am Ansichtswechsel.
+       Nachgestellt wird beides: erst neu zeichnen, dann die Ansicht wechseln. */
+    var leiste = d.getElementById("leiste");
+    function leisteEnglisch(){
+      leiste.innerHTML = '<button class="usn-item"><span class="usn-txt">Search pages</span></button>' +
+                         '<button class="usn-item"><span class="usn-txt">Rows per page</span></button>';
+    }
+    function leisteDeutsch(){
+      var n = 0, els = leiste.querySelectorAll(".usn-txt");
+      for (var i = 0; i < els.length; i++){
+        if (/Seiten suchen|Zeilen pro Seite/.test(els[i].textContent)) n++;
+      }
+      return n;
+    }
+    /* Und die DECKELUNG des Beobachters mitausloesen: kommen mehr als acht Teilbaeume auf
+       einmal, laeuft er nicht mehr je Ast, sondern einmal ueber document -- der Weg, auf dem die
+       Probe <head> zu fassen bekam. Bubble haengt beim Aufbau genau so ein. */
+    leisteEnglisch();
+    for (var z = 0; z < 12; z++){
+      var extra = d.createElement("div");
+      extra.innerHTML = '<span class="up-heading">Search pages</span>';
+      d.getElementById("main").appendChild(extra);
+    }
+    return warte(1200).then(function(){
+      var nachBeobachter = leisteDeutsch();
+      log("4) DIE SIDEBAR ZEICHNET SICH NEU");
+      log("   nach dem Beobachter: " + nachBeobachter + " von 2 deutsch");
+      leisteEnglisch();
+      v.showView("offen");
+      return warte(1500).then(function(){
+        var nachWechsel = leisteDeutsch();
+        log("   neu gezeichnet, dann Ansichtswechsel: " + nachWechsel + " von 2 deutsch");
+        log("   ==> " + ja(nachBeobachter === 2 && nachWechsel === 2) +
+            " (beide Wege fangen es ein -- sonst steht die Leiste englisch da)");
+        log("FERTIG");
+      });
+    });
     v.__ergebnis = { aufrufe: v.__qsa.aufrufe, durchsucht: v.__qsa.durchsucht };
   });
 }).catch(function(e){ log("ABBRUCH: " + e.message + "\n" + (e.stack||"").split("\n").slice(0,3).join("\n")); });
