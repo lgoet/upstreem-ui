@@ -94,13 +94,21 @@
 /* Kein seitliches Polster mehr: die Spalte hat keine eigene Flaeche, also gibt es auch keinen
    Rand, von dem die Ueberschrift einruecken muesste. Sie steht jetzt buendig ueber ihren Karten. */
 .uo-col-head { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; padding: 16px 0; }
-/* Die angeheftete Ueberschrift traegt den Seitengrund und keine Rundung mehr: eine Rundung oben
-   gehoert zu einer Flaeche, und die Spalte hat keine mehr. Der Grund muss trotzdem
-   undurchsichtig sein, sonst laufen die Karten beim Scrollen sichtbar dahinter durch. */
+/* GAR KEINE FLAECHE mehr, auch nicht der Seitengrund (08.09. angefordert: "in den 3 headings und
+   oben hinter heading und Toolbar sind immer noch Backgrounds, mach die weg").
+   Das hat eine Folge, und die ist gewollt: die Ueberschrift bleibt beim Scrollen oben stehen, und
+   die Karten laufen jetzt SICHTBAR dahinter durch, weil nichts mehr dazwischen malt. Wer das
+   nicht will, setzt hier wieder var(--up-surface) ein -- es ist eine Zeile. */
 .up-sticky .uo-col-head {
   position: sticky; top: calc(var(--up-sticky-top) + var(--up-thead-off)); z-index: 4;
-  background: var(--up-surface); border-radius: 0;
+  background: transparent; border-radius: 0;
 }
+/* Dasselbe fuer die Zeile mit Ueberschrift und Werkzeugleiste oben: core heftet sie an und malt
+   dafuer den Seitengrund (core.css, .up-sticky .up-head) samt einem Streifen darueber. Beides
+   hier abgeschaltet -- nur in dieser Komponente, denn in den Tabellen ist der Streifen richtig:
+   dort laufen Zeilen mit Text dahinter durch, und der waere sonst lesbar. */
+.uo-root.up-sticky .up-head { background: transparent; }
+.uo-root.up-sticky .up-head::before { content: none; }
 /* The border-radius above rounds the header's own box, but that alone changes nothing on screen:
    the lane's background runs the full height BEHIND the pinned header, so the two corner notches
    just expose more of the same grey and the top edge reads as square. These two pieces paint the
@@ -155,11 +163,14 @@
 .uo-root.is-stacked .uo-col-head { position: static; }
 
 /* ---------- card ---------- */
-/* Die Karte traegt jetzt den Ton, den vorher die SPALTE hinter ihr hatte (--uo-col-bg). Damit
-   wandert die einzige Flaeche des Bretts von der Spalte auf die Karte: die Ordnung ist die
-   Ueberschrift, die Karte ist das Ding. Angefordert am 08.09. */
+/* Die Karte traegt den Ton, den die Ueberschriften abgegeben haben -- den Grund der Seite
+   (--up-surface). Angefordert am 08.09.: "die Cards selber: mach die in genau diesem Background,
+   den du da entfernst."
+   Damit ist die Karte DUNKLER als die Flaeche, auf der das Brett liegt, und ihr Rahmen ist das,
+   was sie abgrenzt. Das ist eine Umkehrung der ueblichen Richtung (oben heller) und ausdruecklich
+   so bestellt. */
 .uo-card {
-  position: relative; background: var(--uo-col-bg); border: 1px solid var(--vc-border);
+  position: relative; background: var(--up-surface); border: 1px solid var(--vc-border);
   border-radius: 16px; padding: 16px; cursor: pointer; user-select: none;
   transition: border-color 140ms ease, background 140ms ease;
 }

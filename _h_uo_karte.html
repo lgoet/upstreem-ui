@@ -61,7 +61,35 @@ Promise.all(["core.css","opportunities.css","core.js","opportunities.js",
     ["Spaltenkoerper ohne Seitenpolster", parseFloat(koerper.paddingLeft) === 0 && parseFloat(koerper.paddingRight) === 0],
     ["Kopfzeile ohne Seitenpolster",      parseFloat(kopf.paddingLeft) === 0 && parseFloat(kopf.paddingRight) === 0],
     ["Kopfzeile ohne Rundung oben",       parseFloat(kopf.borderTopLeftRadius) === 0],
-    ["Karte traegt den Spaltenton",       karte.backgroundColor === v.getComputedStyle(d.body).backgroundColor ? false : true],
+    /* Die Karte traegt jetzt den Grund der Seite -- den Ton, den die Ueberschriften abgegeben
+       haben. Verglichen wird gegen den Token, nicht gegen einen Zahlenwert im Test. */
+    ["Karte traegt --up-surface",         karte.backgroundColor ===
+                                          "rgb(8, 9, 10)".replace("8, 9, 10", (function(){
+                                            var h = wurzel.getPropertyValue("--up-surface").trim().replace("#","");
+                                            return [0,2,4].map(function(i){ return parseInt(h.substr(i,2),16); }).join(", ");
+                                          })())],
+    ["Kopfzeile der Spalte OHNE Flaeche", durchsichtig(kopf.backgroundColor)],
+    ["Zeile mit Titel+Werkzeugen OHNE Flaeche", (function(){
+        var h = d.querySelector(".up-head");
+        return !h || durchsichtig(v.getComputedStyle(h).backgroundColor);
+      })()],
+    /* DER SCHALTER IM POPOVER -- und warum hier der TOKEN geprueft wird und nicht die gezeichnete
+       Farbe. Aufgefallen ist der Fall bei dieser Messung: die Schiene stand hell im dunklen
+       Menue. Ursache war ein FESTER Wert in der Regel (#d6d6d4), und feste Werte erben nicht
+       ueber eine Attributgrenze -- Token tun es. Der Schalter holt seine Schiene jetzt aus
+       --up-switch-off, und der Token ist in jedem Themenblock gesetzt.
+       Die GEZEICHNETE Farbe taugt hier nicht als Messwert: in diesem Aufbau entstehen die
+       Popover-Knoten, BEVOR core data-theme setzt, und Chrome rechnet den Stil solcher Knoten
+       danach nicht neu -- derselbe Befund wie am 07.09. beim Schalter im Kalender (ein frischer
+       Klon an derselben Stelle bekommt sofort den richtigen Wert). Die echte App zeichnet ihre
+       Popover-Inhalte erst nach dem Thema; dass die Schiene DORT stimmt, misst
+       _h_switch_orte.html auf allen drei Untergruenden. */
+    ["Token der Schiene ist dunkel", (function(){
+        var sw = d.querySelector(".up-menu .up-switch, .up-pop-row .up-switch");
+        if (!sw) return true;
+        var t = v.getComputedStyle(sw).getPropertyValue("--up-switch-off").trim();
+        return t === "#444444";
+      })()],
     ["Typ oben ohne Flaeche",             durchsichtig(eyebrow.backgroundColor)],
     ["Beschreibung nicht sichtbar",       grund.display === "none"],
     ["Datum unten nicht sichtbar",        fuss.display === "none"],
@@ -74,6 +102,22 @@ Promise.all(["core.css","opportunities.css","core.js","opportunities.js",
                                           parseInt(zahl.fontWeight,10) < parseInt(ctitel.fontWeight,10)]
   ];
   log("--uo-col-bg = " + colBg + "   Kartenflaeche = " + karte.backgroundColor);
+  /* WER MALT UEBERHAUPT? Gemeldet am 08.09.: hinter den Karten, hinter den drei Ueberschriften und
+     oben hinter Ueberschrift und Werkzeugleiste stehe im Dunkeln noch eine Flaeche. Statt zu
+     suchen, wird gezaehlt: jedes Element im Bauteil, das eine nicht durchsichtige Flaeche traegt,
+     mit Klasse und Farbe. Ohne diese Liste repariert man die Stelle, die man vermutet. */
+  var maler = [];
+  [].forEach.call(d.querySelectorAll(".uo-root, .uo-root *"), function(el){
+    var c = v.getComputedStyle(el).backgroundColor;
+    if (durchsichtig(c)) return;
+    var kl = String(el.className || el.tagName).split(" ")[0];
+    maler.push(kl + "  " + c);
+  });
+  var zusammen = {};
+  maler.forEach(function(m){ zusammen[m] = (zusammen[m] || 0) + 1; });
+  log("");
+  log("FLAECHEN IM BAUTEIL (Klasse, Farbe, Anzahl):");
+  Object.keys(zusammen).sort().forEach(function(k){ log("   " + zusammen[k] + "x  " + k); });
   log("");
   pruef.forEach(function(p){ log("   " + (p[1] ? "RICHTIG" : "FALSCH ") + "  " + p[0]); });
   log("");
