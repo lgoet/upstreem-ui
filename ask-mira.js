@@ -31,7 +31,8 @@
     "askMiraSetModels","askMiraSetFavicons","askMiraSetBrandLogos","askMiraSetCompanies",
     "askMiraSetTool","askMiraSetFaviconsFromEl","askMiraSetBrandLogosFromEl",
     "askMiraSetToolFromEl","askMiraGetState","askMiraOpportunityResult",
-    "askMiraResolveVoice","askMiraRejectVoice","askMiraSetTranscript","askMiraVoiceCancel"
+    "askMiraResolveVoice","askMiraRejectVoice","askMiraSetTranscript","askMiraVoiceCancel",
+    "askMiraSetChatsLoading"
   ];
   var __amBootQueue = window.__amBootQueue = window.__amBootQueue || [];
   if (!window.__amBootStubbed){
@@ -150,6 +151,7 @@
   var elPrevPanel  = root.querySelector('#am-prev-panel');
   var elPrevList   = root.querySelector('#am-prev-list');
   var _prevLoaded  = false;   // becomes true once the app receives its chat sessions (or a timeout fallback)
+  var _prevAuffang = null;    // die Uhr des Auffangnetzes, damit sie neu gestellt werden kann
   /* Das Skelett soll aussehen wie der Inhalt, der kommt: Zeilen von 34px mit EINER Textzeile
      darin, nicht sieben ausgefuellte Bloecke. Die Breiten wechseln, weil Chatnamen verschieden
      lang sind -- gleich lange Balken lesen sich als Tabelle, nicht als Liste. */
@@ -3475,6 +3477,32 @@
     if (S.previousChats.length) _prevLoaded = true;
     renderPrevious();
   };
+  /* ---- DER SCHALTER FUER DIE SKELETTE IN DER CHATLEISTE (07.09.) ---------------------------
+     Bis hierher gab es keinen: die Skelette endeten, sobald askMiraSetPreviousChats eine NICHT
+     leere Liste brachte, und sonst nach sechs Sekunden. Auf der Seite des Nutzers hat das
+     wiederholt nicht gereicht -- gemeldet als "bei pageload sehe ich keinen Skeleton, die Leiste
+     ist einfach leer". Mit diesem Schalter entscheidet der Workflow, der die Daten holt, und
+     nicht eine Vermutung in der Komponente.
+
+     Der Wert kommt als TEXT aus Bubble ("yes"/"no") -- eine Zahl oder ein nacktes yes/no im
+     JSON waere unlesbar (siehe Glossar). Alles, was nicht "no"/"false"/"0"/leer ist, gilt als
+     "es laedt".
+
+     "yes" stellt das Auffangnetz neu und zwar auf 20 Sekunden: ein Workflow, der sein "no"
+     vergisst, laesst die Leiste sonst ewig flimmern. "no" raeumt die Uhr ab. */
+  window.askMiraSetChatsLoading = function(v){
+    var text = String(v == null ? "" : v).trim().toLowerCase();
+    var laedt = !(text === "no" || text === "false" || text === "0" || text === "");
+    clearTimeout(_prevAuffang); _prevAuffang = null;
+    _prevLoaded = !laedt;
+    if (laedt){
+      _prevAuffang = setTimeout(function(){
+        if (!_prevLoaded){ _prevLoaded = true; renderPrevious(); }
+      }, 20000);
+    }
+    renderPrevious();
+    return true;
+  };
   window.askMiraSetProjects = function(projects){
     if (typeof projects === 'string'){
       var parsed = looseJsonParse(projects);
@@ -4877,8 +4905,10 @@
   setDetail(S.answerDetail || 'balanced', true);
   setModel(S.model || 'pro', true);
   renderPrevious();
-  // Fallback: if no sessions payload ever arrives (e.g. user genuinely has no chats), stop the skeletons after a bit.
-  setTimeout(function(){ if (!_prevLoaded){ _prevLoaded = true; renderPrevious(); } }, 6000);
+  /* Auffangnetz: kommt nie eine Sitzungsliste (ein Nutzer ohne Chats), hoeren die Skelette nach
+     einer Weile von selbst auf. _prevAuffang haelt die Uhr, damit askMiraSetChatsLoading sie
+     zuruecksetzen kann -- sonst raeumt sie ein ausdrueckliches "es laedt" nach sechs Sekunden ab. */
+  _prevAuffang = setTimeout(function(){ if (!_prevLoaded){ _prevLoaded = true; renderPrevious(); } }, 6000);
   renderMessages();
   if (window.__amHeroReady) window.__amHeroReady();   // enable hero collapse animation only after first paint
   autosize(); refreshSend();
