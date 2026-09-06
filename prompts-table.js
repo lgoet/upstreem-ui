@@ -884,7 +884,7 @@
       if (!isBusy() && state.hasData) state.brandSettled = true;
       elBrand.classList.toggle("is-visible", !!valid && state.hasData && !!state.brandSettled);
       if (!valid) return;
-      elBrandLbl.textContent = name + " mentioned";
+      elBrandLbl.textContent = UC.t("{brand} mentioned").replace("{brand}", name);   /* Muster, siehe domains-table */
       if (hasLogo){ elBrandLogo.src = logo; elBrandLogo.style.display = "block"; }
       else { elBrandLogo.style.display = "none"; }
       elBrand.classList.toggle("is-yes", state.brandMentioned === "yes");

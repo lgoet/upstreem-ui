@@ -784,7 +784,7 @@
       else { img.style.display = "none"; }
       // the header reads "<logo> mentioned?"; without a logo the brand name has to carry it
       lbl.textContent = (!logo || logo === "BRAND_LOGO") && name && name !== "BRAND_NAME"
-        ? name + " mentioned?" : "mentioned?";
+        ? UC.t("{brand} mentioned?").replace("{brand}", name) : UC.t("mentioned?");
     }
     function syncBrand(){
       if (!elBrand) return;
@@ -806,7 +806,7 @@
       if (!isBusy() && state.hasData) state.brandSettled = true;
       elBrand.classList.toggle("is-visible", !!valid && state.hasData && !!state.brandSettled);
       if (!valid) return;
-      elBrandLbl.textContent = name + " mentioned";
+      elBrandLbl.textContent = UC.t("{brand} mentioned").replace("{brand}", name);   /* Muster, siehe domains-table */
       if (logo && logo !== "BRAND_LOGO"){ elBrandLogo.src = logo; elBrandLogo.style.display = "block"; }
       else { elBrandLogo.style.display = "none"; }
       elBrand.classList.toggle("is-yes", state.brandMentioned === "yes");

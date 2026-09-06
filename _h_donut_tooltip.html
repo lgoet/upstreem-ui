@@ -61,7 +61,7 @@ Promise.all(["core.css","core.js"].map(hol)).then(function(t){
     log("DIE LEGENDE (sie hatte die Regel schon)");
     log("   " + JSON.stringify(legende));
     var winzig = legende[legende.length - 1];
-    log("   ==> " + ja(winzig === "<0.1%") + " (der Anteil 0,04 steht als \"" + winzig + "\")");
+    log("   ==> " + ja(winzig === "<1%") + " (der Anteil 0,04 steht als \"" + winzig + "\")");
     log("");
 
     /* Den Tooltip ueber die Schnittstelle aufzwingen -- Segment 2 ist der winzige. */
@@ -80,7 +80,7 @@ Promise.all(["core.css","core.js"].map(hol)).then(function(t){
     log("DER TOOLTIP (die Stelle, die roh formatierte)");
     log("   winziges Segment (0,04): \"" + klein + "\"");
     log("   normales Segment (41,2): \"" + normal + "\"");
-    log("   ==> " + ja(klein === "<0.1%") + " (keine irrefuehrende 0.0 mehr)");
+    log("   ==> " + ja(klein === "<1%") + " (keine irrefuehrende 0.0 mehr -- und \"<1%\" statt \"<0.1%\", zweimal so angefordert)");
     log("   ==> " + ja(normal === "41.2%") +
         " GEGENPROBE (ein normaler Wert steht unveraendert da -- die Regel greift nur, wo sie muss)");
     log("   ==> " + ja(klein === winzig) + " (Tooltip und Legende sagen dasselbe)");

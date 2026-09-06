@@ -909,7 +909,7 @@
       if (logo && logo !== "BRAND_LOGO"){ img.src = logo; img.style.display = "block"; }
       else { img.style.display = "none"; }
       lbl.textContent = (!logo || logo === "BRAND_LOGO") && name && name !== "BRAND_NAME"
-        ? name + " mentioned?" : "Mentioned?";
+        ? UC.t("{brand} mentioned?").replace("{brand}", name) : UC.t("Mentioned?");
     }
     /* Spotlight: der Schalter zeigt seinen gewaehlten Zustand, ist aber ausgegraut und nicht
        bedienbar. Gedacht fuer Seiten, die ohnehin schon auf diese Marke gefiltert sind -- dort
@@ -937,7 +937,7 @@
       if (!isBusy() && state.hasData) state.brandSettled = true;
       elBrand.classList.toggle("is-visible", !!valid && state.hasData && !!state.brandSettled);
       if (!valid) return;
-      elBrandLbl.textContent = name + " mentioned";
+      elBrandLbl.textContent = UC.t("{brand} mentioned").replace("{brand}", name);   /* Muster, siehe domains-table */
       if (logo && logo !== "BRAND_LOGO"){ elBrandLogo.src = logo; elBrandLogo.style.display = "block"; }
       else { elBrandLogo.style.display = "none"; }
       /* Im Spotlight IMMER der gewaehlte Zustand, unabhaengig vom Filter: der Schalter behauptet

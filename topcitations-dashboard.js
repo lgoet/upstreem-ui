@@ -53,11 +53,13 @@
     if (mode === "url"){
       var ut = URL_TYPE_CHIP[raw] || URL_TYPE_CHIP.other;
       var c = isDark ? ut.cDark : ut.c;
-      return { label: ut.label, color: c, bg: isDark ? CHIP_BG_DARK : tint(ut.c, 0.12), dot: true };
+      /* Beschriftung uebersetzt (UC.typLabel), Farbe aus der eigenen Palette -- gemeldet am
+         07.09.: die Typen standen hier noch englisch, waehrend sie im Ring nebenan deutsch
+         waren. */
+      return { label: UC.typLabel(raw, "url"), color: c, bg: isDark ? CHIP_BG_DARK : tint(ut.c, 0.12), dot: true };
     }
-    var name = citeName(raw);
     var cc = UC.typeColor(raw, "citation", isDark);
-    return { label: name, color: cc, bg: isDark ? CHIP_BG_DARK : tint(UC.typeColor(raw, "citation", false), 0.12), dot: false };
+    return { label: UC.typLabel(raw, "citation"), color: cc, bg: isDark ? CHIP_BG_DARK : tint(UC.typeColor(raw, "citation", false), 0.12), dot: false };
   }
   var fmtPct = UC.fmtPct;
 

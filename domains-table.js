@@ -1113,7 +1113,9 @@
       if (!isBusy() && state.hasData) state.brandSettled = true;
       elBrand.classList.toggle("is-visible", !!valid && state.hasData && !!state.brandSettled);
       if (!valid) return;
-      elBrandLbl.textContent = name + " mentioned";
+      /* MUSTER statt Verkettung: "Volkswagen mentioned" steht als ganzer Textknoten in keinem
+         Katalog -- der Markenname steckt mittendrin. Gemeldet am 07.09. genau so. */
+      elBrandLbl.textContent = UC.t("{brand} mentioned").replace("{brand}", name);
       if (logo && logo !== "BRAND_LOGO"){ elBrandLogo.src = logo; elBrandLogo.style.display = "block"; }
       else { elBrandLogo.style.display = "none"; }
       elBrand.classList.toggle("is-yes", state.brandMentioned === "yes");

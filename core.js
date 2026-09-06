@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20260916;
+  var BUILD = 20260917;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -112,15 +112,20 @@
   };
   /* Label und Satz zu einem Typ, in einer Funktion fuer beide Achsen. Ohne Treffer ein leerer
      Satz und der Rohwert als Label -- ein erfundener Text waere hier schlimmer als keiner. */
+  /* BEIDE gehen durch den Katalog: sie sind Anzeigefunktionen (url-detail zeigt Name UND
+     Erklaersatz eines Typs), und was angezeigt wird, spricht die Sprache des Nutzers. Gemeldet
+     am 07.09.: "in top citation dashboard und url detail muss auch noch alles an types
+     uebersetzt werden".
+     t() steht weiter unten in der Datei -- das ist in Ordnung, hier wird nur aufgerufen. */
   function typeLabel(raw, mode){
     var k = String(raw == null ? "" : raw).trim();
-    if (mode === "url") return (URL_TYPE[k] && URL_TYPE[k].label) || (k ? k.replace(/_/g, " ") : "");
-    return citeName(k);
+    if (mode === "url") return t((URL_TYPE[k] && URL_TYPE[k].label) || (k ? k.replace(/_/g, " ") : ""));
+    return t(citeName(k));
   }
   function typeDesc(raw, mode){
     var k = String(raw == null ? "" : raw).trim();
-    if (mode === "url") return URL_TYPE_DESC[k] || "";
-    return CITE_DESC[citeName(k)] || "";
+    if (mode === "url") return t(URL_TYPE_DESC[k] || "");
+    return t(CITE_DESC[citeName(k)] || "");
   }
   var OTHER_LIGHT = "#8c8f96", OTHER_DARK = "#a8abb2", CHIP_BG_DARK = "#242424";
   var MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -1412,6 +1417,140 @@
     "Topic color": "Topic-Farbe",
     "Topic Emoji": "Topic-Emoji",
     "Topic emoji": "Topic-Emoji",
+
+    /* ---- DIE ERKLAERTEXTE DER QUICK ACTIONS (07.09.) ------------------------------------------
+       Angefordert: "nicht nur die Titel muessen deutsch sein, auch die Beschreibungen selber".
+       Diese fuenf stehen im Quelltext ueber mehrere Zeilen verkettet -- im DOM landen sie als EIN
+       Textknoten, und genau der ist der Schluessel. Das nachlaufende Leerzeichen gehoert dazu. */
+    "A Prompt is the question you track. A Response is one model's answer to that prompt at one point in time. Each prompt collects one response per model per run, so the relationship is one to many. All aggregates in the app are computed across responses and displayed against the prompt. This is why a prompt's numbers change without the prompt itself being edited. ":
+      "Ein Prompt ist die Frage, die du beobachtest. Eine Response ist die Antwort EINES Modells auf diesen Prompt zu einem Zeitpunkt. Jeder Prompt sammelt pro Lauf eine Response je Modell -- das Verhältnis ist eins zu vielen. Alle Kennzahlen der App werden über Responses gerechnet und am Prompt gezeigt. Deshalb ändern sich die Zahlen eines Prompts, ohne dass jemand den Prompt bearbeitet hat. ",
+    "Model identifies which LLM produced a response. Single select compares one model against the full picture. Multi select pools several models into one number. Models often disagree about which sources to cite, so a metric that looks flat across all models can hide a large movement inside one of them. ":
+      "Model sagt, welches LLM eine Response erzeugt hat. Einzelauswahl vergleicht ein Modell mit dem Gesamtbild. Mehrfachauswahl fasst mehrere Modelle zu einer Zahl zusammen. Modelle sind sich oft uneinig, welche Quellen sie zitieren -- eine Kennzahl, die über alle Modelle flach aussieht, kann in einem einzelnen eine große Bewegung verbergen. ",
+    "Sentiment scores how positively your brand is described, on a scale from 0 to 100, where 50 is neutral. It is measured only in answers that mention your brand, so it carries no information about how often that happens. Read it alongside Visibility, not instead of it. ":
+      "Sentiment bewertet, wie positiv deine Brand beschrieben wird -- auf einer Skala von 0 bis 100, wobei 50 neutral ist. Gemessen wird nur in Antworten, die deine Brand erwähnen; wie oft das geschieht, sagt der Wert also nicht. Lies ihn neben Visibility, nicht an ihrer Stelle. ",
+    "Topics are your own labels on prompts. The app never creates them. Filtering by two topics in Or mode returns prompts carrying either topic. And mode returns only prompts carrying both, which is usually a much smaller set. ":
+      "Topics sind deine eigenen Etiketten an Prompts. Die App legt nie welche an. Filterst du nach zwei Topics im Modus Oder, kommen Prompts mit dem einen ODER dem anderen. Im Modus Und kommen nur Prompts mit beiden -- meist eine deutlich kleinere Menge. ",
+    "Trend compares the selected period against the preceding period of equal length. A 30 day range is compared against the 30 days before it. Values are percentage points, not percent of the previous value: a move from 6% to 8% is shown as +2, never as +33%. No chip is shown when the change rounds to zero. ":
+      "Trend vergleicht den gewählten Zeitraum mit dem gleich langen davor. Ein Zeitraum von 30 Tagen wird mit den 30 Tagen davor verglichen. Die Werte sind Prozentpunkte, nicht Prozent des Vorwerts: von 6% auf 8% steht +2 da, nie +33%. Rundet die Änderung auf null, steht gar nichts. ",
+
+    /* Die uebrigen Beschriftungen der Quick Actions und der Suchflaeche. */
+    "No results found": "Keine Treffer",
+    "Try searching for a brand, domain, URL, or prompt.":
+      "Suche nach einer Brand, einer Domain, einer URL oder einem Prompt.",
+    "Please try again.": "Bitte versuche es erneut.",
+    "Pin to sidebar": "An die Seitenleiste heften",
+    "Remove favorite": "Favorit entfernen",
+    "Single / Multi": "Einzeln / Mehrfach",
+    "Or / And": "Oder / Und",
+    "lower is better": "kleiner ist besser",
+    "own vs competitor": "eigene gegen Wettbewerb",
+    "Enter": "Enter",
+
+    /* url-detail: Felder, Erklaersaetze und die Einbettungen */
+    "AI Summary": "KI-Zusammenfassung",
+    "High-level summary of this page": "Kurzfassung dieser Seite",
+    "Citation Conversion": "Citation-Konversion",
+    "Conversion": "Konversion",
+    "How often this citation leads to brand mentions":
+      "Wie oft diese Citation zu Brand-Erwähnungen führt",
+    "Relevant brands referenced on this page":
+      "Relevante Brands, die auf dieser Seite vorkommen",
+    "Meta Description": "Meta-Beschreibung",
+
+    /* onboarding */
+    "Avoid legal suffixes (e.g. GmbH, Inc., Ltd., LLC).":
+      "Ohne Rechtsform (also ohne GmbH, Inc., Ltd., LLC).",
+    "Cities & Regions": "Städte & Regionen",
+    "Continue with this setup": "Mit dieser Einrichtung fortfahren",
+    "Monthly": "Monatlich",
+    "Yearly": "Jährlich",
+    "Most popular": "Am beliebtesten",
+    "No plans available right now.": "Zurzeit sind keine Tarife verfügbar.",
+    "No prompts yet.": "Noch keine Prompts.",
+    "Skip for now": "Vorerst überspringen",
+    "Start over": "Von vorn beginnen",
+    "This usually takes 3-5 minutes": "Das dauert meist 3-5 Minuten",
+    "Time zone": "Zeitzone",
+    "Website": "Website",
+    "Writing the first prompts for the topics you picked.":
+      "Wir schreiben die ersten Prompts für die Topics, die du gewählt hast.",
+
+    /* sidebar: Handgriffe (die Navigation selbst bleibt englisch) */
+    "Collapse sidebar": "Seitenleiste einklappen",
+    "No teams found": "Keine Teams gefunden",
+    "Remove from pinned": "Von den Angehefteten entfernen",
+    "Rename pinned item": "Angehefteten Eintrag umbenennen",
+
+    /* teams / settings-brand */
+    "New Team": "Neues Team",
+    "No active billing plan": "Kein aktiver Tarif",
+    "Brand Name & Matching Aliases": "Brand-Name & passende Aliase",
+    "Edit brand": "Brand bearbeiten",
+    "No models available yet.": "Noch keine Modelle verfügbar.",
+
+    /* Leerzustaende der Charts und Tabellen */
+    "No types": "Keine Typen",
+    "No series": "Keine Reihen",
+    "No companies": "Keine Unternehmen",
+    "Companies": "Unternehmen",
+    "Clear All": "Alle löschen",
+    "And": "Und",
+    "Page": "Seite",
+    "Title": "Titel",
+
+    /* ---- DIE ERKLAERSAETZE DER TYPEN (07.09.) -------------------------------------------------
+       21 Saetze: die 14 URL-Typen (URL_TYPE_DESC) und die 7 Citation-Typen (CITE_DESC). Sie
+       stehen im Tooltip an jedem Typ-Chip und in url-detail unter dem Wert -- angefordert als
+       "nicht nur die Titel muessen deutsch sein, auch die Beschreibungen selber". typeDesc()
+       schickt sie seit heute durch den Katalog. */
+    "The root or landing page of a site: its front door, usually the domain itself.":
+      "Die Start- oder Einstiegsseite einer Website: ihre Haustür, meist die Domain selbst.",
+    "A single product or service page, one concrete offering described in detail.":
+      "Eine einzelne Produkt- oder Leistungsseite: ein konkretes Angebot, ausführlich beschrieben.",
+    "A large sales platform hosting many third-party sellers, where visitors buy or book directly.":
+      "Eine große Verkaufsplattform mit vielen fremden Anbietern, auf der direkt gekauft oder gebucht wird.",
+    "About, team, contact, or legal pages: background on the company rather than what it sells.":
+      "Über-uns-, Team-, Kontakt- oder Rechtsseiten: Hintergrund zum Unternehmen statt zum Angebot.",
+    "An authored blog post, opinion piece, or dated news story.":
+      "Ein Blogbeitrag, ein Meinungsstück oder eine datierte Nachricht mit Autor.",
+    "A ranked or numbered best-of list. These punch far above their weight in AI answers.":
+      "Eine gereihte oder nummerierte Bestenliste. Solche Seiten wiegen in KI-Antworten weit schwerer, als ihre Zahl vermuten lässt.",
+    "A how-to, tutorial, or long-form explainer that teaches the reader something.":
+      "Eine Anleitung, ein Tutorial oder ein langer Erklärtext, der dem Leser etwas beibringt.",
+    "An X versus Y or alternatives piece, weighing options head to head.":
+      "Ein X-gegen-Y- oder Alternativen-Beitrag, der Optionen direkt gegeneinander abwägt.",
+    "A hands-on test, review, testimonial, or case study of a product or service.":
+      "Ein praktischer Test, eine Rezension, ein Erfahrungsbericht oder eine Fallstudie zu einem Produkt oder einer Leistung.",
+    "Technical docs, API references, help centers, or encyclopedic entries: reference material.":
+      "Technische Dokumentation, API-Referenzen, Hilfebereiche oder Lexikoneinträge: Nachschlagewerke.",
+    "A community thread, Q&A, or discussion, such as Reddit or Quora.":
+      "Ein Community-Thread, eine Frage-und-Antwort-Seite oder eine Diskussion, etwa auf Reddit oder Quora.",
+    "An aggregator listing or profile: review sites, business directories, marketplaces.":
+      "Ein Sammeleintrag oder Profil: Bewertungsportale, Branchenverzeichnisse, Marktplätze.",
+    "A video watch or player page, such as a YouTube result.":
+      "Eine Video-Seite mit Player, etwa ein YouTube-Treffer.",
+    "A social media post or profile, such as a LinkedIn update or an X profile.":
+      "Ein Social-Media-Beitrag oder -Profil, etwa ein LinkedIn-Update oder ein X-Profil.",
+
+    "This is one of your own pages. You control it directly, so it is the fastest content to improve or expand.":
+      "Das ist eine deiner eigenen Seiten. Du hast sie direkt in der Hand -- hier lässt sich am schnellsten etwas verbessern oder ergänzen.",
+    "A competitor's page. You cannot edit it, but it shows what the AI rewards in your space.":
+      "Die Seite eines Wettbewerbers. Du kannst sie nicht ändern, aber sie zeigt, was die KI in deinem Umfeld belohnt.",
+    "A brand-owned platform that is not a competitor: a partner, marketplace, or vendor page.":
+      "Eine Plattform in fremder Markenhand, aber kein Wettbewerber: eine Partner-, Marktplatz- oder Anbieterseite.",
+    "Journalist- or editor-written coverage. You influence it by earning a mention, not by editing.":
+      "Redaktionell geschriebene Berichterstattung. Darauf wirkst du ein, indem du eine Erwähnung verdienst -- nicht durch Bearbeiten.",
+    "An official or authoritative body: government, standards, or academic. High trust, hard to sway.":
+      "Eine offizielle oder maßgebliche Stelle: Behörde, Normung oder Wissenschaft. Hohes Vertrauen, schwer zu beeinflussen.",
+    "Reference material the AI leans on as ground truth, like an encyclopedia or a docs entry.":
+      "Nachschlagematerial, auf das sich die KI als gesicherte Grundlage stützt, etwa ein Lexikon oder eine Dokumentation.",
+    "Community-generated content: forums, reviews, threads. Shaped by real users, not by you.":
+      "Von der Community erzeugte Inhalte: Foren, Bewertungen, Threads. Geprägt von echten Nutzern, nicht von dir.",
+    /* Muster mit eingesetztem Markennamen: der ganze Textknoten steht sonst in keinem Katalog. */
+    "{brand} mentioned": "{brand} erwähnt",
+    "{brand} mentioned?": "{brand} erwähnt?",
+    "mentioned?": "erwähnt?",
+    "Mentioned?": "Erwähnt?",
     /* Das Konto-Menue der Seitenleiste (07.09. ausdruecklich angefordert). */
     "Account Settings": "Kontoeinstellungen",
     "System": "System",
@@ -9366,8 +9505,14 @@
        Die Schwelle ist die kleinste Zahl, die diese Genauigkeit noch zeigen kann: 1 bei keiner
        Stelle, 0,1 bei einer, 0,01 bei zwei. Was darunter liegt und groesser als 0 ist, kann
        nicht als Zahl dargestellt werden, ohne zu luegen. */
+    /* Die SCHWELLE haengt an der Genauigkeit -- der TEXT nicht. Bis hierher stand dort
+       "<0.1%" bei einer Nachkommastelle; zweimal gemeldet, dass an dieser Stelle "<1%" stehen
+       soll. Beides ist wahr (was unter 0,1 liegt, liegt auch unter 1), und "<1%" ist die
+       Aussage, die ein Leser sofort einordnet -- die Zahl dahinter ist ohnehin zu klein, um
+       eine Stelle mehr zu rechtfertigen. Werte, die sich darstellen lassen, bleiben unberuehrt:
+       0,4 steht weiter als "0.4%" da. */
     var schwelle = n ? Math.pow(10, -n) : 1;
-    if (v > 0 && v < schwelle) return "<" + fmtNum(schwelle, n) + "%";
+    if (v > 0 && v < schwelle) return "<1%";
     return n ? fmtNum(v, n) + "%" : fmtNum(Math.round(v), 0) + "%";
   }
 
