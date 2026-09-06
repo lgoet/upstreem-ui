@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20260914;
+  var BUILD = 20260915;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -34,6 +34,32 @@
     "UGC_Community":"UGC / Community", "UGC Community":"UGC / Community"
   };
   var ALL_CITATION_TYPES = ["Editorial","UGC_Community","Knowledge_Base","Brand_Platform","Institutional","Competition","You"];
+  /* ---- EINE UEBERSETZTE TYP-BESCHRIFTUNG FUER DIE GANZE APP (07.09.) ------------------------
+     Gemeldet: "im Ring sind die URL-Typen deutsch, in der Spalte Typ der URLs-Tabelle nicht",
+     dasselbe fuer die Citation-Typen in der Domains-Tabelle, in den Drilldowns und in den Quick
+     Actions. Zwei Gruende dafuer, und beide brauchen diese Funktion:
+       1. Der Sprachlauf UEBERSPRINGT Tabellenzellen ausdruecklich (SPRACHE_ZELLE) -- in einer
+          Zelle steht in der Regel ein Datenwert, und der darf nicht uebersetzt werden. Ein
+          Typ-Chip ist die Ausnahme: sein Text ist keine Nutzereingabe, sondern eine von
+          vierzehn festen Kategorien.
+       2. Vier Komponenten hielten je eine eigene Kopie der Beschriftungen. Die Uebersetzung an
+          vier Stellen nachzuziehen heisst, sie beim naechsten neuen Typ an drei zu vergessen.
+     Darum EIN Ort: die Rohform kommt herein, die uebersetzte Beschriftung heraus. Die Farben
+     bleiben bei den Komponenten -- die unterscheiden sich wirklich (URL-Typen haben eine eigene
+     dunkle Palette, Citation-Typen nicht).
+     Ein Wert, der zu keinem Schluessel passt, kommt UNVERAENDERT zurueck: das ist ein echter,
+     nur unbekannter Typ und keine fehlende Angabe. Leer heisst "Ohne Kategorie". */
+  function typLabel(raw, art){
+    var roh = String(raw == null ? "" : raw).trim();
+    if (!roh) return t("Uncategorized");
+    if (art === "citation"){
+      var c = CITE_ALIAS[roh] || roh;
+      return t(c);
+    }
+    var key = roh.toLowerCase().replace(/[\s-]+/g, "_");
+    var u = URL_LABEL[key];
+    return u ? t(u) : roh;
+  }
   /* URL types: canonical palette, copied 1:1 from the standalone URL Type chip component.
      Unlike citation types these DO have a real dark variant. */
   var URL_TYPE = {
@@ -1272,6 +1298,8 @@
     "Search pages…": "Seiten suchen…",
     "Show title or URL": "Titel oder URL zeigen",
     "Uncategorized": "Ohne Kategorie",
+    "All Types": "Alle Typen",
+    "{n} Types": "{n} Typen",
     /* ---- DIE URL-TYPEN (07.09.) -------------------------------------------------------------
        URL_LABEL weiter unten haelt vierzehn Typen, und nur "Uncategorized" stand hier -- die
        anderen dreizehn blieben in jeder Sprache englisch. Aufgefallen ist es in der Legende des
@@ -1279,6 +1307,18 @@
        gilt aber ueberall, wo ein URL-Typ steht: Chips in der URLs-Tabelle, URL Detail, die
        Balkenliste. Die Typen sind KEINE Glossarwoerter -- sie beschreiben eine Seitenart und
        haben eine deutsche Entsprechung; Topics und Brands bleiben dagegen englisch. */
+    /* Die Citation-Typen. "You" und "Competition" sind keine Glossarwoerter -- sie beschreiben,
+       WEM eine Quelle gehoert, und dafuer gibt es deutsche Woerter. "Editorial" bleibt, es ist im
+       Deutschen dasselbe Wort. */
+    "UGC / Community": "UGC / Community",
+    "Knowledge-Base": "Wissensdatenbank",
+    "Knowledge Base": "Wissensdatenbank",
+    "Brand Platforms": "Brand-Plattformen",
+    "Institutional": "Institutionell",
+    "Competition": "Wettbewerb",
+    "You": "Du",
+    "Your Content": "Deine Inhalte",
+    "Other": "Sonstige",
     "Homepage": "Startseite",
     "Product / Service": "Produkt / Leistung",
     "Marketplace": "Marktplatz",
@@ -9228,7 +9268,8 @@
       return items.map(function(it){
         return {
           key: it.key,
-          name: it._other ? "Other" : (URL_LABEL[it.key] || capitalize(String(it.key).replace(/_/g, " "))),
+          name: it._other ? t("Other") : (URL_LABEL[it.key] ? t(URL_LABEL[it.key])
+                                                              : capitalize(String(it.key).replace(/_/g, " "))),
           share: it.share,
           color: it._other ? (isDark ? CHART_OTHER_DARK : CHART_OTHER_LIGHT) : typeColor(it.key, "url", isDark)
         };
@@ -14006,6 +14047,7 @@
     loadChartJs: loadChartJs,
     CITE_COLOR_DARK: CITE_COLOR_DARK,
     URL_LABEL: URL_LABEL,
+    typLabel: typLabel,
     URL_COLOR_CHART: URL_COLOR_CHART,
     URL_COLOR_DARK: URL_COLOR_DARK,
     CHART_OTHER_LIGHT: CHART_OTHER_LIGHT,

@@ -442,6 +442,16 @@
   }
 
   function makeController(root){
+    /* DIESE DREI STEHEN OBEN, NICHT ERST BEI fitToolbar. syncFromAttrs() ruft schon waehrend
+       makeController ein render(), und render() geht ueber syncFilterBadge nach fitToolbar --
+       das ist frueher als die Stelle, an der die Werte frueher standen. Solange die Tabelle mit
+       extLoading=false startete, sah syncFromAttrs beim ersten Lauf keine Aenderung und rief gar
+       nichts; seit sie mit Ladezustand startet, tut es das, und dann war TOOLBAR_TIERS
+       undefined: "Cannot read properties of undefined (reading length)", mitten im Aufbau, und
+       die Komponente mountete nie zu Ende. */
+    var MIN_HEAD_GAP = 64;
+    var SEARCH_OPEN_WIDTH = 202;
+    var TOOLBAR_TIERS = ["is-w3", "is-w2", "is-w1", "is-w0"];   // is-w2 gilt hier auch: diese Tabelle hat den Marken-Dropdown
     var instanceId = root.getAttribute("data-instance") || "default";
     var saved = STORE[instanceId] || {};
 
@@ -606,6 +616,7 @@
       totalCount: saved.totalCount != null ? saved.totalCount : null,
       ohneTopic: saved.ohneTopic != null ? saved.ohneTopic : null,
       hasData: !!saved.hasData,
+      jeZeilen: false,   // waren hier jemals Zeilen? -- entscheidet das Gnadenfenster
       /* "the automatic All-Prompts fetch has already gone out once" — see
          ensureFlatDataForAllPrompts(). Deliberately NOT derivable from loading/hasData: it has to
          survive setLoading("no") arriving before any rows do, AND a re-render of the Bubble
@@ -617,8 +628,23 @@
          is changing (search, filter, brand toggle) and the rows must go back to a skeleton.
          Deliberately NOT persisted: a rebuilt element has no rows to keep, so it starts hard. */
       softReload: false,
+      /* MIT LADEZUSTAND STARTEN, IMMER. Gemeldet am 07.09. und davor schon mehrfach: beim
+         allerersten Aufbau stand fuer eine Sekunde "No URLs" da, bevor die Ladeanimation
+         losging. Grund war der Anfangswert false -- die Tabelle hatte keine Daten UND galt als
+         fertig, also zeigte sie ihren Leerzustand. Ein Leerzustand ist eine AUSSAGE ("es gibt
+         nichts"), und die darf nicht dastehen, bevor jemand gefragt hat.
+         Der gespeicherte Wert gewinnt nur, wenn fuer diese Instanz schon einmal ausdruecklich
+         ein Ladezustand gesetzt wurde (LOADING_EXPLICIT) -- dann kennt die Seite ihren Ablauf.
+         KEINE Uhr dazu, und das ist gemessen: renderTable() zeigt das Skelett ohnehin, solange
+         noch nie Daten ankamen (isBusy() ODER !state.hasData). Eine Notbremse, die extLoading
+         nach acht Sekunden zuruecknimmt, aendert daran nichts -- sie stand hier und war tote
+         Zeile. Was der Anfangswert WIRKLICH verhindert, ist der andere Fall: Bubble schickt
+         zuerst einen LEEREN Datensatz (hasData wird wahr, rows sind leer), dann laeuft der
+         Gnadenweg in renderTable los und zeigt nach seinem Fenster den Leerzustand -- genau die
+         Sekunde, die gemeldet wurde. Mit true ist isBusy() wahr, der Gnadenweg wird nie
+         betreten, und der erste echte Datensatz raeumt den Zustand selbst ab. */
       extLoading: hasProcessingAttr() ? readProcessing()
-             : (LOADING_EXPLICIT[instanceId] ? !!saved.loading : false),
+             : (LOADING_EXPLICIT[instanceId] ? !!saved.loading : true),
       query: saved.query || "",
       sortField: saved.sortField || DEFAULT_SORT.field,
       sortDir: saved.sortDir || DEFAULT_SORT.dir,
@@ -3277,7 +3303,10 @@
             emptyGraceTimer = null;
             if (isBusy() || !state.hasData || state.rows.length) return;
             renderEmptyState(false);
-          }, (UC.EMPTY_GRACE_MS || 500));
+          /* Laenger, solange noch nie Zeilen da waren -- Begruendung steht in urls-table.js an
+             derselben Stelle: Bubble schickt vor dem echten Datensatz einen leeren, und 500ms
+             spaeter stand faelschlich "es gibt nichts" da. */
+          }, state.jeZeilen ? (UC.EMPTY_GRACE_MS || 500) : 6000);
         }
         return;
       }
@@ -4237,9 +4266,6 @@
        the tools row, drop one tool at a time (least important first) until it fits again. This
        table never had this wired up at all — is-w0..is-w3 only ever did anything because
        core.css's rules for them are generic; nothing here was ever adding the classes. */
-    var SEARCH_OPEN_WIDTH = 202;
-    var MIN_HEAD_GAP = 64;
-    var TOOLBAR_TIERS = ["is-w3", "is-w2", "is-w1", "is-w0"];   // is-w2 now applies: this table has the mentioned-brands dropdown too
     /* Shared: UC.headGap. Five components measured this identically (urls-table differed only in
        two comments). */
     function headGap(){ return UC.headGap(elHeading, elHeadTools, elSearch, SEARCH_OPEN_WIDTH); }
@@ -4796,6 +4822,7 @@
     if (state.query){ elSearchIn.value = state.query; elSearch.classList.add("is-open", "has-text"); }
     populateSort(); populateCols(); populateMent(); render();
 
+
     /* Die einklappbare Werkzeugleiste kommt aus core (UC.makeToolGroup) -- hier steht nur noch, was
        bei DIESER Tabelle einklappt und was sie offen haelt. Die Zustandsmaschine selbst stand an
        genau dieser Stelle 247 Zeilen lang; sie ist nach core gewandert, als die zweite Komponente
@@ -4977,6 +5004,7 @@
           var hatteVorherDaten = state.hasData;
           state.rows = Array.isArray(params.rows) ? params.rows : [];
           state.hasData = true;
+          if (state.rows && state.rows.length) state.jeZeilen = true;   /* Merker fuer das Gnadenfenster */
           /* Nur ECHTE Zeilen loeschen den Lesefehler. Wuerde ihn jeder beliebige Aufruf
              loeschen (etwa ein reiner Theme-Render), stuende danach der Leerzustand da --
              der stille Ausfall waere zurueck, nur eine Stufe spaeter. */
@@ -5037,6 +5065,11 @@
            Die Hausregel dazu steht in CLAUDE.md: ein Ladezustand muss IMMER enden. Wer nach dem
            Rendern erneut laden will, ruft setLoading("yes") danach -- das ist ein Aufruf, kein
            Zustand, der von selbst haengenbleibt. */
+        /* AUSNAHME wie in den anderen Tabellen: ein LEERER erster Datensatz beendet den
+           Ladezustand nicht. Bubble ruft den Setter regelmaessig einmal mit einer leeren Liste,
+           bevor der RPC zurueck ist -- daraus entstand die gemeldete Sekunde Leerzustand vor dem
+           Skelett. Die Uhr gibt nach sechs Sekunden auf, damit ein Nutzer ohne Prompts nicht
+           ewig ins Skelett schaut. */
         if (params.rows != null){
           state.loading = false; state.softReload = false; endSoftReload();
           state.extLoading = false;

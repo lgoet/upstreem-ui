@@ -143,6 +143,16 @@
   var relativeTime = UC.relativeTime;
 
   function makeController(root){
+    /* DIESE DREI STEHEN OBEN, NICHT ERST BEI fitToolbar. syncFromAttrs() ruft schon waehrend
+       makeController ein render(), und render() geht ueber syncFilterBadge nach fitToolbar --
+       das ist frueher als die Stelle, an der die Werte frueher standen. Solange die Tabelle mit
+       extLoading=false startete, sah syncFromAttrs beim ersten Lauf keine Aenderung und rief gar
+       nichts; seit sie mit Ladezustand startet, tut es das, und dann war TOOLBAR_TIERS
+       undefined: "Cannot read properties of undefined (reading length)", mitten im Aufbau, und
+       die Komponente mountete nie zu Ende. */
+    var MIN_HEAD_GAP = 64;
+    var SEARCH_OPEN_WIDTH = 202;
+    var TOOLBAR_TIERS = ["is-w3", "is-w2", "is-w1", "is-w0"];
     var instanceId = root.getAttribute("data-instance") || "default";
     var saved = STORE[instanceId] || {};
 
@@ -217,9 +227,25 @@
 
     var state = {
       rows: [], totalCount: null, hasData: false,
+      jeZeilen: false,   // waren hier jemals Zeilen? -- entscheidet das Gnadenfenster
       loading: false, softReload: false,
+      /* MIT LADEZUSTAND STARTEN, IMMER. Gemeldet am 07.09. und davor schon mehrfach: beim
+         allerersten Aufbau stand fuer eine Sekunde "No URLs" da, bevor die Ladeanimation
+         losging. Grund war der Anfangswert false -- die Tabelle hatte keine Daten UND galt als
+         fertig, also zeigte sie ihren Leerzustand. Ein Leerzustand ist eine AUSSAGE ("es gibt
+         nichts"), und die darf nicht dastehen, bevor jemand gefragt hat.
+         Der gespeicherte Wert gewinnt nur, wenn fuer diese Instanz schon einmal ausdruecklich
+         ein Ladezustand gesetzt wurde (LOADING_EXPLICIT) -- dann kennt die Seite ihren Ablauf.
+         KEINE Uhr dazu, und das ist gemessen: renderTable() zeigt das Skelett ohnehin, solange
+         noch nie Daten ankamen (isBusy() ODER !state.hasData). Eine Notbremse, die extLoading
+         nach acht Sekunden zuruecknimmt, aendert daran nichts -- sie stand hier und war tote
+         Zeile. Was der Anfangswert WIRKLICH verhindert, ist der andere Fall: Bubble schickt
+         zuerst einen LEEREN Datensatz (hasData wird wahr, rows sind leer), dann laeuft der
+         Gnadenweg in renderTable los und zeigt nach seinem Fenster den Leerzustand -- genau die
+         Sekunde, die gemeldet wurde. Mit true ist isBusy() wahr, der Gnadenweg wird nie
+         betreten, und der erste echte Datensatz raeumt den Zustand selbst ab. */
       extLoading: hasProcessingAttr() ? readProcessing()
-             : (LOADING_EXPLICIT[instanceId] ? !!saved.loading : false),
+             : (LOADING_EXPLICIT[instanceId] ? !!saved.loading : true),
       view: saved.view || defaultView,
       // two independent pagination states — only the one matching `view` is "live" in page/pageSize
       tablePage: saved.tablePage || 1, tablePageSize: saved.tablePageSize || DEFAULT_PAGE_SIZE,
@@ -530,7 +556,10 @@
             if (isBusy() || !state.hasData || state.rows.length) return;
             letztesBody = null;
             container.innerHTML = emptyHtml(false);
-          }, (UC.EMPTY_GRACE_MS || 500));
+          /* Laenger, solange noch nie Zeilen da waren -- Begruendung steht in urls-table.js an
+             derselben Stelle: Bubble schickt vor dem echten Datensatz einen leeren, und 500ms
+             spaeter stand faelschlich "es gibt nichts" da. */
+          }, state.jeZeilen ? (UC.EMPTY_GRACE_MS || 500) : 6000);
         }
         return;
       }
@@ -969,9 +998,6 @@
     }
 
     /* ---------------- responsive ---------------- */
-    var MIN_HEAD_GAP = 64;
-    var SEARCH_OPEN_WIDTH = 202;
-    var TOOLBAR_TIERS = ["is-w3", "is-w2", "is-w1", "is-w0"];
     /* Shared: UC.headGap. Five components measured this identically (urls-table differed only in
        two comments). */
     function headGap(){ return UC.headGap(elHeading, elHeadTools, elSearch, SEARCH_OPEN_WIDTH); }
@@ -1158,6 +1184,7 @@
 
     if (state.query){ elSearchIn.value = state.query; elSearch.classList.add("is-open", "has-text"); }
     populateSort(); populateCols(); populateMent(); populateFader(); render();
+
 
     /* Die einklappbare Werkzeugleiste aus core. Sie klappt zusammen, was man EINSTELLT, und laesst
        stehen, was sagt, worauf man gerade sieht -- Segmentschalter und Reiter (role="tablist") und
@@ -1418,7 +1445,8 @@
         /* state.leseFehler faellt nur bei ECHTEN Zeilen weg. Wuerde ihn jeder beliebige Aufruf
            loeschen (etwa ein reiner Theme-Render), stuende danach der Leerzustand da -- der
            stille Ausfall waere zurueck, nur eine Stufe spaeter. */
-        if (params.rows != null){ state.rows = Array.isArray(params.rows) ? params.rows : []; state.hasData = true; state.leseFehler = false; }
+        if (params.rows != null){ state.rows = Array.isArray(params.rows) ? params.rows : []; state.hasData = true; state.leseFehler = false;
+          if (state.rows.length) state.jeZeilen = true;   /* Merker fuer das Gnadenfenster */ }
         if (params.totalCount != null) state.totalCount = toNum(params.totalCount);
         else if (state.rows.length && state.rows[0].total_count != null){
           /* The RPC carries the result-set total on every row (same shape prompts-table uses).

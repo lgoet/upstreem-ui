@@ -232,7 +232,14 @@
   var CITE_LABEL = {
     UGC_Community:"UGC / Community", Knowledge_Base:"Knowledge-Base", Brand_Platform:"Brand Platforms"
   };
-  function citeLabel(c){ return CITE_LABEL[c] || String(c || "").replace(/_/g, " "); }
+  /* Ueber core, damit die Typen hier dieselbe Sprache sprechen wie in den Tabellen und im Ring
+     (gemeldet am 07.09.: in den Quick Actions standen sie noch englisch). CITE_LABEL bleibt als
+     Rueckfall stehen -- laeuft eine aeltere core-Fassung, ist die Beschriftung wenigstens
+     lesbar statt "UGC_Community". */
+  function citeLabel(c){
+    if (UC.typLabel) return UC.typLabel(c, "citation");
+    return CITE_LABEL[c] || String(c || "").replace(/_/g, " ");
+  }
   function isDarkTheme(){ return root.getAttribute("data-theme") === "dark"; }
   /* core's tint(), same maths -- a hex plus an alpha, so the chip fill is the type's own colour at
      12% rather than a neutral grey that ignores the type entirely. */

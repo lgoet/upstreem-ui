@@ -83,6 +83,16 @@
   var DEFAULT_SORT = { field: "share", dir: "desc" };
 
   function makeController(root){
+    /* DIESE DREI STEHEN OBEN, NICHT ERST BEI fitToolbar. syncFromAttrs() ruft schon waehrend
+       makeController ein render(), und render() geht ueber syncFilterBadge nach fitToolbar --
+       das ist frueher als die Stelle, an der die Werte frueher standen. Solange die Tabelle mit
+       extLoading=false startete, sah syncFromAttrs beim ersten Lauf keine Aenderung und rief gar
+       nichts; seit sie mit Ladezustand startet, tut es das, und dann war TOOLBAR_TIERS
+       undefined: "Cannot read properties of undefined (reading length)", mitten im Aufbau, und
+       die Komponente mountete nie zu Ende. */
+    var MIN_HEAD_GAP = 64;
+    var SEARCH_OPEN_WIDTH = 202;
+    var TOOLBAR_TIERS = ["is-w3", "is-w2", "is-w1", "is-w0"];
     var instanceId = root.getAttribute("data-instance") || "default";
     var saved = STORE[instanceId] || {};
 
@@ -128,10 +138,26 @@
       rows: [],
       totalCount: null,
       hasData: false,
+      jeZeilen: false,   // waren hier jemals Zeilen? -- entscheidet das Gnadenfenster
       loading: false,                       // intern (Suche/Pagination), startet immer frei
       softReload: false,                    // true only while a sort is in flight — see dim.begin/end
+      /* MIT LADEZUSTAND STARTEN, IMMER. Gemeldet am 07.09. und davor schon mehrfach: beim
+         allerersten Aufbau stand fuer eine Sekunde "No URLs" da, bevor die Ladeanimation
+         losging. Grund war der Anfangswert false -- die Tabelle hatte keine Daten UND galt als
+         fertig, also zeigte sie ihren Leerzustand. Ein Leerzustand ist eine AUSSAGE ("es gibt
+         nichts"), und die darf nicht dastehen, bevor jemand gefragt hat.
+         Der gespeicherte Wert gewinnt nur, wenn fuer diese Instanz schon einmal ausdruecklich
+         ein Ladezustand gesetzt wurde (LOADING_EXPLICIT) -- dann kennt die Seite ihren Ablauf.
+         KEINE Uhr dazu, und das ist gemessen: renderTable() zeigt das Skelett ohnehin, solange
+         noch nie Daten ankamen (isBusy() ODER !state.hasData). Eine Notbremse, die extLoading
+         nach acht Sekunden zuruecknimmt, aendert daran nichts -- sie stand hier und war tote
+         Zeile. Was der Anfangswert WIRKLICH verhindert, ist der andere Fall: Bubble schickt
+         zuerst einen LEEREN Datensatz (hasData wird wahr, rows sind leer), dann laeuft der
+         Gnadenweg in renderTable los und zeigt nach seinem Fenster den Leerzustand -- genau die
+         Sekunde, die gemeldet wurde. Mit true ist isBusy() wahr, der Gnadenweg wird nie
+         betreten, und der erste echte Datensatz raeumt den Zustand selbst ab. */
       extLoading: hasProcessingAttr() ? readProcessing()
-             : (LOADING_EXPLICIT[instanceId] ? !!saved.loading : false),
+             : (LOADING_EXPLICIT[instanceId] ? !!saved.loading : true),
       query: saved.query || "",
       sortField: saved.sortField || DEFAULT_SORT.field,
       sortDir: saved.sortDir || DEFAULT_SORT.dir,
@@ -266,8 +292,12 @@
     function urlTypeInfo(raw){
       var key = String(raw == null ? "" : raw).trim().toLowerCase().replace(/[\s-]+/g, "_");
       var t = URL_TYPE[key];
-      if (t) return { label: t.label, color: isDark ? t.cDark : t.c, base: t.c };
-      return { label: key ? String(raw) : "Uncategorized", color: isDark ? OTHER_DARK : OTHER_LIGHT, base: OTHER_LIGHT };
+      /* Die Beschriftung kommt aus core (UC.typLabel) und ist damit uebersetzt -- die Farbe
+         bleibt hier, die unterscheidet sich je Komponente wirklich. Gemeldet am 07.09.: im Ring
+         standen die URL-Typen deutsch, in dieser Spalte englisch. Der Sprachlauf fasst
+         Tabellenzellen absichtlich nicht an, also muss die Zelle selbst uebersetzt ankommen. */
+      if (t) return { label: UC.typLabel(raw, "url"), color: isDark ? t.cDark : t.c, base: t.c };
+      return { label: UC.typLabel(raw, "url"), color: isDark ? OTHER_DARK : OTHER_LIGHT, base: OTHER_LIGHT };
     }
     function tagHtml(raw){
       var ti = urlTypeInfo(raw);
@@ -385,7 +415,18 @@
             emptyGraceTimer = null;
             if (isBusy() || !state.hasData || state.rows.length) return;   // state moved on already
             renderEmptyState(false);
-          }, (UC.EMPTY_GRACE_MS || 500));   // matches the app-wide empty-grace window (see core.js's makeEmptyGrace)
+          /* DAS FENSTER IST LAENGER, SOLANGE NOCH NIE ZEILEN DA WAREN. Gemeldet am 07.09.:
+             beim allerersten Laden stand fuer eine Sekunde der Leerzustand da, bevor die
+             Ladeanimation losging. Bubble ruft den Setter regelmaessig einmal mit einer LEEREN
+             Liste, bevor der RPC zurueck ist -- danach gilt die Tabelle als "hat geantwortet,
+             hat aber nichts", und nach 500ms stand die Aussage "es gibt nichts" da. Sie war
+             falsch: die Daten kamen eine Sekunde spaeter.
+             Hat die Tabelle in diesem Leben schon einmal Zeilen gezeigt, bleibt es bei den
+             500ms -- dann ist eine leere Antwort wirklich eine Antwort (ein Filter ohne
+             Treffer, eine geleerte Auswahl). Nur der allererste Fall bekommt sechs Sekunden,
+             und danach erscheint der Leerzustand auch wirklich: ein Nutzer ohne Daten darf
+             nicht ewig ins Skelett schauen. */
+          }, state.jeZeilen ? (UC.EMPTY_GRACE_MS || 500) : 6000);
         }
         return;
       }
@@ -483,7 +524,11 @@
       html += keys.map(function(key){
         var label, color, base;
         if (isUrlDim){ var ti = urlTypeInfo(key); label = ti.label; color = ti.color; base = ti.base; }
-        else { label = citeName(key); color = CITE_COLOR[label] || OTHER_LIGHT; base = color; }
+        /* Farbe ueber den KANONISCHEN Namen, Beschriftung uebersetzt. Beides aus citeName zu
+           nehmen ging nicht: CITE_COLOR ist nach dem englischen Namen geschluesselt, eine
+           deutsche Beschriftung faende dort nichts und der Chip waere grau. */
+        else { color = CITE_COLOR[citeName(key)] || OTHER_LIGHT; base = color;
+               label = UC.typLabel(key, "citation"); }
         var bg = isDark ? CHIP_BG_DARK : tint(base, 0.12);
         var dot = isUrlDim ? '<span class="uut-tag-dot" style="background:' + color + '"></span>' : "";
         return '<div class="up-filter-item' + (sel[key] ? " is-checked" : "") + '" data-type="' + esc(key) + '">' +
@@ -534,9 +579,9 @@
       var ut = Object.keys(state.appliedUrlSel).filter(function(k){ return state.appliedUrlSel[k]; });
       var total = ct.length + ut.length;
       elFilter.classList.toggle("is-active", !!total);
-      var lbl = !total ? "All Types"
-              : total === 1 ? (ct.length ? citeName(ct[0]) : urlTypeInfo(ut[0]).label)
-              : total + " Types";
+      var lbl = !total ? UC.t("All Types")
+              : total === 1 ? (ct.length ? UC.typLabel(ct[0], "citation") : urlTypeInfo(ut[0]).label)
+              : UC.t("{n} Types").replace("{n}", total);
       elFilterLbl.textContent = lbl;
       // the label just changed width, which changes how much gap is left in the head
       fitToolbar();
@@ -1281,12 +1326,9 @@
        "3 Citation Types" label or a different heading all move the point where it gets tight,
        and fixed breakpoints made things disappear while there was still space. Tiers are added
        one at a time, least important first, until MIN_HEAD_GAP px of breathing room is back. */
-    var MIN_HEAD_GAP = 64;
     /* Reserve the search's open width even while it's collapsed, so opening it on a small screen
        never overflows into the heading. 200px box + 2px margin (see .up-search.is-open). */
-    var SEARCH_OPEN_WIDTH = 202;
     var MOBILE_SEARCH_MAX = 640;   // below this component width an open search takes over the toolbar
-    var TOOLBAR_TIERS = ["is-w3", "is-w2", "is-w1", "is-w0"];
     /* Shared: UC.headGap. Five components measured this identically (urls-table differed only in
        two comments). */
     function headGap(){ return UC.headGap(elHeading, elHeadTools, elSearch, SEARCH_OPEN_WIDTH); }
@@ -1381,6 +1423,7 @@
     if (state.query){ elSearchIn.value = state.query; elSearch.classList.add("is-open", "has-text"); }
     populateSort(); populateFilter(); populateCols(); populateMent(); render();
 
+
     /* Die einklappbare Werkzeugleiste aus core. Sie klappt zusammen, was man EINSTELLT, und laesst
        stehen, was sagt, worauf man gerade sieht -- Segmentschalter und Reiter (role="tablist") und
        den Export-Knopf. Unter 620px ist sie aus und die Leiste verhaelt sich wie vorher.
@@ -1426,6 +1469,8 @@
         if (params.rows != null){
           state.rows = Array.isArray(params.rows) ? params.rows : [];
           state.hasData = true;
+        /* Merker fuer das Gnadenfenster oben: gab es in diesem Leben schon einmal Zeilen? */
+        if (state.rows && state.rows.length) state.jeZeilen = true;
           /* Nur echte Zeilen loeschen den Lesefehler. Wuerde ihn jeder beliebige Aufruf loeschen
              (etwa ein reiner Theme-Render), stuende danach "No URLs yet" da -- der stille
              Ausfall waere zurueck, nur eine Stufe spaeter. */
