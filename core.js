@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20260917;
+  var BUILD = 20260918;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -1546,6 +1546,11 @@
       "Nachschlagematerial, auf das sich die KI als gesicherte Grundlage stützt, etwa ein Lexikon oder eine Dokumentation.",
     "Community-generated content: forums, reviews, threads. Shaped by real users, not by you.":
       "Von der Community erzeugte Inhalte: Foren, Bewertungen, Threads. Geprägt von echten Nutzern, nicht von dir.",
+    /* settings-brand schreibt das kaufmaennische Und als HTML-Entitaet -- im DOM steht danach ein
+       gewoehnliches "&", und genau der Textknoten wird gesucht. Beide Formen stehen hier, damit
+       es auch dann trifft, wenn jemand die Vorlage einmal ohne Entitaet einfuegt. */
+    "Brand Name & Matching Aliases": "Brand-Name & passende Aliase",
+    "Brand Name &amp; Matching Aliases": "Brand-Name & passende Aliase",
     /* Muster mit eingesetztem Markennamen: der ganze Textknoten steht sonst in keinem Katalog. */
     "{brand} mentioned": "{brand} erwähnt",
     "{brand} mentioned?": "{brand} erwähnt?",

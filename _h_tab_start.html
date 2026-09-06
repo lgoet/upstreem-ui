@@ -121,7 +121,31 @@ hol("core.css").then(function(coreCss){ return hol("core.js").then(function(core
         log("   ==> " + ja(zeilen > 0) + " (die Daten kommen an)");
         log("   ==> " + ja(typ && /Artikel/.test(typ.textContent)) +
             " (der Typ steht auf Deutsch -- die Zelle uebersetzt der Sprachlauf nicht)");
-        log("FERTIG");
+        log("");
+        /* ---- DAS LOGO IM SPALTENKOPF -----------------------------------------------------
+           Gemeldet am 07.09.: "im urls table fehlt jetzt in der Kopfspalte das Logo vor
+           'erwaehnt', bei responses ist es noch da". Beide Dateien machten dasselbe -- nur
+           baute responses die zwei Elemente selbst, wenn das Bubble-Markup sie nicht mitbringt,
+           und urls-table stieg in dem Fall aus. Hier wird genau dieser Fall nachgestellt: die
+           Elemente werden aus dem Markup ENTFERNT, dann kommen die Markendaten. */
+        var kopf = d.querySelector(".up-th-ment") || d.querySelector(".up-th-mentioned");
+        [].forEach.call((kopf || d).querySelectorAll(".up-th-brandlogo, .up-th-mentlbl"),
+                        function(e){ e.parentNode.removeChild(e); });
+        d.querySelector(".uut-root").setAttribute("data-brand-logo", "https://example.com/l.png");
+        d.querySelector(".uut-root").setAttribute("data-brand-name", "Volkswagen");
+        v.renderUrlsTable(JSON.stringify({ instance_id:"urls-table_start", total_count:1,
+          rows:[{ url:"https://example.com/a", url_type:"article", citations:5, share_pct:12.5 }] }));
+        return warte(900).then(function(){
+          var logo = d.querySelector(".up-th-brandlogo");
+          var lbl  = d.querySelector(".up-th-mentlbl");
+          log("4) DER SPALTENKOPF, wenn das Markup Logo und Beschriftung NICHT mitbringt");
+          log("   Logo gebaut: " + !!logo + "   sichtbar: " +
+              (logo ? v.getComputedStyle(logo).display !== "none" : false) +
+              "   Beschriftung: \"" + (lbl ? lbl.textContent.trim() : "(keine)") + "\"");
+          log("   ==> " + ja(!!logo && !!lbl && v.getComputedStyle(logo).display !== "none") +
+              " (die Komponente baut sich beides selbst -- wie responses-table es laengst tut)");
+          log("FERTIG");
+        });
       });
     });
   });

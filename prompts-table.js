@@ -4741,13 +4741,19 @@
       mitZahl.sort(function(a, b){ return b.anzahl - a.anzahl || a.name.localeCompare(b.name); });
       /* NUR EIN MARKT: die Karte faellt weg, angefordert am 07.09. Ein Ring mit einem einzigen
          Segment sagt "100% Deutschland" -- das ist keine Verteilung, sondern eine Tautologie, und
-         sie kostet ein Drittel der Zeile. Dann stehen oben zwei Karten, und die Zeile verteilt
-         sich darauf (die Karten sind flexibel, es bleibt keine Luecke).
-         Die Karte wird ausgeblendet und nicht entfernt: kommt spaeter ein zweiter Markt dazu --
-         beim Wechsel des Teams etwa --, ist sie sofort wieder da, ohne Neuaufbau der Zeile. */
-      /* kpiTeil sucht ein KIND der Karte -- hier ist die Karte selbst gemeint. */
+         sie kostet ein Drittel der Zeile. Die Karte wird ausgeblendet und nicht entfernt: kommt
+         spaeter ein zweiter Markt dazu -- beim Wechsel des Teams etwa --, ist sie sofort wieder
+         da, ohne Neuaufbau der Zeile.
+
+         GEZAEHLT WIRD DER STORE, NICHT DIE ZEILEN MIT PROMPTS. Der erste Anlauf nahm mitZahl --
+         das sind die Maerkte MIT Prompts, und bei einem frisch angelegten zweiten Markt ohne
+         Prompts waere die Karte verschwunden, obwohl es zwei Maerkte gibt. Ausdruecklich so
+         angefordert: "der soll einfach in setUpstreemMarkets reinschauen, da wo nicht die
+         Fulllist drin ist". Genau das ist UC.getMarkets() -- getAllMarkets() waere die volle
+         Liste aller existierenden Maerkte, die ist hier nicht gemeint. */
+      var eigene = (UC.getMarkets ? UC.getMarkets() : []) || [];
       var karteMarkets = kpiZeile ? kpiZeile.querySelector(".upt-kpi-markets") : null;
-      if (karteMarkets) karteMarkets.hidden = mitZahl.length < 2;
+      if (karteMarkets) karteMarkets.hidden = eigene.length < 2;
       /* renderDonut nimmt "share" fuer den Ring UND fuer die Legende (dort durch fmtPct), es muss
          also der PROZENTWERT sein und nicht die Anzahl -- sonst stuende "29 %" fuer 29 Prompts in
          der Legende. Genauigkeit 0, wie fuer jeden Doughnut der App festgelegt (CLAUDE.md §2b). */

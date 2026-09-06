@@ -262,8 +262,18 @@
 .uto-root.is-narrow .uto-members.no-actions { --up-cols: minmax(0, 1fr) 108px; }
 .uto-root.is-narrow .uto-mail, .uto-root.is-narrow .uto-when,
 .uto-root.is-narrow .uto-c-mail, .uto-root.is-narrow .uto-c-when { display: none; }
-.uto-root.is-narrow .uto-invites { --up-cols: minmax(0, 1fr) 108px 196px; }
-:root[data-up-locale="de"] .uto-root.is-narrow .uto-invites { --up-cols: minmax(0, 1fr) 108px 268px; }
+/* SCHMAL: die beiden Knoepfe werden zu Zeichen. Gemeldet am 07.09.: "im Mobilmode werden keine
+   Buttons bei Pending Invites angezeigt" -- sie waren da, aber die Spalte war 196px breit und der
+   Text darin brauchte mehr, also stand nichts Brauchbares mehr. Zwei 32px-Knoepfe plus 6px Luft
+   und 2px Rand sind 72px, und die Spalte richtet sich danach statt umgekehrt.
+   Der Text verschwindet, nicht der Knopf: der Sinn steht im data-tip, und der Finger trifft ein
+   32px-Ziel besser als eine Beschriftung. */
+.uto-root.is-narrow .uto-invites { --up-cols: minmax(0, 1fr) 108px 72px; }
+:root[data-up-locale="de"] .uto-root.is-narrow .uto-invites { --up-cols: minmax(0, 1fr) 108px 72px; }
+.uto-root.is-narrow .uto-invact .up-rowbtn {
+  width: 32px; height: 32px; min-width: 32px; padding: 0; gap: 0; justify-content: center;
+}
+.uto-root.is-narrow .uto-invact .up-rowbtn span { display: none; }
 .uto-root.is-narrow .uto-invites.no-actions { --up-cols: minmax(0, 1fr) 108px; }
 .uto-root.is-narrow .uto-inv-by, .uto-root.is-narrow .uto-c-by { display: none; }
 /* Das Protokoll auf drei Spalten: Ziel und Details fallen weg. Fuenf Spalten auf 372px waeren

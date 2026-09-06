@@ -236,9 +236,20 @@
      (gemeldet am 07.09.: in den Quick Actions standen sie noch englisch). CITE_LABEL bleibt als
      Rueckfall stehen -- laeuft eine aeltere core-Fassung, ist die Beschriftung wenigstens
      lesbar statt "UGC_Community". */
+  /* window.UpstreemCore und NICHT ein Kuerzel: in diesem Scope gibt es kein UC -- die Datei
+     benutzt den vollen Namen ueberall (siehe Kommentar oben in dieser Datei). Mit "UC.typLabel"
+     stand hier ein ReferenceError, und der riss den Aufbau des Referenz-Abschnitts mit: "Citation
+     Typ bei Referenz kann ich nicht mehr oeffnen" -- genau so gemeldet, und genau das war es. */
   function citeLabel(c){
-    if (UC.typLabel) return UC.typLabel(c, "citation");
+    var k = window.UpstreemCore;
+    if (k && k.typLabel) return k.typLabel(c, "citation");
     return CITE_LABEL[c] || String(c || "").replace(/_/g, " ");
+  }
+  /* Dieselbe Behandlung fuer die URL-Typen -- sie standen ebenfalls englisch da. */
+  function urlTypeLabelUeb(t){
+    var k = window.UpstreemCore;
+    if (k && k.typLabel) return k.typLabel(t, "url");
+    return urlTypeLabel(t);
   }
   function isDarkTheme(){ return root.getAttribute("data-theme") === "dark"; }
   /* core's tint(), same maths -- a hex plus an alpha, so the chip fill is the type's own colour at
@@ -343,7 +354,7 @@
   var SLOT_LABEL = { scope:"", rank:"", type:"Citation", urltype:"URL", market:"Market", mentioning:"Mentioning" };
   function subOptions(kind){
     if (kind === "types")    return CITATION_TYPES.map(function(t){ return { label: citeLabel(t), value: t, dot: citeColor(t) }; });
-    if (kind === "urltypes") return URL_TYPES.map(function(t){ return { label: urlTypeLabel(t), value: t, dot: urlTypeColor(t) }; });
+    if (kind === "urltypes") return URL_TYPES.map(function(t){ return { label: urlTypeLabelUeb(t), value: t, dot: urlTypeColor(t) }; });
     if (kind === "markets") return MARKETS.map(function(m){
       return { label: String(m).toUpperCase(), value: m,
                av: "https://flagcdn.com/" + String(m).toLowerCase() + ".svg", avKind: "flag" };
@@ -359,7 +370,7 @@
     if (slot === "scope"){ var c = COMMANDS.filter(function(x){ return x.slot==="scope" && x.value===v; })[0]; return c ? c.label : v; }
     if (slot === "rank"){ var r = COMMANDS.filter(function(x){ return x.slot==="rank" && x.value===v; })[0]; return r ? r.label : v; }
     if (slot === "market") return String(v).toUpperCase();
-    if (slot === "urltype") return urlTypeLabel(v);
+    if (slot === "urltype") return urlTypeLabelUeb(v);
     if (slot === "mentioning"){ var b = BRANDS.filter(function(x){ return String(x.id) === String(v) || x.name === v; })[0]; return b ? b.name : String(v); }
     return String(v).replace(/_/g," ");
   }
@@ -402,7 +413,7 @@
             "the page.",
       chips: function(){
         return URL_TYPES.map(function(t){
-          return { label: urlTypeLabel(t), color: urlTypeColor(t), base: urlTypeBase(t), dot: true };
+          return { label: urlTypeLabelUeb(t), color: urlTypeColor(t), base: urlTypeBase(t), dot: true };
         });
       }
     },

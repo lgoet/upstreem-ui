@@ -371,8 +371,11 @@
    1.273, weil die dunkle Datei auf einer groesseren Flaeche lag. Alles davon war noetig, WEIL es
    ein fremdes Bild war -- ein Zeichen aus core traegt currentColor und braucht nichts davon. */
 .usn-item.is-active .usn-ic { color: var(--vc-text); }
+/* Eine Spur mehr Laufweite -- angefordert am 07.09., ausdruecklich subtil. .012em sind bei
+   13px rund 0,16px je Zeichen: genug, damit die Liste ruhiger wirkt, zu wenig, um die Breite
+   einer Zeile spuerbar zu aendern (bei "Prompt Insights" sind es 2,4px). */
 .usn-txt { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  line-height: 20px; }
+  line-height: 20px; letter-spacing: .012em; }
 /* Hier stand eine optische Korrektur von 1px nach unten. Sie galt fuer die Feather-Icons; mit
    den Lucide-Formen ist die Zeile damit zu tief, also wieder auf die geometrische Mitte. Der
    Wert bleibt als Stellschraube stehen -- er ist Augenmass, keine Messung. */
@@ -614,8 +617,12 @@
 /* 8px mehr Luft oben -- ausdruecklich angefordert (07.09.). Nur an DIESEM Menue: es beginnt mit
    einer Ueberschrift, und die sass zu dicht am Rand; die anderen Dropdowns beginnen mit einer
    Zeile und brauchen es nicht. */
+/* Oben UND unten dieselbe Luft. Der Zusatz stand erst nur oben, und dadurch stiess die letzte
+   Zeile (Logout) unten an den Rand -- gemeldet als "der Logout-Button wird abgeschnitten". Die
+   Grundpolsterung kommt aus .up-filter-menu (--up-dd-pad); hier kommen 8px dazu, weil das Menue
+   mit einer Ueberschrift beginnt und mit einem Knopf endet. */
 .usn-bar .usn-menu.is-acc { top: auto; bottom: calc(100% + 6px); left: 0; right: auto;
-  padding-top: calc(var(--up-dd-pad) + 8px); }
+  padding-top: calc(var(--up-dd-pad) + 8px); padding-bottom: calc(var(--up-dd-pad) + 8px); }
 /* Im Mini-Zustand ist links kein Platz -- die Panels klappen nach rechts neben die Leiste.
    20px und nicht 8px: das Prozent bezieht sich auf den Wrapper, und der endet 12px vor der
    Kante der Leiste (deren Polsterung im Mini-Zustand). 12 + 8 ergibt die 8px Luft, die auch

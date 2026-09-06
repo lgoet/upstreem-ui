@@ -220,13 +220,14 @@
    sind auf einem Telefon ein Drittel des Bildes fuer eine Liste aus drei Zeilen. */
 @media (max-width: 720px) {
   .ums-backdrop .ums-card { flex-direction: column; height: min(680px, calc(100vh - 32px)); }
-  .ums-aside {
-    flex: 0 0 auto; width: 100%; height: auto;
-    border-right: 0; border-bottom: 1px solid var(--vc-border);
-    flex-direction: row; gap: 4px; overflow-x: auto; padding: 10px 12px;
-  }
-  .ums-navhead { display: none; }
-  .ums-nav { flex: 0 0 auto; }
+  /* SCHMAL: GAR KEINE NAVIGATION. Sie stand hier als waagerechte Reihe ueber dem Inhalt --
+     angefordert am 07.09., sie ganz wegzulassen: "im Mobile-Modus keine Sidebar anzeigen, auch
+     nicht oberhalb. Nur der Bereich Preferences, mit dem X oben." Auf einem Telefon oeffnet man
+     dieses Fenster, um eine Einstellung zu aendern, nicht um zwischen Bereichen zu wandern; die
+     anderen Bereiche fuehren auf eigene Seiten und sind von dort erreichbar.
+     display:none und nicht entfernt: dieselbe Karte wird beim Drehen des Geraets wieder breit,
+     und dann muss die Navigation ohne Neuaufbau zurueck sein. */
+  .ums-aside { display: none; }
   .ums-main { padding: 20px 16px 24px; }
   .ums-row { flex-direction: column; align-items: stretch; gap: 10px; }
   .ums-rowctl { justify-content: flex-start; }

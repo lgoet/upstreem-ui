@@ -2100,3 +2100,27 @@
    Der Selektor hier ist 1,1,0 und schlaegt beide, egal in welcher Reihenfolge geladen wird. Eine
    Leiste darf nicht davon abhaengen, in welcher Sekunde welche Datei ankommt. */
 #ask-mira .am-rep-topics { flex: 0 0 auto; display: inline-block; width: max-content; max-width: 100%; height: 32px; vertical-align: top; }
+
+/* ---------- TELEFON: DIE CHATLEISTE LIEGT UEBER DEM INHALT (07.09.) -------------------------
+   Diese Regeln stehen AM ENDE der Datei, und das ist der ganze Punkt. Dieselben Regeln stehen
+   weiter oben schon einmal in einem @media-Block -- aber danach folgen die Regeln fuer das
+   breite Bild (.am-prev-panel mit position:relative, flex und transform:none), und ein
+   @media-Block traegt keine hoehere Spezifitaet als eine gewoehnliche Klassenregel. Die spaetere
+   Regel gewinnt also, und die Leiste schob den Inhalt zur Seite statt darueber zu liegen --
+   genau so gemeldet: "im Mobilemode soll die Sidebar ueber dem Content oeffnen, wie unsere
+   Hauptsidebar, nicht den Content zur Seite schieben".
+   Der Grenzwert ist derselbe wie oben (720px), damit es einen Umschaltpunkt gibt und nicht zwei. */
+@media (max-width: 720px) {
+  #ask-mira .am-shell { width: 100%; padding-right: 0; }
+  #ask-mira .am-prev-panel .am-side-grip { display: none; }
+  #ask-mira .am-prev-panel {
+    position: absolute; top: 0; right: 0; bottom: 0; left: auto; z-index: 9;
+    width: min(320px, 86%); flex: none; margin: 0;
+    transform: translateX(100%);
+    border-left: 1px solid var(--am-border-strong);
+    box-shadow: -12px 0 28px rgba(0,0,0,.18);
+  }
+  #ask-mira.side-ready .am-prev-panel { transition: transform 200ms ease; }
+  #ask-mira.prev-open .am-prev-panel { transform: translateX(0); margin-right: 0; }
+  #ask-mira .am-prev-scrim { display: block; }
+}

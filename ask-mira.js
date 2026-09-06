@@ -227,6 +227,7 @@
   /* ---------------- Localization (DE for German market, else EN) ---------------- */
   var STR = {
     en: {
+      antwortHaengt: 'The answer is taking longer than expected. Reload the chat to see it.',
       placeholder: 'Ask Mira...',
       suggested: [
         'What is hurting our visibility?',
@@ -312,6 +313,7 @@
       ]
     },
     de: {
+      antwortHaengt: 'Die Antwort dauert länger als erwartet. Lade den Chat neu, um sie zu sehen.',
       placeholder: 'Frag Mira...',
       suggested: [
         'Was schadet unserer Sichtbarkeit?',
@@ -408,7 +410,18 @@
 
   var lang = 'en';
   function L(){ return STR[lang] || STR.en; }
-  function resolveLang(){ lang = (String(S.market||'').toLowerCase() === 'de') ? 'de' : 'en'; }
+  /* DIE SPRACHE DES NUTZERS ENTSCHEIDET, nicht sein Markt. Bis hierher stand hier allein
+     S.market -- wer die App auf Deutsch gestellt hatte, aber einen anderen Markt beobachtet, sah
+     Mira komplett englisch. Genau so gemeldet am 07.09. ("Mira: die Sidebar und co").
+     Der Markt bleibt als RUECKFALL: er war die einzige Quelle, bevor es die Spracheinstellung
+     gab, und eine Seite ohne geladenes core (Mira laeuft ausdruecklich auch dann) hat sonst gar
+     nichts. */
+  function resolveLang(){
+    var l = "";
+    try { if (window.UpstreemCore && window.UpstreemCore.getPref) l = window.UpstreemCore.getPref("locale") || ""; } catch(e){}
+    if (!l) l = String(S.market || "").toLowerCase();
+    lang = (String(l).toLowerCase() === "de") ? "de" : "en";
+  }
   /* EINE Schreibweise fuer jede Dauer in dieser Komponente: die Uhr des Arbeitsprotokolls, die
      Denkzeile und die Zeile ueber alten Antworten. Vorher stand ueber einer geladenen Antwort
      "Nachgedacht fuer 2 Minuten 58 Sekunden" und ueber einer frischen "Gearbeitet 2m 58s".
@@ -3290,6 +3303,23 @@
     }, 140);
   }
   var _chatLoadT = 0;
+  /* Die Uhr zur laufenden Antwort -- siehe renderMessages. 100s: die langsamste gemessene
+     Antwort auf der Seite des Nutzers lag bei 40s, und der Abstand dazu muss gross genug sein,
+     dass niemand eine echte Antwort verliert. */
+  var _laufT = 0, LAUF_FRIST = 100000;
+  function laufUhrLoeschen(){ if (_laufT){ clearTimeout(_laufT); _laufT = 0; } }
+  function laufUhrStellen(){
+    laufUhrLoeschen();
+    _laufT = setTimeout(function(){
+      _laufT = 0;
+      var letzte = S.messages[S.messages.length - 1];
+      if (!isPendingAssistant(letzte)) return;          /* zwischenzeitlich fertig geworden */
+      letzte.status = "stalled";
+      letzte.content = letzte.content || L().antwortHaengt;
+      _pendingAnswer = false;
+      renderMessages();
+    }, LAUF_FRIST);
+  }
   window.askMiraSetMessages = function(messages){
     S.chatLoading = false; clearTimeout(_chatLoadT);   // real messages arrived -> drop the loading skeletons
     if (typeof messages === 'string'){
@@ -3322,6 +3352,16 @@
     var _last = S.messages[S.messages.length - 1];
     var _running = isPendingAssistant(_last);
     _pendingAnswer = _running;
+    /* EIN LADEZUSTAND MUSS IMMER ENDEN (CLAUDE.md). Die laufende Antwort endet normalerweise
+       dadurch, dass Bubbles Realtime-Auslöser die Nachrichten neu setzt. Gemeldet am 07.09.:
+       "im Mobilemode gibt es ab und an Probleme mit dem Realtime-Trigger, er laedt oft einfach
+       endlos, man muss den Chat neu laden". Auf einem Telefon wird ein Tab im Hintergrund
+       gedrosselt und die Verbindung schlafen gelegt -- die Meldung kommt dann nie an, und der
+       Punkt blinkt bis in alle Ewigkeit.
+       Also eine Uhr: bleibt eine Antwort 100 Sekunden lang "laeuft", ohne dass eine neue Nutzlast
+       kommt, hoert das Warten auf und die Nachricht sagt, was zu tun ist. Jede neue Nutzlast
+       stellt sie zurueck -- eine Antwort, die wirklich noch schreibt, wird nicht abgeschnitten. */
+    if (_running) laufUhrStellen(); else laufUhrLoeschen();
     if (_running){ S.messages.pop(); }
     // If a live answer arrives via setMessages without latency_ms, use the measured time.
     if (S.isLoading && _sendStartTs && !_running){
@@ -4192,7 +4232,15 @@
        Uhr neben requestAnimationFrame, weil rAF in einem VERDECKTEN Tab gar nicht laeuft und
        Mira in Bubble regelmaessig in einem noch nicht vorderen Tab haengt -- dieselbe Lektion
        wie beim Hintergrundbild. classList.add ist idempotent. */
-    if (seiteOffen()){
+    /* AUF DEM TELEFON BLEIBT SIE ZU, egal was gespeichert ist. Angefordert am 07.09.: "im
+       Mobilemode soll die Sidebar default ausgeblendet sein". Dort liegt sie ueber dem Chat --
+       eine Ueberlagerung, die beim Oeffnen der Seite schon offen ist, verdeckt genau das, was
+       man sehen will. Am Fenster gemessen und nicht an der Breite des Bauteils: die
+       Ueberlagerung haengt an derselben Grenze in der CSS (720px), und zwei Grenzen, die
+       auseinanderlaufen koennen, sind eine zu viel. */
+    var telefon = false;
+    try { telefon = window.matchMedia("(max-width: 720px)").matches; } catch(e){}
+    if (seiteOffen() && !telefon){
       root.classList.add('prev-open');
       elPrevPanel.setAttribute('aria-hidden', 'false');
       /* UND einmal zeichnen. Vorher lief das nur ueber openPrev(), also erst beim Klick -- mit

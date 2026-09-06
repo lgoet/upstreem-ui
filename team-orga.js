@@ -501,10 +501,14 @@
          (.up-btn-sec.up-rowbtn), nur dauerhaft sichtbar (team-orga.css). */
       function invZelle(i) {
         return '<div class="up-td uto-invact">' +
+          /* data-tip an beiden: im schmalen Bild faellt die Beschriftung weg (team-orga.css),
+             und ein Knopf ohne Text muss trotzdem sagen, was er tut. */
           '<button class="up-btn-sec up-rowbtn" type="button" data-uto-do="resend"' +
-            ' data-uto-i="' + i + '">' + UC.icon("send", 2) + '<span>Resend</span></button>' +
+            ' data-tip="' + esc(UC.t("Resend")) + '" aria-label="' + esc(UC.t("Resend")) + '"' +
+            ' data-uto-i="' + i + '">' + UC.icon("send", 2) + '<span>' + esc(UC.t("Resend")) + '</span></button>' +
           '<button class="up-btn-sec up-rowbtn uto-danger" type="button" data-uto-do="revoke"' +
-            ' data-uto-i="' + i + '">' + UC.icon("x", 2.4) + '<span>Revoke</span></button>' +
+            ' data-tip="' + esc(UC.t("Revoke")) + '" aria-label="' + esc(UC.t("Revoke")) + '"' +
+            ' data-uto-i="' + i + '">' + UC.icon("x", 2.4) + '<span>' + esc(UC.t("Revoke")) + '</span></button>' +
         '</div>';
       }
 

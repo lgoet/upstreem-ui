@@ -777,8 +777,28 @@
     function syncHeadBrand(){
       var logo = root.getAttribute("data-brand-logo") || "";
       var name = root.getAttribute("data-brand-name") || "";
+      /* HIER GEBAUT, wenn sie fehlen -- genau wie in responses-table. Der Pin liefert JS und CSS,
+         das Bubble-Markup ist eine Handkopie: was nur im Markup lebt, bleibt still auf dem Stand,
+         den jemand zuletzt eingefuegt hat. Gemeldet am 07.09.: "im urls table fehlt jetzt in der
+         Kopfspalte das Logo vor 'erwaehnt', bei responses ist es noch da" -- und genau das ist
+         der Unterschied zwischen beiden Dateien gewesen. */
+      var th = root.querySelector(".up-th-ment") || root.querySelector(".up-th-mentioned");
       var img = root.querySelector(".up-th-brandlogo");
+      if (!img && th){
+        img = document.createElement("img");
+        img.className = "up-th-brandlogo"; img.alt = ""; img.style.display = "none";
+        th.insertBefore(img, th.firstChild);
+      }
       var lbl = root.querySelector(".up-th-mentlbl");
+      if (!lbl && th){
+        lbl = document.createElement("span");
+        lbl.className = "up-th-mentlbl";
+        lbl.textContent = (th.textContent || "Mentioned?").trim() || "Mentioned?";
+        Array.prototype.slice.call(th.childNodes).forEach(function(n){
+          if (n.nodeType === 3) th.removeChild(n);
+        });
+        th.appendChild(lbl);
+      }
       if (!img || !lbl) return;
       if (logo && logo !== "BRAND_LOGO"){ img.src = logo; img.style.display = "block"; }
       else { img.style.display = "none"; }
