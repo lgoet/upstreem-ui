@@ -57,6 +57,24 @@ Promise.all([hol("core.css"), hol("sidebar.css"), hol("quick-actions.css")]).the
       gewichtAus: v.getComputedStyle(aus).fontWeight,
       gewichtAn: v.getComputedStyle(an).fontWeight,
       kbd: v.getComputedStyle(bar.querySelector(".mqa-kbd")).color,
+      icGroesse: v.getComputedStyle(an.querySelector(".usn-ic svg")).width,
+      aktFlaeche: (function(){
+        /* --usn-akt ist eine color-mix-Angabe; deckend gerechnet, weil der Kontrast gegen die
+           WIRKLICHE Flaeche zaehlt und nicht gegen die Leiste darunter. */
+        var probe = d.createElement("div");
+        probe.style.cssText = "background:" + cw.getPropertyValue("--usn-bg") + "";
+        var innen = d.createElement("div");
+        innen.style.cssText = "background:" + cw.getPropertyValue("--usn-akt") + ";width:10px;height:10px";
+        probe.appendChild(innen); bar.appendChild(probe);
+        var c = d.createElement("canvas"); c.width = c.height = 1;
+        var x = c.getContext("2d");
+        x.fillStyle = v.getComputedStyle(bar).backgroundColor; x.fillRect(0,0,1,1);
+        x.fillStyle = v.getComputedStyle(innen).backgroundColor; x.fillRect(0,0,1,1);
+        var px = x.getImageData(0,0,1,1).data;
+        probe.remove();
+        function z(n){ n = n.toString(16); return n.length<2 ? "0"+n : n; }
+        return "#" + z(px[0]) + z(px[1]) + z(px[2]);
+      })(),
       teamGroesse: v.getComputedStyle(bar.querySelector(".usn-teamname")).fontSize,
       teamGewicht: v.getComputedStyle(bar.querySelector(".usn-teamname")).fontWeight,
       tokenText: cw.getPropertyValue("--vc-text").trim(),
@@ -67,7 +85,16 @@ Promise.all([hol("core.css"), hol("sidebar.css"), hol("quick-actions.css")]).the
     };
     return ergebnis;
   }
-  function hex(rgb){
+  function kontrastAuf(a, b){
+  function w(h){
+    h = String(h).replace("#","");
+    function l(c){ c = parseInt(c,16)/255; return c <= 0.03928 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4); }
+    return 0.2126*l(h.slice(0,2)) + 0.7152*l(h.slice(2,4)) + 0.0722*l(h.slice(4,6));
+  }
+  var x = w(a), y = w(b); if (x < y){ var t = x; x = y; y = t; }
+  return (x + 0.05) / (y + 0.05);
+}
+function hex(rgb){
     var m = String(rgb).match(/(\d+),\s*(\d+),\s*(\d+)/); if (!m) return String(rgb);
     function z(n){ n=(+n).toString(16); return n.length<2 ? "0"+n : n; }
     return "#"+z(m[1])+z(m[2])+z(m[3]);
@@ -78,12 +105,20 @@ Promise.all([hol("core.css"), hol("sidebar.css"), hol("quick-actions.css")]).the
         "  dritte " + e.tokenThird);
     log("   1  Luecke Zeichen/Wort: " + e.luecke);
     log("      " + ja(parseFloat(e.luecke) === 8) + " 8px");
+    /* Am 07.09. nachmittags zurueckgenommen: die SCHRIFT steht wieder auf der Primaerfarbe, in
+       beiden Zustaenden. Sekundaer bleiben nur die Zeichen der nicht gewaehlten Punkte, und das
+       Zeichen des gewaehlten ist blau -- derselbe Wert wie die You-Marke in der Team-Orga. */
     log("   2  nicht gewaehlt: Wort " + hex(e.farbeAus) + "   Zeichen " + hex(e.icAus));
-    log("      " + ja(hex(e.farbeAus) === e.tokenMuted.toLowerCase()) + " Wort in der Sekundaerfarbe");
-    log("      " + ja(hex(e.icAus) === e.tokenMuted.toLowerCase()) + " Zeichen ebenfalls");
+    log("      " + ja(hex(e.farbeAus) === e.tokenText.toLowerCase()) + " Wort in der Primaerfarbe");
+    log("      " + ja(hex(e.icAus) === e.tokenMuted.toLowerCase()) + " Zeichen in der Sekundaerfarbe");
     log("   3  gewaehlt: Wort " + hex(e.farbeAn) + "   Zeichen " + hex(e.icAn));
-    log("      " + ja(hex(e.farbeAn) === e.tokenText.toLowerCase()) + " Wort in der Primaerfarbe");
-    log("      " + ja(hex(e.icAn) === e.tokenText.toLowerCase()) + " Zeichen ebenfalls");
+    log("      " + ja(hex(e.farbeAn) === e.tokenText.toLowerCase()) + " Wort ebenfalls in der Primaerfarbe");
+    log("      " + ja(hex(e.icAn) === "#3b82f6") + " Zeichen im Blau der You-Marke (#3b82f6)");
+    log("      " + ja(kontrastAuf(hex(e.icAn), e.aktFlaeche) >= 3) +
+        " und auf der aktiven Flaeche lesbar: " + kontrastAuf(hex(e.icAn), e.aktFlaeche).toFixed(2) +
+        " gegen " + e.aktFlaeche + " (verlangt 3.0 fuer eine graphische Flaeche)");
+    log("      Zeichengroesse: " + e.icGroesse);
+    log("      " + ja(parseFloat(e.icGroesse) === 16) + " 16px (vorher 17)");
     log("      Gewicht: nicht gewaehlt " + e.gewichtAus + ", gewaehlt " + e.gewichtAn);
     log("      " + ja(e.gewichtAus === e.gewichtAn) + " kein zusaetzliches Gewicht");
     log("      Breite: " + e.breiteAus + "px gegen " + e.breiteAn +

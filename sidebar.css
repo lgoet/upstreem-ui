@@ -394,15 +394,15 @@
 .usn-bar.is-mini .usn-block-body { overflow: visible; }
 /* 8px Luecke und 14px Text: das Zeichen rueckt naeher an sein Wort. Zweimal um je einen Pixel
    verkleinert (10 -> 9 am 08.09., 9 -> 8 am 07.09.), beide Male ausdruecklich angefordert.
-   DIE GRUNDFARBE IST DIE SEKUNDAERE, nicht die primaere -- angefordert am 07.09. Damit hat die
-   Liste im Ruhezustand EINE Farbe (Zeichen und Wort stehen beide auf --vc-muted), und der aktive
-   Punkt ist der einzige, der in die Textfarbe hochgeht. Vorher trug jede Zeile die volle
-   Textfarbe, und der aktive unterschied sich nur durch Flaeche und Gewicht. */
+   DIE SCHRIFT STEHT WIEDER AUF DER PRIMAERFARBE. Sie war einen Zug lang sekundaer, damit der
+   aktive Punkt der einzige in voller Textfarbe ist -- am 07.09. zurueckgenommen. Die Zeichen
+   bleiben sekundaer (siehe .usn-ic), und was den aktiven Punkt jetzt auszeichnet, ist seine
+   Flaeche und das BLAUE Zeichen, nicht die Schriftfarbe. */
 .usn-item {
   width: 100%; display: flex; align-items: center; gap: 8px;
   height: 36px; padding: 0 8px;
   border: 0; border-radius: 12px; background: transparent;
-  font: inherit; font-size: 14px; font-weight: 500; color: var(--vc-muted);
+  font: inherit; font-size: 14px; font-weight: 500; color: var(--vc-text);
   cursor: pointer; text-align: left;
   transition: background var(--usn-t) var(--usn-ease), color var(--usn-t) var(--usn-ease);
 }
@@ -423,7 +423,7 @@
    getragen: die aktive Zeile hat einen eigenen Hintergrund, und der ist von Farbsehen unabhaengig.
    Das Gewicht kam obendrauf und liess die Zeile beim Wechsel um wenige Pixel breiter werden.
    Ausdruecklich so angefordert am 07.09.: "nicht mehr Weight als im nicht selected Mode". */
-.usn-item.is-active { background: var(--usn-akt); color: var(--vc-text); }
+.usn-item.is-active { background: var(--usn-akt); }
 /* Die Icon-Spalte ist 22px breit, das Symbol darin bleibt 17px und sitzt mittig. 22, weil in
    derselben Spalte auch die Marken-Logos der angehefteten Zeilen stehen -- und die brauchen die
    Platte und den Rand aus den Tabellen, sonst sehen sie anders aus als dort. Eine gemeinsame
@@ -431,13 +431,28 @@
    Beschriftungen aller Zeilen an derselben Stelle beginnen zu lassen. */
 .usn-ic { position: relative; width: 22px; height: 22px; flex: 0 0 22px; color: var(--vc-muted);
   display: inline-flex; align-items: center; justify-content: center; }
-.usn-ic svg { width: 17px; height: 17px; display: block; }
+/* 16px und nicht 17 (07.09. angefordert, "1x1 px kleiner"). Die SPALTE bleibt bei 22px: an ihr
+   haengen die Markenlogos der angehefteten Zeilen und der Textanfang aller Zeilen, das Zeichen
+   sitzt nur mittig darin. Ein Pixel weniger am Symbol verschiebt also nichts. */
+.usn-ic svg { width: 16px; height: 16px; display: block; }
 /* Mira traegt jetzt dasselbe Zeichen wie jeder andere Punkt (blend aus UC.icon). Hier standen
    davor rund 25 Zeilen fuer einen Sonderweg: eine Bilddatei von Bubbles CDN ueber dem Symbol, dazu
    zwei gerechnete Helligkeitsfilter (3.58 hell, 0.714 dunkel) und eine Groessenkorrektur von
    1.273, weil die dunkle Datei auf einer groesseren Flaeche lag. Alles davon war noetig, WEIL es
    ein fremdes Bild war -- ein Zeichen aus core traegt currentColor und braucht nichts davon. */
-.usn-item.is-active .usn-ic { color: var(--vc-text); }
+/* DAS ZEICHEN DES AKTIVEN PUNKTES IST BLAU, und zwar #3b82f6 -- derselbe Wert wie die
+   "You"-Marke in der Mitgliederliste der Team-Orga (.uto-you) und der Chip der Landingpage
+   (.ulh-feat-chip). Ausdruecklich so angefordert am 07.09.: "in der Color von genau dem Blau, was
+   wir auch in der Team Orga bei den You-Chips genutzt haben". Deshalb steht hier der feste Wert
+   und kein neues Token: es ist dieselbe Farbe, nicht eine zweite in derselben Familie.
+   Derselbe Ton in hell und dunkel, genau wie bei .uto-you -- er traegt auf beiden Gruenden.
+   Gemessen wird gegen die Flaeche, auf der das Zeichen wirklich liegt, also gegen --usn-akt und
+   nicht gegen die nackte Leiste: 3.34 im Hellen (dort ergibt --usn-akt auf Weiss #f4f4f4) und
+   3.99 im Dunkeln (#28282c). Beides ueber den 3.0, die fuer eine graphische Flaeche verlangt
+   sind; auf der Leiste selbst waeren es 3.68 und 5.13.
+   Nur das ZEICHEN, nicht die Schrift: die Zeile soll nicht die Farbe wechseln, wenn man sie
+   oeffnet. */
+.usn-item.is-active .usn-ic { color: #3b82f6; }
 /* Eine Spur mehr Laufweite -- angefordert am 07.09., ausdruecklich subtil. .012em sind bei
    13px rund 0,16px je Zeichen: genug, damit die Liste ruhiger wirkt, zu wenig, um die Breite
    einer Zeile spuerbar zu aendern (bei "Prompt Insights" sind es 2,4px). */
