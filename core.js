@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20260926;
+  var BUILD = 20260927;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -9598,7 +9598,7 @@
     if (!selectedKeys.length) return prepped;
     var selSet = {};
     selectedKeys.forEach(function(k){ selSet[k] = true; });
-    var grey = isDark ? "#28282c" : "#e0e2e6";
+    var grey = isDark ? "#28282c" : "#e4e2e4";
     return prepped.map(function(it){
       return (it.key != null && selSet[it.key]) ? it : { key: it.key, name: it.name, share: it.share, color: grey, __dimmed: true, __realColor: it.color };
     });
@@ -9974,10 +9974,11 @@
          traegt, und der Rahmen dazu ist derselbe (--up-menu-border, #3e3e44). Im Hellen bleibt
          alles wie es war. */
       var boxBg = dark ? "#232326" : "#ffffff";
-      var boxBorder = dark ? "border:1px solid #3e3e44;" : "border:1px solid #e0e2e6;";
+      /* Rahmen der schwebenden Schicht: border-tertiary in beiden Themen (#3e3e44 / #dcdbdd). */
+      var boxBorder = dark ? "border:1px solid #3e3e44;" : "border:1px solid #dcdbdd;";
       var boxShadow = dark ? "box-shadow:0 4px 14px rgba(0,0,0,.25);" : "box-shadow:0 4px 14px rgba(0,0,0,.10);";
       var textColor = dark ? "#e6e6e6" : "#1f1f1b";
-      var mutedColor = dark ? "#8a8a8a" : "#6f737c";
+      var mutedColor = dark ? "#8a8a8a" : "#6b6f78";
       var dayLabel = chart.data.labels[dps[0].dataIndex];
       dps = dps.slice().sort(function(a, b){ return b.parsed.y - a.parsed.y; });
       var ff = "Geist,system-ui,-apple-system,Segoe UI,Roboto,Arial";
@@ -10591,7 +10592,10 @@
     function themeColors(){
       return isDark()
         ? { text:"#e0e0e0", muted:"#a0a0a0", border:"#34343a", bg:"#1c1c1f", grid:"rgba(255,255,255,0.08)" }
-        : { text:"#1f1f1b", muted:"#6f737c", border:"#e0e2e6", bg:"#ffffff", grid:"rgba(0,0,0,0.08)" };
+        /* bg ist die FUELLUNG der Datenpunkte, also die Farbe der Karte, auf der das Chart liegt
+           -- im Dunkeln #1c1c1f, im Hellen seit dem 07.09. #f9f8f9 und nicht mehr Weiss. Ein
+           weisser Punktkern auf einer getoenten Karte waere ein heller Fleck in jeder Linie. */
+        : { text:"#1f1f1b", muted:"#6b6f78", border:"#e4e2e4", bg:"#f9f8f9", grid:"rgba(0,0,0,0.08)" };
     }
     function clearExtras(){
       var sk = wrap.querySelector(".up-line-sk"); if (sk) sk.remove();
@@ -11120,9 +11124,9 @@
         letztesTheme = dark ? "d" : "l";
         /* Dieselbe Korrektur wie am Linien-Tooltip weiter oben: Menueflaeche statt Seitengrund. */
         var boxBg = dark ? "#232326" : "#ffffff";
-        var boxBorder = dark ? "border:1px solid #3e3e44;" : "border:1px solid #e0e2e6;";
+        var boxBorder = dark ? "border:1px solid #3e3e44;" : "border:1px solid #dcdbdd;";
         var boxShadow = dark ? "box-shadow:0 4px 14px rgba(0,0,0,.25);" : "box-shadow:0 4px 14px rgba(0,0,0,.10);";
-        var mutedColor = dark ? "#8a8a8a" : "#6f737c";
+        var mutedColor = dark ? "#8a8a8a" : "#6b6f78";
         kBox.style.cssText = "background:" + boxBg + ";color:" + textColor + ";" + boxBorder + "border-radius:16px;padding:12px 14px;font-family:Geist,system-ui,-apple-system,Segoe UI,Roboto,Arial;font-size:13px;line-height:1.35;" + boxShadow + "white-space:nowrap;";
         kTitle.style.cssText = "display:flex;align-items:center;gap:6px;font-weight:600;margin-bottom:6px;";
         kSub.style.cssText = "color:" + mutedColor + ";font-size:11px;";
@@ -11317,7 +11321,7 @@
            reads originalData so the number stays truthful */
         var display = origData.map(function(v){ return Math.max(v, 1.0); });
         var allZero = origData.every(function(v){ return v <= 0; });
-        window.Chart.defaults.color = isDark() ? "#a0a0a0" : "#6f737c";
+        window.Chart.defaults.color = isDark() ? "#a0a0a0" : "#6b6f78";
         window.Chart.defaults.font = { family: "Geist, system-ui, -apple-system, Segoe UI, Roboto, Arial", size: 12 };
         try {
           chart = new window.Chart(ctx, {

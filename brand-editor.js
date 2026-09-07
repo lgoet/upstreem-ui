@@ -314,7 +314,7 @@
           alpha: false, format: "hex", focusInput: false, selectInput: false,
           /* Die Vorschlaege sind die Markenfarben der App (dieselben, die die Charts vergeben) --
              so trifft man mit einem Klick eine Farbe, die neben den anderen funktioniert. */
-          swatches: ["#1f6feb", "#8957e5", "#1a7f5a", "#b3541e", "#be185d", "#0e7490", "#a16207", "#6f737c"]
+          swatches: ["#1f6feb", "#8957e5", "#1a7f5a", "#b3541e", "#be185d", "#0e7490", "#a16207", "#6b6f78"]
         });
         return true;
       } catch (e) { return false; }

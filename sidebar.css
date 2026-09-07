@@ -53,28 +53,34 @@
   --usn-ease: cubic-bezier(.4, 0, .2, 1);
   --usn-w: 250px;
   --usn-mini: 64px;
-  /* Eigener Flaechenton: die Leiste liegt NEBEN dem Inhalt, nicht darin, und --vc-heading-bg
-     waere dafuer zu hell -- man saehe die Kante nicht. Die beiden Werte sind vorgegeben. */
-  --usn-bg: #f5f5f5;
+  /* DIE LEISTE HAT DEN GRUND DER SEITE -- in BEIDEN Themen, seit dem 07.09. auch im Hellen.
+     Hier stand ein eigener Ton (#f5f5f5, nach dem Farbtausch #f4f2f4) mit der Begruendung, die
+     Leiste liege neben dem Inhalt und brauche eine eigene Flaeche. Bei Linear ist genau das nicht
+     so: die Navigation traegt bg-primary, dieselbe Farbe wie die Flaeche daneben, und getrennt
+     wird sie durch eine Kante. Im Dunkeln ist das seit dem 08.09. schon so; das Helle hinkte
+     hinterher und war damit das einzige, was in dieser Leiter noch anders aufgebaut war.
+     Die Kante steht weiter unten und gilt jetzt in beiden Themen. */
+  --usn-bg: var(--up-surface);
   /* Flaeche fuer Hover und Aktivzustand auf der Leiste. Sie MUSS je Thema aus einem anderen
      Token kommen, und das ist keine Bequemlichkeit:
-       hell   Leiste #f5f5f5, --vc-bg #ffffff        -> 10 Stufen Unterschied, sichtbar
+       hell   Leiste #ffffff, --vc-bg #f9f8f9        -> ein Schritt, aber der falsche Weg
        dunkel Leiste #1b1b1b, --vc-bg #1b1b1b        -> 0 Stufen, der Zustand war UNSICHTBAR
      Gemessen: im Dunkelmodus malte der aktive Punkt rgb(27,27,27) auf eine Leiste in
      rgb(27,27,27). Im Dunkeln liefert --up-sel-bg (rgba(42,42,42,.6), die Auswahlflaeche der
      Menuezeilen der App) den Schritt -- ueber #1b1b1b ergibt das ~#242424. Umgekehrt waere
-     --up-sel-bg im Hellen rgba(245,245,245,.55) und damit genauso unsichtbar. Genau dieselbe
-     Falle wie bei .up-pop-opt weiter unten, nur mit dem jeweils anderen Token. */
-  /* Im Hellen NICHT --vc-bg (also weiss): die Leiste ist selbst #f5f5f5, ein weisser Hover leuchtet
-     darauf heller als die Flaeche und liest sich als "herausgehoben" statt als "hier stehe ich".
-     Ueblich ist der Schritt nach UNTEN, und den macht ein Anteil der Textfarbe: 7% von #1f1f1b auf
-     #f5f5f5 ergeben rund #e6e6e5 -- ein sichtbarer, aber ruhiger Schritt. Aus dem Token abgeleitet
-     und nicht als Hexwert gesetzt, damit er dem Thema folgt.
+     --up-sel-bg im Hellen #eeedef -- ein Wert aus Linears Leiter, aber gemacht fuer eine Zeile
+     in einem weissen Menue, nicht fuer eine Navigationsflaeche. Genau dieselbe Falle wie bei
+     .up-pop-opt weiter unten, nur mit dem jeweils anderen Token. */
+  /* Im Hellen NICHT --vc-bg: die Leiste traegt jetzt Weiss, und ein Hover MUSS dort nach unten
+     gehen -- ueber Weiss gibt es nichts. Den Schritt macht ein Anteil der Textfarbe: 7% von
+     #1f1f1b auf Weiss ergeben rund #eeeeee, ein sichtbarer, aber ruhiger Schritt (auf der alten
+     grauen Leiste waren es #e6e6e5). Aus dem Token abgeleitet und nicht als Hexwert gesetzt,
+     damit er dem Thema folgt.
      Im Dunkeln bleibt es bei --up-sel-bg (siehe unten): dort ist heller richtig. */
   --usn-sel: color-mix(in srgb, var(--vc-text) 7%, transparent);
   /* Die AKTIVE Zeile hat einen eigenen Wert, weil sie nicht dasselbe leisten muss wie der
-     Hover: sie steht dauerhaft da. 7% waren dafuer zu kraeftig -- 5% von #1f1f1b auf #f5f5f5
-     ergeben rund #eaeae9. Der Hover bleibt bei seinen 7%, sonst verschwindet er ganz. */
+     Hover: sie steht dauerhaft da. 7% waren dafuer zu kraeftig -- 5% von #1f1f1b auf der jetzt
+     weissen Leiste ergeben rund #f2f2f2. Der Hover bleibt bei seinen 7%, sonst verschwindet er. */
   --usn-akt: color-mix(in srgb, var(--vc-text) 5%, transparent);
   font-family: inherit;
   -webkit-font-smoothing: antialiased;
@@ -93,18 +99,22 @@
   --usn-bg: var(--up-surface); --usn-sel: var(--up-sel-bg); --usn-akt: var(--up-sel-bg);
 }
 /* Seit die Leiste denselben Ton traegt wie die Seite, braucht sie eine Kante -- sonst gibt es
-   keine Grenze mehr zwischen Navigation und Inhalt. Angefordert am 08.09. NUR an der Leiste und
-   nur im Dunkeln: der Block darueber trifft auch die Blende und den Aufklappknopf, und die
-   brauchen keinen Rahmen. Im Hellen liegt die Leiste weiter auf #f5f5f5 und trennt sich selbst. */
+   keine Grenze mehr zwischen Navigation und Inhalt. Angefordert am 08.09. fuer das Dunkle; seit
+   dem 07.09. traegt die Leiste auch im Hellen die Seitenfarbe, also gilt die Kante dort genauso.
+   NUR an der Leiste: der Token-Block weiter oben trifft auch die Blende und den Aufklappknopf,
+   und die brauchen keinen Rahmen. */
 /* SPEZIFITAET, und deshalb stand die Kante zweimal in der Datei, ohne je zu erscheinen: der
    Block ".up-root.up-portal.usn-bar" weiter unten setzt "border: 0" und traegt drei Klassen
    (0,3,0). Ein Selektor aus einer Klasse und einem Attribut hat (0,2,0) und verliert damit --
    unabhaengig davon, wer weiter unten steht. Gemeldet als "Border right bei der Sidebar hast du
    wieder vergessen": vergessen war sie nicht, sie war wirkungslos.
-   Die Kante MUSS auf einem Selektor stehen, der die drei Klassen mitfuehrt. Sie hier direkt in
-   den Block darunter zu schreiben ginge nicht: der gilt in beiden Themen, die Kante nur im
-   Dunkeln. */
-.up-root.up-portal.usn-bar[data-theme="dark"] { border-right: 1px solid var(--vc-border); }
+   Die Kante MUSS auf einem Selektor stehen, der MEHR traegt als diese drei Klassen. Solange sie
+   nur im Dunkeln galt, reichte das Themenattribut dafuer; jetzt gilt sie in beiden Themen, und
+   ein Selektor mit genau denselben drei Klassen haette dieselbe Spezifitaet -- dann entschiede
+   wieder die Reihenfolge, und "border: 0" steht weiter unten. Deshalb .up-root doppelt (0,4,0):
+   dieselbe Klasse zweimal zu nennen ist der uebliche Weg, Spezifitaet zu erhoehen, ohne einen
+   fremden Vorfahren zu erfinden oder !important zu benutzen. */
+.up-root.up-root.up-portal.usn-bar { border-right: 1px solid var(--vc-border); }
 
 /* ---------- die Leiste ---------- */
 /* z-index 9900: knapp UNTER dem Drawer-Band der App (9905-9930). Ein Drawer, der ueber der
@@ -177,9 +187,10 @@
    ist keine Umschalthaelfte.
    Das naechstliegende echte Bauteil waere .up-pop-opt (die Zeile im Dropdown, 13.5px/500,
    Radius 9, gap 10 -- dieselbe Sprache, deshalb hier dieselben Werte). Uebernommen ist es
-   trotzdem nicht: .up-pop-opt haengt an --up-sel-bg, und das ist ein durchscheinendes #f5f5f5,
-   das auf der Leistenflaeche (ebenfalls #f5f5f5) restlos verschwindet. Ein Hover, den man nicht
-   sieht, ist schlechter als eine eigene Klasse. */
+   trotzdem nicht: .up-pop-opt haengt an --up-sel-bg, und das ist die Auswahlflaeche einer
+   MENUEZEILE -- auf der Leiste ist sie zu kraeftig, und als sie noch halbtransparent war,
+   verschwand sie dort sogar restlos. Ein eigener, aus der Textfarbe abgeleiteter Ton passt der
+   Leiste in beiden Themen; siehe --usn-sel oben. */
 /* flex: 0 1 auto und NICHT 1 1 auto: der Knopf ist so breit wie sein Inhalt und schrumpft nur,
    wenn der Platz knapp wird. Waechst er, wandert der Doppelpfeil an den rechten Rand -- gewollt
    ist, dass er dicht am Namen steht. Die Abstaende stehen als eigene Margins an den Kindern
@@ -238,8 +249,9 @@
 
 /* Ein-/Ausklappen: das Bauteil ist .up-iconbtn aus core (32x32, Radius 8, transparent, gedaempft,
    Hover auf Flaeche). Hier steht NUR, was auf dieser Flaeche anders sein muss: der Hover-Ton.
-   --vc-heading-bg ist ein durchscheinendes #f5f5f5 und damit auf der ebenfalls #f5f5f5-hellen
-   Leiste unsichtbar. Spezifitaet statt Ladereihenfolge, deshalb mit .usn-bar davor. */
+   --vc-heading-bg ist die Menuestufe (#f4f2f4 hell) und auf der Leiste der falsche Ton -- sie
+   traegt inzwischen die Seitenfarbe, und ein Hover gehoert dort in denselben abgeleiteten Ton wie
+   jeder andere Zustand auf der Leiste. Spezifitaet statt Ladereihenfolge, deshalb .usn-bar davor. */
 .usn-bar .up-iconbtn { transition: background var(--usn-t) var(--usn-ease), color var(--usn-t) var(--usn-ease); }
 /* Doppelte Klasse am Knopf, damit die Farbe auch gegen `.is-open > .up-iconbtn` aus core
    steht. Diese Regel faerbt den Trigger eines offenen Dropdowns -- der Einklapp-Knopf ist aber

@@ -262,7 +262,7 @@
    every bar drew the whole 0-100% gradient tiled inside its own 5px box, at a background-position
    meant for a 29px slice. That is the "the potential segments look broken" bug: the ramp only
    reads correctly while background-size stays 29px. */
-.up-explain .uo-pot-bar { background-color: #e0e2e6; }
+.up-explain .uo-pot-bar { background-color: #e4e2e4; }
 .up-explain .uo-pot-bar.is-on { background-image: linear-gradient(90deg, #c4c9d0, #1f1f1b); }
 /* Die Erklaerkarte haengt am body und wird im Dark Mode zu #1b1b1b (core.css). Mit den Hellwerten
    oben kehrt sich die Ableseregel um: die LEEREN Balken werden zum hellsten Element der Platte,

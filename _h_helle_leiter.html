@@ -122,12 +122,56 @@ hol("core.css").then(function(css){
           (vorher ? "   Abstand zur vorigen " + (Math.round((hell(vorher)-hell(w))*100)/100) : ""));
     });
   log("");
+  function ja(x){ return x ? "RICHTIG" : "FALSCH "; }
   var karte = rgb(cs.getPropertyValue("--vc-bg").trim(), "#ffffff");
   var seite = rgb(cs.getPropertyValue("--up-surface").trim(), "#ffffff");
   log("   Karte gegen Seite: unser Kontrast " + kontrast(karte, seite).toFixed(3) +
       "   mit Linears Werten " + kontrast(LINEAR["bg-secondary"], LINEAR["bg-primary"]).toFixed(3));
-  log("   " + (karte === seite ? "BEFUND: Karte und Seite sind bei uns DERSELBE Wert -- die Karte steht nur auf ihrem Rahmen."
-                               : "Karte und Seite liegen auseinander."));
+  log("");
+  log("URTEILE");
+  log("   " + ja(karte !== seite) + " Karte und Seite sind verschiedene Werte (Karte " + karte + ", Seite " + seite + ")");
+  /* Die Leiter MUSS monoton fallen: Seite am hellsten, dann Karte, Kopfzeile, Auswahl, Skelett.
+     Genau hier lag der Fehler vor dem 07.09. -- die Auswahl war heller als die Kopfzeile. */
+  var stufen = [["Seite","--up-surface"],["Karte","--vc-bg"],["Kopfzeile","--vc-heading-bg"],
+                ["Auswahl","--up-sel-bg"],["Skelett","--vc-sk"]]
+    .map(function(p){ return { n:p[0], h:hell(rgb(cs.getPropertyValue(p[1]).trim(), "#ffffff")) }; });
+  var monoton = true, kleinster = 999;
+  for (var i=1;i<stufen.length;i++){
+    var d = stufen[i-1].h - stufen[i].h;
+    if (d <= 0) monoton = false;
+    if (d < kleinster) kleinster = d;
+  }
+  log("   " + ja(monoton) + " die Leiter faellt durchgehend (kleinster Schritt " +
+      (Math.round(kleinster*100)/100) + ")");
+  /* Menue und Tooltip liegen OBEN, also auf Weiss -- sonst waeren sie von der Karte darunter
+     nicht zu unterscheiden. */
+  var menue = rgb(cs.getPropertyValue("--up-menu-bg").trim(), "#ffffff");
+  log("   " + ja(hell(menue) > hell(karte)) + " das Menue liegt ueber der Karte (" + menue +
+      " gegen " + karte + ")");
+  /* Rahmen: der auf einer Karte darf leiser sein als der einer schwebenden Schicht. */
+  var rb = rgb(cs.getPropertyValue("--vc-border").trim(), "#ffffff");
+  var rm = rgb(cs.getPropertyValue("--up-menu-border").trim(), "#ffffff");
+  log("   " + ja(hell(rb) - hell(karte) < 0 && (hell(karte) - hell(rb)) > 8) +
+      " Rahmen auf der Karte sichtbar: " + rb + " auf " + karte + ", Abstand " +
+      (Math.round((hell(karte)-hell(rb))*100)/100));
+  log("   " + ja(hell(rm) < hell(rb)) + " Menuerahmen kraeftiger als der auf der Karte (" + rm + " gegen " + rb + ")");
+  /* Und der Tabellenkopf, der vorher bei 1.01 Kontrast praktisch nicht da war. */
+  var tk = rgb(cs.getPropertyValue("--vt-head-bg").trim(), karte);
+  log("   " + ja((hell(karte) - hell(tk)) > 5) + " Tabellenkopf hebt sich von der Karte ab: " +
+      tk + " auf " + karte + ", Abstand " + (Math.round((hell(karte)-hell(tk))*100)/100));
+  /* Schrift: unveraendert, aber sie liegt jetzt auf einer getoenten Karte statt auf Weiss. */
+  /* BEIDE Werte ausgeben -- auf Weiss und auf der neuen Karte. Nur so ist zu sehen, ob ein
+     Unterschreiten von dieser Aenderung kommt oder vorher schon dastand. --vc-third war schon auf
+     Weiss unter 3 (2.68): das ist Beiwerk, kein AA-Text, und die Schwelle steht hier trotzdem,
+     damit der Wert nicht unbemerkt weiter absinkt. */
+  [["--vc-text",4.5],["--vc-muted",4.5],["--vc-third",3]].forEach(function(p){
+    var f = cs.getPropertyValue(p[0]).trim();
+    var kw = kontrast(rgb(f,"#ffffff"), "#ffffff");
+    var k = kontrast(rgb(f,"#ffffff"), karte);
+    log("   " + ja(k >= p[1]) + " " + p[0] + " " + f + ": auf Weiss " + kw.toFixed(2) +
+        ", auf der Karte " + k.toFixed(2) + " (verlangt " + p[1] +
+        (kw < p[1] ? ", lag schon auf Weiss darunter" : "") + ")");
+  });
   log("FERTIG");
 }).catch(function(e){ log("ABBRUCH: " + e.message); });
 </script>

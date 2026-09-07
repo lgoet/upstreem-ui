@@ -945,7 +945,7 @@
     color: var(--am-text); font-size: 13.5px; font-weight: 500; line-height: 1.4;
     transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
   }
-  .am-suggest-card:hover { border-color: #6f6f6f; background: #f5f5f5; }
+  .am-suggest-card:hover { border-color: #6f6f6f; background: #f4f2f4; }
   #ask-mira[data-theme="dark"] .am-suggest-card:hover { border-color: #707070; background: #232326; }
   .am-suggest-card > span:nth-child(2) { min-width: 0; flex: 1 1 auto; }
   .am-suggest-ic {
@@ -1103,7 +1103,7 @@
   /* Der Hoverzustand des Hauses, DECKEND. --vt-row-hover ist rgba(42,42,42,0.6) und damit
      durchsichtig; auf einer Karte ueber dem Hintergrundbild scheint das Bild durch, und die Karte
      verliert beim Hover ihren Boden. --vt-row-hover-solid ist derselbe Ton als voller Wert
-     (#f7f7f7 hell, #242424 dunkel) und existiert in core genau fuer diesen Fall. */
+     (#f4f2f4 hell, #242424 dunkel) und existiert in core genau fuer diesen Fall. */
   .am-rep-card:hover { border-color: var(--vc-hover-border); background: var(--vt-row-hover-solid); }
   /* leading element = a left-tilted little "document" card; larger than the row so it bleeds past the
      bottom edge and is clipped by the card (absolute so it never changes the card height) */
@@ -1189,7 +1189,7 @@
   /* --vt-row-hover-solid und NICHT --am-soft: --am-soft ist --vc-heading-bg, und das ist im Dunkeln
      rgba(42,42,42,0.6) -- also durchsichtig. Der runde Knopf schwebt ueber dem Chat, und beim
      Ueberfahren schien der Text darunter durch ihn hindurch. --vt-row-hover-solid ist das
-     deckende Paar aus core, genau fuer diesen Fall (#f7f7f7 hell, #242424 dunkel). */
+     deckende Paar aus core, genau fuer diesen Fall (#f4f2f4 hell, #242424 dunkel). */
   .am-scroll-bottom:hover { background: var(--vt-row-hover-solid, var(--am-soft)); border-color: var(--vc-hover-border, #6f6f6f); }
   .am-scroll-bottom svg { width: 17px; height: 17px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
   /* "new message" state -> the button stretches into a labelled pill */
@@ -1205,7 +1205,7 @@
   /* grey shell that holds the composer + the settings tray (matches the requested #f5f5f5 look) */
   .am-composer-shell {
     max-width: 920px; margin: 0 auto; width: 100%;
-    background: #f5f5f5; border-radius: 32px; padding: 0;   /* flush with the composer when the tray is closed */
+    background: #f4f2f4; border-radius: 32px; padding: 0;   /* flush with the composer when the tray is closed */
     transition: background 200ms ease, padding-bottom 300ms cubic-bezier(.4,0,.2,1);
   }
   .am-composer-shell.is-settings-open { padding-bottom: 16px; }   /* grey only overhangs while the tray is open */
@@ -1382,7 +1382,7 @@
      Ueberfahren schien der Text darunter durch ihn hindurch -- als Nutzer liest sich das als
      "der Knopf wird beim Hover blasser". Gemeldet am 03.09., und der Nutzer sagt richtig, dass es
      dieselbe Sache schon mehrfach war.
-     --vt-row-hover-solid ist das DECKENDE Paar aus core, genau fuer diesen Fall (#f7f7f7 hell,
+     --vt-row-hover-solid ist das DECKENDE Paar aus core, genau fuer diesen Fall (#f4f2f4 hell,
      #242424 dunkel). Aussehen und Kontrast bleiben, nur die Durchsicht ist weg. */
   .am-ask-sel:hover { background: var(--vt-row-hover-solid, var(--am-soft)); border-color: var(--vc-hover-border, #6f6f6f); }
   .am-ask-sel .am-ic { width: 14px; height: 14px; }
@@ -1399,7 +1399,7 @@
     display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
     transition: background 160ms ease, color 160ms ease;
   }
-  .am-icon-action:hover { background: #f5f5f5; color: #1f1f1b; }
+  .am-icon-action:hover { background: #f4f2f4; color: #1f1f1b; }
   #ask-mira #am-settings-toggle[aria-expanded="true"] { background: transparent; color: var(--am-text); }
   .am-icon-action[aria-expanded="true"] { background: var(--am-soft-2); color: var(--am-text); }
 
@@ -1835,7 +1835,7 @@
     /* 13px und nicht 6: die 100% beziehen sich auf die ZEILE, und zwischen ihrer Kante und der
        Kante des Menues liegen noch dessen 6px Polster plus 1px Rahmen. Mit 6px sass das Untermenue
        damit genau auf dem Menue -- gemessen eine Ueberlappung von 1px, also keine Luecke, kein
-       Schatten dazwischen und ein Rahmen in #e0e2e6, der auf der weissen Nachbarkarte nicht zu
+       Schatten dazwischen und ein Rahmen in --vc-border, der auf der Nachbarkarte nicht zu
        sehen ist. Genau das war "dieses Dropdown hat keine border": der Rahmen war da, aber die
        beiden Karten klebten aneinander und lasen sich als eine Form.
        6 + 6 + 1 = 13 ergibt echte 6px Luft zur Menuekante. */

@@ -47,7 +47,7 @@
      stays here. UC.URL_TYPE covers every key except the "other" bucket this component needs. */
   var URL_TYPE_CHIP = {};
   Object.keys(UC.URL_TYPE).forEach(function(k){ URL_TYPE_CHIP[k] = UC.URL_TYPE[k]; });
-  URL_TYPE_CHIP.other = { label:"Uncategorized", c:"#6f737c", cDark:"#a0a0a0" };
+  URL_TYPE_CHIP.other = { label:"Uncategorized", c:"#6b6f78", cDark:"#a0a0a0" };
 
   function tagInfo(raw, mode, isDark){
     if (mode === "url"){

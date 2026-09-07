@@ -139,8 +139,12 @@
 /* ---------- Landscape tooltip (body-mounted, follows the cursor) ---------- */
 /* Wer eine Palette aufmacht, macht sie vollstaendig auf. Dieses Panel haengt am body und
    erbt nichts von .up-root -- jedes hier NICHT deklarierte Token faellt still aus. */
+/* Rahmen einer SCHWEBENDEN Schicht: border-tertiary, nicht -secondary. Diese Flaeche liegt auf
+   allem und traegt Weiss (hell) bzw. die Menuestufe (dunkel) -- der Rahmen muss eine Stufe
+   kraeftiger sein als der auf einer Karte, sonst loest sich die Kante gegen die Seite auf.
+   Dieselbe Zuordnung wie #3e3e44 im Dunkeln. */
 .ubo-mxtip {
-  --vc-text: #1f1f1b; --vc-muted: #6f737c; --vc-border: #e0e2e6; --vc-bg: #ffffff;
+  --vc-text: #1f1f1b; --vc-muted: #6b6f78; --vc-border: #dcdbdd; --vc-bg: #ffffff;
   /* .up-logo-box braucht --vt-logo-bg, .up-hash braucht --vc-third. Ohne die beiden steht im
      Dark Mode ein Logo mit transparentem Hintergrund ohne helle Unterlage auf #1b1b1b, und das
      "#" der Rangzeile rendert in voller Textstaerke statt gedaempft. */
@@ -212,8 +216,8 @@
 /* Wer eine Palette aufmacht, macht sie vollstaendig auf. Dieses Panel haengt am body und
    erbt nichts von .up-root -- jedes hier NICHT deklarierte Token faellt still aus. */
 .ubo-actmenu {
-  --vc-text: #1f1f1b; --vc-muted: #6f737c; --vc-border: #e0e2e6; --vc-bg: #ffffff; --vc-heading-bg: #f5f5f5;
-  --up-sel-bg: rgba(245,245,245,0.55);   /* .up-pop-opt faerbt sich sonst beim Ueberfahren nicht */
+  --vc-text: #1f1f1b; --vc-muted: #6b6f78; --vc-border: #dcdbdd; --vc-bg: #ffffff; --vc-heading-bg: #f4f2f4;
+  --up-sel-bg: #eeedef;   /* .up-pop-opt faerbt sich sonst beim Ueberfahren nicht */
   position: fixed; z-index: 100050; min-width: 200px; padding: 6px;
   background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: 12px;
   box-shadow: 0 10px 28px rgba(0,0,0,.14);

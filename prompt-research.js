@@ -472,7 +472,7 @@
     var src = _uprSrcTags();
     return kws.map(function(k){
       var f = src.find(function(t){ return String(t.name).toLowerCase() === String(k).toLowerCase(); });
-      return f ? { name: k, color: makeColor(f.hex_light, '#6f737c'), emoji: f.emoji } : { name: k, color: 'var(--vc-third)', emoji: '' };
+      return f ? { name: k, color: makeColor(f.hex_light, '#6b6f78'), emoji: f.emoji } : { name: k, color: 'var(--vc-third)', emoji: '' };
     });
   }
   function _uprPoolTags(){
@@ -844,11 +844,11 @@
   function updateComposerValueState(){ if (!composerEl || !textarea) return; composerEl.classList.toggle('has-value', textarea.value.trim().length > 0); }
   function autoResizeTextarea(){ if (!textarea) return; textarea.style.height = 'auto'; textarea.style.height = Math.min(textarea.scrollHeight, 180) + 'px'; updateComposerValueState(); }
   function normalizeSuggestionTag(input){
-    if (typeof input === 'string'){ var n = input.trim(); return n ? { id: null, name: n, emoji: '', hex_light: '#6f737c' } : null; }
+    if (typeof input === 'string'){ var n = input.trim(); return n ? { id: null, name: n, emoji: '', hex_light: '#6b6f78' } : null; }
     if (!input || typeof input !== 'object') return null;
     var name = String(input.name || input.tag_name || input.label || '').trim();
     if (!name) return null;
-    return { id: input.id || input.tag_id || null, name: name, emoji: input.emoji || '', hex_light: input.hex_light || input.hex_dark || '#6f737c' };
+    return { id: input.id || input.tag_id || null, name: name, emoji: input.emoji || '', hex_light: input.hex_light || input.hex_dark || '#6b6f78' };
   }
   function renderSuggestions(sourceTags){
     var isFirstCall = Array.isArray(sourceTags);
@@ -864,7 +864,7 @@
       suggestionsEl.style.display = '';
     }
     suggestionsEl.innerHTML = visibleTags.map(function(tag){
-      return '<button class="up-topicchip upr-chip" type="button" data-chip="' + esc(tag.name) + '" data-tag-id="' + esc(tag.id || '') + '" style="--ust-tag-color:' + esc(makeColor(tag.hex_light, '#6f737c')) + ';">' +
+      return '<button class="up-topicchip upr-chip" type="button" data-chip="' + esc(tag.name) + '" data-tag-id="' + esc(tag.id || '') + '" style="--ust-tag-color:' + esc(makeColor(tag.hex_light, '#6b6f78')) + ';">' +
         (tag.emoji ? '<span class="up-topicchip-e">' + esc(tag.emoji) + '</span>' : '') +
         '<span class="up-topicchip-lbl">' + esc(tag.name) + '</span></button>';
     }).join('') +

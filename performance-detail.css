@@ -239,7 +239,7 @@
 /* Der Ring behaelt seine echte Groesse. Die geteilte Regel .up-explain-row svg setzt 14px und ist
    genauso stark wie .up-varring svg -- ohne diese Zeile entschiede die Ladereihenfolge. */
 .upd-explain-vis .up-varring svg { width: 22.4px; height: 22.4px; }
-.upd-explain-vis .up-varring-track { stroke: #e0e2e6; }
+.upd-explain-vis .up-varring-track { stroke: #e4e2e4; }
 .upd-explain-vis .up-varring-fill  { stroke: #1f1f1b; }
 /* Dark: die Platte ist dunkel, also drehen sich Ring und Nebentext mit. */
 .up-explain[data-theme="dark"] .upd-explain-vis .up-var-of { color: rgba(240,240,240,0.55); }

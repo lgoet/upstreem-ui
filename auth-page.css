@@ -3,7 +3,7 @@
    ── Abweichungen vom Design-Handoff, mit Grund ───────────────────────────────
    Der Handoff nennt feste Hex-Werte. Die stehen hier NICHT: Farben kommen aus --vc-*, sonst
    laeuft diese Seite beim naechsten Palettenwechsel als einzige aus dem Ruder. Zwei davon
-   stimmen ohnehin ueberein -- der Akzent #1f1f1b ist --vc-text, das Sekundaergrau #6f737c ist
+   stimmen ohnehin ueberein -- der Akzent #1f1f1b ist --vc-text, das Sekundaergrau #6b6f78 ist
    --vc-muted.
    Der Fokusring ist der blaue Core-Ring (--up-focus), nicht der schwarze aus dem Prototyp: er
    ist appweit derselbe, und ein zweiter Fokusstil auf genau der Seite, auf der jeder Nutzer
@@ -154,7 +154,7 @@
 .uau-field.uau-collapse.is-on { grid-template-rows: 1fr; opacity: 1; margin-top: 0; pointer-events: auto; }
 
 /* --vc-label gibt es in core NICHT -- der Rueckfall #4b5057 griff also immer und war im
-   Dunkeln viel zu dunkel. Der Sekundaerton der App ist --vc-muted (#6f737c hell, #a0a0a0
+   Dunkeln viel zu dunkel. Der Sekundaerton der App ist --vc-muted (#6b6f78 hell, #a0a0a0
    dunkel), und der gehoert hierher. */
 .uau-label { font-size: 12px; font-weight: 600; color: var(--vc-muted); }
 .uau-input {

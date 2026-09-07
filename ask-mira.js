@@ -1144,7 +1144,7 @@
   }
   function _oppRecIcon(t){ return _OPP_REC_ICON[t] || _OPP_REC_ICON.get_listed; }
   function _oppCitePretty(c){ return _OPP_CITE[c] || String(c||'').replace(/_/g,' '); }
-  function _oppCiteColor(c){ return _OPP_CITE_COLOR[c] || '#6f737c'; }
+  function _oppCiteColor(c){ return _OPP_CITE_COLOR[c] || '#6b6f78'; }
   function _oppStatusKey(s){ s = String(s||'').toLowerCase(); if (s.indexOf('progress')>=0) return 'in_progress'; if (s==='done'||s==='completed') return 'done'; if (s==='ignored') return 'ignored'; return 'pending'; }
   function _oppStatusLabel(s){ return (String(s||'').toLowerCase()==='created') ? 'Pending' : String(s||''); }   // value stays "Created"; only the label says "Pending"
   function _oppTagPills(topics, limit){   // 1:1 reuse of the Opportunities module chip rendering

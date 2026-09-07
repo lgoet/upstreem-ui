@@ -418,7 +418,7 @@
      Performance Radar: eine Flaeche, die dem Thema der Komponente nicht folgt, bringt ihre eigenen
      Farben mit. Die Werte sind die HELLEN aus core.css -- literal, weil es zu einer festen hellen
      Flaeche kein Token gibt, das in beiden Modi dunkel bleibt. */
-  --vc-text: #1f1f1b; --vc-muted: #6f737c;
+  --vc-text: #1f1f1b; --vc-muted: #6b6f78;
 }
 /* Der Globus im Rueckfall: Primaerfarbe, und er fuellt die Kachel NICHT aus -- er ist ein
    Zeichen, kein Bild. Sichtbar ist er nur, wenn has-img fehlt; liegt ein echtes Favicon darueber,
@@ -779,7 +779,7 @@
      Performance Radar: eine Flaeche, die dem Thema der Komponente nicht folgt, bringt ihre eigenen
      Farben mit. Die Werte sind die HELLEN aus core.css -- literal, weil es zu einer festen hellen
      Flaeche kein Token gibt, das in beiden Modi dunkel bleibt. */
-  --vc-text: #1f1f1b; --vc-muted: #6f737c;
+  --vc-text: #1f1f1b; --vc-muted: #6b6f78;
 }
 .uob-item-logo img { width: 22px; height: 22px; border-radius: 5px; display: block; object-fit: contain; }
 /* Im Dunkeln kein Rahmen, sondern die helle Flaeche --vt-logo-bg -- dieselbe Loesung wie bei

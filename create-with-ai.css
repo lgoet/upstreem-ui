@@ -286,7 +286,7 @@
   color: #1f1f1b;
 }
 .uca-sample::-webkit-scrollbar { height: 0; }
-.up-explain[data-theme="dark"] .uca-sample { color: #e8e8e8; }
+.up-explain[data-theme="dark"] .uca-sample { color: #e9e8ea; }
 /* Markdown-Auszeichnung und HTML-Tags eingefaerbt, damit man auf einen Blick sieht, WAS das
    Format in den Text schreibt -- darum geht es bei der Wahl. Plain text bleibt bewusst einfarbig:
    dass dort nichts eingefaerbt ist, IST die Aussage. */

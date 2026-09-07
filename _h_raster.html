@@ -86,7 +86,15 @@ Promise.all([hol("core.css"), hol("core.js"), hol("sidebar.css")]).then(function
       (kfarbe ? kontrast(kfarbe, grund).toFixed(2) : "?"));
   var hell = d1.createElement("div"); hell.className="up-root up-portal usn-bar"; hell.setAttribute("data-theme","light");
   d1.body.appendChild(hell);
-  log("     " + ja(parseFloat(v1.getComputedStyle(hell).borderRightWidth) === 0) + " im Hellen KEINE Kante (dort traegt sie ihre eigene Flaeche)");
+  /* Seit dem 07.09. traegt die Leiste auch im Hellen die Seitenfarbe, also braucht sie die Kante
+     dort genauso. Vorher stand hier die umgekehrte Erwartung -- sie gehoerte zu einer Leiste, die
+     sich noch durch einen eigenen Grauton getrennt hat. */
+  var hs = v1.getComputedStyle(hell);
+  log("     " + ja(parseFloat(hs.borderRightWidth) >= 1) + " im Hellen ebenfalls eine Kante: " +
+      hs.borderRightWidth + " " + hs.borderRightColor);
+  var hbg = v1.getComputedStyle(hell).getPropertyValue("--usn-bg").trim();
+  log("     " + ja(hbg === "var(--up-surface)" || hbg.toLowerCase() === "#ffffff") +
+      " und im Hellen dieselbe Flaeche wie die Seite (--usn-bg " + hbg + ")");
   log("");
 
   /* ---------- 3 Polsterung des Kontomenues ---------- */

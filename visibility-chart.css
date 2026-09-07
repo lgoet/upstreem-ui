@@ -190,7 +190,7 @@
    Replaces a .vot-explain-dot rule that went unused once the Sentiment visual stopped drawing the
    Brand-Mentions logo stack. */
 .vot-explain-sent { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 6px;
-  border: 1px solid #e0e2e6; border-radius: 6px; flex: 0 0 auto; font-variant-numeric: tabular-nums; }
+  border: 1px solid #e4e2e4; border-radius: 6px; flex: 0 0 auto; font-variant-numeric: tabular-nums; }
 .vot-explain-sentdot { width: 6px; height: 6px; border-radius: 2px; flex: 0 0 auto; }
 .up-explain[data-theme="dark"] .vot-explain-h { color: #1f1f1b; }
 .up-explain[data-theme="dark"] .vot-explain-t { color: rgba(31,31,27,0.66); }

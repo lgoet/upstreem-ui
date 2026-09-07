@@ -20,13 +20,44 @@
       --up-globus: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20'/%3E%3Cpath d='M2 12h20'/%3E%3C/svg%3E");
 }
 .up-root {
-      --vc-text: #1f1f1b; --vc-muted: #6f737c; --vc-border: #e0e2e6;
-      --vc-bg: #ffffff; --vc-heading-bg: #f5f5f5; --vc-sk: #e8e8e8; --up-surface: #ffffff;
+      /* --vc-muted ist um vier Einheiten dunkler als vorher (#6f737c), und das ist KEINE neue
+         Schriftfarbe, sondern der Ausgleich fuer den Grund, den ich verschoben habe: auf Weiss
+         stand dieser Ton bei Kontrast 4.75, auf der neuen Karte (#f9f8f9) waren es 4.49 -- einen
+         Hundertstel unter dem, was AA verlangt. #6b6f78 ist derselbe Blaustich in derselben
+         Helligkeitsfamilie und bringt die 4.75 zurueck, auf der Kopfzeile (#f4f2f4) noch 4.52.
+         Wer den alten Wert buchstabengleich zurueckwill, aendert diese eine Stelle -- dann steht
+         gedaempfter Text auf Karten aber unter AA.
+         Die anderen beiden Schriftfarben sind unveraendert. --vc-third liegt mit 2.53 auf der
+         Karte unter 3, war aber schon auf Weiss bei 2.68: das ist Beiwerk (Platzhalter, Rauten,
+         Einheiten) und war nie AA-Text. */
+      --vc-text: #1f1f1b; --vc-muted: #6b6f78; --vc-border: #e4e2e4;
+      --vc-bg: #f9f8f9; --vc-heading-bg: #f4f2f4; --vc-sk: #e9e8ea; --up-surface: #ffffff;
+      /* ---- DIE HELLE LEITER (07.09.) --------------------------------------------------------
+         Dieselbe Quelle und dieselbe Zuordnung wie die dunkle Leiter weiter unten, nur laeuft sie
+         hier nach unten statt nach oben. Von linear.app gelesen, helles Thema:
+             bg-primary #ffffff  >  bg-secondary #f9f8f9  >  bg-tertiary #f4f2f4
+             bg-quaternary #eeedef  >  bg-quinary #e9e8ea
+             border-primary #e9e8ea   border-secondary #e4e2e4   border-tertiary #dcdbdd
+         IM HELLEN DREHT SICH DIE ERHOEHUNG UM, und das ist der eigentliche Unterschied zum
+         Dunkeln: dort ist "liegt hoeher" heller, hier ist die Seite schon Weiss -- ueber Weiss
+         gibt es nichts. Also geht die Leiter von der Seite abwaerts, und die Karte ist eine Stufe
+         DUNKLER als die Seite. Vorher trugen Seite und Karte beide #ffffff: die Karte stand nur
+         auf ihrem Rahmen, gemessen Kontrast 1.000. Jetzt 1.059.
+         EINE AUSNAHME, und sie ist Absicht: Menues und Tooltips bleiben auf #ffffff. Was oben
+         liegt, muss sich vom Untergrund abheben -- im Dunkeln nach oben (Menue heller als Karte),
+         im Hellen nach oben ebenfalls, und oben ist hier Weiss. Ein Menue in der Kartenfarbe
+         waere von der Karte darunter nicht zu unterscheiden.
+         Die SCHRIFTFARBEN bleiben unveraendert (#1f1f1b / #6b6f78 / #9e9e9e) -- ausdruecklich so
+         angefordert, genau wie im Dunkeln. Linears Toene sind #282a30 / #6f6e77 / #86848d, also
+         etwas blaeulicher und in der dritten Stufe deutlich dunkler; das waere eine eigene
+         Entscheidung. */
       /* One dropdown panel colour and one selected-row colour for the WHOLE app. Every component
          that draws its own menu reads these instead of picking something close -- that drift is
-         exactly why the panels stopped matching each other. --up-sel-bg is deliberately
-         translucent so a selected row still shows the panel underneath rather than becoming a
-         solid block; it is the app's row-selection tone at 55% (light) / 60% (dark). */
+         exactly why the panels stopped matching each other.
+         --up-sel-bg war einmal halbtransparent, damit die Flaeche darunter durchscheint. Das ist
+         seit dem 07./08.09. in beiden Themen ein DECKENDER Wert aus Linears Leiter: eine Auswahl
+         ist eine eigene Stufe, und zwei uebereinanderliegende Halbtransparenzen ergaben je nach
+         Untergrund einen dritten Ton. */
       /* DIE AUSWAHL WAR HELLER ALS DIE KOPFZEILE, und damit lief die helle Leiter rueckwaerts:
          rgba(245,245,245,0.55) ergibt auf einem weissen Menue #fafafa -- Helligkeit 243.8, also
          elf Stufen UEBER --vc-heading-bg (232.8). Eine gewaehlte Zeile war damit heller als der
@@ -35,7 +66,7 @@
          dort): eine Stufe UNTER der Kopfzeile, deckend statt halbtransparent. Im Dunkeln stand
          die Auswahl schon am 08.09. deckend da -- hier war es noch der alte Aufbau.
          Gemessen mit _h_helle_leiter.html. */
-      --up-menu-bg: #ffffff; --up-sel-bg: #eeedef; --up-menu-border: #e0e2e6;
+      --up-menu-bg: #ffffff; --up-sel-bg: #eeedef; --up-menu-border: #dcdbdd;
       /* Dropdown-Geometrie. Vorher hatte jedes Panel eigene Werte -- 12 vs 14 Radius, 6 vs 8
          Padding, 6 vs 8 Abstand zum Trigger. Keiner davon war eine Design-Entscheidung, es waren
          Kopien die auseinandergelaufen sind. Eine Zahl je Groesse, hier. */
@@ -44,7 +75,7 @@
          --up-dd-gap auch den Abstand vom Trigger zum Panel setzt -- der bleibt 6. */
       --up-sub-gap: 4px;
       --up-dd-shadow: 0 10px 28px rgba(0,0,0,.14);
-      --vc-switch-bg: #f5f5f5; --vc-switch-border: #e0e2e6; --vc-third: #9e9e9e;
+      --vc-switch-bg: #f4f2f4; --vc-switch-border: #e4e2e4; --vc-third: #9e9e9e;
       /* Die SCHIENE eines Schalters -- ein eigener Token und nicht --vc-switch-bg, der die
          Flaeche eines Segmentumschalters meint. Als TOKEN und nicht als fester Wert in der
          Regel: ein fester Wert erbt nicht ueber eine Attributgrenze, und der Schalter steht
@@ -55,14 +86,21 @@
          --vc-switch-bg: #f5f5f5 bei 60 Prozent. Der Umschalter soll als Gruppe erkennbar sein und
          nicht als Kasten auf der Karte. Eigener Name und nicht --vc-switch-bg geaendert: dieser Ton
          haengt auch an Chips und Hoverzustaenden, und die sollen bleiben, wie sie sind. */
-      --vc-switch-soft: rgba(245,245,245,0.6);
+      --vc-switch-soft: rgba(244,242,244,0.6);
       /* Die Flaeche eines Eingabefelds, SOLIDE. Es gab sie bisher nur als 60%-Variante
          (--vc-switch-bg im Dunkeln, --up-sel-bg, --vt-row-hover) -- und wo ein Chip auf einer Karte
          liegt, die selbst schon getoent ist, addieren sich zwei Halbtransparenzen zu einem dritten
          Ton. Deshalb ein eigenes Token mit dem Vollwert. */
-      --vc-field: #f5f5f5;
-      --vt-head-bg: rgba(245,245,245,0.3); --vt-logo-bg: #ffffff; --vt-row-hover: rgba(245,245,245,0.75);
-      --vt-row-hover-solid: #f7f7f7;
+      --vc-field: #f4f2f4;
+      /* DECKEND UND AUF DER MENUESTUFE, wie im Dunkeln (#232326 an allen drei). Vorher waren es
+         drei verschiedene Halbtransparenzen von #f5f5f5 -- 30, 75 und ein eigener Vollwert --,
+         die auf Weiss #fcfcfc, #f8f8f8 und #f7f7f7 ergaben: drei Toene fuer zwei Rollen, und der
+         Tabellenkopf mit 1.01 Kontrast zur Karte praktisch nicht vorhanden. Auf der neuen Karte
+         (#f9f8f9) waere er ganz verschwunden.
+         --vt-logo-bg bleibt Weiss: die Platte hinter einem Favicon liegt AUF der Karte, ist also
+         eine Stufe hoeher -- dasselbe, was im Dunkeln #e0e0e0 dort tut. */
+      --vt-head-bg: #f4f2f4; --vt-logo-bg: #ffffff; --vt-row-hover: #f4f2f4;
+      --vt-row-hover-solid: #f4f2f4;
       --vt-up: #2ea84a; --vt-down: #b0200c;
       /* Markenauszeichnung im Antworttext. Die Farbe ist die der alten Response-Elemente,
          wortgleich uebernommen -- Orange, nicht das Gruen der Trendpfeile: eine Marke im Text ist
@@ -664,9 +702,9 @@
     
     /* dark mode inverts the whole card: light ground + dark text, and a dark inner panel with the
        dark-mode metric colours. */
-    .up-explain[data-theme="dark"] { background: #e8e8e8; }
-    .up-explain[data-theme="dark"]::before { border-bottom-color: #e8e8e8; }
-    .up-explain[data-theme="dark"].is-flipped::before { border-top-color: #e8e8e8; }
+    .up-explain[data-theme="dark"] { background: #e9e8ea; }
+    .up-explain[data-theme="dark"]::before { border-bottom-color: #e9e8ea; }
+    .up-explain[data-theme="dark"].is-flipped::before { border-top-color: #e9e8ea; }
     /* Explainer panel content — the light "visual sample" plate + heading/body text on the dark
        ground. prompts-table and visibility-chart each carried their own byte-identical copy of
        this under a upt-/vt- prefix; this is the one both should eventually point at instead. */
@@ -690,7 +728,7 @@
        this sample must look like the actual table cell, not an older circular approximation of it. */
     /* Ohne Rahmen, seit der echte Chip keinen mehr hat -- die Zeile darueber verspricht, dass
        diese Probe aussieht wie die Zelle. */
-    .up-explain-dot { width: 28px; height: 28px; border-radius: 8px; background: #e8e8e8;
+    .up-explain-dot { width: 28px; height: 28px; border-radius: 8px; background: #e9e8ea;
       border: 0; box-shadow: 0 0 0 4px #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #6f6f6f; }
     .up-explain-more { background: #f0f0f0; }
     .up-explain[data-theme="dark"] .up-explain-h { color: #1f1f1b; }
@@ -1430,11 +1468,11 @@
     }
 
     .up-scale-menu {
-      --vc-text: #1f1f1b; --vc-muted: #6f737c; --vc-third: #9e9e9e; --vc-border: #e0e2e6;
-      --vc-heading-bg: #f5f5f5; --vc-hover-border: #6f6f6f; --vc-bg: #ffffff;
-      --vc-switch-bg: #f5f5f5; --vc-switch-border: #e0e2e6;
+      --vc-text: #1f1f1b; --vc-muted: #6b6f78; --vc-third: #9e9e9e; --vc-border: #dcdbdd;
+      --vc-heading-bg: #f4f2f4; --vc-hover-border: #6f6f6f; --vc-bg: #ffffff;
+      --vc-switch-bg: #f4f2f4; --vc-switch-border: #e4e2e4;
       --up-dd-radius: 14px; --up-dd-pad: 8px; --up-dd-shadow: 0 10px 28px rgba(0,0,0,.14);
-      --up-sel-bg: rgba(245,245,245,0.55);
+      --up-sel-bg: #eeedef;
       position: fixed; z-index: 100050; width: 248px;
       background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: var(--up-dd-radius);
       box-shadow: var(--up-dd-shadow); padding: var(--up-dd-pad);
@@ -2576,7 +2614,7 @@
    is-lg ist der Umschalter, der nicht als Werkzeug in einer Kopfzeile steht, sondern allein ueber
    dem Inhalt und die Ansicht der ganzen Seite waehlt (brand-detail, domain-detail).
    Und die Groesse bestimmt den GRUND: der kleine traegt den durchscheinenden Ton
-   (--vc-switch-soft), der grosse den vollen (--vc-switch-bg, hell #f5f5f5). Vorher stand die Hoehe
+   (--vc-switch-soft), der grosse den vollen (--vc-switch-bg, hell #f4f2f4). Vorher stand die Hoehe
    in den Komponenten und der Grund nur hier -- ein 32px hoher Umschalter bekam damit den Ton des
    kleinen und stand zu blass da. Beide Werte gehoeren zusammen, also stehen sie zusammen. */
 .up-seg.is-lg, .cc-seg.is-lg, .ubo-seg.is-lg, .tcl-seg.is-lg,
@@ -2916,7 +2954,7 @@
    reads the same everywhere regardless of which colour the tag happens to carry.
    Applied by adding .up-chiphover next to the chip's own class. */
 .up-chiphover { transition: background 120ms ease, border-color 120ms ease, color 120ms ease; }
-.up-chiphover:hover { background: #f5f5f5; color: #1f1f1b; box-shadow: none; }
+.up-chiphover:hover { background: #f4f2f4; color: #1f1f1b; box-shadow: none; }
 /* Matches on the component root OR on a body-level surface (the bulk bar) that carries the
    attribute itself — the chip can live in either. */
 .up-root[data-theme="dark"] .up-chiphover:hover,
@@ -2950,8 +2988,8 @@
 .up-topicmodal-backdrop[data-theme="dark"] { background: rgba(0,0,0,.35); }
 
 .up-topicmodal-card {
-  --vc-text: #1f1f1b; --vc-muted: #6f737c; --vc-third: #9e9e9e; --vc-border: #e7e9ec;
-  --vc-heading-bg: #f5f5f5; --vc-hover-border: #6f6f6f; --up-surface: #ffffff; --vc-sk: #e8e8e8;
+  --vc-text: #1f1f1b; --vc-muted: #6b6f78; --vc-third: #9e9e9e; --vc-border: #dcdbdd;
+  --vc-heading-bg: #f4f2f4; --vc-hover-border: #6f6f6f; --up-surface: #ffffff; --vc-sk: #e9e8ea;
   /* Die Fokus-Tokens MUESSEN hier mit rein. Diese Karte haengt am body, nicht unter .up-root, wo
      die Tokens definiert sind -- ohne sie ist var(--up-focus) leer, und eine Deklaration mit einer
      leeren Variablen ist ungueltig. Die :focus-Regel des Namensfeldes weiter unten stand damit
