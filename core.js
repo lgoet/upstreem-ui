@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261009;
+  var BUILD = 20261010;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -220,8 +220,8 @@
   /* branding: der upstreem-Schriftzug oben in der Seitenleiste. Vorgabe AN (07.09. so
      angefordert). Er steht in denselben Einstellungen wie Sprache und Thema, weil er dasselbe ist:
      eine Entscheidung des Nutzers darueber, wie die App aussieht -- keine Berechtigung und kein
-     Merkmal des Kontos. Ein Wert "off" versteckt nur die Zeile; das Element bleibt im Layout
-     stehen (siehe sidebar.css), damit ein Umschalten nichts verschiebt. */
+     Merkmal des Kontos. Bei "off" faellt die Zeile GANZ weg (siehe sidebar.css), und der
+     Teamschalter steht wieder oben links. */
   var PREF_DEFAULT = { locale: "en", num: "en", date: "d-mon-y", date_sync: "off", date_preset: "last7",
                        branding: "on" };
   var PREF_ERLAUBT = {
@@ -1521,11 +1521,10 @@
        (07.09. gemeldet). Beide Beschriftungen stehen im Markup des Filters, der Sprachlauf findet
        sie also nur ueber den Katalog. */
     /* Die neue Einstellung (07.09.). "Branding" bleibt stehen -- das Wort ist im Deutschen
-       gebraeuchlich, und "upstreem" ist ein Name, kein Wort. */
-    "Design": "Design",
+       gebraeuchlich, und "upstreem" ist ein Name, kein Wort. Die Zeile hat keine Beschreibung,
+       also steht hier auch keine: ein Katalogeintrag ohne Text im UI ist nur eine Zeile, die beim
+       naechsten Aufraeumen jemanden aufhaelt. */
     "Show upstreem branding": "upstreem-Branding zeigen",
-    "The upstreem logo at the top of the sidebar. Turn it off for screenshots and presentations.":
-      "Das upstreem-Logo oben in der Seitenleiste. Zum Abschalten fuer Screenshots und Praesentationen.",
     "Or": "Oder",
     "And": "Und",
     "Page": "Seite",

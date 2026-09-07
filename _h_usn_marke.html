@@ -42,8 +42,11 @@ Promise.all([hol("core.css"), hol("core.js"), hol("sidebar.css"), hol("sidebar.j
     log("1  Reihenfolge");
     var vorher = marke.compareDocumentPosition(top) & Node.DOCUMENT_POSITION_FOLLOWING;
     log("   " + ja(!!vorher) + " die Markenzeile steht VOR der Teamzeile");
-    log("   " + ja(!!marke.querySelector("[data-toggle]")) + " der Einklappknopf sitzt in der Markenzeile");
-    log("   " + ja(!top.querySelector("[data-toggle]")) + " und nicht mehr in der Teamzeile");
+    /* Der Einklappknopf bleibt in der TEAMZEILE. Er stand im ersten Anlauf oben, und dadurch
+       konnte die Markenzeile beim Abschalten nicht verschwinden -- es blieb ein leerer Streifen.
+       Genau das wurde gemeldet. */
+    log("   " + ja(!marke.querySelector("[data-toggle]")) + " der Einklappknopf sitzt NICHT in der Markenzeile");
+    log("   " + ja(!!top.querySelector("[data-toggle]")) + " sondern in der Teamzeile");
     /* Dieselbe linke Kante: das ist der Grund fuer die -8px und die 0 6px im CSS. */
     var wort=marke.querySelector(".usn-brand-word, .usn-brand-img");
     var teamLogo=top.querySelector(".usn-teamlogo");
@@ -61,32 +64,58 @@ Promise.all([hol("core.css"), hol("core.js"), hol("sidebar.css"), hol("sidebar.j
     log("3  Vorgabe");
     log("   getPref(\"branding\") = " + (UC.getPref ? UC.getPref("branding") : "?"));
     log("   " + ja(UC.getPref("branding") === "on") + " ohne gespeicherte Wahl ist sie AN");
-    var sicht=v.getComputedStyle(marke.querySelector(".usn-brand-mark")).visibility;
-    log("   " + ja(sicht === "visible") + " und die Marke ist sichtbar (" + sicht + ")");
+    log("   " + ja(v.getComputedStyle(marke).display !== "none") + " und die Marke steht da");
     log("");
-    log("4  Umschalten");
-    var vorH=Math.round(marke.getBoundingClientRect().height);
-    var navVor=Math.round(bar.querySelector(".usn-nav").getBoundingClientRect().top);
+    log("4  Abschalten -- die Zeile muss GANZ weg");
+    /* Der Punkt der Meldung: nicht unsichtbar, sondern weg. Gemessen wird deshalb, wo der
+       TEAMSCHALTER sitzt -- er muss danach an der Stelle stehen, an der vorher die Marke war. */
+    var teamVor=Math.round(top.getBoundingClientRect().top);
+    var markeVor=Math.round(marke.getBoundingClientRect().top);
     UC.setPref("branding","off");
     return warte(120).then(function(){
-      var nachSicht=v.getComputedStyle(marke.querySelector(".usn-brand-mark")).visibility;
-      var nachH=Math.round(marke.getBoundingClientRect().height);
-      var navNach=Math.round(bar.querySelector(".usn-nav").getBoundingClientRect().top);
-      log("   " + ja(nachSicht === "hidden") + " nach setPref(\"off\") ist die Marke weg (" + nachSicht + ")");
-      log("   " + ja(vorH === nachH) + " die Zeile behaelt ihre Hoehe (" + vorH + " -> " + nachH + ")");
-      log("   " + ja(navVor === navNach) + " die Navigation darunter springt nicht (" + navVor + " -> " + navNach + ")");
-      log("   " + ja(!!marke.querySelector("[data-toggle]")) + " der Einklappknopf bleibt bedienbar");
-      /* Und mit Bildquelle: das Attribut wird live mitgelesen. */
-      host.setAttribute("data-upstreem-logo", "_h_logo.svg");
-      return warte(200).then(function(){
-        var img=marke.querySelector(".usn-brand-img");
-        log("");
-        log("5  Bildquelle, live gesetzt");
-        log("   " + ja(!!img) + " aus data-upstreem-logo wird ein Bild" +
-            (img ? " (" + img.getAttribute("src") + ")" : ""));
-        log("   " + ja(!marke.querySelector(".usn-brand-word")) + " und der Text weicht");
-        UC.setPref("branding","on");
-        log("FERTIG");
+      var anz=v.getComputedStyle(marke).display;
+      var teamNach=Math.round(top.getBoundingClientRect().top);
+      log("   Markenzeile display " + anz);
+      log("   " + ja(anz === "none") + " die Zeile ist aus dem Fluss genommen");
+      log("   Teamzeile oben: " + teamVor + " -> " + teamNach + "   (Marke sass bei " + markeVor + ")");
+      log("   " + ja(Math.abs(teamNach - markeVor) < 1.5) +
+          " der Teamschalter steht jetzt da, wo die Marke war -- also wieder oben links");
+      log("   " + ja(!!top.querySelector("[data-toggle]")) + " der Einklappknopf ist weiter erreichbar");
+      UC.setPref("branding","on");
+      return warte(120).then(function(){
+        log("   " + ja(Math.round(top.getBoundingClientRect().top) === teamVor) +
+            " und wieder zurueck, ohne Rest");
+        /* Zwei Bildquellen: je Thema die passende, und live gesetzt. */
+        host.setAttribute("data-upstreem-logo", "_h_logo.svg");
+        host.setAttribute("data-upstreem-logo-dark", "_h_bgP_a.svg");
+        return warte(250).then(function(){
+          function src(){ var i=marke.querySelector(".usn-brand-img"); return i ? i.getAttribute("src") : null; }
+          log("");
+          log("5  Zwei Bildquellen, live gesetzt");
+          log("   dunkel: " + src());
+          log("   " + ja(src() === "_h_bgP_a.svg") + " im Dunkeln die dunkle Fassung");
+          log("   " + ja(!marke.querySelector(".usn-brand-word")) + " und der Text weicht");
+          /* Themenwechsel: das Logo muss mitwechseln, nicht stehenbleiben. */
+          /* Der Themenwechsel geht ueber den globalen Setter, so wie die App ihn benutzt --
+             nicht ueber eine interne Funktion, die es morgen anders geben kann. */
+          if (v.setUpstreemTheme) v.setUpstreemTheme("light");
+          return warte(300).then(function(){
+            log("   nach dem Wechsel auf hell: " + src());
+            log("   " + ja(src() === "_h_logo.svg") + " im Hellen die helle Fassung");
+            /* Und wenn nur EINE gesetzt ist, muss die andere einspringen. */
+            host.removeAttribute("data-upstreem-logo");
+            return warte(250).then(function(){
+              log("   hell, aber nur die dunkle Quelle gesetzt: " + src());
+              log("   " + ja(src() === "_h_bgP_a.svg") + " die vorhandene springt ein");
+              log("");
+              log("6  Groesse");
+              var w=marke.querySelector(".usn-brand-img");
+              log("   Bildhoehe " + v.getComputedStyle(w).height + " (Regel: 14px)");
+              log("   " + ja(parseFloat(v.getComputedStyle(w).height) <= 14) + " kleiner als vorher (18px)");
+              log("FERTIG");
+            });
+          });
+        });
       });
     });
   });

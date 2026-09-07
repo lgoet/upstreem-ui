@@ -735,7 +735,6 @@
   "data-up-token",
   "data-up-uid",
   "data-up-unclipped",
-  "data-upstreem-logo",
   "data-url",
   "data-url-range",
   "data-user",
@@ -2858,7 +2857,7 @@
   "fnattrs": 96,
   "globals": 169,
   "payloadkeys": 95,
-  "dataattrs": 239,
+  "dataattrs": 238,
   "klassen": 2033,
   "keyframes": 63
  }

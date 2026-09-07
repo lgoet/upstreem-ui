@@ -381,19 +381,20 @@
     [bar, fab, scrim].forEach(function(el){ el.setAttribute("data-usn-instance", instanceId); });
 
     bar.innerHTML =
-      /* ---- Markenzeile, die oberste Zeile der Leiste (07.09. angefordert: "mach in die Sidebar
-         nach ganz oben links mein Logo und den Teamswitcher quasi eine Row tiefer").
-         Der EINKLAPPKNOPF ist mit nach oben gewandert. Das war nicht ausdruecklich verlangt, aber
-         die Alternative waere ein Knopf, der die obere Kante der Leiste verlaesst und unter dem
-         Logo neben dem Teamnamen sitzt -- er gehoert an den Rand, nicht in die Mitte. Eine Zeile,
-         wenn das anders sein soll.
-         Das Logo kommt als Bild aus data-upstreem-logo, wenn es da ist, sonst steht der
-         Schriftzug als TEXT da. Kein SVG im Code: die Bilddatei liegt in Bubble, und ein
-         nachgebauter Schriftzug waere ein zweites Logo, das beim naechsten Rebrand uebrig
-         bleibt. Der Text ist derselbe Kunstgriff wie .am-wordmark in ask-mira. */
+      /* ---- Markenzeile, die oberste Zeile der Leiste (07.09.) ----
+         NUR das Logo. Der Einklappknopf steht weiter in der Teamzeile darunter, und das ist der
+         Punkt: schaltet man die Marke ab, faellt diese Zeile ganz weg, und der Teamschalter steht
+         wieder oben links -- genau wie vorher. Ein Knopf in dieser Zeile haette sie am Leben
+         gehalten und einen leeren Streifen hinterlassen; so war es im ersten Anlauf, und so wurde
+         es gemeldet.
+         Zwei Bildquellen: data-upstreem-logo fuers Helle, data-upstreem-logo-dark fuers Dunkle --
+         ein Logo, das auf beiden Gruenden traegt, gibt es selten. Fehlt die passende, wird die
+         andere genommen; fehlen beide, steht der Schriftzug als TEXT da. Kein SVG im Code: die
+         Bilddateien liegen in Bubble, und ein nachgebauter Schriftzug waere ein zweites Logo, das
+         beim naechsten Rebrand uebrig bleibt. Der Text ist derselbe Kunstgriff wie .am-wordmark
+         in ask-mira. */
       '<div class="usn-brand" data-brand>' +
         '<span class="usn-brand-mark" data-brand-mark></span>' +
-        '<button class="up-iconbtn usn-toggle" type="button" data-toggle aria-label="Collapse sidebar"></button>' +
       '</div>' +
       '<div class="usn-top usn-pop" data-top>' +
         '<button class="usn-team" type="button" data-team-btn aria-haspopup="menu" aria-expanded="false">' +
@@ -401,6 +402,7 @@
           '<span class="usn-teamname usn-txt" data-team-name></span>' +
           '<span class="usn-sw usn-txt" data-team-sw></span>' +
         '</button>' +
+        '<button class="up-iconbtn usn-toggle" type="button" data-toggle aria-label="Collapse sidebar"></button>' +
         /* Die Panels bleiben IMMER im Layout (STYLEGUIDE 6) -- sichtbar wird nur .is-shown.
            Ein Panel, das per hidden erst beim Oeffnen erscheint, kann seinen Uebergang nicht
            laufen lassen. */
@@ -692,12 +694,24 @@
     function renderBrand(){
       if (!elBrand || !elBrandMk) return;
       var an = !UC.getPref || UC.getPref("branding") !== "off";
+      /* is-off nimmt die ganze Zeile aus dem Fluss (siehe sidebar.css) -- nicht nur unsichtbar:
+         sonst bliebe oben ein leerer Streifen stehen und der Teamschalter saesse weiter in der
+         zweiten Zeile. */
       elBrand.classList.toggle("is-off", !an);
-      var quelle = String(root.getAttribute("data-upstreem-logo") || "").trim();
-      var istPlatzhalter = !quelle || quelle === "UPSTREEM_LOGO";
-      var neu = istPlatzhalter
+      function quelle(name){
+        var w = String(root.getAttribute(name) || "").trim();
+        return (!w || w === "UPSTREEM_LOGO" || w === "UPSTREEM_LOGO_DARK") ? "" : w;
+      }
+      var hell = quelle("data-upstreem-logo");
+      var dunkel = quelle("data-upstreem-logo-dark");
+      /* Das Thema steht am Balken selbst -- dieselbe Quelle, die auch die Tooltips lesen. Fehlt
+         die Fassung fuer das laufende Thema, wird die andere genommen: ein Logo in der falschen
+         Fassung ist immer noch besser als keines. */
+      var istDunkel = bar.getAttribute("data-theme") === "dark";
+      var wahl = istDunkel ? (dunkel || hell) : (hell || dunkel);
+      var neu = !wahl
         ? '<span class="usn-brand-word">upstreem</span>'
-        : '<img class="usn-brand-img" alt="upstreem" src="' + esc(quelle) + '"' +
+        : '<img class="usn-brand-img" alt="upstreem" src="' + esc(wahl) + '"' +
           /* Bricht das Bild, faellt der Schriftzug ein -- eine leere Zeile oben in der Leiste
              saehe wie ein Ladefehler der ganzen App aus. */
           ' onerror="this.outerHTML=&quot;<span class=\'usn-brand-word\'>upstreem</span>&quot;"/>';
@@ -1239,7 +1253,7 @@
             var t = attr("data-team-id");
             var neu = (state.teams || []).filter(function(x){ return String(x.id) === t; })[0];
             if (neu && (!state.team || String(state.team.id) !== t)){ state.team = neu; renderTeam(); renderTeamMenu(); }
-          } else if (n === "data-upstreem-logo"){
+          } else if (n === "data-upstreem-logo" || n === "data-upstreem-logo-dark"){
             /* Mit in den Beobachter, damit es sich wie die drei anderen verhaelt: setzt Bubble die
                Quelle erst nach dem Pageload (aus einer Datenbank), soll die Zeile nicht bis zum
                naechsten Neuladen den Schriftzug zeigen. */
@@ -1247,7 +1261,8 @@
           }
         }
       }).observe(root, { attributes: true,
-        attributeFilter: ["data-active", "data-prompt-count", "data-team-id", "data-upstreem-logo"] });
+        attributeFilter: ["data-active", "data-prompt-count", "data-team-id",
+                          "data-upstreem-logo", "data-upstreem-logo-dark"] });
     }
 
     /* Der Tooltip-Chip des Hauses. Ein Aufruf, der Rest laeuft delegiert ueber [data-tip] --
@@ -1381,7 +1396,9 @@
     else window.addEventListener("resize", function(){ anwenden(); });
     /* Theme-Wechsel: das Mira-Symbol hat zwei Fassungen, und der Haken im Konto-Menue muss
        mitwandern. */
-    UC.onTheme(function(){ renderNav(); qaAufbauen(0); if (popAcc.isOpen()) renderAccMenu(); });
+    /* renderBrand mit dabei: die Marke hat zwei Fassungen, und welche gilt, entscheidet das
+       Thema. Ohne das bliebe nach einem Wechsel das Logo des anderen Themas stehen. */
+    UC.onTheme(function(){ renderBrand(); renderNav(); qaAufbauen(0); if (popAcc.isOpen()) renderAccMenu(); });
     /* Und dasselbe beim Sprachwechsel -- die Beschriftungen entstehen in renderNav und
        renderAccMenu, also braucht es genau dort einen Anlass. Ohne das stuende die Leiste in der
        alten Sprache, bis der Nutzer etwas anderes anklickt. Derselbe Weg wie beim Thema, nur ein

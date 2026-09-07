@@ -1,5 +1,5 @@
 <!doctype html><meta charset="utf-8">
-<title>Einstellungen: der Abschnitt Design und sein Schalter</title>
+<title>Einstellungen: der Branding-Schalter unter dem Thema</title>
 <pre id="out" style="font:12px/1.55 ui-monospace,Menlo,monospace;padding:12px;white-space:pre-wrap"></pre>
 <div id="buehne" style="position:absolute;left:-4000px;top:0"></div>
 <script>
@@ -30,15 +30,27 @@ Promise.all([hol("core.css"), hol("core.js"), hol("preferences.css"), hol("prefe
     return warte(500).then(function(){
       var karte=d.querySelector(".ums-card");
       if (!karte){ log("ABBRUCH: das Fenster hat nicht geoeffnet"); return; }
+      /* KEIN eigener Abschnitt (07.09. richtiggestellt): die Zeile gehoert unter das Thema, in
+         denselben Block. Ueberschrift und Trennlinie waren zu viel Geruest fuer eine Zeile. */
       var titel=[].map.call(d.querySelectorAll(".ums-sectitle"), function(e){ return e.textContent.trim(); });
       log("Abschnitte auf der Seite: " + titel.join(" | "));
-      log("   " + ja(titel.indexOf("Design") > -1) + " es gibt einen Abschnitt \"Design\"");
+      log("   " + ja(titel.length === 1) + " genau EIN Abschnitt, keine eigene Design-Ueberschrift");
+      log("   " + ja(d.querySelectorAll(".ums-secline").length === 1) +
+          " und genau eine Trennlinie (" + d.querySelectorAll(".ums-secline").length + ")");
       var sw=d.querySelector('[data-ums-toggle="branding"]');
-      log("   " + ja(!!sw) + " mit einem Schalter fuer das Branding");
+      log("   " + ja(!!sw) + " der Schalter fuer das Branding ist da");
       if (!sw){ log("FERTIG"); return; }
       var zeile=sw.closest(".ums-row");
       var t1=zeile.querySelector(".ums-rowtitle").textContent.trim();
       log("   Beschriftung: \"" + t1 + "\"");
+      /* Er MUSS direkt hinter dem Thema stehen -- "unter dem Punkt Design, wo man hell/dunkel
+         einstellen kann". Geprueft am Vorgaenger im DOM, nicht am Augenmass. */
+      var vor=zeile.previousElementSibling;
+      var vorTitel=vor && vor.querySelector(".ums-rowtitle");
+      log("   Zeile davor: \"" + (vorTitel ? vorTitel.textContent.trim() : "-") + "\"");
+      log("   " + ja(!!vorTitel && /Theme|Thema/.test(vorTitel.textContent)) +
+          " sie steht direkt unter dem Thema");
+      log("   " + ja(!zeile.querySelector(".ums-rowdesc")) + " und traegt KEINE Beschreibung");
       log("   " + ja(sw.classList.contains("is-on")) + " er steht auf AN (Vorgabe)");
       log("   " + ja(sw.getAttribute("aria-pressed") === "true") + " und sagt das auch der Vorlesehilfe");
       /* Jetzt der Klick. Der Zustand MUSS in der Ablage landen, nicht nur an der Klasse. */

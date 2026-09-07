@@ -342,18 +342,12 @@
           selHtml("date", DATEN, UC.getPref("date"))) +
         zeileHtml("Theme", "System follows the setting of your operating system.",
           selHtml("theme", THEMEN, themaJetzt())) +
-      '</div>' +
-      /* ---- Design (07.09. angefordert) ----
-         Ein eigener Abschnitt auf DIESER Seite und keine vierte Seite: er hat genau eine Zeile,
-         und eine Seite mit einer Zeile in der Navigation daneben liest sich als unfertig. Die
-         Nachbarschaft passt auch inhaltlich -- das Thema steht zwei Zeilen darueber, und beides
-         ist "wie die App aussieht". Kommt eine zweite Design-Zeile dazu, ist der Umzug in eine
-         eigene Seite ein Verschieben dieses Blocks. */
-      '<div class="ums-sec">' +
-        '<h3 class="ums-sectitle">' + esc(t("Design")) + '</h3>' +
-        '<div class="ums-secline"></div>' +
-        zeileHtml("Show upstreem branding",
-          "The upstreem logo at the top of the sidebar. Turn it off for screenshots and presentations.",
+        /* Direkt unter dem Thema und in DEMSELBEN Abschnitt (07.09. richtiggestellt: "unter Design
+           meinte ich unter dem Punkt Design, also wo man hell/dunkel einstellen kann"). Ein
+           eigener Abschnitt mit Ueberschrift und Trennlinie stand hier vorher und war zu viel
+           Geruest fuer eine Zeile.
+           OHNE Beschreibung: die Zeile sagt, was sie tut. Ausdruecklich so verlangt. */
+        zeileHtml("Show upstreem branding", "",
           schalterHtml("branding", UC.getPref("branding") !== "off")) +
       '</div>';
     }
