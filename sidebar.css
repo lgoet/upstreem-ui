@@ -179,6 +179,34 @@
    Kanten haben -- Teamknopf links, Einklapp-Knopf rechts. 16 - 8 = 8.
    gap: 10 und nicht 16, weil der Team-Knopf rechts noch seine eigenen 6px Polsterung
    mitbringt: 10 + 6 = die 16, die man zwischen Doppelpfeil und Knopf sieht. Gemessen. */
+/* ---- Markenzeile, die oberste Zeile der Leiste (07.09.) ----
+   Dieselbe Geometrie wie .usn-top darunter: 32px hoch, dieselben -8px Aussenabstand, damit Logo
+   und Teamlogo auf DERSELBEN linken Kante sitzen. Der Einklappknopf steht hier rechts (er ist mit
+   nach oben gewandert, Begruendung im Markup in sidebar.js).
+   12px Abstand zur Teamzeile: die Leiste kennt sonst nur 24 und 32 fuer GRUPPEN -- Marke und Team
+   sind aber eine Gruppe, zwei Zeilen desselben Kopfes. Die Haelfte von 24 sagt genau das.
+   is-off versteckt nur die MARKE, nicht die Zeile: der Einklappknopf steht darin, die Zeile wird
+   also gebraucht. Damit verschiebt das Umschalten der Einstellung auch nichts. */
+.usn-brand { display: flex; align-items: center; gap: 10px; margin: 0 -8px 12px; flex: 0 0 auto;
+  min-width: 0; height: 32px; }
+.usn-brand-mark { display: inline-flex; align-items: center; min-width: 0; overflow: hidden;
+  /* 0 6px wie .usn-team: so beginnt der Schriftzug genau ueber dem Teamlogo. */
+  padding: 0 6px; }
+.usn-brand.is-off .usn-brand-mark { visibility: hidden; }
+/* Der Schriftzug als Text -- der Rueckfall, wenn kein Bild gesetzt ist. 15px/600 ist die
+   Groesse des Teamnamens darunter plus ein Schritt Gewicht: die Marke steht ueber dem Team, nicht
+   daneben. Kleinbuchstaben, so wie der Name geschrieben wird. */
+.usn-brand-word { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; color: var(--vc-text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1; }
+/* Das Bild traegt seine eigene Form -- 18px Hoehe, Breite nach Bedarf. Dieselbe Bauart wie
+   .ulh-nav-logo auf der Landingpage (dort 20px, hier eine 32px-Zeile). */
+.usn-brand-img { height: 18px; width: auto; display: block; max-width: 100%; object-fit: contain; }
+/* Im Mini-Zustand ist links kein Platz fuer einen Schriftzug: die Zeile behaelt nur den Knopf,
+   und der steht mittig -- wie in .usn-top, das im Mini ebenfalls zur Spalte wird. */
+.usn-bar.is-mini .usn-brand { flex-direction: column; gap: 6px; margin: 0 0 12px; }
+.usn-bar.is-mini .usn-brand-word { display: none; }
+.usn-bar.is-mini .usn-brand-mark { padding: 0; }
+
 .usn-top { display: flex; align-items: center; gap: 10px; margin: 0 -8px; flex: 0 0 auto; min-width: 0; }
 /* .check_reinvention meldet .up-seg-btn (Segmented-Control-Knopf) fuer .usn-team und .usn-item.
    Das ist ein Fehlalarm ueber die gemeinsamen Eigenschaften "Knopf ohne Rahmen mit Radius":

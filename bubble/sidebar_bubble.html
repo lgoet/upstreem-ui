@@ -44,6 +44,13 @@
                          durchgereicht, damit "Export Your Data" den Export-Dialog oeffnet.
   data-mira-icon       = OPTIONAL. Beide Mira-Zeichen stehen fest im Code; diese beiden
   data-mira-icon-dark    Attribute sind nur da, um sie im Notfall zu ueberschreiben.
+  data-upstreem-logo   = OPTIONAL. Die Bildquelle des upstreem-Logos fuer die oberste Zeile der
+                         Leiste. Fehlt es, steht dort der Schriftzug "upstreem" als Text -- die
+                         Zeile ist also nie leer, und ohne dieses Attribut aendert sich nichts.
+                         Wird LIVE mitgelesen: ein Wechsel in Bubble kommt sofort an.
+                         Ob die Zeile ueberhaupt sichtbar ist, entscheidet der Nutzer in den
+                         Einstellungen ("Design" -> "Show upstreem branding", Vorgabe an) -- das
+                         ist eine Einstellung im Browser, kein Attribut.
 
   data-active, data-prompt-count und data-team-id werden LIVE mitgelesen: aendert Bubble den
   dynamischen Wert, zieht die Leiste nach, ohne dass irgendein Workflow etwas rufen muss. Die

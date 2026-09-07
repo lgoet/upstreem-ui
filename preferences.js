@@ -342,6 +342,19 @@
           selHtml("date", DATEN, UC.getPref("date"))) +
         zeileHtml("Theme", "System follows the setting of your operating system.",
           selHtml("theme", THEMEN, themaJetzt())) +
+      '</div>' +
+      /* ---- Design (07.09. angefordert) ----
+         Ein eigener Abschnitt auf DIESER Seite und keine vierte Seite: er hat genau eine Zeile,
+         und eine Seite mit einer Zeile in der Navigation daneben liest sich als unfertig. Die
+         Nachbarschaft passt auch inhaltlich -- das Thema steht zwei Zeilen darueber, und beides
+         ist "wie die App aussieht". Kommt eine zweite Design-Zeile dazu, ist der Umzug in eine
+         eigene Seite ein Verschieben dieses Blocks. */
+      '<div class="ums-sec">' +
+        '<h3 class="ums-sectitle">' + esc(t("Design")) + '</h3>' +
+        '<div class="ums-secline"></div>' +
+        zeileHtml("Show upstreem branding",
+          "The upstreem logo at the top of the sidebar. Turn it off for screenshots and presentations.",
+          schalterHtml("branding", UC.getPref("branding") !== "off")) +
       '</div>';
     }
 
@@ -531,6 +544,12 @@
     function schalten(name) {
       if (name === "legend" && UC.setLegendPref) {
         UC.setLegendPref(UC.getLegendPref() === "on" ? "off" : "on");
+      }
+      /* Ueber setPref und nicht ueber einen eigenen Speicherort: der Schluessel liegt in
+         derselben Ablage wie Sprache und Zahlenformat, und setPref feuert das Ereignis, an dem
+         die Seitenleiste haengt. Ein zweiter Weg waere ein zweiter Zustand. */
+      if (name === "branding" && UC.setPref) {
+        UC.setPref("branding", UC.getPref("branding") === "off" ? "on" : "off");
       }
       zeichnen();
     }

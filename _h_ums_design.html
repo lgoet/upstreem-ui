@@ -1,0 +1,73 @@
+<!doctype html><meta charset="utf-8">
+<title>Einstellungen: der Abschnitt Design und sein Schalter</title>
+<pre id="out" style="font:12px/1.55 ui-monospace,Menlo,monospace;padding:12px;white-space:pre-wrap"></pre>
+<div id="buehne" style="position:absolute;left:-4000px;top:0"></div>
+<script>
+/* Der Schalter ist erst dann fertig, wenn er DREI Dinge tut: dastehen, den gespeicherten Zustand
+   zeigen und beim Klick schreiben. Geprueft wird deshalb am fertigen Fenster und mit einem echten
+   Klick -- ein Blick auf die Funktion haette den Fall "Zeile gebaut, Klick landet nirgends" nicht
+   gefunden, und genau der ist mir bei den Schaltern schon einmal passiert. */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function ja(b){ return b ? "RICHTIG" : "FALSCH "; }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function warte(ms){ return new Promise(function(ok){ setTimeout(ok,ms); }); }
+
+Promise.all([hol("core.css"), hol("core.js"), hol("preferences.css"), hol("preferences.js")])
+.then(function(t){
+  var f=document.createElement("iframe");
+  f.style.cssText="width:1000px;height:700px;border:0";
+  document.getElementById("buehne").appendChild(f);
+  var d=f.contentDocument, v=f.contentWindow;
+  d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0'></body></html>"); d.close();
+  try { v.localStorage.clear(); } catch(e){}
+  [t[0], t[2]].forEach(function(c){ var st=d.createElement("style"); st.textContent=c; d.head.appendChild(st); });
+  [t[1], t[3]].forEach(function(j){ var sc=d.createElement("script"); sc.textContent=j; d.head.appendChild(sc); });
+  return warte(700).then(function(){
+    var UC=v.UpstreemCore;
+    if (!v.openUpstreemPreferences){ log("ABBRUCH: kein openUpstreemPreferences"); return; }
+    v.openUpstreemPreferences("prefs");
+    return warte(500).then(function(){
+      var karte=d.querySelector(".ums-card");
+      if (!karte){ log("ABBRUCH: das Fenster hat nicht geoeffnet"); return; }
+      var titel=[].map.call(d.querySelectorAll(".ums-sectitle"), function(e){ return e.textContent.trim(); });
+      log("Abschnitte auf der Seite: " + titel.join(" | "));
+      log("   " + ja(titel.indexOf("Design") > -1) + " es gibt einen Abschnitt \"Design\"");
+      var sw=d.querySelector('[data-ums-toggle="branding"]');
+      log("   " + ja(!!sw) + " mit einem Schalter fuer das Branding");
+      if (!sw){ log("FERTIG"); return; }
+      var zeile=sw.closest(".ums-row");
+      var t1=zeile.querySelector(".ums-rowtitle").textContent.trim();
+      log("   Beschriftung: \"" + t1 + "\"");
+      log("   " + ja(sw.classList.contains("is-on")) + " er steht auf AN (Vorgabe)");
+      log("   " + ja(sw.getAttribute("aria-pressed") === "true") + " und sagt das auch der Vorlesehilfe");
+      /* Jetzt der Klick. Der Zustand MUSS in der Ablage landen, nicht nur an der Klasse. */
+      sw.click();
+      return warte(200).then(function(){
+        var sw2=d.querySelector('[data-ums-toggle="branding"]');   /* zeichnen() baut die Seite neu */
+        log("   nach dem Klick: getPref = " + UC.getPref("branding") +
+            "   Schalter " + (sw2 && sw2.classList.contains("is-on") ? "an" : "aus"));
+        log("   " + ja(UC.getPref("branding") === "off") + " der Klick schreibt in die Einstellungen");
+        log("   " + ja(sw2 && !sw2.classList.contains("is-on")) + " und der Schalter zeigt es");
+        sw2.click();
+        return warte(200).then(function(){
+          log("   " + ja(UC.getPref("branding") === "on") + " und wieder zurueck");
+          /* Deutsch: die drei neuen Texte muessen im Katalog stehen. */
+          UC.setPref("locale","de");
+          return warte(300).then(function(){
+            var de=[].map.call(d.querySelectorAll(".ums-sectitle"), function(e){ return e.textContent.trim(); });
+            var zl=d.querySelector('[data-ums-toggle="branding"]').closest(".ums-row");
+            log("");
+            log("Auf Deutsch");
+            log("   Abschnitte: " + de.join(" | "));
+            log("   Zeile: \"" + zl.querySelector(".ums-rowtitle").textContent.trim() + "\"");
+            log("   " + ja(zl.querySelector(".ums-rowtitle").textContent.indexOf("zeigen") > -1) +
+                " die Zeile ist uebersetzt");
+            log("FERTIG");
+          });
+        });
+      });
+    });
+  });
+}).catch(function(e){ log("ABBRUCH: " + e.message + "\n" + (e.stack||"")); });
+</script>

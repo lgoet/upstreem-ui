@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261007;
+  var BUILD = 20261008;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -217,7 +217,13 @@
      Gespeichert wird das PRESET und nicht der Zeitraum: "1.-31. August" ist morgen falsch,
      "letzte 30 Tage" bleibt richtig. Deshalb stehen hier nur die drei relativen Presets --
      "Letzte 6 Monate" und ein eigener Zeitraum sind bewusst NICHT global speicherbar. */
-  var PREF_DEFAULT = { locale: "en", num: "en", date: "d-mon-y", date_sync: "off", date_preset: "last7" };
+  /* branding: der upstreem-Schriftzug oben in der Seitenleiste. Vorgabe AN (07.09. so
+     angefordert). Er steht in denselben Einstellungen wie Sprache und Thema, weil er dasselbe ist:
+     eine Entscheidung des Nutzers darueber, wie die App aussieht -- keine Berechtigung und kein
+     Merkmal des Kontos. Ein Wert "off" versteckt nur die Zeile; das Element bleibt im Layout
+     stehen (siehe sidebar.css), damit ein Umschalten nichts verschiebt. */
+  var PREF_DEFAULT = { locale: "en", num: "en", date: "d-mon-y", date_sync: "off", date_preset: "last7",
+                       branding: "on" };
   var PREF_ERLAUBT = {
     locale: { en: 1, de: 1 },
     /* "en": 1,234.56 und 1.24k -- Punkt trennt die Nachkommastellen.
@@ -226,7 +232,8 @@
     num:    { en: 1, de: 1 },
     date:   { "d-mon-y": 1, "mon-d-y": 1, "d-m-y": 1, iso: 1 },
     date_sync:   { on: 1, off: 1 },
-    date_preset: { last7: 1, last30: 1, last3: 1 }
+    date_preset: { last7: 1, last30: 1, last3: 1 },
+    branding:    { on: 1, off: 1 }
   };
   var _prefs = null;
   /* OHNE Team-Suffix, und das ist eine Korrektur. Diese Werte liefen ueber storeKey, und storeKey
@@ -1513,6 +1520,12 @@
     /* "Or" FEHLTE, "And" stand da -- daher der halb uebersetzte Umschalter im Topics-Dropdown
        (07.09. gemeldet). Beide Beschriftungen stehen im Markup des Filters, der Sprachlauf findet
        sie also nur ueber den Katalog. */
+    /* Die neue Einstellung (07.09.). "Branding" bleibt stehen -- das Wort ist im Deutschen
+       gebraeuchlich, und "upstreem" ist ein Name, kein Wort. */
+    "Design": "Design",
+    "Show upstreem branding": "upstreem-Branding zeigen",
+    "The upstreem logo at the top of the sidebar. Turn it off for screenshots and presentations.":
+      "Das upstreem-Logo oben in der Seitenleiste. Zum Abschalten fuer Screenshots und Praesentationen.",
     "Or": "Oder",
     "And": "Und",
     "Page": "Seite",

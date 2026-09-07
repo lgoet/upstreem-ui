@@ -381,13 +381,26 @@
     [bar, fab, scrim].forEach(function(el){ el.setAttribute("data-usn-instance", instanceId); });
 
     bar.innerHTML =
+      /* ---- Markenzeile, die oberste Zeile der Leiste (07.09. angefordert: "mach in die Sidebar
+         nach ganz oben links mein Logo und den Teamswitcher quasi eine Row tiefer").
+         Der EINKLAPPKNOPF ist mit nach oben gewandert. Das war nicht ausdruecklich verlangt, aber
+         die Alternative waere ein Knopf, der die obere Kante der Leiste verlaesst und unter dem
+         Logo neben dem Teamnamen sitzt -- er gehoert an den Rand, nicht in die Mitte. Eine Zeile,
+         wenn das anders sein soll.
+         Das Logo kommt als Bild aus data-upstreem-logo, wenn es da ist, sonst steht der
+         Schriftzug als TEXT da. Kein SVG im Code: die Bilddatei liegt in Bubble, und ein
+         nachgebauter Schriftzug waere ein zweites Logo, das beim naechsten Rebrand uebrig
+         bleibt. Der Text ist derselbe Kunstgriff wie .am-wordmark in ask-mira. */
+      '<div class="usn-brand" data-brand>' +
+        '<span class="usn-brand-mark" data-brand-mark></span>' +
+        '<button class="up-iconbtn usn-toggle" type="button" data-toggle aria-label="Collapse sidebar"></button>' +
+      '</div>' +
       '<div class="usn-top usn-pop" data-top>' +
         '<button class="usn-team" type="button" data-team-btn aria-haspopup="menu" aria-expanded="false">' +
           '<span class="usn-teamlogo" data-team-logo></span>' +
           '<span class="usn-teamname usn-txt" data-team-name></span>' +
           '<span class="usn-sw usn-txt" data-team-sw></span>' +
         '</button>' +
-        '<button class="up-iconbtn usn-toggle" type="button" data-toggle aria-label="Collapse sidebar"></button>' +
         /* Die Panels bleiben IMMER im Layout (STYLEGUIDE 6) -- sichtbar wird nur .is-shown.
            Ein Panel, das per hidden erst beim Oeffnen erscheint, kann seinen Uebergang nicht
            laufen lassen. */
@@ -448,6 +461,8 @@
     var elTeamName = bar.querySelector("[data-team-name]");
     var elTeamMenu = bar.querySelector("[data-team-menu]");
     var elToggle   = bar.querySelector("[data-toggle]");
+    var elBrand    = bar.querySelector("[data-brand]");
+    var elBrandMk  = bar.querySelector("[data-brand-mark]");
     var elNav      = bar.querySelector("[data-nav]");
     var elAcc      = bar.querySelector("[data-acc]");
     var elAccMenu  = bar.querySelector("[data-acc-menu]");
@@ -668,6 +683,27 @@
         '<span class="usn-ic">' + ic(it.icon) + '</span>' +
         '<span class="usn-txt">' + esc(it.label) + '</span>' + extra + '</button>';
     }
+    /* ---- Die Markenzeile ----
+       Bild, wenn data-upstreem-logo eine Quelle nennt, sonst der Schriftzug als Text. Das Attribut
+       darf sich nachtraeglich aendern (Bubble setzt es aus einer Datenbank), darum wird es hier
+       jedes Mal gelesen und nicht beim Bau eingefroren.
+       Die Zeile bleibt IMMER im Layout und wird nur unsichtbar: sie ist die oberste, und ein
+       display:none darauf wuerde beim Umschalten die ganze Leiste um ihre Hoehe verschieben. */
+    function renderBrand(){
+      if (!elBrand || !elBrandMk) return;
+      var an = !UC.getPref || UC.getPref("branding") !== "off";
+      elBrand.classList.toggle("is-off", !an);
+      var quelle = String(root.getAttribute("data-upstreem-logo") || "").trim();
+      var istPlatzhalter = !quelle || quelle === "UPSTREEM_LOGO";
+      var neu = istPlatzhalter
+        ? '<span class="usn-brand-word">upstreem</span>'
+        : '<img class="usn-brand-img" alt="upstreem" src="' + esc(quelle) + '"' +
+          /* Bricht das Bild, faellt der Schriftzug ein -- eine leere Zeile oben in der Leiste
+             saehe wie ein Ladefehler der ganzen App aus. */
+          ' onerror="this.outerHTML=&quot;<span class=\'usn-brand-word\'>upstreem</span>&quot;"/>';
+      if (elBrandMk.innerHTML !== neu) elBrandMk.innerHTML = neu;
+    }
+
     function renderNav(){
       aktivPruefen();
       elNav.innerHTML = BLOECKE.map(function(b){
@@ -1203,10 +1239,15 @@
             var t = attr("data-team-id");
             var neu = (state.teams || []).filter(function(x){ return String(x.id) === t; })[0];
             if (neu && (!state.team || String(state.team.id) !== t)){ state.team = neu; renderTeam(); renderTeamMenu(); }
+          } else if (n === "data-upstreem-logo"){
+            /* Mit in den Beobachter, damit es sich wie die drei anderen verhaelt: setzt Bubble die
+               Quelle erst nach dem Pageload (aus einer Datenbank), soll die Zeile nicht bis zum
+               naechsten Neuladen den Schriftzug zeigen. */
+            renderBrand();
           }
         }
       }).observe(root, { attributes: true,
-        attributeFilter: ["data-active", "data-prompt-count", "data-team-id"] });
+        attributeFilter: ["data-active", "data-prompt-count", "data-team-id", "data-upstreem-logo"] });
     }
 
     /* Der Tooltip-Chip des Hauses. Ein Aufruf, der Rest laeuft delegiert ueber [data-tip] --
@@ -1515,6 +1556,14 @@
       }
     } catch(e){}
 
+    renderBrand();
+    /* Die Einstellung kann sich waehrend der Sitzung aendern (das Einstellungsfenster schreibt
+       sie), und die Leiste ist nicht dessen Kind -- also ueber das Ereignis am Fenster, so wie
+       jede andere Komponente auch. Nur bei DIESEM Schluessel: ein Sprachwechsel geht die
+       Markenzeile nichts an. */
+    try {
+      if (UC.onPrefs) UC.onPrefs(function(d){ if (!d || d.name === "branding") renderBrand(); });
+    } catch(e){}
     renderTeam(); renderNav(); renderAcc();
     /* Die Panels stehen von Anfang an im Layout, also auch von Anfang an gefuellt -- sonst
        klappte beim ersten Oeffnen ein leerer Kasten auf und fuellte sich erst danach. */
