@@ -235,11 +235,23 @@
       --up-dd-shadow: 0 10px 28px rgba(0,0,0,.32);
       --vc-switch-bg: #232326; --vc-switch-border: #34343a; --vc-third: #808080;
       --up-switch-off: #444444;   /* siehe hell */
-      /* Schwarz statt aufgehelltes Grau, siehe die Begruendung beim hellen Wert. 22 Prozent und
-         nicht 5: im Dunkeln sind die Gruende selbst schon dunkel, ein Zwanzigstel Schwarz waere
-         darauf nicht zu sehen. Gemessen ergibt es auf der Karte #161619 und im Menue #1b1b1e --
-         also 24 bzw. 21 Stufen unter der Pille, statt der 7 und 3 von vorher. */
-      --vc-switch-soft: rgba(0,0,0,0.22);
+      /* AUFGEHELLT, und zwar wieder -- mit einer Einschraenkung, die zwei Zeilen weiter unten
+         steht. Am 07.09. war der Wert erst schwarz (0.22), damit die Pille sich abhebt. Das war
+         auf Karten und in Menues richtig und auf dem GRUND DER SEITE falsch: der ist mit #101114
+         selbst fast schwarz, ein Zwanzigstel Schwarz darauf ergibt #0d0d10 -- vier Stufen DARUNTER,
+         also unsichtbar. Und genau dort steht die Mehrzahl der Umschalter: in den Werkzeugleisten
+         der Tabellen, und deren Kopfzeile ist durchsichtig, also die Seite.
+         Gemeldet als "im Darkmode ist der Background des unselektierten kaum erkennbar, im
+         Vergleich zum Page-BG". Gerechnet (Skala 0 bis 255):
+             auf der Seite  aufgehellt #191919 (25.1) -> 8 ueber der Seite, 15 unter der Pille
+             auf der Seite  geschwaerzt #0d0d10 (12.6) -> 4 UNTER der Seite
+             auf der Karte  aufgehellt #212123 (33.1) -> 5 ueber der Karte, 7 unter der Pille
+         EIN Wert kann beides nicht: die Seite ist die dunkelste Flaeche der App, dort MUSS die
+         Schiene heller werden; im Menue (#232326) ist Aufhellen dagegen fast die Pille selbst.
+         Deshalb steht der aufgehellte Wert hier als Regelfall und der geschwaerzte weiter unten
+         nur INNERHALB der Menues. Zwei Werte fuer eine Rolle sind hier nicht Drift, sondern die
+         Antwort auf zwei verschiedene Untergruende. */
+      --vc-switch-soft: rgba(42,42,42,0.35);
       --vc-field: #232326;
       /* Die Kopfleiste jeder Tabelle: eine Stufe HELLER als die Tabellenflaeche (--vc-bg
          #1b1b1b), nicht dunkler. Hier stand #121212 -- die Farbe der SEITE, die Leiste sass
@@ -1380,6 +1392,25 @@
     .up-root[data-theme="dark"] .up-sort-menu,
     .up-root[data-theme="dark"] .up-filter-menu { border-color: #34343a; }
     .up-root[data-theme="dark"] .up-sort-menu { background: var(--up-menu-bg); }
+    /* ---- DIE SCHIENE EINES UMSCHALTERS IM MENUE ------------------------------------------------
+       Im Menue liegt der Grund bei #232326 -- also hoeher als die Karte und dicht unter der Pille
+       (#28282c). Eine aufgehellte Schiene waere dort praktisch die Pille selbst (drei Stufen, so
+       gemeldet am 07.09. fuer die Switcher in den Dropdowns). Hier vertieft sie ihren Grund
+       stattdessen: 25 Prozent Schwarz auf #232326 ergibt #1a1a1c, neun Stufen unter dem Menue und
+       vierzehn unter der Pille.
+       Der Regelfall bleibt aufgehellt (siehe die Begruendung am Token) -- er gilt fuer die Seite
+       und fuer Karten. Genannt sind alle Kaesten, die ihren Grund auf --up-menu-bg setzen, plus
+       die drei Filter-Dropdowns, die ausserhalb dieser Bibliothek gebaut sind, aber ihre Klassen
+       mitfuehren. Ein Umschalter, der in keinem davon steht, behaelt den Regelfall. */
+    .up-root[data-theme="dark"] .up-filter-menu,
+    .up-root[data-theme="dark"] .up-ment-menu,
+    .up-root[data-theme="dark"] .up-menu,
+    .up-root[data-theme="dark"] .up-cols-menu,
+    .up-root[data-theme="dark"] .up-submenu,
+    .up-root[data-theme="dark"] .up-sort-menu,
+    .up-root[data-theme="dark"] .umf-menu,
+    .up-root[data-theme="dark"] .umk-menu,
+    .up-root[data-theme="dark"] .utf-menu { --vc-switch-soft: rgba(0,0,0,0.25); }
     .up-sort.is-open .up-sort-btn { color: var(--vc-text); background: var(--vc-heading-bg); }
     .up-pop-head-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 18px; }   /* reserve the Select-all button height up front so nothing resizes */
     .up-pop-action { border: 0; background: transparent; color: var(--vc-muted); font-family: inherit;

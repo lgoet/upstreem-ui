@@ -119,6 +119,41 @@ Promise.all([hol("core.css"), hol("core.js"), hol("drawer-topbar.css"), hol("dra
       q(".utb-crumb").getBoundingClientRect().height <= 32);
     log("");
 
+    /* Die Angaben, die am 07.09. einzeln genannt wurden -- jede als eigene Zeile, damit man beim
+       naechsten Blick sieht, welche davon nicht mehr stimmt. */
+    log("");
+    log("1b  Die Masse im Einzelnen");
+    var cs=v.getComputedStyle(el);
+    log("      Polster " + cs.paddingLeft + " / " + cs.paddingRight + "   Luecke " + cs.gap);
+    pruef("16px Polster links und rechts",
+      parseFloat(cs.paddingLeft) === 16 && parseFloat(cs.paddingRight) === 16);
+    /* Ueberstand: kein Kind darf ueber die Wurzel hinausragen -- genau das war die Meldung. */
+    var rr=el.getBoundingClientRect();
+    var raus=[].map.call(el.querySelectorAll("*"), function(c){
+      var r=c.getBoundingClientRect();
+      return (r.width || r.height) ? Math.max(rr.left - r.left, r.right - rr.right) : -99; });
+    log("      groesster Ueberstand ueber die Wurzel: " + Math.max.apply(null, raus).toFixed(1) + "px");
+    pruef("nichts ragt ueber die Leiste hinaus", Math.max.apply(null, raus) <= 0.6);
+    var ct=v.getComputedStyle(q(".utb-type")), cn=v.getComputedStyle(q(".utb-name"));
+    log("      Typ " + ct.fontSize + "/" + ct.fontWeight + " " + ct.textTransform +
+        "   Name " + cn.fontSize + "/" + cn.fontWeight);
+    pruef("der Typ ist NICHT versal (\"" + q(".utb-type").textContent + "\")",
+      ct.textTransform === "none" && q(".utb-type").textContent === "Brand");
+    pruef("Name und Typ in derselben Groesse und demselben Gewicht",
+      ct.fontSize === cn.fontSize && ct.fontWeight === cn.fontWeight);
+    var lg=v.getComputedStyle(q(".utb-logo"));
+    log("      Logoplatte " + lg.width + " x " + lg.height);
+    pruef("die Logoplatte ist 18px", parseFloat(lg.width) === 18 && parseFloat(lg.height) === 18);
+    var tools=q(".utb-tools");
+    log("      Luecke zwischen den Knoepfen " + v.getComputedStyle(tools).gap);
+    pruef("8px zwischen den Knoepfen rechts", parseFloat(v.getComputedStyle(tools).gap) === 8);
+    var zeichen=[].map.call(el.querySelectorAll(".up-iconbtn svg"), function(g){
+      var r=v.getComputedStyle(g); return parseFloat(r.width) + "x" + parseFloat(r.height); });
+    log("      Zeichen: " + zeichen.join(", ") + " (Pfeil, Stift, Pin, Kreuz)");
+    pruef("alle vier Zeichen 16x16",
+      zeichen.length === 4 && zeichen.every(function(z){ return z === "16x16"; }));
+    log("");
+
     log("      Farben hell: Name " + v.getComputedStyle(q(".utb-name")).color +
         ", Typ " + v.getComputedStyle(q(".utb-type")).color +
         ", Trenner " + v.getComputedStyle(q(".utb-sep")).color);

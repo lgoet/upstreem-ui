@@ -69,12 +69,36 @@ Promise.all(["core.css","topcitations-dashboard.css","domains-table.css","create
      einem Menue -- und weil sie halbtransparent ist, kommt auf jedem ein anderer Wert heraus.
      Genau daran ist der erste Anlauf gescheitert: auf der Karte sah es gut aus, im Menue waren
      es drei Stufen. Also wird ueberall gemessen, und die SCHLECHTESTE Stelle entscheidet. */
+/* VIER Gruende, nicht drei. Der vierte ist der GRUND DER SEITE, und genau der fehlte am
+   07.09. mittags: die Werkzeugleiste einer Tabelle ist durchsichtig, ihre Umschalter stehen also
+   auf #101114. Ich hatte auf Karte, Kopfzeile und Menue gemessen, alles gruen gemeldet -- und die
+   Schiene war auf der Seite vier Stufen DUNKLER als ihr Grund, also unsichtbar. Gemeldet als "im
+   Darkmode kaum erkennbar im Vergleich zum Page-BG".
+   Und die Schiene wird im MENUE anders gesetzt als sonst (siehe core.css). Deshalb baut dieser
+   Prueftand den Menuefall auch wirklich als Menue: ein Umschalter in einem Kasten mit
+   .up-filter-menu, nicht bloss auf einer Flaeche in Menuefarbe. Ohne das haette er den
+   Regelfall gemessen und den Sonderfall nie gesehen. */
   var GRUENDE = [
-    ["Karte",     "--vc-bg"],
-    ["Kopfzeile", "--vc-heading-bg"],
-    ["Menue",     "--up-menu-bg"]
+    ["Seite",     "--up-surface",    null,             true],
+    ["Karte",     "--vc-bg",         null,             true],
+    /* Nur zur Auskunft, ohne Urteil: eine NACKTE Flaeche in Kopfzeilenfarbe, auf der ein
+       Umschalter steht, gibt es in dieser App nicht -- #232326 traegt Tabellenkoepfe, Hover und
+       Menuegruende, und in einem Menue gilt der Sonderfall darunter. Die Zahlen stehen trotzdem
+       da: baut jemand einen Umschalter auf so eine Flaeche, sieht er hier sofort, was ihn
+       erwartet. */
+    ["Kopfzeile", "--vc-heading-bg", null,             false],
+    ["Menue",     "--up-menu-bg",    "up-filter-menu", true]
   ];
-  var MINDEST = 8;   /* darunter ist die Pille im Menue nicht mehr von ihrer Schiene zu trennen */
+  /* DIE SCHWELLEN KOMMEN AUS DEM, WAS GEMELDET WURDE, nicht aus einer runden Zahl:
+       5.0 zwischen Schiene und Pille wurde als "kaum zu unterscheiden" gemeldet (Dropdowns),
+       7.1 stand vor dem 07.09. auf allen Karten und ist nie beanstandet worden.
+     Also liegt die Grenze dazwischen: 7 unter der Pille. Und 4.5 zum eigenen Grund, denn 4.9 ist
+     der Abstand, den die aufgehellte Schiene auf einer Karte hat -- auch der war nie ein Thema.
+     Ich hatte hier erst 8 stehen und damit meine eigene Wunschzahl geprueft; die Karte fiel
+     durch, obwohl an ihr niemand etwas auszusetzen hatte. Eine Schwelle, die strenger ist als
+     jede Meldung, sagt nichts ueber die App -- sie sagt nur, was ich gerade gern haette. */
+  var MINDEST = 7;
+  var MIND_GRUND = 4.5;
   var alleGut = true;
 
   function messeThema(thema, pilleWert){
@@ -86,27 +110,37 @@ Promise.all(["core.css","topcitations-dashboard.css","domains-table.css","create
     GRUENDE.forEach(function(g){
       var grund=cs2.getPropertyValue(g[1]).trim();
       var grundRgb=deckend(grund, "#ffffff");
-      log("   auf " + g[0] + " (" + g[1] + " " + grundRgb + ")");
+      log("   auf " + g[0] + " (" + g[1] + " " + grundRgb + ")" +
+          (g[2] ? " -- gebaut als ." + g[2] : ""));
+      /* Der Menuefall braucht den echten Kasten: die Schiene wird DARIN anders gesetzt. */
+      var wirt=root;
+      if (g[2]){ wirt=d.createElement("div"); wirt.className=g[2]; root.appendChild(wirt); }
       SCHIENEN.forEach(function(sch){
         var el=d.createElement("div"); el.className=sch.klasse;
         if (sch.klasse.indexOf("Match") >= 0) el.setAttribute("aria-label","Match mode");
-        root.appendChild(el);
+        wirt.appendChild(el);
         var roh=v.getComputedStyle(el).backgroundColor;
         el.remove();
         var dk=deckend(roh, grundRgb);
         var abstand=Math.round((hell(pilleWert)-hell(dk))*100)/100;
-        var ok = abstand >= MINDEST;
-        if (!ok) alleGut = false;
-        log("      " + ja(ok) + " " + sch.name.padEnd(26," ") + " Schiene deckend " + dk +
-            "   Pille liegt " + String(abstand).padStart(6," ") + " Stufen darueber");
+        /* ZWEI Bedingungen, und die zweite fehlte: die Schiene muss sich nicht nur von der Pille
+           unterscheiden, sondern AUCH von ihrem eigenen Grund. Sonst ist der Umschalter als
+           Gruppe nicht zu sehen -- genau die Meldung vom 07.09. */
+        var zumGrund=Math.round(Math.abs(hell(dk)-hell(grundRgb))*100)/100;
+        var ok = abstand >= MINDEST && zumGrund >= MIND_GRUND;
+        if (!ok && g[3]) alleGut = false;
+        log("      " + (g[3] ? ja(ok) : "  ---  ") + " " + sch.name.padEnd(26," ") + " Schiene deckend " + dk +
+            "   Pille " + String(abstand).padStart(6," ") + " darueber" +
+            "   Grund " + String(zumGrund).padStart(5," ") + " entfernt");
       });
+      if (wirt !== root) wirt.remove();
       log("");
     });
   }
   messeThema("dark", "#28282c");
   messeThema("light", "#ffffff");
-  log("==> " + ja(alleGut) + "  jede Schiene liegt auf JEDEM Grund mindestens " + MINDEST +
-      " Stufen unter ihrer Pille");
+  log("==> " + ja(alleGut) + "  auf JEDEM Grund: mindestens " + MINDEST +
+      " Stufen unter der Pille UND mindestens " + MIND_GRUND + " von ihrem Grund entfernt");
   log("FERTIG");
 }).catch(function(e){ log("ABBRUCH: " + e.message + "\n" + (e.stack||"")); });
 </script>

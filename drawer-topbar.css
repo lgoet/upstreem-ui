@@ -25,6 +25,12 @@
      darin. Die Knoepfe fuellen die Leiste damit vollstaendig aus, es gibt keine Luft ueber oder
      unter ihnen, die man als schiefe Zeile sehen koennte. */
   height: 32px; width: 100%; box-sizing: border-box;
+  /* 16px links und rechts (07.09. angefordert). Vorher hatte die Leiste KEIN Polster, und die
+     beiden aeusseren Knoepfe trugen stattdessen -8px Aussenabstand, damit ihre Zeichen auf der
+     Kante des Drawers sitzen. Das ragte ueber die Wurzel hinaus -- wo der Drawer schneidet, war
+     der Rand der Knoepfe ab. Gemeldet als "der Content steht links und rechts ueber, ist also
+     abgeschnitten". Jetzt echtes Polster und keine negativen Abstaende mehr. */
+  padding: 0 16px;
   display: flex; flex-direction: row; align-items: center; gap: 8px; min-width: 0;
   font-family: Geist, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -36,45 +42,60 @@
    ohne die 0 haelt ein Flex-Kind seine Inhaltsbreite und schiebt die Knoepfe rechts hinaus.
    NIEMALS UMBRECHEN (angefordert): white-space steht am Namen, nicht hier, damit der Typ und der
    Trenner ihre eigene Breite behalten und nur der Name Punkte bekommt. */
-.utb-crumb { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; }
+/* GROESSE UND GEWICHT STEHEN HIER, an der Krume, und nicht an ihren Kindern. Angefordert war
+   "der Name in derselben Font-Size und Weight wie das Brand davor" -- also EIN Wert fuer beide.
+   Der erste Anlauf hatte sie nur an .utb-type gelassen und darauf gebaut, dass der Name sie
+   erbt; Geschwister erben aber nichts voneinander, und der Name landete bei den 16px/400 der
+   Seite. Am gemeinsamen Vater erben beide, und der Trenner dazwischen auch. */
+.utb-crumb { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px;
+  font-size: 11px; font-weight: 600; line-height: 1; }
 
-/* Der Typ in der dritten Textstufe: er sagt, WO man ist, nicht WAS man ansieht. Dieselbe Sprache
-   wie eine Abschnittsueberschrift (11px/600/gesperrt/versal, siehe .up-pop-head in core) --
-   dort steht sie ueber einer Liste, hier vor einem Namen, die Rolle ist dieselbe. */
-.utb-type { flex: 0 0 auto; font-size: 11px; font-weight: 600; letter-spacing: .04em;
-  text-transform: uppercase; color: var(--vc-third); white-space: nowrap; line-height: 1; }
+/* Der Typ in der dritten Textstufe: er sagt, WO man ist, nicht WAS man ansieht.
+   OHNE VERSALIEN (07.09. angefordert): "Brand", nicht "BRAND". Mit den Grossbuchstaben faellt
+   auch die Sperrung weg -- .04em ist die Laufweite, die eine versale Zeile braucht, damit ihre
+   Buchstaben nicht kleben; auf gemischter Schrift ist sie ein Fehler und liest sich als
+   auseinandergezogenes Wort.
+   Groesse und Gewicht stehen hier EINMAL und gelten fuer den Namen mit (Regel weiter unten):
+   angefordert war "der Name in derselben Font-Size und Weight wie das Brand, nur in
+   Primaerfarbe". Der Unterschied zwischen den beiden ist damit allein die Farbe. */
+.utb-type { flex: 0 0 auto; color: var(--vc-third); white-space: nowrap; }
 
 /* Der Trenner. Eigene Farbe und nicht die des Typs: er ist Satzzeichen, nicht Text -- eine Stufe
    leiser als das Leiseste waere aber unsichtbar, also derselbe Ton wie der Typ, nur ohne Sperrung
    und in der Groesse des Namens, damit er auf seiner Mittellinie sitzt. */
-.utb-sep { flex: 0 0 auto; color: var(--vc-third); font-size: 13px; line-height: 1;
-  user-select: none; }
+/* OHNE eigene Groesse: der Trenner erbt sie von der Krume wie Typ und Name. Er stand vorher auf
+   13px, weil der Name damals 13.5 war -- jetzt sind alle drei gleich, und ein groesserer Schraegstrich
+   zwischen zwei kleineren Woertern waere das einzige, was aus der Zeile herausragt. */
+.utb-sep { flex: 0 0 auto; color: var(--vc-third); user-select: none; }
 
-/* 20px statt der 24 aus core: die Platte sitzt in einer 32px-Zeile, und 24 lassen oben und unten
-   nur 4px. Alle zusammenhaengenden Werte gehen im selben Verhaeltnis mit (§1): Radius 8 -> 7,
-   Bild 22 -> 18, Buchstabe 11 -> 10. */
-.utb-root .up-logo-box.utb-logo { width: 20px; height: 20px; flex: 0 0 20px; border-radius: 7px; }
-.utb-root .up-logo-box.utb-logo img { width: 18px; height: 18px; border-radius: 6px; }
-.utb-root .up-logo-box.utb-logo .up-logo-ltr { font-size: 10px; }
+/* 18px statt der 24 aus core: die Platte sitzt in einer 32px-Zeile. Erst 20, am 07.09. um zwei
+   Pixel verkleinert. Alle zusammenhaengenden Werte gehen im selben Verhaeltnis mit (§1):
+   Radius 8 -> 6, Bild 22 -> 16, Buchstabe 11 -> 9. */
+.utb-root .up-logo-box.utb-logo { width: 18px; height: 18px; flex: 0 0 18px; border-radius: 6px; }
+.utb-root .up-logo-box.utb-logo img { width: 16px; height: 16px; border-radius: 5px; }
+.utb-root .up-logo-box.utb-logo .up-logo-ltr { font-size: 9px; }
 
-/* Der Name traegt die Aussage der Leiste, also die volle Textfarbe und das Gewicht einer
-   Ueberschrift -- 13.5px/600 ist .up-heading in core eine Stufe kleiner. */
-.utb-name { flex: 1 1 auto; min-width: 0; font-size: 13.5px; font-weight: 600; line-height: 1.2;
+/* Der Name: dieselbe Groesse und dasselbe Gewicht wie der Typ davor, nur in der vollen
+   Textfarbe -- so ausdruecklich angefordert am 07.09. Die zwei Angaben stehen deshalb NICHT
+   noch einmal hier, sondern kommen aus .utb-type darueber; wer sie aendert, aendert beide.
+   Was hier steht, ist nur der Unterschied: die Farbe, das Schrumpfen und die Punkte am Ende. */
+.utb-name { flex: 1 1 auto; min-width: 0;
   color: var(--vc-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* Die Knoepfe rechts. gap 0 und nicht 8: .up-iconbtn ist 32px breit und sein Zeichen 16px, es
-   traegt also schon 8px Luft je Seite -- ein zusaetzliches gap machte daraus 24px und die Gruppe
-   fiel auseinander. Dasselbe Verhaeltnis wie in der Werkzeugleiste jeder Tabelle. */
-.utb-tools { flex: 0 0 auto; display: flex; align-items: center; gap: 0; }
+/* Die Knoepfe rechts, 8px auseinander (07.09. angefordert). Vorher gap 0 mit der Begruendung,
+   .up-iconbtn bringe seine 8px Luft selbst mit -- gewuenscht ist der groessere Abstand. */
+.utb-tools { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; }
 
 /* Der Zuruecklink ganz links, das Kreuz ganz rechts -- beide schliessen. Zwei Wege zu derselben
    Handlung sind hier Absicht: das Kreuz ist die Gewohnheit aus einem Fenster, der Pfeil die aus
-   einer Navigation, und dieser Drawer ist beides. */
-.utb-back { flex: 0 0 auto; margin-left: -8px; }
-/* -8px: der Knopf ist 32px breit und sein Zeichen 16px, sitzt also 8px vom eigenen Rand. Ohne die
-   Korrektur beginnt die Leiste optisch 8px weiter innen als alles darunter im Drawer. Rechts
-   dasselbe am Kreuz. */
-.utb-close { margin-right: -8px; }
+   einer Navigation, und dieser Drawer ist beides.
+   KEINE negativen Aussenabstaende mehr: die hatten die Zeichen auf die Kante der Leiste geholt
+   und die Knoepfe dabei ueber deren Rand geschoben. Das Polster oben macht das jetzt richtig. */
+.utb-back { flex: 0 0 auto; }
+/* Alle vier Zeichen 16x16 (07.09. ausdruecklich). Das ist schon der Wert aus core
+   (.up-iconbtn svg) -- er steht hier trotzdem, weil er als Zusage gemeldet wurde und weil der
+   Prueftand ihn prueft: waere er es nicht mehr, saehe man es an dieser Zeile. */
+.utb-root .up-iconbtn svg { width: 16px; height: 16px; }
 
 /* ---- Schmale Breiten ----------------------------------------------------------------------
    Umbrechen ist ausgeschlossen, also muss etwas weichen. Die Reihenfolge ist die der Wichtigkeit,
