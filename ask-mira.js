@@ -74,11 +74,133 @@
     }
   }
 
+  /* ================= COMPOSER, ZWEITE FASSUNG =================================================
+     WARUM DAS JS DAS MARKUP BAUT und nicht bubble/ask_mira_bubble.html allein:
+     jene Datei ist eine Vorlage fuer NEUINSTALLATIONEN. Das eingebaute Bubble-Element traegt
+     weiter das alte Markup, und ein reiner Umbau der Vorlage waere beim Nutzer nie angekommen.
+     Also baut diese Funktion die Aktionszeile um -- und sie muss BEIDE Staende koennen: den
+     alten mit Fader-Knopf und Einstellungs-Fach und den neuen.
+
+     Sie ist zweimal abgesichert:
+       - idempotent ueber data-am-composer="v2". Bubble ersetzt die Wurzel bei jeder Aenderung
+         eines dynamischen Ausdrucks, und amRun fasst zusaetzlich viermal nach.
+       - sie laeuft VOR dem Elementblock, damit dessen querySelector die neuen Knoepfe findet.
+
+     Und sie schliesst einen Totalausfall, der vorher nur nicht ausgeloest wurde: der Klick-
+     Zuhoerer auf #am-settings-toggle stand ohne Null-Wache. Fehlte der Knopf im Markup, warf
+     amInit an dieser Zeile -- und weil root.__askMiraInit schon gesetzt ist, gibt es keinen
+     zweiten Anlauf: die Galerie, die Vorschlaege, die Chatliste, die Sprachaufnahme und der
+     ganze Init danach liefen nie. Es haette wie "Mira laedt nicht" ausgesehen. */
+  function composerUmbauen(root){
+    var comp = root.querySelector('#am-composer');
+    if (!comp || comp.getAttribute('data-am-composer') === 'v2') return;
+
+    var akt = comp.querySelector('.am-actions');
+    if (!akt) return;                      /* fremdes Markup ohne Aktionszeile: nichts anfassen */
+
+    /* Das alte Einstellungs-Fach aus dem Baum nehmen. Seine CSS BLEIBT stehen (fremdes Markup
+       koennte die Klassen tragen, und eine geloeschte Klasse zaehlt im Vertragsvergleich als
+       Bruch) -- ohne Element ist sie wirkungslos statt grundlos. */
+    var fach = root.querySelector('#am-settings-panel');
+    if (fach && fach.parentNode) fach.parentNode.removeChild(fach);
+    var fader = root.querySelector('#am-settings-toggle');
+    if (fader && fader.parentNode) fader.parentNode.removeChild(fader);
+
+    /* Der Streifen fuer die uebernommenen Treffer: GANZ OBEN, also vor dem Zitat. Die
+       Reihenfolge ist die des Auftrags -- der Bezug steht ueber dem Zitat, das Zitat ueber der
+       Frage. */
+    var picks = document.createElement('div');
+    picks.className = 'am-picks'; picks.id = 'am-picks';
+    comp.insertBefore(picks, comp.firstChild);
+
+    /* Das Picker-Feld haengt AN .am-composer (position: relative) und geht nach oben auf. Kein
+       popover und kein Umhaengen an den Koerper: im Top Layer verlaesst es den Composer, und
+       die verlangte "gesamte Breite des Eingabefeldes" ist dann nicht mehr herstellbar. */
+    var panel = document.createElement('div');
+    panel.className = 'am-pick-panel'; panel.id = 'am-pick-panel';
+    panel.setAttribute('aria-hidden', 'true');
+    panel.innerHTML =
+      '<div class="am-pick-search">' +
+        '<svg class="am-pick-sic" viewBox="0 0 24 24" aria-hidden="true">' +
+          '<path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>' +
+        '<input class="am-pick-input" id="am-pick-input" type="text" autocomplete="off" ' +
+          'spellcheck="false" aria-label="Search your workspace">' +
+        '<span class="am-pick-count" id="am-pick-count"></span>' +
+      '</div>' +
+      '<div class="am-pick-scopes" id="am-pick-scopes"></div>' +
+      '<div class="am-pick-scroll" id="am-pick-scroll">' +
+        '<div class="am-pick-list" id="am-pick-list" role="listbox" aria-live="polite"></div>' +
+      '</div>';
+    comp.insertBefore(panel, comp.firstChild);
+
+    /* Die Aktionszeile bekommt zwei Gruppen: links Plus und die Modell-Schaltflaeche, rechts
+       Mikrofon und Senden. Die vorhandenen Knoepfe werden VERSCHOBEN und nicht neu gebaut --
+       an ihnen haengen Ereignisse (die Sprachaufnahme holt #am-mic selbst) und Attribute. */
+    var links = document.createElement('div'); links.className = 'am-act-l';
+    var rechts = document.createElement('div'); rechts.className = 'am-act-r';
+
+    var plus = document.createElement('button');
+    plus.type = 'button'; plus.className = 'am-icon-action am-pick-btn'; plus.id = 'am-pick-btn';
+    plus.setAttribute('aria-label', 'Add a reference');
+    plus.setAttribute('aria-expanded', 'false');
+    plus.setAttribute('data-tip', 'Add a reference');
+    plus.innerHTML = '<svg viewBox="0 0 24 24" class="am-ic" fill="none" stroke="currentColor" ' +
+      'stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="M12 5v14"/><path d="M5 12h14"/></svg>';
+
+    var eff = document.createElement('div');
+    eff.className = 'am-eff'; eff.id = 'am-eff';
+    eff.innerHTML =
+      '<button class="am-eff-btn" type="button" id="am-eff-btn" aria-haspopup="true" ' +
+              'aria-expanded="false">' +
+        '<span class="am-eff-ic" id="am-eff-ic"></span>' +
+        '<span class="am-eff-name" id="am-eff-name"></span>' +
+        '<span class="am-eff-lvl" id="am-eff-lvl"></span>' +
+        '<svg class="am-eff-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>' +
+      '</button>' +
+      '<div class="am-eff-menu" id="am-eff-menu" role="dialog" aria-label="Model and effort">' +
+        '<button class="am-eff-head" type="button" id="am-eff-head" aria-expanded="false">' +
+          '<span class="am-eff-ic" id="am-eff-hic"></span>' +
+          '<span class="am-eff-hname" id="am-eff-hname"></span>' +
+          '<span class="am-eff-hlvl" id="am-eff-hlvl"></span>' +
+          '<svg class="am-eff-hchev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>' +
+        '</button>' +
+        '<div class="am-eff-models" id="am-eff-models"></div>' +
+        '<div class="am-eff-slider" id="am-eff-slider">' +
+          '<div class="am-eff-track" id="am-eff-track" role="slider" tabindex="0" ' +
+               'aria-valuemin="0" aria-valuemax="2" aria-valuenow="1">' +
+            '<span class="am-eff-fill" id="am-eff-fill"></span>' +
+            '<span class="am-eff-ultra" id="am-eff-ultra" aria-hidden="true"></span>' +
+            '<span class="am-eff-dot" data-i="0"></span>' +
+            '<span class="am-eff-dot" data-i="1"></span>' +
+            '<span class="am-eff-dot" data-i="2"></span>' +
+            '<span class="am-eff-thumb" id="am-eff-thumb"></span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="am-eff-labels" id="am-eff-labels"></div>' +
+        '<p class="am-eff-note" id="am-eff-note"></p>' +
+      '</div>';
+
+    links.appendChild(plus);
+    links.appendChild(eff);
+    /* Was in der Zeile stand, wandert nach rechts -- in der vorhandenen Reihenfolge. */
+    while (akt.firstChild) rechts.appendChild(akt.firstChild);
+    akt.appendChild(links);
+    akt.appendChild(rechts);
+
+    comp.classList.add('is-v2');
+    comp.setAttribute('data-am-composer', 'v2');
+  }
+
   function amInit(){
 
   var root = document.getElementById('ask-mira');
   if (!root || root.__askMiraInit) return;
   root.__askMiraInit = true;
+
+  /* ZUERST: das Markup auf die zweite Fassung bringen. Der Elementblock darunter holt die
+     neuen Knoepfe per querySelector -- die muessen also schon stehen. */
+  composerUmbauen(root);
 
   /* ---------------- Inline icon set (no external libs) ---------------- */
   var ICON = {
@@ -143,10 +265,9 @@
   var elQuoteSlot  = root.querySelector('#am-quote-slot');
   var elPhText     = root.querySelector('#am-ph-text');
   var elSend       = root.querySelector('#am-send');
-  var elDetail     = root.querySelector('#am-detail');
-  var elSegThumb   = root.querySelector('#am-seg-thumb');
-  var elSettingsToggle = root.querySelector('#am-settings-toggle');
-  var elSettingsPanel  = root.querySelector('#am-settings-panel');
+  /* Das Einstellungs-Fach und sein Fader-Knopf sind weg (composerUmbauen nimmt sie aus dem
+     Baum), #am-seg-thumb gab es im Markup ohnehin nie -- der Griff darauf war seit dem Umbau
+     auf ein Dropdown toter Code. */
   var elStatusText = root.querySelector('#am-status-text');
   var elPrevPanel  = root.querySelector('#am-prev-panel');
   var elPrevList   = root.querySelector('#am-prev-list');
@@ -254,6 +375,22 @@
         'What can I dig into for you?'
       ],
       urlVisit: 'Visit',
+      /* Der Picker und der Aufwand-Slider. Die Beschriftungen der drei Stufen stehen NICHT hier,
+         sondern in EFF_LABELS -- sie werden bei jedem Zustandswechsel neu geschrieben, und was
+         ein Zustandswechsel schreibt, erreicht der breite Sprachlauf von core nicht. */
+      pickIdle: 'Search your workspace',
+      pickIdleSub: 'Type at least two letters to find a brand, domain, URL or prompt.',
+      pickEmpty: 'No results found',
+      pickEmptySub: 'Try another spelling, or pick a different type above.',
+      pickBroken: 'The results could not be read',
+      pickBrokenSub: 'Please try again in a moment.',
+      pickTimeout: 'The search did not answer',
+      pickTimeoutSub: 'Please try again.',
+      pickOffline: 'Search is unavailable right now',
+      pickOfflineSub: 'Please reload the page and try again.',
+      pickMax: 'max 3',
+      pickPlaceholder: 'Search brands, domains, URLs, prompts\u2026',
+      effFlashNote: 'Mira Flash always answers at Medium.',
       urlDetail: 'Open detail page',
       oppAdd: 'Add as opportunity',
       oppAdding: 'Adding\u2026',
@@ -340,6 +477,19 @@
         'Was soll ich für dich analysieren?'
       ],
       urlVisit: 'Besuchen',
+      pickIdle: 'In deinen Daten suchen',
+      pickIdleSub: 'Mindestens zwei Buchstaben \u2014 dann findest du Marke, Domain, URL oder Prompt.',
+      pickEmpty: 'Keine Treffer',
+      pickEmptySub: 'Andere Schreibweise versuchen oder oben einen anderen Typ w\u00e4hlen.',
+      pickBroken: 'Die Treffer konnten nicht gelesen werden',
+      pickBrokenSub: 'Bitte gleich noch einmal versuchen.',
+      pickTimeout: 'Die Suche hat nicht geantwortet',
+      pickTimeoutSub: 'Bitte noch einmal versuchen.',
+      pickOffline: 'Die Suche ist gerade nicht verf\u00fcgbar',
+      pickOfflineSub: 'Bitte die Seite neu laden und noch einmal versuchen.',
+      pickMax: 'max. 3',
+      pickPlaceholder: 'Marken, Domains, URLs, Prompts suchen\u2026',
+      effFlashNote: 'Mira Flash antwortet immer auf Mittel.',
       urlDetail: 'Detailseite öffnen',
       oppAdd: 'Als Opportunity hinzufügen',
       oppAdding: 'Wird hinzugefügt\u2026',
@@ -2327,7 +2477,7 @@
 
   /* ---- Grok-style looping placeholder ---- */
   var phIdx = 0, phTimer = null;
-  function loopActive(){ return !root.classList.contains('has-messages') && !elTextarea.value.trim(); }
+  function loopActive(){ return !root.classList.contains('has-messages') && !elTextarea.value.trim() && !(_picks && _picks.length); }   /* Bezuege halten sie an: der Platzhalter fragt "Ask Mira...", waehrend im Feld schon drei Bezuege stehen -- das liest sich wie ein leeres Feld, das es nicht ist. */
   function phStart(){
     phStop();
     if (!loopActive()) return;
@@ -2868,30 +3018,177 @@
     if (window.__amRenderChatTitlebar) window.__amRenderChatTitlebar();
   }
 
-  /* ---------------- Segmented control ---------------- */
-  function moveThumb(){ /* answer detail is now a dropdown; segmented thumb removed */ }
-  var DETAIL_LABELS = { en: { short:'Short', balanced:'Balanced', detailed:'Detailed' }, de: { short:'Kurz', balanced:'Ausgewogen', detailed:'Ausführlich' } };
-  var elDetailBtn  = root.querySelector('#am-detail-btn');
-  var elDetailName = root.querySelector('#am-detail-name');
-  var elDetailMenu = root.querySelector('#am-detail-menu');
-  function _detailLabels(){ return DETAIL_LABELS.en; }   // answer detail stays English (like the old segmented), regardless of UI lang
-  function _buildDetailMenu(){
-    if (!elDetailMenu) return;
-    var lb = _detailLabels();
-    elDetailMenu.innerHTML = ['short','balanced','detailed'].map(function(k){
-      return '<button class="am-model-opt am-detail-opt" type="button" role="menuitemradio" data-detail="'+k+'">'+
-        '<span class="am-model-opt-main"><span class="am-model-opt-name">'+esc(lb[k])+'</span></span>'+
-        '<svg class="am-model-check" viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" /></svg>'+
-      '</button>';
+  /* ================= AUFWAND: Medium / High / Ultra ==========================================
+     DIE ABBILDUNG, und sie steht hier, weil sie sonst geraten wird:
+
+         Medium -> 'short'      High -> 'balanced'      Ultra -> 'detailed'
+
+     Drei geordnete Stufen auf drei geordnete Werte, in der Reihenfolge, in der beide Skalen
+     ohnehin stehen. Entscheidend ist die MITTE: 'balanced' ist der Vorgabewert der Komponente,
+     und er faellt damit auf die mittlere Rasterstelle -- der Slider startet dort, wo die App
+     startet. Und Flash, das setModel auf 'short' zwingt, zeigt die unterste Stufe.
+
+     Am Payload aendert sich NICHTS: S.answerDetail bleibt short|balanced|detailed und geht
+     unveraendert als answer_detail hinaus. Der Slider ist eine neue Darstellung desselben
+     Feldes, keine neue Groesse. setDetail bleibt der einzige Schreiber dieses Zustands. */
+  var EFF_WERTE  = ['short', 'balanced', 'detailed'];
+  var EFF_LABELS = { en: ['Medium', 'High', 'Ultra'], de: ['Mittel', 'Hoch', 'Ultra'] };
+  function effLabels(){ return EFF_LABELS[lang] || EFF_LABELS.en; }
+  function effIndex(wert){ var i = EFF_WERTE.indexOf(wert); return i < 0 ? 1 : i; }
+
+  var elEff       = root.querySelector('#am-eff');
+  var elEffBtn    = root.querySelector('#am-eff-btn');
+  var elEffMenu   = root.querySelector('#am-eff-menu');
+  var elEffIc     = root.querySelector('#am-eff-ic');
+  var elEffName   = root.querySelector('#am-eff-name');
+  var elEffLvl    = root.querySelector('#am-eff-lvl');
+  var elEffHead   = root.querySelector('#am-eff-head');
+  var elEffHic    = root.querySelector('#am-eff-hic');
+  var elEffHname  = root.querySelector('#am-eff-hname');
+  var elEffHlvl   = root.querySelector('#am-eff-hlvl');
+  var elEffTrack  = root.querySelector('#am-eff-track');
+  var elEffFill   = root.querySelector('#am-eff-fill');
+  var elEffUltra  = root.querySelector('#am-eff-ultra');
+  var elEffThumb  = root.querySelector('#am-eff-thumb');
+  var elEffLabels = root.querySelector('#am-eff-labels');
+  var elEffModels = root.querySelector('#am-eff-models');
+  var elEffNote   = root.querySelector('#am-eff-note');
+  var _flimmer = null;
+
+  function effLabelsBauen(){
+    if (!elEffLabels) return;
+    var lb = effLabels();
+    elEffLabels.innerHTML = lb.map(function(s, i){
+      return '<button class="am-eff-lbl" type="button" data-i="' + i + '">' + esc(s) + '</button>';
     }).join('');
   }
+
+  /* Der Weg des Daumens wird GEMESSEN und nicht aus der CSS abgeschrieben: die Menuebreite
+     haengt an max-width: 78vw, auf einem schmalen Schirm ist die Schiene also kuerzer. Eine
+     festgeschriebene Zahl waere dort falsch. */
+  function effWeg(){
+    if (!elEffTrack || !elEffThumb) return 0;
+    var b = elEffTrack.getBoundingClientRect().width;
+    var d = elEffThumb.getBoundingClientRect().width || 23;
+    return Math.max(0, b - d - 5);          /* 2.5px Einzug auf jeder Seite */
+  }
+
+  function effZeichnen(){
+    var i = effIndex(S.answerDetail), lb = effLabels();
+    if (elEffLvl)   elEffLvl.textContent = lb[i];
+    if (elEffHlvl)  elEffHlvl.textContent = lb[i];
+    if (elEffTrack){
+      elEffTrack.setAttribute('aria-valuenow', String(i));
+      elEffTrack.setAttribute('aria-valuetext', lb[i]);
+      elEffTrack.setAttribute('aria-label', 'Answer effort');
+    }
+    var weg = effWeg();
+    if (elEffThumb) elEffThumb.style.transform = 'translateX(' + (weg * i / 2) + 'px)';
+    /* Die Fuellung reicht bis zur MITTE des Daumens -- sonst steht sie entweder vor ihm oder
+       laeuft unter ihm hervor. Bei Stufe 0 bleibt ein kurzes Stueck stehen, damit die Schiene
+       nicht ganz leer wirkt. */
+    if (elEffFill){
+      var b = elEffTrack ? elEffTrack.getBoundingClientRect().width : 0;
+      var d = elEffThumb ? (elEffThumb.getBoundingClientRect().width || 23) : 23;
+      var anteil = b > 0 ? Math.min(1, (2.5 + weg * i / 2 + d / 2 + 2) / b) : 0;
+      elEffFill.style.transform = 'scaleX(' + anteil + ')';
+    }
+    /* Die drei Punkte: auf der gefuellten Seite weiss, dahinter leise. */
+    var punkte = elEffTrack ? elEffTrack.querySelectorAll('.am-eff-dot') : [];
+    for (var k = 0; k < punkte.length; k++){
+      punkte[k].style.left = (2.5 + (elEffThumb ? 11.5 : 11.5) + weg * k / 2 - 2) + 'px';
+      punkte[k].classList.toggle('is-fill', k <= i);
+    }
+    root.classList.toggle('is-ultra', i === 2);
+    var akt = elEffLabels ? elEffLabels.querySelectorAll('.am-eff-lbl') : [];
+    for (var j = 0; j < akt.length; j++) akt[j].classList.toggle('is-active', j === i);
+    effFlimmern();
+  }
+
+  /* ---- Die Partikel -----------------------------------------------------------------------
+     Nur auf Ultra und nur bei offenem Menue -- eine Leinwand, die hinter einem geschlossenen
+     Menue rechnet, ist verschenkte Arbeit auf jeder Mira-Seite.
+     Die Werte sind KOMPAKTER und SCHNELLER als die des Onboardings, und das ist gerechnet:
+     mit dessen 3/20 ergaebe die 236x28-Schiene nur 22 Zellen und 3.6 Prozent Deckung -- das
+     liest sich als verstreute Spritzer, nicht als Raster. Mit 2/3 sind es rund 190 Zellen.
+     fps: 45 und nicht 60. Der Kit verwirft ein Bild, wenn seit dem letzten weniger als 1/fps
+     vergangen ist; auf einem 60-Hz-Schirm liegt 60 damit genau auf der Kante und schwankt,
+     45 ergibt stabile 30. */
+  function effFlimmern(){
+    var willUltra = root.classList.contains('is-ultra') && elEff && elEff.classList.contains('is-open');
+    if (!elEffUltra) return;
+    if (!willUltra){
+      if (_flimmer){ _flimmer.stop(); _flimmer = null; }
+      return;
+    }
+    if (_flimmer){ _flimmer.redraw(); return; }
+    var UCg = window.UpstreemCore;
+    if (!UCg || !UCg.makeFlickerPill) return;
+    _flimmer = UCg.makeFlickerPill(elEffUltra, {
+      squareSize: 2, gap: 3,
+      blinksPerSecond: 2.4, blinkMs: 340,
+      baseOpacity: 0.12, maxOpacity: 0.8, fps: 45
+    });
+  }
+
   function setDetail(value, silent){
-    if (['short','balanced','detailed'].indexOf(value) < 0) value = 'balanced';
+    if (EFF_WERTE.indexOf(value) < 0) value = 'balanced';
     S.answerDetail = value;
-    var lb = _detailLabels();
-    if (elDetailName) elDetailName.textContent = lb[value];
-    if (elDetailMenu) elDetailMenu.querySelectorAll('.am-model-opt').forEach(function(o){ o.classList.toggle('is-active', o.getAttribute('data-detail') === value); });
-    _ddCloseAll();
+    effZeichnen();
+    /* Die alte Fassung schloss hier jedes Menue. Das war richtig, solange die Stufe ein Eintrag
+       in einer Liste war -- an einem Slider ist es falsch: wer zieht, will sehen, wohin. */
+  }
+
+  /* ---- Die Bedienung der Schiene --------------------------------------------------------- */
+  function effAusPosition(clientX){
+    if (!elEffTrack) return effIndex(S.answerDetail);
+    var r = elEffTrack.getBoundingClientRect();
+    if (r.width <= 0) return effIndex(S.answerDetail);
+    var p = (clientX - r.left - 2.5 - 11.5) / Math.max(1, effWeg());
+    return Math.max(0, Math.min(2, Math.round(p * 2)));
+  }
+  function effSetzen(i){
+    var w = EFF_WERTE[Math.max(0, Math.min(2, i))];
+    if (w === S.answerDetail) return;
+    setDetail(w);
+  }
+  if (elEffTrack){
+    var zieht = false;
+    var lauf = function(e){
+      if (!zieht) return;
+      var x = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
+      effSetzen(effAusPosition(x));
+    };
+    var ende = function(){
+      if (!zieht) return;
+      zieht = false;
+      document.removeEventListener('pointermove', lauf);
+      document.removeEventListener('pointerup', ende);
+    };
+    elEffTrack.addEventListener('pointerdown', function(e){
+      if (root.classList.contains('is-flash')) return;
+      zieht = true; effSetzen(effAusPosition(e.clientX));
+      /* Am DOKUMENT und nicht an der Schiene: wer den Zeiger beim Ziehen aus der Pille
+         hinausfuehrt, soll den Griff nicht verlieren. */
+      document.addEventListener('pointermove', lauf);
+      document.addEventListener('pointerup', ende);
+      e.preventDefault();
+    });
+    elEffTrack.addEventListener('keydown', function(e){
+      if (root.classList.contains('is-flash')) return;
+      var i = effIndex(S.answerDetail), k = e.key;
+      if (k === 'ArrowRight' || k === 'ArrowUp') { effSetzen(i + 1); e.preventDefault(); }
+      else if (k === 'ArrowLeft' || k === 'ArrowDown') { effSetzen(i - 1); e.preventDefault(); }
+      else if (k === 'Home') { effSetzen(0); e.preventDefault(); }
+      else if (k === 'End') { effSetzen(2); e.preventDefault(); }
+    });
+  }
+  if (elEffLabels){
+    elEffLabels.addEventListener('click', function(e){
+      var b = e.target.closest && e.target.closest('.am-eff-lbl');
+      if (!b || root.classList.contains('is-flash')) return;
+      effSetzen(+b.getAttribute('data-i'));
+    });
   }
 
   /* ---------------- Model selector (Mira Pro / Mira Flash) ---------------- */
@@ -2901,66 +3198,122 @@
     pro:   { name: 'Mira Pro',   icon: MIRA_LOGO_SVG, desc: 'Detailed answers for bigger tasks, with sources and links.' },
     flash: { name: 'Mira Flash', icon: FLASH_SVG,      desc: 'Fast, lightweight answers for quick everyday questions.' }
   };
-  var elModel      = root.querySelector('#am-model');
-  var elModelBtn   = root.querySelector('#am-model-btn');
-  var elModelIc    = root.querySelector('#am-model-ic');
-  var elModelName  = root.querySelector('#am-model-name');
-  var elModelMenu  = root.querySelector('#am-model-menu');
-  function _modelOptHtml(key){
-    var m = MODELS[key];
-    return '<button class="am-model-opt" type="button" role="menuitemradio" data-model="'+key+'">'+
-      '<span class="am-model-opt-ic">'+m.icon+'</span>'+
-      '<span class="am-model-opt-main"><span class="am-model-opt-name">'+esc(m.name)+'</span>'+
-        (m.desc ? '<span class="am-model-opt-desc">'+esc(m.desc)+'</span>' : '')+
-      '</span>'+
-      '<svg class="am-model-check" viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" /></svg>'+
-    '</button>';
+  /* ---- Das Modell in DERSELBEN Schaltflaeche ---------------------------------------------- */
+  function effModelleBauen(){
+    if (!elEffModels) return;
+    elEffModels.innerHTML = ['pro', 'flash'].map(function(k){
+      var m = MODELS[k];
+      return '<button class="am-eff-opt" type="button" role="menuitemradio" data-model="' + k + '">' +
+        '<span class="am-eff-ic">' + m.icon + '</span>' +
+        '<span class="am-eff-opt-main"><span class="am-eff-opt-name">' + esc(m.name) + '</span>' +
+          (m.desc ? '<span class="am-eff-opt-desc">' + esc(m.desc) + '</span>' : '') +
+        '</span>' +
+        '<svg class="am-eff-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>' +
+      '</button>';
+    }).join('');
   }
-  if (elModelMenu) elModelMenu.innerHTML = _modelOptHtml('pro') + _modelOptHtml('flash');
-  _buildDetailMenu();
-  // generic dropdown open/close (works for both the model and the answer-detail dropdown)
-  function _ddClose(dd){ if (!dd) return; dd.classList.remove('is-open'); var b = dd.querySelector('.am-model-btn'); if (b) b.setAttribute('aria-expanded','false'); }
-  var _ddClipT = 0;
-  function _ddCloseAll(){
-    Array.prototype.slice.call(root.querySelectorAll('.am-model')).forEach(_ddClose);
-    // keep overflow visible until the menu has finished fading out, then re-clip (otherwise it flashes)
-    clearTimeout(_ddClipT);
-    _ddClipT = setTimeout(function(){ if (elSettingsPanel) elSettingsPanel.classList.remove('has-model-menu'); root.classList.remove('is-model-open'); }, 200);
-  }
-  function _ddToggle(dd){
-    if (!dd) return;
-    var open = dd.classList.contains('is-open');
-    _ddCloseAll();
-    if (!open){
-      clearTimeout(_ddClipT);   // opening again: cancel the pending re-clip
-      dd.classList.add('is-open');
-      if (elSettingsPanel) elSettingsPanel.classList.add('has-model-menu');
-      root.classList.add('is-model-open');
-      var b = dd.querySelector('.am-model-btn'); if (b) b.setAttribute('aria-expanded','true');
-    }
-  }
-  function closeModelMenu(){ _ddCloseAll(); }
-  function toggleModelMenu(){ _ddToggle(elModel); }
+
   function setModel(model, silent){
     if (model !== 'pro' && model !== 'flash') model = 'pro';
+    var vorher = S.model;
     S.model = model;
     var m = MODELS[model];
-    if (elModelIc) elModelIc.innerHTML = m.icon;
-    if (elModelName) elModelName.textContent = m.name;
-    if (elModelMenu) elModelMenu.querySelectorAll('.am-model-opt').forEach(function(o){ o.classList.toggle('is-active', o.getAttribute('data-model') === model); });
+    if (elEffIc)    elEffIc.innerHTML = m.icon;
+    if (elEffHic)   elEffHic.innerHTML = m.icon;
+    if (elEffName)  elEffName.textContent = m.name;
+    if (elEffHname) elEffHname.textContent = m.name;
+    if (elEffModels){
+      var opts = elEffModels.querySelectorAll('.am-eff-opt');
+      for (var i = 0; i < opts.length; i++)
+        opts[i].classList.toggle('is-active', opts[i].getAttribute('data-model') === model);
+    }
     if (model === 'flash'){
       root.classList.add('is-flash');
-      setDetail('short', true);                 // Flash is locked to Short
+      if (elEffNote) elEffNote.textContent = L().effFlashNote;
+      setDetail('short', true);                  /* Flash kann nur die unterste Stufe */
     } else {
       root.classList.remove('is-flash');
-      if (!silent) setDetail('balanced', true);  // back to Pro -> Balanced
+      /* Die Stufe nur zuruecksetzen, wenn wirklich AUS Flash heraus gewechselt wurde. Vorher
+         nahm JEDER Klick auf das schon aktive "Mira Pro" dem Nutzer sein Ultra weg -- ein
+         Zustand, den er gar nicht angefasst hatte. */
+      if (!silent && vorher === 'flash') setDetail('balanced', true);
+      else effZeichnen();
     }
-    _ddCloseAll();
+    /* Die Modellliste wieder einklappen: die Wahl ist getroffen, und darunter liegt der
+       Slider, der jetzt wieder das Wichtigere ist. */
+    if (elEff) elEff.classList.remove('is-models');
+    if (elEffHead) elEffHead.setAttribute('aria-expanded', 'false');
+  }
+
+  /* ---- Auf und zu -----------------------------------------------------------------------
+     Ueber UC.makePopover und NICHT ueber einen eigenen Klick-Zuhoerer. Der Grund steht in core
+     an der Stelle selbst: ein click-Ereignis feuert dort, wo der Zeiger LOSGELASSEN wird -- bei
+     einem Slider also irgendwo, oft ausserhalb des Menues. Ein eigener Aussenklick auf click
+     haette das Menue mitten im Ziehen zugemacht. makePopover entscheidet auf pointerdown. */
+  var effPop = null;
+  if (elEff && elEffMenu){
+    var UCp = window.UpstreemCore;
+    if (UCp && UCp.makePopover){
+      effPop = UCp.makePopover({ wrap: elEff, menu: elEffMenu, opener: elEffBtn,
+        onClose: function(){
+          root.classList.remove('is-eff-open');
+          elEff.classList.remove('is-models');
+          if (elEffHead) elEffHead.setAttribute('aria-expanded', 'false');
+          effFlimmern();                     /* zu heisst: die Leinwand hoert auf zu rechnen */
+        } });
+    }
+    if (elEffBtn) elEffBtn.addEventListener('click', function(e){
+      e.stopPropagation();
+      if (!effPop) return;
+      effPop.toggle();
+      var offen = effPop.isOpen();
+      root.classList.toggle('is-eff-open', offen);
+      /* SOFORT und nicht nach zwei Bildern. Das Menue animiert nur opacity und transform --
+         seine Breite steht also von Anfang an, und die Schiene ist auch bei Deckkraft 0
+         messbar. Ein requestAnimationFrame stand hier zuerst, und es war doppelt falsch: es
+         ist nicht noetig, UND in einem verdeckten Fenster laeuft rAF gar nicht -- die Partikel
+         waeren dort nie gebaut worden. */
+      effZeichnen();
+      effFlimmern();
+    });
+    if (elEffHead) elEffHead.addEventListener('click', function(e){
+      e.stopPropagation();
+      var auf = !elEff.classList.contains('is-models');
+      elEff.classList.toggle('is-models', auf);
+      elEffHead.setAttribute('aria-expanded', auf ? 'true' : 'false');
+      /* Beim Einklappen der Modellliste kommt die Schiene zurueck ins Bild -- ihre Breite ist
+         dieselbe, aber der Daumen muss neu gesetzt werden, weil sie zwischenzeitlich
+         display: none trug und dann 0 gemessen haette. */
+      if (!auf) effZeichnen();
+    });
+    if (elEffModels) elEffModels.addEventListener('click', function(e){
+      var b = e.target.closest && e.target.closest('.am-eff-opt');
+      if (!b) return;
+      e.stopPropagation();
+      setModel(b.getAttribute('data-model'));
+    });
+  }
+  effLabelsBauen();
+  effModelleBauen();
+  /* Platzhalter und Beschriftungen erst HIER: resolveLang() laeuft im Init, und vorher steht
+     lang noch auf 'en'. */
+  function pickTexteSetzen(){
+    if (elPickInput){
+      elPickInput.placeholder = L().pickPlaceholder;
+      elPickInput.setAttribute('aria-label', L().pickIdle);
+    }
+    if (elPickBtn){
+      elPickBtn.setAttribute('aria-label', L().pickIdle);
+      elPickBtn.setAttribute('data-tip', L().pickIdle);
+    }
   }
 
   /* ---------------- Composer ---------------- */
   function autosize(){ elTextarea.style.height = 'auto'; elTextarea.style.height = Math.min(elTextarea.scrollHeight, 200) + 'px'; }
-  function canSend(){ return !S.isLoading && (elTextarea.value.trim().length > 0 || !!getQuoteValue()); }
+  /* Auch die Bezuege allein duerfen abgeschickt werden. Ohne diesen Zusatz haette jemand drei
+     Marken ausgewaehlt und der Sendeknopf waere gesperrt geblieben. */
+  function canSend(){ return !S.isLoading && (elTextarea.value.trim().length > 0 ||
+    !!getQuoteValue() || _picks.length > 0); }
   function refreshSend(){ elSend.disabled = !canSend(); }
 
   function sendMessage(text){
@@ -2968,20 +3321,26 @@
     var typed = String(explicit ? text : elTextarea.value).trim();
     if (S.isLoading) return;
     var quote = explicit ? '' : getQuoteValue();
-    if (!typed && !quote) return;
+    var bezug = explicit ? '' : picksText();
+    if (!typed && !quote && !bezug) return;
     /* Vom Startschirm aus geht der Fokus mit dem Absenden aus dem Feld. Dort wandert der Composer
        gleich darauf nach unten in die Chatansicht, und ein blinkender Cursor in einem Kasten, der
        sich bewegt, sieht falsch aus -- auf dem Telefon bleibt ausserdem die Tastatur stehen und
        verdeckt die Antwort. IN der Chatansicht bleibt der Fokus: dort will man weitertippen. */
     var warSchonImChat = root.classList.contains('has-messages');
     if (!warSchonImChat && elTextarea) elTextarea.blur();
-    if (elSettingsPanel && elSettingsPanel.classList.contains('is-open')) toggleSettings(false);   // collapse the tray on first send
+    /* DIE REIHENFOLGE: Bezug, dann Zitat, dann die Frage. Der Bezug sagt, WORUEBER geredet
+       wird, das Zitat WELCHE Stelle, die Frage WAS -- von aussen nach innen.
+       'full' ist gleichzeitig der Text der Nutzer-Blase im Chat. Der Bezug steht damit sichtbar
+       da, genau wie das Zitat heute; das ist gewollt (der Auftrag sagt "wird in den Fliesstext
+       nach oben geschrieben") und aendert den Payload-Vertrag nicht. */
     var full = quote ? ('"' + quote + '"' + (typed ? ('\n\n' + typed) : '')) : typed;
+    if (bezug) full = bezug + (full ? ('\n\n' + full) : '');
 
     // optimistic user message (backend should add only the assistant reply)
     var userMsg = { id: 'local_'+Date.now(), role: 'user', content: full, created_at: new Date().toISOString() };
     S.messages.push(userMsg);
-    elTextarea.value = ''; clearQuote(); autosize(); refreshSend();
+    elTextarea.value = ''; clearQuote(); clearPicks(); autosize(); refreshSend();
     _pendingAnswer = true;
     _lastSendTs = Date.now();
     /* VOR setLoading: runStart liest diesen Zeitstempel und erkennt daran, ob es dieselbe Frage
@@ -3038,6 +3397,350 @@
       e.preventDefault(); e.stopPropagation();
       clearQuote(); autosize(); refreshSend(); updateLoopState(); elTextarea.focus();
     });
+  }
+
+  /* ================= DER PICKER ==============================================================
+     Dieselbe Suche wie Quick Actions, im Composer. Die Maschine steht in core
+     (UC.makeEntitySearch): Uhr, requestId, der Weg nach Bubble und die Zuordnung der Antwort.
+     Sie feuert dieselbe Bubble-Funktion und bekommt die Antwort ueber denselben
+     MiraQuickActions.setResults -- der Verteiler in core schiebt sie hierher. Deshalb braucht
+     dieses Feature BUBBLE-SEITIG keinen einzigen Eingriff.
+
+     Was hier NICHT ist, und zwar auf Ansage: Reference, Actions, Favoriten, letzte Suchen.
+     Der Picker ist zum Aufgreifen da, nicht zum Nachschlagen. */
+  var PICK_MAX = 3;         /* hoechstens drei Bezuege -- ausdruecklich verlangt */
+  var PICK_TREFFER = 8;     /* hoechstens acht Treffer */
+  var PICK_SCOPES = ['brand', 'domain', 'url', 'prompt'];
+
+  var elPickPanel  = root.querySelector('#am-pick-panel');
+  var elPickBtn    = root.querySelector('#am-pick-btn');
+  var elPickInput  = root.querySelector('#am-pick-input');
+  var elPickList   = root.querySelector('#am-pick-list');
+  var elPickScroll = root.querySelector('#am-pick-scroll');
+  var elPickScopes = root.querySelector('#am-pick-scopes');
+  var elPickCount  = root.querySelector('#am-pick-count');
+  var elPicks      = root.querySelector('#am-picks');
+
+  var _picks = [];          /* die uebernommenen Bezuege */
+  var _pickRows = [];       /* die Treffer der letzten Antwort */
+  var _pickScope = '';
+  var _pickSuche = null;
+
+  function pickTypLabel(t){
+    return { brand: 'Brand', domain: 'Domain', url: 'URL', prompt: 'Prompt' }[t] || t;
+  }
+  function pickScopesBauen(){
+    if (!elPickScopes) return;
+    /* .up-seg aus core: der gleitende Streifen faehrt von selbst, und core.css gibt ihm genau
+       'transform 200ms ease, width 200ms ease' -- also die geforderte Bewegung ohne eigene
+       Zeile dafuer. */
+    elPickScopes.innerHTML = '<div class="up-seg" role="tablist">' +
+      PICK_SCOPES.map(function(s){
+        return '<button class="up-seg-btn am-pick-scope" type="button" role="tab" data-scope="' + s + '">' +
+          esc(UCt(pickTypLabel(s) + 's')) + '</button>';
+      }).join('') + '</div>';
+    pickScopeZeigen();
+  }
+  function pickScopeZeigen(){
+    if (!elPickScopes) return;
+    var b = elPickScopes.querySelectorAll('.am-pick-scope');
+    for (var i = 0; i < b.length; i++)
+      b[i].classList.toggle('is-active', b[i].getAttribute('data-scope') === _pickScope);
+  }
+  /* Uebersetzen ueber core, aber nur wenn es da ist -- Mira laeuft ausdruecklich auch ohne. */
+  function UCt(s){
+    var k = window.UpstreemCore;
+    try { return (k && k.t) ? k.t(s) : s; } catch(e){ return s; }
+  }
+
+  function pickSkelett(){
+    var s = '';
+    for (var i = 0; i < 4; i++){
+      s += '<div class="am-pick-sk"><div class="am-pick-sk-av"></div><div class="am-pick-sk-lines">' +
+        '<div class="am-pick-sk-line" style="width:' + (44 + (i * 13) % 40) + '%"></div>' +
+        '<div class="am-pick-sk-line" style="width:' + (24 + (i * 17) % 26) + '%"></div></div></div>';
+    }
+    return s;
+  }
+  function pickHinweis(titel, unter){
+    return '<div class="am-pick-note"><div class="am-pick-note-t">' + esc(titel) + '</div>' +
+           (unter ? esc(unter) : '') + '</div>';
+  }
+  var _pickZahlUhr = 0;
+  function pickZahl(n){
+    if (!elPickCount) return;
+    clearTimeout(_pickZahlUhr);
+    elPickCount.textContent = (n == null) ? '' : String(n);
+  }
+  /* Eine Meldung an DERSELBEN Stelle wie die Zahl -- und danach kommt die Zahl zurueck. Sonst
+     stand "max. 3" bis zur naechsten Suche dort, wo die Trefferzahl hingehoert. */
+  function pickMeldung(t){
+    if (!elPickCount) return;
+    clearTimeout(_pickZahlUhr);
+    elPickCount.textContent = t;
+    _pickZahlUhr = setTimeout(function(){ pickZahl(_pickRows.length || null); }, 1600);
+  }
+  /* Die Tastatur in der Trefferliste. .am-pick-row.is-active steht in der CSS und wurde von
+     nichts gesetzt -- ohne das ist die Liste nur mit der Maus erreichbar. */
+  var _pickAktiv = -1;
+  function pickAktivSetzen(i){
+    var z = elPickList ? elPickList.querySelectorAll('.am-pick-row') : [];
+    if (!z.length){ _pickAktiv = -1; return; }
+    if (i < 0) i = z.length - 1;
+    if (i >= z.length) i = 0;
+    _pickAktiv = i;
+    for (var k = 0; k < z.length; k++) z[k].classList.toggle('is-active', k === i);
+    try { z[i].scrollIntoView({ block: 'nearest' }); } catch(e){}
+  }
+
+  function pickZeichnen(items, meta){
+    _pickRows = items || [];
+    if (!elPickList) return;
+    var UCg = window.UpstreemCore;
+    var q = _pickSuche ? _pickSuche.frage() : '';
+    if (!_pickRows.length){
+      /* KAPUTT UND LEER SIND ZWEI DINGE. Wurden Zeilen verworfen, hat die Antwort ein Problem --
+         und dann darf hier nicht "nichts gefunden" stehen, sonst sucht der Nutzer weiter. */
+      elPickList.innerHTML = (meta && meta.verworfen)
+        ? pickHinweis(L().pickBroken, L().pickBrokenSub)
+        : pickHinweis(L().pickEmpty, L().pickEmptySub);
+      pickZahl(0);
+      return;
+    }
+    elPickList.innerHTML = _pickRows.map(function(it, i){
+      return (UCg && UCg.entityRow)
+        ? UCg.entityRow(it, { prefix: 'am-pick', query: q, index: i }) : '';
+    }).join('');
+    /* Die Klasse fuer "schon uebernommen" NACH dem Zeichnen setzen. Hier stand ein Suchen und
+       Ersetzen im Markup des Kerns ('class="am-pick-row"'), und das haette still aufgehoert zu
+       wirken, sobald dort ein Attribut dazukommt -- die Zeile waere dann nie mehr grau geworden
+       und niemand haette gesehen, warum. */
+    var zz = elPickList.querySelectorAll('.am-pick-row');
+    for (var zi = 0; zi < zz.length; zi++)
+      zz[zi].classList.toggle('is-taken', pickHat(_pickRows[zi]));
+    _pickAktiv = -1;
+    pickZahl(_pickRows.length);
+  }
+
+  function pickSucheAn(){
+    if (_pickSuche) return _pickSuche;
+    var UCg = window.UpstreemCore;
+    if (!UCg || !UCg.makeEntitySearch) return null;
+    _pickSuche = UCg.makeEntitySearch({
+      prefix: 'am', limit: PICK_TREFFER,
+      onLoading: function(){ if (elPickList) elPickList.innerHTML = pickSkelett(); pickZahl(null); },
+      onIdle: function(){
+        if (elPickList) elPickList.innerHTML = pickHinweis(L().pickIdle, L().pickIdleSub);
+        pickZahl(null);
+      },
+      onResults: pickZeichnen,
+      /* Der Ladezustand endet IMMER -- auch im Fehlerfall. Ein Skelett, das ewig laeuft, ist
+         die schlechteste aller Meldungen.
+         VIER Ausgaenge, drei Saetze: Bubble hat einen Fehler gemeldet oder der Payload war
+         unlesbar (dasselbe fuer den Nutzer: "nochmal versuchen"), es kam nie eine Antwort, oder
+         es gibt gar keinen Kanal. Kein interner Name, keine Diagnose -- nur was er tun kann. */
+      onError: function(nachricht, grund){
+        var t = (grund === 'zeit')  ? [L().pickTimeout, L().pickTimeoutSub]
+              : (grund === 'kanal') ? [L().pickOffline, L().pickOfflineSub]
+              :                       [L().pickBroken,  L().pickBrokenSub];
+        if (elPickList) elPickList.innerHTML = pickHinweis(t[0], t[1]);
+        pickZahl(null);
+      }
+    });
+    return _pickSuche;
+  }
+
+  /* ---- Auf und zu ----------------------------------------------------------------------- */
+  function pickDeckel(){
+    /* #ask-mira und .am-shell tragen beide overflow: hidden -- jedes Pixel ueber der Komponente
+       ist weg. Der Deckel wird deshalb GEMESSEN und nicht als vh geschrieben: der Platz ueber
+       dem Feld ist alles, was es gibt. */
+    if (!elPickPanel || !elComposer) return;
+    var r = elComposer.getBoundingClientRect(), rr = root.getBoundingClientRect();
+    var platz = Math.max(180, Math.round(r.top - rr.top - 16));
+    elPickPanel.style.setProperty('--am-pick-max', platz + 'px');
+    if (elPickScroll) elPickScroll.style.maxHeight = Math.max(96, platz - 118) + 'px';
+  }
+  function pickOeffnen(auf){
+    if (!elPickPanel) return;
+    var offen = (typeof auf === 'boolean') ? auf : !root.classList.contains('is-pick-open');
+    if (offen) pickDeckel();
+    root.classList.toggle('is-pick-open', offen);
+    elPickPanel.setAttribute('aria-hidden', offen ? 'false' : 'true');
+    if (elPickBtn) elPickBtn.setAttribute('aria-expanded', offen ? 'true' : 'false');
+    if (offen){
+      if (elEff && effPop) effPop.close(false);         /* zwei offene Menues will niemand */
+      /* Das Ergebnis von pickSucheAn AUSWERTEN. Ohne den Suchkern in core gibt es nichts zu
+         fragen, und vorher blieb dann der Ruhehinweis stehen, waehrend das Tippen nichts tat --
+         der stille Ausfall in seiner reinen Form. */
+      var su = pickSucheAn();
+      if (!su){
+        if (elPickList) elPickList.innerHTML = pickHinweis(L().pickOffline, L().pickOfflineSub);
+      } else if (elPickList && !elPickList.innerHTML){
+        elPickList.innerHTML = pickHinweis(L().pickIdle, L().pickIdleSub);
+      }
+      setTimeout(function(){ try { elPickInput.focus(); } catch(e){} }, 60);
+    } else if (_pickSuche) _pickSuche.abbrechen();
+  }
+  if (elPickBtn) elPickBtn.addEventListener('click', function(e){ e.stopPropagation(); pickOeffnen(); });
+  if (elPickInput){
+    elPickInput.addEventListener('input', function(){
+      var s = pickSucheAn(); if (s) s.tippen(elPickInput.value, _pickScope);
+    });
+    elPickInput.addEventListener('keydown', function(e){
+      if (e.key === 'Escape'){ e.stopPropagation(); pickOeffnen(false); if (elTextarea) elTextarea.focus(); }
+      else if (e.key === 'ArrowDown'){ e.preventDefault(); pickAktivSetzen(_pickAktiv + 1); }
+      else if (e.key === 'ArrowUp'){   e.preventDefault(); pickAktivSetzen(_pickAktiv - 1); }
+      else if (e.key === 'Enter' && _pickRows.length){
+        e.preventDefault();
+        pickNehmen(_pickRows[_pickAktiv >= 0 ? _pickAktiv : 0]);
+      }
+    });
+  }
+  if (elPickScopes){
+    elPickScopes.addEventListener('click', function(e){
+      var b = e.target.closest && e.target.closest('.am-pick-scope');
+      if (!b) return;
+      var s = b.getAttribute('data-scope');
+      _pickScope = (_pickScope === s) ? '' : s;      /* nochmal derselbe Knopf hebt ihn auf */
+      pickScopeZeigen();
+      var su = pickSucheAn(); if (su) su.jetzt(_pickScope);
+    });
+  }
+  if (elPickList){
+    elPickList.addEventListener('click', function(e){
+      var r = e.target.closest && e.target.closest('.am-pick-row');
+      if (!r) return;
+      var i = +r.getAttribute('data-esi');
+      if (_pickRows[i]) pickNehmen(_pickRows[i]);
+    });
+  }
+  /* Ein Klick daneben macht zu. Auf POINTERDOWN und nicht auf click, aus demselben Grund, den
+     core an makePopover nennt: ein click feuert dort, wo losgelassen wird. */
+  document.addEventListener('pointerdown', function(e){
+    if (!root.classList.contains('is-pick-open')) return;
+    if (elPickPanel && elPickPanel.contains(e.target)) return;
+    if (elPickBtn && elPickBtn.contains(e.target)) return;
+    pickOeffnen(false);
+  }, true);
+
+  /* ---- Die uebernommenen Bezuege --------------------------------------------------------- */
+  function pickKennung(it){
+    var UCg = window.UpstreemCore;
+    return (UCg && UCg.entityId) ? UCg.entityId(it) : String(it && it.id || '');
+  }
+  function pickHat(it){
+    var k = String(it.type) + ':' + pickKennung(it);
+    return _picks.some(function(p){ return String(p.type) + ':' + pickKennung(p) === k; });
+  }
+  function pickNehmen(it){
+    if (!it || pickHat(it)) return;
+    if (_picks.length >= PICK_MAX){
+      pickMeldung(L().pickMax);
+      return;
+    }
+    _picks.push(it);
+    picksZeichnen();
+    pickZeichnen(_pickRows, null);       /* die Zeile grau setzen, sie ist jetzt vergeben */
+    /* Die Zahl rechts nennt ab dem ersten Bezug, wie viele noch gehen -- das ist die Auskunft,
+       die man an dieser Stelle braucht, und nicht die Zahl der Treffer. */
+    if (elPickCount) elPickCount.textContent = _picks.length + ' / ' + PICK_MAX;
+    refreshSend(); autosize();
+    /* DIE TREFFERLISTE BLEIBT STEHEN. Hier wurde zuerst das Suchfeld geleert und neu gesucht --
+       und damit war genau die Liste weg, aus der man den zweiten Bezug waehlen wollte: wer zwei
+       Marken derselben Suche braucht, haette neu tippen muessen. Gemessen: nach der ersten
+       Uebernahme stand statt fuenf Zeilen der Ruhehinweis da.
+       Also nur die Zeile grau setzen und den Fokus im Suchfeld lassen. Ist der dritte Bezug
+       drin, macht das Feld zu -- weiter geht es ohnehin nicht -- und der Fokus geht dorthin,
+       wo jetzt getippt wird. */
+    if (_picks.length >= PICK_MAX){
+      pickOeffnen(false);
+      if (elTextarea) elTextarea.focus();
+    } else if (elPickInput){
+      try { elPickInput.focus(); } catch(e){}
+    }
+  }
+  function picksZeichnen(){
+    if (!elPicks) return;
+    var UCg = window.UpstreemCore;
+    elPicks.innerHTML = _picks.map(function(it, i){
+      var bild = (UCg && UCg.entityBild) ? UCg.entityBild(it) : '';
+      var lbl  = (UCg && UCg.entityLabel) ? UCg.entityLabel(it) : '';
+      var istFlagge = String(it.type) === 'prompt' && !!bild;
+      var kl = 'am-pick-tag-av' + (istFlagge ? ' is-flag' : '') + (bild ? '' : ' is-fb');
+      var rueck = String(it.type) === 'prompt'
+        ? '<span class="am-pick-tag-av-t">' + esc(String(it.market || '').toUpperCase()) + '</span>'
+        : (String(it.type) === 'brand'
+            ? '<span class="am-pick-tag-av-t">' + esc(String(lbl).charAt(0).toUpperCase()) + '</span>'
+            : '<span class="am-pick-tag-av-fb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor">' +
+              '<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/>' +
+              '<path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/></svg></span>');
+      return '<span class="am-pick-tag" data-i="' + i + '">' +
+        '<span class="' + kl + '">' +
+          (bild ? '<img src="' + esc(bild) + '" alt="" loading="lazy" referrerpolicy="no-referrer" ' +
+                  'onerror="this.style.display=\'none\';this.parentNode.classList.add(\'is-fb\');">' : '') +
+          rueck +
+        '</span>' +
+        '<span class="am-pick-tag-lbl">' + esc(lbl) + '</span>' +
+        '<button class="am-pick-tag-x" type="button" aria-label="Remove reference" data-x="' + i + '">' +
+          '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>' +
+        '</button>' +
+      '</span>';
+    }).join('');
+    if (elComposer) elComposer.classList.toggle('has-picks', _picks.length > 0);
+  }
+  if (elPicks){
+    elPicks.addEventListener('click', function(e){
+      var x = e.target.closest && e.target.closest('.am-pick-tag-x');
+      if (!x) return;
+      e.preventDefault(); e.stopPropagation();
+      var i = +x.getAttribute('data-x');
+      var tag = elPicks.querySelector('.am-pick-tag[data-i="' + i + '"]');
+      /* Erst die Bewegung, dann der Zustand -- ein sofortiges Neuzeichnen haette die
+         Ausblende-Bewegung verschluckt. */
+      if (tag) tag.classList.add('is-out');
+      setTimeout(function(){
+        _picks.splice(i, 1);
+        picksZeichnen(); pickZeichnen(_pickRows, null); refreshSend(); autosize();
+      }, 200);
+    });
+  }
+  function clearPicks(){
+    _picks = [];
+    picksZeichnen();
+  }
+
+  /* Der Deckel wird beim Oeffnen gerechnet. Dreht jemand das Telefon oder zieht das Fenster
+     kleiner, WAEHREND das Feld offen ist, waere er falsch und das Panel ragte aus der
+     Komponente heraus -- die schneidet ab (#ask-mira und .am-shell tragen overflow: hidden). */
+  amAufResize(function(){ if (root.classList.contains('is-pick-open')) pickDeckel(); }, { hoehe: true });
+  /* Escape hing nur am Suchfeld. Nach einem Klick auf eine Typ-Pille oder eine Trefferzeile ist
+     der Fokus dort, und Escape tat nichts. KEIN stopPropagation: ein umgebender Drawer soll
+     sein eigenes Escape weiter sehen. */
+  document.addEventListener('keydown', function(e){
+    if (e.key !== 'Escape' || !root.classList.contains('is-pick-open')) return;
+    pickOeffnen(false);
+    if (elTextarea) elTextarea.focus();
+  });
+
+  /* ---- Das Format fuer den Agenten -------------------------------------------------------
+     Kurz und knapp, eine Zeile je Bezug, und die Kennung ist die, mit der die Datenbank
+     arbeitet: Marke und Prompt tragen ihre UID, Domain und URL sind selbst der Schluessel
+     (die primaeren Schluessel dieser beiden Tabellen). Genau diese Zuordnung nimmt auch die
+     Palette, wenn sie eine Zeile an Bubble meldet -- eine Quelle, kein zweites Verzeichnis. */
+  function picksText(){
+    if (!_picks.length) return '';
+    var UCg = window.UpstreemCore;
+    var zeilen = _picks.map(function(it){
+      var t = String(it.type), id = pickKennung(it);
+      var name = (UCg && UCg.entityLabel) ? UCg.entityLabel(it) : '';
+      if (t === 'brand')  return '- Brand: ' + name + ' (uid: ' + id + ')';
+      if (t === 'prompt') return '- Prompt: "' + name + '" (uid: ' + id + ')';
+      if (t === 'domain') return '- Domain: ' + id;
+      if (t === 'url')    return '- URL: ' + id + (name && name !== id ? ' (' + name + ')' : '');
+      return '- ' + t + ': ' + id;
+    });
+    return 'Context:\n' + zeilen.join('\n');
   }
 
   /* floating "Ask Mira" button above a selection inside an assistant answer */
@@ -3654,7 +4357,7 @@
   };
   window.askMiraSetTitlePendingFromEl = function(sel){ var r = _amReadEl(sel); if (r != null) window.askMiraSetTitlePending(r); };
   window.askMiraSetExportPending = function(messageId, pending){ setExportPending(messageId, amTruthy(pending)); };
-  window.askMiraClearInput = function(){ elTextarea.value = ''; clearQuote(); autosize(); refreshSend(); updateLoopState(); };
+  window.askMiraClearInput = function(){ elTextarea.value = ''; clearQuote(); clearPicks(); autosize(); refreshSend(); updateLoopState(); };
   window.askMiraSetTheme = function(theme){
     var t = String(theme||'').toLowerCase();
     window.__askMiraTheme = (t === 'dark' || t === 'light') ? t : null;
@@ -3665,6 +4368,7 @@
     S.market = String(market||'').trim().toLowerCase() || S.market;
     window.__askMiraMarket = S.market;
     resolveLang();
+    if (typeof effLabelsBauen === 'function'){ effLabelsBauen(); pickTexteSetzen(); pickScopesBauen(); effZeichnen(); }
     renderSuggested();
     phStart();          // restart loop in the new language
     updateLoopState();
@@ -3782,40 +4486,22 @@
   elSend.addEventListener('click', function(){ sendMessage(); });
 
   // dropdowns: model + answer-detail (both use the .am-model structure)
-  root.addEventListener('click', function(e){
-    if (!e.target.closest) return;
-    var opt = e.target.closest('.am-model-opt');
-    if (opt){
-      e.preventDefault(); e.stopPropagation();
-      var dd = opt.closest('.am-model');
-      if (dd && dd.classList.contains('am-detail-dd')) setDetail(opt.getAttribute('data-detail'));
-      else setModel(opt.getAttribute('data-model'));
-      return;
-    }
-    var btn = e.target.closest('.am-model-btn');
-    if (btn){ e.preventDefault(); e.stopPropagation(); _ddToggle(btn.closest('.am-model')); return; }
-    if (!e.target.closest('.am-model-menu')) _ddCloseAll();
-  });
-  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') _ddCloseAll(); });
+  /* ---- WAS HIER STAND, UND WARUM ES WEG IST (08.09.) ----------------------------------------
+     Hier lag die Klick-Delegation der beiden alten Dropdowns (.am-model-opt / .am-model-btn),
+     der Escape-Zuhoerer darauf, der Tooltip der gesperrten Aufwand-Zeile und toggleSettings
+     samt seinem Klick-Zuhoerer. Alles vier gehoerte zum Einstellungs-Fach, das es nicht mehr
+     gibt: Modell und Aufwand liegen jetzt in einer Schaltflaeche, deren Auf und Zu ueber
+     UC.makePopover laeuft -- und das bringt Aussenklick und Escape selbst mit, auf pointerdown
+     statt auf click (ein Slider laesst den Zeiger irgendwo los, siehe die Begruendung in core).
 
-  // flash tooltip: let it escape the settings panel's overflow while hovering the (locked) answer-detail row
-  var elDetailRow = root.querySelector('.am-detail-row'), _tipT = 0;
-  if (elDetailRow){
-    elDetailRow.addEventListener('mouseenter', function(){ clearTimeout(_tipT); if (root.classList.contains('is-flash') && elSettingsPanel) elSettingsPanel.classList.add('has-tip'); });
-    elDetailRow.addEventListener('mouseleave', function(){ clearTimeout(_tipT); _tipT = setTimeout(function(){ if (elSettingsPanel) elSettingsPanel.classList.remove('has-tip'); }, 240); });   // wait for the fade-out before re-clipping
-  }
-
-  function toggleSettings(force){
-    var open = (typeof force === 'boolean') ? force : !elSettingsPanel.classList.contains('is-open');
-    elSettingsPanel.classList.toggle('is-open', open);
-    var shell = root.querySelector('#am-composer-shell'); if (shell) shell.classList.toggle('is-settings-open', open);
-    elSettingsToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-    if (open) setTimeout(moveThumb, 30); // measure once visible
-    else { closeModelMenu(); if (elSettingsPanel) elSettingsPanel.classList.remove('has-tip'); }   // closing the panel closes the model menu + tooltip overflow too
-  }
-  elSettingsToggle.addEventListener('click', function(e){ e.stopPropagation(); toggleSettings(); });
-  // note: the tray stays open until the fader is clicked again or the first message is sent
-  // (deliberately NOT closing on outside/input clicks).
+     EINE ZEILE DAVON WAR EIN TOTALAUSFALL, der nur nie ausgeloest wurde:
+         elSettingsToggle.addEventListener('click', ...)
+     ohne Null-Wache. Fehlte #am-settings-toggle im Markup -- und ab dieser Fassung fehlt er
+     immer, composerUmbauen nimmt ihn heraus --, warf amInit an dieser Stelle. Weil
+     root.__askMiraInit schon gesetzt ist, gibt es keinen zweiten Anlauf: die Galerie, die
+     Vorschlaege, die Chatliste, die Sprachaufnahme und der ganze Init danach waeren nie
+     gelaufen. Es haette wie "Mira laedt nicht" ausgesehen, und die Ursache waere eine
+     Zeile Ereignisverdrahtung gewesen. */
 
   elSuggGrid.addEventListener('click', function(e){
     var back = e.target.closest('[data-gallery-back]');
@@ -4790,7 +5476,6 @@
   // Toggle chat view + animate the hero collapse/expand (200ms). First (load-time) toggle is instant.
   function setHasMessages(on){
     on = !!on;
-    if (on){ if (elSettingsPanel && elSettingsPanel.classList.contains('is-open')) toggleSettings(false); }   // a loaded chat / first message -> tray stays closed
     if (root.classList.contains('has-messages') === on) return;
     if (!_heroEl || !_heroReady){ root.classList.toggle('has-messages', on); renderChatTitlebar(); return; }
     var from = _heroEl.getBoundingClientRect().height;
@@ -4908,7 +5593,10 @@
     });
   }
 
-  amAufResize(function(){ moveThumb(); }, { hoehe: true });
+  /* Der Slider muss bei einer Groessenaenderung neu gerechnet werden: sein Menue traegt
+     max-width: 78vw, auf einem schmalen Schirm ist die Schiene also kuerzer -- und der Weg des
+     Daumens haengt an ihrer gemessenen Breite. */
+  amAufResize(function(){ effZeichnen(); }, { hoehe: true });
 
   /* ---------------- Init ---------------- */
   /* Das Hintergrundbild des Startschirms ist entfernt, in beiden Themen. Es wurde hier gebaut und
@@ -4950,6 +5638,8 @@
   if (window.__askMiraTheme) window.askMiraSetTheme(window.__askMiraTheme);
   resolveLang();
   renderSuggested();
+  /* Die Reihenfolge zaehlt: effLabelsBauen liest lang, und setModel ruft setDetail. */
+  effLabelsBauen(); pickTexteSetzen(); pickScopesBauen();
   setDetail(S.answerDetail || 'balanced', true);
   setModel(S.model || 'pro', true);
   renderPrevious();
@@ -4961,7 +5651,7 @@
   if (window.__amHeroReady) window.__amHeroReady();   // enable hero collapse animation only after first paint
   autosize(); refreshSend();
   updateLoopState();                       // starts the looping placeholder when empty
-  setTimeout(moveThumb, 60);
+  setTimeout(effZeichnen, 60);
   _amAutoBind();                            // pick up hidden data elements now…
   setTimeout(_amAutoBind, 300);            // …and again once Bubble has rendered/populated them
 

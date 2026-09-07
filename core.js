@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261025;
+  var BUILD = 20261026;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -391,6 +391,22 @@
     "Position": "Position",
     "Status": "Status",
     "Market": "Markt",
+    /* Die vier Typen als Ueberschrift und als Knopf. Sie standen im Katalog noch nicht, weil
+       Quick Actions seine Beschriftungen bisher selbst durch tx() schickte und dort dieselben
+       vier Woerter stehen -- der Picker im Composer braucht sie ueber t(), also gehoeren sie
+       hierhin, wo BEIDE sie finden. */
+    "Brands": "Marken",
+    "Domains": "Domains",
+    "URLs": "URLs",
+    "Prompts": "Prompts",
+    /* Und die Einzahl: sie steht als Marke rechts in jeder Trefferzeile. "URL" gibt es weiter
+       unten schon, die drei anderen fehlten. Domain und Prompt bleiben unveraendert -- beide
+       Woerter sind im Deutschen dieselben, und ein Eintrag, der nichts aendert, ist trotzdem
+       richtig: ohne ihn faellt t() auf den englischen Schluessel zurueck, was hier zufaellig
+       stimmt, aber niemand sieht, dass es Absicht war. */
+    "Brand": "Marke",
+    "Domain": "Domain",
+    "Prompt": "Prompt",
     "Markets": "Märkte",
     "Model": "Modell",
     "Models": "Modelle",
@@ -1954,6 +1970,13 @@
     "Show more": "Mehr zeigen",
     "Show less": "Weniger zeigen",
     "Mira answers based on...": "Mira antwortet auf Basis von…",
+    /* DER GANZE SATZ, und nicht nur der abgeschnittene Schluessel darueber. Der Hinweis unter
+       dem Eingabefeld steht als voller Satz im Markup (bubble/ask_mira_bubble.html, .am-hint),
+       und ohne diesen Eintrag blieb er auf Deutsch englisch -- direkt unter einem Feld, das
+       sonst vollstaendig uebersetzt ist. Gefunden beim Ansehen des neuen Composers auf dem
+       Telefon; .finde_untexte.py meldet es nicht, weil es bubble/*.html nicht durchsucht. */
+    "Mira answers based on your selected workspace data.":
+      "Mira antwortet auf Basis der Daten deines ausgew\u00e4hlten Arbeitsbereichs.",
     "Reading your brand's visibility data": "Die Visibility-Daten deiner Brand werden gelesen",
     "Transcribing voice message": "Sprachnachricht wird transkribiert"
   });
@@ -4907,6 +4930,484 @@
       latestReqId: function(){ return latestReqId; },
       setLatest: function(id){ latestReqId = id; },
       cancel: function(){ clearTimeout(debTimer); }
+    };
+  }
+
+  /* ==========================================================================================
+     ENTITAETS-SUCHE — die Maschine hinter Quick Actions, ab hier geteilt
+     ==========================================================================================
+     Warum hier und nicht in quick-actions.js: der Composer von Ask Mira soll dieselbe Suche
+     koennen. Sein Bubble-Loader (bubble/ask_mira_bubble.html) laedt quick-actions.js NICHT, und
+     eine Ergaenzung dieser Zeile erreicht ein bereits eingebautes Element nie (CLAUDE.md §4).
+     core.js liegt dagegen auf jeder Mira-Seite. "Die Logik gehoert nach core" ist hier also
+     keine Stilfrage, sondern die einzige Fassung, die ueber den CDN-Pin ankommt.
+
+     WAS HIER STEHT: Anfrage, Verteilung der Antwort, das Lesen der Items, die Kennung je Typ,
+     das Hervorheben und die Trefferzeile. WAS NICHT: die Optik. quick-actions.css laedt
+     ausdruecklich kein core.css (siehe ihren Kopf), also kann eine geteilte Regel in core.css
+     die Palette nie erreichen. Deshalb malt der Zeilenmaler mit einem Klassen-PRAEFIX, das der
+     Aufrufer mitgibt -- eine Maschine, zwei Stylesheets, und keine Komponente braucht die CSS
+     der anderen. */
+
+  /* ---- DER VERTEILER -----------------------------------------------------------------------
+     Das Problem, das er loest: Bubble antwortet auf JEDE Suche mit demselben Aufruf,
+     MiraQuickActions.setResults({requestId, items}). Der Schritt steht im Workflow des Nutzers
+     und soll unangetastet bleiben. Die Palette wirft aber jede Antwort weg, deren requestId
+     nicht ihr eigener letzter Lauf ist (quick-actions.js:1856) -- eine Antwort auf eine Anfrage
+     aus Ask Mira waere damit verschwunden, ohne Spur.
+     Also merkt sich der Verteiler zu jeder ausgegebenen requestId, WER sie gestellt hat, und
+     schiebt die Antwort dorthin. Eine eigene, ueberdauernde Karte und nicht das latestReqId
+     einer Komponente: das wird auf null gesetzt, sobald das Feld geleert oder die Palette
+     zugemacht wird, und eine spaete Antwort waere wieder heimatlos.
+
+     DREI EIGENSCHAFTEN, die alle drei aus einem gemessenen Verhalten kommen:
+     - Eine Antwort OHNE requestId geht an den STANDARDKUNDEN. Das ist heute die Notluke der
+       Palette (der Zweig 'payload.requestId &&'), und sie muss bleiben: laesst ein
+       Workflow-Schritt die Id weg, soll sich nichts aendern.
+     - Eine Frist. Eine requestId, auf die nie geantwortet wird (Tippfehler im Workflow,
+       geloeschtes Element), haelt sonst ihren Eintrag fuer immer.
+     - Eine Obergrenze. Tippt jemand eine Minute lang, sind das dutzende Anfragen; die Karte
+       darf nicht mit der Sitzung wachsen. */
+  var ES_KUNDEN = {};            /* requestId -> { nimm: fn, bis: ms } */
+  var ES_FRIST = 90000;          /* eine Anfrage verfaellt nach 90 Sekunden */
+  var ES_MAX = 60;               /* so viele offene Anfragen halten wir hoechstens */
+
+  function esAufraeumen(){
+    var jetzt = +new Date(), ids = Object.keys(ES_KUNDEN), i;
+    for (i = 0; i < ids.length; i++){
+      if (ES_KUNDEN[ids[i]].bis < jetzt) delete ES_KUNDEN[ids[i]];
+    }
+    /* Immer noch zu viele: die aeltesten fallen zuerst. */
+    ids = Object.keys(ES_KUNDEN);
+    if (ids.length <= ES_MAX) return;
+    ids.sort(function(a, b){ return ES_KUNDEN[a].bis - ES_KUNDEN[b].bis; });
+    for (i = 0; i < ids.length - ES_MAX; i++) delete ES_KUNDEN[ids[i]];
+  }
+  function esMerken(reqId, nimm){
+    if (!reqId || typeof nimm !== "function") return;
+    esAufraeumen();
+    ES_KUNDEN[reqId] = { nimm: nimm, bis: (+new Date()) + ES_FRIST };
+  }
+  /* Gibt true zurueck, wenn die Antwort einem EIGENEN Kunden zugeordnet wurde -- dann hat der
+     Aufrufer (die Palette) nichts damit zu tun. false heisst: das ist deine, mach weiter wie
+     bisher. Genau diese Umkehrung macht die Aenderung in quick-actions.js zu drei Zeilen. */
+  function esVerteilen(art, payload){
+    payload = payload || {};
+    var id = payload.requestId;
+    if (!id) return false;                       /* die Notluke: ohne Id gehoert sie dem Standard */
+    var k = ES_KUNDEN[id];
+    if (!k) return false;                        /* unbekannt oder verfallen -> nicht unsere */
+    if (k.bis < +new Date()){ delete ES_KUNDEN[id]; return false; }
+    try { k.nimm(art, payload); } catch(e){
+      if (window.console) console.warn("[core] Suchantwort konnte nicht zugestellt werden:", e);
+    }
+    /* DER EINTRAG BLEIBT STEHEN und wird nicht nach der ersten Antwort geloescht. Grund:
+       "doppelt geschickt" ist einer der fuenf Wege, auf denen ein Bubble-Payload beschaedigt
+       ankommt (CLAUDE.md 2) -- ein Workflow, der zweimal antwortet, oder ein Wiederholungslauf
+       nach einem Fehler. Mit dem Loeschen fiel die zweite Antwort lautlos weg, und lautlos ist
+       genau das Verbotene. Doppelt zustellen ist harmlos: der Empfaenger prueft selbst, ob die
+       Antwort noch die aktuelle ist (id !== letzte).
+       Die Karte laeuft davon nicht ueber -- sie hat eine Frist von 90 Sekunden und eine
+       Obergrenze von 60 Eintraegen, beides in esAufraeumen. */
+    return true;
+  }
+
+  /* ---- DIE BRUECKE ZU BUBBLE --------------------------------------------------------------
+     Bubble antwortet auf JEDE Suche mit window.MiraQuickActions.setResults(...). Dieser Name
+     ist der Rueckkanal des Nutzers, er steht in seinem Workflow, und er soll unangetastet
+     bleiben. Damit gehoert er hierher -- aber mit drei Feinheiten, die alle drei aus einem
+     gemessenen Verhalten kommen:
+
+     1. quick-actions.js:1890 setzt window.MiraQuickActions BEDINGUNGSLOS, und beide Loader
+        laden core.js VOR quick-actions.js. Was core hier anlegt, wuerde die Palette also
+        stillschweigend loeschen. Deshalb gibt searchAttach ein Objekt ZURUECK, das die Palette
+        sich selbst zuweist -- statt dass core ihr eines aufzwingt.
+     2. Auf einer Seite OHNE Palette (Ask Mira laedt quick-actions.js nicht) gibt es den Namen
+        gar nicht, und der Workflow-Schritt wirft "Cannot read properties of undefined" -- was
+        den ganzen Schritt mitnimmt, also auch die Aufrufe darunter. Deshalb legt core eine
+        Bruecke an, sobald keine echte Fassung da ist.
+     3. Die Warteschlange __mqaBootQueue wird NUR am Ende von quick-actions.js geleert. Ohne
+        Palette liefe ein Suchergebnis dort hinein und waere fuer immer weg. Die Bruecke leert
+        sie also selbst -- aber nur, was sie zustellen kann. */
+  var ES_VORNE = null;   /* das Objekt, das unter window.MiraQuickActions steht */
+  var ES_KANAL = {};     /* kanal -> die echte api der Komponente */
+  var ES_ARTEN = { setResults: "results", setLoading: "loading", setError: "error" };
+
+  function esZustellen(art, payload){
+    /* Ein Ladehinweis kommt mit der reinen Id, nicht mit einem Objekt (setLoading(requestId)). */
+    if (art === "loading" && (typeof payload === "string" || typeof payload === "number")){
+      payload = { requestId: String(payload) };
+    }
+    if (esVerteilen(art, payload)) return true;
+    return false;
+  }
+  function esBruecke(){
+    if (ES_VORNE) return ES_VORNE;
+    var vorne = {};
+    /* Die drei Rueckwege gehen ueber den Verteiler; alles andere an den Standardkanal. */
+    Object.keys(ES_ARTEN).forEach(function(n){
+      vorne[n] = function(p){
+        if (esZustellen(ES_ARTEN[n], p)) return;
+        var api = ES_KANAL[ES_STANDARD_KANAL];
+        if (api && typeof api[n] === "function") return api[n](p);
+        /* Kein Empfaenger -- und das ist kein stiller Fall: ohne Meldung sieht es aus wie eine
+           Suche, die einfach nichts findet. */
+        if (window.console) console.warn("[core] Suchantwort ohne Empfaenger (" + n + "). " +
+          "Weder die Palette noch ein anderer Kunde hat diese requestId gestellt.");
+      };
+    });
+    ES_VORNE = vorne;
+    return vorne;
+  }
+  var ES_STANDARD_KANAL = "qa";
+
+  /* Die Palette ruft das in ihrer Zeile 1890 und weist sich das Ergebnis selbst zu. */
+  function searchAttach(kanal, api){
+    kanal = kanal || ES_STANDARD_KANAL;
+    ES_KANAL[kanal] = api;
+    var vorne = esBruecke();
+    /* Jede Methode der Komponente, die nicht ueber den Verteiler laeuft, wird durchgereicht --
+       auch die, die erst spaeter dazukommen: die Palette hat elf, und ein Umbau dort soll die
+       Bruecke nicht brechen. */
+    Object.keys(api).forEach(function(n){
+      if (ES_ARTEN[n]) return;
+      if (typeof api[n] !== "function"){ vorne[n] = api[n]; return; }
+      vorne[n] = function(){ return api[n].apply(api, arguments); };
+    });
+    esQuittieren();
+    return vorne;
+  }
+  /* Was vor uns aufgelaufen ist, in der Reihenfolge, in der es kam. */
+  function esQuittieren(){
+    var q = window.__mqaBootQueue;
+    if (!isArr(q) || !q.length || !ES_VORNE) return;
+    var offen = q.splice(0, q.length), i, n, args;
+    for (i = 0; i < offen.length; i++){
+      n = offen[i][0]; args = offen[i][1] || [];
+      if (typeof ES_VORNE[n] !== "function"){ q.push(offen[i]); continue; }   /* noch nicht zustellbar */
+      try { ES_VORNE[n].apply(ES_VORNE, args); }
+      catch(e){ if (window.console) console.warn("[core] vorgemerkter Suchaufruf " + n +
+        " ist fehlgeschlagen:", e); }
+    }
+  }
+  /* Die Bruecke NUR anlegen, wenn niemand den Namen echt besitzt. Ein Stub traegt __isStub
+     (quick-actions.js:106 und bubble/quick_actions_bubble.html:316) -- den duerfen wir
+     ersetzen, eine echte Palette nicht. */
+  function esBrueckeSetzen(){
+    try {
+      var da = window.MiraQuickActions;
+      if (da && !da.__isStub) return;                  /* echte Palette -> Finger weg */
+      window.MiraQuickActions = esBruecke();
+      esQuittieren();
+    } catch(e){}
+  }
+
+  /* ---- DIE FLIMMER-PILLE ------------------------------------------------------------------
+     Ein Mantel um makeFlickerGrid, und zwar der fehlende Lebenszyklus. Drei gemessene Fallen
+     des Kits, die bei einer Flaeche, die oft auf- und zugeht, echte Fehler sind:
+       - Es prueft NICHT auf einen vorhandenen Handle: ein zweiter Aufruf haengt ein zweites
+         Canvas ein und laesst die erste Schleife unerreichbar weiterlaufen. Ein Leck je
+         Oeffnung.
+       - Unter prefers-reduced-motion gibt es einen ANDEREN Handle zurueck, OHNE redraw. Ein
+         blindes handle.redraw() wirft dort und reisst den Klick-Handler mit.
+       - Wird es auf einer Flaeche der Breite 0 gebaut (das Menue steht noch auf max-height 0),
+         entsteht ein 1x1-Raster.
+     Die Pille loest alle drei: sie stoppt eine vorhandene Instanz, sie zeichnet nach dem
+     Aufklappen nur nach, wenn es redraw wirklich gibt, und sie baut erst, wenn die Flaeche
+     eine Breite hat. */
+  function makeFlickerPill(host, cfg){
+    if (!host) return null;
+    if (host.__upFlicker && host.__upFlicker.stop){
+      try { host.__upFlicker.stop(); } catch(e){}
+      host.__upFlicker = null;
+    }
+    var b = 0;
+    try { b = host.getBoundingClientRect().width; } catch(e){}
+    /* Keine Breite heisst: die Huelle ist noch zu. Dann NICHT bauen -- ein 1x1-Raster
+       ueberlebt sonst als Standbild, weil messen() erst beim naechsten Groessenwechsel
+       nachzieht. Der Aufrufer ruft die Pille nach dem Aufklappen erneut. */
+    if (!(b > 0)) return null;
+    var h = makeFlickerGrid(host, cfg);
+    return {
+      stop: function(){ if (h && h.stop) h.stop(); host.__upFlicker = null; },
+      /* Nicht blind: unter prefers-reduced-motion gibt es kein redraw. */
+      redraw: function(){ if (h && typeof h.redraw === "function") h.redraw(); },
+      info: function(){ return (h && h.info) ? h.info() : null; }
+    };
+  }
+
+  /* ---- DIE KENNUNG JE TYP -----------------------------------------------------------------
+     Sie stand als Kette von vier if-Zweigen in quick-actions.js:1496. Hier steht sie einmal,
+     weil Ask Mira dieselbe Zuordnung braucht: Marke und Prompt tragen eine UID, Domain und URL
+     sind selbst der Schluessel. */
+  function entityId(item){
+    if (!item) return "";
+    var t = String(item.type || "");
+    if (t === "brand" || t === "prompt") return String(item.id == null ? "" : item.id);
+    if (t === "domain") return String(item.domain == null ? "" : item.domain);
+    if (t === "url")    return String(item.url == null ? "" : item.url);
+    return "";
+  }
+  /* Der Text, den ein Mensch liest. Bei der URL zuerst der Titel: eine Adresse ist kein Name. */
+  function entityLabel(item){
+    if (!item) return "";
+    var t = String(item.type || "");
+    if (t === "brand")  return String(item.name || "");
+    if (t === "domain") return String(item.domain || "");
+    if (t === "url")    return String(item.title || item.url || "");
+    if (t === "prompt") return String(item.prompt_text || "");
+    return "";
+  }
+  function entityBild(item){
+    if (!item) return "";
+    var t = String(item.type || "");
+    if (t === "brand")  return String(item.logo || item.favicon || "");
+    if (t === "prompt") return flagUrl(item.market) || "";
+    return String(item.favicon || "");
+  }
+
+  /* ---- DIE ITEMS LESEN ---------------------------------------------------------------------
+     Zwei Dinge mehr als die Fassung in der Palette:
+     1. Sie ZAEHLT, was sie wegwirft. groupsFrom in quick-actions.js:723 verwarf jedes Item mit
+        unbekanntem type still ('if (it && g[it.type])'). Kommen zwanzig Zeilen und alle zwanzig
+        haben einen Tippfehler im Typ, sah das aus wie ein saubereres leeres Ergebnis -- genau
+        der Fall, den CLAUDE.md §2 verbietet: leer und kaputt sind zwei Dinge.
+     2. Sie nimmt readBubble und nicht JSON.parse. parseLoose scheitert an nackten Emoji, und
+        ein Prompt-Text mit einem Emoji ist keine Ausnahme, sondern der Normalfall. */
+  var ES_TYPEN = { brand: 1, domain: 1, url: 1, prompt: 1 };
+  function entityItems(items){
+    var liste = null;
+    if (isArr(items)) liste = items;
+    else if (typeof items === "string"){
+      liste = readBubble(items);
+      if (!isArr(liste)) liste = (liste && typeof liste === "object") ? [liste] : null;
+    } else if (items && typeof items === "object") liste = [items];
+    if (!isArr(liste)) return { items: [], verworfen: 0, unlesbar: true };
+    var gut = [], weg = 0;
+    for (var i = 0; i < liste.length; i++){
+      var it = liste[i];
+      if (it && typeof it === "object" && ES_TYPEN[String(it.type)] && entityId(it)) gut.push(it);
+      else weg++;
+    }
+    return { items: gut, verworfen: weg, unlesbar: false };
+  }
+
+  /* ---- HERVORHEBEN ------------------------------------------------------------------------
+     Die Fassung der Palette (quick-actions.js:551) vergleicht GEFALTET und markiert im
+     Original -- richtig gedacht, denn nur so findet "muller" auch "Müller". Sie nimmt dabei
+     aber an, dass beide Zeichenketten gleich lang sind. foldDiacritics macht aus ß ein ss, und
+     damit ist der gefaltete Text laenger.
+     GEMESSEN, vor der Behebung: "Bosch Straße Nord" mit der Suche "nord" markierte N[ord]
+     statt [Nord], und "Straße 12" mit "strasse" markierte [Straße ]12 -- die Markierung
+     schluckte das Leerzeichen. Jedes ß verschiebt jede Markierung dahinter um eins.
+     Die Behebung ist eine KARTE: zu jedem Zeichen des gefalteten Textes wird notiert, aus
+     welchem Zeichen des Originals es entstand. Damit gilt keine Annahme mehr. */
+  function esFalten(raw){
+    var karte = [], gef = "";
+    for (var i = 0; i < raw.length; i++){
+      var teil = foldDiacritics(raw.charAt(i));
+      for (var k = 0; k < teil.length; k++) karte.push(i);
+      gef += teil;
+    }
+    return { text: gef, karte: karte };
+  }
+  function entityHl(text, query, markKlasse){
+    var raw = String(text == null ? "" : text);
+    var q = String(query == null ? "" : query).trim();
+    if (!q) return esc(raw);
+    var woerter = q.split(/\s+/).map(foldDiacritics)
+      .filter(function(w){ return w.length > 1; })
+      .sort(function(a, b){ return b.length - a.length; });   /* laengstes zuerst */
+    if (!woerter.length) return esc(raw);
+    var f = esFalten(raw), treffer = new Array(raw.length), benutzt = false;
+    for (var m = 0; m < raw.length; m++) treffer[m] = false;
+    woerter.forEach(function(w){
+      var von = 0, i;
+      while ((i = f.text.indexOf(w, von)) !== -1){
+        for (var k = i; k < i + w.length && k < f.karte.length; k++) treffer[f.karte[k]] = true;
+        benutzt = true; von = i + w.length;
+      }
+    });
+    if (!benutzt) return esc(raw);
+    var kl = markKlasse || "up-eshl", out = "", offen = false;
+    for (var j = 0; j < raw.length; j++){
+      if (treffer[j] && !offen){ out += '<mark class="' + kl + '">'; offen = true; }
+      if (!treffer[j] && offen){ out += '</mark>'; offen = false; }
+      out += esc(raw.charAt(j));
+    }
+    return offen ? (out + '</mark>') : out;
+  }
+
+  /* ---- DIE KACHEL -------------------------------------------------------------------------
+     Die richtige der beiden Fassungen aus quick-actions.js. Dort ist avHtml ZWEIMAL deklariert
+     (Z. 651 und Z. 1178), im selben Bereich -- durch das Vorziehen von Funktionen gewinnt die
+     zweite. Deren Signatur ist (av, kind, label), aufgerufen wird sie aber mit (src, fbInner):
+     der Rueckfall landet als 'kind', 'label' bleibt undefined, und daraus wird ein "?".
+     Sichtbare Folge in der Palette: Trefferzeilen tragen die 20px-Befehlskachel statt der
+     30px-Kachel, ihr Rueckfall ist ein Fragezeichen statt eines Initials oder eines Globus,
+     und is-flag kommt in einer Prompt-Zeile nie zustande -- die Flagge wird ins Quadrat
+     gequetscht. Die .mqa-av-Regeln in quick-actions.css waren damit toter Code. */
+  function entityAvatar(src, rueckfall, istFlagge, praefix){
+    var p = praefix || "up-es";
+    var kl = p + "-av" + (istFlagge ? " is-flag" : "");
+    if (!src) return '<span class="' + kl + ' is-fb">' + rueckfall + '</span>';
+    return '<span class="' + kl + '"><img src="' + esc(src) + '" alt="" loading="lazy" ' +
+      'referrerpolicy="no-referrer" ' +
+      'onerror="this.style.display=\'none\';this.parentNode.classList.add(\'is-fb\');">' +
+      '<span class="' + p + '-av-fb">' + rueckfall + '</span></span>';
+  }
+
+  /* ---- DIE TREFFERZEILE -------------------------------------------------------------------
+     Ein Knopf je Treffer. Der Aufrufer gibt das Klassen-Praefix mit (siehe oben, warum), dazu
+     die Suche fuer das Hervorheben und ob rechts der Typ stehen soll. */
+  function entityRow(item, cfg){
+    cfg = cfg || {};
+    var p = cfg.prefix || "up-es";
+    var t = String(item.type || ""), q = cfg.query || "";
+    var bild = entityBild(item), av, zweit = "";
+    if (t === "brand"){
+      var n = String(item.name || "").trim();
+      av = entityAvatar(bild, n
+        ? '<span class="' + p + '-av-t">' + esc(n.charAt(0).toUpperCase()) + '</span>'
+        : icon("globe"), false, p);
+    } else if (t === "prompt"){
+      var mk = String(item.market || "").toUpperCase();
+      av = entityAvatar(bild, '<span class="' + p + '-av-t">' + esc(mk) + '</span>', !!bild, p);
+      zweit = mk ? (t_("Market") + " · " + esc(mk)) : "";
+    } else {
+      av = entityAvatar(bild, icon("globe"), false, p);
+      if (t === "url") zweit = entityHl(item.url || "", q, p + "-hl");
+    }
+    return '<button class="' + p + '-row" type="button" role="option" data-esi="' +
+        esc(cfg.index == null ? "" : cfg.index) + '">' + av +
+      '<span class="' + p + '-main">' +
+        '<span class="' + p + '-primary">' + entityHl(entityLabel(item), q, p + "-hl") + '</span>' +
+        (zweit ? '<span class="' + p + '-secondary">' + zweit + '</span>' : '') +
+      '</span>' +
+      (cfg.typLabel === false ? '' :
+        '<span class="' + p + '-type">' + esc(t_(ES_TYP_LABEL[t] || t)) + '</span>') +
+    '</button>';
+  }
+  var ES_TYP_LABEL = { brand: "Brand", domain: "Domain", url: "URL", prompt: "Prompt" };
+
+  /* ---- DIE MASCHINE ----------------------------------------------------------------------
+     Eine je Komponente. Sie besitzt die Suchzeile, die Uhr, die requestId und den Weg nach
+     Bubble -- und nichts von der Optik.
+
+     cfg = {
+       prefix      Praefix der requestId ("qa", "am") -- nur zur Lesbarkeit in der Konsole
+       limit       wie viele Treffer der RPC hoechstens liefern soll
+       minChars    Vorgabe 2       debounceMs  Vorgabe 400
+       onLoading   ()              onResults   (items, meta)      onError (nachricht)
+       onIdle      ()              laeuft, wenn die Eingabe unter die Mindestlaenge fiel
+     }
+     Der Name der Bubble-Funktion ist HART bubble_fn_quick_actions_search, und das ist
+     Absicht: es ist dasselbe JavaScript-to-Bubble-Element, derselbe Workflow, dieselbe
+     Rueckgabe. Damit braucht die Suche in Ask Mira keinen einzigen Eingriff in Bubble. */
+  function makeEntitySearch(cfg){
+    cfg = cfg || {};
+    var PRE  = cfg.prefix || "es";
+    var MINC = cfg.minChars != null ? cfg.minChars : MIN;
+    var DEB  = cfg.debounceMs != null ? cfg.debounceMs : DEBOUNCE;
+    var LIM  = cfg.limit != null ? cfg.limit : 8;
+    var uhr = 0, wache = 0, letzte = null, frage = "", bereich = "";
+    /* DIE WARTE-UHR. Acht Sekunden. Antwortet Bubble nie -- der Workflow liegt auf dieser Seite
+       gar nicht, eine Bedingung darin greift nicht, die RPC faellt aus --, dann laeuft das
+       Skelett OHNE SIE FUER IMMER. Das ist der schlechteste Ausgang, den es hier gibt: der
+       Nutzer wartet auf etwas, das nicht mehr kommt, und nichts sagt es ihm.
+       Acht und nicht drei: der Weg durch Bubble liegt gemessen unter zwei Sekunden, acht lassen
+       also jede langsame Antwort durch und sind kurz genug, dass niemand ein Skelett anstarrt. */
+    var WACHE = cfg.timeoutMs != null ? cfg.timeoutMs : 8000;
+
+    /* onError bekommt den GRUND als zweites Argument. Vier Ausgaenge sehen im UI sonst gleich
+       aus -- Bubble meldet einen Fehler, der Payload war unlesbar, die Bubble-Funktion fehlt
+       ganz, oder es kam nie eine Antwort. Im Bild steht nie eine Diagnose, aber es soll auch
+       nicht derselbe Satz fuer vier verschiedene Dinge stehen. */
+    function nimm(art, payload){
+      if (art === "loading"){ if (cfg.onLoading) cfg.onLoading(); return; }
+      clearTimeout(wache);            /* eine Antwort ist da -- die Uhr hat ihren Zweck erfuellt */
+      if (art === "error"){
+        if (cfg.onError) cfg.onError((payload && payload.message) || "", "bubble");
+        return;
+      }
+      var g = entityItems(payload.items);
+      /* Unlesbar ist NICHT leer. Ein Payload, den der Parser nicht lesen konnte, darf nicht als
+         "keine Treffer" durchgehen -- sonst sucht der Nutzer weiter und wundert sich. */
+      if (g.unlesbar){ if (cfg.onError) cfg.onError("", "unlesbar"); return; }
+      /* Verworfene Zeilen NENNEN, auch wenn andere durchkamen. Sind alle verworfen, sieht die
+         Komponente das an meta.verworfen und zeigt den Fehlerzustand; kamen einige durch, waere
+         eine Meldung im UI falsch -- aber schweigen waere es auch, denn dann fehlt jemandem eine
+         Zeile und niemand weiss warum. Also eine Zeile in die Konsole: Diagnose, nicht Debug. */
+      if (g.verworfen && window.console) console.warn("[core] Entitaets-Suche: " + g.verworfen +
+        " Treffer waren unlesbar (unbekannter type oder fehlende Kennung) und wurden ausgelassen.");
+      if (cfg.onResults) cfg.onResults(g.items.slice(0, LIM), {
+        verworfen: g.verworfen, gesamt: g.items.length, query: frage, scope: bereich
+      });
+    }
+
+    function los(){
+      var id = PRE + "_" + (+new Date()) + "_" + Math.random().toString(36).slice(2, 8);
+      letzte = id;
+      esMerken(id, function(art, payload){
+        /* Die eigene Verfallspruefung bleibt: der Verteiler weiss, WER gemeint ist, nicht ob
+           die Antwort noch die aktuelle ist. Tippt der Nutzer weiter, kommen alte Antworten
+           immer noch an -- und wuerden die neueren ueberschreiben. */
+        if (id !== letzte) return;
+        nimm(art, payload);
+      });
+      if (cfg.onLoading) cfg.onLoading();
+      /* ALLE NEUN FELDER, auch die leeren. Der Bubble-Schritt liest sie; ein weggelassenes
+         Feld kann dort an einer fehlenden Referenz scheitern, und das sieht nach einem Fehler
+         in der Suche aus. */
+      var detail = {
+        query: frage,
+        query_folded: foldDiacritics(frage),
+        query_de: germanExpand(frage),
+        scope: bereich || "",
+        rank: "", citation_type: "", url_type: "", market: "", mentioning: "",
+        limit: LIM,
+        requestId: id
+      };
+      var fn = window.bubble_fn_quick_actions_search;
+      if (typeof fn === "function"){ try { fn(JSON.stringify(detail)); } catch(e){} }
+      else if (cfg.onError){
+        /* KEIN stiller Ausfall. Ohne die Bubble-Funktion kommt nie eine Antwort, und ein
+           Skelett, das ewig laeuft, ist die schlechteste aller Meldungen. */
+        delete ES_KUNDEN[id]; letzte = null;
+        cfg.onError("", "kanal");
+        if (window.console) console.warn("[core] bubble_fn_quick_actions_search fehlt -- " +
+          "die Entitaets-Suche kann nichts anfragen.");
+        return;
+      }
+      try { window.dispatchEvent(new CustomEvent("mira_quick_actions_search", { detail: detail })); }
+      catch(e){}
+      clearTimeout(wache);
+      wache = setTimeout(function(){
+        if (id !== letzte) return;              /* laengst von einer neueren Anfrage ueberholt */
+        delete ES_KUNDEN[id]; letzte = null;    /* der Kunde ist weg, der Platz frei */
+        if (cfg.onError) cfg.onError("", "zeit");
+      }, WACHE);
+    }
+
+    return {
+      /* Eine Eingabe. Der Bereich (brand/domain/url/prompt oder "") kommt vom Aufrufer. */
+      tippen: function(rohtext, neuerBereich){
+        if (neuerBereich !== undefined) bereich = neuerBereich || "";
+        frage = String(rohtext == null ? "" : rohtext).trim();
+        clearTimeout(uhr); clearTimeout(wache);
+        if (frage.length < MINC){ letzte = null; if (cfg.onIdle) cfg.onIdle(); return; }
+        uhr = setTimeout(los, DEB);
+      },
+      /* Sofort suchen, ohne Uhr -- fuer den Klick auf einen Typ-Knopf. */
+      jetzt: function(neuerBereich){
+        if (neuerBereich !== undefined) bereich = neuerBereich || "";
+        clearTimeout(uhr);
+        if (frage.length < MINC){ letzte = null; if (cfg.onIdle) cfg.onIdle(); return; }
+        los();
+      },
+      bereich: function(){ return bereich; },
+      frage: function(){ return frage; },
+      abbrechen: function(){ clearTimeout(uhr); clearTimeout(wache); letzte = null; }
     };
   }
 
@@ -14789,6 +15290,17 @@
     fmtDate: fmtDate,
     foldDiacritics: foldDiacritics,
     germanExpand: germanExpand,
+    makeEntitySearch: makeEntitySearch,
+    entitySearchDeliver: esVerteilen,
+    searchAttach: searchAttach,
+    makeFlickerPill: makeFlickerPill,
+    entityItems: entityItems,
+    entityId: entityId,
+    entityLabel: entityLabel,
+    entityBild: entityBild,
+    entityRow: entityRow,
+    entityAvatar: entityAvatar,
+    entityHl: entityHl,
     resolveBubbleFn: resolveBubbleFn,
     TREND_UP: TREND_UP,
     TREND_DOWN: TREND_DOWN,
@@ -15011,4 +15523,11 @@
        eben ohne Schutz zuweisen -- lieber eine ungeschuetzte core.js als gar keine. */
     window.UpstreemCore = API;
   }
+
+  /* Die Bruecke fuer den Suchrueckkanal ZULETZT, wenn API steht: sie ersetzt nur einen Stub,
+     nie eine echte Palette (die weist sich ihre Fassung selbst zu, siehe searchAttach). Damit
+     kommt eine Suchantwort auch auf einer Seite an, auf der quick-actions.js nicht liegt --
+     dort waere der Aufruf des Workflow-Schrittes sonst ein ReferenceError, der den ganzen
+     Schritt mitnimmt. */
+  esBrueckeSetzen();
 })();

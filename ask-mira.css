@@ -475,7 +475,12 @@
   #ask-mira .am-shell { touch-action: none !important; }
   #ask-mira .am-chat { touch-action: pan-y !important; overscroll-behavior: contain !important; }
   #ask-mira .am-table-scroll { touch-action: pan-x pan-y !important; }
-  #ask-mira .am-textarea { touch-action: pan-y !important; }
+  /* Die Schiene des Aufwand-Sliders gehoert in DIESE Zeile und bekommt kein eigenes
+     !important: die Regel darueber (#ask-mira, #ask-mira *) traegt selbst eines und schlaegt
+     sonst jede normale Regel. pan-y und nicht none -- senkrechtes Scrollen bleibt beim Browser,
+     die WAAGERECHTE Bewegung bekommt der Slider. Mit none waere die Seite unter dem Finger
+     festgenagelt, solange er auf der Pille liegt. */
+  #ask-mira .am-textarea, #ask-mira .am-eff-track { touch-action: pan-y !important; }
   /* keep the table wrapper a real horizontal scroll container even if the page forces overflow elsewhere */
   #ask-mira .am-table-scroll { overflow-x: auto !important; overflow-y: hidden !important; }
   .am-table-scroll:first-child { margin-top: 0; }
@@ -1391,6 +1396,377 @@
   #ask-mira[data-theme="dark"] .am-inline-quote-remove:hover { background: rgba(255,255,255,0.08); }
 
   .am-actions { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
+
+  /* ==========================================================================================
+     COMPOSER, ZWEITE FASSUNG — Aufwand-Slider und der Entitaets-Picker
+     ==========================================================================================
+     Was sich aendert: das ausklappbare Einstellungs-Fach unter dem Feld faellt weg. Modell UND
+     Aufwand liegen in EINER Schaltflaeche unten links im Feld, deren Menue nach oben aufgeht;
+     links daneben ein Plus, das ueber dem Feld einen Picker auf ganzer Breite oeffnet.
+     Die alten Regeln um das Fach und die Aufwand-Zeile BLEIBEN stehen -- ohne Punkt
+     geschrieben, weil der Vertragsscanner einen Punkt als Selektor liest und sonst eine
+     Klasse in die Aufnahme kaeme, die es nicht gibt. Nicht aus Bequemlichkeit:
+     fremdes Bubble-Markup kann die Klassen noch tragen, und eine geloeschte Klasse zaehlt im
+     Vertragsvergleich als Bruch. Ihre Elemente raeumt das JS aus dem Baum (composerUmbauen),
+     damit bleiben die Regeln ohne Wirkung statt ohne Grund.
+
+     Das Feld ist jetzt EINE Spalte: Textzeile oben, Aktionszeile darunter mit zwei Gruppen. Das
+     ist nicht nur Optik -- es macht die Aktionszeile unabhaengig von der Hoehe des Textfeldes,
+     das bis 200px waechst. */
+  .am-composer { position: relative; }   /* Anker fuer die zwei Menues, die nach oben aufgehen */
+  #ask-mira .am-composer.is-v2 { grid-template-columns: 1fr; gap: 10px; align-items: stretch; }
+  .am-composer.is-v2 .am-input-wrap { grid-column: 1 / -1; }
+  .am-composer.is-v2 .am-actions { grid-column: 1 / -1; justify-content: space-between; width: 100%; }
+  /* Die RECHTE Gruppe gibt nicht nach -- Mikrofon und Senden sind zwei Ziele, die man treffen
+     muss. Die LINKE darf schrumpfen: auf 320px Schirmbreite bleiben dem Feld rund 260px, und
+     Plus plus Modellknopf plus Mikrofon plus Senden brauchen mehr. Die Ellipse am Modellnamen
+     faengt es auf. */
+  .am-act-l, .am-act-r { display: flex; align-items: center; gap: 8px; }
+  .am-act-r { flex: 0 0 auto; }
+  .am-act-l { flex: 0 1 auto; min-width: 0; }
+  .am-eff { min-width: 0; }
+  /* Unter 430px faellt der MODELLNAME weg, nicht die Stufe: das Zeichen unterscheidet Pro
+     (Mira-Marke) von Flash (Blitz) auch ohne Wort, die Stufe steht nirgends sonst. */
+  @media (max-width: 430px){ #ask-mira .am-eff-name { display: none; } }
+  /* Der negative Rand des Mikrofons hing genau am weggefallenen Fader-Knopf: er halbierte den
+     Abstand Fader->Mikrofon. Ohne den Fader rutschte das Mikrofon 5px in den Sendeknopf. */
+  .am-composer.is-v2 .am-mic { margin-left: 0; }
+  /* Die Sprachaufnahme blendet die Zeilen aus. Der Picker-Streifen gehoert in dieselbe Liste --
+     sonst stehen die uebernommenen Treffer mitten in der Aufnahme im Bild. */
+  .am-composer.is-recording .am-picks { display: none; }
+
+  /* ---- Die Schaltflaeche: Modell UND Aufwand -------------------------------------------- */
+  .am-eff { position: relative; flex: 0 0 auto; }
+  /* Die Masse sind die des .am-icon-action direkt daneben (40px, Radius 11) und die des
+     .am-model-btn, den dieser Knopf ersetzt -- NICHT die des .up-seg-btn, den es hier nicht
+     gibt. Zwei Hoehen in einer Knopfzeile sieht man sofort.
+     .check_reinvention.py meldet diese Regel als Verdacht auf Nachbau, und das ist richtig
+     erkannt: es IST die Geometrie eines vorhandenen Bauteils -- absichtlich, denn sie steht
+     neben ihm. */
+  .am-eff-btn {
+    display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 11px 0 12px;
+    border: 1px solid var(--am-border); border-radius: 11px; background: transparent;
+    color: var(--am-muted); font-family: inherit; font-size: 13.5px; font-weight: 500;
+    letter-spacing: -0.01em; cursor: pointer; max-width: 100%;
+    transition: background 200ms ease, border-color 200ms ease, color 200ms ease;
+  }
+  .am-eff-btn:hover, .am-eff.is-open .am-eff-btn {
+    background: var(--am-soft); border-color: var(--vc-hover-border, #6f6f6f); color: var(--am-text);
+  }
+  .am-eff-ic { width: 18px; height: 18px; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; }
+  .am-eff-ic svg { width: 18px; height: 18px; display: block; }
+  .am-eff-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* Die Stufe steht im Knopf, aber leiser als der Modellname: sie ist die Beifuegung. Auf Ultra
+     bekommt sie die Farbe -- der einzige Ort, an dem sie ausserhalb des Menues zu sehen ist. */
+  .am-eff-lvl { flex: 0 0 auto; font-weight: 600; color: var(--up-blau, #3b82f6); transition: color 200ms ease; }
+  #ask-mira.is-ultra .am-eff-lvl { color: var(--up-lila, #9a65e6); }
+  .am-eff-chev { width: 13px; height: 13px; flex: 0 0 auto; fill: none; stroke: currentColor;
+    stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; opacity: 0.75; }
+
+  /* ---- Das Menue darueber -------------------------------------------------------------- */
+  .am-eff-menu {
+    position: absolute; bottom: calc(100% + 8px); left: 0; z-index: 60;
+    width: 264px; max-width: 78vw; box-sizing: border-box; padding: 12px 14px 10px;
+    /* 14px wie .am-model-menu dieser Datei und wie --up-dd-radius in core. Ein drittes Mass
+       in derselben Knopfzeile waere genau die Drift, die die Farbleiter in core beendet hat.
+       Der Schatten bleibt der dieser Komponente (.am-model-menu, .am-msgnav-menu) --
+       --up-dd-shadow waere hier der Fremdkoerper. */
+    border: 1px solid var(--up-menu-border, var(--am-border)); border-radius: 14px;
+    background: var(--up-menu-bg, var(--am-card)); box-shadow: 0 16px 40px rgba(0,0,0,0.16);
+    opacity: 0; transform: translateY(6px) scale(0.98); transform-origin: bottom left;
+    pointer-events: none; transition: opacity 200ms ease, transform 200ms ease;
+  }
+  .am-eff.is-open .am-eff-menu { opacity: 1; transform: none; pointer-events: auto; }
+  #ask-mira[data-theme="dark"] .am-eff-menu { box-shadow: 0 16px 40px rgba(0,0,0,0.6); }
+  /* Die Kopfzeile des Menues: Modell, Stufe, Chevron. Der Klick darauf klappt die Modellliste
+     aus -- eine Schaltflaeche, zwei Tiefen.
+     Dieselbe Zeile eine Ebene tiefer: sie nimmt Radius und Uebergang vom Knopf darueber, damit
+     die Schaltflaeche und ihr Kopf als EIN Stueck lesbar bleiben. */
+  .am-eff-head {
+    display: flex; align-items: center; gap: 8px; width: 100%; height: 30px; padding: 0 4px;
+    border: 0; border-radius: 8px; background: transparent; color: var(--am-text);
+    font-family: inherit; font-size: 13.5px; font-weight: 600; letter-spacing: -0.01em;
+    cursor: pointer; transition: background 200ms ease;
+  }
+  .am-eff-head:hover { background: var(--up-sel-bg, var(--am-soft)); }
+  .am-eff-head .am-eff-ic { color: var(--am-text); }
+  .am-eff-hname { flex: 1 1 auto; min-width: 0; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .am-eff-hlvl { flex: 0 0 auto; font-weight: 600; color: var(--up-blau, #3b82f6); transition: color 200ms ease; }
+  #ask-mira.is-ultra .am-eff-hlvl { color: var(--up-lila, #9a65e6); }
+  /* KEIN Drehen des Chevrons beim Oeffnen -- mehrfach angemahnt. Es zeigt nach rechts und
+     bleibt dort; dass etwas offen ist, sagt die ausgeklappte Liste selbst. */
+  .am-eff-hchev { width: 14px; height: 14px; flex: 0 0 auto; fill: none; stroke: currentColor;
+    stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; opacity: 0.7; }
+
+  /* ---- Die Schiene ---------------------------------------------------------------------
+     Jede Zahl ist aus .up-switch (core.css) mit dem Faktor 28/22 abgeleitet, damit der Slider
+     zur Schalterfamilie der App gehoert und nicht daneben steht:
+         Hoehe   22 -> 28        Daumen  18 -> 23        Einzug  2 -> 2.5
+     Radius und Schatten bleiben, die skalieren nicht mit.
+     Breite: 264 Menue minus 2x14 Polster = 236. Der Weg des Daumens ist damit
+     236 - 23 - 2x2.5 = 208px, die drei Halte liegen auf 0 / 104 / 208. */
+  .am-eff-slider { margin-top: 10px; }
+  .am-eff-track {
+    position: relative; height: 28px; border-radius: 999px; cursor: pointer;
+    background: var(--up-switch-off, #d6d6d4); overflow: hidden;
+    transition: background 200ms ease;
+  }
+  #ask-mira[data-theme="dark"] .am-eff-track { background: var(--up-switch-off, #444444); }
+  /* Die Fuellung waechst mit der Stufe. transform statt width: eine Breite laesst den Browser
+     in jedem Bild neu umbrechen, ein transform nicht -- und die Fuellung liegt hinter dem
+     Daumen, der im selben Zug faehrt. */
+  .am-eff-fill {
+    position: absolute; inset: 0; border-radius: 999px; background: var(--up-blau, #3b82f6);
+    transform-origin: left center; transition: transform 200ms ease;
+  }
+  /* Der Verlauf fuer Ultra liegt als EIGENE Schicht darueber und wird eingeblendet. Ein
+     Umschalten des background-image liesse sich nicht animieren -- ein Verlauf ist kein Wert,
+     zwischen dem der Browser rechnen kann. */
+  .am-eff-ultra {
+    position: absolute; inset: 0; border-radius: 999px; opacity: 0;
+    /* DREI STOPPS und nicht zwei. Der Browser rechnet einen Verlauf in sRGB, und diese Gerade
+       schneidet den Bogen, den OKLCh zwischen Blau und Lila zieht -- die Mitte waere um vier
+       Prozent matter als beide Enden, und zwar genau dort, wo man hinsieht. Der Stopp in der
+       Mitte legt die Gerade auf den Bogen zurueck. */
+    background: linear-gradient(90deg, var(--up-blau, #3b82f6) 0%,
+      var(--up-lila-halb, #7473f4) 50%, var(--up-lila, #9a65e6) 100%);
+    transition: opacity 200ms ease;
+    /* Die Partikel malen sich in DIESE Farbe: makeFlickerGrid liest getComputedStyle(host).color.
+       Es gibt kein cfg.color -- also steht sie hier. Opak, die Staerke regelt maxOpacity. */
+    color: #ffffff;
+    pointer-events: none;
+  }
+  #ask-mira.is-ultra .am-eff-ultra { opacity: 1; }
+  /* Die drei Halte. Auf der gefuellten Seite weiss, auf der leeren leise -- so liest man die
+     Stufe auch ohne den Daumen anzusehen.
+     --vc-muted und NICHT --vc-third, und das ist gerechnet: auf der Schiene misst third nur
+     1.84 (hell) und 2.47 (dunkel), muted 3.46 und 3.72 -- WCAG 1.4.11 verlangt 3.0 fuer den
+     Teil eines Bedienelements, an dem man seinen Zustand abliest.
+     Weiss mit 0.85 auf der Fuellung misst 3.09 gegen das Blau und 3.28 gegen das Lila; 0.55
+     waere mit 2.14 durchgefallen. */
+  .am-eff-dot {
+    position: absolute; top: 50%; width: 4px; height: 4px; margin-top: -2px; border-radius: 999px;
+    background: var(--vc-muted); pointer-events: none; transition: background 200ms ease;
+  }
+  .am-eff-dot.is-fill { background: rgba(255,255,255,0.85); }
+  .am-eff-thumb {
+    position: absolute; top: 2.5px; left: 2.5px; width: 23px; height: 23px; border-radius: 999px;
+    background: #ffffff; box-shadow: 0 1px 2px rgba(0,0,0,0.2); pointer-events: none;
+    transition: transform 200ms ease;
+  }
+  /* Weiss in BEIDEN Themen, und das ist gerechnet: der dunkle Daumen der Schalterfamilie
+     (#e0e0e0) misst auf dem Verlauf 2.79 gegen das Blau und 2.97 gegen das Lila -- beides unter
+     den 3.0, die WCAG 1.4.11 fuer ein Bedienelement verlangt. Weiss schafft 3.68 und 3.92. */
+  #ask-mira[data-theme="dark"] .am-eff-thumb { box-shadow: 0 1px 2px rgba(0,0,0,0.45); }
+  .am-eff-track:focus-visible { outline: none; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+
+  /* Die Beschriftungen stehen UNTER der Schiene und nicht darauf. Gerechnet: weisser Text auf
+     dem Verlauf misst 3.68 bis 3.92, --vc-text 4.50 bis 4.22 -- bei 11.5px schafft KEINE
+     Textfarbe die 4.5 aus WCAG AA, solange das Blau festliegt. Unter der Schiene auf dem
+     Menuegrund liest sich alles. */
+  .am-eff-labels { display: flex; justify-content: space-between; margin-top: 7px; }
+  .am-eff-lbl {
+    border: 0; background: transparent; padding: 2px 2px; cursor: pointer; font-family: inherit;
+    font-size: 11.5px; font-weight: 500; color: var(--vc-third); letter-spacing: 0.01em;
+    transition: color 200ms ease;
+  }
+  .am-eff-lbl:nth-child(1) { margin-left: -2px; }
+  .am-eff-lbl:nth-child(3) { margin-right: -2px; }
+  .am-eff-lbl.is-active { color: var(--am-text); font-weight: 600; }
+  .am-eff-lbl:hover { color: var(--am-text); }
+  /* Flash kann nur die unterste Stufe. Gesperrt wird die SCHIENE, nicht die Schaltflaeche --
+     laege die Sperre wie vorher auf dem ganzen Block, kaeme man aus Flash nicht mehr heraus,
+     weil in derselben Schaltflaeche jetzt auch die Modellwahl sitzt. */
+  #ask-mira.is-flash .am-eff-track, #ask-mira.is-flash .am-eff-labels { opacity: 0.45; pointer-events: none; }
+  .am-eff-note {
+    margin: 8px 0 0; font-size: 11.5px; line-height: 1.35; color: var(--vc-third);
+    max-height: 0; opacity: 0; overflow: hidden; transition: max-height 200ms ease, opacity 200ms ease, margin-top 200ms ease;
+  }
+  #ask-mira.is-flash .am-eff-note { max-height: 40px; opacity: 1; }
+
+  /* ---- Die Modellliste im selben Menue -------------------------------------------------- */
+  .am-eff-models {
+    max-height: 0; opacity: 0; overflow: hidden;
+    transition: max-height 200ms ease, opacity 200ms ease, margin-top 200ms ease;
+  }
+  .am-eff.is-models .am-eff-models { max-height: 180px; opacity: 1; margin-top: 8px; }
+  .am-eff.is-models .am-eff-slider, .am-eff.is-models .am-eff-labels { display: none; }
+  .am-eff-opt {
+    display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 6px 8px;
+    border: 0; border-radius: 10px; background: transparent; color: var(--am-text);
+    font-family: inherit; text-align: left; cursor: pointer; transition: background 200ms ease;
+  }
+  .am-eff-opt + .am-eff-opt { margin-top: 4px; }
+  .am-eff-opt:hover { background: var(--up-sel-bg, var(--am-soft)); }
+  .am-eff-opt.is-active { background: var(--up-sel-bg, var(--am-soft)); }
+  .am-eff-opt-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+  .am-eff-opt-name { font-size: 13px; font-weight: 600; letter-spacing: -0.01em; }
+  .am-eff-opt-desc { font-size: 11.5px; line-height: 1.35; color: var(--am-muted);
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .am-eff-check { width: 15px; height: 15px; flex: 0 0 auto; fill: none; stroke: var(--am-text);
+    stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
+  .am-eff-opt.is-active .am-eff-check { opacity: 1; }
+
+  /* ==========================================================================================
+     DER PICKER — dieselbe Suche wie Quick Actions, im Composer
+     ==========================================================================================
+     Die Maschine steht in core (UC.makeEntitySearch): Uhr, requestId, der Weg nach Bubble und
+     die Zuordnung der Antwort. Hier steht nur die Optik -- und sie steht hier und nicht in
+     core.css, weil quick-actions.css core.css ausdruecklich NICHT laedt: eine geteilte Regel
+     dort wuerde die Palette nie erreichen. Eine Maschine, zwei Stylesheets.
+     Die Masse sind die der Palette (30px Kachel, 13.5/12px Text, 8px 10px Polster), damit eine
+     Trefferzeile hier und dort gleich aussieht. */
+  .am-pick-panel {
+    position: absolute; bottom: calc(100% + 8px); left: 0; right: 0; z-index: 60;
+    box-sizing: border-box; display: flex; flex-direction: column;
+    border: 1px solid var(--up-menu-border, var(--am-border)); border-radius: 18px;
+    background: var(--up-menu-bg, var(--am-card)); box-shadow: 0 16px 40px rgba(0,0,0,0.16);
+    /* Der Deckel kommt vom JS: #ask-mira und .am-shell tragen beide overflow: hidden, also ist
+       jedes Pixel ueber der Komponente weg. Eine feste vh-Zahl kann das nicht wissen. */
+    max-height: var(--am-pick-max, 320px);
+    opacity: 0; transform: translateY(6px) scale(0.99); transform-origin: bottom center;
+    pointer-events: none; overflow: hidden;
+    transition: opacity 200ms ease, transform 200ms ease;
+  }
+  #ask-mira.is-pick-open .am-pick-panel { opacity: 1; transform: none; pointer-events: auto; }
+  #ask-mira[data-theme="dark"] .am-pick-panel { box-shadow: 0 16px 40px rgba(0,0,0,0.6); }
+
+  .am-pick-search { display: flex; align-items: center; gap: 10px; padding: 0 14px; height: 50px; flex: 0 0 auto; }
+  .am-pick-sic { width: 17px; height: 17px; flex: 0 0 auto; fill: none; stroke: var(--vc-third);
+    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .am-pick-input {
+    flex: 1 1 auto; min-width: 40px; border: 0; outline: 0; background: transparent;
+    color: var(--am-text); font-family: inherit; font-size: 14.5px; font-weight: 450;
+    letter-spacing: -0.01em; padding: 0;
+  }
+  .am-pick-input::placeholder { color: var(--vc-third); }
+  .am-pick-count { flex: 0 0 auto; font-size: 11.5px; font-weight: 500; color: var(--vc-third); font-variant-numeric: tabular-nums; }
+
+  /* Die vier Typen als Pillen. .up-seg aus core traegt den gleitenden Streifen und laut core.css
+     bereits mit 'transform 200ms ease, width 200ms ease' -- also genau die geforderte Bewegung,
+     ohne eine eigene Zeile dafuer. */
+  .am-pick-scopes { margin: 0 14px 10px; }
+  .am-pick-panel .up-seg { width: 100%; }
+  .am-pick-panel .up-seg-btn { flex: 1 1 0; min-width: 0; }
+
+  .am-pick-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+    padding: 0 6px 6px; scrollbar-gutter: stable; }
+  .am-pick-list:empty { display: none; }
+  .am-pick-row {
+    display: flex; align-items: center; gap: 11px; width: 100%; padding: 8px 10px;
+    border: 0; border-radius: 10px; background: transparent; cursor: pointer;
+    font-family: inherit; text-align: left; transition: background 200ms ease;
+  }
+  .am-pick-row:hover, .am-pick-row.is-active { background: var(--up-sel-bg, var(--am-soft)); }
+  .am-pick-row.is-taken { opacity: 0.45; pointer-events: none; }
+  .am-pick-av {
+    width: 30px; height: 30px; flex: 0 0 auto; border-radius: 8px; overflow: hidden;
+    border: 1px solid var(--am-border); background: var(--am-soft-2); position: relative;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .am-pick-av img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+  /* Eine Flagge ist quer -- im Quadrat bliebe von den USA nur das Sternenfeld. */
+  .am-pick-av.is-flag { width: 24px; height: 18px; border-radius: 3px; border: 0; }
+  .am-pick-av-fb { display: none; align-items: center; justify-content: center; width: 100%; height: 100%; color: var(--am-muted); }
+  .am-pick-av.is-fb .am-pick-av-fb { display: flex; }
+  .am-pick-av-fb svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .am-pick-av-t { font-size: 11.5px; font-weight: 600; color: var(--am-muted); }
+  .am-pick-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+  .am-pick-primary { font-size: 13.5px; font-weight: 500; color: var(--am-text); letter-spacing: -0.01em;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .am-pick-secondary { font-size: 12px; color: var(--am-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .am-pick-type { flex: 0 0 auto; font-size: 11px; font-weight: 500; color: var(--vc-third); }
+  .am-pick-hl { background: transparent; color: inherit; font-weight: 750; }
+
+  .am-pick-note { padding: 26px 16px 24px; text-align: center; color: var(--am-muted); font-size: 12.5px; }
+  .am-pick-note-t { font-size: 13px; font-weight: 600; color: var(--am-text); margin-bottom: 3px; }
+  .am-pick-sk { display: flex; align-items: center; gap: 11px; padding: 8px 10px; }
+  .am-pick-sk-av { width: 30px; height: 30px; border-radius: 8px; flex: 0 0 auto; }
+  .am-pick-sk-lines { flex: 1 1 auto; display: flex; flex-direction: column; gap: 6px; }
+  .am-pick-sk-line { height: 9px; border-radius: 5px; }
+  .am-pick-sk-av, .am-pick-sk-line { background: var(--vc-sk, #eeedef); animation: amPickSk 1.2s ease-in-out infinite; }
+  @keyframes amPickSk { 0%,100% { opacity: 1; } 50% { opacity: 0.55; } }
+
+  /* ---- Die uebernommenen Treffer im Feld -----------------------------------------------
+     Sie liegen als eigener Streifen GANZ OBEN im Feld -- ueber dem Zitat, das "Ask Mira" aus
+     einer Textmarkierung dort ablegt. Die Reihenfolge ist die des Auftrags und auch die
+     richtige: der Bezug steht vor dem Zitat, das Zitat vor der Frage.
+     max-height statt display, damit die 200ms ueberhaupt eine Strecke haben: zwischen none und
+     block rechnet der Browser nicht. */
+  .am-picks {
+    grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; min-width: 0;
+    max-height: 0; opacity: 0; overflow: hidden;
+    transition: max-height 200ms ease, opacity 200ms ease, margin-bottom 200ms ease;
+  }
+  /* 132px traegt drei umbrochene Kacheln (3x28 plus 2x6 Abstand plus Luft). Mehr als drei
+     gibt es nicht -- PICK_MAX ist 3. */
+  .am-composer.has-picks .am-picks { max-height: 132px; opacity: 1; margin-bottom: 2px; }
+  /* ZWEI GRUENDE FUER EINE EIGENE FAMILIE, und beide gehoeren hierhin, wo sie anfaengt.
+     1. KEIN "-chip" im Klassennamen: der breite Sprachlauf von core nimmt [class*="-chip"]
+        ausdruecklich aus, und eine Beschriftung darin waere spaeter stumm nicht uebersetzbar.
+     2. Nicht .up-entchip/.up-mentlist aus core: jenes Paket skaliert ueber --up-mc, bringt ein
+        20.6px-Logo und 14.4px-Text mit und hat KEIN Entfernen-Kreuz. Der Bezug im Feld braucht
+        ein dauerhaft sichtbares X und eine 18px-Kachel -- das waere ein gesprengtes Bauteil
+        statt eines verwendeten, und genau davor warnt CLAUDE.md 1. */
+  .am-pick-tag {
+    /* flex: 0 0 auto -- die Kachel SCHRUMPFT NICHT. Ohne das teilen sich drei Kacheln die
+       Zeile, und weil die Beschriftung overflow: hidden traegt, ist ihre kleinste Breite 0:
+       gemessen wurde ein URL-Titel auf 35px gequetscht, also unlesbar. Mit fester Breite
+       umbricht der Streifen stattdessen (flex-wrap steht schon auf wrap) -- eine Kachel je
+       Zeile ist richtig, drei unlesbare Stummel sind es nicht. */
+    display: inline-flex; align-items: center; gap: 7px; flex: 0 0 auto; height: 28px;
+    max-width: 100%; padding: 0 4px 0 5px; box-sizing: border-box;
+    border: 1px solid var(--am-border); border-radius: 9px; background: var(--am-soft-2);
+    font-size: 12.5px; color: var(--am-text); min-width: 0;
+    animation: amPickIn 200ms ease both;
+  }
+  @keyframes amPickIn { from { opacity: 0; transform: translateY(3px) scale(0.97); } to { opacity: 1; transform: none; } }
+  .am-pick-tag.is-out { animation: amPickOut 200ms ease both; }
+  @keyframes amPickOut { to { opacity: 0; transform: scale(0.94); } }
+  .am-pick-tag-av {
+    width: 18px; height: 18px; flex: 0 0 auto; border-radius: 5px; overflow: hidden;
+    background: var(--am-soft); display: flex; align-items: center; justify-content: center; position: relative;
+  }
+  .am-pick-tag-av img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .am-pick-tag-av.is-flag { width: 20px; height: 14px; border-radius: 3px; }
+  .am-pick-tag-av-fb { display: none; align-items: center; justify-content: center; width: 100%; height: 100%; color: var(--am-muted); }
+  .am-pick-tag-av.is-fb .am-pick-tag-av-fb { display: flex; }
+  .am-pick-tag-av-fb svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 2.2; }
+  .am-pick-tag-av-t { font-size: 9.5px; font-weight: 700; color: var(--am-muted); }
+  /* EINE Reihe, sonst gekuerzt -- ausdruecklich verlangt. Ein langer URL-Titel oder ein Prompt
+     darf die Zeile nicht sprengen. 320px, damit drei Marken nebeneinander passen und ein
+     einzelner langer Titel trotzdem etwas zu lesen gibt. */
+  /* EINE Reihe, sonst gekuerzt -- ausdruecklich verlangt. 320px ist die Obergrenze: darunter
+     passen drei Marken nebeneinander, darueber kuerzt ein langer URL-Titel oder Prompt.
+     min-width, damit die Kachel im engen Streifen nicht doch noch zusammenfaellt. */
+  .am-pick-tag-lbl { min-width: 40px; max-width: 320px; white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; }
+  /* 19px-Kreuz an der Pille. Vorbild ist .am-inline-quote-remove derselben Datei -- dasselbe
+     Kreuz am Zitat, nur dauerhaft sichtbar statt beim Ueberfahren, und auf 200ms gebracht. */
+  .am-pick-tag-x {
+    width: 19px; height: 19px; flex: 0 0 auto; border: 0; border-radius: 6px; padding: 0;
+    background: transparent; color: var(--am-muted); cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: background 200ms ease, color 200ms ease;
+  }
+  .am-pick-tag-x svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .am-pick-tag-x:hover { color: var(--am-text); background: rgba(0,0,0,0.06); }
+  #ask-mira[data-theme="dark"] .am-pick-tag-x:hover { background: rgba(255,255,255,0.08); }
+
+  /* Der einzige Weg, wie ein nach oben aufgehendes Menue auf dem Telefon nicht abgeschnitten
+     wird. Unter 720px bekommt .am-composer-area overflow-x: hidden, und nach der
+     CSS-Spezifikation wird overflow-y damit von visible zu auto -- die Box klippt also AUCH
+     senkrecht. is-model-open war bisher die einzige Gegenregel; die zwei neuen Menues brauchen
+     sie genauso. */
+  #ask-mira.is-pick-open .am-composer-area,
+  #ask-mira.is-eff-open .am-composer-area { overflow: visible; }
+
+  /* Bewegung reduzieren: die Strecken bleiben, die Zeit faellt weg. */
+  @media (prefers-reduced-motion: reduce) {
+    .am-eff-fill, .am-eff-thumb, .am-eff-ultra, .am-eff-menu, .am-pick-panel,
+    .am-picks, .am-eff-models, .am-eff-note { transition-duration: 0s; }
+    .am-pick-tag, .am-pick-tag.is-out { animation-duration: 0s; }
+  }
 
   /* icon button — prompt research .upr-icon-button */
   .am-icon-action {

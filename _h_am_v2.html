@@ -1,0 +1,53 @@
+<!doctype html><meta charset="utf-8">
+<!-- Das Viewport-Meta ist fuer die MESSUNG noetig, nicht fuer die Optik: ohne es nimmt
+     ein mobiler Browser 980px an, und eine Messung bei "375px" liefert dann Desktopwerte.
+     Die Wirtsseite in Bubble traegt es; hier muss es also auch stehen. -->
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>Ask Mira: Composer v2 -- Aufwand-Slider und Picker</title>
+<!--
+  WARUM DIESER PRUEFSTAND KOPIEN LAEDT UND NICHT DAS REPO:
+  Der lokale Server hat auf diesem Rechner keinen Lesezugriff auf ~/Documents (macOS-
+  Ordnerschutz). GEMESSEN: /private/tmp liefert 200, ~/Documents liefert 404 fuer jede Datei.
+  Deshalb kopiert scratchpad/sync.sh die Dateien in ein Verzeichnis, das der Server lesen darf,
+  und schreibt zu jeder ihre Groesse und ihren Hash nach frische.js -- damit die Frische der
+  geladenen Datei BEWIESEN werden kann und nicht gehofft.
+
+  ZWEI FALLEN DIESER UMGEBUNG, die beide schon zu falschen Schluessen gefuehrt haben:
+  1. Im verdeckten Browser-Fenster laeuft requestAnimationFrame NICHT und document.hidden ist
+     wahr. Eine Animationsmessung meldet dort 0 und sieht aus wie ein Standbild. Der Abschnitt
+     PARTIKEL treibt die Bilder daher selbst -- und die gefaelschte Uhr muss bei
+     performance.now() anfangen, sonst ist dt negativ und jedes Bild wird verworfen.
+  2. Haengende CSS-Uebergaenge halten den berechneten Wert auf dem STARTWERT. Ein max-height,
+     das 0 meldet, sieht dann wie eine nicht greifende Regel aus. Jede Geometriemessung laeuft
+     deshalb mit abgeschalteten Uebergaengen; die 200ms werden getrennt an der
+     transition-duration geprueft, nicht am Endwert.
+  3. Das Fenster kann 0x0 gross sein. Dann ist ALLES 0. Der Prueftand meldet die Fenstergroesse
+     als erste Zeile und bricht ab, wenn sie zu klein ist.
+-->
+<link rel="stylesheet" href="/core.css">
+<link rel="stylesheet" href="/ask-mira.css">
+<style>
+  html,body{margin:0;background:#f6f6f6;font:13px/1.6 ui-monospace,Menlo,monospace}
+  #buehne{position:fixed;left:-4000px;top:0;width:1180px;height:820px}
+  #buehne.zeigen{position:static;left:0;width:1180px;margin:0 auto 20px;border:1px solid #ccc}
+  #raus{padding:16px;max-width:1100px;margin:0 auto;white-space:pre-wrap}
+  .ja{color:#137a3f}.nein{color:#c0392b;font-weight:700}.kopf{font-weight:700;margin-top:14px;display:block}
+</style>
+<body>
+<div id="buehne"><div id="main"><div class="huelle" style="height:820px;display:flex">
+  <!-- MARKUP wird von sync.sh aus bubble/ask_mira_bubble.html eingesetzt -->
+  <!--MARKUP-->
+</div></div></div>
+<pre id="raus">laeuft…</pre>
+<script>
+/* DIE SPRACHE FESTNAGELN, vor core. Ohne das haengt das Ergebnis daran, was eine vorher
+   besuchte Seite in localStorage hinterlassen hat -- ein Lauf meldete sieben FALSCH, weil die
+   Beschriftungen auf Deutsch standen und die Sollwerte englisch sind. Eine Pruefung, deren
+   Ergebnis von der Vorgeschichte des Browsers abhaengt, ist keine Pruefung.
+   Deutsch wird getrennt geprueft (_h_am_blick.html?de). */
+try { localStorage.setItem('up_prefs', JSON.stringify({ locale: 'en' }));
+      localStorage.removeItem('pref_theme'); } catch(e){}
+</script>
+<script src="/frische.js"></script>
+<script src="/core.js"></script>
+<script src="/ask-mira.js"></script>
+<script src="/_h_am_v2_pruef.js"></script>

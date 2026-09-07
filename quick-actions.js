@@ -678,7 +678,17 @@
     if (v == null || v === "" || isNaN(Number(v))) return '<span class="mqa-trend is-flat">' + DASH + '</span>';   // no trend
     var n = Number(v), a = Math.abs(n);
     if (a === 0) return '<span class="mqa-trend is-flat">' + DASH + '</span>';         // no change
-    var txt = UC.fmtPct(a);   // >0 but rounding to 0 prints "<1%" — see UC.fmtPct
+    /* HIER STAND UC.fmtPct(a), und in dieser Datei gibt es kein UC -- core heisst
+       window.UpstreemCore. Jede /trending-Suche mit einem numerischen, von Null verschiedenen
+       trend_pct ohne fertiges item.metric warf damit ReferenceError, riss renderResults mit
+       und liess das Skelett stehen. trendHtml(null) und trendHtml(0) kommen nie bis hierher,
+       deshalb ist es nie aufgefallen.
+       Eine Nachkommastelle, weil CLAUDE.md 2b sie fuer den Trend vorschreibt (4.7%). Der
+       Rueckfall ohne core: dieselbe Rundung von Hand -- die Palette laeuft ausdruecklich auch
+       auf Seiten ohne core (siehe Kopf). */
+    var kern = window.UpstreemCore;
+    var txt = (kern && kern.fmtPct) ? kern.fmtPct(a, 1)
+            : (a > 0 && a < 0.05 ? "<0.1%" : (Math.round(a * 10) / 10) + "%");
     return '<span class="mqa-trend ' + (n > 0 ? "is-up" : "is-down") + '">' +
              (n > 0 ? ARR_UP : ARR_DOWN) + '<span class="mqa-trend-n">' + txt + '</span>' +
            '</span>';
@@ -701,7 +711,10 @@
     else if (type === "prompt"){
       var mk = String(item.market || "").toUpperCase();
       var flag = flaggeUrl(item.market);
-      av = avHtml(flag, '<span class="mqa-av-t">' + esc(mk) + '</span>');
+      /* true fuer istFlagge -- eine Flagge ist quer, und im 30er-Quadrat bleibt von den USA
+         nur das Sternenfeld uebrig. viewedRowHtml unten gibt es seit Langem mit, hier fehlte
+         es: solange der Doppelgaenger oben gewann, war das Argument ohnehin ohne Wirkung. */
+      av = avHtml(flag, '<span class="mqa-av-t">' + esc(mk) + '</span>', !!flag);
       primary = hl(item.prompt_text || ""); secondary = "Market · " + esc(mk);
     }
     return '<button class="mqa-row" type="button" role="option" data-ri="' + ri + '">' +
@@ -1174,8 +1187,16 @@
      Logo nicht beschnitten wird, Initial als Rueckfall), der Markt die Flaggenkachel (.upt-flag --
      flaches Rechteck, cover). Nachgebaut statt importiert: quick-actions.css laedt bewusst kein
      core.css und kennt die --vc-Tokens nicht, siehe Kopf dieser Datei. Die Groesse bleibt bei den
-     bisherigen 20px, nur die Form kommt aus der Tabelle. */
-  function avHtml(av, kind, label){
+     bisherigen 20px, nur die Form kommt aus der Tabelle.
+     HIESS BIS ZUM 08.09. AUCH avHtml -- und war damit ein Doppelgaenger der Zeilen-Kachel
+     oben (Z. 651), im selben Bereich. Durch das Vorziehen von Funktionen gewann DIESE, und
+     jede Trefferzeile bekam deshalb die 20px-Befehlskachel statt der 30px-Kachel, fuer die
+     .mqa-av in der CSS geschrieben ist; ihr Rueckfall war ein "?" statt eines Initials, eines
+     Globus oder des Marktkuerzels, weil der Rueckfall der anderen Signatur hier als 'kind'
+     landet und 'label' undefined bleibt. Die .mqa-av-Regeln waren toter Code.
+     Der neue Name ist die ganze Behebung: cmdAvHtml malt die Befehlskachel, avHtml die
+     Zeilenkachel. */
+  function cmdAvHtml(av, kind, label){
     if (kind === "flag"){
       return '<span class="mqa-cmd-av is-flag"><img src="' + escAttr(av) + '" alt="" loading="lazy"' +
              ' onerror="this.style.display=\'none\'"></span>';
@@ -1191,7 +1212,7 @@
     var lead = dot
       ? '<span class="mqa-cmd-dotwrap"><span class="mqa-ct-dot" style="background:' + escAttr(dot) + '"></span></span>'
       : ((av || avKind === "brand")
-        ? avHtml(av, avKind, label)
+        ? cmdAvHtml(av, avKind, label)
         : '<span class="mqa-cmd-slash">/</span>');
     return '<button class="mqa-action" type="button" role="option" ' + attrs + '>' +
       lead +
@@ -1887,14 +1908,33 @@
     UCg.brandsInto(null, function(list){ api.setBrands(list); });
   })(40);
 
-  window.MiraQuickActions = api;
+  /* ---- DER RUECKKANAL WIRD GETEILT (08.09.) ------------------------------------------------
+     Bubble antwortet auf JEDE Suche mit MiraQuickActions.setResults({requestId, items}) --
+     auf die der Palette UND auf die des Ask-Mira-Composers, denn beide feuern dieselbe
+     Bubble-Funktion und derselbe Workflow-Schritt antwortet. Die drei Setter unten werfen aber
+     jede Antwort weg, deren requestId nicht der eigene letzte Lauf ist (Z. 1856 ff.) -- eine
+     Antwort fuer Mira waere hier lautlos verschwunden.
+     Also laeuft der Rueckkanal ueber den Verteiler in core: searchAttach gibt ein Objekt
+     zurueck, das jede Antwort erst nach ihrer requestId zuordnet und nur die eigenen an diese
+     api weiterreicht. Alle uebrigen Methoden reicht es unveraendert durch.
+     ZUGEWIESEN WIRD ES HIER und nicht in core: diese Zeile ueberschrieb bisher bedingungslos
+     alles, was vorher unter dem Namen stand, und beide Loader laden core.js VORHER -- eine in
+     core angelegte Fassung waere an dieser Stelle stillschweigend geloescht worden.
+     Und der Rueckfall bleibt: ohne core ist es wie vorher die nackte api. Diese Datei laeuft
+     ausdruecklich auch auf Seiten ohne core (siehe Kopf). */
+  var kernAn = window.UpstreemCore;
+  var vorne = (kernAn && kernAn.searchAttach) ? kernAn.searchAttach("qa", api) : api;
+  window.MiraQuickActions = vorne;
   /* Nachholen, was waehrend des Ladens aufgelaufen ist -- in der Reihenfolge, in der es kam.
      Ein Wurf in einem der Aufrufe darf die restliche Warteschlange nicht mitnehmen, aber auch
-     nicht still verschwinden. */
+     nicht still verschwinden.
+     UEBER vorne und nicht ueber api: ein vorgemerkter Aufruf kann eine fremde requestId
+     tragen (der Workflow-Schritt hat vor dem Laden geantwortet), und dann gehoert er zugeordnet
+     und nicht hier gezeichnet. */
   if (MQA_Q.length){
     var offen = MQA_Q.splice(0, MQA_Q.length);
     for (var qi = 0; qi < offen.length; qi++){
-      try { api[offen[qi][0]].apply(api, offen[qi][1]); }
+      try { vorne[offen[qi][0]].apply(vorne, offen[qi][1]); }
       catch(e){ if (window.console) console.warn("[MQA] vorgemerkter Aufruf " + offen[qi][0] +
         " ist fehlgeschlagen:", e); }
     }

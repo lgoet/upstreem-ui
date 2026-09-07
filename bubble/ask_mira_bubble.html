@@ -78,6 +78,51 @@
        bubble_fn_ask_mira_rename_chat / _delete_chat / _pin_chat / _move_chat
        bubble_fn_ask_mira_create_project / _rename_project / _delete_project
      Each falls back to a window CustomEvent when the function is missing, exactly as before.
+
+     ── DER COMPOSER, ZWEITE FASSUNG (08.09.) ─────────────────────────────────────────────────
+     Das ausklappbare Fach unter dem Eingabefeld ist WEG. Modell und Aufwand liegen in EINER
+     Schaltflaeche unten links, deren Menue nach oben aufgeht: darin die Modellzeile (Klick
+     klappt Mira Pro / Mira Flash aus) und ein Slider mit drei Stufen.
+
+       Medium -> short        High -> balanced        Ultra -> detailed
+
+     AM PAYLOAD AENDERT SICH NICHTS. bubble_fn_ask_mira_send bekommt weiter genau vier Felder,
+     in genau dieser Reihenfolge:
+         { chat_id, message, answer_detail, model }
+     und answer_detail traegt weiter buchstabengleich short | balanced | detailed. Der Slider ist
+     eine neue DARSTELLUNG desselben Feldes, keine neue Groesse. Ultra faerbt die Schiene
+     blau-lila und laesst weisse Partikel darin laufen -- reine Optik, kein Datenfeld.
+     Mira Flash kann nur die unterste Stufe; die Schiene ist dann gesperrt, die Schaltflaeche
+     nicht (sonst kaeme man aus Flash nicht mehr heraus).
+
+     ── DAS PLUS: DER ENTITAETS-PICKER ────────────────────────────────────────────────────────
+     Der Knopf links im Feld oeffnet darueber eine Suche ueber Marken, Domains, URLs und Prompts
+     -- dieselbe wie Quick Actions, und zwar WOERTLICH dieselbe Anbindung:
+
+       hinaus   window.bubble_fn_quick_actions_search(JSON.stringify(detail))
+                dieselbe Funktion, derselbe Workflow, dieselben elf Felder im detail
+                (nur limit ist 8 statt 5/15, und requestId beginnt mit "am_" statt "qa_")
+       zurueck  window.MiraQuickActions.setResults({ requestId, items })
+                DERSELBE Run-JS-Schritt, unveraendert
+
+     DESHALB IST BUBBLE-SEITIG FUER DIE SUCHE NICHTS ZU TUN. core.js verteilt die Antwort nach
+     ihrer requestId an den, der die Anfrage gestellt hat: eine "am_"-Antwort geht an Mira, eine
+     "qa_"-Antwort an die Palette, und eine Antwort OHNE requestId weiter an die Palette -- also
+     genau wie bisher. Auf einer Seite ohne Quick Actions legt core den Namen
+     window.MiraQuickActions selbst an, damit der Schritt dort nicht mit "Cannot read properties
+     of undefined" den ganzen Workflow mitnimmt.
+
+     Es kommt KEIN neuer askMira*-Setter dazu -- die Liste oben bleibt unveraendert.
+
+     Aufgegriffene Treffer stehen als Pillen im Feld (hoechstens drei) und gehen beim Abschicken
+     als Block OBEN in message mit, in einer Form, mit der ein Agent umgehen kann:
+         Context:
+         - Brand: Nike (uid: 17123...x123)
+         - Domain: nike.com
+         - URL: https://nike.com/de/air-max (Air Max -- die Uebersicht)
+         - Prompt: "beste laufschuhe" (uid: 17123...x125)
+     Marke und Prompt tragen ihre UID, Domain und URL sind selbst der Schluessel -- dieselbe
+     Zuordnung, die die Palette beim Anklicken einer Zeile an Bubble meldet.
      ============================================================ 
      ── DER RUN-JS-SCHRITT: EIN BACKTICK, KEIN OBJEKT (STYLEGUIDE §46) ────────────────────────
      NIEMALS ein JS-Objekt im Schritt von Hand bauen. Also NICHT so:
@@ -189,23 +234,83 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
       </button>
       <div class="am-composer-shell" id="am-composer-shell">
-      <div class="am-composer" id="am-composer">
+      <!-- ZWEITE FASSUNG (08.09.). Was hier stand: Textzeile und Aktionsspalte nebeneinander,
+           ein Fader-Knopf und darunter ein ausklappbares Fach mit "Answer detail" und der
+           Modellwahl. Beides ist weg -- Modell UND Aufwand liegen jetzt in EINER Schaltflaeche
+           unten links, deren Menue nach oben aufgeht, und links davon ein Plus fuer den
+           Entitaets-Picker.
+           WICHTIG FUER EINEN BESTEHENDEN EINBAU: ask-mira.js baut das alte Markup zur Laufzeit
+           selbst auf diese Fassung um (composerUmbauen). Wer sein Element in Bubble nicht
+           anfasst, bekommt die neue Leiste trotzdem -- dieses Markup hier ist die Aufraeumarbeit
+           fuer NEUINSTALLATIONEN, keine Voraussetzung. -->
+      <div class="am-composer is-v2" id="am-composer" data-am-composer="v2">
+        <!-- Der Picker: oberhalb des Feldes, auf seiner ganzen Breite. Er haengt AN .am-composer
+             (position: relative) und nicht am Koerper: im Top Layer waere die volle Breite des
+             Feldes nicht mehr herstellbar. -->
+        <div class="am-pick-panel" id="am-pick-panel" aria-hidden="true">
+          <div class="am-pick-search">
+            <svg class="am-pick-sic" viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+            <input class="am-pick-input" id="am-pick-input" type="text" autocomplete="off" spellcheck="false" aria-label="Search your workspace">
+            <span class="am-pick-count" id="am-pick-count"></span>
+          </div>
+          <div class="am-pick-scopes" id="am-pick-scopes"></div>
+          <div class="am-pick-scroll" id="am-pick-scroll">
+            <div class="am-pick-list" id="am-pick-list" role="listbox" aria-live="polite"></div>
+          </div>
+        </div>
+        <!-- Die uebernommenen Bezuege: GANZ OBEN, also ueber dem Zitat, das "Ask Mira" aus einer
+             Textmarkierung dort ablegt. Der Bezug sagt worueber, das Zitat welche Stelle, die
+             Frage was -- von aussen nach innen. -->
+        <div class="am-picks" id="am-picks"></div>
         <div class="am-quote-slot" id="am-quote-slot"></div>
         <div class="am-input-wrap">
           <textarea class="am-textarea" id="am-textarea" rows="1" maxlength="2800" placeholder=""></textarea>
           <div class="am-ph-loop" id="am-ph-loop" aria-hidden="true"><span class="am-ph-text" id="am-ph-text">Ask Mira...</span></div>
         </div>
         <div class="am-actions">
-          <button class="am-icon-action" type="button" id="am-settings-toggle" aria-label="Answer settings" aria-expanded="false">
-            <svg viewBox="0 0 24 24" class="am-ic am-ic-fader" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 17H5"></path><path d="M19 7h-9"></path><circle cx="17" cy="17" r="3"></circle><circle cx="7" cy="7" r="3"></circle></svg>
-          </button>
-          <button class="am-icon-action am-mic" type="button" id="am-mic" aria-label="Voice input">
-            <svg viewBox="0 0 24 24" class="am-ic"><path d="M12 19v3" /> <path d="M19 10v2a7 7 0 0 1-14 0v-2" /> <rect x="9" y="2" width="6" height="13" rx="3" /></svg>
-          </button>
-          <button class="am-send" type="button" id="am-send" aria-label="Send message">
-            <svg viewBox="0 0 24 24" class="am-ic am-ic-send"><path d="m5 12 7-7 7 7" /> <path d="M12 19V5" /></svg>
-            <span class="am-send-spinner" aria-hidden="true"></span>
-          </button>
+          <div class="am-act-l">
+            <button class="am-icon-action am-pick-btn" type="button" id="am-pick-btn" aria-label="Add a reference" aria-expanded="false" data-tip="Add a reference">
+              <svg viewBox="0 0 24 24" class="am-ic" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+            </button>
+            <div class="am-eff" id="am-eff">
+              <button class="am-eff-btn" type="button" id="am-eff-btn" aria-haspopup="true" aria-expanded="false">
+                <span class="am-eff-ic" id="am-eff-ic"></span>
+                <span class="am-eff-name" id="am-eff-name"></span>
+                <span class="am-eff-lvl" id="am-eff-lvl"></span>
+                <svg class="am-eff-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+              </button>
+              <div class="am-eff-menu" id="am-eff-menu" role="dialog" aria-label="Model and effort">
+                <button class="am-eff-head" type="button" id="am-eff-head" aria-expanded="false">
+                  <span class="am-eff-ic" id="am-eff-hic"></span>
+                  <span class="am-eff-hname" id="am-eff-hname"></span>
+                  <span class="am-eff-hlvl" id="am-eff-hlvl"></span>
+                  <svg class="am-eff-hchev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                </button>
+                <div class="am-eff-models" id="am-eff-models"></div>
+                <div class="am-eff-slider" id="am-eff-slider">
+                  <div class="am-eff-track" id="am-eff-track" role="slider" tabindex="0" aria-valuemin="0" aria-valuemax="2" aria-valuenow="1">
+                    <span class="am-eff-fill" id="am-eff-fill"></span>
+                    <span class="am-eff-ultra" id="am-eff-ultra" aria-hidden="true"></span>
+                    <span class="am-eff-dot" data-i="0"></span>
+                    <span class="am-eff-dot" data-i="1"></span>
+                    <span class="am-eff-dot" data-i="2"></span>
+                    <span class="am-eff-thumb" id="am-eff-thumb"></span>
+                  </div>
+                </div>
+                <div class="am-eff-labels" id="am-eff-labels"></div>
+                <p class="am-eff-note" id="am-eff-note"></p>
+              </div>
+            </div>
+          </div>
+          <div class="am-act-r">
+            <button class="am-icon-action am-mic" type="button" id="am-mic" aria-label="Voice input">
+              <svg viewBox="0 0 24 24" class="am-ic"><path d="M12 19v3" /> <path d="M19 10v2a7 7 0 0 1-14 0v-2" /> <rect x="9" y="2" width="6" height="13" rx="3" /></svg>
+            </button>
+            <button class="am-send" type="button" id="am-send" aria-label="Send message">
+              <svg viewBox="0 0 24 24" class="am-ic am-ic-send"><path d="m5 12 7-7 7 7" /> <path d="M12 19V5" /></svg>
+              <span class="am-send-spinner" aria-hidden="true"></span>
+            </button>
+          </div>
         </div>
         <div class="am-rec" id="am-rec" aria-hidden="true">
           <span class="am-rec-live"><span class="am-rec-dot"></span><span class="am-rec-time" id="am-rec-time">0:00</span></span>
@@ -218,30 +323,6 @@
         </div>
       </div>
       <div class="am-rec-note" id="am-rec-note" role="status" aria-live="polite"></div>
-
-      <div class="am-settings-panel" id="am-settings-panel">
-        <div class="am-settings-inner">
-          <div class="am-detail-row">
-            <span class="am-detail-label">Answer detail</span>
-            <div class="am-model am-detail-dd" id="am-detail">
-              <button class="am-model-btn" type="button" id="am-detail-btn" aria-haspopup="true" aria-expanded="false" aria-label="Answer detail">
-                <span class="am-model-name" id="am-detail-name">Balanced</span>
-                <svg class="am-model-chev" viewBox="0 0 24 24" fill="none"><path d="m6 9 6 6 6-6" /></svg>
-              </button>
-              <div class="am-model-menu" id="am-detail-menu" role="menu"></div>
-            </div>
-            <span class="am-detail-tip">Answer detail is not supported in Mira Flash</span>
-          </div>
-          <div class="am-model" id="am-model">
-            <button class="am-model-btn" type="button" id="am-model-btn" aria-haspopup="true" aria-expanded="false" aria-label="Select model">
-              <span class="am-model-ic" id="am-model-ic"></span>
-              <span class="am-model-name" id="am-model-name">Mira Pro</span>
-              <svg class="am-model-chev" viewBox="0 0 24 24" fill="none"><path d="m6 9 6 6 6-6" /></svg>
-            </button>
-            <div class="am-model-menu" id="am-model-menu" role="menu"></div>
-          </div>
-        </div>
-      </div>
       </div>
 
       <p class="am-hint">Mira answers based on your selected workspace data.</p>

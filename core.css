@@ -92,6 +92,28 @@
          auch in Menues, die core selbst mit data-theme markiert. Genau daran stand er am
          08.09. hell im dunklen Menue. */
       --up-switch-off: #d6d6d4;
+      /* DAS BLAU DER APP und sein Lila. --up-blau ist der Ton des "You"-Chips der Mitgliederliste
+         (team-orga.css .uto-you) und des Chips der Landingpage -- also der eine Blauton, den die
+         App schon hat, statt eines zweiten daneben.
+         --up-lila ist daraus GERECHNET und nicht gewaehlt: in OKLCh liegt das Blau auf
+         L=0.6231 C=0.1880 H=259.8; das Lila dreht den Farbton um 40 Grad auf H=299.8 und laesst
+         Helligkeit und Saettigung unangetastet. Genau deshalb hat der Verlauf zwischen den
+         beiden keinen Knick -- nachgerechnet: die Chroma wird auf dem ganzen Weg nicht
+         beschnitten, und bei 40 Grad ist es noch Lila und nicht schon Magenta (das beginnt bei
+         etwa H=330).
+         Beide Toene sind in hell UND dunkel dieselben. Eine Flaeche in dieser Saettigung traegt
+         auf beiden Gruenden, und weiss darauf misst 3.68 bis 3.92 -- ueber den 3.0, die WCAG
+         1.4.11 fuer ein Bedienelement verlangt. Ein zweiter Satz Werte waere eine Aussage ohne
+         Anlass. */
+      --up-blau: #3b82f6;
+      --up-lila: #9a65e6;
+      /* DIE MITTE DES BOGENS, und sie ist noetig. Ein Verlauf zwischen zwei Farben rechnet der
+         Browser in sRGB, und diese Gerade schneidet den Bogen, den OKLCh zwischen ihnen zieht:
+         die Mitte landet auf #6a74ee, also L 0.6131 statt 0.6231 und Chroma 0.1809 statt
+         0.1880 -- knapp vier Prozent Saettigung weniger, genau in der Mitte, genau dort, wo man
+         hinsieht. Mit diesem Stopp bleibt die Abweichung auf dem ganzen Weg unter einem
+         Prozent. Derselbe Ton, nur bei H=279.8 statt 299.8. */
+      --up-lila-halb: #7473f4;
       /* DIE SCHIENE EINES UMSCHALTERS LIEGT UNTER IHREM GRUND, nicht darueber -- und genau das
          war sie bis zum 07.09. nicht. Hier stand ein aufgehellter Ton (60 Prozent von
          --vc-switch-bg), im Dunkeln ein aufgehelltes Grau. Aufhellen heisst aber, sich der Pille
