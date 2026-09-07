@@ -687,15 +687,19 @@
          Es bleibt ein Element und keine Pseudoelemente, weil das Ausblenden beim Schrittwechsel
          etwas braucht, das im Dokument BLEIBT.
          aria-hidden, weil hier nichts steht, was jemand vorgelesen bekommen muesste. */
+      /* NUR NOCH DAS FLIMMERRASTER. Hier lagen vier Ebenen aus onboarding-bg.svg -- vier
+         Lichter, ein Bogen, ein 80px-Raster und vier Sternmarken. Alle vier sind raus
+         (07.09. angefordert: "das svg dahinter mit den grids und sternen soll weg"). Das
+         Flimmerraster ist der Hintergrund, nicht eine fuenfte Ebene darauf: ein feines Raster
+         UNTER einem groben Raster liest sich als zwei Raster, und die Sterne waren genau das,
+         was ersetzt werden sollte.
+         Die Klassen .up-bgart-licht/-bogen/-raster/-marken bleiben in core.css stehen -- sie
+         gehoeren zum Vertrag nach aussen, und wer eine davon zurueckwill, haengt hier eine
+         Zeile ein.
+         Das Canvas malt UC.makeFlickerGrid unten in diese Huelle. Die Huelle steht hier im
+         Markup und nicht im Kit, damit sie die Blende der Komponente mitbekommt
+         (.uob-root.is-bg). */
       '<div class="uob-bg" data-bg aria-hidden="true">' +
-        '<span class="up-bgart-licht"></span>' +
-        '<span class="up-bgart-bogen"></span>' +
-        '<span class="up-bgart-raster"></span>' +
-        /* An der Stelle der vier Sternmarken (.up-bgart-marken) liegt seit dem 07.09. das
-           Flimmerraster. Es ist ein Canvas, das UC.makeFlickerGrid unten in diese Huelle malt --
-           Farbe, Gewicht je Thema und Maske stehen in core.css bei den anderen Ebenen, die Regel
-           der Bewegung im Kit. Die Huelle steht hier im Markup und nicht im Kit, damit sie
-           dieselbe Blende mitbekommt wie ihre drei Nachbarn (.uob-root.is-bg). */
         '<span class="up-bgart-flimmer" data-flimmer></span>' +
       '</div>' +
 
@@ -798,11 +802,22 @@
        eine zweite Seite mit demselben Grund sie anders wollen darf. */
     if (UC.makeFlickerGrid){
       var elFlimmer = root.querySelector("[data-flimmer]");
+      /* DIE VIER ZAHLEN SIND DIE ANGEFORDERTEN (07.09., woertlich aus dem Aufruf, den der
+         Nutzer geschickt hat):
+             squareSize 3, gridGap 20, flickerChance 0.05, maxOpacity 0.4
+         flickerChance heisst bei magicui "je Sekunde und Zelle" (dort mit deltaTime
+         multipliziert), also genau unser changesPerSecond -- eine Zelle wechselt im Mittel
+         alle 20 Sekunden ihr Ziel.
+         DAZU KOMMT NUR fadeMs: das ist das "smoother". magicui setzt den neuen Wert sofort,
+         hier faehrt die Zelle 2.2 Sekunden lang dorthin.
+         Die FARBE steht nicht hier: rgb(0,0,0) waere im Dunkeln unsichtbar. Sie kommt aus der
+         Kaskade (color an .up-bgart-flimmer, dort --vc-text) und dreht sich mit dem Thema --
+         im Hellen also genau das angeforderte Schwarz. */
       if (elFlimmer) UC.makeFlickerGrid(elFlimmer, {
-        squareSize: 5, gap: 13,       /* 18px Abstand -- magicui hat 10 */
-        changesPerSecond: 0.22,       /* eine Zelle wechselt im Mittel alle 4.5s */
-        fadeMs: 1200,                 /* und faehrt, statt zu springen */
-        maxOpacity: 0.25, fps: 30
+        squareSize: 3, gap: 20,       /* 23px Abstand */
+        changesPerSecond: 0.05,
+        fadeMs: 2200,                 /* das "smoother": eine Fahrt statt eines Sprungs */
+        maxOpacity: 0.4, fps: 30
       });
     }
 

@@ -78,8 +78,11 @@ Promise.all([hol("core.css"), hol("core.js"), hol("onboarding-page.css")]).then(
     if (!UC || !UC.makeFlickerGrid){ log("ABBRUCH: UC.makeFlickerGrid fehlt"); return; }
     if (v.setUpstreemTheme) v.setUpstreemTheme("dark");
     var host=wurzel.querySelector("[data-flimmer]");
-    var kit=UC.makeFlickerGrid(host, { squareSize:5, gap:13, changesPerSecond:0.22,
-      fadeMs:1200, maxOpacity:0.25, fps:30 });
+    /* Die ANGEFORDERTEN Zahlen (07.09., woertlich aus dem Aufruf des Nutzers):
+       squareSize 3, gridGap 20, flickerChance 0.05, maxOpacity 0.4. Dazu fadeMs -- das ist das
+       "smoother", magicui hat dafuer keine Angabe, weil es dort keine Fahrt gibt. */
+    var kit=UC.makeFlickerGrid(host, { squareSize:3, gap:20, changesPerSecond:0.05,
+      fadeMs:2200, maxOpacity:0.4, fps:30 });
     var cv=host.querySelector("canvas");
 
     log("1  Es malt ueberhaupt");
@@ -110,6 +113,10 @@ Promise.all([hol("core.css"), hol("core.js"), hol("onboarding-page.css")]).then(
        Prozent, nicht 7.7. Der erste Anlauf hat 7.7 erwartet und die Rundung als Fehler
        gemeldet -- die Rundung ist aber der Grund, warum die Kanten hart sind. */
     var lwAll=null;
+    var maxA=0; for (var im=0;im<feld.length;im++) if (feld[im]>maxA) maxA=feld[im];
+    log("      groesste gemalte Deckkraft: " + maxA + " von 255  (angefordert 0.4 -> 102)");
+    pruef("es malt mit hoechstens 0.4 Deckkraft, wie angefordert",
+      maxA <= 103 && maxA >= 88);
     log("");
 
     log("2  Abstand und Kachelgroesse, aus den Pixeln gelesen");
@@ -140,8 +147,8 @@ Promise.all([hol("core.css"), hol("core.js"), hol("onboarding-page.css")]).then(
     pruef("die Kachel liegt auf ganzen Pufferpixeln (harte Kanten)", pixK === Math.round(pixK));
     log("      haeufigste Laufweite AN " + kachel.toFixed(1) + "px,  AUS " + luecke.toFixed(1) +
         "px   -> Abstand " + (kachel+luecke).toFixed(1) + "px   (magicui: 4 + 6 = 10px)");
-    pruef("Kachel 5px", Math.abs(kachel-5)<0.7);
-    pruef("Abstand 18px, also spaceter als die Vorlage", Math.abs(kachel+luecke-18)<1.2);
+    pruef("Kachel 3px, wie angefordert", Math.abs(kachel-3)<0.7);
+    pruef("Abstand 23px (3 + 20), wie angefordert", Math.abs(kachel+luecke-23)<1.2);
     log("");
 
     /* ---- 3  GLAETTE UND GESCHWINDIGKEIT, mit gedrehter Uhr und gegen die Vorlage ---- */
@@ -200,11 +207,11 @@ Promise.all([hol("core.css"), hol("core.js"), hol("onboarding-page.css")]).then(
        Zusammen 7.1. Der erste Anlauf hatte 12 Stufen und damit 5.3 Alphastufen je Stufe -- die
        Messung meldete 11, und die Schranke von 7 war falsch, nicht die Messung. Genau deshalb
        stehen jetzt 32 Stufen im Kit. Die Vorlage setzt in EINEM Bild bis zu 0.3, also 76. */
-    var tau=0.4, dt=1/30, stufen=32;
-    var schranke=0.25*255*((1-Math.exp(-dt/tau)) + 1/stufen);
+    var tau=2.2/3, dt=1/30, stufen=48;
+    var schranke=0.4*255*((1-Math.exp(-dt/tau)) + 1/stufen);
     log("      gerechnete Schranke: " + schranke.toFixed(1) + " Alphastufen" +
-        "  (Fahrt " + (0.25*255*(1-Math.exp(-dt/tau))).toFixed(1) +
-        " + eine Rundungsstufe " + (0.25*255/stufen).toFixed(1) + ")");
+        "  (Fahrt " + (0.4*255*(1-Math.exp(-dt/tau))).toFixed(1) +
+        " + eine Rundungsstufe " + (0.4*255/stufen).toFixed(1) + ")");
     pruef("und liegt unter der gerechneten Schranke", uns.max <= Math.ceil(schranke));
     log("");
 
@@ -234,7 +241,9 @@ Promise.all([hol("core.css"), hol("core.js"), hol("onboarding-page.css")]).then(
         "\"   gemalt rgb(" + (dunkel?dunkel.slice(0,3).join(","):"-") + ")   Ebene " + opDunkel);
     pruef("im Dunkeln malt es hell (die Textfarbe des dunklen Themas)",
       !!dunkel && dunkel[0] > 200 && dunkel[1] > 200);
-    pruef("und die Ebene ist die gerechnete 0.32", Math.abs(parseFloat(opDunkel)-0.32)<0.01);
+    /* KEINE Daempfung mehr ueber die Ebene: angefordert ist maxOpacity 0.4 als die Zahl, die
+       magicui auch benutzt, und dort gibt es keine Ebene darueber. */
+    pruef("die Ebene daempft nicht mehr (1)", Math.abs(parseFloat(opDunkel)-1)<0.01);
     if (v.setUpstreemTheme) v.setUpstreemTheme("light");
     return warte(300).then(function(){
       bilder(3, 1000/30);
@@ -242,7 +251,7 @@ Promise.all([hol("core.css"), hol("core.js"), hol("onboarding-page.css")]).then(
       log("      hell:   Thema am Element \"" + (wurzel.getAttribute("data-theme")||"(keins)") +
           "\"   gemalt rgb(" + (hell?hell.slice(0,3).join(","):"-") + ")   Ebene " + opHell);
       pruef("im Hellen malt es dunkel", !!hell && hell[0] < 80 && hell[1] < 80);
-      pruef("und die Ebene ist die gerechnete 0.388", Math.abs(parseFloat(opHell)-0.388)<0.01);
+      pruef("auch im Hellen keine Daempfung (1)", Math.abs(parseFloat(opHell)-1)<0.01);
       log("");
 
         log("6  Verdeckter Tab: es haelt an und laeuft danach weiter");

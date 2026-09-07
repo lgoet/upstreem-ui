@@ -32,18 +32,24 @@ Promise.all([hol("core.css"), hol("core.js")]).then(function(t){
   var st=document.createElement("style"); st.textContent=t[0]; document.head.appendChild(st);
   var sc=document.createElement("script"); sc.textContent=t[1]; document.head.appendChild(sc);
   var reihen=[[dunkel ? "dunkel" : "hell", dunkel ? "dark" : "light"]];
-  var arten=[["flimmer","Flimmerraster (neu)"],["marken","Sternmarken (alt)"]];
+  var arten=[["flimmer","NEU: nur das Flimmerraster"],["marken","ALT: das SVG mit Raster und Sternen"]];
   var html="";
   reihen.forEach(function(r){
     html += '<div style="display:flex;flex-wrap:wrap">';
     arten.forEach(function(a){
       html += '<div class="feld ' + r[0] + '">' +
         '<div class="up-root" data-theme="' + r[1] + '" style="position:absolute;inset:0">' +
-          '<span class="up-bgart-licht"></span>' +
-          '<span class="up-bgart-bogen"></span>' +
-          '<span class="up-bgart-raster"></span>' +
-          (a[0] === "flimmer" ? '<span class="up-bgart-flimmer" data-f></span>'
-                              : '<span class="up-bgart-marken"></span>') +
+          /* LINKS nur das Flimmern -- genau das, was die Komponente jetzt baut. RECHTS der alte
+             Grund vollstaendig, also die vier Ebenen aus onboarding-bg.svg. Der erste Anlauf
+             hatte das Flimmern UEBER den alten Ebenen gezeigt; das war kein Vergleich, sondern
+             beides zugleich, und genau daran ist die Meldung "das svg ist immernoch da"
+             entstanden. */
+          (a[0] === "flimmer"
+            ? '<span class="up-bgart-flimmer" data-f></span>'
+            : '<span class="up-bgart-licht"></span>' +
+              '<span class="up-bgart-bogen"></span>' +
+              '<span class="up-bgart-raster"></span>' +
+              '<span class="up-bgart-marken"></span>') +
         '</div>' +
         '<div class="titel">Let’s set up your brand<small>Wir holen die Daten, das dauert einen Moment.</small></div>' +
         '<div class="marke">' + r[1] + " · " + a[1] + '</div>' +
@@ -56,8 +62,8 @@ Promise.all([hol("core.css"), hol("core.js")]).then(function(t){
     var UC=window.UpstreemCore;
     if (!UC || !UC.makeFlickerGrid) return;
     [].forEach.call(document.querySelectorAll("[data-f]"), function(h){
-      UC.makeFlickerGrid(h, { squareSize:5, gap:13, changesPerSecond:0.22, fadeMs:1200,
-        maxOpacity:0.25, fps:30 });
+      UC.makeFlickerGrid(h, { squareSize:3, gap:20, changesPerSecond:0.05, fadeMs:2200,
+        maxOpacity:0.4, fps:30 });
     });
   }, 300);
 });

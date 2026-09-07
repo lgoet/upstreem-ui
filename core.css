@@ -3858,34 +3858,30 @@
 /* ---------- Flimmerraster ----------
    Das Bild malt UC.makeFlickerGrid in ein Canvas (siehe dort: warum ein Canvas, was gegen die
    Vorlage von magicui geaendert ist, und was fuer die Leistung getan ist). HIER stehen nur die
-   drei Dinge, die zur Kaskade gehoeren: die Farbe, das Gewicht je Thema und die Maske.
+   zwei Dinge, die zur Kaskade gehoeren: die Farbe und die Maske.
 
    DIE FARBE ueber color und nicht als Angabe im Aufruf: das Canvas liest sie von seinem
-   Elternteil und noch einmal bei jedem Themenwechsel. Damit entscheidet dieselbe Stelle wie bei
-   den drei Maskenebenen darueber, was hell und was dunkel ist -- und es gibt keinen zweiten Ort,
-   an dem jemand eine Farbe pflegen muesste.
+   Elternteil und noch einmal bei jedem Themenwechsel. Der angeforderte Aufruf traegt
+   color="rgb(0, 0, 0)" -- das ist die richtige Farbe fuer HELL und im Dunkeln unsichtbar. Ueber
+   --vc-text ist es im Hellen genau dieses Schwarz (#1f1f1b) und im Dunkeln die Textfarbe des
+   dunklen Themas, und es gibt keinen zweiten Ort, an dem jemand eine Farbe pflegen muesste.
 
-   DAS GEWICHT ist gerechnet, nicht geraten, und zwar in L* wie beim Raster darueber. Das Kit
-   malt mit hoechstens 0.25 Deckkraft, die Ebene daempft:
-     dunkel  Quadrat #e0e0e0 auf #1c1c1f, wirksam 0.25 x 0.32 = 0.080  ->  dL* 7.6
-     hell    Quadrat #1f1f1b auf #ffffff, dafuer noetig     0.097  ->  Ebene 0.388
-   Die Ebene ist im HELLEN also HOEHER, nicht tiefer -- anders als beim Raster, und das ist kein
-   Widerspruch: L* ist nicht linear, und bei diesen Alphawerten dreht sich das Verhaeltnis. Beim
-   Raster (wirksam 0.02) braucht Hell nur 0.42 der dunklen Staerke, hier 1.21.
-   Zum Vergleich, was vorher an dieser Stelle lag: die Arme der Sternmarken kamen auf dL* 12.9,
-   das Raster liegt bei 1.9. Das Flimmern sitzt mit 7.6 dazwischen -- deutlich sichtbar, aber
-   leiser als die Marken, weil es die ganze Flaeche fuellt und nicht vier Punkte.
+   KEINE DAEMPFUNG MEHR UEBER DIE EBENE. Hier stand opacity .388 / .32, damit die Deckkraft des
+   Kits (damals 0.25) in beiden Themen auf denselben wahrgenommenen Abstand kommt. Angefordert
+   ist jetzt maxOpacity 0.4, und zwar als die Zahl, die magicui auch benutzt -- dort gibt es
+   keine Ebene darueber. Also ist die Deckkraft des Kits die ganze Wahrheit: 0.4, wie bestellt.
+   Die Punkte sind dafuer viel kleiner und weiter auseinander (3px auf 23px Abstand statt 5 auf
+   18), sie bedecken also 1.7 Prozent der Flaeche statt 7.7 -- deutlich weniger Farbe insgesamt,
+   bei kraeftigeren einzelnen Punkten. Wird es im Dunkeln zu laut, ist es EINE Zeile hier.
 
    DIE MASKE haelt die Mitte frei. Dort steht der Inhalt der Seite, und ein Raster hinter einer
    Ueberschrift ist kein Hintergrund mehr, sondern Unruhe. Aussen voll, innen nichts, mit einem
    langen Verlauf dazwischen -- eine harte Kante waere als Kreis zu sehen. */
 .up-bgart-flimmer {
   color: var(--vc-text);
-  opacity: .388;
   -webkit-mask-image: radial-gradient(ellipse 58% 54% at 50% 46%, transparent 0%, #000 100%);
           mask-image: radial-gradient(ellipse 58% 54% at 50% 46%, transparent 0%, #000 100%);
 }
-.up-root[data-theme="dark"] .up-bgart-flimmer { opacity: .32; }
 /* Dunkel: das Raster auf ein Drittel -- die Vorlage zeichnet es mit 6%, gemeint waren 2%, und
    genau die kommen so heraus. Die Marken auf die Haelfte, sie waren zu hell. Der Bogen voll, er
    ist die einzige Linie, die tragen soll. */

@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261021;
+  var BUILD = 20261022;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -5014,10 +5014,12 @@
        werden kann statt je Zelle einer -- und die Stufenbreite ist damit die Untergrenze fuer
        "wie glatt kann eine Fahrt sein". Mit 12 Stufen war der groesste gemessene Sprung 11
        Alphastufen (die Fahrt bewegt eine Zelle um bis zu 6.7, und wenn sie dabei zwei
-       Rundungsgrenzen kreuzt, kommt eine ganze Stufe von 5.3 dazu). Mit 32 Stufen ist eine
-       Stufe 2.0 breit. Dass das nichts kostet, liegt am Zaehlsortieren unten: die Arbeit haengt
-       an der Zahl der ZELLEN, nicht an der Zahl der Stufen. */
-    var STUFEN  = 32;
+       Rundungsgrenzen kreuzt, kommt eine ganze Stufe von 5.3 dazu).
+       48 Stufen sind bei maxOpacity 0.4 gut zwei Alphastufen breit -- und die Stufenbreite ist
+       die Untergrenze fuer "wie glatt kann eine Fahrt sein", also gehoert sie unter den Sprung,
+       den die Fahrt selbst macht. Dass das nichts kostet, liegt am Zaehlsortieren unten: die
+       Arbeit haengt an der Zahl der ZELLEN, nicht an der Zahl der Stufen. */
+    var STUFEN  = 48;
 
     var cv = document.createElement("canvas");
     cv.setAttribute("aria-hidden", "true");
