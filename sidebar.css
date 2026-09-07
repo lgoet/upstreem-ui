@@ -307,8 +307,12 @@
    Selektor traegt .usn-bar davor, weil quick-actions.css eine eigene .mqa-trigger-label-Regel
    hat; mit gleicher Spezifitaet haette die Ladereihenfolge entschieden, und die ist nicht
    garantiert. */
+/* 12px und nicht 11: die Blockueberschriften stehen ueber einer Liste und duerfen leise sein,
+   "Quick Actions" ist selbst der Knopf und wurde bei 11px zu klein gelesen -- am 07.09. um genau
+   ein Pixel groesser angefordert. Gewicht und Laufweite bleiben, damit es weiter wie eine
+   Ueberschrift und nicht wie ein Listeneintrag aussieht. */
 .usn-bar .mqa-trigger-label {
-  font-size: 11px; font-weight: 600; letter-spacing: .04em; color: var(--vc-third);
+  font-size: 12px; font-weight: 600; letter-spacing: .04em; color: var(--vc-third);
   text-transform: none; line-height: 1;
 }
 .usn-bar .mqa-trigger:hover .mqa-trigger-label { color: var(--vc-muted); }

@@ -44,7 +44,18 @@
      used to silently skip installing THIS component's copy — including its hover-reveal CSS and
      the empty-state morph — since the two have since diverged (this one gained click-to-edit and
      the "-"/"+Add" hover morph the read-only widget never had). A component-private global can't
-     collide with it, at the cost of a harmless duplicate <style>/popup div if both are present. */
+     collide with it, at the cost of a harmless duplicate <style>/popup div if both are present.
+
+     UND GENAU DIESER DOPPELTE <style> IST DIE URSACHE DER MELDUNG VOM 07.09.: "bei den Topics im
+     Prompts Table sehe ich schon wieder das alte Styling mit den Borders um die 28px". Beide
+     Fassungen schreiben Regeln auf DIESELBE eine Klasse (.ust-tag, Spezifitaet 0,1,0) -- bei
+     gleicher Spezifitaet gewinnt die spaeter geladene, und welche das ist, entscheidet die
+     Reihenfolge der Bubble-Elemente auf der Seite. Steht die alte Kopie hinten, ist der Rahmen
+     zurueck, egal was hier steht.
+     Deshalb tragen alle Regeln hier ab jetzt einen zweiten Selektorteil (.ust-cell davor oder die
+     Klasse verdoppelt, 0,2,0). Damit entscheidet nicht mehr die Ladereihenfolge, sondern die
+     Spezifitaet -- so wie CLAUDE.md es fuer jeden Konflikt vorschreibt. Kein !important: die alte
+     Fassung hat keins, eine Klasse mehr genuegt. */
   function installUstTopics(){
     if (window.__uptUstTopics) return;
     window.__uptUstTopics = (function(){
@@ -54,40 +65,43 @@
       var style = document.createElement('style');
       style.id = 'ust-topics-style';
       style.textContent = [
-        '.ust-cell{width:100%;height:100%;min-width:0;display:flex;align-items:center;background:transparent;border:0;overflow:hidden;font-family:Geist,Inter,system-ui,-apple-system,sans-serif;}',
+        '.ust-cell.ust-cell{width:100%;height:100%;min-width:0;display:flex;align-items:center;background:transparent;border:0;overflow:hidden;font-family:Geist,Inter,system-ui,-apple-system,sans-serif;}',
         '.ust-cell *,.ust-topics-popup *{box-sizing:border-box;}',
-        '.ust-row{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;width:100%;min-width:0;min-height:28px;overflow:hidden;}',
+        '.ust-cell .ust-row{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;width:100%;min-width:0;min-height:28px;overflow:hidden;}',
         /* Masse woertlich von .up-topicchip in core: 0 8px 0 11px und gap 6. Hier standen 0 10px
            und gap 7 -- derselbe Chip in zwei Groessen, und das faellt nebeneinander auf. */
-        '.ust-tag{height:28px;padding:0 9px 0 12px;border-radius:8px;display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;border:0;background:color-mix(in srgb,var(--ust-tag-color,#6b7280) 10%,transparent);color:var(--ust-tag-color,#4b5563);font-size:12px;line-height:1;font-weight:500;white-space:nowrap;cursor:pointer;user-select:none;}',
-        '.ust-tag-emoji{font-size:12px;line-height:1;}',
-        '.ust-tag-label{white-space:nowrap;}',
-        '.ust-empty{display:inline-flex;align-items:center;color:#a0a5ad;font-size:13px;line-height:1;}',
+        '.ust-cell .ust-tag,.ust-topics-popup .ust-tag{height:28px;padding:0 9px 0 12px;border-radius:8px;display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;border:0;background:color-mix(in srgb,var(--ust-tag-color,#6b7280) 10%,transparent);color:var(--ust-tag-color,#4b5563);font-size:12px;line-height:1;font-weight:500;white-space:nowrap;cursor:pointer;user-select:none;}',
+        '.ust-cell .ust-tag-emoji,.ust-topics-popup .ust-tag-emoji{font-size:12px;line-height:1;}',
+        '.ust-cell .ust-tag-label,.ust-topics-popup .ust-tag-label{white-space:nowrap;}',
+        '.ust-cell .ust-empty{display:inline-flex;align-items:center;color:#a0a5ad;font-size:13px;line-height:1;}',
         /* Dash shrinks/fades out, "+ Add" grows/fades in from width:0 — same idiom as the topic
            chip checkbox elsewhere in this file (a max-width transition, not display, since
            display can\'t be animated). Hover trigger lives on .upt-td-topics in prompts-table.css
            (the whole cell, not just this span, is the click/hover target — see the click handler
            that opens the Edit Topics popup from anywhere in the cell, openEditTopicsModal). */
-        '.ust-empty-dash{display:inline-block;transition:opacity 140ms ease,max-width 180ms cubic-bezier(.2,0,.38,.9);}',
-        '.ust-empty-add{display:inline-flex;align-items:center;gap:3px;max-width:0;opacity:0;overflow:hidden;white-space:nowrap;transition:max-width 180ms cubic-bezier(.2,0,.38,.9),opacity 140ms ease,margin-left 180ms cubic-bezier(.2,0,.38,.9);}',
+        '.ust-cell .ust-empty-dash{display:inline-block;transition:opacity 140ms ease,max-width 180ms cubic-bezier(.2,0,.38,.9);}',
+        '.ust-cell .ust-empty-add{display:inline-flex;align-items:center;gap:3px;max-width:0;opacity:0;overflow:hidden;white-space:nowrap;transition:max-width 180ms cubic-bezier(.2,0,.38,.9),opacity 140ms ease,margin-left 180ms cubic-bezier(.2,0,.38,.9);}',
         '.up-root:not(.is-inactive-view) .upt-td-topics:hover .ust-empty{color:var(--vc-text,#1f1f1b);}',
         '.up-root:not(.is-inactive-view) .upt-td-topics:hover .ust-empty-dash{opacity:0;max-width:0;}',
         '.up-root:not(.is-inactive-view) .upt-td-topics:hover .ust-empty-add{max-width:50px;opacity:1;margin-left:4px;}',
-        '.ust-more{height:28px;padding:0 10px;border-radius:8px;display:inline-flex;align-items:center;flex:0 0 auto;border:0;background:#f5f5f5;color:var(--ust-more-color,#5f646d);font-size:12px;line-height:1;font-weight:600;white-space:nowrap;cursor:pointer;user-select:none;}',
-        '.ust-cell{--ust-more-border:#d9dde3;--ust-more-color:#5f646d;}',
+        '.ust-cell .ust-more{height:28px;padding:0 10px;border-radius:8px;display:inline-flex;align-items:center;flex:0 0 auto;border:0;background:#f5f5f5;color:var(--ust-more-color,#5f646d);font-size:12px;line-height:1;font-weight:600;white-space:nowrap;cursor:pointer;user-select:none;}',
+        '.ust-cell.ust-cell{--ust-more-border:#d9dde3;--ust-more-color:#5f646d;}',
         '.ust-cell .ust-more:hover{background:#ececec;color:#1f1f1b;}',
         '.ust-cell[data-theme="dark"] .ust-tag{background:color-mix(in srgb,var(--ust-tag-color,#6b7280) 22%,transparent);color:#e0e0e0;}',
         '.ust-cell[data-theme="dark"] .ust-empty{color:#555;}',
         '.ust-cell[data-theme="dark"]{--ust-more-color:#a0a0a0;}',
         '.ust-cell[data-theme="dark"] .ust-more{background:#232326;}',
         '.ust-cell[data-theme="dark"] .ust-more:hover{background:rgba(42,42,42,0.85);color:#e0e0e0;}',
-        '.ust-topics-popup{position:fixed;z-index:2147483000;display:none;pointer-events:none;max-width:320px;padding:10px;border:1px solid #d9dde3;border-radius:12px;background:#fff;box-shadow:0 14px 34px rgba(0,0,0,0.14);font-family:Geist,Inter,system-ui,-apple-system,sans-serif;}',
+        '.ust-topics-popup.ust-topics-popup{position:fixed;z-index:2147483000;display:none;pointer-events:none;max-width:320px;padding:10px;border:1px solid #d9dde3;border-radius:12px;background:#fff;box-shadow:0 14px 34px rgba(0,0,0,0.14);font-family:Geist,Inter,system-ui,-apple-system,sans-serif;}',
         '.ust-topics-popup .ust-popup-inner{display:flex;flex-wrap:wrap;gap:8px;}',
         /* Border brightened vs. the plain --vc-border dark value (#353535) — against this popup's
            #151515 background that reads as barely-there/blurry. Same #454545 fix already applied
            to the sort/columns/mentioned/filter dropdowns in core.css; this popup is a separate,
            hardcoded-color widget (not built on --vc-border) so it needs its own copy of the fix. */
-        '.ust-topics-popup[data-theme="dark"]{background:#232326;border-color:#2c2e33;box-shadow:0 14px 34px rgba(0,0,0,0.6);}',
+        /* #3e3e44 ist --up-menu-border aus core, der Rahmenwert fuer alles, was ueber der Seite
+           schwebt. Hier stand #2c2e33 -- neun Helligkeitsstufen ueber der eigenen Flaeche des
+           Kastens, also praktisch kein Rahmen. Derselbe Fall wie die Bulkbar. */
+        '.ust-topics-popup[data-theme="dark"]{background:#232326;border-color:#3e3e44;box-shadow:0 14px 34px rgba(0,0,0,0.6);}',
         '.ust-topics-popup[data-theme="dark"] .ust-tag{background:color-mix(in srgb,var(--ust-tag-color,#6b7280) 22%,transparent);color:#e0e0e0;}'
       ].join('');
       document.head.appendChild(style);

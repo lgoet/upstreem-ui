@@ -1100,6 +1100,17 @@
 /* 32px zur Tabelle und nur 16px zwischen den Karten: der Abstand nach unten trennt zwei
    Bereiche, der zwischen den Karten trennt Geschwister. Zwei Aufgaben, zwei Werte. */
 .upt-kpis { display: flex; gap: 16px; margin-bottom: 32px; align-items: stretch; }
+/* DER GRUND, WARUM DIE MARKT-KARTE DREIMAL "IMMER NOCH SICHTBAR" WAR. Das JS setzt karte.hidden,
+   und dazu gehoert ZWINGEND diese Zeile: [hidden] { display: none } steht im Stylesheet des
+   BROWSERS und hat damit die schwaechste Herkunft, die es gibt -- jede eigene display-Angabe
+   schlaegt sie, und die Karte ist eine Flexspalte. Das Attribut stand also am Element, und die
+   Karte blieb stehen.
+   Meine Messung hat es zweimal nicht gefunden, weil sie erst karte.hidden geprueft hat und nur
+   bei false weitergerechnet -- damit habe ich meine eigene Zuweisung gemessen statt ihrer
+   Wirkung. Der Prueftand liest jetzt ausschliesslich den gerechneten display-Wert.
+   Dieselbe Zeile steht schon in add-prompts, auth-page, brand-editor, domain-detail, onboarding,
+   response-detail, sidebar, team-orga und settings-brand; hier fehlte sie. */
+.upt-kpi[hidden] { display: none; }
 .upt-kpi {
   flex: 1 1 0; min-width: 0; height: 256px; box-sizing: border-box;
   border: 1px solid var(--vc-border); background: var(--vc-bg); border-radius: 16px;

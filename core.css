@@ -27,7 +27,15 @@
          exactly why the panels stopped matching each other. --up-sel-bg is deliberately
          translucent so a selected row still shows the panel underneath rather than becoming a
          solid block; it is the app's row-selection tone at 55% (light) / 60% (dark). */
-      --up-menu-bg: #ffffff; --up-sel-bg: rgba(245,245,245,0.55); --up-menu-border: #e0e2e6;
+      /* DIE AUSWAHL WAR HELLER ALS DIE KOPFZEILE, und damit lief die helle Leiter rueckwaerts:
+         rgba(245,245,245,0.55) ergibt auf einem weissen Menue #fafafa -- Helligkeit 243.8, also
+         elf Stufen UEBER --vc-heading-bg (232.8). Eine gewaehlte Zeile war damit heller als der
+         Kopf darueber und gegen das weisse Panel praktisch unsichtbar (Kontrast 1.02).
+         Jetzt Linears bg-quaternary, dieselbe Rolle und derselbe Wert wie im Dunkeln (#28282c
+         dort): eine Stufe UNTER der Kopfzeile, deckend statt halbtransparent. Im Dunkeln stand
+         die Auswahl schon am 08.09. deckend da -- hier war es noch der alte Aufbau.
+         Gemessen mit _h_helle_leiter.html. */
+      --up-menu-bg: #ffffff; --up-sel-bg: #eeedef; --up-menu-border: #e0e2e6;
       /* Dropdown-Geometrie. Vorher hatte jedes Panel eigene Werte -- 12 vs 14 Radius, 6 vs 8
          Padding, 6 vs 8 Abstand zum Trigger. Keiner davon war eine Design-Entscheidung, es waren
          Kopien die auseinandergelaufen sind. Eine Zahl je Groesse, hier. */

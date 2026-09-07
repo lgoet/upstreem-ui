@@ -1,0 +1,133 @@
+<!doctype html><meta charset="utf-8">
+<title>Der helle Modus gegen Linears hellen Modus, Token fuer Token</title>
+<pre id="out" style="font:12px/1.55 ui-monospace,Menlo,monospace;padding:12px;white-space:pre-wrap"></pre>
+<div id="buehne" style="position:absolute;left:-4000px;top:0"></div>
+<script>
+/* Angefordert am 07.09.: "checke bitte auch alle Linear Lightmode Farben, und wie die noch von
+   meinen unterschiedlich sind. alle Farben checken, die wir jetzt im Darkmode auch angepasst
+   haben."
+   Linears Werte sind am 07.09. live von linear.app ausgelesen (data-theme auf "light" gesetzt und
+   die Custom Properties der Wurzel abgefragt) -- dieselbe Methode wie fuer die dunkle Leiter.
+   Unsere Werte liest dieser Prueftand aus der geladenen core.css, damit hier nichts behauptet
+   wird, was in der Datei anders steht. */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+
+/* Am 07.09. von linear.app gelesen, helles Thema. */
+var LINEAR = {
+  "bg-primary":     "#ffffff",
+  "bg-secondary":   "#f9f8f9",
+  "bg-tertiary":    "#f4f2f4",
+  "bg-quaternary":  "#eeedef",
+  "bg-quinary":     "#e9e8ea",
+  "border-primary": "#e9e8ea",
+  "border-secondary":"#e4e2e4",
+  "border-tertiary":"#dcdbdd",
+  "translucent":    "#00000005",
+  "text-primary":   "#282a30",
+  "text-secondary": "#3c4149",
+  "text-tertiary":  "#6f6e77",
+  "text-quaternary":"#86848d"
+};
+
+/* Rolle -> unser Token -> Linears Rolle. Genau die Rollen, die im Dunkeln am 08.09. umgestellt
+   wurden; die Schriftfarben stehen nur zum Vergleich mit, sie waren ausdruecklich ausgenommen. */
+var ROLLEN = [
+  ["Seitengrund",        "--up-surface",      "bg-primary",      "Flaeche"],
+  ["Karte / Panel",      "--vc-bg",           "bg-secondary",    "Flaeche"],
+  ["Kopfzeile / Menue",  "--vc-heading-bg",   "bg-tertiary",     "Flaeche"],
+  ["Auswahl",            "--up-sel-bg",       "bg-quaternary",   "Flaeche"],
+  ["Skelett",            "--vc-sk",           "bg-quinary",      "Flaeche"],
+  ["Menuegrund",         "--up-menu-bg",      "bg-primary",      "Flaeche"],
+  ["Rahmen auf Flaechen","--vc-border",       "border-secondary","Rahmen"],
+  ["Menuerahmen",        "--up-menu-border",  "border-tertiary", "Rahmen"],
+  ["Feld",               "--vc-field",        "bg-tertiary",     "Flaeche"],
+  ["Umschalterflaeche",  "--vc-switch-bg",    "bg-tertiary",     "Flaeche"],
+  ["Umschalterrahmen",   "--vc-switch-border","border-secondary","Rahmen"],
+  ["Tabellenkopf",       "--vt-head-bg",      "bg-tertiary",     "Flaeche"],
+  ["Zeilenhover",        "--vt-row-hover",    "bg-tertiary",     "Flaeche"],
+  ["Text",               "--vc-text",         "text-primary",    "Schrift"],
+  ["Text gedaempft",     "--vc-muted",        "text-tertiary",   "Schrift"],
+  ["Text dritte Stufe",  "--vc-third",        "text-quaternary", "Schrift"]
+];
+
+function rgb(hexOderRgba, unter){
+  /* Alles auf ein deckendes RGB bringen: halbtransparente Werte auf ihrem Untergrund
+     ausgerechnet, sonst vergleicht man eine Farbe mit einer Farbe plus Untergrund. */
+  var c = document.createElement("canvas"); c.width = c.height = 1;
+  var x = c.getContext("2d");
+  x.fillStyle = unter || "#ffffff"; x.fillRect(0,0,1,1);
+  x.fillStyle = hexOderRgba;
+  if (x.fillStyle === "#000000" && !/^#0{3,6}$|black/i.test(hexOderRgba)) return null;   /* nicht lesbar */
+  x.fillRect(0,0,1,1);
+  var d = x.getImageData(0,0,1,1).data;
+  function z(n){ n = n.toString(16); return n.length<2 ? "0"+n : n; }
+  return "#" + z(d[0]) + z(d[1]) + z(d[2]);
+}
+function hell(hex){
+  var h = hex.replace("#","");
+  function lin(c){ c = parseInt(c,16)/255; return c <= 0.03928 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4); }
+  return Math.round((0.2126*lin(h.slice(0,2)) + 0.7152*lin(h.slice(2,4)) + 0.0722*lin(h.slice(4,6)))*255*100)/100;
+}
+function kontrast(a,b){
+  function w(hex){ var h=hex.replace("#",""); function l(c){ c=parseInt(c,16)/255;
+    return c<=0.03928 ? c/12.92 : Math.pow((c+0.055)/1.055,2.4); }
+    return 0.2126*l(h.slice(0,2))+0.7152*l(h.slice(2,4))+0.0722*l(h.slice(4,6)); }
+  var x=w(a), y=w(b); if (x<y){ var t=x; x=y; y=t; } return (x+0.05)/(y+0.05);
+}
+
+hol("core.css").then(function(css){
+  var f = document.createElement("iframe");
+  f.style.cssText = "width:200px;height:80px;border:0";
+  document.getElementById("buehne").appendChild(f);
+  var d = f.contentDocument, v = f.contentWindow;
+  d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body></body></html>"); d.close();
+  var st = d.createElement("style"); st.textContent = css; d.head.appendChild(st);
+  var el = d.createElement("div"); el.className = "up-root"; d.body.appendChild(el);
+  var cs = v.getComputedStyle(el);
+
+  log("HELLER MODUS: unsere Werte gegen Linears (live gelesen am 07.09.)");
+  log("");
+  log("   Rolle                  unser Token          unser Wert   deckend    Linear     Stufen");
+  var abweichung = 0, gleich = 0;
+  ROLLEN.forEach(function(r){
+    var roh = cs.getPropertyValue(r[1]).trim();
+    var lin = LINEAR[r[2]];
+    var unser = roh ? rgb(roh, "#ffffff") : null;
+    if (!unser){ log("   " + r[0].padEnd(22," ") + r[1].padEnd(21," ") + " NICHT LESBAR (" + roh + ")"); return; }
+    var stufen = Math.round(Math.abs(hell(unser) - hell(lin)) * 100) / 100;
+    var marke = stufen < 1.2 ? "gleich " : "ANDERS ";
+    if (stufen < 1.2) gleich++; else abweichung++;
+    log("   " + r[0].padEnd(22," ") + r[1].padEnd(21," ") +
+        roh.padEnd(12," ").slice(0,12) + " " + unser + "  " + lin + "  " +
+        String(stufen).padStart(6," ") + "  " + marke + " (" + r[3] + ")");
+  });
+  log("");
+  log("   " + gleich + " Rollen praktisch gleich, " + abweichung + " weichen ab (Schwelle 1.2 Helligkeitsstufen)");
+  log("");
+  log("DIE LEITER, wenn man Linears helle Werte nimmt");
+  ["bg-primary","bg-secondary","bg-tertiary","bg-quaternary","bg-quinary"].forEach(function(k,i,a){
+    var v1 = LINEAR[k], vor = i ? LINEAR[a[i-1]] : null;
+    log("   " + k.padEnd(15," ") + v1 + "   Helligkeit " + String(hell(v1)).padStart(6," ") +
+        (vor ? "   Abstand zur vorigen " + (Math.round((hell(vor)-hell(v1))*100)/100) : ""));
+  });
+  log("");
+  log("UNSERE LEITER HEUTE");
+  [["--up-surface","Seite"],["--vc-bg","Karte"],["--vc-heading-bg","Kopfzeile"],["--up-sel-bg","Auswahl"],["--vc-sk","Skelett"]]
+    .forEach(function(p, i, a){
+      var w = rgb(cs.getPropertyValue(p[0]).trim(), "#ffffff");
+      var vorher = i ? rgb(cs.getPropertyValue(a[i-1][0]).trim(), "#ffffff") : null;
+      log("   " + p[1].padEnd(15," ") + w + "   Helligkeit " + String(hell(w)).padStart(6," ") +
+          (vorher ? "   Abstand zur vorigen " + (Math.round((hell(vorher)-hell(w))*100)/100) : ""));
+    });
+  log("");
+  var karte = rgb(cs.getPropertyValue("--vc-bg").trim(), "#ffffff");
+  var seite = rgb(cs.getPropertyValue("--up-surface").trim(), "#ffffff");
+  log("   Karte gegen Seite: unser Kontrast " + kontrast(karte, seite).toFixed(3) +
+      "   mit Linears Werten " + kontrast(LINEAR["bg-secondary"], LINEAR["bg-primary"]).toFixed(3));
+  log("   " + (karte === seite ? "BEFUND: Karte und Seite sind bei uns DERSELBE Wert -- die Karte steht nur auf ihrem Rahmen."
+                               : "Karte und Seite liegen auseinander."));
+  log("FERTIG");
+}).catch(function(e){ log("ABBRUCH: " + e.message); });
+</script>

@@ -40,11 +40,17 @@ Promise.all(["core.css","prompts-table.css","core.js","prompts-table.js",
   function sichtbar(){
     var k = d.querySelector(".upt-kpi-markets");
     if (!k) return null;
-    return !k.hidden && v.getComputedStyle(k).display !== "none";
+    /* NUR der gerechnete Wert. Vorher stand hier "!k.hidden && ..." -- damit fragte die Messung
+       zuerst nach dem Attribut, das die Komponente selbst gerade gesetzt hatte, und war bei true
+       fertig. Gemessen wurde also meine eigene Zuweisung, nicht ihre Wirkung: [hidden] kommt aus
+       dem Stylesheet des Browsers und wird von jeder eigenen display-Regel geschlagen, und
+       .upt-kpi ist eine Flexspalte. Die Karte stand sichtbar da, und der Prueftand sagte RICHTIG.
+       Dreimal gemeldet, zweimal von mir gruen gemessen. */
+    return v.getComputedStyle(k).display !== "none";
   }
   function karten(){
     return [].filter.call(d.querySelectorAll(".upt-kpi"), function(k){
-      return !k.hidden && v.getComputedStyle(k).display !== "none"; }).length;
+      return v.getComputedStyle(k).display !== "none"; }).length;
   }
   var schritte = [];
   function schritt(name, fn, erwartet){
