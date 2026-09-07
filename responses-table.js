@@ -77,7 +77,7 @@
        114, plus 2px Reserve gegen Rundung. Bei 110 fehlten 4px, und genau das war zu sehen:
        "Mentioned…". Steht der Markenname davor ("Volkswagen mentioned?", 134px), schneidet es
        weiter ab -- das ist der gewollte Fall, dafuer gibt es den Tooltip. */
-    { key: "mentioned",  label: "Mentioned",      w: "minmax(116px, 0.6fr)",  min: 116, dropAt: "vnarrow", prio: 30 },
+    { key: "mentioned",  label: "Mentioned?",     w: "minmax(116px, 0.6fr)",  min: 116, dropAt: "vnarrow", prio: 30 },
     { key: "sentiment",  label: "Sentiment",      w: "minmax(120px, 1fr)",    min: 120, dropAt: "narrow",  prio: 70 },
     { key: "rank",       label: "Rank",           w: "minmax(90px, 1fr)",     min: 90,  dropAt: "narrow",  prio: 60 },
     /* Brand Mentions shows 4 chips + "+N" (178px, the app-wide figure). Citations shows FIVE chips
@@ -910,7 +910,7 @@
       else { img.style.display = "none"; }
       /* Ohne Fragezeichen (07.09.), wie in urls-table und im Top Citations Dashboard. */
       lbl.textContent = (!logo || logo === "BRAND_LOGO") && name && name !== "BRAND_NAME"
-        ? UC.t("{brand} mentioned").replace("{brand}", name) : UC.t("Mentioned");
+        ? UC.t("{brand} mentioned?").replace("{brand}", name) : UC.t("Mentioned?");
     }
     /* Spotlight: der Schalter zeigt seinen gewaehlten Zustand, ist aber ausgegraut und nicht
        bedienbar. Gedacht fuer Seiten, die ohnehin schon auf diese Marke gefiltert sind -- dort
@@ -938,7 +938,7 @@
       if (!isBusy() && state.hasData) state.brandSettled = true;
       elBrand.classList.toggle("is-visible", !!valid && state.hasData && !!state.brandSettled);
       if (!valid) return;
-      elBrandLbl.textContent = UC.t("{brand} mentioned").replace("{brand}", name);   /* Muster, siehe domains-table */
+      elBrandLbl.textContent = UC.t("{brand} mentioned?").replace("{brand}", name);   /* Muster, siehe domains-table */
       if (logo && logo !== "BRAND_LOGO"){ elBrandLogo.src = logo; elBrandLogo.style.display = "block"; }
       else { elBrandLogo.style.display = "none"; }
       /* Im Spotlight IMMER der gewaehlte Zustand, unabhaengig vom Filter: der Schalter behauptet

@@ -37,6 +37,16 @@
     var k = window.UpstreemCore;
     try { return (k && k.t) ? k.t(s) : s; } catch(e){ return s; }
   }
+  /* ---- WARUM JEDE BESCHRIFTUNG DURCH tx() LAEUFT (08.09.) ----
+     Gemeldet: "im DE Setting auch noch brutal viel auf Englisch." Der breite Sprachlauf von core
+     haette die kurzen Beschriftungen erwischt, die langen Glossartexte aber NIE: er ueberspringt
+     Textknoten ueber 200 Zeichen (breiterLauf in core.js), und die Erklaerungen hier sind 300 bis
+     450 Zeichen lang. Ein Katalogeintrag dafuer waere ohne Wirkung geblieben, und niemand haette
+     gesehen, warum.
+     Also uebersetzt diese Komponente ihre Texte SELBST, an der Stelle, an der sie sie malt. Das
+     ist ohnehin die richtige Ordnung -- die Komponente besitzt ihre Beschriftungen -- und es
+     macht sie unabhaengig von der Laengengrenze eines fremden Laufs. Ohne core bleibt alles
+     englisch, und das ist richtig: ohne core gibt es keinen Katalog. */
   function ensureCore(){
     if (coreDa()) return;
     var m = /^(.*\/)quick-actions\.js(?:\?.*)?$/.exec(SELF_SRC);
@@ -755,8 +765,8 @@
       html += '<div class="mqa-ref-item' + (on ? " is-open" : "") + '">' +
         '<button class="mqa-action mqa-ref" type="button" role="option" data-ref="' + escAttr(r.id) + '"' +
                 ' aria-expanded="' + (on ? "true" : "false") + '">' +
-          '<span class="mqa-main"><span class="mqa-primary">' + esc(r.label) + '</span></span>' +
-          (hint ? '<span class="mqa-action-hint">' + esc(hint) + '</span>' : '') +
+          '<span class="mqa-main"><span class="mqa-primary">' + esc(tx(r.label)) + '</span></span>' +
+          (hint ? '<span class="mqa-action-hint">' + esc(tx(hint)) + '</span>' : '') +
           '<span class="mqa-ref-chev">' +
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>' +
           '</span>' +
@@ -768,7 +778,7 @@
         /* .mqa-ref-inner is what the grid track collapses: a grid item can animate from 0fr to
            1fr, its own padding cannot. All the body's content therefore lives one level down. */
         html += '<div class="mqa-ref-body"><div class="mqa-ref-inner">' +
-                  '<p class="mqa-ref-text">' + esc(r.body) + '</p>';
+                  '<p class="mqa-ref-text">' + esc(tx(r.body)) + '</p>';
         if (r.chips){
           /* Same constants the palette's own /citation-type and /url-type menus read, drawn with
              the same tagHtml() the rest of this file now uses -- so a type looks identical here,
@@ -858,8 +868,8 @@
     STATIC.forEach(function(a){
       html += '<button class="mqa-action" type="button" role="option" data-action="' + a.action + '">' +
         '<span class="mqa-action-ic">' + a.icon + '</span>' +
-        '<span class="mqa-main"><span class="mqa-primary">' + esc(a.label) + '</span></span>' +
-        (a.hint ? '<span class="mqa-action-hint">' + esc(a.hint) + '</span>' : '') +
+        '<span class="mqa-main"><span class="mqa-primary">' + esc(tx(a.label)) + '</span></span>' +
+        (a.hint ? '<span class="mqa-action-hint">' + esc(tx(a.hint)) + '</span>' : '') +
         '<span class="mqa-enter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg></span>' +
       '</button>';
     });
@@ -1172,8 +1182,8 @@
         : '<span class="mqa-cmd-slash">/</span>');
     return '<button class="mqa-action" type="button" role="option" ' + attrs + '>' +
       lead +
-      '<span class="mqa-main"><span class="mqa-primary"' + (dot ? ' style="color:' + escAttr(dot) + '"' : '') + '>' + esc(label) + '</span></span>' +
-      (hint ? '<span class="mqa-cmd-hint">' + esc(hint) + '</span>' : '') +
+      '<span class="mqa-main"><span class="mqa-primary"' + (dot ? ' style="color:' + escAttr(dot) + '"' : '') + '>' + esc(tx(label)) + '</span></span>' +
+      (hint ? '<span class="mqa-cmd-hint">' + esc(tx(hint)) + '</span>' : '') +
       '<span class="mqa-enter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg></span>' +
     '</button>';
   }

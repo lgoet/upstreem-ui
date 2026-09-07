@@ -135,6 +135,7 @@
   "utbClose",
   "utbDomain",
   "utbEdit",
+  "utbPrompt",
   "utoInvite",
   "utoRemove",
   "utoResend",
@@ -2865,7 +2866,7 @@
   "uutpulse"
  ],
  "_zaehlung": {
-  "events": 149,
+  "events": 150,
   "fnattrs": 96,
   "globals": 169,
   "payloadkeys": 96,

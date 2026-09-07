@@ -9,7 +9,7 @@
       [<]  URL      / (Favicon) Die 7 besten Modelle    [Globus] [Pin] [X]
       [<]  Brand Editor / (Logo) ADAC                                 [X]
       [<]  Prompt   / (Zeichen) Welche Anbieter...              [Pin] [X]
-      [<]  Response / (Zeichen) ChatGPT, 12.09.                       [X]
+      [<]  Response / (Zeichen) ChatGPT, 12.09.                 [Zap] [X]
 
   Der Stift steht NUR bei data-type="brand", der Globus NUR bei data-type="url". Beide sitzen
   am selben Platz: es ist der eine typabhaengige Knopf, und zwei Plaetze fuer dieselbe Rolle
@@ -107,6 +107,12 @@
                     Nur bei data-type="brand", vom Stift. Nutzlast wie oben.
                     Im Workflow: den Brand-Editor oeffnen.
 
+  data-prompt-fn  = "bubble_fn_utbPrompt_[dynamic id]"
+                    Nur bei data-type="response", vom Zap links neben dem Kreuz. Nutzlast wie
+                    oben. Im Workflow: den Drawer des uebergeordneten Prompts oeffnen.
+                    Wie beim Globus schickt die Leiste die Kennung der ANTWORT und nicht die des
+                    Prompts -- welcher Prompt darueber steht, weiss das Datenmodell.
+
   data-domain-fn  = "bubble_fn_utbDomain_[dynamic id]"
                     Nur bei data-type="url", vom Globus links neben dem Pin. Nutzlast wie oben.
                     Im Workflow: den Domain-Drawer der uebergeordneten Domain oeffnen.
@@ -171,7 +177,8 @@
      data-item-id    = "[unique id]"
      data-close-fn   = "bubble_fn_utbClose_[dynamic id]"
      data-edit-fn    = "bubble_fn_utbEdit_[dynamic id]"
-     data-domain-fn  = "bubble_fn_utbDomain_[dynamic id]"></div>
+     data-domain-fn  = "bubble_fn_utbDomain_[dynamic id]"
+     data-prompt-fn  = "bubble_fn_utbPrompt_[dynamic id]"></div>
 
 <script>
 (function(){

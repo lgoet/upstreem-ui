@@ -52,6 +52,12 @@
                                               fuer dieselbe Absicht waeren zwei Workflows, die
                                               auseinanderlaufen. Payload { type, item_id }.
    data-edit-fn    "bubble_fn_utbEdit_[id]"    nur bei data-type="brand". { type, item_id }
+   data-prompt-fn  "bubble_fn_utbPrompt_[id]"  nur bei data-type="response", das zap links vom
+                                              Pin: "zum uebergeordneten Prompt". Wie beim
+                                              Globus schickt die Leiste die Kennung der Antwort
+                                              und NICHT die des Prompts -- welcher Prompt
+                                              darueber steht, weiss das Datenmodell.
+                                              { type, item_id }
    data-domain-fn  "bubble_fn_utbDomain_[id]"  nur bei data-type="url", der Globus links vom
                                               Pin: "zur uebergeordneten Domain". Die Leiste
                                               weiss NICHT, welche Domain das ist -- sie schickt
@@ -182,7 +188,7 @@
     }
     function itemId() { return feld("item_id", "data-item-id"); }
 
-    var elType, elLogo, elName, elEdit, elDomain, elPin;
+    var elType, elLogo, elName, elEdit, elDomain, elPin, elPrompt;
     var state = { leer: true };
 
     /* Das Markup baut die Komponente selbst. In Bubble steht nur die leere Wurzel -- die Leiste
@@ -216,6 +222,13 @@
           'data-tip="' + esc(UC.t("Go to parent domain")) + '" ' +
           'aria-label="' + esc(UC.t("Go to parent domain")) + '">' +
           UC.icon("globe", 2) + '</button>' +
+        /* Nur bei einer KI-Antwort, und links vom Pin (so angefordert): der Weg zurueck zum
+           Prompt, der sie erzeugt hat. Dasselbe zap wie im Prompts-Seitenkopf und wie vor dem
+           Namen einer Prompt-Zeile -- damit ist ohne Beschriftung zu sehen, wohin es geht. */
+        '<button type="button" class="up-iconbtn utb-prompt" data-utb-prompt hidden ' +
+          'data-tip="' + esc(UC.t("Go to parent prompt")) + '" ' +
+          'aria-label="' + esc(UC.t("Go to parent prompt")) + '">' +
+          UC.icon("zap", 2) + '</button>' +
         '<button type="button" class="up-iconbtn utb-pin" data-utb-pin ' +
           'data-tip="' + esc(UC.t("Pin to sidebar")) + '" aria-label="' + esc(UC.t("Pin to sidebar")) + '">' +
           UC.icon("pin", 2) + '</button>' +
@@ -230,6 +243,7 @@
       elEdit = root.querySelector("[data-utb-edit]");
       elDomain = root.querySelector("[data-utb-domain]");
       elPin = root.querySelector("[data-utb-pin]");
+      elPrompt = root.querySelector("[data-utb-prompt]");
     }
     aufbauen();
 
@@ -306,6 +320,10 @@
          werden muesste). Steht der Typ schon fest, ist er trotzdem gleich weg, statt einmal
          aufzublitzen. */
       elPin.hidden = !!OHNE_PIN[t];
+      /* Der Weg zum uebergeordneten Prompt gibt es nur bei einer KI-Antwort -- sie ist das
+         einzige Element, das einen Prompt UEBER sich hat. Im Ladezustand weg, wie Stift und
+         Globus: welcher Typ kommt, weiss die Leiste da noch nicht. */
+      elPrompt.hidden = laedt || (t !== "response");
     }
 
     /* ---- Zuruecksetzen (07.09. angefordert) ----
@@ -369,6 +387,10 @@
       }
       if (t.closest("[data-utb-domain]")) {
         fire("data-domain-fn", "utbDomain", { type: typ(), item_id: itemId() });
+        return;
+      }
+      if (t.closest("[data-utb-prompt]")) {
+        fire("data-prompt-fn", "utbPrompt", { type: typ(), item_id: itemId() });
         return;
       }
       if (t.closest("[data-utb-pin]")) { anheften(); return; }

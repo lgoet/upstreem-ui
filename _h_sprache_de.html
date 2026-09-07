@@ -1,0 +1,91 @@
+<!doctype html><meta charset="utf-8">
+<title>Deutsch: kommen die Texte von Quick Actions und Response Detail an?</title>
+<pre id="out" style="font:12px/1.55 ui-monospace,Menlo,monospace;padding:12px;white-space:pre-wrap"></pre>
+<script>
+/* Gemeldet am 08.09.: "im DE Setting auch noch brutal viel auf Englisch" -- fuer Quick Actions
+   und fuer Response Detail.
+
+   GEPRUEFT WIRD AN t(), also an der Quelle, und zwar mit den Zeichenketten, die WIRKLICH IM
+   QUELLTEXT STEHEN: der Prueftand holt sie aus quick-actions.js und response-detail.js, statt
+   sie hier abzuschreiben. Eine abgeschriebene Zeichenkette ist beim naechsten Komma im Original
+   falsch, und dann meldet der Prueftand gruen, waehrend auf dem Schirm Englisch steht -- genau
+   die Sorte Messung, die nichts wert ist.
+
+   Warum nicht ueber den Sprachlauf am DOM: die Glossartexte sind 300 bis 450 Zeichen lang, und
+   der breite Lauf ueberspringt Textknoten ueber 200 Zeichen. Deshalb uebersetzt quick-actions
+   seit dem 08.09. selbst (tx() dort), und die richtige Frage ist damit "kennt der Katalog den
+   Text", nicht "hat der Lauf ihn erwischt". */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function ja(b){ return b ? "RICHTIG" : "FALSCH "; }
+var gut=0, schlecht=0;
+function pruef(t,b){ if(b) gut++; else schlecht++; log("   "+ja(b)+" "+t); }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+
+/* Aus dem Quelltext holen, was als sichtbarer Text gemalt wird: label, hint, body, title. Die
+   mehrzeiligen Verkettungen werden zusammengezogen -- genau so kommen sie zur Laufzeit an. */
+function texte(q){
+  var raus=[];
+  var re=/(?:label|hint|body|title|txt)\s*:\s*((?:"(?:[^"\\]|\\.)*"\s*\+\s*)*"(?:[^"\\]|\\.)*")/g, m;
+  while ((m=re.exec(q))){
+    var teile=m[1].match(/"(?:[^"\\]|\\.)*"/g)||[];
+    var s=teile.map(function(x){ return x.slice(1,-1); }).join("");
+    if (s.length>2 && /[A-Za-z]{3}/.test(s) && !/^[a-z0-9_\-]+$/.test(s)) raus.push(s);
+  }
+  return raus.filter(function(x,i,a){ return a.indexOf(x)===i; });
+}
+
+Promise.all([hol("core.js"), hol("quick-actions.js"), hol("response-detail.js")]).then(function(t){
+  var sc=document.createElement("script"); sc.textContent=t[0]; document.head.appendChild(sc);
+  var UC=window.UpstreemCore;
+  if (!UC){ log("ABBRUCH: core.js nicht geladen"); return; }
+  try { localStorage.setItem("up_prefs", JSON.stringify({locale:"de"})); } catch(e){}
+  if (UC.setPref) UC.setPref("locale","de");
+  log("Sprache jetzt: " + (UC.getPref ? UC.getPref("locale") : "?"));
+  log("");
+  [["quick-actions.js", t[1]], ["response-detail.js", t[2]]].forEach(function(paar){
+    var alle=texte(paar[1]);
+    var offen=alle.filter(function(s){ return UC.t(s) === s; });
+    /* Was NICHT uebersetzt gehoert: Zeichen, Zahlen, Eigennamen. Sie stehen hier namentlich,
+       damit die Zahl unten eine Aussage ist und keine Ausrede. */
+    var ERLAUBT=/^(%|▲ ▼|0 – 100|1 : many|Or \/ And|Single \/ Multi|URLs|Brands|Domains|Prompts|Markets|Topics|Models|Share|Trend|Rank|Sentiment|Visibility|Market|Top|Citation Types|URL Types|ChatGPT|Perplexity|Gemini|Claude|DeepSeek)$/;
+    /* ZWEI SORTEN, die hier NICHT als Fehler zaehlen, und beide mit Grund:
+       1. Diagnosetexte, die nur erscheinen, wenn core NICHT geladen ist ("Core not loaded",
+          "Brand store missing..."). Ohne core gibt es keinen Katalog -- sie KOENNEN nicht
+          uebersetzt sein, und sie sind ohnehin fuer den Entwickler und nicht fuer den Nutzer.
+       2. Bruchstuecke aus KOMMENTAREN. Der Sucher liest den Quelltext mit einem Ausdruck, und
+          ein "body:" in einem Kommentar sieht fuer ihn aus wie eine Beschriftung. Der erste
+          Anlauf hat daraufhin zwei Codezeilen als "nicht uebersetzt" gemeldet. */
+    var DIAGNOSE=/^(Core not loaded|Brand store missing)/;
+    var CODE=/\*\/|function |return |var |\bd = |\.slice\(/;
+    var echt=offen.filter(function(s){
+      return !ERLAUBT.test(s) && !DIAGNOSE.test(s) && !CODE.test(s);
+    });
+    log(paar[0] + ": " + alle.length + " sichtbare Texte, " + echt.length + " ohne Uebersetzung");
+    echt.forEach(function(s){ log("      " + s.slice(0,110) + (s.length>110?"…":"")); });
+    pruef(paar[0] + ": jeder sichtbare Text hat eine deutsche Fassung", echt.length === 0);
+    log("");
+  });
+  /* Und die zwei Stellen, um die es ausdruecklich ging: das Fragezeichen. */
+  log("Das Fragezeichen (08.09. wieder bestellt)");
+  [["Mentioned?", "Erwähnt?"], ["{brand} mentioned?", "{brand} erwähnt?"],
+   ["{brand} is mentioned", "{brand} wird erwähnt"]].forEach(function(p){
+    var got=UC.t(p[0]);
+    log("   " + p[0] + "  ->  " + got);
+    pruef('"' + p[0] + '" wird "' + p[1] + '"', got === p[1]);
+  });
+  log("");
+  log("Die Zeitangabe in der Kopfzeile (UC.relativeTime)");
+  var jetzt=new Date();
+  [[0,"gerade eben"],[1,"vor 1 Minute"],[5,"vor 5 Minuten"],[60,"vor 1 Stunde"],[180,"vor 3 Stunden"]]
+    .forEach(function(p){
+      var iso=new Date(jetzt.getTime() - p[0]*60000 - 1000).toISOString();
+      var got=UC.relativeTime(iso);
+      log("   vor " + p[0] + " Minuten  ->  " + got);
+      pruef("relativeTime(" + p[0] + " min) ist deutsch", got === p[1]);
+    });
+  log("");
+  log((schlecht ? "==> FALSCH  " : "==> RICHTIG ")+gut+" von "+(gut+schlecht)+" Pruefungen");
+  log("FERTIG");
+}).catch(function(e){ log("ABBRUCH "+e); });
+</script>

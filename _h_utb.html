@@ -44,6 +44,7 @@ Promise.all([hol("core.css"), hol("core.js"), hol("drawer-topbar.css"), hol("dra
   v.bubble_fn_utbClose_x = function(p){ ereignisse.push(["close", nutz(p)]); };
   v.bubble_fn_utbEdit_x  = function(p){ ereignisse.push(["edit", nutz(p)]); };
   v.bubble_fn_utbDomain_x= function(p){ ereignisse.push(["domain", nutz(p)]); };
+  v.bubble_fn_utbPrompt_x= function(p){ ereignisse.push(["prompt", nutz(p)]); };
   var gepinnt=[];
   v.upstreemPinToSidebar = function(p){ gepinnt.push(p); return true; };
   var warn=[];
@@ -63,6 +64,7 @@ Promise.all([hol("core.css"), hol("core.js"), hol("drawer-topbar.css"), hol("dra
     el.setAttribute("data-close-fn","bubble_fn_utbClose_x");
     el.setAttribute("data-edit-fn","bubble_fn_utbEdit_x");
     el.setAttribute("data-domain-fn","bubble_fn_utbDomain_x");
+    el.setAttribute("data-prompt-fn","bubble_fn_utbPrompt_x");
     Object.keys(attrs).forEach(function(k){ if (k !== "__id") el.setAttribute(k, attrs[k]); });
     /* In einem Kasten mit fester Breite -- die Leiste misst SICH, nicht das Fenster. */
     var box=d.createElement("div");
@@ -130,6 +132,27 @@ Promise.all([hol("core.css"), hol("core.js"), hol("drawer-topbar.css"), hol("dra
             parseFloat(v.getComputedStyle(box.querySelector("svg")).width) === 16);
           pruef(fall[0] + ": weder Stift noch Globus",
             q(".utb-edit").hidden && q(".utb-domain").hidden);
+          /* Der Weg zum uebergeordneten Prompt gibt es NUR bei der Response -- der Prompt selbst
+             hat keinen Prompt ueber sich. Beide Faelle am selben Ort, damit die Regel nicht als
+             "alle Zeichentypen bekommen das Zap" endet. */
+          var zapDa = fall[0] === "response";
+          log("      " + fall[0] + ": Zap " + (q(".utb-prompt").hidden ? "weg" : "da") +
+              "   (gerechnet " + v.getComputedStyle(q(".utb-prompt")).display + ")");
+          pruef(fall[0] + ": Zap " + (zapDa ? "da" : "weg"),
+            q(".utb-prompt").hidden === !zapDa &&
+            (v.getComputedStyle(q(".utb-prompt")).display === "none") === !zapDa);
+          if (zapDa){
+            ereignisse.length = 0; q(".utb-prompt").click();
+            log("      " + JSON.stringify(ereignisse));
+            pruef("das Zap meldet prompt mit Typ und Kennung",
+              ereignisse.length === 1 && ereignisse[0][0] === "prompt" &&
+              ereignisse[0][1].type === "response");
+            /* Und es steht LINKS vom Pin (so angefordert) -- an den echten Kanten. */
+            var zp=q(".utb-prompt").getBoundingClientRect();
+            var kr=q(".utb-close").getBoundingClientRect();
+            log("      linke Kanten: Zap " + Math.round(zp.left) + ", Kreuz " + Math.round(kr.left));
+            pruef("das Zap steht links vom Kreuz", zp.right <= kr.left + 0.6);
+          }
           /* Der Pin: beim Prompt bleibt er, bei der Response ist er weg (07.09. angefordert).
              Geprueft wird BEIDES am selben Ort, damit die Regel nicht "alle Zeichentypen
              verlieren den Pin" heisst -- das war sie ausdruecklich nicht. */
@@ -297,9 +320,9 @@ Promise.all([hol("core.css"), hol("core.js"), hol("drawer-topbar.css"), hol("dra
     pruef("8px zwischen den Knoepfen rechts", parseFloat(v.getComputedStyle(tools).gap) === 8);
     var zeichen=[].map.call(el.querySelectorAll(".up-iconbtn svg"), function(g){
       var r=v.getComputedStyle(g); return parseFloat(r.width) + "x" + parseFloat(r.height); });
-    log("      Zeichen: " + zeichen.join(", ") + " (Pfeil, Stift, Globus, Pin, Kreuz)");
-    pruef("alle fuenf Zeichen 16x16",
-      zeichen.length === 5 && zeichen.every(function(z){ return z === "16x16"; }));
+    log("      Zeichen: " + zeichen.join(", ") + " (Pfeil, Stift, Globus, Zap, Pin, Kreuz)");
+    pruef("alle sechs Zeichen 16x16",
+      zeichen.length === 6 && zeichen.every(function(z){ return z === "16x16"; }));
     log("");
 
     log("      Farben hell: Name " + v.getComputedStyle(q(".utb-name")).color +

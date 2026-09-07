@@ -44,7 +44,7 @@
          first thing you can do without. */
       { key: "share",    label: "Share",            w: "minmax(13%, 150px)",   min: 130, prio: 50 },
       { key: "type",     label: "Type",             w: "minmax(11%, 1fr)",     min: 118, dropAt: "vnarrow", prio: 30 },
-      { key: "ment",     label: "Mentioned",        w: "minmax(112px, 0.6fr)", min: 112, dropAt: "narrow",  prio: 20 },
+      { key: "ment",     label: "Mentioned?",       w: "minmax(112px, 0.6fr)", min: 112, dropAt: "narrow",  prio: 20 },
       { key: "brands",   label: "Brands mentioned", w: "minmax(13%, 1fr)",     min: 178, dropAt: "vnarrow", prio: 40 },
       { key: "lastseen", label: "Last Seen",        w: "minmax(104px, 0.7fr)", min: 104, dropAt: "vnarrow", prio: 10 }
   ];
@@ -805,7 +805,7 @@
       /* Der Kopf liest "<Logo> mentioned"; ohne Logo muss der Markenname die Bedeutung tragen.
          Ohne Fragezeichen (07.09.): der Kopf sagt, was in der Spalte steht, er fragt nichts. */
       lbl.textContent = (!logo || logo === "BRAND_LOGO") && name && name !== "BRAND_NAME"
-        ? UC.t("{brand} mentioned").replace("{brand}", name) : UC.t("mentioned");
+        ? UC.t("{brand} mentioned?").replace("{brand}", name) : UC.t("Mentioned?");
     }
     function syncBrand(){
       if (!elBrand) return;
@@ -827,7 +827,7 @@
       if (!isBusy() && state.hasData) state.brandSettled = true;
       elBrand.classList.toggle("is-visible", !!valid && state.hasData && !!state.brandSettled);
       if (!valid) return;
-      elBrandLbl.textContent = UC.t("{brand} mentioned").replace("{brand}", name);   /* Muster, siehe domains-table */
+      elBrandLbl.textContent = UC.t("{brand} mentioned?").replace("{brand}", name);   /* Muster, siehe domains-table */
       if (logo && logo !== "BRAND_LOGO"){ elBrandLogo.src = logo; elBrandLogo.style.display = "block"; }
       else { elBrandLogo.style.display = "none"; }
       elBrand.classList.toggle("is-yes", state.brandMentioned === "yes");
