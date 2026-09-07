@@ -28,13 +28,34 @@
   --am-hover-bg: #eef0f3;
   --mqa-font: 'Geist','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
 }
+/* DIE DUNKLEN WERTE SIND JETZT DIE DER DROPDOWNS (07.09. angefordert: "mach den Quick-Actions-
+   Background so wie die Dropdown-Backgrounds, im Darkmode"). Sie stammten aus der Zeit vor
+   Linears Leiter und waren die letzte Palette der App, die noch auf eigenen Graustufen stand:
+   Panel #1a1a1a, aktive Zeile #1e1e1e, Rahmen #23252a. Neben einem Dropdown in #232326 sah das
+   wie ein anderes Programm aus.
+   Diese Datei hat bewusst ihre EIGENEN --am-Namen (sie ist ein Singleton der Seite und braucht
+   core.css nicht), darum stehen hier feste Werte und keine var(--up-menu-bg). Die Zuordnung ist
+   trotzdem eins zu eins, und sie steht hier, damit die naechste Aenderung an core sie findet:
+       --am-card     #232326  = --up-menu-bg   (der Grund jedes Dropdowns)
+       --am-border   #3e3e44  = --up-menu-border
+       --am-soft     #28282c  = --up-sel-bg    (die aktive Zeile)
+       --am-hover-bg #28282c  = --up-sel-bg
+   --am-soft-2 (Chips, Avatare, das Tastenkuerzel) wird HALBDURCHSICHTIG: Linears
+   --color-bg-translucent. Es sitzt mal auf dem Panel, mal auf einer aktiven Zeile -- ein fester
+   Wert waere auf einer der beiden Flaechen verschwunden. So ist es immer genau eine leise Stufe
+   ueber dem, worauf es liegt.
+   --am-border-strong bleibt #34343a. Der Name stimmt damit nicht mehr (er ist jetzt schwaecher
+   als --am-border), aber der Wert wird nur noch vom Rollbalken des Panels benutzt, und dort ist
+   er richtig: die Hover-Kante des geschlossenen Knopfes, fuer die er sonst noch galt, gibt es
+   seit dem 07.09. nicht mehr. Ein Umbenennen waere eine Aenderung an einem Namen, den fremdes
+   Markup kennen koennte -- den Wert zu erklaeren ist billiger. */
 #mira-quick-actions[data-theme="dark"], .mqa-overlay[data-theme="dark"] {
   --am-text: #e0e0e0; --am-muted: #a0a0a0; --am-muted-2: #6f6f6f;
-  --am-border: #23252a; --am-border-strong: #34343a;
-  --am-soft: #1e1e1e; --am-soft-2: #242424; --am-card: #1a1a1a; --am-trigger-bg: #1a1a1a;
+  --am-border: #3e3e44; --am-border-strong: #34343a;
+  --am-soft: #28282c; --am-soft-2: #ffffff0d; --am-card: #232326; --am-trigger-bg: #1a1a1a;
   --am-overlay: rgba(0,0,0,0.55);
   --am-shadow: 0 24px 64px rgba(0,0,0,0.55), 0 6px 16px rgba(0,0,0,0.4);
-  --am-hover-bg: #262626;
+  --am-hover-bg: #28282c;
 }
 #mira-quick-actions, #mira-quick-actions *, #mira-quick-actions *::before, #mira-quick-actions *::after,
 .mqa-overlay, .mqa-overlay *, .mqa-overlay *::before, .mqa-overlay *::after { box-sizing: border-box; }
