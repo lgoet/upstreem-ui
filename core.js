@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261020;
+  var BUILD = 20261021;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -4956,6 +4956,230 @@
     }
     function offen(){ var n = 0; for (var k in wartend) if (Object.prototype.hasOwnProperty.call(wartend, k)) n += wartend[k].length; return n; }
     return { park: park, drain: drain, offen: offen };
+  }
+
+  /* ══ Flimmerraster ═════════════════════════════════════════════════════════════════════════
+     Der Hintergrund des Onboardings hatte vier gezeichnete Sternmarken (--up-bgart-marken, vier
+     Kreuze mit Verlaufsarmen). Angefordert am 07.09.: an ihre Stelle das Flickering Grid von
+     magicui -- "etwas spaceter als aktuell, deutlich smoother und etwas langsamer".
+
+     WAS MAGICUI MACHT, UND WAS HIER ANDERS IST. Dort bekommt jede Zelle in JEDEM Bild mit einer
+     Wahrscheinlichkeit (flickerChance, Vorgabe 0.3 je Sekunde und Zelle) SOFORT eine neue,
+     zufaellige Deckkraft. Das ist der Grund, warum es zappelt: die Zelle springt, sie faehrt
+     nicht. Hier hat jede Zelle einen IST- und einen SOLL-Wert; das Bild bewegt den Ist-Wert
+     exponentiell auf den Soll zu, und der Soll wechselt selten. Damit ist jede Aenderung eine
+     Fahrt ueber knapp eine Sekunde statt eines Sprungs in einem Bild.
+
+     DIE DREI ANGEFORDERTEN UNTERSCHIEDE, in Zahlen und gegen die Vorgaben von magicui:
+       spaceter   Raster 5px Kachel + 13px Luecke = 18px Abstand (magicui: 4 + 6 = 10px).
+                  Auf 1440x890 sind das 3920 Zellen statt 12816.
+       smoother   Fahrt statt Sprung, Zeitkonstante 300ms (95 Prozent nach etwa 900ms).
+       langsamer  0.22 Wechsel je Sekunde und Zelle statt 0.3 je BILD -- bei 30 Bildern in der
+                  Sekunde ist das der Faktor 40. Eine Zelle wechselt im Mittel alle 4.5s.
+
+     UND WARUM EIN CANVAS UND KEINE 3920 DIVS: 3920 Elemente mit einer eigenen Deckkraft sind
+     3920 Ebenen fuer den Compositor, und die Seite hat schon vier Hintergrundebenen. Ein Canvas
+     ist eine.
+
+     WAS AN DER LEISTUNG GETAN IST -- die Seite dieses Hauses hat 156000 Knoten, hier wird nicht
+     grosszuegig gerechnet:
+       - 30 Bilder je Sekunde, nicht 60. Bei einer Fahrt ueber 900ms sieht man den Unterschied
+         nicht, und es ist die Haelfte der Arbeit.
+       - Die Deckkraft ist auf 12 Stufen gerundet, und je Stufe wird EIN Pfad mit allen Rechtecken
+         dieser Stufe gefuellt. Also 12 Zustandswechsel je Bild statt 3920.
+       - Der Puffer laeuft hoechstens mit Faktor 1.5, nicht mit dem Geraetefaktor 3: ein
+         Flimmerpunkt braucht keine Netzhautschaerfe.
+       - Steht das Element nicht im Bild (IntersectionObserver) oder ist der Tab verdeckt, laeuft
+         nichts. Und ist das Element aus dem Dokument gefallen (Bubble baut Elemente neu),
+         beendet sich die Schleife selbst -- sonst laeuft sie fuer einen Knoten weiter, den
+         niemand mehr sieht.
+       - prefers-reduced-motion: EIN Bild, dann Schluss. Ein Raster, das steht, ist immer noch
+         das Bild; ein zappelndes ist fuer manche Menschen unbenutzbar.
+
+     Die FARBE kommt aus der Kaskade (color am Element, in core.css auf --vc-text) und wird bei
+     einem Themenwechsel neu gelesen. Damit gibt es keinen zweiten Ort, an dem hell und dunkel
+     entschieden wird -- dieselbe Regel wie bei den drei Maskenebenen daneben. */
+  function makeFlickerGrid(host, cfg){
+    if (!host || !host.getContext && !host.appendChild) return { stop: function(){} };
+    cfg = cfg || {};
+    var KACHEL  = cfg.squareSize   == null ? 5    : cfg.squareSize;
+    var LUECKE  = cfg.gap          == null ? 13   : cfg.gap;
+    var MAX     = cfg.maxOpacity   == null ? 0.25 : cfg.maxOpacity;
+    var TAKT    = cfg.fps          == null ? 30   : cfg.fps;
+    /* Wechsel je Sekunde und Zelle. Nicht je Bild: eine Rate je Bild haengt an der Bildzahl, und
+       dann laeuft dasselbe Raster auf einem 120Hz-Schirm doppelt so schnell. */
+    var RATE    = cfg.changesPerSecond == null ? 0.22 : cfg.changesPerSecond;
+    var TAU     = (cfg.fadeMs == null ? 1200 : cfg.fadeMs) / 3000;  /* Sekunden, 3 Tau = 95% */
+    /* 32 STUFEN UND NICHT 12. Die Deckkraft wird gerundet, damit je Stufe EIN Pfad gefuellt
+       werden kann statt je Zelle einer -- und die Stufenbreite ist damit die Untergrenze fuer
+       "wie glatt kann eine Fahrt sein". Mit 12 Stufen war der groesste gemessene Sprung 11
+       Alphastufen (die Fahrt bewegt eine Zelle um bis zu 6.7, und wenn sie dabei zwei
+       Rundungsgrenzen kreuzt, kommt eine ganze Stufe von 5.3 dazu). Mit 32 Stufen ist eine
+       Stufe 2.0 breit. Dass das nichts kostet, liegt am Zaehlsortieren unten: die Arbeit haengt
+       an der Zahl der ZELLEN, nicht an der Zahl der Stufen. */
+    var STUFEN  = 32;
+
+    var cv = document.createElement("canvas");
+    cv.setAttribute("aria-hidden", "true");
+    cv.style.cssText = "position:absolute;inset:0;width:100%;height:100%;display:block";
+    host.appendChild(cv);
+    var ctx = cv.getContext("2d");
+    if (!ctx) return { stop: function(){} };
+
+    var spalten = 0, zeilen = 0, ist = null, soll = null, dpr = 1, farbe = "#ffffff";
+    var pixKachel = KACHEL, pixSchritt = KACHEL + LUECKE;
+    /* Fuer das Zaehlsortieren beim Zeichnen: eine Reihenfolge und ein Zaehler je Stufe. Beide
+       werden EINMAL angelegt und wiederverwendet -- neue Felder in jedem Bild waeren 30 mal je
+       Sekunde Arbeit fuer den Speicherverwalter. */
+    /* anfang und nicht start: start ist hier die Funktion, die die Schleife anwirft, und ein
+       Feld mit demselben Namen hat sie verdeckt -- "start is not a function", noch im Aufbau. */
+    var ordnung = null, zaehler = new Int32Array(STUFEN + 2), anfang = new Int32Array(STUFEN + 2),
+        lauf = new Int32Array(STUFEN + 2);
+    var laeuft = false, sichtbar = true, uhr = null, letzte = 0, tot = false;
+
+    function ruhig(){
+      try { return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches; }
+      catch(e){ return false; }
+    }
+    function farbeLesen(){
+      var c = "";
+      try { c = getComputedStyle(host).color; } catch(e){}
+      farbe = c || "#ffffff";
+    }
+    function messen(){
+      var r = host.getBoundingClientRect();
+      var b = Math.max(1, Math.round(r.width)), h = Math.max(1, Math.round(r.height));
+      dpr = Math.min(1.5, (window.devicePixelRatio || 1));
+      cv.width = Math.round(b * dpr); cv.height = Math.round(h * dpr);
+      /* AUF GANZE PUFFERPIXEL GERUNDET. Bei Geraetefaktor 1.5 waere eine 5px-Kachel 7.5 Pixel
+         breit, und eine halbe Pixelkante zeichnet der Browser weich -- aus einem Punkt wird ein
+         Fleck mit unscharfem Rand. Gemessen im Prueftand als Laufweite 5.3 statt 5.0. Gerundet
+         sind es 8 Pixel und eine harte Kante; in CSS-Pixeln also 5.33 statt 5, was niemand
+         sieht, waehrend die Unschaerfe auffaellt. */
+      pixKachel  = Math.max(1, Math.round(KACHEL * dpr));
+      pixSchritt = Math.max(pixKachel + 1, Math.round((KACHEL + LUECKE) * dpr));
+      var schritt = pixSchritt / dpr;
+      var sp = Math.ceil(b / schritt), ze = Math.ceil(h / schritt);
+      if (sp !== spalten || ze !== zeilen || !ist){
+        spalten = sp; zeilen = ze;
+        var n = spalten * zeilen;
+        ist = new Float32Array(n); soll = new Float32Array(n); ordnung = new Int32Array(n);
+        /* Der Anfangszustand ist ZUFAELLIG und nicht leer: ein Raster, das aus dem Nichts
+           auffaechert, ist eine Bewegung, die niemand bestellt hat. */
+        for (var i = 0; i < n; i++){ var v = Math.random() * MAX; ist[i] = v; soll[i] = v; }
+      }
+    }
+    function zeichnen(){
+      var schritt = pixSchritt, k = pixKachel;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, cv.width, cv.height);
+      ctx.fillStyle = farbe;
+      /* EIN PFAD JE DECKKRAFTSTUFE, und die Zellen dafuer per ZAEHLSORTIEREN gruppiert.
+         Der naheliegende Weg -- globalAlpha und fillRect je Zelle -- sind 3920 Zustandswechsel
+         im Bild. Der zweite Anlauf lief je Stufe einmal ueber alle Zellen; das sind bei 32
+         Stufen 125000 Durchlaeufe im Bild, also dreissigmal mehr Arbeit als noetig.
+         So sind es zwei Laeufe ueber die Zellen (zaehlen, einsortieren) und dann 32 Pfade --
+         die Arbeit haengt an der Zahl der Zellen, nicht an der Zahl der Stufen. */
+      var n = ist.length, i, stufe;
+      for (i = 0; i <= STUFEN + 1; i++) zaehler[i] = 0;
+      for (i = 0; i < n; i++){
+        var v = ist[i];
+        stufe = v <= 0.002 ? 0 : Math.min(STUFEN, Math.max(1, Math.ceil((v / MAX) * STUFEN)));
+        zaehler[stufe]++;
+      }
+      var summe = 0;
+      for (i = 0; i <= STUFEN; i++){ anfang[i] = summe; summe += zaehler[i]; }
+      for (i = 0; i <= STUFEN; i++) lauf[i] = anfang[i];
+      for (i = 0; i < n; i++){
+        var v2 = ist[i];
+        stufe = v2 <= 0.002 ? 0 : Math.min(STUFEN, Math.max(1, Math.ceil((v2 / MAX) * STUFEN)));
+        ordnung[lauf[stufe]++] = i;
+      }
+      for (stufe = 1; stufe <= STUFEN; stufe++){
+        var von = anfang[stufe], bis = von + zaehler[stufe];
+        if (von === bis) continue;
+        ctx.beginPath();
+        for (i = von; i < bis; i++){
+          var z = ordnung[i];
+          ctx.rect((z % spalten) * schritt, ((z / spalten) | 0) * schritt, k, k);
+        }
+        ctx.globalAlpha = (stufe / STUFEN) * MAX;
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+    function schritt(dt){
+      /* Neuer Soll-Wert: Poisson mit der Rate RATE je Sekunde. */
+      var p = 1 - Math.exp(-RATE * dt);
+      /* Annaeherung an den Soll: exponentiell, damit die Fahrt am Ende ausklingt statt zu
+         stoppen. Genau das ist der Unterschied zum Sprung in der Vorlage. */
+      var k = 1 - Math.exp(-dt / TAU);
+      for (var i = 0; i < ist.length; i++){
+        if (Math.random() < p) soll[i] = Math.random() * MAX;
+        ist[i] += (soll[i] - ist[i]) * k;
+      }
+    }
+    function bild(jetzt){
+      if (tot) return;
+      if (!host.isConnected){ stop(); return; }
+      uhr = window.requestAnimationFrame(bild);
+      if (!sichtbar || document.hidden) { letzte = jetzt; return; }
+      var dt = (jetzt - letzte) / 1000;
+      if (dt < 1 / TAKT) return;
+      /* Nach einem verdeckten Tab kommt ein riesiges dt. Es zu benutzen heisst, das Raster
+         springt einmal komplett um -- gedeckelt auf ein Drittel Sekunde faehrt es statt zu
+         springen. */
+      letzte = jetzt;
+      schritt(Math.min(dt, 0.333));
+      zeichnen();
+    }
+    function start(){
+      if (laeuft || tot) return;
+      laeuft = true; letzte = (window.performance ? performance.now() : Date.now());
+      uhr = window.requestAnimationFrame(bild);
+    }
+    function stop(){
+      laeuft = false;
+      if (uhr) window.cancelAnimationFrame(uhr);
+      uhr = null;
+    }
+
+    farbeLesen(); messen(); zeichnen();
+
+    if (ruhig()){
+      /* Ein Bild steht, mehr nicht. */
+      return { stop: function(){ tot = true; stop(); } };
+    }
+
+    var abTheme = (typeof onTheme === "function")
+      ? onTheme(function(){ farbeLesen(); zeichnen(); }) : null;
+    var ro = null;
+    if (window.ResizeObserver){
+      ro = new ResizeObserver(function(){ messen(); zeichnen(); });
+      try { ro.observe(host); } catch(e){}
+    } else if (typeof onResize === "function"){
+      onResize(function(){ messen(); zeichnen(); });
+    }
+    var io = null;
+    if (window.IntersectionObserver){
+      io = new IntersectionObserver(function(eintraege){
+        sichtbar = !!(eintraege[0] && eintraege[0].isIntersecting);
+      });
+      try { io.observe(host); } catch(e){}
+    }
+    document.addEventListener("visibilitychange", function(){ letzte = performance.now(); });
+    start();
+
+    return {
+      stop: function(){
+        tot = true; stop();
+        if (abTheme) abTheme();
+        if (ro) try { ro.disconnect(); } catch(e){}
+        if (io) try { io.disconnect(); } catch(e){}
+        if (cv.parentNode) cv.parentNode.removeChild(cv);
+      },
+      redraw: function(){ farbeLesen(); messen(); zeichnen(); }
+    };
   }
 
   function makeMount(cfg){
@@ -14414,6 +14638,7 @@
     makeColumns: makeColumns,
     makeSearch: makeSearch,
     bootStubs: bootStubs,
+    makeFlickerGrid: makeFlickerGrid,
     makeMount: makeMount,
     makeLate: makeLate,
     istSichtbar: istSichtbar,

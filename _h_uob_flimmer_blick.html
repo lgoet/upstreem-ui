@@ -1,0 +1,64 @@
+<!doctype html><meta charset="utf-8">
+<title>Der Onboarding-Grund mit dem Flimmerraster, hell und dunkel</title>
+<style>
+  html,body{margin:0;font:13px/1.5 system-ui,sans-serif;background:#f3f3f3}
+  .feld{position:relative;width:700px;height:470px;margin:14px;overflow:hidden;
+        border:1px solid #ccc;border-radius:16px}
+  .feld.hell{background:#ffffff} .feld.dunkel{background:#1c1c1f}
+  .titel{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);text-align:center;
+         font:600 22px/1.3 system-ui;z-index:2}
+  .feld.hell .titel{color:#1f1f1b} .feld.dunkel .titel{color:#e0e0e0}
+  .titel small{display:block;font:400 13px/1.5 system-ui;opacity:.6;margin-top:6px}
+  .marke{position:absolute;left:16px;bottom:10px;font:11px ui-monospace,monospace;opacity:.55;z-index:2}
+  .feld.dunkel .marke{color:#e0e0e0} .feld.hell .marke{color:#1f1f1b}
+</style>
+<body>
+<!-- NUR ZUM ANSEHEN. Gemessen wird in _h_uob_flimmer.html. Hier stehen die vier Ebenen des
+     Onboarding-Grundes so uebereinander wie in der Komponente, in beiden Themen, mit einer
+     Ueberschrift in der Mitte -- denn genau dort haelt die Maske das Raster frei, und ob das
+     reicht, sieht man nur an einem Text. Links das Flimmerraster, rechts der alte Stand mit den
+     vier Sternmarken, zum Vergleich. -->
+<div id="buehne"></div>
+<script>
+/* EIN THEMA JE AUFRUF, mit ?dark das andere. core setzt data-theme auf JEDER Wurzel der Seite
+   nach seinem eigenen Zustand -- ein von Hand gesetztes Attribut haelt dagegen nicht. Der erste
+   Anlauf hat beide Themen nebeneinander gestellt und BEIDE hell gemalt: gemessen color
+   rgb(31,31,27) und Ebene 0.388 im "dunklen" Feld. Die Farben waren richtig, die Seite hat sie
+   nur falsch bestellt. */
+var dunkel = location.search.indexOf("dark") >= 0;
+try { localStorage.setItem("pref_theme", dunkel ? "dark" : "light"); } catch(e){}
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){ return r.text(); }); }
+Promise.all([hol("core.css"), hol("core.js")]).then(function(t){
+  var st=document.createElement("style"); st.textContent=t[0]; document.head.appendChild(st);
+  var sc=document.createElement("script"); sc.textContent=t[1]; document.head.appendChild(sc);
+  var reihen=[[dunkel ? "dunkel" : "hell", dunkel ? "dark" : "light"]];
+  var arten=[["flimmer","Flimmerraster (neu)"],["marken","Sternmarken (alt)"]];
+  var html="";
+  reihen.forEach(function(r){
+    html += '<div style="display:flex;flex-wrap:wrap">';
+    arten.forEach(function(a){
+      html += '<div class="feld ' + r[0] + '">' +
+        '<div class="up-root" data-theme="' + r[1] + '" style="position:absolute;inset:0">' +
+          '<span class="up-bgart-licht"></span>' +
+          '<span class="up-bgart-bogen"></span>' +
+          '<span class="up-bgart-raster"></span>' +
+          (a[0] === "flimmer" ? '<span class="up-bgart-flimmer" data-f></span>'
+                              : '<span class="up-bgart-marken"></span>') +
+        '</div>' +
+        '<div class="titel">Let’s set up your brand<small>Wir holen die Daten, das dauert einen Moment.</small></div>' +
+        '<div class="marke">' + r[1] + " · " + a[1] + '</div>' +
+      '</div>';
+    });
+    html += '</div>';
+  });
+  document.getElementById("buehne").innerHTML = html;
+  setTimeout(function(){
+    var UC=window.UpstreemCore;
+    if (!UC || !UC.makeFlickerGrid) return;
+    [].forEach.call(document.querySelectorAll("[data-f]"), function(h){
+      UC.makeFlickerGrid(h, { squareSize:5, gap:13, changesPerSecond:0.22, fadeMs:1200,
+        maxOpacity:0.25, fps:30 });
+    });
+  }, 300);
+});
+</script>

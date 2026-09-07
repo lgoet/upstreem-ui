@@ -1846,6 +1846,7 @@
   "up-bars-sk",
   "up-bgart-",
   "up-bgart-bogen",
+  "up-bgart-flimmer",
   "up-bgart-licht",
   "up-bgart-marken",
   "up-bgart-raster",
@@ -2869,7 +2870,7 @@
   "globals": 169,
   "payloadkeys": 96,
   "dataattrs": 240,
-  "klassen": 2037,
+  "klassen": 2038,
   "keyframes": 63
  }
 }

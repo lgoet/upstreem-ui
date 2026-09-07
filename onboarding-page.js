@@ -691,7 +691,12 @@
         '<span class="up-bgart-licht"></span>' +
         '<span class="up-bgart-bogen"></span>' +
         '<span class="up-bgart-raster"></span>' +
-        '<span class="up-bgart-marken"></span>' +
+        /* An der Stelle der vier Sternmarken (.up-bgart-marken) liegt seit dem 07.09. das
+           Flimmerraster. Es ist ein Canvas, das UC.makeFlickerGrid unten in diese Huelle malt --
+           Farbe, Gewicht je Thema und Maske stehen in core.css bei den anderen Ebenen, die Regel
+           der Bewegung im Kit. Die Huelle steht hier im Markup und nicht im Kit, damit sie
+           dieselbe Blende mitbekommt wie ihre drei Nachbarn (.uob-root.is-bg). */
+        '<span class="up-bgart-flimmer" data-flimmer></span>' +
       '</div>' +
 
       /* Die Uhr am unteren Rand. Sie steht IM Rahmen und nicht im Ladebild: das Ladebild sitzt
@@ -782,6 +787,24 @@
     }
 
     root.innerHTML = shell();
+
+    /* ---- Das Flimmerraster starten ----
+       Nach dem Einhaengen, weil das Kit die Groesse seiner Huelle messen muss. Es bringt seinen
+       eigenen Ausschalter mit: es haelt an, wenn der Tab verdeckt ist, wenn die Huelle nicht im
+       Bild steht und wenn sie aus dem Dokument fliegt (Bubble baut Elemente neu) -- hier ist
+       also nichts abzuraeumen.
+       Die drei Zahlen sind die angeforderten Unterschiede zur Vorlage von magicui und stehen mit
+       ihrer Begruendung bei UC.makeFlickerGrid. Sie stehen HIER und nicht dort als Vorgabe, weil
+       eine zweite Seite mit demselben Grund sie anders wollen darf. */
+    if (UC.makeFlickerGrid){
+      var elFlimmer = root.querySelector("[data-flimmer]");
+      if (elFlimmer) UC.makeFlickerGrid(elFlimmer, {
+        squareSize: 5, gap: 13,       /* 18px Abstand -- magicui hat 10 */
+        changesPerSecond: 0.22,       /* eine Zelle wechselt im Mittel alle 4.5s */
+        fadeMs: 1200,                 /* und faehrt, statt zu springen */
+        maxOpacity: 0.25, fps: 30
+      });
+    }
 
     var elStack   = root.querySelector("[data-stack]");
     var elNav     = root.querySelector("[data-nav]");

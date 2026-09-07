@@ -1,0 +1,310 @@
+<!doctype html><meta charset="utf-8">
+<title>Flimmerraster: Abstand, Glaette, Geschwindigkeit, beide Themen</title>
+<pre id="out" style="font:12px/1.55 ui-monospace,Menlo,monospace;padding:12px;white-space:pre-wrap"></pre>
+<div id="buehne"></div>
+<script>
+/* Angefordert am 07.09.: an die Stelle der vier Sternmarken im Onboarding-Hintergrund das
+   Flickering Grid von magicui -- "etwas spaceter als aktuell, deutlich smoother und etwas
+   langsamer".
+
+   ALLE DREI SIND VERGLEICHE, also wird verglichen: neben unserem Raster laeuft eine Nachbildung
+   der VORLAGE (4px Kachel, 6px Luecke, flickerChance 0.3, jedes Bild ein Sprung, 60 Bilder je
+   Sekunde). Ohne sie stuende hier "0.4 Alphastufen je Bild" -- eine Zahl ohne Bedeutung.
+
+   DIE UHR WIRD VON HAND GEDREHT. requestAnimationFrame laeuft in der verdeckten Browserflaeche
+   des Werkzeugs GAR NICHT -- gemessen: 0 Bilder in 300ms. Der erste Anlauf hat daraufhin fuer
+   unser Raster UND fuer die Vorlage "0.000 Sprung" gemeldet und daraus einen Faktor NaN
+   gerechnet; beides war die Umgebung und nicht der Code. Darum ersetzt der Prueftand rAF im
+   Rahmen durch eine Warteschlange und ruft die Bilder selbst auf, mit einem dt, das er kennt.
+   Das ist genauer als die echte Uhr: derselbe Ablauf ist wiederholbar, und "je Bild" heisst
+   wirklich je Bild.
+
+   GEMESSEN WIRD AM BILD, nicht am Zustand des Kits: die Pixel des Canvas sind, was der Nutzer
+   sieht. Abstand und Kachel kommen aus den Pixelreihen, die Glaette aus dem Unterschied zweier
+   aufeinanderfolgender Bilder, die Farbe aus einem gefuellten Pixel. */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function ja(b){ return b ? "RICHTIG" : "FALSCH "; }
+var gut=0, schlecht=0;
+function pruef(t,b){ if(b) gut++; else schlecht++; log("   "+ja(b)+" "+t); }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function warte(ms){ return new Promise(function(ok){ setTimeout(ok,ms); }); }
+
+Promise.all([hol("core.css"), hol("core.js"), hol("onboarding-page.css")]).then(function(t){
+  var f=document.createElement("iframe");
+  f.style.cssText="width:900px;height:900px;border:1px solid #ccc;display:block";
+  document.getElementById("buehne").appendChild(f);
+  var d=f.contentDocument, v=f.contentWindow;
+  d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0'></body></html>"); d.close();
+  /* Das Thema ausdruecklich: pref_theme gehoert dem Ursprung, und core gewinnt gegen ein von
+     Hand gesetztes data-theme. Der erste Anlauf hat im "dunklen" Abschnitt die hellen Farben
+     gemessen, weil ein anderer Prueftand pref_theme auf light gestellt hatte. */
+  try { v.localStorage.clear(); v.localStorage.setItem("pref_theme","dark"); } catch(e){}
+  [t[0], t[2]].forEach(function(c){ var st=d.createElement("style"); st.textContent=c; d.head.appendChild(st); });
+
+  /* ---- DIE UHR. Eingehaengt VOR core.js, damit auch das Kit sie nimmt. ---- */
+  var warteschlange=[], zeit=0, echteRaf=v.requestAnimationFrame;
+  v.requestAnimationFrame=function(fn){ warteschlange.push(fn); return warteschlange.length; };
+  v.cancelAnimationFrame=function(){ };
+  function bilder(n, dtMs, jeBild){
+    for (var i=0;i<n;i++){
+      zeit+=dtMs;
+      var jetzt=warteschlange; warteschlange=[];
+      for (var k=0;k<jetzt.length;k++){ try { jetzt[k](zeit); } catch(e){} }
+      if (jeBild) jeBild(i);
+    }
+  }
+  /* document.hidden AUCH VON HAND. Das Kit haelt an, wenn der Tab verdeckt ist -- und die
+     Browserflaeche des Werkzeugs IST verdeckt, sobald hier JavaScript ausgewertet wird. Der
+     erste Anlauf mit gedrehter Uhr meldete daraufhin "groesster Sprung 0" fuer unser Raster und
+     74 fuer die Vorlage (die nicht auf document.hidden schaut): kein Ergebnis, sondern die
+     Umgebung. Also wird die Verdeckung hier gesetzt, und beide Faelle werden gemessen. */
+  var verdeckt = false;
+  try { Object.defineProperty(d, "hidden", { get: function(){ return verdeckt; } }); } catch(e){}
+
+  v.performance = v.performance || {};
+  var echtesNow = v.performance.now ? v.performance.now.bind(v.performance) : function(){ return Date.now(); };
+  try { v.performance.now = function(){ return zeit; }; } catch(e){}
+
+  var wurzel=d.createElement("div");
+  wurzel.className="up-root uob-root"; wurzel.setAttribute("data-theme","dark");
+  wurzel.style.cssText="position:relative;width:720px;height:420px;background:#1c1c1f";
+  wurzel.innerHTML='<span class="up-bgart-flimmer" data-flimmer></span>';
+  d.body.appendChild(wurzel);
+  var sc=d.createElement("script"); sc.textContent=t[1]; d.head.appendChild(sc);
+
+  return warte(400).then(function(){
+    var UC=v.UpstreemCore;
+    if (!UC || !UC.makeFlickerGrid){ log("ABBRUCH: UC.makeFlickerGrid fehlt"); return; }
+    if (v.setUpstreemTheme) v.setUpstreemTheme("dark");
+    var host=wurzel.querySelector("[data-flimmer]");
+    var kit=UC.makeFlickerGrid(host, { squareSize:5, gap:13, changesPerSecond:0.22,
+      fadeMs:1200, maxOpacity:0.25, fps:30 });
+    var cv=host.querySelector("canvas");
+
+    log("1  Es malt ueberhaupt");
+    pruef("ein Canvas liegt in der Huelle", !!cv);
+    if (!cv){ log("ABBRUCH"); return; }
+    var r=cv.getBoundingClientRect();
+    log("      Canvas " + Math.round(r.width) + "x" + Math.round(r.height) +
+        "   Puffer " + cv.width + "x" + cv.height +
+        "   Geraetefaktor " + (v.devicePixelRatio||1));
+    pruef("es deckt die Huelle", Math.abs(r.width-720)<1 && Math.abs(r.height-420)<1);
+    pruef("der Puffer laeuft hoechstens mit Faktor 1.5 (" +
+      (cv.width/Math.round(r.width)).toFixed(2) + ")", cv.width/Math.round(r.width) <= 1.51);
+    var ctx=cv.getContext("2d");
+    var faktor=cv.width/Math.round(r.width);
+    function alphaFeld(cvx){
+      var b=cvx.getContext("2d").getImageData(0,0,cvx.width,cvx.height).data;
+      var a=new Uint8Array(cvx.width*cvx.height);
+      for (var i=0;i<a.length;i++) a[i]=b[i*4+3];
+      return a;
+    }
+    var feld=alphaFeld(cv);
+    var gefuellt=0; for (var i=0;i<feld.length;i++) if (feld[i]>0) gefuellt++;
+    log("      gefuellte Pixel: " + gefuellt + " von " + feld.length +
+        " (" + (100*gefuellt/feld.length).toFixed(1) + "%)  -- ob das die richtige Zahl " +
+        "ist, rechnet Abschnitt 2 aus dem gemessenen Raster");
+    /* Die Erwartung wird aus den GEMESSENEN Laufweiten gerechnet und nicht aus 5 und 18: bei
+       Geraetefaktor 1.5 rundet das Kit auf ganze Pufferpixel (8 von 27), und (8/27)^2 sind 8.8
+       Prozent, nicht 7.7. Der erste Anlauf hat 7.7 erwartet und die Rundung als Fehler
+       gemeldet -- die Rundung ist aber der Grund, warum die Kanten hart sind. */
+    var lwAll=null;
+    log("");
+
+    log("2  Abstand und Kachelgroesse, aus den Pixeln gelesen");
+    var bild=ctx.getImageData(0,0,cv.width,cv.height);
+    function laufweiten(y){
+      var an=[], aus=[], zaehl=0, letzter=null;
+      for (var x=0;x<cv.width;x++){
+        var a=bild.data[(y*cv.width+x)*4+3]>0;
+        if (letzter===null){ letzter=a; zaehl=1; continue; }
+        if (a===letzter){ zaehl++; continue; }
+        (letzter?an:aus).push(zaehl); letzter=a; zaehl=1;
+      }
+      return { an:an, aus:aus };
+    }
+    function haeufigste(a){
+      var z={}, best=null;
+      a.forEach(function(x){ z[x]=(z[x]||0)+1; if(!best||z[x]>z[best])best=x; });
+      return best==null?0:Number(best);
+    }
+    var lw=laufweiten(Math.round(2*faktor));
+    var pixK=haeufigste(lw.an), pixS=pixK+haeufigste(lw.aus);
+    var kachel=pixK/faktor, luecke=haeufigste(lw.aus)/faktor;
+    var erwartet=100*Math.pow(pixK/pixS,2);
+    log("      Puffer: Kachel " + pixK + "px, Abstand " + pixS + "px  -> erwartete Flaeche " +
+        erwartet.toFixed(1) + "%,  gemessen " + (100*gefuellt/feld.length).toFixed(1) + "%");
+    pruef("die gemalte Flaeche stimmt mit dem gemessenen Raster ueberein",
+      Math.abs(100*gefuellt/feld.length - erwartet) < 0.6);
+    pruef("die Kachel liegt auf ganzen Pufferpixeln (harte Kanten)", pixK === Math.round(pixK));
+    log("      haeufigste Laufweite AN " + kachel.toFixed(1) + "px,  AUS " + luecke.toFixed(1) +
+        "px   -> Abstand " + (kachel+luecke).toFixed(1) + "px   (magicui: 4 + 6 = 10px)");
+    pruef("Kachel 5px", Math.abs(kachel-5)<0.7);
+    pruef("Abstand 18px, also spaceter als die Vorlage", Math.abs(kachel+luecke-18)<1.2);
+    log("");
+
+    /* ---- 3  GLAETTE UND GESCHWINDIGKEIT, mit gedrehter Uhr und gegen die Vorlage ---- */
+    log("3  Glaette: wie weit springt ein Pixel von einem Bild zum naechsten?");
+    /* Die Nachbildung der Vorlage. Sie haengt an derselben Uhr, damit "je Bild" fuer beide
+       dasselbe heisst -- nur laeuft sie mit 60 Bildern, wie magicui. */
+    var cv2=d.createElement("canvas");
+    cv2.width=cv.width; cv2.height=cv.height;
+    cv2.style.cssText="position:absolute;left:0;top:430px;width:720px;height:420px;background:#1c1c1f";
+    d.body.appendChild(cv2);
+    (function vorlage(){
+      var c=cv2.getContext("2d"), schritt=10*faktor, k=4*faktor;
+      var sp=Math.ceil(cv2.width/schritt), ze=Math.ceil(cv2.height/schritt);
+      var o=new Float32Array(sp*ze);
+      for (var i=0;i<o.length;i++) o[i]=Math.random()*0.3;
+      function malen(){
+        /* magicui: je Bild und Zelle mit flickerChance * dt ein SOFORTIGER neuer Wert. */
+        for (var i=0;i<o.length;i++) if (Math.random() < 0.3*(1/60)) o[i]=Math.random()*0.3;
+        c.clearRect(0,0,cv2.width,cv2.height);
+        for (var y=0;y<ze;y++) for (var x=0;x<sp;x++){
+          var a=o[y*sp+x]; if (a<=0.002) continue;
+          c.fillStyle="rgba(224,224,224,"+a+")";
+          c.fillRect(x*schritt,y*schritt,k,k);
+        }
+        v.requestAnimationFrame(malen);
+      }
+      v.requestAnimationFrame(malen);
+    })();
+
+    function sprungReihe(cvx, n, dtMs){
+      var vor=alphaFeld(cvx), summe=0, zahl=0, groesster=0;
+      bilder(n, dtMs, function(){
+        var jetzt=alphaFeld(cvx), s=0, m=0;
+        for (var i=0;i<vor.length;i+=7){
+          var dd=Math.abs(jetzt[i]-vor[i]); s+=dd; if (dd>groesster) groesster=dd; m++;
+        }
+        summe+=s/m; zahl++; vor=jetzt;
+      });
+      return { mittel: summe/Math.max(1,zahl), max: groesster };
+    }
+    /* Unser Raster mit 30 Bildern (das ist sein Takt), die Vorlage mit 60. Verglichen wird der
+       Sprung JE BILD -- das ist, was das Auge als Zucken sieht. */
+    var uns=sprungReihe(cv, 20, 1000/30);
+    var vgl=sprungReihe(cv2, 20, 1000/60);
+    log("      unser Raster: im Mittel " + uns.mittel.toFixed(2) +
+        " Alphastufen je Bild, groesster Sprung " + uns.max);
+    log("      die Vorlage:  im Mittel " + vgl.mittel.toFixed(2) +
+        " Alphastufen je Bild, groesster Sprung " + vgl.max);
+    pruef("unser groesster Sprung ist deutlich kleiner als der der Vorlage (" +
+      (vgl.max/Math.max(1,uns.max)).toFixed(1) + "-mal)", uns.max * 2 < vgl.max);
+    /* DIE SCHRANKE IST GERECHNET, nicht gewuenscht. Zwei Dinge bewegen einen Pixel:
+         die Fahrt      1-exp(-dt/tau) der Restspanne = 8.0 Prozent bei dt=1/30 und tau=400ms,
+                        auf 0.25 Deckkraft also 0.020 -> 5.1 Alphastufen
+         die Rundung    die gemalte Deckkraft liegt auf 32 Stufen, eine Stufe ist
+                        0.25/32 -> 2.0 Alphastufen
+       Zusammen 7.1. Der erste Anlauf hatte 12 Stufen und damit 5.3 Alphastufen je Stufe -- die
+       Messung meldete 11, und die Schranke von 7 war falsch, nicht die Messung. Genau deshalb
+       stehen jetzt 32 Stufen im Kit. Die Vorlage setzt in EINEM Bild bis zu 0.3, also 76. */
+    var tau=0.4, dt=1/30, stufen=32;
+    var schranke=0.25*255*((1-Math.exp(-dt/tau)) + 1/stufen);
+    log("      gerechnete Schranke: " + schranke.toFixed(1) + " Alphastufen" +
+        "  (Fahrt " + (0.25*255*(1-Math.exp(-dt/tau))).toFixed(1) +
+        " + eine Rundungsstufe " + (0.25*255/stufen).toFixed(1) + ")");
+    pruef("und liegt unter der gerechneten Schranke", uns.max <= Math.ceil(schranke));
+    log("");
+
+    log("4  Geschwindigkeit: wie viel bewegt sich in einer Sekunde?");
+    function bewegung(cvx, n, dtMs){
+      var vor=alphaFeld(cvx);
+      bilder(n, dtMs);
+      var jetzt=alphaFeld(cvx), s=0, m=0;
+      for (var i=0;i<vor.length;i+=7){ s+=Math.abs(jetzt[i]-vor[i]); m++; }
+      return s/m;
+    }
+    var b1=bewegung(cv, 30, 1000/30);
+    var b2=bewegung(cv2, 60, 1000/60);
+    log("      in einer Sekunde: unser Raster " + b1.toFixed(2) +
+        " Alphastufen je Pixel, die Vorlage " + b2.toFixed(2));
+    pruef("unser Raster bewegt sich langsamer als die Vorlage", b1 < b2);
+    log("");
+
+    log("5  Farbe und Gewicht je Thema");
+    function ersteFarbe(){
+      var b=ctx.getImageData(0,0,cv.width,cv.height).data;
+      for (var i=0;i<b.length;i+=4) if (b[i+3]>40) return [b[i],b[i+1],b[i+2],b[i+3]];
+      return null;
+    }
+    var dunkel=ersteFarbe(), opDunkel=v.getComputedStyle(host).opacity;
+    log("      dunkel: Thema am Element \"" + wurzel.getAttribute("data-theme") +
+        "\"   gemalt rgb(" + (dunkel?dunkel.slice(0,3).join(","):"-") + ")   Ebene " + opDunkel);
+    pruef("im Dunkeln malt es hell (die Textfarbe des dunklen Themas)",
+      !!dunkel && dunkel[0] > 200 && dunkel[1] > 200);
+    pruef("und die Ebene ist die gerechnete 0.32", Math.abs(parseFloat(opDunkel)-0.32)<0.01);
+    if (v.setUpstreemTheme) v.setUpstreemTheme("light");
+    return warte(300).then(function(){
+      bilder(3, 1000/30);
+      var hell=ersteFarbe(), opHell=v.getComputedStyle(host).opacity;
+      log("      hell:   Thema am Element \"" + (wurzel.getAttribute("data-theme")||"(keins)") +
+          "\"   gemalt rgb(" + (hell?hell.slice(0,3).join(","):"-") + ")   Ebene " + opHell);
+      pruef("im Hellen malt es dunkel", !!hell && hell[0] < 80 && hell[1] < 80);
+      pruef("und die Ebene ist die gerechnete 0.388", Math.abs(parseFloat(opHell)-0.388)<0.01);
+      log("");
+
+        log("6  Verdeckter Tab: es haelt an und laeuft danach weiter");
+      verdeckt = true;
+      var vorV=alphaFeld(cv);
+      bilder(20, 1000/30);
+      var nachV=alphaFeld(cv), dV=0;
+      for (var iv=0;iv<vorV.length;iv+=7) dV+=Math.abs(nachV[iv]-vorV[iv]);
+      verdeckt = false;
+      bilder(1, 1000/30);
+      var vorW=alphaFeld(cv);
+      bilder(20, 1000/30);
+      var nachW=alphaFeld(cv), dW=0;
+      for (var iw=0;iw<vorW.length;iw+=7) dW+=Math.abs(nachW[iw]-vorW[iw]);
+      log("      Bewegung verdeckt " + dV + ",  danach sichtbar " + dW);
+      pruef("verdeckt bewegt sich nichts", dV === 0);
+      pruef("und sichtbar laeuft es weiter", dW > 0);
+      log("");
+
+      log("7  Faellt die Huelle aus dem Dokument, endet die Schleife");
+      /* Der Beweis ohne echte Uhr: die Warteschlange. Wer weiterlaufen will, legt in jedem Bild
+         einen neuen Aufruf hinein. Unser Kit und die Vorlage sind zusammen zwei; nach dem
+         Entfernen der Huelle darf nur noch die Vorlage nachlegen. */
+      bilder(2, 1000/30);
+      var vorher=warteschlange.length;
+      host.parentNode.removeChild(host);
+      bilder(3, 1000/30);
+      var nachher=warteschlange.length;
+      log("      Eintraege in der Warteschlange: vorher " + vorher + ", nachher " + nachher);
+      pruef("nach dem Entfernen legt nur noch EINE Schleife nach (die Vorlage)",
+        vorher === 2 && nachher === 1);
+      log("");
+
+      /* ---- 7  prefers-reduced-motion: EIN Bild, dann Schluss ---- */
+      log("8  Bei prefers-reduced-motion bewegt sich nichts");
+      var host2=d.createElement("span");
+      host2.className="up-bgart-flimmer";
+      host2.style.cssText="position:absolute;left:0;top:0;width:200px;height:120px";
+      wurzel.appendChild(host2);
+      var altMM=v.matchMedia;
+      v.matchMedia=function(q){
+        if (String(q).indexOf("reduced-motion") >= 0) return { matches:true, addListener:function(){}, addEventListener:function(){} };
+        return altMM ? altMM.call(v, q) : { matches:false, addListener:function(){}, addEventListener:function(){} };
+      };
+      var q0=warteschlange.length;
+      var kit2=UC.makeFlickerGrid(host2, { squareSize:5, gap:13, maxOpacity:0.25, fps:30 });
+      var cv3=host2.querySelector("canvas");
+      var vorRuhig=alphaFeld(cv3);
+      var voll=0; for (var j=0;j<vorRuhig.length;j++) if (vorRuhig[j]>0) voll++;
+      bilder(10, 1000/30);
+      var nachRuhig=alphaFeld(cv3);
+      var diff=0; for (var j2=0;j2<vorRuhig.length;j2++) diff+=Math.abs(nachRuhig[j2]-vorRuhig[j2]);
+      log("      gefuellte Pixel " + voll + "   Bewegung nach 10 Bildern " + diff +
+          "   neue Warteschlangen-Eintraege " + (warteschlange.length-q0));
+      pruef("es steht EIN Bild da", voll > 200);
+      pruef("und es bewegt sich nichts mehr", diff === 0);
+      pruef("und es fragt kein einziges Bild an", warteschlange.length - q0 === 0);
+      v.matchMedia=altMM;
+      log("");
+      log((schlecht ? "==> FALSCH  " : "==> RICHTIG ")+gut+" von "+(gut+schlecht)+" Pruefungen");
+      log("FERTIG");
+    });
+  });
+}).catch(function(e){ log("ABBRUCH "+e+"\n"+(e&&e.stack||"")); });
+</script>
