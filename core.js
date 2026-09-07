@@ -395,16 +395,26 @@
        Quick Actions seine Beschriftungen bisher selbst durch tx() schickte und dort dieselben
        vier Woerter stehen -- der Picker im Composer braucht sie ueber t(), also gehoeren sie
        hierhin, wo BEIDE sie finden. */
-    "Brands": "Marken",
+    /* "Brands" und "Brand" bleiben STEHEN, sie werden nicht zu Marken. Der Rest der App macht
+       es seit Langem so -- "Brands filtern", "Brands suchen...", "Neue Brand",
+       "Brand-Erwaehnungen" -- und ein Eintrag, der hier "Marken" sagt, waere der einzige Ort,
+       an dem das Wort ploetzlich anders heisst. Ein Eintrag, der nichts aendert, ist trotzdem
+       richtig: ohne ihn faellt t() auf den englischen Schluessel zurueck, was hier zufaellig
+       stimmt -- aber niemand saehe, dass es Absicht war. */
+    /* Die zwei Modellbeschreibungen im Composer von Ask Mira. Sie werden bei jedem
+       Zustandswechsel neu geschrieben, also erreicht sie der breite Sprachlauf nicht -- die
+       Komponente schickt sie beim Malen selbst durch t(). */
+    "Detailed answers for bigger tasks, with sources and links.":
+      "Ausf\u00fchrliche Antworten f\u00fcr gr\u00f6\u00dfere Aufgaben, mit Quellen und Links.",
+    "Fast, lightweight answers for quick everyday questions.":
+      "Schnelle, knappe Antworten f\u00fcr Fragen zwischendurch.",
+    "Brands": "Brands",
     "Domains": "Domains",
     "URLs": "URLs",
     "Prompts": "Prompts",
-    /* Und die Einzahl: sie steht als Marke rechts in jeder Trefferzeile. "URL" gibt es weiter
-       unten schon, die drei anderen fehlten. Domain und Prompt bleiben unveraendert -- beide
-       Woerter sind im Deutschen dieselben, und ein Eintrag, der nichts aendert, ist trotzdem
-       richtig: ohne ihn faellt t() auf den englischen Schluessel zurueck, was hier zufaellig
-       stimmt, aber niemand sieht, dass es Absicht war. */
-    "Brand": "Marke",
+    /* Und die Einzahl: sie steht als Typmarke rechts in jeder Trefferzeile. "URL" gibt es
+       weiter unten schon, die drei anderen fehlten. */
+    "Brand": "Brand",
     "Domain": "Domain",
     "Prompt": "Prompt",
     "Markets": "Märkte",
@@ -14305,6 +14315,15 @@
               '<path d="M3 8.268a2 2 0 0 0-1 1.738V19a2 2 0 0 0 2 2h11a2 2 0 0 0 1.732-1"/>',
     listTodo: '<path d="M13 5h8"/><path d="M13 12h8"/><path d="M13 19h8"/>' +
               '<path d="m3 17 2 2 4-4"/><rect x="3" y="4" width="6" height="6" rx="1"/>',
+    /* Lucide "database-search" -- der Zylinder mit der Lupe unten rechts. Uebertragen und
+       nicht gezeichnet: dieselbe Formsprache wie die 76 anderen (Raster 24, runde Enden).
+       Gebraucht vom Ruhehinweis des Entitaets-Pickers in Ask Mira. */
+    databaseSearch: '<ellipse cx="12" cy="5" rx="9" ry="3"/>' +
+      '<path d="M3 5v14a9 3 0 0 0 6.47 2.88"/>' +
+      '<path d="M3 12a9 3 0 0 0 6.47 2.88"/>' +
+      '<path d="M21 5v6"/>' +
+      '<circle cx="18" cy="18" r="3"/>' +
+      '<path d="m22 22-1.5-1.5"/>',
     scanSearch: PFAD_SCAN,
     textSearch: PFAD_SQDASH,
     /* arrow-down-up: das Sortierzeichen der Toolbars, jetzt auch fuer die Sortierknoepfe in den

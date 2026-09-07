@@ -82,7 +82,8 @@
      alten mit Fader-Knopf und Einstellungs-Fach und den neuen.
 
      Sie ist zweimal abgesichert:
-       - idempotent ueber data-am-composer="v2". Bubble ersetzt die Wurzel bei jeder Aenderung
+       - idempotent ueber data-am-composer, und der Stempel ist eine VERSION (siehe unten).
+       Bubble ersetzt die Wurzel bei jeder Aenderung
          eines dynamischen Ausdrucks, und amRun fasst zusaetzlich viermal nach.
        - sie laeuft VOR dem Elementblock, damit dessen querySelector die neuen Knoepfe findet.
 
@@ -91,12 +92,44 @@
      amInit an dieser Zeile -- und weil root.__askMiraInit schon gesetzt ist, gibt es keinen
      zweiten Anlauf: die Galerie, die Vorschlaege, die Chatliste, die Sprachaufnahme und der
      ganze Init danach liefen nie. Es haette wie "Mira laedt nicht" ausgesehen. */
+  /* DER STEMPEL IST EINE VERSION UND ZAEHLT HOCH. Er stand zuerst fest auf "v2", und das war
+     ein Fehler mit Ansage: sobald die Vorlage selbst v2 trug, sah diese Funktion den Stempel,
+     brach ab und baute die naechste Fassung des Menues nie. Gemessen am 08.09. -- der
+     Prueftand auf dem Vorlagen-Markup starb an einem fehlenden #am-eff-body.
+     Ein Stempel, der nicht der aktuelle ist, heisst deshalb: NEU BAUEN, nicht "fertig". */
+  var COMPOSER_FASSUNG = 'v3';
   function composerUmbauen(root){
     var comp = root.querySelector('#am-composer');
-    if (!comp || comp.getAttribute('data-am-composer') === 'v2') return;
+    if (!comp) return;
+    var stand = comp.getAttribute('data-am-composer');
+    if (stand === COMPOSER_FASSUNG) return;
 
     var akt = comp.querySelector('.am-actions');
     if (!akt) return;                      /* fremdes Markup ohne Aktionszeile: nichts anfassen */
+
+    /* Eine AELTERE Fassung liegt schon da: ihre Teile wegnehmen, bevor die neuen kommen --
+       sonst stehen zwei Modellknoepfe und zwei Picker in der Zeile. Die Knoepfe, die es schon
+       vor dem ersten Umbau gab (Mikrofon, Senden), bleiben dabei unberuehrt: sie tragen
+       Ereignisse und werden unten nur VERSCHOBEN. */
+    if (stand){
+      /* #am-pick-btn gehoert MIT in die Liste: der Aufbau unten erzeugt einen frischen, und
+         der alte waere sonst beim Aufloesen der Gruppen in die RECHTE gespuelt worden --
+         gemessen als "am-pick-btn,am-eff,am-mic,am-send" in der rechten Gruppe, also ein
+         zweites Plus an der falschen Stelle. */
+      ['#am-eff', '#am-pick-btn', '#am-pick-panel', '#am-picks'].forEach(function(sel){
+        var e = comp.querySelector(sel);
+        if (e && e.parentNode) e.parentNode.removeChild(e);
+      });
+      /* Die zwei Gruppen aufloesen und ihren Inhalt zurueck in die Zeile geben, damit der
+         Aufbau unten von einem bekannten Zustand ausgeht. */
+      ['.am-act-l', '.am-act-r'].forEach(function(sel){
+        var gr = akt.querySelector(sel);
+        if (!gr) return;
+        while (gr.firstChild) akt.insertBefore(gr.firstChild, gr);
+        gr.parentNode.removeChild(gr);
+      });
+      comp.classList.remove('is-v2');
+    }
 
     /* Das alte Einstellungs-Fach aus dem Baum nehmen. Seine CSS BLEIBT stehen (fremdes Markup
        koennte die Klassen tragen, und eine geloeschte Klasse zaehlt im Vertragsvergleich als
@@ -127,6 +160,7 @@
           'spellcheck="false" aria-label="Search your workspace">' +
         '<span class="am-pick-count" id="am-pick-count"></span>' +
       '</div>' +
+      '<p class="am-pick-h" id="am-pick-h"></p>' +
       '<div class="am-pick-scopes" id="am-pick-scopes"></div>' +
       '<div class="am-pick-scroll" id="am-pick-scroll">' +
         '<div class="am-pick-list" id="am-pick-list" role="listbox" aria-live="polite"></div>' +
@@ -151,45 +185,59 @@
     var eff = document.createElement('div');
     eff.className = 'am-eff'; eff.id = 'am-eff';
     eff.innerHTML =
+      /* OHNE Zeichen. Der Modellname und die Stufe sagen alles, was hier zu sagen ist -- ein
+         Logo daneben war Schmuck in einer Zeile, in der drei Knoepfe um den Platz ringen. */
       '<button class="am-eff-btn" type="button" id="am-eff-btn" aria-haspopup="true" ' +
               'aria-expanded="false">' +
-        '<span class="am-eff-ic" id="am-eff-ic"></span>' +
         '<span class="am-eff-name" id="am-eff-name"></span>' +
         '<span class="am-eff-lvl" id="am-eff-lvl"></span>' +
         '<svg class="am-eff-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>' +
       '</button>' +
       '<div class="am-eff-menu" id="am-eff-menu" role="dialog" aria-label="Model and effort">' +
         '<button class="am-eff-head" type="button" id="am-eff-head" aria-expanded="false">' +
-          '<span class="am-eff-ic" id="am-eff-hic"></span>' +
           '<span class="am-eff-hname" id="am-eff-hname"></span>' +
           '<span class="am-eff-hlvl" id="am-eff-hlvl"></span>' +
           '<svg class="am-eff-hchev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>' +
         '</button>' +
-        '<div class="am-eff-models" id="am-eff-models"></div>' +
-        '<div class="am-eff-slider" id="am-eff-slider">' +
-          '<div class="am-eff-track" id="am-eff-track" role="slider" tabindex="0" ' +
-               'aria-valuemin="0" aria-valuemax="2" aria-valuenow="1">' +
-            '<span class="am-eff-fill" id="am-eff-fill"></span>' +
-            '<span class="am-eff-ultra" id="am-eff-ultra" aria-hidden="true"></span>' +
-            '<span class="am-eff-dot" data-i="0"></span>' +
-            '<span class="am-eff-dot" data-i="1"></span>' +
-            '<span class="am-eff-dot" data-i="2"></span>' +
-            '<span class="am-eff-thumb" id="am-eff-thumb"></span>' +
+        /* EIN Rumpf um beide Ansichten. Seine Hoehe wird gemessen und gesetzt (effRumpf),
+           damit das Menue beim Umschalten weich waechst statt zu springen: max-height auf
+           zwei Kindern gleichzeitig ergibt zwei Bewegungen, die nicht zueinander passen, und
+           genau das sah man als Zucken. */
+        '<div class="am-eff-body" id="am-eff-body">' +
+          '<div class="am-eff-pane am-eff-slider" id="am-eff-slider">' +
+            '<div class="am-eff-track" id="am-eff-track" role="slider" tabindex="0" ' +
+                 'aria-valuemin="0" aria-valuemax="2" aria-valuenow="1">' +
+              '<span class="am-eff-fill" id="am-eff-fill"></span>' +
+              '<span class="am-eff-ultra" id="am-eff-ultra" aria-hidden="true">' +
+                /* Die Punkte liegen in EIGENER Schicht ueber dem Verlauf. Nur so kann der
+                   Ausblender nach links allein sie treffen -- eine Maske auf dem Verlauf
+                   haette den Verlauf mit ausgeblendet. */
+                '<span class="am-eff-dots" id="am-eff-dots"></span>' +
+              '</span>' +
+              '<span class="am-eff-dot" data-i="0"></span>' +
+              '<span class="am-eff-dot" data-i="1"></span>' +
+              '<span class="am-eff-dot" data-i="2"></span>' +
+              '<span class="am-eff-thumb" id="am-eff-thumb"></span>' +
+            '</div>' +
+            '<div class="am-eff-labels" id="am-eff-labels"></div>' +
           '</div>' +
+          '<div class="am-eff-pane am-eff-models" id="am-eff-models"></div>' +
+          '<p class="am-eff-note" id="am-eff-note"></p>' +
         '</div>' +
-        '<div class="am-eff-labels" id="am-eff-labels"></div>' +
-        '<p class="am-eff-note" id="am-eff-note"></p>' +
       '</div>';
 
     links.appendChild(plus);
-    links.appendChild(eff);
     /* Was in der Zeile stand, wandert nach rechts -- in der vorhandenen Reihenfolge. */
     while (akt.firstChild) rechts.appendChild(akt.firstChild);
+    /* Die Modell-Schaltflaeche steht RECHTS und links neben dem Mikrofon, nicht bei dem Plus:
+       links gehoert das Hinzufuegen, rechts das Absenden samt allem, was es naeher bestimmt. */
+    var mikro = rechts.querySelector('#am-mic');
+    if (mikro) rechts.insertBefore(eff, mikro); else rechts.insertBefore(eff, rechts.firstChild);
     akt.appendChild(links);
     akt.appendChild(rechts);
 
     comp.classList.add('is-v2');
-    comp.setAttribute('data-am-composer', 'v2');
+    comp.setAttribute('data-am-composer', COMPOSER_FASSUNG);
   }
 
   function amInit(){
@@ -378,7 +426,10 @@
       /* Der Picker und der Aufwand-Slider. Die Beschriftungen der drei Stufen stehen NICHT hier,
          sondern in EFF_LABELS -- sie werden bei jedem Zustandswechsel neu geschrieben, und was
          ein Zustandswechsel schreibt, erreicht der breite Sprachlauf von core nicht. */
+      pickHeading: 'What are you looking for?',
       pickIdle: 'Search your workspace',
+      /* pickIdleSub wird nicht mehr gemalt -- der eine Satz plus das Zeichen reichen. Der
+         Eintrag BLEIBT: ein geloeschter Schluessel zaehlt im Vertragsvergleich als Bruch. */
       pickIdleSub: 'Type at least two letters to find a brand, domain, URL or prompt.',
       pickEmpty: 'No results found',
       pickEmptySub: 'Try another spelling, or pick a different type above.',
@@ -477,8 +528,9 @@
         'Was soll ich für dich analysieren?'
       ],
       urlVisit: 'Besuchen',
+      pickHeading: 'Was suchst du?',
       pickIdle: 'In deinen Daten suchen',
-      pickIdleSub: 'Mindestens zwei Buchstaben \u2014 dann findest du Marke, Domain, URL oder Prompt.',
+      pickIdleSub: 'Mindestens zwei Buchstaben \u2014 dann findest du Brand, Domain, URL oder Prompt.',
       pickEmpty: 'Keine Treffer',
       pickEmptySub: 'Andere Schreibweise versuchen oder oben einen anderen Typ w\u00e4hlen.',
       pickBroken: 'Die Treffer konnten nicht gelesen werden',
@@ -488,7 +540,7 @@
       pickOffline: 'Die Suche ist gerade nicht verf\u00fcgbar',
       pickOfflineSub: 'Bitte die Seite neu laden und noch einmal versuchen.',
       pickMax: 'max. 3',
-      pickPlaceholder: 'Marken, Domains, URLs, Prompts suchen\u2026',
+      pickPlaceholder: 'Brands, Domains, URLs, Prompts suchen\u2026',
       effFlashNote: 'Mira Flash antwortet immer auf Mittel.',
       urlDetail: 'Detailseite öffnen',
       oppAdd: 'Als Opportunity hinzufügen',
@@ -3039,11 +3091,9 @@
   var elEff       = root.querySelector('#am-eff');
   var elEffBtn    = root.querySelector('#am-eff-btn');
   var elEffMenu   = root.querySelector('#am-eff-menu');
-  var elEffIc     = root.querySelector('#am-eff-ic');
   var elEffName   = root.querySelector('#am-eff-name');
   var elEffLvl    = root.querySelector('#am-eff-lvl');
   var elEffHead   = root.querySelector('#am-eff-head');
-  var elEffHic    = root.querySelector('#am-eff-hic');
   var elEffHname  = root.querySelector('#am-eff-hname');
   var elEffHlvl   = root.querySelector('#am-eff-hlvl');
   var elEffTrack  = root.querySelector('#am-eff-track');
@@ -3052,6 +3102,9 @@
   var elEffThumb  = root.querySelector('#am-eff-thumb');
   var elEffLabels = root.querySelector('#am-eff-labels');
   var elEffModels = root.querySelector('#am-eff-models');
+  var elEffBody   = root.querySelector('#am-eff-body');
+  var elEffSlider = root.querySelector('#am-eff-slider');
+  var elEffDots   = root.querySelector('#am-eff-dots');
   var elEffNote   = root.querySelector('#am-eff-note');
   var _flimmer = null;
 
@@ -3102,6 +3155,7 @@
     root.classList.toggle('is-ultra', i === 2);
     var akt = elEffLabels ? elEffLabels.querySelectorAll('.am-eff-lbl') : [];
     for (var j = 0; j < akt.length; j++) akt[j].classList.toggle('is-active', j === i);
+    effRumpf();
     effFlimmern();
   }
 
@@ -3114,9 +3168,37 @@
      fps: 45 und nicht 60. Der Kit verwirft ein Bild, wenn seit dem letzten weniger als 1/fps
      vergangen ist; auf einem 60-Hz-Schirm liegt 60 damit genau auf der Kante und schwankt,
      45 ergibt stabile 30. */
+  /* DIE HOEHE WIRD GEMESSEN UND GESETZT, nicht in der CSS geraten.
+     Vorher trugen die zwei Ansichten je ein max-height, und der Wechsel sah aus wie ein Zucken:
+     zwei Bewegungen mit verschiedenen Zielwerten, von denen keine die tatsaechliche Hoehe des
+     Inhalts kannte -- die Summe sprang. Jetzt faehrt EIN Wert, und er kommt von scrollHeight
+     der Ansicht, die gerade gilt.
+     Flash zeigt GAR KEINEN Slider mehr (vorher stand er gedimmt da und sagte nichts, was der
+     Hinweis nicht schon sagte). Das Ein- und Ausfahren ist damit dieselbe Bewegung wie der
+     Wechsel zur Modellliste -- eine Mechanik, ein Wert, 200ms. */
+  function effRumpf(){
+    if (!elEffBody) return;
+    var zeigtModelle = elEff && elEff.classList.contains('is-models');
+    var zeigtSlider  = !zeigtModelle && !root.classList.contains('is-flash');
+    if (elEffSlider) elEffSlider.classList.toggle('is-an', zeigtSlider);
+    if (elEffModels) elEffModels.classList.toggle('is-an', zeigtModelle);
+    /* Die Hoehe der Ansicht, die gilt -- plus die des Hinweises, wenn er sichtbar ist. Bei
+       Deckkraft 0 misst scrollHeight trotzdem richtig; nur display: none waere 0, und genau
+       deshalb steht in der CSS visibility und nicht display. */
+    var h = 0;
+    var an = zeigtModelle ? elEffModels : (zeigtSlider ? elEffSlider : null);
+    if (an) h += an.scrollHeight;
+    if (elEffNote && root.classList.contains('is-flash') && !zeigtModelle)
+      h += elEffNote.scrollHeight + 8;
+    elEffBody.style.height = h + 'px';
+  }
+
   function effFlimmern(){
-    var willUltra = root.classList.contains('is-ultra') && elEff && elEff.classList.contains('is-open');
-    if (!elEffUltra) return;
+    /* Bei Flash gibt es keinen Slider und damit auch keine Partikel -- egal, was die Stufe sagt. */
+    var willUltra = root.classList.contains('is-ultra') && !root.classList.contains('is-flash') &&
+      elEff && elEff.classList.contains('is-open') &&
+      !(elEff && elEff.classList.contains('is-models'));
+    if (!elEffDots) return;
     if (!willUltra){
       if (_flimmer){ _flimmer.stop(); _flimmer = null; }
       return;
@@ -3124,7 +3206,7 @@
     if (_flimmer){ _flimmer.redraw(); return; }
     var UCg = window.UpstreemCore;
     if (!UCg || !UCg.makeFlickerPill) return;
-    _flimmer = UCg.makeFlickerPill(elEffUltra, {
+    _flimmer = UCg.makeFlickerPill(elEffDots, {
       squareSize: 2, gap: 3,
       blinksPerSecond: 2.4, blinkMs: 340,
       baseOpacity: 0.12, maxOpacity: 0.8, fps: 45
@@ -3194,9 +3276,11 @@
   /* ---------------- Model selector (Mira Pro / Mira Flash) ---------------- */
   var MIRA_LOGO_SVG = '<svg viewBox="0 0 44 43" fill="none"><path d="M25.8 33.1C22.3 31.8 18.7 31.6 15.4 32.5C13.1 33.1 10.9 34.3 8.90002 35.8L7.5 37L7.10001 37.4L8 38.2C8.1 38.2 8.10001 38.3 8.20001 38.4C8.40001 38.6 8.60002 38.7 8.90002 38.9L9.5 39.3L10.1 38.8C10.2 38.7 10.4 38.5 10.6 38.4C12.4 36.9 14.4 35.9 16.5 35.4C19.2 34.7 22.1 34.8 25 35.9C27.4 36.8 32.3 37.9 38.2 35.4L38.4 35.3L38.7 35C38.7 34.9 38.8 34.9 38.9 34.8C39.4 34.2 39.9 33.6 40.3 32.9L42.3 29.8L39.1 31.6C34.4 34.2 30.1 34.7 25.8 33.1Z" fill="currentColor"/><path d="M12.1 22.3C14.8 21.6 17.7 21.7 20.6 22.8C23.8 24 32 25.7 41.2 17.4L42.7 15.9L42.8 15.8L43.2 15.4L43 14.9C42.9 14.5 42.7 14 42.5 13.5L42 12.1L41 13.1C40.9 13.3 40.7 13.4 40.5 13.6C36.1 18.1 29.3 22.7 21.5 19.9C18 18.6 14.4 18.4 11.1 19.3C7.90001 20.2 5.1 21.9 2.5 24.3V24.2L1 25.8C1 25.9 0.900018 25.9 0.800018 26L0.5 26.3L0.600006 26.7C0.700006 27.2 0.9 27.7 1 28.2L1.60001 29.8L2.60001 28.5C2.70001 28.3 2.9 28.2 3 28C5.1 26.1 8.00001 23.4 12.1 22.3Z" fill="currentColor"/><path d="M2.40002 20.5C4.70002 18.1 7.30001 16.6 10.1 15.8C12.8 15.1 15.7 15.2 18.6 16.3C27.6 19.6 35.4 14.2 38.8 11.3L40.1 10L40.6 9.59998L40.2 9C39.9 8.7 39.7 8.29999 39.4 7.89999L38.8 7.09998L38.1 7.79999C38 7.89999 37.8 8.09998 37.7 8.19998C33.5 12.2 27 16.3 19.6 13.5C16.1 12.2 12.5 12 9.20001 12.9C7.10001 13.5 5.10001 14.5 3.10001 15.8L1 17.5C0.8 17.7 0.7 17.8 0.5 18L0.300018 18.2V18.5C0.200018 19.2 0.200006 19.9 0.100006 20.5L0 23L1.70001 21.2C1.90001 21 2.10002 20.7 2.40002 20.5Z" fill="currentColor"/><path d="M28.7 39.9L28.5 40.5L28.7 39.9C28.4 39.8 28.2 39.7 27.9 39.6C24.4 38.3 20.8 38.1 17.5 39C16.8 39.2 16.1 39.4 15.4 39.7L13 40.8L12.4 41.1L14.4 41.8C15 42 15.6 42.2 16.2 42.4L16.5 42.5L16.8 42.4C17.1 42.3 17.4 42.1 17.7 42.1C17.9 42.1 18.1 42 18.3 41.9C20.7 41.3 23.3 41.3 26.1 42.2C26.4 42.3 26.6 42.4 26.9 42.5L27.4 42.7L27.7 42.6C28.4 42.4 29.2 42.2 29.8 41.9L32.6 40.9L29.7 40.2C29.4 40.1 29 40 28.7 39.9Z" fill="currentColor"/><path d="M44 19.2L42.5 20.7C42.3 20.9 42.1 21.1 41.9 21.3C37.8 25.2 31.2 29.4 23.8 26.6C20.3 25.3 16.7 25.1 13.4 26C10.3 26.9 7.5 28.5 5 30.9L3.70001 32.3L3.30002 32.8L3.70001 33.4C4.00001 33.8 4.20002 34.1 4.40002 34.5L5 35.4L5.70001 34.5C5.80001 34.4 6.00001 34.2 6.10001 34.1C8.50001 31.5 11.1 29.9 14.1 29.1C16.8 28.4 19.7 28.5 22.6 29.6C25.1 30.5 27.7 30.8 30.3 30.5C34.9 30 39.5 27.4 42.9 24.5C43.1 24.3 43.3 24.2 43.5 24L43.8 23.7V23.4C43.8 22.8 43.9 22.1 43.9 21.5L44 19.2Z" fill="currentColor"/><path d="M6 10L5.70001 9.39999L6 10C6.6 9.7 7.30002 9.49999 7.90002 9.29999C10.6 8.59999 13.5 8.69999 16.4 9.79999C18.3 10.5 20.2 10.8 22.3 10.8C26.5 10.8 30.7 9.29999 34.6 6.39999L36.1 5.19998L36.6 4.79999L35.7 4.09998C35.4 3.79998 35 3.49999 34.6 3.29999L34 2.89999L33.5 3.29999C33.3 3.39999 33.2 3.59998 33 3.69998C27.7 7.69998 22.4 8.79999 17.4 6.89999C13.8 5.59999 10.2 5.29999 6.60001 6.39999C6.30001 6.49999 6.00001 6.59998 5.60001 6.69998L5.40002 6.79999L5.10001 7.09998C5.10001 7.19998 5.00002 7.19999 4.90002 7.29999C4.50002 7.89999 4.00001 8.4 3.60001 9L1.70001 11.9L4.80002 10.3C5.30002 10.3 5.7 10.1 6 10Z" fill="currentColor"/><path d="M14.2 3.19998L14.5 3.29999C15.8 3.79999 17.8 4.29999 20.3 4.29999C22.9 4.29999 25.4 3.69998 27.9 2.69998L31 1.19998L28.9 0.5C28.3 0.3 27.7 0.1 27 0H26.7L26.4 0.0999756C26.1 0.199976 25.8 0.4 25.5 0.5C22.5 1.6 19.5 1.8 16.6 1C16.3 0.9 16 0.799982 15.7 0.699982L15.4 0.599976L15.1 0.699982C14.5 0.899982 13.9 1.09999 13.3 1.39999L11 2.39999L13.4 3.09998C13.6 2.99998 13.9 3.09998 14.2 3.19998Z" fill="currentColor"/></svg>';
   var FLASH_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 1.5 4.2 13.1c-.34.45-.02 1.1.55 1.1H10l-1.1 8.05c-.09.66.77.98 1.16.43L20 9.9c.34-.45.02-1.1-.55-1.1H14l1.15-6.9c.11-.66-.75-1-1.15-.4z"/></svg>';
+  /* Die Zeichen bleiben als Konstanten stehen -- sie werden im Composer nicht mehr gemalt
+     (der Modellknopf traegt nur Text), aber MIRA_LOGO_SVG haengt auch am Kopf der Komponente. */
   var MODELS = {
-    pro:   { name: 'Mira Pro',   icon: MIRA_LOGO_SVG, desc: 'Detailed answers for bigger tasks, with sources and links.' },
-    flash: { name: 'Mira Flash', icon: FLASH_SVG,      desc: 'Fast, lightweight answers for quick everyday questions.' }
+    pro:   { name: 'Mira Pro 1.0', desc: 'Detailed answers for bigger tasks, with sources and links.' },
+    flash: { name: 'Mira Flash',   desc: 'Fast, lightweight answers for quick everyday questions.' }
   };
   /* ---- Das Modell in DERSELBEN Schaltflaeche ---------------------------------------------- */
   function effModelleBauen(){
@@ -3204,9 +3288,11 @@
     elEffModels.innerHTML = ['pro', 'flash'].map(function(k){
       var m = MODELS[k];
       return '<button class="am-eff-opt" type="button" role="menuitemradio" data-model="' + k + '">' +
-        '<span class="am-eff-ic">' + m.icon + '</span>' +
         '<span class="am-eff-opt-main"><span class="am-eff-opt-name">' + esc(m.name) + '</span>' +
-          (m.desc ? '<span class="am-eff-opt-desc">' + esc(m.desc) + '</span>' : '') +
+          /* Durch UCt und nicht roh: die Beschreibung wird bei jedem Zustandswechsel neu
+             geschrieben, und was ein Zustandswechsel schreibt, erreicht der breite Sprachlauf
+             von core nicht -- ein Katalogeintrag allein waere ohne Wirkung geblieben. */
+          (m.desc ? '<span class="am-eff-opt-desc">' + esc(UCt(m.desc)) + '</span>' : '') +
         '</span>' +
         '<svg class="am-eff-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>' +
       '</button>';
@@ -3218,8 +3304,6 @@
     var vorher = S.model;
     S.model = model;
     var m = MODELS[model];
-    if (elEffIc)    elEffIc.innerHTML = m.icon;
-    if (elEffHic)   elEffHic.innerHTML = m.icon;
     if (elEffName)  elEffName.textContent = m.name;
     if (elEffHname) elEffHname.textContent = m.name;
     if (elEffModels){
@@ -3243,6 +3327,7 @@
        Slider, der jetzt wieder das Wichtigere ist. */
     if (elEff) elEff.classList.remove('is-models');
     if (elEffHead) elEffHead.setAttribute('aria-expanded', 'false');
+    effRumpf();
   }
 
   /* ---- Auf und zu -----------------------------------------------------------------------
@@ -3274,17 +3359,15 @@
          ist nicht noetig, UND in einem verdeckten Fenster laeuft rAF gar nicht -- die Partikel
          waeren dort nie gebaut worden. */
       effZeichnen();
-      effFlimmern();
     });
     if (elEffHead) elEffHead.addEventListener('click', function(e){
       e.stopPropagation();
       var auf = !elEff.classList.contains('is-models');
       elEff.classList.toggle('is-models', auf);
       elEffHead.setAttribute('aria-expanded', auf ? 'true' : 'false');
-      /* Beim Einklappen der Modellliste kommt die Schiene zurueck ins Bild -- ihre Breite ist
-         dieselbe, aber der Daumen muss neu gesetzt werden, weil sie zwischenzeitlich
-         display: none trug und dann 0 gemessen haette. */
-      if (!auf) effZeichnen();
+      /* Immer neu zeichnen, in beide Richtungen: der Rumpf muss seine neue Hoehe bekommen, und
+         beim Einklappen auch der Daumen seine Stelle. */
+      effZeichnen();
     });
     if (elEffModels) elEffModels.addEventListener('click', function(e){
       var b = e.target.closest && e.target.closest('.am-eff-opt');
@@ -3298,6 +3381,7 @@
   /* Platzhalter und Beschriftungen erst HIER: resolveLang() laeuft im Init, und vorher steht
      lang noch auf 'en'. */
   function pickTexteSetzen(){
+    if (elPickH) elPickH.textContent = L().pickHeading;
     if (elPickInput){
       elPickInput.placeholder = L().pickPlaceholder;
       elPickInput.setAttribute('aria-label', L().pickIdle);
@@ -3418,6 +3502,7 @@
   var elPickList   = root.querySelector('#am-pick-list');
   var elPickScroll = root.querySelector('#am-pick-scroll');
   var elPickScopes = root.querySelector('#am-pick-scopes');
+  var elPickH      = root.querySelector('#am-pick-h');
   var elPickCount  = root.querySelector('#am-pick-count');
   var elPicks      = root.querySelector('#am-picks');
 
@@ -3434,7 +3519,11 @@
     /* .up-seg aus core: der gleitende Streifen faehrt von selbst, und core.css gibt ihm genau
        'transform 200ms ease, width 200ms ease' -- also die geforderte Bewegung ohne eigene
        Zeile dafuer. */
-    elPickScopes.innerHTML = '<div class="up-seg" role="tablist">' +
+    /* is-lg und nicht nur eine eigene Hoehe: core traegt unter dieser Klasse BEIDE Werte
+       zusammen -- 32px und den kraeftigeren Grund -- und begruendet es dort woertlich damit,
+       dass ein 32px hoher Umschalter mit dem Ton des kleinen "zu blass da stand". Genau das
+       war hier der Fall. */
+    elPickScopes.innerHTML = '<div class="up-seg is-lg" role="tablist">' +
       PICK_SCOPES.map(function(s){
         return '<button class="up-seg-btn am-pick-scope" type="button" role="tab" data-scope="' + s + '">' +
           esc(UCt(pickTypLabel(s) + 's')) + '</button>';
@@ -3462,8 +3551,14 @@
     }
     return s;
   }
-  function pickHinweis(titel, unter){
-    return '<div class="am-pick-note"><div class="am-pick-note-t">' + esc(titel) + '</div>' +
+  /* zeichen: nur der Ruhehinweis traegt eines. Bei einem Fehler oder einem leeren Ergebnis
+     waere ein Bild ueber dem Satz eine Verzierung an der falschen Stelle. */
+  function pickHinweis(titel, unter, zeichen){
+    var UCg = window.UpstreemCore;
+    var bild = (zeichen && UCg && UCg.icon)
+      ? '<span class="am-pick-note-ic">' + UCg.icon(zeichen, 1.6) + '</span>' : '';
+    return '<div class="am-pick-note">' + bild +
+           '<div class="am-pick-note-t">' + esc(titel) + '</div>' +
            (unter ? esc(unter) : '') + '</div>';
   }
   var _pickZahlUhr = 0;
@@ -3530,7 +3625,7 @@
       prefix: 'am', limit: PICK_TREFFER,
       onLoading: function(){ if (elPickList) elPickList.innerHTML = pickSkelett(); pickZahl(null); },
       onIdle: function(){
-        if (elPickList) elPickList.innerHTML = pickHinweis(L().pickIdle, L().pickIdleSub);
+        if (elPickList) elPickList.innerHTML = pickHinweis(L().pickIdle, '', 'databaseSearch');
         pickZahl(null);
       },
       onResults: pickZeichnen,
@@ -3577,7 +3672,7 @@
       if (!su){
         if (elPickList) elPickList.innerHTML = pickHinweis(L().pickOffline, L().pickOfflineSub);
       } else if (elPickList && !elPickList.innerHTML){
-        elPickList.innerHTML = pickHinweis(L().pickIdle, L().pickIdleSub);
+        elPickList.innerHTML = pickHinweis(L().pickIdle, '', 'databaseSearch');
       }
       setTimeout(function(){ try { elPickInput.focus(); } catch(e){} }, 60);
     } else if (_pickSuche) _pickSuche.abbrechen();
@@ -3668,13 +3763,20 @@
       var lbl  = (UCg && UCg.entityLabel) ? UCg.entityLabel(it) : '';
       var istFlagge = String(it.type) === 'prompt' && !!bild;
       var kl = 'am-pick-tag-av' + (istFlagge ? ' is-flag' : '') + (bild ? '' : ' is-fb');
-      var rueck = String(it.type) === 'prompt'
+      /* DER RUECKFALL LIEGT IN DER HUELLE -av-fb, und zwar IMMER. Hier stand der Buchstabe
+         (bei einer Brand) und das Marktkuerzel (bei einem Prompt) NACKT daneben -- also ohne
+         die Huelle, die ihn verbirgt, solange ein Bild da ist. Sichtbare Folge: neben dem
+         Logo stand noch ein "N", neben der deutschen Flagge ein "D", und weil der Buchstabe
+         im Flex Platz beansprucht, war das Bild daneben zusammengequetscht.
+         Genau EIN Ort entscheidet jetzt, was man sieht: die Klasse is-fb an der Kachel. */
+      var inner = String(it.type) === 'prompt'
         ? '<span class="am-pick-tag-av-t">' + esc(String(it.market || '').toUpperCase()) + '</span>'
         : (String(it.type) === 'brand'
             ? '<span class="am-pick-tag-av-t">' + esc(String(lbl).charAt(0).toUpperCase()) + '</span>'
-            : '<span class="am-pick-tag-av-fb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor">' +
+            : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor">' +
               '<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/>' +
-              '<path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/></svg></span>');
+              '<path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/></svg>');
+      var rueck = '<span class="am-pick-tag-av-fb">' + inner + '</span>';
       return '<span class="am-pick-tag" data-i="' + i + '">' +
         '<span class="' + kl + '">' +
           (bild ? '<img src="' + esc(bild) + '" alt="" loading="lazy" referrerpolicy="no-referrer" ' +

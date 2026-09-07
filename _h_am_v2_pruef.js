@@ -55,20 +55,27 @@
     pruef("Farbtoken --up-lila", getComputedStyle(root).getPropertyValue("--up-lila").trim(), "#9a65e6");
 
     kopf("1  DER UMBAU -- er laeuft auf dem ALTEN Markup, das in Bubble eingebaut ist");
-    pruef("Composer-Fassung", comp.getAttribute("data-am-composer"), "v2");
+    /* Der Stempel ist eine VERSION. Er wird hier nicht auf einen festen Text geprueft, sondern
+       darauf, dass er der aktuelle ist -- sonst muss diese Zeile bei jeder Fassung mitwandern
+       und faellt genau dann durch, wenn sonst alles richtig ist. */
+    pruef("Composer-Fassung ist die aktuelle", comp.getAttribute("data-am-composer"),
+      function(v){ return /^v\d+$/.test(v || ""); }, "gestempelt: " +
+      comp.getAttribute("data-am-composer"));
     pruef("Fader-Knopf weg", !g("am-settings-toggle"), true);
     pruef("Einstellungs-Fach weg", !g("am-settings-panel"), true);
     pruef("Plus da", !!g("am-pick-btn"), true);
     pruef("Aufwand-Schaltflaeche da", !!g("am-eff"), true);
-    pruef("links: Plus und Aufwand", [].map.call(document.querySelector(".am-act-l").children,
-      function(e){ return e.id || e.className; }).join(","), "am-pick-btn,am-eff");
-    pruef("rechts: Mikrofon und Senden", [].map.call(document.querySelector(".am-act-r").children,
-      function(e){ return e.id; }).join(","), "am-mic,am-send");
+    /* Die Modell-Schaltflaeche steht RECHTS, links neben dem Mikrofon (08.09. angefordert):
+       links gehoert das Hinzufuegen, rechts das Absenden samt allem, was es naeher bestimmt. */
+    pruef("links: nur das Plus", [].map.call(document.querySelector(".am-act-l").children,
+      function(e){ return e.id || e.className; }).join(","), "am-pick-btn");
+    pruef("rechts: Aufwand, Mikrofon, Senden", [].map.call(document.querySelector(".am-act-r").children,
+      function(e){ return e.id; }).join(","), "am-eff,am-mic,am-send");
     /* DER TOTALAUSFALL, der vorher nur nicht ausgeloest wurde: der Klick-Zuhoerer auf
        #am-settings-toggle stand ohne Null-Wache, und amInit haette dort geworfen -- ohne
        zweiten Anlauf. Der Beweis, dass der Init BIS ZUM ENDE lief, ist alles, was nach
        jener Zeile kommt. */
-    pruef("Init lief bis zum Ende: Modellname", g("am-eff-name").textContent, "Mira Pro");
+    pruef("Init lief bis zum Ende: Modellname", g("am-eff-name").textContent, "Mira Pro 1.0");
     pruef("Init lief bis zum Ende: Ask-Mira-Knopf", !!g("am-ask-sel"), true);
     pruef("Init lief bis zum Ende: Chatpanel", !!g("am-prev-panel"), true);
     pruef("negativer Rand am Mikrofon aufgehoben",
@@ -132,16 +139,24 @@
     pruef("Flash: Schaltflaeche NICHT gesperrt", getComputedStyle(btn).pointerEvents, "auto",
       "sonst kaeme man aus Flash nicht mehr heraus");
     pruef("Flash: Kopfzeile NICHT gesperrt", getComputedStyle(g("am-eff-head")).pointerEvents, "auto");
-    pruef("Flash: Hinweis sichtbar", getComputedStyle(g("am-eff-note")).maxHeight, "40px");
+    /* Der Hinweis haengt nicht mehr an max-height -- die Hoehe macht der Rumpf. Gemessen wird
+       jetzt, was ihn sichtbar macht. */
+    pruef("Flash: Hinweis sichtbar", getComputedStyle(g("am-eff-note")).visibility, "visible");
+    pruef("Flash: KEIN Slider mehr", g("am-eff-slider").classList.contains("is-an"), false,
+      "vorher stand er gedimmt da und sagte nichts, was der Hinweis nicht schon sagt");
+    pruef("Flash: der Rumpf traegt nur den Hinweis",
+      parseInt(g("am-eff-body").style.height, 10), function(v){ return v > 0 && v < 40; },
+      "gesetzt: " + g("am-eff-body").style.height);
     document.querySelectorAll(".am-eff-lbl")[2].click();
     pruef("Flash: Klick auf Ultra tut nichts", g("am-eff-lvl").textContent, "Medium");
     g("am-eff-head").click();
     var pro = [].filter.call(document.querySelectorAll(".am-eff-opt"),
       function(o){ return o.getAttribute("data-model") === "pro"; })[0];
     pro.click();
-    pruef("zurueck auf Pro moeglich", g("am-eff-name").textContent, "Mira Pro");
+    pruef("zurueck auf Pro moeglich", g("am-eff-name").textContent, "Mira Pro 1.0");
+    pruef("Pro: der Slider ist wieder da", g("am-eff-slider").classList.contains("is-an"), true);
     pruef("Pro: Stufe wieder die Mitte", g("am-eff-lvl").textContent, "High");
-    pruef("GEGENPROBE Hinweis wieder weg", getComputedStyle(g("am-eff-note")).maxHeight, "0px");
+    pruef("GEGENPROBE Hinweis wieder weg", getComputedStyle(g("am-eff-note")).visibility, "hidden");
     btn.click();
 
     kopf("5  DER PICKER  (dieselbe Maschine wie Quick Actions, ueber core)");
@@ -312,12 +327,146 @@
     pruef("doppelt geschickte Antwort kommt an", anMira, 2,
       "lautlos wegwerfen ist genau das Verbotene");
 
+    kopf("9  DIE NACHBESSERUNGEN VOM 08.09.  (dreizehn Punkte, je eine Pruefung)");
+    /* 1 */
+    pruef("1 Modellknopf ohne Rahmen", getComputedStyle(g("am-eff-btn")).borderTopColor,
+      function(v){ return /rgba\(0, 0, 0, 0\)|transparent/.test(v); },
+      "1px transparent bleibt stehen, sonst springt die Zeile um 2px");
+    pruef("1 Menue rechts verankert", getComputedStyle(g("am-eff-menu")).right, "0px");
+    /* 2 */
+    pruef("2 keine Zeichen an Knopf und Kopf", !g("am-eff-ic") && !g("am-eff-hic"), true);
+    pruef("2 keine Zeichen in der Modellliste",
+      document.querySelectorAll(".am-eff-opt .am-eff-ic").length, 0);
+    /* 3 */
+    pruef("3 Namen", [].map.call(document.querySelectorAll(".am-eff-opt-name"),
+      function(e){ return e.textContent; }).join(" / "), "Mira Pro 1.0 / Mira Flash");
+    /* 4 */
+    pruef("4 Punkte in eigener Schicht", !!g("am-eff-dots") &&
+      g("am-eff-dots").parentElement === g("am-eff-ultra"), true);
+    pruef("4 Ausblender NUR auf den Punkten", (function(){
+      var d = getComputedStyle(g("am-eff-dots")), u = getComputedStyle(g("am-eff-ultra"));
+      var dm = (d.maskImage && d.maskImage !== "none") ? d.maskImage : d.webkitMaskImage;
+      var um = (u.maskImage && u.maskImage !== "none") ? u.maskImage : u.webkitMaskImage;
+      return (/linear-gradient/.test(dm || "")) && !(/linear-gradient/.test(um || ""));
+    })(), true, "der Verlauf steht auf ganzer Breite, nur die Punkte faden nach links");
+    pruef("4 die Punkte sind weiss", getComputedStyle(g("am-eff-dots")).color, "rgb(255, 255, 255)");
+    /* 5 */
+    pruef("5 Menuepolster", getComputedStyle(g("am-eff-menu")).padding, "8px");
+    /* An der REGEL und nicht am berechneten Wert: die Uebergaenge sind in diesem Abschnitt
+       abgeschaltet (siehe oben, sonst haengen sie und halten jeden Wert auf dem Startwert),
+       und der berechnete Wert waere damit immer 0s. */
+    pruef("5 EIN Wert faehrt die Hoehe", (function(){
+      var t = null;
+      [].forEach.call(document.styleSheets, function(ss){
+        try { [].forEach.call(ss.cssRules, function(r){
+          if ((r.selectorText || "") === ".am-eff-body") t = r.style.transition;
+        }); } catch(e){}
+      });
+      return t;
+    })(), "height 200ms",
+      "das CSSOM laesst 'ease' weg -- es ist der Vorgabewert. In der Datei steht es.");
+    (function(){
+      /* Die drei Hoehen muessen sich unterscheiden UND gesetzt sein -- ein leerer Wert heisst,
+         effRumpf hat nie gemessen, und dann springt es wieder. */
+      var h = {};
+      btn.click();                       h.slider = g("am-eff-body").style.height;
+      g("am-eff-head").click();          h.modelle = g("am-eff-body").style.height;
+      g("am-eff-head").click();          h.zurueck = g("am-eff-body").style.height;
+      btn.click();
+      pruef("5 drei gemessene Hoehen, keine geraten",
+        !!h.slider && !!h.modelle && h.slider !== h.modelle && h.zurueck === h.slider, true,
+        "Slider " + h.slider + ", Modelle " + h.modelle + ", zurueck " + h.zurueck);
+    })();
+    /* 6 */
+    g("am-pick-btn").click();
+    pruef("6 Ueberschrift steht", g("am-pick-h").textContent, "What are you looking for?");
+    pruef("6 Umschalter 32px", Math.round(
+      g("am-pick-scopes").querySelector(".up-seg").getBoundingClientRect().height), 32);
+    pruef("6 Umschalter hebt sich ab", (function(){
+      var seg = getComputedStyle(g("am-pick-scopes").querySelector(".up-seg"));
+      var pan = getComputedStyle(g("am-pick-panel"));
+      var a = (seg.backgroundColor.match(/\d+/g) || []).slice(0,3).map(Number);
+      var b = (pan.backgroundColor.match(/\d+/g) || []).slice(0,3).map(Number);
+      var d = Math.max.apply(null, a.map(function(v,i){ return Math.abs(v - b[i]); }));
+      return { d: d, rand: seg.borderTopWidth };
+    })(), function(v){ return v.d >= 5 && v.rand === "1px"; },
+      "vorher waren es 2 Kanalstufen und kein Rand -- unsichtbar");
+    /* 7 */
+    pruef("7 Feld 16px Ecken", getComputedStyle(comp).borderRadius, "16px");
+    /* 11 */
+    pruef("11 Hover-Flaeche 32x32", (function(){
+      var v = getComputedStyle(g("am-pick-btn"), "::before");
+      return v.width + "/" + v.height + "/" + getComputedStyle(g("am-pick-btn")).width;
+    })(), "32px/32px/40px", "Klickziel bleibt 40, die Farbe ist 32");
+    /* 12 -- ZUERST in den Ruhezustand bringen. Die Liste trug hier noch das Ergebnis der
+       Suche aus Abschnitt 5; gemessen wurde dann eine Trefferzeile und nicht der Hinweis. */
+    inp.value = ""; inp.dispatchEvent(new Event("input", { bubbles: true }));
+    await warte(200);
+    pruef("12 Ruhehinweis: nur der eine Satz",
+      g("am-pick-list").textContent.trim(), "Search your workspace");
+    pruef("12 mit Datenbank-Zeichen darueber",
+      !!document.querySelector(".am-pick-note-ic svg"), true);
+    /* 13 -- auf Deutsch geprueft, denn nur dort war es falsch */
+    pruef("13 der Umschalter sagt Brands (hier englisch, DE getrennt geprueft)",
+      [].map.call(document.querySelectorAll(".am-pick-scope"),
+        function(b){ return b.textContent; })[0], "Brands");
+    g("am-pick-btn").click();
+    /* 8 und 9 -- an ECHTEN Pillen, mit Bild und ohne. Eine Pruefung, die nur nachsieht, ob
+       eine Funktion existiert, kann nicht fehlschlagen und ist damit keine. */
+    var pixel = "data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 " +
+      "viewBox=%220 0 10 10%22%3E%3Crect width=%2210%22 height=%2210%22 fill=%22%23e11%22/%3E%3C/svg%3E";
+    g("am-pick-btn").click();
+    inp.value = "pillen"; inp.dispatchEvent(new Event("input", { bubbles: true }));
+    await warte(UHR);
+    window.MiraQuickActions.setResults({
+      requestId: window.__gefeuert[window.__gefeuert.length - 1].requestId, items: [
+      { type: "brand",  id: "L1", name: "MitLogo", logo: pixel },
+      { type: "prompt", id: "L2", prompt_text: "MitFlagge", market: "de" },
+      { type: "brand",  id: "L3", name: "OhneLogo", logo: "" }
+    ]});
+    await warte(80);
+    for (var pi = 0; pi < 3; pi++) document.querySelectorAll(".am-pick-row")[pi].click();
+    await warte(80);
+    var pillen = [].map.call(document.querySelectorAll(".am-pick-tag"), function(t){
+      var av = t.querySelector("[class*=am-pick-tag-av]");
+      var fb = t.querySelector(".am-pick-tag-av-fb");
+      var im = t.querySelector(".am-pick-tag-av img");
+      return { bild: !!im, fbSichtbar: fb ? getComputedStyle(fb).display !== "none" : null,
+               fbText: fb ? fb.textContent.trim() : "",
+               bildBreite: im ? Math.round(im.getBoundingClientRect().width) : 0,
+               kachel: Math.round(av.getBoundingClientRect().width) };
+    });
+    pruef("8 mit Logo: KEIN Buchstabe daneben",
+      pillen[0] && pillen[0].bild && !pillen[0].fbSichtbar, true,
+      "vorher stand neben dem Logo noch ein N");
+    pruef("9 mit Flagge: KEIN Marktkuerzel daneben",
+      pillen[1] && pillen[1].bild && !pillen[1].fbSichtbar, true,
+      "vorher stand neben der Flagge noch ein D");
+    pruef("9 das Bild fuellt die Kachel, ist also nicht gequetscht",
+      pillen[0] && pillen[0].bildBreite === pillen[0].kachel, true,
+      pillen[0] ? pillen[0].bildBreite + " in " + pillen[0].kachel : "?");
+    pruef("GEGENPROBE ohne Logo ist der Buchstabe DA",
+      pillen[2] && !pillen[2].bild && pillen[2].fbSichtbar && pillen[2].fbText === "O", true,
+      "sonst pruefte die Messung nur, dass nie etwas zu sehen ist");
+
     malen();
     if (location.search.indexOf("zeigen") >= 0){
       uebergaengeAn();
       document.getElementById("buehne").className = "zeigen";
     }
   }
-  if (document.readyState === "complete") setTimeout(los, 400);
-  else window.addEventListener("load", function(){ setTimeout(los, 400); });
+  /* EIN WURF DARF DEN PRUEFTAND NICHT STUMM MACHEN. malen() lief bisher nur am Ende; starb
+     die Folge unterwegs, stand auf der Seite fuer immer "laeuft..." und nichts sagte, wo.
+     Genau das ist am 08.09. passiert (ein fehlendes #am-eff-body auf altem Markup), und die
+     Ursache war eine Minute lang unsichtbar. Jetzt wird gemalt, was bis dahin da war, und der
+     Wurf steht als letzte Zeile darunter. */
+  function losMitNetz(){
+    los().catch(function(e){
+      Z.push('<span class="nein">ABGEBROCHEN</span> ' + (e && e.message ? e.message : e) +
+        '\n' + ((e && e.stack) ? String(e.stack).split("\n").slice(0,3).join("\n") : ""));
+      malen();
+    });
+  }
+  if (document.readyState === "complete") setTimeout(losMitNetz, 400);
+  else window.addEventListener("load", function(){ setTimeout(losMitNetz, 400); });
 })();
