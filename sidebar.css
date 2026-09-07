@@ -331,7 +331,10 @@
 .usn-bar .mqa-trigger { white-space: nowrap; overflow: hidden; }
 .usn-bar .mqa-trigger-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .usn-bar .mqa-trigger-ic { color: inherit; }
-.usn-bar .mqa-trigger .mqa-kbd { color: var(--vc-muted); background: transparent; }
+/* Das Tastenkuerzel in der dritten Textstufe (07.09. angefordert): es ist die leiseste Angabe
+   auf dem Knopf -- die Beschriftung sagt, was passiert, das Kuerzel nur, wie man es schneller
+   erreicht. Beim Ueberfahren geht es mit der Zeile hoch (Regel darunter). */
+.usn-bar .mqa-trigger .mqa-kbd { color: var(--vc-third); background: transparent; }
 .usn-bar .mqa-trigger:hover .mqa-kbd { color: var(--vc-text); }
 
 /* Im Mini-Zustand bleibt vom Quick-Actions-Knopf nur die Lupe. Sein eigenes CSS gibt ihm
@@ -385,14 +388,17 @@
    Weg zurueck. Die Hoehe raeumt das JS aus dem inline-Stil (hoehenSetzen) -- eine Regel hier
    koennte den inline-Wert nur mit !important schlagen, und das ist verboten. */
 .usn-bar.is-mini .usn-block-body { overflow: visible; }
-/* 9px Luecke und 14px Text (08.09.): das Zeichen rueckt einen Punkt naeher an sein Wort, und die
-   Zeile traegt einen halben Punkt mehr. Beides zusammen, damit die Zeile nicht laenger wird --
-   der halbe Punkt Text holt sich genau den Pixel, den die Luecke abgibt. */
+/* 8px Luecke und 14px Text: das Zeichen rueckt naeher an sein Wort. Zweimal um je einen Pixel
+   verkleinert (10 -> 9 am 08.09., 9 -> 8 am 07.09.), beide Male ausdruecklich angefordert.
+   DIE GRUNDFARBE IST DIE SEKUNDAERE, nicht die primaere -- angefordert am 07.09. Damit hat die
+   Liste im Ruhezustand EINE Farbe (Zeichen und Wort stehen beide auf --vc-muted), und der aktive
+   Punkt ist der einzige, der in die Textfarbe hochgeht. Vorher trug jede Zeile die volle
+   Textfarbe, und der aktive unterschied sich nur durch Flaeche und Gewicht. */
 .usn-item {
-  width: 100%; display: flex; align-items: center; gap: 9px;
+  width: 100%; display: flex; align-items: center; gap: 8px;
   height: 36px; padding: 0 8px;
   border: 0; border-radius: 12px; background: transparent;
-  font: inherit; font-size: 14px; font-weight: 500; color: var(--vc-text);
+  font: inherit; font-size: 14px; font-weight: 500; color: var(--vc-muted);
   cursor: pointer; text-align: left;
   transition: background var(--usn-t) var(--usn-ease), color var(--usn-t) var(--usn-ease);
 }
@@ -407,9 +413,13 @@
    zweiten Ton zu erfinden. */
 .usn-item:hover { background: color-mix(in srgb, var(--usn-sel) 50%, transparent); }
 .usn-item.is-active:hover { background: var(--usn-akt); }
-/* Der aktive Punkt traegt Flaeche UND Gewicht -- Farbe allein reicht nicht, wenn jemand sie
-   nicht unterscheiden kann. */
-.usn-item.is-active { background: var(--usn-akt); font-weight: 550; }
+/* Der aktive Punkt traegt Flaeche und die volle Textfarbe -- aber KEIN zusaetzliches Gewicht.
+   Hier stand font-weight: 550 mit der Begruendung, Farbe allein reiche nicht fuer jemanden, der
+   sie nicht unterscheiden kann. Das Argument bleibt richtig, wird aber schon von der Flaeche
+   getragen: die aktive Zeile hat einen eigenen Hintergrund, und der ist von Farbsehen unabhaengig.
+   Das Gewicht kam obendrauf und liess die Zeile beim Wechsel um wenige Pixel breiter werden.
+   Ausdruecklich so angefordert am 07.09.: "nicht mehr Weight als im nicht selected Mode". */
+.usn-item.is-active { background: var(--usn-akt); color: var(--vc-text); }
 /* Die Icon-Spalte ist 22px breit, das Symbol darin bleibt 17px und sitzt mittig. 22, weil in
    derselben Spalte auch die Marken-Logos der angehefteten Zeilen stehen -- und die brauchen die
    Platte und den Rand aus den Tabellen, sonst sehen sie anders aus als dort. Eine gemeinsame

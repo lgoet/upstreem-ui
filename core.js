@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20260928;
+  var BUILD = 20260929;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -1200,6 +1200,13 @@
        ueberall "mentioned" stehen -- das war die Meldung. */
     "{brand} mentioned?": "{brand} erwähnt?",
     "{brand} mentioned": "{brand} erwähnt",
+    /* Die AUSGESCHALTETEN Stellungen desselben Schalters. Im Top Citations Dashboard traegt er
+       drei Beschriftungen, nicht eine, und die beiden gesetzten Zustaende standen in keinem
+       Katalog -- gemeldet am 07.09. als "Brand X mentioned ist im DE noch nicht korrekt".
+       Im Deutschen braucht es das Hilfsverb ("wird erwaehnt"), ein blosses "erwaehnt" liest sich
+       als Frage ohne Fragezeichen. */
+    "{brand} is mentioned": "{brand} wird erwähnt",
+    "{brand} is not mentioned": "{brand} wird nicht erwähnt",
     "Own brand": "Eigene Brand",
 
     /* ---- Das Fenster "Prompts hinzufügen" ---- */

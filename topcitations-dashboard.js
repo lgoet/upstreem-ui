@@ -584,11 +584,18 @@
       }
       brandToggle.classList.toggle("is-yes", state.brandMentioned === "yes");
       brandToggle.classList.toggle("is-no", state.brandMentioned === "no");
+      /* Muster aus dem Katalog statt Name + englischer Rest. Zusammengeklebt kann der Sprachlauf
+         nichts davon finden: er sucht ganze Textknoten, und "Nike mentioned?" steht in keinem
+         Katalog -- deshalb blieb dieser Schalter auf Englisch stehen, waehrend die Tabellen laengst
+         Deutsch sprachen. Im Deutschen steht der Name ohnehin vor dem Verb, ein Muster mit
+         {brand} ist also nicht Bequemlichkeit, sondern die einzige Form, die beides kann. */
       function steadyLabel(){
         if (!lbl) return;
-        if (state.brandMentioned === "yes") lbl.textContent = state.brand.name + " is mentioned";
-        else if (state.brandMentioned === "no") lbl.textContent = state.brand.name + " is not mentioned";
-        else lbl.textContent = state.brand.name + " mentioned?";
+        var name = state.brand.name || UC.t("Own brand");
+        var muster = state.brandMentioned === "yes" ? "{brand} is mentioned"
+                   : state.brandMentioned === "no"  ? "{brand} is not mentioned"
+                   : "{brand} mentioned?";
+        lbl.textContent = UC.t(muster).replace("{brand}", name);
       }
       if (startClearMessage) BRAND_CLEAR_STORE[instanceId] = Date.now() + 3000;
       var clearUntil = BRAND_CLEAR_STORE[instanceId];

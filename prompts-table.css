@@ -1191,12 +1191,20 @@
 .upt-kpi-topics .up-bar-track { height: 16px; border-radius: 4px; }
 .upt-kpi-topics .up-bar-fill { border-radius: 4px; padding: 0 5px; gap: 4px; }
 .upt-kpi-topics .up-bar-row { padding: 3px 0; }
-.upt-kpi-topics .up-bar-labeltxt { font-size: 12.5px; }
+/* Namen und Zaehler in der Sekundaerfarbe (07.09. angefordert). Die Vorgabe in core ist die
+   volle Textfarbe -- richtig fuer eine Balkenliste, die eine Seite fuer sich ist. Hier ist die
+   Liste eine KENNZAHLENKARTE neben zwei anderen: die Aussage traegt der Balken, die Beschriftung
+   sagt nur, welcher es ist. Nur an dieser Karte, damit der Radar und das Detail ihre Werte
+   behalten. */
+.upt-kpi-topics .up-bar-labeltxt { font-size: 12.5px; color: var(--vc-muted); }
 /* Der Zaehler rechts: eigene Spalte mit fester Breite, damit die Zahlen untereinander stehen.
    tabular-nums, sonst wandern die Ziffern -- dieselbe Regel wie bei .uto-when. */
 /* Die Wertspalte (cfg.pctCol) mit 16px Abstand zur Balkenspur -- so angefordert. */
-.upt-kpi-topics .up-bar-pctcol { margin-left: 16px; }
-.up-root[data-theme="dark"] .upt-kpi-topics .up-bar-pctcol { color: rgba(255,255,255,0.92); }
+.upt-kpi-topics .up-bar-pctcol { margin-left: 16px; color: var(--vc-muted); }
+/* Der aufgehellte Sonderwert im Dunkeln (rgba(255,255,255,0.92)) ist entfallen: er war die
+   dunkle Entsprechung der vollen Textfarbe, und die gilt hier nicht mehr. --vc-muted traegt
+   beide Themen selbst -- mit einer Spezifitaet von (0,4,0) haette die alte Regel die neue sonst
+   geschlagen, und im Dunkeln waere alles beim Alten geblieben. */
 
 /* ---- Karte 2: Doughnut nach Maerkten ----
    Kein Zaehler in der Mitte (ausdruecklich gewuenscht), kleinerer Ring, Chart links und Legende

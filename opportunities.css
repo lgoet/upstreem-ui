@@ -189,9 +189,13 @@
 /* OHNE eigene Flaeche (08.09. angefordert): der Typ stand als graue Pille auf einer Karte, die
    selbst schon eine Flaeche ist -- drei Ebenen uebereinander. Groesse, Gewicht und Laufweite
    bleiben, es faellt nur der Grund weg, und mit ihm das seitliche Polster. */
+/* DRITTFARBE (07.09. angefordert), Zeichen und Wort gemeinsam -- das Zeichen traegt
+   currentColor, es genuegt also die eine Angabe. Der Typ ist die leiseste Zeile der Karte: er
+   sortiert sie ein, er sagt nichts ueber DIESE Empfehlung. Vorher stand er auf --vc-muted und
+   damit gleichrangig mit dem Titel der Quelle darunter. */
 .uo-eyebrow {
   display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0;
-  border-radius: 8px; background: transparent; color: var(--vc-muted);
+  border-radius: 8px; background: transparent; color: var(--vc-third);
   font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
   min-width: 0; max-width: 100%;
 }
@@ -207,7 +211,20 @@
    kostete er zwei Zeilen fuer einen Text, den man dort ohnehin nur anliest. */
 .uo-card-reason { display: none; }
 
-.uo-source { display: flex; align-items: center; gap: 10px; margin-top: 16px; min-width: 0; }
+/* 13px oben und nicht 16, obwohl unten 16 steht -- und das ist genau der Punkt der Meldung vom
+   07.09. ("Gap unter dem Lead-URL-Container genauso gross wie das darueber"). Beide Aussenabstaende
+   standen auf 16 und sahen trotzdem verschieden aus, weil ein Textkasten hoeher ist als seine
+   Buchstaben: die Differenz aus Zeilenhoehe und Schriftgroesse liegt zur Haelfte ueber und zur
+   Haelfte unter der Schrift. Gemessen mit _h_uo_luecken.html:
+       unter dem Kartentitel  2.6px Luft (15px Schrift in 20.25px Zeile)
+       ueber dem Quelltitel   1.3px       (13px in 15.6px)
+       unter der Domain       1.2px       (12px in 14.4px)
+       sichtbar oben 16 + 2.6 + 1.3 = 19.9px    sichtbar unten 16 + 1.2 = 17.2px
+   Die 2.7px Unterschied sind das, was man sieht. Unten kann man sie nicht dazugeben: der Chip
+   darunter traegt einen Hintergrund, seine Kante IST die sichtbare Kante. Also gehen sie oben
+   ab: 13 + 2.6 + 1.3 = 16.9 gegen 17.2, ein Drittel Pixel Unterschied.
+   Wer hier die 16 wieder einsetzt, macht die Meldung auf. */
+.uo-source { display: flex; align-items: center; gap: 10px; margin-top: 13px; min-width: 0; }
 .uo-source-meta { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 /* Titel in Sekundaer-, Domain in Drittfarbe (08.09.). Vorher trug der Titel die Primaerfarbe und
    stand damit gleichrangig neben der Ueberschrift der Karte. */

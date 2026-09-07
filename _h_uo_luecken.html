@@ -1,0 +1,122 @@
+<!doctype html><meta charset="utf-8">
+<title>Opportunities-Karte: sind die Luecken ueber und unter der Quelle gleich?</title>
+<pre id="out" style="font:12px/1.55 ui-monospace,Menlo,monospace;padding:12px;white-space:pre-wrap"></pre>
+<div id="buehne" style="position:absolute;left:-4000px;top:0"></div>
+<script>
+/* Gemeldet am 07.09.: "Gap unter dem Lead-URL-Container genauso gross wie das Gap darueber --
+   Opportunity Title, Lead URL, Tag Container, die beiden Luecken jeweils gleich gross."
+   In der Datei stehen beide auf margin-top: 16px. Wenn es trotzdem unterschiedlich AUSSIEHT,
+   liegt es nicht am Aussenabstand, sondern an den Kaesten selbst -- eine Zeile mit
+   line-height 1.35 hat unter dem letzten Buchstaben noch Luft, ein 28px-Chip hat sie oben.
+   Darum messen wir hier nicht die Angaben, sondern die WIRKLICHEN Abstaende zwischen den
+   sichtbaren Kanten: erst von Kasten zu Kasten, dann von Schriftlinie zu Schriftlinie. */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function ja(b){ return b ? "RICHTIG" : "FALSCH "; }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function warte(ms){ return new Promise(function(ok){ setTimeout(ok,ms); }); }
+
+Promise.all([hol("core.css"), hol("core.js"), hol("opportunities.css"), hol("opportunities.js"),
+             hol("bubble/opportunities_bubble.html")]).then(function(t){
+  var f=document.createElement("iframe");
+  f.style.cssText="width:1200px;height:900px;border:0";
+  document.getElementById("buehne").appendChild(f);
+  var d=f.contentDocument, v=f.contentWindow;
+  d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0'></body></html>"); d.close();
+  try { v.localStorage.setItem("pref_theme","dark"); } catch(e){}
+  [t[0], t[2]].forEach(function(c){ var st=d.createElement("style"); st.textContent=c; d.head.appendChild(st); });
+  var roh = t[4].replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim();
+  var w=d.createElement("div"); w.innerHTML=roh;
+  var r=w.querySelector(".uo-root")||w.firstElementChild;
+  r.setAttribute("data-instance","luecken"); r.setAttribute("data-cdn-pin","t"); r.setAttribute("data-isdark","yes");
+  d.body.appendChild(r);
+  [t[1], t[3]].forEach(function(j){ var sc=d.createElement("script"); sc.textContent=j; d.head.appendChild(sc); });
+  return warte(1200).then(function(){
+    /* Eine Karte mit allen drei Bloecken: Typ, Titel, Quelle, Tags. */
+    /* Der Setter heisst opportunitiesSetItems und nimmt die LISTE -- dieselbe Form wie in
+       _h_uo_karte.html. Die Themen als Text, so wie Bubble sie schickt. */
+    try {
+      v.opportunitiesSetItems([{
+        id:"o1", status:"Pending", recommendation_type:"Create Matching Content",
+        headline:"Vergleichsseite fuer Modell X bauen",
+        reason:"Diese Domain wird zitiert, deine Seite fehlt in der Aufzaehlung.",
+        lead_title:"Die 7 besten Modelle 2026", lead_domain:"beispiel.de",
+        created_at:"2026-09-01",
+        topics:'[{"id":"t1","name":"Preise","hex_light":"#3586e6"},{"id":"t2","name":"Support","hex_light":"#349f40"}]'
+      }]);
+    } catch(e){ log("Setter: " + e.message); }
+    return warte(1200).then(function(){
+      var karte = d.querySelector(".uo-card");
+      if (!karte){ log("ABBRUCH: keine .uo-card gebaut"); return; }
+      function kasten(sel){ var e = karte.querySelector(sel); return e ? { e:e, r:e.getBoundingClientRect() } : null; }
+      var titel = kasten(".uo-card-title"), quelle = kasten(".uo-source"), tags = kasten(".uo-tags");
+      var eyeb = kasten(".uo-eyebrow");
+      if (!titel || !quelle || !tags){ log("ABBRUCH: Titel, Quelle oder Tags fehlen"); return; }
+      var oben = Math.round((quelle.r.top - titel.r.bottom) * 10) / 10;
+      var unten = Math.round((tags.r.top - quelle.r.bottom) * 10) / 10;
+      log("KASTEN GEGEN KASTEN");
+      log("   Titel unten " + Math.round(titel.r.bottom) + "   Quelle oben " + Math.round(quelle.r.top) +
+          " -> Luecke " + oben + "px");
+      log("   Quelle unten " + Math.round(quelle.r.bottom) + "   Tags oben " + Math.round(tags.r.top) +
+          " -> Luecke " + unten + "px");
+      /* Diese beiden Zahlen sind ABSICHTLICH verschieden (13 oben, 16 unten) -- sie sollen die
+         Buchstabenkanten zur Deckung bringen, nicht die Kastenkanten. Deshalb steht hier kein
+         Urteil, sondern nur der Wert; das Urteil faellt unten am optischen Abstand. */
+      log("   (verschiedene Werte sind hier gewollt -- das Urteil faellt am optischen Abstand)");
+      log("");
+      /* Und was das AUGE sieht. Ein Textkasten ist hoeher als seine Buchstaben: die Differenz
+         zwischen Zeilenhoehe und Schriftgroesse liegt zur Haelfte ueber und zur Haelfte unter
+         der Schrift. Ein Chip mit Hintergrund hat diese Luft nicht -- seine Kante IST die
+         sichtbare Kante. Genau daran liegt es, wenn zwei gleiche Aussenabstaende verschieden
+         aussehen, und deshalb wird hier die BUCHSTABENKANTE gerechnet, nicht die Kastenkante. */
+      function halbeLuft(el){
+        var c = v.getComputedStyle(el);
+        var lh = parseFloat(c.lineHeight), fs = parseFloat(c.fontSize);
+        if (isNaN(lh)) lh = fs * 1.2;                 /* line-height: normal */
+        return Math.max(0, (lh - fs) / 2);
+      }
+      var qTitel = karte.querySelector(".uo-source-title");
+      var qDomain = karte.querySelector(".uo-source-domain");
+      var chip = tags.e.querySelector(".up-topicchip, .uo-tagmore");
+      var lTitel = halbeLuft(titel.e);
+      var lQTitel = qTitel ? halbeLuft(qTitel) : 0;
+      var lDomain = qDomain ? halbeLuft(qDomain) : 0;
+      var obenOptisch = oben + lTitel + lQTitel;
+      var untenOptisch = unten + lDomain;
+      log("OPTISCH (Zeilenabstand auf beiden Seiten mitgerechnet)");
+      log("   Luft unter dem Kartentitel " + Math.round(lTitel*10)/10 +
+          "px, ueber dem Quelltitel " + Math.round(lQTitel*10)/10 +
+          "px, unter der Domain " + Math.round(lDomain*10)/10 + "px");
+      log("   sichtbare Luecke oberhalb der Quelle: " + Math.round(obenOptisch*10)/10 + "px");
+      log("   sichtbare Luecke unterhalb der Quelle: " + Math.round(untenOptisch*10)/10 + "px" +
+          (chip ? " (bis zur Chipkante)" : ""));
+      var diff = Math.round(Math.abs(obenOptisch - untenOptisch) * 10) / 10;
+      log("   " + ja(diff < 1) + " optisch gleich (Unterschied " + diff + "px, Schwelle 1)");
+      log("");
+      /* Welche Kante ist unten die SICHTBARE? Reicht das Favicon bis an den Rand des Kastens,
+         ist es diese; endet der Text hoeher, sieht man dort nichts mehr. */
+      var fav = karte.querySelector(".uo-source .up-fav, .uo-source img, .uo-source .up-logo-box");
+      var meta = karte.querySelector(".uo-source-meta");
+      log("WAS DEN KASTEN DER QUELLE UNTEN BEGRENZT");
+      log("   Kasten der Quelle: " + Math.round(quelle.r.height) + "px hoch");
+      if (fav) log("   Favicon: " + Math.round(fav.getBoundingClientRect().height) +
+                   "px, endet " + Math.round((quelle.r.bottom - fav.getBoundingClientRect().bottom)*10)/10 +
+                   "px ueber dem Rand");
+      if (meta) log("   Textspalte: " + Math.round(meta.getBoundingClientRect().height) +
+                    "px, endet " + Math.round((quelle.r.bottom - meta.getBoundingClientRect().bottom)*10)/10 +
+                    "px ueber dem Rand");
+      log("");
+      log("FARBEN");
+      if (eyeb){
+        var ec = v.getComputedStyle(eyeb.e), dritt = v.getComputedStyle(karte).getPropertyValue("--vc-third").trim();
+        var svg = eyeb.e.querySelector("svg");
+        var sc = svg ? v.getComputedStyle(svg).color : null;
+        log("   Typ oben: " + ec.color + "   --vc-third: " + dritt);
+        log("   " + ja(ec.color === "rgb(128, 128, 128)") + " Typ in der Drittfarbe");
+        log("   " + ja(sc === ec.color) + " das Zeichen daneben in derselben Farbe (" + sc + ")");
+      } else log("   .uo-eyebrow nicht gefunden");
+      log("FERTIG");
+    });
+  });
+}).catch(function(e){ log("ABBRUCH: " + e.message + "\n" + (e.stack||"")); });
+</script>
