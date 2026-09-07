@@ -698,12 +698,17 @@
          sonst bliebe oben ein leerer Streifen stehen und der Teamschalter saesse weiter in der
          zweiten Zeile. */
       elBrand.classList.toggle("is-off", !an);
-      function quelle(name){
-        var w = String(root.getAttribute(name) || "").trim();
+      /* Die Attributnamen stehen als LITERALE in getAttribute und nicht als Variable. Das ist
+         keine Umstaendlichkeit: .contract_snapshot.py findet gelesene Attribute genau an diesem
+         Muster, und mit einer Variablen sah es aus, als waere data-upstreem-logo aus dem Vertrag
+         verschwunden -- der Diff hat es beim Commit als ENTFERNT gemeldet. Ein Werkzeug, das
+         stille Brueche findet, darf man nicht blind machen. */
+      function quelle(w){
+        w = String(w || "").trim();
         return (!w || w === "UPSTREEM_LOGO" || w === "UPSTREEM_LOGO_DARK") ? "" : w;
       }
-      var hell = quelle("data-upstreem-logo");
-      var dunkel = quelle("data-upstreem-logo-dark");
+      var hell = quelle(root.getAttribute("data-upstreem-logo"));
+      var dunkel = quelle(root.getAttribute("data-upstreem-logo-dark"));
       /* Das Thema steht am Balken selbst -- dieselbe Quelle, die auch die Tooltips lesen. Fehlt
          die Fassung fuer das laufende Thema, wird die andere genommen: ein Logo in der falschen
          Fassung ist immer noch besser als keines. */
