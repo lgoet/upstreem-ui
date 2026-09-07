@@ -130,6 +130,15 @@ Promise.all([hol("core.css"), hol("core.js"), hol("drawer-topbar.css"), hol("dra
             parseFloat(v.getComputedStyle(box.querySelector("svg")).width) === 16);
           pruef(fall[0] + ": weder Stift noch Globus",
             q(".utb-edit").hidden && q(".utb-domain").hidden);
+          /* Der Pin: beim Prompt bleibt er, bei der Response ist er weg (07.09. angefordert).
+             Geprueft wird BEIDES am selben Ort, damit die Regel nicht "alle Zeichentypen
+             verlieren den Pin" heisst -- das war sie ausdruecklich nicht. */
+          var pinWeg = fall[0] === "response";
+          log("      " + fall[0] + ": Pin " + (q(".utb-pin").hidden ? "weg" : "da") +
+              "   (gerechnet " + v.getComputedStyle(q(".utb-pin")).display + ")");
+          pruef(fall[0] + ": Pin " + (pinWeg ? "weg" : "da"),
+            q(".utb-pin").hidden === pinWeg &&
+            (v.getComputedStyle(q(".utb-pin")).display === "none") === pinWeg);
         });
       });
     }, Promise.resolve()).then(function(){
@@ -142,8 +151,24 @@ Promise.all([hol("core.css"), hol("core.js"), hol("drawer-topbar.css"), hol("dra
         pruef("zurueck auf brand steht wieder das Bild da",
           !!box.querySelector("img") && !box.classList.contains("is-zeichen") && br === 18);
         pruef("und der Stift ist wieder da", !q(".utb-edit").hidden);
+        pruef("und der Pin auch", !q(".utb-pin").hidden);
+        /* Und der Riegel hinter dem Knopf: ohne Knopf soll auch die Funktion nichts anheften.
+           Sie ist von aussen nicht erreichbar, der Controller aber schon -- und genau so wuerde
+           ein spaeterer Umbau daran vorbeikommen. */
+        v.setDrawerTopbar("x", { type: "response", name: "ChatGPT, 12.09.", item_id: "r-4" });
+        return warte(200).then(function(){
+          gepinnt.length = 0; warn.length = 0;
+          q(".utb-pin").click();
+          log("      Klick auf den versteckten Pin: " + gepinnt.length + " Eintraege");
+          pruef("ein Klick auf den versteckten Pin heftet nichts an", gepinnt.length === 0);
+          pruef("und die Konsole sagt warum",
+            warn.some(function(w){ return /KI-Antwort/.test(w); }));
+          v.setDrawerTopbar("x", { type: "brand", name: "ADAC", logo: "_h_logo.svg" });
+          return warte(200);
+        }).then(function(){
         log("");
         return teil13();
+        });
       });
     });
   }

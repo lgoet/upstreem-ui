@@ -61,6 +61,8 @@
    Anheften meldet NICHTS an Bubble: es ruft window.upstreemPinToSidebar, dieselbe Funktion, die
    Quick Actions aus seinem Zeilenmenue ruft. Die Seitenleiste besitzt diese Liste, und ein
    zweiter Weg dorthin waere ein zweiter Zustand.
+   BEI data-type="response" GIBT ES DEN PIN NICHT: die Seitenleiste fuehrt Orte, zu denen man
+   zurueckkehrt, und eine einzelne KI-Antwort ist ein Ergebnis eines Laufs, kein Ort.
 
    ── Die Setter ──────────────────────────────────────────────────────────────────
    setDrawerTopbar(id, p) fuellt Typ, Name, Bild und Kennung. Siehe oben.
@@ -170,7 +172,7 @@
     }
     function itemId() { return feld("item_id", "data-item-id"); }
 
-    var elType, elLogo, elName, elEdit, elDomain;
+    var elType, elLogo, elName, elEdit, elDomain, elPin;
     var state = { leer: true };
 
     /* Das Markup baut die Komponente selbst. In Bubble steht nur die leere Wurzel -- die Leiste
@@ -217,6 +219,7 @@
       elName = root.querySelector("[data-utb-name]");
       elEdit = root.querySelector("[data-utb-edit]");
       elDomain = root.querySelector("[data-utb-domain]");
+      elPin = root.querySelector("[data-utb-pin]");
     }
     aufbauen();
 
@@ -286,6 +289,15 @@
          die Leiste den Typ noch nicht, und ein Knopf, der gleich wieder verschwindet, ist
          schlimmer als einer, der spaeter erscheint. */
       elDomain.hidden = laedt || (t !== "url");
+      /* ANHEFTEN GIBT ES BEI EINER KI-ANTWORT NICHT (07.09. angefordert: "das soll da nicht
+         gehen"). Und das passt zur Sache: die Seitenleiste heftet Dinge an, zu denen man
+         zurueckkehrt -- eine Marke, eine Domain, eine URL, einen Prompt. Eine einzelne Antwort
+         ist ein Ergebnis eines Laufs, kein Ort.
+         OHNE laedt, anders als beim Stift und beim Globus: der Pin ist sonst IMMER bedienbar,
+         auch im Ladezustand (so gebaut und so geprueft -- er haengt an nichts, was geladen
+         werden muesste). Steht der Typ schon auf response, ist er trotzdem gleich weg, statt
+         einmal aufzublitzen. */
+      elPin.hidden = (t === "response");
     }
 
     /* ---- Zuruecksetzen (07.09. angefordert) ----
@@ -359,6 +371,15 @@
        dieselbe ist, die auch in unseren Ereignissen steht, liefert ein Klick in der Leiste
        spaeter denselben Wert wie dieser Drawer. */
     function anheften() {
+      /* Der Knopf ist bei einer KI-Antwort gar nicht da (siehe render). Diese Zeile ist der
+         Riegel dahinter: wer die Funktion auf einem anderen Weg erreicht, heftet keine Antwort
+         an eine Liste, die sie nicht zeigen kann. Eine Sichtbarkeit, eine Regel -- und beide
+         nennen denselben Grund. */
+      if (typ() === "response") {
+        if (window.console) console.warn("[drawer-topbar] eine KI-Antwort wird nicht an die " +
+          "Seitenleiste geheftet -- die Leiste fuehrt Orte, zu denen man zurueckkehrt.");
+        return;
+      }
       var id = itemId();
       if (!id) {
         /* Ohne Kennung waere der Pin eine Zeile, die auf nichts zeigt. Das sagt die Konsole --

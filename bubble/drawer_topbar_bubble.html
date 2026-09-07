@@ -9,7 +9,7 @@
       [<]  URL      / (Favicon) Die 7 besten Modelle    [Globus] [Pin] [X]
       [<]  Brand Editor / (Logo) ADAC                           [Pin] [X]
       [<]  Prompt   / (Zeichen) Welche Anbieter...              [Pin] [X]
-      [<]  Response / (Zeichen) ChatGPT, 12.09.                 [Pin] [X]
+      [<]  Response / (Zeichen) ChatGPT, 12.09.                       [X]
 
   Der Stift steht NUR bei data-type="brand", der Globus NUR bei data-type="url". Beide sitzen
   am selben Platz: es ist der eine typabhaengige Knopf, und zwei Plaetze fuer dieselbe Rolle
@@ -115,6 +115,10 @@
                     URL ohnehin auf ihre Domain zeigen laesst. Ein zweites Attribut mit der
                     Domain waere ein zweiter Ort, an dem das Datenmodell der App steht, und der
                     erste, der veraltet.
+
+  KEIN PIN BEI data-type="response". Die Seitenleiste fuehrt Orte, zu denen man zurueckkehrt --
+  eine Marke, eine Domain, eine URL, einen Prompt. Eine einzelne KI-Antwort ist das Ergebnis
+  eines Laufs und kein Ort, also gibt es dort den Knopf nicht (07.09. angefordert).
 
   ANHEFTEN MELDET NICHTS AN BUBBLE. Der Pin ruft window.upstreemPinToSidebar -- dieselbe
   Funktion, die Quick Actions aus seinem Zeilenmenue ruft. Die Seitenleiste besitzt diese Liste
