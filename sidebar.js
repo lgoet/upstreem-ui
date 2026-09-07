@@ -514,6 +514,10 @@
          Marke muss beides uebernehmen. Zweimal, wie beim Zuklappen -- die Breite der Leiste
          faehrt 200ms. */
       if (typeof tipsSchalten === "function") tipsSchalten();
+      /* Die Marke haengt jetzt am Zustand: eingeklappt zeigt sie das Quadrat, ausgeklappt den
+         breiten Schriftzug. Ohne diesen Aufruf blieb beim Umschalten das Bild des vorigen
+         Zustands stehen -- bis irgendwann etwas anderes renderBrand angestossen haette. */
+      if (typeof renderBrand === "function") renderBrand();
       elToggle.hidden = hint;
       elToggle.setAttribute("aria-label", mini ? "Expand sidebar" : "Collapse sidebar");
 
@@ -711,23 +715,43 @@
          Muster, und mit einer Variablen sah es aus, als waere data-upstreem-logo aus dem Vertrag
          verschwunden -- der Diff hat es beim Commit als ENTFERNT gemeldet. Ein Werkzeug, das
          stille Brueche findet, darf man nicht blind machen. */
+      /* Ein nicht ersetzter Platzhalter gilt als LEER. Sonst stuende in der Leiste ein Bild mit
+         der Adresse "UPSTREEM_LOGO", das nie laedt -- und der Rueckfall auf den Schriftzug
+         griffe erst nach dem gescheiterten Abruf, also sichtbar spaeter. */
       function quelle(w){
         w = String(w || "").trim();
-        return (!w || w === "UPSTREEM_LOGO" || w === "UPSTREEM_LOGO_DARK") ? "" : w;
+        if (!w) return "";
+        return (w === "UPSTREEM_LOGO" || w === "UPSTREEM_LOGO_DARK" ||
+                w === "UPSTREEM_LOGO_SMALL" || w === "UPSTREEM_LOGO_SMALL_DARK") ? "" : w;
       }
       var hell = quelle(root.getAttribute("data-upstreem-logo"));
       var dunkel = quelle(root.getAttribute("data-upstreem-logo-dark"));
+      /* EINGEKLAPPT DAS QUADRAT. Der breite Schriftzug ist auf 64px kein Logo mehr, sondern ein
+         zusammengedrueckter Streifen -- deshalb zwei weitere Eingaenge fuer die 1:1-Fassung,
+         hell und dunkel. Fehlt sie, bleibt es beim breiten Logo: eine fehlende Marke ist
+         schlimmer als eine schmale. */
+      var kleinHell = quelle(root.getAttribute("data-upstreem-logo-small"));
+      var kleinDunkel = quelle(root.getAttribute("data-upstreem-logo-small-dark"));
       /* Das Thema steht am Balken selbst -- dieselbe Quelle, die auch die Tooltips lesen. Fehlt
          die Fassung fuer das laufende Thema, wird die andere genommen: ein Logo in der falschen
          Fassung ist immer noch besser als keines. */
       var istDunkel = bar.getAttribute("data-theme") === "dark";
-      var wahl = istDunkel ? (dunkel || hell) : (hell || dunkel);
+      var mini = bar.classList.contains("is-mini");
+      var klein = istDunkel ? (kleinDunkel || kleinHell) : (kleinHell || kleinDunkel);
+      var breit = istDunkel ? (dunkel || hell) : (hell || dunkel);
+      var quadrat = mini && !!klein;
+      var wahl = quadrat ? klein : breit;
       var neu = !wahl
         ? '<span class="usn-brand-word">upstreem</span>'
-        : '<img class="usn-brand-img" alt="upstreem" src="' + esc(wahl) + '"' +
+        : '<img class="usn-brand-img' + (quadrat ? ' is-square' : '') + '" alt="upstreem" ' +
+          'src="' + esc(wahl) + '"' +
           /* Bricht das Bild, faellt der Schriftzug ein -- eine leere Zeile oben in der Leiste
              saehe wie ein Ladefehler der ganzen App aus. */
           ' onerror="this.outerHTML=&quot;<span class=\'usn-brand-word\'>upstreem</span>&quot;"/>';
+      /* Die Klasse wandert an den KASTEN und nicht nur ans Bild: seine Hoehe ist fest gesetzt
+         (siehe sidebar.css), und ein quadratisches Logo braucht dort eine andere Zahl als ein
+         Schriftzug -- die Rechnung fuer den Abstand darunter liest sie mit. */
+      elBrandMk.classList.toggle("is-square", quadrat);
       if (elBrandMk.innerHTML !== neu) elBrandMk.innerHTML = neu;
     }
 
@@ -1266,7 +1290,8 @@
             var t = attr("data-team-id");
             var neu = (state.teams || []).filter(function(x){ return String(x.id) === t; })[0];
             if (neu && (!state.team || String(state.team.id) !== t)){ state.team = neu; renderTeam(); renderTeamMenu(); }
-          } else if (n === "data-upstreem-logo" || n === "data-upstreem-logo-dark"){
+          } else if (n === "data-upstreem-logo" || n === "data-upstreem-logo-dark" ||
+                     n === "data-upstreem-logo-small" || n === "data-upstreem-logo-small-dark"){
             /* Mit in den Beobachter, damit es sich wie die drei anderen verhaelt: setzt Bubble die
                Quelle erst nach dem Pageload (aus einer Datenbank), soll die Zeile nicht bis zum
                naechsten Neuladen den Schriftzug zeigen. */
@@ -1275,7 +1300,8 @@
         }
       }).observe(root, { attributes: true,
         attributeFilter: ["data-active", "data-prompt-count", "data-team-id",
-                          "data-upstreem-logo", "data-upstreem-logo-dark"] });
+                          "data-upstreem-logo", "data-upstreem-logo-dark",
+                          "data-upstreem-logo-small", "data-upstreem-logo-small-dark"] });
     }
 
     /* Der Tooltip-Chip des Hauses. Ein Aufruf, der Rest laeuft delegiert ueber [data-tip] --

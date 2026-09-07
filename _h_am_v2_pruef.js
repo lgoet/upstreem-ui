@@ -12,6 +12,7 @@
       (gut ? "" : '   SOLL ' + (typeof soll === "function" ? "(Bedingung)" : JSON.stringify(soll))) +
       (extra ? "   " + extra : ""));
   }
+  function v_(cs){ return cs.borderTopWidth + " " + cs.borderTopStyle; }
   function kopf(t){ Z.push('<span class="kopf">' + t + '</span>'); }
   function malen(){ document.getElementById("raus").innerHTML =
     Z.join("\n") + "\n\n" + (ok === n ? '<span class="ja">' : '<span class="nein">') +
@@ -22,6 +23,15 @@
   var UHR = 1100;
 
   var root, comp, UC;
+  /* Den Grund der Pruefseite auf den der App setzen -- Mira malt selbst keinen, das tut die
+     Bubble-Seite dahinter. Und das THEMA wird nicht geraten, sondern am fertigen Baum gelesen:
+     ohne pref_theme folgt core dem System, und ein hell geratener Grund unter einer dunklen
+     Komponente ergab beim ersten Anlauf einen Abstand von 227 Kanalstufen. */
+  function grundSetzen(){
+    var t = (root && root.getAttribute("data-theme")) === "dark" ? "#121212" : "#ffffff";
+    document.documentElement.style.background = t;
+    document.body.style.background = t;
+  }
   /* Uebergaenge aus, dauerhaft: sonst haelt ein haengender Uebergang jeden berechneten Wert auf
      dem Startwert, und eine greifende Regel sieht wie eine nicht greifende aus. */
   function uebergaengeAus(){
@@ -38,6 +48,7 @@
 
   async function los(){
     root = g("ask-mira"); comp = g("am-composer"); UC = window.UpstreemCore;
+    grundSetzen();
 
     kopf("0  UMGEBUNG UND FRISCHE  (ohne das ist jeder Messwert darunter wertlos)");
     pruef("Fensterbreite", window.innerWidth, function(v){ return v >= 900; },
@@ -78,10 +89,75 @@
     pruef("Init lief bis zum Ende: Modellname", g("am-eff-name").textContent, "Mira Pro 1.0");
     pruef("Init lief bis zum Ende: Ask-Mira-Knopf", !!g("am-ask-sel"), true);
     pruef("Init lief bis zum Ende: Chatpanel", !!g("am-prev-panel"), true);
+    /* DIE KATEGORIEKARTEN SIND DER BESTE ZEUGE dafuer, dass amInit BIS ZUM ENDE lief:
+       renderSuggested steht weit hinten, und alles, was davor wirft, laesst sie verschwinden.
+       Am 08.09. hat genau das eine Regression gefangen -- ein Aufruf von L() VOR der
+       Deklaration von STR (var, also noch undefined) warf, und die Folge war eine leere
+       Galerie bei sonst unauffaelligem Bild. Ohne diese Zeile haette es niemand gemerkt. */
+    pruef("Init lief bis zum Ende: die Kategoriekarten stehen",
+      document.querySelectorAll(".am-cat-card").length, function(v){ return v >= 4; },
+      "renderSuggested steht weit hinten -- keine Karten heisst: irgendwo davor hat es geworfen");
+    pruef("Init lief bis zum Ende: die Galerie-Ueberschrift",
+      (g("am-suggested-label") || {}).textContent, "Explore categories",
+      "steht dort 'Try asking', ist galleryLabel leer -- also L() kaputt");
     pruef("negativer Rand am Mikrofon aufgehoben",
       getComputedStyle(g("am-mic")).marginLeft, "0px");
 
     uebergaengeAus();
+
+    /* DIESER ABSCHNITT STEHT HIER UND NICHT WEITER UNTEN. Abschnitt 6 schickt eine Nachricht
+       ab, und damit traegt die Wurzel has-messages: der Startschirm samt Kategoriekarten geht
+       auf display: none. In einem nicht gerenderten Baum verweigert der Browser jedes
+       transform -- gemessen sogar bei einem inline gesetzten -- und das sah aus, als greife die
+       Hover-Regel nicht. */
+    kopf("10  DIE KATEGORIEKARTEN UND \"ALLE CHATS\"  (08.09., zweite Runde)");
+    (function(){
+      /* Der Hover ueber eine Klasse GLEICHER Spezifitaet: :hover laesst sich im verdeckten
+         Fenster nicht ausloesen, und ein inline-Stil waere eine andere Kaskadenstufe. */
+      var st = document.createElement("style");
+      /* Der Ersatz fuer :hover muss die ECHTEN Regeln nachstellen, BEIDE Themen. Zuerst stand
+         hier nur der helle Wert; im Dunkeln sprang die Karte damit auf --up-sel-bg statt auf
+         --vc-heading-bg, und die gemeldete Stufenzahl war 13 statt der wirklichen 7. Eine
+         Messung, die eine andere Regel prueft als die ausgelieferte, ist keine. */
+      st.textContent = '#ask-mira .am-cat-card.pruefhover { background: var(--up-sel-bg); }' +
+        '#ask-mira[data-theme="dark"] .am-cat-card.pruefhover { background: var(--vc-heading-bg); }' +
+        '#ask-mira .am-cat-card.pruefhover .am-cat-chev { transform: translateX(4px); }';
+      document.head.appendChild(st);
+      var karte = document.querySelectorAll(".am-cat-card")[1];
+      var chev = karte.querySelector(".am-cat-chev");
+      var zahl = function(c){ return (String(c).match(/\d+/g) || []).slice(0,3).map(Number); };
+      var stufen = function(a, b){ var A = zahl(a), B = zahl(b);
+        return Math.max.apply(null, A.map(function(v, i){ return Math.abs(v - B[i]); })); };
+      var cs = getComputedStyle(karte);
+      pruef("Karte ohne Rahmen", cs.borderTopWidth + "/" + cs.borderTopStyle,
+        function(v){ return v.indexOf("0px") === 0 || v.indexOf("none") >= 0; }, v_(cs));
+      var ruhe = cs.backgroundColor;
+      /* Gegen den Grund, den die SEITE malt -- Mira malt keinen. Ein Vergleich gegen den Grund
+         der Pruefseite meldete beim ersten Anlauf 3 statt 7 Stufen. */
+      var grund = getComputedStyle(document.body).backgroundColor;
+      pruef("Karte hebt sich leise vom Seitengrund ab", stufen(ruhe, grund),
+        function(v){ return v >= 5 && v <= 16; },
+        "Karte " + ruhe + " auf " + grund);
+      karte.classList.add("pruefhover");
+      var hov = getComputedStyle(karte).backgroundColor;
+      var chevHov = getComputedStyle(chev).transform;
+      karte.classList.remove("pruefhover");
+      pruef("der Hover ist noch da, eine Sprosse hoeher", stufen(hov, ruhe),
+        function(v){ return v >= 5; }, ruhe + " -> " + hov);
+      pruef("das Chevron rueckt 4px", chevHov, "matrix(1, 0, 0, 1, 4, 0)");
+      pruef("und zwar mit 200ms ease", (function(){
+        var t = null;
+        [].forEach.call(document.styleSheets, function(ss){
+          try { [].forEach.call(ss.cssRules, function(r){
+            if ((r.selectorText || "") === ".am-cat-chev") t = r.style.transition; }); } catch(e){}
+        });
+        return t;
+      })(), "transform 200ms, color 200ms",
+        "das CSSOM laesst 'ease' weg -- es ist der Vorgabewert");
+    })();
+    pruef("\"All Chats\" kommt aus dem Katalog",
+      (g("am-open-prev").querySelector(".am-prev-label-full") || {}).textContent, "All Chats",
+      "hier englisch; die deutsche Fassung wird getrennt geprueft");
 
     kopf("2  DER SLIDER  (Medium/High/Ultra -> short/balanced/detailed, Werte unveraendert)");
     var btn = g("am-eff-btn"), tr = g("am-eff-track"), th = g("am-eff-thumb"), fl = g("am-eff-fill");

@@ -964,14 +964,28 @@
 
   /* ===== Question Gallery (clickable topic menu) ===== */
   .am-cat-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+  /* KEIN RAHMEN MEHR, nur eine ganz leise Fuellung (08.09. angefordert). Der Ton ist die
+     leiseste Sprosse, die die Leiter je Thema UEBER dem Seitengrund hat -- und er muss eine
+     Sprosse unter dem Hover liegen, sonst waere der Hover weg: der lag bisher auf
+     --vt-row-hover-solid, also genau auf dem Ton, der jetzt der RUHEZUSTAND ist.
+     GEMESSEN in rohen Kanalstufen, auf dem Grund, den die Seite hinter Mira wirklich malt
+     (Mira selbst malt keinen -- der erste Anlauf hat gegen den Grund der Pruefseite gemessen
+     und 3 statt 7 gemeldet):
+         hell    Seite #ffffff -> Karte #f9f8f9  ( 7) -> Hover #f4f2f4  (6 weitere)
+         dunkel  Seite #121212 -> Karte #1c1c1f (13) -> Hover #232326 (7 weitere)
+     Zwei Regeln mit je einer dunklen Ausnahme, und das ist kein Versehen: die zwei Leitern
+     haben ueber ihrem Seitengrund NICHT gleich viele Sprossen. Hell liegt zwischen #ffffff und
+     #f9f8f9 nichts, dunkel liegt zwischen #101114 und #232326 noch #1c1c1f. Ein einzelnes
+     Token kann also nicht in beiden Themen die leiseste Stufe sein. */
   .am-cat-card {
     position: relative; overflow: hidden;
-    text-align: left; border: 1px solid var(--am-border); border-radius: 13px;
-    background: var(--am-bg); padding: 13px 14px 13px 60px; cursor: pointer;
+    text-align: left; border: 0; border-radius: 13px;
+    background: var(--am-soft); padding: 13px 14px 13px 60px; cursor: pointer;
     display: flex; align-items: center; gap: 11px; min-width: 0;
     color: var(--am-text); font-size: 13.5px; font-weight: 500; line-height: 1.4;
-    transition: border-color 160ms ease, background 160ms ease;
+    transition: background 200ms ease;
   }
+  #ask-mira[data-theme="dark"] .am-cat-card { background: var(--vc-bg); }
   .am-cat-card-full { width: 100%; margin-bottom: 10px; }
   /* the Reporting category card is styled exactly like a report card (taller, with a subheading) */
   .am-cat-card-report { padding: 12px 13px 12px 76px; align-items: center; }
@@ -989,7 +1003,10 @@
      DURCHSICHTIG. Auf dem Startschirm liegt hinter den Karten das Hintergrundbild, und beim Hover
      schien dessen Raster durch -- die Karte verlor ihren Boden. -solid ist derselbe Ton als voller
      Wert und liegt vier Stufen daneben (36 statt 32 im Dunkeln), was niemand sieht. */
-  .am-cat-card:hover { border-color: var(--vc-hover-border); background: var(--vt-row-hover-solid); }
+  /* Der Hover bleibt, nur ohne Rahmen -- und eine Sprosse hoeher als vorher, weil die Karte
+     jetzt selbst auf dem Ton sitzt, der bisher der Hover war. */
+  .am-cat-card:hover { background: var(--up-sel-bg); }
+  #ask-mira[data-theme="dark"] .am-cat-card:hover { background: var(--vc-heading-bg); }
   /* leading = a left-tilted little "document" tile, larger than the row so it bleeds past the bottom
      and is clipped by the card (same logic as the report cards); absolute -> no extra card height */
   .am-cat-ic {
@@ -1006,7 +1023,14 @@
   .am-cat-name { flex: 1 1 auto; min-width: 0; }
   #ask-mira[data-theme="dark"] .am-cat-ic { background: rgba(42,42,42,0.3); border-color: #28282c; box-shadow: 0 1px 4px rgba(0,0,0,.28); }
   #ask-mira[data-theme="dark"] .am-cat-card:hover .am-cat-ic { background: rgba(53,54,56,0.3); color: #ececec; box-shadow: 0 3px 10px rgba(0,0,0,.38); }
-  .am-cat-chev { flex: 0 0 auto; display: grid; place-items: center; color: var(--am-muted-2); }
+  /* Das Chevron rueckt beim Ueberfahren 4px nach rechts. transform und nicht margin: ein
+     transform laesst den Browser nicht neu umbrechen, die Karte darum bleibt also ruhig.
+     Der Uebergang steht in DIESER Regel und nicht in einer weiter oben: zwei Regeln mit
+     gleicher Spezifitaet entscheidet die Ladereihenfolge, und darauf darf hier nichts
+     beruhen. */
+  .am-cat-chev { flex: 0 0 auto; display: grid; place-items: center; color: var(--am-muted-2);
+    transition: transform 200ms ease, color 200ms ease; }
+  .am-cat-card:hover .am-cat-chev { transform: translateX(4px); color: var(--am-muted); }
   .am-cat-chev svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
   .am-gallery-head { display: flex; align-items: center; gap: 16px; margin: 0 0 20px; }

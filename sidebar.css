@@ -231,10 +231,19 @@
 .usn-brand-mark { display: inline-flex; align-items: center; min-width: 0; overflow: hidden;
   /* 0 6px wie .usn-team: so beginnt der Schriftzug genau ueber dem Teamlogo. */
   padding: 0 6px;
-  /* 16.5px FEST. Bild und Schriftzug sind verschieden hoch, und der Abstand nach oben haengt an
-     dieser Zahl (siehe die Rechnung am Block darueber) -- er darf sich nicht danach aendern,
-     welche der beiden Fassungen gerade da ist. Dieselbe 16.5 steht im calc des Aussenabstands. */
-  height: 16.5px; }
+  /* DIE HOEHE ALS VARIABLE, nicht als Zahl an zwei Stellen. Sie stand hier und noch einmal im
+     calc des Aussenabstands unten; seit es eine zweite Fassung des Logos gibt (das Quadrat im
+     eingeklappten Zustand, 22px statt 16.5), waeren das drei Stellen gewesen, die zusammen
+     wandern muessen. Jetzt ist es eine.
+     16.5px FEST fuer den Regelfall: Bild und Schriftzug sind verschieden hoch, und der Abstand
+     nach oben haengt an dieser Zahl -- er darf sich nicht danach aendern, welche der beiden
+     Fassungen gerade da ist. */
+  --usn-mark-h: 16.5px;
+  height: var(--usn-mark-h); }
+/* Das QUADRAT: 22px. Ein 1:1-Logo auf 16.5px waere winzig -- die Leiste ist eingeklappt 64px
+   breit und hat nach ihrem 12px-Polster 40px Platz, ein 22er Zeichen sitzt darin ruhig und
+   bleibt neben dem 26px-Teamlogo darunter die kleinere Marke. */
+.usn-brand-mark.is-square { --usn-mark-h: 22px; }
 /* Der Schriftzug als Text -- der Rueckfall, wenn kein Bild gesetzt ist. Am 07.09. viermal
    nachgestellt: 15 -> 13 (zu klein) -> 14 -> 15 (zu viel) -> 14.5, die Mitte zwischen den letzten
    beiden. Damit ist er genau so gross wie der Teamname darunter.
@@ -246,13 +255,20 @@
    letzten Werten. Ein Bild, das kleiner ist als sein Kasten, waere in der Rechnung fuer die drei
    Abstaende wieder eine Unbekannte, deshalb genau die Kastenhoehe. Dieselbe Bauart wie
    .ulh-nav-logo auf der Landingpage (dort 20px, hier die kleinere Fassung fuer eine Leiste). */
-.usn-brand-img { height: 16.5px; width: auto; display: block; max-width: 100%; object-fit: contain; }
+.usn-brand-img { height: var(--usn-mark-h, 16.5px); width: auto; display: block; max-width: 100%; object-fit: contain; }
+/* Die quadratische Fassung ist so BREIT wie hoch -- das ist der ganze Unterschied. object-fit
+   contain haelt ein Bild, das nicht genau 1:1 ist, trotzdem unverzerrt. */
+.usn-brand-img.is-square { width: var(--usn-mark-h, 22px); }
 /* Im Mini-Zustand ist links kein Platz fuer einen Schriftzug. Das BILD bleibt: ein Logo ist auch
    auf 64px noch ein Logo, ein Wort nicht. Zeichen und Knopf stehen dann uebereinander, wie in
    .usn-top, das im Mini ebenfalls zur Spalte wird -- und dafuer braucht die Zeile ihre feste
    Hoehe nicht mehr. */
 .usn-bar.is-mini .usn-brand { flex-direction: column; justify-content: center; gap: 6px;
-  height: auto; margin: 0 0 calc(8px + (32px - 16.5px) / 2); }
+  height: auto; margin: 0 0 calc(8px + (32px - var(--usn-brand-h, 16.5px)) / 2); }
+/* Und die Zeile muss die Hoehe des Kastens KENNEN, um sie aus der Rechnung herauszunehmen --
+   der Kasten ist ihr Kind, eine Variable von dort erreicht sie nicht. Deshalb steht sie
+   zusaetzlich hier, an der Zeile, und wird von derselben Klasse umgeschaltet. */
+.usn-bar.is-mini .usn-brand:has(.usn-brand-mark.is-square) { --usn-brand-h: 22px; }
 /* Eingeklappt zieht die Zeile NICHT aus dem Polster heraus (margin 0). Um trotzdem
    durchzugehen, braucht die Linie hier das GANZE Polster der eingeklappten Leiste als
    negativen Wert -- nicht 8px wie ausgeklappt, sondern 12. */

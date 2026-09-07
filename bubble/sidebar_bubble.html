@@ -49,6 +49,13 @@
                          Fassung des laufenden Themas, wird die andere genommen; fehlen beide,
                          steht dort der Schriftzug "upstreem" als Text. Die Zeile ist also nie
                          leer, und ohne diese Attribute aendert sich nichts.
+  data-upstreem-logo-small       = OPTIONAL. Dasselbe fuer die EINGEKLAPPTE Leiste, als 1:1-Logo
+  data-upstreem-logo-small-dark    (Quadrat), wieder hell und dunkel. Eingeklappt ist die Leiste
+                         64px breit, und ein breiter Schriftzug ist darin kein Logo mehr, sondern
+                         ein zusammengedrueckter Streifen. Gezeigt wird das Quadrat auf 22px.
+                         Fehlt es, bleibt es beim breiten Logo -- eine fehlende Marke waere
+                         schlimmer als eine schmale. Auch diese zwei werden LIVE mitgelesen, und
+                         der Wechsel zwischen ein- und ausgeklappt tauscht das Bild sofort.
                          Beide werden LIVE mitgelesen: ein Wechsel in Bubble kommt sofort an, und
                          beim Umschalten des Themas wechselt auch das Logo.
                          Ob die Zeile ueberhaupt da ist, entscheidet der Nutzer in den
@@ -261,6 +268,10 @@
      data-active="dashboard"
      data-prompt-count=""
      data-export-instance="EXPORT_INSTANCE_ID"
+     data-upstreem-logo="UPSTREEM_LOGO"
+     data-upstreem-logo-dark="UPSTREEM_LOGO_DARK"
+     data-upstreem-logo-small="UPSTREEM_LOGO_SMALL"
+     data-upstreem-logo-small-dark="UPSTREEM_LOGO_SMALL_DARK"
      data-nav-fn="bubble_fn_usnNav"
      data-team-fn="bubble_fn_usnTeam"
      data-account-fn="bubble_fn_usnAccount"

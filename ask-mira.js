@@ -340,10 +340,25 @@
      install, so a wording or icon change made there never reaches an existing page. Doing it from
      JS means the CDN pin alone carries the change -- no Bubble-side edit. Idempotent, so a
      re-render or a re-init cannot double-apply it. */
-  (function(){
+  function prevKnopfText(){
     if (!elOpenPrev) return;
     var full = elOpenPrev.querySelector('.am-prev-label-full');
-    if (full) full.textContent = 'All Chats';
+    if (full) full.textContent = L().allChats;
+    var kurz = elOpenPrev.querySelector('.am-prev-label-short');
+    if (kurz) kurz.textContent = L().allChatsShort;
+  }
+  (function(){
+    if (!elOpenPrev) return;
+    /* HIER WIRD DIE BESCHRIFTUNG NICHT GESETZT, und das ist keine Nachlaessigkeit: dieser
+       Block laeuft VOR der Deklaration von STR (var, also hochgezogen und noch undefined), und
+       L() haette an dieser Stelle geworfen -- "Cannot read properties of undefined". Weil er
+       ungeschuetzt in amInit steht und root.__askMiraInit schon gesetzt ist, waere danach
+       NICHTS mehr gelaufen: keine Galerie, keine Vorschlaege, keine Chatliste. Genau das ist
+       beim ersten Anlauf passiert, gemessen als 0 Kategoriekarten gegen 5 in der eingecheckten
+       Fassung.
+       Den Text setzt prevKnopfText im Init, direkt nach resolveLang -- im selben Durchlauf,
+       also ohne dass jemand kurz das Englische sieht. Das Zeichen dagegen haengt an keinem
+       Katalog und gehoert hierhin. */
     var ic = elOpenPrev.querySelector('.am-ic');
     // feather message-circle (round). The square message-square is the one the composer uses.
     if (ic) ic.innerHTML = '<path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719" />';
@@ -423,6 +438,7 @@
         'What can I dig into for you?'
       ],
       urlVisit: 'Visit',
+      allChats: 'All Chats', allChatsShort: 'Chats',
       /* Der Picker und der Aufwand-Slider. Die Beschriftungen der drei Stufen stehen NICHT hier,
          sondern in EFF_LABELS -- sie werden bei jedem Zustandswechsel neu geschrieben, und was
          ein Zustandswechsel schreibt, erreicht der breite Sprachlauf von core nicht. */
@@ -528,6 +544,7 @@
         'Was soll ich für dich analysieren?'
       ],
       urlVisit: 'Besuchen',
+      allChats: 'Alle Chats', allChatsShort: 'Chats',
       pickHeading: 'Was suchst du?',
       pickIdle: 'In deinen Daten suchen',
       pickIdleSub: 'Mindestens zwei Buchstaben \u2014 dann findest du Brand, Domain, URL oder Prompt.',
@@ -4471,6 +4488,7 @@
     window.__askMiraMarket = S.market;
     resolveLang();
     if (typeof effLabelsBauen === 'function'){ effLabelsBauen(); pickTexteSetzen(); pickScopesBauen(); effZeichnen(); }
+    if (typeof prevKnopfText === 'function') prevKnopfText();
     renderSuggested();
     phStart();          // restart loop in the new language
     updateLoopState();
@@ -5740,8 +5758,10 @@
   if (window.__askMiraTheme) window.askMiraSetTheme(window.__askMiraTheme);
   resolveLang();
   renderSuggested();
-  /* Die Reihenfolge zaehlt: effLabelsBauen liest lang, und setModel ruft setDetail. */
-  effLabelsBauen(); pickTexteSetzen(); pickScopesBauen();
+  /* Die Reihenfolge zaehlt: effLabelsBauen liest lang, und setModel ruft setDetail.
+     prevKnopfText muss hier NOCHMAL: der Block oben laeuft, bevor resolveLang die Sprache
+     gesetzt hat, und schrieb dort also die englische Fassung. */
+  effLabelsBauen(); pickTexteSetzen(); pickScopesBauen(); prevKnopfText();
   setDetail(S.answerDetail || 'balanced', true);
   setModel(S.model || 'pro', true);
   renderPrevious();

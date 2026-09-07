@@ -1,0 +1,39 @@
+<!doctype html><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sidebar: das kleine Logo im eingeklappten Zustand</title>
+<!--
+  Geprueft wird: eingeklappt das QUADRAT (1:1), ausgeklappt der breite Schriftzug, je Thema die
+  richtige Fassung, und was passiert, wenn eine Quelle fehlt.
+
+  Der lokale Server hat auf diesem Rechner keinen Lesezugriff auf ~/Documents (macOS-
+  Ordnerschutz, gemessen: /private/tmp -> 200, ~/Documents -> 404). Der Prueftand laeuft
+  deshalb ueber Kopien aus dem Scratchpad; frische.js nennt Groesse und Hash jeder Datei,
+  damit die Frische bewiesen und nicht gehofft wird.
+  Die Uebergaenge sind VOR dem Init abgeschaltet: ein nachtraeglich gesetztes 0s beendet eine
+  schon laufende Transition nicht, und im verdeckten Browser-Fenster laufen sie nie zu Ende --
+  getComputedStyle liefert dann dauerhaft den Startwert.
+-->
+<style>*,*::before,*::after{transition-duration:0s !important;animation-duration:0s !important}</style>
+<link rel="stylesheet" href="/core.css">
+<link rel="stylesheet" href="/sidebar.css">
+<style>
+  html,body{margin:0;background:#f6f6f6;font:13px/1.6 ui-monospace,Menlo,monospace}
+  #raus{padding:16px;max-width:1000px;white-space:pre-wrap}
+  .ja{color:#137a3f}.nein{color:#c0392b;font-weight:700}
+  .kopf{font-weight:700;margin-top:14px;display:block}
+</style>
+<body>
+<!-- Vier Quellen als data-URI: ein BREITES Rechteck (3:1) und ein QUADRAT, je hell und dunkel.
+     Data-URIs, damit die Messung nicht am Netz haengt und ein Bild sofort da ist. -->
+<div class="up-root usn-root" id="upstreem-sidebar"
+     data-instance="pruef" data-active="dashboard" data-team-id="t1"
+     data-upstreem-logo="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 20'%3E%3Crect width='60' height='20' fill='%23222'/%3E%3C/svg%3E"
+     data-upstreem-logo-dark="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 20'%3E%3Crect width='60' height='20' fill='%23eee'/%3E%3C/svg%3E"
+     data-upstreem-logo-small="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Crect width='20' height='20' fill='%23c00'/%3E%3C/svg%3E"
+     data-upstreem-logo-small-dark="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Crect width='20' height='20' fill='%230c0'/%3E%3C/svg%3E">
+</div>
+<pre id="raus">laeuft…</pre>
+<script src="/frische.js"></script>
+<script src="/core.js"></script>
+<script src="/sidebar.js"></script>
+<script src="/_h_usn_logo_pruef.js"></script>
