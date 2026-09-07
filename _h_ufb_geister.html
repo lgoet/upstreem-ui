@@ -1,0 +1,254 @@
+<!doctype html><meta charset="utf-8">
+<title>More Filters: bleiben nach dem Zugehen unsichtbare Klickflaechen stehen?</title>
+<script>
+/* DIE DATEIEN MIT EINEM FRISCHEN NAMEN LADEN. Der erste Anlauf hatte hier feste <link>-Zeilen --
+   und der Browser lieferte die alte filter-bar.css aus dem Zwischenspeicher, WAEHREND ich schon
+   den Fix drin hatte. Drei Runden Diagnose gegen eine Datei, die nicht die geaenderte war; genau
+   davor warnt CLAUDE.md Punkt 3. Ein zufaelliger Zusatz je Aufruf laesst keinen Treffer im
+   Zwischenspeicher zu, und document.write im Kopf haengt sie waehrend des Parsens ein, also
+   BEVOR die Skripte unten laufen. Geprueft wird die Frische zusaetzlich unten am Regeltext. */
+(function(){
+  var n = "?n=" + Math.random();
+  ["core.css","filters/filter-bar.css","filters/topics-filter.css",
+   "filters/models-filter.css","filters/markets-filter.css"].forEach(function(f){
+    document.write('<link rel="stylesheet" href="' + f + n + '">');
+  });
+})();
+</script>
+<style>
+  html,body{margin:0;font:13px/1.5 system-ui,sans-serif;background:#fff}
+  #buehne{padding:20px}
+  #out{font:11px/1.55 ui-monospace,Menlo,monospace;white-space:pre-wrap;background:#f6f6f6;padding:10px;margin:12px 20px}
+  /* Ein Fangnetz UNTER der Leiste: was hier ankommt, ist durchgekommen. Genau die Stelle, an der
+     der Nutzer "iwo in die richtige Ecke" klickt. */
+  #netz{margin:0 20px;height:420px;background:#e8f4ff;border:1px dashed #79a}
+</style>
+<body>
+<div id="buehne">
+  <div class="up-root ufb-root" data-instance="fb" data-isdark="no"
+       data-topics-instance="tp" data-models-instance="md" data-markets-instance="mk"></div>
+  <div class="up-root utf-root" data-instance="tp" data-isdark="no" data-isprocessing="no"></div>
+  <div class="up-root umf-root" data-instance="md" data-isdark="no" data-isprocessing="no"></div>
+  <div class="up-root umk-root" data-instance="mk" data-isdark="no" data-isprocessing="no"></div>
+</div>
+<div id="netz">Fangnetz</div>
+<pre id="out">laeuft…</pre>
+<script>
+(function(){
+  var n = "?n=" + Math.random();
+  ["core.js","filters/topics-filter.js","filters/models-filter.js",
+   "filters/markets-filter.js","filters/filter-bar.js"].forEach(function(f){
+    document.write('<script src="' + f + n + '"><\/script>');
+  });
+})();
+</script>
+<script>
+/* Gemeldet am 07.09.: "wenn man den Filter mal ganz ausgeklappt hatte, dann bleiben die
+   Klickflaechen / die Boundaries der Dropdowns irgendwie klickbar / als Ebene vorhanden, ohne dass
+   sie sichtbar sind. Ab und zu kann man so sogar Filter aktivieren / deaktivieren."
+
+   DAS IST KEINE FARBFRAGE, also wird auch nicht an Farben gemessen: gepruefte Groesse ist, WAS
+   document.elementFromPoint an einer Stelle zurueckgibt. Das ist genau das Element, das den Klick
+   des Nutzers bekommt -- dieselbe Messung, mit der derselbe Fehler in dieser Datei schon einmal
+   gefunden wurde (siehe der pointer-events-Abschnitt in filter-bar.css).
+
+   ES WIRD AUCH WIRKLICH GEKLICKT. Eine Trefferpruefung sagt, dass die Flaeche da ist; ob ein Klick
+   dort einen Filter umstellt, sagt nur der Klick. Also: Auswahl vorher lesen, klicken, Auswahl
+   nachher lesen. Genau die Beschwerde. */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function ja(b){ return b ? "RICHTIG" : "FALSCH "; }
+var gut=0, schlecht=0;
+function pruef(t,b){ if(b) gut++; else schlecht++; log("   "+ja(b)+" "+t); }
+function warte(ms){ return new Promise(function(ok){ setTimeout(ok,ms); }); }
+
+function beschreibe(el){
+  if (!el) return "null";
+  var k=[], n=el;
+  while (n && n !== document.body){
+    k.push((n.className && String(n.className).split(" ")[0]) || n.tagName.toLowerCase());
+    n=n.parentNode;
+  }
+  return k.slice(0,4).join(" < ");
+}
+/* Liegt an dieser Stelle etwas aus einem FILTERPANEL? Nicht "irgendein Element" -- das Fangnetz
+   selbst ist ja auch etwas. */
+function ausPanel(el){
+  return !!(el && el.closest && el.closest(".utf-menu, .umf-menu, .umk-menu"));
+}
+
+/* ---- FRISCHE ZUERST. Ohne diesen Beweis ist jeder Messwert darunter wertlos: der erste Anlauf
+   hat den Fix gemessen und die alte Datei geladen. Gesucht wird die BEDINGUNG des Fixes, nicht
+   irgendein Text -- die alte Fassung hatte dieselbe Regel ohne die zwei is-shown davor. */
+(function(){
+  var frisch = false, gefunden = "";
+  [].forEach.call(document.styleSheets, function(ss){
+    try { [].forEach.call(ss.cssRules, function(r){
+      var t = r.cssText || "";
+      if (t.indexOf("up-subhost.is-on") >= 0 && t.indexOf("pointer-events") >= 0){
+        gefunden = t.slice(0, 120);
+        if (t.indexOf(".ufb-sub.is-shown") >= 0) frisch = true;
+      }
+    }); } catch(e){}
+  });
+  log("0  Ist die geaenderte CSS wirklich geladen?");
+  log("      " + (gefunden || "die Regel steht in keinem geladenen Stylesheet"));
+  pruef("die Regel traegt die Bedingung .ufb-sub.is-shown", frisch);
+  log("");
+})();
+
+var wurzel = document.querySelector(".ufb-root");
+var mdRoot = document.querySelector(".umf-root");
+
+setUpstreemTopics(JSON.stringify([
+  {topic_id:"t1", name:"Digitalisierung", hex_light:"#575757", hex_dark:"#575757", prompt_count:12},
+  {topic_id:"t2", name:"Solar", hex_light:"#8d6a11", hex_dark:"#8d6a11", prompt_count:9}
+]));
+setUpstreemMarkets(JSON.stringify([
+  {code:"DE", name:"Germany", alpha2:"DE"}, {code:"AT", name:"Austria", alpha2:"AT"}
+]));
+setUpstreemModels(JSON.stringify([
+  {key:"gpt", name:"ChatGPT"}, {key:"per", name:"Perplexity"}, {key:"gem", name:"Gemini"}
+]));
+
+function auswahl(){
+  var c = mdRoot.__umfCtrl;
+  try { return c ? String(c.getSelected().model_keys || "") : "?"; } catch(e){ return "?"; }
+}
+
+warte(1500).then(function(){
+  var btn = wurzel.querySelector(".ufb-btn");
+  var menu = wurzel.querySelector(".ufb-menu");
+  if (!btn || !menu){ log("ABBRUCH: die Leiste hat sich nicht gebaut"); return; }
+
+  /* ZUMACHEN WIE DER NUTZER, an EINER Stelle. makePopover hoert auf pointerdown am document,
+     nicht auf click -- ein blosses body.click() liess das Panel offen, und Abschnitt 4 meldete
+     daraufhin "zu faengt auto", obwohl gar nichts zu war. Ein Prueftand, der seinen eigenen
+     Bedienweg falsch nachbaut, meldet Fehler, die es nicht gibt. */
+  function zumachen(){
+    document.body.dispatchEvent(new MouseEvent("pointerdown", {bubbles:true}));
+    document.body.click();
+    return warte(350);
+  }
+  /* Und aufmachen nur, wenn es zu ist: ein Klick auf den Knopf schaltet um. */
+  function aufmachen(){
+    if (!menu.classList.contains("is-shown")) btn.click();
+    return warte(300);
+  }
+
+  log("1  Aufmachen und in die Models-Zeile hineingehen");
+  btn.click();
+  return warte(300).then(function(){
+    var zeile = menu.querySelector('[data-sub="models"]');
+    pruef("das Panel ist offen", menu.classList.contains("is-shown"));
+    if (!zeile){ log("ABBRUCH: keine Models-Zeile"); return; }
+    /* GANZ AUSKLAPPEN heisst KLICKEN, nicht hovern -- ein Klick stellt die Zeile fest
+       (makeSubmenu: open(key, true)), und genau das beschreibt die Meldung. Der erste Anlauf
+       schickte mouseenter/mouseover: makeSubmenu hoert auf POINTERover, also passierte nichts,
+       und der Prueftand meldete eine 0x0 grosse Zeile. Das waere ein Messfehler gewesen, kein
+       Ergebnis -- eine geschlossene Huelle ist display: none, und die hat immer 0x0. */
+    zeile.click();
+    return warte(400).then(function(){
+      var sub = wurzel.querySelector(".ufb-sub");
+      var opt = wurzel.querySelector(".umf-menu .umf-opt");
+      pruef("das Untermenue ist offen", sub.classList.contains("is-shown"));
+      if (!opt){ log("ABBRUCH: keine Modellzeile im Panel"); return; }
+      var r = opt.getBoundingClientRect();
+      var mx = Math.round(r.left + r.width/2), my = Math.round(r.top + r.height/2);
+      log("      eine Modellzeile liegt bei " + mx + "/" + my +
+          "  (" + Math.round(r.width) + "x" + Math.round(r.height) + ")");
+      var offenTreffer = document.elementFromPoint(mx, my);
+      log("      Treffer OFFEN: " + beschreibe(offenTreffer));
+      pruef("offen liegt dort die Modellzeile (die Messung trifft die richtige Stelle)",
+        ausPanel(offenTreffer));
+      var vorher = auswahl();
+
+      log("");
+      log("2  Alles zumachen -- und dann an dieselbe Stelle klicken");
+      /* Zu wie der Nutzer: nach draussen zeigen. Nicht ueber eine interne Funktion, sonst
+         pruefe ich einen Weg, den es im Betrieb nicht gibt. */
+      return zumachen().then(function(){
+        pruef("das Panel ist zu", !menu.classList.contains("is-shown"));
+        pruef("und das Untermenue auch", !wurzel.querySelector(".ufb-sub").classList.contains("is-shown"));
+        var zuTreffer = document.elementFromPoint(mx, my);
+        log("      Treffer ZU:    " + beschreibe(zuTreffer));
+        pruef("an der Stelle liegt KEINE Flaeche eines Filterpanels mehr", !ausPanel(zuTreffer));
+        /* UND DER WERT SELBST, nicht nur der Treffer an einem Punkt. Der Punkt beweist diesen
+           einen Ort; der gerechnete Wert beweist die ganze Flaeche -- und er gilt in JEDER
+           Breitenstufe. Das ist hier der Unterschied: im Hineingehen (Telefon, unter 768px)
+           gelten zusaetzliche Regeln, die aber alle die SCHALE betreffen. Steht an Schale und
+           Panel none, kann keine dieser Regeln eine Ebene aufmachen -- ohne dass der Prueftand
+           ein Fenster von 500px braucht, das die Browserflaeche des Werkzeugs nicht hergibt
+           (gemessene innerWidth dort: 980, obwohl 500 bestellt war). */
+        var pePanel = getComputedStyle(wurzel.querySelector(".umf-menu")).pointerEvents;
+        var peSchale = getComputedStyle(wurzel.querySelector(".ufb-sub")).pointerEvents;
+        log("      gerechnet: Filterpanel pointer-events " + pePanel +
+            ", Schale " + peSchale);
+        pruef("das Filterpanel faengt gerechnet nichts (pointer-events: none)", pePanel === "none");
+        pruef("und die Schale auch nicht", peSchale === "none");
+
+        /* Und der eigentliche Schaden: laesst sich dort ein Filter umstellen? */
+        var ziel = document.elementFromPoint(mx, my);
+        if (ziel) ziel.click();
+        return warte(300).then(function(){
+          var nachher = auswahl();
+          log("      Auswahl vorher \"" + vorher + "\"   nach dem Klick ins Leere \"" + nachher + "\"");
+          pruef("ein Klick dorthin stellt KEINEN Filter um", vorher === nachher);
+          log("");
+
+          log("3  Und wieder aufmachen: es muss weiter funktionieren");
+          return aufmachen().then(function(){
+            var zeile2 = menu.querySelector('[data-sub="models"]');
+            zeile2.click();
+            return warte(400).then(function(){
+              var opt2 = wurzel.querySelector(".umf-menu .umf-opt");
+              var r2 = opt2.getBoundingClientRect();
+              var t2 = document.elementFromPoint(Math.round(r2.left+r2.width/2),
+                                                 Math.round(r2.top+r2.height/2));
+              log("      Treffer WIEDER OFFEN: " + beschreibe(t2));
+              pruef("offen ist die Zeile wieder da", ausPanel(t2));
+              var v2 = auswahl();
+              /* Und zwar auf die STELLE, nicht auf den Knoten: ein el.click() auf einem
+                 display:none-Knoten geht auch durch und haette in Abschnitt 3 einen gruenen
+                 Haken gegeben, obwohl dort niemand hinklicken kann. */
+              if (t2) t2.click();
+              return warte(300).then(function(){
+                log("      Auswahl vorher \"" + v2 + "\"   nach dem echten Klick \"" + auswahl() + "\"");
+                pruef("und ein Klick darauf stellt den Filter um", auswahl() !== v2);
+                log("");
+                /* ---- 4  ALLE DREI, nicht nur Models. Die Regel nennt drei Klassen; ein Tippfehler
+                   in einer davon waere von aussen nicht zu sehen, und der gemeldete Fehler kann in
+                   jedem der drei Panels stecken. Gemessen wird der gerechnete Wert nach dem
+                   Zumachen -- die Punktprobe oben hat die Bauart schon bewiesen. */
+                log("4  Dasselbe fuer Topics und Markets");
+                var reihe = [["topics",".utf-menu"],["markets",".umk-menu"]];
+                return reihe.reduce(function(k, fall){
+                  return k.then(function(){
+                    return zumachen().then(aufmachen).then(function(){
+                      var z = menu.querySelector('[data-sub="' + fall[0] + '"]');
+                      if (!z){ pruef(fall[0] + ": Zeile vorhanden", false); return; }
+                      z.click();
+                      return warte(350).then(function(){
+                        var offenPe = getComputedStyle(wurzel.querySelector(fall[1])).pointerEvents;
+                        return zumachen().then(function(){
+                          var zuPe = getComputedStyle(wurzel.querySelector(fall[1])).pointerEvents;
+                          log("      " + fall[0] + ": offen " + offenPe + ", zu " + zuPe);
+                          pruef(fall[0] + ": offen bedienbar", offenPe === "auto");
+                          pruef(fall[0] + ": zu faengt es nichts", zuPe === "none");
+                        });
+                      });
+                    });
+                  });
+                }, Promise.resolve()).then(function(){
+                  log("");
+                  log((schlecht ? "==> FALSCH  " : "==> RICHTIG ")+gut+" von "+(gut+schlecht)+" Pruefungen");
+                  log("FERTIG");
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+  });
+}).catch(function(e){ log("ABBRUCH "+e+"\n"+(e&&e.stack||"")); });
+</script>

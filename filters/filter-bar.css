@@ -259,10 +259,28 @@
    Mit EINER Schale kann das nicht mehr passieren: es gibt nur einen Kasten, und die Huellen der
    geschlossenen Filter sind display: none. Die Regel bleibt trotzdem noetig -- das Panel des
    Filters traegt in seiner eigenen CSS pointer-events: none, solange es "zu" ist, und "zu" ist es
-   hier immer (sein eigener Zustand wird absichtlich nicht angefasst). */
-.ufb-sub .up-subhost.is-on .utf-menu,
-.ufb-sub .up-subhost.is-on .umf-menu,
-.ufb-sub .up-subhost.is-on .umk-menu { pointer-events: auto; }
+   hier immer (sein eigener Zustand wird absichtlich nicht angefasst).
+
+   UND SIE BRAUCHT BEIDE ZUSTAENDE DAVOR. Gemeldet am 07.09.: "wenn man den Filter mal ganz
+   ausgeklappt hatte, bleiben die Klickflaechen der Dropdowns klickbar, ohne sichtbar zu sein --
+   ab und zu kann man dort sogar Filter aktivieren." Genau so war es, und der Grund stand hier:
+   .is-on bleibt an der Huelle stehen, nachdem alles zu ist (mit Absicht -- beim Zugehen soll der
+   letzte Inhalt stehen bleiben, statt vorher leer zu werden). Damit blieb auch dieses
+   pointer-events: auto in Kraft. Und pointer-events ist keine Sperre, die ein Elternteil setzen
+   kann: ein Kind mit auto ist wieder treffbar, egal wie viele Vorfahren none sagen. Die Kette
+   Panel (none, opacity 0) -> Schale (none, opacity 0) -> Huelle (is-on) -> Filterpanel (auto)
+   ergab eine unsichtbare, voll bedienbare Ebene.
+
+   Gemessen in _h_ufb_geister.html mit document.elementFromPoint -- also mit dem, was den Klick
+   des Nutzers wirklich bekommt: bei zugeklapptem Panel lag dort umf-opt-main < up-filter-item <
+   umf-list < umf-menu, und ein Klick darauf setzte den Modellfilter auf "gpt".
+
+   Also gilt das auto nur, wenn Panel UND Schale wirklich offen sind. Beide Klassen setzt das Kit
+   selbst (makePopover am Panel, makeSubmenu an der Schale), es kommt also kein dritter Zustand
+   dazu, den jemand pflegen muesste. */
+.ufb-menu.is-shown .ufb-sub.is-shown .up-subhost.is-on .utf-menu,
+.ufb-menu.is-shown .ufb-sub.is-shown .up-subhost.is-on .umf-menu,
+.ufb-menu.is-shown .ufb-sub.is-shown .up-subhost.is-on .umk-menu { pointer-events: auto; }
 /* Die Huelle traegt keine eigene Geometrie -- sie ist nur der Schalter zwischen den drei
    Inhalten. */
 .ufb-host { min-width: 0; }
