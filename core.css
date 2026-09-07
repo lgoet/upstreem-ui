@@ -3379,6 +3379,36 @@
    ====================================================================== */
 .up-root .up-filter-menu, .up-root .up-menu, .up-root .up-cols-menu,
 .up-root .up-sort-menu, .up-root .up-ment-menu, .up-root .up-pop,
+/* ---- Hover IN einem Menue: der Auswahlton, nicht der Kopfzeilenton -----------------------------
+   Gemeldet am 07.09. fuer die Type-Dropdowns in den Tabellenkoepfen: "entweder haben die Hover
+   Effekte exakt die gleiche Farbe wie der BG, oder sie sind schlicht nicht sichtbar."
+
+   Genau so war es, und zwar rechnerisch: die Zeilen holen ihren Hover aus --vc-heading-bg
+   (#232326 im Dunkeln), und der Grund JEDES dieser Menues ist --up-menu-bg -- ebenfalls #232326.
+   Gemessen in _h_dd_hover.html: Abstand 0.0. Auf einer Karte oder in einer Werkzeugleiste ist
+   derselbe Ton richtig und gut sichtbar (dort liegt er auf --vc-bg, #1c1c1f); nur AUF einem
+   Menue faellt er mit dem Grund zusammen. Die Dropdowns der Topics-, Markets- und Models-Filter
+   traf es genauso -- dort fiel es nur nicht auf, weil ihre Zeilen meist angehakt sind und dann
+   den Auswahlton tragen.
+
+   Darum wird der Ton nicht in zwanzig :hover-Regeln getauscht, sondern EINMAL an der Quelle: in
+   einem Menue IST der leise Ton der Auswahlton. Damit gilt hier die Hausregel, die .up-optrow
+   schon beschreibt -- "eine Zeile, auf die man zeigt, und eine Zeile, die gewaehlt ist, sind
+   beide 'diese hier', und zwei verschiedene Graus nebeneinander lesen sich als zwei
+   Bedeutungen". Alles, was in einem Menue liegt, zieht mit: Zeilen, Schalterzeilen, die
+   Icon-Knoepfe der Kopfzeile, das X im Suchfeld.
+
+   Dasselbe Muster wie --vc-switch-soft weiter oben, das aus demselben Grund je Menue
+   ueberschrieben wird. Die Trigger sind NICHT betroffen: sie sind Geschwister des Menues, keine
+   Kinder, und ihr geoeffneter Zustand bleibt der Kopfzeilenton auf der Seitenflaeche. */
+.up-root .up-filter-menu, .up-root .up-menu, .up-root .up-cols-menu,
+.up-root .up-sort-menu, .up-root .up-ment-menu, .up-root .up-pop,
+.up-root .up-submenu,
+.up-root .utf-menu, .up-root .umf-menu, .up-root .umk-menu,
+.up-root .udr-menu, .up-root .uap-menu {
+  --vc-heading-bg: var(--up-sel-bg);
+}
+
 .up-root .utf-menu, .up-root .umf-menu, .up-root .umk-menu,
 .up-root .udr-menu, .up-root .uap-menu {
   border-color: var(--up-menu-border);

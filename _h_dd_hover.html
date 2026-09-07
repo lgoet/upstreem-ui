@@ -1,0 +1,183 @@
+<!doctype html><meta charset="utf-8">
+<title>Dropdown-Zeilen: Hover und Auswahl gegen den Grund: sind Hover und Auswahl vom Grund zu unterscheiden?</title>
+<pre id="out" style="font:12px/1.55 ui-monospace,Menlo,monospace;padding:12px;white-space:pre-wrap"></pre>
+<div id="buehne"></div>
+<script>
+/* Gemeldet: "in den Type Dropdowns in den Tabellen-Headern im Darkmode: entweder haben die Hover
+   Effekte exakt die gleiche Farbe wie der BG, oder sie sind schlicht nicht sichtbar. Mach selected
+   und hover states einfach genauso wie in allen anderen Dropdowns auch (wie Topics)."
+
+   GEMESSEN WIRD GEGEN DEN EIGENEN GRUND. Ein Ton allein sagt nichts -- #232326 ist auf der Seite
+   gut sichtbar und auf einem Menue derselben Farbe gar nicht. Also je Zeile: ihre Farbe, die
+   Farbe des Kastens, in dem sie liegt, und der Abstand dazwischen.
+
+   MASS: Kanalabstand mit Luma-Gewichten (0.299/0.587/0.114) auf der 0-255-Skala -- dieselbe
+   Skala, mit der die Flaechenleitern und die Switcher-Traeger dieses Hauses gemessen wurden.
+   WCAG-Kontrast waere hier das falsche Werkzeug: der ist fuer Text gegen Grund gemacht und
+   liefert fuer zwei benachbarte dunkle Flaechen Verhaeltnisse um 1.0, in denen jeder Unterschied
+   verschwindet. (Das Vermischen der beiden Skalen hat in dieser Sitzung schon einen sich selbst
+   widersprechenden Prueftand erzeugt.)
+
+   SCHWELLE: nicht erfunden, sondern die Referenz, die der Nutzer selbst nennt -- der Auswahlton
+   der Topics-Liste. Alles hier muss MINDESTENS so weit vom Grund weg sein wie der.
+
+   HOVER OHNE MAUS: jedes ":hover" wird vor dem Einhaengen durch eine Klasse ersetzt. Gleiche
+   Spezifitaet (0,1,0), gleiche Dateireihenfolge -- der Browser entscheidet wie mit der Maus.
+   Mit echter Maus geht es nicht: die Browserflaeche des Werkzeugs ist verdeckt, eine verdeckte
+   Seite zeichnet nicht, und dann kommt rgba(0,0,0,0) zurueck. */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function ja(b){ return b ? "RICHTIG" : "FALSCH "; }
+var gut=0, schlecht=0;
+function pruef(t,b){ if(b) gut++; else schlecht++; log("   "+ja(b)+" "+t); }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function warte(ms){ return new Promise(function(ok){ setTimeout(ok,ms); }); }
+var PROBE="ddHoverProbe";
+
+function rgb(s){ var m=String(s).match(/(\d+(?:\.\d+)?)/g); return m ? m.slice(0,3).map(Number) : null; }
+function abstand(a, b){
+  var x=rgb(a), y=rgb(b); if(!x||!y) return 0;
+  return Math.abs(x[0]-y[0])*0.299 + Math.abs(x[1]-y[1])*0.587 + Math.abs(x[2]-y[2])*0.114;
+}
+
+Promise.all([hol("core.css"), hol("filters/topics-filter.css"), hol("filters/filter-bar.css"),
+             hol("response-detail.css")])
+.then(function(t){
+  var f=document.createElement("iframe");
+  f.style.cssText="width:1000px;height:560px;border:1px solid #333;display:block";
+  document.getElementById("buehne").appendChild(f);
+  var d=f.contentDocument, v=f.contentWindow;
+  d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0'></body></html>"); d.close();
+  t.forEach(function(c){ var st=d.createElement("style");
+    st.textContent=c.split(":hover").join("." + PROBE); d.head.appendChild(st); });
+  var st2=d.createElement("style");
+  st2.textContent="body{margin:0;padding:16px;background:#101114;display:flex;gap:16px;flex-wrap:wrap}"+
+                  "*,*::before,*::after{transition:none!important;animation:none!important}";
+  d.head.appendChild(st2);
+
+  /* Vier Menuearten mit ihrem ECHTEN Markup. Die Klassen sind die, die die Komponenten
+     ausgeben -- nicht nachgebaute Kaesten, sonst messe ich mein eigenes HTML. */
+  var FAELLE = [
+    { name: "Types-Dropdown (urls-table, domains-table)", menue: "up-filter-menu is-shown",
+      zeile: "up-filter-item", gewaehlt: "is-checked",
+      inhalt: '<span class="up-filter-check"></span><span class="up-filter-tag-lbl">Editorial</span>' },
+    { name: "Topics-Dropdown (die Referenz des Nutzers)", menue: "utf-menu is-shown",
+      zeile: "up-filter-item utf-opt", gewaehlt: "is-checked",
+      inhalt: '<span class="up-filter-check"></span><span class="utf-opt-main">Tarife</span>' },
+    /* .up-pop hat KEINEN eigenen Grund -- den malt die Komponente, die es einsetzt. Also wird
+       der echte Verbraucher genommen (response-detail malt .urd-hlpop auf --up-surface), sonst
+       messe ich gegen einen Grund, den ich mir selbst gegeben habe. */
+    { name: "Sorter im echten Kasten (urd-hlpop + up-pop)", menue: "urd-hlpop up-pop is-shown",
+      zeile: "up-pop-opt", gewaehlt: "is-active",
+      inhalt: '<span>Visibility</span><span class="up-check"></span>' },
+    { name: "Zeilenmenue (up-optrow)", menue: "up-menu is-shown",
+      zeile: "up-optrow", gewaehlt: "is-on",
+      inhalt: '<span>Open</span>' },
+    { name: "Untermenue (up-submenu)", menue: "up-submenu is-shown",
+      zeile: "up-optrow", gewaehlt: "is-on",
+      inhalt: '<span>Move to</span>' },
+    /* Diese Zeile hat KEINEN Auswahlzustand -- ihre Aussage steckt im Schalter rechts. Darum
+       gewaehlt: null; eine Pruefung auf einen Zustand, den es nicht gibt, waere ein gruener
+       Haken fuer nichts (der erste Anlauf las hier rgba(0,0,0,0), rechnete das als Schwarz und
+       meldete stolz Abstand 35.3). */
+    { name: "Schalterzeile im Sorter (up-pop-row)", menue: "up-sort-menu is-shown",
+      zeile: "up-pop-row", gewaehlt: null,
+      inhalt: '<span class="up-pop-label">Descending</span><span class="up-switch"></span>' }
+  ];
+
+  var wurzel=d.createElement("div");
+  wurzel.className="up-root"; wurzel.setAttribute("data-theme","dark");
+  wurzel.style.cssText="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start";
+  wurzel.innerHTML = FAELLE.map(function(fa, i){
+    return '<div class="' + fa.menue + '" data-fall="' + i + '" ' +
+      'style="position:static;opacity:1;transform:none;pointer-events:auto;display:flex;' +
+      'flex-direction:column;gap:4px;width:230px">' +
+      '<div class="' + fa.zeile + '" data-rolle="ruhe">' + fa.inhalt + '</div>' +
+      '<div class="' + fa.zeile + ' ' + PROBE + '" data-rolle="hover">' + fa.inhalt + '</div>' +
+      (fa.gewaehlt
+        ? '<div class="' + fa.zeile + ' ' + fa.gewaehlt + '" data-rolle="gewaehlt">' + fa.inhalt + '</div>'
+        : "") +
+      '</div>';
+  }).join("");
+  d.body.appendChild(wurzel);
+
+  return warte(300).then(function(){
+    function ton(el){ return v.getComputedStyle(el).backgroundColor; }
+    /* DER GRUND IST DIE NAECHSTE DECKENDE FLAECHE. .up-pop hat keinen eigenen Grund -- den malt
+       die Komponente, die es einsetzt. Der erste Anlauf las darum "rgba(0, 0, 0, 0)" und verglich
+       gegen die Seite: 40.5 Abstand, ein Messwert, der nur sagt, dass die Seite dunkler ist als
+       die Zeile. Was das Auge sieht, ist die erste Flaeche darunter, die wirklich deckt. */
+    function grundVon(el){
+      var k = el;
+      while (k && k !== d.documentElement){
+        var b = v.getComputedStyle(k).backgroundColor;
+        if (b && b !== "rgba(0, 0, 0, 0)" && b !== "transparent") return b;
+        k = k.parentNode;
+      }
+      return "rgb(255, 255, 255)";
+    }
+    var referenz = null;
+    var messwerte = [];
+    FAELLE.forEach(function(fa, i){
+      var kasten = wurzel.querySelector('[data-fall="' + i + '"]');
+      var grund = grundVon(kasten);
+      var h = kasten.querySelector('[data-rolle="hover"]');
+      var g = kasten.querySelector('[data-rolle="gewaehlt"]');
+      messwerte.push({ name: fa.name, grund: grund, hover: ton(h),
+                       gewaehlt: g ? ton(g) : null,
+                       dh: abstand(ton(h), grund),
+                       dg: g ? abstand(ton(g), grund) : null });
+      /* Die Schwelle ist der Auswahlton der Topics-Liste -- der Fall, den der Nutzer selbst als
+         gut sichtbar nennt. Sie wird aus dem gerade gemessenen Eintrag gelesen und nicht als
+         Zahl hingeschrieben: aendert sich der Hausston, aendert sich die Schwelle mit. */
+      if (i === 1) referenz = messwerte[messwerte.length - 1].dg;
+    });
+    log("DIE MENUEARTEN IM DUNKELN, jede gegen IHREN Grund");
+    messwerte.forEach(function(m){
+      log("   " + m.name);
+      log("      Grund   " + m.grund);
+      log("      Hover   " + m.hover + "   Abstand " + m.dh.toFixed(1));
+      log(m.dg == null ? "      (kein Auswahlzustand -- die Aussage steckt im Schalter)"
+                       : "      Gewaehlt " + m.gewaehlt + "   Abstand " + m.dg.toFixed(1));
+    });
+    log("");
+    log("SCHWELLE = der Auswahlton der Topics-Liste: " + referenz.toFixed(1));
+    log("");
+    messwerte.forEach(function(m){
+      pruef(m.name + ": Hover ist vom Grund zu unterscheiden (" + m.dh.toFixed(1) + ")",
+        m.dh >= referenz - 0.2);
+      if (m.dg != null) pruef(m.name + ": Auswahl ist vom Grund zu unterscheiden (" +
+        m.dg.toFixed(1) + ")", m.dg >= referenz - 0.2);
+    });
+    log("");
+    /* UND NICHT NUR IM DUNKELN: dieselbe Regel traegt beide Themen, also wird hell mitgemessen.
+       Die Schwelle ist dort dieselbe Referenz -- der Auswahlton der Topics-Liste im Hellen. */
+    wurzel.setAttribute("data-theme","light");
+    return warte(200).then(function(){
+      log("DASSELBE IM HELLEN");
+      var refH=null, hell=[];
+      FAELLE.forEach(function(fa, i){
+        var kasten = wurzel.querySelector('[data-fall="' + i + '"]');
+        var grund = grundVon(kasten);
+        var dh = abstand(ton(kasten.querySelector('[data-rolle="hover"]')), grund);
+        var gh = kasten.querySelector('[data-rolle="gewaehlt"]');
+        var dg = gh ? abstand(ton(gh), grund) : null;
+        hell.push({ name: fa.name, dh: dh, dg: dg, grund: grund });
+        if (i === 1) refH = dg;
+      });
+      hell.forEach(function(m){
+        log("   " + m.name + "  Grund " + m.grund + "   Hover " + m.dh.toFixed(1) +
+            (m.dg == null ? "" : "   Auswahl " + m.dg.toFixed(1)));
+      });
+      log("   Schwelle hell: " + refH.toFixed(1));
+      hell.forEach(function(m){
+        pruef("hell -- " + m.name + ": Hover sichtbar (" + m.dh.toFixed(1) + ")",
+          m.dh >= refH - 0.2);
+      });
+      log("");
+      log((schlecht ? "==> FALSCH  " : "==> RICHTIG ") + gut + " von " + (gut+schlecht) + " Pruefungen");
+      log("FERTIG");
+    });
+  });
+}).catch(function(e){ log("ABBRUCH " + e); });
+</script>
