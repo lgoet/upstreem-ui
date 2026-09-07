@@ -23,12 +23,14 @@
 
    Die Attribute:
 
-       data-type       "brand" | "prompt" | "domain" | "url" | "response"
+       data-type       "brand" | "brand editor" | "prompt" | "domain" | "url" | "response"
                        bestimmt die Beschriftung links, welches Bild oder Zeichen davor steht
                        UND welcher Knopf rechts dazukommt: der Stift nur bei brand, der Globus
                        ("zur uebergeordneten Domain") nur bei url.
-                       brand, domain und url zeigen data-logo (Logo oder Favicon), prompt und
-                       response ein Zeichen (zap / scan) -- die haben kein Bild.
+                       brand, brand editor, domain und url zeigen data-logo (Logo oder Favicon),
+                       prompt und response ein Zeichen (zap / scan) -- die haben kein Bild.
+                       Zweiwortige Typen darf man auch "brand_editor" oder "brand-editor"
+                       schreiben; die Leiste normt das.
        data-name       der Name, der rechts vom Trenner steht. Bei einer Marke ihr Name, bei
                        einer URL ihr Titel -- was da hineingehoert, entscheidet der Drawer, nicht
                        diese Leiste.
@@ -107,12 +109,28 @@
   var UC = window.UpstreemCore;
   var esc = UC.esc;
 
-  /* Die vier Typen und ihre Beschriftung. Ueber t() und nicht fest, damit sie im deutschen
-     Setting mitgeht -- die Woerter selbst stehen im Katalog von core.
+  /* Die Typen und ihre Beschriftung. Ueber t() und nicht fest, damit sie im deutschen Setting
+     mitgeht -- die Woerter selbst stehen im Katalog von core.
      Ein unbekannter Typ verschluckt die Leiste NICHT: er wird gezeigt, wie er kam. Ein Drawer
-     ohne Beschriftung waere schlimmer als eine, die "widget" sagt. */
+     ohne Beschriftung waere schlimmer als eine, die "widget" sagt.
+     "brand editor" ist der Drawer, in dem eine Marke BEARBEITET wird (07.09. angefordert). Er
+     zeigt dasselbe Markenlogo wie "brand" -- es ist dieselbe Sache, nur eine andere Ansicht
+     davon -- aber KEINEN Stift: dort ist man schon. */
   var TYPEN = { brand: "Brand", prompt: "Prompt", domain: "Domain", url: "URL",
-                response: "Response" };
+                response: "Response", "brand editor": "Brand Editor" };
+  /* ---- Ein Typ, mehrere Schreibweisen ----
+     Aus Bubble kommt der Wert als Text aus einem Ausdruck, und ein zweiwortiger Typ schreibt
+     sich dort erfahrungsgemaess mal "brand_editor", mal "brand-editor", mal "Brand Editor".
+     Alle drei meinen dasselbe, also werden alle drei zu einem Wert -- sonst faellt der Typ auf
+     "wird gezeigt, wie er kam" zurueck und die Leiste sagt "brand_editor". Ein Unterstrich in
+     einer Brotkrume ist ein Fehler, den niemand melden muss.
+     Genormt wird auch, was in den EREIGNISSEN mitgeht: ein Workflow, der auf den Typ verzweigt,
+     soll nicht drei Faelle fuer eine Sache brauchen. Fuer die alten Typen aendert das nichts,
+     sie normen sich auf sich selbst. */
+  function typNorm(t) {
+    return String(t == null ? "" : t).toLowerCase().trim()
+      .replace(/[_-]+/g, " ").replace(/\s+/g, " ");
+  }
   /* ---- Zwei Typen haben kein Bild, sondern ein Zeichen (07.09. angefordert) ----
      Ein Prompt und eine KI-Antwort sind keine Sache mit Logo: es gibt kein Markenbild und kein
      Favicon dazu, und der erste Buchstabe des Namens waere hier eine Behauptung ("W" fuer
@@ -124,7 +142,7 @@
      den Typ, und zwei Quellen fuer dieselbe Stelle waeren die naechste Meldung. */
   var TYP_ZEICHEN = { prompt: "zap", response: "scan" };
   function typLabel(t) {
-    var k = String(t == null ? "" : t).toLowerCase().trim();
+    var k = typNorm(t);
     var w = TYPEN[k] || k;
     return w ? (UC.t ? UC.t(w) : w) : "";
   }
@@ -142,7 +160,7 @@
       var w = daten[schluessel] != null ? daten[schluessel] : attr(attrName);
       return String(w == null ? "" : w).trim();
     }
-    function typ() { return feld("type", "data-type").toLowerCase(); }
+    function typ() { return typNorm(feld("type", "data-type")); }
     function name() { return feld("name", "data-name"); }
     function logo() {
       var w = feld("logo", "data-logo");

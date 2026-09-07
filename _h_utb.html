@@ -143,9 +143,48 @@ Promise.all([hol("core.css"), hol("core.js"), hol("drawer-topbar.css"), hol("dra
           !!box.querySelector("img") && !box.classList.contains("is-zeichen") && br === 18);
         pruef("und der Stift ist wieder da", !q(".utb-edit").hidden);
         log("");
-        log("==> " + ja(schlecht === 0) + "  " + gut + " von " + (gut+schlecht) + " Pruefungen");
-        log("FERTIG");
+        return teil13();
       });
+    });
+  }
+
+  /* ---- 13  Brand Editor (07.09. angefordert) ----
+     Der Drawer, in dem eine Marke bearbeitet wird: dasselbe Markenlogo wie bei "brand" -- es ist
+     dieselbe Sache, nur eine andere Ansicht davon --, aber kein Stift, denn dort ist man schon.
+     Und DREI SCHREIBWEISEN, weil der Wert aus einem Bubble-Ausdruck kommt: "brand editor",
+     "brand_editor", "Brand Editor". Alle drei muessen dieselbe Leiste ergeben, auch im Ereignis,
+     sonst braucht ein Workflow drei Faelle fuer eine Sache. */
+  function teil13(){
+    var el = A.el;
+    function q(sel){ return el.querySelector(sel); }
+    log("13  Brand Editor");
+    return ["brand editor", "brand_editor", "Brand Editor"].reduce(function(k, wie){
+      return k.then(function(){
+        v.setDrawerTopbar("x", { type: wie, name: "ADAC", logo: "_h_logo.svg", item_id: "b-1" });
+        return warte(220).then(function(){
+          var box = q(".utb-logo");
+          ereignisse.length = 0; q(".utb-close").click();
+          var nutzTyp = ereignisse.length ? ereignisse[0][1].type : "-";
+          log("      \"" + wie + "\" -> Beschriftung \"" + q(".utb-type").textContent +
+              "\"   img " + (box.querySelector("img") ? "ja" : "nein") +
+              "   Stift " + (q(".utb-edit").hidden ? "weg" : "da") +
+              "   im Ereignis \"" + nutzTyp + "\"");
+          pruef("\"" + wie + "\": Beschriftung \"Brand Editor\"",
+            q(".utb-type").textContent === "Brand Editor");
+          pruef("\"" + wie + "\": das Markenlogo steht davor",
+            !!box.querySelector("img") &&
+            box.querySelector("img").getAttribute("src") === "_h_logo.svg" &&
+            parseFloat(v.getComputedStyle(box).width) === 18);
+          pruef("\"" + wie + "\": KEIN Stift -- dort ist man schon", q(".utb-edit").hidden);
+          pruef("\"" + wie + "\": und kein Globus", q(".utb-domain").hidden);
+          pruef("\"" + wie + "\": im Ereignis steht der genormte Typ",
+            nutzTyp === "brand editor");
+        });
+      });
+    }, Promise.resolve()).then(function(){
+      log("");
+      log("==> " + ja(schlecht === 0) + "  " + gut + " von " + (gut+schlecht) + " Pruefungen");
+      log("FERTIG");
     });
   }
 
