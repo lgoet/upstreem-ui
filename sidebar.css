@@ -773,11 +773,18 @@
 .usn-bar.is-pindrag, .usn-bar.is-pindrag * { user-select: none; -webkit-user-select: none; }
 
 /* ---------- Konto ---------- */
-/* 64px zwischen dem letzten Eintrag der Navigation und der Konto-Zeile, nicht 16. Die Zeile
-   gehoert nicht zur Liste darueber -- sie ist der Ausgang aus der App, und dieser Abstand ist
-   das, was das sagt. Es ist ein MINDEST-Abstand: reicht die Liste bis nach unten, scrollt sie in
-   .usn-nav, und die 64px bleiben trotzdem stehen, weil sie ausserhalb des Scrollbereichs liegen. */
-.usn-accwrap { flex: 0 0 auto; margin-top: 64px; }
+/* 32px zwischen dem letzten Eintrag der Navigation und der Konto-Zeile (08.09. angefordert:
+   "ueberm Account-Bereich ist noch sehr viel Whitespace -- bitte auch 32px, dann koennen da
+   schon Menuepunkte zu sehen sein"). Vorher 64.
+   DIE ZAHL IST HIER NICHT NUR EIN ABSTAND, SIE IST HOEHE. .usn-nav nimmt den ganzen Rest
+   (flex: 1 1 auto) und scrollt; dieser Aussenabstand liegt AUSSERHALB des Scrollbereichs und
+   nimmt der Liste damit dauerhaft Platz weg. 64 statt 32 heisst also: 32px weniger Liste, in
+   jeder Fensterhoehe, und bei einer langen Liste eine Zeile weniger sichtbar.
+   Die Zeile gehoert trotzdem nicht zur Liste darueber -- sie ist der Ausgang aus der App, und
+   ein Abstand, der groesser ist als der zwischen zwei Eintraegen (2px), sagt genau das. 32 ist
+   derselbe Wert wie um Quick Actions, also der Abstand, mit dem diese Leiste ihre Bereiche
+   trennt. */
+.usn-accwrap { flex: 0 0 auto; margin-top: 32px; }
 .usn-acc {
   width: 100%; display: flex; align-items: center; gap: 10px;
   padding: 8px; border: 0; border-radius: 12px; background: transparent;
