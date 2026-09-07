@@ -1,0 +1,84 @@
+<!doctype html><meta charset="utf-8">
+<title>Modellfarben fuer den Model Breakdown</title>
+<style>
+  :root{--bg:#fff;--fg:#1f1f1b;--mut:#6b6f78;--third:#9e9e9e;--line:#e4e2e4;--dunkel:#1c1c1f}
+  html,body{margin:0;background:var(--bg);color:var(--fg);
+    font:14px/1.5 Geist,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1000px;margin:0 auto;padding:30px 24px 70px}
+  h1{font-size:22px;font-weight:600;margin:0 0 6px;letter-spacing:-.01em}
+  h2{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;
+     color:var(--mut);margin:26px 0 10px}
+  p{margin:0 0 10px;max-width:78ch;color:var(--mut)}
+  .zwei{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .box{border:1px solid var(--line);border-radius:14px;padding:16px}
+  .box.d{background:var(--dunkel);border-color:#3e3e44;color:#e0e0e0}
+  .ringe{display:flex;gap:26px;align-items:center;flex-wrap:wrap}
+  .ringe figure{margin:0;text-align:center}
+  .ringe figcaption{font-size:10.5px;color:var(--third);margin-top:5px}
+  table{border-collapse:collapse;font-size:12.5px;width:100%;margin-top:8px}
+  td,th{padding:4px 10px 4px 0;text-align:left;font-weight:400;font-variant-numeric:tabular-nums}
+  th{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);font-weight:600}
+  .sw{display:inline-block;width:20px;height:20px;border-radius:6px;vertical-align:-5px;margin-right:7px}
+  code{font:12px/1.5 ui-monospace,Menlo,monospace;background:#f9f8f9;padding:1px 5px;border-radius:5px}
+  .box.d code{background:#232326}
+  .kopier{font:12px/1.7 ui-monospace,Menlo,monospace;background:#f9f8f9;border:1px solid var(--line);
+    border-radius:10px;padding:10px 12px;white-space:pre-wrap;margin-top:8px}
+</style>
+<div class="wrap">
+  <h1>Modellfarben fuer den Model Breakdown</h1>
+  <p>Gerechnet, nicht gewaehlt: <code>.farben_modelle.py</code>. Konstantes L und C in OKLCh
+  (dieselbe Rechnung wie die Linien-Skala), acht Farbtoene in gleichen Schritten von 45 Grad,
+  und ueber die Helligkeit und die Drehung wurde der kleinste Abstand zu ALLEN Farben maximiert,
+  die in derselben Komponente vorkommen: die sieben Zitationstyp-Toene des Typ-Splits, die
+  Familie von Abstufungen um die Farbe dieser Domain (die Balken der URL-Liste und die Linie)
+  und die zwei Trend-Toene. Das sind 51 Farben je Thema.</p>
+  <div id="raus">laeuft…</div>
+</div>
+<script src="_h_udd_modellfarben_daten.js"></script>
+<script>
+/* Nur zum Ansehen und zum Kopieren. Die Werte gehoeren in die Datenbank
+   (model_breakdown[].color_lightmode / .color_darkmode) und nicht in den Code -- deshalb steht
+   hier kein Einbau, sondern eine Tabelle. */
+var M = window.MODELLFARBEN;
+function ring(farben, r, br){
+  var u=2*Math.PI*r, teil=u/farben.length;
+  var s='<svg width="'+(r*2+br)+'" height="'+(r*2+br)+'" viewBox="0 0 '+(r*2+br)+' '+(r*2+br)+'">';
+  farben.forEach(function(f,i){
+    s+='<circle cx="'+(r+br/2)+'" cy="'+(r+br/2)+'" r="'+r+'" fill="none" stroke="'+f+
+       '" stroke-width="'+br+'" stroke-dasharray="'+(teil-1)+' '+(u-teil+1)+
+       '" stroke-dashoffset="'+(-teil*i)+'" transform="rotate(-90 '+(r+br/2)+' '+(r+br/2)+')"/>';
+  });
+  return s+"</svg>";
+}
+function tabelle(farben, nah, dunkel){
+  var h='<table><tr><th>Nr</th><th>Farbe</th><th>Hex</th><th>naechste Farbe der Komponente</th>'+
+        '<th>Abstand</th></tr>';
+  farben.forEach(function(f,i){
+    var n=nah[i]||["","",0];
+    h+='<tr><td>'+(i+1)+'</td><td><span class="sw" style="background:'+f+'"></span></td>'+
+       '<td><code>'+f+'</code></td>'+
+       '<td><span class="sw" style="width:12px;height:12px;border-radius:4px;background:'+n[1]+
+       '"></span><code>'+n[1]+'</code></td><td>'+n[2].toFixed(4)+'</td></tr>';
+  });
+  return h+'</table>';
+}
+document.getElementById("raus").innerHTML =
+  '<div class="zwei">' +
+    '<div class="box"><h2>Hell &mdash; color_lightmode</h2><div class="ringe">' +
+      '<figure>'+ring(M.hell,44,13)+'<figcaption>8 Modelle</figcaption></figure>' +
+      '<figure>'+ring(M.cite_hell,44,13)+'<figcaption>der Typ-Split daneben</figcaption></figure>' +
+    '</div>' + tabelle(M.hell, M.hellNah, false) + '</div>' +
+    '<div class="box d"><h2>Dunkel &mdash; color_darkmode</h2><div class="ringe">' +
+      '<figure>'+ring(M.dunkel,44,13)+'<figcaption>8 Modelle</figcaption></figure>' +
+      '<figure>'+ring(M.cite_dunkel,44,13)+'<figcaption>der Typ-Split daneben</figcaption></figure>' +
+    '</div>' + tabelle(M.dunkel, M.dunkelNah, true) + '</div>' +
+  '</div>' +
+  '<h2>Zum Kopieren</h2>' +
+  '<div class="kopier">color_lightmode   ' + M.hell.join("  ") + '\n' +
+  'color_darkmode    ' + M.dunkel.join("  ") + '</div>' +
+  '<p style="margin-top:14px">Die Reihenfolge ist die des Farbkreises, nicht eine Rangfolge. ' +
+  'Wichtig ist nur, dass ein Modell seine Nummer BEHAELT -- wandert eine Farbe, aendert sich ' +
+  'die Bedeutung eines Rings, den jemand schon gelesen hat. Acht statt sieben, damit ein ' +
+  'neuntes Modell nicht sofort eine neue Rechnung braucht.</p>';
+</script>
