@@ -382,11 +382,14 @@
 
     bar.innerHTML =
       /* ---- Markenzeile, die oberste Zeile der Leiste (07.09.) ----
-         NUR das Logo. Der Einklappknopf steht weiter in der Teamzeile darunter, und das ist der
-         Punkt: schaltet man die Marke ab, faellt diese Zeile ganz weg, und der Teamschalter steht
-         wieder oben links -- genau wie vorher. Ein Knopf in dieser Zeile haette sie am Leben
-         gehalten und einen leeren Streifen hinterlassen; so war es im ersten Anlauf, und so wurde
-         es gemeldet.
+         Das Logo und der Einklappknopf. Der Knopf gehoert in die OBERSTE Zeile, rechts in die
+         Ecke -- eine Seitenleiste, deren Einklappknopf in der zweiten Reihe sitzt, gibt es nicht.
+         Und weil die oberste Zeile je nach Einstellung eine andere ist, WANDERT er: ist die Marke
+         da, sitzt er hier; ist sie aus, haengt renderBrand ihn in die Teamzeile, die dann selbst
+         die oberste ist. Ein zweiter Knopf zum Ein- und Ausblenden waere ein zweiter Weg zur
+         gleichen Sache, und der Klick haengt ohnehin delegiert am Balken -- ein Umzug im DOM
+         kostet ihn nichts.
+         Im Markup steht er bei der Marke, weil das der Vorgabezustand ist (Branding an).
          Zwei Bildquellen: data-upstreem-logo fuers Helle, data-upstreem-logo-dark fuers Dunkle --
          ein Logo, das auf beiden Gruenden traegt, gibt es selten. Fehlt die passende, wird die
          andere genommen; fehlen beide, steht der Schriftzug als TEXT da. Kein SVG im Code: die
@@ -395,6 +398,7 @@
          in ask-mira. */
       '<div class="usn-brand" data-brand>' +
         '<span class="usn-brand-mark" data-brand-mark></span>' +
+        '<button class="up-iconbtn usn-toggle" type="button" data-toggle aria-label="Collapse sidebar"></button>' +
       '</div>' +
       '<div class="usn-top usn-pop" data-top>' +
         '<button class="usn-team" type="button" data-team-btn aria-haspopup="menu" aria-expanded="false">' +
@@ -402,7 +406,6 @@
           '<span class="usn-teamname usn-txt" data-team-name></span>' +
           '<span class="usn-sw usn-txt" data-team-sw></span>' +
         '</button>' +
-        '<button class="up-iconbtn usn-toggle" type="button" data-toggle aria-label="Collapse sidebar"></button>' +
         /* Die Panels bleiben IMMER im Layout (STYLEGUIDE 6) -- sichtbar wird nur .is-shown.
            Ein Panel, das per hidden erst beim Oeffnen erscheint, kann seinen Uebergang nicht
            laufen lassen. */
@@ -698,6 +701,11 @@
          sonst bliebe oben ein leerer Streifen stehen und der Teamschalter saesse weiter in der
          zweiten Zeile. */
       elBrand.classList.toggle("is-off", !an);
+      /* Und der Einklappknopf zieht mit in die Zeile, die dann die OBERSTE ist. Nur wenn er nicht
+         schon dort haengt: ein appendChild auf denselben Vater nimmt ihn aus dem DOM und setzt ihn
+         wieder ein, und das kostet bei einem Knopf mit Fokus den Fokus. */
+      var ziel = an ? elBrand : elTop;
+      if (elToggle && elToggle.parentNode !== ziel) ziel.appendChild(elToggle);
       /* Die Attributnamen stehen als LITERALE in getAttribute und nicht als Variable. Das ist
          keine Umstaendlichkeit: .contract_snapshot.py findet gelesene Attribute genau an diesem
          Muster, und mit einer Variablen sah es aus, als waere data-upstreem-logo aus dem Vertrag
