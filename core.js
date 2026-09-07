@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261023;
+  var BUILD = 20261024;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -4963,19 +4963,20 @@
      Kreuze mit Verlaufsarmen). Angefordert am 07.09.: an ihre Stelle das Flickering Grid von
      magicui -- "etwas spaceter als aktuell, deutlich smoother und etwas langsamer".
 
-     WAS MAGICUI MACHT, UND WAS HIER ANDERS IST. Dort bekommt jede Zelle in JEDEM Bild mit einer
-     Wahrscheinlichkeit (flickerChance, Vorgabe 0.3 je Sekunde und Zelle) SOFORT eine neue,
-     zufaellige Deckkraft. Das ist der Grund, warum es zappelt: die Zelle springt, sie faehrt
-     nicht. Hier hat jede Zelle einen IST- und einen SOLL-Wert; das Bild bewegt den Ist-Wert
-     exponentiell auf den Soll zu, und der Soll wechselt selten. Damit ist jede Aenderung eine
-     Fahrt ueber knapp eine Sekunde statt eines Sprungs in einem Bild.
-
-     DIE DREI ANGEFORDERTEN UNTERSCHIEDE, in Zahlen und gegen die Vorgaben von magicui:
-       spaceter   Raster 5px Kachel + 13px Luecke = 18px Abstand (magicui: 4 + 6 = 10px).
-                  Auf 1440x890 sind das 3920 Zellen statt 12816.
-       smoother   Fahrt statt Sprung, Zeitkonstante 300ms (95 Prozent nach etwa 900ms).
-       langsamer  0.22 Wechsel je Sekunde und Zelle statt 0.3 je BILD -- bei 30 Bildern in der
-                  Sekunde ist das der Faktor 40. Eine Zelle wechselt im Mittel alle 4.5s.
+     DAS MODELL IST BLINKEN, NICHT ZUFALLSLAUFEN (08.09. umgestellt). Zwei Anlaeufe davor:
+       magicui  gibt jeder Zelle in jedem Bild mit einer Wahrscheinlichkeit SOFORT eine neue,
+                zufaellige Deckkraft. Die Zelle springt -- das zappelt.
+       Anlauf 2 hatte einen Ist- und einen Soll-Wert und fuhr den Ist-Wert exponentiell auf den
+                Soll zu. Glatt, aber das Feld sieht damit IMMER halb erleuchtet aus: jede Zelle
+                steht auf einem beliebigen Zwischenwert, und der Eindruck ist eine statische
+                Textur mit langsamem Driften. Genau so gemeldet.
+     Jetzt hat jede Zelle einen RUHEWERT, auf dem sie steht -- damit ist das Raster als Raster zu
+     sehen -- und blinkt gelegentlich: sie faehrt auf einen Gipfel und zurueck. Die Kurve ist
+     sin^2 ueber die Blinkdauer, also mit Steigung NULL an beiden Enden: das Aufleuchten beginnt
+     und endet unmerklich, es gibt keinen Ansatz und keinen Abriss. Der Gipfel ist je Blinken
+     verschieden (halbe bis volle Deckkraft), sonst sieht es mechanisch aus.
+     Ein Blinken ist ein voller Schwung von der Ruhe zum Gipfel und zurueck -- also SICHTBAR,
+     anders als ein Zufallslauf, der sich im Mittelfeld bewegt.
 
      UND WARUM EIN CANVAS UND KEINE 3920 DIVS: 3920 Elemente mit einer eigenen Deckkraft sind
      3920 Ebenen fuer den Compositor, und die Seite hat schon vier Hintergrundebenen. Ein Canvas
@@ -5004,12 +5005,18 @@
     cfg = cfg || {};
     var KACHEL  = cfg.squareSize   == null ? 5    : cfg.squareSize;
     var LUECKE  = cfg.gap          == null ? 13   : cfg.gap;
-    var MAX     = cfg.maxOpacity   == null ? 0.25 : cfg.maxOpacity;
+    var MAX     = cfg.maxOpacity   == null ? 0.4  : cfg.maxOpacity;
+    /* Der Ruhewert: darauf steht eine Zelle, wenn sie nicht blinkt. Er ist der Grund, warum man
+       ein RASTER sieht und nicht nur vereinzelte Lichter -- und er ist leise, sonst ist das
+       Blinken darauf nicht mehr zu erkennen. */
+    var BASIS   = cfg.baseOpacity  == null ? 0.10 : cfg.baseOpacity;
     var TAKT    = cfg.fps          == null ? 30   : cfg.fps;
-    /* Wechsel je Sekunde und Zelle. Nicht je Bild: eine Rate je Bild haengt an der Bildzahl, und
-       dann laeuft dasselbe Raster auf einem 120Hz-Schirm doppelt so schnell. */
-    var RATE    = cfg.changesPerSecond == null ? 0.22 : cfg.changesPerSecond;
-    var TAU     = (cfg.fadeMs == null ? 1200 : cfg.fadeMs) / 3000;  /* Sekunden, 3 Tau = 95% */
+    /* Blinken je Sekunde und Zelle. Nicht je Bild: eine Rate je Bild haengt an der Bildzahl, und
+       dann blinkt dasselbe Raster auf einem 120Hz-Schirm doppelt so schnell. */
+    var RATE    = cfg.blinksPerSecond == null
+      ? (cfg.changesPerSecond == null ? 0.2 : cfg.changesPerSecond) : cfg.blinksPerSecond;
+    /* Dauer EINES Blinkens, hoch und zurueck. */
+    var DAUER   = (cfg.blinkMs == null ? (cfg.fadeMs == null ? 1100 : cfg.fadeMs) : cfg.blinkMs) / 1000;
     /* 32 STUFEN UND NICHT 12. Die Deckkraft wird gerundet, damit je Stufe EIN Pfad gefuellt
        werden kann statt je Zelle einer -- und die Stufenbreite ist damit die Untergrenze fuer
        "wie glatt kann eine Fahrt sein". Mit 12 Stufen war der groesste gemessene Sprung 11
@@ -5028,7 +5035,11 @@
     var ctx = cv.getContext("2d");
     if (!ctx) return { stop: function(){} };
 
-    var spalten = 0, zeilen = 0, ist = null, soll = null, dpr = 1, farbe = "#ffffff";
+    /* ist   die gemalte Deckkraft (nur zum Zeichnen)
+       phase  0 = ruht, sonst die Zeit seit dem Beginn des Blinkens in Sekunden
+       gipfel die Deckkraft, auf die DIESES Blinken zulaeuft */
+    var spalten = 0, zeilen = 0, ist = null, phase = null, gipfel = null,
+        dpr = 1, farbe = "#ffffff";
     var pixKachel = KACHEL, pixSchritt = KACHEL + LUECKE;
     /* Fuer das Zaehlsortieren beim Zeichnen: eine Reihenfolge und ein Zaehler je Stufe. Beide
        werden EINMAL angelegt und wiederverwendet -- neue Felder in jedem Bild waeren 30 mal je
@@ -5070,10 +5081,18 @@
       if (sp !== spalten || ze !== zeilen || !ist){
         spalten = sp; zeilen = ze;
         var n = spalten * zeilen;
-        ist = new Float32Array(n); soll = new Float32Array(n); ordnung = new Int32Array(n);
-        /* Der Anfangszustand ist ZUFAELLIG und nicht leer: ein Raster, das aus dem Nichts
-           auffaechert, ist eine Bewegung, die niemand bestellt hat. */
-        for (var i = 0; i < n; i++){ var v = Math.random() * MAX; ist[i] = v; soll[i] = v; }
+        ist = new Float32Array(n); phase = new Float32Array(n); gipfel = new Float32Array(n);
+        ordnung = new Int32Array(n);
+        /* Der Anfangszustand: alle auf dem Ruhewert, und ein Teil MITTEN in einem Blinken --
+           ein Raster, das erst nach dem Ansehen zu blinken anfaengt, sieht beim Aufbau aus wie
+           ein Standbild. */
+        for (var i = 0; i < n; i++){
+          ist[i] = BASIS;
+          if (Math.random() < Math.min(0.9, RATE * DAUER)){
+            phase[i] = Math.random() * DAUER;
+            gipfel[i] = BASIS + (MAX - BASIS) * (0.5 + 0.5 * Math.random());
+          }
+        }
       }
     }
     function zeichnen(){
@@ -5116,14 +5135,28 @@
       ctx.globalAlpha = 1;
     }
     function schritt(dt){
-      /* Neuer Soll-Wert: Poisson mit der Rate RATE je Sekunde. */
+      /* Beginn eines Blinkens: Poisson mit der Rate RATE je Sekunde und Zelle. */
       var p = 1 - Math.exp(-RATE * dt);
-      /* Annaeherung an den Soll: exponentiell, damit die Fahrt am Ende ausklingt statt zu
-         stoppen. Genau das ist der Unterschied zum Sprung in der Vorlage. */
-      var k = 1 - Math.exp(-dt / TAU);
+      var PI = Math.PI;
       for (var i = 0; i < ist.length; i++){
-        if (Math.random() < p) soll[i] = Math.random() * MAX;
-        ist[i] += (soll[i] - ist[i]) * k;
+        var ph = phase[i];
+        if (ph <= 0){
+          if (Math.random() < p){
+            phase[i] = 1e-6;
+            /* Halber bis voller Gipfel -- gleich hohe Blinker wirken wie ein Blinklicht. */
+            gipfel[i] = BASIS + (MAX - BASIS) * (0.5 + 0.5 * Math.random());
+          }
+          ist[i] = BASIS;
+          continue;
+        }
+        ph += dt;
+        if (ph >= DAUER){ phase[i] = 0; ist[i] = BASIS; continue; }
+        phase[i] = ph;
+        /* sin^2: bei 0 und bei DAUER ist der Wert 0 UND die Steigung 0. Damit hat das
+           Aufleuchten keinen Ansatz und das Verloeschen keinen Abriss -- der Grund, warum es
+           ruhig wirkt und nicht wie ein Schalter. */
+        var f = Math.sin(PI * ph / DAUER);
+        ist[i] = BASIS + (gipfel[i] - BASIS) * f * f;
       }
     }
     function bild(jetzt){
@@ -5160,7 +5193,11 @@
         sichtbar: sichtbar, tabVerdeckt: !!document.hidden,
         zellen: spalten * zeilen, spalten: spalten, zeilen: zeilen,
         kachelPx: pixKachel, abstandPx: pixSchritt, geraetefaktor: dpr,
-        farbe: farbe, maxDeckkraft: MAX, wechselJeSekunde: RATE, fahrtMs: TAU * 3000
+        farbe: farbe, maxDeckkraft: MAX, ruheDeckkraft: BASIS,
+        blinkenJeSekunde: RATE, blinkMs: DAUER * 1000,
+        /* Wie viele Zellen gerade blinken -- die Zahl, an der "es bewegt sich" haengt. */
+        blinkenJetzt: (function(){ var n = 0; if (phase) for (var i = 0; i < phase.length; i++)
+          if (phase[i] > 0) n++; return n; })()
       };
     }
 

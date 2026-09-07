@@ -1,5 +1,5 @@
 <!doctype html><meta charset="utf-8">
-<title>Flimmerraster: Abstand, Glaette, Geschwindigkeit, beide Themen</title>
+<title>Blinkende Quadrate: Ruhewert, Funkeln, Glaette, beide Themen</title>
 <pre id="out" style="font:12px/1.55 ui-monospace,Menlo,monospace;padding:12px;white-space:pre-wrap"></pre>
 <div id="buehne"></div>
 <script>
@@ -81,8 +81,8 @@ Promise.all([hol("core.css"), hol("core.js"), hol("onboarding-page.css")]).then(
     /* Die ANGEFORDERTEN Zahlen (07.09., woertlich aus dem Aufruf des Nutzers):
        squareSize 3, gridGap 20, flickerChance 0.05, maxOpacity 0.4. Dazu fadeMs -- das ist das
        "smoother", magicui hat dafuer keine Angabe, weil es dort keine Fahrt gibt. */
-    var kit=UC.makeFlickerGrid(host, { squareSize:3, gap:20, changesPerSecond:0.4,
-      fadeMs:900, maxOpacity:0.4, fps:30 });
+    var kit=UC.makeFlickerGrid(host, { squareSize:3, gap:20, blinksPerSecond:0.2,
+      blinkMs:1100, baseOpacity:0.10, maxOpacity:0.4, fps:30 });
     var cv=host.querySelector("canvas");
 
     log("1  Es malt ueberhaupt");
@@ -103,7 +103,18 @@ Promise.all([hol("core.css"), hol("core.js"), hol("onboarding-page.css")]).then(
       for (var i=0;i<a.length;i++) a[i]=b[i*4+3];
       return a;
     }
+    /* UEBER EINE SEKUNDE MESSEN, nicht im ersten Bild. Beim Aufbau stehen fast alle Zellen auf
+       dem Ruhewert -- der erste Anlauf las darum "groesste Deckkraft 28" und meldete, das Kit
+       halte die angeforderten 0.4 nicht ein. Der Gipfel entsteht MITTEN in einem Blinken, also
+       muss die Messung ein paar Bilder mitlaufen. */
+    bilder(30, 34);
     var feld=alphaFeld(cv);
+    var maxUeberZeit=0;
+    for (var mz=0; mz<8; mz++){
+      bilder(4, 34);
+      var f2=alphaFeld(cv);
+      for (var iz=0; iz<f2.length; iz++) if (f2[iz]>maxUeberZeit) maxUeberZeit=f2[iz];
+    }
     var gefuellt=0; for (var i=0;i<feld.length;i++) if (feld[i]>0) gefuellt++;
     log("      gefuellte Pixel: " + gefuellt + " von " + feld.length +
         " (" + (100*gefuellt/feld.length).toFixed(1) + "%)  -- ob das die richtige Zahl " +
@@ -113,10 +124,15 @@ Promise.all([hol("core.css"), hol("core.js"), hol("onboarding-page.css")]).then(
        Prozent, nicht 7.7. Der erste Anlauf hat 7.7 erwartet und die Rundung als Fehler
        gemeldet -- die Rundung ist aber der Grund, warum die Kanten hart sind. */
     var lwAll=null;
-    var maxA=0; for (var im=0;im<feld.length;im++) if (feld[im]>maxA) maxA=feld[im];
-    log("      groesste gemalte Deckkraft: " + maxA + " von 255  (angefordert 0.4 -> 102)");
+    var maxA=maxUeberZeit;
+    log("      groesste gemalte Deckkraft in einer Sekunde: " + maxA +
+        " von 255  (angefordert 0.4 -> 102)");
+    var minA=255; for (var im2=0;im2<feld.length;im2++) if (feld[im2]>0 && feld[im2]<minA) minA=feld[im2];
+    log("      kleinste gemalte Deckkraft: " + minA + " von 255  (Ruhewert 0.10 -> 26)");
     pruef("es malt mit hoechstens 0.4 Deckkraft, wie angefordert",
       maxA <= 103 && maxA >= 88);
+    pruef("und der Ruhewert traegt das Raster (0.10 -> etwa 26)",
+      minA >= 20 && minA <= 32);
     log("");
 
     log("2  Abstand und Kachelgroesse, aus den Pixeln gelesen");
@@ -221,16 +237,20 @@ Promise.all([hol("core.css"), hol("core.js"), hol("onboarding-page.css")]).then(
        Zusammen 7.1. Der erste Anlauf hatte 12 Stufen und damit 5.3 Alphastufen je Stufe -- die
        Messung meldete 11, und die Schranke von 7 war falsch, nicht die Messung. Genau deshalb
        stehen jetzt 32 Stufen im Kit. Die Vorlage setzt in EINEM Bild bis zu 0.3, also 76. */
-    var tau=0.9/3, dt=1/30, stufen=48;
-    var schranke=0.4*255*((1-Math.exp(-dt/tau)) + 1/stufen);
+    /* Die Schranke fuer EIN BLINKEN. Die Kurve ist sin^2 ueber die Blinkdauer, ihre groesste
+       Steigung ist Amplitude * PI / Dauer -- bei 0.3 Amplitude (Gipfel 0.4 minus Ruhe 0.10) und
+       1.1s also 0.856 je Sekunde, in einem Bild bei 30 Bildern 0.0285, mal 255 also 7.3
+       Alphastufen. Dazu eine Rundungsstufe (0.4/48 * 255 = 2.1). */
+    var dt=1/30, stufen=48, dauer=1.1, amp=0.4-0.10;
+    var schranke=255*(amp*Math.PI/dauer*dt) + 0.4*255/stufen;
     log("      gerechnete Schranke: " + schranke.toFixed(1) + " Alphastufen" +
-        "  (Fahrt " + (0.4*255*(1-Math.exp(-dt/tau))).toFixed(1) +
+        "  (steilste Stelle des Blinkens " + (255*(amp*Math.PI/dauer*dt)).toFixed(1) +
         " + eine Rundungsstufe " + (0.4*255/stufen).toFixed(1) + ")");
     pruef("und liegt unter der gerechneten Schranke", uns.max <= Math.ceil(schranke));
     /* Und der Fall mit ausgelassenem Bild, damit auch er eine Zahl hat statt eine Ueberraschung
        zu sein: doppeltes dt, also doppelter Schritt. */
     var unsLang=sprungReihe(cv, 10, 67);
-    var schranke2=0.4*255*((1-Math.exp(-2*dt/tau)) + 1/stufen);
+    var schranke2=255*(amp*Math.PI/dauer*2*dt) + 0.4*255/stufen;
     log("      mit ausgelassenem Bild (dt doppelt): groesster Sprung " + unsLang.max +
         ", Schranke " + schranke2.toFixed(1));
     pruef("auch mit ausgelassenem Bild bleibt es unter seiner Schranke",
@@ -274,6 +294,39 @@ Promise.all([hol("core.css"), hol("core.js"), hol("onboarding-page.css")]).then(
     pruef("unser Raster IST eine Animation: mehr als 15 Prozent der Punkte aendern sich je Sekunde",
       b1.anteil > 15);
     pruef("und es bewegt sich trotzdem weniger als die Vorlage", b1.mittel < b2.mittel);
+    log("");
+
+    log("4b  Ist es ein BLINKEN oder ein Zufallslauf?");
+    /* Der Unterschied ist messbar und nicht Geschmack: beim Blinken RUHT eine Zelle die meiste
+       Zeit auf dem Ruhewert und faehrt selten hoch -- die Verteilung der Deckkraft ist also
+       stark am unteren Ende geballt. Beim Zufallslauf (Anlauf 2 und die Vorlage) sitzt jede
+       Zelle auf einem beliebigen Zwischenwert, die Verteilung ist flach. Genau daran lag
+       "sieht aus wie eine statische Textur".
+       Gemessen wird der Anteil der Punkte, die auf dem Ruhewert stehen (Ruhe +/- 3 Alphastufen).
+       Und die Vorlage wird mitgemessen: sie MUSS hier durchfallen, sonst prueft die Zahl nichts. */
+    function anteilRuhe(cvx, ruheAlpha){
+      var a=alphaFeld(cvx), punkte=0, ruhe=0;
+      for (var i=0;i<a.length;i+=3){
+        if (a[i]<=0) continue;
+        punkte++; if (Math.abs(a[i]-ruheAlpha) <= 3) ruhe++;
+      }
+      return punkte ? 100*ruhe/punkte : 0;
+    }
+    var ruheAlpha=Math.round(0.10*255);
+    var rUns=anteilRuhe(cv, ruheAlpha);
+    var rVgl=anteilRuhe(cv2, ruheAlpha);
+    log("      Anteil der Punkte auf dem Ruhewert (" + ruheAlpha + " von 255, +/- 3):");
+    log("        unser Raster " + rUns.toFixed(1) + "%   <- die meisten ruhen, einzelne funkeln");
+    log("        die Vorlage  " + rVgl.toFixed(1) + "%   <- flach verteilt, kein Ruhewert");
+    pruef("die Mehrheit der Punkte steht auf dem Ruhewert (ueber 60 Prozent)", rUns > 60);
+    pruef("und die Vorlage tut das NICHT -- die Zahl unterscheidet also die zwei Modelle",
+      rVgl < 20);
+    var iB=kit.info();
+    log("      info(): " + iB.blinkenJetzt + " von " + iB.zellen + " Zellen blinken gerade (" +
+        (100*iB.blinkenJetzt/iB.zellen).toFixed(1) + "%),  gerechnet " +
+        (100*Math.min(1, iB.blinkenJeSekunde*iB.blinkMs/1000)).toFixed(0) + "%");
+    pruef("es blinken so viele Zellen wie gerechnet",
+      Math.abs(100*iB.blinkenJetzt/iB.zellen - 100*iB.blinkenJeSekunde*iB.blinkMs/1000) < 12);
     log("");
 
     log("5  Farbe und Gewicht je Thema");
@@ -323,7 +376,8 @@ Promise.all([hol("core.css"), hol("core.js"), hol("onboarding-page.css")]).then(
       var i2=kit.info();
       log("      Bilder " + i1.bilder + " -> " + i2.bilder + "   Zellen " + i2.zellen +
           "   Kachel " + i2.kachelPx + "px Abstand " + i2.abstandPx + "px (Puffer)" +
-          "   Wechsel/s " + i2.wechselJeSekunde + "   Fahrt " + i2.fahrtMs + "ms");
+          "   Blinken/s " + i2.blinkenJeSekunde + "   Blinkdauer " + i2.blinkMs + "ms" +
+          "   Ruhe " + i2.ruheDeckkraft + " Gipfel " + i2.maxDeckkraft);
       pruef("der Bildzaehler waechst -- daran ist von aussen zu sehen, dass es laeuft",
         i2.bilder > i1.bilder);
       pruef("und info() nennt kein Hindernis",

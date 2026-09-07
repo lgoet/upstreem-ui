@@ -62,8 +62,8 @@ Promise.all([hol("core.css"), hol("core.js")]).then(function(t){
     var UC=window.UpstreemCore;
     if (!UC || !UC.makeFlickerGrid) return;
     [].forEach.call(document.querySelectorAll("[data-f]"), function(h){
-      UC.makeFlickerGrid(h, { squareSize:3, gap:20, changesPerSecond:0.4, fadeMs:900,
-        maxOpacity:0.4, fps:30 });
+      UC.makeFlickerGrid(h, { squareSize:3, gap:20, blinksPerSecond:0.2, blinkMs:1100,
+        baseOpacity:0.10, maxOpacity:0.4, fps:30 });
     });
   }, 300);
 });

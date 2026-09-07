@@ -35,7 +35,11 @@
      auf eine Reaktion, dort sieht jemand der Seite beim Ankommen zu. Wortgleich zu --uau-in. */
   --uob-in: 420ms;
   --uob-ease: cubic-bezier(.4, 0, .2, 1);
-  --uob-hover: #f7f8fa;
+  /* Der Hoverton kommt aus der Leiter und steht EINMAL. Hier stand #f7f8fa -- ein Grau mit
+     Blaustich aus der Zeit vor Linears Leiter, und der dunkle Zweig unten setzte laengst
+     --vc-heading-bg. Zwei Toene fuer eine Bedeutung, und einer davon von Hand. Jetzt beide aus
+     demselben Token: #f9f8f9 im Hellen, #232326 im Dunkeln. */
+  --uob-hover: var(--vc-heading-bg);
   /* Breite je Schritt. Ein Formular liest sich in einer schmalen Spalte besser, eine Liste
      braucht mehr, drei Preiskarten am meisten. Der Wechsel laeuft ueber dieselben 200ms wie
      alles andere, deshalb eine Variable statt drei Klassen mit festen Breiten. */
@@ -51,7 +55,13 @@
   height: 100vh;
   height: 100dvh;
   display: flex; flex-direction: column;
-  background: var(--vc-bg);
+  /* --up-surface UND NICHT --vc-bg. Das ist der Seitengrund des Hauses; --vc-bg ist der Grund
+     einer KARTE. Im Hellen sind beide weiss, im Dunkeln nicht: seit der Umstellung auf Linears
+     Leiter liegt die Seite auf #101114 und die Karten darauf auf #1c1c1f. Hier stand --vc-bg,
+     also lagen Seite und Karten auf demselben Ton -- flach, und genau das war gemeldet als "da
+     sieht noch alles aus wie vor der Umstellung". Die Felder, Listenzeilen und Preiskarten in
+     dieser Datei behalten ihr --vc-bg und heben sich damit von selbst ab. */
+  background: var(--up-surface);
   color: var(--vc-text);
   font-family: inherit;
   -webkit-font-smoothing: antialiased;
@@ -66,7 +76,6 @@
 /* Nur noch die Pseudo-Elemente: box-sizing wird NICHT geerbt, ::before/::after brauchen es
    eigens. Der Teil fuer die Elemente selbst kam doppelt zu .up-root * aus core (s. dort). */
 .uob-root *::before, .uob-root *::after { box-sizing: border-box; }
-.uob-root[data-theme="dark"] { --uob-hover: var(--vc-heading-bg); }
 
 /* ---------- Weltkarte im Hintergrund ----------
    Sie steht auf dem Formular, im Tor und im ERSTEN Ladebild -- ueberall dort, wo der Bildschirm
@@ -612,7 +621,12 @@
    Karten und ohne Toenung liest sich ein dunklerer Kasten als Loch statt als Auflage. Hier,
    wo er ueber blankem Grund schwebt, muss er nach oben abheben.
    Im Hellen ist der Seitengrund schon Weiss -- heller geht nicht, dort traegt der Rahmen. */
-.uob-root[data-theme="dark"] .uob-ddmenu { background: #202020; border-color: #383838; }
+/* Flaeche und Rahmen einer SCHWEBENDEN SCHICHT, aus der Leiter: --up-menu-bg (#232326) und
+   --up-menu-border (#3e3e44). Hier standen #202020 und #383838 -- beide von Hand und beide aus
+   der Zeit vor der Umstellung; #202020 war dunkler als der Grund einer Karte und hob sich damit
+   in die falsche Richtung ab. Gilt fuer BEIDE Themen, im Hellen sind es #ffffff und #dcdbdd,
+   also genau das, was jedes andere Menue der App traegt. */
+.uob-ddmenu { background: var(--up-menu-bg); border-color: var(--up-menu-border); }
 /* Der geschlossene Kasten hat keine HOEHE -- er bleibt aber im DOM und im Layout, display wird
    nie umgeschaltet. Das ist die Regel aus STYLEGUIDE §6, und sie gilt hier unveraendert: die
    Appear-Animation (opacity + Scale) laeuft wie bei jedem anderen Dropdown der App.
@@ -1261,7 +1275,10 @@
   width: 320px; max-width: calc(100% - 24px);
   max-height: calc(100% - 130px);
   display: flex; flex-direction: column;
-  border: 1px solid var(--vc-border); border-radius: 14px;
+  /* Der Rahmen einer schwebenden Schicht, nicht der einer Karte: --up-menu-border. Dieselbe
+     Korrektur wie an den sechs anderen Stellen der App, die eine eigene Schicht aufmachen --
+     auf einem dunklen Grund loest sich ein Kartenrahmen auf. */
+  border: 1px solid var(--up-menu-border); border-radius: 14px;
   background: var(--vc-bg);
   /* Derselbe Schatten wie der Drawer der Hauptapp (uo-drawer, ohne Punkt geschrieben: .contract_snapshot.py
      sucht Klassennamen im Rohtext und nimmt sonst auch die aus Kommentaren in den Vertrag

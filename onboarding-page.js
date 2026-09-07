@@ -813,21 +813,25 @@
          Die FARBE steht nicht hier: rgb(0,0,0) waere im Dunkeln unsichtbar. Sie kommt aus der
          Kaskade (color an .up-bgart-flimmer, dort --vc-text) und dreht sich mit dem Thema --
          im Hellen also genau das angeforderte Schwarz. */
+      /* BLINKENDE QUADRATE (08.09. angefordert, nach dem Vorbild "Blinking Squares" von React
+         Bits Pro: ein Raster kleiner Quadrate, die leise funkeln). Installiert werden kann das
+         Original hier nicht -- es ist React plus Tailwind aus einer bezahlten Registry, und
+         diese Bibliothek ist Vanilla-JS/CSS fuer Bubble. Nachgebaut ist das VERHALTEN: ein
+         Ruhewert, auf dem das Raster steht, und einzelne Quadrate, die auf einen Gipfel fahren
+         und zurueck. Die Kurve steht im Kit.
+         OHNE FARBE, wie bestellt: die Farbe ist --vc-text, also im Hellen Schwarz und im
+         Dunkeln die dunkle Textfarbe -- kein Farbton, nur Helligkeit. */
       if (elFlimmer) UC.makeFlickerGrid(elFlimmer, {
         squareSize: 3, gap: 20,       /* 23px Abstand -- wie angefordert */
-        /* DIESE ZWEI ZAHLEN SIND NICHT DIE ANGEFORDERTEN, und der Grund ist gerechnet:
-           flickerChance 0.05 heisst bei magicui "eine Zelle wechselt im Mittel alle 20
-           Sekunden". Dort ist der Wechsel ein SPRUNG, also sieht man 118 Blitze je Sekunde im
-           Feld. Hier faehrt die Zelle -- und mit einer Fahrt von 2.2s waren nur 11 Prozent der
-           Zellen ueberhaupt in Bewegung, jede mit 0.5 Alphastufen je Bild. Das liegt unter der
-           Wahrnehmungsschwelle: gemeldet als "das ist ein statisches Bild", und die Meldung war
-           richtig.
-           0.4 je Sekunde und 900ms Fahrt: 36 Prozent der Zellen sind immer in Bewegung, 940
-           Wechsel je Sekunde, groesster Sprung 12.9 Alphastufen je Bild -- immer noch ein
-           Achtel von magicuis 102, aber sichtbar. Der Prueftand prueft jetzt BEIDE Richtungen:
-           glatt genug UND sichtbar genug. */
-        changesPerSecond: 0.4,
-        fadeMs: 900,
+        /* Der Ruhewert traegt das Raster, der Gipfel ist das Funkeln. 0.4 ist die
+           angeforderte Deckkraft und hier der GIPFEL eines Blinkens; 0.10 ist der Ton, auf dem
+           eine Zelle wartet -- ohne ihn saehe man einzelne Lichter statt eines Rasters.
+           Ein Blinken alle 5 Sekunden je Zelle, 1.1s hoch und zurueck: auf 1440x890 sind das
+           rund 470 Blinken je Sekunde im Feld und 22 Prozent der Zellen gleichzeitig in
+           Bewegung. "Leise funkeln", nicht blinken wie eine Ampel. */
+        blinksPerSecond: 0.2,
+        blinkMs: 1100,
+        baseOpacity: 0.10,
         maxOpacity: 0.4, fps: 30
       });
     }

@@ -1,0 +1,158 @@
+<!doctype html><meta charset="utf-8">
+<title>Onboarding: liegen die Farben auf der neuen Leiter?</title>
+<pre id="out" style="font:12px/1.55 ui-monospace,Menlo,monospace;padding:12px;white-space:pre-wrap"></pre>
+<div id="buehne"></div>
+<script>
+/* Gemeldet am 08.09.: "bei onboarding die Farben ueberall auf meine neuen Farben aendern, da
+   sieht noch alles aus wie vor der Umstellung."
+
+   ZUERST DIE BESTANDSAUFNAHME, und die ist knapp: onboarding-page.css hatte VIER Stellen mit
+   Farben von Hand. Alles andere in der Datei liest die Tokens (--vc- und --up-), ist also mit
+   der Umstellung von selbst mitgegangen.
+   (Und ja, hier stand einmal "--vc-*" mit einem Schrägstrich dahinter: das beendet den
+   Kommentar mitten im Satz, und die Datei lief nicht mehr. Dieselbe Falle, die .scan_comments.py
+   fuer CSS abfaengt -- in JavaScript gilt sie genauso.)
+   Die vier:
+       1. der Seitengrund stand auf --vc-bg          -- das ist der Grund einer KARTE, nicht der
+                                                        einer Seite. Im Dunkeln lagen Seite und
+                                                        Karten damit auf demselben Ton (#1c1c1f),
+                                                        und genau das sieht flach aus.
+       2. --uob-hover: #f7f8fa                       -- ein Grau mit Blaustich aus der Zeit vor
+                                                        Linears Leiter, und im dunklen Zweig
+                                                        stand laengst --vc-heading-bg: zwei Toene
+                                                        fuer eine Bedeutung.
+       3. .uob-ddmenu dunkel: #202020 / #383838      -- von Hand, und #202020 war DUNKLER als
+                                                        eine Karte, hob sich also falsch ab.
+       4. .uob-help: Rahmen aus --vc-border          -- eine schwebende Schicht braucht die
+                                                        kraeftigere Kante, wie die sechs anderen
+                                                        Schichten der App seit dem 07.09.
+
+   GEPRUEFT WIRD GEGEN DIE LEITER, nicht gegen eine Wunschliste: die Sollwerte werden aus den
+   Tokens der Wurzel GELESEN (--up-surface, --vc-heading-bg, --up-menu-bg, --up-menu-border).
+   Damit gilt der Prueftand weiter, wenn die Leiter das naechste Mal bewegt wird -- eine
+   eingetippte #101114 waere beim naechsten Dreh falsch, ohne dass es jemand merkt.
+   Und die ALTEN Werte werden ausdruecklich gesucht: sie duerfen im geladenen Stylesheet nicht
+   mehr vorkommen. */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function ja(b){ return b ? "RICHTIG" : "FALSCH "; }
+var gut=0, schlecht=0;
+function pruef(t,b){ if(b) gut++; else schlecht++; log("   "+ja(b)+" "+t); }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function warte(ms){ return new Promise(function(ok){ setTimeout(ok,ms); }); }
+var DUNKEL=location.search.indexOf("dark")>=0;
+
+Promise.all([hol("core.css"), hol("core.js"), hol("onboarding-page.css")]).then(function(t){
+  var f=document.createElement("iframe");
+  f.style.cssText="width:900px;height:420px;border:1px solid #ccc;display:block";
+  document.getElementById("buehne").appendChild(f);
+  var d=f.contentDocument, v=f.contentWindow;
+  d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0'></body></html>"); d.close();
+  try { v.localStorage.clear(); v.localStorage.setItem("pref_theme", DUNKEL?"dark":"light"); } catch(e){}
+  [t[0], t[2]].forEach(function(c){ var st=d.createElement("style"); st.textContent=c; d.head.appendChild(st); });
+  /* HOVER OHNE MAUS: jedes ":hover" wird durch eine Klasse gleicher Spezifitaet ersetzt --
+     dieselbe Technik wie in _h_upt_zeilenlinie.html und _h_dd_hover.html. */
+  var PROBE="uobHoverProbe";
+  var st3=d.createElement("style"); st3.textContent=t[2].split(":hover").join("."+PROBE);
+  d.head.appendChild(st3);
+  var r=d.createElement("div");
+  r.className="up-root uob-root"; r.setAttribute("data-theme", DUNKEL?"dark":"light");
+  r.setAttribute("data-instance","fb"); r.setAttribute("data-cdn-pin","t");
+  /* Genau die Klassen, um die es geht -- kein nachgebautes Markup, sondern die echten. */
+  r.innerHTML =
+    /* Die Klassen sind aus der Datei GELESEN und nicht erfunden: .uob-link traegt den Hover
+       ueber --uob-hover (dieselbe Zeile wie .uob-themebtn, .uob-back und vier weitere),
+       .uob-item ist eine Listenzeile mit eigenem Grund, .uob-ddmenu das Dropdown und .uob-help
+       die schwebende Tafel. Der erste Anlauf hat eine .uob-card gebaut, die es in der Datei
+       nicht gibt -- gemessen rgba(0,0,0,0), also nichts. */
+    '<div class="uob-mid">' +
+      '<a class="uob-link" data-ruhe href="#">ruht</a>' +
+      '<a class="uob-link ' + PROBE + '" data-hover href="#">ueberfahren</a>' +
+      '<div class="uob-item" data-card>eine Listenzeile</div>' +
+      '<div class="uob-field"><input class="uob-input" value="Feld"></div>' +
+      '<div class="uob-ddmenu is-on" data-dd style="position:static;opacity:1;display:block">' +
+        '<div class="uob-ddname">Eintrag</div></div>' +
+    '</div>' +
+    '<div class="uob-help is-on" data-help>Hilfe</div>';
+  d.body.appendChild(r);
+  var sc=d.createElement("script"); sc.textContent=t[1]; d.head.appendChild(sc);
+
+  return warte(700).then(function(){
+    if (v.setUpstreemTheme) v.setUpstreemTheme(DUNKEL?"dark":"light");
+    return warte(300);
+  }).then(function(){
+    function tok(name){ return v.getComputedStyle(r).getPropertyValue(name).trim(); }
+    function hexRgb(h){
+      h=h.replace("#","");
+      if (h.length===3) h=h.split("").map(function(x){return x+x;}).join("");
+      return "rgb(" + parseInt(h.slice(0,2),16) + ", " + parseInt(h.slice(2,4),16) + ", " +
+             parseInt(h.slice(4,6),16) + ")";
+    }
+    function cs(el,p){ return v.getComputedStyle(el).getPropertyValue(p).trim(); }
+    log("THEMA: " + (DUNKEL?"dunkel":"hell") + "   (mit ?dark das andere)");
+    log("Die Leiter an der Wurzel: --up-surface " + tok("--up-surface") +
+        "   --vc-bg " + tok("--vc-bg") + "   --vc-heading-bg " + tok("--vc-heading-bg") +
+        "   --up-menu-bg " + tok("--up-menu-bg") + "   --up-menu-border " + tok("--up-menu-border"));
+    log("");
+
+    log("1  Der Seitengrund ist ein SEITENgrund");
+    var grund=cs(r,"background-color");
+    log("      Wurzel " + grund + "   Soll --up-surface " + hexRgb(tok("--up-surface")));
+    pruef("die Seite liegt auf --up-surface", grund === hexRgb(tok("--up-surface")));
+    var karte=r.querySelector("[data-card]");
+    var kGrund=cs(karte,"background-color");
+    log("      eine Listenzeile darauf: " + kGrund + "   Soll --vc-bg " + hexRgb(tok("--vc-bg")));
+    if (DUNKEL){
+      pruef("und die Flaechen darauf heben sich ab (im Dunkeln zwei Toene)",
+        kGrund === hexRgb(tok("--vc-bg")) && kGrund !== grund);
+    } else {
+      pruef("im Hellen sind Seite und Karte beide weiss (so ist die Leiter)",
+        grund === "rgb(255, 255, 255)");
+    }
+    log("");
+
+    log("2  Der Hoverton kommt aus der Leiter");
+    var hv=cs(r.querySelector("[data-hover]"),"background-color");
+    var ruhe=cs(r.querySelector("[data-ruhe]"),"background-color");
+    log("      ruht " + ruhe + "   ueberfahren " + hv +
+        "   Soll --vc-heading-bg " + hexRgb(tok("--vc-heading-bg")));
+    pruef("der Hover traegt --vc-heading-bg", hv === hexRgb(tok("--vc-heading-bg")));
+    pruef("und unterscheidet sich vom Ruhezustand", hv !== ruhe);
+    log("");
+
+    log("3  Das Dropdown ist eine schwebende Schicht");
+    var dd=r.querySelector("[data-dd]");
+    log("      Flaeche " + cs(dd,"background-color") + "   Soll " + hexRgb(tok("--up-menu-bg")));
+    log("      Rahmen  " + cs(dd,"border-top-color") + "   Soll " + hexRgb(tok("--up-menu-border")));
+    pruef("Flaeche aus --up-menu-bg", cs(dd,"background-color") === hexRgb(tok("--up-menu-bg")));
+    pruef("Rahmen aus --up-menu-border", cs(dd,"border-top-color") === hexRgb(tok("--up-menu-border")));
+    log("");
+
+    log("4  Die Hilfetafel ebenso");
+    var hp=r.querySelector("[data-help]");
+    log("      Rahmen " + cs(hp,"border-top-color") + "   Soll " + hexRgb(tok("--up-menu-border")));
+    pruef("Rahmen aus --up-menu-border", cs(hp,"border-top-color") === hexRgb(tok("--up-menu-border")));
+    log("");
+
+    log("5  GEGENPROBE: die alten Werte stehen nicht mehr in der Datei");
+    /* Nicht am geladenen Stylesheet, sondern am QUELLTEXT -- Kommentare zaehlen dabei nicht mit,
+       denn dort DUERFEN die alten Werte stehen (sie erklaeren, was ersetzt wurde). */
+    var ohneKommentare=t[2].replace(/\/\*[\s\S]*?\*\//g, "");
+    [["#f7f8fa","der Hoverton von Hand"],["#202020","die Menueflaeche von Hand"],
+     ["#383838","der Menuerahmen von Hand"]].forEach(function(x){
+      var da=ohneKommentare.toLowerCase().indexOf(x[0]) >= 0;
+      pruef(x[0] + " (" + x[1] + ") ist raus", !da);
+    });
+    /* Und die Zaehlung, damit die Aussage "alles andere liest Tokens" eine Zahl hat. */
+    var hexAlle=(ohneKommentare.match(/#[0-9a-fA-F]{3,8}\b/g)||[]);
+    log("      Hexwerte im Regelwerk (ohne Kommentare): " + hexAlle.length +
+        (hexAlle.length ? "  -> " + hexAlle.join(" ") : ""));
+    /* Was uebrig bleiben DARF: die Rueckfaelle hinter var(--vc-neg/--vc-pos) und die zwei
+       hellen Textfarben der Logokachel -- die sind ausdruecklich eine eigene, helle Insel. */
+    pruef("es bleiben nur die begruendeten Rueckfaelle (hoechstens 8)", hexAlle.length <= 8);
+    log("");
+    log((schlecht ? "==> FALSCH  " : "==> RICHTIG ")+gut+" von "+(gut+schlecht)+" Pruefungen");
+    log("FERTIG");
+  });
+}).catch(function(e){ log("ABBRUCH "+e+"\n"+(e&&e.stack||"")); });
+</script>
