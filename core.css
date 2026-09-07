@@ -3874,13 +3874,35 @@
    18), sie bedecken also 1.7 Prozent der Flaeche statt 7.7 -- deutlich weniger Farbe insgesamt,
    bei kraeftigeren einzelnen Punkten. Wird es im Dunkeln zu laut, ist es EINE Zeile hier.
 
-   DIE MASKE haelt die Mitte frei. Dort steht der Inhalt der Seite, und ein Raster hinter einer
+   DIE MASKE HAELT DIE MITTE FREI. Dort steht der Inhalt der Seite, und ein Raster hinter einer
    Ueberschrift ist kein Hintergrund mehr, sondern Unruhe. Aussen voll, innen nichts, mit einem
-   langen Verlauf dazwischen -- eine harte Kante waere als Kreis zu sehen. */
+   langen Verlauf dazwischen -- eine harte Kante waere als Kreis zu sehen.
+
+   ZWEIMAL GEAENDERT, und die Zahlen sagen warum. Zuerst stand hier
+       ellipse 58% 54%, transparent 0%, #000 100%
+   also ein Verlauf, der SOFORT beim Mittelpunkt anfaengt. Auf 1440x890 heisst das: am Rand des
+   Textblocks (240px von der Mitte) liegt die Maske schon bei 29 Prozent, es stehen also Punkte
+   mit knapp einem Drittel Staerke direkt hinter der Ueberschrift. Im Dunkeln fallen die kaum
+   auf, im Hellen sind es dunkle Punkte auf Weiss -- gemeldet als "wirkt gerade im Lightmode
+   noch etwas unruhig mittig im Bild".
+   Jetzt
+       ellipse 74% 70%, transparent 0%, transparent 30%, #000 100%
+   Der erste Teil ist groesser (Radien 1066 x 623 statt 835 x 481), und der zweite ist neu: die
+   ersten 30 Prozent sind VOLLSTAENDIG frei. Auf 1440x890 sind das 320px zu den Seiten und 187px
+   nach oben und unten -- der Textblock (480px breit) liegt damit ganz in der freien Zone, und
+   der Verlauf beginnt erst dahinter. Am Rand der Karte (480px von der Mitte) steht die Maske
+   bei 21 Prozent statt bei 57.
+
+   EINE Geometrie fuer beide Themen und nicht zwei. Gemeldet war das Helle -- das ist der
+   strengere Fall, weil dunkle Punkte auf Weiss mehr auffallen als helle auf Dunkel. Wer nach
+   dem strengeren Fall bemisst, hat den leichteren mit erledigt; zwei Masken waeren zwei
+   Wahrheiten fuer dieselbe Frage. */
 .up-bgart-flimmer {
   color: var(--vc-text);
-  -webkit-mask-image: radial-gradient(ellipse 58% 54% at 50% 46%, transparent 0%, #000 100%);
-          mask-image: radial-gradient(ellipse 58% 54% at 50% 46%, transparent 0%, #000 100%);
+  -webkit-mask-image: radial-gradient(ellipse 74% 70% at 50% 46%,
+                        transparent 0%, transparent 30%, #000 100%);
+          mask-image: radial-gradient(ellipse 74% 70% at 50% 46%,
+                        transparent 0%, transparent 30%, #000 100%);
 }
 /* Dunkel: das Raster auf ein Drittel -- die Vorlage zeichnet es mit 6%, gemeint waren 2%, und
    genau die kommen so heraus. Die Marken auf die Haelfte, sie waren zu hell. Der Bogen voll, er

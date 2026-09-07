@@ -329,6 +329,43 @@ Promise.all([hol("core.css"), hol("core.js"), hol("onboarding-page.css")]).then(
       Math.abs(100*iB.blinkenJetzt/iB.zellen - 100*iB.blinkenJeSekunde*iB.blinkMs/1000) < 12);
     log("");
 
+    log("4c  Die Maske: wie gross ist die freie Mitte?");
+    /* GEMESSEN WIRD DIE ANGABE, nicht das Bild. Die Maske wirkt beim Zeichnen der Seite, nicht
+       im Canvas -- getImageData sieht sie also nie. Was hier geprueft werden KANN, ist zweierlei
+       und beides ist etwas wert: dass die geladene CSS wirklich die neue Geometrie traegt (der
+       Frischebeweis aus CLAUDE.md 3), und was diese Geometrie in PIXELN bedeutet. Das Urteil
+       darueber, ob es ruhig genug wirkt, faellt am Blick -- _h_uob_flimmer_blick.html, im
+       Hellen, denn dort war es gemeldet. */
+    var maske=v.getComputedStyle(host).maskImage || v.getComputedStyle(host).webkitMaskImage || "";
+    /* AUS DEM GERECHNETEN WERT und nicht aus dem Quelltext: der Browser normt "transparent" zu
+       rgba(0, 0, 0, 0) und die Kurzform "ellipse" verschwindet, sobald zwei Radien dastehen.
+       Der erste Anlauf suchte nach dem Wort "transparent" und fand null davon -- und las den
+       freien Stopp an der falschen Stelle (die Zahlenliste beginnt mit den Radien UND der
+       Position, der Stopp ist erst der sechste Wert). Beides gemessen am eigenen Ausdruck statt
+       am gewuenschten. */
+    var zahlen=(maske.match(/(\d+(?:\.\d+)?)%/g)||[]).map(parseFloat);
+    var klarStopps=(maske.match(/rgba\(0,\s*0,\s*0,\s*0\)\s+(\d+(?:\.\d+)?)%/g)||[]);
+    var klarBis=0;
+    klarStopps.forEach(function(x){ var m=x.match(/(\d+(?:\.\d+)?)%/); if (m) klarBis=Math.max(klarBis, parseFloat(m[1])); });
+    log("      " + maske.replace(/\s+/g," ").slice(0, 150));
+    log("      freie Stopps: " + klarStopps.length + ", frei bis " + klarBis +
+        " Prozent des Radius");
+    pruef("die Maske hat eine FREIE MITTE und nicht nur einen Verlauf ab dem Mittelpunkt",
+      klarStopps.length >= 2 && klarBis >= 20);
+    /* Die Radien und die freie Zone in Pixeln, gerechnet fuer die Seitengroesse der App. */
+    if (zahlen.length >= 6){
+      var rx=zahlen[0]/100*1440, ry=zahlen[1]/100*890, klar=klarBis/100;
+      function anteil(dx){ return dx <= klar*rx ? 0 : Math.min(1,(dx-klar*rx)/(rx-klar*rx)); }
+      log("      auf 1440x890: Radien " + Math.round(rx) + " x " + Math.round(ry) +
+          ", voll frei bis " + Math.round(klar*rx) + " x " + Math.round(klar*ry) + "px");
+      log("      Maskenstaerke bei 240px von der Mitte (Rand des Textblocks): " +
+          Math.round(100*anteil(240)) + "%   bei 480px (Rand der Karte): " +
+          Math.round(100*anteil(480)) + "%");
+      pruef("hinter dem Textblock (240px) ist die Flaeche vollstaendig frei", anteil(240) === 0);
+      pruef("und am Rand der Karte (480px) noch unter einem Drittel", anteil(480) < 0.34);
+    }
+    log("");
+
     log("5  Farbe und Gewicht je Thema");
     function ersteFarbe(){
       var b=ctx.getImageData(0,0,cv.width,cv.height).data;
