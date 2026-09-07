@@ -1,0 +1,105 @@
+<!doctype html><meta charset="utf-8">
+<title>Grosse Umschalter im Dunkeln: hebt sich die Pille von ihrer Schiene ab?</title>
+<pre id="out" style="font:12px/1.5 ui-monospace,Menlo,monospace;padding:12px;white-space:pre-wrap"></pre>
+<div id="buehne" style="position:absolute;left:-4000px;top:0"></div>
+<script>
+/* Gemeldet am 07.09.: "die grossen Switcher, die 32px hoch sind, muessen im Darkmode denselben
+   Grund bekommen wie die kleinen -- der Selected-State unterscheidet sich sonst zu wenig davon.
+   Der Selected-State soll bleiben, nur die Schiene aendern."
+   Gemessen wird die HELLIGKEIT beider Flaechen, deckend ausgerechnet: die Schiene ist
+   halbtransparent, und ein Vergleich der Rohwerte waere ein Vergleich zweier verschiedener
+   Dinge. Untergrund ist die Karte (--vc-bg), denn dort liegen diese Umschalter. */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function ja(b){ return b ? "RICHTIG" : "FALSCH "; }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+
+var SCHIENEN = [
+  { name:"up-seg (klein, 26px)",  klasse:"up-seg",                gross:false },
+  { name:"vc-gran (klein, 26px)", klasse:"vc-gran",               gross:false },
+  { name:"up-seg.is-lg (32px)",   klasse:"up-seg is-lg",          gross:true },
+  { name:"up-seg.umf-seg (32px)", klasse:"up-seg umf-seg",        gross:true },
+  { name:"up-seg.umk-seg (32px)", klasse:"up-seg umk-seg",        gross:true },
+  { name:"up-pagesize-seg (32px)",klasse:"up-pagesize-seg",       gross:true },
+  { name:"up-filter-dim (32px)",  klasse:"up-filter-dim",         gross:true },
+  { name:"up-dense (34px)",       klasse:"up-dense",              gross:true },
+  { name:"tcd-mode (32px)",       klasse:"tcd-mode",              gross:true },
+  { name:"udt-sub-dispseg (32px)",klasse:"udt-sub-dispseg",       gross:true },
+  { name:"uca-format-seg (32px)", klasse:"uca-format-seg",        gross:true },
+  { name:"uap-tabs (32px)",       klasse:"uap-tabs",              gross:true }
+];
+
+Promise.all(["core.css","topcitations-dashboard.css","domains-table.css","create-with-ai.css",
+             "add-prompts.css"].map(hol)).then(function(t){
+  var f=document.createElement("iframe");
+  f.style.cssText="width:900px;height:600px;border:0";
+  document.getElementById("buehne").appendChild(f);
+  var d=f.contentDocument, v=f.contentWindow;
+  d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0'></body></html>"); d.close();
+  t.forEach(function(c){ var st=d.createElement("style"); st.textContent=c; d.head.appendChild(st); });
+  var root=d.createElement("div");
+  root.className="up-root"; root.setAttribute("data-theme","dark");
+  d.body.appendChild(root);
+  var cs=v.getComputedStyle(root);
+  var karte=cs.getPropertyValue("--vc-bg").trim();
+  var pille="#28282c";   /* bg-quaternary, der Wert der gleitenden Pille im Dunkeln */
+
+  function deckend(farbe, unter){
+    var c=d.createElement("canvas"); c.width=c.height=1;
+    var x=c.getContext("2d");
+    x.fillStyle=unter; x.fillRect(0,0,1,1);
+    x.fillStyle=farbe; x.fillRect(0,0,1,1);
+    var p=x.getImageData(0,0,1,1).data;
+    function z(n){ n=n.toString(16); return n.length<2?"0"+n:n; }
+    return "#"+z(p[0])+z(p[1])+z(p[2]);
+  }
+  /* DIESELBE SKALA wie in _h_dunkel_leiter.html: die Kanalwerte roh, mit den Augengewichten
+     verrechnet, also 0 bis 255. NICHT die linearisierte Leuchtdichte -- die drueckt im Dunkeln
+     alles auf Werte unter zehn zusammen, und dann sind zwei Prueftaende nicht mehr
+     vergleichbar, obwohl beide "Stufen" sagen. Der Wert ist ein Abstand auf der Leiter, kein
+     Kontrastverhaeltnis; fuer Text waere Letzteres richtig, fuer "sieht man den Unterschied
+     zwischen zwei benachbarten Flaechen" ist es dieser. */
+  function hell(h){
+    h=h.replace("#","");
+    function k(i){ return parseInt(h.slice(i,i+2),16); }
+    return Math.round((0.2126*k(0)+0.7152*k(2)+0.0722*k(4))*100)/100;
+  }
+
+  log("Untergrund: die Karte " + karte + "   Pille " + pille + " (Helligkeit " + hell(pille) + ")");
+  log("");
+  var kleinAbstand = null, alleGut = true;
+  SCHIENEN.forEach(function(sch){
+    var el=d.createElement("div"); el.className=sch.klasse;
+    if (sch.klasse.indexOf("Match") >= 0) el.setAttribute("aria-label","Match mode");
+    root.appendChild(el);
+    var roh=v.getComputedStyle(el).backgroundColor;
+    var dk=deckend(roh, karte);
+    var abstand=Math.round((hell(pille)-hell(dk))*100)/100;
+    if (!sch.gross && kleinAbstand === null) kleinAbstand = abstand;
+    log("   " + sch.name.padEnd(26," ") + " Schiene " + roh.padEnd(24," ") +
+        " deckend " + dk + "   Pille liegt " + String(abstand).padStart(6," ") + " Stufen darueber");
+    /* Die grossen muessen mindestens so viel Abstand haben wie die kleinen. Kein absoluter
+       Schwellwert: gefordert war Gleichstand mit der kleinen Form, nicht eine erfundene Zahl. */
+    if (sch.gross){
+      var ok = kleinAbstand != null && abstand >= kleinAbstand - 0.5;
+      if (!ok) alleGut = false;
+      log("      " + ja(ok) + " mindestens so viel Abstand wie die kleine Form (" + kleinAbstand + ")");
+    }
+    el.remove();
+  });
+  log("");
+  log("==> " + ja(alleGut) + "  alle grossen Schienen liegen so tief wie die kleinen");
+
+  /* Gegenprobe nach unten: im HELLEN darf sich nichts geaendert haben. */
+  root.setAttribute("data-theme","light");
+  var hp=d.createElement("div"); hp.className="up-seg is-lg"; root.appendChild(hp);
+  var hellSchiene=v.getComputedStyle(hp).backgroundColor;
+  hp.remove();
+  var sollHell=v.getComputedStyle(root).getPropertyValue("--vc-switch-bg").trim();
+  var probe=d.createElement("div"); probe.style.background=sollHell; root.appendChild(probe);
+  var sollRgb=v.getComputedStyle(probe).backgroundColor; probe.remove();
+  log("   " + ja(hellSchiene === sollRgb) + " im Hellen unveraendert der volle Ton (" +
+      hellSchiene + " gegen " + sollRgb + ")");
+  log("FERTIG");
+}).catch(function(e){ log("ABBRUCH: " + e.message + "\n" + (e.stack||"")); });
+</script>

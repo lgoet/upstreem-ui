@@ -77,7 +77,7 @@
        114, plus 2px Reserve gegen Rundung. Bei 110 fehlten 4px, und genau das war zu sehen:
        "Mentioned…". Steht der Markenname davor ("Volkswagen mentioned?", 134px), schneidet es
        weiter ab -- das ist der gewollte Fall, dafuer gibt es den Tooltip. */
-    { key: "mentioned",  label: "Mentioned?",     w: "minmax(116px, 0.6fr)",  min: 116, dropAt: "vnarrow", prio: 30 },
+    { key: "mentioned",  label: "Mentioned",      w: "minmax(116px, 0.6fr)",  min: 116, dropAt: "vnarrow", prio: 30 },
     { key: "sentiment",  label: "Sentiment",      w: "minmax(120px, 1fr)",    min: 120, dropAt: "narrow",  prio: 70 },
     { key: "rank",       label: "Rank",           w: "minmax(90px, 1fr)",     min: 90,  dropAt: "narrow",  prio: 60 },
     /* Brand Mentions shows 4 chips + "+N" (178px, the app-wide figure). Citations shows FIVE chips
@@ -899,7 +899,7 @@
       if (!lbl){
         lbl = document.createElement("span");
         lbl.className = "up-th-mentlbl";
-        lbl.textContent = (th.textContent || "Mentioned?").trim() || "Mentioned?";
+        lbl.textContent = (th.textContent || "Mentioned").trim() || "Mentioned";
         /* replace the bare text node the old markup had */
         Array.prototype.slice.call(th.childNodes).forEach(function(n){
           if (n.nodeType === 3) th.removeChild(n);
@@ -908,8 +908,9 @@
       }
       if (logo && logo !== "BRAND_LOGO"){ img.src = logo; img.style.display = "block"; }
       else { img.style.display = "none"; }
+      /* Ohne Fragezeichen (07.09.), wie in urls-table und im Top Citations Dashboard. */
       lbl.textContent = (!logo || logo === "BRAND_LOGO") && name && name !== "BRAND_NAME"
-        ? UC.t("{brand} mentioned?").replace("{brand}", name) : UC.t("Mentioned?");
+        ? UC.t("{brand} mentioned").replace("{brand}", name) : UC.t("Mentioned");
     }
     /* Spotlight: der Schalter zeigt seinen gewaehlten Zustand, ist aber ausgegraut und nicht
        bedienbar. Gedacht fuer Seiten, die ohnehin schon auf diese Marke gefiltert sind -- dort

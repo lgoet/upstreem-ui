@@ -2616,6 +2616,34 @@
    Jetzt bg-quaternary (#28282c) auf border-secondary -- eine Stufe ueber der Schiene, wie ueberall
    sonst das Gewaehlte. Sieben Stellen, alle mit demselben Muster. */
 [data-theme="dark"] .uap-tabs::before { background: #28282c; border-color: #34343a; }
+/* ---- UND DIE SCHIENE DARUNTER, im Dunkeln, bei den GROSSEN Umschaltern -----------------------
+   Gemeldet am 07.09.: "die grossen Switcher, die 32px hoch sind, muessen im Darkmode denselben
+   Grund bekommen wie die kleinen, weil der Selected-State sich sonst zu wenig davon
+   unterscheidet". Genau so war es, und es ist nachrechenbar:
+       Schiene --vc-switch-bg  #232326            Pille #28282c   ->  5 Helligkeitsstufen
+       Schiene --vc-switch-soft rgba(42,42,42,.35) auf einer Karte  #212123  ->  7.1 Stufen
+   Der volle Ton stammt aus dem Hellen, wo er richtig ist (#f9f8f9 gegen eine weisse Pille sind
+   15 Stufen). Im Dunkeln liegt --vc-switch-bg dagegen fast auf der Pille. Also traegt die
+   Schiene im Dunkeln denselben durchscheinenden Ton wie die kleine Form -- die Pille bleibt
+   unveraendert, gemeldet war ausdruecklich nur der nicht gewaehlte Grund.
+   Alle grossen Schienen an EINER Stelle, damit die naechste Groessenaenderung sie nicht wieder
+   auseinanderlaufen laesst. Die Spezifitaet reicht in jedem Fall: [data-theme="dark"] legt eine
+   Stufe auf den jeweiligen Grundselektor, also gewinnt sie unabhaengig von der Ladereihenfolge
+   auch gegen die Regeln in den Komponentendateien. */
+[data-theme="dark"] .up-pagesize-seg,
+[data-theme="dark"] .up-filter-dim,
+[data-theme="dark"] .up-dense,
+[data-theme="dark"] .up-seg.is-lg,
+[data-theme="dark"] .cc-seg.is-lg,
+[data-theme="dark"] .ubo-seg.is-lg,
+[data-theme="dark"] .tcl-seg.is-lg,
+[data-theme="dark"] .up-seg.umf-seg,
+[data-theme="dark"] .up-seg.umk-seg,
+[data-theme="dark"] .up-seg[aria-label="Match mode"],
+[data-theme="dark"] .tcd-mode,
+[data-theme="dark"] .udt-sub-dispseg,
+[data-theme="dark"] .uca-format-seg,
+[data-theme="dark"] .uap-tabs { background: var(--vc-switch-soft); }
 /* Die Knoepfe stehen ueber dem Streifen. */
 .is-gleitend > button { position: relative; z-index: 1; }
 /* Und die aktive Stufe gibt ihre eigene Flaeche ab, SOBALD der Streifen misst. Drei Stufen der

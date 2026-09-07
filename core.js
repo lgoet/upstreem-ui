@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261004;
+  var BUILD = 20261005;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -389,7 +389,8 @@
     "Models": "Modelle",
     "Share": "Anteil",
     "Domain Share": "Domain-Anteil",
-    "Mentioned?": "Erwähnt?",
+    "Mentioned?": "Erwähnt",
+    "Mentioned": "Erwähnt",
     "Brand Mentions": "Brand-Erwähnungen",
     /* Citations heisst auf Deutsch "Web-Quellen" -- so angefordert, und damit faellt dieses eine
        Wort aus dem Glossar heraus. Der breite Lauf (breiterLauf) greift damit ueberall, wo das
@@ -1198,7 +1199,15 @@
     /* ---- Der Mention-Schalter in jeder Toolbar und jedem Tabellenkopf ----
        Muster mit {brand}: im Deutschen steht der Name vor dem Verb. Zusammengesetzt blieb hier
        ueberall "mentioned" stehen -- das war die Meldung. */
-    "{brand} mentioned?": "{brand} erwähnt?",
+    /* OHNE FRAGEZEICHEN, und die alten Schluessel MIT einem zeigen auf denselben Text (07.09.:
+       "bei manchen steht ein ? danach, bei anderen nicht -- vereinheitliche das, ohne
+       Fragezeichen"). Der Schalter STELLT keine Frage, er sagt, wonach gefiltert wird.
+       Die Schluessel mit ? bleiben stehen und werden gebraucht: das Markup der Tabellen ist in
+       Bubble von Hand eingefuegt und kann noch Jahre "Mentioned?" enthalten, ohne dass ein
+       CDN-Pin es erreicht. Ueber diese Zeilen faellt im Deutschen trotzdem das Fragezeichen weg.
+       Im Englischen bleibt so ein alter Textknoten, bis das Markup neu eingefuegt wird -- das
+       gehoert in die Uebergabe, nicht in eine Regel. */
+    "{brand} mentioned?": "{brand} erwähnt",
     "{brand} mentioned": "{brand} erwähnt",
     /* Die AUSGESCHALTETEN Stellungen desselben Schalters. Im Top Citations Dashboard traegt er
        drei Beschriftungen, nicht eine, und die beiden gesetzten Zustaende standen in keinem
@@ -1560,9 +1569,11 @@
     "Brand Name &amp; Matching Aliases": "Brand-Name & passende Aliase",
     /* Muster mit eingesetztem Markennamen: der ganze Textknoten steht sonst in keinem Katalog. */
     "{brand} mentioned": "{brand} erwähnt",
-    "{brand} mentioned?": "{brand} erwähnt?",
-    "mentioned?": "erwähnt?",
-    "Mentioned?": "Erwähnt?",
+    "{brand} mentioned?": "{brand} erwähnt",
+    "mentioned?": "erwähnt",
+    "mentioned": "erwähnt",
+    "Mentioned?": "Erwähnt",
+    "Mentioned": "Erwähnt",
     /* Das Konto-Menue der Seitenleiste (07.09. ausdruecklich angefordert). */
     "Account Settings": "Kontoeinstellungen",
     "System": "System",
@@ -3086,7 +3097,7 @@
                (logo ? '<img class="up-brandlogo" src="' + esc(logo) + '" alt="" loading="lazy"' +
                        ' referrerpolicy="no-referrer" onerror="this.remove()"/>' : "") +
                '<span class="up-brandlabel">' +
-                 esc(t("{brand} mentioned?").replace("{brand}", name || t("Own brand"))) + "</span>" +
+                 esc(t("{brand} mentioned").replace("{brand}", name || t("Own brand"))) + "</span>" +
              "</span>" +
              '<span class="up-brandcheck">' + svgJa + svgNein + "</span>" +
            "</button>";

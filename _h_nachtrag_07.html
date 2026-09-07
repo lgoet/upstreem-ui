@@ -77,16 +77,27 @@ Promise.all([hol("core.css"), hol("core.js"), hol("prompts-table.css")]).then(fu
       var UC=u.v.UpstreemCore;
       if (!UC){ log("   ABBRUCH: kein UC"); return; }
       if (UC.setPref) UC.setPref("locale","de");
+      /* OHNE FRAGEZEICHEN, und zwar ueber ALLE Formen -- auch die alten Schluessel mit ?, weil
+         das von Hand eingefuegte Bubble-Markup sie noch enthalten kann und der Sprachlauf sie
+         dann findet. Gemeldet am 07.09.: "bei manchen steht ein ? danach, bei anderen nicht". */
       var faelle = [
-        ["{brand} mentioned?",     "Nike erwähnt?"],
+        ["{brand} mentioned",      "Nike erwähnt"],
+        ["{brand} mentioned?",     "Nike erwähnt"],
         ["{brand} is mentioned",   "Nike wird erwähnt"],
-        ["{brand} is not mentioned","Nike wird nicht erwähnt"]
+        ["{brand} is not mentioned","Nike wird nicht erwähnt"],
+        ["Mentioned",              "Erwähnt"],
+        ["Mentioned?",             "Erwähnt"],
+        ["mentioned",              "erwähnt"],
+        ["mentioned?",             "erwähnt"]
       ];
+      var keinFrage = true;
       faelle.forEach(function(p){
         var raus = UC.t(p[0]).replace("{brand}", "Nike");
-        log("   " + ja(raus === p[1]) + " " + p[0] + "  ->  \"" + raus + "\"" +
+        if (raus.indexOf("?") >= 0) keinFrage = false;
+        log("   " + ja(raus === p[1]) + " " + p[0].padEnd(24," ") + " ->  \"" + raus + "\"" +
             (raus === p[1] ? "" : "   erwartet: \"" + p[1] + "\""));
       });
+      log("   " + ja(keinFrage) + " keine einzige Form traegt noch ein Fragezeichen");
       log("");
       log("FERTIG");
     });

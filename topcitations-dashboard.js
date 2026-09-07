@@ -594,7 +594,7 @@
         var name = state.brand.name || UC.t("Own brand");
         var muster = state.brandMentioned === "yes" ? "{brand} is mentioned"
                    : state.brandMentioned === "no"  ? "{brand} is not mentioned"
-                   : "{brand} mentioned?";
+                   : "{brand} mentioned";
         lbl.textContent = UC.t(muster).replace("{brand}", name);
       }
       if (startClearMessage) BRAND_CLEAR_STORE[instanceId] = Date.now() + 3000;
