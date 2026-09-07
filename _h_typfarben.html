@@ -1,0 +1,202 @@
+<!doctype html><meta charset="utf-8">
+<title>Farbvorschlaege fuer Citation- und URL-Typen</title>
+<style>
+  :root { --bg:#ffffff; --fg:#1f1f1b; --mut:#6b6f78; --third:#9e9e9e; --line:#e4e2e4;
+          --card:#f9f8f9; --chipdark:#242424; --dunkel:#1c1c1f; }
+  html,body { margin:0; background:var(--bg); color:var(--fg);
+    font:14px/1.5 Geist, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:1180px; margin:0 auto; padding:32px 24px 80px; }
+  h1 { font-size:24px; font-weight:600; letter-spacing:-.01em; margin:0 0 6px; }
+  h2 { font-size:19px; font-weight:600; margin:0 0 4px; }
+  h3 { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.05em;
+       color:var(--mut); margin:0 0 10px; }
+  p { margin:0 0 10px; max-width:78ch; }
+  .lead { color:var(--mut); }
+  .sec { margin:44px 0 0; padding-top:28px; border-top:1px solid var(--line); }
+  .sec:first-of-type { border-top:0; }
+  .regel { font-size:15px; font-weight:500; margin:0 0 12px; }
+  .zwei { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:14px 0 0; }
+  .box { border:1px solid var(--line); border-radius:14px; padding:14px 16px; background:var(--bg); }
+  .box.d { background:var(--dunkel); border-color:#3e3e44; color:#e0e0e0; }
+  .box.d h3 { color:#808080; }
+  .zeile { display:flex; align-items:center; gap:10px; padding:3px 0; }
+  .sw { width:26px; height:26px; border-radius:8px; flex:0 0 26px; }
+  .nm { flex:1 1 auto; min-width:0; font-size:12.5px; white-space:nowrap; overflow:hidden;
+        text-overflow:ellipsis; }
+  .chip { display:inline-flex; align-items:center; gap:6px; height:22px; padding:0 9px;
+          border-radius:7px; font-size:11.5px; font-weight:600; white-space:nowrap; flex:0 0 auto; }
+  .chip i { width:6px; height:6px; border-radius:2px; flex:0 0 6px; }
+  .k { font-size:10.5px; color:var(--third); font-variant-numeric:tabular-nums; flex:0 0 auto;
+       min-width:52px; text-align:right; }
+  .box.d .k { color:#707070; }
+  .fam { font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.05em;
+         color:var(--third); margin:12px 0 2px; }
+  .box.d .fam { color:#707070; }
+  table.m { border-collapse:collapse; font-size:12.5px; margin:10px 0 0; }
+  table.m td, table.m th { padding:4px 14px 4px 0; text-align:left; font-weight:400;
+    font-variant-numeric:tabular-nums; }
+  table.m th { color:var(--mut); font-weight:600; font-size:11px; text-transform:uppercase;
+    letter-spacing:.04em; }
+  .gut { color:#2ea84a; font-weight:600; } .schlecht { color:#b0200c; font-weight:600; }
+  .ringe { display:flex; gap:22px; align-items:center; flex-wrap:wrap; margin:6px 0 0; }
+  .ringe figure { margin:0; text-align:center; }
+  .ringe figcaption { font-size:10.5px; color:var(--third); margin-top:4px; }
+  .balken { display:flex; height:26px; border-radius:8px; overflow:hidden; margin:8px 0 0; }
+  .balken span { flex:1 1 auto; }
+  code { font:12px/1.5 ui-monospace,Menlo,monospace; background:var(--card); padding:1px 5px;
+    border-radius:5px; }
+  .box.d code { background:#232326; }
+</style>
+<div class="wrap">
+  <h1>Farbgebung fuer Citation- und URL-Typen</h1>
+  <p class="lead">Drei Vorschlaege, alle aus derselben Rechnung wie die Linien-Skala
+  <code>COLOR_SCALES.linear</code>: OKLCh, L und C konstant, der Farbton ist die Variable.
+  Oben steht der heutige Stand mit denselben Massen daneben, damit der Vergleich Zahlen hat und
+  nicht Geschmack. Jede Farbe ist gerechnet, nicht gewaehlt -- <code>.farben_typen.py</code>.</p>
+  <div id="raus">laeuft…</div>
+</div>
+<script src="_h_typfarben_daten.js"></script>
+<script>
+/* Diese Seite ZEIGT nur. Gerechnet wird in .farben_typen.py, und zwar aus einem Grund: die drei
+   Vorschlaege unterscheiden sich in ihrer REGEL, nicht in einzelnen Hex-Werten. Wer hier Farben
+   von Hand einsetzte, haette beim naechsten Dreh an der Regel 21 Stellen nachzuziehen. */
+var CITE_ORDER = window.TYPFARBEN[0].cite.map(function(c){ return c.key; });
+
+function esc(s){ return String(s).replace(/[&<>"]/g, function(c){
+  return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
+
+/* Ein Ring aus n Flaechen -- damit die Farben als FLAECHE nebeneinander stehen und nicht nur als
+   Kaestchen. Genau so werden sie benutzt (Doughnut in topcitations, Ring in der Verteilung). */
+function ring(farben, gross){
+  var r = gross ? 46 : 46, br = gross ? 13 : 13, u = 2*Math.PI*r, teil = u/farben.length;
+  var s = '<svg width="' + (r*2+br) + '" height="' + (r*2+br) + '" viewBox="0 0 ' +
+          (r*2+br) + ' ' + (r*2+br) + '">';
+  farben.forEach(function(f, i){
+    s += '<circle cx="' + (r+br/2) + '" cy="' + (r+br/2) + '" r="' + r + '" fill="none" stroke="' +
+         f + '" stroke-width="' + br + '" stroke-dasharray="' + (teil-1) + ' ' + (u-teil+1) +
+         '" stroke-dashoffset="' + (-teil*i) + '" transform="rotate(-90 ' + (r+br/2) + ' ' +
+         (r+br/2) + ')"/>';
+  });
+  return s + "</svg>";
+}
+function balken(farben){
+  return '<div class="balken">' + farben.map(function(f){
+    return '<span style="background:' + f + '"></span>'; }).join("") + '</div>';
+}
+
+function zeileHtml(x, dunkel){
+  var fill = (dunkel && x.fill_dark) ? x.fill_dark : x.fill;
+  var txt  = dunkel ? x.chip_dark : x.chip_light;
+  var bg   = dunkel ? "#242424" : mischen(x.fill, "#ffffff", 0.12);
+  var k    = dunkel ? x.chip_dark_k : x.chip_light_k;
+  return '<div class="zeile">' +
+    '<span class="sw" style="background:' + fill + '"></span>' +
+    '<span class="nm">' + esc(x.label) + '</span>' +
+    '<span class="chip" style="color:' + txt + ';background:' + bg + '">' +
+      '<i style="background:' + txt + '"></i>' + esc(x.label) + '</span>' +
+    '<span class="k">' + (k < 4.4 ? '<span class="schlecht">' + k.toFixed(2) + '</span>'
+                                  : k.toFixed(2)) + '</span>' +
+  '</div>';
+}
+/* Der Chipgrund ist tint(farbe, 0.12) auf Weiss -- also keine eigene Farbe, sondern eine
+   Mischung. Sie muss hier genauso gerechnet werden wie in core, sonst zeigt die Seite einen
+   Kontrast, den es im Produkt nicht gibt. */
+function mischen(a, b, alpha){
+  function n(h){ h = h.replace("#",""); return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)]; }
+  var x = n(a), y = n(b);
+  return "rgb(" + x.map(function(v,i){ return Math.round(v*alpha + y[i]*(1-alpha)); }).join(",") + ")";
+}
+
+function seite(d){
+  var m = d.mass;
+  var h = '<div class="sec"><h2>' + esc(d.titel) + '</h2>' +
+    '<p class="regel">' + esc(d.satz) + '</p>' +
+    '<p>' + esc(d.warum) + '</p>' +
+    '<p class="lead"><b>Preis:</b> ' + esc(d.preis) + '</p>';
+
+  /* Die Masse. Sie stehen VOR den Farben, weil sie die Entscheidung tragen -- die Farben zeigen
+     nur, wie es aussieht. */
+  h += '<table class="m"><tr><th>Helligkeit L</th><th>Saettigung C</th>' +
+       '<th>kleinster Farbtonabstand</th><th>zwei Typen gleiche Farbe</th></tr><tr>' +
+    '<td>' + m.L_min.toFixed(3) + '..' + m.L_max.toFixed(3) + '  (Spanne ' +
+      (m.L_spanne <= 0.02 ? '<span class="gut">' + m.L_spanne.toFixed(3) + '</span>'
+                          : m.L_spanne.toFixed(3)) + ')</td>' +
+    '<td>' + m.C_min.toFixed(3) + '..' + m.C_max.toFixed(3) + '  (Spanne ' +
+      m.C_spanne.toFixed(3) + ')</td>' +
+    '<td>' + (m.hue_min_abstand >= 14 ? '<span class="gut">' + m.hue_min_abstand.toFixed(1) + '&deg;</span>'
+              : m.hue_min_abstand.toFixed(1) + "&deg;") + '</td>' +
+    '<td>' + (m.doppelte_farben ? '<span class="schlecht">ja</span>' : '<span class="gut">nein</span>') + '</td>' +
+    '</tr></table>';
+
+  /* Ringe und Balken: dieselben Farben als FLAECHE. */
+  var cf = d.cite.map(function(x){ return x.fill; });
+  var uf = d.url.map(function(x){ return x.fill; });
+  var cfd = d.cite.map(function(x){ return x.fill_dark || x.fill; });
+  var ufd = d.url.map(function(x){ return x.fill_dark || x.fill; });
+  h += '<div class="zwei">' +
+    '<div class="box"><h3>Hell</h3><div class="ringe">' +
+      '<figure>' + ring(cf) + '<figcaption>7 Citation-Typen</figcaption></figure>' +
+      '<figure>' + ring(uf) + '<figcaption>14 URL-Typen</figcaption></figure>' +
+      '</div>' + balken(uf) + '</div>' +
+    '<div class="box d"><h3>Dunkel</h3><div class="ringe">' +
+      '<figure>' + ring(cfd) + '<figcaption>7 Citation-Typen</figcaption></figure>' +
+      '<figure>' + ring(ufd) + '<figcaption>14 URL-Typen</figcaption></figure>' +
+      '</div>' + balken(ufd) + '</div>' +
+    '</div>';
+
+  /* Und die Liste: Flaeche, Chip wie im Produkt, und der Kontrast der Chipschrift. */
+  h += '<div class="zwei">';
+  [false, true].forEach(function(dunkel){
+    h += '<div class="box' + (dunkel ? " d" : "") + '"><h3>Citation-Typen &mdash; ' +
+         (dunkel ? "dunkel" : "hell") + '</h3>';
+    d.cite.forEach(function(x){ h += zeileHtml(x, dunkel); });
+    h += '<h3 style="margin-top:16px">URL-Typen, nach Familie &mdash; ' +
+         (dunkel ? "dunkel" : "hell") + '</h3>';
+    var fam = null;
+    d.url.forEach(function(x){
+      if (x.familie !== fam){ fam = x.familie;
+        h += '<div class="fam">' + esc(fam) + '</div>'; }
+      h += zeileHtml(x, dunkel);
+    });
+    h += '</div>';
+  });
+  h += '</div></div>';
+  return h;
+}
+
+/* ---- Was heute schon nicht stimmt, aus den Daten und nicht aus dem Bauch ----
+   Diese drei Zeilen sind der Grund, ueberhaupt etwas zu aendern. Sie stehen VOR den Vorschlaegen,
+   damit die Entscheidung an einem Befund haengt und nicht an "sieht frischer aus". */
+function befund(){
+  var h = window.TYPFARBEN[0], alle = h.cite.concat(h.url);
+  var unter = alle.filter(function(x){ return x.chip_light_k < 4.5; });
+  var hex = {}, doppelt = [];
+  alle.forEach(function(x){ if (hex[x.fill]) doppelt.push(x.label + " = " + hex[x.fill]);
+                            else hex[x.fill] = x.label; });
+  return '<div class="box" style="background:var(--card);margin:18px 0 0">' +
+    '<h3>Was am heutigen Stand messbar nicht stimmt</h3>' +
+    '<p style="margin:0 0 6px"><b>' + unter.length + ' von ' + alle.length + ' Chips</b> liegen ' +
+    'im Hellen unter 4.5 Kontrast, also unter dem, was fuer Text verlangt ist &mdash; darunter ' +
+    'alle sieben Citation-Typen (' +
+    Math.min.apply(null, h.cite.map(function(x){ return x.chip_light_k; })).toFixed(2) + ' bis ' +
+    Math.max.apply(null, h.cite.map(function(x){ return x.chip_light_k; })).toFixed(2) + '). ' +
+    'Im Dunkeln liegt keiner darunter.</p>' +
+    '<p style="margin:0 0 6px"><b>Ungleiche Gewichte:</b> die Helligkeit der Fuellfarben spannt ' +
+    'ueber ' + h.mass.L_spanne.toFixed(3) + ', die Saettigung ueber ' + h.mass.C_spanne.toFixed(3) +
+    '. In einem Ring heisst das: die violetten Flaechen draengen sich vor, Article und Listicle ' +
+    'verschwinden.</p>' +
+    '<p style="margin:0"><b>' + (doppelt.length === 1 ? 'Ein Paar traegt' : doppelt.length +
+    ' Paare tragen') + ' dieselbe Farbe:</b> ' + doppelt.join(", ") +
+    '. Zwei Typen, ein Hex &mdash; in einem Chart nicht unterscheidbar. Vier weitere liegen im ' +
+    'Violett so dicht beieinander, dass sie in einer Legende zusammenfallen.</p>' +
+    '</div>';
+}
+
+document.getElementById("raus").innerHTML = befund() +
+  '<p class="lead" style="margin-top:18px">Die Zahl rechts an jedem Chip ist der gemessene Kontrast der Chipschrift auf ' +
+  'ihrem eigenen Grund. Rot heisst unter 4.5 -- also unter dem, was fuer Text verlangt ist. ' +
+  'Die Zuordnung URL-Typ &rarr; Citation-Typ ist unangetastet: sie steht als Familienueberschrift ' +
+  'in der Liste und ist genau die, die heute in den Farbtoenen steckt.</p>' +
+  window.TYPFARBEN.map(seite).join("");
+</script>
