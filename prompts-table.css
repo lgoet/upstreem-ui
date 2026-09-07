@@ -1199,7 +1199,19 @@
    dieselbe Spezifitaet hat (0,3,0) und dann die Reihenfolge entscheidet -- gemessen: im schmalen
    Bild blieben die Karten 256px hoch mit leerem Koerper. Ueber die Spezifitaet geloest und nicht
    ueber die Position, sonst kippt es beim naechsten Verschieben einer Regel wieder. */
-.up-root .upt-kpis.is-hidden-view .upt-kpi { height: auto; }
+/* HOEHE ALS LAENGE, nicht auto -- und genau das war die Meldung vom 07.09. ("das Ein- und
+   Ausblenden soll mit derselben smooth Animation laufen wie die Charts im Citations Combo
+   Chart"). Der Uebergang an .upt-kpi nennt height seit dem ersten Tag, aber ein Uebergang von
+   256px nach "auto" laeuft nicht: auto ist kein Wert, zwischen dem interpoliert werden kann, und
+   der Browser springt. Im Citations Combo Chart klappt es, weil .combo-box von 430px auf 0 geht,
+   also von Laenge zu Laenge.
+   Hier kann das Ziel nicht 0 sein -- die Kopfzeile bleibt stehen. Also der abgeleitete Wert:
+       16px Polster oben + 20px Kopfzeile + 16px Polster unten
+   Die 20 sind das Auge: ein 32px-Knopf mit -6px oben und unten, also 20px wirksame Hoehe. Der
+   Titel daneben ist 14px bei 1.2, also 16.8px, und damit kleiner -- der Knopf bestimmt die Zeile.
+   Wer eine der drei Zahlen aendert, aendert diese mit; deshalb steht sie als calc und nicht als
+   52px, damit die Rechnung sichtbar bleibt. Gemessen wird sie in _h_upt_kpi_falten.html. */
+.up-root .upt-kpis.is-hidden-view .upt-kpi { height: calc(16px + 20px + 16px); }
 /* flex: 0 0 0 und nicht nur height: 0 -- der Koerper hat sonst weiter flex-grow: 1 und zieht
    sich aus der Restverteilung 3,2px zurueck (gemessen). Sichtbar ist das nichts, aber es macht
    aus "die Karte ist zu" ein "fast zu", und die naechste Messung glaubt es dann nicht. */
@@ -1209,7 +1221,10 @@
 }
 .upt-kpis.is-hidden-view .upt-kpi-title,
 .upt-kpis.is-hidden-view .upt-kpi-note { opacity: .4; }
-.upt-kpi-body, .upt-kpi-foot { transition: opacity 160ms ease; }
+/* 200ms ease, wortgleich wie .combo-panel-body im Citations Combo Chart -- vorher 160, und damit
+   war die Blende schon fertig, waehrend die Karte noch fuhr. Beide Zeiten gehoeren zusammen: die
+   Karte fuehrt die Bewegung, der Inhalt verschwindet mit ihr. */
+.upt-kpi-body, .upt-kpi-foot { transition: opacity 200ms ease; }
 
 /* ---- Karte 1: Balkenliste nach Topics ----
    UC.makeBarList baut die Liste, hier stehen nur die abweichenden Masse. Die Vorgabe in core ist

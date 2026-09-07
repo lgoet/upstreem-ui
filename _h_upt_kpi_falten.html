@@ -1,0 +1,120 @@
+<!doctype html><meta charset="utf-8">
+<title>Falten die Karten ueberm Prompts Table wie die Charts im Combo Chart?</title>
+<pre id="out" style="font:12px/1.55 ui-monospace,Menlo,monospace;padding:12px;white-space:pre-wrap"></pre>
+<div id="buehne"></div>
+<script>
+/* Gemeldet am 07.09.: "das Ein- und Ausblenden der Cards ueberm Table soll mit derselben smooth
+   Animation laufen wie das der Charts im Citations Combo Chart."
+   Der Uebergang stand da -- er LIEF nur nicht. Ein Uebergang von 256px nach "auto" hat keinen
+   Zwischenwert, und der Browser springt.
+   GEPRUEFT WIRD DESHALB AN DEN ENDPUNKTEN UND AN DEN ANGABEN, nicht an einem Zwischenstand.
+   Der erste Anlauf hat die Hoehe mitten in der Bewegung gelesen -- und bekam beim VORBILD
+   dasselbe Ergebnis wie beim Fehlerfall: nichts bewegte sich. Der Grund ist die Umgebung, nicht
+   die CSS: die Browserflaeche des Werkzeugs ist verdeckt, eine verdeckte Seite zeichnet nicht,
+   und ohne Zeichnen laufen keine Uebergaenge. Genau davor warnt auch der Merksatz "Transitions
+   aus" -- ein haengender Uebergang haelt den gerechneten Wert auf dem Startwert und sieht aus wie
+   kaputte CSS.
+   Was hier steht, reicht trotzdem: ein Uebergang zwischen zwei LAENGEN mit einer Dauer laeuft --
+   das ist die Regel des Browsers, keine Vermutung. Kaputt war genau das eine, was diese Pruefung
+   findet: ein Ziel, das keine Laenge ist. Das Vorbild wird im selben Rahmen gebaut und mit
+   denselben Angaben verglichen, damit "gleich smooth" eine Aussage ueber Zahlen ist. */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function ja(b){ return b ? "RICHTIG" : "FALSCH "; }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function warte(ms){ return new Promise(function(ok){ setTimeout(ok,ms); }); }
+
+Promise.all([hol("core.css"), hol("prompts-table.css"), hol("citations-combo-chart.css")])
+.then(function(t){
+  /* SICHTBAR und nicht in einem verdeckten Rahmen: eine verborgene Seite laesst Uebergaenge
+     nicht laufen (dieselbe Falle wie beim Hover mit der Maus, siehe _h_upt_zeilenlinie.html). */
+  var f=document.createElement("iframe");
+  f.style.cssText="width:900px;height:320px;border:1px solid #ccc;display:block";
+  document.getElementById("buehne").appendChild(f);
+  var d=f.contentDocument, v=f.contentWindow;
+  d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0'></body></html>"); d.close();
+  t.forEach(function(c){ var st=d.createElement("style"); st.textContent=c; d.head.appendChild(st); });
+
+  var root=d.createElement("div");
+  root.className="up-root upt-root"; root.setAttribute("data-theme","light");
+  root.innerHTML =
+    '<div class="upt-kpis">' +
+      '<div class="upt-kpi upt-kpi-topics"><div class="upt-kpi-head">' +
+        '<span class="upt-kpi-title">Verteilung</span>' +
+        '<button class="upt-kpi-eye" type="button"></button></div>' +
+        '<div class="upt-kpi-body">Inhalt</div>' +
+        '<div class="upt-kpi-foot"><span>Fuss</span></div></div>' +
+    '</div>';
+  d.body.appendChild(root);
+  /* Das Vorbild: derselbe Kasten, den die Meldung als "smooth" beschreibt. */
+  var combo=d.createElement("div");
+  combo.className="up-root combo-root"; combo.setAttribute("data-theme","light");
+  combo.innerHTML='<div class="combo-box combo-box-left"><div class="combo-panel-body">Chart</div></div>';
+  d.body.appendChild(combo);
+
+  return warte(250).then(function(){
+    var karte=root.querySelector(".upt-kpi");
+    var kasten=combo.querySelector(".combo-box");
+    var kpis=root.querySelector(".upt-kpis");
+
+    function eig(el, n){ return v.getComputedStyle(el).getPropertyValue(n).trim(); }
+    log("DIE ANGABEN IM VERGLEICH");
+    log("   Karte     transition " + eig(karte, "transition"));
+    log("   Combo-Box transition " + eig(kasten, "transition"));
+    var kd=eig(karte,"transition-duration"), cd=eig(kasten,"transition-duration");
+    var kf=eig(karte,"transition-timing-function"), cf=eig(kasten,"transition-timing-function");
+    log("   " + ja(kd.indexOf("0.2s") >= 0 && cd.indexOf("0.2s") >= 0) +
+        " beide 200ms (" + kd + " / " + cd + ")");
+    log("   " + ja(kf.indexOf("ease") >= 0 && cf.indexOf("ease") >= 0) +
+        " beide ease (" + kf + " / " + cf + ")");
+    var kb=eig(root.querySelector(".upt-kpi-body"),"transition-duration");
+    var cb=eig(combo.querySelector(".combo-panel-body"),"transition-duration");
+    log("   " + ja(kb === cb) + " und der Inhalt blendet gleich lang (" + kb + " / " + cb + ")");
+    log("");
+
+    /* Beide Endpunkte OHNE laufenden Uebergang lesen. Waehrend einer Bewegung gibt
+       getComputedStyle den Zwischenwert zurueck, nicht das Ziel -- der erste Anlauf hat sich
+       daran selbst getaeuscht und "zugeklappt laut Regel 256px" gemeldet. */
+    function endpunkt(el, schalter, an){
+      var vorher=el.style.transition;
+      el.style.transition="none";
+      if (an) schalter.classList.add("is-hidden-view"); else schalter.classList.remove("is-hidden-view");
+      /* Lesen erzwingt die Neuberechnung, bevor der Uebergang zurueckkommt. */
+      var w=v.getComputedStyle(el).height;
+      el.style.transition=vorher;
+      return w;
+    }
+    var offen=endpunkt(karte, kpis, false);
+    var zu=endpunkt(karte, kpis, true);
+    endpunkt(karte, kpis, false);
+    var cOffen=endpunkt(kasten, combo, false);
+    var cZu=endpunkt(kasten, combo, true);
+    endpunkt(kasten, combo, false);
+    log("DIE ENDPUNKTE");
+    log("   Karte     " + offen + " -> " + zu);
+    log("   Combo-Box " + cOffen + " -> " + cZu);
+    function laenge(w){ return /^[\d.]+px$/.test(String(w)); }
+    log("   " + ja(laenge(offen) && laenge(zu)) +
+        " beide Endpunkte der Karte sind LAENGEN (vorher war das Ziel \"auto\", und zwischen einer" +
+        " Laenge und auto interpoliert kein Browser)");
+    log("   " + ja(laenge(cOffen) && laenge(cZu)) + " beim Vorbild ebenso");
+    log("   " + ja(parseFloat(zu) < parseFloat(offen)) + " und das Ziel liegt unter dem Start");
+    log("");
+    log("DIE GERECHNETE HOEHE GEGEN DIE ABGELEITETE");
+    /* 16 + 20 + 16: Polster oben, wirksame Hoehe des Auges (32px Knopf mit -6px oben und unten),
+       Polster unten. Steht so als calc in der Regel -- hier wird nachgerechnet, dass die drei
+       Zahlen noch stimmen und die Kopfzeile nicht in Wahrheit hoeher ist. */
+    var kopf=Math.round(root.querySelector(".upt-kpi-head").getBoundingClientRect().height);
+    log("   Kopfzeile wirklich " + kopf + "px, Polster 16 + 16 -> erwartet " + (kopf+32) + "px");
+    log("   " + ja(Math.abs(parseFloat(zu) - (kopf+32)) < 1.5) +
+        " die Regel trifft die Kopfzeile genau (" + zu + ")");
+    log("");
+    log("HINWEIS  Die laufende Bewegung selbst ist hier nicht messbar: die Browserflaeche des");
+    log("         Werkzeugs ist verdeckt, und eine verdeckte Seite zeichnet nicht -- auch das");
+    log("         Vorbild stand im ersten Anlauf still. Zwei Laengen mit einer Dauer laufen");
+    log("         aber immer; kaputt war genau das Ziel, das keine Laenge war.");
+    log("FERTIG");
+    return null;
+  });
+}).catch(function(e){ log("ABBRUCH: " + e.message + "\n" + (e.stack||"")); });
+</script>

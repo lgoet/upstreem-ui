@@ -183,7 +183,10 @@
       var dark = isDark();
       return {
         grid:    tok("--vc-border", dark ? "#34343a" : "#e4e2e4"),
-        gridSoft: dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)",
+        /* Derselbe Wert wie core's themeColors().grid -- am 07.09. von 8 auf 9 Prozent
+           angehoben ("die Gridlines minimal kraeftiger"). Die Begruendung fuer genau 9 steht
+           dort; hier steht der Wert nur mit, weil dieses Chart sein Raster selbst zeichnet. */
+        gridSoft: dark ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.09)",
         font:    tok("--vc-muted",  dark ? "#a0a0a0" : "#6b6f78"),
         axis:    tok("--vc-border", dark ? "#34343a" : "#e4e2e4"),
         quad:    tok("--vc-border", dark ? "#34343a" : "#e4e2e4"),
