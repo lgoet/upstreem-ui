@@ -195,11 +195,10 @@
    das Logo ist --, und der Aussenabstand ist 8px + s. Deshalb steht der Aussenabstand als calc mit
    genau dieser Rechnung da: wer das Logo aendert, aendert nur h an zwei Stellen, und die drei
    Abstaende bleiben gleich.
-   Bei h = 16.5px sind es 15.75px fuer die zwei oberen. DER UNTERE IST JETZT 32px, ausdruecklich
-   angefordert am 08.09. ("das Gap von Separator zu Teamswitcher zu Quick Actions: mach das
-   32px, also beide Gaps"). Damit ist der Abstand unter der Linie groesser als die zwei um das
-   Logo -- das ist gewollt: oberhalb der Linie steht die Marke, unterhalb beginnt die App, und
-   die zwei Bereiche sollen weiter auseinanderliegen als die Teile innerhalb der Marke.
+   Bei h = 16.5px sind es 15.75px fuer die zwei oberen. DER UNTERE IST 16px, angefordert am
+   08.09. (zuerst 32, dann "das Gap von 32px bitte doch auf 16px runter"). Damit ist er
+   praktisch derselbe wie die zwei um das Logo -- die Marke und der Anfang der App liegen also
+   gleich weit auseinander wie die Teile innerhalb der Marke.
    Die Hoehe des Logokastens ist FEST gesetzt (.usn-brand-mark), damit Bild und Schriftzug dieselbe
    Rechnung ergeben. Gemessen wird das in _h_usn_marke.html.
    Die Linie ist die border-bottom DIESER Zeile, nicht ein eigenes Element: so kann der Abstand
@@ -209,7 +208,7 @@
    gemeldet. */
 .usn-brand { display: flex; align-items: center; flex: 0 0 auto;
   min-width: 0; height: 32px; box-sizing: content-box;
-  padding-bottom: 8px; margin: 0 -8px 32px;
+  padding-bottom: 8px; margin: 0 -8px 16px;
   position: relative; }
 /* DIE LINIE IST EIN EIGENES ELEMENT und nicht mehr die border-bottom der Zeile. Angefordert am
    07.09.: "pro Seite 8px kuerzer, so dass sie genauso lang ist wie die Menuepunkt-Backgrounds."
@@ -379,9 +378,9 @@
 /* 24 statt 32, auf Ansage -- derselbe Schritt wie unter Quick Actions. Die beiden Abstaende
    oben (Kopfleiste -> Quick Actions -> erste Gruppe) sind das Geruest der Leiste und muessen
    gleich bleiben; wer einen aendert, aendert beide. */
-/* 32px, angefordert am 08.09. -- derselbe Wert wie unter der Linie darueber, damit die zwei
-   Abstaende gleich sind. Vorher 24. */
-.usn-qa:not(:empty) { margin-top: 32px; }
+/* 16px, angefordert am 08.09. -- derselbe Wert wie unter der Linie darueber, damit die zwei
+   Abstaende gleich sind. Vorher 24, dann kurz 32. */
+.usn-qa:not(:empty) { margin-top: 16px; }
 /* Der Knopf traegt die Werte eines Menuepunktes: 36 hoch, Radius 9, gedaempfte Schrift, und
    auf dieser Flaeche KEINEN eigenen Hintergrund -- sein weisses --am-trigger-bg stach als
    Kachel heraus. Sichtbar bleibt der Rahmen; beim Hover geht Text und Icon auf die
@@ -461,16 +460,18 @@
    NUR wenn Quick Actions wirklich da ist: ohne den Knopf waere die Ueberschrift der direkte
    Nachbar der Teamzeile, und dann sind die 24 richtig. Dieselbe Bedingung wie am Aussenabstand
    von .usn-qa darueber. */
-/* 36 UND NICHT 33. Die 33 waren gerechnet, als der Quick-Actions-Knopf KEINEN Rahmen hatte:
-   damals war seine Beschriftung die sichtbare Kante, und der Abstand musste die 12px Luft im
-   36px hohen Knopf ausgleichen. Seit dem 08.09. hat der Knopf wieder einen Rahmen -- damit ist
-   seine KASTENKANTE das, was das Auge nimmt, und der Ausgleich faellt weg.
-   Gemessen (_h_usn_kopfgaps.html, an den sichtbaren Kanten): Linie -> Teamlogo 36.5px,
-   Teamlogo -> QA-Rahmen 36.5px, QA-Rahmen -> DATABASE mit 33 nur 33.5px. Mit 36 sind alle drei
-   36.5. Genau der Fehler, der am 07.09. schon einmal gemeldet war ("das Gap zwischen Quick
-   Actions und Datenbank ist kleiner als das nach oben") -- er kommt zurueck, sobald einer der
-   drei Abstaende bewegt wird, ohne die anderen nachzumessen. */
-.usn-qa:not(:empty) + .usn-nav { margin-top: 36px; }
+/* 20, UND DIESE ZAHL HAENGT AN DEN ZWEI DARUEBER. Sie ist keine Vorliebe, sie ist gerechnet:
+   die zwei angeforderten Abstaende sind 16px von Kasten zu Kasten, und weil der Teamumschalter
+   KEINEN Rahmen hat, sieht das Auge dort seinen Inhalt -- gemessen 4.5px Luft je Seite. Die
+   zwei sichtbaren Abstaende sind also 20.5px. Der Knopf darunter HAT einen Rahmen, seine
+   Kastenkante ist die sichtbare Kante, und ueber der Ueberschrift liegt 0.5px Luft. Damit auch
+   der dritte sichtbar 20.5px hat, braucht er 20 von Kasten zu Kasten.
+   Die 33 von vorher waren fuer den rahmenlosen Knopf gerechnet, die 36 fuer die 32er-Fassung.
+   Wer einen der drei Abstaende bewegt, muss die anderen nachmessen -- der Fehler "das Gap
+   zwischen Quick Actions und Datenbank ist kleiner als das nach oben" ist genau so entstanden
+   und kommt genau so zurueck. Gemessen wird das in _h_usn_kopfgaps.html an den SICHTBAREN
+   Kanten. */
+.usn-qa:not(:empty) + .usn-nav { margin-top: 20px; }
 /* Derselbe Abstand wie zwischen Kopf, Quick Actions und Menue: alle groesseren Gruppen
    stehen gleich weit auseinander. */
 .usn-block + .usn-block { margin-top: 32px; }

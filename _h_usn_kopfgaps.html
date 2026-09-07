@@ -106,9 +106,10 @@ Promise.all([hol("core.css"), hol("core.js"), hol("sidebar.css"), hol("sidebar.j
       log("KASTEN GEGEN KASTEN (das, was in der Datei steht)");
       var k1=z(r(qa).top - r(top).bottom), k2=z(r(nav).top - r(qa).bottom);
       log("   Team -> Quick Actions " + k1 + "px   Quick Actions -> Navigation " + k2 + "px");
-      log("   (verschiedene Werte sind hier gewollt -- 32 oben, 36 unten. Der Grund: oben grenzt" +
-          " der Abstand an eine Kastenkante OHNE Rahmen, unten an eine MIT. Die Begruendung" +
-          " steht in sidebar.css, das Urteil oben bei den sichtbaren Kanten.)");
+      log("   (verschiedene Werte sind hier gewollt -- 16 oben, 20 unten. Der Grund: oben grenzt" +
+          " der Abstand an eine Kastenkante OHNE Rahmen (man sieht den Inhalt, 4.5px Luft je" +
+          " Seite), unten an eine MIT Rahmen. Begruendung in sidebar.css, Urteil oben bei den" +
+          " sichtbaren Kanten.)");
       log("");
       log("SCHRIFT GEGEN SCHRIFT (nur noch ein Bericht, nicht mehr das Urteil)");
       log("   Solange der Quick-Actions-Knopf KEINEN Rahmen hatte, war seine Beschriftung die");
