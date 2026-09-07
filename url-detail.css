@@ -56,9 +56,19 @@
 /* Die Raute steht in der dritten Farbe und zwei Punkt kleiner als die Zahl daneben: sie ist die
    Einheit, nicht der Wert. Farbe kommt aus core (.up-hash), hier nur die Groesse -- 15 - 2 = 13. */
 .uud-rank .up-hash { width: 13px; height: 13px; }
+/* line-height FEST auf 16px, und das ist der Grund: das Info-Zeichen ist 14px hoch und sitzt
+   absolut auf der Mitte dieser Ueberschrift (Regel weiter unten). Wie hoch deren Kasten ist,
+   entschied bisher die Schrift -- "normal" ergibt je Schnitt zwischen 13 und 16px. Bei 13px ist
+   ein 14px-Zeichen groesser als sein Bezugskasten und steht oben und unten einen halben Pixel
+   darueber hinaus; das liest sich als "oben ganz leicht abgeschnitten", genau so gemeldet am
+   07.09. Mit 16px hat es in JEDER Schrift einen Pixel Luft nach oben und unten.
+   16 und nicht 18: 16 ist die Hoehe, die die Ueberschrift mit der Hausschrift ohnehin schon hat
+   -- die Zeile darunter verschiebt sich also nicht. Uppercase hat keine Unterlaengen, es wird
+   dabei nichts beschnitten. */
 .uud-kpi-lbl {
   display: inline-flex; align-items: center; justify-content: flex-start;
   font-size: 12px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase;
+  line-height: 16px;
   color: var(--vc-third); white-space: nowrap; text-align: left;
 }
 /* Das Info-Symbol ist .up-th-info aus core. Zwei Dinge muessen anders sein, genau wie in

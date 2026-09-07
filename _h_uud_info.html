@@ -1,0 +1,123 @@
+<!doctype html><meta charset="utf-8">
+<title>URL Detail: sind die Info-Zeichen der KPIs oben angeschnitten?</title>
+<pre id="out" style="font:12px/1.55 ui-monospace,Menlo,monospace;padding:12px;white-space:pre-wrap"></pre>
+<div id="buehne"></div>
+<script>
+/* Gemeldet am 07.09.: "die i-Icons an den Top-KPIs sind ganz leicht oben abgeschnitten, nur ein
+   paar px". Angeschnitten heisst: irgendein Vorfahre schneidet, oder das Zeichen steht ueber der
+   Kante seines eigenen Kastens. Beides laesst sich rechnen, und beides wird hier getrennt
+   ausgewiesen -- sonst behebt man das Falsche. */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function ja(b){ return b ? "RICHTIG" : "FALSCH "; }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function warte(ms){ return new Promise(function(ok){ setTimeout(ok,ms); }); }
+
+Promise.all([hol("core.css"), hol("core.js"), hol("url-detail.css"), hol("url-detail.js"),
+             hol("bubble/url_detail_bubble.html")]).then(function(t){
+  var f=document.createElement("iframe");
+  f.style.cssText="width:1200px;height:600px;border:1px solid #ccc;display:block";
+  document.getElementById("buehne").appendChild(f);
+  var d=f.contentDocument, v=f.contentWindow;
+  d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0'></body></html>"); d.close();
+  [t[0], t[2]].forEach(function(c){ var st=d.createElement("style"); st.textContent=c; d.head.appendChild(st); });
+  var roh=t[4].replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim();
+  var w=d.createElement("div"); w.innerHTML=roh;
+  var r=w.querySelector(".uud-root")||w.querySelector(".up-root")||w.firstElementChild;
+  r.setAttribute("data-instance","info"); r.setAttribute("data-cdn-pin","t"); r.setAttribute("data-isdark","no");
+  d.body.appendChild(r);
+  [t[1], t[3]].forEach(function(j){ var sc=d.createElement("script"); sc.textContent=j; d.head.appendChild(sc); });
+  return warte(1200).then(function(){
+    /* DIE KPIS BAUT DAS JS, nicht die Vorlage. Der erste Anlauf hat den statischen Rest der
+       Vorlage gemessen und "alles in Ordnung" gemeldet -- an einem Markup, das auf der Seite gar
+       nicht steht. Also erst Daten schicken. */
+    try {
+      v.setUrlDetail("info", JSON.stringify({
+        url: "https://beispiel.de/vergleich", title: "Vergleich der Anbieter 2026",
+        domain: "beispiel.de", last_seen: "2026-09-01",
+        domain_share_pct: 12.4, citations: 42, avg_position: 3.2,
+        first_seen: "2026-06-01", url_type: "Article", sentiment: 71
+      }));
+    } catch(e){ log("Setter: " + e.message); }
+    return warte(900).then(weiter);
+  });
+  function weiter(){
+    var lbl=d.querySelector(".uud-kpi-lbl");
+    var ic=d.querySelector(".uud-info");
+    if (!lbl || !ic){ log("ABBRUCH: keine KPI-Ueberschrift mit Info-Zeichen gefunden"); return; }
+    /* Sichtbar machen -- im Ruhezustand ist das Zeichen durchsichtig, und ein durchsichtiges
+       Element hat trotzdem seinen Kasten. Fuer die Rechnung genuegt der Kasten. */
+    ic.style.opacity="1";
+    var ir=ic.getBoundingClientRect(), lr=lbl.getBoundingClientRect();
+    log("Das Zeichen und sein eigener Kasten");
+    log("   Zeichen  oben " + ir.top.toFixed(1) + "  unten " + ir.bottom.toFixed(1) +
+        "  Hoehe " + ir.height.toFixed(1));
+    log("   Ueberschrift oben " + lr.top.toFixed(1) + "  unten " + lr.bottom.toFixed(1) +
+        "  Hoehe " + lr.height.toFixed(1));
+    var raus = Math.round((lr.top - ir.top) * 10) / 10;
+    log("   " + ja(raus <= 0.1) + " das Zeichen steht nicht ueber der Oberkante seiner" +
+        " Ueberschrift (" + raus + "px darueber)");
+    log("");
+    log("Und wer schneidet? Jeder Vorfahre mit overflow, der die Oberkante kreuzt");
+    var el=ic.parentNode, gefunden=false;
+    while (el && el.nodeType === 1 && el !== d.body){
+      var cs=v.getComputedStyle(el);
+      var ov=cs.overflow + " / " + cs.overflowY;
+      if (cs.overflowY !== "visible" || cs.overflow !== "visible"){
+        var er=el.getBoundingClientRect();
+        var schneidet = ir.top < er.top - 0.1;
+        if (schneidet) gefunden=true;
+        log("   " + (schneidet ? "SCHNEIDET" : "  ok     ") + "  " +
+            (el.className || el.tagName) + "   overflow " + ov +
+            "   oben " + er.top.toFixed(1) +
+            (schneidet ? "   -> " + (er.top - ir.top).toFixed(1) + "px des Zeichens liegen darueber" : ""));
+      }
+      el=el.parentNode;
+    }
+    if (!gefunden) log("   kein Vorfahre schneidet die Oberkante");
+    log("");
+    log("   " + ja(!gefunden && raus <= 0.1) + " das Zeichen steht vollstaendig da");
+    /* Alle sechs, nicht nur das erste: die Ueberschriften sind unterschiedlich lang, und eine
+       zweizeilige haette eine andere Kastenhoehe. */
+    var alle=[].map.call(d.querySelectorAll(".uud-info"), function(e){
+      e.style.opacity="1";
+      var a=e.getBoundingClientRect(), b=e.parentNode.getBoundingClientRect();
+      return { txt:(e.parentNode.textContent||"").trim().slice(0,18),
+               ueber: Math.round((b.top - a.top)*10)/10, hoehe: b.height };
+    });
+    log("");
+    log("Alle Ueberschriften der Reihe");
+    alle.forEach(function(x){
+      log("   " + ja(x.ueber <= 0.1) + " " + x.txt.padEnd(20," ") +
+          " Kasten " + x.hoehe.toFixed(1) + "px, Zeichen " + x.ueber + "px darueber");
+    });
+    log("   " + ja(alle.length > 0 && alle.every(function(x){ return x.ueber <= 0.1; })) +
+        " keines steht ueber seiner Ueberschrift");
+    log("");
+    /* GEGENPROBE, und sie ist hier das Wichtigste: mit der Rueckfallschrift dieses Rahmens ergibt
+       "line-height: normal" zufaellig genau 16px -- die Messung oben waere also auch ohne die
+       neue Regel gruen gewesen. Sie sagt damit nichts ueber die Ursache.
+       Also wird der Fall nachgestellt, den eine andere Schrift erzeugt: ein Zeilenkasten von
+       13px. Dann ist das 14px-Zeichen groesser als sein Bezug und steht oben und unten darueber
+       hinaus -- das ist der Zustand, der als "oben ganz leicht abgeschnitten" gemeldet wurde.
+       Danach zeigt die gesetzte Regel, dass genau das nicht mehr passieren kann. */
+    log("GEGENPROBE  was passiert, wenn die Schrift einen kleineren Zeilenkasten liefert");
+    var l2=d.querySelector(".uud-kpi-lbl");
+    var i2=l2.querySelector(".uud-info");
+    l2.style.lineHeight="13px";
+    var a2=i2.getBoundingClientRect(), b2=l2.getBoundingClientRect();
+    var ueber2=Math.round((b2.top - a2.top)*10)/10;
+    log("   mit 13px Zeilenkasten: Kasten " + b2.height.toFixed(1) +
+        "px, Zeichen " + ueber2 + "px darueber");
+    log("   " + ja(ueber2 > 0.1) + " so entsteht der Ueberstand -- der Fehlerfall ist" +
+        " nachgestellt, die Messung kann ihn also sehen");
+    l2.style.lineHeight="";
+    var a3=i2.getBoundingClientRect(), b3=l2.getBoundingClientRect();
+    log("   mit der gesetzten Regel: Kasten " + b3.height.toFixed(1) +
+        "px, Zeichen " + (Math.round((b3.top - a3.top)*10)/10) + "px darueber");
+    log("   " + ja(b3.height === 16) + " der Kasten ist auf 16px festgelegt und haengt nicht" +
+        " mehr an der Schrift");
+    log("FERTIG");
+  }
+}).catch(function(e){ log("ABBRUCH: " + e.message + "\n" + (e.stack||"")); });
+</script>

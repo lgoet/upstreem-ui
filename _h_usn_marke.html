@@ -122,25 +122,45 @@ Promise.all([hol("core.css"), hol("core.js"), hol("sidebar.css"), hol("sidebar.j
               log("");
               log("6  Groesse");
               var w=marke.querySelector(".usn-brand-img");
-              log("   Bildhoehe " + v.getComputedStyle(w).height + " (Regel: 15px)");
-              log("   " + ja(parseFloat(v.getComputedStyle(w).height) === 15) + " 15px");
+              /* 16 und nicht 15: die Rechnung fuer die drei Abstaende braucht einen Logokasten
+                 von genau 16px (siehe 7a), und ein Bild, das kleiner ist als sein Kasten, waere
+                 darin wieder eine Unbekannte. Angefordert waren "zehn Prozent groesser" auf 14 --
+                 das sind 15.4, und 16 ist die Zahl daneben, die die Geometrie aufgehen laesst. */
+              log("   Bildhoehe " + v.getComputedStyle(w).height + " (Regel: 17px)");
+              log("   " + ja(parseFloat(v.getComputedStyle(w).height) === 17) + " 17px");
               log("");
-              log("7  Die Trennlinie und ihre zwei Abstaende");
+              log("7a  DIE DREI ABSTAENDE OBEN -- alle drei muessen gleich sein");
+              /* Gemeldet am 07.09.: "das Gap von oberem Rand zu Logo zu Separator ist nicht
+                 gleich, nach unten ist es leicht groesser". Also werden alle drei gerechnet, und
+                 zwar an den SICHTBAREN Kanten: Rand der Leiste, Logokasten, Linie, Teamzeile. */
+              var brs=v.getComputedStyle(marke);
+              var barR=bar.getBoundingClientRect();
+              var mkR=marke.querySelector(".usn-brand-mark").getBoundingClientRect();
+              var mR=marke.getBoundingClientRect();
+              var randB=parseFloat(brs.borderBottomWidth);
+              var g1=Math.round((mkR.top - barR.top) * 10) / 10;
+              var g2=Math.round(((mR.bottom - randB) - mkR.bottom) * 10) / 10;
+              var g3=Math.round((top.getBoundingClientRect().top - mR.bottom) * 10) / 10;
+              log("   Rand -> Logo " + g1 + "px   Logo -> Linie " + g2 + "px   Linie -> Team " + g3 + "px");
+              log("   " + ja(Math.abs(g1-g2) < 0.6 && Math.abs(g2-g3) < 0.6) + " alle drei gleich");
+              /* Der Wert kommt aus der Rechnung 8 + (32 - h) / 2 mit h = 17, nicht aus einer
+                 abgeschriebenen Zahl: so faellt eine Aenderung am Logo hier auf. */
+              var soll=8 + (32 - mkR.height) / 2;
+              log("   " + ja(Math.abs(g1-soll) < 0.6) + " und zwar " + soll +
+                  "px, der Wert aus 8 + (32 - " + mkR.height + ") / 2");
+              /* Und mit BILD statt Schriftzug muss dieselbe Zahl herauskommen -- deshalb steht die
+                 Hoehe des Logokastens fest. */
+              log("   Logokasten " + mkR.height + "px (fest 17px, damit Bild und Schriftzug" +
+                  " dieselbe Rechnung ergeben)");
+              log("   " + ja(mkR.height === 17) + " Kasten ist 17px");
+              log("");
+              log("7b  Die Trennlinie");
               /* Der Punkt der Meldung war nicht "eine Linie", sondern "gleiches Gap oben und
                  unten". Also wird beides gerechnet: vom Inhalt der Markenzeile bis zur Linie und
                  von der Linie bis zur Teamzeile. */
-              var cs=v.getComputedStyle(marke);
-              var mr=marke.getBoundingClientRect(), tr=top.getBoundingClientRect();
-              var rand=parseFloat(cs.borderBottomWidth);
-              var linieOben=mr.bottom - rand;
-              var inhalt=marke.querySelector(".usn-brand-mark").getBoundingClientRect();
-              var oben=Math.round((linieOben - mr.top - parseFloat(cs.height)) * 10) / 10;
-              var unten=Math.round((tr.top - mr.bottom) * 10) / 10;
-              log("   Linie: " + cs.borderBottomWidth + " " + cs.borderBottomStyle + " " +
-                  cs.borderBottomColor);
-              log("   " + ja(rand >= 1 && cs.borderBottomStyle !== "none") + " sie ist da");
-              log("   Abstand Inhalt -> Linie " + oben + "px   Linie -> Teamzeile " + unten + "px");
-              log("   " + ja(Math.abs(oben - unten) < 0.6) + " beide gleich");
+              log("   Linie: " + brs.borderBottomWidth + " " + brs.borderBottomStyle + " " +
+                  brs.borderBottomColor);
+              log("   " + ja(randB >= 1 && brs.borderBottomStyle !== "none") + " sie ist da");
               /* Und sie darf nur da sein, WENN die Marke da ist. */
               UC.setPref("branding","off");
               return warte(150).then(function(){

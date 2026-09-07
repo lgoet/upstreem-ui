@@ -184,38 +184,55 @@
    .usn-top darunter: so sitzen Logo und Teamlogo auf DERSELBEN linken Kante und der Knopf auf
    derselben rechten. Er wandert mit der Einstellung in die jeweils oberste Zeile -- das macht
    renderBrand in sidebar.js, die Begruendung steht dort.
-   DIE TRENNLINIE und ihre zwei Abstaende (07.09. angefordert, "gleiches Gap nach oben und unten"):
-   sie ist die border-bottom DIESER Zeile, mit 12px Polster darunter und 12px Aussenabstand
-   darauf. Damit ist der Abstand ueber und unter der Linie derselbe Wert, und zwar per Bauart --
-   zwei getrennte Zahlen waeren zwei Dinge, die auseinanderlaufen koennen.
-   12 und nicht 24: die Leiste kennt 24 und 32 fuer GRUPPEN, Marke und Team sind aber eine Gruppe,
-   zwei Zeilen desselben Kopfes. Die Haelfte von 24 sagt genau das.
+   DREI ABSTAENDE, EIN WERT. Am 07.09. zweimal nachgemessen -- zuerst waren die zwei um die Linie
+   gleich, aber der obere kleiner (16.5 gegen 20.5). Nennt man die Hoehe der Zeile H (32px, die des
+   Einklappknopfes darin), die Hoehe des Logokastens h und die Luft je Seite s = (H - h) / 2, dann
+   ist
+       oben   8px Polster der Leiste + s
+       Mitte  s + Polster dieser Zeile
+       unten  Aussenabstand dieser Zeile
+   Alle drei gleich heisst: das Polster dieser Zeile ist IMMER 8px -- unabhaengig davon, wie gross
+   das Logo ist --, und der Aussenabstand ist 8px + s. Deshalb steht der Aussenabstand als calc mit
+   genau dieser Rechnung da: wer das Logo aendert, aendert nur h an zwei Stellen, und die drei
+   Abstaende bleiben gleich.
+   Bei h = 17px sind es 15.5px, dreimal. Halbe Pixel sind hier in Ordnung -- gerundet wird erst
+   beim Zeichnen, und alle drei runden gleich.
+   Die Hoehe des Logokastens ist FEST gesetzt (.usn-brand-mark), damit Bild und Schriftzug dieselbe
+   Rechnung ergeben. Gemessen wird das in _h_usn_marke.html.
+   Die Linie ist die border-bottom DIESER Zeile, nicht ein eigenes Element: so kann der Abstand
+   ueber ihr gar nicht vom Abstand unter ihr abweichen, und ohne Marke ist sie automatisch mit weg.
    is-off nimmt die Zeile GANZ aus dem Fluss, Linie und Abstaende inbegriffen. Im ersten Anlauf
    stand hier visibility: hidden, und dadurch blieb oben ein leerer Streifen stehen -- genau so
    gemeldet. */
-.usn-brand { display: flex; align-items: center; margin: 0 -8px 12px; flex: 0 0 auto;
-  min-width: 0; height: 32px; padding-bottom: 12px; box-sizing: content-box;
+.usn-brand { display: flex; align-items: center; flex: 0 0 auto;
+  min-width: 0; height: 32px; box-sizing: content-box;
+  padding-bottom: 8px; margin: 0 -8px calc(8px + (32px - 17px) / 2);
   border-bottom: 1px solid var(--vc-border); }
 .usn-brand.is-off { display: none; }
 .usn-brand-mark { display: inline-flex; align-items: center; min-width: 0; overflow: hidden;
   /* 0 6px wie .usn-team: so beginnt der Schriftzug genau ueber dem Teamlogo. */
-  padding: 0 6px; }
-/* Der Schriftzug als Text -- der Rueckfall, wenn kein Bild gesetzt ist. 14px/600: einen halben
-   Punkt kleiner als der Teamname darunter (14.5px), und das ist die Absicht -- die Marke ist der
-   leiseste Punkt der Leiste, nicht ihr lautester. Am 07.09. erst auf 13 verkleinert, dann um
-   zehn Prozent zurueck: 13 war zu wenig. Kleinbuchstaben, so wie der Name geschrieben wird. */
-.usn-brand-word { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; color: var(--vc-text);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1; }
-/* Das Bild traegt seine eigene Form -- 15px Hoehe (dieselben zehn Prozent auf die 14), Breite
-   nach Bedarf. Dieselbe Bauart wie .ulh-nav-logo auf der Landingpage (dort 20px, hier die
-   kleinere Fassung fuer eine Leiste). */
-.usn-brand-img { height: 15px; width: auto; display: block; max-width: 100%; object-fit: contain; }
+  padding: 0 6px;
+  /* 17px FEST. Bild und Schriftzug sind verschieden hoch, und der Abstand nach oben haengt an
+     dieser Zahl (siehe die Rechnung am Block darueber) -- er darf sich nicht danach aendern,
+     welche der beiden Fassungen gerade da ist. Dieselbe 17 steht im calc des Aussenabstands. */
+  height: 17px; }
+/* Der Schriftzug als Text -- der Rueckfall, wenn kein Bild gesetzt ist. Am 07.09. dreimal
+   nachgestellt: 15 -> 13 (zu klein) -> 14 -> 15. Damit ist er einen halben Punkt GROESSER als der
+   Teamname darunter (14.5px) -- die Marke steht ueber dem Team, nicht daneben.
+   Kleinbuchstaben, so wie der Name geschrieben wird. */
+.usn-brand-word { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; color: var(--vc-text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 17px; }
+/* Das Bild fuellt den Kasten: 17px. Zwei Schritte am 07.09. -- "zehn Prozent groesser" auf die 14
+   und danach noch fuenf. Ein Bild, das kleiner ist als sein Kasten, waere in der Rechnung fuer die
+   drei Abstaende wieder eine Unbekannte, deshalb genau die Kastenhoehe. Dieselbe Bauart wie
+   .ulh-nav-logo auf der Landingpage (dort 20px, hier die kleinere Fassung fuer eine Leiste). */
+.usn-brand-img { height: 17px; width: auto; display: block; max-width: 100%; object-fit: contain; }
 /* Im Mini-Zustand ist links kein Platz fuer einen Schriftzug. Das BILD bleibt: ein Logo ist auch
    auf 64px noch ein Logo, ein Wort nicht. Zeichen und Knopf stehen dann uebereinander, wie in
    .usn-top, das im Mini ebenfalls zur Spalte wird -- und dafuer braucht die Zeile ihre feste
    Hoehe nicht mehr. */
 .usn-bar.is-mini .usn-brand { flex-direction: column; justify-content: center; gap: 6px;
-  height: auto; margin: 0 0 12px; }
+  height: auto; margin: 0 0 calc(8px + (32px - 17px) / 2); }
 .usn-bar.is-mini .usn-brand-word { display: none; }
 .usn-bar.is-mini .usn-brand-mark { padding: 0; }
 
