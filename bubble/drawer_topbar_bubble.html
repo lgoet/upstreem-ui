@@ -13,7 +13,51 @@
   Ein HTML-Element ganz oben in den Drawer, volle Breite, Hoehe 32.
   Darunter im Drawer folgt wie gehabt der eigentliche Inhalt (brand-detail, url-detail, ...).
 
-  ── Attribute ───────────────────────────────────────────────────────────────────
+  ── Die Daten: EIN Run-JS-Schritt fuellt alles (empfohlen) ──────────────────────
+  setDrawerTopbar("[dynamic id]", <Text>)
+
+      Der HAUPTWEG. Ein Schritt setzt Typ, Name, Bild und Kennung -- und er GEWINNT gegen die
+      Attribute unten. Warum es ihn gibt, obwohl die Attribute alles koennen: Bubble hat
+      data-name und data-type zuverlaessig nachgezogen, data-logo aber nicht, und die Leiste
+      zeigte das alte Bild zu einem neuen Namen. Ein Wert, den ein Workflow SCHICKT, kommt an
+      oder nicht; ein Attribut, das jemand aendern SOLLTE, ist eine Hoffnung.
+
+      Der Payload ist derselbe Text wie bei jedem anderen Setter dieser Bibliothek:
+
+          { "type": "domain", "name": "adac.de", "logo": "https://.../favicon.png",
+            "item_id": "1712849302914x392" }
+
+      FEHLENDE FELDER BLEIBEN STEHEN. Ein zweiter Schritt, der nur { "logo": "..." } schickt,
+      traegt das Bild nach, ohne den Namen zu loeschen -- gebaut fuer den Fall, dass das Favicon
+      erst nach dem Namen bekannt ist.
+
+      Der Run-JS-Schritt, wortgleich einsetzbar (Parameter alle als TEXT anlegen):
+
+          setDrawerTopbar("[dynamic id]", `{
+            "type":    "[typ]",
+            "name":    "[name]",
+            "logo":    "[logo]",
+            "item_id": "[item id]"
+          }`);
+
+      Und mit echten Daten zum Ausprobieren, ohne einen einzigen Bubble-Ausdruck:
+
+          setDrawerTopbar("ROOTID_1234", `{
+            "type":    "domain",
+            "name":    "adac.de",
+            "logo":    "https://www.google.com/s2/favicons?sz=64&domain=adac.de",
+            "item_id": "1712849302914x392"
+          }`);
+
+      Reihenfolge im Workflow, der den Drawer auf ein anderes Element umstellt:
+          1. resetDrawerTopbar(...)   -> Skelett, der alte Name verschwindet sofort
+          2. Daten holen
+          3. setDrawerTopbar(...)     -> die Leiste steht
+
+  ── Attribute (der Anfangszustand, funktionieren weiter) ────────────────────────
+  Wer keinen Workflow schreiben will, kann alles auch hier hineingeben. Sobald ein
+  setDrawerTopbar ein Feld gesetzt hat, gilt fuer dieses Feld der Setter.
+
   data-instance   = "ROOTID_[dynamic id]"        eindeutig pro Platzierung
   data-isdark     = "yes" / "no"                 nur Rueckfall; das Theme kommt aus core
   data-cdn-pin    = der Commit-Hash der Auslieferung
@@ -71,6 +115,9 @@
       Und mit einer festen Kennung zum Ausprobieren:
 
           resetDrawerTopbar("ROOTID_1234");
+
+      Zusammen mit dem Setter: reset loescht AUCH die vom Setter geschickten Werte, danach
+      gelten wieder die Attribute.
 
   refreshDrawerTopbar("[dynamic id]")
       Notbremse fuer Attributaenderungen, die der Beobachter nicht sieht. Im Normalbetrieb nicht

@@ -72,6 +72,18 @@
    Pixel verkleinert. Alle zusammenhaengenden Werte gehen im selben Verhaeltnis mit (§1):
    Radius 8 -> 6, Bild 22 -> 16, Buchstabe 11 -> 9. */
 .utb-root .up-logo-box.utb-logo { width: 18px; height: 18px; flex: 0 0 18px; border-radius: 6px; }
+/* IM DUNKELN OHNE PLATTE (07.09. angefordert). --vt-logo-bg ist dort #e0e0e0, also eine helle
+   Flaeche -- in den Tabellen ist sie richtig, weil ein dunkles Logo darauf sonst verschwindet.
+   Hier ist sie ein weisser Fleck von 18px in einer 32px-Leiste, und das faellt mehr auf als ein
+   Logo, das sich nicht abhebt. Im Hellen bleibt die Platte: dort ist sie Weiss auf Weiss und
+   ohnehin unsichtbar.
+   Der Buchstaben-Rueckfall traegt --vc-muted und liest sich auch ohne Platte (5.6 gegen den
+   Grund der Seite).
+   :not(.is-sk) ist noetig, nicht Zierde: dieser Selektor hat (0,4,1) und wuerde die Skelettregel
+   weiter unten (0,3,0) sonst schlagen -- die Platte waere im Ladezustand im Dunkeln durchsichtig
+   statt grau, also gar nicht da. */
+.up-root[data-theme="dark"] .utb-root .up-logo-box.utb-logo:not(.is-sk),
+.up-root[data-theme="dark"].utb-root .up-logo-box.utb-logo:not(.is-sk) { background: transparent; }
 .utb-root .up-logo-box.utb-logo img { width: 16px; height: 16px; border-radius: 5px; }
 .utb-root .up-logo-box.utb-logo .up-logo-ltr { font-size: 9px; }
 

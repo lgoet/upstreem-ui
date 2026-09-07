@@ -2501,6 +2501,7 @@
   "upt-kpi-quota-bar",
   "upt-kpi-quota-fill",
   "upt-kpi-quota-num",
+  "upt-kpi-quota-sk",
   "upt-kpi-quota-total",
   "upt-kpi-quota-used",
   "upt-kpi-title",
@@ -2514,6 +2515,9 @@
   "upt-selcount",
   "upt-selcount-clear",
   "upt-selcount-n",
+  "upt-sk-bar",
+  "upt-sk-total",
+  "upt-sk-used",
   "upt-status",
   "upt-status-btn",
   "upt-status-tag",
@@ -2864,7 +2868,7 @@
   "globals": 169,
   "payloadkeys": 96,
   "dataattrs": 240,
-  "klassen": 2033,
+  "klassen": 2037,
   "keyframes": 63
  }
 }

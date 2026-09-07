@@ -5,7 +5,23 @@
    "TYP / Logo / Name", rechts Bearbeiten (nur bei Marken), Anheften und das Kreuz.
 
    ── Woher die Daten kommen ──────────────────────────────────────────────────────
-   ALLES ueber Attribute, kein Setter. Das ist die ganze Schnittstelle:
+   ZWEI WEGE, und der Setter gewinnt:
+
+       setDrawerTopbar(id, payload)   der EMPFOHLENE Weg. Ein Run-JS-Schritt, der alles fuellt:
+                                      { "type": "...", "name": "...", "logo": "...",
+                                        "item_id": "..." }
+                                      Fehlt ein Feld im Payload, bleibt der bisherige Wert
+                                      stehen -- so kann ein Schritt auch nur das Bild nachtragen.
+
+   Die Attribute unten funktionieren weiter und sind der Anfangszustand. Sie waren der erste
+   Entwurf und ausdruecklich als "kein Setter noetig" begruendet -- das hat zwei Runden gekostet:
+   Bubble hat data-name und data-type nachgezogen, data-logo aber nicht, und die Leiste zeigte
+   das alte Bild zu einem neuen Namen. Ob das an einem Ausdruck in Bubble lag oder am Element,
+   ist von hier aus nicht zu sehen -- und das ist genau der Grund, warum jede andere Komponente
+   dieses Hauses einen Setter hat. Ein Wert, den ein Workflow schickt, kommt an oder nicht; ein
+   Attribut, das jemand aendern SOLLTE, ist eine Hoffnung.
+
+   Die Attribute:
 
        data-type       "brand" | "prompt" | "domain" | "url"   bestimmt die Beschriftung links
                        UND ob der Bearbeiten-Knopf da ist (nur bei brand)
@@ -33,7 +49,8 @@
    Quick Actions aus seinem Zeilenmenue ruft. Die Seitenleiste besitzt diese Liste, und ein
    zweiter Weg dorthin waere ein zweiter Zustand.
 
-   ── Der eine Setter ─────────────────────────────────────────────────────────────
+   ── Die Setter ──────────────────────────────────────────────────────────────────
+   setDrawerTopbar(id, p) fuellt Typ, Name, Bild und Kennung. Siehe oben.
    resetDrawerTopbar(id)   zurueck auf das Skelett. Gehoert in den Workflow, der den Drawer auf
                            ein anderes Element umstellt, und zwar VOR das Laden: sonst zeigt die
                            Leiste solange den alten Namen mit dem alten Bild, und das ist eine
@@ -58,7 +75,7 @@
      ohne Stub wirft der erste Aufruf und reisst den ganzen Run-JS-Step mit, also auch die Setter
      der anderen Komponenten darunter. Alles ANDERE steht weiter in Attributen; die sind im
      Markup, bevor irgendein Skript laeuft. */
-  var API_NAMES = ["resetDrawerTopbar", "refreshDrawerTopbar"];
+  var API_NAMES = ["setDrawerTopbar", "resetDrawerTopbar", "refreshDrawerTopbar"];
   var Q = (window.__utbBootQueue = window.__utbBootQueue || []);
   API_NAMES.forEach(function (n) {
     if (!window[n]) window[n] = function () { Q.push([n, [].slice.call(arguments)]); };
@@ -95,15 +112,23 @@
     var instanceId = root.getAttribute("data-instance") || "default";
 
     function attr(n) { return root.getAttribute(n) || ""; }
-    function typ() { return String(attr("data-type")).toLowerCase().trim(); }
-    function name() { return attr("data-name").trim(); }
+    /* Der Setter schreibt in daten; ist ein Feld dort nicht gesetzt (undefined), gilt das
+       Attribut. So bleibt der Anfangszustand aus dem Markup gueltig, und ein Schritt, der nur
+       das Bild nachtraegt, loescht nicht den Namen. */
+    var daten = {};
+    function feld(schluessel, attrName) {
+      var w = daten[schluessel] != null ? daten[schluessel] : attr(attrName);
+      return String(w == null ? "" : w).trim();
+    }
+    function typ() { return feld("type", "data-type").toLowerCase(); }
+    function name() { return feld("name", "data-name"); }
     function logo() {
-      var w = attr("data-logo").trim();
+      var w = feld("logo", "data-logo");
       /* Die Platzhalter, die Bubble stehen laesst, wenn ein Feld leer ist. Sie als Bildquelle zu
          nehmen ergibt ein gebrochenes Bild -- der Buchstabe ist dann die richtige Antwort. */
       return (!w || w === "LOGO" || w === "BRAND_LOGO" || w === "FAVICON") ? "" : w;
     }
-    function itemId() { return attr("data-item-id").trim(); }
+    function itemId() { return feld("item_id", "data-item-id"); }
 
     var elType, elLogo, elName, elEdit;
     var state = { leer: true };
@@ -211,7 +236,43 @@
        Element, das im Drawer schon nicht mehr offen ist.
        state.leer und NICHT das Loeschen der Attribute: die gehoeren Bubble. Sobald ein Name
        ankommt, ist der Zustand von selbst vorbei (siehe der Beobachter). */
-    function reset() { state.leer = true; render(); }
+    function reset() { state.leer = true; daten = {}; render(); }
+
+    /* ---- Der Setter (07.09.) ----
+       readBubble und nicht JSON.parse: ein Bubble-Ausdruck liefert regelmaessig doppelt
+       verpacktes JSON, unquotierte yes/no und leere Werte hinter einem Doppelpunkt -- readBubble
+       kennt all das (siehe core), JSON.parse wirft. Und ein Payload, der NICHT lesbar war, darf
+       nicht stumm verpuffen (§46): dann bleibt stehen, was die Attribute sagen, der Ladezustand
+       endet trotzdem, und die Konsole sagt warum. Endloses Skelett waere die schlechteste
+       Antwort -- es sieht aus wie "gleich da". */
+    function setzen(p) {
+      var o = UC.readBubble ? UC.readBubble(p) : (typeof p === "object" ? p : null);
+      /* readBubble liefert bei TEXT eine LISTE zurueck -- parseBubbleJson verpackt auch ein
+         einzelnes Objekt in ein Array, weil seine Aufrufer Zeilen erwarten. Ein Objekt, das
+         direkt hereinkommt, gibt es unveraendert weiter. Beide Formen kommen hier an, also wird
+         hier ausgepackt. Ohne diese drei Zeilen ging der Setter durch die Pruefung darunter
+         (ein Array IST typeof "object"), setzte aber kein einziges Feld: o.name war undefined,
+         und die Leiste zeigte weiter die Attribute. Genau so gemeldet ("das Logo bleibt
+         bestehen") und im Prueftand mit fuenf FALSCH belegt. */
+      if (Array.isArray(o)) o = o.length ? o[0] : null;
+      if (!o || typeof o !== "object" || Array.isArray(o)) {
+        if (window.console) console.warn("[drawer-topbar] setDrawerTopbar: der Payload war nicht " +
+          "lesbar. Es bleibt stehen, was in den Attributen steht. Payload: " + String(p).slice(0, 200));
+        state.leer = false;
+        render();
+        return;
+      }
+      /* Nur die vier Felder, die es gibt, und nur die MITGESCHICKTEN. item_id auch als "id":
+         so heisst das Feld in den Ereignissen dieser Leiste und in jedem Payload der App. */
+      ["type", "name", "logo"].forEach(function (k) {
+        if (o[k] != null) daten[k] = String(o[k]);
+      });
+      if (o.item_id != null) daten.item_id = String(o.item_id);
+      else if (o.id != null) daten.item_id = String(o.id);
+      /* Der Ladezustand endet, sobald ein Name da ist -- dieselbe Regel wie am Attributweg. */
+      if (name()) state.leer = false;
+      render();
+    }
 
     /* ---- Klicks. Delegiert an der Wurzel, damit ein Neubau des Markups die Bindung nicht
        verliert -- render() schreibt nur Text und Bild, aber das ist eine Zusage, die man leicht
@@ -296,7 +357,7 @@
       if (!neu) root.__utbController = alt;
     });
 
-    var api = { render: render, refresh: render, reset: reset };
+    var api = { render: render, refresh: render, reset: reset, set: setzen };
     root.__utbController = api;
     return api;
   }
@@ -318,6 +379,8 @@
     initRoot: initRoot,
     queue: "__utbBootQueue",
     api: {
+      /* Der Hauptweg: ein Schritt fuellt alles. */
+      setDrawerTopbar: function (id, p) { return each(id, function (c) { c.set(p); }); },
       /* Zurueck auf das Skelett. Gehoert VOR das Laden der neuen Daten, in denselben Workflow,
          der den Drawer umstellt. */
       resetDrawerTopbar: function (id) { return each(id, function (c) { c.reset(); }); },

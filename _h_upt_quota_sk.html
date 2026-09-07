@@ -1,0 +1,155 @@
+<!doctype html><meta charset="utf-8">
+<title>Prompts Table: hat die Kontingent-Karte im Ladezustand ein Skelett?</title>
+<style>html,body{margin:0;font:13px/1.5 system-ui,sans-serif}
+#out{font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap;padding:10px;background:#f6f6f6}</style>
+<body><iframe id="rahmen" style="width:1280px;height:700px;border:0"></iframe><pre id="out">laeuft…</pre>
+<script>
+/* Gemeldet am 07.09.: "im prompts table das prompt kontingent soll bitte auch einen skeleton
+   loader bekommen, on loading."
+   Ein Ladezustand STAND da -- er war nur unsichtbar: die Karte schrieb
+   <div class="up-bars-sk"><div class="up-bar-sk-row"></div>...</div>, und die Zeile hat keine
+   eigene Hoehe. Sichtbar wird sie erst durch ihr Kind .up-bar-sk-track, das makeBarList setzt und
+   das hier nie geschrieben wurde. Also ein leerer Kasten neben zwei schimmernden Nachbarn.
+
+   GEMESSEN WIRD DIE SICHTBARE FLAECHE, nicht die Anwesenheit einer Klasse -- genau daran waere
+   der alte Zustand gruen durchgelaufen. Und die alte Fassung steht als GEGENPROBE im selben
+   Aufbau: sie muss 0 melden, sonst misst das Werkzeug nicht, was es zu messen behauptet. */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function ja(b){ return b ? "RICHTIG" : "FALSCH "; }
+var gut=0, schlecht=0;
+function pruef(t,b){ if(b) gut++; else schlecht++; log("   "+ja(b)+" "+t); }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function warte(ms){ return new Promise(function(ok){ setTimeout(ok,ms); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var DUNKEL=(new URLSearchParams(location.search)).get("dunkel")==="1";
+/* ?halt=1 haelt VOR dem Fuettern an -- damit der Ladezustand auch ANGESEHEN werden kann und
+   nicht nur gemessen. Genau dieser Blick hat bei der Topbar den Fehler gefunden, den drei
+   Messungen uebersehen hatten. */
+var HALT=(new URLSearchParams(location.search)).get("halt")==="1";
+
+Promise.all([hol("core.css"),hol("prompts-table.css"),hol("core.js"),hol("prompts-table.js"),
+             hol("bubble/prompts_table_bubble.html")]).then(function(t){
+  var f=document.getElementById("rahmen");
+  var d=f.contentDocument, v=f.contentWindow;
+  d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0'></body></html>"); d.close();
+  try { v.localStorage.removeItem("up_prefs"); v.localStorage.removeItem("pref_theme");
+        v.localStorage.setItem("pref_theme", DUNKEL ? "dark" : "light");
+        v.localStorage.setItem("upt_grouped__q1","no"); } catch(e){}
+  [t[0],t[1]].forEach(function(c){ var st=d.createElement("style"); st.textContent=c; d.head.appendChild(st); });
+  /* Die Bewegung aus: gemessen werden MASSE und FARBEN. Ein laufender Uebergang gibt
+     Zwischenwerte zurueck (siehe der Merksatz "Transitions aus"). */
+  var st2=d.createElement("style");
+  st2.textContent="*,*::before,*::after{transition:none!important;animation:none!important}";
+  d.head.appendChild(st2);
+  var w=d.createElement("div"); w.innerHTML=wurzelAus(t[4]);
+  var r=w.querySelector(".upt-root");
+  r.setAttribute("data-instance","q1"); r.setAttribute("data-cdn-pin","q");
+  r.setAttribute("data-isdark", DUNKEL?"yes":"no");
+  d.body.appendChild(r);
+  var cj=d.createElement("script"); cj.src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js";
+  d.head.appendChild(cj);
+  [t[2],t[3]].forEach(function(j){ var s=d.createElement("script"); s.textContent=j; d.head.appendChild(s); });
+
+  /* Sichtbare Flaeche aller Skelettbloecke in einem Kasten. Ein Block ohne Hoehe zaehlt nicht,
+     und genau das war der Fehler. */
+  function flaeche(el){
+    var s=0;
+    [].forEach.call(el.querySelectorAll("*"), function(k){
+      var b=k.getBoundingClientRect();
+      var st=v.getComputedStyle(k);
+      var bg=st.backgroundColor;
+      if (b.width>0 && b.height>0 && bg && bg!=="rgba(0, 0, 0, 0)" && bg!=="transparent") s+=b.width*b.height;
+    });
+    return Math.round(s);
+  }
+  function koerper(){ return r.querySelector(".upt-kpi-quota .upt-kpi-body"); }
+
+  return warte(2400).then(function(){
+    var k=koerper();
+    log("1  Der Ladezustand, bevor irgendein Setter lief");
+    if (!k){ log("   ABBRUCH: die Karte wurde nicht gebaut"); return; }
+    /* GEMESSEN WIRD DIE SPANNWEITE DES INHALTS, nicht die Kartenhoehe und nicht der Abstand von
+       oben. Zwei Irrwege lagen davor:
+       - die Koerperhoehe: die drei Karten stehen in einer Reihe und ziehen sich auf die hoechste
+         (im Ladezustand die Themenkarte mit fuenf Zeilen), also meldete sie 15px "Sprung", die
+         gar nicht aus dieser Karte kamen;
+       - der Abstand von der Oberkante des Koerpers: der Koerper ist eine zentrierte flex-Spalte,
+         der Inhalt beginnt also je nach Kartenhoehe woanders.
+       Was hier zaehlt, ist der Platz, den der Inhalt EINNIMMT: unterste Kante minus oberste. */
+    function inhaltHoehe(el){
+      var o=null, u=null;
+      [].forEach.call(el.querySelectorAll("*"), function(c){
+        var b=c.getBoundingClientRect();
+        if (!b.width && !b.height) return;
+        if (o === null || b.top < o) o = b.top;
+        if (u === null || b.bottom > u) u = b.bottom;
+      });
+      return o === null ? 0 : Math.round(u - o);
+    }
+    var hoehe1=inhaltHoehe(k);
+    var bloecke=k.querySelectorAll(".up-sk-lbl");
+    log("      Bloecke: "+bloecke.length+"   Inhaltshoehe "+hoehe1+"px"+
+        "   sichtbare Flaeche "+flaeche(k)+"px2");
+    [].forEach.call(bloecke, function(b){
+      var bb=b.getBoundingClientRect();
+      log("      "+b.className.split(" ").pop()+": "+Math.round(bb.width)+"x"+Math.round(bb.height)+
+          "  "+v.getComputedStyle(b).backgroundColor);
+    });
+    pruef("die Karte zeigt drei Skelettbloecke", bloecke.length===3);
+    pruef("und die haben alle eine sichtbare Flaeche",
+      bloecke.length===3 && [].every.call(bloecke, function(b){
+        var bb=b.getBoundingClientRect(); return bb.width>8 && bb.height>4; }));
+    var ton=bloecke.length ? v.getComputedStyle(bloecke[0]).backgroundColor : "";
+    var sollTon=v.getComputedStyle(r).getPropertyValue("--vc-sk").trim();
+    log("      Ton der Bloecke "+ton+"   --vc-sk der Wurzel "+sollTon);
+    pruef("im Skelettton der App und nicht in einer eigenen Farbe",
+      !!ton && ton!=="rgba(0, 0, 0, 0)");
+    var f1=flaeche(k);
+    pruef("die sichtbare Flaeche ist groesser als 1500px2 (der Balken allein waere weniger)",
+      f1>1500);
+    log("");
+
+    log("2  GEGENPROBE: die alte Fassung im selben Kasten");
+    /* Wortgleich das, was vorher im Code stand. Sie MUSS 0 melden -- sonst prueft die Messung
+       oben nicht die Sichtbarkeit, sondern nur die Anwesenheit von Knoten. */
+    var merk=k.innerHTML;
+    k.innerHTML='<div class="up-bars-sk"><div class="up-bar-sk-row"></div>'+
+                '<div class="up-bar-sk-row"></div></div>';
+    return warte(60).then(function(){
+      var f0=flaeche(k);
+      log("      sichtbare Flaeche der alten Fassung: "+f0+"px2");
+      pruef("die alte Fassung war unsichtbar (das Werkzeug misst also die Sichtbarkeit)", f0===0);
+      k.innerHTML=merk;
+      log("");
+
+      if (HALT){ log("(gehalten fuer den Blick -- ohne ?halt=1 laeuft es weiter)"); return; }
+      log("3  Und wenn die Daten kommen: springt die Karte?");
+      v.setUpstreemQuota(JSON.stringify({ used: 128, total: 150, plan: "Growth" }));
+      v.renderPromptsTable({ instanceId: "q1", totalCount: 1, rows: [
+        { id:"p1", prompt:"Bester ADAC Tarif", topic:"Tarife", market:"DE", visibility: 41.2 }
+      ] });
+      return warte(700).then(function(){
+        var k2=koerper();
+        var hoehe2=inhaltHoehe(k2);
+        var zahl=k2.querySelector(".upt-kpi-quota-used");
+        log("      jetzt steht da: \""+(zahl?zahl.textContent:"-")+"\"   Inhaltshoehe "+
+            hoehe2+"px (Skelett "+hoehe1+"px)");
+        pruef("die echte Zahl steht da", !!zahl && zahl.textContent.indexOf("128")>=0);
+        pruef("kein Skelett mehr", !k2.querySelector(".up-sk-lbl"));
+        pruef("die Karte springt nicht (Unterschied unter 3px)", Math.abs(hoehe2-hoehe1)<3);
+        log("");
+        log("4  Und zurueck: resetPromptsTable-Weg ueber setPromptsTableLoading");
+        v.setPromptsTableLoading("q1","yes");
+        return warte(300).then(function(){
+          log("      (der Ladezustand der Tabelle ruehrt die Karten nach dem ersten Mal nicht" +
+              " mehr an -- so ausdruecklich gebaut, siehe kpiWartet)");
+          log("");
+          log((schlecht? "==> FALSCH  " : "==> RICHTIG ")+gut+" von "+(gut+schlecht)+" Pruefungen");
+          log("FERTIG");
+        });
+      });
+    });
+  });
+}).catch(function(e){ log("ABBRUCH "+e); });
+</script>

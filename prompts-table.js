@@ -4585,8 +4585,7 @@
       if (kpiBars) kpiBars.skeleton(5);
       if (kpiRing) kpiRing.skeleton();
       var qk = kpiTeil("upt-kpi-quota", "body");
-      if (qk) qk.innerHTML = '<div class="up-bars-sk"><div class="up-bar-sk-row"></div>' +
-                             '<div class="up-bar-sk-row"></div></div>';
+      if (qk) qk.innerHTML = quotaSkelett();
       kpiFuss("upt-kpi-topics", "", ""); kpiFuss("upt-kpi-markets", "", "");
       kpiFuss("upt-kpi-quota", "", "");
       var n1 = kpiTeil("upt-kpi-topics", "note"), n2 = kpiTeil("upt-kpi-markets", "note"),
@@ -4797,6 +4796,25 @@
       kpiRing.renderDonut(mitZahl);
     }
 
+    /* ---- Das Skelett der Kontingent-Karte (07.09. angefordert) ----
+       Hier stand `<div class="up-bars-sk">` mit zwei LEEREN Zeilen -- und das ist nichts: die
+       Balkenspur ist .up-bar-sk-track, ein Kind, das makeBarList setzt und das hier nie jemand
+       geschrieben hat. Die Karte zeigte also waehrend des ganzen Ladens einen leeren Kasten,
+       waehrend ihre beiden Nachbarn schimmerten. So gemeldet.
+       Diese Karte hat ihr eigenes Markup (Zahl, Nenner, Balken), also braucht sie ihr eigenes
+       Skelett -- in DERSELBEN Geometrie, damit beim Umschalten nichts springt: der Zahlenblock
+       behaelt seine 38px Zeilenhoehe, der Balken seine 8px unter 16px Abstand. Der Schimmer ist
+       der geteilte aus core (.up-sk-lbl), nicht ein zweiter. */
+    function quotaSkelett(){
+      return '<div class="upt-kpi-quota-sk">' +
+        '<div class="upt-kpi-quota-num">' +
+          '<span class="up-sk-lbl upt-sk-used"></span>' +
+          '<span class="up-sk-lbl upt-sk-total"></span>' +
+        '</div>' +
+        '<span class="up-sk-lbl upt-sk-bar"></span>' +
+      '</div>';
+    }
+
     function kpiQuota(q){
       kpiRohQuota = q;
       kpiKits();
@@ -4824,8 +4842,7 @@
         return;
       }
       if (!q){
-        koerper.innerHTML = '<div class="up-bars-sk"><div class="up-bar-sk-row"></div>' +
-                            '<div class="up-bar-sk-row"></div></div>';
+        koerper.innerHTML = quotaSkelett();
         kpiFuss("upt-kpi-quota", "", "");
         return;
       }

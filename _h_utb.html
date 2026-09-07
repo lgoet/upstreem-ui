@@ -288,12 +288,90 @@ Promise.all([hol("core.css"), hol("core.js"), hol("drawer-topbar.css"), hol("dra
                 !!neu && neu.getAttribute("src") === "_h_logo.svg");
               pruef("und die Knoepfe sind wieder da", !!q(".utb-close") && !!q(".utb-pin"));
               log("");
-              return weiter7();
+              return teil11();
             });
           });
         });
 
+        /* ---- 11  DER SETTER, der Hauptweg seit dem 07.09. ----
+           Er muss den Attributen VORGEHEN, mit Text UND mit Objekt umgehen, ein Feld nachtragen
+           koennen, ohne die anderen zu loeschen, und ein kaputter Payload darf nicht in einem
+           endlosen Skelett enden. */
+        function teil11(){
+        log("11  setDrawerTopbar -- der Weg ohne Attribute");
+        /* DAS ATTRIBUT AUF EINEN ANDEREN WERT als den des Setters. Der erste Anlauf liess hier
+           stehen, was Abschnitt 3c hinterlassen hatte -- und das war ausgerechnet dieselbe Datei,
+           die der Setter schickt. Die Pruefung "der Setter geht dem Attribut vor" konnte damit
+           nie gruen werden, egal wie richtig die Komponente lag: sie verlangt zwei Werte, die
+           sich unterscheiden. */
+        el.setAttribute("data-logo", "_h_bgP_b.svg");
+        v.resetDrawerTopbar("x");
+        v.setDrawerTopbar("x", JSON.stringify({
+          type: "domain", name: "beispiel.de", logo: "_h_logo.svg", item_id: "d-42" }));
+        return warte(200).then(function(){
+          log("      Typ \"" + q(".utb-type").textContent + "\"   Name \"" +
+              q(".utb-name").textContent + "\"   Bild " +
+              (q(".utb-logo img") ? q(".utb-logo img").getAttribute("src") : "-"));
+          pruef("er fuellt Typ, Name und Bild", q(".utb-type").textContent === "Domain" &&
+            q(".utb-name").textContent === "beispiel.de" &&
+            !!q(".utb-logo img") && q(".utb-logo img").getAttribute("src") === "_h_logo.svg");
+          pruef("und beendet den Ladezustand", !q(".utb-sk-name"));
+          ereignisse.length=0; q(".utb-close").click();
+          pruef("die Kennung aus dem Payload steht im Ereignis",
+            ereignisse[0][1].item_id === "d-42" && ereignisse[0][1].type === "domain");
+          pruef("der Setter geht dem Attribut vor (data-logo sagt \"" +
+            el.getAttribute("data-logo") + "\")",
+            q(".utb-logo img").getAttribute("src") === "_h_logo.svg" &&
+            el.getAttribute("data-logo") !== "_h_logo.svg");
+          v.setDrawerTopbar("x", { logo: "_h_bgP_a.svg" });
+          return warte(200).then(function(){
+            pruef("ein Payload mit nur EINEM Feld tauscht nur dieses",
+              q(".utb-logo img").getAttribute("src") === "_h_bgP_a.svg" &&
+              q(".utb-name").textContent === "beispiel.de" &&
+              q(".utb-type").textContent === "Domain");
+            /* DER FALL, DER FUENF PRUEFUNGEN GEKOSTET HAT. UC.readBubble ist der LISTEN-Leser
+               der App: aus TEXT macht er immer ein Array, auch aus einem einzelnen Objekt. Der
+               Setter hat das nicht ausgepackt, die Pruefung darunter (ein Array IST typeof
+               "object") liess ihn durch, und gesetzt wurde nichts. Hier steht beide Formen
+               nebeneinander -- Objekt-Text und Listen-Text -- damit ein Rueckfall auffaellt. */
+            v.setDrawerTopbar("x", '[{"name":"Aus einer Liste","type":"prompt"}]');
+            return warte(200).then(function(){
+              pruef("ein Payload als LISTE (so gibt readBubble jeden Text zurueck) wird ausgepackt",
+                q(".utb-name").textContent === "Aus einer Liste" &&
+                q(".utb-type").textContent === "Prompt");
+              v.setDrawerTopbar("x", { name: "beispiel.de", type: "domain" });
+              return warte(150);
+            }).then(function(){
+            warn.length=0;
+            v.setDrawerTopbar("x", "{ das ist kein json");
+            return warte(200).then(function(){
+              pruef("ein kaputter Payload endet nicht im endlosen Skelett", !q(".utb-sk-name"));
+              pruef("und die Konsole sagt warum",
+                warn.some(function(w){ return /nicht lesbar/.test(w); }));
+              pruef("der letzte gute Stand steht weiter da",
+                q(".utb-name").textContent === "beispiel.de");
+              v.resetDrawerTopbar("x");
+              return warte(150).then(function(){
+                pruef("reset raeumt auch die Setter-Daten weg", !!q(".utb-sk-name"));
+                el.setAttribute("data-type","url");
+                el.setAttribute("data-name","Zurueck auf Attribute");
+                el.setAttribute("data-logo","");
+                return warte(200).then(function(){
+                  pruef("danach gelten wieder die Attribute",
+                    q(".utb-name").textContent === "Zurueck auf Attribute" &&
+                    q(".utb-type").textContent === "URL");
+                  log("");
+                  return weiter7();
+                });
+              });
+            });
+            });
+          });
+        });
+        }
+
         function weiter7(){
+        el.setAttribute("data-name","Die 7 besten Modelle 2026");
         log("7  Schmal und sehr schmal (nichts darf umbrechen)");
         var lang="Ein sehr langer Titel, der in keine Leiste dieser Welt passt und daher" +
                  " abgeschnitten werden muss, ohne die Knoepfe rechts hinauszuschieben";
@@ -333,14 +411,29 @@ Promise.all([hol("core.css"), hol("core.js"), hol("drawer-topbar.css"), hol("dra
          JEDER Wurzel selbst, und ein von Hand gesetztes Attribut wird beim naechsten Lauf
          ueberschrieben. */
       if (v.setUpstreemTheme) v.setUpstreemTheme("dark");
+      /* Die Platte hinter dem Logo: im Dunkeln OHNE Flaeche (07.09.), im Ladezustand aber schon
+         -- dort ist sie das Skelett. Beides wird geprueft, weil die eine Regel die andere ueber
+         die Spezifitaet schlagen kann, und genau das waere hier passiert. */
+      v.setDrawerTopbar("x", { logo: "_h_logo.svg", name: "Mit Bild", type: "brand" });
       return warte(400).then(function(){
         var f1=v.getComputedStyle(q(".utb-name")).color;
         var f2=v.getComputedStyle(q(".utb-type")).color;
         log("      Name " + f1 + "   Typ " + f2);
         pruef("Name in der Textfarbe des dunklen Themas", f1 === "rgb(224, 224, 224)");
         pruef("Typ in der dritten Stufe", f2 === "rgb(128, 128, 128)");
-        if (v.setUpstreemTheme) v.setUpstreemTheme("light");
-        log("");
+        var pl=v.getComputedStyle(q(".utb-logo")).backgroundColor;
+        log("      Logoplatte im Dunkeln: " + pl);
+        pruef("keine weisse Platte hinter dem Logo", pl === "rgba(0, 0, 0, 0)");
+        v.resetDrawerTopbar("x");
+        return warte(200).then(function(){
+          var sk2=v.getComputedStyle(q(".utb-logo")).backgroundColor;
+          log("      dieselbe Platte im Ladezustand: " + sk2);
+          pruef("das Skelett der Platte bleibt im Dunkeln sichtbar", sk2 !== "rgba(0, 0, 0, 0)");
+          if (v.setUpstreemTheme) v.setUpstreemTheme("light");
+          v.setDrawerTopbar("x", { name: "Etwas", type: "url" });
+          log("");
+          return null;
+        }).then(function(){
 
         log("9  Kaputte Eingaben");
         var be=B.el;
@@ -359,6 +452,7 @@ Promise.all([hol("core.css"), hol("core.js"), hol("drawer-topbar.css"), hol("dra
         log("");
         log("==> " + ja(schlecht === 0) + "  " + gut + " von " + (gut+schlecht) + " Pruefungen");
         log("FERTIG");
+      });
       });
     });
   });

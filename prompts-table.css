@@ -1323,6 +1323,19 @@
 /* Ueber der Grenze der Warnton, ebenfalls aus dem Trend-Paar. */
 .upt-kpi-quota.is-over .upt-kpi-quota-fill { background: var(--vt-down); }
 
+/* ---- Ladezustand der Kontingent-Karte ----
+   DIESELBE Geometrie wie die fertige Karte, damit beim Umschalten nichts springt: der Zahlenblock
+   behaelt die 38px Zeilenhoehe der grossen Zahl, der Balken seine 8px unter 16px Abstand. Die
+   Bloecke darin sind kleiner als der Platz, den sie halten -- ein 38px hoher Vollton waere ein
+   schwarzer Riegel in der Karte, waehrend die Nachbarkarten leise schimmern.
+   Farbe, Radiusverhaeltnis und Schimmer kommen aus .up-sk-lbl in core; hier stehen nur die Masse,
+   und die drei Werte je Block (Breite, Hoehe, Radius) wandern zusammen. */
+.upt-kpi-quota-sk .upt-kpi-quota-num { height: 38px; align-items: center; }
+.upt-kpi-quota-sk .upt-sk-used  { width: 68px; height: 28px; border-radius: 8px; }
+.upt-kpi-quota-sk .upt-sk-total { width: 38px; height: 16px; border-radius: 6px; }
+.upt-kpi-quota-sk .upt-sk-bar   { display: block; width: 100%; margin-top: 16px; height: 8px;
+  border-radius: 4px; }
+
 /* ---- schmal: eine Karte nach der anderen weg, in dieser Reihenfolge ----
    So angefordert (04.09.): zuerst die Maerkte, dann das Kontingent, zuletzt die Themen. Der Grund
    fuer die Reihenfolge ist der Informationswert je Pixel -- der Ring braucht am meisten Platz und

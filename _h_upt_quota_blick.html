@@ -1,0 +1,44 @@
+<!doctype html><meta charset="utf-8">
+<title>Blick: die Kontingent-Karte im Ladezustand und fertig</title>
+<style>html,body{margin:0;font:13px/1.5 system-ui,sans-serif}</style>
+<body>
+<div id="hell"></div><div id="dunkel"></div>
+<script>
+/* NUR ZUM ANSEHEN. Gemessen wird in _h_upt_quota_sk.html -- aber die Topbar hat gezeigt, dass
+   eine Messung eine falsche Anordnung nicht sieht, ein Blick schon. Links das Skelett, rechts die
+   fertige Karte, in derselben Reihe und in beiden Themen. */
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){ return r.text(); }); }
+var SK='<div class="upt-kpi-quota-sk">'+
+  '<div class="upt-kpi-quota-num"><span class="up-sk-lbl upt-sk-used"></span>'+
+  '<span class="up-sk-lbl upt-sk-total"></span></div>'+
+  '<span class="up-sk-lbl upt-sk-bar"></span></div>';
+var ECHT='<div class="upt-kpi-quota-num"><span class="upt-kpi-quota-used">128</span>'+
+  '<span class="upt-kpi-quota-total">/ 150</span></div>'+
+  '<div class="upt-kpi-quota-bar"><div class="upt-kpi-quota-fill" style="width:85%"></div></div>';
+function karte(inhalt, note){
+  return '<div class="upt-kpi upt-kpi-quota"><div class="upt-kpi-head">'+
+    '<span class="upt-kpi-title">Prompt allowance</span>'+
+    '<span class="upt-kpi-note">'+note+'</span></div>'+
+    '<div class="upt-kpi-body">'+inhalt+'</div>'+
+    '<div class="upt-kpi-foot"><span class="upt-kpi-foot-left"></span>'+
+    '<span class="upt-kpi-foot-right"></span></div></div>';
+}
+Promise.all([hol("core.css"), hol("prompts-table.css")]).then(function(t){
+  [["hell","light"],["dunkel","dark"]].forEach(function(p){
+    var f=document.createElement("iframe");
+    f.style.cssText="width:700px;height:330px;border:0;display:block";
+    document.getElementById(p[0]).appendChild(f);
+    var d=f.contentDocument;
+    d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0'></body></html>"); d.close();
+    t.forEach(function(c){ var st=d.createElement("style"); st.textContent=c; d.head.appendChild(st); });
+    var st=d.createElement("style");
+    st.textContent="body{padding:20px;background:"+(p[1]==="dark"?"#101114":"#ffffff")+"}"+
+      ".upt-kpis{display:flex}";
+    d.head.appendChild(st);
+    var r=d.createElement("div");
+    r.className="up-root upt-root"; r.setAttribute("data-theme", p[1]);
+    r.innerHTML='<div class="upt-kpis">'+karte(SK,"")+karte(ECHT,"Plan Growth")+'</div>';
+    d.body.appendChild(r);
+  });
+});
+</script>
