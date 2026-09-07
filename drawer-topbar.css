@@ -25,12 +25,14 @@
      darin. Die Knoepfe fuellen die Leiste damit vollstaendig aus, es gibt keine Luft ueber oder
      unter ihnen, die man als schiefe Zeile sehen koennte. */
   height: 32px; width: 100%; box-sizing: border-box;
-  /* 16px links und rechts (07.09. angefordert). Vorher hatte die Leiste KEIN Polster, und die
-     beiden aeusseren Knoepfe trugen stattdessen -8px Aussenabstand, damit ihre Zeichen auf der
-     Kante des Drawers sitzen. Das ragte ueber die Wurzel hinaus -- wo der Drawer schneidet, war
-     der Rand der Knoepfe ab. Gemeldet als "der Content steht links und rechts ueber, ist also
-     abgeschnitten". Jetzt echtes Polster und keine negativen Abstaende mehr. */
-  padding: 0 16px;
+  /* 7px links und rechts. Erst gab es KEIN Polster, und die beiden aeusseren Knoepfe trugen
+     stattdessen -8px Aussenabstand, damit ihre Zeichen auf der Kante des Drawers sitzen. Das
+     ragte ueber die Wurzel hinaus -- wo der Drawer schneidet, war der Rand der Knoepfe ab
+     ("der Content steht links und rechts ueber"). Dann 16px, und die waren zu viel: die Knoepfe
+     bringen ihr eigenes Polster mit (.up-iconbtn ist 32px breit fuer ein 16px-Zeichen, also 8px
+     je Seite), das Auge sah also 24px. 16 - 9 = 7px, so angefordert. Wichtig bleibt nur, dass es
+     echtes Polster ist und kein negativer Abstand. */
+  padding: 0 7px;
   display: flex; flex-direction: row; align-items: center; gap: 8px; min-width: 0;
   font-family: Geist, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;

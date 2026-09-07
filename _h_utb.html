@@ -130,8 +130,8 @@ Promise.all([hol("core.css"), hol("core.js"), hol("drawer-topbar.css"), hol("dra
     log("1b  Die Masse im Einzelnen");
     var cs=v.getComputedStyle(el);
     log("      Polster " + cs.paddingLeft + " / " + cs.paddingRight + "   Luecke " + cs.gap);
-    pruef("16px Polster links und rechts",
-      parseFloat(cs.paddingLeft) === 16 && parseFloat(cs.paddingRight) === 16);
+    pruef("7px Polster links und rechts (16 minus 9, angefordert)",
+      parseFloat(cs.paddingLeft) === 7 && parseFloat(cs.paddingRight) === 7);
     /* Ueberstand: kein Kind darf ueber die Wurzel hinausragen -- genau das war die Meldung. */
     var rr=el.getBoundingClientRect();
     var raus=[].map.call(el.querySelectorAll("*"), function(c){
