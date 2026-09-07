@@ -1,0 +1,40 @@
+<!doctype html><meta charset="utf-8">
+<title>drawer-topbar zum Ansehen</title>
+<link rel="stylesheet" href="core.css">
+<link rel="stylesheet" href="drawer-topbar.css">
+<body style="margin:0;padding:24px;background:var(--up-surface,#fff);font-family:Geist,system-ui,sans-serif">
+<div style="width:640px;border:1px solid #e4e2e4;border-radius:16px;padding:12px 16px;margin-bottom:20px">
+  <div class="up-root utb-root" data-instance="a" data-cdn-pin="t"
+       data-type="brand" data-name="ADAC" data-logo="_h_logo.svg" data-item-id="b-1"></div>
+</div>
+<div style="width:640px;border:1px solid #e4e2e4;border-radius:16px;padding:12px 16px;margin-bottom:20px">
+  <div class="up-root utb-root" data-instance="b" data-cdn-pin="t"
+       data-type="url" data-name="Die 7 besten Modelle 2026 im Vergleich" data-item-id="u-9"></div>
+</div>
+<div style="width:300px;border:1px solid #e4e2e4;border-radius:16px;padding:12px 16px;margin-bottom:20px">
+  <div class="up-root utb-root is-narrow" data-instance="c" data-cdn-pin="t"
+       data-type="domain" data-name="beispiel.de" data-item-id="d-3"></div>
+</div>
+<!-- Das Thema gilt fuer die ganze Seite (core setzt data-theme auf jeder Wurzel selbst), eine
+     Mischung auf einer Seite gibt es also nicht. Mit ?dark im Aufruf steht dieselbe Seite dunkel. -->
+<div style="width:640px;border:1px solid var(--vc-border);border-radius:16px;padding:12px 16px">
+  <div class="up-root utb-root" data-instance="d" data-cdn-pin="t"
+       data-type="prompt" data-name="Welche Anbieter sind die guenstigsten?" data-item-id="p-7"></div>
+</div>
+<script>
+/* Das Thema ausdruecklich setzen, BEVOR core laeuft: localStorage gehoert dem Ursprung, und ein
+   anderer Prueftand auf demselben Port hat pref_theme schon einmal auf dark gestellt. Ohne diese
+   Zeile zeigt diese Seite Dunkelmodus auf weissem Grund -- genau so ist der erste Screenshot
+   entstanden, und er sah nach falschen Farben aus, obwohl nur das Thema fremd war. */
+var dunkel = location.search.indexOf("dark") >= 0;
+try { localStorage.setItem("pref_theme", dunkel ? "dark" : "light"); } catch(e){}
+/* Der Grund der SEITE muss mit: --up-surface haengt an .up-root, und der body ist keine. Ohne
+   diese Zeile stand die dunkle Fassung auf weissem Grund -- der erste Screenshot sah deshalb nach
+   falschen Farben aus, obwohl nur der Untergrund fehlte. */
+document.addEventListener("DOMContentLoaded", function(){
+  document.body.style.background = dunkel ? "#101114" : "#ffffff";
+});
+</script>
+<script src="core.js"></script>
+<script src="drawer-topbar.js"></script>
+</body>

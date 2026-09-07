@@ -1,0 +1,272 @@
+<!doctype html><meta charset="utf-8">
+<title>drawer-topbar: die neue Leiste ueber den Drawern</title>
+<pre id="out" style="font:12px/1.55 ui-monospace,Menlo,monospace;padding:12px;white-space:pre-wrap"></pre>
+<div id="buehne"></div>
+<script>
+/* Neue Komponente, also nach CLAUDE.md 1b Punkt 4 nicht nur der Gutfall:
+     1  Aufbau und Anordnung -- Reihenfolge, Hoehe, volle Breite
+     2  Der Typ bestimmt den Stift (nur bei brand)
+     3  Kein Name heisst LAEDT, nicht leer
+     4  Alle drei Ereignisse mit ihrer Nutzlast, auch das Kreuz UND der Pfeil
+     5  Anheften ohne Seitenleiste und ohne Kennung -- beides darf nicht stumm scheitern
+     6  Live-Wechsel der Attribute (der Drawer zeigt ein anderes Element)
+     7  Schmal und sehr schmal: was weicht, und dass NICHTS umbricht
+     8  Dunkel
+     9  Kaputte Eingaben: unbekannter Typ, Platzhalter im Logo, sehr langer Name */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function ja(b){ return b ? "RICHTIG" : "FALSCH "; }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function warte(ms){ return new Promise(function(ok){ setTimeout(ok,ms); }); }
+var gut=0, schlecht=0;
+function pruef(t, b){ if (b) gut++; else schlecht++; log("   " + ja(b) + " " + t); }
+
+Promise.all([hol("core.css"), hol("core.js"), hol("drawer-topbar.css"), hol("drawer-topbar.js")])
+.then(function(t){
+  var f=document.createElement("iframe");
+  f.style.cssText="width:900px;height:420px;border:1px solid #ccc;display:block";
+  document.getElementById("buehne").appendChild(f);
+  var d=f.contentDocument, v=f.contentWindow;
+  d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0;padding:20px'></body></html>"); d.close();
+  /* DAS THEMA AUSDRUECKLICH SETZEN. localStorage gehoert dem Ursprung, nicht der Datei -- ein
+     anderer Prueftand auf demselben Port hatte pref_theme auf "dark" gestellt, und core hat das
+     brav uebernommen. Der erste Anlauf hat daraufhin im "hellen" Abschnitt die dunklen Farben
+     gemessen und im dunklen dieselben noch einmal: zwei gruene Haken fuer eine Messung, die nur
+     die Nachbardatei gemessen hat. data-isdark allein genuegt nicht, core gewinnt. */
+  try { v.localStorage.clear(); v.localStorage.setItem("pref_theme","light"); } catch(e){}
+  [t[0], t[2]].forEach(function(c){ var st=d.createElement("style"); st.textContent=c; d.head.appendChild(st); });
+
+  /* Die Ereignisse abfangen: die Namen sind die aus der Vorlage. */
+  /* Bubble bekommt einen JSON-TEXT, kein Objekt -- makeFire schreibt ihn. Der erste Anlauf hat
+     hier auf Objektfelder geprueft und FALSCH gemeldet, obwohl die Komponente richtig lag. */
+  var ereignisse=[];
+  function nutz(p){ try { return typeof p === "string" ? JSON.parse(p) : p; } catch(e){ return null; } }
+  v.bubble_fn_utbClose_x = function(p){ ereignisse.push(["close", nutz(p)]); };
+  v.bubble_fn_utbEdit_x  = function(p){ ereignisse.push(["edit", nutz(p)]); };
+  var gepinnt=[];
+  v.upstreemPinToSidebar = function(p){ gepinnt.push(p); return true; };
+  var warn=[];
+  var altWarn=v.console.warn;
+  v.console.warn = function(){ warn.push([].slice.call(arguments).join(" ")); altWarn.apply(v.console, arguments); };
+
+  function bauen(attrs){
+    var el=d.createElement("div");
+    el.className="up-root utb-root";
+    el.setAttribute("data-instance","x");
+    el.setAttribute("data-cdn-pin","t");
+    el.setAttribute("data-close-fn","bubble_fn_utbClose_x");
+    el.setAttribute("data-edit-fn","bubble_fn_utbEdit_x");
+    Object.keys(attrs).forEach(function(k){ el.setAttribute(k, attrs[k]); });
+    /* In einem Kasten mit fester Breite -- die Leiste misst SICH, nicht das Fenster. */
+    var box=d.createElement("div");
+    box.style.cssText="width:800px;margin-bottom:24px;outline:1px dashed #ddd";
+    box.appendChild(el); d.body.appendChild(box);
+    return { el:el, box:box };
+  }
+
+  /* ALLE Leisten stehen, BEVOR die Skripte laufen. Der erste Anlauf hat zwei davon nachtraeglich
+     eingehaengt und dann 300ms gewartet -- die Nachzuendung von makeMount haengt aber an
+     Zeitgebern und an requestAnimationFrame, und die Browserflaeche des Werkzeugs ist verdeckt:
+     dort laeuft rAF gedrosselt. Ergebnis war ein nicht aufgebautes Element und ein Abbruch an
+     einem querySelector, der null lieferte. Wer den Aufbau nicht messen will, baut vorher. */
+  var A=bauen({ "data-type":"brand", "data-name":"ADAC", "data-logo":"_h_logo.svg",
+                "data-item-id":"b-1", "data-isdark":"no" });
+  var B=bauen({ "data-type":"widget", "data-name":"Etwas", "data-logo":"BRAND_LOGO",
+                "data-item-id":"w-1" });
+  var C=bauen({ "data-name":"Ohne Typ", "data-item-id":"c-1" });
+
+  [t[1], t[3]].forEach(function(j){ var sc=d.createElement("script"); sc.textContent=j; d.head.appendChild(sc); });
+  return warte(1400).then(function(){
+    var el=A.el;
+    function q(s){ return el.querySelector(s); }
+    log("1  Aufbau");
+    pruef("die Leiste hat sich selbst gebaut", !!q(".utb-crumb"));
+    if (!q(".utb-crumb")){ log("ABBRUCH"); return; }
+    var r=el.getBoundingClientRect();
+    pruef("32px hoch (" + r.height + ")", r.height === 32);
+    pruef("volle Breite des Kastens (" + r.width + " von 800)", Math.abs(r.width - 800) < 0.6);
+    var kinder=[].map.call(el.children, function(c){ return c.className.split(" ").pop(); });
+    log("      Reihenfolge: " + kinder.join(" | "));
+    /* DIE DREI OBERSTEN KINDER MUESSEN NEBENEINANDER STEHEN. Das fehlte im ersten Anlauf, und
+       genau dort lag der Fehler: .up-root aus core ist eine flex-SPALTE, und weil diese Leiste
+       eine feste Hoehe hat, blieb sie trotzdem 32px hoch -- die Kinder liefen unten heraus.
+       Gesehen hat es erst ein Blick auf die Seite. Also wird jetzt gemessen: gleiche Oberkante,
+       aufsteigende linke Kanten. */
+    /* Verglichen werden die MITTEN und nicht die Oberkanten: die Knoepfe sind 32px hoch, die
+       Brotkrume 20 -- bei align-items: center koennen sie gar nicht dieselbe Oberkante haben, und
+       der erste Anlauf dieser Pruefung hat genau deshalb FALSCH gemeldet, obwohl die Zeile richtig
+       stand. Was eine Zeile ausmacht, ist eine gemeinsame Mittellinie. */
+    var mitten=[].map.call(el.children, function(c){
+      var r=c.getBoundingClientRect(); return Math.round(r.top + r.height/2); });
+    var links=[].map.call(el.children, function(c){ return Math.round(c.getBoundingClientRect().left); });
+    log("      Mittellinien " + mitten.join(", ") + "   linke Kanten " + links.join(", "));
+    pruef("alle drei auf derselben Mittellinie",
+      mitten.every(function(y){ return Math.abs(y - mitten[0]) < 1.5; }));
+    pruef("und von links nach rechts", links[0] < links[1] && links[1] < links[2]);
+    pruef("flex-direction ist row", v.getComputedStyle(el).flexDirection === "row");
+    pruef("Pfeil ganz links", el.children[0].hasAttribute("data-utb-close"));
+    var werkz=q(".utb-tools");
+    pruef("Kreuz ganz rechts", werkz.lastElementChild.hasAttribute("data-utb-close"));
+    pruef("Pin links neben dem Kreuz",
+      werkz.lastElementChild.previousElementSibling.hasAttribute("data-utb-pin"));
+    var reihe=[q(".utb-type"), q(".utb-sep"), q(".utb-logo"), q(".utb-name")].map(function(e){
+      return Math.round(e.getBoundingClientRect().left); });
+    log("      Brotkrume von links: Typ " + reihe[0] + ", / " + reihe[1] + ", Logo " + reihe[2] +
+        ", Name " + reihe[3]);
+    pruef("Typ, Trenner, Logo, Name in dieser Reihenfolge",
+      reihe[0] < reihe[1] && reihe[1] < reihe[2] && reihe[2] < reihe[3]);
+    pruef("alles auf EINER Zeile (Hoehe der Krume " + q(".utb-crumb").getBoundingClientRect().height + ")",
+      q(".utb-crumb").getBoundingClientRect().height <= 32);
+    log("");
+
+    log("      Farben hell: Name " + v.getComputedStyle(q(".utb-name")).color +
+        ", Typ " + v.getComputedStyle(q(".utb-type")).color +
+        ", Trenner " + v.getComputedStyle(q(".utb-sep")).color);
+    pruef("der Name traegt im Hellen die volle Textfarbe",
+      v.getComputedStyle(q(".utb-name")).color === "rgb(31, 31, 27)");
+    pruef("Typ und Trenner die dritte Stufe",
+      v.getComputedStyle(q(".utb-type")).color === "rgb(158, 158, 158)" &&
+      v.getComputedStyle(q(".utb-sep")).color === "rgb(158, 158, 158)");
+    log("");
+
+    log("2  Der Typ");
+    pruef("Beschriftung \"" + q(".utb-type").textContent + "\"", q(".utb-type").textContent === "Brand");
+    pruef("Stift da, weil brand", !q(".utb-edit").hidden &&
+      v.getComputedStyle(q(".utb-edit")).display !== "none");
+    log("");
+
+    log("4  Ereignisse");
+    ereignisse.length=0;
+    q(".utb-back").click();
+    q(".utb-close").click();
+    q(".utb-edit").click();
+    log("      " + JSON.stringify(ereignisse));
+    pruef("Pfeil und Kreuz melden BEIDE close", ereignisse.filter(function(x){ return x[0]==="close"; }).length === 2);
+    pruef("der Stift meldet edit", ereignisse.filter(function(x){ return x[0]==="edit"; }).length === 1);
+    var p0=ereignisse[0][1];
+    pruef("Nutzlast traegt type, item_id und team_id-Platz",
+      !!p0 && p0.type === "brand" && p0.item_id === "b-1");
+    log("");
+
+    log("5  Anheften");
+    gepinnt.length=0;
+    q(".utb-pin").click();
+    log("      " + JSON.stringify(gepinnt));
+    pruef("ruft upstreemPinToSidebar mit Typ, Kennung, Beschriftung, Bild",
+      gepinnt.length === 1 && gepinnt[0].type === "brand" && gepinnt[0].id === "b-1" &&
+      gepinnt[0].label === "ADAC" && gepinnt[0].logo === "_h_logo.svg");
+    /* Ohne Kennung: nicht anheften, aber sagen. */
+    warn.length=0; gepinnt.length=0;
+    el.setAttribute("data-item-id","");
+    q(".utb-pin").click();
+    pruef("ohne Kennung wird NICHT angeheftet", gepinnt.length === 0);
+    pruef("und es steht in der Konsole", warn.some(function(w){ return /item-id/.test(w); }));
+    el.setAttribute("data-item-id","b-1");
+    /* Ohne Seitenleiste: dasselbe. */
+    var merk=v.upstreemPinToSidebar; v.upstreemPinToSidebar=null;
+    warn.length=0;
+    q(".utb-pin").click();
+    pruef("ohne Seitenleiste steht es in der Konsole",
+      warn.some(function(w){ return /Sidebar/.test(w); }));
+    v.upstreemPinToSidebar=merk;
+    log("");
+
+    log("6  Der Drawer wechselt sein Element (Attribute live)");
+    el.setAttribute("data-type","url");
+    el.setAttribute("data-name","Die 7 besten Modelle 2026");
+    el.setAttribute("data-logo","");
+    el.setAttribute("data-item-id","u-9");
+    return warte(120).then(function(){
+      pruef("Typ jetzt \"" + q(".utb-type").textContent + "\"", q(".utb-type").textContent === "URL");
+      pruef("Name jetzt \"" + q(".utb-name").textContent + "\"",
+        q(".utb-name").textContent === "Die 7 besten Modelle 2026");
+      pruef("Stift weg, weil nicht brand", q(".utb-edit").hidden &&
+        v.getComputedStyle(q(".utb-edit")).display === "none");
+      pruef("ohne Bild steht der Buchstabe da (\"" +
+        (q(".utb-logo .up-logo-ltr")||{}).textContent + "\")",
+        !!q(".utb-logo .up-logo-ltr") && q(".utb-logo .up-logo-ltr").textContent === "D" &&
+        !q(".utb-logo").classList.contains("has-img"));
+      ereignisse.length=0; q(".utb-close").click();
+      pruef("die Nutzlast traegt den NEUEN Typ und die neue Kennung",
+        ereignisse[0][1].type === "url" && ereignisse[0][1].item_id === "u-9");
+      log("");
+
+      log("3  Kein Name = laedt");
+      el.setAttribute("data-name","");
+      return warte(120).then(function(){
+        pruef("Skelett statt Text", !!q(".utb-name-sk"));
+        pruef("und der Typ steht weiter da", q(".utb-type").textContent === "URL");
+        pruef("das Kreuz bleibt bedienbar",
+          v.getComputedStyle(q(".utb-close")).display !== "none");
+        el.setAttribute("data-name","Die 7 besten Modelle 2026");
+        log("");
+
+        log("7  Schmal und sehr schmal (nichts darf umbrechen)");
+        var lang="Ein sehr langer Titel, der in keine Leiste dieser Welt passt und daher" +
+                 " abgeschnitten werden muss, ohne die Knoepfe rechts hinauszuschieben";
+        el.setAttribute("data-name", lang);
+        /* DIE STUFEN VON HAND. UC.widthTiers haengt an onResize, und das sammelt seine Laeufe
+           ueber requestAnimationFrame -- in der verdeckten Browserflaeche des Werkzeugs ist rAF
+           gedrosselt, die Klasse kam also nicht. CLAUDE.md 1b Punkt 4 nennt genau diesen Fall und
+           laesst das Setzen von Hand zu. Geprueft wird damit, was die CSS aus der Stufe MACHT --
+           dass die Stufe ueberhaupt verdrahtet ist, prueft der Punkt danach. */
+        var faelle=[[800,"breit",""],[340,"schmal","is-narrow"],[240,"sehr schmal","is-narrow is-vnarrow"]];
+        return faelle.reduce(function(k, fall){
+          return k.then(function(){
+            A.box.style.width = fall[0] + "px";
+            el.className = "up-root utb-root" + (fall[2] ? " " + fall[2] : "");
+            return warte(120).then(function(){
+              var rr=el.getBoundingClientRect();
+              var tools=q(".utb-tools").getBoundingClientRect();
+              log("      " + fall[1] + " (" + fall[0] + "px): Hoehe " + rr.height +
+                  ", Typ " + (v.getComputedStyle(q(".utb-type")).display === "none" ? "weg" : "da") +
+                  ", Logo " + (v.getComputedStyle(q(".utb-logo")).display === "none" ? "weg" : "da"));
+              pruef(fall[1] + ": bleibt 32px hoch, bricht also nicht um", rr.height === 32);
+              pruef(fall[1] + ": die Knoepfe stehen vollstaendig in der Leiste",
+                tools.right <= rr.right + 0.6 && tools.left >= rr.left - 0.6);
+              pruef(fall[1] + ": der Name ist noch da", !!q(".utb-name").textContent);
+            });
+          });
+        }, Promise.resolve()).then(function(){
+          A.box.style.width="800px";
+          return warte(200);
+        });
+      });
+    }).then(function(){
+      log("");
+      log("8  Dunkel");
+      /* Ueber den globalen Setter der App, nicht ueber ein Attribut: core setzt data-theme auf
+         JEDER Wurzel selbst, und ein von Hand gesetztes Attribut wird beim naechsten Lauf
+         ueberschrieben. */
+      if (v.setUpstreemTheme) v.setUpstreemTheme("dark");
+      return warte(400).then(function(){
+        var f1=v.getComputedStyle(q(".utb-name")).color;
+        var f2=v.getComputedStyle(q(".utb-type")).color;
+        log("      Name " + f1 + "   Typ " + f2);
+        pruef("Name in der Textfarbe des dunklen Themas", f1 === "rgb(224, 224, 224)");
+        pruef("Typ in der dritten Stufe", f2 === "rgb(128, 128, 128)");
+        if (v.setUpstreemTheme) v.setUpstreemTheme("light");
+        log("");
+
+        log("9  Kaputte Eingaben");
+        var be=B.el;
+        pruef("unbekannter Typ wird gezeigt, wie er kam (\"" +
+          be.querySelector(".utb-type").textContent + "\")",
+          be.querySelector(".utb-type").textContent === "widget");
+        pruef("der Platzhalter BRAND_LOGO wird NICHT als Bild geladen",
+          !be.querySelector(".utb-logo").classList.contains("has-img"));
+        pruef("ohne Typ faellt auch der Trenner weg",
+          v.getComputedStyle(C.el.querySelector(".utb-sep")).display === "none");
+        log("");
+        log("10  Ist die Breitenstufe ueberhaupt verdrahtet?");
+        /* Die Wirkung der Klassen ist oben gemessen. Hier nur, dass die Komponente sie ueberhaupt
+           bestellt hat -- widthTiers setzt diese Marke auf der Wurzel. */
+        pruef("UC.widthTiers ist an der Wurzel angemeldet", B.el.__upWidthTiers === true);
+        log("");
+        log("==> " + ja(schlecht === 0) + "  " + gut + " von " + (gut+schlecht) + " Pruefungen");
+        log("FERTIG");
+      });
+    });
+  });
+}).catch(function(e){ log("ABBRUCH: " + e.message + "\n" + (e.stack||"")); });
+</script>

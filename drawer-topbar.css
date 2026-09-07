@@ -1,0 +1,111 @@
+/* upstreem drawer-topbar.css — die kleine Navigationsleiste ueber jedem Detail-Drawer (Praefix
+   `utb`). Braucht core.css.
+
+   Vorbild ist die Kopfzeile einer Tabelle (.up-head): 32px hoch, Knoepfe aus .up-iconbtn, und
+   der Text dazwischen in den drei Textstufen. Uebernommen sind die Werte 1:1 -- die Leiste soll
+   nicht aussehen wie ein eigenes Bauteil, sondern wie der Kopf, den die App ueberall hat.
+
+   WAS AUS CORE KOMMT: .up-iconbtn (32x32, Radius 8, Hoverflaeche), .up-logo-box (die Platte
+   hinter Logo und Favicon, 24px), .up-tip (die Sprechblasen) und der Skelettton --vc-sk. Hier
+   steht nur, was diese Leiste anders braucht: die Anordnung, die kleinere Logoplatte und das
+   Abschneiden des Namens.
+   ============================================================================================ */
+
+/* .up-root DOPPELT, und das ist der Grund: .up-root aus core setzt "flex-direction: column" --
+   jede Komponentenwurzel ist dort eine Spalte, weil Komponenten Bloecke untereinander stapeln.
+   Diese Leiste ist die Ausnahme, sie ist EINE ZEILE. Mit der gleichen Spezifitaet (0,1,0) haette
+   die Ladereihenfolge entschieden, und "row" haette nur zufaellig gewonnen; .up-root.utb-root
+   sind (0,2,0) und gewinnen immer.
+   Gefunden hat das der BLICK auf die Seite, nicht die Messung: der Prueftand hatte die Hoehe
+   geprueft (32, wegen der festen Hoehe unten auch als Spalte richtig) und die Reihenfolge INNEN
+   in der Brotkrume (die ist ihre eigene Zeile) -- dass die drei obersten Kinder untereinander
+   standen, hat er nicht gesehen. Er prueft es jetzt. */
+.up-root.utb-root {
+  /* 32px, ausdruecklich so angefordert -- dieselbe Hoehe wie .up-head und wie jeder .up-iconbtn
+     darin. Die Knoepfe fuellen die Leiste damit vollstaendig aus, es gibt keine Luft ueber oder
+     unter ihnen, die man als schiefe Zeile sehen koennte. */
+  height: 32px; width: 100%; box-sizing: border-box;
+  display: flex; flex-direction: row; align-items: center; gap: 8px; min-width: 0;
+  font-family: Geist, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  color: var(--vc-text);
+}
+.utb-root * { box-sizing: border-box; }
+
+/* Die Brotkrume: Typ / Logo / Name. flex mit min-width: 0, damit der Name schrumpfen kann --
+   ohne die 0 haelt ein Flex-Kind seine Inhaltsbreite und schiebt die Knoepfe rechts hinaus.
+   NIEMALS UMBRECHEN (angefordert): white-space steht am Namen, nicht hier, damit der Typ und der
+   Trenner ihre eigene Breite behalten und nur der Name Punkte bekommt. */
+.utb-crumb { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; }
+
+/* Der Typ in der dritten Textstufe: er sagt, WO man ist, nicht WAS man ansieht. Dieselbe Sprache
+   wie eine Abschnittsueberschrift (11px/600/gesperrt/versal, siehe .up-pop-head in core) --
+   dort steht sie ueber einer Liste, hier vor einem Namen, die Rolle ist dieselbe. */
+.utb-type { flex: 0 0 auto; font-size: 11px; font-weight: 600; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--vc-third); white-space: nowrap; line-height: 1; }
+
+/* Der Trenner. Eigene Farbe und nicht die des Typs: er ist Satzzeichen, nicht Text -- eine Stufe
+   leiser als das Leiseste waere aber unsichtbar, also derselbe Ton wie der Typ, nur ohne Sperrung
+   und in der Groesse des Namens, damit er auf seiner Mittellinie sitzt. */
+.utb-sep { flex: 0 0 auto; color: var(--vc-third); font-size: 13px; line-height: 1;
+  user-select: none; }
+
+/* 20px statt der 24 aus core: die Platte sitzt in einer 32px-Zeile, und 24 lassen oben und unten
+   nur 4px. Alle zusammenhaengenden Werte gehen im selben Verhaeltnis mit (§1): Radius 8 -> 7,
+   Bild 22 -> 18, Buchstabe 11 -> 10. */
+.utb-root .up-logo-box.utb-logo { width: 20px; height: 20px; flex: 0 0 20px; border-radius: 7px; }
+.utb-root .up-logo-box.utb-logo img { width: 18px; height: 18px; border-radius: 6px; }
+.utb-root .up-logo-box.utb-logo .up-logo-ltr { font-size: 10px; }
+
+/* Der Name traegt die Aussage der Leiste, also die volle Textfarbe und das Gewicht einer
+   Ueberschrift -- 13.5px/600 ist .up-heading in core eine Stufe kleiner. */
+.utb-name { flex: 1 1 auto; min-width: 0; font-size: 13.5px; font-weight: 600; line-height: 1.2;
+  color: var(--vc-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Die Knoepfe rechts. gap 0 und nicht 8: .up-iconbtn ist 32px breit und sein Zeichen 16px, es
+   traegt also schon 8px Luft je Seite -- ein zusaetzliches gap machte daraus 24px und die Gruppe
+   fiel auseinander. Dasselbe Verhaeltnis wie in der Werkzeugleiste jeder Tabelle. */
+.utb-tools { flex: 0 0 auto; display: flex; align-items: center; gap: 0; }
+
+/* Der Zuruecklink ganz links, das Kreuz ganz rechts -- beide schliessen. Zwei Wege zu derselben
+   Handlung sind hier Absicht: das Kreuz ist die Gewohnheit aus einem Fenster, der Pfeil die aus
+   einer Navigation, und dieser Drawer ist beides. */
+.utb-back { flex: 0 0 auto; margin-left: -8px; }
+/* -8px: der Knopf ist 32px breit und sein Zeichen 16px, sitzt also 8px vom eigenen Rand. Ohne die
+   Korrektur beginnt die Leiste optisch 8px weiter innen als alles darunter im Drawer. Rechts
+   dasselbe am Kreuz. */
+.utb-close { margin-right: -8px; }
+
+/* ---- Schmale Breiten ----------------------------------------------------------------------
+   Umbrechen ist ausgeschlossen, also muss etwas weichen. Die Reihenfolge ist die der Wichtigkeit,
+   von hinten: erst der Typ mit seinem Trenner (die Ueberschrift des Drawers sagt ihn ohnehin),
+   dann das Logo. Der NAME bleibt immer -- er ist der Grund, warum die Leiste da ist. Die Knoepfe
+   bleiben ebenfalls immer: eine Leiste, die auf dem Telefon ihr Kreuz verliert, ist eine Falle.
+   Die Schwellen kommen aus der Rechnung, nicht aus dem Gefuehl: drei Knoepfe rechts (96px), der
+   Zuruecklink (32), Typ mit Trenner und Luecken (rund 80), Logo mit Luecke (28) -- fuer einen
+   Namen, der noch etwas sagt, braucht es 120px. 96 + 32 + 80 + 28 + 120 = 356. */
+.utb-root.is-narrow .utb-type,
+.utb-root.is-narrow .utb-sep { display: none; }
+.utb-root.is-vnarrow .utb-logo { display: none; }
+/* Kein Typ heisst auch kein Trenner: "/ ADAC" waere ein Satzzeichen ohne Satz. Die Klasse setzt
+   die JS, wenn data-type fehlt oder leer ist. */
+.utb-root.is-notype .utb-sep { display: none; }
+/* Und die Zeile mit dem Bearbeiten-Knopf: [hidden] steht im Stylesheet des BROWSERS und hat damit
+   die schwaechste Herkunft, die es gibt -- .up-iconbtn traegt display: inline-flex und schlaegt
+   es. Ohne diese Zeile bliebe der Knopf bei jedem Typ stehen. Dieselbe Falle wie neunmal vorher
+   in diesem Haus. */
+.utb-root .up-iconbtn[hidden] { display: none; }
+
+/* ---- Ladezustand ---------------------------------------------------------------------------
+   Solange kein Name da ist, steht ein Skelett an seiner Stelle -- und NUR dort. Typ, Knoepfe und
+   Logoplatte stehen schon: sie haengen an Attributen, die beim Aufbau gesetzt sind, und ein
+   Skelett ueber der ganzen Leiste wuerde behaupten, auch das Kreuz sei noch nicht da. */
+.utb-name-sk { display: inline-block; width: 140px; max-width: 100%; height: 13px;
+  border-radius: 4px; background: var(--vc-sk); }
+
+/* KEIN "schon angeheftet"-Zustand, und das ist eine Entscheidung: die Pins liegen im
+   localStorage unter einem Schluessel, der die Instanz der SEITENLEISTE enthaelt
+   (usn_pins__<instanz>@<team>) -- die kennt diese Leiste nicht, und sie zu erraten waere ein
+   zweiter Weg zu einem Zustand, der schon einen Besitzer hat. Quick Actions macht es genauso:
+   anheften, Toast, fertig. Wer den Zustand hier sehen will, braucht dafuer erst eine Abfrage an
+   der Seitenleiste; das ist eine eigene Aenderung an ihr, keine an dieser Leiste. */

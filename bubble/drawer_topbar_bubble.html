@@ -1,0 +1,147 @@
+<!--
+  ============================================================================================
+  upstreem drawer-topbar  —  VORLAGE FUER EINE NEUINSTALLATION
+  ============================================================================================
+
+  Die kleine Navigationsleiste ueber einem Detail-Drawer. 32px hoch, volle Breite, bricht nie um.
+
+      [<]  BRAND / (Logo) ADAC                          [Stift] [Pin] [X]
+
+  Der Stift steht NUR bei data-type="brand".
+
+  ── Einbau ──────────────────────────────────────────────────────────────────────
+  Ein HTML-Element ganz oben in den Drawer, volle Breite, Hoehe 32.
+  Darunter im Drawer folgt wie gehabt der eigentliche Inhalt (brand-detail, url-detail, ...).
+
+  ── Attribute ───────────────────────────────────────────────────────────────────
+  data-instance   = "ROOTID_[dynamic id]"        eindeutig pro Platzierung
+  data-isdark     = "yes" / "no"                 nur Rueckfall; das Theme kommt aus core
+  data-cdn-pin    = der Commit-Hash der Auslieferung
+
+  data-type       = "brand" | "prompt" | "domain" | "url"
+                    Bestimmt die Beschriftung links UND ob der Stift da ist (nur brand).
+                    Ein unbekannter Wert wird gezeigt, wie er kommt -- die Leiste verschluckt
+                    ihn nicht.
+  data-name       = der Name rechts vom Trenner. Bei einer Marke ihr Name, bei einer URL ihr
+                    TITEL, bei einer Domain die Domain, beim Prompt sein Text. Was hineingehoert,
+                    entscheidet der Drawer.
+                    Solange es leer ist, steht dort ein Skelett -- das heisst "laedt", nicht
+                    "leer". Es muss also nicht vorbelegt werden.
+  data-logo       = Bildquelle fuer die Platte davor (Markenlogo oder Favicon). Fehlt sie, steht
+                    dort der erste Buchstabe des Namens.
+  data-item-id    = die Kennung. Geht in jedem Ereignis mit und ist der Wert, der angeheftet wird.
+
+  ALLE VIER WERDEN LIVE MITGELESEN. Wechselt der Drawer sein Element, aendert Bubble die
+  Attribute -- die Leiste zieht von selbst nach, kein Workflow-Schritt noetig.
+
+  ── Ereignisse (JavaScriptToBubble) ─────────────────────────────────────────────
+  data-close-fn   = "bubble_fn_utbClose_[dynamic id]"
+                    Ausgeloest vom Pfeil links UND vom Kreuz rechts -- beide bedeuten
+                    "Drawer zu". Nutzlast:
+                        { "team_id": "...", "type": "brand", "item_id": "..." }
+                    Im Workflow: den Drawer schliessen (Close_Drawer).
+
+  data-edit-fn    = "bubble_fn_utbEdit_[dynamic id]"
+                    Nur bei data-type="brand", vom Stift. Nutzlast wie oben.
+                    Im Workflow: den Brand-Editor oeffnen.
+
+  ANHEFTEN MELDET NICHTS AN BUBBLE. Der Pin ruft window.upstreemPinToSidebar -- dieselbe
+  Funktion, die Quick Actions aus seinem Zeilenmenue ruft. Die Seitenleiste besitzt diese Liste
+  und speichert sie selbst im Browser. Es gibt dafuer also keinen Workflow und kein Feld in der
+  Datenbank; liegt keine Seitenleiste auf der Seite, sagt die Konsole es einmal.
+
+  ── Setter ──────────────────────────────────────────────────────────────────────
+  Keine. Die Leiste hat keinen Zustand, den sie sich merken muesste.
+  refreshDrawerTopbar("[dynamic id]") ist eine Notbremse fuer den Fall, dass die Attribute ueber
+  einen Weg geaendert werden, den der Beobachter nicht sieht (etwa als Ganzes ersetztes Markup).
+  Im Normalbetrieb wird sie nicht gebraucht.
+
+  ── Dateien ─────────────────────────────────────────────────────────────────────
+  core.css, core.js, drawer-topbar.css, drawer-topbar.js
+  ============================================================================================
+-->
+
+<div class="up-root utb-root"
+     data-instance   = "ROOTID_[dynamic id]"
+     data-isdark     = "[yes/no]"
+     data-cdn-pin    = "CDN_PIN"
+     data-type       = "brand"
+     data-name       = ""
+     data-logo       = ""
+     data-item-id    = "[unique id]"
+     data-close-fn   = "bubble_fn_utbClose_[dynamic id]"
+     data-edit-fn    = "bubble_fn_utbEdit_[dynamic id]"></div>
+
+<script>
+(function(){
+  /* Loader nach STYLEGUIDE 26: den Pin ueber getElementsByClassName lesen, NIEMALS ueber
+     document.currentScript — Bubble fuehrt Scripts nicht in DOM-Reihenfolge aus. */
+  function echterPin(p){
+    /* trim: ein Leerzeichen aus der Bubble-Konstante ergaebe sonst .../upstreem-ui@ abc /core.js,
+       jsDelivr antwortet mit 404, und weder CSS noch JS landen. Ohne trim greift auch kein
+       Rueckfall, weil "   " truthy ist.
+       Gespaltener Platzhalter: wer "CDN_PIN" global im Element ersetzt, wuerde sonst auch diesen
+       Waechter treffen, und der Loader liefe dauerhaft auf @main, obwohl ein Pin gesetzt ist. */
+    p = String(p == null ? "" : p).trim();
+    return (p && p !== "CDN_" + "PIN") ? p : "";
+  }
+  function readPin(cls){
+    var i, p, els = document.getElementsByClassName(cls);
+    for (i = 0; i < els.length; i++){
+      p = echterPin(els[i].getAttribute("data-cdn-pin"));
+      if (p) return (window.__upPin = p);
+    }
+    /* ---- Rueckfall: einen Pin nehmen, der auf DIESER Seite schon gilt ----------------------
+       Gemeldet am 31.08. mit drei Stapelspuren, alle aus einem solchen Loader: "core.css ist
+       schon von einem anderen Pin geladen ... ignoriert wird @main" -- obwohl der Pin am Element
+       stand. Der Grund ist die Reihenfolge: Bubble baut ein Element bei jedem Rerender neu und
+       fuehrt Scripts nicht in DOM-Reihenfolge aus, dieser Loader lief also, waehrend seine eigene
+       Wurzel noch nicht im Dokument stand -- die Klasse oben fand nichts.
+       Und das war mehr als eine Warnung: core kam durch die Entdoppelung unten noch aus dem Pin,
+       die Dateien DIESER Komponente aber tatsaechlich von @main. Eine Seite, die zur Haelfte auf
+       @main laeuft, ist genau das, was ein Pin verhindern soll.
+       Geraten wird nichts: jede der drei Stufen liest einen Pin, der auf dieser Seite schon in
+       Gebrauch ist. */
+    if (echterPin(window.__upPin)) return window.__upPin;
+    var alle = document.querySelectorAll ? document.querySelectorAll("[data-cdn-pin]") : [];
+    for (i = 0; i < alle.length; i++){
+      p = echterPin(alle[i].getAttribute("data-cdn-pin"));
+      if (p) return (window.__upPin = p);
+    }
+    /* Aus einer schon geladenen Datei ablesen. Diese Stufe greift auch dann, wenn alle anderen
+       Elemente der Seite noch die ALTE Fassung dieses Loaders tragen -- die fuellen
+       __upAssetsLoaded genauso. "main" wird NICHT gemerkt: das ist kein Pin, und die naechste
+       Komponente wuerde ihn sonst fuer einen halten. */
+    var L0 = window.__upAssetsLoaded, k, m;
+    for (k in L0){
+      if (!Object.prototype.hasOwnProperty.call(L0, k)) continue;
+      m = String(L0[k] || "").match(/upstreem-ui@([^/]+)\//);
+      if (m && m[1] && m[1] !== "main") return (window.__upPin = m[1]);
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("utb-root") + "/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  /* Entdoppelt nach DATEINAME, nicht nach URL. Zwei Elemente mit verschiedenen data-cdn-pin
+     ergeben zwei URLs fuer dieselbe Datei -- vorher lud der Loader dann beide: core.js lief
+     zweimal, und core.css stand zweimal im Dokument, wobei die spaetere die fruehere ueberschrieb.
+     Wer gewinnt, entschied die Reihenfolge, in der Bubble die Elemente baut.
+     Der erste Pin gewinnt jetzt, und ein zweiter wird gemeldet -- sonst sucht man den Unterschied
+     zwischen zwei Seiten, auf denen dieselbe Version verschiedene Dinge tut. */
+  function once(url, make){
+    var name = url.slice(url.lastIndexOf("/") + 1);
+    if (L[name]){
+      if (L[name] !== url && window.console) console.warn("upstreem: " + name +
+        " ist schon von einem anderen Pin geladen. Geladen bleibt " + L[name] +
+        ", ignoriert wird " + url + ". Setzt alle Elemente auf denselben Pin.");
+      return;
+    }
+    L[name] = url; make(url);
+  }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+
+  css("core.css");           js("core.js");
+  css("drawer-topbar.css");  js("drawer-topbar.js");
+})();
+</script>

@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261015;
+  var BUILD = 20261016;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -1525,6 +1525,11 @@
        also steht hier auch keine: ein Katalogeintrag ohne Text im UI ist nur eine Zeile, die beim
        naechsten Aufraeumen jemanden aufhaelt. */
     "Show upstreem branding": "upstreem-Branding zeigen",
+    /* Die Leiste ueber den Drawern (drawer-topbar). "Brand", "Prompt", "Domain" und "URL" stehen
+       schon weiter oben im Glossar -- sie bleiben englisch, das ist die Hausregel fuer diese
+       Woerter. Hier nur, was sonst noch in der Leiste steht. */
+    "Back": "Zurück",
+    "Edit brand": "Brand bearbeiten",
     "Or": "Oder",
     "And": "Und",
     "Page": "Seite",
@@ -13294,6 +13299,12 @@
        aber ein gedrehtes Zeichen ist eine Form, die man nicht suchen kann. Erster Verbraucher ist
        die Zurueck-Zeile im hineingegangenen Untermenue der Filterleiste. */
     chevronLeft: '<path d="m15 18-6-6 6-6"/>',
+    /* Lucide pin. Zweiter Verbraucher (drawer-topbar) -- damit gehoert es hierher.
+       quick-actions traegt denselben Pfad weiter als eigenes PIN_SVG, und das bleibt so: diese
+       Komponente laeuft ausdruecklich AUCH ohne core (siehe der Kommentar an ihrem Kopf), sie
+       darf UC.icon also nicht brauchen. Ein Zeichen an zwei Orten ist hier der Preis dafuer, dass
+       die Palette ohne core funktioniert -- kein Versehen. */
+    pin:      '<path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/>',
     search:   '<path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/>',
     plus:     '<path d="M5 12h14"/><path d="M12 5v14"/>',
     minus:    '<path d="M5 12h14"/>',
