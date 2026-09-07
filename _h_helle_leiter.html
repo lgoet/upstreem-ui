@@ -183,6 +183,46 @@ hol("core.css").then(function(css){
         ", auf der Karte " + k.toFixed(2) + " (verlangt " + p[1] +
         (kw < p[1] ? ", lag schon auf Weiss darunter" : "") + ")");
   });
-  log("FERTIG");
+  /* Die sechs schwebenden Schichten machen eigene Paletten auf. Sie MUESSEN den Menuerahmen
+     tragen, nicht den fuer Karten -- sonst loest sich ihre Kante gegen die Seite auf. Geprueft
+     wird der Wert in der Datei, weil diese Bloecke am body haengen und hier nicht gemountet
+     werden koennen. */
+  log("");
+  log("SCHWEBENDE SCHICHTEN: tragen sie den Menuerahmen?");
+  var SCHICHTEN = [
+    ["core.css",             ".up-scale-menu"],
+    ["core.css",             ".up-topicmodal-card"],
+    ["prompts-table.css",    ".upt-bulkbar"],
+    ["brands-overview.css",  ".ubo-mxtip"],
+    ["brands-overview.css",  ".ubo-actmenu"],
+    ["performance-radar.css",".uhm-tip"],
+    ["settings-brand.css",   ".usb-dlg"]
+  ];
+  var dateien = {};
+  return Promise.all(SCHICHTEN.map(function(p){ return p[0]; })
+      .filter(function(n, i, a){ return a.indexOf(n) === i; })
+      .map(function(n){ return hol(n).then(function(txt){ dateien[n] = txt; }); }))
+    .then(function(){
+      var alleGut = true;
+      SCHICHTEN.forEach(function(p){
+        var txt = dateien[p[0]] || "";
+        /* Der Block einer Schicht: ab ihrem Namen bis zur naechsten schliessenden Klammer. */
+        function block(bei){
+          var i = txt.indexOf(bei); if (i < 0) return "";
+          var j = txt.indexOf("}", i); return j < 0 ? "" : txt.slice(i, j);
+        }
+        var hellB = block(p[1] + " {");
+        var dunkelB = block(p[1] + "[data-theme=\"dark\"]");
+        if (!dunkelB) dunkelB = block("[data-theme=\"dark\"] " + p[1]);
+        if (!dunkelB) dunkelB = block("[data-theme=\"dark\"]" + p[1]);
+        function wert(b){ var m = b.match(/--vc-border:\s*(#[0-9a-fA-F]{6})/); return m ? m[1].toLowerCase() : null; }
+        var h = wert(hellB), dk = wert(dunkelB);
+        var ok = h === "#dcdbdd" && dk === "#3e3e44";
+        if (!ok) alleGut = false;
+        log("   " + ja(ok) + " " + p[1].padEnd(22," ") + " hell " + (h || "-") + "   dunkel " + (dk || "-"));
+      });
+      log("   " + ja(alleGut) + " alle sieben tragen border-tertiary in beiden Themen");
+      log("FERTIG");
+    });
 }).catch(function(e){ log("ABBRUCH: " + e.message); });
 </script>

@@ -296,7 +296,7 @@
 }
 .uhm-tip.is-on { opacity: 1; }
 .uhm-tip[data-theme="dark"] {
-  --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-third: #808080; --vc-border: #2c2e33;
+  --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-third: #808080; --vc-border: #3e3e44;
   --vc-bg: #1c1c1f; --vt-logo-bg: #e0e0e0;
   --vt-up: #60d25d; --vt-down: #d25d5d;
 }

@@ -158,7 +158,11 @@
   opacity: 0; transition: opacity 120ms ease;
 }
 .ubo-mxtip.is-on { opacity: 1; }
-.ubo-mxtip[data-theme="dark"] { --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-border: #34343a; --vc-bg: #1c1c1f;
+/* Rahmen einer SCHWEBENDEN Schicht: border-tertiary (#3e3e44), nicht -secondary. Im Hellen ist
+   das seit dem 07.09. so; hier stand noch der Wert fuer Rahmen AUF Karten, und in einem Fall
+   sogar noch border-primary aus der Zeit vor Linears Leiter. Eine Schicht, die ueber allem
+   schwebt, braucht die kraeftigere Kante -- sonst loest sie sich gegen die Seite auf. */
+.ubo-mxtip[data-theme="dark"] { --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-border: #3e3e44; --vc-bg: #1c1c1f;
   --vt-logo-bg: #e0e0e0; --vc-third: #808080; }
 .ubo-mxtip * { box-sizing: border-box; }
 .ubo-mxtip-head { display: flex; align-items: center; gap: 8px; }
@@ -228,7 +232,7 @@
   display: flex; flex-direction: column; gap: 2px;
 }
 .ubo-actmenu.is-shown { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
-.ubo-actmenu[data-theme="dark"] { --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-border: #34343a;
+.ubo-actmenu[data-theme="dark"] { --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-border: #3e3e44;
   --vc-bg: #1c1c1f; --vc-heading-bg: #232326; --up-sel-bg: #232326; }
 .ubo-actmenu * { box-sizing: border-box; }
 @media (prefers-reduced-motion: reduce){ .ubo-actmenu { transition-duration: 1ms; } }
