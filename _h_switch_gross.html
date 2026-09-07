@@ -37,12 +37,12 @@ Promise.all(["core.css","topcitations-dashboard.css","domains-table.css","create
   var d=f.contentDocument, v=f.contentWindow;
   d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0'></body></html>"); d.close();
   t.forEach(function(c){ var st=d.createElement("style"); st.textContent=c; d.head.appendChild(st); });
+  /* .up-root MUSS an der Huelle stehen: die Regel fuer die grossen Schienen haengt daran, und
+     die Menues der App tragen sie ebenfalls (sie haengen am body als .up-root.up-portal). Ohne
+     sie wuerde hier eine Regel gemessen, die es auf der Seite nicht gibt. */
   var root=d.createElement("div");
   root.className="up-root"; root.setAttribute("data-theme","dark");
   d.body.appendChild(root);
-  var cs=v.getComputedStyle(root);
-  var karte=cs.getPropertyValue("--vc-bg").trim();
-  var pille="#28282c";   /* bg-quaternary, der Wert der gleitenden Pille im Dunkeln */
 
   function deckend(farbe, unter){
     var c=d.createElement("canvas"); c.width=c.height=1;
@@ -65,41 +65,48 @@ Promise.all(["core.css","topcitations-dashboard.css","domains-table.css","create
     return Math.round((0.2126*k(0)+0.7152*k(2)+0.0722*k(4))*100)/100;
   }
 
-  log("Untergrund: die Karte " + karte + "   Pille " + pille + " (Helligkeit " + hell(pille) + ")");
-  log("");
-  var kleinAbstand = null, alleGut = true;
-  SCHIENEN.forEach(function(sch){
-    var el=d.createElement("div"); el.className=sch.klasse;
-    if (sch.klasse.indexOf("Match") >= 0) el.setAttribute("aria-label","Match mode");
-    root.appendChild(el);
-    var roh=v.getComputedStyle(el).backgroundColor;
-    var dk=deckend(roh, karte);
-    var abstand=Math.round((hell(pille)-hell(dk))*100)/100;
-    if (!sch.gross && kleinAbstand === null) kleinAbstand = abstand;
-    log("   " + sch.name.padEnd(26," ") + " Schiene " + roh.padEnd(24," ") +
-        " deckend " + dk + "   Pille liegt " + String(abstand).padStart(6," ") + " Stufen darueber");
-    /* Die grossen muessen mindestens so viel Abstand haben wie die kleinen. Kein absoluter
-       Schwellwert: gefordert war Gleichstand mit der kleinen Form, nicht eine erfundene Zahl. */
-    if (sch.gross){
-      var ok = kleinAbstand != null && abstand >= kleinAbstand - 0.5;
-      if (!ok) alleGut = false;
-      log("      " + ja(ok) + " mindestens so viel Abstand wie die kleine Form (" + kleinAbstand + ")");
-    }
-    el.remove();
-  });
-  log("");
-  log("==> " + ja(alleGut) + "  alle grossen Schienen liegen so tief wie die kleinen");
+  /* DREI GRUENDE, nicht einer. Eine Schiene liegt auf einer Karte, in einer Kopfzeile ODER in
+     einem Menue -- und weil sie halbtransparent ist, kommt auf jedem ein anderer Wert heraus.
+     Genau daran ist der erste Anlauf gescheitert: auf der Karte sah es gut aus, im Menue waren
+     es drei Stufen. Also wird ueberall gemessen, und die SCHLECHTESTE Stelle entscheidet. */
+  var GRUENDE = [
+    ["Karte",     "--vc-bg"],
+    ["Kopfzeile", "--vc-heading-bg"],
+    ["Menue",     "--up-menu-bg"]
+  ];
+  var MINDEST = 8;   /* darunter ist die Pille im Menue nicht mehr von ihrer Schiene zu trennen */
+  var alleGut = true;
 
-  /* Gegenprobe nach unten: im HELLEN darf sich nichts geaendert haben. */
-  root.setAttribute("data-theme","light");
-  var hp=d.createElement("div"); hp.className="up-seg is-lg"; root.appendChild(hp);
-  var hellSchiene=v.getComputedStyle(hp).backgroundColor;
-  hp.remove();
-  var sollHell=v.getComputedStyle(root).getPropertyValue("--vc-switch-bg").trim();
-  var probe=d.createElement("div"); probe.style.background=sollHell; root.appendChild(probe);
-  var sollRgb=v.getComputedStyle(probe).backgroundColor; probe.remove();
-  log("   " + ja(hellSchiene === sollRgb) + " im Hellen unveraendert der volle Ton (" +
-      hellSchiene + " gegen " + sollRgb + ")");
+  function messeThema(thema, pilleWert){
+    root.setAttribute("data-theme", thema);
+    var cs2=v.getComputedStyle(root);
+    log(thema.toUpperCase() + "   Pille " + pilleWert + " (Helligkeit " + hell(pilleWert) + ")" +
+        "   Mindestabstand " + MINDEST);
+    log("");
+    GRUENDE.forEach(function(g){
+      var grund=cs2.getPropertyValue(g[1]).trim();
+      var grundRgb=deckend(grund, "#ffffff");
+      log("   auf " + g[0] + " (" + g[1] + " " + grundRgb + ")");
+      SCHIENEN.forEach(function(sch){
+        var el=d.createElement("div"); el.className=sch.klasse;
+        if (sch.klasse.indexOf("Match") >= 0) el.setAttribute("aria-label","Match mode");
+        root.appendChild(el);
+        var roh=v.getComputedStyle(el).backgroundColor;
+        el.remove();
+        var dk=deckend(roh, grundRgb);
+        var abstand=Math.round((hell(pilleWert)-hell(dk))*100)/100;
+        var ok = abstand >= MINDEST;
+        if (!ok) alleGut = false;
+        log("      " + ja(ok) + " " + sch.name.padEnd(26," ") + " Schiene deckend " + dk +
+            "   Pille liegt " + String(abstand).padStart(6," ") + " Stufen darueber");
+      });
+      log("");
+    });
+  }
+  messeThema("dark", "#28282c");
+  messeThema("light", "#ffffff");
+  log("==> " + ja(alleGut) + "  jede Schiene liegt auf JEDEM Grund mindestens " + MINDEST +
+      " Stufen unter ihrer Pille");
   log("FERTIG");
 }).catch(function(e){ log("ABBRUCH: " + e.message + "\n" + (e.stack||"")); });
 </script>

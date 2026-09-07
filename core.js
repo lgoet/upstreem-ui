@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261006;
+  var BUILD = 20261007;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -1510,6 +1510,10 @@
     "No companies": "Keine Unternehmen",
     "Companies": "Unternehmen",
     "Clear All": "Alle löschen",
+    /* "Or" FEHLTE, "And" stand da -- daher der halb uebersetzte Umschalter im Topics-Dropdown
+       (07.09. gemeldet). Beide Beschriftungen stehen im Markup des Filters, der Sprachlauf findet
+       sie also nur ueber den Katalog. */
+    "Or": "Oder",
     "And": "Und",
     "Page": "Seite",
     "Title": "Titel",

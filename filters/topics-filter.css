@@ -149,18 +149,25 @@
 
 /* Grouping toggle. Icon button in the app's standard 32px box, with prompts-table's notify dot:
    the same control in two places has to carry the same "there is something on" mark. */
+/* OHNE EIGENE FLAECHE (07.09. angefordert: "die Buttons da in der Bottom Bar sollen alle keinen
+   Background haben"). Sie trugen --vc-bg, also die Farbe einer KARTE -- und dieses Dropdown ist
+   keine Karte, sondern ein Menue (--up-menu-bg, im Dunkeln #232326 gegen #1c1c1f). Die Knoepfe
+   standen damit als dunklere Kaesten in einem helleren Menue.
+   Der Rahmen bleibt: er ist es, der den Knopf als Knopf ausweist, jetzt ganz allein.
+   Und der Hover wechselt auf --up-sel-bg: --vc-heading-bg ist im Dunkeln derselbe Wert wie der
+   Menuegrund, ein Hover darin waere unsichtbar gewesen. */
 .utf-grpbtn {
   position: relative; display: grid; place-items: center; width: 32px; height: 32px; padding: 0;
   border: 1px solid var(--vc-border); border-radius: 8px;
-  background: var(--vc-bg); color: var(--vc-text); cursor: pointer;
+  background: transparent; color: var(--vc-text); cursor: pointer;
   transition: background 150ms ease, border-color 150ms ease;
 }
-.utf-grpbtn:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); }
+.utf-grpbtn:hover { background: var(--up-sel-bg); border-color: var(--vc-hover-border); }
 .utf-grpbtn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
 /* Geometry copied from prompts-table's .upt-group-dot, down to the 6px and the corner offset. */
 .utf-grpbtn-dot { position: absolute; top: 5px; right: 5px; width: 6px; height: 6px; border-radius: 50%;
   background: var(--vc-text); opacity: 0; transition: opacity 120ms ease; }
-.utf-grpbtn.is-on { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
+.utf-grpbtn.is-on { border-color: var(--vc-hover-border); background: var(--up-sel-bg); }
 .utf-grpbtn.is-on .utf-grpbtn-dot { opacity: 1; }
 
 /* ---------- custom groupings section ----------
@@ -182,14 +189,15 @@
 .utf-grp-ic { flex: 0 0 auto; display: inline-flex; color: var(--vc-third); }
 .utf-grp-ic svg { width: 15px; height: 15px; display: block; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
 
+/* Ohne eigene Flaeche, dieselbe Begruendung wie am Knopf darueber. */
 .utf-new {
   height: 32px; padding: 0 11px; border: 1px solid var(--vc-border); border-radius: 8px;
-  background: var(--vc-bg); color: var(--vc-text);
+  background: transparent; color: var(--vc-text);
   display: inline-flex; align-items: center; gap: 6px;
   font-family: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
   transition: background 150ms ease, border-color 150ms ease;
 }
-.utf-new:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); }
+.utf-new:hover { background: var(--up-sel-bg); border-color: var(--vc-hover-border); }
 .utf-new svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
 @media (max-width: 560px) {

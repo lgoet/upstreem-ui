@@ -92,11 +92,20 @@
          auch in Menues, die core selbst mit data-theme markiert. Genau daran stand er am
          08.09. hell im dunklen Menue. */
       --up-switch-off: #d6d6d4;
-      /* Die Flaeche der Umschalter (Day/Week/Month und die Bild-Umschalter) ist LEISER als
-         --vc-switch-bg: #f5f5f5 bei 60 Prozent. Der Umschalter soll als Gruppe erkennbar sein und
-         nicht als Kasten auf der Karte. Eigener Name und nicht --vc-switch-bg geaendert: dieser Ton
-         haengt auch an Chips und Hoverzustaenden, und die sollen bleiben, wie sie sind. */
-      --vc-switch-soft: rgba(249,248,249,0.6);
+      /* DIE SCHIENE EINES UMSCHALTERS LIEGT UNTER IHREM GRUND, nicht darueber -- und genau das
+         war sie bis zum 07.09. nicht. Hier stand ein aufgehellter Ton (60 Prozent von
+         --vc-switch-bg), im Dunkeln ein aufgehelltes Grau. Aufhellen heisst aber, sich der Pille
+         zu naehern, denn die Pille ist der HELLERE Teil. Gemessen (rohe Kanalwerte mit
+         Augengewichten, Skala 0 bis 255):
+             hell,  auf Weiss:  Schiene #fbfbfb  Pille #ffffff  ->  4.1 Stufen
+             dunkel, im Menue:  Schiene #252528  Pille #28282c  ->  3.0 Stufen
+         Drei Stufen sind nichts, und genau so wurde es gemeldet: "die Switcher in allen Dropdowns
+         brauchen andere Farben, im Darkmode sind sie kaum erkennbar."
+         Jetzt eine SCHWARZE Halbtransparenz. Damit vertieft sie jeden Grund, auf dem sie liegt --
+         Karte, Kopfzeile oder Menue --, und die Pille steht immer darueber statt daneben. Ein
+         fester Wert koennte das nicht: die drei Gruende liegen im Dunkeln 11 bis 19 Stufen
+         auseinander, ein Wert unter dem einen waere ueber dem anderen. */
+      --vc-switch-soft: rgba(0,0,0,0.05);
       /* Die Flaeche eines Eingabefelds, SOLIDE. Es gab sie bisher nur als 60%-Variante
          (--vc-switch-bg im Dunkeln, --up-sel-bg, --vt-row-hover) -- und wo ein Chip auf einer Karte
          liegt, die selbst schon getoent ist, addieren sich zwei Halbtransparenzen zu einem dritten
@@ -226,10 +235,11 @@
       --up-dd-shadow: 0 10px 28px rgba(0,0,0,.32);
       --vc-switch-bg: #232326; --vc-switch-border: #34343a; --vc-third: #808080;
       --up-switch-off: #444444;   /* siehe hell */
-      /* 35 statt 60 Prozent. Vorher stand hier derselbe Wert wie in --vc-switch-bg, und damit gab
-         es im Dunkeln keinen Unterschied zwischen dem grossen und dem kleinen Umschalter -- den,
-         den es im Hellen sehr wohl gibt. Weniger als 35 waere nicht mehr zu sehen. */
-      --vc-switch-soft: rgba(42,42,42,0.35);
+      /* Schwarz statt aufgehelltes Grau, siehe die Begruendung beim hellen Wert. 22 Prozent und
+         nicht 5: im Dunkeln sind die Gruende selbst schon dunkel, ein Zwanzigstel Schwarz waere
+         darauf nicht zu sehen. Gemessen ergibt es auf der Karte #161619 und im Menue #1b1b1e --
+         also 24 bzw. 21 Stufen unter der Pille, statt der 7 und 3 von vorher. */
+      --vc-switch-soft: rgba(0,0,0,0.22);
       --vc-field: #232326;
       /* Die Kopfleiste jeder Tabelle: eine Stufe HELLER als die Tabellenflaeche (--vc-bg
          #1b1b1b), nicht dunkler. Hier stand #121212 -- die Farbe der SEITE, die Leiste sass
@@ -2616,34 +2626,39 @@
    Jetzt bg-quaternary (#28282c) auf border-secondary -- eine Stufe ueber der Schiene, wie ueberall
    sonst das Gewaehlte. Sieben Stellen, alle mit demselben Muster. */
 [data-theme="dark"] .uap-tabs::before { background: #28282c; border-color: #34343a; }
-/* ---- UND DIE SCHIENE DARUNTER, im Dunkeln, bei den GROSSEN Umschaltern -----------------------
-   Gemeldet am 07.09.: "die grossen Switcher, die 32px hoch sind, muessen im Darkmode denselben
-   Grund bekommen wie die kleinen, weil der Selected-State sich sonst zu wenig davon
-   unterscheidet". Genau so war es, und es ist nachrechenbar:
-       Schiene --vc-switch-bg  #232326            Pille #28282c   ->  5 Helligkeitsstufen
-       Schiene --vc-switch-soft rgba(42,42,42,.35) auf einer Karte  #212123  ->  7.1 Stufen
-   Der volle Ton stammt aus dem Hellen, wo er richtig ist (#f9f8f9 gegen eine weisse Pille sind
-   15 Stufen). Im Dunkeln liegt --vc-switch-bg dagegen fast auf der Pille. Also traegt die
-   Schiene im Dunkeln denselben durchscheinenden Ton wie die kleine Form -- die Pille bleibt
-   unveraendert, gemeldet war ausdruecklich nur der nicht gewaehlte Grund.
+/* ---- UND DIE SCHIENE DARUNTER, bei den GROSSEN Umschaltern -----------------------------------
+   Gemeldet am 07.09. zuerst fuer das Dunkle ("die grossen Switcher, die 32px hoch sind, muessen
+   denselben Grund bekommen wie die kleinen, weil der Selected-State sich sonst zu wenig davon
+   unterscheidet"), danach fuer alle Dropdowns ("kaum erkennbar, der Kontrast ist zu niedrig").
+   Beides ist dieselbe Ursache: die grossen trugen --vc-switch-bg, den VOLLEN Ton, und der liegt
+   dicht an der Pille. Nachgerechnet gegen die Pille (rohe Kanalwerte mit Augengewichten):
+       dunkel  Schiene #232326  Pille #28282c   ->   5.0 Stufen
+       hell    Schiene #f9f8f9  Pille #ffffff   ->   6.7 Stufen
+   Jetzt tragen sie in BEIDEN Themen die Schiene der kleinen Form (--vc-switch-soft, seit dem
+   07.09. eine schwarze Halbtransparenz, siehe dort). Daraus werden 13 bis 24 Stufen, je Grund.
+   Die Groessenunterscheidung beim GRUND faellt damit ganz weg -- ihr Anlass war, dass die alte,
+   aufhellende Schiene den grossen Umschalter blass aussehen liess. Eine Schiene, die ihren Grund
+   VERTIEFT, hat das Problem nicht, und zwei Werte fuer eine Rolle waren immer der schlechtere
+   Teil dieser Regel. Was bleibt, ist der Unterschied in der HOEHE.
    Alle grossen Schienen an EINER Stelle, damit die naechste Groessenaenderung sie nicht wieder
-   auseinanderlaufen laesst. Die Spezifitaet reicht in jedem Fall: [data-theme="dark"] legt eine
-   Stufe auf den jeweiligen Grundselektor, also gewinnt sie unabhaengig von der Ladereihenfolge
-   auch gegen die Regeln in den Komponentendateien. */
-[data-theme="dark"] .up-pagesize-seg,
-[data-theme="dark"] .up-filter-dim,
-[data-theme="dark"] .up-dense,
-[data-theme="dark"] .up-seg.is-lg,
-[data-theme="dark"] .cc-seg.is-lg,
-[data-theme="dark"] .ubo-seg.is-lg,
-[data-theme="dark"] .tcl-seg.is-lg,
-[data-theme="dark"] .up-seg.umf-seg,
-[data-theme="dark"] .up-seg.umk-seg,
-[data-theme="dark"] .up-seg[aria-label="Match mode"],
-[data-theme="dark"] .tcd-mode,
-[data-theme="dark"] .udt-sub-dispseg,
-[data-theme="dark"] .uca-format-seg,
-[data-theme="dark"] .uap-tabs { background: var(--vc-switch-soft); }
+   auseinanderlaufen laesst. Die Spezifitaet reicht in jedem Fall: .up-root legt eine Stufe auf
+   den jeweiligen Grundselektor, also gewinnt sie unabhaengig von der Ladereihenfolge auch gegen
+   die Regeln in den Komponentendateien -- und die Menues haengen zwar am body, tragen aber
+   selbst .up-root (up-portal), der Selektor trifft sie also. */
+.up-root .up-pagesize-seg,
+.up-root .up-filter-dim,
+.up-root .up-dense,
+.up-root .up-seg.is-lg,
+.up-root .cc-seg.is-lg,
+.up-root .ubo-seg.is-lg,
+.up-root .tcl-seg.is-lg,
+.up-root .up-seg.umf-seg,
+.up-root .up-seg.umk-seg,
+.up-root .up-seg[aria-label="Match mode"],
+.up-root .tcd-mode,
+.up-root .udt-sub-dispseg,
+.up-root .uca-format-seg,
+.up-root .uap-tabs { background: var(--vc-switch-soft); }
 /* Die Knoepfe stehen ueber dem Streifen. */
 .is-gleitend > button { position: relative; z-index: 1; }
 /* Und die aktive Stufe gibt ihre eigene Flaeche ab, SOBALD der Streifen misst. Drei Stufen der
