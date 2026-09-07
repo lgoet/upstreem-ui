@@ -210,18 +210,21 @@
   min-width: 0; height: 32px; box-sizing: content-box;
   padding-bottom: 8px; margin: 0 -8px 16px;
   position: relative; }
-/* DIE LINIE IST EIN EIGENES ELEMENT und nicht mehr die border-bottom der Zeile. Angefordert am
-   07.09.: "pro Seite 8px kuerzer, so dass sie genauso lang ist wie die Menuepunkt-Backgrounds."
-   Gemessen (_h_usn_linie.html, Leiste 250px): die Zeile liegt 8px von der Kante (sie zieht mit
-   -8px aus dem 16px-Polster der Leiste heraus, damit Logo und Teamlogo auf derselben Kante
-   sitzen), die Flaeche eines Menuepunkts liegt 16px von der Kante. Genau die 8px je Seite.
+/* DIE LINIE IST EIN EIGENES ELEMENT und nicht die border-bottom der Zeile -- nur so kann sie
+   eine andere Breite haben als die Zeile, in der sie liegt.
+   SIE GEHT JETZT DURCH, von Kante zu Kante der Leiste (08.09. angefordert: "bitte durchziehen,
+   kein Polster links rechts"). Am 07.09. war sie ausdruecklich auf die Breite der
+   Menuepunkt-Flaechen gesetzt (16px Einzug), davor lag sie bei 8px. Die Zeile selbst liegt 8px
+   von der Kante -- sie zieht mit -8px aus dem 16px-Polster der Leiste heraus, damit Logo und
+   Teamlogo auf derselben Kante sitzen. Also muss die Linie noch einmal 8px darueber hinaus,
+   je Seite: left und right auf -8px. Gemessen in _h_usn_linie.html.
    Warum nicht einfach Polster an die Zeile: das haette den Inhalt mitverschoben, also das Logo
    8px nach rechts. Verlangt war eine kuerzere LINIE, nicht ein verschobenes Logo.
    Die Zeile behaelt trotzdem ihre eine Quelle fuer die drei Abstaende: das Element liegt auf
    bottom: 0, also genau dort, wo die Kante war, und die Rechnung im Block darueber gilt
    unveraendert. Ohne Marke ist die Zeile display: none und die Linie damit mit weg. */
 .usn-brand::after {
-  content: ""; position: absolute; left: 8px; right: 8px; bottom: 0; height: 1px;
+  content: ""; position: absolute; left: -8px; right: -8px; bottom: 0; height: 1px;
   background: var(--vc-border);
 }
 .usn-brand.is-off { display: none; }
@@ -250,10 +253,10 @@
    Hoehe nicht mehr. */
 .usn-bar.is-mini .usn-brand { flex-direction: column; justify-content: center; gap: 6px;
   height: auto; margin: 0 0 calc(8px + (32px - 16.5px) / 2); }
-/* Eingeklappt zieht die Zeile NICHT aus dem Polster heraus (margin 0), liegt also schon auf
-   derselben Kante wie die Menuepunkte -- gemessen beide bei 12px. Die 8px Einzug waeren hier
-   also 8px zu viel. */
-.usn-bar.is-mini .usn-brand::after { left: 0; right: 0; }
+/* Eingeklappt zieht die Zeile NICHT aus dem Polster heraus (margin 0). Um trotzdem
+   durchzugehen, braucht die Linie hier das GANZE Polster der eingeklappten Leiste als
+   negativen Wert -- nicht 8px wie ausgeklappt, sondern 12. */
+.usn-bar.is-mini .usn-brand::after { left: -12px; right: -12px; }
 .usn-bar.is-mini .usn-brand-word { display: none; }
 .usn-bar.is-mini .usn-brand-mark { padding: 0; }
 
@@ -378,9 +381,9 @@
 /* 24 statt 32, auf Ansage -- derselbe Schritt wie unter Quick Actions. Die beiden Abstaende
    oben (Kopfleiste -> Quick Actions -> erste Gruppe) sind das Geruest der Leiste und muessen
    gleich bleiben; wer einen aendert, aendert beide. */
-/* 16px, angefordert am 08.09. -- derselbe Wert wie unter der Linie darueber, damit die zwei
-   Abstaende gleich sind. Vorher 24, dann kurz 32. */
-.usn-qa:not(:empty) { margin-top: 16px; }
+/* 24px UEBER Quick Actions (08.09. angefordert: "die Gaps ueber und unter Quick Actions auf
+   24px statt 16"). Der Abstand unter der Linie darueber bleibt bei 16 -- er war nicht gemeint. */
+.usn-qa:not(:empty) { margin-top: 24px; }
 /* Der Knopf traegt die Werte eines Menuepunktes: 36 hoch, Radius 9, gedaempfte Schrift, und
    auf dieser Flaeche KEINEN eigenen Hintergrund -- sein weisses --am-trigger-bg stach als
    Kachel heraus. Sichtbar bleibt der Rahmen; beim Hover geht Text und Icon auf die
@@ -460,18 +463,18 @@
    NUR wenn Quick Actions wirklich da ist: ohne den Knopf waere die Ueberschrift der direkte
    Nachbar der Teamzeile, und dann sind die 24 richtig. Dieselbe Bedingung wie am Aussenabstand
    von .usn-qa darueber. */
-/* 20, UND DIESE ZAHL HAENGT AN DEN ZWEI DARUEBER. Sie ist keine Vorliebe, sie ist gerechnet:
-   die zwei angeforderten Abstaende sind 16px von Kasten zu Kasten, und weil der Teamumschalter
-   KEINEN Rahmen hat, sieht das Auge dort seinen Inhalt -- gemessen 4.5px Luft je Seite. Die
-   zwei sichtbaren Abstaende sind also 20.5px. Der Knopf darunter HAT einen Rahmen, seine
-   Kastenkante ist die sichtbare Kante, und ueber der Ueberschrift liegt 0.5px Luft. Damit auch
-   der dritte sichtbar 20.5px hat, braucht er 20 von Kasten zu Kasten.
+/* 28, UND DIESE ZAHL HAENGT AN DER DARUEBER. Sie ist keine Vorliebe, sie ist gerechnet:
+   ueber Quick Actions stehen 24px von Kasten zu Kasten, und weil der Teamumschalter KEINEN
+   Rahmen hat, sieht das Auge dort seinen Inhalt -- gemessen 4.5px Luft je Seite. Sichtbar sind
+   das also 28.5px. Der Knopf darunter HAT einen Rahmen, seine Kastenkante ist die sichtbare
+   Kante, und ueber der Ueberschrift liegt 0.5px Luft. Damit der Abstand unter dem Knopf ebenso
+   28.5px WIRKT, braucht er 28 von Kasten zu Kasten.
    Die 33 von vorher waren fuer den rahmenlosen Knopf gerechnet, die 36 fuer die 32er-Fassung.
    Wer einen der drei Abstaende bewegt, muss die anderen nachmessen -- der Fehler "das Gap
    zwischen Quick Actions und Datenbank ist kleiner als das nach oben" ist genau so entstanden
    und kommt genau so zurueck. Gemessen wird das in _h_usn_kopfgaps.html an den SICHTBAREN
    Kanten. */
-.usn-qa:not(:empty) + .usn-nav { margin-top: 20px; }
+.usn-qa:not(:empty) + .usn-nav { margin-top: 28px; }
 /* Derselbe Abstand wie zwischen Kopf, Quick Actions und Menue: alle groesseren Gruppen
    stehen gleich weit auseinander. */
 .usn-block + .usn-block { margin-top: 32px; }

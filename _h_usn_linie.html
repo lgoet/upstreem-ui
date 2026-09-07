@@ -94,10 +94,25 @@ Promise.all([hol("core.css"), hol("core.js"), hol("sidebar.css"), hol("sidebar.j
         kM.da && parseFloat(kM.hoehe) === 1 && kM.farbe !== "rgba(0, 0, 0, 0)");
       pruef("und KEINE zweite als Rahmen der Zeile (" + randUnten + ")",
         parseFloat(randUnten) === 0);
-      pruef("die Linie ist genau so lang wie die Flaeche eines Menuepunkts",
-        Math.abs(kM.b - kI.b) < 0.6);
-      pruef("und sie beginnt auf derselben linken Kante", Math.abs(kM.l - kI.l) < 0.6);
-      pruef("und endet auf derselben rechten", Math.abs(kM.r - kI.r) < 0.6);
+      /* SEIT DEM 08.09. GEHT DIE LINIE DURCH -- von Kante zu Kante der Leiste, ohne Polster.
+         Vorher war sie ausdruecklich auf die Breite der Menuepunkt-Flaechen gesetzt; die
+         Pruefung darauf steht als Bericht daneben, damit sichtbar bleibt, wovon die Linie jetzt
+         abweicht und um wie viel. */
+      /* "Durchgehen" heisst bis an die INNENkante der Leiste, nicht bis an ihre Aussenkante:
+         die Leiste traegt rechts einen 1px-Rahmen (usn-bar, border-right), und der gehoert ihr
+         und nicht der Linie. Der erste Anlauf hat gegen 0 geprueft und FALSCH gemeldet, obwohl
+         die Linie genau da endet, wo der Inhalt endet. Also wird die Rahmenbreite gelesen und
+         nicht geraten. */
+      var randR = parseFloat(v.getComputedStyle(bar).borderRightWidth) || 0;
+      var randL = parseFloat(v.getComputedStyle(bar).borderLeftWidth) || 0;
+      log("      Rahmen der Leiste: links " + randL + "px, rechts " + randR + "px");
+      pruef("die Linie geht durch: links bis an die Innenkante", Math.abs(kM.l - randL) < 0.6);
+      pruef("und rechts ebenso", Math.abs(kM.r - randR) < 0.6);
+      pruef("sie ist damit so breit wie die Leiste innen (" + kM.b + " von " +
+        Math.round(rb.width - randL - randR) + ")",
+        Math.abs(kM.b - (rb.width - randL - randR)) < 1.2);
+      log("      (zum Vergleich: die Flaeche eines Menuepunkts liegt bei " + kI.l + " / " +
+          kI.r + " -- die Linie ist jetzt " + Math.round(kM.b - kI.b) + "px breiter)");
       log("");
       /* Und im Mini: dort wird die Zeile zur Spalte, die Linie muss auch da passen. */
       log("EINGEKLAPPT (is-mini)");
@@ -115,7 +130,11 @@ Promise.all([hol("core.css"), hol("core.js"), hol("sidebar.css"), hol("sidebar.j
         var i2=k2(item);
         log("   Linie " + m2.l + " / " + m2.r + "   " + m2.b + "px");
         log("   Punkt " + i2.l + " / " + i2.r + "   " + i2.b + "px");
-        pruef("auch eingeklappt gleich lang", Math.abs(m2.b - i2.b) < 0.6);
+        var rr = parseFloat(v.getComputedStyle(bar).borderRightWidth) || 0;
+        var rl = parseFloat(v.getComputedStyle(bar).borderLeftWidth) || 0;
+        pruef("auch eingeklappt geht sie durch (links " + m2.l + ", rechts " + m2.r +
+          ", Rahmen " + rl + "/" + rr + ")",
+          Math.abs(m2.l - rl) < 0.6 && Math.abs(m2.r - rr) < 0.6);
         bar.classList.remove("is-mini");
         log("");
         /* Die Farbe des Icons im aktiven Punkt -- zweite Meldung derselben Nachricht. */

@@ -98,18 +98,24 @@ Promise.all([hol("core.css"), hol("core.js"), hol("sidebar.css"), hol("sidebar.j
         log("   Teamlogo -> QA-Rahmen    " + z(qb.top - lg.bottom) + "px");
         log("   QA-Rahmen -> DATABASE    " + z(kf.top - qb.bottom) + "px");
         var g1=lg.top - linieUnten, g2=qb.top - lg.bottom, g3=kf.top - qb.bottom;
-        log("   " + ja(Math.abs(g1-g2) < 1.2) + " die zwei angeforderten sind gleich (" +
-            z(g1) + " / " + z(g2) + ")");
-        log("   " + ja(Math.abs(g2-g3) < 1.2) + " und der dritte passt dazu (" + z(g3) + ")");
+        /* GEPRUEFT WIRD, WAS ZUSAMMENGEHOERT. Die zwei UM Quick Actions sind am 08.09.
+           ausdruecklich auf 24px gesetzt worden und muessen gleich WIRKEN; der Abstand unter der
+           Linie ist absichtlich kleiner geblieben (16px) -- er war nicht gemeint. Bis dahin
+           verlangte diese Zeile alle drei gleich, und meldete nach der Aenderung FALSCH fuer
+           etwas, das so bestellt war. */
+        log("   " + ja(Math.abs(g2-g3) < 1.2) + " die zwei um Quick Actions wirken gleich (" +
+            z(g2) + " / " + z(g3) + ")");
+        log("   (der Abstand unter der Linie ist mit " + z(g1) +
+            "px absichtlich kleiner -- dort stehen 16px in der Datei, um Quick Actions 24)");
         log("");
       }
       log("KASTEN GEGEN KASTEN (das, was in der Datei steht)");
       var k1=z(r(qa).top - r(top).bottom), k2=z(r(nav).top - r(qa).bottom);
       log("   Team -> Quick Actions " + k1 + "px   Quick Actions -> Navigation " + k2 + "px");
-      log("   (verschiedene Werte sind hier gewollt -- 16 oben, 20 unten. Der Grund: oben grenzt" +
-          " der Abstand an eine Kastenkante OHNE Rahmen (man sieht den Inhalt, 4.5px Luft je" +
-          " Seite), unten an eine MIT Rahmen. Begruendung in sidebar.css, Urteil oben bei den" +
-          " sichtbaren Kanten.)");
+      log("   (verschiedene Werte sind hier gewollt -- 24 ueber Quick Actions, 28 darunter. Der" +
+          " Grund: oben grenzt der Abstand an eine Kastenkante OHNE Rahmen (man sieht den" +
+          " Inhalt, 4.5px Luft je Seite), unten an eine MIT Rahmen. Begruendung in" +
+          " sidebar.css, Urteil oben bei den sichtbaren Kanten.)");
       log("");
       log("SCHRIFT GEGEN SCHRIFT (nur noch ein Bericht, nicht mehr das Urteil)");
       log("   Solange der Quick-Actions-Knopf KEINEN Rahmen hatte, war seine Beschriftung die");
