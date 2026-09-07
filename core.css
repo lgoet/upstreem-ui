@@ -2216,7 +2216,8 @@
    Genommen ist der Kasten mit der GLEICHEN FLAECHE: 173 x 24.57 ergibt Tinte etwa 163 x 25, also
    beide Achsen innerhalb von zehn Prozent des alten Zeichens. Deckkraft (0.05) ist unveraendert.
 
-   ZUR LAGE: top 47% und dazu 6px nach unten (08.09. angefordert). Die 47% sind der alte Wert --
+   ZUR LAGE: top 47% und dazu 4px nach unten (08.09., in zwei Schritten -- erst "4px, oder eher
+   6", dann "nochmal 2px nach oben"; das ergibt die 4 vom Anfang). Die 47% sind der alte Wert --
    das Zeichen sitzt absichtlich etwas ueber der Mitte, weil unter dem Chart die Achsenbeschriftung
    steht und die Flaeche darueber optisch groesser ist. Die 6px kommen als Verschiebung im
    transform dazu und nicht als geaenderte Prozentzahl: Prozent haengen an der HOEHE des Kastens,
@@ -2226,7 +2227,7 @@
    background-size: contain und nicht 100% 100%: die Datei behaelt ihr Verhaeltnis, auch wenn
    jemand den Kasten spaeter anfasst. */
 .upstreem-watermark {
-  position: absolute; top: 47%; left: 50%; transform: translate(-50%, calc(-50% + 6px));
+  position: absolute; top: 47%; left: 50%; transform: translate(-50%, calc(-50% + 4px));
   width: 173px; height: 24.57px;
   opacity: 0.05; pointer-events: none; z-index: 2;
   background-repeat: no-repeat; background-position: center; background-size: contain;

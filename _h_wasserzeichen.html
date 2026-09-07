@@ -4,16 +4,16 @@
 <div id="buehne"></div>
 <script>
 /* Gemeldet am 08.09.: "das Logo in den Chart-Containern im Hintergrund bitte so 4px weiter nach
-   unten, oder eher 6". Genommen sind 6.
+   unten, oder eher 6" -- und danach "nochmal 2px nach oben". Es sind also 4.
 
    GEMESSEN WIRD DER ABSTAND DER MITTEN, nicht der Wert im transform: was dort steht, ist die
    Absicht -- was das Auge sieht, ist die Lage des Zeichens im Kasten. Die Rechnung dahinter:
    top 47% setzt die Oberkante auf 47 Prozent der Kastenhoehe, translate(-50%) zieht das Zeichen
-   um seine halbe Hoehe zurueck, und die 6px kommen danach dazu. Bei einem 300px hohen Kasten
-   sitzt die Mitte des Zeichens also 6px unter 47 Prozent, und das sind 9px UEBER der Mitte des
-   Kastens (300 * 0.03 = 9, minus 6).
+   um seine halbe Hoehe zurueck, und die 4px kommen danach dazu. Bei einem 300px hohen Kasten
+   sitzt die Mitte des Zeichens also 4px unter 47 Prozent, und das sind 5px UEBER der Mitte des
+   Kastens (300 * 0.03 = 9, minus 4).
 
-   ZWEI KASTENHOEHEN, und das ist der Punkt der Umsetzung: die 6px sind PIXEL und keine Prozent.
+   ZWEI KASTENHOEHEN, und das ist der Punkt der Umsetzung: die 4px sind PIXEL und keine Prozent.
    In einem 200px und in einem 600px hohen Chart muessen sie derselbe Weg sein -- mit einer
    geaenderten Prozentzahl waeren sie es nicht. Genau das prueft der zweite Kasten. */
 var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
@@ -72,10 +72,10 @@ Promise.all([hol("core.css"), hol("core.js")]).then(function(t){
     log("   Zeichen " + b.zeichen + "px hoch   Mitte " + b.abMitte +
         "px von der Kastenmitte   " + b.ab47 + "px unter der 47-Prozent-Linie");
     log("");
-    pruef("es sitzt 6px unter der 47-Prozent-Linie (300px-Kasten: " + a.ab47 + ")",
-      Math.abs(a.ab47 - 6) < 0.6);
-    pruef("und im doppelt so hohen Kasten genauso 6px (" + b.ab47 + ")",
-      Math.abs(b.ab47 - 6) < 0.6);
+    pruef("es sitzt 4px unter der 47-Prozent-Linie (300px-Kasten: " + a.ab47 + ")",
+      Math.abs(a.ab47 - 4) < 0.6);
+    pruef("und im doppelt so hohen Kasten genauso 4px (" + b.ab47 + ")",
+      Math.abs(b.ab47 - 4) < 0.6);
     pruef("die Verschiebung ist also in PIXELN und nicht in Prozent",
       Math.abs(a.ab47 - b.ab47) < 0.6);
     log("");
