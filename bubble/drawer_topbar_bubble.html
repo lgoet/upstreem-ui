@@ -50,11 +50,31 @@
   und speichert sie selbst im Browser. Es gibt dafuer also keinen Workflow und kein Feld in der
   Datenbank; liegt keine Seitenleiste auf der Seite, sagt die Konsole es einmal.
 
-  ── Setter ──────────────────────────────────────────────────────────────────────
-  Keine. Die Leiste hat keinen Zustand, den sie sich merken muesste.
-  refreshDrawerTopbar("[dynamic id]") ist eine Notbremse fuer den Fall, dass die Attribute ueber
-  einen Weg geaendert werden, den der Beobachter nicht sieht (etwa als Ganzes ersetztes Markup).
-  Im Normalbetrieb wird sie nicht gebraucht.
+  ── Ladezustand und Zuruecksetzen ───────────────────────────────────────────────
+  SOLANGE KEIN data-name DA IST, ZEIGT DIE LEISTE SKELETTE -- am Typ, an der Logoplatte und am
+  Namen. Die Knoepfe bleiben bedienbar: sie haengen an nichts, was geladen werden muesste.
+  Woran die Leiste "noch keine Daten" erkennt, ist der leere data-name. Ein Logo kann echt
+  fehlen (eine URL ohne Favicon), ein Name nicht.
+
+  resetDrawerTopbar("[dynamic id]")
+      Setzt die Leiste zurueck auf das Skelett. GEHOERT IN DEN WORKFLOW, DER DEN DRAWER AUF EIN
+      ANDERES ELEMENT UMSTELLT, und zwar als ERSTER Schritt -- vor dem Laden der neuen Daten.
+      Ohne ihn zeigt die Leiste solange den alten Namen mit dem alten Bild, und das ist eine
+      Falschaussage ueber ein Element, das im Drawer schon nicht mehr offen ist.
+      Die Attribute werden dabei NICHT geloescht -- die gehoeren Bubble. Sobald ein data-name
+      ankommt, ist der Ladezustand von selbst vorbei.
+
+      Der Run-JS-Schritt, wortgleich einsetzbar:
+
+          resetDrawerTopbar("[dynamic id]");
+
+      Und mit einer festen Kennung zum Ausprobieren:
+
+          resetDrawerTopbar("ROOTID_1234");
+
+  refreshDrawerTopbar("[dynamic id]")
+      Notbremse fuer Attributaenderungen, die der Beobachter nicht sieht. Im Normalbetrieb nicht
+      gebraucht -- die Leiste heilt sich selbst, wenn Bubble ihr Markup ersetzt.
 
   ── Dateien ─────────────────────────────────────────────────────────────────────
   core.css, core.js, drawer-topbar.css, drawer-topbar.js

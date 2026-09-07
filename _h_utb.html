@@ -49,14 +49,19 @@ Promise.all([hol("core.css"), hol("core.js"), hol("drawer-topbar.css"), hol("dra
   var altWarn=v.console.warn;
   v.console.warn = function(){ warn.push([].slice.call(arguments).join(" ")); altWarn.apply(v.console, arguments); };
 
+  /* JEDE Leiste ihre eigene Kennung. Der erste Anlauf gab allen drei "x" -- und
+     resetDrawerTopbar("x") hat dann alle drei auf das Skelett gestellt, worauf die Pruefungen fuer
+     den unbekannten Typ und den fehlenden Trenner FALSCH meldeten. Die Komponente lag richtig, der
+     Prueftand hat drei Elemente unter einem Namen gefuehrt. */
+  var lfd = 0;
   function bauen(attrs){
     var el=d.createElement("div");
     el.className="up-root utb-root";
-    el.setAttribute("data-instance","x");
+    el.setAttribute("data-instance", attrs.__id || ("x" + (++lfd)));
     el.setAttribute("data-cdn-pin","t");
     el.setAttribute("data-close-fn","bubble_fn_utbClose_x");
     el.setAttribute("data-edit-fn","bubble_fn_utbEdit_x");
-    Object.keys(attrs).forEach(function(k){ el.setAttribute(k, attrs[k]); });
+    Object.keys(attrs).forEach(function(k){ if (k !== "__id") el.setAttribute(k, attrs[k]); });
     /* In einem Kasten mit fester Breite -- die Leiste misst SICH, nicht das Fenster. */
     var box=d.createElement("div");
     box.style.cssText="width:800px;margin-bottom:24px;outline:1px dashed #ddd";
@@ -69,11 +74,11 @@ Promise.all([hol("core.css"), hol("core.js"), hol("drawer-topbar.css"), hol("dra
      Zeitgebern und an requestAnimationFrame, und die Browserflaeche des Werkzeugs ist verdeckt:
      dort laeuft rAF gedrosselt. Ergebnis war ein nicht aufgebautes Element und ein Abbruch an
      einem querySelector, der null lieferte. Wer den Aufbau nicht messen will, baut vorher. */
-  var A=bauen({ "data-type":"brand", "data-name":"ADAC", "data-logo":"_h_logo.svg",
+  var A=bauen({ __id:"x", "data-type":"brand", "data-name":"ADAC", "data-logo":"_h_logo.svg",
                 "data-item-id":"b-1", "data-isdark":"no" });
-  var B=bauen({ "data-type":"widget", "data-name":"Etwas", "data-logo":"BRAND_LOGO",
+  var B=bauen({ __id:"b", "data-type":"widget", "data-name":"Etwas", "data-logo":"BRAND_LOGO",
                 "data-item-id":"w-1" });
-  var C=bauen({ "data-name":"Ohne Typ", "data-item-id":"c-1" });
+  var C=bauen({ __id:"c", "data-name":"Ohne Typ", "data-item-id":"c-1" });
 
   [t[1], t[3]].forEach(function(j){ var sc=d.createElement("script"); sc.textContent=j; d.head.appendChild(sc); });
   return warte(1400).then(function(){
@@ -226,16 +231,69 @@ Promise.all([hol("core.css"), hol("core.js"), hol("drawer-topbar.css"), hol("dra
         ereignisse[0][1].type === "url" && ereignisse[0][1].item_id === "u-9");
       log("");
 
-      log("3  Kein Name = laedt");
+      log("3  Kein Name = laedt -- an DREI Stellen");
       el.setAttribute("data-name","");
       return warte(120).then(function(){
-        pruef("Skelett statt Text", !!q(".utb-name-sk"));
-        pruef("und der Typ steht weiter da", q(".utb-type").textContent === "URL");
+        pruef("Skelett am Namen", !!q(".utb-sk-name"));
+        pruef("Skelett am Typ", !!q(".utb-sk-type"));
+        pruef("Skelett an der Logoplatte (kein Buchstabe, kein Bild)",
+          q(".utb-logo").classList.contains("is-sk") &&
+          !q(".utb-logo .up-logo-ltr") && !q(".utb-logo img"));
+        var skm=v.getComputedStyle(q(".utb-logo"));
+        pruef("die Platte behaelt ihre 18px (die Zeile springt nicht)",
+          parseFloat(skm.width) === 18 && parseFloat(skm.height) === 18);
+        pruef("der Stift ist im Ladezustand weg", q(".utb-edit").hidden);
         pruef("das Kreuz bleibt bedienbar",
           v.getComputedStyle(q(".utb-close")).display !== "none");
         el.setAttribute("data-name","Die 7 besten Modelle 2026");
         log("");
+        log("3b  resetDrawerTopbar -- Skelett, obwohl die Attribute stehen");
+        /* Der Punkt: die Attribute bleiben unberuehrt (sie gehoeren Bubble), und die Leiste zeigt
+           trotzdem das Skelett. Genau das braucht der Workflow, der den Drawer umstellt. */
+        v.resetDrawerTopbar("x");
+        pruef("nach dem Reset stehen alle drei Skelette",
+          !!q(".utb-sk-name") && !!q(".utb-sk-type") && q(".utb-logo").classList.contains("is-sk"));
+        pruef("und data-name steht unveraendert am Element",
+          el.getAttribute("data-name") === "Die 7 besten Modelle 2026");
+        pruef("Kreuz und Pin bleiben bedienbar",
+          v.getComputedStyle(q(".utb-close")).display !== "none" &&
+          v.getComputedStyle(q(".utb-pin")).display !== "none");
+        /* Und NUR diese Leiste: der Reset traegt eine Kennung, die anderen zwei stehen daneben
+           und muessen unberuehrt bleiben. */
+        pruef("die anderen beiden Leisten sind NICHT zurueckgesetzt",
+          !B.el.querySelector(".utb-sk-type") && !C.el.querySelector(".utb-sk-type"));
+        el.setAttribute("data-name","Ein anderes Element");
+        log("");
 
+        log("3c  Das Bild wechselt zuverlaessig -- auch wenn Bubble das Markup wegwirft");
+        el.setAttribute("data-logo","_h_logo.svg");
+        return warte(200).then(function(){
+          pruef("ein neuer Name beendet den Ladezustand von selbst",
+            !q(".utb-sk-name") && q(".utb-name").textContent === "Ein anderes Element");
+          var src1=q(".utb-logo img") ? q(".utb-logo img").getAttribute("src") : null;
+          el.setAttribute("data-logo","_h_bgP_a.svg");
+          return warte(200).then(function(){
+            var src2=q(".utb-logo img") ? q(".utb-logo img").getAttribute("src") : null;
+            log("      " + src1 + " -> " + src2);
+            pruef("ein neues data-logo tauscht das Bild",
+              src1 === "_h_logo.svg" && src2 === "_h_bgP_a.svg");
+            /* DER GEMELDETE FALL: Bubble ersetzt den Inhalt der Wurzel. Danach zeigen die
+               gemerkten Knoten ins Nichts -- ohne Selbstheilung blieb das alte Bild stehen. */
+            el.innerHTML = "<span>von Bubble ueberschrieben</span>";
+            el.setAttribute("data-logo","_h_logo.svg");
+            return warte(300).then(function(){
+              var neu=q(".utb-logo img");
+              log("      nach dem Ueberschreiben: " + (neu ? neu.getAttribute("src") : "kein Bild"));
+              pruef("die Leiste baut sich neu auf und zeigt das NEUE Bild",
+                !!neu && neu.getAttribute("src") === "_h_logo.svg");
+              pruef("und die Knoepfe sind wieder da", !!q(".utb-close") && !!q(".utb-pin"));
+              log("");
+              return weiter7();
+            });
+          });
+        });
+
+        function weiter7(){
         log("7  Schmal und sehr schmal (nichts darf umbrechen)");
         var lang="Ein sehr langer Titel, der in keine Leiste dieser Welt passt und daher" +
                  " abgeschnitten werden muss, ohne die Knoepfe rechts hinauszuschieben";
@@ -266,6 +324,7 @@ Promise.all([hol("core.css"), hol("core.js"), hol("drawer-topbar.css"), hol("dra
           A.box.style.width="800px";
           return warte(200);
         });
+        }
       });
     }).then(function(){
       log("");

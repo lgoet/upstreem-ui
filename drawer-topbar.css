@@ -118,11 +118,20 @@
 .utb-root .up-iconbtn[hidden] { display: none; }
 
 /* ---- Ladezustand ---------------------------------------------------------------------------
-   Solange kein Name da ist, steht ein Skelett an seiner Stelle -- und NUR dort. Typ, Knoepfe und
-   Logoplatte stehen schon: sie haengen an Attributen, die beim Aufbau gesetzt sind, und ein
-   Skelett ueber der ganzen Leiste wuerde behaupten, auch das Kreuz sei noch nicht da. */
-.utb-name-sk { display: inline-block; width: 140px; max-width: 100%; height: 13px;
-  border-radius: 4px; background: var(--vc-sk); }
+   Solange keine Daten da sind, stehen Skelette an DREI Stellen: Typ, Logoplatte und Name
+   (07.09. angefordert -- "auch beim Image"). Die erste Fassung hatte nur den Namen, und die
+   Platte zeigte solange den Buchstaben eines Namens, den es noch nicht gab.
+   Die KNOEPFE bekommen keines: sie haengen an nichts, was geladen werden muesste, und ein
+   Skelett ueber dem Kreuz wuerde behaupten, man koenne den Drawer noch nicht schliessen.
+   Alle drei tragen dieselbe Hoehe wie ihr Inhalt, damit die Zeile beim Ankommen der Daten nicht
+   springt: der Typ 11px wie seine Schrift, die Platte ihre eigenen 18. */
+.utb-sk { display: inline-block; border-radius: 4px; background: var(--vc-sk); }
+.utb-sk-type { width: 34px; height: 11px; }
+.utb-sk-name { width: 140px; max-width: 100%; height: 11px; }
+/* Die Logoplatte im Ladezustand: ihre Groesse und Rundung behaelt sie (die Regel oben), nur ihr
+   Grund wird der Skelettton. --vt-logo-bg ist die helle Platte fuer ein Bild und waere hier eine
+   Behauptung, es sei schon eines da. */
+.utb-root .up-logo-box.utb-logo.is-sk { background: var(--vc-sk); }
 
 /* KEIN "schon angeheftet"-Zustand, und das ist eine Entscheidung: die Pins liegen im
    localStorage unter einem Schluessel, der die Instanz der SEITENLEISTE enthaelt

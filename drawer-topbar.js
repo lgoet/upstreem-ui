@@ -33,6 +33,19 @@
    Quick Actions aus seinem Zeilenmenue ruft. Die Seitenleiste besitzt diese Liste, und ein
    zweiter Weg dorthin waere ein zweiter Zustand.
 
+   ── Der eine Setter ─────────────────────────────────────────────────────────────
+   resetDrawerTopbar(id)   zurueck auf das Skelett. Gehoert in den Workflow, der den Drawer auf
+                           ein anderes Element umstellt, und zwar VOR das Laden: sonst zeigt die
+                           Leiste solange den alten Namen mit dem alten Bild, und das ist eine
+                           Falschaussage ueber ein Element, das schon nicht mehr offen ist.
+                           Er loescht die Attribute NICHT -- die gehoeren Bubble. Sobald ein
+                           data-name ankommt, ist der Ladezustand von selbst vorbei.
+   refreshDrawerTopbar(id) Notbremse fuer Attributaenderungen, die der Beobachter nicht sieht.
+
+   OHNE DATEN STEHT EIN SKELETT, an drei Stellen: Typ, Logoplatte und Name. Woran die Leiste das
+   erkennt, ist der leere data-name -- ein Logo kann echt fehlen (eine URL ohne Favicon), ein
+   Name nicht.
+
    ── Was aus core kommt ──────────────────────────────────────────────────────────
    UC.makeMount, UC.makeFire, UC.esc, UC.icon, UC.makeTooltips, UC.widthTiers, UC.themeParam
    .up-iconbtn, .up-logo-box, .up-tip   die Bauteile
@@ -40,9 +53,16 @@
 (function () {
   "use strict";
 
-  /* Boot-Stubs (STYLEGUIDE §25) braucht diese Komponente NICHT: sie hat keinen Setter, den ein
-     Workflow vor dem Laden dieser Datei rufen koennte. Was Bubble ihr sagt, steht in Attributen,
-     und die stehen im Markup, bevor irgendein Skript laeuft. */
+  /* ---- Boot-Stubs (STYLEGUIDE §25), VOR der core-Pruefung ---------------------------------
+     Seit es resetDrawerTopbar gibt, kann ein Workflow rufen, bevor diese Datei geladen ist --
+     ohne Stub wirft der erste Aufruf und reisst den ganzen Run-JS-Step mit, also auch die Setter
+     der anderen Komponenten darunter. Alles ANDERE steht weiter in Attributen; die sind im
+     Markup, bevor irgendein Skript laeuft. */
+  var API_NAMES = ["resetDrawerTopbar", "refreshDrawerTopbar"];
+  var Q = (window.__utbBootQueue = window.__utbBootQueue || []);
+  API_NAMES.forEach(function (n) {
+    if (!window[n]) window[n] = function () { Q.push([n, [].slice.call(arguments)]); };
+  });
 
   function utbBoot(triesLeft) {
     if (!window.UpstreemCore) {
@@ -85,9 +105,18 @@
     }
     function itemId() { return attr("data-item-id").trim(); }
 
+    var elType, elLogo, elName, elEdit;
+    var state = { leer: true };
+
     /* Das Markup baut die Komponente selbst. In Bubble steht nur die leere Wurzel -- die Leiste
        hat keine Zellen, die jemand von Hand anpassen wollte, und ein von Hand eingefuegter
-       Aufbau waere eine Kopie, die beim naechsten Pin nicht mitwandert. */
+       Aufbau waere eine Kopie, die beim naechsten Pin nicht mitwandert.
+       EIGENE FUNKTION, damit sie sich WIEDERHOLEN laesst: Bubble baut ein Element bei jedem
+       Rerender neu und ersetzt dabei auch schon einmal dessen Inhalt. Danach zeigen elName und
+       die anderen auf abgehaengte Knoten, und jedes Zeichnen schreibt ins Leere -- das Bild blieb
+       stehen, obwohl der Drawer laengst ein anderes Element zeigte. Genau so gemeldet: "das Bild
+       updatet beim Wechseln nicht zuverlaessig". */
+    function aufbauen() {
     root.innerHTML =
       '<button type="button" class="up-iconbtn utb-back" data-utb-close ' +
         'data-tip="' + esc(UC.t("Back")) + '" aria-label="' + esc(UC.t("Back")) + '">' +
@@ -110,10 +139,12 @@
           UC.icon("x", 2) + '</button>' +
       '</div>';
 
-    var elType = root.querySelector("[data-utb-type]");
-    var elLogo = root.querySelector("[data-utb-logo]");
-    var elName = root.querySelector("[data-utb-name]");
-    var elEdit = root.querySelector("[data-utb-edit]");
+      elType = root.querySelector("[data-utb-type]");
+      elLogo = root.querySelector("[data-utb-logo]");
+      elName = root.querySelector("[data-utb-name]");
+      elEdit = root.querySelector("[data-utb-edit]");
+    }
+    aufbauen();
 
     var fire = UC.makeFire(root, { label: "drawer-topbar", eventPrefix: "utb" });
 
@@ -124,30 +155,63 @@
     }
 
     function render() {
-      var t = typ(), n = name(), l = logo();
-      elType.textContent = typLabel(t);
-      /* Ohne Typ faellt auch der Trenner weg: "/ ADAC" waere ein Satzzeichen ohne Satz. */
-      root.classList.toggle("is-notype", !elType.textContent);
+      /* SELBSTHEILUNG ZUERST. Sind unsere Knoten nicht mehr im Baum, hat sie jemand ersetzt --
+         dann wird neu gebaut, statt in abgehaengte Knoten zu schreiben. Das ist die Ursache des
+         "das Bild updatet nicht zuverlaessig": es stand noch da, weil das sichtbare Logo ein
+         anderer Knoten war als der, den diese Funktion beschrieben hat. */
+      if (!elName || !root.contains(elName)) aufbauen();
 
-      /* Das Logo: Bild, wenn eine Quelle da ist, sonst der erste Buchstabe des Namens. Bricht das
-         Bild, bleibt der Buchstabe stehen -- er liegt schon darunter, .has-img versteckt ihn nur. */
-      var buchst = (n.charAt(0) || "?").toUpperCase();
-      elLogo.className = "up-logo-box utb-logo" + (l ? " has-img" : "");
-      elLogo.innerHTML = '<span class="up-logo-ltr">' + esc(buchst) + '</span>' +
-        (l ? '<img alt="" src="' + esc(l) + '" ' +
-             'onerror="this.parentNode.classList.remove(&quot;has-img&quot;);this.remove()"/>' : "");
+      var t = typ(), n = name(), l = logo();
+      /* NOCH KEINE DATEN heisst SKELETT -- fuer den Namen UND fuer das Bild (07.09. angefordert).
+         Woran man es erkennt: kein Name. Der Typ allein genuegt nicht, den kennt der Drawer schon
+         beim Oeffnen; und ein Logo kann echt fehlen (eine URL ohne Favicon), ein Name nicht.
+         state.leer kommt dazu: reset() setzt es, damit die Leiste auch dann leer aussieht, wenn
+         die alten Attribute noch am Element stehen. */
+      var laedt = state.leer || !n;
+
+      elType.innerHTML = laedt ? '<span class="utb-sk utb-sk-type"></span>' : esc(typLabel(t));
+      /* Ohne Typ faellt auch der Trenner weg: "/ ADAC" waere ein Satzzeichen ohne Satz. Im
+         Ladezustand bleibt er stehen -- dort steht links davon ja ein Skelett. */
+      root.classList.toggle("is-notype", !laedt && !typLabel(t));
+
+      if (laedt) {
+        /* Die Platte behaelt ihre Groesse und traegt den Skelettton -- im Ladezustand ist sie
+           kein Bild und kein Buchstabe, sondern ein Platzhalter. */
+        elLogo.className = "up-logo-box utb-logo is-sk";
+        elLogo.innerHTML = "";
+      } else {
+        /* Das Logo: Bild, wenn eine Quelle da ist, sonst der erste Buchstabe des Namens. Bricht
+           das Bild, bleibt der Buchstabe stehen -- er liegt schon darunter, .has-img versteckt
+           ihn nur. */
+        var buchst = (n.charAt(0) || "?").toUpperCase();
+        elLogo.className = "up-logo-box utb-logo" + (l ? " has-img" : "");
+        elLogo.innerHTML = '<span class="up-logo-ltr">' + esc(buchst) + '</span>' +
+          (l ? '<img alt="" src="' + esc(l) + '" ' +
+               'onerror="this.parentNode.classList.remove(&quot;has-img&quot;);this.remove()"/>' : "");
+      }
 
       /* Kein Name heisst LAEDT und nicht LEER: die Leiste steht schon, waehrend der Drawer seine
          Daten holt. Ein Skelett sagt das; ein leerer Streifen saehe aus wie ein Fehler, und ein
          erfundener Text ("Unbenannt") waere eine Behauptung ueber Daten, die es nicht gibt. */
-      if (n) elName.textContent = n;
-      else elName.innerHTML = '<span class="utb-name-sk"></span>';
+      if (laedt) elName.innerHTML = '<span class="utb-sk utb-sk-name"></span>';
+      else elName.textContent = n;
 
       /* Bearbeiten NUR bei Marken (angefordert). hidden UND die CSS-Zeile dazu: [hidden] kommt
          aus dem Stylesheet des Browsers und wird von jeder eigenen display-Regel geschlagen --
-         hier gibt es keine, aber .up-iconbtn traegt display: inline-flex, also braucht es sie. */
-      elEdit.hidden = (t !== "brand");
+         hier gibt es keine, aber .up-iconbtn traegt display: inline-flex, also braucht es sie.
+         Im Ladezustand bleibt er weg: welcher Typ kommt, weiss die Leiste noch nicht, und ein
+         Knopf, der gleich wieder verschwindet, ist schlimmer als einer, der spaeter erscheint. */
+      elEdit.hidden = laedt || (t !== "brand");
     }
+
+    /* ---- Zuruecksetzen (07.09. angefordert) ----
+       Ein Workflow, der den Drawer auf ein anderes Element umstellt, ruft das VOR dem Laden --
+       dann steht das Skelett, waehrend die neuen Daten kommen, und nicht der alte Name mit dem
+       alten Bild. Ohne das waere der Zwischenzustand eine Falschaussage: die Leiste zeigte ein
+       Element, das im Drawer schon nicht mehr offen ist.
+       state.leer und NICHT das Loeschen der Attribute: die gehoeren Bubble. Sobald ein Name
+       ankommt, ist der Zustand von selbst vorbei (siehe der Beobachter). */
+    function reset() { state.leer = true; render(); }
 
     /* ---- Klicks. Delegiert an der Wurzel, damit ein Neubau des Markups die Bindung nicht
        verliert -- render() schreibt nur Text und Bild, aber das ist eine Zusage, die man leicht
@@ -195,9 +259,18 @@
        Element wechselt, aendert sie -- ohne diesen Beobachter stuende der alte Name da, bis
        irgendetwas anderes die Seite anfasst. */
     if (window.MutationObserver) {
-      new MutationObserver(render).observe(root, {
+      new MutationObserver(function () {
+        /* Ein Name, der ankommt, beendet den Ladezustand. Bleibt er leer, bleibt das Skelett --
+           auch wenn Typ oder Bild sich aendern: ohne Namen ist nichts vollstaendig da. */
+        if (name()) state.leer = false;
+        render();
+      }).observe(root, {
         attributes: true,
-        attributeFilter: ["data-type", "data-name", "data-logo", "data-item-id"]
+        attributeFilter: ["data-type", "data-name", "data-logo", "data-item-id"],
+        /* childList DAZU: ersetzt jemand den Inhalt der Wurzel (Bubble tut das bei einem
+           Rerender), zeigen unsere Knoten ins Nichts. render() baut dann neu auf -- aber nur,
+           wenn es ueberhaupt gerufen wird, und dafuer braucht es diese Zeile. */
+        childList: true
       });
     }
 
@@ -207,6 +280,9 @@
     if (UC.widthTiers) UC.widthTiers(root, { narrowAt: 356, vnarrowAt: 260 });
     if (UC.makeTooltips) UC.makeTooltips(root, dunkelJetzt);
 
+    /* Der erste Zustand: steht schon ein Name am Element, ist die Leiste fertig -- sonst laedt
+       sie. Dieselbe Regel wie im Beobachter, damit es nur eine gibt. */
+    if (name()) state.leer = false;
     render();
     /* Ein Themenwechsel aendert hier nichts am Markup -- die Farben haengen alle an Tokens. Die
        Sprache dagegen steckt in Beschriftungen, die beim Aufbau geschrieben wurden: Typ, und die
@@ -220,12 +296,7 @@
       if (!neu) root.__utbController = alt;
     });
 
-    var api = {
-      render: render,
-      /* Fuer Prueftaende und fuer einen Workflow, der die Leiste von aussen anstossen will, ohne
-         ein Attribut zu aendern. Bewusst KEIN window-Setter: es gibt nichts zu setzen. */
-      refresh: render
-    };
+    var api = { render: render, refresh: render, reset: reset };
     root.__utbController = api;
     return api;
   }
@@ -245,10 +316,13 @@
     ctrlProp: "__utbController",
     resolveLocal: "__utbResolveLocal",
     initRoot: initRoot,
+    queue: "__utbBootQueue",
     api: {
-      /* Ein einziger Name nach aussen, und der ist eine Notbremse: wer die Attribute ueber einen
-         Weg aendert, den der Beobachter nicht sieht (etwa als Ganzes ersetztes Markup), kann die
-         Leiste damit nachziehen. */
+      /* Zurueck auf das Skelett. Gehoert VOR das Laden der neuen Daten, in denselben Workflow,
+         der den Drawer umstellt. */
+      resetDrawerTopbar: function (id) { return each(id, function (c) { c.reset(); }); },
+      /* Notbremse: wer die Attribute ueber einen Weg aendert, den der Beobachter nicht sieht,
+         kann die Leiste damit nachziehen. Im Normalbetrieb nicht noetig. */
       refreshDrawerTopbar: function (id) { return each(id, function (c) { c.refresh(); }); }
     }
   });
