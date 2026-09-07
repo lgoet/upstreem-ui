@@ -9,7 +9,7 @@
 
        setDrawerTopbar(id, payload)   der EMPFOHLENE Weg. Ein Run-JS-Schritt, der alles fuellt:
                                       { "type": "...", "name": "...", "logo": "...",
-                                        "item_id": "..." }
+                                        "item_id": "...", "market": "DE" }
                                       Fehlt ein Feld im Payload, bleibt der bisherige Wert
                                       stehen -- so kann ein Schritt auch nur das Bild nachtragen.
 
@@ -38,6 +38,11 @@
                        erste Buchstabe des Namens dort. Bei prompt und response wird es nicht
                        gelesen: dort steht das Zeichen des Typs.
        data-item-id    die Kennung, die in jedem Ereignis mitgeht und die auch angeheftet wird.
+       data-market     der Markt, zweistellig (DE, US, ...). Nur fuer EINE Sache da: heftet man
+                       einen Prompt an die Seitenleiste, ist die Flagge dieses Marktes dort das
+                       Bild -- so wie es Quick Actions macht. Fehlt er, bleibt das Bild leer und
+                       die Leiste zeigt den ersten Buchstaben; in der Brotkrume hier aendert er
+                       nichts (dort steht beim Prompt das zap).
 
    Warum Attribute und kein Setter: die Leiste hat keinen Zustand, den sie sich merken muesste.
    Sie zeigt genau das, was gerade im Drawer offen ist -- und WELCHES das ist, weiss Bubble
@@ -187,6 +192,12 @@
       return (!w || w === "LOGO" || w === "BRAND_LOGO" || w === "FAVICON") ? "" : w;
     }
     function itemId() { return feld("item_id", "data-item-id"); }
+    /* Der Markt, zweistellig. Er steht NUR fuer eine Sache da: beim Anheften eines Prompts ist
+       die Flagge des Marktes das Bild in der Seitenleiste -- so macht es Quick Actions, und
+       gemeldet wurde am 08.09., dass die zwei Wege unterschiedlich aussehen. In der Brotkrume
+       dieser Leiste bleibt beim Prompt das zap: dort sagt das Zeichen, WAS es ist, in der
+       Seitenleiste sagt die Flagge, WELCHER Prompt. */
+    function markt() { return feld("market", "data-market"); }
 
     var elType, elLogo, elName, elEdit, elDomain, elPin, elPrompt;
     var state = { leer: true };
@@ -361,7 +372,7 @@
       }
       /* Nur die vier Felder, die es gibt, und nur die MITGESCHICKTEN. item_id auch als "id":
          so heisst das Feld in den Ereignissen dieser Leiste und in jedem Payload der App. */
-      ["type", "name", "logo"].forEach(function (k) {
+      ["type", "name", "logo", "market"].forEach(function (k) {
         if (o[k] != null) daten[k] = String(o[k]);
       });
       if (o.item_id != null) daten.item_id = String(o.item_id);
@@ -427,7 +438,13 @@
           "window.upstreemPinToSidebar fehlt, der Eintrag wurde nicht angeheftet.");
         return;
       }
-      try { fn({ type: typ(), id: id, label: name() || id, logo: logo() }); } catch (e) {}
+      /* Das Bild fuer die Seitenleiste. Beim Prompt die Flagge seines Marktes, sonst das Logo
+         oder Favicon -- genau die Zuordnung, die Quick Actions in pinToSidebar() trifft. Die
+         Adresse kommt aus UC.flagUrl, der einen Quelle der App; hier eine zweite zu bauen war
+         der Grund, warum die zwei Wege verschieden aussahen. */
+      var bild = logo();
+      if (typ() === "prompt" && markt() && UC.flagUrl) bild = UC.flagUrl(markt()) || bild;
+      try { fn({ type: typ(), id: id, label: name() || id, logo: bild }); } catch (e) {}
     }
 
     /* ---- Live mitlesen. Genau die vier Attribute, die das Bild bestimmen. Ein Drawer, der sein
@@ -441,7 +458,7 @@
         render();
       }).observe(root, {
         attributes: true,
-        attributeFilter: ["data-type", "data-name", "data-logo", "data-item-id"],
+        attributeFilter: ["data-type", "data-name", "data-logo", "data-item-id", "data-market"],
         /* childList DAZU: ersetzt jemand den Inhalt der Wurzel (Bubble tut das bei einem
            Rerender), zeigen unsere Knoten ins Nichts. render() baut dann neu auf -- aber nur,
            wenn es ueberhaupt gerufen wird, und dafuer braucht es diese Zeile. */

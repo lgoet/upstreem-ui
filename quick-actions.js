@@ -47,6 +47,19 @@
      ist ohnehin die richtige Ordnung -- die Komponente besitzt ihre Beschriftungen -- und es
      macht sie unabhaengig von der Laengengrenze eines fremden Laufs. Ohne core bleibt alles
      englisch, und das ist richtig: ohne core gibt es keinen Katalog. */
+  /* ---- Die Flaggenadresse an EINER Stelle (08.09.) ----
+     Sie stand hier vier Mal von Hand ("https://flagcdn.com/" + market + ".svg") und in core
+     noch einmal als UC.flagUrl. Vier Kopien sind vier Gelegenheiten, dass eine abweicht -- und
+     genau das war der gemeldete Fehler: ueber die Topbar angeheftete Prompts hatten keine
+     Flagge, ueber diese Palette schon. Also delegiert es an core, wo die Quelle der ganzen App
+     steht, und faellt nur zurueck, wenn core nicht da ist (diese Komponente laeuft ausdruecklich
+     auch ohne). */
+  function flaggeUrl(m){
+    var k = window.UpstreemCore;
+    if (k && k.flagUrl) return k.flagUrl(m);
+    var c = String(m == null ? "" : m).trim().toLowerCase();
+    return c.length === 2 ? "https://flagcdn.com/" + c + ".svg" : "";
+  }
   function ensureCore(){
     if (coreDa()) return;
     var m = /^(.*\/)quick-actions\.js(?:\?.*)?$/.exec(SELF_SRC);
@@ -367,7 +380,7 @@
     if (kind === "urltypes") return URL_TYPES.map(function(t){ return { label: urlTypeLabelUeb(t), value: t, dot: urlTypeColor(t) }; });
     if (kind === "markets") return MARKETS.map(function(m){
       return { label: String(m).toUpperCase(), value: m,
-               av: "https://flagcdn.com/" + String(m).toLowerCase() + ".svg", avKind: "flag" };
+               av: flaggeUrl(m), avKind: "flag" };
     });
     if (kind === "brands")  return BRANDS.map(function(b){
       return { label: b.name, value: (b.id != null && b.id !== "") ? b.id : b.name,
@@ -687,7 +700,7 @@
     else if (type === "url"){ av = avHtml(item.favicon, GLOBE); primary = hl(item.title || item.url || ""); secondary = hl(item.url || ""); }
     else if (type === "prompt"){
       var mk = String(item.market || "").toUpperCase();
-      var flag = item.market ? ("https://flagcdn.com/" + String(item.market).toLowerCase() + ".svg") : "";
+      var flag = flaggeUrl(item.market);
       av = avHtml(flag, '<span class="mqa-av-t">' + esc(mk) + '</span>');
       primary = hl(item.prompt_text || ""); secondary = "Market · " + esc(mk);
     }
@@ -1029,7 +1042,7 @@
     else if (item.type === "url"){ av = avHtml(item.favicon, GLOBE); primary = esc(item.title || item.url || ""); secondary = esc(item.url || ""); }
     else if (item.type === "prompt"){
       var mk = String(item.market || "").toUpperCase();
-      av = avHtml(item.market ? ("https://flagcdn.com/" + String(item.market).toLowerCase() + ".svg") : "",
+      av = avHtml(flaggeUrl(item.market),
                   '<span class="mqa-av-t">' + esc(mk) + '</span>', true);
       primary = esc(item.prompt_text || ""); secondary = mk ? ("Market · " + esc(mk)) : "";
     }
@@ -1364,8 +1377,9 @@
     else if (typ === "domain"){ id = it.domain; label = it.domain || "";          logo = it.favicon || ""; }
     else if (typ === "url"){    id = it.url;    label = it.title || it.url || ""; logo = it.favicon || ""; }
     else if (typ === "prompt"){ id = it.id;     label = it.prompt_text || "";
-      /* Beim Prompt ist die Flagge des Marktes das Bild -- dieselbe Quelle wie in der Zeile. */
-      logo = it.market ? ("https://flagcdn.com/" + String(it.market).toLowerCase() + ".svg") : ""; }
+      /* Beim Prompt ist die Flagge des Marktes das Bild -- dieselbe Quelle wie in der Zeile,
+         und ueber flaggeUrl() dieselbe wie in der Topbar. */
+      logo = flaggeUrl(it.market); }
     else return;
     var fn = window.upstreemPinToSidebar ||
              (window.parent && window.parent.upstreemPinToSidebar) ||

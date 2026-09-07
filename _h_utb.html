@@ -239,8 +239,55 @@ Promise.all([hol("core.css"), hol("core.js"), hol("drawer-topbar.css"), hol("dra
       });
     }, Promise.resolve()).then(function(){
       log("");
-      log("==> " + ja(schlecht === 0) + "  " + gut + " von " + (gut+schlecht) + " Pruefungen");
-      log("FERTIG");
+      return teil14();
+    });
+  }
+
+  /* ---- 14  Ein angehefteter Prompt traegt die Flagge seines Marktes (08.09.) ----
+     Gemeldet: "heftet man ueber die Topbar einen Prompt an, muss das Logo links den Markt-Flag
+     zeigen -- genau wie beim Anheften ueber Quick Actions. Das ist aktuell unterschiedlich."
+     War es: die Leiste schickte data-logo, und ein Prompt hat keines. Geprueft wird deshalb
+     nicht "es ist irgendein Bild da", sondern dass es GENAU die Adresse ist, die auch Quick
+     Actions baut -- und die kommt aus UC.flagUrl, der einen Quelle der App. Eine hier
+     abgeschriebene Adresse waere die vierte Kopie und damit die naechste Abweichung. */
+  function teil14(){
+    var el = A.el;
+    function q(sel){ return el.querySelector(sel); }
+    log("14  Anheften: der Prompt bringt die Flagge seines Marktes mit");
+    var UC = v.UpstreemCore;
+    v.setDrawerTopbar("x", { type: "prompt", name: "Welche Anbieter sind die guenstigsten?",
+      item_id: "p-7", market: "DE", logo: "" });
+    return warte(220).then(function(){
+      gepinnt.length = 0;
+      q(".utb-pin").click();
+      var soll = UC.flagUrl ? UC.flagUrl("DE") : "";
+      log("      angeheftet: " + JSON.stringify(gepinnt[0] || null));
+      log("      UC.flagUrl(\"DE\") = " + soll);
+      pruef("es wird ueberhaupt angeheftet (der Pin ist beim Prompt da)", gepinnt.length === 1);
+      pruef("das Bild ist die Flagge des Marktes, aus UC.flagUrl",
+        !!gepinnt[0] && !!soll && gepinnt[0].logo === soll);
+      pruef("Typ und Kennung stimmen",
+        !!gepinnt[0] && gepinnt[0].type === "prompt" && gepinnt[0].id === "p-7");
+      /* OHNE Markt: dann bleibt das Bild leer und die Leiste zeigt den Buchstaben -- besser als
+         eine Flagge zu raten. */
+      v.setDrawerTopbar("x", { type: "prompt", name: "Ohne Markt", item_id: "p-8", market: "" });
+      return warte(200).then(function(){
+        gepinnt.length = 0; q(".utb-pin").click();
+        log("      ohne Markt: " + JSON.stringify(gepinnt[0] || null));
+        pruef("ohne Markt bleibt das Bild leer", !!gepinnt[0] && gepinnt[0].logo === "");
+        /* Und bei einer MARKE aendert der Markt nichts -- das Logo gewinnt. */
+        v.setDrawerTopbar("x", { type: "brand", name: "ADAC", item_id: "b-1",
+          logo: "_h_logo.svg", market: "DE" });
+        return warte(200).then(function(){
+          gepinnt.length = 0; q(".utb-pin").click();
+          log("      Marke mit Markt: " + JSON.stringify(gepinnt[0] || null));
+          pruef("bei einer Marke bleibt ihr Logo das Bild, der Markt aendert nichts",
+            !!gepinnt[0] && gepinnt[0].logo === "_h_logo.svg");
+          log("");
+          log("==> " + ja(schlecht === 0) + "  " + gut + " von " + (gut+schlecht) + " Pruefungen");
+          log("FERTIG");
+        });
+      });
     });
   }
 

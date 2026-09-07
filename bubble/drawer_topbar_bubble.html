@@ -31,7 +31,7 @@
       Der Payload ist derselbe Text wie bei jedem anderen Setter dieser Bibliothek:
 
           { "type": "domain", "name": "adac.de", "logo": "https://.../favicon.png",
-            "item_id": "1712849302914x392" }
+            "item_id": "1712849302914x392", "market": "DE" }
 
       FEHLENDE FELDER BLEIBEN STEHEN. Ein zweiter Schritt, der nur { "logo": "..." } schickt,
       traegt das Bild nach, ohne den Namen zu loeschen -- gebaut fuer den Fall, dass das Favicon
@@ -43,7 +43,8 @@
             "type":    "[typ]",
             "name":    "[name]",
             "logo":    "[logo]",
-            "item_id": "[item id]"
+            "item_id": "[item id]",
+            "market":  "[market]"
           }`);
 
       Und mit echten Daten zum Ausprobieren, ohne einen einzigen Bubble-Ausdruck:
@@ -52,7 +53,8 @@
             "type":    "domain",
             "name":    "adac.de",
             "logo":    "https://www.google.com/s2/favicons?sz=64&domain=adac.de",
-            "item_id": "1712849302914x392"
+            "item_id": "1712849302914x392",
+            "market":  "DE"
           }`);
 
       Reihenfolge im Workflow, der den Drawer auf ein anderes Element umstellt:
@@ -92,6 +94,13 @@
   data-logo       = Bildquelle fuer die Platte davor (Markenlogo oder Favicon). Fehlt sie, steht
                     dort der erste Buchstabe des Namens.
   data-item-id    = die Kennung. Geht in jedem Ereignis mit und ist der Wert, der angeheftet wird.
+
+  data-market     = der Markt, zweistellig ("DE", "US", ...). NUR fuer das Anheften: heftet man
+                    einen Prompt an die Seitenleiste, ist die Flagge dieses Marktes dort das
+                    Bild -- genauso, wie wenn man den Prompt ueber Quick Actions anheftet. Fehlt
+                    er, bleibt das Bild leer und die Leiste zeigt den ersten Buchstaben. In der
+                    Brotkrume dieser Leiste aendert er nichts (dort steht beim Prompt das zap).
+                    Bei allen anderen Typen wird er nicht gelesen.
 
   ALLE VIER WERDEN LIVE MITGELESEN. Wechselt der Drawer sein Element, aendert Bubble die
   Attribute -- die Leiste zieht von selbst nach, kein Workflow-Schritt noetig.
@@ -175,6 +184,7 @@
      data-name       = ""
      data-logo       = ""
      data-item-id    = "[unique id]"
+     data-market     = "[market]"
      data-close-fn   = "bubble_fn_utbClose_[dynamic id]"
      data-edit-fn    = "bubble_fn_utbEdit_[dynamic id]"
      data-domain-fn  = "bubble_fn_utbDomain_[dynamic id]"
