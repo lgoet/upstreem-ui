@@ -30,21 +30,25 @@
    sticky positioning outright. */
 .uo-root {
   min-height: 480px; padding: 16px 16px 32px;
-  /* Column surface: a hair off the page background so the columns read as lanes without needing a
-     border. Not a core token because no other component has a "lane" surface -- core's
-     --vc-heading-bg is a hover/emphasis tone and is noticeably darker here. */
-  --uo-col-bg: #f8f9f9;
+  /* Die Flaeche der Karten: eine Spur ueber dem Grund der Seite, damit sie ohne einen zweiten
+     Ton auskommen. Kein core-Token, weil keine andere Komponente so eine Flaeche hat --
+     --vc-heading-bg ist ein Hover-/Betonungston und hier deutlich zu dunkel.
+     JETZT LINEARS --color-bg-translucent, wie im Dunkeln: dort ist es #ffffff0d (Weiss bei 5
+     Prozent), hier #00000005 (Schwarz bei 2 Prozent) -- beide von linear.app gelesen, beide die
+     leiseste Flaeche, die ihr System ueber dem Grund kennt. Ueber Weiss ergibt das etwa #fafafa.
+     Vorher stand hier #f8f9f9, ein von Hand gewaehlter Ton; angefordert am 07.09. war "die Cards
+     im Lightmode noch eine Nuance heller", und genau diese Nuance ist es: zwei Helligkeitsstufen.
+     Halbdurchsichtig und nicht ausgerechnet -- so steht es bei Linear, und so traegt es auf jedem
+     Untergrund, auf dem das Brett spaeter liegen mag. */
+  --uo-col-bg: #00000005;
   /* Potential-bar gradient ends. The bars fade from muted to primary across the four steps, so a
      4/4 bar set reads as a single left-to-right ramp rather than four identical blocks. */
   --uo-pot-a: #c4c9d0;
   --uo-pot-b: var(--vc-text);
 }
-/* #ffffff0d ist Linears --color-bg-translucent, ausgelesen von linear.app: Weiss bei 5 Prozent.
-   Es ist die LEISESTE Flaeche, die ihr System ueber dem Grund kennt -- ueber unserem Grund
-   (#101114) ergibt es etwa #1c1d20. Genau so
-   angefordert: "den leichtesten im Kontrast zum Page-BG, den das Linear Design System hergibt".
-   Halbdurchsichtig und nicht ausgerechnet: so steht es bei Linear, und so traegt es auf jedem
-   Untergrund, auf dem das Brett spaeter liegen mag. */
+/* Die dunkle Haelfte desselben Tokens: Weiss bei 5 Prozent, ueber unserem Grund (#101114) etwa
+   #1c1d20. Die Begruendung steht oben beim hellen Wert. Angefordert war "der leichteste im
+   Kontrast zum Page-BG, den das Linear Design System hergibt". */
 .up-root[data-theme="dark"].uo-root { --uo-col-bg: #ffffff0d; --uo-pot-a: #4a4f56; }
 
 /* ---------- toolbar ----------

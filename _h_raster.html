@@ -149,6 +149,7 @@ Promise.all([hol("core.css"), hol("core.js"), hol("sidebar.css")]).then(function
       };
       ch.draw();
       ctx.moveTo=oM; ctx.lineTo=oL; ctx.stroke=oS; ctx.setLineDash=oD;
+      var ca = ch.chartArea;
       var waag = spuren.filter(function(s){ return Math.abs(s[1]-s[3]) < 0.6 && Math.abs(s[0]-s[2]) > 5; });
       var senk = spuren.filter(function(s){ return Math.abs(s[0]-s[2]) < 0.6 && Math.abs(s[1]-s[3]) > 5; });
       /* Gleichmaessig heisst: die Abstaende zwischen benachbarten Linien sind gleich. */
@@ -161,7 +162,14 @@ Promise.all([hol("core.css"), hol("core.js"), hol("sidebar.css")]).then(function
       log("4  Chart-Raster");
       log("     waagerecht " + waag.length + "   senkrecht " + senk.length);
       log("     " + ja(waag.length === 4) + " vier waagerechte (vorher drei -- 'eine zusaetzliche')");
-      log("     " + ja(senk.length === waag.length) + " gleich viele senkrechte wie waagerechte");
+      /* Eine senkrechte WENIGER als waagerechte, seit dem 07.09.: die Linie auf der rechten Kante
+         der Zeichenflaeche ist weg ("ganz links ist ja auch keine"). Geteilt wird weiter in vier
+         gleiche Spalten, nur die aeusserste Trennung faellt. */
+      log("     " + ja(senk.length === waag.length - 1) + " eine senkrechte weniger (keine auf der rechten Kante)");
+      var senkX = senk.map(function(s){ return s[0]; });
+      log("     " + ja(senkX.every(function(x){ return x < ca.right - 2; })) +
+          " und keine liegt auf der rechten Kante (rechts " + Math.round(ca.right) + ", letzte " +
+          (senkX.length ? Math.round(Math.max.apply(null, senkX)) : "-") + ")");
       log("     " + ja(gleichmaessig(waag.map(function(s){ return s[1]; }))) + " waagerechte gleichmaessig verteilt");
       log("     " + ja(gleichmaessig(senk.map(function(s){ return s[0]; }))) + " senkrechte gleichmaessig verteilt");
       var rf = rgbHex(ch.$upGridColor) || ch.$upGridColor;

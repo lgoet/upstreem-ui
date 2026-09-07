@@ -39,6 +39,7 @@ Promise.all([hol("core.css"), hol("sidebar.css"), hol("quick-actions.css")]).the
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>' +
         '</span><span class="usn-txt">Gewaehlt</span></button>' +
       '</div>' +
+      '<button class="usn-team" type="button"><span class="usn-teamname">Upstreem GmbH</span></button>' +
       '<button class="mqa-trigger" type="button"><span class="mqa-trigger-ic"></span>' +
         '<span class="mqa-trigger-label">Quick Actions</span>' +
         '<span class="mqa-kbd">⌘K</span></button>';
@@ -56,6 +57,8 @@ Promise.all([hol("core.css"), hol("sidebar.css"), hol("quick-actions.css")]).the
       gewichtAus: v.getComputedStyle(aus).fontWeight,
       gewichtAn: v.getComputedStyle(an).fontWeight,
       kbd: v.getComputedStyle(bar.querySelector(".mqa-kbd")).color,
+      teamGroesse: v.getComputedStyle(bar.querySelector(".usn-teamname")).fontSize,
+      teamGewicht: v.getComputedStyle(bar.querySelector(".usn-teamname")).fontWeight,
       tokenText: cw.getPropertyValue("--vc-text").trim(),
       tokenMuted: cw.getPropertyValue("--vc-muted").trim(),
       tokenThird: cw.getPropertyValue("--vc-third").trim(),
@@ -87,6 +90,14 @@ Promise.all([hol("core.css"), hol("sidebar.css"), hol("quick-actions.css")]).the
         "px -- " + ja(e.breiteAus === e.breiteAn) + " die Zeile springt beim Wechsel nicht");
     log("   4  Tastenkuerzel: " + hex(e.kbd));
     log("      " + ja(hex(e.kbd) === e.tokenThird.toLowerCase()) + " in der dritten Textstufe");
+    /* 14.5px und 500 -- "0.5px groesser und 50 Weight weniger" als die 14px/550 von vorher.
+       Der halbe Pixel muss WIRKLICH ankommen: manche Umgebungen runden font-size auf ganze
+       Pixel, und dann waere die Aenderung nur halb da. */
+    log("   5  Teamname: " + e.teamGroesse + " / " + e.teamGewicht);
+    log("      " + ja(parseFloat(e.teamGroesse) === 14.5) + " 14.5px (vorher 14)");
+    log("      " + ja(e.teamGewicht === "500") + " Gewicht 500 (vorher 550)");
+    log("      " + ja(e.teamGewicht === e.gewichtAus) +
+        " dieselbe Staerke wie die Menuepunkte (" + e.gewichtAus + ")");
     log("");
   });
   log("FERTIG");

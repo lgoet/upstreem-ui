@@ -238,9 +238,13 @@
    Leiste zu schwer, 500 machte den Kopf nicht als Kopf kenntlich. Der Zwischenwert steht nur zur
    Verfuegung, weil core die Schrift als variable Datei ueber den Bereich 400..600 laedt -- mit
    einzelnen Staerken faende der Browser hier die 600. */
+/* 14.5px und 500 (07.09. angefordert, "0.5px groesser und 50 Weight weniger"). Der halbe Pixel
+   ist bei variabler Schrift kein Problem -- gerundet wird erst beim Rastern der Glyphen, die
+   Laufweite bleibt exakt. Und 500 ist dieselbe Staerke wie die Menuepunkte darunter: der Teamname
+   ist damit nicht mehr die schwerste Schrift der Leiste, sondern die groesste. */
 .usn-teamname {
   flex: 0 1 auto; min-width: 0; margin-left: 10px;
-  font-size: 14px; font-weight: 550; line-height: 1.2;
+  font-size: 14.5px; font-weight: 500; line-height: 1.2;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 /* 12px vom Namen, damit der Doppelpfeil zum Namen gehoert und nicht zum Rand. */

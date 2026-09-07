@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20260929;
+  var BUILD = 20260930;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -9883,7 +9883,15 @@
 
      Die senkrechten haengen ABSICHTLICH nicht an den x-Ticks. Deren Zahl richtet sich nach der
      Datenlaenge (xTickZeigen, siehe makeLine) und schwankt zwischen 5 und 7 -- ein Raster, dessen
-     Maschenweite sich mit der Anzahl der Tage aendert, ist kein gleichmaessiges Raster. */
+     Maschenweite sich mit der Anzahl der Tage aendert, ist kein gleichmaessiges Raster.
+
+     KEINE LINIE AM RECHTEN RAND (07.09.): "bitte ueberall auf die ganz rechte vertikale
+     gestrichelte Gridline verzichten, weil ganz links ist ja auch keine". Links steht die
+     y-Achse, dort braucht das Raster keine eigene Linie -- rechts steht nichts, und eine Linie
+     genau auf der Kante der Zeichenflaeche liest sich als Rahmen, nicht als Raster. Es bleiben
+     also RASTER_N - 1 senkrechte Linien, und die Maschen sind weiter gleich breit: geteilt wird
+     unveraendert in RASTER_N Spalten, nur die letzte Trennung faellt weg. Waagerecht bleibt es
+     bei RASTER_N -- dort traegt jede Linie eine Beschriftung, auch die oberste. */
   var RASTER_N = 4;
   var dashedGridPlugin = {
     id: "upDashedGrid",
@@ -9903,12 +9911,9 @@
         if (yp < ca.top - 0.5 || yp > ca.bottom + 0.5) return;
         ctx.beginPath(); ctx.moveTo(ca.left, Math.round(yp) + 0.5); ctx.lineTo(ca.right, Math.round(yp) + 0.5); ctx.stroke();
       });
-      /* senkrecht: gleiche Anzahl, gleiche Bruchteile */
-      for (var i = 1; i <= RASTER_N; i++){
+      /* senkrecht: dieselben Bruchteile, aber ohne die Linie auf der rechten Kante */
+      for (var i = 1; i < RASTER_N; i++){
         var xp = ca.left + breite * (i / RASTER_N);
-        /* die letzte Linie liegt auf ca.right; ein halbes Pixel nach innen, sonst laege die
-           Haelfte des Strichs ausserhalb der Zeichenflaeche und sieht duenner aus als die uebrigen */
-        if (i === RASTER_N) xp -= 1;
         ctx.beginPath(); ctx.moveTo(Math.round(xp) + 0.5, ca.top); ctx.lineTo(Math.round(xp) + 0.5, ca.bottom); ctx.stroke();
       }
       ctx.restore();

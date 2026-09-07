@@ -134,11 +134,22 @@
    box-shadow wird nicht auf ganze Pixel gerundet und ueberlebt gebrochene Hoehen. Die border
    wird dafuer abgeschaltet, sonst staende an den unauffaelligen Zeilen eine doppelte Linie.
    Der Selektor greift NUR auf direkte Kinder von .up-tbody -- also den flachen Body. Zeilen in
-   Gruppen-Containern und in der breiten Ansicht behalten ihre gewoehnliche border: dort schneidet
-   der jeweilige Container den Schatten ab, und das Rundungsproblem gibt es nur im flachen Body. */
+   Gruppen-Containern behalten ihre gewoehnliche border: dort schneidet der jeweilige Container
+   den Schatten ab, und das Rundungsproblem gibt es nur im flachen Body.
+
+   INSET, und das ist die Meldung vom 07.09.: "beim Hovern und im Selected-State verschwindet die
+   Gridline UEBER der Zeile". Hier stand "0 1px 0" ohne inset -- ein aeusserer Schatten, der 1px
+   UNTERHALB der Zeile liegt, also im Kasten der Zeile DARUNTER. Geschwister malen in
+   Dokumentreihenfolge: der Schatten der oberen Zeile ist fertig, bevor die untere ihren
+   Hintergrund malt, und ein deckender Hintergrund (Hover oder Auswahl) legt sich genau darueber.
+   Gemessen mit _h_upt_zeilenlinie.html: Streifen y 56 bis 57, Kasten der Zeile darunter 56 bis
+   111 -- der Streifen lag mitten darin.
+   Mit inset liegt die Linie innen an der Unterkante DERSELBEN Zeile. Sie wird damit ueber deren
+   eigenen Hintergrund gemalt und ist von der Nachbarzeile nicht mehr erreichbar. Optisch ist sie
+   einen Pixel hoeher, was auf einer Trennlinie zwischen zwei Zeilen niemand sieht. */
 .upt-root.is-rh-dynamic .up-tbody > .up-row {
   border-bottom: 0;
-  box-shadow: 0 1px 0 0 var(--vc-border);
+  box-shadow: inset 0 -1px 0 0 var(--vc-border);
 }
 .upt-root.is-rh-dynamic .up-tbody > .up-row:last-child { box-shadow: none; }
 .upt-root.is-rh-dynamic .upt-prompt-text { -webkit-line-clamp: unset; display: block; white-space: normal; overflow: visible; }
@@ -965,6 +976,24 @@
 .up-root[data-theme="dark"] .upt-grp-inner {
   background: color-mix(in srgb, var(--vc-bg) 50%, var(--up-surface) 50%); }
 .upt-grp-inner .up-row { background: var(--vc-bg); }
+/* HIER FEHLTE DER HOVER GANZ -- gemeldet am 07.09.: "bei Grouping yes gibt es gar keinen
+   Hover-Effekt auf den Rows, der Selected-State ist dagegen korrekt". Beides hat denselben Grund:
+   die Regel eine Zeile darueber hat Spezifitaet (0,2,0), genau wie ".up-row:hover" aus core --
+   und sie steht in der spaeter geladenen Datei, also gewinnt sie. Die Auswahl kam durch, weil sie
+   mit ".upt-root .up-row.is-selected" (0,3,0) notiert ist. Das ist dieselbe Falle, die im
+   Kommentar an .is-selected schon beschrieben steht; sie war nur fuer den Hover nicht mitgezogen.
+
+   WARUM --up-sel-bg UND NICHT --vt-row-hover: die Zeilen liegen hier auf --vc-bg, der Kasten
+   drumherum (.upt-grp-inner) traegt --vt-head-bg -- und seit dem 07.09. ist --vt-head-bg
+   derselbe Wert wie --vt-row-hover (beide die Stufe unter der Karte). Ein Hover in
+   --vt-row-hover haette die Zeile also genau auf die Farbe ihres Behaelters gebracht: statt
+   hervorzutreten waere sie darin verschwunden. --up-sel-bg ist die naechste Stufe darunter und
+   damit von beidem unterscheidbar -- gemessen in _h_upt_zeilenlinie.html.
+   Die Auswahl bekommt denselben Wert, sonst waere sie im Behaelter unsichtbar und der Hover
+   deutlicher als der Dauerzustand. */
+.upt-grp-inner .up-row:hover,
+.upt-root .upt-grp-inner .up-row.is-selected,
+.upt-root .upt-grp-inner .up-row.is-selected:hover { background: var(--up-sel-bg); }
 
 /* Reuses the table's own .up-pagesize / .up-pager / .up-page primitives verbatim, same as the
    domains-table drilldown footer. */

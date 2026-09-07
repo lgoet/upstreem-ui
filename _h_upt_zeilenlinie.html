@@ -1,0 +1,137 @@
+<!doctype html><meta charset="utf-8">
+<title>Prompts Table: verschwindet die Linie ueber einer Zeile, wenn sie Flaeche bekommt?</title>
+<pre id="out" style="font:12px/1.55 ui-monospace,Menlo,monospace;padding:12px;white-space:pre-wrap"></pre>
+<div id="buehne" style="position:absolute;left:-4000px;top:0"></div>
+<script>
+/* Gemeldet am 07.09.: "beim Hovern und im Selected-State verschwindet die horizontale Gridline
+   UEBER der Zeile -- in Grouping yes + Listmode und in Grouping no. In Grouping yes + Widemode
+   gibt es dafuer gar keinen Hover, und dort ist der Selected-State richtig."
+
+   Der Verdacht laesst sich ohne Maus pruefen, weil er reine Malreihenfolge ist. Die Trennlinie
+   zwischen zwei Zeilen wird an zwei verschiedenen Orten gezeichnet:
+       border-bottom  liegt INNEN in der oberen Zeile      -> die untere kann sie nicht ueberdecken
+       box-shadow 0 1px 0  liegt 1px UNTERHALB dieser Zeile -> also im Kasten der UNTEREN Zeile
+   Geschwister malen in Dokumentreihenfolge. Der Schatten der oberen Zeile wird also gemalt,
+   BEVOR die untere Zeile ihren Hintergrund malt -- und ein deckender Hintergrund (Hover oder
+   Auswahl) legt sich damit genau darueber.
+   Dieser Prueftand rechnet fuer jede Betriebsart aus, WO die Linie liegt, und prueft dann, ob
+   der Kasten der unteren Zeile diesen Streifen enthaelt. Ein Hover ist dafuer nicht noetig; die
+   Deckung ist das Problem, nicht der Zeitpunkt. */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function ja(b){ return b ? "RICHTIG" : "FALSCH "; }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+
+/* Wo malt diese Zeile ihre untere Trennlinie? Rueckgabe in Dokumentkoordinaten. */
+function linie(v, el){
+  var c = v.getComputedStyle(el), r = el.getBoundingClientRect();
+  var bb = parseFloat(c.borderBottomWidth) || 0;
+  if (bb > 0 && c.borderBottomStyle !== "none")
+    return { art: "border-bottom", oben: r.bottom - bb, unten: r.bottom, breite: bb };
+  var sh = c.boxShadow;
+  if (sh && sh !== "none"){
+    /* Nur der einfache Fall, den diese Datei benutzt: eine Farbe, x y blur spread. */
+    var zahlen = sh.replace(/rgba?\([^)]*\)/g, "").match(/-?[\d.]+px/g) || [];
+    var innen = /inset/.test(sh);
+    var y = zahlen.length > 1 ? parseFloat(zahlen[1]) : 0;
+    if (innen) return { art: "box-shadow inset", oben: r.bottom + y, unten: r.bottom + y + 1, breite: 1 };
+    return { art: "box-shadow aussen", oben: r.bottom + y - 1, unten: r.bottom + y, breite: 1 };
+  }
+  return { art: "keine", oben: null, unten: null, breite: 0 };
+}
+
+/* HOVER OHNE MAUS, aber ohne die Kaskade zu erraten. :hover laesst sich von aussen nicht
+   erzwingen, und den Gewinner unter mehreren treffenden Regeln selbst auszurechnen hiesse, den
+   Browser nachzubauen. Stattdessen wird in BEIDEN Dateien jedes ":hover" durch eine Klasse
+   ersetzt, bevor sie eingehaengt werden. Eine Klasse und eine Pseudoklasse haben dieselbe
+   Spezifitaet (0,1,0), und die Reihenfolge der Dateien bleibt unangetastet -- der Browser
+   entscheidet also genau so, wie er es mit der echten Maus taete, nur dass wir den Zustand
+   setzen koennen.
+   (Mit der echten Maus geht es hier nicht: die Browserflaeche des Werkzeugs ist verdeckt, und
+   eine verdeckte Seite zeichnet nicht, also kommt kein Hover an. Einmal probiert, kam
+   rgba(0,0,0,0) zurueck -- ein Messwert, der nur die Verdeckung gemessen haette.) */
+var PROBE = "uptHoverProbe";
+Promise.all([hol("core.css"), hol("prompts-table.css")]).then(function(t){
+  var f=document.createElement("iframe");
+  f.style.cssText="width:1100px;height:700px;border:0";
+  document.getElementById("buehne").appendChild(f);
+  var d=f.contentDocument, v=f.contentWindow;
+  d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0'></body></html>"); d.close();
+  t.forEach(function(c){
+    var st=d.createElement("style");
+    st.textContent=c.split(":hover").join("." + PROBE);
+    d.head.appendChild(st);
+  });
+
+  function zeile(){
+    return '<div class="up-row"><div class="up-td">Zeile</div></div>';
+  }
+  /* Vier Betriebsarten, genau die DOM-Formen, die prompts-table.js baut:
+       flach       .up-tbody > .up-row                     (Grouping no)
+       gruppiert   .up-tbody > .upt-grp > .upt-grp-rows > .upt-grp-inner > .up-row  (Grouping yes) */
+/* WELCHE FORM WELCHE BETRIEBSART BAUT -- nachgelesen in prompts-table.js, nicht geraten:
+     Grouping no                  renderFlatBody   -> .up-tbody > .up-row
+     Grouping yes + is-groups-wide renderGroupWideBody (Zeile 2977) -> ebenfalls .up-tbody > .up-row,
+                                  "literally the same thing the flat view would render"
+     Grouping yes ohne wide       .upt-grp-Abschnitte -> .upt-grp-rows > .upt-grp-inner > .up-row
+   Der Schatten-Trennstrich gilt nur fuer direkte Kinder von .up-tbody, trifft also die ersten
+   beiden. Genau die zwei hat die Meldung genannt. */
+  var ARTEN = [
+    { name:"Grouping no, Hoehe dynamisch",       klassen:"up-root upt-root is-rh-dynamic",              gruppiert:false },
+    { name:"Grouping no, Hoehe compact",         klassen:"up-root upt-root is-rh-compact",              gruppiert:false },
+    { name:"Grouping yes + breit, dynamisch",    klassen:"up-root upt-root is-grouped is-groups-wide is-rh-dynamic", gruppiert:false },
+    { name:"Grouping yes ohne breit, dynamisch", klassen:"up-root upt-root is-grouped is-rh-dynamic",   gruppiert:true }
+  ];
+
+  ARTEN.forEach(function(a){
+    var root=d.createElement("div");
+    root.className=a.klassen; root.setAttribute("data-theme","light");
+    var koerper = a.gruppiert
+      ? '<div class="upt-grp"><div class="upt-grp-head is-open">Gruppe</div>' +
+        '<div class="upt-grp-rows"><div class="upt-grp-inner">' + zeile()+zeile()+zeile() +
+        '</div></div></div>'
+      : zeile()+zeile()+zeile();
+    root.innerHTML = '<div class="up-box"><div class="up-table"><div class="up-tbody">' + koerper +
+                     '</div></div></div>';
+    d.body.appendChild(root);
+    var rows = root.querySelectorAll(".up-row");
+    if (rows.length < 3){ log(a.name + ": ABBRUCH, keine drei Zeilen"); return; }
+    var oben = rows[0], unten = rows[1];
+    var lin = linie(v, oben);
+    var ru = unten.getBoundingClientRect();
+    /* Deckende Flaeche wie bei Hover und Auswahl. Inline, weil :hover nicht erzwingbar ist --
+       und die Frage ist nicht, WANN die Flaeche kommt, sondern was sie ueberdeckt. */
+    unten.style.background = "#f9f8f9";
+    var verdeckt = lin.oben != null && lin.oben >= ru.top - 0.01 && lin.oben < ru.bottom;
+    log(a.name);
+    log("   Trennlinie: " + lin.art + (lin.oben == null ? "" :
+        "   Streifen y " + (Math.round(lin.oben*10)/10) + " bis " + (Math.round(lin.unten*10)/10)));
+    log("   Kasten der Zeile darunter: y " + Math.round(ru.top) + " bis " + Math.round(ru.bottom));
+    log("   " + ja(!verdeckt) + " die Linie liegt NICHT im Kasten der Zeile darunter" +
+        (verdeckt ? " -- ihr Hintergrund deckt sie ab" : ""));
+    /* In der Gruppenansicht liegt die Zeile in einem getoenten Behaelter. Ein Hover, der genau
+       dessen Farbe traegt, ist kein Hover -- deshalb hier alle drei Toene nebeneinander. */
+    /* Und jetzt der Zustand selbst, vom Browser gerechnet. */
+    unten.style.background = "";
+    var ruhe = v.getComputedStyle(unten).backgroundColor;
+    unten.classList.add(PROBE);
+    var imHover = v.getComputedStyle(unten).backgroundColor;
+    unten.classList.remove(PROBE);
+    unten.classList.add("is-selected");
+    var imGewaehlt = v.getComputedStyle(unten).backgroundColor;
+    unten.classList.remove("is-selected");
+    var inner = root.querySelector(".upt-grp-inner");
+    var behaelter = inner ? v.getComputedStyle(inner).backgroundColor : null;
+    log("   Ruhe " + ruhe + "   Hover " + imHover + "   Gewaehlt " + imGewaehlt +
+        (behaelter ? "   Behaelter " + behaelter : ""));
+    log("   " + ja(imHover !== ruhe) + " der Hover setzt ueberhaupt eine Flaeche");
+    log("   " + ja(imGewaehlt !== ruhe) + " die Auswahl setzt eine Flaeche");
+    if (behaelter){
+      log("   " + ja(imHover !== behaelter) + " der Hover unterscheidet sich vom Behaelter");
+      log("   " + ja(imGewaehlt !== behaelter) + " die Auswahl unterscheidet sich vom Behaelter");
+    }
+    log("");
+  });
+  log("FERTIG");
+}).catch(function(e){ log("ABBRUCH: " + e.message + "\n" + (e.stack||"")); });
+</script>

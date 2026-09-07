@@ -106,6 +106,41 @@ Promise.all([hol("core.css"), hol("core.js"), hol("opportunities.css"), hol("opp
                     "px, endet " + Math.round((quelle.r.bottom - meta.getBoundingClientRect().bottom)*10)/10 +
                     "px ueber dem Rand");
       log("");
+      /* Die Kartenflaeche im HELLEN: halbdurchsichtig notiert, also auf ihrem Untergrund
+         ausgerechnet. Angefordert war "eine Nuance heller" -- gemessen wird deshalb gegen den
+         alten Wert #f8f9f9, nicht gegen eine Schwelle aus der Luft. */
+      log("KARTENFLAECHE");
+      var hellRahmen = document.createElement("iframe");
+      hellRahmen.style.cssText = "width:400px;height:200px;border:0";
+      document.getElementById("buehne").appendChild(hellRahmen);
+      var hd = hellRahmen.contentDocument, hv = hellRahmen.contentWindow;
+      hd.open(); hd.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0;background:#ffffff'></body></html>"); hd.close();
+      [t[0], t[2]].forEach(function(c){ var st=hd.createElement("style"); st.textContent=c; hd.head.appendChild(st); });
+      var hroot = hd.createElement("div");
+      hroot.className = "up-root uo-root"; hroot.setAttribute("data-theme","light");
+      hroot.innerHTML = '<div class="uo-card">x</div>';
+      hd.body.appendChild(hroot);
+      var kc = hv.getComputedStyle(hroot.querySelector(".uo-card")).backgroundColor;
+      function aufWeiss(farbe){
+        var c = hd.createElement("canvas"); c.width = c.height = 1;
+        var x = c.getContext("2d");
+        x.fillStyle = "#ffffff"; x.fillRect(0,0,1,1);
+        x.fillStyle = farbe; x.fillRect(0,0,1,1);
+        var p = x.getImageData(0,0,1,1).data;
+        function z(n){ n = n.toString(16); return n.length<2 ? "0"+n : n; }
+        return "#" + z(p[0]) + z(p[1]) + z(p[2]);
+      }
+      var deckend = aufWeiss(kc);
+      function helligkeit(h){
+        h = h.replace("#","");
+        function lin(c){ c = parseInt(c,16)/255; return c <= 0.03928 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4); }
+        return Math.round((0.2126*lin(h.slice(0,2))+0.7152*lin(h.slice(2,4))+0.0722*lin(h.slice(4,6)))*255*100)/100;
+      }
+      log("   --uo-col-bg ergibt auf Weiss " + deckend + " (Helligkeit " + helligkeit(deckend) + ")");
+      log("   vorher #f8f9f9 (Helligkeit " + helligkeit("#f8f9f9") + "), Seite #ffffff (255)");
+      log("   " + ja(helligkeit(deckend) > helligkeit("#f8f9f9")) + " heller als vorher");
+      log("   " + ja(helligkeit(deckend) < 255) + " und weiter von der Seite zu unterscheiden");
+      log("");
       log("FARBEN");
       if (eyeb){
         var ec = v.getComputedStyle(eyeb.e), dritt = v.getComputedStyle(karte).getPropertyValue("--vc-third").trim();
