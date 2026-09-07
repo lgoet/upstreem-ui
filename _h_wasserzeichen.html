@@ -1,0 +1,102 @@
+<!doctype html><meta charset="utf-8">
+<title>Wasserzeichen im Chart: wo sitzt es?</title>
+<pre id="out" style="font:12px/1.55 ui-monospace,Menlo,monospace;padding:12px;white-space:pre-wrap"></pre>
+<div id="buehne"></div>
+<script>
+/* Gemeldet am 08.09.: "das Logo in den Chart-Containern im Hintergrund bitte so 4px weiter nach
+   unten, oder eher 6". Genommen sind 6.
+
+   GEMESSEN WIRD DER ABSTAND DER MITTEN, nicht der Wert im transform: was dort steht, ist die
+   Absicht -- was das Auge sieht, ist die Lage des Zeichens im Kasten. Die Rechnung dahinter:
+   top 47% setzt die Oberkante auf 47 Prozent der Kastenhoehe, translate(-50%) zieht das Zeichen
+   um seine halbe Hoehe zurueck, und die 6px kommen danach dazu. Bei einem 300px hohen Kasten
+   sitzt die Mitte des Zeichens also 6px unter 47 Prozent, und das sind 9px UEBER der Mitte des
+   Kastens (300 * 0.03 = 9, minus 6).
+
+   ZWEI KASTENHOEHEN, und das ist der Punkt der Umsetzung: die 6px sind PIXEL und keine Prozent.
+   In einem 200px und in einem 600px hohen Chart muessen sie derselbe Weg sein -- mit einer
+   geaenderten Prozentzahl waeren sie es nicht. Genau das prueft der zweite Kasten. */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function ja(b){ return b ? "RICHTIG" : "FALSCH "; }
+var gut=0, schlecht=0;
+function pruef(t,b){ if(b) gut++; else schlecht++; log("   "+ja(b)+" "+t); }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function warte(ms){ return new Promise(function(ok){ setTimeout(ok,ms); }); }
+
+Promise.all([hol("core.css"), hol("core.js")]).then(function(t){
+  var f=document.createElement("iframe");
+  f.style.cssText="width:900px;height:900px;border:1px solid #ccc;display:block";
+  document.getElementById("buehne").appendChild(f);
+  var d=f.contentDocument, v=f.contentWindow;
+  d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0'></body></html>"); d.close();
+  try { v.localStorage.clear(); v.localStorage.setItem("pref_theme","light"); } catch(e){}
+  var st=d.createElement("style"); st.textContent=t[0]; d.head.appendChild(st);
+  var wurzel=d.createElement("div");
+  wurzel.className="up-root"; wurzel.setAttribute("data-theme","light");
+  wurzel.innerHTML =
+    '<div class="up-line-wrap" data-wrap style="position:relative;height:300px;background:#fff;' +
+      'border:1px solid #eee"></div>' +
+    '<div class="up-line-wrap" data-wrap2 style="position:relative;height:600px;background:#fff;' +
+      'border:1px solid #eee;margin-top:12px"></div>';
+  d.body.appendChild(wurzel);
+  var sc=d.createElement("script"); sc.textContent=t[1]; d.head.appendChild(sc);
+
+  return warte(500).then(function(){
+    var UC=v.UpstreemCore;
+    /* Ueber das Kit einsetzen und nicht von Hand: so wird geprueft, was die Charts wirklich
+       bauen. injectWatermark ist nicht exportiert -- makeLine setzt es ein, also wird der
+       Knoten hier mit derselben Klasse erzeugt, die das Kit erzeugt. Der PUNKT der Messung ist
+       die CSS, und die trifft die Klasse. */
+    [["[data-wrap]",300],["[data-wrap2]",600]].forEach(function(paar){
+      var wrap=wurzel.querySelector(paar[0]);
+      var wm=d.createElement("div"); wm.className="upstreem-watermark"; wrap.appendChild(wm);
+    });
+    return warte(200);
+  }).then(function(){
+    function mess(sel, hoehe){
+      var wrap=wurzel.querySelector(sel), wm=wrap.querySelector(".upstreem-watermark");
+      var rw=wrap.getBoundingClientRect(), rm=wm.getBoundingClientRect();
+      var mitteWrap=rw.top + rw.height/2, mitteWm=rm.top + rm.height/2;
+      /* Wo saesse es OHNE die 6px: 47 Prozent der Hoehe, dann die halbe Zeichenhoehe zurueck. */
+      var ohne=rw.top + rw.height*0.47;
+      return { hoehe: Math.round(rw.height), zeichen: Math.round(rm.height*100)/100,
+               abMitte: Math.round((mitteWm - mitteWrap)*100)/100,
+               ab47: Math.round((mitteWm - ohne)*100)/100 };
+    }
+    var a=mess("[data-wrap]",300), b=mess("[data-wrap2]",600);
+    log("KASTEN 300px");
+    log("   Zeichen " + a.zeichen + "px hoch   Mitte " + a.abMitte +
+        "px von der Kastenmitte   " + a.ab47 + "px unter der 47-Prozent-Linie");
+    log("KASTEN 600px");
+    log("   Zeichen " + b.zeichen + "px hoch   Mitte " + b.abMitte +
+        "px von der Kastenmitte   " + b.ab47 + "px unter der 47-Prozent-Linie");
+    log("");
+    pruef("es sitzt 6px unter der 47-Prozent-Linie (300px-Kasten: " + a.ab47 + ")",
+      Math.abs(a.ab47 - 6) < 0.6);
+    pruef("und im doppelt so hohen Kasten genauso 6px (" + b.ab47 + ")",
+      Math.abs(b.ab47 - 6) < 0.6);
+    pruef("die Verschiebung ist also in PIXELN und nicht in Prozent",
+      Math.abs(a.ab47 - b.ab47) < 0.6);
+    log("");
+    log("Und die Datei je Thema");
+    function bild(){ return v.getComputedStyle(
+      wurzel.querySelector("[data-wrap] .upstreem-watermark")).backgroundImage; }
+    var hell=bild();
+    log("   hell   " + hell.slice(hell.lastIndexOf("/")+1, hell.length-2));
+    if (v.setUpstreemTheme) v.setUpstreemTheme("dark");
+    return warte(300).then(function(){
+      var dunkel=bild();
+      log("   dunkel " + dunkel.slice(dunkel.lastIndexOf("/")+1, dunkel.length-2));
+      pruef("hell nimmt die dunkle Datei (1f1f1f)", hell.indexOf("1f1f1f") >= 0);
+      pruef("dunkel nimmt die helle (e0e0e0)", dunkel.indexOf("e0e0e0") >= 0);
+      var op=v.getComputedStyle(wurzel.querySelector("[data-wrap] .upstreem-watermark")).opacity;
+      log("   Deckkraft " + op + " (unveraendert 0.05)");
+      pruef("die Deckkraft ist unangetastet", Math.abs(parseFloat(op) - 0.05) < 0.001);
+      log("");
+      log((schlecht ? "==> FALSCH  " : "==> RICHTIG ")+gut+" von "+(gut+schlecht)+" Pruefungen");
+      log("FERTIG");
+    });
+  });
+}).catch(function(e){ log("ABBRUCH "+e); });
+</script>

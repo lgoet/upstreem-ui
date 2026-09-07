@@ -2214,13 +2214,19 @@
      neu, Kasten 150 x 21.31   ->  Tinte 141 x 22   (gleiche Breite, 21% flacher)
      neu, Kasten 275 x 39.04   ->  Tinte 258 x 40   (gleiche Hoehe, 75% breiter)
    Genommen ist der Kasten mit der GLEICHEN FLAECHE: 173 x 24.57 ergibt Tinte etwa 163 x 25, also
-   beide Achsen innerhalb von zehn Prozent des alten Zeichens. Lage (top 47%, mittig) und
-   Deckkraft (0.05) sind unveraendert.
+   beide Achsen innerhalb von zehn Prozent des alten Zeichens. Deckkraft (0.05) ist unveraendert.
+
+   ZUR LAGE: top 47% und dazu 6px nach unten (08.09. angefordert). Die 47% sind der alte Wert --
+   das Zeichen sitzt absichtlich etwas ueber der Mitte, weil unter dem Chart die Achsenbeschriftung
+   steht und die Flaeche darueber optisch groesser ist. Die 6px kommen als Verschiebung im
+   transform dazu und nicht als geaenderte Prozentzahl: Prozent haengen an der HOEHE des Kastens,
+   und in einem hohen Chart waere derselbe Prozentwert ein anderer Weg in Pixeln. Angefordert
+   waren Pixel, also stehen dort Pixel.
 
    background-size: contain und nicht 100% 100%: die Datei behaelt ihr Verhaeltnis, auch wenn
    jemand den Kasten spaeter anfasst. */
 .upstreem-watermark {
-  position: absolute; top: 47%; left: 50%; transform: translate(-50%, -50%);
+  position: absolute; top: 47%; left: 50%; transform: translate(-50%, calc(-50% + 6px));
   width: 173px; height: 24.57px;
   opacity: 0.05; pointer-events: none; z-index: 2;
   background-repeat: no-repeat; background-position: center; background-size: contain;
