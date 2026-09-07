@@ -162,7 +162,7 @@ Promise.all([hol("core.css"), hol("core.js"), hol("drawer-topbar.css"), hol("dra
           log("      Klick auf den versteckten Pin: " + gepinnt.length + " Eintraege");
           pruef("ein Klick auf den versteckten Pin heftet nichts an", gepinnt.length === 0);
           pruef("und die Konsole sagt warum",
-            warn.some(function(w){ return /KI-Antwort/.test(w); }));
+            warn.some(function(w){ return /Seitenleiste geheftet/.test(w); }));
           v.setDrawerTopbar("x", { type: "brand", name: "ADAC", logo: "_h_logo.svg" });
           return warte(200);
         }).then(function(){
@@ -202,6 +202,14 @@ Promise.all([hol("core.css"), hol("core.js"), hol("drawer-topbar.css"), hol("dra
             parseFloat(v.getComputedStyle(box).width) === 18);
           pruef("\"" + wie + "\": KEIN Stift -- dort ist man schon", q(".utb-edit").hidden);
           pruef("\"" + wie + "\": und kein Globus", q(".utb-domain").hidden);
+          /* Und kein Pin: der Editor ist eine Ansicht auf eine Marke, und die Marke selbst ist
+             anheftbar -- von hier aus noch einmal waere ein zweiter Weg zu demselben Eintrag.
+             Geprueft wird die gerechnete Sichtbarkeit mit, nicht nur das Attribut: [hidden]
+             kommt aus dem Stylesheet des Browsers und verliert gegen jede eigene
+             display-Regel. */
+          pruef("\"" + wie + "\": und kein Pin",
+            q(".utb-pin").hidden &&
+            v.getComputedStyle(q(".utb-pin")).display === "none");
           pruef("\"" + wie + "\": im Ereignis steht der genormte Typ",
             nutzTyp === "brand editor");
         });

@@ -61,8 +61,9 @@
    Anheften meldet NICHTS an Bubble: es ruft window.upstreemPinToSidebar, dieselbe Funktion, die
    Quick Actions aus seinem Zeilenmenue ruft. Die Seitenleiste besitzt diese Liste, und ein
    zweiter Weg dorthin waere ein zweiter Zustand.
-   BEI data-type="response" GIBT ES DEN PIN NICHT: die Seitenleiste fuehrt Orte, zu denen man
-   zurueckkehrt, und eine einzelne KI-Antwort ist ein Ergebnis eines Laufs, kein Ort.
+   BEI data-type="response" UND "brand editor" GIBT ES DEN PIN NICHT: die Seitenleiste fuehrt
+   Orte, zu denen man zurueckkehrt. Eine einzelne KI-Antwort ist das Ergebnis eines Laufs, und
+   der Editor ist eine Ansicht auf eine Marke -- die Marke selbst ist anheftbar.
 
    ── Die Setter ──────────────────────────────────────────────────────────────────
    setDrawerTopbar(id, p) fuellt Typ, Name, Bild und Kennung. Siehe oben.
@@ -143,6 +144,15 @@
      Ein mitgeschicktes data-logo wird fuer diese zwei Typen NICHT verwendet: das Zeichen sagt
      den Typ, und zwei Quellen fuer dieselbe Stelle waeren die naechste Meldung. */
   var TYP_ZEICHEN = { prompt: "zap", response: "scan" };
+  /* ---- Wo es kein Anheften gibt (07.09. angefordert) ----
+     Die Seitenleiste fuehrt ORTE, zu denen man zurueckkehrt. Zwei Typen sind keine:
+       response       das Ergebnis eines Laufs, kein Ort.
+       brand editor   eine ANSICHT auf eine Marke, nicht die Marke. Die ist selbst anheftbar,
+                      und von hier aus anzuheften ergaebe einen zweiten Weg zu demselben
+                      Eintrag -- oder, schlimmer, einen zweiten Eintrag daneben.
+     Eine Liste und nicht zwei ODER-Vergleiche: ein dritter Fall ist dann eine Zeile hier und
+     sonst nichts. */
+  var OHNE_PIN = { response: 1, "brand editor": 1 };
   function typLabel(t) {
     var k = typNorm(t);
     var w = TYPEN[k] || k;
@@ -289,15 +299,13 @@
          die Leiste den Typ noch nicht, und ein Knopf, der gleich wieder verschwindet, ist
          schlimmer als einer, der spaeter erscheint. */
       elDomain.hidden = laedt || (t !== "url");
-      /* ANHEFTEN GIBT ES BEI EINER KI-ANTWORT NICHT (07.09. angefordert: "das soll da nicht
-         gehen"). Und das passt zur Sache: die Seitenleiste heftet Dinge an, zu denen man
-         zurueckkehrt -- eine Marke, eine Domain, eine URL, einen Prompt. Eine einzelne Antwort
-         ist ein Ergebnis eines Laufs, kein Ort.
+      /* ANHEFTEN NUR, WO ES EINEN ORT GIBT -- welche Typen keiner sind, steht bei OHNE_PIN
+         oben, mit der Begruendung je Typ.
          OHNE laedt, anders als beim Stift und beim Globus: der Pin ist sonst IMMER bedienbar,
          auch im Ladezustand (so gebaut und so geprueft -- er haengt an nichts, was geladen
-         werden muesste). Steht der Typ schon auf response, ist er trotzdem gleich weg, statt
-         einmal aufzublitzen. */
-      elPin.hidden = (t === "response");
+         werden muesste). Steht der Typ schon fest, ist er trotzdem gleich weg, statt einmal
+         aufzublitzen. */
+      elPin.hidden = !!OHNE_PIN[t];
     }
 
     /* ---- Zuruecksetzen (07.09. angefordert) ----
@@ -371,13 +379,13 @@
        dieselbe ist, die auch in unseren Ereignissen steht, liefert ein Klick in der Leiste
        spaeter denselben Wert wie dieser Drawer. */
     function anheften() {
-      /* Der Knopf ist bei einer KI-Antwort gar nicht da (siehe render). Diese Zeile ist der
-         Riegel dahinter: wer die Funktion auf einem anderen Weg erreicht, heftet keine Antwort
-         an eine Liste, die sie nicht zeigen kann. Eine Sichtbarkeit, eine Regel -- und beide
-         nennen denselben Grund. */
-      if (typ() === "response") {
-        if (window.console) console.warn("[drawer-topbar] eine KI-Antwort wird nicht an die " +
-          "Seitenleiste geheftet -- die Leiste fuehrt Orte, zu denen man zurueckkehrt.");
+      /* Bei diesen Typen ist der Knopf gar nicht da (siehe render und OHNE_PIN). Diese Zeilen
+         sind der Riegel dahinter: wer die Funktion auf einem anderen Weg erreicht, heftet
+         nichts an eine Liste, die es nicht zeigen kann. Eine Liste, zwei Wirkungen -- und
+         beide nennen denselben Grund. */
+      if (OHNE_PIN[typ()]) {
+        if (window.console) console.warn("[drawer-topbar] Typ \"" + typ() + "\" wird nicht an " +
+          "die Seitenleiste geheftet -- die Leiste fuehrt Orte, zu denen man zurueckkehrt.");
         return;
       }
       var id = itemId();
