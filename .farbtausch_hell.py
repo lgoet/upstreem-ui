@@ -8,10 +8,16 @@ Suche nach der Herkunft eines Wertes liefe ins Leere. Also werden /* ... */ und 
 import io, re, sys
 
 TAUSCH = [
-    # Zweiter Lauf: EIN gedaempfter Ton fuer die ganze App. #6f737c stand noch in jeder lokalen
-    # Palette der schwebenden Schichten; zwei Toene fuer eine Rolle sind genau die Drift, gegen
-    # die diese Tokens da sind. Begruendung fuer den Wert steht in core.css am hellen Block.
-    ("#6f737c", "#6b6f78"),
+    # Dritter Lauf, 07.09.: JEDE ROLLE EINE STUFE HOEHER. Gemeldet als "die Tabellen / Cards /
+    # Kopfzeilen sind mir etwas zu dunkel". In Linears hellem Spektrum gibt es dafuer genau eine
+    # Stufe, und zwar die jeweils naechste nach oben -- zwischen bg-secondary und Weiss liegt
+    # nichts mehr. Die Reihenfolge dieser drei Paare ist wichtig: erst tertiary hoch, dann
+    # quaternary auf den frei gewordenen Platz, dann quinary. Andersherum wuerde ein Wert zweimal
+    # wandern. Die Karte selbst steht schon von Hand auf #ffffff, sonst waere sie mitgelaufen.
+    ("#f4f2f4", "#f9f8f9"),                 # Kopfzeile, Feld, Umschalter, Tabellenkopf, Zeilenhover
+    ("#eeedef", "#f4f2f4"),                 # Auswahl
+    ("#e9e8ea", "#eeedef"),                 # Skelett
+    ("rgba(244,242,244,0.6)", "rgba(249,248,249,0.6)"),
 ]
 
 def tausche(text):

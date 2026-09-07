@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20260927;
+  var BUILD = 20260928;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -10595,7 +10595,7 @@
         /* bg ist die FUELLUNG der Datenpunkte, also die Farbe der Karte, auf der das Chart liegt
            -- im Dunkeln #1c1c1f, im Hellen seit dem 07.09. #f9f8f9 und nicht mehr Weiss. Ein
            weisser Punktkern auf einer getoenten Karte waere ein heller Fleck in jeder Linie. */
-        : { text:"#1f1f1b", muted:"#6b6f78", border:"#e4e2e4", bg:"#f9f8f9", grid:"rgba(0,0,0,0.08)" };
+        : { text:"#1f1f1b", muted:"#6b6f78", border:"#e4e2e4", bg:"#ffffff", grid:"rgba(0,0,0,0.08)" };
     }
     function clearExtras(){
       var sk = wrap.querySelector(".up-line-sk"); if (sk) sk.remove();

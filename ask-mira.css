@@ -945,7 +945,7 @@
     color: var(--am-text); font-size: 13.5px; font-weight: 500; line-height: 1.4;
     transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
   }
-  .am-suggest-card:hover { border-color: #6f6f6f; background: #f4f2f4; }
+  .am-suggest-card:hover { border-color: #6f6f6f; background: #f9f8f9; }
   #ask-mira[data-theme="dark"] .am-suggest-card:hover { border-color: #707070; background: #232326; }
   .am-suggest-card > span:nth-child(2) { min-width: 0; flex: 1 1 auto; }
   .am-suggest-ic {
@@ -1205,7 +1205,7 @@
   /* grey shell that holds the composer + the settings tray (matches the requested #f5f5f5 look) */
   .am-composer-shell {
     max-width: 920px; margin: 0 auto; width: 100%;
-    background: #f4f2f4; border-radius: 32px; padding: 0;   /* flush with the composer when the tray is closed */
+    background: #f9f8f9; border-radius: 32px; padding: 0;   /* flush with the composer when the tray is closed */
     transition: background 200ms ease, padding-bottom 300ms cubic-bezier(.4,0,.2,1);
   }
   .am-composer-shell.is-settings-open { padding-bottom: 16px; }   /* grey only overhangs while the tray is open */
@@ -1399,7 +1399,7 @@
     display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
     transition: background 160ms ease, color 160ms ease;
   }
-  .am-icon-action:hover { background: #f4f2f4; color: #1f1f1b; }
+  .am-icon-action:hover { background: #f9f8f9; color: #1f1f1b; }
   #ask-mira #am-settings-toggle[aria-expanded="true"] { background: transparent; color: var(--am-text); }
   .am-icon-action[aria-expanded="true"] { background: var(--am-soft-2); color: var(--am-text); }
 

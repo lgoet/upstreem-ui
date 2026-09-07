@@ -483,9 +483,9 @@
 .mqa-tip-arrow { color: #9a9a9a; font-size: 11px; }
 .mqa-tip .mqa-mini { color: #1f1f1b; }
 /* Dark Mode dreht die Karte um, die Platte bleibt eine eigene Flaeche -- exakt wie beim Explainer. */
-.mqa-tip[data-theme="dark"] { background: #e9e8ea; }
-.mqa-tip[data-theme="dark"]::before { border-bottom-color: #e9e8ea; }
-.mqa-tip[data-theme="dark"].is-flipped::before { border-top-color: #e9e8ea; }
+.mqa-tip[data-theme="dark"] { background: #eeedef; }
+.mqa-tip[data-theme="dark"]::before { border-bottom-color: #eeedef; }
+.mqa-tip[data-theme="dark"].is-flipped::before { border-top-color: #eeedef; }
 .mqa-tip[data-theme="dark"] .mqa-tip-h { color: #1f1f1b; }
 .mqa-tip[data-theme="dark"] .mqa-tip-t { color: rgba(31,31,27,0.66); }
 .mqa-tip[data-theme="dark"] .mqa-tip-vis { background: #1c1c1f; }

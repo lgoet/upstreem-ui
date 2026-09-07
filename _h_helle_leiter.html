@@ -33,20 +33,24 @@ var LINEAR = {
 
 /* Rolle -> unser Token -> Linears Rolle. Genau die Rollen, die im Dunkeln am 08.09. umgestellt
    wurden; die Schriftfarben stehen nur zum Vergleich mit, sie waren ausdruecklich ausgenommen. */
+/* Seit dem 07.09. nachmittags sitzt jede Rolle eine Sprosse HOEHER -- gemeldet als "die Tabellen,
+   Cards und Kopfzeilen sind mir etwas zu dunkel", und hoeher ist im hellen Spektrum die einzige
+   Richtung, die es dafuer gibt. Die Zuordnung unten ist die geltende; verglichen wird weiter
+   gegen Linears Werte, nur eben gegen die jeweils naechste ihrer Sprossen. */
 var ROLLEN = [
   ["Seitengrund",        "--up-surface",      "bg-primary",      "Flaeche"],
-  ["Karte / Panel",      "--vc-bg",           "bg-secondary",    "Flaeche"],
-  ["Kopfzeile / Menue",  "--vc-heading-bg",   "bg-tertiary",     "Flaeche"],
-  ["Auswahl",            "--up-sel-bg",       "bg-quaternary",   "Flaeche"],
-  ["Skelett",            "--vc-sk",           "bg-quinary",      "Flaeche"],
+  ["Karte / Panel",      "--vc-bg",           "bg-primary",      "Flaeche"],
+  ["Kopfzeile",          "--vc-heading-bg",   "bg-secondary",    "Flaeche"],
+  ["Auswahl",            "--up-sel-bg",       "bg-tertiary",     "Flaeche"],
+  ["Skelett",            "--vc-sk",           "bg-quaternary",   "Flaeche"],
   ["Menuegrund",         "--up-menu-bg",      "bg-primary",      "Flaeche"],
   ["Rahmen auf Flaechen","--vc-border",       "border-secondary","Rahmen"],
   ["Menuerahmen",        "--up-menu-border",  "border-tertiary", "Rahmen"],
-  ["Feld",               "--vc-field",        "bg-tertiary",     "Flaeche"],
-  ["Umschalterflaeche",  "--vc-switch-bg",    "bg-tertiary",     "Flaeche"],
+  ["Feld",               "--vc-field",        "bg-secondary",    "Flaeche"],
+  ["Umschalterflaeche",  "--vc-switch-bg",    "bg-secondary",    "Flaeche"],
   ["Umschalterrahmen",   "--vc-switch-border","border-secondary","Rahmen"],
-  ["Tabellenkopf",       "--vt-head-bg",      "bg-tertiary",     "Flaeche"],
-  ["Zeilenhover",        "--vt-row-hover",    "bg-tertiary",     "Flaeche"],
+  ["Tabellenkopf",       "--vt-head-bg",      "bg-secondary",    "Flaeche"],
+  ["Zeilenhover",        "--vt-row-hover",    "bg-secondary",    "Flaeche"],
   ["Text",               "--vc-text",         "text-primary",    "Schrift"],
   ["Text gedaempft",     "--vc-muted",        "text-tertiary",   "Schrift"],
   ["Text dritte Stufe",  "--vc-third",        "text-quaternary", "Schrift"]
@@ -107,14 +111,14 @@ hol("core.css").then(function(css){
   log("   " + gleich + " Rollen praktisch gleich, " + abweichung + " weichen ab (Schwelle 1.2 Helligkeitsstufen)");
   log("");
   log("DIE LEITER, wenn man Linears helle Werte nimmt");
-  ["bg-primary","bg-secondary","bg-tertiary","bg-quaternary","bg-quinary"].forEach(function(k,i,a){
+  ["bg-primary","bg-secondary","bg-tertiary","bg-quaternary","bg-quinary"].forEach(function(k,i,a){   /* zum Vergleich */
     var v1 = LINEAR[k], vor = i ? LINEAR[a[i-1]] : null;
     log("   " + k.padEnd(15," ") + v1 + "   Helligkeit " + String(hell(v1)).padStart(6," ") +
         (vor ? "   Abstand zur vorigen " + (Math.round((hell(vor)-hell(v1))*100)/100) : ""));
   });
   log("");
   log("UNSERE LEITER HEUTE");
-  [["--up-surface","Seite"],["--vc-bg","Karte"],["--vc-heading-bg","Kopfzeile"],["--up-sel-bg","Auswahl"],["--vc-sk","Skelett"]]
+  [["--up-surface","Seite"],["--vc-bg","Karte"],["--vc-heading-bg","Kopfzeile"],["--up-sel-bg","Auswahl"],["--vc-sk","Skelett"]]   /* Seite und Karte teilen die oberste Sprosse */
     .forEach(function(p, i, a){
       var w = rgb(cs.getPropertyValue(p[0]).trim(), "#ffffff");
       var vorher = i ? rgb(cs.getPropertyValue(a[i-1][0]).trim(), "#ffffff") : null;
@@ -129,10 +133,17 @@ hol("core.css").then(function(css){
       "   mit Linears Werten " + kontrast(LINEAR["bg-secondary"], LINEAR["bg-primary"]).toFixed(3));
   log("");
   log("URTEILE");
-  log("   " + ja(karte !== seite) + " Karte und Seite sind verschiedene Werte (Karte " + karte + ", Seite " + seite + ")");
-  /* Die Leiter MUSS monoton fallen: Seite am hellsten, dann Karte, Kopfzeile, Auswahl, Skelett.
-     Genau hier lag der Fehler vor dem 07.09. -- die Auswahl war heller als die Kopfzeile. */
-  var stufen = [["Seite","--up-surface"],["Karte","--vc-bg"],["Kopfzeile","--vc-heading-bg"],
+  /* Karte und Seite teilen sich seit dem 07.09. nachmittags die oberste Sprosse -- das ist der
+     Preis dafuer, dass jede Rolle eine Stufe hoeher sitzt, und es ist eine Entscheidung, kein
+     Versehen. Getragen wird die Karte dann vom Rahmen, und GENAU DAS wird hier geprueft. */
+  var rbTest = rgb(cs.getPropertyValue("--vc-border").trim(), "#ffffff");
+  log("   " + ja(karte === seite ? (hell(karte) - hell(rbTest)) > 25 : true) +
+      " die Karte traegt sich ueber ihren Rahmen (Karte " + karte + " wie die Seite, Rahmen " +
+      rbTest + ", Abstand " + (Math.round((hell(karte)-hell(rbTest))*100)/100) + ", verlangt > 25)");
+  /* Ab der Kopfzeile MUSS die Leiter fallen. Genau hier lag der Fehler am Vormittag -- die
+     Auswahl war heller als die Kopfzeile darueber. Die Karte steht bewusst nicht mit drin: sie
+     liegt auf derselben Sprosse wie die Seite. */
+  var stufen = [["Karte","--vc-bg"],["Kopfzeile","--vc-heading-bg"],
                 ["Auswahl","--up-sel-bg"],["Skelett","--vc-sk"]]
     .map(function(p){ return { n:p[0], h:hell(rgb(cs.getPropertyValue(p[1]).trim(), "#ffffff")) }; });
   var monoton = true, kleinster = 999;
@@ -141,13 +152,13 @@ hol("core.css").then(function(css){
     if (d <= 0) monoton = false;
     if (d < kleinster) kleinster = d;
   }
-  log("   " + ja(monoton) + " die Leiter faellt durchgehend (kleinster Schritt " +
+  log("   " + ja(monoton) + " ab der Karte faellt die Leiter durchgehend (kleinster Schritt " +
       (Math.round(kleinster*100)/100) + ")");
   /* Menue und Tooltip liegen OBEN, also auf Weiss -- sonst waeren sie von der Karte darunter
      nicht zu unterscheiden. */
   var menue = rgb(cs.getPropertyValue("--up-menu-bg").trim(), "#ffffff");
-  log("   " + ja(hell(menue) > hell(karte)) + " das Menue liegt ueber der Karte (" + menue +
-      " gegen " + karte + ")");
+  log("   " + ja(hell(menue) >= hell(karte)) + " das Menue liegt nicht UNTER der Karte (" + menue +
+      " gegen " + karte + "; getrennt wird es durch Rahmen und Schatten)");
   /* Rahmen: der auf einer Karte darf leiser sein als der einer schwebenden Schicht. */
   var rb = rgb(cs.getPropertyValue("--vc-border").trim(), "#ffffff");
   var rm = rgb(cs.getPropertyValue("--up-menu-border").trim(), "#ffffff");
@@ -157,7 +168,7 @@ hol("core.css").then(function(css){
   log("   " + ja(hell(rm) < hell(rb)) + " Menuerahmen kraeftiger als der auf der Karte (" + rm + " gegen " + rb + ")");
   /* Und der Tabellenkopf, der vorher bei 1.01 Kontrast praktisch nicht da war. */
   var tk = rgb(cs.getPropertyValue("--vt-head-bg").trim(), karte);
-  log("   " + ja((hell(karte) - hell(tk)) > 5) + " Tabellenkopf hebt sich von der Karte ab: " +
+  log("   " + ja((hell(karte) - hell(tk)) > 10) + " Tabellenkopf hebt sich von der Karte ab: " +
       tk + " auf " + karte + ", Abstand " + (Math.round((hell(karte)-hell(tk))*100)/100));
   /* Schrift: unveraendert, aber sie liegt jetzt auf einer getoenten Karte statt auf Weiss. */
   /* BEIDE Werte ausgeben -- auf Weiss und auf der neuen Karte. Nur so ist zu sehen, ob ein

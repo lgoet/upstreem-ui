@@ -22,7 +22,7 @@
 .up-root.uhm-root {
   /* Die fuenf Farbstufen stehen jetzt in core.css -- zwei Komponenten lesen sie. Hier bleibt nur,
      was wirklich nur diese Komponente hat. */
-  --uhm-empty: #f4f2f4;
+  --uhm-empty: #f9f8f9;
   --uhm-lead: 176px;
   /* Panel-Radius 16 statt der App-Vorgabe 14. Ueber das vorhandene Token, nicht mit einer
      border-radius-Regel pro Panel: so ziehen Settings-Menue UND Fader-Picker gleichzeitig mit,
