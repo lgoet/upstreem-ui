@@ -214,6 +214,9 @@ Promise.all([hol("core.css"), hol("core.js"), hol("drawer-topbar.css"), hol("dra
       ct.textTransform === "none" && q(".utb-type").textContent === "Brand");
     pruef("Name und Typ in derselben Groesse und demselben Gewicht",
       ct.fontSize === cn.fontSize && ct.fontWeight === cn.fontWeight);
+    /* Der Wert selbst, festgenagelt: 12px seit dem 07.09. ("1px groesser"). Ohne diese Zeile
+       pruefte der Punkt darueber nur, dass BEIDE gleich sind -- auch wenn beide falsch waeren. */
+    pruef("und zwar 12px (" + ct.fontSize + ")", parseFloat(ct.fontSize) === 12);
     var lg=v.getComputedStyle(q(".utb-logo"));
     log("      Logoplatte " + lg.width + " x " + lg.height);
     pruef("die Logoplatte ist 18px", parseFloat(lg.width) === 18 && parseFloat(lg.height) === 18);
@@ -323,6 +326,15 @@ Promise.all([hol("core.css"), hol("core.js"), hol("drawer-topbar.css"), hol("dra
       return warte(120).then(function(){
         pruef("Skelett am Namen", !!q(".utb-sk-name"));
         pruef("Skelett am Typ", !!q(".utb-sk-type"));
+        /* Die Skelette sind so hoch wie die Schrift, die sie vertreten -- sonst springt die
+           Zeile um einen Pixel, sobald die Daten da sind. Sie haengen an derselben Zahl wie
+           .utb-crumb, und genau das wird hier verglichen statt einer zweiten festen 12. */
+        var hSk = parseFloat(v.getComputedStyle(q(".utb-sk-type")).height);
+        var hSchrift = parseFloat(v.getComputedStyle(q(".utb-crumb")).fontSize);
+        log("      Skeletthoehe " + hSk + "px, Schriftgroesse " + hSchrift + "px");
+        pruef("die Skelette sind so hoch wie die Schrift (kein Sprung beim Ankommen)",
+          hSk === hSchrift &&
+          parseFloat(v.getComputedStyle(q(".utb-sk-name")).height) === hSchrift);
         pruef("Skelett an der Logoplatte (kein Buchstabe, kein Bild)",
           q(".utb-logo").classList.contains("is-sk") &&
           !q(".utb-logo .up-logo-ltr") && !q(".utb-logo img"));

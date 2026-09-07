@@ -49,8 +49,11 @@
    Der erste Anlauf hatte sie nur an .utb-type gelassen und darauf gebaut, dass der Name sie
    erbt; Geschwister erben aber nichts voneinander, und der Name landete bei den 16px/400 der
    Seite. Am gemeinsamen Vater erben beide, und der Trenner dazwischen auch. */
+/* 12px seit dem 07.09. ("die Font Size 1px groesser"). Der Wert steht hier EINMAL und gilt fuer
+   Typ, Trenner und Name -- und die zwei Skelette unten ziehen mit, sonst springt die Zeile beim
+   Ankommen der Daten um einen Pixel. */
 .utb-crumb { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px;
-  font-size: 11px; font-weight: 600; line-height: 1; }
+  font-size: 12px; font-weight: 600; line-height: 1; }
 
 /* Der Typ in der dritten Textstufe: er sagt, WO man ist, nicht WAS man ansieht.
    OHNE VERSALIEN (07.09. angefordert): "Brand", nicht "BRAND". Mit den Grossbuchstaben faellt
@@ -155,10 +158,10 @@
    Die KNOEPFE bekommen keines: sie haengen an nichts, was geladen werden muesste, und ein
    Skelett ueber dem Kreuz wuerde behaupten, man koenne den Drawer noch nicht schliessen.
    Alle drei tragen dieselbe Hoehe wie ihr Inhalt, damit die Zeile beim Ankommen der Daten nicht
-   springt: der Typ 11px wie seine Schrift, die Platte ihre eigenen 18. */
+   springt: der Typ 12px wie seine Schrift (siehe .utb-crumb), die Platte ihre eigenen 18. */
 .utb-sk { display: inline-block; border-radius: 4px; background: var(--vc-sk); }
-.utb-sk-type { width: 34px; height: 11px; }
-.utb-sk-name { width: 140px; max-width: 100%; height: 11px; }
+.utb-sk-type { width: 34px; height: 12px; }
+.utb-sk-name { width: 140px; max-width: 100%; height: 12px; }
 /* Die Logoplatte im Ladezustand: ihre Groesse und Rundung behaelt sie (die Regel oben), nur ihr
    Grund wird der Skelettton. --vt-logo-bg ist die helle Platte fuer ein Bild und waere hier eine
    Behauptung, es sei schon eines da. */
