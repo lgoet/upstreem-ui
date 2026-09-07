@@ -104,14 +104,16 @@
 /* Kein seitliches Polster mehr: die Spalte hat keine eigene Flaeche, also gibt es auch keinen
    Rand, von dem die Ueberschrift einruecken muesste. Sie steht jetzt buendig ueber ihren Karten. */
 .uo-col-head { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; padding: 16px 0; }
-/* GAR KEINE FLAECHE mehr, auch nicht der Seitengrund (08.09. angefordert: "in den 3 headings und
-   oben hinter heading und Toolbar sind immer noch Backgrounds, mach die weg").
-   Das hat eine Folge, und die ist gewollt: die Ueberschrift bleibt beim Scrollen oben stehen, und
-   die Karten laufen jetzt SICHTBAR dahinter durch, weil nichts mehr dazwischen malt. Wer das
-   nicht will, setzt hier wieder var(--up-surface) ein -- es ist eine Zeile. */
+/* Der Seitengrund, damit die Karten nicht sichtbar hinter der angehefteten Ueberschrift
+   durchlaufen -- dieselbe Aufgabe wie bei .up-sticky .up-head in core, und aus demselben Grund
+   am 07.09. zurueckgeholt: die Flaeche war nie das Problem, sie passte nur nicht mehr zur
+   Seitenfarbe in Bubble. Beide stehen jetzt auf demselben Wert.
+   Was BLEIBT: die Ueberschrift traegt keine eigene Betonungsflaeche und keine Rundung. Genau das
+   war die Meldung vom 08.09. ("in den 3 headings sind immer noch Backgrounds") -- gemeint war ein
+   sichtbarer Kasten, nicht der Deckstreifen, der die Karten wegblendet. */
 .up-sticky .uo-col-head {
   position: sticky; top: calc(var(--up-sticky-top) + var(--up-thead-off)); z-index: 4;
-  background: transparent; border-radius: 0;
+  background: var(--up-surface); border-radius: 0;
 }
 /* Der Sonderfall von hier ist nach core gewandert: seit dem 08.09. malt .up-sticky .up-head in
    KEINER Komponente mehr eine Flaeche, weil derselbe Streifen ueberall als dunkler Hintergrund
@@ -299,16 +301,13 @@
    Each heading pins inside its own .uo-list-section, so it hands over to the next one instead of
    stacking. Extra top padding only while pinned, so the rows have something to disappear behind
    rather than touching the text.
-   KEINE FLAECHE (08.09.), aus demselben Grund wie an der Bahnueberschrift daneben und an
-   .up-sticky .up-head in core: hier stand var(--up-surface), unser Wert fuer die Farbe der Seite.
-   Die Liste liegt direkt auf der Seite, und deren Farbe wird in Bubble eingestellt, nicht hier --
-   sobald die beiden auseinanderlaufen, steht hinter jeder der drei Ueberschriften ein sichtbarer
-   dunkler Kasten. Genau so gemeldet: "in den 3 Headings sind immer noch Backgrounds".
-   Die Folge steht bei .up-sticky .up-head ausfuehrlich: Zeilen laufen jetzt sichtbar hinter der
-   Ueberschrift durch, bis die Seitenfarbe in Bubble auf --up-surface steht. */
+   Wieder der Seitengrund (07.09.), wie an der Bahnueberschrift daneben und an .up-sticky .up-head
+   in core. Die Liste liegt direkt auf der Seite; solange --up-surface und die in Bubble
+   eingestellte Seitenfarbe denselben Wert haben, sieht man die Flaeche nicht -- und sie haelt die
+   Zeilen davon ab, beim Scrollen durch die Ueberschrift zu laufen. */
 .up-sticky .uo-list-sechead {
   position: sticky; top: calc(var(--up-sticky-top) + var(--up-thead-off)); z-index: 4;
-  background: transparent; padding-top: 10px;
+  background: var(--up-surface); padding-top: 10px;
 }
 .uo-list-rows { display: flex; flex-direction: column; gap: 8px; }
 .uo-row {

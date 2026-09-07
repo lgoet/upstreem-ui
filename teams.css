@@ -52,10 +52,10 @@
    keine Zeile durch.
    pointer-events dazu: der Streifen ist reine Dekoration, hat aber die Klicks im ganzen Kopf
    gefangen -- der "Create a new Team"-Knopf war nicht erreichbar. */
-/* Ohne eigene Flaeche -- dieselbe Meldung wie bei den Tabellen ("Teams hat auch einen
-   Background, auch den im Darkmode weg"). Der z-index bleibt: der Kopf muss ueber dem Inhalt
-   liegen, auch ohne zu malen. */
-.uts-root .uts-pagehead { position: relative; z-index: 7; background: transparent; }
+/* Wieder --up-surface (07.09.): der Kopf MUSS dieselbe Farbe tragen wie der Deckstreifen, der
+   unter ihm liegt -- sonst malt der Streifen ihn zu, und genau das beschreibt der Absatz darueber.
+   Transparent war er nur, solange der Streifen selbst nichts malte. */
+.uts-root .uts-pagehead { position: relative; z-index: 7; background: var(--up-surface); }
 .uts-root.up-sticky .up-head::before { pointer-events: none; }
 
 /* ---------- Teamzelle ----------

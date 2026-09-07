@@ -1713,16 +1713,21 @@
        through while scrolling underneath. */
     .up-sticky .up-head {
       position: sticky; top: var(--up-sticky-top); z-index: 6;
-      /* KEINE FLAECHE (08.09.). Hier stand var(--up-surface) -- unser Wert fuer "die Farbe der
-         Seite". Der ist aber nur dann unsichtbar, wenn die Seite WIRKLICH diese Farbe hat, und in
-         Bubble wird sie dort eingestellt, nicht hier. Nach der Umstellung auf Linears Leiter
-         passte sie nicht mehr, und der Streifen wurde in sieben Komponenten als
-         "dunkler Hintergrund hinter Heading und Toolbar" sichtbar -- genau so gemeldet.
-         Die Folge, und sie gehoert dazu: beim Scrollen laufen Zeilen jetzt SICHTBAR hinter der
-         angehefteten Kopfzeile durch. Der Streifen war dagegen gedacht. Wer ihn zurueck will,
-         setzt die Seitenfarbe in Bubble auf denselben Wert wie --up-surface; dann ist er
-         unsichtbar und tut wieder seine Arbeit. */
-      background: transparent;
+      /* DIE FLAECHE MUSS DECKEND SEIN, sonst laufen beim Scrollen die Zeilen sichtbar hinter der
+         angehefteten Kopfzeile durch. Genau dafuer ist sie da.
+         Sie war vom 08.09. bis zum 07.09. auf transparent: nach der Umstellung auf Linears Leiter
+         passte --up-surface nicht mehr zur Seitenfarbe, die in Bubble eingestellt ist, und der
+         Streifen wurde in sieben Komponenten als "dunkler Hintergrund hinter Heading und Toolbar"
+         gemeldet. Die Diagnose war richtig, die Behandlung nicht -- ich habe die Flaeche entfernt,
+         statt die beiden Werte anzugleichen. Nachgereicht vom Nutzer: "das war ein Fehler, du
+         haettest sie einfach nur angleichen muessen."
+         Jetzt steht die Seite in Bubble auf #ffffff (hell) und #101114 (dunkel), also genau auf
+         --up-surface, und der Streifen ist unsichtbar UND tut seine Arbeit.
+         WER --up-surface AENDERT, MUSS DIE SEITENFARBE IN BUBBLE MITAENDERN. Laufen die beiden
+         auseinander, ist der Streifen sofort wieder als Kasten hinter Ueberschrift und
+         Werkzeugleiste zu sehen -- das ist kein Fehler dieser Regel, sondern die Anzeige dafuer,
+         dass die zwei Werte nicht mehr zusammenpassen. */
+      background: var(--up-surface);
       margin-bottom: 0; height: 48px; padding-bottom: 16px;
     }
     /* Rows scroll up past the pinned header; without this they'd show behind a transparent page
@@ -1737,7 +1742,7 @@
          pseudo-element is unconditionally part of .up-head's box, not scroll-triggered). If a sliver
          of a row ever peeks through above a stuck header again, fix it with a couple of px here, not
          a flat +16 that stops matching the configured offset at all. */
-      height: var(--up-sticky-top); background: transparent;
+      height: var(--up-sticky-top); background: var(--up-surface);
     }
     /* In sticky mode the box's visible border is dropped (kept transparent so layout doesn't
        shift) and drawn on the header and body instead. Both span the full width and align exactly,

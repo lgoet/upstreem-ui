@@ -1,15 +1,17 @@
 <!doctype html><meta charset="utf-8">
-<title>Malen die Komponenten-Huellen im Dunkeln noch eine eigene Flaeche?</title>
+<title>Huelle ohne Flaeche, angeheftete Kopfzeile mit dem Seitengrund</title>
 <pre id="out" style="font:12px/1.5 ui-monospace,Menlo,monospace;padding:12px;white-space:pre-wrap"></pre>
 <div id="rahmen"></div>
 <script>
-/* Gemeldet am 08.09. fuer sieben Komponenten nacheinander: "hat noch einen dunklen Hintergrund im
-   Darkmode, hinter Heading und Toolbar zu erkennen". Immer dieselbe Ursache -- die Huelle malte
-   var(--up-surface), also UNSEREN Wert fuer "die Farbe der Seite". Der ist nur dann unsichtbar,
-   wenn die Seite in Bubble wirklich diese Farbe hat.
-   Statt die Meldung ein achtes Mal einzeln zu bearbeiten, prueft dieser Prueftand die REGEL: die
-   Huelle einer Komponente und ihre angeheftete Kopfzeile malen nichts. Was IN der Tabelle liegt
-   (Zeilen, Kopfzeile der Tabelle, Karten) ist ausdruecklich nicht gemeint und wird nicht geprueft. */
+/* Zwei Regeln, die leicht verwechselt werden -- am 08.09. habe ich sie verwechselt:
+     Die HUELLE einer Komponente malt nichts. Sie ist nur ein Rahmen um den Inhalt, und eine
+     eigene Flaeche dort war die Ursache der Meldungen vom 08.09.
+     Die ANGEHEFTETE KOPFZEILE malt den Seitengrund. Das ist ihre Aufgabe: ohne sie laufen die
+     Zeilen beim Scrollen sichtbar dahinter durch. Ich hatte sie mit entfernt, weil --up-surface
+     damals nicht zur Seitenfarbe in Bubble passte -- die richtige Behandlung waere gewesen, die
+     beiden Werte anzugleichen, und genau das ist am 07.09. nachgereicht worden.
+   Dieser Prueftand prueft beide Regeln getrennt. Was IN der Tabelle liegt (Zeilen, Kopfzeile der
+   Tabelle, Karten) ist ausdruecklich nicht gemeint und wird nicht geprueft. */
 var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
 function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
   if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
@@ -26,8 +28,10 @@ var KOMP = [
     vorlage:"bubble/prompts_table_bubble.html" },
   { name:"responses-table", css:"responses-table.css", js:"responses-table.js", w:"urt-root",
     vorlage:"bubble/responses_table_bubble.html" },
+  /* Der Seitenkopf von Teams MUSS denselben Ton tragen wie der Deckstreifen: er liegt mit
+     z-index 7 darueber, und traegt er nichts, malt der Streifen ihn zu (steht so in teams.css). */
   { name:"teams",           css:"teams.css",           js:"teams.js",           w:"uts-root",
-    vorlage:"bubble/teams_bubble.html" },
+    vorlage:"bubble/teams_bubble.html", auchGrund:".uts-pagehead" },
   { name:"ask-mira",        css:"ask-mira.css",        js:"ask-mira.js",        w:"am-root",
     vorlage:"bubble/ask_mira_bubble.html" }
 ];
@@ -39,7 +43,7 @@ function pruefe(k, kern){
     document.getElementById("rahmen").appendChild(f);
     var d = f.contentDocument, v = f.contentWindow;
     d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0'></body></html>"); d.close();
-    try { v.localStorage.setItem("pref_theme","dark"); } catch(e){}
+    try { v.localStorage.setItem("pref_theme", THEMA); } catch(e){}
     v.__fehler = []; v.addEventListener("error", function(e){ v.__fehler.push(String(e.message)); });
     [kern.css, t[0]].forEach(function(c){ var st=d.createElement("style"); st.textContent=c; d.head.appendChild(st); });
     var roh = t[2].replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim();
@@ -47,7 +51,7 @@ function pruefe(k, kern){
     var r = w.querySelector("." + k.w) || w.querySelector(".up-root") || w.firstElementChild;
     if (!r) return { name:k.name, fehler:"keine Wurzel in der Vorlage" };
     r.setAttribute("data-instance", k.name + "_h"); r.setAttribute("data-cdn-pin","t");
-    r.setAttribute("data-isdark","yes");
+    r.setAttribute("data-isdark", THEMA === "dark" ? "yes" : "no");
     d.body.appendChild(r);
     var j1=d.createElement("script"); j1.textContent=kern.js; d.head.appendChild(j1);
     var j2=d.createElement("script"); j2.textContent=t[1]; d.head.appendChild(j2);
@@ -57,34 +61,57 @@ function pruefe(k, kern){
       var cw = wurzel ? v.getComputedStyle(wurzel).backgroundColor : null;
       var ck = kopf ? v.getComputedStyle(kopf).backgroundColor : null;
       var streifen = kopf ? v.getComputedStyle(kopf, "::before").backgroundColor : null;
-      return { name:k.name, wurzel:cw, kopf:ck, streifen:streifen,
-               ok: durchsichtig(cw) && (!kopf || durchsichtig(ck)) &&
-                   (!streifen || durchsichtig(streifen)),
+      var grund = wurzel ? v.getComputedStyle(wurzel).getPropertyValue("--up-surface").trim() : "";
+      /* Der Kopf und sein Streifen muessen den Seitengrund tragen -- verglichen wird gegen den
+         Token, nicht gegen einen Hexwert im Prueftand: sonst misst man die eigene Erwartung. */
+      function istGrund(c){ return !!c && !durchsichtig(c) && c === grundRgb; }
+      var probe = d.createElement("div");
+      probe.style.background = grund; d.body.appendChild(probe);
+      var grundRgb = v.getComputedStyle(probe).backgroundColor;
+      probe.remove();
+      var extraEl = k.auchGrund ? d.querySelector(k.auchGrund) : null;
+      var extra = extraEl ? v.getComputedStyle(extraEl).backgroundColor : null;
+      return { name:k.name, wurzel:cw, kopf:ck, streifen:streifen, grund:grundRgb,
+               extraName: k.auchGrund || null, extra: extra,
+               ok: durchsichtig(cw) && (!kopf || istGrund(ck)) &&
+                   (!streifen || istGrund(streifen)) &&
+                   (!k.auchGrund || istGrund(extra)),
                fehlerZahl: v.__fehler.length };
     });
   }, function(e){ return { name:k.name, fehler:e.message }; });
 }
 
-Promise.all([hol("core.css"), hol("core.js")]).then(function(t){
+/* Beide Themen, weil die Seitenfarbe je Thema eine andere ist und die Kopfzeile in BEIDEN mit
+   ihr uebereinstimmen muss. Am 08.09. war nur das Dunkle gemeldet -- geprueft wird trotzdem
+   beides, sonst faellt eine Haelfte irgendwann still auseinander. */
+var THEMA = "dark";
+function lauf(){
+ return Promise.all([hol("core.css"), hol("core.js")]).then(function(t){
   var kern = { css:t[0], js:t[1] };
   var raus = [];
   function naechste(i){
     if (i >= KOMP.length) return Promise.resolve();
     return pruefe(KOMP[i], kern).then(function(e){ raus.push(e); return naechste(i+1); });
   }
-  log("Die Huelle und ihre angeheftete Kopfzeile duerfen nichts malen (dunkel)");
+  log("Die Huelle malt nichts, die angeheftete Kopfzeile den Seitengrund -- " + THEMA);
   log("");
   return naechste(0).then(function(){
     raus.forEach(function(e){
       if (e.fehler){ log("   " + e.name.padEnd(17," ") + " ABBRUCH: " + e.fehler); return; }
       log("   " + (e.ok ? "RICHTIG" : "FALSCH ") + "  " + e.name.padEnd(17," ") +
           " Wurzel " + String(e.wurzel).padEnd(22," ") +
-          " Kopf " + String(e.kopf).padEnd(22," ") + " Streifen " + String(e.streifen));
+          " Kopf " + String(e.kopf).padEnd(22," ") + " Streifen " + String(e.streifen).padEnd(22," ") +
+          " Seitengrund " + String(e.grund));
+      if (e.extraName) log("            " + e.extraName + " " + String(e.extra));
     });
     var gut = raus.filter(function(e){ return e.ok; }).length;
     log("");
-    log("==> " + ja(gut === KOMP.length) + "  " + gut + " von " + KOMP.length);
-    log("FERTIG");
+    log("==> " + ja(gut === KOMP.length) + "  " + gut + " von " + KOMP.length + " (" + THEMA + ")");
+    log("");
   });
-}).catch(function(e){ log("ABBRUCH: " + e.message); });
+ });
+}
+lauf().then(function(){ THEMA = "light"; return lauf(); })
+      .then(function(){ log("FERTIG"); })
+      .catch(function(e){ log("ABBRUCH: " + e.message); });
 </script>
