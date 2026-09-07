@@ -5,9 +5,12 @@
 
   Die kleine Navigationsleiste ueber einem Detail-Drawer. 32px hoch, volle Breite, bricht nie um.
 
-      [<]  BRAND / (Logo) ADAC                          [Stift] [Pin] [X]
+      [<]  Brand / (Logo) ADAC                          [Stift] [Pin] [X]
+      [<]  URL   / (Favicon) Die 7 besten Modelle       [Globus] [Pin] [X]
 
-  Der Stift steht NUR bei data-type="brand".
+  Der Stift steht NUR bei data-type="brand", der Globus NUR bei data-type="url". Beide sitzen
+  am selben Platz: es ist der eine typabhaengige Knopf, und zwei Plaetze fuer dieselbe Rolle
+  waeren zwei Orte, an denen der Nutzer suchen muss.
 
   ── Einbau ──────────────────────────────────────────────────────────────────────
   Ein HTML-Element ganz oben in den Drawer, volle Breite, Hoehe 32.
@@ -89,6 +92,15 @@
                     Nur bei data-type="brand", vom Stift. Nutzlast wie oben.
                     Im Workflow: den Brand-Editor oeffnen.
 
+  data-domain-fn  = "bubble_fn_utbDomain_[dynamic id]"
+                    Nur bei data-type="url", vom Globus links neben dem Pin. Nutzlast wie oben.
+                    Im Workflow: den Domain-Drawer der uebergeordneten Domain oeffnen.
+                    DIE LEISTE WEISS NICHT, WELCHE DOMAIN DAS IST. Sie schickt die Kennung der
+                    URL, und der Workflow loest die Domain daraus auf -- ueber das Feld, das die
+                    URL ohnehin auf ihre Domain zeigen laesst. Ein zweites Attribut mit der
+                    Domain waere ein zweiter Ort, an dem das Datenmodell der App steht, und der
+                    erste, der veraltet.
+
   ANHEFTEN MELDET NICHTS AN BUBBLE. Der Pin ruft window.upstreemPinToSidebar -- dieselbe
   Funktion, die Quick Actions aus seinem Zeilenmenue ruft. Die Seitenleiste besitzt diese Liste
   und speichert sie selbst im Browser. Es gibt dafuer also keinen Workflow und kein Feld in der
@@ -137,7 +149,8 @@
      data-logo       = ""
      data-item-id    = "[unique id]"
      data-close-fn   = "bubble_fn_utbClose_[dynamic id]"
-     data-edit-fn    = "bubble_fn_utbEdit_[dynamic id]"></div>
+     data-edit-fn    = "bubble_fn_utbEdit_[dynamic id]"
+     data-domain-fn  = "bubble_fn_utbDomain_[dynamic id]"></div>
 
 <script>
 (function(){

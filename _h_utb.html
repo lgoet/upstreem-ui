@@ -43,6 +43,7 @@ Promise.all([hol("core.css"), hol("core.js"), hol("drawer-topbar.css"), hol("dra
   function nutz(p){ try { return typeof p === "string" ? JSON.parse(p) : p; } catch(e){ return null; } }
   v.bubble_fn_utbClose_x = function(p){ ereignisse.push(["close", nutz(p)]); };
   v.bubble_fn_utbEdit_x  = function(p){ ereignisse.push(["edit", nutz(p)]); };
+  v.bubble_fn_utbDomain_x= function(p){ ereignisse.push(["domain", nutz(p)]); };
   var gepinnt=[];
   v.upstreemPinToSidebar = function(p){ gepinnt.push(p); return true; };
   var warn=[];
@@ -61,6 +62,7 @@ Promise.all([hol("core.css"), hol("core.js"), hol("drawer-topbar.css"), hol("dra
     el.setAttribute("data-cdn-pin","t");
     el.setAttribute("data-close-fn","bubble_fn_utbClose_x");
     el.setAttribute("data-edit-fn","bubble_fn_utbEdit_x");
+    el.setAttribute("data-domain-fn","bubble_fn_utbDomain_x");
     Object.keys(attrs).forEach(function(k){ if (k !== "__id") el.setAttribute(k, attrs[k]); });
     /* In einem Kasten mit fester Breite -- die Leiste misst SICH, nicht das Fenster. */
     var box=d.createElement("div");
@@ -154,9 +156,9 @@ Promise.all([hol("core.css"), hol("core.js"), hol("drawer-topbar.css"), hol("dra
     pruef("8px zwischen den Knoepfen rechts", parseFloat(v.getComputedStyle(tools).gap) === 8);
     var zeichen=[].map.call(el.querySelectorAll(".up-iconbtn svg"), function(g){
       var r=v.getComputedStyle(g); return parseFloat(r.width) + "x" + parseFloat(r.height); });
-    log("      Zeichen: " + zeichen.join(", ") + " (Pfeil, Stift, Pin, Kreuz)");
-    pruef("alle vier Zeichen 16x16",
-      zeichen.length === 4 && zeichen.every(function(z){ return z === "16x16"; }));
+    log("      Zeichen: " + zeichen.join(", ") + " (Pfeil, Stift, Globus, Pin, Kreuz)");
+    pruef("alle fuenf Zeichen 16x16",
+      zeichen.length === 5 && zeichen.every(function(z){ return z === "16x16"; }));
     log("");
 
     log("      Farben hell: Name " + v.getComputedStyle(q(".utb-name")).color +
@@ -173,6 +175,8 @@ Promise.all([hol("core.css"), hol("core.js"), hol("drawer-topbar.css"), hol("dra
     pruef("Beschriftung \"" + q(".utb-type").textContent + "\"", q(".utb-type").textContent === "Brand");
     pruef("Stift da, weil brand", !q(".utb-edit").hidden &&
       v.getComputedStyle(q(".utb-edit")).display !== "none");
+    pruef("Globus weg, weil nicht url", q(".utb-domain").hidden &&
+      v.getComputedStyle(q(".utb-domain")).display === "none");
     log("");
 
     log("4  Ereignisse");
@@ -222,6 +226,23 @@ Promise.all([hol("core.css"), hol("core.js"), hol("drawer-topbar.css"), hol("dra
         q(".utb-name").textContent === "Die 7 besten Modelle 2026");
       pruef("Stift weg, weil nicht brand", q(".utb-edit").hidden &&
         v.getComputedStyle(q(".utb-edit")).display === "none");
+      pruef("Globus da, weil url", !q(".utb-domain").hidden &&
+        v.getComputedStyle(q(".utb-domain")).display !== "none");
+      /* LINKS VOM PIN, so angefordert -- an den echten Kanten gemessen und nicht an der
+         Reihenfolge im Markup: ein order oder ein row-reverse wuerde die Zeile drehen, ohne dass
+         ein Blick auf das HTML es zeigt. */
+      var gl=q(".utb-domain").getBoundingClientRect(), pn=q(".utb-pin").getBoundingClientRect(),
+          kr=q(".utb-close").getBoundingClientRect();
+      log("      linke Kanten: Globus " + Math.round(gl.left) + ", Pin " + Math.round(pn.left) +
+          ", Kreuz " + Math.round(kr.left));
+      pruef("der Globus steht links neben dem Pin", gl.right <= pn.left + 0.6);
+      pruef("und die Luecke dazwischen sind dieselben 8px",
+        Math.abs((pn.left - gl.right) - 8) < 0.6 && Math.abs((kr.left - pn.right) - 8) < 0.6);
+      ereignisse.length=0; q(".utb-domain").click();
+      log("      " + JSON.stringify(ereignisse));
+      pruef("der Globus meldet domain mit Typ und Kennung",
+        ereignisse.length === 1 && ereignisse[0][0] === "domain" &&
+        ereignisse[0][1].type === "url" && ereignisse[0][1].item_id === "u-9");
       pruef("ohne Bild steht der Buchstabe da (\"" +
         (q(".utb-logo .up-logo-ltr")||{}).textContent + "\")",
         !!q(".utb-logo .up-logo-ltr") && q(".utb-logo .up-logo-ltr").textContent === "D" &&
@@ -243,6 +264,9 @@ Promise.all([hol("core.css"), hol("core.js"), hol("drawer-topbar.css"), hol("dra
         pruef("die Platte behaelt ihre 18px (die Zeile springt nicht)",
           parseFloat(skm.width) === 18 && parseFloat(skm.height) === 18);
         pruef("der Stift ist im Ladezustand weg", q(".utb-edit").hidden);
+        /* Der Typ steht auf "url", der Globus muesste also nach der Typregel DA sein -- im
+           Ladezustand ist er es trotzdem nicht: solange kein Name da ist, ist nichts sicher. */
+        pruef("und der Globus auch, obwohl der Typ url sagt", q(".utb-domain").hidden);
         pruef("das Kreuz bleibt bedienbar",
           v.getComputedStyle(q(".utb-close")).display !== "none");
         el.setAttribute("data-name","Die 7 besten Modelle 2026");

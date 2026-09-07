@@ -45,6 +45,12 @@
                                               fuer dieselbe Absicht waeren zwei Workflows, die
                                               auseinanderlaufen. Payload { type, item_id }.
    data-edit-fn    "bubble_fn_utbEdit_[id]"    nur bei data-type="brand". { type, item_id }
+   data-domain-fn  "bubble_fn_utbDomain_[id]"  nur bei data-type="url", der Globus links vom
+                                              Pin: "zur uebergeordneten Domain". Die Leiste
+                                              weiss NICHT, welche Domain das ist -- sie schickt
+                                              die Kennung der URL, und der Workflow loest sie
+                                              auf. Alles andere waere ein zweiter Ort, an dem
+                                              das Datenmodell der App steht. { type, item_id }
    Anheften meldet NICHTS an Bubble: es ruft window.upstreemPinToSidebar, dieselbe Funktion, die
    Quick Actions aus seinem Zeilenmenue ruft. Die Seitenleiste besitzt diese Liste, und ein
    zweiter Weg dorthin waere ein zweiter Zustand.
@@ -130,7 +136,7 @@
     }
     function itemId() { return feld("item_id", "data-item-id"); }
 
-    var elType, elLogo, elName, elEdit;
+    var elType, elLogo, elName, elEdit, elDomain;
     var state = { leer: true };
 
     /* Das Markup baut die Komponente selbst. In Bubble steht nur die leere Wurzel -- die Leiste
@@ -156,6 +162,14 @@
         '<button type="button" class="up-iconbtn utb-edit" data-utb-edit hidden ' +
           'data-tip="' + esc(UC.t("Edit brand")) + '" aria-label="' + esc(UC.t("Edit brand")) + '">' +
           UC.icon("squarePen", 2) + '</button>' +
+        /* Nur bei einer URL, und LINKS vom Pin (so angefordert). Er steht damit an derselben
+           Stelle wie der Stift bei einer Marke: beide sind der EINE typabhaengige Knopf, und
+           zwei verschiedene Plaetze fuer dieselbe Rolle waeren zwei Orte, an denen der Nutzer
+           suchen muss. */
+        '<button type="button" class="up-iconbtn utb-domain" data-utb-domain hidden ' +
+          'data-tip="' + esc(UC.t("Go to parent domain")) + '" ' +
+          'aria-label="' + esc(UC.t("Go to parent domain")) + '">' +
+          UC.icon("globe", 2) + '</button>' +
         '<button type="button" class="up-iconbtn utb-pin" data-utb-pin ' +
           'data-tip="' + esc(UC.t("Pin to sidebar")) + '" aria-label="' + esc(UC.t("Pin to sidebar")) + '">' +
           UC.icon("pin", 2) + '</button>' +
@@ -168,6 +182,7 @@
       elLogo = root.querySelector("[data-utb-logo]");
       elName = root.querySelector("[data-utb-name]");
       elEdit = root.querySelector("[data-utb-edit]");
+      elDomain = root.querySelector("[data-utb-domain]");
     }
     aufbauen();
 
@@ -227,6 +242,10 @@
          Im Ladezustand bleibt er weg: welcher Typ kommt, weiss die Leiste noch nicht, und ein
          Knopf, der gleich wieder verschwindet, ist schlimmer als einer, der spaeter erscheint. */
       elEdit.hidden = laedt || (t !== "brand");
+      /* Und der Globus nur bei einer URL -- aus demselben Grund wie oben: im Ladezustand weiss
+         die Leiste den Typ noch nicht, und ein Knopf, der gleich wieder verschwindet, ist
+         schlimmer als einer, der spaeter erscheint. */
+      elDomain.hidden = laedt || (t !== "url");
     }
 
     /* ---- Zuruecksetzen (07.09. angefordert) ----
@@ -286,6 +305,10 @@
       }
       if (t.closest("[data-utb-edit]")) {
         fire("data-edit-fn", "utbEdit", { type: typ(), item_id: itemId() });
+        return;
+      }
+      if (t.closest("[data-utb-domain]")) {
+        fire("data-domain-fn", "utbDomain", { type: typ(), item_id: itemId() });
         return;
       }
       if (t.closest("[data-utb-pin]")) { anheften(); return; }

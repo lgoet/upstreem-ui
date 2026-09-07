@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261018;
+  var BUILD = 20261019;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -1462,6 +1462,7 @@
       "Suche nach einer Brand, einer Domain, einer URL oder einem Prompt.",
     "Please try again.": "Bitte versuche es erneut.",
     "Pin to sidebar": "An die Seitenleiste heften",
+    "Go to parent domain": "Zur uebergeordneten Domain",
     "Remove favorite": "Favorit entfernen",
     "Single / Multi": "Einzeln / Mehrfach",
     "Or / And": "Oder / Und",
