@@ -30,6 +30,11 @@ Promise.all([hol("core.css"), hol("core.js"), hol("sidebar.css"), hol("sidebar.j
   host.className="up-root usn-root"; host.setAttribute("data-instance","gaps");
   host.setAttribute("data-isdark","no"); host.setAttribute("data-cdn-pin","t");
   host.setAttribute("data-team-id","1"); host.setAttribute("data-active","dashboard");
+  /* MIT LOGO, sonst gibt es die Linie gar nicht -- und der erste der drei Abstaende, um die es
+     hier geht, haengt an ihr. Ohne diese zwei Zeilen ist die Markenzeile is-off und der
+     Prueftand messt eine Leiste, die es beim Nutzer nicht gibt. */
+  host.setAttribute("data-upstreem-logo","_h_logo.svg");
+  host.setAttribute("data-upstreem-logo-dark","_h_logo.svg");
   d.body.appendChild(host);
   [t[1], t[3], t[5]].forEach(function(j){ var sc=d.createElement("script"); sc.textContent=j; d.head.appendChild(sc); });
   return warte(1800).then(function(){
@@ -70,20 +75,54 @@ Promise.all([hol("core.css"), hol("core.js"), hol("sidebar.css"), hol("sidebar.j
             " er bleibt 36px hoch -- die Abstaende darunter haengen daran");
         log("");
       }
+      /* ---- DIE DREI ABSTAENDE AN IHREN SICHTBAREN KANTEN (08.09.) ----
+         Angefordert: "das Gap von Separator zu Teamswitcher zu Quick Actions, mach das 32px,
+         also beide Gaps". Kasten gegen Kasten ist damit erledigt -- aber was das AUGE nimmt,
+         ist je Anker etwas anderes:
+             die Linie unter der Marke   eine harte 1px-Kante
+             der Teamumschalter          KEIN Rahmen, also sieht man seinen Inhalt (das
+                                         Teamlogo), nicht seine Kastenkante
+             der Quick-Actions-Knopf     hat seit dem 08.09. wieder einen RAHMEN, also ist seine
+                                         Kastenkante die sichtbare Kante
+             die Ueberschrift DATABASE   blosser Text
+         Darum wird beides ausgewiesen: die Kastenabstaende (die Zahlen aus der Datei) und die
+         Abstaende zwischen den sichtbaren Kanten. Das Urteil faellt an den sichtbaren. */
+      var marke=bar.querySelector(".usn-brand");
+      var teamlogo=bar.querySelector(".usn-teamlogo") || bar.querySelector(".usn-team");
+      var qaBtn=bar.querySelector(".mqa-trigger");
+      if (marke && teamlogo && qaBtn && kopf){
+        var linieUnten=r(marke).bottom;   /* die Linie liegt auf bottom: 0 der Markenzeile */
+        var lg=r(teamlogo), qb=r(qaBtn), kf=r(kopf);
+        log("SICHTBARE KANTEN");
+        log("   Linie -> Teamlogo        " + z(lg.top - linieUnten) + "px");
+        log("   Teamlogo -> QA-Rahmen    " + z(qb.top - lg.bottom) + "px");
+        log("   QA-Rahmen -> DATABASE    " + z(kf.top - qb.bottom) + "px");
+        var g1=lg.top - linieUnten, g2=qb.top - lg.bottom, g3=kf.top - qb.bottom;
+        log("   " + ja(Math.abs(g1-g2) < 1.2) + " die zwei angeforderten sind gleich (" +
+            z(g1) + " / " + z(g2) + ")");
+        log("   " + ja(Math.abs(g2-g3) < 1.2) + " und der dritte passt dazu (" + z(g3) + ")");
+        log("");
+      }
       log("KASTEN GEGEN KASTEN (das, was in der Datei steht)");
       var k1=z(r(qa).top - r(top).bottom), k2=z(r(nav).top - r(qa).bottom);
       log("   Team -> Quick Actions " + k1 + "px   Quick Actions -> Navigation " + k2 + "px");
-      log("   (verschiedene Werte sind hier gewollt: 24 oben, 33 unten -- die Begruendung steht" +
-          " in sidebar.css, das Urteil faellt an der Schrift)");
+      log("   (verschiedene Werte sind hier gewollt -- 32 oben, 36 unten. Der Grund: oben grenzt" +
+          " der Abstand an eine Kastenkante OHNE Rahmen, unten an eine MIT. Die Begruendung" +
+          " steht in sidebar.css, das Urteil oben bei den sichtbaren Kanten.)");
       log("");
-      log("SCHRIFT GEGEN SCHRIFT (das, was man sieht)");
+      log("SCHRIFT GEGEN SCHRIFT (nur noch ein Bericht, nicht mehr das Urteil)");
+      log("   Solange der Quick-Actions-Knopf KEINEN Rahmen hatte, war seine Beschriftung die");
+      log("   sichtbare Kante -- damals fiel das Urteil hier. Seit dem 08.09. hat er einen");
+      log("   Rahmen, und dann nimmt das Auge die Kastenkante: das Urteil steht oben bei den");
+      log("   sichtbaren Kanten. Die Zahlen hier bleiben stehen, weil sie erklaeren, warum die");
+      log("   Kastenabstaende in der Datei NICHT alle gleich sind.");
       if (!name || !qaLbl){ log("   ABBRUCH: Teamname oder Quick-Actions-Beschriftung fehlt"); return; }
       var s1=z(r(qaLbl).top - r(name).bottom), s2=z(r(kopf).top - r(qaLbl).bottom);
       log("   Teamname " + z(r(name).height) + "px hoch in " + z(r(top).height) + "px Zeile" +
           "   Beschriftung " + z(r(qaLbl).height) + "px in " + z(r(qa).height) + "px" +
           "   Ueberschrift " + z(r(kopf).height) + "px");
       log("   Teamname -> Beschriftung " + s1 + "px   Beschriftung -> Ueberschrift " + s2 + "px");
-      log("   " + ja(Math.abs(s1-s2) < 1.2) + " gleich (Schwelle 1.2px, darunter sieht es niemand)");
+      log("   (Bericht, kein Urteil) Schriftabstaende " + z(s1) + " / " + z(s2));
       log("   Unterschied " + z(s1-s2) + "px");
       log("");
       log("   Zum Nachrechnen: der Abstand unter Quick Actions muesste " +
