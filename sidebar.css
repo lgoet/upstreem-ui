@@ -414,6 +414,21 @@
    offsetTop wird dadurch unabhaengig von der Scrollposition, und die Marke scrollt mit dem
    Inhalt, weil sie in derselben Flaeche liegt. */
 .usn-nav { position: relative; margin-top: 24px; flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; }
+/* 33 UND NICHT 24, wenn Quick Actions dasteht -- gemeldet am 07.09.: "das Gap zwischen Quick
+   Actions und DATENBANK ist kleiner als das nach oben". In der Datei standen beide auf 24, und
+   zwischen den KAESTEN sind es auch beide 24. Verschieden ist, was dazwischen liegt:
+       Teamname 13px mittig in einer 32px-Zeile   -> 9.5px Luft unter der Schrift
+       Beschriftung 12px mittig in 36px           -> 12px Luft darueber und darunter
+       Ueberschrift 11px ohne Polster oben        -> 1px Luft darueber
+   Gemessen ergibt das 24 + 9.5 + 12 = 45.5px zwischen Teamname und Beschriftung, aber nur
+   24 + 12 + 1 = 36.5px zwischen Beschriftung und Ueberschrift. Die 9px Unterschied sind genau
+   das, was man sieht. Also gehen sie hier drauf: 33px.
+   Der Wert haengt an den drei Kastenhoehen -- wer eine davon aendert, muss ihn nachmessen
+   (_h_usn_kopfgaps.html rechnet den Sollwert selbst aus und schreibt ihn hin).
+   NUR wenn Quick Actions wirklich da ist: ohne den Knopf waere die Ueberschrift der direkte
+   Nachbar der Teamzeile, und dann sind die 24 richtig. Dieselbe Bedingung wie am Aussenabstand
+   von .usn-qa darueber. */
+.usn-qa:not(:empty) + .usn-nav { margin-top: 33px; }
 /* Derselbe Abstand wie zwischen Kopf, Quick Actions und Menue: alle groesseren Gruppen
    stehen gleich weit auseinander. */
 .usn-block + .usn-block { margin-top: 32px; }

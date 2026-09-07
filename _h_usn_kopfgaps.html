@@ -1,0 +1,77 @@
+<!doctype html><meta charset="utf-8">
+<title>Leiste: die drei Abstaende Team - Quick Actions - erste Ueberschrift</title>
+<pre id="out" style="font:12px/1.55 ui-monospace,Menlo,monospace;padding:12px;white-space:pre-wrap"></pre>
+<div id="buehne"></div>
+<script>
+/* Gemeldet am 07.09.: "das Gap zwischen Team-Container, Quick Actions und DATENBANK gleich gross
+   machen -- das zwischen Quick Actions und Datenbank ist kleiner als das nach oben."
+   In der Datei stehen beide auf 24px. Wenn es trotzdem verschieden AUSSIEHT, liegt es nicht am
+   Aussenabstand, sondern an den Kaesten: Teamname und Quick-Actions-Beschriftung sitzen mittig in
+   32 bzw. 36px hohen Knoepfen, die Ueberschrift ist blosser Text ohne Polster oben. Zwischen zwei
+   Kastenkanten sind es dieselben 24 -- zwischen den SCHRIFTEN nicht.
+   Deshalb wird hier zweierlei gemessen und getrennt ausgewiesen: Kasten gegen Kasten und Schrift
+   gegen Schrift. Das Urteil faellt an der Schrift, denn die sieht man. */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function ja(b){ return b ? "RICHTIG" : "FALSCH "; }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function warte(ms){ return new Promise(function(ok){ setTimeout(ok,ms); }); }
+
+Promise.all([hol("core.css"), hol("core.js"), hol("sidebar.css"), hol("sidebar.js"),
+             hol("quick-actions.css"), hol("quick-actions.js")]).then(function(t){
+  var f=document.createElement("iframe");
+  f.style.cssText="width:1400px;height:700px;border:1px solid #ccc;display:block";
+  document.getElementById("buehne").appendChild(f);
+  var d=f.contentDocument, v=f.contentWindow;
+  d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0'></body></html>"); d.close();
+  try { v.localStorage.clear(); } catch(e){}
+  [t[0], t[2], t[4]].forEach(function(c){ var st=d.createElement("style"); st.textContent=c; d.head.appendChild(st); });
+  var host=d.createElement("div");
+  host.className="up-root usn-root"; host.setAttribute("data-instance","gaps");
+  host.setAttribute("data-isdark","no"); host.setAttribute("data-cdn-pin","t");
+  host.setAttribute("data-team-id","1"); host.setAttribute("data-active","dashboard");
+  d.body.appendChild(host);
+  [t[1], t[3], t[5]].forEach(function(j){ var sc=d.createElement("script"); sc.textContent=j; d.head.appendChild(sc); });
+  return warte(1800).then(function(){
+    var bar=d.querySelector(".usn-bar");
+    if (!bar){ log("ABBRUCH: keine .usn-bar"); return; }
+    /* Ein Team, damit der Name dasteht und nicht das Skelett. */
+    try { v.setSidebarTeams(JSON.stringify([{ id:"1", name:"Upstreem GmbH" }])); } catch(e){}
+    try { v.setSidebarUser(JSON.stringify({ name:"Lukas", email:"l@u.io" })); } catch(e){}
+    try { v.setSidebarBrands(JSON.stringify([{ id:"b1", name:"ADAC" }])); } catch(e){}
+    return warte(900).then(function(){
+      var top=bar.querySelector(".usn-top");
+      var qa=bar.querySelector(".usn-qa");
+      var nav=bar.querySelector(".usn-nav");
+      var name=bar.querySelector(".usn-teamname");
+      var qaLbl=bar.querySelector(".mqa-trigger-label");
+      var kopf=bar.querySelector(".usn-head-lbl") || bar.querySelector(".usn-head");
+      if (!top || !qa || !nav || !kopf){ log("ABBRUCH: eine der drei Zeilen fehlt"); return; }
+      function r(e){ return e.getBoundingClientRect(); }
+      function z(x){ return Math.round(x*100)/100; }
+
+      log("KASTEN GEGEN KASTEN (das, was in der Datei steht)");
+      var k1=z(r(qa).top - r(top).bottom), k2=z(r(nav).top - r(qa).bottom);
+      log("   Team -> Quick Actions " + k1 + "px   Quick Actions -> Navigation " + k2 + "px");
+      log("   (verschiedene Werte sind hier gewollt: 24 oben, 33 unten -- die Begruendung steht" +
+          " in sidebar.css, das Urteil faellt an der Schrift)");
+      log("");
+      log("SCHRIFT GEGEN SCHRIFT (das, was man sieht)");
+      if (!name || !qaLbl){ log("   ABBRUCH: Teamname oder Quick-Actions-Beschriftung fehlt"); return; }
+      var s1=z(r(qaLbl).top - r(name).bottom), s2=z(r(kopf).top - r(qaLbl).bottom);
+      log("   Teamname " + z(r(name).height) + "px hoch in " + z(r(top).height) + "px Zeile" +
+          "   Beschriftung " + z(r(qaLbl).height) + "px in " + z(r(qa).height) + "px" +
+          "   Ueberschrift " + z(r(kopf).height) + "px");
+      log("   Teamname -> Beschriftung " + s1 + "px   Beschriftung -> Ueberschrift " + s2 + "px");
+      log("   " + ja(Math.abs(s1-s2) < 1.2) + " gleich (Schwelle 1.2px, darunter sieht es niemand)");
+      log("   Unterschied " + z(s1-s2) + "px");
+      log("");
+      log("   Zum Nachrechnen: der Abstand unter Quick Actions muesste " +
+          z(parseFloat(v.getComputedStyle(nav).marginTop) + (s1 - s2)) +
+          "px sein, damit beide Schriften gleich weit auseinanderstehen" +
+          " (jetzt " + v.getComputedStyle(nav).marginTop + ")");
+      log("FERTIG");
+    });
+  });
+}).catch(function(e){ log("ABBRUCH: " + e.message + "\n" + (e.stack||"")); });
+</script>
