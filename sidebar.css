@@ -195,8 +195,8 @@
    das Logo ist --, und der Aussenabstand ist 8px + s. Deshalb steht der Aussenabstand als calc mit
    genau dieser Rechnung da: wer das Logo aendert, aendert nur h an zwei Stellen, und die drei
    Abstaende bleiben gleich.
-   Bei h = 17px sind es 15.5px, dreimal. Halbe Pixel sind hier in Ordnung -- gerundet wird erst
-   beim Zeichnen, und alle drei runden gleich.
+   Bei h = 16.5px sind es 15.75px, dreimal. Viertelpixel sind hier in Ordnung -- gerundet wird
+   erst beim Zeichnen, und alle drei runden gleich.
    Die Hoehe des Logokastens ist FEST gesetzt (.usn-brand-mark), damit Bild und Schriftzug dieselbe
    Rechnung ergeben. Gemessen wird das in _h_usn_marke.html.
    Die Linie ist die border-bottom DIESER Zeile, nicht ein eigenes Element: so kann der Abstand
@@ -206,33 +206,34 @@
    gemeldet. */
 .usn-brand { display: flex; align-items: center; flex: 0 0 auto;
   min-width: 0; height: 32px; box-sizing: content-box;
-  padding-bottom: 8px; margin: 0 -8px calc(8px + (32px - 17px) / 2);
+  padding-bottom: 8px; margin: 0 -8px calc(8px + (32px - 16.5px) / 2);
   border-bottom: 1px solid var(--vc-border); }
 .usn-brand.is-off { display: none; }
 .usn-brand-mark { display: inline-flex; align-items: center; min-width: 0; overflow: hidden;
   /* 0 6px wie .usn-team: so beginnt der Schriftzug genau ueber dem Teamlogo. */
   padding: 0 6px;
-  /* 17px FEST. Bild und Schriftzug sind verschieden hoch, und der Abstand nach oben haengt an
+  /* 16.5px FEST. Bild und Schriftzug sind verschieden hoch, und der Abstand nach oben haengt an
      dieser Zahl (siehe die Rechnung am Block darueber) -- er darf sich nicht danach aendern,
-     welche der beiden Fassungen gerade da ist. Dieselbe 17 steht im calc des Aussenabstands. */
-  height: 17px; }
-/* Der Schriftzug als Text -- der Rueckfall, wenn kein Bild gesetzt ist. Am 07.09. dreimal
-   nachgestellt: 15 -> 13 (zu klein) -> 14 -> 15. Damit ist er einen halben Punkt GROESSER als der
-   Teamname darunter (14.5px) -- die Marke steht ueber dem Team, nicht daneben.
+     welche der beiden Fassungen gerade da ist. Dieselbe 16.5 steht im calc des Aussenabstands. */
+  height: 16.5px; }
+/* Der Schriftzug als Text -- der Rueckfall, wenn kein Bild gesetzt ist. Am 07.09. viermal
+   nachgestellt: 15 -> 13 (zu klein) -> 14 -> 15 (zu viel) -> 14.5, die Mitte zwischen den letzten
+   beiden. Damit ist er genau so gross wie der Teamname darunter.
    Kleinbuchstaben, so wie der Name geschrieben wird. */
-.usn-brand-word { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; color: var(--vc-text);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 17px; }
-/* Das Bild fuellt den Kasten: 17px. Zwei Schritte am 07.09. -- "zehn Prozent groesser" auf die 14
-   und danach noch fuenf. Ein Bild, das kleiner ist als sein Kasten, waere in der Rechnung fuer die
-   drei Abstaende wieder eine Unbekannte, deshalb genau die Kastenhoehe. Dieselbe Bauart wie
+.usn-brand-word { font-size: 14.5px; font-weight: 600; letter-spacing: -0.01em; color: var(--vc-text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 16.5px; }
+/* Das Bild fuellt den Kasten: 16.5px. Drei Schritte am 07.09. -- "zehn Prozent groesser" auf die
+   14, danach fuenf mehr (das wurden versehentlich sechs), dann die Mitte zwischen den beiden
+   letzten Werten. Ein Bild, das kleiner ist als sein Kasten, waere in der Rechnung fuer die drei
+   Abstaende wieder eine Unbekannte, deshalb genau die Kastenhoehe. Dieselbe Bauart wie
    .ulh-nav-logo auf der Landingpage (dort 20px, hier die kleinere Fassung fuer eine Leiste). */
-.usn-brand-img { height: 17px; width: auto; display: block; max-width: 100%; object-fit: contain; }
+.usn-brand-img { height: 16.5px; width: auto; display: block; max-width: 100%; object-fit: contain; }
 /* Im Mini-Zustand ist links kein Platz fuer einen Schriftzug. Das BILD bleibt: ein Logo ist auch
    auf 64px noch ein Logo, ein Wort nicht. Zeichen und Knopf stehen dann uebereinander, wie in
    .usn-top, das im Mini ebenfalls zur Spalte wird -- und dafuer braucht die Zeile ihre feste
    Hoehe nicht mehr. */
 .usn-bar.is-mini .usn-brand { flex-direction: column; justify-content: center; gap: 6px;
-  height: auto; margin: 0 0 calc(8px + (32px - 17px) / 2); }
+  height: auto; margin: 0 0 calc(8px + (32px - 16.5px) / 2); }
 .usn-bar.is-mini .usn-brand-word { display: none; }
 .usn-bar.is-mini .usn-brand-mark { padding: 0; }
 

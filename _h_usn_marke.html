@@ -126,8 +126,8 @@ Promise.all([hol("core.css"), hol("core.js"), hol("sidebar.css"), hol("sidebar.j
                  von genau 16px (siehe 7a), und ein Bild, das kleiner ist als sein Kasten, waere
                  darin wieder eine Unbekannte. Angefordert waren "zehn Prozent groesser" auf 14 --
                  das sind 15.4, und 16 ist die Zahl daneben, die die Geometrie aufgehen laesst. */
-              log("   Bildhoehe " + v.getComputedStyle(w).height + " (Regel: 17px)");
-              log("   " + ja(parseFloat(v.getComputedStyle(w).height) === 17) + " 17px");
+              log("   Bildhoehe " + v.getComputedStyle(w).height + " (Regel: 16.5px)");
+              log("   " + ja(parseFloat(v.getComputedStyle(w).height) === 16.5) + " 16.5px");
               log("");
               log("7a  DIE DREI ABSTAENDE OBEN -- alle drei muessen gleich sein");
               /* Gemeldet am 07.09.: "das Gap von oberem Rand zu Logo zu Separator ist nicht
@@ -150,9 +150,9 @@ Promise.all([hol("core.css"), hol("core.js"), hol("sidebar.css"), hol("sidebar.j
                   "px, der Wert aus 8 + (32 - " + mkR.height + ") / 2");
               /* Und mit BILD statt Schriftzug muss dieselbe Zahl herauskommen -- deshalb steht die
                  Hoehe des Logokastens fest. */
-              log("   Logokasten " + mkR.height + "px (fest 17px, damit Bild und Schriftzug" +
+              log("   Logokasten " + mkR.height + "px (fest 16.5px, damit Bild und Schriftzug" +
                   " dieselbe Rechnung ergeben)");
-              log("   " + ja(mkR.height === 17) + " Kasten ist 17px");
+              log("   " + ja(mkR.height === 16.5) + " Kasten ist 16.5px");
               log("");
               log("7b  Die Trennlinie");
               /* Der Punkt der Meldung war nicht "eine Linie", sondern "gleiches Gap oben und
