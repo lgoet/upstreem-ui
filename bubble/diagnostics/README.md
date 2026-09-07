@@ -11,6 +11,7 @@ nicht löschen, nur bei Bedarf einfügen.
 
 | Datei | Misst | Status |
 |---|---|---|
+| `_diagnose_flimmern.js` | Laeuft das Flimmerraster im Onboarding-Grund, und wenn nicht: welcher der vier Gruende (Ruhemodus, verdeckter Tab, Huelle nicht im Bild, Schleife nicht gestartet) | Aktiv — gemeldet am 08.09. als "das ist ein statisches Bild" |
 | `_diagnose_drawer_console.js` | Frames/Long-Tasks/Render-Aufrufe während eines Drawer-Open/Close | Untersuchung abgeschlossen (STYLEGUIDE §44) — Ursache war Bubble-Workflow-Arbeit im Animationsfenster, Fix ist eine "Add a pause"-Stufe im Workflow |
 | `_diagnose_view_console.js` | Zeitleiste eines View-Wechsels: wann wird sichtbar, wieviel Main-Thread blockiert, wann laufen unsere Render-Aufrufe | Untersuchung abgeschlossen (STYLEGUIDE §45) — unsere Komponenten kosten ~5% der blockierten Zeit, Rest ist Bubble |
 | `_diagnose_chart_console.js` | Wie oft ein Chart.js-Chart innerhalb eines Einblend-Fensters neu gebaut wird, plus Long Tasks daneben | Fix in `core.js`s `makeLine.render()` (Signatur-Vergleich verhindert Doppel-Build) gelandet; Snippet bereithalten falls die Einblend-Animation nochmal ruckelt |

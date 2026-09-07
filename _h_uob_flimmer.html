@@ -81,8 +81,8 @@ Promise.all([hol("core.css"), hol("core.js"), hol("onboarding-page.css")]).then(
     /* Die ANGEFORDERTEN Zahlen (07.09., woertlich aus dem Aufruf des Nutzers):
        squareSize 3, gridGap 20, flickerChance 0.05, maxOpacity 0.4. Dazu fadeMs -- das ist das
        "smoother", magicui hat dafuer keine Angabe, weil es dort keine Fahrt gibt. */
-    var kit=UC.makeFlickerGrid(host, { squareSize:3, gap:20, changesPerSecond:0.05,
-      fadeMs:2200, maxOpacity:0.4, fps:30 });
+    var kit=UC.makeFlickerGrid(host, { squareSize:3, gap:20, changesPerSecond:0.4,
+      fadeMs:900, maxOpacity:0.4, fps:30 });
     var cv=host.querySelector("canvas");
 
     log("1  Es malt ueberhaupt");
@@ -179,6 +179,13 @@ Promise.all([hol("core.css"), hol("core.js"), hol("onboarding-page.css")]).then(
     })();
 
     function sprungReihe(cvx, n, dtMs){
+      /* ZWEI BILDER WARMLAUFEN, bevor gemessen wird. Das Kit laesst Bilder aus, deren dt unter
+         1/TAKT liegt, und es merkt sich dabei die vergangene Zeit -- kommt der Prueftand aus
+         einem Abschnitt mit kuerzerem Takt (die Vorlage laeuft mit 60), traegt das erste
+         gemessene Bild einen Rest von bis zu 33ms zusaetzlich. Genau daran ist die Schranke im
+         ersten Anlauf gerissen: gemessen 26 gegen eine fuer 67ms gerechnete Schranke von 22.4,
+         weil das erste Bild in Wahrheit 100ms trug. Zwei Bilder Vorlauf verbrauchen den Rest. */
+      bilder(2, dtMs);
       var vor=alphaFeld(cvx), summe=0, zahl=0, groesster=0;
       bilder(n, dtMs, function(){
         var jetzt=alphaFeld(cvx), s=0, m=0;
@@ -191,7 +198,14 @@ Promise.all([hol("core.css"), hol("core.js"), hol("onboarding-page.css")]).then(
     }
     /* Unser Raster mit 30 Bildern (das ist sein Takt), die Vorlage mit 60. Verglichen wird der
        Sprung JE BILD -- das ist, was das Auge als Zucken sieht. */
-    var uns=sprungReihe(cv, 20, 1000/30);
+    /* 34ms UND NICHT GENAU 1000/30. Das Kit laesst ein Bild aus, wenn dt unter 1/TAKT liegt --
+       und bei genau 1000/30 entscheidet das Rundungsverhalten der Fliesskommazahl, ob es
+       darunter liegt. Dann traegt das naechste Bild das doppelte dt, die Fahrt macht einen
+       doppelten Schritt, und die Messung meldete 20 statt der gerechneten 12.9. Das ist echtes
+       Verhalten (auf einer beschaeftigten Seite fallen Bilder aus, und die Fahrt behaelt dann
+       ihre Dauer in Sekunden statt in Bildern) -- nur ist es nicht der Takt, dessen Glaette hier
+       geprueft wird. Der ausgelassene Fall steht darunter mit seiner eigenen Schranke. */
+    var uns=sprungReihe(cv, 20, 34);
     var vgl=sprungReihe(cv2, 20, 1000/60);
     log("      unser Raster: im Mittel " + uns.mittel.toFixed(2) +
         " Alphastufen je Bild, groesster Sprung " + uns.max);
@@ -207,27 +221,59 @@ Promise.all([hol("core.css"), hol("core.js"), hol("onboarding-page.css")]).then(
        Zusammen 7.1. Der erste Anlauf hatte 12 Stufen und damit 5.3 Alphastufen je Stufe -- die
        Messung meldete 11, und die Schranke von 7 war falsch, nicht die Messung. Genau deshalb
        stehen jetzt 32 Stufen im Kit. Die Vorlage setzt in EINEM Bild bis zu 0.3, also 76. */
-    var tau=2.2/3, dt=1/30, stufen=48;
+    var tau=0.9/3, dt=1/30, stufen=48;
     var schranke=0.4*255*((1-Math.exp(-dt/tau)) + 1/stufen);
     log("      gerechnete Schranke: " + schranke.toFixed(1) + " Alphastufen" +
         "  (Fahrt " + (0.4*255*(1-Math.exp(-dt/tau))).toFixed(1) +
         " + eine Rundungsstufe " + (0.4*255/stufen).toFixed(1) + ")");
     pruef("und liegt unter der gerechneten Schranke", uns.max <= Math.ceil(schranke));
+    /* Und der Fall mit ausgelassenem Bild, damit auch er eine Zahl hat statt eine Ueberraschung
+       zu sein: doppeltes dt, also doppelter Schritt. */
+    var unsLang=sprungReihe(cv, 10, 67);
+    var schranke2=0.4*255*((1-Math.exp(-2*dt/tau)) + 1/stufen);
+    log("      mit ausgelassenem Bild (dt doppelt): groesster Sprung " + unsLang.max +
+        ", Schranke " + schranke2.toFixed(1));
+    pruef("auch mit ausgelassenem Bild bleibt es unter seiner Schranke",
+      unsLang.max <= Math.ceil(schranke2));
     log("");
 
-    log("4  Geschwindigkeit: wie viel bewegt sich in einer Sekunde?");
+    log("4  Geschwindigkeit -- und zwar in BEIDE Richtungen");
+    /* HIER LAG DER FEHLER. Abschnitt 4 hat nur "langsamer als die Vorlage" geprueft, und das
+       war eine einseitige Schwelle: ein Bild, das sich GAR NICHT bewegt, ist auch langsamer.
+       Genau das ist ausgeliefert worden und wurde als "das ist ein statisches Bild" gemeldet --
+       zu Recht, bei 0.05 Wechseln je Sekunde und 2.2s Fahrt bewegten sich 11 Prozent der Zellen
+       mit 0.5 Alphastufen je Bild, also unter der Wahrnehmungsschwelle.
+       Also wird jetzt beides gemessen: langsamer als die Vorlage UND sichtbar. Sichtbar heisst
+       hier: welcher ANTEIL DER PUNKTE aendert innerhalb einer Sekunde seine Helligkeit um
+       mindestens 2 Alphastufen. Und als Gegenprobe dasselbe an einem Canvas, das wirklich
+       steht -- der muss 0 melden, sonst prueft die Messung nicht, was sie behauptet. */
     function bewegung(cvx, n, dtMs){
       var vor=alphaFeld(cvx);
       bilder(n, dtMs);
-      var jetzt=alphaFeld(cvx), s=0, m=0;
-      for (var i=0;i<vor.length;i+=7){ s+=Math.abs(jetzt[i]-vor[i]); m++; }
-      return s/m;
+      var jetzt=alphaFeld(cvx), s=0, m=0, geaendert=0, punkte=0;
+      for (var i=0;i<vor.length;i+=3){
+        s+=Math.abs(jetzt[i]-vor[i]); m++;
+        if (vor[i]>0 || jetzt[i]>0){ punkte++; if (Math.abs(jetzt[i]-vor[i])>=2) geaendert++; }
+      }
+      return { mittel: s/m, anteil: punkte ? 100*geaendert/punkte : 0 };
     }
     var b1=bewegung(cv, 30, 1000/30);
     var b2=bewegung(cv2, 60, 1000/60);
-    log("      in einer Sekunde: unser Raster " + b1.toFixed(2) +
-        " Alphastufen je Pixel, die Vorlage " + b2.toFixed(2));
-    pruef("unser Raster bewegt sich langsamer als die Vorlage", b1 < b2);
+    /* Ein Standbild als Gegenprobe: derselbe Inhalt, aber niemand malt es neu. */
+    var cv3=d.createElement("canvas"); cv3.width=cv.width; cv3.height=cv.height;
+    cv3.getContext("2d").drawImage(cv, 0, 0);
+    var b3=bewegung(cv3, 30, 1000/30);
+    log("      in einer Sekunde, Anteil der Punkte mit sichtbarer Aenderung:");
+    log("        unser Raster " + b1.anteil.toFixed(1) + "%   (mittlere Bewegung " +
+        b1.mittel.toFixed(2) + " Alphastufen je Pixel)");
+    log("        die Vorlage  " + b2.anteil.toFixed(1) + "%   (" + b2.mittel.toFixed(2) + ")");
+    log("        ein Standbild " + b3.anteil.toFixed(1) + "%   (" + b3.mittel.toFixed(2) +
+        ")  <- die Gegenprobe");
+    pruef("das Standbild meldet 0 -- die Messung prueft also wirklich Bewegung",
+      b3.anteil === 0);
+    pruef("unser Raster IST eine Animation: mehr als 15 Prozent der Punkte aendern sich je Sekunde",
+      b1.anteil > 15);
+    pruef("und es bewegt sich trotzdem weniger als die Vorlage", b1.mittel < b2.mittel);
     log("");
 
     log("5  Farbe und Gewicht je Thema");
@@ -271,6 +317,19 @@ Promise.all([hol("core.css"), hol("core.js"), hol("onboarding-page.css")]).then(
       pruef("und sichtbar laeuft es weiter", dW > 0);
       log("");
 
+      log("6b  info() am laufenden Kit");
+      var i1=kit.info();
+      bilder(10, 1000/30);
+      var i2=kit.info();
+      log("      Bilder " + i1.bilder + " -> " + i2.bilder + "   Zellen " + i2.zellen +
+          "   Kachel " + i2.kachelPx + "px Abstand " + i2.abstandPx + "px (Puffer)" +
+          "   Wechsel/s " + i2.wechselJeSekunde + "   Fahrt " + i2.fahrtMs + "ms");
+      pruef("der Bildzaehler waechst -- daran ist von aussen zu sehen, dass es laeuft",
+        i2.bilder > i1.bilder);
+      pruef("und info() nennt kein Hindernis",
+        i2.laeuft && i2.sichtbar && !i2.tabVerdeckt && !i2.ruhemodus);
+      log("");
+
       log("7  Faellt die Huelle aus dem Dokument, endet die Schleife");
       /* Der Beweis ohne echte Uhr: die Warteschlange. Wer weiterlaufen will, legt in jedem Bild
          einen neuen Aufruf hinein. Unser Kit und die Vorlage sind zusammen zwei; nach dem
@@ -309,6 +368,13 @@ Promise.all([hol("core.css"), hol("core.js"), hol("onboarding-page.css")]).then(
       pruef("es steht EIN Bild da", voll > 200);
       pruef("und es bewegt sich nichts mehr", diff === 0);
       pruef("und es fragt kein einziges Bild an", warteschlange.length - q0 === 0);
+      var inf=kit2.info ? kit2.info() : null;
+      log("      info(): " + (inf ? JSON.stringify({ruhemodus:inf.ruhemodus, bilder:inf.bilder,
+        laeuft:inf.laeuft, zellen:inf.zellen}) : "fehlt"));
+      /* Die Auskunft muss den Grund NENNEN. "Es bewegt sich nichts" hat vier moegliche Gruende,
+         und von aussen sehen alle gleich aus -- ohne diese Zeile ist die naechste Meldung
+         wieder "das ist ein statisches Bild" und niemand kann sie beantworten. */
+      pruef("und info() sagt, dass es der Ruhemodus ist", !!inf && inf.ruhemodus === true);
       v.matchMedia=altMM;
       log("");
       log((schlecht ? "==> FALSCH  " : "==> RICHTIG ")+gut+" von "+(gut+schlecht)+" Pruefungen");

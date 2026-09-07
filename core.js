@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261022;
+  var BUILD = 20261023;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -5038,6 +5038,11 @@
     var ordnung = null, zaehler = new Int32Array(STUFEN + 2), anfang = new Int32Array(STUFEN + 2),
         lauf = new Int32Array(STUFEN + 2);
     var laeuft = false, sichtbar = true, uhr = null, letzte = 0, tot = false;
+    /* Ein Bildzaehler, und er ist nicht Zierde: "es bewegt sich nichts" hat auf einer laufenden
+       Seite genau vier moegliche Gruende (Ruhemodus des Systems, verdeckter Tab, Huelle nicht
+       im Bild, Schleife gar nicht gestartet), und von aussen sehen alle vier gleich aus. Mit
+       info() beantwortet die Seite die Frage selbst, statt dass jemand raten muss. */
+    var bilder = 0, ruhemodus = false;
 
     function ruhig(){
       try { return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches; }
@@ -5132,6 +5137,7 @@
          springt einmal komplett um -- gedeckelt auf ein Drittel Sekunde faehrt es statt zu
          springen. */
       letzte = jetzt;
+      bilder++;
       schritt(Math.min(dt, 0.333));
       zeichnen();
     }
@@ -5146,11 +5152,26 @@
       uhr = null;
     }
 
+    /* Die Auskunft fuer die Diagnose. Sie nennt die vier Gruende, aus denen ein Flimmern
+       stillstehen kann, und den Bildzaehler -- waechst der zwischen zwei Aufrufen, laeuft es. */
+    function info(){
+      return {
+        bilder: bilder, laeuft: laeuft && !tot, ruhemodus: ruhemodus,
+        sichtbar: sichtbar, tabVerdeckt: !!document.hidden,
+        zellen: spalten * zeilen, spalten: spalten, zeilen: zeilen,
+        kachelPx: pixKachel, abstandPx: pixSchritt, geraetefaktor: dpr,
+        farbe: farbe, maxDeckkraft: MAX, wechselJeSekunde: RATE, fahrtMs: TAU * 3000
+      };
+    }
+
     farbeLesen(); messen(); zeichnen();
 
     if (ruhig()){
-      /* Ein Bild steht, mehr nicht. */
-      return { stop: function(){ tot = true; stop(); } };
+      /* Ein Bild steht, mehr nicht -- und info() sagt, dass es der Ruhemodus war. Ohne diese
+         Auskunft sieht ein System mit "Bewegung reduzieren" wie ein kaputtes Kit aus. */
+      ruhemodus = true;
+      host.__upFlicker = { stop: function(){ tot = true; stop(); }, info: info };
+      return host.__upFlicker;
     }
 
     var abTheme = (typeof onTheme === "function")
@@ -5172,7 +5193,7 @@
     document.addEventListener("visibilitychange", function(){ letzte = performance.now(); });
     start();
 
-    return {
+    host.__upFlicker = {
       stop: function(){
         tot = true; stop();
         if (abTheme) abTheme();
@@ -5180,8 +5201,10 @@
         if (io) try { io.disconnect(); } catch(e){}
         if (cv.parentNode) cv.parentNode.removeChild(cv);
       },
-      redraw: function(){ farbeLesen(); messen(); zeichnen(); }
+      redraw: function(){ farbeLesen(); messen(); zeichnen(); },
+      info: info
     };
+    return host.__upFlicker;
   }
 
   function makeMount(cfg){

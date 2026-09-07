@@ -814,9 +814,20 @@
          Kaskade (color an .up-bgart-flimmer, dort --vc-text) und dreht sich mit dem Thema --
          im Hellen also genau das angeforderte Schwarz. */
       if (elFlimmer) UC.makeFlickerGrid(elFlimmer, {
-        squareSize: 3, gap: 20,       /* 23px Abstand */
-        changesPerSecond: 0.05,
-        fadeMs: 2200,                 /* das "smoother": eine Fahrt statt eines Sprungs */
+        squareSize: 3, gap: 20,       /* 23px Abstand -- wie angefordert */
+        /* DIESE ZWEI ZAHLEN SIND NICHT DIE ANGEFORDERTEN, und der Grund ist gerechnet:
+           flickerChance 0.05 heisst bei magicui "eine Zelle wechselt im Mittel alle 20
+           Sekunden". Dort ist der Wechsel ein SPRUNG, also sieht man 118 Blitze je Sekunde im
+           Feld. Hier faehrt die Zelle -- und mit einer Fahrt von 2.2s waren nur 11 Prozent der
+           Zellen ueberhaupt in Bewegung, jede mit 0.5 Alphastufen je Bild. Das liegt unter der
+           Wahrnehmungsschwelle: gemeldet als "das ist ein statisches Bild", und die Meldung war
+           richtig.
+           0.4 je Sekunde und 900ms Fahrt: 36 Prozent der Zellen sind immer in Bewegung, 940
+           Wechsel je Sekunde, groesster Sprung 12.9 Alphastufen je Bild -- immer noch ein
+           Achtel von magicuis 102, aber sichtbar. Der Prueftand prueft jetzt BEIDE Richtungen:
+           glatt genug UND sichtbar genug. */
+        changesPerSecond: 0.4,
+        fadeMs: 900,
         maxOpacity: 0.4, fps: 30
       });
     }
