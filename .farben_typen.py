@@ -125,10 +125,50 @@ def variante_rad():
        mehr als "derselbe Farbton wie die Familie". Der Gewinn: 26 Grad zwischen zwei URL-Typen
        statt heute 0 (review und documentation sind heute derselbe Hex)."""
     cite = {n: hexof(L_FILL, C_FILL, h) for n,h,_ in FAMILIEN}
-    start, spanne = 40.0, 340.0
+    # DAS BAND UM "YOU" GEHOERT IHM ALLEIN, und das ist keine Geschmacksfrage: You ist der
+    # einzige Citation-Typ OHNE URL-Typen. Jeder andere Farbton auf dem Rad hat einen Nachbarn
+    # aus derselben Familie und darf ihm aehnlich sein -- der von You hat keinen, also bedeutet
+    # Aehnlichkeit dort eine Verwandtschaft, die es nicht gibt.
+    # Der erste Anlauf liess die Rampe ueber 340 Grad laufen und damit ueber die 360 hinaus:
+    # Directory landete bei 20 Grad, also 8 Grad neben You (11.6) -- gemeldet als "Directory ist
+    # mir zu nah an You, die Verbindung waere erklaerungsbeduerftig". Genau richtig, es gibt
+    # keine. Jetzt endet die Rampe bei 340, das sind 31.6 Grad Abstand zu You -- mehr als der
+    # Abstand zweier URL-Typen untereinander (23.1).
+    start, spanne = 40.0, 300.0
     url = {}
     for i, u in enumerate(URL_ORDER):
         url[u] = hexof(L_FILL, C_FILL, (start + spanne*i/(len(URL_ORDER)-1)) % 360)
+    return cite, url
+
+L_URL_TIEF = 0.630   # zweite Helligkeitsstufe fuer die URL-Typen, siehe variante_rad_zwei()
+
+def variante_rad_zwei():
+    """A' -- WIE A, ABER MIT ZWEI HELLIGKEITSSTUFEN. Gemeldet an A: "Directory ist mir etwas zu
+       nah an You, die Verbindung waere erklaerungsbeduerftig." Das Band um You ist daraufhin
+       freigeraeumt (siehe variante_rad) -- und beim Nachmessen kamen drei weitere Paare derselben
+       Sorte heraus: Guide neben Editorial (7.7 Grad), Review neben UGC (7.6), Documentation neben
+       Institutional (10.1). Alle vier sind derselbe Fehler: ein URL-Typ, der aussieht wie ein
+       Citation-Typ, mit dem er nichts zu tun hat.
+
+       Einen Farbton nach dem anderen zu verschieben hilft nicht -- gemessen: bei 14 Toenen im
+       Abstand von 23 Grad und 7 festen Citation-Toenen bleibt in JEDER Drehung irgendwo ein Paar
+       unter 12 Grad (bestes Ergebnis der Suche ueber alle Drehungen und Spannen: 11.0 Grad).
+       Die Ursache ist nicht die Drehung, sondern dass beide Raeder auf derselben Helligkeit
+       liegen: dann ist der Farbton das EINZIGE Unterscheidungsmerkmal.
+
+       Also bekommen die URL-Typen ihre eigene Stufe: L 0.630 statt 0.685, C unveraendert. Damit
+       ist kein URL-Ton mehr mit einem Citation-Ton verwechselbar, egal wie nah der Farbton liegt
+       -- und innerhalb des URL-Rades aendert sich NICHTS an der Unterscheidbarkeit (die haengt
+       am Farbtonabstand, und der bleibt).
+       Gemessen (OKLab-Abstand, kleinster ueber alle 98 Paare URL x Citation):
+           eine Stufe   0.0128   (forum ~ Brand Platforms -- praktisch dieselbe Farbe)
+           zwei Stufen  0.0565   (viereinhalbmal so weit)
+       Innerhalb des URL-Rades bleibt der kleinste Abstand in beiden Faellen 0.0580."""
+    cite, url_hues = variante_rad()
+    url = {}
+    for i, u in enumerate(URL_ORDER):
+        H = (40.0 + 300.0*i/(len(URL_ORDER)-1)) % 360
+        url[u] = hexof(L_URL_TIEF, C_FILL, H)
     return cite, url
 
 def variante_familien():
@@ -263,6 +303,15 @@ ALLE = [
         "Die Zuordnung liest sich als Nachbarschaft auf dem Rad, nicht mehr als derselbe Farbton "
         "wie die Familie.",
         variante_rad),
+    bau("rad2", "A' -- Ein Rad, zwei Helligkeitsstufen",
+        "Wie A, aber die URL-Typen liegen eine Stufe tiefer (L 0.630 statt 0.685).",
+        "Damit kann kein URL-Ton mehr mit einem Citation-Ton verwechselbar sein, egal wie nah der "
+        "Farbton liegt -- und innerhalb des URL-Rades aendert sich an der Unterscheidbarkeit "
+        "nichts, die haengt am Farbtonabstand.",
+        "Das URL-Rad ist als Gruppe etwas dunkler als das Citation-Rad. In seinem eigenen Chart "
+        "faellt das nicht auf; nebeneinander sieht man zwei Stufen -- und genau das ist die "
+        "Absicht.",
+        variante_rad_zwei),
     bau("familien", "B -- Familien",
         "Der Farbton sagt die Familie, die Helligkeit sagt das Mitglied.",
         "Jeder URL-Typ traegt genau den Farbton seines Citation-Typs. Man sieht die Zuordnung, "
@@ -310,5 +359,45 @@ unter = [x["label"] for x in h["cite"]+h["url"] if x["chip_light_k"] < 4.5]
 print("  hell:   %d von %d  (%s)" % (len(unter), len(h["cite"])+len(h["url"]), ", ".join(unter)))
 unter2 = [x["label"] for x in h["cite"]+h["url"] if x["chip_dark_k"] < 4.5]
 print("  dunkel: %d von %d  (%s)" % (len(unter2), len(h["cite"])+len(h["url"]), ", ".join(unter2) or "keiner"))
+print()
+print("== Kann ein URL-Ton mit einem Citation-Ton verwechselt werden? (OKLab-Abstand) ==")
+print("   kleinster Abstand ueber alle 98 Paare URL x Citation, und zum Vergleich der kleinste")
+print("   Abstand INNERHALB des URL-Rades -- der sagt, wie fein das Rad selbst noch ist.")
+def oklab(hx):
+    L, C, H = hex_to_oklch(hx); h = math.radians(H)
+    return (L, C*math.cos(h), C*math.sin(h))
+def dE(a, b):
+    return math.sqrt(sum((x-y)**2 for x, y in zip(a, b)))
+for d in ALLE:
+    uc = min((dE(oklab(u["fill"]), oklab(c["fill"])), u["label"], c["label"])
+             for u in d["url"] for c in d["cite"])
+    uu = min(dE(oklab(a["fill"]), oklab(b["fill"]))
+             for i, a in enumerate(d["url"]) for b in d["url"][i+1:])
+    print("  %-34s URL~Citation %.4f  (%s ~ %s)   im URL-Rad %.4f"
+          % (d["titel"], uc[0], uc[1], uc[2], uu))
+print()
+print("== Wo liegt ein URL-Typ nah an einem Citation-Typ, der NICHT seine Familie ist? ==")
+print("   (unter 12 Grad waere die Naehe eine Aussage, die es nicht gibt)")
+print("   ACHTUNG, die Spalte gilt nur, wo beide Raeder AUF DERSELBEN Helligkeit liegen. Wo sie")
+print("   das nicht tun (A'), entscheidet nicht der Farbton, sondern der Abstand darueber.")
+for d in ALLE:
+    if d["key"] == "heute": continue
+    schlimm = []
+    for u in d["url"]:
+        hu = hex_to_oklch(u["fill"])[2]
+        for c in d["cite"]:
+            if c["key"] == u["familie"]: continue
+            hc = hex_to_oklch(c["fill"])[2]
+            ab = abs((hc - hu + 180) % 360 - 180)
+            if ab < 12: schlimm.append("%s ~ %s (%.1f Grad)" % (u["label"], c["label"], ab))
+    print("  %-22s %s" % (d["titel"], ", ".join(schlimm) if schlimm else "keine"))
+print()
+print("== Abstand jedes URL-Typs zu You (der Citation-Typ ohne URL-Typen) ==")
+for d in ALLE:
+    if d["key"] == "heute": continue
+    hy = hex_to_oklch([c for c in d["cite"] if c["key"] == "You"][0]["fill"])[2]
+    ab = [(abs((hy - hex_to_oklch(u["fill"])[2] + 180) % 360 - 180), u["label"]) for u in d["url"]]
+    ab.sort()
+    print("  %-22s naechster: %s (%.1f Grad)" % (d["titel"], ab[0][1], ab[0][0]))
 print()
 print("_h_typfarben_daten.js geschrieben.")
