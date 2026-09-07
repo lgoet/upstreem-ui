@@ -83,6 +83,72 @@ Promise.all([hol("core.css"), hol("core.js"), hol("drawer-topbar.css"), hol("dra
   var C=bauen({ __id:"c", "data-name":"Ohne Typ", "data-item-id":"c-1" });
 
   [t[1], t[3]].forEach(function(j){ var sc=d.createElement("script"); sc.textContent=j; d.head.appendChild(sc); });
+
+  /* ---- 12  Prompt und Response: ein Zeichen statt eines Bildes (07.09. angefordert) ----
+     Die Leiste muss auch die Modi Prompt und Response koennen -- dort kein Logo, sondern das zap
+     bzw. das scan aus dem Prompts-Seitenkopf. Gemessen wird, dass wirklich ein Zeichen dasteht,
+     dass die Platte weg ist und dass ein mitgeschicktes data-logo dort NICHT gewinnt: nur daran
+     ist der Fall vom Bildfall zu unterscheiden.
+     Am Ende der Weg ZURUECK auf einen Bildtyp. Ein Zeichen, das kleben bleibt, waere genau die
+     Sorte Fehler, die diese Leiste schon einmal hatte (das Bild, das nicht wechselte).
+     Sie steht HIER und nicht unten in der Kette: dort haette die Funktion die Argumentliste
+     eines .then zerschnitten -- genau das war der SyntaxError "missing ) after argument list"
+     beim ersten Anlauf. Hier liegt sie im selben Bereich wie A und v und ist durch Hoisting
+     trotzdem schon vorher aufrufbar. */
+  function teil12(){
+    var el = A.el;
+    function q(sel){ return el.querySelector(sel); }
+    log("12  Prompt und Response tragen ein Zeichen");
+    /* UEBER DEN SETTER und nicht ueber die Attribute: Abschnitt 8 hat zuletzt gesetzt, und der
+       Setter geht den Attributen vor (Abschnitt 11 prueft genau das). Der erste Anlauf schrieb
+       hier Attribute und bekam brav weiter "URL" zu sehen -- ein Messfehler, der wie ein
+       kaputter Typ aussah.
+       Das Bild wird MITGESCHICKT, nicht nur ins Attribut geschrieben: bei diesen zwei Typen darf
+       auch ein ausdruecklich uebergebenes Logo nicht gewinnen. */
+    el.setAttribute("data-logo", "_h_logo.svg");
+    return [["prompt", "Prompt"], ["response", "Response"]].reduce(function(k, fall){
+      return k.then(function(){
+        v.setDrawerTopbar("x", { type: fall[0], logo: "_h_logo.svg",
+          name: "Welche Anbieter sind die guenstigsten?" });
+        return warte(220).then(function(){
+          var box = q(".utb-logo");
+          var cs = v.getComputedStyle(box);
+          log("      " + fall[0] + ": Beschriftung \"" + q(".utb-type").textContent +
+              "\"   Kasten " + parseFloat(cs.width) + "x" + parseFloat(cs.height) +
+              "   Grund " + cs.backgroundColor +
+              "   svg " + (box.querySelector("svg") ? "ja" : "nein") +
+              "   img " + (box.querySelector("img") ? "ja" : "nein"));
+          pruef(fall[0] + ": Beschriftung \"" + fall[1] + "\"",
+            q(".utb-type").textContent === fall[1]);
+          pruef(fall[0] + ": ein Zeichen steht da", !!box.querySelector("svg"));
+          pruef(fall[0] + ": und KEIN Bild, obwohl data-logo gesetzt ist",
+            !box.querySelector("img") && !box.classList.contains("has-img"));
+          pruef(fall[0] + ": keine Platte darunter, und 16 statt 18 breit",
+            cs.backgroundColor === "rgba(0, 0, 0, 0)" && parseFloat(cs.width) === 16);
+          pruef(fall[0] + ": das Zeichen ist 16x16 wie jedes andere in der Leiste",
+            !!box.querySelector("svg") &&
+            parseFloat(v.getComputedStyle(box.querySelector("svg")).width) === 16);
+          pruef(fall[0] + ": weder Stift noch Globus",
+            q(".utb-edit").hidden && q(".utb-domain").hidden);
+        });
+      });
+    }, Promise.resolve()).then(function(){
+      v.setDrawerTopbar("x", { type: "brand", name: "ADAC", logo: "_h_logo.svg" });
+      return warte(220).then(function(){
+        var box = q(".utb-logo");
+        var br = parseFloat(v.getComputedStyle(box).width);
+        log("      zurueck auf brand: img " + (box.querySelector("img") ? "ja" : "nein") +
+            "   Kasten " + br + "   Stift " + (q(".utb-edit").hidden ? "weg" : "da"));
+        pruef("zurueck auf brand steht wieder das Bild da",
+          !!box.querySelector("img") && !box.classList.contains("is-zeichen") && br === 18);
+        pruef("und der Stift ist wieder da", !q(".utb-edit").hidden);
+        log("");
+        log("==> " + ja(schlecht === 0) + "  " + gut + " von " + (gut+schlecht) + " Pruefungen");
+        log("FERTIG");
+      });
+    });
+  }
+
   return warte(1400).then(function(){
     var el=A.el;
     function q(s){ return el.querySelector(s); }
@@ -474,8 +540,7 @@ Promise.all([hol("core.css"), hol("core.js"), hol("drawer-topbar.css"), hol("dra
            bestellt hat -- widthTiers setzt diese Marke auf der Wurzel. */
         pruef("UC.widthTiers ist an der Wurzel angemeldet", B.el.__upWidthTiers === true);
         log("");
-        log("==> " + ja(schlecht === 0) + "  " + gut + " von " + (gut+schlecht) + " Pruefungen");
-        log("FERTIG");
+        return teil12();
       });
       });
     });

@@ -89,6 +89,23 @@
 .utb-root .up-logo-box.utb-logo img { width: 16px; height: 16px; border-radius: 5px; }
 .utb-root .up-logo-box.utb-logo .up-logo-ltr { font-size: 9px; }
 
+/* ---- Prompt und Response tragen ein Zeichen statt eines Bildes (07.09. angefordert) ----
+   Keine Platte, kein Rahmen, keine 18px: an dieser Stelle steht dann kein Bild, sondern das
+   Zeichen des Typs (zap fuer Prompt, scan fuer Response -- dieselben, die der Prompts-Seitenkopf
+   fuehrt). Es ist 16px gross wie jedes andere Zeichen in dieser Leiste, und damit ist der Kasten
+   auch 16 statt 18: eine Platte um ein Strichzeichen waere ein Kasten um einen Kasten.
+   --vc-muted und nicht --vc-text: rechts davon steht der Name in der vollen Textfarbe, und der
+   soll die Aussage der Brotkrume bleiben. Nicht --vc-third wie Typ und Trenner -- ein
+   Strichzeichen hat viel weniger Flaeche als ein Wort und verschwindet in der dritten Stufe.
+   Doppelte Klasse, damit die Regel die dunkle Platten-Regel darueber (0,4,1) schlaegt, ohne dass
+   die Reihenfolge der Dateien darueber entscheidet. */
+.utb-root .up-logo-box.utb-logo.is-zeichen.is-zeichen {
+  width: 16px; height: 16px; flex: 0 0 16px; min-width: 0;
+  background: transparent; border: 0; border-radius: 0; box-shadow: none;
+  color: var(--vc-muted);
+}
+.utb-root .up-logo-box.utb-logo.is-zeichen svg { width: 16px; height: 16px; display: block; }
+
 /* Der Name: dieselbe Groesse und dasselbe Gewicht wie der Typ davor, nur in der vollen
    Textfarbe -- so ausdruecklich angefordert am 07.09. Die zwei Angaben stehen deshalb NICHT
    noch einmal hier, sondern kommen aus .utb-type darueber; wer sie aendert, aendert beide.

@@ -1,0 +1,151 @@
+<!doctype html><meta charset="utf-8">
+<title>Leiste: ist die Linie unter dem Logo so lang wie die Menuepunkte?</title>
+<pre id="out" style="font:12px/1.55 ui-monospace,Menlo,monospace;padding:12px;white-space:pre-wrap"></pre>
+<div id="buehne"></div>
+<script>
+/* Gemeldet am 07.09.: "der Separator zwischen upstreem Logo und Teamswitcher pro Seite 8px
+   kuerzer -- oder mehr? So dass er genauso lang ist wie die Menue-Item-Container-Backgrounds.
+   Die haben 16px padding left right? Bitte checken."
+
+   ALSO WIRD GECHECKT, und zwar an den echten Kanten: die Frage ist nicht, welche Zahl in der
+   Datei steht, sondern wo die Flaechen anfangen und aufhoeren. Gemessen wird gegen die Kante der
+   LEISTE -- das ist der Bezug, den das Auge nimmt.
+   Mitgemessen wird der Teamumschalter: seine Flaeche liegt woanders als die der Menuepunkte, und
+   wer die Linie auf die Menuepunkte legt, muss wissen, dass sie dann nicht mehr auf ihn passt. */
+var L=[]; function log(t){ L.push(t); document.getElementById("out").textContent=L.join("\n"); }
+function ja(b){ return b ? "RICHTIG" : "FALSCH "; }
+var gut=0, schlecht=0;
+function pruef(t,b){ if(b) gut++; else schlecht++; log("   "+ja(b)+" "+t); }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function warte(ms){ return new Promise(function(ok){ setTimeout(ok,ms); }); }
+
+Promise.all([hol("core.css"), hol("core.js"), hol("sidebar.css"), hol("sidebar.js"),
+             hol("quick-actions.css"), hol("quick-actions.js")]).then(function(t){
+  var f=document.createElement("iframe");
+  f.style.cssText="width:1400px;height:760px;border:1px solid #ccc;display:block";
+  document.getElementById("buehne").appendChild(f);
+  var d=f.contentDocument, v=f.contentWindow;
+  d.open(); d.write("<!doctype html><html><head><meta charset='utf-8'></head><body style='margin:0'></body></html>"); d.close();
+  try { v.localStorage.clear(); v.localStorage.setItem("pref_theme","light"); } catch(e){}
+  [t[0], t[2], t[4]].forEach(function(c){ var st=d.createElement("style"); st.textContent=c; d.head.appendChild(st); });
+  var host=d.createElement("div");
+  host.className="up-root usn-root"; host.setAttribute("data-instance","lin");
+  host.setAttribute("data-isdark","no"); host.setAttribute("data-cdn-pin","t");
+  host.setAttribute("data-team-id","1"); host.setAttribute("data-active","dashboard");
+  /* MIT Logo, sonst gibt es die Linie gar nicht. */
+  host.setAttribute("data-upstreem-logo","_h_logo.svg");
+  host.setAttribute("data-upstreem-logo-dark","_h_logo.svg");
+  d.body.appendChild(host);
+  [t[1], t[3], t[5]].forEach(function(j){ var sc=d.createElement("script"); sc.textContent=j; d.head.appendChild(sc); });
+  return warte(1800).then(function(){
+    var bar=d.querySelector(".usn-bar");
+    if (!bar){ log("ABBRUCH: keine .usn-bar"); return; }
+    try { v.setSidebarTeams(JSON.stringify([{ id:"1", name:"Upstreem GmbH" }])); } catch(e){}
+    try { v.setSidebarUser(JSON.stringify({ name:"Lukas", email:"l@u.io" })); } catch(e){}
+    return warte(900).then(function(){
+      var marke=bar.querySelector(".usn-brand");
+      var item=bar.querySelector(".usn-nav .usn-item");
+      var team=bar.querySelector(".usn-team");
+      var top=bar.querySelector(".usn-top");
+      if (!marke || !item){ log("ABBRUCH: Markenzeile oder Menuepunkt fehlt"); return; }
+      var rb=bar.getBoundingClientRect();
+      function kanten(el){
+        var r=el.getBoundingClientRect();
+        return { l: Math.round((r.left - rb.left)*100)/100,
+                 r: Math.round((rb.right - r.right)*100)/100,
+                 b: Math.round(r.width*100)/100 };
+      }
+      /* DIE LINIE IST NICHT DIE ZEILE. Sie ist ein eigenes Element (::after) und liegt in der
+         Zeile eingerueckt -- der erste Anlauf hat die ZEILE gemessen und haette den Fix nie
+         gesehen, egal wie richtig er ist. Ein Pseudoelement hat keinen Knoten, also kein
+         getBoundingClientRect; seine Kanten sind aber gerechnet abrufbar und liegen relativ zur
+         Zeile. */
+      function linie(el){
+        var cs=v.getComputedStyle(el, "::after");
+        var r=el.getBoundingClientRect();
+        var li=parseFloat(cs.left) || 0, re=parseFloat(cs.right) || 0;
+        var l=r.left + li, rr=r.right - re;
+        return { l: Math.round((l - rb.left)*100)/100,
+                 r: Math.round((rb.right - rr)*100)/100,
+                 b: Math.round((rr - l)*100)/100,
+                 hoehe: cs.height, farbe: cs.backgroundColor, da: cs.content !== "none" };
+      }
+      var kM=linie(marke), kI=kanten(item), kT=team?kanten(team):null, kO=kanten(top);
+      var randUnten=v.getComputedStyle(marke).borderBottomWidth;
+      var cs=v.getComputedStyle(bar);
+      log("Die Leiste ist " + Math.round(rb.width) + "px breit, ihr Polster: " +
+          cs.paddingLeft + " links / " + cs.paddingRight + " rechts");
+      log("");
+      log("EINZUG VON DER KANTE DER LEISTE (links / rechts / Breite)");
+      log("   Linie unter dem Logo   " + kM.l + " / " + kM.r + "   " + kM.b + "px" +
+          "   (" + kM.hoehe + ", " + kM.farbe + ")");
+      log("   Zeile der Marke        " + kanten(marke).l + " / " + kanten(marke).r +
+          "   " + kanten(marke).b + "px  -- die bleibt, wo sie war (das Logo soll nicht wandern)");
+      log("   Menuepunkt-Flaeche     " + kI.l + " / " + kI.r + "   " + kI.b + "px");
+      if (kT) log("   Teamumschalter-Flaeche " + kT.l + " / " + kT.r + "   " + kT.b + "px");
+      log("   Kopfzeile (usn-top)    " + kO.l + " / " + kO.r + "   " + kO.b + "px");
+      log("");
+      var cItem=v.getComputedStyle(item);
+      log("   Der Menuepunkt selbst polstert innen " + cItem.paddingLeft + " / " +
+          cItem.paddingRight + " -- das verschiebt seinen Inhalt, NICHT seine Flaeche.");
+      log("");
+      pruef("es gibt die Linie ueberhaupt (ein Element mit Hoehe und Farbe)",
+        kM.da && parseFloat(kM.hoehe) === 1 && kM.farbe !== "rgba(0, 0, 0, 0)");
+      pruef("und KEINE zweite als Rahmen der Zeile (" + randUnten + ")",
+        parseFloat(randUnten) === 0);
+      pruef("die Linie ist genau so lang wie die Flaeche eines Menuepunkts",
+        Math.abs(kM.b - kI.b) < 0.6);
+      pruef("und sie beginnt auf derselben linken Kante", Math.abs(kM.l - kI.l) < 0.6);
+      pruef("und endet auf derselben rechten", Math.abs(kM.r - kI.r) < 0.6);
+      log("");
+      /* Und im Mini: dort wird die Zeile zur Spalte, die Linie muss auch da passen. */
+      log("EINGEKLAPPT (is-mini)");
+      bar.classList.add("is-mini");
+      return warte(300).then(function(){
+        var rb2=bar.getBoundingClientRect();
+        function k2(el){ var r=el.getBoundingClientRect();
+          return { l: Math.round((r.left-rb2.left)*100)/100, r: Math.round((rb2.right-r.right)*100)/100,
+                   b: Math.round(r.width*100)/100 }; }
+        var csA=v.getComputedStyle(marke, "::after");
+        var rM=marke.getBoundingClientRect();
+        var m2={ l: Math.round(((rM.left + (parseFloat(csA.left)||0)) - rb2.left)*100)/100,
+                 r: Math.round((rb2.right - (rM.right - (parseFloat(csA.right)||0)))*100)/100 };
+        m2.b = Math.round((rb2.width - m2.l - m2.r)*100)/100;
+        var i2=k2(item);
+        log("   Linie " + m2.l + " / " + m2.r + "   " + m2.b + "px");
+        log("   Punkt " + i2.l + " / " + i2.r + "   " + i2.b + "px");
+        pruef("auch eingeklappt gleich lang", Math.abs(m2.b - i2.b) < 0.6);
+        bar.classList.remove("is-mini");
+        log("");
+        /* Die Farbe des Icons im aktiven Punkt -- zweite Meldung derselben Nachricht. */
+        return warte(200).then(function(){
+          /* Den aktiven Punkt notfalls selbst setzen. Der erste Anlauf verliess sich auf
+             data-active="dashboard" und fand nichts -- ob das an der Reihenfolge des Aufbaus
+             liegt oder an einem anderen Schluessel, ist fuer DIESE Messung gleichgueltig:
+             gepruefte Groesse ist die FARBE der Klasse is-active, nicht der Weg, auf dem sie
+             ans Element kommt. Was den Punkt aktiv macht, prueft _h_usn_farben.html. */
+          var akt=bar.querySelector(".usn-item.is-active");
+          if (!akt){
+            akt=bar.querySelector(".usn-nav .usn-item");
+            if (akt) akt.classList.add("is-active");
+            log("   (is-active von Hand gesetzt -- data-active hat keinen Punkt markiert)");
+          }
+          if (!akt){ log("ABBRUCH: kein Menuepunkt"); return ende(); }
+          var ic=akt.querySelector(".usn-ic");
+          var fIc=v.getComputedStyle(ic).color, fTxt=v.getComputedStyle(akt).color;
+          log("ICON IM AKTIVEN MENUEPUNKT");
+          log("   Icon " + fIc + "   Text " + fTxt);
+          pruef("das Icon traegt die Textfarbe und kein Blau", fIc === fTxt);
+          return ende();
+        });
+      });
+      function ende(){
+        log("");
+        log((schlecht ? "==> FALSCH  " : "==> RICHTIG ")+gut+" von "+(gut+schlecht)+" Pruefungen");
+        log("FERTIG");
+      }
+    });
+  });
+}).catch(function(e){ log("ABBRUCH "+e); });
+</script>

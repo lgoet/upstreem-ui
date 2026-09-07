@@ -23,13 +23,18 @@
 
    Die Attribute:
 
-       data-type       "brand" | "prompt" | "domain" | "url"   bestimmt die Beschriftung links
-                       UND ob der Bearbeiten-Knopf da ist (nur bei brand)
+       data-type       "brand" | "prompt" | "domain" | "url" | "response"
+                       bestimmt die Beschriftung links, welches Bild oder Zeichen davor steht
+                       UND welcher Knopf rechts dazukommt: der Stift nur bei brand, der Globus
+                       ("zur uebergeordneten Domain") nur bei url.
+                       brand, domain und url zeigen data-logo (Logo oder Favicon), prompt und
+                       response ein Zeichen (zap / scan) -- die haben kein Bild.
        data-name       der Name, der rechts vom Trenner steht. Bei einer Marke ihr Name, bei
                        einer URL ihr Titel -- was da hineingehoert, entscheidet der Drawer, nicht
                        diese Leiste.
        data-logo       Bild fuer die Platte davor (Markenlogo oder Favicon). Fehlt es, steht der
-                       erste Buchstabe des Namens dort.
+                       erste Buchstabe des Namens dort. Bei prompt und response wird es nicht
+                       gelesen: dort steht das Zeichen des Typs.
        data-item-id    die Kennung, die in jedem Ereignis mitgeht und die auch angeheftet wird.
 
    Warum Attribute und kein Setter: die Leiste hat keinen Zustand, den sie sich merken muesste.
@@ -106,7 +111,18 @@
      Setting mitgeht -- die Woerter selbst stehen im Katalog von core.
      Ein unbekannter Typ verschluckt die Leiste NICHT: er wird gezeigt, wie er kam. Ein Drawer
      ohne Beschriftung waere schlimmer als eine, die "widget" sagt. */
-  var TYPEN = { brand: "Brand", prompt: "Prompt", domain: "Domain", url: "URL" };
+  var TYPEN = { brand: "Brand", prompt: "Prompt", domain: "Domain", url: "URL",
+                response: "Response" };
+  /* ---- Zwei Typen haben kein Bild, sondern ein Zeichen (07.09. angefordert) ----
+     Ein Prompt und eine KI-Antwort sind keine Sache mit Logo: es gibt kein Markenbild und kein
+     Favicon dazu, und der erste Buchstabe des Namens waere hier eine Behauptung ("W" fuer
+     "Welche Anbieter..."). Genommen werden genau die Zeichen, die der Prompts-Seitenkopf fuer
+     seine zwei Abschnitte fuehrt -- zap fuer die Prompts, scan fuer die Responses (so heisst es
+     in core; im Seitenkopf und in Miras Protokoll ist es dasselbe Zeichen). Damit steht in der
+     Leiste dasselbe Zeichen wie in der Navigation, aus der man kommt.
+     Ein mitgeschicktes data-logo wird fuer diese zwei Typen NICHT verwendet: das Zeichen sagt
+     den Typ, und zwei Quellen fuer dieselbe Stelle waeren die naechste Meldung. */
+  var TYP_ZEICHEN = { prompt: "zap", response: "scan" };
   function typLabel(t) {
     var k = String(t == null ? "" : t).toLowerCase().trim();
     var w = TYPEN[k] || k;
@@ -216,9 +232,15 @@
 
       if (laedt) {
         /* Die Platte behaelt ihre Groesse und traegt den Skelettton -- im Ladezustand ist sie
-           kein Bild und kein Buchstabe, sondern ein Platzhalter. */
+           kein Bild und kein Buchstabe, sondern ein Platzhalter. Auch bei den Zeichentypen: der
+           Typ ist zwar frueh bekannt, aber ein Zeichen neben zwei Skeletten saehe aus wie halb
+           geladen. */
         elLogo.className = "up-logo-box utb-logo is-sk";
         elLogo.innerHTML = "";
+      } else if (TYP_ZEICHEN[t]) {
+        /* Kein Bild, keine Platte, nur das Zeichen des Typs. */
+        elLogo.className = "up-logo-box utb-logo is-zeichen";
+        elLogo.innerHTML = UC.icon(TYP_ZEICHEN[t], 2);
       } else {
         /* Das Logo: Bild, wenn eine Quelle da ist, sonst der erste Buchstabe des Namens. Bricht
            das Bild, bleibt der Buchstabe stehen -- er liegt schon darunter, .has-img versteckt

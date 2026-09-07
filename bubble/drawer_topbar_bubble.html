@@ -5,8 +5,10 @@
 
   Die kleine Navigationsleiste ueber einem Detail-Drawer. 32px hoch, volle Breite, bricht nie um.
 
-      [<]  Brand / (Logo) ADAC                          [Stift] [Pin] [X]
-      [<]  URL   / (Favicon) Die 7 besten Modelle       [Globus] [Pin] [X]
+      [<]  Brand    / (Logo) ADAC                       [Stift] [Pin] [X]
+      [<]  URL      / (Favicon) Die 7 besten Modelle    [Globus] [Pin] [X]
+      [<]  Prompt   / (Zeichen) Welche Anbieter...              [Pin] [X]
+      [<]  Response / (Zeichen) ChatGPT, 12.09.                 [Pin] [X]
 
   Der Stift steht NUR bei data-type="brand", der Globus NUR bei data-type="url". Beide sitzen
   am selben Platz: es ist der eine typabhaengige Knopf, und zwei Plaetze fuer dieselbe Rolle
@@ -65,10 +67,18 @@
   data-isdark     = "yes" / "no"                 nur Rueckfall; das Theme kommt aus core
   data-cdn-pin    = der Commit-Hash der Auslieferung
 
-  data-type       = "brand" | "prompt" | "domain" | "url"
-                    Bestimmt die Beschriftung links UND ob der Stift da ist (nur brand).
+  data-type       = "brand" | "prompt" | "domain" | "url" | "response"
+                    Bestimmt die Beschriftung links, was davor steht und welcher Knopf rechts
+                    dazukommt (Stift nur bei brand, Globus nur bei url).
                     Ein unbekannter Wert wird gezeigt, wie er kommt -- die Leiste verschluckt
                     ihn nicht.
+                    VOR DEM NAMEN steht je Typ etwas anderes:
+                        brand, domain, url    das Bild aus data-logo (Logo oder Favicon), sonst
+                                              der erste Buchstabe des Namens
+                        prompt, response      das Zeichen des Typs (zap bzw. scan) -- dieselben,
+                                              die der Prompts-Seitenkopf fuer seine zwei
+                                              Abschnitte fuehrt. data-logo wird dort nicht
+                                              gelesen; ein Prompt hat kein Bild.
   data-name       = der Name rechts vom Trenner. Bei einer Marke ihr Name, bei einer URL ihr
                     TITEL, bei einer Domain die Domain, beim Prompt sein Text. Was hineingehoert,
                     entscheidet der Drawer.

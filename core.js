@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261019;
+  var BUILD = 20261020;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -430,6 +430,11 @@
     "Top URLs": "Top-URLs",
     "Top Brands": "Top-Brands",
     "Responses": "KI-Antworten",
+    /* Einzahl fuer die Leiste ueber einem Drawer ("KI-Antwort / <Titel>"). Dieselbe Wortwahl wie
+       die Mehrzahl darueber -- "Response" bliebe im Deutschen ein Fremdwort mitten in einer
+       Brotkrume, und die anderen Typen dort (Brand, Prompt, Domain, URL) heissen auf Deutsch
+       ohnehin gleich. */
+    "Response": "KI-Antwort",
     "Yes": "Ja",
     "No": "Nein",
 
