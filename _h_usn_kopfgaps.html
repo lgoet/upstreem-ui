@@ -50,6 +50,26 @@ Promise.all([hol("core.css"), hol("core.js"), hol("sidebar.css"), hol("sidebar.j
       function r(e){ return e.getBoundingClientRect(); }
       function z(x){ return Math.round(x*100)/100; }
 
+      /* ---- Der Rahmen des Quick-Actions-Knopfes (08.09. wieder bestellt) ----
+         Er wird HIER mitgeprueft und nicht in einem eigenen Prueftand: an der Hoehe dieses
+         Knopfes haengen die drei Abstaende, um die es in dieser Datei geht. Ein Rahmen, der die
+         Hoehe um 2px wachsen laesst, verschiebt genau die Zahlen darunter -- also stehen beide
+         Messungen zusammen. */
+      var trig=bar.querySelector(".mqa-trigger");
+      if (trig){
+        var ct=v.getComputedStyle(trig);
+        var rt=trig.getBoundingClientRect();
+        log("QUICK ACTIONS: DER RAHMEN");
+        log("   Rahmen " + ct.borderTopWidth + " " + ct.borderTopStyle + " " + ct.borderTopColor +
+            "   Radius " + ct.borderRadius + "   Hoehe " + rt.height + "px (" + ct.boxSizing + ")");
+        log("   " + ja(parseFloat(ct.borderTopWidth) === 1) + " der Knopf hat einen 1px-Rahmen");
+        log("   " + ja(ct.borderTopColor === v.getComputedStyle(bar).getPropertyValue("border-right-color") ||
+             ct.borderTopColor.indexOf("rgb") === 0) + " und zwar in einer echten Farbe (" +
+             ct.borderTopColor + ")");
+        log("   " + ja(Math.abs(rt.height - 36) < 0.6) +
+            " er bleibt 36px hoch -- die Abstaende darunter haengen daran");
+        log("");
+      }
       log("KASTEN GEGEN KASTEN (das, was in der Datei steht)");
       var k1=z(r(qa).top - r(top).bottom), k2=z(r(nav).top - r(qa).bottom);
       log("   Team -> Quick Actions " + k1 + "px   Quick Actions -> Navigation " + k2 + "px");

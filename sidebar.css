@@ -381,14 +381,24 @@
    auf dieser Flaeche KEINEN eigenen Hintergrund -- sein weisses --am-trigger-bg stach als
    Kachel heraus. Sichtbar bleibt der Rahmen; beim Hover geht Text und Icon auf die
    Primaerfarbe, wie bei den Menuepunkten. */
-/* OHNE RAHMEN, angefordert am 08.09. Er war das letzte Kastenelement in einer Leiste, die sonst
-   nur aus Flaechen besteht -- die Menuepunkte darueber haben keinen. Der Hoverzustand ist damit
-   derselbe wie bei ihnen: eine Flaeche, kein Rahmenwechsel. */
+/* MIT RAHMEN. Hier stand er einmal, war am 08.09. abbestellt ("er war das letzte
+   Kastenelement in einer Leiste, die sonst nur aus Flaechen besteht") und ist am 08.09. wieder
+   bestellt. Also steht er wieder da -- und zwar in --vc-border, dem Rahmen der Leiste, nicht in
+   --am-border aus der eigenen Palette von Quick Actions: auf DIESER Flaeche gelten die Tokens
+   der Leiste, sonst haette der Knopf eine Kante aus einem anderen Haus.
+   box-sizing ist border-box (core, .up-root *), die 36px bleiben also 36px -- die drei
+   Abstaende oben in der Leiste haengen an dieser Hoehe und duerfen sich nicht verschieben.
+   Geprueft in _h_usn_kopfgaps.html.
+   Der Hover behaelt seine Flaeche UND bekommt die kraeftigere Kante dazu, wie jeder andere
+   umrandete Trigger des Hauses (.udr-trigger, .utf-trigger): --vc-hover-border. */
 .usn-bar .mqa-trigger {
   height: 36px; border-radius: 12px; background: transparent;
-  border: 0; color: var(--vc-muted);
+  border: 1px solid var(--vc-border); color: var(--vc-muted);
 }
-.usn-bar .mqa-trigger:hover { background: var(--up-sel-bg); color: var(--vc-text); }
+.usn-bar .mqa-trigger:hover {
+  background: var(--up-sel-bg); color: var(--vc-text);
+  border-color: var(--vc-hover-border);
+}
 /* Waehrend des Aufklappens ist der Knopf einen Moment zu schmal fuer "Quick Actions" plus
    Tastenkuerzel -- der Text brach dann sichtbar in eine zweite Zeile um und der Knopf wuchs mit.
    Nichts umbrechen, ueberzaehliges abschneiden: die Breite steht nach 200ms ohnehin. */
