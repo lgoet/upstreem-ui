@@ -254,18 +254,24 @@
            selbst auf diese Fassung um (composerUmbauen). Wer sein Element in Bubble nicht
            anfasst, bekommt die neue Leiste trotzdem -- dieses Markup hier ist die Aufraeumarbeit
            fuer NEUINSTALLATIONEN, keine Voraussetzung. -->
-      <div class="am-composer is-v2" id="am-composer" data-am-composer="v3">
+      <div class="am-composer is-v2" id="am-composer" data-am-composer="v4">
         <!-- Der Picker: oberhalb des Feldes, auf seiner ganzen Breite. Er haengt AN .am-composer
              (position: relative) und nicht am Koerper: im Top Layer waere die volle Breite des
              Feldes nicht mehr herstellbar. -->
         <div class="am-pick-panel" id="am-pick-panel" aria-hidden="true">
           <div class="am-pick-search">
             <svg class="am-pick-sic" viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
-            <input class="am-pick-input" id="am-pick-input" type="text" autocomplete="off" spellcheck="false" aria-label="Search your workspace">
+            <span class="am-pick-chips" id="am-pick-chips"></span>
+            <span class="am-pick-inwrap">
+              <input class="am-pick-input" id="am-pick-input" type="text" autocomplete="off" spellcheck="false" aria-label="Search your workspace">
+            </span>
             <span class="am-pick-count" id="am-pick-count"></span>
           </div>
           <p class="am-pick-h" id="am-pick-h"></p>
-          <div class="am-pick-scopes" id="am-pick-scopes"></div>
+          <!-- An der Stelle des frueheren Umschalters: die Befehle, die JETZT gelten, als
+               Chips. Zuerst die vier Typen, nach der Wahl eines Typs die Dimensionen, die es
+               fuer ihn gibt. Getippt werden sie ueber "/" wie in Quick Actions. -->
+          <div class="am-pick-cmds" id="am-pick-cmds"></div>
           <div class="am-pick-scroll" id="am-pick-scroll">
             <div class="am-pick-list" id="am-pick-list" role="listbox" aria-live="polite"></div>
           </div>

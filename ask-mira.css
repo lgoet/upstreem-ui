@@ -1728,33 +1728,98 @@
   .am-pick-input::placeholder { color: var(--vc-third); }
   .am-pick-count { flex: 0 0 auto; font-size: 11.5px; font-weight: 500; color: var(--vc-third); font-variant-numeric: tabular-nums; }
 
-  /* Die vier Typen als Pillen. .up-seg aus core traegt den gleitenden Streifen und laut core.css
-     bereits mit 'transform 200ms ease, width 200ms ease' -- also genau die geforderte Bewegung,
-     ohne eine eigene Zeile dafuer. */
-  /* Die Ueberschrift ueber dem Umschalter: sie sagt, was die vier Knoepfe darunter sind.
-     KEIN Versal mehr (08.09.) -- es ist eine Frage an den Nutzer und keine Rubrik, und in
-     Grossbuchstaben liest sich eine Frage wie eine Beschriftung.
+  /* Die Ueberschrift ueber den Befehlschips: sie sagt, was die Chips darunter sind.
+     KEIN Versal -- es ist eine Frage an den Nutzer und keine Rubrik, und in Grossbuchstaben
+     liest sich eine Frage wie eine Beschriftung.
      Der Abstand zum Suchfeld ist verdoppelt: 2px waren gemessen der ganze Zwischenraum
      zwischen den beiden Kaesten, jetzt 4. */
   .am-pick-h {
     margin: 4px 14px 6px; font-size: 12px; font-weight: 600; letter-spacing: 0;
     color: var(--vc-muted);   /* siehe .am-eff-lbl: third misst im Dunkeln nur 3.97 */
   }
-  .am-pick-scopes { margin: 0 14px 10px; }
-  /* WEDER RAHMEN NOCH EIGENE SCHIENE -- nur die Breite. Der erste Anlauf gab dem Umschalter
-     einen Rahmen und einen kraeftigeren Grund, weil er "zu wenig Kontrast" hatte. Die Ursache
-     war eine andere, und sie stand in core: segLesen steigt bei
-         var aktiv = box.querySelector("button.is-active"); if (!aktiv) return null;
-     aus. Ohne aktiven Knopf misst core den Kasten NIE -- der gleitende Streifen bleibt auf
-     Deckkraft 0 (gemessen: is-gleitend fehlte, --up-seg-w war leer), und ein Umschalter ohne
-     Streifen ist ein leerer grauer Balken. Genau so sah er aus.
-     Seit die Auswahl immer gesetzt ist (Brand ist die Vorgabe, und man kann sie nicht
-     abwaehlen), ist der Streifen immer da: #28282c auf #34343a im Dunkeln, eine Sprosse UEBER
-     der Schiene -- dieselbe Mechanik, mit der die Umschalter in den Topics-, Markets- und
-     Models-Dropdowns ihren Kontrast tragen. Die Schiene bleibt damit die des Hauses
-     (--vc-switch-soft ueber is-lg) und braucht hier keine eigene Farbe. */
-  #ask-mira .am-pick-panel .up-seg { width: 100%; box-sizing: border-box; }
-  .am-pick-panel .up-seg-btn { flex: 1 1 0; min-width: 0; }
+  /* ---- DIE BEFEHLE ALS CHIPS, an der Stelle des Umschalters ----------------------------
+     Der Umschalter ist weg (08.09.). Er konnte nur den TYP -- und damit lagen Markt,
+     Zitationstyp, "Mentioning" und die Rangfolge ausser Reichweite. Als Chips ist der Typ nur
+     der erste von zehn Befehlen, und getippt werden sie ueber "/" wie in der Palette.
+     Die Form ist die der Bezugs-Pille (.am-pick-tag): 28px hoch, Radius 9, dieselbe Fuellung.
+     Eine zweite Chipform in derselben Komponente saehe man sofort. */
+  /* .am-pick-scopes trug den Umschalter, der hier stand. Er ist fort, die Klasse BLEIBT:
+     ein in Bubble eingebautes Element bekommt die Vorlage nicht nach, es kann den alten Knoten
+     also noch tragen. composerUmbauen raeumt ihn aus dem Baum -- laeuft der Umbau aber nicht
+     (altes core.js im Cache, JS-Fehler davor), stuende sonst ein toter Umschalter im Panel.
+     Ausserdem zaehlt eine geloeschte Klasse im Vertragsvergleich als Bruch. */
+  .am-pick-scopes { display: none; }
+
+  .am-pick-cmds { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 14px 10px; }
+  .am-pick-cmds.is-leer, .am-pick-h.is-leer { display: none; }
+  .am-pick-cmd {
+    display: inline-flex; align-items: center; gap: 5px; flex: 0 0 auto; height: 28px;
+    padding: 0 10px 0 8px; box-sizing: border-box;
+    border: 1px solid var(--vc-border); border-radius: 9px; background: var(--up-sel-bg);
+    color: var(--am-text); font-family: inherit; font-size: 12.5px; font-weight: 500;
+    cursor: pointer; transition: background 200ms ease, border-color 200ms ease, color 200ms ease;
+  }
+  /* --up-sel-bg und NICHT --am-soft-2. Gemessen war --am-soft-2 im Dunkeln #232326 -- exakt die
+     Farbe des Panels darunter, der Chip stand also mit NULL Stufen Unterschied da und lebte nur
+     von seinem Rand. Genau der Mangel, der am Umschalter zweimal gemeldet wurde.
+     --up-sel-bg ist eine Stufe der Leiter weiter und dreht mit dem Thema die Richtung um:
+     hell #f4f2f4 auf Weiss (11 Stufen), dunkel #28282c auf #232326 (5). Dieselbe Farbe, die
+     der aktive Knopf der Umschalter in core traegt -- das Aussehen ist damit nicht neu erfunden,
+     sondern das bekannte. */
+  .am-pick-cmd:hover { background: var(--vc-sk); border-color: var(--vc-hover-border); }
+  /* Im Dunkeln ist --vc-sk dieselbe Farbe wie --up-sel-bg, der Hover waere also unsichtbar.
+     Eine Stufe hoeher liegt der Randton, und den nimmt hier die Flaeche. */
+  #ask-mira[data-theme="dark"] .am-pick-cmd:hover { background: var(--vc-border); }
+  /* Der Schraegstrich sagt, dass man den Befehl auch TIPPEN kann -- der Chip ist die Abkuerzung,
+     nicht der einzige Weg. */
+  .am-pick-cmd-slash { color: var(--vc-third); font-weight: 600; }
+  .am-pick-cmd-lbl { white-space: nowrap; }
+
+  /* ---- DIE GESETZTEN FILTER, als Chips IM Suchfeld -------------------------------------- */
+  .am-pick-chips { display: inline-flex; align-items: center; gap: 5px; flex: 0 0 auto; max-width: 60%;
+    overflow: hidden; }
+  .am-pick-chips:empty { display: none; }
+  .am-pick-inwrap { flex: 1 1 auto; min-width: 40px; display: flex; }
+  .am-pick-chip {
+    display: inline-flex; align-items: center; gap: 5px; flex: 0 0 auto; height: 24px;
+    padding: 0 3px 0 8px; box-sizing: border-box;
+    border-radius: 8px; background: var(--up-sel-bg);
+    font-size: 12px; color: var(--am-text); max-width: 100%;
+  }
+  .am-pick-chip-dot { width: 7px; height: 7px; border-radius: 999px; flex: 0 0 auto; }
+  /* Die Angabe, WELCHE Dimension gemeint ist, steht leiser als ihr Wert -- "Market" erklaert,
+     "DE" ist die Aussage. */
+  .am-pick-chip-pre { color: var(--vc-muted); }
+  .am-pick-chip-v { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .am-pick-chip-x {
+    width: 18px; height: 18px; flex: 0 0 auto; border: 0; border-radius: 6px; padding: 0;
+    background: transparent; color: var(--am-muted); cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: background 200ms ease, color 200ms ease;
+  }
+  .am-pick-chip-x svg { width: 11px; height: 11px; fill: none; stroke: currentColor;
+    stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .am-pick-chip-x:hover { color: var(--am-text); background: rgba(0,0,0,0.06); }
+  #ask-mira[data-theme="dark"] .am-pick-chip-x:hover { background: rgba(255,255,255,0.08); }
+
+  /* ---- DIE BEFEHLSLISTE im Ergebnisbereich ----------------------------------------------
+     Dieselbe Zeilenform wie ein Treffer (.am-pick-row), damit Klick und Pfeiltasten nicht
+     zwei Wege brauchen -- nur die Kachel links ist eine andere. */
+  .am-pick-cgroup { padding: 2px 0; }
+  .am-pick-cghead {
+    padding: 6px 10px 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.02em;
+    color: var(--vc-muted);
+  }
+  .am-pick-cav {
+    width: 22px; height: 22px; flex: 0 0 auto; border-radius: 6px; overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--am-soft); color: var(--vc-third);
+    font-size: 12.5px; font-weight: 600;
+  }
+  .am-pick-cav.is-flag { width: 22px; height: 16px; border-radius: 3px; }
+  .am-pick-cav img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .am-pick-cav.is-slash { background: transparent; }
+  .am-pick-chint { flex: 0 0 auto; font-size: 11.5px; color: var(--vc-third); }
 
   .am-pick-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
     padding: 0 6px 6px; scrollbar-gutter: stable; }

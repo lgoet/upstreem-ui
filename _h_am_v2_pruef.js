@@ -247,7 +247,7 @@
     (function(){ var b = document.querySelector("[data-gallery-back]"); if (b) b.click(); })();
     await warte(700);
 
-    kopf("2  DER SLIDER  (Medium/High/Ultra -> short/balanced/detailed, Werte unveraendert)");
+    kopf("2  DER SLIDER  (die Stufe SELBST ist der Wert: answer_detail = Mid | High | Ultra)");
     var btn = g("am-eff-btn"), tr = g("am-eff-track"), th = g("am-eff-thumb"), fl = g("am-eff-fill");
     var eff = g("am-eff");
     btn.click();
@@ -332,10 +332,16 @@
     pruef("Panel auf ganzer Breite des Feldes",
       Math.abs(breite(g("am-pick-panel")) - breite(comp)) <= 2, true,
       breite(g("am-pick-panel")) + " gegen " + breite(comp));
-    pruef("vier Typ-Knoepfe", [].map.call(document.querySelectorAll(".am-pick-scope"),
-      function(b){ return b.textContent; }).join(","), "Brands,Domains,URLs,Prompts");
-    pruef("Typ-Knoepfe sind .up-seg aus core", !!g("am-pick-scopes").querySelector(".up-seg"), true,
-      "der gleitende Streifen kommt damit von core, mit 200ms ease");
+    pruef("kein Umschalter mehr im Markup", document.querySelectorAll(".am-pick-scope").length, 0,
+      "an seine Stelle sind die Befehls-Chips getreten");
+    pruef("vier Erstbefehle als Chips", [].map.call(
+      document.querySelectorAll("#am-pick-cmds .am-pick-cmd"),
+      function(b){ return b.getAttribute("data-cmd"); }).join(","),
+      "brands,prompts,domains,urls");
+    pruef("die Chips tragen den Schraegstrich", [].every.call(
+      document.querySelectorAll("#am-pick-cmds .am-pick-cmd"), function(b){
+        return b.querySelector(".am-pick-cmd-slash"); }), true,
+      "sie sagen damit, dass sie dasselbe tun wie das Tippen von /");
     pruef("kein Reference-Abschnitt", !document.querySelector(".am-pick-panel .mqa-refgroup"), true);
     pruef("keine Actions", document.querySelectorAll(".am-pick-panel .mqa-action").length, 0);
     var inp = g("am-pick-input");
@@ -369,12 +375,21 @@
     pruef("Ergebnisliste rollt", getComputedStyle(g("am-pick-scroll")).overflowY, "auto");
 
     kopf("6  UEBERNEHMEN, ENTFERNEN, DAS FORMAT FUER DEN AGENTEN");
-    /* JE TYP EINE SUCHE. Seit die Anzeige nur den gewaehlten Typ durchlaesst, kann man drei
-       verschiedene Bezuege nicht mehr aus EINER Trefferliste greifen -- der Nutzer wechselt
-       jetzt den Umschalter dazwischen, und genau diesen Weg geht die Messung. */
+    /* JE TYP EINE SUCHE. Steht ein Bereich, laesst die Anzeige nur diesen Typ durch -- drei
+       verschiedene Bezuege kommen also nicht aus EINER Trefferliste. Der Weg dorthin ist jetzt
+       der Befehls-Chip, und genau den geht die Messung. */
+    var CMD_ZU = { brand: "brands", domain: "domains", url: "urls", prompt: "prompts" };
+    async function bereichSetzen(scope){
+      /* Erst den gesetzten Bereich abraeumen: der Filtersatz kennt nur EINEN, und ohne das
+         Kreuz bliebe der alte stehen und der neue Befehl faende keinen Chip mehr vor. */
+      var x = document.querySelector('#am-pick-chips .am-pick-chip[data-fach="scope"] .am-pick-chip-x');
+      if (x) x.click();
+      var c = document.querySelector('#am-pick-cmds .am-pick-cmd[data-cmd="' + CMD_ZU[scope] + '"]');
+      if (c) c.click();
+      await warte(60);
+    }
     async function holen(scope, items){
-      var b = document.querySelector('.am-pick-scope[data-scope="' + scope + '"]');
-      if (b && !b.classList.contains("is-active")) b.click();
+      await bereichSetzen(scope);
       inp.value = "such" + scope; inp.dispatchEvent(new Event("input", { bubbles: true }));
       await warte(UHR);
       window.MiraQuickActions.setResults({
@@ -473,10 +488,9 @@
       ["nacktes yes", '[{"type":"brand","id":"b","name":"X","aktiv":yes}]']
     ];
     /* AUF BRAND STELLEN. Die Anzeige laesst nur den gewaehlten Typ durch, und die Faelle unten
-       schicken teils URL- und teils Brand-Items -- ohne festen Umschalter haette der Emoji-Fall
+       schicken teils URL- und teils Brand-Items -- ohne festen Bereich haette der Emoji-Fall
        0 Zeilen gemeldet, obwohl der Payload sauber gelesen wurde. Genau so passiert. */
-    (function(){ var b = document.querySelector('.am-pick-scope[data-scope="brand"]');
-      if (b && !b.classList.contains("is-active")) b.click(); })();
+    await bereichSetzen("brand");
     for (var fi = 0; fi < faelle.length; fi++){
       if (!root.classList.contains("is-pick-open")) g("am-pick-btn").click();
       inp.value = "test" + fi; inp.dispatchEvent(new Event("input", { bubbles: true }));
@@ -494,6 +508,62 @@
       if (fi === 3) pruef("Emoji ueberlebt", document.querySelectorAll(".am-pick-row").length, 1);
       if (fi === 4) pruef("nacktes yes ueberlebt", document.querySelectorAll(".am-pick-row").length, 1);
     }
+    if (root.classList.contains("is-pick-open")) g("am-pick-btn").click();
+
+    kopf("7b  DIE BEFEHLE  (der Umschalter ist fort, die /-Logik von Quick Actions tut es)");
+    /* ZWEI GEMESSENE FEHLER, beide aus dem Leeren des Suchfeldes. Die Palette leert es beim
+       Anwenden eines Befehls -- dort kommt man an einen Befehl auch nur ueber "/", das Feld ist
+       also ohnehin verbraucht. Hier gibt es Chips, und ein Klick darauf traf eine echte Suche:
+       gemessen ging "nike" verloren und citation_type hinaus als "". Beides wird jetzt gehalten.
+       Gezaehlt wird die ZAHL der Anfragen, nicht der letzte Payload -- der Fehlschluss davor war,
+       denselben alten Payload zweimal zu lesen und den Stand fuer richtig zu halten. */
+    if (!root.classList.contains("is-pick-open")) g("am-pick-btn").click();
+    (function(){ var x = document.querySelector("#am-pick-chips .am-pick-chip-x");
+      while (x){ x.click(); x = document.querySelector("#am-pick-chips .am-pick-chip-x"); } })();
+    inp.value = "nike"; inp.dispatchEvent(new Event("input", { bubbles: true }));
+    await warte(UHR);
+    var vor7b = window.__gefeuert.length;
+    document.querySelector('#am-pick-cmds .am-pick-cmd[data-cmd="urls"]').click();
+    await warte(UHR);
+    pruef("7b ein Chip-Klick loest eine NEUE Anfrage aus",
+      window.__gefeuert.length - vor7b, 1);
+    pruef("die getippte Suche ueberlebt den Chip-Klick", inp.value, "nike");
+    pruef("und geht mit dem Bereich zusammen hinaus", (function(){
+      var p = window.__gefeuert[window.__gefeuert.length - 1];
+      return p.query + "/" + p.scope;
+    })(), "nike/url");
+    var vor7c = window.__gefeuert.length;
+    document.querySelector('#am-pick-cmds .am-pick-cmd[data-cmd="citation-type"]').click();
+    await warte(120);
+    pruef("ein Unterbefehl sucht NICHT, er geht nur tiefer",
+      window.__gefeuert.length - vor7c, 0);
+    pruef("das Feld traegt den Befehlspfad", inp.value, "/citation-type ");
+    pruef("die Unterliste steht", document.querySelectorAll(
+      "#am-pick-list .am-pick-row[data-cmd-val]").length, 7, "sieben Zitationstypen");
+    document.querySelector('#am-pick-list .am-pick-row[data-cmd-val="Editorial"]').click();
+    await warte(UHR);
+    pruef("der gewaehlte Wert geht wirklich hinaus", (function(){
+      var p = window.__gefeuert[window.__gefeuert.length - 1];
+      return p.citation_type + "/" + p.scope + "/" + p.query;
+    })(), "Editorial/url/nike",
+      "gemessen war hier citation_type leer -- das Feld war geleert, also wurde nie neu gesucht");
+    pruef("die beiseitegelegte Suche kommt zurueck", inp.value, "nike");
+    pruef("ein gesetzter Befehl verschwindet aus dem Angebot",
+      [].map.call(document.querySelectorAll("#am-pick-cmds .am-pick-cmd"), function(b){
+        return b.getAttribute("data-cmd"); }).indexOf("citation-type"), -1);
+    pruef("zwei Chips stehen im Feld", [].map.call(
+      document.querySelectorAll("#am-pick-chips .am-pick-chip"), function(c){
+        return c.getAttribute("data-fach"); }).join(","), "scope,type",
+      "das Fach heisst type, das Payload-Feld citation_type -- die Namen sind getrennt");
+    /* Die Ruecktaste im leeren Feld nimmt den letzten Chip -- ohne sie kommt die Tastatur an
+       einen gesetzten Filter nur ueber ein 19px kleines Kreuz. */
+    inp.value = ""; inp.dispatchEvent(new Event("input", { bubbles: true }));
+    inp.dispatchEvent(new KeyboardEvent("keydown", { key: "Backspace", bubbles: true }));
+    await warte(80);
+    pruef("die Ruecktaste nimmt den letzten Chip", document.querySelectorAll(
+      "#am-pick-chips .am-pick-chip").length, 1);
+    (function(){ var x = document.querySelector("#am-pick-chips .am-pick-chip-x");
+      while (x){ x.click(); x = document.querySelector("#am-pick-chips .am-pick-chip-x"); } })();
     if (root.classList.contains("is-pick-open")) g("am-pick-btn").click();
 
     kopf("8  DER VERTEILER  (deshalb braucht die Suche KEINEN Eingriff in Bubble)");
@@ -577,37 +647,25 @@
     /* 6 */
     g("am-pick-btn").click();
     pruef("6 Ueberschrift steht", g("am-pick-h").textContent, "What are you looking for?");
-    pruef("6 Umschalter 32px", Math.round(
-      g("am-pick-scopes").querySelector(".up-seg").getBoundingClientRect().height), 32);
-    pruef("Umschalter OHNE Rahmen", getComputedStyle(
-      g("am-pick-scopes").querySelector(".up-seg")).borderTopWidth, "0px",
-      "der Kontrast kommt vom Streifen, nicht von einem Kasten");
-    pruef("Brand ist vorgewaehlt", [].filter.call(
-      document.querySelectorAll(".am-pick-scope"), function(b){
-        return b.classList.contains("is-active"); }).map(function(b){ return b.textContent; }).join(","),
-      "Brands");
-    pruef("der gleitende Streifen laeuft", (function(){
-      var seg = g("am-pick-scopes").querySelector(".up-seg");
-      return seg.classList.contains("is-gleitend") + "/" +
-        getComputedStyle(seg, "::before").opacity;
-    })(), "true/1",
-      "ohne aktiven Knopf misst core den Kasten nie -- dann ist der Umschalter ein leerer Balken");
+    pruef("6 Befehls-Chip 28px", Math.round(
+      document.querySelector("#am-pick-cmds .am-pick-cmd").getBoundingClientRect().height), 28);
+    pruef("kein Rahmen um die Chip-Zeile", getComputedStyle(g("am-pick-cmds")).borderTopWidth,
+      "0px", "der Kontrast kommt vom Chip selbst, nicht von einem Kasten darum");
     pruef("Ueberschrift ohne Versal", getComputedStyle(g("am-pick-h")).textTransform, "none");
     pruef("Abstand zum Suchfeld verdoppelt", Math.round(
       g("am-pick-h").getBoundingClientRect().top -
       g("am-pick-input").closest(".am-pick-search").getBoundingClientRect().bottom), 4,
       "vorher 2");
-    /* DER KONTRAST KOMMT VOM STREIFEN, nicht von der Schiene -- genau wie bei den Umschaltern
-       in den Topics-, Markets- und Models-Dropdowns. Gemessen wird deshalb Streifen gegen
-       Schiene und nicht Schiene gegen Panel. */
-    pruef("der Streifen hebt sich von der Schiene ab", (function(){
-      var seg = g("am-pick-scopes").querySelector(".up-seg");
+    /* DER KONTRAST KOMMT VOM CHIP, nicht von einem Kasten -- dieselbe Rechnung wie vorher beim
+       Umschalter, nur ist der gemessene Koerper jetzt der Chip. Gemessen wird Chip gegen Panel,
+       auf der Flaechen-Skala (1.4.11), nicht auf der Text-Skala. */
+    pruef("der Befehls-Chip hebt sich vom Panel ab", (function(){
+      var c = document.querySelector("#am-pick-cmds .am-pick-cmd");
       var panel = farbe(getComputedStyle(g("am-pick-panel")).backgroundColor);
-      var schiene = ueber(farbe(getComputedStyle(seg).backgroundColor), panel);
-      var streifen = ueber(farbe(getComputedStyle(seg, "::before").backgroundColor), schiene);
-      return stufen(streifen, schiene);
+      var chip = ueber(farbe(getComputedStyle(c).backgroundColor), panel);
+      return stufen(chip, panel);
     })(), function(v){ return v >= 4; },
-      "plus der eigene Rand des Streifens, der ihn zusaetzlich zeichnet");
+      "die Flaeche des Chips traegt den Unterschied allein");
     /* 7 */
     pruef("7 Feld 16px Ecken", getComputedStyle(comp).borderRadius, "16px");
     /* 11 */
@@ -643,9 +701,9 @@
     pruef("12 mit Datenbank-Zeichen darueber",
       !!document.querySelector(".am-pick-note-ic svg"), true);
     /* 13 -- auf Deutsch geprueft, denn nur dort war es falsch */
-    pruef("13 der Umschalter sagt Brands (hier englisch, DE getrennt geprueft)",
-      [].map.call(document.querySelectorAll(".am-pick-scope"),
-        function(b){ return b.textContent; })[0], "Brands");
+    pruef("13 der Befehl sagt Brands (hier englisch, DE getrennt geprueft)",
+      (document.querySelector('#am-pick-cmds .am-pick-cmd[data-cmd="brands"] .am-pick-cmd-lbl')
+        || {}).textContent, "Brands");
     g("am-pick-btn").click();
     /* 8 und 9 -- an ECHTEN Pillen, mit Bild und ohne. Eine Pruefung, die nur nachsieht, ob
        eine Funktion existiert, kann nicht fehlschlagen und ist damit keine. */

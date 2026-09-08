@@ -97,7 +97,7 @@
      brach ab und baute die naechste Fassung des Menues nie. Gemessen am 08.09. -- der
      Prueftand auf dem Vorlagen-Markup starb an einem fehlenden #am-eff-body.
      Ein Stempel, der nicht der aktuelle ist, heisst deshalb: NEU BAUEN, nicht "fertig". */
-  var COMPOSER_FASSUNG = 'v3';
+  var COMPOSER_FASSUNG = 'v4';
   function composerUmbauen(root){
     var comp = root.querySelector('#am-composer');
     if (!comp) return;
@@ -156,12 +156,20 @@
       '<div class="am-pick-search">' +
         '<svg class="am-pick-sic" viewBox="0 0 24 24" aria-hidden="true">' +
           '<path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>' +
-        '<input class="am-pick-input" id="am-pick-input" type="text" autocomplete="off" ' +
-          'spellcheck="false" aria-label="Search your workspace">' +
+        /* Die gesetzten Filter stehen IM Feld, links vor der Eingabe -- wie in der Palette.
+           Ein Filter, der ueber dem Feld stuende, waere eine Angabe ueber die Suche; hier ist
+           er ein TEIL der Suche. */
+        '<span class="am-pick-chips" id="am-pick-chips"></span>' +
+        '<span class="am-pick-inwrap">' +
+          '<input class="am-pick-input" id="am-pick-input" type="text" autocomplete="off" ' +
+            'spellcheck="false" aria-label="Search your workspace">' +
+        '</span>' +
         '<span class="am-pick-count" id="am-pick-count"></span>' +
       '</div>' +
       '<p class="am-pick-h" id="am-pick-h"></p>' +
-      '<div class="am-pick-scopes" id="am-pick-scopes"></div>' +
+      /* An der Stelle des Umschalters: die Befehle, die JETZT gelten, als Chips. Zuerst die
+         vier Typen, nach der Wahl eines Typs die Dimensionen, die es fuer ihn gibt. */
+      '<div class="am-pick-cmds" id="am-pick-cmds"></div>' +
       '<div class="am-pick-scroll" id="am-pick-scroll">' +
         '<div class="am-pick-list" id="am-pick-list" role="listbox" aria-live="polite"></div>' +
       '</div>';
@@ -453,6 +461,9 @@
       pickEmptySub: 'Try another spelling, or pick a different type above.',
       pickBroken: 'The results could not be read',
       pickBrokenSub: 'Please try again in a moment.',
+      pickNoMatch: 'No match',
+      pickNoCmd: 'No such filter',
+      pickNoCmdSub: 'Pick a type first \u2013 the other filters depend on it.',
       pickTimeout: 'The search did not answer',
       pickTimeoutSub: 'Please try again.',
       pickOffline: 'Search is unavailable right now',
@@ -555,6 +566,9 @@
       pickEmptySub: 'Andere Schreibweise versuchen oder oben einen anderen Typ w\u00e4hlen.',
       pickBroken: 'Die Treffer konnten nicht gelesen werden',
       pickBrokenSub: 'Bitte gleich noch einmal versuchen.',
+      pickNoMatch: 'Kein Treffer',
+      pickNoCmd: 'Diesen Filter gibt es nicht',
+      pickNoCmdSub: 'W\u00e4hle zuerst einen Typ \u2013 die anderen Filter h\u00e4ngen daran.',
       pickTimeout: 'Die Suche hat nicht geantwortet',
       pickTimeoutSub: 'Bitte noch einmal versuchen.',
       pickOffline: 'Die Suche ist gerade nicht verf\u00fcgbar',
@@ -3536,56 +3550,118 @@
      Der Picker ist zum Aufgreifen da, nicht zum Nachschlagen. */
   var PICK_MAX = 3;         /* hoechstens drei Bezuege -- ausdruecklich verlangt */
   var PICK_TREFFER = 8;     /* hoechstens acht Treffer */
-  var PICK_SCOPES = ['brand', 'domain', 'url', 'prompt'];
-
   var elPickPanel  = root.querySelector('#am-pick-panel');
   var elPickBtn    = root.querySelector('#am-pick-btn');
   var elPickInput  = root.querySelector('#am-pick-input');
   var elPickList   = root.querySelector('#am-pick-list');
   var elPickScroll = root.querySelector('#am-pick-scroll');
-  var elPickScopes = root.querySelector('#am-pick-scopes');
+  var elPickCmds   = root.querySelector('#am-pick-cmds');
+  var elPickChips  = root.querySelector('#am-pick-chips');
   var elPickH      = root.querySelector('#am-pick-h');
   var elPickCount  = root.querySelector('#am-pick-count');
   var elPicks      = root.querySelector('#am-picks');
 
   var _picks = [];          /* die uebernommenen Bezuege */
   var _pickRows = [];       /* die Treffer der letzten Antwort */
-  /* BRAND IST DIE VORAUSWAHL, und die Auswahl kann NICHT leer werden. Zwei Gruende, und
-     beide sind mehr als Geschmack:
-     1. Ohne aktiven Knopf malt core den gleitenden Streifen nicht (segLesen steigt bei
-        "kein button.is-active" aus) -- der Umschalter stand dann als leerer grauer Balken da.
-        Genau das war die Kontrastmeldung.
-     2. Die Treffer werden nie GEMISCHT (08.09. ausdruecklich): ein Ergebnis, in dem Brands,
-        Domains, URLs und Prompts durcheinanderstehen, laesst den Nutzer suchen, wo die Liste
-        ihn fuehren soll. Ein Typ, eine Liste. */
-  var _pickScope = 'brand';
   var _pickSuche = null;
+  /* Die getippte Suche, waehrend das Feld einen Befehlspfad traegt. Ein Unterbefehl braucht das
+     Feld fuer sich ("/market d" filtert die Maerkte), die Suche des Nutzers darf davon aber nicht
+     verlorengehen -- sie kommt zurueck, sobald der Unterbefehl gewaehlt oder verworfen ist. */
+  var _pickFrage = '';
 
-  function pickTypLabel(t){
-    return { brand: 'Brand', domain: 'Domain', url: 'URL', prompt: 'Prompt' }[t] || t;
+  /* DER UMSCHALTER IST WEG (08.09.). An seiner Stelle stehen die Befehle als Chips, und
+     getippt wird sie ueber "/" -- dieselbe Mechanik wie in der Palette. Ein Umschalter mit
+     vier Knoepfen konnte nur den TYP, und damit lagen Markt, Zitationstyp, "Mentioning" und
+     die Rangfolge ausser Reichweite; als Chips ist der Typ nur der erste von zehn Befehlen.
+     Der Filtersatz selbst liegt in core (UC.makeEntityFilters) -- mitsamt dem Vokabular, das
+     dort ohnehin steht. Hier stehen nur die Chips. */
+  /* Die Marken fuer "/mentioning". Aus dem seitenweiten Store von core -- dieselbe Quelle, aus
+     der die Palette sie zieht. MIT root als owner: dieser Picker ist eine Instanz und kein
+     Singleton, das Abo darf also mit der Wurzel verschwinden. (Die Palette uebergibt dort
+     ausdruecklich null, weil sie EIN Objekt auf window ist -- siehe ihren Kommentar.) */
+  var _pickBrands = [];
+  (function(){
+    var k = window.UpstreemCore;
+    if (k && k.brandsInto) k.brandsInto(root, function(list){ _pickBrands = list || []; });
+  })();
+  var _filter = (window.UpstreemCore && window.UpstreemCore.makeEntityFilters)
+    ? window.UpstreemCore.makeEntityFilters({
+        isDark: function(){ return root.getAttribute('data-theme') === 'dark'; },
+        brands: function(){ return _pickBrands; }
+      })
+    : null;
+
+  var XSVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
+
+  /* ---- Die gesetzten Filter als Chips IM Suchfeld ---------------------------------------- */
+  function pickChipsZeichnen(){
+    if (!elPickChips) return;
+    var liste = _filter ? _filter.chips() : [];
+    elPickChips.innerHTML = liste.map(function(c){
+      return '<span class="am-pick-chip" data-fach="' + esc(c.fach) + '">' +
+        (c.dot ? '<span class="am-pick-chip-dot" style="background:' + esc(c.dot) + '"></span>' : '') +
+        (c.vor ? '<span class="am-pick-chip-pre">' + esc(UCt(c.vor)) + '</span>' : '') +
+        '<span class="am-pick-chip-v"' + (c.dot ? ' style="color:' + esc(c.dot) + '"' : '') + '>' +
+          esc(c.label) + '</span>' +
+        '<button class="am-pick-chip-x" type="button" data-rm="' + esc(c.fach) + '" ' +
+          'aria-label="Remove filter">' + XSVG + '</button>' +
+      '</span>';
+    }).join('');
+    /* Der Platzhalter macht Platz: stehen Chips im Feld, waere er eine zweite Aufforderung. */
+    if (elPickInput) elPickInput.placeholder = liste.length ? '' : L().pickPlaceholder;
   }
-  function pickScopesBauen(){
-    if (!elPickScopes) return;
-    /* .up-seg aus core: der gleitende Streifen faehrt von selbst, und core.css gibt ihm genau
-       'transform 200ms ease, width 200ms ease' -- also die geforderte Bewegung ohne eigene
-       Zeile dafuer. */
-    /* is-lg und nicht nur eine eigene Hoehe: core traegt unter dieser Klasse BEIDE Werte
-       zusammen -- 32px und den kraeftigeren Grund -- und begruendet es dort woertlich damit,
-       dass ein 32px hoher Umschalter mit dem Ton des kleinen "zu blass da stand". Genau das
-       war hier der Fall. */
-    elPickScopes.innerHTML = '<div class="up-seg is-lg" role="tablist">' +
-      PICK_SCOPES.map(function(s){
-        return '<button class="up-seg-btn am-pick-scope" type="button" role="tab" data-scope="' + s + '">' +
-          esc(UCt(pickTypLabel(s) + 's')) + '</button>';
-      }).join('') + '</div>';
-    pickScopeZeigen();
+
+  /* ---- Die Befehle, die JETZT gelten, als Chips ------------------------------------------ */
+  function pickCmdsZeichnen(){
+    if (!elPickCmds || !_filter) return;
+    var liste = _filter.befehle('');
+    elPickCmds.innerHTML = liste.map(function(c){
+      return '<button class="am-pick-cmd" type="button" data-cmd="' + esc(c.id) + '" ' +
+        (c.hinweis ? 'data-tip="' + esc(UCt(c.hinweis)) + '" ' : '') + '>' +
+        '<span class="am-pick-cmd-slash">/</span>' +
+        '<span class="am-pick-cmd-lbl">' + esc(UCt(c.label)) + '</span>' +
+      '</button>';
+    }).join('');
+    /* Ist nichts mehr anzubieten, faellt die Zeile weg statt leer zu stehen. */
+    elPickCmds.classList.toggle('is-leer', !liste.length);
+    if (elPickH) elPickH.classList.toggle('is-leer', !liste.length);
   }
-  function pickScopeZeigen(){
-    if (!elPickScopes) return;
-    var b = elPickScopes.querySelectorAll('.am-pick-scope');
-    for (var i = 0; i < b.length; i++)
-      b[i].classList.toggle('is-active', b[i].getAttribute('data-scope') === _pickScope);
+
+  /* Ein Befehl wurde gewaehlt -- vom Chip oder aus der Befehlsliste im Ergebnisbereich. */
+  function pickCmdAnwenden(id, wert){
+    if (!_filter) return;
+    var r = _filter.anwenden(id, wert);
+    if (r === 'tiefer'){
+      /* Ein Befehl mit Unterliste: einen Schritt tiefer, nicht anwenden. Das Feld schreibt
+         "/<id> " und die Liste zeigt die Unteroptionen. */
+      if (elPickInput){
+        var f = elPickInput.value;
+        if (f.charAt(0) !== '/') _pickFrage = f;   /* echte Suche, nicht ein Befehlspfad */
+        elPickInput.value = '/' + id + ' '; elPickInput.focus();
+      }
+      pickEingabe();
+      return;
+    }
+    if (!r) return;
+    /* DAS FELD NUR LEEREN, WENN DORT EIN BEFEHL STEHT. Die Palette leert es immer -- dort
+       kommt man an einen Befehl auch nur ueber "/", das Feld ist also ohnehin verbraucht.
+       Hier gibt es die Chips, und ein Klick darauf laesst die Eingabe unberuehrt: wer "nike"
+       getippt hat und dann /URLs anklickt, will nach "nike" in URLs suchen und nicht neu
+       tippen. Gemessen war genau das der Fehler -- der Chip stand, und citation_type ging
+       leer hinaus, weil nach dem Leeren gar nicht mehr gesucht wurde. */
+    var frage = elPickInput ? elPickInput.value : '';
+    if (frage.charAt(0) === '/'){
+      /* Im Feld steht ein Befehlspfad, der ist jetzt verbraucht. Die beiseitegelegte Suche
+         kommt zurueck -- gemessen ging sonst "nike" beim Klick auf /Citation type verloren. */
+      frage = _pickFrage; _pickFrage = '';
+      if (elPickInput) elPickInput.value = frage;
+    }
+    pickChipsZeichnen(); pickCmdsZeichnen();
+    var su = pickSucheAn();
+    if (su) su.jetzt(_filter.bereich(), frage);
+    if (elPickInput) elPickInput.focus();
   }
+
   /* Uebersetzen ueber core, aber nur wenn es da ist -- Mira laeuft ausdruecklich auch ohne. */
   function UCt(s){
     var k = window.UpstreemCore;
@@ -3647,7 +3723,8 @@
        hier geschnitten. Dieselbe Vorsicht wie bei der Achtergrenze: die Regel gilt zweimal,
        einmal in der Anfrage und einmal an der Anzeige. */
     _pickRows = (items || []).filter(function(it){
-      return !_pickScope || String(it && it.type) === _pickScope;
+      var b = _filter ? _filter.bereich() : '';
+      return !b || String(it && it.type) === b;
     });
     if (!elPickList) return;
     var UCg = window.UpstreemCore;
@@ -3676,12 +3753,84 @@
     pickZahl(_pickRows.length);
   }
 
+  /* ---- DIE EINGABE: "/" fuehrt in die Befehle, alles andere sucht ------------------------
+     Genau die Aufteilung der Palette. Ein "/" am Anfang heisst: der Ergebnisbereich gehoert
+     jetzt der Befehlsliste, und es wird NICHT gesucht -- sonst schickte jeder Tastendruck im
+     Befehlsmodus eine Anfrage nach Bubble. */
+  function pickEingabe(){
+    var roh = elPickInput ? elPickInput.value : '';
+    /* Tippt der Nutzer den Befehlspfad selbst weg, ist die beiseitegelegte Suche hinfaellig --
+       sonst kaeme sie beim naechsten Befehl als Ueberraschung zurueck. */
+    if (roh.charAt(0) !== '/') _pickFrage = '';
+    if (_filter && roh.charAt(0) === '/'){
+      var su0 = pickSucheAn(); if (su0) su0.abbrechen();
+      pickBefehleZeichnen(roh);
+      return;
+    }
+    var su = pickSucheAn();
+    if (su) su.tippen(roh, _filter ? _filter.bereich() : '');
+  }
+
+  /* Die Befehlsliste im Ergebnisbereich. Zwei Ebenen: ohne Luecke die Befehle, mit Luecke die
+     Unteroptionen des getippten Befehls ("/market de"). */
+  function pickBefehleZeichnen(roh){
+    if (!elPickList || !_filter) return;
+    var g = _filter.lesen(roh);
+    if (!g) return;
+    var UCg = window.UpstreemCore;
+    var zeile = function(label, hinweis, attrs, dot, bild, bildArt){
+      var vorn = dot
+        ? '<span class="am-pick-cav"><span class="am-pick-chip-dot" style="background:' + esc(dot) + '"></span></span>'
+        : (bild
+            ? '<span class="am-pick-cav' + (bildArt === 'flag' ? ' is-flag' : '') + '">' +
+              '<img src="' + esc(bild) + '" alt="" loading="lazy" referrerpolicy="no-referrer" ' +
+              'onerror="this.style.display=\'none\'"></span>'
+            : '<span class="am-pick-cav is-slash">/</span>');
+      return '<button class="am-pick-row am-pick-crow" type="button" role="option" ' + attrs + '>' +
+        vorn +
+        '<span class="am-pick-main"><span class="am-pick-primary">' + esc(label) + '</span></span>' +
+        (hinweis ? '<span class="am-pick-chint">' + esc(hinweis) + '</span>' : '') +
+      '</button>';
+    };
+    /* Untermenue: "/market d" -> die Maerkte, gefiltert auf "d". */
+    if (g.cmd && g.cmd.unter && g.luecke){
+      var opts = _filter.unterOptionen(g.cmd.unter, g.rest);
+      var h1 = '<div class="am-pick-cgroup">' +
+        '<div class="am-pick-cghead">' + esc(UCt(g.cmd.label)) + '</div>';
+      if (!opts.length) h1 += '<div class="am-pick-note"><div class="am-pick-note-t">' +
+        esc(L().pickNoMatch) + '</div></div>';
+      opts.forEach(function(o){
+        h1 += zeile(o.label, '', 'data-cmd="' + esc(g.cmd.id) + '" data-cmd-val="' + esc(o.wert) + '"',
+          o.dot, o.bild, o.bildArt);
+      });
+      elPickList.innerHTML = h1 + '</div>';
+      pickZahl(opts.length);
+      _pickRows = []; _pickAktiv = -1;
+      return;
+    }
+    /* Erste Ebene. */
+    var liste = _filter.befehle(g.kopf);
+    if (!liste.length){
+      elPickList.innerHTML = pickHinweis(L().pickNoCmd, L().pickNoCmdSub);
+      pickZahl(null); _pickRows = []; _pickAktiv = -1;
+      return;
+    }
+    elPickList.innerHTML = '<div class="am-pick-cgroup">' + liste.map(function(c){
+      return zeile(UCt(c.label), UCt(c.hinweis || ''), 'data-cmd="' + esc(c.id) + '"', '', '', '');
+    }).join('') + '</div>';
+    pickZahl(liste.length);
+    _pickRows = []; _pickAktiv = -1;
+  }
+
   function pickSucheAn(){
     if (_pickSuche) return _pickSuche;
     var UCg = window.UpstreemCore;
     if (!UCg || !UCg.makeEntitySearch) return null;
     _pickSuche = UCg.makeEntitySearch({
       prefix: 'am', limit: PICK_TREFFER,
+      /* Die sechs Filterfelder kommen aus dem Filtersatz -- so geht ein "/market de" wirklich
+         mit hinaus und nicht nur als Chip im Bild. */
+      filters: function(){ return _filter ? _filter.payload() : null; },
       onLoading: function(){ if (elPickList) elPickList.innerHTML = pickSkelett(); pickZahl(null); },
       onIdle: function(){
         if (elPickList) elPickList.innerHTML = pickHinweis(L().pickIdle, L().pickIdleSub, 'databaseSearch');
@@ -3734,36 +3883,68 @@
         elPickList.innerHTML = pickHinweis(L().pickIdle, L().pickIdleSub, 'databaseSearch');
       }
       setTimeout(function(){ try { elPickInput.focus(); } catch(e){} }, 60);
-    } else if (_pickSuche) _pickSuche.abbrechen();
+    } else { _pickFrage = ''; if (_pickSuche) _pickSuche.abbrechen(); }
   }
   if (elPickBtn) elPickBtn.addEventListener('click', function(e){ e.stopPropagation(); pickOeffnen(); });
   if (elPickInput){
-    elPickInput.addEventListener('input', function(){
-      var s = pickSucheAn(); if (s) s.tippen(elPickInput.value, _pickScope);
-    });
+    elPickInput.addEventListener('input', pickEingabe);
     elPickInput.addEventListener('keydown', function(e){
       if (e.key === 'Escape'){ e.stopPropagation(); pickOeffnen(false); if (elTextarea) elTextarea.focus(); }
       else if (e.key === 'ArrowDown'){ e.preventDefault(); pickAktivSetzen(_pickAktiv + 1); }
       else if (e.key === 'ArrowUp'){   e.preventDefault(); pickAktivSetzen(_pickAktiv - 1); }
-      else if (e.key === 'Enter' && _pickRows.length){
+      else if (e.key === 'Enter'){
+        /* Im Befehlsmodus liegt in der Liste ein BEFEHL und kein Treffer -- dann wendet Enter
+           ihn an. _pickRows ist dort leer, und ohne diesen Zweig tat Enter gar nichts. */
+        var z = elPickList ? elPickList.querySelectorAll('.am-pick-row') : [];
+        var i = _pickAktiv >= 0 ? _pickAktiv : 0;
+        if (!_pickRows.length && z[i] && z[i].hasAttribute('data-cmd')){
+          e.preventDefault();
+          pickCmdAnwenden(z[i].getAttribute('data-cmd'), z[i].getAttribute('data-cmd-val'));
+          return;
+        }
+        if (_pickRows.length){
+          e.preventDefault();
+          pickNehmen(_pickRows[i]);
+        }
+      } else if (e.key === 'Backspace' && !elPickInput.value && _filter && _filter.gesetzt()){
+        /* Die Ruecktaste im LEEREN Feld nimmt den letzten Chip. Ohne das kommt man an einen
+           gesetzten Filter nur ueber ein 19px kleines Kreuz -- die Tastatur hatte keinen Weg
+           zurueck. */
         e.preventDefault();
-        pickNehmen(_pickRows[_pickAktiv >= 0 ? _pickAktiv : 0]);
+        var chips = _filter.chips();
+        _filter.entfernen(chips[chips.length - 1].fach);
+        pickChipsZeichnen(); pickCmdsZeichnen();
+        var su = pickSucheAn(); if (su) su.tippen('', _filter.bereich());
       }
     });
   }
-  if (elPickScopes){
-    elPickScopes.addEventListener('click', function(e){
-      var b = e.target.closest && e.target.closest('.am-pick-scope');
+  if (elPickCmds){
+    elPickCmds.addEventListener('click', function(e){
+      var b = e.target.closest && e.target.closest('.am-pick-cmd');
       if (!b) return;
-      var s = b.getAttribute('data-scope');
-      /* KEIN Abwaehlen. Ein zweiter Klick auf denselben Knopf tat vorher die Auswahl weg --
-         damit war der Umschalter leer, der Streifen verschwand und die Treffer mischten sich
-         wieder. Derselbe Knopf noch einmal heisst jetzt: nichts tut sich. */
-      if (_pickScope === s) return;
-      _pickScope = s;
-      pickScopeZeigen();
-      var su = pickSucheAn(); if (su) su.jetzt(_pickScope);
+      pickCmdAnwenden(b.getAttribute('data-cmd'), null);
     });
+  }
+  if (elPickChips){
+    elPickChips.addEventListener('click', function(e){
+      var x = e.target.closest && e.target.closest('[data-rm]');
+      if (!x || !_filter) return;
+      e.stopPropagation();
+      _filter.entfernen(x.getAttribute('data-rm'));
+      pickChipsZeichnen(); pickCmdsZeichnen();
+      var su = pickSucheAn();
+      if (su){ su.tippen(elPickInput ? elPickInput.value : '', _filter.bereich()); }
+      if (elPickInput) elPickInput.focus();
+    });
+  }
+  /* Die Befehlsliste im Ergebnisbereich -- dieselbe Zeilenform wie ein Treffer, damit die
+     Pfeiltasten und der Klick nicht zwei Wege brauchen. */
+  if (elPickList){
+    elPickList.addEventListener('click', function(e){
+      var c = e.target.closest && e.target.closest('[data-cmd]');
+      if (!c) return;
+      pickCmdAnwenden(c.getAttribute('data-cmd'), c.getAttribute('data-cmd-val'));
+    }, true);
   }
   if (elPickList){
     elPickList.addEventListener('click', function(e){
@@ -4533,7 +4714,7 @@
     S.market = String(market||'').trim().toLowerCase() || S.market;
     window.__askMiraMarket = S.market;
     resolveLang();
-    if (typeof effLabelsBauen === 'function'){ effLabelsBauen(); pickTexteSetzen(); pickScopesBauen(); effZeichnen(); }
+    if (typeof effLabelsBauen === 'function'){ effLabelsBauen(); pickTexteSetzen(); pickCmdsZeichnen(); pickChipsZeichnen(); effZeichnen(); }
     if (typeof prevKnopfText === 'function') prevKnopfText();
     renderSuggested();
     phStart();          // restart loop in the new language
@@ -5807,7 +5988,7 @@
   /* Die Reihenfolge zaehlt: effLabelsBauen liest lang, und setModel ruft setDetail.
      prevKnopfText muss hier NOCHMAL: der Block oben laeuft, bevor resolveLang die Sprache
      gesetzt hat, und schrieb dort also die englische Fassung. */
-  effLabelsBauen(); pickTexteSetzen(); pickScopesBauen(); prevKnopfText();
+  effLabelsBauen(); pickTexteSetzen(); pickCmdsZeichnen(); pickChipsZeichnen(); prevKnopfText();
   setDetail(S.answerDetail || 'High', true);
   setModel(S.model || 'pro', true);
   renderPrevious();

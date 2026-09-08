@@ -5300,6 +5300,174 @@
   }
   var ES_TYP_LABEL = { brand: "Brand", domain: "Domain", url: "URL", prompt: "Prompt" };
 
+
+  /* ---- DIE "/"-BEFEHLE -------------------------------------------------------------------
+     Dieselbe Mechanik wie in der Palette: Fächer, die höchstens einen Wert halten. "/urls
+     /market de" liest sich als scope=url + market=de. Ein Fach wird nur angeboten, wenn das
+     Datenmodell es für den gewählten Typ überhaupt hat -- eine Marke hat keinen Zitationstyp.
+
+     DAS VOKABULAR KOMMT AUS CORE und wird nicht ein drittes Mal aufgeschrieben:
+     ALL_CITATION_TYPES, ALL_URL_TYPES, URL_TYPE, typLabel, typeColor liegen alle schon hier.
+     Die Palette spiegelt sie absichtlich in ihrer eigenen Datei (sie laeuft ohne core, siehe
+     ihren Kopf) -- dieser Kern nicht: er IST core.
+
+     Was hier NICHT ist: Markup. Der Aufrufer malt mit seinen eigenen Klassen, denn eine Regel
+     in core.css erreicht die Palette nie. Dieser Kern liefert Daten und Zustand. */
+  var EF_ALLE_BEREICHE = ["url", "domain", "brand", "prompt"];
+  var EF_BEFEHLE = [
+    /* Schritt 1 -- worueber reden wir? */
+    { id: "brands",  fach: "scope", wert: "brand",  label: "Brands",  hinweis: "Only brands" },
+    { id: "prompts", fach: "scope", wert: "prompt", label: "Prompts", hinweis: "Only prompts" },
+    { id: "domains", fach: "scope", wert: "domain", label: "Domains", hinweis: "Only domains" },
+    { id: "urls",    fach: "scope", wert: "url",    label: "URLs",    hinweis: "Only URLs" },
+    /* Schritt 2 -- die Dimensionen, nur dort, wo es sie gibt */
+    { id: "citation-type", fach: "type",    label: "Citation type", hinweis: "Filter by citation type",
+      unter: "types",    bereiche: ["url", "domain"] },
+    { id: "url-type",      fach: "urltype", label: "URL type",      hinweis: "Filter by URL type",
+      unter: "urltypes", bereiche: ["url"] },
+    { id: "market",        fach: "market",  label: "Market",        hinweis: "Filter by market",
+      unter: "markets",  bereiche: EF_ALLE_BEREICHE },
+    { id: "mentioning",    fach: "mentioning", label: "Mentioning", hinweis: "Mentions a brand",
+      unter: "brands",   bereiche: ["url", "domain", "prompt"] },
+    { id: "top",      fach: "rank", wert: "top",      label: "Top",      hinweis: "Best performing first",
+      bereiche: EF_ALLE_BEREICHE },
+    { id: "trending", fach: "rank", wert: "trending", label: "Trending", hinweis: "Biggest risers first",
+      bereiche: EF_ALLE_BEREICHE }
+  ];
+  var EF_NACH_ID = {}; EF_BEFEHLE.forEach(function(c){ EF_NACH_ID[c.id] = c; });
+  /* Was VOR dem Wert im Chip steht. Bereich und Rangfolge tragen ihren Namen selbst ("Brands",
+     "Top"), die Dimensionen brauchen die Angabe, WELCHE Dimension gemeint ist. */
+  var EF_FACH_LABEL = { scope: "", rank: "", type: "Citation", urltype: "URL",
+                        market: "Market", mentioning: "Mentioning" };
+  var EF_FAECHER = ["scope", "rank", "type", "urltype", "market", "mentioning"];
+
+  function makeEntityFilters(cfg){
+    cfg = cfg || {};
+    var F = { scope: null, rank: null, type: null, urltype: null, market: null, mentioning: null };
+    function dunkel(){ return typeof cfg.isDark === "function" ? !!cfg.isDark() : false; }
+    function marken(){ return typeof cfg.brands === "function" ? (cfg.brands() || []) : []; }
+    function maerkte(){
+      if (typeof cfg.markets === "function"){ var m = cfg.markets(); if (m && m.length) return m; }
+      var g = getMarkets();
+      return g.length ? g.map(function(x){ return String(x && x.value != null ? x.value : x); })
+                      : ["de", "us", "gb", "at", "ch", "fr", "es", "it", "nl"];
+    }
+    /* Die Unteroptionen eines Befehls. dot ist die Farbe des Typs -- sie kommt aus typeColor,
+       damit ein Zitationstyp hier genauso aussieht wie im Ring und in der Tabelle. */
+    function unterOptionen(art, rest){
+      var liste = [];
+      if (art === "types") liste = ALL_CITATION_TYPES.map(function(x){
+        return { label: typLabel(x, "citation"), wert: x, dot: typeColor(x, "citation", dunkel()) }; });
+      else if (art === "urltypes") liste = ALL_URL_TYPES.map(function(x){
+        return { label: typLabel(x, "url"), wert: x, dot: typeColor(x, "url", dunkel()) }; });
+      else if (art === "markets") liste = maerkte().map(function(m){
+        return { label: String(m).toUpperCase(), wert: m, bild: flagUrl(m), bildArt: "flag" }; });
+      else if (art === "brands") liste = marken().map(function(b){
+        var id = (b.id != null && b.id !== "") ? b.id
+               : (b.company_id != null ? b.company_id : b.name);
+        return { label: String(b.name || b.label || ""), wert: id,
+                 bild: b.logo || b.favicon || b.logo_url || b.favicon_url || "", bildArt: "brand" }; });
+      if (!rest) return liste;
+      var r = String(rest).toLowerCase();
+      return liste.filter(function(o){
+        return String(o.label).toLowerCase().indexOf(r) !== -1 ||
+               String(o.wert).toLowerCase().indexOf(r) !== -1;
+      });
+    }
+    /* Welche Befehle gelten JETZT. Erst der Typ, dann die Dimensionen -- und nur die, die es
+       fuer diesen Typ gibt. Ein belegtes Fach wird nicht zweimal angeboten. */
+    function befehle(kopf){
+      var l = EF_BEFEHLE.filter(function(c){
+        if (c.fach === "scope") return !F.scope;
+        if (!F.scope) return false;
+        if (c.bereiche && c.bereiche.indexOf(F.scope) === -1) return false;
+        if (c.fach && F[c.fach]) return false;
+        return true;
+      });
+      if (!kopf) return l;
+      var k = String(kopf).toLowerCase();
+      /* Nur auf WORTANFAENGE, damit "/u" auf "URLs" trifft und nicht auf "Edit yoUr brand". */
+      return l.filter(function(c){
+        return (c.id + " " + c.label).toLowerCase().split(/[\s\-]+/).some(function(w){
+          return w.indexOf(k) === 0;
+        });
+      });
+    }
+    /* Die Beschriftung eines gesetzten Fachs. */
+    function label(fach){
+      var v = F[fach];
+      if (!v) return "";
+      if (fach === "scope" || fach === "rank"){
+        var c = EF_BEFEHLE.filter(function(x){ return x.fach === fach && x.wert === v; })[0];
+        return c ? c.label : String(v);
+      }
+      if (fach === "market") return String(v).toUpperCase();
+      if (fach === "type") return typLabel(v, "citation");
+      if (fach === "urltype") return typLabel(v, "url");
+      if (fach === "mentioning"){
+        var b = marken().filter(function(x){
+          return String(x.id) === String(v) || String(x.company_id) === String(v) || x.name === v; })[0];
+        return b ? String(b.name) : String(v);
+      }
+      return String(v).replace(/_/g, " ");
+    }
+    /* Die gesetzten Faecher als DATEN -- der Aufrufer malt daraus seine Chips. */
+    function chips(){
+      var raus = [];
+      EF_FAECHER.forEach(function(fach){
+        if (!F[fach]) return;
+        raus.push({ fach: fach, vor: EF_FACH_LABEL[fach], label: label(fach),
+          dot: fach === "type" ? typeColor(F.type, "citation", dunkel())
+             : (fach === "urltype" ? typeColor(F.urltype, "url", dunkel()) : "") });
+      });
+      return raus;
+    }
+    /* Die Dimensionen haengen am Typ: faellt er weg oder wechselt er, fallen die mit, die
+       keinen Sinn mehr haben. Ohne das blieb "Citation: You" stehen, nachdem der Typ auf
+       Brand gewechselt war -- ein Filter, den es fuer Marken gar nicht gibt. */
+    function aufraeumen(){
+      if (!F.scope){ EF_FAECHER.forEach(function(f){ if (f !== "scope") F[f] = null; }); return; }
+      EF_BEFEHLE.forEach(function(c){
+        if (!c.fach || c.fach === "scope" || !F[c.fach]) return;
+        if (c.bereiche && c.bereiche.indexOf(F.scope) === -1) F[c.fach] = null;
+      });
+    }
+    return {
+      befehle: befehle,
+      unterOptionen: unterOptionen,
+      chips: chips,
+      /* "/urls", "/market de" -- oder nichts davon. Gibt null zurueck, wenn die Eingabe kein
+         Befehl ist; sonst { kopf, cmd, luecke, rest }. */
+      lesen: function(roh){
+        var m = /^\/(\S*)(\s+)?(.*)$/.exec(String(roh == null ? "" : roh));
+        if (!m) return null;
+        return { kopf: (m[1] || "").toLowerCase(), luecke: !!m[2],
+                 rest: (m[3] || "").toLowerCase(), cmd: EF_NACH_ID[(m[1] || "").toLowerCase()] || null };
+      },
+      befehlNach: function(id){ return EF_NACH_ID[id] || null; },
+      /* Setzt ein Fach. Ein Befehl MIT Unterliste und ohne Wert heisst: einen Schritt tiefer,
+         nicht anwenden -- der Aufrufer schreibt dann "/<id> " ins Feld. */
+      anwenden: function(id, wert){
+        var c = EF_NACH_ID[id];
+        if (!c) return false;
+        if (c.unter && (wert == null || wert === "")) return "tiefer";
+        F[c.fach] = wert || c.wert;
+        aufraeumen();
+        return true;
+      },
+      entfernen: function(fach){ F[fach] = null; aufraeumen(); },
+      leeren: function(){ EF_FAECHER.forEach(function(f){ F[f] = null; }); },
+      bereich: function(){ return F.scope || ""; },
+      rang: function(){ return F.rank || ""; },
+      gesetzt: function(){ return EF_FAECHER.some(function(f){ return !!F[f]; }); },
+      /* Die sechs Filterfelder fuer den Suchpayload. */
+      payload: function(){
+        return { scope: F.scope || "", rank: F.rank || "", citation_type: F.type || "",
+                 url_type: F.urltype || "", market: F.market || "", mentioning: F.mentioning || "" };
+      }
+    };
+  }
+
   /* ---- DIE MASCHINE ----------------------------------------------------------------------
      Eine je Komponente. Sie besitzt die Suchzeile, die Uhr, die requestId und den Weg nach
      Bubble -- und nichts von der Optik.
@@ -5321,6 +5489,11 @@
     var DEB  = cfg.debounceMs != null ? cfg.debounceMs : DEBOUNCE;
     var LIM  = cfg.limit != null ? cfg.limit : 8;
     var uhr = 0, wache = 0, letzte = null, frage = "", bereich = "";
+    function rangDa(){
+      if (typeof cfg.filters !== "function") return false;
+      var f = cfg.filters() || {};
+      return !!f.rank;
+    }
     /* DIE WARTE-UHR. Acht Sekunden. Antwortet Bubble nie -- der Workflow liegt auf dieser Seite
        gar nicht, eine Bedingung darin greift nicht, die RPC faellt aus --, dann laeuft das
        Skelett OHNE SIE FUER IMMER. Das ist der schlechteste Ausgang, den es hier gibt: der
@@ -5368,13 +5541,21 @@
       if (cfg.onLoading) cfg.onLoading();
       /* ALLE NEUN FELDER, auch die leeren. Der Bubble-Schritt liest sie; ein weggelassenes
          Feld kann dort an einer fehlenden Referenz scheitern, und das sieht nach einem Fehler
-         in der Suche aus. */
+         in der Suche aus.
+         Die sechs Filterfelder kommen aus cfg.filters, wenn der Aufrufer einen Filtersatz hat
+         (UC.makeEntityFilters). Ohne ihn bleiben sie leer -- dann ist bereich der einzige, und
+         der kommt wie bisher aus tippen/jetzt. */
+      var f = (typeof cfg.filters === "function") ? (cfg.filters() || {}) : {};
       var detail = {
         query: frage,
         query_folded: foldDiacritics(frage),
         query_de: germanExpand(frage),
-        scope: bereich || "",
-        rank: "", citation_type: "", url_type: "", market: "", mentioning: "",
+        scope: f.scope || bereich || "",
+        rank: f.rank || "",
+        citation_type: f.citation_type || "",
+        url_type: f.url_type || "",
+        market: f.market || "",
+        mentioning: f.mentioning || "",
         limit: LIM,
         requestId: id
       };
@@ -5405,14 +5586,20 @@
         if (neuerBereich !== undefined) bereich = neuerBereich || "";
         frage = String(rohtext == null ? "" : rohtext).trim();
         clearTimeout(uhr); clearTimeout(wache);
-        if (frage.length < MINC){ letzte = null; if (cfg.onIdle) cfg.onIdle(); return; }
+        /* Eine RANGFOLGE sucht auch ohne Suchbegriff: "die besten URLs" ist eine vollstaendige
+           Frage. Ohne diese Ausnahme blieb der Picker auf dem Ruhehinweis stehen, nachdem
+           jemand /top gewaehlt hatte -- und nichts sagte, dass da noch ein Wort fehlt. */
+        if (frage.length < MINC && !rangDa()){ letzte = null; if (cfg.onIdle) cfg.onIdle(); return; }
         uhr = setTimeout(los, DEB);
       },
-      /* Sofort suchen, ohne Uhr -- fuer den Klick auf einen Typ-Knopf. */
-      jetzt: function(neuerBereich){
+      /* Sofort suchen, ohne Uhr -- fuer den Klick auf einen Befehl oder einen Chip.
+         neueFrage darf mitkommen: ein Chip-Klick aendert den Filter, nicht die Eingabe, und
+         die soll dann mit dem neuen Filter erneut hinausgehen. */
+      jetzt: function(neuerBereich, neueFrage){
         if (neuerBereich !== undefined) bereich = neuerBereich || "";
-        clearTimeout(uhr);
-        if (frage.length < MINC){ letzte = null; if (cfg.onIdle) cfg.onIdle(); return; }
+        if (neueFrage !== undefined) frage = String(neueFrage == null ? "" : neueFrage).trim();
+        clearTimeout(uhr); clearTimeout(wache);
+        if (frage.length < MINC && !rangDa()){ letzte = null; if (cfg.onIdle) cfg.onIdle(); return; }
         los();
       },
       bereich: function(){ return bereich; },
@@ -15310,6 +15497,7 @@
     foldDiacritics: foldDiacritics,
     germanExpand: germanExpand,
     makeEntitySearch: makeEntitySearch,
+    makeEntityFilters: makeEntityFilters,
     entitySearchDeliver: esVerteilen,
     searchAttach: searchAttach,
     makeFlickerPill: makeFlickerPill,
