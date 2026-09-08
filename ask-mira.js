@@ -444,9 +444,11 @@
          ein Zustandswechsel schreibt, erreicht der breite Sprachlauf von core nicht. */
       pickHeading: 'What are you looking for?',
       pickIdle: 'Search your workspace',
-      /* pickIdleSub wird nicht mehr gemalt -- der eine Satz plus das Zeichen reichen. Der
-         Eintrag BLEIBT: ein geloeschter Schluessel zaehlt im Vertragsvergleich als Bruch. */
-      pickIdleSub: 'Type at least two letters to find a brand, domain, URL or prompt.',
+      /* Nicht mehr "tippe zwei Buchstaben" -- das sieht der Nutzer am Feld. Der Satz sagt
+         jetzt, WOFUER der Picker da ist: dass ein aufgegriffener Treffer als Bezug in die
+         Frage wandert. Das ist die eine Sache, die man an dieser Stelle nicht erraten kann. */
+      pickIdleSub: 'Pick a brand, domain, URL or prompt to attach it to your question \u2013 ' +
+        'Mira then answers about exactly that.',
       pickEmpty: 'No results found',
       pickEmptySub: 'Try another spelling, or pick a different type above.',
       pickBroken: 'The results could not be read',
@@ -547,7 +549,8 @@
       allChats: 'Alle Chats', allChatsShort: 'Chats',
       pickHeading: 'Was suchst du?',
       pickIdle: 'In deinen Daten suchen',
-      pickIdleSub: 'Mindestens zwei Buchstaben \u2014 dann findest du Brand, Domain, URL oder Prompt.',
+      pickIdleSub: 'W\u00e4hle Brand, Domain, URL oder Prompt aus, um es an deine Frage zu ' +
+        'h\u00e4ngen \u2013 Mira antwortet dann genau dazu.',
       pickEmpty: 'Keine Treffer',
       pickEmptySub: 'Andere Schreibweise versuchen oder oben einen anderen Typ w\u00e4hlen.',
       pickBroken: 'Die Treffer konnten nicht gelesen werden',
@@ -3525,7 +3528,15 @@
 
   var _picks = [];          /* die uebernommenen Bezuege */
   var _pickRows = [];       /* die Treffer der letzten Antwort */
-  var _pickScope = '';
+  /* BRAND IST DIE VORAUSWAHL, und die Auswahl kann NICHT leer werden. Zwei Gruende, und
+     beide sind mehr als Geschmack:
+     1. Ohne aktiven Knopf malt core den gleitenden Streifen nicht (segLesen steigt bei
+        "kein button.is-active" aus) -- der Umschalter stand dann als leerer grauer Balken da.
+        Genau das war die Kontrastmeldung.
+     2. Die Treffer werden nie GEMISCHT (08.09. ausdruecklich): ein Ergebnis, in dem Brands,
+        Domains, URLs und Prompts durcheinanderstehen, laesst den Nutzer suchen, wo die Liste
+        ihn fuehren soll. Ein Typ, eine Liste. */
+  var _pickScope = 'brand';
   var _pickSuche = null;
 
   function pickTypLabel(t){
@@ -3574,9 +3585,12 @@
     var UCg = window.UpstreemCore;
     var bild = (zeichen && UCg && UCg.icon)
       ? '<span class="am-pick-note-ic">' + UCg.icon(zeichen, 1.6) + '</span>' : '';
+    /* Der Untersatz in EIGENER Huelle. Vorher lief er als nackter Text neben dem Titel und
+       konnte deshalb keine eigene Farbe und keine eigene Breite haben -- jetzt traegt der
+       Titel die Sekundaerfarbe und der Satz darunter die Drittfarbe. */
     return '<div class="am-pick-note">' + bild +
            '<div class="am-pick-note-t">' + esc(titel) + '</div>' +
-           (unter ? esc(unter) : '') + '</div>';
+           (unter ? '<div class="am-pick-note-sub">' + esc(unter) + '</div>' : '') + '</div>';
   }
   var _pickZahlUhr = 0;
   function pickZahl(n){
@@ -3606,7 +3620,13 @@
   }
 
   function pickZeichnen(items, meta){
-    _pickRows = items || [];
+    /* EIN TYP, EINE LISTE. Der Bereich geht als scope mit hinaus, aber was der Bubble-RPC
+       daraus macht, ist von hier aus nicht pruefbar -- liefert er trotzdem Gemischtes, wird es
+       hier geschnitten. Dieselbe Vorsicht wie bei der Achtergrenze: die Regel gilt zweimal,
+       einmal in der Anfrage und einmal an der Anzeige. */
+    _pickRows = (items || []).filter(function(it){
+      return !_pickScope || String(it && it.type) === _pickScope;
+    });
     if (!elPickList) return;
     var UCg = window.UpstreemCore;
     var q = _pickSuche ? _pickSuche.frage() : '';
@@ -3642,7 +3662,7 @@
       prefix: 'am', limit: PICK_TREFFER,
       onLoading: function(){ if (elPickList) elPickList.innerHTML = pickSkelett(); pickZahl(null); },
       onIdle: function(){
-        if (elPickList) elPickList.innerHTML = pickHinweis(L().pickIdle, '', 'databaseSearch');
+        if (elPickList) elPickList.innerHTML = pickHinweis(L().pickIdle, L().pickIdleSub, 'databaseSearch');
         pickZahl(null);
       },
       onResults: pickZeichnen,
@@ -3689,7 +3709,7 @@
       if (!su){
         if (elPickList) elPickList.innerHTML = pickHinweis(L().pickOffline, L().pickOfflineSub);
       } else if (elPickList && !elPickList.innerHTML){
-        elPickList.innerHTML = pickHinweis(L().pickIdle, '', 'databaseSearch');
+        elPickList.innerHTML = pickHinweis(L().pickIdle, L().pickIdleSub, 'databaseSearch');
       }
       setTimeout(function(){ try { elPickInput.focus(); } catch(e){} }, 60);
     } else if (_pickSuche) _pickSuche.abbrechen();
@@ -3714,7 +3734,11 @@
       var b = e.target.closest && e.target.closest('.am-pick-scope');
       if (!b) return;
       var s = b.getAttribute('data-scope');
-      _pickScope = (_pickScope === s) ? '' : s;      /* nochmal derselbe Knopf hebt ihn auf */
+      /* KEIN Abwaehlen. Ein zweiter Klick auf denselben Knopf tat vorher die Auswahl weg --
+         damit war der Umschalter leer, der Streifen verschwand und die Treffer mischten sich
+         wieder. Derselbe Knopf noch einmal heisst jetzt: nichts tut sich. */
+      if (_pickScope === s) return;
+      _pickScope = s;
       pickScopeZeigen();
       var su = pickSucheAn(); if (su) su.jetzt(_pickScope);
     });

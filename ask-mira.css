@@ -968,24 +968,28 @@
      leiseste Sprosse, die die Leiter je Thema UEBER dem Seitengrund hat -- und er muss eine
      Sprosse unter dem Hover liegen, sonst waere der Hover weg: der lag bisher auf
      --vt-row-hover-solid, also genau auf dem Ton, der jetzt der RUHEZUSTAND ist.
-     GEMESSEN in rohen Kanalstufen, auf dem Grund, den die Seite hinter Mira wirklich malt
-     (Mira selbst malt keinen -- der erste Anlauf hat gegen den Grund der Pruefseite gemessen
-     und 3 statt 7 gemeldet):
-         hell    Seite #ffffff -> Karte #f9f8f9  ( 7) -> Hover #f4f2f4  (6 weitere)
-         dunkel  Seite #121212 -> Karte #1c1c1f (13) -> Hover #232326 (7 weitere)
-     Zwei Regeln mit je einer dunklen Ausnahme, und das ist kein Versehen: die zwei Leitern
-     haben ueber ihrem Seitengrund NICHT gleich viele Sprossen. Hell liegt zwischen #ffffff und
-     #f9f8f9 nichts, dunkel liegt zwischen #101114 und #232326 noch #1c1c1f. Ein einzelnes
-     Token kann also nicht in beiden Themen die leiseste Stufe sein. */
+     ZWEITE FASSUNG (08.09.): hell eine Sprosse KRAEFTIGER, dunkel nur HALBE Deckkraft.
+     Die zwei Themen laufen hier auseinander, und das ist so gewollt -- auf Weiss war die erste
+     Fassung zu leise, im Dunkeln zu praesent.
+         hell    Seite #ffffff -> Karte --up-sel-bg   -> Hover --vc-sk
+         dunkel  Seite #121212 -> Karte --vc-bg zu 50% -> Hover --vc-bg voll
+     Die halbe Deckkraft und nicht ein eigener Hexwert: so bleibt es EIN Ton der Leiter, nur
+     halb aufgetragen -- und der Hover ist dann genau derselbe Ton voll. Ein Verhaeltnis, das
+     man erklaeren kann, statt zweier Zahlen, die zufaellig zueinander passen.
+     Hinter den Karten liegt kein Bild mehr, nur das feine 44px-Raster der Schale mit
+     Deckkraft 0.5 -- das schimmert durch die halbdurchsichtige Karte, und genau so ist es
+     gemeint. Die Zahlen stehen gemessen im Kommentar am Hover. */
   .am-cat-card {
     position: relative; overflow: hidden;
     text-align: left; border: 0; border-radius: 13px;
-    background: var(--am-soft); padding: 13px 14px 13px 60px; cursor: pointer;
+    background: var(--up-sel-bg); padding: 13px 14px 13px 60px; cursor: pointer;
     display: flex; align-items: center; gap: 11px; min-width: 0;
     color: var(--am-text); font-size: 13.5px; font-weight: 500; line-height: 1.4;
     transition: background 200ms ease;
   }
-  #ask-mira[data-theme="dark"] .am-cat-card { background: var(--vc-bg); }
+  #ask-mira[data-theme="dark"] .am-cat-card {
+    background: color-mix(in srgb, var(--vc-bg) 50%, transparent);
+  }
   .am-cat-card-full { width: 100%; margin-bottom: 10px; }
   /* the Reporting category card is styled exactly like a report card (taller, with a subheading) */
   .am-cat-card-report { padding: 12px 13px 12px 76px; align-items: center; }
@@ -1003,10 +1007,9 @@
      DURCHSICHTIG. Auf dem Startschirm liegt hinter den Karten das Hintergrundbild, und beim Hover
      schien dessen Raster durch -- die Karte verlor ihren Boden. -solid ist derselbe Ton als voller
      Wert und liegt vier Stufen daneben (36 statt 32 im Dunkeln), was niemand sieht. */
-  /* Der Hover bleibt, nur ohne Rahmen -- und eine Sprosse hoeher als vorher, weil die Karte
-     jetzt selbst auf dem Ton sitzt, der bisher der Hover war. */
-  .am-cat-card:hover { background: var(--up-sel-bg); }
-  #ask-mira[data-theme="dark"] .am-cat-card:hover { background: var(--vc-heading-bg); }
+  /* Der Hover: hell die naechste Sprosse, dunkel derselbe Ton VOLL statt halb. */
+  .am-cat-card:hover { background: var(--vc-sk); }
+  #ask-mira[data-theme="dark"] .am-cat-card:hover { background: var(--vc-bg); }
   /* leading = a left-tilted little "document" tile, larger than the row so it bleeds past the bottom
      and is clipped by the card (same logic as the report cards); absolute -> no extra card height */
   .am-cat-ic {
@@ -1117,23 +1120,27 @@
      Unterzeile und Winkelzeichen -- ein Knopf des Segmentschalters hat davon nichts. Geaendert
      wurde hier nur die Fuellung und der Hoverzustand, und die kommen jetzt aus den Haus-Marken;
      die Regel ist damit naeher am Haus als vorher, nicht weiter weg. */
+  /* DIESELBE FASSUNG WIE DIE KATEGORIEKARTEN (08.09.): kein Rahmen, hell eine Sprosse
+     kraeftiger als der Seitengrund, dunkel derselbe Ton zu halber Deckkraft. Sie waren beim
+     ersten Umbau uebersehen worden und standen als einzige Kartenfamilie noch mit Rahmen da --
+     gemeldet als "die Reporting Cards sind alle noch auf dem alten Design".
+     Die Begruendung der Toene steht bei .am-cat-card; hier stehen nur dieselben Werte, damit
+     zwei Kartenfamilien nicht mit zwei Rechnungen auseinanderlaufen. */
   .am-rep-card {
     position: relative; overflow: hidden;
     display: flex; align-items: center; gap: 13px; width: 100%; text-align: left;
-    border: 1px solid var(--am-border); border-radius: 12px;
-    /* --am-bg und nicht --am-card: dieselbe Fuellung wie die Kategoriekarten, also #ffffff hell und
-       #121212 dunkel. Im Dunkeln stand hier --am-card (#1b1b1b) und weiter unten ein Override auf
-       transparent -- das SAH aus wie #121212, war aber durchsichtig, und seit hinter dem
-       Startschirm das Hintergrundbild liegt, schien das Raster durch die Karte. */
-    background: var(--am-bg);
+    border: 0; border-radius: 12px;
+    background: var(--up-sel-bg);
     padding: 12px 13px 12px 76px; cursor: pointer; font-family: inherit;
-    transition: border-color 140ms ease, background 140ms ease;
+    transition: background 200ms ease;
   }
-  /* Der Hoverzustand des Hauses, DECKEND. --vt-row-hover ist rgba(42,42,42,0.6) und damit
-     durchsichtig; auf einer Karte ueber dem Hintergrundbild scheint das Bild durch, und die Karte
-     verliert beim Hover ihren Boden. --vt-row-hover-solid ist derselbe Ton als voller Wert
-     (#f4f2f4 hell, #242424 dunkel) und existiert in core genau fuer diesen Fall. */
-  .am-rep-card:hover { border-color: var(--vc-hover-border); background: var(--vt-row-hover-solid); }
+  #ask-mira[data-theme="dark"] .am-rep-card {
+    background: color-mix(in srgb, var(--vc-bg) 50%, transparent);
+  }
+  /* Der Hover: hell die naechste Sprosse, dunkel derselbe Ton VOLL statt halb -- wie bei den
+     Kategoriekarten. */
+  .am-rep-card:hover { background: var(--vc-sk); }
+  #ask-mira[data-theme="dark"] .am-rep-card:hover { background: var(--vc-bg); }
   /* leading element = a left-tilted little "document" card; larger than the row so it bleeds past the
      bottom edge and is clipped by the card (absolute so it never changes the card height) */
   .am-rep-ic {
@@ -1150,8 +1157,11 @@
   .am-rep-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
   .am-rep-label { font-size: 13.5px; font-weight: 600; color: var(--am-text); }
   .am-rep-desc { font-size: 11.5px; font-weight: 450; color: var(--am-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .am-rep-go { flex: 0 0 auto; display: grid; place-items: center; color: var(--am-muted-2); transition: transform 160ms ease, color 140ms ease; }
-  .am-rep-card:hover .am-rep-go { color: var(--am-muted); transform: translateX(2px); }
+  /* 4px und 200ms, wie an den Kategoriekarten -- zwei Kartenfamilien mit zwei verschiedenen
+     Wegen fuer dieselbe Bewegung sieht man sofort. */
+  .am-rep-go { flex: 0 0 auto; display: grid; place-items: center; color: var(--am-muted-2);
+    transition: transform 200ms ease, color 200ms ease; }
+  .am-rep-card:hover .am-rep-go { color: var(--am-muted); transform: translateX(4px); }
   .am-rep-go svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   /* edit affordance: appears on the right after ~1s of hover (is-editable added via JS), replacing the chevron */
   .am-rep-edit {
@@ -1377,7 +1387,8 @@
 
   /* ===== "Ask Mira" selection -> quoted gray chip in composer ===== */
   .am-quote-slot { grid-column: 1 / -1; display: none; min-width: 0; }
-  .am-composer.has-quote .am-quote-slot { display: block; margin-bottom: 2px; }
+  /* 12 wie beim Bezugsstreifen: die 10 des entfallenen Gitterabstands plus die 2 von vorher. */
+  .am-composer.has-quote .am-quote-slot { display: block; margin-bottom: 12px; }
 
   .am-inline-quote { display: inline; max-width: 100%; user-select: none; -webkit-user-select: none; }
   .am-inline-quote-body {
@@ -1441,7 +1452,14 @@
      ist nicht nur Optik -- es macht die Aktionszeile unabhaengig von der Hoehe des Textfeldes,
      das bis 200px waechst. */
   .am-composer { position: relative; }   /* Anker fuer die zwei Menues, die nach oben aufgehen */
-  #ask-mira .am-composer.is-v2 { grid-template-columns: 1fr; gap: 10px; align-items: stretch; }
+  /* KEIN ZEILENABSTAND IM GITTER, sondern Raender an den Elementen, die ihn brauchen.
+     Der Grund: eine leere Gitterzeile ist 0px hoch, aber der Abstand DAHINTER zaehlt trotzdem
+     -- gemessen 26px ueber dem Textfeld gegen 16px nach links, bei 16px Polster auf allen
+     Seiten. Ein negativer Rand am leeren Element hilft nicht: das Gitter klemmt die Spur auf 0
+     und laesst den Abstand stehen (nachgemessen, ebenfalls 26). Also traegt jedes Element
+     seinen eigenen Abstand, und wer nicht da ist, traegt keinen. */
+  #ask-mira .am-composer.is-v2 { grid-template-columns: 1fr; gap: 0; align-items: stretch; }
+  #ask-mira .am-composer.is-v2 .am-actions { margin-top: 10px; }
   .am-composer.is-v2 .am-input-wrap { grid-column: 1 / -1; }
   .am-composer.is-v2 .am-actions { grid-column: 1 / -1; justify-content: space-between; width: 100%; }
   /* Die RECHTE Gruppe gibt nicht nach -- Mikrofon und Senden sind zwei Ziele, die man treffen
@@ -1713,29 +1731,29 @@
   /* Die vier Typen als Pillen. .up-seg aus core traegt den gleitenden Streifen und laut core.css
      bereits mit 'transform 200ms ease, width 200ms ease' -- also genau die geforderte Bewegung,
      ohne eine eigene Zeile dafuer. */
-  /* Die Ueberschrift ueber dem Umschalter: sie sagt, was die vier Knoepfe darunter sind. */
+  /* Die Ueberschrift ueber dem Umschalter: sie sagt, was die vier Knoepfe darunter sind.
+     KEIN Versal mehr (08.09.) -- es ist eine Frage an den Nutzer und keine Rubrik, und in
+     Grossbuchstaben liest sich eine Frage wie eine Beschriftung.
+     Der Abstand zum Suchfeld ist verdoppelt: 2px waren gemessen der ganze Zwischenraum
+     zwischen den beiden Kaesten, jetzt 4. */
   .am-pick-h {
-    margin: 2px 14px 6px; font-size: 11.5px; font-weight: 600; letter-spacing: 0.02em;
-    text-transform: uppercase; color: var(--vc-muted);   /* siehe .am-eff-lbl: third misst 3.97 */
+    margin: 4px 14px 6px; font-size: 12px; font-weight: 600; letter-spacing: 0;
+    color: var(--vc-muted);   /* siehe .am-eff-lbl: third misst im Dunkeln nur 3.97 */
   }
   .am-pick-scopes { margin: 0 14px 10px; }
-  /* Die HOEHE kommt aus core: is-lg am Markup macht 32px, wie bei den drei Filter-Dropdowns.
-     DER GRUND MUSS HIER STEHEN, und das ist gerechnet. Auf einer Karte tragen die
-     Schalter-Token; auf einem MENUEGRUND (--up-menu-bg) tragen sie nicht:
-         --vc-switch-soft (der Vorgabewert)   2 Kanalstufen Abstand im Dunkeln -- unsichtbar
-         --vc-switch-bg                       0 Stufen -- im Dunkeln genau der Panelgrund
-         --up-sel-bg                          6 Stufen dunkel, 13 hell
-         dazu 1px --up-menu-border           30 Stufen dunkel, 36 hell
-     --up-sel-bg ist der Ton, den die App fuer eine gehobene Zeile IN einem Menue benutzt, und
-     der Rand ist derselbe, den jedes Feld auf einem Menuegrund traegt. Genau das war die
-     Meldung "zu wenig Kontrast zum Background".
-     Mit #ask-mira davor, weil .up-root .up-seg.is-lg in core drei Klassen tief ist und eine
-     Regel mit nur zwei sie nicht erreicht -- ueber Spezifitaet und nicht ueber die
-     Ladereihenfolge. */
-  #ask-mira .am-pick-panel .up-seg {
-    width: 100%; box-sizing: border-box;
-    background: var(--up-sel-bg); border: 1px solid var(--up-menu-border);
-  }
+  /* WEDER RAHMEN NOCH EIGENE SCHIENE -- nur die Breite. Der erste Anlauf gab dem Umschalter
+     einen Rahmen und einen kraeftigeren Grund, weil er "zu wenig Kontrast" hatte. Die Ursache
+     war eine andere, und sie stand in core: segLesen steigt bei
+         var aktiv = box.querySelector("button.is-active"); if (!aktiv) return null;
+     aus. Ohne aktiven Knopf misst core den Kasten NIE -- der gleitende Streifen bleibt auf
+     Deckkraft 0 (gemessen: is-gleitend fehlte, --up-seg-w war leer), und ein Umschalter ohne
+     Streifen ist ein leerer grauer Balken. Genau so sah er aus.
+     Seit die Auswahl immer gesetzt ist (Brand ist die Vorgabe, und man kann sie nicht
+     abwaehlen), ist der Streifen immer da: #28282c auf #34343a im Dunkeln, eine Sprosse UEBER
+     der Schiene -- dieselbe Mechanik, mit der die Umschalter in den Topics-, Markets- und
+     Models-Dropdowns ihren Kontrast tragen. Die Schiene bleibt damit die des Hauses
+     (--vc-switch-soft ueber is-lg) und braucht hier keine eigene Farbe. */
+  #ask-mira .am-pick-panel .up-seg { width: 100%; box-sizing: border-box; }
   .am-pick-panel .up-seg-btn { flex: 1 1 0; min-width: 0; }
 
   .am-pick-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
@@ -1768,7 +1786,21 @@
   .am-pick-hl { background: transparent; color: inherit; font-weight: 750; }
 
   .am-pick-note { padding: 26px 16px 24px; text-align: center; color: var(--am-muted); font-size: 12.5px; }
-  .am-pick-note-t { font-size: 13px; font-weight: 600; color: var(--am-text); margin-bottom: 3px; }
+  /* Der Titel in der SEKUNDAERfarbe und nicht in der primaeren: er ist ein Hinweis, keine
+     Ansage. Darunter der Erklaersatz in der Drittfarbe -- eine Stufe leiser als der Titel,
+     denn er erklaert ihn. */
+  .am-pick-note-t { font-size: 13px; font-weight: 600; color: var(--am-muted); margin-bottom: 4px; }
+  /* Mittig und mit einer Breite, die den Satz umbrechen laesst, bevor er die Panelkante
+     erreicht -- ein Erklaersatz auf voller Breite liest sich wie ein Absatz. */
+  /* 42ch, damit der Satz auf ZWEI Zeilen umbricht und nicht auf drei -- gemessen bei 34ch
+     waren es drei, und drei mittige Zeilen unter einer Ueberschrift lesen sich wie ein Absatz.
+     Die Drittfarbe ist ausdruecklich gewuenscht; sie misst auf dem Menuegrund 3.97 und liegt
+     damit unter den 4.5 aus WCAG AA. Fuer einen Erklaersatz, der einen Titel darueber
+     erlaeutert, ist das die Hausfarbe -- die Zahl steht hier, damit sie niemand suchen muss. */
+  .am-pick-note-sub {
+    max-width: 42ch; margin: 0 auto; font-size: 11.5px; line-height: 1.45;
+    color: var(--vc-third);
+  }
   /* Nur der Ruhehinweis traegt ein Zeichen. 22px, also die Groesse, die core einem Zeichen
      ueber einer Leermeldung gibt; leiser als der Satz darunter, denn es erklaert ihn, es
      ersetzt ihn nicht. */
@@ -1788,14 +1820,20 @@
      richtige: der Bezug steht vor dem Zitat, das Zitat vor der Frage.
      max-height statt display, damit die 200ms ueberhaupt eine Strecke haben: zwischen none und
      block rechnet der Browser nicht. */
+  /* LEER traegt der Streifen KEINEN Rand -- damit ist ueber dem Textfeld genau das Polster
+     des Feldes, also 16, so viel wie nach links. Mit Pillen traegt er 12 (siehe has-picks),
+     und dann sind oben und links wieder beide 16: genau der Zustand, der schon gefallen hat.
+     Der Rand animiert mit, faehrt beim Erscheinen der ersten Pille also mit statt zu springen. */
   .am-picks {
     grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; min-width: 0;
-    max-height: 0; opacity: 0; overflow: hidden;
+    max-height: 0; opacity: 0; overflow: hidden; margin-bottom: 0;
     transition: max-height 200ms ease, opacity 200ms ease, margin-bottom 200ms ease;
   }
   /* 132px traegt drei umbrochene Kacheln (3x28 plus 2x6 Abstand plus Luft). Mehr als drei
      gibt es nicht -- PICK_MAX ist 3. */
-  .am-composer.has-picks .am-picks { max-height: 132px; opacity: 1; margin-bottom: 2px; }
+  /* 12px = die 10, die vorher der Gitterabstand trug, plus die 2 von vorher. Dieselbe Optik,
+     nur jetzt an einer Stelle, die verschwindet, wenn der Streifen leer ist. */
+  .am-composer.has-picks .am-picks { max-height: 132px; opacity: 1; margin-bottom: 12px; }
   /* ZWEI GRUENDE FUER EINE EIGENE FAMILIE, und beide gehoeren hierhin, wo sie anfaengt.
      1. KEIN "-chip" im Klassennamen: der breite Sprachlauf von core nimmt [class*="-chip"]
         ausdruecklich aus, und eine Beschriftung darin waere spaeter stumm nicht uebersetzbar.

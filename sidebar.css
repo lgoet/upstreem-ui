@@ -133,7 +133,10 @@
   transition: width var(--usn-t) var(--usn-ease), transform var(--usn-t) var(--usn-ease);
   overflow: visible;   /* die Dropdowns duerfen herausragen */
 }
-.up-root.up-portal.usn-bar.is-mini { width: var(--usn-mini); padding: 8px 12px 16px; }
+/* 14 oben und nicht 8 (08.09. angefordert: "6px mehr top padding"). Eingeklappt steht ganz
+   oben das quadratische Logo, und ein Quadrat braucht mehr Luft ueber sich als ein flacher
+   Schriftzug -- sonst klebt es an der Kante. Seitlich und unten bleibt es. */
+.up-root.up-portal.usn-bar.is-mini { width: var(--usn-mini); padding: 14px 12px 16px; }
 
 /* Im hint-Zustand faehrt die Leiste nach links heraus, statt zu verschwinden: display:none
    koennte man nicht animieren, und ein Sprung waere genau das, was hier nicht sein soll. */
@@ -263,7 +266,9 @@
    auf 64px noch ein Logo, ein Wort nicht. Zeichen und Knopf stehen dann uebereinander, wie in
    .usn-top, das im Mini ebenfalls zur Spalte wird -- und dafuer braucht die Zeile ihre feste
    Hoehe nicht mehr. */
-.usn-bar.is-mini .usn-brand { flex-direction: column; justify-content: center; gap: 6px;
+/* gap 8 und nicht 6: eingeklappt stehen Logo und Einklappknopf UEBEREINANDER, und mit dem
+   quadratischen Logo darueber standen sie zu dicht. */
+.usn-bar.is-mini .usn-brand { flex-direction: column; justify-content: center; gap: 8px;
   height: auto; margin: 0 0 calc(8px + (32px - var(--usn-brand-h, 16.5px)) / 2); }
 /* Und die Zeile muss die Hoehe des Kastens KENNEN, um sie aus der Rechnung herauszunehmen --
    der Kasten ist ihr Kind, eine Variable von dort erreicht sie nicht. Deshalb steht sie

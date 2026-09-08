@@ -13,6 +13,22 @@
       (extra ? "   " + extra : ""));
   }
   function v_(cs){ return cs.borderTopWidth + " " + cs.borderTopStyle; }
+  /* Eine Farbe SAUBER lesen. Der Browser gibt eine halbdurchsichtige Fuellung als
+     color(srgb r g b / a) mit Anteilen von 0..1 zurueck, nicht als rgba mit 0..255 -- ein
+     Muster, das nur Zahlen sammelt, liest daraus Unsinn (gemessen: rgb(9,9,9) statt
+     rgb(23,23,25)). */
+  function farbe(c){
+    c = String(c);
+    var m = c.match(/^color\(srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.]+))?\)/);
+    if (m) return { r: +m[1]*255, g: +m[2]*255, b: +m[3]*255, a: m[4] === undefined ? 1 : +m[4] };
+    m = c.match(/rgba?\(([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:[,\s\/]+([\d.]+))?\)/);
+    if (m) return { r: +m[1], g: +m[2], b: +m[3], a: m[4] === undefined ? 1 : +m[4] };
+    return { r: 0, g: 0, b: 0, a: 1 };
+  }
+  function ueber(v, b){ return { r: v.r*v.a + b.r*(1-v.a), g: v.g*v.a + b.g*(1-v.a),
+                                 b: v.b*v.a + b.b*(1-v.a), a: 1 }; }
+  function stufen(x, y){ return Math.round(Math.max(Math.abs(x.r-y.r),
+                                Math.abs(x.g-y.g), Math.abs(x.b-y.b))); }
   function kopf(t){ Z.push('<span class="kopf">' + t + '</span>'); }
   function malen(){ document.getElementById("raus").innerHTML =
     Z.join("\n") + "\n\n" + (ok === n ? '<span class="ja">' : '<span class="nein">') +
@@ -125,9 +141,6 @@
       document.head.appendChild(st);
       var karte = document.querySelectorAll(".am-cat-card")[1];
       var chev = karte.querySelector(".am-cat-chev");
-      var zahl = function(c){ return (String(c).match(/\d+/g) || []).slice(0,3).map(Number); };
-      var stufen = function(a, b){ var A = zahl(a), B = zahl(b);
-        return Math.max.apply(null, A.map(function(v, i){ return Math.abs(v - B[i]); })); };
       var cs = getComputedStyle(karte);
       pruef("Karte ohne Rahmen", cs.borderTopWidth + "/" + cs.borderTopStyle,
         function(v){ return v.indexOf("0px") === 0 || v.indexOf("none") >= 0; }, v_(cs));
@@ -135,14 +148,19 @@
       /* Gegen den Grund, den die SEITE malt -- Mira malt keinen. Ein Vergleich gegen den Grund
          der Pruefseite meldete beim ersten Anlauf 3 statt 7 Stufen. */
       var grund = getComputedStyle(document.body).backgroundColor;
-      pruef("Karte hebt sich leise vom Seitengrund ab", stufen(ruhe, grund),
+      /* Ueber farbe/ueber/stufen und NICHT ueber ein Zahlenmuster: seit die dunkle Fuellung
+         halbdurchsichtig ist, kommt sie als color(srgb ...) zurueck, und ein Muster, das nur
+         Zahlen sammelt, meldete 109786 statt 7. */
+      pruef("Karte hebt sich leise vom Seitengrund ab",
+        stufen(ueber(farbe(ruhe), farbe(grund)), farbe(grund)),
         function(v){ return v >= 5 && v <= 16; },
         "Karte " + ruhe + " auf " + grund);
       karte.classList.add("pruefhover");
       var hov = getComputedStyle(karte).backgroundColor;
       var chevHov = getComputedStyle(chev).transform;
       karte.classList.remove("pruefhover");
-      pruef("der Hover ist noch da, eine Sprosse hoeher", stufen(hov, ruhe),
+      pruef("der Hover ist noch da, eine Sprosse hoeher",
+        stufen(ueber(farbe(hov), farbe(grund)), ueber(farbe(ruhe), farbe(grund))),
         function(v){ return v >= 5; }, ruhe + " -> " + hov);
       pruef("das Chevron rueckt 4px", chevHov, "matrix(1, 0, 0, 1, 4, 0)");
       pruef("und zwar mit 200ms ease", (function(){
@@ -158,6 +176,76 @@
     pruef("\"All Chats\" kommt aus dem Katalog",
       (g("am-open-prev").querySelector(".am-prev-label-full") || {}).textContent, "All Chats",
       "hier englisch; die deutsche Fassung wird getrennt geprueft");
+
+    kopf("11  DRITTE RUNDE  (Polster, Kartentoene, der Umschalter, der Hinweis)");
+    (function(){
+      /* Das Polster oben MUSS so gross sein wie nach links. Der leere Bezugsstreifen ist eine
+         Gitterzeile -- 0px hoch, aber der Abstand dahinter zaehlte trotzdem (gemessen 26 gegen
+         16). Ein negativer Rand half nicht: das Gitter klemmt die Spur auf 0. */
+      var cs = getComputedStyle(comp);
+      var wrap = comp.querySelector(".am-input-wrap");
+      var iOben = comp.getBoundingClientRect().top + parseFloat(cs.borderTopWidth);
+      var iLinks = comp.getBoundingClientRect().left + parseFloat(cs.borderLeftWidth);
+      pruef("Polster oben = Polster links",
+        Math.round(wrap.getBoundingClientRect().top - iOben) + "/" +
+        Math.round(wrap.getBoundingClientRect().left - iLinks), "16/16");
+      pruef("kein Zeilenabstand im Gitter", getComputedStyle(comp).rowGap, "0px",
+        "die Abstaende tragen die Elemente, damit ein leeres keinen kostet");
+    })();
+    (function(){
+      /* Die Kartentoene haengen am Thema, und das folgt hier dem System -- also erst lesen,
+         dann pruefen, statt einen Wert zu erwarten. */
+      var dunkel = root.getAttribute("data-theme") === "dark";
+      var grund = farbe(getComputedStyle(document.body).backgroundColor);
+      var st = document.createElement("style");
+      st.textContent = '#ask-mira .am-cat-card.h3 { background: var(--vc-sk) }' +
+        '#ask-mira[data-theme="dark"] .am-cat-card.h3 { background: var(--vc-bg) }';
+      document.head.appendChild(st);
+      var k = document.querySelectorAll(".am-cat-card")[1];
+      var ruhe = farbe(getComputedStyle(k).backgroundColor);
+      k.classList.add("h3");
+      var hov = farbe(getComputedStyle(k).backgroundColor);
+      k.classList.remove("h3");
+      pruef("Kategoriekarte ohne Rahmen", getComputedStyle(k).borderTopWidth, "0px");
+      pruef(dunkel ? "dunkel: die Fuellung ist HALB durchsichtig" : "hell: die Fuellung ist deckend",
+        ruhe.a, dunkel ? 0.5 : 1, "das war die Ansage: dunkel halbe Deckkraft, hell eine Sprosse hoeher");
+      var sG = stufen(ueber(ruhe, grund), grund);
+      pruef("Karte hebt sich vom Seitengrund ab", sG,
+        dunkel ? 7 : 13, "dunkel war es vorher 13, jetzt halb so praesent");
+      pruef("der Hover ist ein klarer Schritt", stufen(ueber(hov, grund), ueber(ruhe, grund)), 6);
+    })();
+    (function(){
+      /* Die Reporting-Karten waren beim ersten Umbau uebersehen worden. Sie liegen in der
+         Reporting-Kategorie, also erst dorthin klicken. */
+      var rep = [].filter.call(document.querySelectorAll(".am-cat-card"), function(c){
+        return c.classList.contains("am-cat-card-report"); })[0];
+      if (!rep){ pruef("Reporting-Kategorie gefunden", false, true); return; }
+      rep.click();
+    })();
+    await warte(900);
+    (function(){
+      var reps = document.querySelectorAll(".am-rep-card");
+      pruef("die Reporting-Karten sind da", reps.length, function(v){ return v >= 3; });
+      if (!reps.length) return;
+      var dunkel = root.getAttribute("data-theme") === "dark";
+      var grund = farbe(getComputedStyle(document.body).backgroundColor);
+      var k = reps[0], ruhe = farbe(getComputedStyle(k).backgroundColor);
+      pruef("Reporting-Karte ohne Rahmen", getComputedStyle(k).borderTopWidth, "0px",
+        "sie standen als einzige Kartenfamilie noch mit Rahmen da");
+      pruef("Reporting-Karte hat denselben Ton wie die Kategoriekarte",
+        stufen(ueber(ruhe, grund), grund), dunkel ? 7 : 13);
+      var st = document.createElement("style");
+      st.textContent = '#ask-mira .am-rep-card.h3 .am-rep-go { transform: translateX(4px) }';
+      document.head.appendChild(st);
+      k.classList.add("h3");
+      pruef("und ihr Pfeil rueckt auch 4px",
+        getComputedStyle(k.querySelector(".am-rep-go")).transform, "matrix(1, 0, 0, 1, 4, 0)");
+      k.classList.remove("h3");
+    })();
+    /* Zurueck auf die Kategorieuebersicht, damit die Abschnitte danach ihren Ausgangszustand
+       vorfinden. */
+    (function(){ var b = document.querySelector("[data-gallery-back]"); if (b) b.click(); })();
+    await warte(700);
 
     kopf("2  DER SLIDER  (Medium/High/Ultra -> short/balanced/detailed, Werte unveraendert)");
     var btn = g("am-eff-btn"), tr = g("am-eff-track"), th = g("am-eff-thumb"), fl = g("am-eff-fill");
@@ -268,10 +356,11 @@
 
     /* 25 Treffer -- die Achtergrenze wird ZWEIMAL gezogen: limit im Payload und Schnitt im
        Kern. Was der Bubble-RPC mit limit tut, ist von hier aus nicht pruefbar. */
+    /* 25 Treffer EINES Typs. Gemischt waere es hier falsch: die Anzeige laesst seit dem 08.09.
+       nur den gewaehlten Typ durch (nie vermischt, ausdrueckliche Ansage), und ein Test mit vier
+       Typen haette also nicht die Achtergrenze gemessen, sondern die Filterung. */
     var viele = [];
-    for (var i = 0; i < 25; i++) viele.push({ type: ["brand","domain","url","prompt"][i % 4],
-      id: "X" + i, name: "Marke " + i, domain: "d" + i + ".de", url: "https://u" + i + ".de/x",
-      title: "Titel " + i, prompt_text: "Prompt " + i, market: "de" });
+    for (var i = 0; i < 25; i++) viele.push({ type: "brand", id: "X" + i, name: "Marke " + i });
     viele.push({ type: "brnad", id: "kaputt" });   /* ein Tippfehler im Typ */
     window.MiraQuickActions.setResults({ requestId: p.requestId, items: viele });
     await warte(60);
@@ -279,33 +368,45 @@
     pruef("Ergebnisliste rollt", getComputedStyle(g("am-pick-scroll")).overflowY, "auto");
 
     kopf("6  UEBERNEHMEN, ENTFERNEN, DAS FORMAT FUER DEN AGENTEN");
-    /* EINE FRISCHE ANFRAGE. Der Fehlschluss davor: hier wurde noch einmal auf p.requestId
-       geantwortet, und der Achtergrenzen-Fall hatte bereits acht Zeilen dort stehen -- gemessen
-       wurden dann dessen Zeilen ("Marke 0" statt "Nike"), und der Formattest prueft am Ende
-       Zeichenketten, die nie im Bild waren. Eine Suche, eine Antwort. */
-    inp.value = "nike2"; inp.dispatchEvent(new Event("input", { bubbles: true }));
-    await warte(UHR);
-    var p6 = window.__gefeuert[window.__gefeuert.length - 1];
-    window.MiraQuickActions.setResults({ requestId: p6.requestId, items: [
-      { type:"brand",  id:"B-77", name:"Nike" },
-      { type:"domain", domain:"nike.com" },
-      { type:"url",    url:"https://nike.com/de/air-max",
-        title:"Air Max — Der komplette Ueberblick ueber alle Modelle und ihre Geschichte" },
-      { type:"prompt", id:"P-12", prompt_text:"Beste Laufschuhe fuer Anfaenger", market:"de" }
-    ]});
-    await warte(60);
+    /* JE TYP EINE SUCHE. Seit die Anzeige nur den gewaehlten Typ durchlaesst, kann man drei
+       verschiedene Bezuege nicht mehr aus EINER Trefferliste greifen -- der Nutzer wechselt
+       jetzt den Umschalter dazwischen, und genau diesen Weg geht die Messung. */
+    async function holen(scope, items){
+      var b = document.querySelector('.am-pick-scope[data-scope="' + scope + '"]');
+      if (b && !b.classList.contains("is-active")) b.click();
+      inp.value = "such" + scope; inp.dispatchEvent(new Event("input", { bubbles: true }));
+      await warte(UHR);
+      window.MiraQuickActions.setResults({
+        requestId: window.__gefeuert[window.__gefeuert.length - 1].requestId, items: items });
+      await warte(80);
+    }
+    await holen("brand", [
+      { type: "brand", id: "B-77", name: "Nike" },
+      { type: "brand", id: "B-78", name: "Nike Running" }
+    ]);
+    pruef("nur der gewaehlte Typ, nie gemischt",
+      [].map.call(document.querySelectorAll(".am-pick-type"),
+        function(e){ return e.textContent; }).join(",") , "Brand,Brand");
+    pruef("Trefferliste bleibt nach der Uebernahme stehen (erst nach dem Klick pruefen)",
+      document.querySelectorAll(".am-pick-row").length, 2);
+    document.querySelectorAll(".am-pick-row")[0].click();
+    pruef("die Liste steht noch", document.querySelectorAll(".am-pick-row").length, 2,
+      "sonst muesste man fuer den zweiten Bezug neu tippen");
+    pruef("uebernommene Zeile wird grau",
+      document.querySelectorAll(".am-pick-row.is-taken").length, 1);
+    await holen("url", [{ type: "url", url: "https://nike.com/de/air-max",
+      title: "Air Max \u2014 Der komplette Ueberblick ueber alle Modelle und ihre Geschichte" }]);
+    document.querySelectorAll(".am-pick-row")[0].click();
+    await holen("prompt", [{ type: "prompt", id: "P-12",
+      prompt_text: "Beste Laufschuhe fuer Anfaenger", market: "de" }]);
     pruef("Prompt-Zeile traegt die Flaggenkachel",
-      !!document.querySelectorAll(".am-pick-row")[3].querySelector(".am-pick-av.is-flag"), true,
+      !!document.querySelectorAll(".am-pick-row")[0].querySelector(".am-pick-av.is-flag"), true,
       "eine Flagge ist quer -- im Quadrat bleibt von den USA nur das Sternenfeld");
     document.querySelectorAll(".am-pick-row")[0].click();
-    pruef("Trefferliste bleibt nach der Uebernahme stehen",
-      document.querySelectorAll(".am-pick-row").length, 4,
-      "sonst muesste man fuer den zweiten Bezug neu tippen");
-    pruef("uebernommene Zeile wird grau", document.querySelectorAll(".am-pick-row.is-taken").length, 1);
-    document.querySelectorAll(".am-pick-row")[2].click();
-    document.querySelectorAll(".am-pick-row")[3].click();
     pruef("drei Bezuege", document.querySelectorAll(".am-pick-tag").length, 3);
     pruef("bei drei macht das Feld zu", root.classList.contains("is-pick-open"), false);
+    /* Die Pille mit dem langen URL-Titel heraussuchen -- die Reihenfolge der drei haengt
+       daran, in welcher Runde sie aufgegriffen wurden. */
     var lbl = [].filter.call(document.querySelectorAll(".am-pick-tag-lbl"),
       function(e){ return e.textContent.indexOf("Air Max") === 0; })[0] ||
       document.querySelectorAll(".am-pick-tag-lbl")[1];
@@ -316,11 +417,7 @@
       lbl.scrollWidth + " in " + lbl.clientWidth);
     /* Ein vierter Bezug darf nicht gehen. Feld wieder auf und noch einmal versuchen. */
     g("am-pick-btn").click();
-    inp.value = "nike"; inp.dispatchEvent(new Event("input", { bubbles: true }));
-    await warte(UHR);
-    window.MiraQuickActions.setResults({ requestId: window.__gefeuert[window.__gefeuert.length-1].requestId,
-      items: [{ type:"brand", id:"B-99", name:"Zu viel" }] });
-    await warte(60);
+    await holen("brand", [{ type: "brand", id: "B-99", name: "Zu viel" }]);
     document.querySelectorAll(".am-pick-row")[0].click();
     pruef("ein vierter Bezug wird abgelehnt", document.querySelectorAll(".am-pick-tag").length, 3);
     g("am-pick-btn").click();
@@ -353,11 +450,18 @@
       ["leere Liste", []],
       ["unlesbarer Text", "{kaputt"],
       ["alle Typen falsch", [{type:"brnad",id:"a"},{type:"brnad",id:"b"}]],
-      ["Emoji im Text", '[{"type":"url","url":"https://a.de","title":"A 🎉"}]'],
+      /* Als BRAND und nicht als URL: der Fall prueft, ob ein nacktes Emoji den Parser
+         ueberlebt, nicht die Filterung nach Typ. */
+      ["Emoji im Text", '[{"type":"brand","id":"e1","name":"A 🎉"}]'],
       ["nacktes yes", '[{"type":"brand","id":"b","name":"X","aktiv":yes}]']
     ];
+    /* AUF BRAND STELLEN. Die Anzeige laesst nur den gewaehlten Typ durch, und die Faelle unten
+       schicken teils URL- und teils Brand-Items -- ohne festen Umschalter haette der Emoji-Fall
+       0 Zeilen gemeldet, obwohl der Payload sauber gelesen wurde. Genau so passiert. */
+    (function(){ var b = document.querySelector('.am-pick-scope[data-scope="brand"]');
+      if (b && !b.classList.contains("is-active")) b.click(); })();
     for (var fi = 0; fi < faelle.length; fi++){
-      g("am-pick-btn").click();
+      if (!root.classList.contains("is-pick-open")) g("am-pick-btn").click();
       inp.value = "test" + fi; inp.dispatchEvent(new Event("input", { bubbles: true }));
       await warte(UHR);
       var rq = window.__gefeuert[window.__gefeuert.length - 1].requestId;
@@ -372,8 +476,8 @@
         txt.indexOf("No results") < 0 && txt.length > 0, true);
       if (fi === 3) pruef("Emoji ueberlebt", document.querySelectorAll(".am-pick-row").length, 1);
       if (fi === 4) pruef("nacktes yes ueberlebt", document.querySelectorAll(".am-pick-row").length, 1);
-      g("am-pick-btn").click();
     }
+    if (root.classList.contains("is-pick-open")) g("am-pick-btn").click();
 
     kopf("8  DER VERTEILER  (deshalb braucht die Suche KEINEN Eingriff in Bubble)");
     /* ZUSTELLUNGEN zaehlen und nicht DOM-Zeilen. Der Fehlschluss davor: die Trefferliste trug
@@ -458,15 +562,35 @@
     pruef("6 Ueberschrift steht", g("am-pick-h").textContent, "What are you looking for?");
     pruef("6 Umschalter 32px", Math.round(
       g("am-pick-scopes").querySelector(".up-seg").getBoundingClientRect().height), 32);
-    pruef("6 Umschalter hebt sich ab", (function(){
-      var seg = getComputedStyle(g("am-pick-scopes").querySelector(".up-seg"));
-      var pan = getComputedStyle(g("am-pick-panel"));
-      var a = (seg.backgroundColor.match(/\d+/g) || []).slice(0,3).map(Number);
-      var b = (pan.backgroundColor.match(/\d+/g) || []).slice(0,3).map(Number);
-      var d = Math.max.apply(null, a.map(function(v,i){ return Math.abs(v - b[i]); }));
-      return { d: d, rand: seg.borderTopWidth };
-    })(), function(v){ return v.d >= 5 && v.rand === "1px"; },
-      "vorher waren es 2 Kanalstufen und kein Rand -- unsichtbar");
+    pruef("Umschalter OHNE Rahmen", getComputedStyle(
+      g("am-pick-scopes").querySelector(".up-seg")).borderTopWidth, "0px",
+      "der Kontrast kommt vom Streifen, nicht von einem Kasten");
+    pruef("Brand ist vorgewaehlt", [].filter.call(
+      document.querySelectorAll(".am-pick-scope"), function(b){
+        return b.classList.contains("is-active"); }).map(function(b){ return b.textContent; }).join(","),
+      "Brands");
+    pruef("der gleitende Streifen laeuft", (function(){
+      var seg = g("am-pick-scopes").querySelector(".up-seg");
+      return seg.classList.contains("is-gleitend") + "/" +
+        getComputedStyle(seg, "::before").opacity;
+    })(), "true/1",
+      "ohne aktiven Knopf misst core den Kasten nie -- dann ist der Umschalter ein leerer Balken");
+    pruef("Ueberschrift ohne Versal", getComputedStyle(g("am-pick-h")).textTransform, "none");
+    pruef("Abstand zum Suchfeld verdoppelt", Math.round(
+      g("am-pick-h").getBoundingClientRect().top -
+      g("am-pick-input").closest(".am-pick-search").getBoundingClientRect().bottom), 4,
+      "vorher 2");
+    /* DER KONTRAST KOMMT VOM STREIFEN, nicht von der Schiene -- genau wie bei den Umschaltern
+       in den Topics-, Markets- und Models-Dropdowns. Gemessen wird deshalb Streifen gegen
+       Schiene und nicht Schiene gegen Panel. */
+    pruef("der Streifen hebt sich von der Schiene ab", (function(){
+      var seg = g("am-pick-scopes").querySelector(".up-seg");
+      var panel = farbe(getComputedStyle(g("am-pick-panel")).backgroundColor);
+      var schiene = ueber(farbe(getComputedStyle(seg).backgroundColor), panel);
+      var streifen = ueber(farbe(getComputedStyle(seg, "::before").backgroundColor), schiene);
+      return stufen(streifen, schiene);
+    })(), function(v){ return v >= 4; },
+      "plus der eigene Rand des Streifens, der ihn zusaetzlich zeichnet");
     /* 7 */
     pruef("7 Feld 16px Ecken", getComputedStyle(comp).borderRadius, "16px");
     /* 11 */
@@ -478,8 +602,27 @@
        Suche aus Abschnitt 5; gemessen wurde dann eine Trefferzeile und nicht der Hinweis. */
     inp.value = ""; inp.dispatchEvent(new Event("input", { bubbles: true }));
     await warte(200);
-    pruef("12 Ruhehinweis: nur der eine Satz",
-      g("am-pick-list").textContent.trim(), "Search your workspace");
+    pruef("12 Ruhehinweis: Titel und Erklaersatz",
+      (document.querySelector(".am-pick-note-t") || {}).textContent, "Search your workspace");
+    pruef("der Erklaersatz sagt, WOFUER der Picker da ist",
+      ((document.querySelector(".am-pick-note-sub") || {}).textContent || "").indexOf("attach") > 0,
+      true);
+    pruef("Titel in der Sekundaerfarbe, Satz in der Drittfarbe", (function(){
+      var t = getComputedStyle(document.querySelector(".am-pick-note-t")).color;
+      var u = getComputedStyle(document.querySelector(".am-pick-note-sub")).color;
+      var m = getComputedStyle(root).getPropertyValue("--vc-muted").trim();
+      var d = getComputedStyle(root).getPropertyValue("--vc-third").trim();
+      var hex = function(c){ var f = farbe(c); return "#" + [f.r,f.g,f.b].map(function(v){
+        return ("0" + Math.round(v).toString(16)).slice(-2); }).join(""); };
+      return (hex(t) === m.toLowerCase()) + "/" + (hex(u) === d.toLowerCase());
+    })(), "true/true");
+    pruef("beide mittig", (function(){
+      var p = g("am-pick-panel").getBoundingClientRect();
+      var mitte = function(e){ var b = e.getBoundingClientRect();
+        return Math.round(Math.abs((b.left + b.width/2) - (p.left + p.width/2))); };
+      return mitte(document.querySelector(".am-pick-note-t")) + "/" +
+             mitte(document.querySelector(".am-pick-note-sub"));
+    })(), function(v){ return /^[01]\/[01]$/.test(v); });
     pruef("12 mit Datenbank-Zeichen darueber",
       !!document.querySelector(".am-pick-note-ic svg"), true);
     /* 13 -- auf Deutsch geprueft, denn nur dort war es falsch */
@@ -491,38 +634,45 @@
        eine Funktion existiert, kann nicht fehlschlagen und ist damit keine. */
     var pixel = "data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 " +
       "viewBox=%220 0 10 10%22%3E%3Crect width=%2210%22 height=%2210%22 fill=%22%23e11%22/%3E%3C/svg%3E";
+    /* Wieder je Typ eine Suche: die zwei Brands aus dem Brand-Bereich, die Flagge aus dem
+       Prompt-Bereich. Gemischt kaeme der Prompt gar nicht in die Liste -- und das ist richtig
+       so, also muss die Messung den Weg gehen und nicht die Regel umgehen. */
     g("am-pick-btn").click();
-    inp.value = "pillen"; inp.dispatchEvent(new Event("input", { bubbles: true }));
-    await warte(UHR);
-    window.MiraQuickActions.setResults({
-      requestId: window.__gefeuert[window.__gefeuert.length - 1].requestId, items: [
-      { type: "brand",  id: "L1", name: "MitLogo", logo: pixel },
-      { type: "prompt", id: "L2", prompt_text: "MitFlagge", market: "de" },
-      { type: "brand",  id: "L3", name: "OhneLogo", logo: "" }
-    ]});
-    await warte(80);
-    for (var pi = 0; pi < 3; pi++) document.querySelectorAll(".am-pick-row")[pi].click();
-    await warte(80);
+    await holen("brand", [
+      { type: "brand", id: "L1", name: "MitLogo", logo: pixel },
+      { type: "brand", id: "L3", name: "OhneLogo", logo: "" }
+    ]);
+    document.querySelectorAll(".am-pick-row")[0].click();
+    document.querySelectorAll(".am-pick-row")[1].click();
+    await holen("prompt", [{ type: "prompt", id: "L2", prompt_text: "MitFlagge", market: "de" }]);
+    document.querySelectorAll(".am-pick-row")[0].click();
+    await warte(120);
     var pillen = [].map.call(document.querySelectorAll(".am-pick-tag"), function(t){
       var av = t.querySelector("[class*=am-pick-tag-av]");
       var fb = t.querySelector(".am-pick-tag-av-fb");
       var im = t.querySelector(".am-pick-tag-av img");
-      return { bild: !!im, fbSichtbar: fb ? getComputedStyle(fb).display !== "none" : null,
+      return { text: t.querySelector(".am-pick-tag-lbl").textContent,
+               bild: !!im, fbSichtbar: fb ? getComputedStyle(fb).display !== "none" : null,
                fbText: fb ? fb.textContent.trim() : "",
                bildBreite: im ? Math.round(im.getBoundingClientRect().width) : 0,
                kachel: Math.round(av.getBoundingClientRect().width) };
     });
+    /* Nach Namen greifen und nicht nach Reihenfolge -- die haengt daran, in welcher Runde eine
+       Pille aufgegriffen wurde. */
+    var mitLogo  = pillen.filter(function(x){ return x.text === "MitLogo"; })[0];
+    var ohneLogo = pillen.filter(function(x){ return x.text === "OhneLogo"; })[0];
+    var mitFlagge = pillen.filter(function(x){ return x.text === "MitFlagge"; })[0];
     pruef("8 mit Logo: KEIN Buchstabe daneben",
-      pillen[0] && pillen[0].bild && !pillen[0].fbSichtbar, true,
+      !!mitLogo && mitLogo.bild && !mitLogo.fbSichtbar, true,
       "vorher stand neben dem Logo noch ein N");
     pruef("9 mit Flagge: KEIN Marktkuerzel daneben",
-      pillen[1] && pillen[1].bild && !pillen[1].fbSichtbar, true,
+      !!mitFlagge && mitFlagge.bild && !mitFlagge.fbSichtbar, true,
       "vorher stand neben der Flagge noch ein D");
     pruef("9 das Bild fuellt die Kachel, ist also nicht gequetscht",
-      pillen[0] && pillen[0].bildBreite === pillen[0].kachel, true,
-      pillen[0] ? pillen[0].bildBreite + " in " + pillen[0].kachel : "?");
+      !!mitLogo && mitLogo.bildBreite === mitLogo.kachel, true,
+      mitLogo ? mitLogo.bildBreite + " in " + mitLogo.kachel : "?");
     pruef("GEGENPROBE ohne Logo ist der Buchstabe DA",
-      pillen[2] && !pillen[2].bild && pillen[2].fbSichtbar && pillen[2].fbText === "O", true,
+      !!ohneLogo && !ohneLogo.bild && ohneLogo.fbSichtbar && ohneLogo.fbText === "O", true,
       "sonst pruefte die Messung nur, dass nie etwas zu sehen ist");
 
     malen();
