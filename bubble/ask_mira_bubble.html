@@ -81,17 +81,28 @@
 
      ── DER COMPOSER, ZWEITE FASSUNG (08.09.) ─────────────────────────────────────────────────
      Das ausklappbare Fach unter dem Eingabefeld ist WEG. Modell und Aufwand liegen in EINER
-     Schaltflaeche unten links, deren Menue nach oben aufgeht: darin die Modellzeile (Klick
-     klappt Mira Pro / Mira Flash aus) und ein Slider mit drei Stufen.
+     Schaltflaeche unten RECHTS, links neben dem Mikrofon; ihr Menue geht nach oben auf und
+     enthaelt die Modellzeile (Klick klappt Mira Pro 1.0 / Mira Flash aus) und einen Slider mit
+     drei Stufen.
 
-       Medium -> short        High -> balanced        Ultra -> detailed
-
-     AM PAYLOAD AENDERT SICH NICHTS. bubble_fn_ask_mira_send bekommt weiter genau vier Felder,
-     in genau dieser Reihenfolge:
+     ── DER AUFWAND IST DER WERT ───────────────────────────────────────────────────────────────
+     bubble_fn_ask_mira_send bekommt weiter genau vier Felder, in genau dieser Reihenfolge:
          { chat_id, message, answer_detail, model }
-     und answer_detail traegt weiter buchstabengleich short | balanced | detailed. Der Slider ist
-     eine neue DARSTELLUNG desselben Feldes, keine neue Groesse. Ultra faerbt die Schiene
-     blau-lila und laesst weisse Partikel darin laufen -- reine Optik, kein Datenfeld.
+     Der FELDNAME answer_detail bleibt, damit die Extraktion unangetastet bleibt. Die WERTE
+     darin sind seit dem 08.09. die drei Stufen selbst:
+
+         Mid            High            Ultra
+
+     (bis dahin standen dort short | balanced | detailed -- wer eine Bedingung oder einen
+     Systemprompt auf die alten Werte gebaut hat, muss dort nachziehen. Das Kit nimmt die alten
+     drei noch AN, falls sie irgendwo vorbelegt sind, und hebt sie auf ihre Stufe.)
+
+     DIE WERTE SIND IMMER ENGLISCH, auch wenn die Oberflaeche auf Deutsch steht -- nur die
+     Beschriftung ist uebersetzt (Mittel / Hoch / Ultra). Vorgabe ist die Mitte: High.
+     Mira Flash kann nur Mid; die Schiene ist dann gar nicht da, die Schaltflaeche schon (sonst
+     kaeme man aus Flash nicht mehr heraus).
+     Ultra faerbt die Schiene blau-lila und laesst weisse Partikel darin laufen -- reine Optik,
+     kein Datenfeld.
      Mira Flash kann nur die unterste Stufe; die Schiene ist dann gesperrt, die Schaltflaeche
      nicht (sonst kaeme man aus Flash nicht mehr heraus).
 

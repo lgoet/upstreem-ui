@@ -249,12 +249,13 @@
 
     kopf("2  DER SLIDER  (Medium/High/Ultra -> short/balanced/detailed, Werte unveraendert)");
     var btn = g("am-eff-btn"), tr = g("am-eff-track"), th = g("am-eff-thumb"), fl = g("am-eff-fill");
+    var eff = g("am-eff");
     btn.click();
     var schiene = breite(tr), daumen = breite(th), weg = schiene - daumen - 5;
     pruef("Schiene breit", schiene, function(v){ return v > 180; });
     pruef("Daumen breit", daumen, 23, "aus .up-switch mit Faktor 28/22 abgeleitet");
     var halte = [];
-    ["short","balanced","detailed"].forEach(function(w, i){
+    ["Mid","High","Ultra"].forEach(function(w, i){
       document.querySelectorAll(".am-eff-lbl")[i].click();
       halte.push({ stufe: i, daumen: Math.round(parseFloat((th.style.transform.match(/([\d.]+)px/) || [0,0])[1])),
         fuellung: +(parseFloat((fl.style.transform.match(/scaleX\(([\d.]+)\)/) || [0,0])[1])).toFixed(3),
@@ -269,7 +270,7 @@
     pruef("Fuellung waechst", halte[0].fuellung < halte[1].fuellung &&
       halte[1].fuellung < halte[2].fuellung, true,
       halte.map(function(h){ return h.fuellung; }).join(" < "));
-    pruef("aria Halt 0", halte[0].aria, "0/Medium");
+    pruef("aria Halt 0", halte[0].aria, "0/Mid");
     pruef("aria Halt 1", halte[1].aria, "1/High");
     pruef("aria Halt 2", halte[2].aria, "2/Ultra");
     pruef("is-ultra NUR auf Halt 2",
@@ -298,7 +299,7 @@
     var flash = [].filter.call(document.querySelectorAll(".am-eff-opt"),
       function(o){ return o.getAttribute("data-model") === "flash"; })[0];
     flash.click();
-    pruef("Flash: Stufe", g("am-eff-lvl").textContent, "Medium");
+    pruef("Flash: Stufe", g("am-eff-lvl").textContent, "Mid");
     pruef("Flash: Schiene gesperrt", getComputedStyle(tr).pointerEvents, "none");
     pruef("Flash: Schaltflaeche NICHT gesperrt", getComputedStyle(btn).pointerEvents, "auto",
       "sonst kaeme man aus Flash nicht mehr heraus");
@@ -312,7 +313,7 @@
       parseInt(g("am-eff-body").style.height, 10), function(v){ return v > 0 && v < 40; },
       "gesetzt: " + g("am-eff-body").style.height);
     document.querySelectorAll(".am-eff-lbl")[2].click();
-    pruef("Flash: Klick auf Ultra tut nichts", g("am-eff-lvl").textContent, "Medium");
+    pruef("Flash: Klick auf Ultra tut nichts", g("am-eff-lvl").textContent, "Mid");
     g("am-eff-head").click();
     var pro = [].filter.call(document.querySelectorAll(".am-eff-opt"),
       function(o){ return o.getAttribute("data-model") === "pro"; })[0];
@@ -435,8 +436,8 @@
     var gs = JSON.parse(window.__gesendet);
     pruef("Payload-Schluessel unveraendert", Object.keys(gs).join(","),
       "chat_id,message,answer_detail,model");
-    pruef("answer_detail bei Ultra", gs.answer_detail, "detailed",
-      "die Werte aendern sich NICHT -- der Slider ist nur eine neue Darstellung");
+    pruef("answer_detail bei Ultra", gs.answer_detail, "Ultra",
+      "die Stufe SELBST ist der Wert -- der Feldname bleibt answer_detail");
     pruef("Bezugsblock steht oben", gs.message.indexOf("Context:"), 0);
     pruef("Marke mit UID", gs.message.indexOf("- Brand: Nike (uid: B-77)") > 0, true);
     pruef("Prompt mit UID", gs.message.indexOf("(uid: P-12)") > 0, true);
@@ -444,6 +445,22 @@
     pruef("Frage steht unter dem Bezug",
       gs.message.indexOf("Woran liegt das?") > gs.message.indexOf("Context:"), true);
     pruef("nach dem Senden sind die Bezuege weg", document.querySelectorAll(".am-pick-tag").length, 0);
+    /* DIE ALTEN DREI WERTE muessen auf IHRER Stufe landen und nicht stillschweigend in der
+       Mitte. Sie koennen in window.askMiraState vorbelegt sein oder in einem gespeicherten
+       Chat ueberlebt haben.
+       Geprueft wird der ECHTE Weg: den Zustand setzen und das Menue oeffnen -- das ruft
+       effZeichnen, und das liest die Stufe ueber effIndex. Ein Test, der die Stufe erst
+       anklickt und dann nachsieht, ob sie steht, koennte nicht fehlschlagen. */
+    [["short", "Mid"], ["balanced", "High"], ["detailed", "Ultra"],
+     ["quatsch", "High"]].forEach(function(paar){
+      if (eff.classList.contains("is-open")) btn.click();
+      window.askMiraState.answerDetail = paar[0];
+      btn.click();                                  /* oeffnen -> effZeichnen liest neu */
+      pruef("alter Wert \"" + paar[0] + "\" landet auf " + paar[1],
+        g("am-eff-lvl").textContent, paar[1],
+        paar[0] === "quatsch" ? "Unbekanntes faellt auf die Mitte" : "");
+      btn.click();
+    });
 
     kopf("7  KAPUTTE UND LEERE ANTWORTEN  (leer und kaputt sind zwei Dinge)");
     var faelle = [

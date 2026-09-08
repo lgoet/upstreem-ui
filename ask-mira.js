@@ -377,7 +377,7 @@
   window.askMiraState = window.askMiraState || {
     activeChatId: null,
     titlePending: false,
-    answerDetail: 'balanced',
+    answerDetail: 'High',
     model: 'pro',
     chatLoading: false,
     isLoading: false,
@@ -459,7 +459,7 @@
       pickOfflineSub: 'Please reload the page and try again.',
       pickMax: 'max 3',
       pickPlaceholder: 'Search brands, domains, URLs, prompts\u2026',
-      effFlashNote: 'Mira Flash always answers at Medium.',
+      effFlashNote: 'Mira Flash always answers at Mid.',
       urlDetail: 'Open detail page',
       oppAdd: 'Add as opportunity',
       oppAdding: 'Adding\u2026',
@@ -3090,23 +3090,43 @@
     if (window.__amRenderChatTitlebar) window.__amRenderChatTitlebar();
   }
 
-  /* ================= AUFWAND: Medium / High / Ultra ==========================================
-     DIE ABBILDUNG, und sie steht hier, weil sie sonst geraten wird:
+  /* ================= AUFWAND: Mid / High / Ultra ==========================================
+     DIE DREI STUFEN SIND DIE WERTE. Sie gehen buchstabengleich als answer_detail hinaus:
 
-         Medium -> 'short'      High -> 'balanced'      Ultra -> 'detailed'
+         Mid            High            Ultra
 
-     Drei geordnete Stufen auf drei geordnete Werte, in der Reihenfolge, in der beide Skalen
-     ohnehin stehen. Entscheidend ist die MITTE: 'balanced' ist der Vorgabewert der Komponente,
-     und er faellt damit auf die mittlere Rasterstelle -- der Slider startet dort, wo die App
-     startet. Und Flash, das setModel auf 'short' zwingt, zeigt die unterste Stufe.
+     Der FELDNAME bleibt answer_detail -- die Extraktion in Bubble haengt daran und soll
+     unangetastet bleiben. Was sich geaendert hat, sind die drei Werte darin: vorher standen
+     dort short|balanced|detailed, und die Stufe war nur eine Beschriftung darueber. Das war
+     ein Lesefehler auf meiner Seite; gemeint war von Anfang an, dass der Aufwand SELBST der
+     Wert ist, damit er im Systemprompt benannt werden kann.
 
-     Am Payload aendert sich NICHTS: S.answerDetail bleibt short|balanced|detailed und geht
-     unveraendert als answer_detail hinaus. Der Slider ist eine neue Darstellung desselben
-     Feldes, keine neue Groesse. setDetail bleibt der einzige Schreiber dieses Zustands. */
-  var EFF_WERTE  = ['short', 'balanced', 'detailed'];
-  var EFF_LABELS = { en: ['Medium', 'High', 'Ultra'], de: ['Mittel', 'Hoch', 'Ultra'] };
+     DIE WERTE SIND IMMER ENGLISCH, auch wenn die Oberflaeche auf Deutsch steht. Sonst schickte
+     ein deutscher Nutzer "Mittel" und der Systemprompt haette zwei Namen fuer eine Stufe. Die
+     Beschriftung ist uebersetzt (Mittel/Hoch/Ultra), der Wert nicht -- Beschriftung und Wert
+     sind zwei verschiedene Dinge, und nur das eine ist ein Vertrag.
+
+     Die MITTE ist der Vorgabewert: High. Der Slider startet dort, wo die App startet.
+     Flash kann nur die unterste Stufe und zeigt deshalb Mid.
+
+     DIE ALTEN DREI WERDEN NOCH ANGENOMMEN (EFF_ALT). Ein Wert kann irgendwo ueberlebt haben --
+     in window.askMiraState, das eine Seite vorbelegen darf, oder in einem gespeicherten Chat.
+     Ohne die Zuordnung faellt so ein Wert auf die Mitte, also stillschweigend auf High, auch
+     wenn er "short" hiess. Drei Zeilen, und niemand verliert seine Stufe. */
+  var EFF_WERTE  = ['Mid', 'High', 'Ultra'];
+  /* Die Werte bis zum 08.09. -- damit ein ueberlebender alter Wert auf SEINER Stufe landet
+     und nicht stillschweigend in der Mitte. */
+  var EFF_ALT    = { short: 'Mid', balanced: 'High', detailed: 'Ultra' };
+  function effWert(w){
+    w = String(w == null ? '' : w);
+    if (EFF_WERTE.indexOf(w) >= 0) return w;
+    return EFF_ALT[w] || '';
+  }
+  /* Englisch heisst die Stufe wie ihr WERT -- ein Name fuer eine Sache. Deutsch ist eine
+     Uebersetzung der Beschriftung, nicht des Wertes. */
+  var EFF_LABELS = { en: ['Mid', 'High', 'Ultra'], de: ['Mittel', 'Hoch', 'Ultra'] };
   function effLabels(){ return EFF_LABELS[lang] || EFF_LABELS.en; }
-  function effIndex(wert){ var i = EFF_WERTE.indexOf(wert); return i < 0 ? 1 : i; }
+  function effIndex(wert){ var i = EFF_WERTE.indexOf(effWert(wert)); return i < 0 ? 1 : i; }
 
   var elEff       = root.querySelector('#am-eff');
   var elEffBtn    = root.querySelector('#am-eff-btn');
@@ -3234,7 +3254,9 @@
   }
 
   function setDetail(value, silent){
-    if (EFF_WERTE.indexOf(value) < 0) value = 'balanced';
+    /* Ueber effWert: ein alter Wert wird auf seine Stufe gehoben, alles Unbekannte auf die
+       Mitte. So kann in S.answerDetail nie etwas stehen, was der Systemprompt nicht kennt. */
+    value = effWert(value) || 'High';
     S.answerDetail = value;
     effZeichnen();
     /* Die alte Fassung schloss hier jedes Menue. Das war richtig, solange die Stufe ein Eintrag
@@ -3334,13 +3356,13 @@
     if (model === 'flash'){
       root.classList.add('is-flash');
       if (elEffNote) elEffNote.textContent = L().effFlashNote;
-      setDetail('short', true);                  /* Flash kann nur die unterste Stufe */
+      setDetail('Mid', true);                    /* Flash kann nur die unterste Stufe */
     } else {
       root.classList.remove('is-flash');
       /* Die Stufe nur zuruecksetzen, wenn wirklich AUS Flash heraus gewechselt wurde. Vorher
          nahm JEDER Klick auf das schon aktive "Mira Pro" dem Nutzer sein Ultra weg -- ein
          Zustand, den er gar nicht angefasst hatte. */
-      if (!silent && vorher === 'flash') setDetail('balanced', true);
+      if (!silent && vorher === 'flash') setDetail('High', true);
       else effZeichnen();
     }
     /* Die Modellliste wieder einklappen: die Wahl ist getroffen, und darunter liegt der
@@ -5786,7 +5808,7 @@
      prevKnopfText muss hier NOCHMAL: der Block oben laeuft, bevor resolveLang die Sprache
      gesetzt hat, und schrieb dort also die englische Fassung. */
   effLabelsBauen(); pickTexteSetzen(); pickScopesBauen(); prevKnopfText();
-  setDetail(S.answerDetail || 'balanced', true);
+  setDetail(S.answerDetail || 'High', true);
   setModel(S.model || 'pro', true);
   renderPrevious();
   /* Auffangnetz: kommt nie eine Sitzungsliste (ein Nutzer ohne Chats), hoeren die Skelette nach
