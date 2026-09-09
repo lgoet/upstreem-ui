@@ -2873,29 +2873,33 @@
    Polsterung 0 6.5 0 9.75, halbdurchsichtiger Grund und ZWEI Schattenlagen. Die zwei Lagen
    sind Absicht und keine Verzierung -- eine Lage kann nur eines von beiden: mit 3px Streuung
    ist die Kante weich, mit 1px fehlt das Abheben. Zusammen 2px Gesamtausdehnung.
-   Im Dunkeln beide kraeftiger (40 und 26 statt 22 und 12 Prozent), weil ein Schatten auf
-   dunklem Grund weniger hergibt.
+   Im Dunkeln beide kraeftiger (24 und 16 statt 13 und 7 Prozent), weil ein Schatten auf
+   dunklem Grund weniger hergibt. Alle vier Deckkraefte am 09.09. um 40 Prozent zurueck
+   (22/12 und 40/26 mal 0.6) -- der Chip soll sich abheben und nicht schweben.
    WARUM HIER UND NICHT NUR DORT: der Chip ist derselbe Gedanke an zwei Orten -- die Palette
    und der Picker in Ask Mira zeigen beide Brand, Prompt, Domain, URL. Die Palette BEHAELT
    ihre eigene Kopie, weil ihr Bubble-Loader nur quick-actions.css zieht und core dort nicht
-   im Baum ist; dieselbe Begruendung wie bei ihren Farbpaletten. Diese Datei ist die Quelle. */
+   im Baum ist; dieselbe Begruendung wie bei ihren Farbpaletten. Diese Datei ist die Quelle.
+   WER DIESE VIER ZAHLEN AENDERT, AENDERT SIE AUCH IN quick-actions.css (.mqa-chip und
+   .mqa-mini). Dort steht derselbe Hinweis. Solange die Palette ohne core laeuft, ist das die
+   einzige Fassung, die haelt -- ein Import waere ein stiller Ausfall auf ihrer Seite. */
 .up-entchip.is-lifted {
   height: 26px; gap: 6.5px; padding: 0 6.5px 0 9.75px; border-radius: 7.6px;
   font-size: 12.5px; font-weight: 500;
   background: color-mix(in srgb, var(--vc-heading-bg) 50%, transparent);
-  box-shadow: 0 1px 1px rgba(0,0,0,0.22), 0 2px 4px rgba(0,0,0,0.12);
+  box-shadow: 0 1px 1px rgba(0,0,0,0.13), 0 2px 4px rgba(0,0,0,0.07);
 }
 .up-root[data-theme="dark"] .up-entchip.is-lifted {
-  box-shadow: 0 1px 1px rgba(0,0,0,0.40), 0 2px 4px rgba(0,0,0,0.26);
+  box-shadow: 0 1px 1px rgba(0,0,0,0.24), 0 2px 4px rgba(0,0,0,0.16);
 }
 /* Die kleine Fassung (.mqa-mini): 22px statt 26, Radius 6.4, und der Schatten einen Pixel
    enger -- der kleine Chip soll nicht staerker schweben als der grosse. */
 .up-entchip.is-lifted.is-sm {
   height: 22px; gap: 5.5px; padding: 0 5.5px 0 8.25px; border-radius: 6.4px; font-size: 11px;
-  box-shadow: 0 1px 1px rgba(0,0,0,0.22), 0 1px 3px rgba(0,0,0,0.12);
+  box-shadow: 0 1px 1px rgba(0,0,0,0.13), 0 1px 3px rgba(0,0,0,0.07);
 }
 .up-root[data-theme="dark"] .up-entchip.is-lifted.is-sm {
-  box-shadow: 0 1px 1px rgba(0,0,0,0.40), 0 1px 3px rgba(0,0,0,0.26);
+  box-shadow: 0 1px 1px rgba(0,0,0,0.24), 0 1px 3px rgba(0,0,0,0.16);
 }
 
 /* ---- Mention-Liste ---------------------------------------------------------------------------

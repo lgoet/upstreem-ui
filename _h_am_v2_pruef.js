@@ -680,6 +680,21 @@
         cs.fontSize + " " + cs.fontWeight,
         "26 / 7.6px / 6.5px / 9.75px 6.5px / 12.5px 500");
       pruef("1 zwei Schattenlagen", (cs.boxShadow.match(/rgba?\(/g) || []).length, 2);
+      /* DIE DECKKRAEFTE FESTNAGELN. Am 09.09. um 40 Prozent zurueck (22/12 und 40/26 mal 0.6).
+         Ohne diese Zeile faellt ein Zurueckdrehen niemandem auf -- ein Schatten ist die Art
+         Wert, die man nicht vermisst. Geprueft wird in BEIDEN Themen, weil die dunklen Zahlen
+         eigene sind. */
+      pruef("1 die Deckkraefte sind 40 Prozent zurueck", (function(){
+        var lies = function(thema){
+          root.setAttribute("data-theme", thema);
+          return (getComputedStyle(c).boxShadow.match(/rgba\(0,\s*0,\s*0,\s*([\d.]+)\)/g) || [])
+            .map(function(x){ return x.match(/([\d.]+)\)/)[1]; }).join("/");
+        };
+        var vorher = root.getAttribute("data-theme");
+        var h = lies("light"), d = lies("dark");
+        root.setAttribute("data-theme", vorher || "light");
+        return h + " hell, " + d + " dunkel";
+      })(), "0.13/0.07 hell, 0.24/0.16 dunkel");
     })();
     /* Der Chip IM FELD ist die kleine Fassung (.mqa-mini). */
     document.querySelector('#am-pick-cmds .am-pick-cmd[data-cmd="urls"]').click();

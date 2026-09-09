@@ -174,19 +174,24 @@
      0 1px 2px bei 12%   die weiche Lage darunter, die den Chip von der Eingabezeile abhebt
    Eine Lage kann nur eines von beiden: mit 3px Streuung ist die Kante weich, mit 1px fehlt das
    Abheben. Zusammen sind es 2px Gesamtausdehnung statt 3 -- einen weniger als vorher.
-   Im Dunkeln beide kraeftiger (40 und 26%), weil ein Schatten auf dunklem Grund weniger hergibt. */
+   Im Dunkeln beide kraeftiger (24 und 16%), weil ein Schatten auf dunklem Grund weniger hergibt.
+   Alle vier Deckkraefte am 09.09. um 40 Prozent zurueck (22/12 und 40/26 mal 0.6).
+   DIESE WERTE STEHEN AUCH IN CORE (.up-entchip.is-lifted) und muessen dort MITWANDERN: diese
+   Datei ist absichtlich eigenstaendig -- ihr Bubble-Loader zieht nur quick-actions.css/.js,
+   core ist auf ihrer Seite nicht im Baum. Deshalb eine Kopie und kein Import, und deshalb
+   dieser Hinweis an beiden Stellen. */
 .mqa-chip {
   display: inline-flex; align-items: center; gap: 6.5px; height: 26px; padding: 0 6.5px 0 9.75px;
   border-radius: 7.6px; border: 1px solid var(--am-border);
   background: color-mix(in srgb, var(--am-soft-2) 50%, transparent);
   /* Die weiche Lage zwei Pixel weiter (Streuung 2 -> 4, Versatz 1 -> 2). Die dichte Lage an der
      Kante bleibt: sie zeichnet die Kante, sie traegt nicht den Schatten. */
-  box-shadow: 0 1px 1px rgba(0,0,0,0.22), 0 2px 4px rgba(0,0,0,0.12);
+  box-shadow: 0 1px 1px rgba(0,0,0,0.13), 0 2px 4px rgba(0,0,0,0.07);
   color: var(--am-muted); font-size: 12.5px; font-weight: 500; white-space: nowrap;
 }
 /* [data-theme="dark"] als Vorfahre, wie die Nachbarregeln dieser Datei. */
 [data-theme="dark"] .mqa-chip {
-  box-shadow: 0 1px 1px rgba(0,0,0,0.40), 0 2px 4px rgba(0,0,0,0.26); }
+  box-shadow: 0 1px 1px rgba(0,0,0,0.24), 0 2px 4px rgba(0,0,0,0.16); }
 .mqa-chip b { font-weight: 400; color: var(--am-muted-2); }   /* value only: -100 weight, weaker colour */
 .mqa-chip-x {
   width: 16px; height: 16px; border: 0; border-radius: 4px; background: transparent; cursor: pointer;
@@ -420,11 +425,11 @@
   background: color-mix(in srgb, var(--am-soft-2) 50%, transparent);
   /* Einen Pixel weiter als vorher (Streuung 2 -> 3), also einen weniger als beim grossen Chip --
      der kleine soll nicht staerker schweben als der grosse. */
-  box-shadow: 0 1px 1px rgba(0,0,0,0.22), 0 1px 3px rgba(0,0,0,0.12);
+  box-shadow: 0 1px 1px rgba(0,0,0,0.13), 0 1px 3px rgba(0,0,0,0.07);
   color: var(--am-muted); font-size: 11px; font-weight: 500; white-space: nowrap; gap: 5.5px;
 }
 [data-theme="dark"] .mqa-mini {
-  box-shadow: 0 1px 1px rgba(0,0,0,0.40), 0 1px 3px rgba(0,0,0,0.26); }
+  box-shadow: 0 1px 1px rgba(0,0,0,0.24), 0 1px 3px rgba(0,0,0,0.16); }
 /* Nur der Wert: eine Stufe leichter und gedaempft, genau wie in .mqa-chip b. */
 .mqa-mini b { font-weight: 400; color: var(--am-muted-2); }
 .mqa-recent-q { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
