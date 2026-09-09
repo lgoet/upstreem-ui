@@ -166,8 +166,9 @@
          hier nur der helle Wert; im Dunkeln sprang die Karte damit auf --up-sel-bg statt auf
          --vc-heading-bg, und die gemeldete Stufenzahl war 13 statt der wirklichen 7. Eine
          Messung, die eine andere Regel prueft als die ausgelieferte, ist keine. */
-      st.textContent = '#ask-mira .am-cat-card.pruefhover { background: var(--up-sel-bg); }' +
-        '#ask-mira[data-theme="dark"] .am-cat-card.pruefhover { background: var(--vc-heading-bg); }' +
+      st.textContent = '#ask-mira .am-cat-card.pruefhover { background: var(--vc-heading-bg); }' +
+        '#ask-mira[data-theme="dark"] .am-cat-card.pruefhover' +
+        ' { background: color-mix(in srgb, var(--vc-heading-bg) 40%, transparent); }' +
         '#ask-mira .am-cat-card.pruefhover .am-cat-chev { transform: translateX(4px); }';
       document.head.appendChild(st);
       var karte = document.querySelectorAll(".am-cat-card")[1];
@@ -242,8 +243,9 @@
       var dunkel = root.getAttribute("data-theme") === "dark";
       var grund = farbe(getComputedStyle(document.body).backgroundColor);
       var st = document.createElement("style");
-      st.textContent = '#ask-mira .am-cat-card.h3 { background: var(--vc-sk) }' +
-        '#ask-mira[data-theme="dark"] .am-cat-card.h3 { background: var(--vc-bg) }';
+      st.textContent = '#ask-mira .am-cat-card.h3 { background: var(--vc-heading-bg) }' +
+        '#ask-mira[data-theme="dark"] .am-cat-card.h3' +
+        ' { background: color-mix(in srgb, var(--vc-heading-bg) 40%, transparent) }';
       document.head.appendChild(st);
       var k = document.querySelectorAll(".am-cat-card")[1];
       var ruhe = farbe(getComputedStyle(k).backgroundColor);
@@ -900,6 +902,82 @@
       if (root.classList.contains("is-pick-open")) g("am-pick-btn").click();
       return t;
     })(), "Filter");
+
+    kopf("7f  DER GETEILTE HOVER UND \"START NEW CHAT\"  (09.09., dritte Runde)");
+    /* DER HOVER DER KARTEN IST EINE BEZIEHUNG, KEINE FARBE. In core liegt --vc-heading-bg auf
+       --vc-bg und ist 7 Kanalstufen darueber -- so sieht jedes unfarbige Klickziel der App
+       aus. Miras Seite ist mit --am-bg #101114 dunkler als #1c1c1f: der nackte Ton macht dort
+       19 Stufen, also fast das Dreifache. Deshalb im Dunkeln derselbe Ton auf 40 Prozent.
+       Geprueft wird die BEZIEHUNG in beiden Themen, gegen den Grund der SEITE -- nicht gegen
+       den Grund der Pruefseite, das hat schon einmal 3 statt 7 gemeldet. */
+    (function(){
+      var karte = document.querySelector(".am-cat-card");
+      if (!karte){ pruef("7f Kategoriekarte da", false, true); return; }
+      var probe = document.createElement("button");
+      probe.className = "am-rep-card";
+      (document.querySelector("#ask-mira .am-shell") || root).appendChild(probe);
+      var st = document.createElement("style");
+      st.textContent =
+        '#ask-mira .am-cat-card.h7, #ask-mira .am-rep-card.h7 { background: var(--vc-heading-bg); }' +
+        '#ask-mira[data-theme="dark"] .am-cat-card.h7,' +
+        '#ask-mira[data-theme="dark"] .am-rep-card.h7' +
+        ' { background: color-mix(in srgb, var(--vc-heading-bg) 40%, transparent); }';
+      document.head.appendChild(st);
+      var warThema = root.getAttribute("data-theme");
+      var messen = function(e, thema){
+        root.setAttribute("data-theme", thema);
+        var cs0 = getComputedStyle(root);
+        var grund = farbe(cs0.getPropertyValue("--am-bg").trim());
+        var randRuhe = getComputedStyle(e).borderTopColor;
+        e.classList.add("h7");
+        var hov = farbe(getComputedStyle(e).backgroundColor);
+        var randHov = getComputedStyle(e).borderTopColor;
+        e.classList.remove("h7");
+        return { stufen: stufen(ueber(hov, grund), grund), randGleich: randHov === randRuhe };
+      };
+      var kh = messen(karte, "light"), kd = messen(karte, "dark");
+      var rh = messen(probe, "light"), rd = messen(probe, "dark");
+      /* Die Beziehung, die core selbst hat -- als Zielwert und nicht als geratene Zahl. */
+      root.setAttribute("data-theme", "dark");
+      var csd = getComputedStyle(root);
+      var ziel = stufen(farbe(csd.getPropertyValue("--vc-heading-bg").trim()),
+                        farbe(csd.getPropertyValue("--vc-bg").trim()));
+      root.setAttribute("data-theme", warThema || "light");
+      st.remove(); probe.remove();
+      pruef("7f die Beziehung in core ist der Zielwert", ziel, 7,
+        "--vc-heading-bg auf --vc-bg");
+      pruef("7f Kategoriekarte: derselbe Schritt in beiden Themen",
+        kh.stufen + "/" + kd.stufen,
+        function(v){ var t = v.split("/").map(Number);
+          return t.every(function(x){ return Math.abs(x - ziel) <= 2; }); },
+        "vorher 18 hell und 12 dunkel");
+      pruef("7f Reporting-Karte genauso", rh.stufen + "/" + rd.stufen,
+        function(v){ var t = v.split("/").map(Number);
+          return t.every(function(x){ return Math.abs(x - ziel) <= 2; }); });
+      pruef("7f und NUR der Grund -- der Rahmen bleibt",
+        [kh, kd, rh, rd].every(function(x){ return x.randGleich; }), true,
+        "ausdruecklich ohne Rahmen-Hover");
+    })();
+    /* "START NEW CHAT" AUF DEM STARTSCHIRM setzt nur den Fokus. Gemessen wird BEIDES: dass
+       Bubble dort NICHT gerufen wird, und die Gegenprobe, dass es im Chat weiter ruft --
+       sonst zeigte die Null nur, dass der Knopf gar nichts tut. */
+    (function(){
+      var ta = g("am-textarea"), knopf = g("am-new-chat");
+      if (!knopf){ pruef("7f Start-New-Chat da", false, true); return; }
+      var altFn = window.bubble_fn_ask_mira_new_chat;
+      var gerufen = 0;
+      window.bubble_fn_ask_mira_new_chat = function(){ gerufen++; };
+      var warMsgs = root.classList.contains("has-messages");
+      root.classList.remove("has-messages");
+      ta.blur(); knopf.click();
+      pruef("7f auf dem Startschirm nur Fokus, kein neuer Chat",
+        (document.activeElement === ta) + "/" + gerufen, "true/0");
+      root.classList.add("has-messages");
+      gerufen = 0; ta.blur(); knopf.click();
+      pruef("GEGENPROBE im Chat startet er einen neuen", gerufen, 1);
+      if (warMsgs) root.classList.add("has-messages"); else root.classList.remove("has-messages");
+      window.bubble_fn_ask_mira_new_chat = altFn;
+    })();
 
     kopf("8  DER VERTEILER  (deshalb braucht die Suche KEINEN Eingriff in Bubble)");
     /* ZUSTELLUNGEN zaehlen und nicht DOM-Zeilen. Der Fehlschluss davor: die Trefferliste trug

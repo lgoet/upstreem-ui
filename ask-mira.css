@@ -1009,8 +1009,28 @@
      schien dessen Raster durch -- die Karte verlor ihren Boden. -solid ist derselbe Ton als voller
      Wert und liegt vier Stufen daneben (36 statt 32 im Dunkeln), was niemand sieht. */
   /* Der Hover: hell die naechste Sprosse, dunkel derselbe Ton VOLL statt halb. */
-  .am-cat-card:hover { background: var(--vc-sk); }
-  #ask-mira[data-theme="dark"] .am-cat-card:hover { background: var(--vc-bg); }
+  /* DER GETEILTE HOVER UNFARBIGER CONTAINER AUS CORE: --vc-heading-bg. Denselben Ton tragen
+     dort .up-iconbtn, .up-quietbtn, .up-filter-item, .up-page und .up-btn-sec -- ein Klickziel
+     ohne eigene Farbe sieht damit ueberall gleich aus.
+     Die alten Werte (--vc-sk hell, --vc-bg dunkel) stammten aus der Zeit, als die Karte im
+     Ruhezustand selbst einen Grund hatte: der Hover war die naechste Sprosse ueber diesem
+     Grund. Seit die Karte durchsichtig ist, springt derselbe Wert vom Nichts direkt auf einen
+     kraeftigen Ton -- gemessen im Hellen 17 Stufen gegen Weiss, wo der geteilte Ton 6 macht.
+     NUR DER GRUND. Die Kernregeln setzen daneben oft color und border-color; beides bleibt
+     hier, wo es ist -- ausdruecklich so verlangt.
+
+     WARUM IM DUNKELN EIN MIX UND NICHT DERSELBE TON: der geteilte Hover ist in core eine
+     BEZIEHUNG und keine Farbe -- --vc-heading-bg liegt dort auf --vc-bg und ist gemessen 7
+     Kanalstufen darueber. Miras Seite ist mit --am-bg #101114 dunkler als #1c1c1f, und der
+     nackte Ton macht auf ihr 19 Stufen: fast das Dreifache der geteilten Beziehung und
+     kraeftiger als die 12, die vorher zu stark waren. Hell trifft es von allein (#f9f8f9 auf
+     Weiss sind ebenfalls 7). Im Dunkeln bringt derselbe Ton auf 40 Prozent genau diese
+     Beziehung zurueck: gemessen 8 Stufen. Eine Farbe waere hier ein zweiter Wert, der
+     auseinanderlaufen kann -- der Mix bleibt an demselben Token haengen. */
+  .am-cat-card:hover { background: var(--vc-heading-bg); }
+  #ask-mira[data-theme="dark"] .am-cat-card:hover {
+    background: color-mix(in srgb, var(--vc-heading-bg) 40%, transparent);
+  }
   /* leading = a left-tilted little "document" tile, larger than the row so it bleeds past the bottom
      and is clipped by the card (same logic as the report cards); absolute -> no extra card height */
   .am-cat-ic {
@@ -1140,8 +1160,12 @@
   #ask-mira[data-theme="dark"] .am-rep-card { background: transparent; }
   /* Der Hover: hell die naechste Sprosse, dunkel derselbe Ton VOLL statt halb -- wie bei den
      Kategoriekarten. */
-  .am-rep-card:hover { background: var(--vc-sk); }
-  #ask-mira[data-theme="dark"] .am-rep-card:hover { background: var(--vc-bg); }
+  /* Derselbe geteilte Hover wie bei den Kategoriekarten, samt der dunklen Fassung -- die
+     Begruendung fuer den Mix steht dort. Die beiden Kartenfamilien muessen gleich reagieren. */
+  .am-rep-card:hover { background: var(--vc-heading-bg); }
+  #ask-mira[data-theme="dark"] .am-rep-card:hover {
+    background: color-mix(in srgb, var(--vc-heading-bg) 40%, transparent);
+  }
   /* leading element = a left-tilted little "document" card; larger than the row so it bleeds past the
      bottom edge and is clipped by the card (absolute so it never changes the card height) */
   .am-rep-ic {

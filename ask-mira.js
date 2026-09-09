@@ -5753,6 +5753,16 @@
   }, { passive: false });
 
   function goToStart(){
+    /* STEHT MAN SCHON AUF DEM STARTSCHIRM, ist "Start New Chat" kein Wechsel mehr -- dann
+       setzt der Punkt nur den Fokus ins Feld. Ohne das lief hier der ganze Zuruecksetzweg
+       samt bubble_fn_ask_mira_new_chat noch einmal, obwohl es nichts zurueckzusetzen gab:
+       Bubble bekam ein zweites "neuer Chat" fuer denselben leeren Chat, und der Nutzer sah
+       gar nichts passieren. Der Startschirm ist genau das Gegenteil von has-messages. */
+    if (!root.classList.contains('has-messages')){
+      closePrevWennSchmal();
+      if (elTextarea){ try { elTextarea.focus(); } catch(e){} }
+      return;
+    }
     S.activeChatId = null; S.messages = []; S.titlePending = false;
     runDrop();
     if (S.isLoading) setLoading(false);   // stop the loader + clear its timers, else has-messages stays on via isLoading
