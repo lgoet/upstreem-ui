@@ -981,15 +981,16 @@
      gemeint. Die Zahlen stehen gemessen im Kommentar am Hover. */
   .am-cat-card {
     position: relative; overflow: hidden;
-    text-align: left; border: 0; border-radius: 13px;
-    background: var(--up-sel-bg); padding: 13px 14px 13px 60px; cursor: pointer;
+    text-align: left; border-radius: 13px;
+    /* OHNE Grund, dafuer ein Rahmen mit halber Deckkraft (09.09.). color-mix statt opacity:
+       opacity haette das ganze Element durchsichtig gemacht, samt Zeichen und Text. */
+    border: 1px solid color-mix(in srgb, var(--vc-border) 50%, transparent);
+    background: transparent; padding: 13px 14px 13px 60px; cursor: pointer;
     display: flex; align-items: center; gap: 11px; min-width: 0;
     color: var(--am-text); font-size: 13.5px; font-weight: 500; line-height: 1.4;
     transition: background 200ms ease;
   }
-  #ask-mira[data-theme="dark"] .am-cat-card {
-    background: color-mix(in srgb, var(--vc-bg) 50%, transparent);
-  }
+  #ask-mira[data-theme="dark"] .am-cat-card { background: transparent; }
   .am-cat-card-full { width: 100%; margin-bottom: 10px; }
   /* the Reporting category card is styled exactly like a report card (taller, with a subheading) */
   .am-cat-card-report { padding: 12px 13px 12px 76px; align-items: center; }
@@ -1129,14 +1130,14 @@
   .am-rep-card {
     position: relative; overflow: hidden;
     display: flex; align-items: center; gap: 13px; width: 100%; text-align: left;
-    border: 0; border-radius: 12px;
-    background: var(--up-sel-bg);
+    border-radius: 12px;
+    /* wie bei den Kategoriekarten: kein Grund, ein halber Rahmen */
+    border: 1px solid color-mix(in srgb, var(--vc-border) 50%, transparent);
+    background: transparent;
     padding: 12px 13px 12px 76px; cursor: pointer; font-family: inherit;
     transition: background 200ms ease;
   }
-  #ask-mira[data-theme="dark"] .am-rep-card {
-    background: color-mix(in srgb, var(--vc-bg) 50%, transparent);
-  }
+  #ask-mira[data-theme="dark"] .am-rep-card { background: transparent; }
   /* Der Hover: hell die naechste Sprosse, dunkel derselbe Ton VOLL statt halb -- wie bei den
      Kategoriekarten. */
   .am-rep-card:hover { background: var(--vc-sk); }
@@ -1750,8 +1751,15 @@
      16px Abstand, links ausgerichtet, und die Ueberschrift bricht nicht um -- sie ist kurz,
      die Chips duerfen umbrechen. align-items: center, damit die 28px-Chips die 12px-Zeile
      nicht nach oben ziehen. */
+  /* flex-wrap: der ganze Chip-Block rutscht unter die Ueberschrift, BEVOR die Chips
+     untereinander brechen (09.09. verlangt). Moeglich wird das durch zwei Dinge zusammen:
+     die Zeile darf umbrechen, und der Chip-Block darf NICHT schrumpfen (flex-shrink: 0 an
+     .am-pick-cmds) -- sonst quetscht Flex ihn schmal, statt ihn umzusetzen, und die Chips
+     brechen doch untereinander. Die 8px sind der Abstand NACH dem Umbruch: row-gap.
+     column-gap bleibt bei 16, das ist der Abstand daneben. */
   .am-pick-crow {
-    display: flex; align-items: center; gap: 16px;
+    display: flex; align-items: center; flex-wrap: wrap;
+    column-gap: 16px; row-gap: 8px;
     margin: 4px 14px 10px;
   }
   .am-pick-crow.is-leer { display: none; }
@@ -1775,7 +1783,13 @@
 
   /* Die Raender liegen jetzt an .am-pick-crow -- hier bleibt nur der Abstand ZWISCHEN den
      Chips, sonst stuende 14px zweimal. */
-  .am-pick-cmds { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; min-width: 0; }
+  /* flex: 0 1 auto -- nicht 0 0 auto. Der Zeilenumbruch von Flex rechnet mit der
+     UNGESCHRUMPFTEN Groesse: der Block rutscht also unter die Ueberschrift, sobald er
+     daneben nicht mehr passt. Erst DANACH, auf seiner eigenen Zeile, darf er schrumpfen --
+     und dann brechen die Chips untereinander, statt aus dem Panel zu laufen. Mit 0 0 auto
+     kam nur der erste Teil: gemessen standen die Chips bei 340px Breite noch in einer Reihe
+     und wurden vom Panel abgeschnitten. */
+  .am-pick-cmds { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; flex: 0 1 auto; }
   .am-pick-cmds.is-leer, .am-pick-h.is-leer { display: none; }
   /* GEOMETRIE UND ANMUTUNG KOMMEN AUS CORE: .up-entchip.is-lifted, also derselbe Chip, den
      die Palette zeigt -- 26px, Radius 7.6, halbdurchsichtiger Grund und die zwei
@@ -1807,19 +1821,28 @@
     max-width: 60%; min-width: 0; }
   .am-pick-chips:empty { display: none; }
   .am-pick-inwrap { flex: 1 1 auto; min-width: 40px; display: flex; }
-  /* Auch dieser aus core: .up-entchip.is-lifted.is-sm, die 22px-Fassung der Palette
-     (.mqa-mini). Rechts weniger Polsterung als core vorgibt, weil dort das Entfernen-Kreuz
-     sitzt und nicht Text -- das ist der einzige Grund, hier ueberhaupt etwas zu setzen. */
-  .am-pick-chip { flex: 0 1 auto; min-width: 0; padding-right: 3px; color: var(--am-text);
-    max-width: 100%; }
+  /* DER CHIP DER PALETTE, nicht die kleine Fassung: 26px, Radius 7.6, 12.5px, derselbe
+     Rahmen, derselbe Schatten. Ausdruecklich verlangt -- "genau so, gleiche height, gleicher
+     border, gleiche font size". Er kommt deshalb ohne is-sm, also als volles
+     .up-entchip.is-lifted, und hier steht nur noch, was ein Filter-Chip mehr hat als ein
+     Anzeige-Chip: er darf schrumpfen, und rechts sitzt das Kreuz statt Text. */
+  .am-pick-chip { flex: 0 1 auto; min-width: 0; padding-right: 6.5px; max-width: 100%; }
+  /* Die Farben der Palette: der Chip gedaempft, sein WERT eine Stufe leichter und leiser
+     (.mqa-chip und .mqa-chip b). Vorher stand hier alles in der Textfarbe und der Wert fett --
+     das war der sichtbare Unterschied, den man sofort sieht, wenn man beide nebeneinander
+     legt. */
+  .am-pick-chip .am-pick-chip-pre { color: var(--am-muted); font-weight: 500; }
+  .am-pick-chip .am-pick-chip-v { color: var(--am-muted-2); font-weight: 400;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .am-pick-chip-dot { width: 7px; height: 7px; border-radius: 999px; flex: 0 0 auto; }
   /* Die Angabe, WELCHE Dimension gemeint ist, steht leiser als ihr Wert -- "Market" erklaert,
      "DE" ist die Aussage. */
   .am-pick-chip-pre { color: var(--vc-muted); }
   .am-pick-chip-v { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* Auch das Kreuz aus der Palette (.mqa-chip-x): 16px, Radius 4, gedaempfte Farbe. */
   .am-pick-chip-x {
-    width: 18px; height: 18px; flex: 0 0 auto; border: 0; border-radius: 6px; padding: 0;
-    background: transparent; color: var(--am-muted); cursor: pointer;
+    width: 16px; height: 16px; flex: 0 0 auto; border: 0; border-radius: 4px; padding: 0;
+    background: transparent; color: var(--am-muted-2); cursor: pointer;
     display: inline-flex; align-items: center; justify-content: center;
     transition: background 200ms ease, color 200ms ease;
   }
@@ -2050,7 +2073,9 @@
 
   /* send button — prompt research .upr-start-button (primary) */
   .am-send {
-    width: 40px; height: 40px; border: 0; border-radius: 50%; flex: 0 0 auto;
+    /* 36 statt 40 (09.09.). Der Kreis bleibt ein Kreis -- border-radius: 50% skaliert mit,
+       das Zeichen darin sitzt zentriert und braucht keinen zweiten Wert. */
+    width: 36px; height: 36px; border: 0; border-radius: 50%; flex: 0 0 auto;
     background: var(--am-primary); color: var(--am-bg); cursor: pointer;
     display: inline-flex; align-items: center; justify-content: center; position: relative;
     box-shadow: 0 1px 2px rgba(0,0,0,0.12);

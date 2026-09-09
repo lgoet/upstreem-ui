@@ -2868,6 +2868,28 @@
 .up-entchip.is-soft:not(.up-chiphover):hover { background: var(--vt-row-hover-solid, var(--vc-switch-bg)); }
 .up-entchip:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 1px; }
 
+/* ---- KEIN HINEINZOOMEN BEIM FOKUS AUF DEM TELEFON ----------------------------------------
+   iOS-Safari zoomt die Seite, sobald ein Feld mit einer Schrift UNTER 16px den Fokus bekommt.
+   Das ist kein Fehler, sondern eine Lesehilfe -- nur passt sie zu unseren Komponenten nicht:
+   eine Tabelle oder ein Chart, in das hineingezoomt wird, ist danach unbedienbar, und der
+   Nutzer muss von Hand zurueckzoomen. Die einzige Abhilfe, die OHNE Eingriff in das
+   viewport-Meta auskommt, ist die Schriftgroesse selbst: ab 16px zoomt iOS nicht.
+
+   DER PREIS, und er gehoert hierhin: auf dem Telefon steht in JEDEM Eingabefeld 16px statt
+   der 12 bis 14, die am Schreibtisch stehen. Die Felder werden dort also etwas hoeher. Der
+   Weg ueber user-scalable=no im Meta waere unsichtbar, nimmt aber der ganzen Seite das
+   Zoomen -- auch dem, der es zum Lesen braucht. Deshalb dieser.
+
+   Die Spezifitaet ist Absicht: eine nackte input-Regel (0,0,1) verliert gegen jede
+   Komponentenregel wie .up-search-input (0,1,0). :not([type]) hebt sie auf 0,2,1 und schlaegt
+   damit auch die zweiklassigen Regeln. Kein !important -- CLAUDE.md 1.
+   Gemessen wird das, nicht angenommen: der Prueftand prueft JEDES Feld im Baum. */
+@media (hover: none) and (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea:not([readonly]),
+  select:not([multiple]) { font-size: 16px; }
+}
+
 /* ---- is-lifted: der Chip, wie ihn die Palette traegt -------------------------------------
    Die Werte sind die von .mqa-chip in quick-actions.css, Wert fuer Wert: Radius 7.6, gap 6.5,
    Polsterung 0 6.5 0 9.75, halbdurchsichtiger Grund und ZWEI Schattenlagen. Die zwei Lagen

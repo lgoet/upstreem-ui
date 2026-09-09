@@ -173,8 +173,14 @@
       var karte = document.querySelectorAll(".am-cat-card")[1];
       var chev = karte.querySelector(".am-cat-chev");
       var cs = getComputedStyle(karte);
-      pruef("Karte ohne Rahmen", cs.borderTopWidth + "/" + cs.borderTopStyle,
-        function(v){ return v.indexOf("0px") === 0 || v.indexOf("none") >= 0; }, v_(cs));
+      /* UMGEDREHT am 09.09.: kein Grund mehr, dafuer ein 1px-Rahmen mit HALBER Deckkraft.
+         color-mix und nicht opacity -- opacity haette die ganze Karte durchsichtig gemacht,
+         samt Zeichen und Text. */
+      pruef("Karte MIT 1px-Rahmen", cs.borderTopWidth + "/" + cs.borderTopStyle, "1px/solid");
+      pruef("und der Rahmen hat halbe Deckkraft",
+        Math.round(farbe(cs.borderTopColor).a * 100) / 100, 0.5);
+      pruef("Karte OHNE Grund", farbe(cs.backgroundColor).a, 0,
+        "der Grund kommt erst beim Ueberfahren");
       var ruhe = cs.backgroundColor;
       /* Gegen den Grund, den die SEITE malt -- Mira malt keinen. Ein Vergleich gegen den Grund
          der Pruefseite meldete beim ersten Anlauf 3 statt 7 Stufen. */
@@ -182,17 +188,24 @@
       /* Ueber farbe/ueber/stufen und NICHT ueber ein Zahlenmuster: seit die dunkle Fuellung
          halbdurchsichtig ist, kommt sie als color(srgb ...) zurueck, und ein Muster, das nur
          Zahlen sammelt, meldete 109786 statt 7. */
-      pruef("Karte hebt sich leise vom Seitengrund ab",
-        stufen(ueber(farbe(ruhe), farbe(grund)), farbe(grund)),
-        function(v){ return v >= 5 && v <= 16; },
-        "Karte " + ruhe + " auf " + grund);
+      /* Die Karte wird jetzt vom RAHMEN gezeichnet, nicht von der Fuellung -- also den
+         Rahmen gegen den Seitengrund messen. Die Fuellung dafuer zu nehmen waere die falsche
+         Groesse und wuerde eine richtige Karte als Fehler melden. */
+      pruef("der Rahmen hebt sich vom Seitengrund ab",
+        stufen(ueber(farbe(cs.borderTopColor), farbe(grund)), farbe(grund)),
+        function(v){ return v >= 5; },
+        "Rahmen " + cs.borderTopColor + " auf " + grund);
       karte.classList.add("pruefhover");
       var hov = getComputedStyle(karte).backgroundColor;
       var chevHov = getComputedStyle(chev).transform;
       karte.classList.remove("pruefhover");
-      pruef("der Hover ist noch da, eine Sprosse hoeher",
-        stufen(ueber(farbe(hov), farbe(grund)), ueber(farbe(ruhe), farbe(grund))),
-        function(v){ return v >= 5; }, ruhe + " -> " + hov);
+      /* Der Hover bringt NUR den Grund -- ausdruecklich so verlangt. Gemessen wird deshalb
+         der Sprung der Fuellung von durchsichtig auf deckend, und dass der Rahmen dabei
+         unveraendert bleibt. */
+      pruef("der Hover bringt den Grund",
+        farbe(ruhe).a + " -> " + Math.round(farbe(hov).a * 100) / 100, "0 -> 1");
+      pruef("und laesst den Rahmen in Ruhe",
+        getComputedStyle(karte).borderTopColor === cs.borderTopColor, true);
       pruef("das Chevron rueckt 4px", chevHov, "matrix(1, 0, 0, 1, 4, 0)");
       pruef("und zwar mit 200ms ease", (function(){
         var t = null;
@@ -237,13 +250,12 @@
       k.classList.add("h3");
       var hov = farbe(getComputedStyle(k).backgroundColor);
       k.classList.remove("h3");
-      pruef("Kategoriekarte ohne Rahmen", getComputedStyle(k).borderTopWidth, "0px");
-      pruef(dunkel ? "dunkel: die Fuellung ist HALB durchsichtig" : "hell: die Fuellung ist deckend",
-        ruhe.a, dunkel ? 0.5 : 1, "das war die Ansage: dunkel halbe Deckkraft, hell eine Sprosse hoeher");
-      var sG = stufen(ueber(ruhe, grund), grund);
-      pruef("Karte hebt sich vom Seitengrund ab", sG,
-        dunkel ? 7 : 13, "dunkel war es vorher 13, jetzt halb so praesent");
-      pruef("der Hover ist ein klarer Schritt", stufen(ueber(hov, grund), ueber(ruhe, grund)), 6);
+      pruef("Kategoriekarte MIT halbem Rahmen und OHNE Grund",
+        getComputedStyle(k).borderTopWidth + " / " +
+        Math.round(farbe(getComputedStyle(k).borderTopColor).a * 100) / 100 + " / " + ruhe.a,
+        "1px / 0.5 / 0", "so in BEIDEN Themen -- der Rahmen zeichnet die Karte");
+      pruef("der Hover ist ein klarer Schritt", stufen(ueber(hov, grund), ueber(ruhe, grund)),
+        function(v){ return v >= 5; });
     })();
     (function(){
       /* Die Reporting-Karten waren beim ersten Umbau uebersehen worden. Sie liegen in der
@@ -261,10 +273,10 @@
       var dunkel = root.getAttribute("data-theme") === "dark";
       var grund = farbe(getComputedStyle(document.body).backgroundColor);
       var k = reps[0], ruhe = farbe(getComputedStyle(k).backgroundColor);
-      pruef("Reporting-Karte ohne Rahmen", getComputedStyle(k).borderTopWidth, "0px",
-        "sie standen als einzige Kartenfamilie noch mit Rahmen da");
-      pruef("Reporting-Karte hat denselben Ton wie die Kategoriekarte",
-        stufen(ueber(ruhe, grund), grund), dunkel ? 7 : 13);
+      pruef("Reporting-Karte genauso: halber Rahmen, kein Grund",
+        getComputedStyle(k).borderTopWidth + " / " +
+        Math.round(farbe(getComputedStyle(k).borderTopColor).a * 100) / 100 + " / " + ruhe.a,
+        "1px / 0.5 / 0", "die beiden Kartenfamilien muessen gleich aussehen");
       var st = document.createElement("style");
       st.textContent = '#ask-mira .am-rep-card.h3 .am-rep-go { transform: translateX(4px) }';
       document.head.appendChild(st);
@@ -737,7 +749,8 @@
         return h + " hell, " + d + " dunkel";
       })(), "0.13/0.07 hell, 0.24/0.16 dunkel");
     })();
-    /* Der Chip IM FELD ist die kleine Fassung (.mqa-mini). */
+    /* Der Chip IM FELD ist GENAU der Chip der Palette (.mqa-chip), nicht die kleine Fassung:
+       gleiche Hoehe, gleicher Rahmen, gleiche Schrift. Am 09.09. ausdruecklich verlangt. */
     document.querySelector('#am-pick-cmds .am-pick-cmd[data-cmd="urls"]').click();
     await warte(UHR);
     (function(){
@@ -745,10 +758,15 @@
       var cs = getComputedStyle(f);
       pruef("1 der Schatten des Chips im Feld wird nicht abgeschnitten",
       schattenPlatz("#am-pick-chips .am-pick-chip"), "Platz");
-    pruef("1 der Chip im Feld ist die kleine Fassung",
-        f.classList.contains("is-sm") + " / " + Math.round(f.getBoundingClientRect().height) +
-        " / " + cs.borderRadius + " / " + cs.fontSize,
-        "true / 22 / 6.4px / 11px", "die Werte von .mqa-mini");
+      pruef("1 der Chip im Feld traegt die Werte von .mqa-chip",
+        (!f.classList.contains("is-sm")) + " / " + Math.round(f.getBoundingClientRect().height) +
+        " / " + cs.borderRadius + " / " + cs.fontSize + " / " + cs.gap +
+        " / " + cs.borderTopWidth,
+        "true / 26 / 7.6px / 12.5px / 6.5px / 1px");
+      pruef("1 und das Kreuz die von .mqa-chip-x", (function(){
+        var x = f.querySelector(".am-pick-chip-x"), xs = getComputedStyle(x);
+        return Math.round(x.getBoundingClientRect().width) + " / " + xs.borderRadius;
+      })(), "16 / 4px");
       pruef("1 auch er mit Schatten", (cs.boxShadow.match(/rgba?\(/g) || []).length, 2);
       /* Der Grund ist halbdurchsichtig, ueber gleicher Farbe also 0 Stufen -- der RAHMEN
          zeichnet den Chip. Genau so macht es die Palette. */
@@ -805,6 +823,83 @@
       pruef("4 und ein Zeichen aus core bringt sie mit",
         UC.icon("blend", 1.8).indexOf('width="24"') >= 0, true);
     })();
+
+    kopf("7e  DIE SECHS PUNKTE VOM 09.09.  (Send, Umbruchreihenfolge, kein Zoom, Filter)");
+    /* 1 -- der Send-Knopf 4px kleiner */
+    pruef("1 Send-Knopf 36x36", (function(){
+      var b = g("am-send").getBoundingClientRect();
+      return Math.round(b.width) + "x" + Math.round(b.height);
+    })(), "36x36", "vorher 40x40");
+    pruef("1 und immer noch ein Kreis", getComputedStyle(g("am-send")).borderRadius, "50%");
+    /* 3 -- DIE REIHENFOLGE DES UMBRUCHS. Nicht "es bricht irgendwann um", sondern: es gibt
+       KEINE Breite, bei der die Chips untereinander brechen, WAEHREND sie noch neben der
+       Ueberschrift stehen. Deshalb ein Lauf ueber 89 Breiten und nicht drei Stichproben.
+       Das Chatpanel muss dafuer zu sein -- offen bleiben dem Composer bei 420px nur 98px,
+       und dann misst man den Prueftand und nicht die Regel. */
+    (function(){
+      if (!root.classList.contains("is-pick-open")) g("am-pick-btn").click();
+      var xx = document.querySelector("#am-pick-chips .am-pick-chip-x");
+      while (xx){ xx.click(); xx = document.querySelector("#am-pick-chips .am-pick-chip-x"); }
+      var warPrev = root.classList.contains("prev-open");
+      root.classList.remove("prev-open");
+      var h = g("am-pick-h"), cmds = g("am-pick-cmds");
+      var verstoesse = 0, breiten = 0, umbruchBei = 0;
+      for (var b = 1180; b >= 300; b -= 10){
+        root.style.width = b + "px"; breiten++;
+        var hb = h.getBoundingClientRect(), cb = cmds.getBoundingClientRect();
+        var reihen = {};
+        [].forEach.call(cmds.querySelectorAll(".am-pick-cmd"), function(c){
+          reihen[Math.round(c.getBoundingClientRect().top)] = 1; });
+        var unten = Math.round(cb.top) > Math.round(hb.bottom - 2);
+        var n = Object.keys(reihen).length;
+        if (!unten && n > 1) verstoesse++;
+        if (unten && !umbruchBei) umbruchBei = b;
+      }
+      root.style.width = "";
+      if (warPrev) root.classList.add("prev-open");
+      pruef("3 keine Breite bricht die Chips, solange sie neben der Ueberschrift stehen",
+        verstoesse + " von " + breiten, "0 von 89");
+      pruef("3 der Block rutscht darunter, und zwar mit 8px", (function(){
+        var warP = root.classList.contains("prev-open");
+        root.classList.remove("prev-open");
+        root.style.width = "420px";
+        var d = Math.round(g("am-pick-cmds").getBoundingClientRect().top -
+                           g("am-pick-h").getBoundingClientRect().bottom);
+        root.style.width = ""; if (warP) root.classList.add("prev-open");
+        return d;
+      })(), 8, "row-gap 8, column-gap bleibt 16");
+      if (root.classList.contains("is-pick-open")) g("am-pick-btn").click();
+    })();
+    /* 4 -- KEIN HINEINZOOMEN AUF DEM TELEFON. Die Abfrage laesst sich hier nicht schalten,
+       also wird die REGEL im geladenen Stylesheet geprueft UND die Gegenprobe gemacht, dass
+       die Felder am Schreibtisch wirklich unter 16px liegen -- sonst waere die Regel
+       wirkungslos, ohne dass es auffiele. */
+    (function(){
+      var regel = null;
+      [].forEach.call(document.styleSheets, function(ss){
+        try { [].forEach.call(ss.cssRules, function(r){
+          if (r.type !== 4) return;                      /* CSSMediaRule */
+          if (String(r.conditionText || "").indexOf("coarse") < 0) return;
+          [].forEach.call(r.cssRules, function(x){
+            if ((x.selectorText || "").indexOf("input") >= 0 &&
+                x.style && x.style.fontSize === "16px") regel = x.selectorText;
+          });
+        }); } catch(e){}
+      });
+      pruef("4 die Regel steht im geladenen Stylesheet", !!regel, true, String(regel));
+      var klein = [].filter.call(root.querySelectorAll("input, textarea"), function(e){
+        return parseFloat(getComputedStyle(e).fontSize) < 16; }).length;
+      pruef("GEGENPROBE am Schreibtisch sind Felder unter 16px", klein,
+        function(v){ return v >= 1; },
+        "sonst zoomte iOS ohnehin nicht und die Regel waere ohne Wirkung");
+    })();
+    /* 6 -- die Ueberschrift heisst Filter, in BEIDEN Sprachen (getrennt geprueft) */
+    pruef("6 Ueberschrift heisst Filter", (function(){
+      if (!root.classList.contains("is-pick-open")) g("am-pick-btn").click();
+      var t = g("am-pick-h").textContent;
+      if (root.classList.contains("is-pick-open")) g("am-pick-btn").click();
+      return t;
+    })(), "Filter");
 
     kopf("8  DER VERTEILER  (deshalb braucht die Suche KEINEN Eingriff in Bubble)");
     /* ZUSTELLUNGEN zaehlen und nicht DOM-Zeilen. Der Fehlschluss davor: die Trefferliste trug
@@ -886,7 +981,7 @@
     })();
     /* 6 */
     g("am-pick-btn").click();
-    pruef("6 Ueberschrift steht", g("am-pick-h").textContent, "What are you looking for?");
+    pruef("6 Ueberschrift steht", g("am-pick-h").textContent, "Filter");
     /* 26px seit dem 09.09.: der Chip ist jetzt das Core-Bauteil .up-entchip.is-lifted, und das
        traegt die Werte der Palette (.mqa-chip) -- 26 hoch, nicht 28. */
     pruef("6 Befehls-Chip 26px wie .mqa-chip", Math.round(

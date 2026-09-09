@@ -454,7 +454,7 @@
       /* Der Picker und der Aufwand-Slider. Die Beschriftungen der drei Stufen stehen NICHT hier,
          sondern in EFF_LABELS -- sie werden bei jedem Zustandswechsel neu geschrieben, und was
          ein Zustandswechsel schreibt, erreicht der breite Sprachlauf von core nicht. */
-      pickHeading: 'What are you looking for?',
+      pickHeading: 'Filter',
       pickIdle: 'Search your workspace',
       /* Nicht mehr "tippe zwei Buchstaben" -- das sieht der Nutzer am Feld. Der Satz sagt
          jetzt, WOFUER der Picker da ist: dass ein aufgegriffener Treffer als Bezug in die
@@ -562,7 +562,7 @@
       ],
       urlVisit: 'Besuchen',
       allChats: 'Alle Chats', allChatsShort: 'Chats',
-      pickHeading: 'Was suchst du?',
+      pickHeading: 'Filter',
       pickIdle: 'In deinen Daten suchen',
       pickIdleSub: 'W\u00e4hle Brand, Domain, URL oder Prompt aus, um es an deine Frage zu ' +
         'h\u00e4ngen \u2013 Mira antwortet dann genau dazu.',
@@ -3614,7 +3614,7 @@
     if (!elPickChips) return;
     var liste = _filter ? _filter.chips() : [];
     elPickChips.innerHTML = liste.map(function(c){
-      return '<span class="am-pick-chip up-entchip is-lifted is-sm is-static" data-fach="' +
+      return '<span class="am-pick-chip up-entchip is-lifted is-static" data-fach="' +
         esc(c.fach) + '">' +
         (c.dot ? '<span class="am-pick-chip-dot" style="background:' + esc(c.dot) + '"></span>' : '') +
         (c.vor ? '<span class="am-pick-chip-pre">' + esc(UCt(c.vor)) + '</span>' : '') +

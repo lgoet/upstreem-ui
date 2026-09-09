@@ -119,6 +119,14 @@
 .mqa-inputwrap { position: relative; flex: 1 1 auto; min-width: 60px; display: flex; align-items: center; }
 .mqa-input { flex: 1 1 auto; min-width: 60px; border: 0; outline: 0; background: transparent; color: var(--am-text); font-family: var(--mqa-font); font-size: 15px; font-weight: 450; letter-spacing: -0.01em; padding: 0; touch-action: auto; position: relative; z-index: 1; }
 .mqa-input::placeholder { color: var(--am-muted-2); }
+/* KEIN HINEINZOOMEN BEIM FOKUS AUF DEM TELEFON. iOS-Safari zoomt die Seite, sobald ein Feld mit
+   einer Schrift unter 16px den Fokus bekommt -- 15px reichen dafuer schon. Die Regel steht auch
+   in core.css (dort fuer die ganze App); DIESE Datei braucht ihre eigene, weil ihr Bubble-Loader
+   nur quick-actions.css/.js zieht und core auf ihrer Seite nicht im Baum ist. Wer die eine
+   aendert, aendert die andere -- derselbe Fall wie beim Chip-Schatten. */
+@media (hover: none) and (pointer: coarse) {
+  .mqa-input { font-size: 16px; }
+}
 /* placeholder: only while the field is empty */
 .mqa-ph {
   position: absolute; left: 0; top: 50%; transform: translateY(-50%);
