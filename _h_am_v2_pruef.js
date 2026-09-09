@@ -826,10 +826,10 @@
 
     kopf("7e  DIE SECHS PUNKTE VOM 09.09.  (Send, Umbruchreihenfolge, kein Zoom, Filter)");
     /* 1 -- der Send-Knopf 4px kleiner */
-    pruef("1 Send-Knopf 36x36", (function(){
+    pruef("1 Send-Knopf 32x32", (function(){
       var b = g("am-send").getBoundingClientRect();
       return Math.round(b.width) + "x" + Math.round(b.height);
-    })(), "36x36", "vorher 40x40");
+    })(), "32x32", "40 -> 36 -> 32; der grosse Knopf liess das Polster groesser wirken");
     pruef("1 und immer noch ein Kreis", getComputedStyle(g("am-send")).borderRadius, "50%");
     /* 3 -- DIE REIHENFOLGE DES UMBRUCHS. Nicht "es bricht irgendwann um", sondern: es gibt
        KEINE Breite, bei der die Chips untereinander brechen, WAEHREND sie noch neben der
