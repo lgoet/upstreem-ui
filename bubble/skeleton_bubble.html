@@ -1,0 +1,145 @@
+<!--
+  ============================================================================================
+  upstreem skeleton  —  VORLAGE FUER EINE NEUINSTALLATION
+  ============================================================================================
+
+  Ein Ladeskelett, das seine Gruppe fuellt. Volle Breite, volle Hoehe, keine eigene Groesse:
+  wer die Gruppe groesser zieht, bekommt ein groesseres Skelett.
+
+      block                        rows                        card
+      +----------------------+     ----------------------      [##] ----------------------
+      |                      |     ----------------------      [##] --------------
+      |                      |     --------------
+      +----------------------+
+
+  ── Einbau ──────────────────────────────────────────────────────────────────────
+  Ein HTML-Element in die Gruppe, die spaeter den Inhalt zeigt -- volle Breite und volle
+  Hoehe der Gruppe. Das Element bringt KEINE Groesse mit, es nimmt die der Gruppe.
+
+  SICHTBAR MACHEN UND VERSTECKEN uebernimmt Bubble ueber die Bedingungen der Gruppe. Das ist
+  dort schon geloest, und ein zweiter Schalter hier waere ein zweiter Ort, an dem jemand
+  nachsehen muesste, warum ein Skelett stehen bleibt.
+
+  In Bubble braucht die Gruppe eine HOEHE (fest, Prozent oder ein Verhaeltnis). Hat sie keine,
+  ist sie 0px hoch -- dann ist auch das Skelett 0px hoch, und man sieht nichts. Das ist keine
+  Eigenheit dieser Komponente, sondern die Rechnung des Browsers: height: 100% von 0 ist 0.
+  Fuer diesen Fall traegt die Wurzel min-height, damit wenigstens eine Zeile zu sehen ist.
+
+  ── Die Attribute ───────────────────────────────────────────────────────────────
+       data-instance   Kennung, falls mehrere Skelette einer Seite verschieden gesetzt werden
+       data-isdark     "yes" / "no"
+       data-variant    "block" (Vorgabe) | "rows" | "card"
+                         block  eine Flaeche, die alles fuellt -- fuer Charts, Bilder, Karten
+                         rows   Streifen, deren ANZAHL sich aus der Hoehe ergibt -- fuer Text
+                         card   Kachel links, Streifen daneben -- fuer Zeilen mit Logo
+       data-rows       feste Zeilenanzahl statt der gerechneten (nur rows und card)
+       data-radius     Radius der Flaeche bei block, in px. Vorgabe 12.
+
+  Alle vier werden LIVE mitgelesen: aendert Bubble ein Attribut, zieht das Skelett nach, ohne
+  dass ein Workflow etwas rufen muss.
+
+  ── Der Setter (optional) ───────────────────────────────────────────────────────
+  Run-JS:   setSkeleton("ROOTID_[dynamic id]", "{\"variant\":\"rows\",\"rows\":4}")
+            resetSkeleton("ROOTID_[dynamic id]")
+
+  Er ist NICHT noetig, wenn die Fassung feststeht -- dann reichen die Attribute. Er ist da,
+  weil Bubble ein Attribut erfahrungsgemaess nicht immer nachzieht (siehe drawer-topbar), und
+  wer die Fassung im Betrieb wechselt, soll sich darauf nicht verlassen muessen.
+
+  Ein Payload, den der Setter nicht lesen kann, laesst das Skelett STEHEN wie es war und
+  schreibt eine Zeile in die Konsole. Ein Skelett, das wegen eines Tippfehlers verschwindet,
+  sieht aus wie "fertig geladen" -- das ist die schlimmste Verwechslung, die hier moeglich ist.
+
+  ── Was es meldet ───────────────────────────────────────────────────────────────
+  Nichts. Ein Skelett ist eine Anzeige und kein Bedienelement, es hat kein Ereignis, auf das
+  ein Workflow warten koennte. Deshalb steht hier kein data-*-fn.
+
+  ── Dateien ─────────────────────────────────────────────────────────────────────
+  core.css, core.js, skeleton.css, skeleton.js
+
+  Farbe und Pulsbewegung kommen aus core.css (--vc-sk und uutpulse) -- dieselben, die die
+  Skelette in den Tabellen und Charts tragen. Wer den Ton aendern will, aendert ihn dort.
+  ============================================================================================
+-->
+
+<div class="up-root usk-root"
+     data-instance   = "ROOTID_[dynamic id]"
+     data-isdark     = "[yes/no]"
+     data-cdn-pin    = "CDN_PIN"
+     data-variant    = "block"
+     data-rows       = ""
+     data-radius     = "12"></div>
+
+<script>
+(function(){
+  /* Loader nach STYLEGUIDE 26: den Pin ueber getElementsByClassName lesen, NIEMALS ueber
+     document.currentScript — Bubble fuehrt Scripts nicht in DOM-Reihenfolge aus. */
+  function echterPin(p){
+    /* trim: ein Leerzeichen aus der Bubble-Konstante ergaebe sonst .../upstreem-ui@ abc /core.js,
+       jsDelivr antwortet mit 404, und weder CSS noch JS landen. Ohne trim greift auch kein
+       Rueckfall, weil "   " truthy ist.
+       Gespaltener Platzhalter: wer "CDN_PIN" global im Element ersetzt, wuerde sonst auch diesen
+       Waechter treffen, und der Loader liefe dauerhaft auf @main, obwohl ein Pin gesetzt ist. */
+    p = String(p == null ? "" : p).trim();
+    return (p && p !== "CDN_" + "PIN") ? p : "";
+  }
+  function readPin(cls){
+    var i, p, els = document.getElementsByClassName(cls);
+    for (i = 0; i < els.length; i++){
+      p = echterPin(els[i].getAttribute("data-cdn-pin"));
+      if (p) return (window.__upPin = p);
+    }
+    /* ---- Rueckfall: einen Pin nehmen, der auf DIESER Seite schon gilt ----------------------
+       Gemeldet am 31.08. mit drei Stapelspuren, alle aus einem solchen Loader: "core.css ist
+       schon von einem anderen Pin geladen ... ignoriert wird @main" -- obwohl der Pin am Element
+       stand. Der Grund ist die Reihenfolge: Bubble baut ein Element bei jedem Rerender neu und
+       fuehrt Scripts nicht in DOM-Reihenfolge aus, dieser Loader lief also, waehrend seine eigene
+       Wurzel noch nicht im Dokument stand -- die Klasse oben fand nichts.
+       Und das war mehr als eine Warnung: core kam durch die Entdoppelung unten noch aus dem Pin,
+       die Dateien DIESER Komponente aber tatsaechlich von @main. Eine Seite, die zur Haelfte auf
+       @main laeuft, ist genau das, was ein Pin verhindern soll.
+       Geraten wird nichts: jede der drei Stufen liest einen Pin, der auf dieser Seite schon in
+       Gebrauch ist. */
+    if (echterPin(window.__upPin)) return window.__upPin;
+    var alle = document.querySelectorAll ? document.querySelectorAll("[data-cdn-pin]") : [];
+    for (i = 0; i < alle.length; i++){
+      p = echterPin(alle[i].getAttribute("data-cdn-pin"));
+      if (p) return (window.__upPin = p);
+    }
+    /* Aus einer schon geladenen Datei ablesen. Diese Stufe greift auch dann, wenn alle anderen
+       Elemente der Seite noch die ALTE Fassung dieses Loaders tragen -- die fuellen
+       __upAssetsLoaded genauso. "main" wird NICHT gemerkt: das ist kein Pin, und die naechste
+       Komponente wuerde ihn sonst fuer einen halten. */
+    var L0 = window.__upAssetsLoaded, k, m;
+    for (k in L0){
+      if (!Object.prototype.hasOwnProperty.call(L0, k)) continue;
+      m = String(L0[k] || "").match(/upstreem-ui@([^/]+)\//);
+      if (m && m[1] && m[1] !== "main") return (window.__upPin = m[1]);
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("usk-root") + "/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  /* Entdoppelt nach DATEINAME, nicht nach URL. Zwei Elemente mit verschiedenen data-cdn-pin
+     ergeben zwei URLs fuer dieselbe Datei -- vorher lud der Loader dann beide: core.js lief
+     zweimal, und core.css stand zweimal im Dokument, wobei die spaetere die fruehere ueberschrieb.
+     Wer gewinnt, entschied die Reihenfolge, in der Bubble die Elemente baut.
+     Der erste Pin gewinnt jetzt, und ein zweiter wird gemeldet -- sonst sucht man den Unterschied
+     zwischen zwei Seiten, auf denen dieselbe Version verschiedene Dinge tut. */
+  function once(url, make){
+    var name = url.slice(url.lastIndexOf("/") + 1);
+    if (L[name]){
+      if (L[name] !== url && window.console) console.warn("upstreem: " + name +
+        " ist schon von einem anderen Pin geladen. Geladen bleibt " + L[name] +
+        ", ignoriert wird " + url + ". Setzt alle Elemente auf denselben Pin.");
+      return;
+    }
+    L[name] = url; make(url);
+  }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+
+  css("core.css");           js("core.js");
+  css("skeleton.css");       js("skeleton.js");
+})();
+</script>

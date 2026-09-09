@@ -1,0 +1,68 @@
+/* upstreem skeleton.css — das Ladeskelett als eigene Komponente (Praefix `usk`).
+   Braucht core.css: die Farbe (--vc-sk) und die Pulsbewegung (uutpulse) kommen von dort und
+   werden hier NICHT nachgebaut. Wer den Ton aendern will, aendert ihn in core -- dann ziehen
+   alle Skelette der App mit, auch die in den Tabellen und Charts. */
+
+/* DIE WURZEL FUELLT IHREN KASTEN, und zwar ohne eine eigene Groesse mitzubringen. Genau das
+   war die Anforderung: das Element passt sich der Bubble-Gruppe an, in der es steht.
+   height: 100% wirkt nur, wenn der Elter eine Hoehe HAT -- in Bubble hat er das, weil dort
+   jede Gruppe eine Hoehe oder ein Verhaeltnis traegt. Fuer den Fall, dass er keine hat,
+   steht min-height: 100% daneben: dann bestimmt der Inhalt, und das ist immer noch besser
+   als ein 0px hoher Streifen, den niemand sieht.
+   box-sizing, damit ein Polster der Gruppe nicht zu einem Ueberlauf fuehrt. */
+.usk-root {
+  display: block; width: 100%; height: 100%; min-height: 100%;
+  box-sizing: border-box; overflow: hidden;
+  /* Kein Grund und kein Rahmen: das Skelett ersetzt Inhalt, nicht eine Karte. Wer es in einer
+     Karte zeigt, hat die Karte schon. */
+  background: transparent;
+}
+/* Ohne Hoehe am Elter faellt min-height: 100% auf 0 zurueck -- dann traegt der Kasten wenigstens
+   die Hoehe einer Zeile, statt zu verschwinden. 20px ist die Zeilenhoehe des Bausteins unten. */
+.usk-root:empty { min-height: 20px; }
+
+/* ---- Die eine Flaeche (Vorgabe) -----------------------------------------------------------
+   Ein Block, der alles fuellt. Der Radius kommt aus einer Variablen, damit die Bubble-Gruppe
+   ihn ueber data-radius setzen kann, ohne dass hier eine zweite Regel entsteht. */
+.usk-block {
+  display: block; width: 100%; height: 100%;
+  border-radius: var(--usk-radius, 12px);
+  background: var(--vc-sk);
+  animation: uutpulse 1.2s ease-in-out infinite;
+}
+
+/* ---- Die Zeilen ---------------------------------------------------------------------------
+   Streifen, die den Kasten von oben nach unten fuellen. Die ANZAHL rechnet das JS aus der
+   gemessenen Hoehe (ResizeObserver) -- in CSS liesse sich das nur ueber flex: 1 loesen, und
+   dann waere in einem hohen Kasten jede Zeile fingerdick. Eine Zeile bleibt 12px, wie
+   .up-tsk-bar in core, damit ein Skelett hier so aussieht wie eines in einer Tabelle. */
+.usk-rows { display: flex; flex-direction: column; gap: 10px; height: 100%; }
+.usk-line {
+  height: 12px; flex: 0 0 auto; border-radius: 4px;
+  background: var(--vc-sk);
+  animation: uutpulse 1.2s ease-in-out infinite;
+}
+/* Die letzte Zeile kuerzer: ein Textblock endet mitten in der Zeile, und ein Skelett, das
+   unten buendig abschliesst, liest sich als Tabelle statt als Text. */
+.usk-rows .usk-line:last-child { width: 62%; }
+/* Eine EINZIGE Zeile ist keine Aufzaehlung -- dann waere die Kuerzung eine Behauptung ueber
+   einen Text, den es nicht gibt. */
+.usk-rows .usk-line:first-child:last-child { width: 100%; }
+
+/* ---- Die Kachel-Fassung -------------------------------------------------------------------
+   Ein quadratisches Bild links, daneben zwei Zeilen: die Form jeder Zeile dieser App, die
+   einen Namen mit Logo zeigt. Die Kachel ist so gross wie zwei Zeilen plus ihr Abstand
+   (12 + 10 + 12 = 34), damit sie mit dem Text abschliesst und nicht darunter hinausragt. */
+.usk-card { display: flex; align-items: flex-start; gap: 12px; height: 100%; }
+.usk-tile {
+  width: 34px; height: 34px; flex: 0 0 auto; border-radius: 8px;
+  background: var(--vc-sk);
+  animation: uutpulse 1.2s ease-in-out infinite;
+}
+.usk-card .usk-rows { flex: 1 1 auto; min-width: 0; }
+
+/* Wer die Bewegung abgestellt hat, bekommt sie nicht. Das Skelett bleibt sichtbar -- es sagt
+   "hier kommt noch etwas", und diese Aussage haengt nicht an der Bewegung. */
+@media (prefers-reduced-motion: reduce) {
+  .usk-block, .usk-line, .usk-tile { animation: none; }
+}
