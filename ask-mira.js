@@ -993,7 +993,11 @@
     var def = EVIDENCE[String(type||'').toLowerCase()];
     var color = def ? def.color : '#6b7280';
     var icon = def ? def.icon : ICON.flag;
-    var ic = icon.replace('<svg width="24" height="24" ', '<svg width="24" height="24" class="am-ev-ic" ');
+    /* NUR "<svg" suchen. Der Groessen-Lauf vom 09.09. hat hier auch die SUCHZEICHENKETTE
+       getroffen -- sie passte zufaellig weiter, weil UC.icon genau diese Attribute in genau
+       dieser Reihenfolge schreibt. Aendert sich dort ein Zeichen, faende dieses replace nichts
+       mehr und die Klasse fehlte stillschweigend. */
+    var ic = icon.replace('<svg', '<svg class="am-ev-ic"');
     var text = label || (def ? def.label : (type || 'Info'));
     return '<span class="am-ev-pill" style="--am-ev-color:'+esc(color)+';">'+ic+'<span>'+esc(text)+'</span></span>';
   }
@@ -4063,7 +4067,7 @@
               '<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/>' +
               '<path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/></svg>');
       var rueck = '<span class="am-pick-tag-av-fb">' + inner + '</span>';
-      return '<span class="am-pick-tag" data-i="' + i + '">' +
+      return '<span class="am-pick-tag up-entchip is-lifted is-static" data-i="' + i + '">' +
         '<span class="' + kl + '">' +
           (bild ? '<img src="' + esc(bild) + '" alt="" loading="lazy" referrerpolicy="no-referrer" ' +
                   'onerror="this.style.display=\'none\';this.parentNode.classList.add(\'is-fb\');">' : '') +

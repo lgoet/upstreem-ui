@@ -1795,14 +1795,23 @@
   .am-pick-cmd-lbl { white-space: nowrap; }
 
   /* ---- DIE GESETZTEN FILTER, als Chips IM Suchfeld -------------------------------------- */
-  .am-pick-chips { display: inline-flex; align-items: center; gap: 5px; flex: 0 0 auto; max-width: 60%;
-    overflow: hidden; }
+  /* KEIN overflow: hidden. Hier stand es, um die Chips in der Zeile zu halten -- und weil der
+     Kasten dieses Streifens EXAKT der Chipkasten ist (gemessen 66x22 fuer 66x22), schnitt es
+     den Schatten vollstaendig ab. Die Regel stand, zu sehen war nichts: ein overflow klippt
+     nicht den Inhalt, sondern alles jenseits der Kante, und ein Schatten liegt dort.
+     Gehalten wird die Zeile jetzt anders und richtiger: der Streifen bleibt bei 60 Prozent
+     gedeckelt, und die Chips darin DUERFEN SCHRUMPFEN (flex: 0 1 auto). Ein zu langer Wert
+     wird damit im Chip selbst gekuerzt -- .up-entchip bringt overflow: hidden und
+     .am-pick-chip-v die Auslassungspunkte schon mit. Gekuerzter Text statt gekappter Kachel. */
+  .am-pick-chips { display: inline-flex; align-items: center; gap: 5px; flex: 0 1 auto;
+    max-width: 60%; min-width: 0; }
   .am-pick-chips:empty { display: none; }
   .am-pick-inwrap { flex: 1 1 auto; min-width: 40px; display: flex; }
   /* Auch dieser aus core: .up-entchip.is-lifted.is-sm, die 22px-Fassung der Palette
      (.mqa-mini). Rechts weniger Polsterung als core vorgibt, weil dort das Entfernen-Kreuz
      sitzt und nicht Text -- das ist der einzige Grund, hier ueberhaupt etwas zu setzen. */
-  .am-pick-chip { flex: 0 0 auto; padding-right: 3px; color: var(--am-text); max-width: 100%; }
+  .am-pick-chip { flex: 0 1 auto; min-width: 0; padding-right: 3px; color: var(--am-text);
+    max-width: 100%; }
   .am-pick-chip-dot { width: 7px; height: 7px; border-radius: 999px; flex: 0 0 auto; }
   /* Die Angabe, WELCHE Dimension gemeint ist, steht leiser als ihr Wert -- "Market" erklaert,
      "DE" ist die Aussage. */
@@ -1911,16 +1920,32 @@
      des Feldes, also 16, so viel wie nach links. Mit Pillen traegt er 12 (siehe has-picks),
      und dann sind oben und links wieder beide 16: genau der Zustand, der schon gefallen hat.
      Der Rand animiert mit, faehrt beim Erscheinen der ersten Pille also mit statt zu springen. */
+  /* DAS POLSTER IST DER PLATZ FUER DEN SCHATTEN, und es MUSS mitanimieren. overflow: hidden
+     braucht dieser Streifen fuer die 200ms (max-height ist die Strecke) -- und weil sein
+     Kasten die Pillen auf den Pixel umschloss, schnitt er deren Schatten restlos ab. Gemessen
+     0px Luft auf allen Seiten, bei 4 bis 6px Reichweite: "er ist da wirklich nicht da" war
+     woertlich richtig.
+     Ein festes Polster geht nicht: gemessen ist ein Kasten mit max-height 0 und 4px Polster
+     immer noch 8px hoch -- der eingeklappte Streifen waere ein sichtbarer Streifen. Also
+     faehrt das Polster mit von 0 auf 4px oben, 6px unten (Versatz 2 plus Streuung 4) und 5px
+     an den Seiten. Die seitlichen 5px holt ein negativer Rand zurueck, damit die Pillen genau
+     dort stehen wie vorher. */
   .am-picks {
     grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; min-width: 0;
     max-height: 0; opacity: 0; overflow: hidden; margin-bottom: 0;
-    transition: max-height 200ms ease, opacity 200ms ease, margin-bottom 200ms ease;
+    padding: 0; margin-left: -5px; margin-right: -5px;
+    transition: max-height 200ms ease, opacity 200ms ease, margin-bottom 200ms ease,
+                padding 200ms ease;
   }
   /* 132px traegt drei umbrochene Kacheln (3x28 plus 2x6 Abstand plus Luft). Mehr als drei
      gibt es nicht -- PICK_MAX ist 3. */
   /* 12px = die 10, die vorher der Gitterabstand trug, plus die 2 von vorher. Dieselbe Optik,
      nur jetzt an einer Stelle, die verschwindet, wenn der Streifen leer ist. */
-  .am-composer.has-picks .am-picks { max-height: 132px; opacity: 1; margin-bottom: 12px; }
+  /* 142 statt 132: die 132 tragen drei umbrochene Kacheln, dazu die 10px Polster, die jetzt
+     dazukommen. Und 6px Rand statt 12, weil 6px davon nun das untere Polster stellt -- der
+     sichtbare Abstand bleibt damit 12. */
+  .am-composer.has-picks .am-picks { max-height: 142px; opacity: 1; margin-bottom: 6px;
+    padding: 4px 5px 6px; }
   /* ZWEI GRUENDE FUER EINE EIGENE FAMILIE, und beide gehoeren hierhin, wo sie anfaengt.
      1. KEIN "-chip" im Klassennamen: der breite Sprachlauf von core nimmt [class*="-chip"]
         ausdruecklich aus, und eine Beschriftung darin waere spaeter stumm nicht uebersetzbar.
@@ -1934,12 +1959,20 @@
        gemessen wurde ein URL-Titel auf 35px gequetscht, also unlesbar. Mit fester Breite
        umbricht der Streifen stattdessen (flex-wrap steht schon auf wrap) -- eine Kachel je
        Zeile ist richtig, drei unlesbare Stummel sind es nicht. */
-    display: inline-flex; align-items: center; gap: 7px; flex: 0 0 auto; height: 28px;
-    max-width: 100%; padding: 0 4px 0 5px; box-sizing: border-box;
-    border: 1px solid var(--am-border); border-radius: 9px; background: var(--am-soft-2);
+    display: inline-flex; align-items: center; flex: 0 0 auto;
+    max-width: 100%; box-sizing: border-box;
+    border: 1px solid var(--am-border);
     font-size: 12.5px; color: var(--am-text); min-width: 0;
     animation: amPickIn 200ms ease both;
   }
+  /* GRUND, SCHATTEN UND RADIUS KOMMEN AUS CORE (.up-entchip.is-lifted) -- derselbe Chip, den
+     die Palette und die Befehls-Chips tragen. Vorher hatte diese Pille gar keinen Schatten:
+     "er ist da wirklich nicht da", und das war woertlich richtig.
+     Die MASSE bleiben ihre eigenen, und dafuer braucht es drei Klassen: die eigene Hoehe von
+     28px, das Polster fuer das 19px-Kreuz rechts und die 18px-Kachel links. Mit zwei Klassen
+     stuende es gegen .up-entchip.is-lifted gleichauf und haenge an der Ladereihenfolge -- und
+     die ist laut CLAUDE.md 1 kein Mittel, Konflikte zu loesen. */
+  .am-pick-tag.up-entchip.is-lifted { height: 28px; gap: 7px; padding: 0 4px 0 5px; }
   @keyframes amPickIn { from { opacity: 0; transform: translateY(3px) scale(0.97); } to { opacity: 1; transform: none; } }
   .am-pick-tag.is-out { animation: amPickOut 200ms ease both; }
   @keyframes amPickOut { to { opacity: 0; transform: scale(0.94); } }

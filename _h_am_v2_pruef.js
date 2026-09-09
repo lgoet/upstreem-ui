@@ -25,6 +25,37 @@
     if (m) return { r: +m[1], g: +m[2], b: +m[3], a: m[4] === undefined ? 1 : +m[4] };
     return { r: 0, g: 0, b: 0, a: 1 };
   }
+  /* DER SCHATTEN MUSS AUCH ZU SEHEN SEIN. Zweimal war die Regel da und der Schatten nicht:
+     #am-pick-chips und #am-picks umschlossen ihre Chips auf den Pixel und trugen
+     overflow: hidden -- gemessen 0px Luft bei 4 bis 6px Reichweite. Ein overflow klippt
+     nicht den Inhalt, sondern alles jenseits der Kante, und ein Schatten liegt dort.
+     Geprueft wird deshalb nicht die Regel, sondern der PLATZ: der Schnitt aller
+     abschneidenden Vorfahren gegen den Kasten des Chips. */
+  function schattenPlatz(sel){
+    var e = document.querySelector(sel);
+    if (!e) return "fehlt: " + sel;
+    var b = e.getBoundingClientRect();
+    var reich = 0;
+    (getComputedStyle(e).boxShadow.match(/(-?[\d.]+)px\s+(-?[\d.]+)px\s+(-?[\d.]+)px/g) || [])
+      .forEach(function(l){
+        var z = l.match(/(-?[\d.]+)px\s+(-?[\d.]+)px\s+(-?[\d.]+)px/);
+        reich = Math.max(reich, Math.abs(+z[2]) + (+z[3]));
+      });
+    var sn = { l:-1e9, t:-1e9, r:1e9, u:1e9 };
+    var el = e.parentElement;
+    while (el && el !== document.documentElement){
+      var c = getComputedStyle(el);
+      if (c.overflowX !== "visible" || c.overflowY !== "visible"){
+        var kb = el.getBoundingClientRect();
+        sn.l = Math.max(sn.l, kb.left); sn.t = Math.max(sn.t, kb.top);
+        sn.r = Math.min(sn.r, kb.right); sn.u = Math.min(sn.u, kb.bottom);
+      }
+      el = el.parentElement;
+    }
+    var luft = Math.min(b.left - sn.l, b.top - sn.t, sn.r - b.right, sn.u - b.bottom);
+    return (luft >= reich) ? "Platz" : ("abgeschnitten: " + Math.round(luft) +
+            "px Luft bei " + Math.round(reich) + "px Reichweite");
+  }
   function ueber(v, b){ return { r: v.r*v.a + b.r*(1-v.a), g: v.g*v.a + b.g*(1-v.a),
                                  b: v.b*v.a + b.b*(1-v.a), a: 1 }; }
   function stufen(x, y){ return Math.round(Math.max(Math.abs(x.r-y.r),
@@ -405,6 +436,16 @@
     pruef("nur der gewaehlte Typ, nie gemischt",
       [].map.call(document.querySelectorAll("#am-pick-list .am-pick-cghead"),
         function(e){ return e.textContent.trim(); }).join(",") , "Brands");
+    pruef("die Bezugs-Pille traegt den Schatten aus core", (function(){
+      var t = document.querySelector("#am-picks .am-pick-tag");
+      if (!t) return "keine Pille";
+      var cs = getComputedStyle(t);
+      return t.classList.contains("up-entchip") + "/" +
+        (cs.boxShadow.match(/rgba?\(/g) || []).length + " Lagen";
+    })(), "true/2 Lagen", "vorher hatte sie gar keinen");
+    pruef("und er wird nicht abgeschnitten",
+      schattenPlatz("#am-picks .am-pick-tag"), "Platz",
+      "#am-picks traegt overflow: hidden fuer die 200ms -- das Polster faehrt deshalb mit");
     pruef("Trefferliste bleibt nach der Uebernahme stehen (erst nach dem Klick pruefen)",
       document.querySelectorAll(".am-pick-row").length, 2);
     document.querySelectorAll(".am-pick-row")[0].click();
@@ -702,7 +743,9 @@
     (function(){
       var f = document.querySelector("#am-pick-chips .am-pick-chip");
       var cs = getComputedStyle(f);
-      pruef("1 der Chip im Feld ist die kleine Fassung",
+      pruef("1 der Schatten des Chips im Feld wird nicht abgeschnitten",
+      schattenPlatz("#am-pick-chips .am-pick-chip"), "Platz");
+    pruef("1 der Chip im Feld ist die kleine Fassung",
         f.classList.contains("is-sm") + " / " + Math.round(f.getBoundingClientRect().height) +
         " / " + cs.borderRadius + " / " + cs.fontSize,
         "true / 22 / 6.4px / 11px", "die Werte von .mqa-mini");
