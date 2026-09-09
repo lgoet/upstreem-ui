@@ -1022,7 +1022,30 @@
       return (c.match(/rgba?\(/g) || []).length;
     })(), 2, "eine Lage kann nur eines von beiden: weiche Kante ODER Abheben");
     /* 7 */
-    pruef("7 Feld 16px Ecken", getComputedStyle(comp).borderRadius, "16px");
+    /* 32 seit dem 09.09. Am 08.09. war es 16 -- der Wert ist gewandert, weil sich das
+       Verhaeltnis geaendert hat: der Send-Knopf ist von 40 auf 32 herunter und das Feld um
+       8px hoeher, die Rundung nimmt also nicht mehr die halbe Aktionszeile ein. */
+    pruef("7 Feld 32px Ecken", getComputedStyle(comp).borderRadius, "32px");
+    pruef("7 und die Schale dahinter deckungsgleich",
+      getComputedStyle(g("am-composer-shell")).borderRadius, "32px",
+      "bliebe sie bei 16, schauten ihre Ecken hinter dem Feld hervor");
+    /* 8px mehr Luft zwischen Textfeld und Aktionszeile, und das Feld genau so viel hoeher.
+       Gemessen wird BEIDES: der Abstand und der Unterschied in der Hoehe -- mit der alten
+       Regel als Gegenprobe, sonst zeigt die Zahl nur, dass irgendein Wert dort steht. */
+    (function(){
+      var wrap = comp.querySelector(".am-input-wrap").getBoundingClientRect();
+      var akt = comp.querySelector(".am-actions").getBoundingClientRect();
+      pruef("7 18px zwischen Textfeld und Aktionszeile",
+        Math.round(akt.top - wrap.bottom), 18, "vorher 10");
+      var jetzt = Math.round(comp.getBoundingClientRect().height);
+      var st = document.createElement("style");
+      st.textContent = "#ask-mira .am-composer.is-v2 .am-actions { margin-top: 10px; }";
+      document.head.appendChild(st);
+      var alt10 = Math.round(comp.getBoundingClientRect().height);
+      st.remove();
+      pruef("GEGENPROBE das Feld ist dadurch genau 8px hoeher", jetzt - alt10, 8,
+        alt10 + " -> " + jetzt);
+    })();
     /* 11 */
     pruef("11 Hover-Flaeche 32x32", (function(){
       var v = getComputedStyle(g("am-pick-btn"), "::before");

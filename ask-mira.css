@@ -1245,7 +1245,10 @@
   /* grey shell that holds the composer + the settings tray (matches the requested #f5f5f5 look) */
   .am-composer-shell {
     max-width: 920px; margin: 0 auto; width: 100%;
-    background: #f9f8f9; border-radius: 16px; padding: 0;   /* deckungsgleich mit dem Feld darin */
+    /* MIT dem Feld auf 32 (09.09.). Der Kommentar sagte schon immer "deckungsgleich mit dem
+       Feld darin", und genau deshalb muss dieser Wert mitwandern: bliebe die Schale bei 16,
+       schauten ihre eckigeren Ecken hinter dem runderen Feld hervor. */
+    background: #f9f8f9; border-radius: 32px; padding: 0;
     transition: background 200ms ease, padding-bottom 300ms cubic-bezier(.4,0,.2,1);
   }
   .am-composer-shell.is-settings-open { padding-bottom: 16px; }   /* grey only overhangs while the tray is open */
@@ -1337,10 +1340,11 @@
 
   .am-composer {
     max-width: 920px; margin: 0 auto; width: 100%; min-height: 0;
-    /* 16 und nicht 32. Bei 32 war die Rundung so gross wie die halbe Aktionszeile, und die
-       Pillen darin (Radius 9 und 10) sassen in einer Form, die einer anderen Familie
-       angehoerte. 16 ist --am-radius, also der Radius dieser Komponente. */
-    border: 1px solid var(--am-border-strong); border-radius: 16px;
+    /* 32 (09.09.). Hier stand einmal 16, mit der Begruendung, bei 32 sei die Rundung so gross
+       wie die halbe Aktionszeile gewesen. Das Verhaeltnis ist inzwischen ein anderes: der
+       Send-Knopf ist von 40 auf 32 herunter und das Feld um 8px hoeher, die Rundung nimmt
+       also nicht mehr die halbe Zeile ein. Der Wert kommt vom Nutzer und ist gewollt. */
+    border: 1px solid var(--am-border-strong); border-radius: 32px;
     background: var(--am-card); box-shadow: var(--am-shadow-sm);
     padding: 16px;
     display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center;
@@ -1460,7 +1464,11 @@
      und laesst den Abstand stehen (nachgemessen, ebenfalls 26). Also traegt jedes Element
      seinen eigenen Abstand, und wer nicht da ist, traegt keinen. */
   #ask-mira .am-composer.is-v2 { grid-template-columns: 1fr; gap: 0; align-items: stretch; }
-  #ask-mira .am-composer.is-v2 .am-actions { margin-top: 10px; }
+  /* 18 statt 10: 8px mehr Luft zwischen Textfeld und Aktionszeile, das Feld wird damit um
+     genau diese 8px hoeher. Der Abstand sitzt als RAND an der Zeile und nicht als
+     Gitterabstand -- eine leere Gitterzeile ist 0px hoch, ihr Abstand zaehlt aber trotzdem,
+     und genau daran ist das Polster oben schon einmal gescheitert (26 statt 16). */
+  #ask-mira .am-composer.is-v2 .am-actions { margin-top: 18px; }
   .am-composer.is-v2 .am-input-wrap { grid-column: 1 / -1; }
   .am-composer.is-v2 .am-actions { grid-column: 1 / -1; justify-content: space-between; width: 100%; }
   /* Die RECHTE Gruppe gibt nicht nach -- Mikrofon und Senden sind zwei Ziele, die man treffen
