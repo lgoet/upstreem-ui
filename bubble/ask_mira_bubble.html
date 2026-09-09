@@ -254,7 +254,7 @@
            selbst auf diese Fassung um (composerUmbauen). Wer sein Element in Bubble nicht
            anfasst, bekommt die neue Leiste trotzdem -- dieses Markup hier ist die Aufraeumarbeit
            fuer NEUINSTALLATIONEN, keine Voraussetzung. -->
-      <div class="am-composer is-v2" id="am-composer" data-am-composer="v4">
+      <div class="am-composer is-v2" id="am-composer" data-am-composer="v5">
         <!-- Der Picker: oberhalb des Feldes, auf seiner ganzen Breite. Er haengt AN .am-composer
              (position: relative) und nicht am Koerper: im Top Layer waere die volle Breite des
              Feldes nicht mehr herstellbar. -->
@@ -267,11 +267,13 @@
             </span>
             <span class="am-pick-count" id="am-pick-count"></span>
           </div>
-          <p class="am-pick-h" id="am-pick-h"></p>
-          <!-- An der Stelle des frueheren Umschalters: die Befehle, die JETZT gelten, als
-               Chips. Zuerst die vier Typen, nach der Wahl eines Typs die Dimensionen, die es
-               fuer ihn gibt. Getippt werden sie ueber "/" wie in Quick Actions. -->
-          <div class="am-pick-cmds" id="am-pick-cmds"></div>
+          <!-- Ueberschrift UND Chips in EINER Zeile, 16px auseinander, links ausgerichtet. -->
+          <div class="am-pick-crow" id="am-pick-crow">
+            <p class="am-pick-h" id="am-pick-h"></p>
+            <!-- An der Stelle des frueheren Umschalters: die Befehle als Chips -- Brand,
+                 Prompt, Domain, URL. Getippt werden sie ueber "/" wie in Quick Actions. -->
+            <div class="am-pick-cmds" id="am-pick-cmds"></div>
+          </div>
           <div class="am-pick-scroll" id="am-pick-scroll">
             <div class="am-pick-list" id="am-pick-list" role="listbox" aria-live="polite"></div>
           </div>

@@ -97,7 +97,7 @@
      brach ab und baute die naechste Fassung des Menues nie. Gemessen am 08.09. -- der
      Prueftand auf dem Vorlagen-Markup starb an einem fehlenden #am-eff-body.
      Ein Stempel, der nicht der aktuelle ist, heisst deshalb: NEU BAUEN, nicht "fertig". */
-  var COMPOSER_FASSUNG = 'v4';
+  var COMPOSER_FASSUNG = 'v5';
   function composerUmbauen(root){
     var comp = root.querySelector('#am-composer');
     if (!comp) return;
@@ -166,10 +166,14 @@
         '</span>' +
         '<span class="am-pick-count" id="am-pick-count"></span>' +
       '</div>' +
-      '<p class="am-pick-h" id="am-pick-h"></p>' +
-      /* An der Stelle des Umschalters: die Befehle, die JETZT gelten, als Chips. Zuerst die
-         vier Typen, nach der Wahl eines Typs die Dimensionen, die es fuer ihn gibt. */
-      '<div class="am-pick-cmds" id="am-pick-cmds"></div>' +
+      /* Ueberschrift UND Chips in einer Zeile, 16px auseinander, links ausgerichtet. Die
+         Ueberschrift fragt, die Chips antworten -- untereinander las sich das wie zwei
+         Abschnitte. */
+      '<div class="am-pick-crow" id="am-pick-crow">' +
+        '<p class="am-pick-h" id="am-pick-h"></p>' +
+        /* An der Stelle des Umschalters: die Befehle als Chips -- Brand, Prompt, Domain, URL. */
+        '<div class="am-pick-cmds" id="am-pick-cmds"></div>' +
+      '</div>' +
       '<div class="am-pick-scroll" id="am-pick-scroll">' +
         '<div class="am-pick-list" id="am-pick-list" role="listbox" aria-live="polite"></div>' +
       '</div>';
@@ -3558,6 +3562,7 @@
   var elPickCmds   = root.querySelector('#am-pick-cmds');
   var elPickChips  = root.querySelector('#am-pick-chips');
   var elPickH      = root.querySelector('#am-pick-h');
+  var elPickCrow   = root.querySelector('#am-pick-crow');
   var elPickCount  = root.querySelector('#am-pick-count');
   var elPicks      = root.querySelector('#am-picks');
 
@@ -3587,7 +3592,12 @@
   var _filter = (window.UpstreemCore && window.UpstreemCore.makeEntityFilters)
     ? window.UpstreemCore.makeEntityFilters({
         isDark: function(){ return root.getAttribute('data-theme') === 'dark'; },
-        brands: function(){ return _pickBrands; }
+        brands: function(){ return _pickBrands; },
+        /* NUR die erste Ebene. Hier wird gesucht und nicht ausgewertet: Brand, Prompt, Domain,
+           URL sagen, WORIN gesucht wird, und das genuegt, um eine Entitaet an die Frage zu
+           haengen. Markt, Im Trend, Erwaehnt und die Typen gehoeren zur Auswertung -- die
+           stehen in Quick Actions und bleiben dort. */
+        nurTypen: true
       })
     : null;
 
@@ -3625,6 +3635,10 @@
     /* Ist nichts mehr anzubieten, faellt die Zeile weg statt leer zu stehen. */
     elPickCmds.classList.toggle('is-leer', !liste.length);
     if (elPickH) elPickH.classList.toggle('is-leer', !liste.length);
+    /* Die ZEILE muss mit weg. Sonst bleibt ein leerer Flex-Kasten samt seinem Abstand nach
+       unten stehen -- 0px hoch, aber der Rand zaehlt weiter. Derselbe Fall wie die leere
+       Gitterzeile ueber dem Eingabefeld. */
+    if (elPickCrow) elPickCrow.classList.toggle('is-leer', !liste.length);
   }
 
   /* Ein Befehl wurde gewaehlt -- vom Chip oder aus der Befehlsliste im Ergebnisbereich. */
@@ -3738,9 +3752,29 @@
       pickZahl(0);
       return;
     }
-    elPickList.innerHTML = _pickRows.map(function(it, i){
-      return (UCg && UCg.entityRow)
-        ? UCg.entityRow(it, { prefix: 'am-pick', query: q, index: i }) : '';
+    /* DER TYP STEHT ALS UEBERSCHRIFT, nicht am rechten Rand der Zeile -- genau wie in der
+       Palette. Sortiert wie dort: die groesste Gruppe zuerst, bei Gleichstand in der festen
+       Reihenfolge Brand, Domain, URL, Prompt. Ist nur ein Typ da (der Normalfall, sobald ein
+       Chip steht), bleibt eine Gruppe mit einer Ueberschrift -- und die sagt dasselbe, was
+       vorher jede Zeile einzeln wiederholt hat. */
+    var ORD = { brand: 0, domain: 1, url: 2, prompt: 3 };
+    var HEAD = { brand: 'Brands', domain: 'Domains', url: 'URLs', prompt: 'Prompts' };
+    var gruppen = {};
+    _pickRows.forEach(function(it, i){
+      var k = String(it && it.type || 'url');
+      (gruppen[k] || (gruppen[k] = [])).push({ it: it, i: i });
+    });
+    var schluessel = Object.keys(gruppen).sort(function(a, b){
+      return (gruppen[b].length - gruppen[a].length) || (ORD[a] - ORD[b]);
+    });
+    elPickList.innerHTML = schluessel.map(function(k){
+      return '<div class="am-pick-cgroup"><div class="am-pick-cghead">' +
+        esc(UCt(HEAD[k] || k)) + '</div>' +
+        gruppen[k].map(function(e){
+          return (UCg && UCg.entityRow)
+            /* typLabel: false -- der Typ steht jetzt oben und nicht mehr in jeder Zeile. */
+            ? UCg.entityRow(e.it, { prefix: 'am-pick', query: q, index: e.i, typLabel: false }) : '';
+        }).join('') + '</div>';
     }).join('');
     /* Die Klasse fuer "schon uebernommen" NACH dem Zeichnen setzen. Hier stand ein Suchen und
        Ersetzen im Markup des Kerns ('class="am-pick-row"'), und das haette still aufgehoert zu

@@ -1564,7 +1564,12 @@
   /* EIN Wert faehrt, und er kommt gemessen aus dem JS (effRumpf). Vorher trugen die zwei
      Ansichten je ein max-height mit geratenem Zielwert -- die Summe sprang, und genau das war
      das Zucken beim Umschalten. */
-  .am-eff-body { position: relative; overflow: hidden; transition: height 200ms ease; }
+  /* 8px zwischen der Modellzeile und dem, was darunter steht (09.09. angefordert). Der Rand
+     sitzt am RUMPF und nicht an den Ansichten: seine Hoehe wird gemessen und gesetzt, ein Rand
+     liegt ausserhalb dieser Hoehe und faehrt beim Umschalten also nicht mit -- an einer Ansicht
+     waere er Teil der gemessenen Hoehe und der Abstand haette gezuckt. */
+  .am-eff-body { position: relative; overflow: hidden; margin-top: 8px;
+    transition: height 200ms ease; }
   /* visibility und NICHT display: eine Ansicht mit display: none misst scrollHeight als 0, und
      dann waere die Hoehe, die das JS setzt, immer 0. So bleibt sie messbar und ist trotzdem
      nicht anklickbar. */
@@ -1577,7 +1582,8 @@
     opacity: 1; visibility: visible; pointer-events: auto;
     transition: opacity 200ms ease, visibility 0s linear 0s;
   }
-  .am-eff-slider { padding: 2px 6px 0; }
+  /* Oben 0: die 8px kommen jetzt vom Rand des Rumpfes, sonst stuenden 10px da. */
+  .am-eff-slider { padding: 0 6px; }
   .am-eff-track {
     position: relative; height: 28px; border-radius: 999px; cursor: pointer;
     background: var(--up-switch-off, #d6d6d4); overflow: hidden;
@@ -1733,8 +1739,18 @@
      liest sich eine Frage wie eine Beschriftung.
      Der Abstand zum Suchfeld ist verdoppelt: 2px waren gemessen der ganze Zwischenraum
      zwischen den beiden Kaesten, jetzt 4. */
+  /* Ueberschrift und Chips in EINER Zeile: die Frage steht vorn, die Antworten daneben.
+     16px Abstand, links ausgerichtet, und die Ueberschrift bricht nicht um -- sie ist kurz,
+     die Chips duerfen umbrechen. align-items: center, damit die 28px-Chips die 12px-Zeile
+     nicht nach oben ziehen. */
+  .am-pick-crow {
+    display: flex; align-items: center; gap: 16px;
+    margin: 4px 14px 10px;
+  }
+  .am-pick-crow.is-leer { display: none; }
   .am-pick-h {
-    margin: 4px 14px 6px; font-size: 12px; font-weight: 600; letter-spacing: 0;
+    margin: 0; flex: 0 0 auto; white-space: nowrap;
+    font-size: 12px; font-weight: 600; letter-spacing: 0;
     color: var(--vc-muted);   /* siehe .am-eff-lbl: third misst im Dunkeln nur 3.97 */
   }
   /* ---- DIE BEFEHLE ALS CHIPS, an der Stelle des Umschalters ----------------------------
@@ -1750,7 +1766,9 @@
      Ausserdem zaehlt eine geloeschte Klasse im Vertragsvergleich als Bruch. */
   .am-pick-scopes { display: none; }
 
-  .am-pick-cmds { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 14px 10px; }
+  /* Die Raender liegen jetzt an .am-pick-crow -- hier bleibt nur der Abstand ZWISCHEN den
+     Chips, sonst stuende 14px zweimal. */
+  .am-pick-cmds { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; min-width: 0; }
   .am-pick-cmds.is-leer, .am-pick-h.is-leer { display: none; }
   .am-pick-cmd {
     display: inline-flex; align-items: center; gap: 5px; flex: 0 0 auto; height: 28px;
@@ -1805,10 +1823,15 @@
   /* ---- DIE BEFEHLSLISTE im Ergebnisbereich ----------------------------------------------
      Dieselbe Zeilenform wie ein Treffer (.am-pick-row), damit Klick und Pfeiltasten nicht
      zwei Wege brauchen -- nur die Kachel links ist eine andere. */
-  .am-pick-cgroup { padding: 2px 0; }
+  /* DIE MASSE DER PALETTE, Wert fuer Wert (.mqa-group / .mqa-group-head in quick-actions.css):
+     4px 0 2px am Kasten, 9px Luft zwischen zwei Gruppen, und die Ueberschrift 6px 10px 4px mit
+     11px Versalien und 0.05em Sperrung. Nicht "aehnlich" -- dieselben Zahlen, sonst sehen zwei
+     Listen, die dasselbe tun, verschieden aus. */
+  .am-pick-cgroup { padding: 4px 0 2px; }
+  .am-pick-cgroup + .am-pick-cgroup { margin-top: 9px; }
   .am-pick-cghead {
-    padding: 6px 10px 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.02em;
-    color: var(--vc-muted);
+    padding: 6px 10px 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.05em;
+    text-transform: uppercase; color: var(--am-muted-2);
   }
   .am-pick-cav {
     width: 22px; height: 22px; flex: 0 0 auto; border-radius: 6px; overflow: hidden;

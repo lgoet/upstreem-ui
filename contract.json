@@ -941,6 +941,7 @@
   "am-pick-cmd-slash",
   "am-pick-cmds",
   "am-pick-count",
+  "am-pick-crow",
   "am-pick-h",
   "am-pick-hl",
   "am-pick-input",
@@ -2955,7 +2956,7 @@
   "globals": 169,
   "payloadkeys": 96,
   "dataattrs": 242,
-  "klassen": 2117,
+  "klassen": 2118,
   "keyframes": 66
  }
 }

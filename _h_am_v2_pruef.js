@@ -400,9 +400,11 @@
       { type: "brand", id: "B-77", name: "Nike" },
       { type: "brand", id: "B-78", name: "Nike Running" }
     ]);
+    /* Der Typ steht seit dem 09.09. in der UEBERSCHRIFT und nicht mehr in jeder Zeile. Geprueft
+       wird darum: EINE Gruppe, und die heisst Brands -- zwei Gruppen hiessen gemischt. */
     pruef("nur der gewaehlte Typ, nie gemischt",
-      [].map.call(document.querySelectorAll(".am-pick-type"),
-        function(e){ return e.textContent; }).join(",") , "Brand,Brand");
+      [].map.call(document.querySelectorAll("#am-pick-list .am-pick-cghead"),
+        function(e){ return e.textContent.trim(); }).join(",") , "Brands");
     pruef("Trefferliste bleibt nach der Uebernahme stehen (erst nach dem Klick pruefen)",
       document.querySelectorAll(".am-pick-row").length, 2);
     document.querySelectorAll(".am-pick-row")[0].click();
@@ -532,39 +534,133 @@
       var p = window.__gefeuert[window.__gefeuert.length - 1];
       return p.query + "/" + p.scope;
     })(), "nike/url");
-    var vor7c = window.__gefeuert.length;
-    document.querySelector('#am-pick-cmds .am-pick-cmd[data-cmd="citation-type"]').click();
-    await warte(120);
-    pruef("ein Unterbefehl sucht NICHT, er geht nur tiefer",
-      window.__gefeuert.length - vor7c, 0);
-    pruef("das Feld traegt den Befehlspfad", inp.value, "/citation-type ");
-    pruef("die Unterliste steht", document.querySelectorAll(
-      "#am-pick-list .am-pick-row[data-cmd-val]").length, 7, "sieben Zitationstypen");
-    document.querySelector('#am-pick-list .am-pick-row[data-cmd-val="Editorial"]').click();
-    await warte(UHR);
-    pruef("der gewaehlte Wert geht wirklich hinaus", (function(){
-      var p = window.__gefeuert[window.__gefeuert.length - 1];
-      return p.citation_type + "/" + p.scope + "/" + p.query;
-    })(), "Editorial/url/nike",
-      "gemessen war hier citation_type leer -- das Feld war geleert, also wurde nie neu gesucht");
-    pruef("die beiseitegelegte Suche kommt zurueck", inp.value, "nike");
-    pruef("ein gesetzter Befehl verschwindet aus dem Angebot",
-      [].map.call(document.querySelectorAll("#am-pick-cmds .am-pick-cmd"), function(b){
-        return b.getAttribute("data-cmd"); }).indexOf("citation-type"), -1);
-    pruef("zwei Chips stehen im Feld", [].map.call(
-      document.querySelectorAll("#am-pick-chips .am-pick-chip"), function(c){
-        return c.getAttribute("data-fach"); }).join(","), "scope,type",
-      "das Fach heisst type, das Payload-Feld citation_type -- die Namen sind getrennt");
+    /* NUR DIE ERSTE EBENE (09.09.). Hier wird gesucht und nicht ausgewertet: Brand, Prompt,
+       Domain und URL sagen, WORIN gesucht wird -- Markt, Im Trend, Erwaehnt und die Typen
+       gehoeren zur Auswertung und bleiben in der Palette. Geprueft wird deshalb, dass nach der
+       Wahl eines Typs NICHTS mehr angeboten wird, und die Gegenprobe steht direkt daneben: der
+       gleiche Kern OHNE nurTypen muss die Dimensionen liefern, sonst prueft die Zeile nur, dass
+       ueberhaupt nie etwas kommt. */
+    pruef("7b nach der Typwahl gibt es keine zweite Ebene",
+      document.querySelectorAll("#am-pick-cmds .am-pick-cmd").length, 0);
+    pruef("GEGENPROBE der gleiche Kern OHNE nurTypen hat sie", (function(){
+      var g = UC.makeEntityFilters({}); g.anwenden("urls");
+      return g.befehle("").map(function(x){ return x.id; }).join(",");
+    })(), "citation-type,url-type,market,mentioning,top,trending");
+    /* UND DIE TASTATUR DARF KEINEN ZWEITEN WEG HABEN. nurTypen wirkte zuerst nur auf das
+       Angebot -- ein von Hand getipptes "/market de" haette den Filter trotzdem gesetzt. */
+    pruef("ein getipptes /market laeuft mit nurTypen ins Leere", (function(){
+      var a = UC.makeEntityFilters({ nurTypen: true });
+      var gesetzt = a.anwenden("market", "de");
+      return gesetzt + "/" + a.payload().market;
+    })(), "false/");
+    /* GEGENPROBE mit BEREICH. Ohne gesetzten Bereich raeumt aufraeumen() den Markt sofort
+       wieder weg (bereiche.indexOf(null) ist -1) -- meine erste Fassung dieser Zeile mass genau
+       das und sah wie ein Fehler im Kern aus. */
+    pruef("GEGENPROBE ohne nurTypen setzt es", (function(){
+      var b = UC.makeEntityFilters({}); b.anwenden("urls");
+      return b.anwenden("market", "de") + "/" + b.payload().market;
+    })(), "true/de");
+    pruef("und die Zeile faellt weg statt leer zu stehen",
+      g("am-pick-crow").classList.contains("is-leer"), true,
+      "ein leerer Flex-Kasten haette seinen Abstand nach unten behalten");
     /* Die Ruecktaste im leeren Feld nimmt den letzten Chip -- ohne sie kommt die Tastatur an
        einen gesetzten Filter nur ueber ein 19px kleines Kreuz. */
     inp.value = ""; inp.dispatchEvent(new Event("input", { bubbles: true }));
     inp.dispatchEvent(new KeyboardEvent("keydown", { key: "Backspace", bubbles: true }));
     await warte(80);
     pruef("die Ruecktaste nimmt den letzten Chip", document.querySelectorAll(
-      "#am-pick-chips .am-pick-chip").length, 1);
+      "#am-pick-chips .am-pick-chip").length, 0);
+    pruef("und die Typen stehen danach wieder da",
+      [].map.call(document.querySelectorAll("#am-pick-cmds .am-pick-cmd"), function(b){
+        return b.getAttribute("data-cmd"); }).join(","), "brands,prompts,domains,urls");
     (function(){ var x = document.querySelector("#am-pick-chips .am-pick-chip-x");
       while (x){ x.click(); x = document.querySelector("#am-pick-chips .am-pick-chip-x"); } })();
     if (root.classList.contains("is-pick-open")) g("am-pick-btn").click();
+
+    kopf("7c  DIE VIER PUNKTE VOM 09.09.  (eine Zeile, Ueberschriften, die Masse der Palette)");
+    if (!root.classList.contains("is-pick-open")) g("am-pick-btn").click();
+    (function(){ var x = document.querySelector("#am-pick-chips .am-pick-chip-x");
+      while (x){ x.click(); x = document.querySelector("#am-pick-chips .am-pick-chip-x"); } })();
+    await warte(80);
+    /* 1 -- nur die erste Ebene */
+    pruef("1 nur Brand, Prompt, Domain, URL", [].map.call(
+      document.querySelectorAll("#am-pick-cmds .am-pick-cmd"), function(b){
+        return b.getAttribute("data-cmd"); }).join(","), "brands,prompts,domains,urls");
+    /* 2 -- Ueberschrift und Chips in EINER Zeile, 16px, links ausgerichtet */
+    (function(){
+      var h = g("am-pick-h"), c = g("am-pick-cmds"), z = g("am-pick-crow");
+      var hb = h.getBoundingClientRect(), cb = c.getBoundingClientRect(),
+          zb = z.getBoundingClientRect();
+      pruef("2 Ueberschrift und Chips in EINER Zeile",
+        (Math.abs((hb.top + hb.height/2) - (cb.top + cb.height/2)) <= 1) + "/" + (cb.left > hb.right),
+        "true/true", "mittig zueinander, die Chips rechts von der Ueberschrift");
+      pruef("2 16px dazwischen", Math.round(cb.left - hb.right) + "/" + getComputedStyle(z).gap,
+        "16/16px");
+      pruef("2 links ausgerichtet, nicht mittig", Math.round(hb.left - zb.left), 0);
+      /* 8px ZWISCHEN den Chips (09.09.). Gemessen wird der echte Zwischenraum von zwei
+         nebeneinander stehenden Chips und nicht nur die Regel -- eine Regel sagt nichts, wenn
+         ein Rand oder ein Rahmen dazwischenfunkt. */
+      var cc = document.querySelectorAll("#am-pick-cmds .am-pick-cmd");
+      pruef("2 8px zwischen den Chips",
+        Math.round(cc[1].getBoundingClientRect().left - cc[0].getBoundingClientRect().right) +
+        "/" + getComputedStyle(c).gap, "8/8px");
+    })();
+    /* 3 -- der Typ als UEBERSCHRIFT und nicht am rechten Rand, mit den Massen der Palette.
+       Eine GEMISCHTE Antwort, sonst waere eine Gruppierung nicht zu sehen. */
+    inp.value = "misch"; inp.dispatchEvent(new Event("input", { bubbles: true }));
+    await warte(UHR);
+    window.MiraQuickActions.setResults({
+      requestId: window.__gefeuert[window.__gefeuert.length - 1].requestId, items: [
+        { type: "url", url: "https://nike.com/a", title: "Air Max" },
+        { type: "url", url: "https://nike.com/b", title: "Pegasus" },
+        { type: "brand", id: "B-1", name: "Nike" },
+        { type: "prompt", id: "P-1", name: "Beste Laufschuhe", market: "de" } ] });
+    await warte(150);
+    pruef("3 der Typ steht als Ueberschrift", [].map.call(
+      document.querySelectorAll("#am-pick-list .am-pick-cghead"), function(e){
+        return e.textContent.trim(); }).join(","), "URLs,Brands,Prompts",
+      "groesste Gruppe zuerst, dann die feste Reihenfolge -- wie orderedKeys der Palette");
+    pruef("3 und NICHT mehr am rechten Rand der Zeile",
+      document.querySelectorAll("#am-pick-list .am-pick-type").length, 0);
+    pruef("GEGENPROBE ohne typLabel:false ist er DA",
+      UC.entityRow({ type: "url", url: "https://x.de/a", title: "A" },
+                   { prefix: "am-pick", index: 0 }).indexOf("am-pick-type") >= 0, true,
+      "sonst pruefte die Zeile darueber nur, dass es die Klasse nicht gibt");
+    pruef("3 alle vier Treffer stehen noch da",
+      document.querySelectorAll("#am-pick-list .am-pick-row").length, 4);
+    /* DIE MASSE DER PALETTE, Wert fuer Wert -- nicht "aehnlich". */
+    (function(){
+      var gr = document.querySelectorAll("#am-pick-list .am-pick-cgroup");
+      var k = document.querySelector("#am-pick-list .am-pick-cghead");
+      var cg = getComputedStyle(gr[0]), ck = getComputedStyle(k);
+      pruef("3 Gruppe: Polster wie .mqa-group",
+        cg.paddingTop + " " + cg.paddingRight + " " + cg.paddingBottom, "4px 0px 2px");
+      pruef("3 Gruppe: 9px Luft zur naechsten wie .mqa-results .mqa-group + .mqa-group",
+        getComputedStyle(gr[1]).marginTop, "9px");
+      pruef("3 Ueberschrift: wie .mqa-group-head",
+        ck.paddingTop + " " + ck.paddingRight + " " + ck.paddingBottom + " / " + ck.fontSize +
+        " / " + ck.fontWeight + " / " + ck.textTransform,
+        "6px 10px 4px / 11px / 600 / uppercase");
+      pruef("3 Ueberschrift: 0.05em gesperrt",
+        Math.round(parseFloat(ck.letterSpacing) * 100) / 100, 0.55,
+        "0.05em auf 11px sind 0.55px");
+    })();
+    if (root.classList.contains("is-pick-open")) g("am-pick-btn").click();
+    /* 4 -- 8px zwischen Modellzeile und dem, was darunter steht */
+    (function(){
+      btn.click();
+      var kb = g("am-eff-head").getBoundingClientRect();
+      var rb = g("am-eff-body").getBoundingClientRect();
+      pruef("4 8px zwischen Modellzeile und Aufwand-Slider",
+        Math.round(rb.top - kb.bottom) + "/" + getComputedStyle(g("am-eff-body")).marginTop,
+        "8/8px");
+      pruef("4 der Rand liegt AUSSERHALB der gemessenen Hoehe",
+        g("am-eff-body").style.height !== "" &&
+        Math.round(rb.height) === Math.round(parseFloat(g("am-eff-body").style.height)), true,
+        "sonst waere er Teil der Hoehe und der Abstand haette beim Umschalten gezuckt: " +
+        Math.round(rb.height) + " gegen " + g("am-eff-body").style.height);
+      btn.click();
+    })();
 
     kopf("8  DER VERTEILER  (deshalb braucht die Suche KEINEN Eingriff in Bubble)");
     /* ZUSTELLUNGEN zaehlen und nicht DOM-Zeilen. Der Fehlschluss davor: die Trefferliste trug
@@ -652,10 +748,21 @@
     pruef("kein Rahmen um die Chip-Zeile", getComputedStyle(g("am-pick-cmds")).borderTopWidth,
       "0px", "der Kontrast kommt vom Chip selbst, nicht von einem Kasten darum");
     pruef("Ueberschrift ohne Versal", getComputedStyle(g("am-pick-h")).textTransform, "none");
+    /* Gemessen wird die ZEILE und nicht der Text. Seit Ueberschrift und Chips zusammen in
+       .am-pick-crow stehen, sitzt der 12px-Text mittig zu den 28px-Chips -- sein Oberrand liegt
+       damit tiefer als der der Zeile, und das ist kein Abstand, sondern die Ausrichtung. Der
+       Abstand selbst ist unveraendert: 4px, verdoppelt von 2. */
     pruef("Abstand zum Suchfeld verdoppelt", Math.round(
-      g("am-pick-h").getBoundingClientRect().top -
+      g("am-pick-crow").getBoundingClientRect().top -
       g("am-pick-input").closest(".am-pick-search").getBoundingClientRect().bottom), 4,
-      "vorher 2");
+      "vorher 2, gemessen an der Zeile");
+    pruef("und der Text sitzt mittig zu den Chips", (function(){
+      var h = g("am-pick-h").getBoundingClientRect();
+      var c = document.querySelector("#am-pick-cmds .am-pick-cmd");
+      if (!c) return "keine Chips";
+      var cb = c.getBoundingClientRect();
+      return Math.abs((h.top + h.height/2) - (cb.top + cb.height/2)) <= 1;
+    })(), true);
     /* DER KONTRAST KOMMT VOM CHIP, nicht von einem Kasten -- dieselbe Rechnung wie vorher beim
        Umschalter, nur ist der gemessene Koerper jetzt der Chip. Gemessen wird Chip gegen Panel,
        auf der Flaechen-Skala (1.4.11), nicht auf der Text-Skala. */

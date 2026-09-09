@@ -5374,11 +5374,25 @@
                String(o.wert).toLowerCase().indexOf(r) !== -1;
       });
     }
+    /* Kennt dieser Filtersatz den Befehl UEBERHAUPT? Eine Stelle fuer alle drei Wege hinein:
+       das Angebot, das Lesen der Eingabe und das Anwenden. Ohne sie wirkte nurTypen nur auf die
+       Chips, und ein von Hand getipptes "/market de" haette den Filter trotzdem gesetzt -- die
+       Oberflaeche haette das eine gesagt und die Tastatur das andere getan. */
+    function kennt(id){
+      var c = EF_NACH_ID[id];
+      if (!c) return null;
+      if (cfg.nurTypen && c.fach !== "scope") return null;
+      return c;
+    }
     /* Welche Befehle gelten JETZT. Erst der Typ, dann die Dimensionen -- und nur die, die es
-       fuer diesen Typ gibt. Ein belegtes Fach wird nicht zweimal angeboten. */
+       fuer diesen Typ gibt. Ein belegtes Fach wird nicht zweimal angeboten.
+       cfg.nurTypen haelt es auf der ERSTEN Ebene: dann gibt es nur Brand, Prompt, Domain und
+       URL und danach nichts mehr. Der Mira-Picker sucht damit, Quick Actions filtert damit --
+       dort bleiben die Dimensionen. Deshalb eine Einstellung und keine zweite Vokabel. */
     function befehle(kopf){
       var l = EF_BEFEHLE.filter(function(c){
         if (c.fach === "scope") return !F.scope;
+        if (cfg.nurTypen) return false;
         if (!F.scope) return false;
         if (c.bereiche && c.bereiche.indexOf(F.scope) === -1) return false;
         if (c.fach && F[c.fach]) return false;
@@ -5442,13 +5456,13 @@
         var m = /^\/(\S*)(\s+)?(.*)$/.exec(String(roh == null ? "" : roh));
         if (!m) return null;
         return { kopf: (m[1] || "").toLowerCase(), luecke: !!m[2],
-                 rest: (m[3] || "").toLowerCase(), cmd: EF_NACH_ID[(m[1] || "").toLowerCase()] || null };
+                 rest: (m[3] || "").toLowerCase(), cmd: kennt((m[1] || "").toLowerCase()) };
       },
-      befehlNach: function(id){ return EF_NACH_ID[id] || null; },
+      befehlNach: function(id){ return kennt(id); },
       /* Setzt ein Fach. Ein Befehl MIT Unterliste und ohne Wert heisst: einen Schritt tiefer,
          nicht anwenden -- der Aufrufer schreibt dann "/<id> " ins Feld. */
       anwenden: function(id, wert){
-        var c = EF_NACH_ID[id];
+        var c = kennt(id);
         if (!c) return false;
         if (c.unter && (wert == null || wert === "")) return "tiefer";
         F[c.fach] = wert || c.wert;
