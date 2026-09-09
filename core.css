@@ -2868,6 +2868,36 @@
 .up-entchip.is-soft:not(.up-chiphover):hover { background: var(--vt-row-hover-solid, var(--vc-switch-bg)); }
 .up-entchip:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 1px; }
 
+/* ---- is-lifted: der Chip, wie ihn die Palette traegt -------------------------------------
+   Die Werte sind die von .mqa-chip in quick-actions.css, Wert fuer Wert: Radius 7.6, gap 6.5,
+   Polsterung 0 6.5 0 9.75, halbdurchsichtiger Grund und ZWEI Schattenlagen. Die zwei Lagen
+   sind Absicht und keine Verzierung -- eine Lage kann nur eines von beiden: mit 3px Streuung
+   ist die Kante weich, mit 1px fehlt das Abheben. Zusammen 2px Gesamtausdehnung.
+   Im Dunkeln beide kraeftiger (40 und 26 statt 22 und 12 Prozent), weil ein Schatten auf
+   dunklem Grund weniger hergibt.
+   WARUM HIER UND NICHT NUR DORT: der Chip ist derselbe Gedanke an zwei Orten -- die Palette
+   und der Picker in Ask Mira zeigen beide Brand, Prompt, Domain, URL. Die Palette BEHAELT
+   ihre eigene Kopie, weil ihr Bubble-Loader nur quick-actions.css zieht und core dort nicht
+   im Baum ist; dieselbe Begruendung wie bei ihren Farbpaletten. Diese Datei ist die Quelle. */
+.up-entchip.is-lifted {
+  height: 26px; gap: 6.5px; padding: 0 6.5px 0 9.75px; border-radius: 7.6px;
+  font-size: 12.5px; font-weight: 500;
+  background: color-mix(in srgb, var(--vc-heading-bg) 50%, transparent);
+  box-shadow: 0 1px 1px rgba(0,0,0,0.22), 0 2px 4px rgba(0,0,0,0.12);
+}
+.up-root[data-theme="dark"] .up-entchip.is-lifted {
+  box-shadow: 0 1px 1px rgba(0,0,0,0.40), 0 2px 4px rgba(0,0,0,0.26);
+}
+/* Die kleine Fassung (.mqa-mini): 22px statt 26, Radius 6.4, und der Schatten einen Pixel
+   enger -- der kleine Chip soll nicht staerker schweben als der grosse. */
+.up-entchip.is-lifted.is-sm {
+  height: 22px; gap: 5.5px; padding: 0 5.5px 0 8.25px; border-radius: 6.4px; font-size: 11px;
+  box-shadow: 0 1px 1px rgba(0,0,0,0.22), 0 1px 3px rgba(0,0,0,0.12);
+}
+.up-root[data-theme="dark"] .up-entchip.is-lifted.is-sm {
+  box-shadow: 0 1px 1px rgba(0,0,0,0.40), 0 1px 3px rgba(0,0,0,0.26);
+}
+
 /* ---- Mention-Liste ---------------------------------------------------------------------------
    Die Aufzaehlung der Marken, die irgendwo vorkommen. Lag als lokaler Block in response-detail;
    url-detail braucht denselben Chip, also gehoert er hierher -- zwei Kopien sind genau der Weg,

@@ -154,7 +154,7 @@
     panel.setAttribute('aria-hidden', 'true');
     panel.innerHTML =
       '<div class="am-pick-search">' +
-        '<svg class="am-pick-sic" viewBox="0 0 24 24" aria-hidden="true">' +
+        '<svg width="24" height="24" class="am-pick-sic" viewBox="0 0 24 24" aria-hidden="true">' +
           '<path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>' +
         /* Die gesetzten Filter stehen IM Feld, links vor der Eingabe -- wie in der Palette.
            Ein Filter, der ueber dem Feld stuende, waere eine Angabe ueber die Suche; hier ist
@@ -203,13 +203,13 @@
               'aria-expanded="false">' +
         '<span class="am-eff-name" id="am-eff-name"></span>' +
         '<span class="am-eff-lvl" id="am-eff-lvl"></span>' +
-        '<svg class="am-eff-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>' +
+        '<svg width="24" height="24" class="am-eff-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>' +
       '</button>' +
       '<div class="am-eff-menu" id="am-eff-menu" role="dialog" aria-label="Model and effort">' +
         '<button class="am-eff-head" type="button" id="am-eff-head" aria-expanded="false">' +
           '<span class="am-eff-hname" id="am-eff-hname"></span>' +
           '<span class="am-eff-hlvl" id="am-eff-hlvl"></span>' +
-          '<svg class="am-eff-hchev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>' +
+          '<svg width="24" height="24" class="am-eff-hchev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>' +
         '</button>' +
         /* EIN Rumpf um beide Ansichten. Seine Hoehe wird gemessen und gesetzt (effRumpf),
            damit das Menue beim Umschalten weich waechst statt zu springen: max-height auf
@@ -264,42 +264,42 @@
 
   /* ---------------- Inline icon set (no external libs) ---------------- */
   var ICON = {
-    user: '<svg viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
-    trend: '<svg viewBox="0 0 24 24"><path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/></svg>',
-    source: '<svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>',
-    flag: '<svg viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/></svg>',
-    smile: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01M15 9h.01"/></svg>',
-    clock: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
-    copy: '<svg viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /> <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>',
-    download: '<svg viewBox="0 0 24 24"><path d="M12 15V3" /> <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /> <path d="m7 10 5 5 5-5" /></svg>',
-    zap: '<svg viewBox="0 0 24 24"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z" /></svg>',
-    maximize: '<svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3" /> <path d="M21 8V5a2 2 0 0 0-2-2h-3" /> <path d="M3 16v3a2 2 0 0 0 2 2h3" /> <path d="M16 21h3a2 2 0 0 0 2-2v-3" /></svg>',
-    globe: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" /> <path d="M2 12h20" /></svg>',
-    link: '<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /> <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>',
-    fileText: '<svg viewBox="0 0 24 24"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" /> <path d="M14 2v5a1 1 0 0 0 1 1h5" /> <path d="M10 9H8" /> <path d="M16 13H8" /> <path d="M16 17H8" /></svg>',
-    star: '<svg viewBox="0 0 24 24"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" /></svg>',
-    swords: '<svg viewBox="0 0 24 24"><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/><line x1="13" y1="19" x2="19" y2="13"/><line x1="16" y1="16" x2="20" y2="20"/><line x1="19" y1="21" x2="21" y2="19"/><polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5"/><line x1="5" y1="14" x2="9" y2="18"/><line x1="7" y1="17" x2="4" y2="20"/><line x1="3" y1="19" x2="5" y2="21"/></svg>',
-    prompt: '<svg viewBox="0 0 24 24"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z" /></svg>',
-    citation: '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>',
-    competitor: '<svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
-    recommendation: '<svg viewBox="0 0 24 24"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 3h6c0-1.5.5-2.5 1-3a7 7 0 0 0-4-12z"/></svg>',
-    brand: '<svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.4 8.3 8 11 4.6-2.7 8-6 8-11V5z"/></svg>',
-    thumbsUp: '<svg viewBox="0 0 24 24"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>',
-    thumbsDown: '<svg viewBox="0 0 24 24"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3z"/><path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>',
-    check: '<svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg>',
-    trash: '<svg viewBox="0 0 24 24"><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /> <path d="M3 6h18" /> <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>',
-    pencil: '<svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
-    x: '<svg viewBox="0 0 24 24"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>',
-    telescope: '<svg viewBox="0 0 24 24"><path d="m10.065 12.493-6.18 1.318a.934.934 0 0 1-1.108-.702l-.537-2.15a1.07 1.07 0 0 1 .691-1.265l13.504-4.44"/><path d="m13.56 11.747 4.332-.924"/><path d="m16 21-3.105-6.21"/><path d="M16.485 5.94a2 2 0 0 1 1.455-2.425l1.09-.272a1 1 0 0 1 1.212.727l1.515 6.06a1 1 0 0 1-.727 1.213l-1.09.272a2 2 0 0 1-2.425-1.455z"/><path d="m6.158 8.633 1.114 4.456"/><path d="m8 21 3.105-6.21"/><circle cx="12" cy="13" r="2"/></svg>',
-    settings: '<svg viewBox="0 0 24 24"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>',
-    chevron: '<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg>',
-    chevronRight: '<svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></svg>',
-    dots: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>',
-    folderOpen: '<svg viewBox="0 0 24 24"><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></svg>',
-    folder: '<svg viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>',
-    pin: '<svg viewBox="0 0 24 24"><g transform="rotate(45 12 12)"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></g></svg>',
-    pinOff: '<svg viewBox="0 0 24 24"><g transform="rotate(45 12 12)"><path d="M12 17v5"/><path d="M15 9.34V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H7.89"/><path d="M9 9v1.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h11"/></g><path d="m2 2 20 20"/></svg>',
-    plus: '<svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></svg>'
+    user: '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+    trend: '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/></svg>',
+    source: '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>',
+    flag: '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/></svg>',
+    smile: '<svg width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01M15 9h.01"/></svg>',
+    clock: '<svg width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
+    copy: '<svg width="24" height="24" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /> <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>',
+    download: '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M12 15V3" /> <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /> <path d="m7 10 5 5 5-5" /></svg>',
+    zap: '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z" /></svg>',
+    maximize: '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3" /> <path d="M21 8V5a2 2 0 0 0-2-2h-3" /> <path d="M3 16v3a2 2 0 0 0 2 2h3" /> <path d="M16 21h3a2 2 0 0 0 2-2v-3" /></svg>',
+    globe: '<svg width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" /> <path d="M2 12h20" /></svg>',
+    link: '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /> <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>',
+    fileText: '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" /> <path d="M14 2v5a1 1 0 0 0 1 1h5" /> <path d="M10 9H8" /> <path d="M16 13H8" /> <path d="M16 17H8" /></svg>',
+    star: '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" /></svg>',
+    swords: '<svg width="24" height="24" viewBox="0 0 24 24"><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/><line x1="13" y1="19" x2="19" y2="13"/><line x1="16" y1="16" x2="20" y2="20"/><line x1="19" y1="21" x2="21" y2="19"/><polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5"/><line x1="5" y1="14" x2="9" y2="18"/><line x1="7" y1="17" x2="4" y2="20"/><line x1="3" y1="19" x2="5" y2="21"/></svg>',
+    prompt: '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z" /></svg>',
+    citation: '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>',
+    competitor: '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+    recommendation: '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 3h6c0-1.5.5-2.5 1-3a7 7 0 0 0-4-12z"/></svg>',
+    brand: '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.4 8.3 8 11 4.6-2.7 8-6 8-11V5z"/></svg>',
+    thumbsUp: '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>',
+    thumbsDown: '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3z"/><path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>',
+    check: '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg>',
+    trash: '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /> <path d="M3 6h18" /> <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>',
+    pencil: '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
+    x: '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>',
+    telescope: '<svg width="24" height="24" viewBox="0 0 24 24"><path d="m10.065 12.493-6.18 1.318a.934.934 0 0 1-1.108-.702l-.537-2.15a1.07 1.07 0 0 1 .691-1.265l13.504-4.44"/><path d="m13.56 11.747 4.332-.924"/><path d="m16 21-3.105-6.21"/><path d="M16.485 5.94a2 2 0 0 1 1.455-2.425l1.09-.272a1 1 0 0 1 1.212.727l1.515 6.06a1 1 0 0 1-.727 1.213l-1.09.272a2 2 0 0 1-2.425-1.455z"/><path d="m6.158 8.633 1.114 4.456"/><path d="m8 21 3.105-6.21"/><circle cx="12" cy="13" r="2"/></svg>',
+    settings: '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>',
+    chevron: '<svg width="24" height="24" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg>',
+    chevronRight: '<svg width="24" height="24" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></svg>',
+    dots: '<svg width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>',
+    folderOpen: '<svg width="24" height="24" viewBox="0 0 24 24"><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></svg>',
+    folder: '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>',
+    pin: '<svg width="24" height="24" viewBox="0 0 24 24"><g transform="rotate(45 12 12)"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></g></svg>',
+    pinOff: '<svg width="24" height="24" viewBox="0 0 24 24"><g transform="rotate(45 12 12)"><path d="M12 17v5"/><path d="M15 9.34V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H7.89"/><path d="M9 9v1.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h11"/></g><path d="m2 2 20 20"/></svg>',
+    plus: '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></svg>'
   };
   var EVIDENCE = {
     brand:         { label: 'Your Brand',     color: '#3a8ea3', icon: ICON.copy },
@@ -641,11 +641,11 @@
   };
   var SUGG_ICONS = [ICON.trend, ICON.source, ICON.competitor, ICON.smile, ICON.clock];
   var GALLERY_ICONS = [
-    '<svg viewBox="0 0 24 24"><path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/></svg>',
-    '<svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>',
-    '<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /> <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>',
-    '<svg viewBox="0 0 24 24"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z" /></svg>',
-    '<svg viewBox="0 0 24 24"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2" /></svg>'
+    '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/></svg>',
+    '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>',
+    '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /> <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>',
+    '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z" /></svg>',
+    '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2" /></svg>'
   ];
 
   var lang = 'en';
@@ -993,7 +993,7 @@
     var def = EVIDENCE[String(type||'').toLowerCase()];
     var color = def ? def.color : '#6b7280';
     var icon = def ? def.icon : ICON.flag;
-    var ic = icon.replace('<svg ', '<svg class="am-ev-ic" ');
+    var ic = icon.replace('<svg width="24" height="24" ', '<svg width="24" height="24" class="am-ev-ic" ');
     var text = label || (def ? def.label : (type || 'Info'));
     return '<span class="am-ev-pill" style="--am-ev-color:'+esc(color)+';">'+ic+'<span>'+esc(text)+'</span></span>';
   }
@@ -1148,7 +1148,7 @@
     return (m && m.logo_url) ? String(m.logo_url) : '';
   }
   // small "response" fallback icon (message bubble), used when no model logo resolves
-  var RESP_FALLBACK_SVG = '<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+  var RESP_FALLBACK_SVG = '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
   // Decide the marker that precedes a matched entity, based on the current Settings:
   //  brand/competitor -> S.settings.brand  ('logo' | 'icon' | 'none')
   //  url/domain/citation/prompt -> S.settings.citation ('favicon' | 'icon' | 'none')
@@ -1377,7 +1377,7 @@
       '<button class="uo-status-btn" type="button" aria-haspopup="true" aria-expanded="false" title="Change status">'+
         '<span class="uo-status-dot" style="--uo-stat:'+meta.color+';"></span>'+
         '<span class="uo-status-label">'+esc(meta.label)+'</span>'+
-        '<svg class="uo-status-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg>'+
+        '<svg width="24" height="24" class="uo-status-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg>'+
       '</button>'+
       '<div class="uo-status-menu" role="menu">'+statusOptionsHtml(key)+'</div>'+
     '</div>';
@@ -1418,8 +1418,8 @@
     if (!item || typeof item !== 'object') return '';
     var trendUp = Number(item.trend_pct) >= 0;
     var gapNeg  = Number(item.gap) < 0;
-    var arrowUp   = '<svg viewBox="0 0 24 24"><path d="M7 7h10v10" /> <path d="M7 17 17 7" /></svg>';
-    var arrowDown = '<svg viewBox="0 0 24 24"><path d="m7 7 10 10" /> <path d="M17 7v10H7" /></svg>';
+    var arrowUp   = '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M7 7h10v10" /> <path d="M7 17 17 7" /></svg>';
+    var arrowDown = '<svg width="24" height="24" viewBox="0 0 24 24"><path d="m7 7 10 10" /> <path d="M17 7v10H7" /></svg>';
     var comps = asArrayLoose(item.mentioned_competitors);
     var compTotal = Number(item.competitor_count); if (!isFinite(compTotal)) compTotal = comps.length;
     var compMore = compTotal - comps.length;
@@ -1454,7 +1454,7 @@
 
     return '<div class="uo-card am-opp-card">'+
       '<div class="uo-card-top">'+
-        '<span class="uo-eyebrow"><svg viewBox="0 0 24 24">'+_oppRecIcon(item.recommendation_type)+'</svg><span>'+esc(item.label||'')+'</span></span>'+
+        '<span class="uo-eyebrow"><svg width="24" height="24" viewBox="0 0 24 24">'+_oppRecIcon(item.recommendation_type)+'</svg><span>'+esc(item.label||'')+'</span></span>'+
         '<span class="uo-card-topright">'+statusPill+_oppPot(item)+'</span>'+
       '</div>'+
       '<h3 class="uo-card-title">'+esc(item.headline||'')+'</h3>'+
@@ -2267,10 +2267,10 @@
 
   // Mobile-only quick actions (ChatGPT-style shortcuts). Reuse the exact desktop prompts.
   var _QA_IC = {
-    report: '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
-    smile:  '<svg viewBox="0 0 24 24"><path d="M15 10V9" /> <path d="M16.472 15a6 6 0 01-8.943 0" /> <path d="M9 10V9" /> <circle cx="12" cy="12" r="10" /></svg>',
-    trend:  '<svg viewBox="0 0 24 24"><path d="M16 7h6v6" /> <path d="m22 7-8.5 8.5-5-5L2 17" /></svg>',
-    eye:    '<svg viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>'
+    report: '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
+    smile:  '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M15 10V9" /> <path d="M16.472 15a6 6 0 01-8.943 0" /> <path d="M9 10V9" /> <circle cx="12" cy="12" r="10" /></svg>',
+    trend:  '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M16 7h6v6" /> <path d="m22 7-8.5 8.5-5-5L2 17" /></svg>',
+    eye:    '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>'
   };
   var QUICK_ACTIONS = {
     en: [
@@ -2473,7 +2473,7 @@
         return '<button class="am-cat-card'+(full ? ' am-cat-card-full' : '')+'" type="button" data-cat="'+i+'">'+
           '<span class="am-cat-ic">'+(GALLERY_ICONS[i] || ICON.trend)+'</span>'+
           '<span class="am-cat-name">'+esc(cat.name)+'</span>'+
-          '<span class="am-cat-chev"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></svg></span>'+
+          '<span class="am-cat-chev"><svg width="24" height="24" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></svg></span>'+
         '</button>';
       }
       var repIdx = -1;
@@ -2484,7 +2484,7 @@
           '<span class="am-cat-ic">'+(GALLERY_ICONS[repIdx] || ICON.fileText)+'</span>'+
           '<span class="am-cat-text"><span class="am-cat-label">'+esc(g[repIdx].name)+'</span>'+
             '<span class="am-cat-desc">'+esc(g[repIdx].desc || 'Full reports on your AI visibility')+'</span></span>'+
-          '<span class="am-cat-chev"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></svg></span>'+
+          '<span class="am-cat-chev"><svg width="24" height="24" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></svg></span>'+
         '</button>';
       }
       html += '<div class="am-cat-grid">' + g.map(function(cat, i){
@@ -2515,18 +2515,18 @@
         var grp = o.group || 'd';
         if (grp !== prevGroup){ menu += '<div class="am-rep-range-sep"></div>'; prevGroup = grp; }
         menu += '<button class="am-rep-range-opt'+(o.id===_reportRange?' is-sel':'')+'" type="button" data-rep-range="'+escAttr(o.id)+'">'+esc(o.label)+
-          '<span class="am-rep-range-check"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg></span></button>';
+          '<span class="am-rep-range-check"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg></span></button>';
       });
       var rhtml = '<div class="am-gallery-head am-rep-head">'+
-        '<button class="am-gallery-back" type="button" data-gallery-back><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></svg><span>'+esc(L().galleryBack || 'All categories')+'</span></button>'+
+        '<button class="am-gallery-back" type="button" data-gallery-back><svg width="24" height="24" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></svg><span>'+esc(L().galleryBack || 'All categories')+'</span></button>'+
         '<span class="am-gallery-cat-title">'+esc(cat.name)+'</span>'+
         '<span class="am-rep-spacer"></span>'+
         repTopicsMarkup(de)+
         '<div class="am-rep-range-wrap">'+
           '<button class="am-rep-range" type="button" data-rep-range-toggle>'+
-            '<svg class="am-rep-cal" viewBox="0 0 24 24"><path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>'+
+            '<svg width="24" height="24" class="am-rep-cal" viewBox="0 0 24 24"><path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>'+
             '<span class="am-rep-range-lbl">'+esc(repRangeLabel())+'</span>'+
-            '<svg class="am-rep-range-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg>'+
+            '<svg width="24" height="24" class="am-rep-range-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg>'+
           '</button>'+
           '<div class="am-rep-range-menu">'+menu+'</div>'+
         '</div>'+
@@ -2536,7 +2536,7 @@
           '<span class="am-rep-ic">'+(ICON[r.icon] || ICON.trend)+'</span>'+
           '<span class="am-rep-text"><span class="am-rep-label">'+esc(r.label)+'</span><span class="am-rep-desc">'+esc(r.desc || '')+'</span></span>'+
           '<span class="am-rep-edit" data-rep-edit role="button" tabindex="-1" aria-label="Edit prompt" title="Edit prompt">'+ICON.pencil+'</span>'+
-          '<span class="am-rep-go"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></svg></span>'+
+          '<span class="am-rep-go"><svg width="24" height="24" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></svg></span>'+
         '</button>';
       }).join('') + '</div>';
       elSuggGrid.innerHTML = rhtml;
@@ -2546,7 +2546,7 @@
       return;
     }
     var html = '<div class="am-gallery-head">'+
-      '<button class="am-gallery-back" type="button" data-gallery-back><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></svg><span>'+esc(L().galleryBack || 'All categories')+'</span></button>'+
+      '<button class="am-gallery-back" type="button" data-gallery-back><svg width="24" height="24" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></svg><span>'+esc(L().galleryBack || 'All categories')+'</span></button>'+
       '<span class="am-gallery-cat-title">'+esc(cat.name)+'</span>'+
     '</div>';
     html += (cat.subs || []).map(function(sub){
@@ -2555,7 +2555,7 @@
           var label = (q && typeof q === 'object') ? (q.label || q.prompt || '') : q;
           var prompt = (q && typeof q === 'object') ? (q.prompt || q.label || '') : q;
           return '<button class="am-gallery-prompt" type="button" data-q="'+escAttr(prompt)+'"><span>'+esc(label)+'</span>'+
-            '<span class="am-gallery-prompt-chev"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></svg></span></button>';
+            '<span class="am-gallery-prompt-chev"><svg width="24" height="24" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></svg></span></button>';
         }).join('')+
       '</div></div>';
     }).join('');
@@ -3334,10 +3334,12 @@
   }
 
   /* ---------------- Model selector (Mira Pro / Mira Flash) ---------------- */
-  var MIRA_LOGO_SVG = '<svg viewBox="0 0 44 43" fill="none"><path d="M25.8 33.1C22.3 31.8 18.7 31.6 15.4 32.5C13.1 33.1 10.9 34.3 8.90002 35.8L7.5 37L7.10001 37.4L8 38.2C8.1 38.2 8.10001 38.3 8.20001 38.4C8.40001 38.6 8.60002 38.7 8.90002 38.9L9.5 39.3L10.1 38.8C10.2 38.7 10.4 38.5 10.6 38.4C12.4 36.9 14.4 35.9 16.5 35.4C19.2 34.7 22.1 34.8 25 35.9C27.4 36.8 32.3 37.9 38.2 35.4L38.4 35.3L38.7 35C38.7 34.9 38.8 34.9 38.9 34.8C39.4 34.2 39.9 33.6 40.3 32.9L42.3 29.8L39.1 31.6C34.4 34.2 30.1 34.7 25.8 33.1Z" fill="currentColor"/><path d="M12.1 22.3C14.8 21.6 17.7 21.7 20.6 22.8C23.8 24 32 25.7 41.2 17.4L42.7 15.9L42.8 15.8L43.2 15.4L43 14.9C42.9 14.5 42.7 14 42.5 13.5L42 12.1L41 13.1C40.9 13.3 40.7 13.4 40.5 13.6C36.1 18.1 29.3 22.7 21.5 19.9C18 18.6 14.4 18.4 11.1 19.3C7.90001 20.2 5.1 21.9 2.5 24.3V24.2L1 25.8C1 25.9 0.900018 25.9 0.800018 26L0.5 26.3L0.600006 26.7C0.700006 27.2 0.9 27.7 1 28.2L1.60001 29.8L2.60001 28.5C2.70001 28.3 2.9 28.2 3 28C5.1 26.1 8.00001 23.4 12.1 22.3Z" fill="currentColor"/><path d="M2.40002 20.5C4.70002 18.1 7.30001 16.6 10.1 15.8C12.8 15.1 15.7 15.2 18.6 16.3C27.6 19.6 35.4 14.2 38.8 11.3L40.1 10L40.6 9.59998L40.2 9C39.9 8.7 39.7 8.29999 39.4 7.89999L38.8 7.09998L38.1 7.79999C38 7.89999 37.8 8.09998 37.7 8.19998C33.5 12.2 27 16.3 19.6 13.5C16.1 12.2 12.5 12 9.20001 12.9C7.10001 13.5 5.10001 14.5 3.10001 15.8L1 17.5C0.8 17.7 0.7 17.8 0.5 18L0.300018 18.2V18.5C0.200018 19.2 0.200006 19.9 0.100006 20.5L0 23L1.70001 21.2C1.90001 21 2.10002 20.7 2.40002 20.5Z" fill="currentColor"/><path d="M28.7 39.9L28.5 40.5L28.7 39.9C28.4 39.8 28.2 39.7 27.9 39.6C24.4 38.3 20.8 38.1 17.5 39C16.8 39.2 16.1 39.4 15.4 39.7L13 40.8L12.4 41.1L14.4 41.8C15 42 15.6 42.2 16.2 42.4L16.5 42.5L16.8 42.4C17.1 42.3 17.4 42.1 17.7 42.1C17.9 42.1 18.1 42 18.3 41.9C20.7 41.3 23.3 41.3 26.1 42.2C26.4 42.3 26.6 42.4 26.9 42.5L27.4 42.7L27.7 42.6C28.4 42.4 29.2 42.2 29.8 41.9L32.6 40.9L29.7 40.2C29.4 40.1 29 40 28.7 39.9Z" fill="currentColor"/><path d="M44 19.2L42.5 20.7C42.3 20.9 42.1 21.1 41.9 21.3C37.8 25.2 31.2 29.4 23.8 26.6C20.3 25.3 16.7 25.1 13.4 26C10.3 26.9 7.5 28.5 5 30.9L3.70001 32.3L3.30002 32.8L3.70001 33.4C4.00001 33.8 4.20002 34.1 4.40002 34.5L5 35.4L5.70001 34.5C5.80001 34.4 6.00001 34.2 6.10001 34.1C8.50001 31.5 11.1 29.9 14.1 29.1C16.8 28.4 19.7 28.5 22.6 29.6C25.1 30.5 27.7 30.8 30.3 30.5C34.9 30 39.5 27.4 42.9 24.5C43.1 24.3 43.3 24.2 43.5 24L43.8 23.7V23.4C43.8 22.8 43.9 22.1 43.9 21.5L44 19.2Z" fill="currentColor"/><path d="M6 10L5.70001 9.39999L6 10C6.6 9.7 7.30002 9.49999 7.90002 9.29999C10.6 8.59999 13.5 8.69999 16.4 9.79999C18.3 10.5 20.2 10.8 22.3 10.8C26.5 10.8 30.7 9.29999 34.6 6.39999L36.1 5.19998L36.6 4.79999L35.7 4.09998C35.4 3.79998 35 3.49999 34.6 3.29999L34 2.89999L33.5 3.29999C33.3 3.39999 33.2 3.59998 33 3.69998C27.7 7.69998 22.4 8.79999 17.4 6.89999C13.8 5.59999 10.2 5.29999 6.60001 6.39999C6.30001 6.49999 6.00001 6.59998 5.60001 6.69998L5.40002 6.79999L5.10001 7.09998C5.10001 7.19998 5.00002 7.19999 4.90002 7.29999C4.50002 7.89999 4.00001 8.4 3.60001 9L1.70001 11.9L4.80002 10.3C5.30002 10.3 5.7 10.1 6 10Z" fill="currentColor"/><path d="M14.2 3.19998L14.5 3.29999C15.8 3.79999 17.8 4.29999 20.3 4.29999C22.9 4.29999 25.4 3.69998 27.9 2.69998L31 1.19998L28.9 0.5C28.3 0.3 27.7 0.1 27 0H26.7L26.4 0.0999756C26.1 0.199976 25.8 0.4 25.5 0.5C22.5 1.6 19.5 1.8 16.6 1C16.3 0.9 16 0.799982 15.7 0.699982L15.4 0.599976L15.1 0.699982C14.5 0.899982 13.9 1.09999 13.3 1.39999L11 2.39999L13.4 3.09998C13.6 2.99998 13.9 3.09998 14.2 3.19998Z" fill="currentColor"/></svg>';
-  var FLASH_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 1.5 4.2 13.1c-.34.45-.02 1.1.55 1.1H10l-1.1 8.05c-.09.66.77.98 1.16.43L20 9.9c.34-.45.02-1.1-.55-1.1H14l1.15-6.9c.11-.66-.75-1-1.15-.4z"/></svg>';
-  /* Die Zeichen bleiben als Konstanten stehen -- sie werden im Composer nicht mehr gemalt
-     (der Modellknopf traegt nur Text), aber MIRA_LOGO_SVG haengt auch am Kopf der Komponente. */
+  /* HIER STANDEN ZWEI TOTE ZEICHEN: das 44x43-Mira-Logo und der Blitz fuer Mira Flash.
+     Beide wurden von nichts mehr gemalt -- der Modellknopf traegt nur Text, und das Logo im
+     Kopf kommt aus core (UC.icon('blend')). Ein Kommentar behauptete, MIRA_LOGO_SVG haenge
+     noch am Kopf der Komponente; ein grep ueber die Datei zeigt keine zweite Fundstelle.
+     Raus damit: ein SVG ohne Groessenangabe, das niemand braucht, kann beim Aufbau nur
+     aufblitzen. Die Groessenangabe selbst liegt jetzt in core (siehe ICON_MASS). */
   var MODELS = {
     pro:   { name: 'Mira Pro 1.0', desc: 'Detailed answers for bigger tasks, with sources and links.' },
     flash: { name: 'Mira Flash',   desc: 'Fast, lightweight answers for quick everyday questions.' }
@@ -3354,7 +3356,7 @@
              von core nicht -- ein Katalogeintrag allein waere ohne Wirkung geblieben. */
           (m.desc ? '<span class="am-eff-opt-desc">' + esc(UCt(m.desc)) + '</span>' : '') +
         '</span>' +
-        '<svg class="am-eff-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>' +
+        '<svg width="24" height="24" class="am-eff-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>' +
       '</button>';
     }).join('');
   }
@@ -3500,7 +3502,7 @@
   }
 
   /* ===== "Ask Mira" selection -> quoted gray chip (prompt_research X-delete mechanic) ===== */
-  var QUOTE_X = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>';
+  var QUOTE_X = '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>';
 
   function getQuoteValue(){
     if (!elQuoteSlot) return '';
@@ -3601,14 +3603,15 @@
       })
     : null;
 
-  var XSVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
+  var XSVG = '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
 
   /* ---- Die gesetzten Filter als Chips IM Suchfeld ---------------------------------------- */
   function pickChipsZeichnen(){
     if (!elPickChips) return;
     var liste = _filter ? _filter.chips() : [];
     elPickChips.innerHTML = liste.map(function(c){
-      return '<span class="am-pick-chip" data-fach="' + esc(c.fach) + '">' +
+      return '<span class="am-pick-chip up-entchip is-lifted is-sm is-static" data-fach="' +
+        esc(c.fach) + '">' +
         (c.dot ? '<span class="am-pick-chip-dot" style="background:' + esc(c.dot) + '"></span>' : '') +
         (c.vor ? '<span class="am-pick-chip-pre">' + esc(UCt(c.vor)) + '</span>' : '') +
         '<span class="am-pick-chip-v"' + (c.dot ? ' style="color:' + esc(c.dot) + '"' : '') + '>' +
@@ -3626,7 +3629,7 @@
     if (!elPickCmds || !_filter) return;
     var liste = _filter.befehle('');
     elPickCmds.innerHTML = liste.map(function(c){
-      return '<button class="am-pick-cmd" type="button" data-cmd="' + esc(c.id) + '" ' +
+      return '<button class="am-pick-cmd up-entchip is-lifted" type="button" data-cmd="' + esc(c.id) + '" ' +
         (c.hinweis ? 'data-tip="' + esc(UCt(c.hinweis)) + '" ' : '') + '>' +
         '<span class="am-pick-cmd-slash">/</span>' +
         '<span class="am-pick-cmd-lbl">' + esc(UCt(c.label)) + '</span>' +
@@ -3705,10 +3708,15 @@
            (unter ? '<div class="am-pick-note-sub">' + esc(unter) + '</div>' : '') + '</div>';
   }
   var _pickZahlUhr = 0;
+  /* DIE TREFFERZAHL WIRD NICHT MEHR ANGEZEIGT (09.09.): sie stand fast immer auf 8, der
+     Obergrenze, und sagte damit nichts. Der Platz BLEIBT trotzdem bestehen -- dort erscheinen
+     die kurzen Meldungen (pickMeldung, etwa "max. 3"), und ohne diese Stelle waeren sie
+     stumm verschwunden. Das Argument n wird weiter durchgereicht, damit jeder Aufruf den
+     Platz raeumt: eine alte Meldung darf nicht ueber den naechsten Treffern stehen bleiben. */
   function pickZahl(n){
     if (!elPickCount) return;
     clearTimeout(_pickZahlUhr);
-    elPickCount.textContent = (n == null) ? '' : String(n);
+    elPickCount.textContent = '';
   }
   /* Eine Meldung an DERSELBEN Stelle wie die Zahl -- und danach kommt die Zahl zurueck. Sonst
      stand "max. 3" bis zur naechsten Suche dort, wo die Trefferzahl hingehoert. */
@@ -4051,7 +4059,7 @@
         ? '<span class="am-pick-tag-av-t">' + esc(String(it.market || '').toUpperCase()) + '</span>'
         : (String(it.type) === 'brand'
             ? '<span class="am-pick-tag-av-t">' + esc(String(lbl).charAt(0).toUpperCase()) + '</span>'
-            : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor">' +
+            : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">' +
               '<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/>' +
               '<path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/></svg>');
       var rueck = '<span class="am-pick-tag-av-fb">' + inner + '</span>';
@@ -4063,7 +4071,7 @@
         '</span>' +
         '<span class="am-pick-tag-lbl">' + esc(lbl) + '</span>' +
         '<button class="am-pick-tag-x" type="button" aria-label="Remove reference" data-x="' + i + '">' +
-          '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>' +
+          '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>' +
         '</button>' +
       '</span>';
     }).join('');
@@ -5050,8 +5058,8 @@
   }
   function showUrlPop(wrap){
     var visit = visitUrlFor(wrap);
-    var iconVisit = '<svg viewBox="0 0 24 24"><path d="M15 3h6v6" /> <path d="M10 14 21 3" /> <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></svg>';
-    var iconDetail = '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+    var iconVisit = '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M15 3h6v6" /> <path d="M10 14 21 3" /> <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></svg>';
+    var iconDetail = '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
     urlPop.innerHTML =
       '<button type="button" data-pop="detail" class="is-primary">'+iconDetail+'<span>'+esc(L().urlDetail)+'</span></button>' +
       '<button type="button" data-pop="visit">'+iconVisit+'<span>'+esc(urlPreview(visit, 34))+'</span></button>';

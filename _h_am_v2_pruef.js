@@ -662,6 +662,92 @@
       btn.click();
     })();
 
+    kopf("7d  DIE VIER PUNKTE VOM 09.09., ZWEITE RUNDE  (Chips aus core, Zaehler, X, Blitz)");
+    if (!root.classList.contains("is-pick-open")) g("am-pick-btn").click();
+    (function(){ var x = document.querySelector("#am-pick-chips .am-pick-chip-x");
+      while (x){ x.click(); x = document.querySelector("#am-pick-chips .am-pick-chip-x"); } })();
+    await warte(80);
+    /* 1 -- DIE CHIPS SIND DAS CORE-BAUTEIL. Geprueft wird nicht "sieht aehnlich aus", sondern
+       dass die Werte die der Palette sind, Wert fuer Wert. */
+    (function(){
+      var c = document.querySelector("#am-pick-cmds .am-pick-cmd");
+      pruef("1 der Befehls-Chip traegt das Core-Bauteil",
+        c.classList.contains("up-entchip") + "/" + c.classList.contains("is-lifted"), "true/true");
+      var cs = getComputedStyle(c);
+      pruef("1 und dessen Werte sind die von .mqa-chip",
+        Math.round(c.getBoundingClientRect().height) + " / " + cs.borderRadius + " / " +
+        cs.gap + " / " + cs.paddingLeft + " " + cs.paddingRight + " / " +
+        cs.fontSize + " " + cs.fontWeight,
+        "26 / 7.6px / 6.5px / 9.75px 6.5px / 12.5px 500");
+      pruef("1 zwei Schattenlagen", (cs.boxShadow.match(/rgba?\(/g) || []).length, 2);
+    })();
+    /* Der Chip IM FELD ist die kleine Fassung (.mqa-mini). */
+    document.querySelector('#am-pick-cmds .am-pick-cmd[data-cmd="urls"]').click();
+    await warte(UHR);
+    (function(){
+      var f = document.querySelector("#am-pick-chips .am-pick-chip");
+      var cs = getComputedStyle(f);
+      pruef("1 der Chip im Feld ist die kleine Fassung",
+        f.classList.contains("is-sm") + " / " + Math.round(f.getBoundingClientRect().height) +
+        " / " + cs.borderRadius + " / " + cs.fontSize,
+        "true / 22 / 6.4px / 11px", "die Werte von .mqa-mini");
+      pruef("1 auch er mit Schatten", (cs.boxShadow.match(/rgba?\(/g) || []).length, 2);
+      /* Der Grund ist halbdurchsichtig, ueber gleicher Farbe also 0 Stufen -- der RAHMEN
+         zeichnet den Chip. Genau so macht es die Palette. */
+      var panel = farbe(getComputedStyle(g("am-pick-panel")).backgroundColor);
+      pruef("1 und der Rahmen traegt ihn",
+        stufen(ueber(farbe(cs.borderTopColor), panel), panel),
+        function(v){ return v >= 15; });
+    })();
+    /* 2 -- DER ZAEHLER IST WEG, der Meldeplatz bleibt. */
+    pruef("2 kein Zaehler mehr", (g("am-pick-count") || {}).textContent, "");
+    pruef("2 aber der Platz fuer Meldungen steht noch", !!g("am-pick-count"), true,
+      "ohne ihn waeren die kurzen Meldungen still verschwunden");
+    (function(){ var x = document.querySelector("#am-pick-chips .am-pick-chip-x");
+      while (x){ x.click(); x = document.querySelector("#am-pick-chips .am-pick-chip-x"); } })();
+    if (root.classList.contains("is-pick-open")) g("am-pick-btn").click();
+    /* 3 -- DAS GESCHLOSSENE MODELLMENUE DARF KEINE KLICKS SCHLUCKEN. Das war die Ursache des
+       kleinen Klickfleckes am Entfernen-Kreuz: .am-eff-menu traegt pointer-events: none, aber
+       die aktive Ansicht darin setzte auto -- und ein Nachkomme mit auto ist wieder
+       anklickbar. Gemessen lag der unsichtbare Kasten ueber dem dritten Bezug. */
+    pruef("3 das geschlossene Menue faengt keine Zeiger",
+      getComputedStyle(g("am-eff-slider")).pointerEvents, "none",
+      "die Ansicht darf erst mit .am-eff.is-open wieder auto sein");
+    pruef("GEGENPROBE offen ist sie anklickbar", (function(){
+      btn.click();
+      var v = getComputedStyle(g("am-eff-slider")).pointerEvents;
+      btn.click();
+      return v;
+    })(), "auto", "sonst pruefte die Zeile nur, dass nie etwas anklickbar ist");
+    /* 4 -- KEIN ZEICHEN DARF OHNE CSS AUFBLITZEN. Gemessen wird MIT und OHNE Stylesheets:
+       ohne sie hatte ein <svg> mit viewBox und ohne Groessenangabe die volle Kastenbreite --
+       das groesste war das Logo im Kopf mit 831x831. */
+    (function(){
+      var mess = function(){
+        var n = 0, max = 0;
+        [].forEach.call(root.querySelectorAll("svg"), function(sv){
+          var r = sv.getBoundingClientRect(), m = Math.max(r.width, r.height);
+          if (m > 60){ n++; if (m > max) max = m; }
+        });
+        return n + "/" + Math.round(max);
+      };
+      var mit = mess();
+      var ss = [].filter.call(document.styleSheets, function(x){ return true; });
+      ss.forEach(function(x){ try { x.disabled = true; } catch(e){} });
+      var ohne = mess();
+      ss.forEach(function(x){ try { x.disabled = false; } catch(e){} });
+      pruef("4 kein Zeichen zu gross -- mit CSS", mit, "0/0");
+      pruef("4 und auch OHNE CSS nicht", ohne, "0/0",
+        "vorher 25 Zeichen, das groesste 831x831 -- das ist der Blitz beim Aufbau");
+      pruef("4 die Groesse steht als ATTRIBUT, nicht nur in der Regel", (function(){
+        var ohneAttr = [].filter.call(root.querySelectorAll("svg"), function(sv){
+          return !sv.getAttribute("width"); }).length;
+        return ohneAttr;
+      })(), 0, "eine CSS-Regel hilft nicht, wenn genau die CSS noch fehlt");
+      pruef("4 und ein Zeichen aus core bringt sie mit",
+        UC.icon("blend", 1.8).indexOf('width="24"') >= 0, true);
+    })();
+
     kopf("8  DER VERTEILER  (deshalb braucht die Suche KEINEN Eingriff in Bubble)");
     /* ZUSTELLUNGEN zaehlen und nicht DOM-Zeilen. Der Fehlschluss davor: die Trefferliste trug
        noch das Ergebnis des vorigen Falls, und eine Zeile darin sah wie eine falsch geroutete
@@ -743,8 +829,10 @@
     /* 6 */
     g("am-pick-btn").click();
     pruef("6 Ueberschrift steht", g("am-pick-h").textContent, "What are you looking for?");
-    pruef("6 Befehls-Chip 28px", Math.round(
-      document.querySelector("#am-pick-cmds .am-pick-cmd").getBoundingClientRect().height), 28);
+    /* 26px seit dem 09.09.: der Chip ist jetzt das Core-Bauteil .up-entchip.is-lifted, und das
+       traegt die Werte der Palette (.mqa-chip) -- 26 hoch, nicht 28. */
+    pruef("6 Befehls-Chip 26px wie .mqa-chip", Math.round(
+      document.querySelector("#am-pick-cmds .am-pick-cmd").getBoundingClientRect().height), 26);
     pruef("kein Rahmen um die Chip-Zeile", getComputedStyle(g("am-pick-cmds")).borderTopWidth,
       "0px", "der Kontrast kommt vom Chip selbst, nicht von einem Kasten darum");
     pruef("Ueberschrift ohne Versal", getComputedStyle(g("am-pick-h")).textTransform, "none");
@@ -763,16 +851,23 @@
       var cb = c.getBoundingClientRect();
       return Math.abs((h.top + h.height/2) - (cb.top + cb.height/2)) <= 1;
     })(), true);
-    /* DER KONTRAST KOMMT VOM CHIP, nicht von einem Kasten -- dieselbe Rechnung wie vorher beim
-       Umschalter, nur ist der gemessene Koerper jetzt der Chip. Gemessen wird Chip gegen Panel,
-       auf der Flaechen-Skala (1.4.11), nicht auf der Text-Skala. */
-    pruef("der Befehls-Chip hebt sich vom Panel ab", (function(){
+    /* DER KONTRAST KOMMT JETZT VOM RAHMEN UND VOM SCHATTEN, nicht von der Flaeche. Seit der
+       Chip das Core-Bauteil ist, traegt er den halbdurchsichtigen Grund der Palette -- ueber
+       derselben Farbe ergibt der 0 Stufen, und das ist Absicht: die Palette zeichnet den Chip
+       mit Rahmen und zwei Schattenlagen. Gemessen wird deshalb der RAHMEN gegen das Panel,
+       und dass der Schatten wirklich da ist. Die Flaeche zu messen waere hier die falsche
+       Groesse und wuerde einen richtigen Chip als Fehler melden. */
+    pruef("der Rahmen des Befehls-Chips hebt sich vom Panel ab", (function(){
       var c = document.querySelector("#am-pick-cmds .am-pick-cmd");
       var panel = farbe(getComputedStyle(g("am-pick-panel")).backgroundColor);
-      var chip = ueber(farbe(getComputedStyle(c).backgroundColor), panel);
-      return stufen(chip, panel);
-    })(), function(v){ return v >= 4; },
-      "die Flaeche des Chips traegt den Unterschied allein");
+      var rand = ueber(farbe(getComputedStyle(c).borderTopColor), panel);
+      return stufen(rand, panel);
+    })(), function(v){ return v >= 15; },
+      "gemessen 20 dunkel und 29 hell");
+    pruef("und er traegt die zwei Schattenlagen der Palette", (function(){
+      var c = getComputedStyle(document.querySelector("#am-pick-cmds .am-pick-cmd")).boxShadow;
+      return (c.match(/rgba?\(/g) || []).length;
+    })(), 2, "eine Lage kann nur eines von beiden: weiche Kante ODER Abheben");
     /* 7 */
     pruef("7 Feld 16px Ecken", getComputedStyle(comp).borderRadius, "16px");
     /* 11 */

@@ -14886,13 +14886,22 @@
       '<path d="M14 2a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h12zM2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2z"/>' +
       '<path d="M3 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4z"/></svg>'
   };
+  /* width und height ALS ATTRIBUT, nicht nur ueber die CSS. Ein <svg> mit viewBox und ohne
+     Groesse ist ein ersetztes Element ohne eigene Groesse: es nimmt, was der Kasten hergibt.
+     Solange die CSS da ist, faellt das nicht auf -- jede Regel schlaegt das Attribut, die
+     Zeichen bleiben also 14, 16, 26px, was auch immer dort steht. Kommt die CSS einen Moment
+     spaeter als das Markup (CDN, langsame Leitung, ein zweiter Aufbau), blitzt jedes Zeichen
+     in voller Kastenbreite auf. Gemessen am 09.09. in Ask Mira: MIT CSS 0 von 42 Zeichen zu
+     gross, OHNE CSS 25 -- das groesste war das Logo im Kopf mit 831x831.
+     24 ist der viewBox-Kasten, also die Groesse, in der ein Zeichen ohne Regel gedacht ist. */
+  var ICON_MASS = 'width="24" height="24"';
   function icon(name, strokeWidth){
     var f = ICON_FILLED[name];
     /* Ein Eintrag darf sein eigenes svg mitbringen, wenn er einen anderen viewBox braucht als den
        24er-Kasten -- sonst nur die Formen, und der Kasten kommt von hier. */
     if (f) return f.charAt(0) === "<" && f.indexOf("<svg") === 0
       ? f
-      : '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none">' + f + '</svg>';
+      : '<svg ' + ICON_MASS + ' viewBox="0 0 24 24" fill="currentColor" stroke="none">' + f + '</svg>';
     var d = ICON_PATHS[name];
     if (!d){
       if (window.console) console.error("upstreem: kein Icon namens \"" + name + "\" -- " +
@@ -14900,7 +14909,7 @@
       return "";
     }
     var w = (strokeWidth == null) ? 2 : strokeWidth;
-    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + w +
+    return '<svg ' + ICON_MASS + ' viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + w +
            '" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
   }
 

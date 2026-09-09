@@ -1578,7 +1578,14 @@
     opacity: 0; visibility: hidden; pointer-events: none;
     transition: opacity 200ms ease, visibility 0s linear 200ms;
   }
-  .am-eff-pane.is-an {
+  /* .am-eff.is-open DAVOR, und das ist kein Beiwerk. Ein GESCHLOSSENES Menue traegt
+     pointer-events: none -- aber ein Nachkomme mit auto ist trotzdem wieder anklickbar, das
+     none des Vorfahren gilt nur fuer ihn selbst. Dieselbe Zeile setzte ausserdem visibility
+     wieder auf visible. Das unsichtbare Menue (259x108, opacity 0) lag damit ueber dem
+     Composer und SCHLUCKTE Klicks: gemessen lag es ueber dem Entfernen-Kreuz des dritten
+     Bezugs im Feld, und der Klick darauf kam nie an. Deshalb fiel es erst mit mehreren
+     Items auf -- vorher war der Streifen zu kurz, um unter das Menue zu reichen. */
+  .am-eff.is-open .am-eff-pane.is-an {
     opacity: 1; visibility: visible; pointer-events: auto;
     transition: opacity 200ms ease, visibility 0s linear 0s;
   }
@@ -1770,20 +1777,14 @@
      Chips, sonst stuende 14px zweimal. */
   .am-pick-cmds { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; min-width: 0; }
   .am-pick-cmds.is-leer, .am-pick-h.is-leer { display: none; }
-  .am-pick-cmd {
-    display: inline-flex; align-items: center; gap: 5px; flex: 0 0 auto; height: 28px;
-    padding: 0 10px 0 8px; box-sizing: border-box;
-    border: 1px solid var(--vc-border); border-radius: 9px; background: var(--up-sel-bg);
-    color: var(--am-text); font-family: inherit; font-size: 12.5px; font-weight: 500;
-    cursor: pointer; transition: background 200ms ease, border-color 200ms ease, color 200ms ease;
-  }
-  /* --up-sel-bg und NICHT --am-soft-2. Gemessen war --am-soft-2 im Dunkeln #232326 -- exakt die
-     Farbe des Panels darunter, der Chip stand also mit NULL Stufen Unterschied da und lebte nur
-     von seinem Rand. Genau der Mangel, der am Umschalter zweimal gemeldet wurde.
-     --up-sel-bg ist eine Stufe der Leiter weiter und dreht mit dem Thema die Richtung um:
-     hell #f4f2f4 auf Weiss (11 Stufen), dunkel #28282c auf #232326 (5). Dieselbe Farbe, die
-     der aktive Knopf der Umschalter in core traegt -- das Aussehen ist damit nicht neu erfunden,
-     sondern das bekannte. */
+  /* GEOMETRIE UND ANMUTUNG KOMMEN AUS CORE: .up-entchip.is-lifted, also derselbe Chip, den
+     die Palette zeigt -- 26px, Radius 7.6, halbdurchsichtiger Grund und die zwei
+     Schattenlagen. Hier steht nur, was diesen Chip von jedem anderen unterscheidet.
+     Vorher trug er --up-sel-bg als Flaeche: das war die Antwort auf einen gemessenen Mangel
+     (--am-soft-2 war im Dunkeln exakt die Panelfarbe, also NULL Stufen Unterschied). Den
+     Unterschied tragen jetzt Rahmen UND Schatten, wie in der Palette. */
+  .am-pick-cmd { flex: 0 0 auto; color: var(--am-text); font-family: inherit;
+    transition: background 200ms ease, border-color 200ms ease, color 200ms ease; }
   .am-pick-cmd:hover { background: var(--vc-sk); border-color: var(--vc-hover-border); }
   /* Im Dunkeln ist --vc-sk dieselbe Farbe wie --up-sel-bg, der Hover waere also unsichtbar.
      Eine Stufe hoeher liegt der Randton, und den nimmt hier die Flaeche. */
@@ -1798,12 +1799,10 @@
     overflow: hidden; }
   .am-pick-chips:empty { display: none; }
   .am-pick-inwrap { flex: 1 1 auto; min-width: 40px; display: flex; }
-  .am-pick-chip {
-    display: inline-flex; align-items: center; gap: 5px; flex: 0 0 auto; height: 24px;
-    padding: 0 3px 0 8px; box-sizing: border-box;
-    border-radius: 8px; background: var(--up-sel-bg);
-    font-size: 12px; color: var(--am-text); max-width: 100%;
-  }
+  /* Auch dieser aus core: .up-entchip.is-lifted.is-sm, die 22px-Fassung der Palette
+     (.mqa-mini). Rechts weniger Polsterung als core vorgibt, weil dort das Entfernen-Kreuz
+     sitzt und nicht Text -- das ist der einzige Grund, hier ueberhaupt etwas zu setzen. */
+  .am-pick-chip { flex: 0 0 auto; padding-right: 3px; color: var(--am-text); max-width: 100%; }
   .am-pick-chip-dot { width: 7px; height: 7px; border-radius: 999px; flex: 0 0 auto; }
   /* Die Angabe, WELCHE Dimension gemeint ist, steht leiser als ihr Wert -- "Market" erklaert,
      "DE" ist die Aussage. */
