@@ -190,7 +190,7 @@
     plus.setAttribute('aria-label', 'Add a reference');
     plus.setAttribute('aria-expanded', 'false');
     plus.setAttribute('data-tip', 'Add a reference');
-    plus.innerHTML = '<svg viewBox="0 0 24 24" class="am-ic" fill="none" stroke="currentColor" ' +
+    plus.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" class="am-ic" fill="none" stroke="currentColor" ' +
       'stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
       '<path d="M12 5v14"/><path d="M5 12h14"/></svg>';
 
@@ -993,7 +993,7 @@
     var def = EVIDENCE[String(type||'').toLowerCase()];
     var color = def ? def.color : '#6b7280';
     var icon = def ? def.icon : ICON.flag;
-    /* NUR "<svg" suchen. Der Groessen-Lauf vom 09.09. hat hier auch die SUCHZEICHENKETTE
+    /* NUR "<svg width="24" height="24"" suchen. Der Groessen-Lauf vom 09.09. hat hier auch die SUCHZEICHENKETTE
        getroffen -- sie passte zufaellig weiter, weil UC.icon genau diese Attribute in genau
        dieser Reihenfolge schreibt. Aendert sich dort ein Zeichen, faende dieses replace nichts
        mehr und die Klasse fehlte stillschweigend. */
@@ -1607,13 +1607,13 @@
      reproduzierbar (UC liegt eine Ebene hoeher im selben Scope), also steht die Geometrie hier
      direkt statt ueber das Kit: dieselben Feather-Pfade, die UC.icon("plus")/("check") liefert,
      nur ohne Abhaengigkeit an einer Stelle, die nachweislich faellt. */
-  var OPPC_PLUS  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+  var OPPC_PLUS  = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
                    'stroke-linecap="round" stroke-linejoin="round">' +
                    '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
-  var OPPC_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" ' +
+  var OPPC_CHECK = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" ' +
                    'stroke-linecap="round" stroke-linejoin="round">' +
                    '<polyline points="20 6 9 17 4 12"/></svg>';
-  var OPPC_SPIN  = '<svg class="am-oppc-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.2-8.6"/></svg>';
+  var OPPC_SPIN  = '<svg width="24" height="24" class="am-oppc-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.2-8.6"/></svg>';
   function _oppcApplyState(btn, state){
     var lab = btn.querySelector('.am-oppc-label'), ic = btn.querySelector('.am-oppc-ic');
     btn.classList.remove('is-loading', 'is-exists');
@@ -4140,7 +4140,7 @@
   elAskSel.type = 'button';
   elAskSel.className = 'am-ask-sel';
   elAskSel.id = 'am-ask-sel';
-  elAskSel.innerHTML = '<svg class="am-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z" /></svg><span>Ask Mira</span>';
+  elAskSel.innerHTML = '<svg width="24" height="24" class="am-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z" /></svg><span>Ask Mira</span>';
   root.appendChild(elAskSel);
 
   var _askSelText = '';

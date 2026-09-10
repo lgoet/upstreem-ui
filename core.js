@@ -14986,12 +14986,28 @@
      gross, OHNE CSS 25 -- das groesste war das Logo im Kopf mit 831x831.
      24 ist der viewBox-Kasten, also die Groesse, in der ein Zeichen ohne Regel gedacht ist. */
   var ICON_MASS = 'width="24" height="24"';
+  /* Die Groesse eines mitgebrachten <svg> aus seinem viewBox: "0 0 16 16" -> 16x16. Faellt der
+     viewBox aus, bleibt es beim 24er-Kasten -- das ist die Groesse, in der jedes andere Zeichen
+     dieses Hauses gedacht ist. */
+  function kastenMass(svg){
+    var m = /viewBox="\s*[-\d.]+\s+[-\d.]+\s+([\d.]+)\s+([\d.]+)/.exec(String(svg || ""));
+    if (!m) return ICON_MASS;
+    return 'width="' + m[1] + '" height="' + m[2] + '"';
+  }
   function icon(name, strokeWidth){
     var f = ICON_FILLED[name];
     /* Ein Eintrag darf sein eigenes svg mitbringen, wenn er einen anderen viewBox braucht als den
        24er-Kasten -- sonst nur die Formen, und der Kasten kommt von hier. */
     if (f) return f.charAt(0) === "<" && f.indexOf("<svg") === 0
-      ? f
+      /* Auch ein Eintrag, der sein eigenes <svg> mitbringt, bekommt die Groesse -- sonst faellt
+         genau er durch das Netz. Gemessen: vier Zeichen ohne Groessenangabe blieben uebrig, alle
+         von sidebarPanels, dem einzigen solchen Eintrag.
+         DIE ZAHL KOMMT AUS SEINEM EIGENEN viewBox und ist nicht die 24 von oben: sidebarPanels
+         zeichnet in einem 16er-Kasten, und ein width="24" daran waere anderthalbmal zu gross --
+         ein Fehler, der nur ohne CSS sichtbar wird und genau deshalb lange keinem auffiele.
+         Nur ergaenzen, wenn nichts dasteht: bringt ein Eintrag eine eigene Groesse mit, ist sie
+         Absicht. */
+      ? (/<svg[^>]*\bwidth=/.test(f) ? f : f.replace("<svg", "<svg " + kastenMass(f)))
       : '<svg ' + ICON_MASS + ' viewBox="0 0 24 24" fill="currentColor" stroke="none">' + f + '</svg>';
     var d = ICON_PATHS[name];
     if (!d){
