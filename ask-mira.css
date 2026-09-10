@@ -2224,62 +2224,114 @@
      der Weg zurueck in die Leiste (der Umschalter darin ist dann ja mit ihr weg). */
   #ask-mira.prev-open .am-prev-btn { display: none; }
   /* ==========================================================================================
-     DAS EINSTELLUNGSFENSTER  (10.09. angefordert)
+     DAS EINSTELLUNGSFENSTER  (10.09. angefordert, am selben Tag neu gebaut)
      ==========================================================================================
-     Dieselbe Huelle wie das Preferences-Fenster der Hauptleiste: .up-topicmodal-backdrop und
-     .up-topicmodal-card kommen aus CORE, hier steht nur das Innenleben. Bewusst NICHT die
-     ums-*-Klassen aus preferences.css nachgenutzt: jene Datei wird auf einer Mira-Seite nicht
-     zwingend geladen, und ein Fenster, dessen Aufteilung von einer fremden Datei abhaengt, faellt
-     dort auseinander, wo sie fehlt. Die Masse sind dieselben. */
-  .am-set-card { display: grid; grid-template-columns: 208px minmax(0, 1fr); min-height: 380px; }
-  .am-set-aside {
-    border-right: 1px solid var(--vc-border); padding: 14px 10px;
-    display: flex; flex-direction: column; gap: 2px; background: var(--vc-heading-bg);
+     ES TRAEGT DIE KLASSEN DER VORLAGE (ums-*), nicht eigene. Liegt preferences.css auf der
+     Seite, gilt dort Zeile fuer Zeile dasselbe und die zwei Fenster koennen gar nicht
+     auseinanderlaufen. Fehlt sie -- eine Mira-Seite MUSS sie nicht laden --, tragen die Regeln
+     hier dieselben Werte.
+
+     Der erste Anlauf hatte eigene Klassen mit GERATENEN Zahlen: 208px Navigation statt 232,
+     ein 13px-Titel statt 22, kein fester Kasten, 18px Polster statt 24/28. Das Ergebnis sah
+     aus wie ein anderes Programm, obwohl eine 1:1-Vorlage danebenlag. Die Zahlen unten sind
+     aus preferences.css uebernommen, nicht nachempfunden -- wer sie dort aendert, aendert sie
+     hier mit. */
+  .am-set-backdrop .ums-card, .am-set-backdrop .am-set-card {
+    width: min(880px, calc(100vw - 48px)); max-width: none;
+    height: min(620px, calc(100vh - 64px));
+    padding: 0; overflow: hidden; display: flex; flex-direction: row;
   }
-  .am-set-navhead {
-    font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
-    color: var(--vc-third); padding: 6px 8px 4px;
+  .am-set-backdrop .ums-aside, .am-set-backdrop .am-set-aside {
+    flex: 0 0 232px; min-width: 0; height: 100%;
+    border-right: 1px solid var(--vc-border); background: var(--vc-heading-bg);
+    padding: 16px 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px;
   }
-  .am-set-nav {
-    display: flex; align-items: center; gap: 9px; height: 32px; padding: 0 8px;
-    border: 0; border-radius: 8px; background: transparent; cursor: pointer;
-    font-family: inherit; font-size: 13px; color: var(--vc-text); text-align: left;
-    transition: background 120ms ease;
+  .am-set-backdrop .ums-navhead, .am-set-backdrop .am-set-navhead {
+    padding: 10px 10px 6px; font-size: 11.5px; font-weight: 500; letter-spacing: .04em;
+    text-transform: uppercase; color: var(--vc-third);
   }
-  .am-set-nav svg { width: 17px; height: 17px; flex: 0 0 17px; display: block; color: var(--vc-muted); }
-  .am-set-nav:hover { background: color-mix(in srgb, var(--vc-text) 3.5%, transparent); }
-  .am-set-nav.is-on { background: color-mix(in srgb, var(--vc-text) 5%, transparent); font-weight: 600; }
-  .am-set-main { padding: 18px 20px 20px; display: flex; flex-direction: column; min-width: 0; }
-  .am-set-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-  .am-set-title { font-size: 15px; font-weight: 600; color: var(--vc-text); }
-  .am-set-sub { font-size: 12.5px; color: var(--vc-muted); margin-top: 2px; }
-  .am-set-body { margin-top: 16px; display: flex; flex-direction: column; gap: 14px; }
+  .am-set-backdrop .ums-nav, .am-set-backdrop .am-set-nav {
+    min-height: 36px; height: 36px; padding: 0 8px; border-radius: 12px; gap: 10px;
+    font-size: 13.5px; font-weight: 500; color: var(--vc-text); background: transparent;
+    transition: background 120ms cubic-bezier(.4,0,.2,1), color 120ms cubic-bezier(.4,0,.2,1);
+  }
+  .am-set-backdrop .ums-nav + .ums-nav { margin-top: 2px; }
+  .am-set-backdrop .ums-nav svg { width: 17px; height: 17px; flex: 0 0 17px; display: block;
+    color: var(--vc-muted); }
+  .am-set-backdrop .ums-aside .ums-nav:hover {
+    background: color-mix(in srgb, var(--vc-text) 3.5%, transparent); }
+  .am-set-backdrop .ums-aside .ums-nav.is-on {
+    background: color-mix(in srgb, var(--vc-text) 5%, transparent);
+    color: var(--vc-text); font-weight: 550; }
+  .am-set-backdrop .ums-nav.is-on svg { color: var(--vc-text); }
+  /* Im Dunkeln waere color-mix auf der Textfarbe ein fast weisser Schleier -- dieselbe eigene
+     Auswahlflaeche wie in der Sidebar und in preferences.css. */
+  .am-set-backdrop[data-theme="dark"] .ums-aside .ums-nav:hover {
+    background: color-mix(in srgb, var(--up-sel-bg) 50%, transparent); }
+  .am-set-backdrop[data-theme="dark"] .ums-aside .ums-nav.is-on,
+  .am-set-backdrop[data-theme="dark"] .ums-aside .ums-nav.is-on:hover {
+    background: var(--up-sel-bg); }
+  .am-set-backdrop .ums-main, .am-set-backdrop .am-set-main { flex: 1 1 auto; min-width: 0; height: 100%; overflow-y: auto;
+    padding: 24px 28px 28px; }
+  .am-set-backdrop .ums-head, .am-set-backdrop .am-set-head { display: flex; align-items: flex-start; gap: 12px;
+    margin-bottom: 26px; }
+  .am-set-backdrop .ums-headtext { display: flex; flex-direction: column; gap: 6px;
+    min-width: 0; flex: 1 1 auto; }
+  .am-set-backdrop .ums-title, .am-set-backdrop .am-set-title { font-size: 22px; font-weight: 500; line-height: 1.2;
+    color: var(--vc-text); }
+  .am-set-backdrop .ums-sub, .am-set-backdrop .am-set-sub { font-size: 16px; font-weight: 400; color: var(--vc-third);
+    line-height: 1.3; }
+  .am-set-backdrop .ums-row { display: flex; align-items: flex-start;
+    justify-content: space-between; gap: 24px; padding: 16px 0; }
+  .am-set-backdrop .ums-rowtext { display: flex; flex-direction: column; gap: 4px;
+    min-width: 0; flex: 1 1 auto; }
+  .am-set-backdrop .ums-rowtitle { font-size: 14px; font-weight: 500; color: var(--vc-text);
+    line-height: 1.35; }
+  .am-set-backdrop .ums-rowdesc, .am-set-backdrop .am-set-note { font-size: 13px; font-weight: 400; color: var(--vc-muted);
+    line-height: 1.5; max-width: 46ch; }
+  .am-set-backdrop .ums-rowctl, .am-set-backdrop .am-set-seg { flex: 0 0 auto; display: flex; align-items: center; gap: 8px;
+    padding-top: 1px; }
   /* Die Highlight-Zeilen werden AUS DER LEISTE HERUEBERGEHAENGT, nicht neu gebaut -- sie sind
      verdrahtet (makePopover, applySetting), und ein Nachbau haette die Verdrahtung verloren.
      Deshalb hier nur die Anpassung an den neuen Ort. */
-  .am-set-body .am-hl-panel {
+  /* DIE ALTEN KLASSENNAMEN STEHEN IN DENSELBEN REGELN. Sie waren einen halben Tag
+     ausgeliefert, und eine geloeschte Klasse zaehlt im Vertragsvergleich als Bruch -- dieselbe
+     Ueberlegung wie bei .am-pick-scopes. Sie tragen keine EIGENEN Werte: sie stehen neben
+     ihrer ums-Entsprechung im selben Selektor, es gibt also nichts, was auseinanderlaufen
+     koennte. */
+  .am-set-backdrop .am-set-body { min-width: 0; }
+  .am-set-backdrop .am-hl-panel {
     display: block; position: static; width: auto; padding: 0; border: 0;
     background: transparent; box-shadow: none; max-height: none; opacity: 1; visibility: visible;
   }
-  .am-set-seg { display: inline-flex; gap: 0; }
-  .am-set-note { font-size: 12.5px; color: var(--vc-muted); line-height: 1.5; }
 
   /* ---- Die Leiste LINKS --------------------------------------------------------------------
      Alles, was die Seite wechselt, haengt an EINER Klasse an der Wurzel. */
   #ask-mira.is-side-left .am-prev-panel { order: -1; }
-  /* Der Griff wandert an die andere Kante: er sitzt immer an der Kante ZUM Inhalt. */
+  /* DIE TRENNLINIE AUCH. Sie sitzt immer an der Kante ZUM Inhalt -- rechts stehend links,
+     links stehend rechts. Beim ersten Anlauf blieb sie links und die Leiste hatte ihre Kante
+     auf der falschen Seite. */
+  #ask-mira.is-side-left .am-prev-panel {
+    border-left: 0; border-right: 1px solid var(--am-border-strong);
+  }
+  /* Der Griff wandert mit: er sitzt an derselben Kante wie die Linie. */
   #ask-mira.is-side-left .am-prev-panel .am-side-grip { left: auto; right: 0; }
   /* Kopfzeile gespiegelt: Logo links, Umschalter rechts. row-reverse und nicht zwei Regeln fuer
      die Kinder -- die Reihenfolge ist die Aussage, nicht die Position der einzelnen Knoepfe. */
   #ask-mira.is-side-left .am-prev-head { flex-direction: row-reverse; }
-  /* Und das Zeichen gespiegelt: es zeigt, zu welcher Seite die Leiste verschwindet. */
-  #ask-mira.is-side-left .am-prev-panel .am-side-toggle svg { transform: scaleX(-1); }
-  /* Das Wegschieben lief ueber einen negativen RECHTEN Rand -- links muss es der linke sein.
-     Beide Regeln stehen hier zusammen: der rechte wird auf 0 gesetzt und der linke uebernimmt,
-     sonst zoege die Leiste in beide Richtungen. */
-  #ask-mira.is-side-left .am-prev-panel {
-    margin: 0 0 0 calc(-1 * var(--am-side-w));
-  }
+  /* DAS ZEICHEN ZURUECK, NICHT NOCHMAL GESPIEGELT. Der Umschalter traegt im Grundzustand
+     schon scaleX(-1) (siehe .am-prev-panel .am-side-toggle svg weiter unten) -- die Leiste
+     steht rechts, das Zeichen zeigt nach rechts. Mein erster Anlauf setzte hier NOCHMAL
+     scaleX(-1), und das ist derselbe Wert: gemessen stand in BEIDEN Zustaenden
+     matrix(-1,0,0,1,0,0), die Regel bewirkte also gar nichts.
+     Steht die Leiste links, muss das Zeichen in seine urspruengliche Richtung -- also
+     scaleX(1). Die drei Selektoren, weil ein eingebautes Element den Umschalter je nach
+     Fassung unter einer anderen Klasse traegt. */
+  #ask-mira.is-side-left .am-prev-head .am-side-toggle svg,
+  #ask-mira.is-side-left .am-prev-head .am-icon-btn svg,
+  #ask-mira.is-side-left .am-prev-head .up-iconbtn svg { transform: scaleX(1); }
+  /* Das Wegschieben lief ueber einen negativen RECHTEN Rand -- links muss es der linke sein. */
+  #ask-mira.is-side-left .am-prev-panel { margin: 0 0 0 calc(-1 * var(--am-side-w)); }
   #ask-mira.side-ready.is-side-left .am-prev-panel { transition: margin-left 200ms ease; }
   #ask-mira.prev-open.is-side-left .am-prev-panel { margin-left: 0; }
 

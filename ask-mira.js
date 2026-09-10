@@ -5993,11 +5993,46 @@
   var SET_SEITEN = [
     { key: 'highlights', label: 'Highlights', icon: 'sparkle',
       titel: 'Highlights', sub: 'How brands, citations and responses are marked in answers' },
-    { key: 'appearance', label: 'Appearance', icon: 'sidebarPanels',
+    { key: 'appearance', label: 'Appearance', icon: 'layoutGrid',
       titel: 'Appearance', sub: 'Where the chat sidebar sits' }
   ];
 
   function seiteLinks(){ return (S.settings && S.settings.side) === 'left'; }
+
+  /* ---- DIE HAUPTLEISTE EINKLAPPEN --------------------------------------------------------
+     Ausdruecklich verlangt: schiebt jemand die Chat-Leiste nach links, soll die Hauptleiste
+     einklappen -- aber nur, wenn sie in dem Moment VOLL SICHTBAR ist, also in ihrer normalen
+     Groesse.
+
+     DER FEHLER, DEN ICH HIER ERST HATTE: geprueft wurde mit offsetParent !== null. Fuer ein
+     Element mit position: fixed ist offsetParent aber IMMER null -- und .usn-bar ist fixiert
+     (sidebar.css: "position: fixed; left: 0; top: 0; bottom: 0"). Die Bedingung war damit
+     dauerhaft falsch und der Klick kam nie. Gemessen und nicht geraten: im Prueftand mit
+     beiden Komponenten stand die Leiste sichtbar da, und offsetParent war null.
+
+     Gefragt wird nach den ZUSTANDSKLASSEN der Leiste und nicht nach ihrer gemessenen Groesse:
+       nicht mini    schon eingeklappt gibt es nichts einzuklappen
+       nicht hidden  ganz herausgeschoben (schmaler Schirm) -- dann ist sie nicht sichtbar
+       display       ein none schlaegt alles andere
+     Eine Breitenmessung waere hier die zweite Falle nach offsetParent gewesen: sie haengt
+     daran, dass sidebar.css geladen ist und die Leiste einen Kasten hat. Gemessen ergab ein
+     Baum ohne sie display: contents und damit Breite 0, obwohl die Leiste "da" war. Die
+     Klassen sind die eigene Wahrheit der Leiste und haengen an nichts.
+     Der Griff ist ihr EIGENER Umschalter: ein Klick darauf geht denselben Weg wie der des
+     Nutzers, samt gemerktem Zustand. Ein zweiter Weg in denselben Zustand waere die Stelle, an
+     der beide auseinanderlaufen. */
+  function hauptleisteEinklappen(){
+    try {
+      var bar = document.querySelector('.usn-bar');
+      if (!bar) return false;
+      if (bar.classList.contains('is-mini') || bar.classList.contains('is-hidden')) return false;
+      if (getComputedStyle(bar).display === 'none') return false;
+      var t = bar.querySelector('[data-toggle]');
+      if (!t) return false;
+      t.click();
+      return true;
+    } catch(e){ return false; }
+  }
 
   /* Die Seite anwenden. EINE Klasse an der Wurzel traegt alles Weitere (siehe ask-mira.css). */
   function seiteAnwenden(seite, vomNutzer){
@@ -6012,25 +6047,24 @@
        Markup dort traegt unsere Klassen, und ein Klick auf den eigenen Knopf geht denselben Weg
        wie der des Nutzers -- samt gemerktem Zustand (prefSchreiben). Ein zweiter Weg in denselben
        Zustand waere die Stelle, an der beide auseinanderlaufen. */
-    if (links && vomNutzer){
-      try {
-        var bar = document.querySelector('.usn-bar');
-        if (bar && bar.offsetParent !== null && !bar.classList.contains('is-mini')){
-          var t = bar.querySelector('[data-toggle]');
-          if (t) t.click();
-        }
-      } catch(e){}
-    }
+    if (links && vomNutzer) hauptleisteEinklappen();
   }
 
   function setKopfHtml(s){
-    return '<div class="am-set-head"><div>' +
-        '<div class="am-set-title">' + esc(UCt(s.titel)) + '</div>' +
-        '<div class="am-set-sub">' + esc(UCt(s.sub)) + '</div>' +
-      '</div>' +
-      '<button type="button" class="up-popup-close" data-am-set-close aria-label="' +
-        esc(UCt('Close')) + '">' + (window.UpstreemCore ? window.UpstreemCore.icon('x', 2) : '\u00d7') +
-      '</button></div>';
+    /* DIESELBEN KLASSEN WIE DAS PREFERENCES-FENSTER (ums-*). Nicht nachempfunden: liegt
+       preferences.css auf der Seite, gilt dort Zeile fuer Zeile dasselbe, und die zwei Fenster
+       koennen gar nicht auseinanderlaufen. Fehlt sie, traegt ask-mira.css dieselben Werte.
+       Meine erste Fassung hatte eigene Klassen mit geratenen Zahlen -- 208 statt 232 breit, ein
+       13px-Titel statt 22, kein fester Kasten. Das Ergebnis sah aus wie ein anderes Programm. */
+    return '<div class="ums-head am-set-head">' +
+        '<div class="ums-headtext">' +
+          '<div class="ums-title am-set-title">' + esc(UCt(s.titel)) + '</div>' +
+          '<div class="ums-sub am-set-sub">' + esc(UCt(s.sub)) + '</div>' +
+        '</div>' +
+        '<button type="button" class="up-popup-close" data-am-set-close aria-label="' +
+          esc(UCt('Close')) + '">' + (window.UpstreemCore ? window.UpstreemCore.icon('x', 2) : '\u00d7') +
+        '</button>' +
+      '</div>';
   }
 
   function setZeichnen(){
@@ -6038,10 +6072,13 @@
     var aside = _setBack.querySelector('[data-am-set-aside]');
     var main = _setBack.querySelector('[data-am-set-main]');
     var kern = window.UpstreemCore;
-    aside.innerHTML = '<div class="am-set-navhead">' + esc(UCt('Settings')) + '</div>' +
+    aside.innerHTML = '<div class="ums-navhead am-set-navhead">' + esc(UCt('Settings')) + '</div>' +
       SET_SEITEN.map(function(s){
-        return '<button class="am-set-nav' + (s.key === _setSeite ? ' is-on' : '') + '" type="button"' +
-          ' data-am-set-page="' + esc(s.key) + '">' +
+        /* up-optrow ums-nav -- genau die Zeile der Vorlage, samt Hoehe, Radius und beiden
+           Zustaenden. */
+        return '<button class="up-optrow ums-nav am-set-nav' + (s.key === _setSeite ? ' is-on' : '') +
+          '" type="button" data-am-set-page="' + esc(s.key) + '"' +
+          ' aria-current="' + (s.key === _setSeite ? 'page' : 'false') + '">' +
           (kern && kern.icon ? kern.icon(s.icon, 2) : '') +
           '<span>' + esc(UCt(s.label)) + '</span></button>';
       }).join('');
@@ -6067,17 +6104,23 @@
       }
     } else {
       var links = seiteLinks();
+      /* Die Zeilenform der Vorlage: Titel und Erklaersatz links, der Regler rechts. */
       body.innerHTML =
-        '<div class="am-set-seg">' +
-          '<div class="up-seg" role="tablist">' +
-            '<button class="up-seg-btn' + (!links ? ' is-active' : '') + '" type="button" data-am-side="right">' +
-              esc(UCt('Right')) + '</button>' +
-            '<button class="up-seg-btn' + (links ? ' is-active' : '') + '" type="button" data-am-side="left">' +
-              esc(UCt('Left')) + '</button>' +
+        '<div class="ums-row">' +
+          '<div class="ums-rowtext">' +
+            '<div class="ums-rowtitle">' + esc(UCt('Chat sidebar')) + '</div>' +
+            '<div class="ums-rowdesc am-set-note">' + esc(UCt(
+              'Moving the chat sidebar to the left collapses the main sidebar, so the two do not sit side by side.')) +
+            '</div>' +
           '</div>' +
-        '</div>' +
-        '<div class="am-set-note">' +
-          esc(UCt('Moving the chat sidebar to the left collapses the main sidebar, so the two do not sit side by side.')) +
+          '<div class="ums-rowctl am-set-seg">' +
+            '<div class="up-seg" role="tablist">' +
+              '<button class="up-seg-btn' + (!links ? ' is-active' : '') + '" type="button" data-am-side="right">' +
+                esc(UCt('Right')) + '</button>' +
+              '<button class="up-seg-btn' + (links ? ' is-active' : '') + '" type="button" data-am-side="left">' +
+                esc(UCt('Left')) + '</button>' +
+            '</div>' +
+          '</div>' +
         '</div>';
       /* KEIN segLauf-Aufruf: die Funktion ist in core nicht ausgefuehrt, ein Aufruf waere ins
          Leere gegangen. Core faehrt den gleitenden Streifen von selbst, sobald der Umschalter im
@@ -6092,13 +6135,13 @@
     var back = document.createElement('div');
     /* up-root fuer den Themen-Sweep von core, up-portal weil er ausserhalb jeder
        Komponentenwurzel im body lebt -- setUpstreemTheme sucht genau diese beiden. */
-    back.className = 'up-root up-portal up-topicmodal-backdrop am-set-backdrop';
+    back.className = 'up-root up-portal up-topicmodal-backdrop ums-backdrop am-set-backdrop';
     back.setAttribute('role', 'dialog');
     back.setAttribute('aria-modal', 'true');
     back.setAttribute('data-theme', root.getAttribute('data-theme') || 'light');
-    back.innerHTML = '<div class="up-topicmodal-card am-set-card">' +
-      '<div class="am-set-aside" data-am-set-aside></div>' +
-      '<div class="am-set-main" data-am-set-main></div></div>';
+    back.innerHTML = '<div class="up-topicmodal-card ums-card am-set-card">' +
+      '<div class="ums-aside am-set-aside" data-am-set-aside></div>' +
+      '<div class="ums-main am-set-main" data-am-set-main></div></div>';
     document.body.appendChild(back);
     _setBack = back;
     /* .is-shown NICHT VERGESSEN. .up-topicmodal-backdrop steht auf opacity: 0 und

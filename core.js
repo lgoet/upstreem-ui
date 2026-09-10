@@ -1878,6 +1878,7 @@
     "Appearance": "Darstellung",
     "How brands, citations and responses are marked in answers":
       "Wie Brands, Quellen und Antworten in den Antworten markiert werden",
+    "Chat sidebar": "Chat-Leiste",
     "Where the chat sidebar sits": "Wo die Chat-Leiste steht",
     "Right": "Rechts",
     "Left": "Links",
