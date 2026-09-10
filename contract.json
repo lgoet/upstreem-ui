@@ -1070,8 +1070,19 @@
   "am-segmented",
   "am-send",
   "am-send-spinner",
+  "am-set-aside",
+  "am-set-body",
+  "am-set-card",
+  "am-set-head",
   "am-set-label",
+  "am-set-main",
+  "am-set-nav",
+  "am-set-navhead",
+  "am-set-note",
   "am-set-row",
+  "am-set-seg",
+  "am-set-sub",
+  "am-set-title",
   "am-settings-btn",
   "am-settings-inner",
   "am-settings-panel",
@@ -2957,7 +2968,7 @@
   "globals": 169,
   "payloadkeys": 96,
   "dataattrs": 243,
-  "klassen": 2118,
+  "klassen": 2129,
   "keyframes": 66
  }
 }

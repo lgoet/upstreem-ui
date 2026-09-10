@@ -921,6 +921,20 @@
              eigene Zeile. Wessen Zeitraum sich nicht geaendert hat, wird nicht angefasst: der
              STAND-Vergleich in sichtbareBedienen entscheidet das je Picker. */
           if (an) sichtbareBedienen(instanceId, eigenApplyVerzug());
+          /* EINE MELDUNG, WEIL DER SCHALTER MEHR TUT, ALS MAN SIEHT (10.09. angefordert).
+             Er stellt den Zeitraum in JEDER Ansicht um -- auch in denen, die gerade nicht offen
+             sind. Die sichtbaren laden nach (sichtbareBedienen oben), die anderen erst beim
+             naechsten Aufruf. Wer also gleich weiterklickt, kann eine Ansicht erwischen, die
+             noch die alten Zahlen zeigt; genau davor warnt der Satz.
+             UC.toast ist das Preset des Hauses -- dieselbe Meldung, die "Pinned to sidebar" und
+             "x prompts added" benutzen. Es meldet sich still ab, wenn die Seite kein
+             showMacToast hat, wirft also nirgends. */
+          try {
+            if (UC.toast) UC.toast(t(an
+              ? "Date range now applies everywhere. Refresh to update views you already opened."
+              : "Date range is per view again. Refresh to update views you already opened."),
+              { icon: "check", timeout: 3200 });
+          } catch(e){}
           return;
         }
         var preset = e.target.closest(".udr-preset");

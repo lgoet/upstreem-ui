@@ -1832,6 +1832,21 @@
     "Est. Volume": "Gesch. Volumen",
     "The estimated frequency that users actually use this or a very similar prompt.":
       "Wie oft Nutzer diesen oder einen sehr ähnlichen Prompt tatsächlich verwenden.",
+    "Date range now applies everywhere. Refresh to update views you already opened.":
+      "Der Zeitraum gilt jetzt überall. Lade neu, um schon geöffnete Ansichten zu aktualisieren.",
+    "Date range is per view again. Refresh to update views you already opened.":
+      "Der Zeitraum gilt wieder je Ansicht. Lade neu, um schon geöffnete Ansichten zu aktualisieren.",
+    "Highlights": "Hervorhebungen",
+    "Appearance": "Darstellung",
+    "How brands, citations and responses are marked in answers":
+      "Wie Brands, Quellen und Antworten in den Antworten markiert werden",
+    "Where the chat sidebar sits": "Wo die Chat-Leiste steht",
+    "Right": "Rechts",
+    "Left": "Links",
+    "Moving the chat sidebar to the left collapses the main sidebar, so the two do not sit side by side.":
+      "Steht die Chat-Leiste links, wird die Hauptleiste eingeklappt \u2014 sonst stehen beide nebeneinander.",
+    "Highlight settings are not available here.":
+      "Die Hervorhebungs-Einstellungen stehen hier nicht zur Verf\u00fcgung.",
     "Search URLs": "URLs durchsuchen",
     "Search domains": "Domains durchsuchen",
     "Search responses": "Antworten durchsuchen",

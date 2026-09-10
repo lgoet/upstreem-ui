@@ -5974,7 +5974,156 @@
     if (!show) ddCloseAll();
     if (elHlBtn){ elHlBtn.classList.toggle('is-open', show); elHlBtn.setAttribute('aria-expanded', show ? 'true' : 'false'); }
   }
-  if (elHlBtn) elHlBtn.addEventListener('click', function(e){ e.stopPropagation(); openHlPanel(); });
+  /* ---------------- Das Einstellungsfenster (10.09. angefordert) ----------------
+     Der Settings-Knopf oeffnet jetzt ein Fenster wie das Preferences-Fenster der Hauptleiste --
+     zwei Reiter statt eines aufklappenden Fachs in der Leiste.
+       Highlights   die drei Auswahlfelder, die es schon gab
+       Appearance   auf welcher Seite die Mira-Leiste steht
+
+     DIE HIGHLIGHT-ZEILEN WERDEN HERUEBERGEHAENGT, NICHT NACHGEBAUT. Sie sind verdrahtet
+     (makePopover, applySetting, ddSync); ein Nachbau haette die Verdrahtung verloren und die
+     Auswahl waere still wirkungslos geworden -- der Fehler, den man erst bemerkt, wenn jemand
+     eine Einstellung aendert und nichts passiert. Beim Schliessen wandern sie zurueck. */
+  var _setBack = null, _setSeite = 'highlights', _hlHeimat = null;
+
+  var SET_SEITEN = [
+    { key: 'highlights', label: 'Highlights', icon: 'sparkle',
+      titel: 'Highlights', sub: 'How brands, citations and responses are marked in answers' },
+    { key: 'appearance', label: 'Appearance', icon: 'sidebarPanels',
+      titel: 'Appearance', sub: 'Where the chat sidebar sits' }
+  ];
+
+  function seiteLinks(){ return (S.settings && S.settings.side) === 'left'; }
+
+  /* Die Seite anwenden. EINE Klasse an der Wurzel traegt alles Weitere (siehe ask-mira.css). */
+  function seiteAnwenden(seite, vomNutzer){
+    var links = seite === 'left';
+    root.classList.toggle('is-side-left', links);
+    if (!S.settings) S.settings = {};
+    S.settings.side = links ? 'left' : 'right';
+    /* DIE HAUPTLEISTE EINKLAPPEN, aber nur wenn sie da UND offen ist -- ausdruecklich so
+       verlangt. Und nur auf Wunsch des Nutzers: beim Aufbau die Leiste einer anderen Komponente
+       zuzuklappen waere ein Eingriff, den niemand angefordert hat.
+       Der Griff ist der Umschalter der Leiste selbst. Kein neuer API-Aufruf in sidebar.js: das
+       Markup dort traegt unsere Klassen, und ein Klick auf den eigenen Knopf geht denselben Weg
+       wie der des Nutzers -- samt gemerktem Zustand (prefSchreiben). Ein zweiter Weg in denselben
+       Zustand waere die Stelle, an der beide auseinanderlaufen. */
+    if (links && vomNutzer){
+      try {
+        var bar = document.querySelector('.usn-bar');
+        if (bar && bar.offsetParent !== null && !bar.classList.contains('is-mini')){
+          var t = bar.querySelector('[data-toggle]');
+          if (t) t.click();
+        }
+      } catch(e){}
+    }
+  }
+
+  function setKopfHtml(s){
+    return '<div class="am-set-head"><div>' +
+        '<div class="am-set-title">' + esc(UCt(s.titel)) + '</div>' +
+        '<div class="am-set-sub">' + esc(UCt(s.sub)) + '</div>' +
+      '</div>' +
+      '<button type="button" class="up-popup-close" data-am-set-close aria-label="' +
+        esc(UCt('Close')) + '">' + (window.UpstreemCore ? window.UpstreemCore.icon('x', 2) : '\u00d7') +
+      '</button></div>';
+  }
+
+  function setZeichnen(){
+    if (!_setBack) return;
+    var aside = _setBack.querySelector('[data-am-set-aside]');
+    var main = _setBack.querySelector('[data-am-set-main]');
+    var kern = window.UpstreemCore;
+    aside.innerHTML = '<div class="am-set-navhead">' + esc(UCt('Settings')) + '</div>' +
+      SET_SEITEN.map(function(s){
+        return '<button class="am-set-nav' + (s.key === _setSeite ? ' is-on' : '') + '" type="button"' +
+          ' data-am-set-page="' + esc(s.key) + '">' +
+          (kern && kern.icon ? kern.icon(s.icon, 2) : '') +
+          '<span>' + esc(UCt(s.label)) + '</span></button>';
+      }).join('');
+    var s = SET_SEITEN.filter(function(x){ return x.key === _setSeite; })[0] || SET_SEITEN[0];
+    /* DIE HIGHLIGHT-ZEILEN IN SICHERHEIT BRINGEN, BEVOR main.innerHTML sie ueberschreibt.
+       Beim ersten Bau des Reiterwechsels fehlte das, und der Wechsel auf "Appearance" hat sie
+       vernichtet -- danach war #am-hl-settings-panel nicht mehr im Dokument, und der
+       Highlights-Reiter blieb fuer immer leer. Gefunden beim Messen, nicht beim Lesen: der
+       Fehler zeigt sich erst, wenn man den Reiter WECHSELT und zurueckgeht.
+       Zurueckhaengen und nicht bewahren: das Panel gehoert in die Leiste, das Fenster leiht es
+       sich nur. */
+    try { if (elHlPanel && _hlHeimat && main.contains(elHlPanel)) _hlHeimat.appendChild(elHlPanel); } catch(e){}
+    main.innerHTML = setKopfHtml(s) + '<div class="am-set-body" data-am-set-body></div>';
+    var body = main.querySelector('[data-am-set-body]');
+    if (_setSeite === 'highlights'){
+      if (elHlPanel){
+        /* Die Heimat merken, damit die Zeilen beim Schliessen genau dorthin zurueckkommen. */
+        if (!_hlHeimat) _hlHeimat = elHlPanel.parentNode;
+        body.appendChild(elHlPanel);
+        syncSettingsUI();
+      } else {
+        body.innerHTML = '<div class="am-set-note">' + esc(UCt('Highlight settings are not available here.')) + '</div>';
+      }
+    } else {
+      var links = seiteLinks();
+      body.innerHTML =
+        '<div class="am-set-seg">' +
+          '<div class="up-seg" role="tablist">' +
+            '<button class="up-seg-btn' + (!links ? ' is-active' : '') + '" type="button" data-am-side="right">' +
+              esc(UCt('Right')) + '</button>' +
+            '<button class="up-seg-btn' + (links ? ' is-active' : '') + '" type="button" data-am-side="left">' +
+              esc(UCt('Left')) + '</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="am-set-note">' +
+          esc(UCt('Moving the chat sidebar to the left collapses the main sidebar, so the two do not sit side by side.')) +
+        '</div>';
+      /* KEIN segLauf-Aufruf: die Funktion ist in core nicht ausgefuehrt, ein Aufruf waere ins
+         Leere gegangen. Core faehrt den gleitenden Streifen von selbst, sobald der Umschalter im
+         Baum steht -- und ohne aktiven Knopf misst es ihn nie, deshalb traegt hier IMMER einer
+         is-active (siehe die zwei Zeilen darueber). Genau daran ist der Umschalter im
+         Mira-Picker schon einmal haengengeblieben. */
+    }
+  }
+
+  function setOeffnen(){
+    if (_setBack){ _setBack.classList.remove('is-closing'); setZeichnen(); return; }
+    var back = document.createElement('div');
+    /* up-root fuer den Themen-Sweep von core, up-portal weil er ausserhalb jeder
+       Komponentenwurzel im body lebt -- setUpstreemTheme sucht genau diese beiden. */
+    back.className = 'up-root up-portal up-topicmodal-backdrop am-set-backdrop';
+    back.setAttribute('role', 'dialog');
+    back.setAttribute('aria-modal', 'true');
+    back.setAttribute('data-theme', root.getAttribute('data-theme') || 'light');
+    back.innerHTML = '<div class="up-topicmodal-card am-set-card">' +
+      '<div class="am-set-aside" data-am-set-aside></div>' +
+      '<div class="am-set-main" data-am-set-main></div></div>';
+    document.body.appendChild(back);
+    _setBack = back;
+    back.addEventListener('click', function(e){
+      if (e.target === back){ setSchliessen(); return; }
+      if (!e.target.closest) return;
+      if (e.target.closest('[data-am-set-close]')){ setSchliessen(); return; }
+      var nav = e.target.closest('[data-am-set-page]');
+      if (nav){ _setSeite = nav.getAttribute('data-am-set-page'); setZeichnen(); return; }
+      var side = e.target.closest('[data-am-side]');
+      if (side){ seiteAnwenden(side.getAttribute('data-am-side'), true); setZeichnen(); return; }
+    });
+    document.addEventListener('keydown', setEscape);
+    setZeichnen();
+  }
+  function setEscape(e){ if (e.key === 'Escape' && _setBack) setSchliessen(); }
+  function setSchliessen(){
+    if (!_setBack) return;
+    /* DIE HIGHLIGHT-ZEILEN ZURUECK AN IHREN PLATZ, bevor das Fenster verschwindet -- sonst
+       nimmt es sie mit, und beim naechsten Oeffnen stuende dort nichts. */
+    try { if (elHlPanel && _hlHeimat) _hlHeimat.appendChild(elHlPanel); } catch(e){}
+    document.removeEventListener('keydown', setEscape);
+    _setBack.remove();
+    _setBack = null;
+  }
+
+  if (elHlBtn) elHlBtn.addEventListener('click', function(e){ e.stopPropagation(); setOeffnen(); });
+  /* Die gemerkte Seite beim Aufbau anwenden -- ohne die Hauptleiste anzufassen (zweites
+     Argument false): das ist eine Anzeige des gespeicherten Zustands und keine Handlung. */
+  seiteAnwenden(seiteLinks() ? 'left' : 'right', false);
   function applySetting(key, value){
     if (!S.settings) S.settings = { brand:'logo', citation:'icon', response:'logo' };
     S.settings[key] = value;

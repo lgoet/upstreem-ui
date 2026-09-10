@@ -2223,6 +2223,66 @@
      Knopf, der sichtbar nichts tut, ist schlimmer als keiner. Zugeklappt kommt er zurueck und ist
      der Weg zurueck in die Leiste (der Umschalter darin ist dann ja mit ihr weg). */
   #ask-mira.prev-open .am-prev-btn { display: none; }
+  /* ==========================================================================================
+     DAS EINSTELLUNGSFENSTER  (10.09. angefordert)
+     ==========================================================================================
+     Dieselbe Huelle wie das Preferences-Fenster der Hauptleiste: .up-topicmodal-backdrop und
+     .up-topicmodal-card kommen aus CORE, hier steht nur das Innenleben. Bewusst NICHT die
+     ums-*-Klassen aus preferences.css nachgenutzt: jene Datei wird auf einer Mira-Seite nicht
+     zwingend geladen, und ein Fenster, dessen Aufteilung von einer fremden Datei abhaengt, faellt
+     dort auseinander, wo sie fehlt. Die Masse sind dieselben. */
+  .am-set-card { display: grid; grid-template-columns: 208px minmax(0, 1fr); min-height: 380px; }
+  .am-set-aside {
+    border-right: 1px solid var(--vc-border); padding: 14px 10px;
+    display: flex; flex-direction: column; gap: 2px; background: var(--vc-heading-bg);
+  }
+  .am-set-navhead {
+    font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+    color: var(--vc-third); padding: 6px 8px 4px;
+  }
+  .am-set-nav {
+    display: flex; align-items: center; gap: 9px; height: 32px; padding: 0 8px;
+    border: 0; border-radius: 8px; background: transparent; cursor: pointer;
+    font-family: inherit; font-size: 13px; color: var(--vc-text); text-align: left;
+    transition: background 120ms ease;
+  }
+  .am-set-nav svg { width: 17px; height: 17px; flex: 0 0 17px; display: block; color: var(--vc-muted); }
+  .am-set-nav:hover { background: color-mix(in srgb, var(--vc-text) 3.5%, transparent); }
+  .am-set-nav.is-on { background: color-mix(in srgb, var(--vc-text) 5%, transparent); font-weight: 600; }
+  .am-set-main { padding: 18px 20px 20px; display: flex; flex-direction: column; min-width: 0; }
+  .am-set-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .am-set-title { font-size: 15px; font-weight: 600; color: var(--vc-text); }
+  .am-set-sub { font-size: 12.5px; color: var(--vc-muted); margin-top: 2px; }
+  .am-set-body { margin-top: 16px; display: flex; flex-direction: column; gap: 14px; }
+  /* Die Highlight-Zeilen werden AUS DER LEISTE HERUEBERGEHAENGT, nicht neu gebaut -- sie sind
+     verdrahtet (makePopover, applySetting), und ein Nachbau haette die Verdrahtung verloren.
+     Deshalb hier nur die Anpassung an den neuen Ort. */
+  .am-set-body .am-hl-panel {
+    display: block; position: static; width: auto; padding: 0; border: 0;
+    background: transparent; box-shadow: none; max-height: none; opacity: 1; visibility: visible;
+  }
+  .am-set-seg { display: inline-flex; gap: 0; }
+  .am-set-note { font-size: 12.5px; color: var(--vc-muted); line-height: 1.5; }
+
+  /* ---- Die Leiste LINKS --------------------------------------------------------------------
+     Alles, was die Seite wechselt, haengt an EINER Klasse an der Wurzel. */
+  #ask-mira.is-side-left .am-prev-panel { order: -1; }
+  /* Der Griff wandert an die andere Kante: er sitzt immer an der Kante ZUM Inhalt. */
+  #ask-mira.is-side-left .am-prev-panel .am-side-grip { left: auto; right: 0; }
+  /* Kopfzeile gespiegelt: Logo links, Umschalter rechts. row-reverse und nicht zwei Regeln fuer
+     die Kinder -- die Reihenfolge ist die Aussage, nicht die Position der einzelnen Knoepfe. */
+  #ask-mira.is-side-left .am-prev-head { flex-direction: row-reverse; }
+  /* Und das Zeichen gespiegelt: es zeigt, zu welcher Seite die Leiste verschwindet. */
+  #ask-mira.is-side-left .am-prev-panel .am-side-toggle svg { transform: scaleX(-1); }
+  /* Das Wegschieben lief ueber einen negativen RECHTEN Rand -- links muss es der linke sein.
+     Beide Regeln stehen hier zusammen: der rechte wird auf 0 gesetzt und der linke uebernimmt,
+     sonst zoege die Leiste in beide Richtungen. */
+  #ask-mira.is-side-left .am-prev-panel {
+    margin: 0 0 0 calc(-1 * var(--am-side-w));
+  }
+  #ask-mira.side-ready.is-side-left .am-prev-panel { transition: margin-left 200ms ease; }
+  #ask-mira.prev-open.is-side-left .am-prev-panel { margin-left: 0; }
+
   .am-prev-head {
     height: 52px; flex: 0 0 auto; padding: 0 10px;
     display: flex; align-items: center; justify-content: space-between;
