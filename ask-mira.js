@@ -5988,7 +5988,13 @@
      (makePopover, applySetting, ddSync); ein Nachbau haette die Verdrahtung verloren und die
      Auswahl waere still wirkungslos geworden -- der Fehler, den man erst bemerkt, wenn jemand
      eine Einstellung aendert und nichts passiert. Beim Schliessen wandern sie zurueck. */
-  var _setBack = null, _setSeite = 'highlights', _hlHeimat = null;
+  var _setBack = null, _setSeite = 'highlights';
+  /* Die drei Zeilen und ihre Auswahl -- dieselben Werte wie im alten Fach der Leiste. */
+  var HL_ZEILEN = [
+    { key: 'brand',    label: 'Brand Highlights',    opt: ['logo', 'icon', 'none'] },
+    { key: 'citation', label: 'Citation Highlights', opt: ['icon', 'favicon', 'none'] },
+    { key: 'response', label: 'Response Highlights', opt: ['logo', 'icon', 'none'] }
+  ];
 
   var SET_SEITEN = [
     { key: 'highlights', label: 'Highlights', icon: 'sparkle',
@@ -6083,25 +6089,43 @@
           '<span>' + esc(UCt(s.label)) + '</span></button>';
       }).join('');
     var s = SET_SEITEN.filter(function(x){ return x.key === _setSeite; })[0] || SET_SEITEN[0];
-    /* DIE HIGHLIGHT-ZEILEN IN SICHERHEIT BRINGEN, BEVOR main.innerHTML sie ueberschreibt.
-       Beim ersten Bau des Reiterwechsels fehlte das, und der Wechsel auf "Appearance" hat sie
-       vernichtet -- danach war #am-hl-settings-panel nicht mehr im Dokument, und der
-       Highlights-Reiter blieb fuer immer leer. Gefunden beim Messen, nicht beim Lesen: der
-       Fehler zeigt sich erst, wenn man den Reiter WECHSELT und zurueckgeht.
-       Zurueckhaengen und nicht bewahren: das Panel gehoert in die Leiste, das Fenster leiht es
-       sich nur. */
-    try { if (elHlPanel && _hlHeimat && main.contains(elHlPanel)) _hlHeimat.appendChild(elHlPanel); } catch(e){}
     main.innerHTML = setKopfHtml(s) + '<div class="am-set-body" data-am-set-body></div>';
     var body = main.querySelector('[data-am-set-body]');
     if (_setSeite === 'highlights'){
-      if (elHlPanel){
-        /* Die Heimat merken, damit die Zeilen beim Schliessen genau dorthin zurueckkommen. */
-        if (!_hlHeimat) _hlHeimat = elHlPanel.parentNode;
-        body.appendChild(elHlPanel);
-        syncSettingsUI();
-      } else {
-        body.innerHTML = '<div class="am-set-note">' + esc(UCt('Highlight settings are not available here.')) + '</div>';
-      }
+      /* DIE ZEILEN WERDEN HIER GEBAUT und nicht mehr aus der Leiste herueber geschoben.
+         Das Verschieben war der Fehler: das Fach der Leiste bringt seine eigene Form mit
+         (Polster, Rundung, absolute Menues), und in einem Fenster mit overflow-y: auto wurde
+         der Inhalt an den Ecken abgeschnitten und die Menues standen an der falschen Stelle.
+         Jetzt genau die Zeile der Vorlage: Titel links, Auswahlknopf rechts, das Menue rechts
+         am Knopf (.ums-selwrap + .ums-sel + .up-menu.ums-menu, wie in preferences.js).
+         Das alte Fach bleibt in der Leiste liegen und wird nicht mehr angefasst -- es ist
+         unsichtbar und stoert dort niemanden. */
+      body.innerHTML = HL_ZEILEN.map(function(z){
+        var wert = (S.settings && S.settings[z.key]) || z.opt[0];
+        return '<div class="ums-row am-set-row2">' +
+          '<div class="ums-rowtext">' +
+            '<div class="ums-rowtitle">' + esc(UCt(z.label)) + '</div>' +
+          '</div>' +
+          '<div class="ums-rowctl am-set-seg">' +
+            '<span class="ums-selwrap" data-am-hl-wrap="' + esc(z.key) + '">' +
+              '<button class="ums-sel" type="button" aria-haspopup="menu" aria-expanded="false"' +
+                ' data-am-hl-btn="' + esc(z.key) + '">' +
+                '<span class="ums-sel-val">' + esc(UCt(DD_LABELS[wert] || wert)) + '</span>' +
+                (kern && kern.icon ? kern.icon('chevronDown', 2.2) : '') +
+              '</button>' +
+              '<div class="up-menu ums-menu" role="menu" aria-hidden="true">' +
+                z.opt.map(function(o){
+                  return '<button class="up-optrow' + (o === wert ? ' is-on' : '') + '" type="button"' +
+                    ' data-am-hl-set="' + esc(z.key) + '" data-am-hl-val="' + esc(o) + '">' +
+                    '<span>' + esc(UCt(DD_LABELS[o] || o)) + '</span>' +
+                    '<span class="ums-opt-check">' + (kern && kern.icon ? kern.icon('check', 2.6) : '') +
+                    '</span></button>';
+                }).join('') +
+              '</div>' +
+            '</span>' +
+          '</div>' +
+        '</div>';
+      }).join('');
     } else {
       var links = seiteLinks();
       /* Die Zeilenform der Vorlage: Titel und Erklaersatz links, der Regler rechts. */
@@ -6114,11 +6138,13 @@
             '</div>' +
           '</div>' +
           '<div class="ums-rowctl am-set-seg">' +
-            '<div class="up-seg" role="tablist">' +
-              '<button class="up-seg-btn' + (!links ? ' is-active' : '') + '" type="button" data-am-side="right">' +
-                esc(UCt('Right')) + '</button>' +
+            /* LINKS steht links und RECHTS rechts -- die Reihenfolge im Umschalter ist
+               dieselbe Aussage wie das Wort darin. Umgekehrt liest sie sich als Fehler. */
+            '<div class="up-seg is-lg" role="tablist">' +
               '<button class="up-seg-btn' + (links ? ' is-active' : '') + '" type="button" data-am-side="left">' +
                 esc(UCt('Left')) + '</button>' +
+              '<button class="up-seg-btn' + (!links ? ' is-active' : '') + '" type="button" data-am-side="right">' +
+                esc(UCt('Right')) + '</button>' +
             '</div>' +
           '</div>' +
         '</div>';
@@ -6162,6 +6188,37 @@
       if (nav){ _setSeite = nav.getAttribute('data-am-set-page'); setZeichnen(); return; }
       var side = e.target.closest('[data-am-side]');
       if (side){ seiteAnwenden(side.getAttribute('data-am-side'), true); setZeichnen(); return; }
+      /* Der Auswahlknopf: das Menue kommt aus core (makePopover) -- derselbe Weg, den jedes
+         Dropdown der App geht, samt Aussenklick, Escape und gegenseitigem Schliessen. */
+      var hlBtn = e.target.closest('[data-am-hl-btn]');
+      if (hlBtn){
+        e.stopPropagation();
+        var wrap = hlBtn.closest('.ums-selwrap');
+        var menu = wrap && wrap.querySelector('.ums-menu');
+        var k = window.UpstreemCore;
+        if (wrap && menu && k && k.makePopover){
+          if (!wrap.__amPop){
+            wrap.__amPop = k.makePopover({ wrap: wrap, menu: menu, opener: hlBtn,
+              group: 'am-set-hl',
+              onClose: function(){ hlBtn.setAttribute('aria-expanded', 'false'); } });
+          }
+          wrap.__amPop.toggle ? wrap.__amPop.toggle() : wrap.__amPop.open();
+          hlBtn.setAttribute('aria-expanded', wrap.classList.contains('is-open') ? 'true' : 'false');
+        }
+        return;
+      }
+      var hlSet = e.target.closest('[data-am-hl-set]');
+      if (hlSet){
+        e.stopPropagation();
+        var w2 = hlSet.closest('.ums-selwrap');
+        if (w2 && w2.__amPop) w2.__amPop.close();
+        /* applySetting ist derselbe Weg, den das alte Fach ging: es merkt den Wert, meldet ihn
+           nach Bubble und zeichnet den offenen Chat neu. */
+        applySetting(hlSet.getAttribute('data-am-hl-set'), hlSet.getAttribute('data-am-hl-val'));
+        syncSettingsUI();
+        setZeichnen();
+        return;
+      }
     });
     document.addEventListener('keydown', setEscape);
     setZeichnen();
@@ -6169,9 +6226,6 @@
   function setEscape(e){ if (e.key === 'Escape' && _setBack) setSchliessen(); }
   function setSchliessen(){
     if (!_setBack) return;
-    /* DIE HIGHLIGHT-ZEILEN ZURUECK AN IHREN PLATZ, bevor das Fenster verschwindet -- sonst
-       nimmt es sie mit, und beim naechsten Oeffnen stuende dort nichts. */
-    try { if (elHlPanel && _hlHeimat) _hlHeimat.appendChild(elHlPanel); } catch(e){}
     document.removeEventListener('keydown', setEscape);
     /* Erst ausblenden, dann entfernen -- sonst verschwindet das Fenster hart. 180ms sind die
        160ms der Blende plus etwas Luft. Der Knoten wird auch dann entfernt, wenn die Uhr

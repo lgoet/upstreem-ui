@@ -2300,6 +2300,42 @@
      ihrer ums-Entsprechung im selben Selektor, es gibt also nichts, was auseinanderlaufen
      koennte. */
   .am-set-backdrop .am-set-body { min-width: 0; }
+  /* Die Werte des Auswahlknopfes aus preferences.css (.ums-selwrap / .ums-sel / .ums-menu),
+     damit er auch ohne jene Datei genauso aussieht. Das Menue haengt RECHTS am Knopf: er steht
+     am rechten Rand der Zeile, ein linksbuendiges liefe aus der Karte heraus. */
+  .am-set-backdrop .ums-selwrap { position: relative; display: inline-flex; }
+  .am-set-backdrop .ums-sel {
+    display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 10px;
+    border: 1px solid var(--vc-border); border-radius: 8px;
+    background: var(--vc-bg); color: var(--vc-muted);
+    font-family: inherit; font-size: 13px; font-weight: 500; line-height: 1;
+    white-space: nowrap; cursor: pointer; outline: 0;
+    transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease;
+  }
+  .am-set-backdrop .ums-sel:hover,
+  .am-set-backdrop .ums-selwrap.is-open .ums-sel {
+    color: var(--vc-text); background: var(--vc-heading-bg); border-color: var(--vc-hover-border);
+  }
+  .am-set-backdrop .ums-sel-val { color: var(--vc-text); }
+  .am-set-backdrop .ums-sel svg { width: 16px; height: 16px; flex: 0 0 16px; display: block;
+    color: var(--vc-text); }
+  .am-set-backdrop .ums-menu.ums-menu { width: 232px; right: 0; left: auto; }
+  .am-set-backdrop .ums-menu .up-optrow { min-height: 34px; padding: 0 9px; font-size: 13px;
+    font-weight: 500; }
+  .am-set-backdrop .ums-menu .up-optrow .ums-opt-check { margin-left: auto; flex: 0 0 16px;
+    width: 16px; height: 16px; opacity: 0; color: var(--vc-text); }
+  .am-set-backdrop .ums-menu .up-optrow.is-on .ums-opt-check { opacity: 1; }
+  .am-set-backdrop .ums-menu .up-optrow svg { width: 16px; height: 16px; display: block; }
+  /* DAS MENUE DARF NICHT AM RAND DES FENSTERS ABGESCHNITTEN WERDEN. .ums-main traegt
+     overflow-y: auto (fuer lange Seiten), und ein absolut sitzendes Menue darin wird davon
+     geklippt -- genau das war "hier und da cuttet irgendeine roundness den content ab".
+     Solange ein Menue offen ist, faellt die Klammer weg; die Seiten dieses Fensters sind kurz
+     genug, dass dabei nichts verlorengeht. */
+  .am-set-backdrop .ums-main:has(.ums-selwrap.is-open) { overflow: visible; }
+  /* Zwischen den Zeilen eine Trennlinie, wie im Preferences-Fenster. */
+  .am-set-backdrop .am-set-row2 + .am-set-row2 { border-top: 1px solid var(--vc-border); }
+  /* Der Umschalter 32px hoch -- .up-seg.is-lg aus core traegt genau das. */
+  .am-set-backdrop .am-set-seg .up-seg.is-lg { height: 32px; }
   .am-set-backdrop .am-hl-panel {
     display: block; position: static; width: auto; padding: 0; border: 0;
     background: transparent; box-shadow: none; max-height: none; opacity: 1; visibility: visible;
@@ -2343,8 +2379,20 @@
   /* Umschalter links, Logo rechts -- gespiegelt zu einer linken Leiste, weil diese rechts sitzt.
      Das Zeichen ist dasselbe wie in der Hauptleiste (UC.icon("sidebarPanels")), samt Groesse und
      Deckkraft: ein Umschalter, der an zwei Orten anders aussieht, liest sich als zwei Dinge. */
-  .am-prev-panel .am-side-toggle { color: var(--am-muted); }
-  .am-prev-panel .am-side-toggle:hover { background: var(--am-soft); color: var(--am-text); }
+  /* --vc-third, GENAU wie .usn-bar .up-iconbtn.usn-toggle in der Hauptleiste. Hier stand
+     --am-muted, und das ist --vc-muted: eine Stufe kraeftiger. Sichtbar wurde es als "Mira ist
+     im Dunkeln heller und im Hellen dunkler" -- zwei Zeichen mit derselben Bedeutung an zwei
+     Raendern desselben Bildschirms. Der Hover ebenso: dort --vc-text.
+     Am 10.09. habe ich zuerst .am-prev-btn geaendert -- das ist der "All Chats"-Knopf im
+     Composer und nicht der Umschalter oben in der Leiste. Der hier war gemeint. */
+  /* DREI KLASSEN, genau wie die Hauptleiste (.usn-bar .up-iconbtn.usn-toggle). Mit zweien
+     verliert die Regel im DUNKELN gegen core: .up-root[data-theme="dark"] .up-iconbtn ist
+     0,2,1 und setzt dort #a0a0a0. Genau das war "Mira ist im Dunkeln heller" -- gemessen
+     rgb(160,160,160) gegen die rgb(128,128,128) der Hauptleiste. Im Hellen fiel es nicht auf,
+     weil dort keine solche Regel steht.
+     Ueber die Spezifitaet geloest und nicht ueber die Ladereihenfolge -- CLAUDE.md 1. */
+  .am-prev-panel .up-iconbtn.am-side-toggle { color: var(--vc-third); }
+  .am-prev-panel .up-iconbtn.am-side-toggle:hover { background: var(--am-soft); color: var(--vc-text); }
   /* Gespiegelt: das Zeichen zeigt eine Leiste an der linken Kante, diese hier sitzt rechts.
      scaleX(-1) wie am Zeichen des "All Chats"-Knopfes daneben -- dieselbe Drehung, damit die zwei
      nicht in verschiedene Richtungen deuten. */
