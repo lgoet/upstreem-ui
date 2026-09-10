@@ -6,9 +6,27 @@
   Prompt und oeffnet den Assistenten damit.
 
   ── DER WEG, DEN DU NEHMEN SOLLTEST: EIN JS-AUFRUF ──────────────────────────
-  Am 10.09. gewuenscht: die Angaben nicht mehr ueber die Attribute am HTML-Element setzen,
-  sondern per JavaScript. DAS GIBT ES BEREITS -- kein Umbau noetig, nur diese Zeile in einem
-  Run-JS-Schritt:
+  DER NAME STEHT AM ELEMENT, in data-open-fn. Steht dort "open_popup", legt die Komponente
+  window.open_popup an, und der Run-JS-Schritt in Bubble ruft genau das:
+
+      window.open_popup({
+        url:               "https://…",
+        citation_type:     "Editorial",
+        lead_title:        "…",
+        lead_domain:       "…",
+        lead_favicon:      "…",
+        own_brand_name:    "…",
+        own_brand_summary: "…"
+      });
+
+  Der Name ist frei waehlbar -- bei mehreren Popups auf einer Seite bekommt jedes seinen
+  eigenen, und dann braucht kein Aufruf mehr eine UID. Er wird geprueft, bevor er gesetzt wird:
+  ein leerer oder ungueltiger Name wird ignoriert, und ein Name, den es auf der Seite schon
+  gibt und der nicht dieser Komponente gehoert, wird NICHT ueberschrieben (beides mit einer
+  Zeile in der Konsole). Sonst raeumt ein Tippfehler etwas weg, das jemand anderem gehoert,
+  und der Fehler zeigt sich an einer ganz anderen Stelle.
+
+  Ohne data-open-fn gilt weiter der eingebaute Name -- er tut dasselbe:
 
       window.createWithAiOpen({
         url:               "https://…",
@@ -58,6 +76,7 @@
   | Attribut            | Pflicht | Bedeutung                                              |
   |---------------------|---------|--------------------------------------------------------|
   | data-cdn-pin        | ja      | Commit-Hash, identisch mit allen anderen Komponenten   |
+  | data-open-fn        | nein    | Name der JS-Funktion, die das Popup oeffnet           |
   | data-instance       | nein    | Nur wenn MEHRERE Elemente auf einer Seite liegen: der  |
   |                     |         | Name, mit dem die Funktionen dieses Element treffen.   |
   |                     |         | In einer Repeating Group weglassen.                    |
@@ -197,6 +216,7 @@
 <div class="up-root uca-root"
      data-cdn-pin="CDN_PIN"
      data-instance="INSTANCE"
+     data-open-fn="open_popup"
      data-url="URL"
      data-title="TITLE"
      data-citation-type="TYPE"

@@ -930,10 +930,9 @@
              "x prompts added" benutzen. Es meldet sich still ab, wenn die Seite kein
              showMacToast hat, wirft also nirgends. */
           try {
-            if (UC.toast) UC.toast(t(an
-              ? "Date range now applies everywhere. Refresh to update views you already opened."
-              : "Date range is per view again. Refresh to update views you already opened."),
-              { icon: "check", timeout: 3200 });
+            if (UC.toast) UC.toast(t(an ? "Applied everywhere \u2014 refresh to update open views"
+                                        : "Per view again \u2014 refresh to update open views"),
+              { icon: "check", timeout: 4000 });
           } catch(e){}
           return;
         }

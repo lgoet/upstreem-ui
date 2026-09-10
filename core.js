@@ -283,6 +283,44 @@
     try { window.dispatchEvent(new CustomEvent("up-prefs-change", { detail: { name: name, value: v } })); } catch(e){}
     return v;
   }
+  /* ---- SPRACHE WECHSELN UND NEU LADEN --------------------------------------------------------
+     Gemeldet am 10.09.: die App stuerzt beim Sprachwechsel ab, mit 100 Prozent Quote. Der erste
+     Versuch war ein Reload NACH setPref -- der kam zu spaet: setPref feuert up-prefs-change
+     SYNCHRON, der Sprachlauf und jeder andere Empfaenger liefen also noch, bevor die Seite
+     ueberhaupt ans Neuladen kam. Der Absturz blieb.
+
+     Diese Fassung benachrichtigt NIEMANDEN. Sie schreibt die Wahl in denselben Speicher, aus
+     dem prefsLesen sie beim naechsten Aufbau holt, und laedt neu. Damit gibt es in dieser
+     Sitzung keinen Sprachlauf, keine neu zeichnende Komponente und keinen Empfaenger, der
+     stolpern koennte -- die neue Sprache steht beim Laden da, auf dem Weg, den die App ohnehin
+     jeden Tag geht.
+
+     ES IST WEITERHIN EIN UMWEG UND KEINE URSACHENBEHEBUNG. Was ich messen konnte: der
+     Sprachlauf selbst wirft nicht und haengt nicht (30ms auf 14534 Knoten, hochgerechnet 322ms
+     auf die 156000 der echten Seite). Welcher Empfaenger auf der echten Seite stirbt, laesst
+     sich von hier aus nicht nachstellen -- und der Nutzer hat ausdruecklich um genau diesen Weg
+     gebeten.
+
+     Der Rueckgabewert sagt, ob geschrieben werden konnte. Kein Reload, wenn nicht: dann waere
+     die Seite neu geladen und stuende noch in der alten Sprache -- schlimmer als nichts zu tun,
+     weil der Nutzer denkt, es habe funktioniert. */
+  function setLocaleReload(value){
+    if (!PREF_ERLAUBT.locale || !PREF_ERLAUBT.locale[value]) return false;
+    var p = prefsLesen();
+    if (p.locale === value){ return true; }   /* nichts zu tun, also auch kein Neuladen */
+    p.locale = value;
+    try { window.localStorage.setItem(PREF_STORE, JSON.stringify(p)); }
+    catch(e){
+      if (window.console) console.warn("[upstreem] Die Sprache liess sich nicht speichern:", e);
+      return false;
+    }
+    /* _prefs ist der gemerkte Stand in dieser Sitzung -- er wird gleich weggeworfen, aber falls
+       zwischen hier und dem Neuladen noch jemand liest, soll er das Neue sehen. */
+    _prefs = null;
+    try { window.location.reload(); } catch(e){}
+    return true;
+  }
+
   /* Anmelden, ohne das Ereignis selbst zu kennen. Gibt eine Abmeldefunktion zurueck. */
   /* Ein Sprachwechsel aendert kein DOM von sich aus -- der Lauf oben haengt am Beobachter fuer
      NEUE Knoten. Also hier ausdruecklich, sobald die Einstellung sich aendert. */
@@ -1832,10 +1870,10 @@
     "Est. Volume": "Gesch. Volumen",
     "The estimated frequency that users actually use this or a very similar prompt.":
       "Wie oft Nutzer diesen oder einen sehr ähnlichen Prompt tatsächlich verwenden.",
-    "Date range now applies everywhere. Refresh to update views you already opened.":
-      "Der Zeitraum gilt jetzt überall. Lade neu, um schon geöffnete Ansichten zu aktualisieren.",
-    "Date range is per view again. Refresh to update views you already opened.":
-      "Der Zeitraum gilt wieder je Ansicht. Lade neu, um schon geöffnete Ansichten zu aktualisieren.",
+    "Applied everywhere \u2014 refresh to update open views":
+      "Überall angewendet \u2014 offene Ansichten mit Neuladen aktualisieren",
+    "Per view again \u2014 refresh to update open views":
+      "Wieder je Ansicht \u2014 offene Ansichten mit Neuladen aktualisieren",
     "Highlights": "Hervorhebungen",
     "Appearance": "Darstellung",
     "How brands, citations and responses are marked in answers":
@@ -15723,7 +15761,8 @@
     /* Die Einstellungen des Nutzers und ihre Werkzeuge. getPref/setPref sind der ganze Zugang --
        die Ablage selbst bleibt privat, damit niemand einen Wert hineinschreibt, den kein
        Formatierer kennt. */
-    getPref: getPref, setPref: setPref, onPrefs: onPrefs, getUpstreemThemeChoice: getUpstreemThemeChoice,
+    getPref: getPref, setPref: setPref, setLocaleReload: setLocaleReload,
+    onPrefs: onPrefs, getUpstreemThemeChoice: getUpstreemThemeChoice,
     PREF_DEFAULT: PREF_DEFAULT, PREF_ERLAUBT: PREF_ERLAUBT,
     fmtNum: fmtNum, fmtDateMuster: fmtDateMuster, datumsTeile: datumsTeile,
     addMessages: addMessages, t: t,

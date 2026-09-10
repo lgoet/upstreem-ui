@@ -209,6 +209,7 @@
   "data-nav-fn",
   "data-newteam-fn",
   "data-newtopic-fn",
+  "data-open-fn",
   "data-openurl-fn",
   "data-page-fn",
   "data-password-fn",
@@ -648,6 +649,7 @@
   "data-nurfunktion",
   "data-on",
   "data-open",
+  "data-open-fn",
   "data-oph-btn",
   "data-page",
   "data-pagesize",
@@ -2964,10 +2966,10 @@
  ],
  "_zaehlung": {
   "events": 150,
-  "fnattrs": 96,
+  "fnattrs": 97,
   "globals": 169,
   "payloadkeys": 96,
-  "dataattrs": 243,
+  "dataattrs": 244,
   "klassen": 2129,
   "keyframes": 66
  }

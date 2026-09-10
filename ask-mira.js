@@ -5921,6 +5921,10 @@
      und diese Zeile ist die einzige Stelle, die seinen Inhalt setzt -- ein zweiter Ort haette
      das Etikett beim naechsten Aufbau wieder weggeworfen. */
   if (elHlBtn) elHlBtn.innerHTML = ICON.settings + '<span class="am-side-lbl">Settings</span>';
+  /* Der Tooltip sagte "Highlight settings" -- seit dem 10.09. sind es zwei Reiter, und
+     Hervorhebungen sind nur einer davon. HIER gesetzt und nicht in der Vorlage: die erreicht ein
+     bereits eingebautes Element nicht, und genau dort stand der alte Text noch. */
+  if (elHlBtn) elHlBtn.setAttribute('data-tip', 'Settings');
   var DD_LABELS = { logo:'Logo', icon:'Icon', none:'No Highlight', favicon:'Favicon' };
   function ddSync(dd, value){
     if (!dd) return;
@@ -6084,7 +6088,7 @@
   }
 
   function setOeffnen(){
-    if (_setBack){ _setBack.classList.remove('is-closing'); setZeichnen(); return; }
+    if (_setBack){ _setBack.classList.add('is-shown'); setZeichnen(); return; }
     var back = document.createElement('div');
     /* up-root fuer den Themen-Sweep von core, up-portal weil er ausserhalb jeder
        Komponentenwurzel im body lebt -- setUpstreemTheme sucht genau diese beiden. */
@@ -6097,6 +6101,16 @@
       '<div class="am-set-main" data-am-set-main></div></div>';
     document.body.appendChild(back);
     _setBack = back;
+    /* .is-shown NICHT VERGESSEN. .up-topicmodal-backdrop steht auf opacity: 0 und
+       pointer-events: none, bis diese Klasse kommt -- ohne sie haengt das Fenster im Baum und
+       ist unsichtbar UND unklickbar. Genau das war gemeldet: "Klick auf Einstellungen oeffnet
+       nix." Meine Pruefung hatte nur nachgesehen, ob das Element EXISTIERT, und das tat es.
+       offsetHeight erzwingt einen Umbruch, bevor die Klasse kommt -- sonst rechnet der Browser
+       beides in einem Zug und die Blende laeuft nicht. Kein requestAnimationFrame: das laeuft in
+       einem verdeckten Fenster gar nicht, und der Aufbau haenge dann an einem Bild, das nie
+       kommt. */
+    void back.offsetHeight;
+    back.classList.add("is-shown");
     back.addEventListener('click', function(e){
       if (e.target === back){ setSchliessen(); return; }
       if (!e.target.closest) return;
@@ -6116,8 +6130,13 @@
        nimmt es sie mit, und beim naechsten Oeffnen stuende dort nichts. */
     try { if (elHlPanel && _hlHeimat) _hlHeimat.appendChild(elHlPanel); } catch(e){}
     document.removeEventListener('keydown', setEscape);
-    _setBack.remove();
+    /* Erst ausblenden, dann entfernen -- sonst verschwindet das Fenster hart. 180ms sind die
+       160ms der Blende plus etwas Luft. Der Knoten wird auch dann entfernt, wenn die Uhr
+       gedrosselt ist; er ist ab dem ersten Bild schon unsichtbar und faengt keine Klicks mehr. */
+    var weg = _setBack;
+    weg.classList.remove('is-shown');
     _setBack = null;
+    setTimeout(function(){ try { weg.remove(); } catch(e){} }, 180);
   }
 
   if (elHlBtn) elHlBtn.addEventListener('click', function(e){ e.stopPropagation(); setOeffnen(); });

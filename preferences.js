@@ -507,33 +507,29 @@
         /* Der Weg von core, derselbe, den das Konto-Menue der Seitenleiste geht: er faerbt jede
            Wurzel der Seite um, merkt die Wahl und loest "System" nach der Systemeinstellung auf. */
         if (window.setUpstreemTheme) window.setUpstreemTheme(wert);
+      } else if (name === "locale") {
+        /* ---- SPRACHWECHSEL: SCHREIBEN UND NEU LADEN, OHNE JEDEN LAUF ----------------------
+           Gemeldet am 10.09. mit RESULT_CODE_HUNG -- die Seite HAENGT, sie wirft nicht. Das ist
+           eine Rueckkopplung und kein Fehler in einer einzelnen Zeile.
+           UC.setPref waere hier falsch: es feuert up-prefs-change SYNCHRON, und damit liefen der
+           Sprachlauf und jeder andere Empfaenger noch, bevor die Seite ans Neuladen kommt --
+           genau das war der erste Versuch, und er hat den Absturz nicht verhindert.
+           setLocaleReload schreibt die Wahl in denselben Speicher, aus dem sie beim naechsten
+           Aufbau kommt, und laedt neu. In dieser Sitzung passiert nichts weiter.
+           nachBubble VOR dem Aufruf: danach laeuft keine Zeile dieser Datei mehr. */
+        nachBubble(name, wert);
+        if (!(UC.setLocaleReload && UC.setLocaleReload(wert))){
+          /* Aeltere core.js an einem anderen Pin, oder der Speicher ist dicht: dann lieber den
+             alten Weg als gar keinen Sprachwechsel. */
+          UC.setPref(name, wert);
+          zeichnen();
+        }
+        return;
       } else {
         UC.setPref(name, wert);
       }
       nachBubble(name, wert);
       zeichnen();
-      /* ---- SPRACHWECHSEL: NEU LADEN --------------------------------------------------------
-         Gemeldet am 10.09.: die App stuerzt beim Sprachwechsel ab, mit 100 Prozent Quote und auf
-         einem neuen Rechner. Nach einem Reload steht alles richtig da und laeuft.
-         DAS HIER IST EIN UMWEG UND KEINE URSACHENBEHEBUNG, und es steht so da, damit niemand
-         spaeter glaubt, der Fehler sei gefunden. Was ich messen konnte: der Sprachlauf selbst
-         wirft nicht und haengt nicht -- auf 14534 kuenstlich erzeugten Knoten kostet ein
-         Wechsel 30ms, hochgerechnet auf die 156000 der echten Seite rund 322ms. Langsam, aber
-         kein Absturz. Was die echte Seite darueber hinaus tut (184 Wurzeln, Bubbles eigene
-         Workflows, die Repeating Groups), laesst sich von hier aus nicht nachstellen.
-         Warum der Reload trotzdem richtig ist und nicht nur bequem: die Sprache aendert JEDEN
-         Text der Seite. Sie beim Laden zu setzen ist der Weg, den die App ohnehin jeden Tag
-         geht und der nachweislich funktioniert -- ein zweiter Weg, der dasselbe Ergebnis im
-         Betrieb herstellt, ist die teurere und die zerbrechlichere Loesung.
-         Die Wahl liegt schon im localStorage (UC.setPref oben) und geht, wenn ein Empfaenger da
-         ist, auch nach Bubble -- der Reload verliert also nichts.
-         Kein Reload beim THEMA und beim Zahlenformat: die aendern Farben und Ziffern, keinen
-         Baum, und laufen seit jeher ohne Klage. */
-      if (name === "locale") {
-        try {
-          window.setTimeout(function () { window.location.reload(); }, 60);
-        } catch (e) { /* kein Reload moeglich -- dann bleibt es beim Lauf in der Sitzung */ }
-      }
     }
     /* Jede Aenderung geht ZUSAETZLICH nach Bubble -- aber nur, wenn es dort einen Empfaenger gibt.
        Der Vorrat liegt im Browser (wie das Thema seit immer), das genuegt fuer ein Geraet. Wer die

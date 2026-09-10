@@ -203,8 +203,11 @@
       /* Der Hover bringt NUR den Grund -- ausdruecklich so verlangt. Gemessen wird deshalb
          der Sprung der Fuellung von durchsichtig auf deckend, und dass der Rahmen dabei
          unveraendert bleibt. */
+      /* Im DUNKELN ist der Hover ein Mix auf 40 Prozent (die geteilte Beziehung, siehe 7f),
+         im Hellen deckend. Geprueft wird darum, dass aus NICHTS etwas wird -- nicht ein
+         bestimmter Wert, den nur eines der beiden Themen hat. */
       pruef("der Hover bringt den Grund",
-        farbe(ruhe).a + " -> " + Math.round(farbe(hov).a * 100) / 100, "0 -> 1");
+        farbe(ruhe).a + " -> " + (farbe(hov).a > 0), "0 -> true");
       pruef("und laesst den Rahmen in Ruhe",
         getComputedStyle(karte).borderTopColor === cs.borderTopColor, true);
       pruef("das Chevron rueckt 4px", chevHov, "matrix(1, 0, 0, 1, 4, 0)");
@@ -649,8 +652,11 @@
       pruef("2 Ueberschrift und Chips in EINER Zeile",
         (Math.abs((hb.top + hb.height/2) - (cb.top + cb.height/2)) <= 1) + "/" + (cb.left > hb.right),
         "true/true", "mittig zueinander, die Chips rechts von der Ueberschrift");
-      pruef("2 16px dazwischen", Math.round(cb.left - hb.right) + "/" + getComputedStyle(z).gap,
-        "16/16px");
+      /* column-gap lesen und nicht gap: seit die Zeile umbrechen darf, meldet gap BEIDE Werte
+         ("8px 16px"). 16 ist der Abstand DANEBEN, 8 der nach dem Umbruch. */
+      pruef("2 16px dazwischen",
+        Math.round(cb.left - hb.right) + "/" + getComputedStyle(z).columnGap, "16/16px");
+      pruef("2 und 8px nach dem Umbruch", getComputedStyle(z).rowGap, "8px");
       pruef("2 links ausgerichtet, nicht mittig", Math.round(hb.left - zb.left), 0);
       /* 8px ZWISCHEN den Chips (09.09.). Gemessen wird der echte Zwischenraum von zwei
          nebeneinander stehenden Chips und nicht nur die Regel -- eine Regel sagt nichts, wenn

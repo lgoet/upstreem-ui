@@ -976,6 +976,40 @@
     };
     window.createWithAi = window.createWithAi || {};
     window.createWithAi[UID] = api;
+
+    /* ---- EIN EIGENER NAME AM ELEMENT (10.09. angefordert) -----------------------------------
+       data-open-fn = "open_popup" legt window.open_popup an. Der Run-JS-Schritt in Bubble ruft
+       dann genau diesen Namen:
+
+           window.open_popup({ url: "…", citation_type: "…", lead_title: "…" })
+
+       Warum das ueberhaupt gebraucht wird, obwohl createWithAiOpen schon existiert: der Name
+       steht dann AM ELEMENT und ist dort zu lesen, statt in einer Doku zu stehen -- dieselbe
+       Rolle, die data-*-fn fuer den Weg NACH Bubble spielt. Wer mehrere Popups auf einer Seite
+       hat, gibt jedem seinen eigenen Namen und braucht die UID im Aufruf nicht mehr.
+
+       DER NAME WIRD GEPRUEFT und nicht blind gesetzt: ein Ausdruck aus Bubble kann leer bleiben
+       oder Zeichen enthalten, die kein gueltiger Bezeichner sind. Und ein bestehender Name wird
+       NICHT ueberschrieben, ausser er gehoert schon dieser Komponente -- sonst raeumt ein
+       Tippfehler ("length", "close") etwas weg, das der Seite gehoert, und der Fehler zeigt sich
+       an einer ganz anderen Stelle. */
+    (function eigenerName(){
+      var n = String(root.getAttribute("data-open-fn") || "").trim();
+      if (!n || n === "OPEN_FN") return;
+      if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(n)){
+        if (window.console) console.warn('[create-with-ai] data-open-fn="' + n +
+          '" ist kein gueltiger Funktionsname -- ignoriert.');
+        return;
+      }
+      if (window[n] && !window[n].__uca){
+        if (window.console) console.warn('[create-with-ai] window.' + n +
+          " gibt es schon und gehoert nicht dieser Komponente -- nicht ueberschrieben.");
+        return;
+      }
+      var f = function(p){ if (p != null) api.setContext(p); api.open(); return true; };
+      f.__uca = UID;
+      window[n] = f;
+    })();
     try {
       Object.keys(window.createWithAi).forEach(function(k){
         var r = window.createWithAi[k].root;
