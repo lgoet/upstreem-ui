@@ -735,6 +735,7 @@
   "data-up-ic",
   "data-up-key",
   "data-up-lifted",
+  "data-up-locale",
   "data-up-name",
   "data-up-noescape",
   "data-up-preload",
@@ -2955,7 +2956,7 @@
   "fnattrs": 96,
   "globals": 169,
   "payloadkeys": 96,
-  "dataattrs": 242,
+  "dataattrs": 243,
   "klassen": 2118,
   "keyframes": 66
  }

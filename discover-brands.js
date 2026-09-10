@@ -90,7 +90,21 @@
   var IDX_W = 44;        // feste Breite der "#"-Spalte, wie in brands-overview
   /* Breite der Track-Spalte. Feste Zahlen, keine inhaltsabhaengige Spur: Kopf und Zeilen sind
      getrennte Raster und wuerden ein `auto` verschieden aufloesen (siehe Kommentar in core.js). */
-  var TRACK_WIDE = 108, TRACK_NARROW = 56;
+  /* Auf Deutsch heisst "Track" -> "Beobachten", und das ist mehr als doppelt so breit.
+     GEMESSEN mit der Schrift der App (13px/500) plus Zeichen 14, Abstand 6 und Polster 2x12:
+     Englisch braucht 78px, Deutsch 118. Die 108 reichten damit fuer Englisch bequem und fuer
+     Deutsch NICHT -- der Knopf war abgeschnitten (10.09. gemeldet).
+     128 statt der gemessenen 118: zehn Pixel Luft, damit eine leicht andere Schriftmetrik auf
+     einem anderen Rechner nicht doch wieder schneidet.
+     Als Funktion und ueber data-up-locale am <html>: core setzt die Marke in jedem Sprachlauf,
+     genau dafuer gibt es sie. Dieselbe Loesung wie die Einladungstabelle in team-orga, nur dort
+     in CSS -- hier rechnet das Spaltenraster in JS, also steht die Zahl hier. */
+  var TRACK_WIDE_EN = 108, TRACK_WIDE_DE = 128, TRACK_NARROW = 56;
+  function trackWide(){
+    var l = "";
+    try { l = document.documentElement.getAttribute("data-up-locale") || ""; } catch(e){}
+    return l === "de" ? TRACK_WIDE_DE : TRACK_WIDE_EN;
+  }
 
   function udbBoot(n) {
     if (!window.UpstreemCore) {
@@ -233,7 +247,7 @@
         leadWidth: IDX_W,
         /* Breit traegt der Track-Knopf seine Beschriftung, schmal ist er quadratisch -- die Spur
            folgt dem. Als Funktion, weil das Kit sie bei jeder Rasterrechnung neu abfragt. */
-        actionsMin: function () { return root.classList.contains("is-narrow") ? TRACK_NARROW : TRACK_WIDE; },
+        actionsMin: function () { return root.classList.contains("is-narrow") ? TRACK_NARROW : trackWide(); },
         badgeSel: ".udb-cols-badge", cellPrefixes: ["up", "udb"],
         onChange: function () { renderTable(); }
       });
@@ -509,7 +523,19 @@
         if (state.parseError) { elTotal.classList.remove("is-sk"); elTotal.textContent = ""; return; }
         if (state.totalResponses == null) { elTotal.classList.add("is-sk"); elTotal.textContent = ""; return; }
         elTotal.classList.remove("is-sk");
-        elTotal.textContent = "Total Responses analyzed: " +
+        /* BESCHRIFTUNG UND ZAHL GETRENNT. Vorher stand beides in EINEM Textknoten
+           ("Total Responses analyzed: 12.345"), und der Sprachlauf sucht den ganzen Knoten im
+           Katalog -- mit der Zahl daran findet er ihn nie. Der Eintrag existierte die ganze
+           Zeit ("Ausgewertete KI-Antworten:"), er war nur unerreichbar. Gemeldet am 10.09.
+           Jetzt traegt ein eigenes Element die Beschriftung, und die Zahl steht daneben. */
+        var SCHL = "Total Responses analyzed:";
+        /* data-i18n mit dem englischen Schluessel: daran erkennt der Sprachlauf das Element auch
+           dann noch, wenn schon der deutsche Text darin steht -- sonst waere ein Wechsel zurueck
+           nach Englisch nicht mehr moeglich. Uebersetzt wird hier gleich mit UC.t, damit der
+           englische Text nicht kurz aufblitzt. */
+        elTotal.innerHTML = '<span class="udb-total-lbl" data-i18n="' + esc(SCHL) + '">' +
+          esc(UC.t(SCHL)) + '</span> <span class="udb-total-n"></span>';
+        elTotal.querySelector(".udb-total-n").textContent =
           (UC.fmtTotal ? UC.fmtTotal(state.totalResponses) : state.totalResponses);
       }
       /* measure() steht mit im render(), nicht nur im ResizeObserver. Der Beobachter ist der

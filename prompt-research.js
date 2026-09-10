@@ -1127,7 +1127,11 @@
     for (var i = 0; i < ths.length; i++){
       var th = ths[i];
       if (th.querySelector(".up-th-info")) continue;
-      if (String(th.textContent || "").trim().indexOf("Est. Volume") !== 0) continue;
+      /* Auf den ENGLISCHEN Schluessel UND auf die Uebersetzung pruefen: im deutschen Setting
+         steht in der Kopfzelle "Gesch. Volumen", und der Vergleich mit dem englischen Text ging
+         dort ins Leere -- ohne Zeichen kein Tooltip. Gemeldet am 10.09. */
+      var kopfTxt = String(th.textContent || "").trim();
+      if (kopfTxt.indexOf("Est. Volume") !== 0 && kopfTxt.indexOf(UC.t("Est. Volume")) !== 0) continue;
       var s = document.createElement("span");
       s.className = "up-th-info";
       s.setAttribute("data-explain", "volume");
@@ -1149,8 +1153,13 @@
                     loesen die Tokens nicht auf und die Segmente waeren in beiden Themes unsichtbar. */
                  '<span class="upr-volume-track upr-vol-demo" style="width:58px"><span class="upr-volume-seg is-filled"></span><span class="upr-volume-seg is-filled"></span><span class="upr-volume-seg is-filled"></span><span class="upr-volume-seg"></span></span>' +
                '</span></div>' +
-               '<div class="up-explain-h">Est. Volume</div>' +
-               '<div class="up-explain-t">The estimated frequency that users actually use this or a very similar prompt.</div>';
+               /* Ueber UC.t und nicht fest: die Erklaerkarte haengt am body, der Sprachlauf
+                  erreicht sie also nicht ueber die Wurzel der Komponente. Gemeldet am 10.09.,
+                  dass der Tooltip auf Deutsch fehlt -- er fehlte nicht, er war englisch. */
+               '<div class="up-explain-h">' + UC.esc(UC.t("Est. Volume")) + '</div>' +
+               '<div class="up-explain-t">' + UC.esc(UC.t(
+                 "The estimated frequency that users actually use this or a very similar prompt.")) +
+               '</div>';
       }
     });
   }

@@ -503,7 +503,15 @@
           '</div>' +
           '<div class="up-filter-list">' + ALL_URL_TYPES.map(function(k){
             var ti = urlTypeInfo(k);
-            var bg = isDark ? CHIP_BG_DARK : tint(ti.base, 0.12);
+            /* IM DUNKELN KEIN KASTEN UM DEN CHIP (10.09. gemeldet). CHIP_BG_DARK ist #242424, das
+               Dropdown darunter #232326 -- fast dieselbe Farbe, aber eben nicht dieselbe. Auf einer
+               ueberfahrenen oder gewaehlten Zeile wechselt der Zeilengrund (#232326 bzw. #28282c),
+               und dann steht der Chip als sichtbarer Kasten in einem dritten Ton darin. Im Dunkeln
+               traegt ein Chip dieser App ohnehin nur die FARBE DER SCHRIFT und keinen Grund; hier
+               war der Grund die Ausnahme, und sie fiel genau dort auf, wo sie stoerte.
+               In der TABELLE bleibt CHIP_BG_DARK: dort liegt der Chip auf der Zeile und braucht
+               seine Flaeche. Geaendert ist nur die Liste im Dropdown. */
+            var bg = isDark ? "transparent" : tint(ti.base, 0.12);
             return '<div class="up-filter-item' + (state.subTypes[k] ? " is-checked" : "") + '" data-subtype="' + esc(k) + '">' +
               '<span class="up-filter-check">' + CHECK_SVG + '</span>' +
               '<span class="up-filter-tag" style="color:' + ti.color + ';background:' + bg + '">' +
@@ -922,7 +930,15 @@
       html += ALL_CITATION_TYPES.map(function(key){
         var color = CITE_COLOR[citeName(key)] || OTHER_LIGHT;
         var label = UC.typLabel(key, "citation");
-        var bg = isDark ? CHIP_BG_DARK : tint(color, 0.12);
+        /* IM DUNKELN KEIN KASTEN UM DEN CHIP (10.09. gemeldet). CHIP_BG_DARK ist #242424, das
+           Dropdown darunter #232326 -- fast dieselbe Farbe, aber eben nicht dieselbe. Auf einer
+           ueberfahrenen oder gewaehlten Zeile wechselt der Zeilengrund (#232326 bzw. #28282c),
+           und dann steht der Chip als sichtbarer Kasten in einem dritten Ton darin. Im Dunkeln
+           traegt ein Chip dieser App ohnehin nur die FARBE DER SCHRIFT und keinen Grund; hier
+           war der Grund die Ausnahme, und sie fiel genau dort auf, wo sie stoerte.
+           In der TABELLE bleibt CHIP_BG_DARK: dort liegt der Chip auf der Zeile und braucht
+           seine Flaeche. Geaendert ist nur die Liste im Dropdown. */
+        var bg = isDark ? "transparent" : tint(color, 0.12);
         return '<div class="up-filter-item' + (sel[key] ? " is-checked" : "") + '" data-type="' + esc(key) + '">' +
                  '<span class="up-filter-check">' + CHECK_SVG + '</span>' +
                  '<span class="up-filter-tag" style="color:' + color + ';background:' + bg + '">' +

@@ -177,6 +177,13 @@
          Seitenaufbau wieder, und genau das wurde gemeldet. Die AUSWAHL in beiden Listen bleibt
          weiter gespeichert; nur welche Liste offen ist, entscheidet der Modus. */
       filterDim: vorgabeDim(),
+      /* Hat der Nutzer den Umschalter SELBST angefasst? Solange nicht, folgt die Vorgabe dem
+         Modus der Tabelle -- auch dann noch, wenn Bubble data-domain-mode erst nach dem Mount
+         aufloest. Genau davor warnt der Kommentar an vorgabeDim, und bis hierher half er nur
+         halb: die Vorgabe wurde EINMAL beim Aufbau gelesen, und was danach am Attribut kam,
+         erreichte sie nicht mehr. Gemeldet am 10.09.: der Filter stand beim ersten Oeffnen auf
+         Citation Type statt auf URL Type. */
+      dimGewaehlt: false,
       brandMentioned: saved.brandMentioned || "",
       pageSize: saved.pageSize || DEFAULT_PAGE_SIZE,
       page: saved.page || 1,                   // 1-based; offset is derived, never stored
@@ -516,6 +523,11 @@
       /* Two dimensions in one dropdown, exactly like the TopCitations URL mode: a URL has both a
          citation type (what kind of source) and a url type (what kind of page). Each keeps its own
          selection, so switching the tab back and forth doesn't lose anything. */
+      /* Solange der Nutzer nicht selbst umgeschaltet hat, gilt der Modus der Tabelle -- hier
+         gelesen und nicht beim Aufbau gemerkt, damit ein spaet aufgeloestes data-domain-mode
+         noch ankommt. Hat er umgeschaltet, gewinnt seine Wahl; das ist eine Entscheidung und
+         keine Vorgabe. */
+      if (!state.dimGewaehlt) state.filterDim = vorgabeDim();
       var dim = state.filterDim || vorgabeDim();
       var isUrlDim = dim === "url_type";
       var sel = isUrlDim ? state.filterUrlSel : state.filterSel;
@@ -535,7 +547,15 @@
            deutsche Beschriftung faende dort nichts und der Chip waere grau. */
         else { color = CITE_COLOR[citeName(key)] || OTHER_LIGHT; base = color;
                label = UC.typLabel(key, "citation"); }
-        var bg = isDark ? CHIP_BG_DARK : tint(base, 0.12);
+        /* IM DUNKELN KEIN KASTEN UM DEN CHIP (10.09. gemeldet). CHIP_BG_DARK ist #242424, das
+           Dropdown darunter #232326 -- fast dieselbe Farbe, aber eben nicht dieselbe. Auf einer
+           ueberfahrenen oder gewaehlten Zeile wechselt der Zeilengrund (#232326 bzw. #28282c),
+           und dann steht der Chip als sichtbarer Kasten in einem dritten Ton darin. Im Dunkeln
+           traegt ein Chip dieser App ohnehin nur die FARBE DER SCHRIFT und keinen Grund; hier
+           war der Grund die Ausnahme, und sie fiel genau dort auf, wo sie stoerte.
+           In der TABELLE bleibt CHIP_BG_DARK: dort liegt der Chip auf der Zeile und braucht
+           seine Flaeche. Geaendert ist nur die Liste im Dropdown. */
+        var bg = isDark ? "transparent" : tint(base, 0.12);
         var dot = isUrlDim ? '<span class="uut-tag-dot" style="background:' + color + '"></span>' : "";
         return '<div class="up-filter-item' + (sel[key] ? " is-checked" : "") + '" data-type="' + esc(key) + '">' +
                  '<span class="up-filter-check">' + CHECK_SVG + '</span>' +
@@ -1205,7 +1225,8 @@
 
       // --- filter menu ---
       var dimBtn = e.target.closest("[data-dim]");
-      if (dimBtn){ state.filterDim = dimBtn.getAttribute("data-dim"); persist(); populateFilter(); return; }
+      if (dimBtn){ state.filterDim = dimBtn.getAttribute("data-dim"); state.dimGewaehlt = true;
+                   persist(); populateFilter(); return; }
       var fi = e.target.closest(".up-filter-item");
       if (fi){
         var key = fi.getAttribute("data-type");

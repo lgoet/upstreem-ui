@@ -1821,6 +1821,44 @@
     "Search teams": "Teams suchen",
     "Search teams…": "Teams suchen…",
 
+    /* ---- BESCHRIFTUNGEN IN ATTRIBUTEN (10.09. gemeldet) ---------------------------------
+       "Alle Search Inputs in den Toolbars sind im DE Setting noch englisch." Der Grund war
+       nicht der Sprachlauf -- attributeStellen laeuft und uebersetzt placeholder und
+       aria-label seit langem. Es fehlten schlicht die EINTRAEGE, und zwar vor allem fuer
+       Texte, die in den bubble/*.html-VORLAGEN stehen: die sind das Markup, das in der App
+       wirklich haengt, und beim Durchsehen der JS-Dateien faellt so etwas nie auf.
+       Gefunden mit einem Abgleich aller placeholder- und aria-label-Werte aus Vorlagen UND
+       Komponenten gegen den Katalog -- 25 Texte ohne Eintrag. */
+    "Est. Volume": "Gesch. Volumen",
+    "The estimated frequency that users actually use this or a very similar prompt.":
+      "Wie oft Nutzer diesen oder einen sehr ähnlichen Prompt tatsächlich verwenden.",
+    "Search URLs": "URLs durchsuchen",
+    "Search domains": "Domains durchsuchen",
+    "Search responses": "Antworten durchsuchen",
+    "Search opportunities": "Chancen durchsuchen",
+    "Search opportunities...": "Chancen durchsuchen…",
+    "Search your workspace": "Workspace durchsuchen",
+    "Type in domain...": "Domain eingeben…",
+    "Type in url...": "URL eingeben…",
+    "Add a reference": "Bezug hinzufügen",
+    "Remove reference": "Bezug entfernen",
+    "Board settings": "Board-Einstellungen",
+    "Card view": "Kartenansicht",
+    "Table view": "Tabellenansicht",
+    "Chat options": "Chat-Optionen",
+    /* "Brands" und nicht "Marken": so heisst es in dieser App auch auf Deutsch. */
+    "Choose brands and topics": "Brands und Themen wählen",
+    "Discard recording": "Aufnahme verwerfen",
+    "Send recording": "Aufnahme senden",
+    "Send message": "Nachricht senden",
+    "Voice input": "Spracheingabe",
+    "Filter by rank and sentiment": "Nach Rang und Stimmung filtern",
+    "Scroll to latest": "Zum Neuesten springen",
+    "Model and effort": "Modell und Aufwand",
+    "Metric": "Kennzahl",
+    "Mode": "Modus",
+    "View": "Ansicht",
+
     /* ---- Visibility Chart ---- */
     "Clear company search": "Brand-Suche löschen",
 

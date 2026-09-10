@@ -481,21 +481,29 @@
    No scrollport here any more: the page scrolls, so core's .up-sticky .up-box (overflow:visible)
    applies and the column header pins to the viewport under the toolbar instead of to this box. */
 .upr-box {
-  /* DIE AKTIONSSPALTE IST max-content UND KEINE ZAHL MEHR (08.09. angefordert: "die Buttons
-     rechts sind truncated -- das darf nie passieren, immer ganzer Text sichtbar, alles fit
-     width"). Vorher standen dort 200px, dann 236, weil der Knopf auf Deutsch "Ignorieren" statt
-     "Ignore" heisst -- und danach kuerzte die Beschriftung trotzdem, weil "Beobachten" (Track)
-     noch dazukam. Jede feste Zahl ist eine Wette auf die laengste Sprache, und jede neue Sprache
-     gewinnt sie.
-     max-content heisst: die Spalte ist so breit, wie ihr breitester Inhalt es braucht -- in
-     jeder Sprache, ohne dass hier jemand nachrechnet. Bezahlt wird es aus der ersten Spalte, die
-     als fr-Anteil ohnehin die flexible ist; sie kann bis 0 schrumpfen (minmax(0, ...)), der
-     Prompt-Text kuerzt dort mit zwei Zeilen und Auslassungspunkten. Das ist die richtige Reihen-
-     folge: Text, den der Nutzer gelesen hat, darf kuerzen -- ein Knopf, den er treffen soll,
-     nicht. */
-  --up-cols: minmax(0, 2.4fr) minmax(0, 1.7fr) 150px max-content;
+  /* Die Anforderung vom 08.09. gilt unveraendert: die Knoepfe rechts duerfen NIE kuerzen,
+     ganzer Text in jeder Sprache. Der Weg dorthin war max-content -- der war falsch, und die
+     Begruendung dafuer steht gleich darunter. Die feste Zahl ist zurueck, aber diesmal nicht
+     als Wette auf die laengste Sprache, sondern gemessen und je Sprache gesetzt.
+
+     KEIN max-content FUER DIE AKTIONSSPALTE (10.09. gemeldet: "das Tabellenlayout ist komplett
+     im Arsch", und zwar in BEIDEN Sprachen).
+     Der Grund steht schon zwei Absaetze weiter oben in dieser Datei und in core: Kopf und Zeilen
+     sind GETRENNTE Raster. max-content heisst "so breit wie der breiteste Inhalt" -- und der ist
+     im Kopf das Wort "Actions", in den Zeilen zwei Knoepfe. Jedes Raster rechnet fuer sich, und
+     schon stehen die Spalten versetzt. Gemessen mit der Schrift der App: die Zeilen brauchen
+     161px auf Englisch und 221 auf Deutsch, der Kopf nur 45 bzw. 53.
+     Also eine FESTE Spur, die beide Raster gleich lesen -- und weil eine feste Zahl eine Wette
+     auf die Sprache ist, steht sie in einer Variablen, die die deutsche Fassung ueberschreibt.
+     Dieselbe Loesung wie die Einladungstabelle in team-orga (data-up-locale am <html>, von core
+     in jedem Sprachlauf gesetzt). */
+  --upr-act-w: 176px;
+  --up-cols: minmax(0, 2.4fr) minmax(0, 1.7fr) 150px var(--upr-act-w);
   flex: 0 0 auto;
 }
+/* Deutsch: "Ignorieren" und "Beobachten" statt "Ignore" und "Track" -- gemessen 221px, plus
+   Luft fuer eine andere Schriftmetrik. */
+:root[data-up-locale="de"] .upr-box { --upr-act-w: 236px; }
 /* --vt-head-bg is semi-transparent, which is fine for a header that never has anything behind it.
    Pinned, the rows slide underneath — so the same opaque base core paints under its own sticky
    thead goes here too. */
@@ -536,7 +544,11 @@
    overflow: visible ueberschreibt das overflow: hidden von .up-td aus core: dort ist es richtig
    (eine Zelle mit Text soll nicht ausbrechen), hier wuerde es genau das abschneiden, was ganz
    bleiben muss. Zusammen mit max-content laeuft ohnehin nichts ueber -- die Zeile hat den Platz. */
-.upr-td-actions { justify-content: flex-end; overflow: visible; min-width: max-content; }
+/* KEIN min-width: max-content mehr. Es sollte verhindern, dass die Knoepfe kuerzen -- aber es
+   laesst die ZELLE ueber ihre Spur hinauswachsen, und dann steht die Zeile wieder anders als der
+   Kopf. Genau das war der zweite Teil des Layoutfehlers. Die Spur ist jetzt gemessen breit genug
+   (siehe --upr-act-w), die Zelle braucht die Notbremse also nicht mehr. */
+.upr-td-actions { justify-content: flex-end; overflow: visible; }
 .upr-row-actions { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
 .upr-row-btn { flex: 0 0 auto; }
 .upr-row-btn > span { white-space: nowrap; }
@@ -696,12 +708,12 @@
 
 /* ---------- responsive ---------- */
 @media (max-width: 1040px) {
-  .upr-box { --up-cols: minmax(0, 2.2fr) minmax(0, 1.4fr) 120px max-content; }
+  .upr-box { --up-cols: minmax(0, 2.2fr) minmax(0, 1.4fr) 120px var(--upr-act-w); }
   .upr-results-context { display: none; }
 }
 @media (max-width: 860px) {
   .upr-settings-grid { grid-template-columns: 1fr; }
-  .upr-box { --up-cols: minmax(0, 2fr) 110px max-content; }
+  .upr-box { --up-cols: minmax(0, 2fr) 110px var(--upr-act-w); }
   .upr-box .up-th:nth-child(2), .upr-box .up-td:nth-child(2) { display: none; }
 }
 @media (max-width: 560px) {

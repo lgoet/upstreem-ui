@@ -2732,7 +2732,11 @@
   /* Primary colour for BOTH parts. Scoped to .am-prev-btn, not .am-ghost-btn: that class is the
      generic secondary button and its muted default is correct everywhere else. The icon needs no
      rule of its own -- its stroke is currentColor. */
-  #ask-mira .am-prev-btn { color: var(--am-text); }
+  /* DIESELBE FARBE WIE DAS SEITENLEISTEN-ZEICHEN DER HAUPTLEISTE (10.09. gemeldet: "das der
+     main ist etwas heller"). Dort steht --vc-third (.usn-bar .up-iconbtn.usn-toggle), hier stand
+     --am-text -- das ist die volle Textfarbe und damit deutlich kraeftiger. Zwei Zeichen mit
+     derselben Bedeutung an zwei Raendern desselben Bildschirms sollen gleich aussehen. */
+  #ask-mira .am-prev-btn { color: var(--vc-third); }
   /* mobile/compact chat topbar: 16px side padding so the back & "Chats" buttons don't touch the edges */
   #ask-mira.is-compact.has-messages .am-hero { padding-left: 16px; padding-right: 16px; }
   @media (max-width: 720px) {

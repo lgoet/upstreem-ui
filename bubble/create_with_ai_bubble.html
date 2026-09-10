@@ -5,6 +5,38 @@
   Links, Ausgabeformat und den KI-Assistenten waehlt; der Knopf unten baut daraus einen fertigen
   Prompt und oeffnet den Assistenten damit.
 
+  ── DER WEG, DEN DU NEHMEN SOLLTEST: EIN JS-AUFRUF ──────────────────────────
+  Am 10.09. gewuenscht: die Angaben nicht mehr ueber die Attribute am HTML-Element setzen,
+  sondern per JavaScript. DAS GIBT ES BEREITS -- kein Umbau noetig, nur diese Zeile in einem
+  Run-JS-Schritt:
+
+      window.createWithAiOpen({
+        url:               "https://…",
+        citation_type:     "Editorial",
+        lead_title:        "…",
+        lead_domain:       "…",
+        lead_favicon:      "…",
+        own_brand_name:    "…",
+        own_brand_summary: "…"
+      });
+
+  Ohne UID gilt der Aufruf fuer die Instanz, die gerade auf der Seite lebt -- genau die Form,
+  die an anderer Stelle schon benutzt wird. Mit mehreren Popups auf einer Seite kommt die UID
+  als ERSTES Argument davor: createWithAiOpen("[dynamic id]", { … }).
+
+  Weitere Aufrufe derselben Art:
+      window.createWithAiSetContext({ … })   fuellt, ohne zu oeffnen
+      window.createWithAiClose()             schliesst
+      window.createWithAiSetYouUrls(…)       die eigenen URLs fuer die Linkliste
+
+  Alle sind ab dem ersten Bild aufrufbar: die Datei legt Platzhalter an, bevor core geladen ist,
+  und arbeitet die Warteschlange danach ab. Ein zu frueher Aufruf geht also nicht verloren.
+
+  DIE ATTRIBUTE UNTEN BLEIBEN STEHEN und sind ab jetzt der ZWEITE Weg. Geloescht werden sie
+  nicht: sie sind der Rueckfall, wenn kein Aufruf kommt (readAttrs), und ein eingebautes Element
+  traegt sie ohnehin schon -- ein Loeschen hier wuerde nur die Vorlage von der Wirklichkeit
+  entfernen. Wer den JS-Weg geht, laesst sie einfach leer.
+
   ── WAS SICH GEGENUEBER DER ALTEN FASSUNG AENDERT ────────────────────────────
   Das war bisher EIN Block: Markup, CSS und JS zusammen in einem Bubble-HTML-Element, rund 45 KB
   pro Platzierung. Jetzt ist es eine Komponente wie alle anderen -- unten steht ein leeres Div und
