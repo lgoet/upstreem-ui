@@ -225,9 +225,24 @@
        from then on, same as every other remembered preference here. */
     var defaultView = String(root.getAttribute("data-default-view") || "").toLowerCase() === "cards" ? "cards" : "table";
 
+    /* ---- EIN NEU GEBAUTES ELEMENT MACHT WEITER (11.09. gemeldet) ----
+       "Als einziger bleibt dieser in einem ewigen Ladezustand, wenn man das Theme wechselt und
+       er sichtbar ist." Bubble baut ein HTML-Element NEU, sobald sich ein dynamischer Wert
+       darin aendert -- beim Themewechsel ist das data-isdark. Die neue Wurzel startete mit
+       leeren Zeilen und extLoading true, und weil Bubble die Daten nicht noch einmal schickt
+       (die haben sich ja nicht geaendert), stand das Skelett fuer immer da. Gemessen im
+       Prueftand: Wurzel ersetzen -> 15 Skelettzeilen, dauerhaft.
+       prompts-table hat genau dafuer Zeilen, Gesamtzahl und hasData im STORE -- dieselben
+       drei Felder jetzt auch hier, mit derselben Begruendung. */
+    var gemerkteZeilen = Array.isArray(saved.rows) ? saved.rows : [];
     var state = {
-      rows: [], totalCount: null, hasData: false,
-      jeZeilen: false,   // waren hier jemals Zeilen? -- entscheidet das Gnadenfenster
+      rows: gemerkteZeilen,
+      totalCount: saved.totalCount != null ? saved.totalCount : null,
+      hasData: !!saved.hasData,
+      /* Der Lesefehler mit: sonst hiesse ein Neuaufbau nach einem kaputten Payload "hasData,
+         keine Zeilen" -- und das ist der Leerzustand, also der stille Ausfall (CLAUDE.md §2). */
+      leseFehler: !!saved.leseFehler,
+      jeZeilen: gemerkteZeilen.length > 0,   // waren hier jemals Zeilen? -- entscheidet das Gnadenfenster
       loading: false, softReload: false,
       /* MIT LADEZUSTAND STARTEN, IMMER. Gemeldet am 07.09. und davor schon mehrfach: beim
          allerersten Aufbau stand fuer eine Sekunde "No URLs" da, bevor die Ladeanimation
@@ -245,7 +260,10 @@
          Sekunde, die gemeldet wurde. Mit true ist isBusy() wahr, der Gnadenweg wird nie
          betreten, und der erste echte Datensatz raeumt den Zustand selbst ab. */
       extLoading: hasProcessingAttr() ? readProcessing()
-             : (LOADING_EXPLICIT[instanceId] ? !!saved.loading : true),
+             /* ...UND wenn diese Instanz schon Daten hatte: dann ist sie ein Neuaufbau, und ihr
+                gemerkter Ladezustand gilt. Mit true stuende trotz gemerkter Zeilen das Skelett
+                da -- isBusy() gewinnt in renderBody vor den Zeilen. */
+             : ((LOADING_EXPLICIT[instanceId] || saved.hasData) ? !!saved.loading : true),
       view: saved.view || defaultView,
       // two independent pagination states — only the one matching `view` is "live" in page/pageSize
       tablePage: saved.tablePage || 1, tablePageSize: saved.tablePageSize || DEFAULT_PAGE_SIZE,
@@ -327,7 +345,10 @@
         rankFilterActive: state.rankFilterActive, sentFilterActive: state.sentFilterActive,
         brandMentioned: state.brandMentioned,
         mentionSel: state.mentionSel, mentionApplied: state.mentionApplied,
-        brands: state.brands, models: state.models
+        brands: state.brands, models: state.models,
+        /* Fuer einen Neuaufbau des Elements -- siehe den Kommentar ueber state. */
+        rows: state.rows, totalCount: state.totalCount, hasData: state.hasData,
+        leseFehler: !!state.leseFehler
       };
     }
     var fire = UC.makeFire(root, { label: "responses-table", eventPrefix: "urt-" });
