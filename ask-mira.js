@@ -3025,8 +3025,28 @@
     return s === 'true' || s === '1' || s === 'yes' || s === 'y' || s === 't';
   }
   function escAttr(v){ return esc(v).replace(/"/g, '&quot;'); }
+  /* AUF DEM STARTSCHIRM IST KEIN CHAT GEWAEHLT (11.09. gemeldet: nach "New Chat" oder dem
+     Mira-Knopf der Topbar stand der letzte Chat in der Seitenleiste noch als gewaehlt da).
+     goToStart setzte activeChatId zwar zurueck, zeichnete die Liste aber nicht neu -- und jeder
+     andere Weg auf den Startschirm (Bubble leert die Nachrichten, ein unbekannter Chat faellt
+     zurueck) haette dieselbe Luecke gehabt.
+     Deshalb EINE Regel statt eines Aufrufs an jedem Weg: gewaehlt ist ein Chat nur, solange die
+     Chatansicht steht (has-messages) oder er gerade laedt. Der Wechsel selbst laeuft immer
+     durch setHasMessages, und dort wird die Markierung nachgezogen (aktivMarkieren).
+     activeChatId bleibt dabei unangetastet: ruft Bubble askMiraSetActiveChat, BEVOR die
+     Nachrichten da sind, ist der Chat gemerkt und wird markiert, sobald er steht. */
+  function chatAktivSichtbar(id){
+    return !!S.activeChatId && String(id) === String(S.activeChatId) &&
+           (root.classList.contains('has-messages') || !!S.chatLoading);
+  }
+  function aktivMarkieren(){
+    if (!elPrevList) return;
+    elPrevList.querySelectorAll('.am-prev-item').forEach(function(el){
+      el.classList.toggle('is-active', chatAktivSichtbar(el.getAttribute('data-chat-id')));
+    });
+  }
   function chatItemHTML(c){
-    var active = (String(c.id) === String(S.activeChatId)) ? ' is-active' : '';
+    var active = chatAktivSichtbar(c.id) ? ' is-active' : '';
     var isP = amTruthy(c.is_pinned);
     var pinned = isP ? ' is-pinned' : '';
     var title = c.title || 'Untitled chat';
@@ -6001,7 +6021,7 @@
   function setHasMessages(on){
     on = !!on;
     if (root.classList.contains('has-messages') === on) return;
-    if (!_heroEl || !_heroReady){ root.classList.toggle('has-messages', on); renderChatTitlebar(); return; }
+    if (!_heroEl || !_heroReady){ root.classList.toggle('has-messages', on); aktivMarkieren(); renderChatTitlebar(); return; }
     var from = _heroEl.getBoundingClientRect().height;
     // hero (the topbar) never changes Y position -- it's pinned flush to the top always, in both
     // states -- only its HEIGHT flips (hero-text vs. chat-titlebar content). The composer DOES
@@ -6010,6 +6030,7 @@
     // smooth 200ms move instead of a jump.
     var composerFrom = _composerAreaEl ? _composerAreaEl.getBoundingClientRect().top : null;
     root.classList.toggle('has-messages', on);
+    aktivMarkieren();
     _heroEl.style.transition = 'none'; _heroEl.style.height = '';
     var to = _heroEl.getBoundingClientRect().height;
     _heroEl.style.height = from + 'px';
