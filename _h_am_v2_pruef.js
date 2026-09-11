@@ -1193,27 +1193,31 @@
        Suche aus Abschnitt 5; gemessen wurde dann eine Trefferzeile und nicht der Hinweis. */
     inp.value = ""; inp.dispatchEvent(new Event("input", { bubbles: true }));
     await warte(200);
-    pruef("12 Ruhehinweis: Titel und Erklaersatz",
+    pruef("12 Ruhehinweis: nur der Titel",
       (document.querySelector(".am-pick-note-t") || {}).textContent, "Search your workspace");
-    pruef("der Erklaersatz sagt, WOFUER der Picker da ist",
-      ((document.querySelector(".am-pick-note-sub") || {}).textContent || "").indexOf("attach") > 0,
-      true);
-    pruef("Titel in der Sekundaerfarbe, Satz in der Drittfarbe", (function(){
+    pruef("12 kein Erklaersatz mehr (11.09. entfernt)",
+      document.querySelectorAll("#am-pick-panel .am-pick-note-sub").length, 0);
+    pruef("Titel in der Sekundaerfarbe", (function(){
       var t = getComputedStyle(document.querySelector(".am-pick-note-t")).color;
-      var u = getComputedStyle(document.querySelector(".am-pick-note-sub")).color;
       var m = getComputedStyle(root).getPropertyValue("--vc-muted").trim();
-      var d = getComputedStyle(root).getPropertyValue("--vc-third").trim();
       var hex = function(c){ var f = farbe(c); return "#" + [f.r,f.g,f.b].map(function(v){
         return ("0" + Math.round(v).toString(16)).slice(-2); }).join(""); };
-      return (hex(t) === m.toLowerCase()) + "/" + (hex(u) === d.toLowerCase());
-    })(), "true/true");
-    pruef("beide mittig", (function(){
+      return hex(t) === m.toLowerCase();
+    })(), true);
+    pruef("Titel mittig", (function(){
       var p = g("am-pick-panel").getBoundingClientRect();
-      var mitte = function(e){ var b = e.getBoundingClientRect();
-        return Math.round(Math.abs((b.left + b.width/2) - (p.left + p.width/2))); };
-      return mitte(document.querySelector(".am-pick-note-t")) + "/" +
-             mitte(document.querySelector(".am-pick-note-sub"));
-    })(), function(v){ return /^[01]\/[01]$/.test(v); });
+      var b = document.querySelector(".am-pick-note-t").getBoundingClientRect();
+      return Math.round(Math.abs((b.left + b.width/2) - (p.left + p.width/2)));
+    })(), function(v){ return v <= 1; });
+    /* DER SCHATTEN ERREICHT DAS FELD NICHT (11.09.). Reichweite nach unten = Unschaerfe +
+       Versatz nach unten + Ausdehnung; sie muss kleiner sein als der Abstand zur Eingabebox. */
+    pruef("12 Schatten endet vor der Eingabebox", (function(){
+      var pn = g("am-pick-panel"), cp = g("am-composer");
+      var abstand = cp.getBoundingClientRect().top - pn.getBoundingClientRect().bottom;
+      var sh = getComputedStyle(pn).boxShadow.match(/-?[\d.]+px/g).map(parseFloat);
+      var reicht = sh[2] + sh[1] + (sh[3] || 0);
+      return Math.round(abstand) + "/" + reicht + "/" + (reicht < abstand);
+    })(), function(v){ return /\/true$/.test(v); });
     pruef("12 mit Datenbank-Zeichen darueber",
       !!document.querySelector(".am-pick-note-ic svg"), true);
     /* 13 -- auf Deutsch geprueft, denn nur dort war es falsch */

@@ -455,12 +455,9 @@
          sondern in EFF_LABELS -- sie werden bei jedem Zustandswechsel neu geschrieben, und was
          ein Zustandswechsel schreibt, erreicht der breite Sprachlauf von core nicht. */
       pickHeading: 'Filter',
+      /* Im Ruhezustand NUR der Titel (11.09. angefordert: der Erklaersatz darunter ist weg).
+         Was der Picker tut, sagen die Typ-Pillen daneben selbst. */
       pickIdle: 'Search your workspace',
-      /* Nicht mehr "tippe zwei Buchstaben" -- das sieht der Nutzer am Feld. Der Satz sagt
-         jetzt, WOFUER der Picker da ist: dass ein aufgegriffener Treffer als Bezug in die
-         Frage wandert. Das ist die eine Sache, die man an dieser Stelle nicht erraten kann. */
-      pickIdleSub: 'Pick a brand, domain, URL or prompt to attach it to your question \u2013 ' +
-        'Mira then answers about exactly that.',
       pickEmpty: 'No results found',
       pickEmptySub: 'Try another spelling, or pick a different type above.',
       pickBroken: 'The results could not be read',
@@ -564,8 +561,6 @@
       allChats: 'Alle Chats', allChatsShort: 'Chats',
       pickHeading: 'Filter',
       pickIdle: 'In deinen Daten suchen',
-      pickIdleSub: 'W\u00e4hle Brand, Domain, URL oder Prompt aus, um es an deine Frage zu ' +
-        'h\u00e4ngen \u2013 Mira antwortet dann genau dazu.',
       pickEmpty: 'Keine Treffer',
       pickEmptySub: 'Andere Schreibweise versuchen oder oben einen anderen Typ w\u00e4hlen.',
       pickBroken: 'Die Treffer konnten nicht gelesen werden',
@@ -3891,7 +3886,7 @@
       filters: function(){ return _filter ? _filter.payload() : null; },
       onLoading: function(){ if (elPickList) elPickList.innerHTML = pickSkelett(); pickZahl(null); },
       onIdle: function(){
-        if (elPickList) elPickList.innerHTML = pickHinweis(L().pickIdle, L().pickIdleSub, 'databaseSearch');
+        if (elPickList) elPickList.innerHTML = pickHinweis(L().pickIdle, '', 'databaseSearch');
         pickZahl(null);
       },
       onResults: pickZeichnen,
@@ -3918,7 +3913,8 @@
        dem Feld ist alles, was es gibt. */
     if (!elPickPanel || !elComposer) return;
     var r = elComposer.getBoundingClientRect(), rr = root.getBoundingClientRect();
-    var platz = Math.max(180, Math.round(r.top - rr.top - 16));
+    /* 24 = die 16px Abstand zum Feld (.am-pick-panel, bottom) und 8px Luft nach oben. */
+    var platz = Math.max(180, Math.round(r.top - rr.top - 24));
     elPickPanel.style.setProperty('--am-pick-max', platz + 'px');
     if (elPickScroll) elPickScroll.style.maxHeight = Math.max(96, platz - 118) + 'px';
   }
@@ -3938,7 +3934,7 @@
       if (!su){
         if (elPickList) elPickList.innerHTML = pickHinweis(L().pickOffline, L().pickOfflineSub);
       } else if (elPickList && !elPickList.innerHTML){
-        elPickList.innerHTML = pickHinweis(L().pickIdle, L().pickIdleSub, 'databaseSearch');
+        elPickList.innerHTML = pickHinweis(L().pickIdle, '', 'databaseSearch');
       }
       setTimeout(function(){ try { elPickInput.focus(); } catch(e){} }, 60);
     } else { _pickFrage = ''; if (_pickSuche) _pickSuche.abbrechen(); }

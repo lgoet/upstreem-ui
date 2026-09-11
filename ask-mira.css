@@ -1748,11 +1748,19 @@
      dort wuerde die Palette nie erreichen. Eine Maschine, zwei Stylesheets.
      Die Masse sind die der Palette (30px Kachel, 13.5/12px Text, 8px 10px Polster), damit eine
      Trefferzeile hier und dort gleich aussieht. */
+  /* DER SCHATTEN FAELLT NICHT AUFS FELD (11.09. gemeldet). Das Panel geht nach OBEN auf, und
+     der alte Schatten (0 16px 40px) lag nach UNTEN versetzt -- mit 40px Unschaerfe reichte er
+     56px unter die Kante, bei 8px Abstand also 48px tief auf die Eingabebox.
+     Jetzt: 2px nach OBEN versetzt, 16px Unschaerfe, deutlich schwaecher. Nach unten reicht er
+     damit 16 - 2 = 14px -- und der Abstand zum Feld ist 16px. Den Abstand liest pickDeckel()
+     in ask-mira.js mit (dort 24 = 16 + 8px Luft nach oben).
+     17 und nicht 16: bottom zaehlt ab der POLSTERKANTE von .am-composer, und dessen 1px-Rahmen
+     liegt noch dazwischen. Gemessen mit 16: 15px bis zur sichtbaren Kante. */
   .am-pick-panel {
-    position: absolute; bottom: calc(100% + 8px); left: 0; right: 0; z-index: 60;
+    position: absolute; bottom: calc(100% + 17px); left: 0; right: 0; z-index: 60;
     box-sizing: border-box; display: flex; flex-direction: column;
     border: 1px solid var(--up-menu-border, var(--am-border)); border-radius: 18px;
-    background: var(--up-menu-bg, var(--am-card)); box-shadow: 0 16px 40px rgba(0,0,0,0.16);
+    background: var(--up-menu-bg, var(--am-card)); box-shadow: 0 -2px 16px rgba(0,0,0,0.06);
     /* Der Deckel kommt vom JS: #ask-mira und .am-shell tragen beide overflow: hidden, also ist
        jedes Pixel ueber der Komponente weg. Eine feste vh-Zahl kann das nicht wissen. */
     max-height: var(--am-pick-max, 320px);
@@ -1761,7 +1769,7 @@
     transition: opacity 200ms ease, transform 200ms ease;
   }
   #ask-mira.is-pick-open .am-pick-panel { opacity: 1; transform: none; pointer-events: auto; }
-  #ask-mira[data-theme="dark"] .am-pick-panel { box-shadow: 0 16px 40px rgba(0,0,0,0.6); }
+  #ask-mira[data-theme="dark"] .am-pick-panel { box-shadow: 0 -2px 16px rgba(0,0,0,0.3); }
 
   .am-pick-search { display: flex; align-items: center; gap: 10px; padding: 0 14px; height: 50px; flex: 0 0 auto; }
   .am-pick-sic { width: 17px; height: 17px; flex: 0 0 auto; fill: none; stroke: var(--vc-third);
