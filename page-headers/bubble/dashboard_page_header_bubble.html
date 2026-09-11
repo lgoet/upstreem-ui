@@ -28,6 +28,18 @@
   which one was clicked. This component does not refresh anything or open any URL itself; wiring
   the resulting workflow up to an actual data reload / docs link is a Bubble-side decision.
 
+  data-mode-fn    = "bubble_fn_dphMode_[dynamic id]"            (NEU 11.09.)
+                    Der Umschalter "Standard | Power" oben rechts. Nutzlast:
+                        { "team_id": "...", "mode": "standard" }   bzw.  "mode": "power"
+                    Geht bei JEDEM Klick heraus UND einmal beim Seitenaufbau mit der gespeicherten
+                    Wahl (localStorage, Schluessel "up_dashboard") -- so steht nach dem Laden das
+                    Dashboard da, das der Nutzer zuletzt gewaehlt hat.
+                    IM WORKFLOW: den Wert in einen Custom State der Seite schreiben (z.B.
+                    dash_mode). Die Gruppe des Standard-Dashboards ist sichtbar, wenn dash_mode
+                    NICHT "power" ist; die Gruppe mit dem Power Dashboard, wenn er "power" ist.
+                    Der Umschalter selbst wird vom JS eingebaut -- auch in einem schon eingebauten
+                    Seitenkopf. Neu ist nur dieses Attribut.
+
   ── Feeding the KPI numbers ────────────────────────────────────────────────────
   Unlike prompts-page-header.js, this component has one real piece of server data, delivered ONCE
   at page load via a Run-JS "setDashboardPageHeaderKpis" step (same convention as e.g.
@@ -114,7 +126,8 @@
      data-brand-name="BRAND_NAME"
      data-brand-logo="BRAND_LOGO_URL"
      data-refresh-fn="bubble_fn_dphRefresh"
-     data-docs-fn="bubble_fn_dphDocs">
+     data-docs-fn="bubble_fn_dphDocs"
+     data-mode-fn="bubble_fn_dphMode">
   <div class="up-ph-top">
     <div class="up-ph-left">
       <!-- KEINE Meta-Zeile auf dem Dashboard. dashboard-page-header.js baut sie zusaetzlich aus,

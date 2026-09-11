@@ -1,0 +1,160 @@
+/* upstreem power-dashboard.css -- die zweite Ansicht des Dashboards (11.09.).
+   Was hier steht, ist Anordnung: Spalte, Abstaende, die Chats-Liste und die Overview-Leiste.
+   Alles, was ein Bauteil ist, kommt aus core und wird hier NICHT umgebaut: .up-box, .up-table,
+   .up-row (im Kompaktmodus is-dense, 55px), .up-sent, .up-rank-group, .up-tag, .up-btn-sec,
+   .up-seg, .up-iconbtn, .up-head. Miras Feld bringt ask-mira.css mit (is-launcher). */
+
+/* ---------- die Spalte ----------
+   So breit wie Mira: ihr Feld ist hoechstens 920px breit und sitzt in einem Polster von
+   clamp(14px, 3vw, 28px) (.am-composer-area). Dieselbe Rechnung hier -- dann ist das geliehene Feld
+   genau so breit wie in Miras eigener Ansicht, und auf normalen Bildschirmen bleibt links und
+   rechts Platz ("nicht full width, genau so wie Mira"). */
+.upw-root { display: block; width: 100%; background: transparent; color: var(--vc-text); }
+.upw-col {
+  --upw-pad: clamp(14px, 3vw, 28px);
+  max-width: calc(920px + 2 * var(--upw-pad)); margin: 0 auto;
+  padding: 8px var(--upw-pad) 48px; box-sizing: border-box;
+}
+
+/* ---------- Mira ----------
+   Der Platz fuer die geliehene Wurzel. Bis sie da ist, ihr Umriss: dieselbe Hoehe, derselbe
+   Radius (32px wie .am-composer), damit darunter nichts springt. Die Hoehe ist die gemessene des
+   geliehenen Feldes im Prueftand (_h_upw.html): Feld 123px, Hinweiszeile 25px -- zusammen die 148px
+   der geliehenen Wurzel. */
+.upw-mira { position: relative; }
+.upw-mira-sk {
+  height: 123px; border-radius: 32px; border: 1px solid var(--vc-border); background: var(--vc-bg);
+  padding: 20px 16px 16px; box-sizing: border-box;
+  display: flex; flex-direction: column; justify-content: space-between;
+  margin-bottom: 25px;
+}
+.upw-root.has-mira .upw-mira-sk { display: none; }
+.upw-mira-sk-row { display: flex; align-items: center; justify-content: space-between; }
+
+/* ---------- Chips ----------
+   .up-btn-sec aus core, unveraendert. Hier nur die Reihe: mittig, 8px zwischen den Chips in
+   beiden Richtungen, und das Emoji in der Groesse der Schrift daneben. */
+.upw-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 24px; }
+.upw-chips:empty { display: none; }
+.upw-chip { max-width: 100%; }
+.upw-chip-emoji { font-size: 13px; line-height: 1; }
+.upw-chip-lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- Abschnitte ----------
+   Die Ueberschrift ist die kleine Versalzeile der App (.up-pop-head: 11px, 600, 0.04em,
+   Versalien, --vc-muted) -- dieselbe, die Mira ueber ihren Kategorien fuehrt. */
+.upw-sec { margin-top: 48px; }
+.upw-sec-head { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  min-height: 24px; margin-bottom: 12px; }
+.upw-sec-h { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--vc-muted); }
+.upw-link {
+  display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0; border: 0;
+  background: transparent; color: var(--vc-muted); font-family: inherit; font-size: 13px;
+  font-weight: 500; cursor: pointer; transition: color 140ms ease;
+}
+.upw-link:hover { color: var(--vc-text); }
+.upw-link svg { width: 14px; height: 14px; }
+.upw-range { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500;
+  color: var(--vc-muted); }
+.upw-range svg { width: 14px; height: 14px; }
+
+/* ---------- Recent chats ----------
+   Zeilen ohne Kasten, wie die Chatliste in Mira: Zeichen, Titel, Zeitpunkt rechts. Der Hover
+   ist die Zeilenfarbe der Tabellen (--vt-row-hover), ohne Uebergang -- dieselbe Regel wie dort.
+   .check_reinvention.py haelt .upw-chat fuer eine nachgebaute Sentiment-Pille (Rahmen, Radius,
+   Hoehe): es ist eine ganze Listenzeile und kein Etikett, und core hat fuer eine klickbare Zeile
+   ohne Tabelle kein Bauteil. Miras .am-prev-item waere das Vorbild, steht aber in ask-mira.css
+   und nicht in core -- darauf zu bauen hiesse, dass diese Liste ohne Mira auf der Seite
+   ungestylt dasteht. */
+.upw-chatlist { display: flex; flex-direction: column; }
+.upw-chat {
+  display: flex; align-items: center; gap: 12px; width: 100%; height: 36px; padding: 0 8px;
+  margin: 0 -8px; width: calc(100% + 16px); border: 0; border-radius: 9px; background: transparent;
+  color: var(--vc-text); font-family: inherit; text-align: left; cursor: pointer;
+}
+.upw-chat:hover { background: var(--vt-row-hover); }
+.upw-chat.is-sk { cursor: default; }
+.upw-chat.is-sk:hover { background: transparent; }
+.upw-chat-ic { width: 16px; height: 16px; flex: 0 0 auto; color: var(--vc-muted); display: inline-flex; }
+.upw-chat-ic svg { width: 16px; height: 16px; }
+.upw-chat-title { flex: 1 1 auto; min-width: 0; font-size: 14px; font-weight: 500;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.upw-chat-when { flex: 0 0 auto; font-size: 13px; color: var(--vc-third); }
+.upw-chats-empty { font-size: 13px; color: var(--vc-muted); padding: 8px 0; }
+
+/* ---------- Overview (neu) ----------
+   Drei Kennzahlen in EINEM .up-box, getrennt durch 1px-Linien. Zahl und Trend in den Groessen
+   der Kennzahl in brand-detail (.ubd-kpi-val 23px, .ubd-kpi-trend 15px mit 17px-Pfeil) --
+   dieselbe Rolle, derselbe Wert. */
+.up-box.upw-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.upw-kpi { padding: 16px; min-width: 0; border-left: 1px solid var(--vc-border); }
+.upw-kpi:first-child { border-left: 0; }
+.upw-kpi-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.upw-kpi-main { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.upw-kpi-label { font-size: 13px; font-weight: 500; color: var(--vc-muted); }
+.upw-kpi-row { display: flex; align-items: center; gap: 10px; min-height: 30px; }
+.upw-kpi-val .up-num { font-size: 23px; font-weight: 500; line-height: 1.15; letter-spacing: -0.4px;
+  font-variant-numeric: tabular-nums; }
+.upw-kpi-trend { display: inline-flex; align-items: center; }
+.upw-kpi-trend .up-trend { font-size: 15px; }
+.upw-kpi-trend .up-trend svg { width: 17px; height: 17px; }
+/* Der Verlauf in der Drittfarbe: er ist Beiwerk zur Zahl. Der Punkt am Ende in der Textfarbe --
+   er ist "heute", und heute ist die Zahl daneben. */
+.upw-spark { flex: 0 0 auto; color: var(--vc-third); margin-top: 4px; }
+.upw-spark-end { fill: var(--vc-text); }
+.upw-spark.is-leer { width: 96px; height: 28px; }
+.upw-kpi-foot { display: flex; align-items: center; flex-wrap: wrap; row-gap: 4px; margin-top: 14px;
+  padding-top: 12px; border-top: 1px solid var(--vc-border); font-size: 13px; min-height: 20px; }
+.upw-kpi-strong { font-weight: 500; color: var(--vc-text); white-space: nowrap; }
+.upw-kpi-soft { color: var(--vc-muted); white-space: nowrap; }
+/* Derselbe Punkt wie .up-head-sep in core (4px, --vc-muted, 8px zu beiden Seiten) -- dort ist er
+   an .has-count gebunden und hier immer sichtbar, darum als eigene Klasse. */
+.upw-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--vc-muted); margin: 0 8px; flex: 0 0 auto; }
+
+/* ---------- die zwei Tabellen ----------
+   Nebeneinander, 16px dazwischen; die Spalten kommen ueber --up-cols, das der Baukasten in core
+   liest (.up-thead, .up-row). Feste Spuren und EINE flexible: jede Zeile ist ein eigenes Raster,
+   und nur feste Breiten stehen in allen Zeilen gleich untereinander. */
+.upw-tables { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 40px; }
+.upw-tcard { min-width: 0; }
+/* Die festen Spuren sind GEMESSEN (_h_upw.html, breitester Inhalt der Beispieldaten) plus das
+   Zellpolster aus core (12 + 16) und die 1px-Linie:
+     Visibility  "5.2%" und ein Trend-Chip "4.0%"     92 + 29 = 121  -> 130, damit auch
+                                                     "12.3%" mit "10.5%" noch passt
+     Rank        Raute und "2.6"                      37 + 29 =  66
+     Sent.       die Pille aus core                   42 + 29 =  71  ->  72
+     Type        der laengste Typ-Chip, "UGC / Community"  115 + 29 = 144 -> 148 (bei 144 schnitt
+                                                     die Zelle den Chip um einen Bruchteil ab)
+     Share       "21.0%"                              41 + 29 =  70
+     Change      Trend-Chip "13.0%"                   58 + 29 =  87  ->  88
+   Der Rest geht an den Namen; ein zu langer wird abgeschnitten und steht im Tooltip (title). */
+.upw-t-brands { --up-cols: 40px minmax(0, 1fr) 130px 66px 72px; }
+.upw-t-cites  { --up-cols: minmax(0, 1fr) 148px 70px 88px; }
+.upw-td-name { gap: 10px; }
+/* Der Name wie .ubo-brand-name in brands-overview: 13.5px, 500, abgeschnitten. */
+.upw-name { font-size: 13.5px; font-weight: 500; color: var(--vc-text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.upw-tcard .up-seg { flex: 0 0 auto; }
+
+/* ---------- schmal ----------
+   Unter 760px Breite (widthTiers, is-narrow) gehen Tabellen und Kennzahlen untereinander. Zwei
+   Tabellen von je 360px haetten fuer den Namen keinen Platz mehr, drei Kennzahlen nebeneinander
+   keinen fuer den Verlauf. */
+.upw-root.is-narrow .upw-tables { grid-template-columns: minmax(0, 1fr); }
+.upw-root.is-narrow .up-box.upw-kpis { grid-template-columns: minmax(0, 1fr); }
+.upw-root.is-narrow .upw-kpi { border-left: 0; border-top: 1px solid var(--vc-border); }
+.upw-root.is-narrow .upw-kpi:first-child { border-top: 0; }
+
+/* ---------- Skelett ----------
+   Farbe und Pulsieren aus core (--vc-sk, uutpulse), wie .up-tsk-bar. */
+.upw-sk { display: block; background: var(--vc-sk); border-radius: 6px; animation: uutpulse 1.2s ease-in-out infinite; }
+.upw-sk-line  { width: 46%; height: 12px; }
+.upw-sk-dot   { width: 28px; height: 28px; border-radius: 9px; }
+.upw-sk-send  { width: 32px; height: 32px; border-radius: 999px; }
+.upw-sk-ic    { width: 16px; height: 16px; border-radius: 5px; flex: 0 0 auto; }
+.upw-sk-title { height: 11px; }
+.upw-sk-lbl   { width: 64px; height: 10px; }
+.upw-sk-val   { width: 88px; height: 24px; margin-top: 4px; }
+.upw-sk-spark { width: 96px; height: 28px; }
+.upw-sk-foot  { width: 60%; height: 10px; }

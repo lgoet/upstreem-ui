@@ -630,6 +630,29 @@
     "External only": "Nur extern",
     "Competitors": "Wettbewerber",
     "Performance Chart": "Performance-Chart",
+    /* Power Dashboard und der Umschalter im Dashboard-Seitenkopf (11.09.). Visibility und
+       Sentiment bleiben, wie ueberall im Katalog, die Fachbegriffe. */
+    "Standard": "Standard",
+    "Power": "Power",
+    "Recent chats": "Letzte Chats",
+    "All chats": "Alle Chats",
+    "Overview": "Überblick",
+    "Competitive field": "Wettbewerbsfeld",
+    "Trending Citations": "Trendende Zitierungen",
+    "Open brands": "Brands öffnen",
+    "Open citations": "Zitierungen öffnen",
+    "Today": "Heute",
+    "Yesterday": "Gestern",
+    "Untitled chat": "Chat ohne Titel",
+    "Sent.": "Sent.",
+    "Change": "Veränderung",
+    "Last 30 days": "Letzte 30 Tage",
+    "7 days": "7 Tage",
+    "#{n} of {m} brands": "#{n} von {m} Brands",
+    "Best in field {v}": "Bester im Feld {v}",
+    "First in {n}/{m} prompts": "Erster in {n}/{m} Prompts",
+    "Field average {v}": "Feldschnitt {v}",
+    "{n}/{m} negative": "{n}/{m} negativ",
     "Why this matters": "Warum das zählt",
     "How to choose": "Wie du wählst",
     "No suggested prompts found": "Keine vorgeschlagenen Prompts gefunden",
@@ -13217,6 +13240,38 @@
     setTimeout(function(){ watchForShowView(triesLeft - 1); }, 200);
   })(50);
 
+  /* ---- WELCHES DASHBOARD: Standard oder Power (11.09.) ---------------------------------------
+     Der Umschalter sitzt im Dashboard-Seitenkopf, gezeigt wird das Power Dashboard -- zwei
+     Komponenten, EIN Wert. Er steht hier, damit beide ihn aus derselben Quelle lesen.
+     NICHT ueber setPref, und das ist gemessen, nicht Geschmack: setPref feuert up-prefs-change,
+     und darauf zeichnet makeMount JEDE Komponente der Seite neu, jeder Chart baut neu (siehe die
+     Zuhoerer dort). Ein Klick auf "Power" haette die ganze Seite neu gezeichnet -- derselbe Weg,
+     an dem der Sprachwechsel am 10.09. haengen blieb. Eigener Schluessel, eigenes Ereignis, und
+     nur die zwei Beteiligten hoeren zu.
+     Ohne Team-Suffix, aus demselben Grund wie up_prefs: eine Vorliebe des Geraets, und die
+     Team-Id ist beim Boot noch nicht bekannt. */
+  var DASH_STORE = "up_dashboard", DASH_WERTE = { standard: 1, power: 1 };
+  function getDashboardMode(){
+    var v = "";
+    try { v = String(window.localStorage.getItem(DASH_STORE) || ""); } catch(e){}
+    return DASH_WERTE[v] ? v : "standard";
+  }
+  function setDashboardMode(v){
+    v = DASH_WERTE[v] ? v : "standard";
+    var alt = getDashboardMode();
+    try { window.localStorage.setItem(DASH_STORE, v); } catch(e){}
+    if (alt !== v){
+      try { window.dispatchEvent(new CustomEvent("up-dashboard-mode", { detail: { mode: v } })); } catch(e){}
+    }
+    return v;
+  }
+  function onDashboardMode(fn){
+    if (typeof fn !== "function") return function(){};
+    function h(e){ try { fn(e && e.detail && e.detail.mode); } catch(err){} }
+    window.addEventListener("up-dashboard-mode", h);
+    return function(){ window.removeEventListener("up-dashboard-mode", h); };
+  }
+
   /* ---- DRAWER: derselbe Griff wie showView ---------------------------------------------------
      Die Host-App oeffnet JEDEN Drawer ueber openDrawer(art, id) -- ausnahmslos. Damit hat auch
      der Drawer einen Melder, genau wie eine Ansicht ihren showView hat, und niemand muss die
@@ -14729,6 +14784,12 @@
               '<path d="M16.2 4.8c2 2 2.26 5.11.8 7.47"/><path d="M19.1 1.9a9.96 9.96 0 0 1 0 14.1"/>' +
               '<path d="M9.5 18h5"/><path d="m8 22 4-11 4 11"/>',
     clock:    '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+    /* Drei fuer das Power Dashboard (11.09.), alle Lucide: maximize-2 an "Competitive field" und
+       "Trending Citations" (zur ganzen Tabelle), message-square vor jedem Eintrag unter "Recent
+       chats" -- dieselbe Form, die Mira fuer "Ask Mira" zeichnet --, calendar vor dem Zeitraum. */
+    maximize2:     '<path d="M15 3h6v6"/><path d="m21 3-7 7"/><path d="m3 21 7-7"/><path d="M9 21H3v-6"/>',
+    messageSquare: '<path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/>',
+    calendar:      '<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>',
     shieldCheck:'<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>' +
               '<path d="m9 12 2 2 4-4"/>',
     /* Aus prompts-table hierher: die Verwaltung der Gruppierungen braucht sie an zwei Orten, und
@@ -15578,6 +15639,8 @@
     dropdownOpened: dropdownOpened,
     closeAllDropdowns: closeAllDropdowns,
     onViewChange: onViewChange,
+    getDashboardMode: getDashboardMode, setDashboardMode: setDashboardMode,
+    onDashboardMode: onDashboardMode,
     currentView: currentView,
     /* Fuer die Komponenten: "darf ich hier messen?" ohne Layoutwert. Gebraucht wird das ueberall,
        wo ein Takt oder ein Beobachter etwas ausmisst -- in einer geparkten Ansicht zwingt jeder

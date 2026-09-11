@@ -3016,3 +3016,47 @@
   #ask-mira.prev-open .am-prev-panel { transform: translateX(0); margin-right: 0; }
   #ask-mira .am-prev-scrim { display: block; }
 }
+
+/* ---------- LAUNCHER: Mira im Power Dashboard (11.09.) ----------------------------------------
+   ask-mira.js leiht die Wurzel dem Power Dashboard (siehe "LAUNCHER" dort) und setzt dabei
+   is-launcher. Sichtbar bleibt nur, was das Dashboard zeigen soll: das Eingabefeld mit dem Hinweis
+   darunter. Kopf, Chat, Vorschlaege und Chatliste sind aus -- sie gehoeren in Miras Ansicht, und
+   dorthin geht es, sobald etwas gesendet wird.
+   ALLE Regeln mit #ask-mira.up-root.is-launcher (1,2,0 plus Nachfahre): die Regeln, die sie
+   ueberstimmen muessen, stehen mit #ask-mira.<zustand> (1,1,0 plus Nachfahre) im Rest der Datei,
+   teils weiter unten. So gewinnt der Launcher ueber die Spezifitaet und nicht ueber die Stelle
+   in der Datei. */
+#ask-mira.up-root.is-launcher { display: block; height: auto; overflow: visible; }
+#ask-mira.up-root.is-launcher .am-shell { height: auto; overflow: visible; padding-right: 0; }
+#ask-mira.up-root.is-launcher .am-shell::before,
+#ask-mira.up-root.is-launcher .am-hero,
+#ask-mira.up-root.is-launcher .am-chat,
+#ask-mira.up-root.is-launcher .am-prev-panel,
+#ask-mira.up-root.is-launcher .am-prev-scrim,
+#ask-mira.up-root.is-launcher .am-scroll-bottom,
+#ask-mira.up-root.is-launcher .am-msgnav { display: none; }
+/* Kein Polster und kein Verlauf: das Dashboard gibt die Spalte vor (dieselben 920px wie Mira),
+   und der Verlauf ist der Ausblender fuer Nachrichten, die es hier nicht gibt. */
+#ask-mira.up-root.is-launcher .am-composer-area { padding: 0; margin: 0; background: none; overflow: visible; }
+#ask-mira.up-root.is-launcher .am-composer-shell,
+#ask-mira.up-root.is-launcher .am-composer { max-width: none; }
+/* Mira sperrt auf dem Telefon das Ziehen an ihrer Wurzel (touch-action: none, weiter oben, mit
+   !important) -- in ihrer eigenen Ansicht richtig, dort scrollt nur der Chat. Im Dashboard waere
+   das Feld eine Stelle, an der die Seite unter dem Finger festklebt. Gegen ein !important hilft
+   nur ein !important mit hoeherer Spezifitaet; darum hier und nur hier. */
+#ask-mira.up-root.is-launcher,
+#ask-mira.up-root.is-launcher .am-shell { touch-action: pan-x pan-y !important; }
+
+/* Die zwei Menues gehen im Dashboard nach UNTEN auf (verlangt: "das Add-Dropdown oeffnet sich
+   natuerlich nach unten"). Das Feld steht dort ganz oben -- nach oben waere es in den Seitenkopf
+   gelaufen. Das Modellmenue folgt aus demselben Grund.
+   Abstand und Schatten wie in Miras Ansicht, nur gespiegelt: 17px bis zur sichtbaren Kante (der
+   1px-Rahmen des Composers liegt dazwischen), der Schatten 2px nach UNTEN versetzt -- nach oben
+   reicht er 16 - 2 = 14px und bleibt damit vom Feld weg. pickDeckel rechnet den Platz nach
+   unten. */
+#ask-mira.up-root.is-launcher .am-pick-panel { top: calc(100% + 17px); bottom: auto; transform-origin: top center;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.06); }
+#ask-mira.up-root.is-launcher:not(.is-pick-open) .am-pick-panel { transform: translateY(-6px) scale(0.99); }
+#ask-mira.up-root.is-launcher[data-theme="dark"] .am-pick-panel { box-shadow: 0 2px 16px rgba(0,0,0,0.3); }
+#ask-mira.up-root.is-launcher .am-eff-menu { top: calc(100% + 8px); bottom: auto; transform-origin: top right; }
+#ask-mira.up-root.is-launcher .am-eff:not(.is-open) .am-eff-menu { transform: translateY(-6px) scale(0.98); }

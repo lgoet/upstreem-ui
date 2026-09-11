@@ -32,7 +32,7 @@
     "askMiraSetTool","askMiraSetFaviconsFromEl","askMiraSetBrandLogosFromEl",
     "askMiraSetToolFromEl","askMiraGetState","askMiraOpportunityResult",
     "askMiraResolveVoice","askMiraRejectVoice","askMiraSetTranscript","askMiraVoiceCancel",
-    "askMiraSetChatsLoading", "askMiraAddReference"
+    "askMiraSetChatsLoading", "askMiraAddReference", "askMiraOpen"
   ];
   var __amBootQueue = window.__amBootQueue = window.__amBootQueue || [];
   if (!window.__amBootStubbed){
@@ -58,9 +58,19 @@
   }
 
   function amRun(){
-    var el = document.getElementById("ask-mira");
-    if (!el || el.__askMiraInit) return;
-    amInit();
+    /* ALLE Wurzeln mit dieser Kennung, nicht getElementById (11.09., Launcher). Leiht das Power
+       Dashboard Mira aus und Bubble baut in der Zeit Miras eigenes Element neu, stehen fuer einen
+       Moment ZWEI #ask-mira im Dokument: die ausgeliehene (fertig, aber verwaist) und die neue.
+       getElementById gab die erste zurueck -- lag die ausgeliehene im Dokument weiter vorn, war
+       sie schon fertig, und die neue wurde nie gestartet. Jetzt: die erste NICHT gestartete
+       nehmen, und eine verwaiste ausgeliehene tritt ab (__amAbtreten, siehe den Launcher). */
+    var alle = document.querySelectorAll('[id="ask-mira"]'), el = null, i;
+    for (i = 0; i < alle.length; i++){ if (!alle[i].__askMiraInit){ el = alle[i]; break; } }
+    if (!el) return;
+    for (i = 0; i < alle.length; i++){
+      if (alle[i] !== el && typeof alle[i].__amAbtreten === "function") alle[i].__amAbtreten();
+    }
+    amInit(el);
     /* Replay whatever Bubble queued against the stubs, in call order. A stub is only replaced by
        the real implementation inside amInit; anything still stubbed is skipped rather than thrown. */
     var q = window.__amBootQueue;
@@ -252,9 +262,9 @@
     comp.setAttribute('data-am-composer', COMPOSER_FASSUNG);
   }
 
-  function amInit(){
+  function amInit(el){
 
-  var root = document.getElementById('ask-mira');
+  var root = el || document.getElementById('ask-mira');
   if (!root || root.__askMiraInit) return;
   root.__askMiraInit = true;
 
@@ -3484,6 +3494,10 @@
   function sendMessage(text){
     var explicit = (text != null);
     var typed = String(explicit ? text : elTextarea.value).trim();
+    /* Aus dem Power Dashboard heraus: erst nach Hause und in Miras Ansicht, als NEUER Chat --
+       dann geht es hier ganz normal weiter, und die Antwort kommt in Mira an. Text und Bezuege
+       stehen noch im Feld; es ist dasselbe Feld. */
+    if (!explicit && istLauncher() && (typed || _picks.length || getQuoteValue())) zuMira({ neu: true });
     if (S.isLoading) return;
     var quote = explicit ? '' : getQuoteValue();
     var bezug = explicit ? '' : picksText();
@@ -3935,6 +3949,10 @@
     var r = elComposer.getBoundingClientRect(), rr = root.getBoundingClientRect();
     /* 24 = die 16px Abstand zum Feld (.am-pick-panel, bottom) und 8px Luft nach oben. */
     var platz = Math.max(180, Math.round(r.top - rr.top - 24));
+    /* Im Power Dashboard geht das Panel nach UNTEN auf (ask-mira.css, is-launcher) -- der Platz
+       ist dann der unter dem Feld bis zur Fensterkante, dieselben 24px abgezogen. Mindestens 240:
+       das Dashboard scrollt, und ein Panel mit zwei Zeilen waere keines. */
+    if (istLauncher()) platz = Math.max(240, Math.round(window.innerHeight - r.bottom - 24));
     elPickPanel.style.setProperty('--am-pick-max', platz + 'px');
     if (elPickScroll) elPickScroll.style.maxHeight = Math.max(96, platz - 118) + 'px';
   }
@@ -4693,6 +4711,8 @@
        einen neuen Nutzer sind besser als gar keins fuer alle anderen. */
     if (S.previousChats.length) _prevLoaded = true;
     renderPrevious();
+    /* Fuer "Recent chats" im Power Dashboard: es zeichnet neu, sobald die Liste sich aendert. */
+    try { window.dispatchEvent(new CustomEvent('askmira:chats')); } catch(e){}
   };
   /* ---- DER SCHALTER FUER DIE SKELETTE IN DER CHATLEISTE (07.09.) ---------------------------
      Bis hierher gab es keinen: die Skelette endeten, sobald askMiraSetPreviousChats eine NICHT
@@ -5729,7 +5749,13 @@
     }
     var item = e.target.closest('.am-prev-item'); if (!item) return;
     if (item.classList.contains('is-editing')) return;
-    var id = item.getAttribute('data-chat-id');
+    chatWaehlen(item.getAttribute('data-chat-id'));
+    closePrevWennSchmal();
+  });
+  /* Einen Chat oeffnen -- der EINE Weg, den der Klick in der Chatliste nimmt und seit dem 11.09.
+     auch "Recent chats" im Power Dashboard (askMiraOpen({ chatId })). Vorher stand er nur im
+     Klick-Handler; ein zweiter Aufrufer haette ihn kopieren muessen. */
+  function chatWaehlen(id){
     S.chatLoading = true;                              // show the chat + skeletons right away
     S.messages = [];                                   // drop the previous chat's messages so the skeleton shows
     runDrop();                                         // anderer Chat -> das Protokoll der letzten Antwort gilt nicht mehr
@@ -5738,8 +5764,7 @@
     renderMessages(); renderChatTitlebar();
     if (window.bubble_fn_ask_mira_select_chat) window.bubble_fn_ask_mira_select_chat(id);
     else window.dispatchEvent(new CustomEvent('askmira:select-chat', { detail: { chat_id: id } }));
-    closePrevWennSchmal();
-  });
+  }
   elPrevList.addEventListener('keydown', function(e){
     var inp = e.target.closest('.am-prev-item-input');
     if (inp){ var item = inp.closest('.am-prev-item');
@@ -5913,6 +5938,139 @@
     closePrevWennSchmal();
   }
   elNewChat.addEventListener('click', goToStart);
+
+  /* ================= LAUNCHER: Mira im Power Dashboard (11.09. angefordert) ===================
+     Das Power Dashboard zeigt Miras Eingabefeld ganz oben -- und zwar DIESES, nicht einen
+     Nachbau ("du sollst nicht das Mira-Inputfeld neu bauen"). Eine zweite Instanz geht nicht:
+     Mira haengt an genau einer Wurzel (#ask-mira, 316 Regeln darauf), und eine zweite wuerde
+     jede window.askMira*-Funktion der ersten ueberschreiben -- Bubbles Setter kaemen dann beim
+     Dashboard an und nicht mehr bei Mira.
+     Also LEIHT sich das Dashboard die Wurzel: sie wandert in seinen Platz, traegt is-launcher
+     (ask-mira.css blendet dann Kopf, Chat und Chatliste aus und laesst nur das Feld mit dem
+     Hinweis darunter stehen) und geht wieder nach Hause, sobald
+       - die Ansicht wechselt (core meldet das VOR dem Wechsel -- Mira steht also schon wieder
+         an ihrem Platz, wenn ihre Ansicht aufgeht),
+       - etwas gesendet wird, ein Chip oder ein Chat aus "Recent chats" geklickt wird: dann geht
+         es direkt weiter in Miras Ansicht, und die Antwort kommt DORT (verlangt: "auf dem
+         Dashboard selber soll nix mit Mira-Antworten passieren").
+     Ein Kommentarknoten haelt den Platz zu Hause frei. Das Verschieben nimmt alles mit, was an
+     den Knoten haengt -- Zuhoerer, Zustand, Picker, Modellwahl, Spracheingabe: es IST dasselbe
+     Feld.
+     ZWEI FAELLE, IN DENEN BUBBLE DAZWISCHENFUNKT:
+       - Bubble baut Miras Element neu, waehrend sie ausgeliehen ist (ein dynamischer Wert darin
+         aendert sich, etwa beim Themewechsel). Dann steht zu Hause eine NEUE Wurzel, und die
+         ausgeliehene ist verwaist -- sie tritt ab (__amAbtreten, gerufen von amRun), und das
+         Dashboard leiht sich die neue (askmira:bereit).
+       - Bubble baut das DASHBOARD neu. Dann faellt die ausgeliehene Wurzel mit aus dem Dokument,
+         lebt aber weiter (dieser Abschluss haelt sie). Das neue Dashboard leiht sie wieder aus,
+         und beim naechsten Ansichtswechsel geht sie wie immer nach Hause. */
+  var _heim = null, _launchView = '';
+  function istLauncher(){ return root.classList.contains('is-launcher'); }
+  function launcherMenuesZu(){
+    if (root.classList.contains('is-pick-open')) pickOeffnen(false);
+    if (effPop){ try { effPop.close(false); } catch(e){} }
+  }
+  function launcherAn(slot, opts){
+    if (root.__amTot || !slot || slot.nodeType !== 1) return false;
+    _launchView = String((opts && opts.view) || '');
+    if (root.parentNode === slot && istLauncher()) return true;
+    if (!_heim){
+      if (!root.parentNode) return false;          /* nirgends zu Hause: nichts auszuleihen */
+      _heim = document.createComment('ask-mira: Miras Platz, waehrend sie ausgeliehen ist');
+      root.parentNode.insertBefore(_heim, root);
+    }
+    launcherMenuesZu();
+    root.classList.add('is-launcher');
+    slot.appendChild(root);
+    if (root.__amFit) root.__amFit();
+    autosize(); picksEinziehen();
+    return true;
+  }
+  function launcherAus(){
+    if (!istLauncher() && !_heim) return;
+    launcherMenuesZu();
+    root.classList.remove('is-launcher');
+    if (_heim && _heim.parentNode){
+      _heim.parentNode.insertBefore(root, _heim);
+      _heim.parentNode.removeChild(_heim);
+    }
+    _heim = null; _launchView = '';
+    if (root.__amFit) root.__amFit();
+    autosize(); picksEinziehen();
+  }
+  root.__amAbtreten = function(){
+    if (!istLauncher()) return;
+    root.__amTot = true;
+    if (_abView) _abView();
+    _heim = null;
+    if (root.parentNode) root.parentNode.removeChild(root);
+  };
+  var UCl = window.UpstreemCore;
+  var _abView = (UCl && UCl.onViewChange) ? UCl.onViewChange(function(name){
+    if (!istLauncher()) return;
+    /* In die Ansicht des Dashboards selbst: bleiben (das Dashboard leiht sie gerade dafuer). */
+    if (_launchView && String(name) === _launchView) return;
+    launcherAus();
+  }) : null;
+  /* Nach Hause und in Miras Ansicht -- derselbe Weg wie der Mira-Knopf der Drawer-Topbar:
+     alle Drawer zu, dann showView("mira"). neu: aus einem offenen Chat heraus einen NEUEN
+     anfangen; das Dashboard ist ein Einstieg, keine Fortsetzung des letzten Gespraechs.
+     goToStart laesst Text und Bezuege im Feld stehen -- sie werden gleich gesendet. */
+  function zuMira(opts){
+    launcherAus();
+    var UCz = window.UpstreemCore;
+    try { if (UCz && UCz.closeAllDrawers) UCz.closeAllDrawers(); } catch(e){}
+    try { if (typeof window.showView === 'function') window.showView('mira'); } catch(e){}
+    if (opts && opts.neu && root.classList.contains('has-messages')) goToStart();
+  }
+  window.askMiraLauncherAttach = function(slot, opts){ return launcherAn(slot, opts); };
+  /* Nur zurueckgeben, wenn sie in DIESEM Platz steht -- ein zweites Dashboard (Bubble baut
+     doppelt) darf sie dem ersten nicht wegnehmen. */
+  window.askMiraLauncherDetach = function(slot){
+    if (!istLauncher()) return false;
+    if (slot && root.parentNode !== slot) return false;
+    launcherAus();
+    return true;
+  };
+  /* Die Einstiege des Dashboards. Eines davon je Aufruf:
+       { prompt: "..." }   neuer Chat, der Text geht sofort ab ({TIMEFRAME} wie bei den Karten)
+       { chatId: "..." }   diesen Chat oeffnen -- derselbe Weg wie der Klick in der Chatliste
+       { chats: true }     Miras Chatliste aufklappen
+       {}                  nur hinwechseln, Fokus ins Feld */
+  window.askMiraOpen = function(o){
+    if (typeof o === 'string') o = { prompt: o };
+    o = o || {};
+    if (o.chatId != null && String(o.chatId) !== ''){ zuMira(); chatWaehlen(String(o.chatId)); return true; }
+    if (o.chats){ zuMira(); openPrev(); return true; }
+    if (o.prompt){
+      zuMira({ neu: true });
+      var q = String(o.prompt).replace('{TIMEFRAME}', repTimeframe(_reportRange));
+      if (window.bubble_fn_ask_mira_suggested_question) window.bubble_fn_ask_mira_suggested_question(q);
+      sendMessage(q);
+      return true;
+    }
+    zuMira();
+    try { elTextarea.focus(); } catch(e){}
+    return true;
+  };
+  /* Die letzten Chats fuer "Recent chats". Die Reihenfolge ist die von Bubble -- ausser die Chats
+     tragen einen Zeitstempel, dann der neueste zuerst. Mira selbst liest keinen; ob Bubble einen
+     mitschickt, entscheidet der Workflow. */
+  window.askMiraRecentChats = function(n){
+    var zeit = function(c){
+      var t = Date.parse(c && (c.updated_at || c.last_message_at || c.modified_date || c.created_at) || '');
+      return isFinite(t) ? t : null;
+    };
+    var liste = (S.previousChats || []).filter(function(c){ return c && c.id != null; }).slice();
+    if (liste.some(function(c){ return zeit(c) != null; })){
+      liste.sort(function(a, b){ return (zeit(b) || 0) - (zeit(a) || 0); });
+    }
+    return liste.slice(0, n || 3).map(function(c){
+      return { id: String(c.id), title: String(c.title || ''), time: zeit(c) };
+    });
+  };
+  /* Das Dashboard wartet darauf: Mira ist (neu) gestartet und kann ausgeliehen werden. */
+  setTimeout(function(){ try { window.dispatchEvent(new CustomEvent('askmira:bereit')); } catch(e){} }, 0);
   /* The component always dispatches this, whether or not it also calls Bubble -- in local mode it
      is the only channel. Delegated on the root so a rebuilt picker keeps being heard. */
   root.addEventListener('utf-topics', function(e){
@@ -6805,6 +6963,10 @@
       return !!(root.offsetWidth || root.offsetHeight || root.getClientRects().length);
     }
     function fit(){
+      /* Im Power Dashboard (is-launcher) ist Mira nur ihr Eingabefeld und genau so hoch -- die
+         Bildschirmhoehe unten ("claim a screenful") gilt fuer ihre eigene Ansicht. Ohne diese
+         Zeile stand sie dort 900px hoch und schob das ganze Dashboard aus dem Bild, gemessen. */
+      if (root.classList.contains('is-launcher')){ root.style.height = ''; root.style.maxHeight = ''; return; }
       if (!visible()) return;
       // Phone with the keyboard open: visualViewport shrinks, so take exactly that and the composer
       // stays on screen. This is the ONE case worth overriding the host's height for.
@@ -6825,6 +6987,9 @@
       var vh = Math.round(window.innerHeight);
       root.style.height = vh + 'px'; root.style.maxHeight = vh + 'px';
     }
+    /* Fuer den Launcher: beim Ausleihen und beim Zurueckgeben SOFORT neu messen, nicht erst beim
+       naechsten Lauf des Waechters unten (bis zu 2s). */
+    root.__amFit = fit;
     // The height math only holds while our top edge and the viewport stay put. Bubble can move us later
     // (late header, async content, a scrolled ancestor, a group being shown) WITHOUT firing resize/scroll —
     // that left the element too tall: the "Mira answers based on..." hint sat below the screen and the page

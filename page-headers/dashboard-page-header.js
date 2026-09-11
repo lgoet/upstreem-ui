@@ -215,7 +215,59 @@
         /* Zwischen Docs und Refresh: vor dem Refresh-Knopf, wenn es einen gibt, sonst ans Ende. */
         if (rb) tools.insertBefore(sb, rb); else tools.appendChild(sb);
       }
+
+      /* 5. Der Umschalter Standard | Power (11.09.). .up-seg aus core, derselbe wie Board | List
+            in Opportunities -- der Streifen darunter kommt von core (segLauf). Ganz vorn in der
+            Werkzeugleiste: er schaltet die ganze Seite um, die Knoepfe dahinter handeln auf ihr.
+            Aus JS und nicht aus der Vorlage, aus demselben Grund wie 2. bis 4. */
+      var topright = root.querySelector(".dph-topright") || tools;
+      if (topright && !root.querySelector(".dph-mode")){
+        var seg = document.createElement("div");
+        seg.className = "up-seg dph-mode";
+        seg.setAttribute("role", "tablist");
+        seg.setAttribute("aria-label", "Dashboard view");
+        seg.innerHTML = ["standard", "power"].map(function(v){
+          var lbl = v === "power" ? "Power" : "Standard";
+          return '<button type="button" class="up-seg-btn" role="tab" data-dph-mode="' + v + '" ' +
+            'data-i18n="' + lbl + '">' + (UC.t ? UC.t(lbl) : lbl) + '</button>';
+        }).join("");
+        topright.insertBefore(seg, topright.firstChild);
+      }
     })();
+
+    /* ---------- Standard | Power ----------
+       Die Wahl liegt im localStorage (UC.getDashboardMode/setDashboardMode) -- verlangt: "die
+       Auswahl, auf welchem Dashboard man startet, bitte in den localStorage". Bubble erfaehrt sie
+       ueber data-mode-fn und blendet damit die Gruppen um: das Standard-Dashboard und das Power
+       Dashboard sind zwei Bubble-Gruppen, und welche sichtbar ist, entscheidet Bubble.
+       BEIM START geht das Ereignis EINMAL mit der gespeicherten Wahl heraus, sonst stuende nach
+       dem Laden immer das Standard-Dashboard da, bis jemand klickt. Nur wenn es einen Empfaenger
+       gibt -- sonst meldete die Konsole bei jedem Seitenaufbau einen fehlenden Workflow. */
+    var modeSeg = root.querySelector(".dph-mode");
+    function modeZeigen(v){
+      if (!modeSeg) return;
+      Array.prototype.forEach.call(modeSeg.querySelectorAll("[data-dph-mode]"), function(b){
+        var on = b.getAttribute("data-dph-mode") === v;
+        b.classList.toggle("is-active", on);
+        b.setAttribute("aria-selected", on ? "true" : "false");
+      });
+    }
+    function modeMelden(v){ fire("data-mode-fn", "dphMode", { mode: v }); }
+    if (modeSeg && UC.getDashboardMode){
+      var modeStart = UC.getDashboardMode();
+      modeZeigen(modeStart);
+      modeSeg.addEventListener("click", function(e){
+        var b = e.target.closest("[data-dph-mode]");
+        if (!b) return;
+        var v = UC.setDashboardMode(b.getAttribute("data-dph-mode"));
+        modeZeigen(v);
+        modeMelden(v);
+      });
+      /* Ein zweiter Seitenkopf (Bubble baut doppelt) oder ein anderer Weg zum Umschalten: alle
+         zeigen dasselbe. */
+      if (UC.onDashboardMode) UC.onDashboardMode(function(v){ modeZeigen(v); });
+      if (root.getAttribute("data-mode-fn") || window.bubble_fn_dphMode) modeMelden(modeStart);
+    }
 
     var searchBtn = root.querySelector(".dph-searchbtn");
     if (searchBtn){

@@ -1,0 +1,239 @@
+<!--
+  UPSTREEM — POWER DASHBOARD (power-dashboard.js / power-dashboard.css)
+
+  Die zweite Ansicht des Dashboards: kompakt, Mira im Vordergrund, nur minimal Daten.
+  Umgeschaltet wird im Dashboard-Seitenkopf ("Standard | Power", siehe
+  page-headers/bubble/dashboard_page_header_bubble.html, data-mode-fn).
+
+  ── WOHIN ─────────────────────────────────────────────────────────────────────────────────────
+  In die Ansicht des Dashboards, in eine EIGENE Gruppe neben dem Standard-Dashboard:
+      Gruppe "Standard"   sichtbar, wenn der Custom State dash_mode NICHT "power" ist
+      Gruppe "Power"      sichtbar, wenn dash_mode "power" ist  -- darin dieses HTML-Element
+  dash_mode setzt der Workflow auf dem Ereignis dphMode des Seitenkopfs (Nutzlast { mode }).
+  Das Element NICHT auf volle Breite begrenzen: die Komponente haelt ihre Spalte selbst, genau so
+  breit wie Mira (hoechstens 920px Inhalt, mittig, links und rechts Luft).
+
+  ── MIRA ──────────────────────────────────────────────────────────────────────────────────────
+  Das Eingabefeld oben IST Miras Feld, keine Kopie. Das Dashboard leiht sich das Mira-Element
+  der Seite, solange es sichtbar ist, und gibt es beim naechsten Ansichtswechsel zurueck. Dafuer
+  muss Mira auf DERSELBEN SEITE eingebaut sein (die Ansicht view=mira) und auf DEMSELBEN PIN
+  stehen. Kein Workflow noetig:
+      Senden          -> Miras Ansicht, neuer Chat, der Text geht dort ab
+      ein Chip        -> Miras Ansicht, neuer Chat, der hinterlegte Prompt geht dort ab
+      Recent chats    -> Miras Ansicht, genau dieser Chat
+      All chats       -> Miras Ansicht, die Chatliste offen
+  Den Wechsel macht die Komponente selbst (closeDrawer fuer offene Drawer, dann showView("mira")),
+  derselbe Weg wie der Mira-Knopf der Drawer-Topbar.
+  "Recent chats" liest Miras eigene Liste (askMiraSetPreviousChats). Traegt ein Chat updated_at
+  (oder last_message_at / created_at), stehen die neuesten oben und rechts "Today", "Yesterday"
+  oder das Datum; sonst gilt die Reihenfolge, in der Bubble die Liste schickt.
+
+  ── ATTRIBUTE ─────────────────────────────────────────────────────────────────────────────────
+  data-instance    = "ROOTID_[dynamic id]"    eindeutig je Platzierung
+  data-cdn-pin     = derselbe Commit-Hash wie alle anderen Elemente
+  data-isdark      = "yes" / "no"             nur Rueckfall; das Thema kommt aus core
+  data-brand-name  = der Name der eigenen Marke. Wird im Chip "Compare me with …" ausgeschlossen:
+                     der Chip nennt den staerksten WETTBEWERBER aus "Competitive field".
+  data-view        = der Name, den die App an showView() fuer die Ansicht dieses Dashboards
+                     uebergibt. Standard "dashboard". Stimmt er nicht, funktioniert alles
+                     trotzdem -- Mira erscheint dann nur eine Viertelsekunde spaeter.
+  data-demo        = "yes"  Beispieldaten, bis der erste renderPowerDashboard-Aufruf kommt
+                     "no"   Skelett, bis die echten Daten da sind
+                     JETZT "yes" (angefordert: erst einmal Beispieldaten). Sobald die Run-JS-
+                     Schritte unten angeschlossen sind, auf "no" stellen -- sonst stehen beim
+                     Laden fuer einen Moment die Beispielzahlen da.
+
+  ── EREIGNISSE (JavaScriptToBubble), Namen je Platzierung eindeutig ──────────────────────────
+  data-brands-fn    = "bubble_fn_upwBrands_[dynamic id]"
+                      Das Pfeil-Zeichen an "Competitive field". Nutzlast { "team_id": "..." }.
+                      Im Workflow: zur Brands-Seite / -Ansicht wechseln.
+  data-citations-fn = "bubble_fn_upwCitations_[dynamic id]"
+                      Das Pfeil-Zeichen an "Trending Citations". Nutzlast
+                      { "team_id": "...", "mode": "domains" | "urls" }.
+                      Im Workflow: zur Citations-Seite, im selben Modus.
+  data-rowclick-fn  = "bubble_fn_upwRowClick_[dynamic id]"
+                      Klick auf eine Zeile. Nutzlast
+                      { "team_id": "...", "type": "brand" | "domain" | "url", "id": "..." }
+                      id ist bei brand die company_id, bei domain die Domain, bei url die Adresse --
+                      dieselben Kennungen wie in Quick Actions. Im Workflow: den passenden
+                      Drawer oeffnen (openDrawer).
+
+  ── DATEN: renderPowerDashboard ───────────────────────────────────────────────────────────────
+  EIN Aufruf, jeder Teil darf einzeln kommen (ein Workflow je RPC ist in Ordnung):
+
+    renderPowerDashboard(`{ "instanceId": "...", "overview": {...}, "brands": [...],
+                            "top_domains": [...], "top_urls": [...], "citations_label": "7 days" }`)
+
+  overview -- EIN Objekt:
+    range_label             Text rechts neben "Overview", z.B. "Last 30 days"
+    visibility_pct          3.0        visibility_delta_pct   1.0     (Prozentpunkte)
+    visibility_series       [2.1, 2.2, …]  der Verlauf, alt -> neu (auch "2.1, 2.2, …" als Text)
+    visibility_position     2          brand_count            8       -> "#2 of 8 brands"
+    leader_name             "Anfragenfluss"   leader_visibility_pct 5.2 -> "Anfragenfluss 5.2%"
+    avg_rank                3.3        avg_rank_delta        -0.9     (kleiner ist besser)
+    rank_series             [4.0, 3.9, …]
+    best_rank               2.6                                        -> "Best in field 2.6"
+    first_count             14         prompt_count           91      -> "First in 14/91 prompts"
+    sentiment               76         sentiment_delta        1.6
+    sentiment_series        [74, 73.5, …]
+    field_avg_sentiment     74                                         -> "Field average 74"
+    negative_count          6          response_count         214     -> "6/214 negative"
+    Fehlen visibility_position, brand_count oder leader_name, rechnet die Komponente sie aus
+    "brands" aus (die eigene Marke traegt is_own: true).
+
+  brands -- DIESELBEN Felder wie brands-overview (derselbe RPC fuellt beide):
+    company_id, position, name, logo_url (oder favicon_url), visibility_pct,
+    visibility_delta_pct, avg_rank, sentiment, is_own (true bei der eigenen Marke)
+
+  top_domains -- dieselben Felder wie topcitations-dashboard:
+    domain, favicon, citation_type (Editorial | UGC_Community | Brand_Platform | Institutional |
+    Competition | Knowledge_Base | You), share_pct, share_delta_pct
+  top_urls -- ebenso:
+    url, title, favicon, url_type, global_share_pct, share_delta_pct
+
+  citations_label -- der Text hinter "Trending Citations", z.B. "7 days"
+
+  chips (optional) -- eigene Chips statt der eingebauten:
+    [{ "emoji": "📅", "label": "Create a Daily Briefing", "prompt": "…" }, …]
+    {TIMEFRAME} im Prompt ersetzt Mira mit dem Zeitraum ihrer Report-Karten, {COMPETITOR} die
+    Komponente mit dem staerksten Wettbewerber.
+
+  setPowerDashboardLoading("INSTANCE_ID", "yes" | "no")   Skelett an/aus. Echte Daten beenden
+  es auch ohne "no".
+
+  ── DER RUN-JS-SCHRITT (STYLEGUIDE §46): EIN BACKTICK, BEIDE ERSETZUNGEN ─────────────────────
+  Nie ein Objekt von Hand bauen -- ein leerer Ausdruck ergaebe ungueltiges JavaScript, und der
+  ganze Schritt stuerbe, bevor eine Zeile laeuft. Zahlen OHNE Anfuehrungszeichen.
+
+    (function () {
+      var ROH = `{
+        "instanceId": "INSTANCE_ID",
+        "overview": [Overview-RPC als JSON-Objekt],
+        "brands": [Brands-RPC, :format as text],
+        "top_domains": [Top-Domains-RPC, :format as text],
+        "top_urls": [Top-URLs-RPC, :format as text],
+        "citations_label": "7 days"
+      }`
+        .replace(/:\s*([,}\]])/g, ": null$1")
+        .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+      try { if (window.renderPowerDashboard) window.renderPowerDashboard(ROH); } catch (e) {}
+    })();
+
+  "instanceId" als ERSTES Feld: bricht der Payload ab, fischt core die Id trotzdem heraus, und
+  die richtige Platzierung zeigt den Lesefehler.
+  Ein unlesbarer Payload zeigt "Could not load …" in allen vier Bereichen, ein wirklich leerer
+  Teil ("[]") den normalen Leerzustand.
+
+  STATISCH ZUM TESTEN -- dieselben Werte wie die Beispieldaten, als Run-JS-Schritt:
+
+    (function () {
+      var ROH = `{
+        "instanceId": "INSTANCE_ID",
+        "overview": { "range_label": "Last 30 days", "visibility_pct": 3.0, "visibility_delta_pct": 1.0,
+          "visibility_series": [2.1, 2.2, 2.4, 2.3, 2.6, 2.8, 3.0], "visibility_position": 2, "brand_count": 8,
+          "leader_name": "Anfragenfluss", "leader_visibility_pct": 5.2, "avg_rank": 3.3, "avg_rank_delta": -0.9,
+          "rank_series": [4.0, 3.9, 4.1, 3.8, 3.9, 3.6, 3.3], "best_rank": 2.6, "first_count": 14, "prompt_count": 91,
+          "sentiment": 76, "sentiment_delta": 1.6, "sentiment_series": [74, 73.5, 74.5, 74, 74.8, 74.6, 76],
+          "field_avg_sentiment": 74, "negative_count": 6, "response_count": 214 },
+        "brands": [
+          { "company_id": "d1", "position": 1, "name": "Anfragenfluss", "visibility_pct": 5.2, "visibility_delta_pct": 4.0, "avg_rank": 2.6, "sentiment": 75 },
+          { "company_id": "d2", "position": 2, "name": "LeeUp Media", "visibility_pct": 3.0, "visibility_delta_pct": 1.0, "avg_rank": 3.3, "sentiment": 76, "is_own": yes }
+        ],
+        "top_domains": [
+          { "domain": "reddit.com", "citation_type": "UGC_Community", "share_pct": 6.8, "share_delta_pct": 9.1 },
+          { "domain": "trustpilot.com", "citation_type": "Brand_Platform", "share_pct": 4.1, "share_delta_pct": 5.2 }
+        ],
+        "top_urls": [],
+        "citations_label": "7 days"
+      }`
+        .replace(/:\s*([,}\]])/g, ": null$1")
+        .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+      try { if (window.renderPowerDashboard) window.renderPowerDashboard(ROH); } catch (e) {}
+    })();
+
+  Bubble-seitig NEU sind also: diese Gruppe mit dem Element, der Custom State dash_mode samt
+  Workflow auf dphMode (Seitenkopf), die drei Ereignisse oben und die Run-JS-Schritte.
+-->
+<div class="up-root upw-root"
+     data-instance="ROOTID_[dynamic id]"
+     data-cdn-pin="CDN_PIN"
+     data-isdark="IS_DARK"
+     data-brand-name="BRAND_NAME"
+     data-view="dashboard"
+     data-demo="yes"
+     data-brands-fn="bubble_fn_upwBrands"
+     data-citations-fn="bubble_fn_upwCitations"
+     data-rowclick-fn="bubble_fn_upwRowClick"></div>
+<script>
+(function(){
+  /* Loader nach STYLEGUIDE 26: den Pin ueber getElementsByClassName lesen, NIEMALS ueber
+     document.currentScript — Bubble fuehrt Scripts nicht in DOM-Reihenfolge aus. */
+  function echterPin(p){
+    /* trim: ein Leerzeichen aus der Bubble-Konstante ergaebe sonst .../upstreem-ui@ abc /core.js,
+       jsDelivr antwortet mit 404, und weder CSS noch JS landen. Ohne trim greift auch kein
+       Rueckfall, weil "   " truthy ist.
+       Gespaltener Platzhalter: wer "CDN_PIN" global im Element ersetzt, wuerde sonst auch diesen
+       Waechter treffen, und der Loader liefe dauerhaft auf @main, obwohl ein Pin gesetzt ist. */
+    p = String(p == null ? "" : p).trim();
+    return (p && p !== "CDN_" + "PIN") ? p : "";
+  }
+  function readPin(cls){
+    var i, p, els = document.getElementsByClassName(cls);
+    for (i = 0; i < els.length; i++){
+      p = echterPin(els[i].getAttribute("data-cdn-pin"));
+      if (p) return (window.__upPin = p);
+    }
+    /* ---- Rueckfall: einen Pin nehmen, der auf DIESER Seite schon gilt ----------------------
+       Gemeldet am 31.08. mit drei Stapelspuren, alle aus einem solchen Loader: "core.css ist
+       schon von einem anderen Pin geladen ... ignoriert wird @main" -- obwohl der Pin am Element
+       stand. Der Grund ist die Reihenfolge: Bubble baut ein Element bei jedem Rerender neu und
+       fuehrt Scripts nicht in DOM-Reihenfolge aus, dieser Loader lief also, waehrend seine eigene
+       Wurzel noch nicht im Dokument stand -- die Klasse oben fand nichts.
+       Und das war mehr als eine Warnung: core kam durch die Entdoppelung unten noch aus dem Pin,
+       die Dateien DIESER Komponente aber tatsaechlich von @main. Eine Seite, die zur Haelfte auf
+       @main laeuft, ist genau das, was ein Pin verhindern soll.
+       Geraten wird nichts: jede der drei Stufen liest einen Pin, der auf dieser Seite schon in
+       Gebrauch ist. */
+    if (echterPin(window.__upPin)) return window.__upPin;
+    var alle = document.querySelectorAll ? document.querySelectorAll("[data-cdn-pin]") : [];
+    for (i = 0; i < alle.length; i++){
+      p = echterPin(alle[i].getAttribute("data-cdn-pin"));
+      if (p) return (window.__upPin = p);
+    }
+    /* Aus einer schon geladenen Datei ablesen. Diese Stufe greift auch dann, wenn alle anderen
+       Elemente der Seite noch die ALTE Fassung dieses Loaders tragen -- die fuellen
+       __upAssetsLoaded genauso. "main" wird NICHT gemerkt: das ist kein Pin, und die naechste
+       Komponente wuerde ihn sonst fuer einen halten. */
+    var L0 = window.__upAssetsLoaded, k, m;
+    for (k in L0){
+      if (!Object.prototype.hasOwnProperty.call(L0, k)) continue;
+      m = String(L0[k] || "").match(/upstreem-ui@([^/]+)\//);
+      if (m && m[1] && m[1] !== "main") return (window.__upPin = m[1]);
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("upw-root") + "/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  /* Entdoppelt nach DATEINAME, nicht nach URL. Zwei Elemente mit verschiedenen data-cdn-pin
+     ergeben zwei URLs fuer dieselbe Datei -- vorher lud der Loader dann beide: core.js lief
+     zweimal, und core.css stand zweimal im Dokument, wobei die spaetere die fruehere ueberschrieb.
+     Wer gewinnt, entschied die Reihenfolge, in der Bubble die Elemente baut.
+     Der erste Pin gewinnt jetzt, und ein zweiter wird gemeldet -- sonst sucht man den Unterschied
+     zwischen zwei Seiten, auf denen dieselbe Version verschiedene Dinge tut. */
+  function once(url, make){
+    var name = url.slice(url.lastIndexOf("/") + 1);
+    if (L[name]){
+      if (L[name] !== url && window.console) console.warn("upstreem: " + name +
+        " ist schon von einem anderen Pin geladen. Geladen bleibt " + L[name] +
+        ", ignoriert wird " + url + ". Setzt alle Elemente auf denselben Pin.");
+      return;
+    }
+    L[name] = url; make(url);
+  }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+
+  css("core.css");           js("core.js");
+  css("power-dashboard.css"); js("power-dashboard.js");
+})();
+</script>

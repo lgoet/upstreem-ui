@@ -54,3 +54,20 @@
    Init an -- aus JS und nicht aus der Vorlage, weil die Vorlage ein bereits eingebautes Element
    nicht mehr erreicht. Hier bleibt nur, was .up-ph-iconbtn nicht selbst regelt: nicht schrumpfen. */
 .dph-docsbtn { flex: 0 0 auto; }
+
+/* ---------- Standard | Power auf dem Telefon (11.09.) ----------
+   Oben rechts stehen jetzt Umschalter UND drei Knoepfe, zusammen rund 290px. Unter 500px
+   (is-vnarrow, widthTiers) passt das nicht mehr neben die Ueberschrift -- gemessen bei 420px: der
+   Umschalter lag ueber "Dashboard". Also bekommt er dort eine eigene Zeile unter dem Text, die
+   Knoepfe bleiben oben rechts.
+   display: contents an .dph-topright hebt dessen Kinder in die Zeile von .up-ph-top, damit der
+   Umschalter allein umbrechen kann; order schickt ihn ans Ende, flex-basis 100% auf eine Zeile fuer
+   sich. Die KPI-Leiste darin ist ohnehin aus (display: none oben). */
+.dph-root.is-vnarrow .up-ph-top { flex-wrap: wrap; row-gap: 12px; }
+/* Der Textblock schrumpft wie bisher, statt die Knoepfe in die naechste Zeile zu schieben: mit
+   dem Umbruch oben haette er sonst die ganze Breite genommen, und die Knoepfe waeren unter den
+   Text gerutscht -- gemessen, und anders als der Seitenkopf auf dem Telefon bisher aussah. */
+.dph-root.is-vnarrow .up-ph-left { flex: 1 1 0; }
+.dph-root.is-vnarrow .dph-topright { display: contents; }
+.dph-root.is-vnarrow .dph-mode { order: 3; flex: 0 0 100%; }
+.dph-root.is-vnarrow .dph-mode .up-seg-btn { flex: 1 1 0; }
