@@ -3040,6 +3040,15 @@
 #ask-mira.up-root.is-launcher .am-composer-area { padding: 0; margin: 0; background: none; overflow: visible; }
 #ask-mira.up-root.is-launcher .am-composer-shell,
 #ask-mira.up-root.is-launcher .am-composer { max-width: none; }
+/* 16px mehr Hoehe (11.09. angefordert), nur im Launcher: 8 oben und 8 unten statt der 16px
+   rundum aus core-mira, sonst waechst der Textblock einseitig und die Zeile sieht nicht mehr
+   mittig aus. NUR hier -- Miras eigene Ansicht (.am-composer ohne is-launcher) bleibt bei den
+   16px, die sie schon hat; siehe .am-composer weiter oben in dieser Datei. */
+#ask-mira.up-root.is-launcher .am-composer { padding: 24px 16px; }
+/* "Mira answers based on..." ist im Dashboard weg (11.09. angefordert) -- der Satz erklaert
+   Mira SICH SELBST, und im Launcher steht sie nur als Einstieg da, nicht als eigene Ansicht mit
+   eigenem Fusstext. In Miras eigener Ansicht bleibt er (kein is-launcher dort). */
+#ask-mira.up-root.is-launcher .am-hint { display: none; }
 /* Mira sperrt auf dem Telefon das Ziehen an ihrer Wurzel (touch-action: none, weiter oben, mit
    !important) -- in ihrer eigenen Ansicht richtig, dort scrollt nur der Chat. Im Dashboard waere
    das Feld eine Stelle, an der die Seite unter dem Finger festklebt. Gegen ein !important hilft

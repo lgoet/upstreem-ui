@@ -15,18 +15,33 @@
   max-width: calc(920px + 2 * var(--upw-pad)); margin: 0 auto;
   padding: 8px var(--upw-pad) 48px; box-sizing: border-box;
 }
+/* ---------- gegenlaeufig breit (11.09. angefordert) ----------
+   Mira samt Chips und Recent chats sollen SCHMALER sein als die Spalte, Overview und die beiden
+   Tabellen BREITER -- je 64px pro Seite, macht 128px Unterschied zwischen den beiden Huellen.
+   .upw-narrow ruecht von den Kanten der Spalte weg ein, .upw-wide reicht mit negativen
+   Aussenmassen ueber sie hinaus (ins Polster --upw-pad und, je nach Fensterbreite, noch etwas
+   darueber -- die Spalte selbst bleibt bei 920px, nur diese zwei Kinder weichen davon ab).
+   NUR ab der Breite, ab der die Tabellen und Kennzahlen ohnehin nebeneinander stehen
+   (widthTiers, is-narrow ab 760px): darunter ist kein Platz fuer ein zusaetzliches Aufweiten, und
+   die Karten liefen sonst über den Bildschirmrand hinaus. */
+.upw-narrow { margin-left: 64px; margin-right: 64px; }
+.upw-wide { margin-left: -64px; margin-right: -64px; }
+.upw-root.is-narrow .upw-narrow,
+.upw-root.is-narrow .upw-wide { margin-left: 0; margin-right: 0; }
 
 /* ---------- Mira ----------
    Der Platz fuer die geliehene Wurzel. Bis sie da ist, ihr Umriss: dieselbe Hoehe, derselbe
-   Radius (32px wie .am-composer), damit darunter nichts springt. Die Hoehe ist die gemessene des
-   geliehenen Feldes im Prueftand (_h_upw.html): Feld 123px, Hinweiszeile 25px -- zusammen die 148px
-   der geliehenen Wurzel. */
+   Radius (32px wie .am-composer), damit darunter nichts springt.
+   139px = die 123px, im Prueftand gemessen (_h_upw.html), plus die 16px, die ask-mira.css jetzt
+   im Launcher auf .am-composer draufgibt (8 oben, 8 unten -- siehe dort).
+   Die Hinweiszeile darunter ("Mira answers based on...") ist im Launcher aus (ask-mira.css,
+   .am-hint), also keine eigene Zeile mehr im Skelett und kein margin-bottom hier -- die Luecke
+   zur naechsten Reihe (den Chips) kommt jetzt allein aus deren eigenem margin-top. */
 .upw-mira { position: relative; }
 .upw-mira-sk {
-  height: 123px; border-radius: 32px; border: 1px solid var(--vc-border); background: var(--vc-bg);
+  height: 139px; border-radius: 32px; border: 1px solid var(--vc-border); background: var(--vc-bg);
   padding: 20px 16px 16px; box-sizing: border-box;
   display: flex; flex-direction: column; justify-content: space-between;
-  margin-bottom: 25px;
 }
 .upw-root.has-mira .upw-mira-sk { display: none; }
 .upw-mira-sk-row { display: flex; align-items: center; justify-content: space-between; }
@@ -37,7 +52,17 @@
 .upw-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 24px; }
 .upw-chips:empty { display: none; }
 .upw-chip { max-width: 100%; }
+/* Kein Rand, Hoverstate nur der Hintergrund (11.09. angefordert). .up-btn-sec traegt normalerweise
+   einen Rahmen samt eigener Hover-Randfarbe -- hier ueberschrieben statt in core.css geaendert,
+   sonst haette JEDER .up-btn-sec der App (z.B. "Edit" in Brands Overview) seinen Rand verloren.
+   :disabled bleibt aussen vor: core setzt dort ohnehin border-color auf --vc-border zurueck. */
+.upw-chip.up-btn-sec { border-color: transparent; }
+.upw-chip.up-btn-sec:hover { border-color: transparent; background: var(--vc-heading-bg); }
 .upw-chip-emoji { font-size: 13px; line-height: 1; }
+/* Der Zeilenumbruch nach dem dritten Chip -- siehe power-dashboard.js, renderChips(). Ein leeres
+   Element mit voller Breite (flex-basis:100%) zwingt jeden nachfolgenden Flex-Kind in eine neue
+   Zeile, ganz unabhaengig davon, wie lang die Beschriftungen daneben sind. */
+.upw-chip-break { flex-basis: 100%; width: 0; height: 0; }
 .upw-chip-lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ---------- Abschnitte ----------

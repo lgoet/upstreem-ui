@@ -232,36 +232,44 @@
     }
     root.innerHTML =
       '<div class="upw-col">' +
-        /* Miras Platz. Bis sie da ist, steht ihr Umriss als Skelett -- sonst spraenge alles
-           darunter um die Hoehe des Feldes, sobald sie ankommt. */
-        '<div class="upw-mira" data-upw-mira><div class="upw-mira-sk" aria-hidden="true">' +
-          '<span class="upw-sk upw-sk-line"></span><span class="upw-mira-sk-row">' +
-          '<span class="upw-sk upw-sk-dot"></span><span class="upw-sk upw-sk-send"></span></span></div></div>' +
-        '<div class="upw-chips" data-upw-chips></div>' +
-        '<section class="upw-sec">' +
-          '<div class="upw-sec-head"><span class="upw-sec-h" data-i18n="Recent chats">' + esc(t("Recent chats")) + '</span>' +
-            '<button type="button" class="upw-link" data-upw-allchats><span data-i18n="All chats">' + esc(t("All chats")) + '</span>' +
-            UC.icon("chevronRight", 2) + '</button></div>' +
-          '<div class="upw-chatlist" data-upw-chatlist></div>' +
-        '</section>' +
-        '<section class="upw-sec">' +
-          '<div class="upw-sec-head"><span class="upw-sec-h" data-i18n="Overview">' + esc(t("Overview")) + '</span>' +
-            '<span class="upw-range">' + UC.icon("calendar", 2) + '<span data-upw-range></span></span></div>' +
-          '<div class="up-box upw-kpis" data-upw-kpis></div>' +
-        '</section>' +
-        '<div class="upw-tables">' +
-          '<section class="upw-tcard">' +
-            kopf("Competitive field", "brands", expandBtn("brands", "Open brands")) +
-            '<div class="up-box"><div class="up-table upw-table upw-t-brands" data-upw-brands></div></div>' +
+        /* ZWEI HUELLEN, GEGENLAEUFIG BREITER (11.09. angefordert): Mira, ihre Chips und Recent
+           chats sollen 64px je Seite SCHMALER sein als die Spalte, Overview und die Tabellen
+           64px je Seite BREITER -- die Masse stehen an .upw-narrow/.upw-wide in
+           power-dashboard.css, hier nur die Gruppierung. */
+        '<div class="upw-narrow">' +
+          /* Miras Platz. Bis sie da ist, steht ihr Umriss als Skelett -- sonst spraenge alles
+             darunter um die Hoehe des Feldes, sobald sie ankommt. */
+          '<div class="upw-mira" data-upw-mira><div class="upw-mira-sk" aria-hidden="true">' +
+            '<span class="upw-sk upw-sk-line"></span><span class="upw-mira-sk-row">' +
+            '<span class="upw-sk upw-sk-dot"></span><span class="upw-sk upw-sk-send"></span></span></div></div>' +
+          '<div class="upw-chips" data-upw-chips></div>' +
+          '<section class="upw-sec">' +
+            '<div class="upw-sec-head"><span class="upw-sec-h" data-i18n="Recent chats">' + esc(t("Recent chats")) + '</span>' +
+              '<button type="button" class="upw-link" data-upw-allchats><span data-i18n="All chats">' + esc(t("All chats")) + '</span>' +
+              UC.icon("chevronRight", 2) + '</button></div>' +
+            '<div class="upw-chatlist" data-upw-chatlist></div>' +
           '</section>' +
-          '<section class="upw-tcard">' +
-            kopf("Trending Citations", "cites",
-              '<div class="up-seg upw-cmode" role="tablist" aria-label="Citations">' +
-                '<button type="button" class="up-seg-btn is-active" role="tab" aria-selected="true" data-upw-cmode="domain" data-i18n="Domains">' + esc(t("Domains")) + '</button>' +
-                '<button type="button" class="up-seg-btn" role="tab" aria-selected="false" data-upw-cmode="url" data-i18n="URLs">' + esc(t("URLs")) + '</button>' +
-              '</div>' + expandBtn("citations", "Open citations")) +
-            '<div class="up-box"><div class="up-table upw-table upw-t-cites" data-upw-cites></div></div>' +
+        '</div>' +
+        '<div class="upw-wide">' +
+          '<section class="upw-sec">' +
+            '<div class="upw-sec-head"><span class="upw-sec-h" data-i18n="Overview">' + esc(t("Overview")) + '</span>' +
+              '<span class="upw-range">' + UC.icon("calendar", 2) + '<span data-upw-range></span></span></div>' +
+            '<div class="up-box upw-kpis" data-upw-kpis></div>' +
           '</section>' +
+          '<div class="upw-tables">' +
+            '<section class="upw-tcard">' +
+              kopf("Competitive field", "brands", expandBtn("brands", "Open brands")) +
+              '<div class="up-box"><div class="up-table upw-table upw-t-brands" data-upw-brands></div></div>' +
+            '</section>' +
+            '<section class="upw-tcard">' +
+              kopf("Trending Citations", "cites",
+                '<div class="up-seg upw-cmode" role="tablist" aria-label="Citations">' +
+                  '<button type="button" class="up-seg-btn is-active" role="tab" aria-selected="true" data-upw-cmode="domain" data-i18n="Domains">' + esc(t("Domains")) + '</button>' +
+                  '<button type="button" class="up-seg-btn" role="tab" aria-selected="false" data-upw-cmode="url" data-i18n="URLs">' + esc(t("URLs")) + '</button>' +
+                '</div>' + expandBtn("citations", "Open citations")) +
+              '<div class="up-box"><div class="up-table upw-table upw-t-cites" data-upw-cites></div></div>' +
+            '</section>' +
+          '</div>' +
         '</div>' +
       '</div>';
 
@@ -295,14 +303,25 @@
     }
     function renderChips(){
       var wb = staerksterWettbewerber();
-      elChips.innerHTML = chipListe().map(function(c, i){
+      var liste = chipListe(), teile = [];
+      liste.forEach(function(c, i){
         var braucht = /\{COMPETITOR\}/.test(String(c.label || "") + String(c.prompt || ""));
         var label = String(c.label || "");
         if (braucht) label = wb ? label.replace("{COMPETITOR}", wb) : String(c.fallback || label.replace("{COMPETITOR}", ""));
-        return '<button type="button" class="up-btn-sec upw-chip" data-upw-chip="' + i + '">' +
+        teile.push('<button type="button" class="up-btn-sec upw-chip" data-upw-chip="' + i + '">' +
           (c.emoji ? '<span class="upw-chip-emoji" aria-hidden="true">' + esc(c.emoji) + '</span>' : '') +
-          '<span class="upw-chip-lbl">' + esc(label) + '</span></button>';
-      }).join("");
+          '<span class="upw-chip-lbl">' + esc(label) + '</span></button>');
+        /* ERZWUNGENER ZEILENUMBRUCH NACH DEM DRITTEN (11.09. angefordert: "3 in row 1, 2 in
+           row 2, bei default screen width"). Flexbox bricht sonst nach der VERFUEGBAREN BREITE
+           um, nicht nach einer festen Anzahl -- bei fuenf unterschiedlich langen Beschriftungen
+           waere das mal 4+1, mal 3+2, je nach Text und Fensterbreite (siehe den Entwurfs-
+           Screenshot: dort stand es als 4+1). Ein leeres Element mit flex-basis:100% zwingt die
+           naechste Zeile unabhaengig von der Textlaenge -- der uebliche Trick fuer eine feste
+           Spaltenzahl in einer umbrechenden Flex-Reihe (CSS bei .upw-chip-break). Nur bei mehr
+           als drei Chips, sonst gibt es nichts umzubrechen. */
+        if (i === 2 && liste.length > 3) teile.push('<span class="upw-chip-break" aria-hidden="true"></span>');
+      });
+      elChips.innerHTML = teile.join("");
     }
     elChips.addEventListener("click", function(e){
       var b = e.target.closest("[data-upw-chip]");
@@ -401,7 +420,7 @@
       }
       elChats.innerHTML = liste.map(function(c){
         return '<button type="button" class="upw-chat" data-upw-chat="' + esc(c.id) + '">' +
-          '<span class="upw-chat-ic">' + UC.icon("messageSquare", 2) + '</span>' +
+          '<span class="upw-chat-ic">' + UC.icon("messageCircle", 2) + '</span>' +
           '<span class="upw-chat-title">' + esc(c.title || t("Untitled chat")) + '</span>' +
           '<span class="upw-chat-when">' + esc(wann(c.time)) + '</span></button>';
       }).join("");

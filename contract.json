@@ -2677,6 +2677,7 @@
   "upw-chatlist",
   "upw-chats-empty",
   "upw-chip",
+  "upw-chip-break",
   "upw-chip-emoji",
   "upw-chip-lbl",
   "upw-chips",
@@ -2698,6 +2699,7 @@
   "upw-mira-sk",
   "upw-mira-sk-row",
   "upw-name",
+  "upw-narrow",
   "upw-range",
   "upw-root",
   "upw-sec",
@@ -2720,6 +2722,7 @@
   "upw-tables",
   "upw-tcard",
   "upw-td-name",
+  "upw-wide",
   "urt-brand-check",
   "urt-brand-check-no",
   "urt-brand-check-yes",
@@ -3049,7 +3052,7 @@
   "globals": 175,
   "payloadkeys": 96,
   "dataattrs": 251,
-  "klassen": 2186,
+  "klassen": 2189,
   "keyframes": 66
  }
 }

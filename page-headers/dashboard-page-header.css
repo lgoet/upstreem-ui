@@ -20,6 +20,21 @@
    inzwischen gewuenscht: die 16/450 stehen jetzt an .up-ph-desc in core.css und gelten fuer alle
    sieben Seitenkoepfe. Hier bleibt nichts. */
 
+/* ---------- Power: schmaler Kopf (11.09. angefordert) ----------
+   Im Power Dashboard ist der Seitenkopf nur noch die Werkzeugzeile: die Beschreibung ist weg, und
+   "Dashboard" soll "einfach nur in der Topbar mittig top/bottom" stehen -- also so hoch wie die
+   Knoepfe daneben (32px, .up-ph-iconbtn) und auf ihrer Mitte, nicht mehr als eigene Ueberschrift
+   mit eigenem Abstand nach unten.
+   8px kleiner als die 28px aus core.css: 20px. margin: 0 nimmt den 12px-Abstand zur Beschreibung
+   weg, den es ohne sie nicht mehr braucht. align-items: center auf .up-ph-top zentriert die
+   Ueberschrift GEGEN die Werkzeugzeile -- vorher stand alles an der Kopfkante (flex-start), was
+   bei einer einzelnen Zeile ohne Beschreibung schief aussah.
+   is-power sitzt an der WURZEL (dashboard-page-header.js, modeZeigen) statt an .dph-mode: ein
+   Umschalter kann fehlen (kein data-mode-fn-Empfaenger), der Modus selbst nicht. */
+.dph-root.is-power .up-ph-desc { display: none; }
+.dph-root.is-power .up-ph-heading { font-size: 20px; margin: 0; }
+.dph-root.is-power .up-ph-top { align-items: center; }
+
 /* ---------- KPI strip: Visibility / Ranking / Sentiment ----------
    AUS. Die drei Zahlen oben rechts sind weg -- dieselben Werte stehen einen Blick weiter unten in
    den Karten der Seite, und oben nahmen sie der Ueberschrift die Breite (dafuer gab es sogar eine

@@ -244,7 +244,12 @@
        dem Laden immer das Standard-Dashboard da, bis jemand klickt. Nur wenn es einen Empfaenger
        gibt -- sonst meldete die Konsole bei jedem Seitenaufbau einen fehlenden Workflow. */
     var modeSeg = root.querySelector(".dph-mode");
+    /* is-power an der WURZEL (11.09. angefordert): Power blendet die Beschreibung aus und
+       verkleinert die Ueberschrift, damit sie mittig in der Werkzeugzeile steht -- beides nur
+       eine CSS-Frage, wenn die Wurzel selbst den Zustand traegt. Kein zweiter Speicher: der
+       Wert kommt aus genau der Funktion, die auch den Umschalter fuellt. */
     function modeZeigen(v){
+      root.classList.toggle("is-power", v === "power");
       if (!modeSeg) return;
       Array.prototype.forEach.call(modeSeg.querySelectorAll("[data-dph-mode]"), function(b){
         var on = b.getAttribute("data-dph-mode") === v;
