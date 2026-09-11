@@ -3571,6 +3571,15 @@
   var elPickCrow   = root.querySelector('#am-pick-crow');
   var elPickCount  = root.querySelector('#am-pick-count');
   var elPicks      = root.querySelector('#am-picks');
+  /* DER STREIFEN GEHOERT IN DAS TEXTFELD (11.09.): die Bezuege stehen als erstes in der
+     Chatbox, der Text geht direkt dahinter weiter. Hier umgehaengt und nicht in der Vorlage:
+     die erreicht ein bereits eingebautes Element nicht, und dort steht der Streifen noch ueber
+     dem Feld. Idempotent -- steht er schon drin, passiert nichts. Das Klick-Zuhoeren am
+     Streifen wandert mit, es haengt am Element selbst. */
+  (function(){
+    var w = root.querySelector('.am-input-wrap');
+    if (elPicks && w && elPicks.parentNode !== w) w.insertBefore(elPicks, w.firstChild);
+  })();
 
   var _picks = [];          /* die uebernommenen Bezuege */
   var _pickRows = [];       /* die Treffer der letzten Antwort */
@@ -4083,7 +4092,61 @@
       '</span>';
     }).join('');
     if (elComposer) elComposer.classList.toggle('has-picks', _picks.length > 0);
+    picksEinziehen();
   }
+  /* ---- DER EINZUG: die erste Zeile beginnt hinter der letzten Pille -------------------------
+     Das Textfeld bleibt ein Textfeld. Es bekommt nur drei Werte:
+       text-indent   so weit, dass die ERSTE Zeile hinter der letzten Pille beginnt
+       padding-top   so weit, dass diese erste Zeile auf der Hoehe der LETZTEN Pillenreihe
+                     steht und dort senkrecht mittig sitzt
+       min-height    mindestens so hoch wie alle Pillen -- sonst ragten sie unten heraus
+     Jede weitere Zeile laeuft am linken Rand unter den Pillen -- text-indent wirkt nur auf die
+     erste. Das ist genau der Fluss eines contenteditable wie in Prompt Research.
+     LAYOUT-MASSE, nicht der gemessene Kasten: offsetLeft/-Top/-Width ignorieren den scale, mit
+     dem eine neue Pille hereinfaehrt. getBoundingClientRect waehrend der 200ms haette einen zu
+     kleinen Einzug geliefert, und der Text waere unter die Pille gerutscht.
+     Bleibt hinter der letzten Pille zu wenig Platz (unter 90px), faengt der Text auf der
+     naechsten Zeile an -- ein Wort pro Zeile hinter einer Pille ist schlimmer als eine Zeile
+     tiefer. */
+  var PICK_LUFT = 8;   /* Abstand zwischen letzter Pille und Text */
+  function picksEinziehen(){
+    if (!elPicks || !elTextarea) return;
+    var tags = elPicks.querySelectorAll('.am-pick-tag');
+    if (!tags.length){
+      elTextarea.style.textIndent = ''; elTextarea.style.paddingTop = ''; elTextarea.style.minHeight = '';
+      autosize();
+      return;
+    }
+    var letzte = tags[tags.length - 1];
+    var pillH = letzte.offsetHeight || 28;
+    var zeile = parseFloat(getComputedStyle(elTextarea).lineHeight) || 22.5;
+    var einzug = letzte.offsetLeft + letzte.offsetWidth + PICK_LUFT;
+    /* +1: das Textfeld traegt von Haus aus 1px Polster oben (siehe .am-textarea). */
+    var oben = letzte.offsetTop + Math.max(0, (pillH - zeile) / 2) + 1;
+    if (elTextarea.clientWidth - einzug < 90){
+      einzug = 0;
+      oben = elPicks.offsetHeight + 6;
+    }
+    elTextarea.style.textIndent = Math.round(einzug) + 'px';
+    elTextarea.style.paddingTop = Math.round(oben) + 'px';
+    elTextarea.style.minHeight = Math.ceil(elPicks.offsetHeight) + 'px';
+    autosize();
+  }
+  /* Eine andere Breite verschiebt die Pillen (sie brechen um) -- also nachrechnen. */
+  if (typeof amAufResize === 'function') amAufResize(function(){ picksEinziehen(); });
+
+  /* RUECKTASTE GANZ VORNE nimmt die letzte Pille -- wie in Prompt Research und in der Palette.
+     Nur bei leerer Auswahl an Stelle 0: steht der Cursor im Text, gehoert die Taste dem Text. */
+  if (elTextarea){
+    elTextarea.addEventListener('keydown', function(e){
+      if (e.key !== 'Backspace' || !_picks.length) return;
+      if (elTextarea.selectionStart !== 0 || elTextarea.selectionEnd !== 0) return;
+      e.preventDefault();
+      _picks.pop();
+      picksZeichnen(); pickZeichnen(_pickRows, null); refreshSend(); autosize(); updateLoopState();
+    });
+  }
+
   if (elPicks){
     elPicks.addEventListener('click', function(e){
       var x = e.target.closest && e.target.closest('.am-pick-tag-x');

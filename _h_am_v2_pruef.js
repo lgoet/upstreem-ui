@@ -453,6 +453,14 @@
     pruef("nur der gewaehlte Typ, nie gemischt",
       [].map.call(document.querySelectorAll("#am-pick-list .am-pick-cghead"),
         function(e){ return e.textContent.trim(); }).join(",") , "Brands");
+    pruef("Trefferliste bleibt nach der Uebernahme stehen (erst nach dem Klick pruefen)",
+      document.querySelectorAll(".am-pick-row").length, 2);
+    document.querySelectorAll(".am-pick-row")[0].click();
+    pruef("die Liste steht noch", document.querySelectorAll(".am-pick-row").length, 2,
+      "sonst muesste man fuer den zweiten Bezug neu tippen");
+    /* ERST HIER gibt es eine Pille. Diese zwei Zeilen standen VOR dem Klick und meldeten
+       "keine Pille" -- eine Pruefung an der falschen Stelle misst nichts und sieht dabei aus
+       wie ein Fehler im Code. */
     pruef("die Bezugs-Pille traegt den Schatten aus core", (function(){
       var t = document.querySelector("#am-picks .am-pick-tag");
       if (!t) return "keine Pille";
@@ -463,11 +471,6 @@
     pruef("und er wird nicht abgeschnitten",
       schattenPlatz("#am-picks .am-pick-tag"), "Platz",
       "#am-picks traegt overflow: hidden fuer die 200ms -- das Polster faehrt deshalb mit");
-    pruef("Trefferliste bleibt nach der Uebernahme stehen (erst nach dem Klick pruefen)",
-      document.querySelectorAll(".am-pick-row").length, 2);
-    document.querySelectorAll(".am-pick-row")[0].click();
-    pruef("die Liste steht noch", document.querySelectorAll(".am-pick-row").length, 2,
-      "sonst muesste man fuer den zweiten Bezug neu tippen");
     pruef("uebernommene Zeile wird grau",
       document.querySelectorAll(".am-pick-row.is-taken").length, 1);
     await holen("url", [{ type: "url", url: "https://nike.com/de/air-max",
@@ -983,6 +986,57 @@
       pruef("GEGENPROBE im Chat startet er einen neuen", gerufen, 1);
       if (warMsgs) root.classList.add("has-messages"); else root.classList.remove("has-messages");
       window.bubble_fn_ask_mira_new_chat = altFn;
+    })();
+
+    kopf("7g  DIE BEZUEGE STEHEN IM TEXT  (11.09., wie in Prompt Research)");
+    /* Die Pillen stehen als ERSTES in der Chatbox, der Text geht direkt dahinter weiter; jede
+       weitere Zeile laeuft am linken Rand unter den Pillen. Geprueft wird der FLUSS, nicht nur
+       der Einzug: ein Spiegel mit denselben Massen und derselben Schrift zeigt, wo der Browser
+       umbricht -- dort bricht er auch im Textfeld um. */
+    (function(){
+      if (root.classList.contains("is-pick-open")) g("am-pick-btn").click();
+      window.askMiraAddReference({ type: "domain", domain: "adac.de", name: "adac.de" });
+      var ta = g("am-textarea"), picks = g("am-picks");
+      pruef("7g der Streifen haengt im Textfeld",
+        picks.parentNode.classList.contains("am-input-wrap"), true);
+      pruef("7g kein Trenner mehr", getComputedStyle(picks, "::after").content, "none");
+      var tag = picks.querySelector(".am-pick-tag");
+      var cs = getComputedStyle(ta);
+      pruef("7g Einzug = rechte Pillenkante + 8px Luft",
+        parseFloat(cs.textIndent) - (tag.offsetLeft + tag.offsetWidth), 8);
+      ta.value = "Wie steht diese Domain im Vergleich zu den wichtigsten Wettbewerbern da, " +
+                 "und welche Quellen zitieren sie am haeufigsten?";
+      ta.dispatchEvent(new Event("input", { bubbles: true }));
+      cs = getComputedStyle(ta);
+      var m = document.createElement("div");
+      ["fontFamily","fontSize","fontWeight","lineHeight","letterSpacing","paddingTop",
+       "paddingLeft","paddingRight","textIndent","boxSizing"].forEach(function(k){ m.style[k] = cs[k]; });
+      m.style.width = ta.clientWidth + "px"; m.style.position = "absolute";
+      m.style.left = "-9999px"; m.style.whiteSpace = "pre-wrap";
+      m.innerHTML = ta.value.split(" ").map(function(w){ return "<span>" + w + "</span>"; }).join(" ");
+      document.body.appendChild(m);
+      var mb = m.getBoundingClientRect(), zeilen = {};
+      [].forEach.call(m.querySelectorAll("span"), function(sp){
+        var q = sp.getBoundingClientRect(), top = Math.round(q.top - mb.top);
+        if (!(top in zeilen)) zeilen[top] = Math.round(q.left - mb.left);
+      });
+      m.remove();
+      var tops = Object.keys(zeilen).map(Number).sort(function(a,b){ return a - b; });
+      pruef("7g erste Zeile beginnt HINTER der Pille", zeilen[tops[0]], Math.round(parseFloat(cs.textIndent)));
+      pruef("7g zweite Zeile beginnt am linken Rand", tops.length > 1 ? zeilen[tops[1]] : "nur eine Zeile", 0,
+        "das ist der Fluss eines contenteditable -- ohne ihn liefe der Text als zweite Spalte");
+      /* Die Ruecktaste ganz vorne nimmt die Pille, im Text nicht. */
+      ta.value = ""; ta.setSelectionRange(0, 0);
+      ta.dispatchEvent(new KeyboardEvent("keydown", { key: "Backspace", bubbles: true, cancelable: true }));
+      pruef("7g Ruecktaste an Stelle 0 nimmt die Pille",
+        picks.querySelectorAll(".am-pick-tag").length, 0);
+      pruef("7g und der Einzug faellt weg", getComputedStyle(ta).textIndent, "0px");
+      window.askMiraAddReference({ type: "domain", domain: "adac.de", name: "adac.de" });
+      ta.value = "abc"; ta.setSelectionRange(3, 3);
+      ta.dispatchEvent(new KeyboardEvent("keydown", { key: "Backspace", bubbles: true, cancelable: true }));
+      pruef("GEGENPROBE im Text laesst sie die Pille stehen",
+        picks.querySelectorAll(".am-pick-tag").length, 1);
+      window.askMiraClearInput();
     })();
 
     kopf("8  DER VERTEILER  (deshalb braucht die Suche KEINEN Eingriff in Bubble)");

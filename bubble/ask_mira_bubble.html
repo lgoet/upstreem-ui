@@ -278,12 +278,14 @@
             <div class="am-pick-list" id="am-pick-list" role="listbox" aria-live="polite"></div>
           </div>
         </div>
-        <!-- Die uebernommenen Bezuege: GANZ OBEN, also ueber dem Zitat, das "Ask Mira" aus einer
-             Textmarkierung dort ablegt. Der Bezug sagt worueber, das Zitat welche Stelle, die
-             Frage was -- von aussen nach innen. -->
-        <div class="am-picks" id="am-picks"></div>
         <div class="am-quote-slot" id="am-quote-slot"></div>
         <div class="am-input-wrap">
+          <!-- Die uebernommenen Bezuege stehen IM Textfeld, als erstes -- wie in Prompt Research
+               (11.09.). Der Text geht direkt hinter der letzten Pille weiter: das Textfeld
+               bekommt dafuer einen Einzug, den ask-mira.js aus der Lage der Pillen rechnet.
+               ask-mira.js haengt den Streifen auch in einem aelteren eingebauten Element hierher
+               um -- diese Stelle ist die Aufraeumarbeit fuer Neuinstallationen. -->
+          <div class="am-picks" id="am-picks"></div>
           <textarea class="am-textarea" id="am-textarea" rows="1" maxlength="2800" placeholder=""></textarea>
           <div class="am-ph-loop" id="am-ph-loop" aria-hidden="true"><span class="am-ph-text" id="am-ph-text">Ask Mira...</span></div>
         </div>

@@ -1989,40 +1989,29 @@
      faehrt das Polster mit von 0 auf 4px oben, 6px unten (Versatz 2 plus Streuung 4) und 5px
      an den Seiten. Die seitlichen 5px holt ein negativer Rand zurueck, damit die Pillen genau
      dort stehen wie vorher. */
-  .am-picks {
-    grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; min-width: 0;
-    max-height: 0; opacity: 0; overflow: hidden; margin-bottom: 0;
-    padding: 0; margin-left: -5px; margin-right: -5px;
-    position: relative;   /* Anker fuer den Trenner unten, siehe ::after */
-    transition: max-height 200ms ease, opacity 200ms ease, margin-bottom 200ms ease,
-                padding 200ms ease;
+  /* ---- DIE BEZUEGE STEHEN IM TEXT, NICHT DARUEBER (11.09. angefordert) -------------------
+     "Wie bei Prompt Research": die Pillen stehen als ERSTES in der Chatbox, und der Text geht
+     direkt dahinter weiter. Kein Streifen ueber dem Feld, kein Trenner.
+     Prompt Research loest das mit einem contenteditable. Fuer Miras Eingabe waere das ein
+     grosser Umbau -- Senden, Autohoehe, Platzhalter-Schleife, Spracheingabe und Zitat haengen
+     alle am echten Textfeld. Also dasselbe Bild mit dem Textfeld, das es gibt:
+       · der Streifen haengt IN .am-input-wrap und liegt oben links ueber dem Textfeld,
+       · das Textfeld bekommt einen Einzug (text-indent), genau so breit wie die Pillen,
+       · die ERSTE Zeile beginnt damit direkt hinter der letzten Pille, JEDE WEITERE unter den
+         Pillen am linken Rand -- das ist der Fluss eines contenteditable.
+     Die Zahlen rechnet picksEinziehen() in ask-mira.js aus der LAYOUT-Lage der Pillen
+     (offsetLeft/offsetWidth), nicht aus getBoundingClientRect: die Pillen fahren mit einem
+     scale herein, und ein gemessener Kasten waere waehrenddessen zu klein.
+     pointer-events: none am Streifen, auto an den Pillen: ein Klick in die Luecke zwischen
+     zwei Pillen soll das Textfeld treffen und nicht den Streifen. */
+  .am-picks { display: none; }
+  .am-input-wrap > .am-picks {
+    position: absolute; left: 0; top: 0; right: 0; z-index: 1;
+    display: flex; flex-wrap: wrap; gap: 6px; min-width: 0;
+    margin: 0; padding: 0; overflow: visible; pointer-events: none;
   }
-  /* 132px traegt drei umbrochene Kacheln (3x28 plus 2x6 Abstand plus Luft). Mehr als drei
-     gibt es nicht -- PICK_MAX ist 3. */
-  /* 12px = die 10, die vorher der Gitterabstand trug, plus die 2 von vorher. Dieselbe Optik,
-     nur jetzt an einer Stelle, die verschwindet, wenn der Streifen leer ist. */
-  /* 142 statt 132: die 132 tragen drei umbrochene Kacheln, dazu die 10px Polster, die jetzt
-     dazukommen. Und 6px Rand statt 12, weil 6px davon nun das untere Polster stellt -- der
-     sichtbare Abstand bleibt damit 12. */
-  /* DER TRENNER ZWISCHEN DEN BEZUEGEN UND DEM TEXT (11.09. angefordert): 16px Luft darueber,
-     16px darunter, und die Linie 16px vom Rand des Feldes eingerueckt -- also genau so breit
-     wie der Inhalt.
-     Er sitzt IM Streifen und nicht als eigenes Element, damit er mit den Pillen ein- und
-     ausfaehrt: der Streifen klappt ueber max-height auf, und was in ihm steht, kommt mit.
-     Ohne Bezuege ist der Streifen 0px hoch und overflow: hidden -- der Trenner ist dann nicht
-     da, genau wie verlangt.
-     Die Zahlen:
-       unten 17 = 16 Luft bis zur Linie + 1 fuer die Linie selbst (sie steht auf bottom: 0)
-       Rand 16  = die Luft von der Linie bis zum Textfeld
-       left/right 5 im ::after gleichen die -5px Rand des Streifens aus (die hat er fuer den
-       Schatten der Pillen); die Linie steht damit wieder auf den 16px Polster des Feldes.
-     142 bleibt als Deckel: drei umbrochene Reihen sind 96, plus 4 oben und 17 unten = 117. */
-  .am-composer.has-picks .am-picks { max-height: 142px; opacity: 1; margin-bottom: 16px;
-    padding: 4px 5px 17px; }
-  .am-picks::after {
-    content: ""; position: absolute; left: 5px; right: 5px; bottom: 0; height: 1px;
-    background: var(--vc-border);
-  }
+  .am-input-wrap > .am-picks:empty { display: none; }
+  .am-input-wrap > .am-picks .am-pick-tag { pointer-events: auto; }
   /* ZWEI GRUENDE FUER EINE EIGENE FAMILIE, und beide gehoeren hierhin, wo sie anfaengt.
      1. KEIN "-chip" im Klassennamen: der breite Sprachlauf von core nimmt [class*="-chip"]
         ausdruecklich aus, und eine Beschriftung darin waere spaeter stumm nicht uebersetzbar.
