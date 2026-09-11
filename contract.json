@@ -1759,11 +1759,16 @@
   "uo-skel-cnt",
   "uo-skel-fav",
   "uo-skel-line",
+  "uo-skel-meta",
+  "uo-skel-pot",
+  "uo-skel-rfav",
+  "uo-skel-row",
   "uo-skel-source",
   "uo-skel-tag",
   "uo-skel-tags",
   "uo-skel-text",
   "uo-skel-title",
+  "uo-skel-z",
   "uo-source",
   "uo-source-domain",
   "uo-source-meta",
@@ -2976,7 +2981,7 @@
   "globals": 171,
   "payloadkeys": 96,
   "dataattrs": 244,
-  "klassen": 2131,
+  "klassen": 2136,
   "keyframes": 66
  }
 }

@@ -144,7 +144,11 @@
   function portalHide(){ if (canPopover){ try { portal.hidePopover(); } catch(_){} } }
 
   /* ---------- state ---------- */
-  var S = { items: [], mode: 'board', visible: { pending: true, in_progress: true, done: true, ignored: false }, query: '', sort: 'priority', externalOnly: false, detailId: null, loading: false };
+  var S = { items: [], mode: 'board', visible: { pending: true, in_progress: true, done: true, ignored: false }, query: '', sort: 'priority', externalOnly: false, detailId: null, loading: false,
+            /* hasData: kam je ein Datensatz an? jeKarten: war je eine Karte da? leerFrei: das
+               Gnadenfenster fuer den leeren Datensatz ist abgelaufen. leseFehler: der letzte
+               Datensatz war nicht lesbar. Alles fuer render(), siehe dort. */
+            hasData: false, jeKarten: false, leerFrei: false, leseFehler: false };
   var COL_ORDER = ['ignored', 'pending', 'in_progress', 'done'];
 
   /* Column identity colours: status semantics, not the app's up/down or citation palettes, so they
@@ -432,17 +436,49 @@
     root.classList.toggle('is-stacked', avail > 0 && avail < needed);
   }
 
-  /* ---------- skeleton ---------- */
-  function skelCard(){
+  /* ---------- skeleton ----------
+     NEU GEBAUT AM 11.09. ("ein zum Layout passendes Skeleton"). Das alte Skelett stammte aus
+     einer frueheren Karte: es zeichnete den Begruendungssatz (seit dem 08.09. nicht mehr auf der
+     Karte), eine Quelle mit EINER Zeile statt Titel und Domain, und es fehlten die Balken rechts
+     oben. Die Karte sprang beim Laden also sichtbar in eine andere Form.
+     Jetzt steht es auf DENSELBEN Layout-Klassen wie die Karte (uo-card-top, uo-source,
+     uo-source-meta, uo-tags) -- ihre Abstaende gelten damit auch hier, und aendert jemand die
+     Karte, zieht das Skelett mit. Jede Textzeile ist ein Kasten in der Zeilenhoehe ihres Textes
+     (uo-skel-z), der Balken darin sitzt senkrecht mittig: so ist das Skelett genau so hoch wie die
+     Karte, ohne eine Zahl zweimal zu fuehren.
+     NICHT .uo-card und NICHT .uo-row am Aussenkasten: die Klick-Behandlung sucht genau diese zwei
+     Klassen (closest('.uo-card, .uo-row')) und oeffnete sonst die Detailansicht einer Karte, die es
+     nicht gibt. */
+  function skelZeile(art, breite){
+    return '<span class="uo-skel-z is-' + art + '"><span class="uo-skel" style="width:' + breite + '"></span></span>';
+  }
+  function skelCard(i){
+    /* Etwas Unruhe in den Breiten, damit drei Skelette untereinander nicht wie ein Muster aussehen. */
+    var w = [["96px", "62%", "68%"], ["120px", "48%", "54%"], ["84px", "74%", "62%"]][i % 3];
     return '<div class="uo-skel-card">'+
-      '<div class="uo-skel uo-skel-chip"></div>'+
-      '<div class="uo-skel uo-skel-title"></div>'+
-      '<div class="uo-skel uo-skel-title short"></div>'+
-      '<div class="uo-skel uo-skel-text"></div>'+
-      '<div class="uo-skel uo-skel-text short"></div>'+
-      '<div class="uo-skel-source"><div class="uo-skel uo-skel-fav"></div><div class="uo-skel uo-skel-line"></div></div>'+
-      '<div class="uo-skel-tags"><div class="uo-skel uo-skel-tag"></div><div class="uo-skel uo-skel-tag sm"></div></div>'+
+      '<div class="uo-card-top">'+ skelZeile("eyebrow", w[0]) +
+        '<span class="uo-skel-z is-eyebrow"><span class="uo-skel uo-skel-pot"></span></span></div>'+
+      skelZeile("title", "100%") + skelZeile("title", w[1]) +
+      '<div class="uo-source"><span class="uo-skel uo-skel-fav"></span>'+
+        '<span class="uo-source-meta uo-skel-meta">' + skelZeile("stitle", w[2]) + skelZeile("sdomain", "40%") + '</span>'+
+      '</div>'+
+      '<div class="uo-tags"><span class="uo-skel uo-skel-tag"></span><span class="uo-skel uo-skel-tag sm"></span></div>'+
     '</div>';
+  }
+  /* Die Listenzeile als Skelett: dieselbe Rechnung, auf den Klassen der Zeile (uo-row-main,
+     uo-row-sub, uo-row-right). */
+  function skelRow(i){
+    var w = ["58%", "44%", "66%", "38%"][i % 4];
+    return '<div class="uo-skel-row">'+
+      '<div class="uo-row-main">' + skelZeile("rtitle", w) +
+        '<span class="uo-row-sub"><span class="uo-skel uo-skel-rfav"></span>' + skelZeile("rsub", "140px") + '</span>'+
+      '</div>'+
+      '<div class="uo-row-right"><span class="uo-row-tags"><span class="uo-skel uo-skel-tag"></span>'+
+        '<span class="uo-skel uo-skel-tag sm"></span></span><span class="uo-skel uo-skel-pot"></span></div>'+
+    '</div>';
+  }
+  function skelKopf(col){
+    return '<span class="uo-col-dot'+(col.key==='in_progress'?' is-hollow':'')+'" style="'+(col.key==='in_progress'?'color:':'background:')+col.dot+';"></span><span class="uo-col-title">'+col.label+'</span><span class="up-head-sep" style="display:block"></span><span class="uo-skel uo-skel-cnt"></span>';
   }
   function renderSkeleton(){
     var elTotal = root.querySelector('.uo-total');
@@ -450,20 +486,67 @@
     var stage = root.querySelector('.uo-stage');
     var cols = visibleColumns();
     var per = [3, 2, 2, 1];
+    /* Das Skelett folgt der ANSICHT. Vorher stand auch in der Listenansicht das Brett da -- und
+       beim ersten Datensatz sprang die Seite von vier Spalten in eine Liste. */
+    if (S.mode === 'list'){
+      stage.innerHTML = '<div class="uo-list">' + cols.slice(0, 2).map(function(col, ci){
+        var n = ci === 0 ? 3 : 2, rows = '';
+        for (var i = 0; i < n; i++) rows += skelRow(i + ci);
+        return '<div class="uo-list-section"><div class="uo-list-sechead">' + skelKopf(col) + '</div>'+
+          '<div class="uo-list-rows">' + rows + '</div></div>';
+      }).join('') + '</div>';
+      updateLayout();
+      return;
+    }
     stage.innerHTML = '<div class="uo-board">' + cols.map(function(col, ci){
       var n = per[ci] != null ? per[ci] : 1, cards = '';
-      for (var i = 0; i < n; i++) cards += skelCard();
+      for (var i = 0; i < n; i++) cards += skelCard(i + ci);
       return '<section class="uo-col" data-status-key="'+col.key+'">'+
-        '<div class="uo-col-head"><span class="uo-col-dot'+(col.key==='in_progress'?' is-hollow':'')+'" style="'+(col.key==='in_progress'?'color:':'background:')+col.dot+';"></span><span class="uo-col-title">'+col.label+'</span><span class="up-head-sep" style="display:block"></span><span class="uo-skel uo-skel-cnt"></span></div>'+
+        '<div class="uo-col-head">' + skelKopf(col) + '</div>'+
         '<div class="uo-col-body">'+cards+'</div>'+
       '</section>';
     }).join('') + '</div>';
     updateLayout();
   }
 
+  /* ---- LEER ERST, WENN WIRKLICH DATEN KAMEN (11.09. angefordert) ----
+     "Den No-Data-Zustand erst anzeigen, wenn wirklich Daten reinkommen und die halt leer sind."
+     Vorher gab es drei Wege in den Leerzustand, ohne dass Daten da waren:
+       1. eine Uhr beendete das Laden nach 12s -- danach stand "Nothing here yet" in jeder Spalte,
+       2. opportunitiesSetLoading("no") vor den Daten -- sofort leer,
+       3. ein kaputter Payload wurde zu [] -- leer statt Fehler (CLAUDE.md §2).
+     Jetzt: solange nie Daten ankamen (S.hasData), steht das Skelett, egal was setLoading sagt.
+     Keine Uhr -- dieselbe Entscheidung wie in den Tabellen ("KEINE Uhr dazu", responses-table).
+     Und der ERSTE leere Datensatz bekommt ein Gnadenfenster: Bubble schickt vor dem echten oft
+     einen leeren (in urls-table gemessen), und der sagte sonst fuer einen Moment "es gibt nichts".
+     6s, solange noch nie Karten da waren, danach der Wert aus core -- genau die Regel der
+     Tabellen. */
+  var leerUhr = null;
+  function leerUhrWeg(){ if (leerUhr){ clearTimeout(leerUhr); leerUhr = null; } }
   function render(){
     var elTotal = root.querySelector('.uo-total');
-    if (S.loading){ renderSkeleton(); return; }
+    if (S.loading || !S.hasData){ leerUhrWeg(); renderSkeleton(); return; }
+    if (S.leseFehler){
+      leerUhrWeg();
+      elTotal.classList.remove('is-sk'); elTotal.textContent = '';
+      var UCf = window.UpstreemCore;
+      root.querySelector('.uo-stage').innerHTML = (UCf && UCf.leseFehlerHtml)
+        ? UCf.leseFehlerHtml("opportunities") : '<div class="uo-col-empty">The data could not be read.</div>';
+      return;
+    }
+    if (!S.items.length && !S.leerFrei){
+      renderSkeleton();
+      if (!leerUhr){
+        var UCg = window.UpstreemCore;
+        leerUhr = setTimeout(function(){
+          leerUhr = null;
+          if (S.loading || S.items.length) return;
+          S.leerFrei = true; render();
+        }, S.jeKarten ? ((UCg && UCg.EMPTY_GRACE_MS) || 500) : 6000);
+      }
+      return;
+    }
+    leerUhrWeg();
     elTotal.classList.remove('is-sk');
     var active = shownItems().filter(function(it){ var k = statusKeyOf(it); return k === 'pending' || k === 'in_progress'; }).length;
     elTotal.textContent = String(active);
@@ -1005,7 +1088,23 @@
   /* ---------- public API ----------
      Names, signatures and semantics are byte-identical to the standalone. */
   function ingest(items){ S.items = (Array.isArray(items) ? items : []).map(function(it, i){ if (it.id == null) it.id = 'opp_' + i; return it; }); }
-  window.opportunitiesSetItems = function(items){ if (typeof items === 'string') { var p = looseParse(items); items = Array.isArray(p) ? p : []; } S.loading = false; if (skelTimer){ clearTimeout(skelTimer); skelTimer = null; } ingest(items); if (S.detailId && !S.items.find(function(x){ return String(x.id)===String(S.detailId); })) closeDetail(); render(); };
+  window.opportunitiesSetItems = function(items){
+    /* Ein Text, der sich nicht lesen laesst, ist KEINE leere Liste: vorher wurde er zu [] und
+       sah genau aus wie "es gibt keine Opportunities". Jetzt der Lesefehler. Leerer Text bleibt
+       eine leere Liste -- den schickt Bubble, wenn das Feld noch nichts hat. */
+    var kaputt = false;
+    if (typeof items === 'string'){
+      var roh = items.trim();
+      var p = roh ? looseParse(roh) : [];
+      kaputt = !Array.isArray(p);
+      items = kaputt ? [] : p;
+    }
+    S.loading = false; S.hasData = true; S.leseFehler = kaputt;
+    ingest(items);
+    if (S.items.length){ S.jeKarten = true; S.leerFrei = false; }
+    if (S.detailId && !S.items.find(function(x){ return String(x.id)===String(S.detailId); })) closeDetail();
+    render();
+  };
   /* !!v war hier falsch, und zwar genau andersherum als gedacht: Bubble uebergibt "yes"/"no" als
      TEXT, und !!"no" ist true -- der Aufruf mit "no" schaltete das Skelett AN statt aus. Kein
      Fehler in der Konsole, das Board blieb einfach im Ladezustand haengen.
@@ -1078,15 +1177,13 @@
   };
 
   /* ---------- init ---------- */
-  var skelTimer = null;
   var injected = looseParse((root.querySelector('.uo-data-json')||{}).textContent || '');
   if (Array.isArray(injected) && injected.length){
-    S.loading = false; ingest(injected);
-  } else {
-    /* no data yet -> skeletons until opportunitiesSetItems() arrives */
-    S.loading = true;
-    skelTimer = setTimeout(function(){ if (S.loading){ S.loading = false; render(); } }, 12000);
+    S.loading = false; S.hasData = true; S.jeKarten = true; ingest(injected);
   }
+  /* Sonst: Skelett, bis opportunitiesSetItems() kommt -- ueber S.hasData, siehe render(). Die
+     12s-Uhr, die hier stand, ist weg: sie hat das Laden beendet, ohne dass Daten da waren, und
+     danach stand "Nothing here yet" in jeder Spalte. */
   render();
 
   }

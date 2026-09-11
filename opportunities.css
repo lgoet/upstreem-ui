@@ -484,7 +484,42 @@ button.uo-comp-more:hover { background: var(--vt-row-hover); color: var(--vc-tex
    Uses core's --vc-sk token and uutpulse keyframes, the same loading treatment every table shows,
    instead of the local shimmer gradient the standalone version animated. */
 .uo-skel { background: var(--vc-sk); border-radius: 6px; animation: uutpulse 1.2s ease-in-out infinite; }
-.uo-skel-card { background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; }
+/* Dieselbe Flaeche wie die Karte (--uo-col-bg). Hier stand --vc-bg, und im Dunkeln war das
+   Skelett damit heller als die Karte, die es ersetzt. */
+.uo-skel-card { background: var(--uo-col-bg); border: 1px solid var(--vc-border); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; }
+/* Eine Textzeile des Skeletts: ein Kasten so hoch wie die ZEILE des Textes, den sie vertritt,
+   der Balken darin senkrecht mittig. Die Hoehe kommt NICHT aus einer Zahl, sondern aus einem
+   unsichtbaren Zeichen (::before) in derselben Schriftgroesse und Zeilenhoehe wie das Original:
+   die Karte fuehrt Quelltitel und Domain mit line-height normal, und das ist je Schrift anders --
+   gemessen 17px und 15.5px, waehrend der Kommentar ueber .uo-source 15.6 und 14.4 nennt. Eine
+   feste Zahl haette auf der einen oder anderen Seite nicht gestimmt.
+   Die Typzeile ist 24px fest wie .uo-eyebrow. Der Balken ist rund drei Viertel der
+   Schriftgroesse hoch -- so hoch, wie Kleinbuchstaben mit Oberlaengen wirken. */
+.uo-skel-z { display: flex; align-items: center; min-width: 0; line-height: normal; }
+.uo-skel-z::before { content: "\200b"; width: 0; overflow: hidden; }
+.uo-skel-z > .uo-skel { max-width: 100%; }
+.uo-skel-z.is-eyebrow { height: 24px; font-size: 11px; }
+.uo-skel-z.is-eyebrow > .uo-skel { height: 10px; border-radius: 4px; }
+.uo-skel-z.is-title   { font-size: 15px; line-height: 1.35; }
+.uo-skel-z.is-title > .uo-skel { height: 12px; border-radius: 5px; }
+.uo-skel-z.is-stitle  { font-size: 13px; font-weight: 500; }
+.uo-skel-z.is-stitle > .uo-skel { height: 10px; border-radius: 4px; }
+.uo-skel-z.is-sdomain { font-size: 12px; }
+.uo-skel-z.is-sdomain > .uo-skel { height: 9px; border-radius: 4px; }
+.uo-skel-meta { flex: 1 1 auto; }
+/* Die Balken rechts oben: dieselbe Gesamtbreite wie die vier echten (4 * 4 + 3 * 2.4). */
+.uo-skel-pot { width: 23.2px; height: 12px; border-radius: 3.2px; }
+/* Die Listenzeile: dieselbe Schale wie .uo-row, ohne Zeiger und ohne Hover -- es gibt nichts
+   zu oeffnen. Schriftgroessen wie dort: Titel 14px, Unterzeile 12px neben einer 18px-Kachel. */
+.uo-skel-row {
+  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 16px;
+  background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: 12px; padding: 12px 15px;
+}
+.uo-skel-z.is-rtitle { font-size: 14px; font-weight: 500; }
+.uo-skel-z.is-rtitle > .uo-skel { height: 11px; border-radius: 4px; }
+.uo-skel-z.is-rsub { font-size: 12px; }
+.uo-skel-z.is-rsub > .uo-skel { height: 9px; border-radius: 4px; }
+.uo-skel-rfav { width: 18px; height: 18px; border-radius: 5px; flex: 0 0 auto; }
 .uo-skel-chip { width: 124px; height: 24px; border-radius: 8px; }
 .uo-skel-title { width: 100%; height: 14px; margin-top: 14px; }
 .uo-skel-title.short { width: 62%; margin-top: 8px; }

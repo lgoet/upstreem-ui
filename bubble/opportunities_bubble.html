@@ -73,7 +73,7 @@
   One Run-JS step per data load:
 
     window.opportunitiesSetItems(LIST);            // array (or a JSON string of one)
-    window.opportunitiesSetLoading("yes"/"no");    // skeleton lanes on/off
+    window.opportunitiesSetLoading("yes"/"no");    // skeleton on; "no" ends it only once data came
     window.opportunitiesSetTheme("dark"/"light");  // optional, data-isdark also works
     window.opportunitiesSetMode("board"/"list");
     window.opportunitiesSetShowIgnored(true/false);
@@ -81,8 +81,13 @@
     window.opportunitiesOpenDetail("OPPORTUNITY_ID");
     window.opportunitiesCloseDetail();
 
-  Until opportunitiesSetItems() is called the board shows skeleton lanes; after 12 seconds without
-  data it falls back to the empty state so a broken RPC does not leave a shimmering board forever.
+  Until opportunitiesSetItems() is called the board shows a skeleton in the shape of the current
+  view (cards on the board, rows in the list) -- with NO timeout (changed 11.09.): the empty state
+  ("Nothing here yet") only appears once a dataset has actually arrived and is empty. The first
+  empty dataset gets a 6s grace window, because Bubble often sends an empty one before the real
+  one; after cards have been shown once, the window is core's EMPTY_GRACE_MS (500ms).
+  A JSON string that cannot be read shows "Could not load opportunities" instead of an empty board.
+  An empty string is an empty list.
 
   One item looks like this (only id/headline are strictly required, everything else degrades):
 
