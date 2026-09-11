@@ -164,6 +164,11 @@
      Eine Liste und nicht zwei ODER-Vergleiche: ein dritter Fall ist dann eine Zeile hier und
      sonst nichts. */
   var OHNE_PIN = { response: 1, "brand editor": 1 };
+  /* ---- Wo es den Mira-Knopf gibt (11.09. angefordert) ----
+     Er haengt die offene Entitaet als Bezug an Mira. Vorerst NUR bei domain, ausdruecklich so
+     verlangt ("erstmal fuer Domain"). Die anderen Typen kommen, indem sie hier eingetragen
+     werden -- und in miraBezug() darunter ihre Form bekommen. */
+  var MIT_MIRA = { domain: 1 };
   function typLabel(t) {
     var k = typNorm(t);
     var w = TYPEN[k] || k;
@@ -199,7 +204,7 @@
        Seitenleiste sagt die Flagge, WELCHER Prompt. */
     function markt() { return feld("market", "data-market"); }
 
-    var elType, elLogo, elName, elEdit, elDomain, elPin, elPrompt;
+    var elType, elLogo, elName, elEdit, elDomain, elPin, elPrompt, elMira;
     var state = { leer: true };
 
     /* Das Markup baut die Komponente selbst. In Bubble steht nur die leere Wurzel -- die Leiste
@@ -240,6 +245,12 @@
           'data-tip="' + esc(UC.t("Go to parent prompt")) + '" ' +
           'aria-label="' + esc(UC.t("Go to parent prompt")) + '">' +
           UC.icon("zap", 2) + '</button>' +
+        /* Mira: dasselbe Zeichen wie der Mira-Punkt in der Seitenleiste (blend), damit ohne
+           Beschriftung zu sehen ist, wohin es geht. LINKS vom Pin, so angefordert. */
+        '<button type="button" class="up-iconbtn utb-mira" data-utb-mira hidden ' +
+          'data-tip="' + esc(UC.t("Ask Mira about this")) + '" ' +
+          'aria-label="' + esc(UC.t("Ask Mira about this")) + '">' +
+          UC.icon("blend", 2) + '</button>' +
         '<button type="button" class="up-iconbtn utb-pin" data-utb-pin ' +
           'data-tip="' + esc(UC.t("Pin to sidebar")) + '" aria-label="' + esc(UC.t("Pin to sidebar")) + '">' +
           UC.icon("pin", 2) + '</button>' +
@@ -255,6 +266,7 @@
       elDomain = root.querySelector("[data-utb-domain]");
       elPin = root.querySelector("[data-utb-pin]");
       elPrompt = root.querySelector("[data-utb-prompt]");
+      elMira = root.querySelector("[data-utb-mira]");
     }
     aufbauen();
 
@@ -335,6 +347,9 @@
          einzige Element, das einen Prompt UEBER sich hat. Im Ladezustand weg, wie Stift und
          Globus: welcher Typ kommt, weiss die Leiste da noch nicht. */
       elPrompt.hidden = laedt || (t !== "response");
+      /* Der Mira-Knopf braucht einen NAMEN: ohne ihn gaebe es nichts, was im Feld stuende. Im
+         Ladezustand weg, aus demselben Grund wie Stift und Globus. */
+      if (elMira) elMira.hidden = laedt || !MIT_MIRA[t] || !name();
     }
 
     /* ---- Zuruecksetzen (07.09. angefordert) ----
@@ -405,7 +420,43 @@
         return;
       }
       if (t.closest("[data-utb-pin]")) { anheften(); return; }
+      if (t.closest("[data-utb-mira]")) { zuMira(); return; }
     });
+
+    /* ---- Mira (11.09. angefordert) ----
+       Drei Dinge, in dieser Reihenfolge:
+         1. Der Bezug geht an Mira. Ist Mira auf der Seite, direkt ueber askMiraAddReference.
+            Ist sie es NICHT, ueber den sessionStorage: Bubble schaltet auf view=mira, und je
+            nach Aufbau der Seite ist das ein Seitenwechsel -- ein Aufruf ins Leere waere dann
+            verloren. Mira liest den Eintrag beim Start und loescht ihn.
+            NUR EINER der beiden Wege: mit beiden kaeme der Bezug bei Mira zweimal an, und ein
+            Eintrag im Speicher, den niemand abholt, stuende beim naechsten Laden einer ganz
+            anderen Seite wieder im Feld.
+         2. Das Ereignis an Bubble. Drawer schliessen und auf view=mira schalten KANN nur Bubble:
+            die Drawer sind Bubble-Gruppen, und eine URL-Aenderung per JavaScript bemerkt Bubble
+            nicht -- es liest die Parameter beim Seitenaufbau und bei seinem eigenen "Go to
+            page". Also dasselbe Muster wie Schliessen, Stift und Globus: ein Ereignis, und der
+            Workflow tut den Rest.
+         3. Nichts weiter hier. Den Ausgangszustand in Mira (Startschirm, leeres Feld, Fokus)
+            stellt askMiraAddReference selbst her -- an einer Stelle, nicht an zweien. */
+    function miraBezug() {
+      var t = typ(), n = name();
+      if (t === "domain") return { type: "domain", domain: n, name: n, favicon: logo(),
+                                   id: itemId() || n };
+      return null;
+    }
+    function zuMira() {
+      var bezug = miraBezug();
+      if (!bezug) return;
+      var wurzel = document.getElementById("ask-mira");
+      var miraDa = !!(wurzel && wurzel.__askMiraInit) && typeof window.askMiraAddReference === "function";
+      if (miraDa) {
+        try { window.askMiraAddReference(bezug); } catch (e) {}
+      } else {
+        try { sessionStorage.setItem("am_pending_ref", JSON.stringify(bezug)); } catch (e) {}
+      }
+      fire("data-mira-fn", "utbMira", { type: typ(), item_id: itemId(), name: name() });
+    }
 
     /* ---- Anheften. Wortgleich die Uebergabe, die Quick Actions benutzt: Typ, Kennung,
        Beschriftung, Bild. Die Seitenleiste zeichnet daraus ihre Zeile, und weil die Kennung

@@ -32,7 +32,7 @@
     "askMiraSetTool","askMiraSetFaviconsFromEl","askMiraSetBrandLogosFromEl",
     "askMiraSetToolFromEl","askMiraGetState","askMiraOpportunityResult",
     "askMiraResolveVoice","askMiraRejectVoice","askMiraSetTranscript","askMiraVoiceCancel",
-    "askMiraSetChatsLoading"
+    "askMiraSetChatsLoading", "askMiraAddReference"
   ];
   var __amBootQueue = window.__amBootQueue = window.__amBootQueue || [];
   if (!window.__amBootStubbed){
@@ -3784,8 +3784,11 @@
         esc(UCt(HEAD[k] || k)) + '</div>' +
         gruppen[k].map(function(e){
           return (UCg && UCg.entityRow)
-            /* typLabel: false -- der Typ steht jetzt oben und nicht mehr in jeder Zeile. */
-            ? UCg.entityRow(e.it, { prefix: 'am-pick', query: q, index: e.i, typLabel: false }) : '';
+            /* Typ rechts in der Zeile UND Ueberschrift darueber -- wie in Quick Actions, die
+               beides zeigen (11.09. ausdruecklich so verlangt). Am 09.09. hatte ich den Typ
+               rechts mit typLabel: false abgeschaltet, als die Ueberschriften dazukamen; das
+               war eine Annahme, nicht die Anforderung. */
+            ? UCg.entityRow(e.it, { prefix: 'am-pick', query: q, index: e.i }) : '';
         }).join('') + '</div>';
     }).join('');
     /* Die Klasse fuer "schon uebernommen" NACH dem Zeichnen setzen. Hier stand ein Suchen und
@@ -4750,6 +4753,65 @@
   window.askMiraSetTitlePendingFromEl = function(sel){ var r = _amReadEl(sel); if (r != null) window.askMiraSetTitlePending(r); };
   window.askMiraSetExportPending = function(messageId, pending){ setExportPending(messageId, amTruthy(pending)); };
   window.askMiraClearInput = function(){ elTextarea.value = ''; clearQuote(); clearPicks(); autosize(); refreshSend(); updateLoopState(); };
+
+  /* ---- EIN BEZUG VON AUSSEN (11.09. angefordert) --------------------------------------------
+     Der Mira-Knopf der Drawer-Topbar ruft das: die Entitaet, die gerade offen ist (zuerst eine
+     Domain), soll als Bezug im Eingabefeld stehen. Und Mira soll dabei IMMER im Ausgangszustand
+     sein -- Startschirm, leeres Feld, Fokus im Feld, genau dieser eine Bezug darin.
+
+       askMiraAddReference({ type: "domain", domain: "adac.de", name: "adac.de",
+                             favicon: "https://…" })
+
+     Die Form ist die eines Treffers der Suche (entityItems), damit derselbe Bezug entsteht, als
+     haette der Nutzer ihn ueber das Plus gewaehlt -- dieselbe Pille, dasselbe Format fuer den
+     Agenten. Das Feld heisst domain/url/id wie dort; entityId liest es danach.
+
+     NICHT ANHAENGEN, SONDERN ERSETZEN. Stand von einem frueheren Klick noch ein Bezug im Feld,
+     waere der naechste Klick "fuege noch einen dazu" -- verlangt ist aber "mit diesem Item".
+     Ebenso der Text: ein halb geschriebener Satz aus einem anderen Zusammenhang gehoert nicht
+     vor einen neuen Bezug.
+
+     DER FOKUS KOMMT MEHRMALS. Beim Klick ist Mira oft noch unsichtbar -- Bubble schaltet die
+     Ansicht erst auf view=mira, nachdem das Ereignis angekommen ist, und ein Fokus auf ein
+     verstecktes Feld geht ins Leere. Also wird nachgefasst, bis das Feld sichtbar ist, und
+     danach nicht mehr. Zwei Sekunden Obergrenze: laenger wartet niemand auf einen Cursor. */
+  window.askMiraAddReference = function(ref){
+    var it = null;
+    try { it = (typeof ref === 'string') ? JSON.parse(ref) : ref; } catch(e){ it = null; }
+    if (!it || typeof it !== 'object'){
+      if (window.console) console.warn('[ask-mira] askMiraAddReference: kein lesbarer Bezug --', ref);
+      return false;
+    }
+    it = Object.assign({}, it);
+    if (!it.type) it.type = 'domain';
+    if (it.type === 'domain' && !it.domain) it.domain = it.name || it.id || '';
+    if (!it.name) it.name = it.domain || it.url || it.title || '';
+    /* In den Ausgangszustand: aus einem Chat heraus ein neuer Chat, auf dem Startschirm nichts. */
+    if (root.classList.contains('has-messages')) goToStart();
+    elTextarea.value = '';
+    clearQuote(); clearPicks();
+    if (root.classList.contains('is-pick-open')) pickOeffnen(false);
+    _picks.push(it);
+    picksZeichnen(); refreshSend(); autosize(); updateLoopState();
+    var bis = Date.now() + 2000;
+    (function fassen(){
+      var sichtbar = elTextarea && elTextarea.getClientRects().length > 0 &&
+                     getComputedStyle(elTextarea).visibility !== 'hidden';
+      if (sichtbar){ try { elTextarea.focus(); } catch(e){} return; }
+      if (Date.now() < bis) setTimeout(fassen, 80);
+    })();
+    return true;
+  };
+  /* Kam der Aufruf, BEVOR diese Datei geladen war, liegt er in der Warteschlange der Stubs und
+     wird dort abgearbeitet. Kam er vor einem Seitenwechsel, den Bubble fuer view=mira macht,
+     liegt er im sessionStorage -- die Topbar legt ihn dort ab (siehe drawer-topbar.js). */
+  try {
+    var wartend = sessionStorage.getItem('am_pending_ref');
+    if (wartend){
+      sessionStorage.removeItem('am_pending_ref');
+      window.askMiraAddReference(wartend);
+    }
+  } catch(e){}
   window.askMiraSetTheme = function(theme){
     var t = String(theme||'').toLowerCase();
     window.__askMiraTheme = (t === 'dark' || t === 'light') ? t : null;
