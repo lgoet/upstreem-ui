@@ -123,7 +123,16 @@
                     Prompts -- welcher Prompt darueber steht, weiss das Datenmodell.
 
   data-mira-fn    = "bubble_fn_utbMira_[dynamic id]"
-                    Vom Mira-Zeichen links neben dem Pin -- vorerst NUR bei data-type="domain".
+                    Vom Mira-Zeichen links neben dem Pin -- bei data-type="domain", "brand",
+                    "prompt" und "url" (nicht bei "brand editor" und "response"). Was dafuer
+                    gesetzt sein muss, sonst bleibt das Zeichen weg:
+                        domain   data-name (die Domain)
+                        brand    data-name und data-item-id (die Kennung der Marke)
+                        prompt   data-name (der Text) und data-item-id; data-market fuer die Flagge
+                        url      data-name (der Titel) und data-item-id = DIE ADRESSE der URL --
+                                 derselbe Wert, den der Pin anheftet. Eine Bubble-Kennung
+                                 ("1712849302914x392") ist keine Adresse; dann bleibt das Zeichen
+                                 weg und die Konsole sagt es einmal.
                     Nutzlast:
                         { "team_id": "...", "type": "domain", "item_id": "...", "name": "adac.de" }
                     KEIN WORKFLOW NOETIG. Die Leiste erledigt alles selbst, in dieser Reihenfolge:
@@ -134,7 +143,7 @@
                       3. den Bezug an Mira geben.
                     Das Ereignis bleibt als Haken, falls Bubble ZUSAETZLICH etwas tun soll.
                     DEN BEZUG IM EINGABEFELD MACHT DIE LEISTE SELBST, nicht der Workflow: sie gibt
-                    die Domain an Mira (askMiraAddReference), und Mira stellt dabei ihren
+                    die Entitaet an Mira (askMiraAddReference), und Mira stellt dabei ihren
                     Ausgangszustand her -- Startschirm, leeres Feld, Fokus im Feld, genau dieser
                     eine Bezug darin. Ist Mira beim Klick noch nicht auf der Seite, liegt der
                     Bezug im sessionStorage und Mira holt ihn beim Start ab.

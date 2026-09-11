@@ -165,10 +165,13 @@
      sonst nichts. */
   var OHNE_PIN = { response: 1, "brand editor": 1 };
   /* ---- Wo es den Mira-Knopf gibt (11.09. angefordert) ----
-     Er haengt die offene Entitaet als Bezug an Mira. Vorerst NUR bei domain, ausdruecklich so
-     verlangt ("erstmal fuer Domain"). Die anderen Typen kommen, indem sie hier eingetragen
-     werden -- und in miraBezug() darunter ihre Form bekommen. */
-  var MIT_MIRA = { domain: 1 };
+     Er haengt die offene Entitaet als Bezug an Mira. Zuerst nur domain, am selben Tag um
+     brand, prompt und url erweitert -- genau die vier Typen, die Miras eigene Suche kennt. Die
+     Form des Bezugs je Typ steht in miraBezug() darunter.
+     NICHT bei brand editor und response: der Editor ist eine Ansicht auf eine Marke (die Marke
+     selbst hat den Knopf), und eine einzelne Antwort ist kein Bezug, den Miras Suche fuehrt --
+     ein Bezug, den man ueber das Plus nicht waehlen kann, haette kein Format fuer den Agenten. */
+  var MIT_MIRA = { domain: 1, brand: 1, prompt: 1, url: 1 };
   function typLabel(t) {
     var k = typNorm(t);
     var w = TYPEN[k] || k;
@@ -347,9 +350,11 @@
          einzige Element, das einen Prompt UEBER sich hat. Im Ladezustand weg, wie Stift und
          Globus: welcher Typ kommt, weiss die Leiste da noch nicht. */
       elPrompt.hidden = laedt || (t !== "response");
-      /* Der Mira-Knopf braucht einen NAMEN: ohne ihn gaebe es nichts, was im Feld stuende. Im
-         Ladezustand weg, aus demselben Grund wie Stift und Globus. */
-      if (elMira) elMira.hidden = laedt || !MIT_MIRA[t] || !name();
+      /* Der Mira-Knopf nur, wenn der Bezug VOLLSTAENDIG ist -- miraBezug() entscheidet das, an
+         einer Stelle: bei der Domain reicht der Name, Marke und Prompt brauchen zusaetzlich ihre
+         Kennung, die URL ihre Adresse. Ein Knopf, dessen Klick nichts tut, waere schlimmer als
+         keiner. Im Ladezustand weg, aus demselben Grund wie Stift und Globus. */
+      if (elMira) elMira.hidden = laedt || !miraBezug();
     }
 
     /* ---- Zuruecksetzen (07.09. angefordert) ----
@@ -439,10 +444,39 @@
             Workflow tut den Rest.
          3. Nichts weiter hier. Den Ausgangszustand in Mira (Startschirm, leeres Feld, Fokus)
             stellt askMiraAddReference selbst her -- an einer Stelle, nicht an zweien. */
+    /* DIE FORM JE TYP ist die eines Treffers aus Miras Suche (UC.entityItems) -- dieselben
+       Felder, die UC.entityId, UC.entityLabel und UC.entityBild lesen. So entsteht dieselbe
+       Pille und dieselbe Zeile fuer den Agenten, als haette der Nutzer den Eintrag ueber das Plus
+       gewaehlt:
+         brand   id = Kennung,  name = Name,         logo = Logo       -> "- Brand: N (uid: …)"
+         prompt  id = Kennung,  prompt_text = Text,  market = Markt    -> "- Prompt: "…" (uid: …)"
+         domain  domain = Name, favicon = Bild                         -> "- Domain: adac.de"
+         url     url = Kennung, title = Name,        favicon = Bild    -> "- URL: … (Titel)"
+       Bei der URL ist data-item-id die ADRESSE: die ist der Schluessel der Tabelle, und genau
+       diesen Wert heftet der Pin schon heute an -- derselbe, den Quick Actions fuer eine URL
+       anheftet (it.url). Der Name ist ihr Titel und keine Adresse.
+       Fehlt, was der Typ braucht, gibt es keinen Bezug -- und damit keinen Knopf (render). */
     function miraBezug() {
-      var t = typ(), n = name();
+      var t = typ(), n = name(), id = itemId();
+      if (!MIT_MIRA[t] || !n) return null;
       if (t === "domain") return { type: "domain", domain: n, name: n, favicon: logo(),
-                                   id: itemId() || n };
+                                   id: id || n };
+      if (!id) return null;
+      if (t === "brand")  return { type: "brand", id: id, name: n, logo: logo() };
+      if (t === "prompt") return { type: "prompt", id: id, prompt_text: n, name: n,
+                                   market: markt() };
+      if (t === "url") {
+        /* Eine Bubble-Kennung ("1712849302914x392") ist keine Adresse. Mit ihr stuende im Text an
+           den Agenten "URL: 1712849302914x392" -- eine Zeile, mit der er nichts anfangen kann, und
+           der Nutzer saehe davon nichts. Also kein Knopf, und die Konsole sagt einmal, warum. */
+        if (!/[.\/]/.test(id)) {
+          if (!state.urlGewarnt && window.console) console.warn("[drawer-topbar] data-item-id " +
+            "ist bei einer URL keine Adresse (\"" + id + "\") -- der Mira-Knopf bleibt weg.");
+          state.urlGewarnt = true;
+          return null;
+        }
+        return { type: "url", url: id, title: n, name: n, favicon: logo() };
+      }
       return null;
     }
     function zuMira() {
