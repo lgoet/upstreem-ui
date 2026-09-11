@@ -126,18 +126,18 @@
                     Vom Mira-Zeichen links neben dem Pin -- vorerst NUR bei data-type="domain".
                     Nutzlast:
                         { "team_id": "...", "type": "domain", "item_id": "...", "name": "adac.de" }
-                    Im Workflow, in dieser Reihenfolge:
-                      1. ALLE offenen Drawer schliessen.
-                      2. Auf die Mira-Ansicht wechseln: "Go to page (current page)" mit dem
-                         Parameter view = mira.
+                    KEIN WORKFLOW NOETIG. Die Leiste erledigt alles selbst, in dieser Reihenfolge:
+                      1. alle offenen Drawer schliessen (closeDrawer der Host-App -- core merkt
+                         sich seit dem 11.09., welche offen sind),
+                      2. die Ansicht wechseln (showView("mira"), derselbe Weg wie jeder
+                         Ansichtswechsel der App),
+                      3. den Bezug an Mira geben.
+                    Das Ereignis bleibt als Haken, falls Bubble ZUSAETZLICH etwas tun soll.
                     DEN BEZUG IM EINGABEFELD MACHT DIE LEISTE SELBST, nicht der Workflow: sie gibt
                     die Domain an Mira (askMiraAddReference), und Mira stellt dabei ihren
                     Ausgangszustand her -- Startschirm, leeres Feld, Fokus im Feld, genau dieser
                     eine Bezug darin. Ist Mira beim Klick noch nicht auf der Seite, liegt der
                     Bezug im sessionStorage und Mira holt ihn beim Start ab.
-                    Warum Drawer und Ansicht in Bubble liegen: die Drawer sind Bubble-Gruppen, und
-                    eine URL-Aenderung per JavaScript bemerkt Bubble nicht -- es liest die
-                    Parameter beim Seitenaufbau und bei seinem eigenen "Go to page".
 
   data-domain-fn  = "bubble_fn_utbDomain_[dynamic id]"
                     Nur bei data-type="url", vom Globus links neben dem Pin. Nutzlast wie oben.

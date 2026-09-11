@@ -448,6 +448,24 @@
     function zuMira() {
       var bezug = miraBezug();
       if (!bezug) return;
+      /* 1. ALLE OFFENEN DRAWER ZU -- selbst, nicht ueber Bubble (11.09. gemeldet: "der Drawer
+         schliesst sich nicht, der View wechselt nicht"). Die Host-App schliesst Drawer mit
+         closeDrawer(art), und core weiss seit heute, welche offen sind. Der eigene Typ geht
+         zusaetzlich mit: der Drawer, in dem diese Leiste steht, ist ganz sicher offen, auch wenn
+         er geoeffnet wurde, bevor core openDrawer eingewickelt hatte. */
+      try {
+        if (UC.closeAllDrawers) UC.closeAllDrawers([typ()]);
+        else if (typeof window.closeDrawer === "function") window.closeDrawer(typ());
+      } catch (e) {}
+      /* 2. DIE ANSICHT WECHSELN, mit dem Weg der App: showView("mira"). Das ist dieselbe
+         Funktion, mit der die Host-App jede Ansicht umschaltet -- und core meldet den Wechsel
+         ueber seine Einwicklung an alle Komponenten, die aufraeumen muessen. */
+      try { if (typeof window.showView === "function") window.showView("mira"); } catch (e) {}
+      /* 3. DER BEZUG AN MIRA. Nach dem Wechsel und nicht davor: ist Mira auf der Seite, steht sie
+         jetzt sichtbar da, und der Fokus trifft ein sichtbares Feld. Ist sie es nicht, liegt der
+         Bezug im sessionStorage und Mira holt ihn beim Start ab.
+         Nur EINER der zwei Wege: mit beiden kaeme er zweimal an, und ein Eintrag, den niemand
+         abholt, stuende beim naechsten Laden einer ganz anderen Seite wieder im Feld. */
       var wurzel = document.getElementById("ask-mira");
       var miraDa = !!(wurzel && wurzel.__askMiraInit) && typeof window.askMiraAddReference === "function";
       if (miraDa) {
@@ -455,6 +473,8 @@
       } else {
         try { sessionStorage.setItem("am_pending_ref", JSON.stringify(bezug)); } catch (e) {}
       }
+      /* Das Ereignis bleibt -- als Haken fuer alles, was Bubble zusaetzlich tun will. Noetig ist
+         es nicht mehr: Drawer und Ansicht erledigt die Leiste oben selbst. */
       fire("data-mira-fn", "utbMira", { type: typ(), item_id: itemId(), name: name() });
     }
 

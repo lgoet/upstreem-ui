@@ -322,6 +322,7 @@
   "bubble_fn_uptTopicsClick",
   "closeAddBrand",
   "closeAddPrompts",
+  "closeDrawer",
   "closeUpstreemPreferences",
   "createWithAi",
   "fadeView",
@@ -2972,7 +2973,7 @@
  "_zaehlung": {
   "events": 151,
   "fnattrs": 98,
-  "globals": 170,
+  "globals": 171,
   "payloadkeys": 96,
   "dataattrs": 244,
   "klassen": 2131,

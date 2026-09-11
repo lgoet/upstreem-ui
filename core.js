@@ -13266,6 +13266,50 @@
       sicher("segLauf", function(){ segLauf(null, true, true); });
     }, 350);
   });
+  /* ---- WELCHE DRAWER SIND OFFEN? (11.09.) ----------------------------------------------------
+     Die Host-App oeffnet und schliesst Drawer mit openDrawer(art) / closeDrawer(art), und core
+     wickelt beide ohnehin ein (wrapDrawerFn). Gemerkt hat sich bisher niemand, WELCHE gerade
+     offen sind -- und genau das braucht der Mira-Knopf der Topbar: "alle offenen Drawer
+     schliessen" geht nur, wenn man sie kennt.
+     closeDrawer() OHNE Namen schliesst in der Host-App den obersten; hier faellt dann der
+     zuletzt geoeffnete aus der Liste. */
+  var OFFENE_DRAWER = [];
+  onDrawerOpen(function(art){
+    art = String(art == null ? "" : art).trim();
+    if (!art) return;
+    var i = OFFENE_DRAWER.indexOf(art);
+    if (i >= 0) OFFENE_DRAWER.splice(i, 1);
+    OFFENE_DRAWER.push(art);                 /* der zuletzt geoeffnete steht hinten */
+  });
+  onDrawerClose(function(art){
+    art = String(art == null ? "" : art).trim();
+    if (!art){ OFFENE_DRAWER.pop(); return; }
+    var i = OFFENE_DRAWER.indexOf(art);
+    if (i >= 0) OFFENE_DRAWER.splice(i, 1);
+  });
+  function openDrawers(){ return OFFENE_DRAWER.slice(); }
+  /* Alle offenen schliessen, von oben nach unten. zusaetzlich: Namen, die sicher mit sollen,
+     auch wenn sie nicht in der Liste stehen -- ein Drawer, der geoeffnet wurde, BEVOR core
+     openDrawer eingewickelt hatte, kennt die Liste nicht. Die Topbar gibt deshalb ihren eigenen
+     Typ mit: der Drawer, in dem sie steht, ist ganz sicher offen.
+     Jeder Name hoechstens einmal, und ein Fehler beim Schliessen des einen haelt die anderen
+     nicht auf. */
+  function closeAllDrawers(zusaetzlich){
+    if (typeof window.closeDrawer !== "function") return 0;
+    var liste = OFFENE_DRAWER.slice().reverse();
+    (zusaetzlich || []).forEach(function(a){
+      a = String(a == null ? "" : a).trim();
+      if (a && liste.indexOf(a) < 0) liste.push(a);
+    });
+    var n = 0;
+    liste.forEach(function(a){
+      try { window.closeDrawer(a); n++; }
+      catch(e){ if (window.console) console.warn("[drawer] closeDrawer(\"" + a + "\") hat geworfen:", e); }
+    });
+    OFFENE_DRAWER.length = 0;
+    return n;
+  }
+
   (function watchForDrawerFns(triesLeft){
     var a = wrapDrawerFn("openDrawer", DRAWER_SUBS);
     var b = wrapDrawerFn("closeDrawer", DRAWER_ZU_SUBS);
@@ -15780,6 +15824,7 @@
        die Ablage selbst bleibt privat, damit niemand einen Wert hineinschreibt, den kein
        Formatierer kennt. */
     getPref: getPref, setPref: setPref, setLocaleReload: setLocaleReload,
+    openDrawers: openDrawers, closeAllDrawers: closeAllDrawers,
     onPrefs: onPrefs, getUpstreemThemeChoice: getUpstreemThemeChoice,
     PREF_DEFAULT: PREF_DEFAULT, PREF_ERLAUBT: PREF_ERLAUBT,
     fmtNum: fmtNum, fmtDateMuster: fmtDateMuster, datumsTeile: datumsTeile,
