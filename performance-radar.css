@@ -123,9 +123,20 @@
    Markenspalten unter sich durchlaufen. Also nicht die Farbe der Seite, sondern die des Kastens,
    in dem sie liegen -- und der ist im Dunkeln der Grund der Karte darunter. Damit sind sie
    unsichtbar, egal was in Bubble eingestellt ist. */
+/* NACHTRAG 11.09. -- das Gitter war immer noch da ("keine bg color"). --vc-bg ist im Dunkeln
+   #1c1c1f, der Grund der Karte in Bubble ist dunkler: jede Kopfzelle stand wieder als eigener
+   heller Kasten da. Die Annahme "der Kasten ist der Grund" stimmt nicht, denn der Kasten malt im
+   Dunkeln gar nichts -- der Grund kommt aus Bubble, und den kennt keine Variable hier.
+   Also KEINE Flaeche. Deckend werden die Zellen nur, solange die Matrix quer gescrollt ist
+   (is-xscrolled, gesetzt in performance-radar.js) -- dann laufen Markenspalten unter ihnen
+   durch. Und dann mit der GEMESSENEN Farbe des Grunds dahinter (--uhm-grund), damit sie auch
+   dann nicht als Kasten erscheinen. --up-surface ist nur der Rueckfall, wenn die Messung nichts
+   Deckendes findet. */
 .up-root[data-theme="dark"] .uhm-box { background: transparent; }
 .up-root[data-theme="dark"] .uhm-rowhead,
-.up-root[data-theme="dark"] .uhm-corner { background: var(--vc-bg); }
+.up-root[data-theme="dark"] .uhm-corner { background: transparent; }
+.up-root[data-theme="dark"].is-xscrolled .uhm-rowhead,
+.up-root[data-theme="dark"].is-xscrolled .uhm-corner { background: var(--uhm-grund, var(--up-surface)); }
 .uhm-rowhead .up-topicchip { max-width: 100%; }
 
 /* ---------- cells ----------

@@ -1422,6 +1422,35 @@
       hideTip();
     });
     if (elScroll) elScroll.addEventListener("scroll", hideTip, { passive: true });
+    /* ---- Die klebende erste Spalte: deckend NUR beim Querscrollen (11.09.) ----
+       Im Dunkeln hat sie keine Flaeche (siehe performance-radar.css, is-xscrolled). Sobald die
+       Matrix quer gescrollt ist, laufen die Markenspalten unter ihr durch -- dann braucht sie
+       einen Grund, und zwar DEN, der hinter ihr liegt. Gemessen wird er beim Einschalten: der
+       erste deckende Hintergrund von der Matrix aufwaerts. Beim Einschalten und nicht einmal
+       beim Aufbau, weil ein Themewechsel den Grund dahinter mitdreht. */
+    function grundDahinter(){
+      var el = elScroll ? elScroll.parentElement : root;
+      while (el && el.nodeType === 1){
+        var c = getComputedStyle(el).backgroundColor || "";
+        var m = c.match(/rgba?\(([^)]+)\)/);
+        if (m){
+          var teile = m[1].split(",");
+          if (teile.length < 4 || parseFloat(teile[3]) >= 1) return c;
+        }
+        el = el.parentElement;
+      }
+      return "";
+    }
+    function querLage(){
+      var an = !!elScroll && elScroll.scrollLeft > 0;
+      if (an === root.classList.contains("is-xscrolled")) return;
+      if (an){
+        var g = grundDahinter();
+        if (g) root.style.setProperty("--uhm-grund", g); else root.style.removeProperty("--uhm-grund");
+      }
+      root.classList.toggle("is-xscrolled", an);
+    }
+    if (elScroll) elScroll.addEventListener("scroll", querLage, { passive: true });
 
     /* Die einklappbare Werkzeugleiste aus core. Sie klappt zusammen, was man EINSTELLT (Brands &
        Topics, Settings) und laesst den Metrik-Schalter stehen -- der sagt, WORAUF man gerade
