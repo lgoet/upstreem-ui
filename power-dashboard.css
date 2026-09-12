@@ -92,7 +92,7 @@
   min-height: 24px; margin-bottom: 12px; }
 .upw-link {
   display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0; border: 0;
-  background: transparent; color: var(--vc-muted); font-family: inherit; font-size: 13px;
+  background: transparent; color: var(--vc-third); font-family: inherit; font-size: 13px;
   font-weight: 500; cursor: pointer; transition: color 140ms ease;
 }
 .upw-link:hover { color: var(--vc-text); }
@@ -101,7 +101,10 @@
    Schrift wie die Ueberschrift links gegenueber -- angefordert ("gleiche Fontsize wie die
    Headings, aber in Drittcolor"), und .up-blockhead ist genau das, Drittfarbe inbegriffen. Keine
    eigenen Schriftwerte mehr hier: die waeren die zweite Wahrheit ueber dieselbe Zeile. */
-.upw-range { display: inline-flex; align-items: center; }
+/* ... aber OHNE Versalien (12.09. nachgezogen): "Last 30 days" ist ein Zeitraum, kein
+   Abschnittsname -- die Ueberschrift links darf schreien, die Angabe rechts nicht. Alles andere
+   an .up-blockhead (11px, 600, Laufweite, Drittfarbe) bleibt. */
+.upw-range { display: inline-flex; align-items: center; text-transform: none; }
 /* Das Zeichen VOR der Ueberschrift (nur bei "Recent chats"): 14px, in der Farbe der Ueberschrift,
    also erbt es sie einfach. Der Abstand ist der einer Zeile aus Zeichen und Wort, nicht der einer
    Liste -- 6px, wie .usn-head in der Seitenleiste ihn zwischen Zeichen und Beschriftung haelt. */
@@ -143,7 +146,9 @@
    eigentlich nicht so super prominent zu sein, darum sind die da ganz gut platziert." Die
    Zurueckhaltung IST die Platzierung -- eine schmale, feste Spalte neben der breiten Overview-
    Flaeche, kein zusaetzlicher Verkleinerungsschritt an Schrift oder Zeile noetig. */
-.upw-datarow { display: flex; align-items: flex-start; gap: 24px; margin-top: 48px; }
+/* 64px statt 48px (12.09. angefordert: "die beiden Gaps bitte groesser, so 16px pro Gap mehr") --
+   der Abstand von den Chips herunter zu Overview. Der zweite ist an .upw-tcard. */
+.upw-datarow { display: flex; align-items: flex-start; gap: 24px; margin-top: 64px; }
 .upw-datarow .upw-sec { margin-top: 0; }
 .upw-datarow-main { flex: 1 1 auto; min-width: 0; }
 /* 31% statt der 26% vom 12.09. frueh: "gib den Recent chats so 5% mehr width, dafuer Overview 5%
@@ -195,12 +200,12 @@
    margin-top haelt trotzdem etwas Luft zur Zahl darueber. */
 .upw-kpi-foot { display: flex; align-items: center; flex-wrap: wrap; row-gap: 4px; margin-top: 10px;
   font-size: 11px; color: var(--vc-third); min-height: 16px; }
-.upw-kpi-strong, .upw-kpi-soft { color: var(--vc-third); white-space: nowrap; }
-.upw-kpi-strong { font-weight: 500; }
-/* Derselbe Punkt wie .up-head-sep in core (4px, 8px zu beiden Seiten), nur in der Drittfarbe der
-   Fusszeile statt --vc-muted -- dort ist er an .has-count gebunden und hier immer sichtbar,
-   darum als eigene Klasse. */
-.upw-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--vc-third); margin: 0 8px; flex: 0 0 auto; }
+/* Nur noch EINE Angabe je Fusszeile (12.09.): die zweite Haelfte und der Trennpunkt dazwischen
+   sind mitsamt ihren Regeln weg -- nichts schreibt sie mehr. (Die beiden Klassennamen stehen hier
+   bewusst NICHT mit ihrem Punkt davor: .contract_snapshot.py liest Klassennamen mit einer Regex
+   ueber die ganze Datei, Kommentare eingeschlossen, und haette sie sonst weiter als vorhanden
+   gemeldet -- eine Entfernung, die das Gate nie sieht, ist keine.) */
+.upw-kpi-strong { color: var(--vc-third); white-space: nowrap; font-weight: 500; }
 
 /* ---------- die eine Tabelle, umschaltbar (12.09. umgebaut) ----------
    "Wir streichen, dass 2 nebeneinander dargestellt werden. Nur eine Tabelle auf full width."
@@ -225,10 +230,13 @@
    8px-Abstand mitnehmen -- ein eigener Kasten drumherum haette eine zweite Abstandsrechnung
    aufgemacht. Leer erzeugt er ohnehin nichts. */
 .upw-uotools { display: contents; }
-.upw-tcard { min-width: 0; margin-top: 40px; }
-/* Die Kopfzeile ("16 brands · Last 30 days") in der Drittfarbe der Range-Zeile, keine eigene
-   Groesse -- dieselbe Rolle wie .upw-range, nur an anderer Stelle im Kopf. */
-.upw-tinfo { font-size: 13px; font-weight: 500; color: var(--vc-muted); white-space: nowrap; }
+.upw-tcard { min-width: 0; margin-top: 56px; }
+/* Die Kopfzeile ("8 brands · Last 30 days") traegt GENAU die Schrift der Zeitraum-Angabe oben
+   rechts bei Overview (12.09. ausdruecklich so verlangt) -- dieselbe Rolle, also dieselben Werte.
+   .up-blockhead steht im Markup nicht mit dran, weil die Angabe hier keine Ueberschrift ist;
+   die vier Werte stehen deshalb ausgeschrieben da, und die Quelle dafuer ist die Zeile darueber. */
+.upw-tinfo { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; color: var(--vc-third);
+  white-space: nowrap; }
 /* DIE SPUREN SIND DIE DER VORBILDER, ZAHL FUER ZAHL (12.09. angefordert: "style die doch einfach
    genau so wie im Visibility Chart die Tabelle wenn maximiert ... auch die Spaltenbreite", und
    fuer die Zitierungen entsprechend die maximierte Tabelle des Top Citations Dashboards):
@@ -250,6 +258,9 @@
 .upw-name { font-size: 14px; font-weight: 500; color: var(--vc-text);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .upw-table .up-td-idx.up-td-idx { font-size: 13px; font-weight: 500; color: var(--vc-third); }
+/* 12px wie .vt-th-idx svg / .tct-th-idx svg in den Vorbildern; core fuehrt fuer die grossen
+   Tabellen 14px, und genau die waren hier zu gross (12.09. gemeldet). */
+.upw-table .up-th-idx svg { width: 12px; height: 12px; }
 .upw-tcard .up-seg { flex: 0 0 auto; }
 
 /* ---------- Spalten, die auf schmalem Platz verschwinden (12.09.) ----------

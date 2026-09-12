@@ -152,7 +152,11 @@
   function portalHide(){ if (canPopover){ try { portal.hidePopover(); } catch(_){} } }
 
   /* ---------- state ---------- */
-  var S = { items: [], mode: 'board', visible: { pending: true, in_progress: true, done: true, ignored: false }, query: '', sort: 'priority', externalOnly: false, detailId: null, loading: false,
+  /* Standard sind PENDING und IN PROGRESS (12.09. angefordert). "Done" ist erledigte Arbeit: sie
+     gehoert nicht in den ersten Blick, sondern hinter den Schalter in den Brett-Einstellungen --
+     dieselbe Ueberlegung, aus der "Ignored" schon immer aus war. Der Schalter bleibt fuer beide
+     da, die Lane ist einen Klick entfernt. */
+  var S = { items: [], mode: 'board', visible: { pending: true, in_progress: true, done: false, ignored: false }, query: '', sort: 'priority', externalOnly: false, detailId: null, loading: false,
             /* hasData: kam je ein Datensatz an? jeKarten: war je eine Karte da? leerFrei: das
                Gnadenfenster fuer den leeren Datensatz ist abgelaufen. leseFehler: der letzte
                Datensatz war nicht lesbar. Alles fuer render(), siehe dort. */
@@ -950,6 +954,24 @@
   var settingsPop = root.querySelector('.uo-settings-pop');
   var sortBtn     = root.querySelector('.uo-sort-btn');
   var sortPop     = root.querySelector('.uo-sort-pop');
+
+  /* DIE SCHALTER AUF DEN ZUSTAND ZIEHEN, BEVOR JEMAND SIE SIEHT. Sie standen bisher nur im
+     Markup auf "an"/"aus", und das stimmte zufaellig mit dem Standard ueberein -- wer den
+     Standard aendert (12.09.: "Done" ist jetzt aus), haette einen Schalter auf "an" ueber einer
+     Lane gehabt, die nicht da ist. Dasselbe Muster wie der Domains/URL-Umschalter im Power
+     Dashboard, wo genau dieser Fehler gerade gemeldet wurde: der Zustand war richtig, nur sein
+     Abbild fehlte. Und es raeumt nebenbei ein bereits eingebautes Bubble-Markup mit auf, das die
+     alte Schalterstellung noch traegt -- bubble/*.html erreicht ein stehendes Element nicht. */
+  if (settingsPop){
+    ['pending','in_progress','done','ignored'].forEach(function(k){
+      var sw = settingsPop.querySelector('[data-board="' + k + '"] .up-switch');
+      if (sw) sw.classList.toggle('is-on', !!S.visible[k]);
+    });
+  }
+  if (sortPop){
+    var swExt0 = sortPop.querySelector('.uo-switch-external');
+    if (swExt0) swExt0.classList.toggle('is-on', !!S.externalOnly);
+  }
 
   /* Core's .up-menu uses an opacity/scale appear animation keyed off .is-shown; the standalone had
      .is-open on a copy of the same menu, plus a hard display:none toggle on the column menus. */

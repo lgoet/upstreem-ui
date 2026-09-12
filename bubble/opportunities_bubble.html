@@ -89,7 +89,10 @@
     window.opportunitiesSetTheme("dark"/"light");  // optional, data-isdark also works
     window.opportunitiesSetMode("board"/"list");
     window.opportunitiesSetShowIgnored(true/false);
-    window.opportunitiesSetVisibleBoards({pending:true,in_progress:true,done:true,ignored:false});
+    window.opportunitiesSetVisibleBoards({pending:true,in_progress:true,done:false,ignored:false});
+    // ^ das ist zugleich der STANDARD seit dem 12.09.: Pending und In Progress sind an, Done und
+    //   Ignored liegen hinter dem Schalter in den Brett-Einstellungen. Erledigtes gehoert nicht
+    //   in den ersten Blick. Wer es anders will, schickt diesen Aufruf mit done:true.
     window.opportunitiesOpenDetail("OPPORTUNITY_ID");
     window.opportunitiesCloseDetail();
 
@@ -237,7 +240,7 @@
           <div class="up-pop-head">Lanes</div>
           <div class="up-pop-row" data-board="pending"><span class="up-pop-label"><span class="uo-col-dot" style="background:#9ca3af;"></span>Pending</span><span class="up-switch is-on" role="switch"></span></div>
           <div class="up-pop-row" data-board="in_progress"><span class="up-pop-label"><span class="uo-col-dot" style="background:#2384E2;"></span>In Progress</span><span class="up-switch is-on" role="switch"></span></div>
-          <div class="up-pop-row" data-board="done"><span class="up-pop-label"><span class="uo-col-dot" style="background:#15803d;"></span>Done</span><span class="up-switch is-on" role="switch"></span></div>
+          <div class="up-pop-row" data-board="done"><span class="up-pop-label"><span class="uo-col-dot" style="background:#15803d;"></span>Done</span><span class="up-switch" role="switch"></span></div>
           <div class="up-pop-row" data-board="ignored"><span class="up-pop-label"><span class="uo-col-dot" style="background:#b4451f;"></span>Ignored</span><span class="up-switch" role="switch"></span></div>
         </div>
       </div>

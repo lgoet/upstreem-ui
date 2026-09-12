@@ -546,15 +546,17 @@
         '<path d="' + d + '" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>' +
         '<circle cx="' + e[0].toFixed(1) + '" cy="' + e[1].toFixed(1) + '" r="3" class="upw-spark-end"/></svg>';
     }
-    function kpiKarte(label, wertHtml, trendHtml, reiheWerte, fussStark, fussLeise){
+    /* NUR NOCH EINE ANGABE IN DER FUSSZEILE (12.09. angefordert): der zweite Teil und der Punkt
+       dazwischen sind weg -- "Anfragenfluss 5.2%", "First in 14/91 prompts" und "6/214 negative"
+       standen als leise Zusatzzahl hinter der ersten und haben die Karte vollgeschrieben, ohne
+       eine Frage zu beantworten, die die Zahl darueber nicht schon beantwortet. */
+    function kpiKarte(label, wertHtml, trendHtml, reiheWerte, fussStark){
       return '<div class="upw-kpi">' +
         '<div class="upw-kpi-top"><div class="upw-kpi-main">' +
           '<span class="upw-kpi-label" data-i18n="' + esc(label) + '">' + esc(t(label)) + '</span>' +
           '<span class="upw-kpi-row"><span class="upw-kpi-val">' + wertHtml + '</span>' +
           '<span class="upw-kpi-trend">' + trendHtml + '</span></span></div>' + spark(reiheWerte) + '</div>' +
-        '<div class="upw-kpi-foot">' + (fussStark ? '<span class="upw-kpi-strong">' + esc(fussStark) + '</span>' : '') +
-          (fussStark && fussLeise ? '<span class="upw-dot" aria-hidden="true"></span>' : '') +
-          (fussLeise ? '<span class="upw-kpi-soft">' + esc(fussLeise) + '</span>' : '') + '</div>' +
+        '<div class="upw-kpi-foot">' + (fussStark ? '<span class="upw-kpi-strong">' + esc(fussStark) + '</span>' : '') + '</div>' +
       '</div>';
     }
     function fmtPct1(v){ return v == null ? "–" : (UC.fmtPct ? UC.fmtPct(v, 1) : v.toFixed(1) + "%"); }
@@ -567,31 +569,29 @@
       var o = state.overview;
       elRange.textContent = o.range_label ? t(String(o.range_label)) : "";
       var vis = num(o.visibility_pct), rank = num(o.avg_rank), sent = num(o.sentiment);
-      /* Position und Spitzenreiter: aus dem Payload -- und wenn er sie nicht traegt, aus
-         "Competitive field" darunter, das dieselbe Frage beantwortet. */
+      /* Position und Feldgroesse: aus dem Payload -- und wenn er sie nicht traegt, aus
+         "Competitive field" darunter, das dieselbe Frage beantwortet.
+         Der Spitzenreiter (leader_name/leader_visibility_pct) wird hier seit dem 12.09. NICHT
+         mehr gelesen: er stand in der zweiten Haelfte der Fusszeile, und die ist gestrichen. Die
+         Felder duerfen weiter im Payload stehen, sie werden nur nicht mehr angezeigt. */
       var pos = num(o.visibility_position), anzahl = num(o.brand_count);
-      var leader = o.leader_name, leaderV = num(o.leader_visibility_pct);
-      if ((pos == null || anzahl == null || !leader) && state.brands && state.brands.length){
+      if ((pos == null || anzahl == null) && state.brands && state.brands.length){
         var sortiert = state.brands.slice().sort(function(a, b){ return (num(b.visibility_pct) || 0) - (num(a.visibility_pct) || 0); });
         if (anzahl == null) anzahl = sortiert.length;
-        if (!leader){ leader = sortiert[0].name; leaderV = num(sortiert[0].visibility_pct); }
         if (pos == null) sortiert.forEach(function(b, i){ if (b.is_own === true || String(b.is_own) === "yes") pos = i + 1; });
       }
       var fussVis = (pos != null && anzahl != null) ? ersetze(t("#{n} of {m} brands"), { n: fmtI(pos), m: fmtI(anzahl) }) : "";
-      var leiseVis = leader ? (String(leader) + (leaderV != null ? " " + fmtPct1(leaderV) : "")) : "";
-      var bestR = num(o.best_rank), first = num(o.first_count), prompts = num(o.prompt_count);
+      var bestR = num(o.best_rank);
       var fussRank = bestR != null ? ersetze(t("Best in field {v}"), { v: fmtR(bestR) }) : "";
-      var leiseRank = (first != null && prompts != null) ? ersetze(t("First in {n}/{m} prompts"), { n: fmtI(first), m: fmtI(prompts) }) : "";
-      var avg = num(o.field_avg_sentiment), neg = num(o.negative_count), resp = num(o.response_count);
+      var avg = num(o.field_avg_sentiment);
       var fussSent = avg != null ? ersetze(t("Field average {v}"), { v: fmtI(avg) }) : "";
-      var leiseSent = (neg != null && resp != null) ? ersetze(t("{n}/{m} negative"), { n: fmtI(neg), m: fmtI(resp) }) : "";
       elKpis.innerHTML =
         kpiKarte("Visibility", '<span class="up-num">' + fmtPct1(vis) + '</span>',
-          UC.trendChip(o.visibility_delta_pct, { decimals: true, suffix: "%" }), reihe(o.visibility_series), fussVis, leiseVis) +
+          UC.trendChip(o.visibility_delta_pct, { decimals: true, suffix: "%" }), reihe(o.visibility_series), fussVis) +
         kpiKarte("Avg. Rank", '<span class="up-num">' + fmtR(rank) + '</span>',
-          UC.trendChip(o.avg_rank_delta, { decimals: true, inverted: true }), reihe(o.rank_series), fussRank, leiseRank) +
+          UC.trendChip(o.avg_rank_delta, { decimals: true, inverted: true }), reihe(o.rank_series), fussRank) +
         kpiKarte("Sentiment", '<span class="up-num">' + fmtI(sent) + '</span>',
-          UC.trendChip(o.sentiment_delta, { decimals: true }), reihe(o.sentiment_series), fussSent, leiseSent);
+          UC.trendChip(o.sentiment_delta, { decimals: true }), reihe(o.sentiment_series), fussSent);
     }
     function kpiSkelett(){
       var k = '<div class="upw-kpi is-sk"><div class="upw-kpi-top"><div class="upw-kpi-main">' +
@@ -950,6 +950,25 @@
        und den Trend zeigt jede der drei Wertspalten. */
     if (UC.makeExplain && UC.explainCopy){
       var TREND_SATZ = ", plus the change against the previous period";
+      /* Die kleine Vorschau ueber dem Text -- WORTGLEICH die aus brands-overview.js, samt deren
+         Klassen aus core (.up-explain-row/.up-explain-up). Sie hat hier zuerst GEFEHLT, und das
+         war der ganze Unterschied: die Karte zeigte nur Ueberschrift und Satz, waehrend sie in
+         jeder anderen Tabelle der App mit einem Beispiel der Zelle aufmacht. brands-overview und
+         nicht visibility-chart als Quelle, weil dort die core-Klassen stehen und nicht eigene
+         (vot-explain-*) -- damit braucht diese Datei keine einzige eigene Regel dafuer. */
+      function explainVisual(kind){
+        /* Das ROHE Zeichen, nicht das mit .up-hash aus der Rang-Zelle: die Karte liegt am <body>
+           und wird von .up-explain-row svg bemasst, eine mitgeschleppte Zellklasse brauchte dort
+           niemand. */
+        if (kind === "ranking") return '<span class="up-explain-row">' + (UC.HASH_ICON || "#") + '<span>2.3</span></span>';
+        if (kind === "sentiment"){
+          return '<span class="up-explain-row">78' +
+            '<span class="up-explain-up">' + UC.TREND_UP + '</span><span class="up-explain-up">4</span></span>';
+        }
+        return '<span class="up-explain-row">18.4%' +
+               '<span class="up-explain-up">' + UC.TREND_UP + '</span>' +
+               '<span class="up-explain-up">2.9%</span></span>';
+      }
       UC.makeExplain({
         root: root, triggerSel: ".up-th-info", getIsDark: dunkel,
         html: function(kind){
@@ -959,7 +978,8 @@
           else if (kind === "sentiment") info = UC.explainCopy("sentiment", { scope: "", trend: TREND_SATZ });
           else if (kind === "share") info = UC.explainCopy("share", { subject: state.cmode === "url" ? "URL" : "domain" });
           if (!info) return "";
-          return '<div class="up-explain-h">' + esc(info.h) + '</div>' +
+          return '<div class="up-explain-vis">' + explainVisual(kind) + '</div>' +
+                 '<div class="up-explain-h">' + esc(info.h) + '</div>' +
                  '<div class="up-explain-t">' + esc(info.t) + '</div>';
         }
       });

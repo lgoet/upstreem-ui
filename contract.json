@@ -2691,7 +2691,6 @@
   "upw-datarow",
   "upw-datarow-main",
   "upw-datarow-side",
-  "upw-dot",
   "upw-hide-rank",
   "upw-hide-sent",
   "upw-hide-trend-rank",
@@ -2705,7 +2704,6 @@
   "upw-kpi-label",
   "upw-kpi-main",
   "upw-kpi-row",
-  "upw-kpi-soft",
   "upw-kpi-strong",
   "upw-kpi-top",
   "upw-kpi-trend",
@@ -3082,7 +3080,7 @@
   "globals": 177,
   "payloadkeys": 96,
   "dataattrs": 251,
-  "klassen": 2215,
+  "klassen": 2213,
   "keyframes": 66
  }
 }
