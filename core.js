@@ -645,7 +645,10 @@
     "Standard": "Standard",
     "Power": "Power",
     "Recent chats": "Letzte Chats",
-    "All chats": "Alle Chats",
+    /* "All chats" ist am 12.09. zu "All" gekuerzt worden -- die Ueberschrift daneben sagt schon,
+       wovon "alle". Der alte Eintrag ist mitgegangen: gegengeprueft, ihn liest kein t()-Aufruf
+       mehr, und ein Katalogeintrag ohne Leser ist die naechste Drift. */
+    "All": "Alle",
     "Overview": "Überblick",
     "Competitive field": "Wettbewerbsfeld",
     "Trending Citations": "Trendende Zitierungen",

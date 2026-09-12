@@ -196,12 +196,9 @@
     var n = Number(String(v).replace(",", "."));
     return isFinite(n) ? n : null;
   }
-  /* Eine Reihe fuer den Verlauf: Array oder "1.2, 1.4, 1.9". */
-  function reihe(v){
-    if (v == null || v === "") return [];
-    var a = Array.isArray(v) ? v : String(v).replace(/^\s*\[|\]\s*$/g, "").split(/[,;]\s*|\s+/);
-    return a.map(num).filter(function(n){ return n != null; });
-  }
+  /* reihe() -- der Leser fuer "1.2, 1.4, 1.9" -- ist mit den Verlaufslinien weggefallen (12.09.).
+     Die drei *_series-Felder duerfen weiter im Payload stehen, sie werden nur nicht mehr
+     gezeichnet; ein Leser, den niemand ruft, waere die naechste Drift. */
   function isOn(attr){ var v = String(attr == null ? "" : attr).trim().toLowerCase();
     return !(v === "no" || v === "false" || v === "0" || v === "off"); }
 
@@ -285,23 +282,19 @@
              platziert". Recent chats bekommt eine feste, schmalere Breite (.upw-datarow-side in
              power-dashboard.css), Overview nimmt den Rest. */
           '<div class="upw-datarow">' +
+            /* OHNE KASTEN, MIT TRENNLINIE (12.09. umgebaut, nach dem beigefuegten Entwurf): die
+               drei Kennzahlen stehen frei nebeneinander statt in einem .up-box, und eine Linie
+               unter der Abschnittszeile trennt Ueberschrift von Inhalt -- bei BEIDEN Abschnitten
+               gleich. Die Verlaufslinien (spark) sind mit dem Kasten zusammen weg. */
             '<section class="upw-sec upw-datarow-main">' +
-              /* Der Zeitraum rechts traegt DIESELBE Klasse wie die Ueberschrift links (12.09.
-                 angefordert: "gleiche Fontsize wie die Headings, aber in Drittfarbe") -- und
-                 .up-blockhead IST bereits in Drittfarbe, also genuegt die Klasse. Das Kalender-
-                 Zeichen davor ist weg. */
               '<div class="upw-sec-head"><span class="upw-sec-h up-blockhead" data-i18n="Overview">' + esc(t("Overview")) + '</span>' +
                 '<span class="upw-range up-blockhead" data-upw-range></span></div>' +
-              '<div class="up-box upw-kpis" data-upw-kpis></div>' +
+              '<div class="upw-kpis" data-upw-kpis></div>' +
             '</section>' +
             '<section class="upw-sec upw-datarow-side">' +
-              /* EIN Zeichen vor der Ueberschrift statt eines vor jeder Zeile (12.09. angefordert)
-                 -- die Liste wird dadurch ruhiger, und die Sprechblase sagt einmal, worum es hier
-                 geht, statt es siebenmal zu wiederholen. */
               '<div class="upw-sec-head"><span class="upw-sec-h up-blockhead" data-i18n="Recent chats">' +
-                '<span class="upw-sec-ic" aria-hidden="true">' + UC.icon("messageCircle", 2) + '</span>' +
                 esc(t("Recent chats")) + '</span>' +
-                '<button type="button" class="upw-link" data-upw-allchats><span data-i18n="All chats">' + esc(t("All chats")) + '</span>' +
+                '<button type="button" class="upw-link" data-upw-allchats><span data-i18n="All">' + esc(t("All")) + '</span>' +
                 UC.icon("chevronRight", 2) + '</button></div>' +
               '<div class="upw-chatlist" data-upw-chatlist></div>' +
             '</section>' +
@@ -315,7 +308,11 @@
              -- die Brands- oder die Citations-Ansicht in Bubble oeffnet. */
           '<section class="upw-tcard">' +
             '<div class="up-head upw-head">' +
-              '<div class="up-seg upw-tabseg" role="tablist" aria-label="Table" data-upw-tabseg>' +
+              /* is-lg ist die GROSSE Form des Umschalters aus core (32px hoch, 16px Polster je
+                 Seite) -- genau die war gemeint ("exakt den grossen core switcher, nicht
+                 nachbauen"), und sie steht dort schon fuer die Filter-Dropdowns und die
+                 Granularitaet. Keine eigene Zeile Geometrie hier. */
+              '<div class="up-seg is-lg upw-tabseg" role="tablist" aria-label="Table" data-upw-tabseg>' +
                 '<button type="button" class="up-seg-btn" role="tab" data-upw-tab="brands" data-i18n="Competitive field">' + esc(t("Competitive field")) + '</button>' +
                 '<button type="button" class="up-seg-btn" role="tab" data-upw-tab="citations" data-i18n="Trending Citations">' + esc(t("Trending Citations")) + '</button>' +
                 '<button type="button" class="up-seg-btn" role="tab" data-upw-tab="opportunities" data-i18n="Opportunities">' + esc(t("Opportunities")) + '</button>' +
@@ -507,12 +504,13 @@
            wahr (dieselbe Frist wie Miras eigene Chatleiste). */
         elChats.innerHTML = _chatsLeer
           ? '<div class="upw-chats-empty" data-i18n="No chats yet">' + esc(t("No chats yet")) + '</div>'
-          : [0, 1, 2].map(function(i){ return '<div class="upw-chat is-sk">' +
+          : [0, 1, 2].map(function(i){ return '<div class="upw-chat is-sk"><span class="upw-sk upw-sk-ic"></span>' +
               '<span class="upw-sk upw-sk-title" style="width:' + [42, 30, 36][i] + '%"></span></div>'; }).join("");
         return;
       }
       elChats.innerHTML = liste.map(function(c){
         return '<button type="button" class="upw-chat" data-upw-chat="' + esc(c.id) + '">' +
+          '<span class="upw-chat-ic" aria-hidden="true">' + UC.icon("messageCircle", 2) + '</span>' +
           '<span class="upw-chat-title">' + esc(c.title || t("Untitled chat")) + '</span>' +
           '<span class="upw-chat-when">' + esc(wann(c.time)) + '</span></button>';
       }).join("");
@@ -532,30 +530,12 @@
        Groessen sind die der Kennzahl in brand-detail (23px, Trend 15px mit 17px-Pfeil) -- das
        naechste Vorbild in der App, dieselbe Rolle. Der Verlauf ist eine schmale Linie mit Punkt am
        Ende, ohne Achsen: er sagt "steigt oder faellt", die Zahl daneben sagt wie viel. */
-    function spark(werte){
-      if (!werte || werte.length < 2) return '<span class="upw-spark is-leer"></span>';
-      var W = 96, H = 28, P = 3;
-      var min = Math.min.apply(null, werte), max = Math.max.apply(null, werte);
-      var span = (max - min) || 1;
-      var pts = werte.map(function(v, i){
-        return [P + i * (W - 2 * P) / (werte.length - 1), P + (1 - (v - min) / span) * (H - 2 * P)];
-      });
-      var d = pts.map(function(p, i){ return (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1); }).join(" ");
-      var e = pts[pts.length - 1];
-      return '<svg class="upw-spark" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true">' +
-        '<path d="' + d + '" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>' +
-        '<circle cx="' + e[0].toFixed(1) + '" cy="' + e[1].toFixed(1) + '" r="3" class="upw-spark-end"/></svg>';
-    }
-    /* NUR NOCH EINE ANGABE IN DER FUSSZEILE (12.09. angefordert): der zweite Teil und der Punkt
-       dazwischen sind weg -- "Anfragenfluss 5.2%", "First in 14/91 prompts" und "6/214 negative"
-       standen als leise Zusatzzahl hinter der ersten und haben die Karte vollgeschrieben, ohne
-       eine Frage zu beantworten, die die Zahl darueber nicht schon beantwortet. */
-    function kpiKarte(label, wertHtml, trendHtml, reiheWerte, fussStark){
+    function kpiKarte(label, wertHtml, trendHtml, fussStark){
       return '<div class="upw-kpi">' +
         '<div class="upw-kpi-top"><div class="upw-kpi-main">' +
           '<span class="upw-kpi-label" data-i18n="' + esc(label) + '">' + esc(t(label)) + '</span>' +
           '<span class="upw-kpi-row"><span class="upw-kpi-val">' + wertHtml + '</span>' +
-          '<span class="upw-kpi-trend">' + trendHtml + '</span></span></div>' + spark(reiheWerte) + '</div>' +
+          '<span class="upw-kpi-trend">' + trendHtml + '</span></span></div></div>' +
         '<div class="upw-kpi-foot">' + (fussStark ? '<span class="upw-kpi-strong">' + esc(fussStark) + '</span>' : '') + '</div>' +
       '</div>';
     }
@@ -587,16 +567,16 @@
       var fussSent = avg != null ? ersetze(t("Field average {v}"), { v: fmtI(avg) }) : "";
       elKpis.innerHTML =
         kpiKarte("Visibility", '<span class="up-num">' + fmtPct1(vis) + '</span>',
-          UC.trendChip(o.visibility_delta_pct, { decimals: true, suffix: "%" }), reihe(o.visibility_series), fussVis) +
+          UC.trendChip(o.visibility_delta_pct, { decimals: true, suffix: "%" }), fussVis) +
         kpiKarte("Avg. Rank", '<span class="up-num">' + fmtR(rank) + '</span>',
-          UC.trendChip(o.avg_rank_delta, { decimals: true, inverted: true }), reihe(o.rank_series), fussRank) +
+          UC.trendChip(o.avg_rank_delta, { decimals: true, inverted: true }), fussRank) +
         kpiKarte("Sentiment", '<span class="up-num">' + fmtI(sent) + '</span>',
-          UC.trendChip(o.sentiment_delta, { decimals: true }), reihe(o.sentiment_series), fussSent);
+          UC.trendChip(o.sentiment_delta, { decimals: true }), fussSent);
     }
     function kpiSkelett(){
       var k = '<div class="upw-kpi is-sk"><div class="upw-kpi-top"><div class="upw-kpi-main">' +
         '<span class="upw-sk upw-sk-lbl"></span><span class="upw-sk upw-sk-val"></span></div>' +
-        '<span class="upw-sk upw-sk-spark"></span></div><div class="upw-kpi-foot"><span class="upw-sk upw-sk-foot"></span></div></div>';
+        '</div><div class="upw-kpi-foot"><span class="upw-sk upw-sk-foot"></span></div></div>';
       return k + k + k;
     }
 

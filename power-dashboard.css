@@ -88,8 +88,12 @@
    Sidebar die Headings ueber den Menuebloecken", dieselbe Klasse steht seither auch an
    sidebar.js' .usn-head) -- keine eigene Schrift mehr hier, nur noch das Markup-Klassenpaar. */
 .upw-sec { margin-top: 48px; }
+/* DIE TRENNLINIE UNTER DER ABSCHNITTSZEILE (12.09. nach dem beigefuegten Entwurf) -- bei BEIDEN
+   Abschnitten gleich, sie trennt Ueberschrift von Inhalt. Sie ersetzt den Rahmen, den der
+   Overview-Kasten vorher mitbrachte: der ist weg, die Kennzahlen stehen jetzt frei. */
 .upw-sec-head { display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  min-height: 24px; margin-bottom: 12px; }
+  min-height: 24px; padding-bottom: 12px; margin-bottom: 12px;
+  border-bottom: 1px solid var(--vc-border); }
 .upw-link {
   display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0; border: 0;
   background: transparent; color: var(--vc-third); font-family: inherit; font-size: 13px;
@@ -105,12 +109,8 @@
    Abschnittsname -- die Ueberschrift links darf schreien, die Angabe rechts nicht. Alles andere
    an .up-blockhead (11px, 600, Laufweite, Drittfarbe) bleibt. */
 .upw-range { display: inline-flex; align-items: center; text-transform: none; }
-/* Das Zeichen VOR der Ueberschrift (nur bei "Recent chats"): 14px, in der Farbe der Ueberschrift,
-   also erbt es sie einfach. Der Abstand ist der einer Zeile aus Zeichen und Wort, nicht der einer
-   Liste -- 6px, wie .usn-head in der Seitenleiste ihn zwischen Zeichen und Beschriftung haelt. */
-.upw-sec-h { display: inline-flex; align-items: center; gap: 6px; }
-.upw-sec-ic { display: inline-flex; width: 14px; height: 14px; flex: 0 0 auto; }
-.upw-sec-ic svg { width: 14px; height: 14px; display: block; }
+/* Das Zeichen vor der Ueberschrift ist wieder weg (12.09.) und steht erneut vor JEDER Chatzeile
+   (.upw-chat-ic weiter unten) -- wie am 11.09.; die Runde dazwischen war der Umweg. */
 
 /* ---------- Recent chats ----------
    Zeilen ohne Kasten, wie die Chatliste in Mira: Zeichen, Titel, Zeitpunkt rechts. Der Hover
@@ -134,8 +134,10 @@
 .upw-chat:hover { background: var(--vt-row-hover); }
 .upw-chat.is-sk { cursor: default; }
 .upw-chat.is-sk:hover { background: transparent; }
-/* Die Sprechblase vor jeder Zeile ist weg (12.09.) -- sie steht jetzt einmal vor der Ueberschrift
-   (.upw-sec-ic). Der Titel beginnt damit an der Kante, wie in einer Liste ohne Zeichen. */
+/* Die runde Sprechblase vor jeder Zeile, 16px in Drittfarbe -- leiser als der Titel daneben: sie
+   markiert die Zeile und liest sich nicht mit. */
+.upw-chat-ic { width: 16px; height: 16px; flex: 0 0 auto; color: var(--vc-third); display: inline-flex; }
+.upw-chat-ic svg { width: 16px; height: 16px; display: block; }
 .upw-chat-title { flex: 1 1 auto; min-width: 0; font-size: 14px; font-weight: 500;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .upw-chat-when { flex: 0 0 auto; font-size: 13px; color: var(--vc-third); }
@@ -176,10 +178,11 @@
    um, darf der Kasten wachsen; abgeschnittener Text waere der schlechtere Tausch.
    Gilt nur, solange beide nebeneinander stehen -- gestapelt (is-narrow) gibt es nichts
    auszurichten, siehe unten. */
-.up-box.upw-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+.upw-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;
   min-height: calc(var(--upw-chatrow, 36px) * 3); }
-.upw-kpi { padding: 14px; min-width: 0; border-left: 1px solid var(--vc-border); }
-.upw-kpi:first-child { border-left: 0; }
+/* Kein Polster und keine senkrechten Linien mehr: ohne Kasten drumherum haetten sie nichts, woran
+   sie sich ausrichten koennten -- die Spalten des Rasters trennen die drei Kennzahlen schon. */
+.upw-kpi { min-width: 0; }
 .upw-kpi-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .upw-kpi-main { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .upw-kpi-label { font-size: 13px; font-weight: 500; color: var(--vc-muted); }
@@ -189,13 +192,7 @@
 .upw-kpi-trend { display: inline-flex; align-items: center; }
 .upw-kpi-trend .up-trend { font-size: 15px; }
 .upw-kpi-trend .up-trend svg { width: 17px; height: 17px; }
-/* Der Verlauf in der Drittfarbe: er ist Beiwerk zur Zahl. Der Punkt am Ende in der Textfarbe --
-   er ist "heute", und heute ist die Zahl daneben. NACH RECHTS (angefordert) -- er ist bereits
-   das zweite Kind von .upw-kpi-top neben .upw-kpi-main, das space-between schiebt ihn an die
-   rechte Kante der Karte; hier bleibt nur die Groesse. */
-.upw-spark { flex: 0 0 auto; color: var(--vc-third); margin-top: 4px; }
-.upw-spark-end { fill: var(--vc-text); }
-.upw-spark.is-leer { width: 96px; height: 28px; }
+/* Die Verlaufslinien sind weg (12.09.) -- mitsamt ihren Regeln, nichts zeichnet sie mehr. */
 /* KEINE Trennlinie mehr (angefordert) -- border-top und das Polster, das sie freihielt, sind weg.
    margin-top haelt trotzdem etwas Luft zur Zahl darueber. */
 .upw-kpi-foot { display: flex; align-items: center; flex-wrap: wrap; row-gap: 4px; margin-top: 10px;
@@ -237,6 +234,14 @@
    die vier Werte stehen deshalb ausgeschrieben da, und die Quelle dafuer ist die Zeile darueber. */
 .upw-tinfo { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; color: var(--vc-third);
   white-space: nowrap; }
+/* Das Oeffnen-Zeichen in Drittfarbe (12.09. angefordert), im Hover wie ueberall in Primaerfarbe.
+   VIER Stufen Spezifitaet, und das ist kein Uebermut: core faerbt .up-iconbtn (0,1,0) und im
+   dunklen Thema .up-root[data-theme="dark"] .up-iconbtn (0,3,0). Mit drei Stufen stuende ich mit
+   der dunklen Regel auf Gleichstand und gewaenne nur, weil diese Datei spaeter laedt -- genau die
+   Falle, die an .usn-head schon einmal zugeschnappt ist. Mit vier gewinne ich in beiden Themen
+   ueber Spezifitaet. */
+.upw-root .upw-tcard .up-iconbtn[data-upw-open] { color: var(--vc-third); }
+.upw-root .upw-tcard .up-iconbtn[data-upw-open]:hover { color: var(--vc-text); }
 /* DIE SPUREN SIND DIE DER VORBILDER, ZAHL FUER ZAHL (12.09. angefordert: "style die doch einfach
    genau so wie im Visibility Chart die Tabelle wenn maximiert ... auch die Spaltenbreite", und
    fuer die Zitierungen entsprechend die maximierte Tabelle des Top Citations Dashboards):
@@ -299,9 +304,7 @@
    Unter 760px Breite (widthTiers, is-narrow) gehen die Kennzahlen untereinander (die eine
    Tabelle ist seit dem 12.09. ohnehin immer schon voll breit, kein eigenes Verhalten hier mehr
    noetig). Drei Kennzahlen nebeneinander haetten keinen Platz mehr fuer den Verlauf. */
-.upw-root.is-narrow .up-box.upw-kpis { grid-template-columns: minmax(0, 1fr); min-height: 0; }
-.upw-root.is-narrow .upw-kpi { border-left: 0; border-top: 1px solid var(--vc-border); }
-.upw-root.is-narrow .upw-kpi:first-child { border-top: 0; }
+.upw-root.is-narrow .upw-kpis { grid-template-columns: minmax(0, 1fr); min-height: 0; row-gap: 20px; }
 /* Der Tabellenkopf (Umschalter + Kopfzeile + Domains/URL-Umschalter + Zeichen) ist zu breit fuer
    schmale Bildschirme -- GEMESSEN in _h_upw.html: bei 480px Wurzelbreite ueberlief die Seite um
    77px, .up-head ist fix 32px hoch und bricht selbst nicht um. Hier auf zwei Zeilen erlaubt;
@@ -347,8 +350,10 @@
 .upw-sk-line  { width: 46%; height: 12px; }
 .upw-sk-dot   { width: 28px; height: 28px; border-radius: 9px; }
 .upw-sk-send  { width: 32px; height: 32px; border-radius: 999px; }
+/* Der Platzhalter der Sprechblase in der Chatzeile -- dieselben 16px wie das Zeichen, das dort
+   gleich stehen wird, sonst springt die Zeile beim Eintreffen der Liste. */
+.upw-sk-ic    { width: 16px; height: 16px; border-radius: 5px; flex: 0 0 auto; }
 .upw-sk-title { height: 11px; }
 .upw-sk-lbl   { width: 64px; height: 10px; }
 .upw-sk-val   { width: 88px; height: 24px; margin-top: 4px; }
-.upw-sk-spark { width: 96px; height: 28px; }
 .upw-sk-foot  { width: 60%; height: 10px; }
