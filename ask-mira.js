@@ -4095,18 +4095,25 @@
     if (!elPicks) return;
     var UCg = window.UpstreemCore;
     elPicks.innerHTML = _picks.map(function(it, i){
-      var bild = (UCg && UCg.entityBild) ? UCg.entityBild(it) : '';
+      /* EIN PROMPT TRAEGT DAS ZAP-ZEICHEN, immer (12.09. angefordert: "das Prompt-Icon, das wir
+         ueberall fuer Prompts nutzen" -- dasselbe wie in der Drawer-Topbar). Vorher stand dort
+         das Marktkuerzel und, wenn der Prompt keins mitbrachte, GAR NICHTS: genau die gemeldete
+         leere Kachel. Die Markt-Flagge entfaellt an der Pille damit; der Markt ist eine Angabe
+         zum Prompt, das Zeichen sagt, WAS die Pille ueberhaupt ist, und das ist auf 18px die
+         nuetzlichere Auskunft. In der Auswahlliste darueber (.am-pick-cav/.am-pick-av) bleibt die
+         Flagge, wo sie ist. */
+      var istPrompt = String(it.type) === 'prompt';
+      var bild = istPrompt ? '' : ((UCg && UCg.entityBild) ? UCg.entityBild(it) : '');
       var lbl  = (UCg && UCg.entityLabel) ? UCg.entityLabel(it) : '';
-      var istFlagge = String(it.type) === 'prompt' && !!bild;
-      var kl = 'am-pick-tag-av' + (istFlagge ? ' is-flag' : '') + (bild ? '' : ' is-fb');
+      var kl = 'am-pick-tag-av' + (istPrompt ? ' is-prompt' : '') + (bild ? '' : ' is-fb');
       /* DER RUECKFALL LIEGT IN DER HUELLE -av-fb, und zwar IMMER. Hier stand der Buchstabe
          (bei einer Brand) und das Marktkuerzel (bei einem Prompt) NACKT daneben -- also ohne
          die Huelle, die ihn verbirgt, solange ein Bild da ist. Sichtbare Folge: neben dem
          Logo stand noch ein "N", neben der deutschen Flagge ein "D", und weil der Buchstabe
          im Flex Platz beansprucht, war das Bild daneben zusammengequetscht.
          Genau EIN Ort entscheidet jetzt, was man sieht: die Klasse is-fb an der Kachel. */
-      var inner = String(it.type) === 'prompt'
-        ? '<span class="am-pick-tag-av-t">' + esc(String(it.market || '').toUpperCase()) + '</span>'
+      var inner = istPrompt
+        ? ((UCg && UCg.icon) ? UCg.icon('zap', 2) : '')
         : (String(it.type) === 'brand'
             ? '<span class="am-pick-tag-av-t">' + esc(String(lbl).charAt(0).toUpperCase()) + '</span>'
             : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">' +

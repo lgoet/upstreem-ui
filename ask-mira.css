@@ -2055,7 +2055,14 @@
     background: var(--am-soft); display: flex; align-items: center; justify-content: center; position: relative;
   }
   .am-pick-tag-av img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .am-pick-tag-av.is-flag { width: 20px; height: 14px; border-radius: 3px; }
+  /* DIE PROMPT-KACHEL: Grund in der Primaerfarbe, Zeichen in der des jeweils anderen Themes
+     (12.09. so angefordert) -- hell auf dunkel im Lichtmodus, dunkel auf hell im Dunkelmodus.
+     --am-card ist genau dieser Gegenwert und wechselt mit dem Thema von selbst, deshalb steht
+     hier keine feste Farbe. 4px Radius statt der 5px der Bildkacheln, ebenfalls angefordert.
+     Die Flaggenvariante an der Pille ist damit weg: seit dem 12.09. traegt jeder Prompt das
+     Zeichen, und niemand setzt is-flag hier noch (in der Auswahlliste darueber schon). */
+  .am-pick-tag-av.is-prompt { border-radius: 4px; background: var(--am-text); }
+  .am-pick-tag-av.is-prompt .am-pick-tag-av-fb { color: var(--am-card); }
   .am-pick-tag-av-fb { display: none; align-items: center; justify-content: center; width: 100%; height: 100%; color: var(--am-muted); }
   .am-pick-tag-av.is-fb .am-pick-tag-av-fb { display: flex; }
   .am-pick-tag-av-fb svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 2.2; }
@@ -2292,6 +2299,32 @@
     background: var(--up-sel-bg); }
   .am-set-backdrop .ums-main, .am-set-backdrop .am-set-main { flex: 1 1 auto; min-width: 0; height: 100%; overflow-y: auto;
     padding: 24px 28px 28px; }
+  /* ===== SCHMALER SCHIRM: die Navigation nur so hoch wie ihr Inhalt (12.09. gemeldet) =====
+     Gemeldet als "viel zu viel Whitespace unten" im Menuebereich, und der Grund ist eine Falle,
+     die man nur im Zusammenspiel ZWEIER Dateien sieht:
+       preferences.css stellt die Karte unter 720px auf flex-direction: column (Menue nach oben).
+       Die Regeln hier oben geben der Navigation flex: 0 0 232px -- als BREITE gemeint, denn hier
+       steht die Karte auf row. In column ist dieselbe Angabe eine HOEHE: 232px fuer zwei
+       Eintraege, die 80 brauchen. GEMESSEN: 229px hoch bei 232px Inhalt und zwei Zeilen darin.
+     Und ob das ueberhaupt passiert, entschied bis jetzt die LADEREIHENFOLGE: beide Dateien setzen
+     die Karte mit derselben Spezifitaet (0,2,0), und welche von beiden Bubble zuerst einbindet,
+     ist nicht festgelegt -- im Prueftand stand die Navigation links, beim Nutzer oben. Genau
+     davor warnt CLAUDE.md 1. Dieser Block entscheidet es ueber Spezifitaet (0,3,0 durch .up-root
+     an derselben Wurzel) und gilt damit in jeder Reihenfolge.
+     Die Navigation BLEIBT hier -- preferences.css blendet sie in seinem eigenen Fenster ganz aus
+     (07.09. so bestellt), fuer Miras Fenster war jetzt "fit height" verlangt, nicht "weg". */
+  @media (max-width: 720px) {
+    .up-root.am-set-backdrop .ums-card, .up-root.am-set-backdrop .am-set-card { flex-direction: column; }
+    .up-root.am-set-backdrop .ums-aside, .up-root.am-set-backdrop .am-set-aside {
+      flex: 0 0 auto; height: auto; overflow-y: visible;
+      border-right: 0; border-bottom: 1px solid var(--vc-border);
+    }
+    /* Ohne feste Hoehe daneben darf der Inhaltsbereich den Rest nehmen -- 100% waere hier die
+       Hoehe der ganzen Karte und schoebe die Navigation wieder hinaus. */
+    .up-root.am-set-backdrop .ums-main, .up-root.am-set-backdrop .am-set-main {
+      height: auto; flex: 1 1 auto; min-height: 0;
+    }
+  }
   .am-set-backdrop .ums-head, .am-set-backdrop .am-set-head { display: flex; align-items: flex-start; gap: 12px;
     margin-bottom: 26px; }
   .am-set-backdrop .ums-headtext { display: flex; flex-direction: column; gap: 6px;

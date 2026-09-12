@@ -278,6 +278,11 @@
    vor der Flaeche, und ein Strich ueber ihr, der die letzte Zeile abschliesst. */
 .udd-root.is-narrow .udd-fn-svg { margin-top: 16px; }
 .udd-root.is-narrow .udd-fn-head { border-bottom: 1px solid var(--vc-border); }
+/* Auf dem Telefon kein Erklaer-Zeichen neben dem Umschalter (12.09. angefordert). Dort nimmt der
+   Umschalter die volle Breite (Regel darunter), und das Zeichen sass als schmaler Rest daneben --
+   ein Hover-Ziel ohne Hover ist auf einem Beruehrungsschirm ohnehin die falsche Bedienform. Die
+   Erklaerung bleibt am breiteren Schirm da, wo sie hingehoert. */
+.udd-root.is-vnarrow .udd-info { display: none; }
 .udd-root.is-vnarrow .udd-seg { width: 100%; }
 .udd-root.is-vnarrow .udd-seg .up-seg-btn { flex: 1 1 0; padding-left: 8px; padding-right: 8px; }
 .udd-root.is-vnarrow .udd-chartwrap { height: 220px; }
