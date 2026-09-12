@@ -3075,14 +3075,13 @@
 #ask-mira.up-root.is-launcher .am-composer { max-width: none; }
 /* 16px mehr Hoehe (11.09. angefordert), nur im Launcher: 8 oben und 8 unten auf die 16px rundum
    aus core-mira, sonst waechst der Textblock einseitig und die Zeile sieht nicht mehr mittig aus.
-   RUNDUM 24 und nicht 24/16 (12.09. gemeldet: "das bottom padding sieht groesser aus als links
-   und rechts"). Es sah nicht nur so aus, es war so: die Mehrhoehe kam als senkrechtes Polster
-   dazu, das waagerechte blieb bei 16 -- unten 25px Abstand zur Kante gegen 17px seitlich,
-   gemessen im Prueftand. Die Hoehe bleibt, wie sie bestellt ist; gleich wird das schmalere Mass
-   ans groessere gezogen, nicht umgekehrt.
+   24 OBEN, 16 an den anderen drei Seiten (12.09., zweite Runde). Der Weg dahin in zwei Schritten:
+   erst stand hier 24/16, gemeldet als "unten sieht nach mehr Luft aus als seitlich" -- und das war
+   es auch, unten 25px gegen 17px seitlich. Dann rundum 24. Jetzt ausdruecklich links, unten und
+   rechts auf 16; oben bleiben die 24, dort faengt der Text an und die Luft ist gewollt.
    NUR hier -- Miras eigene Ansicht (.am-composer ohne is-launcher) bleibt bei ihren 16px rundum;
    siehe .am-composer weiter oben in dieser Datei. */
-#ask-mira.up-root.is-launcher .am-composer { padding: 24px; }
+#ask-mira.up-root.is-launcher .am-composer { padding: 24px 16px 16px; }
 /* "Mira answers based on..." ist im Dashboard weg (11.09. angefordert) -- der Satz erklaert
    Mira SICH SELBST, und im Launcher steht sie nur als Einstieg da, nicht als eigene Ansicht mit
    eigenem Fusstext. In Miras eigener Ansicht bleibt er (kein is-launcher dort). */
