@@ -100,7 +100,7 @@
    Versatz zwischen den Linien. Beide Texte sind kurz und sollen nie umbrechen; wird einer doch
    einmal zu lang, schneidet er ab, statt die Zeile aufzublaehen. min-width:0 ist noetig, damit
    ein Flex-Kind ueberhaupt unter seine Inhaltsbreite schrumpfen darf. */
-.upw-sec-h, .upw-range, .upw-link { white-space: nowrap; min-width: 0; }
+.upw-sec-h, .upw-link { white-space: nowrap; min-width: 0; }
 .upw-sec-h { overflow: hidden; text-overflow: ellipsis; }
 /* UND ALLE KINDER DER ZEILE GLEICH HOCH. Nur nicht umbrechen genuegte nicht: die Ueberschrift ist
    11px hoch (14px Zeile), der "All"-Knopf daneben 24px -- damit war der eine Kopf 27px und der
@@ -117,14 +117,9 @@
 }
 .upw-link:hover { color: var(--vc-text); }
 .upw-link svg { width: 14px; height: 14px; }
-/* Der Zeitraum rechts in der Abschnittszeile traegt seit dem 12.09. .up-blockhead, also dieselbe
-   Schrift wie die Ueberschrift links gegenueber -- angefordert ("gleiche Fontsize wie die
-   Headings, aber in Drittcolor"), und .up-blockhead ist genau das, Drittfarbe inbegriffen. Keine
-   eigenen Schriftwerte mehr hier: die waeren die zweite Wahrheit ueber dieselbe Zeile. */
-/* ... aber OHNE Versalien (12.09. nachgezogen): "Last 30 days" ist ein Zeitraum, kein
-   Abschnittsname -- die Ueberschrift links darf schreien, die Angabe rechts nicht. Alles andere
-   an .up-blockhead (11px, 600, Laufweite, Drittfarbe) bleibt. */
-.upw-range { display: inline-flex; align-items: center; text-transform: none; }
+/* Der Zeitraum rechts neben "Overview" ist weg (12.09.) -- mitsamt seiner Regel. Er steht
+   weiterhin in der Kopfzeile der Tabelle darunter, und overview.range_label wird dafuer auch
+   weiter gelesen (syncTinfo); nur diese zweite Anzeige derselben Angabe ist gestrichen. */
 /* Das Zeichen vor der Ueberschrift ist wieder weg (12.09.) und steht erneut vor JEDER Chatzeile
    (.upw-chat-ic weiter unten) -- wie am 11.09.; die Runde dazwischen war der Umweg. */
 

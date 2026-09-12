@@ -287,8 +287,10 @@
                unter der Abschnittszeile trennt Ueberschrift von Inhalt -- bei BEIDEN Abschnitten
                gleich. Die Verlaufslinien (spark) sind mit dem Kasten zusammen weg. */
             '<section class="upw-sec upw-datarow-main">' +
-              '<div class="upw-sec-head"><span class="upw-sec-h up-blockhead" data-i18n="Overview">' + esc(t("Overview")) + '</span>' +
-                '<span class="upw-range up-blockhead" data-upw-range></span></div>' +
+              /* Rechts steht hier nichts mehr (12.09.): der Zeitraum stand doppelt auf dem Schirm --
+                 einmal hier und einmal in der Kopfzeile der Tabelle darunter ("8 brands · Last 30
+                 days"), und dort ist er naeher an den Zahlen, die er datiert. */
+              '<div class="upw-sec-head"><span class="upw-sec-h up-blockhead" data-i18n="Overview">' + esc(t("Overview")) + '</span></div>' +
               '<div class="upw-kpis" data-upw-kpis></div>' +
             '</section>' +
             '<section class="upw-sec upw-datarow-side">' +
@@ -343,7 +345,6 @@
     var elChips = root.querySelector("[data-upw-chips]");
     var elChats = root.querySelector("[data-upw-chatlist]");
     var elKpis = root.querySelector("[data-upw-kpis]");
-    var elRange = root.querySelector("[data-upw-range]");
     var elBrands = root.querySelector("[data-upw-brands]");
     var elCites = root.querySelector("[data-upw-cites]");
     var elTabseg = root.querySelector("[data-upw-tabseg]");
@@ -544,10 +545,9 @@
     function fmtI(v){ return v == null ? "–" : (UC.fmtInt ? UC.fmtInt(v) : String(Math.round(v))); }
     function ersetze(s, o){ return String(s).replace(/\{(\w+)\}/g, function(_, k){ return o[k] != null ? o[k] : ""; }); }
     function renderKpis(){
-      if (state.loading || !state.overview){ elKpis.innerHTML = kpiSkelett(); elRange.textContent = ""; return; }
+      if (state.loading || !state.overview){ elKpis.innerHTML = kpiSkelett(); return; }
       if (state.fehler.overview){ elKpis.innerHTML = UC.leseFehlerHtml ? UC.leseFehlerHtml("overview") : ""; return; }
       var o = state.overview;
-      elRange.textContent = o.range_label ? t(String(o.range_label)) : "";
       var vis = num(o.visibility_pct), rank = num(o.avg_rank), sent = num(o.sentiment);
       /* Position und Feldgroesse: aus dem Payload -- und wenn er sie nicht traegt, aus
          "Competitive field" darunter, das dieselbe Frage beantwortet.

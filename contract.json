@@ -2716,7 +2716,6 @@
   "upw-mira-sk-row",
   "upw-name",
   "upw-narrow",
-  "upw-range",
   "upw-root",
   "upw-sec",
   "upw-sec-h",
@@ -3078,7 +3077,7 @@
   "globals": 177,
   "payloadkeys": 96,
   "dataattrs": 251,
-  "klassen": 2211,
+  "klassen": 2210,
   "keyframes": 66
  }
 }
