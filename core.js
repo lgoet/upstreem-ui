@@ -455,11 +455,16 @@
     "Brand": "Brand",
     "Domain": "Domain",
     "Prompt": "Prompt",
-    /* Fachbegriff wie "Brand"/"Sent." -- unveraendert auch auf Deutsch (12.09., Power Dashboard,
-       Spaltenkopf UND KPI-Karte). Ohne diesen Eintrag meldet .finde_untexte.py den t()-Aufruf als
-       ungeprueften Text, obwohl der Rueckfall (t() ohne Katalogtreffer gibt den Originaltext
-       zurueck) hier zufaellig richtig aussieht. */
+    /* Fachbegriffe wie "Brand"/"Sent." -- unveraendert auch auf Deutsch (12.09., Power Dashboard,
+       Spaltenkoepfe UND KPI-Karten; "Ranking"/"Sentiment" kamen dazu, als die Tabelle die Koepfe
+       der maximierten Visibility-Chart-Tabelle uebernahm). Ohne diese Eintraege meldet
+       .finde_untexte.py die t()-Aufrufe als ungeprueften Text, obwohl der Rueckfall (t() ohne
+       Katalogtreffer gibt den Originaltext zurueck) hier zufaellig richtig aussieht. */
     "Visibility": "Visibility",
+    "Ranking": "Ranking",
+    "Sentiment": "Sentiment",
+    /* Der Name des Bretts -- er steht in der App ueberall so und wird nicht uebersetzt. */
+    "Opportunities": "Opportunities",
     "Markets": "Märkte",
     "Model": "Modell",
     "Models": "Modelle",
@@ -652,6 +657,10 @@
        "Show tables..."-Zeilen sind wieder raus, nichts liest sie mehr. */
     "Open brands": "Brands öffnen",
     "Open citations": "Zitierungen öffnen",
+    /* Der dritte Reiter (12.09.): darunter steht das geliehene Kanban-Brett aus opportunities.js.
+       "Opportunities" ist im Katalog schon als Seitenname vergeben, hier braucht es nur den
+       zugehoerigen Knopftext. */
+    "Open opportunities": "Opportunities öffnen",
     /* Die Kopfzeile der einen Tabelle: "16 brands · Last 30 days" bzw. "32.5k citations ·
        7 days" (12.09. angefordert). Kleingeschrieben, weil es hier ein Zaehlwort in einem Satz
        ist und kein Eigenname -- anders als die Katalogeintraege "Brands"/"Citations" weiter oben,
@@ -14810,10 +14819,16 @@
                               zwei kleinen Auslaeufern statt des Schwanzes) keine eigene Version
                               mehr, die aelteren Kacheldesigns (message-circle-check usw.) sind
                               seither eigene Icons.
+         arrow-up-right        der Knopf ganz rechts in der Kopfzeile der einen Tabelle: er
+                              oeffnet die Ansicht, die gerade im Umschalter steht (Brands,
+                              Citations oder Opportunities). 12.09. ausdruecklich dieses Zeichen
+                              angefordert -- vorher stand dort external-link, und das meint
+                              "verlaesst die App", was hier nicht stimmt.
        maximize2/minimize2 (11.09., der alte Umschalter an "Competitive field") sind raus
        (12.09.): der Knopf stellt seit der Tabellen-Umschaltung nichts mehr um, was ein Icon
        braucht -- nichts liest die beiden Keys mehr. */
     messageCircle: '<path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/>',
+    arrowUpRight:  '<path d="M7 7h10v10"/><path d="M7 17 17 7"/>',
     calendar:      '<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>',
     shieldCheck:'<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>' +
               '<path d="m9 12 2 2 4-4"/>',

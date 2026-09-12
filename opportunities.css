@@ -67,6 +67,16 @@
    component because core has no generic .up-iconbtn.is-active rule to inherit. */
 .uo-root .up-iconbtn.is-active { color: var(--vc-text); background: var(--vc-heading-bg); }
 
+/* ---------- ausgeliehen: das Brett im Power Dashboard (12.09.) ----------
+   Dort ist das Brett EIN Reiter unter zweien anderen, kein eigener Bildschirm: die Kopfzeile
+   stellt der Ausleiher (sein Tabellen-Umschalter), und die Werkzeugleiste ist beim Ausleihen in
+   dessen Kopfzeile umgezogen (power-dashboard.js, opportunitiesLauncherAttach) -- also bleibt
+   hier eine leere .uo-head stehen, die weg muss, sonst steht eine leere 32px-Zeile ueber dem
+   Brett. Polster und Mindesthoehe ebenfalls aus: die 480px sind das Mass eines ganzen
+   Bildschirms, und das Polster stellt im Dashboard die Sektion drumherum. */
+.uo-root.is-launcher { min-height: 0; padding: 0; }
+.uo-root.is-launcher .uo-head { display: none; }
+
 /* ---------- board ---------- */
 .uo-stage { flex: 1 1 auto; position: relative; }
 .uo-board { display: flex; gap: 16px; align-items: stretch; }

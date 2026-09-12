@@ -27,6 +27,18 @@
   every ancestor between this element and <html> that clips or establishes a containing block —
   which is what breaks position:sticky when it breaks.
 
+  ── DAS POWER DASHBOARD LEIHT SICH DIESES ELEMENT (12.09.) ───────────────────
+  Der dritte Reiter seines Umschalters ("Opportunities") zeigt DIESES Brett, keine Kopie: die
+  Wurzel wandert dorthin, solange der Reiter vorne steht, und kommt beim Reiter- oder
+  Ansichtswechsel von selbst zurueck. Die Werkzeugleiste (Sortierer, Suche, Board/List,
+  Brett-Einstellungen) zieht dabei in dessen Kopfzeile um und kehrt ebenso zurueck.
+  Warum geliehen und nicht ein zweites Element: jede window.opportunities*-Funktion gehoert zu
+  genau einer Wurzel -- eine zweite Instanz auf derselben Seite wuerde sie ueberschreiben, und
+  Bubbles Setter kaemen dann beim Dashboard an statt hier. Genau dieselbe Loesung wie bei Miras
+  Eingabefeld.
+  BUBBLE-SEITIG IST DAFUER NICHTS ZU TUN -- kein zweiter Workflow, kein zweites Element, kein
+  zusaetzlicher Setter. Nur auf DEMSELBEN PIN muessen beide stehen.
+
   ── Bubble dynamic values on the root element ────────────────────────────────
   data-instance = "ROOTID_[dynamic id]"   unique per placement
   data-cdn-pin  = commit hash to load from, e.g. "71ed61f" — leave EMPTY (or leave the literal

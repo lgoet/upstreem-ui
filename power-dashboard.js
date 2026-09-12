@@ -64,32 +64,40 @@
       sentiment_series: [74, 73.5, 74.5, 74, 74.8, 74.6, 76],
       field_avg_sentiment: 74, negative_count: 6, response_count: 214
     },
+    /* avg_rank_delta und sentiment_delta sind seit dem 12.09. dabei: "Competitive field" zeigt
+       den Trend jetzt in ALLEN drei Wertspalten, genau wie die maximierte Tabelle im Visibility
+       Chart, deren Zeile hier das Vorbild ist. Beim Rang ist WENIGER besser -- die Richtung dreht
+       UC.trendChip ueber inverted, nicht das Vorzeichen der Daten. */
     brands: [
-      { company_id: "d1", position: 1, name: "Anfragenfluss", logo_url: "", visibility_pct: 5.2, visibility_delta_pct: 4.0, avg_rank: 2.6, sentiment: 75 },
-      { company_id: "d2", position: 2, name: "LeeUp Media", logo_url: "", visibility_pct: 3.0, visibility_delta_pct: 1.0, avg_rank: 3.3, sentiment: 76, is_own: true },
-      { company_id: "d3", position: 3, name: "Candidate Flow", logo_url: "", visibility_pct: 2.1, visibility_delta_pct: -1.0, avg_rank: 3.5, sentiment: 71 },
-      { company_id: "d4", position: 4, name: "Andreas May", logo_url: "", visibility_pct: 1.2, visibility_delta_pct: 0, avg_rank: 3.2, sentiment: 74 },
-      { company_id: "d5", position: 5, name: "Leadmagneten", logo_url: "", visibility_pct: 0.6, visibility_delta_pct: 0, avg_rank: 3.7, sentiment: 71 },
-      { company_id: "d6", position: 6, name: "A&M Beratung", logo_url: "", visibility_pct: 0.4, visibility_delta_pct: 0, avg_rank: 4.0, sentiment: 72 },
-      { company_id: "d7", position: 7, name: "Matthias Niehaus", logo_url: "", visibility_pct: 0.3, visibility_delta_pct: 0, avg_rank: 3.1, sentiment: 81 }
+      { company_id: "d1", position: 1, name: "Anfragenfluss", logo_url: "", visibility_pct: 5.2, visibility_delta_pct: 4.0, avg_rank: 2.6, avg_rank_delta: -0.4, sentiment: 75, sentiment_delta: 2.1 },
+      { company_id: "d2", position: 2, name: "LeeUp Media", logo_url: "", visibility_pct: 3.0, visibility_delta_pct: 1.0, avg_rank: 3.3, avg_rank_delta: -0.9, sentiment: 76, sentiment_delta: 1.6, is_own: true },
+      { company_id: "d3", position: 3, name: "Candidate Flow", logo_url: "", visibility_pct: 2.1, visibility_delta_pct: -1.0, avg_rank: 3.5, avg_rank_delta: 0.3, sentiment: 71, sentiment_delta: -1.2 },
+      { company_id: "d4", position: 4, name: "Andreas May", logo_url: "", visibility_pct: 1.2, visibility_delta_pct: 0, avg_rank: 3.2, avg_rank_delta: 0, sentiment: 74, sentiment_delta: 0 },
+      { company_id: "d5", position: 5, name: "Leadmagneten", logo_url: "", visibility_pct: 0.6, visibility_delta_pct: 0, avg_rank: 3.7, avg_rank_delta: 0.2, sentiment: 71, sentiment_delta: 0.4 },
+      { company_id: "d6", position: 6, name: "A&M Beratung", logo_url: "", visibility_pct: 0.4, visibility_delta_pct: 0, avg_rank: 4.0, avg_rank_delta: -0.1, sentiment: 72, sentiment_delta: -0.6 },
+      { company_id: "d7", position: 7, name: "Matthias Niehaus", logo_url: "", visibility_pct: 0.3, visibility_delta_pct: 0, avg_rank: 3.1, avg_rank_delta: 0.5, sentiment: 81, sentiment_delta: 3.0 }
     ],
+    /* used_total wie in topcitations-dashboard: die Spalte "Used" gehoert zu dessen Zeile, und
+       die ist seit dem 12.09. das Vorbild fuer "Trending Citations" hier. */
     top_domains: [
-      { domain: "reddit.com", favicon: "", citation_type: "UGC_Community", share_pct: 6.8, share_delta_pct: 9.1 },
-      { domain: "trustpilot.com", favicon: "", citation_type: "Brand_Platform", share_pct: 4.1, share_delta_pct: 5.2 },
-      { domain: "handwerk.com", favicon: "", citation_type: "Editorial", share_pct: 7.3, share_delta_pct: 4.0 },
-      { domain: "anfragenfluss.de", favicon: "", citation_type: "Competition", share_pct: 3.9, share_delta_pct: 3.4 },
-      { domain: "ihk.de", favicon: "", citation_type: "Institutional", share_pct: 2.2, share_delta_pct: 1.8 },
-      { domain: "youtube.com", favicon: "", citation_type: "UGC_Community", share_pct: 21.0, share_delta_pct: -6.0 },
-      { domain: "handwerk-digitalisieren.de", favicon: "", citation_type: "Brand_Platform", share_pct: 20.0, share_delta_pct: -13.0 }
+      { domain: "reddit.com", favicon: "", citation_type: "UGC_Community", share_pct: 6.8, share_delta_pct: 9.1, used_total: 1840 },
+      { domain: "trustpilot.com", favicon: "", citation_type: "Brand_Platform", share_pct: 4.1, share_delta_pct: 5.2, used_total: 1120 },
+      { domain: "handwerk.com", favicon: "", citation_type: "Editorial", share_pct: 7.3, share_delta_pct: 4.0, used_total: 1990 },
+      { domain: "anfragenfluss.de", favicon: "", citation_type: "Competition", share_pct: 3.9, share_delta_pct: 3.4, used_total: 1060 },
+      { domain: "ihk.de", favicon: "", citation_type: "Institutional", share_pct: 2.2, share_delta_pct: 1.8, used_total: 600 },
+      { domain: "youtube.com", favicon: "", citation_type: "UGC_Community", share_pct: 21.0, share_delta_pct: -6.0, used_total: 5720 },
+      { domain: "handwerk-digitalisieren.de", favicon: "", citation_type: "Brand_Platform", share_pct: 20.0, share_delta_pct: -13.0, used_total: 5450 }
     ],
     top_urls: [
-      { url: "https://www.reddit.com/r/handwerk/leads", title: "Wie kommt ihr an Anfragen?", favicon: "", url_type: "forum", global_share_pct: 3.1, share_delta_pct: 6.2 },
-      { url: "https://www.trustpilot.com/review/anfragenfluss.de", title: "Anfragenfluss Bewertungen", favicon: "", url_type: "review", global_share_pct: 2.4, share_delta_pct: 3.0 },
-      { url: "https://www.handwerk.com/leadgenerierung", title: "Leadgenerierung im Handwerk", favicon: "", url_type: "article", global_share_pct: 2.2, share_delta_pct: 2.1 },
-      { url: "https://anfragenfluss.de/", title: "Anfragenfluss – Mehr Anfragen", favicon: "", url_type: "homepage", global_share_pct: 1.9, share_delta_pct: 1.4 },
-      { url: "https://www.ihk.de/digitalisierung", title: "Digitalisierung im Mittelstand", favicon: "", url_type: "article", global_share_pct: 1.2, share_delta_pct: 0.8 }
+      { url: "https://www.reddit.com/r/handwerk/leads", title: "Wie kommt ihr an Anfragen?", favicon: "", url_type: "forum", global_share_pct: 3.1, share_delta_pct: 6.2, used_total: 840 },
+      { url: "https://www.trustpilot.com/review/anfragenfluss.de", title: "Anfragenfluss Bewertungen", favicon: "", url_type: "review", global_share_pct: 2.4, share_delta_pct: 3.0, used_total: 650 },
+      { url: "https://www.handwerk.com/leadgenerierung", title: "Leadgenerierung im Handwerk", favicon: "", url_type: "article", global_share_pct: 2.2, share_delta_pct: 2.1, used_total: 600 },
+      { url: "https://anfragenfluss.de/", title: "Anfragenfluss – Mehr Anfragen", favicon: "", url_type: "homepage", global_share_pct: 1.9, share_delta_pct: 1.4, used_total: 520 },
+      { url: "https://www.ihk.de/digitalisierung", title: "Digitalisierung im Mittelstand", favicon: "", url_type: "article", global_share_pct: 1.2, share_delta_pct: 0.8, used_total: 330 }
     ],
-    citations_label: "7 days",
+    /* Derselbe Zeitraum wie in "Overview" (12.09. korrigiert: "die unteren Tabellen sind
+       natuerlich auch 30 days, nicht 7 days"). */
+    citations_label: "Last 30 days",
     /* Gesamtzahl der Domains bzw. URLs, die im Zeitraum zitiert haben -- NICHT die Laenge von
        top_domains/top_urls (die zeigen nur die "top" 7). Fuer die Kopfzeile der Tabelle
        ("32.5k citations · 7 days"). */
@@ -214,9 +222,10 @@
        eigen (instanceId haengt dran, dasselbe Muster wie responses-table.js' rhKey/urls-table.js
        usw.). Kein Team-Bezug -- welche Tabelle man zuletzt offen hatte, ist eine Geraetevorliebe,
        keine Teamdatensache (dieselbe Begruendung wie bei core.js' getDashboardMode). */
+    var TABS = { brands: 1, citations: 1, opportunities: 1 };
     function tabKey(){ return "upw_table__" + instanceId; }
     function readTab(){
-      try { return window.localStorage.getItem(tabKey()) === "citations" ? "citations" : "brands"; }
+      try { var v = window.localStorage.getItem(tabKey()); return TABS[v] ? v : "brands"; }
       catch(e){ return "brands"; }
     }
     function writeTab(v){ try { window.localStorage.setItem(tabKey(), v); } catch(e){} }
@@ -277,12 +286,21 @@
              power-dashboard.css), Overview nimmt den Rest. */
           '<div class="upw-datarow">' +
             '<section class="upw-sec upw-datarow-main">' +
+              /* Der Zeitraum rechts traegt DIESELBE Klasse wie die Ueberschrift links (12.09.
+                 angefordert: "gleiche Fontsize wie die Headings, aber in Drittfarbe") -- und
+                 .up-blockhead IST bereits in Drittfarbe, also genuegt die Klasse. Das Kalender-
+                 Zeichen davor ist weg. */
               '<div class="upw-sec-head"><span class="upw-sec-h up-blockhead" data-i18n="Overview">' + esc(t("Overview")) + '</span>' +
-                '<span class="upw-range">' + UC.icon("calendar", 2) + '<span data-upw-range></span></span></div>' +
+                '<span class="upw-range up-blockhead" data-upw-range></span></div>' +
               '<div class="up-box upw-kpis" data-upw-kpis></div>' +
             '</section>' +
             '<section class="upw-sec upw-datarow-side">' +
-              '<div class="upw-sec-head"><span class="upw-sec-h up-blockhead" data-i18n="Recent chats">' + esc(t("Recent chats")) + '</span>' +
+              /* EIN Zeichen vor der Ueberschrift statt eines vor jeder Zeile (12.09. angefordert)
+                 -- die Liste wird dadurch ruhiger, und die Sprechblase sagt einmal, worum es hier
+                 geht, statt es siebenmal zu wiederholen. */
+              '<div class="upw-sec-head"><span class="upw-sec-h up-blockhead" data-i18n="Recent chats">' +
+                '<span class="upw-sec-ic" aria-hidden="true">' + UC.icon("messageCircle", 2) + '</span>' +
+                esc(t("Recent chats")) + '</span>' +
                 '<button type="button" class="upw-link" data-upw-allchats><span data-i18n="All chats">' + esc(t("All chats")) + '</span>' +
                 UC.icon("chevronRight", 2) + '</button></div>' +
               '<div class="upw-chatlist" data-upw-chatlist></div>' +
@@ -300,6 +318,7 @@
               '<div class="up-seg upw-tabseg" role="tablist" aria-label="Table" data-upw-tabseg>' +
                 '<button type="button" class="up-seg-btn" role="tab" data-upw-tab="brands" data-i18n="Competitive field">' + esc(t("Competitive field")) + '</button>' +
                 '<button type="button" class="up-seg-btn" role="tab" data-upw-tab="citations" data-i18n="Trending Citations">' + esc(t("Trending Citations")) + '</button>' +
+                '<button type="button" class="up-seg-btn" role="tab" data-upw-tab="opportunities" data-i18n="Opportunities">' + esc(t("Opportunities")) + '</button>' +
               '</div>' +
               '<div class="up-head-tools">' +
                 '<span class="upw-tinfo" data-upw-tinfo></span>' +
@@ -307,11 +326,18 @@
                   '<button type="button" class="up-seg-btn" role="tab" data-upw-cmode="domain" data-i18n="Domains">' + esc(t("Domains")) + '</button>' +
                   '<button type="button" class="up-seg-btn" role="tab" data-upw-cmode="url" data-i18n="URLs">' + esc(t("URLs")) + '</button>' +
                 '</div>' +
-                '<button type="button" class="up-iconbtn" data-upw-open>' + UC.icon("externalLink", 2) + '</button>' +
+                /* Der Platz, in den die Werkzeugleiste des GELIEHENEN Bretts einzieht (Sortierer,
+                   Suche, Board/List, Brett-Einstellungen) -- sie kommt aus opportunities.js und
+                   gehoert dort auch hin, siehe opportunitiesLauncherAttach. */
+                '<span class="upw-uotools" data-upw-uotools></span>' +
+                '<button type="button" class="up-iconbtn" data-upw-open>' + UC.icon("arrowUpRight", 2) + '</button>' +
               '</div>' +
             '</div>' +
-            '<div class="up-box"><div class="up-table upw-table upw-t-brands" data-upw-brands></div>' +
+            '<div class="up-box" data-upw-tablebox><div class="up-table upw-table upw-t-brands" data-upw-brands></div>' +
               '<div class="up-table upw-table upw-t-cites" data-upw-cites></div></div>' +
+            /* Der Platz des geliehenen Bretts. Bis es da ist (oder wenn es auf dieser Seite gar
+               nicht eingebaut ist), steht hier der Hinweis darunter -- kein leeres Nichts. */
+            '<div class="upw-board is-off" data-upw-board></div>' +
           '</section>' +
         '</div>' +
       '</div>';
@@ -327,6 +353,9 @@
     var elTinfo = root.querySelector("[data-upw-tinfo]");
     var elCmodeWrap = root.querySelector("[data-upw-cmodewrap]");
     var elOpenBtn = root.querySelector("[data-upw-open]");
+    var elTableBox = root.querySelector("[data-upw-tablebox]");
+    var elBoard = root.querySelector("[data-upw-board]");
+    var elUoTools = root.querySelector("[data-upw-uotools]");
 
     /* ---------- Chips ---------- */
     function staerksterWettbewerber(){
@@ -427,10 +456,15 @@
          steht das Feld beim Aufgehen schon da. Die Pruefreihe bestaetigt danach. */
       if (String(name) === VIEW && miraBereit()) { try { window.askMiraLauncherAttach(elSlot, { view: VIEW }); } catch(e){} }
       pruefen();
+      /* Das Brett geht von sich aus nach Hause, sobald eine andere Ansicht dran ist (sein eigener
+         onViewChange in opportunities.js) -- hier bleibt nur, es beim Zurueckkommen in DIESE
+         Ansicht wieder zu holen, falls sein Reiter vorne steht. */
+      if (String(name) === VIEW && state.activeTable === "opportunities") brettPruefen();
     });
     if (UC.onDashboardMode) UC.onDashboardMode(function(mode){
-      if (mode !== "power") zurueckgeben();
+      if (mode !== "power"){ zurueckgeben(); brettZurueckgeben(); }
       pruefen();
+      if (mode === "power" && state.activeTable === "opportunities") brettPruefen();
     });
     window.addEventListener("askmira:bereit", pruefen);
     function zuMira(o){
@@ -440,6 +474,20 @@
     }
 
     /* ---------- Recent chats ---------- */
+    /* OHNE JAHRESANGABE (12.09. angefordert). Nicht ein festes Format erfunden, sondern das
+       eingestellte genommen und nur das Jahr weggelassen -- UC.datumsTeile liefert dieselben
+       Teile, aus denen UC.fmtDateMuster seine vier Muster baut, also bleibt die Schreibweise die
+       der App (Monat zuerst im englischen, Tag zuerst im deutschen Muster). Ein Chat ist ein
+       Ereignis der letzten Tage; das Jahr dazuzuschreiben sagt nichts und kostet Platz in einer
+       Spalte, die ohnehin die schmalste der Zeile ist. */
+    function ohneJahr(d){
+      var p = UC.datumsTeile ? UC.datumsTeile(d.toISOString()) : null;
+      if (!p) return UC.fmtDate ? UC.fmtDate(d.toISOString()) : d.toLocaleDateString();
+      var muster = UC.getPref ? UC.getPref("date") : "";
+      if (muster === "mon-d-y") return p.mon + " " + p.t;
+      if (muster === "d-m-y" || muster === "iso") return p.tt + "." + p.mm + ".";
+      return p.tt + ". " + p.mon;
+    }
     function wann(ms){
       if (ms == null) return "";
       var d = new Date(ms), jetzt = new Date();
@@ -447,7 +495,7 @@
       var diff = Math.round((tag(jetzt) - tag(d)) / 86400000);
       if (diff === 0) return t("Today");
       if (diff === 1) return t("Yesterday");
-      return UC.fmtDate ? UC.fmtDate(d.toISOString()) : d.toLocaleDateString();
+      return ohneJahr(d);
     }
     var _chatsGeladen = false;
     function renderChats(){
@@ -459,13 +507,12 @@
            wahr (dieselbe Frist wie Miras eigene Chatleiste). */
         elChats.innerHTML = _chatsLeer
           ? '<div class="upw-chats-empty" data-i18n="No chats yet">' + esc(t("No chats yet")) + '</div>'
-          : [0, 1, 2].map(function(i){ return '<div class="upw-chat is-sk"><span class="upw-sk upw-sk-ic"></span>' +
+          : [0, 1, 2].map(function(i){ return '<div class="upw-chat is-sk">' +
               '<span class="upw-sk upw-sk-title" style="width:' + [42, 30, 36][i] + '%"></span></div>'; }).join("");
         return;
       }
       elChats.innerHTML = liste.map(function(c){
         return '<button type="button" class="upw-chat" data-upw-chat="' + esc(c.id) + '">' +
-          '<span class="upw-chat-ic">' + UC.icon("messageCircle", 2) + '</span>' +
           '<span class="upw-chat-title">' + esc(c.title || t("Untitled chat")) + '</span>' +
           '<span class="upw-chat-when">' + esc(wann(c.time)) + '</span></button>';
       }).join("");
@@ -577,19 +624,53 @@
        (40+120+130+66+72 = 428px plus Zellpolster). 380px: darunter reicht er nicht einmal mehr
        ohne Sentiment (40+120+130+66 = 356px plus Polster). Gemessen und bei Bedarf nachgezogen
        in _h_upw.html. */
+    /* DER TREND FAELLT WEG, SOBALD ER NICHT MEHR IN SEINE ZELLE PASST -- wortgleich uebernommen
+       aus visibility-chart.js (trendFitJetzt), inklusive der zwei Lehren, die dort im Kommentar
+       stehen: erstens muss man die Trends zum Messen erst einblenden, sonst misst der Lauf das
+       Ergebnis des vorigen und die Entscheidung kippt nie zurueck; zweitens wird SPALTENWEISE
+       entschieden und nicht zeilenweise, sonst staenden in derselben Spalte mal Trends und mal
+       keine, was sich als Fehler liest. 1px Toleranz gegen die Rundung der Prozentspuren.
+       GEMESSEN, warum es das hier ueberhaupt braucht: bei 320px Fensterbreite ist die
+       Visibility-Spur 91px breit, ihr Inhalt ("5.2%" plus Trend-Chip) braucht 119px. */
+    var TREND_SPALTEN = ["vis", "rank", "sent"];
+    function trendPasst(tabelle, spalten){
+      if (!tabelle) return;
+      spalten.forEach(function(k){ tabelle.classList.remove("upw-hide-trend-" + k); });
+      var eng = {};
+      spalten.forEach(function(k){
+        var zellen = tabelle.querySelectorAll(".upw-td-" + k);
+        for (var i = 0; i < zellen.length; i++){
+          var c = zellen[i];
+          if (!c.querySelector(".up-trend")) continue;
+          if (getComputedStyle(c).display === "none") continue;
+          if (c.scrollWidth > c.clientWidth + 1){ eng[k] = true; break; }
+        }
+      });
+      spalten.forEach(function(k){ tabelle.classList.toggle("upw-hide-trend-" + k, !!eng[k]); });
+    }
     function brandsResponsive(){
       var w = elBrands.clientWidth;
       if (!w) return;
-      elBrands.classList.toggle("upw-hide-sent", w < 460);
-      elBrands.classList.toggle("upw-hide-rank", w < 380);
+      elBrands.classList.toggle("upw-hide-sent", w < 560);
+      elBrands.classList.toggle("upw-hide-rank", w < 440);
+      trendPasst(elBrands, TREND_SPALTEN);
     }
+    /* Das Info-Zeichen der Spaltenkoepfe: .up-th-info aus core, das core selbst ueber
+       ".up-th:hover .up-th-info" einblendet -- meine Koepfe SIND .up-th, also greift das ohne
+       eigene Regel. Den Text holt UC.explainCopy aus dem einen Katalog in core, wortgleich zu
+       brands-overview und visibility-chart: dieselbe Spalte soll nicht in drei Tabellen drei
+       verschiedene Erklaerungen haben. */
+    function infoIcon(key){
+      return '<span class="up-th-info" data-explain="' + key + '" role="button" tabindex="0">' + UC.icon("info", 2) + '</span>';
+    }
+    var ROW_GOTO = UC.GOTO_SVG ? '<span class="up-row-goto">' + UC.GOTO_SVG + '</span>' : "";
     function brandsKopf(){
       return '<div class="up-thead">' +
         '<div class="up-th up-th-idx">' + (UC.HASH_ICON || "#") + '</div>' +
         '<div class="up-th"><span class="up-th-txt">' + esc(t("Brand")) + '</span></div>' +
-        '<div class="up-th"><span class="up-th-txt">' + esc(t("Visibility")) + '</span></div>' +
-        '<div class="up-th upw-th-rank"><span class="up-th-txt">' + esc(t("Rank")) + '</span></div>' +
-        '<div class="up-th upw-th-sent"><span class="up-th-txt">' + esc(t("Sent.")) + '</span></div></div>';
+        '<div class="up-th"><span class="up-th-txt">' + esc(t("Visibility")) + '</span>' + infoIcon("visibility") + '</div>' +
+        '<div class="up-th upw-th-rank"><span class="up-th-txt">' + esc(t("Ranking")) + '</span>' + infoIcon("ranking") + '</div>' +
+        '<div class="up-th upw-th-sent"><span class="up-th-txt">' + esc(t("Sentiment")) + '</span>' + infoIcon("sentiment") + '</div></div>';
     }
     function renderBrands(){
       var kopf = brandsKopf();
@@ -607,13 +688,19 @@
         var v = num(r.visibility_pct), rk = num(r.avg_rank), s = num(r.sentiment);
         var vis = '<span class="up-num' + (v == null ? " is-empty" : "") + '">' + fmtPct1(v) + '</span>' +
           UC.trendChip(r.visibility_delta_pct, { decimals: true, suffix: "%" });
-        var rank = '<span class="up-rank-group">' + HASH + '<span class="up-num">' + fmtR(rk) + '</span></span>';
+        /* Trend jetzt AUCH an Rang und Sentiment (12.09. angefordert), beide genau wie in der
+           maximierten Tabelle des Visibility Charts: am Rang mit inverted, weil dort WENIGER
+           besser ist, am Sentiment ohne -- und beide ohne Prozentzeichen, denn keiner der zwei
+           Werte ist ein Prozentwert (CLAUDE.md 2b). */
+        var rank = '<span class="up-rank-group">' + HASH + '<span class="up-num' + (rk == null ? " is-empty" : "") + '">' + fmtR(rk) + '</span></span>' +
+          UC.trendChip(r.avg_rank_delta, { decimals: true, inverted: true });
         var sent = '<span class="up-sent"><span class="up-sent-dot" style="background:' + (s == null ? "#9E9E9E" : UC.sentColor(s)) + '"></span>' +
-          '<span class="up-sent-val' + (s == null ? " is-empty" : "") + '">' + (s == null ? "–" : Math.round(s)) + '</span></span>';
+          '<span class="up-sent-val' + (s == null ? " is-empty" : "") + '">' + (s == null ? "–" : Math.round(s)) + '</span></span>' +
+          UC.trendChip(r.sentiment_delta, { decimals: true });
         return '<div class="up-row' + (r.is_own === true || String(r.is_own) === "yes" ? " is-own" : "") + '" data-upw-row="brand" data-id="' + esc(String(r.company_id == null ? "" : r.company_id)) + '">' +
           '<div class="up-td up-td-idx">' + fmtI(pos) + '</div>' +
-          '<div class="up-td upw-td-name">' + logo(r.logo_url || r.favicon_url, r.name) + '<span class="upw-name" title="' + esc(r.name == null ? "" : r.name) + '">' + esc(r.name == null ? "" : r.name) + '</span></div>' +
-          '<div class="up-td">' + vis + '</div>' +
+          '<div class="up-td upw-td-name">' + logo(r.logo_url || r.favicon_url, r.name) + '<span class="upw-name" title="' + esc(r.name == null ? "" : r.name) + '">' + esc(r.name == null ? "" : r.name) + '</span>' + ROW_GOTO + '</div>' +
+          '<div class="up-td upw-td-vis">' + vis + '</div>' +
           '<div class="up-td upw-td-rank">' + rank + '</div>' +
           '<div class="up-td upw-td-sent">' + sent + '</div></div>';
       }).join("") + '</div>';
@@ -649,17 +736,23 @@
        Nummerierung") -- vorher hatte nur Competitive field eine.
        460px: darunter reicht der Platz nicht mehr fuer alle vier Spalten (40+120+148+130 = 438px
        plus Zellpolster) -- dieselbe eigene-Breite-Messung wie brandsResponsive() oben. */
+    /* Reihenfolge des Ausblendens wie in topcitations-dashboard: erst "Used", dann "Type" --
+       "Used" ist die Zahl, die am ehesten entbehrlich ist, "Type" traegt die Farbe und damit die
+       schnellste Information der Zeile. Die Schwellen sind die EIGENE Breite dieser Tabelle. */
     function citesResponsive(){
       var w = elCites.clientWidth;
       if (!w) return;
+      elCites.classList.toggle("upw-hide-used", w < 620);
       elCites.classList.toggle("upw-hide-type", w < 460);
+      trendPasst(elCites, ["share"]);
     }
     function citesKopf(url){
       return '<div class="up-thead">' +
         '<div class="up-th up-th-idx">' + (UC.HASH_ICON || "#") + '</div>' +
         '<div class="up-th"><span class="up-th-txt">' + esc(t(url ? "URL" : "Domain")) + '</span></div>' +
         '<div class="up-th upw-th-type"><span class="up-th-txt">' + esc(t("Type")) + '</span></div>' +
-        '<div class="up-th"><span class="up-th-txt">' + esc(t("Share")) + '</span></div></div>';
+        '<div class="up-th"><span class="up-th-txt">' + esc(t("Share")) + '</span>' + infoIcon("share") + '</div>' +
+        '<div class="up-th upw-th-used"><span class="up-th-txt">' + esc(t("Used")) + '</span></div></div>';
     }
     function renderCites(){
       var url = state.cmode === "url";
@@ -669,7 +762,8 @@
       if (fehler){ elCites.innerHTML = kopf + (UC.leseFehlerHtml ? UC.leseFehlerHtml("citations") : ""); citesResponsive(); return; }
       if (state.loading || !rows){
         elCites.innerHTML = kopf + '<div class="up-tbody">' + UC.skeletonRows({ count: 7, rowClass: "up-row", cellClass: "up-td",
-          cols: [{ w: 12, cls: "up-td-idx" }, { w: 110, jitter: 30, logo: true }, { w: 56, cls: "upw-td-type" }, 40] }) + '</div>';
+          cols: [{ w: 12, cls: "up-td-idx" }, { w: 110, jitter: 30, logo: true }, { w: 56, cls: "upw-td-type" }, 40,
+                 { w: 36, cls: "upw-td-used" }] }) + '</div>';
         citesResponsive();
         return;
       }
@@ -681,13 +775,19 @@
         var anteil = num(url ? (r.global_share_pct != null ? r.global_share_pct : r.share_pct) : r.share_pct);
         var share = '<span class="up-num' + (anteil == null ? " is-empty" : "") + '">' + fmtPct1(anteil) + '</span>' +
           UC.trendChip(r.share_delta_pct, { decimals: true, suffix: "%" });
+        /* "Used" wie in topcitations-dashboard: die Gesamtzahl der Nennungen, kompakt (1.8k).
+           Fehlt das Feld, bleibt die Zelle leer -- dort steht dann nichts, keine Null: niemand
+           hat gezaehlt, und "0" waere eine Behauptung. */
+        var used = num(r.used_total) != null
+          ? '<span class="up-num">' + esc(UC.fmtTotal ? UC.fmtTotal(num(r.used_total)) : fmtI(num(r.used_total))) + '</span>' : "";
         return '<div class="up-row" data-upw-row="' + (url ? "url" : "domain") + '" data-id="' + esc(String(id)) + '">' +
           '<div class="up-td up-td-idx">' + fmtI(i + 1) + '</div>' +
           '<div class="up-td upw-td-name">' + (fav ? '<span class="up-logo-box up-fav has-img"><img src="' + esc(fav) + '" alt="" referrerpolicy="no-referrer"/></span>'
                                                : '<span class="up-logo-box up-fav"></span>') +
-            '<span class="upw-name" title="' + esc(url && r.url ? r.url : name) + '">' + esc(name) + '</span></div>' +
+            '<span class="upw-name" title="' + esc(url && r.url ? r.url : name) + '">' + esc(name) + '</span>' + ROW_GOTO + '</div>' +
           '<div class="up-td upw-td-type">' + typTag(url ? r.url_type : r.citation_type, url) + '</div>' +
-          '<div class="up-td">' + share + '</div></div>';
+          '<div class="up-td upw-td-share">' + share + '</div>' +
+          '<div class="up-td upw-td-used">' + used + '</div></div>';
       }).join("") + '</div>';
       citesResponsive();
     }
@@ -699,6 +799,51 @@
        Datenabruf sofort da). Der Domains/URL-Umschalter daneben gilt nur im Citations-Modus, das
        Info-Zeichen rechts oeffnet je nach aktiver Tabelle die Brands- oder Citations-Ansicht in
        Bubble (dieselben zwei Ereignisse, die bis zum 12.09. am alten Maximieren-Knopf hingen). */
+    /* ---------- Das geliehene Opportunities-Brett (12.09. angefordert) ----------
+       Genau derselbe Griff wie bei Mira weiter oben, und aus demselben Grund: eine zweite
+       .uo-root wuerde jede window.opportunities*-Funktion der echten ueberschreiben (der
+       Launcher in opportunities.js erklaert es ausfuehrlich). Das Brett wandert also her,
+       solange sein Reiter vorne steht, und geht zurueck, sobald ein anderer Reiter oder eine
+       andere Ansicht dran ist. Seine Werkzeugleiste zieht dabei in elUoTools ein -- deshalb
+       stehen Board/List, Sortierer, Suche und die Brett-Einstellungen hier oben rechts in
+       DERSELBEN Zeile wie der Reiter-Umschalter, so wie verlangt. */
+    function brettBereit(){
+      return typeof window.opportunitiesLauncherAttach === "function";
+    }
+    function brettHier(){
+      return !!(elBoard && elBoard.querySelector(".uo-root"));
+    }
+    function brettAusleihen(){
+      if (!brettBereit() || !elBoard) return false;
+      var ok = false;
+      try { ok = window.opportunitiesLauncherAttach(elBoard, { view: VIEW, toolSlot: elUoTools }); } catch(e){}
+      root.classList.toggle("has-board", !!ok && brettHier());
+      return ok;
+    }
+    function brettZurueckgeben(){
+      if (typeof window.opportunitiesLauncherDetach === "function"){
+        try { window.opportunitiesLauncherDetach(elBoard); } catch(e){}
+      }
+      root.classList.remove("has-board");
+    }
+    /* Dieselbe kurze Anlaufreihe wie bei Mira: Bubble blendet eine Gruppe erst im naechsten Task
+       ein, und opportunities.js startet auf einer frischen Seite etwas spaeter als dieses
+       Dashboard. Kein Dauertakt -- jeder Anlass stoesst genau diese Reihe an. */
+    var _brettT = [];
+    function brettPruefen(){
+      _brettT.forEach(clearTimeout); _brettT = [];
+      [0, 250, 800, 1800].forEach(function(ms){
+        _brettT.push(setTimeout(function(){
+          if (state.activeTable !== "opportunities") return;
+          if (sichtbar()) brettAusleihen();
+          root.classList.toggle("has-board", brettHier());
+        }, ms));
+      });
+    }
+    window.addEventListener("opportunities:bereit", function(){
+      if (state.activeTable === "opportunities") brettPruefen();
+    });
+
     function mitPunkt(a, b){ return a && b ? (a + " · " + b) : (a || b || ""); }
     function syncTinfo(){
       if (!elTinfo) return;
@@ -714,30 +859,53 @@
       }
       elTinfo.textContent = text;
     }
-    function syncActiveTable(){
-      var citations = state.activeTable === "citations";
-      if (elTabseg) Array.prototype.forEach.call(elTabseg.querySelectorAll("[data-upw-tab]"), function(b){
-        var on = b.getAttribute("data-upw-tab") === state.activeTable;
+    /* GEMELDET (12.09.): "wenn man auf Citations wechselt, muss im Switcher auch Domain
+       ausgewaehlt sein". War es nicht -- is-active wurde NUR im Klickzuhoerer gesetzt, also trug
+       beim ersten Anzeigen KEINER der beiden Knoepfe die Markierung, obwohl state.cmode sehr wohl
+       auf "domain" stand und die Tabelle auch Domains zeigte. Der Zustand war richtig, nur sein
+       Abbild fehlte. Jetzt schreibt eine Funktion beides, und sie laeuft auch beim Aufbau. */
+    function syncCmode(){
+      if (!elCmodeWrap) return;
+      Array.prototype.forEach.call(elCmodeWrap.querySelectorAll("[data-upw-cmode]"), function(b){
+        var on = b.getAttribute("data-upw-cmode") === state.cmode;
         b.classList.toggle("is-active", on); b.setAttribute("aria-selected", on ? "true" : "false");
       });
-      elBrands.classList.toggle("is-off", citations);
+    }
+    function syncActiveTable(){
+      var tab = state.activeTable;
+      var citations = tab === "citations", chancen = tab === "opportunities";
+      syncCmode();
+      if (elTabseg) Array.prototype.forEach.call(elTabseg.querySelectorAll("[data-upw-tab]"), function(b){
+        var on = b.getAttribute("data-upw-tab") === tab;
+        b.classList.toggle("is-active", on); b.setAttribute("aria-selected", on ? "true" : "false");
+      });
+      elBrands.classList.toggle("is-off", !(tab === "brands"));
       elCites.classList.toggle("is-off", !citations);
+      /* Der Tabellenkasten ganz weg, wenn das Brett dran ist: es bringt seine eigene Flaeche mit
+         (die Spalten des Kanbans), ein leerer Rahmen darueber waere eine Linie ohne Inhalt. */
+      if (elTableBox) elTableBox.classList.toggle("is-off", chancen);
+      if (elBoard) elBoard.classList.toggle("is-off", !chancen);
       if (elCmodeWrap) elCmodeWrap.classList.toggle("is-off", !citations);
+      if (elTinfo) elTinfo.classList.toggle("is-off", chancen);
       if (elOpenBtn){
-        var tip = t(citations ? "Open citations" : "Open brands");
+        var tip = t(chancen ? "Open opportunities" : citations ? "Open citations" : "Open brands");
         elOpenBtn.setAttribute("data-tip", tip);
         elOpenBtn.setAttribute("aria-label", tip);
       }
+      /* Das Brett wird nur geliehen, solange sein Reiter vorne steht -- sonst haelt das Dashboard
+         es fest, waehrend nebenan die Opportunities-Ansicht leer dasteht. */
+      if (chancen) brettPruefen(); else brettZurueckgeben();
       /* Die gerade sichtbar gewordene Tabelle stand womoeglich als is-off bei 0 Breite und hat
          darum ihre Spalten-Ausblendung nie nachgezogen (clientWidth eines display:none-Elements
          ist 0, brandsResponsive/citesResponsive brechen dort sofort ab) -- hier nachgeholt. */
-      if (citations) citesResponsive(); else brandsResponsive();
+      if (citations) citesResponsive(); else if (!chancen) brandsResponsive();
       syncTinfo();
     }
     if (elTabseg) elTabseg.addEventListener("click", function(e){
       var b = e.target.closest("[data-upw-tab]");
       if (!b) return;
-      var v = b.getAttribute("data-upw-tab") === "citations" ? "citations" : "brands";
+      var roh = b.getAttribute("data-upw-tab");
+      var v = TABS[roh] ? roh : "brands";
       if (v === state.activeTable) return;
       state.activeTable = v;
       writeTab(v);
@@ -748,15 +916,13 @@
       if (!b) return;
       state.cmode = b.getAttribute("data-upw-cmode") === "url" ? "url" : "domain";
       writeCmode(state.cmode);
-      Array.prototype.forEach.call(elCmodeWrap.querySelectorAll("[data-upw-cmode]"), function(x){
-        var on = x === b;
-        x.classList.toggle("is-active", on); x.setAttribute("aria-selected", on ? "true" : "false");
-      });
+      syncCmode();
       renderCites();
       syncTinfo();
     });
     if (elOpenBtn) elOpenBtn.addEventListener("click", function(){
-      if (state.activeTable === "citations") fire("data-citations-fn", "upwCitations", { mode: state.cmode === "url" ? "urls" : "domains" });
+      if (state.activeTable === "opportunities") fire("data-opportunities-fn", "upwOpportunities", {});
+      else if (state.activeTable === "citations") fire("data-citations-fn", "upwCitations", { mode: state.cmode === "url" ? "urls" : "domains" });
       else fire("data-brands-fn", "upwBrands", {});
     });
     root.addEventListener("click", function(e){
@@ -778,6 +944,26 @@
     root.classList.add("is-dense");
     if (UC.widthTiers) UC.widthTiers(root, { narrowAt: 760, vnarrowAt: 480 });
     if (UC.makeTooltips) UC.makeTooltips(root, dunkel);
+    /* Der Erklaerkasten an den Spaltenkoepfen -- derselbe Aufruf wie in brands-overview und
+       visibility-chart, und derselbe Text aus UC.explainCopy. {scope}/{trend}/{subject} sind die
+       Stellen, die je Tabelle wirklich verschieden sind: hier ist der Zeitraum der der Kopfzeile,
+       und den Trend zeigt jede der drei Wertspalten. */
+    if (UC.makeExplain && UC.explainCopy){
+      var TREND_SATZ = ", plus the change against the previous period";
+      UC.makeExplain({
+        root: root, triggerSel: ".up-th-info", getIsDark: dunkel,
+        html: function(kind){
+          var info;
+          if (kind === "visibility") info = UC.explainCopy("visibility", { scope: " for the tracked prompts", trend: TREND_SATZ });
+          else if (kind === "ranking"){ var r = UC.explainCopy("rank", { scope: "", trend: TREND_SATZ }); info = r ? { h: "Ranking", t: r.t } : null; }
+          else if (kind === "sentiment") info = UC.explainCopy("sentiment", { scope: "", trend: TREND_SATZ });
+          else if (kind === "share") info = UC.explainCopy("share", { subject: state.cmode === "url" ? "URL" : "domain" });
+          if (!info) return "";
+          return '<div class="up-explain-h">' + esc(info.h) + '</div>' +
+                 '<div class="up-explain-t">' + esc(info.t) + '</div>';
+        }
+      });
+    }
     /* Die zwei Tabellen messen sich SELBST nach: eine Aenderung ihrer EIGENEN Breite -- Fenster-
        resize oder is-narrow-Umschalten -- loest brandsResponsive()/citesResponsive() neu aus,
        ohne dass irgendwer explizit daran denken muss (syncActiveTable() holt das zusaetzlich

@@ -70,6 +70,14 @@
     var roots = document.querySelectorAll(".uo-root");
     Array.prototype.forEach.call(roots, function(root){
       if (root.__uoInit) return;
+      /* Eine NEUE Wurzel ist aufgetaucht -- Bubble hat das Element neu gebaut. Steht die alte
+         gerade ausgeliehen im Power Dashboard, ist sie damit verwaist: sie haelt noch die
+         window.opportunities*-Funktionen, wird aber von Bubble nie wieder gefuettert. Sie tritt
+         ab, und der Ausleiher holt sich beim naechsten Anlauf die neue. Dieselbe Vorsorge wie in
+         ask-mira.js (__amAbtreten, gerufen von amRun). */
+      Array.prototype.forEach.call(document.querySelectorAll(".uo-root"), function(alt){
+        if (alt !== root && typeof alt.__uoAbtreten === "function") alt.__uoAbtreten();
+      });
       root.__uoInit = true;
       initRoot(root, window.UpstreemCore);
     });
@@ -995,7 +1003,12 @@
     }
     if (e.target.closest('.uo-toggle-external')){
       S.externalOnly = !S.externalOnly;
-      root.querySelector('.uo-switch-external').classList.toggle('is-on', S.externalOnly);
+      /* Ueber sortPop und nicht ueber root gesucht: seit dem Launcher (12.09., siehe unten) kann
+         die Werkzeugleiste in der Kopfzeile eines AUSLEIHERS stehen -- dann liegt der Schalter
+         nicht mehr unter dieser Wurzel, und root.querySelector kaeme mit null zurueck. sortPop ist
+         die Referenz, die beim Aufbau geholt wurde; die stimmt an jedem Ort. */
+      var swExt = sortPop && sortPop.querySelector('.uo-switch-external');
+      if (swExt) swExt.classList.toggle('is-on', S.externalOnly);
       render();
     }
   });
@@ -1119,7 +1132,9 @@
     return t === "yes" || t === "true" || t === "1";
   }
   window.opportunitiesSetLoading = function(v){ S.loading = isYesVal(v); render(); };
-  window.opportunitiesSetMode = function(m){ if (m==='board'||m==='list'){ S.mode = m; root.querySelectorAll('.uo-mode .up-seg-btn').forEach(function(x){ x.classList.toggle('is-active', x.getAttribute('data-mode')===m); }); render(); } };
+  /* modeSeg statt root.querySelectorAll: dieselbe Begruendung wie beim Aussen-Schalter oben --
+     die Leiste kann ausgeliehen in einer fremden Kopfzeile stehen. */
+  window.opportunitiesSetMode = function(m){ if (m==='board'||m==='list'){ S.mode = m; if (modeSeg) modeSeg.querySelectorAll('.up-seg-btn').forEach(function(x){ x.classList.toggle('is-active', x.getAttribute('data-mode')===m); }); render(); } };
   window.opportunitiesSetShowIgnored = function(v){ S.visible.ignored = isYesVal(v);   /* gleicher Defekt wie oben */ var row = settingsPop.querySelector('[data-board="ignored"] .up-switch'); if (row) row.classList.toggle('is-on', S.visible.ignored); render(); };
   window.opportunitiesSetVisibleBoards = function(obj){ if (obj && typeof obj === 'object'){ ['pending','in_progress','done','ignored'].forEach(function(k){ if (k in obj){ S.visible[k] = !!obj[k]; var sw = settingsPop.querySelector('[data-board="'+k+'"] .up-switch'); if (sw) sw.classList.toggle('is-on', S.visible[k]); } }); render(); } };
   window.opportunitiesSetTheme = function(t){ root.setAttribute('data-theme', String(t).toLowerCase()==='dark' ? 'dark' : 'light'); if (String(t).toLowerCase() !== 'dark') root.removeAttribute('data-theme'); portal.setAttribute('data-theme', isDark() ? 'dark' : 'light'); };
@@ -1133,6 +1148,88 @@
   window.opportunitiesOpenDetail = openDetail;
   window.opportunitiesCloseDetail = closeDetail;
   window.opportunitiesGetState = function(){ return { mode: S.mode, visible: S.visible, query: S.query, count: S.items.length }; };
+
+  /* ============ LAUNCHER: das Brett im Power Dashboard (12.09. angefordert) ====================
+     Wortgleich zum Launcher in ask-mira.js, und aus demselben Grund: eine ZWEITE .uo-root auf der
+     Seite geht nicht. Jede window.opportunities*-Funktion wird hier in initRoot gesetzt und
+     schliesst ueber das S dieser einen Wurzel -- eine zweite Instanz wuerde sie alle
+     ueberschreiben, und Bubbles Setter kaemen dann beim Dashboard an statt beim echten Brett.
+     Also wird GELIEHEN: die Wurzel wandert in den Platz des Ausleihers, traegt is-launcher und
+     geht nach Hause, sobald die Ansicht wechselt.
+     Die WERKZEUGLEISTE wandert dabei getrennt: der Ausleiher hat schon eine Kopfzeile (seinen
+     Tabellen-Umschalter), und zwei Kopfzeilen uebereinander waeren eine zu viel -- also zieht
+     .up-head-tools in dessen Kopfzeile um, wenn er einen Platz dafuer anbietet. Deshalb suchen
+     die zwei Stellen weiter oben ihre Schalter ueber gespeicherte Referenzen und nicht mehr ueber
+     root: ausgeliehen liegen sie nicht mehr unter dieser Wurzel.
+     Ein Kommentarknoten haelt jeweils den Platz zu Hause frei -- fuer die Wurzel und fuer die
+     Leiste. */
+  var _uoHeim = null, _uoToolHeim = null, _uoLaunchView = '';
+  function istLauncher(){ return root.classList.contains('is-launcher'); }
+  function werkzeuge(){ return root.querySelector('.uo-head .up-head-tools') || (_uoToolHeim && _uoToolHeim.__uoTools) || null; }
+  function launcherAn(slot, opts){
+    if (root.__uoTot || !slot || slot.nodeType !== 1) return false;
+    _uoLaunchView = String((opts && opts.view) || '');
+    if (!_uoHeim){
+      if (!root.parentNode) return false;          /* nirgends zu Hause: nichts auszuleihen */
+      _uoHeim = document.createComment('opportunities: der Platz des Bretts, waehrend es ausgeliehen ist');
+      root.parentNode.insertBefore(_uoHeim, root);
+    }
+    root.classList.add('is-launcher');
+    if (root.parentNode !== slot) slot.appendChild(root);
+    var toolSlot = opts && opts.toolSlot;
+    var tools = werkzeuge();
+    if (toolSlot && tools && tools.parentNode !== toolSlot){
+      if (!_uoToolHeim){
+        _uoToolHeim = document.createComment('opportunities: der Platz der Werkzeugleiste');
+        _uoToolHeim.__uoTools = tools;
+        tools.parentNode.insertBefore(_uoToolHeim, tools);
+      }
+      toolSlot.appendChild(tools);
+    }
+    render();
+    return true;
+  }
+  function launcherAus(){
+    if (!istLauncher() && !_uoHeim) return;
+    root.classList.remove('is-launcher');
+    var tools = werkzeuge();
+    if (_uoToolHeim && _uoToolHeim.parentNode && tools){
+      _uoToolHeim.parentNode.insertBefore(tools, _uoToolHeim);
+      _uoToolHeim.parentNode.removeChild(_uoToolHeim);
+    }
+    _uoToolHeim = null;
+    if (_uoHeim && _uoHeim.parentNode){
+      _uoHeim.parentNode.insertBefore(root, _uoHeim);
+      _uoHeim.parentNode.removeChild(_uoHeim);
+    }
+    _uoHeim = null; _uoLaunchView = '';
+    render();
+  }
+  /* Bubble baut das Brett neu, waehrend es ausgeliehen ist: die alte Wurzel ist dann verwaist und
+     tritt ab, der Ausleiher holt sich die neue (opportunities:bereit). Dieselbe Vorsorge wie
+     __amAbtreten in ask-mira.js. */
+  root.__uoAbtreten = function(){
+    if (!istLauncher()) return;
+    root.__uoTot = true;
+    if (_uoAbView) _uoAbView();
+    _uoHeim = null; _uoToolHeim = null;
+    if (root.parentNode) root.parentNode.removeChild(root);
+  };
+  var _uoAbView = (UC && UC.onViewChange) ? UC.onViewChange(function(name){
+    if (!istLauncher()) return;
+    if (_uoLaunchView && String(name) === _uoLaunchView) return;   /* in die Ansicht des Ausleihers: bleiben */
+    launcherAus();
+  }) : null;
+  window.opportunitiesLauncherAttach = function(slot, opts){ return launcherAn(slot, opts); };
+  /* Nur zurueckgeben, wenn es in DIESEM Platz steht -- ein zweites Dashboard (Bubble baut
+     doppelt) darf es dem ersten nicht wegnehmen. */
+  window.opportunitiesLauncherDetach = function(slot){
+    if (!istLauncher()) return false;
+    if (slot && root.parentNode !== slot) return false;
+    launcherAus();
+    return true;
+  };
+  try { window.dispatchEvent(new CustomEvent('opportunities:bereit')); } catch(e){}
 
   /* Replay whatever Bubble called while this file was still loading, in the order it arrived.
      Cleared first so a second init cannot replay the same calls twice. */

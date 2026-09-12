@@ -43,12 +43,21 @@
                      Schritte unten angeschlossen sind, auf "no" stellen -- sonst stehen beim
                      Laden fuer einen Moment die Beispielzahlen da.
 
+  ── DER UMSCHALTER UNTER DEN KENNZAHLEN ───────────────────────────────────────────────────────
+  Drei Reiter, einer davon sichtbar: "Competitive field" (Standard), "Trending Citations" und
+  "Opportunities". Der Umschalter selbst ist rein lokal (kein Workflow, die Wahl liegt im
+  localStorage, ebenso die Domains/URL-Wahl der Zitierungen).
+  DER DRITTE REITER ZEIGT DAS ECHTE OPPORTUNITIES-BRETT, nicht eine Kopie: das Dashboard leiht
+  sich dessen Element, solange der Reiter vorne steht, und gibt es beim Reiter- oder
+  Ansichtswechsel zurueck -- derselbe Weg wie bei Miras Eingabefeld oben. Dafuer muss
+  opportunities.js auf DERSELBEN SEITE eingebaut sein und auf DEMSELBEN PIN stehen. Seine
+  Werkzeugleiste (Sortierer, Suche, Board/List, Brett-Einstellungen) zieht dabei nach oben rechts
+  in die Kopfzeile dieses Umschalters. Fehlt das Element auf der Seite, bleibt der Reiter einfach
+  leer -- es geht nichts kaputt.
+
   ── EREIGNISSE (JavaScriptToBubble), Namen je Platzierung eindeutig ──────────────────────────
-  Es gibt nur noch EINE Tabelle im Kasten, umschaltbar zwischen "Competitive field" (Standard)
-  und "Trending Citations" -- der Umschalter selbst ist rein lokal (kein Workflow, Auswahl im
-  localStorage). Das Zeichen ganz rechts daneben oeffnet je nach GERADE AKTIVER Tabelle die
-  Brands- oder die Citations-Ansicht (12.09.: zurueck aus der kurzen Maximieren-Zwischenloesung,
-  die die beiden Tabellen stattdessen lokal umgestellt hatte).
+  Das Zeichen ganz rechts (Pfeil nach oben rechts) oeffnet die Ansicht, die im Umschalter gerade
+  vorne steht -- je nach Reiter eines dieser drei:
   data-brands-fn    = "bubble_fn_upwBrands_[dynamic id]"
                       Klick auf das Zeichen, waehrend "Competitive field" aktiv ist. Leere
                       Nutzlast {} -- im Workflow einfach zur Brands-Ansicht wechseln.
@@ -57,6 +66,9 @@
                       { "mode": "domains" | "urls" } -- welcher der beiden Domains/URL-Umschalter
                       gerade steht. Im Workflow: zur Citations-Ansicht wechseln, ggf. denselben
                       Modus dort vorwaehlen.
+  data-opportunities-fn = "bubble_fn_upwOpportunities_[dynamic id]"
+                      Klick auf dasselbe Zeichen, waehrend "Opportunities" aktiv ist. Leere
+                      Nutzlast {} -- im Workflow zur Opportunities-Ansicht wechseln.
   data-rowclick-fn  = "bubble_fn_upwRowClick_[dynamic id]"
                       Klick auf eine Zeile. Nutzlast
                       { "team_id": "...", "type": "brand" | "domain" | "url", "id": "..." }
@@ -68,7 +80,7 @@
   EIN Aufruf, jeder Teil darf einzeln kommen (ein Workflow je RPC ist in Ordnung):
 
     renderPowerDashboard(`{ "instanceId": "...", "overview": {...}, "brands": [...],
-                            "top_domains": [...], "top_urls": [...], "citations_label": "7 days" }`)
+                            "top_domains": [...], "top_urls": [...], "citations_label": "Last 30 days" }`)
 
   overview -- EIN Objekt:
     range_label             Text rechts neben "Overview", z.B. "Last 30 days"
@@ -89,15 +101,21 @@
 
   brands -- DIESELBEN Felder wie brands-overview (derselbe RPC fuellt beide):
     company_id, position, name, logo_url (oder favicon_url), visibility_pct,
-    visibility_delta_pct, avg_rank, sentiment, is_own (true bei der eigenen Marke)
+    visibility_delta_pct, avg_rank, avg_rank_delta, sentiment, sentiment_delta,
+    is_own (true bei der eigenen Marke)
+    avg_rank_delta und sentiment_delta sind seit dem 12.09. dabei: die Tabelle zeigt den Trend
+    jetzt in ALLEN drei Wertspalten, wie die maximierte Tabelle im Visibility Chart. Fehlen sie,
+    steht dort einfach kein Trend -- kein Fehler, nur weniger Aussage.
 
   top_domains -- dieselben Felder wie topcitations-dashboard:
     domain, favicon, citation_type (Editorial | UGC_Community | Brand_Platform | Institutional |
-    Competition | Knowledge_Base | You), share_pct, share_delta_pct
+    Competition | Knowledge_Base | You), share_pct, share_delta_pct, used_total
   top_urls -- ebenso:
-    url, title, favicon, url_type, global_share_pct, share_delta_pct
+    url, title, favicon, url_type, global_share_pct, share_delta_pct, used_total
+    used_total fuellt die Spalte "Used" (ebenfalls seit dem 12.09., wie im Top Citations
+    Dashboard). Fehlt es, bleibt die Zelle leer.
 
-  citations_label -- der Text neben der Zahl in der Tabellen-Kopfzeile, z.B. "7 days"
+  citations_label -- der Text neben der Zahl in der Tabellen-Kopfzeile, z.B. "Last 30 days"
   totalCountDomain, totalCountUrl -- die GESAMTZAHL der Domains bzw. URLs im Zeitraum, NICHT die
     Laenge von top_domains/top_urls (die zeigen nur die "top" 7). Fuer die Kopfzeile der Tabelle
     im Citations-Modus: "32.5k citations · 7 days" (UC.fmtTotal, wortgleich zu
@@ -123,7 +141,7 @@
         "brands": [Brands-RPC, :format as text],
         "top_domains": [Top-Domains-RPC, :format as text],
         "top_urls": [Top-URLs-RPC, :format as text],
-        "citations_label": "7 days",
+        "citations_label": "Last 30 days",
         "totalCountDomain": [Gesamtzahl Domains],
         "totalCountUrl": [Gesamtzahl URLs]
       }`
@@ -149,15 +167,15 @@
           "sentiment": 76, "sentiment_delta": 1.6, "sentiment_series": [74, 73.5, 74.5, 74, 74.8, 74.6, 76],
           "field_avg_sentiment": 74, "negative_count": 6, "response_count": 214 },
         "brands": [
-          { "company_id": "d1", "position": 1, "name": "Anfragenfluss", "visibility_pct": 5.2, "visibility_delta_pct": 4.0, "avg_rank": 2.6, "sentiment": 75 },
-          { "company_id": "d2", "position": 2, "name": "LeeUp Media", "visibility_pct": 3.0, "visibility_delta_pct": 1.0, "avg_rank": 3.3, "sentiment": 76, "is_own": yes }
+          { "company_id": "d1", "position": 1, "name": "Anfragenfluss", "visibility_pct": 5.2, "visibility_delta_pct": 4.0, "avg_rank": 2.6, "avg_rank_delta": -0.4, "sentiment": 75, "sentiment_delta": 2.1 },
+          { "company_id": "d2", "position": 2, "name": "LeeUp Media", "visibility_pct": 3.0, "visibility_delta_pct": 1.0, "avg_rank": 3.3, "avg_rank_delta": -0.9, "sentiment": 76, "sentiment_delta": 1.6, "is_own": yes }
         ],
         "top_domains": [
-          { "domain": "reddit.com", "citation_type": "UGC_Community", "share_pct": 6.8, "share_delta_pct": 9.1 },
-          { "domain": "trustpilot.com", "citation_type": "Brand_Platform", "share_pct": 4.1, "share_delta_pct": 5.2 }
+          { "domain": "reddit.com", "citation_type": "UGC_Community", "share_pct": 6.8, "share_delta_pct": 9.1, "used_total": 1840 },
+          { "domain": "trustpilot.com", "citation_type": "Brand_Platform", "share_pct": 4.1, "share_delta_pct": 5.2, "used_total": 1120 }
         ],
         "top_urls": [],
-        "citations_label": "7 days",
+        "citations_label": "Last 30 days",
         "totalCountDomain": 128,
         "totalCountUrl": 32500
       }`
@@ -178,6 +196,7 @@
      data-demo="yes"
      data-brands-fn="bubble_fn_upwBrands"
      data-citations-fn="bubble_fn_upwCitations"
+     data-opportunities-fn="bubble_fn_upwOpportunities"
      data-rowclick-fn="bubble_fn_upwRowClick"></div>
 <script>
 (function(){
