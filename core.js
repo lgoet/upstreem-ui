@@ -455,6 +455,11 @@
     "Brand": "Brand",
     "Domain": "Domain",
     "Prompt": "Prompt",
+    /* Fachbegriff wie "Brand"/"Sent." -- unveraendert auch auf Deutsch (12.09., Power Dashboard,
+       Spaltenkopf UND KPI-Karte). Ohne diesen Eintrag meldet .finde_untexte.py den t()-Aufruf als
+       ungeprueften Text, obwohl der Rueckfall (t() ohne Katalogtreffer gibt den Originaltext
+       zurueck) hier zufaellig richtig aussieht. */
+    "Visibility": "Visibility",
     "Markets": "Märkte",
     "Model": "Modell",
     "Models": "Modelle",
@@ -639,13 +644,20 @@
     "Overview": "Überblick",
     "Competitive field": "Wettbewerbsfeld",
     "Trending Citations": "Trendende Zitierungen",
-    /* "Open brands"/"Open citations"/"Change" sind raus (12.09.): der Knopf an "Competitive
-       field" oeffnet seither nicht mehr die Brands-Seite, sondern stellt die zwei Tabellen lokal
-       um -- die beiden Zeilen darunter sind sein neuer Text. Der zweite Knopf an "Trending
-       Citations" und die eigene Change-Spalte sind ganz weg. Ein Katalogeintrag, den nichts
-       mehr liest, ist die naechste Drift. */
-    "Show tables stacked": "Tabellen untereinander zeigen",
-    "Show tables side by side": "Tabellen nebeneinander zeigen",
+    /* "Open brands"/"Open citations" (11.09., am 12.09. kurz durch "Show tables stacked/side by
+       side" ersetzt -- der Knopf stellte damals die zwei Tabellen lokal um) sind zurueck: seit
+       dem 12.09. steht wieder nur EINE Tabelle da, ein Umschalter waehlt zwischen Competitive
+       field und Trending Citations, und das Zeichen ganz rechts oeffnet -- je nachdem, welche
+       gerade aktiv ist -- die Brands- oder die Citations-Ansicht in Bubble. Die beiden
+       "Show tables..."-Zeilen sind wieder raus, nichts liest sie mehr. */
+    "Open brands": "Brands öffnen",
+    "Open citations": "Zitierungen öffnen",
+    /* Die Kopfzeile der einen Tabelle: "16 brands · Last 30 days" bzw. "32.5k citations ·
+       7 days" (12.09. angefordert). Kleingeschrieben, weil es hier ein Zaehlwort in einem Satz
+       ist und kein Eigenname -- anders als die Katalogeintraege "Brands"/"Citations" weiter oben,
+       die als Seitentitel stehen. Deutsch bleibt trotzdem grossgeschrieben (Substantiv). */
+    "brands": "Brands",
+    "citations": "Web-Quellen",
     "Today": "Heute",
     "Yesterday": "Gestern",
     "Untitled chat": "Chat ohne Titel",
@@ -14790,10 +14802,6 @@
     clock:    '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
     /* Fuer das Power Dashboard (11./12.09.), alle Lucide, woertlich aus dem vendorten
        lucide-Paket (Version 1.8.0) uebernommen, nicht nachgezeichnet:
-         maximize2/minimize2  der Umschalter an "Competitive field", der die zwei Tabellen
-                              nebeneinander bzw. untereinander stellt (NUR dort -- "Trending
-                              Citations" hat seit dem 12.09. keinen eigenen Knopf mehr, ein
-                              Klick wirkt auf beide zugleich).
          calendar             vor dem Zeitraum in "Overview".
          message-circle       vor jedem Eintrag unter "Recent chats" (11.09. ausdruecklich
                               message-circle statt dem eckigen message-square angefordert --
@@ -14801,9 +14809,10 @@
                               Lucide seit der Umstellung auf die Ein-Pfad-Sprechblase (mit den
                               zwei kleinen Auslaeufern statt des Schwanzes) keine eigene Version
                               mehr, die aelteren Kacheldesigns (message-circle-check usw.) sind
-                              seither eigene Icons. */
-    maximize2:     '<path d="M15 3h6v6"/><path d="m21 3-7 7"/><path d="m3 21 7-7"/><path d="M9 21H3v-6"/>',
-    minimize2:     '<path d="m14 10 7-7"/><path d="M20 10h-6V4"/><path d="m3 21 7-7"/><path d="M4 14h6v6"/>',
+                              seither eigene Icons.
+       maximize2/minimize2 (11.09., der alte Umschalter an "Competitive field") sind raus
+       (12.09.): der Knopf stellt seit der Tabellen-Umschaltung nichts mehr um, was ein Icon
+       braucht -- nichts liest die beiden Keys mehr. */
     messageCircle: '<path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/>',
     calendar:      '<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>',
     shieldCheck:'<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>' +

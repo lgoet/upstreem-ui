@@ -1,26 +1,30 @@
-/* upstreem power-dashboard.js — die zweite Ansicht des Dashboards (11.09. angefordert).
-   Requires core.js (window.UpstreemCore) loaded first.
+/* upstreem power-dashboard.js — die zweite Ansicht des Dashboards (11.09. angefordert, 12.09.
+   ueberarbeitet). Requires core.js (window.UpstreemCore) loaded first.
 
    "Kompakter, Mira im Vordergrund, nur minimal Daten." Von oben nach unten:
      1. Miras Eingabefeld -- DAS ECHTE, ausgeliehen (siehe "Mira" unten und LAUNCHER in
         ask-mira.js). Ausdruecklich verlangt: "du sollst nicht das Mira-Inputfeld neu bauen".
      2. Chips mit hinterlegten Prompts. Klick = neuer Chat in Mira, der Prompt geht sofort ab.
-     3. Recent chats -- die letzten drei aus Miras eigener Liste. Klick = dieser Chat in Mira.
-     4. Overview -- drei Kennzahlen mit Verlauf. Das EINZIGE Bauteil hier, das es vorher nicht
-        gab ("bis auf die Overview-KPI-Bar 100% Core-Sachen").
-     5. Competitive field und Trending Citations -- aus dem Tabellenbaukasten von core
-        (.up-box, .up-table, .up-thead, .up-row, .up-sent, .up-rank-group, .up-tag,
-        UC.trendChip), wortgleich so, wie brands-overview und topcitations-dashboard ihn benutzen.
+     3. Overview (drei Kennzahlen mit Verlauf, das einzige Bauteil hier, das es vorher nicht
+        gab) und daneben, weniger prominent, Recent chats -- die letzten drei aus Miras eigener
+        Liste, Klick = dieser Chat in Mira (12.09.: aus der Chip-Spalte hierher verschoben).
+     4. EINE Tabelle, umschaltbar zwischen Competitive field (Standard) und Trending Citations
+        -- aus dem Tabellenbaukasten von core (.up-box, .up-table, .up-thead, .up-row, .up-sent,
+        .up-rank-group, .up-tag, UC.trendChip), wortgleich so, wie brands-overview und
+        topcitations-dashboard ihn benutzen. Im Citations-Modus zusaetzlich der Domains/URL-
+        Umschalter. Beide Wahlen liegen im localStorage.
    Auf dem Dashboard selbst passiert nichts mit Mira-Antworten: jeder Einstieg wechselt in Miras
    Ansicht, und die Antwort kommt dort.
 
    DATEN: bis ein Setter kommt, stehen Beispieldaten da (data-demo, siehe die Vorlage) -- so
    verlangt ("erstmal Dummy-Daten"). Die Felder sind DIESELBEN, die brands-overview und
-   topcitations-dashboard lesen, damit dieselben RPCs beide fuellen koennen.
+   topcitations-dashboard lesen (plus totalCountDomain/totalCountUrl, ebenfalls wortgleich zu
+   topcitations-dashboard), damit dieselben RPCs beide fuellen koennen.
 
    API (alle mit Stub-Warteschlange, Bubble ruft sie regelmaessig vor dem Laden dieser Datei):
      renderPowerDashboard({ instanceId, overview, brands, top_domains, top_urls,
-                            citations_label, chips })     jeder Schluessel einzeln moeglich
+                            citations_label, totalCountDomain, totalCountUrl, chips })
+                                                                jeder Schluessel einzeln moeglich
      setPowerDashboardLoading(instanceId, "yes" | "no") */
 (function(){
   "use strict";
@@ -85,7 +89,11 @@
       { url: "https://anfragenfluss.de/", title: "Anfragenfluss – Mehr Anfragen", favicon: "", url_type: "homepage", global_share_pct: 1.9, share_delta_pct: 1.4 },
       { url: "https://www.ihk.de/digitalisierung", title: "Digitalisierung im Mittelstand", favicon: "", url_type: "article", global_share_pct: 1.2, share_delta_pct: 0.8 }
     ],
-    citations_label: "7 days"
+    citations_label: "7 days",
+    /* Gesamtzahl der Domains bzw. URLs, die im Zeitraum zitiert haben -- NICHT die Laenge von
+       top_domains/top_urls (die zeigen nur die "top" 7). Fuer die Kopfzeile der Tabelle
+       ("32.5k citations · 7 days"). */
+    totalCountDomain: 128, totalCountUrl: 32500
   };
 
   /* ---------- Die Chips ----------
@@ -201,6 +209,24 @@
        Rueckfall fuer eine Seite ohne gesetztes Thema. */
     if (root.hasAttribute("data-isdark") && UC.syncTheme) UC.syncTheme(root, !UC.isYes(root.getAttribute("data-isdark")));
 
+    /* ---------- localStorage: welche Tabelle, welcher Citations-Modus (12.09.) --------------
+       "Alle die Settings bleiben im local storage gespeichert." Zwei Schluessel, je Platzierung
+       eigen (instanceId haengt dran, dasselbe Muster wie responses-table.js' rhKey/urls-table.js
+       usw.). Kein Team-Bezug -- welche Tabelle man zuletzt offen hatte, ist eine Geraetevorliebe,
+       keine Teamdatensache (dieselbe Begruendung wie bei core.js' getDashboardMode). */
+    function tabKey(){ return "upw_table__" + instanceId; }
+    function readTab(){
+      try { return window.localStorage.getItem(tabKey()) === "citations" ? "citations" : "brands"; }
+      catch(e){ return "brands"; }
+    }
+    function writeTab(v){ try { window.localStorage.setItem(tabKey(), v); } catch(e){} }
+    function cmodeKey(){ return "upw_cmode__" + instanceId; }
+    function readCmode(){
+      try { return window.localStorage.getItem(cmodeKey()) === "url" ? "url" : "domain"; }
+      catch(e){ return "domain"; }
+    }
+    function writeCmode(v){ try { window.localStorage.setItem(cmodeKey(), v); } catch(e){} }
+
     /* Demo: bis ein Setter kommt, stehen die Beispieldaten. Mit data-demo="no" steht stattdessen
        das Skelett, bis die echten Daten da sind -- das ist der Schalter fuer den Anschluss. */
     var demo = isOn(root.getAttribute("data-demo"));
@@ -210,8 +236,16 @@
       domains: demo ? DEMO.top_domains : null,
       urls: demo ? DEMO.top_urls : null,
       citesLabel: demo ? DEMO.citations_label : "",
+      /* Die GESAMTZAHL, nicht die Laenge der obigen Arrays -- die zeigen nur die "top" 7, die
+         Gesamtzahl kann groesser sein ("16 brands" auch wenn nur 7 Zeilen stehen). Fuer Brands
+         gibt es dafuer schon overview.brand_count (dieselbe Zahl wie "#2 of 8 brands"); fuer
+         Citations sind totalCountDomain/totalCountUrl NEU, wortgleich zu topcitations-dashboard,
+         damit dieselbe RPC beide Komponenten fuellen kann. */
+      totalCountDomain: demo ? DEMO.totalCountDomain : null,
+      totalCountUrl: demo ? DEMO.totalCountUrl : null,
       chips: null,
-      cmode: "domain",
+      cmode: readCmode(),
+      activeTable: readTab(),
       loading: false,
       fehler: {}
     };
@@ -220,30 +254,14 @@
        Die Komponente baut ihr Markup selbst; in Bubble steht nur die leere Wurzel. Dieselbe
        Entscheidung wie in drawer-topbar: ein von Hand eingefuegter Aufbau waere eine Kopie, die
        beim naechsten Pin nicht mitwandert. */
-    function kopf(label, zaehler, werkzeuge){
-      return '<div class="up-head upw-head">' +
-        '<div class="up-heading has-count"><span class="up-head-label" data-i18n="' + esc(label) + '">' + esc(t(label)) + '</span>' +
-          '<span class="up-head-sep"></span><span class="up-head-count" data-upw-count="' + zaehler + '"></span></div>' +
-        '<div class="up-head-tools">' + werkzeuge + '</div></div>';
-    }
-    /* Der Maximieren-Knopf (12.09. umgebaut): NUR NOCH an "Competitive field" -- ein Klick wirkt
-       auf BEIDE Tabellen, ein zweiter Knopf an "Trending Citations" fuer dieselbe Wirkung waere
-       also nur eine zweite Klickflaeche fuer denselben Griff. Er navigiert nicht mehr weg (die
-       alten Ereignisse data-brands-fn/data-citations-fn sind deshalb raus, siehe die Vorlage) --
-       er stellt die zwei Tabellen lokal um, wie der Domains/URLs-Umschalter daneben auch rein
-       lokal ist. Start-Zeichen und -Tooltip sind "maximize2"/"Show tables stacked"; maxSync()
-       dreht beides auf "minimize2"/"Show tables side by side" um, sobald gestapelt ist. */
-    function maxBtn(){
-      return '<button type="button" class="up-iconbtn upw-maxbtn" data-upw-max ' +
-        'data-tip="' + esc(t("Show tables stacked")) + '" aria-label="' + esc(t("Show tables stacked")) + '" ' +
-        'aria-pressed="false">' + UC.icon("maximize2", 2) + '</button>';
-    }
     root.innerHTML =
       '<div class="upw-col">' +
-        /* ZWEI HUELLEN, GEGENLAEUFIG BREITER (11.09. angefordert): Mira, ihre Chips und Recent
-           chats sollen 64px je Seite SCHMALER sein als die Spalte, Overview und die Tabellen
-           64px je Seite BREITER -- die Masse stehen an .upw-narrow/.upw-wide in
-           power-dashboard.css, hier nur die Gruppierung. */
+        /* ZWEI HUELLEN, GEGENLAEUFIG BREITER (11.09. angefordert): Mira und ihre Chips sollen
+           72px je Seite SCHMALER sein als die Spalte, Overview/Recent-chats/die Tabelle 80px je
+           Seite BREITER -- die Masse stehen an .upw-narrow/.upw-wide in power-dashboard.css, hier
+           nur die Gruppierung. Recent chats stand hier frueher noch mit in .upw-narrow (11.09.);
+           seit dem 12.09. sitzt sie neben Overview in .upw-datarow, siehe unten -- "die brauchen
+           ja eigentlich nicht so super prominent zu sein". */
         '<div class="upw-narrow">' +
           /* Miras Platz. Bis sie da ist, steht ihr Umriss als Skelett -- sonst spraenge alles
              darunter um die Hoehe des Feldes, sobald sie ankommt. */
@@ -251,33 +269,50 @@
             '<span class="upw-sk upw-sk-line"></span><span class="upw-mira-sk-row">' +
             '<span class="upw-sk upw-sk-dot"></span><span class="upw-sk upw-sk-send"></span></span></div></div>' +
           '<div class="upw-chips" data-upw-chips></div>' +
-          '<section class="upw-sec">' +
-            '<div class="upw-sec-head"><span class="upw-sec-h up-blockhead" data-i18n="Recent chats">' + esc(t("Recent chats")) + '</span>' +
-              '<button type="button" class="upw-link" data-upw-allchats><span data-i18n="All chats">' + esc(t("All chats")) + '</span>' +
-              UC.icon("chevronRight", 2) + '</button></div>' +
-            '<div class="upw-chatlist" data-upw-chatlist></div>' +
-          '</section>' +
         '</div>' +
         '<div class="upw-wide">' +
-          '<section class="upw-sec">' +
-            '<div class="upw-sec-head"><span class="upw-sec-h up-blockhead" data-i18n="Overview">' + esc(t("Overview")) + '</span>' +
-              '<span class="upw-range">' + UC.icon("calendar", 2) + '<span data-upw-range></span></span></div>' +
-            '<div class="up-box upw-kpis" data-upw-kpis></div>' +
-          '</section>' +
-          '<div class="upw-tables" data-upw-tables>' +
-            '<section class="upw-tcard">' +
-              kopf("Competitive field", "brands", maxBtn()) +
-              '<div class="up-box"><div class="up-table upw-table upw-t-brands" data-upw-brands></div></div>' +
+          /* Overview links, Recent chats rechts daneben, mit Abstand (12.09. angefordert) --
+             "die brauchen ja eig. nicht so super prominent zu sein, darum sind die da ganz gut
+             platziert". Recent chats bekommt eine feste, schmalere Breite (.upw-datarow-side in
+             power-dashboard.css), Overview nimmt den Rest. */
+          '<div class="upw-datarow">' +
+            '<section class="upw-sec upw-datarow-main">' +
+              '<div class="upw-sec-head"><span class="upw-sec-h up-blockhead" data-i18n="Overview">' + esc(t("Overview")) + '</span>' +
+                '<span class="upw-range">' + UC.icon("calendar", 2) + '<span data-upw-range></span></span></div>' +
+              '<div class="up-box upw-kpis" data-upw-kpis></div>' +
             '</section>' +
-            '<section class="upw-tcard">' +
-              kopf("Trending Citations", "cites",
-                '<div class="up-seg upw-cmode" role="tablist" aria-label="Citations">' +
-                  '<button type="button" class="up-seg-btn is-active" role="tab" aria-selected="true" data-upw-cmode="domain" data-i18n="Domains">' + esc(t("Domains")) + '</button>' +
-                  '<button type="button" class="up-seg-btn" role="tab" aria-selected="false" data-upw-cmode="url" data-i18n="URLs">' + esc(t("URLs")) + '</button>' +
-                '</div>') +
-              '<div class="up-box"><div class="up-table upw-table upw-t-cites" data-upw-cites></div></div>' +
+            '<section class="upw-sec upw-datarow-side">' +
+              '<div class="upw-sec-head"><span class="upw-sec-h up-blockhead" data-i18n="Recent chats">' + esc(t("Recent chats")) + '</span>' +
+                '<button type="button" class="upw-link" data-upw-allchats><span data-i18n="All chats">' + esc(t("All chats")) + '</span>' +
+                UC.icon("chevronRight", 2) + '</button></div>' +
+              '<div class="upw-chatlist" data-upw-chatlist></div>' +
             '</section>' +
           '</div>' +
+          /* ---- Die eine Tabelle, umschaltbar (12.09. umgebaut) ----
+             "Wir streichen, dass 2 nebeneinander dargestellt werden. Nur eine Tabelle auf full
+             width." Ein Umschalter oben links waehlt Competitive field (Standard) oder Trending
+             Citations; nur die aktive Tabelle steht im DOM sichtbar (is-off an der anderen).
+             Rechts, in dieser Reihenfolge: die Anzahl+Zeitraum-Zeile, der Domains/URL-Umschalter
+             (nur im Citations-Modus da) und ganz aussen ein Knopf, der -- je nach aktiver Tabelle
+             -- die Brands- oder die Citations-Ansicht in Bubble oeffnet. */
+          '<section class="upw-tcard">' +
+            '<div class="up-head upw-head">' +
+              '<div class="up-seg upw-tabseg" role="tablist" aria-label="Table" data-upw-tabseg>' +
+                '<button type="button" class="up-seg-btn" role="tab" data-upw-tab="brands" data-i18n="Competitive field">' + esc(t("Competitive field")) + '</button>' +
+                '<button type="button" class="up-seg-btn" role="tab" data-upw-tab="citations" data-i18n="Trending Citations">' + esc(t("Trending Citations")) + '</button>' +
+              '</div>' +
+              '<div class="up-head-tools">' +
+                '<span class="upw-tinfo" data-upw-tinfo></span>' +
+                '<div class="up-seg upw-cmode" role="tablist" aria-label="Citations" data-upw-cmodewrap>' +
+                  '<button type="button" class="up-seg-btn" role="tab" data-upw-cmode="domain" data-i18n="Domains">' + esc(t("Domains")) + '</button>' +
+                  '<button type="button" class="up-seg-btn" role="tab" data-upw-cmode="url" data-i18n="URLs">' + esc(t("URLs")) + '</button>' +
+                '</div>' +
+                '<button type="button" class="up-iconbtn" data-upw-open>' + UC.icon("externalLink", 2) + '</button>' +
+              '</div>' +
+            '</div>' +
+            '<div class="up-box"><div class="up-table upw-table upw-t-brands" data-upw-brands></div>' +
+              '<div class="up-table upw-table upw-t-cites" data-upw-cites></div></div>' +
+          '</section>' +
         '</div>' +
       '</div>';
 
@@ -288,10 +323,10 @@
     var elRange = root.querySelector("[data-upw-range]");
     var elBrands = root.querySelector("[data-upw-brands]");
     var elCites = root.querySelector("[data-upw-cites]");
-    var elCntBrands = root.querySelector('[data-upw-count="brands"]');
-    var elCntCites = root.querySelector('[data-upw-count="cites"]');
-    var elTables = root.querySelector("[data-upw-tables]");
-    var elMaxBtn = root.querySelector("[data-upw-max]");
+    var elTabseg = root.querySelector("[data-upw-tabseg]");
+    var elTinfo = root.querySelector("[data-upw-tinfo]");
+    var elCmodeWrap = root.querySelector("[data-upw-cmodewrap]");
+    var elOpenBtn = root.querySelector("[data-upw-open]");
 
     /* ---------- Chips ---------- */
     function staerksterWettbewerber(){
@@ -558,16 +593,14 @@
     }
     function renderBrands(){
       var kopf = brandsKopf();
-      if (state.fehler.brands){ elBrands.innerHTML = kopf + (UC.leseFehlerHtml ? UC.leseFehlerHtml("brands") : ""); zaehler(elCntBrands, null); return; }
+      if (state.fehler.brands){ elBrands.innerHTML = kopf + (UC.leseFehlerHtml ? UC.leseFehlerHtml("brands") : ""); return; }
       if (state.loading || !state.brands){
         elBrands.innerHTML = kopf + '<div class="up-tbody">' + UC.skeletonRows({ count: 7, rowClass: "up-row", cellClass: "up-td",
           cols: [{ w: 12, cls: "up-td-idx" }, { w: 90, jitter: 30, logo: true }, 60, { w: 36, cls: "upw-td-rank" }, { w: 40, cls: "upw-td-sent" }] }) + '</div>';
-        zaehler(elCntBrands, null);
         brandsResponsive();
         return;
       }
       var rows = state.brands;
-      zaehler(elCntBrands, rows.length);
       if (!rows.length){ elBrands.innerHTML = kopf + '<div class="up-empty-mini" data-i18n="No data">' + esc(t("No data")) + '</div>'; brandsResponsive(); return; }
       elBrands.innerHTML = kopf + '<div class="up-tbody">' + rows.map(function(r, i){
         var pos = num(r.position) != null ? num(r.position) : i + 1;
@@ -612,7 +645,9 @@
        (UC.trendChip direkt hinter dem up-num). upw-th-type/upw-td-type markieren die einzige
        Spalte, die auf schmalem Platz verschwindet -- dieselbe Reihenfolge wie in
        topcitations-dashboard.js/.css (dort zusaetzlich "Used", das es hier nicht gibt).
-       460px: darunter reicht der Platz nicht mehr fuer alle drei Spalten (120+148+130 = 398px
+       Und jetzt MIT #-Spalte (12.09. angefordert: "immer die # columns anzeigen mit der
+       Nummerierung") -- vorher hatte nur Competitive field eine.
+       460px: darunter reicht der Platz nicht mehr fuer alle vier Spalten (40+120+148+130 = 438px
        plus Zellpolster) -- dieselbe eigene-Breite-Messung wie brandsResponsive() oben. */
     function citesResponsive(){
       var w = elCites.clientWidth;
@@ -621,6 +656,7 @@
     }
     function citesKopf(url){
       return '<div class="up-thead">' +
+        '<div class="up-th up-th-idx">' + (UC.HASH_ICON || "#") + '</div>' +
         '<div class="up-th"><span class="up-th-txt">' + esc(t(url ? "URL" : "Domain")) + '</span></div>' +
         '<div class="up-th upw-th-type"><span class="up-th-txt">' + esc(t("Type")) + '</span></div>' +
         '<div class="up-th"><span class="up-th-txt">' + esc(t("Share")) + '</span></div></div>';
@@ -630,17 +666,15 @@
       var kopf = citesKopf(url);
       var rows = url ? state.urls : state.domains;
       var fehler = url ? state.fehler.urls : state.fehler.domains;
-      elCntCites.textContent = state.citesLabel ? t(state.citesLabel) : "";
-      elCntCites.parentNode.classList.toggle("has-count", !!state.citesLabel);
       if (fehler){ elCites.innerHTML = kopf + (UC.leseFehlerHtml ? UC.leseFehlerHtml("citations") : ""); citesResponsive(); return; }
       if (state.loading || !rows){
         elCites.innerHTML = kopf + '<div class="up-tbody">' + UC.skeletonRows({ count: 7, rowClass: "up-row", cellClass: "up-td",
-          cols: [{ w: 110, jitter: 30, logo: true }, { w: 56, cls: "upw-td-type" }, 40] }) + '</div>';
+          cols: [{ w: 12, cls: "up-td-idx" }, { w: 110, jitter: 30, logo: true }, { w: 56, cls: "upw-td-type" }, 40] }) + '</div>';
         citesResponsive();
         return;
       }
       if (!rows.length){ elCites.innerHTML = kopf + '<div class="up-empty-mini" data-i18n="No data">' + esc(t("No data")) + '</div>'; citesResponsive(); return; }
-      elCites.innerHTML = kopf + '<div class="up-tbody">' + rows.map(function(r){
+      elCites.innerHTML = kopf + '<div class="up-tbody">' + rows.map(function(r, i){
         var name = url ? (r.title || r.url || "") : (r.domain || "");
         var id = url ? (r.url || r.title || "") : (r.domain || "");
         var fav = r.favicon || r.logo || "";
@@ -648,6 +682,7 @@
         var share = '<span class="up-num' + (anteil == null ? " is-empty" : "") + '">' + fmtPct1(anteil) + '</span>' +
           UC.trendChip(r.share_delta_pct, { decimals: true, suffix: "%" });
         return '<div class="up-row" data-upw-row="' + (url ? "url" : "domain") + '" data-id="' + esc(String(id)) + '">' +
+          '<div class="up-td up-td-idx">' + fmtI(i + 1) + '</div>' +
           '<div class="up-td upw-td-name">' + (fav ? '<span class="up-logo-box up-fav has-img"><img src="' + esc(fav) + '" alt="" referrerpolicy="no-referrer"/></span>'
                                                : '<span class="up-logo-box up-fav"></span>') +
             '<span class="upw-name" title="' + esc(url && r.url ? r.url : name) + '">' + esc(name) + '</span></div>' +
@@ -656,73 +691,73 @@
       }).join("") + '</div>';
       citesResponsive();
     }
-    function zaehler(el, n){
-      el.textContent = n == null ? "" : fmtI(n);
-      el.parentNode.classList.toggle("has-count", n != null);
-    }
 
-    /* ---------- Maximieren: die zwei Tabellen nebeneinander <-> untereinander (12.09.) ---------
-       "der soll auch funktionieren und die beiden unteren Tabellen untereinander darstellen.
-       Maximize mit 200ms ease animieren." Reines CSS reicht hier nicht: .upw-tables ist ein
-       Grid mit ZWEI Spuren (nebeneinander) bzw. EINER (untereinander), und ein Uebergang auf
-       grid-template-columns springt bei einer wechselnden Spurenzahl, statt zu gleiten -- in
-       jedem gaengigen Browser gemessen.
-       Also FLIP (First-Last-Invert-Play), derselbe Griff wie beim Zusammenklappen des Composers
-       in ask-mira.js (setHasMessages): VOR dem Umschalten die Lage jeder Karte messen, umstellen,
-       NACHHER erneut messen, die Karte per transform SOFORT auf ihre alte Lage zuruecksetzen
-       (kein Sprung sichtbar, weil das im selben Bild passiert) und dann mit einem erzwungenen
-       Reflow (void ...offsetWidth) in einer eigenen Ubergangsregel auf die neue Lage gleiten
-       lassen. scale gleicht die Breitenaenderung mit aus -- die Karte bleibt am linken Rand
-       verankert (transform-origin: top left), die Verzerrung ist bei 200ms nicht wahrnehmbar. */
-    var gestapelt = false;
-    function maxSync(){
-      if (!elMaxBtn) return;
-      var text = t(gestapelt ? "Show tables side by side" : "Show tables stacked");
-      elMaxBtn.setAttribute("data-tip", text);
-      elMaxBtn.setAttribute("aria-label", text);
-      elMaxBtn.setAttribute("aria-pressed", gestapelt ? "true" : "false");
-      elMaxBtn.innerHTML = UC.icon(gestapelt ? "minimize2" : "maximize2", 2);
+    /* ---------- EINE Tabelle statt zwei nebeneinander (12.09. umgebaut) ------------------------
+       "Wir streichen, dass 2 nebeneinander dargestellt werden. Nur eine Tabelle auf full width."
+       Der Umschalter oben links waehlt, welche der beiden im DOM stehenden Tabellen sichtbar ist
+       (is-off an der anderen -- beide bleiben gerendert, ein Tabwechsel ist damit ohne neuen
+       Datenabruf sofort da). Der Domains/URL-Umschalter daneben gilt nur im Citations-Modus, das
+       Info-Zeichen rechts oeffnet je nach aktiver Tabelle die Brands- oder Citations-Ansicht in
+       Bubble (dieselben zwei Ereignisse, die bis zum 12.09. am alten Maximieren-Knopf hingen). */
+    function mitPunkt(a, b){ return a && b ? (a + " · " + b) : (a || b || ""); }
+    function syncTinfo(){
+      if (!elTinfo) return;
+      var text;
+      if (state.activeTable === "citations"){
+        var n = state.cmode === "url" ? state.totalCountUrl : state.totalCountDomain;
+        var nTxt = num(n) != null ? ((UC.fmtTotal ? UC.fmtTotal(n) : fmtI(n)) + " " + t("citations")) : "";
+        text = mitPunkt(nTxt, state.citesLabel ? t(String(state.citesLabel)) : "");
+      } else {
+        var o = state.overview, bn = o ? num(o.brand_count) : null;
+        var nTxt2 = bn != null ? (fmtI(bn) + " " + t("brands")) : "";
+        text = mitPunkt(nTxt2, o && o.range_label ? t(String(o.range_label)) : "");
+      }
+      elTinfo.textContent = text;
     }
-    function maxUmschalten(){
-      if (!elTables) return;
-      var karten = Array.prototype.slice.call(elTables.querySelectorAll(".upw-tcard"));
-      var vorher = karten.map(function(k){ return k.getBoundingClientRect(); });
-      gestapelt = !gestapelt;
-      elTables.classList.toggle("is-stacked", gestapelt);
-      maxSync();
-      karten.forEach(function(k, i){
-        var a = vorher[i], b = k.getBoundingClientRect();
-        if (!b.width || !b.height) return;   // ausgeblendet (z.B. is-narrow) -- nichts zu bewegen
-        var dx = a.left - b.left, dy = a.top - b.top;
-        var sx = a.width / b.width, sy = a.height / b.height;
-        k.style.transition = "none";
-        k.style.transformOrigin = "top left";
-        k.style.transform = "translate(" + dx + "px," + dy + "px) scale(" + sx + "," + sy + ")";
+    function syncActiveTable(){
+      var citations = state.activeTable === "citations";
+      if (elTabseg) Array.prototype.forEach.call(elTabseg.querySelectorAll("[data-upw-tab]"), function(b){
+        var on = b.getAttribute("data-upw-tab") === state.activeTable;
+        b.classList.toggle("is-active", on); b.setAttribute("aria-selected", on ? "true" : "false");
       });
-      /* Erzwungener Reflow -- ohne ihn fasst der Browser den Start- und den Zielwert zu einem
-         einzigen Style-Recalc zusammen und der Uebergang bleibt aus (dasselbe Muster wie
-         renderGallery weiter oben in dieser App). */
-      void elTables.offsetWidth;
-      karten.forEach(function(k){
-        k.style.transition = "transform 200ms ease";
-        k.style.transform = "";
-      });
-      clearTimeout(elTables.__upwMaxT);
-      elTables.__upwMaxT = setTimeout(function(){
-        karten.forEach(function(k){ k.style.transition = ""; k.style.transformOrigin = ""; });
-      }, 220);
+      elBrands.classList.toggle("is-off", citations);
+      elCites.classList.toggle("is-off", !citations);
+      if (elCmodeWrap) elCmodeWrap.classList.toggle("is-off", !citations);
+      if (elOpenBtn){
+        var tip = t(citations ? "Open citations" : "Open brands");
+        elOpenBtn.setAttribute("data-tip", tip);
+        elOpenBtn.setAttribute("aria-label", tip);
+      }
+      /* Die gerade sichtbar gewordene Tabelle stand womoeglich als is-off bei 0 Breite und hat
+         darum ihre Spalten-Ausblendung nie nachgezogen (clientWidth eines display:none-Elements
+         ist 0, brandsResponsive/citesResponsive brechen dort sofort ab) -- hier nachgeholt. */
+      if (citations) citesResponsive(); else brandsResponsive();
+      syncTinfo();
     }
-    if (elMaxBtn) elMaxBtn.addEventListener("click", maxUmschalten);
-
-    root.querySelector(".upw-cmode").addEventListener("click", function(e){
+    if (elTabseg) elTabseg.addEventListener("click", function(e){
+      var b = e.target.closest("[data-upw-tab]");
+      if (!b) return;
+      var v = b.getAttribute("data-upw-tab") === "citations" ? "citations" : "brands";
+      if (v === state.activeTable) return;
+      state.activeTable = v;
+      writeTab(v);
+      syncActiveTable();
+    });
+    if (elCmodeWrap) elCmodeWrap.addEventListener("click", function(e){
       var b = e.target.closest("[data-upw-cmode]");
       if (!b) return;
       state.cmode = b.getAttribute("data-upw-cmode") === "url" ? "url" : "domain";
-      root.querySelectorAll("[data-upw-cmode]").forEach(function(x){
+      writeCmode(state.cmode);
+      Array.prototype.forEach.call(elCmodeWrap.querySelectorAll("[data-upw-cmode]"), function(x){
         var on = x === b;
         x.classList.toggle("is-active", on); x.setAttribute("aria-selected", on ? "true" : "false");
       });
       renderCites();
+      syncTinfo();
+    });
+    if (elOpenBtn) elOpenBtn.addEventListener("click", function(){
+      if (state.activeTable === "citations") fire("data-citations-fn", "upwCitations", { mode: state.cmode === "url" ? "urls" : "domains" });
+      else fire("data-brands-fn", "upwBrands", {});
     });
     root.addEventListener("click", function(e){
       var row = e.target.closest("[data-upw-row]");
@@ -731,7 +766,7 @@
       }
     });
 
-    function renderAll(){ renderChips(); renderChats(); renderKpis(); renderBrands(); renderCites(); }
+    function renderAll(){ renderChips(); renderChats(); renderKpis(); renderBrands(); renderCites(); syncTinfo(); }
 
     /* Sprache: Beschriftungen und Chips sind beim Zeichnen geschrieben -- also neu zeichnen. Nur
        bei der Sprache, nicht bei jeder Einstellung (siehe setDashboardMode in core). */
@@ -743,18 +778,22 @@
     root.classList.add("is-dense");
     if (UC.widthTiers) UC.widthTiers(root, { narrowAt: 760, vnarrowAt: 480 });
     if (UC.makeTooltips) UC.makeTooltips(root, dunkel);
-    /* Die zwei Tabellen messen sich SELBST nach (12.09.): eine Aenderung ihrer EIGENEN Breite --
-       Fensterresize, is-narrow-Umschalten, oder der Maximieren-Knopf, der .upw-tables gerade
-       zwischen nebeneinander und untereinander umstellt -- loest brandsResponsive()/
-       citesResponsive() neu aus, ohne dass irgendwer explizit daran denken muss. EINMAL
-       angemeldet, nicht bei jedem render*() -- sonst haeufen sich Beobachter bei jedem Neuzeichnen
-       an. UC.beobachteGroesse ist der geteilte, gedrosselte ResizeObserver aus core (siehe
+    /* Die zwei Tabellen messen sich SELBST nach: eine Aenderung ihrer EIGENEN Breite -- Fenster-
+       resize oder is-narrow-Umschalten -- loest brandsResponsive()/citesResponsive() neu aus,
+       ohne dass irgendwer explizit daran denken muss (syncActiveTable() holt das zusaetzlich
+       nach, wenn ein Tabwechsel eine Tabelle von 0 Breite -- is-off -- auf sichtbar bringt, denn
+       ein ResizeObserver an einem display:none-Element misst dort nichts). EINMAL angemeldet,
+       nicht bei jedem render*() -- sonst haeufen sich Beobachter bei jedem Neuzeichnen an.
+       UC.beobachteGroesse ist der geteilte, gedrosselte ResizeObserver aus core (siehe
        topcitations-dashboard.js fuer denselben Griff). */
     if (UC.beobachteGroesse){
       UC.beobachteGroesse(elBrands, brandsResponsive);
       UC.beobachteGroesse(elCites, citesResponsive);
     }
 
+    /* Der persistierte Zustand (Tabelle, Domains/URL) muss auf das statische Anfangsmarkup
+       nachgezogen werden -- es traegt noch keine is-active/is-off-Klassen. */
+    syncActiveTable();
     renderAll();
     pruefen();
 
@@ -780,6 +819,8 @@
         if (p.top_domains != null){ r = liste(p.top_domains); state.fehler.domains = r.kaputt; state.domains = r.wert || []; }
         if (p.top_urls != null){ r = liste(p.top_urls); state.fehler.urls = r.kaputt; state.urls = r.wert || []; }
         if (p.citations_label != null) state.citesLabel = String(p.citations_label);
+        if (p.totalCountDomain != null) state.totalCountDomain = num(p.totalCountDomain);
+        if (p.totalCountUrl != null) state.totalCountUrl = num(p.totalCountUrl);
         if (p.chips != null){ r = liste(p.chips); state.chips = r.kaputt ? null : r.wert; }
         /* Echte Daten beenden jeden Ladezustand -- auch einen ausdruecklichen ohne passendes "no". */
         if (p.overview != null || p.brands != null || p.top_domains != null || p.top_urls != null) state.loading = false;

@@ -63,9 +63,17 @@
 /* Kein Rand, Hoverstate nur der Hintergrund (11.09. angefordert). .up-btn-sec traegt normalerweise
    einen Rahmen samt eigener Hover-Randfarbe -- hier ueberschrieben statt in core.css geaendert,
    sonst haette JEDER .up-btn-sec der App (z.B. "Edit" in Brands Overview) seinen Rand verloren.
-   :disabled bleibt aussen vor: core setzt dort ohnehin border-color auf --vc-border zurueck. */
-.upw-chip.up-btn-sec { border-color: transparent; }
-.upw-chip.up-btn-sec:hover { border-color: transparent; background: var(--vc-heading-bg); }
+   :disabled bleibt aussen vor: core setzt dort ohnehin border-color auf --vc-border zurueck.
+   Schrift in Drittfarbe, im Hover in Primaerfarbe (12.09. angefordert). color:var(--vc-text) STEHT
+   HIER NOCH EINMAL im Hover, obwohl core.css das an .up-btn-sec:hover schon tut -- absichtlich,
+   nicht doppelt gemoppelt: beide Regeln haben dieselbe Spezifitaet (zwei Klassen), meine
+   Ruhezustand-Regel darunter hat sie AUCH, und core.css laedt vor power-dashboard.css. Ohne die
+   eigene Zeile hier wuerde beim Hover exakt die Falle zuschnappen, die gerade an .usn-head in
+   sidebar.css gemeldet wurde: bei gleicher Spezifitaet gewinnt die SPAETERE Regel -- und das
+   waere dann meine eigene Ruhezustand-Regel, nicht core.css' Hover-Regel. Explizit hier
+   hingeschrieben gewinnt sie ueber SPEZIFITAET (0,3,0 gegen 0,2,0), nicht ueber Zufall. */
+.upw-chip.up-btn-sec { border-color: transparent; color: var(--vc-third); }
+.upw-chip.up-btn-sec:hover { border-color: transparent; background: var(--vc-heading-bg); color: var(--vc-text); }
 .upw-chip-emoji { font-size: 13px; line-height: 1; }
 /* Der Zeilenumbruch nach dem dritten Chip -- siehe power-dashboard.js, renderChips(). Ein leeres
    Element mit voller Breite (flex-basis:100%) zwingt jeden nachfolgenden Flex-Kind in eine neue
@@ -116,49 +124,73 @@
 .upw-chat-when { flex: 0 0 auto; font-size: 13px; color: var(--vc-third); }
 .upw-chats-empty { font-size: 13px; color: var(--vc-muted); padding: 8px 0; }
 
-/* ---------- Overview (neu) ----------
-   Drei Kennzahlen in EINEM .up-box, getrennt durch 1px-Linien. Zahl und Trend in den Groessen
-   der Kennzahl in brand-detail (.ubd-kpi-val 23px, .ubd-kpi-trend 15px mit 17px-Pfeil) --
-   dieselbe Rolle, derselbe Wert. */
+/* ---------- Overview neben Recent chats (12.09. umgebaut) ----------
+   "Rechts neben dem Overview-Kram kommt mit Gap dann die Recent Chats ... die brauchen ja
+   eigentlich nicht so super prominent zu sein, darum sind die da ganz gut platziert." Die
+   Zurueckhaltung IST die Platzierung -- eine schmale, feste Spalte neben der breiten Overview-
+   Flaeche, kein zusaetzlicher Verkleinerungsschritt an Schrift oder Zeile noetig. */
+.upw-datarow { display: flex; align-items: flex-start; gap: 24px; margin-top: 48px; }
+.upw-datarow .upw-sec { margin-top: 0; }
+.upw-datarow-main { flex: 1 1 auto; min-width: 0; }
+.upw-datarow-side { flex: 0 0 280px; min-width: 0; }
+/* Unter 760px (is-narrow) ist neben drei Kennzahlen kein Platz mehr fuer eine feste Seitenspalte
+   -- untereinander, wie die Kennzahlen und die Tabelle es dort ohnehin schon tun. */
+.upw-root.is-narrow .upw-datarow { flex-direction: column; }
+.upw-root.is-narrow .upw-datarow-side { flex-basis: auto; width: 100%; }
+
+/* ---------- Overview (neu, 12.09. verdichtet) ----------
+   Drei Kennzahlen in EINEM .up-box (16px Radius -- der geerbte Wert aus core, hier absichtlich
+   NICHT ueberschrieben). Die Trennlinie UNTER der Zahl ist weg (angefordert), die Fusszeile
+   komplett in Drittfarbe und 2px kleiner (13 -> 11px), die grosse Zahl 2px kleiner (23 -> 21px) --
+   Overview teilt sich die Zeile jetzt mit Recent chats (.upw-datarow) und hat darum weniger
+   Platz als vorher, wo sie allein auf ihrer Zeile stand. Das Polster geht im selben Zug von 16
+   auf 14px. */
 .up-box.upw-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.upw-kpi { padding: 16px; min-width: 0; border-left: 1px solid var(--vc-border); }
+.upw-kpi { padding: 14px; min-width: 0; border-left: 1px solid var(--vc-border); }
 .upw-kpi:first-child { border-left: 0; }
 .upw-kpi-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-.upw-kpi-main { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.upw-kpi-main { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .upw-kpi-label { font-size: 13px; font-weight: 500; color: var(--vc-muted); }
-.upw-kpi-row { display: flex; align-items: center; gap: 10px; min-height: 30px; }
-.upw-kpi-val .up-num { font-size: 23px; font-weight: 500; line-height: 1.15; letter-spacing: -0.4px;
+.upw-kpi-row { display: flex; align-items: center; gap: 10px; min-height: 28px; }
+.upw-kpi-val .up-num { font-size: 21px; font-weight: 500; line-height: 1.15; letter-spacing: -0.4px;
   font-variant-numeric: tabular-nums; }
 .upw-kpi-trend { display: inline-flex; align-items: center; }
 .upw-kpi-trend .up-trend { font-size: 15px; }
 .upw-kpi-trend .up-trend svg { width: 17px; height: 17px; }
 /* Der Verlauf in der Drittfarbe: er ist Beiwerk zur Zahl. Der Punkt am Ende in der Textfarbe --
-   er ist "heute", und heute ist die Zahl daneben. */
+   er ist "heute", und heute ist die Zahl daneben. NACH RECHTS (angefordert) -- er ist bereits
+   das zweite Kind von .upw-kpi-top neben .upw-kpi-main, das space-between schiebt ihn an die
+   rechte Kante der Karte; hier bleibt nur die Groesse. */
 .upw-spark { flex: 0 0 auto; color: var(--vc-third); margin-top: 4px; }
 .upw-spark-end { fill: var(--vc-text); }
 .upw-spark.is-leer { width: 96px; height: 28px; }
-.upw-kpi-foot { display: flex; align-items: center; flex-wrap: wrap; row-gap: 4px; margin-top: 14px;
-  padding-top: 12px; border-top: 1px solid var(--vc-border); font-size: 13px; min-height: 20px; }
-.upw-kpi-strong { font-weight: 500; color: var(--vc-text); white-space: nowrap; }
-.upw-kpi-soft { color: var(--vc-muted); white-space: nowrap; }
-/* Derselbe Punkt wie .up-head-sep in core (4px, --vc-muted, 8px zu beiden Seiten) -- dort ist er
-   an .has-count gebunden und hier immer sichtbar, darum als eigene Klasse. */
-.upw-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--vc-muted); margin: 0 8px; flex: 0 0 auto; }
+/* KEINE Trennlinie mehr (angefordert) -- border-top und das Polster, das sie freihielt, sind weg.
+   margin-top haelt trotzdem etwas Luft zur Zahl darueber. */
+.upw-kpi-foot { display: flex; align-items: center; flex-wrap: wrap; row-gap: 4px; margin-top: 10px;
+  font-size: 11px; color: var(--vc-third); min-height: 16px; }
+.upw-kpi-strong, .upw-kpi-soft { color: var(--vc-third); white-space: nowrap; }
+.upw-kpi-strong { font-weight: 500; }
+/* Derselbe Punkt wie .up-head-sep in core (4px, 8px zu beiden Seiten), nur in der Drittfarbe der
+   Fusszeile statt --vc-muted -- dort ist er an .has-count gebunden und hier immer sichtbar,
+   darum als eigene Klasse. */
+.upw-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--vc-third); margin: 0 8px; flex: 0 0 auto; }
 
-/* ---------- die zwei Tabellen ----------
-   Nebeneinander, 16px dazwischen; die Spalten kommen ueber --up-cols, das der Baukasten in core
-   liest (.up-thead, .up-row). Feste Spuren und EINE flexible: jede Zeile ist ein eigenes Raster,
-   und nur feste Breiten stehen in allen Zeilen gleich untereinander. */
-.upw-tables { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 40px; }
-/* is-stacked: der Maximieren-Knopf an "Competitive field" (12.09.) -- EINE Spur statt zwei,
-   dieselbe Regel wie .upw-root.is-narrow weiter unten benutzt, nur von Hand statt von der
-   Fensterbreite ausgeloest. Den Uebergang animiert power-dashboard.js selbst per FLIP-Transform
-   (transform ist animierbar, eine wechselnde Spurenzahl in grid-template-columns nicht --
-   gemessen: der Sprung blieb, ein CSS-Uebergang allein haette hier nichts gebracht). */
-.upw-tables.is-stacked { grid-template-columns: minmax(0, 1fr); }
-.upw-tcard { min-width: 0; }
+/* ---------- die eine Tabelle, umschaltbar (12.09. umgebaut) ----------
+   "Wir streichen, dass 2 nebeneinander dargestellt werden. Nur eine Tabelle auf full width."
+   Beide .up-table liegen im selben .up-box (power-dashboard.js), is-off blendet die inaktive aus.
+   .up-table setzt selbst display:flex (core.css) -- ein blosses .is-off waere hier dieselbe
+   Spezifitaetsfalle wie eben an .usn-head/sidebar.css: gleiche Spezifitaet, die SPAETER geladene
+   Regel gewinnt, unabhaengig davon, welche "gemeint" ist. Zwei Klassen zusammen (0,2,0) schlagen
+   .up-table (0,1,0) ueber Spezifitaet, nicht ueber Ladereihenfolge -- genauso bei .upw-cmode
+   gegen .up-seg. */
+.upw-t-brands.is-off, .upw-t-cites.is-off, .upw-cmode.is-off { display: none; }
+.upw-tcard { min-width: 0; margin-top: 40px; }
+/* Die Kopfzeile ("16 brands · Last 30 days") in der Drittfarbe der Range-Zeile, keine eigene
+   Groesse -- dieselbe Rolle wie .upw-range, nur an anderer Stelle im Kopf. */
+.upw-tinfo { font-size: 13px; font-weight: 500; color: var(--vc-muted); white-space: nowrap; }
 /* Die festen Spuren sind GEMESSEN (_h_upw.html, breitester Inhalt der Beispieldaten) plus das
    Zellpolster aus core (12 + 16) und die 1px-Linie:
+     #           die Nummerierung, jetzt an BEIDEN Tabellen (12.09. angefordert)   -> 40
      Visibility  "5.2%" und ein Trend-Chip "4.0%"     92 + 29 = 121  -> 130, damit auch
                                                      "12.3%" mit "10.5%" noch passt
      Rank        Raute und "2.6"                      37 + 29 =  66
@@ -173,7 +205,7 @@
    blieben -- genau das gemeldete Bild ("bei Brand sieht man gar keinen Text mehr"). 120px ist der
    Wert, den visibility-chart.css und topcitations-dashboard.css fuer dieselbe Spalte fuehren. */
 .upw-t-brands { --up-cols: 40px minmax(120px, 1fr) 130px 66px 72px; }
-.upw-t-cites  { --up-cols: minmax(120px, 1fr) 148px 130px; }
+.upw-t-cites  { --up-cols: 40px minmax(120px, 1fr) 148px 130px; }
 .upw-td-name { gap: 10px; }
 /* Der Name wie .ubo-brand-name in brands-overview: 13.5px, 500, abgeschnitten. */
 .upw-name { font-size: 13.5px; font-weight: 500; color: var(--vc-text);
@@ -196,16 +228,21 @@
 .upw-t-brands.upw-hide-rank.upw-hide-sent { --up-cols: 40px minmax(120px, 1fr) 130px; }
 .upw-t-cites.upw-hide-type .upw-th-type,
 .upw-t-cites.upw-hide-type .upw-td-type { display: none; }
-.upw-t-cites.upw-hide-type { --up-cols: minmax(120px, 1fr) 130px; }
+.upw-t-cites.upw-hide-type { --up-cols: 40px minmax(120px, 1fr) 130px; }
 
 /* ---------- schmal ----------
-   Unter 760px Breite (widthTiers, is-narrow) gehen Tabellen und Kennzahlen untereinander. Zwei
-   Tabellen von je 360px haetten fuer den Namen keinen Platz mehr, drei Kennzahlen nebeneinander
-   keinen fuer den Verlauf. */
-.upw-root.is-narrow .upw-tables { grid-template-columns: minmax(0, 1fr); }
+   Unter 760px Breite (widthTiers, is-narrow) gehen die Kennzahlen untereinander (die eine
+   Tabelle ist seit dem 12.09. ohnehin immer schon voll breit, kein eigenes Verhalten hier mehr
+   noetig). Drei Kennzahlen nebeneinander haetten keinen Platz mehr fuer den Verlauf. */
 .upw-root.is-narrow .up-box.upw-kpis { grid-template-columns: minmax(0, 1fr); }
 .upw-root.is-narrow .upw-kpi { border-left: 0; border-top: 1px solid var(--vc-border); }
 .upw-root.is-narrow .upw-kpi:first-child { border-top: 0; }
+/* Der Tabellenkopf (Umschalter + Kopfzeile + Domains/URL-Umschalter + Zeichen) ist zu breit fuer
+   schmale Bildschirme -- GEMESSEN in _h_upw.html: bei 480px Wurzelbreite ueberlief die Seite um
+   77px, .up-head ist fix 32px hoch und bricht selbst nicht um. Hier auf zwei Zeilen erlaubt;
+   .up-head-tools bleibt durch sein eigenes margin-left:auto (core.css) auch auf der zweiten Zeile
+   rechtsbuendig -- eine Auto-Marge wirkt je Flex-Zeile, nicht nur auf der ersten. */
+.upw-root.is-narrow .upw-tcard .up-head { flex-wrap: wrap; height: auto; row-gap: 8px; }
 
 /* ---------- mobil (12.09. angefordert: "im Mobile bitte direkt korrekt machen") -------------
    is-vnarrow ist Miras eigene Telefon-Schwelle (widthTiers oben, 480px) -- dieselbe, unter der

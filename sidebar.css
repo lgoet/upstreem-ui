@@ -504,11 +504,19 @@
    nur, was .up-blockhead nicht selbst ist: ein KNOPF, volle Breite, mit Chevron rechts.
    Beschriftung links, Chevron rechts. Der Chevron erscheint erst beim Hover und mit 220ms
    Verzoegerung -- im Ruhezustand soll die Leiste ruhig bleiben, und ein Zeichen, das beim
-   Vorbeifahren aufblitzt, ist Unruhe. Beim Verlassen geht er sofort. */
+   Vorbeifahren aufblitzt, ist Unruhe. Beim Verlassen geht er sofort.
+   NACHTRAG (12.09., live gemeldet: "die Ueberschriften sind riesig"): hier stand `font: inherit`
+   -- die KURZFORM setzt ALLE Schriftwerte zurueck, nicht nur die Familie, und core.css laedt vor
+   sidebar.css. Bei gleicher Spezifitaet (beides eine einzelne Klasse) gewinnt die SPAETERE Regel
+   -- also diese hier -- und ihr `font: inherit` hat die font-size/-weight von .up-blockhead
+   wieder auf die Groesse der Elternzeile zurueckgesetzt. Genau die Falle, vor der CLAUDE.md warnt:
+   Konflikte ueber Spezifitaet loesen, nie ueber Ladereihenfolge. font-family (LANGFORM) trifft
+   nur, was diese Regel wirklich will -- keine Knopf-Schriftart des Betriebssystems --, und laesst
+   Groesse, Gewicht und Laufweite von .up-blockhead in Ruhe. */
 .usn-head {
   width: 100%; display: flex; align-items: center; gap: 6px;
   padding: 0 8px 6px; border: 0; background: transparent; cursor: pointer;
-  font: inherit; white-space: nowrap; text-align: left;
+  font-family: inherit; white-space: nowrap; text-align: left;
   transition: opacity calc(var(--usn-t) * .6) var(--usn-ease), color var(--usn-t) var(--usn-ease);
 }
 .usn-head:hover { color: var(--vc-muted); }
