@@ -639,13 +639,17 @@
     "Overview": "Überblick",
     "Competitive field": "Wettbewerbsfeld",
     "Trending Citations": "Trendende Zitierungen",
-    "Open brands": "Brands öffnen",
-    "Open citations": "Zitierungen öffnen",
+    /* "Open brands"/"Open citations"/"Change" sind raus (12.09.): der Knopf an "Competitive
+       field" oeffnet seither nicht mehr die Brands-Seite, sondern stellt die zwei Tabellen lokal
+       um -- die beiden Zeilen darunter sind sein neuer Text. Der zweite Knopf an "Trending
+       Citations" und die eigene Change-Spalte sind ganz weg. Ein Katalogeintrag, den nichts
+       mehr liest, ist die naechste Drift. */
+    "Show tables stacked": "Tabellen untereinander zeigen",
+    "Show tables side by side": "Tabellen nebeneinander zeigen",
     "Today": "Heute",
     "Yesterday": "Gestern",
     "Untitled chat": "Chat ohne Titel",
     "Sent.": "Sent.",
-    "Change": "Veränderung",
     "Last 30 days": "Letzte 30 Tage",
     "7 days": "7 Tage",
     "#{n} of {m} brands": "#{n} von {m} Brands",
@@ -14784,15 +14788,22 @@
               '<path d="M16.2 4.8c2 2 2.26 5.11.8 7.47"/><path d="M19.1 1.9a9.96 9.96 0 0 1 0 14.1"/>' +
               '<path d="M9.5 18h5"/><path d="m8 22 4-11 4 11"/>',
     clock:    '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
-    /* Drei fuer das Power Dashboard (11.09.), alle Lucide: maximize-2 an "Competitive field" und
-       "Trending Citations" (zur ganzen Tabelle), calendar vor dem Zeitraum, message-circle vor
-       jedem Eintrag unter "Recent chats" (11.09. ausdruecklich message-circle statt dem
-       eckigen message-square angefordert -- eine runde Sprechblase, keine mit Ecken). Pfad
-       woertlich aus dem vendorten lucide-Paket (Version 1.8.0) uebernommen, nicht nachgezeichnet;
-       message-circle traegt in Lucide seit der Umstellung auf die Ein-Pfad-Sprechblase (mit den
-       zwei kleinen Auslaeufern statt des Schwanzes) keine eigene Version mehr, die aelteren
-       Kacheldesigns (message-circle-check usw.) sind seither eigene Icons. */
+    /* Fuer das Power Dashboard (11./12.09.), alle Lucide, woertlich aus dem vendorten
+       lucide-Paket (Version 1.8.0) uebernommen, nicht nachgezeichnet:
+         maximize2/minimize2  der Umschalter an "Competitive field", der die zwei Tabellen
+                              nebeneinander bzw. untereinander stellt (NUR dort -- "Trending
+                              Citations" hat seit dem 12.09. keinen eigenen Knopf mehr, ein
+                              Klick wirkt auf beide zugleich).
+         calendar             vor dem Zeitraum in "Overview".
+         message-circle       vor jedem Eintrag unter "Recent chats" (11.09. ausdruecklich
+                              message-circle statt dem eckigen message-square angefordert --
+                              eine runde Sprechblase, keine mit Ecken). message-circle traegt in
+                              Lucide seit der Umstellung auf die Ein-Pfad-Sprechblase (mit den
+                              zwei kleinen Auslaeufern statt des Schwanzes) keine eigene Version
+                              mehr, die aelteren Kacheldesigns (message-circle-check usw.) sind
+                              seither eigene Icons. */
     maximize2:     '<path d="M15 3h6v6"/><path d="m21 3-7 7"/><path d="m3 21 7-7"/><path d="M9 21H3v-6"/>',
+    minimize2:     '<path d="m14 10 7-7"/><path d="M20 10h-6V4"/><path d="m3 21 7-7"/><path d="M4 14h6v6"/>',
     messageCircle: '<path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/>',
     calendar:      '<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>',
     shieldCheck:'<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>' +

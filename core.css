@@ -1455,6 +1455,18 @@
     .up-pop-action:hover { color: var(--vc-text); }
     .up-pop-action.is-hidden { visibility: hidden; pointer-events: none; }
     .up-pop-head { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--vc-muted); padding: 4px 10px 8px; }
+    /* ---------- Blockueberschrift (12.09., aus sidebar.css hierher gezogen) ----------
+       Die kleine Versalzeile UEBER einem Inhaltsblock -- in der Hauptseitenleiste die Zeile vor
+       jedem Menuebereich (.usn-head), im Power Dashboard vor "Recent chats" und "Overview". Nicht
+       dasselbe wie .up-pop-head zwei Zeilen darueber: das ist die Ueberschrift IN einem Dropdown
+       (Sekundaerton, eigenes Polster fuer den Menuekasten), das hier ist die Ueberschrift AUF DER
+       SEITE selbst -- deshalb die ruhigere Drittfarbe und kein eigenes Polster (das legt jeder
+       Aufrufer nach seiner eigenen Anordnung fest).
+       Wer mehr braucht als nur die Schrift -- .usn-head ist zugleich ein Knopf mit Chevron und
+       Hoverfarbe, siehe sidebar.css --, baut das ALS ZUSATZ zu dieser Klasse, nicht als Ersatz:
+       zwei Stellen mit denselben vier Werten (Groesse, Gewicht, Laufweite, Versalien) sind die
+       naechste Drift, sobald eine davon geaendert wird und die andere nicht. */
+    .up-blockhead { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--vc-third); }
     .up-pop-opt { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 10px; border-radius: 9px; cursor: pointer; font-size: 13.5px; font-weight: 500; color: var(--vc-text); }
     /* Hover UND selected tragen denselben Ton (--up-sel-bg, 55%/60%): eine Zeile auf die man zeigt
        und eine die gewaehlt ist meinen beide "diese hier", zwei verschiedene Graus nebeneinander

@@ -767,7 +767,7 @@
         /* Die Ueberschrift ist ein Knopf: ein Klick klappt die Gruppe zu. Der Chevron erscheint
            erst beim Hover, mit Verzoegerung -- im Ruhezustand soll die Leiste ruhig bleiben. */
         return '<div class="usn-block' + (zu ? " is-closed" : "") + '" data-block="' + esc(b.head) + '">' +
-          '<button class="usn-head usn-fade" type="button" data-head="' + esc(b.head) + '" ' +
+          '<button class="usn-head up-blockhead usn-fade" type="button" data-head="' + esc(b.head) + '" ' +
           'aria-expanded="' + (zu ? "false" : "true") + '">' +
             '<span class="usn-head-lbl">' + esc(b.head) + '</span>' +
             '<span class="usn-head-chev">' + ic("chevronDown") + '</span>' +

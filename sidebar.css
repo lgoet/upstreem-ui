@@ -499,16 +499,16 @@
 /* Derselbe Abstand wie zwischen Kopf, Quick Actions und Menue: alle groesseren Gruppen
    stehen gleich weit auseinander. */
 .usn-block + .usn-block { margin-top: 32px; }
-/* Abschnittsueberschrift in derselben Sprache wie .up-pop-head in core: 11px, versal,
-   gesperrt, Sekundaerton. */
-/* Die Ueberschrift ist ein Knopf: Beschriftung links, Chevron rechts. Der Chevron erscheint
-   erst beim Hover und mit 220ms Verzoegerung -- im Ruhezustand soll die Leiste ruhig bleiben,
-   und ein Zeichen, das beim Vorbeifahren aufblitzt, ist Unruhe. Beim Verlassen geht er sofort. */
+/* Schrift und Farbe kommen jetzt aus .up-blockhead in core.css (12.09. dorthin gezogen, damit
+   das Power Dashboard dieselbe Ueberschrift benutzen kann statt sie nachzubauen) -- hier bleibt
+   nur, was .up-blockhead nicht selbst ist: ein KNOPF, volle Breite, mit Chevron rechts.
+   Beschriftung links, Chevron rechts. Der Chevron erscheint erst beim Hover und mit 220ms
+   Verzoegerung -- im Ruhezustand soll die Leiste ruhig bleiben, und ein Zeichen, das beim
+   Vorbeifahren aufblitzt, ist Unruhe. Beim Verlassen geht er sofort. */
 .usn-head {
   width: 100%; display: flex; align-items: center; gap: 6px;
   padding: 0 8px 6px; border: 0; background: transparent; cursor: pointer;
-  font: inherit; font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
-  color: var(--vc-third); white-space: nowrap; text-align: left;
+  font: inherit; white-space: nowrap; text-align: left;
   transition: opacity calc(var(--usn-t) * .6) var(--usn-ease), color var(--usn-t) var(--usn-ease);
 }
 .usn-head:hover { color: var(--vc-muted); }

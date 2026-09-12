@@ -44,13 +44,11 @@
                      Laden fuer einen Moment die Beispielzahlen da.
 
   ── EREIGNISSE (JavaScriptToBubble), Namen je Platzierung eindeutig ──────────────────────────
-  data-brands-fn    = "bubble_fn_upwBrands_[dynamic id]"
-                      Das Pfeil-Zeichen an "Competitive field". Nutzlast { "team_id": "..." }.
-                      Im Workflow: zur Brands-Seite / -Ansicht wechseln.
-  data-citations-fn = "bubble_fn_upwCitations_[dynamic id]"
-                      Das Pfeil-Zeichen an "Trending Citations". Nutzlast
-                      { "team_id": "...", "mode": "domains" | "urls" }.
-                      Im Workflow: zur Citations-Seite, im selben Modus.
+  DAS MAXIMIEREN-ZEICHEN AN "Competitive field" BRAUCHT KEINEN WORKFLOW (12.09. geaendert). Es
+  stellte fruecher zur Brands-Seite um (data-brands-fn); jetzt legt es die beiden Tabellen lokal
+  nebeneinander bzw. untereinander -- genau wie der Domains/URLs-Umschalter daneben rein lokal
+  ist. data-brands-fn und data-citations-fn sind deshalb weg, und "Trending Citations" hat seit
+  dem 12.09. gar kein eigenes Zeichen mehr (ein Klick an "Competitive field" wirkt auf beide).
   data-rowclick-fn  = "bubble_fn_upwRowClick_[dynamic id]"
                       Klick auf eine Zeile. Nutzlast
                       { "team_id": "...", "type": "brand" | "domain" | "url", "id": "..." }
@@ -161,8 +159,6 @@
      data-brand-name="BRAND_NAME"
      data-view="dashboard"
      data-demo="yes"
-     data-brands-fn="bubble_fn_upwBrands"
-     data-citations-fn="bubble_fn_upwCitations"
      data-rowclick-fn="bubble_fn_upwRowClick"></div>
 <script>
 (function(){

@@ -226,9 +226,17 @@
           '<span class="up-head-sep"></span><span class="up-head-count" data-upw-count="' + zaehler + '"></span></div>' +
         '<div class="up-head-tools">' + werkzeuge + '</div></div>';
     }
-    function expandBtn(was, tip){
-      return '<button type="button" class="up-iconbtn upw-expand" data-upw-expand="' + was + '" ' +
-        'data-tip="' + esc(t(tip)) + '" aria-label="' + esc(t(tip)) + '">' + UC.icon("maximize2", 2) + '</button>';
+    /* Der Maximieren-Knopf (12.09. umgebaut): NUR NOCH an "Competitive field" -- ein Klick wirkt
+       auf BEIDE Tabellen, ein zweiter Knopf an "Trending Citations" fuer dieselbe Wirkung waere
+       also nur eine zweite Klickflaeche fuer denselben Griff. Er navigiert nicht mehr weg (die
+       alten Ereignisse data-brands-fn/data-citations-fn sind deshalb raus, siehe die Vorlage) --
+       er stellt die zwei Tabellen lokal um, wie der Domains/URLs-Umschalter daneben auch rein
+       lokal ist. Start-Zeichen und -Tooltip sind "maximize2"/"Show tables stacked"; maxSync()
+       dreht beides auf "minimize2"/"Show tables side by side" um, sobald gestapelt ist. */
+    function maxBtn(){
+      return '<button type="button" class="up-iconbtn upw-maxbtn" data-upw-max ' +
+        'data-tip="' + esc(t("Show tables stacked")) + '" aria-label="' + esc(t("Show tables stacked")) + '" ' +
+        'aria-pressed="false">' + UC.icon("maximize2", 2) + '</button>';
     }
     root.innerHTML =
       '<div class="upw-col">' +
@@ -244,7 +252,7 @@
             '<span class="upw-sk upw-sk-dot"></span><span class="upw-sk upw-sk-send"></span></span></div></div>' +
           '<div class="upw-chips" data-upw-chips></div>' +
           '<section class="upw-sec">' +
-            '<div class="upw-sec-head"><span class="upw-sec-h" data-i18n="Recent chats">' + esc(t("Recent chats")) + '</span>' +
+            '<div class="upw-sec-head"><span class="upw-sec-h up-blockhead" data-i18n="Recent chats">' + esc(t("Recent chats")) + '</span>' +
               '<button type="button" class="upw-link" data-upw-allchats><span data-i18n="All chats">' + esc(t("All chats")) + '</span>' +
               UC.icon("chevronRight", 2) + '</button></div>' +
             '<div class="upw-chatlist" data-upw-chatlist></div>' +
@@ -252,13 +260,13 @@
         '</div>' +
         '<div class="upw-wide">' +
           '<section class="upw-sec">' +
-            '<div class="upw-sec-head"><span class="upw-sec-h" data-i18n="Overview">' + esc(t("Overview")) + '</span>' +
+            '<div class="upw-sec-head"><span class="upw-sec-h up-blockhead" data-i18n="Overview">' + esc(t("Overview")) + '</span>' +
               '<span class="upw-range">' + UC.icon("calendar", 2) + '<span data-upw-range></span></span></div>' +
             '<div class="up-box upw-kpis" data-upw-kpis></div>' +
           '</section>' +
-          '<div class="upw-tables">' +
+          '<div class="upw-tables" data-upw-tables>' +
             '<section class="upw-tcard">' +
-              kopf("Competitive field", "brands", expandBtn("brands", "Open brands")) +
+              kopf("Competitive field", "brands", maxBtn()) +
               '<div class="up-box"><div class="up-table upw-table upw-t-brands" data-upw-brands></div></div>' +
             '</section>' +
             '<section class="upw-tcard">' +
@@ -266,7 +274,7 @@
                 '<div class="up-seg upw-cmode" role="tablist" aria-label="Citations">' +
                   '<button type="button" class="up-seg-btn is-active" role="tab" aria-selected="true" data-upw-cmode="domain" data-i18n="Domains">' + esc(t("Domains")) + '</button>' +
                   '<button type="button" class="up-seg-btn" role="tab" aria-selected="false" data-upw-cmode="url" data-i18n="URLs">' + esc(t("URLs")) + '</button>' +
-                '</div>' + expandBtn("citations", "Open citations")) +
+                '</div>') +
               '<div class="up-box"><div class="up-table upw-table upw-t-cites" data-upw-cites></div></div>' +
             '</section>' +
           '</div>' +
@@ -282,6 +290,8 @@
     var elCites = root.querySelector("[data-upw-cites]");
     var elCntBrands = root.querySelector('[data-upw-count="brands"]');
     var elCntCites = root.querySelector('[data-upw-count="cites"]');
+    var elTables = root.querySelector("[data-upw-tables]");
+    var elMaxBtn = root.querySelector("[data-upw-max]");
 
     /* ---------- Chips ---------- */
     function staerksterWettbewerber(){
@@ -521,26 +531,44 @@
       return url ? '<span class="up-logo-box has-img"><img src="' + esc(url) + '" alt="" referrerpolicy="no-referrer"/>' + ltr + '</span>'
                  : '<span class="up-logo-box">' + ltr + '</span>';
     }
+    /* upw-th-rank/upw-th-sent markieren die zwei Spalten, die auf schmalem Platz verschwinden --
+       Sentiment zuerst, dann Rank, dieselbe Reihenfolge und derselbe Griff (Klasse an Kopf UND
+       Zelle) wie visibility-chart.js/.css (.vt-hide-sentiment/.vt-hide-rank). Sichtbar bleibt
+       immer der Name: die Namensspalte traegt einen Mindestwert (minmax(120px,...), siehe CSS),
+       genau wie dort.
+       DIE SCHWELLEN sind die EIGENE Breite dieser Tabelle, nicht die der Seite -- die Karte kann
+       neben ihrer Schwester stehen (breit) oder allein in einer Spalte (schmal, Telefon), und nur
+       das zaehlt. 460px: darunter reicht der Platz nicht mehr fuer alle fuenf Spalten
+       (40+120+130+66+72 = 428px plus Zellpolster). 380px: darunter reicht er nicht einmal mehr
+       ohne Sentiment (40+120+130+66 = 356px plus Polster). Gemessen und bei Bedarf nachgezogen
+       in _h_upw.html. */
+    function brandsResponsive(){
+      var w = elBrands.clientWidth;
+      if (!w) return;
+      elBrands.classList.toggle("upw-hide-sent", w < 460);
+      elBrands.classList.toggle("upw-hide-rank", w < 380);
+    }
     function brandsKopf(){
       return '<div class="up-thead">' +
         '<div class="up-th up-th-idx">' + (UC.HASH_ICON || "#") + '</div>' +
         '<div class="up-th"><span class="up-th-txt">' + esc(t("Brand")) + '</span></div>' +
         '<div class="up-th"><span class="up-th-txt">' + esc(t("Visibility")) + '</span></div>' +
-        '<div class="up-th"><span class="up-th-txt">' + esc(t("Rank")) + '</span></div>' +
-        '<div class="up-th"><span class="up-th-txt">' + esc(t("Sent.")) + '</span></div></div>';
+        '<div class="up-th upw-th-rank"><span class="up-th-txt">' + esc(t("Rank")) + '</span></div>' +
+        '<div class="up-th upw-th-sent"><span class="up-th-txt">' + esc(t("Sent.")) + '</span></div></div>';
     }
     function renderBrands(){
       var kopf = brandsKopf();
       if (state.fehler.brands){ elBrands.innerHTML = kopf + (UC.leseFehlerHtml ? UC.leseFehlerHtml("brands") : ""); zaehler(elCntBrands, null); return; }
       if (state.loading || !state.brands){
         elBrands.innerHTML = kopf + '<div class="up-tbody">' + UC.skeletonRows({ count: 7, rowClass: "up-row", cellClass: "up-td",
-          cols: [{ w: 12, cls: "up-td-idx" }, { w: 90, jitter: 30, logo: true }, 60, 36, 40] }) + '</div>';
+          cols: [{ w: 12, cls: "up-td-idx" }, { w: 90, jitter: 30, logo: true }, 60, { w: 36, cls: "upw-td-rank" }, { w: 40, cls: "upw-td-sent" }] }) + '</div>';
         zaehler(elCntBrands, null);
+        brandsResponsive();
         return;
       }
       var rows = state.brands;
       zaehler(elCntBrands, rows.length);
-      if (!rows.length){ elBrands.innerHTML = kopf + '<div class="up-empty-mini" data-i18n="No data">' + esc(t("No data")) + '</div>'; return; }
+      if (!rows.length){ elBrands.innerHTML = kopf + '<div class="up-empty-mini" data-i18n="No data">' + esc(t("No data")) + '</div>'; brandsResponsive(); return; }
       elBrands.innerHTML = kopf + '<div class="up-tbody">' + rows.map(function(r, i){
         var pos = num(r.position) != null ? num(r.position) : i + 1;
         var v = num(r.visibility_pct), rk = num(r.avg_rank), s = num(r.sentiment);
@@ -553,9 +581,10 @@
           '<div class="up-td up-td-idx">' + fmtI(pos) + '</div>' +
           '<div class="up-td upw-td-name">' + logo(r.logo_url || r.favicon_url, r.name) + '<span class="upw-name" title="' + esc(r.name == null ? "" : r.name) + '">' + esc(r.name == null ? "" : r.name) + '</span></div>' +
           '<div class="up-td">' + vis + '</div>' +
-          '<div class="up-td">' + rank + '</div>' +
-          '<div class="up-td">' + sent + '</div></div>';
+          '<div class="up-td upw-td-rank">' + rank + '</div>' +
+          '<div class="up-td upw-td-sent">' + sent + '</div></div>';
       }).join("") + '</div>';
+      brandsResponsive();
     }
 
     /* ---------- Trending Citations ----------
@@ -577,12 +606,24 @@
         (punkt ? '<span class="up-tag-dot" style="background:' + farbe + '"></span>' : '') +
         '<span class="up-tag-lbl">' + esc(label) + '</span></span>';
     }
+    /* KEINE eigene "Change"-Spalte mehr (12.09. angefordert: "warum ist Change ne eigene
+       Spalte, das kommt in Share rein") -- der Trend steht jetzt IN der Share-Zelle, genau wie
+       bei der Visibility-Spalte der Brands-Tabelle nebenan und wie ueberall sonst in der App
+       (UC.trendChip direkt hinter dem up-num). upw-th-type/upw-td-type markieren die einzige
+       Spalte, die auf schmalem Platz verschwindet -- dieselbe Reihenfolge wie in
+       topcitations-dashboard.js/.css (dort zusaetzlich "Used", das es hier nicht gibt).
+       460px: darunter reicht der Platz nicht mehr fuer alle drei Spalten (120+148+130 = 398px
+       plus Zellpolster) -- dieselbe eigene-Breite-Messung wie brandsResponsive() oben. */
+    function citesResponsive(){
+      var w = elCites.clientWidth;
+      if (!w) return;
+      elCites.classList.toggle("upw-hide-type", w < 460);
+    }
     function citesKopf(url){
       return '<div class="up-thead">' +
         '<div class="up-th"><span class="up-th-txt">' + esc(t(url ? "URL" : "Domain")) + '</span></div>' +
-        '<div class="up-th"><span class="up-th-txt">' + esc(t("Type")) + '</span></div>' +
-        '<div class="up-th"><span class="up-th-txt">' + esc(t("Share")) + '</span></div>' +
-        '<div class="up-th"><span class="up-th-txt">' + esc(t("Change")) + '</span></div></div>';
+        '<div class="up-th upw-th-type"><span class="up-th-txt">' + esc(t("Type")) + '</span></div>' +
+        '<div class="up-th"><span class="up-th-txt">' + esc(t("Share")) + '</span></div></div>';
     }
     function renderCites(){
       var url = state.cmode === "url";
@@ -591,31 +632,87 @@
       var fehler = url ? state.fehler.urls : state.fehler.domains;
       elCntCites.textContent = state.citesLabel ? t(state.citesLabel) : "";
       elCntCites.parentNode.classList.toggle("has-count", !!state.citesLabel);
-      if (fehler){ elCites.innerHTML = kopf + (UC.leseFehlerHtml ? UC.leseFehlerHtml("citations") : ""); return; }
+      if (fehler){ elCites.innerHTML = kopf + (UC.leseFehlerHtml ? UC.leseFehlerHtml("citations") : ""); citesResponsive(); return; }
       if (state.loading || !rows){
         elCites.innerHTML = kopf + '<div class="up-tbody">' + UC.skeletonRows({ count: 7, rowClass: "up-row", cellClass: "up-td",
-          cols: [{ w: 110, jitter: 30, logo: true }, 56, 36, 40] }) + '</div>';
+          cols: [{ w: 110, jitter: 30, logo: true }, { w: 56, cls: "upw-td-type" }, 40] }) + '</div>';
+        citesResponsive();
         return;
       }
-      if (!rows.length){ elCites.innerHTML = kopf + '<div class="up-empty-mini" data-i18n="No data">' + esc(t("No data")) + '</div>'; return; }
+      if (!rows.length){ elCites.innerHTML = kopf + '<div class="up-empty-mini" data-i18n="No data">' + esc(t("No data")) + '</div>'; citesResponsive(); return; }
       elCites.innerHTML = kopf + '<div class="up-tbody">' + rows.map(function(r){
         var name = url ? (r.title || r.url || "") : (r.domain || "");
         var id = url ? (r.url || r.title || "") : (r.domain || "");
         var fav = r.favicon || r.logo || "";
         var anteil = num(url ? (r.global_share_pct != null ? r.global_share_pct : r.share_pct) : r.share_pct);
+        var share = '<span class="up-num' + (anteil == null ? " is-empty" : "") + '">' + fmtPct1(anteil) + '</span>' +
+          UC.trendChip(r.share_delta_pct, { decimals: true, suffix: "%" });
         return '<div class="up-row" data-upw-row="' + (url ? "url" : "domain") + '" data-id="' + esc(String(id)) + '">' +
           '<div class="up-td upw-td-name">' + (fav ? '<span class="up-logo-box up-fav has-img"><img src="' + esc(fav) + '" alt="" referrerpolicy="no-referrer"/></span>'
                                                : '<span class="up-logo-box up-fav"></span>') +
             '<span class="upw-name" title="' + esc(url && r.url ? r.url : name) + '">' + esc(name) + '</span></div>' +
-          '<div class="up-td">' + typTag(url ? r.url_type : r.citation_type, url) + '</div>' +
-          '<div class="up-td"><span class="up-num' + (anteil == null ? " is-empty" : "") + '">' + fmtPct1(anteil) + '</span></div>' +
-          '<div class="up-td">' + UC.trendChip(r.share_delta_pct, { decimals: true, suffix: "%" }) + '</div></div>';
+          '<div class="up-td upw-td-type">' + typTag(url ? r.url_type : r.citation_type, url) + '</div>' +
+          '<div class="up-td">' + share + '</div></div>';
       }).join("") + '</div>';
+      citesResponsive();
     }
     function zaehler(el, n){
       el.textContent = n == null ? "" : fmtI(n);
       el.parentNode.classList.toggle("has-count", n != null);
     }
+
+    /* ---------- Maximieren: die zwei Tabellen nebeneinander <-> untereinander (12.09.) ---------
+       "der soll auch funktionieren und die beiden unteren Tabellen untereinander darstellen.
+       Maximize mit 200ms ease animieren." Reines CSS reicht hier nicht: .upw-tables ist ein
+       Grid mit ZWEI Spuren (nebeneinander) bzw. EINER (untereinander), und ein Uebergang auf
+       grid-template-columns springt bei einer wechselnden Spurenzahl, statt zu gleiten -- in
+       jedem gaengigen Browser gemessen.
+       Also FLIP (First-Last-Invert-Play), derselbe Griff wie beim Zusammenklappen des Composers
+       in ask-mira.js (setHasMessages): VOR dem Umschalten die Lage jeder Karte messen, umstellen,
+       NACHHER erneut messen, die Karte per transform SOFORT auf ihre alte Lage zuruecksetzen
+       (kein Sprung sichtbar, weil das im selben Bild passiert) und dann mit einem erzwungenen
+       Reflow (void ...offsetWidth) in einer eigenen Ubergangsregel auf die neue Lage gleiten
+       lassen. scale gleicht die Breitenaenderung mit aus -- die Karte bleibt am linken Rand
+       verankert (transform-origin: top left), die Verzerrung ist bei 200ms nicht wahrnehmbar. */
+    var gestapelt = false;
+    function maxSync(){
+      if (!elMaxBtn) return;
+      var text = t(gestapelt ? "Show tables side by side" : "Show tables stacked");
+      elMaxBtn.setAttribute("data-tip", text);
+      elMaxBtn.setAttribute("aria-label", text);
+      elMaxBtn.setAttribute("aria-pressed", gestapelt ? "true" : "false");
+      elMaxBtn.innerHTML = UC.icon(gestapelt ? "minimize2" : "maximize2", 2);
+    }
+    function maxUmschalten(){
+      if (!elTables) return;
+      var karten = Array.prototype.slice.call(elTables.querySelectorAll(".upw-tcard"));
+      var vorher = karten.map(function(k){ return k.getBoundingClientRect(); });
+      gestapelt = !gestapelt;
+      elTables.classList.toggle("is-stacked", gestapelt);
+      maxSync();
+      karten.forEach(function(k, i){
+        var a = vorher[i], b = k.getBoundingClientRect();
+        if (!b.width || !b.height) return;   // ausgeblendet (z.B. is-narrow) -- nichts zu bewegen
+        var dx = a.left - b.left, dy = a.top - b.top;
+        var sx = a.width / b.width, sy = a.height / b.height;
+        k.style.transition = "none";
+        k.style.transformOrigin = "top left";
+        k.style.transform = "translate(" + dx + "px," + dy + "px) scale(" + sx + "," + sy + ")";
+      });
+      /* Erzwungener Reflow -- ohne ihn fasst der Browser den Start- und den Zielwert zu einem
+         einzigen Style-Recalc zusammen und der Uebergang bleibt aus (dasselbe Muster wie
+         renderGallery weiter oben in dieser App). */
+      void elTables.offsetWidth;
+      karten.forEach(function(k){
+        k.style.transition = "transform 200ms ease";
+        k.style.transform = "";
+      });
+      clearTimeout(elTables.__upwMaxT);
+      elTables.__upwMaxT = setTimeout(function(){
+        karten.forEach(function(k){ k.style.transition = ""; k.style.transformOrigin = ""; });
+      }, 220);
+    }
+    if (elMaxBtn) elMaxBtn.addEventListener("click", maxUmschalten);
 
     root.querySelector(".upw-cmode").addEventListener("click", function(e){
       var b = e.target.closest("[data-upw-cmode]");
@@ -628,13 +725,6 @@
       renderCites();
     });
     root.addEventListener("click", function(e){
-      var x = e.target.closest("[data-upw-expand]");
-      if (x){
-        var was = x.getAttribute("data-upw-expand");
-        if (was === "brands") fire("data-brands-fn", "upwBrands", {});
-        else fire("data-citations-fn", "upwCitations", { mode: state.cmode === "url" ? "urls" : "domains" });
-        return;
-      }
       var row = e.target.closest("[data-upw-row]");
       if (row && !row.classList.contains("up-tsk")){
         fire("data-rowclick-fn", "upwRowClick", { type: row.getAttribute("data-upw-row"), id: row.getAttribute("data-id") || "" });
@@ -653,6 +743,17 @@
     root.classList.add("is-dense");
     if (UC.widthTiers) UC.widthTiers(root, { narrowAt: 760, vnarrowAt: 480 });
     if (UC.makeTooltips) UC.makeTooltips(root, dunkel);
+    /* Die zwei Tabellen messen sich SELBST nach (12.09.): eine Aenderung ihrer EIGENEN Breite --
+       Fensterresize, is-narrow-Umschalten, oder der Maximieren-Knopf, der .upw-tables gerade
+       zwischen nebeneinander und untereinander umstellt -- loest brandsResponsive()/
+       citesResponsive() neu aus, ohne dass irgendwer explizit daran denken muss. EINMAL
+       angemeldet, nicht bei jedem render*() -- sonst haeufen sich Beobachter bei jedem Neuzeichnen
+       an. UC.beobachteGroesse ist der geteilte, gedrosselte ResizeObserver aus core (siehe
+       topcitations-dashboard.js fuer denselben Griff). */
+    if (UC.beobachteGroesse){
+      UC.beobachteGroesse(elBrands, brandsResponsive);
+      UC.beobachteGroesse(elCites, citesResponsive);
+    }
 
     renderAll();
     pruefen();

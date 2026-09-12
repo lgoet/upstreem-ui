@@ -15,17 +15,18 @@
   max-width: calc(920px + 2 * var(--upw-pad)); margin: 0 auto;
   padding: 8px var(--upw-pad) 48px; box-sizing: border-box;
 }
-/* ---------- gegenlaeufig breit (11.09. angefordert) ----------
+/* ---------- gegenlaeufig breit (11.09. angefordert, 12.09. nachgezogen) ----------
    Mira samt Chips und Recent chats sollen SCHMALER sein als die Spalte, Overview und die beiden
-   Tabellen BREITER -- je 64px pro Seite, macht 128px Unterschied zwischen den beiden Huellen.
+   Tabellen BREITER. 72px pro Seite schmaler (72*2=144px unter den 920px), 80px pro Seite breiter
+   (80*2=160px darueber) -- macht 304px Unterschied zwischen den beiden Huellen.
    .upw-narrow ruecht von den Kanten der Spalte weg ein, .upw-wide reicht mit negativen
    Aussenmassen ueber sie hinaus (ins Polster --upw-pad und, je nach Fensterbreite, noch etwas
    darueber -- die Spalte selbst bleibt bei 920px, nur diese zwei Kinder weichen davon ab).
    NUR ab der Breite, ab der die Tabellen und Kennzahlen ohnehin nebeneinander stehen
    (widthTiers, is-narrow ab 760px): darunter ist kein Platz fuer ein zusaetzliches Aufweiten, und
    die Karten liefen sonst über den Bildschirmrand hinaus. */
-.upw-narrow { margin-left: 64px; margin-right: 64px; }
-.upw-wide { margin-left: -64px; margin-right: -64px; }
+.upw-narrow { margin-left: 72px; margin-right: 72px; }
+.upw-wide { margin-left: -80px; margin-right: -80px; }
 .upw-root.is-narrow .upw-narrow,
 .upw-root.is-narrow .upw-wide { margin-left: 0; margin-right: 0; }
 
@@ -49,7 +50,14 @@
 /* ---------- Chips ----------
    .up-btn-sec aus core, unveraendert. Hier nur die Reihe: mittig, 8px zwischen den Chips in
    beiden Richtungen, und das Emoji in der Groesse der Schrift daneben. */
-.upw-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 24px; }
+/* row-gap 4px statt der 8px der Spalten (12.09. gemessen und korrigiert): der erzwungene
+   Zeilenumbruch (.upw-chip-break, renderChips()) steht als EIGENE, unsichtbare Flex-Zeile
+   zwischen den beiden echten Zeilen -- `gap` zaehlt DIESE Zeilengrenze mit, also zweimal 8px
+   zwischen den sichtbaren Zeilen statt einmal. Ein negativer Rand am Break-Element (der erste
+   Versuch) aendert daran nichts: `gap` reserviert den Abstand zwischen den Flex-Zeilen fest,
+   unabhaengig von einem Rand auf dem Inhalt einer Zeile. Also andersherum: row-gap auf die
+   HAELFTE (4px), macht 4+4=8px ueber die unsichtbare Zeile hinweg -- genau wie column-gap. */
+.upw-chips { display: flex; flex-wrap: wrap; justify-content: center; column-gap: 8px; row-gap: 4px; margin-top: 24px; }
 .upw-chips:empty { display: none; }
 .upw-chip { max-width: 100%; }
 /* Kein Rand, Hoverstate nur der Hintergrund (11.09. angefordert). .up-btn-sec traegt normalerweise
@@ -61,18 +69,18 @@
 .upw-chip-emoji { font-size: 13px; line-height: 1; }
 /* Der Zeilenumbruch nach dem dritten Chip -- siehe power-dashboard.js, renderChips(). Ein leeres
    Element mit voller Breite (flex-basis:100%) zwingt jeden nachfolgenden Flex-Kind in eine neue
-   Zeile, ganz unabhaengig davon, wie lang die Beschriftungen daneben sind. */
+   Zeile, ganz unabhaengig davon, wie lang die Beschriftungen daneben sind. Warum row-gap oben nur
+   4px ist (nicht 8), steht an .upw-chips. */
 .upw-chip-break { flex-basis: 100%; width: 0; height: 0; }
 .upw-chip-lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ---------- Abschnitte ----------
-   Die Ueberschrift ist die kleine Versalzeile der App (.up-pop-head: 11px, 600, 0.04em,
-   Versalien, --vc-muted) -- dieselbe, die Mira ueber ihren Kategorien fuehrt. */
+   Die Ueberschrift ist jetzt .up-blockhead aus core (12.09. angefordert: "wie in der main
+   Sidebar die Headings ueber den Menuebloecken", dieselbe Klasse steht seither auch an
+   sidebar.js' .usn-head) -- keine eigene Schrift mehr hier, nur noch das Markup-Klassenpaar. */
 .upw-sec { margin-top: 48px; }
 .upw-sec-head { display: flex; align-items: center; justify-content: space-between; gap: 12px;
   min-height: 24px; margin-bottom: 12px; }
-.upw-sec-h { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
-  color: var(--vc-muted); }
 .upw-link {
   display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0; border: 0;
   background: transparent; color: var(--vc-muted); font-family: inherit; font-size: 13px;
@@ -142,6 +150,12 @@
    liest (.up-thead, .up-row). Feste Spuren und EINE flexible: jede Zeile ist ein eigenes Raster,
    und nur feste Breiten stehen in allen Zeilen gleich untereinander. */
 .upw-tables { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 40px; }
+/* is-stacked: der Maximieren-Knopf an "Competitive field" (12.09.) -- EINE Spur statt zwei,
+   dieselbe Regel wie .upw-root.is-narrow weiter unten benutzt, nur von Hand statt von der
+   Fensterbreite ausgeloest. Den Uebergang animiert power-dashboard.js selbst per FLIP-Transform
+   (transform ist animierbar, eine wechselnde Spurenzahl in grid-template-columns nicht --
+   gemessen: der Sprung blieb, ein CSS-Uebergang allein haette hier nichts gebracht). */
+.upw-tables.is-stacked { grid-template-columns: minmax(0, 1fr); }
 .upw-tcard { min-width: 0; }
 /* Die festen Spuren sind GEMESSEN (_h_upw.html, breitester Inhalt der Beispieldaten) plus das
    Zellpolster aus core (12 + 16) und die 1px-Linie:
@@ -151,16 +165,38 @@
      Sent.       die Pille aus core                   42 + 29 =  71  ->  72
      Type        der laengste Typ-Chip, "UGC / Community"  115 + 29 = 144 -> 148 (bei 144 schnitt
                                                      die Zelle den Chip um einen Bruchteil ab)
-     Share       "21.0%"                              41 + 29 =  70
-     Change      Trend-Chip "13.0%"                   58 + 29 =  87  ->  88
-   Der Rest geht an den Namen; ein zu langer wird abgeschnitten und steht im Tooltip (title). */
-.upw-t-brands { --up-cols: 40px minmax(0, 1fr) 130px 66px 72px; }
-.upw-t-cites  { --up-cols: minmax(0, 1fr) 148px 70px 88px; }
+     Share       "21.0%" + Trend-Chip "13.0%" in EINER Zelle (12.09.: die eigene Change-Spalte ist
+                                                     weg, siehe renderCites) -- dieselbe Form wie
+                                                     Visibility, deshalb dieselbe Breite, 130px.
+   minmax(120px, ...) an der Namensspalte statt minmax(0, ...): ohne Mindestmass durfte sie auf
+   schmalem Platz bis auf nichts zusammenschrumpfen, waehrend die festen Spuren daneben stehen
+   blieben -- genau das gemeldete Bild ("bei Brand sieht man gar keinen Text mehr"). 120px ist der
+   Wert, den visibility-chart.css und topcitations-dashboard.css fuer dieselbe Spalte fuehren. */
+.upw-t-brands { --up-cols: 40px minmax(120px, 1fr) 130px 66px 72px; }
+.upw-t-cites  { --up-cols: minmax(120px, 1fr) 148px 130px; }
 .upw-td-name { gap: 10px; }
 /* Der Name wie .ubo-brand-name in brands-overview: 13.5px, 500, abgeschnitten. */
 .upw-name { font-size: 13.5px; font-weight: 500; color: var(--vc-text);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .upw-tcard .up-seg { flex: 0 0 auto; }
+
+/* ---------- Spalten, die auf schmalem Platz verschwinden (12.09.) ----------
+   Dieselbe Logik wie visibility-chart.js/.css und topcitations-dashboard.js/.css: Klassen an
+   Kopf UND Zelle blenden eine Spalte aus, und dieselbe Klasse am Tisch selbst schreibt das
+   uebrige Raster neu -- die frei werdende Breite geht an die flexible Namensspalte, nicht an
+   eine feste Spur. Reihenfolge bei "Competitive field" wie bei visibility-chart: erst Sentiment,
+   dann Rank. Bei "Trending Citations" bleibt nur Type zum Ausblenden (kein "Used" wie bei
+   topcitations-dashboard, das gibt es hier nicht). Wer misst und die Klassen setzt, steht in
+   power-dashboard.js (brandsResponsive/citesResponsive, UC.beobachteGroesse). */
+.upw-t-brands.upw-hide-sent .upw-th-sent,
+.upw-t-brands.upw-hide-sent .upw-td-sent { display: none; }
+.upw-t-brands.upw-hide-sent { --up-cols: 40px minmax(120px, 1fr) 130px 66px; }
+.upw-t-brands.upw-hide-rank .upw-th-rank,
+.upw-t-brands.upw-hide-rank .upw-td-rank { display: none; }
+.upw-t-brands.upw-hide-rank.upw-hide-sent { --up-cols: 40px minmax(120px, 1fr) 130px; }
+.upw-t-cites.upw-hide-type .upw-th-type,
+.upw-t-cites.upw-hide-type .upw-td-type { display: none; }
+.upw-t-cites.upw-hide-type { --up-cols: minmax(120px, 1fr) 130px; }
 
 /* ---------- schmal ----------
    Unter 760px Breite (widthTiers, is-narrow) gehen Tabellen und Kennzahlen untereinander. Zwei
@@ -170,6 +206,27 @@
 .upw-root.is-narrow .up-box.upw-kpis { grid-template-columns: minmax(0, 1fr); }
 .upw-root.is-narrow .upw-kpi { border-left: 0; border-top: 1px solid var(--vc-border); }
 .upw-root.is-narrow .upw-kpi:first-child { border-top: 0; }
+
+/* ---------- mobil (12.09. angefordert: "im Mobile bitte direkt korrekt machen") -------------
+   is-vnarrow ist Miras eigene Telefon-Schwelle (widthTiers oben, 480px) -- dieselbe, unter der
+   auch ihre Seitenleiste auf "ueber dem Inhalt" umschaltet, also der richtige Massstab fuer
+   "Mobile" in dieser Komponente. */
+/* 16px statt der 14-28px aus dem clamp: gemeldet als "aktuell sinds im Mobile 32px oderso" --
+   der clamp() lag zwar selbst schon bei 14px am unteren Ende, aber DAS Polster ist nur eine von
+   zwei Quellen (die Bubble-Seite drumherum traegt in der Praxis noch ihr eigenes dazu), und ein
+   fester Wert hier nimmt der Sache die Unschaerfe: 16px, PUNKT, unabhaengig davon, was aussenrum
+   noch steht. */
+.upw-root.is-vnarrow .upw-col { --upw-pad: 16px; }
+/* Die Chips sind auf dem Telefon eine Stufe kleiner, damit auch mal zwei nebeneinander stehen
+   koennen statt jede fuer sich eine ganze Zeile zu belegen -- 28px statt 32px Hoehe, 8px statt
+   14px Seitenpolster, 11.5px statt 12.5px Schrift. Ueberschrieben an .upw-chip, nicht an
+   .up-btn-sec: das Bauteil aus core bleibt ueberall sonst bei seiner Groesse.
+   8px und nicht 10px Seitenpolster: GEMESSEN in _h_upw.html bei 375px (der schmalsten Breite,
+   bei der die Spalte noch die vollen 16px Seitenpolster hat) -- die kuerzesten zwei Chips der
+   Beispieldaten kamen bei 10px auf 336px Inhalt, +8px Zwischenraum = 344px gegen 343px Platz,
+   einen Pixel zu viel. Bei 8px passen sie. */
+.upw-root.is-vnarrow .upw-chip.up-btn-sec { height: 28px; padding: 0 8px; gap: 5px; font-size: 11.5px; }
+.upw-root.is-vnarrow .upw-chip-emoji { font-size: 11.5px; }
 
 /* ---------- Skelett ----------
    Farbe und Pulsieren aus core (--vc-sk, uutpulse), wie .up-tsk-bar. */
