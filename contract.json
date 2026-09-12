@@ -2719,6 +2719,7 @@
   "upw-range",
   "upw-root",
   "upw-sec",
+  "upw-sec-h",
   "upw-sec-head",
   "upw-sk",
   "upw-sk-dot",
@@ -3077,7 +3078,7 @@
   "globals": 177,
   "payloadkeys": 96,
   "dataattrs": 251,
-  "klassen": 2210,
+  "klassen": 2211,
   "keyframes": 66
  }
 }

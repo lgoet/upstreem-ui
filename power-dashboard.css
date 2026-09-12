@@ -92,8 +92,24 @@
    Abschnitten gleich, sie trennt Ueberschrift von Inhalt. Sie ersetzt den Rahmen, den der
    Overview-Kasten vorher mitbrachte: der ist weg, die Kennzahlen stehen jetzt frei. */
 .upw-sec-head { display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  min-height: 24px; padding-bottom: 12px; margin-bottom: 12px;
+  min-height: 24px; padding-bottom: 12px; margin-bottom: 28px;
   border-bottom: 1px solid var(--vc-border); }
+/* BEIDE ABSCHNITTSZEILEN EINZEILIG -- sonst stehen ihre Trennlinien auf verschiedener Hoehe, und
+   genau das war zu sehen. GEMESSEN, woran es lag: "Last 30 days" lief in der schmalen Spalte auf
+   DREI Zeilen (42px), "Recent chats" auf zwei (28px), macht 55px gegen 41px Kopfhoehe und 14px
+   Versatz zwischen den Linien. Beide Texte sind kurz und sollen nie umbrechen; wird einer doch
+   einmal zu lang, schneidet er ab, statt die Zeile aufzublaehen. min-width:0 ist noetig, damit
+   ein Flex-Kind ueberhaupt unter seine Inhaltsbreite schrumpfen darf. */
+.upw-sec-h, .upw-range, .upw-link { white-space: nowrap; min-width: 0; }
+.upw-sec-h { overflow: hidden; text-overflow: ellipsis; }
+/* UND ALLE KINDER DER ZEILE GLEICH HOCH. Nur nicht umbrechen genuegte nicht: die Ueberschrift ist
+   11px hoch (14px Zeile), der "All"-Knopf daneben 24px -- damit war der eine Kopf 27px und der
+   andere 37px, die Linien standen wieder versetzt, nur andersherum als vorher. Das hoechste Kind
+   bestimmt die Zeilenhoehe, also bekommen alle dieselbe Mindesthoehe; die 24px sind die des
+   Knopfes, der hier das groesste Element ist. Der Kindselektor ist hier Absicht und keine
+   Schludrigkeit: die Regel gilt fuer JEDES Kind dieser Zeile, auch fuer eines, das spaeter
+   dazukommt -- genau das haelt die zwei Abschnitte auf Dauer auf einer Linie. */
+.upw-sec-head > * { min-height: 24px; display: inline-flex; align-items: center; }
 .upw-link {
   display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0; border: 0;
   background: transparent; color: var(--vc-third); font-family: inherit; font-size: 13px;
@@ -150,14 +166,14 @@
    Flaeche, kein zusaetzlicher Verkleinerungsschritt an Schrift oder Zeile noetig. */
 /* 64px statt 48px (12.09. angefordert: "die beiden Gaps bitte groesser, so 16px pro Gap mehr") --
    der Abstand von den Chips herunter zu Overview. Der zweite ist an .upw-tcard. */
-.upw-datarow { display: flex; align-items: flex-start; gap: 24px; margin-top: 64px; }
+.upw-datarow { display: flex; align-items: flex-start; gap: 32px; margin-top: 64px; }
 .upw-datarow .upw-sec { margin-top: 0; }
 .upw-datarow-main { flex: 1 1 auto; min-width: 0; }
-/* 31% statt der 26% vom 12.09. frueh: "gib den Recent chats so 5% mehr width, dafuer Overview 5%
-   weniger -- absolut" also 5 Punkte der GESAMTBREITE der Zeile, nicht 5% der Spalte selbst. Als
-   Prozentwert und nicht als feste Pixelzahl, damit die Verschiebung bei jeder Fensterbreite
-   dieselbe bleibt; die Zeile selbst ist ohnehin auf 1080px gedeckelt (.upw-col). */
-.upw-datarow-side { flex: 0 0 31%; min-width: 0; }
+/* 36%: dreimal 5 Punkte der GESAMTBREITE der Zeile hergegeben (26 -> 31 -> 36), jedes Mal so
+   angefordert -- nicht 5% der Spalte selbst. Als Prozentwert und nicht als feste Pixelzahl, damit
+   die Verschiebung bei jeder Fensterbreite dieselbe bleibt; die Zeile ist ohnehin auf 1080px
+   gedeckelt (.upw-col). */
+.upw-datarow-side { flex: 0 0 36%; min-width: 0; }
 /* Unter 760px (is-narrow) ist neben drei Kennzahlen kein Platz mehr fuer eine feste Seitenspalte
    -- untereinander, wie die Kennzahlen und die Tabelle es dort ohnehin schon tun. */
 .upw-root.is-narrow .upw-datarow { flex-direction: column; }
