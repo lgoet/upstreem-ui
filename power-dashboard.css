@@ -164,14 +164,14 @@
    Flaeche, kein zusaetzlicher Verkleinerungsschritt an Schrift oder Zeile noetig. */
 /* 64px statt 48px (12.09. angefordert: "die beiden Gaps bitte groesser, so 16px pro Gap mehr") --
    der Abstand von den Chips herunter zu Overview. Der zweite ist an .upw-tcard. */
-.upw-datarow { display: flex; align-items: flex-start; gap: 32px; margin-top: 64px; }
+.upw-datarow { display: flex; align-items: flex-start; gap: 64px; margin-top: 64px; }
 .upw-datarow .upw-sec { margin-top: 0; }
 .upw-datarow-main { flex: 1 1 auto; min-width: 0; }
-/* 36%: dreimal 5 Punkte der GESAMTBREITE der Zeile hergegeben (26 -> 31 -> 36), jedes Mal so
-   angefordert -- nicht 5% der Spalte selbst. Als Prozentwert und nicht als feste Pixelzahl, damit
-   die Verschiebung bei jeder Fensterbreite dieselbe bleibt; die Zeile ist ohnehin auf 1080px
-   gedeckelt (.upw-col). */
-.upw-datarow-side { flex: 0 0 36%; min-width: 0; }
+/* 41%: viermal 5 Punkte der GESAMTBREITE der Zeile hergegeben (26 -> 31 -> 36 -> 41), jedes Mal
+   so angefordert -- nicht 5% der Spalte selbst. Als Prozentwert und nicht als feste Pixelzahl,
+   damit die Verschiebung bei jeder Fensterbreite dieselbe bleibt; die Zeile ist ohnehin auf
+   1080px gedeckelt (.upw-col). */
+.upw-datarow-side { flex: 0 0 41%; min-width: 0; }
 /* Unter 760px (is-narrow) ist neben drei Kennzahlen kein Platz mehr fuer eine feste Seitenspalte
    -- untereinander, wie die Kennzahlen und die Tabelle es dort ohnehin schon tun. */
 .upw-root.is-narrow .upw-datarow { flex-direction: column; }

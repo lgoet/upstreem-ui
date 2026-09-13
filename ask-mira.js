@@ -481,7 +481,7 @@
       pickOfflineSub: 'Please reload the page and try again.',
       pickMax: 'max 3',
       pickPlaceholder: 'Search brands, domains, URLs, prompts\u2026',
-      effFlashNote: 'Mira Flash always answers at Mid.',
+      effFlashNote: 'Mira Flash always answers at Medium.',
       urlDetail: 'Open detail page',
       oppAdd: 'Add as opportunity',
       oppAdding: 'Adding\u2026',
@@ -3137,10 +3137,10 @@
     if (window.__amRenderChatTitlebar) window.__amRenderChatTitlebar();
   }
 
-  /* ================= AUFWAND: Mid / High / Ultra ==========================================
+  /* ================= AUFWAND: Medium / High / Ultra ======================================
      DIE DREI STUFEN SIND DIE WERTE. Sie gehen buchstabengleich als answer_detail hinaus:
 
-         Mid            High            Ultra
+         Medium         High            Ultra
 
      Der FELDNAME bleibt answer_detail -- die Extraktion in Bubble haengt daran und soll
      unangetastet bleiben. Was sich geaendert hat, sind die drei Werte darin: vorher standen
@@ -3154,16 +3154,18 @@
      sind zwei verschiedene Dinge, und nur das eine ist ein Vertrag.
 
      Die MITTE ist der Vorgabewert: High. Der Slider startet dort, wo die App startet.
-     Flash kann nur die unterste Stufe und zeigt deshalb Mid.
+     Flash kann nur die unterste Stufe und zeigt deshalb Medium.
 
      DIE ALTEN DREI WERDEN NOCH ANGENOMMEN (EFF_ALT). Ein Wert kann irgendwo ueberlebt haben --
      in window.askMiraState, das eine Seite vorbelegen darf, oder in einem gespeicherten Chat.
      Ohne die Zuordnung faellt so ein Wert auf die Mitte, also stillschweigend auf High, auch
      wenn er "short" hiess. Drei Zeilen, und niemand verliert seine Stufe. */
-  var EFF_WERTE  = ['Mid', 'High', 'Ultra'];
-  /* Die Werte bis zum 08.09. -- damit ein ueberlebender alter Wert auf SEINER Stufe landet
-     und nicht stillschweigend in der Mitte. */
-  var EFF_ALT    = { short: 'Mid', balanced: 'High', detailed: 'Ultra' };
+  var EFF_WERTE  = ['Medium', 'High', 'Ultra'];
+  /* Die frueheren Werte -- damit ein ueberlebender alter Wert auf SEINER Stufe landet und nicht
+     stillschweigend in der Mitte. Zwei Generationen stehen hier: short/balanced/detailed bis zum
+     08.09., und "Mid" bis zum 13.09., als die unterste Stufe auf "Medium" umbenannt wurde. Ein
+     gespeicherter Chat oder ein vorbelegtes askMiraState kann beides noch tragen. */
+  var EFF_ALT    = { short: 'Medium', balanced: 'High', detailed: 'Ultra', Mid: 'Medium' };
   function effWert(w){
     w = String(w == null ? '' : w);
     if (EFF_WERTE.indexOf(w) >= 0) return w;
@@ -3171,7 +3173,7 @@
   }
   /* Englisch heisst die Stufe wie ihr WERT -- ein Name fuer eine Sache. Deutsch ist eine
      Uebersetzung der Beschriftung, nicht des Wertes. */
-  var EFF_LABELS = { en: ['Mid', 'High', 'Ultra'], de: ['Mittel', 'Hoch', 'Ultra'] };
+  var EFF_LABELS = { en: ['Medium', 'High', 'Ultra'], de: ['Mittel', 'Hoch', 'Ultra'] };
   function effLabels(){ return EFF_LABELS[lang] || EFF_LABELS.en; }
   function effIndex(wert){ var i = EFF_WERTE.indexOf(effWert(wert)); return i < 0 ? 1 : i; }
 
@@ -3405,7 +3407,7 @@
     if (model === 'flash'){
       root.classList.add('is-flash');
       if (elEffNote) elEffNote.textContent = L().effFlashNote;
-      setDetail('Mid', true);                    /* Flash kann nur die unterste Stufe */
+      setDetail('Medium', true);                 /* Flash kann nur die unterste Stufe */
     } else {
       root.classList.remove('is-flash');
       /* Die Stufe nur zuruecksetzen, wenn wirklich AUS Flash heraus gewechselt wurde. Vorher
