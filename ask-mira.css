@@ -1761,9 +1761,16 @@
      17 und nicht 16: bottom zaehlt ab der POLSTERKANTE von .am-composer, und dessen 1px-Rahmen
      liegt noch dazwischen. Gemessen mit 16: 15px bis zur sichtbaren Kante. */
   .am-pick-panel {
-    position: absolute; bottom: calc(100% + 17px); left: 0; right: 0; z-index: 60;
-    box-sizing: border-box; display: flex; flex-direction: column;
-    border: 1px solid var(--up-menu-border, var(--am-border)); border-radius: 18px;
+    /* RUNDUNG UND POLSTER WIE DAS EINGABEFELD DARUEBER (13.09. angefordert): 32px Radius und
+       16px rundum, also dieselben Werte wie .am-composer -- die zwei Flaechen liegen
+       uebereinander und sollen als ein Paar lesbar sein. Der Abstand dazwischen ist auf 4px
+       zurueck (vorher 17), die zwei ruecken damit sichtbar zusammen.
+       Das Polster sitzt HIER und nicht mehr in den Kindern: .am-pick-search und .am-pick-scroll
+       hatten je eigene Seitenpolster, die sich mit diesem gedoppelt haetten -- sie sind darum
+       weiter unten auf 0 gesetzt. */
+    position: absolute; bottom: calc(100% + 4px); left: 0; right: 0; z-index: 60;
+    box-sizing: border-box; display: flex; flex-direction: column; padding: 16px;
+    border: 1px solid var(--up-menu-border, var(--am-border)); border-radius: 32px;
     background: var(--up-menu-bg, var(--am-card)); box-shadow: 0 -2px 16px rgba(0,0,0,0.06);
     /* Der Deckel kommt vom JS: #ask-mira und .am-shell tragen beide overflow: hidden, also ist
        jedes Pixel ueber der Komponente weg. Eine feste vh-Zahl kann das nicht wissen. */
@@ -1775,7 +1782,9 @@
   #ask-mira.is-pick-open .am-pick-panel { opacity: 1; transform: none; pointer-events: auto; }
   #ask-mira[data-theme="dark"] .am-pick-panel { box-shadow: 0 -2px 16px rgba(0,0,0,0.3); }
 
-  .am-pick-search { display: flex; align-items: center; gap: 10px; padding: 0 14px; height: 50px; flex: 0 0 auto; }
+  /* Ohne eigenes Seitenpolster -- das stellt seit dem 13.09. das Panel (16px rundum). Die Hoehe
+     bleibt, sie ist die Zeilenhoehe des Suchfelds und nicht sein Abstand zum Rand. */
+  .am-pick-search { display: flex; align-items: center; gap: 10px; padding: 0; height: 50px; flex: 0 0 auto; }
   .am-pick-sic { width: 17px; height: 17px; flex: 0 0 auto; fill: none; stroke: var(--vc-third);
     stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .am-pick-input {
@@ -1919,8 +1928,12 @@
   .am-pick-cav.is-slash { background: transparent; }
   .am-pick-chint { flex: 0 0 auto; font-size: 11.5px; color: var(--vc-third); }
 
+  /* Der negative Seitenrand holt die 10px Zeilenpolster von .am-pick-row wieder herein: die
+     Hover-Flaeche einer Zeile soll bis an das Panel-Polster reichen, der TEXT darin aber mit dem
+     Suchfeld darueber fluchten. Ohne ihn staende die Liste um ihr eigenes Zeilenpolster
+     eingerueckt. */
   .am-pick-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
-    padding: 0 6px 6px; scrollbar-gutter: stable; }
+    padding: 0; margin: 0 -10px; scrollbar-gutter: stable; }
   .am-pick-list:empty { display: none; }
   .am-pick-row {
     display: flex; align-items: center; gap: 11px; width: 100%; padding: 8px 10px;
@@ -3079,16 +3092,18 @@
 #ask-mira.up-root.is-launcher .am-composer { max-width: none; }
 /* 16px mehr Hoehe (11.09. angefordert), nur im Launcher: 8 oben und 8 unten auf die 16px rundum
    aus core-mira, sonst waechst der Textblock einseitig und die Zeile sieht nicht mehr mittig aus.
-   32 OBEN, 16 an den anderen drei Seiten (13.09.). Der Weg dahin in drei Schritten: erst 24/16,
-   gemeldet als "unten sieht nach mehr Luft aus als seitlich" -- und das war es auch, unten 25px
-   gegen 17px seitlich. Dann rundum 24. Dann links, unten und rechts auf 16. Und jetzt 8px mehr
-   Hoehe, die OBEN dazukommen, weil die anderen drei Seiten gerade erst auf 16 bestellt wurden --
-   oben faengt der Text an, dort ist die Luft gewollt.
-   Wer diesen Wert wieder anfasst, zieht .upw-mira-sk in power-dashboard.css mit: der Platzhalter
+   16px RUNDUM, und die bestellte Mehrhoehe steckt stattdessen im Abstand zwischen Textzeile und
+   Aktionszeile (13.09. korrigiert). Der Weg dahin: 24/16, dann rundum 24, dann 16 an drei Seiten
+   und 32 oben -- und genau das war der Fehler. Oben 32 gegen 17 seitlich hat die Textzeile
+   sichtbar nach unten gedrueckt ("der Eingabetext sitzt viel zu weit unten"), denn der Text
+   beginnt an der Polsterkante. Das Polster ist der falsche Ort fuer Hoehe.
+   Die 8px kommen jetzt aus dem Raster-Abstand des Composers (row-gap 14 -> 22): die Hoehe bleibt,
+   die Textzeile sitzt aber wieder mit demselben Abstand oben wie links.
+   Wer einen dieser Werte anfasst, zieht .upw-mira-sk in power-dashboard.css mit: der Platzhalter
    haelt genau diese Hoehe frei, bis Mira eintrifft, sonst springt alles darunter.
-   NUR hier -- Miras eigene Ansicht (.am-composer ohne is-launcher) bleibt bei ihren 16px rundum;
-   siehe .am-composer weiter oben in dieser Datei. */
-#ask-mira.up-root.is-launcher .am-composer { padding: 32px 16px 16px; }
+   NUR hier -- Miras eigene Ansicht (.am-composer ohne is-launcher) behaelt ihren eigenen
+   Abstand; siehe .am-composer weiter oben in dieser Datei. */
+#ask-mira.up-root.is-launcher .am-composer { padding: 16px; row-gap: 22px; }
 /* "Mira answers based on..." ist im Dashboard weg (11.09. angefordert) -- der Satz erklaert
    Mira SICH SELBST, und im Launcher steht sie nur als Einstieg da, nicht als eigene Ansicht mit
    eigenem Fusstext. In Miras eigener Ansicht bleibt er (kein is-launcher dort). */
@@ -3103,11 +3118,11 @@
 /* Die zwei Menues gehen im Dashboard nach UNTEN auf (verlangt: "das Add-Dropdown oeffnet sich
    natuerlich nach unten"). Das Feld steht dort ganz oben -- nach oben waere es in den Seitenkopf
    gelaufen. Das Modellmenue folgt aus demselben Grund.
-   Abstand und Schatten wie in Miras Ansicht, nur gespiegelt: 17px bis zur sichtbaren Kante (der
-   1px-Rahmen des Composers liegt dazwischen), der Schatten 2px nach UNTEN versetzt -- nach oben
-   reicht er 16 - 2 = 14px und bleibt damit vom Feld weg. pickDeckel rechnet den Platz nach
-   unten. */
-#ask-mira.up-root.is-launcher .am-pick-panel { top: calc(100% + 17px); bottom: auto; transform-origin: top center;
+   Abstand und Schatten wie in Miras Ansicht, nur gespiegelt: 4px bis zur sichtbaren Kante (der
+   1px-Rahmen des Composers liegt dazwischen; 13.09. von 17 auf 4 zurueckgenommen), der Schatten
+   2px nach UNTEN versetzt -- nach oben reicht er 16 - 2 = 14px und bleibt damit vom Feld weg.
+   pickDeckel rechnet den Platz nach unten. */
+#ask-mira.up-root.is-launcher .am-pick-panel { top: calc(100% + 4px); bottom: auto; transform-origin: top center;
   box-shadow: 0 2px 16px rgba(0,0,0,0.06); }
 #ask-mira.up-root.is-launcher:not(.is-pick-open) .am-pick-panel { transform: translateY(-6px) scale(0.99); }
 #ask-mira.up-root.is-launcher[data-theme="dark"] .am-pick-panel { box-shadow: 0 2px 16px rgba(0,0,0,0.3); }
