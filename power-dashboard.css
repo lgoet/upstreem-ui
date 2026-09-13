@@ -229,6 +229,16 @@
    Regel gewinnt, unabhaengig davon, welche "gemeint" ist. Zwei Klassen zusammen (0,2,0) schlagen
    .up-table (0,1,0) ueber Spezifitaet, nicht ueber Ladereihenfolge -- genauso bei .upw-cmode
    gegen .up-seg. */
+/* OHNE RAHMEN UM DEN KASTEN UND OHNE FLAECHE IN DER KOPFZEILE (13.09. angefordert). Beides
+   kommt aus core (.up-box traegt den Rahmen, .up-thead den Ton --vt-head-bg) und wird dort NICHT
+   geaendert -- jede andere Tabelle der App behaelt beides.
+   DREI STUFEN und nicht zwei: im dunklen Thema greift core mit .up-root[data-theme="dark"]
+   .up-box (0,3,0) auf denselben Rahmen zu. Mit zwei Stufen haette ich dort nur ueber die
+   Ladereihenfolge gewonnen. border:0 und nicht border-color:transparent, damit auch kein Platz
+   von 1px stehen bleibt -- der Kasten sitzt sonst um zwei Pixel versetzt zur Kopfzeile darueber. */
+.upw-root .upw-tcard .up-box { border: 0; }
+.upw-root .upw-table .up-thead { background: transparent; }
+
 .upw-t-brands.is-off, .upw-t-cites.is-off, .upw-cmode.is-off,
 .upw-tinfo.is-off, .upw-board.is-off { display: none; }
 /* Der Tabellenkasten selbst verschwindet im Opportunities-Reiter. .up-box hat KEINE eigene
