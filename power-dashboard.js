@@ -52,17 +52,16 @@
      Die Werte aus dem Entwurf, damit das Dashboard vor dem Anschluss so aussieht wie gemeint.
      Die Form ist die der echten Setter -- wer den Anschluss baut, sieht hier, was ankommen muss. */
   var DEMO = {
+    /* GENAU die Felder, die renderKpis() liest -- nicht mehr. Die Verlaufsreihen, der
+       Spitzenreiter und die vier Zaehler der zweiten Fusszeilen-Haelfte sind am 13.09.
+       mitgegangen, als ihre Anzeigen gestrichen wurden. Beispieldaten, die mehr zeigen als die
+       Komponente liest, sind eine Einladung, den RPC groesser zu bauen als noetig. */
     overview: {
       range_label: "Last 30 days",
       visibility_pct: 3.0, visibility_delta_pct: 1.0,
-      visibility_series: [2.1, 2.2, 2.4, 2.3, 2.6, 2.8, 3.0],
-      visibility_position: 2, brand_count: 8, leader_name: "Anfragenfluss", leader_visibility_pct: 5.2,
-      avg_rank: 3.3, avg_rank_delta: -0.9,
-      rank_series: [4.0, 3.9, 4.1, 3.8, 3.9, 3.6, 3.3],
-      best_rank: 2.6, first_count: 14, prompt_count: 91,
-      sentiment: 76, sentiment_delta: 1.6,
-      sentiment_series: [74, 73.5, 74.5, 74, 74.8, 74.6, 76],
-      field_avg_sentiment: 74, negative_count: 6, response_count: 214
+      visibility_position: 2, brand_count: 8,
+      avg_rank: 3.3, avg_rank_delta: -0.9, best_rank: 2.6,
+      sentiment: 76, sentiment_delta: 1.6, field_avg_sentiment: 74
     },
     /* avg_rank_delta und sentiment_delta sind seit dem 12.09. dabei: "Competitive field" zeigt
        den Trend jetzt in ALLEN drei Wertspalten, genau wie die maximierte Tabelle im Visibility

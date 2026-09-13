@@ -87,18 +87,19 @@
                             Tabelle ("8 brands · Last 30 days"); neben "Overview" stand er bis
                             zum 12.09. ein zweites Mal, das ist gestrichen.
     visibility_pct          3.0        visibility_delta_pct   1.0     (Prozentpunkte)
-    visibility_series       [2.1, 2.2, …]  der Verlauf, alt -> neu (auch "2.1, 2.2, …" als Text)
     visibility_position     2          brand_count            8       -> "#2 of 8 brands"
-    leader_name             "Anfragenfluss"   leader_visibility_pct 5.2 -> "Anfragenfluss 5.2%"
     avg_rank                3.3        avg_rank_delta        -0.9     (kleiner ist besser)
-    rank_series             [4.0, 3.9, …]
     best_rank               2.6                                        -> "Best in field 2.6"
-    first_count             14         prompt_count           91      -> "First in 14/91 prompts"
     sentiment               76         sentiment_delta        1.6
-    sentiment_series        [74, 73.5, …]
     field_avg_sentiment     74                                         -> "Field average 74"
-    negative_count          6          response_count         214     -> "6/214 negative"
-    Fehlen visibility_position, brand_count oder leader_name, rechnet die Komponente sie aus
+
+    NICHT MEHR GELESEN (13.09. aufgeraeumt, die Anzeigen dazu sind gestrichen): die drei
+    *_series (die Verlaufslinien sind weg), leader_name/leader_visibility_pct,
+    first_count/prompt_count und negative_count/response_count -- sie standen in der zweiten
+    Haelfte der Fusszeilen, und die Fusszeile traegt jetzt nur noch eine Angabe. Sie duerfen im
+    Payload stehen bleiben, kosten aber nur Bandbreite; wer den RPC neu baut, laesst sie weg.
+
+    Fehlen visibility_position oder brand_count, rechnet die Komponente sie aus
     "brands" aus (die eigene Marke traegt is_own: true).
 
   brands -- DIESELBEN Felder wie brands-overview (derselbe RPC fuellt beide):
@@ -163,11 +164,8 @@
       var ROH = `{
         "instanceId": "INSTANCE_ID",
         "overview": { "range_label": "Last 30 days", "visibility_pct": 3.0, "visibility_delta_pct": 1.0,
-          "visibility_series": [2.1, 2.2, 2.4, 2.3, 2.6, 2.8, 3.0], "visibility_position": 2, "brand_count": 8,
-          "leader_name": "Anfragenfluss", "leader_visibility_pct": 5.2, "avg_rank": 3.3, "avg_rank_delta": -0.9,
-          "rank_series": [4.0, 3.9, 4.1, 3.8, 3.9, 3.6, 3.3], "best_rank": 2.6, "first_count": 14, "prompt_count": 91,
-          "sentiment": 76, "sentiment_delta": 1.6, "sentiment_series": [74, 73.5, 74.5, 74, 74.8, 74.6, 76],
-          "field_avg_sentiment": 74, "negative_count": 6, "response_count": 214 },
+          "visibility_position": 2, "brand_count": 8, "avg_rank": 3.3, "avg_rank_delta": -0.9,
+          "best_rank": 2.6, "sentiment": 76, "sentiment_delta": 1.6, "field_avg_sentiment": 74 },
         "brands": [
           { "company_id": "d1", "position": 1, "name": "Anfragenfluss", "visibility_pct": 5.2, "visibility_delta_pct": 4.0, "avg_rank": 2.6, "avg_rank_delta": -0.4, "sentiment": 75, "sentiment_delta": 2.1 },
           { "company_id": "d2", "position": 2, "name": "LeeUp Media", "visibility_pct": 3.0, "visibility_delta_pct": 1.0, "avg_rank": 3.3, "avg_rank_delta": -0.9, "sentiment": 76, "sentiment_delta": 1.6, "is_own": yes }
