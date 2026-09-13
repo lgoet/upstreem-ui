@@ -109,33 +109,30 @@
      Prompts -- gleiche Logik wie bei den Kategorie-Karten." Also wie dort: der Prompt steht
      hier in beiden Sprachen, {TIMEFRAME} ersetzt Mira mit dem Zeitraum ihrer Report-Karten, und
      der Klick sendet sofort. {COMPETITOR} ist der staerkste Wettbewerber aus "Competitive field"
-     -- der Chip heisst dann nach ihm, wie im Entwurf ("Compare me with Anfragenfluss").
+     -- der Chip heisst dann nach ihm, wie im Entwurf ("Compare me with Anfragenfluss"). Das ist
+     der Spitzenreiter, und ist man selbst der Spitzenreiter, der Zweite: staerksterWettbewerber()
+     ueberspringt die eigene Marke.
+     DREI CHIPS, EINE REIHE (13.09. auf drei gekuerzt): Daily Briefing, der Vergleich und die
+     neuen Zitierungen. "Negative Antworten zeigen" und der Report-Entwurf sind raus -- fuenf
+     Chips brauchten zwei Reihen, und die zwei sind die, die man am ehesten in Mira selbst tippt.
      Zeichen: die Emoji des Entwurfs. Eigene Chips kann Bubble ueber renderPowerDashboard({ chips })
      setzen, dieselbe Form. */
   var CHIPS = {
     en: [
       { emoji: "📅", label: "Create a Daily Briefing",
         prompt: "Give me my daily AI visibility briefing: what changed since yesterday in visibility, ranking and sentiment, the three most important moves among my competitors, new or lost citations, and one concrete action for today. Short and scannable." },
-      { emoji: "📉", label: "Show negative responses",
-        prompt: "Show me the AI responses from {TIMEFRAME} that describe my brand negatively. Group them by theme, quote the critical passages with model and prompt, and tell me which ones matter most and why." },
       { emoji: "🏁", label: "Compare me with {COMPETITOR}", fallback: "Compare me with my top competitor",
         prompt: "Compare my brand with {COMPETITOR} for {TIMEFRAME}: visibility, average rank and sentiment side by side, the topics and prompts where they beat me and where I lead, and the sources that cite them but not me. End with three actions to close the gap." },
       { emoji: "🔗", label: "New citations this week",
-        prompt: "Which sources and URLs started citing my brand or my competitors in the last 7 days? Highlight new domains, the ones that cite competitors but not me, and which of them I should target first." },
-      { emoji: "📝", label: "Draft an AI visibility report",
-        prompt: "Draft a presentation-ready AI visibility report for {TIMEFRAME}: executive summary, visibility and share of voice versus competitors, strongest and weakest topics, sentiment, the sources that matter, biggest win and biggest risk, and recommended next steps." }
+        prompt: "Which sources and URLs started citing my brand or my competitors in the last 7 days? Highlight new domains, the ones that cite competitors but not me, and which of them I should target first." }
     ],
     de: [
       { emoji: "📅", label: "Daily Briefing erstellen",
         prompt: "Gib mir mein tägliches Briefing zur KI-Sichtbarkeit: was sich seit gestern bei Sichtbarkeit, Ranking und Sentiment verändert hat, die drei wichtigsten Bewegungen meiner Wettbewerber, neue oder verlorene Zitierungen und eine konkrete Maßnahme für heute. Kurz und überfliegbar." },
-      { emoji: "📉", label: "Negative Antworten zeigen",
-        prompt: "Zeig mir die KI-Antworten aus {TIMEFRAME}, die meine Marke negativ darstellen. Gruppiere sie nach Thema, zitiere die kritischen Stellen mit Modell und Prompt und sag mir, welche am wichtigsten sind und warum." },
       { emoji: "🏁", label: "Mit {COMPETITOR} vergleichen", fallback: "Mit meinem stärksten Wettbewerber vergleichen",
         prompt: "Vergleiche meine Marke mit {COMPETITOR} für {TIMEFRAME}: Sichtbarkeit, durchschnittlicher Rang und Sentiment nebeneinander, die Themen und Prompts, bei denen sie vorne liegen und bei denen ich führe, und die Quellen, die sie zitieren, mich aber nicht. Schließe mit drei Maßnahmen, um den Abstand zu schließen." },
       { emoji: "🔗", label: "Neue Zitierungen diese Woche",
-        prompt: "Welche Quellen und URLs zitieren seit den letzten 7 Tagen meine Marke oder meine Wettbewerber neu? Hebe neue Domains hervor, die, die Wettbewerber zitieren, mich aber nicht, und welche ich zuerst angehen sollte." },
-      { emoji: "📝", label: "KI-Sichtbarkeitsreport entwerfen",
-        prompt: "Entwirf einen präsentationsfertigen KI-Sichtbarkeitsreport für {TIMEFRAME}: Executive Summary, Sichtbarkeit und Share of Voice gegenüber Wettbewerbern, stärkste und schwächste Themen, Sentiment, die entscheidenden Quellen, größter Erfolg und größtes Risiko sowie empfohlene nächste Schritte." }
+        prompt: "Welche Quellen und URLs zitieren seit den letzten 7 Tagen meine Marke oder meine Wettbewerber neu? Hebe neue Domains hervor, die, die Wettbewerber zitieren, mich aber nicht, und welche ich zuerst angehen sollte." }
     ]
   };
 

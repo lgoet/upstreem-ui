@@ -1529,7 +1529,7 @@
        wieder einer gesetzt wird. */
     display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 9px 0 10px;
     border: 1px solid transparent; border-radius: 10px; background: transparent;
-    color: var(--am-muted); font-family: inherit; font-size: 13.5px; font-weight: 500;
+    color: var(--am-muted); font-family: inherit; font-size: 12.5px; font-weight: 400;
     letter-spacing: -0.01em; cursor: pointer; max-width: 100%;
     transition: background 200ms ease, color 200ms ease;
   }
@@ -1538,15 +1538,19 @@
   }
   .am-eff-ic { width: 18px; height: 18px; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; }
   .am-eff-ic svg { width: 18px; height: 18px; display: block; }
-  .am-eff-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* Der Modellname in der Primaerfarbe, die Stufe daneben in der Drittfarbe (13.09. so
+     angefordert) -- zusammen mit einem Grad kleiner und einer Gewichtsstufe leichter am ganzen
+     Knopf. Die Zeile soll ruhiger werden: der Name sagt, womit man spricht, die Stufe ist die
+     Beifuegung dazu. */
+  .am-eff-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--am-text); }
   /* Die Stufe steht im Knopf, aber leiser als der Modellname: sie ist die Beifuegung. Auf Ultra
      bekommt sie die Farbe -- der einzige Ort, an dem sie ausserhalb des Menues zu sehen ist. */
-  /* Die TEXT-Fassung des Paares und nicht der Flaechenton: --up-blau misst als Wort auf dem
-     Feld nur 3.68 (hell) und 3.90 (dunkel) und faellt damit durch die 4.5 aus WCAG AA. Die
-     Textfassung dreht nur die Helligkeit, der Farbton bleibt -- es ist sichtbar dasselbe Blau
-     wie im Slider, nur lesbar. */
-  .am-eff-lvl { flex: 0 0 auto; font-weight: 600; color: var(--up-blau-text, #286fe1); transition: color 200ms ease; }
-  #ask-mira.is-ultra .am-eff-lvl { color: var(--up-lila-text, #8e58d8); }
+  /* DRITTFARBE, KEINE FARBCODIERUNG MEHR (13.09. angefordert). Hier stand das Blau des Paares
+     (und auf Ultra das Lila) -- es war der einzige Ort ausserhalb des Menues, an dem die Stufe
+     Farbe trug. Die Farbcodierung bleibt dort, wo sie hingehoert: an der Schiene im Menue. In der
+     Fusszeile des Feldes ist die Stufe eine Beifuegung zum Modellnamen und darf nicht lauter sein
+     als er. */
+  .am-eff-lvl { flex: 0 0 auto; font-weight: 500; color: var(--vc-third); transition: color 200ms ease; }
   .am-eff-chev { width: 13px; height: 13px; flex: 0 0 auto; fill: none; stroke: currentColor;
     stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; opacity: 0.75; }
 
@@ -3075,13 +3079,16 @@
 #ask-mira.up-root.is-launcher .am-composer { max-width: none; }
 /* 16px mehr Hoehe (11.09. angefordert), nur im Launcher: 8 oben und 8 unten auf die 16px rundum
    aus core-mira, sonst waechst der Textblock einseitig und die Zeile sieht nicht mehr mittig aus.
-   24 OBEN, 16 an den anderen drei Seiten (12.09., zweite Runde). Der Weg dahin in zwei Schritten:
-   erst stand hier 24/16, gemeldet als "unten sieht nach mehr Luft aus als seitlich" -- und das war
-   es auch, unten 25px gegen 17px seitlich. Dann rundum 24. Jetzt ausdruecklich links, unten und
-   rechts auf 16; oben bleiben die 24, dort faengt der Text an und die Luft ist gewollt.
+   32 OBEN, 16 an den anderen drei Seiten (13.09.). Der Weg dahin in drei Schritten: erst 24/16,
+   gemeldet als "unten sieht nach mehr Luft aus als seitlich" -- und das war es auch, unten 25px
+   gegen 17px seitlich. Dann rundum 24. Dann links, unten und rechts auf 16. Und jetzt 8px mehr
+   Hoehe, die OBEN dazukommen, weil die anderen drei Seiten gerade erst auf 16 bestellt wurden --
+   oben faengt der Text an, dort ist die Luft gewollt.
+   Wer diesen Wert wieder anfasst, zieht .upw-mira-sk in power-dashboard.css mit: der Platzhalter
+   haelt genau diese Hoehe frei, bis Mira eintrifft, sonst springt alles darunter.
    NUR hier -- Miras eigene Ansicht (.am-composer ohne is-launcher) bleibt bei ihren 16px rundum;
    siehe .am-composer weiter oben in dieser Datei. */
-#ask-mira.up-root.is-launcher .am-composer { padding: 24px 16px 16px; }
+#ask-mira.up-root.is-launcher .am-composer { padding: 32px 16px 16px; }
 /* "Mira answers based on..." ist im Dashboard weg (11.09. angefordert) -- der Satz erklaert
    Mira SICH SELBST, und im Launcher steht sie nur als Einstieg da, nicht als eigene Ansicht mit
    eigenem Fusstext. In Miras eigener Ansicht bleibt er (kein is-launcher dort). */
