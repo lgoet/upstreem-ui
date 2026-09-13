@@ -170,11 +170,11 @@
 .upw-datarow { display: flex; align-items: flex-start; gap: 64px; margin-top: 64px; }
 .upw-datarow .upw-sec { margin-top: 0; }
 .upw-datarow-main { flex: 1 1 auto; min-width: 0; }
-/* 41%: viermal 5 Punkte der GESAMTBREITE der Zeile hergegeben (26 -> 31 -> 36 -> 41), jedes Mal
-   so angefordert -- nicht 5% der Spalte selbst. Als Prozentwert und nicht als feste Pixelzahl,
-   damit die Verschiebung bei jeder Fensterbreite dieselbe bleibt; die Zeile ist ohnehin auf
-   1080px gedeckelt (.upw-col). */
-.upw-datarow-side { flex: 0 0 41%; min-width: 0; }
+/* 36% der GESAMTBREITE der Zeile -- nicht 36% der Spalte selbst. Der Weg dahin ging in
+   Fuenf-Punkt-Schritten hin und einen zurueck (26 -> 31 -> 36 -> 41 -> 36), jeder einzeln so
+   angefordert. Als Prozentwert und nicht als feste Pixelzahl, damit das Verhaeltnis bei jeder
+   Fensterbreite dasselbe bleibt; die Zeile ist ohnehin auf 1080px gedeckelt (.upw-col). */
+.upw-datarow-side { flex: 0 0 36%; min-width: 0; }
 /* Unter 760px (is-narrow) ist neben drei Kennzahlen kein Platz mehr fuer eine feste Seitenspalte
    -- untereinander, wie die Kennzahlen und die Tabelle es dort ohnehin schon tun. */
 .upw-root.is-narrow .upw-datarow { flex-direction: column; }
