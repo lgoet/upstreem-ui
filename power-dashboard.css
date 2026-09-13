@@ -33,18 +33,18 @@
 /* ---------- Mira ----------
    Der Platz fuer die geliehene Wurzel. Bis sie da ist, ihr Umriss: dieselbe Hoehe, derselbe
    Radius (32px wie .am-composer), damit darunter nichts springt.
-   144px, im Prueftand an der geliehenen Wurzel GEMESSEN (_h_upw.html). Der Wert haengt an dem,
-   was ask-mira.css im Launcher auf .am-composer gibt, und das ist mehrfach gewandert: 24 rundum,
-   dann 24 oben mit 16 an den anderen Seiten (131px), dann 32 oben (139px) -- und seit dem 13.09.
-   16px rundum mit 22px Abstand zwischen Text- und Aktionszeile, weil das Polster der falsche Ort
-   fuer Hoehe war (der Text sass sichtbar zu tief). Wer dort etwas anfasst, misst hier nach, sonst
-   springt beim Eintreffen von Mira alles darunter um die Differenz.
+   133px, im Prueftand an der geliehenen Wurzel GEMESSEN (_h_upw.html). Der Wert haengt an dem,
+   was ask-mira.css im Launcher auf .am-composer gibt: 16px Polster rundum und 10px Abstand
+   zwischen Text- und Aktionszeile. Die Hoehe sitzt bewusst im ABSTAND und nicht im Polster --
+   ueber das Polster gestellt drueckt sie die Textzeile nach unten, und genau das war am 13.09.
+   gemeldet. Wer dort etwas anfasst, misst hier nach, sonst springt beim Eintreffen von Mira
+   alles darunter um die Differenz.
    Die Hinweiszeile darunter ("Mira answers based on...") ist im Launcher aus (ask-mira.css,
    .am-hint), also keine eigene Zeile mehr im Skelett und kein margin-bottom hier -- die Luecke
    zur naechsten Reihe (den Chips) kommt jetzt allein aus deren eigenem margin-top. */
 .upw-mira { position: relative; }
 .upw-mira-sk {
-  height: 144px; border-radius: 32px; border: 1px solid var(--vc-border); background: var(--vc-bg);
+  height: 133px; border-radius: 32px; border: 1px solid var(--vc-border); background: var(--vc-bg);
   padding: 20px 16px 16px; box-sizing: border-box;
   display: flex; flex-direction: column; justify-content: space-between;
 }

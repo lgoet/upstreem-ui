@@ -1782,9 +1782,12 @@
   #ask-mira.is-pick-open .am-pick-panel { opacity: 1; transform: none; pointer-events: auto; }
   #ask-mira[data-theme="dark"] .am-pick-panel { box-shadow: 0 -2px 16px rgba(0,0,0,0.3); }
 
-  /* Ohne eigenes Seitenpolster -- das stellt seit dem 13.09. das Panel (16px rundum). Die Hoehe
-     bleibt, sie ist die Zeilenhoehe des Suchfelds und nicht sein Abstand zum Rand. */
-  .am-pick-search { display: flex; align-items: center; gap: 10px; padding: 0; height: 50px; flex: 0 0 auto; }
+  /* Ohne eigenes Seitenpolster UND ohne feste Hoehe -- beides stellte frueher den Abstand zum
+     Rand, seit dem 13.09. macht das Panel es mit seinen 16px rundum. Die 50px waren dabei der
+     eigentliche Stolperstein: der Text sass MITTIG darin, also 33px unter der Panelkante, waehrend
+     links 17px standen -- genau die gemeldete Schieflage. Mit auto ist die Zeile so hoch wie ihr
+     Inhalt, und der Text beginnt oben auf demselben Polster wie seitlich. */
+  .am-pick-search { display: flex; align-items: center; gap: 10px; padding: 0; height: auto; flex: 0 0 auto; }
   .am-pick-sic { width: 17px; height: 17px; flex: 0 0 auto; fill: none; stroke: var(--vc-third);
     stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .am-pick-input {
@@ -1813,7 +1816,9 @@
   .am-pick-crow {
     display: flex; align-items: center; flex-wrap: wrap;
     column-gap: 16px; row-gap: 8px;
-    margin: 4px 14px 10px;
+    /* Seitlich 0: die 14px von frueher doppelten sich mit dem Panel-Polster. Oben und unten
+       bleibt der Abstand zu Suchzeile und Liste. */
+    margin: 12px 0 10px;
   }
   .am-pick-crow.is-leer { display: none; }
   .am-pick-h {
@@ -3097,13 +3102,15 @@
    und 32 oben -- und genau das war der Fehler. Oben 32 gegen 17 seitlich hat die Textzeile
    sichtbar nach unten gedrueckt ("der Eingabetext sitzt viel zu weit unten"), denn der Text
    beginnt an der Polsterkante. Das Polster ist der falsche Ort fuer Hoehe.
-   Die 8px kommen jetzt aus dem Raster-Abstand des Composers (row-gap 14 -> 22): die Hoehe bleibt,
-   die Textzeile sitzt aber wieder mit demselben Abstand oben wie links.
+   Die Hoehe kommt jetzt aus dem Raster-Abstand des Composers und nicht mehr aus dem Polster: die
+   Textzeile sitzt damit mit demselben Abstand oben wie links, und die Hoehe bleibt trotzdem
+   einstellbar. row-gap 10 (13.09.: erst 22 fuer 8px mehr, dann 12px weniger bestellt -- macht
+   144 - 12 = 132px).
    Wer einen dieser Werte anfasst, zieht .upw-mira-sk in power-dashboard.css mit: der Platzhalter
    haelt genau diese Hoehe frei, bis Mira eintrifft, sonst springt alles darunter.
    NUR hier -- Miras eigene Ansicht (.am-composer ohne is-launcher) behaelt ihren eigenen
    Abstand; siehe .am-composer weiter oben in dieser Datei. */
-#ask-mira.up-root.is-launcher .am-composer { padding: 16px; row-gap: 22px; }
+#ask-mira.up-root.is-launcher .am-composer { padding: 16px; row-gap: 10px; }
 /* "Mira answers based on..." ist im Dashboard weg (11.09. angefordert) -- der Satz erklaert
    Mira SICH SELBST, und im Launcher steht sie nur als Einstieg da, nicht als eigene Ansicht mit
    eigenem Fusstext. In Miras eigener Ansicht bleibt er (kein is-launcher dort). */
