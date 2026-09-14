@@ -662,9 +662,13 @@
        (14.09.). "All {n} brands" traegt die GESAMTZAHL, nicht die fuenf gezeigten Zeilen; die
        Fassung ohne Zahl greift, wenn der Payload keine mitbringt. */
     "Main Metrics": "Hauptkennzahlen",
-    "All {n} brands": "Alle {n} Brands",
-    "All brands": "Alle Brands",
-    "All domains": "Alle Domains",
+    /* Die Beschriftungen der zwei Weiterwege. Sie stehen seit dem 14.09. nur noch im Tooltip des
+       Zeichens in der Ueberschriftzeile, darum die Verbform: aus "All 8 brands" (Zeile unter der
+       Liste) wurde "Go to all 8 brands" (was der Klick tut). */
+    "Go to all {n} brands": "Alle {n} Brands öffnen",
+    "Go to all brands": "Alle Brands öffnen",
+    "Go to all domains": "Alle Domains öffnen",
+    "Go to all URLs": "Alle URLs öffnen",
     "Open brands": "Brands öffnen",
     "Open citations": "Zitierungen öffnen",
     /* Der dritte Reiter (12.09.): darunter steht das geliehene Kanban-Brett aus opportunities.js.

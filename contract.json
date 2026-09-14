@@ -108,7 +108,6 @@
   "upwBrands",
   "upwCitations",
   "upwNeeds",
-  "upwOpportunities",
   "upwRowClick",
   "urdBrand",
   "urdDomain",
@@ -2678,7 +2677,6 @@
   "upt-topicsearch-clear",
   "upt-topicsearch-in",
   "upt-topicsearch-wrap",
-  "upw-all",
   "upw-chat",
   "upw-chat-ic",
   "upw-chat-title",
@@ -2695,6 +2693,7 @@
   "upw-datarow",
   "upw-datarow-main",
   "upw-datarow-side",
+  "upw-goto",
   "upw-kpi",
   "upw-kpi-foot",
   "upw-kpi-label",
@@ -3059,7 +3058,7 @@
   "uutpulse"
  ],
  "_zaehlung": {
-  "events": 158,
+  "events": 157,
   "fnattrs": 102,
   "globals": 177,
   "payloadkeys": 97,

@@ -85,19 +85,24 @@
   leer -- es geht nichts kaputt.
 
   ── EREIGNISSE (JavaScriptToBubble), Namen je Platzierung eindeutig ──────────────────────────
-  Das Zeichen ganz rechts (Pfeil nach oben rechts) oeffnet die Ansicht, die im Umschalter gerade
-  vorne steht -- je nach Reiter eines dieser drei:
+  Je ein Zeichen (Pfeil nach oben rechts, 16px) steht ganz rechts in der Ueberschriftzeile der
+  beiden Listen und fuehrt in die jeweilige volle Ansicht. Was es tut, sagt sein Tooltip -- bei den
+  Marken mit Anzahl ("Go to all 8 brands"), bei den Zitierungen je nach Umschalterstellung.
   data-brands-fn    = "bubble_fn_upwBrands_[dynamic id]"
-                      Klick auf das Zeichen, waehrend "Competitive field" aktiv ist. Leere
+                      Klick auf das Zeichen in der Ueberschrift von "Competitive field". Leere
                       Nutzlast {} -- im Workflow einfach zur Brands-Ansicht wechseln.
   data-citations-fn = "bubble_fn_upwCitations_[dynamic id]"
-                      Klick auf dasselbe Zeichen, waehrend "Trending Citations" aktiv ist. Nutzlast
+                      Klick auf das Zeichen in der Ueberschrift von "Trending Citations". Nutzlast
                       { "mode": "domains" | "urls" } -- welcher der beiden Domains/URL-Umschalter
                       gerade steht. Im Workflow: zur Citations-Ansicht wechseln, ggf. denselben
                       Modus dort vorwaehlen.
-  data-opportunities-fn = "bubble_fn_upwOpportunities_[dynamic id]"
-                      Klick auf dasselbe Zeichen, waehrend "Opportunities" aktiv ist. Leere
-                      Nutzlast {} -- im Workflow zur Opportunities-Ansicht wechseln.
+  data-opportunities-fn = ENTFAELLT SEIT DEM 14.09. -- nichts feuert es mehr.
+                      Es hing am Oeffnen-Zeichen in der Umschalterzeile, und das ist gestrichen:
+                      die zwei Listen tragen ihres jetzt selbst, je in ihrer Ueberschriftzeile, und
+                      die fuehren zu Brands bzw. Citations. Aus dem Opportunities-Bereich gibt es
+                      damit KEINEN Weg mehr in die volle Opportunities-Ansicht -- wer einen will,
+                      sagt Bescheid, dann kommt das Zeichen dort wieder hin.
+                      Das Attribut darf am Element stehen bleiben, es wird nur nicht mehr gelesen.
   data-needs-fn     = "bubble_fn_upwNeeds_[dynamic id]"
                       Sagt, welche Datenabschnitte gerade gebraucht werden. Nutzlast
                       { "mode": "metrics" | "opportunities",

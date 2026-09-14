@@ -316,14 +316,16 @@
           '<div class="upw-modeseg" role="tablist" aria-label="Section" data-upw-modeseg>' +
             '<button type="button" class="upw-modebtn" role="tab" data-upw-mode="metrics" data-i18n="Main Metrics">' + esc(t("Main Metrics")) + '</button>' +
             '<button type="button" class="upw-modebtn" role="tab" data-upw-mode="opportunities" data-i18n="Opportunities">' + esc(t("Opportunities")) + '</button>' +
-            '<span class="upw-modetools"><span class="upw-uotools" data-upw-uotools></span>' +
-              '<button type="button" class="up-iconbtn" data-upw-open>' + UC.icon("arrowUpRight", 2) + '</button></span>' +
+            /* Nur noch die eingezogene Werkzeugleiste des Bretts. Das Oeffnen-Zeichen, das hier
+               stand, ist am 14.09. gestrichen -- die zwei Listen tragen ihres jetzt selbst, je in
+               ihrer Ueberschriftzeile. */
+            '<span class="upw-modetools"><span class="upw-uotools" data-upw-uotools></span></span>' +
           '</div>' +
           '<div class="upw-metrics" data-upw-metrics>' +
             '<section class="upw-sec upw-metric-card">' +
-              '<div class="upw-sec-head"><span class="upw-sec-h up-blockhead" data-i18n="Competitive field">' + esc(t("Competitive field")) + '</span></div>' +
+              '<div class="upw-sec-head"><span class="upw-sec-h up-blockhead" data-i18n="Competitive field">' + esc(t("Competitive field")) + '</span>' +
+                '<button type="button" class="upw-goto" data-upw-allbrands>' + UC.icon("arrowUpRight", 2) + '</button></div>' +
               '<div class="upw-list" data-upw-brands></div>' +
-              '<button type="button" class="upw-all" data-upw-allbrands><span data-upw-allbrands-lbl></span>' + UC.icon("chevronRight", 2) + '</button>' +
             '</section>' +
             '<section class="upw-sec upw-metric-card">' +
               '<div class="upw-sec-head"><span class="upw-sec-h up-blockhead" data-i18n="Trending Citations">' + esc(t("Trending Citations")) + '</span>' +
@@ -332,9 +334,9 @@
                 '<div class="up-seg upw-cmode" role="tablist" aria-label="Citations" data-upw-cmodewrap>' +
                   '<button type="button" class="up-seg-btn" role="tab" data-upw-cmode="domain" data-i18n="Domains">' + esc(t("Domains")) + '</button>' +
                   '<button type="button" class="up-seg-btn" role="tab" data-upw-cmode="url" data-i18n="URLs">' + esc(t("URLs")) + '</button>' +
-                '</div></div>' +
+                '</div>' +
+                '<button type="button" class="upw-goto" data-upw-allcites>' + UC.icon("arrowUpRight", 2) + '</button></div>' +
               '<div class="upw-list" data-upw-cites></div>' +
-              '<button type="button" class="upw-all" data-upw-allcites><span data-upw-allcites-lbl></span>' + UC.icon("chevronRight", 2) + '</button>' +
             '</section>' +
           '</div>' +
           /* Der Platz des geliehenen Bretts. Bis es da ist (oder wenn es auf dieser Seite gar
@@ -352,14 +354,11 @@
     var elCites = root.querySelector("[data-upw-cites]");
     var elModeseg = root.querySelector("[data-upw-modeseg]");
     var elCmodeWrap = root.querySelector("[data-upw-cmodewrap]");
-    var elOpenBtn = root.querySelector("[data-upw-open]");
     var elMetrics = root.querySelector("[data-upw-metrics]");
     var elBoard = root.querySelector("[data-upw-board]");
     var elUoTools = root.querySelector("[data-upw-uotools]");
     var elAllBrands = root.querySelector("[data-upw-allbrands]");
-    var elAllBrandsLbl = root.querySelector("[data-upw-allbrands-lbl]");
     var elAllCites = root.querySelector("[data-upw-allcites]");
-    var elAllCitesLbl = root.querySelector("[data-upw-allcites-lbl]");
 
     /* ---------- Chips ---------- */
     function staerksterWettbewerber(){
@@ -728,13 +727,17 @@
        Gesamtzahl die der Domains bzw. URLs und stuende damit zweimal fast gleich da, darum dort
        nur das Wort. */
     function syncAlle(){
-      if (elAllBrandsLbl){
+      if (elAllBrands){
         var o = state.overview, bn = o ? num(o.brand_count) : null;
-        elAllBrandsLbl.textContent = bn != null
-          ? ersetze(t("All {n} brands"), { n: fmtI(bn) })
-          : t("All brands");
+        var bt = bn != null ? ersetze(t("Go to all {n} brands"), { n: fmtI(bn) }) : t("Go to all brands");
+        elAllBrands.setAttribute("data-tip", bt);
+        elAllBrands.setAttribute("aria-label", bt);
       }
-      if (elAllCitesLbl) elAllCitesLbl.textContent = t(state.cmode === "url" ? "All URLs" : "All domains");
+      if (elAllCites){
+        var ct = t(state.cmode === "url" ? "Go to all URLs" : "Go to all domains");
+        elAllCites.setAttribute("data-tip", ct);
+        elAllCites.setAttribute("aria-label", ct);
+      }
     }
     /* GEMELDET (12.09.): "wenn man auf Citations wechselt, muss im Switcher auch Domain
        ausgewaehlt sein". War es nicht -- is-active wurde NUR im Klickzuhoerer gesetzt, also trug
@@ -769,11 +772,6 @@
       });
       if (elMetrics) elMetrics.classList.toggle("is-off", chancen);
       if (elBoard) elBoard.classList.toggle("is-off", !chancen);
-      if (elOpenBtn){
-        var tip = t(chancen ? "Open opportunities" : "Open brands");
-        elOpenBtn.setAttribute("data-tip", tip);
-        elOpenBtn.setAttribute("aria-label", tip);
-      }
       /* Das Brett wird nur geliehen, solange sein Bereich vorne steht -- sonst haelt das Dashboard
          es fest, waehrend nebenan die Opportunities-Ansicht leer dasteht. */
       if (chancen) brettPruefen(); else brettZurueckgeben();
@@ -798,10 +796,6 @@
       renderCites();
       syncAlle();
       datenBedarfMelden();
-    });
-    if (elOpenBtn) elOpenBtn.addEventListener("click", function(){
-      if (state.mode === "opportunities") fire("data-opportunities-fn", "upwOpportunities", {});
-      else fire("data-brands-fn", "upwBrands", {});
     });
     /* Die zwei Fusszeilen melden sich einzeln -- "alle Marken" und "alle Zitierungen" fuehren auf
        verschiedene Ansichten. Die Citations-Meldung traegt mit, welche der beiden Listen offen

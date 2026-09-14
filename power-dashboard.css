@@ -106,7 +106,7 @@
    Abschnitten gleich, sie trennt Ueberschrift von Inhalt. Sie ersetzt den Rahmen, den der
    Overview-Kasten vorher mitbrachte: der ist weg, die Kennzahlen stehen jetzt frei. */
 .upw-sec-head { display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  min-height: 24px; padding-bottom: 12px; margin-bottom: 28px;
+  min-height: 24px; padding-bottom: 8px; margin-bottom: 28px;
   border-bottom: 1px solid var(--vc-border); }
 /* BEIDE ABSCHNITTSZEILEN EINZEILIG -- sonst stehen ihre Trennlinien auf verschiedener Hoehe, und
    genau das war zu sehen. GEMESSEN, woran es lag: "Last 30 days" lief in der schmalen Spalte auf
@@ -182,11 +182,11 @@
 .upw-datarow { display: flex; align-items: flex-start; gap: 64px; margin-top: 64px; }
 .upw-datarow .upw-sec { margin-top: 0; }
 .upw-datarow-main { flex: 1 1 auto; min-width: 0; }
-/* 36% der GESAMTBREITE der Zeile -- nicht 36% der Spalte selbst. Der Weg dahin ging in
-   Fuenf-Punkt-Schritten hin und einen zurueck (26 -> 31 -> 36 -> 41 -> 36), jeder einzeln so
-   angefordert. Als Prozentwert und nicht als feste Pixelzahl, damit das Verhaeltnis bei jeder
+/* 31% der GESAMTBREITE der Zeile -- nicht 31% der Spalte selbst. Der Weg dahin ging in
+   Fuenf-Punkt-Schritten hin und zweimal zurueck (26 -> 31 -> 36 -> 41 -> 36 -> 31), jeder einzeln
+   so angefordert. Als Prozentwert und nicht als feste Pixelzahl, damit das Verhaeltnis bei jeder
    Fensterbreite dasselbe bleibt; die Zeile ist ohnehin auf 1080px gedeckelt (.upw-col). */
-.upw-datarow-side { flex: 0 0 36%; min-width: 0; }
+.upw-datarow-side { flex: 0 0 31%; min-width: 0; }
 /* Unter 760px (is-narrow) ist neben drei Kennzahlen kein Platz mehr fuer eine feste Seitenspalte
    -- untereinander, wie die Kennzahlen und die Tabelle es dort ohnehin schon tun. */
 .upw-root.is-narrow .upw-datarow { flex-direction: column; }
@@ -285,17 +285,18 @@
 .upw-li.is-own .upw-li-name { font-weight: 600; }
 .upw-li-empty { font-size: 13px; color: var(--vc-muted); padding: 8px 0; }
 
-/* ---------- die Fusszeile unter jeder Liste ----------
-   Links unter der Liste, in Drittfarbe, im Hover in Primaerfarbe (angefordert). Kein Knopf-Aussehen
-   -- es ist ein Weiterweg, kein Befehl. */
-.upw-all {
-  display: inline-flex; align-items: center; gap: 4px; align-self: flex-start;
-  margin-top: 16px; padding: 0; border: 0; background: transparent; font-family: inherit;
-  font-size: 12px; font-weight: 500; color: var(--vc-third); cursor: pointer;
-  transition: color 140ms ease;
+/* ---------- der Weiterweg, jetzt in der Ueberschriftzeile (14.09.) ----------
+   Vorher stand unter jeder Liste eine Zeile ("All 8 brands"); sie ist zu einem 16px-Zeichen ganz
+   rechts in der Ueberschrift geworden. Kein Knopf-Aussehen und keine 32px-Flaeche wie .up-iconbtn:
+   die Zeile ist 24px hoch, ein Knopf aus core wuerde sie aufblaehen. Was er tut, sagt der Tooltip,
+   den syncAlle() schreibt -- samt Anzahl bei den Marken. */
+.upw-goto {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; flex: 0 0 auto; padding: 0; border: 0; background: transparent;
+  color: var(--vc-third); cursor: pointer; transition: color 140ms ease;
 }
-.upw-all:hover { color: var(--vc-text); }
-.upw-all svg { width: 14px; height: 14px; }
+.upw-goto:hover { color: var(--vc-text); }
+.upw-goto svg { width: 16px; height: 16px; display: block; }
 
 /* ---------- der Domains/URL-Umschalter in der Ueberschriftzeile ----------
    24px statt der 26 aus core (angefordert). Hoehe UND Knopfhoehe zusammen: mit nur einer der
