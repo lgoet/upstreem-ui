@@ -241,6 +241,12 @@
       brands: demo ? DEMO.brands : null,
       domains: demo ? DEMO.top_domains : null,
       urls: demo ? DEMO.top_urls : null,
+      /* citesLabel/range_label werden seit dem 14.09. NICHT mehr angezeigt: die Kopfzeile, die
+         "8 brands · Last 30 days" trug, ist mit der grossen Tabelle weggefallen, und neben
+         "Overview" stand der Zeitraum schon vorher nicht mehr. Der Zustand bleibt trotzdem
+         stehen -- Bubble schickt das Feld weiter, und ein Setter, der einen Wert stillschweigend
+         verwirft, ist schwerer zu erklaeren als einer, der ihn aufhebt. Wer ihn wieder zeigen
+         will, hat ihn hier. */
       citesLabel: demo ? DEMO.citations_label : "",
       /* Die GESAMTZAHL, nicht die Laenge der obigen Arrays -- die zeigen nur die "top" 7, die
          Gesamtzahl kann groesser sein ("16 brands" auch wenn nur 7 Zeilen stehen). Fuer Brands
