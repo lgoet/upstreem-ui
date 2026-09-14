@@ -853,13 +853,27 @@
           renderAll();
           return;
         }
+        if (p.overview != null){
+          r = lesen(p.overview);
+          var o = Array.isArray(r.wert) ? r.wert[0] : r.wert;
+          state.fehler.overview = r.kaputt || !o;
+          state.overview = o || null;
+        }
+        if (p.brands != null){ r = liste(p.brands); state.fehler.brands = r.kaputt; state.brands = r.wert || []; }
+        if (p.top_domains != null){ r = liste(p.top_domains); state.fehler.domains = r.kaputt; state.domains = r.wert || []; }
+        if (p.top_urls != null){ r = liste(p.top_urls); state.fehler.urls = r.kaputt; state.urls = r.wert || []; }
         /* EIN ABSCHNITT IST GESCHEITERT, die anderen nicht (14.09.). Der RPC liefert dafuer einen
            errors-Block, und ohne diese Zeilen haette der Aufrufer nur zwei schlechte Moeglich-
            keiten: den Abschnitt weglassen (dann steht das Skelett endlos) oder eine leere Liste
            schicken (dann behauptet die Oberflaeche "No data", wo in Wahrheit die Abfrage
            gescheitert ist). Beides ist ein stiller Ausfall.
            Die Schluessel sind die Abschnittsnamen aus der Datenspezifikation, damit RPC und
-           Nutzlast dieselbe Sprache sprechen -- und nicht die internen Zustandsnamen. */
+           Nutzlast dieselbe Sprache sprechen -- und nicht die internen Zustandsnamen.
+           STEHT NACH den Datenzeilen, nicht davor: ein gescheiterter Abschnitt kommt in der
+           Regel MIT leerer Liste an, und "top_urls: []" setzte den Fehler sonst sofort wieder
+           auf false -- gemessen am Beispielpayload vom 14.09., der errors.citations_url trug
+           und trotzdem die Liste zeigte. Umgekehrt loescht ein spaeterer Aufruf ohne diesen
+           Schluessel den Fehler weiterhin, weil die Datenzeile ihn auf false zurueckschreibt. */
         if (p.errors && typeof p.errors === "object"){
           var ABSCHNITT = { overview: "overview", brands: "brands",
                             citations_domain: "domains", citations_url: "urls" };
@@ -870,15 +884,6 @@
             state.loading = false;
           }
         }
-        if (p.overview != null){
-          r = lesen(p.overview);
-          var o = Array.isArray(r.wert) ? r.wert[0] : r.wert;
-          state.fehler.overview = r.kaputt || !o;
-          state.overview = o || null;
-        }
-        if (p.brands != null){ r = liste(p.brands); state.fehler.brands = r.kaputt; state.brands = r.wert || []; }
-        if (p.top_domains != null){ r = liste(p.top_domains); state.fehler.domains = r.kaputt; state.domains = r.wert || []; }
-        if (p.top_urls != null){ r = liste(p.top_urls); state.fehler.urls = r.kaputt; state.urls = r.wert || []; }
         if (p.citations_label != null) state.citesLabel = String(p.citations_label);
         if (p.totalCountDomain != null) state.totalCountDomain = num(p.totalCountDomain);
         if (p.totalCountUrl != null) state.totalCountUrl = num(p.totalCountUrl);
