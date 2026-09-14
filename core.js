@@ -658,6 +658,13 @@
        field und Trending Citations, und das Zeichen ganz rechts oeffnet -- je nachdem, welche
        gerade aktiv ist -- die Brands- oder die Citations-Ansicht in Bubble. Die beiden
        "Show tables..."-Zeilen sind wieder raus, nichts liest sie mehr. */
+    /* Der Bereichs-Umschalter unter den Kennzahlen und die zwei Fusszeilen unter den Listen
+       (14.09.). "All {n} brands" traegt die GESAMTZAHL, nicht die fuenf gezeigten Zeilen; die
+       Fassung ohne Zahl greift, wenn der Payload keine mitbringt. */
+    "Main Metrics": "Hauptkennzahlen",
+    "All {n} brands": "Alle {n} Brands",
+    "All brands": "Alle Brands",
+    "All domains": "Alle Domains",
     "Open brands": "Brands öffnen",
     "Open citations": "Zitierungen öffnen",
     /* Der dritte Reiter (12.09.): darunter steht das geliehene Kanban-Brett aus opportunities.js.

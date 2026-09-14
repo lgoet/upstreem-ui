@@ -65,10 +65,17 @@
                      Schritte unten angeschlossen sind, auf "no" stellen -- sonst stehen beim
                      Laden fuer einen Moment die Beispielzahlen da.
 
-  ── DER UMSCHALTER UNTER DEN KENNZAHLEN ───────────────────────────────────────────────────────
-  Drei Reiter, einer davon sichtbar: "Competitive field" (Standard), "Trending Citations" und
-  "Opportunities". Der Umschalter selbst ist rein lokal (kein Workflow, die Wahl liegt im
+  ── DER UMSCHALTER UNTER DEN KENNZAHLEN (14.09. umgebaut) ─────────────────────────────────────
+  ZWEI Bereiche, nicht mehr drei Reiter: "Main Metrics" zeigt die zwei schmalen Listen
+  nebeneinander -- links "Competitive field", rechts "Trending Citations" --, "Opportunities" das
+  geliehene Brett. Der Umschalter selbst ist rein lokal (kein Workflow, die Wahl liegt im
   localStorage, ebenso die Domains/URL-Wahl der Zitierungen).
+  Die Markenliste zeigt FUENF Zeilen und haengt die eigene Marke unten an, wenn sie weiter hinten
+  steht -- mit ihrer echten Position. Dafuer braucht der Payload is_own an der eigenen Marke und
+  position als Rang in der VOLLSTAENDIGEN Liste. Rang und Sentiment zeigt sie nicht mehr; die
+  Felder duerfen bleiben, gelesen werden sie nicht.
+  Unter jeder Liste steht ein Weiterweg ("All 8 brands" / "All domains"), der data-brands-fn bzw.
+  data-citations-fn feuert -- dieselben Ereignisse wie das Zeichen oben rechts.
   DER DRITTE REITER ZEIGT DAS ECHTE OPPORTUNITIES-BRETT, nicht eine Kopie: das Dashboard leiht
   sich dessen Element, solange der Reiter vorne steht, und gibt es beim Reiter- oder
   Ansichtswechsel zurueck -- derselbe Weg wie bei Miras Eingabefeld oben. Dafuer muss
@@ -92,12 +99,14 @@
                       Klick auf dasselbe Zeichen, waehrend "Opportunities" aktiv ist. Leere
                       Nutzlast {} -- im Workflow zur Opportunities-Ansicht wechseln.
   data-needs-fn     = "bubble_fn_upwNeeds_[dynamic id]"
-                      Sagt, welcher Datenabschnitt gerade gebraucht wird. Nutzlast
-                      { "tab": "brands" | "citations" | "opportunities",
-                        "needs": "brands" | "citations_domain" | "citations_url" | "opportunities" }
-                      Feuert EINMAL beim Aufbau -- mit dem Reiter, den der Browser gespeichert hat,
-                      denn den kann Bubble nicht kennen -- und danach bei jedem Reiterwechsel sowie
-                      beim Umschalten Domains/URLs.
+                      Sagt, welche Datenabschnitte gerade gebraucht werden. Nutzlast
+                      { "mode": "metrics" | "opportunities",
+                        "needs": [ "brands" | "citations_domain" | "citations_url" | "opportunities" ] }
+                      needs ist eine LISTE: "Main Metrics" zeigt zwei Listen nebeneinander und
+                      braucht darum beide Datensaetze zugleich.
+                      Feuert EINMAL beim Aufbau -- mit dem Bereich, den der Browser gespeichert hat,
+                      denn den kann Bubble nicht kennen -- und danach bei jedem Bereichswechsel
+                      sowie beim Umschalten Domains/URLs.
                       Im Workflow: nachsehen, ob dieser Abschnitt schon geladen wurde; wenn nicht,
                       ihn nachladen und an seinen Setter geben. Ist er schon da, nichts tun -- das
                       Ereignis kommt bei jedem Wechsel, auch beim Zurueckwechseln.

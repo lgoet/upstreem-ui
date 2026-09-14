@@ -215,13 +215,17 @@
        eigen (instanceId haengt dran, dasselbe Muster wie responses-table.js' rhKey/urls-table.js
        usw.). Kein Team-Bezug -- welche Tabelle man zuletzt offen hatte, ist eine Geraetevorliebe,
        keine Teamdatensache (dieselbe Begruendung wie bei core.js' getDashboardMode). */
-    var TABS = { brands: 1, citations: 1, opportunities: 1 };
-    function tabKey(){ return "upw_table__" + instanceId; }
-    function readTab(){
-      try { var v = window.localStorage.getItem(tabKey()); return TABS[v] ? v : "brands"; }
-      catch(e){ return "brands"; }
+    /* Zwei Bereiche statt drei Reitern (14.09.): "Main Metrics" zeigt die beiden Listen,
+       "Opportunities" das geliehene Brett. Der alte Schluessel upw_table__ ist damit ueberholt --
+       ein gespeichertes "brands"/"citations" faellt hier auf "metrics", und genau dahin gehoerte
+       es auch: beide Listen stehen jetzt nebeneinander. */
+    var MODI = { metrics: 1, opportunities: 1 };
+    function modeKey(){ return "upw_mode__" + instanceId; }
+    function readMode(){
+      try { var v = window.localStorage.getItem(modeKey()); return MODI[v] ? v : "metrics"; }
+      catch(e){ return "metrics"; }
     }
-    function writeTab(v){ try { window.localStorage.setItem(tabKey(), v); } catch(e){} }
+    function writeMode(v){ try { window.localStorage.setItem(modeKey(), v); } catch(e){} }
     function cmodeKey(){ return "upw_cmode__" + instanceId; }
     function readCmode(){
       try { return window.localStorage.getItem(cmodeKey()) === "url" ? "url" : "domain"; }
@@ -247,7 +251,7 @@
       totalCountUrl: demo ? DEMO.totalCountUrl : null,
       chips: null,
       cmode: readCmode(),
-      activeTable: readTab(),
+      mode: readMode(),
       loading: false,
       fehler: {}
     };
@@ -297,42 +301,39 @@
               '<div class="upw-chatlist" data-upw-chatlist></div>' +
             '</section>' +
           '</div>' +
-          /* ---- Die eine Tabelle, umschaltbar (12.09. umgebaut) ----
-             "Wir streichen, dass 2 nebeneinander dargestellt werden. Nur eine Tabelle auf full
-             width." Ein Umschalter oben links waehlt Competitive field (Standard) oder Trending
-             Citations; nur die aktive Tabelle steht im DOM sichtbar (is-off an der anderen).
-             Rechts, in dieser Reihenfolge: die Anzahl+Zeitraum-Zeile, der Domains/URL-Umschalter
-             (nur im Citations-Modus da) und ganz aussen ein Knopf, der -- je nach aktiver Tabelle
-             -- die Brands- oder die Citations-Ansicht in Bubble oeffnet. */
-          '<section class="upw-tcard">' +
-            '<div class="up-head upw-head">' +
-              /* is-lg ist die GROSSE Form des Umschalters aus core (32px hoch, 16px Polster je
-                 Seite) -- genau die war gemeint ("exakt den grossen core switcher, nicht
-                 nachbauen"), und sie steht dort schon fuer die Filter-Dropdowns und die
-                 Granularitaet. Keine eigene Zeile Geometrie hier. */
-              '<div class="up-seg is-lg upw-tabseg" role="tablist" aria-label="Table" data-upw-tabseg>' +
-                '<button type="button" class="up-seg-btn" role="tab" data-upw-tab="brands" data-i18n="Competitive field">' + esc(t("Competitive field")) + '</button>' +
-                '<button type="button" class="up-seg-btn" role="tab" data-upw-tab="citations" data-i18n="Trending Citations">' + esc(t("Trending Citations")) + '</button>' +
-                '<button type="button" class="up-seg-btn" role="tab" data-upw-tab="opportunities" data-i18n="Opportunities">' + esc(t("Opportunities")) + '</button>' +
-              '</div>' +
-              '<div class="up-head-tools">' +
-                '<span class="upw-tinfo" data-upw-tinfo></span>' +
+          /* ---- ZWEI SCHMALE LISTEN STATT EINER GROSSEN TABELLE (14.09. umgebaut) ----
+             "Wir streichen die Tabelle unten." An ihre Stelle treten zwei Bereiche im selben
+             Zuschnitt wie Overview und Recent chats darueber: Ueberschrift, Trennlinie, Inhalt --
+             und der Inhalt ist eine schlichte Liste ohne Raster, nicht der Tabellenbaukasten.
+             Der Reiter-Umschalter von gestern ist weg; an seiner Stelle steht ein leiser
+             Wortumschalter zwischen den zwei Listen und dem Opportunities-Brett. */
+          '<div class="upw-modeseg" role="tablist" aria-label="Section" data-upw-modeseg>' +
+            '<button type="button" class="upw-modebtn" role="tab" data-upw-mode="metrics" data-i18n="Main Metrics">' + esc(t("Main Metrics")) + '</button>' +
+            '<button type="button" class="upw-modebtn" role="tab" data-upw-mode="opportunities" data-i18n="Opportunities">' + esc(t("Opportunities")) + '</button>' +
+            '<span class="upw-modetools"><span class="upw-uotools" data-upw-uotools></span>' +
+              '<button type="button" class="up-iconbtn" data-upw-open>' + UC.icon("arrowUpRight", 2) + '</button></span>' +
+          '</div>' +
+          '<div class="upw-metrics" data-upw-metrics>' +
+            '<section class="upw-sec upw-metric-card">' +
+              '<div class="upw-sec-head"><span class="upw-sec-h up-blockhead" data-i18n="Competitive field">' + esc(t("Competitive field")) + '</span></div>' +
+              '<div class="upw-list" data-upw-brands></div>' +
+              '<button type="button" class="upw-all" data-upw-allbrands><span data-upw-allbrands-lbl></span>' + UC.icon("chevronRight", 2) + '</button>' +
+            '</section>' +
+            '<section class="upw-sec upw-metric-card">' +
+              '<div class="upw-sec-head"><span class="upw-sec-h up-blockhead" data-i18n="Trending Citations">' + esc(t("Trending Citations")) + '</span>' +
+                /* 24px statt der 26 aus core (angefordert): Hoehe UND Knopfhoehe zusammen, sonst
+                   sprengt der Knopf die Pille -- CLAUDE.md 1. Die CSS steht bei .upw-cmode. */
                 '<div class="up-seg upw-cmode" role="tablist" aria-label="Citations" data-upw-cmodewrap>' +
                   '<button type="button" class="up-seg-btn" role="tab" data-upw-cmode="domain" data-i18n="Domains">' + esc(t("Domains")) + '</button>' +
                   '<button type="button" class="up-seg-btn" role="tab" data-upw-cmode="url" data-i18n="URLs">' + esc(t("URLs")) + '</button>' +
-                '</div>' +
-                /* Der Platz, in den die Werkzeugleiste des GELIEHENEN Bretts einzieht (Sortierer,
-                   Suche, Board/List, Brett-Einstellungen) -- sie kommt aus opportunities.js und
-                   gehoert dort auch hin, siehe opportunitiesLauncherAttach. */
-                '<span class="upw-uotools" data-upw-uotools></span>' +
-                '<button type="button" class="up-iconbtn" data-upw-open>' + UC.icon("arrowUpRight", 2) + '</button>' +
-              '</div>' +
-            '</div>' +
-            '<div class="up-box" data-upw-tablebox><div class="up-table upw-table upw-t-brands" data-upw-brands></div>' +
-              '<div class="up-table upw-table upw-t-cites" data-upw-cites></div></div>' +
-            /* Der Platz des geliehenen Bretts. Bis es da ist (oder wenn es auf dieser Seite gar
-               nicht eingebaut ist), steht hier der Hinweis darunter -- kein leeres Nichts. */
-            '<div class="upw-board is-off" data-upw-board></div>' +
+                '</div></div>' +
+              '<div class="upw-list" data-upw-cites></div>' +
+              '<button type="button" class="upw-all" data-upw-allcites><span data-upw-allcites-lbl></span>' + UC.icon("chevronRight", 2) + '</button>' +
+            '</section>' +
+          '</div>' +
+          /* Der Platz des geliehenen Bretts. Bis es da ist (oder wenn es auf dieser Seite gar
+             nicht eingebaut ist), bleibt er leer. */
+          '<div class="upw-board is-off" data-upw-board></div>' +
           '</section>' +
         '</div>' +
       '</div>';
@@ -343,13 +344,16 @@
     var elKpis = root.querySelector("[data-upw-kpis]");
     var elBrands = root.querySelector("[data-upw-brands]");
     var elCites = root.querySelector("[data-upw-cites]");
-    var elTabseg = root.querySelector("[data-upw-tabseg]");
-    var elTinfo = root.querySelector("[data-upw-tinfo]");
+    var elModeseg = root.querySelector("[data-upw-modeseg]");
     var elCmodeWrap = root.querySelector("[data-upw-cmodewrap]");
     var elOpenBtn = root.querySelector("[data-upw-open]");
-    var elTableBox = root.querySelector("[data-upw-tablebox]");
+    var elMetrics = root.querySelector("[data-upw-metrics]");
     var elBoard = root.querySelector("[data-upw-board]");
     var elUoTools = root.querySelector("[data-upw-uotools]");
+    var elAllBrands = root.querySelector("[data-upw-allbrands]");
+    var elAllBrandsLbl = root.querySelector("[data-upw-allbrands-lbl]");
+    var elAllCites = root.querySelector("[data-upw-allcites]");
+    var elAllCitesLbl = root.querySelector("[data-upw-allcites-lbl]");
 
     /* ---------- Chips ---------- */
     function staerksterWettbewerber(){
@@ -453,12 +457,12 @@
       /* Das Brett geht von sich aus nach Hause, sobald eine andere Ansicht dran ist (sein eigener
          onViewChange in opportunities.js) -- hier bleibt nur, es beim Zurueckkommen in DIESE
          Ansicht wieder zu holen, falls sein Reiter vorne steht. */
-      if (String(name) === VIEW && state.activeTable === "opportunities") brettPruefen();
+      if (String(name) === VIEW && state.mode === "opportunities") brettPruefen();
     });
     if (UC.onDashboardMode) UC.onDashboardMode(function(mode){
       if (mode !== "power"){ zurueckgeben(); brettZurueckgeben(); }
       pruefen();
-      if (mode === "power" && state.activeTable === "opportunities") brettPruefen();
+      if (mode === "power" && state.mode === "opportunities") brettPruefen();
     });
     window.addEventListener("askmira:bereit", pruefen);
     function zuMira(o){
@@ -580,209 +584,100 @@
        Die Zeile von brands-overview (activeRowHtml), ohne Suche, ohne Aktionen, ohne Spalten-
        menue: Index, Logo und Name, Sichtbarkeit mit Trend, Rang, Sentiment. Die Felder heissen
        wie dort, also kann derselbe RPC beide fuellen. */
-    var HASH = UC.HASH_ICON ? UC.HASH_ICON.replace("<svg ", '<svg class="up-hash" ') : "#";
-    /* Mit dem Anfangsbuchstaben als Rueckfall (.up-logo-ltr) -- bei einer Marke ist er eine
-       Aussage, und laedt das Bild nicht, nimmt der Favicon-Zuhoerer in core has-img ab und der
-       Buchstabe steht da. */
+    /* ===== DIE ZWEI LISTEN (14.09. neu) =======================================================
+       Keine Tabelle mehr, kein Raster, keine Trennlinien zwischen den Spalten: links Zeichen und
+       Name, rechts der Wert mit seinem Trend. Die Bauteile sind die von core (.up-logo-box,
+       .up-num, UC.trendChip) -- neu ist nur die Zeile, die sie traegt.
+       Rang und Sentiment sind weg (angefordert): fuer den Blick aufs Dashboard zaehlt, wer wie
+       sichtbar ist; alles andere steht eine Ansicht weiter. */
     function logo(url, name){
       var ltr = '<span class="up-logo-ltr">' + esc(String(name || "?").trim().charAt(0) || "?") + '</span>';
       return url ? '<span class="up-logo-box has-img"><img src="' + esc(url) + '" alt="" referrerpolicy="no-referrer"/>' + ltr + '</span>'
                  : '<span class="up-logo-box">' + ltr + '</span>';
     }
-    /* upw-th-rank/upw-th-sent markieren die zwei Spalten, die auf schmalem Platz verschwinden --
-       Sentiment zuerst, dann Rank, dieselbe Reihenfolge und derselbe Griff (Klasse an Kopf UND
-       Zelle) wie visibility-chart.js/.css (.vt-hide-sentiment/.vt-hide-rank). Sichtbar bleibt
-       immer der Name: die Namensspalte traegt einen Mindestwert (minmax(120px,...), siehe CSS),
-       genau wie dort.
-       DIE SCHWELLEN sind die EIGENE Breite dieser Tabelle, nicht die der Seite -- die Karte kann
-       neben ihrer Schwester stehen (breit) oder allein in einer Spalte (schmal, Telefon), und nur
-       das zaehlt. 460px: darunter reicht der Platz nicht mehr fuer alle fuenf Spalten
-       (40+120+130+66+72 = 428px plus Zellpolster). 380px: darunter reicht er nicht einmal mehr
-       ohne Sentiment (40+120+130+66 = 356px plus Polster). Gemessen und bei Bedarf nachgezogen
-       in _h_upw.html. */
-    /* DER TREND FAELLT WEG, SOBALD ER NICHT MEHR IN SEINE ZELLE PASST -- wortgleich uebernommen
-       aus visibility-chart.js (trendFitJetzt), inklusive der zwei Lehren, die dort im Kommentar
-       stehen: erstens muss man die Trends zum Messen erst einblenden, sonst misst der Lauf das
-       Ergebnis des vorigen und die Entscheidung kippt nie zurueck; zweitens wird SPALTENWEISE
-       entschieden und nicht zeilenweise, sonst staenden in derselben Spalte mal Trends und mal
-       keine, was sich als Fehler liest. 1px Toleranz gegen die Rundung der Prozentspuren.
-       GEMESSEN, warum es das hier ueberhaupt braucht: bei 320px Fensterbreite ist die
-       Visibility-Spur 91px breit, ihr Inhalt ("5.2%" plus Trend-Chip) braucht 119px. */
-    var TREND_SPALTEN = ["vis", "rank", "sent"];
-    function trendPasst(tabelle, spalten){
-      if (!tabelle) return;
-      spalten.forEach(function(k){ tabelle.classList.remove("upw-hide-trend-" + k); });
-      var eng = {};
-      spalten.forEach(function(k){
-        var zellen = tabelle.querySelectorAll(".upw-td-" + k);
-        for (var i = 0; i < zellen.length; i++){
-          var c = zellen[i];
-          if (!c.querySelector(".up-trend")) continue;
-          if (getComputedStyle(c).display === "none") continue;
-          if (c.scrollWidth > c.clientWidth + 1){ eng[k] = true; break; }
-        }
-      });
-      spalten.forEach(function(k){ tabelle.classList.toggle("upw-hide-trend-" + k, !!eng[k]); });
+    function listenZeile(typ, id, idx, zeichen, name, titel, wertHtml, eigen){
+      return '<div class="upw-li' + (eigen ? " is-own" : "") + '" data-upw-row="' + typ + '" data-id="' + esc(String(id == null ? "" : id)) + '">' +
+        '<span class="upw-li-idx">' + esc(String(idx)) + '</span>' +
+        zeichen +
+        '<span class="upw-li-name" title="' + esc(titel || name) + '">' + esc(name) + '</span>' +
+        '<span class="upw-li-val">' + wertHtml + '</span></div>';
     }
-    function brandsResponsive(){
-      var w = elBrands.clientWidth;
-      if (!w) return;
-      elBrands.classList.toggle("upw-hide-sent", w < 560);
-      elBrands.classList.toggle("upw-hide-rank", w < 440);
-      trendPasst(elBrands, TREND_SPALTEN);
+    function listenSkelett(n){
+      var out = "";
+      for (var i = 0; i < n; i++){
+        out += '<div class="upw-li is-sk"><span class="upw-sk upw-sk-idx"></span>' +
+          '<span class="upw-sk upw-sk-ava"></span>' +
+          '<span class="upw-sk upw-sk-title" style="width:' + [46, 34, 40, 30, 38][i % 5] + '%"></span>' +
+          '<span class="upw-sk upw-sk-val"></span></div>';
+      }
+      return out;
     }
-    /* Das Info-Zeichen der Spaltenkoepfe: .up-th-info aus core, das core selbst ueber
-       ".up-th:hover .up-th-info" einblendet -- meine Koepfe SIND .up-th, also greift das ohne
-       eigene Regel. Den Text holt UC.explainCopy aus dem einen Katalog in core, wortgleich zu
-       brands-overview und visibility-chart: dieselbe Spalte soll nicht in drei Tabellen drei
-       verschiedene Erklaerungen haben. */
-    function infoIcon(key){
-      return '<span class="up-th-info" data-explain="' + key + '" role="button" tabindex="0">' + UC.icon("info", 2) + '</span>';
-    }
-    var ROW_GOTO = UC.GOTO_SVG ? '<span class="up-row-goto">' + UC.GOTO_SVG + '</span>' : "";
-    function brandsKopf(){
-      return '<div class="up-thead">' +
-        '<div class="up-th up-th-idx">' + (UC.HASH_ICON || "#") + '</div>' +
-        '<div class="up-th"><span class="up-th-txt">' + esc(t("Brand")) + '</span></div>' +
-        '<div class="up-th"><span class="up-th-txt">' + esc(t("Visibility")) + '</span>' + infoIcon("visibility") + '</div>' +
-        '<div class="up-th upw-th-rank"><span class="up-th-txt">' + esc(t("Ranking")) + '</span>' + infoIcon("ranking") + '</div>' +
-        '<div class="up-th upw-th-sent"><span class="up-th-txt">' + esc(t("Sentiment")) + '</span>' + infoIcon("sentiment") + '</div></div>';
-    }
+    /* FUENF ZEILEN -- und die eigene Marke IMMER dabei (14.09. angefordert): steht sie jenseits
+       von Platz fuenf, haengt sie unten an, mit ihrer ECHTEN Position in der Spalte davor. Sonst
+       zeigt ein Dashboard fuenf fremde Marken und verschweigt die eigene, was die eine Frage
+       unbeantwortet laesst, wegen der man hinsieht. */
+    var LISTE_MAX = 5;
+    function eigenesRoh(r){ return r && (r.is_own === true || String(r.is_own) === "yes"); }
     function renderBrands(){
-      var kopf = brandsKopf();
-      if (state.fehler.brands){ elBrands.innerHTML = kopf + (UC.leseFehlerHtml ? UC.leseFehlerHtml("brands") : ""); return; }
-      if (state.loading || !state.brands){
-        elBrands.innerHTML = kopf + '<div class="up-tbody">' + UC.skeletonRows({ count: 7, rowClass: "up-row", cellClass: "up-td",
-          cols: [{ w: 12, cls: "up-td-idx" }, { w: 90, jitter: 30, logo: true }, 60, { w: 36, cls: "upw-td-rank" }, { w: 40, cls: "upw-td-sent" }] }) + '</div>';
-        brandsResponsive();
-        return;
-      }
+      if (state.fehler.brands){ elBrands.innerHTML = UC.leseFehlerHtml ? UC.leseFehlerHtml("brands") : ""; return; }
+      if (state.loading || !state.brands){ elBrands.innerHTML = listenSkelett(LISTE_MAX); return; }
       var rows = state.brands;
-      if (!rows.length){ elBrands.innerHTML = kopf + '<div class="up-empty-mini" data-i18n="No data">' + esc(t("No data")) + '</div>'; brandsResponsive(); return; }
-      elBrands.innerHTML = kopf + '<div class="up-tbody">' + rows.map(function(r, i){
-        var pos = num(r.position) != null ? num(r.position) : i + 1;
-        var v = num(r.visibility_pct), rk = num(r.avg_rank), s = num(r.sentiment);
-        var vis = '<span class="up-num' + (v == null ? " is-empty" : "") + '">' + fmtPct1(v) + '</span>' +
-          UC.trendChip(r.visibility_delta_pct, { decimals: true, suffix: "%" });
-        /* Trend jetzt AUCH an Rang und Sentiment (12.09. angefordert), beide genau wie in der
-           maximierten Tabelle des Visibility Charts: am Rang mit inverted, weil dort WENIGER
-           besser ist, am Sentiment ohne -- und beide ohne Prozentzeichen, denn keiner der zwei
-           Werte ist ein Prozentwert (CLAUDE.md 2b). */
-        var rank = '<span class="up-rank-group">' + HASH + '<span class="up-num' + (rk == null ? " is-empty" : "") + '">' + fmtR(rk) + '</span></span>' +
-          UC.trendChip(r.avg_rank_delta, { decimals: true, inverted: true });
-        var sent = '<span class="up-sent"><span class="up-sent-dot" style="background:' + (s == null ? "#9E9E9E" : UC.sentColor(s)) + '"></span>' +
-          '<span class="up-sent-val' + (s == null ? " is-empty" : "") + '">' + (s == null ? "–" : Math.round(s)) + '</span></span>' +
-          UC.trendChip(r.sentiment_delta, { decimals: true });
-        return '<div class="up-row' + (r.is_own === true || String(r.is_own) === "yes" ? " is-own" : "") + '" data-upw-row="brand" data-id="' + esc(String(r.company_id == null ? "" : r.company_id)) + '">' +
-          '<div class="up-td up-td-idx">' + fmtI(pos) + '</div>' +
-          '<div class="up-td upw-td-name">' + logo(r.logo_url || r.favicon_url, r.name) + '<span class="upw-name" title="' + esc(r.name == null ? "" : r.name) + '">' + esc(r.name == null ? "" : r.name) + '</span>' + ROW_GOTO + '</div>' +
-          '<div class="up-td upw-td-vis">' + vis + '</div>' +
-          '<div class="up-td upw-td-rank">' + rank + '</div>' +
-          '<div class="up-td upw-td-sent">' + sent + '</div></div>';
-      }).join("") + '</div>';
-      brandsResponsive();
-    }
-
-    /* ---------- Trending Citations ----------
-       Die Zeile von topcitations-dashboard, ohne Index und "Used": Domain bzw. URL mit Favicon,
-       Typ, Anteil, Veraenderung. Der Typ-Chip ist .up-tag aus core in den Zitationstyp-Farben
-       (wie domains-table), bei URLs in den URL-Typ-Farben mit Punkt (wie topcitations). */
-    function typTag(roh, url){
-      if (roh == null || roh === "") return "";
-      var farbe, label = UC.typLabel ? UC.typLabel(roh, url ? "url" : "citation") : String(roh), punkt = false;
-      if (url){
-        var ut = (UC.URL_TYPE || {})[roh];
-        farbe = ut ? (dunkel() ? ut.cDark : ut.c) : (dunkel() ? UC.OTHER_DARK : UC.OTHER_LIGHT);
-        punkt = true;
-      } else {
-        farbe = (UC.CITE_COLOR || {})[UC.citeName ? UC.citeName(roh) : roh] || UC.OTHER_LIGHT;
+      if (!rows.length){ elBrands.innerHTML = '<div class="upw-li-empty" data-i18n="No data">' + esc(t("No data")) + '</div>'; return; }
+      var pos = function(r, i){ return num(r.position) != null ? num(r.position) : i + 1; };
+      var zeige = rows.slice(0, LISTE_MAX);
+      var eigenIdx = -1;
+      rows.forEach(function(r, i){ if (eigenIdx < 0 && eigenesRoh(r)) eigenIdx = i; });
+      var angehaengt = eigenIdx >= LISTE_MAX ? rows[eigenIdx] : null;
+      var html = zeige.map(function(r, i){
+        var v = num(r.visibility_pct);
+        return listenZeile("brand", r.company_id, fmtI(pos(r, i)),
+          logo(r.logo_url || r.favicon_url, r.name),
+          r.name == null ? "" : String(r.name), null,
+          '<span class="up-num' + (v == null ? " is-empty" : "") + '">' + fmtPct1(v) + '</span>' +
+            UC.trendChip(r.visibility_delta_pct, { decimals: true, suffix: "%" }),
+          eigenesRoh(r));
+      }).join("");
+      if (angehaengt){
+        var av = num(angehaengt.visibility_pct);
+        html += listenZeile("brand", angehaengt.company_id, fmtI(pos(angehaengt, eigenIdx)),
+          logo(angehaengt.logo_url || angehaengt.favicon_url, angehaengt.name),
+          angehaengt.name == null ? "" : String(angehaengt.name), null,
+          '<span class="up-num' + (av == null ? " is-empty" : "") + '">' + fmtPct1(av) + '</span>' +
+            UC.trendChip(angehaengt.visibility_delta_pct, { decimals: true, suffix: "%" }),
+          true);
       }
-      var bg = dunkel() ? UC.CHIP_BG_DARK : (UC.tint ? UC.tint(farbe, 0.12) : "transparent");
-      return '<span class="up-tag" style="color:' + farbe + ';background:' + bg + '">' +
-        (punkt ? '<span class="up-tag-dot" style="background:' + farbe + '"></span>' : '') +
-        '<span class="up-tag-lbl">' + esc(label) + '</span></span>';
-    }
-    /* KEINE eigene "Change"-Spalte mehr (12.09. angefordert: "warum ist Change ne eigene
-       Spalte, das kommt in Share rein") -- der Trend steht jetzt IN der Share-Zelle, genau wie
-       bei der Visibility-Spalte der Brands-Tabelle nebenan und wie ueberall sonst in der App
-       (UC.trendChip direkt hinter dem up-num). upw-th-type/upw-td-type markieren die einzige
-       Spalte, die auf schmalem Platz verschwindet -- dieselbe Reihenfolge wie in
-       topcitations-dashboard.js/.css (dort zusaetzlich "Used", das es hier nicht gibt).
-       Und jetzt MIT #-Spalte (12.09. angefordert: "immer die # columns anzeigen mit der
-       Nummerierung") -- vorher hatte nur Competitive field eine.
-       460px: darunter reicht der Platz nicht mehr fuer alle vier Spalten (40+120+148+130 = 438px
-       plus Zellpolster) -- dieselbe eigene-Breite-Messung wie brandsResponsive() oben. */
-    /* Reihenfolge des Ausblendens wie in topcitations-dashboard: erst "Used", dann "Type" --
-       "Used" ist die Zahl, die am ehesten entbehrlich ist, "Type" traegt die Farbe und damit die
-       schnellste Information der Zeile. Die Schwellen sind die EIGENE Breite dieser Tabelle. */
-    function citesResponsive(){
-      var w = elCites.clientWidth;
-      if (!w) return;
-      elCites.classList.toggle("upw-hide-used", w < 620);
-      elCites.classList.toggle("upw-hide-type", w < 460);
-      trendPasst(elCites, ["share"]);
-    }
-    function citesKopf(url){
-      return '<div class="up-thead">' +
-        '<div class="up-th up-th-idx">' + (UC.HASH_ICON || "#") + '</div>' +
-        '<div class="up-th"><span class="up-th-txt">' + esc(t(url ? "URL" : "Domain")) + '</span></div>' +
-        '<div class="up-th upw-th-type"><span class="up-th-txt">' + esc(t("Type")) + '</span></div>' +
-        '<div class="up-th"><span class="up-th-txt">' + esc(t("Share")) + '</span>' + infoIcon("share") + '</div>' +
-        '<div class="up-th upw-th-used"><span class="up-th-txt">' + esc(t("Used")) + '</span></div></div>';
+      elBrands.innerHTML = html;
     }
     function renderCites(){
       var url = state.cmode === "url";
-      var kopf = citesKopf(url);
       var rows = url ? state.urls : state.domains;
       var fehler = url ? state.fehler.urls : state.fehler.domains;
-      if (fehler){ elCites.innerHTML = kopf + (UC.leseFehlerHtml ? UC.leseFehlerHtml("citations") : ""); citesResponsive(); return; }
-      if (state.loading || !rows){
-        elCites.innerHTML = kopf + '<div class="up-tbody">' + UC.skeletonRows({ count: 7, rowClass: "up-row", cellClass: "up-td",
-          cols: [{ w: 12, cls: "up-td-idx" }, { w: 110, jitter: 30, logo: true }, { w: 56, cls: "upw-td-type" }, 40,
-                 { w: 36, cls: "upw-td-used" }] }) + '</div>';
-        citesResponsive();
-        return;
-      }
-      if (!rows.length){ elCites.innerHTML = kopf + '<div class="up-empty-mini" data-i18n="No data">' + esc(t("No data")) + '</div>'; citesResponsive(); return; }
-      elCites.innerHTML = kopf + '<div class="up-tbody">' + rows.map(function(r, i){
+      if (fehler){ elCites.innerHTML = UC.leseFehlerHtml ? UC.leseFehlerHtml("citations") : ""; return; }
+      if (state.loading || !rows){ elCites.innerHTML = listenSkelett(LISTE_MAX); return; }
+      if (!rows.length){ elCites.innerHTML = '<div class="upw-li-empty" data-i18n="No data">' + esc(t("No data")) + '</div>'; return; }
+      elCites.innerHTML = rows.slice(0, LISTE_MAX).map(function(r, i){
         var name = url ? (r.title || r.url || "") : (r.domain || "");
         var id = url ? (r.url || r.title || "") : (r.domain || "");
         var fav = r.favicon || r.logo || "";
         var anteil = num(url ? (r.global_share_pct != null ? r.global_share_pct : r.share_pct) : r.share_pct);
-        var share = '<span class="up-num' + (anteil == null ? " is-empty" : "") + '">' + fmtPct1(anteil) + '</span>' +
-          UC.trendChip(r.share_delta_pct, { decimals: true, suffix: "%" });
-        /* "Used" wie in topcitations-dashboard: die Gesamtzahl der Nennungen, kompakt (1.8k).
-           Fehlt das Feld, bleibt die Zelle leer -- dort steht dann nichts, keine Null: niemand
-           hat gezaehlt, und "0" waere eine Behauptung. */
-        var used = num(r.used_total) != null
-          ? '<span class="up-num">' + esc(UC.fmtTotal ? UC.fmtTotal(num(r.used_total)) : fmtI(num(r.used_total))) + '</span>' : "";
-        return '<div class="up-row" data-upw-row="' + (url ? "url" : "domain") + '" data-id="' + esc(String(id)) + '">' +
-          '<div class="up-td up-td-idx">' + fmtI(i + 1) + '</div>' +
-          '<div class="up-td upw-td-name">' + (fav ? '<span class="up-logo-box up-fav has-img"><img src="' + esc(fav) + '" alt="" referrerpolicy="no-referrer"/></span>'
-                                               : '<span class="up-logo-box up-fav"></span>') +
-            '<span class="upw-name" title="' + esc(url && r.url ? r.url : name) + '">' + esc(name) + '</span>' + ROW_GOTO + '</div>' +
-          '<div class="up-td upw-td-type">' + typTag(url ? r.url_type : r.citation_type, url) + '</div>' +
-          '<div class="up-td upw-td-share">' + share + '</div>' +
-          '<div class="up-td upw-td-used">' + used + '</div></div>';
-      }).join("") + '</div>';
-      citesResponsive();
+        var zeichen = fav
+          ? '<span class="up-logo-box up-fav has-img"><img src="' + esc(fav) + '" alt="" referrerpolicy="no-referrer"/></span>'
+          : '<span class="up-logo-box up-fav"></span>';
+        return listenZeile(url ? "url" : "domain", id, fmtI(i + 1), zeichen, name,
+          url && r.url ? r.url : name,
+          '<span class="up-num' + (anteil == null ? " is-empty" : "") + '">' + fmtPct1(anteil) + '</span>' +
+            UC.trendChip(r.share_delta_pct, { decimals: true, suffix: "%" }), false);
+      }).join("");
     }
 
-    /* ---------- EINE Tabelle statt zwei nebeneinander (12.09. umgebaut) ------------------------
-       "Wir streichen, dass 2 nebeneinander dargestellt werden. Nur eine Tabelle auf full width."
-       Der Umschalter oben links waehlt, welche der beiden im DOM stehenden Tabellen sichtbar ist
-       (is-off an der anderen -- beide bleiben gerendert, ein Tabwechsel ist damit ohne neuen
-       Datenabruf sofort da). Der Domains/URL-Umschalter daneben gilt nur im Citations-Modus, das
-       Info-Zeichen rechts oeffnet je nach aktiver Tabelle die Brands- oder Citations-Ansicht in
-       Bubble (dieselben zwei Ereignisse, die bis zum 12.09. am alten Maximieren-Knopf hingen). */
     /* ---------- Das geliehene Opportunities-Brett (12.09. angefordert) ----------
        Genau derselbe Griff wie bei Mira weiter oben, und aus demselben Grund: eine zweite
        .uo-root wuerde jede window.opportunities*-Funktion der echten ueberschreiben (der
        Launcher in opportunities.js erklaert es ausfuehrlich). Das Brett wandert also her,
-       solange sein Reiter vorne steht, und geht zurueck, sobald ein anderer Reiter oder eine
+       solange sein Bereich vorne steht, und geht zurueck, sobald der andere Bereich oder eine
        andere Ansicht dran ist. Seine Werkzeugleiste zieht dabei in elUoTools ein -- deshalb
        stehen Board/List, Sortierer, Suche und die Brett-Einstellungen hier oben rechts in
-       DERSELBEN Zeile wie der Reiter-Umschalter, so wie verlangt. */
+       DERSELBEN Zeile wie der Bereichs-Umschalter, so wie verlangt. */
     function brettBereit(){
       return typeof window.opportunitiesLauncherAttach === "function";
     }
@@ -810,35 +705,35 @@
       _brettT.forEach(clearTimeout); _brettT = [];
       [0, 250, 800, 1800].forEach(function(ms){
         _brettT.push(setTimeout(function(){
-          if (state.activeTable !== "opportunities") return;
+          if (state.mode !== "opportunities") return;
           if (sichtbar()) brettAusleihen();
           root.classList.toggle("has-board", brettHier());
         }, ms));
       });
     }
     window.addEventListener("opportunities:bereit", function(){
-      if (state.activeTable === "opportunities") brettPruefen();
+      if (state.mode === "opportunities") brettPruefen();
     });
 
-    function mitPunkt(a, b){ return a && b ? (a + " · " + b) : (a || b || ""); }
-    function syncTinfo(){
-      if (!elTinfo) return;
-      var text;
-      if (state.activeTable === "citations"){
-        var n = state.cmode === "url" ? state.totalCountUrl : state.totalCountDomain;
-        var nTxt = num(n) != null ? ((UC.fmtTotal ? UC.fmtTotal(n) : fmtI(n)) + " " + t("citations")) : "";
-        text = mitPunkt(nTxt, state.citesLabel ? t(String(state.citesLabel)) : "");
-      } else {
+    /* ===== DIE FUSSZEILE UNTER JEDER LISTE (14.09.) ===========================================
+       "All 8 brands" bzw. "All Domains"/"All URLs" mit Chevron, in Drittfarbe, im Hover in
+       Primaerfarbe -- und ein Klick meldet es an Bubble. Bei den Marken steht die GESAMTZAHL
+       darin (overview.brand_count), nicht die fuenf gezeigten; bei den Zitierungen waere die
+       Gesamtzahl die der Domains bzw. URLs und stuende damit zweimal fast gleich da, darum dort
+       nur das Wort. */
+    function syncAlle(){
+      if (elAllBrandsLbl){
         var o = state.overview, bn = o ? num(o.brand_count) : null;
-        var nTxt2 = bn != null ? (fmtI(bn) + " " + t("brands")) : "";
-        text = mitPunkt(nTxt2, o && o.range_label ? t(String(o.range_label)) : "");
+        elAllBrandsLbl.textContent = bn != null
+          ? ersetze(t("All {n} brands"), { n: fmtI(bn) })
+          : t("All brands");
       }
-      elTinfo.textContent = text;
+      if (elAllCitesLbl) elAllCitesLbl.textContent = t(state.cmode === "url" ? "All URLs" : "All domains");
     }
     /* GEMELDET (12.09.): "wenn man auf Citations wechselt, muss im Switcher auch Domain
        ausgewaehlt sein". War es nicht -- is-active wurde NUR im Klickzuhoerer gesetzt, also trug
        beim ersten Anzeigen KEINER der beiden Knoepfe die Markierung, obwohl state.cmode sehr wohl
-       auf "domain" stand und die Tabelle auch Domains zeigte. Der Zustand war richtig, nur sein
+       auf "domain" stand und die Liste auch Domains zeigte. Der Zustand war richtig, nur sein
        Abbild fehlte. Jetzt schreibt eine Funktion beides, und sie laeuft auch beim Aufbau. */
     function syncCmode(){
       if (!elCmodeWrap) return;
@@ -847,61 +742,45 @@
         b.classList.toggle("is-active", on); b.setAttribute("aria-selected", on ? "true" : "false");
       });
     }
-    /* ===== WELCHE DATEN GERADE GEBRAUCHT WERDEN (14.09.) =======================================
-       Der Reiter merkt sich seine Stellung im localStorage -- ein Nutzer, der zuletzt auf
-       "Opportunities" stand, sieht diesen Reiter schon beim Laden, und Bubble kann das nicht
-       wissen. Ohne diese Meldung muesste jede Seite alles mitladen, auch was niemand ansieht.
-       Gemeldet wird darum bei JEDEM Wechsel und EINMAL beim Aufbau mit dem wiederhergestellten
-       Stand; die Nutzlast sagt, was dieser Reiter braucht. Was Bubble damit macht -- nachladen
-       oder nichts, weil es schon da ist -- entscheidet der Workflow.
-       needs ist der Abschnittsname aus der Datenspezifikation, damit Nutzlast und RPC dieselbe
-       Sprache sprechen. */
+    /* ===== WELCHE DATEN GERADE GEBRAUCHT WERDEN =================================================
+       Der Bereich merkt sich seine Wahl im localStorage -- wer zuletzt auf "Opportunities" stand,
+       sieht das Brett schon beim Laden, und Bubble kann das nicht wissen. Ohne diese Meldung
+       muesste jede Seite alles mitladen, auch was niemand ansieht.
+       Seit dem Umbau auf zwei Listen nebeneinander braucht "Main Metrics" BEIDE Datensaetze
+       gleichzeitig -- Marken und Zitierungen -- und meldet sie als Liste. */
     function datenBedarfMelden(){
-      var tab = state.activeTable;
-      var needs = tab === "opportunities" ? "opportunities"
-                : tab === "citations" ? (state.cmode === "url" ? "citations_url" : "citations_domain")
-                : "brands";
-      fire("data-needs-fn", "upwNeeds", { tab: tab, needs: needs });
+      var needs = state.mode === "opportunities"
+        ? ["opportunities"]
+        : ["brands", state.cmode === "url" ? "citations_url" : "citations_domain"];
+      fire("data-needs-fn", "upwNeeds", { mode: state.mode, needs: needs });
     }
-    function syncActiveTable(){
-      var tab = state.activeTable;
-      var citations = tab === "citations", chancen = tab === "opportunities";
+    function syncMode(){
+      var chancen = state.mode === "opportunities";
       syncCmode();
-      if (elTabseg) Array.prototype.forEach.call(elTabseg.querySelectorAll("[data-upw-tab]"), function(b){
-        var on = b.getAttribute("data-upw-tab") === tab;
+      if (elModeseg) Array.prototype.forEach.call(elModeseg.querySelectorAll("[data-upw-mode]"), function(b){
+        var on = b.getAttribute("data-upw-mode") === state.mode;
         b.classList.toggle("is-active", on); b.setAttribute("aria-selected", on ? "true" : "false");
       });
-      elBrands.classList.toggle("is-off", !(tab === "brands"));
-      elCites.classList.toggle("is-off", !citations);
-      /* Der Tabellenkasten ganz weg, wenn das Brett dran ist: es bringt seine eigene Flaeche mit
-         (die Spalten des Kanbans), ein leerer Rahmen darueber waere eine Linie ohne Inhalt. */
-      if (elTableBox) elTableBox.classList.toggle("is-off", chancen);
+      if (elMetrics) elMetrics.classList.toggle("is-off", chancen);
       if (elBoard) elBoard.classList.toggle("is-off", !chancen);
-      if (elCmodeWrap) elCmodeWrap.classList.toggle("is-off", !citations);
-      if (elTinfo) elTinfo.classList.toggle("is-off", chancen);
       if (elOpenBtn){
-        var tip = t(chancen ? "Open opportunities" : citations ? "Open citations" : "Open brands");
+        var tip = t(chancen ? "Open opportunities" : "Open brands");
         elOpenBtn.setAttribute("data-tip", tip);
         elOpenBtn.setAttribute("aria-label", tip);
       }
-      /* Das Brett wird nur geliehen, solange sein Reiter vorne steht -- sonst haelt das Dashboard
+      /* Das Brett wird nur geliehen, solange sein Bereich vorne steht -- sonst haelt das Dashboard
          es fest, waehrend nebenan die Opportunities-Ansicht leer dasteht. */
       if (chancen) brettPruefen(); else brettZurueckgeben();
-      /* Die gerade sichtbar gewordene Tabelle stand womoeglich als is-off bei 0 Breite und hat
-         darum ihre Spalten-Ausblendung nie nachgezogen (clientWidth eines display:none-Elements
-         ist 0, brandsResponsive/citesResponsive brechen dort sofort ab) -- hier nachgeholt. */
-      if (citations) citesResponsive(); else if (!chancen) brandsResponsive();
-      syncTinfo();
     }
-    if (elTabseg) elTabseg.addEventListener("click", function(e){
-      var b = e.target.closest("[data-upw-tab]");
+    if (elModeseg) elModeseg.addEventListener("click", function(e){
+      var b = e.target.closest("[data-upw-mode]");
       if (!b) return;
-      var roh = b.getAttribute("data-upw-tab");
-      var v = TABS[roh] ? roh : "brands";
-      if (v === state.activeTable) return;
-      state.activeTable = v;
-      writeTab(v);
-      syncActiveTable();
+      var roh = b.getAttribute("data-upw-mode");
+      var v = MODI[roh] ? roh : "metrics";
+      if (v === state.mode) return;
+      state.mode = v;
+      writeMode(v);
+      syncMode();
       datenBedarfMelden();
     });
     if (elCmodeWrap) elCmodeWrap.addEventListener("click", function(e){
@@ -911,13 +790,21 @@
       writeCmode(state.cmode);
       syncCmode();
       renderCites();
-      syncTinfo();
+      syncAlle();
       datenBedarfMelden();
     });
     if (elOpenBtn) elOpenBtn.addEventListener("click", function(){
-      if (state.activeTable === "opportunities") fire("data-opportunities-fn", "upwOpportunities", {});
-      else if (state.activeTable === "citations") fire("data-citations-fn", "upwCitations", { mode: state.cmode === "url" ? "urls" : "domains" });
+      if (state.mode === "opportunities") fire("data-opportunities-fn", "upwOpportunities", {});
       else fire("data-brands-fn", "upwBrands", {});
+    });
+    /* Die zwei Fusszeilen melden sich einzeln -- "alle Marken" und "alle Zitierungen" fuehren auf
+       verschiedene Ansichten. Die Citations-Meldung traegt mit, welche der beiden Listen offen
+       war, damit die Zielansicht denselben Modus zeigt. */
+    if (elAllBrands) elAllBrands.addEventListener("click", function(){
+      fire("data-brands-fn", "upwBrands", {});
+    });
+    if (elAllCites) elAllCites.addEventListener("click", function(){
+      fire("data-citations-fn", "upwCitations", { mode: state.cmode === "url" ? "urls" : "domains" });
     });
     root.addEventListener("click", function(e){
       var row = e.target.closest("[data-upw-row]");
@@ -926,7 +813,7 @@
       }
     });
 
-    function renderAll(){ renderChips(); renderChats(); renderKpis(); renderBrands(); renderCites(); syncTinfo(); }
+    function renderAll(){ renderChips(); renderChats(); renderKpis(); renderBrands(); renderCites(); syncAlle(); }
 
     /* Sprache: Beschriftungen und Chips sind beim Zeichnen geschrieben -- also neu zeichnen. Nur
        bei der Sprache, nicht bei jeder Einstellung (siehe setDashboardMode in core). */
@@ -942,62 +829,16 @@
        visibility-chart, und derselbe Text aus UC.explainCopy. {scope}/{trend}/{subject} sind die
        Stellen, die je Tabelle wirklich verschieden sind: hier ist der Zeitraum der der Kopfzeile,
        und den Trend zeigt jede der drei Wertspalten. */
-    if (UC.makeExplain && UC.explainCopy){
-      var TREND_SATZ = ", plus the change against the previous period";
-      /* Die kleine Vorschau ueber dem Text -- WORTGLEICH die aus brands-overview.js, samt deren
-         Klassen aus core (.up-explain-row/.up-explain-up). Sie hat hier zuerst GEFEHLT, und das
-         war der ganze Unterschied: die Karte zeigte nur Ueberschrift und Satz, waehrend sie in
-         jeder anderen Tabelle der App mit einem Beispiel der Zelle aufmacht. brands-overview und
-         nicht visibility-chart als Quelle, weil dort die core-Klassen stehen und nicht eigene
-         (vot-explain-*) -- damit braucht diese Datei keine einzige eigene Regel dafuer. */
-      function explainVisual(kind){
-        /* Das ROHE Zeichen, nicht das mit .up-hash aus der Rang-Zelle: die Karte liegt am <body>
-           und wird von .up-explain-row svg bemasst, eine mitgeschleppte Zellklasse brauchte dort
-           niemand. */
-        if (kind === "ranking") return '<span class="up-explain-row">' + (UC.HASH_ICON || "#") + '<span>2.3</span></span>';
-        if (kind === "sentiment"){
-          return '<span class="up-explain-row">78' +
-            '<span class="up-explain-up">' + UC.TREND_UP + '</span><span class="up-explain-up">4</span></span>';
-        }
-        return '<span class="up-explain-row">18.4%' +
-               '<span class="up-explain-up">' + UC.TREND_UP + '</span>' +
-               '<span class="up-explain-up">2.9%</span></span>';
-      }
-      UC.makeExplain({
-        root: root, triggerSel: ".up-th-info", getIsDark: dunkel,
-        html: function(kind){
-          var info;
-          if (kind === "visibility") info = UC.explainCopy("visibility", { scope: " for the tracked prompts", trend: TREND_SATZ });
-          else if (kind === "ranking"){ var r = UC.explainCopy("rank", { scope: "", trend: TREND_SATZ }); info = r ? { h: "Ranking", t: r.t } : null; }
-          else if (kind === "sentiment") info = UC.explainCopy("sentiment", { scope: "", trend: TREND_SATZ });
-          else if (kind === "share") info = UC.explainCopy("share", { subject: state.cmode === "url" ? "URL" : "domain" });
-          if (!info) return "";
-          return '<div class="up-explain-vis">' + explainVisual(kind) + '</div>' +
-                 '<div class="up-explain-h">' + esc(info.h) + '</div>' +
-                 '<div class="up-explain-t">' + esc(info.t) + '</div>';
-        }
-      });
-    }
-    /* Die zwei Tabellen messen sich SELBST nach: eine Aenderung ihrer EIGENEN Breite -- Fenster-
-       resize oder is-narrow-Umschalten -- loest brandsResponsive()/citesResponsive() neu aus,
-       ohne dass irgendwer explizit daran denken muss (syncActiveTable() holt das zusaetzlich
-       nach, wenn ein Tabwechsel eine Tabelle von 0 Breite -- is-off -- auf sichtbar bringt, denn
-       ein ResizeObserver an einem display:none-Element misst dort nichts). EINMAL angemeldet,
-       nicht bei jedem render*() -- sonst haeufen sich Beobachter bei jedem Neuzeichnen an.
-       UC.beobachteGroesse ist der geteilte, gedrosselte ResizeObserver aus core (siehe
-       topcitations-dashboard.js fuer denselben Griff). */
-    if (UC.beobachteGroesse){
-      UC.beobachteGroesse(elBrands, brandsResponsive);
-      UC.beobachteGroesse(elCites, citesResponsive);
-    }
-
-    /* Der persistierte Zustand (Tabelle, Domains/URL) muss auf das statische Anfangsmarkup
+    /* Der Erklaerkasten an den Spaltenkoepfen ist mit den Spaltenkoepfen weggefallen (14.09.):
+       die zwei Listen haben keine Koepfe mehr, nur noch Ueberschriften. UC.makeExplain wird hier
+       also nicht mehr gerufen -- die Texte in core bleiben, sie gehoeren den grossen Tabellen. */
+    /* Der persistierte Zustand (Bereich, Domains/URL) muss auf das statische Anfangsmarkup
        nachgezogen werden -- es traegt noch keine is-active/is-off-Klassen. */
-    syncActiveTable();
+    syncMode();
     renderAll();
     pruefen();
-    /* Nach dem ersten Zeichnen und nicht davor: der Bedarf haengt am wiederhergestellten Reiter,
-       und der steht erst nach syncActiveTable() fest. */
+    /* Nach dem ersten Zeichnen und nicht davor: der Bedarf haengt am wiederhergestellten Bereich,
+       und der steht erst nach syncMode() fest. */
     datenBedarfMelden();
 
     return {

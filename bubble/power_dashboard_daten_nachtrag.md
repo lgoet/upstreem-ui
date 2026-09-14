@@ -79,23 +79,32 @@ deshalb **sagt die Oberfläche es selbst**, über ein Ereignis:
 
 ```
 data-needs-fn = "bubble_fn_upwNeeds_[dynamic id]"
-Nutzlast: { "tab": "brands" | "citations" | "opportunities",
-            "needs": "brands" | "citations_domain" | "citations_url" | "opportunities" }
+Nutzlast: { "mode":  "metrics" | "opportunities",
+            "needs": [ "brands" | "citations_domain" | "citations_url" | "opportunities", … ] }
+```
+
+`needs` ist eine **Liste**, weil "Main Metrics" zwei Listen gleichzeitig zeigt und darum beide
+Datensätze braucht:
+
+```json
+{ "mode": "metrics",       "needs": ["brands", "citations_domain"] }
+{ "mode": "metrics",       "needs": ["brands", "citations_url"] }
+{ "mode": "opportunities", "needs": ["opportunities"] }
 ```
 
 Es feuert:
 
-* **einmal beim Aufbau**, mit dem wiederhergestellten Reiter — wer zuletzt auf "Opportunities"
-  stand, sieht diesen Reiter sofort beim Laden, und das Ereignis sagt es;
-* **bei jedem Reiterwechsel**;
+* **einmal beim Aufbau**, mit dem wiederhergestellten Bereich — wer zuletzt auf "Opportunities"
+  stand, sieht das Brett sofort beim Laden, und das Ereignis sagt es;
+* **bei jedem Bereichswechsel**;
 * **beim Umschalten Domains ↔ URLs**.
 
-Der Workflow darauf: `needs` lesen, prüfen ob dieser Abschnitt schon geladen wurde, und wenn
-nicht, den RPC mit genau diesem einen Abschnitt nachladen und an den passenden Setter geben.
-Ist er schon da, nichts tun — das Ereignis kommt bei jedem Wechsel, auch beim Zurückwechseln.
+Der Workflow darauf: über `needs` gehen, je Eintrag prüfen ob der Abschnitt schon geladen wurde,
+und nur die fehlenden nachladen. Ist alles da, nichts tun — das Ereignis kommt bei jedem Wechsel,
+auch beim Zurückwechseln.
 
-`brands` steht mit in der Liste, obwohl es ohnehin immer geladen wird: so muss der Workflow keine
-Sonderfälle kennen, sondern nur "habe ich das schon?".
+`brands` steht immer mit in der Liste, obwohl es ohnehin beim Seitenladen kommt: so muss der
+Workflow keine Sonderfälle kennen, sondern nur "habe ich das schon?".
 
 ---
 
@@ -119,13 +128,19 @@ anderen mit.
       overview: D.overview, brands: D.brands,
       top_domains: D.top_domains, top_urls: D.top_urls,
       citations_label: D.citations_label,
-      totalCountDomain: D.totalCountDomain, totalCountUrl: D.totalCountUrl
+      totalCountDomain: D.totalCountDomain, totalCountUrl: D.totalCountUrl,
+      errors: D.errors
     }));
   } catch (e) {}
 
   /* 2. Miras Chatliste -- nur wenn der Abschnitt dabei war */
   try {
     if (D.chats && window.askMiraSetPreviousChats) window.askMiraSetPreviousChats(D.chats);
+  } catch (e) {}
+
+  /* 2b. Miras Projekte, falls der RPC sie mitliefert (chat_projects) */
+  try {
+    if (D.chat_projects && window.askMiraSetProjects) window.askMiraSetProjects(D.chat_projects);
   } catch (e) {}
 
   /* 3. Das Opportunities-Brett -- dito */
@@ -175,3 +190,71 @@ Das Opportunities-Brett hat dieselbe Eigenheit: Es schreibt Statusänderungen **
 eigene Anzeige und meldet sie danach an Bubble. Der Cache muss also auch dort auf die Mutationen
 hören, sonst kommt beim nächsten Laden der alte Stand zurück und schiebt die Karte sichtbar
 zurück.
+
+---
+
+## 6. Nachtrag zum Nachtrag: Umbau vom 14.09.
+
+Die große Tabelle unten ist weg. An ihrer Stelle stehen **zwei schmale Listen nebeneinander** —
+links "Competitive field", rechts "Trending Citations" — und ein Wortumschalter darüber wechselt
+zwischen diesen beiden Listen ("Main Metrics") und dem Opportunities-Brett.
+
+Für die Datenseite ändert das drei Dinge:
+
+### 6.1 `brands` braucht weniger Felder
+
+Die Liste zeigt nur noch **Logo, Name, Visibility und deren Trend**. Rang und Sentiment sind aus
+der Anzeige verschwunden.
+
+| Feld | weiter nötig? |
+|---|---|
+| `company_id`, `position`, `name`, `logo_url` | ja |
+| `visibility_pct`, `visibility_delta_pct` | ja |
+| `is_own` | ja, wichtiger denn je — siehe 6.3 |
+| `avg_rank`, `avg_rank_delta` | **nein** |
+| `sentiment`, `sentiment_delta` | **nein** |
+
+Die vier dürfen im Payload bleiben, sie werden nur nicht mehr gelesen. Wer den RPC neu baut,
+lässt sie weg — das spart die teureren Aggregate.
+
+### 6.2 "Main Metrics" braucht immer BEIDE Listen
+
+Vorher war je nach Reiter entweder `brands` **oder** `citations_*` nötig. Jetzt stehen beide
+gleichzeitig auf dem Schirm, also braucht der Bereich immer beides.
+
+`data-needs-fn` trägt das entsprechend: `needs` ist jetzt eine **Liste**, und `tab` heißt `mode`.
+
+```json
+{ "mode": "metrics",       "needs": ["brands", "citations_domain"] }
+{ "mode": "metrics",       "needs": ["brands", "citations_url"] }
+{ "mode": "opportunities", "needs": ["opportunities"] }
+```
+
+Beim Seitenladen also: `overview, brands, citations_domain, chats` — unverändert. Nur beim
+Umschalten auf URLs kommt `citations_url` dazu, und beim Wechsel auf Opportunities die Karten.
+
+### 6.3 Fünf Zeilen, aber die eigene Marke immer dabei
+
+Die Markenliste zeigt **fünf** Zeilen. Steht die eigene Marke weiter hinten, hängt die Oberfläche
+sie unten an und schreibt ihre **echte** Position davor (also "9", nicht "6").
+
+Dafür braucht sie zwei Dinge im Payload:
+
+* `is_own: true` an der eigenen Marke — sonst kann sie nicht erkannt werden;
+* `position` als die **Position in der vollständigen Rangliste**, nicht der Index in der
+  gelieferten Liste.
+
+Wenn du nur die Top 5 lieferst, fehlt die eigene Marke, sobald sie Platz 6 oder schlechter hat.
+Liefere deshalb entweder die Top 5 **plus** die eigene Marke, oder eine etwas längere Liste
+(z. B. Top 10) — die Oberfläche schneidet selbst auf fünf zu und hängt die eigene an.
+
+### 6.4 Was die Fußzeilen auslösen
+
+Unter jeder Liste steht ein Weiterweg. Beide feuern die Ereignisse, die es schon gibt:
+
+| Fußzeile | Ereignis | Nutzlast |
+|---|---|---|
+| "All {n} brands" | `data-brands-fn` | `{}` |
+| "All domains" / "All URLs" | `data-citations-fn` | `{ "mode": "domains" \| "urls" }` |
+
+Die Zahl in "All 8 brands" kommt aus `overview.brand_count`. Fehlt sie, steht dort "All brands".
