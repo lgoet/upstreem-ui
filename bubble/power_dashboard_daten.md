@@ -1,7 +1,9 @@
 # Power Dashboard — was die Oberfläche braucht
 
-Stand 13.09. Diese Datei beschreibt **nur die Datenseite**: welche Felder die fertige Komponente
-liest, wie ein RPC dafür geschnitten sein sollte und wo gecacht werden kann. Sie ist als Vorlage
+Stand 14.09. Diese Datei beschreibt **nur die Datenseite**: welche Felder die fertige Komponente
+liest, wie ein RPC dafür geschnitten sein sollte und wo gecacht werden kann. Sie deckt ALLES ab,
+was für ein vollständig gefülltes Dashboard zu beschaffen ist — auch die zwei Listen, die nicht
+über den Dashboard-RPC laufen (Kapitel 7). Sie ist als Vorlage
 für den gedacht, der die Abfragen baut — die Einbau-Anleitung steht daneben in
 `power_dashboard_bubble.html`.
 
@@ -13,21 +15,27 @@ beide Seiten füllen können.
 
 ## 1. Was auf dem Schirm steht
 
-Vier Blöcke, aber nur **drei** brauchen Daten von dir:
+Fünf Blöcke. Alle brauchen Daten von dir — aber sie kommen aus **drei verschiedenen Quellen**:
 
-| Block | Was es zeigt | Datenquelle |
-|---|---|---|
-| Overview | drei Kennzahlen: Visibility, Ø Rank, Sentiment | `overview` |
-| Recent chats | die letzten drei Mira-Chats | **kommt aus Mira**, kein RPC nötig |
-| Tabelle, Reiter 1 | "Competitive field" — 7 Marken | `brands` |
-| Tabelle, Reiter 2 | "Trending Citations" — 7 Domains **oder** 7 URLs | `top_domains` / `top_urls` |
-| Tabelle, Reiter 3 | "Opportunities" — das Kanban-Brett | **kommt aus opportunities.js**, kein RPC nötig |
+| Block | Was es zeigt | Woher die Daten kommen | Über welchen Setter |
+|---|---|---|---|
+| Overview | drei Kennzahlen: Visibility, Ø Rank, Sentiment | Dashboard-RPC, Abschnitt `overview` | `renderPowerDashboard` |
+| Recent chats | die letzten drei Mira-Chats | **eigene Abfrage** (Kapitel 7) | `askMiraSetPreviousChats` |
+| Tabelle, Reiter 1 | "Competitive field" — 7 Marken | Dashboard-RPC, Abschnitt `brands` | `renderPowerDashboard` |
+| Tabelle, Reiter 2 | "Trending Citations" — 7 Domains **oder** 7 URLs | Dashboard-RPC, `top_domains` / `top_urls` | `renderPowerDashboard` |
+| Tabelle, Reiter 3 | "Opportunities" — das Kanban-Brett | **eigene Abfrage** (Kapitel 7) | `opportunitiesSetItems` |
 
-Die beiden "kein RPC nötig"-Zeilen sind wichtig für den Zuschnitt: Das Dashboard **leiht** sich
-diese zwei Elemente von ihren eigenen Seiten. Für Reiter 3 musst du nichts zusätzlich laden — das
-Brett wird von `opportunitiesSetItems` gefüllt, wie bisher.
+**Fünf Blöcke, aber nur drei davon gehören in den Dashboard-RPC.** Die anderen zwei sind eigene
+Abfragen mit eigenen Settern — sie füttern nicht das Dashboard, sondern Mira bzw. das
+Opportunities-Brett, und das Dashboard **leiht** sich diese zwei Elemente und zeigt, was darin
+schon steht.
 
-Es bleiben also **drei** Datenblöcke und im Citations-Block **zwei** Varianten (Domains / URLs).
+Zu holen sind sie trotzdem, und zwar **beim Seitenladen** — sonst bleiben die zwei Blöcke leer.
+Das steht in Kapitel 7; wer nur die drei RPC-Abschnitte baut, hat ein Dashboard mit zwei leeren
+Kästen.
+
+Für den Dashboard-RPC bleiben also **drei** Abschnitte und im Citations-Abschnitt **zwei**
+Varianten (Domains / URLs).
 
 ---
 
@@ -229,3 +237,11 @@ Die Oberfläche formatiert selbst. Liefere **rohe Zahlen**, keine formatierten T
 
 Das heißt für dich: Wenn eine Abfrage scheitert, schicke den Abschnitt **gar nicht** oder lass den
 Aufruf ganz weg — schicke **nicht** `[]`, sonst behauptet die Oberfläche, es gäbe nichts.
+
+---
+
+## 7. Nicht vergessen: zwei Listen laufen NICHT über diesen RPC
+
+"Recent chats" und das Opportunities-Brett werden von eigenen Abfragen mit eigenen Settern
+gefüllt, beim Seitenladen. Sie stehen in `power_dashboard_daten_nachtrag.md` — wer nur die drei
+Abschnitte oben baut, hat ein Dashboard mit zwei leeren Kästen.
