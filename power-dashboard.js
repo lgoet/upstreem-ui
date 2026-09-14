@@ -1012,6 +1012,23 @@
           renderAll();
           return;
         }
+        /* EIN ABSCHNITT IST GESCHEITERT, die anderen nicht (14.09.). Der RPC liefert dafuer einen
+           errors-Block, und ohne diese Zeilen haette der Aufrufer nur zwei schlechte Moeglich-
+           keiten: den Abschnitt weglassen (dann steht das Skelett endlos) oder eine leere Liste
+           schicken (dann behauptet die Oberflaeche "No data", wo in Wahrheit die Abfrage
+           gescheitert ist). Beides ist ein stiller Ausfall.
+           Die Schluessel sind die Abschnittsnamen aus der Datenspezifikation, damit RPC und
+           Nutzlast dieselbe Sprache sprechen -- und nicht die internen Zustandsnamen. */
+        if (p.errors && typeof p.errors === "object"){
+          var ABSCHNITT = { overview: "overview", brands: "brands",
+                            citations_domain: "domains", citations_url: "urls" };
+          for (var eKey in ABSCHNITT){
+            if (!Object.prototype.hasOwnProperty.call(p.errors, eKey)) continue;
+            if (!p.errors[eKey]) continue;                 /* null/leer heisst "kein Fehler" */
+            state.fehler[ABSCHNITT[eKey]] = true;
+            state.loading = false;
+          }
+        }
         if (p.overview != null){
           r = lesen(p.overview);
           var o = Array.isArray(r.wert) ? r.wert[0] : r.wert;

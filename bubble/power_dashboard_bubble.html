@@ -171,26 +171,52 @@
   Nie ein Objekt von Hand bauen -- ein leerer Ausdruck ergaebe ungueltiges JavaScript, und der
   ganze Schritt stuerbe, bevor eine Zeile laeuft. Zahlen OHNE Anfuehrungszeichen.
 
+  EIN Aufruf des Dashboard-RPC, DREI Setter: das Dashboard, Miras Chatliste samt Projekten und das
+  Opportunities-Brett. Die letzten zwei fuettern nicht dieses Element, sondern die zwei, die es
+  sich ausleiht -- ohne sie bleiben "Recent chats" und der Opportunities-Reiter leer.
+  Dieser Schritt ist GEMESSEN gegen eine echte RPC-Antwort, nicht abgeschrieben.
+
     (function () {
-      var ROH = `{
-        "instanceId": "INSTANCE_ID",
-        "overview": [Overview-RPC als JSON-Objekt],
-        "brands": [Brands-RPC, :format as text],
-        "top_domains": [Top-Domains-RPC, :format as text],
-        "top_urls": [Top-URLs-RPC, :format as text],
-        "citations_label": "Last 30 days",
-        "totalCountDomain": [Gesamtzahl Domains],
-        "totalCountUrl": [Gesamtzahl URLs]
-      }`
+      var ROH = `[Power-Dashboard-RPC, :format as text]`
         .replace(/:\s*([,}\]])/g, ": null$1")
         .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
-      try { if (window.renderPowerDashboard) window.renderPowerDashboard(ROH); } catch (e) {}
+
+      var D = {};
+      try { D = JSON.parse(ROH); } catch (e) { D = {}; }
+
+      /* 1. Dieses Element. instanceId als ERSTES Feld: bricht die Nutzlast ab, fischt core die
+            Kennung trotzdem heraus und die richtige Platzierung zeigt den Lesefehler. */
+      try {
+        if (window.renderPowerDashboard) window.renderPowerDashboard(JSON.stringify({
+          instanceId: "INSTANCE_ID",
+          overview: D.overview, brands: D.brands,
+          top_domains: D.top_domains, top_urls: D.top_urls,
+          citations_label: D.citations_label,
+          totalCountDomain: D.totalCountDomain, totalCountUrl: D.totalCountUrl,
+          errors: D.errors
+        }));
+      } catch (e) {}
+
+      /* 2. Miras Chatliste und ihre Projekte -- fuellen "Recent chats" hier. */
+      try { if (D.chats && window.askMiraSetPreviousChats) window.askMiraSetPreviousChats(D.chats); } catch (e) {}
+      try { if (D.chat_projects && window.askMiraSetProjects) window.askMiraSetProjects(D.chat_projects); } catch (e) {}
+
+      /* 3. Das Opportunities-Brett -- fuellt den dritten Reiter. */
+      try { if (D.opportunities && window.opportunitiesSetItems) window.opportunitiesSetItems(D.opportunities); } catch (e) {}
     })();
 
-  "instanceId" als ERSTES Feld: bricht der Payload ab, fischt core die Id trotzdem heraus, und
-  die richtige Platzierung zeigt den Lesefehler.
-  Ein unlesbarer Payload zeigt "Could not load …" in allen vier Bereichen, ein wirklich leerer
-  Teil ("[]") den normalen Leerzustand.
+  JEDER Setter in EIGENEM try: ein kaputter Teil darf die anderen nicht mitnehmen.
+  Und jeder mit "if (D.x && ...)": beim NACHLADEN eines einzelnen Abschnitts (data-needs-fn) sind
+  die anderen Felder nicht dabei, und ein Setter mit undefined wuerde eine gefuellte Liste leeren.
+
+  DER errors-BLOCK. Liefert der RPC { "errors": { "citations_url": "..." } }, zeigt der betroffene
+  Bereich "Could not load ..." statt einer leeren Tabelle. Die Schluessel sind die Abschnittsnamen
+  des RPC: overview, brands, citations_domain, citations_url. Ein leerer Wert (null) heisst "kein
+  Fehler". OHNE diesen Block haette ein gescheiterter Abschnitt nur zwei schlechte Enden: weglassen
+  (das Skelett laeuft endlos) oder [] schicken (die Oberflaeche behauptet "No data", wo in Wahrheit
+  die Abfrage gescheitert ist).
+  Ein komplett unlesbarer Payload zeigt "Could not load ..." in allen vier Bereichen, ein wirklich
+  leerer Teil ("[]") den normalen Leerzustand.
 
   STATISCH ZUM TESTEN -- dieselben Werte wie die Beispieldaten, als Run-JS-Schritt:
 
