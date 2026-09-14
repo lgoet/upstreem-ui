@@ -847,6 +847,22 @@
         b.classList.toggle("is-active", on); b.setAttribute("aria-selected", on ? "true" : "false");
       });
     }
+    /* ===== WELCHE DATEN GERADE GEBRAUCHT WERDEN (14.09.) =======================================
+       Der Reiter merkt sich seine Stellung im localStorage -- ein Nutzer, der zuletzt auf
+       "Opportunities" stand, sieht diesen Reiter schon beim Laden, und Bubble kann das nicht
+       wissen. Ohne diese Meldung muesste jede Seite alles mitladen, auch was niemand ansieht.
+       Gemeldet wird darum bei JEDEM Wechsel und EINMAL beim Aufbau mit dem wiederhergestellten
+       Stand; die Nutzlast sagt, was dieser Reiter braucht. Was Bubble damit macht -- nachladen
+       oder nichts, weil es schon da ist -- entscheidet der Workflow.
+       needs ist der Abschnittsname aus der Datenspezifikation, damit Nutzlast und RPC dieselbe
+       Sprache sprechen. */
+    function datenBedarfMelden(){
+      var tab = state.activeTable;
+      var needs = tab === "opportunities" ? "opportunities"
+                : tab === "citations" ? (state.cmode === "url" ? "citations_url" : "citations_domain")
+                : "brands";
+      fire("data-needs-fn", "upwNeeds", { tab: tab, needs: needs });
+    }
     function syncActiveTable(){
       var tab = state.activeTable;
       var citations = tab === "citations", chancen = tab === "opportunities";
@@ -886,6 +902,7 @@
       state.activeTable = v;
       writeTab(v);
       syncActiveTable();
+      datenBedarfMelden();
     });
     if (elCmodeWrap) elCmodeWrap.addEventListener("click", function(e){
       var b = e.target.closest("[data-upw-cmode]");
@@ -895,6 +912,7 @@
       syncCmode();
       renderCites();
       syncTinfo();
+      datenBedarfMelden();
     });
     if (elOpenBtn) elOpenBtn.addEventListener("click", function(){
       if (state.activeTable === "opportunities") fire("data-opportunities-fn", "upwOpportunities", {});
@@ -978,6 +996,9 @@
     syncActiveTable();
     renderAll();
     pruefen();
+    /* Nach dem ersten Zeichnen und nicht davor: der Bedarf haengt am wiederhergestellten Reiter,
+       und der steht erst nach syncActiveTable() fest. */
+    datenBedarfMelden();
 
     return {
       update: function(p){
