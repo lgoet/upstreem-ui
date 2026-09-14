@@ -85,7 +85,20 @@
      enthaelt die Modellzeile (Klick klappt Mira Pro 1.0 / Mira Flash aus) und einen Slider mit
      drei Stufen.
 
-     ── DER AUFWAND IST DER WERT ───────────────────────────────────────────────────────────────
+     ── SENDEN AUS EINER ANDEREN ANSICHT (14.09.) ─────────────────────────────────────────────────
+  bubble_fn_ask_mira_send entsteht erst, wenn Bubble das zugehoerige JavaScriptToBubble-Element
+  zum ERSTEN MAL rendert. Wer aus dem Power Dashboard sendet, ohne vorher in Miras Ansicht gewesen
+  zu sein, trifft genau dieses Fenster: die Ansicht wechselt gerade erst, die Funktion gibt es noch
+  nicht. Bis zum 14.09. ging der Versand dann still verloren -- Nachricht und Ladeanimation waren
+  zu sehen, gestartet wurde nie ein Chat.
+  Das Kit fasst jetzt nach: viermal schnell, danach im Sekundentakt, zusammen gut vier Sekunden.
+  Im Normalfall merkt niemand etwas. Bleibt die Funktion aus, endet der Ladezustand und im Chat
+  steht, dass es nicht geklappt hat -- statt endlos zu drehen.
+  BUBBLE-SEITIG ist dafuer nichts zu tun. Wer ganz sichergehen will, legt das
+  JavaScriptToBubble-Element fuer send auf die SEITE statt in Miras Gruppe; dann existiert die
+  Funktion ab dem Seitenladen.
+
+  ── DER AUFWAND IST DER WERT ───────────────────────────────────────────────────────────────
      bubble_fn_ask_mira_send bekommt weiter genau vier Felder, in genau dieser Reihenfolge:
          { chat_id, message, answer_detail, model }
      Der FELDNAME answer_detail bleibt, damit die Extraktion unangetastet bleibt. Die WERTE

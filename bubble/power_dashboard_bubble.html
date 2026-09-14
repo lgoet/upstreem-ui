@@ -28,6 +28,28 @@
   (oder last_message_at / created_at), stehen die neuesten oben und rechts "Today", "Yesterday"
   oder das Datum; sonst gilt die Reihenfolge, in der Bubble die Liste schickt.
 
+  ── WENN RECENT CHATS UND DAS BRETT LEER BLEIBEN (14.09., gemeldet) ──────────────────────────
+  Bild: man kommt frisch auf die Seite, das Power Dashboard steht da, "Recent chats" zeigt erst
+  das Skelett und dann "No chats yet", die Opportunity-Karten fehlen. Geht man EINMAL in Miras
+  bzw. die Opportunities-Ansicht und kommt zurueck, ist alles da.
+
+  DAS LIEGT NICHT AM KIT. Gemessen: schickt man askMiraSetPreviousChats bzw.
+  opportunitiesSetItems neun Sekunden nach dem Laden -- also lange nach der Frist, mit der
+  "No chats yet" erscheint --, nimmt die Oberflaeche beides an und zeigt es sofort. Sie wartet
+  beliebig lange.
+
+  Es liegt daran, WANN Bubble die zwei Setter ruft. Haengt der Workflow an der Sichtbarkeit der
+  jeweiligen Gruppe ("Do when Group Mira is visible", "When element is visible") oder speist sich
+  die Liste aus einer Repeating Group INNERHALB dieser Gruppe, dann laeuft er nicht, solange die
+  Gruppe nie gezeigt wurde -- und das Dashboard bekommt nie etwas.
+
+  ZU TUN: die Workflows, die askMiraSetPreviousChats und opportunitiesSetItems rufen, an
+  "When page is loaded" haengen statt an die Sichtbarkeit. Beide Setter vertragen das: Kommt der
+  Aufruf, bevor das jeweilige Skript geladen ist, legt dessen Boot-Warteschlange ihn ab und spielt
+  ihn beim Start nach.
+  Das gilt AUCH, wenn der Nutzer die Seite direkt auf dem Power Dashboard betritt -- und das ist
+  der Normalfall, sobald "Power" seine gespeicherte Ansicht ist.
+
   ── ATTRIBUTE ─────────────────────────────────────────────────────────────────────────────────
   data-instance    = "ROOTID_[dynamic id]"    eindeutig je Platzierung
   data-cdn-pin     = derselbe Commit-Hash wie alle anderen Elemente

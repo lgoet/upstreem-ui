@@ -488,6 +488,7 @@
       oppAdded: 'Added',
       oppExists: 'Already added',
       oppError: 'Couldn\u2019t add the opportunity. Please try again.',
+      sendFailed: 'The message could not be sent. Please try again.',
       runNow: 'Working for', runDone: 'Worked for', thoughtMoment: 'Thought for a moment',
       galleryBack: 'All categories',
       gallery: [
@@ -591,6 +592,7 @@
       oppAdded: 'Hinzugefügt',
       oppExists: 'Bereits hinzugefügt',
       oppError: 'Opportunity konnte nicht hinzugefügt werden. Bitte erneut versuchen.',
+      sendFailed: 'Die Nachricht konnte nicht gesendet werden. Bitte erneut versuchen.',
       runNow: 'Arbeitet seit', runDone: 'Gearbeitet', thoughtMoment: 'Kurz nachgedacht',
       galleryBack: 'Alle Kategorien',
       gallery: [
@@ -3532,8 +3534,44 @@
     renderMessages();
 
     var payload = { chat_id: S.activeChatId, message: full, answer_detail: S.answerDetail, model: S.model };
-    if (window.bubble_fn_ask_mira_send) window.bubble_fn_ask_mira_send(JSON.stringify(payload));
-    else { window.dispatchEvent(new CustomEvent('askmira:send', { detail: payload })); }
+    anBubbleSenden(payload, 0);
+  }
+
+  /* ===== DER VERSAND WARTET AUF BUBBLE (14.09.) ==============================================
+     Gemeldet: aus dem Dashboard heraus senden, ohne vorher einmal in Miras Ansicht gewesen zu
+     sein -- die Ansicht wechselt, die Nachricht erscheint, die Ladeanimation laeuft, und dann
+     passiert nie etwas. Nach einem Besuch von Miras Ansicht geht es.
+     Der Grund: Bubble legt bubble_fn_* erst an, wenn das zugehoerige JavaScriptToBubble-Element
+     zum ERSTEN MAL gerendert wurde. Aus dem Dashboard wird aber gesendet, waehrend showView("mira")
+     die Ansicht gerade erst aufblendet -- in diesem Moment gibt es die Funktion noch nicht. Hier
+     stand ein blankes if/else: fehlt sie, ging der Versand als CustomEvent hinaus, das in der App
+     niemand hoert. Die Oberflaeche hatte da laengst Nachricht und Ladeanimation gezeigt. Genau
+     das ist ein stiller Ausfall, und genau den verbietet CLAUDE.md 2.
+     Jetzt wird nachgefasst: viermal schnell (100ms) fuer den Normalfall, danach im Sekundentakt,
+     zusammen gut vier Sekunden. Kommt sie in dieser Zeit, geht die Nachricht ganz normal raus --
+     der Nutzer merkt nichts. Kommt sie nicht, endet der Ladezustand und es steht da, dass es
+     nicht geklappt hat. */
+  function anBubbleSenden(payload, versuch){
+    var fn = window.bubble_fn_ask_mira_send;
+    if (typeof fn === 'function'){ fn(JSON.stringify(payload)); return; }
+    if (versuch < 12){
+      setTimeout(function(){ anBubbleSenden(payload, versuch + 1); }, versuch < 4 ? 100 : 400);
+      return;
+    }
+    /* Aufgegeben. Das Ereignis geht trotzdem hinaus -- die Landingpage und der Prueftand hoeren
+       darauf, und dort gibt es bubble_fn_* gar nicht. */
+    window.dispatchEvent(new CustomEvent('askmira:send', { detail: payload }));
+    if (window.bubble_fn_ask_mira_send) return;   /* in der Zwischenzeit doch noch aufgetaucht */
+    _pendingAnswer = false;
+    try { setLoading(false); } catch(e){}
+    /* Das Laufzeitprotokoll wegwerfen, BEVOR die Meldung kommt. Sonst haengt Miras "Gearbeitet
+       12s" davor -- die Uhr laeuft ab dem Absenden, und hier wurde nie gearbeitet. Gemessen: ohne
+       diese Zeile stand da "Worked for 12s ... The message could not be sent". */
+    try { runDrop(); } catch(e){}
+    S.messages.push({ id: 'local_err_' + Date.now(), role: 'assistant',
+      content: L().sendFailed,
+      created_at: new Date().toISOString() });
+    try { renderMessages(); } catch(e){}
   }
 
   /* ===== "Ask Mira" selection -> quoted gray chip (prompt_research X-delete mechanic) ===== */
