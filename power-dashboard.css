@@ -105,9 +105,22 @@
 /* DIE TRENNLINIE UNTER DER ABSCHNITTSZEILE (12.09. nach dem beigefuegten Entwurf) -- bei BEIDEN
    Abschnitten gleich, sie trennt Ueberschrift von Inhalt. Sie ersetzt den Rahmen, den der
    Overview-Kasten vorher mitbrachte: der ist weg, die Kennzahlen stehen jetzt frei. */
-.upw-sec-head { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+.upw-sec-head { display: flex; align-items: center; justify-content: space-between; gap: 8px;
   min-height: 24px; padding-bottom: 8px; margin-bottom: 28px;
   border-bottom: 1px solid var(--vc-border); }
+/* SCHALTER UND PFEIL GEHOEREN RECHTS ZUSAMMEN (14.09. angefordert). Mit space-between und drei
+   Kindern stand der Domain/URL-Schalter sonst mittig in der Zeile. Das auto-Margin am mittleren
+   Kind schiebt die hinteren zwei ans Ende; der 8px-Abstand der Zeile oben ist dann genau der
+   Abstand zwischen ihnen -- deshalb steht dort 8 statt der vorherigen 12. Bei den Zeilen mit nur
+   zwei Kindern aendert das nichts: dort bleibt Platz uebrig, und der Abstand ist nur ein
+   Mindestwert. */
+.upw-sec-head .upw-cmode { margin-left: auto; }
+/* 2px mehr Luft unter dem Schalter bis zur Linie (14.09. angefordert). Gilt fuer BEIDE
+   Abschnittskarten, nicht nur fuer die mit dem Schalter: die zwei Trennlinien stehen
+   nebeneinander, und 2px nur auf einer Seite haetten sie gegeneinander versetzt -- derselbe
+   Versatz, der am 14.09. schon zweimal auffiel. Die Zeile darueber (Overview / Recent chats)
+   bleibt unberuehrt, sie steht in einer eigenen Reihe. */
+.upw-metric-card .upw-sec-head { padding-bottom: 10px; }
 /* BEIDE ABSCHNITTSZEILEN EINZEILIG -- sonst stehen ihre Trennlinien auf verschiedener Hoehe, und
    genau das war zu sehen. GEMESSEN, woran es lag: "Last 30 days" lief in der schmalen Spalte auf
    DREI Zeilen (42px), "Recent chats" auf zwei (28px), macht 55px gegen 41px Kopfhoehe und 14px
