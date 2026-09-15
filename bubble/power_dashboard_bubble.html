@@ -181,9 +181,28 @@
   setPowerDashboardLoading("INSTANCE_ID", "yes" | "no")   Skelett an/aus. Echte Daten beenden
   es auch ohne "no".
 
-  ── DER RUN-JS-SCHRITT (STYLEGUIDE §46): EIN BACKTICK, BEIDE ERSETZUNGEN ─────────────────────
+  ── DER RUN-JS-SCHRITT: KEIN BACKTICK MEHR, DAFUER JSON-SAFE ────────────────────────────────
   Nie ein Objekt von Hand bauen -- ein leerer Ausdruck ergaebe ungueltiges JavaScript, und der
   ganze Schritt stuerbe, bevor eine Zeile laeuft. Zahlen OHNE Anfuehrungszeichen.
+
+  WARUM KEIN BACKTICK MEHR (15.09.): Der Ausdruck wird WOERTLICH in den Quelltext gesetzt, bevor
+  der Browser ihn liest. Steht irgendwo in den Daten selbst ein Backtick, endet das Literal dort
+  -- der Rest der Zeile ist dann Programmtext. Genau das ist passiert: eine Chat-Vorschau enthielt
+  `https://de.trustpilot.com/review/lee-up.de` in Schraegstrichen, und der Schritt starb mit
+  "Uncaught SyntaxError: Unexpected identifier 'https'". Nachgestellt und Zeichen fuer Zeichen
+  reproduziert. Dagegen hilft KEINE Ersetzung im Schritt: der Fehler passiert beim Einlesen,
+  lange bevor die erste Zeile laeuft. Dasselbe gilt fuer die Folge ${ und fuer Backslashes.
+
+  Die Loesung ist der Ausdruck in doppelten Anfuehrungszeichen plus :formatted as JSON-safe.
+  JSON-safe escapt genau die drei Zeichen, die ein solches Literal sprengen koennen --
+  Anfuehrungszeichen, Backslash, Zeilenumbruch -- und laesst Backticks in Ruhe, weil sie dort
+  harmlos sind. Das Escaping von JSON ist mit dem von JavaScript deckungsgleich, der Browser liest
+  danach wieder genau den Urtext.
+
+  ACHTUNG, das ist Bubble-seitige Arbeit: der Zusatz :formatted as JSON-safe muss AN DEN AUSDRUCK.
+  Ohne ihn liest der Schritt beim ersten Anfuehrungszeichen in den Daten falsch weiter.
+  Kurzprobe ohne Deployment: denselben Ausdruck in ein Textelement legen. Steht dort alles in
+  EINER Zeile und mit \" statt ", greift JSON-safe.
 
   EIN Aufruf des Dashboard-RPC, DREI Setter: das Dashboard, Miras Chatliste samt Projekten und das
   Opportunities-Brett. Die letzten zwei fuettern nicht dieses Element, sondern die zwei, die es
@@ -191,7 +210,7 @@
   Dieser Schritt ist GEMESSEN gegen eine echte RPC-Antwort, nicht abgeschrieben.
 
     (function () {
-      var ROH = `[Power-Dashboard-RPC, :format as text]`
+      var ROH = "[Power-Dashboard-RPC, :formatted as JSON-safe]"
         .replace(/:\s*([,}\]])/g, ": null$1")
         .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
 
@@ -233,6 +252,10 @@
   leerer Teil ("[]") den normalen Leerzustand.
 
   STATISCH ZUM TESTEN -- dieselben Werte wie die Beispieldaten, als Run-JS-Schritt:
+  Hier steht ein Backtick-Literal, weil diese Daten von Hand geschrieben sind und keinen Backtick
+  enthalten. Wer ECHTE Daten hier einsetzt, muss darin jeden Backtick als \` schreiben und jedes
+  ${ als \${ -- oder dieselbe Form wie oben nehmen. Ein Backtick in einer Chat-Vorschau hat den
+  Schritt am 15.09. mit "Unexpected identifier" zum Absturz gebracht.
 
     (function () {
       var ROH = `{

@@ -292,7 +292,17 @@
 .upw-li .up-logo-box { flex: 0 0 auto; }
 .upw-li-name { flex: 1 1 auto; min-width: 0; font-size: 13.5px; font-weight: 500; color: var(--vc-text);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.upw-li-val { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 8px; }
+/* DIE WERTSPALTE HAT EINE FESTE BREITE (15.09. angefordert). Vorher war sie "shrink to fit" und
+   sass rechts an der Kante: eine Zeile mit Trendpille war breiter als eine ohne, also begann die
+   Zahl in jeder Zeile woanders. GEMESSEN bei 1440px ueber fuenf gemischte Zeilen: die linke Kante
+   der Spalte lag zwischen 574 und 657px -- 83px Versatz, und genau der war zu sehen.
+   Die zwei Zahlen sind Messwerte plus Reserve: "100.0%" ist mit 49px die breiteste Zahl, die
+   breiteste Trendpille ("12.4%" mit Pfeil) 58px. 54 und 62 lassen beiden Platz fuer eine Stelle
+   mehr; zusammen mit den 8px Abstand ergibt das 124. Ein Deckel und keine Mindestbreite: eine
+   fehlende Trendpille darf die Spalte nicht schmaler machen, sonst faengt der Versatz von vorne
+   an -- und genau die Zeilen ohne Trend waren der Anlass. */
+.upw-li-val { flex: 0 0 124px; display: inline-flex; align-items: center; gap: 8px; }
+.upw-li-val > .up-num { flex: 0 0 54px; }
 /* Die eigene Marke traegt ihren Namen fetter -- dasselbe Mittel, mit dem die grossen Tabellen sie
    hervorheben, nur ohne deren Zeilenflaeche. */
 .upw-li.is-own .upw-li-name { font-weight: 600; }
