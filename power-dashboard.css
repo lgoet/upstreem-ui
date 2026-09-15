@@ -339,10 +339,14 @@
    mehr; zusammen mit den 8px Abstand ergibt das 124. Ein Deckel und keine Mindestbreite: eine
    fehlende Trendpille darf die Spalte nicht schmaler machen, sonst faengt der Versatz von vorne
    an -- und genau die Zeilen ohne Trend waren der Anlass. */
-/* 4px zwischen Zahl und Trendpille statt 8 (15.09. angefordert). Die Spalte wird im selben Zug
-   von 124 auf 120 schmaler -- 54 + 4 + 62 --, sonst bliebe rechts ein Rest stehen und der Pfeil
-   haette einen Abstand zur Kante, den die Zeile daneben nicht hat. */
-.upw-li-val { flex: 0 0 120px; display: inline-flex; align-items: center; gap: 4px; }
+/* KEIN Abstand mehr zwischen Zahl und Trendpille (15.09., in zwei Schritten: 8 -> 4 -> 0). Das
+   sieht nur deshalb nicht gedraengt aus, weil die Zahl in einem festen 54px-Feld steht und kaum
+   eine so breit ist -- "5.8%" misst 31px, der Rest des Feldes ist der sichtbare Abstand. Genau
+   deshalb bleibt das Feld bei 54: es IST hier der Abstand, und eine schmalere Zahl bekommt
+   automatisch mehr Luft als eine breite.
+   Die Spalte zieht jedes Mal mit -- 54 + 0 + 62 = 116 --, sonst bliebe rechts ein Rest stehen und
+   der Pfeil haette einen Abstand zur Kante, den die Zeile daneben nicht hat. */
+.upw-li-val { flex: 0 0 116px; display: inline-flex; align-items: center; gap: 0; }
 .upw-li-val > .up-num { flex: 0 0 54px; }
 /* Die eigene Marke traegt ihren Namen fetter -- dasselbe Mittel, mit dem die grossen Tabellen sie
    hervorheben, nur ohne deren Zeilenflaeche. */
