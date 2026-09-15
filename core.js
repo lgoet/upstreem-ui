@@ -13295,15 +13295,29 @@
     try { v = String(window.localStorage.getItem(DASH_STORE) || ""); } catch(e){}
     return DASH_WERTE[v] ? v : "standard";
   }
+  /* DER MODUS STEHT AUCH AM DOKUMENT (15.09.). Grund: der Seitenkopf bekommt seine is-power-
+     Klasse erst, wenn dashboard-page-header.js geladen und gemountet ist -- bis dahin steht dort
+     der breite Standardkopf, und beim Umschalten sprang er sichtbar. Ein Attribut am <html> kann
+     dagegen schon der Vorlade-Schnipsel im Seitenkopf setzen, lange vor jeder Komponente, und die
+     CSS greift ab dem ersten Bild.
+     Hier wird es zusaetzlich gepflegt, damit es auch ohne den Schnipsel stimmt und nach jedem
+     Umschalten wieder passt. Eine Zeile, eine Wahrheit: DASH_STORE bleibt die Quelle. */
+  function dashModusStempeln(v){
+    try { document.documentElement.setAttribute("data-up-dashboard", v); } catch(e){}
+  }
   function setDashboardMode(v){
     v = DASH_WERTE[v] ? v : "standard";
     var alt = getDashboardMode();
     try { window.localStorage.setItem(DASH_STORE, v); } catch(e){}
+    dashModusStempeln(v);
     if (alt !== v){
       try { window.dispatchEvent(new CustomEvent("up-dashboard-mode", { detail: { mode: v } })); } catch(e){}
     }
     return v;
   }
+  /* Einmal beim Start: eine Seite ohne den Vorlade-Schnipsel bekommt das Attribut wenigstens,
+     sobald core da ist. Mit Schnipsel steht derselbe Wert schon drin und nichts aendert sich. */
+  dashModusStempeln(getDashboardMode());
   function onDashboardMode(fn){
     if (typeof fn !== "function") return function(){};
     function h(e){ try { fn(e && e.detail && e.detail.mode); } catch(err){} }

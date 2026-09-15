@@ -20,6 +20,16 @@
    inzwischen gewuenscht: die 16/450 stehen jetzt an .up-ph-desc in core.css und gelten fuer alle
    sieben Seitenkoepfe. Hier bleibt nichts. */
 
+/* ---------- ZWEI WEGE ZUM POWER-KOPF, DIESELBEN WERTE (15.09.) ----------
+   .is-power setzt dashboard-page-header.js, sobald es geladen und gemountet ist. Bis dahin steht
+   der breite Standardkopf da und springt danach sichtbar zusammen -- genau so gemeldet
+   ("verhindern, dass er kurz bei pageload falsches Format hat").
+   html[data-up-dashboard="power"] setzt der Vorlade-Schnipsel im Seitenkopf aus dem localStorage,
+   bevor irgendeine Komponente im DOM steht; core pflegt es danach weiter (setDashboardMode).
+   Deshalb tragen die Power-Regeln BEIDE Selektoren -- gruppiert, damit die Werte genau einmal
+   dastehen und nicht auseinanderlaufen koennen. Ohne den Schnipsel bleibt alles wie vorher.
+
+*/
 /* ---------- Power: schmaler Kopf (11.09. angefordert) ----------
    Im Power Dashboard ist der Seitenkopf nur noch die Werkzeugzeile: die Beschreibung ist weg, und
    "Dashboard" soll "einfach nur in der Topbar mittig top/bottom" stehen -- also so hoch wie die
@@ -31,9 +41,12 @@
    bei einer einzelnen Zeile ohne Beschreibung schief aussah.
    is-power sitzt an der WURZEL (dashboard-page-header.js, modeZeigen) statt an .dph-mode: ein
    Umschalter kann fehlen (kein data-mode-fn-Empfaenger), der Modus selbst nicht. */
-.dph-root.is-power .up-ph-desc { display: none; }
-.dph-root.is-power .up-ph-heading { font-size: 20px; margin: 0; }
-.dph-root.is-power .up-ph-top { align-items: center; }
+.dph-root.is-power .up-ph-desc,
+html[data-up-dashboard="power"] .dph-root .up-ph-desc { display: none; }
+.dph-root.is-power .up-ph-heading,
+html[data-up-dashboard="power"] .dph-root .up-ph-heading { font-size: 20px; margin: 0; }
+.dph-root.is-power .up-ph-top,
+html[data-up-dashboard="power"] .dph-root .up-ph-top { align-items: center; }
 /* ---------- Power: die Topbar ist so hoch wie der Logoblock der Leiste (15.09. angefordert) ----
    "genauso viel height wie im main sidebar der Bereich oben links mit dem upstreem Logo".
    GEMESSEN an der echten Leiste: .usn-bar hat padding-top 8px, .usn-brand ist 32px hoch mit 8px
@@ -45,7 +58,8 @@
    KEINE Trennlinie hier (15.09. nachgereicht: "den separator wieder raus"). Die Hoehe ist das
    Gemeinsame mit der Leiste, nicht die Linie.
    Gilt NUR unter .is-power: die anderen sechs Seitenkoepfe behalten ihre 16/16 aus core. */
-.dph-root.is-power { padding-top: 8px; padding-bottom: 40px; }
+.dph-root.is-power,
+html[data-up-dashboard="power"] .dph-root { padding-top: 8px; padding-bottom: 40px; }
 /* 40 statt 8 (15.09. nachgereicht: "nochmal 32px padding bottom mehr"). Die Topbar ENDET
    weiterhin bei 48 -- die 32 sind Luft darunter, kein hoeherer Balken. */
 

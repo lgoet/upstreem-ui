@@ -1,5 +1,5 @@
 <!--
-  UPSTREEM — THEMA VOR DEM ERSTEN BILD
+  UPSTREEM — THEMA UND DASHBOARD-MODUS VOR DEM ERSTEN BILD
 
   WOHIN: Bubble → Settings → SEO/metatags → "Script/meta tags in header". Ganz nach OBEN, vor das
   Asset-Preload aus page_header_preload.html. Es muss laufen, bevor der Browser das erste Mal malt.
@@ -47,6 +47,20 @@
   }
   /* Kein else: fehlt der Schluessel, ist "System" gemeint, und dann soll die Media Query unten
      entscheiden. Ein Attribut zu setzen wuerde sie ausschalten. */
+
+  /* ── DASSELBE FUER DEN DASHBOARD-MODUS (15.09.) ──────────────────────────────────────────────
+     Der Seitenkopf des Dashboards bekommt seine schmale Power-Form erst, wenn
+     dashboard-page-header.js geladen und gemountet ist. Bis dahin steht dort der breite
+     Standardkopf, und danach springt er sichtbar zusammen. Dieselbe Bauart wie beim Thema:
+     der Wert liegt schon im localStorage, CSS kann ihn nicht lesen, also drei Zeilen hier.
+     "up_dashboard" ist derselbe Schluessel, den core.js schreibt (setDashboardMode) und liest
+     (getDashboardMode) -- nichts Neues zu pflegen. core stempelt dasselbe Attribut beim Start
+     noch einmal, damit es auch ohne diesen Schnipsel stimmt.
+     Nur "power" wird gesetzt: "standard" ist die Vorgabe der CSS, und ein Attribut dafuer waere
+     eine zweite Wahrheit ohne Wirkung. */
+  var d = "";
+  try { d = String(window.localStorage.getItem("up_dashboard") || "").trim().toLowerCase(); } catch (e) {}
+  if (d === "power") document.documentElement.setAttribute("data-up-dashboard", "power");
 })();
 </script>
 <style>

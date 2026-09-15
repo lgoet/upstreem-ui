@@ -4527,16 +4527,25 @@
         '<div class="upt-kpi-foot"><span class="upt-kpi-foot-left"></span>' +
         '<span class="upt-kpi-foot-right"></span></div></div>';
     }
-    /* Zugeklappt bleibt zugeklappt, auch wenn Bubble diese Wurzel wegwirft und neu baut -- und
-       das tut Bubble bei jedem Ansichtswechsel. Darum am window und nach Instanz, genau wie
-       __ccHidden im Citations Combo Chart. Nicht in den Einstellungen: das ist ein Blick auf die
-       Seite, keine Vorliebe, und ueber einen Reload hinweg zugeklappte Karten waeren beim
-       naechsten Besuch eine verschwundene Funktion. */
+    /* Zugeklappt bleibt zugeklappt -- auch ueber einen RELOAD hinweg (15.09. angefordert).
+       Bis dahin stand der Wert nur am window: das ueberlebte Bubbles Neubau der Wurzel bei jedem
+       Ansichtswechsel, aber keinen Seitenaufbau. Die Begruendung dagegen war, zugeklappte Karten
+       koennten beim naechsten Besuch wie eine verschwundene Funktion wirken -- das Auge steht
+       aber sichtbar in der Zeile und traegt "Show" als Tooltip, also findet man sie wieder.
+       localStorage je Instanz, dasselbe Muster wie rhKey/gKey hier in der Datei. Das window-Feld
+       bleibt als schneller Zwischenspeicher: es beantwortet den Neubau der Wurzel ohne Zugriff
+       auf den Speicher, und beide werden zusammen geschrieben. */
+    function kpiKey(){ return "upt_kpizu__" + instanceId; }
     function kpiAugeStand(){ return (window.__uptKpiZu = window.__uptKpiZu || {}); }
+    function kpiAugeGelesen(){
+      var w = kpiAugeStand();
+      if (Object.prototype.hasOwnProperty.call(w, instanceId)) return !!w[instanceId];
+      try { return window.localStorage.getItem(kpiKey()) === "yes"; } catch(e){ return false; }
+    }
     function kpiAugeBinden(){
       var btn = kpiZeile && kpiZeile.querySelector("[data-kpi-eye]");
       if (!btn) return;
-      kpiAugeSetzen(!!kpiAugeStand()[instanceId]);
+      kpiAugeSetzen(kpiAugeGelesen());
       btn.addEventListener("click", function(){
         kpiAugeSetzen(!kpiZeile.classList.contains("is-hidden-view"));
       });
@@ -4546,6 +4555,7 @@
       if (!kpiZeile || !btn) return;
       kpiZeile.classList.toggle("is-hidden-view", zu);
       kpiAugeStand()[instanceId] = zu;
+      try { window.localStorage.setItem(kpiKey(), zu ? "yes" : "no"); } catch(e){}
       btn.setAttribute("aria-expanded", zu ? "false" : "true");
       var txt = UC.t(zu ? "Show" : "Hide");
       btn.setAttribute("data-tip", txt);
