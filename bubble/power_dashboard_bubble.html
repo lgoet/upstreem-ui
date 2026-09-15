@@ -203,9 +203,9 @@
       }
 
       var haupt = sauber(`[Power-Dashboard-RPC, :format as text]`);
-      var chats = sauber(`[Power-Dashboard-RPC's chats, :format as text]`);
+      var chats = sauber(`[Power-Dashboard-RPC's chats, :format as text:find & replace:find & replace]`);
       var proj  = sauber(`[Power-Dashboard-RPC's chat_projects, :format as text]`);
-      var opps  = sauber(`[Power-Dashboard-RPC's opportunities, :format as text]`);
+      var opps  = sauber(`[Power-Dashboard-RPC's opportunities, :format as text:find & replace:find & replace]`);
 
       /* renderPowerDashboard nimmt EIN Argument (core, forwardShape "params"): den rohen Text.
          Die Kennung steht darin, wenn der RPC sie mitliefert; sonst trifft der Aufruf das einzige
@@ -221,25 +221,34 @@
   top_domains, top_urls, citations_label und errors und laesst alles andere liegen -- chats,
   chat_projects und opportunities stoeren dort nicht.
 
-  ── DIE EINE ZEICHENFOLGE, DIE IM BACKTICK GEFAEHRLICH BLEIBT ───────────────────────────────
-  Ein BACKTICK oder ein Dollar mit geschweifter Klammer in einem WERT. Das Literal endet dort,
-  und der Rest der Zeile ist auf einmal Programmtext. In Marken-, Domain- und Themennamen kommt
-  das nicht vor -- so steht es seit dem 24.08. in jeder Vorlage, und dort stimmt es auch.
+  ── PFLICHT AN JEDEM AUSDRUCK MIT FREIEM TEXT: find & replace ───────────────────────────────
+  Die EINZIGE Zeichenfolge, die im Backtick gefaehrlich bleibt, ist ein BACKTICK oder ein Dollar
+  mit geschweifter Klammer in einem WERT. Das Literal endet dort, und der Rest wird Programmtext.
+  Die aelteren Vorlagen sagen "kommt in Marken- und Domainnamen nicht vor" -- fuer Marken und
+  Domains stimmt das. Fuer Text aus einem Sprachmodell nicht: ein Modell setzt Backticks um URLs
+  und Feldnamen. Zweimal am 15.09. gemessen, je nach Stelle mit anderer Meldung:
 
-  In CHATVORSCHAUEN stimmt es NICHT. Sie kommen aus einem Sprachmodell, und ein Modell setzt
-  Backticks um URLs und Feldnamen. Genau daran ist der Schritt am 15.09. gestorben:
-
-      "preview": "Die URL `https://de.trustpilot.com/review/lee-up.de` ist deine Seite..."
-      -> Uncaught SyntaxError: Unexpected identifier 'https'
+      roher Backtick im Wert, Literal frei stehend   -> Unexpected identifier 'https'
+      roher Backtick im Wert, Literal in einem Aufruf -> missing ) after argument list
 
   Das ist NICHT im Schritt zu heilen: der Fehler passiert beim Einlesen, lange bevor eine Zeile
-  laeuft, also auch vor jeder Ersetzung. Es gehoert in den RPC -- er darf in Freitextfeldern
-  keinen rohen Backtick ausliefern. In Postgres:
+  laeuft -- also auch vor jeder Ersetzung im Schritt. Die Entschaerfung gehoert VOR das Einsetzen,
+  und dafuer hat Bubble den Textoperator find & replace. Zwei davon, mit "Use RegEx" an, an JEDEN
+  Ausdruck, der Freitext tragen kann:
 
-      replace(c.preview, chr(96), '')
+      1.  find:  [`]          replace:  '
+      2.  find:  \$\{         replace:  $ {
 
-  Betroffen sind nur die Felder, die Modelltext tragen: chats.preview, chats.title,
-  opportunities.headline und opportunities.reason. Zahlen, Ids, Domains und Marken nicht.
+  Also:
+
+      [Power-Dashboard-RPC's chats, :format as text:find & replace:find & replace]
+
+  Der erste tauscht den Backtick gegen ein Apostroph -- der Text bleibt lesbar, statt dass eine
+  Stelle verschwindet. Der zweite trennt Dollar und Klammer, damit keine Ersetzung im Literal
+  ausgeloest wird. Ein einzelnes $ und ein Backslash sind ungefaehrlich, gemessen.
+
+  Welche Ausdruecke: alle, die Modelltext tragen -- hier chats und opportunities. Der Hauptausdruck
+  traegt nur Zahlen, Ids, Marken- und Domainnamen und braucht es nicht; schadet aber auch nicht.
 
   STATISCH ZUM TESTEN -- dieselben Werte wie die Beispieldaten, als Run-JS-Schritt:
   Hier steht ein Backtick-Literal, weil diese Daten von Hand geschrieben sind und keinen Backtick
