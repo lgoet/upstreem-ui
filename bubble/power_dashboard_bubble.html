@@ -121,8 +121,29 @@
                       Klick auf eine Zeile. Nutzlast
                       { "team_id": "...", "type": "brand" | "domain" | "url", "id": "..." }
                       id ist bei brand die company_id, bei domain die Domain, bei url die Adresse --
-                      dieselben Kennungen wie in Quick Actions. Im Workflow: den passenden
-                      Drawer oeffnen (openDrawer).
+                      dieselben Kennungen wie in Quick Actions.
+                      KEIN WORKFLOW NOETIG (15.09.): die Komponente ruft openDrawer(type, id)
+                      selbst, und openDrawer meldet die Kennung von sich aus an
+                      bubble_fn_drawer_<type>. Die drei Zeilentypen heissen genau wie die drei
+                      Drawer-Arten aus DRAWER_LEVELS im Header-Snippet. Das Ereignis feuert
+                      trotzdem weiter -- fuer alles, was ZUSAETZLICH passieren soll.
+
+  ── NAVIGATION: DAS KIT GEHT SELBST HIN ───────────────────────────────────────────────────────
+  Die Host-App wechselt Ansichten mit showView(name) und oeffnet Drawer mit openDrawer(art, id).
+  Beides ruft die Komponente direkt, genau wie Miras Senden aus dem Dashboard. Fuer diese vier
+  Klicks braucht es also KEINEN Bubble-Workflow mehr:
+
+      Zeile "Competitive field"   -> openDrawer("brand",  company_id)
+      Zeile "Trending Citations"  -> openDrawer("domain", domain)   im Domain-Modus
+                                     openDrawer("url",    url)      im URL-Modus
+      Pfeil ueber "Competitive field"  -> showView("brands")
+      Pfeil ueber "Trending Citations" -> showView("citations")
+
+  Gibt es showView/openDrawer auf der Seite nicht (Prueftand, Landingpage), steht eine Zeile in
+  der Konsole und das Ereignis feuert trotzdem -- kein stiller Ausfall.
+
+  Der Umschalter Standard/Power ist die Ausnahme: er entscheidet, WELCHE Bubble-Gruppe sichtbar
+  ist, und das kann nur Bubble. Dafuer bleibt data-mode-fn am Seitenkopf.
 
   ── DATEN: renderPowerDashboard ───────────────────────────────────────────────────────────────
   EIN Aufruf, jeder Teil darf einzeln kommen (ein Workflow je RPC ist in Ordnung):

@@ -800,16 +800,48 @@
     /* Die zwei Fusszeilen melden sich einzeln -- "alle Marken" und "alle Zitierungen" fuehren auf
        verschiedene Ansichten. Die Citations-Meldung traegt mit, welche der beiden Listen offen
        war, damit die Zielansicht denselben Modus zeigt. */
+    /* ---------- NAVIGATION OHNE BUBBLE-WORKFLOW (15.09.) --------------------------------------
+       Die Host-App wechselt Ansichten mit showView(name) und oeffnet Drawer mit
+       openDrawer(art, id) -- ausnahmslos, und openDrawer meldet die Kennung von sich aus an
+       bubble_fn_drawer_<art>. Damit braucht KEIN Klick hier einen eigenen Workflow. Derselbe Weg,
+       den Miras Senden aus dem Dashboard schon geht (ask-mira.js, zuMira).
+       Die Namen sind nicht geraten: view-<name> stammt aus den Sidebar-Schluesseln, die drei
+       Drawer-Arten stehen in DRAWER_LEVELS des Header-Snippets (brand und domain auf Ebene 1,
+       url auf Ebene 2).
+       Die EREIGNISSE BLEIBEN und feuern weiter. Sie wegzunehmen waere eine stille Vertrags-
+       aenderung, und wer zusaetzlich etwas tun will (etwas mitloggen, einen State setzen), haengt
+       sich weiter daran. Wer nichts tut, braucht den Workflow nicht mehr. */
+    function zurAnsicht(name){
+      if (typeof window.showView === "function"){ try { window.showView(name); return true; } catch(e){} }
+      /* Kein showView: die Seite ist nicht die Hauptapp (Prueftand, Landingpage). Dann bleibt es
+         beim Ereignis -- und einer Zeile, damit es nicht stumm nichts tut (CLAUDE.md §5). */
+      if (window.console) console.warn('[power-dashboard] showView("' + name + '") gibt es auf ' +
+        'dieser Seite nicht. Das Ereignis ist trotzdem gefeuert.');
+      return false;
+    }
+    function zumDrawer(art, id){
+      if (!id) return false;
+      if (typeof window.openDrawer === "function"){ try { window.openDrawer(art, id); return true; } catch(e){} }
+      if (window.console) console.warn('[power-dashboard] openDrawer("' + art + '") gibt es auf ' +
+        'dieser Seite nicht. Das Ereignis ist trotzdem gefeuert.');
+      return false;
+    }
     if (elAllBrands) elAllBrands.addEventListener("click", function(){
       fire("data-brands-fn", "upwBrands", {});
+      zurAnsicht("brands");
     });
     if (elAllCites) elAllCites.addEventListener("click", function(){
       fire("data-citations-fn", "upwCitations", { mode: state.cmode === "url" ? "urls" : "domains" });
+      zurAnsicht("citations");
     });
     root.addEventListener("click", function(e){
       var row = e.target.closest("[data-upw-row]");
       if (row && !row.classList.contains("up-tsk")){
-        fire("data-rowclick-fn", "upwRowClick", { type: row.getAttribute("data-upw-row"), id: row.getAttribute("data-id") || "" });
+        var typ = row.getAttribute("data-upw-row");
+        var id = row.getAttribute("data-id") || "";
+        fire("data-rowclick-fn", "upwRowClick", { type: typ, id: id });
+        /* Die Zeilentypen heissen genau wie die Drawer: brand, domain, url. */
+        zumDrawer(typ, id);
       }
     });
 

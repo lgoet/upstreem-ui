@@ -248,7 +248,41 @@
        verkleinert die Ueberschrift, damit sie mittig in der Werkzeugzeile steht -- beides nur
        eine CSS-Frage, wenn die Wurzel selbst den Zustand traegt. Kein zweiter Speicher: der
        Wert kommt aus genau der Funktion, die auch den Umschalter fuellt. */
-    function modeZeigen(v){
+    /* DEN HOEHENWECHSEL ANIMIEREN (15.09. angefordert, 200ms ease). Der Kopf ist im Power-Modus
+       80px hoch und sonst 100 -- die Beschreibung faellt weg und die Ueberschrift wird kleiner.
+       Beides ist nicht animierbar (display: none kennt keinen Uebergang, auto keine Hoehe), also
+       der uebliche Weg: vorher messen, umschalten, nachher messen, die zwei Zahlen als Inline-
+       Hoehe setzen und danach wieder aufraeumen. Ohne das Aufraeumen bliebe der Kopf auf einer
+       festen Hoehe stehen und wuerde einen spaeteren Umbruch der Werkzeugzeile abschneiden.
+       Beim ERSTEN Setzen des Modus wird nicht animiert (still = true): die Seite baut sich gerade
+       auf, und eine Animation aus dem Nichts sieht aus wie ein Ruckler. */
+    var _hoehenUhr = null;
+    function hoeheAnimieren(aendern){
+      var vorher = root.getBoundingClientRect().height;
+      aendern();
+      var nachher = root.getBoundingClientRect().height;
+      if (Math.abs(nachher - vorher) < 1) return;
+      if (_hoehenUhr) clearTimeout(_hoehenUhr);
+      root.classList.add("is-hoehenwechsel");
+      root.style.height = vorher + "px";
+      /* Ein erzwungener Umbruch statt requestAnimationFrame: nur so uebernimmt der Browser die
+         erste Hoehe als eigenen Zustand, sonst setzt er beide im selben Stilaufbau und
+         ueberspringt den Uebergang. rAF taete dasselbe, laeuft aber in einem VERDECKTEN Tab gar
+         nicht -- gemessen im Pruefstand, wo der Tab verdeckt ist: kein einziges Bild, die Hoehe
+         blieb bis zum Aufraeumen stehen. offsetHeight ist davon unabhaengig. */
+      void root.offsetHeight;
+      root.style.height = nachher + "px";
+      _hoehenUhr = setTimeout(function(){
+        root.style.height = "";
+        root.classList.remove("is-hoehenwechsel");
+        _hoehenUhr = null;
+      }, 240);
+    }
+    function modeZeigen(v, still){
+      if (still || root.classList.contains("is-power") === (v === "power")) modeKlassen(v);
+      else hoeheAnimieren(function(){ modeKlassen(v); });
+    }
+    function modeKlassen(v){
       root.classList.toggle("is-power", v === "power");
       if (!modeSeg) return;
       Array.prototype.forEach.call(modeSeg.querySelectorAll("[data-dph-mode]"), function(b){
@@ -260,7 +294,7 @@
     function modeMelden(v){ fire("data-mode-fn", "dphMode", { mode: v }); }
     if (modeSeg && UC.getDashboardMode){
       var modeStart = UC.getDashboardMode();
-      modeZeigen(modeStart);
+      modeZeigen(modeStart, true);
       modeSeg.addEventListener("click", function(e){
         var b = e.target.closest("[data-dph-mode]");
         if (!b) return;

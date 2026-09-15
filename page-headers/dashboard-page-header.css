@@ -45,7 +45,22 @@
    KEINE Trennlinie hier (15.09. nachgereicht: "den separator wieder raus"). Die Hoehe ist das
    Gemeinsame mit der Leiste, nicht die Linie.
    Gilt NUR unter .is-power: die anderen sechs Seitenkoepfe behalten ihre 16/16 aus core. */
-.dph-root.is-power { padding-top: 8px; padding-bottom: 8px; }
+.dph-root.is-power { padding-top: 8px; padding-bottom: 40px; }
+/* 40 statt 8 (15.09. nachgereicht: "nochmal 32px padding bottom mehr"). Die Topbar ENDET
+   weiterhin bei 48 -- die 32 sind Luft darunter, kein hoeherer Balken. */
+
+/* ---------- Der Hoehenwechsel Standard/Power wird animiert (15.09. angefordert) ----------
+   200ms ease. Eine Hoehe von auf auto ist nicht animierbar, und die Beschreibung verschwindet
+   mit display: none -- auch das kann kein Uebergang. Deshalb misst dashboard-page-header.js
+   vorher und nachher und setzt die zwei Zahlen als Inline-Hoehe; diese Regel traegt nur den
+   Uebergang. Waehrend der Animation liegt .is-hoehenwechsel an der Wurzel: sie schneidet ab,
+   damit der Inhalt der groesseren Fassung nicht ueber die kleinere hinauslaeuft.
+   prefers-reduced-motion: wer Bewegung abbestellt hat, bekommt den Sprung -- dieselbe Regel wie
+   ueberall im Kit. */
+.dph-root.is-hoehenwechsel { transition: height 200ms ease; overflow: hidden; }
+@media (prefers-reduced-motion: reduce) {
+  .dph-root.is-hoehenwechsel { transition: none; }
+}
 
 /* ---------- KPI strip: Visibility / Ranking / Sentiment ----------
    AUS. Die drei Zahlen oben rechts sind weg -- dieselben Werte stehen einen Blick weiter unten in
