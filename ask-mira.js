@@ -3292,11 +3292,28 @@
   /* Der Weg des Daumens wird GEMESSEN und nicht aus der CSS abgeschrieben: die Menuebreite
      haengt an max-width: 78vw, auf einem schmalen Schirm ist die Schiene also kuerzer. Eine
      festgeschriebene Zahl waere dort falsch. */
+  /* DER EINZUG DES DAUMENS, an EINER Stelle. Er steht in der CSS als top/left: 2.5px, und der
+     Weg unten rechnet mit ihm auf beiden Seiten. Bis zum 15.09. stand die 5 (= 2 x 2.5) als
+     nackte Zahl in effWeg und die Fuellung leitete sich ihren Rand aus der gemessenen
+     Schienenhoehe ab -- die ist 27 und nicht 28, also kam dort 2 statt 2.5 heraus, und die zwei
+     Rechnungen liefen um einen halben Pixel je Stufe auseinander. Gemessen: Ueberstaende von
+     2 / 4 / 6px, wo ueberall derselbe stehen sollte. */
+  var EFF_EINZUG = 2.5;
+  /* offsetWidth und NICHT getBoundingClientRect(): das Menue faehrt beim Oeffnen mit einem
+     scale() heran, und ein gerendertes Mass ist waehrenddessen KLEINER als das Layoutmass.
+     Der Daumen faehrt aber in Layoutpixeln (left + translateX), die Fuellung skaliert dagegen
+     ihre Layoutbreite -- mischt man beide Masse, laufen sie um den Skalierungsfaktor
+     auseinander, und zwar mit dem Weg WACHSEND. Genau das war zu sehen: Ueberstaende von
+     2.6 / 4.6 / 6.6px statt dreimal desselben. offsetWidth ist von Transformationen der
+     Vorfahren unberuehrt. */
+  function effBreiten(){
+    if (!elEffTrack || !elEffThumb) return null;
+    return { b: elEffTrack.offsetWidth || 0, d: elEffThumb.offsetWidth || 23 };
+  }
   function effWeg(){
-    if (!elEffTrack || !elEffThumb) return 0;
-    var b = elEffTrack.getBoundingClientRect().width;
-    var d = elEffThumb.getBoundingClientRect().width || 23;
-    return Math.max(0, b - d - 5);          /* 2.5px Einzug auf jeder Seite */
+    var m = effBreiten();
+    if (!m || !m.b) return 0;
+    return Math.max(0, m.b - m.d - 2 * EFF_EINZUG);
   }
 
   function effZeichnen(){
@@ -3310,13 +3327,24 @@
     }
     var weg = effWeg();
     if (elEffThumb) elEffThumb.style.transform = 'translateX(' + (weg * i / 2) + 'px)';
-    /* Die Fuellung reicht bis zur MITTE des Daumens -- sonst steht sie entweder vor ihm oder
-       laeuft unter ihm hervor. Bei Stufe 0 bleibt ein kurzes Stueck stehen, damit die Schiene
-       nicht ganz leer wirkt. */
+    /* DIE FUELLUNG UMSCHLIESST DEN DAUMEN -- auf JEDER Stufe (15.09. angefordert).
+       Vorher endete sie an seiner MITTE (+2px). Auf Ultra fiel das nicht auf: dort steht der
+       Daumen am Anschlag, der Anteil wird auf 1 gedeckelt, und die Fuellung reicht ohnehin bis
+       zur Kante -- sie umschloss ihn also genau dort und sonst nirgends. Genau so gemeldet.
+       Jetzt endet sie hinter dem Daumen, und zwar mit GENAU dem Abstand, den Ultra schon hat --
+       nicht mit einem neu gewaehlten. Der ist gerechnet und nicht geschrieben: auf der letzten
+       Stufe endet die Fuellung an der Schienenkante, also ist ihr Ueberstand dort
+       Schienenbreite - (linker Rand + ganzer Weg + Daumenbreite). Genau dieser Wert gilt jetzt
+       auf jeder Stufe, und auf Ultra kommt damit wieder Anteil 1 heraus.
+       GEMESSEN vorher: 2 / 4 / 6px auf den drei Stufen -- gleich sah das nur auf Ultra aus,
+       weil der Anteil dort ohnehin gedeckelt wurde. */
     if (elEffFill){
-      var b = elEffTrack ? elEffTrack.getBoundingClientRect().width : 0;
-      var d = elEffThumb ? (elEffThumb.getBoundingClientRect().width || 23) : 23;
-      var anteil = b > 0 ? Math.min(1, (2.5 + weg * i / 2 + d / 2 + 2) / b) : 0;
+      var m = effBreiten() || { b: 0, d: 23 };
+      var b = m.b, d = m.d;
+      /* Linke Kante des Daumens + seine Breite + derselbe Einzug rechts. Auf der letzten Stufe
+         ergibt das genau die Schienenbreite (EINZUG + weg + d + EINZUG = b, weil weg als
+         b - d - 2*EINZUG definiert ist) -- also Anteil 1, wie Ultra es schon zeigte. */
+      var anteil = b > 0 ? Math.min(1, (EFF_EINZUG + weg * i / 2 + d + EFF_EINZUG) / b) : 0;
       elEffFill.style.transform = 'scaleX(' + anteil + ')';
     }
     /* Die drei Punkte: auf der gefuellten Seite weiss, dahinter leise. */
