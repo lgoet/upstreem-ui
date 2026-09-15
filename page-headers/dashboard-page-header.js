@@ -318,7 +318,10 @@
         'Element und core haengen an verschiedenen Pins. Der Umschalter bleibt wirkungslos.');
     }
     if (modeSeg && UC.getDashboardMode){
-      var modeStart = UC.getDashboardMode();
+      /* data-mode-default entscheidet, was ein Geraet sieht, das noch nie umgeschaltet hat.
+         Ohne das Attribut bleibt es bei "standard" wie bisher. Die Wahl des Nutzers gewinnt --
+         sie steht im localStorage und wird hier gar nicht erst ueberschrieben. */
+      var modeStart = UC.getDashboardMode(root.getAttribute("data-mode-default"));
       modeZeigen(modeStart, true);
       modeSeg.addEventListener("click", function(e){
         var b = e.target.closest("[data-dph-mode]");

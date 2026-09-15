@@ -28,6 +28,14 @@
   which one was clicked. This component does not refresh anything or open any URL itself; wiring
   the resulting workflow up to an actual data reload / docs link is a Bubble-side decision.
 
+  data-mode-default = "power" | "standard"                       (NEU 15.09.)
+                    Was ein Geraet sieht, das noch NIE umgeschaltet hat. Ohne das Attribut gilt
+                    "standard" wie bisher. Die Wahl des Nutzers gewinnt immer -- sie steht im
+                    localStorage ("up_dashboard") und wird davon nicht ueberschrieben.
+                    WICHTIG: derselbe Wert gehoert in DASH_VORGABE im Vorlade-Schnipsel
+                    (bubble/page_theme_preload.html). Der laeuft, bevor es ein Element gibt, und
+                    kann dieses Attribut nicht lesen. Stehen die zwei auseinander, blitzt beim
+                    allerersten Besuch kurz die andere Kopfform auf.
   data-mode-fn    = "bubble_fn_dphMode_[dynamic id]"            (NEU 11.09.)
                     Der Umschalter "Standard | Power" oben rechts. Nutzlast:
                         { "team_id": "...", "mode": "standard" }   bzw.  "mode": "power"
@@ -127,6 +135,7 @@
      data-brand-logo="BRAND_LOGO_URL"
      data-refresh-fn="bubble_fn_dphRefresh"
      data-docs-fn="bubble_fn_dphDocs"
+     data-mode-default="power"
      data-mode-fn="bubble_fn_dphMode">
   <div class="up-ph-top">
     <div class="up-ph-left">

@@ -58,8 +58,15 @@
      noch einmal, damit es auch ohne diesen Schnipsel stimmt.
      Nur "power" wird gesetzt: "standard" ist die Vorgabe der CSS, und ein Attribut dafuer waere
      eine zweite Wahrheit ohne Wirkung. */
+  /* DASH_VORGABE muss mit data-mode-default am Dashboard-Seitenkopf uebereinstimmen (15.09.).
+     Zwei Orte, weil dieser Schnipsel laeuft, BEVOR es ein Element auf der Seite gibt -- er kann
+     das Attribut nicht lesen. Stehen sie auseinander, blitzt beim allerersten Besuch eines
+     Geraets kurz die andere Kopfform auf; ab dem ersten Umschalten entscheidet ohnehin der
+     localStorage und die Vorgabe spielt keine Rolle mehr. */
+  var DASH_VORGABE = "power";
   var d = "";
   try { d = String(window.localStorage.getItem("up_dashboard") || "").trim().toLowerCase(); } catch (e) {}
+  if (d !== "power" && d !== "standard") d = DASH_VORGABE;
   if (d === "power") document.documentElement.setAttribute("data-up-dashboard", "power");
 })();
 </script>

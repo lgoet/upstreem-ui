@@ -13348,10 +13348,15 @@
      Ohne Team-Suffix, aus demselben Grund wie up_prefs: eine Vorliebe des Geraets, und die
      Team-Id ist beim Boot noch nicht bekannt. */
   var DASH_STORE = "up_dashboard", DASH_WERTE = { standard: 1, power: 1 };
-  function getDashboardMode(){
+  /* vorgabe: was gilt, solange der Nutzer auf DIESEM Geraet noch nichts gewaehlt hat (15.09.).
+     Ohne Argument bleibt es bei "standard" -- jeder bestehende Aufrufer merkt nichts davon.
+     Der Dashboard-Seitenkopf reicht dafuer sein data-mode-default durch; die Wahl des Nutzers
+     gewinnt immer, sonst waere es keine Vorgabe, sondern eine Festlegung. */
+  function getDashboardMode(vorgabe){
     var v = "";
     try { v = String(window.localStorage.getItem(DASH_STORE) || ""); } catch(e){}
-    return DASH_WERTE[v] ? v : "standard";
+    if (DASH_WERTE[v]) return v;
+    return DASH_WERTE[vorgabe] ? vorgabe : "standard";
   }
   /* DER MODUS STEHT AUCH AM DOKUMENT (15.09.). Grund: der Seitenkopf bekommt seine is-power-
      Klasse erst, wenn dashboard-page-header.js geladen und gemountet ist -- bis dahin steht dort
