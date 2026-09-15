@@ -308,18 +308,19 @@
    Takt laufen. */
 .upw-list { display: flex; flex-direction: column; }
 .upw-li {
-  /* 20px statt 10 (15.09. angefordert: "verdoppel das minimale gap"). Das ist der Abstand
-     zwischen Marken-/Domain-/URL-Namen und der Wertspalte -- ein MINDESTabstand, weil der Name
-     die freie Breite nimmt und der Wert eine feste hat. Er gilt zugleich zwischen Platzziffer,
-     Zeichen und Name; dort war 10 nie zu eng, aber zwei Zahlen fuer dieselbe Zeile waeren eine
-     Quelle mehr, die auseinanderlaeuft. */
-  display: flex; align-items: center; gap: 20px; height: 36px; padding: 0 8px;
+  /* 40px, in zwei Schritten verdoppelt (15.09.: erst 10 -> 20, dann 20 -> 40). Das ist der
+     Abstand zwischen Marken-/Domain-/URL-Namen und der Wertspalte -- ein MINDESTabstand, weil der
+     Name die freie Breite nimmt und der Wert eine feste hat. Er gilt zugleich zwischen
+     Platzziffer, Zeichen und Name; dort sollen es weiterhin 10 sein, das holt der negative Rand
+     unten wieder herein. Zwei Zahlen fuer dieselbe Zeile waeren eine Quelle mehr, die
+     auseinanderlaeuft. */
+  display: flex; align-items: center; gap: 40px; height: 36px; padding: 0 8px;
   margin: 0 -8px; border-radius: 9px; cursor: pointer;
 }
-/* Platzziffer, Zeichen und Name behalten ihre alten 10px -- verdoppelt werden sollte der Abstand
-   VOR dem Prozentwert, nicht der im Zeilenkopf. Der negative Rand nimmt die Haelfte des
-   Zeilenabstands wieder weg; so steht genau eine Zahl (20) in der Datei. */
-.upw-li-idx, .upw-li .up-logo-box { margin-right: -10px; }
+/* Platzziffer, Zeichen und Name behalten ihre alten 10px -- vergroessert werden sollte der
+   Abstand VOR dem Prozentwert, nicht der im Zeilenkopf. Der negative Rand nimmt die Differenz
+   wieder weg (40 - 10 = 30); so steht genau eine Zahl fuer den Zeilenabstand in der Datei. */
+.upw-li-idx, .upw-li .up-logo-box { margin-right: -30px; }
 .upw-li:hover { background: var(--vt-row-hover); }
 .upw-li.is-sk, .upw-li.is-sk:hover { cursor: default; background: transparent; }
 /* Die Nummer in Drittfarbe und mit fester Breite, damit die Zeichen darunter fluchten -- auch
