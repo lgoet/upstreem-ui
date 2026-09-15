@@ -25,7 +25,10 @@ for p in sorted(QUELLEN):
     rel = os.path.relpath(p, WURZEL)
     s = open(p, encoding="utf-8", errors="replace").read()
     # makeFire-Aufrufe: fire("data-x-fn", "eventName", {...})
-    for m in re.finditer(r'fire\w*\(\s*"(data-[a-z-]+-fn)"\s*,\s*"(\w+)"', s):
+    # Auch fire.spaet(...) -- dieselbe Meldung, nur wartet sie auf ihren Empfaenger (core,
+    # 15.09.). Ohne \.?\w* meldete der Waechter upwNeeds als ENTFERNT, obwohl es weiter feuert:
+    # ein Fehlalarm, der genau so teuer ist wie ein uebersehener Ausfall.
+    for m in re.finditer(r'fire[\w.]*\(\s*"(data-[a-z-]+-fn)"\s*,\s*"(\w+)"', s):
         v["fnattrs"].add(m.group(1)); v["events"].add(m.group(2))
     # eventPrefix
     for m in re.finditer(r'eventPrefix:\s*"(\w+)"', s): v["events"].add("prefix:" + m.group(1))
@@ -42,7 +45,7 @@ for p in sorted(QUELLEN):
     # gelesene data-Attribute
     for m in re.finditer(r'getAttribute\(\s*"(data-[a-z0-9-]+)"', s): v["dataattrs"].add(m.group(1))
     # Payload-Schluessel in gefeuerten Objekten (grobe, aber stabile Naeherung)
-    for m in re.finditer(r'fire\w*\([^;]{0,400}?\{([^{}]{0,600})\}', s, re.S):
+    for m in re.finditer(r'fire[\w.]*\([^;]{0,400}?\{([^{}]{0,600})\}', s, re.S):
         for k in re.finditer(r'(?:^|[\s,{])([a-z_][a-z0-9_]*)\s*:', m.group(1)):
             v["payloadkeys"].add(k.group(1))
     if p.endswith(".css"):

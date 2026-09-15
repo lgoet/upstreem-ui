@@ -305,7 +305,13 @@
       /* Ein zweiter Seitenkopf (Bubble baut doppelt) oder ein anderer Weg zum Umschalten: alle
          zeigen dasselbe. */
       if (UC.onDashboardMode) UC.onDashboardMode(function(v){ modeZeigen(v); });
-      if (root.getAttribute("data-mode-fn") || window.bubble_fn_dphMode) modeMelden(modeStart);
+      /* Die ERSTE Ansage wartet auf ihren Empfaenger (fire.spaet). Bubble legt das
+         Toolbox-Element erst an, wenn es zum ersten Mal gerendert wird -- der Seitenkopf ist
+         16ms nach dem Aufbau fertig und war damit regelmaessig frueher. Die Meldung verpuffte,
+         und wer daran die Sichtbarkeit der zwei Dashboards haengt, sah danach gar nichts.
+         Ohne die Bedingung von vorher: die fragte, ob der Empfaenger JETZT da ist -- genau die
+         Annahme, die hier nicht gilt. */
+      fire.spaet("data-mode-fn", "dphMode", { mode: modeStart });
     }
 
     var searchBtn = root.querySelector(".dph-searchbtn");

@@ -812,7 +812,10 @@
       /* Nichts zu holen: gar nicht erst feuern. Ein Ereignis mit leerer Liste waere eine
          Einladung, den Workflow trotzdem durchlaufen zu lassen. */
       if (!needs.length) return;
-      fire("data-needs-fn", "upwNeeds", { mode: state.mode, needs: needs });
+      /* Auch diese Ansage wartet auf ihren Empfaenger -- aus demselben Grund wie die
+         Modusmeldung im Seitenkopf. Sie geht beim Aufbau raus, das Toolbox-Element kann noch
+         fehlen, und eine verpuffte Bedarfsmeldung heisst: die Listen bleiben leer. */
+      fire.spaet("data-needs-fn", "upwNeeds", { mode: state.mode, needs: needs });
     }
     /* Der Anlass zum Nachholen: die Gruppe wird erst im naechsten Task eingeblendet, also ist
        sichtbar() im Moment des Moduswechsels noch false. Dieselbe kurze Anlaufreihe wie bei Mira

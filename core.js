@@ -8855,7 +8855,7 @@
     opts = opts || {};
     var label = opts.label || "component";
     var evtPrefix = opts.eventPrefix || "";
-    return function fire(attr, fallbackName, payload){
+    function fire(attr, fallbackName, payload, opts){
       /* team_id rides along on every event, so a Bubble workflow can check that what came back
          belongs to the team currently on screen instead of trusting arrival order. Added here,
          once, rather than in each component's payload -- and only when a team is actually known,
@@ -8919,19 +8919,52 @@
         console.log("[trace] " + label + " -> " + fnName +
           (typeof fn === "function" ? " (Empfaenger da)" : " (KEIN EMPFAENGER)") + " " + json);
       }
-      if (typeof fn === "function"){
+      var getroffen = typeof fn === "function";
+      if (getroffen){
         try { fn(json); }
         catch(e){
           if (window.console) console.warn("[" + label + "] " + fnName + " hat geworfen. Das Event " +
             "wurde ausgeloest, der Bubble-Workflow ist aber nicht durchgelaufen. Fehler:", e);
         }
       }
-      else if (window.console) {
+      else if (window.console && !(opts && opts.still)) {
         console.warn("[" + label + "] " + fnName + " not found on window/parent/top or any reachable " +
           "iframe — this action reached no Bubble workflow. Check the Toolbox element's name.");
       }
       try { root.dispatchEvent(new CustomEvent(evtPrefix + fallbackName, { detail: payload, bubbles: true })); } catch(e){}
+      /* Sagt dem Aufrufer, ob ein Empfaenger da war. Bis zum 15.09. gab fire nichts zurueck, also
+         konnte niemand auf "noch nicht da" reagieren -- der Aufruf verpuffte. */
+      return getroffen;
+    }
+    /* ── EINE MELDUNG, DIE AUF IHREN EMPFAENGER WARTET ──────────────────────────────────────────
+       Bubble legt ein Toolbox-Element ("JavaScript to Bubble") erst an, wenn es zum ersten Mal
+       gerendert wird. Eine Komponente ist regelmaessig frueher fertig als ihr Empfaenger -- dann
+       feuert sie ins Leere und der Workflow laeuft nie. Genau das ist mit der Moduszmeldung des
+       Dashboard-Seitenkopfs passiert: sie geht 16ms nach dem Aufbau raus, und wer daran die
+       Sichtbarkeit beider Dashboards haengt, sieht danach GAR NICHTS.
+       Also dieselbe Loesung wie bei Miras Senden (ask-mira.js, anBubbleSenden): erneut versuchen,
+       bis ein Empfaenger da ist. Die Abstaende wachsen -- der Normalfall ist beim ersten oder
+       zweiten Versuch erledigt, und ein wirklich fehlender Empfaenger soll nicht vier Sekunden
+       lang die Schleife beschaeftigen. Die Zwischenversuche sind STILL; nur der letzte warnt,
+       sonst stuenden sieben gleiche Zeilen in der Konsole.
+       NUR fuer Meldungen, die einen Zustand ansagen (welcher Modus, welcher Bedarf) -- nicht fuer
+       Klicks: ein Klick, der vier Sekunden spaeter ankommt, ist ein Fehler, keine Rettung. */
+    /* Dicht am Anfang, weit am Ende: ein Empfaenger, der bei 1200ms auftaucht, soll nicht bis
+       2700ms warten -- gemessen, genau das passierte mit der groben Reihe. Jeder Versuch ist ein
+       Namensnachschlag ueber vier Fenster, also billig; elf davon ueber vier Sekunden fallen
+       nicht ins Gewicht. */
+    var WARTEN = [0, 60, 150, 300, 500, 800, 1200, 1700, 2400, 3200, 4000];
+    fire.spaet = function(attr, fallbackName, payload){
+      var i = 0;
+      (function versuch(){
+        var letzter = i >= WARTEN.length - 1;
+        if (fire(attr, fallbackName, payload, { still: !letzter })) return;
+        if (letzter) return;
+        i++;
+        setTimeout(versuch, WARTEN[i] - WARTEN[i - 1]);
+      })();
     };
+    return fire;
   }
 
   /* ── Toast ───────────────────────────────────────────────────────────────────────────────────
