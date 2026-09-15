@@ -1210,6 +1210,21 @@
     }
     root.classList.add('is-launcher');
     if (root.parentNode !== slot) slot.appendChild(root);
+    /* DER ANHEFTPUNKT GEHOERT DEM GASTGEBER (15.09.). data-sticky-top steht hier fest auf 16 --
+       richtig fuer die eigene Seite dieses Bretts, falsch im Dashboard: dort klebt darueber noch
+       die Zeile mit Bereichsumschalter und Werkzeugen. Ohne diese Zeilen pinnten die
+       Bahnueberschriften bei 48px und damit UEBER der Zeile, die sie eigentlich untermalen
+       sollen -- gemessen: Zeile bei 171, Ueberschrift bei 48.
+       Der Gastgeber rechnet den Wert aus (sein eigener Anheftpunkt plus die Hoehe seiner Zeile)
+       und reicht ihn durch; hier wird er nur gesetzt und die Entscheidung neu getroffen. */
+    if (opts && opts.stickyTop != null){
+      var neuerTop = String(opts.stickyTop);
+      if (root.getAttribute('data-sticky-top') !== neuerTop){
+        root.setAttribute('data-sticky-top', neuerTop);
+        if (UC.makeSticky) UC.makeSticky(root, root.querySelector('.uo-head'));
+        applySticky();
+      }
+    }
     var toolSlot = opts && opts.toolSlot;
     var tools = werkzeuge();
     if (toolSlot && tools && tools.parentNode !== toolSlot){
@@ -1225,6 +1240,13 @@
   }
   function launcherAus(){
     if (!istLauncher() && !_uoHeim) return;
+    /* Zurueck auf den eigenen Anheftpunkt -- sonst behielte das Brett den des Gastgebers, und auf
+       seiner eigenen Seite klebten die Ueberschriften viel zu tief. */
+    if (root.getAttribute('data-sticky-top') !== '16'){
+      root.setAttribute('data-sticky-top', '16');
+      if (UC.makeSticky) UC.makeSticky(root, root.querySelector('.uo-head'));
+      applySticky();
+    }
     root.classList.remove('is-launcher');
     var tools = werkzeuge();
     if (_uoToolHeim && _uoToolHeim.parentNode && tools){

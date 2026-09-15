@@ -705,7 +705,13 @@
     function brettAusleihen(){
       if (!brettBereit() || !elBoard) return false;
       var ok = false;
-      try { ok = window.opportunitiesLauncherAttach(elBoard, { view: VIEW, toolSlot: elUoTools }); } catch(e){}
+      /* Der Anheftpunkt fuer das Brett: unser eigener plus die Hoehe der klebenden Zeile darueber.
+         Jedes Mal frisch gerechnet statt einmal beim Aufbau -- die Zeile bricht auf schmalen
+         Schirmen um und ist dann hoeher. */
+      var obenIch = parseFloat(getComputedStyle(root).getPropertyValue("--up-sticky-top")) || 0;
+      var zeileHoch = elModeseg ? Math.round(elModeseg.getBoundingClientRect().height) : 0;
+      try { ok = window.opportunitiesLauncherAttach(elBoard, { view: VIEW, toolSlot: elUoTools,
+              stickyTop: Math.round(obenIch + zeileHoch) }); } catch(e){}
       root.classList.toggle("has-board", !!ok && brettHier());
       return ok;
     }
