@@ -280,9 +280,18 @@
    Takt laufen. */
 .upw-list { display: flex; flex-direction: column; }
 .upw-li {
-  display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 8px;
+  /* 20px statt 10 (15.09. angefordert: "verdoppel das minimale gap"). Das ist der Abstand
+     zwischen Marken-/Domain-/URL-Namen und der Wertspalte -- ein MINDESTabstand, weil der Name
+     die freie Breite nimmt und der Wert eine feste hat. Er gilt zugleich zwischen Platzziffer,
+     Zeichen und Name; dort war 10 nie zu eng, aber zwei Zahlen fuer dieselbe Zeile waeren eine
+     Quelle mehr, die auseinanderlaeuft. */
+  display: flex; align-items: center; gap: 20px; height: 36px; padding: 0 8px;
   margin: 0 -8px; border-radius: 9px; cursor: pointer;
 }
+/* Platzziffer, Zeichen und Name behalten ihre alten 10px -- verdoppelt werden sollte der Abstand
+   VOR dem Prozentwert, nicht der im Zeilenkopf. Der negative Rand nimmt die Haelfte des
+   Zeilenabstands wieder weg; so steht genau eine Zahl (20) in der Datei. */
+.upw-li-idx, .upw-li .up-logo-box { margin-right: -10px; }
 .upw-li:hover { background: var(--vt-row-hover); }
 .upw-li.is-sk, .upw-li.is-sk:hover { cursor: default; background: transparent; }
 /* Die Nummer in Drittfarbe und mit fester Breite, damit die Zeichen darunter fluchten -- auch
@@ -301,7 +310,10 @@
    mehr; zusammen mit den 8px Abstand ergibt das 124. Ein Deckel und keine Mindestbreite: eine
    fehlende Trendpille darf die Spalte nicht schmaler machen, sonst faengt der Versatz von vorne
    an -- und genau die Zeilen ohne Trend waren der Anlass. */
-.upw-li-val { flex: 0 0 124px; display: inline-flex; align-items: center; gap: 8px; }
+/* 4px zwischen Zahl und Trendpille statt 8 (15.09. angefordert). Die Spalte wird im selben Zug
+   von 124 auf 120 schmaler -- 54 + 4 + 62 --, sonst bliebe rechts ein Rest stehen und der Pfeil
+   haette einen Abstand zur Kante, den die Zeile daneben nicht hat. */
+.upw-li-val { flex: 0 0 120px; display: inline-flex; align-items: center; gap: 4px; }
 .upw-li-val > .up-num { flex: 0 0 54px; }
 /* Die eigene Marke traegt ihren Namen fetter -- dasselbe Mittel, mit dem die grossen Tabellen sie
    hervorheben, nur ohne deren Zeilenflaeche. */
