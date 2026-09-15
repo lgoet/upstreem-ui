@@ -30,6 +30,7 @@
 .upw-root.is-narrow .upw-narrow,
 .upw-root.is-narrow .upw-wide { margin-left: 0; margin-right: 0; }
 
+
 /* ---------- Mira ----------
    Der Platz fuer die geliehene Wurzel. Bis sie da ist, ihr Umriss: dieselbe Hoehe, derselbe
    Radius (32px wie .am-composer), damit darunter nichts springt.
@@ -204,6 +205,10 @@
    -- untereinander, wie die Kennzahlen und die Tabelle es dort ohnehin schon tun. */
 .upw-root.is-narrow .upw-datarow { flex-direction: column; }
 .upw-root.is-narrow .upw-datarow-side { flex-basis: auto; width: 100%; }
+/* Und der Hauptblock genauso. Ohne ihn war er nur so breit wie sein Inhalt (gemessen 305 statt
+   358px), und die mittig gestellten Kennzahlen darin hatten nichts zu verteilen -- "mittig" fiel
+   mit "links" zusammen, rechts blieben 69px Luft stehen. */
+.upw-root.is-narrow .upw-datarow-main { width: 100%; }
 
 /* ---------- Overview (neu, 12.09. verdichtet) ----------
    Drei Kennzahlen in EINEM .up-box (16px Radius -- der geerbte Wert aus core, hier absichtlich
@@ -381,13 +386,26 @@
    doch"). Sie standen untereinander, seit der Kasten um sie herum weg ist -- das war die Regel aus
    der Zeit mit Kasten und Verlaufslinien, als eine Karte breit sein musste. Ohne beides braucht
    eine Kennzahl nur noch ihre Zahl und eine kurze Fusszeile.
-   Der Text rueckt dabei in die Mitte: drei schmale Spalten, die alle links anschlagen, sehen auf
-   einem Telefon aus, als waere rechts etwas abgeschnitten. */
+   Der Text rueckte dabei bis zum 15.09. in die MITTE. Jetzt anders herum, und das ist der
+   Unterschied: die DREI BLOECKE stehen mittig auf der Zeile, der Text IN jedem Block aber links.
+   Grund: mit mittigem Text beginnt jede der drei Zeilen (Beschriftung, Zahl, Fusstext) an einer
+   anderen Stelle, weil sie verschieden breit sind -- das Auge findet keine Kante. Links
+   angeschlagen fangen alle drei auf derselben Linie an, und die Gruppe als Ganzes sitzt trotzdem
+   mittig, statt rechts eine Luecke zu lassen.
+   Flex statt Grid dafuer: drei feste Spalten koennen nicht mittig stehen, und sie sollen bei
+   Bedarf untereinander brechen (wrap) statt zu quetschen -- ausdruecklich so verlangt. */
 .upw-root.is-narrow .upw-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); min-height: 0; gap: 8px; }
-.upw-root.is-vnarrow .upw-kpi { text-align: center; }
-.upw-root.is-vnarrow .upw-kpi-main { align-items: center; }
-.upw-root.is-vnarrow .upw-kpi-row { justify-content: center; gap: 6px; }
-.upw-root.is-vnarrow .upw-kpi-foot { justify-content: center; }
+.upw-root.is-vnarrow .upw-kpis {
+  /* width: 100% ist noetig, damit justify-content ueberhaupt etwas zu verteilen hat: als Kind
+     eines Rasters ist die Zeile sonst nur so breit wie ihr Inhalt, und "mittig" faellt mit
+     "links" zusammen -- gemessen, 305 statt 358px breit und rechts 69px Luft. */
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; width: 100%;
+  column-gap: 24px; row-gap: 20px;
+}
+.upw-root.is-vnarrow .upw-kpi { flex: 0 1 auto; min-width: 0; text-align: left; }
+.upw-root.is-vnarrow .upw-kpi-main { align-items: flex-start; }
+.upw-root.is-vnarrow .upw-kpi-row { justify-content: flex-start; gap: 6px; }
+.upw-root.is-vnarrow .upw-kpi-foot { justify-content: flex-start; }
 /* Eine Stufe kleiner, damit "3.0%" und sein Trend in einem Drittel der Telefonbreite nebeneinander
    bleiben -- gemessen passt es bei 375px, darunter bricht der Trend unter die Zahl. */
 .upw-root.is-vnarrow .upw-kpi-val .up-num { font-size: 18px; }
@@ -404,7 +422,14 @@
    zwei Quellen (die Bubble-Seite drumherum traegt in der Praxis noch ihr eigenes dazu), und ein
    fester Wert hier nimmt der Sache die Unschaerfe: 16px, PUNKT, unabhaengig davon, was aussenrum
    noch steht. */
-.upw-root.is-vnarrow .upw-col { --upw-pad: 16px; }
+/* Ab is-narrow und nicht erst ab is-vnarrow (15.09. angefordert: "ueberall 16px padding left
+   right im mobile dashboard powermode"). Darunter lag --upw-pad auf clamp(14px, 3vw, 28px) --
+   bei 700px also 21px, bei 760px 22.8px: auf einem Telefon quer und auf einem kleinen Tablet ein
+   anderer Einzug als hochkant, ohne dass jemand das gewollt haette.
+   EINE Stelle fuer alle: der Wert haengt an .upw-col, und Mira, die Chips, Overview, Recent
+   chats, beide Listen und das Brett liegen darin. Ein zweites Polster an der Wurzel haette sich
+   mit diesem verdoppelt -- gemessen, 32 statt 16. */
+.upw-root.is-narrow .upw-col { --upw-pad: 16px; }
 /* Die Chips sind auf dem Telefon eine Stufe kleiner, damit auch mal zwei nebeneinander stehen
    koennen statt jede fuer sich eine ganze Zeile zu belegen -- 28px statt 32px Hoehe, 8px statt
    14px Seitenpolster, 11.5px statt 12.5px Schrift. Ueberschrieben an .upw-chip, nicht an

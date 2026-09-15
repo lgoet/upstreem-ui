@@ -226,10 +226,21 @@
         seg.className = "up-seg dph-mode";
         seg.setAttribute("role", "tablist");
         seg.setAttribute("aria-label", "Dashboard view");
+        /* Zeichen UND Wort, immer beide im Markup (15.09.). Auf dem Telefon ist kein Platz fuer
+           die zwei Woerter -- dort blendet die CSS die Beschriftung aus und laesst das Zeichen
+           stehen. Das im JS zu entscheiden hiesse, bei jeder Breitenaenderung neu zu bauen; mit
+           beidem im Markup ist es eine Frage der Darstellung, und der Umschalter bleibt bei einem
+           Drehen des Geraets derselbe Knopf.
+           data-tip traegt das Wort weiter, sobald es nicht mehr dasteht -- und aria-label, damit
+           der Knopf fuer die Vorlesehilfe nicht nur ein Bild ist. */
         seg.innerHTML = ["standard", "power"].map(function(v){
           var lbl = v === "power" ? "Power" : "Standard";
-          return '<button type="button" class="up-seg-btn" role="tab" data-dph-mode="' + v + '" ' +
-            'data-i18n="' + lbl + '">' + (UC.t ? UC.t(lbl) : lbl) + '</button>';
+          var zeichen = UC.icon ? UC.icon(v === "power" ? "gauge" : "layoutDashboard", 2) : "";
+          var txt = UC.t ? UC.t(lbl) : lbl;
+          return '<button type="button" class="up-seg-btn dph-modebtn" role="tab" data-dph-mode="' + v + '" ' +
+            'data-tip="' + txt + '" aria-label="' + txt + '">' +
+            '<span class="dph-modeic" aria-hidden="true">' + zeichen + '</span>' +
+            '<span class="dph-modelbl" data-i18n="' + lbl + '">' + txt + '</span></button>';
         }).join("");
         topright.insertBefore(seg, topright.firstChild);
       }

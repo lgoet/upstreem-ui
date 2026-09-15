@@ -14851,6 +14851,17 @@
               '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
     layoutGrid: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>' +
               '<rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>',
+    /* layout-dashboard und gauge: das Paar fuer den Umschalter Standard/Power im Dashboard-Kopf,
+       sobald dort kein Platz mehr fuer Woerter ist (15.09. angefordert). Beide sind neu in diesem
+       Katalog und stehen sonst nirgends in der App -- ausdruecklich verlangt, damit die zwei
+       Zeichen nicht mit einem anderen Ort verwechselt werden.
+       Warum diese zwei: layout-dashboard ist der ungleiche Kachelsatz, also "die uebliche
+       Uebersicht", waehrend layoutGrid daneben vier gleiche Quadrate zeigt und schon fuer
+       "Gitteransicht" vergeben ist. gauge ist der Tachometer -- Leistung, nicht Blitz: zap steht
+       in dieser App fuer Prompt Insights, und ein zweiter Blitz waere eine falsche Faehrte. */
+    layoutDashboard: '<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/>' +
+              '<rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
+    gauge: '<path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/>',
     listIcon: '<path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/>' +
               '<path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/>',
     /* list-chevrons-up-down / -down-up: das Paar fuer eine Liste, die sich aufklappen bzw.

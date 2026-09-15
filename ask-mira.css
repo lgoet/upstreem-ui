@@ -1763,12 +1763,12 @@
   .am-pick-panel {
     /* RUNDUNG UND POLSTER WIE DAS EINGABEFELD DARUEBER (13.09. angefordert): 32px Radius und
        16px rundum, also dieselben Werte wie .am-composer -- die zwei Flaechen liegen
-       uebereinander und sollen als ein Paar lesbar sein. Der Abstand dazwischen ist auf 4px
-       zurueck (vorher 17), die zwei ruecken damit sichtbar zusammen.
+       uebereinander und sollen als ein Paar lesbar sein. Der Abstand dazwischen: 17 -> 4 (13.09.)
+       -> 8 (15.09. angefordert). Die zwei bleiben ein Paar, atmen aber wieder etwas.
        Das Polster sitzt HIER und nicht mehr in den Kindern: .am-pick-search und .am-pick-scroll
        hatten je eigene Seitenpolster, die sich mit diesem gedoppelt haetten -- sie sind darum
        weiter unten auf 0 gesetzt. */
-    position: absolute; bottom: calc(100% + 4px); left: 0; right: 0; z-index: 60;
+    position: absolute; bottom: calc(100% + 8px); left: 0; right: 0; z-index: 60;
     box-sizing: border-box; display: flex; flex-direction: column; padding: 16px;
     border: 1px solid var(--up-menu-border, var(--am-border)); border-radius: 32px;
     background: var(--up-menu-bg, var(--am-card)); box-shadow: 0 -2px 16px rgba(0,0,0,0.06);
@@ -1817,8 +1817,11 @@
     display: flex; align-items: center; flex-wrap: wrap;
     column-gap: 16px; row-gap: 8px;
     /* Seitlich 0: die 14px von frueher doppelten sich mit dem Panel-Polster. Oben und unten
-       bleibt der Abstand zu Suchzeile und Liste. */
-    margin: 12px 0 10px;
+       bleibt der Abstand zu Suchzeile und Liste.
+       OBEN 24 statt 12 (15.09. angefordert: "verdoppel das gap zwischen dem Inputbereich und der
+       Filter bar"). Unten bleibt es bei 10 -- gemeint war der Abstand NACH OBEN zum Eingabefeld,
+       nicht der zur Liste darunter. */
+    margin: 24px 0 10px;
   }
   .am-pick-crow.is-leer { display: none; }
   .am-pick-h {
@@ -3129,7 +3132,9 @@
    1px-Rahmen des Composers liegt dazwischen; 13.09. von 17 auf 4 zurueckgenommen), der Schatten
    2px nach UNTEN versetzt -- nach oben reicht er 16 - 2 = 14px und bleibt damit vom Feld weg.
    pickDeckel rechnet den Platz nach unten. */
-#ask-mira.up-root.is-launcher .am-pick-panel { top: calc(100% + 4px); bottom: auto; transform-origin: top center;
+/* 8 wie oben (15.09.): im Dashboard klappt das Panel nach UNTEN auf, es ist aber derselbe
+   Abstand zum selben Eingabefeld -- zwei Zahlen dafuer waeren zwei Orte zum Vergessen. */
+#ask-mira.up-root.is-launcher .am-pick-panel { top: calc(100% + 8px); bottom: auto; transform-origin: top center;
   box-shadow: 0 2px 16px rgba(0,0,0,0.06); }
 #ask-mira.up-root.is-launcher:not(.is-pick-open) .am-pick-panel { transform: translateY(-6px) scale(0.99); }
 #ask-mira.up-root.is-launcher[data-theme="dark"] .am-pick-panel { box-shadow: 0 2px 16px rgba(0,0,0,0.3); }

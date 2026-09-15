@@ -111,19 +111,32 @@ html[data-up-dashboard="power"] .dph-root { padding-top: 8px; padding-bottom: 40
    nicht mehr erreicht. Hier bleibt nur, was .up-ph-iconbtn nicht selbst regelt: nicht schrumpfen. */
 .dph-docsbtn { flex: 0 0 auto; }
 
-/* ---------- Standard | Power auf dem Telefon (11.09.) ----------
-   Oben rechts stehen jetzt Umschalter UND drei Knoepfe, zusammen rund 290px. Unter 500px
-   (is-vnarrow, widthTiers) passt das nicht mehr neben die Ueberschrift -- gemessen bei 420px: der
-   Umschalter lag ueber "Dashboard". Also bekommt er dort eine eigene Zeile unter dem Text, die
-   Knoepfe bleiben oben rechts.
-   display: contents an .dph-topright hebt dessen Kinder in die Zeile von .up-ph-top, damit der
-   Umschalter allein umbrechen kann; order schickt ihn ans Ende, flex-basis 100% auf eine Zeile fuer
-   sich. Die KPI-Leiste darin ist ohnehin aus (display: none oben). */
+/* Das Zeichen im Umschalter steht IMMER im Markup und ist auf breiten Schirmen aus -- dort
+   traegt der Knopf sein Wort. Siehe die Begruendung in dashboard-page-header.js: die Entscheidung
+   gehoert der Darstellung, nicht dem Aufbau, sonst muesste der Umschalter bei jedem Drehen des
+   Geraets neu gebaut werden. */
+.dph-modeic { display: none; }
+.dph-modeic svg { width: 16px; height: 16px; display: block; }
+
+/* ---------- Standard | Power auf dem Telefon (11.09., 15.09. umgebaut) ----------
+   Bis zum 15.09. bekam der Umschalter unter 500px eine EIGENE ZEILE unter der Ueberschrift. Neu
+   verlangt: er gehoert in die Werkzeugzeile, links neben das Docs-Zeichen, und zwar als
+   ZEICHENumschalter -- zwei Woerter passen dort nicht.
+   Damit ist der Umbruch von vorher gegenstandslos: kein order, kein flex-basis 100%.
+   display: contents an .dph-topright bleibt -- es hebt die Kinder in die Zeile von .up-ph-top,
+   und order 1 vor den Werkzeugen (2) setzt den Umschalter genau links daneben.
+   Die KPI-Leiste darin ist ohnehin aus (display: none oben). */
 .dph-root.is-vnarrow .up-ph-top { flex-wrap: wrap; row-gap: 12px; }
 /* Der Textblock schrumpft wie bisher, statt die Knoepfe in die naechste Zeile zu schieben: mit
    dem Umbruch oben haette er sonst die ganze Breite genommen, und die Knoepfe waeren unter den
    Text gerutscht -- gemessen, und anders als der Seitenkopf auf dem Telefon bisher aussah. */
 .dph-root.is-vnarrow .up-ph-left { flex: 1 1 0; }
 .dph-root.is-vnarrow .dph-topright { display: contents; }
-.dph-root.is-vnarrow .dph-mode { order: 3; flex: 0 0 100%; }
-.dph-root.is-vnarrow .dph-mode .up-seg-btn { flex: 1 1 0; }
+.dph-root.is-vnarrow .dph-mode { order: 1; flex: 0 0 auto; }
+.dph-root.is-vnarrow .dph-tools { order: 2; }
+/* Wort aus, Zeichen an. Der Knopf wird quadratisch: 28px in der 32px-Pille, dieselbe Rechnung wie
+   .up-seg-btn sie fuer Text macht (Hoehe minus 2px Luft je Seite), nur ohne Textbreite. */
+.dph-root.is-vnarrow .dph-modelbl { display: none; }
+.dph-root.is-vnarrow .dph-modeic { display: block; }
+.dph-root.is-vnarrow .dph-mode .up-seg-btn { flex: 0 0 auto; width: 28px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center; }
