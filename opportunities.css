@@ -125,6 +125,23 @@
   position: sticky; top: calc(var(--up-sticky-top) + var(--up-thead-off)); z-index: 4;
   background: var(--up-surface); border-radius: 0;
 }
+/* UND DER STREIFEN DARUEBER, WENN DAS BRETT GELIEHEN IST (15.09.).
+   Normalerweise deckt .uo-head den Bereich zwischen Fensteroberkante und der angehefteten
+   Bahnueberschrift ab: die Werkzeugleiste klebt bei --up-sticky-top und malt ihre eigene Flaeche.
+   Im Launcher zieht die Leiste aber in die Kopfzeile des Dashboards um (opportunities.js,
+   toolSlot), .uo-head bleibt 0px hoch -- gemessen -- und dieses Band malt niemand mehr. Die
+   Karten laufen dann sichtbar OBERHALB der Ueberschrift durch. Genau so gemeldet, mit Bild.
+   Dieselbe Loesung wie ueberall sonst: .up-sticky .up-head::before in core malt von der
+   Kopfzeile bis zur Fensteroberkante. Die Hoehe ist genau die Strecke, um die diese Ueberschrift
+   tiefer klebt -- dieselbe Rechnung wie ihr top, damit die zwei nicht auseinanderlaufen koennen.
+   Nur bei .is-launcher: steht das Brett auf seiner eigenen Seite, deckt .uo-head das Band schon
+   ab, und ein zweiter Streifen waere doppelt gemalt. */
+.up-sticky.is-launcher .uo-col-head::before,
+.up-sticky.is-launcher .uo-list-sechead::before {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 100%;
+  height: calc(var(--up-sticky-top) + var(--up-thead-off));
+  background: var(--up-surface); pointer-events: none;
+}
 /* Der Sonderfall von hier ist nach core gewandert: seit dem 08.09. malt .up-sticky .up-head in
    KEINER Komponente mehr eine Flaeche, weil derselbe Streifen ueberall als dunkler Hintergrund
    gemeldet wurde. Die zwei Zeilen sind damit gegenstandslos. */
@@ -137,9 +154,17 @@
 /* Die beiden Eckstuecke sind entfallen: sie malten den Seitengrund in die Ecken AUSSERHALB des
    16px-Radius, damit die Rundung der Spalte hinter der angehefteten Ueberschrift sichtbar bleibt.
    Ohne Spaltenflaeche und ohne Rundung gibt es dort nichts mehr freizulegen. */
-.up-sticky:not(.is-stacked) .uo-col-head::before,
+/* Die zwei Eckstuecke sind gegenstandslos -- aber NICHT der Deckstreifen darueber: der Selektor
+   nimmt ::before deshalb nur dort zurueck, wo das Brett nicht geliehen ist. Ohne diese Ausnahme
+   haette diese Zeile die Regel gleich wieder geloescht. */
+.up-sticky:not(.is-stacked):not(.is-launcher) .uo-col-head::before,
 .up-sticky:not(.is-stacked) .uo-col-head::after { content: none; }
-.up-sticky:not(.is-stacked) .uo-col-head::before {
+/* :not(.is-launcher) auch hier -- und das ist kein Schmuck. Diese Regel setzt background auf
+   einen Verlauf und steht SPAETER in der Datei; bei gleicher Spezifitaet hat sie den Deckstreifen
+   oben wieder durchsichtig gemacht (gemessen: content "" und height 48px standen, aber
+   backgroundColor war rgba(0,0,0,0)). Genau der Fall aus CLAUDE.md 1: ueber Spezifitaet loesen,
+   nicht ueber Reihenfolge. */
+.up-sticky:not(.is-stacked):not(.is-launcher) .uo-col-head::before {
   left: 0;  background: radial-gradient(circle at bottom right, rgba(0,0,0,0) 16px, var(--up-surface) 16.5px);
 }
 .up-sticky:not(.is-stacked) .uo-col-head::after {
