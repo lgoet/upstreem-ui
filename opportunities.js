@@ -1225,6 +1225,13 @@
         applySticky();
       }
     }
+    /* UND --up-thead-off AUF NULL. Der Wert ist die Hoehe der eigenen Werkzeugleiste, um die die
+       Bahnueberschriften tiefer anheften -- richtig auf der eigenen Seite, falsch im Launcher:
+       dort ist die Leiste umgezogen und .uo-head 0px hoch, makeSticky hat den Wert aber vorher
+       gemessen und behaelt ihn. Die Ueberschrift klebte dadurch 32px UNTER der Zeile des
+       Gastgebers, und genau durch diese Luecke liefen die Karten sichtbar durch. Gemessen: Zeile
+       bis 203, Ueberschrift erst ab 235. */
+    root.style.setProperty('--up-thead-off', '0px');
     var toolSlot = opts && opts.toolSlot;
     var tools = werkzeuge();
     if (toolSlot && tools && tools.parentNode !== toolSlot){
@@ -1247,6 +1254,8 @@
       if (UC.makeSticky) UC.makeSticky(root, root.querySelector('.uo-head'));
       applySticky();
     }
+    /* Zu Hause misst makeSticky wieder selbst -- die eigene Leiste ist dann ja zurueck. */
+    root.style.removeProperty('--up-thead-off');
     root.classList.remove('is-launcher');
     var tools = werkzeuge();
     if (_uoToolHeim && _uoToolHeim.parentNode && tools){

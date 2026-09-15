@@ -287,10 +287,14 @@
 .upw-root.has-board .upw-modeseg {
   position: sticky; top: var(--up-sticky-top); background: var(--up-surface);
 }
-.upw-root.has-board .upw-modeseg::before {
-  content: ""; position: absolute; left: 0; right: 0; bottom: 100%;
-  height: var(--up-sticky-top); background: var(--up-surface); pointer-events: none;
-}
+/* HIER STAND EIN DECKSTREIFEN und er war ein Fehler (15.09.). Er sollte die Strecke zwischen
+   Fensteroberkante und der klebenden Zeile abdecken -- so wie core es bei .up-head macht. Dort
+   stimmt das, weil der Kopf ganz oben in seiner Komponente sitzt. HIER stehen darueber Mira, die
+   Chips, Overview und Recent chats: der Streifen ist --up-sticky-top hoch (in der App 171px),
+   liegt IMMER da, nicht nur im angehefteten Zustand, und hat damit alles darueber zugedeckt.
+   Genau so gemeldet ("der gesamte Bereich darueber ist mit sticky").
+   Es braucht ihn auch nicht: die Zeile selbst ist deckend, und die Strecke ueber ihr gehoert der
+   Topbar der App, die ihren eigenen Grund malt. */
 .upw-modebtn {
   padding: 0; border: 0; background: transparent; font-family: inherit; font-size: 12px;
   font-weight: 500; color: var(--vc-third); cursor: pointer; transition: color 140ms ease;
