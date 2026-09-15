@@ -1039,10 +1039,34 @@
         if (p.errors && typeof p.errors === "object"){
           var ABSCHNITT = { overview: "overview", brands: "brands",
                             citations_domain: "domains", citations_url: "urls" };
+          /* WER DATEN GELIEFERT HAT, IST NICHT GESCHEITERT (15.09.). Der RPC schickt seinen
+             errors-Block auch dann noch mit, wenn der Abschnitt inzwischen Daten hat -- gemessen
+             am laufenden System: top_urls kam als Liste mit 5 an, stand als 5 Zeilen im Zustand,
+             und darueber lag trotzdem "Could not load citations". Drei Runden Suche, weil der
+             Bildschirm nur den Abschnitt nennt und nicht den Grund.
+             Die Regel ist jetzt: ein gemeldeter Fehler zaehlt nur fuer einen Abschnitt, der in
+             DIESEM Aufruf nichts Brauchbares mitgebracht hat. Eine LEERE Liste zaehlt weiterhin
+             als nichts -- sie ist ja gerade die Folge des Fehlschlags, und "No data" waere dort
+             die falsche Auskunft. Damit bleibt der echte Fall erhalten (Abfrage gescheitert, also
+             leer oder gar nicht dabei) und der falsche verschwindet. */
+          var GEFUELLT = {
+            overview: p.overview != null && !!state.overview,
+            brands:   p.brands != null && !!(state.brands && state.brands.length),
+            domains:  p.top_domains != null && !!(state.domains && state.domains.length),
+            urls:     p.top_urls != null && !!(state.urls && state.urls.length)
+          };
           for (var eKey in ABSCHNITT){
             if (!Object.prototype.hasOwnProperty.call(p.errors, eKey)) continue;
             if (!p.errors[eKey]) continue;                 /* null/leer heisst "kein Fehler" */
-            state.fehler[ABSCHNITT[eKey]] = true;
+            var zielAbschnitt = ABSCHNITT[eKey];
+            if (GEFUELLT[zielAbschnitt]){
+              if (window.console) console.warn('[power-dashboard] Der RPC meldet "' + eKey +
+                '" als gescheitert, hat aber Daten dafuer mitgeschickt. Die Daten werden gezeigt. ' +
+                'Im RPC gehoert dieser Schluessel nur in den errors-Block, wenn der Abschnitt ' +
+                'wirklich leer bleibt.');
+              continue;
+            }
+            state.fehler[zielAbschnitt] = true;
             state.loading = false;
           }
         }

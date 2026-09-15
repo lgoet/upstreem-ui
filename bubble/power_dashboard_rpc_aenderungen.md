@@ -163,3 +163,34 @@ bereits gefüllte Liste — genau so gemeldet.
 
 **Für den Workflow heißt das:** die Prüfung „habe ich diesen Abschnitt schon?" kann raus. Was
 gemeldet wird, wird gebraucht.
+
+---
+
+## 11. `errors` nur für Abschnitte, die wirklich leer bleiben (15.09.)
+
+Der RPC schickt `errors.citations_url` auch dann mit, wenn `top_urls` im selben Aufruf **fünf
+Einträge** trägt. Gemessen am laufenden System:
+
+```
+urls   kamAn 'Liste mit 5'   imZustand '5 Zeilen'   lesefehler true
+```
+
+Die Daten waren da und wurden von der Meldung zugedeckt — der Nutzer sah dauerhaft
+„Could not load citations", obwohl nichts fehlte.
+
+**Die Oberfläche ist dagegen abgesichert:** ein gemeldeter Fehler zählt nur noch für einen
+Abschnitt, der in demselben Aufruf nichts Brauchbares mitgebracht hat. Kommt beides, gewinnen die
+Daten, und in der Konsole steht eine Zeile.
+
+**Trotzdem gehört es im RPC geradegezogen:** ein Abschnittsname gehört nur dann in `errors`, wenn
+er wirklich leer bleibt. Sonst ist der Block kein Signal mehr, sondern Rauschen — und beim
+nächsten echten Ausfall glaubt ihm niemand.
+
+Unverändert richtig bleiben:
+
+| Lage | `errors`-Eintrag |
+|---|---|
+| Abfrage gescheitert, Feld fehlt ganz | **ja** |
+| Abfrage gescheitert, Feld kommt als `[]` | **ja** |
+| Abfrage lief, Ergebnis ist echt leer | **nein** — das ist „No data", kein Fehler |
+| Abfrage lief, Daten sind da | **nein** |
