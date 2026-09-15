@@ -142,13 +142,9 @@
       rootClass: "upw-root", notPortal: true,
       ctrlProp: "__upwController", resolveLocal: "__upwResolveLocal", queue: "__upwBootQueue",
       initRoot: initRoot,
-      api: { renderPowerDashboard: doRender, setPowerDashboardLoading: doLoading,
-             renderPowerDashboardFrom: doRenderFrom },
+      api: { renderPowerDashboard: doRender, setPowerDashboardLoading: doLoading },
       forwardShape: { renderPowerDashboard: "params" }
     });
-    /* ERST HIER, nicht auf Modulebene: UC wird eine Zeile weiter oben gesetzt. Davor gerufen
-       riss der Zugriff darauf die ganze Datei mit -- gemessen, die Komponente bootete nicht. */
-    upwDatenBinden();
   }
 
   function resolve(id){
@@ -166,9 +162,6 @@
     return true;
   }
   function doLoading(id, on){ var c = resolve(id); if (!c) return false; c.setLoading(on); return true; }
-  /* Wie doRender, aber der Payload steht im Inhalt eines Elements statt in JS-Quelltext.
-     Derselbe Weg wie setResponseDetailFrom -- der einzige, der jeden Text vertraegt. */
-  function doRenderFrom(id, sel){ var c = resolve(id); if (!c) return false; return c.setFrom(sel); }
 
   function initRoot(root){
     if (!root) return null;
@@ -268,17 +261,6 @@
       loading: false,
       fehler: {}
     };
-
-    /* EINEN MITGELIEFERTEN JSON-BLOCK AUSLESEN, BEVOR das Markup ihn ueberschreibt -- danach ist
-       er weg. Derselbe Weg wie in response-detail (setResponseDetailFrom) und opportunities
-       (.uo-data-json), und aus demselben Grund: ein Antworttext, ein Chattitel oder eine
-       Chatvorschau passt NICHT in JS-Quelltext. "..." vertraegt keinen Zeilenumbruch, `...`
-       keinen Backtick -- und ein Backtick steht in jeder Vorschau, die ein Modell mit einem
-       Code-Abschnitt beantwortet hat. Im Inhalt eines Elements ist jedes Zeichen erlaubt, weil
-       der Browser dort keinen Code liest. */
-    var mitgeliefert = "";
-    var elJson0 = root.querySelector('script[type="application/json"]');
-    if (elJson0) mitgeliefert = String(elJson0.textContent || "");
 
     /* ---------- Markup ----------
        Die Komponente baut ihr Markup selbst; in Bubble steht nur die leere Wurzel. Dieselbe
@@ -859,7 +841,7 @@
        und der steht erst nach syncMode() fest. */
     datenBedarfMelden();
 
-    var api = {
+    return {
       update: function(p){
         var r;
         /* Der ganze Payload war nicht lesbar (core, normParams). Dann weiss niemand, welcher Teil
@@ -917,83 +899,9 @@
         state.loading = UC.isYes(on);
         if (state.loading) state.fehler = {};
         renderAll();
-      },
-      /* DEN PAYLOAD AUS EINEM ELEMENT LESEN statt aus JS-Quelltext -- der Weg aus response-detail,
-         wortgleich uebernommen. Der Selektor darf auf irgendein Element der Seite zeigen; gelesen
-         wird sein textContent. Leer heisst "nichts zu tun" und nicht "Fehler": ein Workflow, der
-         das Element erst spaeter fuellt, soll die gezeigten Werte nicht wegwischen. */
-      setFrom: function(sel){
-        var el = null;
-        try { el = sel ? document.querySelector(String(sel)) : null; } catch (e) { el = null; }
-        if (!el){
-          if (window.console) console.warn('[power-dashboard] renderPowerDashboardFrom: kein ' +
-            'Element zu "' + sel + '" gefunden. Steht es auf der Seite und ist der Selektor richtig?');
-          return false;
-        }
-        var roh = el.textContent == null ? "" : String(el.textContent);
-        if (!roh.trim()){
-          if (window.console) console.warn('[power-dashboard] renderPowerDashboardFrom: "' + sel +
-            '" ist leer. Traegt es den dynamischen Ausdruck?');
-          return false;
-        }
-        api.ausText(roh);
-        return true;
-      },
-      ausText: function(roh){
-        var p = UC.readBubble ? UC.readBubble(roh) : null;
-        /* readBubble gibt IMMER eine Liste zurueck -- auch fuer ein einzelnes Objekt. Ohne diese
-           Zeile kam {overview:..., brands:...} als [ {...} ] an, update() fand keinen einzigen
-           bekannten Schluessel und tat schweigend nichts: das Skelett lief endlos weiter.
-           GEMESSEN am 15.09., readBubble lieferte Object.keys() == ["0"]. */
-        if (Array.isArray(p)) p = p.length === 1 ? p[0] : null;
-        /* Und ein Objekt OHNE einen einzigen bekannten Abschnitt ist kein leerer Payload, sondern
-           ein falscher -- sonst waere derselbe stille Ausfall nur eine Ebene tiefer verschoben. */
-        var kennt = p && typeof p === "object" && (p.overview != null || p.brands != null ||
-          p.top_domains != null || p.top_urls != null || p.errors != null);
-        if (kennt) api.update(p);
-        else {
-          /* Unlesbar ist nicht leer: alle vier Bereiche zeigen den Lesefehler (CLAUDE.md §2). */
-          state.fehler.overview = state.fehler.brands = state.fehler.domains = state.fehler.urls = true;
-          state.loading = false;
-          renderAll();
-        }
       }
     };
-
-    /* Der mitgelieferte Block zaehlt wie ein Setteraufruf -- nur ohne Run-JS-Schritt. Er kommt
-       NACH dem ersten Zeichnen, damit Ladezustand und Stufenklassen schon stehen, und NACH der
-       Zuweisung von api, weil er dessen Methoden benutzt. */
-    if (mitgeliefert.trim()) api.ausText(mitgeliefert);
-    else if (upwGemerkt && String(upwGemerkt).trim()) api.ausText(upwGemerkt);
-
-    return api;
   }
 
-  /* DIE DATEN KOMMEN AUS VERSTECKTEN ELEMENTEN, NICHT AUS EINEM RUN-JS-SCHRITT (15.09.).
-     Vier Ids, vier Abschnitte der einen RPC-Antwort -- die letzten drei fuettern nicht dieses
-     Element, sondern die zwei, die es sich ausleiht. Warum ueberhaupt: siehe UC.bindeDatenElement.
-     Kurz: ein Backtick in einer Chatvorschau hat den Schritt getoetet, und im Inhalt eines
-     Elements kann das nicht passieren. */
-  var upwGemerkt = null;
-  function upwDatenBinden(){
-    if (!UC.bindeDatenElemente) return;
-    UC.bindeDatenElemente([
-      ["upw-data", function(roh){
-        /* Kommt der Text, bevor die Wurzel im DOM steht, geht er sonst verloren: der
-           MutationObserver feuert nur ein zweites Mal, wenn sich das Element AENDERT. Also
-           merken -- initRoot spielt ihn nach. Umgekehrt genauso: steht die Wurzel schon, wirkt
-           er sofort. */
-        upwGemerkt = roh;
-        var w = document.querySelector(".upw-root");
-        var c = w ? initRoot(w) : null;
-        if (c) c.ausText(roh);
-      }],
-      /* Die drei geliehenen Listen. Sie laufen ueber die Setter der jeweiligen Komponente, weil
-         nur die deren Zustand kennt -- hier steht nur, WOHER der Text kommt. */
-      ["upw-chats-data",    function(roh){ if (window.askMiraSetPreviousChats) window.askMiraSetPreviousChats(roh); }],
-      ["upw-projects-data", function(roh){ if (window.askMiraSetProjects) window.askMiraSetProjects(roh); }],
-      ["upw-opportunities-data", function(roh){ if (window.opportunitiesSetItems) window.opportunitiesSetItems(roh); }]
-    ]);
-  }
   upwBoot(50);
 })();
