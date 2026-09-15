@@ -116,6 +116,47 @@ Jede Bubble-Doku braucht **beide** Sanitizer-Zeilen (§46):
 
 ---
 
+## 2a. Run-JS-Schritte: die Hausform, abschreiben statt erfinden
+
+**Alle ~100 Komponenten der App werden ueber Run-JS-Schritte gefuellt.** Bevor einer geschrieben
+wird: `bubble/urls_table_bubble.html` ab "DER RUN-JS-SCHRITT" lesen und die Form **kopieren**.
+`brand_detail_bubble.html` und `ask_mira_bubble.html` tragen dieselbe.
+
+```javascript
+(function () {
+  var ROH = `[Bubble-Ausdruck]`
+    .replace(/:\s*([,}\]])/g, ": null$1")
+    .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+  try { if (window.setXyz) window.setXyz(ROH); } catch (e) {}
+})();
+```
+
+Mehrere Setter: **je ein eigener Backtick, je eine eigene Variable, je ein try.** Das Literal nie
+in einem Aufruf (`sauber(...)`) -- ein Fehler darin meldet dann "missing ) after argument list"
+statt der wahren Stelle. `window.<name>` statt des nackten Namens: haengt ein Element noch an
+einem aelteren Pin, ist der Name `undefined` statt ein ReferenceError, der den Schritt mitnimmt.
+
+**Verboten:** `JSON.parse` im Schritt, ein handgebautes Objekt mit `JSON.stringify`,
+`:formatted as JSON-safe`, `String.raw`, Bubbles `find & replace`, versteckte Datenelemente.
+Der **rohe** Text geht in den Setter; `UC.readBubble` in der Komponente ist der EINE geteilte
+Leseweg. Eine Komponente mit eigenem `looseParse` statt `readBubble` ist ein Fehler -- sie zeigt
+bei jeder Bubble-Eigenheit einen Lesefehler (so gefunden in opportunities.js am 15.09.).
+
+**Die Regel dahinter.** Im Backtick ist nur ein **Backtick oder `${` in einem WERT** gefaehrlich;
+Anfuehrungszeichen, Apostrophe, Umlaute, Zeilenumbrueche und Emoji traegt er unbeschadet. Deshalb
+traegt **keine Nutzlast dieser App ein Feld mit Text aus einem Sprachmodell** -- Miras Chatliste
+ist `id`, `title`, `updated_at`, mehr nicht. Stirbt ein Schritt daran, ist die Frage NICHT "wie
+escape ich das", sondern **"welches Feld gehoert da gar nicht rein"**. Am 15.09. war es
+`chats.preview`: in keiner Spezifikation, von keiner Komponente gelesen, groesster Teil der
+Nutzlast -- und es trug die Backticks. Wo Modelltext wirklich angezeigt wird
+(`opportunities.headline`/`.reason`), entfernt der RPC den Backtick:
+`replace(feld, chr(96), '')`.
+
+Zu jedem Schritt gehoert **ungefragt** die statische Fassung mit den echten Daten des Nutzers,
+in derselben Antwort -- und beide vorher gegen die Komponente laufen lassen.
+
+---
+
 ## 2b. Zahlenformate: pro Kennzahl festgelegt
 
 | Kennzahl | Einheit | Nachkommastellen | Beispiel |
