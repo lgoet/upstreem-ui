@@ -233,8 +233,14 @@
            Drehen des Geraets derselbe Knopf.
            data-tip traegt das Wort weiter, sobald es nicht mehr dasteht -- und aria-label, damit
            der Knopf fuer die Vorlesehilfe nicht nur ein Bild ist. */
-        seg.innerHTML = ["standard", "power"].map(function(v){
-          var lbl = v === "power" ? "Power" : "Standard";
+        /* POWER ZUERST (15.09. angefordert) -- und die Beschriftung des anderen heisst jetzt
+           "Analytics". NUR die Beschriftung: der WERT bleibt "standard". An ihm haengen der
+           localStorage-Schluessel, das Ereignis dphMode, data-mode-default und die
+           Sichtbarkeit der zwei Bubble-Gruppen. Ein umbenannter Wert haette all das stumm
+           gelegt -- dieselbe Falle wie bei den Sidebar-Schluesseln, wo eine Umbenennung schon
+           einmal einen Zweig totgelegt hat. */
+        seg.innerHTML = ["power", "standard"].map(function(v){
+          var lbl = v === "power" ? "Power" : "Analytics";
           var zeichen = UC.icon ? UC.icon(v === "power" ? "gauge" : "layoutDashboard", 2) : "";
           var txt = UC.t ? UC.t(lbl) : lbl;
           return '<button type="button" class="up-seg-btn dph-modebtn" role="tab" data-dph-mode="' + v + '" ' +

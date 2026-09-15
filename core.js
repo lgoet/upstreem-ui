@@ -643,6 +643,9 @@
     /* Power Dashboard und der Umschalter im Dashboard-Seitenkopf (11.09.). Visibility und
        Sentiment bleiben, wie ueberall im Katalog, die Fachbegriffe. */
     "Standard": "Standard",
+    /* Die Beschriftung des Dashboard-Umschalters (15.09.). Der WERT dahinter heisst
+       weiterhin "standard" -- nur das Wort auf dem Knopf ist ein anderes. */
+    "Analytics": "Analytics",
     "Power": "Power",
     "Recent chats": "Letzte Chats",
     /* "All chats" ist am 12.09. zu "All" gekuerzt worden -- die Ueberschrift daneben sagt schon,

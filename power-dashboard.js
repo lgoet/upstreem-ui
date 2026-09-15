@@ -371,16 +371,24 @@
     var elAllCites = root.querySelector("[data-upw-allcites]");
 
     /* ---------- Chips ---------- */
+    /* DER STAERKSTE WETTBEWERBER IST EINE FRAGE DES RANGS (15.09. praezisiert): Platz 1 aus
+       "Competitive field", und steht die eigene Marke dort, Platz 2. Vorher wurde nach der
+       hoechsten Sichtbarkeit gesucht -- dasselbe Ergebnis, solange die Liste danach sortiert
+       ist, aber der Rang steht im Payload und muss nicht erraten werden.
+       position ist der Rang in der VOLLSTAENDIGEN Rangliste (siehe die Datenspezifikation), also
+       auch dann richtig, wenn die Liste gekuerzt ankommt. Fehlt er, entscheidet die Reihenfolge,
+       in der die Marken geliefert wurden -- die ist ohnehin die Rangliste. */
     function staerksterWettbewerber(){
       var eigen = String(root.getAttribute("data-brand-name") || "").trim().toLowerCase();
       if (eigen === "brand_name") eigen = "";
       var beste = null;
-      (state.brands || []).forEach(function(b){
+      (state.brands || []).forEach(function(b, i){
         var name = String(b.name || "").trim();
         if (!name || b.is_own === true || String(b.is_own) === "yes" || b.role === "own") return;
         if (eigen && name.toLowerCase() === eigen) return;
-        var v = num(b.visibility_pct);
-        if (!beste || (v != null && (beste.v == null || v > beste.v))) beste = { name: name, v: v };
+        var rang = num(b.position);
+        if (rang == null) rang = i + 1;
+        if (!beste || rang < beste.rang) beste = { name: name, rang: rang };
       });
       return beste ? beste.name : "";
     }
@@ -393,8 +401,12 @@
       var liste = chipListe(), teile = [];
       liste.forEach(function(c, i){
         var braucht = /\{COMPETITOR\}/.test(String(c.label || "") + String(c.prompt || ""));
+        /* OHNE WETTBEWERBER GAR NICHT ANZEIGEN (15.09. angefordert). Der Rueckfalltext ("mit
+           meinem staerksten Wettbewerber vergleichen") stand sonst auch dann da, wenn es gar
+           keinen gibt -- ein Vorschlag, der ins Leere fuehrt, ist schlechter als keiner. */
+        if (braucht && !wb) return;
         var label = String(c.label || "");
-        if (braucht) label = wb ? label.replace("{COMPETITOR}", wb) : String(c.fallback || label.replace("{COMPETITOR}", ""));
+        if (braucht) label = label.replace("{COMPETITOR}", wb);
         teile.push('<button type="button" class="up-btn-sec upw-chip" data-upw-chip="' + i + '">' +
           (c.emoji ? '<span class="upw-chip-emoji" aria-hidden="true">' + esc(c.emoji) + '</span>' : '') +
           '<span class="upw-chip-lbl">' + esc(label) + '</span></button>');
@@ -620,13 +632,23 @@
         '<span class="upw-li-name" title="' + esc(titel || name) + '">' + esc(name) + '</span>' +
         '<span class="upw-li-val">' + wertHtml + '</span></div>';
     }
+    /* DAS SKELETT TRAEGT DIE KLASSEN DER ECHTEN ZEILE (15.09.). Vorher hatte es eigene --
+       .upw-sk-idx und .upw-sk-ava, zu denen es gar keine CSS gab (0px breit), und ein
+       .upw-sk-val als VIERTES Flex-Kind statt in der Wertspalte. Mit dem 40px-Zeilenabstand und
+       der festen 116px-Spalte stand danach nichts mehr dort, wo es spaeter steht -- genau das
+       war gemeldet ("die Skelette der Tabellen sind voellig off").
+       Jetzt kommt die Geometrie aus EINER Quelle: Platzziffer, Logokasten, Name und Wertspalte
+       sind dieselben Kaesten wie in listenZeile, nur mit einem grauen Balken darin. Wer die
+       Zeile aendert, aendert das Skelett automatisch mit. */
     function listenSkelett(n){
       var out = "";
       for (var i = 0; i < n; i++){
-        out += '<div class="upw-li is-sk"><span class="upw-sk upw-sk-idx"></span>' +
-          '<span class="upw-sk upw-sk-ava"></span>' +
-          '<span class="upw-sk upw-sk-title" style="width:' + [46, 34, 40, 30, 38][i % 5] + '%"></span>' +
-          '<span class="upw-sk upw-sk-val"></span></div>';
+        out += '<div class="upw-li is-sk">' +
+          '<span class="upw-li-idx"><span class="upw-sk upw-sk-bar" style="width:8px"></span></span>' +
+          '<span class="up-logo-box"><span class="upw-sk upw-sk-ava"></span></span>' +
+          '<span class="upw-li-name"><span class="upw-sk upw-sk-bar" style="width:' + [46, 34, 40, 30, 38][i % 5] + '%"></span></span>' +
+          '<span class="upw-li-val"><span class="upw-sk upw-sk-bar" style="width:38px"></span></span>' +
+          '</div>';
       }
       return out;
     }
