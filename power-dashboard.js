@@ -463,11 +463,14 @@
          onViewChange in opportunities.js) -- hier bleibt nur, es beim Zurueckkommen in DIESE
          Ansicht wieder zu holen, falls sein Reiter vorne steht. */
       if (String(name) === VIEW && state.mode === "opportunities") brettPruefen();
+      if (String(name) === VIEW) bedarfNachholen();
     });
     if (UC.onDashboardMode) UC.onDashboardMode(function(mode){
       if (mode !== "power"){ zurueckgeben(); brettZurueckgeben(); }
       pruefen();
       if (mode === "power" && state.mode === "opportunities") brettPruefen();
+      /* Jetzt ist dieses Dashboard dran -- was fehlt, wird jetzt gebraucht. */
+      if (mode === "power") bedarfNachholen();
     });
     window.addEventListener("askmira:bereit", pruefen);
     function zuMira(o){
@@ -772,7 +775,36 @@
       if (abschnitt === "citations_url")    return !state.urls || state.fehler.urls;
       return true;   /* opportunities: das Brett fuehrt seinen eigenen Zustand, hier unbekannt */
     }
+    /* UND NUR, WENN DIESES DASHBOARD UEBERHAUPT DRAN IST (15.09.). Gemessen: die Komponente
+       mountet auch in einer versteckten Gruppe und meldete ihren Bedarf 13ms nach dem Aufbau --
+       also auch dann, wenn der Nutzer im Standard-Dashboard steht und niemand diese Daten sehen
+       wird. Wer den Workflow daran haengt, laedt den teuren Power-RPC bei jedem Seitenaufbau.
+       Zwei Bedingungen, beide noetig: der Dashboard-Modus steht auf "power" (der Umschalter im
+       Seitenkopf, gemeinsamer Wert in core), UND die Wurzel wird wirklich gezeichnet -- die
+       Ansicht kann eine andere sein. Beim Umschalten auf Power wird nachgeholt, siehe
+       onDashboardMode weiter oben. */
+    function dranSein(){
+      if (UC.getDashboardMode && UC.getDashboardMode() !== "power") return false;
+      return sichtbar();
+    }
+    /* EIN UNLESBARER ABSCHNITT SAGT, WELCHER ER IST UND WIE ER AUSSAH (15.09.). Der Bildschirm
+       kann das nicht: dort steht "Could not load ..." -- richtig fuer den Nutzer, nutzlos fuer
+       die Suche. Gekostet hat das eine ganze Runde: ein zweiter Aufruf mit unlesbarem top_urls
+       zerlegte nur die Zitierungen, waehrend Overview und Marken heil dastanden, und von aussen
+       sah es aus, als koenne die Komponente URLs nicht. Die ersten 80 Zeichen des Rohwerts
+       zeigen sofort, ob dort "null", "[object Object]" oder ein abgeschnittener Payload steht.
+       Nur beim UEBERGANG auf kaputt, sonst schreibt jeder Neuaufbau dieselbe Zeile. */
+    function merkeFehler(abschnitt, r, roh){
+      var vorher = !!state.fehler[abschnitt];
+      state.fehler[abschnitt] = r.kaputt;
+      if (r.kaputt && !vorher && window.console){
+        var txt = typeof roh === "string" ? roh : (function(){ try { return JSON.stringify(roh); } catch(e){ return String(roh); } })();
+        console.warn('[power-dashboard] "' + abschnitt + '" war nicht lesbar und zeigt jetzt den ' +
+          'Lesefehler. So kam der Wert an (erste 80 Zeichen): ' + String(txt).slice(0, 80));
+      }
+    }
     function datenBedarfMelden(){
+      if (!dranSein()) return;
       var alle = state.mode === "opportunities"
         ? ["opportunities"]
         : ["brands", state.cmode === "url" ? "citations_url" : "citations_domain"];
@@ -781,6 +813,14 @@
          Einladung, den Workflow trotzdem durchlaufen zu lassen. */
       if (!needs.length) return;
       fire("data-needs-fn", "upwNeeds", { mode: state.mode, needs: needs });
+    }
+    /* Der Anlass zum Nachholen: die Gruppe wird erst im naechsten Task eingeblendet, also ist
+       sichtbar() im Moment des Moduswechsels noch false. Dieselbe kurze Anlaufreihe wie bei Mira
+       und dem Brett, kein Dauertakt. */
+    var _bedarfT = [];
+    function bedarfNachholen(){
+      _bedarfT.forEach(clearTimeout); _bedarfT = [];
+      [0, 250, 800].forEach(function(ms){ _bedarfT.push(setTimeout(datenBedarfMelden, ms)); });
     }
     function syncMode(){
       var chancen = state.mode === "opportunities";
@@ -910,9 +950,9 @@
           state.fehler.overview = r.kaputt || !o;
           state.overview = o || null;
         }
-        if (p.brands != null){ r = liste(p.brands); state.fehler.brands = r.kaputt; state.brands = r.wert || []; }
-        if (p.top_domains != null){ r = liste(p.top_domains); state.fehler.domains = r.kaputt; state.domains = r.wert || []; }
-        if (p.top_urls != null){ r = liste(p.top_urls); state.fehler.urls = r.kaputt; state.urls = r.wert || []; }
+        if (p.brands != null){ r = liste(p.brands); merkeFehler("brands", r, p.brands); state.brands = r.wert || []; }
+        if (p.top_domains != null){ r = liste(p.top_domains); merkeFehler("domains", r, p.top_domains); state.domains = r.wert || []; }
+        if (p.top_urls != null){ r = liste(p.top_urls); merkeFehler("urls", r, p.top_urls); state.urls = r.wert || []; }
         /* EIN ABSCHNITT IST GESCHEITERT, die anderen nicht (14.09.). Der RPC liefert dafuer einen
            errors-Block, und ohne diese Zeilen haette der Aufrufer nur zwei schlechte Moeglich-
            keiten: den Abschnitt weglassen (dann steht das Skelett endlos) oder eine leere Liste
