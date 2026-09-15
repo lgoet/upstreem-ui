@@ -292,6 +292,20 @@
       });
     }
     function modeMelden(v){ fire("data-mode-fn", "dphMode", { mode: v }); }
+    /* WENN HIER ETWAS FEHLT, DARF ES NICHT SCHWEIGEN (CLAUDE.md §5 / STYLEGUIDE §46). Ohne
+       modeSeg lief der ganze Block nicht -- kein Umschalter, KEINE Modusmeldung beim Aufbau,
+       und in der Konsole stand nichts. Wer daran die Sichtbarkeit der zwei Dashboards haengt,
+       sieht eine leere Seite und hat keinen Anhaltspunkt. Genau so gemeldet am 15.09. */
+    if (!modeSeg && window.console){
+      console.warn('[dashboard-page-header] Der Umschalter Standard/Power (.dph-mode) steht ' +
+        'nicht im Element "' + (root.getAttribute("data-instance") || "?") + '". Er wird sonst ' +
+        'selbst angelegt und braucht dafuer .dph-topright oder die Werkzeugzeile im Markup. ' +
+        'Ohne ihn geht beim Seitenaufbau AUCH KEINE Modusmeldung (dphMode) heraus.');
+    }
+    if (modeSeg && !UC.getDashboardMode && window.console){
+      console.warn('[dashboard-page-header] Dieses core.js kennt getDashboardMode nicht -- ' +
+        'Element und core haengen an verschiedenen Pins. Der Umschalter bleibt wirkungslos.');
+    }
     if (modeSeg && UC.getDashboardMode){
       var modeStart = UC.getDashboardMode();
       modeZeigen(modeStart, true);

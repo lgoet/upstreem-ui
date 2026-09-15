@@ -811,19 +811,41 @@
       var needs = alle.filter(fehlt);
       /* Nichts zu holen: gar nicht erst feuern. Ein Ereignis mit leerer Liste waere eine
          Einladung, den Workflow trotzdem durchlaufen zu lassen. */
-      if (!needs.length) return;
+      if (!needs.length) return true;
       /* Auch diese Ansage wartet auf ihren Empfaenger -- aus demselben Grund wie die
          Modusmeldung im Seitenkopf. Sie geht beim Aufbau raus, das Toolbox-Element kann noch
          fehlen, und eine verpuffte Bedarfsmeldung heisst: die Listen bleiben leer. */
       fire.spaet("data-needs-fn", "upwNeeds", { mode: state.mode, needs: needs });
+      return true;
     }
-    /* Der Anlass zum Nachholen: die Gruppe wird erst im naechsten Task eingeblendet, also ist
-       sichtbar() im Moment des Moduswechsels noch false. Dieselbe kurze Anlaufreihe wie bei Mira
-       und dem Brett, kein Dauertakt. */
-    var _bedarfT = [];
+    /* NACHFRAGEN, BIS DIESES DASHBOARD WIRKLICH DRAN IST.
+       Beim Seitenaufbau steht es regelmaessig noch in einer versteckten Gruppe: Bubble blendet
+       sie erst ein, nachdem der Seitenkopf seinen Modus gemeldet hat UND der Workflow gelaufen
+       ist. Wie lange das dauert, weiss vorher niemand -- eine feste Reihe von Zeitpunkten ist
+       eine Wette, und die ging am 15.09. verloren ("jetzt laedt nix mehr"): der Workflow war
+       langsamer als die letzte Stufe, danach fragte niemand mehr nach, die Listen blieben leer.
+       Also nachsehen, bis es klappt: alle 250ms, hoechstens 15 Sekunden, beim ersten Erfolg
+       Schluss. Jeder Blick ist ein Lesen aus dem localStorage und ein getClientRects.
+       KEIN ResizeObserver und kein requestAnimationFrame, obwohl beides hier naheliegt: beide
+       ruhen in einem VERDECKTEN Tab, und genau dort baut ein Browser die Seite regelmaessig auf
+       (gemessen im Pruefstand -- mit dem Beobachter kam die Meldung nie). */
+    var _bedarfUhr = null, _bedarfBis = 0;
+    function jetztMs(){ return window.performance && performance.now ? performance.now() : Date.now(); }
     function bedarfNachholen(){
-      _bedarfT.forEach(clearTimeout); _bedarfT = [];
-      [0, 250, 800].forEach(function(ms){ _bedarfT.push(setTimeout(datenBedarfMelden, ms)); });
+      if (_bedarfUhr) clearTimeout(_bedarfUhr);
+      _bedarfBis = jetztMs() + 15000;
+      (function schauen(){
+        _bedarfUhr = null;
+        if (datenBedarfMelden()) return;                /* gemeldet oder nichts zu melden */
+        if (jetztMs() >= _bedarfBis){
+          if (window.console) console.warn("[power-dashboard] Dieses Dashboard wurde 15 Sekunden " +
+            "lang nicht gezeichnet (versteckte Gruppe oder Standard-Modus), also ging KEINE " +
+            "Bedarfsmeldung raus. Wird es spaeter sichtbar, fragt es beim Modus- oder " +
+            "Ansichtswechsel erneut nach.");
+          return;
+        }
+        _bedarfUhr = setTimeout(schauen, 250);
+      })();
     }
     function syncMode(){
       var chancen = state.mode === "opportunities";
@@ -932,8 +954,14 @@
     renderAll();
     pruefen();
     /* Nach dem ersten Zeichnen und nicht davor: der Bedarf haengt am wiederhergestellten Bereich,
-       und der steht erst nach syncMode() fest. */
-    datenBedarfMelden();
+       und der steht erst nach syncMode() fest.
+       Eine REIHE und kein einzelner Aufruf (15.09.): beim Seitenaufbau steht dieses Dashboard
+       regelmaessig noch in einer versteckten Gruppe -- Bubble blendet sie erst ein, nachdem der
+       Seitenkopf seinen Modus gemeldet hat und der Workflow gelaufen ist. Ein einzelner Aufruf
+       faellt genau in dieses Loch: dranSein() ist false, und danach fragt niemand mehr nach.
+       Genau so gemeldet ("jetzt laedt nix mehr"). Die Reihe hoert auf, sobald gemeldet wurde
+       oder nichts zu melden ist. */
+    bedarfNachholen();
 
     return {
       update: function(p){

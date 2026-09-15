@@ -13350,6 +13350,7 @@
   }
   /* Einmal beim Start: eine Seite ohne den Vorlade-Schnipsel bekommt das Attribut wenigstens,
      sobald core da ist. Mit Schnipsel steht derselbe Wert schon drin und nichts aendert sich. */
+  try { if (window.localStorage.getItem("up_trace") === "yes") window.__upTrace = true; } catch(e){}
   dashModusStempeln(getDashboardMode());
   function onDashboardMode(fn){
     if (typeof fn !== "function") return function(){};
@@ -14235,9 +14236,17 @@
   /* Schalter fuer die Event-Diagnose in makeFire. Global, weil er aus der Konsole und aus einem
      Run-JS-Schritt erreichbar sein muss; standardmaessig aus. Rueckgabe ist der neue Zustand,
      damit man in Bubble sieht, dass der Aufruf angekommen ist. */
+  /* BLEIBT ueber den Reload hinweg an (15.09.). Die interessanten Ereignisse gehen 16ms nach
+     dem Seitenaufbau raus -- wer den Schalter danach in der Konsole umlegt, hat sie verpasst und
+     sieht genau das, was ihn ratlos gemacht hat: nichts. Der Schluessel wird beim Start gelesen,
+     bevor die erste Komponente feuert. upstreemTrace(false) schaltet ihn wieder aus. */
   window.upstreemTrace = function(an){
     window.__upTrace = (an === undefined) ? true : !!an;
-    if (window.console) console.log("[trace] " + (window.__upTrace ? "an" : "aus"));
+    try {
+      if (window.__upTrace) window.localStorage.setItem("up_trace", "yes");
+      else window.localStorage.removeItem("up_trace");
+    } catch(e){}
+    if (window.console) console.log("[trace] " + (window.__upTrace ? "an (bleibt auch nach dem Reload an)" : "aus"));
     return window.__upTrace;
   };
 
