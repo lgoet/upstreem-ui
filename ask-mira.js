@@ -3110,8 +3110,9 @@
     if (_mehrGefragt || _mehrEnde) return;
     _mehrGefragt = true;
     amFire('more_chats', { have: (S.previousChats || []).length, step: LISTE_SCHRITT }, 'more-chats');
+    renderPrevious();                       /* jetzt die Skelettzeilen zeigen, nicht erst spaeter */
     /* Eine Antwort, die nie kommt, darf das Nachladen nicht fuer immer stilllegen. */
-    _mehrUhr = setTimeout(function(){ _mehrGefragt = false; }, 8000);
+    _mehrUhr = setTimeout(function(){ _mehrGefragt = false; renderPrevious(); }, 8000);
   }
   elPrevList.addEventListener('scroll', _pruefeNachladen, { passive: true });
   function _fuehlerBinden(){
@@ -3182,6 +3183,16 @@
     if (S.prevFenster < LISTE_SCHRITT) S.prevFenster = LISTE_SCHRITT;
     var recentsHTML = recentsAlle.slice(0, S.prevFenster).map(chatItemHTML).join('');
     if (!recentsHTML) recentsHTML = '<div class="am-prev-proj-empty">No recent chats</div>';
+    /* Waehrend auf die naechste Seite gewartet wird, stehen unten drei Skelettzeilen (15.09.
+       angefordert). Vorher passierte sichtbar nichts, bis die Antwort da war -- und wer nichts
+       sieht, scrollt noch einmal, was den naechsten Aufruf ausloest.
+       Drei und nicht fuenfzehn: sie sagen "es kommt etwas", sie sollen die Liste nicht so weit
+       verlaengern, dass die Bildlaufleiste springt, wenn die echten Zeilen sie ersetzen. */
+    else if (_mehrGefragt)
+      recentsHTML += '<div class="am-prev-mehr-skel" aria-hidden="true">' +
+        [62, 48, 55].map(function(w){
+          return '<div class="am-prev-skel-row"><span class="am-prev-skel-line" style="width:' + w + '%"></span></div>';
+        }).join('') + '</div>';
     /* Der Fuehler steht als LETZTES in der Liste. Kommt er in Sicht, ist der Nutzer unten
        angekommen -- dann die naechsten 15 aufdecken. Ein Knopf waere die Alternative; verlangt
        war ausdruecklich das Verhalten, das man von anderen Anwendungen kennt. */

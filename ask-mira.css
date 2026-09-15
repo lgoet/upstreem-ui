@@ -2632,6 +2632,10 @@
      geraten koennen. 1px statt 0, weil ein Element ohne Hoehe von IntersectionObserver in
      manchen Browsern gar nicht erst gemeldet wird. */
   .am-prev-fuehler { flex: 0 0 auto; height: 1px; }
+  /* Die drei Skelettzeilen beim Nachladen. Kein eigenes Aussehen: dieselben Zeilen wie das
+     Skelett beim Seitenaufbau (.am-prev-skel-row / -line), nur ohne dessen Kopfzeile -- eine
+     zweite Ueberschrift mitten in der Liste waere falsch. */
+  .am-prev-mehr-skel { flex: 0 0 auto; }
   /* Feiner als vorher, und nach dem Inhalt gebaut, der kommt: die Zeile ist 34px hoch wie
      .am-prev-item, aber sie ist LEER -- das Schimmern liegt auf einer 10px-Textzeile darin. Vorher
      waren es sieben ausgefuellte 36px-Bloecke, und das las sich als Kachelwand statt als Liste

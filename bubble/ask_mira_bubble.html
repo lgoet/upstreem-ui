@@ -213,6 +213,28 @@
      Ein Projekt zeigt ebenfalls 15 Chats und darunter "Show all N". Das ist reine Anzeige: die
      Chats eines Projekts kommen mit derselben Liste und brauchen keinen eigenen Workflow.
 
+     Waehrend auf die naechste Seite gewartet wird, stehen unten drei Skelettzeilen. Sie kommen
+     von selbst und verschwinden, sobald angehaengt wurde -- oder nach acht Sekunden, falls die
+     Antwort ausbleibt. Dafuer ist nichts einzurichten.
+
+     ── DER WORKFLOW IN DREI SCHRITTEN ───────────────────────────────────────────
+     1. Ein "JavaScript to Bubble"-Element in dasselbe Reusable wie die anderen Mira-Elemente:
+        Function name  bubble_fn_ask_mira_more_chats
+        Value type     text
+        Trigger event  angehakt
+     2. Workflow "When bubble_fn_ask_mira_more_chats's value is changed". Der Wert ist Text:
+            {"have":160,"step":15}
+        have und step mit :extract with regex aus dem Wert holen --
+            (?<="have":)\d+      und      (?<="step":)\d+
+        -- und als Zahl verwenden. KEIN team_id darin: Miras Ereignisse gehen einen anderen Weg
+        als die des Dashboards und tragen keins.
+     3. Denselben RPC rufen wie beim Seitenaufbau, mit p_offset = have und p_limit = step, dann:
+            askMiraAppendPreviousChats(`[RPC's sessions, :format as text]`)
+
+     ANHAENGEN, nicht setzen -- askMiraSetPreviousChats ersetzt die Liste und wuerfe alles
+     Aufgedeckte weg. Kommt nichts zurueck, TROTZDEM aufrufen, mit leerer Liste: das ist das
+     Ende-Signal. Ohne es fragt die Leiste bei jedem Scrollen weiter.
+
      ── DIE CHATLISTE, UND ZWAR BEIM SEITENLADEN (14.09.) ────────────────────────
      Dieser eine Schritt gehoert in den Workflow "When page is loaded" und NICHT an die
      Sichtbarkeit von Miras Gruppe. Grund: das Power Dashboard zeigt unter "Recent chats"
