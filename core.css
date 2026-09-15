@@ -3407,13 +3407,26 @@
    Die Hoverflaeche bleibt --vc-heading-bg (das Onboarding hat dafuer ein eigenes #f7f8fa): das
    ist der Ton, den jeder ruhige Zeichenknopf der App beim Ueberfahren zeigt -- .up-iconbtn und
    .up-quietbtn eingeschlossen. Zwei Hovertoene im selben Kopf waeren der schlechtere Tausch. */
-.up-ph-iconbtn { display: inline-flex; align-items: center; justify-content: center;
+/* .dph-docsbtn STEHT HIER MIT DRIN, und das ist Absicht (15.09.). Ein eingebautes Bubble-Element
+   bekommt Aenderungen an bubble/*.html nicht mit -- die Vorlage ist ein Bauplan, kein Update. Der
+   Docs-Knopf trug frueher ein Buch-SVG PLUS das Wort "Docs" und nicht die Klasse .up-ph-iconbtn;
+   dashboard-page-header.js raeumt das beim Init auf, aber bis dahin steht dort ein nackter
+   HTML-Button mit Rahmen und Beschriftung. Genau so gemeldet und im Bild belegt.
+   Warum in core.css und nicht in dashboard-page-header.css: core.css laedt in der ERSTEN Welle
+   des Vorlade-Schnipsels, die Seitenkopf-CSS in der zweiten. Eine Regel in der zweiten Welle
+   kaeme zu spaet fuer genau die Millisekunden, um die es geht.
+   Gruppiert und nicht kopiert: dieselben Werte, ein Selektor mehr -- sonst haetten wir zwei
+   Zeichenknoepfe, die auseinanderlaufen koennen (CLAUDE.md 1).
+   font-size: 0 gehoert nur hier hin: es loescht eine Beschriftung, die im neuen Markup gar nicht
+   mehr vorkommt. Bei .up-ph-iconbtn waere es eine Regel gegen ein Problem, das es dort nicht gibt. */
+.up-ph-iconbtn, .dph-docsbtn { display: inline-flex; align-items: center; justify-content: center;
   width: 32px; height: 32px; border: 0; border-radius: 8px; background: transparent;
   color: var(--vc-muted); cursor: pointer; padding: 0; flex: 0 0 auto;
   transition: color 120ms ease, background-color 120ms ease; }
-.up-ph-iconbtn:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
-.up-ph-iconbtn:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
-.up-ph-iconbtn svg { width: 15px; height: 15px; display: block; }
+.dph-docsbtn { font-size: 0; line-height: 0; }
+.up-ph-iconbtn:hover, .dph-docsbtn:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
+.up-ph-iconbtn:focus-visible, .dph-docsbtn:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+.up-ph-iconbtn svg, .dph-docsbtn svg { width: 15px; height: 15px; display: block; }
 /* One full turn, ease-in-out, on click -- triggered via UC.spinOnce(btn) (core.js), which
    toggles this class off/on with a forced reflow in between so a second click mid-spin restarts
    the animation instead of doing nothing (the class name alone wouldn't change, so a plain
