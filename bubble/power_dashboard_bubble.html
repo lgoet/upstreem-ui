@@ -112,9 +112,16 @@
                       Feuert EINMAL beim Aufbau -- mit dem Bereich, den der Browser gespeichert hat,
                       denn den kann Bubble nicht kennen -- und danach bei jedem Bereichswechsel
                       sowie beim Umschalten Domains/URLs.
-                      Im Workflow: nachsehen, ob dieser Abschnitt schon geladen wurde; wenn nicht,
-                      ihn nachladen und an seinen Setter geben. Ist er schon da, nichts tun -- das
-                      Ereignis kommt bei jedem Wechsel, auch beim Zurueckwechseln.
+                      Es meldet NUR, was wirklich fehlt (15.09.): ein Abschnitt, der schon im
+                      Element steht, wird nicht mehr angefordert, und bleibt nichts uebrig, feuert
+                      das Ereignis GAR NICHT. Wer alles mit dem ersten Schritt liefert, sieht es
+                      also nie -- vorher lief der Workflow beim Umschalten fuer nichts, und wenn er
+                      dabei das Skelett anschaltete, verschwand eine gefuellte Liste.
+                      Ein Abschnitt mit LESEFEHLER zaehlt als fehlend: ein neuer Versuch ist dann
+                      genau das Richtige. Eine leere Liste zaehlt NICHT als fehlend -- geliefert und
+                      wirklich leer ist etwas anderes als nie geliefert.
+                      Im Workflow: den genannten Abschnitt laden und an seinen Setter geben. Die
+                      Pruefung "habe ich das schon?" braucht es dort nicht mehr.
                       Wer alles beim Seitenladen holt, braucht dafuer keinen Workflow; das Ereignis
                       laeuft dann ins Leere und stoert nicht. Siehe power_dashboard_daten_nachtrag.md.
   data-rowclick-fn  = "bubble_fn_upwRowClick_[dynamic id]"

@@ -757,10 +757,29 @@
        muesste jede Seite alles mitladen, auch was niemand ansieht.
        Seit dem Umbau auf zwei Listen nebeneinander braucht "Main Metrics" BEIDE Datensaetze
        gleichzeitig -- Marken und Zitierungen -- und meldet sie als Liste. */
+    /* NUR MELDEN, WAS WIRKLICH FEHLT (15.09.). Vorher meldete jeder Wechsel seinen ganzen
+       Abschnitt an, auch wenn die Daten laengst im Zustand standen -- der erste Schritt liefert
+       inzwischen top_urls gleich mit. Der Workflow lief dann fuer nichts, und je nachdem, was er
+       tut (Skelett an, neu laden, leer zurueckschreiben), verschwanden gefuellte Listen beim
+       Umschalten. Genau so gemeldet: "wenn ich auf url schalte, seh ich keine daten, obwohl die
+       ja schon da sind."
+       null heisst "noch nie geliefert", eine leere Liste heisst "geliefert und wirklich leer" --
+       zwei verschiedene Dinge (CLAUDE.md §2), und nur das erste ist ein Bedarf. Ein Lesefehler
+       zaehlt auch als Bedarf: dann ist ein neuer Versuch genau das Richtige. */
+    function fehlt(abschnitt){
+      if (abschnitt === "brands")          return !state.brands || state.fehler.brands;
+      if (abschnitt === "citations_domain") return !state.domains || state.fehler.domains;
+      if (abschnitt === "citations_url")    return !state.urls || state.fehler.urls;
+      return true;   /* opportunities: das Brett fuehrt seinen eigenen Zustand, hier unbekannt */
+    }
     function datenBedarfMelden(){
-      var needs = state.mode === "opportunities"
+      var alle = state.mode === "opportunities"
         ? ["opportunities"]
         : ["brands", state.cmode === "url" ? "citations_url" : "citations_domain"];
+      var needs = alle.filter(fehlt);
+      /* Nichts zu holen: gar nicht erst feuern. Ein Ereignis mit leerer Liste waere eine
+         Einladung, den Workflow trotzdem durchlaufen zu lassen. */
+      if (!needs.length) return;
       fire("data-needs-fn", "upwNeeds", { mode: state.mode, needs: needs });
     }
     function syncMode(){

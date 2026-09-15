@@ -138,3 +138,28 @@ replace(o.reason,   chr(96), '')
 
 Alles andere — Anführungszeichen, Apostrophe, Umlaute, Zeilenumbrüche, Emoji — ist unkritisch,
 das repariert `UC.readBubble` in der Komponente.
+
+---
+
+## 10. `data-needs-fn` meldet jetzt nur noch, was fehlt (15.09.)
+
+Seit `top_urls` im ersten Aufruf mitkommt, ist beim Umschalten auf URLs nichts mehr
+nachzuladen. Die Oberfläche fragt deshalb nicht mehr pauschal nach, sondern prüft ihren eigenen
+Zustand:
+
+| Lage im Element | wird gemeldet |
+|---|---|
+| Abschnitt nie geliefert (`null`) | ja |
+| Abschnitt geliefert, aber Lesefehler | ja — ein neuer Versuch ist richtig |
+| Abschnitt geliefert, leere Liste | **nein** — geliefert und leer ist nicht dasselbe wie nie geliefert |
+| Abschnitt gefüllt | **nein** |
+
+Bleibt nichts übrig, **feuert das Ereignis gar nicht**. Wer alles im ersten Schritt liefert,
+sieht es also nie.
+
+Warum das nötig war: der Workflow lief beim Umschalten für nichts, und wenn er dabei
+`setPowerDashboardLoading("yes")` setzte oder eine leere Liste zurückschrieb, verschwand eine
+bereits gefüllte Liste — genau so gemeldet.
+
+**Für den Workflow heißt das:** die Prüfung „habe ich diesen Abschnitt schon?" kann raus. Was
+gemeldet wird, wird gebraucht.
