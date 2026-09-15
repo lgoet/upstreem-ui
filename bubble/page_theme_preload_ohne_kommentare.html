@@ -1,0 +1,31 @@
+<script>
+(function () {
+
+  var t = "";
+  try { t = String(window.localStorage.getItem("pref_theme") || "").trim().toLowerCase(); } catch (e) {}
+  if (t === "dark" || t === "light") {
+    document.documentElement.setAttribute("data-up-pagetheme", t);
+  }
+
+  var DASH_VORGABE = "power";
+  var d = "";
+  try { d = String(window.localStorage.getItem("up_dashboard") || "").trim().toLowerCase(); } catch (e) {}
+  if (d !== "power" && d !== "standard") d = DASH_VORGABE;
+  if (d === "power") document.documentElement.setAttribute("data-up-dashboard", "power");
+})();
+</script>
+<style>
+
+  html, body { background-color: #ffffff; }
+
+  @media (prefers-color-scheme: dark) {
+    html:not([data-up-pagetheme]), html:not([data-up-pagetheme]) body { background-color: #121212; }
+  }
+
+  html[data-up-pagetheme="dark"], html[data-up-pagetheme="dark"] body { background-color: #121212; }
+  html[data-up-pagetheme="light"], html[data-up-pagetheme="light"] body { background-color: #ffffff; }
+
+  html[data-up-pagetheme="dark"] .bubble-element.Group.loader,
+  html[data-up-pagetheme="dark"] .page-loader,
+  html[data-up-pagetheme="dark"] #app-loader { background-color: #121212; }
+</style>

@@ -1,0 +1,323 @@
+<script>
+(function(){
+  var PIN = "fad3196810aad8fc2b023ec602f423df40b29fe3";
+  if (!PIN || PIN === "CDN_" + "PIN") PIN = "main";
+  var VORRAT = "sofort";
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + PIN + "/";
+  try { window.__upPin = PIN; } catch(e){}
+  try { window.__upPreloadFassung = 4; } catch(e){}
+
+  ["preconnect", "dns-prefetch"].forEach(function(rel){
+    var l = document.createElement("link");
+    l.rel = rel; l.href = "https://cdn.jsdelivr.net";
+    if (rel === "preconnect") l.crossOrigin = "anonymous";
+    document.head.appendChild(l);
+  });
+
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  var geladen = {};
+  function once(rohUrl, make){
+    var name = rohUrl.slice(rohUrl.lastIndexOf("/") + 1);
+    var da = L[name] || L[rohUrl];
+    if (da){
+      if (da !== rohUrl && !gleicherPin(pinAus(da), pinAus(rohUrl)) && String(da).indexOf("http") === 0 && window.console) console.warn("upstreem: " + name +
+        " ist schon von einem anderen Pin geladen. Geladen bleibt " + da +
+        ", ignoriert wird " + rohUrl + ". Setzt alle Elemente auf denselben Pin.");
+      return;
+    }
+    L[name] = rohUrl; L[rohUrl] = rohUrl; geladen[name] = true; make();
+  }
+  function minUrl(f){ return base + f.replace(/\.(js|css)$/, ".min.$1"); }
+
+  function gleicherPin(a, b){
+    a = String(a || ""); b = String(b || "");
+    if (a === b) return true;
+    if (!/^[0-9a-f]{7,40}$/.test(a) || !/^[0-9a-f]{7,40}$/.test(b)) return false;
+    return a.indexOf(b) === 0 || b.indexOf(a) === 0;
+  }
+  var PIN_RE = new RegExp("upstreem-ui@([^/]+)/");
+  function pinAus(u){ var m = PIN_RE.exec(String(u || "")); return m ? m[1] : ""; }
+
+  function cssRoh(f){ once(base + f, function(){
+    var l = document.createElement("link"); l.rel = "stylesheet"; l.href = base + f;
+    l.setAttribute("data-up-preload", "1");
+    document.head.appendChild(l);
+  }); }
+  function jsRoh(f){ once(base + f, function(){
+    var s = document.createElement("script"); s.src = base + f; s.async = false;
+    s.setAttribute("data-up-preload", "1");
+    document.head.appendChild(s);
+  }); }
+
+  function css(f){ once(base + f, function(){
+    var l = document.createElement("link"); l.rel = "stylesheet"; l.href = minUrl(f);
+    l.setAttribute("data-up-preload", "1");
+    l.onerror = function(){
+      var r = document.createElement("link"); r.rel = "stylesheet"; r.href = base + f;
+      r.setAttribute("data-up-preload", "1");
+      document.head.appendChild(r);
+      if (l.parentNode) l.parentNode.removeChild(l);
+    };
+    document.head.appendChild(l);
+  }); }
+  function js(f){ once(base + f, function(){
+    var s = document.createElement("script"); s.src = minUrl(f); s.async = false; s.setAttribute("data-up-preload", "1");
+    s.onerror = function(){
+      var r = document.createElement("script"); r.src = base + f; r.async = false; r.setAttribute("data-up-preload", "1");
+      document.head.appendChild(r);
+      if (s.parentNode) s.parentNode.removeChild(s);
+    };
+    document.head.appendChild(s);
+  }); }
+
+  ["Topics","Markets","Brands"].forEach(function(n){
+    var q = "__up" + n + "Queue";
+    window[q] = window[q] || [];
+    if (typeof window["setUpstreem" + n] !== "function"){
+      window["setUpstreem" + n] = function(rows){ window[q].push(rows); };
+    }
+  });
+  window.__upstreemMarketQueue = window.__upstreemMarketQueue || [];
+  if (typeof window.setUpstreemAllMarkets !== "function"){
+    window.setUpstreemAllMarkets = function(rows){
+      window.__upstreemMarketQueue.push({ all: true, rows: rows }); return true;
+    };
+  }
+
+  var UP_API = [
+    "askMiraAddMessage","askMiraClearInput","askMiraExpectAnswer","askMiraGetState",
+    "askMiraOpportunityResult","askMiraRejectVoice","askMiraResolveVoice",
+    "askMiraSetActiveChat","askMiraSetBrandLogos","askMiraSetBrandLogosFromEl",
+    "askMiraSetCompanies","askMiraSetExportPending","askMiraSetExtras","askMiraSetFavicons",
+    "askMiraSetFaviconsFromEl","askMiraSetLoading","askMiraSetMarket","askMiraSetMessages",
+    "askMiraSetMessagesFromEl","askMiraSetModels","askMiraSetPreviousChats",
+    "askMiraSetPreviousChatsFromEl","askMiraSetProjects","askMiraSetProjectsFromEl",
+    "askMiraSetSettings","askMiraSetTheme","askMiraSetTitlePending",
+    "askMiraSetTitlePendingFromEl","askMiraSetTool","askMiraSetToolFromEl","askMiraSetTopics",
+    "askMiraSetTopicsFromEl","askMiraSetTranscript","askMiraTypeLastAnswer",
+    "askMiraVoiceCancel","closeAddBrand","closeAddPrompts","openAddBrand","openAddPrompts",
+    "renderTeams","resetAddBrand","resetAddPrompts","resetTeams","setAddPromptsTheme",
+    "setTeamsLoading","setUpstreemAllMarkets",
+    "setUpstreemBrands","setUpstreemDefaultMarket","setUpstreemMarkets","setUpstreemModels",
+    "setUpstreemTeam","setUpstreemTheme","setUpstreemTopics","upstreemBrandsChanged",
+    "upstreemExportClose","upstreemExportOpen","upstreemExportResolve",
+    "upstreemExportSetContext","upstreemMarketsChanged","upstreemPinToSidebar",
+    "upstreemSetTheme","upstreemSignal","upstreemTopicsChanged","upstreemTrace"
+  ];
+  window.__upFrueh = window.__upFrueh || [];
+  UP_API.forEach(function(n){
+    if (typeof window[n] === "function") return;
+    var f = function(){ window.__upFrueh.push([n, [].slice.call(arguments)]); };
+    f.__upShim = 1;
+    f.__amStub = true;
+    window[n] = f;
+  });
+
+  cssRoh("core.css");  jsRoh("core.js");
+  css("sidebar.css");  js("sidebar.js");
+
+  function welle2(){
+    css("visibility-chart.css");        js("visibility-chart.js");
+    css("topcitations-dashboard.css");  js("topcitations-dashboard.js");
+    css("citations-combo-chart.css");   js("citations-combo-chart.js");
+    css("prompts-table.css");           js("prompts-table.js");
+    css("urls-table.css");              js("urls-table.js");
+    css("domains-table.css");           js("domains-table.js");
+    css("topics-manager.css");          js("topics-manager.js");
+    css("responses-table.css");         js("responses-table.js");
+    css("brands-overview.css");         js("brands-overview.js");
+    css("performance-radar.css");       js("performance-radar.js");
+    css("quick-actions.css");           js("quick-actions.js");
+    css("performance-detail.css");      js("performance-detail.js");
+    css("discover-brands.css");         js("discover-brands.js");
+    css("settings-brand.css");          js("settings-brand.js");
+    css("opportunities.css");           js("opportunities.js");
+    css("ask-mira.css");                js("ask-mira.js");
+    css("prompt-research.css");         js("prompt-research.js");
+    css("add-prompts.css");             js("add-prompts.js");
+    css("create-with-ai.css");          js("create-with-ai.js");
+    css("teams.css");                   js("teams.js");
+    css("power-dashboard.css");         js("power-dashboard.js");
+
+    css("filters/date-range.css");      js("filters/date-range.js");
+    css("filters/filter-bar.css");      js("filters/filter-bar.js");
+    css("filters/models-filter.css");   js("filters/models-filter.js");
+    css("filters/topics-filter.css");   js("filters/topics-filter.js");
+    css("filters/markets-filter.css");  js("filters/markets-filter.js");
+    css("export-data.css");             js("export-data.js");
+    css("notification-card.css");       js("notification-card.js");
+    css("team-orga.css");               js("team-orga.js");
+    css("add-brand.css");               js("add-brand.js");
+    css("brand-editor.css");            js("brand-editor.js");
+    css("brand-detail.css");            js("brand-detail.js");
+    css("response-detail.css");         js("response-detail.js");
+    css("domain-detail.css");           js("domain-detail.js");
+    css("url-detail.css");              js("url-detail.js");
+    css("preferences.css");             js("preferences.js");
+    css("page-headers/dashboard-page-header.css");  js("page-headers/dashboard-page-header.js");
+    css("page-headers/prompts-page-header.css");    js("page-headers/prompts-page-header.js");
+    css("page-headers/citations-page-header.css");  js("page-headers/citations-page-header.js");
+    css("page-headers/brands-page-header.css");     js("page-headers/brands-page-header.js");
+    css("page-headers/settings-page-header.css");   js("page-headers/settings-page-header.js");
+    js("page-headers/performance-page-header.js");
+    js("page-headers/opportunities-page-header.js");
+    cssRoh("vendor-coloris.min.css");   jsRoh("vendor-coloris.min.js");
+
+    once("chartjs", function(){
+      var c = document.createElement("script");
+      c.src = "https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js";
+      c.setAttribute("data-upstreem-chartjs", "1");
+      c.async = false;
+      document.head.appendChild(c);
+    });
+  }
+  function saeubern(n, wo){
+    if (!n) return;
+    var art = n.nodeType;
+    if (art !== 1 && art !== 11) return;
+    var drin;
+    if (art === 11){
+      if (!n.querySelectorAll) return;
+      drin = [].slice.call(n.querySelectorAll("script[src], link[href]"));
+    } else {
+      if (!n.getElementsByTagName || !n.childElementCount) return;
+      drin = [].slice.call(n.getElementsByTagName("script"))
+               .concat([].slice.call(n.getElementsByTagName("link")));
+    }
+    for (var i = 0; i < drin.length; i++){
+      if (!schonDa(drin[i])) continue;
+      notiereDoppel(drin[i], wo, true);
+      if (drin[i].parentNode) drin[i].parentNode.removeChild(drin[i]);
+    }
+  }
+  var SPUR_JE_DATEI = {};
+  function notiereDoppel(n, wo, vorher){
+    var u = quelleVon(n), name = dateiname(u);
+    var wieOft = (SPUR_JE_DATEI[name] = (SPUR_JE_DATEI[name] || 0) + 1);
+    var spur = [];
+    if (wieOft <= 2){
+      try { spur = (new Error().stack || "").split("\n").slice(3, 6)
+              .map(function(x){ return x.trim(); }); } catch(e){}
+    }
+    (window.__upDoppel || (window.__upDoppel = [])).push({
+      datei: name, wann: vorher ? "vor" : "nach", wo: wo || "?",
+      zeit: Math.round(window.performance && performance.now ? performance.now() : 0),
+      spur: spur
+    });
+  }
+  function einhaengeSperre(){
+    var ziele = [document.head, document.body, document.documentElement];
+    ["appendChild", "insertBefore"].forEach(function(m){
+      ziele.forEach(function(z){
+        if (!z || z["__upGesperrt_" + m]) return;
+        var orig = z[m];
+        if (typeof orig !== "function") return;
+        z["__upGesperrt_" + m] = 1;
+        z[m] = function(n){
+          try {
+            if (schonDa(n)){ notiereDoppel(n, "nackt", true); return n; }
+            saeubern(n, "teilbaum");
+          } catch(e){}
+          return orig.apply(this, arguments);
+        };
+      });
+    });
+  }
+  function quelleVon(n){
+    if (!n || n.nodeType !== 1 || !n.getAttribute) return null;
+    if (n.tagName === "SCRIPT") return n.getAttribute("src");
+    if (n.tagName === "LINK" && (n.getAttribute("rel") || "").indexOf("stylesheet") >= 0) return n.getAttribute("href");
+    return null;
+  }
+  function dateiname(u){
+    return String(u || "").slice(String(u || "").lastIndexOf("/") + 1)
+      .replace(/[?#].*$/, "").replace(".min.", ".");
+  }
+  function tagImDokument(name){
+    var listen = [document.getElementsByTagName("script"), document.getElementsByTagName("link")];
+    for (var l = 0; l < listen.length; l++){
+      var els = listen[l];
+      for (var i = 0; i < els.length; i++){
+        var u = els[i].getAttribute("src") || els[i].getAttribute("href");
+        if (u && u.indexOf("upstreem-ui@") >= 0 && dateiname(u) === name) return true;
+      }
+    }
+    return false;
+  }
+  function schonDa(n){
+    if (!n || n.nodeType !== 1 || !n.getAttribute) return false;
+    if (n.getAttribute("data-up-preload")) return false;
+    var u = quelleVon(n);
+    if (!u || u.indexOf("upstreem-ui@") < 0) return false;
+    var name = dateiname(u);
+    return !!geladen[name] || tagImDokument(name);
+  }
+
+  function doppelWaechter(){
+    if (!window.MutationObserver) return;
+    function pruefen(n){
+      if (!n || n.nodeType !== 1 || !n.getAttribute) return;
+      if (!n.getAttribute("data-up-preload")){
+        var u = null;
+        if (n.tagName === "SCRIPT") u = n.getAttribute("src");
+        else if (n.tagName === "LINK" && (n.getAttribute("rel") || "").indexOf("stylesheet") >= 0) u = n.getAttribute("href");
+        if (u && u.indexOf("upstreem-ui@") >= 0){
+          var name = dateiname(u);
+          if (geladen[name]){
+            if (n.parentNode) n.parentNode.removeChild(n);
+            notiereDoppel(n, "beobachter", false);
+            return;
+          }
+        }
+      }
+      if (!n.querySelectorAll) return;
+      var drin = n.querySelectorAll('script[src*="upstreem-ui@"], link[href*="upstreem-ui@"]');
+      for (var q = 0; q < drin.length; q++) pruefen(drin[q]);
+    }
+    new MutationObserver(function(muts){
+      for (var i = 0; i < muts.length; i++){
+        var neu = muts[i].addedNodes;
+        for (var j = 0; j < neu.length; j++) pruefen(neu[j]);
+      }
+    }).observe(document.documentElement, { childList: true, subtree: true });
+  }
+  einhaengeSperre();
+  if (!document.body){
+    document.addEventListener("DOMContentLoaded", einhaengeSperre);
+    var koerperUhr = setInterval(function(){
+      if (!document.body) return;
+      clearInterval(koerperUhr); einhaengeSperre();
+    }, 50);
+  }
+  doppelWaechter();
+
+  function pinWaechter(){
+    var versuche = 0;
+    (function schauen(){
+      var els = document.querySelectorAll("[data-cdn-pin]");
+      for (var i = 0; i < els.length; i++){
+        var p = (els[i].getAttribute("data-cdn-pin") || "").trim();
+        if (!p || p === "CDN_" + "PIN") continue;
+        if (gleicherPin(p, PIN)) return;
+        if (window.console) console.error("upstreem: Der Pin im Header-Snippet (" + PIN +
+          ") ist nicht derselbe wie am Element \"" + (els[i].className || els[i].id) + "\" (" + p +
+          "). Solange sie sich unterscheiden, laedt ein Teil der Elemente seine Dateien ZUSAETZLICH " +
+          "-- doppelte Dateien, doppeltes core, langsamer Seitenaufbau. Beide auf dieselbe " +
+          "Zeichenfolge setzen (nicht nur denselben Commit: kurzer und langer Hash sind zwei URLs).");
+        return;
+      }
+      if (++versuche < 20) setTimeout(schauen, 500);
+    })();
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", pinWaechter);
+  else pinWaechter();
+
+  function welle2Planen(){
+    if (window.requestIdleCallback) window.requestIdleCallback(welle2, { timeout: 2500 });
+    else setTimeout(welle2, 1200);
+  }
+  if (VORRAT === "sofort") welle2();
+  else if (document.readyState === "complete") welle2Planen();
+  else window.addEventListener("load", welle2Planen);
+})();
+</script>
