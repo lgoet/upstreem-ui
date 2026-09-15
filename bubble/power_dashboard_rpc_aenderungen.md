@@ -103,3 +103,38 @@ linken Liste.
 * der `errors`-Block je Abschnitt — er wird inzwischen ausgewertet und zeigt im betroffenen
   Bereich "Could not load …" statt einer leeren Liste
 * die Cache-Regeln, insbesondere der Chat-Cache über `user_id + max(updated_at)`
+
+---
+
+## 8. `chats.preview` bitte weglassen (15.09.)
+
+Der RPC liefert je Chat ein `preview` — die ersten ~200 Zeichen der letzten Antwort. Das Feld
+steht **in keiner Spezifikation** und wird **von keiner Komponente gelesen** (nachgesehen in
+`ask-mira.js` und `power-dashboard.js`). Die Chatliste braucht drei Felder:
+
+```json
+{ "id": "…", "title": "…", "updated_at": "2026-09-14T10:00:00Z" }
+```
+
+Dazu optional `project_id`, `project_title`, `status`, `is_pinned` für Miras eigene Leiste.
+
+Zwei Gründe, warum es weg soll:
+
+1. **Es hat den Run-JS-Schritt getötet.** Der Vorschautext kommt aus einem Sprachmodell, und ein
+   Modell setzt Backticks um URLs. Der Bubble-Ausdruck wird wörtlich in den JS-Quelltext gesetzt;
+   ein Backtick beendet dort die Zeichenkette, und der Schritt stirbt beim Einlesen —
+   `Uncaught SyntaxError: missing ) after argument list`. Das ist im Schritt nicht zu heilen.
+2. **Es ist der größte Teil der Nutzlast.** 50 Chats × ~200 Zeichen, für nichts.
+
+## 9. `opportunities.headline` / `.reason`: Backticks entfernen
+
+Diese zwei **werden** angezeigt und sind ebenfalls Modelltext. Sie können bleiben, sollen aber
+keinen rohen Backtick tragen:
+
+```sql
+replace(o.headline, chr(96), '')
+replace(o.reason,   chr(96), '')
+```
+
+Alles andere — Anführungszeichen, Apostrophe, Umlaute, Zeilenumbrüche, Emoji — ist unkritisch,
+das repariert `UC.readBubble` in der Komponente.

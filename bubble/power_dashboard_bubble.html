@@ -181,74 +181,72 @@
   setPowerDashboardLoading("INSTANCE_ID", "yes" | "no")   Skelett an/aus. Echte Daten beenden
   es auch ohne "no".
 
-  ── DER RUN-JS-SCHRITT: EIN BACKTICK JE AUSDRUCK, BEIDE ERSETZUNGEN ─────────────────────────
-  Die Hausform aus brand_detail_bubble.html, unveraendert: kein Objekt von Hand bauen, kein
-  JSON.parse im Schritt, kein :formatted as JSON-safe. Der ROHE Text geht in den Setter, und
-  UC.readBubble in der Komponente ist der EINE geteilte Leseweg -- er liest gueltiges JSON
-  unveraendert, repariert Bubbles Eigenheiten und trennt LEER von UNLESBAR.
+  ── DER RUN-JS-SCHRITT: EIN BACKTICK JE AUSDRUCK (wie urls-table, brand-detail, ask-mira) ────
+  NIEMALS ein JS-Objekt im Schritt von Hand bauen und nie im Schritt parsen. Ist ein Ausdruck
+  leer, steht dort  "key": ,  -- kein gueltiges JavaScript, der Schritt stirbt beim PARSEN, und
+  mit ihm alle Aufrufe darunter. Im Backtick ist ein leeres Feld nur Text; die erste Ersetzung
+  macht null daraus, die zweite quotiert Bubbles unquotiertes yes/no. BEIDE Zeilen sind Pflicht.
 
-  Ein leerer Ausdruck ergaebe ohne Backtick ungueltiges JavaScript ("key": ,) und der Schritt
-  stuerbe beim Parsen, bevor eine Zeile laeuft. Im Backtick ist er nur Text; die erste Ersetzung
-  macht null daraus, die zweite quotiert yes/no.
+  Der ROHE Text geht in den Setter. UC.readBubble in der Komponente ist der EINE geteilte
+  Leseweg -- er repariert unescapte Anfuehrungszeichen, leere Werte, abgeschnittene Felder,
+  Zeilenumbrueche und Emoji und trennt LEER von UNLESBAR. Kein JSON.parse, kein
+  :formatted as JSON-safe, kein find & replace.
 
-  EIN Aufruf des Dashboard-RPC, VIER Setter -- JE EIN EIGENER BACKTICK, JE EIN TRY. Nicht
-  zusammenfassen: eine Zeichenkette fuer vier Abschnitte ist eine Stelle, an der alle vier
-  zugleich kippen. Die letzten drei fuettern nicht dieses Element, sondern die zwei, die es sich
-  ausleiht -- ohne sie bleiben "Recent chats" und der Opportunities-Bereich leer.
+  Vier Setter, JE EIN EIGENER BACKTICK, JE EIN TRY -- und jeder in einer eigenen Variablen, nicht
+  in einem Aufruf. Der Unterschied ist nicht Geschmack: steht das Literal in einem Aufruf, meldet
+  ein Fehler darin "missing ) after argument list" statt der Stelle, an der er wirklich sitzt.
 
     (function () {
-      function sauber(s){
-        return s.replace(/:\s*([,}\]])/g, ": null$1")
-                .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
-      }
+      var HAUPT = `[Power-Dashboard-RPC, :format as text]`
+        .replace(/:\s*([,}\]])/g, ": null$1")
+        .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+      var CHATS = `[Power-Dashboard-RPC's chats, :format as text]`
+        .replace(/:\s*([,}\]])/g, ": null$1")
+        .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+      var PROJ = `[Power-Dashboard-RPC's chat_projects, :format as text]`
+        .replace(/:\s*([,}\]])/g, ": null$1")
+        .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+      var OPPS = `[Power-Dashboard-RPC's opportunities, :format as text]`
+        .replace(/:\s*([,}\]])/g, ": null$1")
+        .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
 
-      var haupt = sauber(`[Power-Dashboard-RPC, :format as text]`);
-      var chats = sauber(`[Power-Dashboard-RPC's chats, :format as text:find & replace:find & replace]`);
-      var proj  = sauber(`[Power-Dashboard-RPC's chat_projects, :format as text]`);
-      var opps  = sauber(`[Power-Dashboard-RPC's opportunities, :format as text:find & replace:find & replace]`);
-
-      /* renderPowerDashboard nimmt EIN Argument (core, forwardShape "params"): den rohen Text.
-         Die Kennung steht darin, wenn der RPC sie mitliefert; sonst trifft der Aufruf das einzige
-         Dashboard der Seite. Mit mehreren Dashboards auf einer Seite muss der RPC instanceId
-         mitschicken. */
-      try { window.renderPowerDashboard(haupt); } catch (e) {}
-      try { window.askMiraSetPreviousChats(chats); } catch (e) {}
-      try { window.askMiraSetProjects(proj); } catch (e) {}
-      try { window.opportunitiesSetItems(opps); } catch (e) {}
+      /* Jeder Aufruf in seinem EIGENEN try, und window.<name> statt des nackten Namens: haengt
+         ein Element noch an einem aelteren Pin, ist der Name schlicht undefined statt ein
+         ReferenceError, der den ganzen Schritt mitnimmt. */
+      try { if (window.renderPowerDashboard) window.renderPowerDashboard(HAUPT); } catch (e) {}
+      try { if (window.askMiraSetPreviousChats) window.askMiraSetPreviousChats(CHATS); } catch (e) {}
+      try { if (window.askMiraSetProjects) window.askMiraSetProjects(PROJ); } catch (e) {}
+      try { if (window.opportunitiesSetItems) window.opportunitiesSetItems(OPPS); } catch (e) {}
     })();
 
   Der erste Aufruf nimmt die GANZE RPC-Antwort. Die Komponente liest daraus overview, brands,
-  top_domains, top_urls, citations_label und errors und laesst alles andere liegen -- chats,
-  chat_projects und opportunities stoeren dort nicht.
+  top_domains, top_urls, citations_label und errors; chats, chat_projects und opportunities
+  liegen darin und stoeren nicht.
 
-  ── PFLICHT AN JEDEM AUSDRUCK MIT FREIEM TEXT: find & replace ───────────────────────────────
-  Die EINZIGE Zeichenfolge, die im Backtick gefaehrlich bleibt, ist ein BACKTICK oder ein Dollar
-  mit geschweifter Klammer in einem WERT. Das Literal endet dort, und der Rest wird Programmtext.
-  Die aelteren Vorlagen sagen "kommt in Marken- und Domainnamen nicht vor" -- fuer Marken und
-  Domains stimmt das. Fuer Text aus einem Sprachmodell nicht: ein Modell setzt Backticks um URLs
-  und Feldnamen. Zweimal am 15.09. gemessen, je nach Stelle mit anderer Meldung:
+  Zahlen bleiben OHNE Anfuehrungszeichen -- 3.0, nicht "3.0".
 
-      roher Backtick im Wert, Literal frei stehend   -> Unexpected identifier 'https'
-      roher Backtick im Wert, Literal in einem Aufruf -> missing ) after argument list
+  ── DIE EINE ZEICHENFOLGE, DIE IM BACKTICK GEFAEHRLICH BLEIBT ───────────────────────────────
+  Ein BACKTICK oder ein Dollar mit geschweifter Klammer in einem WERT. Alles andere --
+  Anfuehrungszeichen, Apostrophe, Umlaute, Zeilenumbrueche, Emoji -- traegt der Backtick
+  unbeschadet. Das steht so in jeder Vorlage, und es stimmt: in Marken-, Domain- und Themennamen
+  kommt beides nicht vor.
 
-  Das ist NICHT im Schritt zu heilen: der Fehler passiert beim Einlesen, lange bevor eine Zeile
-  laeuft -- also auch vor jeder Ersetzung im Schritt. Die Entschaerfung gehoert VOR das Einsetzen,
-  und dafuer hat Bubble den Textoperator find & replace. Zwei davon, mit "Use RegEx" an, an JEDEN
-  Ausdruck, der Freitext tragen kann:
+  Es kommt aber in TEXT VOR, DEN EIN SPRACHMODELL GESCHRIEBEN HAT -- ein Modell setzt Backticks
+  um URLs und Feldnamen. Deshalb steht in KEINER Nutzlast dieser App ein solches Feld: Miras
+  Chatliste traegt id, title und updated_at, sonst nichts. Genau das war der Fehler am 15.09. --
+  der RPC lieferte zusaetzlich chats.preview, ein Feld, das in KEINER Datenspezifikation steht und
+  das KEINE Komponente liest (nachgesehen in ask-mira.js und power-dashboard.js). Darin stand:
 
-      1.  find:  [`]          replace:  '
-      2.  find:  \$\{         replace:  $ {
+      "preview": "Die URL `https://de.trustpilot.com/review/lee-up.de` ist deine ..."
+      -> Uncaught SyntaxError: missing ) after argument list
 
-  Also:
+  Abhilfe im RPC, nicht im Schritt: das Feld faellt weg. Es kostete nebenbei den groessten Teil
+  der Nutzlast -- 50 Chats mal 200 Zeichen Vorschau, fuer nichts.
 
-      [Power-Dashboard-RPC's chats, :format as text:find & replace:find & replace]
+  Bleibt opportunities: headline und reason SIND Modelltext und werden angezeigt. Fuer die zwei
+  gehoert ein replace in den RPC, damit kein roher Backtick herauskommt:
 
-  Der erste tauscht den Backtick gegen ein Apostroph -- der Text bleibt lesbar, statt dass eine
-  Stelle verschwindet. Der zweite trennt Dollar und Klammer, damit keine Ersetzung im Literal
-  ausgeloest wird. Ein einzelnes $ und ein Backslash sind ungefaehrlich, gemessen.
-
-  Welche Ausdruecke: alle, die Modelltext tragen -- hier chats und opportunities. Der Hauptausdruck
-  traegt nur Zahlen, Ids, Marken- und Domainnamen und braucht es nicht; schadet aber auch nicht.
+      replace(o.headline, chr(96), '')
 
   STATISCH ZUM TESTEN -- dieselben Werte wie die Beispieldaten, als Run-JS-Schritt:
   Hier steht ein Backtick-Literal, weil diese Daten von Hand geschrieben sind und keinen Backtick

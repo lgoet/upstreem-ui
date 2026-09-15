@@ -182,7 +182,19 @@
 
   /* ---------- helpers ---------- */
   function esc(v){ var d = document.createElement('div'); d.textContent = String(v == null ? '' : v); return d.innerHTML; }
-  function looseParse(s){ if (typeof s !== 'string') return s; try { return JSON.parse(s); } catch(e){ return null; } }
+  /* UC.readBubble statt eines nackten JSON.parse (15.09.). Das hier war kein "loose" Parser,
+     sondern JSON.parse mit null-Rueckfall -- jede Eigenheit von Bubble liess das Brett
+     "Could not load opportunities" zeigen, obwohl die Daten da waren. GEMESSEN an einem echten
+     Payload: ein Zeilenumbruch in "reason" (Modelltext hat regelmaessig welche) -> 0 Karten,
+     waehrend UC.readBubble denselben Text als 1 Eintrag mit 9 Feldern liest.
+     readBubble ist der EINE geteilte Leseweg fuer Bubble-Nutzlasten und repariert nacktes
+     yes/no, leere Werte, unescapte Anfuehrungszeichen, Zeilenumbrueche und Emoji. Der alte Weg
+     bleibt als Rueckfall, falls core aelter ist als diese Datei. */
+  function looseParse(s){
+    if (typeof s !== 'string') return s;
+    if (UC && UC.readBubble){ var w = UC.readBubble(s); if (w != null) return w; return null; }
+    try { return JSON.parse(s); } catch(e){ return null; }
+  }
   function fmtDate(iso){ if(!iso) return ''; var d = new Date(iso); if (isNaN(d.getTime())) return String(iso); return MONTHS[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear(); }
   /* UC.themeParam statt isYes: kennt core ein Thema, gewinnt core -- das Attribut ist nur die
      Momentaufnahme aus dem Lauf des Workflows. */
