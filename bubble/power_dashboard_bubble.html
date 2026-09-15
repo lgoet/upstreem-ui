@@ -181,75 +181,50 @@
   setPowerDashboardLoading("INSTANCE_ID", "yes" | "no")   Skelett an/aus. Echte Daten beenden
   es auch ohne "no".
 
-  ── DER RUN-JS-SCHRITT: KEIN BACKTICK MEHR, DAFUER JSON-SAFE ────────────────────────────────
-  Nie ein Objekt von Hand bauen -- ein leerer Ausdruck ergaebe ungueltiges JavaScript, und der
-  ganze Schritt stuerbe, bevor eine Zeile laeuft. Zahlen OHNE Anfuehrungszeichen.
+  ── DIE DATEN: VIER VERSTECKTE ELEMENTE, KEIN RUN-JS-SCHRITT ────────────────────────────────
+  Ein Run-JS-Schritt setzt den Bubble-Ausdruck WOERTLICH in den Quelltext, bevor der Browser ihn
+  liest. "..." vertraegt keinen echten Zeilenumbruch, `...` keinen Backtick und kein ${.
+  Chatvorschauen, Antworttexte und Opportunity-Begruendungen kommen aus einem Sprachmodell und
+  tragen genau das. Am 15.09. hat ein Backtick um eine URL in einer Chatvorschau den Schritt mit
+  "Unexpected identifier 'https'" getoetet; davor schon einmal ein Zeilenumbruch in einem
+  Antworttext. Dagegen hilft KEINE Ersetzung: der Fehler passiert beim Einlesen, lange bevor die
+  erste Zeile laeuft.
 
-  WARUM KEIN BACKTICK MEHR (15.09.): Der Ausdruck wird WOERTLICH in den Quelltext gesetzt, bevor
-  der Browser ihn liest. Steht irgendwo in den Daten selbst ein Backtick, endet das Literal dort
-  -- der Rest der Zeile ist dann Programmtext. Genau das ist passiert: eine Chat-Vorschau enthielt
-  `https://de.trustpilot.com/review/lee-up.de` in Schraegstrichen, und der Schritt starb mit
-  "Uncaught SyntaxError: Unexpected identifier 'https'". Nachgestellt und Zeichen fuer Zeichen
-  reproduziert. Dagegen hilft KEINE Ersetzung im Schritt: der Fehler passiert beim Einlesen,
-  lange bevor die erste Zeile laeuft. Dasselbe gilt fuer die Folge ${ und fuer Backslashes.
+  Im INHALT eines Elements ist jedes Zeichen erlaubt, weil der Browser dort keinen Code liest.
+  Also: vier versteckte Elemente mit FESTEN Ids, jedes traegt seinen dynamischen Ausdruck, und die
+  Komponenten holen sich den Text selbst -- sofort und noch einmal, sobald Bubble sie gefuellt hat
+  (MutationObserver, UC.bindeDatenElement). Derselbe Weg wie response-detail und Miras
+  mira-*-data-Elemente.
 
-  Die Loesung ist der Ausdruck in doppelten Anfuehrungszeichen plus :formatted as JSON-safe.
-  JSON-safe escapt genau die drei Zeichen, die ein solches Literal sprengen koennen --
-  Anfuehrungszeichen, Backslash, Zeilenumbruch -- und laesst Backticks in Ruhe, weil sie dort
-  harmlos sind. Das Escaping von JSON ist mit dem von JavaScript deckungsgleich, der Browser liest
-  danach wieder genau den Urtext.
+    <div style="display:none">
+      <div id="upw-data">[Power-Dashboard-RPC, :format as text]</div>
+      <div id="upw-chats-data">[... 's chats, :format as text]</div>
+      <div id="upw-projects-data">[... 's chat_projects, :format as text]</div>
+      <div id="upw-opportunities-data">[... 's opportunities, :format as text]</div>
+    </div>
 
-  ACHTUNG, das ist Bubble-seitige Arbeit: der Zusatz :formatted as JSON-safe muss AN DEN AUSDRUCK.
-  Ohne ihn liest der Schritt beim ersten Anfuehrungszeichen in den Daten falsch weiter.
-  Kurzprobe ohne Deployment: denselben Ausdruck in ein Textelement legen. Steht dort alles in
-  EINER Zeile und mit \" statt ", greift JSON-safe.
+  Kommt alles aus EINEM RPC (so ist es gebaut), tragen die vier Elemente vier Ausdruecke auf
+  dasselbe Ergebnis -- z.B. das Ergebnis in einen Custom State legen und daraus die vier Felder
+  ziehen. Es darf auch ein Bubble-Textelement oder ein verstecktes Input sein; gelesen wird sein
+  Inhalt bzw. sein Wert.
 
-  EIN Aufruf des Dashboard-RPC, DREI Setter: das Dashboard, Miras Chatliste samt Projekten und das
-  Opportunities-Brett. Die letzten zwei fuettern nicht dieses Element, sondern die zwei, die es
-  sich ausleiht -- ohne sie bleiben "Recent chats" und der Opportunities-Reiter leer.
-  Dieser Schritt ist GEMESSEN gegen eine echte RPC-Antwort, nicht abgeschrieben.
+  KEIN Escaping, KEIN :formatted as JSON-safe, KEINE Sanitizer-Zeilen. Backticks, Anfuehrungs-
+  zeichen, Zeilenumbrueche, Backslashes, ${ und Emoji koennen hier nichts mehr kaputtmachen --
+  gemessen am 15.09. mit allen sechs in einer Nutzlast: 0 Fehler, alle vier Bereiche gefuellt.
 
-    (function () {
-      var ROH = "[Power-Dashboard-RPC, :formatted as JSON-safe]"
-        .replace(/:\s*([,}\]])/g, ": null$1")
-        .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+  Die beiden Ersetzungen aus §46 wirken weiterhin dort, wo sie hingehoeren: im Leser der
+  Komponente (UC.readBubble), nicht im Schritt. Ein leeres Feld und ein nacktes yes/no faengt er
+  genauso ab wie vorher.
 
-      var D = {};
-      try { D = JSON.parse(ROH); } catch (e) { D = {}; }
+  ── WENN DIE DATEN SPAETER KOMMEN ───────────────────────────────────────────────────────────
+  Schreibt ein Workflow spaeter in dasselbe Element, wird es von selbst neu gelesen -- der
+  Beobachter haengt daran. Ein Schritt ist nur noetig, wenn der Text aus einem ANDEREN Element
+  kommen soll:
 
-      /* 1. Dieses Element. instanceId als ERSTES Feld: bricht die Nutzlast ab, fischt core die
-            Kennung trotzdem heraus und die richtige Platzierung zeigt den Lesefehler. */
-      try {
-        if (window.renderPowerDashboard) window.renderPowerDashboard(JSON.stringify({
-          instanceId: "INSTANCE_ID",
-          overview: D.overview, brands: D.brands,
-          top_domains: D.top_domains, top_urls: D.top_urls,
-          citations_label: D.citations_label,
-          totalCountDomain: D.totalCountDomain, totalCountUrl: D.totalCountUrl,
-          errors: D.errors
-        }));
-      } catch (e) {}
+    renderPowerDashboardFrom("INSTANCE_ID", "#mein-element")
 
-      /* 2. Miras Chatliste und ihre Projekte -- fuellen "Recent chats" hier. */
-      try { if (D.chats && window.askMiraSetPreviousChats) window.askMiraSetPreviousChats(D.chats); } catch (e) {}
-      try { if (D.chat_projects && window.askMiraSetProjects) window.askMiraSetProjects(D.chat_projects); } catch (e) {}
-
-      /* 3. Das Opportunities-Brett -- fuellt den dritten Reiter. */
-      try { if (D.opportunities && window.opportunitiesSetItems) window.opportunitiesSetItems(D.opportunities); } catch (e) {}
-    })();
-
-  JEDER Setter in EIGENEM try: ein kaputter Teil darf die anderen nicht mitnehmen.
-  Und jeder mit "if (D.x && ...)": beim NACHLADEN eines einzelnen Abschnitts (data-needs-fn) sind
-  die anderen Felder nicht dabei, und ein Setter mit undefined wuerde eine gefuellte Liste leeren.
-
-  DER errors-BLOCK. Liefert der RPC { "errors": { "citations_url": "..." } }, zeigt der betroffene
-  Bereich "Could not load ..." statt einer leeren Tabelle. Die Schluessel sind die Abschnittsnamen
-  des RPC: overview, brands, citations_domain, citations_url. Ein leerer Wert (null) heisst "kein
-  Fehler". OHNE diesen Block haette ein gescheiterter Abschnitt nur zwei schlechte Enden: weglassen
-  (das Skelett laeuft endlos) oder [] schicken (die Oberflaeche behauptet "No data", wo in Wahrheit
-  die Abfrage gescheitert ist).
-  Ein komplett unlesbarer Payload zeigt "Could not load ..." in allen vier Bereichen, ein wirklich
-  leerer Teil ("[]") den normalen Leerzustand.
+  Ein falscher Selektor gibt false und sagt in der Konsole, was fehlt. Ein leeres Element gilt als
+  "noch nichts da" und raeumt eine gefuellte Liste NICHT weg.
 
   STATISCH ZUM TESTEN -- dieselben Werte wie die Beispieldaten, als Run-JS-Schritt:
   Hier steht ein Backtick-Literal, weil diese Daten von Hand geschrieben sind und keinen Backtick

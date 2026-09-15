@@ -15663,6 +15663,53 @@
 
   /* Die neue Reihenfolge festschreiben: sichtbare in der uebergebenen Ordnung, verborgene
      dahinter in ihrer bisherigen relativen Ordnung -- sie sind nie Teil des Ziehens. */
+  /* ---------- bindeDatenElement: der Payload kommt aus dem DOM, nie aus JS-Quelltext ----------
+     Der einzige Weg, der JEDEN Text vertraegt. Ein Run-JS-Schritt setzt den Bubble-Ausdruck
+     WOERTLICH in den Quelltext, bevor der Browser ihn liest: "..." vertraegt keinen echten
+     Zeilenumbruch, `...` keinen Backtick und kein ${. Chatvorschauen, Antworttexte und
+     Opportunity-Begruendungen kommen aus einem Sprachmodell und tragen genau das -- ein Backtick
+     um eine URL hat den Dashboard-Schritt am 15.09. mit "Unexpected identifier 'https'" getoetet,
+     ein Zeilenumbruch in einem Antworttext denselben Schritt schon davor. Dagegen hilft keine
+     Ersetzung: der Fehler passiert beim Einlesen, lange bevor die erste Zeile laeuft.
+     Im INHALT eines Elements ist jedes Zeichen erlaubt, weil der Browser dort keinen Code liest.
+     Bubble legt ein verstecktes Element mit fester Id an, schreibt den dynamischen Ausdruck
+     hinein, und die Komponente holt ihn sich. Kein Schritt, keine Escapes, keine Ausnahmen.
+     Ausgezogen aus ask-mira.js' _amAutoBind (dort seit dem 30.08. in Betrieb), damit die anderen
+     Komponenten ihn nicht nachbauen.
+     Der MutationObserver ist noetig, weil Bubble das Element spaeter fuellt als es anlegt; der
+     last-Vergleich verhindert, dass dieselbe Nutzlast zweimal durchlaeuft. Ein LEERER Wert wird
+     uebergangen und gilt nicht als "keine Daten": Bubble zeigt beim Aufbau kurz nichts an, und ein
+     Setteraufruf damit wuerde eine gefuellte Liste leerraeumen. */
+  function bindeDatenElement(id, fn){
+    var el = document.getElementById(id);
+    if (!el || el.__ucBound) return false;
+    el.__ucBound = true;
+    var last = null;
+    function lesen(){
+      return ("value" in el && el.value != null && el.value !== "") ? el.value : (el.textContent || "");
+    }
+    function anwenden(){
+      var v = lesen();
+      if (v == null) return;
+      v = String(v);
+      if (v === last || !v.trim()) return;
+      last = v;
+      try { fn(v); } catch (e){
+        try { if (window.console) console.warn("[core] bindeDatenElement " + id + " fehlgeschlagen", e); } catch (_){}
+      }
+    }
+    anwenden();
+    try { new MutationObserver(anwenden).observe(el, { childList: true, characterData: true, subtree: true }); } catch (e){}
+    return true;
+  }
+  /* Zweimal rufen: einmal sofort, einmal nachdem Bubble gerendert hat. Dieselbe Verzoegerung wie
+     in ask-mira, wo sie sich bewaehrt hat. */
+  function bindeDatenElemente(paare){
+    function runde(){ paare.forEach(function(p){ try { bindeDatenElement(p[0], p[1]); } catch (e){} }); }
+    runde();
+    setTimeout(runde, 300);
+  }
+
   function cgApplyOrder(keys){
     var alle = cgRead(), nach = {};
     alle.forEach(function(g){ nach[g.key] = g; });
@@ -15779,6 +15826,8 @@
     esc: esc,
     parseBubbleJson: parseBubbleJson,
     readBubble: readBubble,
+    bindeDatenElement: bindeDatenElement,
+    bindeDatenElemente: bindeDatenElemente,
     citeName: citeName,
     tint: tint,
     brighten: brighten,
