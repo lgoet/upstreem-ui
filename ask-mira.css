@@ -2606,6 +2606,20 @@
   .am-newchat:hover { background: var(--am-soft); border-color: #6f6f6f; }
   #ask-mira .am-newchat .am-ic { width: 14px; height: 14px; }
   .am-prev-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 6px 10px 16px; display: flex; flex-direction: column; gap: 2px; }
+  /* "Show all 42" / "Show less" unter einem Projekt. Kein eigenes Bauteil: es ist dieselbe Zeile
+     wie ein Chat, nur ohne Zeichen und in Drittfarbe -- Hoehe und Polster kommen deshalb von
+     .am-prev-item, hier steht nur, was anders ist. */
+  .am-prev-mehr {
+    display: block; width: 100%; text-align: left; border: 0; background: transparent;
+    padding: 0 8px; height: 30px; border-radius: 8px; cursor: pointer;
+    font-family: inherit; font-size: 12.5px; font-weight: 500; color: var(--vc-third);
+    transition: color 120ms ease, background-color 120ms ease;
+  }
+  .am-prev-mehr:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
+  /* Der Fuehler fuer das Nachladen: er wird nie gesehen, er muss nur in den sichtbaren Bereich
+     geraten koennen. 1px statt 0, weil ein Element ohne Hoehe von IntersectionObserver in
+     manchen Browsern gar nicht erst gemeldet wird. */
+  .am-prev-fuehler { flex: 0 0 auto; height: 1px; }
   /* Feiner als vorher, und nach dem Inhalt gebaut, der kommt: die Zeile ist 34px hoch wie
      .am-prev-item, aber sie ist LEER -- das Schimmern liegt auf einer 10px-Textzeile darin. Vorher
      waren es sieben ausgefuellte 36px-Bloecke, und das las sich als Kachelwand statt als Liste

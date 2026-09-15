@@ -192,6 +192,27 @@
      askMiraSetPreviousChats, askMiraSetTopics, askMiraSetModels, askMiraSetCompanies und
      askMiraSetProjects tragen ebenfalls Listen -- je EIN eigener Backtick, je ein try.
 
+     ── NACHLADEN BEIM SCROLLEN (15.09.) ─────────────────────────────────────────
+     Die Leiste zeigt 15 Chats und deckt beim Herunterscrollen die naechsten 15 auf. Ist alles
+     aufgedeckt, was geladen wurde, meldet sie sich:
+
+         bubble_fn_ask_mira_more_chats   Nutzlast { "have": 160, "step": 15 }
+
+     have = wie viele Chats das Element schon hat, step = wie viele es haben moechte.
+     IM WORKFLOW: die naechsten step Chats holen -- Offset ist have, Sortierung dieselbe wie beim
+     ersten Aufruf -- und anhaengen:
+
+         askMiraAppendPreviousChats(`[... die naechsten 15 ...]`)
+
+     ANHAENGEN, nicht setzen. askMiraSetPreviousChats ersetzt die Liste; damit waere alles
+     Aufgedeckte wieder weg und die Leiste spraenge nach oben.
+     Doppelte fliegen nach id von selbst raus, eine Ueberlappung von einem Eintrag schadet also
+     nicht. Eine LEERE Liste heisst "es gibt nichts mehr": danach fragt die Leiste nicht wieder.
+     Genau das beendet die Schleife -- ohne sie fragt sie bei jedem Scrollen weiter.
+
+     Ein Projekt zeigt ebenfalls 15 Chats und darunter "Show all N". Das ist reine Anzeige: die
+     Chats eines Projekts kommen mit derselben Liste und brauchen keinen eigenen Workflow.
+
      ── DIE CHATLISTE, UND ZWAR BEIM SEITENLADEN (14.09.) ────────────────────────
      Dieser eine Schritt gehoert in den Workflow "When page is loaded" und NICHT an die
      Sichtbarkeit von Miras Gruppe. Grund: das Power Dashboard zeigt unter "Recent chats"
@@ -226,6 +247,7 @@
 <div class="up-root am-root" id="ask-mira"
      data-instance="ROOTID_[dynamic id]"
      data-cdn-pin="CDN_PIN"
+     data-morechats-fn="bubble_fn_ask_mira_more_chats"
      data-isdark="IS_DARK">
   <div class="am-shell">
 

@@ -409,6 +409,11 @@
     topics: [],
     collapsed: { projects: false, recents: false },
     collapsedProjects: {},
+    /* Wie viele der "Recents" gerade aufgedeckt sind, und welche Projekte ganz offen stehen
+       (15.09.). Beides gehoert in den Zustand und nicht ins DOM: renderPrevious baut die Liste
+       bei jeder Aenderung neu, und ein Fenster, das nur im Markup stuende, waere danach weg. */
+    prevFenster: 15,
+    projOffen: {},
     market: null,
     models: {},
     favicons: [],
@@ -3080,14 +3085,63 @@
       '</span>'+
     '</div>';
   }
+  /* ---------- NACHLADEN BEIM HERUNTERSCROLLEN (15.09.) --------------------------------------
+     Zwei Stufen, und sie sind verschieden:
+     1. AUFDECKEN -- was schon geladen ist, aber noch nicht gezeichnet. Kostet nichts, passiert
+        sofort, braucht niemanden.
+     2. NACHFORDERN -- wenn nichts mehr da ist, das aufzudecken waere. Dafuer geht eine Meldung
+        nach aussen (data-morechats-fn) mit der Zahl, die das Fenster schon hat; Bubble laedt die
+        naechsten und haengt sie mit askMiraAppendPreviousChats an.
+     _mehrGefragt verhindert, dass dieselbe Seite mehrfach angefordert wird, solange die Antwort
+     unterwegs ist -- der Beobachter feuert sonst bei jedem Pixel Scrollweg erneut. Die Sperre
+     faellt, sobald angehaengt wurde oder nach acht Sekunden: eine Antwort, die nie kommt, darf
+     das Nachladen nicht fuer immer stilllegen. */
+  var _mehrGefragt = false, _mehrEnde = false, _mehrUhr = null;
+  function _mehrDraussen(){ return !_mehrEnde; }
+  /* AM SCROLLSTAND und nicht an der Sichtbarkeit eines Fuehlers. IntersectionObserver waere das
+     modernere Werkzeug, meldet aber nichts, solange die Leiste ausgefahren neben dem Bild steht
+     (gemessen: der Fuehler lag bei x = -2809) oder der Tab verdeckt ist -- und genau dann wird
+     hier gescrollt. Der Scrollstand ist unabhaengig davon und in beiden Faellen richtig.
+     120px Vorlauf: die naechsten Zeilen stehen da, bevor der Nutzer die Kante erreicht. */
+  function _pruefeNachladen(){
+    if (elPrevList.scrollTop + elPrevList.clientHeight < elPrevList.scrollHeight - 120) return;
+    var offen = (S.previousChats || []).filter(function(c){ return !c.project_id; }).length;
+    if (S.prevFenster < offen){ S.prevFenster += LISTE_SCHRITT; renderPrevious(); return; }
+    if (_mehrGefragt || _mehrEnde) return;
+    _mehrGefragt = true;
+    amFire('more_chats', { have: (S.previousChats || []).length, step: LISTE_SCHRITT }, 'more-chats');
+    /* Eine Antwort, die nie kommt, darf das Nachladen nicht fuer immer stilllegen. */
+    _mehrUhr = setTimeout(function(){ _mehrGefragt = false; }, 8000);
+  }
+  elPrevList.addEventListener('scroll', _pruefeNachladen, { passive: true });
+  function _fuehlerBinden(){
+    /* Nach dem Neuzeichnen kann die Liste kuerzer sein als das Fenster -- dann steht der Nutzer
+       schon am Ende, ohne zu scrollen, und niemand wuerde je wieder fragen. */
+    setTimeout(_pruefeNachladen, 0);
+  }
   function sortPinnedFirst(arr){
     return arr.map(function(c,i){ return { c:c, i:i }; })
       .sort(function(a,b){ var d=(amTruthy(b.c.is_pinned)?1:0)-(amTruthy(a.c.is_pinned)?1:0); return d!==0 ? d : a.i-b.i; })
       .map(function(o){ return o.c; });
   }
+  /* ---------- WIE VIELE CHATS AUF EINMAL (15.09.) ------------------------------------------
+     Bis hierhin wurde ALLES gezeichnet, was geladen war: 200 Sitzungen in der Leiste und in
+     einem Projekt so viele, wie drin liegen -- bei 100 Chats in einem Projekt also 100 Zeilen
+     auf einen Schlag. Und was jenseits der 200 lag, war fuer den Nutzer nicht erreichbar: er
+     sah es erst, wenn er die davor loeschte.
+     Jetzt in Schritten von 15, wie man es von anderen Anwendungen kennt: die Leiste zeigt 15
+     und laedt beim Herunterscrollen die naechsten 15 nach; ein Projekt zeigt 15 und hat darunter
+     "Show all". 15 und nicht 20, weil eine Zeile 36px hoch ist -- 15 Zeilen sind 540px und damit
+     etwa eine Bildschirmhoehe, also genau eine Nachladung je Schirm.
+     Das ist die Anzeige-Seite. Geht dem Fenster aus, was geladen ist, meldet es das nach aussen
+     (data-morechats-fn), damit Bubble die naechste Seite nachreichen kann --
+     askMiraAppendPreviousChats haengt sie an, statt die Liste zu ersetzen. */
+  var LISTE_SCHRITT = 15;
   function renderPrevious(){
     if (!_prevLoaded){ elPrevList.innerHTML = _prevSkeletonHTML(); return; }   // sessions still loading at page load
-    var sessions = (S.previousChats || []).slice(0, 200);
+    /* Kein 200er-Deckel mehr: was ueber den liegt, erreicht der Nutzer jetzt ueber das
+       Nachladen. Ein Deckel hier haette genau die alten Chats wieder unsichtbar gemacht. */
+    var sessions = (S.previousChats || []);
     var projects = (S.projects || []);
     var byProject = {}, recents = [];
     sessions.forEach(function(c){
@@ -3097,7 +3151,15 @@
     var projHTML = projects.map(function(p){
       var collapsed = !!S.collapsedProjects[p.id];
       var chats = sortPinnedFirst(byProject[p.id] || []);
-      var body = chats.length ? chats.map(chatItemHTML).join('') : '<div class="am-prev-proj-empty">No chats yet</div>';
+      /* Angeheftete zuerst, dann die ersten 15 -- wer etwas oben festgehalten hat, soll es nicht
+         hinter einem "Show all" wiederfinden muessen. */
+      var alleZeigen = !!S.projOffen[p.id];
+      var gezeigt = alleZeigen ? chats : chats.slice(0, LISTE_SCHRITT);
+      var body = chats.length ? gezeigt.map(chatItemHTML).join('') : '<div class="am-prev-proj-empty">No chats yet</div>';
+      if (chats.length > LISTE_SCHRITT){
+        body += '<button class="am-prev-mehr" type="button" data-proj-more="'+escAttr(p.id)+'">'+
+          (alleZeigen ? 'Show less' : ('Show all ' + chats.length)) + '</button>';
+      }
       return '<div class="am-prev-project'+(collapsed?' is-collapsed':'')+'" data-project-id="'+escAttr(p.id)+'">'+
         '<div class="am-prev-proj-head">'+
           '<span class="am-prev-proj-folder"><span class="am-fo">'+ICON.folderOpen+'</span><span class="am-fc">'+ICON.folder+'</span></span>'+
@@ -3116,8 +3178,15 @@
       '</div>';
     }).join('');
 
-    var recentsHTML = sortPinnedFirst(recents).map(chatItemHTML).join('');
+    var recentsAlle = sortPinnedFirst(recents);
+    if (S.prevFenster < LISTE_SCHRITT) S.prevFenster = LISTE_SCHRITT;
+    var recentsHTML = recentsAlle.slice(0, S.prevFenster).map(chatItemHTML).join('');
     if (!recentsHTML) recentsHTML = '<div class="am-prev-proj-empty">No recent chats</div>';
+    /* Der Fuehler steht als LETZTES in der Liste. Kommt er in Sicht, ist der Nutzer unten
+       angekommen -- dann die naechsten 15 aufdecken. Ein Knopf waere die Alternative; verlangt
+       war ausdruecklich das Verhalten, das man von anderen Anwendungen kennt. */
+    else if (recentsAlle.length > S.prevFenster || _mehrDraussen())
+      recentsHTML += '<div class="am-prev-fuehler" data-prev-fuehler aria-hidden="true"></div>';
 
     elPrevList.innerHTML =
       '<div class="am-prev-section'+(S.collapsed.projects?' is-collapsed':'')+'" data-section="projects">'+
@@ -3137,6 +3206,8 @@
         '<div class="am-prev-sec-body">'+recentsHTML+'</div>'+
       '</div>';
     if (window.__amRenderChatTitlebar) window.__amRenderChatTitlebar();
+    /* Der Fuehler ist nach jedem Neuzeichnen ein anderer Knoten -- also neu beobachten. */
+    _fuehlerBinden();
   }
 
   /* ================= AUFWAND: Medium / High / Ultra ======================================
@@ -4845,6 +4916,34 @@
   };
   window.askMiraSetTopicsFromEl        = function(sel){ var r = _amReadEl(sel); if (r != null) window.askMiraSetTopics(r); };
   window.askMiraSetPreviousChatsFromEl = function(sel){ var r = _amReadEl(sel); if (r != null) window.askMiraSetPreviousChats(r); };
+  /* ANHAENGEN statt ersetzen -- die Antwort auf more_chats (15.09.). Doppelte fliegen nach id
+     raus: Bubble liefert eine Seite regelmaessig mit einer Ueberlappung von einem Eintrag, und
+     zwei gleiche Zeilen waeren schlimmer als eine fehlende.
+     Eine LEERE Antwort heisst "es gibt nichts mehr": dann wird nicht weiter gefragt, und der
+     Fuehler verschwindet. Ohne dieses Ende fragte die Leiste bei jedem Scrollen bis ans
+     Weltende weiter. */
+  window.askMiraAppendPreviousChats = function(chats){
+    if (typeof chats === 'string'){
+      var p = looseJsonParse(chats);
+      if (p == null){ console.warn('[AskMira] askMiraAppendPreviousChats: Payload nicht lesbar.'); return; }
+      chats = p;
+    }
+    var neu = Array.isArray(chats) ? chats : (chats ? [chats] : []);
+    if (_mehrUhr){ clearTimeout(_mehrUhr); _mehrUhr = null; }
+    _mehrGefragt = false;
+    if (!neu.length){ _mehrEnde = true; renderPrevious(); return; }
+    var da = {};
+    (S.previousChats || []).forEach(function(c){ if (c && c.id != null) da[String(c.id)] = true; });
+    var dazu = neu.filter(function(c){ return c && c.id != null && !da[String(c.id)]; });
+    if (!dazu.length){ _mehrEnde = true; renderPrevious(); return; }
+    S.previousChats = (S.previousChats || []).concat(dazu);
+    _prevLoaded = true;
+    /* Das Fenster waechst mit, sonst kaeme das Nachgeladene erst beim naechsten Scrollen zum
+       Vorschein -- und der Nutzer saehe auf seine Bewegung hin: nichts. */
+    S.prevFenster += dazu.length;
+    renderPrevious();
+    return dazu.length;
+  };
   window.askMiraSetProjectsFromEl      = function(sel){ var r = _amReadEl(sel); if (r != null) window.askMiraSetProjects(r); };
 
   // ---- Auto-bind: the component reads its data from hidden elements and re-reads on change.
@@ -5759,6 +5858,15 @@
   /* ---- click delegation ---- */
   elPrevList.addEventListener('click', function(e){
     if (e.target.closest('[data-add-project]')){ e.stopPropagation(); createProject(); return; }
+    /* "Show all N" / "Show less" an einem Projekt. */
+    var mehr = e.target.closest('[data-proj-more]');
+    if (mehr){
+      e.stopPropagation();
+      var pid = mehr.getAttribute('data-proj-more');
+      S.projOffen[pid] = !S.projOffen[pid];
+      renderPrevious();
+      return;
+    }
     var pAct = e.target.closest('[data-proj-act]');
     if (pAct){
       e.stopPropagation();
