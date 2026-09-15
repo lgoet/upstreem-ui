@@ -1370,7 +1370,12 @@
        also nicht mehr die halbe Zeile ein. Der Wert kommt vom Nutzer und ist gewollt. */
     border: 1px solid var(--am-border-strong); border-radius: 32px;
     background: var(--am-card); box-shadow: var(--am-shadow-sm);
-    padding: 16px;
+    /* Links, rechts und unten 8 statt 16 (15.09. angefordert). Oben bleibt es bei 16, weil dort
+       das Eingabefeld sitzt und genau das seinen Platz NICHT aendern soll.
+       Das schmalere Polster gilt fuer alles darin -- die Aktionszeile unten rueckt naeher an die
+       Kante, und dort ist sie auch gemeint. Das Eingabefeld und der laufende Platzhalter holen
+       sich den Unterschied ueber eigene Raender zurueck (.am-input-wrap weiter unten). */
+    padding: 16px 8px 8px;
     display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center;
     transition: border-color 170ms ease, box-shadow 170ms ease;
   }
@@ -1397,7 +1402,14 @@
   .am-textarea::placeholder { color: #888d97; }
 
   /* Grok-style looping placeholder */
-  .am-input-wrap { position: relative; min-width: 0; }
+  /* DAS EINGABEFELD BLEIBT, WO ES WAR -- UND RUECKT 4px WEITER HINEIN (15.09. angefordert).
+     Rechnung, damit sie nachvollziehbar bleibt: das Polster der Huelle faellt links von 16 auf 8,
+     also fehlen dem Feld 8px; gewollt sind zusaetzlich 4px mehr Abstand zur Kante als vorher.
+     8 + 4 = 12 links. Oben bleibt das Polster bei 16, dort kommen nur die 4px dazu.
+     Ergebnis: der Text steht 20px von der linken und 20px von der oberen Kante -- vorher 16/16.
+     Der laufende Platzhalter liegt IN diesem Wrapper (.am-ph-loop ist absolut darin) und wandert
+     deshalb mit, ohne eine zweite Zahl zu brauchen. */
+  .am-input-wrap { position: relative; min-width: 0; margin-left: 12px; margin-top: 4px; }
   .am-ph-loop {
     position: absolute; left: 0; top: 1px; right: 0; height: 22px;
     overflow: hidden; pointer-events: none; display: none;
@@ -3127,7 +3139,10 @@
    haelt genau diese Hoehe frei, bis Mira eintrifft, sonst springt alles darunter.
    NUR hier -- Miras eigene Ansicht (.am-composer ohne is-launcher) behaelt ihren eigenen
    Abstand; siehe .am-composer weiter oben in dieser Datei. */
-#ask-mira.up-root.is-launcher .am-composer { padding: 16px; row-gap: 10px; }
+/* Dieselbe Aufteilung wie oben: oben 16, sonst 8. Das Dashboard traegt hier sein eigenes
+   Polster, also muss die Zahl mitwandern -- sonst saehe dieselbe Box an zwei Orten
+   verschieden aus. */
+#ask-mira.up-root.is-launcher .am-composer { padding: 16px 8px 8px; row-gap: 10px; }
 /* "Mira answers based on..." ist im Dashboard weg (11.09. angefordert) -- der Satz erklaert
    Mira SICH SELBST, und im Launcher steht sie nur als Einstieg da, nicht als eigene Ansicht mit
    eigenem Fusstext. In Miras eigener Ansicht bleibt er (kein is-launcher dort). */
