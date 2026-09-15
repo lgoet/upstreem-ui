@@ -142,7 +142,8 @@
       rootClass: "upw-root", notPortal: true,
       ctrlProp: "__upwController", resolveLocal: "__upwResolveLocal", queue: "__upwBootQueue",
       initRoot: initRoot,
-      api: { renderPowerDashboard: doRender, setPowerDashboardLoading: doLoading },
+      api: { renderPowerDashboard: doRender, setPowerDashboardLoading: doLoading,
+             upwStand: doStand },
       forwardShape: { renderPowerDashboard: "params" }
     });
   }
@@ -160,6 +161,15 @@
     if (!ctrl) return false;
     ctrl.update(params || {});
     return true;
+  }
+  /* window.upwStand() in der Konsole -- ohne Argument, nimmt das einzige Dashboard der Seite.
+     Beantwortet, was der Bildschirm nicht kann: WAS kam an, als "Could not load ..." entstand. */
+  function doStand(id){
+    var c = id ? resolve(id) : initRoot(document.querySelector(".upw-root"));
+    if (!c) return "[power-dashboard] kein Dashboard auf dieser Seite gefunden.";
+    var st = c.stand();
+    try { console.table(st); } catch(e){}
+    return st;
   }
   function doLoading(id, on){ var c = resolve(id); if (!c) return false; c.setLoading(on); return true; }
 
@@ -964,8 +974,38 @@
     bedarfNachholen();
 
     return {
+      /* Fuer die Konsole: window.upwStand(). Zeigt je Abschnitt, WAS zuletzt ankam, was daraus
+         wurde und ob ein Lesefehler steht. Beantwortet die eine Frage, die der Bildschirm nie
+         beantworten kann -- "Could not load ..." nennt den Abschnitt, nicht den Wert. Aendert
+         nichts, kostet nichts: state.letzte haelt nur Verweise auf das, was ohnehin dasteht. */
+      stand: function(){
+        function beschreibe(v){
+          if (v === undefined) return "(nicht im Payload)";
+          if (v === null) return "null";
+          if (Array.isArray(v)) return "Liste mit " + v.length;
+          if (typeof v === "object") return "Objekt";
+          return "TEXT(" + String(v).length + " Zeichen): " + String(v).slice(0, 80);
+        }
+        var L = state.letzte || {};
+        return {
+          zuletztGesetzt: L.zeit || "(noch kein Aufruf)",
+          laedtGerade: !!state.loading,
+          overview: { kamAn: beschreibe(L.overview), imZustand: state.overview ? "da" : "leer", lesefehler: !!state.fehler.overview },
+          brands:   { kamAn: beschreibe(L.brands),   imZustand: state.brands ? state.brands.length + " Zeilen" : "leer",   lesefehler: !!state.fehler.brands },
+          domains:  { kamAn: beschreibe(L.top_domains), imZustand: state.domains ? state.domains.length + " Zeilen" : "leer", lesefehler: !!state.fehler.domains },
+          urls:     { kamAn: beschreibe(L.top_urls), imZustand: state.urls ? state.urls.length + " Zeilen" : "leer",       lesefehler: !!state.fehler.urls },
+          errorsBlock: beschreibe(L.errors),
+          zeigtGerade: state.cmode === "url" ? "URLs" : "Domains"
+        };
+      },
       update: function(p){
         var r;
+        /* Den letzten Rohwert je Abschnitt aufheben -- nur zum Nachsehen, nichts haengt daran. */
+        try {
+          state.letzte = { zeit: new Date().toISOString(),
+            overview: p && p.overview, brands: p && p.brands,
+            top_domains: p && p.top_domains, top_urls: p && p.top_urls, errors: p && p.errors };
+        } catch(e){}
         /* Der ganze Payload war nicht lesbar (core, normParams). Dann weiss niemand, welcher Teil
            gemeint war -- alle vier Bereiche zeigen den Lesefehler statt ihrer alten Werte oder
            eines endlosen Skeletts (CLAUDE.md §2). */
