@@ -35,26 +35,17 @@
 .dph-root.is-power .up-ph-heading { font-size: 20px; margin: 0; }
 .dph-root.is-power .up-ph-top { align-items: center; }
 /* ---------- Power: die Topbar ist so hoch wie der Logoblock der Leiste (15.09. angefordert) ----
-   "genauso viel height wie im main sidebar der Bereich oben links mit dem upstreem Logo", und die
-   Trennlinie soll das Ende der Topbar bilden -- damit beide Linien auf EINER Hoehe liegen.
+   "genauso viel height wie im main sidebar der Bereich oben links mit dem upstreem Logo".
    GEMESSEN an der echten Leiste: .usn-bar hat padding-top 8px, .usn-brand ist 32px hoch mit 8px
-   Polster darunter, ihre Linie liegt also bei y=48. Der Seitenkopf stand auf 16/16 um eine
-   32px-Zeile, war damit 64px hoch und hatte gar keine Linie.
+   Polster darunter, ihre Unterkante liegt also bei y=48. Der Seitenkopf stand auf 16/16 um eine
+   32px-Zeile und war damit 64px hoch.
    8px oben und unten ergeben dieselben 48 -- die Zahlen sind nicht gewaehlt, sondern abgelesen:
    8 + 32 + 8. Aendert sich die Hoehe der Knoepfe, aendert sich beides gleich, weil beide Seiten
    dieselbe 32 tragen (.up-ph-iconbtn hier, .usn-brand dort).
+   KEINE Trennlinie hier (15.09. nachgereicht: "den separator wieder raus"). Die Hoehe ist das
+   Gemeinsame mit der Leiste, nicht die Linie.
    Gilt NUR unter .is-power: die anderen sechs Seitenkoepfe behalten ihre 16/16 aus core. */
-.dph-root.is-power { padding-top: 8px; padding-bottom: 8px; position: relative; }
-/* Die Linie ist ein eigenes Element und keine border-bottom -- nur so kann sie breiter sein als
-   der Kopf. Der Seitenkopf sitzt in einer Bubble-Gruppe mit seitlichem Polster; ohne Ausgleich
-   endete die Linie davor, waehrend die der Leiste von Kante zu Kante geht. --dph-bleed traegt
-   dieses Polster, damit die Zahl an EINER Stelle steht statt in vier Regeln. 0 ist der sichere
-   Vorgabewert: ohne Polster sieht es richtig aus, mit Polster setzt man die Zahl einmal. */
-.dph-root.is-power::after {
-  content: ""; position: absolute; bottom: 0;
-  left: calc(-1 * var(--dph-bleed, 0px)); right: calc(-1 * var(--dph-bleed, 0px));
-  height: 1px; background: var(--vc-border);
-}
+.dph-root.is-power { padding-top: 8px; padding-bottom: 8px; }
 
 /* ---------- KPI strip: Visibility / Ranking / Sentiment ----------
    AUS. Die drei Zahlen oben rechts sind weg -- dieselben Werte stehen einen Blick weiter unten in
