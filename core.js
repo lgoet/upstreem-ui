@@ -2958,6 +2958,29 @@
         kann statt eine leere Liste zu zeigen.
 
      Rueckgabe: Array oder Objekt, oder null wenn nichts zu lesen war. */
+  /* ---------- wennBody: erst handeln, wenn es einen <body> gibt (15.09.) ----------------------
+     Das Vorlade-Schnipsel haengt core.js und alle Komponenten in den <head>, mit async=false.
+     Sie laufen damit regelmaessig, BEVOR der Browser den <body> gebaut hat -- document.body ist
+     dann null. Jeder Zugriff darauf wirft, und ein Wurf auf Modulebene reisst die ganze Datei
+     mit: gemeldet am 15.09. als "die Prompts-Tabelle geht kaputt und bleibt es auch nach dem
+     Reload". Im Stack stand watchRoots -> makeMount -> sidebar.js, danach war KEINE Komponente
+     mehr gemountet. Ein hartes Neuladen half nur, weil es die Zeiten verschiebt.
+     Ist der body schon da, laeuft fn sofort -- der Normalfall kostet nichts. */
+  function wennBody(fn){
+    if (document.body){ try { fn(document.body); } catch(e){} return; }
+    var fertig = false;
+    function los(){
+      if (fertig || !document.body) return;
+      fertig = true;
+      try { fn(document.body); } catch(e){}
+    }
+    document.addEventListener("DOMContentLoaded", los);
+    /* Und eine Uhr daneben: DOMContentLoaded ist schon durch, wenn eine Datei erst spaeter
+       nachgeladen wird -- dann kaeme das Ereignis nie wieder. */
+    var uhr = setInterval(function(){ if (document.body){ clearInterval(uhr); los(); } }, 20);
+    setTimeout(function(){ clearInterval(uhr); }, 10000);
+  }
+
   function readBubble(raw){
     if (raw && typeof raw === "object") return raw;
     var t = String(raw == null ? "" : raw).trim();
@@ -10532,7 +10555,9 @@
           }
         }
       });
-      G.obs.observe(document.body, { childList: true, subtree: true });
+      /* NICHT document.body direkt: core laeuft im <head> und der body kann noch fehlen.
+         observe(null) wirft, und der Wurf hat makeMount mitten im Aufbau abgerissen. */
+      wennBody(function(body){ G.obs.observe(body, { childList: true, subtree: true }); });
     }
     /* Das Auffangnetz fuer alles, was der Beobachter nicht sieht. Es lief bisher alle 1,5s ueber
        ALLE Komponenten -- dauerhaft, auch auf einer Seite, auf der sich nichts mehr ruehrt.
@@ -15835,6 +15860,7 @@
     esc: esc,
     parseBubbleJson: parseBubbleJson,
     readBubble: readBubble,
+    wennBody: wennBody,
     citeName: citeName,
     tint: tint,
     brighten: brighten,

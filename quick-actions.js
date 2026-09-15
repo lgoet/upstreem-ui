@@ -4,6 +4,19 @@
    and every bubble_fn_* it calls. See bubble/quick_actions_bubble.html for the migration notes
    and the full attribute/event documentation. */
 (function mqaBoot(){
+  /* ERST WENN ES EINEN <body> GIBT. Das Vorlade-Schnipsel haengt diese Datei in den <head> --
+     sie laeuft dann, BEVOR der Browser den body gebaut hat, und document.body ist null. Ein Wurf
+     auf Modulebene reisst die ganze Datei mit; genau daran ging die Tabelle am 15.09. kaputt und
+     blieb es bis zu einem harten Neuladen (das nur die Zeiten verschiebt). UC gibt es hier noch
+     nicht, deshalb lokal und nicht ueber UC.wennBody. */
+  function upBody(fn){
+    if (document.body){ try { fn(document.body); } catch(e){} return; }
+    var fertig = false;
+    function los(){ if (fertig || !document.body) return; fertig = true; try { fn(document.body); } catch(e){} }
+    document.addEventListener("DOMContentLoaded", los);
+    var uhr = setInterval(function(){ if (document.body){ clearInterval(uhr); los(); } }, 20);
+    setTimeout(function(){ clearInterval(uhr); }, 10000);
+  }
   /* Der Loader dieses Elements laedt als EINZIGER der 15 Komponenten kein core.js mit -- er holt
      nur quick-actions.css/js. Auf einer Seite, auf der sonst keine upstreem-Komponente liegt,
      existiert damit gar kein window.UpstreemCore, also auch kein Marken-Store: /mentioning stand
@@ -176,7 +189,10 @@
   var actionsWrap = overlay.querySelector('.mqa-actions-wrap');
 
   // move the overlay to <body> so it can never be clipped by a sidebar/containing block
-  try { document.body.appendChild(overlay); } catch(_){}
+  /* Der try schluckte hier einen echten Ausfall: laeuft diese Datei vor dem body, ist
+     document.body null, die Palette landet nie im body und bleibt fuer immer beschnitten --
+     ohne eine Zeile irgendwo. upBody wartet stattdessen. */
+  upBody(function(b){ b.appendChild(overlay); });
 
   var DEBOUNCE = 400, MIN = 2;
 

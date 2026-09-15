@@ -1,5 +1,18 @@
 /* upstreem prompts-table.js — component logic. Requires core.js (window.UpstreemCore) loaded first. */
 (function(){
+  /* ERST WENN ES EINEN <body> GIBT. Das Vorlade-Schnipsel haengt diese Datei in den <head> --
+     sie laeuft dann, BEVOR der Browser den body gebaut hat, und document.body ist null. Ein Wurf
+     auf Modulebene reisst die ganze Datei mit; genau daran ging die Tabelle am 15.09. kaputt und
+     blieb es bis zu einem harten Neuladen (das nur die Zeiten verschiebt). UC gibt es hier noch
+     nicht, deshalb lokal und nicht ueber UC.wennBody. */
+  function upBody(fn){
+    if (document.body){ try { fn(document.body); } catch(e){} return; }
+    var fertig = false;
+    function los(){ if (fertig || !document.body) return; fertig = true; try { fn(document.body); } catch(e){} }
+    document.addEventListener("DOMContentLoaded", los);
+    var uhr = setInterval(function(){ if (document.body){ clearInterval(uhr); los(); } }, 20);
+    setTimeout(function(){ clearInterval(uhr); }, 10000);
+  }
   "use strict";
 
   /* Bubble's own RunJS "kick" polling can call window.setPromptsTableLoading/renderPromptsTable
@@ -108,7 +121,7 @@
 
       var popup = document.createElement('div');
       popup.className = 'ust-topics-popup';
-      document.body.appendChild(popup);
+      upBody(function(b){ b.appendChild(popup); });
 
       function esc(v){ var d=document.createElement('div'); d.textContent=String(v==null?'':v); return d.innerHTML; }
       function normHex(h){ h=String(h||'#6b7280').trim(); return h.charAt(0)==='#'?h:'#'+h; }
@@ -5316,7 +5329,7 @@
        Geschwisterknoten kann sie nicht ausblenden. Also wird genau diese Kette beobachtet, und
        zwar erst dann, wenn es eine Wurzel gibt. childList bleibt body-weit -- ein neu
        eingehaengter Root muss weiterhin gefunden werden, und dafuer gibt es keinen engeren Ort. */
-    rootWatcher.observe(document.body, { childList: true, subtree: true });
+    upBody(function(b){ rootWatcher.observe(b, { childList: true, subtree: true }); });
     beobachteVorfahren();
   }
   function initRoot(root){
