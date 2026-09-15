@@ -1646,12 +1646,21 @@
     transition: background 200ms ease;
   }
   #ask-mira[data-theme="dark"] .am-eff-track { background: var(--up-switch-off, #444444); }
-  /* Die Fuellung waechst mit der Stufe. transform statt width: eine Breite laesst den Browser
-     in jedem Bild neu umbrechen, ein transform nicht -- und die Fuellung liegt hinter dem
-     Daumen, der im selben Zug faehrt. */
+  /* BREITE statt transform (15.09.). Hier stand scaleX, mit der Begruendung, eine Breite lasse
+     den Browser neu umbrechen. Das stimmt -- kostet hier aber nichts (ein absolut gesetztes
+     Element in einer 28px-Schiene, drei Stufen, kein Dauerlauf) und der Preis war hoch: scaleX
+     staucht auch die RUNDUNG. Bei Faktor 0.56 wurde aus dem rechten Halbkreis eine Ellipse mit
+     7.8 statt 14px Radius -- die Fuellung lag an der rechten Kante flacher als oben und unten
+     und schnitt sichtbar in den Daumen. Nur auf Ultra (Faktor 1) war sie rund; genau so
+     gemeldet, mit Bild.
+     Mit einer Breite bleibt der Radius, was er ist: 999px auf 28px Hoehe sind 14, und das ist
+     genau die Rundung des Daumens (11.5) plus sein Einzug (2.5) -- die vom Nutzer genannte
+     Formel, ohne sie ausrechnen zu muessen.
+     right: auto, weil inset: 0 sonst beide Kanten festnagelt und eine Breite nichts bewirkt. */
   .am-eff-fill {
-    position: absolute; inset: 0; border-radius: 999px; background: var(--up-blau, #3b82f6);
-    transform-origin: left center; transition: transform 200ms ease;
+    position: absolute; top: 0; bottom: 0; left: 0; right: auto; width: 0;
+    border-radius: 999px; background: var(--up-blau, #3b82f6);
+    transition: width 200ms ease;
   }
   /* Der Verlauf fuer Ultra liegt als EIGENE Schicht darueber und wird eingeblendet. Ein
      Umschalten des background-image liesse sich nicht animieren -- ein Verlauf ist kein Wert,

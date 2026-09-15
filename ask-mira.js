@@ -3344,8 +3344,8 @@
       /* Linke Kante des Daumens + seine Breite + derselbe Einzug rechts. Auf der letzten Stufe
          ergibt das genau die Schienenbreite (EINZUG + weg + d + EINZUG = b, weil weg als
          b - d - 2*EINZUG definiert ist) -- also Anteil 1, wie Ultra es schon zeigte. */
-      var anteil = b > 0 ? Math.min(1, (EFF_EINZUG + weg * i / 2 + d + EFF_EINZUG) / b) : 0;
-      elEffFill.style.transform = 'scaleX(' + anteil + ')';
+      var ende = Math.min(b, EFF_EINZUG + weg * i / 2 + d + EFF_EINZUG);
+      elEffFill.style.width = (b > 0 ? ende : 0) + 'px';
     }
     /* Die drei Punkte: auf der gefuellten Seite weiss, dahinter leise. */
     var punkte = elEffTrack ? elEffTrack.querySelectorAll('.am-eff-dot') : [];
