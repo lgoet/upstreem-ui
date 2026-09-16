@@ -1686,6 +1686,33 @@
       if (st && st.status === 'loading') _oppcApplyState(btn, 'loading');
     });
   }
+  /* ---- TEXT, DER EINE BUBBLE-NUTZLAST HEIL UEBERLEBT (16.09.) ----------------------------
+     Gemeldet: "Create Opportunity feuert, aber die Daten kommen nicht zurueck". Im Log steht der
+     Grund wortwoertlich -- der Grund der gescheiterten Zeile war:
+         "reason": "Die Seite ,,Die 10 besten Anbieter fuer Photovoltaik-Leads" wird zitiert ...
+     Das Modell hat ein deutsches Anfuehrungszeichen GEOEFFNET und mit einem GERADEN geschlossen.
+     Im HTML ist das harmlos (dort steht &quot;), in einer JSON-Zeichenkette beendet es den Wert:
+     "Expected ',' or '}' after property value in JSON at position 225" und
+     "Unexpected identifier 'wird'". In der Datenbank steht die Begruendung entsprechend genau an
+     dieser Stelle abgeschnitten.
+     JSON.stringify unten escapt korrekt -- aber der Weg durch Bubble tut es nicht durchgehend,
+     und genau davor schuetzt die Hausregel: KEINE Nutzlast dieser App traegt ein Zeichen, das eine
+     Zeichenkette beenden kann. Also hier an der Quelle ersetzen, nicht unterwegs escapen:
+       "   ->  typografische Anfuehrungszeichen (oeffnend nach Leerraum, sonst schliessend). Fuer
+              den Leser ist das dieselbe Aussage, fuer jeden Transportweg ist es ungefaehrlich.
+       `   ->  Apostroph. Ein Backtick beendet das Literal eines Run-JS-Schritts.
+       ${  ->  mit schmalem Leerraum getrennt. Nur diese Folge wird in einem Literal ersetzt.
+     Der Text wird NUR fuer den Versand angefasst, nie die Anzeige: im Chat steht weiter, was das
+     Modell geschrieben hat. */
+  function textFuerNutzlast(t){
+    return String(t == null ? '' : t)
+      .replace(/"/g, function(_, i, ganz){
+        var davor = i ? ganz.charAt(i - 1) : ' ';
+        return /[\s(\[{\u201e\u201c\u00ab]/.test(davor) ? '\u201c' : '\u201d';
+      })
+      .replace(/`/g, "'")
+      .replace(/\$\{/g, '$\u2009{');
+  }
   function _oppcButtons(aid){ return Array.prototype.slice.call(root.querySelectorAll('.am-oppc-btn')).filter(function(b){ return (b.getAttribute('data-mira-action-id') || '') === aid; }); }
   function _oppcToast(msg){
     var el = root.querySelector('.am-toast');
@@ -1727,8 +1754,8 @@
     if (!btn || btn.disabled) return;
     var aid = btn.getAttribute('data-mira-action-id') || '';
     var payload = { action_id: aid, lead_url: btn.getAttribute('data-mira-lead-url') || '' };
-    var t = btn.getAttribute('data-mira-title');  if (t != null) payload.title = t;
-    var r = btn.getAttribute('data-mira-reason'); if (r != null) payload.reason = r;
+    var t = btn.getAttribute('data-mira-title');  if (t != null) payload.title = textFuerNutzlast(t);
+    var r = btn.getAttribute('data-mira-reason'); if (r != null) payload.reason = textFuerNutzlast(r);
     if (aid) _oppcState[aid] = { status: 'loading' };
     _oppcApplyState(btn, 'loading');
     if (typeof window.bubble_fn_ask_mira_create_opportunity === 'function') window.bubble_fn_ask_mira_create_opportunity(JSON.stringify(payload));
@@ -4907,6 +4934,27 @@
     }
     setLoading(v);
   };
+  /* ---- WER SCHREIBT DIE CHATLISTE, UND WIE LANG WAR SIE? (16.09.) -------------------------
+     Gemeldet: nach dem Weg Dashboard -> Chip -> Mira steht in der Leiste manchmal nur EIN Chat,
+     und zwar ein sehr alter. In der Komponente gibt es dafuer keine Stelle: nichts hier kuerzt
+     die Liste, der Setter ERSETZT sie mit dem, was hereingereicht wird -- also kommt genau ein
+     Eintrag herein. Woher, laesst sich von hier aus nicht sehen: der Setter wird von Bubble
+     gerufen (direkt oder ueber das versteckte Element mira-chats-data, das die Auto-Bindung
+     beobachtet).
+     Deshalb keine Vermutung, sondern eine Spur: jeder Schreibzugriff wird mit Zahl, Quelle und
+     erstem Titel gemerkt, und ein Einbruch von vielen auf hoechstens zwei meldet sich von selbst
+     in der Konsole. window.askMiraChatTrace() gibt sie aus. Damit ist nach EINEM Nachstellen
+     klar, ob Bubble eine Ein-Eintrag-Liste schickt -- und welcher Aufrufer es war. */
+  var _chatSpur = [];
+  function chatSpur(quelle, anzahl, ersterTitel){
+    _chatSpur.push({ t: new Date().toISOString().slice(11, 23), quelle: quelle, anzahl: anzahl,
+                     erster: String(ersterTitel || '').slice(0, 40) });
+    if (_chatSpur.length > 40) _chatSpur.shift();
+  }
+  window.askMiraChatTrace = function(){
+    try { console.table(_chatSpur); } catch(e){ try { console.log(_chatSpur); } catch(_){} }
+    return _chatSpur.slice();
+  };
   window.askMiraSetPreviousChats = function(chats){
     if (typeof chats === 'string'){
       var parsed = looseJsonParse(chats);
@@ -4916,7 +4964,20 @@
       }
       chats = parsed;
     }
+    var vorher = (S.previousChats || []).length;
     S.previousChats = Array.isArray(chats) ? chats.slice() : [];
+    chatSpur(_vonAutoBind ? 'mira-chats-data' : 'setPreviousChats', S.previousChats.length,
+             S.previousChats.length ? S.previousChats[0].title : '');
+    /* Der Einbruch, der gemeldet wurde -- und er wird gemeldet, nicht repariert: eine kuerzere
+       Liste ist ein voellig legitimer Vorgang (anderes Team, geloeschter Chat), und stillschweigend
+       an der alten festzuhalten waere geraten. Was hier steht, ist der Messwert. */
+    if (vorher > 5 && S.previousChats.length <= 2 && window.console){
+      console.warn('[AskMira] die Chatliste ist gerade von ' + vorher + ' auf ' +
+        S.previousChats.length + ' Eintraege geschrumpft (Quelle: ' +
+        (_vonAutoBind ? 'das versteckte Element mira-chats-data' : 'ein direkter Aufruf von askMiraSetPreviousChats') +
+        '). Die Komponente kuerzt nie selbst -- so ist der Payload angekommen. ' +
+        'window.askMiraChatTrace() zeigt alle Schreibzugriffe dieser Sitzung.');
+    }
     /* Eine LEERE Liste beendet das Laden NICHT. Bubble ruft diesen Setter regelmaessig einmal mit
        einer leeren Liste, bevor der RPC zurueck ist -- und das machte aus dem Skelett augenblicklich
        eine leere Leiste. Genau so gemeldet (03.09.): "beim initial Load gibt es in der sidebar
@@ -5034,6 +5095,8 @@
     var dazu = neu.filter(function(c){ return c && c.id != null && !da[String(c.id)]; });
     if (!dazu.length){ _mehrEnde = true; renderPrevious(); return; }
     S.previousChats = (S.previousChats || []).concat(dazu);
+    chatSpur('appendPreviousChats +' + dazu.length, S.previousChats.length,
+             S.previousChats.length ? S.previousChats[0].title : '');
     _prevLoaded = true;
     /* Das Fenster waechst mit, sonst kaeme das Nachgeladene erst beim naechsten Scrollen zum
        Vorschein -- und der Nutzer saehe auf seine Bewegung hin: nichts. */
@@ -5047,6 +5110,7 @@
   // Drop your dynamic JSON into a hidden <textarea id="mira-msgs-data">…</textarea> (and the
   // topics/chats/projects equivalents) in Bubble — NO Run-JS needed, nothing is ever inlined
   // into JS, so backticks/quotes/umlauts/newlines can never break anything. ----
+  var _vonAutoBind = false;
   function _amAutoBind(){
     var map = [
       ['mira-msgs-data',     window.askMiraSetMessages],
@@ -5065,7 +5129,12 @@
       el.__amBound = true;
       var last = null;
       var read = function(){ return ('value' in el && el.value != null && el.value !== '') ? el.value : (el.textContent || ''); };
-      var apply = function(){ var v = read(); if (v == null) return; v = String(v); if (v === last) return; if (!v.trim()) return; last = v; try { fn(v); } catch(e){ try { console.warn('[AskMira] auto-bind '+id+' failed', e); } catch(_){} } };
+      var apply = function(){ var v = read(); if (v == null) return; v = String(v); if (v === last) return; if (!v.trim()) return; last = v;
+        /* Nur fuer die Spur: der Setter soll sagen koennen, ob Bubble ihn direkt gerufen hat oder
+           ob das versteckte Element sich geaendert hat. */
+        _vonAutoBind = true;
+        try { fn(v); } catch(e){ try { console.warn('[AskMira] auto-bind '+id+' failed', e); } catch(_){} }
+        _vonAutoBind = false; };
       apply(); // initial read
       try { new MutationObserver(apply).observe(el, { childList: true, characterData: true, subtree: true }); } catch(e){}
     });
