@@ -114,24 +114,46 @@
      DREI CHIPS, EINE REIHE (13.09. auf drei gekuerzt): Daily Briefing, der Vergleich und die
      neuen Zitierungen. "Negative Antworten zeigen" und der Report-Entwurf sind raus -- fuenf
      Chips brauchten zwei Reihen, und die zwei sind die, die man am ehesten in Mira selbst tippt.
-     Zeichen: die Emoji des Entwurfs. Eigene Chips kann Bubble ueber renderPowerDashboard({ chips })
-     setzen, dieselbe Form. */
+
+     ZEICHEN: icon traegt einen Namen aus UC.icon, und der Sonderwert "{COMPETITOR}" heisst "das
+     Logo der Marke, um die es geht" (16.09.). Die Emoji des Entwurfs sind raus. Eigene Chips
+     kann Bubble ueber renderPowerDashboard({ chips }) setzen, dieselbe Form -- ein mitgelieferter
+     emoji-Schluessel wird weiterhin gezeigt, damit ein bestehender Aufruf nicht stumm sein
+     Zeichen verliert.
+
+     DIE PROMPTS SIND WASSERSTANDSMELDUNGEN, KEINE TAGESVERGLEICHE (16.09. umgeschrieben).
+     Vorher stand in allen dreien "was hat sich seit gestern geaendert". Das ist bei dieser
+     Datenmenge die falsche Frage: LLM-Antworten sind probabilistisch, ein Grossteil der
+     zitierten Seiten wechselt innerhalb von zwei Wochen, und ein einzelner Lauf traegt keine
+     Entscheidung. Ein Tagesdelta misst darum ueberwiegend Rauschen.
+     Was die drei jetzt verlangen -- und warum:
+       1. STAND statt Niveau-Aufzaehlung: nicht "Sichtbarkeit ist 34%", sondern wo der Wert im
+          eigenen Verlauf steht und wohin er laeuft.
+       2. NUR AUSSERHALB DER UEBLICHEN SCHWANKUNG: die Ausnahme ist die Nachricht, alles andere
+          ist Fuellung, die den Blick abstumpft.
+       3. NEU STATT VERAENDERT: neue Prompts, Quellen, Wettbewerber -- das ist der Teil, den
+          niemand aus einem Chart ablesen kann.
+       4. HAEUFIGKEIT STATT ERSTAUFTRITT bei den Zitierungen: eine Quelle, die einmal auftaucht
+          und nie wieder, ist kein Fund.
+       5. AUSDRUECKLICH SAGEN, WENN NICHTS WAR. Ohne diesen Satz erfindet ein Modell eine
+          Bewegung, weil es gefragt wurde.
+       6. GENAU EINE HANDLUNG am Ende. Eine Meldung ohne naechsten Schritt wird nicht gelesen. */
   var CHIPS = {
     en: [
-      { emoji: "📅", label: "Create a Daily Briefing",
-        prompt: "Give me my daily AI visibility briefing: what changed since yesterday in visibility, ranking and sentiment, the three most important moves among my competitors, new or lost citations, and one concrete action for today. Short and scannable." },
-      { emoji: "🏁", label: "Compare me with {COMPETITOR}", fallback: "Compare me with my top competitor",
-        prompt: "Compare my brand with {COMPETITOR} for {TIMEFRAME}: visibility, average rank and sentiment side by side, the topics and prompts where they beat me and where I lead, and the sources that cite them but not me. End with three actions to close the gap." },
-      { emoji: "🔗", label: "New citations this week",
-        prompt: "Which sources and URLs started citing my brand or my competitors in the last 7 days? Highlight new domains, the ones that cite competitors but not me, and which of them I should target first." }
+      { icon: "chartSpline", label: "Create a Daily Briefing",
+        prompt: "Give me the current state of my AI visibility, not a yesterday-vs-today comparison: where visibility, average rank and sentiment stand over {TIMEFRAME} and which way they are drifting, anything that moved beyond the usual fluctuation, and what is genuinely new in prompts, sources or competitors. Say plainly if nothing meaningful changed, and end with the one thing worth doing today." },
+      { icon: "{COMPETITOR}", label: "Compare me with {COMPETITOR}", fallback: "Compare me with my top competitor",
+        prompt: "Where do I stand against {COMPETITOR} right now? Visibility, average rank and sentiment side by side over {TIMEFRAME}, the topics and prompts where the gap holds over the whole period rather than in a single answer, and the sources that cite them but not me. Close with three actions that narrow the gap." },
+      { icon: "trendingUp", label: "New citations this week",
+        prompt: "What is new in my citations over the last 7 days? New domains and URLs citing me or my competitors, sources that cite them but not me, and regular sources I have lost. Sort by how often each one comes up, not by when it first appeared, and name the one to go after first." }
     ],
     de: [
-      { emoji: "📅", label: "Daily Briefing erstellen",
-        prompt: "Gib mir mein tägliches Briefing zur KI-Sichtbarkeit: was sich seit gestern bei Sichtbarkeit, Ranking und Sentiment verändert hat, die drei wichtigsten Bewegungen meiner Wettbewerber, neue oder verlorene Zitierungen und eine konkrete Maßnahme für heute. Kurz und überfliegbar." },
-      { emoji: "🏁", label: "Mit {COMPETITOR} vergleichen", fallback: "Mit meinem stärksten Wettbewerber vergleichen",
-        prompt: "Vergleiche meine Marke mit {COMPETITOR} für {TIMEFRAME}: Sichtbarkeit, durchschnittlicher Rang und Sentiment nebeneinander, die Themen und Prompts, bei denen sie vorne liegen und bei denen ich führe, und die Quellen, die sie zitieren, mich aber nicht. Schließe mit drei Maßnahmen, um den Abstand zu schließen." },
-      { emoji: "🔗", label: "Neue Zitierungen diese Woche",
-        prompt: "Welche Quellen und URLs zitieren seit den letzten 7 Tagen meine Marke oder meine Wettbewerber neu? Hebe neue Domains hervor, die, die Wettbewerber zitieren, mich aber nicht, und welche ich zuerst angehen sollte." }
+      { icon: "chartSpline", label: "Daily Briefing erstellen",
+        prompt: "Gib mir den aktuellen Stand meiner KI-Sichtbarkeit, keinen Vergleich von gestern auf heute: wo Sichtbarkeit, durchschnittlicher Rang und Sentiment über {TIMEFRAME} stehen und in welche Richtung sie laufen, was über die übliche Schwankung hinausgeht und was wirklich neu ist bei Prompts, Quellen oder Wettbewerbern. Sag klar, wenn sich nichts Wesentliches bewegt hat, und schließe mit der einen Sache, die heute lohnt." },
+      { icon: "{COMPETITOR}", label: "Mit {COMPETITOR} vergleichen", fallback: "Mit meinem stärksten Wettbewerber vergleichen",
+        prompt: "Wo stehe ich gerade gegenüber {COMPETITOR}? Sichtbarkeit, durchschnittlicher Rang und Sentiment nebeneinander über {TIMEFRAME}, die Themen und Prompts, bei denen der Abstand über den ganzen Zeitraum hält und nicht nur in einer einzelnen Antwort, und die Quellen, die sie zitieren, mich aber nicht. Schließe mit drei Maßnahmen, die den Abstand verkleinern." },
+      { icon: "trendingUp", label: "Neue Zitierungen diese Woche",
+        prompt: "Was ist bei meinen Zitierungen in den letzten 7 Tagen neu? Neue Domains und URLs, die mich oder meine Wettbewerber zitieren, Quellen, die sie zitieren und mich nicht, und regelmäßige Quellen, die ich verloren habe. Sortiere danach, wie oft eine Quelle vorkommt, nicht danach, wann sie zuerst auftauchte, und nenne die eine, die ich zuerst angehen sollte." }
     ]
   };
 
@@ -378,6 +400,8 @@
        position ist der Rang in der VOLLSTAENDIGEN Rangliste (siehe die Datenspezifikation), also
        auch dann richtig, wenn die Liste gekuerzt ankommt. Fehlt er, entscheidet die Reihenfolge,
        in der die Marken geliefert wurden -- die ist ohnehin die Rangliste. */
+    /* Gibt den ganzen Eintrag zurueck, nicht nur den Namen (16.09.): der Chip traegt jetzt das
+       LOGO dieser Marke, und das steht im selben Datensatz. Ohne Wettbewerber: null. */
     function staerksterWettbewerber(){
       var eigen = String(root.getAttribute("data-brand-name") || "").trim().toLowerCase();
       if (eigen === "brand_name") eigen = "";
@@ -388,9 +412,37 @@
         if (eigen && name.toLowerCase() === eigen) return;
         var rang = num(b.position);
         if (rang == null) rang = i + 1;
-        if (!beste || rang < beste.rang) beste = { name: name, rang: rang };
+        if (!beste || rang < beste.rang) beste = { name: name, rang: rang, logo: b.logo_url || b.favicon_url || "" };
       });
-      return beste ? beste.name : "";
+      return beste;
+    }
+    /* DAS ZEICHEN EINES CHIPS (16.09.): ein 16px-Plaettchen in der Primaerfarbe mit einem
+       Lucide-Zeichen in der Primaerfarbe des anderen Themas. Die Groessen stehen in der CSS,
+       hier steht nur, WAS hineinkommt.
+       Drei Faelle, in dieser Reihenfolge:
+         "{COMPETITOR}"  das Logo der Marke, um die es im Chip geht -- mit dem Buchstaben-
+                         rueckfall darunter, denselben, den jede Logoplatte der App benutzt
+                         (logo() weiter unten macht es genauso, nur mit .up-logo-box).
+         ein Icon-Name   aus UC.icon. Strichstaerke 2.2 statt der ueblichen 1.8: das Zeichen
+                         sitzt auf 10px herunterskaliert im Plaettchen, und duenner faellt es
+                         gegen den deckenden Grund auseinander.
+         emoji           der alte Schluessel. Nur noch Rueckfall fuer ein Bubble, das seine
+                         eigenen Chips mit Emoji schickt -- unsere drei tragen keine mehr. */
+    function chipZeichen(c, wb){
+      var n = String(c.icon || "");
+      if (n === "{COMPETITOR}"){
+        if (!wb) return "";
+        /* .up-logo-box aus core, nur auf 16px gezogen -- NICHT nachgebaut: die Platte bringt den
+           Buchstabenrueckfall und das Ausblenden bei has-img schon mit, und genau das braucht es
+           hier auch (CLAUDE.md 1, dasselbe Vorgehen wie in drawer-topbar). */
+        var ltr = '<span class="up-logo-ltr">' + esc(String(wb.name || "?").trim().charAt(0) || "?") + '</span>';
+        return '<span class="up-logo-box upw-chip-ic' + (wb.logo ? " has-img" : "") + '" aria-hidden="true">' +
+          (wb.logo ? '<img src="' + esc(wb.logo) + '" alt="" referrerpolicy="no-referrer"/>' : "") +
+          ltr + '</span>';
+      }
+      if (n) return '<span class="upw-chip-ic" aria-hidden="true">' + UC.icon(n, 2.2) + '</span>';
+      if (c.emoji) return '<span class="upw-chip-emoji" aria-hidden="true">' + esc(c.emoji) + '</span>';
+      return "";
     }
     function chipListe(){
       if (state.chips && state.chips.length) return state.chips;
@@ -406,9 +458,9 @@
            keinen gibt -- ein Vorschlag, der ins Leere fuehrt, ist schlechter als keiner. */
         if (braucht && !wb) return;
         var label = String(c.label || "");
-        if (braucht) label = label.replace("{COMPETITOR}", wb);
+        if (braucht) label = label.replace("{COMPETITOR}", wb.name);
         teile.push('<button type="button" class="up-btn-sec upw-chip" data-upw-chip="' + i + '">' +
-          (c.emoji ? '<span class="upw-chip-emoji" aria-hidden="true">' + esc(c.emoji) + '</span>' : '') +
+          chipZeichen(c, wb) +
           '<span class="upw-chip-lbl">' + esc(label) + '</span></button>');
         /* ERZWUNGENER ZEILENUMBRUCH NACH DEM DRITTEN (11.09. angefordert: "3 in row 1, 2 in
            row 2, bei default screen width"). Flexbox bricht sonst nach der VERFUEGBAREN BREITE
@@ -427,7 +479,8 @@
       if (!b) return;
       var c = chipListe()[Number(b.getAttribute("data-upw-chip"))];
       if (!c || !c.prompt) return;
-      var wb = staerksterWettbewerber() || (de() ? "meinem stärksten Wettbewerber" : "my strongest competitor");
+      var beste = staerksterWettbewerber();
+      var wb = (beste && beste.name) || (de() ? "meinem stärksten Wettbewerber" : "my strongest competitor");
       zuMira({ prompt: String(c.prompt).replace(/\{COMPETITOR\}/g, wb) });
     });
 

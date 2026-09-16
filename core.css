@@ -31,6 +31,12 @@
          Karte unter 3, war aber schon auf Weiss bei 2.68: das ist Beiwerk (Platzhalter, Rauten,
          Einheiten) und war nie AA-Text. */
       --vc-text: #1f1f1b; --vc-muted: #6b6f78; --vc-border: #e4e2e4;
+      /* Die Primaerfarbe des ANDEREN Themas -- also genau der Wert, der zwei Bloecke weiter unten
+         als --vc-text steht. Gebraucht fuer Zeichen AUF einer Flaeche in der Primaerfarbe: die
+         16px-Plaettchen der Mira-Chips (16.09. angefordert). Kein Weiss und kein --vc-bg: auf
+         #1f1f1b soll dasselbe gedaempfte Hell sitzen, das im dunklen Thema die Schrift traegt,
+         sonst sticht das Zeichen heller heraus als jeder Text der App. */
+      --vc-text-invert: #e0e0e0;
       --vc-bg: #ffffff; --vc-heading-bg: #f9f8f9; --vc-sk: #eeedef; --up-surface: #ffffff;
       /* ---- DIE HELLE LEITER (07.09.) --------------------------------------------------------
          Dieselbe Quelle und dieselbe Zuordnung wie die dunkle Leiter weiter unten, nur laeuft sie
@@ -234,6 +240,8 @@
          der Karte. Gemeldet als "die Border-Color macht einen komischen Eindruck", und das war
          sie auch: sichtbar auf dem Grund, verschwunden auf allem anderen. */
       --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-border: #34343a;
+      /* Gegenstueck zum hellen Thema: dort steht hier #e0e0e0, hier der Textton von dort. */
+      --vc-text-invert: #1f1f1b;
       --vc-bg: #1c1c1f; --vc-heading-bg: #232326; --vc-sk: #28282c; --up-surface: #101114;
       /* ---- DIE DUNKLE LEITER (08.09.) --------------------------------------------------------
          An Linears dunklem Thema ausgerichtet, ausgelesen aus deren eigener Seite:

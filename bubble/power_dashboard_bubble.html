@@ -202,7 +202,10 @@
     "8 brands · Last 30 days" -- kein eigenes Feld noetig, das gibt es schon.
 
   chips (optional) -- eigene Chips statt der eingebauten:
-    [{ "emoji": "📅", "label": "Create a Daily Briefing", "prompt": "…" }, …]
+    [{ "icon": "chartSpline", "label": "Create a Daily Briefing", "prompt": "…" }, …]
+    icon ist ein Name aus UC.icon (die eingebauten drei nehmen chartSpline und trendingUp); der
+    Sonderwert "{COMPETITOR}" setzt das LOGO der Marke ein, um die es im Chip geht. Ein alter
+    Schluessel "emoji" wird weiter gezeigt, damit ein bestehender Aufruf sein Zeichen behaelt.
     {TIMEFRAME} im Prompt ersetzt Mira mit dem Zeitraum ihrer Report-Karten, {COMPETITOR} die
     Komponente mit dem staerksten Wettbewerber.
 

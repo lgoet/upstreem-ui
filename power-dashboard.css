@@ -93,6 +93,37 @@
    waere es ein zweiter Knopf mit denselben Klassen (CLAUDE.md 1). Das Zeichen zieht mit, sonst
    sitzt es plötzlich kleiner neben dem Wort. */
 .upw-chip.up-btn-sec { font-size: 13.5px; }
+
+/* ---- Das Zeichen im Chip: ein Plaettchen statt eines Emoji (16.09. angefordert) ----
+   16x16, 4px Rundung, Grund in der Primaerfarbe, Zeichen in der Primaerfarbe des ANDEREN Themas
+   (--vc-text-invert, in core.css neben --vc-text deklariert). Also hell im dunklen Thema, dunkel
+   im hellen -- ohne eine eigene Farbe zu erfinden.
+   Das Zeichen darin ist 10px, nicht 16: der Grund ist deckend, und ein Lucide-Zeichen ohne Luft
+   an den Kanten sieht auf einer so kleinen Flaeche aus wie ein gefuelltes Quadrat. 3px Luft je
+   Seite, dieselbe Rechnung wie bei .up-iconbtn (32px Knopf, 16px Zeichen).
+   line-height: 0 an der Huelle, damit die Zeile nicht an der Schriftgrundlinie des <span>
+   haengt -- sonst sitzt das Plaettchen einen Pixel zu tief neben dem Wort. */
+.upw-chip-ic {
+  flex: 0 0 16px; width: 16px; height: 16px; border-radius: 4px;
+  display: inline-flex; align-items: center; justify-content: center; line-height: 0;
+  background: var(--vc-text); color: var(--vc-text-invert); overflow: hidden;
+}
+.upw-chip-ic svg { width: 10px; height: 10px; display: block; }
+/* Der Vergleichs-Chip traegt das LOGO der Marke: dafuer die Platte aus core (.up-logo-box) mit
+   ihrem Buchstabenrueckfall, hier nur auf dieses Mass gezogen. Alle zusammenhaengenden Werte
+   ziehen mit (CLAUDE.md 1): Kasten 24 -> 16, Rundung 8 -> 4 (so angefordert), Bild 22 -> 14,
+   dessen Rundung 7 -> 3, Buchstabe 11 -> 8. Das 1px Polster bleibt: es ist der helle Saum um das
+   Bild, kein Anteil an der Groesse.
+   .up-logo-box.upw-chip-ic ist (0,2,0) und gewinnt damit ueber SPEZIFITAET gegen core (0,1,0) --
+   nicht ueber die Ladereihenfolge.
+   Der Buchstabe traegt hier --vc-text-invert statt --vc-muted: er sitzt auf der Primaerfarbe,
+   und der gedaempfte Ton aus core waere darauf kaum zu lesen. */
+.up-logo-box.upw-chip-ic { width: 16px; height: 16px; flex: 0 0 16px; border-radius: 4px;
+  background: var(--vc-text); }
+.up-logo-box.upw-chip-ic img { width: 14px; height: 14px; border-radius: 3px; }
+.up-logo-box.upw-chip-ic .up-logo-ltr { font-size: 8px; color: var(--vc-text-invert); }
+/* Der alte Emoji-Schluessel: unsere drei Chips tragen keinen mehr, ein Bubble mit eigenen Chips
+   darf ihn weiter schicken. */
 .upw-chip-emoji { font-size: 14px; }
 .upw-chip { max-width: 100%; }
 /* Kein Rand, Hoverstate nur der Hintergrund (11.09. angefordert). .up-btn-sec traegt normalerweise
@@ -474,6 +505,11 @@
    einen Pixel zu viel. Bei 8px passen sie. */
 .upw-root.is-vnarrow .upw-chip.up-btn-sec { height: 28px; padding: 0 8px; gap: 5px; font-size: 12.5px; }
 .upw-root.is-vnarrow .upw-chip-emoji { font-size: 12.5px; }
+/* Auf dem Telefon zieht das Plaettchen mit der Schrift mit: 14px Kasten, 3px Rundung, 9px Zeichen
+   und ein 12px Bild -- dasselbe Verhaeltnis wie oben, eine Stufe kleiner. */
+.upw-root.is-vnarrow .upw-chip-ic { flex: 0 0 14px; width: 14px; height: 14px; border-radius: 3px; }
+.upw-root.is-vnarrow .upw-chip-ic svg { width: 9px; height: 9px; }
+.upw-root.is-vnarrow .up-logo-box.upw-chip-ic img { width: 12px; height: 12px; border-radius: 2.5px; }
 
 /* ---------- Skelett ----------
    Farbe und Pulsieren aus core (--vc-sk, uutpulse), wie .up-tsk-bar. */

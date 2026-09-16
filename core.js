@@ -14943,6 +14943,15 @@
        braucht -- nichts liest die beiden Keys mehr. */
     messageCircle: '<path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/>',
     arrowUpRight:  '<path d="M7 7h10v10"/><path d="M7 17 17 7"/>',
+    /* chart-spline und trending-up: die zwei Zeichen der Mira-Chips im Power-Dashboard (16.09.
+       angefordert). Wortgleich aus dem Lucide-Bestand, nicht nachgezeichnet.
+       chartSpline und nicht das vorhandene trendUp-Paar der Trendpillen: die Pillen zeigen EINE
+       Richtung an einem Wert, hier steht das Zeichen fuer "Verlauf" ueberhaupt. Und trendingUp
+       ist der lange Pfeil ueber die Achse -- das Zeichen fuer "was kommt neu dazu", nicht die
+       kleine Pfeilspitze aus einer Pille. */
+    chartSpline:   '<path d="M3 3v16a2 2 0 0 0 2 2h16"/>' +
+              '<path d="M7 16c.5-2 1.5-7 4-7 2 0 2 3 4 3 2.5 0 4.5-5 5-7"/>',
+    trendingUp:    '<path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/>',
     calendar:      '<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>',
     shieldCheck:'<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>' +
               '<path d="m9 12 2 2 4-4"/>',
