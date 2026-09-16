@@ -13964,6 +13964,86 @@
   var BRANDS = (window.__upBrands = window.__upBrands || { list: [], at: 0, seq: 0, subs: [] });
 
   function getBrands(){ return BRANDS.list.slice(); }
+
+  /* ---- "CREATE WITH AI" VON UEBERALL OEFFNEN (16.09. angefordert) --------------------------
+     Angefordert war ausdruecklich: "ich will create with ai nicht separat auf der Seite haben
+     muessen, nirgendwo". Bis hierher musste das Element auf jeder Seite stehen und ein
+     Bubble-Workflow es mit dem richtigen Payload rufen -- gemeldet als "funktioniert nicht so
+     richtig", und der Screenshot zeigt, warum: der Payload wird dort von Hand zusammengesetzt,
+     citation_type stand auf lead_url.
+     Jetzt macht es die aufrufende Komponente selbst. Drei Faelle, in dieser Reihenfolge:
+       1. Es gibt eine lebende Instanz (das Element steht auf der Seite)  -> die wird gerufen.
+       2. Es gibt keine -> eine UNSICHTBARE Wurzel wird angelegt und gemountet. Das geht, weil
+          create-with-ai sein ganzes Markup selbst baut (root.innerHTML = triggerHtml()) und sein
+          Fenster ohnehin in einem Portal am <body> haengt -- der versteckte Ausloeser wird nie
+          gebraucht, das Overlay funktioniert unabhaengig davon.
+       3. create-with-ai.js ist gar nicht geladen -> EINE laute Zeile in der Konsole, die sagt,
+          welche Datei fehlt. Stiller Ausfall ist hier besonders teuer: der Knopf sieht aus, als
+          haette er nichts getan.
+     Warten statt sofort aufgeben: die Datei kann noch laden (Welle 2), und eine frisch angelegte
+     Wurzel ist erst im naechsten Durchlauf des Mount-Beobachters eine Instanz. Elf Versuche ueber
+     vier Sekunden, dieselbe Reihe wie bei fire.spaet. */
+  function ucaInstanzDa(){
+    var reg = window.createWithAi;
+    if (!reg) return false;
+    for (var k in reg){
+      if (!Object.prototype.hasOwnProperty.call(reg, k)) continue;
+      var r = reg[k] && reg[k].root;
+      if (r && document.documentElement.contains(r)) return true;
+    }
+    return false;
+  }
+  function ucaWurzelAnlegen(){
+    var da = document.querySelector('.uca-root[data-instance="uca_auto"]');
+    if (da) return da;
+    var el = document.createElement("div");
+    el.className = "up-root uca-root";
+    el.setAttribute("data-instance", "uca_auto");
+    /* NICHT display:none, und das ist der Punkt, an dem der erste Versuch gescheitert ist:
+       makeMount richtet eine Wurzel nur ein, wenn messbar(el) wahr ist, und das ist
+       checkVisibility({ visibilityProperty: true }) -- ein display:none-Knoten wird also nie
+       gemountet, die Instanz entsteht nie, und der Knopf tut scheinbar nichts (im Prueftand
+       gemessen: 1 Wurzel im Dokument, 0 Portale, Registry leer).
+       Also technisch sichtbar und trotzdem unsichtbar: 1px weit draussen, ohne Deckkraft und ohne
+       Trefferflaeche. opacity zaehlt fuer checkVisibility nicht mit (dafuer gaebe es
+       opacityProperty, das hier niemand setzt), der Knoten gilt also als messbar.
+       Gebraucht wird ohnehin nur das Fenster: das haengt in einem eigenen Portal am <body>, der
+       Ausloeser in dieser Wurzel wird nie angefasst. */
+    el.style.cssText = "position:fixed;left:-9999px;top:0;width:1px;height:1px;" +
+                       "overflow:hidden;opacity:0;pointer-events:none";
+    (document.body || document.documentElement).appendChild(el);
+    return el;
+  }
+  function openCreateWithAi(payload){
+    var p = {};
+    for (var k in (payload || {})) if (Object.prototype.hasOwnProperty.call(payload, k)) p[k] = payload[k];
+    /* Die eigene Marke kennt core schon (setUpstreemBrands). Der Aufrufer muss sie also nicht
+       durchreichen -- und wenn er sie mitbringt, gewinnt seine Angabe. Die Zusammenfassung steht
+       nicht im Markenspeicher; die holt sich die Komponente aus ihrem data-summary. */
+    if (p.own_brand_name == null){
+      for (var i = 0; i < BRANDS.list.length; i++){
+        var b = BRANDS.list[i];
+        if (b && (b.role === "own" || b.is_own === true) && b.name){ p.own_brand_name = b.name; break; }
+      }
+    }
+    var rest = 11;
+    (function versuch(){
+      if (typeof window.createWithAiOpen === "function" && ucaInstanzDa()){
+        try { window.createWithAiOpen(p); } catch(e){ if (window.console) console.error("[core] createWithAiOpen hat geworfen:", e); }
+        return;
+      }
+      if (typeof window.createWithAiOpen === "function") ucaWurzelAnlegen();
+      if (--rest <= 0){
+        if (window.console) console.warn("[core] \"Create with AI\" kann nicht geoeffnet werden: " +
+          (typeof window.createWithAiOpen === "function"
+            ? "die Komponente hat keine Instanz angelegt."
+            : "create-with-ai.js ist auf dieser Seite nicht geladen -- ins Vorlade-Snippet aufnehmen (Welle 2, samt create-with-ai.css)."));
+        return;
+      }
+      setTimeout(versuch, rest > 8 ? 60 : 400);
+    })();
+    return true;
+  }
   function onBrands(fn, owner){
     var sub = { fn: fn, owner: owner || null };
     BRANDS.subs.push(sub);
@@ -15864,6 +15944,7 @@
     onMarkets: onMarkets,
     marketsChanged: marketsChanged,
     getBrands: getBrands,
+    openCreateWithAi: openCreateWithAi,
     /* Diagnose fuer leere Zustaende: wie oft wurde der Setter gerufen, wie oft war die
        Payload unlesbar. Damit kann ein leerer Store sagen, WARUM er leer ist. */
     dumpMarkets: dumpMarkets,

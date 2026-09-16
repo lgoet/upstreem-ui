@@ -207,7 +207,7 @@
        Seitenleiste sagt die Flagge, WELCHER Prompt. */
     function markt() { return feld("market", "data-market"); }
 
-    var elType, elLogo, elName, elEdit, elDomain, elPin, elPrompt, elMira;
+    var elType, elLogo, elName, elEdit, elDomain, elPin, elPrompt, elMira, elAi;
     var state = { leer: true };
 
     /* Das Markup baut die Komponente selbst. In Bubble steht nur die leere Wurzel -- die Leiste
@@ -250,6 +250,15 @@
           UC.icon("zap", 2) + '</button>' +
         /* Mira: dasselbe Zeichen wie der Mira-Punkt in der Seitenleiste (blend), damit ohne
            Beschriftung zu sehen ist, wohin es geht. LINKS vom Pin, so angefordert. */
+        /* "Create with AI" -- nur bei einer URL (16.09. angefordert: "im URL Page Header ein
+           Icon-Knopf, der das Fenster fuer DIESE URL oeffnet"). Er oeffnet es selbst ueber
+           UC.openCreateWithAi; auf der Seite muss dafuer nichts stehen.
+           astroid ist das Zeichen dieser App fuer "Create with AI" -- dasselbe, das der Knopf in
+           jeder Tabelle traegt (core.js). Kein zweites Sinnbild fuer dieselbe Handlung. */
+        '<button type="button" class="up-iconbtn utb-ai" data-utb-ai hidden ' +
+          'data-tip="' + esc(UC.t("Create with AI")) + '" ' +
+          'aria-label="' + esc(UC.t("Create with AI")) + '">' +
+          UC.icon("astroid", 2) + '</button>' +
         '<button type="button" class="up-iconbtn utb-mira" data-utb-mira hidden ' +
           'data-tip="' + esc(UC.t("Ask Mira about this")) + '" ' +
           'aria-label="' + esc(UC.t("Ask Mira about this")) + '">' +
@@ -270,6 +279,7 @@
       elPin = root.querySelector("[data-utb-pin]");
       elPrompt = root.querySelector("[data-utb-prompt]");
       elMira = root.querySelector("[data-utb-mira]");
+      elAi = root.querySelector("[data-utb-ai]");
     }
     aufbauen();
 
@@ -355,6 +365,9 @@
          Kennung, die URL ihre Adresse. Ein Knopf, dessen Klick nichts tut, waere schlimmer als
          keiner. Im Ladezustand weg, aus demselben Grund wie Stift und Globus. */
       if (elMira) elMira.hidden = laedt || !miraBezug();
+      /* Dieselbe Pruefung wie beim Mira-Knopf: eine Bubble-Kennung ist keine Adresse, und ohne
+         Adresse hat das Fenster nichts, worueber es schreiben koennte. */
+      if (elAi) elAi.hidden = laedt || t !== "url" || !/[.\/]/.test(String(itemId() || ""));
     }
 
     /* ---- Zuruecksetzen (07.09. angefordert) ----
@@ -426,7 +439,25 @@
       }
       if (t.closest("[data-utb-pin]")) { anheften(); return; }
       if (t.closest("[data-utb-mira]")) { zuMira(); return; }
+      if (t.closest("[data-utb-ai]")) { zuCreateWithAi(); return; }
     });
+
+    /* ---- Create with AI (16.09. angefordert) ----
+       Die Leiste hat alles, was das Fenster braucht: die Adresse steht in data-item-id (bei einer
+       URL IST die Kennung die Adresse, siehe miraBezug), der Titel im Namen, das Favicon im Logo.
+       Zitationstyp und Markenzusammenfassung kennt sie NICHT -- die holt sich die Komponente aus
+       ihren eigenen data-Attributen, dafuer gibt es die Rettung in readAttrs.
+       Kein Bubble-Workflow dazwischen: genau das war die Bitte. */
+    function zuCreateWithAi() {
+      var url = String(itemId() || "");
+      if (typ() !== "url" || !/[.\/]/.test(url)) return;
+      if (!UC.openCreateWithAi){
+        if (window.console) console.warn("[drawer-topbar] dieses core kennt openCreateWithAi noch " +
+          "nicht -- Pin am Element und im Vorlade-Snippet angleichen.");
+        return;
+      }
+      UC.openCreateWithAi({ url: url, lead_title: name(), lead_favicon: logo() });
+    }
 
     /* ---- Mira (11.09. angefordert) ----
        Drei Dinge, in dieser Reihenfolge:

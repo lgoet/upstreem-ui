@@ -702,7 +702,25 @@
     var goto = modal.querySelector('#uo-m-goto');
     if (goto) goto.addEventListener('click', function(){ emit('open_url', { opportunity_id: id, lead_url: item.lead_url, lead_title: item.lead_title, lead_domain: item.lead_domain }); if (item.lead_url) window.open(item.lead_url, '_blank', 'noopener'); });
     var cta = modal.querySelector('#uo-cta');
-    if (cta) cta.addEventListener('click', function(){ emit('create_with_ai', { opportunity_id: id }); });
+    /* DAS BRETT OEFFNET DAS FENSTER SELBST (16.09. angefordert). Vorher ging nur die Meldung
+       raus, und ein Bubble-Workflow baute den Payload von Hand zusammen -- gemeldet als
+       "funktioniert nicht so richtig"; im Screenshot stand citation_type auf lead_url. Alles,
+       was das Fenster braucht, steht hier in item, also wird es hier gesetzt.
+       Die Meldung geht WEITER raus: sie ist Teil des Vertrags, und wer sie fuer eine Statistik
+       oder ein Log benutzt, verliert sie nicht. Nur der Workflow, der daraufhin das Fenster
+       oeffnete, muss weg -- sonst oeffnet es zweimal und der zweite Payload gewinnt. */
+    if (cta) cta.addEventListener('click', function(){
+      emit('create_with_ai', { opportunity_id: id });
+      if (UC.openCreateWithAi) UC.openCreateWithAi({
+        url: item.lead_url || '',
+        citation_type: item.effective_citation_type || '',
+        lead_title: item.lead_title || '',
+        lead_domain: item.lead_domain || '',
+        lead_favicon: item.lead_favicon || ''
+      });
+      else if (window.console) console.warn('[opportunities] dieses core kennt openCreateWithAi ' +
+        'noch nicht -- Pin am Element und im Vorlade-Snippet angleichen.');
+    });
     var seg = modal.querySelector('.uo-status-seg');
     if (seg) seg.addEventListener('click', function(e){ var b = e.target.closest('button[data-status-key]'); if (!b) return; setStatus(id, b.getAttribute('data-status-key')); });
   }

@@ -755,6 +755,16 @@
           var tSpaet = attrOf("data-title");
           if (tSpaet){ S.lead_title = tSpaet; renderSource(); }
         }
+        /* Dieselbe Ausnahme fuer die eigene Marke (16.09.): seit UC.openCreateWithAi das Fenster
+           aus anderen Komponenten heraus oeffnet, kommt ein Aufruf mit URL und Zitationstyp, aber
+           ohne Markenzusammenfassung -- die kennt weder das Opportunities-Brett noch die
+           Drawer-Leiste. Ohne diese Zeilen waere sie dann leer, obwohl sie am Element steht, und
+           der gebaute Prompt haette seinen Absender verloren.
+           Nur wenn leer: eine ausdrueckliche Angabe im Aufruf gewinnt weiterhin. Der Zitationstyp
+           bleibt bewusst AUSSEN vor -- der gehoert zur einzelnen Quelle, und ein Wert vom Element
+           waere hier der Typ einer ganz anderen. */
+        if (!S.own_brand_name){ var brSpaet = attrOf("data-brand"); if (brSpaet) S.own_brand_name = brSpaet; }
+        if (!S.own_brand_summary){ var bsSpaet = attrOf("data-summary"); if (bsSpaet) S.own_brand_summary = bsSpaet; }
         return;
       }
       var u = attrOf("data-url"), c = attrOf("data-citation-type"), t = attrOf("data-title"),
