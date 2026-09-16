@@ -3056,11 +3056,27 @@
     return !!S.activeChatId && String(id) === String(S.activeChatId) &&
            (root.classList.contains('has-messages') || !!S.chatLoading);
   }
+  /* WELCHE ZEILE DREHT SICH: die des Chats, der gerade dran ist, solange er laedt. Zwei Lagen
+     zaehlen dafuer, und beide sind fuer den Nutzer dasselbe Warten:
+       S.chatLoading  der Chat wird geoeffnet, die Nachrichten sind unterwegs
+       S.isLoading    im Chat laeuft eine Antwort
+     Der zweite ist der laengere von beiden und der Grund, warum die Marke nuetzlich ist: wer
+     waehrend einer laufenden Antwort in der Leiste stoebert, sieht, welcher Chat noch arbeitet. */
+  function ladeMarkeSetzen(){
+    if (!elPrevList) return;
+    var laeuft = !!(S.chatLoading || S.isLoading);
+    var aktiv = S.activeChatId == null ? null : String(S.activeChatId);
+    elPrevList.querySelectorAll('.am-prev-item').forEach(function(el){
+      el.classList.toggle('is-busy', laeuft && aktiv !== null &&
+        String(el.getAttribute('data-chat-id')) === aktiv);
+    });
+  }
   function aktivMarkieren(){
     if (!elPrevList) return;
     elPrevList.querySelectorAll('.am-prev-item').forEach(function(el){
       el.classList.toggle('is-active', chatAktivSichtbar(el.getAttribute('data-chat-id')));
     });
+    ladeMarkeSetzen();
   }
   function chatItemHTML(c){
     var active = chatAktivSichtbar(c.id) ? ' is-active' : '';
@@ -3068,6 +3084,12 @@
     var pinned = isP ? ' is-pinned' : '';
     var title = c.title || 'Untitled chat';
     return '<div class="am-prev-item'+active+pinned+'" draggable="true" data-chat-id="'+escAttr(c.id)+'" data-project-id="'+escAttr(c.project_id || '')+'">'+
+      /* Der Spinner steht IMMER im Markup und wird per Klasse an der Zeile sichtbar (16.09.
+         angefordert: "wenn ein Chat im Ladestate ist, ein Spinner links vorne"). Dasselbe
+         Vorgehen wie bei der Pin-Marke gleich daneben, und aus einem handfesten Grund: so
+         genuegt EIN Klassenwechsel, wenn sich der Ladezustand aendert -- die Liste neu zu
+         bauen wuerde eine offene Umbenennung und das Kontextmenue mitreissen. */
+      '<span class="am-prev-spin" aria-hidden="true"><span class="am-act-spinner"></span></span>'+
       '<span class="am-prev-pin-ind" title="Pinned">'+ICON.pin+'</span>'+
       '<span class="am-prev-item-title">'+esc(title)+'</span>'+
       '<input class="am-prev-item-input" type="text" value="'+escAttr(title)+'" maxlength="120" aria-label="Chat name">'+
@@ -3098,15 +3120,30 @@
      das Nachladen nicht fuer immer stilllegen. */
   var _mehrGefragt = false, _mehrEnde = false, _mehrUhr = null;
   function _mehrDraussen(){ return !_mehrEnde; }
-  /* AM SCROLLSTAND und nicht an der Sichtbarkeit eines Fuehlers. IntersectionObserver waere das
-     modernere Werkzeug, meldet aber nichts, solange die Leiste ausgefahren neben dem Bild steht
-     (gemessen: der Fuehler lag bei x = -2809) oder der Tab verdeckt ist -- und genau dann wird
-     hier gescrollt. Der Scrollstand ist unabhaengig davon und in beiden Faellen richtig.
-     120px Vorlauf: die naechsten Zeilen stehen da, bevor der Nutzer die Kante erreicht. */
+  function _offeneChats(){
+    return (S.previousChats || []).filter(function(c){ return !c.project_id; }).length;
+  }
+  /* NUR EINE LISTE, DIE WIRKLICH SCROLLT, DARF NACHFORDERN (16.09. -- der Fehler, der die Meldung
+     im Sekundentakt feuern liess). Die Bedingung stand vorher allein auf dem Scrollstand:
+         scrollTop + clientHeight < scrollHeight - 120  ->  aussteigen
+     Eine Liste, die KUERZER ist als die Leiste, erfuellt das nie -- 0 + 700 ist nicht kleiner als
+     540 - 120. Sie galt damit als "ganz unten", ohne dass jemand gescrollt hat. Und weil
+     renderPrevious am Ende wieder pruefte, ging es nach jeder Antwort von vorne los: 15 Chats
+     ankommen, zeichnen, pruefen, feuern, 15 ankommen ... bis die Liste endlich laenger war als
+     die Leiste. Genau so gemeldet ("feuert im Sekundentakt ohne dass gescrollt wird").
+     Jetzt zwei getrennte Bedingungen, und beide muessen stimmen:
+       scrollbar  die Leiste ist sichtbar (clientHeight > 0) UND laenger als ihr Fenster
+       am Ende    der Nutzer ist unten angekommen
+     Kein Vorlauf von 120px mehr, sondern 32: verlangt war "erst wenn man unten ist und da
+     maessig weiterscrollt". 120px feuern schon, waehrend noch drei Zeilen zu lesen sind. */
+  function _listeScrollbar(){
+    var h = elPrevList.clientHeight;
+    return h > 0 && elPrevList.scrollHeight > h + 8;
+  }
   function _pruefeNachladen(){
-    if (elPrevList.scrollTop + elPrevList.clientHeight < elPrevList.scrollHeight - 120) return;
-    var offen = (S.previousChats || []).filter(function(c){ return !c.project_id; }).length;
-    if (S.prevFenster < offen){ S.prevFenster += LISTE_SCHRITT; renderPrevious(); return; }
+    if (!_listeScrollbar()) return;
+    if (elPrevList.scrollTop + elPrevList.clientHeight < elPrevList.scrollHeight - 32) return;
+    if (S.prevFenster < _offeneChats()){ S.prevFenster += LISTE_SCHRITT; renderPrevious(); return; }
     if (_mehrGefragt || _mehrEnde) return;
     _mehrGefragt = true;
     amFire('more_chats', { have: (S.previousChats || []).length, step: LISTE_SCHRITT }, 'more-chats');
@@ -3115,10 +3152,28 @@
     _mehrUhr = setTimeout(function(){ _mehrGefragt = false; renderPrevious(); }, 8000);
   }
   elPrevList.addEventListener('scroll', _pruefeNachladen, { passive: true });
+  /* DIE SACKGASSE, die sich aus der neuen Regel ergibt -- und ihre Loesung OHNE Meldung nach
+     aussen: haengt das Nachladen am Scrollen, und passen die 15 Zeilen in die Leiste, ohne sie zu
+     fuellen, dann gibt es nichts zu scrollen und niemand fragt je wieder. Also wird die sichtbare
+     Flaeche erst einmal AUS DEM GEFUELLT, WAS SCHON GELADEN IST: das Fenster waechst in
+     15er-Schritten, bis die Liste scrollt oder alles Geladene gezeigt ist. Das kostet nichts und
+     feuert nichts -- die Chats liegen schon im Zustand.
+     Ist auch lokal nichts mehr da und die Liste trotzdem zu kurz zum Scrollen, passiert nichts
+     mehr: gewuenscht ist ausdruecklich, dass NUR das Scrollen nachlaedt. Das ist genau dann ein
+     Randfall, wenn der RPC weniger liefert, als in die Leiste passt.
+     Die Notbremse zaehlt die Durchlaeufe: renderPrevious ruft hier wieder herein, und ein
+     Zustand, in dem die Hoehe nie waechst (Leiste 0px hoch waehrend einer Animation), waere sonst
+     eine Endlosschleife. */
+  var _fuellLauf = 0;
   function _fuehlerBinden(){
-    /* Nach dem Neuzeichnen kann die Liste kuerzer sein als das Fenster -- dann steht der Nutzer
-       schon am Ende, ohne zu scrollen, und niemand wuerde je wieder fragen. */
-    setTimeout(_pruefeNachladen, 0);
+    setTimeout(function(){
+      if (!elPrevList.clientHeight) return;                 /* Leiste zu oder noch ohne Hoehe */
+      if (_listeScrollbar()){ _fuellLauf = 0; return; }
+      if (S.prevFenster >= _offeneChats()){ _fuellLauf = 0; return; }
+      if (++_fuellLauf > 12) return;
+      S.prevFenster += LISTE_SCHRITT;
+      renderPrevious();
+    }, 0);
   }
   function sortPinnedFirst(arr){
     return arr.map(function(c,i){ return { c:c, i:i }; })
@@ -3218,6 +3273,7 @@
       '</div>';
     if (window.__amRenderChatTitlebar) window.__amRenderChatTitlebar();
     /* Der Fuehler ist nach jedem Neuzeichnen ein anderer Knoten -- also neu beobachten. */
+    ladeMarkeSetzen();
     _fuehlerBinden();
   }
 
@@ -4490,6 +4546,7 @@
   function setLoading(v){
     S.isLoading = !!v;
     root.classList.toggle('is-loading', S.isLoading);
+    ladeMarkeSetzen();
     elStatusText.textContent = S.isLoading ? 'Analyzing your workspace' : 'Ready';
     refreshSend();
     if (S.isLoading){
@@ -4674,6 +4731,7 @@
   }
   window.askMiraSetMessages = function(messages){
     S.chatLoading = false; clearTimeout(_chatLoadT);   // real messages arrived -> drop the loading skeletons
+    ladeMarkeSetzen();                                 /* und der Spinner in der Leiste hoert auf */
     if (typeof messages === 'string'){
       var parsed = looseJsonParse(messages);
       if (parsed == null){
@@ -5951,9 +6009,10 @@
      Klick-Handler; ein zweiter Aufrufer haette ihn kopieren muessen. */
   function chatWaehlen(id){
     S.chatLoading = true;                              // show the chat + skeletons right away
+    ladeMarkeSetzen();                                 /* die Zeile dreht sich ab dem Klick */
     S.messages = [];                                   // drop the previous chat's messages so the skeleton shows
     runDrop();                                         // anderer Chat -> das Protokoll der letzten Antwort gilt nicht mehr
-    clearTimeout(_chatLoadT); _chatLoadT = setTimeout(function(){ if (S.chatLoading){ S.chatLoading = false; renderMessages(); renderChatTitlebar(); } }, 12000);
+    clearTimeout(_chatLoadT); _chatLoadT = setTimeout(function(){ if (S.chatLoading){ S.chatLoading = false; ladeMarkeSetzen(); renderMessages(); renderChatTitlebar(); } }, 12000);
     window.askMiraSetActiveChat(id, false);
     renderMessages(); renderChatTitlebar();
     if (window.bubble_fn_ask_mira_select_chat) window.bubble_fn_ask_mira_select_chat(id);
@@ -6497,7 +6556,22 @@
       titel: 'Appearance', sub: 'Where the chat sidebar sits' }
   ];
 
-  function seiteLinks(){ return (S.settings && S.settings.side) === 'left'; }
+  /* DIE SEITE UEBERLEBT DAS NEULADEN (16.09. gemeldet: "passiert gerade nicht"). Breite und
+     Offen-Zustand der Leiste liegen laengst im localStorage (am_side_w, am_side_open) -- die
+     Seite war der eine Wert, der nur im Arbeitsspeicher stand, also stand die Leiste nach jedem
+     Laden wieder rechts. Vorgabe ist rechts, "kein Eintrag" gilt deshalb als rechts. */
+  var SEITE_KEY = 'am_side_pos';
+  function seitePosLesen(){
+    try { return localStorage.getItem(SEITE_KEY) === 'left' ? 'left' : 'right'; }
+    catch(e){ return 'right'; }        /* privates Fenster wirft schon beim Lesen */
+  }
+  function seitePosMerken(seite){
+    try { localStorage.setItem(SEITE_KEY, seite === 'left' ? 'left' : 'right'); } catch(e){}
+  }
+  function seiteLinks(){
+    if (S.settings && S.settings.side) return S.settings.side === 'left';
+    return seitePosLesen() === 'left';
+  }
 
   /* ---- DIE HAUPTLEISTE EINKLAPPEN --------------------------------------------------------
      Ausdruecklich verlangt: schiebt jemand die Chat-Leiste nach links, soll die Hauptleiste
@@ -6540,6 +6614,7 @@
     root.classList.toggle('is-side-left', links);
     if (!S.settings) S.settings = {};
     S.settings.side = links ? 'left' : 'right';
+    seitePosMerken(S.settings.side);
     /* DIE HAUPTLEISTE EINKLAPPEN, aber nur wenn sie da UND offen ist -- ausdruecklich so
        verlangt. Und nur auf Wunsch des Nutzers: beim Aufbau die Leiste einer anderen Komponente
        zuzuklappen waere ein Eingriff, den niemand angefordert hat.

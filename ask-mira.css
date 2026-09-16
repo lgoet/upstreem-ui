@@ -2743,6 +2743,17 @@
   .am-prev-item:hover { background: var(--am-soft); }
   .am-prev-item.is-active { background: var(--am-soft-2); }
   .am-prev-item.is-dragging { opacity: 0.4; }
+  /* Der Spinner der ladenden Zeile: dieselbe Mechanik wie die Pin-Marke darunter -- immer im
+     Markup, sichtbar nur mit der Zustandsklasse. Der Spinner selbst ist der dieser Komponente
+     (.am-act-spinner am Export-Knopf), nicht ein zweiter: hier nur kleiner, und die Randstaerke
+     zieht im selben Verhaeltnis mit (14px/2px -> 12px/1.7px, CLAUDE.md 1).
+     Farbe wie die Pin-Marke -- er sagt "gleich da", er soll die Zeile nicht anschreien. */
+  .am-prev-spin { display: none; flex: 0 0 auto; align-items: center; color: var(--am-muted-2); }
+  .am-prev-item.is-busy .am-prev-spin { display: inline-flex; }
+  .am-prev-spin .am-act-spinner { width: 12px; height: 12px; border-width: 1.7px; }
+  /* Beim Umbenennen tritt er zurueck, genau wie die Pin-Marke und die Knoepfe: die Zeile gehoert
+     dann dem Eingabefeld. */
+  .am-prev-item.is-editing .am-prev-spin { display: none; }
   .am-prev-pin-ind { display: none; flex: 0 0 auto; color: var(--am-muted-2); }
   .am-prev-item.is-pinned .am-prev-pin-ind { display: inline-flex; }
   .am-prev-pin-ind svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
