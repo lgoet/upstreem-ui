@@ -128,7 +128,11 @@
      Entscheidung. Ein Tagesdelta misst darum ueberwiegend Rauschen.
      Was die drei jetzt verlangen -- und warum:
        1. STAND statt Niveau-Aufzaehlung: nicht "Sichtbarkeit ist 34%", sondern wo der Wert im
-          eigenen Verlauf steht und wohin er laeuft.
+          eigenen Verlauf steht und wohin er laeuft. Das Fenster dafuer ist die LETZTE WOCHE --
+          eine feste Zahl im Prompt, keine Umschreibung. Der erste Anlauf schrieb dem Modell
+          stattdessen hinein, was es NICHT tun soll ("not a yesterday-vs-today comparison"); das
+          ist keine Frage, sondern eine Anweisung ueber die Frage, und sie gehoert nicht in einen
+          Text, den ein Nutzer als seinen eigenen abschickt.
        2. NUR AUSSERHALB DER UEBLICHEN SCHWANKUNG: die Ausnahme ist die Nachricht, alles andere
           ist Fuellung, die den Blick abstumpft.
        3. NEU STATT VERAENDERT: neue Prompts, Quellen, Wettbewerber -- das ist der Teil, den
@@ -141,17 +145,17 @@
   var CHIPS = {
     en: [
       { icon: "chartSpline", label: "Create a Daily Briefing",
-        prompt: "Give me the current state of my AI visibility, not a yesterday-vs-today comparison: where visibility, average rank and sentiment stand over {TIMEFRAME} and which way they are drifting, anything that moved beyond the usual fluctuation, and what is genuinely new in prompts, sources or competitors. Say plainly if nothing meaningful changed, and end with the one thing worth doing today." },
+        prompt: "Give me my status for the last 7 days: where visibility, average rank and sentiment stand and which way they are moving, what moved beyond the usual fluctuation, and what is new in prompts, sources or competitors. Say plainly if nothing meaningful changed, and end with the one thing worth doing today." },
       { icon: "{COMPETITOR}", label: "Compare me with {COMPETITOR}", fallback: "Compare me with my top competitor",
-        prompt: "Where do I stand against {COMPETITOR} right now? Visibility, average rank and sentiment side by side over {TIMEFRAME}, the topics and prompts where the gap holds over the whole period rather than in a single answer, and the sources that cite them but not me. Close with three actions that narrow the gap." },
+        prompt: "Where do I stand against {COMPETITOR} right now? Visibility, average rank and sentiment side by side over {TIMEFRAME}, the topics and prompts where the gap holds across the whole period, and the sources that cite them but not me. Close with three actions that narrow the gap." },
       { icon: "trendingUp", label: "New citations this week",
         prompt: "What is new in my citations over the last 7 days? New domains and URLs citing me or my competitors, sources that cite them but not me, and regular sources I have lost. Sort by how often each one comes up, not by when it first appeared, and name the one to go after first." }
     ],
     de: [
       { icon: "chartSpline", label: "Daily Briefing erstellen",
-        prompt: "Gib mir den aktuellen Stand meiner KI-Sichtbarkeit, keinen Vergleich von gestern auf heute: wo Sichtbarkeit, durchschnittlicher Rang und Sentiment über {TIMEFRAME} stehen und in welche Richtung sie laufen, was über die übliche Schwankung hinausgeht und was wirklich neu ist bei Prompts, Quellen oder Wettbewerbern. Sag klar, wenn sich nichts Wesentliches bewegt hat, und schließe mit der einen Sache, die heute lohnt." },
+        prompt: "Gib mir meinen Stand der letzten 7 Tage: wo Sichtbarkeit, durchschnittlicher Rang und Sentiment stehen und in welche Richtung sie laufen, was über die übliche Schwankung hinausgeht und was neu ist bei Prompts, Quellen oder Wettbewerbern. Sag klar, wenn sich nichts Wesentliches bewegt hat, und schließe mit der einen Sache, die heute lohnt." },
       { icon: "{COMPETITOR}", label: "Mit {COMPETITOR} vergleichen", fallback: "Mit meinem stärksten Wettbewerber vergleichen",
-        prompt: "Wo stehe ich gerade gegenüber {COMPETITOR}? Sichtbarkeit, durchschnittlicher Rang und Sentiment nebeneinander über {TIMEFRAME}, die Themen und Prompts, bei denen der Abstand über den ganzen Zeitraum hält und nicht nur in einer einzelnen Antwort, und die Quellen, die sie zitieren, mich aber nicht. Schließe mit drei Maßnahmen, die den Abstand verkleinern." },
+        prompt: "Wo stehe ich gerade gegenüber {COMPETITOR}? Sichtbarkeit, durchschnittlicher Rang und Sentiment nebeneinander über {TIMEFRAME}, die Themen und Prompts, bei denen der Abstand über den ganzen Zeitraum hält, und die Quellen, die sie zitieren, mich aber nicht. Schließe mit drei Maßnahmen, die den Abstand verkleinern." },
       { icon: "trendingUp", label: "Neue Zitierungen diese Woche",
         prompt: "Was ist bei meinen Zitierungen in den letzten 7 Tagen neu? Neue Domains und URLs, die mich oder meine Wettbewerber zitieren, Quellen, die sie zitieren und mich nicht, und regelmäßige Quellen, die ich verloren habe. Sortiere danach, wie oft eine Quelle vorkommt, nicht danach, wann sie zuerst auftauchte, und nenne die eine, die ich zuerst angehen sollte." }
     ]
