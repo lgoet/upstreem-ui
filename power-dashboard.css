@@ -10,6 +10,21 @@
    genau so breit wie in Miras eigener Ansicht, und auf normalen Bildschirmen bleibt links und
    rechts Platz ("nicht full width, genau so wie Mira"). */
 .upw-root { display: block; width: 100%; background: transparent; color: var(--vc-text); }
+
+/* ---------- der Anheftpunkt dieser Ansicht: 16px (15.09. angefordert) ----------
+   core setzt --up-sticky-top auf 171px, und dort ist das richtig: 171 ist die Hoehe der
+   schwebenden Topbar der Tabellenseiten, unter der deren Tabellenkopf haengen soll. UEBER DIESER
+   ANSICHT GIBT ES SIE NICHT -- der Dashboard-Seitenkopf scrollt mit weg, ueber der klebenden
+   Zeile steht nichts mehr. Mit den geerbten 171 blieb sie also fast auf halber Schirmhoehe
+   stehen ("die Topbar ist fast noch mittig im Bildschirm, wenn sie sticky wird").
+   16px ist derselbe Wert, den das Opportunities-Brett auf seiner EIGENEN Seite traegt
+   (data-sticky-top="16" in opportunities_bubble.html) -- dieselbe Lage, dieselbe Zahl.
+   Der Wert steht an der Wurzel und nicht in der Klebe-Regel darunter, weil ihn zwei lesen: die
+   Regel fuer .upw-modeseg und brettAusleihen() in der JS, das ihn um die Hoehe der Zeile erhoeht
+   an das geliehene Brett weitergibt. Eine Zahl, zwei Verbraucher.
+   .up-root.upw-root und nicht .upw-root allein: core deklariert die Variable an .up-root, das ist
+   dieselbe Spezifitaet (0,1,0), und dann haette die Ladereihenfolge entschieden (§1). */
+.up-root.upw-root { --up-sticky-top: 16px; }
 .upw-col {
   --upw-pad: clamp(14px, 3vw, 28px);
   max-width: calc(920px + 2 * var(--upw-pad)); margin: 0 auto;
@@ -287,14 +302,22 @@
 .upw-root.has-board .upw-modeseg {
   position: sticky; top: var(--up-sticky-top); background: var(--up-surface);
 }
-/* HIER STAND EIN DECKSTREIFEN und er war ein Fehler (15.09.). Er sollte die Strecke zwischen
-   Fensteroberkante und der klebenden Zeile abdecken -- so wie core es bei .up-head macht. Dort
-   stimmt das, weil der Kopf ganz oben in seiner Komponente sitzt. HIER stehen darueber Mira, die
-   Chips, Overview und Recent chats: der Streifen ist --up-sticky-top hoch (in der App 171px),
-   liegt IMMER da, nicht nur im angehefteten Zustand, und hat damit alles darueber zugedeckt.
-   Genau so gemeldet ("der gesamte Bereich darueber ist mit sticky").
-   Es braucht ihn auch nicht: die Zeile selbst ist deckend, und die Strecke ueber ihr gehoert der
-   Topbar der App, die ihren eigenen Grund malt. */
+/* Der Deckstreifen ueber der Zeile -- 16px, und das ist die ganze Geschichte (15.09.).
+   Er schliesst die Strecke zwischen Fensteroberkante und der klebenden Zeile, sonst laufen die
+   Karten dort sichtbar durch (gemessen: elementFromPoint(x, 8) lieferte ohne ihn eine
+   .uo-card-title). core macht bei .up-head dasselbe, und das Brett auf seiner eigenen Seite auch.
+   WARUM ER EINMAL EIN FEHLER WAR: Er ist so hoch wie --up-sticky-top und liegt IMMER da, nicht
+   nur im angehefteten Zustand. Solange diese Ansicht die 171px aus core erbte, war er also ein
+   171px hoher Balken, der im Ruhezustand Mira, die Chips, Overview und Recent chats zugedeckt hat
+   ("der gesamte Bereich darueber ist mit sticky"). Mit den 16px von oben deckt er 16px der 56px
+   Aussenabstand ueber dieser Zeile -- dort steht nichts. Die Hoehe MUSS deshalb der Anheftpunkt
+   bleiben und darf nie ein eigener Wert werden: wer den einen aendert, aendert beide.
+   bottom: 100% statt top: -171px: der Streifen sitzt immer unmittelbar ueber der Zeile, egal wie
+   hoch er ist. */
+.upw-root.has-board .upw-modeseg::before {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 100%;
+  height: var(--up-sticky-top); background: var(--up-surface);
+}
 .upw-modebtn {
   padding: 0; border: 0; background: transparent; font-family: inherit; font-size: 12px;
   font-weight: 500; color: var(--vc-third); cursor: pointer; transition: color 140ms ease;
