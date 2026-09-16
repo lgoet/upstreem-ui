@@ -1113,7 +1113,28 @@
         /* External reset is SILENT by design: it realigns the picker with a date change that has
            already happened elsewhere. Emitting here would kick off a second page-wide refresh the
            user never asked for. The Reset button inside the panel does publish. */
-        reset: function () { return applyPreset(DEFAULT_PRESET, false); },
+        /* WOHIN ZURUECK? Dahin, wo ein FRISCHER MOUNT landen wuerde -- dieselbe Zeile wie beim
+           Aufbau oben, absichtlich wortgleich. Bei aktivem "ueberall anwenden" ist das der
+           GETEILTE Zeitraum, NICHT Last 7 Days.
+           Der Fehler dahinter (16.09. gemeldet, im Prueftand nachgestellt): die Drawer-Workflows
+           rufen resetUpstreemDateRangePicker('dates_v2_<drawer>') beim SCHLIESSEN. Da ist die
+           Gruppe schon weg, Bubble baut das Markup einer versteckten Gruppe nicht -- also findet
+           forEachInstance keinen Kalender und PARKT den Aufruf (UC.makeLate). Beim naechsten
+           Oeffnen mountet der Kalender, uebernimmt richtig den geteilten Zeitraum, und dann laeuft
+           der geparkte Aufruf nach und stellt ihn auf Last 7 Days. Gemessen: 1. Oeffnen
+           "Last 30 Days", 2. und 3. "Last 7 Days", geteiltes Preset unveraendert last30.
+           Dass es "mal so, mal so" war, hat denselben Grund: ein geparkter Aufruf verfaellt nach
+           60s (LATE_TTL_MS), wer also lange genug wartet, sieht den richtigen Zeitraum.
+           Nicht die Parkerei abgeschafft: ein Reset, der vor seinem Kalender eintrifft, soll ihn
+           weiter erreichen. Nur das ZIEL war falsch -- ein Reset auf Last 7 Days waere bei
+           aktivem Schalter ein Zustand, in dem der Schalter luegt, genau wie beim Reset-Knopf
+           im Fach (der stellt deshalb den geteilten Zeitraum mit um). */
+        reset: function () {
+          var ziel = (syncAn() && nimmtTeil(instanceId))
+            ? ((urlAn(root) && urlPreset()) || syncPreset())
+            : DEFAULT_PRESET;
+          return applyPreset(ziel, false);
+        },
         setPreset: function (key, emitToo) { return applyPreset(key, emitToo === true); },
         setTheme: function (t) {
           var dark = String(t || "").toLowerCase() === "dark";

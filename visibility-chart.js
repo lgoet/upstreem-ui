@@ -888,6 +888,20 @@
         delete USER_FILTERED[instanceId];
         delete INIT_COMPANIES[instanceId];  // next fill re-captures it fresh, like a first load
 
+        /* UND DIE GRANULARITAET MIT (16.09.). Sie fehlte hier als einzige -- resetComboChart
+           raeumt sie seit jeher weg (citations-combo-chart.js, gleiche drei Zeilen). Zwei Dinge
+           ueberlebten den Reset: der gemerkte Wert (GRAN_STORE, ueberlebt auch das Ab- und
+           Anhaengen des Elements) und vor allem die MARKE, dass der Nutzer selbst gewaehlt hat
+           (GRAN_PICKED). Die Marke sperrt in update() jede Granularitaet aus dem Payload aus --
+           dauerhaft, je Instanz. In einem Drawer heisst das: einmal auf "Week" geklickt, und
+           jedes weitere Oeffnen stand auf Week, egal was Bubble schickte. Genau so gemeldet
+           ("manchmal steht auch die gran noch auf week, mal auf day").
+           Wie bei INIT_COMPANIES eine Zeile darueber: weg damit, dann entscheidet der naechste
+           Payload wieder -- wie bei einem ersten Laden. */
+        delete GRAN_PICKED[instanceId];
+        curGran = "day"; GRAN_STORE[instanceId] = "day";
+        syncGranActive();
+
         /* Also EMPTY the data (chart + table back to skeleton), not just the filters. A slide-in
            that re-uses this placement calls resetVisibilityChart() on open; without this the old
            chart/table sat there and re-animated/re-resized during the open (stale data flashing +
