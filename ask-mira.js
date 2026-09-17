@@ -5057,7 +5057,46 @@
       chats = parsed;
     }
     var vorher = (S.previousChats || []).length;
-    S.previousChats = Array.isArray(chats) ? chats.slice() : [];
+    /* ---- EINE TEIL-NEUSENDUNG ERSETZT NICHT MEHR DIE GANZE LISTE (17.09.) ------------------
+       Der Fall, der dreimal gemeldet wurde: geblaettert (90 Chats), auf das Dashboard, ueber
+       einen Chip zurueck -- und die Leiste steht wieder auf 38, der ERSTEN Seite. Irgendein
+       Workflow schickt sie noch einmal, und der Setter hat sie bisher wortwoertlich genommen:
+       alles Nachgeladene weg, der gerade offene Chat nicht mehr in der Liste, also kein Titel
+       und keine Markierung.
+       Die Unterscheidung, die das loest, braucht kein Raten: bringt die neue Liste NICHTS, was
+       wir nicht schon haben, und ist sie KUERZER als unsere, dann ist sie ein Ausschnitt und
+       keine neue Wahrheit. Dann werden die gelieferten Eintraege uebernommen (ihre Titel koennen
+       frischer sein) und der Rest BEHALTEN.
+       Alles andere ersetzt weiter vollstaendig -- ein Teamwechsel bringt fremde Kennungen mit,
+       eine wirklich leere Liste bleibt eine leere Liste. Und ein anderswo geloeschter Chat kann
+       so eine Runde laenger stehenbleiben; das ist der Preis, und er ist kleiner als der
+       Verlust der halben Liste. */
+    var altListe = S.previousChats || [];
+    var einListe = Array.isArray(chats) ? chats.slice() : [];
+    var hatten = {};
+    altListe.forEach(function(c){ if (c && c.id != null) hatten[String(c.id)] = true; });
+    /* "Kennen wir das meiste?" und nicht "kennen wir alles": die erste Seite enthaelt nach einer
+       frischen Antwort genau EINEN neuen Chat -- den gerade entstandenen. Bei "alles bekannt"
+       waere sie damit wieder eine vollstaendige Ersetzung gewesen, und der Verlust derselbe.
+       Die Haelfte als Schwelle ist bewusst grosszuegig: ein Teamwechsel bringt NULL bekannte
+       Kennungen mit, davon ist sie weit entfernt. */
+    var bekannteDrin = 0;
+    einListe.forEach(function(c){ if (c && c.id != null && hatten[String(c.id)]) bekannteDrin++; });
+    var nurBekanntes = einListe.length > 0 && bekannteDrin >= einListe.length / 2;
+    if (nurBekanntes && altListe.length > einListe.length){
+      var drin = {};
+      einListe.forEach(function(c){ drin[String(c.id)] = true; });
+      S.previousChats = einListe.concat(altListe.filter(function(c){
+        return !(c && c.id != null && drin[String(c.id)]);
+      }));
+      if (window.console) console.warn('[AskMira] die Chatliste kam mit ' + einListe.length +
+        ' Eintraegen, davon ' + bekannteDrin + ' schon bekannt -- die Leiste haelt ' + altListe.length +
+        '. Das ist ein Ausschnitt, keine neue Liste: das Nachgeladene bleibt stehen. (Quelle: ' +
+        (_vonAutoBind ? 'das versteckte Element mira-chats-data' : 'ein direkter Aufruf von askMiraSetPreviousChats') +
+        '.) window.askMiraChatTrace() zeigt alle Schreibzugriffe.');
+    } else {
+      S.previousChats = einListe;
+    }
     chatSpur(_vonAutoBind ? 'mira-chats-data' : 'setPreviousChats', S.previousChats.length,
              S.previousChats.length ? S.previousChats[0].title : '');
     /* Der Einbruch, der gemeldet wurde -- und er wird gemeldet, nicht repariert: eine kuerzere
