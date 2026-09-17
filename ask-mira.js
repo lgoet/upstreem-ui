@@ -440,6 +440,19 @@
     en: {
       antwortHaengt: 'The answer is taking longer than expected. Reload the chat to see it.',
       placeholder: 'Ask Mira...',
+      /* EIN Bezug im Feld -> die naheliegende Frage steht als PLATZHALTER da (17.09. angefordert).
+         Nur als Platzhalter, nicht als Text: wer etwas anderes wissen will, tippt einfach los und
+         loescht nichts. Bei ZWEI Bezuegen faellt sie weg -- welche Frage zu zwei Dingen passt,
+         weiss niemand, und "Brand" in einer Frage waere dann die falsche Haelfte.
+         Die Woerter sind die des Katalogs (Brand, Prompt, Domain, URL, Response). */
+      bezugFrage: {
+        brand:      'What can you tell me about this brand?',
+        competitor: 'What can you tell me about this competitor?',
+        prompt:     'What can you tell me about this prompt?',
+        domain:     'What can you tell me about this domain?',
+        url:        'What can you tell me about this URL?',
+        response:   'What can you tell me about this response?'
+      },
       suggested: [
         'What is hurting our visibility?',
         'Which sources should we improve first?',
@@ -549,6 +562,14 @@
     de: {
       antwortHaengt: 'Die Antwort dauert länger als erwartet. Lade den Chat neu, um sie zu sehen.',
       placeholder: 'Frag Mira...',
+      bezugFrage: {
+        brand:      'Was kannst du mir über diese Brand sagen?',
+        competitor: 'Was kannst du mir über diesen Wettbewerber sagen?',
+        prompt:     'Was kannst du mir über diesen Prompt sagen?',
+        domain:     'Was kannst du mir über diese Domain sagen?',
+        url:        'Was kannst du mir über diese URL sagen?',
+        response:   'Was kannst du mir über diese KI-Antwort sagen?'
+      },
       suggested: [
         'Was schadet unserer Sichtbarkeit?',
         'Welche Quellen sollten wir zuerst verbessern?',
@@ -2642,11 +2663,21 @@
       t.classList.remove('is-in');               // animate up into place
     }, 240);
   }
+  /* Der Platzhalter, wenn der Laufteppich steht: bei GENAU EINEM Bezug die Frage zu seinem Typ,
+     sonst der uebliche. Kennt der Katalog den Typ nicht, bleibt es beim ueblichen -- ein Bezug
+     ohne passende Frage soll keine leere Zeile erzeugen. */
+  function platzhalterText(){
+    if (_picks && _picks.length === 1){
+      var f = (L().bezugFrage || {})[String(_picks[0].type || '').toLowerCase()];
+      if (f) return f;
+    }
+    return L().placeholder;
+  }
   function updateLoopState(){
     var on = loopActive();
     elComposer.classList.toggle('loop-on', on);
     // native placeholder only when not looping (e.g. inside an existing chat)
-    elTextarea.setAttribute('placeholder', (!on && !elTextarea.value.trim()) ? L().placeholder : '');
+    elTextarea.setAttribute('placeholder', (!on && !elTextarea.value.trim()) ? platzhalterText() : '');
     if (on){ if (!phTimer) phStart(); } else { phStop(); }
   }
 
@@ -3105,12 +3136,31 @@
     });
     ladeMarkeSetzen();
   }
+  /* ---- KEIN "Untitled chat", SOLANGE DER TITEL ENTSTEHT (17.09. angefordert) -----------------
+     Zwischen dem Absenden und dem fertigen Titel stand in der Leiste "Untitled chat" -- ein Name,
+     der keiner ist, und er verschwindet gleich wieder. Jetzt steht dort NICHTS; der Spinner links
+     sagt schon, dass etwas laeuft.
+     Und wenn der Titel kommt, wird er GETIPPT: die Zeile war leer, jetzt erscheint sie Zeichen
+     fuer Zeichen. Gemerkt wird das je Kennung -- welche Zeile ohne Titel dastand und welche schon
+     getippt wurde -- sonst tippt jedes Neuzeichnen der Liste alles noch einmal. */
+  var _ohneTitel = {}, _titelGetippt = {};
   function chatItemHTML(c){
     var active = chatAktivSichtbar(c.id) ? ' is-active' : '';
     var isP = amTruthy(c.is_pinned);
     var pinned = isP ? ' is-pinned' : '';
-    var title = c.title || 'Untitled chat';
-    return '<div class="am-prev-item'+active+pinned+'" draggable="true" data-chat-id="'+escAttr(c.id)+'" data-project-id="'+escAttr(c.project_id || '')+'">'+
+    var kid = String(c.id);
+    var echterTitel = c.title ? String(c.title) : '';
+    /* OHNE TITEL HEISST: der Spinner steht da (17.09. angefordert). Nicht nur waehrend die
+       Antwort laeuft -- zwischen fertiger Antwort und fertigem Titel liegen ein paar Sekunden,
+       und eine leere Zeile ohne jedes Zeichen waere in dieser Zeit ein Loch in der Liste.
+       Eigene Klasse neben is-busy: die schaltet ladeMarkeSetzen im Takt des Ladezustands, diese
+       haengt allein am fehlenden Titel. */
+    var ohneTitel = echterTitel ? '' : ' is-untitled';
+    var tippen = '';
+    if (!echterTitel){ _ohneTitel[kid] = true; }
+    else if (_ohneTitel[kid] && !_titelGetippt[kid]){ tippen = echterTitel; }
+    var title = echterTitel;
+    return '<div class="am-prev-item'+active+pinned+ohneTitel+'" draggable="true" data-chat-id="'+escAttr(c.id)+'" data-project-id="'+escAttr(c.project_id || '')+'">'+
       /* Der Spinner steht IMMER im Markup und wird per Klasse an der Zeile sichtbar (16.09.
          angefordert: "wenn ein Chat im Ladestate ist, ein Spinner links vorne"). Dasselbe
          Vorgehen wie bei der Pin-Marke gleich daneben, und aus einem handfesten Grund: so
@@ -3118,7 +3168,8 @@
          bauen wuerde eine offene Umbenennung und das Kontextmenue mitreissen. */
       '<span class="am-prev-spin" aria-hidden="true"><span class="am-act-spinner"></span></span>'+
       '<span class="am-prev-pin-ind" title="Pinned">'+ICON.pin+'</span>'+
-      '<span class="am-prev-item-title">'+esc(title)+'</span>'+
+      '<span class="am-prev-item-title"' + (tippen ? ' data-tippen="' + escAttr(tippen) + '"' : '') + '>' +
+        (tippen ? '' : esc(title)) + '</span>'+
       '<input class="am-prev-item-input" type="text" value="'+escAttr(title)+'" maxlength="120" aria-label="Chat name">'+
       '<span class="am-prev-actions">'+
         /* Die drei Punkte kommen aus core (moreHorizontal, dasselbe Zeichen wie im Kebab jeder
@@ -3231,6 +3282,37 @@
      Die Notbremse zaehlt die Durchlaeufe: renderPrevious ruft hier wieder herein, und ein
      Zustand, in dem die Hoehe nie waechst (Leiste 0px hoch waehrend einer Animation), waere sonst
      eine Endlosschleife. */
+  /* ---- DIE TIPP-ANIMATION DES TITELS --------------------------------------------------------
+     18ms je Zeichen: schnell genug, dass es wie ein Erscheinen wirkt, langsam genug, dass man es
+     sieht. Der Titel ist kurz, das sind selten mehr als vierhundert Millisekunden.
+     TRUNCATED WIRD VORHER BEDACHT (angefordert): getippt wird nur so weit, wie die Zeile es
+     zeigen kann -- sobald der Text breiter ist als sein Kasten, steht am Ende der volle Titel
+     da und die CSS kuerzt ihn mit Auslassungspunkten. Sonst liefe die Animation sichtbar ins
+     Nichts weiter, und der letzte sichtbare Buchstabe bliebe zufaellig stehen.
+     Die Markierung im Merker faellt VOR der Animation, nicht danach: ein Neuzeichnen mitten im
+     Tippen soll den Titel fertig hinschreiben und nicht von vorn anfangen. */
+  function titelAustippen(){
+    if (!elPrevList) return;
+    var offen = elPrevList.querySelectorAll('.am-prev-item-title[data-tippen]');
+    Array.prototype.forEach.call(offen, function(el){
+      var voll = el.getAttribute('data-tippen') || '';
+      var zeile = el.closest ? el.closest('.am-prev-item') : null;
+      var kid = zeile ? String(zeile.getAttribute('data-chat-id')) : '';
+      el.removeAttribute('data-tippen');
+      if (!voll) return;
+      if (kid){ _titelGetippt[kid] = true; delete _ohneTitel[kid]; }
+      var i = 0;
+      (function tick(){
+        if (!el.isConnected) return;
+        i++;
+        el.textContent = voll.slice(0, i);
+        /* Passt es nicht mehr in die Zeile, ist der Rest ohnehin nicht zu sehen. */
+        if (i >= voll.length || el.scrollWidth > el.clientWidth){ el.textContent = voll; return; }
+        setTimeout(tick, 18);
+      })();
+    });
+  }
+
   var _fuellLauf = 0;
   function _fuehlerBinden(){
     setTimeout(function(){
@@ -3369,6 +3451,7 @@
     if (window.__amRenderChatTitlebar) window.__amRenderChatTitlebar();
     /* Der Fuehler ist nach jedem Neuzeichnen ein anderer Knoten -- also neu beobachten. */
     ladeMarkeSetzen();
+    titelAustippen();
     _fuehlerBinden();
   }
 
@@ -3737,7 +3820,12 @@
   /* Platzhalter und Beschriftungen erst HIER: resolveLang() laeuft im Init, und vorher steht
      lang noch auf 'en'. */
   function pickTexteSetzen(){
-    if (elPickH) elPickH.textContent = L().pickHeading;
+    /* DIE UEBERSCHRIFT "Filter" IST WEG (17.09. angefordert: "ist selbsterklaerend, dass das
+       Filter sind"). Der Knoten bleibt stehen -- pickCmdsZeichnen schaltet an ihm is-leer, und
+       ein fehlendes Element waere dort eine zweite Fallunterscheidung. Leer ist er 0px hoch, die
+       CSS nimmt ihn zusaetzlich aus dem Fluss. Die Katalogeintraege bleiben ebenfalls: ein
+       Element auf einem aelteren Pin zeigt sonst den Schluessel statt des Wortes. */
+    if (elPickH) elPickH.textContent = '';
     if (elPickInput){
       elPickInput.placeholder = L().pickPlaceholder;
       elPickInput.setAttribute('aria-label', L().pickIdle);
@@ -3762,7 +3850,11 @@
     /* Aus dem Power Dashboard heraus: erst nach Hause und in Miras Ansicht, als NEUER Chat --
        dann geht es hier ganz normal weiter, und die Antwort kommt in Mira an. Text und Bezuege
        stehen noch im Feld; es ist dasselbe Feld. */
-    if (!explicit && istLauncher() && (typed || _picks.length || getQuoteValue())) zuMira({ neu: true });
+    if (!explicit && istLauncher() && (typed || _picks.length || getQuoteValue())){
+      /* Dieser eine Wechsel nimmt den Inhalt MIT -- siehe _feldSpeicher weiter unten. */
+      _umzugOhneFeld = true;
+      try { zuMira({ neu: true }); } finally { _umzugOhneFeld = false; }
+    }
     if (S.isLoading) return;
     var quote = explicit ? '' : getQuoteValue();
     var bezug = explicit ? '' : picksText();
@@ -6620,6 +6712,29 @@
     if (root.classList.contains('is-pick-open')) pickOeffnen(false);
     if (effPop){ try { effPop.close(false); } catch(e){} }
   }
+  /* ---- ZWEI FELDER, EIN ELEMENT (17.09. angefordert) ---------------------------------------
+     Das Feld im Power Dashboard und das Feld in Miras Ansicht sind fuer den Nutzer zwei
+     verschiedene Felder -- "nicht shared". Technisch ist es EIN Element: das Dashboard leiht sich
+     Miras Wurzel und gibt sie zurueck (der Launcher weiter oben erklaert ausfuehrlich, warum eine
+     zweite Wurzel nicht geht).
+     Also wird beim Umzug der Inhalt mitgenommen und wieder ausgepackt: was im Dashboard stand,
+     liegt beim naechsten Besuch dort wieder, und Miras Ansicht faengt mit dem an, was dort stand.
+     Text UND Bezuege, denn beides gehoert zur angefangenen Frage.
+     AUSNAHME, und ohne sie waere das Absenden kaputt: sendMessage aus dem Dashboard wechselt
+     absichtlich MIT Inhalt nach Mira hinueber (dieselbe Frage soll dort ankommen). Waehrend
+     dieses einen Wechsels wird nichts ein- und ausgepackt -- _umzugOhneFeld sagt es an. */
+  var _feldSpeicher = { launcher: null, mira: null };
+  var _umzugOhneFeld = false;
+  function feldEinpacken(){
+    return { text: elTextarea ? elTextarea.value : '', picks: (_picks || []).slice() };
+  }
+  function feldAuspacken(z){
+    if (!elTextarea) return;
+    elTextarea.value = (z && z.text) || '';
+    _picks.length = 0;
+    if (z && z.picks) z.picks.forEach(function(p){ _picks.push(p); });
+    picksZeichnen(); refreshSend(); autosize(); updateLoopState();
+  }
   function launcherAn(slot, opts){
     if (root.__amTot || !slot || slot.nodeType !== 1) return false;
     _launchView = String((opts && opts.view) || '');
@@ -6630,6 +6745,7 @@
       root.parentNode.insertBefore(_heim, root);
     }
     launcherMenuesZu();
+    if (!_umzugOhneFeld){ _feldSpeicher.mira = feldEinpacken(); feldAuspacken(_feldSpeicher.launcher); }
     root.classList.add('is-launcher');
     slot.appendChild(root);
     if (root.__amFit) root.__amFit();
@@ -6639,6 +6755,7 @@
   function launcherAus(){
     if (!istLauncher() && !_heim) return;
     launcherMenuesZu();
+    if (!_umzugOhneFeld && istLauncher()){ _feldSpeicher.launcher = feldEinpacken(); feldAuspacken(_feldSpeicher.mira); }
     root.classList.remove('is-launcher');
     if (_heim && _heim.parentNode){
       _heim.parentNode.insertBefore(root, _heim);

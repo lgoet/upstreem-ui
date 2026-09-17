@@ -1902,6 +1902,9 @@
   .am-pick-chips { display: inline-flex; align-items: center; gap: 5px; flex: 0 1 auto;
     max-width: 60%; min-width: 0; }
   .am-pick-chips:empty { display: none; }
+  /* Die Ueberschrift der Chipzeile traegt seit dem 17.09. keinen Text mehr (angefordert). Leer
+     ist sie 0px hoch, aber der Abstand der Zeile zaehlte weiter -- also ganz heraus. */
+  .am-pick-h:empty { display: none; }
   .am-pick-inwrap { flex: 1 1 auto; min-width: 40px; display: flex; }
   /* DER CHIP DER PALETTE, nicht die kleine Fassung: 26px, Radius 7.6, 12.5px, derselbe
      Rahmen, derselbe Schatten. Ausdruecklich verlangt -- "genau so, gleiche height, gleicher
@@ -1913,13 +1916,17 @@
      (.mqa-chip und .mqa-chip b). Vorher stand hier alles in der Textfarbe und der Wert fett --
      das war der sichtbare Unterschied, den man sofort sieht, wenn man beide nebeneinander
      legt. */
-  .am-pick-chip .am-pick-chip-pre { color: var(--am-muted); font-weight: 500; }
-  .am-pick-chip .am-pick-chip-v { color: var(--am-muted-2); font-weight: 400;
+  /* 17.09.: BEIDE TEILE IN DER PRIMAERFARBE. Angefordert -- "wenn die Chips ausgewaehlt sind und
+     im Eingabefeld stehen, soll die Schrift in Primaerfarbe sein". Der Unterschied zwischen
+     Dimension und Wert bleibt am GEWICHT (500 gegen 400), nicht mehr an der Farbe: ein gesetzter
+     Filter ist eine Aussage des Nutzers und keine Beschriftung. */
+  .am-pick-chip .am-pick-chip-pre { color: var(--am-text); font-weight: 500; }
+  .am-pick-chip .am-pick-chip-v { color: var(--am-text); font-weight: 400;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .am-pick-chip-dot { width: 7px; height: 7px; border-radius: 999px; flex: 0 0 auto; }
   /* Die Angabe, WELCHE Dimension gemeint ist, steht leiser als ihr Wert -- "Market" erklaert,
      "DE" ist die Aussage. */
-  .am-pick-chip-pre { color: var(--vc-muted); }
+  .am-pick-chip-pre { color: var(--am-text); }
   .am-pick-chip-v { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   /* Auch das Kreuz aus der Palette (.mqa-chip-x): 16px, Radius 4, gedaempfte Farbe. */
   .am-pick-chip-x {
@@ -2749,7 +2756,10 @@
      zieht im selben Verhaeltnis mit (14px/2px -> 12px/1.7px, CLAUDE.md 1).
      Farbe wie die Pin-Marke -- er sagt "gleich da", er soll die Zeile nicht anschreien. */
   .am-prev-spin { display: none; flex: 0 0 auto; align-items: center; color: var(--am-muted-2); }
-  .am-prev-item.is-busy .am-prev-spin { display: inline-flex; }
+  .am-prev-item.is-busy .am-prev-spin,
+  /* Auch ohne Titel: zwischen fertiger Antwort und fertigem Titel steht sonst eine ganz leere
+     Zeile da (17.09. angefordert -- "in der Phase einfach keinen Text, nur den Loadingspinner"). */
+  .am-prev-item.is-untitled .am-prev-spin { display: inline-flex; }
   .am-prev-spin .am-act-spinner { width: 12px; height: 12px; border-width: 1.7px; }
   /* Beim Umbenennen tritt er zurueck, genau wie die Pin-Marke und die Knoepfe: die Zeile gehoert
      dann dem Eingabefeld. */

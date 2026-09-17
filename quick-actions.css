@@ -195,12 +195,15 @@
   /* Die weiche Lage zwei Pixel weiter (Streuung 2 -> 4, Versatz 1 -> 2). Die dichte Lage an der
      Kante bleibt: sie zeichnet die Kante, sie traegt nicht den Schatten. */
   box-shadow: 0 1px 1px rgba(0,0,0,0.13), 0 2px 4px rgba(0,0,0,0.07);
-  color: var(--am-muted); font-size: 12.5px; font-weight: 500; white-space: nowrap;
+  /* 17.09.: SCHRIFT IN DER PRIMAERFARBE. Angefordert -- ein Chip, der im Suchfeld steht, ist eine
+     Auswahl des Nutzers und keine Beschriftung. Der Unterschied zwischen Dimension und Wert
+     bleibt am Gewicht (500 gegen 400). */
+  color: var(--am-text); font-size: 12.5px; font-weight: 500; white-space: nowrap;
 }
 /* [data-theme="dark"] als Vorfahre, wie die Nachbarregeln dieser Datei. */
 [data-theme="dark"] .mqa-chip {
   box-shadow: 0 1px 1px rgba(0,0,0,0.24), 0 2px 4px rgba(0,0,0,0.16); }
-.mqa-chip b { font-weight: 400; color: var(--am-muted-2); }   /* value only: -100 weight, weaker colour */
+.mqa-chip b { font-weight: 400; color: var(--am-text); }   /* nur der Wert: -100 Gewicht, gleiche Farbe */
 .mqa-chip-x {
   width: 16px; height: 16px; border: 0; border-radius: 4px; background: transparent; cursor: pointer;
   color: var(--am-muted-2); display: inline-flex; align-items: center; justify-content: center; padding: 0;
