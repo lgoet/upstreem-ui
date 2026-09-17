@@ -3302,6 +3302,22 @@
       '</div>';
     }).join('');
 
+    /* DER OFFENE CHAT STEHT IMMER IN DER LEISTE (17.09.). Gemeldet, mehrfach: Chip geklickt, Chat
+       entsteht, Antwort kommt -- und in der Leiste ist er nicht zu sehen, weil die Listen, die
+       Bubble schickt, ihn noch nicht enthalten (der RPC hat seinen Sitzungs-Cache ueber
+       user_id + max(updated_at); ein frisch angelegter Chat faellt da durch, bis der Cache
+       nachzieht).
+       Bis dahin traegt ihn die Komponente selbst ein. Das ist nichts Erfundenes: der Nutzer SITZT
+       in diesem Chat, die Kennung ist seine. Ein Titel wird nicht behauptet -- ohne Titel steht da
+       dasselbe wie bei jedem unbenannten Chat, und sobald die Liste ihn kennt, faellt die eigene
+       Zeile weg (gleiche Kennung, sie wird nicht doppelt gezeigt).
+       Ganz oben, weil er der juengste ist. */
+    if (S.activeChatId){
+      var offenId = String(S.activeChatId);
+      var schonDrin = recents.some(function(c){ return c && String(c.id) === offenId; }) ||
+                      (S.previousChats || []).some(function(c){ return c && String(c.id) === offenId; });
+      if (!schonDrin) recents.unshift({ id: S.activeChatId, title: '', _lokal: true });
+    }
     var recentsAlle = sortPinnedFirst(recents);
     if (S.prevFenster < LISTE_SCHRITT) S.prevFenster = LISTE_SCHRITT;
     var recentsHTML = recentsAlle.slice(0, S.prevFenster).map(chatItemHTML).join('');
