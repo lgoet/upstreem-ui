@@ -4615,6 +4615,9 @@
     S.isLoading = !!v;
     root.classList.toggle('is-loading', S.isLoading);
     ladeMarkeSetzen();
+    /* Die Uhr haengt am Zustand, nicht an einem einzelnen Aufruf: jedes Lebenszeichen stellt sie
+       neu, ihr Ausbleiben laesst sie ablaufen. */
+    if (S.isLoading) stummUhrStellen(); else stummUhrLoeschen();
     elStatusText.textContent = S.isLoading ? 'Analyzing your workspace' : 'Ready';
     refreshSend();
     if (S.isLoading){
@@ -4783,6 +4786,43 @@
   /* Die Uhr zur laufenden Antwort -- siehe renderMessages. 100s: die langsamste gemessene
      Antwort auf der Seite des Nutzers lag bei 40s, und der Abstand dazu muss gross genug sein,
      dass niemand eine echte Antwort verliert. */
+  /* ---- DER LOADER DARF NIE EWIG DREHEN (17.09.) --------------------------------------------
+     Gemeldet: Frage gestellt, Loader an, die Antwort ist serverseitig laengst fertig -- und der
+     Loader dreht weiter. Ursache war ein Run-JS-Schritt, der an einem rohen Anfuehrungszeichen
+     im Payload starb ("Unexpected identifier 'beste'"). Damit kam WEDER askMiraSetMessages NOCH
+     askMiraSetLoading(false) an: aus Sicht dieser Komponente ist einfach nie wieder etwas
+     passiert.
+     Die vorhandene Uhr (LAUF_FRIST) hilft dort nicht: sie wird erst in askMiraSetMessages
+     gestellt, also genau in dem Aufruf, der ausgefallen ist. Diese hier haengt am Loader selbst.
+     240 Sekunden, und die Zahl ist gemessen und nicht geraten: die zwei Antworten aus den
+     Fehlerberichten brauchten 86 und 92 Sekunden (latency_ms). Vier Minuten sind also weit
+     jenseits einer langsamen, aber gesunden Antwort -- und wer so lange auf einen Kreisel sieht,
+     hat ohnehin verloren. Danach steht da, was der Nutzer TUN kann ("Lade den Chat neu"), nicht,
+     was kaputt war -- und genau das hilft hier auch wirklich: ueber den Klick auf den Chat kommt
+     dieselbe Antwort an. */
+  var _stummT = 0, STUMM_FRIST = 240000;
+  function stummUhrLoeschen(){ if (_stummT){ clearTimeout(_stummT); _stummT = 0; } }
+  function stummUhrStellen(){
+    stummUhrLoeschen();
+    _stummT = setTimeout(function(){
+      _stummT = 0;
+      if (!S.isLoading) return;
+      var letzte = S.messages[S.messages.length - 1];
+      if (isPendingAssistant(letzte)){
+        letzte.status = 'stalled';
+        letzte.content = letzte.content || L().antwortHaengt;
+      } else {
+        /* Kein angefangener Assistenten-Eintrag: beim Senden steht nur die Frage des Nutzers in
+           der Liste, die Antwort kommt erst mit dem Setter. Also einen anlegen -- sonst endet der
+           Loader wortlos, und wortlos ist genau das, was hier nicht mehr passieren soll. */
+        S.messages.push({ id: 'stumm_' + Date.now(), role: 'assistant', status: 'stalled',
+                          content: L().antwortHaengt, created_at: new Date().toISOString() });
+      }
+      _pendingAnswer = false;
+      setLoading(false);
+      renderMessages();
+    }, STUMM_FRIST);
+  }
   var _laufT = 0, LAUF_FRIST = 100000;
   function laufUhrLoeschen(){ if (_laufT){ clearTimeout(_laufT); _laufT = 0; } }
   function laufUhrStellen(){
