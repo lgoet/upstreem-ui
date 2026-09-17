@@ -104,19 +104,19 @@
        6. GENAU EINE HANDLUNG am Ende. Eine Meldung ohne naechsten Schritt wird nicht gelesen. */
   var CHIPS = {
     en: [
-      { icon: "chartSpline", label: "Create a Daily Briefing",
+      { icon: "newspaper", label: "Create a Daily Briefing", kurz: "Daily Briefing",
         prompt: "Write my daily briefing: where visibility, average rank and sentiment stand and which way they are moving, what moved beyond the usual fluctuation, and what is new in prompts, sources or competitors. Use the last 7 days as the window. Say plainly if nothing meaningful changed, and end with the one thing worth doing today." },
-      { icon: "{COMPETITOR}", label: "Compare me with {COMPETITOR}", fallback: "Compare me with my top competitor",
+      { icon: "{COMPETITOR}", label: "Compare me with {COMPETITOR}", kurz: "vs. {COMPETITOR}", fallback: "Compare me with my top competitor",
         prompt: "Where do I stand against {COMPETITOR} right now? Visibility, average rank and sentiment side by side over {TIMEFRAME}, the topics and prompts where the gap holds across the whole period, and the sources that cite them but not me. Close with three actions that narrow the gap." },
-      { icon: "trendingUp", label: "New citations this week",
+      { icon: "trendingUp", label: "New citations this week", kurz: "New citations",
         prompt: "What is new in my citations over the last 7 days? New domains and URLs citing me or my competitors, sources that cite them but not me, and regular sources I have lost. Sort by how often each one comes up, not by when it first appeared, and name the one to go after first." }
     ],
     de: [
-      { icon: "chartSpline", label: "Daily Briefing erstellen",
+      { icon: "newspaper", label: "Daily Briefing erstellen", kurz: "Daily Briefing",
         prompt: "Schreib mein Daily Briefing: wo Sichtbarkeit, durchschnittlicher Rang und Sentiment stehen und in welche Richtung sie laufen, was über die übliche Schwankung hinausgeht und was neu ist bei Prompts, Quellen oder Wettbewerbern. Nimm die letzten 7 Tage als Zeitfenster. Sag klar, wenn sich nichts Wesentliches bewegt hat, und schließe mit der einen Sache, die heute lohnt." },
-      { icon: "{COMPETITOR}", label: "Mit {COMPETITOR} vergleichen", fallback: "Mit meinem stärksten Wettbewerber vergleichen",
+      { icon: "{COMPETITOR}", label: "Mit {COMPETITOR} vergleichen", kurz: "vs. {COMPETITOR}", fallback: "Mit meinem stärksten Wettbewerber vergleichen",
         prompt: "Wo stehe ich gerade gegenüber {COMPETITOR}? Sichtbarkeit, durchschnittlicher Rang und Sentiment nebeneinander über {TIMEFRAME}, die Themen und Prompts, bei denen der Abstand über den ganzen Zeitraum hält, und die Quellen, die sie zitieren, mich aber nicht. Schließe mit drei Maßnahmen, die den Abstand verkleinern." },
-      { icon: "trendingUp", label: "Neue Zitierungen diese Woche",
+      { icon: "trendingUp", label: "Neue Zitierungen diese Woche", kurz: "Neue Zitierungen",
         prompt: "Was ist bei meinen Zitierungen in den letzten 7 Tagen neu? Neue Domains und URLs, die mich oder meine Wettbewerber zitieren, Quellen, die sie zitieren und mich nicht, und regelmäßige Quellen, die ich verloren habe. Sortiere danach, wie oft eine Quelle vorkommt, nicht danach, wann sie zuerst auftauchte, und nenne die eine, die ich zuerst angehen sollte." }
     ]
   };
@@ -416,10 +416,19 @@
            keinen gibt -- ein Vorschlag, der ins Leere fuehrt, ist schlechter als keiner. */
         if (braucht && !wb) return;
         var label = String(c.label || "");
-        if (braucht) label = label.replace("{COMPETITOR}", wb.name);
+        var kurz  = String(c.kurz || c.label || "");
+        if (braucht){ label = label.replace("{COMPETITOR}", wb.name); kurz = kurz.replace("{COMPETITOR}", wb.name); }
+        /* ZWEI BESCHRIFTUNGEN, EINE ENTSCHEIDET DIE CSS (17.09. angefordert: "im Mobilemode die
+           Labels nicht truncaten, lieber kuerzere"). Nicht ueber einen Breitenmesser und ein
+           Neuzeichnen: der Umbruch soll beim Drehen des Geraets sofort stimmen, und ein
+           Neuzeichnen mitten in einer Bewegung waere teurer als ein zweites verstecktes Wort.
+           Dasselbe Muster wie .am-prev-label-full/-short in Mira. */
         teile.push('<button type="button" class="up-btn-sec upw-chip" data-upw-chip="' + i + '">' +
           chipZeichen(c, wb) +
-          '<span class="upw-chip-lbl">' + esc(label) + '</span></button>');
+          '<span class="upw-chip-lbl">' +
+            '<span class="upw-chip-lang">' + esc(label) + '</span>' +
+            (kurz && kurz !== label ? '<span class="upw-chip-kurz">' + esc(kurz) + '</span>' : '') +
+          '</span></button>');
         /* ERZWUNGENER ZEILENUMBRUCH NACH DEM DRITTEN (11.09. angefordert: "3 in row 1, 2 in
            row 2, bei default screen width"). Flexbox bricht sonst nach der VERFUEGBAREN BREITE
            um, nicht nach einer festen Anzahl -- bei fuenf unterschiedlich langen Beschriftungen

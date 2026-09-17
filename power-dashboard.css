@@ -155,6 +155,17 @@
    4px ist (nicht 8), steht an .upw-chips. */
 .upw-chip-break { flex-basis: 100%; width: 0; height: 0; }
 .upw-chip-lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Die kurze Beschriftung erscheint erst auf dem Telefon (17.09. angefordert). Beide stehen im
+   Markup, die CSS waehlt -- so stimmt es beim Drehen des Geraets sofort und ohne Neuzeichnen.
+   Traegt ein Chip keine kurze Fassung, steht nur die lange da und es aendert sich nichts. */
+.upw-chip-kurz { display: none; }
+.upw-root.is-vnarrow .upw-chip-lang { display: none; }
+.upw-root.is-vnarrow .upw-chip-kurz { display: inline; }
+/* UND DER DECKEL FAELLT, sobald es eine kurze Fassung gibt: die 48% waren dazu da, zwei Chips
+   nebeneinander zu bekommen, und sie haben dafuer abgeschnitten. Mit den kurzen Woertern passen
+   sie ohnehin -- gemessen bei 375px. Abgeschnitten wird damit nur noch, was auch kurz zu lang
+   ist, und das ist dann der Markenname im Vergleichs-Chip. */
+.upw-root.is-vnarrow .upw-chip { max-width: 100%; }
 
 /* ---------- Abschnitte ----------
    Die Ueberschrift ist jetzt .up-blockhead aus core (12.09. angefordert: "wie in der main
