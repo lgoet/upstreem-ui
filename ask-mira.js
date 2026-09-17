@@ -5063,12 +5063,25 @@
     /* Der Einbruch, der gemeldet wurde -- und er wird gemeldet, nicht repariert: eine kuerzere
        Liste ist ein voellig legitimer Vorgang (anderes Team, geloeschter Chat), und stillschweigend
        an der alten festzuhalten waere geraten. Was hier steht, ist der Messwert. */
-    if (vorher > 5 && S.previousChats.length <= 2 && window.console){
+    /* WANN IST EIN EINBRUCH EINER? Erst galt "von mehr als fuenf auf hoechstens zwei" -- zu eng.
+       Gemeldet am 17.09.: nach dem Weg Mira -> Dashboard -> Chip stand die Leiste wieder auf 38
+       Eintraegen, obwohl vorher laengst weiter geblaettert war. 90 auf 38 ist kein Randfall,
+       sondern derselbe Vorgang: irgendwo schickt ein Workflow die ERSTE Seite noch einmal, und
+       der Setter ersetzt damit alles Nachgeladene.
+       Jetzt meldet sich jede Halbierung. Und die entscheidende Zusatzangabe steht dabei: ob der
+       gerade offene Chat in der neuen Liste ueberhaupt vorkommt -- fehlt er, ist die Liste
+       veraltet, und genau dann bleiben Titel und Markierung aus. */
+    var weniger = vorher > 5 && S.previousChats.length < vorher / 2;
+    if (weniger && window.console){
+      var offenDrin = !S.activeChatId ||
+        S.previousChats.some(function(c){ return c && String(c.id) === String(S.activeChatId); });
       console.warn('[AskMira] die Chatliste ist gerade von ' + vorher + ' auf ' +
         S.previousChats.length + ' Eintraege geschrumpft (Quelle: ' +
         (_vonAutoBind ? 'das versteckte Element mira-chats-data' : 'ein direkter Aufruf von askMiraSetPreviousChats') +
-        '). Die Komponente kuerzt nie selbst -- so ist der Payload angekommen. ' +
-        'window.askMiraChatTrace() zeigt alle Schreibzugriffe dieser Sitzung.');
+        '). Die Komponente kuerzt nie selbst -- so ist der Payload angekommen.' +
+        (offenDrin ? '' : ' Der offene Chat "' + S.activeChatId + '" steht NICHT in der neuen Liste -- ' +
+          'sie ist also aelter als er. Darum bleiben Titel und Markierung aus.') +
+        ' window.askMiraChatTrace() zeigt alle Schreibzugriffe dieser Sitzung.');
     }
     /* Eine LEERE Liste beendet das Laden NICHT. Bubble ruft diesen Setter regelmaessig einmal mit
        einer leeren Liste, bevor der RPC zurueck ist -- und das machte aus dem Skelett augenblicklich
