@@ -11101,13 +11101,52 @@
      -- siehe die Begruendung an ticks.autoSkip in makeLine.
      Erste und letzte immer, dazwischen gleichmaessig verteilt. Die Rundung kann zwei Indizes auf
      denselben Platz legen; das ist harmlos, es stehen dann eben weniger als X_MAX_TICKS. */
-  var _xTickCache = { n: -1, set: null };
-  function xTickZeigen(i, n){
-    if (!n || n <= X_MAX_TICKS) return true;
-    if (_xTickCache.n !== n){
-      var set = {}, k = X_MAX_TICKS - 1;
-      for (var j = 0; j <= k; j++) set[Math.round(j * (n - 1) / k)] = 1;
-      _xTickCache = { n: n, set: set };
+  var _xTickCache = { schl: "", set: null };
+  /* WIE VIELE BESCHRIFTUNGEN PASSEN? (17.09.) Gemeldet: auf dem Telefon ueberschneiden sich im
+     Monatsmodus die Namen. Die Zahl der Ticks stand fest auf sieben -- sieben Monatsnamen brauchen
+     aber mehr Platz als ein Telefon hat.
+     Die Breite darf hier mitreden, und sie darf es aus einem bestimmten Grund: der alte Fehler
+     (das Chart rueckte beim Einblenden von rechts herein) kam NICHT daher, dass die Anzahl mit der
+     Breite ging, sondern daher, dass autoSkip die LETZTE Beschriftung wegliess. Erste und letzte
+     stehen hier immer; ausgeduennt wird nur die Mitte.
+     Die Luecke wird am ENGSTEN Paar gemessen, nicht am Durchschnitt. Die gleichmaessige Verteilung
+     rundet (sieben Ticks auf zwoelf Monate ergeben die Schritte 2,2,2,1,2,2), und dieses eine
+     kurze Paar ist das, was sich beruehrt -- bei 250px Achse standen dort gemessene 3px. Deshalb
+     wird der Satz gebaut, sein engster Abstand gemessen und die Anzahl so lange gesenkt, bis auch
+     das engste Paar MIN_LUECKE haelt. Die Breite einer Beschriftung wird geschaetzt statt gemessen
+     -- eine Messung je Bild waere ein erzwungenes Layout an der teuersten Stelle, und die zwei
+     Formate sind bekannt: "MM-DD" ist rund 34px breit, ein kurzer Monatsname rund 24px
+     (gemessen: 19.7px bei 12px Schrift, aufgerundet). */
+  var MIN_LUECKE = 8;
+  function xTickSatz(n, max){
+    var set = {}, pos = [], k = max - 1, j, p;
+    for (j = 0; j <= k; j++){
+      p = Math.round(j * (n - 1) / k);
+      if (!set[p]){ set[p] = 1; pos.push(p); }
+    }
+    var eng = n - 1;
+    for (j = 1; j < pos.length; j++) if (pos[j] - pos[j - 1] < eng) eng = pos[j] - pos[j - 1];
+    return { set: set, eng: eng };
+  }
+  function xTickZeigen(i, n, breite, gran){
+    if (!n || n <= 2) return true;
+    var schl = n + "/" + Math.round(breite || 0) + "/" + gran;
+    if (_xTickCache.schl !== schl){
+      var labW = (gran === "month") ? 24 : 34;
+      /* this.width ist beim Callback noch zu gross: Chart.js legt die Beschriftungen erst danach
+         und nimmt dann den Ueberstand der letzten von der Achse ab. Gemessen ist dieser Abzug die
+         halbe Beschriftungsbreite (Monat: 262 -> 250 bei labW 24; Tag: 162 -> 146 bei labW 34).
+         Ohne ihn rechnet die Ausduennung mit Platz, den es nicht gibt -- bei 200px Kasten im
+         Tagesmodus blieben so 7px Luecke stehen. */
+      var nutz = breite - labW / 2;
+      var proSchritt = (nutz > 0) ? (nutz / (n - 1)) : 0;
+      var max = Math.min(X_MAX_TICKS, n);
+      var satz = xTickSatz(n, max);
+      while (max > 2 && proSchritt > 0 && (satz.eng * proSchritt - labW) < MIN_LUECKE){
+        max--;
+        satz = xTickSatz(n, max);
+      }
+      _xTickCache = { schl: schl, set: satz.set };
     }
     return !!_xTickCache.set[i];
   }
@@ -12181,7 +12220,10 @@
                       Raster und die Fuehrungslinie haengen daran), messen aber keine Breite. */
                    ticks: { autoSkip:false, maxRotation:0, color: tc.muted,
                             callback: function(v, i){
-                              if (!xTickZeigen(i, labels.length)) return "";
+                              /* this ist die Skala -- ihre Breite ist der Platz, den die
+                                 Beschriftungen teilen muessen. */
+                              var gr = (cfg.gran && cfg.gran()) || "day";
+                              if (!xTickZeigen(i, labels.length, this && this.width, gr)) return "";
                               /* dayKey ZUERST. Der Rohwert ist nicht immer ISO: ein Bubble-Ausdruck
                                  schickt auch "Aug 6, 2026 12:00 am", und slice(5) machte daraus
                                  "6, 2026 12:00 am" -- genau so stand es in der Achse. dayKey bringt
@@ -12191,7 +12233,16 @@
                               var iso = lab.match(/^(\d{4})-(\d{2})-(\d{2})$/);
                               if (!iso) return String(labels[i] || "");
                               if (cfg.gran && cfg.gran() === "month"){
-                                return MONTHS_LONG[parseInt(iso[2],10) - 1] || lab;
+                                /* DER KURZE NAME AN DER ACHSE (17.09.). "September" ist bei 11px
+                                   rund 70px breit -- sieben davon brauchen 490px plus Luecken, und
+                                   auf dem Telefon hat die Achse keine 300. Gemeldet als
+                                   "einige Monatsnamen ueberschneiden sich".
+                                   MONTHS ist die dreibuchstabige Reihe, die derselbe Katalog schon
+                                   uebersetzt (Mar -> Maer, Oct -> Okt, Dec -> Dez) und die in
+                                   jedem anderen Chart dieser App an der Achse steht. Der TOOLTIP
+                                   behaelt den langen Namen: dort ist Platz, und dort ist der Monat
+                                   die Aussage. */
+                                return t(MONTHS[parseInt(iso[2],10) - 1]) || lab;
                               }
                               return lab.slice(5);   // day / week → "MM-DD"
                             } } },
