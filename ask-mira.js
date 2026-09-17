@@ -3314,9 +3314,20 @@
        Ganz oben, weil er der juengste ist. */
     if (S.activeChatId){
       var offenId = String(S.activeChatId);
-      var schonDrin = recents.some(function(c){ return c && String(c.id) === offenId; }) ||
-                      (S.previousChats || []).some(function(c){ return c && String(c.id) === offenId; });
-      if (!schonDrin) recents.unshift({ id: S.activeChatId, title: '', _lokal: true });
+      /* NACH VORNE, nicht nur "irgendwo dabei" (17.09. gemessen): die Leiste zeigt die ersten 15
+         Zeilen. Kam eine Liste herein, die den offenen Chat weiter hinten einsortiert, stand er
+         auf Platz 21 -- also ausserhalb des Fensters, und damit wieder unsichtbar und unmarkiert.
+         Er gehoert ohnehin nach oben: der Chat, in dem jemand gerade sitzt, ist der juengste. */
+      var idx = -1;
+      for (var q = 0; q < recents.length; q++){
+        if (recents[q] && String(recents[q].id) === offenId){ idx = q; break; }
+      }
+      if (idx > 0) recents.unshift(recents.splice(idx, 1)[0]);
+      else if (idx < 0){
+        /* Auch nicht in einem Projekt? Dann kennt ihn die Liste gar nicht -- eigene Zeile. */
+        var imProjekt = (S.previousChats || []).some(function(c){ return c && String(c.id) === offenId; });
+        if (!imProjekt) recents.unshift({ id: S.activeChatId, title: '', _lokal: true });
+      }
     }
     var recentsAlle = sortPinnedFirst(recents);
     if (S.prevFenster < LISTE_SCHRITT) S.prevFenster = LISTE_SCHRITT;
@@ -5111,6 +5122,20 @@
         (_vonAutoBind ? 'das versteckte Element mira-chats-data' : 'ein direkter Aufruf von askMiraSetPreviousChats') +
         '.) window.askMiraChatTrace() zeigt alle Schreibzugriffe.');
     } else {
+      /* DER OFFENE CHAT UEBERLEBT AUCH EINE VOLLSTAENDIGE ERSETZUNG (17.09. gemessen). Eine
+         veraltete Liste, die ihn nicht kennt, nahm sonst genau den Eintrag wieder mit, den wir
+         eben erst hatten -- samt Titel: Kopfzeile zurueck ins Skelett, Zeile wieder "Untitled
+         chat". Wir wissen aber sicher, dass es diesen Chat gibt, der Nutzer steht darin.
+         Nur DIESER eine Eintrag wird herueberegrettet, nicht die halbe alte Liste -- ein
+         Teamwechsel raeumt also weiter auf, nur die eine offene Zeile bleibt. */
+      if (S.activeChatId){
+        var offen = String(S.activeChatId);
+        var kommtVor = einListe.some(function(c){ return c && String(c.id) === offen; });
+        if (!kommtVor){
+          var alterEintrag = altListe.filter(function(c){ return c && String(c.id) === offen; })[0];
+          if (alterEintrag) einListe = [alterEintrag].concat(einListe);
+        }
+      }
       S.previousChats = einListe;
     }
     chatSpur(_vonAutoBind ? 'mira-chats-data' : 'setPreviousChats', S.previousChats.length,
@@ -5327,7 +5352,14 @@
       try { new MutationObserver(apply).observe(el, { childList: true, characterData: true, subtree: true }); } catch(e){}
     });
   }
-  window.askMiraSetActiveChat = function(chatId, fireEvent){
+  /* DRITTES, FREIWILLIGES ARGUMENT: der TITEL (17.09.). Bis hierher konnte die Kopfzeile ihn nur
+     aus der Chatliste holen -- und bei einem gerade erst angelegten Chat steht er dort noch nicht
+     (mehrfach gemeldet: "oben bleibt es leer"). Der Workflow, der den Chat oeffnet, KENNT ihn
+     aber oft schon. Wer ihn mitgibt, sieht ihn sofort:
+         askMiraSetActiveChat(id, false, "Daily Briefing 17.09.")
+     Wer ihn weglaesst, bekommt genau das bisherige Verhalten. Der Titel aus der Liste gewinnt
+     spaeter, sobald sie den Chat kennt -- hier wird nur die Luecke bis dahin gefuellt. */
+  window.askMiraSetActiveChat = function(chatId, fireEvent, titel){
     /* EINE LEERE KENNUNG WIRFT DIE AUSWAHL NICHT MEHR WEG (17.09. gemeldet: "Antwort kommt, dann
        geht der Titel oben wieder in den Ladezustand und der Chat ist in der Leiste nicht mehr
        markiert -- Konsole sagt nix").
@@ -5364,6 +5396,18 @@
     }
     S.activeChatId = chatId;
     var _c = chatId ? findChat(chatId) : null;
+    /* Ein mitgegebener Titel wird in die Liste geschrieben: dann finden ihn Kopfzeile UND Leiste
+       ueber denselben Weg wie jeden anderen, und es gibt keine zweite Quelle, die auseinanderlaufen
+       kann. Einen vorhandenen Titel ueberschreibt er nur, wenn er selbst etwas sagt. */
+    var _t = (titel == null) ? '' : String(titel).trim();
+    if (chatId && _t){
+      if (_c) { if (!_c.title) _c.title = _t; }
+      else {
+        S.previousChats = (S.previousChats || []).slice();
+        S.previousChats.unshift({ id: chatId, title: _t });
+        _c = findChat(chatId);
+      }
+    }
     if (_c && _c.title) S.titlePending = false;   // opened a chat that already has a title -> show it (no skeleton)
     renderPrevious();
     if (window.__amRenderChatTitlebar) window.__amRenderChatTitlebar();
