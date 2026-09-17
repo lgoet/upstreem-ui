@@ -45,7 +45,6 @@
 
   try { if (window.askMiraSetActiveChat) window.askMiraSetActiveChat(CHAT_ID, false); } catch (e) {}
   try { if (window.askMiraSetMessages)   window.askMiraSetMessages(ROH); } catch (e) {}
-  try { if (window.askMiraSetExtras)     window.askMiraSetExtras(ROH); } catch (e) {}
   try { if (window.askMiraTypeLastAnswer) window.askMiraTypeLastAnswer(); } catch (e) {}
   try { if (window.askMiraSetLoading)    window.askMiraSetLoading("no"); } catch (e) {}
 })();
