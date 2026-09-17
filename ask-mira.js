@@ -3167,13 +3167,53 @@
     var h = elPrevList.clientHeight;
     return h > 0 && elPrevList.scrollHeight > h + 8;
   }
+  /* DRITTE BEDINGUNG: es muss nach UNTEN gegangen sein (17.09.). Gemeldet: beim Wechsel vom
+     Power Dashboard zu Mira feuerte die Meldung zwei bis drei Sekunden spaeter, ohne dass jemand
+     gescrollt hat. Der Grund ist kein Klick und kein Timer, sondern das Neuvermessen: die Leiste
+     wird beim Ansichtswechsel neu ausgelegt, dabei aendert sich ihre Hoehe, der Browser KAPPT
+     scrollTop auf den neuen Hoechstwert -- und schickt dafuer ein echtes scroll-Ereignis. In
+     genau diesem Moment steht die Liste rechnerisch am Ende (mehr geht ja nicht), und die zwei
+     Bedingungen darueber waren erfuellt.
+     Eine Kappung bewegt scrollTop nach OBEN, ein Nutzer, der weiterlesen will, nach UNTEN. Also
+     wird die Richtung gemerkt. Das ist zugleich die woertliche Uebersetzung der Anforderung:
+     "erst wenn man unten ist und da maessig weiterscrollt". */
+  var _letzterStand = 0, _letzteGeo = "";
+  function _geo(){ return elPrevList.clientHeight + "x" + elPrevList.scrollHeight; }
+  /* Den Nullpunkt setzen, ohne zu pruefen: nach dem Zeichnen und beim Aufklappen. Sonst gilt die
+     erste echte Bewegung als "Geometrie hat sich geaendert" und wird verschluckt. */
+  function _standMerken(){ _letzterStand = elPrevList.scrollTop; _letzteGeo = _geo(); }
   function _pruefeNachladen(){
+    var stand = elPrevList.scrollTop, geo = _geo();
+    var standVorher = _letzterStand, geoVorher = _letzteGeo;
+    _letzterStand = stand; _letzteGeo = geo;
+    /* NEU VERMESSEN IST KEIN SCROLLEN. Beim Wechsel vom Power Dashboard zu Mira wird die Leiste
+       neu ausgelegt; aendert sich dabei ihre Hoehe, KAPPT der Browser scrollTop auf den neuen
+       Hoechstwert und schickt dafuer ein echtes scroll-Ereignis. Rechnerisch steht die Liste in
+       dem Moment am Ende -- und die Meldung ging raus, ohne dass jemand gescrollt hatte (17.09.
+       gemeldet: "nach 2-3s ohne Grund, hab nicht gescrollt"). Ein Nutzer-Scrollen aendert die
+       Geometrie NICHT; genau daran sind die beiden auseinanderzuhalten.
+       Im Prueftand gemessen: mit der Richtungspruefung allein feuerte ein Schrumpfen der Leiste
+       weiter (der Hoechstwert waechst dabei, scrollTop steigt also). */
+    if (geo !== geoVorher) return;
+    /* Und es muss nach UNTEN gegangen sein -- die woertliche Uebersetzung von "erst wenn man
+       unten ist und da maessig weiterscrollt". */
+    if (stand <= standVorher + 1) return;
     if (!_listeScrollbar()) return;
-    if (elPrevList.scrollTop + elPrevList.clientHeight < elPrevList.scrollHeight - 32) return;
+    if (stand + elPrevList.clientHeight < elPrevList.scrollHeight - 32) return;
     if (S.prevFenster < _offeneChats()){ S.prevFenster += LISTE_SCHRITT; renderPrevious(); return; }
     if (_mehrGefragt || _mehrEnde) return;
     _mehrGefragt = true;
-    amFire('more_chats', { have: (S.previousChats || []).length, step: LISTE_SCHRITT }, 'more-chats');
+    /* DREI ZAHLEN, UND KEINE DAVON IST EIN OFFSET (17.09. praezisiert). Gemeldet wurde eine
+       Luecke: erster Aufruf p_limit 30 / p_offset 0, der naechste p_offset 38 -- acht Chats
+       uebersprungen. Der Grund ist die Bedeutung von have: es ist alles, was die Leiste HAELT,
+       Projekt-Chats eingeschlossen (30 Sitzungen + 8 aus Projekten = 38). Womit der RPC blaettert,
+       weiss nur der RPC.
+       Deshalb kommt have_recents dazu -- die Zahl der Chats OHNE Projekt, also die Laenge genau
+       der Liste, die hier nachlaedt. Und deshalb steht in der Uebergabe: blaettere mit dem
+       next_offset aus der vorigen Antwort, nicht mit einer Zahl von hier. Der RPC liefert es
+       bereits mit. */
+    amFire('more_chats', { have: (S.previousChats || []).length,
+                           have_recents: _offeneChats(), step: LISTE_SCHRITT }, 'more-chats');
     renderPrevious();                       /* jetzt die Skelettzeilen zeigen, nicht erst spaeter */
     /* Eine Antwort, die nie kommt, darf das Nachladen nicht fuer immer stilllegen. */
     _mehrUhr = setTimeout(function(){ _mehrGefragt = false; renderPrevious(); }, 8000);
@@ -3194,6 +3234,7 @@
   var _fuellLauf = 0;
   function _fuehlerBinden(){
     setTimeout(function(){
+      _standMerken();
       if (!elPrevList.clientHeight) return;                 /* Leiste zu oder noch ohne Hoehe */
       if (_listeScrollbar()){ _fuellLauf = 0; return; }
       if (S.prevFenster >= _offeneChats()){ _fuellLauf = 0; return; }
@@ -5649,7 +5690,7 @@
   }
   function seiteMerken(offen){ try { localStorage.setItem(SIDE_KEY, offen ? '1' : '0'); } catch(e){} }
 
-  function openPrev(){ renderPrevious(); root.classList.add('prev-open'); elPrevPanel.setAttribute('aria-hidden','false'); elPrevScrim.hidden = false; if (elPrevList) elPrevList.scrollTop = 0; seiteMerken(true); }
+  function openPrev(){ renderPrevious(); root.classList.add('prev-open'); elPrevPanel.setAttribute('aria-hidden','false'); elPrevScrim.hidden = false; if (elPrevList) elPrevList.scrollTop = 0; _standMerken(); seiteMerken(true); }
   function closePrev(){ root.classList.remove('prev-open'); elPrevPanel.setAttribute('aria-hidden','true'); if (typeof openHlPanel === 'function') openHlPanel(false); seiteMerken(false); }
   function togglePrev(){ if (root.classList.contains('prev-open')) closePrev(); else openPrev(); }
   /* Einen Chat oeffnen schliesst die Leiste NICHT mehr. Sie ist jetzt Teil des Layouts -- sie
@@ -5817,10 +5858,14 @@
      Nebenwirkung, die dafuer spricht: an anderer Stelle wird titleEl.textContent neu gesetzt
      (Umbenennen) -- ein dauerhafter Span waere dabei stillschweigend verschwunden. */
   var LAUF_WARTE = 700;        /* nicht jeder Zeiger, der ueber die Liste streicht, soll etwas bewegen */
-  var LAUF_PX_PRO_S = 85;      /* lesbares Tempo, unabhaengig von der Laenge: 216px Ueberhang
-                                  brauchen damit 2,5s. 55 waren mit 3,9s zu langsam, 120 mit
-                                  1,8s zu schnell. */
-  var LAUF_MIN_MS = 480;
+  var LAUF_PX_PRO_S = 65;      /* lesbares Tempo, unabhaengig von der Laenge: 216px Ueberhang
+                                  brauchen damit 3,3s. 55 waren mit 3,9s zu langsam, 120 mit
+                                  1,8s zu schnell, 85 waren es ab dem 07.09.
+                                  17.09.: 30 PROZENT LANGSAMER angefordert. Das ist eine Angabe
+                                  ueber die ZEIT, nicht ueber das Tempo -- also 85 / 1.3 = 65,
+                                  nicht 85 * 0.7. Aus 2,5s werden damit genau 3,25s. */
+  var LAUF_MIN_MS = 624;       /* dieselben 30 Prozent auf die Untergrenze (480 * 1.3), sonst
+                                  liefe ein kurzer Ueberhang weiter im alten Tempo. */
   var _laufUhr = null, _laufEl = null;
   function laufStop(){
     if (_laufUhr){ clearTimeout(_laufUhr); _laufUhr = null; }
