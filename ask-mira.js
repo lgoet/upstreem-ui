@@ -5289,9 +5289,32 @@
     if (_mehrUhr){ clearTimeout(_mehrUhr); _mehrUhr = null; }
     _mehrGefragt = false;
     if (!neu.length){ _mehrEnde = true; renderPrevious(); return; }
+    /* BEKANNTE EINTRAEGE WERDEN AUFGEFRISCHT, nicht nur uebersprungen (17.09.). Anhaengen hiess
+       bisher ausschliesslich "was ich nicht kenne, kommt dazu" -- ein Chat, den die Leiste schon
+       ohne Titel hat, behielt seinen leeren Titel, auch wenn der Aufruf ihn mitbrachte. Genau das
+       ist aber der kuerzeste Weg fuer einen frisch benannten Chat:
+           askMiraAppendPreviousChats(`[{ "id": "...", "title": "..." }]`)
+       Ein Feld wird nur uebernommen, wenn es etwas sagt -- ein leerer Titel loescht keinen
+       vorhandenen. */
     var da = {};
-    (S.previousChats || []).forEach(function(c){ if (c && c.id != null) da[String(c.id)] = true; });
+    (S.previousChats || []).forEach(function(c){ if (c && c.id != null) da[String(c.id)] = c; });
+    var aufgefrischt = 0;
+    neu.forEach(function(n){
+      if (!n || n.id == null) return;
+      var alt = da[String(n.id)];
+      if (!alt) return;
+      ['title', 'updated_at', 'project_id', 'project_title', 'status', 'is_pinned'].forEach(function(k){
+        if (n[k] != null && n[k] !== '' && n[k] !== alt[k]){ alt[k] = n[k]; aufgefrischt++; }
+      });
+    });
     var dazu = neu.filter(function(c){ return c && c.id != null && !da[String(c.id)]; });
+    if (aufgefrischt && !dazu.length){
+      /* Nichts Neues, aber etwas geaendert -- das ist KEIN Leerlauf und kein Ende. */
+      _leerlauf = 0;
+      renderPrevious();
+      titelNachziehen();
+      return 0;
+    }
     /* EINE SEITE VOLLER BEKANNTER CHATS IST NICHT DASSELBE WIE DAS ENDE (17.09. gemeldet: "laedt
        beim Scrollen nur EINMAL nach, danach ist Schluss").
        Vorher hat genau das sofort _mehrEnde gesetzt, und ab da fragte die Leiste nie wieder --
