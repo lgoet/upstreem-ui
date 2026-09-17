@@ -273,6 +273,36 @@
 .ubo-root.is-narrow .ubo-mx-wrap { grid-column: 1; }
 .ubo-root.is-narrow .ubo-mx-legend-x { grid-column: 1; }
 
+/* MOBILEMODUS: die Kopfzeile bricht in ZWEI Reihen -- Ueberschrift oben, Werkzeuge darunter.
+   Gemeldet am 17.09.: im Mobilemodus ist an Werkzeugen immer alles sichtbar und die Zeile viel
+   zu voll. Gemessen bei 390px Buehne: der Chartkopf trug 323px Werkzeuge, die Ueberschrift fiel
+   daneben auf 29px zusammen und stand als "Visibilit..." da.
+   ubo-narrow-page ist die SEITENbreite unter 500px, also wirklich das Telefon. is-narrow waere
+   die falsche Grenze: die greift in der App schon bei rund 1050px Fensterbreite, weil links die
+   Leiste steht, und dort ist die einzeilige Kopfzeile unveraendert richtig -- genau der Umbruch,
+   der weiter oben aus diesem Grund ausgebaut wurde.
+   flex-basis 100% statt "wrap und hoffen": der Umbruch haengt dann nicht an der gemessenen
+   Breite der Werkzeuge, die sich mit jedem Schalter aendert. */
+.ubo-root.ubo-narrow-page .ubo-head { flex-wrap: wrap; }
+/* Der direkte Nachfahre, nicht .ubo-heading ueberall: dieselbe Klasse sitzt ein zweites Mal IN
+   .ubo-heading-table neben Punkt und Anzahl, und 100% Basis haette die beiden herausgedraengt. */
+.ubo-root.ubo-narrow-page .ubo-head > .ubo-heading,
+.ubo-root.ubo-narrow-page .ubo-head > .ubo-heading-table { flex: 1 0 100%; min-width: 0; }
+/* Die Werkzeugreihe darf SCHRUMPFEN und UMBRECHEN, statt aus dem Kasten zu haengen.
+   In der Grundform steht dort flex: 0 0 auto -- damit behielt die Leiste auch bei 320px ihre
+   Inhaltsbreite: gemessen 387px bei festgestellter Tabellenleiste (67px ueber die Kante), und im
+   Landscape-Modus braucht der Chartkopf mit Achsenschalter, Chartform, Fader und Auge noch mehr.
+   Ein Vorfahre mit overflow-x macht daraus einen waagerechten Balken, den niemand mit dieser
+   Leiste in Verbindung bringt. Die 100%-Basis gibt ihr ausserdem ihre eigene Reihe, das
+   Schrumpfen erlaubt den Umbruch, und min-width: 0 hebt die Inhaltsbreite als Untergrenze auf.
+   Rechtsbuendig, damit die zweite Reihe unter der ersten endet und nicht daneben. */
+.ubo-root.ubo-narrow-page .ubo-head-tools { flex: 1 1 100%; min-width: 0; flex-wrap: wrap; justify-content: flex-end; }
+/* NUR im aufgeklappten Zustand. Eingeklappt ist die Spalte der Gruppe 0 breit -- ein Umbruch
+   setzt dort jedes Werkzeug auf eine eigene Zeile, und die Leiste wurde 144px hoch statt 32
+   (gemessen). Waagerecht kappt der overflow der Gruppe das weg, in der Hoehe nicht. */
+.ubo-root.ubo-narrow-page.is-tools-open .up-toolgroup-in,
+.ubo-root.ubo-narrow-page.is-tools-peek .up-toolgroup-in { flex-wrap: wrap; justify-content: flex-end; }
+
 /* count on the tab you're NOT on (see syncStatusSwitch) */
 .ubo-seg-n { font-size: 11px; font-weight: 600; color: var(--vc-third); font-variant-numeric: tabular-nums; }
 /* Seit syncStatusSwitch die Zahlen leert, steht hier ein leerer Span -- und ein leeres Kind

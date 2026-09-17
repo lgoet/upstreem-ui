@@ -1650,6 +1650,12 @@
        Ausloeser. In der Tabelle darunter stehen dagegen genau die drei Werkzeuge, um die es geht:
        Sortierung, Suche, Tabelleneinstellungen.
 
+       minWidth: 0 seit dem 17.09. Die Vorgabe des Kits ist 620, darunter ist es AUS -- und damit
+       stand im Mobilemodus alles offen da, genau dort, wo am wenigsten Platz ist. Der Gedanke
+       hinter der Vorgabe war, eine schmale Kopfzeile sei ohnehin schon zusammengestrichen; fuer
+       diese hier gilt das nicht, sie traegt bei 390px 258px Werkzeuge. Oberhalb von 620px
+       aendert sich nichts.
+
        Die Leiste wird ueber die Tabelleneinstellungen gefunden und nicht als
        querySelectorAll(".ubo-head-tools")[1]: es gibt zwei Leisten mit derselben Klasse, und ein
        Index waere von der Reihenfolge im Markup abhaengig -- die naechste Umstellung dort haette
@@ -1665,6 +1671,7 @@
       root: root, tools: uboTabTools,
       filterActive: function(){ return !!(state.query && String(state.query).trim()); },
       prefKey: UC.prefKey ? UC.prefKey("ubo_tools__" + instanceId) : null,
+      minWidth: 0,
       tip: "Sort, search and table settings"
     }) : null;
 

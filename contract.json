@@ -1435,6 +1435,7 @@
   "ubo-mxtip-rows",
   "ubo-mxtip-sep",
   "ubo-mxtip-val",
+  "ubo-narrow-page",
   "ubo-panel-body",
   "ubo-root",
   "ubo-row-edit",
@@ -3089,7 +3090,7 @@
   "globals": 187,
   "payloadkeys": 101,
   "dataattrs": 253,
-  "klassen": 2203,
+  "klassen": 2204,
   "keyframes": 66
  }
 }
