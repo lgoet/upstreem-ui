@@ -5107,6 +5107,27 @@
        Verlust der halben Liste. */
     var altListe = S.previousChats || [];
     var einListe = Array.isArray(chats) ? chats.slice() : [];
+    /* ---- EINE LEERE LISTE LOESCHT NICHTS MEHR (17.09.) --------------------------------------
+       In seiner Spur steht es zweimal hintereinander:
+           rein 0, danach 0      rein 0, danach 0
+       Ein Workflow schickt eine leere Liste, und die Leiste war leer. Der Kommentar weiter unten
+       sagt seit dem 03.09., dass Bubble diesen Setter regelmaessig einmal LEER ruft, bevor der
+       RPC zurueck ist -- daraufhin wurde der Ladezustand geschont, die Liste aber trotzdem
+       ausgeraeumt. Genau das ist "die Sidebar ist wieder kaputt".
+       Wer nichts zu sagen hat, sagt nichts: haben wir schon Chats, bleiben sie stehen.
+       Der Preis, und er ist klein: loescht jemand ANDERSWO seinen letzten Chat, steht die Leiste
+       eine Runde laenger voll. Das eigene Loeschen raeumt die Zeile ohnehin selbst weg. */
+    if (!einListe.length && altListe.length){
+      if (window.console) console.warn('[AskMira] askMiraSetPreviousChats kam mit einer LEEREN ' +
+        'Liste, waehrend die Leiste ' + altListe.length + ' Chats haelt -- sie bleiben stehen. ' +
+        'Im Workflow ist das Feld leer geblieben (der RPC war noch nicht zurueck, oder der ' +
+        'Schritt liest das falsche Ergebnis). window.askMiraChatTrace() zeigt alle Schreibzugriffe.');
+      chatSpur(_vonAutoBind ? 'mira-chats-data (leer, ignoriert)' : 'setPreviousChats (leer, ignoriert)',
+               altListe.length, altListe.length ? altListe[0].title : '', 0, '',
+               !S.activeChatId ? '(kein Chat offen)' : 'unveraendert');
+      renderPrevious();
+      return;
+    }
     var hatten = {};
     altListe.forEach(function(c){ if (c && c.id != null) hatten[String(c.id)] = true; });
     /* "Kennen wir das meiste?" und nicht "kennen wir alles": die erste Seite enthaelt nach einer
