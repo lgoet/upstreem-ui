@@ -5160,7 +5160,8 @@
         (_vonAutoBind ? 'das versteckte Element mira-chats-data' : 'ein direkter Aufruf von askMiraSetPreviousChats') +
         '). Die Komponente kuerzt nie selbst -- so ist der Payload angekommen.' +
         (offenDrin ? '' : ' Der offene Chat "' + S.activeChatId + '" steht NICHT in der neuen Liste -- ' +
-          'sie ist also aelter als er. Darum bleiben Titel und Markierung aus.') +
+          'sie ist also aelter als er. Seine Zeile bleibt trotzdem oben stehen; einen TITEL hat er ' +
+          'aber nirgendwo her. Wer ihn kennt, gibt ihn mit: askMiraSetActiveChat(id, false, titel).') +
         ' window.askMiraChatTrace() zeigt alle Schreibzugriffe dieser Sitzung.');
     }
     /* Eine LEERE Liste beendet das Laden NICHT. Bubble ruft diesen Setter regelmaessig einmal mit
