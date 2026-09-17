@@ -16,8 +16,8 @@
    Auf dem Dashboard selbst passiert nichts mit Mira-Antworten: jeder Einstieg wechselt in Miras
    Ansicht, und die Antwort kommt dort.
 
-   DATEN: bis ein Setter kommt, stehen Beispieldaten da (data-demo, siehe die Vorlage) -- so
-   verlangt ("erstmal Dummy-Daten"). Die Felder sind DIESELBEN, die brands-overview und
+   DATEN: bis ein Setter kommt, steht das SKELETT -- nie erfundene Zahlen (17.09.).
+   Die Felder sind DIESELBEN, die brands-overview und
    topcitations-dashboard lesen (plus totalCountDomain/totalCountUrl, ebenfalls wortgleich zu
    topcitations-dashboard), damit dieselben RPCs beide fuellen koennen.
 
@@ -48,60 +48,19 @@
 
   var UC, mount;
 
-  /* ---------- Beispieldaten ----------
-     Die Werte aus dem Entwurf, damit das Dashboard vor dem Anschluss so aussieht wie gemeint.
-     Die Form ist die der echten Setter -- wer den Anschluss baut, sieht hier, was ankommen muss. */
-  var DEMO = {
-    /* GENAU die Felder, die renderKpis() liest -- nicht mehr. Die Verlaufsreihen, der
-       Spitzenreiter und die vier Zaehler der zweiten Fusszeilen-Haelfte sind am 13.09.
-       mitgegangen, als ihre Anzeigen gestrichen wurden. Beispieldaten, die mehr zeigen als die
-       Komponente liest, sind eine Einladung, den RPC groesser zu bauen als noetig. */
-    overview: {
-      range_label: "Last 30 days",
-      visibility_pct: 3.0, visibility_delta_pct: 1.0,
-      visibility_position: 2, brand_count: 8,
-      avg_rank: 3.3, avg_rank_delta: -0.9, best_rank: 2.6,
-      sentiment: 76, sentiment_delta: 1.6, field_avg_sentiment: 74
-    },
-    /* avg_rank_delta und sentiment_delta sind seit dem 12.09. dabei: "Competitive field" zeigt
-       den Trend jetzt in ALLEN drei Wertspalten, genau wie die maximierte Tabelle im Visibility
-       Chart, deren Zeile hier das Vorbild ist. Beim Rang ist WENIGER besser -- die Richtung dreht
-       UC.trendChip ueber inverted, nicht das Vorzeichen der Daten. */
-    brands: [
-      { company_id: "d1", position: 1, name: "Anfragenfluss", logo_url: "", visibility_pct: 5.2, visibility_delta_pct: 4.0, avg_rank: 2.6, avg_rank_delta: -0.4, sentiment: 75, sentiment_delta: 2.1 },
-      { company_id: "d2", position: 2, name: "LeeUp Media", logo_url: "", visibility_pct: 3.0, visibility_delta_pct: 1.0, avg_rank: 3.3, avg_rank_delta: -0.9, sentiment: 76, sentiment_delta: 1.6, is_own: true },
-      { company_id: "d3", position: 3, name: "Candidate Flow", logo_url: "", visibility_pct: 2.1, visibility_delta_pct: -1.0, avg_rank: 3.5, avg_rank_delta: 0.3, sentiment: 71, sentiment_delta: -1.2 },
-      { company_id: "d4", position: 4, name: "Andreas May", logo_url: "", visibility_pct: 1.2, visibility_delta_pct: 0, avg_rank: 3.2, avg_rank_delta: 0, sentiment: 74, sentiment_delta: 0 },
-      { company_id: "d5", position: 5, name: "Leadmagneten", logo_url: "", visibility_pct: 0.6, visibility_delta_pct: 0, avg_rank: 3.7, avg_rank_delta: 0.2, sentiment: 71, sentiment_delta: 0.4 },
-      { company_id: "d6", position: 6, name: "A&M Beratung", logo_url: "", visibility_pct: 0.4, visibility_delta_pct: 0, avg_rank: 4.0, avg_rank_delta: -0.1, sentiment: 72, sentiment_delta: -0.6 },
-      { company_id: "d7", position: 7, name: "Matthias Niehaus", logo_url: "", visibility_pct: 0.3, visibility_delta_pct: 0, avg_rank: 3.1, avg_rank_delta: 0.5, sentiment: 81, sentiment_delta: 3.0 }
-    ],
-    /* used_total wie in topcitations-dashboard: die Spalte "Used" gehoert zu dessen Zeile, und
-       die ist seit dem 12.09. das Vorbild fuer "Trending Citations" hier. */
-    top_domains: [
-      { domain: "reddit.com", favicon: "", citation_type: "UGC_Community", share_pct: 6.8, share_delta_pct: 9.1, used_total: 1840 },
-      { domain: "trustpilot.com", favicon: "", citation_type: "Brand_Platform", share_pct: 4.1, share_delta_pct: 5.2, used_total: 1120 },
-      { domain: "handwerk.com", favicon: "", citation_type: "Editorial", share_pct: 7.3, share_delta_pct: 4.0, used_total: 1990 },
-      { domain: "anfragenfluss.de", favicon: "", citation_type: "Competition", share_pct: 3.9, share_delta_pct: 3.4, used_total: 1060 },
-      { domain: "ihk.de", favicon: "", citation_type: "Institutional", share_pct: 2.2, share_delta_pct: 1.8, used_total: 600 },
-      { domain: "youtube.com", favicon: "", citation_type: "UGC_Community", share_pct: 21.0, share_delta_pct: -6.0, used_total: 5720 },
-      { domain: "handwerk-digitalisieren.de", favicon: "", citation_type: "Brand_Platform", share_pct: 20.0, share_delta_pct: -13.0, used_total: 5450 }
-    ],
-    top_urls: [
-      { url: "https://www.reddit.com/r/handwerk/leads", title: "Wie kommt ihr an Anfragen?", favicon: "", url_type: "forum", global_share_pct: 3.1, share_delta_pct: 6.2, used_total: 840 },
-      { url: "https://www.trustpilot.com/review/anfragenfluss.de", title: "Anfragenfluss Bewertungen", favicon: "", url_type: "review", global_share_pct: 2.4, share_delta_pct: 3.0, used_total: 650 },
-      { url: "https://www.handwerk.com/leadgenerierung", title: "Leadgenerierung im Handwerk", favicon: "", url_type: "article", global_share_pct: 2.2, share_delta_pct: 2.1, used_total: 600 },
-      { url: "https://anfragenfluss.de/", title: "Anfragenfluss – Mehr Anfragen", favicon: "", url_type: "homepage", global_share_pct: 1.9, share_delta_pct: 1.4, used_total: 520 },
-      { url: "https://www.ihk.de/digitalisierung", title: "Digitalisierung im Mittelstand", favicon: "", url_type: "article", global_share_pct: 1.2, share_delta_pct: 0.8, used_total: 330 }
-    ],
-    /* Derselbe Zeitraum wie in "Overview" (12.09. korrigiert: "die unteren Tabellen sind
-       natuerlich auch 30 days, nicht 7 days"). */
-    citations_label: "Last 30 days",
-    /* Gesamtzahl der Domains bzw. URLs, die im Zeitraum zitiert haben -- NICHT die Laenge von
-       top_domains/top_urls (die zeigen nur die "top" 7). Fuer die Kopfzeile der Tabelle
-       ("32.5k citations · 7 days"). */
-    totalCountDomain: 128, totalCountUrl: 32500
-  };
+  /* ---------- KEINE BEISPIELDATEN MEHR (17.09.) ----------
+     Hier standen die Werte aus dem Entwurf, damit das Dashboard vor dem Anschluss so aussieht wie
+     gemeint -- und data-demo="no" schaltete sie ab. Beides ist weg, weil die Vorgabe ANDERSHERUM
+     falsch war: ohne Attribut galt demo als EIN, und ein Element, an dem das Attribut fehlt oder
+     verloren geht, zeigt erfundene Zahlen.
+     Genau so gemeldet (17.09.): Seite gestern geladen, heute den Rechner aufgeklappt, auf Power
+     umgeschaltet -- ein bis zwei Sekunden lang standen Beispieldaten da, dann kamen die echten.
+     Zahlen, die aussehen wie Messwerte, aber keine sind, sind schlimmer als ein Skelett: man kann
+     sie nicht als falsch erkennen.
+     Jetzt ist der Anfangszustand fuer JEDEN Abschnitt "noch nichts da", und jeder Abschnitt zeigt
+     dafuer sein Skelett (renderKpis, renderBrands, renderCites, die Chatliste). Wer das Aussehen
+     vor dem Anschluss sehen will, ruft renderPowerDashboard mit Daten -- den statischen
+     Run-JS-Schritt dafuer gibt es in bubble/power_dashboard_runjs_test.js. */
 
   /* ---------- Die Chips ----------
      "Wichtige Daily-Use-Sachen, allgemeingueltig ... dahinter kleine, aber super effektive
@@ -232,9 +191,6 @@
   /* reihe() -- der Leser fuer "1.2, 1.4, 1.9" -- ist mit den Verlaufslinien weggefallen (12.09.).
      Die drei *_series-Felder duerfen weiter im Payload stehen, sie werden nur nicht mehr
      gezeichnet; ein Leser, den niemand ruft, waere die naechste Drift. */
-  function isOn(attr){ var v = String(attr == null ? "" : attr).trim().toLowerCase();
-    return !(v === "no" || v === "false" || v === "0" || v === "off"); }
-
   function buildController(root){
     var esc = UC.esc;
     var fire = UC.makeFire(root, { label: "power-dashboard", eventPrefix: "upw" });
@@ -270,28 +226,25 @@
     }
     function writeCmode(v){ try { window.localStorage.setItem(cmodeKey(), v); } catch(e){} }
 
-    /* Demo: bis ein Setter kommt, stehen die Beispieldaten. Mit data-demo="no" steht stattdessen
-       das Skelett, bis die echten Daten da sind -- das ist der Schalter fuer den Anschluss. */
-    var demo = isOn(root.getAttribute("data-demo"));
     var state = {
-      overview: demo ? DEMO.overview : null,
-      brands: demo ? DEMO.brands : null,
-      domains: demo ? DEMO.top_domains : null,
-      urls: demo ? DEMO.top_urls : null,
+      overview: null,
+      brands: null,
+      domains: null,
+      urls: null,
       /* citesLabel/range_label werden seit dem 14.09. NICHT mehr angezeigt: die Kopfzeile, die
          "8 brands · Last 30 days" trug, ist mit der grossen Tabelle weggefallen, und neben
          "Overview" stand der Zeitraum schon vorher nicht mehr. Der Zustand bleibt trotzdem
          stehen -- Bubble schickt das Feld weiter, und ein Setter, der einen Wert stillschweigend
          verwirft, ist schwerer zu erklaeren als einer, der ihn aufhebt. Wer ihn wieder zeigen
          will, hat ihn hier. */
-      citesLabel: demo ? DEMO.citations_label : "",
+      citesLabel: "",
       /* Die GESAMTZAHL, nicht die Laenge der obigen Arrays -- die zeigen nur die "top" 7, die
          Gesamtzahl kann groesser sein ("16 brands" auch wenn nur 7 Zeilen stehen). Fuer Brands
          gibt es dafuer schon overview.brand_count (dieselbe Zahl wie "#2 of 8 brands"); fuer
          Citations sind totalCountDomain/totalCountUrl NEU, wortgleich zu topcitations-dashboard,
          damit dieselbe RPC beide Komponenten fuellen kann. */
-      totalCountDomain: demo ? DEMO.totalCountDomain : null,
-      totalCountUrl: demo ? DEMO.totalCountUrl : null,
+      totalCountDomain: null,
+      totalCountUrl: null,
       chips: null,
       cmode: readCmode(),
       mode: readMode(),

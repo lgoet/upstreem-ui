@@ -59,11 +59,10 @@
   data-view        = der Name, den die App an showView() fuer die Ansicht dieses Dashboards
                      uebergibt. Standard "dashboard". Stimmt er nicht, funktioniert alles
                      trotzdem -- Mira erscheint dann nur eine Viertelsekunde spaeter.
-  data-demo        = "yes"  Beispieldaten, bis der erste renderPowerDashboard-Aufruf kommt
-                     "no"   Skelett, bis die echten Daten da sind
-                     JETZT "yes" (angefordert: erst einmal Beispieldaten). Sobald die Run-JS-
-                     Schritte unten angeschlossen sind, auf "no" stellen -- sonst stehen beim
-                     Laden fuer einen Moment die Beispielzahlen da.
+  data-demo        GIBT ES NICHT MEHR (17.09.). Bis Daten da sind, steht das Skelett -- immer.
+                     Beispieldaten gab es nur, solange nichts angeschlossen war; ein Element ohne
+                     das Attribut zeigte sie aber weiter, und dann sehen erfundene Zahlen aus wie
+                     Messwerte. Am Element darf es stehenbleiben, es wird schlicht nicht gelesen.
 
   ── DER UMSCHALTER UNTER DEN KENNZAHLEN (14.09. umgebaut) ─────────────────────────────────────
   ZWEI Bereiche, nicht mehr drei Reiter: "Main Metrics" zeigt die zwei schmalen Listen
@@ -318,7 +317,6 @@
      data-isdark="IS_DARK"
      data-brand-name="BRAND_NAME"
      data-view="dashboard"
-     data-demo="yes"
      data-brands-fn="bubble_fn_upwBrands"
      data-citations-fn="bubble_fn_upwCitations"
      data-opportunities-fn="bubble_fn_upwOpportunities"
