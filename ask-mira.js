@@ -4843,9 +4843,20 @@
     if (typeof messages === 'string'){
       var parsed = looseJsonParse(messages);
       if (parsed == null){
+        /* Die Textstelle gehoert HIERHER und nirgendwo sonst: erst wenn auch die Reparatur nicht
+           mehr getragen hat, ist etwas kaputt. (Vorher stand sie in askMiraSetMessagesFromEl und
+           feuerte, waehrend der Text gleich darauf anstandslos gelesen wurde.) */
+        var stelle = '';
+        try {
+          JSON.parse(messages);
+        } catch(e){
+          var mp = /position (\d+)/.exec(String((e && e.message) || e));
+          if (mp){ var pos = +mp[1];
+            stelle = ' Stelle: …' + messages.slice(Math.max(0, pos - 70), pos + 70).replace(/\n/g, '\\n') + '…'; }
+        }
         console.warn('[AskMira] askMiraSetMessages: could not parse the payload — leaving messages unchanged. '+
           'Likely the JSON was truncated in transport or contains characters that broke it. '+
-          'Ein unescaptes Anfuehrungszeichen im Text repariert die Komponente selbst; haelt der Payload trotzdem nicht, ist er unterwegs abgeschnitten worden. (Laenge='+messages.length+')');
+          'Ein unescaptes Anfuehrungszeichen im Text repariert die Komponente selbst; haelt der Payload trotzdem nicht, ist er unterwegs abgeschnitten worden. (Laenge='+messages.length+')' + stelle);
         return; // keep whatever is currently shown instead of blanking the chat
       }
       messages = parsed;
@@ -5068,6 +5079,7 @@
        einen neuen Nutzer sind besser als gar keins fuer alle anderen. */
     if (S.previousChats.length) _prevLoaded = true;
     renderPrevious();
+    titelNachziehen();
     /* Fuer "Recent chats" im Power Dashboard: es zeichnet neu, sobald die Liste sich aendert. */
     try { window.dispatchEvent(new CustomEvent('askmira:chats')); } catch(e){}
   };
@@ -5135,22 +5147,17 @@
     var raw = ('value' in el && el.value != null && el.value !== '') ? el.value : (el.textContent || '');
     return raw;
   }
+  /* HIER STAND EINE FALSCHMELDUNG, UND ZWAR ZWEIMAL (17.09.). Der Block hat den Rohtext mit
+     JSON.parse geprueft, um eine hilfreiche Zeile in die Konsole zu schreiben -- und dann den
+     Text ganz normal weitergereicht, wo askMiraSetMessages ihn mit looseJsonParse repariert und
+     einliest. Bei einem unescapten Anfuehrungszeichen schlug JSON.parse also zu, die Warnung ging
+     raus (wegen eines kopierten Blocks sogar doppelt), und danach lief alles durch: der Chat war
+     da, die Konsole rot. Gemeldet als "Chat kommt rein, aber die Konsole sagt ...".
+     Eine Meldung ueber einen Fehler, den es nicht gibt, ist schlimmer als keine: beim naechsten
+     echten Ausfall glaubt ihr niemand mehr. Gemeldet wird jetzt nur noch, was WIRKLICH nicht
+     gelesen werden konnte -- das tut askMiraSetMessages selbst, mitsamt Textstelle. */
   window.askMiraSetMessagesFromEl      = function(sel){
     var r = _amReadEl(sel); if (r == null) return;
-    try {
-      var hasOpp = (typeof r === 'string') && r.indexOf('"opportunities"') >= 0;
-      var ok = true, err = '';
-      if (typeof r === 'string'){ try { JSON.parse(r); } catch(e){ ok = false; err = String((e && e.message) || e); } }
-      if (typeof r === 'string' && hasOpp && !ok){
-        var mp = /position (\d+)/.exec(err);
-        if (mp){ var pos = +mp[1]; console.warn('[AskMira] FromEl: invalid JSON near -> …'+ r.slice(Math.max(0,pos-70), pos+70).replace(/\n/g,'\\n') +'…'); }
-      }
-      if (typeof r === 'string' && hasOpp && !ok){
-        var mp = /position (\d+)/.exec(err);
-        if (mp){ var pos = +mp[1]; console.warn('[AskMira] FromEl: invalid JSON near -> …'+ r.slice(Math.max(0,pos-70), pos+70).replace(/\n/g,'\\n') +'…'); }
-        console.warn('[AskMira] Der Rohtext enthaelt opportunities, ist aber kein gueltiges JSON. Ein unescaptes Anfuehrungszeichen im Text repariert die Komponente selbst; haelt der Payload trotzdem nicht, ist er unterwegs abgeschnitten worden.');
-      }
-    } catch(e){}
     window.askMiraSetMessages(r);
   };
   window.askMiraSetTopicsFromEl        = function(sel){ var r = _amReadEl(sel); if (r != null) window.askMiraSetTopics(r); };
@@ -5183,6 +5190,7 @@
        Vorschein -- und der Nutzer saehe auf seine Bewegung hin: nichts. */
     S.prevFenster += dazu.length;
     renderPrevious();
+    titelNachziehen();
     return dazu.length;
   };
   window.askMiraSetProjectsFromEl      = function(sel){ var r = _amReadEl(sel); if (r != null) window.askMiraSetProjects(r); };
@@ -6534,6 +6542,23 @@
       if (elCtText) elCtText.textContent = title;
       if (elCtInput) elCtInput.value = title;
     }
+  }
+
+  /* DER TITEL OBEN, SOBALD DIE LISTE IHN KENNT (17.09. gemeldet: "in der Sidebar sehe ich den
+     Titel, oben nicht -- klicke ich den Chat an, steht er da").
+     Der Grund ist die Reihenfolge: askMiraSetActiveChat merkt sich den Chat und loescht
+     titlePending nur, wenn die Liste ihn in DIESEM Moment schon mit Titel kennt. Nach einer
+     frischen Antwort ist der Chat aber neu -- die Liste kommt erst danach. Titel da, Kopfzeile
+     im Skelett, und nichts sah je wieder nach. Der Klick half, weil er setActiveChat ein zweites
+     Mal ruft, diesmal mit gefuellter Liste.
+     Also nachsehen, wann immer sich die Liste aendert -- an genau den zwei Stellen, die sie
+     schreiben. Nur vorwaerts: ein vorhandener Titel wird gezeigt, ein fehlender loescht nichts. */
+  function titelNachziehen(){
+    if (!S.activeChatId) return;
+    var c = findChat(S.activeChatId);
+    if (!c || !c.title) return;
+    S.titlePending = false;
+    renderChatTitlebar();
   }
 
   function ctEnterEdit(){
