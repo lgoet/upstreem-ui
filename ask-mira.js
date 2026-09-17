@@ -3145,7 +3145,7 @@
      unterwegs ist -- der Beobachter feuert sonst bei jedem Pixel Scrollweg erneut. Die Sperre
      faellt, sobald angehaengt wurde oder nach acht Sekunden: eine Antwort, die nie kommt, darf
      das Nachladen nicht fuer immer stilllegen. */
-  var _mehrGefragt = false, _mehrEnde = false, _mehrUhr = null;
+  var _mehrGefragt = false, _mehrEnde = false, _mehrUhr = null, _leerlauf = 0;
   function _mehrDraussen(){ return !_mehrEnde; }
   function _offeneChats(){
     return (S.previousChats || []).filter(function(c){ return !c.project_id; }).length;
@@ -5181,7 +5181,31 @@
     var da = {};
     (S.previousChats || []).forEach(function(c){ if (c && c.id != null) da[String(c.id)] = true; });
     var dazu = neu.filter(function(c){ return c && c.id != null && !da[String(c.id)]; });
-    if (!dazu.length){ _mehrEnde = true; renderPrevious(); return; }
+    /* EINE SEITE VOLLER BEKANNTER CHATS IST NICHT DASSELBE WIE DAS ENDE (17.09. gemeldet: "laedt
+       beim Scrollen nur EINMAL nach, danach ist Schluss").
+       Vorher hat genau das sofort _mehrEnde gesetzt, und ab da fragte die Leiste nie wieder --
+       auch nicht, wenn es hunderte Chats gibt. Es hat aber zwei ganz verschiedene Ursachen:
+         wirklich am Ende   der Server schickt die letzte Seite noch einmal
+         falscher Offset    die Seite ueberspringt oder wiederholt Eintraege (bei ihm gemessen:
+                            erste Abfrage 30 Chats, die naechste mit p_offset 38)
+       Die LEERE Antwort bleibt das eindeutige Ende -- so steht es in der Uebergabe, und daran
+       aendert sich nichts. Eine volle Seite ohne Neues bekommt dagegen noch einen Versuch, und
+       die Konsole sagt mit Zahlen, was ankam; erst beim zweiten Mal hintereinander ist Schluss.
+       Damit heilt ein einzelner verrutschter Offset sich beim naechsten Scrollen selbst, und eine
+       Endlosschleife entsteht trotzdem nicht. */
+    if (!dazu.length){
+      _leerlauf++;
+      if (window.console) console.warn('[AskMira] die nachgeladene Seite brachte ' + neu.length +
+        ' Chats, davon 0 neue -- die Leiste hat schon ' + (S.previousChats || []).length + '. ' +
+        (_leerlauf >= 2
+          ? 'Zum zweiten Mal hintereinander: es wird nicht mehr nachgefragt.'
+          : 'Das kann ein verrutschter Offset sein -- blaettere mit dem next_offset aus der ' +
+            'vorigen Antwort. Ein weiterer Versuch ist noch moeglich.'));
+      if (_leerlauf >= 2) _mehrEnde = true;
+      renderPrevious();
+      return;
+    }
+    _leerlauf = 0;
     S.previousChats = (S.previousChats || []).concat(dazu);
     chatSpur('appendPreviousChats +' + dazu.length, S.previousChats.length,
              S.previousChats.length ? S.previousChats[0].title : '');
@@ -5229,6 +5253,23 @@
     });
   }
   window.askMiraSetActiveChat = function(chatId, fireEvent){
+    /* EINE LEERE KENNUNG WIRFT DIE AUSWAHL NICHT MEHR WEG (17.09. gemeldet: "Antwort kommt, dann
+       geht der Titel oben wieder in den Ladezustand und der Chat ist in der Leiste nicht mehr
+       markiert -- Konsole sagt nix").
+       Genau das passiert, wenn ein Workflow diesen Setter mit leerem Feld ruft: S.activeChatId
+       war danach "", die Kopfzeile fand keinen Chat mehr (also Skelett) und chatAktivSichtbar
+       lieferte false (also keine Markierung). Kein Fehler, keine Zeile in der Konsole -- die
+       Auswahl war einfach fort.
+       "Kein Chat mehr" gibt es sehr wohl, aber das macht die Komponente selbst (goToStart und das
+       Loeschen eines Chats setzen S.activeChatId direkt). Ueber diesen Weg kommt eine leere
+       Kennung nur, wenn ein Feld im Workflow leer geblieben ist -- und dann ist Behalten richtig.
+       Gesagt wird es trotzdem: still darf so etwas nicht sein. */
+    if ((chatId == null || String(chatId).trim() === '') && S.activeChatId){
+      if (window.console) console.warn('[AskMira] askMiraSetActiveChat wurde ohne Chat-Kennung ' +
+        'gerufen, waehrend "' + S.activeChatId + '" offen ist -- die Auswahl bleibt bestehen. ' +
+        'Im Workflow ist das Feld fuer die Chat-Id leer.');
+      return;
+    }
     S.activeChatId = chatId;
     var _c = chatId ? findChat(chatId) : null;
     if (_c && _c.title) S.titlePending = false;   // opened a chat that already has a title -> show it (no skeleton)
