@@ -5165,7 +5165,14 @@
     if (typeof projects === 'string'){
       var parsed = looseJsonParse(projects);
       if (parsed == null){
-        console.warn('[AskMira] askMiraSetProjects: Payload nicht lesbar. Ein unescaptes Anfuehrungszeichen im Text repariert die Komponente selbst; haelt der Payload trotzdem nicht, ist er unterwegs abgeschnitten worden.');
+        /* MIT DEM ANFANG DES TEXTES. Ohne ihn ist "nicht lesbar" eine Sackgasse: fehlen die
+           eckigen Klammern um die Liste, steht da {...}, {...} -- das sieht man in einer Zeile
+           und raet sonst eine Runde. */
+        console.warn('[AskMira] askMiraSetProjects: Payload nicht lesbar. Ein unescaptes ' +
+          'Anfuehrungszeichen im Text repariert die Komponente selbst; haelt der Payload trotzdem ' +
+          'nicht, fehlen die eckigen Klammern um die Liste oder er ist unterwegs abgeschnitten ' +
+          'worden. (Laenge=' + String(projects).length + ') Anfang: ' +
+          String(projects).slice(0, 160).replace(/\n/g, '\\n'));
         return;
       }
       projects = parsed;
@@ -5316,6 +5323,23 @@
        Loeschen eines Chats setzen S.activeChatId direkt). Ueber diesen Weg kommt eine leere
        Kennung nur, wenn ein Feld im Workflow leer geblieben ist -- und dann ist Behalten richtig.
        Gesagt wird es trotzdem: still darf so etwas nicht sein. */
+    /* ECKIGE KLAMMERN UM DIE KENNUNG: ein Bubble-Artefakt, kein Chat (17.09. im Log gefunden --
+       der offene Chat hiess "[f657b442-a47a-4372-a1c3-fb44b7418c63"). So sieht eine LISTE aus,
+       die Bubble als Text ausgibt, und genauso sieht es aus, wenn im Run-JS-Schritt die Klammern
+       meiner Vorlage um das Feld herum stehengeblieben sind. Mit ihnen findet die Kennung keinen
+       Chat: kein Titel, keine Markierung, und nichts sagt warum.
+       Gestutzt wird nur, wenn GENAU EIN Wert darin steht -- bei "[a, b]" waere jede Wahl geraten.
+       Und gesagt wird es, damit die Ursache im Schritt behoben wird und nicht hier haengenbleibt. */
+    if (typeof chatId === 'string'){
+      var k = chatId.trim();
+      if (k.length > 2 && k.charAt(0) === '[' && k.charAt(k.length - 1) === ']' && k.indexOf(',') < 0){
+        chatId = k.slice(1, -1).trim();
+        if (window.console) console.warn('[AskMira] die Chat-Kennung kam in eckigen Klammern ("' + k +
+          '") -- das ist eine Bubble-Liste als Text oder eine stehengebliebene Klammer im ' +
+          'Run-JS-Schritt. Verwendet wird "' + chatId + '". Im Schritt gehoert um das Feld mit ' +
+          'der Chat-Id KEINE Klammer.');
+      }
+    }
     if ((chatId == null || String(chatId).trim() === '') && S.activeChatId){
       if (window.console) console.warn('[AskMira] askMiraSetActiveChat wurde ohne Chat-Kennung ' +
         'gerufen, waehrend "' + S.activeChatId + '" offen ist -- die Auswahl bleibt bestehen. ' +

@@ -18,6 +18,10 @@
        replace(p.title, chr(96), '')
    Ohne das kann ein Nutzer seine eigene Chatleiste lahmlegen, indem er ein Projekt so nennt. */
 (function () {
+  /* DIE KLAMMERN GEHOEREN HIER DAZU: Bubbles ":format as text" verbindet die Eintraege einer
+     Liste nur mit einem Trenner, ohne die Klammern eines Arrays. Ohne sie kommt
+     {...}, {...} an -- kein JSON, und der Setter meldet "Payload nicht lesbar".
+     Und im Format-Dialog gehoert der Trenner auf KOMMA (nicht auf Zeilenumbruch). */
   var ROH = `[projects :format as text]`
     .replace(/:\s*([,}\]])/g, ": null$1")
     .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });

@@ -36,7 +36,13 @@
    Zeichnen). Gemessen: nach askMiraSetMessages allein steht der "Add as Opportunity"-Knopf da,
    ohne einen einzigen weiteren Aufruf. */
 (function () {
-  var CHAT_ID = `[Chat-ID]`;
+  /* OHNE ECKIGE KLAMMERN. Hier steht NUR das Feld mit der Chat-Id -- keine Klammern drumherum.
+     Die zwei Zeilen sehen aehnlich aus und meinen Verschiedenes, und genau daran ist es
+     schiefgegangen (17.09.): unten UMSCHLIESSEN die Klammern die Liste, weil daraus ein
+     JSON-Array werden muss. Hier waeren sie Teil der Kennung -- in der Konsole stand dann
+     der offene Chat "[f657b442-a47a-4372-a1c3-fb44b7418c63" und wurde in keiner Liste
+     gefunden: kein Titel, keine Markierung. */
+  var CHAT_ID = `Feld mit der Chat-Id`;
 
   var ROH = `[get_mira_chat_messages's ... :format as text]`
     .replace(/:\s*([,}\]])/g, ": null$1")
