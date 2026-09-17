@@ -5065,9 +5065,16 @@
      in der Konsole. window.askMiraChatTrace() gibt sie aus. Damit ist nach EINEM Nachstellen
      klar, ob Bubble eine Ein-Eintrag-Liste schickt -- und welcher Aufrufer es war. */
   var _chatSpur = [];
-  function chatSpur(quelle, anzahl, ersterTitel){
-    _chatSpur.push({ t: new Date().toISOString().slice(11, 23), quelle: quelle, anzahl: anzahl,
-                     erster: String(ersterTitel || '').slice(0, 40) });
+  /* WAS KAM AN -- nicht nur, was danach dasteht (17.09. nachgeschaerft). Die Spur zeigte bisher
+     die Laenge und den ersten Titel des ERGEBNISSES; bei einer Zusammenfuehrung ist das aber der
+     alte Kopf, und ueber die Nutzlast sagt es nichts. Fuer die Frage "welcher Workflow schickt
+     welche Seite" braucht es genau die: wie viele kamen, welcher stand vorn, und war der offene
+     Chat dabei. */
+  function chatSpur(quelle, anzahl, ersterTitel, rein, ersterRein, offenDrin){
+    _chatSpur.push({ t: new Date().toISOString().slice(11, 23), quelle: quelle,
+                     rein: rein, ersterRein: String(ersterRein || '').slice(0, 40),
+                     offenerChatDabei: offenDrin,
+                     danach: anzahl, ersterDanach: String(ersterTitel || '').slice(0, 40) });
     if (_chatSpur.length > 40) _chatSpur.shift();
   }
   window.askMiraChatTrace = function(){
@@ -5139,7 +5146,10 @@
       S.previousChats = einListe;
     }
     chatSpur(_vonAutoBind ? 'mira-chats-data' : 'setPreviousChats', S.previousChats.length,
-             S.previousChats.length ? S.previousChats[0].title : '');
+             S.previousChats.length ? S.previousChats[0].title : '',
+             einListe.length, einListe.length ? einListe[0].title : '',
+             !S.activeChatId ? '(kein Chat offen)'
+               : (einListe.some(function(c){ return c && String(c.id) === String(S.activeChatId); }) ? 'ja' : 'NEIN'));
     /* Der Einbruch, der gemeldet wurde -- und er wird gemeldet, nicht repariert: eine kuerzere
        Liste ist ein voellig legitimer Vorgang (anderes Team, geloeschter Chat), und stillschweigend
        an der alten festzuhalten waere geraten. Was hier steht, ist der Messwert. */
@@ -5308,8 +5318,11 @@
     }
     _leerlauf = 0;
     S.previousChats = (S.previousChats || []).concat(dazu);
-    chatSpur('appendPreviousChats +' + dazu.length, S.previousChats.length,
-             S.previousChats.length ? S.previousChats[0].title : '');
+    chatSpur('appendPreviousChats', S.previousChats.length,
+             S.previousChats.length ? S.previousChats[0].title : '',
+             neu.length, neu.length ? neu[0].title : '',
+             !S.activeChatId ? '(kein Chat offen)'
+               : (neu.some(function(c){ return c && String(c.id) === String(S.activeChatId); }) ? 'ja' : 'NEIN'));
     _prevLoaded = true;
     /* Das Fenster waechst mit, sonst kaeme das Nachgeladene erst beim naechsten Scrollen zum
        Vorschein -- und der Nutzer saehe auf seine Bewegung hin: nichts. */
