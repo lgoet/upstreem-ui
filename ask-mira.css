@@ -932,6 +932,15 @@
   #ask-mira:not(.has-messages):not(.is-compact) .am-suggested { margin-top: 0; margin-bottom: 92px; }
   #ask-mira:not(.has-messages):not(.is-compact) .am-composer-area { margin-bottom: auto; }
   .am-welcome { margin: 0 0 40px; }
+  /* Die eigene Marke in der Begruessung: Logo und Name als EIN Stueck, damit sie beim Umbruch
+     zusammenbleiben. Das Bild misst 0.8em -- es waechst also mit der Ueberschrift mit, die
+     selbst ein clamp() ist, und bleibt in jeder Groesse im selben Verhaeltnis zur Schrift.
+     Rundung, Plattenfarbe und Rahmen sind die von .am-inline-logo im Chat, nur in em statt in
+     px: 8/24 der Kante ist 0.2667em, der Abstand zum Namen 5/24 ist 0.21em -- damit ein Logo
+     hier nicht anders gerundet und nicht anders gesetzt aussieht als dasselbe Logo im Chat. */
+  .am-welcome-brand { display: inline-flex; align-items: center; gap: .21em; white-space: nowrap; }
+  .am-welcome-brand img { width: .8em; height: .8em; border-radius: .2667em; object-fit: cover;
+    display: block; box-sizing: border-box; background: var(--am-soft); border: 1px solid var(--am-border); }
   .am-welcome-title {
     margin: 0;
     font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
