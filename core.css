@@ -1675,7 +1675,7 @@
        nicht mehr zu sehen. Die Bahn selbst zieht von allein mit, sie liest --vc-border und
        --vc-text, und die stehen oben im Menue. */
     .up-scale-menu[data-theme="dark"] .up-switch::after { background: #e0e0e0; }
-    .up-scale-menu[data-theme="dark"] .up-switch.is-on::after { background: #1f1f1b; }
+    .up-scale-menu[data-theme="dark"] .up-switch.is-on::after { background: var(--up-accent-fg); }
     @media (prefers-reduced-motion: reduce){ .up-scale-menu { transition-duration: 1ms; } }
     .up-scale-menu * { box-sizing: border-box; }
 
@@ -1842,14 +1842,23 @@
     .up-switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 999px; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.2); transition: transform 160ms ease; }
     .up-switch.is-on { background: var(--up-accent); }
     /* dark base .up-switch rule out-specifies .up-switch.is-on, so the ON track needs an
-       explicit dark rule — otherwise it stays the dark off-colour. */
+       explicit dark rule — otherwise it stays the dark off-colour.
+       HIER STAND #e0e0e0 FEST, und das war der gemeldete Fehler (19.09.: "die Flaeche, die da
+       aktuell in Fontcolor ist, auch als Primaercolor setzen -- im Lightmode hast du es korrekt
+       gemacht, im Darkmode nicht"). Der Token traegt im Dunkeln von sich aus #e0e0e0, am
+       Standard aendert sich also nichts; bei einer gewaehlten Akzentfarbe folgt die Bahn ihr
+       jetzt auch im dunklen Thema. */
     .up-root[data-theme="dark"] .up-switch.is-on,
-    [data-theme="dark"] .up-switch.is-on { background: #e0e0e0; }
+    [data-theme="dark"] .up-switch.is-on { background: var(--up-accent); }
     .up-switch.is-on::after { transform: translateX(16px); }
     .up-root[data-theme="dark"] .up-switch::after,
     [data-theme="dark"] .up-switch::after { background: #e0e0e0; }
+    /* Der Knopf liegt AUF der eingeschalteten Bahn, traegt also --up-accent-fg wie jede Schrift
+       auf einer Akzentflaeche. Im Standard ist das #1b1b1b statt der frueheren #1f1f1b -- vier
+       Stufen, nicht sichtbar; bei Indigo oder Azur ist es weiss statt dunkel, und das ist der
+       Unterschied zwischen sichtbarem und unsichtbarem Knopf. */
     .up-root[data-theme="dark"] .up-switch.is-on::after,
-    [data-theme="dark"] .up-switch.is-on::after { background: #1f1f1b; }
+    [data-theme="dark"] .up-switch.is-on::after { background: var(--up-accent-fg); }
 
     /* ---------- brand mentioned toggle ---------- */
 
