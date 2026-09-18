@@ -313,7 +313,7 @@
 }
 .uca-cb svg { width: 11px; height: 11px; display: block; }
 .uca-cb-row:hover .uca-cb { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
-.uca-cb-row.is-checked .uca-cb { background: var(--vc-text); border-color: var(--vc-text); color: var(--vc-bg); }
+.uca-cb-row.is-checked .uca-cb { background: var(--up-accent); border-color: var(--up-accent); color: var(--up-accent-fg); }
 .uca-cb-meta { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .uca-cb-label { font-size: 13px; font-weight: 600; line-height: 1.25; }
 .uca-cb-sub { font-size: 11.5px; color: var(--vc-muted); line-height: 1.4; }
@@ -335,7 +335,7 @@
 .uca-ai-desc { font-size: 11.5px; color: var(--vc-muted); line-height: 1.3; }
 .uca-ai-check {
   position: absolute; top: 50%; right: 14px; transform: translateY(-50%); width: 16px; height: 16px; border-radius: 999px;
-  background: var(--vc-text); color: var(--vc-bg); display: none; align-items: center; justify-content: center;
+  background: var(--up-accent); color: var(--up-accent-fg); display: none; align-items: center; justify-content: center;
 }
 .uca-ai-check svg { width: 11px; height: 11px; }
 .uca-assistant.is-selected .uca-ai-check { display: inline-flex; }
@@ -344,7 +344,7 @@
 .uca-foot { flex: 0 0 auto; padding: 18px 22px 22px; border-top: 1px solid var(--vc-border); background: var(--vc-bg); }
 .uca-primary {
   width: 100%; height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 9px;
-  border: 0; border-radius: 12px; background: var(--vc-text); color: var(--vc-bg);
+  border: 0; border-radius: 12px; background: var(--up-accent); color: var(--up-accent-fg);
   font: inherit; font-size: 14.5px; font-weight: 580; cursor: pointer; transition: opacity .14s ease;
 }
 .uca-primary:hover { opacity: .9; }
@@ -390,7 +390,7 @@
 .uca-bld-input.uca-bld-input:focus { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); background: var(--up-surface); outline: 0; }
 .uca-bld-add {
   flex: 0 0 auto; height: 40px; padding: 0 16px; border-radius: 12px; border: 0;
-  background: var(--vc-text); color: var(--vc-bg); font: inherit; font-size: 13.5px; font-weight: 560;
+  background: var(--up-accent); color: var(--up-accent-fg); font: inherit; font-size: 13.5px; font-weight: 560;
   cursor: pointer; transition: opacity .14s ease;
 }
 .uca-bld-add:hover { opacity: .9; }

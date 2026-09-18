@@ -40,7 +40,7 @@
     display: inline-flex; align-items: center; gap: 8px;
     height: 32px; padding: 0 8px;
     border: 0; border-radius: 8px;
-    background: var(--vc-text); color: var(--vc-bg);
+    background: var(--up-accent); color: var(--up-accent-fg);
     font: inherit; font-size: 12px; font-weight: 560; line-height: 1;
     white-space: nowrap; cursor: pointer; outline: 0;
     transition: opacity var(--uex-t) var(--uex-ease);
@@ -149,7 +149,7 @@
   .uex-opt-check {
     position: absolute; top: 50%; right: 14px; transform: translateY(-50%);
     width: 16px; height: 16px; border-radius: 999px;
-    background: var(--vc-text); color: var(--vc-bg);
+    background: var(--up-accent); color: var(--up-accent-fg);
     display: none; align-items: center; justify-content: center;
   }
   .uex-opt-check svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
@@ -218,8 +218,8 @@
   .uex-foot { flex: 0 0 auto; padding: 16px; border-top: 1px solid var(--vc-border); background: var(--up-surface); }
   .uex-submit {
     width: 100%; height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 9px;
-    border: 1px solid var(--vc-text); border-radius: 12px;
-    background: var(--vc-text); color: var(--vc-bg);
+    border: 1px solid var(--up-accent); border-radius: 12px;
+    background: var(--up-accent); color: var(--up-accent-fg);
     font: inherit; font-size: 14.5px; font-weight: 580; cursor: pointer;
     transition: opacity var(--uex-t) var(--uex-ease);
   }

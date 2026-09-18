@@ -60,7 +60,7 @@
 /* dark button tooltip (own implementation — see file header) */
 
 /* Go-To: primary-font-color bg */
-.tcd-goto { background: var(--vc-text) !important; color: #e0e0e0; }
+.tcd-goto { background: var(--up-accent) !important; color: var(--up-accent-fg); }
 .up-root[data-theme="dark"] .tcd-goto { color: #1f1f1b; }
 .tcd-goto:hover { background: #585855 !important; color: #e0e0e0; }
 .up-root[data-theme="dark"] .tcd-goto:hover { background: #a0a0a0 !important; color: #1f1f1b; }
@@ -164,7 +164,7 @@
 .tcd-brand-toggle-lbl { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
 .tcd-brand-check { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: #fff; }
 .tcd-brand-check svg { width: 11px; height: 11px; display: none; }
-.tcd-brand-toggle.is-yes .tcd-brand-check, .tcd-brand-toggle.is-no .tcd-brand-check { background: var(--vc-text); border-color: var(--vc-text); }
+.tcd-brand-toggle.is-yes .tcd-brand-check, .tcd-brand-toggle.is-no .tcd-brand-check { background: var(--up-accent); border-color: var(--up-accent); }
 .up-root[data-theme="dark"] .tcd-brand-toggle.is-yes .tcd-brand-check, .up-root[data-theme="dark"] .tcd-brand-toggle.is-no .tcd-brand-check { color: #1f1f1b; }
 .tcd-brand-toggle.is-yes .tcd-brand-check .tcd-brand-check-yes { display: block; }
 .tcd-brand-toggle.is-no .tcd-brand-check .tcd-brand-check-no { display: block; }

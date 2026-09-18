@@ -257,7 +257,7 @@
    action on a landing surface, not one control among many in a toolbar. */
 .upr-start-btn {
   height: 40px; padding: 0 18px; border: 0; border-radius: 11px;
-  background: var(--vc-text); color: var(--vc-bg);
+  background: var(--up-accent); color: var(--up-accent-fg);
   display: inline-flex; align-items: center; gap: 9px;
   font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
   box-shadow: 0 1px 2px rgba(0,0,0,0.12);
@@ -560,7 +560,7 @@
 .upr-row-btn svg { width: 14px; height: 14px; display: block; flex: 0 0 auto; }
 .upr-row-btn.is-ignore { padding: 0 10px; border: 1px solid var(--vc-border); background: var(--vc-bg); color: var(--vc-muted); }
 .upr-row-btn.is-ignore:hover { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); color: var(--vc-text); }
-.upr-row-btn.is-accept { padding: 0 12px; border: 1px solid var(--vc-text); background: var(--vc-text); color: var(--vc-bg); }
+.upr-row-btn.is-accept { padding: 0 12px; border: 1px solid var(--up-accent); background: var(--up-accent); color: var(--up-accent-fg); }
 .upr-row-btn.is-accept:hover { opacity: .9; }
 
 .upr-results-empty { display: none; flex: 0 0 auto; }
@@ -597,7 +597,7 @@
   margin-top: clamp(20px, 3.4vh, 30px); width: 100%; max-width: 320px;
   height: 3px; border-radius: 999px; background: var(--vc-sk); overflow: hidden;
 }
-.upr-bar-fill { display: block; height: 100%; width: 0; border-radius: 999px; background: var(--vc-text);
+.upr-bar-fill { display: block; height: 100%; width: 0; border-radius: 999px; background: var(--up-accent);
   transition: width 620ms linear; }
 .upr-loading-inner .upr-tl-tags { margin-top: 14px; }
 /* Der schwebende Kasten zwischen zwei pulsenden Ringen ist weg, mit ihm die zwei Skelettbalken:

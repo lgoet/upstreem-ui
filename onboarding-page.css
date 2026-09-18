@@ -247,7 +247,7 @@
    Strich sind eine zu viel. */
 .uob-rail-fill {
   position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; width: 0;
-  background: var(--vc-text);
+  background: var(--up-accent);
   transition: width var(--uob-t) var(--uob-ease);
 }
 .uob-rail-dots { position: absolute; inset: 0; }
@@ -271,10 +271,10 @@
 /* Erledigt: gefuellt mit Haken, und einen Pixel groesser als ein offener Punkt -- ein Haken in
    einem 10px-Kreis wird sonst zum Fleck. Aktuell: gefuellt und deutlich groesser, ohne Haken,
    denn der wuerde "fertig" behaupten. Kuenftig: hohl. */
-.uob-dot.is-done { width: 12px; height: 12px; background: var(--vc-text); border-color: var(--vc-text); }
+.uob-dot.is-done { width: 12px; height: 12px; background: var(--up-accent); border-color: var(--up-accent); }
 .uob-dot.is-done svg { opacity: 1; transform: scale(1); }
 .uob-dot.is-now {
-  width: 14px; height: 14px; background: var(--vc-text); border-color: var(--vc-text);
+  width: 14px; height: 14px; background: var(--up-accent); border-color: var(--up-accent);
   box-shadow: 0 0 0 4px var(--vc-bg);
 }
 /* Ein Punkt, der frisch dazukommt (der Tarif), faehrt nicht von links heran -- er blendet an
@@ -315,7 +315,7 @@
 /* Drei Klassen, weil .is-done weiter unten dieselbe Spezifitaet haette und dann die
    Ladereihenfolge entschiede -- gemessen blieb der Text beim Ueberfahren grau. */
 .uob-rail-labels span.is-hot, .uob-rail-labels span.is-done.is-hot { color: var(--vc-text); }
-.uob-dot.is-hot:not(.is-now) { border-color: var(--vc-text); }
+.uob-dot.is-hot:not(.is-now) { border-color: var(--up-accent); }
 
 /* Die Beschriftungen sitzen ebenfalls absolut und GENAU mittig unter ihrem Punkt -- vorher
    verteilte sie ein flex mit space-between, dann steht die erste linksbuendig unter einem
@@ -768,11 +768,11 @@
   opacity: 0; transform: scale(.7);
   transition: opacity var(--uob-t) var(--uob-ease), transform var(--uob-t) var(--uob-ease);
 }
-.uob-item.is-on .uob-check { background: var(--vc-text); border-color: var(--vc-text); }
+.uob-item.is-on .uob-check { background: var(--up-accent); border-color: var(--up-accent); }
 /* Ein eigenes Thema ohne Namen ist noch keines: der Haken bleibt leer, bis etwas dasteht. */
 .uob-item [data-eigen-in] ~ * .uob-check, .uob-check.is-leer { background: var(--vc-bg); border-color: var(--vc-border); }
 .uob-check.is-leer svg { opacity: 0; }
-.uob-item[data-eigen] .uob-check:not(.is-leer) { background: var(--vc-text); border-color: var(--vc-text); }
+.uob-item[data-eigen] .uob-check:not(.is-leer) { background: var(--up-accent); border-color: var(--up-accent); }
 .uob-item[data-eigen] .uob-check:not(.is-leer) svg { opacity: 1; transform: scale(1); }
 .uob-item[data-eigen] { cursor: text; }
 .uob-item.is-on .uob-check svg { opacity: 1; transform: scale(1); }
@@ -940,7 +940,7 @@
   height: 3px; border-radius: 999px; background: var(--vc-sk); overflow: hidden;
 }
 .uob-bar-fill {
-  height: 100%; width: 0; border-radius: 999px; background: var(--vc-text);
+  height: 100%; width: 0; border-radius: 999px; background: var(--up-accent);
   transition: width 620ms linear;
 }
 .uob-phases {
@@ -1061,7 +1061,7 @@
    280ms statt der 200 des Hauses: eine Feder, die in 200ms schwingt, sieht nach Zucken aus. Das
    ist eine Belohnung und kein Zustandswechsel, deshalb die Ausnahme. */
 .uob-phase-ok {
-  position: absolute; inset: 0; border-radius: 50%; background: var(--vc-text); color: var(--vc-bg);
+  position: absolute; inset: 0; border-radius: 50%; background: var(--up-accent); color: var(--up-accent-fg);
   display: inline-flex; align-items: center; justify-content: center;
   opacity: 0; transform: scale(.2);
   transition: opacity 160ms var(--uob-ease), transform 280ms cubic-bezier(.34, 1.56, .64, 1),
@@ -1138,13 +1138,13 @@
 .uob-sk-z     { width: 88%; height: 9px;  border-radius: 4px; }
 .uob-sk-z.is-kurz { width: 64%; }
 .uob-plan.is-on {
-  border-color: var(--vc-text);
-  box-shadow: 0 0 0 1px var(--vc-text);   /* zweiter Ring statt 2px Rahmen: sonst springt der Inhalt um 1px */
+  border-color: var(--up-accent);
+  box-shadow: 0 0 0 1px var(--up-accent);   /* zweiter Ring statt 2px Rahmen: sonst springt der Inhalt um 1px */
 }
 .uob-plan:focus-visible { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 .uob-plan-tag {
   position: absolute; top: -9px; left: 18px; height: 18px; padding: 0 8px; border-radius: 999px;
-  background: var(--vc-text); color: var(--vc-bg);
+  background: var(--up-accent); color: var(--up-accent-fg);
   font-size: 10.5px; font-weight: 600; letter-spacing: .02em;
   display: inline-flex; align-items: center;
 }
@@ -1211,7 +1211,7 @@
 .uob-next {
   height: 40px; min-width: 148px; padding: 0 20px;
   border: 0; border-radius: 12px;
-  background: var(--vc-text); color: var(--vc-bg);
+  background: var(--up-accent); color: var(--up-accent-fg);
   font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: -.01em;
   cursor: pointer;
   /* Ohne Schatten wie jeder Knopf der App -- .up-btn in core traegt keinen. */

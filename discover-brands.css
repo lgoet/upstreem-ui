@@ -44,7 +44,7 @@
   transition: background var(--up-cb-t) var(--up-cb-ease), border-color var(--up-cb-t) var(--up-cb-ease), color var(--up-cb-t) var(--up-cb-ease);
 }
 .udb-cb svg { width: 10px; height: 10px; display: block; }
-.udb-matched.is-on .udb-cb { background: var(--vc-text); border-color: var(--vc-text); color: var(--vc-bg); }
+.udb-matched.is-on .udb-cb { background: var(--up-accent); border-color: var(--up-accent); color: var(--up-accent-fg); }
 
 /* Das Platzhalterlogo im Erklaerbeispiel. Grau und ohne Fuellung -- es soll als Beispiel lesbar
    sein und nicht als echte Marke. Die Platte darunter (.up-explain-vis) ist in beiden Themes
@@ -112,7 +112,7 @@
 .udb-track {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   height: 30px; padding: 0 12px; border: 0; border-radius: 8px;
-  background: var(--vc-text); color: var(--vc-bg);
+  background: var(--up-accent); color: var(--up-accent-fg);
   font-family: inherit; font-size: 12.5px; font-weight: 600; line-height: 1;
   cursor: pointer; outline: 0; white-space: nowrap;
   transition: opacity .14s ease;

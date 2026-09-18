@@ -134,15 +134,15 @@
    Einstellungen der App: kein Haken, weil sich die vier Modi ausschliessen. */
 .urd-hlradio { width: 15px; height: 15px; border-radius: 999px; flex: 0 0 15px; margin-top: 2px;
   border: 1.5px solid var(--vc-border); box-sizing: border-box; position: relative; }
-.urd-hlopt.is-on .urd-hlradio { border-color: var(--vc-text); }
+.urd-hlopt.is-on .urd-hlradio { border-color: var(--up-accent); }
 .urd-hlopt.is-on .urd-hlradio::after { content: ""; position: absolute; inset: 3px;
-  border-radius: 999px; background: var(--vc-text); }
+  border-radius: 999px; background: var(--up-accent); }
 /* Der Haken dagegen ist ein Schalter: an oder aus, keine Auswahl aus mehreren. */
 .urd-hlcheck { width: 15px; height: 15px; border-radius: 5px; flex: 0 0 15px; margin-top: 2px;
   border: 1.5px solid var(--vc-border); box-sizing: border-box; display: inline-flex;
   align-items: center; justify-content: center; color: var(--up-surface, #fff); }
 .urd-hlcheck svg { width: 10px; height: 10px; display: none; }
-.urd-hlcheck.is-on { background: var(--vc-text); border-color: var(--vc-text); }
+.urd-hlcheck.is-on { background: var(--up-accent); border-color: var(--up-accent); }
 .urd-hlcheck.is-on svg { display: block; }
 .urd-hltxt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .urd-hllbl { font-size: 13px; font-weight: 500; color: var(--vc-text); }

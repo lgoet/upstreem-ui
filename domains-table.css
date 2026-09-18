@@ -13,7 +13,7 @@
 .udt-brand-toggle-lbl { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
 .udt-brand-check { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: #fff; }
 .udt-brand-check svg { width: 11px; height: 11px; display: none; }
-.udt-brand-toggle.is-yes .udt-brand-check, .udt-brand-toggle.is-no .udt-brand-check { background: var(--vc-text); border-color: var(--vc-text); }
+.udt-brand-toggle.is-yes .udt-brand-check, .udt-brand-toggle.is-no .udt-brand-check { background: var(--up-accent); border-color: var(--up-accent); }
 .up-root[data-theme="dark"] .udt-brand-toggle.is-yes .udt-brand-check, .up-root[data-theme="dark"] .udt-brand-toggle.is-no .udt-brand-check { color: #1f1f1b; }
 .udt-brand-toggle.is-yes .udt-brand-check .udt-brand-check-yes { display: block; }
 .udt-brand-toggle.is-no .udt-brand-check .udt-brand-check-no { display: block; }

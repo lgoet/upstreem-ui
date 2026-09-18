@@ -120,7 +120,7 @@
 .upw-chip-ic {
   flex: 0 0 16px; width: 16px; height: 16px; border-radius: 4px;
   display: inline-flex; align-items: center; justify-content: center; line-height: 0;
-  background: var(--vc-text); color: var(--vc-text-invert); overflow: hidden;
+  background: var(--up-accent); color: var(--vc-text-invert); overflow: hidden;
 }
 .upw-chip-ic svg { width: 11px; height: 11px; display: block; }
 /* Der Vergleichs-Chip traegt das LOGO der Marke: dafuer die Platte aus core (.up-logo-box) mit
@@ -133,7 +133,7 @@
    Der Buchstabe traegt hier --vc-text-invert statt --vc-muted: er sitzt auf der Primaerfarbe,
    und der gedaempfte Ton aus core waere darauf kaum zu lesen. */
 .up-logo-box.upw-chip-ic { width: 16px; height: 16px; flex: 0 0 16px; border-radius: 4px;
-  background: var(--vc-text); }
+  background: var(--up-accent); }
 /* 15px Bild in einem 16px-Kasten: das 1px Polster aus core gibt genau 14 her, das Bild deckt es
    also und liegt Kante an Kante. Genau so gewollt -- gefordert war "das Logo einen Pixel
    groesser", und der Saum ist kein Mass, sondern Beiwerk. overflow: hidden oben schneidet es auf

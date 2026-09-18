@@ -290,7 +290,7 @@
 }
 .uau-check input:hover { border-color: var(--vc-hover-border, var(--vc-third)); }
 .uau-check input:checked {
-  background-color: var(--vc-text); border-color: var(--vc-text);
+  background-color: var(--up-accent); border-color: var(--up-accent);
   /* Der Haken als data-URI, weil ein Pseudo-Element an input nicht geht. Geometrie identisch
      zum ICON.check dieser Datei und zu core: polyline 20 6 / 9 17 / 4 12, Strichstaerke 2.4. */
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
@@ -324,7 +324,7 @@
      weit auseinander, und der Block hebt sich vom dichteren Feldstapel darueber ab. */
   margin-top: 32px; height: 40px; width: 100%;
   border: 0; border-radius: 12px;
-  background: var(--vc-text); color: var(--vc-bg);
+  background: var(--up-accent); color: var(--up-accent-fg);
   font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: -.01em;
   cursor: pointer;
   box-shadow: 0 1px 2px rgba(15,17,21,.14);
@@ -522,7 +522,7 @@
 }
 .uau-mic { background: transparent; border-radius: 11px; color: var(--vc-text); }
 .uau-mic svg { width: 56%; height: 56%; display: block; }
-.uau-send { border-radius: 50%; background: var(--vc-text); color: var(--vc-bg);
+.uau-send { border-radius: 50%; background: var(--up-accent); color: var(--up-accent-fg);
   box-shadow: 0 1px 3px rgba(0,0,0,.16); }
 .uau-send svg { width: 52%; height: 52%; display: block; }
 .uau-panel-f { font-size: clamp(12px, .95vw, 14px); font-weight: 500; color: var(--vc-muted); }

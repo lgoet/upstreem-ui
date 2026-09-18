@@ -105,6 +105,13 @@
          mehr, sonst laufen zwei Fassungen desselben Wortes auseinander. */
       "System follows the setting of your operating system.":
         "System übernimmt die Einstellung deines Betriebssystems.",
+      "General": "Allgemein",
+      "How upstreem looks across the whole app": "Wie upstreem in der ganzen App aussieht",
+      "Appearance": "Darstellung",
+      "Accent color": "Akzentfarbe",
+      "The color of buttons, switches, checks and the selected page in the navigation. Logos, favicons and charts keep their own colors.":
+        "Die Farbe von Knöpfen, Schaltern, Häkchen und der gewählten Seite in der Navigation. Logos, Favicons und Charts behalten ihre eigenen Farben.",
+      "Default": "Standard",
       "System": "System",
 
       /* Die Meldungen des Profilbild-Uploads. Ohne Diagnose und ohne interne Namen -- nur, was
@@ -154,6 +161,15 @@
       { wert: "dark",   name: "Dark" },
       { wert: "system", name: "System" }
     ];
+    /* Die Akzentfarben. Der Punkt zeigt den HELLEN Wert -- die Liste steht meistens im hellen
+       Thema, und zwei Punkte je Zeile waeren eine Auskunft, nach der niemand gefragt hat. Die
+       Werte selbst liegen in core.css (html[data-accent]), hier steht nur, was man sieht. */
+    var AKZENTE = [
+      { wert: "default", name: "Default", farbe: "#1f1f1b" },
+      { wert: "linear",  name: "Linear",  farbe: "#5E6AD2" },
+      { wert: "notion",  name: "Notion",  farbe: "#1A73C7" },
+      { wert: "claude",  name: "Claude",  farbe: "#D97757" }
+    ];
     var DATEN = [
       { wert: "d-mon-y", name: "12. Dec 2025" },
       { wert: "mon-d-y", name: "Dec 12, 2025" },
@@ -193,7 +209,13 @@
         titel: "My Preferences", sub: "Choose how upstreem looks and formats your data" },
       { key: "profile", label: "Profile", icon: "users",
         titel: "Profile", sub: "Your name and picture, as your team sees them" },
-      { key: "charts",  kopf: "Display", label: "Charts", icon: "chartColumnUp",
+      /* ALLGEMEIN steht ueber Charts und traegt damit die Gruppenueberschrift (18.09.
+         angefordert). Hierher gehoert alles, was das AUSSEHEN der ganzen App betrifft: das
+         Thema und das Branding, die vorher unter "Sprache und Formate" standen und dort
+         thematisch falsch lagen, und die neue Akzentfarbe. */
+      { key: "general", kopf: "Display", label: "General", icon: "blend",
+        titel: "General", sub: "How upstreem looks across the whole app" },
+      { key: "charts",  label: "Charts", icon: "chartColumnUp",
         titel: "Charts", sub: "How lines and legends are drawn across every chart" }
     ];
 
@@ -313,13 +335,17 @@
     function flagge(o, cls) {
       return o && o.land ? UC.flagHtml(o.land, cls) : "";
     }
+    /* Derselbe Platz wie die Flagge: was die Wahl AUSMACHT, steht vor ihrem Namen. */
+    function farbpunkt(o) {
+      return o && o.farbe ? '<span class="ums-dot" style="background:' + esc(o.farbe) + '"></span>' : "";
+    }
     function selHtml(name, liste, jetzt) {
       var akt = null;
       liste.forEach(function (o) { if (o.wert === jetzt) akt = o; });
       return '<span class="ums-selwrap" data-ums-wrap>' +
         '<button class="ums-sel" type="button" aria-haspopup="menu" aria-expanded="false"' +
           ' data-ums-selbtn="' + esc(name) + '">' +
-          flagge(akt, "ums-flag") +
+          flagge(akt, "ums-flag") + farbpunkt(akt) +
           '<span class="ums-sel-val">' + esc(akt ? t(akt.name) : jetzt) + '</span>' +
           UC.icon("chevronDown", 2.2) +
         '</button>' +
@@ -342,13 +368,20 @@
           "charts and tooltips.", selHtml("num", ZAHLEN, UC.getPref("num"))) +
         zeileHtml("Date format", "Used everywhere a date appears, including chart axes.",
           selHtml("date", DATEN, UC.getPref("date"))) +
+      '</div>';
+    }
+
+    /* Thema, Akzentfarbe und Branding -- alles, was das Aussehen der ganzen App betrifft.
+       Thema und Branding standen bis zum 18.09. unter "Sprache und Formate"; dort waren sie
+       Gaeste. OHNE Beschreibung beim Branding: die Zeile sagt, was sie tut (07.09. verlangt). */
+    function generalHtml() {
+      return '<div class="ums-sec">' +
+        '<h3 class="ums-sectitle">' + esc(t("Appearance")) + '</h3>' +
+        '<div class="ums-secline"></div>' +
         zeileHtml("Theme", "System follows the setting of your operating system.",
           selHtml("theme", THEMEN, themaJetzt())) +
-        /* Direkt unter dem Thema und in DEMSELBEN Abschnitt (07.09. richtiggestellt: "unter Design
-           meinte ich unter dem Punkt Design, also wo man hell/dunkel einstellen kann"). Ein
-           eigener Abschnitt mit Ueberschrift und Trennlinie stand hier vorher und war zu viel
-           Geruest fuer eine Zeile.
-           OHNE Beschreibung: die Zeile sagt, was sie tut. Ausdruecklich so verlangt. */
+        zeileHtml("Accent color", "The color of buttons, switches, checks and the selected page in the navigation. Logos, favicons and charts keep their own colors.",
+          selHtml("accent", AKZENTE, UC.getPref("accent"))) +
         zeileHtml("Show upstreem branding", "",
           schalterHtml("branding", UC.getPref("branding") !== "off")) +
       '</div>';
@@ -440,7 +473,9 @@
       M.aside.innerHTML = asideHtml();
       var s = SEITEN.filter(function (x) { return x.key === seite; })[0] || SEITEN[0];
       M.main.innerHTML = kopfHtml(s) +
-        (seite === "profile" ? profileHtml() : (seite === "charts" ? chartsHtml() : prefsHtml()));
+        (seite === "profile" ? profileHtml()
+          : seite === "charts"  ? chartsHtml()
+          : seite === "general" ? generalHtml() : prefsHtml());
     }
 
     /* ---- Auswahlmenue ---- */
@@ -469,14 +504,15 @@
       }
       var liste = name === "locale" ? SPRACHEN
                 : name === "num"    ? ZAHLEN
-                : name === "theme"  ? THEMEN : DATEN;
+                : name === "theme"  ? THEMEN
+                : name === "accent" ? AKZENTE : DATEN;
       var jetzt = name === "theme" ? themaJetzt() : UC.getPref(name);
       menu.innerHTML = liste.map(function (o) {
         var bsp = name === "num" ? zahlBeispiel(o.wert)
                 : (name === "date" ? datumBeispiel(o.wert) : "");
         return '<button class="up-optrow' + (o.wert === jetzt ? " is-on" : "") + '" type="button"' +
           ' data-ums-set="' + esc(name) + '" data-ums-val="' + esc(o.wert) + '">' +
-          flagge(o, "ums-flag") +
+          flagge(o, "ums-flag") + farbpunkt(o) +
           '<span>' + esc(t(o.name)) + '</span>' +
           (bsp && bsp !== o.name ? '<span class="ums-opt-bsp">' + esc(bsp) + '</span>' : "") +
           '<span class="ums-opt-check">' + UC.icon("check", 2.6) + '</span>' +

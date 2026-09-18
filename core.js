@@ -223,7 +223,7 @@
      Merkmal des Kontos. Bei "off" faellt die Zeile GANZ weg (siehe sidebar.css), und der
      Teamschalter steht wieder oben links. */
   var PREF_DEFAULT = { locale: "en", num: "en", date: "d-mon-y", date_sync: "off", date_preset: "last7",
-                       branding: "on" };
+                       branding: "on", accent: "default" };
   var PREF_ERLAUBT = {
     locale: { en: 1, de: 1 },
     /* "en": 1,234.56 und 1.24k -- Punkt trennt die Nachkommastellen.
@@ -233,7 +233,9 @@
     date:   { "d-mon-y": 1, "mon-d-y": 1, "d-m-y": 1, iso: 1 },
     date_sync:   { on: 1, off: 1 },
     date_preset: { last7: 1, last30: 1, last3: 1 },
-    branding:    { on: 1, off: 1 }
+    branding:    { on: 1, off: 1 },
+    /* Die Akzentfarbe. "default" ist die bisherige -- Flaeche in der Schriftfarbe des Themas. */
+    accent:      { "default": 1, linear: 1, notion: 1, claude: 1 }
   };
   var _prefs = null;
   /* OHNE Team-Suffix, und das ist eine Korrektur. Diese Werte liefen ueber storeKey, und storeKey
@@ -330,6 +332,23 @@
       try { spracheLauf(); } catch(err){}
     });
   } catch(e){}
+  /* DIE AKZENTFARBE ANS DOKUMENT. Sie steht als data-accent am <html> und nicht an einer Wurzel:
+     die Fenster dieser App (Einstellungen, Erklaerkarten, Drawer) haengen als Portale direkt am
+     body und liegen damit ausserhalb jeder Komponentenwurzel -- am <html> erreicht die Wahl sie
+     alle. "default" schreibt gar nichts: ohne Attribut gelten die Werte aus .up-root, und die
+     sind buchstabengleich das, was vorher dastand.
+     Gesetzt wird beim Aufbau und bei jeder Aenderung -- der Zuhoerer steht gleich darunter. */
+  function akzentAnwenden(){
+    var w = getPref("accent");
+    try {
+      if (!w || w === "default") document.documentElement.removeAttribute("data-accent");
+      else document.documentElement.setAttribute("data-accent", w);
+    } catch(e){}
+  }
+  akzentAnwenden();
+  window.addEventListener("up-prefs-change", function(e){
+    if (!e || !e.detail || e.detail.name === "accent") akzentAnwenden();
+  });
   function onPrefs(fn){
     if (typeof fn !== "function") return function(){};
     function h(e){ try { fn((e && e.detail) || {}); } catch(err){} }

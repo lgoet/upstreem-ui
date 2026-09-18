@@ -121,7 +121,7 @@
 @keyframes uab-spin { to { transform: rotate(360deg); } }
 /* Der gespeicherte Knopf bleibt in der Primaerfarbe, nicht ausgegraut: er ist der einzige Teil
    der Karte, der gerade AKTIV etwas tut. core's :disabled-Regel wuerde ihn grau faerben. */
-.uab-card.is-saving .uab-save:disabled { background: var(--vc-text); color: var(--up-surface); opacity: .9; }
+.uab-card.is-saving .uab-save:disabled { background: var(--up-accent); color: var(--up-accent-fg); opacity: .9; }
 @media (prefers-reduced-motion: reduce) { .uab-spin { animation-duration: 2s; } }
 .uab-cancel {
   height: 34px; padding: 0 16px; border: 1px solid var(--vc-border); border-radius: 9px;
