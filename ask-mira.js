@@ -2219,6 +2219,9 @@
   }
 
   var _greetIdx = -1;
+  /* Stand beim Zeichnen schon eine eigene Marke bereit? Dann ist die Begruessung aus dem
+     grossen Topf gezogen und bleibt, wie sie ist. */
+  var _greetMarkeDa = false;
   var _galleryCat = null;
   /* Der Kategorienblock laesst sich zuklappen, und die Entscheidung ueberlebt den Seitenwechsel.
      In try/catch, weil localStorage im privaten Fenster beim Lesen schon wirft -- ohne den Fang
@@ -2375,6 +2378,7 @@
          ein Satz mit einer Luecke. Beide Listen sind gleich lang, also ist etwa jede zweite
          Begruessung persoenlich. */
       var marke = eigeneMarke();
+      if (marke) _greetMarkeDa = true;
       var gs = (L().greetings || ['How can I help you today?']).slice();
       if (marke) gs = gs.concat(L().greetingsBrand || []);
       if (_greetIdx < 0 || _greetIdx >= gs.length) _greetIdx = Math.floor(Math.random() * gs.length);
@@ -7669,6 +7673,20 @@
   if (window.__askMiraTheme) window.askMiraSetTheme(window.__askMiraTheme);
   resolveLang();
   renderSuggested();
+  /* Die Marken kommen von Bubble und treffen oft NACH dem ersten Zeichnen ein. Dann stand hier
+     schon eine Begruessung aus dem kleinen Topf, und ohne diesen Zug bekaeme der Nutzer nie eine
+     persoenliche zu sehen. Also genau EINMAL neu wuerfeln, sobald die eigene Marke zum ersten Mal
+     bekannt ist -- jede spaetere Aenderung des Speichers laesst die Ueberschrift in Ruhe, sonst
+     wechselt sie dem Lesenden unter den Augen weg. */
+  (function markeNachziehen(){
+    var kern = window.UpstreemCore;
+    if (!kern || !kern.onBrands) return;
+    kern.onBrands(function(){
+      if (_greetMarkeDa || !eigeneMarke()) return;
+      _greetIdx = -1;
+      renderSuggested();
+    }, root);
+  })();
   /* Die Reihenfolge zaehlt: effLabelsBauen liest lang, und setModel ruft setDetail.
      prevKnopfText muss hier NOCHMAL: der Block oben laeuft, bevor resolveLang die Sprache
      gesetzt hat, und schrieb dort also die englische Fassung. */
