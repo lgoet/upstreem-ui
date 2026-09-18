@@ -121,7 +121,9 @@
       "The picture was uploaded, but saving it failed. Please try again.":
         "Das Bild wurde hochgeladen, aber nicht gespeichert. Bitte versuche es noch einmal.",
       "Your name could not be saved. Please try again.":
-        "Dein Name konnte nicht gespeichert werden. Bitte versuche es noch einmal."
+        "Dein Name konnte nicht gespeichert werden. Bitte versuche es noch einmal.",
+      "Saving your name…": "Dein Name wird gespeichert …",
+      "Your name is saved.": "Dein Name ist gespeichert."
     });
 
     /* ---- Die Wahlmöglichkeiten ----
@@ -580,6 +582,7 @@
          user_metadata. Das Ereignis geht trotzdem raus -- ein Workflow kann daran haengen (etwa
          die Seitenleiste nachziehen), er MUSS aber nichts mehr speichern.
          Gemeldet wird erst nach dem Schreiben, aus demselben Grund wie beim Bild. */
+      avMelden(AV_TEXT.name_saving, true);
       namenSchreiben(v, false);
     }
 
@@ -609,7 +612,9 @@
       network:      "No connection. Please try again.",
       server:       "The upload failed. Please try again.",
       save_failed:  "The picture was uploaded, but saving it failed. Please try again.",
-      name_failed:  "Your name could not be saved. Please try again."
+      name_failed:  "Your name could not be saved. Please try again.",
+      name_saving:  "Saving your name…",
+      name_saved:   "Your name is saved."
     };
     function avMelden(text, laeuft) {
       var h = M && M.main ? M.main.querySelector(".ums-hint") : null;
@@ -705,6 +710,7 @@
         });
     }
 
+    var nameMsgT = null;
     function namenSchreiben(v, zweiterVersuch) {
       /* BEIDE Schluessel. In einer Metadata, die aus einer Google-Anmeldung kommt, stehen "name"
          und "full_name" -- ein "display_name" gibt es dort nicht, und ein Plugin, das den Namen
@@ -714,7 +720,12 @@
          unberuehrt. */
       profilSchreiben({ display_name: v, name: v }, function (ok, grund) {
         if (ok) {
-          avMelden(null);
+          /* Kurz stehen lassen und dann zurueck auf den Hinweis zum Bild: die Zeile gehoert
+             beiden, und eine Erfolgsmeldung, die fuer immer stehen bleibt, liest sich beim
+             naechsten Oeffnen wie ein Zustand. */
+          avMelden(AV_TEXT.name_saved);
+          clearTimeout(nameMsgT);
+          nameMsgT = setTimeout(function(){ avMelden(null); }, 2600);
           fireBauen();
           fire("data-name-fn", "umsName", { display_name: v });
           return;
@@ -749,6 +760,12 @@
     }
     function schliessen() {
       if (!M || !offen) return;
+      /* ZUERST den Namen sichern. Gespeichert wird sonst beim Verlassen des Feldes -- und genau
+         das passiert hier nicht: wer tippt und dann auf das Kreuz klickt, nimmt dem Feld den
+         Fokus nicht, sondern das ganze Fenster. Gemeldet am 18.09.: "wenn ich mit nem anderen
+         namen einfach das popup schliesse, aendert sich auch nix." namenSpeichern prueft selbst,
+         ob sich etwas geaendert hat. */
+      try { namenSpeichern(); } catch (e) {}
       offen = false;
       popovers.forEach(function (p) { try { p.close(false); } catch (e) {} });
       popovers = [];

@@ -649,9 +649,13 @@
     "Power": "Power",
     /* 17.09.: der Umschalter heisst jetzt Agentic / Analytic. Die zwei Eintraege darueber bleiben
        stehen, solange irgendein Element einen aelteren Pin faehrt -- ein fehlender Katalogeintrag
-       zeigt sonst den englischen Schluessel. */
+       zeigt sonst den englischen Schluessel.
+       BEIDE Woerter bleiben auch auf Deutsch stehen (18.09.): hier stand "Analytisch", und damit
+       war der eine Knopf uebersetzt und der andere nicht -- die zwei sind ein Paar und muessen
+       gleich klingen. Der Eintrag bleibt trotzdem stehen: ohne ihn meldet .finde_untexte.py das
+       Wort als Text ohne Katalogeintrag. */
     "Agentic": "Agentic",
-    "Analytic": "Analytisch",
+    "Analytic": "Analytic",
     "Recent chats": "Letzte Chats",
     /* "All chats" ist am 12.09. zu "All" gekuerzt worden -- die Ueberschrift daneben sagt schon,
        wovon "alle". Der alte Eintrag ist mitgegangen: gegengeprueft, ihn liest kein t()-Aufruf
@@ -4263,14 +4267,21 @@
       try { el.hidePopover(); } catch(e){}
       el.removeAttribute("popover");
     }
+    /* DIE OBERSTE EBENE WIRD ERST NACH DEM AUSBLENDEN VERLASSEN (18.09. gemeldet). Hier stand
+       obenRaus() gleich neben dem Wegnehmen von is-on -- die Karte fiel also im selben Augenblick
+       aus dem Top Layer zurueck und blendete DAHINTER aus, hinter dem Menue, aus dem sie geoeffnet
+       wurde. Genau so beschrieben: "dann springt es sofort hinter das Dropdown und macht dahinter
+       seine Fadeout-Animation." Jetzt bleibt sie oben, bis die 140ms Ueberblendung durch sind;
+       derselbe Timer raeumt auf, der auch is-flipped zurueckstellt, und sein Wachposten sorgt
+       dafuer, dass eine inzwischen wieder gezeigte Karte oben bleibt. */
     function hide(){
       el.classList.remove("is-on");
-      obenRaus();
       openFor = null;
       clearTimeout(aufraeumT);
       aufraeumT = setTimeout(function(){
         if (el.classList.contains("is-on")) return;
         el.classList.remove("is-flipped");
+        obenRaus();
       }, 200);
     }
     function show(trigger){
@@ -4296,8 +4307,13 @@
          Gemessen: Karte sichtbar, Text richtig, aber im Bild nur eine dunkle Ecke unter dem Menue.
          Eine spaeter gezeigte popover-Ebene liegt ueber einer frueheren, also genuegt es, die Karte
          beim Zeigen dorthin zu heben. Wo es popover nicht gibt, bleibt es beim alten Verhalten. */
-      if (!el.hasAttribute("popover") && typeof el.showPopover === "function"){
+      /* FRISCH nach oben, auch wenn sie noch oben liegt: die Reihenfolge im Top Layer ist die
+         Reihenfolge des Zeigens, und seit dem letzten Mal kann ein Menue dazugekommen sein.
+         Seit hide() die Karte bis zum Ende der Ueberblendung oben laesst, ist genau das der
+         Normalfall. */
+      if (typeof el.showPopover === "function"){
         try {
+          if (el.hasAttribute("popover")){ try { el.hidePopover(); } catch(e2){} }
           el.setAttribute("popover", "manual");
           el.showPopover();
           /* Der UA-Stylesheet gibt jedem [popover] margin:auto und inset:0 -- ohne das
