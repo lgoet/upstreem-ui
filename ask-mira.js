@@ -5312,11 +5312,12 @@
       S.previousChats = einListe.concat(altListe.filter(function(c){
         return !(c && c.id != null && drin[String(c.id)]);
       }));
-      if (window.console) console.warn('[AskMira] die Chatliste kam mit ' + einListe.length +
-        ' Eintraegen, davon ' + bekannteDrin + ' schon bekannt -- die Leiste haelt ' + altListe.length +
-        '. Das ist ein Ausschnitt, keine neue Liste: das Nachgeladene bleibt stehen. (Quelle: ' +
-        (_vonAutoBind ? 'das versteckte Element mira-chats-data' : 'ein direkter Aufruf von askMiraSetPreviousChats') +
-        '.) window.askMiraChatTrace() zeigt alle Schreibzugriffe.');
+      /* HIER STAND EINE WARNUNG, und sie war falsch am Platz: dieser Zweig ist der NORMALFALL.
+         Jede Seite, die Bubble nachliefert, ist ein Ausschnitt der Liste, die die Leiste schon
+         haelt -- und der Code macht genau das Richtige damit, er haengt sie an. Eine Warnung
+         gehoert zu etwas, das jemand beheben kann; hier gibt es nichts zu beheben, und sie kam
+         bei jedem Nachladen. Die Spur bleibt: window.askMiraChatTrace() zeigt weiter jeden
+         Schreibzugriff mitsamt Quelle. */
     } else {
       /* DER OFFENE CHAT UEBERLEBT AUCH EINE VOLLSTAENDIGE ERSETZUNG (17.09. gemessen). Eine
          veraltete Liste, die ihn nicht kennt, nahm sonst genau den Eintrag wieder mit, den wir
@@ -6381,10 +6382,22 @@
   });
 
   /* ---------------- events helper ---------------- */
+  var _stummGemeldet = {};
   function amFire(fn, payload, dom){
     var f = window['bubble_fn_ask_mira_'+fn];
     if (f) f(JSON.stringify(payload));
-    else { window.dispatchEvent(new CustomEvent('askmira:'+dom, { detail: payload })); console.log('Ask Mira '+dom+':', payload); }
+    else {
+      window.dispatchEvent(new CustomEvent('askmira:'+dom, { detail: payload }));
+      /* EINMAL je Ereignisart, nicht bei jedem Aufruf. Ohne Bubble-Funktion geht die Meldung nur
+         als CustomEvent hinaus -- das ist der Fall im Pruefstand und auf jeder Seite, die dieses
+         eine Ereignis nicht verdrahtet hat. Die Zeile sagt EINMAL, dass niemand zuhoert (das kann
+         man beheben); bei jedem Klick wiederholt war sie nur Laerm. */
+      if (!_stummGemeldet[dom]){
+        _stummGemeldet[dom] = true;
+        if (window.console) console.info('[AskMira] ' + dom + ': kein bubble_fn_ask_mira_' + fn +
+          ' auf der Seite -- die Meldung geht nur als Ereignis askmira:' + dom + ' hinaus.');
+      }
+    }
   }
   function findChat(id){ return (S.previousChats||[]).filter(function(c){ return String(c.id)===String(id); })[0]; }
   function findProject(id){ return (S.projects||[]).filter(function(p){ return String(p.id)===String(id); })[0]; }

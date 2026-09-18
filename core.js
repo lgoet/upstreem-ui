@@ -10003,6 +10003,25 @@
         }
         break;
       }
+      /* EIN FESTER VORFAHRE WIRD NICHT ANGEFASST, UND DER LAUF ENDET DORT (18.09.).
+         Gefunden in der Konsolen-Diagnose des Nutzers: die Host-App haelt jede Ansicht in
+         einem eigenen Kasten (#view-dashboard, #view-brands ...), und ein nicht sichtbarer
+         steht auf position: fixed. Auf diesen Kaesten stand unser overflow: visible --
+         gewirkt hat es nicht einmal (Bubbles eigene Regel gewinnt, gemessen: computed
+         weiterhin hidden), aber geschrieben haben wir auf die Ansichtsverwaltung der App.
+         Das ist dieselbe Grenze wie beim z-index (CLAUDE.md 5): dieses Modul kennt die
+         Ebenen des Hosts nicht und darf sie nicht umschreiben.
+         Und es bringt auch nichts: ein fester Kasten ist der umschliessende Block fuer
+         alles darin. Ein sticky-Element darin ist von ihm begrenzt, egal was sein overflow
+         sagt -- weiter oben zu entklemmen aendert daran nichts. Also hier aufhoeren.
+         Was wir vorher schon geschrieben haben, wird dabei zurueckgenommen. */
+      if (cs.position === "fixed"){
+        if (el.hasAttribute("data-up-unclipped")){
+          el.style.overflow = el.getAttribute("data-up-unclipped") || "";
+          el.removeAttribute("data-up-unclipped");
+        }
+        break;
+      }
       var clips = (cs.overflow === "hidden" || cs.overflow === "clip" ||
                    cs.overflowX === "hidden" || cs.overflowX === "clip" ||
                    oy === "hidden" || oy === "clip");
