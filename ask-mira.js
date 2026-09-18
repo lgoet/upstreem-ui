@@ -440,10 +440,12 @@
     en: {
       antwortHaengt: 'The answer is taking longer than expected. Reload the chat to see it.',
       placeholder: 'Ask Mira...',
-      /* EIN Bezug im Feld -> die naheliegende Frage steht als PLATZHALTER da (17.09. angefordert).
-         Nur als Platzhalter, nicht als Text: wer etwas anderes wissen will, tippt einfach los und
-         loescht nichts. Bei ZWEI Bezuegen faellt sie weg -- welche Frage zu zwei Dingen passt,
-         weiss niemand, und "Brand" in einer Frage waere dann die falsche Haelfte.
+      /* DER ERSTE Bezug in einem leeren Feld -> die naheliegende Frage steht dort als echter TEXT
+         (17.09. angefordert, am 18.09. vom Platzhalter zum Text geworden). Wer etwas anderes
+         wissen will, loescht sie und schreibt seine eigene -- als Platzhalter ging das nicht.
+         Bei ZWEI Bezuegen faellt sie weg: welche Frage zu zwei Dingen passt, weiss niemand, und
+         "Brand" in einer Frage waere dann die falsche Haelfte. Das Wann und Warum steht bei
+         frageNachziehen.
          Die Woerter sind die des Katalogs (Brand, Prompt, Domain, URL, Response). */
       bezugFrage: {
         brand:      'What can you tell me about this brand?',
@@ -2663,21 +2665,45 @@
       t.classList.remove('is-in');               // animate up into place
     }, 240);
   }
-  /* Der Platzhalter, wenn der Laufteppich steht: bei GENAU EINEM Bezug die Frage zu seinem Typ,
-     sonst der uebliche. Kennt der Katalog den Typ nicht, bleibt es beim ueblichen -- ein Bezug
-     ohne passende Frage soll keine leere Zeile erzeugen. */
-  function platzhalterText(){
-    if (_picks && _picks.length === 1){
+  /* DIE FRAGE ZUM BEZUG STEHT ALS ECHTER TEXT IM FELD (18.09. geaendert; vorher war sie der
+     Platzhalter). Der Grund ist der Nutzer selbst: als Text kann er sie loeschen und etwas
+     anderes schreiben, als Platzhalter musste er erst tippen, um sie loszuwerden.
+
+     Sie kommt NUR, wenn der erste Bezug in ein LEERES Feld faellt. Stand dort schon etwas, ist
+     das die Frage des Nutzers und die gewinnt. Und sie GEHT WIEDER, sobald nicht mehr genau ein
+     Bezug dasteht -- beim zweiten Bezug passt "diese Brand" nicht mehr, dort steht dann wieder
+     der uebliche Platzhalter. Von zwei zurueck auf einen bringt sie nicht wieder: der Nutzer hat
+     dann schon zwei Mal gewaehlt, und ein Feld, das sich von selbst neu befuellt, waere ein Feld,
+     das man zweimal leeren muss. Deshalb sagt der Aufrufer, ob ein Bezug DAZUKAM.
+
+     WELCHER TEXT UNSERER IST, wird am Katalog erkannt und nicht an einem Merker. Ein Merker
+     muesste beim Umzug zwischen Dashboard-Feld und Mira-Feld mitwandern (zwei Felder, eine
+     Wurzel, siehe _feldSpeicher) -- der Vergleich weiss es ohne diese Buchhaltung. Hat der Nutzer
+     die Frage angefasst, stimmt sie nicht mehr ueberein und bleibt damit stehen: seine. */
+  function frageAusUns(txt){
+    var t = String(txt || '').trim();
+    if (!t) return false;
+    var f = L().bezugFrage || {};
+    for (var k in f) if (f[k] === t) return true;
+    return false;
+  }
+  function frageNachziehen(dazu){
+    if (!elTextarea) return;
+    var txt = elTextarea.value;
+    if (dazu && _picks.length === 1 && !txt.trim()){
+      /* Kennt der Katalog den Typ nicht, bleibt das Feld leer -- ein Bezug ohne passende Frage
+         soll nichts Halbes hineinschreiben. */
       var f = (L().bezugFrage || {})[String(_picks[0].type || '').toLowerCase()];
-      if (f) return f;
+      if (f) elTextarea.value = f;
+      return;
     }
-    return L().placeholder;
+    if (_picks.length !== 1 && frageAusUns(txt)) elTextarea.value = '';
   }
   function updateLoopState(){
     var on = loopActive();
     elComposer.classList.toggle('loop-on', on);
     // native placeholder only when not looping (e.g. inside an existing chat)
-    elTextarea.setAttribute('placeholder', (!on && !elTextarea.value.trim()) ? platzhalterText() : '');
+    elTextarea.setAttribute('placeholder', (!on && !elTextarea.value.trim()) ? L().placeholder : '');
     if (on){ if (!phTimer) phStart(); } else { phStop(); }
   }
 
@@ -3286,8 +3312,9 @@
      Zustand, in dem die Hoehe nie waechst (Leiste 0px hoch waehrend einer Animation), waere sonst
      eine Endlosschleife. */
   /* ---- DIE TIPP-ANIMATION DES TITELS --------------------------------------------------------
-     18ms je Zeichen: schnell genug, dass es wie ein Erscheinen wirkt, langsam genug, dass man es
-     sieht. Der Titel ist kurz, das sind selten mehr als vierhundert Millisekunden.
+     27ms je Zeichen: schnell genug, dass es wie ein Erscheinen wirkt, langsam genug, dass man es
+     sieht. Waren 18ms, am 18.09. um die Haelfte verlangsamt. Der Titel ist kurz, das sind selten
+     mehr als sechshundert Millisekunden.
      TRUNCATED WIRD VORHER BEDACHT (angefordert): getippt wird nur so weit, wie die Zeile es
      zeigen kann -- sobald der Text breiter ist als sein Kasten, steht am Ende der volle Titel
      da und die CSS kuerzt ihn mit Auslassungspunkten. Sonst liefe die Animation sichtbar ins
@@ -3331,7 +3358,7 @@
           if (kid){ _titelGetippt[kid] = true; delete _tippStand[kid]; }
           return;
         }
-        setTimeout(tick, 18);
+        setTimeout(tick, 27);
       })();
     });
   }
@@ -4494,8 +4521,8 @@
     if (elPickCount) elPickCount.textContent = _picks.length + ' / ' + PICK_MAX;
     /* updateLoopState MUSS hier stehen. Ohne ihn lief der Laufteppich weiter, WAEHREND die erste
        Pille schon im Feld stand -- gemeldet am 18.09. mit Bild: die Beispielfrage lag hinter der
-       Pille. Und weil derselbe Aufruf den nativen Platzhalter setzt, fehlte damit auch die Frage
-       zum Bezug (Was kannst du mir ueber diese Brand sagen?). Zwei Meldungen, eine Ursache. */
+       Pille. */
+    frageNachziehen(true);
     refreshSend(); autosize(); updateLoopState();
     /* DIE TREFFERLISTE BLEIBT STEHEN. Hier wurde zuerst das Suchfeld geleert und neu gesucht --
        und damit war genau die Liste weg, aus der man den zweiten Bezug waehlen wollte: wer zwei
@@ -4604,6 +4631,7 @@
       if (elTextarea.selectionStart !== 0 || elTextarea.selectionEnd !== 0) return;
       e.preventDefault();
       _picks.pop();
+      frageNachziehen(false);
       picksZeichnen(); pickZeichnen(_pickRows, null); refreshSend(); autosize(); updateLoopState();
     });
   }
@@ -4620,12 +4648,14 @@
       if (tag) tag.classList.add('is-out');
       setTimeout(function(){
         _picks.splice(i, 1);
+        frageNachziehen(false);
         picksZeichnen(); pickZeichnen(_pickRows, null); refreshSend(); autosize(); updateLoopState();
       }, 200);
     });
   }
   function clearPicks(){
     _picks = [];
+    frageNachziehen(false);
     picksZeichnen(); pickZeichnen(_pickRows, null); updateLoopState();
   }
 
@@ -5646,6 +5676,7 @@
     clearQuote(); clearPicks();
     if (root.classList.contains('is-pick-open')) pickOeffnen(false);
     _picks.push(it);
+    frageNachziehen(true);
     picksZeichnen(); refreshSend(); autosize(); updateLoopState();
     var bis = Date.now() + 2000;
     (function fassen(){
