@@ -569,6 +569,14 @@
     }
 
     /* ---- Profil ---- */
+    /* WAS DER NUTZER SELBST GESETZT HAT, GEWINNT -- bis zum naechsten Seitenladen.
+       Der Grund steht in der Ursache des Fehlers vom 18.09.: core liest die data-up-*-Attribute
+       bei jeder DOM-Aenderung neu (attrLesen in toolbarLauf) und schiebt sie ueber
+       setUpstreemProfile hierher. Diese Werte kommen aus Bubble und damit aus Supabase -- und
+       dort steht der neue Name minutenlang noch nicht. Ohne diesen Merker ueberschrieb der alte
+       Wert den gerade eingegebenen, und beim naechsten Oeffnen stand wieder der falsche da.
+       Nur der NAME ist betroffen: Bild und Kennung setzt der Nutzer hier nicht als Text. */
+    var selbstGesetzt = "";
     function namenSpeichern() {
       var feld = M.main.querySelector("[data-ums-name]");
       var v = String((feld && feld.value) || "").trim();
@@ -582,7 +590,22 @@
          user_metadata. Das Ereignis geht trotzdem raus -- ein Workflow kann daran haengen (etwa
          die Seitenleiste nachziehen), er MUSS aber nichts mehr speichern.
          Gemeldet wird erst nach dem Schreiben, aus demselben Grund wie beim Bild. */
+      /* DIE LEISTE ZIEHT SOFORT NACH, nicht erst wenn der Server geantwortet hat (18.09.
+         gemeldet: der Name unten aendert sich nicht). Der Aufruf stand im Erfolgszweig -- und
+         schlaegt das Schreiben fehl, etwa weil Token oder Anon-Key auf der Seite fehlen, kam er
+         nie. Der Nutzer sah dann weder den neuen Namen noch einen Grund.
+         Hier ist er ehrlich: er zeigt, was der Nutzer gerade eingegeben hat. Ob es GESPEICHERT
+         ist, sagt die Hinweiszeile darunter -- und beim naechsten Seitenladen kommt ohnehin,
+         was wirklich in der Datenbank steht. */
+      nameInLeiste(v);
+      selbstGesetzt = v;
       avMelden(AV_TEXT.name_saving, true);
+      /* WARTE-UHR. Der Zweig "Token abgelaufen" wartet auf eine Auffrischung, die ausbleiben
+         kann -- dann staende hier fuer immer "Saving your name…". Ein Ladezustand ohne Ende ist
+         die schlechteste Meldung, die es gibt (CLAUDE.md 2). Zwoelf Sekunden: der Weg zu
+         Supabase liegt weit darunter, eine langsame Auffrischung passt noch hinein. */
+      clearTimeout(nameWacheT);
+      nameWacheT = setTimeout(function(){ nameWacheT = null; avMelden(AV_TEXT.name_failed); }, 12000);
       namenSchreiben(v, false);
     }
 
@@ -725,16 +748,25 @@
       if (!sn || typeof window.setSidebarUser !== "function") return;
       var mail = sn.querySelector("[data-acc-mail]");
       var img = sn.querySelector(".usn-av img");
-      try {
-        window.setSidebarUser({
-          name: v,
-          email: mail ? String(mail.textContent || "").trim() : "",
-          avatar_url: (img && img.getAttribute("src")) || profil.avatar || "",
-          user_id: profil.userId || ""
-        });
-      } catch (e) {}
+      var nutzlast = {
+        name: v,
+        email: mail ? String(mail.textContent || "").trim() : "",
+        avatar_url: (img && img.getAttribute("src")) || profil.avatar || "",
+        user_id: profil.userId || ""
+      };
+      /* MIT DER INSTANZ-KENNUNG, und zwar je Wurzel einzeln. setSidebarUser nimmt (id,
+         payload) -- der Aufruf ohne id schob die Nutzlast an die Stelle der Kennung, und die
+         Leiste meldete "no instance for id [object Object]" und tat nichts. Genau das war am
+         18.09. gemeldet: der Name unten aenderte sich nicht.
+         Ueber ALLE Wurzeln, weil Bubble ein Element mehrfach einbauen kann; eine feste
+         Kennung waere geraten. */
+      var wurzeln = document.querySelectorAll(".usn-root:not(.up-portal)");
+      for (var i = 0; i < wurzeln.length; i++) {
+        try { window.setSidebarUser(wurzeln[i].getAttribute("data-instance") || "default", nutzlast); }
+        catch (e) {}
+      }
     }
-    var nameMsgT = null;
+    var nameMsgT = null, nameWacheT = null;
     function namenSchreiben(v, zweiterVersuch) {
       /* BEIDE Schluessel. In einer Metadata, die aus einer Google-Anmeldung kommt, stehen "name"
          und "full_name" -- ein "display_name" gibt es dort nicht, und ein Plugin, das den Namen
@@ -743,14 +775,17 @@
          display_name. Deshalb beide -- GoTrue MISCHT die Felder, der Rest der Metadata bleibt
          unberuehrt. */
       profilSchreiben({ display_name: v, name: v }, function (ok, grund) {
+        /* Nur die zwei ENDGUELTIGEN Ausgaenge stellen die Uhr ab. Der Zweig darunter, der auf
+           eine neue Anmeldung wartet, laesst sie ausdruecklich laufen -- er ist genau der Fall,
+           fuer den sie da ist. */
         if (ok) {
+          clearTimeout(nameWacheT); nameWacheT = null;
           /* Kurz stehen lassen und dann zurueck auf den Hinweis zum Bild: die Zeile gehoert
              beiden, und eine Erfolgsmeldung, die fuer immer stehen bleibt, liest sich beim
              naechsten Oeffnen wie ein Zustand. */
           avMelden(AV_TEXT.name_saved, false, true);
           clearTimeout(nameMsgT);
           nameMsgT = setTimeout(function(){ avMelden(null); }, 2600);
-          nameInLeiste(v);
           fireBauen();
           fire("data-name-fn", "umsName", { display_name: v });
           return;
@@ -763,7 +798,12 @@
         }
         /* Die Meldung steht in derselben Zeile wie die des Bildes. Der Abschnitt hat EINE
            Meldungszeile, und zwei waeren zwei Orte, an denen man nachsehen muesste. */
+        clearTimeout(nameWacheT); nameWacheT = null;
         avMelden(AV_TEXT.name_failed);
+        if (window.console) console.warn('[preferences] Der Name konnte nicht gespeichert werden' +
+          (grund ? ' (' + grund + ')' : '') + '. Geschrieben wird direkt in Supabase; dafuer\n' +
+          'braucht die Seite setUpstreemAuth(token, anonKey). In der Leiste steht der neue Name\n' +
+          'trotzdem -- beim naechsten Seitenladen kommt wieder der gespeicherte.');
       });
     }
 
@@ -863,7 +903,7 @@
          Seitenleiste ein OBJEKT uebergibt; ein Run-JS-Schritt mit Text-Payload waere gescheitert. */
       if (Array.isArray(p) && p.length === 1 && p[0] && typeof p[0] === "object") p = p[0];
       if (!p || Array.isArray(p)) return;
-      if (typeof p.display_name === "string") profil.name = p.display_name.trim();
+      if (typeof p.display_name === "string" && !selbstGesetzt) profil.name = p.display_name.trim();
       if (typeof p.avatar_url === "string") profil.avatar = p.avatar_url.trim();
       if (typeof p.user_id === "string") profil.userId = p.user_id.trim();
       if (offen) zeichnen();

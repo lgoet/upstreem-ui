@@ -337,6 +337,15 @@
      so the direct-child reset above misses it and it gains an 8px indent vs. plain cells. */
   #ask-mira .am-bubble :is(td, th, p, li) > :is(strong, b, em, i):first-child > .am-logo-wrap:first-child { margin-left: 0; }
   .am-logo-wrap .am-inline-logo { margin: 0 5px 0 0; }
+  /* DAS ZITAT-LOGO IST 2px KLEINER als das einer Marke (18.09. angefordert: "die citation logos
+     sind zu gross"). Nur bei Zitaten -- Marke und Wettbewerber behalten ihre 24px. Der Radius
+     geht im selben Verhaeltnis mit (8 * 22/24 = 7,3), sonst waere die Rundung an einem kleineren
+     Bild sichtbar staerker. */
+  #ask-mira .am-logo-wrap[data-type="url"] .am-inline-logo,
+  #ask-mira .am-logo-wrap[data-type="domain"] .am-inline-logo,
+  #ask-mira .am-logo-wrap[data-type="prompt"] .am-inline-logo {
+    width: 22px; height: 22px; border-radius: 7px;
+  }
   .am-logo-wrap .am-inline-ic { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; margin: 0 5px 0 0; vertical-align: middle; color: var(--am-muted); pointer-events: none; }
   .am-logo-wrap .am-inline-ic svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .am-logo-wrap.is-bare { margin-left: 0; }
@@ -347,28 +356,34 @@
      chip (logo + name) back onto the text baseline */
   #ask-mira .am-logo-wrap[data-type="brand"],
   #ask-mira .am-logo-wrap[data-type="competitor"] { position: relative; top: -1.5px; }
-  /* URLs & Domains: code-chip-style background highlight — NUR wenn Citation-Highlights auf "Icon" stehen */
-  #ask-mira[data-citation="icon"] .am-logo-wrap[data-type="url"],
-  #ask-mira[data-citation="icon"] .am-logo-wrap[data-type="domain"],
-  #ask-mira[data-citation="icon"] .am-logo-wrap[data-type="prompt"],
+  /* URLs & Domains: code-chip-style background highlight.
+     IN BEIDEN Zitat-Modi, seit dem 18.09.: gefragt wurde, warum die Chips im Favicon-Modus
+     keinen grauen Grund haben wie im Icon-Modus. Eine Antwort darauf gab es nicht -- es ist
+     derselbe Chip, nur mit einem anderen Zeichen davor. Die fuenf Regeln darunter gehoeren
+     zusammen (Flaeche, das Zeichen darin, die Ausnahme in gefaerbten Spannen, die erste Zelle
+     einer Tabelle und die Schreibmaschinenschrift); einzeln erweitert waere es ein halber Chip.
+     NUR Zitate -- Marken und Antworten haben ihre eigenen Regeln und bleiben unberuehrt. */
+  #ask-mira:is([data-citation="icon"], [data-citation="favicon"]) .am-logo-wrap[data-type="url"],
+  #ask-mira:is([data-citation="icon"], [data-citation="favicon"]) .am-logo-wrap[data-type="domain"],
+  #ask-mira:is([data-citation="icon"], [data-citation="favicon"]) .am-logo-wrap[data-type="prompt"],
   .am-set-backdrop[data-citation="icon"] .am-logo-wrap[data-type="domain"] {
     display: inline-flex; align-items: center; vertical-align: middle; max-width: 100%; min-width: 0;
     margin: 2px 0; background: var(--am-soft-2); border-radius: 8px; padding: 0 6px;
   }
-  #ask-mira[data-citation="icon"] .am-logo-wrap[data-type="url"] .am-inline-ic,
-  #ask-mira[data-citation="icon"] .am-logo-wrap[data-type="url"] .am-inline-logo,
-  #ask-mira[data-citation="icon"] .am-logo-wrap[data-type="domain"] .am-inline-ic,
-  #ask-mira[data-citation="icon"] .am-logo-wrap[data-type="domain"] .am-inline-logo,
-  #ask-mira[data-citation="icon"] .am-logo-wrap[data-type="prompt"] .am-inline-ic,
+  #ask-mira:is([data-citation="icon"], [data-citation="favicon"]) .am-logo-wrap[data-type="url"] .am-inline-ic,
+  #ask-mira:is([data-citation="icon"], [data-citation="favicon"]) .am-logo-wrap[data-type="url"] .am-inline-logo,
+  #ask-mira:is([data-citation="icon"], [data-citation="favicon"]) .am-logo-wrap[data-type="domain"] .am-inline-ic,
+  #ask-mira:is([data-citation="icon"], [data-citation="favicon"]) .am-logo-wrap[data-type="domain"] .am-inline-logo,
+  #ask-mira:is([data-citation="icon"], [data-citation="favicon"]) .am-logo-wrap[data-type="prompt"] .am-inline-ic,
   .am-set-backdrop[data-citation="icon"] .am-logo-wrap[data-type="domain"] .am-inline-ic,
   .am-set-backdrop[data-citation="icon"] .am-logo-wrap[data-type="domain"] .am-inline-logo { transform: none; flex: 0 0 auto; }
   /* Innerhalb farbiger Sentiment-/Source-Spans: KEIN Chip-Background (würde mit der Einfärbung kollidieren) */
-  #ask-mira[data-citation="icon"] [data-mira-sentiment] .am-logo-wrap[data-type="url"],
-  #ask-mira[data-citation="icon"] [data-mira-sentiment] .am-logo-wrap[data-type="domain"],
-  #ask-mira[data-citation="icon"] [data-mira-sentiment] .am-logo-wrap[data-type="prompt"],
-  #ask-mira[data-citation="icon"] [data-mira-source-signal] .am-logo-wrap[data-type="url"],
-  #ask-mira[data-citation="icon"] [data-mira-source-signal] .am-logo-wrap[data-type="domain"],
-  #ask-mira[data-citation="icon"] [data-mira-source-signal] .am-logo-wrap[data-type="prompt"] {
+  #ask-mira:is([data-citation="icon"], [data-citation="favicon"]) [data-mira-sentiment] .am-logo-wrap[data-type="url"],
+  #ask-mira:is([data-citation="icon"], [data-citation="favicon"]) [data-mira-sentiment] .am-logo-wrap[data-type="domain"],
+  #ask-mira:is([data-citation="icon"], [data-citation="favicon"]) [data-mira-sentiment] .am-logo-wrap[data-type="prompt"],
+  #ask-mira:is([data-citation="icon"], [data-citation="favicon"]) [data-mira-source-signal] .am-logo-wrap[data-type="url"],
+  #ask-mira:is([data-citation="icon"], [data-citation="favicon"]) [data-mira-source-signal] .am-logo-wrap[data-type="domain"],
+  #ask-mira:is([data-citation="icon"], [data-citation="favicon"]) [data-mira-source-signal] .am-logo-wrap[data-type="prompt"] {
     background: none; padding: 0; border-radius: 0;
   }
 
@@ -397,12 +412,12 @@
   .am-logo-wrap[data-type="response"] .am-resp-ic img { width: 17px; height: 17px; object-fit: contain; display: block; }
   .am-logo-wrap[data-type="response"] .am-resp-ic svg { width: 14px; height: 14px; fill: none; stroke: var(--am-muted); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .am-logo-wrap[data-type="response"] .am-logo-text { font-size: 13px; }
-  #ask-mira[data-citation="icon"] td > .am-logo-wrap[data-type="url"]:first-child,
-  #ask-mira[data-citation="icon"] th > .am-logo-wrap[data-type="url"]:first-child,
-  #ask-mira[data-citation="icon"] td > .am-logo-wrap[data-type="domain"]:first-child,
-  #ask-mira[data-citation="icon"] th > .am-logo-wrap[data-type="domain"]:first-child { margin-left: 0; }
-  #ask-mira[data-citation="icon"] .am-logo-wrap[data-type="url"] .am-logo-text,
-  #ask-mira[data-citation="icon"] .am-logo-wrap[data-type="domain"] .am-logo-text,
+  #ask-mira:is([data-citation="icon"], [data-citation="favicon"]) td > .am-logo-wrap[data-type="url"]:first-child,
+  #ask-mira:is([data-citation="icon"], [data-citation="favicon"]) th > .am-logo-wrap[data-type="url"]:first-child,
+  #ask-mira:is([data-citation="icon"], [data-citation="favicon"]) td > .am-logo-wrap[data-type="domain"]:first-child,
+  #ask-mira:is([data-citation="icon"], [data-citation="favicon"]) th > .am-logo-wrap[data-type="domain"]:first-child { margin-left: 0; }
+  #ask-mira:is([data-citation="icon"], [data-citation="favicon"]) .am-logo-wrap[data-type="url"] .am-logo-text,
+  #ask-mira:is([data-citation="icon"], [data-citation="favicon"]) .am-logo-wrap[data-type="domain"] .am-logo-text,
   .am-set-backdrop[data-citation="icon"] .am-logo-wrap[data-type="domain"] .am-logo-text {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13.5px;
   }

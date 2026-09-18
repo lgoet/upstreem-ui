@@ -555,7 +555,16 @@
       return ohneJahr(d);
     }
     var _chatsGeladen = false;
+    function chatSkelett(){
+      return [0, 1, 2].map(function(i){ return '<div class="upw-chat is-sk"><span class="upw-sk upw-sk-ic"></span>' +
+        '<span class="upw-sk upw-sk-title" style="width:' + [42, 30, 36][i] + '%"></span></div>'; }).join("");
+    }
     function renderChats(){
+      /* LAEDT DAS DASHBOARD, STEHT AUCH HIER DAS SKELETT (18.09. gemeldet). Die Chatliste kommt
+         aus Mira und damit aus einer anderen Quelle als der Rest -- sie war deshalb oft schon
+         gefuellt, waehrend daneben noch ueberall Skelette standen. Ein halb geladenes Bild ist
+         schlechter als ein ganz ladendes: es sieht fertig aus und ist es nicht. */
+      if (state.loading){ elChats.innerHTML = chatSkelett(); return; }
       var liste = (typeof window.askMiraRecentChats === "function") ? window.askMiraRecentChats(3) : [];
       if (liste.length) _chatsGeladen = true;
       if (!liste.length){
@@ -564,8 +573,7 @@
            wahr (dieselbe Frist wie Miras eigene Chatleiste). */
         elChats.innerHTML = _chatsLeer
           ? '<div class="upw-chats-empty" data-i18n="No chats yet">' + esc(t("No chats yet")) + '</div>'
-          : [0, 1, 2].map(function(i){ return '<div class="upw-chat is-sk"><span class="upw-sk upw-sk-ic"></span>' +
-              '<span class="upw-sk upw-sk-title" style="width:' + [42, 30, 36][i] + '%"></span></div>'; }).join("");
+          : chatSkelett();
         return;
       }
       elChats.innerHTML = liste.map(function(c){
