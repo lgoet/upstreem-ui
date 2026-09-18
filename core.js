@@ -13413,8 +13413,26 @@
      festgehalten. */
   var LETZTE_ANSICHT = "";
   function currentView(){ return LETZTE_ANSICHT; }
+  /* JEDE ANSICHT FAENGT OBEN AN (18.09.). Gemeldet als "vom Power Dashboard in eine andere
+     Ansicht, dort laesst sich nur ein bisschen scrollen". Gemessen auf der echten Seite:
+     #main scrollt frei (scrollTopMax 493 = moeglich 493), die Brands-Ansicht ist vollstaendig
+     (1415px, Komponente 1050px, 8 Zeilen, keine Skelette) -- nur stand der Scrollwert noch
+     auf dem der vorigen Ansicht. Das Power Dashboard ist deutlich hoeher als die anderen:
+     wer dort nach unten scrollt und wechselt, landet in der kuerzeren Ansicht am ENDE, und
+     nach unten geht dann nichts mehr. Deshalb faellt es seit dem Dashboard auf.
+     Nur bei einem echten Wechsel des Namens -- showView wird auch fuer dieselbe Ansicht
+     gerufen, und dabei soll die Position bleiben. Und nur, wenn wirklich gescrollt ist:
+     ein Schreibzugriff auf scrollTop kostet sonst umsonst ein Layout.
+     #main ist der Scroller dieser App; gibt es ihn nicht, nimmt es das Dokument. */
+  function nachObenBeimWechsel(){
+    var el = document.getElementById("main") || document.scrollingElement;
+    if (!el || !el.scrollTop) return;
+    try { el.scrollTop = 0; } catch(e){}
+  }
   function fireViewChange(name){
+    var gewechselt = !!name && name !== LETZTE_ANSICHT;
     if (name) LETZTE_ANSICHT = name;
+    if (gewechselt) nachObenBeimWechsel();
     closeAllDropdowns();
     /* Ein Wechsel macht Umschalter sichtbar, die vorher geparkt waren -- und geparkte messen
        nicht (siehe messbar). Ohne diesen Lauf haetten sie keinen Streifen, bis irgendetwas
