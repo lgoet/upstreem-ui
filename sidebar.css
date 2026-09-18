@@ -821,7 +821,22 @@
   transition: background var(--usn-t) var(--usn-ease);
 }
 .usn-acc:hover { background: var(--usn-sel); }
-.usn-bar.is-mini .usn-acc { justify-content: center; padding: 8px 0; gap: 0; }
+/* EINGEKLAPPT IST DER KNOPF SO GROSS WIE DAS BILD PLUS 8px (18.09. gemeldet: "der
+   Hovercontainer ist falsch"). Hier stand padding: 8px 0 -- die Breite blieb bei den 100% von
+   oben, also ein 40px breiter Streifen um ein 30px-Bild, und beim Hovern leuchtete er von Kante
+   zu Kante. 46px = 30 + 2x8, und das Bild sitzt mittig darin.
+   Die 46px sind BREITER als der Inhaltsbereich der eingeklappten Leiste (64 minus zweimal 12
+   Polsterung = 40px). Deshalb wird die Huelle zur Flexzeile mit mittiger Ausrichtung: so ragt
+   der Knopf auf beiden Seiten gleich weit in die Polsterung. Mit auto-Raendern geht das nicht --
+   die werden nie negativ, der Knopf staende links und haenge rechts heraus.
+   Die Huelle traegt auch .usn-pop (position: relative) fuer das Konto-Menue; das Menue ist
+   absolut positioniert und liegt damit ausserhalb des Flusses, die Flexzeile fasst es nicht an.
+   Die ausgeklappte Leiste bleibt, wie sie ist -- dort ist die ganze Zeile der Knopf. */
+.usn-bar.is-mini .usn-accwrap { display: flex; justify-content: center; }
+.usn-bar.is-mini .usn-acc {
+  justify-content: center; gap: 0;
+  flex: 0 0 46px; width: 46px; height: 46px; padding: 8px;
+}
 /* Der Kreis traegt die Initialen; ein Bild legt sich per position darueber, damit beim
    Ausfall des Bildes wieder der Buchstabe steht und nicht ein leerer Kreis. */
 .usn-av {
