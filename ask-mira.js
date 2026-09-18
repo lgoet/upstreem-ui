@@ -1024,10 +1024,19 @@
   }
 
   /* ---------------- Rendering ---------------- */
+  /* DAS ZEICHEN DER MARKEN ist dasselbe wie in der Seitenleiste (squareStack, 18.09.
+     angefordert). Es kommt aus core und steht deshalb nicht in der Tabelle oben: die wird beim
+     Laden gebaut, und core kann zu dem Zeitpunkt fehlen. Faellt core ganz aus, bleibt es beim
+     alten Zeichen -- gar keines waere schlechter als ein aelteres. */
+  function markenZeichen(){
+    var k = window.UpstreemCore;
+    return (k && k.icon) ? k.icon('squareStack', 2) : ICON.copy;
+  }
   function evPill(type, label){
-    var def = EVIDENCE[String(type||'').toLowerCase()];
+    var art = String(type||'').toLowerCase();
+    var def = EVIDENCE[art];
     var color = def ? def.color : '#6b7280';
-    var icon = def ? def.icon : ICON.flag;
+    var icon = (art === 'brand') ? markenZeichen() : (def ? def.icon : ICON.flag);
     /* NUR "<svg width="24" height="24"" suchen. Der Groessen-Lauf vom 09.09. hat hier auch die SUCHZEICHENKETTE
        getroffen -- sie passte zufaellig weiter, weil UC.icon genau diese Attribute in genau
        dieser Reihenfolge schreibt. Aendert sich dort ein Zeichen, faende dieses replace nichts
@@ -1203,7 +1212,7 @@
     mode = mode || (isBrand ? 'logo' : isResp ? 'logo' : 'icon');
     if (mode === 'none') return null;
     function iconFor(){
-      var svg = isBrand ? (t === 'competitor' ? ICON.swords : ICON.copy)
+      var svg = isBrand ? (t === 'competitor' ? ICON.swords : markenZeichen())
               : (t === 'domain' ? ICON.globe : t === 'prompt' ? ICON.zap : isResp ? ICON.maximize : ICON.link);
       var span = document.createElement('span'); span.className = 'am-inline-ic'; span.innerHTML = svg; return span;
     }

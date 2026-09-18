@@ -2480,11 +2480,17 @@
   /* DIE DREI BILDER GLEICH GROSS UND GLEICH GERUNDET (18.09. angefordert). In der Antwort sind
      sie es nicht: das Markenlogo misst 24px mit Radius 8, das Modell-Logo 17px mit Radius 4. Im
      Auszug stehen die drei Zeilen untereinander, und dort faellt jeder Unterschied auf, der in
-     einem Fliesstext niemandem auffaellt. 16px fuer alle drei (angefordert).
+     einem Fliesstext niemandem auffaellt. 18px fuer alle drei (angefordert).
+     GLEICH GROSS heisst hier: gleich grosses BILD, nicht gleich grosser Kasten. Das Markenlogo
+     und das Favicon sind .am-inline-logo und tragen einen 1px-Rahmen -- bei border-box bleiben
+     von 18px also 16px Bild. Das Modell-Logo sitzt in .am-resp-ic, und die Kachel hat keinen
+     Rahmen; mit 18px Bild sah das ChatGPT-Zeichen deshalb groesser aus als die anderen, obwohl
+     beide Kaesten gleich gross waren. Sein Bild bekommt daher 16px und zentriert sich in den
+     18px -- damit sind die drei sichtbaren Flaechen gleich.
      Nur hier im Fenster -- in der Antwort bleibt alles, wie es ist. */
   .am-set-backdrop .am-set-demo .am-inline-logo,
   .am-set-backdrop .am-set-demo .am-logo-wrap[data-type="response"] .am-resp-ic {
-    width: 16px; height: 16px; flex: 0 0 16px; border-radius: 4px;
+    width: 18px; height: 18px; flex: 0 0 18px; border-radius: 4px;
   }
   .am-set-backdrop .am-set-demo .am-logo-wrap[data-type="response"] .am-resp-ic img {
     width: 16px; height: 16px;
