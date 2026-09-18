@@ -176,8 +176,8 @@
          sehen bekommt -- nicht die Flaechenfarbe. Die Werte stehen neben ihrer Begruendung in
          core.css beim Token --up-accent-ink. */
       { wert: "indigo",     name: "Indigo",     farbe: "#5E6AD2", farbeDunkel: "#7C8AF0" },
-      { wert: "azur",       name: "Azure",      farbe: "#1A73C7", farbeDunkel: "#529CEC" },
-      { wert: "terrakotta", name: "Terracotta", farbe: "#C4522C", farbeDunkel: "#E08B6E" }
+      { wert: "azur",       name: "Azure",      farbe: "#0075DE", farbeDunkel: "#3D97F0" },
+      { wert: "terrakotta", name: "Terracotta", farbe: "#BD5836", farbeDunkel: "#D97757" }
     ];
     var DATEN = [
       { wert: "d-mon-y", name: "12. Dec 2025" },

@@ -354,22 +354,37 @@
          --up-accent-ink  die SCHRIFT. Sie liegt auf der Seite, nicht auf einer Flaeche, und
                           konkurriert damit mit dem Grund des THEMAS -- hier braucht es zwei.
 
-       Der zweite Fall war mein Fehler und wurde am 18.09. gemeldet: "die sehen aus, als wuerden
-       die im Darkmode auch Lightmode-Farben zeigen, die sind doch zu dunkel". Gemessen gegen den
-       Seitengrund (hell #ffffff, dunkel #101114), verlangt ist AA (4.5):
-           Indigo      #5E6AD2 hell 4.70   im Dunkeln nur 4.02  ->  #7C8AF0 6.07
-           Azur        #1A73C7 hell 4.86   im Dunkeln nur 3.88  ->  #529CEC 6.59
-           Terrakotta  #D97757 hell 3.12 -- faellt auf der HELLEN Seite durch, nicht auf der
-                       dunklen (dort 6.05). Also im Hellen abgedunkelt: #C4522C 4.57, und im
-                       Dunkeln der aufgehellte Ton #E08B6E 7.27.
-       Die Tinte ist jeweils dieselbe Farbe, nur in der Helligkeit verschoben -- Farbton und
-       Saettigung bleiben, sonst waere es eine zweite Farbe und keine zweite Rolle. */
+       DIE WERTE SIND AN DEN QUELLEN GEPRUEFT (19.09. verlangt: "check ob du wirklich Linear,
+       Claude, Notion getroffen hast, mit Quelle"). Zwei von dreien stimmten nicht:
+
+         Indigo      linear.app/brand nennt #5E6AD2 als Brand Indigo, Flaeche der primaeren
+                     Schaltflaeche. Getroffen.
+         Azur        Notions Palette fuehrt #2EAADC als Akzent, die primaere Schaltflaeche der
+                     Anwendung ist aber #0075DE. Hier stand #1A73C7 -- ein von mir abgedunkeltes
+                     #2383E2, also ein Wert, den es bei Notion gar nicht gibt. Jetzt #0075DE.
+         Terrakotta  Anthropic fuehrt ZWEI Toene: Terracotta #C96442 fuer die Flaeche der
+                     primaeren Schaltflaeche und Coral #D97757 fuer Schrift und Verweise auf
+                     dunklem Grund. Ich hatte die SCHRIFTfarbe als Flaeche benutzt -- daher die
+                     Meldung "schwarzer Text auf Orange wirkt komisch". Er war nicht zu schwach
+                     (5.30), aber es war der falsche Ton fuer die Rolle.
+
+       Gemessen, verlangt ist AA (4.5). Flaeche gegen die Schrift darauf, Tinte gegen den
+       Seitengrund (hell #ffffff, dunkel #101114):
+           Indigo      Flaeche #5E6AD2 weiss 4.70    Tinte hell 4.70   dunkel #7C8AF0 6.07
+           Azur        Flaeche #0075DE weiss 4.57    Tinte hell 4.57   dunkel #3D97F0 6.19
+           Terrakotta  Flaeche hell #BD5836 weiss 4.55, dunkel #D97757 mit dunkler Schrift 5.30
+                       Tinte hell 4.55   dunkel 6.05
+       #BD5836 ist Anthropics Terracotta, so weit abgedunkelt, dass weisse Schrift AA traegt
+       (#C96442 selbst traegt weder weisse 3.90 noch dunkle 4.24). Im Dunkeln bleibt es bei
+       Coral mit dunkler Schrift -- das ist dort der uebliche Bau und Anthropics eigener Ton fuer
+       diesen Grund. Terrakotta ist damit die einzige Farbe mit zwei FLAECHEN; die anderen zwei
+       brauchen nur zwei Tinten. */
     html[data-accent="indigo"] .up-root { --up-accent: #5E6AD2; --up-accent-fg: #ffffff; --up-accent-ink: #5E6AD2; }
     html[data-accent="indigo"] .up-root[data-theme="dark"] { --up-accent-ink: #7C8AF0; }
-    html[data-accent="azur"] .up-root { --up-accent: #1A73C7; --up-accent-fg: #ffffff; --up-accent-ink: #1A73C7; }
-    html[data-accent="azur"] .up-root[data-theme="dark"] { --up-accent-ink: #529CEC; }
-    html[data-accent="terrakotta"] .up-root { --up-accent: #D97757; --up-accent-fg: #1f1f1b; --up-accent-ink: #C4522C; }
-    html[data-accent="terrakotta"] .up-root[data-theme="dark"] { --up-accent-ink: #E08B6E; }
+    html[data-accent="azur"] .up-root { --up-accent: #0075DE; --up-accent-fg: #ffffff; --up-accent-ink: #0075DE; }
+    html[data-accent="azur"] .up-root[data-theme="dark"] { --up-accent-ink: #3D97F0; }
+    html[data-accent="terrakotta"] .up-root { --up-accent: #BD5836; --up-accent-fg: #ffffff; --up-accent-ink: #BD5836; }
+    html[data-accent="terrakotta"] .up-root[data-theme="dark"] { --up-accent: #D97757; --up-accent-fg: #1f1f1b; --up-accent-ink: #D97757; }
 
     /* ---------- Fokus-Ring fuer Eingabefelder ----------
        EIN Fokuszustand fuer die ganze App: blauer Rand plus ein 4px weicher Auslauf dahinter.
