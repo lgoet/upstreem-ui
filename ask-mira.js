@@ -4507,6 +4507,17 @@
     var k = String(it.type) + ':' + pickKennung(it);
     return _picks.some(function(p){ return String(p.type) + ':' + pickKennung(p) === k; });
   }
+  /* NUR die Klasse "schon uebernommen" nachziehen, ohne die Liste neu zu malen.
+     pickZeichnen waere hier falsch: bei LEERER Trefferliste malt es den Hinweis "keine Treffer"
+     -- und der ist die Antwort auf eine Suche, nicht der Ruhezustand. Genau so stand er am
+     18.09. schon beim Aufklappen da, samt Rat zur Schreibweise, ohne dass jemand gesucht haette:
+     pickOeffnen setzt den Ruhehinweis mit dem Datenbank-Zeichen nur in eine LEERE Liste, und die
+     war es nicht mehr. */
+  function pickGrauNachziehen(){
+    if (!elPickList) return;
+    var zz = elPickList.querySelectorAll('.am-pick-row');
+    for (var i = 0; i < zz.length; i++) zz[i].classList.toggle('is-taken', pickHat(_pickRows[i]));
+  }
   function pickNehmen(it){
     if (!it || pickHat(it)) return;
     if (_picks.length >= PICK_MAX){
@@ -4515,7 +4526,7 @@
     }
     _picks.push(it);
     picksZeichnen();
-    pickZeichnen(_pickRows, null);       /* die Zeile grau setzen, sie ist jetzt vergeben */
+    pickGrauNachziehen();                /* die Zeile grau setzen, sie ist jetzt vergeben */
     /* Die Zahl rechts nennt ab dem ersten Bezug, wie viele noch gehen -- das ist die Auskunft,
        die man an dieser Stelle braucht, und nicht die Zahl der Treffer. */
     if (elPickCount) elPickCount.textContent = _picks.length + ' / ' + PICK_MAX;
@@ -4632,7 +4643,7 @@
       e.preventDefault();
       _picks.pop();
       frageNachziehen(false);
-      picksZeichnen(); pickZeichnen(_pickRows, null); refreshSend(); autosize(); updateLoopState();
+      picksZeichnen(); pickGrauNachziehen(); refreshSend(); autosize(); updateLoopState();
     });
   }
 
@@ -4649,14 +4660,14 @@
       setTimeout(function(){
         _picks.splice(i, 1);
         frageNachziehen(false);
-        picksZeichnen(); pickZeichnen(_pickRows, null); refreshSend(); autosize(); updateLoopState();
+        picksZeichnen(); pickGrauNachziehen(); refreshSend(); autosize(); updateLoopState();
       }, 200);
     });
   }
   function clearPicks(){
     _picks = [];
     frageNachziehen(false);
-    picksZeichnen(); pickZeichnen(_pickRows, null); updateLoopState();
+    picksZeichnen(); pickGrauNachziehen(); updateLoopState();
   }
 
   /* Der Deckel wird beim Oeffnen gerechnet. Dreht jemand das Telefon oder zieht das Fenster
@@ -6291,13 +6302,13 @@
      Nebenwirkung, die dafuer spricht: an anderer Stelle wird titleEl.textContent neu gesetzt
      (Umbenennen) -- ein dauerhafter Span waere dabei stillschweigend verschwunden. */
   var LAUF_WARTE = 700;        /* nicht jeder Zeiger, der ueber die Liste streicht, soll etwas bewegen */
-  var LAUF_PX_PRO_S = 65;      /* lesbares Tempo, unabhaengig von der Laenge: 216px Ueberhang
-                                  brauchen damit 3,3s. 55 waren mit 3,9s zu langsam, 120 mit
-                                  1,8s zu schnell, 85 waren es ab dem 07.09.
-                                  17.09.: 30 PROZENT LANGSAMER angefordert. Das ist eine Angabe
-                                  ueber die ZEIT, nicht ueber das Tempo -- also 85 / 1.3 = 65,
-                                  nicht 85 * 0.7. Aus 2,5s werden damit genau 3,25s. */
-  var LAUF_MIN_MS = 624;       /* dieselben 30 Prozent auf die Untergrenze (480 * 1.3), sonst
+  var LAUF_PX_PRO_S = 46;      /* lesbares Tempo, unabhaengig von der Laenge: 216px Ueberhang
+                                  brauchen damit 4,7s. 85 waren es ab dem 07.09. (2,5s), am
+                                  17.09. auf 65 (3,25s) und am 18.09. auf 46.
+                                  BEIDE Angaben waren PROZENT AUF DIE ZEIT, nicht auf das Tempo:
+                                  30 Prozent langsamer heisst 85 / 1.3 = 65, weitere 40 Prozent
+                                  heissen 65 / 1.4 = 46. Aus 3,25s werden damit 4,55s. */
+  var LAUF_MIN_MS = 874;       /* dieselben Faktoren auf die Untergrenze (480 * 1.3 * 1.4), sonst
                                   liefe ein kurzer Ueberhang weiter im alten Tempo. */
   var _laufUhr = null, _laufEl = null;
   function laufStop(){
@@ -6791,11 +6802,11 @@
     elTextarea.value = (z && z.text) || '';
     _picks.length = 0;
     if (z && z.picks) z.picks.forEach(function(p){ _picks.push(p); });
-    /* pickZeichnen mit: die PILLEN liegen je Feld getrennt, die Trefferliste im Add-Dropdown ist
-       aber EINE (Mira hat genau eine Wurzel, die zwischen den Plaetzen umzieht). Ohne diesen
+    /* Das Grau zieht mit: die PILLEN liegen je Feld getrennt, die Trefferliste im Add-Dropdown
+       ist aber EINE (Mira hat genau eine Wurzel, die zwischen den Plaetzen umzieht). Ohne diesen
        Aufruf behielten die Zeilen ihr Grau aus dem anderen Feld: im Dashboard eine Marke
        gewaehlt, nach Mira gewechselt -- Feld leer, Zeile trotzdem vergeben. Gemeldet am 18.09. */
-    picksZeichnen(); pickZeichnen(_pickRows, null); refreshSend(); autosize(); updateLoopState();
+    picksZeichnen(); pickGrauNachziehen(); refreshSend(); autosize(); updateLoopState();
   }
   function launcherAn(slot, opts){
     if (root.__amTot || !slot || slot.nodeType !== 1) return false;
