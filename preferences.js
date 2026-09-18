@@ -172,9 +172,12 @@
        begruendet. */
     var AKZENTE = [
       { wert: "default",    name: "Default", farbe: "#1f1f1b", farbeDunkel: "#e0e0e0" },
-      { wert: "indigo",     name: "Indigo",     farbe: "#5E6AD2" },
-      { wert: "azur",       name: "Azure",      farbe: "#1A73C7" },
-      { wert: "terrakotta", name: "Terracotta", farbe: "#D97757" }
+      /* Der Punkt zeigt die TINTE, also den Ton, den man im gewaehlten Thema wirklich zu
+         sehen bekommt -- nicht die Flaechenfarbe. Die Werte stehen neben ihrer Begruendung in
+         core.css beim Token --up-accent-ink. */
+      { wert: "indigo",     name: "Indigo",     farbe: "#5E6AD2", farbeDunkel: "#7C8AF0" },
+      { wert: "azur",       name: "Azure",      farbe: "#1A73C7", farbeDunkel: "#529CEC" },
+      { wert: "terrakotta", name: "Terracotta", farbe: "#C4522C", farbeDunkel: "#E08B6E" }
     ];
     var DATEN = [
       { wert: "d-mon-y", name: "12. Dec 2025" },

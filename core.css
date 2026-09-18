@@ -48,7 +48,7 @@
          (--vt-logo-bg), Zaehlerplaketten und Punkte, die Hintergrundgrafik, das Avatarrund, der
          Toast und die leisen Hover-Toene der Fensternavigation. Die bleiben neutral, egal was
          eingestellt ist. */
-      --up-accent: #1f1f1b; --up-accent-fg: #ffffff;
+      --up-accent: #1f1f1b; --up-accent-fg: #ffffff; --up-accent-ink: #1f1f1b;
       --vc-bg: #ffffff; --vc-heading-bg: #f9f8f9; --vc-sk: #eeedef; --up-surface: #ffffff;
       /* ---- DIE HELLE LEITER (07.09.) --------------------------------------------------------
          Dieselbe Quelle und dieselbe Zuordnung wie die dunkle Leiter weiter unten, nur laeuft sie
@@ -325,7 +325,7 @@
       --vt-head-bg: #232326; --vt-logo-bg: #e0e0e0; --vt-row-hover: #232326;
       /* Die Vorgabe der Akzentfarbe im Dunkeln -- wieder buchstabengleich das, was vorher aus
          --vc-text und --vc-bg kam. */
-      --up-accent: #e0e0e0; --up-accent-fg: #1b1b1b;
+      --up-accent: #e0e0e0; --up-accent-fg: #1b1b1b; --up-accent-ink: #e0e0e0;
       --vt-row-hover-solid: #232326;
       --vt-up: #60d25d; --vt-down: #d25d5d;
       /* Im Dunkeln ein aufgehellter Ton mit weniger Deckung -- auch das wortgleich aus den alten
@@ -347,19 +347,29 @@
        EIGENE Deklaration an .up-root. Ein geerbter Wert vom <html> verliert gegen jede eigene
        Deklaration, egal wie spezifisch er ist -- also muss der Selektor .up-root selbst treffen.
 
-       EINE FARBE FUER BEIDE THEMEN, und das ist eine Messung, keine Bequemlichkeit (18.09.).
-       Zuerst standen hier aufgehellte Toene fuers Dunkle mit dunkler Schrift darauf. Gefragt
-       wurde, ob helle Schrift dort nicht besser waere -- und fuer zwei der drei stimmt das:
-           Indigo      #5E6AD2  weisse Schrift 4.70   auf der dunklen Seite sichtbar mit 3.99
-           Azur        #1A73C7  weisse Schrift 4.86   auf der dunklen Seite 3.85
-           Terrakotta  #D97757  weisse Schrift 3.12 -- faellt durch, auch als mittlerer Ton
-                                (#C4603F: 4.12). Dunkle Schrift traegt hier 5.52.
-       Damit braucht nur Terrakotta eine eigene Schriftfarbe, und keine der drei braucht einen
-       zweiten Ton fuers dunkle Thema. Nur der STANDARD dreht sich mit dem Thema -- er kommt
-       aus den Werten oben und ist dort schon je Thema gesetzt. */
-    html[data-accent="indigo"] .up-root { --up-accent: #5E6AD2; --up-accent-fg: #ffffff; }
-    html[data-accent="azur"] .up-root { --up-accent: #1A73C7; --up-accent-fg: #ffffff; }
-    html[data-accent="terrakotta"] .up-root { --up-accent: #D97757; --up-accent-fg: #1f1f1b; }
+       DIE AKZENTFARBE HAT ZWEI ROLLEN, und nur eine davon kommt mit einem Wert aus:
+
+         --up-accent      die FLAECHE. Was darauf liegt, traegt --up-accent-fg, und die dreht
+                          sich mit der Farbe statt mit dem Thema. Ein Wert reicht also.
+         --up-accent-ink  die SCHRIFT. Sie liegt auf der Seite, nicht auf einer Flaeche, und
+                          konkurriert damit mit dem Grund des THEMAS -- hier braucht es zwei.
+
+       Der zweite Fall war mein Fehler und wurde am 18.09. gemeldet: "die sehen aus, als wuerden
+       die im Darkmode auch Lightmode-Farben zeigen, die sind doch zu dunkel". Gemessen gegen den
+       Seitengrund (hell #ffffff, dunkel #101114), verlangt ist AA (4.5):
+           Indigo      #5E6AD2 hell 4.70   im Dunkeln nur 4.02  ->  #7C8AF0 6.07
+           Azur        #1A73C7 hell 4.86   im Dunkeln nur 3.88  ->  #529CEC 6.59
+           Terrakotta  #D97757 hell 3.12 -- faellt auf der HELLEN Seite durch, nicht auf der
+                       dunklen (dort 6.05). Also im Hellen abgedunkelt: #C4522C 4.57, und im
+                       Dunkeln der aufgehellte Ton #E08B6E 7.27.
+       Die Tinte ist jeweils dieselbe Farbe, nur in der Helligkeit verschoben -- Farbton und
+       Saettigung bleiben, sonst waere es eine zweite Farbe und keine zweite Rolle. */
+    html[data-accent="indigo"] .up-root { --up-accent: #5E6AD2; --up-accent-fg: #ffffff; --up-accent-ink: #5E6AD2; }
+    html[data-accent="indigo"] .up-root[data-theme="dark"] { --up-accent-ink: #7C8AF0; }
+    html[data-accent="azur"] .up-root { --up-accent: #1A73C7; --up-accent-fg: #ffffff; --up-accent-ink: #1A73C7; }
+    html[data-accent="azur"] .up-root[data-theme="dark"] { --up-accent-ink: #529CEC; }
+    html[data-accent="terrakotta"] .up-root { --up-accent: #D97757; --up-accent-fg: #1f1f1b; --up-accent-ink: #C4522C; }
+    html[data-accent="terrakotta"] .up-root[data-theme="dark"] { --up-accent-ink: #E08B6E; }
 
     /* ---------- Fokus-Ring fuer Eingabefelder ----------
        EIN Fokuszustand fuer die ganze App: blauer Rand plus ein 4px weicher Auslauf dahinter.
@@ -3489,9 +3499,11 @@
 .up-ph-navlabel { font-size: 14px; font-weight: 500; color: var(--vc-muted); white-space: nowrap; transition: color 120ms ease; }
 /* DER GEWAEHLTE REITER GANZ IN DER AKZENTFARBE (18.09. angefordert): Zeichen, Schrift und der
    Streifen darunter. Nur hier -- die Seitenleiste bleibt in ihrer Schriftfarbe, dort ist die
-   Auswahl eine Flaeche und kein Strich. */
+   Auswahl eine Flaeche und kein Strich.
+   --up-accent-ink und nicht --up-accent: hier liegt die Farbe als SCHRIFT auf dem Seitengrund,
+   nicht als Flaeche unter einer Schrift. Der Unterschied ist gemessen, siehe oben beim Token. */
 .up-ph-navitem.is-selected .up-ph-navicon,
-.up-ph-navitem.is-selected .up-ph-navlabel { color: var(--up-accent); }
+.up-ph-navitem.is-selected .up-ph-navlabel { color: var(--up-accent-ink); }
 .up-ph-navitem:not(.is-selected):hover .up-ph-navicon,
 .up-ph-navitem:not(.is-selected):hover .up-ph-navlabel { color: var(--vc-text); }
 /* The active indicator: slides left/width to the newly selected tab on click (200ms ease, set in
@@ -3501,7 +3513,7 @@
    z-index:1 -- without it this paints BEHIND .up-ph-nav::after: a ::after's generated box is
    always painted after all of its element's real children, regardless of DOM/append order, so the
    grey 1px separator would silently cover the bottom half of this 2px indicator. */
-.up-ph-navunderline { position: absolute; bottom: 0; left: 0; width: 0; height: 2px; background: var(--up-accent);
+.up-ph-navunderline { position: absolute; bottom: 0; left: 0; width: 0; height: 2px; background: var(--up-accent-ink);
   z-index: 1; transition: left 200ms ease, width 200ms ease; }
 
 /* ---------- responsive (classes set by UC.makePageNav via UC.onResize) ---------- */
