@@ -3143,7 +3143,7 @@
      Und wenn der Titel kommt, wird er GETIPPT: die Zeile war leer, jetzt erscheint sie Zeichen
      fuer Zeichen. Gemerkt wird das je Kennung -- welche Zeile ohne Titel dastand und welche schon
      getippt wurde -- sonst tippt jedes Neuzeichnen der Liste alles noch einmal. */
-  var _ohneTitel = {}, _titelGetippt = {};
+  var _ohneTitel = {}, _titelGetippt = {}, _tippStand = {}, _tippGen = {};
   function chatItemHTML(c){
     var active = chatAktivSichtbar(c.id) ? ' is-active' : '';
     var isP = amTruthy(c.is_pinned);
@@ -3156,9 +3156,12 @@
        Eigene Klasse neben is-busy: die schaltet ladeMarkeSetzen im Takt des Ladezustands, diese
        haengt allein am fehlenden Titel. */
     var ohneTitel = echterTitel ? '' : ' is-untitled';
-    var tippen = '';
+    var tippen = '', schon = '';
     if (!echterTitel){ _ohneTitel[kid] = true; }
-    else if (_ohneTitel[kid] && !_titelGetippt[kid]){ tippen = echterTitel; }
+    else if ((_ohneTitel[kid] || _tippStand[kid] != null) && !_titelGetippt[kid]){
+      tippen = echterTitel;
+      schon = echterTitel.slice(0, _tippStand[kid] || 0);
+    }
     var title = echterTitel;
     return '<div class="am-prev-item'+active+pinned+ohneTitel+'" draggable="true" data-chat-id="'+escAttr(c.id)+'" data-project-id="'+escAttr(c.project_id || '')+'">'+
       /* Der Spinner steht IMMER im Markup und wird per Klasse an der Zeile sichtbar (16.09.
@@ -3169,7 +3172,7 @@
       '<span class="am-prev-spin" aria-hidden="true"><span class="am-act-spinner"></span></span>'+
       '<span class="am-prev-pin-ind" title="Pinned">'+ICON.pin+'</span>'+
       '<span class="am-prev-item-title"' + (tippen ? ' data-tippen="' + escAttr(tippen) + '"' : '') + '>' +
-        (tippen ? '' : esc(title)) + '</span>'+
+        esc(tippen ? schon : title) + '</span>'+
       '<input class="am-prev-item-input" type="text" value="'+escAttr(title)+'" maxlength="120" aria-label="Chat name">'+
       '<span class="am-prev-actions">'+
         /* Die drei Punkte kommen aus core (moreHorizontal, dasselbe Zeichen wie im Kebab jeder
@@ -3289,8 +3292,17 @@
      zeigen kann -- sobald der Text breiter ist als sein Kasten, steht am Ende der volle Titel
      da und die CSS kuerzt ihn mit Auslassungspunkten. Sonst liefe die Animation sichtbar ins
      Nichts weiter, und der letzte sichtbare Buchstabe bliebe zufaellig stehen.
-     Die Markierung im Merker faellt VOR der Animation, nicht danach: ein Neuzeichnen mitten im
-     Tippen soll den Titel fertig hinschreiben und nicht von vorn anfangen. */
+
+     EIN NEUZEICHNEN SETZT FORT, ES SCHREIBT NICHT FERTIG (18.09. gemeldet: keine Animation).
+     Hier stand die Markierung "schon getippt" VOR der Animation, damit ein Neuzeichnen mitten
+     im Tippen den Titel fertig hinschreibt. Die App zeichnet die Leiste aber zweimal kurz
+     hintereinander, wenn ein Titel eintrifft -- gemessen im Pruefstand: erstes Zeichnen "W",
+     nach 60ms "We", nach dem zweiten Zeichnen sofort der ganze Titel. Von der Animation blieben
+     zwei Buchstaben, also nichts.
+     Deshalb merkt _tippStand, WIE WEIT getippt ist: das Neuzeichnen schreibt diesen Anfang hin
+     und haengt data-tippen wieder an, der neue Lauf macht dort weiter. Fertig ist es erst, wenn
+     der Titel steht -- dann und nur dann faellt die Markierung. _tippGen haelt zwei Laeufe
+     derselben Zeile auseinander: der aeltere hoert auf, sobald der neuere uebernommen hat. */
   function titelAustippen(){
     if (!elPrevList) return;
     var offen = elPrevList.querySelectorAll('.am-prev-item-title[data-tippen]');
@@ -3300,14 +3312,25 @@
       var kid = zeile ? String(zeile.getAttribute('data-chat-id')) : '';
       el.removeAttribute('data-tippen');
       if (!voll) return;
-      if (kid){ _titelGetippt[kid] = true; delete _ohneTitel[kid]; }
-      var i = 0;
+      var marke = 0;
+      if (kid){
+        delete _ohneTitel[kid];
+        if (_tippStand[kid] == null) _tippStand[kid] = 0;
+        marke = _tippGen[kid] = (_tippGen[kid] || 0) + 1;
+      }
+      var i = (kid && _tippStand[kid]) || 0;
       (function tick(){
         if (!el.isConnected) return;
+        if (kid && _tippGen[kid] !== marke) return;   /* ein neuerer Lauf hat uebernommen */
         i++;
         el.textContent = voll.slice(0, i);
+        if (kid) _tippStand[kid] = i;
         /* Passt es nicht mehr in die Zeile, ist der Rest ohnehin nicht zu sehen. */
-        if (i >= voll.length || el.scrollWidth > el.clientWidth){ el.textContent = voll; return; }
+        if (i >= voll.length || el.scrollWidth > el.clientWidth){
+          el.textContent = voll;
+          if (kid){ _titelGetippt[kid] = true; delete _tippStand[kid]; }
+          return;
+        }
         setTimeout(tick, 18);
       })();
     });
@@ -4469,7 +4492,11 @@
     /* Die Zahl rechts nennt ab dem ersten Bezug, wie viele noch gehen -- das ist die Auskunft,
        die man an dieser Stelle braucht, und nicht die Zahl der Treffer. */
     if (elPickCount) elPickCount.textContent = _picks.length + ' / ' + PICK_MAX;
-    refreshSend(); autosize();
+    /* updateLoopState MUSS hier stehen. Ohne ihn lief der Laufteppich weiter, WAEHREND die erste
+       Pille schon im Feld stand -- gemeldet am 18.09. mit Bild: die Beispielfrage lag hinter der
+       Pille. Und weil derselbe Aufruf den nativen Platzhalter setzt, fehlte damit auch die Frage
+       zum Bezug (Was kannst du mir ueber diese Brand sagen?). Zwei Meldungen, eine Ursache. */
+    refreshSend(); autosize(); updateLoopState();
     /* DIE TREFFERLISTE BLEIBT STEHEN. Hier wurde zuerst das Suchfeld geleert und neu gesucht --
        und damit war genau die Liste weg, aus der man den zweiten Bezug waehlen wollte: wer zwei
        Marken derselben Suche braucht, haette neu tippen muessen. Gemessen: nach der ersten
@@ -4593,13 +4620,13 @@
       if (tag) tag.classList.add('is-out');
       setTimeout(function(){
         _picks.splice(i, 1);
-        picksZeichnen(); pickZeichnen(_pickRows, null); refreshSend(); autosize();
+        picksZeichnen(); pickZeichnen(_pickRows, null); refreshSend(); autosize(); updateLoopState();
       }, 200);
     });
   }
   function clearPicks(){
     _picks = [];
-    picksZeichnen();
+    picksZeichnen(); pickZeichnen(_pickRows, null); updateLoopState();
   }
 
   /* Der Deckel wird beim Oeffnen gerechnet. Dreht jemand das Telefon oder zieht das Fenster
@@ -6733,7 +6760,11 @@
     elTextarea.value = (z && z.text) || '';
     _picks.length = 0;
     if (z && z.picks) z.picks.forEach(function(p){ _picks.push(p); });
-    picksZeichnen(); refreshSend(); autosize(); updateLoopState();
+    /* pickZeichnen mit: die PILLEN liegen je Feld getrennt, die Trefferliste im Add-Dropdown ist
+       aber EINE (Mira hat genau eine Wurzel, die zwischen den Plaetzen umzieht). Ohne diesen
+       Aufruf behielten die Zeilen ihr Grau aus dem anderen Feld: im Dashboard eine Marke
+       gewaehlt, nach Mira gewechselt -- Feld leer, Zeile trotzdem vergeben. Gemeldet am 18.09. */
+    picksZeichnen(); pickZeichnen(_pickRows, null); refreshSend(); autosize(); updateLoopState();
   }
   function launcherAn(slot, opts){
     if (root.__amTot || !slot || slot.nodeType !== 1) return false;
