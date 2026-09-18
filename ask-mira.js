@@ -479,6 +479,16 @@
         'Where should we look first?',
         'What can I dig into for you?'
       ],
+      /* MIT DER EIGENEN MARKE (18.09. angefordert). Genauso viele wie die allgemeinen darueber:
+         die Begruessung soll etwa jedes zweite Mal persoenlich sein, nicht immer und nicht selten.
+         {BRAND} wird durch Logo und Namen ersetzt; kennt die Seite keine eigene Marke, faellt die
+         ganze Liste weg und es bleibt bei den allgemeinen. */
+      greetingsBrand: [
+        'What is new at {BRAND}?',
+        'How is {BRAND} doing today?',
+        'Where is {BRAND} losing ground?',
+        'What should {BRAND} fix first?'
+      ],
       urlVisit: 'Visit',
       allChats: 'All Chats', allChatsShort: 'Chats',
       /* Der Picker und der Aufwand-Slider. Die Beschriftungen der drei Stufen stehen NICHT hier,
@@ -595,6 +605,12 @@
         'Was möchtest du wissen?',
         'Wo sollen wir zuerst hinschauen?',
         'Was soll ich für dich analysieren?'
+      ],
+      greetingsBrand: [
+        'Was gibt es Neues bei {BRAND}?',
+        'Wie steht {BRAND} heute da?',
+        'Wo verliert {BRAND} gerade Boden?',
+        'Was sollte {BRAND} zuerst angehen?'
       ],
       urlVisit: 'Besuchen',
       allChats: 'Alle Chats', allChatsShort: 'Chats',
@@ -2327,12 +2343,44 @@
     return de ? (' Beschränke den Report auf die folgenden Themen: '+joined+'.')
               : (' Limit the report to the following topics: '+joined+'.');
   }
+  /* DIE EIGENE MARKE kennt core: setUpstreemBrands fuellt seinen Speicher, und dort traegt genau
+     ein Eintrag role "own". Nicht der erste der Liste -- die Reihenfolge ist die des RPC und
+     sagt nichts ueber die Rolle. */
+  function eigeneMarke(){
+    var k = window.UpstreemCore;
+    var liste = (k && k.getBrands) ? k.getBrands() : [];
+    for (var i = 0; i < liste.length; i++){
+      var b = liste[i];
+      if (b && (b.role === 'own' || b.is_own === true) && (b.name || b.label)) return b;
+    }
+    return null;
+  }
+  /* Logo und Name an der Stelle von {BRAND}. Das Bild geht durch _normBrandLogo -- dieselbe
+     Aufbereitung, die auch die Chatliste benutzt (Logo, sonst Favicon aus der Domain). Faellt es
+     aus, bleibt der Name stehen: onerror nimmt nur das Bild weg. */
+  function grussMitMarke(satz, marke){
+    var bild = _normBrandLogo(marke) || {};
+    var name = marke.name || marke.label || bild.label || '';
+    var stueck = '<span class="am-welcome-brand">' +
+      (bild.src ? '<img src="' + esc(bild.src) + '" alt="" referrerpolicy="no-referrer" ' +
+                  'onerror="this.remove()">' : '') +
+      esc(name) + '</span>';
+    var teile = satz.split('{BRAND}');
+    return esc(teile[0]) + stueck + esc(teile.slice(1).join('{BRAND}'));
+  }
   function renderSuggested(){
     var title = root.querySelector('#am-welcome-title');
     if (title){
-      var gs = L().greetings || ['How can I help you today?'];
+      /* Die persoenlichen kommen NUR dazu, wenn es eine eigene Marke gibt -- sonst stuende dort
+         ein Satz mit einer Luecke. Beide Listen sind gleich lang, also ist etwa jede zweite
+         Begruessung persoenlich. */
+      var marke = eigeneMarke();
+      var gs = (L().greetings || ['How can I help you today?']).slice();
+      if (marke) gs = gs.concat(L().greetingsBrand || []);
       if (_greetIdx < 0 || _greetIdx >= gs.length) _greetIdx = Math.floor(Math.random() * gs.length);
-      title.textContent = gs[_greetIdx];
+      var satz = gs[_greetIdx];
+      if (marke && satz.indexOf('{BRAND}') >= 0) title.innerHTML = grussMitMarke(satz, marke);
+      else title.textContent = satz;
     }
     _galleryCat = null;
     renderGallery();
