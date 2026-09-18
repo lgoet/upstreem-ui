@@ -418,9 +418,14 @@
         return { company_id: cid, day: UC.dayKey ? UC.dayKey(x.day) : x.day,
                  visibility_pct: w == null ? 0 : w };
       });
-      var rgb = UC.heatAt ? UC.heatAt(root, 0.65) : [100, 132, 168];
-      var farbe = "rgb(" + rgb[0] + "," + rgb[1] + "," + rgb[2] + ")";
       var c = state.company || {};
+      /* DIE LINIE TRAEGT DIE AKZENTFARBE (19.09. angefordert), nicht mehr den Blauton der
+         Heat-Rampe bei 65 Prozent. Am Standard ist das die Schriftfarbe des Themas -- also
+         genau das, was der Nutzer mit "der tatsaechlichen Primaerfarbe" meinte.
+         Eine gesetzte Markenfarbe gewinnt weiterhin und kommt aus dem RPC: daran aendert sich
+         nichts, sie ist die Aussage der Marke und nicht die der Oberflaeche. */
+      var farbe = String(c.color || c.brand_color || "").trim() ||
+                  (UC.accentInk ? UC.accentInk(root) : "#1f1f1b");
       line.render(UC.buildLineDatasets(pts, [{
         company_id: cid, name: c.name || "", color: farbe,
         favicon_url: c.logo_url || c.favicon_url || ""

@@ -188,7 +188,7 @@
                  Organisationseinstellungen, und die Meta-Zeile sagt, wo man ist. */
               '<span class="up-ph-metatxt"><span class="pph-metaname"></span> Organisation</span>' +
             '</div>' +
-            '<h1 class="up-ph-heading">Teams</h1>' +
+            '<h1 class="up-ph-heading">' + esc(UC.t("Teams")) + '</h1>' +
             '<p class="up-ph-desc">Manage the teams you are a member of, and switch between them</p>' +
           '</div>' +
           /* Derselbe gefuellte Knopf wie "+ Add Brand" im Marken-Seitenkopf: .up-ph-addbtn
@@ -200,7 +200,7 @@
              und laesst das Zeichen stehen. Gleicher Wortlaut wie der Eintrag unten im
              Teamwaehler der Seitenleiste. */
           '<button class="up-ph-addbtn up-export uts-newteam" type="button">' +
-            UC.icon("plus", 1.8) + '<span>New Team</span>' +
+            UC.icon("plus", 1.8) + '<span>' + esc(UC.t("New Team")) + '</span>' +
           '</button>' +
         '</div>';
 
@@ -211,24 +211,24 @@
       root.innerHTML = kopf +
         '<div class="up-head">' +
           '<span class="up-heading">' +
-            '<span class="up-head-label">Teams</span>' +
+            '<span class="up-head-label">' + esc(UC.t("Teams")) + '</span>' +
             '<span class="up-head-sep"></span>' +
             '<span class="up-head-count"></span>' +
           '</span>' +
           '<div class="up-head-tools">' +
             '<div class="up-search">' +
-              '<button type="button" class="up-iconbtn up-search-btn" aria-label="Search" data-tip="Search">' +
+              '<button type="button" class="up-iconbtn up-search-btn" aria-label="' + esc(UC.t("Search")) + '" data-tip="' + esc(UC.t("Search")) + '">' +
                 UC.icon("search", 2) + '</button>' +
               '<div class="up-search-box">' +
-                '<input class="up-search-input" type="text" placeholder="Search teams…" ' +
-                  'autocomplete="off" spellcheck="false" aria-label="Search teams"/>' +
-                '<button type="button" class="up-search-clear" aria-label="Clear search">' +
+                '<input class="up-search-input" type="text" placeholder="' + esc(UC.t("Search teams…")) + '" ' +
+                  'autocomplete="off" spellcheck="false" aria-label="' + esc(UC.t("Search teams")) + '"/>' +
+                '<button type="button" class="up-search-clear" aria-label="' + esc(UC.t("Clear search")) + '">' +
                   UC.icon("x", 2.2) + '</button>' +
               '</div>' +
             '</div>' +
             '<div class="up-cols">' +
-              '<button type="button" class="up-iconbtn up-cols-btn" data-tip="Table Settings" ' +
-                'aria-label="Table settings">' + UC.icon("settings", 2) +
+              '<button type="button" class="up-iconbtn up-cols-btn" data-tip="' + esc(UC.t("Table Settings")) + '" ' +
+                'aria-label="' + esc(UC.t("Table settings")) + '">' + UC.icon("settings", 2) +
                 /* Das Abzeichen am Zahnrad, wenn Spalten abgeschaltet sind -- syncColsBadge()
                    aus dem Kit schaltet es. Ohne dieses Span lief der Aufruf ins Leere. */
                 '<span class="up-badge uts-cols-badge"></span></button>' +
@@ -243,8 +243,8 @@
 
         '<div class="up-foot">' +
           '<div class="up-pagesize">' +
-            '<span class="up-pagesize-lbl">Rows per page</span>' +
-            '<div class="up-pagesize-seg" role="group" aria-label="Rows per page"></div>' +
+            '<span class="up-pagesize-lbl">' + esc(UC.t("Rows per page")) + '</span>' +
+            '<div class="up-pagesize-seg" role="group" aria-label="' + esc(UC.t("Rows per page")) + '"></div>' +
           '</div>' +
           '<div class="up-pager"></div>' +
         '</div>';
@@ -478,7 +478,7 @@
         if (used == null && limit == null) return '<span class="up-num is-empty">–</span>';
         var ueber = used != null && limit != null && used > limit;
         return '<span class="uts-quota' + (ueber ? " is-over" : "") + '"' +
-                 (ueber ? ' data-tip="Above the plan limit"' : "") + '>' +
+                 (ueber ? ' data-tip="' + esc(UC.t("Above the plan limit")) + '"' : "") + '>' +
                  '<span class="up-num">' + (used == null ? "–" : fmtInt(used)) + '</span>' +
                  (limit == null ? "" : '<span class="uts-quota-lim">/ ' + fmtInt(limit) + '</span>') +
                '</span>';
@@ -491,7 +491,7 @@
         if (!r.plan) return '<span class="up-num is-empty">–</span>';
         var c = planFarbe(r.plan);
         return '<span class="up-sent uts-plan' + (r.planAktiv ? "" : " is-off") + '"' +
-                 (r.planAktiv ? "" : ' data-tip="No active billing plan"') + '>' +
+                 (r.planAktiv ? "" : ' data-tip="' + esc(UC.t("No active billing plan")) + '"') + '>' +
                  '<span class="up-sent-dot"' +
                    (r.planAktiv && c ? ' style="background:' + c + '"' : "") + '></span>' +
                  '<span class="up-sent-val">' + esc(r.plan) + '</span>' +
@@ -515,13 +515,15 @@
              in dieser App "gut" heisst. */
           return '<span class="up-sent uts-active">' +
                    '<span class="up-sent-dot" style="background:var(--vt-up)"></span>' +
-                   '<span class="up-sent-val">Active</span>' +
+                   '<span class="up-sent-val">' + esc(UC.t("Active")) + '</span>' +
                  '</span>';
         }
         return '<button type="button" class="up-export uts-switch" data-switch="' + esc(r.id) + '" ' +
-                 'data-tip="Switch to ' + esc(r.name) + '" ' +
-                 'aria-label="Switch to ' + esc(r.name) + '">' +
-                 '<span class="uts-switch-label">Switch</span>' +
+                 /* "Switch to" und der Name getrennt: ein zusammengesetzter Satz findet im
+                    Katalog nie einen Eintrag -- er wuerde bei jedem Team anders lauten. */
+                 'data-tip="' + esc(UC.t("Switch to") + " " + r.name) + '" ' +
+                 'aria-label="' + esc(UC.t("Switch to") + " " + r.name) + '">' +
+                 '<span class="uts-switch-label">' + esc(UC.t("Switch")) + '</span>' +
                  '<span class="uts-switch-chev">' + UC.icon("chevronRight", 2) + '</span>' +
                '</button>';
       }
@@ -534,11 +536,11 @@
          wofuer das Kit die Zellen mit ihrem Schluessel markiert. */
       function headHtml() {
         var h = '<div class="up-thead">' +
-          '<div class="up-th up-th-team">Team</div>';
+          '<div class="up-th up-th-team">' + esc(UC.t("Team")) + '</div>';
         visibleCols().forEach(function (c) {
           h += '<div class="up-th up-th-' + c.key + '">' + esc(c.label) + '</div>';
         });
-        return h + '<div class="up-th up-th-act">Actions</div></div>';
+        return h + '<div class="up-th up-th-act">' + esc(UC.t("Actions")) + '</div></div>';
       }
 
       function rowHtml(r) {
@@ -671,13 +673,13 @@
              der dabei noch klickbar aussieht, wird ein zweites Mal gedrueckt. */
           sw.disabled = true;
           var lbl = sw.querySelector(".uts-switch-label");
-          if (lbl) lbl.textContent = "Switching…";
+          if (lbl) lbl.textContent = UC.t("Switching…");
           /* Und wieder auf, wenn nichts passiert -- ein Workflow, der nie antwortet, darf keinen
              toten Knopf hinterlassen. */
           setTimeout(function () {
             if (!sw || !sw.parentNode) return;
             sw.disabled = false;
-            if (lbl) lbl.textContent = "Switch";
+            if (lbl) lbl.textContent = UC.t("Switch");
           }, WECHSEL_FREI_MS);
           /* Genau die Nutzlast des Teamwaehlers in der Seitenleiste (usnTeam). Wer
              data-switch-fn auf bubble_fn_usnTeam zeigt, braucht keinen neuen Workflow. */

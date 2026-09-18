@@ -1686,6 +1686,9 @@
 
     /* teams / settings-brand */
     "New Team": "Neues Team",
+    /* "Switch to" steht allein, weil der Teamname dahinter kommt -- ein ganzer Satz
+       "Switch to Acme" faende hier nie einen Eintrag. */
+    "Switch to": "Wechseln zu",
     "No active billing plan": "Kein aktiver Tarif",
     "Brand Name & Matching Aliases": "Brand-Name & passende Aliase",
     "Edit brand": "Brand bearbeiten",
@@ -8212,6 +8215,18 @@
       if (getComputedStyle(el).opacity === "0") return;
       var host = el.closest ? el.closest(".up-root") : null;
       var dark = host ? host.getAttribute("data-theme") === "dark" : !!(getIsDark && getIsDark());
+      /* DER CHIP MUSS IN DIESELBE SCHICHT WIE SEIN AUSLOESER (19.09. gemeldet: "im Detailcard
+         bei Opportunities habe ich oben bei den Buttons keine Tooltips"). Er haengt am <body>.
+         Liegt der Ausloeser in einem Popover, steht dieses im TOP LAYER -- und der liegt ueber
+         allem im normalen Fluss, egal welcher z-index darunter steht. Der Chip wurde also
+         gezeichnet und war trotzdem nicht zu sehen, verdeckt von der Karte, zu der er gehoert.
+         Also zieht er fuer diesen einen Fall in dasselbe Popover um. position: fixed misst auch
+         im Top Layer gegen den Viewport, die Rechnung in placeTip bleibt unveraendert.
+         :popover-open kennen aeltere Browser nicht und werfen darauf -- dann bleibt es beim
+         Koerper, also beim bisherigen Verhalten. */
+      var schicht = document.body;
+      try { if (el.closest) schicht = el.closest(":popover-open") || document.body; } catch (e) {}
+      if (tip.parentNode !== schicht) schicht.appendChild(tip);
       /* Uebersetzt wird HIER, an der einen Stelle, durch die jeder Tooltip der App laeuft
          (showTip, showTipText, showTipWide muenden alle in paint). Das ist der Grund fuer diese
          Wahl und nicht Bequemlichkeit: die data-tip-Texte stehen im handgemachten Bubble-Markup
@@ -14603,6 +14618,21 @@
     ];
   }
 
+  /* DIE AKZENTFARBE ALS LINIENFARBE. Gelesen wird --up-accent-ink an der Wurzel und nicht
+     --up-accent: eine Kurve liegt auf dem Grund der Seite wie Schrift, nicht auf einer Flaeche,
+     und die Tinte ist genau der Ton, der fuer diese Lage gemessen ist.
+     Angefordert am 19.09. fuer die Kurven in Brand Detail und Performance Detail, ausdruecklich
+     AUCH fuer den Standard: dort ist die Tinte #1f1f1b im Hellen und #e0e0e0 im Dunkeln.
+     Faellt das Token aus (eine aeltere core.css an einem anderen Pin), bleibt --vc-text -- das
+     ist im Standard derselbe Wert, es sieht also nicht kaputt aus, nur nicht eingefaerbt. */
+  function accentInk(el){
+    var n = (el && el.nodeType === 1) ? el : document.documentElement;
+    var v = "";
+    try { v = String(getComputedStyle(n).getPropertyValue("--up-accent-ink") || "").trim(); } catch(e){}
+    if (!v){ try { v = String(getComputedStyle(n).getPropertyValue("--vc-text") || "").trim(); } catch(e){} }
+    return v || "#1f1f1b";
+  }
+
   function storeKey(base){ return String(base) + "@" + (getTeam() || "_"); }
 
   /* Ansichts-Einstellungen bekommen KEIN Team-Suffix. Das war der Fehler: storeKey haengt die
@@ -16091,6 +16121,7 @@
     prefSet: prefSet,
     heatRamp: heatRamp,
     heatAt: heatAt,
+    accentInk: accentInk,
     getTopics: getTopics,
     setTopics: setTopics,
     onTopics: onTopics,

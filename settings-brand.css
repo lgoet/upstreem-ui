@@ -161,9 +161,16 @@
 .usb-model-name { font-size: 13.5px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .usb-model-prov { font-size: 12px; color: var(--vc-third); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Der Haken belegt seinen Platz immer. Sonst ruecken Name und Logo bei jedem Umschalten um 18px
-   zur Seite und das Raster zappelt beim Durchklicken. */
-.usb-model-check { flex: 0 0 16px; width: 16px; height: 16px; color: var(--vc-text); opacity: 0; transition: opacity 120ms ease; }
-.usb-model-check svg { width: 16px; height: 16px; display: block; }
+   zur Seite und das Raster zappelt beim Durchklicken.
+   RUNDES GEFUELLTES PLAETTCHEN (19.09. angefordert: "wie im Modelpicker bei Create with AI").
+   Die Werte sind die von .uca-ai-check dort, unveraendert uebernommen: 16px, voll rund, Flaeche
+   in der Akzentfarbe, Zeichen in --up-accent-fg, das svg 11 statt 16px -- sonst stiesse es an
+   den Rand des Plaettchens. */
+.usb-model-check { flex: 0 0 16px; width: 16px; height: 16px; border-radius: 999px;
+  background: var(--up-accent); color: var(--up-accent-fg);
+  display: inline-flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 120ms ease; }
+.usb-model-check svg { width: 11px; height: 11px; display: block; }
 .usb-model.is-on .usb-model-check { opacity: 1; }
 .usb-modelsempty { font-size: 13px; color: var(--vc-third); padding: 0 0 16px; }
 

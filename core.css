@@ -1397,6 +1397,33 @@
     .up-root[data-theme="dark"] {
       --uhm-h0: #1e2634; --uhm-h1: #283a58; --uhm-h2: #375582; --uhm-h3: #466ea8; --uhm-h4: #5587c8;
     }
+    /* DIE RAMPE FOLGT DER AKZENTFARBE (19.09. angefordert: "wenn eine der 3 anderen Akzentfarben
+       gewaehlt ist, die Farbskala des Matrix-Charts auf eine Skala mit der jeweiligen
+       Akzentfarbe als Grundfarbe"). Am STANDARD aendert sich nichts -- die zwei Regeln darueber
+       bleiben unberuehrt, und ohne data-accent greift keine der sechs hier.
+       Gerechnet, nicht gegriffen: uebernommen sind Helligkeit UND Saettigung jeder der fuenf
+       Stufen aus der blauen Vorlage, getauscht ist nur der Farbton. Damit hat jede Skala
+       dieselbe Abstufung und denselben Kontrast wie die bisherige -- eine frei gewaehlte Rampe
+       waere an einem Ende flach geworden. Hell laeuft sie von hell nach dunkel, dunkel
+       umgekehrt; auch das ist die Vorlage. */
+    html[data-accent="indigo"] .up-root {
+      --uhm-h0: #f0f1f8; --uhm-h1: #c8cbe5; --uhm-h2: #8a90c4; --uhm-h3: #4a5296; --uhm-h4: #1e255f;
+    }
+    html[data-accent="indigo"] .up-root[data-theme="dark"] {
+      --uhm-h0: #1e2134; --uhm-h1: #282e58; --uhm-h2: #374082; --uhm-h3: #4652a8; --uhm-h4: #5563c8;
+    }
+    html[data-accent="azur"] .up-root {
+      --uhm-h0: #f0f4f8; --uhm-h1: #c8d7e5; --uhm-h2: #8aa9c4; --uhm-h3: #4a7296; --uhm-h4: #1e405f;
+    }
+    html[data-accent="azur"] .up-root[data-theme="dark"] {
+      --uhm-h0: #1e2934; --uhm-h1: #284058; --uhm-h2: #375d82; --uhm-h3: #4677a8; --uhm-h4: #558fc8;
+    }
+    html[data-accent="terrakotta"] .up-root {
+      --uhm-h0: #f8f2f0; --uhm-h1: #e5cfc8; --uhm-h2: #c4998a; --uhm-h3: #965d4a; --uhm-h4: #5f2e1e;
+    }
+    html[data-accent="terrakotta"] .up-root[data-theme="dark"] {
+      --uhm-h0: #34231e; --uhm-h1: #583428; --uhm-h2: #824937; --uhm-h3: #a85e46; --uhm-h4: #c87155;
+    }
     .up-topicchip-lbl { overflow: hidden; text-overflow: ellipsis; }
     .up-topicchip-check { display: inline-flex; align-items: center; justify-content: center;
       width: 0; height: 14px; border-radius: 4px; opacity: 0; overflow: hidden; flex: 0 0 auto;

@@ -419,12 +419,12 @@
       var pts = payload.series.map(function(p){
         return { company_id: cid, day: p.day, visibility_pct: num(p.value) };
       });
-      /* Linienfarbe: der Farbwert, den eine Heatmap-Zelle bei 65 Prozent haette -- aus derselben
-         Rampe und damit automatisch pro Theme richtig. Die Kurve gehoert sichtbar zum Radar
-         darueber, und ein Blau aus dessen eigener Skala sagt das, ohne dass hier ein Farbwert
-         steht, den beim naechsten Palettenwechsel niemand mitzieht. */
-      var rgb = UC.heatAt ? UC.heatAt(root, 0.65) : [100, 132, 168];
-      var linie = "rgb(" + rgb[0] + "," + rgb[1] + "," + rgb[2] + ")";
+      /* Linienfarbe: die Akzentfarbe als Tinte (19.09. angefordert, ausdruecklich auch fuer den
+         Standard -- dort ist sie die Schriftfarbe des Themas). Hier stand der Farbwert einer
+         Heatmap-Zelle bei 65 Prozent; die Begruendung dafuer war, dass die Kurve sichtbar zum
+         Radar darueber gehoert. Das gilt weiter, nur folgt die Matrix jetzt selbst der
+         Akzentfarbe -- beide kommen also nach wie vor aus einer Quelle. */
+      var linie = UC.accentInk ? UC.accentInk(root) : "#1f1f1b";
       var comp = state.company ? [{
         company_id: cid, name: state.company.name, color: linie,
         favicon_url: state.company.favicon_url || state.company.logo_url || state.company.logo || ""
