@@ -16,7 +16,14 @@
      brand/prompt/response/url highlight chips are behaviour-critical and must not be re-styled.
      The three values with no core counterpart (the Mira accent, the user-bubble tint and the two
      shadows) stay as they were. */
-  #ask-mira {
+  /* ZWEI ORTE, EINE PALETTE. Das Einstellungsfenster haengt am BODY (Portal, wegen der
+     Stapelung) und liegt damit AUSSERHALB von #ask-mira -- die Werte unten erreichten es nicht.
+     Gemessen: --am-soft-2 kam dort leer an, und eine Kurzschreibweise mit einem leeren Wert
+     (border: 1px solid var(--am-border)) faellt als GANZE aus, also ohne Rahmen und ohne
+     Fehlermeldung. Deshalb steht die Palette in einem eigenen Selektor mit beiden Orten; die
+     MASSE des Bauteils (Breite, Hoehe, Kasten) bleiben allein bei #ask-mira, die gehoeren dem
+     Fenster nicht. */
+  #ask-mira, .am-set-backdrop {
     /* --up-surface, NOT --vc-bg. Core keeps two different darks apart: --vc-bg (#1b1b1b) is the
        CARD/panel colour, --up-surface (#121212) is the page behind them. --am-bg is Mira's page
        background -- the shell, the composer-area fade, the composer in dark -- so it is the second
@@ -43,7 +50,8 @@
     --am-accent-2: #4f8bff;
     --am-accent-soft: rgba(124,92,255,0.10);
     --am-radius: 16px;
-
+  }
+  #ask-mira {
     width: 100%;
     height: 100%;
     min-height: 0;
@@ -342,7 +350,8 @@
   /* URLs & Domains: code-chip-style background highlight — NUR wenn Citation-Highlights auf "Icon" stehen */
   #ask-mira[data-citation="icon"] .am-logo-wrap[data-type="url"],
   #ask-mira[data-citation="icon"] .am-logo-wrap[data-type="domain"],
-  #ask-mira[data-citation="icon"] .am-logo-wrap[data-type="prompt"] {
+  #ask-mira[data-citation="icon"] .am-logo-wrap[data-type="prompt"],
+  .am-set-backdrop[data-citation="icon"] .am-logo-wrap[data-type="domain"] {
     display: inline-flex; align-items: center; vertical-align: middle; max-width: 100%; min-width: 0;
     margin: 2px 0; background: var(--am-soft-2); border-radius: 8px; padding: 0 6px;
   }
@@ -350,7 +359,9 @@
   #ask-mira[data-citation="icon"] .am-logo-wrap[data-type="url"] .am-inline-logo,
   #ask-mira[data-citation="icon"] .am-logo-wrap[data-type="domain"] .am-inline-ic,
   #ask-mira[data-citation="icon"] .am-logo-wrap[data-type="domain"] .am-inline-logo,
-  #ask-mira[data-citation="icon"] .am-logo-wrap[data-type="prompt"] .am-inline-ic { transform: none; flex: 0 0 auto; }
+  #ask-mira[data-citation="icon"] .am-logo-wrap[data-type="prompt"] .am-inline-ic,
+  .am-set-backdrop[data-citation="icon"] .am-logo-wrap[data-type="domain"] .am-inline-ic,
+  .am-set-backdrop[data-citation="icon"] .am-logo-wrap[data-type="domain"] .am-inline-logo { transform: none; flex: 0 0 auto; }
   /* Innerhalb farbiger Sentiment-/Source-Spans: KEIN Chip-Background (würde mit der Einfärbung kollidieren) */
   #ask-mira[data-citation="icon"] [data-mira-sentiment] .am-logo-wrap[data-type="url"],
   #ask-mira[data-citation="icon"] [data-mira-sentiment] .am-logo-wrap[data-type="domain"],
@@ -364,14 +375,17 @@
   /* ===== Response chips: model logo box (matches the landing-page component) ===== */
   /* logo + icon modes get the soft chip background; "none" stays bare text */
   #ask-mira[data-response="logo"] .am-logo-wrap[data-type="response"],
-  #ask-mira[data-response="icon"] .am-logo-wrap[data-type="response"] {
+  #ask-mira[data-response="icon"] .am-logo-wrap[data-type="response"],
+  .am-set-backdrop[data-response="logo"] .am-logo-wrap[data-type="response"],
+  .am-set-backdrop[data-response="icon"] .am-logo-wrap[data-type="response"] {
     display: inline-flex; align-items: center; vertical-align: middle; max-width: 100%; min-width: 0;
     background: var(--am-soft-2); border-radius: 8px; padding: 1px 8px 1px 4px; margin: 2px 0 2px 8px;
   }
   #ask-mira[data-response="logo"] p > .am-logo-wrap[data-type="response"]:first-child,
   #ask-mira[data-response="icon"] p > .am-logo-wrap[data-type="response"]:first-child,
   #ask-mira[data-response="logo"] li > .am-logo-wrap[data-type="response"]:first-child,
-  #ask-mira[data-response="icon"] li > .am-logo-wrap[data-type="response"]:first-child { margin-left: 0; }
+  #ask-mira[data-response="icon"] li > .am-logo-wrap[data-type="response"]:first-child,
+  .am-set-demo > .am-logo-wrap[data-type="response"]:first-child { margin-left: 0; }
   /* inside coloured sentiment/source spans: no chip background */
   #ask-mira [data-mira-sentiment] .am-logo-wrap[data-type="response"],
   #ask-mira [data-mira-source-signal] .am-logo-wrap[data-type="response"] { background: none; padding: 0; border-radius: 0; margin-left: 6px; }
@@ -388,7 +402,8 @@
   #ask-mira[data-citation="icon"] td > .am-logo-wrap[data-type="domain"]:first-child,
   #ask-mira[data-citation="icon"] th > .am-logo-wrap[data-type="domain"]:first-child { margin-left: 0; }
   #ask-mira[data-citation="icon"] .am-logo-wrap[data-type="url"] .am-logo-text,
-  #ask-mira[data-citation="icon"] .am-logo-wrap[data-type="domain"] .am-logo-text {
+  #ask-mira[data-citation="icon"] .am-logo-wrap[data-type="domain"] .am-logo-text,
+  .am-set-backdrop[data-citation="icon"] .am-logo-wrap[data-type="domain"] .am-logo-text {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13.5px;
   }
   .am-inline-logo {
@@ -2438,7 +2453,29 @@
      genug, dass dabei nichts verlorengeht. */
   .am-set-backdrop .ums-main:has(.ums-selwrap.is-open) { overflow: visible; }
   /* Zwischen den Zeilen eine Trennlinie, wie im Preferences-Fenster. */
+  /* Die Trennlinie liegt jetzt zwischen den GRUPPEN. Zeile und Auszug gehoeren zusammen, also
+     stehen sie in einer Huelle -- und damit sind die Zeilen keine Geschwister mehr. */
+  .am-set-backdrop .am-set-hlgrp + .am-set-hlgrp { border-top: 1px solid var(--vc-border); }
   .am-set-backdrop .am-set-row2 + .am-set-row2 { border-top: 1px solid var(--vc-border); }
+  /* ---- Der Auszug unter jeder Hervorhebungs-Zeile (18.09. angefordert) ----
+     64px hoch, eigener Grund, Rahmen und Rundung: er soll sich abheben wie ein Codeblock, damit
+     man ihn als Beispiel liest und nicht als weitere Einstellung.
+     Der Grund ist die Feldfarbe (--am-soft), angefordert: auf der weissen Karte hebt sich der
+     Kasten damit ab, im Dunkeln liegt er eine Stufe ueber ihr (gemessen: hell 249,248,249 auf
+     255,255,255; dunkel 35,35,38 auf 28,28,31).
+     Was der Kasten dabei verliert und was nicht: die Chips der Zitate und Antworten tragen
+     dieselbe Farbe, ihre Flaeche geht hier also unter. Ihr ZEICHEN bleibt -- Favicon, Logo,
+     Symbol oder nichts -- und genau das ist es, was die Einstellung darueber stellt.
+     Die Schrift ist die der Antwort und NICHT die eines Codeblocks: hier steht ein Satz, kein
+     Code, und in Schreibmaschinenschrift laese er sich schlechter als im Original.
+     Feste Hoehe mit senkrechter Mitte: die drei Kaesten stehen damit gleich hoch, egal ob der
+     Bezug gerade ein 24px-Logo traegt oder nur ein Wort ist.
+     16px Abstand nach unten, also genauso viel, wie die Zeile darueber nach oben hat. */
+  .am-set-backdrop .am-set-demo {
+    height: 64px; display: flex; align-items: center; padding: 0 14px; margin: 0 0 16px;
+    border-radius: 10px; background: var(--am-soft); border: 1px solid var(--am-border);
+    font-size: 13.5px; line-height: 1.5; color: var(--am-text); overflow: hidden;
+  }
   /* Der Umschalter 32px hoch -- .up-seg.is-lg aus core traegt genau das. */
   .am-set-backdrop .am-set-seg .up-seg.is-lg { height: 32px; }
   .am-set-backdrop .am-hl-panel {

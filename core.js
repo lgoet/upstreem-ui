@@ -670,6 +670,13 @@
        (14.09.). "All {n} brands" traegt die GESAMTZAHL, nicht die fuenf gezeigten Zeilen; die
        Fassung ohne Zahl greift, wenn der Payload keine mitbringt. */
     "Main Metrics": "Hauptkennzahlen",
+    /* Die drei Auszuege unter den Hervorhebungs-Einstellungen in Miras Fenster. Der GANZE Satz
+       steht hier und nicht drei Stuecke davon: der Bezug steht im Deutschen an anderer Stelle im
+       Satz. Das hervorgehobene Wort selbst bleibt in beiden Sprachen gleich -- daran findet die
+       Komponente es wieder (indexOf). */
+    "Acme Corp is mentioned in 42 of 120 answers.": "Acme Corp wird in 42 von 120 Antworten genannt.",
+    "Three answers cite example.com as their source.": "Drei Antworten führen example.com als Quelle an.",
+    "Response 128 gave the clearest signal.": "Response 128 lieferte das deutlichste Signal.",
     /* Die Beschriftungen der zwei Weiterwege. Sie stehen seit dem 14.09. nur noch im Tooltip des
        Zeichens in der Ueberschriftzeile, darum die Verbform: aus "All 8 brands" (Zeile unter der
        Liste) wurde "Go to all 8 brands" (was der Klick tut). */

@@ -2121,8 +2121,7 @@
       return;
     }
     setHasMessages(S.messages.length > 0 || S.isLoading);
-    root.setAttribute('data-citation', (S.settings && S.settings.citation) || 'icon');
-    root.setAttribute('data-response', (S.settings && S.settings.response) || 'logo');
+    hlAttrSetzen();
     var poolTerms = buildUnambiguousPoolTerms();   // unambiguous, current session only
     var lastAsstIdx = -1;
     for (var li = S.messages.length - 1; li >= 0; li--){ if (S.messages[li] && S.messages[li].role === 'assistant'){ lastAsstIdx = li; break; } }
@@ -7153,6 +7152,92 @@
     { key: 'response', label: 'Response Highlights', opt: ['logo', 'icon', 'none'] }
   ];
 
+  /* ---- DER AUSZUG UNTER JEDER ZEILE (18.09. angefordert) ------------------------------------
+     Ein kurzer Satz aus einer Antwort, in dem GENAU EIN Bezug steckt -- der, um den die Zeile
+     darueber geht. Er sieht so aus, wie die Einstellung darueber es sagt, und aendert sich mit
+     ihr.
+     Der GANZE Satz steht im Katalog und nicht drei Stuecke davon: im Deutschen steht der Bezug
+     an anderer Stelle im Satz, und drei Bruchstuecke waeren dort nicht zusammenzusetzen.
+     Gefunden wird er per indexOf -- das Wort selbst ist in beiden Sprachen dasselbe. Findet er
+     sich nicht, steht der Satz ohne Hervorhebung da; ein Auszug ist eine Anschauung und darf
+     nichts abbrechen.
+     Der TYP ist der, den die Einstellung wirklich steuert (siehe leadingVisual): brand fuer
+     Marken, domain fuer Zitate -- domain traegt bei "Icon" zusaetzlich den Kastenstil, den
+     Zitate in der Antwort auch haben -- und response fuer Antworten. */
+  var HL_DEMO = {
+    brand:    { typ: 'brand',    satz: 'Acme Corp is mentioned in 42 of 120 answers.', wort: 'Acme Corp' },
+    citation: { typ: 'domain',   satz: 'Three answers cite example.com as their source.', wort: 'example.com' },
+    response: { typ: 'response', satz: 'Response 128 gave the clearest signal.', wort: 'Response 128' }
+  };
+  /* Ein echtes Bild, wenn der Arbeitsbereich eins geliefert hat -- dieselben Quellen, aus denen
+     auch die Antwort ihre Bilder nimmt. */
+  function hlDemoBild(key){
+    if (key === 'brand')    return (((S.brandLogos || [])[0]) || {}).src || '';
+    if (key === 'citation') return (((S.favicons || [])[0]) || {}).src || '';
+    var m = S.models || {};
+    for (var k in m) if (m[k] && m[k].logo_url) return String(m[k].logo_url);
+    return '';
+  }
+  /* Die zwei Attribute, an denen der Chipstil der Zitate und Antworten haengt. Sie stehen an
+     der Wurzel -- und am Fenster, denn das haengt als Portal am body und ist kein Nachfahre
+     der Wurzel. Ohne sie saehe der Auszug im Fenster anders aus als dieselbe Stelle in der
+     Antwort, und genau das soll er nicht. */
+  function hlAttrSetzen(){
+    var c = (S.settings && S.settings.citation) || 'icon';
+    var r = (S.settings && S.settings.response) || 'logo';
+    root.setAttribute('data-citation', c);
+    root.setAttribute('data-response', r);
+    if (_setBack){ _setBack.setAttribute('data-citation', c); _setBack.setAttribute('data-response', r); }
+  }
+  function hlDemoZeichnen(){
+    hlAttrSetzen();
+    if (!_setBack) return;
+    var kaesten = _setBack.querySelectorAll('[data-am-hl-demo]');
+    Array.prototype.forEach.call(kaesten, function(kasten){
+      var key = kasten.getAttribute('data-am-hl-demo');
+      var d = HL_DEMO[key];
+      if (!d) return;
+      var satz = UCt(d.satz), wort = d.wort;
+      var i = satz.indexOf(wort);
+      kasten.innerHTML = '';
+      if (i < 0){ kasten.appendChild(document.createTextNode(satz)); return; }
+      var wert = (S.settings && S.settings[key]) || HL_ZEILEN.filter(function(z){ return z.key === key; })[0].opt[0];
+      var bild = hlDemoBild(key);
+      var wrap = document.createElement('span');
+      wrap.className = 'am-logo-wrap';
+      wrap.setAttribute('data-type', d.typ);
+      /* leadingVisual entscheidet, was vor dem Wort steht -- dieselbe Funktion, die auch die
+         echte Antwort malt. Damit kann der Auszug gar nicht anders aussehen als das Original.
+         EINEN Fall nimmt ihr der Auszug ab: ohne Bildadresse faellt sie auf das Typ-Zeichen
+         zurueck, und dann saehen "Logo" und "Favicon" hier genauso aus wie "Icon". Hat der
+         Arbeitsbereich noch kein Bild geliefert, steht deshalb der Buchstabenkasten da -- genau
+         der, den ein fehlgeschlagenes Bild in der Antwort auch hinterlaesst. Bei response nicht:
+         dort liefert sie schon von sich aus einen eigenen Kasten mit Sprechblase. */
+      var visual = leadingVisual(d.typ, bild, wort);
+      if (!bild && d.typ !== 'response' && (wert === 'logo' || wert === 'favicon')){
+        visual = document.createElement('span');
+        visual.className = 'am-inline-logo am-inline-logo-fallback';
+        visual.textContent = wort.charAt(0).toUpperCase();
+      }
+      if (visual) wrap.appendChild(visual); else wrap.classList.add('is-bare');
+      var t = document.createElement('span');
+      t.className = 'am-logo-text'; t.textContent = satz.slice(i, i + wort.length);
+      wrap.appendChild(t);
+      kasten.appendChild(document.createTextNode(satz.slice(0, i)));
+      kasten.appendChild(wrap);
+      kasten.appendChild(document.createTextNode(satz.slice(i + wort.length)));
+      /* Der Rueckfall auf den Buchstaben, wenn das echte Bild nicht laedt -- wie in
+         renderMessages. */
+      var img = kasten.querySelector('.am-inline-logo:not(.am-inline-logo-fallback)');
+      if (img) img.addEventListener('error', function(){
+        var span = document.createElement('span');
+        span.className = 'am-inline-logo am-inline-logo-fallback';
+        span.textContent = img.getAttribute('data-mono') || '';
+        if (img.parentNode) img.parentNode.replaceChild(span, img);
+      });
+    });
+  }
+
   var SET_SEITEN = [
     { key: 'highlights', label: 'Highlights', icon: 'sparkle',
       titel: 'Highlights', sub: 'How brands, citations and responses are marked in answers' },
@@ -7275,7 +7360,8 @@
          unsichtbar und stoert dort niemanden. */
       body.innerHTML = HL_ZEILEN.map(function(z){
         var wert = (S.settings && S.settings[z.key]) || z.opt[0];
-        return '<div class="ums-row am-set-row2">' +
+        return '<div class="am-set-hlgrp">' +
+          '<div class="ums-row am-set-row2">' +
           '<div class="ums-rowtext">' +
             '<div class="ums-rowtitle">' + esc(UCt(z.label)) + '</div>' +
           '</div>' +
@@ -7297,8 +7383,11 @@
               '</div>' +
             '</span>' +
           '</div>' +
+          '</div>' +
+          '<div class="am-set-demo" data-am-hl-demo="' + esc(z.key) + '"></div>' +
         '</div>';
       }).join('');
+      hlDemoZeichnen();
     } else {
       var links = seiteLinks();
       /* Die Zeilenform der Vorlage: Titel und Erklaersatz links, der Regler rechts. */
@@ -7419,6 +7508,10 @@
     var payload = { brand: S.settings.brand, citation: S.settings.citation, response: S.settings.response };
     if (window.bubble_fn_ask_mira_settings_change) window.bubble_fn_ask_mira_settings_change(JSON.stringify(payload));
     else { window.dispatchEvent(new CustomEvent('askmira:settings-change', { detail: payload })); console.log('Ask Mira settings change:', payload); }
+    /* Die Attribute setzt sonst nur renderMessages -- und an ihnen haengt der Kastenstil der
+       Zitate. hlDemoZeichnen setzt sie mit, damit der Auszug im Fenster auch dann sofort stimmt,
+       wenn gar kein Chat offen ist. */
+    hlDemoZeichnen();   // der Auszug unter der Zeile zeigt den neuen Wert
     renderMessages();   // refresh active chat so highlights update
   }
   wireDropdown(elDdBrand); wireDropdown(elDdCitation); wireDropdown(elDdResponse);
