@@ -337,14 +337,14 @@
      so the direct-child reset above misses it and it gains an 8px indent vs. plain cells. */
   #ask-mira .am-bubble :is(td, th, p, li) > :is(strong, b, em, i):first-child > .am-logo-wrap:first-child { margin-left: 0; }
   .am-logo-wrap .am-inline-logo { margin: 0 5px 0 0; }
-  /* DAS ZITAT-LOGO IST 2px KLEINER als das einer Marke (18.09. angefordert: "die citation logos
-     sind zu gross"). Nur bei Zitaten -- Marke und Wettbewerber behalten ihre 24px. Der Radius
-     geht im selben Verhaeltnis mit (8 * 22/24 = 7,3), sonst waere die Rundung an einem kleineren
-     Bild sichtbar staerker. */
+  /* DAS ZITAT-LOGO IST 4px KLEINER als das einer Marke (18.09. in zwei Schritten angefordert:
+     erst 24 -> 22, dann 22 -> 20). Nur bei Zitaten -- Marke und Wettbewerber behalten ihre 24px.
+     Der Radius geht im selben Verhaeltnis mit (8 * 20/24 = 6,7), sonst waere die Rundung an einem
+     kleineren Bild sichtbar staerker. */
   #ask-mira .am-logo-wrap[data-type="url"] .am-inline-logo,
   #ask-mira .am-logo-wrap[data-type="domain"] .am-inline-logo,
   #ask-mira .am-logo-wrap[data-type="prompt"] .am-inline-logo {
-    width: 22px; height: 22px; border-radius: 7px;
+    width: 20px; height: 20px; border-radius: 6px;
   }
   .am-logo-wrap .am-inline-ic { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; margin: 0 5px 0 0; vertical-align: middle; color: var(--am-muted); pointer-events: none; }
   .am-logo-wrap .am-inline-ic svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -369,6 +369,13 @@
   .am-set-backdrop[data-citation="icon"] .am-logo-wrap[data-type="domain"] {
     display: inline-flex; align-items: center; vertical-align: middle; max-width: 100%; min-width: 0;
     margin: 2px 0; background: var(--am-soft-2); border-radius: 8px; padding: 0 6px;
+    /* DER CHIP IST HOEHER ALS SEIN INHALT (18.09.: "sodass die auch wirklich im grauen Container
+       liegen"). Vorher bestimmte der Inhalt die Hoehe: 22px Bild in einem 22px Chip, also null
+       Luft oben und unten -- das Favicon SASS nicht im Grau, es WAR das Grau.
+       24px ist die Hoehe des Markenchips daneben, also nichts Neues in dieser Zeile. Damit hat
+       das 20px-Favicon 2px Luft und das 18px-Zeichen im Icon-Modus 3px -- und beide Modi sind
+       gleich hoch, worum es beim Grund schon ging. */
+    min-height: 24px;
   }
   #ask-mira:is([data-citation="icon"], [data-citation="favicon"]) .am-logo-wrap[data-type="url"] .am-inline-ic,
   #ask-mira:is([data-citation="icon"], [data-citation="favicon"]) .am-logo-wrap[data-type="url"] .am-inline-logo,
