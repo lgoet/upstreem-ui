@@ -2460,9 +2460,8 @@
   /* ---- Der Auszug unter jeder Hervorhebungs-Zeile (18.09. angefordert) ----
      40px hoch, ohne Rahmen, die Flaeche nur zu 60 Prozent deckend: er soll sich abheben wie ein
      Codeblock, aber leiser als die Zeile darueber, die die Einstellung traegt.
-     Die Flaeche ist die Feldfarbe, und 75 Prozent davon bleiben auf der weissen Karte wie im
-     Dunkeln eine Spur des jeweiligen Grundes -- ein fester Wert waere in einem der zwei Themen
-     falsch. color-mix steht dafuer schon in core (die Markenfarben der Themenkarten).
+     Die Flaeche ist die Feldfarbe, unverduennt (18.09.: erst 60, dann 75, jetzt voll). Sie kommt
+     aus dem Token, faellt also in beiden Themen richtig aus.
      Die SCHRIFT ist die des Protokolls in Team Orga (.uto-log-mono): dieselbe Familie, dieselben
      11,5px, dieselbe Laufweite. Der Auszug ist ein Beleg, kein Fliesstext -- und in der App gibt
      es fuer genau das schon eine Schrift, also keine zweite.
@@ -2473,7 +2472,7 @@
      seine eigene Gewichtung. */
   .am-set-backdrop .am-set-demo {
     height: 40px; display: flex; align-items: center; padding: 0 12px; margin: 0 0 16px;
-    border-radius: 10px; background: color-mix(in srgb, var(--am-soft) 75%, transparent); border: 0;
+    border-radius: 10px; background: var(--am-soft); border: 0;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size: 11.5px; letter-spacing: -0.01em; line-height: 1.5;
     color: var(--am-text); overflow: hidden;
@@ -2481,15 +2480,14 @@
   /* DIE DREI BILDER GLEICH GROSS UND GLEICH GERUNDET (18.09. angefordert). In der Antwort sind
      sie es nicht: das Markenlogo misst 24px mit Radius 8, das Modell-Logo 17px mit Radius 4. Im
      Auszug stehen die drei Zeilen untereinander, und dort faellt jeder Unterschied auf, der in
-     einem Fliesstext niemandem auffaellt. 22px, weil das Markenlogo 2px kleiner werden sollte;
-     die zwei anderen ziehen auf denselben Wert nach.
+     einem Fliesstext niemandem auffaellt. 16px fuer alle drei (angefordert).
      Nur hier im Fenster -- in der Antwort bleibt alles, wie es ist. */
   .am-set-backdrop .am-set-demo .am-inline-logo,
   .am-set-backdrop .am-set-demo .am-logo-wrap[data-type="response"] .am-resp-ic {
-    width: 22px; height: 22px; flex: 0 0 22px; border-radius: 4px;
+    width: 16px; height: 16px; flex: 0 0 16px; border-radius: 4px;
   }
   .am-set-backdrop .am-set-demo .am-logo-wrap[data-type="response"] .am-resp-ic img {
-    width: 22px; height: 22px;
+    width: 16px; height: 16px;
   }
   /* Eine Zeile, nicht umbrechend: der Kasten ist 40px hoch, eine zweite Zeile waere darin nur
      halb zu sehen. Laeuft der Satz einmal zu lang, endet er mit Auslassungspunkten. */
@@ -2514,8 +2512,9 @@
      vertical-align: middle, ihr Inhalt wird also um die Mitte des 22px-Bildes zentriert, und
      die Grundlinie der Schrift darin faellt dabei unter die der Zeile. Gemessen an den
      Textkaesten selbst (Range, nicht am Element): 0,7px tiefer in allen drei Zeilen.
-     Genau diese 0,7px zurueck. Der Wert gehoert zu DIESER Kombination aus 11,5px Schrift und
-     22px Bild -- wer eines davon aendert, misst ihn neu. */
+     Genau diese 0,7px zurueck. Gegengemessen mit ausgeschaltetem Hub: 0,72px zu tief, mit ihm
+     0,03px. Der Wert haengt an der SCHRIFT, nicht an der Bildhoehe -- er stimmte bei 22px
+     Bildern genauso wie jetzt bei 16px. Wer den Schriftgrad aendert, misst ihn neu. */
   .am-set-backdrop .am-set-demo .am-logo-wrap { position: relative; top: -0.7px; }
   /* Der Umschalter 32px hoch -- .up-seg.is-lg aus core traegt genau das. */
   .am-set-backdrop .am-set-seg .up-seg.is-lg { height: 32px; }
