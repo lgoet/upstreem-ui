@@ -365,12 +365,6 @@
   content: ""; position: absolute; left: 0; right: 0; bottom: 100%;
   height: var(--up-sticky-top); background: var(--up-surface);
 }
-.upw-modebtn {
-  padding: 0; border: 0; background: transparent; font-family: inherit; font-size: 12px;
-  font-weight: 500; color: var(--vc-third); cursor: pointer; transition: color 140ms ease;
-}
-.upw-modebtn:hover { color: var(--vc-text); }
-.upw-modebtn.is-active { color: var(--vc-text); }
 /* Die Werkzeuge rechts: die eingezogene Leiste des Bretts und das Oeffnen-Zeichen. margin-left
    schiebt sie ans Ende der Zeile. */
 .upw-modetools { display: flex; align-items: center; gap: 8px; margin-left: auto; }
@@ -452,12 +446,18 @@
 .upw-goto:hover { color: var(--vc-text); }
 .upw-goto svg { width: 16px; height: 16px; display: block; }
 
-/* ---------- der Domains/URL-Umschalter in der Ueberschriftzeile ----------
-   24px statt der 26 aus core (angefordert). Hoehe UND Knopfhoehe zusammen: mit nur einer der
-   beiden Zahlen stoesst der Knopf an den Rand der Pille -- CLAUDE.md 1, ein Bauteil ist ein Paket
-   aus Massen. Das Polster faellt im selben Verhaeltnis von 8 auf 7px. */
-.upw-cmode.up-seg { height: 24px; }
-.upw-cmode .up-seg-btn { height: 24px; padding: 0 7px; font-size: 11.5px; }
+/* ---------- die 24px-Umschalter dieser Komponente ----------
+   Der Domains/URL-Schalter in der Ueberschriftzeile und der Bereichsschalter Main Metrics /
+   Opportunities darunter (der war bis zum 18.09. ein eigener, leiser Wortumschalter).
+   24px statt der 26 aus core (beide Male angefordert). Hoehe UND Knopfhoehe zusammen: mit nur
+   einer der beiden Zahlen stoesst der Knopf an den Rand der Pille -- CLAUDE.md 1, ein Bauteil ist
+   ein Paket aus Massen. Das Polster faellt im selben Verhaeltnis von 8 auf 7px, die Schrift von
+   12 auf 11,5.
+   EINE Regel fuer beide und nicht zweimal dieselben Zahlen: zwei 24px-Umschalter auf derselben
+   Seite, die sich in Polster oder Schriftgrad unterscheiden, sind genau der Fall, den
+   .check_reinvention.py sucht. */
+.upw-cmode.up-seg, .upw-modes.up-seg { height: 24px; }
+.upw-cmode .up-seg-btn, .upw-modes .up-seg-btn { height: 24px; padding: 0 7px; font-size: 11.5px; }
 
 /* ---------- schmal ----------
    Unter 760px Breite (widthTiers, is-narrow) gehen die Kennzahlen untereinander (die eine

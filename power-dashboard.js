@@ -303,9 +303,18 @@
              und der Inhalt ist eine schlichte Liste ohne Raster, nicht der Tabellenbaukasten.
              Der Reiter-Umschalter von gestern ist weg; an seiner Stelle steht ein leiser
              Wortumschalter zwischen den zwei Listen und dem Opportunities-Brett. */
-          '<div class="upw-modeseg" role="tablist" aria-label="Section" data-upw-modeseg>' +
-            '<button type="button" class="upw-modebtn" role="tab" data-upw-mode="metrics" data-i18n="Main Metrics">' + esc(t("Main Metrics")) + '</button>' +
-            '<button type="button" class="upw-modebtn" role="tab" data-upw-mode="opportunities" data-i18n="Opportunities">' + esc(t("Opportunities")) + '</button>' +
+          '<div class="upw-modeseg" data-upw-modeseg>' +
+            /* Der klassische Umschalter aus core (18.09. angefordert). Vorher standen hier zwei
+               nackte Woerter mit 20px Abstand -- ein eigener, leiser Umschalter, den es so
+               nirgends sonst gab. .up-seg bringt Flaeche, Radius, Farben, den Aktivzustand und
+               den gleitenden Streifen mit; er steht in SEG_BOXEN, also faehrt der Streifen ohne
+               eine Zeile JS. Die Liste (role=tablist) sitzt jetzt am Umschalter selbst und nicht
+               mehr an der Zeile -- in der Zeile stehen auch die Werkzeuge des Bretts, und die
+               sind keine Reiter. */
+            '<div class="up-seg upw-modes" role="tablist" aria-label="Section">' +
+              '<button type="button" class="up-seg-btn" role="tab" data-upw-mode="metrics" data-i18n="Main Metrics">' + esc(t("Main Metrics")) + '</button>' +
+              '<button type="button" class="up-seg-btn" role="tab" data-upw-mode="opportunities" data-i18n="Opportunities">' + esc(t("Opportunities")) + '</button>' +
+            '</div>' +
             /* Nur noch die eingezogene Werkzeugleiste des Bretts. Das Oeffnen-Zeichen, das hier
                stand, ist am 14.09. gestrichen -- die zwei Listen tragen ihres jetzt selbst, je in
                ihrer Ueberschriftzeile. */
