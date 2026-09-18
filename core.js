@@ -235,7 +235,7 @@
     date_preset: { last7: 1, last30: 1, last3: 1 },
     branding:    { on: 1, off: 1 },
     /* Die Akzentfarbe. "default" ist die bisherige -- Flaeche in der Schriftfarbe des Themas. */
-    accent:      { "default": 1, linear: 1, notion: 1, claude: 1 }
+    accent:      { "default": 1, indigo: 1, azur: 1, terrakotta: 1 }
   };
   var _prefs = null;
   /* OHNE Team-Suffix, und das ist eine Korrektur. Diese Werte liefen ueber storeKey, und storeKey
@@ -15152,6 +15152,13 @@
               '<path d="M6 14a12 12 0 0 0 2.4 7.2 2 2 0 0 0 3.2-2.4A8 8 0 0 1 10 14"/><path d="M8 6v8"/>',
     /* Fuenf Symbole fuer die Benachrichtigungstypen. sparkle heisst in Lucide sparkles und ist
        dort eine Strichform, keine gefuellte -- der Schluessel bleibt, das Bild aendert sich. */
+    /* Lucide "sun": der Kreis und acht Strahlen. Fuer den Abschnitt "Allgemein" im
+       Einstellungsfenster -- dort geht es um Thema und Farbe, und dafuer gibt es in dieser
+       Sammlung kein naeheres Zeichen. */
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/>' +
+         '<path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/>' +
+         '<path d="M2 12h2"/><path d="M20 12h2"/>' +
+         '<path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
     sparkle:  '<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>' +
               '<path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/>',
     broadcast:'<path d="M4.9 16.1C1 12.2 1 5.8 4.9 1.9"/>' +

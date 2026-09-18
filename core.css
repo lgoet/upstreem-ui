@@ -342,26 +342,24 @@
 
     /* ---------- DIE DREI ANDEREN AKZENTFARBEN ----------------------------------------------
        Gewaehlt wird im Einstellungsfenster, core schreibt die Wahl als data-accent an das
-       <html> und merkt sie im localStorage (UC.setAccent).
+       <html> und merkt sie im localStorage.
        Warum html[data-accent] .up-root und nicht html[data-accent] allein: die Vorgabe steht als
        EIGENE Deklaration an .up-root. Ein geerbter Wert vom <html> verliert gegen jede eigene
        Deklaration, egal wie spezifisch er ist -- also muss der Selektor .up-root selbst treffen.
 
-       DIE WERTE SIND GEMESSEN, nicht abgeschrieben. Verlangt ist AA (4.5) zwischen Flaeche und
-       Schrift darauf:
-           Linear  hell #5E6AD2 auf weiss 4.70   dunkel #7C8AF0 mit #1b1b1b 5.54
-           Notion  hell #1A73C7 auf weiss 4.86   dunkel #529CEC mit #1b1b1b 6.01
-           Claude  hell #D97757 mit #1f1f1b 5.30 dunkel #E08B6E mit #1b1b1b 6.63
-       Zwei Abweichungen von der Markenfarbe, beide aus dieser Messung: Notions #2383E2 traegt
-       weder weisse (3.88) noch dunkle Schrift (4.26) -- im Hellen deshalb eine Stufe dunkler.
-       Claudes #D97757 bleibt, wie es ist, bekommt aber DUNKLE Schrift: mit weisser waeren es
-       3.12, mit dunkler sind es 5.30. */
-    html[data-accent="linear"] .up-root { --up-accent: #5E6AD2; --up-accent-fg: #ffffff; }
-    html[data-accent="linear"] .up-root[data-theme="dark"] { --up-accent: #7C8AF0; --up-accent-fg: #1b1b1b; }
-    html[data-accent="notion"] .up-root { --up-accent: #1A73C7; --up-accent-fg: #ffffff; }
-    html[data-accent="notion"] .up-root[data-theme="dark"] { --up-accent: #529CEC; --up-accent-fg: #1b1b1b; }
-    html[data-accent="claude"] .up-root { --up-accent: #D97757; --up-accent-fg: #1f1f1b; }
-    html[data-accent="claude"] .up-root[data-theme="dark"] { --up-accent: #E08B6E; --up-accent-fg: #1b1b1b; }
+       EINE FARBE FUER BEIDE THEMEN, und das ist eine Messung, keine Bequemlichkeit (18.09.).
+       Zuerst standen hier aufgehellte Toene fuers Dunkle mit dunkler Schrift darauf. Gefragt
+       wurde, ob helle Schrift dort nicht besser waere -- und fuer zwei der drei stimmt das:
+           Indigo      #5E6AD2  weisse Schrift 4.70   auf der dunklen Seite sichtbar mit 3.99
+           Azur        #1A73C7  weisse Schrift 4.86   auf der dunklen Seite 3.85
+           Terrakotta  #D97757  weisse Schrift 3.12 -- faellt durch, auch als mittlerer Ton
+                                (#C4603F: 4.12). Dunkle Schrift traegt hier 5.52.
+       Damit braucht nur Terrakotta eine eigene Schriftfarbe, und keine der drei braucht einen
+       zweiten Ton fuers dunkle Thema. Nur der STANDARD dreht sich mit dem Thema -- er kommt
+       aus den Werten oben und ist dort schon je Thema gesetzt. */
+    html[data-accent="indigo"] .up-root { --up-accent: #5E6AD2; --up-accent-fg: #ffffff; }
+    html[data-accent="azur"] .up-root { --up-accent: #1A73C7; --up-accent-fg: #ffffff; }
+    html[data-accent="terrakotta"] .up-root { --up-accent: #D97757; --up-accent-fg: #1f1f1b; }
 
     /* ---------- Fokus-Ring fuer Eingabefelder ----------
        EIN Fokuszustand fuer die ganze App: blauer Rand plus ein 4px weicher Auslauf dahinter.
@@ -3492,8 +3490,11 @@
 .up-ph-navicon { display: inline-flex; flex: 0 0 auto; color: var(--vc-muted); transition: color 120ms ease; }
 .up-ph-navicon svg { width: 16px; height: 16px; display: block; }
 .up-ph-navlabel { font-size: 14px; font-weight: 500; color: var(--vc-muted); white-space: nowrap; transition: color 120ms ease; }
+/* DER GEWAEHLTE REITER GANZ IN DER AKZENTFARBE (18.09. angefordert): Zeichen, Schrift und der
+   Streifen darunter. Nur hier -- die Seitenleiste bleibt in ihrer Schriftfarbe, dort ist die
+   Auswahl eine Flaeche und kein Strich. */
 .up-ph-navitem.is-selected .up-ph-navicon,
-.up-ph-navitem.is-selected .up-ph-navlabel { color: var(--vc-text); }
+.up-ph-navitem.is-selected .up-ph-navlabel { color: var(--up-accent); }
 .up-ph-navitem:not(.is-selected):hover .up-ph-navicon,
 .up-ph-navitem:not(.is-selected):hover .up-ph-navlabel { color: var(--vc-text); }
 /* The active indicator: slides left/width to the newly selected tab on click (200ms ease, set in

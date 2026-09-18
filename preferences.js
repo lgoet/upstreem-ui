@@ -112,6 +112,9 @@
       "The color of buttons, switches, checks and the selected page in the navigation. Logos, favicons and charts keep their own colors.":
         "Die Farbe von Knöpfen, Schaltern, Häkchen und der gewählten Seite in der Navigation. Logos, Favicons und Charts behalten ihre eigenen Farben.",
       "Default": "Standard",
+      "Indigo": "Indigo",
+      "Azure": "Azur",
+      "Terracotta": "Terrakotta",
       "System": "System",
 
       /* Die Meldungen des Profilbild-Uploads. Ohne Diagnose und ohne interne Namen -- nur, was
@@ -161,14 +164,17 @@
       { wert: "dark",   name: "Dark" },
       { wert: "system", name: "System" }
     ];
-    /* Die Akzentfarben. Der Punkt zeigt den HELLEN Wert -- die Liste steht meistens im hellen
-       Thema, und zwei Punkte je Zeile waeren eine Auskunft, nach der niemand gefragt hat. Die
-       Werte selbst liegen in core.css (html[data-accent]), hier steht nur, was man sieht. */
+    /* Die Akzentfarben. Die Werte selbst liegen in core.css (html[data-accent]), hier steht nur,
+       was man SIEHT -- der Punkt vor dem Namen.
+       Nur der Standard hat zwei Werte: er ist die Schriftfarbe des Themas und dreht sich damit
+       mit. Im Dunkeln stand dort ein schwarzer Punkt (18.09. gemeldet) -- richtig ist der helle.
+       Die drei anderen tragen in beiden Themen denselben Ton, das ist im Farbblock von core
+       begruendet. */
     var AKZENTE = [
-      { wert: "default", name: "Default", farbe: "#1f1f1b" },
-      { wert: "linear",  name: "Linear",  farbe: "#5E6AD2" },
-      { wert: "notion",  name: "Notion",  farbe: "#1A73C7" },
-      { wert: "claude",  name: "Claude",  farbe: "#D97757" }
+      { wert: "default",    name: "Default", farbe: "#1f1f1b", farbeDunkel: "#e0e0e0" },
+      { wert: "indigo",     name: "Indigo",     farbe: "#5E6AD2" },
+      { wert: "azur",       name: "Azure",      farbe: "#1A73C7" },
+      { wert: "terrakotta", name: "Terracotta", farbe: "#D97757" }
     ];
     var DATEN = [
       { wert: "d-mon-y", name: "12. Dec 2025" },
@@ -213,7 +219,7 @@
          angefordert). Hierher gehoert alles, was das AUSSEHEN der ganzen App betrifft: das
          Thema und das Branding, die vorher unter "Sprache und Formate" standen und dort
          thematisch falsch lagen, und die neue Akzentfarbe. */
-      { key: "general", kopf: "Display", label: "General", icon: "blend",
+      { key: "general", kopf: "Display", label: "General", icon: "sun",
         titel: "General", sub: "How upstreem looks across the whole app" },
       { key: "charts",  label: "Charts", icon: "chartColumnUp",
         titel: "Charts", sub: "How lines and legends are drawn across every chart" }
@@ -337,7 +343,12 @@
     }
     /* Derselbe Platz wie die Flagge: was die Wahl AUSMACHT, steht vor ihrem Namen. */
     function farbpunkt(o) {
-      return o && o.farbe ? '<span class="ums-dot" style="background:' + esc(o.farbe) + '"></span>' : "";
+      if (!o || !o.farbe) return "";
+      /* Das Fenster traegt sein Thema als Attribut -- daran haengt, welcher der zwei Werte des
+         Standards gilt. Nicht am gespeicherten Thema: "System" kann beides sein. */
+      var dunkel = !!(M && M.back && M.back.getAttribute("data-theme") === "dark");
+      var f = (dunkel && o.farbeDunkel) ? o.farbeDunkel : o.farbe;
+      return '<span class="ums-dot" style="background:' + esc(f) + '"></span>';
     }
     function selHtml(name, liste, jetzt) {
       var akt = null;
