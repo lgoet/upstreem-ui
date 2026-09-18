@@ -616,11 +616,15 @@
       name_saving:  "Saving your name…",
       name_saved:   "Your name is saved."
     };
-    function avMelden(text, laeuft) {
+    /* Drei Zustaende, nicht zwei: es gibt hier auch etwas GELUNGENES zu melden, und das stand
+       bisher in Rot da (gemeldet am 18.09.). gut schlaegt laeuft nicht -- waehrend etwas laeuft,
+       ist noch nichts gelungen. */
+    function avMelden(text, laeuft, gut) {
       var h = M && M.main ? M.main.querySelector(".ums-hint") : null;
       if (!h) return;
       h.textContent = text ? t(text) : t("Upload a picture — square images look best");
-      h.classList.toggle("is-fehler", !!text && !laeuft);
+      h.classList.toggle("is-fehler", !!text && !laeuft && !gut);
+      h.classList.toggle("is-gut", !!text && !laeuft && !!gut);
       h.classList.toggle("is-laeuft", !!laeuft);
     }
     function bildWaehlen() {
@@ -710,6 +714,26 @@
         });
     }
 
+    /* SUPABASE BRAUCHT MINUTEN, bis der neue Name beim naechsten Seitenladen wieder mitkommt --
+       gemeldet: "dauert oft so 10 min". Bis dahin staende in der Leiste unten weiter der alte,
+       obwohl das Speichern erfolgreich war. Also schreibt die Komponente ihn selbst hinein.
+       Ueber den oeffentlichen Setter der Leiste und mit dem, was dort schon steht: ein
+       Teil-Payload wuerde E-Mail und Bild loeschen, setUser ersetzt den ganzen Kopf.
+       Gibt es keine Leiste (andere Seite, Fenster allein eingebaut), passiert nichts. */
+    function nameInLeiste(v) {
+      var sn = document.querySelector(".usn-bar");
+      if (!sn || typeof window.setSidebarUser !== "function") return;
+      var mail = sn.querySelector("[data-acc-mail]");
+      var img = sn.querySelector(".usn-av img");
+      try {
+        window.setSidebarUser({
+          name: v,
+          email: mail ? String(mail.textContent || "").trim() : "",
+          avatar_url: (img && img.getAttribute("src")) || profil.avatar || "",
+          user_id: profil.userId || ""
+        });
+      } catch (e) {}
+    }
     var nameMsgT = null;
     function namenSchreiben(v, zweiterVersuch) {
       /* BEIDE Schluessel. In einer Metadata, die aus einer Google-Anmeldung kommt, stehen "name"
@@ -723,9 +747,10 @@
           /* Kurz stehen lassen und dann zurueck auf den Hinweis zum Bild: die Zeile gehoert
              beiden, und eine Erfolgsmeldung, die fuer immer stehen bleibt, liest sich beim
              naechsten Oeffnen wie ein Zustand. */
-          avMelden(AV_TEXT.name_saved);
+          avMelden(AV_TEXT.name_saved, false, true);
           clearTimeout(nameMsgT);
           nameMsgT = setTimeout(function(){ avMelden(null); }, 2600);
+          nameInLeiste(v);
           fireBauen();
           fire("data-name-fn", "umsName", { display_name: v });
           return;

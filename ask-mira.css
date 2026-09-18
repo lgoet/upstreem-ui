@@ -2460,9 +2460,12 @@
   /* ---- Der Auszug unter jeder Hervorhebungs-Zeile (18.09. angefordert) ----
      40px hoch, ohne Rahmen, die Flaeche nur zu 60 Prozent deckend: er soll sich abheben wie ein
      Codeblock, aber leiser als die Zeile darueber, die die Einstellung traegt.
-     Die Flaeche ist die Feldfarbe, und 60 Prozent davon bleiben auf der weissen Karte wie im
+     Die Flaeche ist die Feldfarbe, und 75 Prozent davon bleiben auf der weissen Karte wie im
      Dunkeln eine Spur des jeweiligen Grundes -- ein fester Wert waere in einem der zwei Themen
      falsch. color-mix steht dafuer schon in core (die Markenfarben der Themenkarten).
+     Die SCHRIFT ist die des Protokolls in Team Orga (.uto-log-mono): dieselbe Familie, dieselben
+     11,5px, dieselbe Laufweite. Der Auszug ist ein Beleg, kein Fliesstext -- und in der App gibt
+     es fuer genau das schon eine Schrift, also keine zweite.
      40px mit senkrechter Mitte: das groesste, was darin steht, ist ein 24px-Logo, es bleiben also
      8px oben und unten. Die drei Kaesten stehen damit gleich hoch, egal was darin liegt.
      Das Hervorgehobene ist IMMER fett -- darum geht es in diesen drei Zeilen, und fett sagt das
@@ -2470,15 +2473,50 @@
      seine eigene Gewichtung. */
   .am-set-backdrop .am-set-demo {
     height: 40px; display: flex; align-items: center; padding: 0 12px; margin: 0 0 16px;
-    border-radius: 10px; background: color-mix(in srgb, var(--am-soft) 60%, transparent); border: 0;
-    font-size: 13.5px; line-height: 1.5; color: var(--am-text); overflow: hidden;
+    border-radius: 10px; background: color-mix(in srgb, var(--am-soft) 75%, transparent); border: 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 11.5px; letter-spacing: -0.01em; line-height: 1.5;
+    color: var(--am-text); overflow: hidden;
+  }
+  /* DIE DREI BILDER GLEICH GROSS UND GLEICH GERUNDET (18.09. angefordert). In der Antwort sind
+     sie es nicht: das Markenlogo misst 24px mit Radius 8, das Modell-Logo 17px mit Radius 4. Im
+     Auszug stehen die drei Zeilen untereinander, und dort faellt jeder Unterschied auf, der in
+     einem Fliesstext niemandem auffaellt. 22px, weil das Markenlogo 2px kleiner werden sollte;
+     die zwei anderen ziehen auf denselben Wert nach.
+     Nur hier im Fenster -- in der Antwort bleibt alles, wie es ist. */
+  .am-set-backdrop .am-set-demo .am-inline-logo,
+  .am-set-backdrop .am-set-demo .am-logo-wrap[data-type="response"] .am-resp-ic {
+    width: 22px; height: 22px; flex: 0 0 22px; border-radius: 4px;
+  }
+  .am-set-backdrop .am-set-demo .am-logo-wrap[data-type="response"] .am-resp-ic img {
+    width: 22px; height: 22px;
   }
   /* Eine Zeile, nicht umbrechend: der Kasten ist 40px hoch, eine zweite Zeile waere darin nur
      halb zu sehen. Laeuft der Satz einmal zu lang, endet er mit Auslassungspunkten. */
   .am-set-backdrop .am-set-demo-t {
     min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  .am-set-backdrop .am-set-demo .am-logo-text { font-weight: 600; }
+  /* Fett, weil es um genau diese Stelle geht. Und die Schrift erbt: die Zitat-Zeile bringt aus
+     der Antwort ihre eigenen 13,5px mit (der Kastenstil der Zitate), im Auszug soll der ganze
+     Satz aber eine Schrift haben.
+     Die zweite Regel ist die Zitat-Zeile, und sie braucht DIESELBE Bauart wie ihr Gegenstueck
+     aus der Antwort: dort stehen zwei Attributwaehler, und die zaehlen wie Klassen. Mit vier
+     Klassen allein verlor die Regel hier (gemessen: die Marke stand weiter in 13,5px und lag
+     damit auch 1px tiefer als der Satz). */
+  .am-set-backdrop .am-set-demo .am-logo-wrap .am-logo-text {
+    font-weight: 600; font-size: inherit; letter-spacing: inherit;
+  }
+  .am-set-backdrop[data-citation="icon"] .am-set-demo .am-logo-wrap[data-type="domain"] .am-logo-text {
+    font-size: inherit; letter-spacing: inherit;
+  }
+  /* UND SIE STEHT AUF DERSELBEN LINIE wie der Text daneben (18.09. gemeldet: "1-2px zu weit
+     nach unten"). Der Grund ist die Bauart der Pille: sie ist ein inline-flex mit
+     vertical-align: middle, ihr Inhalt wird also um die Mitte des 22px-Bildes zentriert, und
+     die Grundlinie der Schrift darin faellt dabei unter die der Zeile. Gemessen an den
+     Textkaesten selbst (Range, nicht am Element): 0,7px tiefer in allen drei Zeilen.
+     Genau diese 0,7px zurueck. Der Wert gehoert zu DIESER Kombination aus 11,5px Schrift und
+     22px Bild -- wer eines davon aendert, misst ihn neu. */
+  .am-set-backdrop .am-set-demo .am-logo-wrap { position: relative; top: -0.7px; }
   /* Der Umschalter 32px hoch -- .up-seg.is-lg aus core traegt genau das. */
   .am-set-backdrop .am-set-seg .up-seg.is-lg { height: 32px; }
   .am-set-backdrop .am-hl-panel {

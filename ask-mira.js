@@ -7167,7 +7167,8 @@
   var HL_DEMO = {
     brand:    { typ: 'brand',    satz: 'Acme Corp is mentioned in 42 of 120 answers.', wort: 'Acme Corp' },
     citation: { typ: 'domain',   satz: 'Three answers cite example.com as their source.', wort: 'example.com' },
-    response: { typ: 'response', satz: 'Response 128 gave the clearest signal.', wort: 'Response 128' }
+    response: { typ: 'response', satz: 'This ChatGPT response from today gives the clearest signal.',
+                wort: 'ChatGPT response from today' }
   };
   /* EIGENE BEISPIELBILDER, nicht die des Arbeitsbereichs (18.09.). Hier stand das erste Logo aus
      S.brandLogos -- neben dem Namen "Acme Corp" also das Logo einer ganz anderen Marke, und
@@ -7211,7 +7212,11 @@
       var key = kasten.getAttribute('data-am-hl-demo');
       var d = HL_DEMO[key];
       if (!d) return;
-      var satz = UCt(d.satz), wort = d.wort;
+      /* Die MARKE geht mit durch den Katalog: "ChatGPT response from today" heisst auf Deutsch
+         "ChatGPT Response von heute", und gefunden wird sie im uebersetzten Satz per indexOf --
+         mit dem englischen Wort waere sie dort nicht drin. Bei "Acme Corp" und "example.com"
+         gibt der Katalog den Schluessel unveraendert zurueck, die stehen in beiden Sprachen so. */
+      var satz = UCt(d.satz), wort = UCt(d.wort);
       var i = satz.indexOf(wort);
       kasten.innerHTML = '';
       /* EINE HUELLE UM DEN GANZEN SATZ. Der Kasten ist eine Flexzeile (senkrechte Mitte), und

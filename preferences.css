@@ -196,6 +196,9 @@
    Der Fehler in --vt-down, derselben Farbe, in der die App jede negative Zahl schreibt. */
 .ums-hint.is-laeuft { color: var(--vc-muted); }
 .ums-hint.is-fehler { color: var(--vt-down); font-weight: 500; }
+/* Gelungenes in der Aufwaertsfarbe -- dieselbe, die im ganzen Haus "besser geworden" sagt.
+   Vorher lief auch der Erfolg ueber is-fehler und stand in Rot da. */
+.ums-hint.is-gut { color: var(--vt-up); font-weight: 500; }
 .ums-hint {
   display: block; margin: 20px 0 4px;
   font-size: 13.5px; font-weight: 450; color: var(--vc-third);

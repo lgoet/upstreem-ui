@@ -680,7 +680,9 @@
        Komponente es wieder (indexOf). */
     "Acme Corp is mentioned in 42 of 120 answers.": "Acme Corp wird in 42 von 120 Antworten genannt.",
     "Three answers cite example.com as their source.": "Drei Antworten führen example.com als Quelle an.",
-    "Response 128 gave the clearest signal.": "Response 128 lieferte das deutlichste Signal.",
+    "This ChatGPT response from today gives the clearest signal.":
+      "Diese ChatGPT Response von heute liefert das deutlichste Signal.",
+    "ChatGPT response from today": "ChatGPT Response von heute",
     /* Die Beschriftungen der zwei Weiterwege. Sie stehen seit dem 14.09. nur noch im Tooltip des
        Zeichens in der Ueberschriftzeile, darum die Verbform: aus "All 8 brands" (Zeile unter der
        Liste) wurde "Go to all 8 brands" (was der Klick tut). */
