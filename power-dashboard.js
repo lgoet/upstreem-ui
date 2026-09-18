@@ -878,6 +878,7 @@
           'Lesefehler. So kam der Wert an (erste 80 Zeichen): ' + String(txt).slice(0, 80));
       }
     }
+    var _bedarfGemeldet = {};
     function datenBedarfMelden(){
       if (!dranSein()) return;
       var alle = state.mode === "opportunities"
@@ -890,7 +891,33 @@
       /* Auch diese Ansage wartet auf ihren Empfaenger -- aus demselben Grund wie die
          Modusmeldung im Seitenkopf. Sie geht beim Aufbau raus, das Toolbox-Element kann noch
          fehlen, und eine verpuffte Bedarfsmeldung heisst: die Listen bleiben leer. */
-      fire.spaet("data-needs-fn", "upwNeeds", { mode: state.mode, needs: needs });
+      /* STILL feuern. Dieser Kanal ist eine Bitte, keine Pflicht: wer alle Abschnitte schon
+         im Pageload liefert, braucht ihn nie -- und bekam trotzdem bei jedem Aufbau eine
+         Warnung, weil die Abschnitte in den ersten Sekunden noch fehlen (gemeldet am
+         18.09.: "aber ich hab im power dashboard keine probleme").
+         Ob wirklich etwas fehlt, weiss erst der Blick DANACH: sind die Abschnitte acht
+         Sekunden spaeter immer noch nicht da, hat niemand geantwortet und niemand sie
+         anders geliefert -- dann steht in der Konsole, welche fehlen und was zu tun ist.
+         Einmal je Abschnittsgruppe, sonst wiederholt sich die Zeile bei jedem Wechsel. */
+      fire.spaet("data-needs-fn", "upwNeeds", { mode: state.mode, needs: needs }, { still: true });
+      /* Nur was dieses Dashboard auch BEURTEILEN kann. "opportunities" gilt hier immer als
+         fehlend -- das Brett fuehrt seinen eigenen Zustand, den kennt die Komponente nicht
+         (siehe fehlt()). Eine Nachschau darueber waere also immer eine Warnung, egal wie gut
+         alles verdrahtet ist. */
+      var pruefbar = needs.filter(function(n){ return n !== "opportunities"; });
+      var schluessel = pruefbar.join(",");
+      if (pruefbar.length && !_bedarfGemeldet[schluessel]){
+        _bedarfGemeldet[schluessel] = true;
+        setTimeout(function(){
+          var offen = pruefbar.filter(fehlt);
+          if (!offen.length) return;
+          if (window.console) console.warn('[power-dashboard] Diese Abschnitte fehlen weiter: ' +
+            offen.join(', ') + '. Das Dashboard hat sie ueber upwNeeds angefordert, es gibt aber\n' +
+            'kein Toolbox-Element dieses Namens -- und geliefert wurden sie auch sonst nicht.\n' +
+            'Entweder upwNeeds verdrahten (Nutzlast { mode, needs }) oder die Abschnitte schon\n' +
+            'im Pageload an ihre Setter geben.');
+        }, 8000);
+      }
       return true;
     }
     /* NACHFRAGEN, BIS DIESES DASHBOARD WIRKLICH DRAN IST.

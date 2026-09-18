@@ -9023,11 +9023,17 @@
        Namensnachschlag ueber vier Fenster, also billig; elf davon ueber vier Sekunden fallen
        nicht ins Gewicht. */
     var WARTEN = [0, 60, 150, 300, 500, 800, 1200, 1700, 2400, 3200, 4000];
-    fire.spaet = function(attr, fallbackName, payload){
+    /* opts.still: auch der LETZTE Versuch schweigt. Fuer Kanaele, die eine Seite nicht
+       verdrahtet haben MUSS -- der Bedarfsmelder des Power Dashboards etwa fragt nur nach,
+       was noch fehlt, und wer alles im Pageload liefert, braucht ihn nie. Ob dort wirklich
+       etwas kaputt ist, weiss nur der Aufrufer: er sieht hinterher nach, ob die Daten
+       inzwischen da sind, und sagt dann etwas Genaueres, als es hier moeglich waere. */
+    fire.spaet = function(attr, fallbackName, payload, opts){
+      var stumm = !!(opts && opts.still);
       var i = 0;
       (function versuch(){
         var letzter = i >= WARTEN.length - 1;
-        if (fire(attr, fallbackName, payload, { still: !letzter })) return;
+        if (fire(attr, fallbackName, payload, { still: stumm || !letzter })) return;
         if (letzter) return;
         i++;
         setTimeout(versuch, WARTEN[i] - WARTEN[i - 1]);
