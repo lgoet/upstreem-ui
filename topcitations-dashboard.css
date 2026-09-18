@@ -60,9 +60,10 @@
 /* dark button tooltip (own implementation — see file header) */
 
 /* Go-To: primary-font-color bg */
-.tcd-goto { background: var(--up-accent) !important; color: var(--up-accent-fg); }
-.tcd-goto:hover { background: #585855 !important; color: #e0e0e0; }
-.up-root[data-theme="dark"] .tcd-goto:hover { background: #a0a0a0 !important; color: #1f1f1b; }
+.tcd-goto { background: var(--up-accent) !important; color: var(--up-accent-fg); transition: opacity 120ms ease; }
+/* Hover wie bei jedem Primaerknopf: Deckkraft statt zweier fester Grautoene je Thema. Die
+   kannten die Akzentwahl nicht und sprangen im Hover auf den alten Standardton zurueck. */
+.tcd-goto:hover { opacity: .88; }
 
 /* ---------- mode switcher (Domains / URLs) — replaces the left heading ---------- */
 .tcd-mode { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-bg); border-radius: 8px; border: 0; height: 32px; flex: 0 0 auto; }

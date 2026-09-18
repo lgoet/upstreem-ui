@@ -103,9 +103,9 @@
 .vot-sort.is-open .vot-sort-btn { color: var(--vc-text); background: var(--vc-heading-bg); }
 
 /* Go-To button: primary FONT color as bg, icon = the other theme's primary font color */
-.vot-goto { background: var(--up-accent) !important; color: var(--up-accent-fg); }
-.vot-goto:hover { background: #585855 !important; color: #e0e0e0; }
-.up-root[data-theme="dark"] .vot-goto:hover { background: #a0a0a0 !important; color: #1f1f1b; }
+.vot-goto { background: var(--up-accent) !important; color: var(--up-accent-fg); transition: opacity 120ms ease; }
+/* Hover wie bei jedem Primaerknopf -- siehe .tcd-goto, dieselbe Stelle, derselbe Grund. */
+.vot-goto:hover { opacity: .88; }
 
 /* dark button tooltip — own implementation, not core.css's .up-tip (see file header) */
 

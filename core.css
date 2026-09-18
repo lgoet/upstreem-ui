@@ -1011,9 +1011,14 @@
     .up-filter-tag { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 7px;
       font-size: 12px; font-weight: 600; white-space: nowrap; max-width: 100%; overflow: hidden; }
     .up-filter-tag-lbl { overflow: hidden; text-overflow: ellipsis; }
-    .up-filter-submit { flex: 0 0 auto; display: block; width: 100%; margin-top: 6px; height: 34px; border: 0; border-radius: 9px; background: var(--up-accent); color: var(--up-accent-fg); font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
-    .up-filter-submit:hover { background: #585855 !important; }
-    .up-root[data-theme="dark"] .up-filter-submit:hover { background: #a0a0a0 !important; }
+    .up-filter-submit { flex: 0 0 auto; display: block; width: 100%; margin-top: 6px; height: 34px; border: 0; border-radius: 9px; background: var(--up-accent); color: var(--up-accent-fg); font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 120ms ease; }
+    /* DERSELBE HOVER WIE .up-btn-pri, und das ist der Punkt (19.09. gemeldet: "im Darkmode kommt
+       als Hoverstate der klassische Grund aus dem Standard-Setting -- das muessen einfach Core-
+       Buttons sein"). Hier standen zwei feste Grautoene, einer je Thema: sie waren die
+       aufgehellte bzw. abgedunkelte Fassung der FRUEHEREN Primaerfarbe und kannten die Wahl
+       nicht. Eine Deckkraft kennt sie, weil sie nichts ueber die Farbe annimmt -- und sie ist
+       das, was jeder andere Primaerknopf der App im Hover tut. */
+    .up-filter-submit:not(:disabled):hover { opacity: .88; }
 
     /* ---------- mentioned brands filter (multi-select) ---------- */
     .up-ment { position: relative; flex: 0 0 auto; }
