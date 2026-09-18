@@ -8791,6 +8791,19 @@
     var w0 = messbar(root) ? root.getBoundingClientRect().width : 0;
     if (w0 > 0) apply(w0);
     if (onResize) onResize(root, apply);
+    /* UND AM FENSTER (18.09. gemeldet: das Power Dashboard "reizet gar nicht bei kleinerer
+       Screen Width"). Die Stufen hingen allein am ResizeObserver. Der ist der bessere Melder --
+       er sieht auch, wenn nur die Leiste neben der Komponente aufgeht --, aber er ist auch der
+       einzige, und wo er schweigt, bleiben die Klassen fuer immer auf dem Stand des Aufbaus.
+       opportunities macht es seit dem 08.09. genau so herum richtig: aufResize UND
+       beobachteGroesse, und sein Brett stapelt deshalb auch dann noch um.
+       Doppelt anzuwenden kostet nichts: classList.toggle mit demselben Wert ist ein Nullzug, und
+       aufResize drosselt auf 150ms und meldet nur echte Breitenwechsel. */
+    if (aufResize) aufResize(function(){
+      if (!root.isConnected || !messbar(root)) return;
+      var w = root.getBoundingClientRect().width;
+      if (w > 0) apply(w);
+    });
   }
 
   /* Die gewaehlte Unterseite je Kopfzeile, modulweit. Sie muss ein Neueinspritzen des Markups

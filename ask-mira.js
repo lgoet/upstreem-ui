@@ -7169,11 +7169,25 @@
     citation: { typ: 'domain',   satz: 'Three answers cite example.com as their source.', wort: 'example.com' },
     response: { typ: 'response', satz: 'Response 128 gave the clearest signal.', wort: 'Response 128' }
   };
-  /* Ein echtes Bild, wenn der Arbeitsbereich eins geliefert hat -- dieselben Quellen, aus denen
-     auch die Antwort ihre Bilder nimmt. */
+  /* EIGENE BEISPIELBILDER, nicht die des Arbeitsbereichs (18.09.). Hier stand das erste Logo aus
+     S.brandLogos -- neben dem Namen "Acme Corp" also das Logo einer ganz anderen Marke, und
+     dasselbe beim Favicon neben example.com. Ein Beispiel, das sich selbst widerspricht, ist
+     schlimmer als keines.
+     Beide Bilder liegen als data-URI direkt hier: sie haengen an keinem Netz, sind sofort da und
+     koennen nicht fehlschlagen. Nur die ANTWORT nimmt weiter ein echtes Modell-Logo, wenn eines
+     da ist -- dort passt es, ein Response kommt wirklich von einem Modell. */
+  var DEMO_ACME = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E" +
+    "%3Crect width='64' height='64' rx='14' fill='%232f6fed'/%3E" +
+    "%3Cpath fill='%23fff' fill-rule='evenodd' d='M32 13 49 51h-8.2l-3.2-7.6H26.4L23.2 51H15L32 13Z" +
+    "m0 12.8-3.3 8.4h6.6L32 25.8Z'/%3E%3C/svg%3E";
+  var DEMO_FAVICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E" +
+    "%3Crect width='64' height='64' rx='14' fill='%230f766e'/%3E" +
+    "%3Ccircle cx='32' cy='32' r='14' fill='none' stroke='%23fff' stroke-width='3.5'/%3E" +
+    "%3Cpath d='M18 32h28M32 18c4 4.5 6 9 6 14s-2 9.5-6 14c-4-4.5-6-9-6-14s2-9.5 6-14Z'" +
+    " fill='none' stroke='%23fff' stroke-width='3.5'/%3E%3C/svg%3E";
   function hlDemoBild(key){
-    if (key === 'brand')    return (((S.brandLogos || [])[0]) || {}).src || '';
-    if (key === 'citation') return (((S.favicons || [])[0]) || {}).src || '';
+    if (key === 'brand')    return DEMO_ACME;
+    if (key === 'citation') return DEMO_FAVICON;
     var m = S.models || {};
     for (var k in m) if (m[k] && m[k].logo_url) return String(m[k].logo_url);
     return '';
@@ -7200,7 +7214,14 @@
       var satz = UCt(d.satz), wort = d.wort;
       var i = satz.indexOf(wort);
       kasten.innerHTML = '';
-      if (i < 0){ kasten.appendChild(document.createTextNode(satz)); return; }
+      /* EINE HUELLE UM DEN GANZEN SATZ. Der Kasten ist eine Flexzeile (senkrechte Mitte), und
+         darin wird jeder nackte Textknoten zu einem eigenen Flexkind -- der Leerraum an seinen
+         Enden faellt dabei weg, und es stand "Acme Corpis mentioned". In der Huelle laeuft der
+         Satz wieder als gewoehnlicher Fliesstext. */
+      var zeile = document.createElement('span');
+      zeile.className = 'am-set-demo-t';
+      kasten.appendChild(zeile);
+      if (i < 0){ zeile.appendChild(document.createTextNode(satz)); return; }
       var wert = (S.settings && S.settings[key]) || HL_ZEILEN.filter(function(z){ return z.key === key; })[0].opt[0];
       var bild = hlDemoBild(key);
       var wrap = document.createElement('span');
@@ -7208,11 +7229,12 @@
       wrap.setAttribute('data-type', d.typ);
       /* leadingVisual entscheidet, was vor dem Wort steht -- dieselbe Funktion, die auch die
          echte Antwort malt. Damit kann der Auszug gar nicht anders aussehen als das Original.
-         EINEN Fall nimmt ihr der Auszug ab: ohne Bildadresse faellt sie auf das Typ-Zeichen
-         zurueck, und dann saehen "Logo" und "Favicon" hier genauso aus wie "Icon". Hat der
-         Arbeitsbereich noch kein Bild geliefert, steht deshalb der Buchstabenkasten da -- genau
-         der, den ein fehlgeschlagenes Bild in der Antwort auch hinterlaesst. Bei response nicht:
-         dort liefert sie schon von sich aus einen eigenen Kasten mit Sprechblase. */
+         Der Zweig darunter greift nur noch bei der ANTWORT: Marke und Zitat bringen ihr
+         Beispielbild selbst mit, das Modell-Logo kann dagegen fehlen. Ohne Bildadresse faellt
+         leadingVisual auf das Typ-Zeichen zurueck, und "Logo" saehe dann aus wie "Icon" --
+         fuer response liefert sie aber ohnehin einen eigenen Kasten mit Sprechblase, der sich
+         vom Zeichen unterscheidet. Der Buchstabenkasten bleibt als Netz fuer den Fall, dass
+         jemand hier spaeter ein Bild aus dem Arbeitsbereich einsetzt. */
       var visual = leadingVisual(d.typ, bild, wort);
       if (!bild && d.typ !== 'response' && (wert === 'logo' || wert === 'favicon')){
         visual = document.createElement('span');
@@ -7223,9 +7245,9 @@
       var t = document.createElement('span');
       t.className = 'am-logo-text'; t.textContent = satz.slice(i, i + wort.length);
       wrap.appendChild(t);
-      kasten.appendChild(document.createTextNode(satz.slice(0, i)));
-      kasten.appendChild(wrap);
-      kasten.appendChild(document.createTextNode(satz.slice(i + wort.length)));
+      zeile.appendChild(document.createTextNode(satz.slice(0, i)));
+      zeile.appendChild(wrap);
+      zeile.appendChild(document.createTextNode(satz.slice(i + wort.length)));
       /* Der Rueckfall auf den Buchstaben, wenn das echte Bild nicht laedt -- wie in
          renderMessages. */
       var img = kasten.querySelector('.am-inline-logo:not(.am-inline-logo-fallback)');

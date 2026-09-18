@@ -2458,24 +2458,27 @@
   .am-set-backdrop .am-set-hlgrp + .am-set-hlgrp { border-top: 1px solid var(--vc-border); }
   .am-set-backdrop .am-set-row2 + .am-set-row2 { border-top: 1px solid var(--vc-border); }
   /* ---- Der Auszug unter jeder Hervorhebungs-Zeile (18.09. angefordert) ----
-     64px hoch, eigener Grund, Rahmen und Rundung: er soll sich abheben wie ein Codeblock, damit
-     man ihn als Beispiel liest und nicht als weitere Einstellung.
-     Der Grund ist die Feldfarbe (--am-soft), angefordert: auf der weissen Karte hebt sich der
-     Kasten damit ab, im Dunkeln liegt er eine Stufe ueber ihr (gemessen: hell 249,248,249 auf
-     255,255,255; dunkel 35,35,38 auf 28,28,31).
-     Was der Kasten dabei verliert und was nicht: die Chips der Zitate und Antworten tragen
-     dieselbe Farbe, ihre Flaeche geht hier also unter. Ihr ZEICHEN bleibt -- Favicon, Logo,
-     Symbol oder nichts -- und genau das ist es, was die Einstellung darueber stellt.
-     Die Schrift ist die der Antwort und NICHT die eines Codeblocks: hier steht ein Satz, kein
-     Code, und in Schreibmaschinenschrift laese er sich schlechter als im Original.
-     Feste Hoehe mit senkrechter Mitte: die drei Kaesten stehen damit gleich hoch, egal ob der
-     Bezug gerade ein 24px-Logo traegt oder nur ein Wort ist.
-     16px Abstand nach unten, also genauso viel, wie die Zeile darueber nach oben hat. */
+     40px hoch, ohne Rahmen, die Flaeche nur zu 60 Prozent deckend: er soll sich abheben wie ein
+     Codeblock, aber leiser als die Zeile darueber, die die Einstellung traegt.
+     Die Flaeche ist die Feldfarbe, und 60 Prozent davon bleiben auf der weissen Karte wie im
+     Dunkeln eine Spur des jeweiligen Grundes -- ein fester Wert waere in einem der zwei Themen
+     falsch. color-mix steht dafuer schon in core (die Markenfarben der Themenkarten).
+     40px mit senkrechter Mitte: das groesste, was darin steht, ist ein 24px-Logo, es bleiben also
+     8px oben und unten. Die drei Kaesten stehen damit gleich hoch, egal was darin liegt.
+     Das Hervorgehobene ist IMMER fett -- darum geht es in diesen drei Zeilen, und fett sagt das
+     ohne ein zweites Zeichen. Nur hier im Fenster, nicht in der Antwort: dort traegt der Fliesstext
+     seine eigene Gewichtung. */
   .am-set-backdrop .am-set-demo {
-    height: 64px; display: flex; align-items: center; padding: 0 14px; margin: 0 0 16px;
-    border-radius: 10px; background: var(--am-soft); border: 1px solid var(--am-border);
+    height: 40px; display: flex; align-items: center; padding: 0 12px; margin: 0 0 16px;
+    border-radius: 10px; background: color-mix(in srgb, var(--am-soft) 60%, transparent); border: 0;
     font-size: 13.5px; line-height: 1.5; color: var(--am-text); overflow: hidden;
   }
+  /* Eine Zeile, nicht umbrechend: der Kasten ist 40px hoch, eine zweite Zeile waere darin nur
+     halb zu sehen. Laeuft der Satz einmal zu lang, endet er mit Auslassungspunkten. */
+  .am-set-backdrop .am-set-demo-t {
+    min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .am-set-backdrop .am-set-demo .am-logo-text { font-weight: 600; }
   /* Der Umschalter 32px hoch -- .up-seg.is-lg aus core traegt genau das. */
   .am-set-backdrop .am-set-seg .up-seg.is-lg { height: 32px; }
   .am-set-backdrop .am-hl-panel {
