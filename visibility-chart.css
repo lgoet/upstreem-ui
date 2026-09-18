@@ -104,7 +104,6 @@
 
 /* Go-To button: primary FONT color as bg, icon = the other theme's primary font color */
 .vot-goto { background: var(--up-accent) !important; color: var(--up-accent-fg); }
-.up-root[data-theme="dark"] .vot-goto { color: #1f1f1b; }
 .vot-goto:hover { background: #585855 !important; color: #e0e0e0; }
 .up-root[data-theme="dark"] .vot-goto:hover { background: #a0a0a0 !important; color: #1f1f1b; }
 

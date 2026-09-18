@@ -140,7 +140,7 @@
 /* Der Haken dagegen ist ein Schalter: an oder aus, keine Auswahl aus mehreren. */
 .urd-hlcheck { width: 15px; height: 15px; border-radius: 5px; flex: 0 0 15px; margin-top: 2px;
   border: 1.5px solid var(--vc-border); box-sizing: border-box; display: inline-flex;
-  align-items: center; justify-content: center; color: var(--up-surface, #fff); }
+  align-items: center; justify-content: center; color: var(--up-accent-fg); }
 .urd-hlcheck svg { width: 10px; height: 10px; display: none; }
 .urd-hlcheck.is-on { background: var(--up-accent); border-color: var(--up-accent); }
 .urd-hlcheck.is-on svg { display: block; }

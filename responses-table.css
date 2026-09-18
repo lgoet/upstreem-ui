@@ -32,10 +32,9 @@
 .urt-brand-toggle:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
 .urt-brand-toggle.is-yes, .urt-brand-toggle.is-no { background: var(--vc-heading-bg); }
 .urt-brand-toggle-lbl { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
-.urt-brand-check { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: #fff; }
+.urt-brand-check { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: var(--up-accent-fg); }
 .urt-brand-check svg { width: 11px; height: 11px; display: none; }
 .urt-brand-toggle.is-yes .urt-brand-check, .urt-brand-toggle.is-no .urt-brand-check { background: var(--up-accent); border-color: var(--up-accent); }
-.up-root[data-theme="dark"] .urt-brand-toggle.is-yes .urt-brand-check, .up-root[data-theme="dark"] .urt-brand-toggle.is-no .urt-brand-check { color: #1f1f1b; }
 .urt-brand-toggle.is-yes .urt-brand-check .urt-brand-check-yes { display: block; }
 .urt-brand-toggle.is-no .urt-brand-check .urt-brand-check-no { display: block; }
 /* Spotlight: sichtbar und gewaehlt, aber nicht bedienbar. Drei Dinge, und jedes hat seinen Grund.
@@ -184,7 +183,6 @@
 .urt-fader-reset:hover { color: var(--vc-text); background: var(--vc-heading-bg); border-color: var(--vc-hover-border); }
 .urt-fader-apply { flex: 1 1 auto; height: 32px; border: 0; border-radius: 8px;
   background: var(--up-accent); color: var(--up-accent-fg); font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; }
-.up-root[data-theme="dark"] .urt-fader-apply { color: #1f1f1b; }
 .urt-fader-apply:hover { opacity: .92; }
 
 /* ================================================================

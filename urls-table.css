@@ -255,10 +255,9 @@
     .uut-brand-toggle:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
     .uut-brand-toggle.is-yes, .uut-brand-toggle.is-no { background: var(--vc-heading-bg); }
     .uut-brand-toggle-lbl { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
-    .uut-brand-check { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: #fff; }
+    .uut-brand-check { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: var(--up-accent-fg); }
     .uut-brand-check svg { width: 11px; height: 11px; display: none; }
     .uut-brand-toggle.is-yes .uut-brand-check, .uut-brand-toggle.is-no .uut-brand-check { background: var(--up-accent); border-color: var(--up-accent); }
-    .up-root[data-theme="dark"] .uut-brand-toggle.is-yes .uut-brand-check, .up-root[data-theme="dark"] .uut-brand-toggle.is-no .uut-brand-check { color: #1f1f1b; }
     .uut-brand-toggle.is-yes .uut-brand-check .uut-brand-check-yes { display: block; }
     .uut-brand-toggle.is-no .uut-brand-check .uut-brand-check-no { display: block; }
     .uut-brand-logo { width: 16px; height: 16px; border-radius: 4px; flex: 0 0 auto; display: block; object-fit: cover; }

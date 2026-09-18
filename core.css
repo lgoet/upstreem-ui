@@ -956,7 +956,7 @@
     .up-filter-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
     .up-filter-item { display: flex; align-items: center; gap: 10px; padding: 6px 9px; border-radius: 8px; cursor: pointer; min-width: 0; }
     .up-filter-item:hover { background: var(--vc-heading-bg); }
-    .up-filter-check { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: #fff;
+    .up-filter-check { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: var(--up-accent-fg);
       transition: background-color var(--up-cb-t) var(--up-cb-ease), border-color var(--up-cb-t) var(--up-cb-ease); }
     /* display:block, not inline: an inline SVG sits on the text baseline, which pushes the tick a
        little low inside the 16px box -- the "not quite vertically centred" report. block + the
@@ -981,14 +981,12 @@
        Darum eine Klasse, die die Komponente selbst setzt, statt einer Regel, die raet. */
     .up-filter-menu .up-filter-item.is-checked,
     .up-filter-list.is-fill-checked .up-filter-item.is-checked { background: var(--up-sel-bg); }
-    .up-root[data-theme="dark"] .up-filter-item.is-checked .up-filter-check { color: #1f1f1b; }
     /* the dropdown shows the SAME chip the table uses — identical to TopCitations, so a type
        looks the same wherever it appears */
     .up-filter-tag { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 7px;
       font-size: 12px; font-weight: 600; white-space: nowrap; max-width: 100%; overflow: hidden; }
     .up-filter-tag-lbl { overflow: hidden; text-overflow: ellipsis; }
     .up-filter-submit { flex: 0 0 auto; display: block; width: 100%; margin-top: 6px; height: 34px; border: 0; border-radius: 9px; background: var(--up-accent); color: var(--up-accent-fg); font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
-    .up-root[data-theme="dark"] .up-filter-submit { color: #1f1f1b; }
     .up-filter-submit:hover { background: #585855 !important; }
     .up-root[data-theme="dark"] .up-filter-submit:hover { background: #a0a0a0 !important; }
 
@@ -2873,18 +2871,17 @@
   border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center;
   justify-content: center; flex: 0 0 auto; }
 .up-brandcheck svg, .uut-brand-check svg { width: 11px; height: 11px; display: none; }
-/* Im Ruhezustand traegt das Kaestchen keine Fuellung, also darf die Zeichenfarbe nicht Weiss
-   bleiben: ein weisses Zeichen auf durchsichtigem Grund ist im Hellen unsichtbar. Sichtbar ist
-   ohnehin nur eines der beiden svg, und nur in is-yes/is-no -- dort ist der Grund --vc-text und
-   die Farbe wird unten gesetzt. */
-.up-brandcheck, .uut-brand-check { color: var(--up-surface, #fff); }
+/* DAS ZEICHEN AUF DER AKZENTFLAECHE IST --up-accent-fg, und nur das (18.09.). Sichtbar ist
+   ohnehin nur eines der beiden svg, und nur in is-yes/is-no -- dort liegt es auf --up-accent,
+   und welche Farbe darauf lesbar ist, entscheidet die Akzentwahl, nicht das Thema. Hier stand
+   --up-surface: das passte, solange der Akzent die Schriftfarbe des Themas war, und wird mit
+   Indigo oder Azur im Dunkeln zu dunkel auf dunkel. */
+.up-brandcheck, .uut-brand-check { color: var(--up-accent-fg); }
 .up-brandtoggle.is-yes .up-brandcheck, .up-brandtoggle.is-no .up-brandcheck,
 .uut-brand-toggle.is-yes .uut-brand-check, .uut-brand-toggle.is-no .uut-brand-check {
   background: var(--up-accent); border-color: var(--up-accent); }
-/* Im Dunkeln ist --vc-text hell, also braucht das Zeichen darauf die dunkle Farbe -- und die ist
-   genau --up-surface, die Flaechenfarbe des Themas. Vorher stand hier die Konstante #1f1f1b: die
-   traf zufaellig den hellen Grund, war aber im Dunkeln dieselbe Farbe wie die Karte, sodass ein
-   Zeichen auf dunklem Kaestchen unsichtbar wurde, sobald der Zustand nicht is-yes/is-no war. */
+/* Die dunkle Sonderregel darunter faerbt NICHT mehr das Zeichen -- das macht --up-accent-fg
+   oben, in beiden Themen. Sie bleibt fuer alles andere, was hier im Dunkeln abweicht. */
 .up-root[data-theme="dark"] .up-brandtoggle.is-yes .up-brandcheck,
 .up-root[data-theme="dark"] .up-brandtoggle.is-no .up-brandcheck,
 .up-root[data-theme="dark"] .uut-brand-toggle.is-yes .uut-brand-check,

@@ -26,10 +26,9 @@
 .upt-brand-toggle:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
 .upt-brand-toggle.is-yes, .upt-brand-toggle.is-no { background: var(--vc-heading-bg); }
 .upt-brand-toggle-lbl { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
-.upt-brand-check { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: #fff; }
+.upt-brand-check { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: var(--up-accent-fg); }
 .upt-brand-check svg { width: 11px; height: 11px; display: none; }
 .upt-brand-toggle.is-yes .upt-brand-check, .upt-brand-toggle.is-no .upt-brand-check { background: var(--up-accent); border-color: var(--up-accent); }
-.up-root[data-theme="dark"] .upt-brand-toggle.is-yes .upt-brand-check, .up-root[data-theme="dark"] .upt-brand-toggle.is-no .upt-brand-check { color: #1f1f1b; }
 .upt-brand-toggle.is-yes .upt-brand-check .upt-brand-check-yes { display: block; }
 .upt-brand-toggle.is-no .upt-brand-check .upt-brand-check-no { display: block; }
 .upt-brand-logo { width: 16px; height: 16px; border-radius: 4px; flex: 0 0 auto; display: block; object-fit: cover; }
@@ -58,7 +57,7 @@
   position: relative;
   width: var(--upt-check-size); height: var(--upt-check-size); border-radius: 5px;
   border: 1.5px solid var(--vc-border); flex: 0 0 auto; cursor: pointer;
-  display: inline-flex; align-items: center; justify-content: center; color: #fff;
+  display: inline-flex; align-items: center; justify-content: center; color: var(--up-accent-fg);
   /* Timing aus core (--up-cb-t), damit alle Kaestchen der App gleich schnell sind. Vorher hatte
      dieses gar keinen Uebergang und sprang, waehrend das der Anmeldeseite weich lief. */
   transition: background-color var(--up-cb-t) var(--up-cb-ease), border-color var(--up-cb-t) var(--up-cb-ease);
@@ -75,8 +74,6 @@
 .upt-check::before { content: ""; position: absolute; inset: -8px; }
 .upt-check svg { width: 11px; height: 11px; display: block; }
 .upt-check.is-checked, .upt-check.is-indeterminate { background: var(--up-accent); border-color: var(--up-accent); }
-.up-root[data-theme="dark"] .upt-check.is-checked,
-.up-root[data-theme="dark"] .upt-check.is-indeterminate { color: #1f1f1b; }
 /* Absolut positioniert und ueber die Mitte gelegt, NICHT als Flex-Kind. Seit der Haken dauerhaft
    im DOM steht (damit sein Uebergang laufen kann), hat das Kaestchen zwei Kinder: das 11px breite
    SVG mit Deckkraft 0 und diesen Strich. Ein zentrierender Flex-Container ordnet dann BEIDE an, und
@@ -1078,8 +1075,6 @@
 .upt-group-onlycustom.is-yes, .upt-group-onlycustom.is-no { background: var(--vc-heading-bg); color: var(--vc-text); }
 .upt-group-onlycustom .upt-brand-toggle-lbl { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
 .upt-group-onlycustom.is-yes .upt-brand-check, .upt-group-onlycustom.is-no .upt-brand-check { background: var(--up-accent); border-color: var(--up-accent); }
-.up-root[data-theme="dark"] .upt-group-onlycustom.is-yes .upt-brand-check,
-.up-root[data-theme="dark"] .upt-group-onlycustom.is-no .upt-brand-check { color: #1f1f1b; }
 .upt-group-onlycustom.is-yes .upt-brand-check .upt-brand-check-yes { display: block; }
 .upt-group-onlycustom.is-no .upt-brand-check .upt-brand-check-no { display: block; }
 /* Full width, 32px, and it is core's secondary button — same face and same hover as every other

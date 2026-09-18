@@ -108,9 +108,12 @@
 .upw-chip.up-btn-sec { font-size: 13.5px; }
 
 /* ---- Das Zeichen im Chip: ein Plaettchen statt eines Emoji (16.09. angefordert) ----
-   16x16, 4px Rundung, Grund in der Primaerfarbe, Zeichen in der Primaerfarbe des ANDEREN Themas
-   (--vc-text-invert, in core.css neben --vc-text deklariert). Also hell im dunklen Thema, dunkel
-   im hellen -- ohne eine eigene Farbe zu erfinden.
+   16x16, 4px Rundung, Grund in der Akzentfarbe, Zeichen in --up-accent-fg -- derselbe Griff wie
+   bei jedem Knopf (18.09. angefordert: "da gelten die gleichen Regeln wegen Kontrast wie bei
+   Buttons"). Hier stand --vc-text-invert, die Schriftfarbe des ANDEREN Themas. Das war richtig,
+   solange der Akzent die Schriftfarbe des Themas WAR; mit Indigo oder Azur ergibt es im Dunkeln
+   ein dunkles Zeichen auf einem dunklen Blau. Welche Farbe auf der Flaeche lesbar ist, weiss
+   nur die Akzentwahl -- und die traegt sie in --up-accent-fg.
    DAS PLAETTCHEN BLEIBT 16px -- nur der INHALT ist einen Pixel groesser (16.09. praezisiert).
    Dazwischen lag ein Fehler von mir: "die Icons in den Containern 11px groesser" hatte ich auf den
    Kasten gelesen und beides auf 27px gezogen; damit fuellte die Kachel den Chip fast ganz aus.
@@ -120,7 +123,7 @@
 .upw-chip-ic {
   flex: 0 0 16px; width: 16px; height: 16px; border-radius: 4px;
   display: inline-flex; align-items: center; justify-content: center; line-height: 0;
-  background: var(--up-accent); color: var(--vc-text-invert); overflow: hidden;
+  background: var(--up-accent); color: var(--up-accent-fg); overflow: hidden;
 }
 .upw-chip-ic svg { width: 11px; height: 11px; display: block; }
 /* Der Vergleichs-Chip traegt das LOGO der Marke: dafuer die Platte aus core (.up-logo-box) mit
@@ -130,7 +133,7 @@
    Bild, kein Anteil an der Groesse.
    .up-logo-box.upw-chip-ic ist (0,2,0) und gewinnt damit ueber SPEZIFITAET gegen core (0,1,0) --
    nicht ueber die Ladereihenfolge.
-   Der Buchstabe traegt hier --vc-text-invert statt --vc-muted: er sitzt auf der Primaerfarbe,
+   Der Buchstabe traegt hier --up-accent-fg statt --vc-muted: er sitzt auf der Akzentflaeche,
    und der gedaempfte Ton aus core waere darauf kaum zu lesen. */
 .up-logo-box.upw-chip-ic { width: 16px; height: 16px; flex: 0 0 16px; border-radius: 4px;
   background: var(--up-accent); }
@@ -139,7 +142,7 @@
    groesser", und der Saum ist kein Mass, sondern Beiwerk. overflow: hidden oben schneidet es auf
    die Rundung des Kastens, es steht also nichts ueber. */
 .up-logo-box.upw-chip-ic img { width: 15px; height: 15px; border-radius: 3px; }
-.up-logo-box.upw-chip-ic .up-logo-ltr { font-size: 8px; color: var(--vc-text-invert); }
+.up-logo-box.upw-chip-ic .up-logo-ltr { font-size: 8px; color: var(--up-accent-fg); }
 /* Der alte Emoji-Schluessel: unsere drei Chips tragen keinen mehr, ein Bubble mit eigenen Chips
    darf ihn weiter schicken. */
 .upw-chip-emoji { font-size: 15px; }
