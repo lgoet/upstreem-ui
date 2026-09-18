@@ -1265,13 +1265,6 @@
   }
   function launcherAus(){
     if (!istLauncher() && !_uoHeim) return;
-    /* Zurueck auf den eigenen Anheftpunkt -- sonst behielte das Brett den des Gastgebers, und auf
-       seiner eigenen Seite klebten die Ueberschriften viel zu tief. */
-    if (root.getAttribute('data-sticky-top') !== '16'){
-      root.setAttribute('data-sticky-top', '16');
-      if (UC.makeSticky) UC.makeSticky(root, root.querySelector('.uo-head'));
-      applySticky();
-    }
     /* Zu Hause misst makeSticky wieder selbst -- die eigene Leiste ist dann ja zurueck. */
     root.style.removeProperty('--up-thead-off');
     root.classList.remove('is-launcher');
@@ -1286,6 +1279,17 @@
       _uoHeim.parentNode.removeChild(_uoHeim);
     }
     _uoHeim = null; _uoLaunchView = '';
+    /* ERST UMZIEHEN, DANN DEN ANHEFTPUNKT. Zurueck auf den eigenen Wert -- sonst behielte das
+       Brett den des Gastgebers, und auf seiner eigenen Seite klebten die Ueberschriften viel
+       zu tief. Der Aufruf stand VOR dem Umzug, und applySticky misst und schreibt dort, wo
+       die Wurzel gerade haengt: es hat also den Anheftpunkt am alten Platz gerechnet und
+       ueber unclipAncestors noch einmal die Vorfahren des GASTGEBERS entklemmt statt der
+       eigenen. Nach dem Umzug stimmt beides. */
+    if (root.getAttribute('data-sticky-top') !== '16'){
+      root.setAttribute('data-sticky-top', '16');
+      if (UC.makeSticky) UC.makeSticky(root, root.querySelector('.uo-head'));
+    }
+    applySticky();
     render();
   }
   /* Bubble baut das Brett neu, waehrend es ausgeliehen ist: die alte Wurzel ist dann verwaist und
