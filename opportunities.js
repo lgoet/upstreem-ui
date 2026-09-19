@@ -877,7 +877,12 @@
     if (it.lead_url) src.push(it.lead_url);
     section('Source', src.join('\n'));
 
-    var comps = (it.competitors || []).map(function(c){ return c && (c.name || c); }).filter(Boolean);
+    /* mentioned_competitors, NICHT competitors -- so heisst das Feld in der Nutzlast und so liest
+       es auch die Detailkarte zwei Bildschirme weiter oben. Hier stand der falsche Name, und weil
+       ein fehlender Abschnitt stillschweigend wegfaellt, war in der Zwischenablage nie ein
+       Wettbewerber zu sehen, ohne dass irgendwo etwas kaputt aussah (19.09. gefunden). */
+    var comps = (it.mentioned_competitors || it.competitors || [])
+      .map(function(c){ return c && (c.name || c); }).filter(Boolean);
     section('Mentioned competitors', comps.length ? comps.join(', ') : '');
 
     var meta = [];
