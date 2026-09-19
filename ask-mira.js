@@ -6110,9 +6110,28 @@
     if (window.bubble_fn_ask_mira_export_pdf) window.bubble_fn_ask_mira_export_pdf(JSON.stringify(payload));
     else { window.dispatchEvent(new CustomEvent('askmira:export-pdf', { detail: payload })); console.log('Ask Mira export to pdf:', payload); }
   }
+  /* DER SPINNER BLEIBT MINDESTENS SO LANGE STEHEN (19.09. angefordert: "mach die Zeit, bis der
+     Spinner verschwindet, doppelt so lang"). Eine eigene Dauer hatte er nie -- er lief genau so
+     lange, wie Bubble brauchte, und bei einer schnellen Antwort blitzte er nur auf. Das liest
+     sich wie "da ist nichts passiert".
+     1200ms: lang genug, dass die Bewegung als Antwort auf den Klick wahrgenommen wird, kurz
+     genug, dass niemand wartet. Wer laenger braucht, bestimmt weiter Bubble -- die Grenze gilt
+     nur nach UNTEN. */
+  var EXPORT_MIN_MS = 1200;
+  var exportStart = {};
   function setExportPending(messageId, pending){
     var id = String(messageId == null ? '' : messageId);
     if (!id) return;
+    if (pending){ exportStart[id] = Date.now(); }
+    else {
+      var seit = Date.now() - (exportStart[id] || 0);
+      if (exportStart[id] && seit < EXPORT_MIN_MS){
+        /* Noch zu frueh: den Rest der Mindestzeit abwarten und dann denselben Weg gehen. */
+        setTimeout(function(){ setExportPending(id, false); }, EXPORT_MIN_MS - seit);
+        return;
+      }
+      delete exportStart[id];
+    }
     if (pending) exportPendingMap[id] = true; else delete exportPendingMap[id];
     var btn = null, rows = elMessages.querySelectorAll('.am-msg');
     for (var i=0;i<rows.length;i++){ if (String(rows[i].getAttribute('data-id')) === id){ btn = rows[i].querySelector('.am-act-btn[data-act="export"]'); break; } }
@@ -7698,10 +7717,8 @@
       body.innerHTML =
         '<div class="ums-row">' +
           '<div class="ums-rowtext">' +
-            '<div class="ums-rowtitle">' + esc(UCt('Message bubbles')) + '</div>' +
-            '<div class="ums-rowdesc am-set-note">' + esc(UCt(
-              'High contrast fills your own messages with the text colour and writes on them in the opposite one.')) +
-            '</div>' +
+            '<div class="ums-rowtitle">' + esc(UCt('Your messages')) + '</div>' +
+            '<div class="ums-rowdesc am-set-note">' + esc(UCt('How they look in the chat.')) + '</div>' +
           '</div>' +
           '<div class="ums-rowctl am-set-seg">' +
             '<div class="up-seg is-lg" role="tablist">' +
