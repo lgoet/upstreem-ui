@@ -2352,9 +2352,17 @@
   function eigeneMarke(){
     var k = window.UpstreemCore;
     var liste = (k && k.getBrands) ? k.getBrands() : [];
+    var jaNein = (k && k.isYes) ? k.isYes : function(v){ return v === true; };
     for (var i = 0; i < liste.length; i++){
       var b = liste[i];
-      if (b && (b.role === 'own' || b.is_own === true) && (b.name || b.label)) return b;
+      if (!b || !(b.name || b.label)) continue;
+      /* Vier Schreibweisen derselben Aussage. Der RPC liefert role "own"; Bubble schickt
+         Wahrheitswerte aber je nach Feld als "yes", "true" oder true, und welches Feld die
+         Marke traegt, entscheidet der Workflow, der setUpstreemBrands ruft. Gemeldet am
+         19.09.: acht Marken im Speicher und trotzdem keine persoenliche Begruessung. */
+      var rolle = String(b.role || b.brand_role || '').toLowerCase();
+      if (rolle === 'own' || rolle === 'eigene' ||
+          jaNein(b.is_own) || jaNein(b.own) || jaNein(b.is_own_brand)) return b;
     }
     return null;
   }

@@ -564,7 +564,12 @@
          aus Mira und damit aus einer anderen Quelle als der Rest -- sie war deshalb oft schon
          gefuellt, waehrend daneben noch ueberall Skelette standen. Ein halb geladenes Bild ist
          schlechter als ein ganz ladendes: es sieht fertig aus und ist es nicht. */
-      if (state.loading){ elChats.innerHTML = chatSkelett(); return; }
+      /* DIESELBE BEDINGUNG WIE BEI DEN KACHELN DARUEBER: solange geladen wird ODER noch nie
+         Daten da waren, steht hier das Skelett. Nur state.loading zu pruefen war zu wenig --
+         der Ladeschalter kommt von Bubble und ist in den ersten Sekundenbruchteilen noch
+         false. Genau in dem Fenster stand hier "No chats yet" (19.09. gemeldet: "ab und zu
+         geht die Liste kurz in den Platzhalter, waehrend loading yes ist"). */
+      if (state.loading || !state.overview){ elChats.innerHTML = chatSkelett(); return; }
       var liste = (typeof window.askMiraRecentChats === "function") ? window.askMiraRecentChats(3) : [];
       if (liste.length) _chatsGeladen = true;
       if (!liste.length){
@@ -583,8 +588,17 @@
           '<span class="upw-chat-when">' + esc(wann(c.time)) + '</span></button>';
       }).join("");
     }
-    var _chatsLeer = false;
-    setTimeout(function(){ if (!_chatsGeladen){ _chatsLeer = true; renderChats(); } }, 6000);
+    /* "Keine Chats" ist eine AUSSAGE und darf erst fallen, wenn sie geprueft ist. Die Uhr dafuer
+       lief frueher ab dem Mounten -- sie war also abgelaufen, bevor der Ladeschalter ueberhaupt
+       gesetzt war. Jetzt startet sie neu, sobald das Laden endet, und wird zurueckgenommen,
+       sobald es wieder beginnt. */
+    var _chatsLeer = false, _chatsUhr = null;
+    function chatUhrStarten(){
+      clearTimeout(_chatsUhr);
+      _chatsUhr = setTimeout(function(){ if (!_chatsGeladen){ _chatsLeer = true; renderChats(); } }, 6000);
+    }
+    function chatUhrZurueck(){ clearTimeout(_chatsUhr); _chatsUhr = null; _chatsLeer = false; }
+    chatUhrStarten();
     window.addEventListener("askmira:chats", function(){ _chatsLeer = false; renderChats(); });
     window.addEventListener("askmira:bereit", renderChats);
     elChats.addEventListener("click", function(e){
@@ -1174,8 +1188,14 @@
          die Meldung auch dann noch da, wenn laengst frische Daten unterwegs sind: gemessen, nach
          einem kaputten Payload zeigten beide Tabellen trotz "yes" weiter den Fehler. */
       setLoading: function(on){
+        var vorher = state.loading;
         state.loading = UC.isYes(on);
         if (state.loading) state.fehler = {};
+        /* Die Uhr der Chatliste haengt am Ladezustand und nicht am Mounten -- siehe dort.
+           Direkt gerufen und nicht ueber window: es kann mehr als ein Dashboard auf der Seite
+           stehen, und ein globaler Griff wuerde dann das falsche treffen. */
+        if (state.loading) chatUhrZurueck();
+        else if (vorher) chatUhrStarten();
         renderAll();
       }
     };

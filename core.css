@@ -1389,6 +1389,15 @@
        Polster sind jetzt oben schon so. */
     .up-topicchip.is-static { cursor: default; }
 
+    /* KEIN RIESIGES ZEICHEN, BEVOR DIE KOMPONENTEN-CSS DA IST (19.09. gemeldet: "irgendwo in
+       Mira flasht beim Laden noch ein altes SVG auf, ganz gross auf der Seite").
+       Ein <svg> ohne width/height und ohne eigene Klasse faellt auf die Ersatzgroesse des
+       Browsers zurueck -- 300x150 -- solange keine Regel dafuer da ist. core.css laedt zuerst,
+       ask-mira.css danach: genau dieses Fenster war zu sehen. Die Regel greift NUR bei
+       Zeichen ohne Groessenangabe UND ohne Klasse, laesst also jedes gestylte Bild (Skelette,
+       Charts, alle Icons aus UC.icon, die ihre Groesse als Attribut tragen) unberuehrt. */
+    #ask-mira svg:not([width]):not([height]):not([class]) { width: 16px; height: 16px; }
+
     /* ---------- Heat-Rampe ----------
        Fuenf Stufen, in JS interpoliert (UC.heatAt). Sie stehen in CSS statt in einem JS-Blob,
        damit Light und Dark EINE Palette aus der lebenden Kaskade sind statt zweier Listen, die

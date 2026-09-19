@@ -175,8 +175,9 @@
       /* Der Punkt zeigt die TINTE, also den Ton, den man im gewaehlten Thema wirklich zu
          sehen bekommt -- nicht die Flaechenfarbe. Die Werte stehen neben ihrer Begruendung in
          core.css beim Token --up-accent-ink. */
-      { wert: "indigo",     name: "Indigo",     farbe: "#5E6AD2", farbeDunkel: "#7C8AF0" },
+      /* Reihenfolge auf Wunsch (19.09.): Standard, Azure, Indigo, Terracotta. */
       { wert: "azur",       name: "Azure",      farbe: "#0075DE", farbeDunkel: "#3D97F0" },
+      { wert: "indigo",     name: "Indigo",     farbe: "#5E6AD2", farbeDunkel: "#7C8AF0" },
       { wert: "terrakotta", name: "Terracotta", farbe: "#BD5836", farbeDunkel: "#D97757" }
     ];
     var DATEN = [
