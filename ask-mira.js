@@ -6956,7 +6956,7 @@
      Beobachtet wird nur die Vorfahrenkette des Platzes (rund zehn Knoten) auf class und style,
      nicht das ganze Dokument: die App wechselt staendig Klassen, und ein Beobachter darueber
      waere teuer. Die Kette reicht, weil genau dort das Ausblenden passiert. */
-  var _heimWacht = null;
+  var _heimWacht = null, _heimUhr = null, _heimEltern = null;
   function platzSichtbar(){
     var el = root.parentNode;
     if (!el || !el.isConnected) return false;
@@ -6976,18 +6976,28 @@
   function heimWacheAus(){
     if (_heimWacht){ try { _heimWacht.disconnect(); } catch(e){} }
     _heimWacht = null;
+    if (_heimUhr){ clearInterval(_heimUhr); _heimUhr = null; }
   }
   function heimWacheAn(){
     heimWacheAus();
-    if (typeof MutationObserver !== 'function') return;
-    try {
-      _heimWacht = new MutationObserver(function(){ heimWennVerdeckt(); });
-      var el = root.parentNode, n = 0;
-      while (el && el.nodeType === 1 && n++ < 20){
-        _heimWacht.observe(el, { attributes: true, attributeFilter: ['class', 'style'] });
-        el = el.parentElement;
-      }
-    } catch(e){ heimWacheAus(); }
+    if (typeof MutationObserver === 'function'){
+      try {
+        _heimWacht = new MutationObserver(function(){ heimWennVerdeckt(); });
+        var el = root.parentNode, n = 0;
+        while (el && el.nodeType === 1 && n++ < 20){
+          _heimWacht.observe(el, { attributes: true, attributeFilter: ['class', 'style'] });
+          el = el.parentElement;
+        }
+      } catch(e){ _heimWacht = null; }
+    }
+    /* UND EINE UHR DAZU, und die ist nach zwei Fehlversuchen Absicht (19.09.). Der Beobachter
+       deckt den Fall ab, den ich mir vorstellen kann -- eine Klasse oder ein Stil in der Kette.
+       Zweimal lag ich damit daneben, weil die App den Platz auf einem Weg unsichtbar macht, den
+       ich nicht getroffen habe. Eine Pruefung alle 400ms trifft JEDEN Weg, denn sie fragt nicht
+       nach der Ursache, sondern nach dem Ergebnis.
+       Der Preis ist klein und zeitlich begrenzt: ein Lauf ueber rund zehn Vorfahren, und nur
+       solange Mira ausgeliehen ist. Sobald sie zu Hause ist, raeumt heimWacheAus die Uhr ab. */
+    _heimUhr = setInterval(heimWennVerdeckt, 400);
   }
   function launcherAn(slot, opts){
     if (root.__amTot || !slot || slot.nodeType !== 1) return false;
@@ -6996,6 +7006,7 @@
     if (!_heim){
       if (!root.parentNode) return false;          /* nirgends zu Hause: nichts auszuleihen */
       _heim = document.createComment('ask-mira: Miras Platz, waehrend sie ausgeliehen ist');
+      _heimEltern = root.parentNode;
       root.parentNode.insertBefore(_heim, root);
     }
     launcherMenuesZu();
@@ -7029,13 +7040,20 @@
       }
     } catch(e){}
     root.classList.remove('is-launcher');
+    /* ZWEI WEGE ZURUECK. Der Kommentarknoten ist der genaue Platz -- aber Bubble kann die
+       Ansicht, in der er steht, waehrenddessen neu gebaut haben, und dann ist er weg. Dann
+       bleibt das gemerkte ELTERNTEIL: ans Ende haengen ist nicht dieselbe Stelle, aber allemal
+       besser als eine leere Ansicht. Ohne diesen zweiten Weg blieb Mira im Dashboard stehen,
+       obwohl is-launcher laengst ab war. */
     if (_heim && _heim.parentNode){
       try {
         _heim.parentNode.insertBefore(root, _heim);
         _heim.parentNode.removeChild(_heim);
       } catch(e){}
+    } else if (_heimEltern && _heimEltern.isConnected){
+      try { _heimEltern.appendChild(root); } catch(e){}
     }
-    _heim = null; _launchView = '';
+    _heim = null; _heimEltern = null; _launchView = '';
     try { if (root.__amFit) root.__amFit(); } catch(e){}
     try { autosize(); picksEinziehen(); } catch(e){}
   }
