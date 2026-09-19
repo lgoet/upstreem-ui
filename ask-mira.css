@@ -981,8 +981,15 @@
      die .am-inline-logo im Chat schon benutzt. Der Abstand zum Namen ist jetzt ein Rand am Bild
      statt einer Flex-Luecke, der Wert bleibt 0.21em. */
   .am-welcome-brand { white-space: nowrap; margin-left: 8px; }
+  /* DAS BILD SITZT HOEHER ALS DIE MITTE (19.09. angefordert: "das Brand-Logo wieder die 3-4px
+     nach oben, Name bleibt"). vertical-align: middle setzt es auf die halbe x-Hoehe; optisch
+     gehoert ein Zeichen in einer Serifenzeile etwas darueber. Der Versatz steht in em und nicht
+     in px, damit er mit der Ueberschrift mitwaechst -- 0.1em sind 3,6px bei 36px Schrift und
+     2,7px bei 27px. position: relative verschiebt NUR das Bild; die Zeile und der Name daneben
+     bleiben, wo sie sind. Dieselbe Loesung wie bei .am-logo-wrap[data-type="brand"] im Chat. */
   .am-welcome-brand img { width: .856em; height: .856em; border-radius: .285em; object-fit: cover;
-    display: inline-block; vertical-align: middle; margin-right: .21em; }
+    display: inline-block; vertical-align: middle; margin-right: .21em;
+    position: relative; top: -.1em; }
   .am-welcome-title {
     margin: 0;
     font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;

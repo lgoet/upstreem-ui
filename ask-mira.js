@@ -6960,6 +6960,11 @@
   function platzSichtbar(){
     var el = root.parentNode;
     if (!el || !el.isConnected) return false;
+    /* Dieselbe Definition wie im Dashboard -- sie steht in core, damit die zwei Seiten nicht
+       auseinanderlaufen. Genau daran hing die Schleife: das Dashboard hielt die weggeblendete
+       Ansicht fuer sichtbar, Mira nicht. */
+    var kern = window.UpstreemCore;
+    if (kern && kern.wirklichSichtbar) return kern.wirklichSichtbar(el);
     var n = 0;
     while (el && el.nodeType === 1 && n++ < 20){
       var cs; try { cs = window.getComputedStyle(el); } catch(e){ return true; }

@@ -470,6 +470,12 @@
     function sichtbar(){
       if (!root.isConnected) return false;
       if (UC.messbar && !UC.messbar(root)) return false;
+      /* UND die Deckkraft, denn messbar() kennt sie nicht (19.09.). Ohne diese Zeile lieh sich
+         das Dashboard Mira weiter aus, waehrend seine Ansicht schon weggeblendet war -- und
+         Miras eigene Wache holte sie zurueck. Drei Einblend-Animationen hintereinander, so
+         gemeldet. Die Pruefreihe (0/250/800/1800) faengt den kurzen Moment auf, in dem eine
+         aufgehende Ansicht ihre Einblendung noch bei null hat. */
+      if (UC.wirklichSichtbar && !UC.wirklichSichtbar(root)) return false;
       return root.getClientRects().length > 0;
     }
     function miraBereit(){

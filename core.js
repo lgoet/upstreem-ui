@@ -14725,6 +14725,27 @@
      AUCH fuer den Standard: dort ist die Tinte #1f1f1b im Hellen und #e0e0e0 im Dunkeln.
      Faellt das Token aus (eine aeltere core.css an einem anderen Pin), bleibt --vc-text -- das
      ist im Standard derselbe Wert, es sieht also nicht kaputt aus, nur nicht eingefaerbt. */
+  /* WIRKLICH SICHTBAR, und das ist etwas anderes als messbar(). messbar() fragt
+     checkVisibility({ visibilityProperty: true }) -- display und visibility, NICHT die
+     Deckkraft. Genau damit parkt diese App ihre Ansichten aber: der inaktive Kasten steht auf
+     position: fixed, voller Hoehe und opacity 0. Er hat Rechtecke, er besteht checkVisibility,
+     und fuer messbar() ist er sichtbar.
+     Das hat am 19.09. eine Schleife erzeugt: das Power Dashboard lieh sich Miras Wurzel weiter
+     aus, obwohl seine Ansicht laengst weggeblendet war, und Miras eigene Wache holte sie zurueck
+     -- dreimal hin und her, sichtbar als drei Einblend-Animationen.
+     Eine Definition fuer beide Seiten, damit sie nicht wieder auseinanderlaufen. */
+  function wirklichSichtbar(el){
+    if (!el || el.nodeType !== 1 || !el.isConnected) return false;
+    var n = 0;
+    while (el && el.nodeType === 1 && n++ < 30){
+      var cs; try { cs = window.getComputedStyle(el); } catch(e){ return true; }
+      if (cs.display === "none" || cs.visibility === "hidden") return false;
+      if (parseFloat(cs.opacity) === 0) return false;
+      el = el.parentElement;
+    }
+    return true;
+  }
+
   function accentInk(el){
     var n = (el && el.nodeType === 1) ? el : document.documentElement;
     var v = "";
@@ -16222,6 +16243,7 @@
     heatRamp: heatRamp,
     heatAt: heatAt,
     accentInk: accentInk,
+    wirklichSichtbar: wirklichSichtbar,
     getTopics: getTopics,
     setTopics: setTopics,
     onTopics: onTopics,
