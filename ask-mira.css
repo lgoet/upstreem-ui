@@ -3176,15 +3176,19 @@
   #ask-mira .am-hero { transition: height 200ms ease, min-height 200ms ease, padding 200ms ease; }
   #ask-mira.has-messages .am-hero,
   #ask-mira.is-compact.has-messages .am-hero {
-    /* AUF DER HOEHE DES MARKENBLOCKS IN DER SEITENLEISTE (19.09. angefordert: "so wie die
-       Topbar im Power Dashboard, mit dem Upstreem-Branding oben links aligned").
-       Gemessen auf der Seite: .usn-brand liegt bei 8 bis 48, seine Mitte also auf 28. Die
-       Titelleiste ist 30px hoch und lag bei 16 bis 46, Mitte 31 -- knapp 3px zu tief.
-       Der Grund war die Hoehe hier: 53 minus 8 Polster ergibt eine 45px-Zeile, und mittig in
-       45 landet eine 30px-Leiste bei 15,5. Mit 48 ist die Zeile genau die 40px des
-       Markenblocks, die Mitte damit 28 und die Leiste sitzt bei 13 bis 43.
-       Die linke Kante stimmte schon vorher: beide beginnen bei 266. */
-    height: 48px; min-height: 48px;
+    /* AUF DER LINIE DER SEITENLEISTE (19.09. angefordert: "so wie die Topbar im Power
+       Dashboard"). Auf der Seite gemessen, alle drei im selben Fenster:
+         .usn-toggle       8 bis 40   Mitte 24   <- die Linie
+         .usn-brand-mark  16 bis 32   Mitte 24
+         .up-ph-heading   12 bis 36   Mitte 24   <- der Seitenkopf sitzt genau darauf
+       ZWEI ANLAEUFE HAT ES GEBRAUCHT, und beide Male aus demselben Grund: ich habe auf die
+       falsche Kante gezielt. Erst auf die Mitte des AEUSSEREN Markenblocks (.usn-brand, 8 bis
+       48, Mitte 28) -- der traegt unten 8px Polster, das nur Abstand zur Trennlinie ist.
+       Dann auf die Aussenkante DIESES Kastens. Zentriert wird aber im INHALTSkasten: 48 minus
+       8 Polster ergibt 8 bis 48, Mitte 28, und die Leiste landete bei 28.
+       Mit 40 ist der Inhaltskasten 8 bis 40 -- Mitte 24, und die 30px-Leiste sitzt bei 9 bis
+       39. Die linke Kante stimmte die ganze Zeit: beide beginnen bei 266. */
+    height: 40px; min-height: 40px;
     padding: 8px 16px 0;   /* same 16px side inset as the idle hero, so the bar does not shift sideways on the transition */
     display: flex; align-items: center;
   }
