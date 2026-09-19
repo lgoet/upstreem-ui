@@ -936,11 +936,16 @@
      zusammenbleiben. Das Bild misst 0.8em -- es waechst also mit der Ueberschrift mit, die
      selbst ein clamp() ist, und bleibt in jeder Groesse im selben Verhaeltnis zur Schrift.
      Rundung, Plattenfarbe und Rahmen sind die von .am-inline-logo im Chat, nur in em statt in
-     px: 8/24 der Kante ist 0.2667em, der Abstand zum Namen 5/24 ist 0.21em -- damit ein Logo
-     hier nicht anders gerundet und nicht anders gesetzt aussieht als dasselbe Logo im Chat. */
-  .am-welcome-brand { display: inline-flex; align-items: center; gap: .21em; white-space: nowrap; }
-  .am-welcome-brand img { width: .8em; height: .8em; border-radius: .2667em; object-fit: cover;
-    display: block; box-sizing: border-box; background: var(--am-soft); border: 1px solid var(--am-border); }
+     px: der Abstand zum Namen 5/24 ist 0.21em, die Rundung ein Drittel der Kante.
+     NUR HIER, UND ANDERS ALS IM CHAT (19.09. angefordert): keine Platte und kein Rahmen um das
+     Bild -- in einer 36px-Serifenzeile ist der Ring ein zweiter Rahmen neben der Schrift. Dafuer
+     misst das Bild 2px mehr (0.856em statt 0.8em, also 30.8 statt 28.8px bei 36px Schrift), und
+     davor stehen 8px Luft, damit sich die Marke vom Wort davor abhebt. Die 8px sind fest und
+     nicht in em: es ist ein Abstand zwischen zwei Woertern, kein Mass am Bild. */
+  .am-welcome-brand { display: inline-flex; align-items: center; gap: .21em; white-space: nowrap;
+    margin-left: 8px; }
+  .am-welcome-brand img { width: .856em; height: .856em; border-radius: .285em; object-fit: cover;
+    display: block; }
   .am-welcome-title {
     margin: 0;
     font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;

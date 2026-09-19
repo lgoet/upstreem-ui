@@ -13242,11 +13242,15 @@
   function panelVerdeckt(panel){
     var r, cs;
     try { r = panel.getBoundingClientRect(); cs = window.getComputedStyle(panel); } catch(e){ return false; }
-    /* NICHT MESSBAR HEISST NICHT VERDECKT. Ein Menue ist bis .is-shown auf pointer-events: none
-       und opacity: 0 -- elementFromPoint geht dann durch es hindurch und trifft immer den
-       Nachbarn. Ohne diese Wache haette JEDES Panel eskaliert, das einen Sekundenbruchteil zu
-       frueh gemessen wird. Im Prueftand genau so aufgelaufen. */
-    if (cs && (cs.pointerEvents === "none" || cs.opacity === "0" || cs.visibility === "hidden")) return false;
+    /* NICHT MESSBAR HEISST NICHT VERDECKT -- aber die Deckkraft gehoert NICHT dazu, und das war
+       ein Fehler in der ersten Fassung (19.09. gemeldet: "der Kalender liegt immer noch
+       dahinter"). Ein Treffertest ignoriert opacity vollstaendig; nur pointer-events und
+       visibility nehmen ein Element aus ihm heraus. Das Panel wird eine Aufgabe nach dem Oeffnen
+       gemessen, da laeuft seine 140ms-Einblendung noch -- die Deckkraft steht also auf 0 oder
+       knapp darueber, und die alte Wache stieg genau dann aus, wenn sie gebraucht wurde. Im
+       Prueftand ist es nicht aufgefallen, weil dort die Uebergaenge abgeschaltet waren: die
+       Messung hat die eigene Abschaltung gemessen. */
+    if (cs && (cs.pointerEvents === "none" || cs.visibility === "hidden")) return false;
     if (!r.width || !r.height) return true;
     var vw = window.innerWidth || document.documentElement.clientWidth;
     var vh = window.innerHeight || document.documentElement.clientHeight;
