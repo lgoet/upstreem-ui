@@ -2873,12 +2873,26 @@
      Markup, sichtbar nur mit der Zustandsklasse. Der Spinner selbst ist der dieser Komponente
      (.am-act-spinner am Export-Knopf), nicht ein zweiter: hier nur kleiner, und die Randstaerke
      zieht im selben Verhaeltnis mit (14px/2px -> 12px/1.7px, CLAUDE.md 1).
-     Farbe wie die Pin-Marke -- er sagt "gleich da", er soll die Zeile nicht anschreien. */
-  .am-prev-spin { display: none; flex: 0 0 auto; align-items: center; color: var(--am-muted-2); }
+     FARBE: die Schriftfarbe (19.09. angefordert -- "der dunkle Teil, also der spinnende, soll
+     einfach in Fontcolor sein"). Sie steht hier an der HUELLE, nicht am Spinner: der zeichnet
+     seinen Ring aus currentColor mit 28 Prozent und die laufende Kante mit vollem currentColor.
+     Ein Wert, zwei Staerken -- der Ring bleibt also leise, die Bewegung liest sich klar.
+     EIN- UND AUSFAHREN statt an und aus: display laesst sich nicht animieren, deshalb steht der
+     Spinner immer da und gibt seinen Platz her. Beim Zuklappen geht die Breite auf 0 UND der
+     rechte Rand auf -6px -- das hebt die 6px Luecke der Zeile auf, sonst bliebe eine Luecke
+     stehen und der Titel ruckte nur halb zurueck. Dieselbe Mechanik wie .am-run-spin oben, nur
+     mit den hier verlangten 200ms. */
+  .am-prev-spin {
+    display: inline-flex; flex: 0 0 auto; align-items: center; overflow: hidden;
+    color: var(--am-text);
+    width: 0; margin-right: -6px; opacity: 0;
+    transition: width 200ms ease, margin-right 200ms ease, opacity 200ms ease;
+  }
   .am-prev-item.is-busy .am-prev-spin,
   /* Auch ohne Titel: zwischen fertiger Antwort und fertigem Titel steht sonst eine ganz leere
      Zeile da (17.09. angefordert -- "in der Phase einfach keinen Text, nur den Loadingspinner"). */
-  .am-prev-item.is-untitled .am-prev-spin { display: inline-flex; }
+  .am-prev-item.is-untitled .am-prev-spin { width: 12px; margin-right: 0; opacity: 1; }
+  @media (prefers-reduced-motion: reduce){ .am-prev-spin { transition: none; } }
   .am-prev-spin .am-act-spinner { width: 12px; height: 12px; border-width: 1.7px; }
   /* Beim Umbenennen tritt er zurueck, genau wie die Pin-Marke und die Knoepfe: die Zeile gehoert
      dann dem Eingabefeld. */
