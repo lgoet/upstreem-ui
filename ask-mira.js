@@ -944,7 +944,10 @@
     var menu = st.querySelector('.uo-status-menu'); if (menu) menu.innerHTML = statusOptionsHtml(newKey);
     st.classList.remove('is-open');
     var b = st.querySelector('.uo-status-btn'); if (b) b.setAttribute('aria-expanded','false');
-    emitMoveStatus(st.getAttribute('data-oid'), meta.label, oldMeta ? oldMeta.label : oldKey);   // send the exact DB status label
+    /* An Bubble geht der DATENBANKWERT, nicht die Anzeige -- seit die zwei getrennt sind, ist
+       das status und nicht mehr label. Mit label waere hier "Pending" statt "Created"
+       angekommen, und der Workflow haette den Status nicht wiedererkannt. */
+    emitMoveStatus(st.getAttribute('data-oid'), meta.status, oldMeta ? oldMeta.status : oldKey);
   }
   root.addEventListener('click', function(e){
     if (!e.target.closest) return;
@@ -1453,11 +1456,19 @@
   var _OPP_CITE_COLOR = { Editorial:'#14b8a6', UGC_Community:'#0ea5e9', Knowledge_Base:'#6366f1', Brand_Platform:'#d946ef', Institutional:'#64748b', Competition:'#f97316', You:'#f43f5e' };
   var _OPP_STAT_COLOR = { pending:'#9ca3af', in_progress:'#2384E2', done:'#15803d', ignored:'#b4451f' };
   // the four canonical statuses a card can move between (label = exact DB status value)
+  /* DIESELBEN NAMEN WIE IM OPPORTUNITIES-BOARD (19.09. gemeldet: "die Statusnamen sind andere
+     als in der Tabelle, das geht gar nicht").
+     label ist die ANZEIGE, status der Wert in der Datenbank -- hier stand nur eines von beidem,
+     und der Anzeigename war der Datenbankwert. Beim ersten fallen die zwei auseinander: das
+     Board zeigt "Pending" (deutsch "Offen"), die Datenbank haelt "Created" (deutsch "Erstellt").
+     Miras Karten zeigten also den Datenbankwert und damit "Erstellt" statt "Offen".
+     Die Trennung ist dieselbe wie in COLUMNS in opportunities.js -- und sie ist noetig, nicht
+     kosmetisch: an Bubble geht weiterhin status, nicht label. */
   var OPP_STATUSES = [
-    { key:'pending',     label:'Created',     color:'#9ca3af' },
-    { key:'in_progress', label:'In Progress', color:'#2384E2' },
-    { key:'done',        label:'Done',        color:'#15803d' },
-    { key:'ignored',     label:'Ignored',     color:'#b4451f' }
+    { key:'pending',     label:'Pending',     status:'Created',     color:'#9ca3af' },
+    { key:'in_progress', label:'In Progress', status:'In Progress', color:'#2384E2' },
+    { key:'done',        label:'Done',        status:'Done',        color:'#15803d' },
+    { key:'ignored',     label:'Ignored',     status:'Ignored',     color:'#b4451f' }
   ];
   var OPP_STATUS_MAP = {}; OPP_STATUSES.forEach(function(s){ OPP_STATUS_MAP[s.key] = s; });
   function statusOptionsHtml(currentKey){
