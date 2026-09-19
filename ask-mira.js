@@ -7380,6 +7380,23 @@
      Offen-Zustand der Leiste liegen laengst im localStorage (am_side_w, am_side_open) -- die
      Seite war der eine Wert, der nur im Arbeitsspeicher stand, also stand die Leiste nach jedem
      Laden wieder rechts. Vorgabe ist rechts, "kein Eintrag" gilt deshalb als rechts. */
+  /* DIE BLASEN DES NUTZERS (19.09. angefordert). Zwei Zustaende: "default" ist, was bisher da
+     war, "contrast" faerbt die Flaeche in die Schriftfarbe und die Schrift darauf in die des
+     anderen Themas. Der Wert steht als data-bubbles an der Wurzel; die zwei Token dahinter
+     tauscht die CSS. Gemerkt wird er wie die Seite der Leiste -- im localStorage, damit er das
+     Neuladen ueberlebt. */
+  var BLASEN_KEY = 'am_bubbles';
+  function blasenLesen(){
+    try { return localStorage.getItem(BLASEN_KEY) === 'contrast' ? 'contrast' : 'default'; }
+    catch(e){ return 'default'; }      /* privates Fenster wirft schon beim Lesen */
+  }
+  function blasenAnwenden(wert, merken){
+    var w = wert === 'contrast' ? 'contrast' : 'default';
+    if (w === 'contrast') root.setAttribute('data-bubbles', 'contrast');
+    else root.removeAttribute('data-bubbles');
+    if (merken){ try { localStorage.setItem(BLASEN_KEY, w); } catch(e){} }
+  }
+
   var SEITE_KEY = 'am_side_pos';
   function seitePosLesen(){
     try { return localStorage.getItem(SEITE_KEY) === 'left' ? 'left' : 'right'; }
@@ -7521,8 +7538,25 @@
       hlDemoZeichnen();
     } else {
       var links = seiteLinks();
+      var blasen = blasenLesen();
       /* Die Zeilenform der Vorlage: Titel und Erklaersatz links, der Regler rechts. */
       body.innerHTML =
+        '<div class="ums-row">' +
+          '<div class="ums-rowtext">' +
+            '<div class="ums-rowtitle">' + esc(UCt('Message bubbles')) + '</div>' +
+            '<div class="ums-rowdesc am-set-note">' + esc(UCt(
+              'High contrast fills your own messages with the text colour and writes on them in the opposite one.')) +
+            '</div>' +
+          '</div>' +
+          '<div class="ums-rowctl am-set-seg">' +
+            '<div class="up-seg is-lg" role="tablist">' +
+              '<button class="up-seg-btn' + (blasen === 'default' ? ' is-active' : '') + '" type="button" data-am-bubbles="default">' +
+                esc(UCt('Default')) + '</button>' +
+              '<button class="up-seg-btn' + (blasen === 'contrast' ? ' is-active' : '') + '" type="button" data-am-bubbles="contrast">' +
+                esc(UCt('High contrast')) + '</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
         '<div class="ums-row">' +
           '<div class="ums-rowtext">' +
             '<div class="ums-rowtitle">' + esc(UCt('Chat sidebar')) + '</div>' +
@@ -7579,6 +7613,8 @@
       if (e.target.closest('[data-am-set-close]')){ setSchliessen(); return; }
       var nav = e.target.closest('[data-am-set-page]');
       if (nav){ _setSeite = nav.getAttribute('data-am-set-page'); setZeichnen(); return; }
+      var blase = e.target.closest('[data-am-bubbles]');
+      if (blase){ blasenAnwenden(blase.getAttribute('data-am-bubbles'), true); setZeichnen(); return; }
       var side = e.target.closest('[data-am-side]');
       if (side){ seiteAnwenden(side.getAttribute('data-am-side'), true); setZeichnen(); return; }
       /* Der Auswahlknopf: das Menue kommt aus core (makePopover) -- derselbe Weg, den jedes
@@ -7633,6 +7669,7 @@
   /* Die gemerkte Seite beim Aufbau anwenden -- ohne die Hauptleiste anzufassen (zweites
      Argument false): das ist eine Anzeige des gespeicherten Zustands und keine Handlung. */
   seiteAnwenden(seiteLinks() ? 'left' : 'right', false);
+  blasenAnwenden(blasenLesen(), false);
   function applySetting(key, value){
     if (!S.settings) S.settings = { brand:'logo', citation:'icon', response:'logo' };
     S.settings[key] = value;

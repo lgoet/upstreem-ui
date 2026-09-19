@@ -241,6 +241,22 @@
     background: var(--am-user-bg); color: var(--am-user-text);
     border-top-right-radius: 5px;
   }
+  /* HOHER KONTRAST FUER DIE BLASEN DES NUTZERS (19.09. angefordert): Flaeche in der Schriftfarbe,
+     Schrift darauf in der Schriftfarbe des ANDEREN Themas. Zwei Token genuegen -- jede Regel der
+     Blase liest sie ohnehin, auch der Mehr-anzeigen-Knopf und das Schimmern beim Laden. Eine
+     eigene Regel je Stelle waere ein zweiter Ort, an dem dieselbe Entscheidung gepflegt werden
+     muesste.
+     ZWEI SELEKTOREN, UND DER ZWEITE IST DER GRUND: die dunklen Festwerte stehen unter
+     #ask-mira[data-theme="dark"], und das ist (1,1,0) -- genau so viel wie
+     #ask-mira[data-bubbles="contrast"]. Bei Gleichstand gewinnt die Reihenfolge, und der dunkle
+     Block steht weiter unten in dieser Datei. Gemessen: im Dunkeln blieb die Blase auf #2f2f2f.
+     Die zweite Zeile nimmt beide Attribute (1,2,0) und schlaegt ihn damit ueber Spezifitaet --
+     nicht ueber die Ladereihenfolge, die hier ohnehin gegen uns liefe. */
+  #ask-mira[data-bubbles="contrast"],
+  #ask-mira[data-theme="dark"][data-bubbles="contrast"] {
+    --am-user-bg: var(--am-text);
+    --am-user-text: var(--vc-text-invert);
+  }
   /* long user messages: clamp to USER_CLAMP chars + "Mehr anzeigen" toggle */
   .am-user-body .am-user-p { margin: 0; }
   .am-user-body .am-user-p-full { display: none; }

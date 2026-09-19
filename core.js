@@ -1984,6 +1984,10 @@
     "How brands, citations and responses are marked in answers":
       "Wie Brands, Quellen und Antworten in den Antworten markiert werden",
     "Ask Mira about this": "Mira dazu fragen",
+    "Message bubbles": "Nachrichtenblasen",
+    "High contrast": "Hoher Kontrast",
+    "High contrast fills your own messages with the text colour and writes on them in the opposite one.":
+      "Hoher Kontrast fuellt deine eigenen Nachrichten mit der Schriftfarbe und schreibt darauf in der umgekehrten.",
     "Chat sidebar": "Chat-Leiste",
     "Where the chat sidebar sits": "Wo die Chat-Leiste steht",
     "Right": "Rechts",
