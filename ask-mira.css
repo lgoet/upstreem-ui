@@ -257,6 +257,20 @@
     --am-user-bg: var(--am-text);
     --am-user-text: var(--vc-text-invert);
   }
+  /* DAS SKELETT BLEIBT, WIE ES IST (19.09. nachgereicht: "der Chat-Skeleton bleibt so wie er
+     ist, egal welcher Mode"). Es benutzt dieselbe Blase wie eine echte Nachricht und erbte die
+     zwei Token damit mit -- im hohen Kontrast wurde der Ladeblock schwarz, obwohl dort noch gar
+     keine Nachricht steht. Also bekommt der Skelettast die Standardwerte zurueck. Zwei Regeln,
+     weil der Standard selbst je Thema ein anderer ist; die dunkle steht hinten UND traegt ein
+     Attribut mehr, gewinnt also ueber Spezifitaet und nicht ueber die Reihenfolge. */
+  #ask-mira[data-bubbles="contrast"] .am-msg-skel {
+    --am-user-bg: var(--vc-heading-bg);
+    --am-user-text: var(--vc-text);
+  }
+  #ask-mira[data-theme="dark"][data-bubbles="contrast"] .am-msg-skel {
+    --am-user-bg: #2f2f2f;
+    --am-user-text: #ececec;
+  }
   /* long user messages: clamp to USER_CLAMP chars + "Mehr anzeigen" toggle */
   .am-user-body .am-user-p { margin: 0; }
   .am-user-body .am-user-p-full { display: none; }
