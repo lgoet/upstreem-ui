@@ -7,6 +7,14 @@
         Feldnamen frei: {id|company_id, name|label, logo|logo_url|favicon|favicon_url} -- der Store
         normalisiert und legt jede Zeile unter ALLEN diesen Namen ab, damit jede Komponente
         findet, was sie sucht. Zusatzfelder (role, position, ...) bleiben erhalten.
+        ROLE GEHOERT DAZU, und das ist keine Zierde (19.09. praezisiert): zwei Stellen der App
+        suchen im Store nach der EIGENEN Marke und erkennen sie an role "own" -- die Begruessung
+        in Mira ("Was gibt es Neues bei <Marke>?") und der Name, den "Create with AI" von selbst
+        einsetzt. Fehlt das Feld, faellt beides still auf den neutralen Fall zurueck: Mira
+        begruesst allgemein, und Create with AI startet ohne Markennamen. Es kostet eine Spalte
+        im Ausdruck und ist der einzige Weg, auf dem die App die eigene Marke von den
+        Wettbewerbern unterscheiden kann -- die Reihenfolge der Liste sagt darueber nichts.
+        Statt role wird auch is_own akzeptiert, als true oder als "yes".
         Protokoll-relative Logo-URLs ("//cdn...") werden auf https:// gezogen.
 
   Jede Komponente mit einer Marken-Auswahlliste zieht daraus -- Tabellen, Charts, Quick Actions,
