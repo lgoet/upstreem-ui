@@ -6881,7 +6881,10 @@
   var _heim = null, _launchView = '';
   function istLauncher(){ return root.classList.contains('is-launcher'); }
   function launcherMenuesZu(){
-    if (root.classList.contains('is-pick-open')) pickOeffnen(false);
+    /* Beide Schritte fuer sich: das Schliessen eines Menues ist Aufraeumarbeit, und wirft es,
+       darf das den Umzug darunter nicht mitnehmen. effPop war schon abgesichert, pickOeffnen
+       nicht -- und genau daran haengt der Rueckweg (siehe launcherAus). */
+    try { if (root.classList.contains('is-pick-open')) pickOeffnen(false); } catch(e){}
     if (effPop){ try { effPop.close(false); } catch(e){} }
   }
   /* ---- ZWEI FELDER, EIN ELEMENT (17.09. angefordert) ---------------------------------------
@@ -6930,16 +6933,34 @@
   }
   function launcherAus(){
     if (!istLauncher() && !_heim) return;
-    launcherMenuesZu();
-    if (!_umzugOhneFeld && istLauncher()){ _feldSpeicher.launcher = feldEinpacken(); feldAuspacken(_feldSpeicher.mira); }
+    /* DER UMZUG DARF AN NICHTS HAENGEN, WAS DAVOR STEHT (19.09. gemeldet: "wenn man von
+       irgendeinem View auf Mira wechselt, sieht man Mira nicht -- bei Pageload schon").
+       Die Konsolenmessung auf der Seite hat es festgenagelt: Miras Wurzel stand noch IM
+       Dashboard (Kette #ask-mira -> upw-mira -> upw-col -> #view-dashboard mit opacity 0), trug
+       weiterhin is-launcher, und #view-mira war aktiv, 922px hoch und leer. Der Rueckweg war
+       also gelaufen und mittendrin steckengeblieben -- vor dem classList.remove, denn die
+       Klasse war noch da.
+       Davor stehen nur Aufraeumschritte: Menues schliessen und den Feldinhalt umpacken. Wirft
+       einer davon, ist das aergerlich -- aber Mira MUSS trotzdem nach Hause, sonst ist die
+       ganze Ansicht leer. Also jeder Schritt fuer sich, und der Umzug selbst zuletzt und
+       unbedingt. */
+    try { launcherMenuesZu(); } catch(e){}
+    try {
+      if (!_umzugOhneFeld && istLauncher()){
+        _feldSpeicher.launcher = feldEinpacken();
+        feldAuspacken(_feldSpeicher.mira);
+      }
+    } catch(e){}
     root.classList.remove('is-launcher');
     if (_heim && _heim.parentNode){
-      _heim.parentNode.insertBefore(root, _heim);
-      _heim.parentNode.removeChild(_heim);
+      try {
+        _heim.parentNode.insertBefore(root, _heim);
+        _heim.parentNode.removeChild(_heim);
+      } catch(e){}
     }
     _heim = null; _launchView = '';
-    if (root.__amFit) root.__amFit();
-    autosize(); picksEinziehen();
+    try { if (root.__amFit) root.__amFit(); } catch(e){}
+    try { autosize(); picksEinziehen(); } catch(e){}
   }
   root.__amAbtreten = function(){
     if (!istLauncher()) return;
