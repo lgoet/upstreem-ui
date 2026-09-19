@@ -13234,6 +13234,42 @@
     try { return !!document.querySelector(".mqa-overlay.is-open"); } catch(e){ return false; }
   }
 
+  /* Liegt das Panel an seiner eigenen Stelle oben? Getroffen wird mit elementFromPoint, also
+     gegen die WIRKLICHE Stapelung und Beschneidung des Browsers -- nicht gegen eine Nachbildung
+     der Regeln. Drei Punkte statt einem: die linke obere Ecke kann unter einem Rahmen liegen,
+     und ein halb ueberdecktes Panel soll ebenfalls eskalieren. Ein Punkt ausserhalb des Fensters
+     zaehlt nicht mit; null Flaeche heisst weggeschnitten und damit verdeckt. */
+  function panelVerdeckt(panel){
+    var r, cs;
+    try { r = panel.getBoundingClientRect(); cs = window.getComputedStyle(panel); } catch(e){ return false; }
+    /* NICHT MESSBAR HEISST NICHT VERDECKT. Ein Menue ist bis .is-shown auf pointer-events: none
+       und opacity: 0 -- elementFromPoint geht dann durch es hindurch und trifft immer den
+       Nachbarn. Ohne diese Wache haette JEDES Panel eskaliert, das einen Sekundenbruchteil zu
+       frueh gemessen wird. Im Prueftand genau so aufgelaufen. */
+    if (cs && (cs.pointerEvents === "none" || cs.opacity === "0" || cs.visibility === "hidden")) return false;
+    if (!r.width || !r.height) return true;
+    var vw = window.innerWidth || document.documentElement.clientWidth;
+    var vh = window.innerHeight || document.documentElement.clientHeight;
+    if (!vw || !vh) return false;                 // 0x0-Fenster: nicht messbar, also nicht heben
+    /* FUENF PUNKTE, UND ALLE MUESSEN TREFFEN. Der erste Anlauf nahm die obere Ecke und gab sich
+       mit einem Treffer zufrieden -- im Prueftand genau daran vorbeigelaufen: die obere Kante des
+       Menues stand frei, waehrend der ganze Rumpf hinter der Nachbarkomponente lag. Ein halb
+       verdecktes Menue ist verdeckt. */
+    var pts = [[r.left + 8, r.top + 8], [r.right - 8, r.top + 8],
+               [r.left + r.width / 2, r.top + r.height / 2],
+               [r.left + 8, r.bottom - 8], [r.right - 8, r.bottom - 8]];
+    var drin = 0;
+    for (var i = 0; i < pts.length; i++){
+      var x = pts[i][0], y = pts[i][1];
+      if (x < 0 || y < 0 || x > vw || y > vh) continue;
+      drin++;
+      var oben = null;
+      try { oben = document.elementFromPoint(x, y); } catch(e){ return false; }
+      if (!oben || !(oben === panel || panel.contains(oben))) return true;
+    }
+    return false;                                  // kein Punkt im Bild: nichts behaupten
+  }
+
   function menuEscape(panel, owner){
     if (!panel || !owner || typeof panel.showPopover !== "function") return null;
     if (panel.__upEscapeRelease) return null;
@@ -13245,7 +13281,18 @@
        Messwert beim Oeffnen ein; bei einer Leiste, die ihre Breite animiert, landet das Panel
        dann sichtbar daneben (gemessen: 246px statt 72px neben der eingeklappten Leiste). */
     if (panel.getAttribute("data-up-noescape") != null) return null;
-    if (!inOverlay(owner.parentElement || owner)) return null;
+    /* ZWEITE FREIGABE, UND DIESE IST GEMESSEN (19.09.). inOverlay() raet an der Signatur eines
+       Drawers: ein fester Vorfahre oder ein z-index ab 1000. Auf der Dashboard-Seite trifft
+       beides nicht zu -- und trotzdem lag der Kalender hinter dem Visibility Chart. Die Kette
+       aus der Konsole des Nutzers: jeder Vorfahre traegt einen eigenen z-index (2, 19, 29, 32,
+       34, 35, 37, 39), und #allow_scroll (z 34) steht zusaetzlich auf overflow: hidden. Das
+       Menue hat z 60 -- innerhalb von #allow_scroll. Gegen eine Nachbargruppe mit hoeherem
+       z-index ist diese Zahl bedeutungslos, genau wie im Drawer-Fall darueber beschrieben.
+       Statt die Vermutung um eine weitere Regel zu erweitern, wird jetzt NACHGESEHEN: liegt
+       das Panel an seiner Stelle wirklich oben? Drei Punkte, und wenn keiner davon das Panel
+       trifft, ist es verdeckt oder weggeschnitten -- dann wird eskaliert. Auf einer Seite ohne
+       Kaefig trifft der erste Punkt, es kostet einen Treffertest und sonst nichts. */
+    if (!inOverlay(owner.parentElement || owner) && !panelVerdeckt(panel)) return null;
 
     /* ---- Ausrichtung MESSEN, nicht annehmen ----
        Die Panels der App liegen NICHT alle auf derselben Seite: .up-ment-menu und .up-filter-menu
