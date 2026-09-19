@@ -283,7 +283,17 @@
      where this app expects a modal to sit; it has been correct in this product for months.
 
      So this file contributes layout INSIDE the card and nothing about where the card is. */
-  function showShell() { M.back.classList.add("is-shown"); }
+  function showShell() {
+    M.back.classList.add("is-shown");
+    /* Der Sprachlauf ueberspringt unsichtbare Aeste. Dieses Fenster haengt beim Seitenstart
+       schon im Dokument und geht nur ueber eine Klasse auf -- es haengt also nichts ein, der
+       Beobachter feuert nie, und die Platzhalter blieben englisch (19.09. gemeldet). Eine
+       Aufgabe spaeter, damit die Klasse sicher steht. */
+    setTimeout(function(){
+      var k = window.UpstreemCore;
+      try { if (k && k.spracheLauf) k.spracheLauf(M.back); } catch(e){}
+    }, 0);
+  }
   function hideShell() { M.back.classList.remove("is-shown"); }
   var S = {
     tab: "manual",              // "manual" | "csv"

@@ -7529,16 +7529,24 @@
     var sel = I18N_ATTR.map(function(a){ return "[" + a + "]"; }).join(",");
     var els;
     try { els = wurzel.querySelectorAll(sel); } catch(e){ return; }
-    for (var i = 0; i < els.length; i++){
-      var el = els[i];
-      for (var a = 0; a < I18N_ATTR.length; a++){
-        var name = I18N_ATTR[a], v = el.getAttribute(name);
-        if (!v) continue;
-        v = String(v);
-        if (v.length > 200) continue;
-        var neu = t(englischVon(v));
-        if (neu !== v) el.setAttribute(name, neu);
-      }
+    for (var i = 0; i < els.length; i++) einAttribut(els[i]);
+    /* DIE WURZEL SELBST, und das fehlte hier (19.09.). querySelectorAll liefert sie nie mit --
+       der Textweg eine Zeile weiter oben prueft sie deshalb ausdruecklich mit matches(), dieser
+       Weg tat es nicht. Solange der Lauf ueber die ganze Seite ging, fiel das nicht auf: die
+       Aeste, mit denen er arbeitet, sind dort Behaelter, und das Feld darin wird gefunden.
+       Bei einem KLEINEN Ast -- einem frisch geoeffneten Menue, dessen Kinder schon die Felder
+       sind -- ist die Wurzel aber genau das Element mit dem Attribut, und es blieb englisch.
+       Gemeldet fuer die Platzhalter in den Suchfeldern der Prompts-Tabelle. */
+    if (wurzel && wurzel.nodeType === 1) einAttribut(wurzel);
+  }
+  function einAttribut(el){
+    for (var a = 0; a < I18N_ATTR.length; a++){
+      var name = I18N_ATTR[a], v = el.getAttribute && el.getAttribute(name);
+      if (!v) continue;
+      v = String(v);
+      if (v.length > 200) continue;
+      var neu = t(englischVon(v));
+      if (neu !== v) el.setAttribute(name, neu);
     }
   }
   /* Die drei Knoepfe in den Seitenkoepfen tragen ihr Etikett als ZWEI Knoten: den eigenen Text
@@ -13499,6 +13507,12 @@
        (Doppelklick, oder ein anderes Dropdown das dieses schliesst). */
     setTimeout(function(){
       if (OPEN_DD.indexOf(self) === -1) return;      // inzwischen geschlossen
+      /* Und den Sprachlauf ueber das frisch geoeffnete Panel: bis eben war es unsichtbar, und
+         der Lauf ueberspringt unsichtbare Aeste ausdruecklich. Ein Menue, das beim Start der
+         Seite zu war, blieb dadurch in der Vorlagensprache stehen -- gemeldet am 19.09. fuer
+         die Platzhalter in den Suchfeldern der Prompts-Tabelle. Hier ist .is-shown gesetzt,
+         der Ast also sichtbar und messbar. */
+      try { if (getPref("locale") !== "en") spracheLauf(self.panel); } catch(e){}
       menuEscape(self.panel, self.owner);
     }, 0);
     return function(){ ddClose(self); };
@@ -16334,6 +16348,10 @@
     closePopovers: closeAll,
     menuEscape: menuEscape,
     dropEscape: dropEscape,
+    /* Fuer Flaechen, die AUFGEHEN statt eingehaengt zu werden: der Sprachlauf ueberspringt
+       unsichtbare Aeste, und ein Popup, das nur eine Klasse wechselt, haengt nichts ein --
+       der Beobachter feuert also nie. Wer so etwas oeffnet, ruft das hier fuer seinen Ast. */
+    spracheLauf: spracheLauf,
     makeSticky: makeSticky,
     rafThrottle: rafThrottle,
     einmalProBild: einmalProBild,
