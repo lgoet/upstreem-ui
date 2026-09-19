@@ -10461,7 +10461,38 @@
          a short Bubble wrapper, and re-clipping it left no room for a menu taller than the empty
          state. Mirrors topics-manager.js's own unconditional call for the same reason. */
       unclipAncestors(root, false);
-      if (on) syncTheadOffset();
+      if (on){ syncTheadOffset(); syncDeckstreifen(); }
+    }
+    /* WIE HOCH MUSS DER DECKSTREIFEN WIRKLICH SEIN (19.09. gemessen im Domain-Drawer).
+       .up-head::before malt die Flaeche ueber der geklebten Leiste, damit keine Zeile darueber
+       durchlaeuft, und nahm dafuer --up-sticky-top. Das stimmt genau dann, wenn der Scrollport
+       kein Polster hat: "sticky top" misst gegen dessen POLSTERKANTE, der Streifen sitzt aber an
+       der Leiste und muss bis zur sichtbaren Oberkante reichen -- also bis zur Rahmenkante.
+       Im Drawer liegen dazwischen 16px Polster. Gemessen: Leiste rastet bei 83 ein, Scrollport
+       beginnt bei 51, gedeckt waren nur 67 bis 83 -- und in den 16px darueber liefen die Zeilen
+       der Tabelle sichtbar durch (up-td, uut-tag an genau diesen y-Werten).
+       Deshalb wird das Polster GEMESSEN und aufgeschlagen, statt eine Zahl aufzurunden: ohne
+       Polster kommt derselbe Wert heraus wie bisher, die Regel aendert also nur dort etwas, wo
+       es einen Unterschied gibt. Findet sich kein Scrollport, faellt die CSS auf
+       --up-sticky-top zurueck. */
+    function syncDeckstreifen(){
+      var sp = root.parentElement, n = 0, cs;
+      while (sp && n++ < 20){
+        try { cs = window.getComputedStyle(sp); } catch(e){ sp = null; break; }
+        var oy = cs.overflowY;
+        if ((oy === "auto" || oy === "scroll") && sp.scrollHeight > sp.clientHeight + 4) break;
+        sp = sp.parentElement;
+      }
+      if (!sp || sp === document.body || sp === document.documentElement){
+        root.style.removeProperty("--up-sticky-cover");
+        return;
+      }
+      var polster = 0;
+      try { polster = parseFloat(window.getComputedStyle(sp).paddingTop) || 0; } catch(e){}
+      if (polster <= 0){ root.style.removeProperty("--up-sticky-cover"); return; }
+      var oben = 0;
+      try { oben = parseFloat(window.getComputedStyle(root).getPropertyValue("--up-sticky-top")) || 0; } catch(e){}
+      root.style.setProperty("--up-sticky-cover", (oben + polster) + "px");
     }
     /* The intermittent "only the toolbar sticks, the column header scrolls away with the table"
        bug: every syncTheadOffset() call above only fires from explicit call sites (component

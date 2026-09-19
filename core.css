@@ -1949,7 +1949,11 @@
          pseudo-element is unconditionally part of .up-head's box, not scroll-triggered). If a sliver
          of a row ever peeks through above a stuck header again, fix it with a couple of px here, not
          a flat +16 that stops matching the configured offset at all. */
-      height: var(--up-sticky-top); background: var(--up-surface);
+      /* --up-sticky-cover statt --up-sticky-top: hat der Scrollport ein Polster, klebt die Leiste
+         an dessen Polsterkante, der Streifen muss aber bis zur Rahmenkante reichen. core setzt
+         den Wert gemessen (syncDeckstreifen) und NUR dann; ohne Polster gibt es ihn nicht und es
+         bleibt beim bisherigen Wert. */
+      height: var(--up-sticky-cover, var(--up-sticky-top)); background: var(--up-surface);
     }
     /* In sticky mode the box's visible border is dropped (kept transparent so layout doesn't
        shift) and drawn on the header and body instead. Both span the full width and align exactly,
