@@ -2305,6 +2305,12 @@
   .am-mic { margin-left: -5px; }   /* halve the fader -> mic gap (10px -> 5px), mic -> send stays 10px */
   .am-rec { grid-column: 1 / -1; display: none; align-items: center; gap: 12px; min-height: 40px; min-width: 0; }
   .am-composer.is-recording { grid-template-columns: 1fr; }
+  /* WAEHREND DER AUFNAHME SYMMETRISCH POLSTERN (19.09. gemeldet: "der Voice-Kram sitzt nicht
+     mittig, sondern zu weit unten"). Das Feld hat oben 16 und unten 8 -- mit Absicht, dort sitzt
+     sonst das Eingabefeld oben und die Aktionszeile unten. Bleibt nur die Aufnahmeleiste uebrig,
+     macht dieselbe Asymmetrie sie um 4px zu tief. 12 und 12 ist die Mitte derselben Gesamthoehe:
+     16+8 und 12+12 sind beide 24, das Feld springt beim Umschalten also nicht. */
+  .am-composer.is-recording { padding-top: 12px; padding-bottom: 12px; }
   .am-composer.is-recording .am-input-wrap,
   .am-composer.is-recording .am-actions,
   .am-composer.is-recording .am-quote-slot { display: none; }

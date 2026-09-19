@@ -6810,7 +6810,14 @@
     // topbar chevron sits far left -> extend the menu to the RIGHT (left edge under the chevron);
     // sidebar dots -> keep the menu's right edge aligned with the button.
     var left = cmFromTopbar ? r.left : (r.right - mw);
-    var minL = rootRect.left + 8, maxL = rootRect.right - mw - 8;
+    /* GEKLEMMT WIRD AN BEIDEM: an der Komponente UND am Bildschirm (19.09. gemeldet -- "steht
+       die Leiste rechts, ist das Menue rechts ausserhalb vom Bildschirm abgeschnitten").
+       Bisher stand hier nur die Wurzel. Das reicht, solange sie im Bild liegt -- mit der
+       Chatleiste rechts reicht sie aber bis an den Fensterrand und darueber hinaus, und ein
+       Rand, der selbst ausserhalb liegt, klemmt nichts. */
+    var fensterB = window.innerWidth || document.documentElement.clientWidth || 0;
+    var rechts = fensterB ? Math.min(rootRect.right, fensterB) : rootRect.right;
+    var minL = Math.max(rootRect.left, 0) + 8, maxL = rechts - mw - 8;
     if (maxL < minL) maxL = minL;
     if (left < minL) left = minL;
     if (left > maxL) left = maxL;
@@ -6821,8 +6828,12 @@
     // submenu: always fly RIGHT in the topbar (menu is already far left); otherwise flip when the left is tight
     var sub = elChatMenu.querySelector('.am-cm-sub');
     if (sub){
-      var roomLeft = left - rootRect.left;
-      if (cmFromTopbar || roomLeft < 200) sub.classList.add('flip-right');
+      var roomLeft = left - Math.max(rootRect.left, 0);
+      /* Nach rechts nur ausklappen, wenn dort auch Platz IST -- sonst steht das Untermenue
+         ausserhalb des Bildes, und wir haetten den Fehler eine Ebene tiefer wiederholt. */
+      var roomRight = rechts - (left + mw);
+      var nachRechts = cmFromTopbar ? roomRight >= 160 : (roomLeft < 200 && roomRight >= 160);
+      if (nachRechts) sub.classList.add('flip-right');
       else sub.classList.remove('flip-right');
     }
     elChatMenu.style.visibility = '';
@@ -8078,6 +8089,7 @@
       try { if (ac && ac.state!=='closed') ac.close(); } catch(_){}
       if (stream){ stream.getTracks().forEach(function(t){ try{t.stop();}catch(_){} }); }
       stream=null; ac=null; analyser=null; source=null; levels=[];
+      recFokusRaus();
       composer.classList.remove('is-recording'); recEl.setAttribute('aria-hidden','true');
     }
     function startRecording(){
@@ -8113,6 +8125,20 @@
         showNote(msg); fireVoice('error', { reason:reason, message:msg });
       });
     }
+    /* DER FOKUS MUSS RAUS, BEVOR DIE LEISTE VERSTECKT WIRD. Wer auf Abbrechen oder Senden
+       drueckt, steht mit dem Fokus IN der Leiste -- und im naechsten Schritt bekommt sie
+       aria-hidden. Der Browser meldet das zu Recht: "Blocked aria-hidden on an element because
+       its descendant retained focus." Ein Bedienelement, das die Hilfstechnik nicht mehr sieht,
+       den Fokus aber behaelt, ist fuer deren Nutzer ein toter Punkt.
+       Der Fokus geht ins Textfeld -- dorthin, wo nach der Aufnahme ohnehin weitergeschrieben
+       wird. Ohne Textfeld reicht blur(). */
+    function recFokusRaus(){
+      try {
+        if (!recEl.contains(document.activeElement)) return;
+        if (elTextarea && elTextarea.focus) elTextarea.focus();
+        else if (document.activeElement.blur) document.activeElement.blur();
+      } catch(e){}
+    }
     function cancelRecording(){ var was=composer.classList.contains('is-recording'); stopAll(); if (was) fireVoice('cancel', {}); }
     function confirmRecording(){
       if (!composer.classList.contains('is-recording')) return;
@@ -8124,6 +8150,7 @@
       if (raf){ cancelAnimationFrame(raf); raf = 0; }
       if (tick){ clearInterval(tick); tick = 0; }
       recording = false;
+      recFokusRaus();
       composer.classList.remove('is-recording'); recEl.setAttribute('aria-hidden', 'true');
       try {
         S.messages.push({ id: mid, role: 'user', content: '', pending_voice: true, created_at: new Date().toISOString() });
