@@ -972,10 +972,17 @@
      misst das Bild 2px mehr (0.856em statt 0.8em, also 30.8 statt 28.8px bei 36px Schrift), und
      davor stehen 8px Luft, damit sich die Marke vom Wort davor abhebt. Die 8px sind fest und
      nicht in em: es ist ein Abstand zwischen zwei Woertern, kein Mass am Bild. */
-  .am-welcome-brand { display: inline-flex; align-items: center; gap: .21em; white-space: nowrap;
-    margin-left: 8px; }
+  /* KEIN inline-flex, UND DAS IST DER PUNKT (19.09. gemeldet: "der Name sitzt 3-4px zu hoch").
+     Die Grundlinie eines inline-flex ist die seines ERSTEN Flex-Elements -- hier das Bild, und
+     ein Bild hat keine. Der Browser synthetisiert sie aus der Unterkante, setzt also die
+     BILDunterkante auf die Schriftlinie und schiebt den Namen daneben mit nach oben.
+     Als normaler Inline-Kasten steht der Name in derselben Zeile wie der Satz um ihn herum und
+     teilt dessen Grundlinie. Das Bild richtet sich mit vertical-align aus -- dieselbe Loesung,
+     die .am-inline-logo im Chat schon benutzt. Der Abstand zum Namen ist jetzt ein Rand am Bild
+     statt einer Flex-Luecke, der Wert bleibt 0.21em. */
+  .am-welcome-brand { white-space: nowrap; margin-left: 8px; }
   .am-welcome-brand img { width: .856em; height: .856em; border-radius: .285em; object-fit: cover;
-    display: block; }
+    display: inline-block; vertical-align: middle; margin-right: .21em; }
   .am-welcome-title {
     margin: 0;
     font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
