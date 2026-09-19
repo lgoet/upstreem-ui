@@ -425,6 +425,33 @@
   var S = window.askMiraState;
   if (!S.settings) S.settings = { brand: 'logo', citation: 'icon', response: 'logo' };
   if (!S.settings.response) S.settings.response = 'logo';
+  /* DIE HERVORHEBUNGEN UEBERLEBEN DAS NEULADEN (19.09. gemeldet: "die speichern nicht im
+     localStorage, nach Reload wieder auf Default"). Bisher ging die Wahl NUR als Ereignis an
+     Bubble hinaus; kam von dort keine Antwort zurueck, stand nach jedem Laden wieder die
+     Vorgabe da. Der gemerkte Wert ist der ANFANGSWERT, nicht die Wahrheit: schickt Bubble
+     spaeter askMiraSetSettings, gewinnt das weiterhin -- und wird gleich mitgemerkt, damit der
+     naechste Start schon richtig anfaengt, bevor die Antwort da ist. */
+  var HL_KEY = 'am_highlights';
+  var HL_ERLAUBT = { brand: { logo:1, icon:1, none:1 },
+                     citation: { favicon:1, icon:1, none:1 },
+                     response: { logo:1, icon:1, none:1 } };
+  function hlMerken(){
+    if (!S.settings) return;
+    try {
+      localStorage.setItem(HL_KEY, JSON.stringify({
+        brand: S.settings.brand, citation: S.settings.citation, response: S.settings.response
+      }));
+    } catch(e){}                       /* privates Fenster wirft schon beim Schreiben */
+  }
+  (function hlHolen(){
+    var roh = null;
+    try { roh = JSON.parse(localStorage.getItem(HL_KEY) || 'null'); } catch(e){ return; }
+    if (!roh || typeof roh !== 'object') return;
+    Object.keys(HL_ERLAUBT).forEach(function(k){
+      var v = String(roh[k] || '').toLowerCase();
+      if (HL_ERLAUBT[k][v]) S.settings[k] = v;
+    });
+  })();
   if (!S.models) S.models = {};
   if (!S.favicons) S.favicons = [];
   if (!S.brandLogos) S.brandLogos = [];
@@ -5827,6 +5854,9 @@
     if (bv === 'logo' || bv === 'icon' || bv === 'none') S.settings.brand = bv;
     if (cv === 'favicon' || cv === 'icon' || cv === 'none') S.settings.citation = cv;
     if (rv === 'logo' || rv === 'icon' || rv === 'none') S.settings.response = rv;
+    /* Auch Bubbles Wert wandert in den Speicher -- dann faengt der naechste Start damit an,
+       statt erst auf die Antwort zu warten. */
+    hlMerken();
     if (typeof syncSettingsUI === 'function') syncSettingsUI();
     renderMessages();
   };
@@ -6914,6 +6944,51 @@
        gewaehlt, nach Mira gewechselt -- Feld leer, Zeile trotzdem vergeben. Gemeldet am 18.09. */
     picksZeichnen(); pickGrauNachziehen(); refreshSend(); autosize(); updateLoopState();
   }
+  /* ---- DER RUECKWEG HAENGT NICHT MEHR AM EREIGNIS (19.09.) --------------------------------
+     Gemeldet: von einem anderen View auf Mira gewechselt zeigt die Ansicht nichts. Die Messung
+     auf der Seite: Miras Wurzel steht im Dashboard (#view-dashboard, opacity 0, z-index -1),
+     traegt weiter is-launcher, und #view-mira ist aktiv, 922px hoch und leer. In der Konsole
+     KEIN Fehler -- launcherAus() ist also nicht mittendrin gescheitert, es ist nie gelaufen.
+     Der Zuhoerer auf onViewChange feuert zwar (mit einer Sonde nachgewiesen), aber irgendetwas
+     zwischen ihm und dem Umzug greift nicht. Statt weiter zu suchen, WARUM die Nachricht nicht
+     ankommt, haengt der Rueckweg jetzt an einer Tatsache statt an einer Meldung: ist Miras
+     Platz nicht mehr sichtbar, gehoert sie nach Hause -- egal wer das wann angesagt hat.
+     Beobachtet wird nur die Vorfahrenkette des Platzes (rund zehn Knoten) auf class und style,
+     nicht das ganze Dokument: die App wechselt staendig Klassen, und ein Beobachter darueber
+     waere teuer. Die Kette reicht, weil genau dort das Ausblenden passiert. */
+  var _heimWacht = null;
+  function platzSichtbar(){
+    var el = root.parentNode;
+    if (!el || !el.isConnected) return false;
+    var n = 0;
+    while (el && el.nodeType === 1 && n++ < 20){
+      var cs; try { cs = window.getComputedStyle(el); } catch(e){ return true; }
+      if (cs.display === 'none' || cs.visibility === 'hidden' || parseFloat(cs.opacity) === 0) return false;
+      el = el.parentElement;
+    }
+    return true;
+  }
+  function heimWennVerdeckt(){
+    if (!istLauncher()) return;
+    if (platzSichtbar()) return;
+    launcherAus();
+  }
+  function heimWacheAus(){
+    if (_heimWacht){ try { _heimWacht.disconnect(); } catch(e){} }
+    _heimWacht = null;
+  }
+  function heimWacheAn(){
+    heimWacheAus();
+    if (typeof MutationObserver !== 'function') return;
+    try {
+      _heimWacht = new MutationObserver(function(){ heimWennVerdeckt(); });
+      var el = root.parentNode, n = 0;
+      while (el && el.nodeType === 1 && n++ < 20){
+        _heimWacht.observe(el, { attributes: true, attributeFilter: ['class', 'style'] });
+        el = el.parentElement;
+      }
+    } catch(e){ heimWacheAus(); }
+  }
   function launcherAn(slot, opts){
     if (root.__amTot || !slot || slot.nodeType !== 1) return false;
     _launchView = String((opts && opts.view) || '');
@@ -6927,6 +7002,7 @@
     if (!_umzugOhneFeld){ _feldSpeicher.mira = feldEinpacken(); feldAuspacken(_feldSpeicher.launcher); }
     root.classList.add('is-launcher');
     slot.appendChild(root);
+    heimWacheAn();
     if (root.__amFit) root.__amFit();
     autosize(); picksEinziehen();
     return true;
@@ -6944,6 +7020,7 @@
        einer davon, ist das aergerlich -- aber Mira MUSS trotzdem nach Hause, sonst ist die
        ganze Ansicht leer. Also jeder Schritt fuer sich, und der Umzug selbst zuletzt und
        unbedingt. */
+    heimWacheAus();
     try { launcherMenuesZu(); } catch(e){}
     try {
       if (!_umzugOhneFeld && istLauncher()){
@@ -6964,6 +7041,7 @@
   }
   root.__amAbtreten = function(){
     if (!istLauncher()) return;
+    heimWacheAus();
     root.__amTot = true;
     if (_abView) _abView();
     _heim = null;
@@ -7695,6 +7773,7 @@
     if (!S.settings) S.settings = { brand:'logo', citation:'icon', response:'logo' };
     S.settings[key] = value;
     var payload = { brand: S.settings.brand, citation: S.settings.citation, response: S.settings.response };
+    hlMerken();          /* zuerst merken: die Meldung an Bubble darf nicht darueber entscheiden */
     if (window.bubble_fn_ask_mira_settings_change) window.bubble_fn_ask_mira_settings_change(JSON.stringify(payload));
     else { window.dispatchEvent(new CustomEvent('askmira:settings-change', { detail: payload })); console.log('Ask Mira settings change:', payload); }
     /* Die Attribute setzt sonst nur renderMessages -- und an ihnen haengt der Kastenstil der
