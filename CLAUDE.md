@@ -142,8 +142,11 @@ Der **rohe** Text geht in den Setter; `UC.readBubble` in der Komponente ist der 
 Leseweg. Eine Komponente mit eigenem `looseParse` statt `readBubble` ist ein Fehler -- sie zeigt
 bei jeder Bubble-Eigenheit einen Lesefehler (so gefunden in opportunities.js am 15.09.).
 
-**Die Regel dahinter.** Im Backtick ist nur ein **Backtick oder `${` in einem WERT** gefaehrlich;
-Anfuehrungszeichen, Apostrophe, Umlaute, Zeilenumbrueche und Emoji traegt er unbeschadet. Deshalb
+**Die Regel dahinter.** Im Backtick sind drei Dinge in einem WERT gefaehrlich: ein **Backtick**,
+ein **`${`** und ein **Backslash** (19.09. ergaenzt -- ein `reason`, das auf `\` endete, hat das
+schliessende Anfuehrungszeichen gefressen und den ganzen Schritt der Opportunities getoetet:
+"Unexpected identifier 'priority_score'"). Anfuehrungszeichen, Apostrophe, Umlaute,
+Zeilenumbrueche und Emoji traegt er unbeschadet. Deshalb
 traegt **keine Nutzlast dieser App ein Feld mit Text aus einem Sprachmodell** -- Miras Chatliste
 ist `id`, `title`, `updated_at`, mehr nicht. Stirbt ein Schritt daran, ist die Frage NICHT "wie
 escape ich das", sondern **"welches Feld gehoert da gar nicht rein"**. Am 15.09. war es

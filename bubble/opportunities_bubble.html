@@ -166,6 +166,26 @@
          try { if (window.opportunitiesSetItems) window.opportunitiesSetItems(ROH); } catch (e) {}
        })();
 
+     DER BACKSLASH IST GENAUSO TOEDLICH WIE DER BACKTICK (19.09. in der App aufgeschlagen).
+     Im Backtick ist "\\" ein Escape-Zeichen. Endet ein Wert darauf, frisst er das schliessende
+     Anfuehrungszeichen, die Zeichenkette hoert nie auf, und der Parser liest weiter, bis er beim
+     naechsten Feldnamen steht. Gemeldet als:
+
+       Uncaught SyntaxError: Unexpected identifier 'priority_score'
+
+     Im RPC-Ergebnis stand an der Stelle:
+
+       "reason": "Die Seite \u201eDie 10 besten Anbieter fuer Photovoltaik-Leads\\",
+
+     Wie beim Backtick gilt: KEIN Sanitizer im Schritt kann das abfangen. Die Ersetzungen laufen
+     erst, wenn das Literal schon geparst ist -- und genau daran stirbt es. Der RPC entfernt
+     deshalb aus jedem Feld mit Modelltext BEIDE Zeichen, nicht nur den Backtick:
+
+       replace(replace(reason, chr(96), ''), chr(92), '')
+
+     Betroffen ist alles, was ein Modell oder eine fremde Seite geschrieben hat: reason, headline
+     und lead_title, dazu die Namen in topics und mentioned_competitors.
+
      Zahlen bleiben OHNE Anfuehrungszeichen -- 3.0, nicht "3.0" -- sonst kommt der Wert als Text
      an und jede Rechnung darauf geht daneben.
 
