@@ -134,11 +134,24 @@
     });
     var elMentLbl   = root.querySelector(".up-ment-lbl");
 
+    var gemerkteZeilen = Array.isArray(saved.rows) ? saved.rows : [];
+      /* ---- EIN NEU GEBAUTES ELEMENT MACHT WEITER (19.09. gemeldet) ----
+         "Warum brauchen Domains- und URLs-Tabelle beim Themewechsel noch einen manuellen
+         Neufuellen-Workflow?" Weil genau diese drei Felder fehlten. Bubble baut ein
+         HTML-Element NEU, sobald sich ein dynamischer Wert darin aendert -- beim Themewechsel
+         ist das data-isdark. Die neue Wurzel startete mit leeren Zeilen, und Bubble schickt die
+         Daten nicht noch einmal (sie haben sich ja nicht geaendert). Ergebnis: Skelett fuer
+         immer, im richtigen Thema und ohne Daten.
+         prompts-table und responses-table haben dafuer Zeilen, Gesamtzahl und hasData im STORE.
+         Hier jetzt dieselben drei, mit derselben Begruendung -- damit faellt der Workflow weg. */
     var state = {
-      rows: [],
-      totalCount: null,
-      hasData: false,
-      jeZeilen: false,   // waren hier jemals Zeilen? -- entscheidet das Gnadenfenster
+      rows: gemerkteZeilen,
+      totalCount: saved.totalCount != null ? saved.totalCount : null,
+      hasData: !!saved.hasData,
+      /* Der Lesefehler mit: sonst hiesse ein Neuaufbau nach einem kaputten Payload "hasData,
+         keine Zeilen" -- und das ist der Leerzustand, also der stille Ausfall (CLAUDE.md 2). */
+      leseFehler: !!saved.leseFehler,
+      jeZeilen: gemerkteZeilen.length > 0,   // waren hier jemals Zeilen? -- entscheidet das Gnadenfenster
       loading: false,                       // intern (Suche/Pagination), startet immer frei
       softReload: false,                    // true only while a sort is in flight — see dim.begin/end
       /* MIT LADEZUSTAND STARTEN, IMMER. Gemeldet am 07.09. und davor schon mehrfach: beim
@@ -251,7 +264,10 @@
         brandMentioned: state.brandMentioned,
         pageSize: state.pageSize, page: state.page,
         mentionSel: state.mentionSel, mentionApplied: state.mentionApplied,
-        brands: state.brands
+        brands: state.brands,
+        /* Fuer einen Neuaufbau des Elements -- siehe den Kommentar ueber state. */
+        rows: state.rows, totalCount: state.totalCount, hasData: state.hasData,
+        leseFehler: !!state.leseFehler
       };
     }
     /* shared event dispatch (core) */
