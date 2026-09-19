@@ -2349,7 +2349,25 @@
   /* DIE EIGENE MARKE kennt core: setUpstreemBrands fuellt seinen Speicher, und dort traegt genau
      ein Eintrag role "own". Nicht der erste der Liste -- die Reihenfolge ist die des RPC und
      sagt nichts ueber die Rolle. */
+  /* DIE EIGENE MARKE STEHT AM ELEMENT. Bubble setzt data-brand-name und data-brand-logo an die
+     Wurzel -- dieselben zwei Attribute, aus denen jede Seitenkopfzeile ihre Meta-Zeile baut
+     (makePageHeaderMeta in core). Mira hat sie gelesen, bis die Meta-Zeile im Hero entfernt
+     wurde; im Kommentar dort steht seitdem "die Attribute duerfen stehen bleiben, Mira liest sie
+     nur nicht mehr". Genau das war der Fehler bei der Begruessung: ich habe sie an den
+     Brand-Store gehaengt und dort nach role "own" gesucht -- ein Feld, das die Nutzlast gar nicht
+     mitschicken muss. Der kurze Weg lag die ganze Zeit am eigenen Element (19.09.).
+     Die zwei Platzhalter sind dieselben, die core abfaengt: ein nicht ersetzter Bubble-Ausdruck
+     ist keine Marke, sondern ein leeres Feld. */
+  function markeAusAttribut(){
+    var n = String(root.getAttribute('data-brand-name') || '').trim();
+    if (!n || n === 'BRAND_NAME') return null;
+    var l = String(root.getAttribute('data-brand-logo') || '').trim();
+    if (l === 'BRAND_LOGO_URL') l = '';
+    return { name: n, logo_url: l, favicon_url: l };
+  }
   function eigeneMarke(){
+    var amElement = markeAusAttribut();
+    if (amElement) return amElement;
     var k = window.UpstreemCore;
     var liste = (k && k.getBrands) ? k.getBrands() : [];
     var jaNein = (k && k.isYes) ? k.isYes : function(v){ return v === true; };
@@ -7687,13 +7705,24 @@
      bekannt ist -- jede spaetere Aenderung des Speichers laesst die Ueberschrift in Ruhe, sonst
      wechselt sie dem Lesenden unter den Augen weg. */
   (function markeNachziehen(){
-    var kern = window.UpstreemCore;
-    if (!kern || !kern.onBrands) return;
-    kern.onBrands(function(){
+    function nachziehen(){
       if (_greetMarkeDa || !eigeneMarke()) return;
       _greetIdx = -1;
       renderSuggested();
-    }, root);
+    }
+    /* Bubble setzt die zwei Attribute NACH dem Mounten und bearbeitet sie an Ort und Stelle,
+       statt den Knoten zu ersetzen -- derselbe Grund, aus dem makePageHeaderMeta in core einen
+       Beobachter haelt. Ohne ihn stuende hier die neutrale Begruessung, obwohl die Marke eine
+       Zehntelsekunde spaeter am Element steht. */
+    if (window.MutationObserver){
+      try {
+        new MutationObserver(nachziehen).observe(root, {
+          attributes: true, attributeFilter: ['data-brand-name', 'data-brand-logo']
+        });
+      } catch(e){}
+    }
+    var kern = window.UpstreemCore;
+    if (kern && kern.onBrands) kern.onBrands(nachziehen, root);
   })();
   /* Die Reihenfolge zaehlt: effLabelsBauen liest lang, und setModel ruft setDetail.
      prevKnopfText muss hier NOCHMAL: der Block oben laeuft, bevor resolveLang die Sprache
