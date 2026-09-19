@@ -3162,7 +3162,15 @@
   #ask-mira .am-hero { transition: height 200ms ease, min-height 200ms ease, padding 200ms ease; }
   #ask-mira.has-messages .am-hero,
   #ask-mira.is-compact.has-messages .am-hero {
-    height: 53px; min-height: 53px;
+    /* AUF DER HOEHE DES MARKENBLOCKS IN DER SEITENLEISTE (19.09. angefordert: "so wie die
+       Topbar im Power Dashboard, mit dem Upstreem-Branding oben links aligned").
+       Gemessen auf der Seite: .usn-brand liegt bei 8 bis 48, seine Mitte also auf 28. Die
+       Titelleiste ist 30px hoch und lag bei 16 bis 46, Mitte 31 -- knapp 3px zu tief.
+       Der Grund war die Hoehe hier: 53 minus 8 Polster ergibt eine 45px-Zeile, und mittig in
+       45 landet eine 30px-Leiste bei 15,5. Mit 48 ist die Zeile genau die 40px des
+       Markenblocks, die Mitte damit 28 und die Leiste sitzt bei 13 bis 43.
+       Die linke Kante stimmte schon vorher: beide beginnen bei 266. */
+    height: 48px; min-height: 48px;
     padding: 8px 16px 0;   /* same 16px side inset as the idle hero, so the bar does not shift sideways on the transition */
     display: flex; align-items: center;
   }
