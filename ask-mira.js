@@ -482,12 +482,16 @@
       /* MIT DER EIGENEN MARKE (18.09. angefordert). Genauso viele wie die allgemeinen darueber:
          die Begruessung soll etwa jedes zweite Mal persoenlich sein, nicht immer und nicht selten.
          {BRAND} wird durch Logo und Namen ersetzt; kennt die Seite keine eigene Marke, faellt die
-         ganze Liste weg und es bleibt bei den allgemeinen. */
+         ganze Liste weg und es bleibt bei den allgemeinen.
+         FREUNDLICH ODER NEUTRAL, NIE NEGATIV (19.09. nachgeschaerft). Hier standen "Where is
+         {BRAND} losing ground?" und "What should {BRAND} fix first?" -- als Einstieg unterstellen
+         die einen Missstand, noch bevor jemand in die Daten geschaut hat. Das ist der erste Satz,
+         den der Nutzer von seinem eigenen Werkzeug ueber seine eigene Marke liest. */
       greetingsBrand: [
         'What is new at {BRAND}?',
         'How is {BRAND} doing today?',
-        'Where is {BRAND} losing ground?',
-        'What should {BRAND} fix first?'
+        'Where can {BRAND} grow next?',
+        'What is working well for {BRAND}?'
       ],
       urlVisit: 'Visit',
       allChats: 'All Chats', allChatsShort: 'Chats',
@@ -609,8 +613,8 @@
       greetingsBrand: [
         'Was gibt es Neues bei {BRAND}?',
         'Wie steht {BRAND} heute da?',
-        'Wo verliert {BRAND} gerade Boden?',
-        'Was sollte {BRAND} zuerst angehen?'
+        'Wo kann {BRAND} als Nächstes wachsen?',
+        'Was läuft gerade gut für {BRAND}?'
       ],
       urlVisit: 'Besuchen',
       allChats: 'Alle Chats', allChatsShort: 'Chats',
