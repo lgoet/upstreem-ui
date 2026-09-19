@@ -5695,6 +5695,10 @@
          askMiraSetActiveChat(id, false, "Daily Briefing 17.09.")
      Wer ihn weglaesst, bekommt genau das bisherige Verhalten. Der Titel aus der Liste gewinnt
      spaeter, sobald sie den Chat kennt -- hier wird nur die Luecke bis dahin gefuellt. */
+  /* Der Griff zum Leeren des Feldes wird weiter unten gesetzt, wo feldAuspacken lebt -- diese
+     Ebene sieht es nicht. Ein direkter Aufruf waere hier ein ReferenceError zur Laufzeit, und
+     node --check faellt darauf nicht herein: beim Pruefen ist ein unbekannter Name erlaubt. */
+  var _feldLeeren = null;
   window.askMiraSetActiveChat = function(chatId, fireEvent, titel){
     /* EINE LEERE KENNUNG WIRFT DIE AUSWAHL NICHT MEHR WEG (17.09. gemeldet: "Antwort kommt, dann
        geht der Titel oben wieder in den Ladezustand und der Chat ist in der Leiste nicht mehr
@@ -5730,7 +5734,19 @@
         'Im Workflow ist das Feld fuer die Chat-Id leer.');
       return;
     }
+    /* BEIM WECHSEL DES CHATS WIRD DAS FELD GELEERT (19.09. angefordert: "wenn man zwischen
+       Chats wechselt, sollte das immer den Inhalt plus die Entities im Inputfeld clearen").
+       Ein angefangener Satz gehoert zu dem Gespraech, in dem er getippt wurde -- er im naechsten
+       Chat stehen zu lassen, ist eine falsche Fortsetzung. Die Bezuege gehoeren mit dazu: eine
+       Marke, die fuer die alte Frage gewaehlt war, ist fuer die neue geraten.
+       NUR bei einem echten Wechsel, nicht bei jedem Aufruf: Bubble ruft diesen Setter auch, um
+       denselben Chat noch einmal zu bestaetigen (nach einem Titel, nach einer Antwort), und
+       dabei darf nichts verlorengehen.
+       UND NICHT WAEHREND DES UMZUGS AUS DEM DASHBOARD: dort wandert der Feldinhalt absichtlich
+       mit nach Mira und wird gleich gesendet -- _umzugOhneFeld sagt genau diesen einen Fall an. */
+    var _vorherigerChat = S.activeChatId;
     S.activeChatId = chatId;
+    if (chatId && _vorherigerChat !== chatId && _feldLeeren) _feldLeeren();
     var _c = chatId ? findChat(chatId) : null;
     /* Ein mitgegebener Titel wird in die Liste geschrieben: dann finden ihn Kopfzeile UND Leiste
        ueber denselben Weg wie jeden anderen, und es gibt keine zweite Quelle, die auseinanderlaufen
@@ -6955,6 +6971,12 @@
        gewaehlt, nach Mira gewechselt -- Feld leer, Zeile trotzdem vergeben. Gemeldet am 18.09. */
     picksZeichnen(); pickGrauNachziehen(); refreshSend(); autosize(); updateLoopState();
   }
+  /* Von hier aus sichtbar, weiter oben nicht -- deshalb der Griff. Der Umzug aus dem Dashboard
+     ist ausgenommen: dort wandert der Inhalt absichtlich mit und wird gleich gesendet. */
+  _feldLeeren = function(){
+    if (_umzugOhneFeld) return;
+    feldAuspacken({ text: '', picks: [] });
+  };
   /* ---- DER RUECKWEG HAENGT NICHT MEHR AM EREIGNIS (19.09.) --------------------------------
      Gemeldet: von einem anderen View auf Mira gewechselt zeigt die Ansicht nichts. Die Messung
      auf der Seite: Miras Wurzel steht im Dashboard (#view-dashboard, opacity 0, z-index -1),

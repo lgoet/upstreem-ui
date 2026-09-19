@@ -133,16 +133,28 @@
    Bild, kein Anteil an der Groesse.
    .up-logo-box.upw-chip-ic ist (0,2,0) und gewinnt damit ueber SPEZIFITAET gegen core (0,1,0) --
    nicht ueber die Ladereihenfolge.
-   Der Buchstabe traegt hier --up-accent-fg statt --vc-muted: er sitzt auf der Akzentflaeche,
-   und der gedaempfte Ton aus core waere darauf kaum zu lesen. */
+   DIE PLATTE IST JE THEMA EINE ANDERE (19.09. angefordert): hell ohne Flaeche, dafuer mit
+   1px Rahmen -- dunkel ohne Rahmen, dafuer eine Flaeche in der Schriftfarbe. Der Grund ist das
+   Bild darauf: Markenlogos sind fast immer fuer hellen Grund gezeichnet. Im Hellen genuegt die
+   Seite selbst, ein Rahmen setzt das Logo nur ab; im Dunkeln braucht es eine helle Unterlage,
+   und die ist --vc-text, nicht der Akzent -- eine Logoplatte ist keine Akzentflaeche (das steht
+   so auf der Liste dessen, was ausdruecklich nicht Akzent ist).
+   Der Buchstabenrueckfall traegt deshalb auch nicht mehr --up-accent-fg, sondern die Farbe, die
+   auf der jeweiligen Platte lesbar ist. */
 .up-logo-box.upw-chip-ic { width: 16px; height: 16px; flex: 0 0 16px; border-radius: 4px;
-  background: var(--up-accent); }
+  box-sizing: border-box; background: transparent; border: 1px solid var(--vc-border); }
+[data-theme="dark"] .up-logo-box.upw-chip-ic { border: 0; background: var(--vc-text); }
 /* 15px Bild in einem 16px-Kasten: das 1px Polster aus core gibt genau 14 her, das Bild deckt es
    also und liegt Kante an Kante. Genau so gewollt -- gefordert war "das Logo einen Pixel
    groesser", und der Saum ist kein Mass, sondern Beiwerk. overflow: hidden oben schneidet es auf
    die Rundung des Kastens, es steht also nichts ueber. */
-.up-logo-box.upw-chip-ic img { width: 15px; height: 15px; border-radius: 3px; }
-.up-logo-box.upw-chip-ic .up-logo-ltr { font-size: 8px; color: var(--up-accent-fg); }
+/* Das Bild ist EINEN Pixel kleiner als die Platte, in beiden Themen gleich (19.09. angefordert:
+   "das Logo bitte 1x1px kleiner als der bg"). Bei 16px Kante sind das 14 -- im Hellen bleibt
+   damit der 1px Rahmen frei sichtbar, im Dunkeln ein 1px Saum der hellen Flaeche ringsum. Der
+   Radius zieht im selben Verhaeltnis mit (4 * 14/16 = 3,5). */
+.up-logo-box.upw-chip-ic img { width: 14px; height: 14px; border-radius: 3.5px; }
+.up-logo-box.upw-chip-ic .up-logo-ltr { font-size: 8px; color: var(--vc-text); }
+[data-theme="dark"] .up-logo-box.upw-chip-ic .up-logo-ltr { color: var(--vc-bg); }
 /* Der alte Emoji-Schluessel: unsere drei Chips tragen keinen mehr, ein Bubble mit eigenen Chips
    darf ihn weiter schicken. */
 .upw-chip-emoji { font-size: 15px; }
