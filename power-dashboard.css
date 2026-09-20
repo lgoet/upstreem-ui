@@ -560,22 +560,24 @@
    fester Wert hier nimmt der Sache die Unschaerfe: 16px, PUNKT, unabhaengig davon, was aussenrum
    noch steht. */
 /* Ab is-narrow und nicht erst ab is-vnarrow (15.09. angefordert: "ueberall 16px padding left
-   right im mobile dashboard powermode"). Darunter lag --upw-pad auf clamp(14px, 3vw, 28px) --
-   bei 700px also 21px, bei 760px 22.8px: auf einem Telefon quer und auf einem kleinen Tablet ein
-   anderer Einzug als hochkant, ohne dass jemand das gewollt haette.
+   right im mobile dashboard powermode", am 20.09. auf 0 gesetzt). Darunter lag --upw-pad auf
+   clamp(14px, 3vw, 28px) -- bei 700px also 21px, bei 760px 22.8px: auf einem Telefon quer und
+   auf einem kleinen Tablet ein anderer Einzug als hochkant, ohne dass jemand das gewollt haette.
    EINE Stelle fuer alle: der Wert haengt an .upw-col, und Mira, die Chips, Overview, Recent
    chats, beide Listen und das Brett liegen darin. Ein zweites Polster an der Wurzel haette sich
-   mit diesem verdoppelt -- gemessen, 32 statt 16. */
-.upw-root.is-narrow .upw-col { --upw-pad: 16px; }
+   mit diesem verdoppelt -- gemessen, 32 statt 16.
+   0 und nicht 0px: die Zahl steht in calc() fuer die Hoechstbreite der Spalte, und dort ist eine
+   nackte Null gueltig, weil sie mit 2 multipliziert wird. */
+.upw-root.is-narrow .upw-col { --upw-pad: 0px; }
 /* UND DASSELBE NOCH EINMAL AM FENSTER (20.09.). Die Zeile darueber haengt an is-narrow, und die
    Klasse setzt die JS aus der GEMESSENEN Breite der Wurzel. Bleibt die Messung aus -- kein
    ResizeObserver, kein resize-Ereignis, eine Wurzel, die beim Aufbau noch in einer verdeckten
    Gruppe lag --, bleibt auch das Polster auf clamp(14px, 3vw, 28px) stehen, auf dem Telefon also
-   14px statt 16. Auf einem Telefon ist die Wurzel so breit wie das Fenster, deshalb sagt diese
+   14px statt 0. Auf einem Telefon ist die Wurzel so breit wie das Fenster, deshalb sagt diese
    Abfrage dort dasselbe wie die Klasse -- nur ohne auf ein Ereignis angewiesen zu sein.
    Die Klasse bleibt die fuehrende Regel: sie kennt auch den Fall, dass die Komponente in einem
    schmalen Wirt neben einer offenen Leiste steht, und den sieht eine Fensterabfrage nie. */
-@media (max-width: 760px) { .upw-col { --upw-pad: 16px; } }
+@media (max-width: 760px) { .upw-col { --upw-pad: 0px; } }
 /* Die Chips sind auf dem Telefon eine Stufe kleiner, damit auch mal zwei nebeneinander stehen
    koennen statt jede fuer sich eine ganze Zeile zu belegen -- 28px statt 32px Hoehe, 8px statt
    14px Seitenpolster, 11.5px statt 12.5px Schrift. Ueberschrieben an .upw-chip, nicht an
