@@ -1667,6 +1667,72 @@
     }).join('');
     return btns ? '<div class="am-msg-buttons">'+btns+'</div>' : '';
   }
+  /* ---------- SUGGESTED FOLLOWUPS (20.09.) --------------------------------------------------
+     Die Vorschlaege kommen fertig aus dem Backend und stehen im SELBEN actions-Array wie
+     create_opportunity und move_opportunity -- unterschieden wird allein am type. Deshalb wird
+     hier streng gefiltert: alles andere wird woanders gerendert (inline aus content_html) und
+     darf hier nicht ein zweites Mal auftauchen.
+     Es wird nichts erzeugt, nichts nachgeladen und nichts weggelassen -- nur dargestellt. */
+  function folgefragenListe(m){
+    var acts = _msgActs(m);
+    if (!acts.length) return [];
+    var fq = [];
+    for (var i = 0; i < acts.length; i++){
+      var a = acts[i];
+      if (a && typeof a === 'object' && a.type === 'followup_question') fq.push({ a: a, i: fq.length });
+    }
+    /* Nach sort_order aufsteigend. Fehlt das Feld an einem Eintrag, bleibt die Reihenfolge des
+       Arrays -- der Index als zweites Kriterium haelt die Sortierung auch auf einer Engine
+       stabil, deren sort() es nicht von sich aus ist. */
+    fq.sort(function(x, y){
+      var sx = (x.a.sort_order == null || x.a.sort_order === '') ? null : Number(x.a.sort_order);
+      var sy = (y.a.sort_order == null || y.a.sort_order === '') ? null : Number(y.a.sort_order);
+      if (sx == null || sy == null || isNaN(sx) || isNaN(sy)) return x.i - y.i;
+      return (sx - sy) || (x.i - y.i);
+    });
+    return fq.map(function(p){ return p.a; });
+  }
+  function folgefragenHtml(m, role, istLetzte){
+    /* NUR an der letzten Nachricht der Unterhaltung. Das ist zugleich die ganze Logik fuer
+       "nach dem Klick ist der Block weg und kommt nicht wieder": sobald die Frage abgeschickt
+       ist, steht die Nutzer-Nachricht dahinter, und damit ist diese hier nicht mehr die letzte.
+       Kein zusaetzlicher Zustand, nichts zu merken, ueberlebt jeden Neuladen von selbst.
+       Waehrend eine Antwort laeuft, bleibt der Block draussen -- dasselbe tut die Knopfzeile
+       darueber (.am-typing blendet sie aus). */
+    if (role !== 'assistant' || !istLetzte) return '';
+    if (S.isLoading || isPendingAssistant(m)) return '';
+    var fq = folgefragenListe(m);
+    if (!fq.length) return '';            // kein leerer Block, keine Ueberschrift, kein Leerraum
+    var kern = window.UpstreemCore;
+    var ic = '';
+    try { if (kern && kern.icon) ic = kern.icon('messageCircle', 2); } catch(e){}
+    var titel = 'Suggested Followups';
+    try { if (kern && kern.t) titel = kern.t(titel); } catch(e){}
+    var zeilen = '';
+    fq.forEach(function(a){
+      /* Angezeigt wird label, abgeschickt payload.question. Die beiden sind heute gleich, aber
+         der Payload ist der Vertrag -- fehlt er, traegt label auch die Frage. */
+      var text  = String(a.label == null ? '' : a.label).trim();
+      var frage = (a.payload && a.payload.question != null) ? String(a.payload.question).trim() : '';
+      if (!frage) frage = text;
+      if (!text)  text  = frage;
+      if (!text || !frage) return;
+      zeilen += '<button class="am-fq-item" type="button"' +
+                ' data-fq="' + _escAttr(frage) + '"' +
+                ' data-fq-id="' + _escAttr(a.id == null ? '' : String(a.id)) + '">' +
+                '<span class="am-fq-ic" aria-hidden="true">' + ic + '</span>' +
+                '<span class="am-fq-text">' + esc(text) + '</span></button>';
+    });
+    if (!zeilen) return '';
+    /* Die Ueberschrift ist KEIN h1-h6: die Unterhaltung hat ihre eigene Dokumentstruktur, und
+       eine Ueberschrift je Antwort wuerde sie zerlegen. Optisch eine, fuer den Screenreader
+       ausgeblendet -- den Namen traegt stattdessen die Gruppe darunter. */
+    return '<div class="am-fq">' +
+             '<div class="am-fq-head" aria-hidden="true">' + esc(titel) + '</div>' +
+             '<div class="am-fq-list" role="group" aria-label="' + _escAttr(titel) + '">' + zeilen + '</div>' +
+           '</div>';
+  }
+
   // emit a JS event carrying the FULL action (type, action_key, payload) — Bubble fn + DOM CustomEvent
   function _emitMiraAction(action, btn){
     var payloadJson; try { payloadJson = JSON.stringify(action); } catch(e){ payloadJson = ''; }
@@ -1934,7 +2000,7 @@
       }
     })(root);
   }
-  function messageHtml(m, poolTerms, isLastAsst){
+  function messageHtml(m, poolTerms, isLastAsst, istLetzte){
     var role = (m.role === 'user') ? 'user' : 'assistant';
     var body, poolTypes = [];
     if (role === 'assistant' && m.content_html){
@@ -1983,7 +2049,7 @@
     var kopf = thoughtHtml(m, role, isLastAsst);
     var mitRun = (kopf.indexOf('am-run') >= 0) ? ' has-run' : '';
     return '<div class="am-msg is-'+role+mitRun+'" data-id="'+esc(m.id||'')+'">'+
-           '<div class="am-msg-main">'+kopf+'<div class="am-bubble">'+body+ev+extras+'</div>'+actionsHtml(m, role)+'</div></div>';
+           '<div class="am-msg-main">'+kopf+'<div class="am-bubble">'+body+ev+extras+'</div>'+actionsHtml(m, role)+folgefragenHtml(m, role, istLetzte)+'</div></div>';
   }
 
   /* ---- typing reveal for brand-new answers (same feel & speed as the landing-page showcase) ---- */
@@ -2193,7 +2259,8 @@
     var lastAsstIdx = -1;
     for (var li = S.messages.length - 1; li >= 0; li--){ if (S.messages[li] && S.messages[li].role === 'assistant'){ lastAsstIdx = li; break; } }
     _runEmitted = false;
-    elMessages.innerHTML = S.messages.map(function(m, idx){ return messageHtml(m, poolTerms, idx === lastAsstIdx); }).join('');
+    var letzteIdx = S.messages.length - 1;   /* die letzte NACHRICHT, nicht die letzte Antwort -- siehe folgefragenHtml */
+    elMessages.innerHTML = S.messages.map(function(m, idx){ return messageHtml(m, poolTerms, idx === lastAsstIdx, idx === letzteIdx); }).join('');
     elMessages.querySelectorAll('.am-inline-logo').forEach(function(img){
       img.addEventListener('error', function(){
         var span = document.createElement('span');
@@ -6307,6 +6374,22 @@
       }
       // brands / competitors / anything without a visitable URL -> open detail directly
       openEvidenceFor(wrap);
+      return;
+    }
+    /* Eine vorgeschlagene Folgefrage wird abgeschickt, als haette der Nutzer sie getippt --
+       ueber sendMessage, den einen vorhandenen Weg der Eingabe. Kein zweiter Versandpfad. */
+    var fqBtn = e.target.closest('.am-fq-item');
+    if (fqBtn){
+      if (fqBtn.disabled) return;
+      var frage = fqBtn.getAttribute('data-fq') || '';
+      if (!frage) return;
+      /* Zwei schnelle Klicks duerfen nie zwei Nachrichten schicken. sendMessage bricht bei
+         S.isLoading zwar ab, aber der Ladezustand steht erst NACH dem ersten Aufruf -- ein
+         zweiter Klick davor kaeme durch. Deshalb werden die Knoepfe sofort stillgelegt; das
+         Neuzeichnen raeumt den Block ohnehin gleich darauf weg. */
+      var blk = fqBtn.closest('.am-fq') || fqBtn.parentNode;
+      Array.prototype.forEach.call(blk.querySelectorAll('.am-fq-item'), function(b){ b.disabled = true; });
+      sendMessage(frage);
       return;
     }
     var btn = e.target.closest('.am-act-btn'); if (!btn) return;

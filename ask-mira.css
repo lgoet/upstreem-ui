@@ -341,6 +341,43 @@
   .am-act-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   @media (hover: none) { .am-msg-actions { opacity: 1; transform: none; pointer-events: auto; } }
 
+  /* ---------- SUGGESTED FOLLOWUPS (20.09.) ----------
+     Steht als Geschwister von .am-bubble und .am-msg-actions in .am-msg-main und traegt deren
+     Breite: dieselbe linke Kante und dieselbe Zeilenbreite wie die Antwort darueber.
+     26px und nicht 32: .am-msg-main ist ein Flexkasten mit gap 6px, der Abstand zur Knopfzeile
+     ist also 26 + 6 = 32. Gemessen wird der Endwert, nicht die Zahl in dieser Zeile. */
+  .am-fq { width: 100%; max-width: min(100%, 782px); margin-top: 26px; }
+  /* Waehrend die Antwort noch eintippt, ist der Block draussen -- genau wie die Knopfzeile
+     darueber. Sonst laedt er zu etwas ein, das noch gar nicht fertig dasteht. */
+  .am-msg.am-typing .am-fq { opacity: 0; pointer-events: none; }
+  .am-fq { transition: opacity 180ms ease; }
+  .am-fq-head {
+    font-size: 12px; line-height: 1.4; font-weight: 500;
+    color: var(--am-muted);
+    margin: 0 0 12px;                       /* Ueberschrift -> erster Vorschlag */
+  }
+  .am-fq-list { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+  /* Kein Knopf mit Rahmen oder Flaeche: anklickbarer Text mit Icon. Der Reset nimmt dem
+     <button> alles, was er von sich aus mitbringt -- das <button> bleibt trotzdem, weil es
+     Tastaturbedienung und Enter ohne eine Zeile JavaScript mitbringt. */
+  .am-fq-item {
+    display: flex; align-items: flex-start; gap: 8px;
+    width: 100%; margin: 0; padding: 0;
+    border: 0; background: none; border-radius: 6px;
+    font: inherit; font-size: 14px; line-height: 1.5;
+    text-align: left; color: var(--am-muted);
+    cursor: pointer;
+    transition: color 140ms ease;
+  }
+  .am-fq-item:hover { color: var(--am-text); }
+  .am-fq-item:focus-visible { outline: none; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+  .am-fq-item:disabled { cursor: default; }
+  /* Oben buendig zur ERSTEN Textzeile, nicht mittig zum Block: bei zweizeiligem Text saehe
+     mittig nach einem Fehler aus. 3px = (21px Zeilenkasten - 15px Icon) / 2. */
+  .am-fq-ic { flex: 0 0 auto; display: block; margin-top: 3px; }
+  .am-fq-ic svg { width: 15px; height: 15px; display: block; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .am-fq-text { min-width: 0; }
+
   /* Rich content inside assistant bubbles */
   .am-bubble p { margin: 0 0 10px; }
   .am-bubble p:last-child { margin-bottom: 0; }

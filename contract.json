@@ -898,6 +898,12 @@
   "am-evidence",
   "am-fc",
   "am-fo",
+  "am-fq",
+  "am-fq-head",
+  "am-fq-ic",
+  "am-fq-item",
+  "am-fq-list",
+  "am-fq-text",
   "am-gallery-back",
   "am-gallery-cat-ic",
   "am-gallery-cat-title",
@@ -3094,7 +3100,7 @@
   "globals": 187,
   "payloadkeys": 101,
   "dataattrs": 253,
-  "klassen": 2208,
+  "klassen": 2214,
   "keyframes": 66
  }
 }

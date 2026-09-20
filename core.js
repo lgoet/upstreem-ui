@@ -1984,6 +1984,7 @@
     "How brands, citations and responses are marked in answers":
       "Wie Brands, Quellen und Antworten in den Antworten markiert werden",
     "Ask Mira about this": "Mira dazu fragen",
+    "Suggested Followups": "Vorgeschlagene Folgefragen",
     "Your messages": "Deine Nachrichten",
     "How they look in the chat.": "Wie sie im Chat aussehen.",
     "High contrast": "Hoher Kontrast",
