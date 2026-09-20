@@ -2363,11 +2363,38 @@
     galWhenIdle(pushRepTopics);
     pushRepTopics();
   }
+  /* DIE ZAEHLER KOMMEN AUS DEM TOPIC-STORE (20.09. gemeldet: "im Topics-Filter unter Reporting
+     stehen alle Prompt-Counts auf 0, alle anderen Topic-Filter machen das richtig").
+     Der Filter zeichnet prompt_count der Zeile, die er bekommt. Andere Filter bekommen die
+     Zeilen aus dem geteilten Store (setUpstreemTopics), und dort steht der Zaehler drin. Mira
+     schickt ihre EIGENE Liste -- askMiraSetTopics, und die traegt kein prompt_count. Damit
+     ueberschrieb sie die gute Liste mit einer zaehlerlosen; angezeigt wurde folglich 0.
+     Die eigene Liste bleibt massgeblich (sie ist auf aktive Themen gefiltert und entscheidet
+     ueber die Auswahl) -- nur der Zaehler wird je Thema aus dem Store nachgetragen. Kennt der
+     Store ein Thema nicht, bleibt die Zeile, wie sie war: eine erfundene Null waere schlimmer
+     als keine Zahl. Die Zeile wird dabei KOPIERT, damit S.topics unberuehrt bleibt. */
+  function repTopicsMitZaehler(){
+    var eigene = S.topics || [];
+    var kern = window.UpstreemCore;
+    var ausStore = (kern && kern.getTopics) ? kern.getTopics() : [];
+    if (!ausStore.length) return eigene;
+    var zaehler = {};
+    ausStore.forEach(function(t){ if (t && t.id != null && t.prompt_count != null) zaehler[String(t.id)] = t.prompt_count; });
+    return eigene.map(function(t){
+      if (!t || t.prompt_count != null) return t;
+      var c = zaehler[String(t.id)];
+      if (c == null) return t;
+      var kopie = {};
+      for (var k in t) if (Object.prototype.hasOwnProperty.call(t, k)) kopie[k] = t[k];
+      kopie.prompt_count = c;
+      return kopie;
+    });
+  }
   function pushRepTopics(){
     if (!elSuggGrid || !elSuggGrid.querySelector('.am-rep-topics')) return;
     try {
       if (window.console && window.__amDebugTopics) console.log('[ask-mira] push', (S.topics||[]).length, 'topics');
-      if (window.setTopicsFilterTopics) window.setTopicsFilterTopics(REP_TOPICS_ID, S.topics || []);
+      if (window.setTopicsFilterTopics) window.setTopicsFilterTopics(REP_TOPICS_ID, repTopicsMitZaehler());
       if (window.setTopicsFilterSelected) window.setTopicsFilterSelected(REP_TOPICS_ID, _reportTopics.join(','));
       if (window.setTopicsFilterMode) window.setTopicsFilterMode(REP_TOPICS_ID, _reportTopicMode);
       if (window.setTopicsFilterTheme) window.setTopicsFilterTheme(REP_TOPICS_ID, root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light');
