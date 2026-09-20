@@ -36,8 +36,17 @@
   | urdPrompt  | Klick auf den Prompt-Titel                | prompt_id                       |
   | urdBrand   | Klick auf einen Marken-Chip (Mentions ODER die Auszeichnung im Antworttext) | company_id |
   | urdUrl     | Klick auf eine Quelle (Kachel, Zeile) ODER "Open detail page" im Menue eines Zitat-Chips | citations[].id -- und wenn die RPC keine id liefert, die URL |
-  | urdView    | Umschalter Kacheln/Liste                  | { view: "grid" | "list" }       |
+  | urdView    | Umschalter Kacheln/Liste                  | "grid" oder "list", roh         |
   | urdDomain  | Klick auf die Domain einer Quelle (Kachel oder Zeile) | die Domain als Text  |
+
+  urdView ist der EINZIGE dieser Auslöser, der optional ist. Die Komponente merkt sich die
+  Wahl Kacheln/Liste ohnehin selbst (UC.prefSet), Bubble braucht davon nichts zu wissen.
+  Wer das Ereignis nicht will, laesst data-view-fn am Element einfach weg -- dann feuert
+  nichts. Steht der Name dort, muss es das JavaScriptToBubble-Element auch geben, sonst
+  meldet die Konsole "bubble_fn_urdView not found ... this action reached no Bubble
+  workflow". Kaputt ist dann optisch nichts, die Meldung ist aber berechtigt.
+  (Hier stand bis zum 20.09. { view: "grid" } -- eine Huelle um einen einzigen Wert, die in
+  Bubble eine Extraktion kostete, die nichts extrahiert. Die JS gibt den Wert seither roh.)
 
   Die Domain ist ein EIGENES Ziel: sie fuehrt zur Domain-Detailseite, die Kachel zur URL. Ein Klick
   auf die Domain feuert deshalb nur urdDomain und laeuft nicht bis zur Kachel durch.
