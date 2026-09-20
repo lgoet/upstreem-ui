@@ -25,9 +25,12 @@
    .up-root.upw-root und nicht .upw-root allein: core deklariert die Variable an .up-root, das ist
    dieselbe Spezifitaet (0,1,0), und dann haette die Ladereihenfolge entschieden (§1). */
 .up-root.upw-root { --up-sticky-top: 16px; }
+/* 1080 UND NICHT 920 (20.09.). Die Spalte ist jetzt so breit wie ihr BREITESTES Kind, und die
+   beiden Huellen darin ruecken nach innen ein -- vorher war sie 920 und das breite Kind ragte mit
+   negativen Aussenmassen darueber hinaus. Warum das weg musste, steht bei .upw-wide. */
 .upw-col {
   --upw-pad: clamp(14px, 3vw, 28px);
-  max-width: calc(920px + 2 * var(--upw-pad)); margin: 0 auto;
+  max-width: calc(1080px + 2 * var(--upw-pad)); margin: 0 auto;
   padding: 8px var(--upw-pad) 48px; box-sizing: border-box;
 }
 /* ---------- gegenlaeufig breit (11.09. angefordert, 12.09. nachgezogen) ----------
@@ -40,21 +43,34 @@
    NUR ab der Breite, ab der die Tabellen und Kennzahlen ohnehin nebeneinander stehen
    (widthTiers, is-narrow ab 760px): darunter ist kein Platz fuer ein zusaetzliches Aufweiten, und
    die Karten liefen sonst über den Bildschirmrand hinaus. */
-.upw-narrow { margin-left: 72px; margin-right: 72px; }
-/* DER UEBERSTAND NIMMT SICH NUR, WAS DA IST (18.09.). Hier standen feste -80px. Die Spalte ist
-   aber hoechstens 920px plus Polster breit und mittig -- ist das Fenster schmaler als das, gibt
-   es neben ihr gar keinen Platz, und die 80px liefen ueber den Bildschirmrand. Gemessen bei 900px
-   Fenster: 53px Ueberlauf je Seite, also ein waagerechter Balken zwischen 760 und rund 980px.
-   (100vw - 100%) / 2 ist genau der Platz, der neben dem INHALT der Spalte frei ist: 100% ist die
-   Inhaltsbreite der Spalte, der Rest teilt sich auf beide Seiten. Davon 16px Sicherheitsabstand
-   ab, weil 100vw die Bildlaufleiste mitzaehlt und die App in #main scrollt. min() deckelt bei den
-   gewuenschten 80px, max() haelt den Wert bei null, wenn gar nichts frei ist -- ein positiver
-   Aussenabstand waere hier das Gegenteil der Absicht.
-   Am Desktop aendert sich damit nichts: ab rund 1090px Fensterbreite sind die 80px wieder drin. */
-.upw-wide {
-  --upw-bleed: min(80px, max(0px, calc((100vw - 100%) / 2 - 16px)));
-  margin-left: calc(-1 * var(--upw-bleed)); margin-right: calc(-1 * var(--upw-bleed));
+/* 152 = die alten 72 (schmaler als die Spalte) plus 80 (die das breite Kind breiter war). Am
+   Verhaeltnis aendert sich nichts: zwischen den beiden Huellen liegen weiterhin 304px.
+   Der Einzug SCHRUMPFT, wenn die Spalte schmal wird: 2x152 von einer 600px-Spalte liessen Mira
+   knapp 300px, und das ist kein Eingabefeld mehr. 480px ist die Untergrenze, ab der der Einzug
+   linear nachgibt. Das Prozent bezieht sich auf die Inhaltsbreite der Spalte -- ein gueltiger
+   Bezug, anders als das 100vw, das hier vorher stand. */
+.upw-narrow {
+  --upw-einzug: min(152px, max(0px, calc((100% - 480px) / 2)));
+  margin-left: var(--upw-einzug); margin-right: var(--upw-einzug);
 }
+/* HIER STAND EIN UEBERSTAND AUS 100vw, UND DER WAR FALSCH (20.09. gemeldet: "das Ding ist
+   immer noch nicht resizeable, bei ca. 1041px bricht es erst um, davor ragen die Inhalte links
+   und rechts raus, ab ca. 1400px resized es wieder korrekt").
+   Die Rechnung war (100vw - 100%) / 2 -- "der Platz, der neben der Spalte frei ist". Das stimmt
+   nur, wenn die Spalte im FENSTER mittig sitzt. Sie sitzt aber in #main, und links davon steht
+   die 250px breite Seitenleiste. 100vw zaehlt die als freien Platz mit, also rechnete die Regel
+   mit 125px mehr Luft je Seite, als es gibt.
+   GEMESSEN im Prueftand mit nachgestellter Leiste, alte Datei:
+     Fenster 1400 -> Inhalt 1150, breite Huelle 1080, passt (35px Luft je Seite)
+     Fenster 1300 -> Inhalt 1050, breite Huelle 1080, ragt 15px je Seite raus
+     Fenster 1200 -> Inhalt  950, breite Huelle 1054, ragt 52px je Seite raus
+     Fenster 1040 -> Inhalt  790, breite Huelle  894, ragt 52px je Seite raus
+   Genau das Band, das gemeldet wurde -- unten endet es, weil bei rund 1041px Fensterbreite die
+   Wurzel unter 760 faellt und is-narrow beide Huellen auf null setzt.
+   Jetzt ragt gar nichts mehr hinaus: die Spalte ist so breit wie die breite Huelle, und die
+   schmale rueckt ein. Damit gibt es keine Rechnung mehr, die das Fenster mit der Inhaltsflaeche
+   verwechseln koennte -- auf jeder Seitenleistenbreite und in jedem Wirt. */
+.upw-wide { margin-left: 0; margin-right: 0; }
 .upw-root.is-narrow .upw-narrow,
 .upw-root.is-narrow .upw-wide { margin-left: 0; margin-right: 0; }
 
@@ -551,6 +567,15 @@
    chats, beide Listen und das Brett liegen darin. Ein zweites Polster an der Wurzel haette sich
    mit diesem verdoppelt -- gemessen, 32 statt 16. */
 .upw-root.is-narrow .upw-col { --upw-pad: 16px; }
+/* UND DASSELBE NOCH EINMAL AM FENSTER (20.09.). Die Zeile darueber haengt an is-narrow, und die
+   Klasse setzt die JS aus der GEMESSENEN Breite der Wurzel. Bleibt die Messung aus -- kein
+   ResizeObserver, kein resize-Ereignis, eine Wurzel, die beim Aufbau noch in einer verdeckten
+   Gruppe lag --, bleibt auch das Polster auf clamp(14px, 3vw, 28px) stehen, auf dem Telefon also
+   14px statt 16. Auf einem Telefon ist die Wurzel so breit wie das Fenster, deshalb sagt diese
+   Abfrage dort dasselbe wie die Klasse -- nur ohne auf ein Ereignis angewiesen zu sein.
+   Die Klasse bleibt die fuehrende Regel: sie kennt auch den Fall, dass die Komponente in einem
+   schmalen Wirt neben einer offenen Leiste steht, und den sieht eine Fensterabfrage nie. */
+@media (max-width: 760px) { .upw-col { --upw-pad: 16px; } }
 /* Die Chips sind auf dem Telefon eine Stufe kleiner, damit auch mal zwei nebeneinander stehen
    koennen statt jede fuer sich eine ganze Zeile zu belegen -- 28px statt 32px Hoehe, 8px statt
    14px Seitenpolster, 11.5px statt 12.5px Schrift. Ueberschrieben an .upw-chip, nicht an
