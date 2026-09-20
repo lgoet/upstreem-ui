@@ -465,7 +465,7 @@
   /* ---------------- Localization (DE for German market, else EN) ---------------- */
   var STR = {
     en: {
-      antwortHaengt: 'The answer is taking longer than expected. Reload the chat to see it.',
+      antwortHaengt: 'This is taking longer than expected. Mira keeps looking for the answer.',
       placeholder: 'Ask Mira...',
       /* DER ERSTE Bezug in einem leeren Feld -> die naheliegende Frage steht dort als echter TEXT
          (17.09. angefordert, am 18.09. vom Platzhalter zum Text geworden). Wer etwas anderes
@@ -603,7 +603,7 @@
       ]
     },
     de: {
-      antwortHaengt: 'Die Antwort dauert länger als erwartet. Lade den Chat neu, um sie zu sehen.',
+      antwortHaengt: 'Das dauert länger als erwartet. Mira sucht weiter nach der Antwort.',
       placeholder: 'Frag Mira...',
       bezugFrage: {
         brand:      'Was kannst du mir über diese Brand sagen?',
@@ -5276,8 +5276,41 @@
      Was NICHT zurueckkommt, sind die Arbeitsschritte im Loader: die sind fluechtig und stehen
      nirgends nach. Zurueck kommt die fertige Antwort -- und damit endet der Kreisel. */
   var NF_TAKTE = [12000, 18000, 27000], NF_DANN = 15000, NF_BODEN = 3000;
-  var _nfT = 0, _nfI = 0, _nfLetzte = 0;
-  function nfLaeuftNoch(){ return !!S.activeChatId && (_pendingAnswer || S.isLoading); }
+  /* DIE NOTBREMSE, UND NUR DAS. Sie ist kein Urteil ueber die Antwort -- sie verhindert, dass
+     ein vergessener Tab bis ans Ende der Zeit alle 15 Sekunden einen Workflow ausloest. Zehn
+     Minuten sind weit jenseits von allem Gemessenen: die langsamsten echten Antworten lagen bei
+     71 und 92 Sekunden. */
+  var NF_ENDE = 600000;
+  var _nfT = 0, _nfI = 0, _nfLetzte = 0, _nfSeit = 0, _nfChat = '';
+  /* EIN ERFOLG BEENDET DAS NACHFASSEN, NICHT EINE UHR (20.09. nachgezogen).
+     Erst haing das hier an (_pendingAnswer || S.isLoading) -- und beides setzt die Stummuhr nach
+     240s zurueck, wenn sie aufgibt. Damit hoerte das Nachfassen ausgerechnet in dem Moment auf,
+     in dem es als einziges noch helfen konnte: bei einem Lauf, der laenger als vier Minuten
+     braucht. Die Uhr sagt jetzt nur noch, was auf dem Schirm steht; ob weiter gesucht wird,
+     entscheidet allein, ob die Antwort da ist.
+     _nfAktiv geht aus an genau drei Stellen: die Antwort ist da (nfErfolg, aus
+     askMiraSetMessages/askMiraAddMessage heraus), der Nutzer ist in einem anderen Chat, oder
+     die Notbremse greift. */
+  var _nfAktiv = false;
+  function nfLaeuftNoch(){
+    if (!_nfAktiv) return false;
+    var jetzt = String(S.activeChatId || '');
+    if (!_nfChat) _nfChat = jetzt;              /* der Chat bekommt seine Kennung manchmal erst spaeter */
+    if (!jetzt || jetzt !== _nfChat) return false;
+    if (_nfSeit && Date.now() - _nfSeit > NF_ENDE) return false;
+    return true;
+  }
+  /* Die Antwort ist da -- das ist das Ende. 'stalled' zaehlt ausdruecklich NICHT: das ist der
+     Platzhalter, den die Stummuhr selbst hineingeschrieben hat, und auf den zu warten hiesse,
+     auf die eigene Auskunft hereinzufallen. */
+  function nfErfolg(){
+    if (!_nfAktiv) return;
+    var letzte = S.messages[S.messages.length - 1];
+    if (!letzte || letzte.role !== 'assistant') return;
+    if (isPendingAssistant(letzte)) return;
+    if (String(letzte.status || '').toLowerCase() === 'stalled') return;
+    nfAus();
+  }
   function nachfassen(grund){
     if (!nfLaeuftNoch()){ nfAus(); return false; }
     var jetzt = Date.now();
@@ -5304,9 +5337,12 @@
   function nfAn(){
     if (_nfT) return;
     _nfI = 0;
+    _nfAktiv = true;
+    _nfSeit = Date.now();
+    _nfChat = String(S.activeChatId || '');
     _nfT = setTimeout(nfTakt, NF_TAKTE[0]);
   }
-  function nfAus(){ if (_nfT){ clearTimeout(_nfT); _nfT = 0; } _nfI = 0; }
+  function nfAus(){ if (_nfT){ clearTimeout(_nfT); _nfT = 0; } _nfI = 0; _nfAktiv = false; _nfSeit = 0; _nfChat = ''; }
   /* Die zwei Anlaesse von aussen. EINMAL angemeldet, nicht je Lauf -- nfLaeuftNoch() entscheidet
      bei jedem Ereignis neu, ob es ueberhaupt etwas zu holen gibt. */
   try {
@@ -5321,7 +5357,11 @@
     });
   } catch(e){}
 
-  function stummUhrLoeschen(){ nfAus(); if (_stummT){ clearTimeout(_stummT); _stummT = 0; } }
+  /* HIER STAND nfAus(). Es ist weg, und das ist der Kern der Sache: diese Funktion laeuft auch,
+     wenn die Stummuhr aufgibt (setLoading(false) ruft sie), und damit haette die Uhr das
+     Nachfassen beendet. Wer aufhoert zu suchen, weil eine Uhr abgelaufen ist, findet nichts
+     mehr. Beendet wird ueber nfErfolg oder die Notbremse in nfLaeuftNoch. */
+  function stummUhrLoeschen(){ if (_stummT){ clearTimeout(_stummT); _stummT = 0; } }
   function stummUhrStellen(){
     stummUhrLoeschen();
     nfAn();                 /* dieselbe Stelle, an der der Loader angeht -- siehe setLoading */
@@ -5412,6 +5452,7 @@
     var _last = S.messages[S.messages.length - 1];
     var _running = isPendingAssistant(_last);
     _pendingAnswer = _running;
+    nfErfolg();      /* die Antwort ist da -> Schluss mit Nachfassen. Das ist das EINZIGE Ende. */
     /* EIN LADEZUSTAND MUSS IMMER ENDEN (CLAUDE.md). Die laufende Antwort endet normalerweise
        dadurch, dass Bubbles Realtime-Auslöser die Nachrichten neu setzt. Gemeldet am 07.09.:
        "im Mobilemode gibt es ab und an Probleme mit dem Realtime-Trigger, er laedt oft einfach
@@ -5454,6 +5495,9 @@
       setLoading(false);
     }
     S.messages.push(nm);
+    /* NACH dem Einhaengen: nfErfolg sieht sich die LETZTE Nachricht an, und die ist erst ab
+       hier diese hier. Davor haette es die vorherige geprueft. */
+    nfErfolg();
     renderMessages();
   };
   /* Explicit typing controls — use these when you deliver answers by RELOADING the whole
