@@ -183,6 +183,34 @@
      Zahlen bleiben OHNE Anfuehrungszeichen -- 3.0, nicht "3.0" -- sonst kommt der Wert als Text
      an und jede Rechnung darauf geht daneben.
 
+     ── DAS BACKTICK UND DAS JSON EINES RPC (20.09.) ─────────────────────────────
+     Gemeldet: eine lange Antwort kam ueber den Realtime-Ausloeser NICHT an, ueber den Klick auf
+     denselben Chat schon. Die Daten waren identisch -- der Unterschied lag im Schritt.
+
+     Das Backtick frisst genau EINE Ebene Backslash. Solange BUBBLE den Text zusammensetzt,
+     macht das nichts: Bubble setzt Werte roh ein, da steht gar kein Backslash. Reicht ein
+     Schritt dagegen das JSON eines RPC durch, ist die Rechnung eine andere -- in echtem JSON
+     ist jeder Zeilenumbruch ein \n und jedes Anfuehrungszeichen im Text ein \". Nach dem
+     Backtick stehen dort ein ROHER Umbruch und ein ROHES Anfuehrungszeichen, und das ist
+     kaputtes JSON. Gemessen an der gemeldeten Antwort: 967 Backslashes vor dem Schritt,
+     0 danach, JSON.parse stirbt am ersten Umbruch.
+
+     ERKENNUNGSZEICHEN IN DER KONSOLE: die Meldung des Setters nennt seit dem 20.09. die Zahl
+     der Backslashes im Payload. Steht dort  Backslashes=0  und der Payload kommt aus einem RPC,
+     ist NICHTS abgeschnitten -- dann ist es dieser Fall.
+
+     ZU TUN IM WORKFLOW, eins von beiden:
+       a) Denselben Ausdruck nehmen wie der Schritt, der funktioniert (der hinter dem Klick auf
+          einen Chat). Das ist der saubere Weg, weil dann gar kein Schaden entsteht.
+       b) Bleibt es beim RPC-JSON: die Backslashes im RPC verdoppeln, dann halbiert das Backtick
+          sie wieder auf den richtigen Stand --  replace(txt, chr(92), chr(92) || chr(92))
+          als LETZTER Schritt auf den fertigen Text, nicht auf einzelne Felder.
+
+     Die Komponente liest den Schaden seit dem 20.09. ueber UC.readBubble wieder zusammen
+     (gemessen: 62.149 Zeichen, 2 Nachrichten, 25 evidence_items, content und content_html
+     zeichengleich mit dem Original). Das ist ein Netz, keine Heilung -- Raten bleibt Raten,
+     und der Schritt sollte trotzdem in Ordnung gebracht werden.
+
      Was bei einem unlesbaren Payload passiert: dieser Setter hat NOCH KEINEN Lesefehler-Zustand.
      Der Payload landet dann als leere Liste, und die Ansicht sieht aus wie ein sauberes leeres
      Ergebnis. Der Backtick ist hier also nicht eine von zwei Absicherungen, sondern die einzige.

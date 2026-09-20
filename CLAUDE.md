@@ -155,6 +155,18 @@ Nutzlast -- und es trug die Backticks. Wo Modelltext wirklich angezeigt wird
 (`opportunities.headline`/`.reason`), entfernt der RPC den Backtick:
 `replace(feld, chr(96), '')`.
 
+**Der Sonderfall RPC-JSON (20.09.).** Die Regel oben gilt fuer Text, den BUBBLE zusammensetzt --
+dort stehen Werte roh im Backtick. Reicht ein Schritt dagegen das JSON eines RPC durch, ist die
+Rechnung eine andere: in echtem JSON ist JEDER Zeilenumbruch ein `\n` und JEDES
+Anfuehrungszeichen im Text ein `\"`. Das Backtick frisst genau diese Ebene, und uebrig bleibt
+ein roher Umbruch und ein rohes Anfuehrungszeichen -- also kaputtes JSON. Gemessen an einer
+gemeldeten Mira-Antwort: 967 Backslashes vor dem Schritt, 0 danach, `JSON.parse` stirbt am ersten
+Umbruch. Erkennungszeichen in der Konsole: **der Payload kommt mit 0 Backslashes an.** Dann ist
+nichts abgeschnitten -- dann reicht ein Schritt RPC-JSON durch ein Backtick. Zu beheben ist das
+Bubble-seitig (denselben Ausdruck nehmen wie der Schritt, der funktioniert, oder die Backslashes
+im RPC verdoppeln: `replace(txt, chr(92), chr(92)||chr(92))`); `UC.readBubble` liest den Schaden
+zwar wieder zusammen, aber Raten bleibt Raten.
+
 Zu jedem Schritt gehoert **ungefragt** die statische Fassung mit den echten Daten des Nutzers,
 in derselben Antwort -- und beide vorher gegen die Komponente laufen lassen.
 

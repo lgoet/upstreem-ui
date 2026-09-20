@@ -5073,6 +5073,28 @@
     try { return JSON.parse(wrapped); } catch(e){}
     try { return JSON.parse(escapeRawControlsInStrings(wrapped)); } catch(e){}
     try { return JSON.parse(escapeRawControlsInStrings(s)); } catch(e){}
+    /* DER GETEILTE LESEWEG, BEVOR DIE EIGENEN HEURISTIKEN DRANKOMMEN (20.09.).
+       Gemeldet als "ich hab bei Mira eine Antwort nicht bekommen" -- ueber den Klick auf den
+       Chat war dieselbe Antwort da. Der Unterschied liegt nicht in den Daten, sondern im
+       Backtick des Run-JS-Schritts: er frisst genau EINE Ebene Backslash. Traegt der Schritt
+       den Text eines Bubble-Ausdrucks, macht das nichts -- Bubble setzt Werte roh ein. Traegt
+       er dagegen das JSON eines RPC, ist jeder Zeilenumbruch darin ein \n und jedes
+       Anfuehrungszeichen ein \" -- und nach dem Backtick steht dort ein ROHER Umbruch und ein
+       ROHES Anfuehrungszeichen. Gemessen an der gemeldeten Antwort: 967 Backslashes vor dem
+       Schritt, 0 danach, JSON.parse stirbt am ersten Umbruch (Position 952).
+       repairUnescapedQuotes unten haelt einen Doppelpunkt IMMER fuer ein Stringende. Im Text
+       stand  Cluster "Solar-Marketing & Digitalisierung":  -- ab da war jede Klammer
+       verschoben und der ganze Datensatz verloren. parseBubbleJson in core weiss, ob es in
+       einem SCHLUESSEL oder in einem WERT steht, und beendet einen Wert nur an Komma oder
+       Klammer; es liest denselben Payload Zeichen fuer Zeichen wieder richtig (62.149 Zeichen,
+       2 Nachrichten, 25 evidence_items, content und content_html identisch mit dem Original,
+       3,4 ms). Genau deshalb ist readBubble laut CLAUDE.md der EINE geteilte Leseweg.
+       Es steht NACH den vier exakten Versuchen oben -- ein heiler Payload wird nie repariert --
+       und VOR den eigenen Heuristiken, weil die schlechter raten. */
+    try {
+      var kern = window.UpstreemCore;
+      if (kern && kern.readBubble){ var gelesen = kern.readBubble(s); if (gelesen != null) return gelesen; }
+    } catch(e){}
     // last resort: backticks may have un-escaped inner quotes -> repair quotes, then controls
     try { return JSON.parse(escapeRawControlsInStrings(repairUnescapedQuotes(wrapped))); } catch(e){}
     try { return JSON.parse(escapeRawControlsInStrings(repairUnescapedQuotes(s))); } catch(e){}
@@ -5196,9 +5218,19 @@
           if (mp){ var pos = +mp[1];
             stelle = ' Stelle: …' + messages.slice(Math.max(0, pos - 70), pos + 70).replace(/\n/g, '\\n') + '…'; }
         }
+        /* Die Backslash-Zahl gehoert in die Meldung, weil sie den haeufigsten Fall SOFORT
+           entscheidet: ein Payload aus einem RPC ist echtes JSON und traegt hunderte davon.
+           Kommt er hier mit 0 an, hat das Backtick des Run-JS-Schritts die ganze Escape-Ebene
+           gefressen -- dann ist nichts abgeschnitten, sondern der Schritt reicht RPC-JSON durch
+           ein Backtick. Bis zum 20.09. stand hier "vermutlich abgeschnitten", und genau danach
+           wurde dann auch gesucht. */
+        var bs = (String(messages).match(/\\/g) || []).length;
         console.warn('[AskMira] askMiraSetMessages: could not parse the payload — leaving messages unchanged. '+
-          'Likely the JSON was truncated in transport or contains characters that broke it. '+
-          'Ein unescaptes Anfuehrungszeichen im Text repariert die Komponente selbst; haelt der Payload trotzdem nicht, ist er unterwegs abgeschnitten worden. (Laenge='+messages.length+')' + stelle);
+          'Ein unescaptes Anfuehrungszeichen und rohe Zeilenumbrueche repariert die Komponente selbst. '+
+          (bs === 0
+            ? 'Der Payload traegt KEINEN einzigen Backslash: kommt er aus einem RPC, hat das Backtick des Run-JS-Schritts die Escapes gefressen -- das ist Bubble-seitig zu beheben, nicht hier. '
+            : 'Haelt er trotzdem nicht, ist er unterwegs abgeschnitten worden. ') +
+          '(Laenge='+messages.length+', Backslashes='+bs+')' + stelle);
         return; // keep whatever is currently shown instead of blanking the chat
       }
       messages = parsed;

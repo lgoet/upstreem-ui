@@ -1185,6 +1185,7 @@
   "am-user-skel",
   "am-user-skel-line",
   "am-welcome",
+  "am-welcome-brand",
   "am-welcome-title",
   "am-wordmark",
   "combo-box",
@@ -3093,7 +3094,7 @@
   "globals": 187,
   "payloadkeys": 101,
   "dataattrs": 253,
-  "klassen": 2207,
+  "klassen": 2208,
   "keyframes": 66
  }
 }
