@@ -1198,8 +1198,10 @@
   }
   .am-gallery-back:hover { background: var(--am-soft); border-color: #6f6f6f; color: var(--am-text); }
   .am-gallery-back svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  /* Der Knopf im Reporting-Kopf traegt kein Wort mehr, also ist er quadratisch: 24x24, kein
-     Polster, kein Zwischenraum. Radius 8 statt 9 -- auf 24px Kante wirkt 9 fast rund. */
+  /* Der Zurueck-Knopf traegt in JEDER Kategorie kein Wort mehr, also ist er quadratisch: 24x24,
+     kein Polster, kein Zwischenraum. Radius 8 statt 9 -- auf 24px Kante wirkt 9 fast rund.
+     (Angefangen am 20.09. nur im Reporting-Kopf, wo der Platz knapp ist; noch am selben Tag auf
+     alle uebrigen Kategorien nachgezogen, damit die Kopfzeile ueberall dieselbe ist.) */
   .am-gallery-back-ic { width: 24px; height: 24px; padding: 0; gap: 0; border-radius: 8px; justify-content: center; }
   .am-gallery-cat-ic { width: 28px; height: 28px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 8px; background: var(--am-soft); border: 1px solid var(--am-border); color: var(--am-text); }
   .am-gallery-cat-ic svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }

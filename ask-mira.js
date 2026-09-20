@@ -2743,6 +2743,20 @@
     galAfter('height', GAL_SLIDE, galReset);
   }
 
+  /* DER ZURUECK-KNOPF STEHT IN JEDER KATEGORIE OHNE WORT (20.09.). Angefangen hat es im
+     Reporting-Kopf, weil dort neben dem Titel noch der Topics-Picker und die Zeitraumwahl
+     stehen; nachgezogen auf alle uebrigen Kategorien, damit die Kopfzeile ueberall dieselbe
+     ist -- ein 24x24-Quadrat mit dem Chevron, dann der Titel.
+     Der Text geht nicht verloren, er wandert in aria-label und data-tip: data-tip ist der Haken
+     fuer den Chip aus core (UC.makeTooltips laeuft auf dieser Wurzel), aria-label gibt dem Knopf
+     seinen Namen fuer den Screenreader. EINE Stelle fuer beide Zweige -- vorher stand dasselbe
+     Markup zweimal da, und beim ersten Umbau bekam nur eins von beiden die Aenderung. */
+  function zurueckKnopfHtml(){
+    var titel = escAttr(L().galleryBack || 'All categories');
+    return '<button class="am-gallery-back am-gallery-back-ic" type="button" data-gallery-back' +
+           ' aria-label="' + titel + '" data-tip="' + titel + '">' +
+           '<svg width="24" height="24" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></svg></button>';
+  }
   function renderGalleryNow(){
     var label = root.querySelector('#am-suggested-label');
     var g = L().gallery || [];
@@ -2805,18 +2819,8 @@
         menu += '<button class="am-rep-range-opt'+(o.id===_reportRange?' is-sel':'')+'" type="button" data-rep-range="'+escAttr(o.id)+'">'+esc(o.label)+
           '<span class="am-rep-range-check"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg></span></button>';
       });
-      /* NUR IM REPORTING-KOPF steht der Zurueck-Knopf ohne Text (20.09. angefordert): diese
-         Leiste traegt neben dem Titel noch den Topics-Picker und die Zeitraumwahl, und der
-         beschriftete Knopf hat davor den Platz weggenommen. In jeder anderen Kategorie bleibt
-         er beschriftet -- dort steht nur der Titel daneben.
-         Der Text geht nicht verloren, er wandert in aria-label und data-tip: data-tip ist der
-         Haken fuer den Chip aus core (UC.makeTooltips laeuft auf dieser Wurzel), aria-label
-         gibt dem Knopf seinen Namen fuer den Screenreader. */
-      var zurueck = escAttr(L().galleryBack || 'All categories');
       var rhtml = '<div class="am-gallery-head am-rep-head">'+
-        '<button class="am-gallery-back am-gallery-back-ic" type="button" data-gallery-back'+
-          ' aria-label="'+zurueck+'" data-tip="'+zurueck+'">'+
-          '<svg width="24" height="24" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></svg></button>'+
+        zurueckKnopfHtml()+
         '<span class="am-gallery-cat-title">'+esc(cat.name)+'</span>'+
         '<span class="am-rep-spacer"></span>'+
         repTopicsMarkup(de)+
@@ -2844,7 +2848,7 @@
       return;
     }
     var html = '<div class="am-gallery-head">'+
-      '<button class="am-gallery-back" type="button" data-gallery-back><svg width="24" height="24" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></svg><span>'+esc(L().galleryBack || 'All categories')+'</span></button>'+
+      zurueckKnopfHtml()+
       '<span class="am-gallery-cat-title">'+esc(cat.name)+'</span>'+
     '</div>';
     html += (cat.subs || []).map(function(sub){
