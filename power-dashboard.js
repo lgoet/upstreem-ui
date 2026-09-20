@@ -106,7 +106,7 @@
     en: [
       { icon: "newspaper", label: "Create a Daily Briefing", kurz: "Daily Briefing",
         prompt: "Write my daily briefing: where visibility, average rank and sentiment stand and which way they are moving, what moved beyond the usual fluctuation, and what is new in prompts, sources or competitors. Use the last 7 days as the window. Say plainly if nothing meaningful changed, and end with the one thing worth doing today." },
-      { icon: "{COMPETITOR}", label: "Compare me with {COMPETITOR}", kurz: "vs. {COMPETITOR}", fallback: "Compare me with my top competitor",
+      { icon: "{COMPETITOR}", label: "Compare me with {COMPETITOR}", kurz: "Compare with {COMPETITOR}", fallback: "Compare me with my top competitor",
         prompt: "Where do I stand against {COMPETITOR} right now? Visibility, average rank and sentiment side by side over {TIMEFRAME}, the topics and prompts where the gap holds across the whole period, and the sources that cite them but not me. Close with three actions that narrow the gap." },
       { icon: "trendingUp", label: "New citations this week", kurz: "New citations",
         prompt: "What is new in my citations over the last 7 days? New domains and URLs citing me or my competitors, sources that cite them but not me, and regular sources I have lost. Sort by how often each one comes up, not by when it first appeared, and name the one to go after first." }
@@ -114,7 +114,7 @@
     de: [
       { icon: "newspaper", label: "Daily Briefing erstellen", kurz: "Daily Briefing",
         prompt: "Schreib mein Daily Briefing: wo Sichtbarkeit, durchschnittlicher Rang und Sentiment stehen und in welche Richtung sie laufen, was über die übliche Schwankung hinausgeht und was neu ist bei Prompts, Quellen oder Wettbewerbern. Nimm die letzten 7 Tage als Zeitfenster. Sag klar, wenn sich nichts Wesentliches bewegt hat, und schließe mit der einen Sache, die heute lohnt." },
-      { icon: "{COMPETITOR}", label: "Mit {COMPETITOR} vergleichen", kurz: "vs. {COMPETITOR}", fallback: "Mit meinem stärksten Wettbewerber vergleichen",
+      { icon: "{COMPETITOR}", label: "Mit {COMPETITOR} vergleichen", kurz: "Vergleich mit {COMPETITOR}", fallback: "Mit meinem stärksten Wettbewerber vergleichen",
         prompt: "Wo stehe ich gerade gegenüber {COMPETITOR}? Sichtbarkeit, durchschnittlicher Rang und Sentiment nebeneinander über {TIMEFRAME}, die Themen und Prompts, bei denen der Abstand über den ganzen Zeitraum hält, und die Quellen, die sie zitieren, mich aber nicht. Schließe mit drei Maßnahmen, die den Abstand verkleinern." },
       { icon: "trendingUp", label: "Neue Zitierungen diese Woche", kurz: "Neue Zitierungen",
         prompt: "Was ist bei meinen Zitierungen in den letzten 7 Tagen neu? Neue Domains und URLs, die mich oder meine Wettbewerber zitieren, Quellen, die sie zitieren und mich nicht, und regelmäßige Quellen, die ich verloren habe. Sortiere danach, wie oft eine Quelle vorkommt, nicht danach, wann sie zuerst auftauchte, und nenne die eine, die ich zuerst angehen sollte." }

@@ -120,12 +120,17 @@
    Gemeint war das Zeichen IM Kasten, und ein Pixel. Zeichen 10 -> 11, Logo 14 -> 15.
    line-height: 0 an der Huelle, damit die Zeile nicht an der Schriftgrundlinie des <span>
    haengt -- sonst sitzt das Plaettchen einen Pixel zu tief neben dem Wort. */
+/* EINEN PIXEL GROESSER, UND ALLES ZIEHT MIT (20.09. angefordert). 16 -> 17, und im selben
+   Verhaeltnis (17/16) die Rundung 4 -> 4.25 und das Zeichen 11 -> 11.7. Ein groesserer Kasten
+   mit der alten Rundung und dem alten Zeichen waere ein gesprengtes Bauteil (CLAUDE.md 1).
+   Zentriert wird ueber align-items/justify-content auf beiden Achsen -- gemessen sitzt das
+   Zeichen mit demselben Abstand an allen vier Kanten. */
 .upw-chip-ic {
-  flex: 0 0 16px; width: 16px; height: 16px; border-radius: 4px;
+  flex: 0 0 17px; width: 17px; height: 17px; border-radius: 4.25px;
   display: inline-flex; align-items: center; justify-content: center; line-height: 0;
   background: var(--up-accent); color: var(--up-accent-fg); overflow: hidden;
 }
-.upw-chip-ic svg { width: 11px; height: 11px; display: block; }
+.upw-chip-ic svg { width: 11.7px; height: 11.7px; display: block; }
 /* Der Vergleichs-Chip traegt das LOGO der Marke: dafuer die Platte aus core (.up-logo-box) mit
    ihrem Buchstabenrueckfall, hier nur auf dieses Mass gezogen. Alle zusammenhaengenden Werte
    ziehen mit (CLAUDE.md 1): Kasten 24 -> 16, Rundung 8 -> 4 (so angefordert), Bild 22 -> 14,
@@ -141,7 +146,7 @@
    so auf der Liste dessen, was ausdruecklich nicht Akzent ist).
    Der Buchstabenrueckfall traegt deshalb auch nicht mehr --up-accent-fg, sondern die Farbe, die
    auf der jeweiligen Platte lesbar ist. */
-.up-logo-box.upw-chip-ic { width: 16px; height: 16px; flex: 0 0 16px; border-radius: 4px;
+.up-logo-box.upw-chip-ic { width: 17px; height: 17px; flex: 0 0 17px; border-radius: 4.25px;
   box-sizing: border-box; background: transparent; border: 1px solid var(--vc-border); }
 [data-theme="dark"] .up-logo-box.upw-chip-ic { border: 0; background: var(--vc-text); }
 /* 15px Bild in einem 16px-Kasten: das 1px Polster aus core gibt genau 14 her, das Bild deckt es
@@ -152,8 +157,8 @@
    "das Logo bitte 1x1px kleiner als der bg"). Bei 16px Kante sind das 14 -- im Hellen bleibt
    damit der 1px Rahmen frei sichtbar, im Dunkeln ein 1px Saum der hellen Flaeche ringsum. Der
    Radius zieht im selben Verhaeltnis mit (4 * 14/16 = 3,5). */
-.up-logo-box.upw-chip-ic img { width: 14px; height: 14px; border-radius: 3.5px; }
-.up-logo-box.upw-chip-ic .up-logo-ltr { font-size: 8px; color: var(--vc-text); }
+.up-logo-box.upw-chip-ic img { width: 15px; height: 15px; border-radius: 3.75px; }
+.up-logo-box.upw-chip-ic .up-logo-ltr { font-size: 8.5px; color: var(--vc-text); }
 [data-theme="dark"] .up-logo-box.upw-chip-ic .up-logo-ltr { color: var(--vc-bg); }
 /* Der alte Emoji-Schluessel: unsere drei Chips tragen keinen mehr, ein Bubble mit eigenen Chips
    darf ihn weiter schicken. */
@@ -560,12 +565,16 @@
    Beispieldaten kamen bei 10px auf 336px Inhalt, +8px Zwischenraum = 344px gegen 343px Platz,
    einen Pixel zu viel. Bei 8px passen sie. */
 .upw-root.is-vnarrow .upw-chip.up-btn-sec { height: 28px; padding: 0 8px; gap: 5px; font-size: 12.5px; }
-/* Auf dem Telefon zieht das Plaettchen mit der kleineren Schrift mit: 14px Kasten, 3px Rundung,
-   10px Zeichen und ein 13px Bild -- dasselbe Verhaeltnis wie oben, eine Stufe kleiner. */
+/* Auf dem Telefon zieht das Plaettchen mit der kleineren Schrift mit: 15px Kasten, 3.2px
+   Rundung, 10.5px Zeichen und ein 13px Bild -- dasselbe Verhaeltnis wie oben, eine Stufe
+   kleiner. (Alle vier Zahlen am 20.09. um denselben Pixel angehoben wie der Kasten oben.)
+   DAS BILD BLEIBT EINEN PIXEL JE SEITE KLEINER ALS SEINE PLATTE, hier wie am Desktop: 15 - 2
+   = 13. Vorher stand hier 13 in einem 14er Kasten, also nur einen halben Pixel je Seite --
+   dieselbe Regel an zwei Orten mit zwei verschiedenen Zahlen. */
 .upw-root.is-vnarrow .upw-chip-emoji { font-size: 13.5px; }
-.upw-root.is-vnarrow .upw-chip-ic { flex: 0 0 14px; width: 14px; height: 14px; border-radius: 3px; }
-.upw-root.is-vnarrow .upw-chip-ic svg { width: 10px; height: 10px; }
-.upw-root.is-vnarrow .up-logo-box.upw-chip-ic img { width: 13px; height: 13px; border-radius: 2.5px; }
+.upw-root.is-vnarrow .upw-chip-ic { flex: 0 0 15px; width: 15px; height: 15px; border-radius: 3.2px; }
+.upw-root.is-vnarrow .upw-chip-ic svg { width: 10.5px; height: 10.5px; }
+.upw-root.is-vnarrow .up-logo-box.upw-chip-ic img { width: 13px; height: 13px; border-radius: 2.75px; }
 
 /* ---------- Skelett ----------
    Farbe und Pulsieren aus core (--vc-sk, uutpulse), wie .up-tsk-bar. */

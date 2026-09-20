@@ -132,7 +132,18 @@ html[data-up-dashboard="power"] .dph-root { padding-top: 8px; padding-bottom: 40
    Text gerutscht -- gemessen, und anders als der Seitenkopf auf dem Telefon bisher aussah. */
 .dph-root.is-vnarrow .up-ph-left { flex: 1 1 0; }
 .dph-root.is-vnarrow .dph-topright { display: contents; }
-.dph-root.is-vnarrow .dph-mode { order: 1; flex: 0 0 auto; }
+/* align-self: flex-start, und zwar GEGEN core (20.09. gemeldet: "im Standard-Modus sitzt der
+   Umschalter deutlich zu weit unten, als waere er auf derselben Zeile wie die Beschreibung").
+   Genau das war er auch. .up-ph-top steht auf align-items: flex-start, die Werkzeuge sitzen
+   also oben -- .up-seg aus core bringt aber align-self: center mit, und die Zeile ist im
+   Standard-Modus so hoch wie der Textblock. GEMESSEN bei 375px: Werkzeuge oben 32, Umschalter
+   oben 98, Beschreibung 78 bis 190. Im Power-Modus faellt die Beschreibung weg, die Zeile ist
+   32px hoch und der Versatz war unsichtbar -- deshalb nur dort gemeldet.
+   Die 3px sind die halbe Differenz der zwei Bauteile: die Zeichenknoepfe daneben sind 32 hoch
+   (.up-ph-iconbtn), der Umschalter 26. Damit steht er wieder auf derselben Mitte wie vorher --
+   im Power-Modus aendert sich also nichts, gemessen 27 vorher wie nachher. */
+.dph-root.is-vnarrow .dph-mode { order: 1; flex: 0 0 auto;
+  align-self: flex-start; margin-top: calc((32px - 26px) / 2); }
 .dph-root.is-vnarrow .dph-tools { order: 2; }
 /* Wort aus, Zeichen an. Der Knopf wird quadratisch: 28px in der 32px-Pille, dieselbe Rechnung wie
    .up-seg-btn sie fuer Text macht (Hoehe minus 2px Luft je Seite), nur ohne Textbreite. */
