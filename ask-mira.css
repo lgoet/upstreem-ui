@@ -1198,6 +1198,9 @@
   }
   .am-gallery-back:hover { background: var(--am-soft); border-color: #6f6f6f; color: var(--am-text); }
   .am-gallery-back svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  /* Der Knopf im Reporting-Kopf traegt kein Wort mehr, also ist er quadratisch: 24x24, kein
+     Polster, kein Zwischenraum. Radius 8 statt 9 -- auf 24px Kante wirkt 9 fast rund. */
+  .am-gallery-back-ic { width: 24px; height: 24px; padding: 0; gap: 0; border-radius: 8px; justify-content: center; }
   .am-gallery-cat-ic { width: 28px; height: 28px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 8px; background: var(--am-soft); border: 1px solid var(--am-border); color: var(--am-text); }
   .am-gallery-cat-ic svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .am-gallery-cat-title { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; color: var(--am-text); }
@@ -1229,9 +1232,33 @@
   }
   .am-rep-range:hover { background: var(--am-soft); border-color: #6f6f6f; }
   .am-rep-range-wrap.is-open .am-rep-range,
-  .am-rep-range-wrap.is-open .am-rep-range:hover { background: var(--am-card); border-color: #6f6f6f; color: var(--am-text); box-shadow: none; }
+  .am-rep-range-wrap.is-open .am-rep-range:hover { background: var(--am-soft); border-color: #6f6f6f; color: var(--am-text); box-shadow: none; }
   #ask-mira[data-theme="dark"] .am-rep-range-wrap.is-open .am-rep-range,
-  #ask-mira[data-theme="dark"] .am-rep-range-wrap.is-open .am-rep-range:hover { background: var(--am-card); border-color: #707070; }
+  #ask-mira[data-theme="dark"] .am-rep-range-wrap.is-open .am-rep-range:hover { background: var(--am-soft); border-color: #707070; }
+
+  /* ---------- DIE BEIDEN DROPDOWNS IM REPORTING-KOPF TRAGEN KEINE FLAECHE (20.09.) ----------
+     Gemeldet: "im Darkmode die Topics und Last x days Dropdowns: ohne Background, wie alle
+     anderen Dropdowns auch". Beide hatten eine -- und zwar aus demselben Grund:
+       .am-rep-range        stand auf --am-card, und --am-card IST --vc-bg
+       .utf-trigger         steht (aus dem geteilten Bauteil) direkt auf --vc-bg
+     Ueberall sonst in der App ist --vc-bg zugleich der Grund der Seite, da faellt das nicht auf.
+     Mira malt aber keinen eigenen Grund, dort liegt --up-surface darunter -- im Dark Mode eine
+     Stufe dunkler. Dieselbe Farbe wurde also einmal unsichtbar und einmal zur Platte.
+     transparent statt einer festen Farbe: dann stimmt es auf JEDEM Grund, in beiden Themen und
+     auch, wenn Mira spaeter woanders steht. Rahmen, Hover und der offene Zustand bleiben -- ohne
+     die waere es kein Knopf mehr. Der Picker ist das geteilte Bauteil, deshalb wird er nur
+     INNERHALB von Mira umgestellt und nirgends sonst. */
+  #ask-mira .am-rep-range,
+  #ask-mira .am-rep-topics .utf-trigger { background: transparent; }
+  /* Hover und offener Zustand brauchen DIESELBE ID im Selektor. Gemessen, bevor diese Zeilen
+     standen: der Knopf war nachweislich gehovert (:hover traf), blieb aber durchsichtig -- eine
+     ID schlaegt jede Zahl von Klassen, also hat die Ruhelage oben den Hover ueberfahren. Beim
+     offenen Zustand fiel es zuerst nicht auf, weil im Dark Mode eine Regel mit
+     #ask-mira[data-theme="dark"] davorsteht; im Light Mode waere auch er durchsichtig geblieben. */
+  #ask-mira .am-rep-range:hover,
+  #ask-mira .am-rep-range-wrap.is-open .am-rep-range,
+  #ask-mira .am-rep-topics .utf-trigger:hover,
+  #ask-mira .am-rep-topics .utf-wrap.is-open .utf-trigger { background: var(--am-soft); }
   .am-rep-cal { width: 15px; height: 15px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .am-rep-range-chev { width: 14px; height: 14px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; transition: transform 140ms ease; }
   /* Panelfarbe, Rahmen, Radius und Padding aus den Core-Tokens, nicht aus der --am-Palette.

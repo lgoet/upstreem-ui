@@ -905,6 +905,7 @@
   "am-fq-list",
   "am-fq-text",
   "am-gallery-back",
+  "am-gallery-back-ic",
   "am-gallery-cat-ic",
   "am-gallery-cat-title",
   "am-gallery-head",
@@ -3100,7 +3101,7 @@
   "globals": 187,
   "payloadkeys": 101,
   "dataattrs": 253,
-  "klassen": 2214,
+  "klassen": 2215,
   "keyframes": 66
  }
 }

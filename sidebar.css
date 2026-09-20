@@ -557,6 +557,10 @@
   transition: background var(--usn-t) var(--usn-ease), color var(--usn-t) var(--usn-ease);
 }
 .usn-item + .usn-item { margin-top: 2px; }
+/* 5px statt 7 zwischen Icon und Wort -- und ausdruecklich NUR in den Menuepunkten (20.09.).
+   Die angehefteten Marken tragen dieselbe Klasse, haben aber ein 22px-Logo statt eines
+   16px-Icons: derselbe Zwischenraum sieht dort nicht gleich aus, und sie waren nicht gemeint. */
+.usn-item:not(.usn-pin) { gap: 5px; }
 /* Hier stand eine gleitende Marke: ein heller Balken, der beim Wechsel des Menuepunktes an die
    neue Zeile fuhr, waehrend die Zeilen ihre eigene Flaeche abgaben. Sie ist entfallen -- die
    aktive Zeile traegt ihre Flaeche wieder selbst. Was bleibt, ist die Positionierung der Zeilen:
