@@ -220,6 +220,39 @@
      askMiraSetPreviousChats, askMiraSetTopics, askMiraSetModels, askMiraSetCompanies und
      askMiraSetProjects tragen ebenfalls Listen -- je EIN eigener Backtick, je ein try.
 
+     ── WENN DAS REALTIME-EREIGNIS AUSBLEIBT (20.09.) ────────────────────────────
+     Gemeldet vom Telefon: waehrend eine Antwort laeuft, kommen die Realtime-Ereignisse teils
+     nicht an -- weder die Arbeitsschritte im Loader noch die fertige Nachricht. Der Kreisel
+     dreht weiter, obwohl serverseitig alles da ist.
+     Der Grund liegt nicht in dieser App: ein Telefon legt einen Tab im Hintergrund schlafen und
+     mit ihm die WebSocket-Verbindung. Was in dieser Zeit faellt, wird nicht nachgeliefert.
+
+     SEIT DEM 20.09. HOLT DIE KOMPONENTE ES SELBST. Sie ruft dafuer denselben Weg, den ein Klick
+     auf einen Chat geht:
+
+         bubble_fn_ask_mira_select_chat(<aktive chat_id>)
+
+     Es ist also NICHTS einzurichten -- wer diesen Workflow schon hat (und den hat jeder Einbau,
+     sonst liesse sich kein Chat oeffnen), bekommt das Nachfassen geschenkt. Ausgeloest wird es,
+     solange eine Antwort laeuft: wenn der Tab wieder sichtbar wird, wenn die Verbindung
+     zurueckkommt, und sonst mit wachsendem Abstand (8s, 12, 18, 27, dann alle 30).
+
+     OPTIONAL, WENN DER WORKFLOW ZU SCHWER IST: select_chat setzt in den meisten Einbauten auch
+     den aktiven Chat und laedt die Leiste mit. Wer dafuer einen leichteren Weg will -- nur die
+     Nachrichten dieses Chats holen und askMiraSetMessages rufen --, legt ein zweites
+     JavaScriptToBubble-Element an:
+
+         Function name  bubble_fn_ask_mira_refresh_chat
+         Value type     text        (die chat_id)
+         Trigger event  angehakt
+
+     Gibt es das Element, wird es BEVORZUGT; sonst bleibt es bei select_chat. Einen dritten Weg
+     gibt es nicht, und die Komponente legt von sich aus keinen an.
+
+     WAS NICHT ZURUECKKOMMT: die Arbeitsschritte im Loader ("Mira liest die Quellen ..."). Die
+     sind fluechtig und stehen nirgends nach. Zurueck kommt die fertige Antwort -- und damit
+     endet der Kreisel, was der eigentliche Schaden war.
+
      ── NACHLADEN BEIM SCROLLEN (15.09.) ─────────────────────────────────────────
      Die Leiste zeigt 15 Chats und deckt beim Herunterscrollen die naechsten 15 auf. Ist alles
      aufgedeckt, was geladen wurde, meldet sie sich:

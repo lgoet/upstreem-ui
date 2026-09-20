@@ -5246,9 +5246,82 @@
      was kaputt war -- und genau das hilft hier auch wirklich: ueber den Klick auf den Chat kommt
      dieselbe Antwort an. */
   var _stummT = 0, STUMM_FRIST = 240000;
-  function stummUhrLoeschen(){ if (_stummT){ clearTimeout(_stummT); _stummT = 0; } }
+
+  /* ---- WENN DAS REALTIME-EREIGNIS AUSBLEIBT, WIRD NACHGEFRAGT (20.09.) ----------------------
+     Gemeldet vom Telefon: waehrend eine Antwort laeuft, kommen die Realtime-Ereignisse teils gar
+     nicht an -- weder die Arbeitsschritte im Loader noch die fertige Nachricht. Der Kreisel dreht
+     dann weiter, obwohl serverseitig alles da ist; erst ein Neuladen des Chats bringt es auf den
+     Schirm.
+     Der Grund liegt nicht bei uns: ein Telefon legt einen Tab im Hintergrund schlafen, und mit
+     ihm die WebSocket-Verbindung. Ereignisse, die in dieser Zeit fallen, sind weg -- sie werden
+     nicht nachgeliefert, wenn der Tab wieder aufwacht. Darauf zu warten ist also aussichtslos.
+     Die Uhr darunter (STUMM_FRIST) faengt den Fall zwar ab, aber erst nach vier Minuten und nur
+     mit einem Satz, was der Nutzer TUN soll. Das ist die falsche Arbeitsteilung: was der Nutzer
+     von Hand tut -- den Chat neu laden --, kann die Komponente selbst.
+     Genau das passiert hier, und zwar ueber DENSELBEN Aufruf, den ein Klick auf den Chat macht.
+     Kein zweiter Weg, keine neue Verdrahtung in Bubble noetig. Wer einen leichteren Workflow
+     dafuer anlegt (nur die Nachrichten holen, ohne den Chat neu zu setzen), nennt ihn
+     bubble_fn_ask_mira_refresh_chat -- dann wird der bevorzugt.
+     DREI ANLAESSE, und der erste ist der wichtigste:
+       1. Der Tab wird wieder sichtbar. Das IST der gemeldete Fall: Schirm aus, App gewechselt,
+          zurueck -- und in der Zwischenzeit ist die Antwort gekommen.
+       2. Die Verbindung ist wieder da (online).
+       3. Eine Uhr mit wachsendem Abstand, fuer den Fall, dass der Tab vorne liegt und die
+          Verbindung trotzdem tot ist. 8s, dann 12, 18, 27, danach alle 30 -- traeger werdend,
+          damit ein langsamer, aber gesunder Lauf nicht dauernd nachgefragt wird.
+     Ein Boden von 3s verhindert, dass schnelles Hin und Her zwischen Apps eine Salve ausloest.
+     Was NICHT zurueckkommt, sind die Arbeitsschritte im Loader: die sind fluechtig und stehen
+     nirgends nach. Zurueck kommt die fertige Antwort -- und damit endet der Kreisel. */
+  var NF_ERST = 8000, NF_MAX = 30000, NF_BODEN = 3000;
+  var _nfT = 0, _nfAbstand = 0, _nfLetzte = 0;
+  function nfLaeuftNoch(){ return !!S.activeChatId && (_pendingAnswer || S.isLoading); }
+  function nachfassen(grund){
+    if (!nfLaeuftNoch()){ nfAus(); return false; }
+    var jetzt = Date.now();
+    if (jetzt - _nfLetzte < NF_BODEN) return false;
+    var fn = window.bubble_fn_ask_mira_refresh_chat || window.bubble_fn_ask_mira_select_chat;
+    if (typeof fn !== 'function') return false;
+    _nfLetzte = jetzt;
+    try { fn(S.activeChatId); } catch(e){ return false; }
+    /* Fuer den Prueftand und fuer eine Seite ohne Bubble -- und als Spur in der Diagnose. */
+    try { root.dispatchEvent(new CustomEvent('askmira:nachfassen',
+      { detail: { chat_id: S.activeChatId, grund: grund }, bubbles: true })); } catch(e){}
+    return true;
+  }
+  function nfTakt(){
+    _nfT = 0;
+    if (!nfLaeuftNoch()){ nfAus(); return; }
+    /* Im Hintergrund NICHT nachfragen: dort drosselt das Telefon die Uhr ohnehin, und der
+       Aufruf traefe auf eine schlafende Verbindung. Sichtbar wird der Tab wieder -- dann
+       greift Anlass 1, und zwar sofort. */
+    if (!document.hidden) nachfassen('uhr');
+    _nfAbstand = Math.min(Math.round(_nfAbstand * 1.5), NF_MAX);
+    _nfT = setTimeout(nfTakt, _nfAbstand);
+  }
+  function nfAn(){
+    if (_nfT) return;
+    _nfAbstand = NF_ERST;
+    _nfT = setTimeout(nfTakt, _nfAbstand);
+  }
+  function nfAus(){ if (_nfT){ clearTimeout(_nfT); _nfT = 0; } _nfAbstand = 0; }
+  /* Die zwei Anlaesse von aussen. EINMAL angemeldet, nicht je Lauf -- nfLaeuftNoch() entscheidet
+     bei jedem Ereignis neu, ob es ueberhaupt etwas zu holen gibt. */
+  try {
+    document.addEventListener('visibilitychange', function(){
+      if (!document.hidden && nfLaeuftNoch()) nachfassen('sichtbar');
+    });
+    window.addEventListener('online', function(){ if (nfLaeuftNoch()) nachfassen('online'); });
+    /* iOS holt eine Seite aus dem Vor-/Zurueck-Speicher zurueck, ohne sie neu zu laden --
+       visibilitychange bleibt dabei aus. */
+    window.addEventListener('pageshow', function(e){
+      if (e && e.persisted && nfLaeuftNoch()) nachfassen('pageshow');
+    });
+  } catch(e){}
+
+  function stummUhrLoeschen(){ nfAus(); if (_stummT){ clearTimeout(_stummT); _stummT = 0; } }
   function stummUhrStellen(){
     stummUhrLoeschen();
+    nfAn();                 /* dieselbe Stelle, an der der Loader angeht -- siehe setLoading */
     _stummT = setTimeout(function(){
       _stummT = 0;
       if (!S.isLoading) return;
