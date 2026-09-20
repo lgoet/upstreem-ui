@@ -5266,14 +5266,17 @@
        1. Der Tab wird wieder sichtbar. Das IST der gemeldete Fall: Schirm aus, App gewechselt,
           zurueck -- und in der Zwischenzeit ist die Antwort gekommen.
        2. Die Verbindung ist wieder da (online).
-       3. Eine Uhr mit wachsendem Abstand, fuer den Fall, dass der Tab vorne liegt und die
-          Verbindung trotzdem tot ist. 8s, dann 12, 18, 27, danach alle 30 -- traeger werdend,
-          damit ein langsamer, aber gesunder Lauf nicht dauernd nachgefragt wird.
+       3. Eine Uhr, fuer den Fall, dass der Tab VORNE liegt und das Ereignis trotzdem
+          ausbleibt -- der gemeldete Fall. 12s, 18, 27, danach alle 15. Die ersten drei
+          Abstaende wachsen, damit ein langsamer, aber gesunder Lauf nicht schon nach Sekunden
+          nachgefragt wird; danach bleibt es bei einem festen Takt, weil ab da feststeht, dass
+          etwas nicht stimmt, und immer traegere Abstaende den Nutzer nur laenger warten
+          liessen. (So angefordert am 20.09.)
      Ein Boden von 3s verhindert, dass schnelles Hin und Her zwischen Apps eine Salve ausloest.
      Was NICHT zurueckkommt, sind die Arbeitsschritte im Loader: die sind fluechtig und stehen
      nirgends nach. Zurueck kommt die fertige Antwort -- und damit endet der Kreisel. */
-  var NF_ERST = 8000, NF_MAX = 30000, NF_BODEN = 3000;
-  var _nfT = 0, _nfAbstand = 0, _nfLetzte = 0;
+  var NF_TAKTE = [12000, 18000, 27000], NF_DANN = 15000, NF_BODEN = 3000;
+  var _nfT = 0, _nfI = 0, _nfLetzte = 0;
   function nfLaeuftNoch(){ return !!S.activeChatId && (_pendingAnswer || S.isLoading); }
   function nachfassen(grund){
     if (!nfLaeuftNoch()){ nfAus(); return false; }
@@ -5295,15 +5298,15 @@
        Aufruf traefe auf eine schlafende Verbindung. Sichtbar wird der Tab wieder -- dann
        greift Anlass 1, und zwar sofort. */
     if (!document.hidden) nachfassen('uhr');
-    _nfAbstand = Math.min(Math.round(_nfAbstand * 1.5), NF_MAX);
-    _nfT = setTimeout(nfTakt, _nfAbstand);
+    _nfI++;
+    _nfT = setTimeout(nfTakt, NF_TAKTE[_nfI] != null ? NF_TAKTE[_nfI] : NF_DANN);
   }
   function nfAn(){
     if (_nfT) return;
-    _nfAbstand = NF_ERST;
-    _nfT = setTimeout(nfTakt, _nfAbstand);
+    _nfI = 0;
+    _nfT = setTimeout(nfTakt, NF_TAKTE[0]);
   }
-  function nfAus(){ if (_nfT){ clearTimeout(_nfT); _nfT = 0; } _nfAbstand = 0; }
+  function nfAus(){ if (_nfT){ clearTimeout(_nfT); _nfT = 0; } _nfI = 0; }
   /* Die zwei Anlaesse von aussen. EINMAL angemeldet, nicht je Lauf -- nfLaeuftNoch() entscheidet
      bei jedem Ereignis neu, ob es ueberhaupt etwas zu holen gibt. */
   try {
