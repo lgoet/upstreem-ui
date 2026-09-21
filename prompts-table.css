@@ -516,11 +516,9 @@
 .upt-topicfoot { margin-top: var(--upt-sep-gap); display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
 /* Same face as the bar's own action buttons (.upt-bulkbar-btn/core's .up-filter-btn): solid
    border, plain surface — a dashed border read as "disabled" rather than "secondary action". */
-.upt-topicapply { flex: 0 0 auto; height: 34px; padding: 0 20px; border-radius: 9px; border: 0;
-  background: var(--up-accent); color: var(--up-accent-fg); cursor: pointer;
-  font-family: inherit; font-size: 13px; font-weight: 600; transition: opacity 120ms ease; }
-.upt-topicapply:hover:not(:disabled) { opacity: .88; }
-.upt-topicapply:disabled { background: var(--vc-heading-bg); color: var(--vc-third); cursor: default; }
+/* Nur noch die Lage -- Aussehen kommt aus .up-btn-pri in core (dort steht auch, warum der
+   eigene Deaktiviert-Zustand weg musste: er war in dieser Leiste unsichtbar). */
+.upt-topicapply { flex: 0 0 auto; }
 
 /* Soft-reload dim (sort) now lives in core.css as a generic .up-root.is-reloading rule, shared
    with urls-table/domains-table — see UC.makeSoftReload. */
