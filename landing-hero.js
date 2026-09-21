@@ -131,7 +131,13 @@
   var ACME_LOGO = "data:image/svg+xml," + encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">' +
     '<rect width="64" height="64" rx="15" fill="#0b0d10"/>' +
-    '<path d="M32 15.5 20.2 48.5h6.9l2.2-6.6h9.4l2.2 6.6h6.9L43.8 15.5Zm-.6 9.9 3 9h-6.1Z" fill="#fff"/>' +
+    /* SYMMETRISCH um x=32 (21.09. nachgezogen: "das A ist zu weit rechts"). Der erste Wurf
+       begann am Apex als PUNKT (32) und endete rechts oben auf 43.8 -- die Oberkante lief also
+       von 32 nach 43.8 und die ganze Masse hing rechts. Jetzt hat die Spitze eine schmale
+       Flaeche von 29 bis 35 (Mitte 32), die Fuesse stehen auf 16.2/23.1 und 40.9/47.8 (Mitte
+       ebenfalls 32), und die Querstrebe liegt von 25.3 bis 38.7. */
+    '<path d="M29 15.5 16.2 48.5H23.1L25.3 41.9H38.7L40.9 48.5H47.8L35 15.5Z' +
+    'M32 25.4 28.9 34.4H35.1Z" fill="#fff" fill-rule="evenodd"/>' +
     '</svg>');
 
   /* Die eigene Marke traegt ihr Zeichen, die Wettbewerber ihres. Ein Buchstabenkaestchen gibt es
@@ -244,7 +250,7 @@
      Die eigenen zwei Zeilen tragen acmes Zeichen, die Wettbewerberzeile das von BMW -- dieselben
      Zeichen wie in der Markentabelle darueber, damit die Zeile ohne Lesen zuzuordnen ist. */
   var QUELLEN = [
-    { domain: "autobild.de",                share_pct: 18.4, share_delta_pct: 2.1,  used_total: 2926, citation_type: "Editorial" },
+    { domain: "forbes.com",                 share_pct: 18.4, share_delta_pct: 2.1,  used_total: 2926, citation_type: "Editorial" },
     { domain: "reddit.com",                 share_pct: 14.1, share_delta_pct: -1.3, used_total: 2242, citation_type: "UGC_Community" },
     { domain: "wikipedia.org",              share_pct: 11.7, share_delta_pct: 0.8,  used_total: 1860, citation_type: "Knowledge_Base" },
     { domain: "acme.example",               share_pct: 9.3,  share_delta_pct: 3.4,  used_total: 1479, citation_type: "You",
@@ -1843,7 +1849,7 @@
      .uo-row wie in der App, wenn das Brett auf Liste steht. Die mittlere traegt is-mitte: beim
      Ueberfahren der Karte kommt sie nach vorn und die zwei anderen treten zurueck. */
   var VIS_CHANCEN = [
-    { h: "Get the estate into the autobild.de range test", dom: "autobild.de", pot: 4, themen: [2] },
+    { h: "Get the estate into the forbes.com buyer guide", dom: "forbes.com", pot: 4, themen: [2] },
     { h: "No page of yours answers the winter range question", dom: "reddit.com", pot: 3, themen: [2] },
     { h: "Your charging page is cited, never quoted", dom: "acme.example", pot: 2, themen: [3] },
     { h: "Show up in the comparison videos", dom: "youtube.com", pot: 3, themen: [1] },
@@ -2253,7 +2259,7 @@
      und darunter ein Stueck der App -- angeschnitten, nicht als Bild in einem Rahmen. Die Sektion
      zeigt genau eine Sache: was hinter einer Antwort steckt, am Beispiel einer Domain.
 
-     Die Domain ist autobild.de und nicht erfunden: die Sektion behauptet nichts ueber diese Seite,
+     Die Domain ist forbes.com und nicht erfunden: die Sektion behauptet nichts ueber diese Seite,
      sondern zeigt, WAS die App ueber eine Quelle weiss -- und ein erfundener Name waere hier das
      Gegenteil von dem, was gemeint ist ("die echten Quellen deines Marktes"). Die Zahlen sind
      Beispielzahlen und stehen in derselben Groessenordnung wie im Dashboard darueber. */
@@ -2262,11 +2268,13 @@
   var QUELL_H2 = "Which domains the models cite in your market, which of their pages carry the " +
     "answer, and where your brand is named in them.";
   var QUELL_CTA = "Start for free";
-  /* Die Beispiel-Domain ist seit dem 21.09. autobild.de statt g2.com: ein Testmagazin ist die
-     Quelle, aus der KI-Antworten ueber Autos wirklich schoepfen, und dieselbe Domain steht auch
-     oben in der Zitattabelle und auf der ersten Chancenkarte. Drei Szenen, eine Quelle -- eine
-     vierte Domain waere ein Bruch in einer Seite, die sonst eine Geschichte erzaehlt. */
-  var QUELL_DOMAIN = "autobild.de";
+  /* Die Beispiel-Domain ist forbes.com (21.09. angefordert, mit Beispielseiten). Dasselbe
+     Argument wie vorher: eine Quelle, die in Antworten ueber Autos wirklich vorkommt, und
+     dieselbe Domain steht auch oben in der Zitattabelle. Die fuenf Seiten unten sind echte
+     Formen dieser Redaktion -- Bestenlisten, ein Einzeltest, ein Ratgeber --, und keine von
+     ihnen behauptet ein Testergebnis fuer einen Hersteller: gezeigt wird der Anteil, den die
+     SEITE an ACMES Antworten hat, und Acme ist erfunden. */
+  var QUELL_DOMAIN = "forbes.com";
 
   /* Jeden BUCHSTABEN einzeln, damit die Farbe wirklich durch den Satz laeuft und nicht in
      Wortsprüngen. Die Buchstaben stecken in Wortkasten: ein Zeilenumbruch darf zwischen zwei
@@ -2567,11 +2575,11 @@
      fuer einen echten Hersteller. Was sie zeigen, ist der Anteil, den die SEITE an Acmes
      Antworten hat, und das ist eine Aussage ueber Acme. */
   var QUELL_SEITEN = [
-    { p: "/vergleich/elektro-suv", t: "Elektro-SUV im Vergleich 2026 | AUTO BILD", b: 6.2 },
-    { p: "/tests/reichweite-winter", t: "Winter-Reichweitentest 2026: alle Werte | AUTO BILD", b: 4.4 },
-    { p: "/vergleich/kombi-elektro", t: "Elektro-Kombis im Vergleich 2026 | AUTO BILD", b: 3.1 },
-    { p: "/ratgeber/leasing", t: "Leasing-Ratgeber 2026: worauf es ankommt | AUTO BILD", b: 2.3 },
-    { p: "/tests/ladeleistung", t: "Ladeleistung im Test: wer laedt wirklich schnell | AUTO BILD", b: 1.6 }
+    { p: "/safest-family-road-trip-vehicles", t: "These Are The 18 Safest Family Road-Trip Vehicles, Says The IIHS", b: 6.2 },
+    { p: "/best-fuel-economy-2026",           t: "These Are The Models The EPA Says Get The Best Fuel Economy For 2026", b: 4.4 },
+    { p: "/best-luxury-electric-suv-2026",    t: "The Best Luxury Electric SUVs You Can Buy In 2026", b: 3.1 },
+    { p: "/ev-winter-range-guide",            t: "How Much Range An Electric Car Really Loses In Winter", b: 2.3 },
+    { p: "/top-safety-pick-2027",             t: "These Models Hold Onto Their IIHS Top Safety Pick+ Title", b: 1.6 }
   ];
 
   function quellHaupt(){
@@ -2710,6 +2718,19 @@
 
   function teamDomain(m){ return m.dom; }
 
+  /* DER PITCH-CHIP GEHOERT NICHT AN JEDE ZEILE (21.09. angefordert: "mach Pitch nur bei adidas
+     und Sony dran"). Vorher trug ihn die untere Zeile immer -- und damit sagte er nichts mehr:
+     eine Auszeichnung, die jeder hat, ist keine. Jetzt haengt er an zwei bestimmten
+     Arbeitsbereichen und wandert mit ihnen durch die Rotation. */
+  var TEAM_CHIP = { "adidas.com": "Pitch", "sony.com": "Pitch" };
+  /* Beide Wechselzeilen fragen hier nach -- Sony steht im oberen Topf, adidas im unteren, und
+     der Chip soll an der MARKE haengen und nicht an der Zeile. Vorher trug nur die untere Zeile
+     ueberhaupt einen, und Sony haette ihn nie bekommen. */
+  function chipFuer(i){
+    var t = TEAMS[i % TEAMS.length];
+    return (t && TEAM_CHIP[t.dom]) || null;
+  }
+
   /* Eine Zeile des Panels. logo/name/domain wie in der Leiste, der Haken rechts kommt mit und ist
      nur in der aktiven Zeile zu sehen (core.css: .up-pop-opt.is-active .up-check). */
   function teamZeile(i, aktiv, chip){
@@ -2738,8 +2759,8 @@
             '</div>' +
             '<div class="usn-teamlist">' +
               teamZeile(FEN_TEAM_AKTIV, true, null) +
-              teamZeile(FEN_TEAM_WECHSEL[0], false, null) +
-              teamZeile(FEN_TEAM_WECHSEL2[0], false, "Pitch") +
+              teamZeile(FEN_TEAM_WECHSEL[0], false, chipFuer(FEN_TEAM_WECHSEL[0])) +
+              teamZeile(FEN_TEAM_WECHSEL2[0], false, chipFuer(FEN_TEAM_WECHSEL2[0])) +
             '</div>' +
           '</div>' +
         '</div>' +
@@ -2772,14 +2793,16 @@
         zeichenSetzen(root);
       }, FEN_TEAM_AUS);
     }
-    setInterval(function(){
+    /* KEIN eigenes Intervall mehr -- der Taktgeber unten ruft diesen Schritt (21.09.
+       angefordert: "nicht alles in voellig unterschiedlichen Updatezyklen"). */
+    root.__ulhSchrittTeams = function(){
       k  = (k  + 1) % FEN_TEAM_WECHSEL.length;
       k2 = (k2 + 1) % FEN_TEAM_WECHSEL2.length;
-      tauschen("wechsel", FEN_TEAM_WECHSEL[k], null);
+      tauschen("wechsel", FEN_TEAM_WECHSEL[k], chipFuer(FEN_TEAM_WECHSEL[k]));
       /* Die zweite Zeile ein Stueck versetzt: zwei Zeilen, die im selben Bild umschlagen, lesen
          sich als ein Neuaufbau des Panels statt als zwei einzelne Wechsel. */
-      setTimeout(function(){ tauschen("fest", FEN_TEAM_WECHSEL2[k2], "Pitch"); }, 900);
-    }, FEN_TEAM_MS);
+      setTimeout(function(){ tauschen("fest", FEN_TEAM_WECHSEL2[k2], chipFuer(FEN_TEAM_WECHSEL2[k2])); }, 900);
+    };
   }
 
   /* ---------- Zweites Nebenfenster: die URL-Typen im Dunkeln -----------------------------
@@ -2902,7 +2925,7 @@
   function donutLaufen(root){
     if (root.__ulhDonutAn) return;
     root.__ulhDonutAn = true;
-    setInterval(function(){
+    root.__ulhSchrittDonut = function(){
       var kern = window.UpstreemCore;
       var koerper = root.querySelector("[data-ulh-donut]");
       if (!kern || !koerper || !koerper.__ulhDonut) return;
@@ -2914,7 +2937,7 @@
            also nichts weiter nachzuziehen. */
         koerper.classList.remove("is-wechsel");
       }, FEN_URL_AUS);
-    }, FEN_URL_MS);
+    };
   }
 
   /* ---------- Drittes Nebenfenster: eine Antwortkarte ------------------------------------
@@ -3005,19 +3028,63 @@
     if (!fenster || fenster.__ulhLauf) return;
     fenster.__ulhLauf = true;
     var k = 0;
-    (function weiter(){
+    root.__ulhSchrittAntwort = function(){
+      fenster.classList.add("is-blende");
       setTimeout(function(){
-        fenster.classList.add("is-blende");
-        setTimeout(function(){
-          antwortFuellen(++k);
-          /* Die Tooltips kommen mit jeder neuen Karte nach. */
-          ohneTipps(root);
-          hellHalten(root);
-          fenster.classList.remove("is-blende");
-          weiter();
-        }, ANTWORT_BLENDE);
-      }, ANTWORT_HALT);
-    })();
+        antwortFuellen(++k);
+        /* Die Tooltips kommen mit jeder neuen Karte nach. */
+        ohneTipps(root);
+        hellHalten(root);
+        fenster.classList.remove("is-blende");
+      }, ANTWORT_BLENDE);
+    };
+  }
+
+  /* ---------- EIN Taktgeber fuer alle Nebenfenster ------------------------------------------
+     Gemeldet: "ultra hektisch, quasi die ganze Zeit aendert sich irgendwo irgendwas". Der Grund
+     war, dass jedes Fenster seine eigene Uhr hatte -- 5000ms fuer die Teams, 7000 fuer den Ring,
+     5200 plus Blende fuer die Antwortkarte. Drei Perioden, die nicht ineinander aufgehen, ergeben
+     ein Bild, in dem praktisch nie Ruhe ist, und genau das war zu sehen.
+     Jetzt gibt es EINEN Takt, und ein Muster sagt, was in welchem Schlag passiert. Zwei Dinge
+     sind daran wichtig:
+       - es gibt LEERE Schlaege. Ruhe ist der halbe Eindruck; ohne sie wirkt das Fenster nervoes,
+         egal wie langsam das Einzelne laeuft.
+       - manchmal bewegen sich ZWEI Fenster zusammen. Das liest sich als ein Vorgang ("die App
+         hat neue Daten") statt als drei unabhaengige Zappler.
+     Das Muster laeuft im Kreis: 12 Schlaege a 3,2s sind gut 38 Sekunden, bis sich etwas
+     wiederholt -- laenger, als jemand auf ein Schaustueck schaut. */
+  var TAKT_MS = 3200;
+  var TAKT_MUSTER = [
+    ["teams"],            /* 1 */
+    [],                   /* 2  Ruhe */
+    ["antwort", "ring"],  /* 3  zwei zusammen */
+    [],                   /* 4  Ruhe */
+    ["teams"],            /* 5 */
+    ["antwort"],          /* 6 */
+    [],                   /* 7  Ruhe */
+    ["ring"],             /* 8 */
+    ["teams", "antwort"], /* 9  zwei zusammen */
+    [],                   /* 10 Ruhe */
+    ["antwort"],          /* 11 */
+    []                    /* 12 Ruhe */
+  ];
+  function taktgeber(root){
+    if (root.__ulhTaktAn) return;
+    root.__ulhTaktAn = true;
+    var i = -1;
+    setInterval(function(){
+      i = (i + 1) % TAKT_MUSTER.length;
+      var dran = TAKT_MUSTER[i];
+      for (var j = 0; j < dran.length; j++){
+        /* Jeder Schritt in seinem eigenen try: ein Fenster, das noch nicht steht, darf die
+           anderen nicht mitnehmen. */
+        try {
+          if (dran[j] === "teams"   && root.__ulhSchrittTeams)   root.__ulhSchrittTeams();
+          if (dran[j] === "ring"    && root.__ulhSchrittDonut)   root.__ulhSchrittDonut();
+          if (dran[j] === "antwort" && root.__ulhSchrittAntwort) root.__ulhSchrittAntwort();
+        } catch (e){}
+      }
+    }, TAKT_MS);
   }
 
   /* Hover ja, Klick nein. Die Knoepfe, Aufklapper und Zeilen im Fenster SOLLEN auf die Maus
@@ -3346,6 +3413,17 @@
   /* ---------- Daten hineingeben ----------------------------------------------------------- */
 
   function fuellen(){
+    /* DAS UPSTREEM-BRANDING IN DER LEISTE IST AUS (21.09. angefordert: "so wie vorher, bzw. wie
+       in der Hauptapp, wenn man in den Preferences Branding anzeigen ausstellt").
+       Genau dieser Schalter, nicht ein eigener Weg: sidebar.js liest UC.getPref("branding") und
+       nimmt die Zeile bei "off" ganz aus dem Fluss (renderBrand). Ein display:none von hier waere
+       ein zweiter Mechanismus fuer dieselbe Sache -- und haette den Einklappknopf oben stehen
+       lassen, den die Leiste bei "off" selbst in die oberste Zeile umhaengt.
+       VOR den Settern: renderBrand laeuft beim Aufbau der Leiste. */
+    if (window.UpstreemCore && window.UpstreemCore.setPref){
+      window.UpstreemCore.setPref("branding", "off");
+    }
+
     /* DIE FARBSKALA DER LINIEN: "linear" (21.09. angefordert). Sie liegt in der Ablage des
        Betrachters und nicht in den Daten -- die Marken tragen zwar ihre Farbe mit, aber ein
        gesetztes Schema schlaegt sie (buildLineDatasets in core.js), und die Vorgabe der App ist
@@ -3983,8 +4061,8 @@
   var MIRA_QUELLEN = [
     /* Kurze Pfade mit Absicht: der Chip zeigt Domain UND Pfad, und ein langer Pfad schiebt den
        Listenpunkt auf zwei Zeilen -- 26px, die im Fenster fehlen. */
-    { id: "u1", domain: "autobild.de", pfad: "/elektro-suv",
-      titel: "Elektro-SUV im Vergleich 2026" },
+    { id: "u1", domain: "forbes.com", pfad: "/luxury-ev-suv",
+      titel: "The Best Luxury Electric SUVs You Can Buy In 2026" },
     { id: "u2", domain: "reddit.com", pfad: "/winterrange",
       titel: "Winter range thread" }
   ];
@@ -4774,7 +4852,7 @@
      wie es dort hingekommen ist. Ein volles Brett mit sieben Karten konnte das nicht zeigen: mit
      zwei Karten schon in Done sah der zweite Zug wie ein Nachschub aus.
 
-     Die Domains sind ECHT, wo die Quelle fremd ist (autobild.de, reddit.com, youtube.com), und
+     Die Domains sind ECHT, wo die Quelle fremd ist (forbes.com, reddit.com, youtube.com), und
      erfunden, wo sie der eigenen Marke gehoert (acme.example) -- dieselbe Aufteilung wie im
      Zitatteil des Dashboards, Begruendung dort. Die Ueberschriften sind dabei als AUFGABE oder
      als Aussage ueber die eigene Marke formuliert und nicht als Aussage ueber die fremde Seite:
@@ -4782,9 +4860,9 @@
      Wettbewerbernamen wichtiger als vorher: eine Karte darf sagen, wo Acme fehlt, aber nichts
      darueber behaupten, wie eine fremde Redaktion arbeitet. */
   var CHANCEN = [
-    ["o1", "pending", "get_listed", "Get the estate into the autobild.de long range test",
+    ["o1", "pending", "get_listed", "Get the estate into the forbes.com buyer guide",
      "BMW and Audi are in it. You are not.",
-     "High", "Best electric estates, 2026 edition", "autobild.de", "Editorial", "US", 4, 88.4],
+     "High", "The Best Luxury Electric SUVs You Can Buy In 2026", "forbes.com", "Editorial", "US", 4, 88.4],
     ["o2", "pending", "create_matching_content", "No page of yours answers \u201ewhat is the real winter range\u201c",
      "214 runs a month, and never one of your pages.",
      "Medium", "Winter range thread", "reddit.com", "UGC_Community", "US", 3, 61.2],
@@ -4903,12 +4981,25 @@
          hinwegzieht. Erkennbar am Weg -- nur sie aendert x. */
       r.el.style.zIndex = r.dx ? "3" : "2";
       r.el.style.transition = "transform 0s";
+      /* NUR die wandernde Karte wird ausgegraut, und AUSGEGRAUT heisst grau -- nicht
+         durchsichtig (21.09. angefordert: "ausgrauen ja, aber nicht opacity kleiner 1"). Die
+         Klasse traegt die Farben, die Deckkraft bleibt bei 1; die Werte stehen in
+         landing-hero.css. Nur bei einem Spaltenwechsel: eine Karte, die nur nachrutscht, wird
+         nicht angefasst, sie wird ja nicht gezogen. */
+      if (r.dx) r.el.classList.add("ulh-zieht");
       r.el.style.transform = "translate(" + r.dx + "px," + r.dy + "px)";
     });
     void reihe[0].el.offsetHeight;
     requestAnimationFrame(function(){
       reihe.forEach(function(r){
-        r.el.style.transition = "transform " + CHANCEN_ZUG + "ms " + WEICH;
+        /* DER WEG IST JETZT EINE BEWEGUNG UND KEIN SCHIEBEN (21.09.: "das Hin und Her gefaellt
+           mir gar nicht, mach das schoener"). Die wandernde Karte hebt sich beim Losfahren
+           leicht an und legt sich am Ziel wieder ab -- dieselbe Geste, die eine Hand macht.
+           Die zwei Schritte stecken in einer eigenen Kurve: box-shadow und scale laufen mit dem
+           transform, deshalb stehen sie in derselben transition. */
+        r.el.style.transition = "transform " + CHANCEN_ZUG + "ms " + WEICH +
+                                ", box-shadow " + CHANCEN_ZUG + "ms " + WEICH +
+                                ", background-color 200ms ease, border-color 200ms ease";
         r.el.style.transform = "translate(0,0)";
       });
     });
@@ -4916,6 +5007,7 @@
       reihe.forEach(function(r){
         r.el.style.transition = ""; r.el.style.transform = "";
         r.el.style.position = ""; r.el.style.zIndex = "";
+        r.el.classList.remove("ulh-zieht");
       });
     }, CHANCEN_ZUG + 120);
   }
@@ -5547,6 +5639,7 @@
         erscheinen(root);
         teamsLaufen(root);
         donutLaufen(root);
+        taktgeber(root);
         szeneAnsetzen(root);
         miraAnsetzen(root);
         return;

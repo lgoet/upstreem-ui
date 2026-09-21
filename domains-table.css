@@ -293,9 +293,18 @@
 /* Own classes, not core's .up-pagesize-seg/-btn — see the comment on dispCtl in the JS for why
    reusing those literal classes broke the outer table's own page-size control. Same look,
    independent markup: a 32px segmented pill matching the rest of this toolbar's control height. */
-.udt-sub-dispseg { display: inline-flex; align-items: center; gap: 0; height: 32px; padding: 0;
-  background: var(--vc-switch-bg); border-radius: 8px; flex: 0 0 auto; }
-.udt-sub-disp-btn { height: 32px; min-width: 44px; padding: 0 10px; border: 1px solid transparent; border-radius: 8px;
+/* 32 -> 24px (21.09. angefordert, ausdruecklich auch in der App). Der Schalter steht in der
+   Kopfzeile eines AUFGEKLAPPTEN Bereichs, nicht in einer Werkzeugleiste -- dort ist er 32px hoch
+   die groesste Sache der Zeile und zieht den Blick auf sich, obwohl er nur sagt, was in EINER
+   Spalte steht.
+   Die zusammenhaengenden Werte ziehen mit (CLAUDE.md 1): Rundung 8 -> 6, Mindestbreite 44 -> 34,
+   Seitenpolster 10 -> 8px -- alles im Verhaeltnis 0.75. Die SCHRIFT bleibt bei 12px: das ist
+   dieselbe Groesse, die .up-seg in core.css in seinen 26px traegt, und sie steht in 24px mit
+   line-height 1 ohne anzustossen. Eine kleinere Schrift waere hier der eine Wert, der nicht
+   mitmusste. */
+.udt-sub-dispseg { display: inline-flex; align-items: center; gap: 0; height: 24px; padding: 0;
+  background: var(--vc-switch-bg); border-radius: 6px; flex: 0 0 auto; }
+.udt-sub-disp-btn { height: 24px; min-width: 34px; padding: 0 8px; border: 1px solid transparent; border-radius: 6px;
   background: transparent; color: var(--vc-muted); cursor: pointer;
   font: inherit; font-size: 12px; font-weight: 500; line-height: 1;
   display: inline-flex; align-items: center; justify-content: center; }

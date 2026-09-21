@@ -74,7 +74,7 @@ ERSATZ = {
     "UPSTREEM_LOGO": "",
     "EXPORT_INSTANCE_ID": "",
     "BRAND_NAME": "Acme",
-    "BRAND_LOGO_URL": "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2215%22%20fill%3D%22%230b0d10%22%2F%3E%3Cpath%20d%3D%22M32%2015.5%2020.2%2048.5h6.9l2.2-6.6h9.4l2.2%206.6h6.9L43.8%2015.5Zm-.6%209.9%203%209h-6.1Z%22%20fill%3D%22%23fff%22%2F%3E%3C%2Fsvg%3E",
+    "BRAND_LOGO_URL": "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2215%22%20fill%3D%22%230b0d10%22%2F%3E%3Cpath%20d%3D%22M29%2015.5%2016.2%2048.5H23.1L25.3%2041.9H38.7L40.9%2048.5H47.8L35%2015.5ZM32%2025.4%2028.9%2034.4H35.1Z%22%20fill%3D%22%23fff%22%20fill-rule%3D%22evenodd%22%2F%3E%3C%2Fsvg%3E",
     # NACH BRAND_LOGO_URL, nie davor: sonst wird aus BRAND_LOGO_URL ein "_URL".
     "BRAND_LOGO": "",
     # Die Antwortkarte rechts ist der Kartenmodus der Responses-Tabelle. Kein Sticky (das Fenster

@@ -1041,6 +1041,21 @@
    Reihenfolge. */
 .ulh-app .uo-card.is-dragging { opacity: 1; }
 
+/* DIE WANDERNDE KARTE: ausgegraut und angehoben, NIE durchsichtig (21.09. angefordert).
+   opacity steht hier ausdruecklich auf 1 -- nicht als Schmuck, sondern weil genau das gemeldet
+   wurde: die Karte wirkte beim Ziehen halbdurchsichtig. Sie ist es jetzt an keiner Stelle des
+   Weges; was sie vom Rest unterscheidet, sind Farbe und Schatten.
+   Die Farben sind die des Hover-Zustands aus opportunities.css -- dieselbe Sprache wie beim
+   Anfassen, nur eine Stufe deutlicher. Der Schatten ist die dritte Stufe des Fensterschattens
+   und sagt "diese Karte liegt gerade oben". 1.5 Prozent groesser, mehr nicht: eine Karte, die
+   beim Wandern sichtbar waechst, sieht aus, als waere sie naeher an der Kamera. */
+.ulh-app .uo-card.ulh-zieht {
+  opacity: 1;
+  background: var(--vc-heading-bg);
+  border-color: var(--vc-hover-border);
+  box-shadow: 0 10px 26px rgba(16, 20, 24, .14);
+}
+
 /* DIE DREI KENNZAHLENKARTEN UEBER DER PROMPT-TABELLE FALLEN WEG (21.09. gemeldet: "hab ich mit
    einem Wort gesagt, dass ich die Cards ueberm Table haben will? nein").
    prompts-table.js baut sie beim Aufbau immer (kpiBauen, ohne Bedingung) -- in der App gehoeren
@@ -1578,7 +1593,19 @@
 .ulh-vis-tab .up-row, .ulh-vis-dom .up-row { border-bottom: 1px solid var(--ulh-border); }
 .ulh-vis-tab .up-row:last-child, .ulh-vis-dom .up-row:last-child { border-bottom: 0; }
 .ulh-vis-tab .up-td:first-child, .ulh-vis-dom .up-td:first-child { border-left: 0; }
-.ulh-vis-prompt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Die Prompt-Zeile einen Tick groesser und kraeftiger (21.09. angefordert: "1px groesser, 100
+   mehr weight"). Sie ist in dieser Karte der Gegenstand -- die Zahlen daneben erklaeren sie nur --
+   und stand in derselben Staerke da wie alles andere. */
+.ulh-vis-prompt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 17px; font-weight: 500; }
+
+/* DER AUFGEKLAPPTE BEREICH IN DER QUELLENKARTE IST HELLER (21.09. angefordert). --vt-head-bg ist
+   der Ton der Tabellenkoepfe; in einer Karte, die selbst schon auf --vc-bg steht, liest er sich
+   als zweiter Kasten statt als Fortsetzung derselben Zeile. Auf halbem Weg zum Kartengrund bleibt
+   die Abgrenzung erhalten und der Block wird ruhiger.
+   NUR HIER: in der App steht die Tabelle auf der Seite und nicht in einer Karte, dort stimmt der
+   kraeftigere Ton. */
+.ulh-app .udt-subrows { background: color-mix(in srgb, var(--vt-head-bg) 45%, var(--vc-bg) 55%); }
 .ulh-vis-themen { display: flex; gap: 5px; min-width: 0; overflow: hidden; }
 
 /* Der Auslauf nach unten: erst weich zeichnen, dann in den Kartengrund verlaufen. Zwei Ebenen,
