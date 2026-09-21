@@ -535,7 +535,9 @@
 /* "Prompt" specifically, not "Topics" -- a plain class on just that one label, not the shared
    .up-topicmodal-label every field heading uses (that would also repaint the Grouping modal's own
    field labels, which nobody asked for). */
-.upt-et-promptlabel { color: var(--vc-muted); }
+/* HIER STAND .upt-et-promptlabel mit color: var(--vc-muted). Sie ist weg: die Basis in core
+   ist jetzt selbst gedaempft, und die Sonderregel sagte nur noch dasselbe zweimal -- mit dem
+   Nebeneffekt, dass "Prompt" und "Topics" im selben Popup verschieden aussahen. */
 .upt-et-prompttext { font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.35;
   letter-spacing: -0.01em; margin: 0; white-space: pre-wrap; }
 .upt-et-empty { padding: 10px 2px; font-size: 13px; color: var(--vc-muted); }
@@ -858,8 +860,9 @@
 .upt-grp-kpi { display: flex; flex-direction: column; align-items: center; gap: 3px;
   flex: 0 0 auto; min-width: 76px; }
 .upt-grp-kpi-val { display: inline-flex; align-items: center; gap: 6px; }
-.upt-grp-kpi-lbl { font-size: 11px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase;
-  color: var(--vc-third); white-space: nowrap; }
+/* Dieselbe Etikett-Behandlung wie im Rest der App (core: .up-label). Stand auf 11px/500 in
+   Versalien mit Sperrung -- siehe die Begruendung dort. */
+.upt-grp-kpi-lbl { font-size: 12px; font-weight: 600; color: var(--vc-muted); white-space: nowrap; }
 .upt-grp-inactive { font-size: 11px; font-weight: 500; color: var(--vc-third); }
 /* Sentiment without the bordered box the table cell uses — see grpHeadHtml. */
 .upt-grp-sent { display: inline-flex; align-items: center; gap: 6px; }

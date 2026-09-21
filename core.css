@@ -1101,7 +1101,7 @@
     /* Fixed height so the row doesn't grow when the Reset button appears — otherwise the whole
        menu jumps a few pixels the moment you tick the first item. */
     .up-filter-head { flex: 0 0 auto; height: 26px; display: flex; align-items: center; justify-content: space-between; padding: 0 9px; margin-bottom: 6px; }
-    .up-filter-title { font-size: 11px; font-weight: 600; color: var(--vc-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    /* Werte siehe .up-label weiter unten -- hier stand dieselbe Kombination ein zweites Mal. */
     .up-filter-reset { border: 0; background: transparent; color: var(--vc-muted); font-family: inherit; font-size: 11px; font-weight: 500; cursor: pointer; padding: 2px 4px; border-radius: 6px; }
     .up-filter-reset:hover { color: var(--vc-text); }
     /* 4px between rows in every dropdown list. Was 2px here and something different in each
@@ -1690,7 +1690,35 @@
       font-size: 11px; font-weight: 500; cursor: pointer; padding: 2px 4px; border-radius: 6px; text-transform: none; letter-spacing: 0; }
     .up-pop-action:hover { color: var(--vc-text); }
     .up-pop-action.is-hidden { visibility: hidden; pointer-events: none; }
-    .up-pop-head { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--vc-muted); padding: 4px 10px 8px; }
+    /* ---- DIE ETIKETT-BEHANDLUNG (21.09.) --------------------------------------------------
+       EIN Aussehen fuer alles, was einen Abschnitt BENENNT statt etwas zu sagen: Gruppenkopf im
+       Menue, Feldbeschriftung im Dialog, Abschnittstitel in einem Panel. Gemessen waren es vor
+       diesem Umbau 32 Versal-Etiketten in 13 verschiedenen Fassungen und 98 normale
+       Ueberschriften in 50 -- fuer hoechstens vier Rollen.
+
+       KEINE VERSALIEN, und das ist eine Ansage und kein Geschmack (21.09.): "Diese Art von
+       Headings in Uppercase finde ich ganz schlimm, muss weg." Die Unterscheidung zum Fliesstext
+       traegt jetzt Groesse, Schnitt und Farbe -- 12px statt 13, 600 statt 500, gedaempft statt
+       Textfarbe. Das reicht, und es liest sich in jeder Sprache, in der Versalien nicht
+       funktionieren.
+       DIE LAUFWEITE FAELLT MIT WEG. 0.04em stand da, WEIL Versalien Sperrung brauchen; in
+       normaler Schreibung sperrt man nicht, das sieht dann nach Fehler aus.
+       11 -> 12px: die Grossbuchstaben trugen optisches Gewicht, das jetzt fehlt. Ein Pixel
+       mehr gleicht es aus, ohne mit dem Inhalt darunter zu konkurrieren (der steht auf 13).
+
+       NICHT BETROFFEN sind einzelne Buchstaben -- .up-logo-ltr, .up-stack-ltr, .up-model-ltr.
+       Das sind Initialen im Favicon-Kaestchen, keine Ueberschriften; ein kleingeschriebenes
+       "f" fuer forbes.com waere dort schlicht falsch.
+
+       .up-label ist der Name fuer neuen Code. Die vier bestehenden Klassen stehen daneben,
+       damit kein Markup in acht Komponenten angefasst werden muss -- eine Deklaration, vier
+       gewachsene Namen. */
+    .up-label,
+    .up-pop-head,
+    .up-pop-sub,
+    .up-blockhead,
+    .up-filter-title { font-size: 12px; font-weight: 600; color: var(--vc-muted); }
+    .up-pop-head { padding: 4px 10px 8px; }
     /* ---------- Blockueberschrift (12.09., aus sidebar.css hierher gezogen) ----------
        Die kleine Versalzeile UEBER einem Inhaltsblock -- in der Hauptseitenleiste die Zeile vor
        jedem Menuebereich (.usn-head), im Power Dashboard vor "Recent chats" und "Overview". Nicht
@@ -1702,7 +1730,8 @@
        Hoverfarbe, siehe sidebar.css --, baut das ALS ZUSATZ zu dieser Klasse, nicht als Ersatz:
        zwei Stellen mit denselben vier Werten (Groesse, Gewicht, Laufweite, Versalien) sind die
        naechste Drift, sobald eine davon geaendert wird und die andere nicht. */
-    .up-blockhead { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--vc-third); }
+    /* stand auf --vc-third: das ist laut core selbst "Beiwerk" (Platzhalter, Rauten, Einheiten)
+       und war nie AA-Text. Ein Abschnittskopf muss lesbar sein, also --vc-muted wie die anderen. */
     .up-pop-opt { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 10px; border-radius: 9px; cursor: pointer; font-size: 13.5px; font-weight: 500; color: var(--vc-text); }
     /* Hover UND selected tragen denselben Ton (--up-sel-bg, 55%/60%): eine Zeile auf die man zeigt
        und eine die gewaehlt ist meinen beide "diese hier", zwei verschiedene Graus nebeneinander
@@ -1715,7 +1744,7 @@
     .up-pop-opt .up-check svg { width: 16px; height: 16px; display: block; }
     .up-pop-opt.is-active .up-check { opacity: 1; transform: scale(1); }
     .up-pop-div { height: 1px; background: var(--vc-border); margin: 7px 4px; }
-    .up-pop-sub { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--vc-muted); padding: 8px 10px 14px; }
+    .up-pop-sub { padding: 8px 10px 14px; }
     .up-dense { display: inline-flex; width: 100%; padding: 0; gap: 0; background: var(--vc-switch-bg); border-radius: 8px; height: 34px; }
     /* 0 8px: die Beschriftung steht nicht mehr auf der Kante ihrer Haelfte. Wirkt dort, wo der
        Schalter sich nach seinem Inhalt richtet (die Zeile im Einstellungsfenster); in einem
@@ -3510,7 +3539,11 @@
 .up-topicmodal-field { display: flex; flex-direction: column; gap: 8px; }
 /* Each field's own heading: primary color + weight, not muted — these are content labels a user
    reads every time the modal opens, not secondary chrome. */
-.up-topicmodal-label { font-size: 14px; font-weight: 500; color: var(--vc-text); }
+/* Sechs Verwender in drei Dialogen (Name, Appearance, Topics, Group name, Prompt, Topics) --
+   alle benennen einen Block, also dieselbe Behandlung wie jeder andere Abschnittskopf.
+   Vorher 14px/500 in Textfarbe, und prompts-table hat EINEN davon auf gedaempft
+   ueberschrieben: im selben Popup sahen "Prompt" und "Topics" damit verschieden aus. */
+.up-topicmodal-label { font-size: 12px; font-weight: 600; color: var(--vc-muted); }
 .up-topicmodal-name { height: 36px; padding: 0 12px; border: 1px solid var(--vc-border); border-radius: 9px;
   background: transparent; color: var(--vc-text); font: inherit; font-size: 14px; outline: 0; width: 100%; }
 .up-topicmodal-name:focus { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
