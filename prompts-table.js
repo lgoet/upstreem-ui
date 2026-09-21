@@ -1444,7 +1444,35 @@
          one tooltip with the table rather than creating a second. */
       UC.makeTooltips(elBulk, function(){ return isDark; });
       document.body.appendChild(elBulk);
+      akzentSyncen();
       return elBulk;
+    }
+    /* DIE AKZENTFARBE AN DIE LEISTE WEITERREICHEN (21.09.).
+       Der Kommentar ueber ensureBulkBar sagt, die Leiste brauche "only the --vc-* variables,
+       which prompts-table.css declares on .upt-bulkbar directly". Das stimmte -- bis ein
+       PRIMAERKNOPF in die Leiste kam. Der braucht --up-accent, und das steht ausschliesslich
+       an .up-root; die Leiste haengt aber am <body> und ist damit ausserhalb.
+       Gemessen auf der echten Seite: background rgba(0, 0, 0, 0). Der "Apply" hatte also gar
+       keine Fuellung -- nicht als deaktivierter Zustand, sondern immer. Genau das ist als
+       "aktuell ist das nur text button" gemeldet worden, und meine erste Erklaerung dafuer
+       (der Deaktiviert-Zustand sei unsichtbar) war falsch.
+
+       WARUM GELESEN UND NICHT FEST EINGETRAGEN: der Akzent ist einstellbar. core.css kennt
+       html[data-accent="indigo"|"azur"|"terrakotta"] .up-root, jeweils mit eigener Fassung fuers
+       dunkle Thema. Feste Werte in der Palette der Leiste wuerden bei jedem dieser Themen das
+       Falsche zeigen -- und stiller als vorher, weil dann eine Farbe dastuende statt gar keiner.
+       Gelesen wird vom Wurzelelement, dort ist der Akzent aufgeloest, egal welches Thema greift.
+
+       --up-accent-ink kommt mit: Charts in der Leiste gibt es heute nicht, aber wer eines
+       einbaut, faende sonst dieselbe Luecke ein zweites Mal. */
+    function akzentSyncen(){
+      if (!elBulk || !root) return;
+      var cs;
+      try { cs = getComputedStyle(root); } catch (e) { return; }
+      ["--up-accent", "--up-accent-fg", "--up-accent-ink"].forEach(function(name){
+        var wert = String(cs.getPropertyValue(name) || "").trim();
+        if (wert) elBulk.style.setProperty(name, wert);
+      });
     }
     /* Patches just the "N selected" text (slide + fade, same technique as the topic count) when
        a row checkbox toggles — the common case, and by far the most frequent call into the bar.
@@ -5067,6 +5095,10 @@
              Siehe UC.themeParam. */
           isDark = UC.themeParam(params.isDark);
           if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
+          /* Der Akzent unterscheidet sich je Thema (core.css: eigene Werte im dunklen Block und
+             je Akzent-Thema). Nach dem Umschalten also neu lesen, sonst traegt die Leiste die
+             Farbe des vorherigen Themas weiter. */
+          akzentSyncen();
           if (window.__uptUstTopics) window.__uptUstTopics.setTheme(isDark ? "dark" : "light");
         }
         if (params.requestId != null && search.latestReqId() != null && String(params.requestId) !== String(search.latestReqId())) return;
