@@ -434,8 +434,21 @@
    Zutreffen von einer zweiten Klasse und von der Spezifitaet abhaengt. Der Inline-Stil kann von
    nichts geschlagen werden ausser einer laufenden animation, und die ist nach 1410ms vorbei;
    der Takt in landing-hero.js schreibt ihn danach von sich aus nach. */
+/* REDUZIERT HEISST KUERZER, NICHT SPRUNGHAFT (21.09. gemeldet: "auf einigen Windows-Rechnern
+   ist das ein instantes Runterploppen auf den finalen Stand, ohne Animation dazwischen").
+   Die Ursache ist keine kaputte Animation, sondern genau diese Regel: Windows schaltet unter
+   Einstellungen > Barrierefreiheit > Visuelle Effekte die Animationen ab, der Browser meldet
+   daraufhin prefers-reduced-motion: reduce -- und hier stand "transition: none". Das Fenster
+   sprang also von scale(1) auf scale(.8), und die drei Nebenfenster standen im selben Bild da
+   (auftritte() in landing-hero.js setzt sie dort ebenfalls sofort). Auf einem Mac ist die
+   Einstellung selten an, deshalb "auf EINIGEN Rechnern".
+   Ganz abschalten ist die falsche Antwort, aber 1800ms sind genau das, was die Einstellung
+   meint: eine grosse, lange Bewegung. 260ms sind kurz genug, dass nichts mehr schwingt, und
+   lang genug, dass die Groessenaenderung als Bewegung lesbar ist statt als Sprung. Die
+   AUFTRITTE der Seitenstuecke bleiben dabei aus -- die sind viele kleine Bewegungen, und genau
+   die sind gemeint. */
 @media (prefers-reduced-motion: reduce) {
-  .ulh-buehne { transition: none; }
+  .ulh-buehne { transition: transform 260ms var(--ulh-aus); }
 }
 
 /* ---------- Die zwei Seiten im Fenster ----------
@@ -743,8 +756,27 @@
 /* Die Komponenten im Fenster sind Schaustuecke. Nichts darin ist anklickbar, und der Zeiger soll
    das auch nicht behaupten -- der Ablauf spaeter fuehrt die Maus selbst.
    Der Zeiger bleibt trotzdem stehen: pointer-events: none an der Buehne wuerde auch die
-   Tooltips der spaeteren Szenen verhindern, die ueber echte Hover-Zustaende laufen. */
-.ulh-app * { cursor: default; }
+   Tooltips der spaeteren Szenen verhindern, die ueber echte Hover-Zustaende laufen.
+
+   HIER STAND ".ulh-app * { cursor: default }", UND DAS HAT NICHT GEREICHT (21.09. gemeldet).
+   Gemessen waren im Fenster ueber hundert Elemente trotzdem auf pointer: die Komponenten setzen
+   ihn aus Regeln, die entweder eine eigene Kennung tragen (#ask-mira ...) oder zwei Klassen
+   fuehren, und (0,1,0) kommt gegen beides nicht an.
+   Drei Aenderungen daran:
+     - die WURZEL traegt jetzt eine Kennung (landing-hero.js, start()), damit hier (1,2,0)
+       moeglich ist -- !important ist verboten, und Ladereihenfolge ist kein Argument (§1),
+     - die Klasse steht DOPPELT (.up-root.up-root). Das ist kein Tippfehler, sondern der
+       uebliche Weg, eine Spezifitaet um eine Klasse zu heben, ohne einen Vorfahren zu erfinden,
+       den es gar nicht gibt (dieselbe Machart wie .udr-menu.udr-menu in export-data.css),
+     - und es sind DREI Bereiche statt einem: .up-root faengt jede echte Komponente (die tragen
+       alle diese Klasse), .ulh-fen die Nebenfenster und .ulh-vis die Vorschaukarten -- die
+       beiden letzten sind Markup MIT den Klassen der App, aber ohne deren Wurzel.
+   Was ausdruecklich NICHT betroffen ist: die Bedienelemente der Seite selbst. Sie tragen kein
+   .up-root -- Navigation, die zwei Knoepfe, der Preisumschalter und die Fusszeile behalten ihren
+   Zeiger, weil man sie wirklich anklicken kann. */
+#ulh .up-root.up-root,  #ulh .up-root.up-root *,
+#ulh .ulh-fen.ulh-fen,  #ulh .ulh-fen.ulh-fen *,
+#ulh .ulh-vis.ulh-vis,  #ulh .ulh-vis.ulh-vis * { cursor: default; }
 
 /* ---------- Was im Fenster anders steht als in der App --------------------------------------
    Diese vier Regeln fassen fremde Komponenten an, und das braucht eine Begruendung. Sie aendern

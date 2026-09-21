@@ -4600,7 +4600,8 @@
   function promptsAnsetzen(root){
     if (root.__ulhPromptsAn) return;
     root.__ulhPromptsAn = true;
-    var n = 0, hatGetippt = false;
+    var n = 0, hatGetippt = false, ruhig = 0;
+    var RUHE_TAKTE = 12;          /* 12 x 140ms ~ 1,7s Ruhe reichen als Beweis, dass nichts tippt */
     (function warten(){
       var am = root.querySelector("#ask-mira");
       /* Das Tippen muss ANGEFANGEN und geendet haben. Nur "keine Nachricht tippt gerade" reichte
@@ -4617,10 +4618,23 @@
         setTimeout(function(){ promptsSzene(root); }, PROMPTS_WARTEN);
         return;
       }
-      /* Rueckhalt: faengt das Tippen nie an (eine Antwort ohne Text, ein Fehler im Kit), soll der
-         Ablauf trotzdem weitergehen -- nach 30 Sekunden mit zwei Nachrichten reicht es.
-         Und zwei Minuten Geduld insgesamt: in einem verdeckten Tab sind alle Uhren auf eine
-         Sekunde gedrosselt, dort braucht die Mira-Szene ein Vielfaches ihrer Zeit. */
+      /* WENN DAS TIPPEN NIE ANFAENGT, DARF DIE SZENE NICHT 30 SEKUNDEN STEHEN (21.09. gemeldet:
+         "oft bleibt die Animation lange bei Mira stehen, wenn der Chat komplett da ist").
+         Genau das war der Fall: die Bedingung darueber verlangt, dass das Tippen ANGEFANGEN und
+         GEENDET hat. Faengt es gar nicht erst an -- eine Antwort, die ohne den Tippweg gerendert
+         wird --, bleibt hatGetippt false, und es greift erst der Rueckhalt nach n > 214, also
+         rund 30 Sekunden. Der Chat steht dabei fertig da und es passiert nichts.
+         Also ein ZWEITER Ausgang: zwei Nachrichten, nichts tippt, und das seit RUHE_TAKTE
+         Durchlaeufen am Stueck. 12 mal 140ms sind rund 1,7 Sekunden -- lang genug, dass ein
+         Tippen, das gleich beginnt, den Zaehler wieder zurueckstellt (askMiraTypeLastAnswer
+         fasst in 70ms-Schritten nach), und kurz genug, dass niemand davor wartet.
+         Der alte Rueckhalt bleibt: er faengt den Fall, dass die zweite Nachricht spaet kommt. */
+      if (zwei && !tippt && !hatGetippt){ if (++ruhig >= RUHE_TAKTE){
+        setTimeout(function(){ promptsSzene(root); }, PROMPTS_WARTEN); return; } }
+      else ruhig = 0;
+      /* Rueckhalt: nach 30 Sekunden mit zwei Nachrichten reicht es. Und zwei Minuten Geduld
+         insgesamt: in einem verdeckten Tab sind alle Uhren auf eine Sekunde gedrosselt, dort
+         braucht die Mira-Szene ein Vielfaches ihrer Zeit. */
       if (zwei && n > 214){ setTimeout(function(){ promptsSzene(root); }, PROMPTS_WARTEN); return; }
       if (++n < 900) setTimeout(warten, 140);
     })();
@@ -5521,6 +5535,14 @@
     for (var i = 0; i < roots.length; i++){
       if (roots[i].__ulhAuf) continue;
       roots[i].__ulhAuf = true;
+      /* EINE KENNUNG AN DER WURZEL, und zwar nur fuer den Mauszeiger (21.09. angefordert: in den
+         Schaustuecken soll der Zeiger nicht behaupten, man koenne hier klicken).
+         Warum eine Kennung sein MUSS: die Komponenten setzen cursor: pointer teils aus Regeln mit
+         eigener id (#ask-mira ...), und dagegen kommt keine reine Klassenregel an. Gemessen mit
+         .ulh-app * { cursor: default }: ueber hundert Elemente im Fenster standen trotzdem auf
+         pointer. Mit der Kennung reicht (1,2,0), ganz ohne !important.
+         Nur setzen, wenn keine dasteht -- das Element gehoert der Seite, nicht dieser Datei. */
+      if (!roots[i].id) roots[i].id = "ulh";
       los(roots[i]);
     }
   }
