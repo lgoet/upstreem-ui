@@ -2457,7 +2457,11 @@
        darunter (gemessen: beide ab 936, sichtbar war das Panel). z-index 1 genuegt; was rechts
        vom Rand uebersteht, schneidet #ask-mira ohnehin weg. */
     position: relative; z-index: 1;
-    flex-direction: column; align-items: center; gap: 6px;
+    /* gap 2 und nicht 6: der Umschalter soll auf DERSELBEN Hoehe stehen wie der der
+       Hauptleiste, wenn beide eingeklappt sind. Dort sitzt er bei 48 (14 Polster + 32 Logo + 2).
+       Mit 6 plus den 2 am Logo standen hier 54 -- sechs Pixel daneben, gemessen. Der Abstand zu
+       den vier Zeichen darunter haengt am Umschalter selbst (margin-bottom). */
+    flex-direction: column; align-items: center; gap: 2px;
     padding: 14px 12px 16px;
     background: var(--am-bg); border-left: 1px solid var(--am-border-strong);
   }
@@ -2467,7 +2471,7 @@
   #ask-mira.is-side-left .am-mini { order: -1; border-left: 0; border-right: 1px solid var(--am-border-strong); }
   .am-mini-logo {
     width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
-    color: var(--am-text); flex: 0 0 auto; margin-bottom: 2px;
+    color: var(--am-text); flex: 0 0 auto;
   }
   .am-mini-logo svg { width: 20px; height: 20px; display: block; fill: none; stroke: currentColor;
     stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -2499,13 +2503,33 @@
     stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   /* Das Menue der zwei Listen teilt sich die Form mit dem Chat-Menue (.am-cm) und steht wie
      dieses am Koerper -- deshalb hier nur, was anders ist. */
-  .am-mini-pop { max-width: min(280px, calc(100vw - 16px)); }
+  /* 32px breiter als das Chat-Menue (21.09. angefordert). .am-cm bringt min-width 184 mit,
+     hier sind es 216 -- Chattitel sind laenger als "Rename" oder "Pin Chat". */
+  /* .am-cm.am-mini-pop und nicht .am-mini-pop allein: .am-cm setzt min-width 184 und steht
+     WEITER UNTEN in dieser Datei -- bei gleicher Spezifitaet haette die Reihenfolge entschieden
+     und die 216 waeren wirkungslos geblieben (gemessen: 184). Spezifitaet, nicht Ladereihenfolge
+     (CLAUDE.md 1). */
+  .am-cm.am-mini-pop { min-width: 216px; max-width: min(312px, calc(100vw - 16px)); padding-top: 4px; }
+  /* Die Kopfzeile ist die der Filter-Panels aus core; hier nur der Einzug, weil .am-cm mit 6px
+     polstert und .up-filter-head mit 9px rechnet. Links buendig mit den Eintraegen darunter. */
+  .am-mini-head { margin-bottom: 2px; padding: 0 6px; }
   .am-mini-opt span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
   .am-mini-leer { padding: 10px 12px; font-size: 13px; color: var(--am-muted); white-space: nowrap; }
   /* DER "ALL CHATS"-KNOPF FAELLT WEG (21.09. angefordert). Er steht im Markup der Vorlage und
      wuerde ein bereits eingebautes Element nie verlassen -- deshalb hier ausgeblendet und nicht
      dort entfernt. Seine Aufgabe hat die schmale Leiste uebernommen. */
   #ask-mira .am-prev-btn { display: none; }
+  /* KEIN ZIEHGRIFF AN DER EINGEKLAPPTEN LEISTE (21.09. gemeldet). Der Griff gehoert der grossen
+     Leiste und liegt an deren linker Kante -- eingeklappt steht die genau dort, wo jetzt die
+     schmale steht, und man konnte mitten in ihr ziehen. Dabei schob sich die grosse von hinten
+     ins Bild. Die schmale wird nur ueber den Knopf oben auf- und zugeklappt. */
+  #ask-mira:not(.prev-open) .am-prev-panel .am-side-grip { display: none; }
+  /* DER KOPFBEREICH IM STARTZUSTAND IST WEG (21.09. angefordert): Markenzeichen, Ready-Chip und
+     die Zeile "Chat with your AI Search data". Nur im Startzustand -- sobald ein Chat offen ist,
+     steht an derselben Stelle die Titelzeile, und die bleibt.
+     Das Polster der Kopfzeile bleibt stehen: es ist der obere Einzug, an dem sich alles darunter
+     ausrichtet. Ohne es ruecken Willkommenstext und Vorschlaege an die Oberkante. */
+  #ask-mira:not(.has-messages) .am-hero-text { display: none; }
 
   .am-prev-panel {
     position: relative; flex: 0 0 var(--am-side-w); width: var(--am-side-w); z-index: auto;

@@ -6729,13 +6729,24 @@
         if (miniOffen === art){ miniPopZu(); return; }
         var liste = miniListe(art);
         var leer = art === 'pinned' ? 'No pinned chats yet' : 'No chats yet';
-        miniPop.innerHTML = liste.length
-          ? liste.map(function(c){
-              return '<button class="am-cm-opt am-mini-opt" type="button" data-mini-chat="' +
-                escAttr(c.id) + '"><span>' + esc(c.title || 'Untitled chat') + '</span></button>';
-            }).join('')
-          : '<div class="am-mini-leer">' + esc(leer) + '</div>';
+        /* Die Kopfzeile ist die der Filter-Panels aus core (.up-filter-head/.up-filter-title) --
+           dieselbe, die ueber "Citation Type" und "Selected Brands" steht. Nicht nachgebaut:
+           26px hoch, 9px Polster, 11px in Versalien, --vc-muted. */
+        var kopfTxt = art === 'pinned' ? 'Pinned Chats' : 'Recent Chats';
+        miniPop.innerHTML =
+          '<div class="up-filter-head am-mini-head"><span class="up-filter-title">' +
+            esc(kopfTxt) + '</span></div>' +
+          (liste.length
+            ? liste.map(function(c){
+                return '<button class="am-cm-opt am-mini-opt" type="button" data-mini-chat="' +
+                  escAttr(c.id) + '"><span>' + esc(c.title || 'Untitled chat') + '</span></button>';
+              }).join('')
+            : '<div class="am-mini-leer">' + esc(leer) + '</div>');
         miniThema();
+        /* ALLE Knoepfe zuruecksetzen, bevor der neue angeht (21.09. gemeldet: "dann sind beide
+           Icons im offenen Zustand"). Vorher raeumte nur miniPopZu auf, und beim Wechsel von
+           einem Menue zum anderen laeuft das gar nicht -- der alte Knopf blieb hell. */
+        mini.querySelectorAll('[data-mini]').forEach(function(b){ b.setAttribute('aria-expanded', 'false'); });
         miniPop.style.visibility = 'hidden';
         miniPop.classList.add('is-open');
         /* Die Seite richtet sich nach der Leiste: steht sie rechts, geht das Menue nach LINKS
@@ -6748,7 +6759,7 @@
            bleibt der Knopf der Bezug, das Menue soll ja auf seiner Hoehe aufgehen. */
         var lr = mini.getBoundingClientRect();
         var pw = miniPop.offsetWidth, ph = miniPop.offsetHeight;
-        var fb = window.innerWidth || document.documentElement.clientWidth || 0;
+        var fb = document.documentElement.clientWidth || window.innerWidth || 0;   /* ohne Bildlaufleiste, siehe oben */
         var x = links ? (lr.right + 8) : (lr.left - pw - 8);
         if (x < 8) x = 8;
         if (x + pw > fb - 8) x = Math.max(8, fb - pw - 8);
@@ -7328,7 +7339,11 @@
           wegschneiden -- auch keiner, der morgen ein transform bekommt, was auf einer
           Bubble-Seite jederzeit passieren kann. Ein position: fixed ist nur so lange sicher,
           wie kein Vorfahr einen Kaefig aufmacht. */
-    var fensterB = window.innerWidth || document.documentElement.clientWidth || 0;
+    /* clientWidth UND NICHT innerWidth (21.09. gemeldet: "die muessen wahrscheinlich so 8px
+       weiter nach links"). innerWidth zaehlt die BILDLAUFLEISTE mit; clientWidth nicht. Die
+       Differenz ist genau die Breite der Leiste -- je nach System 8 bis 17px --, und um die
+       stand das Menue unter ihr. Genau die Groessenordnung, die gemeldet wurde. */
+    var fensterB = document.documentElement.clientWidth || window.innerWidth || 0;
     var rechts = fensterB || rootRect.right;
     var minL = 8, maxL = rechts - mw - 8;
     if (maxL < minL) maxL = minL;

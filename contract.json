@@ -943,6 +943,7 @@
   "am-mic",
   "am-mini",
   "am-mini-btn",
+  "am-mini-head",
   "am-mini-items",
   "am-mini-leer",
   "am-mini-logo",
@@ -3110,7 +3111,7 @@
   "globals": 187,
   "payloadkeys": 101,
   "dataattrs": 253,
-  "klassen": 2224,
+  "klassen": 2225,
   "keyframes": 66
  }
 }
