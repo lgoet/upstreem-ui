@@ -218,10 +218,12 @@
    currentColor, es genuegt also die eine Angabe. Der Typ ist die leiseste Zeile der Karte: er
    sortiert sie ein, er sagt nichts ueber DIESE Empfehlung. Vorher stand er auf --vc-muted und
    damit gleichrangig mit dem Titel der Quelle darunter. */
+/* Etikett-Behandlung aus core (.up-label): 12px / 600 / --vc-third, normale
+   Schreibung. Versalien und Sperrung sind am 21.09. aus der ganzen App raus. */
 .uo-eyebrow {
   display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0;
   border-radius: 8px; background: transparent; color: var(--vc-third);
-  font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+  font-size: 12px; font-weight: 600;
   min-width: 0; max-width: 100%;
 }
 .uo-eyebrow svg { width: 12px; height: 12px; flex: 0 0 auto; }
@@ -443,7 +445,9 @@
 
 /* Section labels inside the drawer: same small-caps treatment as .up-pop-head, so "PERFORMANCE"
    and a dropdown's "SORT BY" read as the same class of label. */
-.uo-m-section-title { margin: 28px 0 12px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--vc-muted); }
+/* Etikett-Behandlung aus core (.up-label): 12px / 600 / --vc-third, normale
+   Schreibung. Versalien und Sperrung sind am 21.09. aus der ganzen App raus. */
+.uo-m-section-title { margin: 28px 0 12px; font-size: 12px; font-weight: 600; color: var(--vc-third); }
 
 /* Der Performance-Block ist DIESELBE Tabelle wie Details darunter -- Zeile fuer Zeile,
    Beschriftung links, Wert rechts, eine Linie dazwischen. Vorher waren es fuenf gerahmte Kacheln

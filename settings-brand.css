@@ -212,8 +212,9 @@
   flex: 0 0 auto; margin-top: var(--usb-sep-gap); padding-top: var(--usb-sep-gap);
   border-top: 1px solid var(--vc-border);
   display: flex; flex-direction: column; gap: var(--usb-sep-gap); }
-.usb-ddcustom-lbl { font-size: 11px; font-weight: 600; color: var(--vc-muted);
-  text-transform: uppercase; letter-spacing: .04em; padding: 0 1px; }
+/* Etikett-Behandlung aus core (.up-label): 12px / 600 / --vc-third, normale
+   Schreibung. Versalien und Sperrung sind am 21.09. aus der ganzen App raus. */
+.usb-ddcustom-lbl { font-size: 12px; font-weight: 600; color: var(--vc-third); padding: 0 1px; }
 /* Der Add-Knopf sitzt IM Feld, rechts, wie das Loesch-X in jedem Suchfeld der App. Daneben,
    am Rand des Menues, sah er aus wie ein Knopf, der nicht mehr dazugehoert -- er stand buendig an
    der Panelkante und gehoerte optisch weder zum Feld noch zum Menue. Ein Feld mit Knopf darin ist

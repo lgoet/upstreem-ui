@@ -152,9 +152,11 @@
 .unc-tile svg { width: 20px; height: 20px; display: block; }
 /* padding-top 1px: die Grossbuchstaben der Typzeile sitzen optisch zu hoch gegen die Flaeche. */
 .unc-txt { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding-top: 1px; }
+/* Etikett-Behandlung aus core (.up-label): 12px / 600 / --vc-third, normale
+   Schreibung. Versalien und Sperrung sind am 21.09. aus der ganzen App raus. */
 .unc-type {
   font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 10px; font-weight: 500; letter-spacing: 0.09em; text-transform: uppercase;
+  font-size: 12px; font-weight: 600;
   color: var(--vc-third);
 }
 .unc-title {

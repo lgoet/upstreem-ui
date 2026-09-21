@@ -65,9 +65,11 @@
    16 und nicht 18: 16 ist die Hoehe, die die Ueberschrift mit der Hausschrift ohnehin schon hat
    -- die Zeile darunter verschiebt sich also nicht. Uppercase hat keine Unterlaengen, es wird
    dabei nichts beschnitten. */
+/* Etikett-Behandlung aus core (.up-label): 12px / 600 / --vc-third, normale
+   Schreibung. Versalien und Sperrung sind am 21.09. aus der ganzen App raus. */
 .uud-kpi-lbl {
   display: inline-flex; align-items: center; justify-content: flex-start;
-  font-size: 12px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase;
+  font-size: 12px; font-weight: 600;
   line-height: 16px;
   color: var(--vc-third); white-space: nowrap; text-align: left;
 }

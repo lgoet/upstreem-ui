@@ -49,9 +49,10 @@
   padding: 16px 12px; overflow-y: auto;
   display: flex; flex-direction: column; gap: 2px;
 }
+/* Etikett-Behandlung aus core (.up-label): 12px / 600 / --vc-third, normale
+   Schreibung. Versalien und Sperrung sind am 21.09. aus der ganzen App raus. */
 .ums-navhead {
-  padding: 10px 10px 6px; font-size: 11.5px; font-weight: 500; letter-spacing: .04em;
-  text-transform: uppercase; color: var(--vc-third);
+  padding: 10px 10px 6px; font-size: 12px; font-weight: 600; color: var(--vc-third);
 }
 .ums-navhead + .ums-navhead, .ums-nav + .ums-navhead { margin-top: 10px; }
 /* Die Zeile ist .up-optrow aus core -- dieselbe Hoehe, dieselbe Hoverflaeche, derselbe Radius wie

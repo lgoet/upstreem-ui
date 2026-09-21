@@ -309,7 +309,9 @@
 /* ---------- groups + rows ---------- */
 .mqa-group { padding: 4px 0 2px; }
 .mqa-results .mqa-group + .mqa-group { margin-top: 9px; }   /* more air between categories */
-.mqa-group-head { padding: 6px 10px 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--am-muted-2); }
+/* Etikett-Behandlung aus core (.up-label): 12px / 600 / --vc-third, normale
+   Schreibung. Versalien und Sperrung sind am 21.09. aus der ganzen App raus. */
+.mqa-group-head { padding: 6px 10px 4px; font-size: 12px; font-weight: 600; color: var(--vc-third); }
 .mqa-row, .mqa-action {
   display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; border: 0; background: transparent;
   padding: 8px 10px; border-radius: 10px; cursor: pointer; font-family: var(--mqa-font); color: var(--am-text);

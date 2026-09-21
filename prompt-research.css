@@ -289,7 +289,9 @@
 .upr-settings-desc { margin: 4px 0 0; font-size: 12.5px; color: var(--vc-muted); line-height: 1.4; }
 .upr-settings-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; overflow: visible; }
 .upr-field { display: flex; flex-direction: column; gap: 7px; min-width: 0; position: relative; }
-.upr-label { font-size: 11px; line-height: 1; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--vc-muted); }
+/* Etikett-Behandlung aus core (.up-label): 12px / 600 / --vc-third, normale
+   Schreibung. Versalien und Sperrung sind am 21.09. aus der ganzen App raus. */
+.upr-label { font-size: 12px; line-height: 1; font-weight: 600; color: var(--vc-third); }
 
 /* ---------- settings dropdowns ----------
    Open/close, outside-click, Escape and mutual exclusion come from UC.makePopover; only the

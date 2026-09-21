@@ -123,8 +123,9 @@
   display: none; flex-direction: column; box-sizing: border-box; }
 .urd-hlwrap.is-open .urd-hlpop { display: flex; }
 .urd-hlgrp { display: flex; flex-direction: column; gap: 1px; }
-.urd-hlhead { font-size: 11px; font-weight: 600; color: var(--vc-third); letter-spacing: 0.04em;
-  text-transform: uppercase; padding: 6px 8px 4px; }
+/* Etikett-Behandlung aus core (.up-label): 12px / 600 / --vc-third, normale
+   Schreibung. Versalien und Sperrung sind am 21.09. aus der ganzen App raus. */
+.urd-hlhead { font-size: 12px; font-weight: 600; color: var(--vc-third); padding: 6px 8px 4px; }
 .urd-hlsep { height: 1px; background: var(--vc-border); margin: 6px 4px; flex: 0 0 1px; }
 .urd-hlopt { display: flex; align-items: flex-start; gap: 9px; width: 100%; border: 0;
   background: transparent; font: inherit; text-align: left; padding: 7px 8px; border-radius: 8px;

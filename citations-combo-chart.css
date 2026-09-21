@@ -106,7 +106,9 @@
 .up-root[data-theme="dark"] .combo-filter-menu { background: var(--up-menu-bg); }
 .combo-filter.is-open .combo-filter-btn { color: var(--vc-text); background: var(--vc-heading-bg); }
 .combo-filter-head { display: flex; align-items: center; justify-content: space-between; padding: 4px 9px 6px; margin-bottom: 4px; }
-.combo-filter-title { font-size: 11px; font-weight: 600; color: var(--vc-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+/* Etikett-Behandlung aus core (.up-label): 12px / 600 / --vc-third, normale
+   Schreibung. Versalien und Sperrung sind am 21.09. aus der ganzen App raus. */
+.combo-filter-title { font-size: 12px; font-weight: 600; color: var(--vc-third); }
 .combo-filter-toggle { border: 0; background: transparent; color: var(--vc-muted); font-family: inherit; font-size: 11px; font-weight: 500; cursor: pointer; padding: 2px 4px; border-radius: 6px; }
 .combo-filter-toggle:hover { color: var(--cc-primary, #14b8a6); background: transparent; }
 .combo-filter-item { display: flex; align-items: center; gap: 10px; padding: 7px 9px; border-radius: 8px; cursor: pointer; font-size: 13px; color: var(--vc-text); }

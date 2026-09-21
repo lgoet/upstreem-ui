@@ -119,11 +119,12 @@
   .uex-cal-slot > .udr-root, .uex-cal-slot [data-udr-root],
   .uex-cal-slot .udr-wrap,
   .uex-cal-slot .udr-trigger { height: 100%; width: 100%; }
+  /* Etikett-Behandlung aus core (.up-label): 12px / 600 / --vc-third, normale
+     Schreibung. Versalien und Sperrung sind am 21.09. aus der ganzen App raus. */
   .uex-label {
     display: block; margin-bottom: 12px;
-    color: var(--vc-muted);
-    font-size: 11.5px; font-weight: 600; line-height: 1;
-    letter-spacing: .04em; text-transform: uppercase;
+    color: var(--vc-third);
+    font-size: 12px; font-weight: 600; line-height: 1;
   }
 
   /* ---------- option buttons (types + presets share one look) ----------
