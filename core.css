@@ -3,12 +3,20 @@
    Enthält: Tokens+Farben, Icon-Buttons, Switcher, Dropdowns/Portal, Tooltips,
    Skeleton, Suche, Sticky-Header-Mechanik, generische Tabellenstruktur. */
 
-/* Der ganze Bereich 400..600 statt drei einzelner Staerken: Google liefert dafuer die
-   VARIABLE Schnittdatei, und damit sind Zwischenwerte wie 550 wirklich verfuegbar. Mit einer
-   Liste einzelner Staerken faellt jeder Zwischenwert auf die naechste vorhandene zurueck --
-   550 waere dann 600, und eine halbe Stufe liesse sich gar nicht setzen. 400, 500 und 600
-   liegen im Bereich und aendern sich nicht. */
-@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400..600&display=swap");
+/* Der ganze Bereich statt einzelner Staerken: Google liefert dafuer die VARIABLE
+   Schnittdatei, und damit sind Zwischenwerte wie 550 wirklich verfuegbar. Mit einer Liste
+   einzelner Staerken faellt jeder Zwischenwert auf die naechste vorhandene zurueck -- 550
+   waere dann 600, und eine halbe Stufe liesse sich gar nicht setzen.
+
+   400..700 UND NICHT MEHR 400..600 (21.09.). Der Bereich endete bei 600, aber an 15 Stellen
+   stand 650, 700 oder 750 -- und ein Wert ausserhalb des geladenen Bereichs wird still auf
+   den Rand gezogen. Diese 15 Stellen sahen also aus wie 600, obwohl sie mehr wollten, und
+   zwei davon (die Treffermarkierung in Miras Auswahl und die in den Quick Actions) hatten
+   sogar ZWEI Stufen -- 700 und 750 -- die beide als 600 herauskamen. Die Unterscheidung, die
+   dort gebaut wurde, gab es auf dem Bildschirm nie.
+   Kostet keine zweite Datei: es ist dieselbe variable Schnittdatei mit einem breiteren
+   Bereich. */
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400..700&display=swap");
 
 /* Die Form des Globus als Maske -- EINMAL, damit sie nicht in jeder Regel steht. Dieselben Pfade
    wie UC.icon("globe"): Kreis, Meridian, Aequator. Gebraucht vom Rueckfall der Favicon-Kaesten
@@ -20,6 +28,73 @@
       --up-globus: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20'/%3E%3Cpath d='M2 12h20'/%3E%3C/svg%3E");
 }
 .up-root {
+      /* ================= DIE MASSE ==========================================================
+         Angelegt am 21.09. Bis dahin standen in core.css 56 Token, und bis auf sechs
+         (--up-dd-*, --up-focus-*) waren alle davon Farben: fuer Schriftgroesse, Radius, Hoehe,
+         Dauer und Tiefe gab es keine gemeinsame Quelle. Jede dieser Entscheidungen wurde
+         deshalb in jeder der 43 Dateien neu getroffen -- gemessen kamen dabei 34 Schriftgroessen
+         und 57 Radien heraus, wo sechs und fuenf gemeint waren.
+
+         ERFUNDEN IST HIER NICHTS. Jeder Wert unten ist der, der in der App ohnehin am
+         haeufigsten steht; die Zahl in Klammern ist, wie oft er vor dem Anlegen vorkam. Der
+         Block macht also nichts Neues -- er gibt dem, was schon da ist, einen Namen, damit die
+         naechste Regel ihn tippen kann, statt ihn auszurechnen.
+
+         WAS ER NICHT ANFASST: --up-dd-radius (14px), --up-dd-pad, --up-dd-gap, --up-sub-gap und
+         --up-focus-w. Die gab es vorher und sie sind in sich stimmig; die Menues behalten ihren
+         eigenen Radius. Zwei Skalen nebeneinander waeren schlechter als eine mit einer
+         benannten Ausnahme. */
+
+      /* Schrift. Sechs Groessen -- 65 Prozent aller Angaben der App liegen schon auf ihnen.
+         Ueber 22 geht im Dashboard nichts: die Dichte laesst es nicht zu. */
+      --up-fs-xs:  11px;   /* Nebenbeschriftung, Einheiten, Zaehler        (52) */
+      --up-fs-s:   12px;   /* Tabellenzelle, Chip, Menueeintrag           (176) */
+      --up-fs-m:   13px;   /* Fliesstext, Knopfbeschriftung               (164) */
+      --up-fs-l:   14px;   /* Zeilentitel, Chart-Ueberschrift             (100) */
+      --up-fs-xl:  16px;   /* Seitenabschnitt, Dialogtitel                 (26) */
+      --up-fs-kpi: 22px;   /* die grosse Zahl einer Kennzahl               (12) */
+
+      /* Schriftschnitt. Vier, und alle vier liegen im geladenen Bereich (siehe @import oben) --
+         das war vor dem 21.09. bei 700 nicht so. */
+      --up-fw-n:  400;     /* Fliesstext, Nebentext                        (67) */
+      --up-fw-m:  500;     /* der Normalfall der App                      (324) */
+      --up-fw-h:  600;     /* Ueberschrift, aktiver Zustand               (172) */
+      --up-fw-b:  700;     /* echtes Fett: Treffermarkierung, <strong>          */
+
+      /* Radius. Fuenf Stufen. Verschachtelung wird GERECHNET, nicht geraten:
+         innen = aussen minus Innenabstand, danach auf die naechste Stufe. Daher kommen die
+         3.23, 4.28, 7.04 und 8.9, die heute in der App stehen -- aus einer Rechnung ohne
+         Raster zum Einrasten. */
+      --up-r-s:    6px;    /* Chip, Pille, Punkt, kleines Feld             (64) */
+      --up-r-m:    8px;    /* Knopf, Eingabe, Segment, Logoplatte         (180) */
+      --up-r-l:   12px;    /* Karte innen, Drawer-Kopf                     (58) */
+      --up-r-xl:  16px;    /* Chart-Box, Modal, grosse Karte               (31) */
+      --up-r-voll: 999px;  /* alles, was ganz rund ist                     (69) */
+
+      /* Hoehen der Bedienelemente. Vier Stufen, eine Zeilenhoehe. */
+      --up-h-chip: 24px;   /* .up-sent, Plaketten                          (53) */
+      --up-h-seg:  28px;   /* kleines Segment                              (47) */
+      --up-h-btn:  32px;   /* Knopf, Eingabe, Werkzeugleiste              (112) */
+      --up-h-gross: 40px;  /* Hauptknopf, Suchfeld                         (33) */
+      --up-h-row:  55px;   /* Tabellenzeile -- steht so im STYLEGUIDE           */
+
+      /* Bewegung. Drei Dauern, zwei Kurven -- nach dem, WAS sich bewegt, nicht wie weit.
+         Die zwei Kurven sind die, die in der App schon am haeufigsten ausgeschrieben stehen. */
+      --up-t-1: 120ms;     /* Farbe, Deckkraft, Hover -- reiner Zustand   (133) */
+      --up-t-2: 200ms;     /* Groesse und Position                        (129) */
+      --up-t-3: 320ms;     /* Flaechen: Drawer, Modal, Seitenwechsel        (5) */
+      --up-ease:     cubic-bezier(.2, 0, .38, .9);   /* hin und zurueck   (13) */
+      --up-ease-auf: cubic-bezier(.22, 1, .36, 1);   /* nur Auftritte      (9) */
+
+      /* Tiefe. Vier Stufen, EINE Schattenfarbe -- es aendern sich nur Versatz und Unschaerfe.
+         --up-dd-shadow bleibt daneben bestehen: die Menues tragen ihn seit langem, und
+         e-2 ist absichtlich derselbe Ton, damit beides nebeneinander stimmt. */
+      --up-e-1: 0 1px 2px rgba(0,0,0,.06);
+      --up-e-2: 0 10px 28px rgba(0,0,0,.14);   /* = --up-dd-shadow, hell */
+      --up-e-3: 0 14px 34px rgba(0,0,0,.16);
+      --up-e-4: 0 20px 48px rgba(0,0,0,.20);
+      /* ===================================================================================== */
+
       /* --vc-muted ist um vier Einheiten dunkler als vorher (#6f737c), und das ist KEINE neue
          Schriftfarbe, sondern der Ausgleich fuer den Grund, den ich verschoben habe: auf Weiss
          stand dieser Ton bei Kontrast 4.75, auf der neuen Karte (#f9f8f9) waren es 4.49 -- einen
@@ -283,6 +358,17 @@
          Entscheidung und keine Folge dieser hier. */
       --up-menu-bg: #232326; --up-sel-bg: #28282c; --up-menu-border: #3e3e44;
       --up-dd-shadow: 0 10px 28px rgba(0,0,0,.32);
+      /* Die vier Tiefen im dunklen Thema. Sie sind NICHT die hellen mit mehr Deckkraft, auch
+         wenn die Zahlen so aussehen: auf dunklem Grund traegt ein Schatten kaum, deshalb liegt
+         die Arbeit dort beim helleren Rahmen (--vc-border, --up-menu-border), und der Schatten
+         setzt nur die Kante ab. Mehr als .32 macht daraus einen Fleck.
+         Die Masse selbst -- Schrift, Radius, Hoehe, Dauer -- stehen NICHT noch einmal hier:
+         die aendern sich mit dem Thema nicht, und ein zweiter Satz waere ein zweiter Ort zum
+         Auseinanderlaufen. */
+      --up-e-1: 0 1px 2px rgba(0,0,0,.24);
+      --up-e-2: 0 10px 28px rgba(0,0,0,.32);
+      --up-e-3: 0 14px 34px rgba(0,0,0,.38);
+      --up-e-4: 0 20px 48px rgba(0,0,0,.46);
       --vc-switch-bg: #232326; --vc-switch-border: #34343a; --vc-third: #808080;
       --up-switch-off: #444444;   /* siehe hell */
       /* Die Textfassung des Blau-Lila-Paares, hier HERAUFgedreht statt herunter -- der Text

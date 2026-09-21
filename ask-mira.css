@@ -386,7 +386,7 @@
   /* Rich content inside assistant bubbles */
   .am-bubble p { margin: 0 0 10px; }
   .am-bubble p:last-child { margin-bottom: 0; }
-  .am-bubble strong, .am-bubble b { font-weight: 650; }
+  .am-bubble strong, .am-bubble b { font-weight: 700; }
   /* full-bold lines act as headings (no h-tags): first line +2.5px, later bold lines +1.5px */
   .am-bubble .am-mh1 { font-size: calc(1em + 2.5px); }
   .am-bubble .am-mh2 { font-size: calc(1em + 1px); }
@@ -398,8 +398,8 @@
     font-family: inherit; font-size: inherit;
     background: none; padding: 0; border-radius: 0;
   }
-  .am-bubble h3 { margin: 14px 0 6px; font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
-  .am-bubble h4 { margin: 12px 0 6px; font-size: 16px; font-weight: 650; letter-spacing: -0.01em; }
+  .am-bubble h3 { margin: 14px 0 6px; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+  .am-bubble h4 { margin: 12px 0 6px; font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
   .am-bubble h3:first-child, .am-bubble h4:first-child { margin-top: 0; }
   .am-logo-wrap { display: inline-flex; align-items: center; vertical-align: middle; white-space: normal; overflow-wrap: anywhere; word-break: break-word; max-width: 100%; margin-left: 8px; cursor: pointer; }
   td > .am-logo-wrap:first-child, th > .am-logo-wrap:first-child,
@@ -508,7 +508,7 @@
   }
   .am-inline-logo-fallback {
     display: inline-flex; align-items: center; justify-content: center;
-    font-size: 11px; font-weight: 700; line-height: 1; color: var(--am-muted);
+    font-size: 11px; font-weight: 600; line-height: 1; color: var(--am-muted);
     background: var(--am-soft-2); border-color: var(--am-border); object-fit: initial;
   }
 
@@ -704,7 +704,7 @@
   #ask-mira .uo-card-reason { margin: 9px 0 0; font-size: 13px; line-height: 1.55; color: var(--uo-muted); }
   #ask-mira .uo-source { display: flex; align-items: center; gap: 11px; margin-top: 18px; min-width: 0; }
   #ask-mira .uo-fav { width: 26px; height: 26px; border-radius: 7px; flex: 0 0 auto; object-fit: cover; background: var(--uo-soft-2); border: 1px solid var(--uo-border); }
-  #ask-mira .uo-fav-fb { display: none; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--uo-muted); background: var(--uo-soft-2); border: 1px solid var(--uo-border); }
+  #ask-mira .uo-fav-fb { display: none; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: var(--uo-muted); background: var(--uo-soft-2); border: 1px solid var(--uo-border); }
   #ask-mira .uo-source-meta { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
   #ask-mira .uo-source-title { font-size: 12.5px; font-weight: 500; color: var(--uo-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
   #ask-mira .uo-source-domain { font-size: 11.5px; color: var(--uo-muted-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -714,7 +714,7 @@
   #ask-mira .uo-kpi-label { font-size: 11.5px; color: var(--uo-muted); font-weight: 500; }
   #ask-mira .uo-kpi-val { margin-top: 6px; font-size: 18px; font-weight: 550; letter-spacing: -0.02em; color: var(--uo-text); display: flex; align-items: center; flex-wrap: wrap; gap: 4px 7px; }
   #ask-mira .uo-kpi-val .is-pos { color: #2ea84a; } #ask-mira .uo-kpi-val .is-neg { color: #b0200c; }
-  #ask-mira .uo-trend { font-size: 14px; font-weight: 650; display: inline-flex; align-items: center; gap: 4px; }
+  #ask-mira .uo-trend { font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
   #ask-mira .uo-trend svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   #ask-mira .uo-trend.up { color: #2ea84a; } #ask-mira .uo-trend.down { color: #b0200c; }
   #ask-mira .uo-meta-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 2px 18px; }
@@ -966,12 +966,12 @@
   }
 
   /* brand + favicon chip = exactly the inline-logo style (24px, radius 8, soft bg, border, cover) */
-  .am-tload-logo { width: 24px; height: 24px; border-radius: 8px; background: var(--am-soft); border: 1px solid var(--am-border); overflow: hidden; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: #fff; font-size: 9.5px; font-weight: 700; }
+  .am-tload-logo { width: 24px; height: 24px; border-radius: 8px; background: var(--am-soft); border: 1px solid var(--am-border); overflow: hidden; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: #fff; font-size: 9.5px; font-weight: 600; }
   .am-tload-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .am-tload-logo.is-fb { background: var(--fb,#9ca3af) !important; border-radius: 6px; }
   .am-tload-logo.is-fb img { display: none; }
   /* AI model = resp-ic style (transparent, no box, contain) */
-  .am-tload-ai { width: 24px; height: 24px; border-radius: 8px; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; background: transparent; color: #fff; font-size: 9.5px; font-weight: 700; }
+  .am-tload-ai { width: 24px; height: 24px; border-radius: 8px; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; background: transparent; color: #fff; font-size: 9.5px; font-weight: 600; }
   .am-tload-ai img { width: 24px; height: 24px; object-fit: contain; display: block; border-radius: 8px; }
   .am-tload-ai.is-fb { background: var(--fb,#9ca3af) !important; border-radius: 8px; }
   .am-tload-ai.is-fb img { display: none; }
@@ -1293,7 +1293,7 @@
      passen, die eine Zeile darueber jetzt aus --up-menu-bg kommt. --am-soft war auf die alte
      --am-card-Flaeche abgestimmt und sitzt auf der neuen sichtbar daneben. */
   .am-rep-range-opt:hover { background: var(--up-sel-bg); }
-  .am-rep-range-opt.is-sel { font-weight: 650; }
+  .am-rep-range-opt.is-sel { font-weight: 600; }
   .am-rep-range-check { margin-left: auto; flex: 0 0 auto; display: inline-flex; opacity: 0; color: var(--am-text); }
   .am-rep-range-opt.is-sel .am-rep-range-check { opacity: 1; }
   .am-rep-range-check svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
@@ -2165,7 +2165,7 @@
      die den Typ schon sagt, soll die Wiederholung leiser sein und nicht lauter. */
   .am-pick-type { flex: 0 0 auto; font-size: 11px; font-weight: 500; color: var(--am-muted-2);
     letter-spacing: 0.01em; }
-  .am-pick-hl { background: transparent; color: inherit; font-weight: 750; }
+  .am-pick-hl { background: transparent; color: inherit; font-weight: 700; }
 
   .am-pick-note { padding: 26px 16px 24px; text-align: center; color: var(--am-muted); font-size: 12.5px; }
   /* Der Titel in der SEKUNDAERfarbe und nicht in der primaeren: er ist ein Hinweis, keine
@@ -2285,7 +2285,7 @@
   .am-pick-tag-av-fb { display: none; align-items: center; justify-content: center; width: 100%; height: 100%; color: var(--am-muted); }
   .am-pick-tag-av.is-fb .am-pick-tag-av-fb { display: flex; }
   .am-pick-tag-av-fb svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 2.2; }
-  .am-pick-tag-av-t { font-size: 9.5px; font-weight: 700; color: var(--am-muted); }
+  .am-pick-tag-av-t { font-size: 9.5px; font-weight: 600; color: var(--am-muted); }
   /* EINE Reihe, sonst gekuerzt -- ausdruecklich verlangt. Ein langer URL-Titel oder ein Prompt
      darf die Zeile nicht sprengen. 320px, damit drei Marken nebeneinander passen und ein
      einzelner langer Titel trotzdem etwas zu lesen gibt. */
