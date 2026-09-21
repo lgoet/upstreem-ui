@@ -5291,7 +5291,7 @@
      _nfAktiv geht aus an genau drei Stellen: die Antwort ist da (nfErfolg, aus
      askMiraSetMessages/askMiraAddMessage heraus), der Nutzer ist in einem anderen Chat, oder
      die Notbremse greift. */
-  var _nfAktiv = false;
+  var _nfAktiv = false, _nfGemeckert = false;
   function nfLaeuftNoch(){
     if (!_nfAktiv) return false;
     var jetzt = String(S.activeChatId || '');
@@ -5315,8 +5315,25 @@
     if (!nfLaeuftNoch()){ nfAus(); return false; }
     var jetzt = Date.now();
     if (jetzt - _nfLetzte < NF_BODEN) return false;
-    var fn = window.bubble_fn_ask_mira_refresh_chat || window.bubble_fn_ask_mira_select_chat;
-    if (typeof fn !== 'function') return false;
+    /* NUR der eigene Auffrischungs-Workflow, NICHT select_chat (21.09. korrigiert).
+       select_chat heisst "oeffne diesen Chat": in Bubble haengt daran der Ladezustand, der
+       Titel, das Scrollen an den Anfang. Ihn als stille Hintergrundauffrischung zu missbrauchen
+       war der zweite Teil des Aufblitzens -- und der schlimmere, weil er den sichtbaren
+       Ladezustand mitbringt.
+       Fehlt bubble_fn_ask_mira_refresh_chat, wird NICHT nachgefasst. Einmal in die Konsole, was
+       zu tun ist; stillschweigend etwas Falsches zu tun ist schlechter als nichts zu tun. */
+    var fn = window.bubble_fn_ask_mira_refresh_chat;
+    if (typeof fn !== 'function'){
+      if (!_nfGemeckert && window.console){
+        _nfGemeckert = true;
+        console.warn('[AskMira] Nachfassen aus: bubble_fn_ask_mira_refresh_chat fehlt. ' +
+          'Dieser Workflow soll NUR die Nachrichten des Chats neu laden -- ohne ' +
+          'askMiraSetChatLoading, ohne Titelwechsel, ohne Scrollen. select_chat ist dafuer ' +
+          'nicht geeignet: es oeffnet den Chat und bringt den sichtbaren Ladezustand mit.');
+      }
+      nfAus();
+      return false;
+    }
     _nfLetzte = jetzt;
     try { fn(S.activeChatId); } catch(e){ return false; }
     /* Fuer den Prueftand und fuer eine Seite ohne Bubble -- und als Spur in der Diagnose. */
@@ -5398,7 +5415,32 @@
       renderMessages();
     }, LAUF_FRIST);
   }
+  /* DER MERKER GEGEN DAS AUFBLITZEN (21.09. gemeldet: "alle x Sekunden flasht der Chat einmal
+     kurz auf"). Er haelt den ROHEN Text der zuletzt angenommenen Nutzlast und den Chat, zu dem
+     er gehoerte. */
+  var _letzteRoh = '', _letzterRohChat = '';
   window.askMiraSetMessages = function(messages){
+    /* EINE NUTZLAST, DIE NICHTS NEUES BRINGT, DARF DEN CHAT NICHT NEU ZEICHNEN.
+       Bis hierher loeste JEDE Nutzlast renderMessages aus -- elMessages.innerHTML komplett neu,
+       Bilder neu, Scrollposition zurueck auf unten. Beim Oeffnen eines Chats faellt das nicht
+       auf, weil vorher nichts dastand; beim Nachfassen alle paar Sekunden schon, und genau das
+       war zu sehen. Ich hatte behauptet, man sehe es nicht -- das war falsch, und es war nicht
+       gemessen.
+       Verglichen wird der ROHE Text und nicht das geparste Ergebnis: er ist die genaueste
+       Auskunft darueber, ob sich etwas geaendert hat, und der billigste Vergleich dazu. Der Chat
+       gehoert mit in den Vergleich, sonst wuerde ein Wechsel auf einen Chat mit zufaellig
+       gleicher Nutzlast verschluckt.
+       NICHT uebersprungen wird, solange das Skelett laeuft: dort steht noch gar nichts auf dem
+       Schirm, das erhalten bleiben koennte. */
+    if (typeof messages === 'string' && !S.chatLoading &&
+        messages === _letzteRoh && String(S.activeChatId || '') === _letzterRohChat){
+      /* Kein Zeichnen, kein Zustandswechsel -- und ausdruecklich auch kein nfErfolg: es ist ja
+         nichts angekommen. Das Nachfassen laeuft also weiter, bis wirklich etwas Neues kommt. */
+      try { root.dispatchEvent(new CustomEvent('askmira:unveraendert',
+        { detail: { chat_id: S.activeChatId }, bubbles: true })); } catch(e){}
+      return;
+    }
+    if (typeof messages === 'string'){ _letzteRoh = messages; _letzterRohChat = String(S.activeChatId || ''); }
     S.chatLoading = false; clearTimeout(_chatLoadT);   // real messages arrived -> drop the loading skeletons
     ladeMarkeSetzen();                                 /* und der Spinner in der Leiste hoert auf */
     if (typeof messages === 'string'){

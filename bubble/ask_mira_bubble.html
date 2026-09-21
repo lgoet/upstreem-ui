@@ -227,27 +227,31 @@
      Der Grund liegt nicht in dieser App: ein Telefon legt einen Tab im Hintergrund schlafen und
      mit ihm die WebSocket-Verbindung. Was in dieser Zeit faellt, wird nicht nachgeliefert.
 
-     SEIT DEM 20.09. HOLT DIE KOMPONENTE ES SELBST. Sie ruft dafuer denselben Weg, den ein Klick
-     auf einen Chat geht:
-
-         bubble_fn_ask_mira_select_chat(<aktive chat_id>)
-
-     Es ist also NICHTS einzurichten -- wer diesen Workflow schon hat (und den hat jeder Einbau,
-     sonst liesse sich kein Chat oeffnen), bekommt das Nachfassen geschenkt. Ausgeloest wird es,
-     solange eine Antwort laeuft: wenn der Tab wieder sichtbar wird, wenn die Verbindung
-     zurueckkommt, und sonst mit wachsendem Abstand (8s, 12, 18, 27, dann alle 30).
-
-     OPTIONAL, WENN DER WORKFLOW ZU SCHWER IST: select_chat setzt in den meisten Einbauten auch
-     den aktiven Chat und laedt die Leiste mit. Wer dafuer einen leichteren Weg will -- nur die
-     Nachrichten dieses Chats holen und askMiraSetMessages rufen --, legt ein zweites
-     JavaScriptToBubble-Element an:
+     SEIT DEM 20.09. HOLT DIE KOMPONENTE ES SELBST -- und seit dem 21.09. NUR noch ueber einen
+     eigenen, stillen Workflow. Der ist PFLICHT, wenn das Nachfassen laufen soll:
 
          Function name  bubble_fn_ask_mira_refresh_chat
          Value type     text        (die chat_id)
          Trigger event  angehakt
 
-     Gibt es das Element, wird es BEVORZUGT; sonst bleibt es bei select_chat. Einen dritten Weg
-     gibt es nicht, und die Komponente legt von sich aus keinen an.
+     Was er tun darf: die Nachrichten DIESES Chats holen und askMiraSetMessages rufen.
+     Was er NICHT tun darf: askMiraSetChatLoading, den aktiven Chat setzen, die Leiste neu laden,
+     den Titel wechseln, scrollen.
+
+     WARUM NICHT MEHR select_chat (21.09. korrigiert): bis dahin fiel das Nachfassen darauf
+     zurueck, wenn es refresh_chat nicht gab. select_chat heisst aber "oeffne diesen Chat", und
+     in den meisten Einbauten haengt daran der sichtbare Ladezustand. Gemeldet wurde genau das:
+     "alle x Sekunden flasht der Chat einmal kurz auf". Fehlt refresh_chat, wird jetzt NICHT
+     mehr nachgefasst, und die Konsole sagt einmal, was anzulegen ist -- stillschweigend etwas
+     Falsches zu tun ist schlechter als nichts zu tun.
+
+     Ausgeloest wird es, solange eine Antwort laeuft: wenn der Tab wieder sichtbar wird, wenn die
+     Verbindung zurueckkommt, und sonst mit wachsendem Abstand (12s, 18, 27, dann alle 15).
+
+     UND DIE KOMPONENTE ZEICHNET NICHT MEHR NEU, WENN NICHTS NEUES KOMMT (21.09.). Kommt aus
+     einem Nachfassen dieselbe Nutzlast wie zuletzt, ruehrt sie das DOM nicht an -- vorher baute
+     JEDE Nutzlast die Nachrichtenliste komplett neu, mitsamt Bildern und Scrollposition. Der
+     Workflow darf also ruhig immer alles schicken; doppelt kostet nichts.
 
      WAS NICHT ZURUECKKOMMT: die Arbeitsschritte im Loader ("Mira liest die Quellen ..."). Die
      sind fluechtig und stehen nirgends nach. Zurueck kommt die fertige Antwort -- und damit
