@@ -30,7 +30,7 @@ GRUNDLINIE = os.path.join(HIER, ".skala_grundlinie.json")
 # daneben sind die der Token, damit man beim Suchen beides findet.
 # Die Basis der Radien. Die konzentrischen Kinder (Basis minus 1, siehe unten) kommen
 # rechnerisch dazu und stehen deshalb nicht in der Liste.
-RADIUS_BASIS = {4, 6, 8, 10, 12, 16}
+RADIUS_BASIS = {4, 6, 8, 10, 12, 16, 32}
 
 SKALA = {
     "font-size":     ({"11px", "12px", "13px", "14px", "16px", "22px", "28px"},
@@ -98,7 +98,12 @@ def einzelwerte(roh):
     mit dem Fenster mitwachsen sollen -- dieselbe Ueberlegung wie bei der Landingpage: eine ganze
     Seite ist kein Dashboard und vertraegt eine groessere Spreizung. calc() rechnet meist aus
     einem Token (der konzentrische Radius zum Beispiel) und ist damit schon auf der Skala."""
-    roh = roh.strip().rstrip("!important").strip()
+    # KEIN rstrip("!important") -- rstrip nimmt eine ZEICHENMENGE, nicht eine Zeichenkette.
+    # Es entfernt also jedes Zeichen aus {!,i,m,p,o,r,t,a,n} vom Ende, und aus "0.28em" wird
+    # "0.28e". Gefunden am 21.09. in ask-mira.css, wo Radien in em stehen: der Pruefer meldete
+    # ".285e" und "0.28e" als Verstoesse, obwohl relative Einheiten laengst durchgehen sollten.
+    # Betroffen waere jeder Wert auf diesen Buchstaben: 1rem, 2em, center, inherit, normal.
+    roh = re.sub(r'\s*!\s*important\s*$', '', roh.strip(), flags=re.I).strip()
     if FREI.match(roh):
         return []
     # JEDER Funktionsaufruf bleibt am Stueck. Erste Fassung pruefte nur auf var( und calc( --
