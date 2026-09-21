@@ -506,13 +506,14 @@
     }
 
     /* ---------------- Registrierungscode ----------------
-       WAS HIER PASSIERT, IST BEQUEMLICHKEIT -- NICHT SICHERHEIT. Diese Datei laeuft im Browser
-       des Nutzers; wer sie umgeht, umgeht sie. Die Sperre selbst steht in Bubble: der
-       Signup-Workflow prueft den Code serverseitig, bevor er ein Konto anlegt, und ein
-       Datenbank-Ausloeser auf "User is created" wirft jedes Konto wieder weg, das ohne
-       Berechtigung entstanden ist (siehe bubble/signup_code_setup.md). Hier steht nur, dass der
-       Nutzer nicht erst auf eine Serverrunde warten muss, um zu erfahren, dass er nichts
-       eingetippt hat.
+       WAS HIER PASSIERT, IST BEQUEMLICHKEIT -- NICHT SICHERHEIT. Und zwar aus einem schaerferen
+       Grund als dem ueblichen "laeuft im Browser": der Publishable Key steht in jedem Client,
+       und damit kann jeder ohne diese Seite direkt POST /auth/v1/signup an Supabase schicken.
+       Eine Sperre in dieser Datei -- oder in einem Bubble-Workflow -- ist deshalb ein Schild,
+       kein Riegel. Der Riegel sitzt in GoTrue (Signups aus) oder in Postgres (Trigger vor dem
+       Einfuegen in auth.users); beides steht in bubble/signup_code_setup.md.
+       Hier steht nur, dass der Nutzer nicht erst auf eine Serverrunde warten muss, um zu
+       erfahren, dass er nichts eingetippt hat.
        Verlangt wird der Code NUR, wenn data-code-required="yes" steht -- und auch dann nicht bei
        einer Einladung. Der Vorgabewert ist "no": ein bestehendes Element, das dieses Attribut
        noch nicht kennt, soll nicht ploetzlich einen Code verlangen, den niemand hat. */
@@ -668,9 +669,9 @@
       /* GOOGLE LEGT AUCH KONTEN AN -- ohne diesen Riegel waere die Codepflicht ein Knopf weiter
          umgangen. Geprueft wird nur im Signup: im Login gibt es nichts zu berechtigen, und ein
          bestehendes Konto nach einem Code zu fragen waere Unsinn.
-         Der ZWEITE Riegel steht in Bubble -- wer im Login-Modus auf Google klickt, ohne ein
-         Konto zu haben, laesst das Plugin trotzdem eines anlegen. Diesen Fall faengt nur der
-         Datenbank-Ausloeser ab (bubble/signup_code_setup.md). */
+         Den Fall "im Login-Modus auf Google geklickt, ohne Konto" faengt diese Pruefung NICHT
+         ab -- dort gibt es nichts zu pruefen, und GoTrue legt die Identitaet selbst an. Dafuer
+         gibt es Lage 3 in bubble/signup_code_setup.md. */
       if (codeAn() && !codeWert()){
         state.errs.code = "Please enter your registration code.";
         zeigeFehler();
