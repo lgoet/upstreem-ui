@@ -3510,6 +3510,10 @@
 #ask-mira.up-root.is-launcher .am-shell::before,
 #ask-mira.up-root.is-launcher .am-hero,
 #ask-mira.up-root.is-launcher .am-chat,
+/* .am-mini GEHOERT IN DIESE LISTE (21.09.). Sie ist wie die grosse Leiste ein Kind der
+   Wurzel und war im Launcher damit sichtbar -- im Power Dashboard hat Mira nur ihr
+   Eingabefeld zu sein, keine Leiste, weder breit noch schmal. */
+#ask-mira.up-root.is-launcher .am-mini,
 #ask-mira.up-root.is-launcher .am-prev-panel,
 #ask-mira.up-root.is-launcher .am-prev-scrim,
 #ask-mira.up-root.is-launcher .am-scroll-bottom,
