@@ -151,9 +151,22 @@
    so auf der Liste dessen, was ausdruecklich nicht Akzent ist).
    Der Buchstabenrueckfall traegt deshalb auch nicht mehr --up-accent-fg, sondern die Farbe, die
    auf der jeweiligen Platte lesbar ist. */
+/* DER 1px-SAUM KOMMT AUS ZWEI VERSCHIEDENEN QUELLEN -- UND DESHALB AUCH DAS POLSTER (21.09.).
+   Gemeldet: "der Chip mit Compare with soll exakt so gross sein wie die Container mit den Icons".
+   Gemessen war er das auf dem Papier (17x17), auf dem Schirm aber nicht: im HELLEN kamen 1px
+   Rahmen UND das 1px Polster aus core zusammen, der Inhaltskasten war also 13px breit -- und ein
+   <img> im Flexkasten SCHRUMPFT (flex-shrink 1). Das Bild stand mit 13x15 da: quer gestaucht,
+   hochkant ueber den Rahmen hinausgewachsen, Luft 1/2/1/2. Der Rahmen war oben und unten vom
+   Bild verdeckt und nur links und rechts zu sehen -- das Plaettchen las sich schmaler und hoeher
+   als die beiden Akzentplatten daneben.
+   Der Saum ist je Thema etwas anderes: hell der RAHMEN, dunkel die FLAECHE. Also traegt auch nur
+   die jeweils andere Seite das Polster -- hell 0 (der Rahmen macht die 1px schon), dunkel 1px
+   (die Flaeche braucht sie). So ist der Inhaltskasten in BEIDEN Themen 15px, das Bild genau
+   15x15, die Luft 1/1/1/1, und die sichtbare Flaeche misst in beiden Themen volle 17x17 --
+   dieselbe Kantenlaenge wie die Akzentplatten. */
 .up-logo-box.upw-chip-ic { width: 17px; height: 17px; flex: 0 0 17px; border-radius: 4.25px;
-  box-sizing: border-box; background: transparent; border: 1px solid var(--vc-border); }
-[data-theme="dark"] .up-logo-box.upw-chip-ic { border: 0; background: var(--vc-text); }
+  box-sizing: border-box; background: transparent; border: 1px solid var(--vc-border); padding: 0; }
+[data-theme="dark"] .up-logo-box.upw-chip-ic { border: 0; padding: 1px; background: var(--vc-text); }
 /* 15px Bild in einem 16px-Kasten: das 1px Polster aus core gibt genau 14 her, das Bild deckt es
    also und liegt Kante an Kante. Genau so gewollt -- gefordert war "das Logo einen Pixel
    groesser", und der Saum ist kein Mass, sondern Beiwerk. overflow: hidden oben schneidet es auf

@@ -7510,7 +7510,11 @@
      Katalogs: aus {englisch: deutsch} wird {deutsch: englisch}, und damit ist zu jedem Wert die
      Vorlage bekannt, ohne sie irgendwo abzulegen. Bei zwei Eintraegen mit derselben Uebersetzung
      gewinnt der erste -- das ist harmlos, beide fuehren auf denselben deutschen Text zurueck. */
-  var I18N_ATTR = ["aria-label", "placeholder", "title", "data-tip", "data-tiplabel"];
+  /* data-tip-park steht in der Liste, weil ein Tooltip auch GEPARKT sein kann: Miras
+     eingeklappte Leiste nimmt das data-tip vom Knopf, solange dessen Menue offen ist (sonst
+     stellt der Tooltip sich ueber die Liste). Ohne diesen Eintrag bliebe ein waehrenddessen
+     umgeschaltetes Element beim alten Wortlaut, sobald das Menue wieder zugeht. */
+  var I18N_ATTR = ["aria-label", "placeholder", "title", "data-tip", "data-tip-park", "data-tiplabel"];
   var _rueckIndex = null;
   function rueckIndex(){
     if (_rueckIndex) return _rueckIndex;
@@ -13750,9 +13754,21 @@
     return v;
   }
   /* Einmal beim Start: eine Seite ohne den Vorlade-Schnipsel bekommt das Attribut wenigstens,
-     sobald core da ist. Mit Schnipsel steht derselbe Wert schon drin und nichts aendert sich. */
+     sobald core da ist. Mit Schnipsel steht derselbe Wert schon drin und nichts aendert sich.
+     GESTEMPELT WIRD NUR EINE ECHTE WAHL (21.09.). Vorher stand hier getDashboardMode() OHNE
+     Vorgabe -- das liefert bei leerem Speicher "standard". Auf einem frischen Geraet hat der
+     Vorlade-Schnipsel also korrekt "power" ans <html> geschrieben, und core hat es eine
+     Zehntelsekunde spaeter wieder auf "standard" gedreht; der Seitenkopf sprang in die breite
+     Form und erst beim Mounten von dashboard-page-header.js zurueck. Genau der gemeldete
+     Sprung beim ersten Laden ohne Cache und Speicher.
+     core kennt die Vorgabe nicht -- die steht am Seitenkopf (data-mode-default) und im
+     Schnipsel. Also darf core hier auch nichts vorgeben: liegt eine Wahl im Speicher, gilt sie;
+     liegt keine da, bleibt stehen, was der Schnipsel entschieden hat (oder nichts, und dann
+     gilt wie bisher die Vorgabe der CSS). */
   try { if (window.localStorage.getItem("up_trace") === "yes") window.__upTrace = true; } catch(e){}
-  dashModusStempeln(getDashboardMode());
+  var _dashWahl = "";
+  try { _dashWahl = String(window.localStorage.getItem(DASH_STORE) || ""); } catch(e){}
+  if (DASH_WERTE[_dashWahl]) dashModusStempeln(_dashWahl);
   function onDashboardMode(fn){
     if (typeof fn !== "function") return function(){};
     function h(e){ try { fn(e && e.detail && e.detail.mode); } catch(err){} }

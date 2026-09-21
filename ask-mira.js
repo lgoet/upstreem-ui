@@ -6699,9 +6699,33 @@
         document.body.appendChild(miniPop);
       }
       var miniOffen = '';
+      /* KEIN TOOLTIP, SOLANGE DAS EIGENE MENUE OFFEN IST (21.09. gemeldet). Der Tooltip aus core
+         haengt allein am VORHANDENSEIN von data-tip; sein Klick-Riegel loest sich, sobald der
+         Zeiger den Knopf einmal verlassen hat. Bei offenem Menue kam der Zeiger aber genau dorthin
+         zurueck -- und "Recent chats" stand ueber der Liste, die es gerade aufgeschlagen hatte.
+         Deshalb wird das Attribut geparkt statt der Tooltip versteckt: ohne data-tip gibt es fuer
+         core keinen Ausloeser, und nichts muss synchron gehalten werden. aria-label bleibt stehen,
+         an der Ansage aendert sich also nichts; data-tip-park steht in core in I18N_ATTR, damit
+         ein Sprachwechsel bei offenem Menue den geparkten Wortlaut mitnimmt. */
+      function miniTipp(b, zeigen){
+        if (zeigen){
+          var p = b.getAttribute('data-tip-park');
+          if (p != null){ b.setAttribute('data-tip', p); b.removeAttribute('data-tip-park'); }
+        } else {
+          var t = b.getAttribute('data-tip');
+          if (t != null){ b.setAttribute('data-tip-park', t); b.removeAttribute('data-tip'); }
+        }
+      }
+      /* EIN Weg, alle Knoepfe zurueckzusetzen: aria-expanded und Tooltip gehoeren zusammen. */
+      function miniAlleZu(){
+        mini.querySelectorAll('[data-mini]').forEach(function(b){
+          b.setAttribute('aria-expanded', 'false');
+          miniTipp(b, true);
+        });
+      }
       function miniPopZu(){
         miniPop.classList.remove('is-open');
-        mini.querySelectorAll('[data-mini]').forEach(function(b){ b.setAttribute('aria-expanded', 'false'); });
+        miniAlleZu();
         miniOffen = '';
       }
       function miniThema(){
@@ -6746,7 +6770,7 @@
         /* ALLE Knoepfe zuruecksetzen, bevor der neue angeht (21.09. gemeldet: "dann sind beide
            Icons im offenen Zustand"). Vorher raeumte nur miniPopZu auf, und beim Wechsel von
            einem Menue zum anderen laeuft das gar nicht -- der alte Knopf blieb hell. */
-        mini.querySelectorAll('[data-mini]').forEach(function(b){ b.setAttribute('aria-expanded', 'false'); });
+        miniAlleZu();
         miniPop.style.visibility = 'hidden';
         miniPop.classList.add('is-open');
         /* Die Seite richtet sich nach der Leiste: steht sie rechts, geht das Menue nach LINKS
@@ -6769,6 +6793,7 @@
         miniPop.style.top = Math.round(y) + 'px';
         miniPop.style.visibility = '';
         knopf.setAttribute('aria-expanded', 'true');
+        miniTipp(knopf, false);
         miniOffen = art;
       }
       mini.addEventListener('click', function(e){
@@ -6840,8 +6865,20 @@
         var startX = e.clientX, startW = elPrevPanel.getBoundingClientRect().width;
         griff.classList.add('is-active');
         root.classList.add('is-resizing');
+        /* DIE ZIEHRICHTUNG HAENGT AN DER SEITE (21.09. gemeldet: "wenn die Sidebar links ist,
+           ist das Verhalten genau falsch rum"). Der Griff sitzt je nach Seite an der anderen
+           Kante der Leiste (CSS: .am-side-grip links 0 bzw. rechts 0) -- steht die Leiste
+           RECHTS, waechst sie, wenn der Zeiger nach links geht; steht sie LINKS, waechst sie
+           nach rechts. Das Vorzeichen wird beim Aufsetzen gelesen und nicht einmal beim Bau
+           gemerkt: die Seite ist eine Einstellung und kann sich waehrend derselben Sitzung
+           aendern. */
+        var linksSeite = root.classList.contains('is-side-left');
         var raf = null, letztesX = null;
-        function schreiben(){ if (letztesX == null) return; breiteSetzen(startW - (letztesX - startX), false); }
+        function schreiben(){
+          if (letztesX == null) return;
+          var dx = letztesX - startX;
+          breiteSetzen(linksSeite ? (startW + dx) : (startW - dx), false);
+        }
         function bewegen(ev){
           letztesX = ev.clientX;
           if (raf) return;
