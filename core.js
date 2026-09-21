@@ -11656,9 +11656,13 @@
       var neuGezeichnet = kennung !== letzteKennung;
       var rows = !neuGezeichnet ? "" : dps.map(function(dp){
         var ds = dp.dataset;
+        /* 16 -> 14px (21.09. angefordert: "die Shapes vor den Titeln 2x2px kleiner"). Die
+           Rundung zieht im selben Verhaeltnis mit (4 -> 3.5), sonst waere es ein kleinerer
+           Kasten mit der alten Ecke (CLAUDE.md 1). Die Spalte darunter faellt von 16 auf 14 --
+           zwei Pixel, die der Name dazubekommt. */
         var icon = ds.__favicon
-          ? '<img src="' + esc(ds.__favicon) + '" width="16" height="16" style="border-radius:4px;display:block;object-fit:cover"/>'
-          : '<span style="width:16px;height:16px;border-radius:4px;background:' + ds.__baseColor + ';display:block"></span>';
+          ? '<img src="' + esc(ds.__favicon) + '" width="14" height="14" style="border-radius:3.5px;display:block;object-fit:cover"/>'
+          : '<span style="width:14px;height:14px;border-radius:3.5px;background:' + ds.__baseColor + ';display:block"></span>';
         /* HIER steht der Wert des Linechart-Tooltips -- nicht in makeDonutTooltip, wo ich ihn
            zuerst gesucht habe. fmtPct haengt fest ein Prozentzeichen an; Rang und Sentiment
            sind keine Prozentwerte. Ohne Angabe bleibt es bei fmtPct, damit sich fuer die
@@ -11680,7 +11684,7 @@
            zaehlen, und dafuer braucht sie einen Griff, der nicht auf der Reihenfolge von
            <span>-Kindern beruht. */
         return '<div class="up-line-tt-row" data-id="' + esc(String(ds.__id == null ? "" : ds.__id)) + '" style="display:flex;align-items:center;gap:8px;margin-top:8px">' +
-            '<span style="flex:0 0 16px;display:flex">' + icon + '</span>' +
+            '<span style="flex:0 0 14px;display:flex">' + icon + '</span>' +
             /* DER NAME SCHNEIDET ZU FRUEH AB (21.09. gemeldet, an den URL-Titeln der
                Domainseite). Zwei Ursachen, beide hier:
                - truncate(..., 32) war ein HARTER Schnitt nach 32 Zeichen, zusaetzlich zur

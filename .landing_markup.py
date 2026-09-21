@@ -150,7 +150,7 @@ for schluessel, pfad, kennung in TEILE:
     # 1.15 und nicht mehr 1.6: bei 1.6 war der Mira-Schritt der laengste der vier Schritte und
     # blieb am Ende sichtbar stehen. Etwas langsamer als die App bleibt es -- ganz auf 1.0 tippt
     # die Antwort schneller, als man mitlesen kann.
-    m = m.replace('class="up-root am-root"', 'class="up-root am-root" data-typespeed="1.15"')
+    m = m.replace('class="up-root am-root"', 'class="up-root am-root" data-typespeed="1.6"')
     # Die Schublade der Opportunities bleibt IM Fenster. Ohne das wandert sie in die oberste Ebene
     # des Browsers und liegt ueber der ganzen Seite -- siehe opportunities.js, data-portal.
     m = m.replace('class="up-root uo-root"', 'class="up-root uo-root" data-portal="inline"')

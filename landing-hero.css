@@ -1011,6 +1011,22 @@
   animation: ulhRise 420ms var(--ulh-ease) backwards;
   animation-delay: calc(var(--ulh-i, 0) * 90ms);
 }
+/* "Nothing here yet" tritt MIT auf (21.09. gemeldet: "sieht komisch aus, dass der schon sichtbar
+   ist, bevor die Daten kommen"). Der Platzhalter stand von Anfang an da, waehrend die Karten
+   daneben noch versteckt waren -- also las sich die leere Spalte als das Ergebnis, bevor es
+   ueberhaupt eines gab.
+   Dieselbe Mechanik wie bei den Karten und dieselbe Kurve, nur mit einer eigenen Verzoegerung:
+   er gehoert zur LETZTEN Spalte, also kommt er, wenn die Karten durch sind -- vier Karten mal
+   90ms Staffelung plus deren Laufzeit, aufgerundet auf 520. */
+.ulh-root .ulh-chancen.is-kommt .uo-col-empty { visibility: hidden; }
+.ulh-root .ulh-chancen.is-karten .uo-col-empty {
+  visibility: visible;
+  animation: ulhRise 420ms var(--ulh-ease) 520ms backwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ulh-root .ulh-chancen.is-karten .uo-col-empty { animation: none; }
+  .ulh-root .ulh-chancen.is-kommt .uo-col-empty { visibility: visible; }
+}
 @media (prefers-reduced-motion: reduce) {
   .ulh-root .ulh-chancen.is-kommt .up-ph-root,
   .ulh-root .ulh-chancen.is-kommt .uo-top,
@@ -1414,6 +1430,12 @@
    Abstand zwischen Favicon und Ueberschrift ist davon unberuehrt -- der kommt aus dem gap von
    .udd-title und ist eine andere Sache. */
 .ulh-quell-app .udd-head { padding-left: 8px; }
+/* UND die Zeilen der URL-Liste, wo das Forbes-Zeichen wirklich steht (21.09. nachgefasst).
+   Beim ersten Versuch ging die Einrueckung an .udd-head -- das ist die Kopfzeile der Chartkarte
+   ("Citation Share / URL Share"), und dort steht gar kein Favicon. Gemeint war die Liste
+   darunter: jede Zeile beginnt mit dem Zeichen der Domain, und das stand 10px von der Kante.
+   Jetzt 18. Gemessen am Zeichen, nicht an der Zeile -- die Zeile hat kein eigenes Polster. */
+.ulh-quell-app .up-bar-row { padding-left: 8px; }
 /* Kurve und Trichter teilen sich eine Zeile, und das Raster macht beide Karten gleich hoch. Der
    Trichter ist von sich aus flacher -- gemessen blieben unter ihm 57px Luft. Statt einer gemessenen
    Zahl waechst hier die Zeichnung selbst in den Rest der Karte: sie hat preserveAspectRatio="none"
