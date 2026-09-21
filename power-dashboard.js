@@ -702,7 +702,12 @@
       for (var i = 0; i < n; i++){
         out += '<div class="upw-li is-sk">' +
           '<span class="upw-li-idx"><span class="upw-sk upw-sk-bar" style="width:8px"></span></span>' +
-          '<span class="up-logo-box"><span class="upw-sk upw-sk-ava"></span></span>' +
+          /* upw-sk-box: die Platte aus core traegt im Dunkeln eine HELLE Flaeche (sie ist die
+             Unterlage fuer Markenlogos). Im Ladezustand gibt es aber noch kein Logo -- dann
+             standen dort fuenf weisse Kaesten neben den grauen Balken. Die Klasse nimmt der
+             Platte nur ihre Flaeche und ihren Rahmen, Groesse und Rundung bleiben, damit beim
+             Eintreffen der echten Logos nichts springt. */
+          '<span class="up-logo-box upw-sk-box"><span class="upw-sk upw-sk-ava"></span></span>' +
           '<span class="upw-li-name"><span class="upw-sk upw-sk-bar" style="width:' + [46, 34, 40, 30, 38][i % 5] + '%"></span></span>' +
           '<span class="upw-li-val"><span class="upw-sk upw-sk-bar" style="width:38px"></span></span>' +
           '</div>';
@@ -1062,6 +1067,28 @@
        is-dense ist der Schalter, den core dafuer hat (Zeilenhoehe "Compact" der grossen Tabellen). */
     root.classList.add("is-dense");
     if (UC.widthTiers) UC.widthTiers(root, { narrowAt: 760, vnarrowAt: 480 });
+    /* DER FREIE PLATZ NEBEN DER SPALTE, GEMESSEN (21.09.) -- siehe .upw-wide in der CSS.
+       In CSS nicht zu haben: 100% ist immer der eigene Bezug, und 100vw ist die Breite des
+       Fensters, nicht die der Inhaltsflaeche neben der Seitenleiste. Genau daran ist die Regel
+       vorher gescheitert.
+       Gelesen wird die Inhaltsbreite der Spalte (clientWidth minus Polster) und die Breite der
+       Wurzel; die Haelfte der Differenz ist, was je Seite frei ist. Beides in EINEM Durchgang,
+       danach wird geschrieben -- kein Lesen nach dem Schreiben, also kein erzwungenes Layout.
+       BEOBACHTER UND FENSTER: die Wurzel wird auch schmaler, wenn die Seitenleiste aufklappt,
+       und dabei gibt es kein resize-Ereignis. Deshalb beides, wie widthTiers es auch macht. */
+    function freiMessen(){
+      var col = root.querySelector(".upw-col");
+      if (!col || !UC.messbar || !UC.messbar(root)) return;
+      var cs = window.getComputedStyle(col);
+      var inhalt = col.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0);
+      var wurzel = root.getBoundingClientRect().width;
+      var frei = (wurzel - inhalt) / 2;
+      if (!(frei >= 0)) frei = 0;
+      root.style.setProperty("--upw-frei", Math.round(frei) + "px");
+    }
+    if (UC.beobachteGroesse) UC.beobachteGroesse(root, freiMessen);
+    if (UC.aufResize) UC.aufResize(freiMessen);
+    freiMessen();
     if (UC.makeTooltips) UC.makeTooltips(root, dunkel);
     /* Der Erklaerkasten an den Spaltenkoepfen -- derselbe Aufruf wie in brands-overview und
        visibility-chart, und derselbe Text aus UC.explainCopy. {scope}/{trend}/{subject} sind die

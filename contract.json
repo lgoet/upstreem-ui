@@ -2763,6 +2763,7 @@
   "upw-sk",
   "upw-sk-ava",
   "upw-sk-bar",
+  "upw-sk-box",
   "upw-sk-dot",
   "upw-sk-foot",
   "upw-sk-ic",
@@ -3101,7 +3102,7 @@
   "globals": 187,
   "payloadkeys": 101,
   "dataattrs": 253,
-  "klassen": 2215,
+  "klassen": 2216,
   "keyframes": 66
  }
 }

@@ -725,7 +725,11 @@
               margin-left 200ms cubic-bezier(.2,0,.38,.9);
 }
 .usn-pin-x svg { width: 12px; height: 12px; display: block; }
-.usn-pin:hover .usn-pin-x { opacity: 1; transition-delay: 220ms, 0ms, 0ms; }
+/* SOFORT, OHNE VERZOEGERUNG (21.09. angefordert). Hier standen 220ms -- das x kam also
+   merklich nach dem Zeiger. Vorbild ist der Pfeil, der im Domains-Table bei Zeilen-Hover
+   einblendet (.udt-sub-goto: opacity/transform 140ms ease); uebernommen ist seine Kurve und
+   seine Dauer, NICHT seine Verzoegerung von 180ms -- verlangt war "beides einfach sofort da". */
+.usn-pin:hover .usn-pin-x { opacity: 1; transition-delay: 0ms; }
 .usn-pin-x:hover { color: var(--vc-text); }
 .usn-bar.is-mini .usn-pin-x { display: none; }
 
@@ -756,13 +760,21 @@
   display: inline-flex; align-items: center; justify-content: center;
   color: var(--vc-third); cursor: pointer; overflow: hidden;
   max-width: 0; opacity: 0; margin-left: -10px; pointer-events: none;
-  transition: max-width 200ms cubic-bezier(.2,0,.38,.9), opacity 160ms ease,
-              margin-left 200ms cubic-bezier(.2,0,.38,.9), color var(--usn-t) var(--usn-ease);
+  transition: max-width 140ms ease, opacity 140ms ease,
+              margin-left 140ms ease, color var(--usn-t) var(--usn-ease);
 }
 .usn-pin-edit svg { width: 12px; height: 12px; display: block; }
+/* DER STIFT KOMMT MIT DEM ZEIGER, NICHT 750ms SPAETER (21.09. angefordert: "beides einfach
+   sofort da"). Der Hover-Zustand steht deshalb VOR is-editready und sagt dasselbe; die Klasse
+   bleibt als zweiter Ausloeser stehen, damit der Zuhoerer in sidebar.js nichts davon merkt und
+   der Stift auch nach einem Klick ohne Hover offen bleibt.
+   Die Zeiten sind die des Vorbilds aus dem Domains-Table (140ms ease), nicht mehr die 200ms des
+   Aufziehens -- es faehrt jetzt nichts mehr auf, es blendet ein. */
+.usn-pin:hover .usn-pin-edit,
 .usn-pin.is-editready .usn-pin-edit {
   max-width: 14px; opacity: 1; margin-left: -4px; pointer-events: auto;
 }
+.usn-pin:hover .usn-pin-x,
 .usn-pin.is-editready .usn-pin-x { margin-left: -4px; }
 .usn-pin-edit:hover { color: var(--vc-text); }
 .usn-bar.is-mini .usn-pin-edit { display: none; }

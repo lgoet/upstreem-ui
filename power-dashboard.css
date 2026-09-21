@@ -41,18 +41,23 @@
    (widthTiers, is-narrow ab 760px): darunter ist kein Platz fuer ein zusaetzliches Aufweiten, und
    die Karten liefen sonst über den Bildschirmrand hinaus. */
 .upw-narrow { margin-left: 72px; margin-right: 72px; }
-/* DER UEBERSTAND NIMMT SICH NUR, WAS DA IST (18.09.). Hier standen feste -80px. Die Spalte ist
-   aber hoechstens 920px plus Polster breit und mittig -- ist das Fenster schmaler als das, gibt
-   es neben ihr gar keinen Platz, und die 80px liefen ueber den Bildschirmrand. Gemessen bei 900px
-   Fenster: 53px Ueberlauf je Seite, also ein waagerechter Balken zwischen 760 und rund 980px.
-   (100vw - 100%) / 2 ist genau der Platz, der neben dem INHALT der Spalte frei ist: 100% ist die
-   Inhaltsbreite der Spalte, der Rest teilt sich auf beide Seiten. Davon 16px Sicherheitsabstand
-   ab, weil 100vw die Bildlaufleiste mitzaehlt und die App in #main scrollt. min() deckelt bei den
-   gewuenschten 80px, max() haelt den Wert bei null, wenn gar nichts frei ist -- ein positiver
-   Aussenabstand waere hier das Gegenteil der Absicht.
-   Am Desktop aendert sich damit nichts: ab rund 1090px Fensterbreite sind die 80px wieder drin. */
+/* DER UEBERSTAND NIMMT SICH NUR, WAS WIRKLICH DA IST (21.09., dritter Anlauf).
+   Erster Anlauf: feste -80px. Zweiter: (100vw - 100%) / 2. Der zweite war der Fehler, der
+   gemeldet wurde -- 100vw ist die Breite des FENSTERS, die Spalte steht aber in #main, und
+   links davon liegt die 250px breite Seitenleiste. Die Regel rechnete also mit 125px mehr Luft
+   je Seite, als es gibt: gemessen ragte die breite Huelle zwischen rund 1040 und 1340px
+   Fensterbreite bis zu 52px je Seite hinaus.
+   Es gibt in CSS keinen Weg, die Breite des Elternelements der Spalte zu erfragen (100% ist
+   immer der eigene Bezug, und Container-Queries bringen Containment mit, das hier die geliehene
+   Mira-Wurzel treffen wuerde). Also wird EINMAL je Groessenaenderung gemessen und als
+   --upw-frei an die Wurzel geschrieben; die Rechnung bleibt hier.
+   ENTSCHEIDEND IST DER RUECKFALL: ohne die Messung steht --upw-frei auf 0, der Ueberstand ist
+   dann 0, und die breite Huelle bleibt genau in der Spalte. Sie ist dann schmaler als gewollt,
+   aber sie ragt NIE hinaus -- der Fehler kann sich also nicht wiederholen, wenn die JS spaeter
+   einmal nicht laeuft.
+   16px Sicherheitsabstand, 80px Deckel, max() haelt bei null: unveraendert. */
 .upw-wide {
-  --upw-bleed: min(80px, max(0px, calc((100vw - 100%) / 2 - 16px)));
+  --upw-bleed: min(80px, max(0px, calc(var(--upw-frei, 0px) - 16px)));
   margin-left: calc(-1 * var(--upw-bleed)); margin-right: calc(-1 * var(--upw-bleed));
 }
 .upw-root.is-narrow .upw-narrow,
@@ -575,6 +580,13 @@
 .upw-root.is-vnarrow .upw-chip-ic { flex: 0 0 15px; width: 15px; height: 15px; border-radius: 3.2px; }
 .upw-root.is-vnarrow .upw-chip-ic svg { width: 10.5px; height: 10.5px; }
 .upw-root.is-vnarrow .up-logo-box.upw-chip-ic img { width: 13px; height: 13px; border-radius: 2.75px; }
+
+/* Die Logoplatte im Ladezustand: ohne Flaeche und ohne Rahmen, in BEIDEN Themen. Gemeldet fuer
+   den Dunkelmodus (dort ist die Flaeche hell und stach heraus), im Hellen ist sie zwar leiser,
+   aber genauso wenig gewollt -- im Ladezustand soll nur das Skelett zu sehen sein.
+   Groesse, Rundung und Polster bleiben: sonst springt die Zeile, sobald das echte Logo kommt. */
+.upw-li .up-logo-box.upw-sk-box,
+.up-logo-box.upw-sk-box { background: transparent; border: 0; box-shadow: none; }
 
 /* ---------- Skelett ----------
    Farbe und Pulsieren aus core (--vc-sk, uutpulse), wie .up-tsk-bar. */
