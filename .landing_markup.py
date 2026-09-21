@@ -61,23 +61,20 @@ ERSATZ = {
     "IS_PROCESSING": "no",
     "TEAM_ID": "t1",
     # Die vier Logo-Plaetze der Leiste (seit dem Umbau der eingeklappten Fassung). OHNE sie bricht
-    # dieser Lauf mit "unersetzte Platzhalter" ab -- und genau daran ist er seit dem 20.09. jedes
-    # Mal gescheitert, weshalb das Markup der Landingpage auf einem alten Stand der App stehen
-    # blieb. Die Dateien sind dieselben, die die App benutzt: Schriftzug fuer die offene Leiste,
-    # 1:1-Zeichen fuer die eingeklappte, je Thema eine Fassung.
-    "UPSTREEM_LOGO_SMALL_DARK": "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/upstreem-mark-square-e0e0e0.svg",
-    "UPSTREEM_LOGO_SMALL": "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/upstreem-mark-square-1f1f1f.svg",
-    "UPSTREEM_LOGO_DARK": "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/upstreem-lockup-e0e0e0.svg",
-    "UPSTREEM_LOGO": "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/upstreem-lockup-1f1f1f.svg",
+    # dieser Lauf mit "unersetzte Platzhalter" ab -- daran ist er seit dem 20.09. jedes Mal
+    # gescheitert, weshalb das Markup der Landingpage auf einem alten Stand stehen blieb.
+    # LEER, und das ist eine Entscheidung: hier standen einen Commit lang die echten
+    # upstreem-Dateien, und damit stand ploetzlich ein Schriftzug in der Leiste, den vorher
+    # niemand dort hatte und niemand bestellt hatte. Die Leiste des Schaustuecks zeigt das
+    # Zeichen des TEAMS, nicht das Produktlogo -- das steht schon oben in der Navigation der
+    # Seite. Leere Attribute laesst sidebar.js einfach weg (sie sind OPTIONAL).
+    "UPSTREEM_LOGO_SMALL_DARK": "",
+    "UPSTREEM_LOGO_SMALL": "",
+    "UPSTREEM_LOGO_DARK": "",
+    "UPSTREEM_LOGO": "",
     "EXPORT_INSTANCE_ID": "",
-    # Acme ist die eigene Marke der Landingpage -- eine gehobene Automarke, erfunden. Ihr Zeichen
-    # ist dasselbe selbst gezeichnete A wie in landing-hero.js (ACME_LOGO); als data:-Adresse,
-    # damit nichts fehlen kann und kein Abruf dazukommt. Die Zeichenkette ist durchgehend
-    # prozentkodiert und traegt deshalb weder Anfuehrungszeichen noch # -- sie darf so in ein
-    # HTML-Attribut.
-    # WER SIE AENDERT, AENDERT SIE AN BEIDEN STELLEN: hier und in landing-hero.js.
     "BRAND_NAME": "Acme",
-    "BRAND_LOGO_URL": "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%23101418%22%2F%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%225.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M19%2047%20L32%2017%20L45%2047%22%2F%3E%3Cpath%20d%3D%22M24.6%2036.5%20H39.4%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E",
+    "BRAND_LOGO_URL": "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20440%20440%22%3E%3Cg%20transform%3D%22translate%281%2C19%29%22%20fill%3D%22%23101418%22%3E%3Cpath%20d%3D%22M190%2020%20H278%20L418%20330%20H326%20L232%20118%20L170%20268%20C156%20300%20128%20318%2092%20318%20H64%20L104%20232%20H112%20C126%20232%20136%20224%20142%20210%20Z%22%2F%3E%3Cpath%20d%3D%22M20%20330%20H418%20L418%20382%20H48%20Z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E",
     # NACH BRAND_LOGO_URL, nie davor: sonst wird aus BRAND_LOGO_URL ein "_URL".
     "BRAND_LOGO": "",
     # Die Antwortkarte rechts ist der Kartenmodus der Responses-Tabelle. Kein Sticky (das Fenster

@@ -1984,6 +1984,14 @@
    selbst eine Frage ein, und eine Wand aus Karten daneben zieht den Blick von genau dieser Bewegung
    weg. Der Rest des Startbildschirms bleibt, wie er ist. */
 .ulh-app #am-suggested { display: none; }
+/* DIE LEISTE SCROLLT NICHT (21.09. gemeldet). .usn-nav steht in der App auf overflow-y: auto --
+   richtig dort, denn die Liste kann laenger sein als der Schirm. Im Schaustueck ist sie eine
+   Scrollflaeche, in der das Rad haengen bleibt, statt die Seite weiterzubewegen. Dieselbe
+   Entscheidung und derselbe Wert wie bei Miras Chat weiter unten: clip und NICHT hidden -- hidden
+   macht weiter eine Scrollflaeche daraus, nur eine, die niemand bewegen darf.
+   Spezifitaet: drueben ist es (0,1,0), hier (0,2,0). Reicht also. */
+.ulh-app .usn-nav { overflow: clip; }
+
 /* Das Panel der frueheren Chats bleibt zu und braucht seinen Knopf hier nicht -- ohne Bubble gibt
    es keine Chats, die es zeigen koennte. */
 .ulh-app .am-prev-btn { display: none; }
