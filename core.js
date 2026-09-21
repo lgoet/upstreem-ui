@@ -7869,9 +7869,14 @@
          sichtbareBereiche). Die vier Laeufe nehmen alle eine Wurzel entgegen -- der Zweig
          darunter benutzt genau diese Form seit langem. */
       var bereiche = sichtbareBereiche();
-      sicher("spracheLauf", function(){ spracheLauf(); });
+      /* spracheLauf STAND HIER AUSSERHALB DER SCHLEIFE, ohne Wurzel -- also dokumentweit, waehrend
+         seine drei Nachbarn laengst je Bereich liefen (21.09. in einer Messung des Nutzers
+         aufgefallen: spracheLauf 1,01s Gesamtzeit, davon 0,59s querySelectorAll, periodisch von
+         +3s bis +9s). Der Umbau auf "nur die sichtbaren Aeste" hatte diesen einen Aufrufer
+         schlicht nicht erreicht. Jetzt laeuft er wie die anderen drei: einmal je Bereich. */
       for (var v = 0; v < bereiche.length; v++){
         (function(w){
+          sicher("spracheLauf", function(){ spracheLauf(w); });
           sicher("stampToolbarIcons", function(){ stampToolbarIcons(w); });
           sicher("stampGran", function(){ stampGran(w); });
           sicher("orderToolbars", function(){ orderToolbars(w); });
@@ -10341,16 +10346,53 @@
      Der Breiten-Waechter haelt zusaetzlich die Faelle heraus, in denen sich nur die Hoehe aendert
      (Adressleiste auf dem Telefon, aufgehende Tastatur): dort gibt es fuer eine Breitenlogik
      nichts zu tun. Wer auch auf Hoehe reagieren muss, gibt hoehe: true mit. */
+  /* EIN ZUHOERER FUER ALLE, EIN TIMER FUER ALLE (21.09.).
+     Entprellt hat diese Funktion immer schon -- der Posten in der Messung war ein anderer: jeder
+     Aufrufer brachte seinen EIGENEN window-Zuhoerer und seinen EIGENEN Timer mit. Auf einer
+     vollen Seite sind das rund 127 Registrierungen (widthTiers allein haengt an jeder
+     Komponentenwurzel), und beim Ziehen am Fensterrand feuert resize je Bild.
+     GEMESSEN beim Nutzer am 21.09.: 54 resize-Ereignisse -> 6.860 TimerInstall, 11,2s
+     Hauptthread. 6860 / 54 = 127, also genau die Zahl der Registrierungen.
+     Jetzt: ein Zuhoerer, ein Timer, eine Runde durch die Liste. Die Breiten-/Hoehenpruefung
+     bleibt PRO EINTRAG -- wer nur auf Breite reagiert, laeuft bei einer Hoehenaenderung weiter
+     nicht mit --, sie kostet aber nur noch einen Vergleich statt eines Timers.
+     Zur Frist: die Runde laeuft nach der kuerzesten angemeldeten Frist. Wer eine laengere
+     angibt, bekommt sie damit frueher -- bei einer nachlaufenden Entprellung heisst das nur
+     "etwas frueher nach dem Ende der Bewegung" und nie "mitten in der Bewegung". Genau ein
+     Aufrufer im Repo gibt ueberhaupt etwas anderes als die Vorgabe an (250). */
+  /* Die Liste wird IN aufResize angelegt, nicht hier. core.js ruft aufResize selbst an einer
+     Stelle WEIT OBERHALB dieser Zeile -- und ein var-Initialisierer laeuft erst, wenn die Zeile
+     an der Reihe ist. Die Deklaration ist hochgezogen, die leere Liste nicht: beim Aufruf von
+     oben stand _rsFns damit auf undefined und .push warf, was die ganze Datei mitnahm
+     (gemessen: core.js:16585 "Cannot read properties of undefined"). */
+  var _rsFns, _rsUhr = null, _rsMs = 150, _rsAn = false;
+  function _rsLauf(){
+    _rsUhr = null;
+    if (!_rsFns) return;
+    var b = window.innerWidth, h = window.innerHeight;
+    /* Ueber eine Kopie: ein Rueckruf darf sich waehrend des Laufs abmelden oder einen neuen
+       anmelden, ohne dass die Schleife darueber stolpert. */
+    var liste = _rsFns.slice();
+    for (var i = 0; i < liste.length; i++){
+      var e = liste[i];
+      if (b === e.lastB && (!e.hoehe || h === e.lastH)) continue;
+      e.lastB = b; e.lastH = h;
+      try { e.fn(); } catch(err){ if (window.console) console.warn("[upstreem] aufResize:", err); }
+    }
+  }
+  function _rsPlanen(){
+    if (_rsUhr) clearTimeout(_rsUhr);
+    _rsUhr = setTimeout(_rsLauf, _rsMs);
+  }
   function aufResize(fn, cfg){
+    if (typeof fn !== "function") return;
     cfg = cfg || {};
-    var ms = cfg.ms || 150, uhr = null, letzteB = -1, letzteH = -1;
-    window.addEventListener("resize", function(){
-      var b = window.innerWidth, h = window.innerHeight;
-      if (b === letzteB && (!cfg.hoehe || h === letzteH)) return;
-      letzteB = b; letzteH = h;
-      if (uhr) clearTimeout(uhr);
-      uhr = setTimeout(function(){ uhr = null; try { fn(); } catch(e){ if (window.console) console.warn("[upstreem] aufResize:", e); } }, ms);
-    }, { passive: true });
+    if (cfg.ms && cfg.ms < _rsMs) _rsMs = cfg.ms;
+    if (!_rsFns) _rsFns = [];
+    _rsFns.push({ fn: fn, hoehe: !!cfg.hoehe, lastB: -1, lastH: -1 });
+    if (_rsAn) return;
+    _rsAn = true;
+    window.addEventListener("resize", _rsPlanen, { passive: true });
   }
 
   /* Ein ResizeObserver, der NICHT an jedem Bild ausloest. Fuer alles, was auf eine
