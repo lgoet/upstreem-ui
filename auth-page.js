@@ -264,6 +264,8 @@
     var elMail    = root.querySelector("[data-f-mail]");
     var elPw      = root.querySelector("[data-f-pw]");
     var elNameWrap= root.querySelector("[data-w-name]");
+    var elCode    = root.querySelector("[data-f-code]");
+    var elCodeWrap= root.querySelector("[data-w-code]");
     var elCheck   = root.querySelector("[data-check]");
     var elCheckTxt= root.querySelector("[data-check-txt]");
     var elSide    = root.querySelector("[data-side]");
@@ -346,6 +348,28 @@
                       '<span class="uau-strength-txt" data-strength-txt></span>' +
                     '</span></div></span>' +
                   '</label>' +
+                  /* DER REGISTRIERUNGSCODE (21.09. angefordert: "der klassische Signup soll nur
+                     noch moeglich sein, wenn man eine Art Key hat"). Er steht ZULETZT und nicht
+                     zwischen Adresse und Passwort: die beiden gehoeren zusammen, ein
+                     Passwortverwalter liest sie als Paar, und ein Feld dazwischen hat dort
+                     schon Vorschlaege verdorben.
+                     Dieselbe Einklapp-Mechanik wie das Namensfeld (.uau-collapse) -- es gilt
+                     nur im Signup UND nur ohne Einladung: wer ueber einen Einladungslink kommt,
+                     hat seine Berechtigung schon dabei, und ihn zusaetzlich nach einem Code zu
+                     fragen waere eine Huerde ohne Zweck.
+                     autocomplete="off" und spellcheck="false": ein Code ist kein Wort, und der
+                     Verwalter soll hier nichts anbieten. */
+                  '<label class="uau-field uau-collapse" data-w-code>' +
+                    '<span class="uau-collapse-in">' +
+                      '<span class="uau-label">Registration code</span>' +
+                      '<input class="up-field uau-input uau-code" type="text" name="registration-code" ' +
+                        'autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" ' +
+                        'placeholder="Enter your code" data-f-code/>' +
+                      '<span class="uau-err"><span data-e-code></span></span>' +
+                      '<span class="uau-fixed is-on"><span>' +
+                        'New accounts need a code while upstreem is in private beta.</span></span>' +
+                    '</span>' +
+                  '</label>' +
                 '</div>' +
                 '<div class="uau-opts">' +
                   /* Ungehakt. Eine vorangekreuzte Box ist als Einwilligung fuer Produkt-Mails nach DSGVO
@@ -424,7 +448,7 @@
     }
 
     function zeigeFehler(){
-      [["name", elName], ["mail", elMail], ["pw", elPw]].forEach(function(p){
+      [["name", elName], ["mail", elMail], ["pw", elPw], ["code", elCode]].forEach(function(p){
         var msg = state.errs[p[0]] || "";
         var f = feld(p[1]);
         if (f) f.classList.toggle("is-err", !!msg);
@@ -455,6 +479,7 @@
       elGoogle.disabled = state.busy;
       elName.disabled = state.busy || state.mode !== "signup";
       elMail.disabled = elPw.disabled = state.busy;
+      renderCode();
       elFootBtn.disabled = elSide.disabled = state.busy;
       renderTexte();
 
@@ -480,6 +505,38 @@
       elMailFix.classList.toggle("is-on", state.mailFest);
     }
 
+    /* ---------------- Registrierungscode ----------------
+       WAS HIER PASSIERT, IST BEQUEMLICHKEIT -- NICHT SICHERHEIT. Diese Datei laeuft im Browser
+       des Nutzers; wer sie umgeht, umgeht sie. Die Sperre selbst steht in Bubble: der
+       Signup-Workflow prueft den Code serverseitig, bevor er ein Konto anlegt, und ein
+       Datenbank-Ausloeser auf "User is created" wirft jedes Konto wieder weg, das ohne
+       Berechtigung entstanden ist (siehe bubble/signup_code_setup.md). Hier steht nur, dass der
+       Nutzer nicht erst auf eine Serverrunde warten muss, um zu erfahren, dass er nichts
+       eingetippt hat.
+       Verlangt wird der Code NUR, wenn data-code-required="yes" steht -- und auch dann nicht bei
+       einer Einladung. Der Vorgabewert ist "no": ein bestehendes Element, das dieses Attribut
+       noch nicht kennt, soll nicht ploetzlich einen Code verlangen, den niemand hat. */
+    function codeVerlangt(){ return UC.isYes(attr("data-code-required", "no")); }
+    function codeAn(){ return state.mode === "signup" && codeVerlangt() && !state.token; }
+    /* GROSS UND OHNE LEERZEICHEN -- das ist der VERTRAG mit Bubble (dort :uppercase vergleichen).
+       Ein aus einer Mail kopierter Code bringt regelmaessig ein fuehrendes Leerzeichen oder einen
+       Umbruch mit, und "Code ungueltig" fuer einen richtigen Code ist die schlechteste Sorte
+       Fehlermeldung. \s deckt auch geschuetzte Leerzeichen und Tabulatoren ab. */
+    function codeWert(){ return String(elCode.value || "").replace(/\s+/g, "").toUpperCase(); }
+    function renderCode(){
+      var an = codeAn();
+      elCodeWrap.classList.toggle("is-on", an);
+      /* Ein ausgeblendetes Feld darf nicht per Tabulator erreichbar bleiben -- dieselbe Regel
+         wie beim Namensfeld. */
+      elCode.disabled = !an || state.busy;
+      /* Der WERT bleibt stehen, auch wenn das Feld zu ist. Erst hatte das Zumachen ihn geleert --
+         und damit den Fall zerschossen, fuer den die Vorbelegung ueberhaupt da ist: /login?code=..
+         startet im Login-Modus, das Feld ist zu, der Code waere weg gewesen, bevor der Nutzer
+         unten auf "Sign up" klickt.
+         Dass im Login trotzdem kein Code mitfaehrt, entscheidet die NUTZLAST (codeAn() in
+         sendeJetzt), nicht das Eingabefeld -- eine Wahrheit, an einer Stelle. */
+    }
+
     function setToken(tok, mail){
       state.token = String(tok == null ? "" : tok).trim();
       var m = String(mail == null ? "" : mail).trim();
@@ -488,9 +545,11 @@
          und ein leeres Feld zu sperren waere eine Sackgasse. */
       else state.mailFest = false;
       renderMailFest();
+      /* Eine Einladung nimmt die Codefrage weg -- sie ist selbst die Berechtigung. */
+      renderCode();
     }
 
-    function render(){ renderTexte(); zeigeFehler(); renderStaerke(); renderMailFest(); }
+    function render(){ renderTexte(); zeigeFehler(); renderStaerke(); renderMailFest(); renderCode(); }
 
     /* ---------------- Pruefen ---------------- */
     function pruefe(){
@@ -509,10 +568,12 @@
          das der Nutzer gar nicht mehr aendern kann. */
       else if (state.mode === "signup" && pw.length < 8) e.pw = "At least 8 characters.";
 
+      if (codeAn() && !codeWert()) e.code = "Please enter your registration code.";
+
       state.errs = e;
       state.formErr = "";
       zeigeFehler();
-      var erste = e.name ? elName : (e.mail ? elMail : (e.pw ? elPw : null));
+      var erste = e.name ? elName : (e.mail ? elMail : (e.pw ? elPw : (e.code ? elCode : null)));
       if (erste){ try { erste.focus(); } catch(x){} return false; }
       return true;
     }
@@ -557,6 +618,13 @@
            Bubble-Workflow zu einer Fallunterscheidung beim Auslesen -- leer heisst schlicht
            "normale Anmeldung ohne Einladung". */
         token: state.token,
+        /* Auch hier IMMER dabei, auch leer -- aus demselben Grund wie token. Leer heisst
+           entweder "Einladung" oder "diese Installation verlangt keinen Code" oder "Login";
+           welches davon, sagt der Workflow anhand von mode und token, nicht die Seite.
+           codeAn() und nicht der nackte Feldwert: im Login und bei einer Einladung steht im Feld
+           vielleicht noch etwas aus einem frueheren Versuch, und das hat in dieser Nutzlast
+           nichts zu suchen. */
+        code: codeAn() ? codeWert() : "",
         /* email steht hier weiter drin: eine Adresse kann kein Anfuehrungszeichen enthalten,
            die Extraktion ist also sicher. Sie faehrt zusaetzlich in uauPassword-Naehe nirgends
            mit -- ein Feld, zwei Quellen waere eine zu viel. */
@@ -597,7 +665,20 @@
     });
     elGoogle.addEventListener("click", function(){
       if (state.busy || state.done) return;
+      /* GOOGLE LEGT AUCH KONTEN AN -- ohne diesen Riegel waere die Codepflicht ein Knopf weiter
+         umgangen. Geprueft wird nur im Signup: im Login gibt es nichts zu berechtigen, und ein
+         bestehendes Konto nach einem Code zu fragen waere Unsinn.
+         Der ZWEITE Riegel steht in Bubble -- wer im Login-Modus auf Google klickt, ohne ein
+         Konto zu haben, laesst das Plugin trotzdem eines anlegen. Diesen Fall faengt nur der
+         Datenbank-Ausloeser ab (bubble/signup_code_setup.md). */
+      if (codeAn() && !codeWert()){
+        state.errs.code = "Please enter your registration code.";
+        zeigeFehler();
+        try { elCode.focus(); } catch(x){}
+        return;
+      }
       fire("data-google-fn", "uauGoogle", { mode: state.mode, token: state.token,
+                                            code: codeAn() ? codeWert() : "",
                                             email: String(elMail.value || "").trim() });
     });
     elPw.addEventListener("input", function(){
@@ -608,6 +689,7 @@
     });
     elMail.addEventListener("input", function(){ if (state.errs.mail){ delete state.errs.mail; zeigeFehler(); } });
     elName.addEventListener("input", function(){ if (state.errs.name){ delete state.errs.name; zeigeFehler(); } });
+    elCode.addEventListener("input", function(){ if (state.errs.code){ delete state.errs.code; zeigeFehler(); } });
 
 
     /* Unter 900px stapeln die Spalten (siehe CSS). Ueber den Beobachter statt einer
@@ -673,6 +755,15 @@
     setToken(urlParam("token") || attr("data-token"),
              urlParam("mail") || urlParam("email") || attr("data-email"));
 
+    /* Der Code darf aus der Adresse kommen: ein Link wie /signup?code=ABC123 fuellt das Feld
+       vor, und der Empfaenger muss nichts abtippen. Das ist kein Geheimnisverlust -- der Code
+       IST der Zettel, den man weitergibt.
+       Sichtbar bleibt er trotzdem, und aenderbar: der Nutzer soll sehen, womit er sich anmeldet,
+       und einen falsch kopierten Code selbst richtigstellen koennen. */
+    var codeVor = urlParam("code") || urlParam("invite_code") || attr("data-code");
+    if (codeVor) elCode.value = String(codeVor).replace(/\s+/g, "").toUpperCase();
+    renderCode();
+
     /* Zurueck- und Vorwaerts-Knopf des Browsers. Ohne das zeigt die Seite nach einem Zurueck
        weiter den alten Modus, waehrend die Adresse schon den anderen nennt. */
     window.addEventListener("popstate", function(){
@@ -732,6 +823,10 @@
         if (f === "name" || f === "full_name") state.errs.name = t;
         else if (f === "email" || f === "mail") state.errs.mail = t;
         else if (f === "password" || f === "pw") state.errs.pw = t;
+        /* Der Fehler des Servers gehoert AN DAS FELD, nicht in die Zeile ueber dem Formular:
+           "Diesen Code gibt es nicht" neben dem Code ist eine Anweisung, dieselbe Meldung oben
+           ist eine Verlautbarung. */
+        else if (f === "code" || f === "registration_code") state.errs.code = t;
         else state.formErr = t || "Something went wrong. Please try again.";
         zeigeFehler();
         return true;
@@ -750,7 +845,7 @@
       reset: function(){
         setBusy(false);
         state.done = false; state.errs = {}; state.formErr = "";
-        elName.value = elMail.value = elPw.value = "";
+        elName.value = elMail.value = elPw.value = elCode.value = "";
         elCheck.checked = false;
         elPaneDone.classList.add("is-off");
         elPaneDone.setAttribute("aria-hidden", "true");

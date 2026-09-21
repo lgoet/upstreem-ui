@@ -24,6 +24,20 @@
                        gar keines dasteht.
        data-logo       URL des upstreem-Schriftzugs, 18px hoch dargestellt. Fehlt sie, bleibt
                        die Stelle leer statt ein kaputtes Bild zu zeigen.
+       data-code-required  "yes"/"no", Standard "no". Bei "yes" verlangt der SIGNUP zusaetzlich
+                       einen Registrierungscode -- ein Feld "Registration code" erscheint unter
+                       dem Passwort. Gilt NICHT bei einer Einladung (?token=): die ist selbst
+                       die Berechtigung, und zweimal danach zu fragen waere eine Huerde ohne
+                       Zweck. Gilt auch nicht im Login.
+                       ACHTUNG, das hier ist KEINE Sperre. Diese Datei laeuft im Browser des
+                       Nutzers; das Attribut entscheidet nur, ob er GEFRAGT wird. Gesperrt wird
+                       in Bubble -- die vollstaendige Anleitung dazu steht in
+                       bubble/signup_code_setup.md, und ohne sie ist die Anmeldung weiter offen.
+       data-code       Optional: Vorgabewert fuer das Codefeld. Die Adresse schlaegt ihn:
+                       ?code=ABC123 (auch ?invite_code=) fuellt das Feld vor, damit ein
+                       verschickter Link nichts zum Abtippen laesst. Leerzeichen werden entfernt
+                       und der Wert gross geschrieben -- ein aus einer Mail kopierter Code
+                       bringt sonst regelmaessig ein Leerzeichen mit.
        data-submit-delay  Millisekunden zwischen uauName/uauPassword und uauSubmit. Standard 0.
                        Die drei Aufrufe laufen synchron durch, die States sollten also stehen,
                        wenn der Submit-Workflow startet. Kommt bei dir sporadisch ein leeres
@@ -38,7 +52,7 @@
      ── EVENTS (JavaScriptToBubble, Value type TEXT, Trigger event an) ────────────────────────
 
        data-submit-fn  = "bubble_fn_uauSubmit_[dynamic id]"
-         {"team_id":"","mode":"signup","token":"INV-abc123","email":"alex@company.com","opt_in":"yes"}
+         {"team_id":"","mode":"signup","token":"INV-abc123","code":"UPS-4KQ2MN7","email":"alex@company.com","opt_in":"yes"}
 
          Feuert NUR, wenn die Pruefung im Browser durchgelaufen ist. Danach geht die Seite von
          selbst in den Ladezustand: Knopf mit Spinner, alle Felder gesperrt. Aus dem kommt sie
@@ -48,6 +62,12 @@
          token      der Einladungstoken aus ?token= -- leer heisst "normale Anmeldung".
                     Immer dabei, auch leer: ein Feld, das mal fehlt, zwingt jeden Workflow zu
                     einer Fallunterscheidung beim Auslesen.
+         code       der Registrierungscode, GROSS und ohne Leerzeichen. Ebenfalls immer dabei,
+                    auch leer. Leer heisst entweder "kam ueber eine Einladung" (dann steht
+                    token da) oder "diese Installation verlangt keinen Code"
+                    (data-code-required fehlt oder steht auf "no").
+                    PRUEFE IHN SERVERSEITIG. Was die Seite prueft, ist nur, ob ueberhaupt etwas
+                    dasteht -- siehe bubble/signup_code_setup.md.
          opt_in     "yes" | "no" -- der Haken "Send me product updates". Nur im Signup sichtbar
                     und UNGEHAKT vorbelegt: eine vorangekreuzte Box ist als Einwilligung nach
                     DSGVO nicht gueltig, die muss aktiv erfolgen. Im Login gibt es den Haken
@@ -60,9 +80,10 @@
            token  :extract with Regex  "token":"([^"]*)"   :first item
            email  :extract with Regex  "email":"([^"]*)"   :first item
            opt_in :extract with Regex  "opt_in":"([^"]*)"  :first item
+           code   :extract with Regex  "code":"([^"]*)"    :first item
 
-         Alle vier sind sicher per Regex lesbar: keiner dieser Werte kann ein Anfuehrungszeichen
-         enthalten.
+         Alle fuenf sind sicher per Regex lesbar: keiner dieser Werte kann ein
+         Anfuehrungszeichen enthalten.
 
          Passwort und Name stehen NICHT in diesem Payload -- sie kommen als eigene Events, siehe
          unten. Grund: beide duerfen Anfuehrungszeichen enthalten, und die werden in einem
@@ -91,9 +112,14 @@
          naechsten Seitenwechsel dort stehen bleibt.
 
        data-google-fn  = "bubble_fn_uauGoogle_[dynamic id]"
-         {"team_id":"","mode":"login","token":"INV-abc123","email":"alex@company.com"}
+         {"team_id":"","mode":"login","token":"INV-abc123","code":"UPS-4KQ2MN7","email":"alex@company.com"}
          Startet den OAuth-Fluss. Die Adresse faehrt mit, damit du serverseitig pruefen kannst,
          ob der Google-Account zur Einladung passt.
+         code faehrt aus demselben Grund mit: GOOGLE LEGT AUCH KONTEN AN. Bei
+         data-code-required="yes" im Signup feuert dieses Event erst, wenn etwas im Codefeld
+         steht -- sonst waere die Codepflicht einen Knopf weiter umgangen. Den Fall "im
+         Login-Modus auf Google geklickt, ohne Konto" faengt die Seite NICHT ab; dafuer gibt es
+         den Datenbank-Ausloeser aus bubble/signup_code_setup.md.
 
        data-mode-fn    = "bubble_fn_uauMode_[dynamic id]"
          {"team_id":"","mode":"signup","token":"INV-abc123"}
@@ -117,10 +143,11 @@
 
        setAuthPageError(instanceId, feld, text)
          DER wichtigste Aufruf. Er beendet den Ladezustand IMMER, auch bei unbekanntem Feld.
-           feld = "email" | "password" | "name"   -> rote Zeile unter genau diesem Feld
-           feld = ""                              -> Fehlerkasten ueber dem Feldstapel
+           feld = "email" | "password" | "name" | "code"  -> rote Zeile unter genau diesem Feld
+           feld = ""                                      -> Fehlerkasten ueber dem Feldstapel
          Beispiele:
            setAuthPageError("auth", "email", "We do not know this address.")
+           setAuthPageError("auth", "code", "That code is not valid any more.")
            setAuthPageError("auth", "password", "That password is not correct.")
            setAuthPageError("auth", "", "Too many attempts. Try again in a few minutes.")
 
@@ -220,6 +247,7 @@
      data-instance="INSTANCE_ID"
      data-cdn-pin="CDN_PIN"
      data-mode="login"
+     data-code-required="no"
      data-logo="LOGO_URL"
      data-logo-dark="LOGO_DARK_URL"
      data-isdark="IS_DARK"

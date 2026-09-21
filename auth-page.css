@@ -166,6 +166,14 @@
   transition: border-color var(--uau-t) var(--uau-ease), box-shadow var(--uau-t) var(--uau-ease);
 }
 .uau-input::placeholder { color: var(--vc-third); }
+/* Das Codefeld traegt dieselbe Geometrie wie jedes andere -- nur die SCHRIFT sagt, dass hier
+   kein Wort steht: Versalien und etwas Sperrung, damit 0/O und 1/I auseinanderzuhalten sind.
+   text-transform und nicht ein Umschreiben beim Tippen: der Cursor soll nicht springen. Der
+   Wert selbst wird beim Absenden gross geschrieben (codeWert in auth-page.js), die Anzeige ist
+   also nicht die Wahrheit, sondern nur ihr Abbild.
+   Der Platzhalter bleibt gemischt -- er ist ein Satz, kein Code. */
+.uau-code { text-transform: uppercase; letter-spacing: 0.04em; }
+.uau-code::placeholder { text-transform: none; letter-spacing: normal; }
 /* Der Fokusring kommt aus core (.up-field). Hier steht nur, was core nicht kennt. */
 .uau-input:disabled { opacity: .55; cursor: default; }
 /* Ein Feld mit Fehler faerbt seinen Rahmen -- aber NICHT waehrend es den Fokus hat: sonst
