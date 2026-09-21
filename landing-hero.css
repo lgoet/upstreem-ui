@@ -1409,6 +1409,11 @@
    ungleiche Haelften lesen sich als Versehen. */
 .ulh-quell-app .udd-row2 { grid-column: 1 / -1; gap: 8px; grid-template-columns: 1fr 1fr; }
 .ulh-quell-app .udd-card { padding: 14px; }
+/* Die Kopfzeile der Domainseite rueckt 8px von der linken Kante ein (21.09. angefordert). Nur
+   sie: darunter stehen Karten mit eigenem Polster, und die sollen bleiben, wo sie sind. Der
+   Abstand zwischen Favicon und Ueberschrift ist davon unberuehrt -- der kommt aus dem gap von
+   .udd-title und ist eine andere Sache. */
+.ulh-quell-app .udd-head { padding-left: 8px; }
 /* Kurve und Trichter teilen sich eine Zeile, und das Raster macht beide Karten gleich hoch. Der
    Trichter ist von sich aus flacher -- gemessen blieben unter ihm 57px Luft. Statt einer gemessenen
    Zahl waechst hier die Zeichnung selbst in den Rest der Karte: sie hat preserveAspectRatio="none"
@@ -1597,15 +1602,22 @@
    mehr weight"). Sie ist in dieser Karte der Gegenstand -- die Zahlen daneben erklaeren sie nur --
    und stand in derselben Staerke da wie alles andere. */
 .ulh-vis-prompt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  font-size: 17px; font-weight: 500; }
+  font-weight: 500; }
 
 /* DER AUFGEKLAPPTE BEREICH IN DER QUELLENKARTE IST HELLER (21.09. angefordert). --vt-head-bg ist
    der Ton der Tabellenkoepfe; in einer Karte, die selbst schon auf --vc-bg steht, liest er sich
    als zweiter Kasten statt als Fortsetzung derselben Zeile. Auf halbem Weg zum Kartengrund bleibt
    die Abgrenzung erhalten und der Block wird ruhiger.
    NUR HIER: in der App steht die Tabelle auf der Seite und nicht in einer Karte, dort stimmt der
-   kraeftigere Ton. */
-.ulh-app .udt-subrows { background: color-mix(in srgb, var(--vt-head-bg) 45%, var(--vc-bg) 55%); }
+   kraeftigere Ton.
+   BEIDE Scopes, und das war der Fehler beim ersten Versuch: der aufgeklappte Bereich, um den es
+   geht, steht in der VORSCHAUKARTE (.ulh-vis) und nicht im Fenster (.ulh-app). Gemessen blieb
+   die Farbe deshalb unveraendert.
+   Und der ANTEIL ist 50 und nicht 25: der Ausgangston ist rgb(249,248,249), also ohnehin schon
+   dicht an Weiss. Bei 25 Prozent kam rgb(253,253,253) heraus -- das ist kein hellerer Kasten
+   mehr, sondern gar keiner. Bei 50 bleibt er als Flaeche erkennbar und ist eine Stufe ruhiger. */
+.ulh-app .udt-subrows,
+.ulh-vis .udt-subrows { background: color-mix(in srgb, var(--vt-head-bg) 50%, var(--vc-bg) 50%); }
 .ulh-vis-themen { display: flex; gap: 5px; min-width: 0; overflow: hidden; }
 
 /* Der Auslauf nach unten: erst weich zeichnen, dann in den Kartengrund verlaufen. Zwei Ebenen,

@@ -11681,13 +11681,24 @@
            <span>-Kindern beruht. */
         return '<div class="up-line-tt-row" data-id="' + esc(String(ds.__id == null ? "" : ds.__id)) + '" style="display:flex;align-items:center;gap:8px;margin-top:8px">' +
             '<span style="flex:0 0 16px;display:flex">' + icon + '</span>' +
-            '<span class="up-line-tt-name" style="flex:1 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:' + textColor + '">' + esc(truncate(ds.label, 32)) + '</span>' +
-            '<span class="up-line-tt-val" style="flex:0 0 auto;margin-left:77px;color:' + textColor + ';font-weight:500">' + val + '</span>' +
+            /* DER NAME SCHNEIDET ZU FRUEH AB (21.09. gemeldet, an den URL-Titeln der
+               Domainseite). Zwei Ursachen, beide hier:
+               - truncate(..., 32) war ein HARTER Schnitt nach 32 Zeichen, zusaetzlich zur
+                 Ellipse der CSS. Ein Titel wie "These Are The 18 Safest Family Road-Trip
+                 Vehicles" hat 50 und war schon weg, bevor die Breite ueberhaupt knapp wurde.
+                 Der Schnitt bleibt als Deckel gegen wirklich absurde Laengen, aber bei 90 --
+                 danach entscheidet die Breite, und das ist die richtige Instanz dafuer.
+               - margin-left: 77px war ein FESTER Abstand zur Zahl. Er nimmt dem Namen 77px,
+                 egal wie breit der Kasten ist. 64 ist der Abstand, der gebraucht wird, damit
+                 Name und Zahl nicht zusammenlaufen -- 13px mehr fuer den Namen, ohne dass die
+                 zwei sich naeherkommen. */
+            '<span class="up-line-tt-name" style="flex:1 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:' + textColor + '">' + esc(truncate(ds.label, 90)) + '</span>' +
+            '<span class="up-line-tt-val" style="flex:0 0 auto;margin-left:64px;color:' + textColor + ';font-weight:500">' + val + '</span>' +
           '</div>';
       }).join("");
       if (neuGezeichnet){
         el.innerHTML =
-          '<div style="background:' + boxBg + ';color:' + textColor + ';' + boxBorder + 'border-radius:16px;padding:10px 12px;font-family:' + ff + ';font-size:13px;line-height:1.35;' + boxShadow + 'white-space:nowrap;min-width:220px;">' +
+          '<div style="background:' + boxBg + ';color:' + textColor + ';' + boxBorder + 'border-radius:16px;padding:10px 12px;font-family:' + ff + ';font-size:13px;line-height:1.35;' + boxShadow + 'white-space:nowrap;min-width:220px;max-width:420px;">' +
             '<div style="color:' + mutedColor + ';font-size:11px">' + esc(chartDateTitle(dayLabel, getGran ? getGran() : "day")) + '</div>' +
             rows +
           '</div>';

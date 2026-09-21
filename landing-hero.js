@@ -76,7 +76,7 @@
      selben Wettbewerbsfeld, stehen aber weiter unten (Team-Auswahl, Performance-Matrix,
      Prompts) -- sechs Linien sind das, was ein Chart lesbar traegt (MAX_LINE_SERIES). */
   var MARKEN = [
-    { id: "ac", name: "Acme",    farbe: "#579cf1", domain: "acme.example",
+    { id: "ac", name: "Acme",    farbe: "#579cf1", domain: "acme.com",
       a: { vis: 24.6, rank: 2.4, sent: 74, visD: 2.1, rankD: -0.3, sentD: 1.4 },
       b: { vis: 38.9, rank: 1.1, sent: 79, visD: 5.8, rankD: -1.3, sentD: 3.1 } },
     { id: "bm", name: "BMW",     farbe: "#00aad3", domain: "bmw.de",
@@ -253,11 +253,11 @@
     { domain: "forbes.com",                 share_pct: 18.4, share_delta_pct: 2.1,  used_total: 2926, citation_type: "Editorial" },
     { domain: "reddit.com",                 share_pct: 14.1, share_delta_pct: -1.3, used_total: 2242, citation_type: "UGC_Community" },
     { domain: "wikipedia.org",              share_pct: 11.7, share_delta_pct: 0.8,  used_total: 1860, citation_type: "Knowledge_Base" },
-    { domain: "acme.example",               share_pct: 9.3,  share_delta_pct: 3.4,  used_total: 1479, citation_type: "You",
+    { domain: "acme.com",               share_pct: 9.3,  share_delta_pct: 3.4,  used_total: 1479, citation_type: "You",
       logo: MARKEN[0].logo },
     { domain: "bmw.de",                     share_pct: 7.6,  share_delta_pct: -0.4, used_total: 1208, citation_type: "Competition",
       logo: MARKEN[1].logo },
-    { domain: "konfigurator.acme.example",  share_pct: 6.2,  share_delta_pct: 1.9,  used_total: 986,  citation_type: "Brand_Platform",
+    { domain: "konfigurator.acme.com",  share_pct: 6.2,  share_delta_pct: 1.9,  used_total: 986,  citation_type: "Brand_Platform",
       logo: MARKEN[0].logo },
     { domain: "adac.de",                    share_pct: 4.8,  share_delta_pct: -0.7, used_total: 763,  citation_type: "Institutional" }
   ];
@@ -1682,7 +1682,10 @@
        von den Themen (260 -> 210, ein Chip ganz und der zweite angeschnitten -- in einer Vorschau
        ist das genug). Gerechnet: die festen Spalten waren zusammen 648, jetzt 570; auf einer
        838px breiten Vorschau waechst die Prompt-Spalte damit von 190 auf 268. */
-    var html = '<div class="ulh-vis-tab" style="--up-cols: minmax(0,1fr) 96px 84px 96px minmax(0,210px) 84px;">' +
+    /* Die Prompt-Spalte 20px breiter (21.09. angefordert). Sie ist 1fr, nimmt also den Rest --
+       breiter wird sie nur, wenn eine andere Spalte abgibt. Das tut die Themenspalte: 210 -> 190.
+       Dort stehen hoechstens zwei Chips, und die sind zusammen keine 190px breit. */
+    var html = '<div class="ulh-vis-tab" style="--up-cols: minmax(0,1fr) 96px 84px 96px minmax(0,190px) 84px;">' +
       '<div class="up-row up-thead">' + kopf.map(function(t){
         return '<div class="up-td">' + t + '</div>'; }).join("") + '</div>';
     html += VIS_ZEILEN.map(function(z, i){
@@ -1746,11 +1749,17 @@
       if (!kern || !kern.typeColor) return "";
       var farbe = kern.typeColor(typ, modus, false);
       var name = modus === "url" ? (kern.URL_LABEL[typ] || typ) : kern.citeName(typ);
-      /* Dieselbe Pille wie in der Zitattabelle: Punkt in der Typfarbe, Grund derselbe Ton mit
-         wenig Deckkraft. Die Werte kommen aus core (typeColor), nicht von hier. */
+      /* Dieselbe Pille wie in der Zitattabelle: Grund in der Typfarbe mit wenig Deckkraft, die
+         Werte aus core (typeColor) und nicht von hier.
+         DER PUNKT NUR BEI DEN URL-TYPEN (21.09. gemeldet: "die Citation Types ohne den Punkt
+         davor, die Punkte nur bei den URL Types, wie in der Hauptapp"). Genau so macht es die
+         Komponente auch -- tagInfo() in topcitations-dashboard.js gibt dot: true nur im Modus
+         "url" zurueck. Hier stand der Punkt an beiden, und damit sah das Schaustueck anders aus
+         als die App. */
+      var punkt = modus === "url"
+        ? '<span class="tct-tag-dot" style="background:' + farbe + '"></span>' : "";
       return '<span class="tct-tag" style="background:' + farbe + '1f;color:' + farbe + '">' +
-        '<span class="tct-tag-dot" style="background:' + farbe + '"></span>' +
-        '<span class="tct-tag-lbl">' + name + '</span></span>';
+        punkt + '<span class="tct-tag-lbl">' + name + '</span></span>';
     }
     /* Type 172 statt 116, und das ist gerechnet: die laengste Pille ("UGC / Community") misst
        innen 103px, dazu 20 Polster der Pille, 6 Punkt, 6 Abstand und 28 Polster der Zelle -- macht
@@ -1851,7 +1860,7 @@
   var VIS_CHANCEN = [
     { h: "Get the estate into the forbes.com buyer guide", dom: "forbes.com", pot: 4, themen: [2] },
     { h: "No page of yours answers the winter range question", dom: "reddit.com", pot: 3, themen: [2] },
-    { h: "Your charging page is cited, never quoted", dom: "acme.example", pot: 2, themen: [3] },
+    { h: "Your charging page is cited, never quoted", dom: "acme.com", pot: 2, themen: [3] },
     { h: "Show up in the comparison videos", dom: "youtube.com", pot: 3, themen: [1] },
     { h: "Add the model year to the wikipedia entry", dom: "wikipedia.org", pot: 2, themen: [5] },
     { h: "Answer the leasing thread on motor-talk", dom: "motor-talk.de", pot: 3, themen: [0] }
@@ -1861,7 +1870,7 @@
     var kern = window.UpstreemCore;
     return '<div class="ulh-vis-chancen"><div class="uo-list-rows">' +
       VIS_CHANCEN.map(function(c, i){
-        var logo = c.dom.indexOf("acme.example") >= 0 ? MARKEN[0].logo : quellzeichen(c.dom);
+        var logo = c.dom.indexOf("acme.com") >= 0 ? MARKEN[0].logo : quellzeichen(c.dom);
         var bars = "";
         for (var b = 1; b <= 4; b++) bars += '<span class="uo-pot-bar p' + b + (b <= c.pot ? " is-on" : "") + '"></span>';
         var themen = c.themen.map(function(ti){
@@ -2555,12 +2564,32 @@
      Tooltip von makeLine). Eine Pruefung an chart.tooltip haette sich selbst nicht widerlegen
      koennen -- fehlt die Auskunft, sieht "nicht gesetzt" wie "verschwunden" aus, und der Waechter
      haette alle 1,5 Sekunden ein Chart neu gezeichnet, das laengst richtig stand. */
+  /* DER WAECHTER HOERT AUF, SOBALD ER FERTIG IST (21.09. gemeldet: "das Domain-Detail-Ding
+     updatet hier und da, laedt neu -- das soll einmal bei appear hereinladen und dann so
+     bleiben").
+     Er lief ohne Ende: alle 1,5 Sekunden pruefen, und solange der Kasten nicht sichtbar war,
+     tippSetzen() -- und darin steckt chart.update("none"), also ein Neuzeichnen des Charts. Auf
+     einer Seite ohne Mauszeiger im Fenster ist das ein Neuzeichnen alle 1,5 Sekunden, dauerhaft.
+     Jetzt zwei Grenzen: drei Durchgaenge mit sichtbarem Kasten hintereinander heisst "steht", und
+     nach VERSUCHE_TIPP Anlaeufen ist ohnehin Schluss -- was bis dahin nicht steht, steht auch
+     nach einer Minute nicht, und ein Chart, das sich dabei jede Sekunde neu zeichnet, ist der
+     schlechtere Zustand als ein Chart ohne Kasten. */
+  var VERSUCHE_TIPP = 40;          /* 40 x 1,5s = eine Minute */
+  var TIPP_RUHIG = 3;              /* so oft hintereinander sichtbar = fertig */
   function tippWachen(){
+    var n = 0, steht = 0;
     var uhr = setInterval(function(){
       var wurzel = document.querySelector('.udd-root[data-instance="' + ID.udd + '"]');
       if (!wurzel){ clearInterval(uhr); return; }
       var tt = wurzel.querySelector(".up-line-tt");
-      if (!tt || tt.style.opacity === "0" || tt.style.opacity === "") tippSetzen();
+      var sichtbar = !!(tt && tt.style.opacity && tt.style.opacity !== "0");
+      if (sichtbar){
+        if (++steht >= TIPP_RUHIG){ clearInterval(uhr); return; }
+      } else {
+        steht = 0;
+        tippSetzen();
+      }
+      if (++n > VERSUCHE_TIPP) clearInterval(uhr);
     }, 1500);
   }
 
@@ -2691,7 +2720,7 @@
      Automarke: der Umschalter soll gerade NICHT nach Acmes Wettbewerbsfeld aussehen.
      Zahlen behauptet diese Liste keine -- sie sagt nur, dass es mehrere Arbeitsbereiche gibt. */
   var TEAMS = [
-    { name: "Acme",      dom: "acme.example" },        /* das eigene, bleibt oben */
+    { name: "Acme",      dom: "acme.com" },        /* das eigene, bleibt oben */
     { name: "Lufthansa", dom: "lufthansa.com" },
     { name: "Sony",      dom: "sony.com" },
     { name: "Siemens",   dom: "siemens.com" },
@@ -2701,7 +2730,7 @@
     { name: "adidas",    dom: "adidas.com" }
   ];
   /* Acme traegt ihr eigenes Zeichen, alle anderen ihr echtes. */
-  TEAMS.forEach(function(t){ t.logo = (t.dom === "acme.example") ? ACME_LOGO : quellzeichen(t.dom); });
+  TEAMS.forEach(function(t){ t.logo = (t.dom === "acme.com") ? ACME_LOGO : quellzeichen(t.dom); });
 
   var FEN_TEAM_AKTIV = 0;          /* Acme -- der ausgewaehlte Bereich, bleibt oben stehen */
   /* BEIDE unteren Zeilen wechseln (21.09. angefordert: "da soll auch die untere durchrotieren").
@@ -2828,20 +2857,26 @@
       { type: "review",        share_pct: 8.2 },
       { type: "documentation", share_pct: 6.5 }
     ]},
-    /* FUENF benannte Typen und der Rest: sechs Punkte, also drei Reihen zu zwei. Die
-       Beschriftungen dieser Verteilung sind laenger ("Product / Service" allein ist 114px), es
-       gehen also nur zwei in eine Reihe -- mit sieben benannten waeren es vier Reihen gewesen,
-       und die vierte trug nur noch zwei Punkte. Drei Reihen sind die Obergrenze in diesem
-       Fenster, in beiden Verteilungen.
-       Die Anteile der zwei gestrichenen Typen (Comparison, Review) sind auf die fuenf verbliebenen
-       verteilt und nicht in den Rest gewandert: ein "Other" als zweitgroesste Scheibe waere die
-       Aussage "wir wissen es meistens nicht". */
-    { zitate: 54100, rest: 11.1, typen: [
-      { type: "marketplace",     share_pct: 26.4 },
-      { type: "homepage",        share_pct: 23.1 },
-      { type: "product_service", share_pct: 19.8 },
-      { type: "company_info",    share_pct: 13.2 },
-      { type: "documentation",   share_pct: 6.4 }
+    /* DIE ZWEITE VERTEILUNG, neu gesetzt (21.09. gemeldet: "eine Version des URL-Types-Fensters
+       ist kaputt"). Hier standen marketplace / homepage / product_service / company_info --
+       der Quellenmix eines Onlineshops, nicht der eines Automarktes. Und die Beschriftungen
+       waren die laengsten des ganzen Satzes ("Product / Service" allein misst 114px), es gingen
+       also nur zwei Punkte in eine Reihe, waehrend die erste Verteilung drei traegt: zwei
+       Zustaende desselben Fensters mit verschiedener Legendenhoehe.
+       Jetzt tragen beide SIEBEN benannte Typen plus Rest, alle mit kurzen Beschriftungen -- die
+       Legende hat in beiden Zustaenden dieselbe Hoehe, und der Wechsel ist ein Wechsel der
+       Anteile und kein Umbau.
+       Die Aussage ist trotzdem eine andere als oben: dort tragen Artikel und Ratgeber die
+       Antworten, hier Tests, Vergleiche und Videos -- so sieht der Quellenmix aus, wenn jemand
+       ein bestimmtes Modell sucht statt einer Kategorie. */
+    { zitate: 54100, rest: 7.8, typen: [
+      { type: "review",     share_pct: 21.6 },
+      { type: "comparison", share_pct: 18.4 },
+      { type: "article",    share_pct: 15.9 },
+      { type: "forum",      share_pct: 12.7 },
+      { type: "video",      share_pct: 10.3 },
+      { type: "listicle",   share_pct: 8.1 },
+      { type: "homepage",   share_pct: 5.2 }
     ]}
   ];
   var FEN_URL_MS = 7000;
@@ -3449,7 +3484,7 @@
        Laden neu, und der Speicher liegt im Browser des Besuchers. Wer die Seite schon einmal
        gesehen hat, trug die Pins von damals weiter mit sich herum; nach dem Umbau auf Acme standen
        bei ihm vier Zeilen, zwei davon mit dem alten Markennamen. Genau so im Prueftand gesehen:
-       "Acme / acme.example / Kestrel / kestrel.example".
+       "Acme / acme.com / Kestrel / kestrel.example".
        VOR setSidebarTeams und nicht davor bei den Pins: die Leiste liest ihren Speicher, sobald
        das Team eintrifft, und haelt die Liste danach im Arbeitsspeicher. Ein Loeschen danach kaeme
        zu spaet -- gemessen, die vier Zeilen standen weiter da.
@@ -3467,7 +3502,7 @@
       window.setSidebarTeams(ID.usn, TEAMS.map(function(t, i){
         return { id: "t" + (i + 1), name: t.name, domain: t.dom, favicon_url: t.logo };
       }));
-      window.setSidebarUser(ID.usn, { name: "Alex Moreno", email: "alex@acme.example", avatar_url: "" });
+      window.setSidebarUser(ID.usn, { name: "Alex Moreno", email: "alex@acme.com", avatar_url: "" });
       /* Vierzehn Marken im Store. Die Leiste zieht ihren Brands-Zaehler daraus, und er soll dieselbe
          Zahl nennen wie die Kopfzeile der Tabelle. Sichtbar sind die sechs mit einer Linie im
          Chart; die vier weiteren Hersteller des Feldes stehen in der Matrix und in den Prompts,
@@ -3495,7 +3530,7 @@
            der Speicher liegt im Browser des Besuchers. Wer die Seite schon einmal gesehen hat,
            trug deshalb die Pins von damals weiter mit sich herum; nach dem Umbau auf Acme standen
            bei ihm vier Zeilen, zwei davon mit dem alten Markennamen. Genau so im Prueftand
-           gesehen: "Acme / acme.example / Kestrel / kestrel.example".
+           gesehen: "Acme / acme.com / Kestrel / kestrel.example".
            Der Schluessel ist der von sidebar.js (usn_pins__<instanz>@<team>) -- hier steht er ein
            zweites Mal, und das ist die eine Stelle, an der das vertretbar ist: eine API zum
            Leeren gibt es nicht, und die Landingpage darf die App dafuer nicht aendern. Beide
@@ -3506,8 +3541,8 @@
            stand hier ein selbst gebautes Buchstabenkaestchen in einem zweiten Gruenton -- das
            gab es nur, solange die Marken erfunden waren. Jetzt ist der Pin das, was er in der
            App auch waere: die Domain mit ihrem Zeichen. */
-        window.upstreemPinToSidebar({ type: "domain", id: "acme.example",
-          label: "acme.example", logo: MARKEN[0].logo });
+        window.upstreemPinToSidebar({ type: "domain", id: "acme.com",
+          label: "acme.com", logo: MARKEN[0].logo });
         window.upstreemPinToSidebar({ type: "brand", id: "ac",
           label: "Acme", logo: MARKEN[0].logo });
       }
@@ -4853,7 +4888,7 @@
      zwei Karten schon in Done sah der zweite Zug wie ein Nachschub aus.
 
      Die Domains sind ECHT, wo die Quelle fremd ist (forbes.com, reddit.com, youtube.com), und
-     erfunden, wo sie der eigenen Marke gehoert (acme.example) -- dieselbe Aufteilung wie im
+     erfunden, wo sie der eigenen Marke gehoert (acme.com) -- dieselbe Aufteilung wie im
      Zitatteil des Dashboards, Begruendung dort. Die Ueberschriften sind dabei als AUFGABE oder
      als Aussage ueber die eigene Marke formuliert und nicht als Aussage ueber die fremde Seite:
      "hol dir den Platz im Test" statt "das Magazin verschweigt dich". Das ist bei ECHTEN
@@ -4868,7 +4903,7 @@
      "Medium", "Winter range thread", "reddit.com", "UGC_Community", "US", 3, 61.2],
     ["o3", "pending", "improve_existing_content", "Your charging page is cited but never quoted",
      "Models reach the page and quote a competitor.",
-     "Low", "Charging and range overview", "acme.example", "Brand_Platform", "DE", 2, 34.5],
+     "Low", "Charging and range overview", "acme.com", "Brand_Platform", "DE", 2, 34.5],
     ["o4", "in_progress", "build_presence", "Show up in the two comparison videos that decide this class",
      "Both rank top three, and both of them name Audi.",
      "High", "Which electric SUV would you buy in 2026?", "youtube.com", "UGC_Community", "US", 5, 79.1]
@@ -4891,8 +4926,8 @@
         lead_title: c[6],
         lead_domain: c[7],
         /* Das Zeichen der Quelle: echt bei einer fremden Domain, das Markenkaestchen bei der
-           eigenen -- fuer acme.example gibt es kein echtes, die Marke ist erfunden. */
-        lead_favicon: c[7].indexOf("acme.example") >= 0 ? MARKEN[0].logo : quellzeichen(c[7]),
+           eigenen -- fuer acme.com gibt es kein echtes, die Marke ist erfunden. */
+        lead_favicon: c[7].indexOf("acme.com") >= 0 ? MARKEN[0].logo : quellzeichen(c[7]),
         lead_url: "https://" + c[7],
         effective_citation_type: c[8],
         market: c[9],
