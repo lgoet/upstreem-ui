@@ -5488,10 +5488,49 @@
     root.__ulhChancen = function(){ return chancenSzene(root); };
     root.__ulhPerf    = function(){ return perfSzene(root); };
     root.__ulhNeu     = function(){ return neustart(root); };
+    /* EINE ZEILE, DIE SAGT, WORAN ES LIEGT. Sie schreibt nichts und aendert nichts -- sie zaehlt
+       auf, was geladen ist, was gefuellt wurde und was leer blieb. Damit laesst sich auf der
+       echten Seite in einer Zeile klaeren, ob eine Datei fehlt, ob das Fuellen geworfen hat oder
+       ob die Daten da sind und nur nicht zu sehen. Ohne sie bleibt nur Raten aus der Ferne. */
+    root.__ulhDiag = function(){
+      function hat(n){ return typeof window[n] === "function"; }
+      function inhalt(sel){
+        var el = root.querySelector(sel);
+        if (!el) return "FEHLT";
+        var t = (el.innerText || "").replace(/\s+/g, " ").trim();
+        var sk = el.querySelectorAll(".up-sk, .is-sk, [class*='skelett'], [class*='skeleton']").length;
+        return t.length + " Zeichen, " + sk + " Skelette";
+      }
+      return {
+        pin: root.getAttribute("data-cdn-pin"),
+        geladen: Object.keys(window.__upAssetsLoaded || {}),
+        setter: { core: !!window.UpstreemCore, vot: hat("renderVisibilityChart"),
+                  tcd: hat("renderTopCitations"), dph: hat("setDashboardPageHeaderKpis"),
+                  usn: hat("setSidebarTeams"), upt: hat("renderPromptsTable"),
+                  uo: hat("opportunitiesSetItems"), urt: hat("renderResponsesTable"),
+                  udd: hat("renderDomainDetail"), uhm: hat("renderPerformanceRadar") },
+        gefuellt: root.__ulhGefuellt === true,
+        bereit_nach: root.__ulhBereitNach,
+        inhalte: { chart: inhalt(".vot-root"), zitate: inhalt(".tcd-root"),
+                   prompts: inhalt(".upt-root"), brett: inhalt(".uo-root"),
+                   antwortkarte: inhalt(".urt-root"), domain: inhalt(".udd-root") },
+        auftritte: root.querySelectorAll(".ulh-auf.is-da").length + " von " +
+                   root.querySelectorAll(".ulh-auf").length,
+        fenster_hoehe: window.innerHeight
+      };
+    };
     var n = 0;
     (function warte(){
       if (bereit()){
-        try { fuellen(); } catch (e){ if (window.console) console.warn("[landing-hero]", e); }
+        root.__ulhBereitNach = n;
+        try { fuellen(); root.__ulhGefuellt = true; }
+        catch (e){
+          root.__ulhGefuellt = false;
+          /* error und nicht warn: das hier ist kein Hinweis, das ist der Grund, warum die halbe
+             Sektion leer bleibt. Genau so ist es am 21.09. eine Runde lang unbemerkt geblieben. */
+          if (window.console) console.error("[landing-hero] fuellen() hat geworfen -- ab dieser " +
+            "Stelle bleibt alles leer:", e);
+        }
         hellHalten(root);
         ohneTipps(root);
         zeichenSetzen(root);
@@ -5513,6 +5552,24 @@
         return;
       }
       if (++n > VERSUCHE){
+        /* STILLES AUFGEBEN WAR DER FEHLER (21.09.). Hier wurde die Buehne ausgeblendet und
+           zurueckgekehrt -- ohne ein Wort. Wenn eine Datei nicht ankommt (jsDelivr merkt sich
+           einen fehlgeschlagenen GitHub-Abruf pro Datei und pro Commit und liefert danach 54
+           Zeichen Text mit Status 200, siehe CLAUDE.md 2b), sieht man von aussen nur, dass
+           "nichts geht" -- und sucht die Ursache im Code.
+           Jetzt sagt die Konsole, WELCHE Setter fehlen. Das ist die Liste, aus der man in einer
+           Zeile abliest, welche Datei nicht geladen hat. */
+        if (window.console){
+          var fehlt = [];
+          if (!window.UpstreemCore) fehlt.push("core.js (UpstreemCore)");
+          if (!window.renderVisibilityChart) fehlt.push("visibility-chart.js");
+          if (!window.renderTopCitations) fehlt.push("topcitations-dashboard.js");
+          if (!window.setDashboardPageHeaderKpis) fehlt.push("page-headers/dashboard-page-header.js");
+          if (!window.setSidebarTeams) fehlt.push("sidebar.js");
+          console.error("[landing-hero] Aufgegeben nach " + VERSUCHE + " Versuchen: diese Dateien " +
+            "sind nicht angekommen -> " + fehlt.join(", ") + ". Das Fenster bleibt leer. Fast immer " +
+            "ein Pin, dessen Dateien jsDelivr nicht ausliefert -- purgen und pruefen (CLAUDE.md 4).");
+        }
         var f = root.querySelector(".ulh-stage");
         if (f) f.style.display = "none";
         return;
