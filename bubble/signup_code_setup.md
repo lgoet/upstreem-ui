@@ -33,7 +33,7 @@ muss in **GoTrue oder Postgres** sitzen. Alles andere ist Bequemlichkeit.
 
 | Lage | Wo | Faengt ab |
 |---|---|---|
-| 1 | Seite (`data-code-required="yes"`) | leeres Feld — Bequemlichkeit |
+| 1 | Seite (Codefeld, ab 21.09. von selbst an) | leeres Feld — Bequemlichkeit |
 | 2 | RPC `signup_code_pruefen` | falscher/abgelaufener/verbrauchter Code, mit lesbarer Meldung |
 | 3 | **GoTrue: Signups aus** *oder* **Trigger auf `auth.users`** | **alles andere** — direkter API-Aufruf, Google-OAuth, jedes Plugin |
 
@@ -125,7 +125,8 @@ begin
       'reason', 'This code is not valid. Please check it or ask us for a new one.');
   end if;
 
-  -- Reservierung: sie ist es, die der Trigger in Lage 3 spaeter sieht. 30 Minuten
+  -- Reservierung: sie ist es, die Lage 3 spaeter sieht -- die Edge Function bei Weg A,
+  -- der Trigger bei Weg B. 30 Minuten
   -- Gueltigkeit -- lang genug fuer einen Signup, kurz genug, dass ein abgebrochener
   -- Versuch keine Hintertuer offen laesst.
   delete from public.signup_code_reservierungen
@@ -154,9 +155,27 @@ Antwort: `{"ok":true,"reason":""}` bzw. `ok:false` mit Text.
 
 ---
 
-## 3. Lage 3 — der Riegel. Zwei Wege, einer reicht
+## 3. Lage 3 — der Riegel
 
-### Weg A (empfohlen): Signups global aus
+### Die Entscheidung: Weg A
+
+Deine Vorgabe war: **Login weiter ueber Google und Co., Signup nur mit aktivem Einladungstoken
+oder Registrierungscode.** Genau diese Form hat Weg A, und zwar ohne eine einzige Zeile
+Sonderlogik:
+
+| | mit „Signups aus" |
+|---|---|
+| Login mit Passwort, bestehendes Konto | geht |
+| **Login mit Google, bestehendes Konto** | **geht** |
+| Google, unbekannte Adresse | GoTrue legt keine Identitaet an → abgewiesen |
+| `POST /auth/v1/signup` mit dem oeffentlichen Key | 422 |
+| Einladung / Code | geht — ueber die Edge Function, die du kontrollierst |
+
+Weg B (Trigger) steht darunter als Rueckfall, falls du keine Edge Function deployen willst. Er
+ist genauso dicht, aber er fasst `auth.users` an und liefert dem Nutzer nur eine generische
+Fehlermeldung. **Nimm Weg A.**
+
+### Weg A: Signups global aus
 
 **Dashboard → Authentication → Sign In / Providers → Email → „Allow new users to sign up" AUS.**
 
@@ -182,14 +201,21 @@ const admin = createClient(
 );
 
 Deno.serve(async (req) => {
-  const { code, email, password, full_name } = await req.json();
+  const { code, token, email, password, full_name } = await req.json();
 
-  // 1. Pruefen -- dieselbe Funktion wie oben, damit es EINE Wahrheit gibt
-  const { data: pruef } = await admin.rpc("signup_code_pruefen",
-    { p_code: code, p_email: email });
-  if (!pruef?.ok) {
-    return Response.json({ ok: false, reason: pruef?.reason ?? "invalid" }, { status: 200 });
+  // EINE TUER, ZWEI SCHLUESSEL. Genau die zwei Wege, die es geben soll -- und kein dritter.
+  // Der Einladungsweg muss hier mit hinein: mit abgeschalteten Signups kommt auch er
+  // nicht mehr am Client-Signup vorbei.
+  let erlaubt = false, reason = "";
+  if (token) {
+    const { data: inv } = await admin.rpc("invite_pruefen", { p_token: token, p_email: email });
+    erlaubt = !!inv?.ok; reason = inv?.reason ?? "";
+  } else {
+    const { data: pruef } = await admin.rpc("signup_code_pruefen",
+      { p_code: code, p_email: email });
+    erlaubt = !!pruef?.ok; reason = pruef?.reason ?? "";
   }
+  if (!erlaubt) return Response.json({ ok: false, reason }, { status: 200 });
 
   // 2. Konto anlegen -- mit dem Service Role Key geht das trotz abgeschalteter Signups
   const { data: user, error } = await admin.auth.admin.createUser({
@@ -199,8 +225,9 @@ Deno.serve(async (req) => {
   if (error) return Response.json({ ok: false, reason: "signup_failed" }, { status: 200 });
 
   // 3. Einloesen
-  await admin.rpc("signup_code_einloesen",
-    { p_code: code, p_email: email, p_user: user.user.id });
+  if (token) await admin.rpc("invite_einloesen", { p_token: token, p_user: user.user.id });
+  else       await admin.rpc("signup_code_einloesen",
+                             { p_code: code, p_email: email, p_user: user.user.id });
 
   return Response.json({ ok: true });
 });
@@ -211,11 +238,21 @@ und meldet den Nutzer danach ganz normal an (`signInWithPassword`) — das Passw
 gerade vergeben.
 
 > **Vorsicht, das trifft auch deinen Einladungsweg.** Laeuft der heute ueber den normalen
-> Client-Signup, hoert er mit dem Abschalten auf zu funktionieren. Er muss dann entweder ueber
-> dieselbe Function laufen (Token statt Code pruefen) oder ueber
-> `auth.admin.inviteUserByEmail` — Supabase legt das Konto dann selbst an und verschickt die
-> Mail. Das **vor** dem Umlegen des Schalters klaeren, sonst stehen deine offenen Einladungen
-> im Regen.
+> Client-Signup, hoert er mit dem Abschalten auf zu funktionieren. Deshalb oben die zwei
+> Schluessel an einer Tuer: `invite_pruefen` / `invite_einloesen` sind dieselben zwei Funktionen
+> wie fuer den Code, nur gegen deine Einladungstabelle. Wie die heisst, sagt dir die Abfrage in
+> Kapitel 6 — **erst nachsehen, dann schreiben.**
+> Das **vor** dem Umlegen des Schalters bauen, sonst stehen deine offenen Einladungen im Regen.
+
+### Ein Detail, das du pruefen musst
+
+Ein Nutzer legt per Code ein Konto mit Passwort an und klickt spaeter „Continue with Google".
+GoTrue verknuepft die Google-Identitaet mit dem bestehenden Konto, **wenn die Adresse dieselbe
+und bestaetigt ist**. Ist sie nicht bestaetigt, kann derselbe Mensch an seiner eigenen Anmeldung
+scheitern. Entweder `email_confirm: true` in `createUser` setzen (dann gilt die Adresse sofort
+als bestaetigt — nur richtig, wenn der Code selbst schon beweist, dass sie ihm gehoert), oder
+die Bestaetigungsmail so lassen, wie sie ist, und im Kopf behalten. Das ist Fall 9 in der
+Abnahme.
 
 ### Weg B: Signups an, aber ein Trigger auf `auth.users`
 
@@ -324,11 +361,26 @@ create trigger signup_gate_after
 
 ## 5. Die Seite
 
-Am `uau-root` auf der Anmeldeseite:
+Das Codefeld ist ab Pin 21.09. **von selbst da** — `data-code-required` steht auf „yes", wenn
+nichts anderes am Element steht. Wer es abschalten will, schreibt ausdruecklich hin:
 
 ```
-data-code-required="yes"
+data-code-required="no"
 ```
+
+Steht das Feld trotzdem nicht da, ist es fast immer der Pin: `data-cdn-pin` am `uau-root` muss
+auf einen Commit ab dem 21.09. zeigen. Diese Zeile in der Konsole sagt beides:
+
+```js
+(function(){ var r=document.querySelector('.uau-root'); if(!r) return 'keine uau-root auf der Seite';
+  return { pin: r.getAttribute('data-cdn-pin'), attribut: r.getAttribute('data-code-required'),
+           modus: r.getAttribute('data-mode'),
+           feld_im_dom: !!r.querySelector('[data-f-code]'),
+           feld_sichtbar: !!(r.querySelector('[data-w-code]')||{classList:{contains:function(){}}}).classList.contains('is-on') }; })()
+```
+
+`feld_im_dom: false` = alter Pin. `true` mit `feld_sichtbar: false` = Login-Modus oder eine
+Einladung im Spiel, beides richtig so.
 
 Der Workflow an `bubble_fn_uauSubmit`, Zweig `mode = "signup"` und `token` leer:
 
@@ -399,6 +451,7 @@ prueft — alles auf der Seite testet nur das Schild.
 | 6 | „Continue with Google" im **Signup** ohne Code | roter Hinweis, OAuth startet nicht |
 | 7 | „Continue with Google" im **Login**, unbekannte Adresse | **abgewiesen** — kein Konto |
 | 8 | `curl` aus Kapitel 6 | 422 bzw. 500, **niemals** 200 |
+| 9 | Per Code angelegt, danach „Continue with Google" mit derselben Adresse | meldet sich am **bestehenden** Konto an, legt kein zweites |
 
 Faelle 7 und 8 sind die einzigen, die die Sperre selbst pruefen. Wer nur 1 bis 6 testet, hat das
 Schild getestet.

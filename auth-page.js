@@ -514,10 +514,15 @@
        Einfuegen in auth.users); beides steht in bubble/signup_code_setup.md.
        Hier steht nur, dass der Nutzer nicht erst auf eine Serverrunde warten muss, um zu
        erfahren, dass er nichts eingetippt hat.
-       Verlangt wird der Code NUR, wenn data-code-required="yes" steht -- und auch dann nicht bei
-       einer Einladung. Der Vorgabewert ist "no": ein bestehendes Element, das dieses Attribut
-       noch nicht kennt, soll nicht ploetzlich einen Code verlangen, den niemand hat. */
-    function codeVerlangt(){ return UC.isYes(attr("data-code-required", "no")); }
+       VORGABE IST "yes" (21.09. korrigiert). Erst stand hier "no" -- mit der Begruendung, ein
+       bestehendes Element solle nicht ploetzlich einen Code verlangen. Das war die falsche
+       Richtung: gemeldet wurde "im Signup ist kein Codefeld", und zwar genau deshalb -- das
+       Element trug das Attribut nicht, und ein Sicherheitsriegel, den man erst einschalten muss,
+       ist im Zweifel aus. Ein Schalter dieser Art gehoert fail-closed.
+       Wer ihn braucht, schreibt data-code-required="no" ausdruecklich hin.
+       Ohne Wirkung bleibt er im Login und bei einer Einladung: ein Token ist selbst die
+       Berechtigung. */
+    function codeVerlangt(){ return UC.isYes(attr("data-code-required", "yes")); }
     function codeAn(){ return state.mode === "signup" && codeVerlangt() && !state.token; }
     /* GROSS UND OHNE LEERZEICHEN -- das ist der VERTRAG mit Bubble (dort :uppercase vergleichen).
        Ein aus einer Mail kopierter Code bringt regelmaessig ein fuehrendes Leerzeichen oder einen
