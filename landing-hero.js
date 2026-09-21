@@ -13,9 +13,14 @@
    aendert, verliert die Aenderung beim naechsten Lauf -- und die Landingpage weicht von der App ab,
    was der ganze Sinn dieser Bauart ist.
 
-   Die Zahlen im Fenster sind DEMODATEN und die Marken sind erfunden (Kestrel, Vantage, Halden,
-   Lumen, Orbit). Absichtlich: erfundene Zahlen unter echten Firmennamen wuerden auf einer
-   oeffentlichen Seite wie Daten ueber diese Firmen aussehen.
+   Die Zahlen im Fenster sind DEMODATEN. Der Markt ist seit dem 21.09. der AUTOMOBILMARKT: die
+   eigene Marke heisst Acme -- eine gehobene Marke mit Verbrenner- und E-Angebot --, und die
+   Wettbewerber sind echte Hersteller (BMW, Audi, Tesla, Porsche, Volvo, VW, BYD, Lexus, Nio).
+   Das ist eine bewusste Umkehr der frueheren Entscheidung, nur erfundene Marken zu zeigen:
+   erfundene Zahlen unter echten Namen sehen auf einer oeffentlichen Seite wie Daten ueber diese
+   Firmen aus. Deshalb sind die Werte PLAUSIBEL und nicht schmeichelhaft, keine Zahl behauptet
+   etwas ueber einen Hersteller, was sich nachpruefen liesse, und die eigene Marke bleibt
+   erfunden -- sie ist der Platzhalter fuer den Betrachter.
 
    Braucht: core.js, sidebar.js, dashboard-page-header.js, visibility-chart.js,
    topcitations-dashboard.js -- und diese Datei ZULETZT, weil sie deren Setter ruft. */
@@ -30,18 +35,18 @@
   /* ---- MARKUP ANFANG (erzeugt von .landing_markup.py -- nicht von Hand aendern) ---- */
   var MARKUP = {
     usn: "<div class=\"up-root usn-root\" data-instance=\"lh-usn\" data-cdn-pin=\"\" data-isdark=\"no\" data-team-id=\"t1\" data-active=\"dashboard\" data-prompt-count=\"\" data-export-instance=\"\" data-upstreem-logo=\"https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/upstreem-lockup-1f1f1f.svg\" data-upstreem-logo-dark=\"https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/upstreem-lockup-e0e0e0.svg\" data-upstreem-logo-small=\"https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/upstreem-mark-square-1f1f1f.svg\" data-upstreem-logo-small-dark=\"https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/upstreem-mark-square-e0e0e0.svg\"></div>",
-    dph: "<div class=\"up-root up-ph-root dph-root\" data-instance=\"lh-dph\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand-name=\"Kestrel\" data-brand-logo=\"\" data-mode-default=\"power\"><div class=\"up-ph-top\"><div class=\"up-ph-left\"><!-- KEINE Meta-Zeile auf dem Dashboard. dashboard-page-header.js baut sie zusaetzlich aus, falls sie in einer schon eingebauten Seite noch steht. --><h1 class=\"up-ph-heading\">Dashboard</h1><p class=\"up-ph-desc\">Monitor your AI visibility, performance, and latest developments</p></div><div class=\"dph-topright\"><!-- dashboard-page-header.js fuellt das weiter bei setDashboardPageHeaderKpis(), SICHTBAR ist es nicht mehr (dashboard-page-header.css: .dph-kpis { display: none }). Das Markup bleibt, damit der bestehende Setter nicht ins Leere laeuft. --><div class=\"dph-kpis\"></div><div class=\"dph-tools\"><!-- Nur das Zeichen, kein Wort: library-big -- dasselbe wie im Onboarding-Kopf. dashboard-page-header.js setzt es beim Init auch in einer schon eingebauten Seite und haengt .up-ph-iconbtn dazu. --><button class=\"dph-docsbtn up-ph-iconbtn\" type=\"button\" data-tip=\"Open Documentation\" aria-label=\"Open Documentation\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect width=\"8\" height=\"18\" x=\"3\" y=\"3\" rx=\"1\" /><path d=\"M7 3v18\" /><path d=\"M20.4 18.9c.2.5-.1 1.1-.6 1.3l-1.9.7c-.5.2-1.1-.1-1.3-.6L11.1 5.1c-.2-.5.1-1.1.6-1.3l1.9-.7c.5-.2 1.1.1 1.3.6Z\" /></svg></button><!-- Lucide refresh-cw. dashboard-page-header.js setzt dasselbe Zeichen beim Init aus core (UC.icon(\"refreshCw\")) -- hier steht es fuer den Fall, dass das JS noch unterwegs ist, damit der Knopf nicht leer aufblitzt. Dieselben Pfade, geprueft gegen lucide-static. --><!-- Suche: drueckt Cmd+K (Strg+K) -- darauf hoert die Palette (Quick Actions) selbst. Kein Workflow noetig. Wer zusaetzlich einen will, setzt data-search-fn am Wurzelelement -- dann geht auch ein Ereignis heraus. dashboard-page-header.js baut diesen Knopf auch in eine schon eingebaute Seite. --><button class=\"dph-searchbtn up-ph-iconbtn\" type=\"button\" data-tip=\"Quick Actions\" aria-label=\"Open Quick Actions\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m21 21-4.34-4.34\" /><circle cx=\"11\" cy=\"11\" r=\"8\" /></svg></button><button class=\"dph-refreshbtn up-ph-iconbtn\" type=\"button\" aria-label=\"Refresh\" data-tip=\"Refresh Data\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8\" /><path d=\"M21 3v5h-5\" /><path d=\"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16\" /><path d=\"M8 16H3v5\" /></svg></button></div></div></div></div>",
+    dph: "<div class=\"up-root up-ph-root dph-root\" data-instance=\"lh-dph\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand-name=\"Acme\" data-brand-logo=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%23101418%22%2F%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%225.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M19%2047%20L32%2017%20L45%2047%22%2F%3E%3Cpath%20d%3D%22M24.6%2036.5%20H39.4%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E\" data-mode-default=\"power\"><div class=\"up-ph-top\"><div class=\"up-ph-left\"><!-- KEINE Meta-Zeile auf dem Dashboard. dashboard-page-header.js baut sie zusaetzlich aus, falls sie in einer schon eingebauten Seite noch steht. --><h1 class=\"up-ph-heading\">Dashboard</h1><p class=\"up-ph-desc\">Monitor your AI visibility, performance, and latest developments</p></div><div class=\"dph-topright\"><!-- dashboard-page-header.js fuellt das weiter bei setDashboardPageHeaderKpis(), SICHTBAR ist es nicht mehr (dashboard-page-header.css: .dph-kpis { display: none }). Das Markup bleibt, damit der bestehende Setter nicht ins Leere laeuft. --><div class=\"dph-kpis\"></div><div class=\"dph-tools\"><!-- Nur das Zeichen, kein Wort: library-big -- dasselbe wie im Onboarding-Kopf. dashboard-page-header.js setzt es beim Init auch in einer schon eingebauten Seite und haengt .up-ph-iconbtn dazu. --><button class=\"dph-docsbtn up-ph-iconbtn\" type=\"button\" data-tip=\"Open Documentation\" aria-label=\"Open Documentation\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect width=\"8\" height=\"18\" x=\"3\" y=\"3\" rx=\"1\" /><path d=\"M7 3v18\" /><path d=\"M20.4 18.9c.2.5-.1 1.1-.6 1.3l-1.9.7c-.5.2-1.1-.1-1.3-.6L11.1 5.1c-.2-.5.1-1.1.6-1.3l1.9-.7c.5-.2 1.1.1 1.3.6Z\" /></svg></button><!-- Lucide refresh-cw. dashboard-page-header.js setzt dasselbe Zeichen beim Init aus core (UC.icon(\"refreshCw\")) -- hier steht es fuer den Fall, dass das JS noch unterwegs ist, damit der Knopf nicht leer aufblitzt. Dieselben Pfade, geprueft gegen lucide-static. --><!-- Suche: drueckt Cmd+K (Strg+K) -- darauf hoert die Palette (Quick Actions) selbst. Kein Workflow noetig. Wer zusaetzlich einen will, setzt data-search-fn am Wurzelelement -- dann geht auch ein Ereignis heraus. dashboard-page-header.js baut diesen Knopf auch in eine schon eingebaute Seite. --><button class=\"dph-searchbtn up-ph-iconbtn\" type=\"button\" data-tip=\"Quick Actions\" aria-label=\"Open Quick Actions\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m21 21-4.34-4.34\" /><circle cx=\"11\" cy=\"11\" r=\"8\" /></svg></button><button class=\"dph-refreshbtn up-ph-iconbtn\" type=\"button\" aria-label=\"Refresh\" data-tip=\"Refresh Data\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8\" /><path d=\"M21 3v5h-5\" /><path d=\"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16\" /><path d=\"M8 16H3v5\" /></svg></button></div></div></div></div>",
     vot: "<div class=\"up-root vot-root\" data-instance=\"lh-vot\" data-cdn-pin=\"\" data-isdark=\"no\" data-export-instance=\"\" data-processing=\"no\" data-processing2=\"no\"><div class=\"vot-unit vot-unit-left\"><div class=\"vot-head\"><div class=\"vot-heading\">Visibility over Time</div><div class=\"vot-head-tools\"><div class=\"vc-gran\" role=\"tablist\" aria-label=\"Granularity\"><button class=\"vc-gran-btn is-active\" data-gran=\"day\" type=\"button\" role=\"tab\" data-tip=\"Day\" aria-label=\"Day\">D</button><button class=\"vc-gran-btn\" data-gran=\"week\" type=\"button\" role=\"tab\" data-tip=\"Week\" aria-label=\"Week\">W</button><button class=\"vc-gran-btn\" data-gran=\"month\" type=\"button\" role=\"tab\" data-tip=\"Month\" aria-label=\"Month\">M</button></div><button class=\"vot-maximize vot-max-top vot-iconbtn\" type=\"button\" data-tip=\"Minimize\" aria-label=\"Minimize\"><svg class=\"ic-max\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M15 3h6v6\"/><path d=\"m21 3-7 7\"/><path d=\"m3 21 7-7\"/><path d=\"M9 21H3v-6\"/></svg><svg class=\"ic-min\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m14 10 7-7\"/><path d=\"M20 10h-6V4\"/><path d=\"m3 21 7-7\"/><path d=\"M4 14h6v6\"/></svg></button></div></div><div class=\"vot-box vot-box-left\"><div class=\"vot-panel-body\"><button class=\"vot-scale-btn\" type=\"button\" data-tip=\"Chart Settings\" aria-label=\"Chart Settings\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/></svg></button><div class=\"up-line-wrap\"><canvas class=\"up-line-canvas\"></canvas></div><div class=\"up-legend\"></div></div></div></div><div class=\"vot-unit vot-unit-right\"><div class=\"vot-head\"><div class=\"vot-heading vot-heading-right\"><span class=\"vot-head-label\">Top Brands</span><span class=\"vot-head-sep\"></span><span class=\"vot-head-count\"></span></div><div class=\"vot-head-tools\"><div class=\"vot-sort\"><button class=\"vot-sort-btn vot-iconbtn\" type=\"button\" data-tip=\"Sort\" aria-label=\"Sort\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m3 16 4 4 4-4\"/><path d=\"M7 20V4\"/><path d=\"m21 8-4-4-4 4\"/><path d=\"M17 4v16\"/></svg></button><div class=\"up-sort-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><div class=\"vot-filter\"><button class=\"vot-filter-btn vot-iconbtn\" type=\"button\" data-tip=\"Filter brands\" aria-label=\"Filter\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M14 17H5\"/><path d=\"M19 7h-9\"/><circle cx=\"17\" cy=\"17\" r=\"3\"/><circle cx=\"7\" cy=\"7\" r=\"3\"/></svg><span class=\"vot-filter-badge\"></span></button><div class=\"up-ment-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><button class=\"vot-export vot-iconbtn\" type=\"button\" data-tip=\"Export\" aria-label=\"Export\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 15V3\" /><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\" /><path d=\"m7 10 5 5 5-5\" /></svg></button><button class=\"vot-maximize vot-max-right vot-iconbtn\" type=\"button\" data-tip=\"Maximize\" aria-label=\"Maximize\"><svg class=\"ic-max\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M15 3h6v6\"/><path d=\"m21 3-7 7\"/><path d=\"m3 21 7-7\"/><path d=\"M9 21H3v-6\"/></svg><svg class=\"ic-min\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m14 10 7-7\"/><path d=\"M20 10h-6V4\"/><path d=\"m3 21 7-7\"/><path d=\"M4 14h6v6\"/></svg></button><button class=\"vot-goto vot-iconbtn\" type=\"button\" data-tip=\"Open\" aria-label=\"Open\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M7 7h10v10\" /><path d=\"M7 17 17 7\" /></svg></button></div></div><div class=\"vot-box vot-box-right\"><div class=\"vt-table\"></div></div></div></div>",
     tcd: "<div class=\"up-root tcd-root\" data-instance=\"lh-tcd\" data-cdn-pin=\"\" data-isdark=\"no\" data-export-instance=\"\" data-processing=\"no\" data-processing2=\"no\"><div class=\"tcd-unit tcd-unit-left\"><div class=\"tcd-head\"><div class=\"tcd-mode\" role=\"tablist\" aria-label=\"Mode\"><button class=\"tcd-mode-btn is-active\" data-mode=\"domain\" type=\"button\" role=\"tab\">Domains</button><button class=\"tcd-mode-btn\" data-mode=\"url\" type=\"button\" role=\"tab\">URLs</button></div><div class=\"tcd-head-tools\"><div class=\"tcl-seg\" role=\"tablist\" aria-label=\"Chart type\"><button class=\"tcl-seg-btn is-active\" data-chart=\"doughnut\" role=\"tab\" aria-selected=\"true\" data-tip=\"Doughnut\" aria-label=\"Doughnut\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 12c.552 0 1.005-.449.95-.998a10 10 0 0 0-8.953-8.951c-.55-.055-.998.398-.998.95v8a1 1 0 0 0 1 1z\" /><path d=\"M21.21 15.89A10 10 0 1 1 8 2.83\" /></svg></button><button class=\"tcl-seg-btn\" data-chart=\"bar\" role=\"tab\" aria-selected=\"false\" data-tip=\"Bars\" aria-label=\"Bars\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3v16a2 2 0 0 0 2 2h16\"/><rect x=\"7\" y=\"13\" width=\"9\" height=\"4\" rx=\"1\"/><rect x=\"7\" y=\"5\" width=\"12\" height=\"4\" rx=\"1\"/></svg></button></div></div></div><div class=\"tcd-box\"><div class=\"tcd-panel-body\"><div class=\"tcl-top-total\"><span class=\"n\">0</span><span class=\"lbl\">Citations</span></div><div class=\"up-donut-body\"></div></div></div></div><div class=\"tcd-unit tcd-unit-right\"><div class=\"tcd-head\"><div class=\"tcd-heading tcd-heading-right\"><span class=\"tcd-head-label\">Top Domains</span><span class=\"tcd-head-sep\"></span><span class=\"tcd-head-count\"></span></div><div class=\"tcd-head-tools\"><button class=\"tcd-brand-toggle\" type=\"button\" data-tip=\"Filter for your brand mentions\"><span class=\"tcd-brand-toggle-lbl\"><img class=\"tcd-brand-logo\" src=\"\" style=\"display:none\"/><span class=\"tcd-brand-label\"></span></span><span class=\"tcd-brand-check\"><svg class=\"tcd-brand-check-yes\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6 9 17l-5-5\" /></svg><svg class=\"tcd-brand-check-no\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h14\" /></svg></span></button><div class=\"tcd-filter\"><button class=\"tcd-filter-btn tcd-iconbtn\" type=\"button\" data-tip=\"Filter\" aria-label=\"Filter\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M14 17H5\"/><path d=\"M19 7h-9\"/><circle cx=\"17\" cy=\"17\" r=\"3\"/><circle cx=\"7\" cy=\"7\" r=\"3\"/></svg><span class=\"tcd-filter-badge\"></span></button><div class=\"up-filter-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><button class=\"tcd-export tcd-iconbtn\" type=\"button\" data-tip=\"Export\" aria-label=\"Export\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 15V3\" /><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\" /><path d=\"m7 10 5 5 5-5\" /></svg></button><button class=\"tcd-goto tcd-iconbtn\" type=\"button\" data-tip=\"Open\" aria-label=\"Open\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M7 7h10v10\" /><path d=\"M7 17 17 7\" /></svg></button></div></div><div class=\"tcd-box\"><div class=\"tct-table\"></div></div></div></div>",
     mqa: "<div id=\"mira-quick-actions\" data-theme=\"light\" data-team=\"\" data-cdn-pin=\"\" data-export-instance=\"\"><button class=\"mqa-trigger\" type=\"button\" aria-label=\"Open quick actions\"><svg class=\"mqa-trigger-ic\" viewBox=\"0 0 24 24\"><path d=\"m21 21-4.34-4.34\"/><circle cx=\"11\" cy=\"11\" r=\"8\"/></svg><span class=\"mqa-trigger-label\">Quick Actions</span><span class=\"mqa-kbd\" data-kbd>\u2318K</span></button><div class=\"mqa-overlay\" role=\"presentation\" aria-hidden=\"true\"><div class=\"mqa-modal\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Quick actions\"><div class=\"mqa-search\"><svg class=\"mqa-search-ic\" viewBox=\"0 0 24 24\"><path d=\"m21 21-4.34-4.34\"/><circle cx=\"11\" cy=\"11\" r=\"8\"/></svg><span class=\"mqa-chips\" id=\"mqa-chips\"></span><span class=\"mqa-inputwrap\"><input class=\"mqa-input\" type=\"text\" autocomplete=\"off\" spellcheck=\"false\" placeholder=\"\" aria-label=\"Search\" /><span class=\"mqa-ph\" id=\"mqa-ph\" aria-hidden=\"true\">Search brands, domains, URLs, prompts\u2026</span></span><span class=\"mqa-ph-cmd\" id=\"mqa-ph-cmd\" aria-hidden=\"true\">/ for filters</span><span class=\"mqa-kbd mqa-esc\" id=\"mqa-esc\">esc</span><button class=\"mqa-fav is-hidden\" type=\"button\" id=\"mqa-fav\" aria-pressed=\"false\" aria-label=\"Save as Favorite\"><svg viewBox=\"0 0 24 24\"><path d=\"M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z\" /></svg></button><button class=\"mqa-clear is-hidden\" type=\"button\" id=\"mqa-clear\" aria-label=\"Reset search\"><svg viewBox=\"0 0 24 24\"><path d=\"M10 11v6\" /><path d=\"M14 11v6\" /><path d=\"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6\" /><path d=\"M3 6h18\" /><path d=\"M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\" /></svg></button></div><!-- Die zwei Woerter in EIGENEN Spans: ein Satz aus drei Knoten laesst sich nicht uebersetzen. quick-actions.js zieht das bei bereits eingebauten Elementen zur Laufzeit nach (ctaTrennen). --><button class=\"mqa-entercta is-hidden\" type=\"button\" id=\"mqa-entercta\" data-worte=\"1\"><span>Press</span><span class=\"mqa-kbd\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M20 4v7a4 4 0 0 1-4 4H4\" /><path d=\"m9 10-5 5 5 5\" /></svg>Enter</span><span>to search</span></button><div class=\"mqa-scroll\"><div class=\"mqa-results\" aria-live=\"polite\"></div></div><div class=\"mqa-recent-wrap\" id=\"mqa-recent\"></div><div class=\"mqa-actions-wrap\"></div></div></div></div>",
     mira: "<div class=\"up-root am-root\" data-typespeed=\"1.15\" id=\"ask-mira\" data-instance=\"lh-mira\" data-cdn-pin=\"\" data-isdark=\"no\"><div class=\"am-shell\"><!-- ===================== HERO ===================== --><header class=\"am-hero\"><div class=\"am-hero-inner\"><div class=\"am-hero-text\"><div class=\"am-title-row\"><span class=\"am-brand\"><span class=\"am-logo-mark\" aria-hidden=\"true\"></span><span class=\"am-wordmark\">mira</span></span><span class=\"am-status-pill\" id=\"am-status-pill\"><span class=\"am-status-dot\"></span><span id=\"am-status-text\">Ready</span></span></div><p class=\"am-subline\">Chat with your AI Search data.</p></div><div class=\"am-chat-titlebar\" id=\"am-chat-titlebar\" aria-hidden=\"true\"><button class=\"am-ct-back\" id=\"am-ct-back\" type=\"button\" aria-label=\"Back to start\" data-tip=\"Back to start\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\"><path d=\"m12 19-7-7 7-7\" /><path d=\"M19 12H5\" /></svg></button><button class=\"am-ct-name\" id=\"am-ct-name\" type=\"button\" data-tip=\"Rename chat\"><span class=\"am-ct-text\" id=\"am-ct-text\"></span><span class=\"am-ct-skeleton\" id=\"am-ct-skeleton\" aria-hidden=\"true\"></span></button><button class=\"am-ct-chev\" id=\"am-ct-chev\" type=\"button\" aria-label=\"Chat options\" aria-haspopup=\"menu\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\"><path d=\"m6 9 6 6 6-6\" /></svg></button><input class=\"am-ct-input\" id=\"am-ct-input\" type=\"text\" maxlength=\"120\" aria-label=\"Chat name\"><span class=\"am-ct-edit-actions\" id=\"am-ct-edit-actions\"><button class=\"am-ct-mini\" id=\"am-ct-save\" type=\"button\" data-tip=\"Save\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\"><path d=\"M20 6 9 17l-5-5\" /></svg></button><button class=\"am-ct-mini\" id=\"am-ct-discard\" type=\"button\" data-tip=\"Discard\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\"><path d=\"M18 6 6 18\" /><path d=\"m6 6 12 12\" /></svg></button></span></div><button class=\"am-ghost-btn am-prev-btn\" type=\"button\" id=\"am-open-prev\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" class=\"am-ic am-prev-ic\"><rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\"/><path d=\"M9 3v18\"/></svg><span class=\"am-prev-label-full\">All Chats</span><span class=\"am-prev-label-short\">Chats</span></button></div></header><!-- ===================== CHAT VIEW ===================== --><main class=\"am-chat\" id=\"am-chat\"><div class=\"am-messages\" id=\"am-messages\"></div><!-- Suggested questions (shown when empty) --><div class=\"am-suggested\" id=\"am-suggested\"><div class=\"am-welcome\"><h2 class=\"am-welcome-title\" id=\"am-welcome-title\">How can I help you today?</h2></div><p class=\"am-suggested-label\" id=\"am-suggested-label\">Try asking</p><div class=\"am-suggested-grid\" id=\"am-suggested-grid\"></div><div class=\"am-quick\" id=\"am-quick\" aria-label=\"Quick actions\"></div></div></main><!-- ===================== COMPOSER ===================== --><footer class=\"am-composer-area\"><button class=\"am-scroll-bottom\" type=\"button\" id=\"am-scroll-bottom\" aria-label=\"Scroll to latest\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m6 9 6 6 6-6\" /></svg></button><div class=\"am-composer-shell\" id=\"am-composer-shell\"><!-- ZWEITE FASSUNG (08.09.). Was hier stand: Textzeile und Aktionsspalte nebeneinander, ein Fader-Knopf und darunter ein ausklappbares Fach mit \"Answer detail\" und der Modellwahl. Beides ist weg -- Modell UND Aufwand liegen jetzt in EINER Schaltflaeche unten links, deren Menue nach oben aufgeht, und links davon ein Plus fuer den Entitaets-Picker. WICHTIG FUER EINEN BESTEHENDEN EINBAU: ask-mira.js baut das alte Markup zur Laufzeit selbst auf diese Fassung um (composerUmbauen). Wer sein Element in Bubble nicht anfasst, bekommt die neue Leiste trotzdem -- dieses Markup hier ist die Aufraeumarbeit fuer NEUINSTALLATIONEN, keine Voraussetzung. --><div class=\"am-composer is-v2\" id=\"am-composer\" data-am-composer=\"v5\"><!-- Der Picker: oberhalb des Feldes, auf seiner ganzen Breite. Er haengt AN .am-composer (position: relative) und nicht am Koerper: im Top Layer waere die volle Breite des Feldes nicht mehr herstellbar. --><div class=\"am-pick-panel\" id=\"am-pick-panel\" aria-hidden=\"true\"><div class=\"am-pick-search\"><svg width=\"24\" height=\"24\" class=\"am-pick-sic\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m21 21-4.34-4.34\"/><circle cx=\"11\" cy=\"11\" r=\"8\"/></svg><span class=\"am-pick-chips\" id=\"am-pick-chips\"></span><span class=\"am-pick-inwrap\"><input class=\"am-pick-input\" id=\"am-pick-input\" type=\"text\" autocomplete=\"off\" spellcheck=\"false\" aria-label=\"Search your workspace\"></span><span class=\"am-pick-count\" id=\"am-pick-count\"></span></div><!-- Ueberschrift UND Chips in EINER Zeile, 16px auseinander, links ausgerichtet. --><div class=\"am-pick-crow\" id=\"am-pick-crow\"><p class=\"am-pick-h\" id=\"am-pick-h\"></p><!-- An der Stelle des frueheren Umschalters: die Befehle als Chips -- Brand, Prompt, Domain, URL. Getippt werden sie ueber \"/\" wie in Quick Actions. --><div class=\"am-pick-cmds\" id=\"am-pick-cmds\"></div></div><div class=\"am-pick-scroll\" id=\"am-pick-scroll\"><div class=\"am-pick-list\" id=\"am-pick-list\" role=\"listbox\" aria-live=\"polite\"></div></div></div><div class=\"am-quote-slot\" id=\"am-quote-slot\"></div><div class=\"am-input-wrap\"><!-- Die uebernommenen Bezuege stehen IM Textfeld, als erstes -- wie in Prompt Research (11.09.). Der Text geht direkt hinter der letzten Pille weiter: das Textfeld bekommt dafuer einen Einzug, den ask-mira.js aus der Lage der Pillen rechnet. ask-mira.js haengt den Streifen auch in einem aelteren eingebauten Element hierher um -- diese Stelle ist die Aufraeumarbeit fuer Neuinstallationen. --><div class=\"am-picks\" id=\"am-picks\"></div><textarea class=\"am-textarea\" id=\"am-textarea\" rows=\"1\" maxlength=\"2800\" placeholder=\"\"></textarea><div class=\"am-ph-loop\" id=\"am-ph-loop\" aria-hidden=\"true\"><span class=\"am-ph-text\" id=\"am-ph-text\">Ask Mira...</span></div></div><div class=\"am-actions\"><div class=\"am-act-l\"><button class=\"am-icon-action am-pick-btn\" type=\"button\" id=\"am-pick-btn\" aria-label=\"Add a reference\" aria-expanded=\"false\" data-tip=\"Add a reference\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" class=\"am-ic\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 5v14\"/><path d=\"M5 12h14\"/></svg></button></div><div class=\"am-act-r\"><div class=\"am-eff\" id=\"am-eff\"><button class=\"am-eff-btn\" type=\"button\" id=\"am-eff-btn\" aria-haspopup=\"true\" aria-expanded=\"false\"><span class=\"am-eff-name\" id=\"am-eff-name\"></span><span class=\"am-eff-lvl\" id=\"am-eff-lvl\"></span><svg width=\"24\" height=\"24\" class=\"am-eff-chev\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m6 9 6 6 6-6\"/></svg></button><div class=\"am-eff-menu\" id=\"am-eff-menu\" role=\"dialog\" aria-label=\"Model and effort\"><button class=\"am-eff-head\" type=\"button\" id=\"am-eff-head\" aria-expanded=\"false\"><span class=\"am-eff-hname\" id=\"am-eff-hname\"></span><span class=\"am-eff-hlvl\" id=\"am-eff-hlvl\"></span><svg width=\"24\" height=\"24\" class=\"am-eff-hchev\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m9 18 6-6-6-6\"/></svg></button><!-- EIN Rumpf um beide Ansichten; seine Hoehe setzt ask-mira.js gemessen, damit das Menue beim Umschalten weich waechst statt zu springen. --><div class=\"am-eff-body\" id=\"am-eff-body\"><div class=\"am-eff-pane am-eff-slider\" id=\"am-eff-slider\"><div class=\"am-eff-track\" id=\"am-eff-track\" role=\"slider\" tabindex=\"0\" aria-valuemin=\"0\" aria-valuemax=\"2\" aria-valuenow=\"1\"><span class=\"am-eff-fill\" id=\"am-eff-fill\"></span><span class=\"am-eff-ultra\" id=\"am-eff-ultra\" aria-hidden=\"true\"><!-- Die Punkte in EIGENER Schicht: nur sie tragen den Ausblender nach links, der Verlauf darunter steht auf ganzer Breite. --><span class=\"am-eff-dots\" id=\"am-eff-dots\"></span></span><span class=\"am-eff-dot\" data-i=\"0\"></span><span class=\"am-eff-dot\" data-i=\"1\"></span><span class=\"am-eff-dot\" data-i=\"2\"></span><span class=\"am-eff-thumb\" id=\"am-eff-thumb\"></span></div><div class=\"am-eff-labels\" id=\"am-eff-labels\"></div></div><div class=\"am-eff-pane am-eff-models\" id=\"am-eff-models\"></div><p class=\"am-eff-note\" id=\"am-eff-note\"></p></div></div></div><button class=\"am-icon-action am-mic\" type=\"button\" id=\"am-mic\" aria-label=\"Voice input\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" class=\"am-ic\"><path d=\"M12 19v3\" /><path d=\"M19 10v2a7 7 0 0 1-14 0v-2\" /><rect x=\"9\" y=\"2\" width=\"6\" height=\"13\" rx=\"3\" /></svg></button><button class=\"am-send\" type=\"button\" id=\"am-send\" aria-label=\"Send message\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" class=\"am-ic am-ic-send\"><path d=\"m5 12 7-7 7 7\" /><path d=\"M12 19V5\" /></svg><span class=\"am-send-spinner\" aria-hidden=\"true\"></span></button></div></div><div class=\"am-rec\" id=\"am-rec\" aria-hidden=\"true\"><span class=\"am-rec-live\"><span class=\"am-rec-dot\"></span><span class=\"am-rec-time\" id=\"am-rec-time\">0:00</span></span><div class=\"am-rec-wave\"><canvas class=\"am-rec-canvas\" id=\"am-rec-canvas\"></canvas></div><span class=\"am-rec-spring\"></span><div class=\"am-rec-actions\"><button class=\"am-rec-btn am-rec-cancel\" type=\"button\" id=\"am-rec-cancel\" aria-label=\"Discard recording\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" class=\"am-ic\"><path d=\"M18 6 6 18\" /><path d=\"m6 6 12 12\" /></svg></button><button class=\"am-rec-btn am-rec-confirm\" type=\"button\" id=\"am-rec-confirm\" aria-label=\"Send recording\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" class=\"am-ic\"><path d=\"M20 6 9 17l-5-5\" /></svg></button></div></div></div><div class=\"am-rec-note\" id=\"am-rec-note\" role=\"status\" aria-live=\"polite\"></div></div><p class=\"am-hint\">Mira answers based on your selected workspace data.</p></footer><!-- ===================== PREVIOUS CHATS PANEL ===================== --><div class=\"am-prev-scrim\" id=\"am-prev-scrim\" hidden></div><aside class=\"am-prev-panel\" id=\"am-prev-panel\" aria-hidden=\"true\"><div class=\"am-prev-head\"><p class=\"am-prev-title\">Previous chats</p><button class=\"am-icon-btn\" type=\"button\" id=\"am-close-prev\" aria-label=\"Close\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" class=\"am-ic\"><path d=\"M18 6 6 18\"></path><path d=\"m6 6 12 12\"></path></svg></button></div><div class=\"am-prev-toolbar\"><button class=\"am-newchat\" type=\"button\" id=\"am-new-chat\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" class=\"am-ic\"><path d=\"M12 5v14\"></path><path d=\"M5 12h14\"></path></svg><span>New Chat</span></button><button class=\"am-settings-btn\" type=\"button\" id=\"am-settings-btn\" aria-label=\"Settings\" data-tip=\"Settings\" aria-expanded=\"false\"></button></div><div class=\"am-hl-panel\" id=\"am-hl-settings-panel\"><div class=\"am-set-row\"><label class=\"am-set-label\">Brand Highlights</label><div class=\"am-dd\" id=\"am-dd-brand\" data-set=\"brand\"><button class=\"am-dd-trigger\" type=\"button\" aria-haspopup=\"listbox\" aria-expanded=\"false\"><span class=\"am-dd-value\">Logo</span><svg width=\"24\" height=\"24\" class=\"am-dd-chev\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m6 9 6 6 6-6\" /></svg></button><div class=\"am-dd-menu\" role=\"listbox\"><button class=\"am-dd-opt\" type=\"button\" role=\"option\" data-value=\"logo\"><span class=\"am-dd-check\"></span><span>Logo</span><span></span></button><button class=\"am-dd-opt\" type=\"button\" role=\"option\" data-value=\"icon\"><span class=\"am-dd-check\"></span><span>Icon</span><span></span></button><button class=\"am-dd-opt\" type=\"button\" role=\"option\" data-value=\"none\"><span class=\"am-dd-check\"></span><span>No Highlight</span><span></span></button></div></div></div><div class=\"am-set-row\"><label class=\"am-set-label\">Citation Highlights</label><div class=\"am-dd\" id=\"am-dd-citation\" data-set=\"citation\"><button class=\"am-dd-trigger\" type=\"button\" aria-haspopup=\"listbox\" aria-expanded=\"false\"><span class=\"am-dd-value\">Icon</span><svg width=\"24\" height=\"24\" class=\"am-dd-chev\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m6 9 6 6 6-6\" /></svg></button><div class=\"am-dd-menu\" role=\"listbox\"><button class=\"am-dd-opt\" type=\"button\" role=\"option\" data-value=\"icon\"><span class=\"am-dd-check\"></span><span>Icon</span><span></span></button><button class=\"am-dd-opt\" type=\"button\" role=\"option\" data-value=\"favicon\"><span class=\"am-dd-check\"></span><span>Favicon</span><span></span></button><button class=\"am-dd-opt\" type=\"button\" role=\"option\" data-value=\"none\"><span class=\"am-dd-check\"></span><span>No Highlight</span><span></span></button></div></div></div><div class=\"am-set-row\"><label class=\"am-set-label\">Response Highlights</label><div class=\"am-dd\" id=\"am-dd-response\" data-set=\"response\"><button class=\"am-dd-trigger\" type=\"button\" aria-haspopup=\"listbox\" aria-expanded=\"false\"><span class=\"am-dd-value\">Logo</span><svg width=\"24\" height=\"24\" class=\"am-dd-chev\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m6 9 6 6 6-6\" /></svg></button><div class=\"am-dd-menu\" role=\"listbox\"><button class=\"am-dd-opt\" type=\"button\" role=\"option\" data-value=\"logo\"><span class=\"am-dd-check\"></span><span>Logo</span><span></span></button><button class=\"am-dd-opt\" type=\"button\" role=\"option\" data-value=\"icon\"><span class=\"am-dd-check\"></span><span>Icon</span><span></span></button><button class=\"am-dd-opt\" type=\"button\" role=\"option\" data-value=\"none\"><span class=\"am-dd-check\"></span><span>No Highlight</span><span></span></button></div></div></div></div><div class=\"am-prev-list\" id=\"am-prev-list\"></div></aside></div></div>",
-    pph: "<div class=\"up-root up-ph-root pph-root\" data-instance=\"lh-pph\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand-name=\"Kestrel\" data-brand-logo=\"\"><div class=\"up-ph-top\"><div class=\"up-ph-left\"><div class=\"up-ph-meta\"><img class=\"up-ph-metalogo\" alt=\"\" style=\"display:none\"/><span class=\"up-ph-metatxt\"><span class=\"pph-metaname\"></span> Database</span></div><h1 class=\"up-ph-heading\">Prompt Insights</h1><p class=\"up-ph-desc\">Manage Prompts, Topics and monitor latest Responses</p></div><div class=\"pph-topright\"><button class=\"up-ph-addbtn up-export\" type=\"button\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14\" /><path d=\"M12 5v14\" /></svg><span>Add <span class=\"up-ph-addbtn-full\">Prompts</span></span></button><button class=\"pph-refreshbtn up-ph-iconbtn\" type=\"button\" aria-label=\"Refresh\" data-tip=\"Refresh Data\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8\" /><path d=\"M21 3v5h-5\" /><path d=\"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16\" /><path d=\"M8 16H3v5\" /></svg></button></div></div><!-- UC.makePageNav (core.js) builds the three tab items + the sliding indicator into this on init. --><div class=\"up-ph-nav\" role=\"tablist\"></div></div>",
-    upt: "<div class=\"up-root upt-root\" data-instance=\"lh-upt\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand-name=\"Kestrel\" data-brand-logo=\"\" data-sticky=\"no\" data-sticky-top=\"171\" data-export-instance=\"\"><div class=\"up-head\"><div class=\"up-heading\"><span class=\"up-head-label\">Prompts</span><span class=\"up-head-sep\"></span><span class=\"up-head-count\"></span><span class=\"upt-selcount\"><span class=\"upt-selcount-n\">0 selected</span><button class=\"upt-selcount-clear\" type=\"button\" aria-label=\"Clear selection\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6 6 18\" /><path d=\"m6 6 12 12\" /></svg></button></span></div><div class=\"upt-status\" role=\"tablist\" aria-label=\"Prompt status\"></div><div class=\"up-head-tools\"><button class=\"upt-brand-toggle\" type=\"button\" data-tip=\"Filter for your brand mentions\"><span class=\"upt-brand-toggle-lbl\"><img class=\"upt-brand-logo\" src=\"\" style=\"display:none\" alt=\"\"/><span class=\"upt-brand-label\"></span></span><span class=\"upt-brand-check\"><svg class=\"upt-brand-check-yes\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6 9 17l-5-5\" /></svg><svg class=\"upt-brand-check-no\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h14\" /></svg></span></button><div class=\"up-sort\"><button class=\"up-sort-btn up-iconbtn\" type=\"button\" data-tip=\"Sort\" aria-label=\"Sort\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m3 16 4 4 4-4\"/><path d=\"M7 20V4\"/><path d=\"m21 8-4-4-4 4\"/><path d=\"M17 4v16\"/></svg></button><div class=\"up-sort-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><div class=\"up-search\"><button class=\"up-search-btn up-iconbtn\" type=\"button\" data-tip=\"Search\" aria-label=\"Search\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m21 21-4.34-4.34\" /><circle cx=\"11\" cy=\"11\" r=\"8\" /></svg></button><div class=\"up-search-box\"><input class=\"up-search-input\" type=\"text\" placeholder=\"Search prompts...\" autocomplete=\"off\" spellcheck=\"false\" aria-label=\"Search prompts\"/><button class=\"up-search-clear\" type=\"button\" aria-label=\"Clear search\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6 6 18\" /><path d=\"m6 6 12 12\" /></svg></button></div></div><div class=\"up-cols\"><button class=\"up-cols-btn up-iconbtn\" type=\"button\" data-tip=\"Table Settings\" aria-label=\"Table settings\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/></svg></button><span class=\"upt-cols-badge\"></span><div class=\"up-cols-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><button class=\"up-export\" type=\"button\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 15V3\" /><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\" /><path d=\"m7 10 5 5 5-5\" /></svg><span>Export</span></button></div></div><div class=\"up-box\"><div class=\"up-table\"><div class=\"up-thead\"><div class=\"up-th up-th-prompt is-sortable\" data-sortcol=\"prompt\"><span class=\"upt-check\" role=\"checkbox\" tabindex=\"0\" aria-checked=\"false\" data-selectall></span><span class=\"up-th-txt\">Prompt</span><span class=\"up-thsort\" data-for=\"prompt\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m18 15-6-6-6 6\" /></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\" /></svg></span><span class=\"up-grip\" data-grip=\"prompt\"></span></div><div class=\"up-th up-th-visibility is-sortable\" data-sortcol=\"visibility\"><img class=\"upt-th-brandlogo\" src=\"\" alt=\"\"/><span class=\"up-th-txt\">Visibility</span><span class=\"up-th-info\" data-explain=\"visibility\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\" /><path d=\"M12 16v-4\" /><path d=\"M12 8h.01\" /></svg></span><span class=\"up-thsort\" data-for=\"visibility\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m18 15-6-6-6 6\" /></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\" /></svg></span></div><div class=\"up-th up-th-rank is-sortable\" data-sortcol=\"rank\"><span class=\"up-th-txt\">Rank</span><span class=\"up-th-info\" data-explain=\"rank\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\" /><path d=\"M12 16v-4\" /><path d=\"M12 8h.01\" /></svg></span><span class=\"up-thsort\" data-for=\"rank\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m18 15-6-6-6 6\" /></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\" /></svg></span></div><div class=\"up-th up-th-sentiment is-sortable\" data-sortcol=\"sentiment\"><span class=\"up-th-txt\">Sentiment</span><span class=\"up-th-info\" data-explain=\"sentiment\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\" /><path d=\"M12 16v-4\" /><path d=\"M12 8h.01\" /></svg></span><span class=\"up-thsort\" data-for=\"sentiment\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m18 15-6-6-6 6\" /></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\" /></svg></span></div><div class=\"up-th up-th-brands\">Brand Mentions<span class=\"up-th-info\" data-explain=\"brands\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\" /><path d=\"M12 16v-4\" /><path d=\"M12 8h.01\" /></svg></span></div><div class=\"up-th up-th-topics\">Topics</div><div class=\"up-th up-th-market\">Market<span class=\"up-th-info\" data-explain=\"market\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\" /><path d=\"M12 16v-4\" /><path d=\"M12 8h.01\" /></svg></span></div><div class=\"up-th up-th-created is-sortable\" data-sortcol=\"created\"><span class=\"up-th-txt\">Created</span><span class=\"up-thsort\" data-for=\"created\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m18 15-6-6-6 6\" /></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\" /></svg></span></div></div><div class=\"up-tbody\"></div></div></div><div class=\"up-foot\"><div class=\"up-pagesize\"><span class=\"up-pagesize-lbl\">Rows per page</span><div class=\"up-pagesize-seg\" role=\"group\" aria-label=\"Rows per page\"></div></div><div class=\"up-pager\"></div></div></div>",
-    oph: "<div class=\"up-root up-ph-root oph-root\" data-instance=\"lh-oph\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand-name=\"Kestrel\" data-brand-logo=\"\"><div class=\"up-ph-top\"><div class=\"up-ph-left\"><div class=\"up-ph-meta\"><img class=\"up-ph-metalogo\" alt=\"\" style=\"display:none\"/><span class=\"up-ph-metatxt\"><span class=\"pph-metaname\"></span> Workspace</span></div><h1 class=\"up-ph-heading\">Opportunities</h1><p class=\"up-ph-desc\">Manage tasks, prioritize opportunities, and track progress</p></div><button class=\"up-ph-addbtn up-export\" type=\"button\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 7V5a2 2 0 0 1 2-2h2\" /><path d=\"M17 3h2a2 2 0 0 1 2 2v2\" /><path d=\"M21 17v2a2 2 0 0 1-2 2h-2\" /><path d=\"M7 21H5a2 2 0 0 1-2-2v-2\" /><rect width=\"8\" height=\"8\" x=\"8\" y=\"8\" rx=\"1\" /></svg><span>Look for<span class=\"up-ph-addbtn-full\"> new Opportunities</span></span></button></div></div>",
+    pph: "<div class=\"up-root up-ph-root pph-root\" data-instance=\"lh-pph\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand-name=\"Acme\" data-brand-logo=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%23101418%22%2F%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%225.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M19%2047%20L32%2017%20L45%2047%22%2F%3E%3Cpath%20d%3D%22M24.6%2036.5%20H39.4%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E\"><div class=\"up-ph-top\"><div class=\"up-ph-left\"><div class=\"up-ph-meta\"><img class=\"up-ph-metalogo\" alt=\"\" style=\"display:none\"/><span class=\"up-ph-metatxt\"><span class=\"pph-metaname\"></span> Database</span></div><h1 class=\"up-ph-heading\">Prompt Insights</h1><p class=\"up-ph-desc\">Manage Prompts, Topics and monitor latest Responses</p></div><div class=\"pph-topright\"><button class=\"up-ph-addbtn up-export\" type=\"button\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14\" /><path d=\"M12 5v14\" /></svg><span>Add <span class=\"up-ph-addbtn-full\">Prompts</span></span></button><button class=\"pph-refreshbtn up-ph-iconbtn\" type=\"button\" aria-label=\"Refresh\" data-tip=\"Refresh Data\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8\" /><path d=\"M21 3v5h-5\" /><path d=\"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16\" /><path d=\"M8 16H3v5\" /></svg></button></div></div><!-- UC.makePageNav (core.js) builds the three tab items + the sliding indicator into this on init. --><div class=\"up-ph-nav\" role=\"tablist\"></div></div>",
+    upt: "<div class=\"up-root upt-root\" data-instance=\"lh-upt\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand-name=\"Acme\" data-brand-logo=\"\" data-sticky=\"no\" data-sticky-top=\"171\" data-export-instance=\"\"><div class=\"up-head\"><div class=\"up-heading\"><span class=\"up-head-label\">Prompts</span><span class=\"up-head-sep\"></span><span class=\"up-head-count\"></span><span class=\"upt-selcount\"><span class=\"upt-selcount-n\">0 selected</span><button class=\"upt-selcount-clear\" type=\"button\" aria-label=\"Clear selection\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6 6 18\" /><path d=\"m6 6 12 12\" /></svg></button></span></div><div class=\"upt-status\" role=\"tablist\" aria-label=\"Prompt status\"></div><div class=\"up-head-tools\"><button class=\"upt-brand-toggle\" type=\"button\" data-tip=\"Filter for your brand mentions\"><span class=\"upt-brand-toggle-lbl\"><img class=\"upt-brand-logo\" src=\"\" style=\"display:none\" alt=\"\"/><span class=\"upt-brand-label\"></span></span><span class=\"upt-brand-check\"><svg class=\"upt-brand-check-yes\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6 9 17l-5-5\" /></svg><svg class=\"upt-brand-check-no\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h14\" /></svg></span></button><div class=\"up-sort\"><button class=\"up-sort-btn up-iconbtn\" type=\"button\" data-tip=\"Sort\" aria-label=\"Sort\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m3 16 4 4 4-4\"/><path d=\"M7 20V4\"/><path d=\"m21 8-4-4-4 4\"/><path d=\"M17 4v16\"/></svg></button><div class=\"up-sort-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><div class=\"up-search\"><button class=\"up-search-btn up-iconbtn\" type=\"button\" data-tip=\"Search\" aria-label=\"Search\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m21 21-4.34-4.34\" /><circle cx=\"11\" cy=\"11\" r=\"8\" /></svg></button><div class=\"up-search-box\"><input class=\"up-search-input\" type=\"text\" placeholder=\"Search prompts...\" autocomplete=\"off\" spellcheck=\"false\" aria-label=\"Search prompts\"/><button class=\"up-search-clear\" type=\"button\" aria-label=\"Clear search\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6 6 18\" /><path d=\"m6 6 12 12\" /></svg></button></div></div><div class=\"up-cols\"><button class=\"up-cols-btn up-iconbtn\" type=\"button\" data-tip=\"Table Settings\" aria-label=\"Table settings\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/></svg></button><span class=\"upt-cols-badge\"></span><div class=\"up-cols-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><button class=\"up-export\" type=\"button\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 15V3\" /><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\" /><path d=\"m7 10 5 5 5-5\" /></svg><span>Export</span></button></div></div><div class=\"up-box\"><div class=\"up-table\"><div class=\"up-thead\"><div class=\"up-th up-th-prompt is-sortable\" data-sortcol=\"prompt\"><span class=\"upt-check\" role=\"checkbox\" tabindex=\"0\" aria-checked=\"false\" data-selectall></span><span class=\"up-th-txt\">Prompt</span><span class=\"up-thsort\" data-for=\"prompt\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m18 15-6-6-6 6\" /></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\" /></svg></span><span class=\"up-grip\" data-grip=\"prompt\"></span></div><div class=\"up-th up-th-visibility is-sortable\" data-sortcol=\"visibility\"><img class=\"upt-th-brandlogo\" src=\"\" alt=\"\"/><span class=\"up-th-txt\">Visibility</span><span class=\"up-th-info\" data-explain=\"visibility\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\" /><path d=\"M12 16v-4\" /><path d=\"M12 8h.01\" /></svg></span><span class=\"up-thsort\" data-for=\"visibility\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m18 15-6-6-6 6\" /></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\" /></svg></span></div><div class=\"up-th up-th-rank is-sortable\" data-sortcol=\"rank\"><span class=\"up-th-txt\">Rank</span><span class=\"up-th-info\" data-explain=\"rank\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\" /><path d=\"M12 16v-4\" /><path d=\"M12 8h.01\" /></svg></span><span class=\"up-thsort\" data-for=\"rank\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m18 15-6-6-6 6\" /></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\" /></svg></span></div><div class=\"up-th up-th-sentiment is-sortable\" data-sortcol=\"sentiment\"><span class=\"up-th-txt\">Sentiment</span><span class=\"up-th-info\" data-explain=\"sentiment\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\" /><path d=\"M12 16v-4\" /><path d=\"M12 8h.01\" /></svg></span><span class=\"up-thsort\" data-for=\"sentiment\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m18 15-6-6-6 6\" /></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\" /></svg></span></div><div class=\"up-th up-th-brands\">Brand Mentions<span class=\"up-th-info\" data-explain=\"brands\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\" /><path d=\"M12 16v-4\" /><path d=\"M12 8h.01\" /></svg></span></div><div class=\"up-th up-th-topics\">Topics</div><div class=\"up-th up-th-market\">Market<span class=\"up-th-info\" data-explain=\"market\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\" /><path d=\"M12 16v-4\" /><path d=\"M12 8h.01\" /></svg></span></div><div class=\"up-th up-th-created is-sortable\" data-sortcol=\"created\"><span class=\"up-th-txt\">Created</span><span class=\"up-thsort\" data-for=\"created\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m18 15-6-6-6 6\" /></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\" /></svg></span></div></div><div class=\"up-tbody\"></div></div></div><div class=\"up-foot\"><div class=\"up-pagesize\"><span class=\"up-pagesize-lbl\">Rows per page</span><div class=\"up-pagesize-seg\" role=\"group\" aria-label=\"Rows per page\"></div></div><div class=\"up-pager\"></div></div></div>",
+    oph: "<div class=\"up-root up-ph-root oph-root\" data-instance=\"lh-oph\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand-name=\"Acme\" data-brand-logo=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%23101418%22%2F%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%225.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M19%2047%20L32%2017%20L45%2047%22%2F%3E%3Cpath%20d%3D%22M24.6%2036.5%20H39.4%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E\"><div class=\"up-ph-top\"><div class=\"up-ph-left\"><div class=\"up-ph-meta\"><img class=\"up-ph-metalogo\" alt=\"\" style=\"display:none\"/><span class=\"up-ph-metatxt\"><span class=\"pph-metaname\"></span> Workspace</span></div><h1 class=\"up-ph-heading\">Opportunities</h1><p class=\"up-ph-desc\">Manage tasks, prioritize opportunities, and track progress</p></div><button class=\"up-ph-addbtn up-export\" type=\"button\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 7V5a2 2 0 0 1 2-2h2\" /><path d=\"M17 3h2a2 2 0 0 1 2 2v2\" /><path d=\"M21 17v2a2 2 0 0 1-2 2h-2\" /><path d=\"M7 21H5a2 2 0 0 1-2-2v-2\" /><rect width=\"8\" height=\"8\" x=\"8\" y=\"8\" rx=\"1\" /></svg><span>Look for<span class=\"up-ph-addbtn-full\"> new Opportunities</span></span></button></div></div>",
     uo: "<div class=\"up-root uo-root\" data-portal=\"inline\" data-instance=\"lh-uo\" data-cdn-pin=\"\" data-isdark=\"no\" data-sticky=\"no\" data-sticky-top=\"16\"><div class=\"up-head uo-head\"><div class=\"up-heading has-count\"><span class=\"up-head-label\">Active Opportunities</span><span class=\"up-head-sep\"></span><span class=\"up-head-count uo-total\">0</span></div><div class=\"up-head-tools\"><!-- Sorter vor der Suche: dieselbe Reihenfolge wie in allen anderen Kopfzeilen. core.js ordnet die Leiste zur Laufzeit ohnehin (orderToolbars). --><div class=\"uo-popwrap\"><button class=\"uo-sort-btn up-iconbtn\" type=\"button\" data-tip=\"Sort\" aria-label=\"Sort\" aria-haspopup=\"menu\" aria-expanded=\"false\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m3 16 4 4 4-4\"/><path d=\"M7 20V4\"/><path d=\"m21 8-4-4-4 4\"/><path d=\"M17 4v16\"/></svg></button><div class=\"up-menu uo-sort-pop\" role=\"menu\" aria-hidden=\"true\"><div class=\"up-pop-head\">Sort by</div><div class=\"up-pop-opt is-active\" role=\"menuitem\" data-sort=\"priority\">Priority<svg class=\"up-check\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6 9 17l-5-5\" /></svg></div><div class=\"up-pop-opt\" role=\"menuitem\" data-sort=\"newest\">Newest<svg class=\"up-check\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6 9 17l-5-5\" /></svg></div><div class=\"up-pop-div\"></div><div class=\"up-pop-row uo-toggle-external\"><span class=\"up-pop-label\">External only</span><span class=\"up-switch uo-switch-external\" role=\"switch\"></span></div></div></div><div class=\"up-search\"><button class=\"up-search-btn up-iconbtn\" type=\"button\" data-tip=\"Search\" aria-label=\"Search\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m21 21-4.34-4.34\" /><circle cx=\"11\" cy=\"11\" r=\"8\" /></svg></button><div class=\"up-search-box\"><input class=\"up-search-input\" type=\"text\" placeholder=\"Search opportunities...\" autocomplete=\"off\" spellcheck=\"false\" aria-label=\"Search opportunities\"/><button class=\"up-search-clear\" type=\"button\" aria-label=\"Clear search\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6 6 18\" /><path d=\"m6 6 12 12\" /></svg></button></div></div><div class=\"up-seg uo-mode\" role=\"tablist\" aria-label=\"View\"><button class=\"up-seg-btn is-active\" type=\"button\" role=\"tab\" data-mode=\"board\" data-tip=\"Board view\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"18\" rx=\"1.5\"></rect><rect x=\"14\" y=\"3\" width=\"7\" height=\"11\" rx=\"1.5\"></rect></svg>Board</button><button class=\"up-seg-btn\" type=\"button\" role=\"tab\" data-mode=\"list\" data-tip=\"List view\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 5h.01\" /><path d=\"M3 12h.01\" /><path d=\"M3 19h.01\" /><path d=\"M8 5h13\" /><path d=\"M8 12h13\" /><path d=\"M8 19h13\" /></svg>List</button></div><div class=\"uo-popwrap\"><button class=\"uo-settings-btn up-iconbtn\" type=\"button\" data-tip=\"Board settings\" aria-label=\"Board settings\" aria-haspopup=\"menu\" aria-expanded=\"false\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/></svg></button><div class=\"up-menu uo-settings-pop\" role=\"menu\" aria-hidden=\"true\"><div class=\"up-pop-head\">Lanes</div><div class=\"up-pop-row\" data-board=\"pending\"><span class=\"up-pop-label\"><span class=\"uo-col-dot\" style=\"background:#9ca3af;\"></span>Pending</span><span class=\"up-switch is-on\" role=\"switch\"></span></div><div class=\"up-pop-row\" data-board=\"in_progress\"><span class=\"up-pop-label\"><span class=\"uo-col-dot\" style=\"background:#2384E2;\"></span>In Progress</span><span class=\"up-switch is-on\" role=\"switch\"></span></div><div class=\"up-pop-row\" data-board=\"done\"><span class=\"up-pop-label\"><span class=\"uo-col-dot\" style=\"background:#15803d;\"></span>Done</span><span class=\"up-switch\" role=\"switch\"></span></div><div class=\"up-pop-row\" data-board=\"ignored\"><span class=\"up-pop-label\"><span class=\"uo-col-dot\" style=\"background:#b4451f;\"></span>Ignored</span><span class=\"up-switch\" role=\"switch\"></span></div></div></div></div></div><!-- opportunities.js renders the lanes / list into this. --><div class=\"uo-stage\"></div><div class=\"uo-scrim\"></div><div class=\"uo-modal\" role=\"dialog\" aria-modal=\"true\"></div><!-- Optional: paste a JSON array here to render without a Run-JS step (useful while designing). --><script class=\"uo-data-json\" type=\"application/json\">[]</script></div>",
-    urt: "<div class=\"up-root urt-root\" data-instance=\"lh-urt\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand-name=\"Kestrel\" data-brand-logo=\"\" data-spotlight-mode=\"no\" data-export-instance=\"\" data-sticky=\"no\" data-sticky-top=\"171\" data-sticky=\"no\" data-default-view=\"cards\"><div class=\"up-head\"><div class=\"up-heading\"><span class=\"up-head-label\">Responses</span><span class=\"up-head-sep\"></span><span class=\"up-head-count\"></span></div><div class=\"up-head-tools\"><button class=\"urt-brand-toggle\" type=\"button\" data-tip=\"Filter for your brand mentions\"><span class=\"urt-brand-toggle-lbl\"><img class=\"urt-brand-logo\" src=\"\" style=\"display:none\" alt=\"\"/><span class=\"urt-brand-label\"></span></span><span class=\"urt-brand-check\"><svg class=\"urt-brand-check-yes\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6 9 17l-5-5\" /></svg><svg class=\"urt-brand-check-no\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h14\" /></svg></span></button><div class=\"up-ment\"><button class=\"up-ment-btn\" type=\"button\" data-tip=\"Filter for brand mentions\" aria-haspopup=\"menu\" aria-expanded=\"false\"><span class=\"up-ment-lbl\">All Brands</span><svg class=\"up-ment-chev\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\" /></svg><svg class=\"up-ment-clear\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6 6 18\" /><path d=\"m6 6 12 12\" /></svg></button><div class=\"up-ment-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><!-- Reihenfolge: Sorter VOR dem Fader, also von rechts gelesen der Fader vor dem Sorter. core.js ordnet die Leiste zur Laufzeit ohnehin (orderToolbars) -- hier steht sie richtig, damit eine Neuinstallation nicht erst umsortiert werden muss. --><div class=\"up-sort\"><button class=\"up-sort-btn up-iconbtn\" type=\"button\" data-tip=\"Sort\" aria-label=\"Sort\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m3 16 4 4 4-4\"/><path d=\"M7 20V4\"/><path d=\"m21 8-4-4-4 4\"/><path d=\"M17 4v16\"/></svg></button><div class=\"up-sort-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><!-- lucide \"settings-2\" \u2014 the SAME filter glyph visibility-chart / topcitations / combo-chart use. .up-iconbtn makes it behave like every other toolbar icon button. --><div class=\"urt-fader\"><button class=\"urt-fader-btn up-iconbtn\" type=\"button\" data-tip=\"Filter by rank &amp; sentiment\" aria-label=\"Filter by rank and sentiment\" aria-haspopup=\"menu\" aria-expanded=\"false\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M14 17H5\"/><path d=\"M19 7h-9\"/><circle cx=\"17\" cy=\"17\" r=\"3\"/><circle cx=\"7\" cy=\"7\" r=\"3\"/></svg></button><div class=\"urt-fader-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><div class=\"up-search\"><button class=\"up-search-btn up-iconbtn\" type=\"button\" data-tip=\"Search\" aria-label=\"Search\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m21 21-4.34-4.34\" /><circle cx=\"11\" cy=\"11\" r=\"8\" /></svg></button><div class=\"up-search-box\"><input class=\"up-search-input\" type=\"text\" placeholder=\"Search prompts...\" autocomplete=\"off\" spellcheck=\"false\" aria-label=\"Search responses\"/><button class=\"up-search-clear\" type=\"button\" aria-label=\"Clear search\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6 6 18\" /><path d=\"m6 6 12 12\" /></svg></button></div></div><div class=\"up-cols\"><button class=\"up-cols-btn up-iconbtn\" type=\"button\" data-tip=\"Table Settings\" aria-label=\"Table settings\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/></svg></button><span class=\"urt-cols-badge\"></span><div class=\"up-cols-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><!-- .up-dense / .up-dense-btn are core's segmented control \u2014 the same one the Row Height picker uses. Reused verbatim so this switcher IS the app's switcher, not a lookalike. .urt-viewswitch only overrides the width (core's is full-width for the popover). --><div class=\"up-dense urt-viewswitch\" role=\"group\" aria-label=\"View\"><button class=\"up-dense-btn up-dense-btn-icon is-active\" type=\"button\" data-view=\"table\" data-tip=\"Table view\" aria-label=\"Table view\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18\"/></svg></button><button class=\"up-dense-btn up-dense-btn-icon\" type=\"button\" data-view=\"cards\" data-tip=\"Card view\" aria-label=\"Card view\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect width=\"7\" height=\"7\" x=\"3\" y=\"3\" rx=\"1\"/><rect width=\"7\" height=\"7\" x=\"14\" y=\"3\" rx=\"1\"/><rect width=\"7\" height=\"7\" x=\"14\" y=\"14\" rx=\"1\"/><rect width=\"7\" height=\"7\" x=\"3\" y=\"14\" rx=\"1\"/></svg></button></div><button class=\"up-export\" type=\"button\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 15V3\" /><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\" /><path d=\"m7 10 5 5 5-5\" /></svg><span>Export</span></button></div></div><div class=\"up-box\"><div class=\"up-table\"><div class=\"up-thead\"><!-- The lead column's resize grip. Every other table has one; without it the first column simply cannot be dragged (core's resize kit binds to .up-grip). --><div class=\"up-th up-th-prompt\">Prompt<span class=\"up-grip\" data-grip=\"prompt\"></span></div><!-- \"<brand logo> mentioned?\", identical to urls-table: the logo is filled in from data-brand-logo, and without one the label falls back to \"<brand name> mentioned?\" --><div class=\"up-th up-th-mentioned\"><img class=\"up-th-brandlogo\" src=\"\" alt=\"\" style=\"display:none\"/><span class=\"up-th-mentlbl\">Mentioned</span></div><div class=\"up-th up-th-sentiment is-sortable\" data-sortcol=\"sentiment\"><span class=\"up-th-txt\">Sentiment</span><span class=\"up-thsort\" data-for=\"sentiment\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m18 15-6-6-6 6\" /></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\" /></svg></span></div><div class=\"up-th up-th-rank is-sortable\" data-sortcol=\"rank\"><span class=\"up-th-txt\">Rank</span><span class=\"up-thsort\" data-for=\"rank\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m18 15-6-6-6 6\" /></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\" /></svg></span></div><div class=\"up-th up-th-brands\">Brand Mentions</div><div class=\"up-th up-th-citations\">Citations</div><div class=\"up-th up-th-model\">Model</div><div class=\"up-th up-th-date is-sortable\" data-sortcol=\"date\"><span class=\"up-th-txt\">Date</span><span class=\"up-thsort\" data-for=\"date\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m18 15-6-6-6 6\" /></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\" /></svg></span></div></div><div class=\"up-tbody\"></div></div></div><div class=\"urt-cards\"></div><div class=\"up-foot\"><div class=\"up-pagesize\"><span class=\"up-pagesize-lbl\">Rows per page</span><div class=\"up-pagesize-seg\" role=\"group\" aria-label=\"Rows per page\"></div></div><div class=\"up-pager\"></div></div></div>",
-    udd: "<div class=\"up-root udd-root\" data-instance=\"lh-udd\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand=\"Kestrel\"></div>",
-    hph: "<div class=\"up-root up-ph-root pfph-root\" data-instance=\"lh-hph\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand-name=\"Kestrel\" data-brand-logo=\"\"><div class=\"up-ph-top\"><div class=\"up-ph-left\"><div class=\"up-ph-meta\"><img class=\"up-ph-metalogo\" alt=\"\" style=\"display:none\"/><span class=\"up-ph-metatxt\"><span class=\"pph-metaname\"></span> Workspace</span></div><h1 class=\"up-ph-heading\">Performance</h1><p class=\"up-ph-desc\">Explore topic performance, compare brands, and uncover strengths and gaps</p></div></div></div>",
+    urt: "<div class=\"up-root urt-root\" data-instance=\"lh-urt\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand-name=\"Acme\" data-brand-logo=\"\" data-spotlight-mode=\"no\" data-export-instance=\"\" data-sticky=\"no\" data-sticky-top=\"171\" data-sticky=\"no\" data-default-view=\"cards\"><div class=\"up-head\"><div class=\"up-heading\"><span class=\"up-head-label\">Responses</span><span class=\"up-head-sep\"></span><span class=\"up-head-count\"></span></div><div class=\"up-head-tools\"><button class=\"urt-brand-toggle\" type=\"button\" data-tip=\"Filter for your brand mentions\"><span class=\"urt-brand-toggle-lbl\"><img class=\"urt-brand-logo\" src=\"\" style=\"display:none\" alt=\"\"/><span class=\"urt-brand-label\"></span></span><span class=\"urt-brand-check\"><svg class=\"urt-brand-check-yes\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6 9 17l-5-5\" /></svg><svg class=\"urt-brand-check-no\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h14\" /></svg></span></button><div class=\"up-ment\"><button class=\"up-ment-btn\" type=\"button\" data-tip=\"Filter for brand mentions\" aria-haspopup=\"menu\" aria-expanded=\"false\"><span class=\"up-ment-lbl\">All Brands</span><svg class=\"up-ment-chev\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\" /></svg><svg class=\"up-ment-clear\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6 6 18\" /><path d=\"m6 6 12 12\" /></svg></button><div class=\"up-ment-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><!-- Reihenfolge: Sorter VOR dem Fader, also von rechts gelesen der Fader vor dem Sorter. core.js ordnet die Leiste zur Laufzeit ohnehin (orderToolbars) -- hier steht sie richtig, damit eine Neuinstallation nicht erst umsortiert werden muss. --><div class=\"up-sort\"><button class=\"up-sort-btn up-iconbtn\" type=\"button\" data-tip=\"Sort\" aria-label=\"Sort\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m3 16 4 4 4-4\"/><path d=\"M7 20V4\"/><path d=\"m21 8-4-4-4 4\"/><path d=\"M17 4v16\"/></svg></button><div class=\"up-sort-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><!-- lucide \"settings-2\" \u2014 the SAME filter glyph visibility-chart / topcitations / combo-chart use. .up-iconbtn makes it behave like every other toolbar icon button. --><div class=\"urt-fader\"><button class=\"urt-fader-btn up-iconbtn\" type=\"button\" data-tip=\"Filter by rank &amp; sentiment\" aria-label=\"Filter by rank and sentiment\" aria-haspopup=\"menu\" aria-expanded=\"false\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M14 17H5\"/><path d=\"M19 7h-9\"/><circle cx=\"17\" cy=\"17\" r=\"3\"/><circle cx=\"7\" cy=\"7\" r=\"3\"/></svg></button><div class=\"urt-fader-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><div class=\"up-search\"><button class=\"up-search-btn up-iconbtn\" type=\"button\" data-tip=\"Search\" aria-label=\"Search\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m21 21-4.34-4.34\" /><circle cx=\"11\" cy=\"11\" r=\"8\" /></svg></button><div class=\"up-search-box\"><input class=\"up-search-input\" type=\"text\" placeholder=\"Search prompts...\" autocomplete=\"off\" spellcheck=\"false\" aria-label=\"Search responses\"/><button class=\"up-search-clear\" type=\"button\" aria-label=\"Clear search\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6 6 18\" /><path d=\"m6 6 12 12\" /></svg></button></div></div><div class=\"up-cols\"><button class=\"up-cols-btn up-iconbtn\" type=\"button\" data-tip=\"Table Settings\" aria-label=\"Table settings\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/></svg></button><span class=\"urt-cols-badge\"></span><div class=\"up-cols-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><!-- .up-dense / .up-dense-btn are core's segmented control \u2014 the same one the Row Height picker uses. Reused verbatim so this switcher IS the app's switcher, not a lookalike. .urt-viewswitch only overrides the width (core's is full-width for the popover). --><div class=\"up-dense urt-viewswitch\" role=\"group\" aria-label=\"View\"><button class=\"up-dense-btn up-dense-btn-icon is-active\" type=\"button\" data-view=\"table\" data-tip=\"Table view\" aria-label=\"Table view\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18\"/></svg></button><button class=\"up-dense-btn up-dense-btn-icon\" type=\"button\" data-view=\"cards\" data-tip=\"Card view\" aria-label=\"Card view\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect width=\"7\" height=\"7\" x=\"3\" y=\"3\" rx=\"1\"/><rect width=\"7\" height=\"7\" x=\"14\" y=\"3\" rx=\"1\"/><rect width=\"7\" height=\"7\" x=\"14\" y=\"14\" rx=\"1\"/><rect width=\"7\" height=\"7\" x=\"3\" y=\"14\" rx=\"1\"/></svg></button></div><button class=\"up-export\" type=\"button\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 15V3\" /><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\" /><path d=\"m7 10 5 5 5-5\" /></svg><span>Export</span></button></div></div><div class=\"up-box\"><div class=\"up-table\"><div class=\"up-thead\"><!-- The lead column's resize grip. Every other table has one; without it the first column simply cannot be dragged (core's resize kit binds to .up-grip). --><div class=\"up-th up-th-prompt\">Prompt<span class=\"up-grip\" data-grip=\"prompt\"></span></div><!-- \"<brand logo> mentioned?\", identical to urls-table: the logo is filled in from data-brand-logo, and without one the label falls back to \"<brand name> mentioned?\" --><div class=\"up-th up-th-mentioned\"><img class=\"up-th-brandlogo\" src=\"\" alt=\"\" style=\"display:none\"/><span class=\"up-th-mentlbl\">Mentioned</span></div><div class=\"up-th up-th-sentiment is-sortable\" data-sortcol=\"sentiment\"><span class=\"up-th-txt\">Sentiment</span><span class=\"up-thsort\" data-for=\"sentiment\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m18 15-6-6-6 6\" /></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\" /></svg></span></div><div class=\"up-th up-th-rank is-sortable\" data-sortcol=\"rank\"><span class=\"up-th-txt\">Rank</span><span class=\"up-thsort\" data-for=\"rank\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m18 15-6-6-6 6\" /></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\" /></svg></span></div><div class=\"up-th up-th-brands\">Brand Mentions</div><div class=\"up-th up-th-citations\">Citations</div><div class=\"up-th up-th-model\">Model</div><div class=\"up-th up-th-date is-sortable\" data-sortcol=\"date\"><span class=\"up-th-txt\">Date</span><span class=\"up-thsort\" data-for=\"date\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m18 15-6-6-6 6\" /></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\" /></svg></span></div></div><div class=\"up-tbody\"></div></div></div><div class=\"urt-cards\"></div><div class=\"up-foot\"><div class=\"up-pagesize\"><span class=\"up-pagesize-lbl\">Rows per page</span><div class=\"up-pagesize-seg\" role=\"group\" aria-label=\"Rows per page\"></div></div><div class=\"up-pager\"></div></div></div>",
+    udd: "<div class=\"up-root udd-root\" data-instance=\"lh-udd\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand=\"Acme\"></div>",
+    hph: "<div class=\"up-root up-ph-root pfph-root\" data-instance=\"lh-hph\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand-name=\"Acme\" data-brand-logo=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%23101418%22%2F%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%225.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M19%2047%20L32%2017%20L45%2047%22%2F%3E%3Cpath%20d%3D%22M24.6%2036.5%20H39.4%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E\"><div class=\"up-ph-top\"><div class=\"up-ph-left\"><div class=\"up-ph-meta\"><img class=\"up-ph-metalogo\" alt=\"\" style=\"display:none\"/><span class=\"up-ph-metatxt\"><span class=\"pph-metaname\"></span> Workspace</span></div><h1 class=\"up-ph-heading\">Performance</h1><p class=\"up-ph-desc\">Explore topic performance, compare brands, and uncover strengths and gaps</p></div></div></div>",
     uhm: "<div class=\"up-root uhm-root\" data-instance=\"lh-uhm\" data-cdn-pin=\"\" data-isdark=\"no\"><div class=\"up-head\"><div class=\"up-heading\">Performance Chart</div><div class=\"up-head-tools\"><div class=\"uhm-metric up-seg\" role=\"tablist\" aria-label=\"Metric\"><button class=\"up-seg-btn is-active\" data-metric=\"visibility\" type=\"button\" role=\"tab\" aria-selected=\"true\">Visibility</button><button class=\"up-seg-btn\" data-metric=\"rank\" type=\"button\" role=\"tab\" aria-selected=\"false\">Ranking</button><button class=\"up-seg-btn\" data-metric=\"sentiment\" type=\"button\" role=\"tab\" aria-selected=\"false\">Sentiment</button></div><!-- Der Einstellungsknopf steht ganz rechts, hinter dem Filter. Er stand vorher links davon; core.js ordnet die Leiste zur Laufzeit ohnehin (orderToolbars). --><div class=\"uhm-pick\"><button class=\"uhm-pick-btn up-iconbtn\" type=\"button\" data-tip=\"Brands &amp; Topics\" aria-label=\"Choose brands and topics\"></button><div class=\"uhm-pick-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><div class=\"uhm-set\"><button class=\"uhm-set-btn up-iconbtn\" type=\"button\" data-tip=\"Settings\" aria-label=\"Settings\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/></svg></button><div class=\"uhm-set-menu up-menu\" role=\"menu\" aria-hidden=\"true\"></div></div></div></div><div class=\"uhm-box\"><div class=\"uhm-scroll\"><div class=\"uhm-grid\"></div></div></div></div>"
   };
   /* ---- MARKUP ENDE ---- */
@@ -50,68 +55,87 @@
 
   /* Hoechstens sieben Zeichen je Name. Gemessen: bei 1066px Inhaltsbreite -- und die ist fest,
      weil die Buehne fest ist -- kuerzt die Top-Brands-Tabelle "Northwind" auf "Northwi...".
-     Kuerzere Namen sind der billigere Hebel als eine breitere Buehne, denn die Buehnenbreite
-     steuert auch die Schriftgroesse im Fenster. */
-  /* Die Farben sind die Tableau-10-Reihe (4E79A7, F28E2B, E15759, 76B7B2, 59A14F, B07AA1) -- ein
-     Satz, der als Satz entworfen wurde: sechs Linien in einem Chart bleiben auseinanderzuhalten,
-     auch nebeneinander in einer Legende, und keine sticht heraus.
+     Genau daran haengt die Auswahl der Hersteller: Porsche hat sieben, alle anderen weniger.
+     "Polestar" waere der achte Buchstabe gewesen und stand deshalb nicht zur Wahl; Nio steht
+     dort als die zweite E-Marke neben BYD.
+     Die Farben sind die LINEAR-Skala aus core.js (COLOR_SCALES.linear, 21.09. angefordert):
+     sieben gleiche Schritte im Farbton von Blau bis Orange bei konstanter Helligkeit und
+     Buntheit. Genau das ist ihr Punkt -- keine Linie ist heller als ihre Nachbarn, also draengt
+     sich keine vor. Die Werte sind ABGESCHRIEBEN und nicht nachgemischt: waeren sie hier
+     nachgerechnet, liefen sie beim naechsten Feinschliff drueben auseinander.
      Jede Marke hat ZWEI Zustaende. A ist der Anfang, B der Stand nach dem Filterwechsel drei
-     Sekunden spaeter. Die eigene Marke (Kestrel) startet auf Platz 3 und geht auf 1 -- aufwaerts,
-     nicht abwaerts, das war die Ansage. Platz 5 und 6 tauschen (Lumen und Verity).
+     Sekunden spaeter. Die eigene Marke (Acme) startet auf Platz 3 und geht auf 1 -- aufwaerts,
+     nicht abwaerts, das war die Ansage. Platz 5 und 6 tauschen (Porsche und Volvo).
      Die VORZEICHEN der Trendwerte sind in A und B gleich. Das ist Absicht: so muss beim Wechsel nur
      die Zahl zaehlen, und Farbe und Pfeilrichtung des Trendzeichens bleiben, wie sie sind -- ein
-     Umschlagen mitten in der Bewegung waere ein Sprung, den kein Zaehlen glaettet. Verity war der
+     Umschlagen mitten in der Bewegung waere ein Sprung, den kein Zaehlen glaettet. Volvo war der
      Fall, der das erzwungen hat: es steigt von Platz 6 auf 5, also steht auch im Zustand A schon
-     ein kleines Plus davor und nicht das Minus, das dort zuerst stand. */
+     ein kleines Plus davor und nicht das Minus, das dort zuerst stand.
+     WARUM DIESE SECHS OBEN STEHEN: das Fenster zeigt den Premiummarkt, in dem Acme steht. BMW
+     und Audi fuehren ihn, Tesla, Porsche und Volvo folgen. VW, BYD, Lexus und Nio gehoeren zum
+     selben Wettbewerbsfeld, stehen aber weiter unten (Team-Auswahl, Performance-Matrix,
+     Prompts) -- sechs Linien sind das, was ein Chart lesbar traegt (MAX_LINE_SERIES). */
   var MARKEN = [
-    { id: "ke", name: "Kestrel", farbe: "#4E79A7",
+    { id: "ac", name: "Acme",    farbe: "#579cf1", domain: "acme.example",
       a: { vis: 24.6, rank: 2.4, sent: 74, visD: 2.1, rankD: -0.3, sentD: 1.4 },
       b: { vis: 38.9, rank: 1.1, sent: 79, visD: 5.8, rankD: -1.3, sentD: 3.1 } },
-    { id: "va", name: "Vantage", farbe: "#F28E2B",
+    { id: "bm", name: "BMW",     farbe: "#00aad3", domain: "bmw.de",
       a: { vis: 34.8, rank: 1.3, sent: 76, visD: 1.4, rankD: -0.1, sentD: 0.6 },
       b: { vis: 32.1, rank: 1.9, sent: 75, visD: 0.7, rankD: -0.4, sentD: 0.2 } },
-    { id: "ha", name: "Halden",  farbe: "#E15759",
+    { id: "au", name: "Audi",    farbe: "#00b1ab", domain: "audi.de",
       a: { vis: 30.2, rank: 2.1, sent: 71, visD: 1.9, rankD: -0.2, sentD: 2.1 },
       b: { vis: 27.4, rank: 2.6, sent: 70, visD: 1.1, rankD: -0.5, sentD: 1.4 } },
-    { id: "ni", name: "Nimbus",  farbe: "#76B7B2",
+    { id: "te", name: "Tesla",   farbe: "#2db477", domain: "tesla.com",
       a: { vis: 19.4, rank: 3.4, sent: 68, visD: -1.1, rankD: 0.4, sentD: -1.6 },
       b: { vis: 18.2, rank: 3.7, sent: 67, visD: -0.6, rankD: 0.2, sentD: -0.8 } },
-    { id: "lu", name: "Lumen",   farbe: "#59A14F",
+    { id: "po", name: "Porsche", farbe: "#83a93a", domain: "porsche.com",
       a: { vis: 14.1, rank: 4.2, sent: 66, visD: -0.8, rankD: 0.3, sentD: 0.9 },
       b: { vis: 11.3, rank: 5.1, sent: 63, visD: -1.9, rankD: 0.7, sentD: 0.4 } },
-    { id: "ve", name: "Verity",  farbe: "#B07AA1",
+    { id: "vo", name: "Volvo",   farbe: "#b69700", domain: "volvocars.com",
       a: { vis: 9.8,  rank: 5.3, sent: 63, visD: 0.6,  rankD: -0.1, sentD: 0.5 },
       b: { vis: 13.6, rank: 4.4, sent: 66, visD: 1.7,  rankD: -0.6, sentD: 1.2 } }
   ];
+  /* Die vier weiteren Hersteller des Feldes. Sie tragen keine Chartlinie -- sechs sind das, was
+     lesbar bleibt --, aber sie stehen in der Team-Auswahl, in der Performance-Matrix und in den
+     Prompts. Ohne sie waere der Markt sechs Marken gross, und das waere fuer diesen Markt
+     erkennbar zu klein. */
+  var MARKEN_WEITER = [
+    { id: "vw", name: "VW",    domain: "vw.de" },
+    { id: "by", name: "BYD",   domain: "byd.com" },
+    { id: "le", name: "Lexus", domain: "lexus.de" },
+    { id: "ni", name: "Nio",   domain: "nio.com" }
+  ];
 
-  /* Ein Zeichen je Marke, erzeugt: abgerundetes Quadrat in der Markenfarbe mit dem Anfangs-
-     buchstaben. Die Logo-Plaetze der App bleiben sonst leer, und eine Reihe leerer grauer Kreise
-     sieht nach fehlenden Daten aus.
-     ECHTE Firmenlogos waeren die andere Moeglichkeit -- dann stuenden hier aber erfundene Zahlen
-     unter fremden Marken, auf einer oeffentlichen Seite. Das ist eine Entscheidung und keine
-     Kleinigkeit; bis dahin sind es diese.
-     Als data:-Adresse und nicht als Datei: kein zusaetzlicher Abruf, und nichts kann fehlen. */
-  function zeichen(text, farbe){
-    var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">' +
-      '<rect width="32" height="32" rx="8" fill="' + farbe + '"/>' +
-      '<text x="16" y="22.5" text-anchor="middle" fill="#ffffff" font-weight="600" ' +
-      'font-size="16" font-family="Geist, system-ui, sans-serif">' + text + '</text></svg>';
-    return "data:image/svg+xml," + encodeURIComponent(svg);
-  }
-  MARKEN.forEach(function(m){ m.logo = zeichen(m.name.charAt(0), m.farbe); });
-
-  /* Das Zeichen einer ECHTEN Quelle. Die sechs Marken im Bild sind erfunden -- ihre Kaestchen mit
-     Anfangsbuchstaben stehen darueber --, die Seiten, die KI-Antworten zitieren, sind es nicht:
-     YouTube, Reddit, G2, Forbes, Wikipedia. Mit ihren richtigen Zeichen ist auf einen Blick zu
-     sehen, worum es in der Zeile geht; ein graues R fuer Reddit ist eine Behauptung, die der
-     Betrachter erst nachlesen muss.
-     Der Dienst von Google liefert das Zeichen der Domain und fuer eine unbekannte einen
-     Weltkugel-Rueckfall -- er antwortet also immer, und die Komponenten haben zusaetzlich ihr
-     eigenes onerror (opportunities.js: favHtml, topcitations-dashboard.js). Keine eigene Kopie
-     der Dateien: die waere am Tag ihrer Aufnahme richtig und danach veraltet. */
+  /* Das Zeichen einer ECHTEN Quelle. Der Dienst von Google liefert das Zeichen der Domain und
+     fuer eine unbekannte einen Weltkugel-Rueckfall -- er antwortet also immer, und die
+     Komponenten haben zusaetzlich ihr eigenes onerror (opportunities.js: favHtml,
+     topcitations-dashboard.js). Keine eigene Kopie der Dateien: die waere am Tag ihrer Aufnahme
+     richtig und danach veraltet.
+     STEHT JETZT WEITER OBEN als frueher, weil seit dem 21.09. auch die MARKEN echte sind und
+     ihre Zeichen von hier kommen. */
   function quellzeichen(domain){
     return "https://www.google.com/s2/favicons?sz=64&domain=" + encodeURIComponent(domain);
   }
+
+  /* ACMES ZEICHEN -- selbst gezeichnet, und das ist der Punkt. Ein "lizenzfreies A-Logo" aus
+     einer Bildersammlung waere eine Lizenz, die jemand pflegen muesste, und eine Datei, die
+     fehlen kann. Ein Dutzend Zeichen SVG sind rechtlich eindeutig und kosten keinen Abruf.
+     Geometrisch und nicht als Buchstabe gesetzt: ein <text> haengt an der Schrift des
+     Betrachters, und bei 20px Kantenlaenge -- so klein steht es in der Leiste -- entscheidet
+     die Strichstaerke darueber, ob man ein A sieht oder einen Fleck. Die Querstrebe bleibt
+     drin; ohne sie liest sich das Zeichen als Pfeil.
+     1:1, weil die Logoplatten der App quadratisch sind (.up-logo-box). */
+  var ACME_LOGO = "data:image/svg+xml," + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">' +
+    '<rect width="64" height="64" rx="14" fill="#101418"/>' +
+    '<g fill="none" stroke="#ffffff" stroke-width="5.2" stroke-linecap="round" ' +
+    'stroke-linejoin="round"><path d="M19 47 L32 17 L45 47"/><path d="M24.6 36.5 H39.4"/></g>' +
+    '</svg>');
+
+  /* Die eigene Marke traegt ihr Zeichen, die Wettbewerber ihres. Ein Buchstabenkaestchen gibt es
+     nicht mehr: es war der Rueckfall fuer erfundene Marken, und erfunden ist nur noch Acme. */
+  MARKEN.forEach(function(m){ m.logo = (m.id === "ac") ? ACME_LOGO : quellzeichen(m.domain); });
+  MARKEN_WEITER.forEach(function(m){ m.logo = quellzeichen(m.domain); });
 
   /* Claude als eigenes Zeichen statt ueber den Favicon-Dienst. Der liefert fuer claude.ai das
      App-Kaestchen: weisser Stern auf gefuelltem Orange, und der Stern stoesst oben und unten an
@@ -205,34 +229,29 @@
       });
   }
 
-  /* Erfundene Quellen. Keine echten Domains: die Anteile hier sind Demozahlen, und unter einem
-     echten Namen saehen sie aus wie eine Aussage ueber diese Seite. */
-  /* Die Zitattypen sind die ECHTEN der App -- UC.ALL_CITATION_TYPES: Editorial, UGC_Community,
-     Knowledge_Base, Brand_Platform, Institutional, Competition, You. Vorher standen hier erfundene
-     Namen (Review, Comparison, Owned, News); die Komponente faerbt und beschriftet aber nach dieser
-     Liste, ein unbekannter Name laeuft in den Rueckfall. Sechs der sieben stehen unten; nur
-     Institutional faellt weg, seit die fremden Domains echte sind (eine Universitaet oder eine
-     Behoerde mit erfundenen Zahlen daneben waere die eine Zeile, die sich als Aussage ueber diese
-     Einrichtung lesen liesse). Editorial kommt dafuer zweimal vor -- die Spalte darf sich
-     wiederholen, der Kuchen daneben zaehlt ohnehin ALLE Zitate und nicht diese sieben Zeilen. */
-  /* Die FREMDEN Quellen sind echt, die EIGENEN nicht -- und das ist nicht Zufall, sondern die
-     einzige Aufteilung, die aufgeht: forbes.com, reddit.com, wikipedia.org und g2.com zitieren
-     wirklich, und ihr Zeichen erkennt jeder. Die Zeilen mit dem Typ "You" und "Competition"
-     gehoeren dagegen den erfundenen Marken dieses Bildes (Kestrel, Vantage) -- eine echte Domain
-     daneben behauptete, das Konto gehoere dieser Firma. Sie tragen deshalb das Markenkaestchen,
-     das auch in der Markentabelle darueber steht: dieselbe Farbe, derselbe Buchstabe, und damit
-     ist die Zeile sofort der eigenen Marke zuzuordnen. */
+  /* DIE QUELLEN DES AUTOMOBILMARKTES (21.09.). Es sind die Seiten, aus denen KI-Antworten ueber
+     Autos wirklich schoepfen: ein Testmagazin, das grosse deutsche Forum, Wikipedia, der ADAC.
+     Der Anteil daneben ist eine Demozahl -- sie sagt, wie oft diese Seite in den Antworten
+     ueber ACMES Prompts vorkam, und Acme ist erfunden. Sie behauptet also nichts ueber die
+     Seite selbst.
+     Die Zitattypen sind die ECHTEN der App -- UC.ALL_CITATION_TYPES: Editorial, UGC_Community,
+     Knowledge_Base, Brand_Platform, Institutional, Competition, You. Sieben Zeilen, sieben
+     Typen, jeder genau einmal: so steht neben jeder Farbe des Kuchens auch eine Zeile, die sie
+     erklaert. Vorher kam Editorial zweimal vor und Institutional gar nicht -- der ADAC macht
+     jetzt genau diese Zeile auf, und er ist fuer diesen Markt die naheliegendste Institution.
+     Die eigenen zwei Zeilen tragen acmes Zeichen, die Wettbewerberzeile das von BMW -- dieselben
+     Zeichen wie in der Markentabelle darueber, damit die Zeile ohne Lesen zuzuordnen ist. */
   var QUELLEN = [
-    { domain: "forbes.com",           share_pct: 18.4, share_delta_pct: 2.1,  used_total: 2926, citation_type: "Editorial" },
-    { domain: "reddit.com",           share_pct: 14.1, share_delta_pct: -1.3, used_total: 2242, citation_type: "UGC_Community" },
-    { domain: "wikipedia.org",        share_pct: 11.7, share_delta_pct: 0.8,  used_total: 1860, citation_type: "Knowledge_Base" },
-    { domain: "kestrel.example",      share_pct: 9.3,  share_delta_pct: 3.4,  used_total: 1479, citation_type: "You",
+    { domain: "autobild.de",                share_pct: 18.4, share_delta_pct: 2.1,  used_total: 2926, citation_type: "Editorial" },
+    { domain: "reddit.com",                 share_pct: 14.1, share_delta_pct: -1.3, used_total: 2242, citation_type: "UGC_Community" },
+    { domain: "wikipedia.org",              share_pct: 11.7, share_delta_pct: 0.8,  used_total: 1860, citation_type: "Knowledge_Base" },
+    { domain: "acme.example",               share_pct: 9.3,  share_delta_pct: 3.4,  used_total: 1479, citation_type: "You",
       logo: MARKEN[0].logo },
-    { domain: "vantage.example",      share_pct: 7.6,  share_delta_pct: -0.4, used_total: 1208, citation_type: "Competition",
+    { domain: "bmw.de",                     share_pct: 7.6,  share_delta_pct: -0.4, used_total: 1208, citation_type: "Competition",
       logo: MARKEN[1].logo },
-    { domain: "docs.kestrel.example", share_pct: 6.2,  share_delta_pct: 1.9,  used_total: 986,  citation_type: "Brand_Platform",
+    { domain: "konfigurator.acme.example",  share_pct: 6.2,  share_delta_pct: 1.9,  used_total: 986,  citation_type: "Brand_Platform",
       logo: MARKEN[0].logo },
-    { domain: "g2.com",               share_pct: 4.8,  share_delta_pct: -0.7, used_total: 763,  citation_type: "Editorial" }
+    { domain: "adac.de",                    share_pct: 4.8,  share_delta_pct: -0.7, used_total: 763,  citation_type: "Institutional" }
   ];
   QUELLEN.forEach(function(q){ if (!q.logo) q.logo = quellzeichen(q.domain); });
 
@@ -1005,14 +1024,14 @@
      Komponente ihr Arbeitsprotokoll waehrend des Ladens, mit Zeichen und Text je Schritt. */
   function mscFaelle(){
     return [
-      { q: "What are people saying about Kestrel right now?",
+      { q: "What are people saying about Acme right now?",
         titel: "Sentiment, last 30 days",
         werkzeuge: ["brand_overview", "source_mentions_overview"],
         dauer: 14000,
-        html: '<p>' + markeChip("ke") + ' sits at <strong>79 / 100</strong> sentiment over the last ' +
+        html: '<p>' + markeChip("ac") + ' sits at <strong>79 / 100</strong> sentiment over the last ' +
           '30 days, up 3.1 points. The praise is consistent:</p>' +
-          '<p><span data-mira-sentiment="positive">"Kestrel is the fastest of the three to set up, ' +
-          'and the only one that shows which page an answer came from."</span></p>' +
+          '<p><span data-mira-sentiment="positive">"The Acme is the quietest of the three on the ' +
+          'motorway, and the only one that hit its stated range in our winter test."</span></p>' +
           '<p>The quote is from ' + miraChip("response", "r1", "ChatGPT, Aug 24") +
           '; most of the positive mentions trace back to ' + quelleChip(0) + '.</p>' },
 
@@ -1021,10 +1040,11 @@
         werkzeuge: ["prompt_insights", "source_recommendations"],
         dauer: 21000,
         html: '<p>Three things, highest lift first:</p><ul>' +
-          '<li>Get listed on ' + quelleChip(0) + ' - it decides five of your comparison prompts.</li>' +
-          '<li>Answer the pricing thread on ' + quelleChip(1) + ' - ' + markeChip("va") +
+          '<li>Get the estate into the range tests on ' + quelleChip(0) +
+          ' - they decide five of your comparison prompts.</li>' +
+          '<li>Answer the charging thread on ' + quelleChip(1) + ' - ' + markeChip("bm") +
           ' is named there, you are not.</li>' +
-          '<li>Ship a pricing page: your weakest topic at <strong>22%</strong>.</li></ul>' +
+          '<li>Publish real winter range figures: your weakest topic at <strong>22%</strong>.</li></ul>' +
           '<p>Estimated lift: <strong>+5 to 8 points</strong> in 30 days.</p>' },
 
       { q: "Which sources decide who gets named?",
@@ -1035,8 +1055,8 @@
            Antwort passt damit in die Chatflaeche. Nach der Tabelle brauchte er zwei Zeilen. */
         html: '<p>Two pages decide most of it, and neither is yours:</p>' +
           '<table><thead><tr><th>Source</th><th>Share</th><th>Names</th></tr></thead><tbody>' +
-          '<tr><td>' + quelleChip(0) + '</td><td>31.4%</td><td>' + markeChip("va") + '</td></tr>' +
-          '<tr><td>' + quelleChip(1) + '</td><td>18.2%</td><td>' + markeChip("ha") + '</td></tr>' +
+          '<tr><td>' + quelleChip(0) + '</td><td>31.4%</td><td>' + markeChip("bm") + '</td></tr>' +
+          '<tr><td>' + quelleChip(1) + '</td><td>18.2%</td><td>' + markeChip("au") + '</td></tr>' +
           '</tbody></table>' }
     ];
   }
@@ -1497,21 +1517,21 @@
      bekommt (estimated_volume), und dargestellt wird es genauso: als vierstufiger Balken, nicht als
      Zahl. Die Stufen dort: bis 25 eine, bis 50 zwei, bis 75 drei, darueber vier. */
   var SPRACHEN = [
-    { m: "US", t: "best AI visibility tools for B2B SaaS",              v: 88 },
-    { m: "DE", t: "welches Tool zeigt Markenerwähnungen in ChatGPT",    v: 47 },
-    { m: "FR", t: "meilleur outil de suivi de visibilité IA",           v: 39 },
-    { m: "GB", t: "how to track brand mentions in AI answers",          v: 74 },
-    { m: "IT", t: "come monitorare il brand nelle risposte AI",         v: 24 },
-    { m: "US", t: "how do LLMs decide which brands to recommend",       v: 68 },
-    { m: "DE", t: "wie werde ich in KI-Antworten sichtbar",             v: 36 },
-    { m: "FR", t: "comment être cité par ChatGPT",                      v: 29 },
-    { m: "GB", t: "AI search monitoring pricing compared",              v: 52 },
-    { m: "IT", t: "strumenti per la visibilità AI a confronto",         v: 18 },
-    { m: "US", t: "which sources does ChatGPT cite for software",       v: 61 },
-    { m: "DE", t: "KI-Sichtbarkeit messen Agentur oder Tool",           v: 21 },
-    { m: "FR", t: "quelles sources citent les modèles IA",              v: 16 },
-    { m: "GB", t: "share of voice across AI assistants",                v: 44 },
-    { m: "IT", t: "quali fonti cita Perplexity in Italia",              v: 12 }
+    { m: "US", t: "best premium electric SUV for families",             v: 88 },
+    { m: "DE", t: "welches E-Auto hat die beste Winterreichweite",      v: 47 },
+    { m: "FR", t: "meilleur SUV électrique premium 2026",               v: 39 },
+    { m: "GB", t: "which luxury EV charges the fastest",                v: 74 },
+    { m: "IT", t: "quale SUV elettrico premium conviene",               v: 24 },
+    { m: "US", t: "electric estate with the longest real range",        v: 68 },
+    { m: "DE", t: "Premium-SUV leasen oder kaufen",                     v: 36 },
+    { m: "FR", t: "break électrique ou SUV électrique",                 v: 29 },
+    { m: "GB", t: "company car tax on a plug-in hybrid",                v: 52 },
+    { m: "IT", t: "autonomia reale in inverno delle auto elettriche",   v: 18 },
+    { m: "US", t: "which brand has the best driver assistance",         v: 61 },
+    { m: "DE", t: "Ladeleistung Premium-E-SUV im Vergleich",            v: 21 },
+    { m: "FR", t: "quelle voiture électrique garde sa valeur",          v: 16 },
+    { m: "GB", t: "safest family SUV on Euro NCAP",                     v: 44 },
+    { m: "IT", t: "costi di manutenzione di un'auto elettrica",         v: 12 }
   ];
   /* Der Balken aus Prompt Research, Zeile fuer Zeile derselbe (renderVolume dort): vier Felder,
      gefuellt bis zur Stufe, und die Farbe traegt die Stufe. Nachgebaut ist er hier nur, WEIL die
@@ -1587,8 +1607,8 @@
      die Rundung der Kurve und die Form der Schilder (Werte aus dem Tooltip in core.js: Radius 16,
      13px, 10/12 Polster, 16px Logo).
      Die ZAHLEN erzaehlen die Geschichte der Sektion: eine Marke, die seit Monat drei zulegt, und
-     eine, die stehenbleibt. Kestrel geht von 18.2 auf 38.9 (dieselbe 38.9 wie im Fenster oben),
-     Vantage von 34.8 auf 32.1. */
+     eine, die stehenbleibt. Acme geht von 18.2 auf 38.9 (dieselbe 38.9 wie im Fenster oben),
+     BMW von 26.1 auf 23.9. */
   /* hoch: ein zusaetzlicher Versatz nach oben. Die Lage des Schildes wird aus dem Wert der Kurve
      an seiner Stelle gerechnet, und zwar LINEAR zwischen zwei Punkten -- die gezeichnete Kurve ist
      aber gerundet (tension 0.38) und woelbt sich auf einem steigenden Stueck nach oben. Beim
@@ -1596,8 +1616,8 @@
      endete darunter im Leeren. Ein fester Versatz statt einer Bezier-Rechnung, weil genau eine
      Stelle betroffen ist. */
   var KRV = [
-    { id: "va", schild: 1, hoch: 0,  werte: [26.1, 25.4, 24.8, 25.1, 24.2, 23.9] },
-    { id: "ke", schild: 5, hoch: 16, werte: [18.2, 19.1, 22.6, 28.4, 34.2, 38.9] }
+    { id: "bm", schild: 1, hoch: 0,  werte: [26.1, 25.4, 24.8, 25.1, 24.2, 23.9] },
+    { id: "ac", schild: 5, hoch: 16, werte: [18.2, 19.1, 22.6, 28.4, 34.2, 38.9] }
   ];
   var KRV_MIN = 12, KRV_MAX = 47;      /* Rand oben fuer das Schild, unten fuer die flache Kurve */
   /* Der Abstand zwischen Punkt und Schild -- der graue Strich dazwischen ist genau so lang. */
@@ -1629,13 +1649,13 @@
      aufgeht, sagt "das ist alles" -- eine, die unten weich ausgeht, sagt "hier geht es weiter".
      Gemessen: 5 mal 72 plus 40 Kopfzeile sind 400px Inhalt in einem 370px hohen Ausschnitt. */
   var VIS_ZEILEN = [
-    { prompt: "Best AI visibility tools",         vis: 38.9, rank: 1.1,  sent: 79,   themen: [0, 3], markt: "US" },
+    { prompt: "Best premium electric SUV",        vis: 38.9, rank: 1.1,  sent: 79,   themen: [2, 1], markt: "US" },
     /* Die zweite Zeile ist die, die beim Ueberfahren gehoben wird -- sie traegt deshalb Zahlen.
        Der Leerzustand steht in der dritten. */
-    { prompt: "AI search monitoring pricing",     vis: 21.4, rank: 2.8,  sent: 68,   themen: [1],    markt: "US" },
-    { prompt: "Alternativen zu Vantage",          vis: null, rank: null, sent: null, themen: [2, 4], markt: "DE" },
-    { prompt: "Tools to track ChatGPT mentions",  vis: 18.2, rank: 3.2,  sent: 71,   themen: [3],    markt: "UK" },
-    { prompt: "Which platform tracks Perplexity", vis: null, rank: null, sent: null, themen: [0, 1], markt: "US" }
+    { prompt: "Premium SUV leasing rates",        vis: 21.4, rank: 2.8,  sent: 68,   themen: [0],    markt: "US" },
+    { prompt: "Alternativen zum BMW iX",          vis: null, rank: null, sent: null, themen: [1, 2], markt: "DE" },
+    { prompt: "Longest range electric estate",    vis: 18.2, rank: 3.2,  sent: 71,   themen: [2],    markt: "UK" },
+    { prompt: "Which EV charges fastest",         vis: null, rank: null, sent: null, themen: [3, 2], markt: "US" }
   ];
 
   function visZeilen(){
@@ -1705,11 +1725,11 @@
      Rest. Der Titel selbst ist "reddit.com", also das, was ein Scraper dort tatsaechlich findet
      -- genau der Fall, fuer den es diese Funktion gibt. */
   var VIS_DOM_URLS = [
-    { url: "https://www.reddit.com/r/SaaS/comments/1a2b3c/best_ai_visibility_tools/", anteil: 24.6, typ: "forum", gesehen: "Aug 27, 2026" },
-    { url: "https://www.reddit.com/r/marketing/comments/2b3c4d/how_we_track_chatgpt_mentions/", anteil: 18.2, typ: "forum", gesehen: "Aug 26, 2026" },
-    { url: "https://www.reddit.com/r/SEO/comments/3c4d5e/geo_vs_seo_in_2026/", anteil: 12.9, typ: "forum", gesehen: "Aug 24, 2026" },
-    { url: "https://www.reddit.com/r/SaaS/comments/4d5e6f/pricing_comparison_thread/", anteil: 9.4, typ: "forum", gesehen: "Aug 22, 2026" },
-    { url: "https://www.reddit.com/r/bigseo/comments/5e6f7g/ai_overviews_and_traffic/", anteil: 7.1, typ: "forum", gesehen: "Aug 21, 2026" }
+    { url: "https://www.reddit.com/r/electricvehicles/comments/1a2b3c/best_premium_electric_suv/", anteil: 24.6, typ: "forum", gesehen: "Aug 27, 2026" },
+    { url: "https://www.reddit.com/r/cars/comments/2b3c4d/real_winter_range_thread/", anteil: 18.2, typ: "forum", gesehen: "Aug 26, 2026" },
+    { url: "https://www.reddit.com/r/electricvehicles/comments/3c4d5e/charging_speed_compared_2026/", anteil: 12.9, typ: "forum", gesehen: "Aug 24, 2026" },
+    { url: "https://www.reddit.com/r/whatcarshouldIbuy/comments/4d5e6f/estate_or_suv/", anteil: 9.4, typ: "forum", gesehen: "Aug 22, 2026" },
+    { url: "https://www.reddit.com/r/cars/comments/5e6f7g/leasing_vs_buying_in_2026/", anteil: 7.1, typ: "forum", gesehen: "Aug 21, 2026" }
   ];
 
   function visDomains(){
@@ -1821,19 +1841,19 @@
      .uo-row wie in der App, wenn das Brett auf Liste steht. Die mittlere traegt is-mitte: beim
      Ueberfahren der Karte kommt sie nach vorn und die zwei anderen treten zurueck. */
   var VIS_CHANCEN = [
-    { h: "Get listed on the g2.com category page", dom: "g2.com", pot: 4, themen: [0] },
-    { h: "No page of yours answers the pricing question", dom: "reddit.com", pot: 3, themen: [1] },
-    { h: "Your integrations page is cited, never quoted", dom: "kestrel.example", pot: 2, themen: [2] },
-    { h: "Show up in the comparison videos", dom: "youtube.com", pot: 3, themen: [3] },
-    { h: "Add your entry to the wikipedia category", dom: "wikipedia.org", pot: 2, themen: [4] },
-    { h: "Answer the migration question on your blog", dom: "kestrel.example", pot: 3, themen: [0] }
+    { h: "Get the estate into the autobild.de range test", dom: "autobild.de", pot: 4, themen: [2] },
+    { h: "No page of yours answers the winter range question", dom: "reddit.com", pot: 3, themen: [2] },
+    { h: "Your charging page is cited, never quoted", dom: "acme.example", pot: 2, themen: [3] },
+    { h: "Show up in the comparison videos", dom: "youtube.com", pot: 3, themen: [1] },
+    { h: "Add the model year to the wikipedia entry", dom: "wikipedia.org", pot: 2, themen: [5] },
+    { h: "Answer the leasing thread on motor-talk", dom: "motor-talk.de", pot: 3, themen: [0] }
   ];
 
   function visChancen(){
     var kern = window.UpstreemCore;
     return '<div class="ulh-vis-chancen"><div class="uo-list-rows">' +
       VIS_CHANCEN.map(function(c, i){
-        var logo = c.dom.indexOf("kestrel.example") >= 0 ? MARKEN[0].logo : quellzeichen(c.dom);
+        var logo = c.dom.indexOf("acme.example") >= 0 ? MARKEN[0].logo : quellzeichen(c.dom);
         var bars = "";
         for (var b = 1; b <= 4; b++) bars += '<span class="uo-pot-bar p' + b + (b <= c.pot ? " is-on" : "") + '"></span>';
         var themen = c.themen.map(function(ti){
@@ -2231,7 +2251,7 @@
      und darunter ein Stueck der App -- angeschnitten, nicht als Bild in einem Rahmen. Die Sektion
      zeigt genau eine Sache: was hinter einer Antwort steckt, am Beispiel einer Domain.
 
-     Die Domain ist g2.com und nicht erfunden: die Sektion behauptet nichts ueber diese Seite,
+     Die Domain ist autobild.de und nicht erfunden: die Sektion behauptet nichts ueber diese Seite,
      sondern zeigt, WAS die App ueber eine Quelle weiss -- und ein erfundener Name waere hier das
      Gegenteil von dem, was gemeint ist ("die echten Quellen deines Marktes"). Die Zahlen sind
      Beispielzahlen und stehen in derselben Groessenordnung wie im Dashboard darueber. */
@@ -2240,7 +2260,11 @@
   var QUELL_H2 = "Which domains the models cite in your market, which of their pages carry the " +
     "answer, and where your brand is named in them.";
   var QUELL_CTA = "Start for free";
-  var QUELL_DOMAIN = "g2.com";
+  /* Die Beispiel-Domain ist seit dem 21.09. autobild.de statt g2.com: ein Testmagazin ist die
+     Quelle, aus der KI-Antworten ueber Autos wirklich schoepfen, und dieselbe Domain steht auch
+     oben in der Zitattabelle und auf der ersten Chancenkarte. Drei Szenen, eine Quelle -- eine
+     vierte Domain waere ein Bruch in einer Seite, die sonst eine Geschichte erzaehlt. */
+  var QUELL_DOMAIN = "autobild.de";
 
   /* Jeden BUCHSTABEN einzeln, damit die Farbe wirklich durch den Satz laeuft und nicht in
      Wortsprüngen. Die Buchstaben stecken in Wortkasten: ein Zeilenumbruch darf zwischen zwei
@@ -2536,12 +2560,16 @@
      Summe der fuenf bleibt unter dem Domainanteil. */
   var QUELL_TAGE = ["2026-08-12", "2026-08-13", "2026-08-14", "2026-08-15",
                     "2026-08-16", "2026-08-17", "2026-08-18"];
+  /* Fuenf Seiten dieser Domain. Die Pfade sind SO GEBAUT, wie ein Testmagazin sie baut, und die
+     Titel nennen die Kategorie und das Jahr -- aber keine der fuenf behauptet ein Testergebnis
+     fuer einen echten Hersteller. Was sie zeigen, ist der Anteil, den die SEITE an Acmes
+     Antworten hat, und das ist eine Aussage ueber Acme. */
   var QUELL_SEITEN = [
-    { p: "/categories/ai-visibility", t: "Best AI Visibility Software in 2026 | G2", b: 6.2 },
-    { p: "/products/upstreem/reviews", t: "upstreem Reviews 2026: Details, Pricing & Features | G2", b: 4.4 },
-    { p: "/compare/upstreem-vs-vantage", t: "Compare upstreem vs Vantage 2026 | G2", b: 3.1 },
-    { p: "/categories/seo-tools", t: "Best SEO Tools in 2026 | G2", b: 2.3 },
-    { p: "/grid/ai-search-monitoring", t: "G2 Grid for AI Search Monitoring | G2", b: 1.6 }
+    { p: "/vergleich/elektro-suv", t: "Elektro-SUV im Vergleich 2026 | AUTO BILD", b: 6.2 },
+    { p: "/tests/reichweite-winter", t: "Winter-Reichweitentest 2026: alle Werte | AUTO BILD", b: 4.4 },
+    { p: "/vergleich/kombi-elektro", t: "Elektro-Kombis im Vergleich 2026 | AUTO BILD", b: 3.1 },
+    { p: "/ratgeber/leasing", t: "Leasing-Ratgeber 2026: worauf es ankommt | AUTO BILD", b: 2.3 },
+    { p: "/tests/ladeleistung", t: "Ladeleistung im Test: wer laedt wirklich schnell | AUTO BILD", b: 1.6 }
   ];
 
   function quellHaupt(){
@@ -2563,8 +2591,9 @@
       /* Die Schluessel muessen aus URL_TYPE in core.js kommen -- ein Typ, den die Tabelle nicht
          kennt, bekommt keine Farbe und wird grau ("Other"). Genau das war hier zu sehen: "product"
          heisst dort product_service, und "uncategorized" gibt es gar nicht.
-         Die Verteilung passt zu dem, was G2 wirklich ist: Kategorieseiten (Listicle), Produkt-
-         bewertungen (Review), Vergleiche (Comparison), das Grid als Verzeichnis (Directory). */
+         Die Verteilung passt zu dem, was ein Testmagazin wirklich ist: Bestenlisten (Listicle),
+         Einzeltests (Review), Vergleiche (Comparison), Modelluebersichten (Directory) und
+         Ratgeber (Guide). */
       types_breakdown: [
         { type: "listicle", share_pct: 31.5 },
         { type: "review", share_pct: 27.8 },
@@ -2642,12 +2671,12 @@
 
      Die Teams sind DIESELBEN acht, die die Leiste im Hauptfenster kennt (fuellen, setSidebarTeams).
      Eine zweite Teamliste in derselben Sektion waere der Bruch, den man zuerst sieht. */
-  var FEN_TEAM_AKTIV = 0;          /* Kestrel -- das ausgewaehlte Team, bleibt oben stehen */
-  var FEN_TEAM_FEST = 3;           /* Nimbus -- die dritte Zeile, sie traegt den Chip */
+  var FEN_TEAM_AKTIV = 0;          /* Acme -- der ausgewaehlte Bereich, bleibt oben stehen */
+  var FEN_TEAM_FEST = 3;           /* Acme Vans -- die dritte Zeile, sie traegt den Chip */
   /* Die MITTLERE Zeile wechselt. Vier Teams, dann faengt es wieder vorn an -- also vier Runden
      bis zum Anfang. Nicht die dritte Zeile: der Chip gehoert zu IHREM Team, und ein Chip, der
      alle fuenf Sekunden auf ein anderes Team springt, sagt nichts mehr aus. */
-  var FEN_TEAM_WECHSEL = [1, 2, 4, 5];   /* Vantage, Halden, Lumen, Verity */
+  var FEN_TEAM_WECHSEL = [1, 2, 4, 5];   /* Electric, SUV, DE, UK */
   var FEN_TEAM_MS = 5000;
   /* Der Wechsel selbst: die Zeile geht weg, wird ausgetauscht, kommt zurueck. Zwei Haelften einer
      Bewegung, deshalb zwei Zahlen; die CSS traegt den Uebergang (landing-hero.css). */
@@ -2874,20 +2903,20 @@
      die Google-Uebersicht knapp und aufzaehlend, Claude abwaegend und in ganzen Saetzen. */
   var ANTWORTEN = [
     { modell: "chatgpt", sent: 82, rang: 1,
-      frage: "Which AI visibility tool should we use to track brand mentions?",
-      text: "For tracking brand mentions across AI answers, **Kestrel** is the strongest option " +
-        "right now: it covers every major model, reports sentiment per answer, and flags the " +
-        "sources behind each one. Vantage and Halden are close behind on prompt coverage" },
+      frage: "Which premium electric SUV should I buy in 2026?",
+      text: "For a premium electric SUV in 2026, the **Acme** is the strongest all-rounder right " +
+        "now: it holds its stated range in independent winter tests, charges at the top of its " +
+        "class, and has the quietest cabin of the three. BMW and Audi are close behind on ride" },
     { modell: "google", sent: 74, rang: 2,
-      frage: "best AI visibility tools for B2B SaaS",
-      text: "AI visibility tools track how often a brand appears in AI-generated answers. " +
-        "Commonly cited options include Vantage, **Kestrel** and Halden. Kestrel is noted for " +
-        "source-level reporting, Vantage for its prompt library" },
+      frage: "best luxury electric SUV long range",
+      text: "Luxury electric SUVs are compared mainly on real world range, charging speed and " +
+        "interior quality. Commonly cited options include BMW, **Acme** and Audi. Acme is noted " +
+        "for its winter range, BMW for its drivetrain" },
     { modell: "claude", sent: 79, rang: 1,
-      frage: "how do I monitor my brand in ChatGPT and Gemini?",
-      text: "The most reliable approach is a platform built for this rather than manual spot " +
-        "checks. **Kestrel** runs your prompts across both models on a schedule and shows the " +
-        "sources behind each answer, which is usually what explains a competitor being named" }
+      frage: "how do I choose between an electric estate and an SUV?",
+      text: "It comes down to how you actually drive. An estate is the more efficient shape and " +
+        "the easier one to park; the **Acme** estate gives up very little range to its own SUV, " +
+        "which is usually what decides it for people doing long motorway runs" }
   ];
   var ANTWORT_HALT = 5200;      /* wie lange eine Karte steht */
   var ANTWORT_BLENDE = 420;     /* Aus- und Einblenden, jeweils */
@@ -2903,7 +2932,7 @@
       { key: "google", display_name: "Google AI Overviews", logo_url: quellzeichen("google.com") },
       { key: "claude", display_name: "Claude", logo_url: claudezeichen() }
     ]);
-    if (window.setResponsesTableBrand) window.setResponsesTableBrand(ID.urt, "Kestrel", MARKEN[0].logo);
+    if (window.setResponsesTableBrand) window.setResponsesTableBrand(ID.urt, "Acme", MARKEN[0].logo);
     var vorhin = new Date(Date.now() - 3 * 3600 * 1000).toISOString();
     window.renderResponsesTable({
       instanceId: ID.urt,
@@ -3282,32 +3311,66 @@
   /* ---------- Daten hineingeben ----------------------------------------------------------- */
 
   function fuellen(){
+    /* DIE FARBSKALA DER LINIEN: "linear" (21.09. angefordert). Sie liegt in der Ablage des
+       Betrachters und nicht in den Daten -- die Marken tragen zwar ihre Farbe mit, aber ein
+       gesetztes Schema schlaegt sie (buildLineDatasets in core.js), und die Vorgabe der App ist
+       "tableau". Gemessen vorher: die Linien kamen als #5778a4/#e49444/... heraus, also Tableau.
+       Also die Vorliebe setzen, EINMAL und bevor gezeichnet wird. Das aendert nichts in der App:
+       der Schluessel gehoert dem Browser des Besuchers, und auf der Landingpage ist er sonst
+       leer.
+       Die Farbe haengt danach an der Reihenfolge der Datensaetze und nicht mehr an der Marke --
+       so arbeitet buildLineDatasets, und die Legende sagt ohnehin, welche Linie wem gehoert.
+       Gemessen danach: #579cf1 / #00aad3 / #00b1ab / #2db477 / #83a93a / #b69700, also genau
+       COLOR_SCALES.linear. */
+    if (window.UpstreemCore && window.UpstreemCore.setColorScalePref){
+      window.UpstreemCore.setColorScalePref("linear");
+    }
     var serie = reihen("a");
     var tab = tabelle("a");
-    /* Die eigene Marke ist Kestrel und steht im Zustand A auf Platz 3 -- nicht tab[0]. Der
+    /* Die eigene Marke ist Acme und steht im Zustand A auf Platz 3 -- nicht tab[0]. Der
        Seitenkopf zeigt IHRE Zahlen, nicht die des Ersten. */
-    var eigene = tab.filter(function(r){ return r.company_id === "ke"; })[0] || tab[0];
+    var eigene = tab.filter(function(r){ return r.company_id === "ac"; })[0] || tab[0];
+
+    /* ERST DEN PINSPEICHER LEEREN, DANN DIE LEISTE FUELLEN (21.09.). upstreemPinToSidebar HAENGT
+       AN -- in der App ist das richtig, hier nicht: die Landingpage setzt ihre zwei Pins bei jedem
+       Laden neu, und der Speicher liegt im Browser des Besuchers. Wer die Seite schon einmal
+       gesehen hat, trug die Pins von damals weiter mit sich herum; nach dem Umbau auf Acme standen
+       bei ihm vier Zeilen, zwei davon mit dem alten Markennamen. Genau so im Prueftand gesehen:
+       "Acme / acme.example / Kestrel / kestrel.example".
+       VOR setSidebarTeams und nicht davor bei den Pins: die Leiste liest ihren Speicher, sobald
+       das Team eintrifft, und haelt die Liste danach im Arbeitsspeicher. Ein Loeschen danach kaeme
+       zu spaet -- gemessen, die vier Zeilen standen weiter da.
+       Der Schluessel ist der von sidebar.js (usn_pins__<instanz>@<team>) -- hier steht er ein
+       zweites Mal, und das ist die eine Stelle, an der das vertretbar ist: eine API zum Leeren
+       gibt es nicht, und die Landingpage darf die App dafuer nicht aendern. Beide Werte sind
+       Konstanten dieser Datei, es kann also nichts auseinanderlaufen. */
+    try { localStorage.removeItem("usn_pins__" + ID.usn + "@t1"); } catch(e){}
 
     if (window.setSidebarTeams){
-      /* Acht Teams. Nur das erste ist zu sehen (es ist das aktive) -- die anderen sieben zaehlen im
-         Teams-Eintrag der Leiste mit, und genau der soll 8 zeigen. */
+      /* Acht Arbeitsbereiche. Nur der erste ist zu sehen (er ist der aktive) -- die anderen sieben
+         zaehlen im Teams-Eintrag der Leiste mit, und genau der soll 8 zeigen.
+         Sie heissen wie die MODELLREIHEN von Acme und nicht wie fremde Hersteller: ein
+         Arbeitsbereich ist etwas, das man selbst anlegt, und "BMW" als eigener Arbeitsbereich
+         waere die eine Zeile, die behauptet, hier arbeite jemand FUER BMW. */
       window.setSidebarTeams(ID.usn, [
-        { id: "t1", name: "Kestrel",  domain: "kestrel.example",  favicon_url: "" },
-        { id: "t2", name: "Vantage",  domain: "vantage.example",  favicon_url: "" },
-        { id: "t3", name: "Halden",   domain: "halden.example",   favicon_url: "" },
-        { id: "t4", name: "Nimbus",   domain: "nimbus.example",   favicon_url: "" },
-        { id: "t5", name: "Lumen",    domain: "lumen.example",    favicon_url: "" },
-        { id: "t6", name: "Verity",   domain: "verity.example",   favicon_url: "" },
-        { id: "t7", name: "Solace",   domain: "solace.example",   favicon_url: "" },
-        { id: "t8", name: "Marlow",   domain: "marlow.example",   favicon_url: "" }
+        { id: "t1", name: "Acme",           domain: "acme.example",            favicon_url: "" },
+        { id: "t2", name: "Acme Electric",  domain: "electric.acme.example",   favicon_url: "" },
+        { id: "t3", name: "Acme SUV",       domain: "suv.acme.example",        favicon_url: "" },
+        { id: "t4", name: "Acme Vans",      domain: "vans.acme.example",       favicon_url: "" },
+        { id: "t5", name: "Acme DE",        domain: "de.acme.example",         favicon_url: "" },
+        { id: "t6", name: "Acme UK",        domain: "uk.acme.example",         favicon_url: "" },
+        { id: "t7", name: "Acme US",        domain: "us.acme.example",         favicon_url: "" },
+        { id: "t8", name: "Acme Fleet",     domain: "fleet.acme.example",      favicon_url: "" }
       ]);
-      window.setSidebarUser(ID.usn, { name: "Alex Moreno", email: "alex@kestrel.example", avatar_url: "" });
+      window.setSidebarUser(ID.usn, { name: "Alex Moreno", email: "alex@acme.example", avatar_url: "" });
       /* Vierzehn Marken im Store. Die Leiste zieht ihren Brands-Zaehler daraus, und er soll dieselbe
-         Zahl nennen wie die Kopfzeile der Tabelle. Sichtbar sind nur die sechs oben; die acht
-         weiteren stehen nur als Bestand da und tauchen nirgends auf. */
+         Zahl nennen wie die Kopfzeile der Tabelle. Sichtbar sind die sechs mit einer Linie im
+         Chart; die vier weiteren Hersteller des Feldes stehen in der Matrix und in den Prompts,
+         und vier weitere zaehlen nur mit -- ein beobachteter Markt hat mehr Marken, als ein Chart
+         Linien vertraegt, und genau das soll der Zaehler sagen. */
       if (window.setUpstreemBrands) window.setUpstreemBrands(
-        MARKEN.map(function(m){ return { company_id: m.id, name: m.name }; }).concat(
-          ["Solace", "Marlow", "Aster", "Bramble", "Cinder", "Dovetail", "Ember", "Fennel"]
+        MARKEN.concat(MARKEN_WEITER).map(function(m){ return { company_id: m.id, name: m.name }; }).concat(
+          ["Skoda", "Seat", "Cupra", "Kia"]
             .map(function(n, i){ return { company_id: "x" + i, name: n }; })));
       if (window.setSidebarCount) window.setSidebarCount(ID.usn, 231);
       if (window.setSidebarActive) window.setSidebarActive(ID.usn, "dashboard");
@@ -3322,10 +3385,26 @@
          Gruen aus derselben Reihe -- zwei gleich blaue Quadrate untereinander lesen sich als eine
          Wiederholung und nicht als zwei Dinge. */
       if (window.upstreemPinToSidebar){
-        window.upstreemPinToSidebar({ type: "domain", id: "kestrel.example",
-          label: "kestrel.example", logo: zeichen("K", "#9DC3A3") });
-        window.upstreemPinToSidebar({ type: "brand", id: "ke",
-          label: "Kestrel", logo: MARKEN[0].logo });
+        /* ERST LEEREN, DANN ANHEFTEN (21.09.). upstreemPinToSidebar HAENGT AN -- in der App ist
+           das richtig, hier nicht: die Landingpage setzt ihre zwei Pins bei jedem Laden neu, und
+           der Speicher liegt im Browser des Besuchers. Wer die Seite schon einmal gesehen hat,
+           trug deshalb die Pins von damals weiter mit sich herum; nach dem Umbau auf Acme standen
+           bei ihm vier Zeilen, zwei davon mit dem alten Markennamen. Genau so im Prueftand
+           gesehen: "Acme / acme.example / Kestrel / kestrel.example".
+           Der Schluessel ist der von sidebar.js (usn_pins__<instanz>@<team>) -- hier steht er ein
+           zweites Mal, und das ist die eine Stelle, an der das vertretbar ist: eine API zum
+           Leeren gibt es nicht, und die Landingpage darf die App dafuer nicht aendern. Beide
+           Werte sind Konstanten dieser Datei (ID.usn und das Team der Demodaten), es kann also
+           nichts auseinanderlaufen. */
+
+        /* Die Domain bekommt ihr Zeichen ueber denselben Weg wie jede andere Quelle. Frueher
+           stand hier ein selbst gebautes Buchstabenkaestchen in einem zweiten Gruenton -- das
+           gab es nur, solange die Marken erfunden waren. Jetzt ist der Pin das, was er in der
+           App auch waere: die Domain mit ihrem Zeichen. */
+        window.upstreemPinToSidebar({ type: "domain", id: "acme.example",
+          label: "acme.example", logo: MARKEN[0].logo });
+        window.upstreemPinToSidebar({ type: "brand", id: "ac",
+          label: "Acme", logo: MARKEN[0].logo });
       }
     }
 
@@ -3404,7 +3483,7 @@
         }),
         top_urls: [],
         types_breakdown: TYPEN,
-        brand: { id: "ke", name: "Kestrel", logo: MARKEN[0].logo },
+        brand: { id: "ac", name: "Acme", logo: MARKEN[0].logo },
         brandMentioned: ""
       });
     }
@@ -3413,7 +3492,7 @@
   /* ---------- Der Filterwechsel ---------------------------------------------------------- */
 
   /* Drei Sekunden nachdem das Dashboard fertig steht, wechselt es EINMAL von Zustand A auf B -- wie
-     ein Filterwechsel in der App: Kestrel steigt von Platz 3 auf 1, Lumen und Verity tauschen 5 und
+     ein Filterwechsel in der App: Acme steigt von Platz 3 auf 1, Porsche und Volvo tauschen 5 und
      6, alle sechs Linien im Chart fahren auf ihre neuen Werte, und jede Zahl zaehlt dorthin.
      Einmal und nicht im Kreis: eine Sektion, die sich alle drei Sekunden umsortiert, liest sich als
      Fehler und nicht als Funktion. Eine Folge mehrerer Szenen ist Schritt 2 der Landingpage.
@@ -3639,7 +3718,7 @@
 
   function tippWandern(auf, zeilen, werk, dauer){
     /* Die Fuellung der wandernden Zeile ist der Grund des Kastens -- KEIN Rahmen, die Zeilen haben
-       keinen. Ohne Fuellung schlagen zwei Zeilen durcheinander, die sich kreuzen: Lumen und Verity
+       keinen. Ohne Fuellung schlagen zwei Zeilen durcheinander, die sich kreuzen: Porsche und Volvo
        tauschen die Plaetze und stehen auf halber Strecke exakt uebereinander. Aus dem Kasten
        gelesen und nicht festgeschrieben, damit es im Dunkeln stimmt (dort #121212). */
     var innen = auf.box.firstElementChild || auf.box;
@@ -3682,8 +3761,8 @@
 
   /* Die Linien. Zugeordnet ueber __id und nicht ueber den Index: die Datensaetze liegen in der
      Reihenfolge, in der UC.buildLineDatasets sie gebaut hat, und __id ist die einzige Stelle, an
-     der die Marke steht. Ein Zuordnen ueber die Position haette die Werte von Kestrel auf die Linie
-     von Vantage geschrieben. */
+     der die Marke steht. Ein Zuordnen ueber die Position haette die Werte von Acme auf die Linie
+     von BMW geschrieben. */
   function chartWandern(root, serie, dauer){
     var leinwand = root.querySelector(".up-line-canvas");
     if (!leinwand || !window.Chart || !window.Chart.getChart) return false;
@@ -3756,7 +3835,7 @@
       werk.zahl(trendText(z.querySelector(".vt-td-sentiment .up-trend")),
                 Math.abs(a.sentiment_delta), Math.abs(b.sentiment_delta), eine);
       /* Der Punkt vor der Sentiment-Note faerbt sich nach der Note (UC.sentColor, Stufen bei 25,
-         40, 60 und 75). Kestrel geht von 74 auf 79 und Vantage von 76 auf 75 -- beide ueberschreiten
+         40, 60 und 75). Acme geht von 74 auf 79 und BMW von 76 auf 75 -- beide ueberschreiten
          die 75. Aus dem laufenden Wert gerechnet und nicht am Ende gesetzt: so wechselt die Farbe
          genau in dem Augenblick, in dem die Zahl die Stufe erreicht. */
       var punkt = z.querySelector(".vt-td-sentiment .up-sent-dot");
@@ -3774,7 +3853,7 @@
       });
     });
 
-    /* Die Kennzahlen im Seitenkopf gehoeren Kestrel und nicht dem Ersten der Tabelle. Reihenfolge
+    /* Die Kennzahlen im Seitenkopf gehoeren Acme und nicht dem Ersten der Tabelle. Reihenfolge
        im Markup: Visibility, Ranking, Sentiment (dashboard-page-header.js, setKpis).
        Von Hand und nicht ueber setDashboardPageHeaderKpis: der Setter schreibt die Zeile als
        innerHTML neu, und dann springen die drei Zahlen statt zu zaehlen. */
@@ -3872,15 +3951,15 @@
   /* Die zwei Quellen, auf die die Empfehlungen zeigen -- dieselben zwei, die auch im Zitatteil des
      Dashboards oben stehen, mit ihrem echten Zeichen (siehe quellzeichen). Die AUSSAGEN darueber
      sind ueber die eigene Marke formuliert und nicht ueber die Seite: "deine Preisseite wird dort
-     nicht zitiert" ist eine Aussage ueber Kestrel, "die Seite verschweigt dich" waere eine ueber
+     nicht zitiert" ist eine Aussage ueber Acme, "die Seite verschweigt dich" waere eine ueber
      Reddit. */
   var MIRA_QUELLEN = [
     /* Kurze Pfade mit Absicht: der Chip zeigt Domain UND Pfad, und ein langer Pfad schiebt den
        Listenpunkt auf zwei Zeilen -- 26px, die im Fenster fehlen. */
-    { id: "u1", domain: "forbes.com", pfad: "/ai-tools",
-      titel: "Best AI visibility tools, 2026 edition" },
-    { id: "u2", domain: "reddit.com", pfad: "/pricing",
-      titel: "Pricing comparison thread" }
+    { id: "u1", domain: "autobild.de", pfad: "/elektro-suv",
+      titel: "Elektro-SUV im Vergleich 2026" },
+    { id: "u2", domain: "reddit.com", pfad: "/winterrange",
+      titel: "Winter range thread" }
   ];
   function quelleChip(i){
     var q = MIRA_QUELLEN[i];
@@ -3894,9 +3973,9 @@
      Daten, die die Antwort nicht benutzt. */
   function miraBelege(){
     var aus = MARKEN.map(function(m){
-      return { id: "ev-" + m.id, type: m.id === "ke" ? "brand" : "competitor",
+      return { id: "ev-" + m.id, type: m.id === "ac" ? "brand" : "competitor",
                entity_id: m.id, company_id: m.id, company_name: m.name, title: m.name,
-               icon_url: m.logo, action: m.id === "ke" ? "open_brand" : "open_competitor" };
+               icon_url: m.logo, action: m.id === "ac" ? "open_brand" : "open_competitor" };
     });
     MIRA_QUELLEN.forEach(function(q){
       aus.push({ id: "ev-" + q.id, type: "url", entity_id: q.id, title: q.titel,
@@ -3904,10 +3983,13 @@
                  domain: q.domain, icon_url: quellzeichen(q.domain),
                  action: "open_url" });
     });
+    /* Das Zeichen des MODELLS und kein gemaltes Kaestchen: ChatGPT hat eines, und es steht
+       ohnehin schon in den Antwortkarten weiter unten (quellzeichen("openai.com")). Der frueher
+       hier gebaute gruene Buchstabe war der Rueckfall aus der Zeit der erfundenen Marken. */
     aus.push({ id: "ev-r1", type: "response", entity_id: "r1",
-               title: "Which AI visibility tool should we use?", subtitle: "chatgpt",
+               title: "Which premium electric SUV should I buy?", subtitle: "chatgpt",
                prompt_run_id: "r1", action: "open_response",
-               icon_url: zeichen("C", "#10a37f") });
+               icon_url: quellzeichen("openai.com") });
     return aus;
   }
 
@@ -4324,14 +4406,14 @@
   var THEMEN = [
     { id: "t1", name: "Pricing",         emoji: "💸", hex_light: "#b3541e", hex_dark: "#e0a06a" },
     { id: "t2", name: "Comparisons",     emoji: "⚖️", hex_light: "#1f6feb", hex_dark: "#7aa9f0" },
-    { id: "t3", name: "AI Search Tools", emoji: "🔎", hex_light: "#1a7f5a", hex_dark: "#6fc7a4" },
-    { id: "t4", name: "Integrations",    emoji: "🔌", hex_light: "#8957e5", hex_dark: "#b79af0" },
-    { id: "t5", name: "Enterprise",      emoji: "🏢", hex_light: "#0e7490", hex_dark: "#6bb6c9" },
-    { id: "t6", name: "Reporting",       emoji: "📊", hex_light: "#be185d", hex_dark: "#e78bb0" },
-    { id: "t7", name: "Getting Started", emoji: "🚀", hex_light: "#6f737c", hex_dark: "#a8adb6" },
+    { id: "t3", name: "Electric",        emoji: "🔋", hex_light: "#1a7f5a", hex_dark: "#6fc7a4" },
+    { id: "t4", name: "Charging",        emoji: "🔌", hex_light: "#8957e5", hex_dark: "#b79af0" },
+    { id: "t5", name: "Fleet",           emoji: "🏢", hex_light: "#0e7490", hex_dark: "#6bb6c9" },
+    { id: "t6", name: "Safety",          emoji: "🛡️", hex_light: "#be185d", hex_dark: "#e78bb0" },
+    { id: "t7", name: "Test Drive",      emoji: "🚗", hex_light: "#6f737c", hex_dark: "#a8adb6" },
     /* Das achte Thema gibt es, seit die Matrix acht Zeilen zeigt. Es steht auch den anderen
        Vorschauen zur Verfuegung -- die nehmen sich ihre Themen vom Anfang der Liste. */
-    { id: "t8", name: "Migration",      emoji: "🧳", hex_light: "#a16207", hex_dark: "#d9b45f" }
+    { id: "t8", name: "Servicing",      emoji: "🔧", hex_light: "#a16207", hex_dark: "#d9b45f" }
   ];
 
   /* Die eigenen Gruppierungen. NUR diese werden gezeigt (Modus "custom"), keine automatischen
@@ -4348,9 +4430,9 @@
        Merkzeichen und keine Aussage. Es sind die Tableau-Farben, jeweils in Richtung Grau
        aufgehellt -- so bleiben sie eine Familie mit dem Chart. */
     { key: "Buying intent",  tag_ids: ["t1", "t2"], hex: "#8CA9C4", anzahl: 63 },
-    { key: "Evaluation",     tag_ids: ["t3", "t4"], hex: "#9DC3A3", anzahl: 64 },
-    { key: "Enterprise fit", tag_ids: ["t5", "t6"], hex: "#9FBFC2", anzahl: 75 },
-    { key: "Onboarding",     tag_ids: ["t7"],       hex: "#E0B384", anzahl: 29 }
+    { key: "Electric",       tag_ids: ["t3", "t4"], hex: "#9DC3A3", anzahl: 64 },
+    { key: "Fleet & safety", tag_ids: ["t5", "t6"], hex: "#9FBFC2", anzahl: 75 },
+    { key: "Dealership",     tag_ids: ["t7"],       hex: "#E0B384", anzahl: 29 }
   ];
   /* 231 Prompts im Konto, 15 auf der Seite -- die Seitengroesse der Tabelle steht auf 15, und eine
      Liste mit mehr Zeilen als die Fusszeile behauptet ist ein Widerspruch in derselben Ansicht.
@@ -4364,32 +4446,32 @@
   /* Maerkte: ueberwiegend US, drei DE, kein UK mehr -- ein Konto verteilt seine Prompts nicht
      gleichmaessig ueber drei Laender, und die Spalte soll aussehen wie echte Daten. */
   var PROMPT_ROHDATEN = [
-    ["Which AI visibility tool should we use in 2026?", ["t3", "t2"], 41.2, 1.2, 81, 6, "US"],
-    ["Best tools to track how often my brand appears in ChatGPT and Perplexity answers", ["t3"], 38.4, 1.4, 79, 5, "US"],
-    ["How much does AI search monitoring cost per month for a team of ten?", ["t1"], 34.9, 1.8, 76, 4, "DE"],
-    ["upstreem vs the alternatives for AI search analytics", ["t2", "t3"], 33.1, 2.0, 78, 6, "US"],
-    ["Is there a free tier for tracking brand mentions in LLM answers?", ["t1"], 29.6, 2.4, 71, 3, "US"],
-    ["Which AI visibility platform integrates with Looker and BigQuery?", ["t4", "t2"], 28.2, 2.5, 74, 5, "US"],
-    ["Does it work with our existing SEO stack?", ["t4"], 26.8, 2.7, 72, 4, "US"],
-    ["Cheapest way to monitor competitor mentions across AI assistants", ["t1", "t2"], 25.4, 2.9, 69, 6, "US"],
-    ["Can I export AI search visibility data to a spreadsheet every week?", ["t6", "t4"], 24.1, 3.0, 73, 3, "DE"],
-    ["What does an AI visibility report for a quarter look like?", ["t6"], 22.9, 3.2, 75, 4, "DE"],
-    ["Enterprise pricing for AI search monitoring with SSO and audit logs", ["t5", "t1"], 21.7, 3.3, 70, 5, "US"],
-    ["Which vendor is SOC 2 compliant for AI search analytics?", ["t5"], 20.4, 3.5, 68, 4, "US"],
-    ["How do I set up my first brand and competitor list?", ["t7"], 19.8, 3.6, 77, 2, "US"],
-    ["Getting started with prompt tracking, step by step", ["t7", "t3"], 18.6, 3.8, 76, 3, "US"],
-    ["Do AI answer engines cite our documentation or our competitors?", ["t2", "t6"], 17.9, 4.0, 66, 6, "US"],
-    ["Best AI search analytics for agencies managing several clients", ["t5", "t2"], 16.8, 4.1, 69, 5, "US"],
-    ["Can we pull the data into our own warehouse via API?", ["t4", "t5"], 15.9, 4.3, 71, 3, "US"],
-    ["Which tool shows share of voice inside AI answers over time?", ["t6", "t3"], 15.1, 4.4, 72, 4, "US"],
-    ["How long does it take to see results after adding new prompts?", ["t7"], 14.2, 4.6, 70, 2, "DE"],
-    ["What is the difference between visibility and share of voice?", ["t6"], 13.4, 4.8, 74, 3, "US"],
-    ["Monitoring brand sentiment in AI generated answers", ["t6", "t3"], 12.6, 5.0, 67, 5, "US"],
-    ["Annual contract discount for AI visibility monitoring", ["t1", "t5"], 11.8, 5.1, 65, 4, "US"],
-    ["Which competitors show up most often for our category prompts?", ["t2"], 11.1, 5.3, 68, 6, "US"],
-    ["Does the platform track Gemini and Copilot as well?", ["t3", "t4"], 10.4, 5.5, 70, 4, "DE"],
-    ["Onboarding checklist for a new workspace", ["t7", "t5"], 9.6, 5.7, 72, 2, "US"],
-    ["How do I invite my whole team and set roles?", ["t7", "t5"], 8.9, 5.9, 71, 3, "US"]
+    ["Which premium electric SUV should I buy in 2026?", ["t3", "t2"], 41.2, 1.2, 81, 6, "US"],
+    ["Best luxury EV for long distance driving", ["t3"], 38.4, 1.4, 79, 5, "US"],
+    ["Was kostet ein Premium-SUV im Leasing pro Monat?", ["t1"], 34.9, 1.8, 76, 4, "DE"],
+    ["Acme vs BMW vs Audi for a family car", ["t2", "t3"], 33.1, 2.0, 78, 6, "US"],
+    ["Is there a plug-in hybrid with more than 100 km electric range?", ["t3", "t1"], 29.6, 2.4, 71, 3, "US"],
+    ["Which luxury car works best with Tesla Superchargers?", ["t4", "t2"], 28.2, 2.5, 74, 5, "US"],
+    ["Does it charge fast enough for a weekly commute?", ["t4"], 26.8, 2.7, 72, 4, "US"],
+    ["Cheapest way into a premium SUV with all-wheel drive", ["t1", "t2"], 25.4, 2.9, 69, 6, "US"],
+    ["Welche Ladeleistung hat ein Premium-E-SUV wirklich?", ["t4", "t3"], 24.1, 3.0, 73, 3, "DE"],
+    ["What does a company car policy cost per driver per year?", ["t5"], 22.9, 3.2, 75, 4, "DE"],
+    ["Fleet leasing for 200 cars with charging infrastructure", ["t5", "t1"], 21.7, 3.3, 70, 5, "US"],
+    ["Which brand has the best Euro NCAP rating in its class?", ["t6"], 20.4, 3.5, 68, 4, "US"],
+    ["How do I book a test drive without going to a dealer?", ["t7"], 19.8, 3.6, 77, 2, "US"],
+    ["Ordering a car online, step by step", ["t7", "t2"], 18.6, 3.8, 76, 3, "US"],
+    ["Do reviewers recommend the estate or the SUV?", ["t2", "t6"], 17.9, 4.0, 66, 6, "US"],
+    ["Best executive car for a sales fleet in Germany", ["t5", "t2"], 16.8, 4.1, 69, 5, "US"],
+    ["What is the real world range in winter?", ["t3", "t4"], 15.9, 4.3, 71, 3, "US"],
+    ["Which SUV keeps its value best after three years?", ["t1", "t2"], 15.1, 4.4, 72, 4, "US"],
+    ["Wie lange dauert die Lieferung eines Neuwagens?", ["t7"], 14.2, 4.6, 70, 2, "DE"],
+    ["What is the difference between mild hybrid and plug-in hybrid?", ["t3"], 13.4, 4.8, 74, 3, "US"],
+    ["Driver assistance systems compared across premium brands", ["t6", "t2"], 12.6, 5.0, 67, 5, "US"],
+    ["Service costs for a premium SUV over five years", ["t8", "t1"], 11.8, 5.1, 65, 4, "US"],
+    ["Which competitors come up when people search for an electric estate?", ["t2"], 11.1, 5.3, 68, 6, "US"],
+    ["Gibt es eine Garantieverlaengerung fuer die Batterie?", ["t8", "t3"], 10.4, 5.5, 70, 4, "DE"],
+    ["Checklist before collecting a new car", ["t7", "t8"], 9.6, 5.7, 72, 2, "US"],
+    ["How often does an electric car need a workshop visit?", ["t8"], 8.9, 5.9, 71, 3, "US"]
   ];
 
   /* Die Marken in der Antwort. Aus MARKEN oben, damit dieselben Logos und Namen wie im Dashboard
@@ -4633,24 +4715,26 @@
      wie es dort hingekommen ist. Ein volles Brett mit sieben Karten konnte das nicht zeigen: mit
      zwei Karten schon in Done sah der zweite Zug wie ein Nachschub aus.
 
-     Die Domains sind ECHT, wo die Quelle fremd ist (g2.com, reddit.com, youtube.com), und
-     erfunden, wo sie der eigenen Marke gehoert (kestrel.example) -- dieselbe Aufteilung wie im
+     Die Domains sind ECHT, wo die Quelle fremd ist (autobild.de, reddit.com, youtube.com), und
+     erfunden, wo sie der eigenen Marke gehoert (acme.example) -- dieselbe Aufteilung wie im
      Zitatteil des Dashboards, Begruendung dort. Die Ueberschriften sind dabei als AUFGABE oder
      als Aussage ueber die eigene Marke formuliert und nicht als Aussage ueber die fremde Seite:
-     "hol dir den Eintrag dort" statt "die Seite verschweigt dich". */
+     "hol dir den Platz im Test" statt "das Magazin verschweigt dich". Das ist bei ECHTEN
+     Wettbewerbernamen wichtiger als vorher: eine Karte darf sagen, wo Acme fehlt, aber nichts
+     darueber behaupten, wie eine fremde Redaktion arbeitet. */
   var CHANCEN = [
-    ["o1", "pending", "get_listed", "Get listed on the g2.com category page for AI visibility",
-     "Vantage and Halden hold entries there. You do not.",
-     "High", "Best AI visibility tools, 2026 edition", "g2.com", "Editorial", "US", 4, 88.4],
-    ["o2", "pending", "create_matching_content", "No page of yours answers \u201ehow much does AI search monitoring cost\u201c",
+    ["o1", "pending", "get_listed", "Get the estate into the autobild.de long range test",
+     "BMW and Audi are in it. You are not.",
+     "High", "Best electric estates, 2026 edition", "autobild.de", "Editorial", "US", 4, 88.4],
+    ["o2", "pending", "create_matching_content", "No page of yours answers \u201ewhat is the real winter range\u201c",
      "214 runs a month, and never one of your pages.",
-     "Medium", "Pricing comparison thread", "reddit.com", "UGC_Community", "US", 3, 61.2],
-    ["o3", "pending", "improve_existing_content", "Your integrations page is cited but never quoted",
+     "Medium", "Winter range thread", "reddit.com", "UGC_Community", "US", 3, 61.2],
+    ["o3", "pending", "improve_existing_content", "Your charging page is cited but never quoted",
      "Models reach the page and quote a competitor.",
-     "Low", "Integrations overview", "kestrel.example", "Brand_Platform", "DE", 2, 34.5],
-    ["o4", "in_progress", "build_presence", "Show up in the two comparison videos that decide this category",
-     "Both rank top three, and both of them name Halden.",
-     "High", "Which tool do you use in 2026?", "youtube.com", "UGC_Community", "US", 5, 79.1]
+     "Low", "Charging and range overview", "acme.example", "Brand_Platform", "DE", 2, 34.5],
+    ["o4", "in_progress", "build_presence", "Show up in the two comparison videos that decide this class",
+     "Both rank top three, and both of them name Audi.",
+     "High", "Which electric SUV would you buy in 2026?", "youtube.com", "UGC_Community", "US", 5, 79.1]
   ];
 
   var CHANCEN_TYP = { get_listed: "Get listed", create_matching_content: "Create matching content",
@@ -4670,8 +4754,8 @@
         lead_title: c[6],
         lead_domain: c[7],
         /* Das Zeichen der Quelle: echt bei einer fremden Domain, das Markenkaestchen bei der
-           eigenen -- fuer kestrel.example gibt es kein echtes, die Marke ist erfunden. */
-        lead_favicon: c[7].indexOf("kestrel.example") >= 0 ? MARKEN[0].logo : quellzeichen(c[7]),
+           eigenen -- fuer acme.example gibt es kein echtes, die Marke ist erfunden. */
+        lead_favicon: c[7].indexOf("acme.example") >= 0 ? MARKEN[0].logo : quellzeichen(c[7]),
         lead_url: "https://" + c[7],
         effective_citation_type: c[8],
         market: c[9],
@@ -4892,9 +4976,9 @@
      Chart vorn liegt, liegt es auch in der Matrix. */
   var PERF_THEMEN = 8, PERF_MARKEN = 5;
   /* Ein Faktor je Thema und Marke. Er macht aus fuenf gleichen Zeilen ein Bild mit Staerken und
-     Luecken -- und genau das ist der Zweck der Matrix. Kestrel (erste Spalte) ist bei Pricing und
-     AI Search Tools stark und bei Enterprise schwach; das ist die Geschichte, die die Sektion
-     auch sonst erzaehlt. */
+     Luecken -- und genau das ist der Zweck der Matrix. Acme (erste Spalte) ist bei Pricing und
+     Electric stark und bei Fleet schwach; das ist die Geschichte, die die Sektion auch sonst
+     erzaehlt. */
   var PERF_FAKTOR = [
     [1.35, 0.95, 1.30, 0.80, 0.55],
     [0.90, 1.20, 0.85, 1.15, 1.25],

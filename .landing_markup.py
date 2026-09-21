@@ -70,8 +70,14 @@ ERSATZ = {
     "UPSTREEM_LOGO_DARK": "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/upstreem-lockup-e0e0e0.svg",
     "UPSTREEM_LOGO": "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/upstreem-lockup-1f1f1f.svg",
     "EXPORT_INSTANCE_ID": "",
-    "BRAND_NAME": "Kestrel",
-    "BRAND_LOGO_URL": "",
+    # Acme ist die eigene Marke der Landingpage -- eine gehobene Automarke, erfunden. Ihr Zeichen
+    # ist dasselbe selbst gezeichnete A wie in landing-hero.js (ACME_LOGO); als data:-Adresse,
+    # damit nichts fehlen kann und kein Abruf dazukommt. Die Zeichenkette ist durchgehend
+    # prozentkodiert und traegt deshalb weder Anfuehrungszeichen noch # -- sie darf so in ein
+    # HTML-Attribut.
+    # WER SIE AENDERT, AENDERT SIE AN BEIDEN STELLEN: hier und in landing-hero.js.
+    "BRAND_NAME": "Acme",
+    "BRAND_LOGO_URL": "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%23101418%22%2F%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%225.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M19%2047%20L32%2017%20L45%2047%22%2F%3E%3Cpath%20d%3D%22M24.6%2036.5%20H39.4%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E",
     # NACH BRAND_LOGO_URL, nie davor: sonst wird aus BRAND_LOGO_URL ein "_URL".
     "BRAND_LOGO": "",
     # Die Antwortkarte rechts ist der Kartenmodus der Responses-Tabelle. Kein Sticky (das Fenster

@@ -1956,6 +1956,24 @@
    es keine Chats, die es zeigen koennte. */
 .ulh-app .am-prev-btn { display: none; }
 
+/* MIRAS EINGEKLAPPTE LEISTE HAT AUF DER LANDINGPAGE NICHTS ZU SUCHEN (21.09. angefordert).
+   Sie ist der Ersatz fuer die zugeklappte Chatliste und besteht aus lauter Knoepfen, die hier
+   ins Leere fuehren: neuer Chat, Einstellungen, angeheftete und letzte Chats. Ohne Bubble gibt
+   es nichts davon -- eine Leiste aus toten Knoepfen ist schlechter als keine.
+   Sie entsteht erst beim Mounten (seitenleiste() in ask-mira.js), steht also nicht im erzeugten
+   Markup und laesst sich nicht dort wegnehmen; hier ist der richtige Ort.
+   Die Leiste ist der EINZIGE Weg zu ihrem Menue -- ohne ihre Knoepfe kann #am-mini-pop gar
+   nicht aufgehen, also braucht es dafuer keine zweite Regel am Koerper.
+   GEGENGERECHNET, nicht geraten (zweimal gemessen, zweimal display:flex):
+     .am-mini                                          (0,1,0)  none   -- der Grundzustand
+     #ask-mira.side-mounted:not(.prev-open) .am-mini   (1,3,0)  flex   -- der schaltet sie an
+     .ulh-app .am-mini                                 (0,2,0)  VERLIERT
+     .ulh-app #ask-mira .am-mini                       (1,2,0)  VERLIERT AUCH
+   Es gewinnt nur, wer dieselbe Bedingung traegt und eine Klasse mehr: (1,4,0). Und genau
+   dieselbe Bedingung ist auch inhaltlich richtig -- die Leiste ist NUR dann sichtbar, wenn sie
+   angehaengt und die grosse Chatliste zu ist; jeder andere Zustand hat sie ohnehin aus. */
+.ulh-app #ask-mira.side-mounted:not(.prev-open) .am-mini { display: none; }
+
 /* Das Eingabefeld ist VOR dem Tippen vollstaendig leer. Mira laesst dort sonst Beispielfragen
    durchlaufen -- neben einer Frage, die sich gerade selbst tippt, sind das zwei Texte, die um
    dieselbe Zeile streiten. Der native Platzhalter ist waehrend des Durchlaufs ohnehin leer
