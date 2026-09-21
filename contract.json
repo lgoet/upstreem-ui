@@ -642,7 +642,6 @@
   "data-grp-rowmenu",
   "data-grp-selectall",
   "data-grp-side",
-  "data-grp-sort",
   "data-grppage",
   "data-grpside-sortfield",
   "data-grpsize",
@@ -3112,7 +3111,7 @@
   "fnattrs": 103,
   "globals": 187,
   "payloadkeys": 102,
-  "dataattrs": 253,
+  "dataattrs": 252,
   "klassen": 2226,
   "keyframes": 66
  }

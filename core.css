@@ -1717,7 +1717,8 @@
     .up-pop-head,
     .up-pop-sub,
     .up-blockhead,
-    .up-filter-title { font-size: 12px; font-weight: 600; color: var(--vc-muted); }
+    .up-filter-title,
+    .up-topicmodal-label { font-size: 12px; font-weight: 600; color: var(--vc-third); }
     .up-pop-head { padding: 4px 10px 8px; }
     /* ---------- Blockueberschrift (12.09., aus sidebar.css hierher gezogen) ----------
        Die kleine Versalzeile UEBER einem Inhaltsblock -- in der Hauptseitenleiste die Zeile vor
@@ -1730,8 +1731,12 @@
        Hoverfarbe, siehe sidebar.css --, baut das ALS ZUSATZ zu dieser Klasse, nicht als Ersatz:
        zwei Stellen mit denselben vier Werten (Groesse, Gewicht, Laufweite, Versalien) sind die
        naechste Drift, sobald eine davon geaendert wird und die andere nicht. */
-    /* stand auf --vc-third: das ist laut core selbst "Beiwerk" (Platzhalter, Rauten, Einheiten)
-       und war nie AA-Text. Ein Abschnittskopf muss lesbar sein, also --vc-muted wie die anderen. */
+    /* --vc-third UND NICHT --vc-muted (21.09. entschieden, nachdem ich zuerst muted gesetzt
+       hatte). Das ist eine bewusste Entscheidung gegen den Kontrast: --vc-third kommt auf Weiss
+       auf 2.68:1, auf der Kopfzeile 2.53, im Menue 2.41 -- AA verlangt fuer 12px/600 4.5:1.
+       Im dunklen Thema sind es 3.97:1. Die Etiketten sollen zuruecktreten und nur den Abschnitt
+       markieren; der Inhalt darunter traegt die Aussage und steht auf --vc-text.
+       Wer das drehen will, aendert diese eine Zeile -- alle sechs Etiketten haengen daran. */
     .up-pop-opt { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 10px; border-radius: 9px; cursor: pointer; font-size: 13.5px; font-weight: 500; color: var(--vc-text); }
     /* Hover UND selected tragen denselben Ton (--up-sel-bg, 55%/60%): eine Zeile auf die man zeigt
        und eine die gewaehlt ist meinen beide "diese hier", zwei verschiedene Graus nebeneinander
@@ -3539,11 +3544,12 @@
 .up-topicmodal-field { display: flex; flex-direction: column; gap: 8px; }
 /* Each field's own heading: primary color + weight, not muted — these are content labels a user
    reads every time the modal opens, not secondary chrome. */
-/* Sechs Verwender in drei Dialogen (Name, Appearance, Topics, Group name, Prompt, Topics) --
-   alle benennen einen Block, also dieselbe Behandlung wie jeder andere Abschnittskopf.
-   Vorher 14px/500 in Textfarbe, und prompts-table hat EINEN davon auf gedaempft
-   ueberschrieben: im selben Popup sahen "Prompt" und "Topics" damit verschieden aus. */
-.up-topicmodal-label { font-size: 12px; font-weight: 600; color: var(--vc-muted); }
+/* .up-topicmodal-label steht jetzt OBEN in der Sammelregel bei .up-label, nicht mehr hier.
+   Der Grund ist eine gemessene Panne: als die Etikettfarbe von --vc-muted auf --vc-third ging,
+   hat diese eine Regel es nicht mitbekommen -- fuenf Etiketten standen auf rgb(158,158,158),
+   die sechste auf rgb(107,111,120). Eine zweite Deklaration derselben Rolle ist genau die
+   Sorte Abweichung, gegen die der ganze Umbau laeuft.
+   Sechs Verwender in drei Dialogen: Name, Appearance, Topics, Group name, Prompt, Topics. */
 .up-topicmodal-name { height: 36px; padding: 0 12px; border: 1px solid var(--vc-border); border-radius: 9px;
   background: transparent; color: var(--vc-text); font: inherit; font-size: 14px; outline: 0; width: 100%; }
 .up-topicmodal-name:focus { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }

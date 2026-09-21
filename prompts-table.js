@@ -2294,11 +2294,11 @@
       if (state.status === "inactive"){
         h += '<div class="upt-group-note">Active view only – inactive prompts stay ungrouped.</div>';
       }
-      h += '<div class="up-pop-div"></div><div class="up-pop-sub">Sort groups by</div><div class="up-dense">' +
-        GRP_SORTS.map(function(o){
-          return '<button class="up-dense-btn' + (state.groupSort === o.key ? " is-active" : "") +
-                 '" type="button" data-grp-sort="' + o.key + '">' + esc(o.label) + '</button>';
-        }).join("") + '</div>';
+      /* HIER STAND "Sort groups by" mit einer Reihe dichter Knoepfe (21.09. entfernt). Es war
+         die zweite Stelle fuer dieselbe Einstellung: die Seitenliste hat ihren eigenen Sortierer
+         (populateGrpSideSort, data-grpside-sortfield) mit Richtungsschalter, und der steht dort,
+         wo man die Gruppen ohnehin ansieht. Beide schrieben dasselbe state.groupSort -- zwei
+         Bedienwege fuer eine Einstellung, von denen einer weniger kann. */
       h += '<div class="up-pop-div"></div><div class="up-pop-sub">Custom groupings</div>';
       if (!custom.length){
         h += '<div class="upt-group-note">No custom grouping yet.</div>';
@@ -3419,11 +3419,11 @@
          the markup here had to be made in four places or the handlers drifted apart from it. */
       elSortMenu.innerHTML = UC.sortMenuHtml(SORT_FIELDS, state.sortField, state.sortDir);
     }
-    /* Same field list the Grouping dropdown's "Sort groups by" quick-picks use (GRP_SORTS,
-       state.groupSort), styled and behaving exactly like populateSort() above (checkmarked options
-       + a Descending switch) instead of the dense-button strip -- this lives right where you're
-       already looking (the sidelist heading), so it gets the full control, not a shortcut version
-       of it. Writes the SAME state.groupSort the quick-picks read/write, so the two stay in sync. */
+    /* DER Sortierer der Gruppen -- seit dem 21.09. der einzige. Im Gruppierungs-Dropdown stand
+       dieselbe Einstellung ein zweites Mal als Reihe dichter Knoepfe; die ist weg. Dieser hier
+       sitzt an der Ueberschrift der Seitenliste, also dort, wo man die Gruppen ohnehin ansieht,
+       und kann mehr: Haken an der gewaehlten Spalte plus Richtungsschalter, gebaut wie
+       populateSort() weiter oben. Liest und schreibt state.groupSort / state.groupSortDir. */
     function populateGrpSideSort(){
       if (!elGrpSideSortMenu) return;
       var html = '<div class="up-pop-head">Sort by</div>';
@@ -3741,17 +3741,9 @@
           if (groupingOn()) fetchGroups();
           return;
         }
-        var gs = e.target.closest("[data-grp-sort]");
-        if (gs){
-          state.groupSort = gs.getAttribute("data-grp-sort");
-          writeGroupSort(state.groupSort);
-          populateGroupMenu();
-          /* Client-side only — re-sorting the sections needs no new request. The open group is
-             closed first so its sub-block cannot end up under a different header. */
-          state.expandedGroup = null;
-          renderTable();
-          return;
-        }
+        /* Der Griff data-grp-sort ist mit den Knoepfen oben weggefallen -- es gibt kein Markup
+           mehr, das ihn traegt. Die Seitenliste hat ihren eigenen (data-grpside-sortfield,
+           weiter unten) und schreibt dasselbe state.groupSort. */
         var ge2 = e.target.closest("[data-grp-eye]");
         if (ge2){
           /* Umschalten liegt in core (UC.cgSetHidden): derselbe Griff steckt im topics-manager,
