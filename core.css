@@ -2341,8 +2341,18 @@
     .up-root.is-t1 .up-pages { display: none; }
 
     /* ---------- tooltip (same as the other components) ---------- */
+    /* DER TOOLTIP LIEGT UEBER ALLEM (21.09. gemeldet: "die Tooltips in der eingeklappten Leiste
+       sollen trotzdem ueber dem Dropdown liegen -- bei offenem Pinned-Menue liegt das Tooltip
+       von Recent darunter"). Gemessen lagen beide als Kinder des <body> nebeneinander, es
+       entschied also allein die Zahl: Tooltip 2147483000 gegen Miras Menue 2147483600. Und das
+       Menue ist nicht der einzige: quick-actions steht auf 2147483601, die Benachrichtigung auf
+       2147483500, der Markendialog auf 2147483200.
+       Ein Tooltip ist der oberste Gegenstand der Oberflaeche -- er beschriftet, was darunter
+       liegt, und kann nichts verdecken, weil er pointer-events: none traegt und beim ersten
+       Klick verschwindet. Also eine Zahl ueber ALLEN anderen, mit etwas Luft unter dem
+       Hoechstwert von int32 (2147483647), damit darueber noch etwas Platz bleibt. */
     .up-tip {
-      position: fixed; z-index: 2147483000; box-sizing: border-box;
+      position: fixed; z-index: 2147483640; box-sizing: border-box;
       height: 24px; display: inline-flex; align-items: center; padding: 0 9px;
       border-radius: 6px; background: #1f1f1b; color: #ffffff;
       font-family: Geist, system-ui, sans-serif; font-size: 12px; font-weight: 500; line-height: 1;
