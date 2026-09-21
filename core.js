@@ -7992,7 +7992,53 @@
        geschaetzt -- siehe die Zahlen am Beobachter darunter. */
     var SAMMEL_MAX = 8;
     var segKnoten = [];
+
+    /* ---- WAEHREND BUBBLE DIE SEITE BAUT, WIRD GEBUENDELT (21.09.) --------------------------
+       Aus einer Messung des Nutzers: dieser Rueckruf laeuft im Seitenaufbau 209 Mal in sieben
+       Sekunden und kostet dabei 776ms. Nicht der einzelne Lauf ist teuer (0,3ms bei 7000
+       Knoten), sondern ihre ZAHL -- und die kommt von Bubbles DOM-Aufbau, der sekundenlang
+       weiter mutiert.
+       Deshalb: solange gebaut wird, sammeln statt sofort laufen, und einmal je 500ms nachholen.
+       Danach wieder wie bisher SOFORT -- der synchrone Lauf ist der Grund, warum keine
+       englischen Texte aufblitzen (ein Beobachter-Rueckruf ist ein Microtask und laeuft vor dem
+       naechsten Bild), und das gilt fuer jede Komponente, die spaeter dazukommt.
+       Woran endet der Aufbau? An der Ruhe: 600ms ohne eine einzige Mutation. Ein Ereignis dafuer
+       gibt es nicht (up-page-ready existiert in diesem Repo nicht, nachgesehen), und eine feste
+       Frist waere geraten -- eine langsame Verbindung baut laenger.
+       Was man dafuer in Kauf nimmt: waehrend des Aufbaus kann ein Text bis zu einen halben
+       Takt lang unuebersetzt stehen. Dort baut sich die Seite ohnehin gerade auf; danach
+       blitzt nichts mehr, weil der synchrone Weg zurueck ist. */
+    var AUFBAU_STILL = 600, AUFBAU_TAKT = 500;
+    var imAufbau = true, ruheUhr = null, buendelUhr = null, buendel = [];
+    function buendelJetzt(){
+      if (buendelUhr){ clearTimeout(buendelUhr); buendelUhr = null; }
+      if (!buendel) { buendel = []; laufUeber([document]); return; }
+      if (!buendel.length) return;
+      var z = buendel; buendel = [];
+      laufUeber(z);
+    }
+    function laufUeber(ziele){
+      for (var t3 = 0; t3 < ziele.length; t3++){
+        (function(el){
+          sicher("stampGran", function(){ stampGran(el); });
+          sicher("spracheLauf", function(){ spracheLauf(el); });
+        })(ziele[t3]);
+      }
+    }
+    function aufbauEnde(){
+      if (!imAufbau) return;
+      imAufbau = false;
+      if (ruheUhr){ clearTimeout(ruheUhr); ruheUhr = null; }
+      buendelJetzt();          /* was noch liegt, sofort nachholen */
+    }
+    function ruheTicken(){
+      if (!imAufbau) return;
+      if (ruheUhr) clearTimeout(ruheUhr);
+      ruheUhr = setTimeout(aufbauEnde, AUFBAU_STILL);
+    }
+    ruheTicken();
     var stampObs = new MutationObserver(function(muts){
+      ruheTicken();     /* jede Mutation verlaengert den Aufbau -- siehe AUFBAU_STILL oben */
       /* TEXTaenderungen zuerst, und getrennt von allem anderen. Eine Komponente, die nur ihren
          Knopftext tauscht ("Show pages" -> "Hide pages"), haengt keinen Knoten ein -- das ist eine
          characterData-Mutation. Ohne diesen Zweig lief der Sprachlauf erst beim naechsten
@@ -8075,11 +8121,20 @@
           }
           ziele = (eltern.length <= SAMMEL_MAX) ? eltern : [document];
         }
-        for (var t2 = 0; t2 < ziele.length; t2++){
-          (function(el){
-            sicher("stampGran", function(){ stampGran(el); });
-            sicher("spracheLauf", function(){ spracheLauf(el); });
-          })(ziele[t2]);
+        if (imAufbau){
+          /* Sammeln, nicht laufen -- siehe den Block oben. Dieselbe Deckelung wie ueberall
+             hier: ab SAMMEL_MAX Aesten ist ein Lauf ueber alles billiger als viele einzelne. */
+          if (buendel){
+            for (var b2 = 0; b2 < ziele.length; b2++){
+              if (ziele[b2] === document){ buendel = null; break; }
+              if (buendel.indexOf(ziele[b2]) >= 0) continue;
+              if (buendel.length < SAMMEL_MAX) buendel.push(ziele[b2]);
+              else { buendel = null; break; }
+            }
+          }
+          if (!buendelUhr) buendelUhr = setTimeout(buendelJetzt, AUFBAU_TAKT);
+        } else {
+          laufUeber(ziele);
         }
         /* Fuer den 250ms-Lauf dasselbe merken. Dieselbe Deckelung, damit dort nicht doch wieder
            vierzig Laeufe je Takt stehen. */
@@ -8106,7 +8161,7 @@
         /* Die Mutationen, die der Lauf selbst erzeugt hat, verwerfen -- sonst haengt an jedem
            getauschten Icon sofort der naechste Lauf. */
         try { stampObs.takeRecords(); } catch(e){}
-      }, 250);
+      }, imAufbau ? AUFBAU_TAKT : 250);   /* im Aufbau derselbe Takt wie das Buendel oben */
     });
     stampObs.observe(document.documentElement,
                      { childList: true, subtree: true, characterData: true });
