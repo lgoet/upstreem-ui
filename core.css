@@ -64,6 +64,12 @@
       --up-fs-2xl: 22px;   /* Dialogtitel UND die grosse Zahl einer Kennzahl -- in der App
                               heute 20, 21, 22, 23 und 23.5; eine Rolle, fuenf Werte    (22) */
       --up-fs-3xl: 28px;   /* .up-ph-heading, der Kopf jeder Seite              (core:3601) */
+      --up-fs-display: 38px; /* DIE EINE grosse Zahl einer Karte -- die Aussage, nicht der
+                              Rahmen daneben. Eigene Stufe, weil das eine eigene Rolle ist und
+                              keine Ueberschrift: sie steht allein und wird nicht gelesen,
+                              sondern abgelesen. Heute nur .upt-kpi-quota-used; ask-mira.css
+                              traegt dieselbe Rolle auf 34px und zieht nach, wenn die Datei
+                              drankommt.                                     (prompts-table) */
       /* AUSSERHALB DER SKALA, mit Grund: neun font-size in clamp() (auth-page, onboarding,
          ask-mira, prompt-research). Das sind Ueberschriften auf ganzseitigen Flaechen, die mit
          dem Fenster mitwachsen -- dieselbe Ueberlegung wie bei der Landingpage: eine ganze Seite

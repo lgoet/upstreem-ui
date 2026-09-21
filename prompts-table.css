@@ -42,12 +42,11 @@
 .upt-cols-badge {
   position: absolute; top: -3px; right: -3px; z-index: 2;
   min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;
-  background: var(--vc-text); color: #e0e0e0;
-  font-family: inherit; font-size: 10px; font-weight: 600; line-height: 1;
+  background: var(--vc-text); color: var(--vc-text-invert);
+  font-family: inherit; font-size: 11px; font-weight: 600; line-height: 1;
   display: none; align-items: center; justify-content: center;
   font-variant-numeric: tabular-nums; pointer-events: none;
 }
-.up-root[data-theme="dark"] .upt-cols-badge { color: #1f1f1b; }
 .upt-cols-badge.is-visible { display: inline-flex; }
 
 /* ---------- selection checkbox ----------
@@ -81,7 +80,7 @@
    nicht. inset 0 plus margin auto zentriert in beiden Achsen ohne transform -- ein transform hier
    wuerde mit dem scale des Hakens ins Gehege kommen, wenn beide Zustaende einmal ueberblenden. */
 .upt-check.is-indeterminate::after { content: ""; position: absolute; inset: 0; margin: auto;
-  width: 8px; height: 2px; border-radius: 1px; background: currentColor; }
+  width: 8px; height: 2px; border-radius: var(--up-r-voll); background: currentColor; }
 .up-row:hover .upt-check:not(.is-checked) { border-color: var(--vc-third); }
 .up-th .upt-check { margin-right: 8px; }
 
@@ -209,13 +208,13 @@
   font-size: 12px; font-weight: 500; line-height: 1; white-space: nowrap;
   display: inline-flex; align-items: center; gap: 6px; }
 .upt-status-btn:hover { color: var(--vc-text); }
-.upt-status-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
+.upt-status-btn.is-active { background: var(--vc-bg); color: var(--vc-text); border-color: var(--vc-switch-border); }
 /* Derselbe Fall wie die gleitende Pille in core.css: der aktive Knopf liegt UEBER seiner
    Schiene, nicht darunter. Hier stand #08090a, der Grund der Seite -- ein Rest des
    Farbtauschs, nicht eine Entscheidung. Diese Regel greift, solange der gleitende Streifen
    noch nicht gemessen hat (danach uebernimmt .is-gleitend), also genau beim ersten Bild.
    #28282c auf #34343a, wie ueberall sonst das Gewaehlte. */
-.up-root[data-theme="dark"] .upt-status-btn.is-active { background: #28282c; border-color: #34343a; }
+.up-root[data-theme="dark"] .upt-status-btn.is-active { background: var(--up-sel-bg); border-color: var(--vc-switch-border); }
 .up-root.is-searchtakeover .upt-status { display: none; }
 /* "(Inactive)" qualifier before the "Prompts" heading label -- built once in JS (see the same
    IIFE above), text never changes, only its visibility does. Secondary/muted, matching the
@@ -270,7 +269,7 @@
   box-sizing: border-box;
   display: flex; flex-direction: column; align-items: stretch;
   padding: 10px 12px 10px 18px;
-  border-radius: 32px;
+  border-radius: var(--up-r-voll);
   background: var(--up-surface);
   border: 1px solid var(--vc-border);
   box-shadow: 0 14px 34px rgba(0,0,0,0.14);
@@ -278,8 +277,8 @@
   color: var(--vc-text);
   opacity: 0; pointer-events: none;
   transform: translateX(-50%) translateY(24px);
-  transition: opacity 200ms cubic-bezier(0.2, 0, 0.38, 0.9),
-              transform 200ms cubic-bezier(0.2, 0, 0.38, 0.9),
+  transition: opacity 200ms var(--up-ease),
+              transform 200ms var(--up-ease),
               width 200ms ease;
 }
 /* A frosted ring around the whole bar, so a white surface on a white page still reads as its
@@ -369,7 +368,7 @@
    "selected" as a result. Flex baseline alignment doesn't have that quirk, so this was the fix,
    not a vertical-align nudge. The label is its own span (not a trailing text node) so `gap` can
    space the two instead of a single hardcoded character of whitespace. */
-.upt-bulkbar-count { font-size: 13.5px; font-weight: 600; color: var(--vc-text); white-space: nowrap;
+.upt-bulkbar-count { font-size: 14px; font-weight: 600; color: var(--vc-text); white-space: nowrap;
   flex: 0 0 auto; display: inline-flex; align-items: baseline; gap: 5px; }
 /* Only this inner span animates — see syncBulkBarCount(). inline-block + overflow:hidden give it
    a transform to animate and a clipping box to slide within (a plain inline text node has
@@ -380,7 +379,7 @@
   font-variant-numeric: tabular-nums; }
 .upt-bulkbar-count-lbl { white-space: nowrap; }
 .upt-bulkbar-link { border: 0; background: transparent; padding: 0 2px; cursor: pointer;
-  font-family: inherit; font-size: 12.5px; font-weight: 500; color: var(--vc-muted);
+  font-family: inherit; font-size: 13px; font-weight: 500; color: var(--vc-muted);
   text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; flex: 0 0 auto; }
 .upt-bulkbar-link:hover { color: var(--vc-text); }
 /* The action buttons ARE core's .up-filter-btn — same height, border, hover and dark treatment
@@ -391,8 +390,10 @@
 /* Same red as core's .up-topicmodal-delete (the topic modal's own hard-delete button) — one
    "this is destructive" color across the app rather than each surface picking its own. Neutral
    at rest like every other bulk-bar action; only hover and the confirm-armed state go red. */
-.upt-bulkbar-delete:hover { border-color: #b0200c; color: #b0200c; }
-.upt-bulkbar-delete.is-armed { border-color: #b0200c; background: #b0200c; color: #fff; }
+.upt-bulkbar-delete:hover { border-color: var(--vt-down); color: var(--vt-down); }
+/* #fff bleibt Literal und das ist Absicht: Weiss auf dem Gefahrenrot ist in BEIDEN Themen
+   richtig, --up-accent-fg waere im Dunkeln fast schwarz. */
+.upt-bulkbar-delete.is-armed { border-color: var(--vt-down); background: var(--vt-down); color: #fff; }
 .upt-bulkbar-delete.is-armed:hover { opacity: .9; }
 .upt-bulkbar-x { width: 32px; height: 32px; border: 0; padding: 0; border-radius: 8px; background: transparent;
   color: var(--vc-muted); cursor: pointer; flex: 0 0 auto; margin-left: 0;
@@ -408,8 +409,8 @@
 .upt-bulkpanel {
   overflow: hidden; max-height: 0; opacity: 0; margin-top: 0;
   border-top: 1px solid transparent;
-  transition: max-height 220ms cubic-bezier(0.2,0,0.38,0.9), opacity 160ms ease,
-              margin-top 220ms cubic-bezier(0.2,0,0.38,0.9), padding-top 220ms cubic-bezier(0.2,0,0.38,0.9);
+  transition: max-height 200ms var(--up-ease), opacity 120ms ease,
+              margin-top 200ms var(--up-ease), padding-top 200ms var(--up-ease);
   padding-top: 0;
 }
 .upt-bulkbar.is-topics .upt-bulkpanel {
@@ -430,7 +431,7 @@
 .upt-topicsearch-wrap:focus-within { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); outline: 0; }
 .upt-topicsearch-in { flex: 1 1 auto; min-width: 0; height: 100%; padding: 0;
   border: 0; background: transparent; outline: none;
-  font-family: inherit; font-size: 12.5px; color: var(--vc-text); }
+  font-family: inherit; font-size: 13px; color: var(--vc-text); }
 /* Slot always reserved (visibility, not display) so the field's width doesn't shift when the x
    appears — same trick as the main table's own search box. */
 .upt-topicsearch-clear { flex: 0 0 20px; width: 20px; height: 20px; border: 0; border-radius: 6px;
@@ -472,7 +473,7 @@
 .upt-topiccreate-row { flex: 0 0 100%; display: flex; align-items: center; gap: 8px; }
 .upt-topiccreate { flex: 1 1 auto; min-width: 0; height: 34px; padding: 0 12px; border-radius: 9px;
   border: 1px dashed var(--vc-border); background: transparent; color: var(--vc-text);
-  cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 500; text-align: left;
+  cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 500; text-align: left;
   display: inline-flex; align-items: center; gap: 8px; overflow: hidden; }
 .upt-topiccreate:hover { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
 .upt-topiccreate svg { width: 13px; height: 13px; display: block; flex: 0 0 auto; color: var(--vc-muted); }
@@ -506,7 +507,7 @@
   --background: transparent;
   --input-border-radius: 9px;
   --input-border-color: var(--vc-border);
-  --input-font-size: 12.5px;
+  --input-font-size: 13px;
   --indicator-color: var(--vc-text);
   --outline-color: var(--vc-hover-border);
 }
@@ -517,7 +518,7 @@
    border, plain surface — a dashed border read as "disabled" rather than "secondary action". */
 .upt-topicapply { flex: 0 0 auto; height: 34px; padding: 0 20px; border-radius: 9px; border: 0;
   background: var(--up-accent); color: var(--up-accent-fg); cursor: pointer;
-  font-family: inherit; font-size: 12.5px; font-weight: 600; transition: opacity 120ms ease; }
+  font-family: inherit; font-size: 13px; font-weight: 600; transition: opacity 120ms ease; }
 .upt-topicapply:hover:not(:disabled) { opacity: .88; }
 .upt-topicapply:disabled { background: var(--vc-heading-bg); color: var(--vc-third); cursor: default; }
 
@@ -537,12 +538,12 @@
 .upt-et-promptlabel { color: var(--vc-muted); }
 .upt-et-prompttext { font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.35;
   letter-spacing: -0.01em; margin: 0; white-space: pre-wrap; }
-.upt-et-empty { padding: 10px 2px; font-size: 12.5px; color: var(--vc-muted); }
+.upt-et-empty { padding: 10px 2px; font-size: 13px; color: var(--vc-muted); }
 .upt-et-addbtn { margin-top: 10px; }
 /* Same 200ms cubic-bezier(.2,0,.38,.9) reveal every other slide-open panel in this file uses
    (the empty-topics-cell "+Add" morph, the grouping create/edit modal's picker panels). */
 .upt-et-addwrap { max-height: 0; opacity: 0; overflow: hidden; margin-top: 0;
-  transition: max-height 200ms cubic-bezier(.2,0,.38,.9), opacity 160ms ease, margin-top 200ms cubic-bezier(.2,0,.38,.9); }
+  transition: max-height 200ms var(--up-ease), opacity 120ms ease, margin-top 200ms var(--up-ease); }
 .upt-et-addwrap.is-open { max-height: 260px; opacity: 1; margin-top: 12px; }
 .upt-et-addwrap .up-topiclist { max-height: 220px; }
 
@@ -561,11 +562,11 @@
   font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; flex: 0 0 auto;
   margin-left: 0; margin-right: 0; max-width: 0; opacity: 0; overflow: hidden; pointer-events: none;
   transform: translateX(-6px);
-  transition: max-width 220ms cubic-bezier(0.2,0,0.38,0.9), opacity 160ms ease,
-              transform 220ms cubic-bezier(0.2,0,0.38,0.9),
-              margin-left 220ms cubic-bezier(0.2,0,0.38,0.9),
-              margin-right 220ms cubic-bezier(0.2,0,0.38,0.9),
-              padding 220ms cubic-bezier(0.2,0,0.38,0.9);
+  transition: max-width 200ms var(--up-ease), opacity 120ms ease,
+              transform 200ms var(--up-ease),
+              margin-left 200ms var(--up-ease),
+              margin-right 200ms var(--up-ease),
+              padding 200ms var(--up-ease);
 }
 /* The chip owns BOTH gaps around itself, including the one to the switcher on its right. That
    gap used to be a margin-left on .upt-status, toggled by .is-bulk — but a class toggle on a
@@ -663,7 +664,7 @@
 .upt-grp-sidepanel { display: none; }
 .up-root.is-grouped .upt-grp-sidepanel { display: flex; flex-direction: column; flex: 0 0 auto;
   width: 0; min-width: 0; opacity: 0; overflow: hidden; border: 1px solid transparent; border-radius: 16px;   /* matches .up-box's own radius */
-  transition: width 200ms ease, opacity 160ms ease, border-color 200ms ease; }
+  transition: width 200ms ease, opacity 120ms ease, border-color 200ms ease; }
 /* 20% of a genuinely narrow root can be well under a usable list width -- never below 256px.
    (Below the point where even 256px + a usable table no longer both fit, prompts-table.js itself
    forces the list closed and hides its own toggle -- see .is-groups-cramped below -- so this
@@ -840,14 +841,14 @@
 .upt-grp-head.is-open { background: var(--vc-heading-bg); }
 .upt-grp-left { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 auto; position: relative; }
 .upt-grp-chev { width: 16px; height: 16px; flex: 0 0 auto; color: var(--vc-muted);
-  transition: transform 160ms ease; }
+  transition: transform 120ms ease; }
 .upt-grp-head.is-open .upt-grp-chev { transform: rotate(180deg); }
 
 /* The topic chip is core's .up-topicchip (see grpHeadHtml) — nothing chip-shaped is redeclared
    here. Only the read-only variant's cursor needs a line -- core's .up-topicchip is already 28px
    by default now, matching .ust-tag (the per-prompt Topics cell's own pill height) everywhere. */
 /* .up-topicchip.is-static steht jetzt in core.css: drei Komponenten geben die Klasse aus. */
-.upt-grp-name { font-size: 13.5px; font-weight: 500; color: var(--vc-text);
+.upt-grp-name { font-size: 14px; font-weight: 500; color: var(--vc-text);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 
 /* flex-shrink:0 auf BEIDEN Ebenen. Ohne das schrumpften die vier Blocks im engen Header auf
@@ -857,7 +858,7 @@
 .upt-grp-kpi { display: flex; flex-direction: column; align-items: center; gap: 3px;
   flex: 0 0 auto; min-width: 76px; }
 .upt-grp-kpi-val { display: inline-flex; align-items: center; gap: 6px; }
-.upt-grp-kpi-lbl { font-size: 10px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase;
+.upt-grp-kpi-lbl { font-size: 11px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase;
   color: var(--vc-third); white-space: nowrap; }
 .upt-grp-inactive { font-size: 11px; font-weight: 500; color: var(--vc-third); }
 /* Sentiment without the bordered box the table cell uses — see grpHeadHtml. */
@@ -890,8 +891,8 @@
    list look, wherever a group's actions appear. */
 .upt-grp-actmenu { top: calc(100% + 4px); right: 0; left: auto; width: 128px; padding: 6px; }
 .upt-grp-actmenu .up-pop-opt { justify-content: flex-start; height: 32px; padding: 0 10px; font-size: 13px; }
-.upt-grp-actmenu .up-pop-opt.is-danger { color: #b0200c; }
-.upt-grp-actmenu .up-pop-opt.is-danger:hover { background: rgba(176,32,12,.08); }
+.upt-grp-actmenu .up-pop-opt.is-danger { color: var(--vt-down); }
+.upt-grp-actmenu .up-pop-opt.is-danger:hover { background: color-mix(in srgb, var(--vt-down) 8%, transparent); }
 
 /* Select-all-for-this-group checkbox: first child of .upt-grp-head (only present while the group
    is open -- see grpHeadHtml), same left position a row's own checkbox sits at (.upt-grp-head and
@@ -1162,7 +1163,7 @@
 .upt-kpi-body { flex: 1 1 auto; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: center; margin: 16px 0; }
 .upt-kpi-foot {
   flex: 0 0 auto; display: flex; align-items: center; gap: 8px;
-  font-size: 11.5px; color: var(--vc-muted);
+  font-size: 11px; color: var(--vc-muted);
 }
 .upt-kpi-foot-right { margin-left: auto; }
 
@@ -1174,12 +1175,11 @@
 .upt-kpi-eye {
   display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
   width: 32px; height: 32px; margin: -6px -6px -6px 0; padding: 0;
-  border: 0; border-radius: 8px; background: transparent; color: #6f6f6f; cursor: pointer;
+  border: 0; border-radius: 8px; background: transparent; color: var(--vc-muted); cursor: pointer;
 }
 /* Negativer Aussenabstand: die Kopfzeile ist nur so hoch wie ihr Titel (siehe oben), ein 32px
    hoher Knopf wuerde sie also aufziehen und die 16px Polster oben brechen. Rechts ebenso, damit
    das Icon optisch auf der Kante des Polsters sitzt und nicht 6px eingerueckt. */
-.up-root[data-theme="dark"] .upt-kpi-eye { color: #a0a0a0; }
 .upt-kpi-eye:hover { color: var(--vc-text); }
 .upt-kpi-eye svg { width: 16px; height: 16px; display: block; }
 .upt-kpi-eye .ic-show { display: none; }
@@ -1235,7 +1235,7 @@
    Liste eine KENNZAHLENKARTE neben zwei anderen: die Aussage traegt der Balken, die Beschriftung
    sagt nur, welcher es ist. Nur an dieser Karte, damit der Radar und das Detail ihre Werte
    behalten. */
-.upt-kpi-topics .up-bar-labeltxt { font-size: 12.5px; color: var(--vc-muted); }
+.upt-kpi-topics .up-bar-labeltxt { font-size: 12px; color: var(--vc-muted); }
 /* Der Zaehler rechts: eigene Spalte mit fester Breite, damit die Zahlen untereinander stehen.
    tabular-nums, sonst wandern die Ziffern -- dieselbe Regel wie bei .uto-when. */
 /* Die Wertspalte (cfg.pctCol) mit 16px Abstand zur Balkenspur -- so angefordert. */
@@ -1308,12 +1308,17 @@
    der Komponente. Der Nenner steht daneben in der leisen Farbe und kleiner: er ist der Rahmen,
    nicht die Aussage. */
 .upt-kpi-quota-num { display: flex; align-items: baseline; gap: 8px; }
-.upt-kpi-quota-used { font-size: 38px; font-weight: 600; line-height: 1; color: var(--vc-text); font-variant-numeric: tabular-nums; }
-.upt-kpi-quota-total { font-size: 20px; font-weight: 500; line-height: 1; color: var(--vc-muted); font-variant-numeric: tabular-nums; }
+.upt-kpi-quota-used { font-size: var(--up-fs-display); font-weight: 600; line-height: 1; color: var(--vc-text); font-variant-numeric: tabular-nums; }
+.upt-kpi-quota-total { font-size: 16px; font-weight: 500; line-height: 1; color: var(--vc-muted); font-variant-numeric: tabular-nums; }
 .upt-kpi-quota-bar { margin-top: 16px; height: 8px; border-radius: 4px; background: var(--vc-heading-bg); overflow: hidden; }
 /* Gruen NICHT neu gewaehlt: --vt-up ist derselbe Wert, den die Trend-Chips fuer "besser" nehmen
    (#2ea84a hell, #60d25d dunkel) -- eine dritte gruene Farbe in der App waere eine zu viel. */
 .upt-kpi-quota-fill { height: 100%; border-radius: 4px; background: var(--vt-up); width: 0;
+  /* .5s und damit ABSICHTLICH ausserhalb der Uebergangsskala (--up-t-1/2/3, 120/200/260ms).
+     Die Skala gilt fuer Zustandswechsel der Oberflaeche -- etwas geht auf, etwas faerbt sich um.
+     Hier waechst ein WERT: der Balken faehrt von 0 auf seinen Stand, und das soll man ablesen
+     koennen. Auf 260ms ist er da, bevor der Blick ankommt. .check_skala.py fuehrt ihn seit dem
+     21.09. im Bestand, damit er sichtbar bleibt und nicht als vergessen durchgeht. */
   transition: width .5s cubic-bezier(.4,0,.2,1); }
 /* Ueber der Grenze der Warnton, ebenfalls aus dem Trend-Paar. */
 .upt-kpi-quota.is-over .upt-kpi-quota-fill { background: var(--vt-down); }

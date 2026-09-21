@@ -50,8 +50,10 @@ SKALA = {
     # innen = aussen minus Abstand.)
     "border-radius": (set(), "--up-r-xs/s/m/l/xl/2xl/voll, deren konzentrische Kinder"
                              " (Basis minus 1) und --up-dd-radius (14px) fuer Menues"),
-    "dauer":         ({"0ms", "120ms", "200ms", "260ms"},
-                      "--up-t-1/2/3"),
+    # 1ms gehoert dazu und ist kein Ausrutscher: das ist der uebliche Kniff in
+    # @media (prefers-reduced-motion: reduce) -- nicht 0, damit transitionend noch feuert.
+    "dauer":         ({"0ms", "1ms", "120ms", "200ms", "260ms"},
+                      "--up-t-1/2/3 (plus 1ms fuer prefers-reduced-motion)"),
 }
 
 # Was immer durchgeht, egal in welcher Eigenschaft: alles, was schon ueber eine Variable laeuft,
@@ -148,14 +150,26 @@ def pruefe(pfad):
     # Dauern nur da, wo sie wirklich eine Uebergangsdauer sind. Ein animation-delay darf jede
     # Zahl tragen -- Staffelungen sind genau dafuer da und haben kein Raster.
     for m in re.finditer(r"(?<![-\w])transition(?:-duration)?\s*:\s*([^;{}]+)", text):
-        for w in re.findall(r"(?<![\w.])(\d+(?:\.\d+)?m?s)", m.group(1)):
+        # (?<![\w]) und NICHT (?<![\w.]): sonst bricht der Lookbehind beim Punkt von ".5s" ab
+        # und der Wert wird gar nicht gesehen. Genau so ist die halbe Sekunde in
+        # prompts-table.css:1317 durch die erste Fassung geschluepft.
+        for w in re.findall(r"(?<![\w])(\.?\d+(?:\.\d+)?m?s)", m.group(1)):
             w = w if w.endswith("ms") else str(int(float(w[:-1]) * 1000)) + "ms"
             if w not in SKALA["dauer"][0]:
                 raus["dauer"][w] += 1
 
     if name not in FARBE_ERLAUBT:
-        for t in FARBE.findall(text):
-            raus["farbe"][t.lower().replace(" ", "")] += 1
+        # Masken und durchsichtige Farbstopps sind KEINE Themenfarben. In
+        # `-webkit-mask: linear-gradient(#000 0 0)` ist das Schwarz nur "voll deckend" und
+        # waere in jedem Thema dasselbe; `rgba(0,0,0,0)` ist schlicht durchsichtig. Beides
+        # hat die erste Fassung als Verstoss gemeldet -- wer das "behebt", baut eine Maske
+        # kaputt, die richtig war.
+        ohne_maske = re.sub(r"(?<![-\w])(?:-webkit-)?mask[a-z-]*\s*:[^;{}]+", "", text)
+        for t in FARBE.findall(ohne_maske):
+            t = t.lower().replace(" ", "")
+            if t in ("rgba(0,0,0,0)", "rgba(255,255,255,0)"):
+                continue
+            raus["farbe"][t] += 1
 
     return {k: v for k, v in raus.items() if v}
 
