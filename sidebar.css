@@ -290,7 +290,11 @@
    von Miras Zeichen ("mein Logo 1x1 analog zum Mira Elipse Icon").
    Der Aussenabstand der Zeile wird dabei auf die 2px gesetzt: die Rechnung darueber glich die
    frueheren, unterschiedlichen Kastenhoehen aus und ist mit einer festen 32er Hoehe erledigt. */
-.usn-bar.is-mini .usn-brand { gap: 2px; margin: 0 0 2px; }
+/* 16px UEBER und UNTER der Trennlinie (21.09. angefordert). Die Linie liegt am unteren Rand
+   von .usn-brand (::after, bottom 0) -- der Abstand DARUEBER ist also das untere Polster der
+   Zeile, der darunter ihr Aussenabstand. Vorher standen dort 2px, und der Teamwechsler klebte
+   an der Linie. */
+.usn-bar.is-mini .usn-brand { gap: 2px; padding-bottom: 16px; margin: 0 0 16px; }
 .usn-bar.is-mini .usn-brand-mark {
   height: 32px; width: 32px; flex: 0 0 32px; justify-content: center;
 }
@@ -298,8 +302,13 @@
 .usn-bar.is-mini .usn-brand-mark svg { max-height: 20px; max-width: 20px; }
 /* Der Umschalter traegt in Miras Leiste keine gedaempfte Deckkraft -- "gleiche Farbe / Opacity
    wie bei Mira". Die 0.8 aus dem Ruhezustand entfaellt deshalb im eingeklappten Zustand; im
-   ausgeklappten bleibt sie, dort steht der Umschalter neben Text und soll zuruecktreten. */
+   ausgeklappten bleibt sie, dort steht der Umschalter neben Text und soll zuruecktreten.
+   UND DIE FARBE DAZU (21.09. nachgemessen): nicht die Deckkraft war der Unterschied, sondern
+   der Ton. Gemessen im Dunkeln -- Hauptleiste rgb(128,128,128) aus --vc-third, Mira
+   rgb(160,160,160) aus --vc-muted. Also --vc-muted, wie bei Mira. Nur eingeklappt: ausgeklappt
+   bleibt der Umschalter auf der Drittfarbe, dort soll er neben dem Schriftzug zuruecktreten. */
 .usn-bar.is-mini .usn-toggle svg { opacity: 1; }
+.usn-bar.is-mini .up-iconbtn.usn-toggle { color: var(--vc-muted); }
 .usn-bar.is-mini .usn-toggle { flex: 0 0 32px; width: 32px; height: 32px; }
 
 .usn-top { display: flex; align-items: center; gap: 10px; margin: 0 -8px; flex: 0 0 auto; min-width: 0; }
