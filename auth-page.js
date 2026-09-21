@@ -266,6 +266,7 @@
     var elNameWrap= root.querySelector("[data-w-name]");
     var elCode    = root.querySelector("[data-f-code]");
     var elCodeWrap= root.querySelector("[data-w-code]");
+    var elSepWrap = root.querySelector("[data-w-sep]");
     var elCheck   = root.querySelector("[data-check]");
     var elCheckTxt= root.querySelector("[data-check-txt]");
     var elSide    = root.querySelector("[data-side]");
@@ -359,6 +360,13 @@
                      fragen waere eine Huerde ohne Zweck.
                      autocomplete="off" und spellcheck="false": ein Code ist kein Wort, und der
                      Verwalter soll hier nichts anbieten. */
+                  /* Die Trennlinie davor (21.09. angefordert: "nach Passwort: gap, Separator,
+                     gleiches gap, Registration code"). Sie ist ein eigenes Kind des Stapels und
+                     kein Rand am Feld: so gibt der gap des Stapels die 12px oben UND unten von
+                     selbst her, an einer Stelle gepflegt. Und sie klappt mit demselben Griff ein
+                     und aus wie das Feld -- eine Linie ohne etwas darunter waere im Login eine
+                     Trennung zwischen nichts und nichts. */
+                  '<span class="uau-sep" data-w-sep aria-hidden="true"><span><i></i></span></span>' +
                   '<label class="uau-field uau-collapse" data-w-code>' +
                     '<span class="uau-collapse-in">' +
                       '<span class="uau-label">Registration code</span>' +
@@ -366,8 +374,6 @@
                         'autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" ' +
                         'placeholder="Enter your code" data-f-code/>' +
                       '<span class="uau-err"><span data-e-code></span></span>' +
-                      '<span class="uau-fixed is-on"><span>' +
-                        'New accounts need a code while upstreem is in private beta.</span></span>' +
                     '</span>' +
                   '</label>' +
                 '</div>' +
@@ -532,6 +538,7 @@
     function renderCode(){
       var an = codeAn();
       elCodeWrap.classList.toggle("is-on", an);
+      elSepWrap.classList.toggle("is-on", an);
       /* Ein ausgeblendetes Feld darf nicht per Tabulator erreichbar bleiben -- dieselbe Regel
          wie beim Namensfeld. */
       elCode.disabled = !an || state.busy;

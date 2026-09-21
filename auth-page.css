@@ -174,6 +174,24 @@
    Der Platzhalter bleibt gemischt -- er ist ein Satz, kein Code. */
 .uau-code { text-transform: uppercase; letter-spacing: 0.04em; }
 .uau-code::placeholder { text-transform: none; letter-spacing: normal; }
+/* Die Trennlinie ueber dem Codefeld (21.09. angefordert). Abstaende stehen NICHT hier: der
+   Stapel hat gap: 12px, und weil die Linie ein eigenes Kind ist, liegen dieselben 12px von
+   selbst darueber und darunter -- "gap, Separator, gleiches gap" ohne eine zweite Zahl, die
+   beim naechsten Aendern des Stapels zurueckbleibt.
+   Ein- und Ausklappen wie bei .uau-collapse: 0fr -> 1fr, und im geschlossenen Zustand frisst
+   margin-top: -12px den gap ueber ihr. Sonst bliebe im Login genau ein Loch von 12px an der
+   Stelle, an der nichts mehr steht. Die Linie selbst ist 1px in --vc-border -- dasselbe wie die
+   beiden Haelften der "or"-Zeile weiter unten, damit es in einer Karte nicht zwei verschiedene
+   waagrechte Striche gibt. */
+.uau-sep {
+  display: grid; grid-template-rows: 0fr; opacity: 0; margin-top: -12px;
+  transition: grid-template-rows var(--uau-t) var(--uau-ease),
+              opacity var(--uau-t) var(--uau-ease),
+              margin-top var(--uau-t) var(--uau-ease);
+}
+.uau-sep > span { overflow: hidden; min-height: 0; display: block; }
+.uau-sep > span > i { display: block; height: 1px; background: var(--vc-border); }
+.uau-sep.is-on { grid-template-rows: 1fr; opacity: 1; margin-top: 0; }
 /* Der Fokusring kommt aus core (.up-field). Hier steht nur, was core nicht kennt. */
 .uau-input:disabled { opacity: .55; cursor: default; }
 /* Ein Feld mit Fehler faerbt seinen Rahmen -- aber NICHT waehrend es den Fokus hat: sonst
@@ -476,6 +494,37 @@
   background-color: #16203a;
   background-image: linear-gradient(180deg, rgba(12,17,32,.72), rgba(10,14,28,.88) 70%),
                     var(--uau-bgimg, none);
+}
+/* ---------- Das Linienmuster aus der Landingpage (21.09. angefordert) ----------
+   WORTGLEICH von .ulh-bg-grid uebernommen, nicht nachempfunden: senkrechte 1px-Striche alle
+   8px, unten verankert, nach oben ausblendend -- und dieselbe Blende
+   (transparent 16%, .18 bei 32%, .62 bei 50%, voll ab 66%). Wer eine der beiden Seiten
+   aendert, aendert die andere mit; deshalb stehen die Zahlen hier in derselben Reihenfolge.
+   Warum ein eigenes Element und keine weitere background-Lage an .uau-panel: eine Maske gilt
+   fuer das GANZE Element, und dort liegen schon der Verlauf und das Bild -- die Blende haette
+   beide mitgenommen.
+   Die Kinder bekommen dafuer position: relative, sonst legt sich die absolut gesetzte Ebene
+   ueber Ueberschrift, Text und den Promptbalken. */
+.uau-panel > * { position: relative; z-index: 1; }
+.uau-panel::after {
+  content: ""; position: absolute; z-index: 0; pointer-events: none;
+  left: 0; right: 0; top: 0; bottom: 0;
+  background: repeating-linear-gradient(to right,
+              rgba(255, 255, 255, .55) 0, rgba(255, 255, 255, .55) 1px,
+              transparent 1px, transparent 8px);
+  /* Zwei Angaben, weil Safari die Kurzform noch mit Praefix braucht -- wie dort. */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 16%, rgba(0,0,0,.18) 32%,
+                      rgba(0,0,0,.62) 50%, #000 66%);
+  mask-image: linear-gradient(to bottom, transparent 16%, rgba(0,0,0,.18) 32%,
+              rgba(0,0,0,.62) 50%, #000 66%);
+}
+/* Im Dunkeln liegt eine fast deckende Decke ueber dem Bild (0.72 bis 0.88), und weisse Striche
+   mit .55 darauf sind ein Gitter statt einer Textur. Halb so kraeftig -- dasselbe Muster, nur so
+   laut wie der Grund es zulaesst. */
+.uau-root[data-theme="dark"] .uau-panel::after {
+  background: repeating-linear-gradient(to right,
+              rgba(255, 255, 255, .26) 0, rgba(255, 255, 255, .26) 1px,
+              transparent 1px, transparent 8px);
 }
 .uau-root[data-theme="dark"] .uau-panel-h { color: #e8ecf6; }
 .uau-root[data-theme="dark"] .uau-panel-b { color: #a8b3cc; }
