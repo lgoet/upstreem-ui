@@ -57,6 +57,88 @@
     });
   }
 
+  /* ══ DER RIEGEL GEGEN DEN FREMDEN RAHMEN (21.09.) ═══════════════════════════════════════════
+     Gemeldet: auf der echten Seite blieb ab dem Dashboard alles leer. Die Konsole sagte es
+     genau:
+
+       SecurityError: Failed to read a named property 'dphMode' from 'Window':
+       Blocked a frame with origin "...framercanvas.com" from accessing a cross-origin frame.
+           at resolveBubbleFn (core.js) ... at fuellen (landing-hero.js)
+
+     Warum das passiert: die Komponenten melden Ereignisse an Bubble, und core sucht die Funktion
+     dafuer so -- ERSTE Zeile von resolveBubbleFn:
+
+       window[fnName] || (window.parent && window.parent[fnName]) || (window.top && window.top[fnName])
+
+     In Bubble ist der Rahmen gleichen Ursprungs, da ist das harmlos. In Framer liegt das Embed
+     auf framercanvas.com und die Seite darueber auf framer.com -- ein Zugriff auf
+     window.parent[...] WIRFT dort, und zwar ungefangen. Der Wurf reisst den Aufrufer mit; bei
+     uns war das fuellen(), und ab dieser Zeile blieb jede Komponente im Ladezustand.
+
+     Die Landingpage hat KEINE Rueckwege nach Bubble und will keine: sie ist eine Vorfuehrung,
+     kein Programm. Also bekommt sie hier fuer jeden Namen, den die Komponenten suchen koennten,
+     eine Funktion, die NICHTS tut. Damit trifft schon der erste Term (window[fnName]), der Rest
+     des Ausdrucks wird nie ausgewertet, und es gibt nichts mehr, was werfen koennte.
+
+     Das ist der richtige Ort dafuer: diese Datei laeuft VOR jeder Komponente. Und es ist ein
+     Eingriff, der ausschliesslich die Landingpage betrifft -- in der App existiert keine dieser
+     Zeilen.
+
+     Die Liste ist aus den Komponenten UND den Bubble-Vorlagen gezogen, beide Schreibweisen (mit
+     und ohne bubble_fn_-Praefix, denn core faellt auf den Praefix zurueck, wenn der nackte Name
+     nichts findet). Kommt eine Komponente mit einem neuen Namen dazu und fehlt er hier, ist der
+     Schaden ab jetzt klein: es gibt seit demselben Tag eine Warnung in landing-hero.js, die
+     sagt, dass fuellen() geworfen hat. */
+  var STUMM = [
+    /* Seitenkoepfe */
+    "bphAdd","bphNav","bphRefresh","cphNav","cphRefresh","dphDocs","dphMode","dphRefresh",
+    "dphSearch","ophSearch","pphAdd","pphNav","pphRefresh","sphNav",
+    /* Domain-Detail, Performance */
+    "uddGran","uddMode","uhmMetric","uhmSelect",
+    /* Prompts-Tabelle */
+    "uptAddTopics","uptApplyBulkTopics","uptBrand","uptBulkDelete","uptBulkStatus","uptEditTopics",
+    "uptGenerateMore","uptGroupOpen","uptGroups","uptMentioned","uptPage","uptRowClick","uptSearch",
+    "uptSelect","uptSort","uptStatus",
+    /* Antworten- und Domaintabelle */
+    "urtBrand","urtFilter","urtMentioned","urtPage","urtRowClick","urtSearch","urtSort","urtView",
+    "udtBrand","udtFilter","udtMentioned","udtOpenUrl","udtPage","udtRowClick","udtSearch",
+    "udtShowPages","udtSort",
+    /* Seitenleiste */
+    "usnAccount","usnLogout","usnNav","usnNewTeam","usnPinned","usnState","usnTeam","usnTheme",
+    /* Visibility-Chart und Zitatteil -- diese zwei melden mit vollem Namen */
+    "votExportTable","votGoTo","votGranularity","votRowClick","votSortTable","votSubmitCompanies",
+    "tcdApplyTypeFilter","tcdBrandMentioned","tcdExportTable","tcdFilterDimension","tcdGoTo",
+    "tcdMode","tcdRowClick",
+    /* Chancenbrett */
+    "opportunity_change_status","opportunity_competitor_click","opportunity_create_with_ai",
+    "opportunity_ignore","opportunity_move_all","opportunity_open_url",
+    /* Mira */
+    "ask_mira_create_opportunity","ask_mira_create_project","ask_mira_export_pdf",
+    "ask_mira_feedback","ask_mira_more_chats","ask_mira_move_opportunity_status",
+    "ask_mira_new_chat","ask_mira_open_evidence","ask_mira_opportunity_created",
+    "ask_mira_refresh_chat","ask_mira_rename_chat","ask_mira_select_chat","ask_mira_send",
+    "ask_mira_settings_change","ask_mira_suggested_question","ask_mira_voice","miraAction",
+    /* Quick Actions */
+    "qa_add_brand","qa_add_prompt","qa_edit_brand","qa_export_data","qa_select_brand",
+    "qa_select_domain","qa_select_prompt","qa_select_url","quick_actions_search"
+  ];
+  function stumm(){}
+  for (var si = 0; si < STUMM.length; si++){
+    var nm = STUMM[si];
+    try {
+      if (typeof window[nm] !== "function") window[nm] = stumm;
+      var mit = "bubble_fn_" + nm;
+      if (typeof window[mit] !== "function") window[mit] = stumm;
+    } catch (e){}
+  }
+  /* HIER STAND EINMAL EIN ZWEITER GRIFF: window.parent auf das eigene Fenster umschreiben, damit
+     auch ein Name, den die Liste oben nicht kennt, nicht mehr werfen kann. Er ist wieder raus.
+     Gemessen: damit zeigt parent auf das eigene Fenster, und jedes parent.postMessage landet bei
+     einem selbst statt bei der Seite darueber -- die Verbindung zum Gastgeber waere weg, fuer
+     alles, was sie je brauchen koennte. Ein Riegel, der eine Tuer zumauert, ist der falsche
+     Riegel. Die Liste oben deckt die Namen ab, die wirklich feuern; kommt einer dazu, sagt es
+     die Warnung in landing-hero.js. */
+
   /* Die Komponenten, die im Fenster stehen. Wer eine hinzufuegt, aendert NUR diese zwei Bloecke
      und das Markup in .landing_markup.py -- in Framer bleibt es beim Pin. */
   css("core.css");
