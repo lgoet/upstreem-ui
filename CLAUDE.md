@@ -21,9 +21,10 @@ nachbauen und nicht überschreiben. Kommt keiner: dann ist es wirklich neu.
 ```bash
 python3 .scan_comments.py               # §28: kein */ in CSS-Kommentaren
 python3 .check_reinvention.py           # Nachbauten und gesprengte Bauteile
+python3 .check_skala.py                 # Maße außerhalb der Skala (seit 21.09.)
 ```
 
-Beide müssen sauber sein. `.check_reinvention.py` meldet Verdachtsfälle, keine Gewissheiten —
+Alle drei müssen sauber sein. `.check_reinvention.py` meldet Verdachtsfälle, keine Gewissheiten —
 jeden Treffer entweder beheben oder mit einem Satz begründen, warum er hier richtig ist.
 
 ---
@@ -79,6 +80,49 @@ neuen Komponente:
    um die Zitationstyp-Farbe, Helligkeit/Sättigung gestaffelt, gegenläufig je Thema).
 6. Von Anfang an: makeLate für frühe Aufrufe, Warte-Uhr mit benanntem Ende, parseLoose mit
    Fehlerzustand vor dem Skelett, themeParam statt data-isdark roh.
+
+## 1c. Die Skalen: Maße kommen aus core.css, nicht aus dem Kopf
+
+Seit dem 21.09. stehen in `core.css` an `.up-root` **27 Maß-Token** neben den Farben. Vorher gab
+es für Schriftgröße, Radius, Höhe, Dauer und Tiefe keine gemeinsame Quelle — jede dieser
+Entscheidungen wurde in jeder der 43 Dateien neu getroffen. Gemessen kamen dabei **34
+Schriftgrößen** und **57 Radien** heraus, wo sechs und fünf gemeint waren.
+
+| | Skala | Token |
+|---|---|---|
+| Schriftgröße | 11 · 12 · 13 · 14 · 16 · 22 | `--up-fs-xs/s/m/l/xl/kpi` |
+| Schnitt | **Bereich** 400–700 | `--up-fw-n/m/h/b` |
+| Radius | 4 · 6 · 8 · 12 · 16 · 999 | `--up-r-xs/s/m/l/xl/voll` |
+| Höhe | 24 · 28 · 32 · 40 · 55 | `--up-h-chip/seg/btn/gross/row` |
+| Dauer | 120 · 200 · 260 | `--up-t-1/2/3` |
+| Kurve | 2 | `--up-ease`, `--up-ease-auf` |
+| Tiefe | 4 | `--up-e-1..4` |
+
+Drei Dinge, die man dabei wissen muss:
+
+- **Der Schnitt ist ein Bereich, keine Liste.** Geist wird als *variable* Schrift geladen
+  (`@import … wght@400..700`), also rendert auch 450 oder 550 wirklich — an 37 Stellen ist genau
+  das gewollt. Falsch ist nur, was **außerhalb** von 400–700 liegt: das wird still auf den Rand
+  gezogen. So sind am 21.09. 15 Stellen aufgefallen, die wie 600 aussahen, obwohl 650, 700 oder
+  750 dastand — zwei davon hatten sogar zwei Stufen gebaut, die beide als 600 herauskamen.
+- **Verschachtelte Radien werden gerechnet, dann gerundet:** innen = außen − Innenabstand, danach
+  auf die nächste Stufe. Ohne das Runden erzeugt die Regel aus §1 („Faktor auf alles") genau die
+  `3.23`, `4.28`, `7.04` und `8.9`, die heute im Bestand stehen.
+- **Ausnahmen, die bleiben:** `--up-dd-radius` (14px) für Menüs, `--up-dd-pad`, `--up-dd-gap`,
+  `--up-sub-gap`, `--up-focus-w`. Die gab es vorher und sie sind in sich stimmig. Eine Skala mit
+  einer benannten Ausnahme ist besser als zwei Skalen nebeneinander.
+
+`.check_skala.py` hält das. Es arbeitet mit einer **Grundlinie** (`.skala_grundlinie.json`): was
+am Einführungstag schon dastand, ist als Bestand vermerkt und blockiert nie einen Commit —
+gemeldet wird nur, was **dazukommt**. Ein Prüfer, der am ersten Tag tausend Treffer meldet, wird
+weggeklickt. Der Bestand (Stand 21.09.: 1553 Angaben, davon 673 Farbliterale, 319 Schriftgrößen,
+293 Radien, 268 Dauern) wird abgebaut, wenn eine Datei ohnehin angefasst wird. Nach dem
+Aufräumen einer Datei: `python3 .check_skala.py --grundlinie`.
+
+Ausgenommen sind `vendor-coloris.min.css` (Fremdcode) und `landing-hero.css` — eine Landingpage
+ist kein Dashboard und verträgt eine größere Spreizung; 38px Überschrift ist dort richtig und in
+der App falsch.
+
 
 ## 2. Daten von Bubble: leer und kaputt sind zwei Dinge
 

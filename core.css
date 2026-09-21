@@ -54,8 +54,13 @@
       --up-fs-xl:  16px;   /* Seitenabschnitt, Dialogtitel                 (26) */
       --up-fs-kpi: 22px;   /* die grosse Zahl einer Kennzahl               (12) */
 
-      /* Schriftschnitt. Vier, und alle vier liegen im geladenen Bereich (siehe @import oben) --
-         das war vor dem 21.09. bei 700 nicht so. */
+      /* Schriftschnitt. Die vier Stufen, die die App traegt -- und alle vier liegen im
+         geladenen Bereich (siehe @import oben); das war vor dem 21.09. bei 700 nicht so.
+         SIE SIND KEINE AUSSCHLIESSLICHE LISTE. Geist wird als variable Schrift geladen, also
+         rendert auch 450 oder 550 wirklich, und an 37 Stellen steht genau das -- als halbe
+         Stufe zwischen zwei Nachbarn, bewusst gesetzt. Was NICHT geht, ist ein Wert ausserhalb
+         von 400..700: der wird still auf den Rand gezogen und sieht dann aus wie der Nachbar.
+         .check_skala.py prueft deshalb den BEREICH und nicht diese vier Zahlen. */
       --up-fw-n:  400;     /* Fliesstext, Nebentext                        (67) */
       --up-fw-m:  500;     /* der Normalfall der App                      (324) */
       --up-fw-h:  600;     /* Ueberschrift, aktiver Zustand               (172) */
@@ -65,7 +70,8 @@
          innen = aussen minus Innenabstand, danach auf die naechste Stufe. Daher kommen die
          3.23, 4.28, 7.04 und 8.9, die heute in der App stehen -- aus einer Rechnung ohne
          Raster zum Einrasten. */
-      --up-r-s:    6px;    /* Chip, Pille, Punkt, kleines Feld             (64) */
+      --up-r-xs:   4px;    /* Punkt, Haken, Plakette -- das Kleinste       (66) */
+      --up-r-s:    6px;    /* Chip, Pille, kleines Feld                    (64) */
       --up-r-m:    8px;    /* Knopf, Eingabe, Segment, Logoplatte         (180) */
       --up-r-l:   12px;    /* Karte innen, Drawer-Kopf                     (58) */
       --up-r-xl:  16px;    /* Chart-Box, Modal, grosse Karte               (31) */
@@ -82,7 +88,7 @@
          Die zwei Kurven sind die, die in der App schon am haeufigsten ausgeschrieben stehen. */
       --up-t-1: 120ms;     /* Farbe, Deckkraft, Hover -- reiner Zustand   (133) */
       --up-t-2: 200ms;     /* Groesse und Position                        (129) */
-      --up-t-3: 320ms;     /* Flaechen: Drawer, Modal, Seitenwechsel        (5) */
+      --up-t-3: 260ms;     /* Flaechen: Drawer, Modal, Seitenwechsel       (16) */
       --up-ease:     cubic-bezier(.2, 0, .38, .9);   /* hin und zurueck   (13) */
       --up-ease-auf: cubic-bezier(.22, 1, .36, 1);   /* nur Auftritte      (9) */
 
