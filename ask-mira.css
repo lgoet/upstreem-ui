@@ -2442,6 +2442,71 @@
      zusammen einruecken und untereinander ausgerichtet bleiben -- ein Aussenmass nur am Chat
      haette seine Mitte um 8px gegen die Eingabezeile verschoben. */
   .am-shell { flex: 1 1 auto; min-width: 0; width: auto; padding-right: 16px; }
+  /* ---------- DIE EINGEKLAPPTE LEISTE (21.09.) ----------
+     Angefordert: ist die grosse Leiste zu, steht an ihrer Stelle eine schmale Leiste -- "vom
+     Styling her genau so wie die eingeklappte Hauptleiste". Deren Masse sind uebernommen und
+     nicht geschaetzt (sidebar.css): 64px Breite (--usn-mini), Polster 14/12/16, Zeilen 36px hoch
+     und mittig, Zeichenkasten 22px mit einem 16px-Zeichen darin.
+     Sie ist Teil des Layouts wie die grosse Leiste auch -- flex: 0 0 64px, kein Ueberdecken.
+     Damit faellt der "All Chats"-Knopf im Kopf weg (Regel weiter unten). */
+  .am-mini {
+    display: none; flex: 0 0 64px; width: 64px; box-sizing: border-box;
+    /* UEBER DEM WEGGESCHOBENEN PANEL. Eingeklappt verschwindet die grosse Leiste nicht, sie wird
+       mit einem negativen Aussenabstand aus dem Bild geschoben -- sie traegt damit keine Breite
+       mehr, malt aber weiter ab derselben Stelle. Die schmale Leiste landet genau dort und lag
+       darunter (gemessen: beide ab 936, sichtbar war das Panel). z-index 1 genuegt; was rechts
+       vom Rand uebersteht, schneidet #ask-mira ohnehin weg. */
+    position: relative; z-index: 1;
+    flex-direction: column; align-items: center; gap: 6px;
+    padding: 14px 12px 16px;
+    background: var(--am-bg); border-left: 1px solid var(--am-border-strong);
+  }
+  /* Sie ersetzt die grosse Leiste, steht also genau dann da, wenn die zu ist. */
+  #ask-mira.side-mounted:not(.prev-open) .am-mini { display: flex; }
+  /* Und auf derselben Seite wie sie: links heisst order -1 und der Rahmen auf der anderen Kante. */
+  #ask-mira.is-side-left .am-mini { order: -1; border-left: 0; border-right: 1px solid var(--am-border-strong); }
+  .am-mini-logo {
+    width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
+    color: var(--am-text); flex: 0 0 auto; margin-bottom: 2px;
+  }
+  .am-mini-logo svg { width: 20px; height: 20px; display: block; fill: none; stroke: currentColor;
+    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  /* Der Umschalter: 32px wie in der Hauptleiste, das Zeichen darin 16. Gespiegelt zeigt er nach
+     rechts -- die Leiste steht rechts. Steht sie links, zeigt er in seine urspruengliche
+     Richtung. Dieselbe Rechnung wie am .am-side-toggle der grossen Leiste, nur hier noch einmal,
+     weil dieser Knopf nicht in .am-prev-head haengt. */
+  .am-mini-toggle { flex: 0 0 32px; width: 32px; height: 32px; margin-bottom: 8px; }
+  .am-mini-toggle svg { width: 16px; height: 16px; display: block; transform: scaleX(-1); }
+  #ask-mira.is-side-left .am-mini-toggle svg { transform: scaleX(1); }
+  .am-mini-items { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 100%; }
+  /* Die Zeile der Hauptleiste im Mini-Zustand: 36px hoch, mittig, kein Polster, kein Zwischenraum.
+     .check_reinvention meldet hier .up-seg-btn (Segmented-Control). Fehlalarm ueber die
+     gemeinsamen Eigenschaften "Hoehe, Radius, Hintergrund, Uebergang": ein Segmented-Control ist
+     eine GRUPPE von Schaltern, von denen genau einer an ist. Hier stehen vier voneinander
+     unabhaengige Knoepfe untereinander, und ihr Vorbild ist ausdruecklich .usn-item im
+     Mini-Zustand der Hauptleiste -- dessen Werte sind uebernommen, nicht neu erfunden. Geteilt
+     werden kann es nicht: .usn-item haengt an den --usn-*-Variablen der Seitenleiste, die es hier
+     nicht gibt. */
+  .am-mini-btn {
+    width: 100%; height: 36px; display: flex; align-items: center; justify-content: center;
+    border: 0; border-radius: 12px; background: transparent; padding: 0;
+    color: var(--am-muted); cursor: pointer;
+    transition: background 140ms ease, color 140ms ease;
+  }
+  .am-mini-btn:hover { background: var(--am-soft); color: var(--am-text); }
+  .am-mini-btn[aria-expanded="true"] { background: var(--am-soft); color: var(--am-text); }
+  .am-mini-btn svg { width: 16px; height: 16px; display: block; fill: none; stroke: currentColor;
+    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  /* Das Menue der zwei Listen teilt sich die Form mit dem Chat-Menue (.am-cm) und steht wie
+     dieses am Koerper -- deshalb hier nur, was anders ist. */
+  .am-mini-pop { max-width: min(280px, calc(100vw - 16px)); }
+  .am-mini-opt span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+  .am-mini-leer { padding: 10px 12px; font-size: 13px; color: var(--am-muted); white-space: nowrap; }
+  /* DER "ALL CHATS"-KNOPF FAELLT WEG (21.09. angefordert). Er steht im Markup der Vorlage und
+     wuerde ein bereits eingebautes Element nie verlassen -- deshalb hier ausgeblendet und nicht
+     dort entfernt. Seine Aufgabe hat die schmale Leiste uebernommen. */
+  #ask-mira .am-prev-btn { display: none; }
+
   .am-prev-panel {
     position: relative; flex: 0 0 var(--am-side-w); width: var(--am-side-w); z-index: auto;
     margin: 0 calc(-1 * var(--am-side-w)) 0 0; background: var(--am-bg);

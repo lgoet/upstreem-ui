@@ -6571,9 +6571,18 @@
      ueberdecken. Ihr Zustand ueberlebt den Seitenwechsel, und die Vorgabe ist OFFEN -- deshalb
      "kein Eintrag" ausdruecklich als offen gelesen und nicht als geschlossen. */
   var SIDE_KEY = 'am_side_open';
+  /* AUF DEM TELEFON IST EINGEKLAPPT DIE VORGABE (21.09. angefordert). Nur die VORGABE: wer die
+     Leiste dort einmal aufmacht, findet sie beim naechsten Mal offen vor -- gespeichert wird
+     wie am Schirm. Auf 375px nimmt die offene Leiste zwei Drittel des Bildes; die schmale
+     nimmt 64px und laesst den Chat stehen.
+     Einen Hinweismodus wie die Hauptleiste gibt es hier ausdruecklich nicht. */
+  function schmal(){
+    try { return !!(window.matchMedia && window.matchMedia('(max-width: 720px)').matches); }
+    catch(e){ return false; }
+  }
   function seiteOffen(){
-    try { var v = localStorage.getItem(SIDE_KEY); return v === null ? true : v === '1'; }
-    catch(e){ return true; }   /* privates Fenster wirft schon beim Lesen */
+    try { var v = localStorage.getItem(SIDE_KEY); return v === null ? !schmal() : v === '1'; }
+    catch(e){ return !schmal(); }   /* privates Fenster wirft schon beim Lesen */
   }
   function seiteMerken(offen){ try { localStorage.setItem(SIDE_KEY, offen ? '1' : '0'); } catch(e){} }
 
@@ -6643,6 +6652,141 @@
       logo.className = 'am-brand am-side-logo';
       logo.innerHTML = '<span class="am-wordmark">mira</span>';
       kopf.appendChild(um); kopf.appendChild(logo);
+
+      /* ---- DIE EINGEKLAPPTE LEISTE (21.09. angefordert) --------------------------------------
+         Verlangt: ist die grosse Leiste zu, steht an ihrer Stelle KEIN "All Chats"-Knopf mehr,
+         sondern eine schmale Leiste -- gebaut wie die eingeklappte Hauptleiste. Deren Masse sind
+         uebernommen und nicht geschaetzt: 64px breit (--usn-mini), Polster 14/12/16, Zeilen 36px
+         hoch und mittig, Zeichenkasten 22px mit einem 16px-Zeichen darin (sidebar.css).
+         Oben Miras Markenzeichen (UC.icon('blend') -- dasselbe wie im Kopf, kein zweites Logo),
+         darunter der Umschalter, darunter vier Zeichen: neuer Chat, Einstellungen, Angeheftete,
+         letzte Chats. Die letzten zwei oeffnen ein Menue mit hoechstens zehn Eintraegen.
+         Das Menue haengt am KOERPER, nicht hier: ein position:fixed in einem Vorfahren mit
+         transform richtet sich an diesem aus statt am Fenster -- genau der Fehler, der das
+         Chat-Menue zweimal aus dem Bild geschoben hat (siehe dort). */
+      var kern2 = window.UpstreemCore;
+      function ic(n, sw){ return (kern2 && kern2.icon) ? kern2.icon(n, sw || 2) : ''; }
+      var mini = root.querySelector('.am-mini');
+      if (!mini){
+        mini = document.createElement('aside');
+        mini.className = 'am-mini';
+        mini.setAttribute('aria-label', 'Mira');
+        mini.innerHTML =
+          '<span class="am-mini-logo" aria-hidden="true">' + ic('blend') + '</span>' +
+          '<button class="up-iconbtn am-mini-toggle" type="button" data-mini="open"' +
+            ' aria-label="Expand sidebar" data-tip="Expand sidebar">' + ic('sidebarPanels') + '</button>' +
+          '<div class="am-mini-items">' +
+            '<button class="am-mini-btn" type="button" data-mini="new" aria-label="New chat"' +
+              ' data-tip="New chat" data-tip-place="right">' + ic('plus') + '</button>' +
+            '<button class="am-mini-btn" type="button" data-mini="settings" aria-label="Settings"' +
+              ' data-tip="Settings" data-tip-place="right">' + ic('settings') + '</button>' +
+            '<button class="am-mini-btn" type="button" data-mini="pinned" aria-haspopup="menu"' +
+              ' aria-expanded="false" aria-label="Pinned chats" data-tip="Pinned chats"' +
+              ' data-tip-place="right">' + ic('pin') + '</button>' +
+            '<button class="am-mini-btn" type="button" data-mini="recent" aria-haspopup="menu"' +
+              ' aria-expanded="false" aria-label="Recent chats" data-tip="Recent chats"' +
+              ' data-tip-place="right">' + ic('messageCircle') + '</button>' +
+          '</div>';
+        root.appendChild(mini);
+      }
+
+      /* Das Menue der zwei Listen. EINS fuer beide -- sie unterscheiden sich nur im Inhalt. */
+      var miniPop = document.getElementById('am-mini-pop');
+      if (!miniPop){
+        miniPop = document.createElement('div');
+        miniPop.className = 'am-cm am-mini-pop up-root am-root';
+        miniPop.id = 'am-mini-pop';
+        document.body.appendChild(miniPop);
+      }
+      var miniOffen = '';
+      function miniPopZu(){
+        miniPop.classList.remove('is-open');
+        mini.querySelectorAll('[data-mini]').forEach(function(b){ b.setAttribute('aria-expanded', 'false'); });
+        miniOffen = '';
+      }
+      function miniThema(){
+        try {
+          if (root.getAttribute('data-theme') === 'dark') miniPop.setAttribute('data-theme', 'dark');
+          else miniPop.removeAttribute('data-theme');
+        } catch(e){}
+      }
+      /* HOECHSTENS ZEHN, so angefordert. Angeheftet zuerst nach der Reihenfolge der Liste,
+         die letzten Chats in der Reihenfolge, in der sie ohnehin stehen (die Liste kommt
+         bereits sortiert von Bubble -- hier wird NICHT nachsortiert, sonst gaebe es zwei
+         Wahrheiten darueber, was "zuletzt" heisst). */
+      function miniListe(art){
+        var alle = S.previousChats || [];
+        var aus = [];
+        for (var i = 0; i < alle.length && aus.length < 10; i++){
+          var c = alle[i];
+          if (!c || c.id == null) continue;
+          if (art === 'pinned' && !amTruthy(c.is_pinned)) continue;
+          aus.push(c);
+        }
+        return aus;
+      }
+      function miniPopAuf(art, knopf){
+        if (miniOffen === art){ miniPopZu(); return; }
+        var liste = miniListe(art);
+        var leer = art === 'pinned' ? 'No pinned chats yet' : 'No chats yet';
+        miniPop.innerHTML = liste.length
+          ? liste.map(function(c){
+              return '<button class="am-cm-opt am-mini-opt" type="button" data-mini-chat="' +
+                escAttr(c.id) + '"><span>' + esc(c.title || 'Untitled chat') + '</span></button>';
+            }).join('')
+          : '<div class="am-mini-leer">' + esc(leer) + '</div>';
+        miniThema();
+        miniPop.style.visibility = 'hidden';
+        miniPop.classList.add('is-open');
+        /* Die Seite richtet sich nach der Leiste: steht sie rechts, geht das Menue nach LINKS
+           auf, und umgekehrt. Geklemmt wird am Fenster, nicht an der Komponente. */
+        var links = root.classList.contains('is-side-left');
+        var r = knopf.getBoundingClientRect();
+        /* WAAGERECHT an der LEISTE ausgerichtet, nicht am Knopf. Der Knopf sitzt 12px innerhalb
+           der Leiste -- gegen ihn gerechnet ragte das Menue genau um diese 12 minus die 8
+           Abstand in die Leiste hinein (gemessen: Menue bis 1040, Leiste ab 1036). Senkrecht
+           bleibt der Knopf der Bezug, das Menue soll ja auf seiner Hoehe aufgehen. */
+        var lr = mini.getBoundingClientRect();
+        var pw = miniPop.offsetWidth, ph = miniPop.offsetHeight;
+        var fb = window.innerWidth || document.documentElement.clientWidth || 0;
+        var x = links ? (lr.right + 8) : (lr.left - pw - 8);
+        if (x < 8) x = 8;
+        if (x + pw > fb - 8) x = Math.max(8, fb - pw - 8);
+        var y = r.top;
+        if (y + ph > window.innerHeight - 8) y = Math.max(8, window.innerHeight - ph - 8);
+        miniPop.style.left = Math.round(x) + 'px';
+        miniPop.style.top = Math.round(y) + 'px';
+        miniPop.style.visibility = '';
+        knopf.setAttribute('aria-expanded', 'true');
+        miniOffen = art;
+      }
+      mini.addEventListener('click', function(e){
+        var b = e.target.closest('[data-mini]'); if (!b) return;
+        var act = b.getAttribute('data-mini');
+        if (act === 'pinned' || act === 'recent'){ e.stopPropagation(); miniPopAuf(act, b); return; }
+        miniPopZu();
+        /* DIE VORHANDENEN KNOEPFE DRUECKEN, nicht ihre Funktionen rufen. Zwei Gruende: die
+           Zuhoerer an #am-new-chat und #am-settings-btn tun mehr als nur oeffnen (Startschirm,
+           gemerkter Zustand), und setOeffnen liegt ohnehin in einem anderen Scope -- ein
+           direkter Aufruf waere ein ReferenceError gewesen, den node --check nicht findet.
+           So gibt es weiterhin genau EINEN Weg in jeden der beiden Zustaende. */
+        if (act === 'open') openPrev();
+        else if (act === 'new'){ if (elNewChat) elNewChat.click(); }
+        else if (act === 'settings'){ if (elHlBtn) elHlBtn.click(); }
+      });
+      miniPop.addEventListener('click', function(e){
+        var o = e.target.closest('[data-mini-chat]'); if (!o) return;
+        var id = o.getAttribute('data-mini-chat');
+        miniPopZu();
+        chatWaehlen(id);
+      });
+      document.addEventListener('click', function(e){
+        if (!miniOffen) return;
+        if (e.target.closest('#am-mini-pop') || e.target.closest('.am-mini [data-mini]')) return;
+        miniPopZu();
+      });
+      document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && miniOffen) miniPopZu(); });
+      window.addEventListener('scroll', function(){ if (miniOffen) miniPopZu(); }, true);
     }
 
     var leiste = elPrevPanel.querySelector('.am-prev-toolbar');

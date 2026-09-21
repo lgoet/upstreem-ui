@@ -941,6 +941,14 @@
   "am-mh1",
   "am-mh2",
   "am-mic",
+  "am-mini",
+  "am-mini-btn",
+  "am-mini-items",
+  "am-mini-leer",
+  "am-mini-logo",
+  "am-mini-opt",
+  "am-mini-pop",
+  "am-mini-toggle",
   "am-model",
   "am-model-btn",
   "am-model-check",
@@ -3102,7 +3110,7 @@
   "globals": 187,
   "payloadkeys": 101,
   "dataattrs": 253,
-  "klassen": 2216,
+  "klassen": 2224,
   "keyframes": 66
  }
 }
