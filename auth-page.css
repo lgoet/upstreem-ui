@@ -174,24 +174,29 @@
    Der Platzhalter bleibt gemischt -- er ist ein Satz, kein Code. */
 .uau-code { text-transform: uppercase; letter-spacing: 0.04em; }
 .uau-code::placeholder { text-transform: none; letter-spacing: normal; }
-/* Die Trennlinie ueber dem Codefeld (21.09. angefordert). Abstaende stehen NICHT hier: der
-   Stapel hat gap: 12px, und weil die Linie ein eigenes Kind ist, liegen dieselben 12px von
-   selbst darueber und darunter -- "gap, Separator, gleiches gap" ohne eine zweite Zahl, die
-   beim naechsten Aendern des Stapels zurueckbleibt.
-   Ein- und Ausklappen wie bei .uau-collapse: 0fr -> 1fr, und im geschlossenen Zustand frisst
-   margin-top: -12px den gap ueber ihr. Sonst bliebe im Login genau ein Loch von 12px an der
-   Stelle, an der nichts mehr steht. Die Linie selbst ist 1px in --vc-border -- dasselbe wie die
-   beiden Haelften der "or"-Zeile weiter unten, damit es in einer Karte nicht zwei verschiedene
-   waagrechte Striche gibt. */
+/* Die Trennlinie ueber dem Codefeld (21.09. angefordert). Ihre Abstaende sind DOPPELT so gross
+   wie die im Feldstapel -- 24px statt 12px, am selben Tag nachgezogen: sie trennt zwei
+   Gruppen, und eine Trennung, die so eng steht wie die Abstaende innerhalb der Gruppen, trennt
+   nichts.
+   Gerechnet wird gegen den Stapel und nicht gegen eine feste Zahl: er hat gap: 12px, die Linie
+   ist ein eigenes Kind, also legen 12px eigener Rand je Seite genau 24 daraus. Aendert sich der
+   gap, aendert sich beides im Gleichschritt.
+   Ein- und Ausklappen wie bei .uau-collapse: 0fr -> 1fr. Im geschlossenen Zustand frisst
+   margin-top: -12px den gap ueber ihr, und der untere Rand faellt auf 0 -- sonst bliebe im
+   Login ein Loch an der Stelle, an der nichts mehr steht. Die Linie selbst ist 1px in
+   --vc-border, dasselbe wie die beiden Haelften der "or"-Zeile weiter unten: in einer Karte
+   soll es nicht zwei verschiedene waagrechte Striche geben. */
 .uau-sep {
-  display: grid; grid-template-rows: 0fr; opacity: 0; margin-top: -12px;
+  display: grid; grid-template-rows: 0fr; opacity: 0;
+  margin-top: -12px; margin-bottom: 0;
   transition: grid-template-rows var(--uau-t) var(--uau-ease),
               opacity var(--uau-t) var(--uau-ease),
-              margin-top var(--uau-t) var(--uau-ease);
+              margin-top var(--uau-t) var(--uau-ease),
+              margin-bottom var(--uau-t) var(--uau-ease);
 }
 .uau-sep > span { overflow: hidden; min-height: 0; display: block; }
 .uau-sep > span > i { display: block; height: 1px; background: var(--vc-border); }
-.uau-sep.is-on { grid-template-rows: 1fr; opacity: 1; margin-top: 0; }
+.uau-sep.is-on { grid-template-rows: 1fr; opacity: 1; margin-top: 12px; margin-bottom: 12px; }
 /* Der Fokusring kommt aus core (.up-field). Hier steht nur, was core nicht kennt. */
 .uau-input:disabled { opacity: .55; cursor: default; }
 /* Ein Feld mit Fehler faerbt seinen Rahmen -- aber NICHT waehrend es den Fokus hat: sonst
@@ -518,12 +523,17 @@
   mask-image: linear-gradient(to bottom, transparent 16%, rgba(0,0,0,.18) 32%,
               rgba(0,0,0,.62) 50%, #000 66%);
 }
-/* Im Dunkeln liegt eine fast deckende Decke ueber dem Bild (0.72 bis 0.88), und weisse Striche
-   mit .55 darauf sind ein Gitter statt einer Textur. Halb so kraeftig -- dasselbe Muster, nur so
-   laut wie der Grund es zulaesst. */
+/* Im Dunkeln DUNKLE Striche statt heller (21.09. nachgezogen: "die line pattern rechts dunkler
+   machen"). Auf der Landingpage liegt das Muster ueber einem hellen blauen Bild, dort MUSS es
+   weiss sein. Hier liegt im Dunkeln eine fast deckende Decke darueber (0.72 bis 0.88), und
+   weisse Striche darauf leuchten -- sie lesen sich als Gitter VOR der Flaeche statt als Struktur
+   IN ihr. Schwarz mit .30 kehrt das um: dieselbe Zeichnung, dieselben 8px, nur eingegraben
+   statt aufgelegt.
+   Die Rechnung ist nicht dieselbe wie im Hellen: auf einem dunklen Grund braucht eine dunkle
+   Linie mehr Deckkraft als eine helle, um ueberhaupt gesehen zu werden -- .30 statt .26. */
 .uau-root[data-theme="dark"] .uau-panel::after {
   background: repeating-linear-gradient(to right,
-              rgba(255, 255, 255, .26) 0, rgba(255, 255, 255, .26) 1px,
+              rgba(0, 0, 0, .30) 0, rgba(0, 0, 0, .30) 1px,
               transparent 1px, transparent 8px);
 }
 .uau-root[data-theme="dark"] .uau-panel-h { color: #e8ecf6; }
