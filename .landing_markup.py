@@ -147,10 +147,16 @@ for schluessel, pfad, kennung in TEILE:
     m = m.replace('data-sticky-top=', 'data-sticky="no" data-sticky-top=')
     # Mira tippt im Schaustueck langsamer: dort schaut man dem Tippen zu, in der App will man die
     # Antwort haben. Der Faktor liegt am Root, ask-mira.js liest ihn beim Start des Tippens.
-    # 1.15 und nicht mehr 1.6: bei 1.6 war der Mira-Schritt der laengste der vier Schritte und
-    # blieb am Ende sichtbar stehen. Etwas langsamer als die App bleibt es -- ganz auf 1.0 tippt
-    # die Antwort schneller, als man mitlesen kann.
+    # 1.6 und nicht 1.15: bei 1.15 war die Antwort fertig getippt, bevor man den Anfang gelesen
+    # hatte. Der Mira-Schritt haelt dafuer laenger an (MIRA_WARTEN), damit er trotz des
+    # langsameren Tippens nicht als letzter Schritt stehen bleibt.
     m = m.replace('class="up-root am-root"', 'class="up-root am-root" data-typespeed="1.6"')
+    # Der Seitenkopf des Dashboards bleibt der NORMALE. In der App steht in der Vorlage
+    # data-mode-default="power" -- der Power-Kopf laesst die Beschreibung weg und verkleinert die
+    # Ueberschrift. Auf der Landingpage ist das falsch: dort steht der Kopf stellvertretend fuer
+    # alle sieben Seitenkoepfe, und die anderen sechs kennen kein Power. (21.09. gemeldet: "Der
+    # Pageheader ist falsch. Den solltest du auch gar nicht aendern.")
+    m = m.replace('data-mode-default="power"', 'data-mode-default="standard"')
     # Die Schublade der Opportunities bleibt IM Fenster. Ohne das wandert sie in die oberste Ebene
     # des Browsers und liegt ueber der ganzen Seite -- siehe opportunities.js, data-portal.
     m = m.replace('class="up-root uo-root"', 'class="up-root uo-root" data-portal="inline"')

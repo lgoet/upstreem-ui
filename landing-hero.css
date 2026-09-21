@@ -403,14 +403,41 @@
 .ulh-stage { opacity: 0; }
 .ulh-root.is-shown .ulh-stage { opacity: 1; }
 .ulh-root.is-entering .ulh-frame  { animation: ulhRise 690ms var(--ulh-ease) backwards; }
-.ulh-root.is-entering .dph-root   { animation: ulhRise 690ms var(--ulh-ease) 240ms backwards; }
-.ulh-root.is-entering .vot-root   { animation: ulhRise 690ms var(--ulh-ease) 480ms backwards; }
-.ulh-root.is-entering .tcd-root   { animation: ulhRise 690ms var(--ulh-ease) 720ms backwards; }
+.ulh-root.is-entering .dph-root   { animation: ulhRise 620ms var(--ulh-ease) 240ms backwards; }
+/* NICHT MEHR ZWEI GROSSE RECHTECKE (21.09. gemeldet: "Bitte eine richtige Appear animation im
+   Dashboard, das sieht aktuell sehr mau aus"). Vorher stiegen .vot-root und .tcd-root als je ein
+   Block herauf -- zwei Bewegungen fuer vier Kaesten, und in einer Sektion, in der das Brett der
+   Chancen vier Spalten einzeln aufbaut und die Prompts-Liste ihre Zeilen staffelt, war das
+   Dashboard der duennste Auftritt von allen.
+   Jetzt baut sich jeder der vier Kaesten selbst auf: erst seine Ueberschriftzeile, 70ms spaeter
+   sein Panel -- die Geste, mit der eine Karte entsteht. Die vier laufen von links oben nach
+   rechts unten durch.
+   Die Kaesten und ihre Koepfe stehen FEST im Markup (.landing_markup.py zieht sie aus den
+   Bubble-Vorlagen); nur ihr Inhalt wird spaeter gezeichnet. Deshalb laufen die Animationen hier
+   und nicht an den Zeilen der Zitatliste: eine Zeile, die waehrend ihrer eigenen Verzoegerung
+   neu gezeichnet wird, faengt die Verzoegerung von vorn an und springt, wenn is-entering
+   inzwischen abgefallen ist.
+   Das Ende liegt bei 710 + 620 = 1330ms und damit weiter unter ERSCHEINEN_MS (1410) --
+   an der Uhr in landing-hero.js aendert sich nichts. */
+.ulh-root.is-entering .vot-unit-left  .vot-head { animation: ulhRise 560ms var(--ulh-ease) 400ms backwards; }
+.ulh-root.is-entering .vot-unit-left  .vot-box  { animation: ulhRise 620ms var(--ulh-ease) 470ms backwards; }
+.ulh-root.is-entering .vot-unit-right .vot-head { animation: ulhRise 560ms var(--ulh-ease) 460ms backwards; }
+.ulh-root.is-entering .vot-unit-right .vot-box  { animation: ulhRise 620ms var(--ulh-ease) 530ms backwards; }
+.ulh-root.is-entering .tcd-unit-left  .tcd-head { animation: ulhRise 560ms var(--ulh-ease) 580ms backwards; }
+.ulh-root.is-entering .tcd-unit-left  .tcd-box  { animation: ulhRise 620ms var(--ulh-ease) 650ms backwards; }
+.ulh-root.is-entering .tcd-unit-right .tcd-head { animation: ulhRise 560ms var(--ulh-ease) 640ms backwards; }
+.ulh-root.is-entering .tcd-unit-right .tcd-box  { animation: ulhRise 620ms var(--ulh-ease) 710ms backwards; }
 @media (prefers-reduced-motion: reduce) {
   .ulh-root.is-entering .ulh-frame,
   .ulh-root.is-entering .dph-root,
-  .ulh-root.is-entering .vot-root,
-  .ulh-root.is-entering .tcd-root,
+  .ulh-root.is-entering .vot-unit-left  .vot-head,
+  .ulh-root.is-entering .vot-unit-left  .vot-box,
+  .ulh-root.is-entering .vot-unit-right .vot-head,
+  .ulh-root.is-entering .vot-unit-right .vot-box,
+  .ulh-root.is-entering .tcd-unit-left  .tcd-head,
+  .ulh-root.is-entering .tcd-unit-left  .tcd-box,
+  .ulh-root.is-entering .tcd-unit-right .tcd-head,
+  .ulh-root.is-entering .tcd-unit-right .tcd-box,
   .ulh-root .ulh-seite.is-kommt { animation: none; }
 }
 
@@ -695,8 +722,9 @@
      Verhaeltnis: 50px sollen 50px bleiben, egal wie breit das Fenster ist -- ein geaendertes
      Verhaeltnis waere bei 1600px Breite ein anderer Abzug als bei 1000.
      Was unten wegfaellt, faellt weg: das Dashboard ist ohnehin angeschnitten, und bei Mira ist
-     darunter Platz. */
-  padding-bottom: calc(var(--ulh-verhaeltnis) * 100% - 50px);
+     darunter Platz.
+     21.09.: von 50 auf 25 -- bei 50 waren die unteren Kanten einiger Fenster angeschnitten. */
+  padding-bottom: calc(var(--ulh-verhaeltnis) * 100% - 25px);
   overflow: hidden;
   /* Kleiner als der Rahmen: 12 gegen 16, gemessen an der Vorlage. Der Unterschied ist genau die
      Blende -- ein Schirm mit demselben Radius wie sein Rahmen sieht aufgeklebt aus. */
@@ -972,18 +1000,35 @@
 }
 
 /* ---------- Der Auftritt des Dashboards, ab der zweiten Runde ----------
-   Beim ersten Mal steigt das Dashboard mit dem Fenster herauf (is-entering am Root, vier Stufen).
+   Beim ersten Mal steigt das Dashboard mit dem Fenster herauf (is-entering am Root, siehe oben).
    Im Kreislauf danach kommt es wie jede andere Seite zurueck -- und dann soll es sich genauso
-   aufbauen wie die drei Seiten nach ihm: Kopf, Chart, Zitatteil, nacheinander. Die Seite selbst
-   steigt dabei NICHT, sonst laegen zwei Bewegungen uebereinander. */
+   aufbauen wie die drei Seiten nach ihm: Seitenkopf, dann die vier Kaesten einzeln, jeder mit
+   seiner Ueberschriftzeile und seinem Panel. Die Seite selbst steigt dabei NICHT, sonst laegen
+   zwei Bewegungen uebereinander. */
 .ulh-root .ulh-main.is-kommt { animation: none; }
-.ulh-root .ulh-main.is-kommt .dph-root { animation: ulhRise 520ms var(--ulh-ease) backwards; }
-.ulh-root .ulh-main.is-kommt .vot-root { animation: ulhRise 520ms var(--ulh-ease) 140ms backwards; }
-.ulh-root .ulh-main.is-kommt .tcd-root { animation: ulhRise 520ms var(--ulh-ease) 300ms backwards; }
+.ulh-root .ulh-main.is-kommt .dph-root { animation: ulhRise 460ms var(--ulh-ease) backwards; }
+/* Derselbe Aufbau wie beim ersten Auftritt, nur enger getaktet: im Kreislauf hat die Seite
+   NEUSTART_KOMMT (1000ms), bis is-kommt wieder abfaellt. Das Ende liegt hier bei
+   450 + 460 = 910ms -- eine Animation, die ueber das Abfallen der Klasse hinausreicht, wuerde
+   mitten in der Bewegung abgeschnitten und saehe aus wie ein Ruckler. */
+.ulh-root .ulh-main.is-kommt .vot-unit-left  .vot-head { animation: ulhRise 420ms var(--ulh-ease) 140ms backwards; }
+.ulh-root .ulh-main.is-kommt .vot-unit-left  .vot-box  { animation: ulhRise 460ms var(--ulh-ease) 210ms backwards; }
+.ulh-root .ulh-main.is-kommt .vot-unit-right .vot-head { animation: ulhRise 420ms var(--ulh-ease) 200ms backwards; }
+.ulh-root .ulh-main.is-kommt .vot-unit-right .vot-box  { animation: ulhRise 460ms var(--ulh-ease) 270ms backwards; }
+.ulh-root .ulh-main.is-kommt .tcd-unit-left  .tcd-head { animation: ulhRise 420ms var(--ulh-ease) 320ms backwards; }
+.ulh-root .ulh-main.is-kommt .tcd-unit-left  .tcd-box  { animation: ulhRise 460ms var(--ulh-ease) 390ms backwards; }
+.ulh-root .ulh-main.is-kommt .tcd-unit-right .tcd-head { animation: ulhRise 420ms var(--ulh-ease) 380ms backwards; }
+.ulh-root .ulh-main.is-kommt .tcd-unit-right .tcd-box  { animation: ulhRise 460ms var(--ulh-ease) 450ms backwards; }
 @media (prefers-reduced-motion: reduce) {
   .ulh-root .ulh-main.is-kommt .dph-root,
-  .ulh-root .ulh-main.is-kommt .vot-root,
-  .ulh-root .ulh-main.is-kommt .tcd-root { animation: none; }
+  .ulh-root .ulh-main.is-kommt .vot-unit-left  .vot-head,
+  .ulh-root .ulh-main.is-kommt .vot-unit-left  .vot-box,
+  .ulh-root .ulh-main.is-kommt .vot-unit-right .vot-head,
+  .ulh-root .ulh-main.is-kommt .vot-unit-right .vot-box,
+  .ulh-root .ulh-main.is-kommt .tcd-unit-left  .tcd-head,
+  .ulh-root .ulh-main.is-kommt .tcd-unit-left  .tcd-box,
+  .ulh-root .ulh-main.is-kommt .tcd-unit-right .tcd-head,
+  .ulh-root .ulh-main.is-kommt .tcd-unit-right .tcd-box { animation: none; }
 }
 
 /* ---------- Der Auftritt des Opportunities-Bretts ----------
@@ -1395,7 +1440,11 @@
    sitzen und nicht davon abhaengen, wie hoch die Komponente heute rechnet. */
 /* Die Zeile mit Logo und Domain: das Logo ist .up-logo-box aus core, also derselbe Kasten wie in
    jeder Tabelle der App. */
-.ulh-quell-dom { display: flex; align-items: center; gap: 12px; margin-bottom: var(--ulh-quell-kopfluft); }
+/* 8px Einzug links (21.09., dritter Anlauf -- die zwei davor sassen an den falschen Elementen:
+   erst an der Kopfzeile der Chartkarte, dann an den Zeilen der URL-Liste. Gemeint war DIESE
+   Zeile, die mit dem Zeichen der Domain und ihrem Namen ueber dem Fenster steht. */
+.ulh-quell-dom { display: flex; align-items: center; gap: 12px; padding-left: 8px;
+  margin-bottom: var(--ulh-quell-kopfluft); }
 .ulh-quell-dom .up-logo-box { width: 34px; height: 34px; border-radius: 10px; }
 .ulh-quell-dom .up-logo-box img { width: 32px; height: 32px; border-radius: 9px; }
 .ulh-quell-domtxt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
@@ -1425,17 +1474,11 @@
    ungleiche Haelften lesen sich als Versehen. */
 .ulh-quell-app .udd-row2 { grid-column: 1 / -1; gap: 8px; grid-template-columns: 1fr 1fr; }
 .ulh-quell-app .udd-card { padding: 14px; }
-/* Die Kopfzeile der Domainseite rueckt 8px von der linken Kante ein (21.09. angefordert). Nur
-   sie: darunter stehen Karten mit eigenem Polster, und die sollen bleiben, wo sie sind. Der
-   Abstand zwischen Favicon und Ueberschrift ist davon unberuehrt -- der kommt aus dem gap von
-   .udd-title und ist eine andere Sache. */
-.ulh-quell-app .udd-head { padding-left: 8px; }
-/* UND die Zeilen der URL-Liste, wo das Forbes-Zeichen wirklich steht (21.09. nachgefasst).
-   Beim ersten Versuch ging die Einrueckung an .udd-head -- das ist die Kopfzeile der Chartkarte
-   ("Citation Share / URL Share"), und dort steht gar kein Favicon. Gemeint war die Liste
-   darunter: jede Zeile beginnt mit dem Zeichen der Domain, und das stand 10px von der Kante.
-   Jetzt 18. Gemessen am Zeichen, nicht an der Zeile -- die Zeile hat kein eigenes Polster. */
-.ulh-quell-app .up-bar-row { padding-left: 8px; }
+/* HIER STANDEN ZWEI FEHLVERSUCHE fuer das 8px-Gap neben dem Forbes-Zeichen: erst an .udd-head
+   (der Kopfzeile der Chartkarte, wo gar kein Zeichen steht), dann an .up-bar-row (den Zeilen der
+   URL-Liste). Beide sind wieder raus -- sie haben Inhalt verschoben, den niemand verschoben
+   haben wollte. Gemeint war die Zeile UEBER dem Fenster; die Einrueckung steht jetzt dort, an
+   .ulh-quell-dom. */
 /* Kurve und Trichter teilen sich eine Zeile, und das Raster macht beide Karten gleich hoch. Der
    Trichter ist von sich aus flacher -- gemessen blieben unter ihm 57px Luft. Statt einer gemessenen
    Zahl waechst hier die Zeichnung selbst in den Rest der Karte: sie hat preserveAspectRatio="none"
