@@ -1395,8 +1395,28 @@
   /* ===================== COMPOSER ===================== */
   .am-composer-area {
     flex: 0 0 auto; position: relative; z-index: 2;
-    padding: 10px clamp(14px, 3vw, 28px) clamp(12px, 2vw, 16px);
-    background: linear-gradient(to top, var(--am-bg) 70%, transparent);
+    /* unten 32px: der Platz des entfernten Hinweises, siehe .am-hint weiter unten */
+    padding: 10px clamp(14px, 3vw, 28px) 32px;
+    /* DECKEND, nicht mehr verlaufend. Hier stand linear-gradient(to top, var(--am-bg) 70%,
+       transparent) -- gedacht als Ausblendung des Textes darueber, aber wirkungslos: die 70%
+       decken fast die ganze Flaeche, und die Rampe wurde in die 10px Kopfpolsterung gequetscht.
+       Zu sehen war eine harte Kante. Die Ausblendung macht jetzt ::before, ueber der Flaeche
+       statt in ihr. */
+    background: var(--am-bg);
+  }
+  /* 16px Ausblendung UEBER dem Fuss (21.09. angefordert): von der Grundfarbe unten nach
+     durchsichtig oben, damit der Chattext ueber dem Eingabefeld ausfadet statt abzureissen.
+     Als ::before und nicht als Polsterung: so kostet die Ausblendung KEINEN Platz im Layout,
+     sie legt sich nur ueber die letzten 16px des Chats. Der Fuss traegt schon position:
+     relative und z-index: 2, das Stueck liegt also ueber den Nachrichten.
+     pointer-events: none ist Pflicht -- sonst faengt ein unsichtbarer Streifen die Klicks auf
+     die Nachrichten darunter ab.
+     var(--am-bg) und kein festes Weiss: im dunklen Thema muss dieselbe Rampe in #101114
+     auslaufen, nicht in Weiss. */
+  .am-composer-area::before {
+    content: ""; position: absolute; left: 0; right: 0; top: -16px; height: 16px;
+    background: linear-gradient(to top, var(--am-bg), transparent);
+    pointer-events: none;
   }
   /* ===== right-edge message navigation (scroll spy) ===== */
   .am-msgnav { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); z-index: 30; display: none; transition: opacity 120ms ease; }
@@ -1571,7 +1591,12 @@
      Hintergrundbild liegt, deckt er es auf voller Breite ab und man sieht ein Band. Im Chat
      BLEIBT er: dort ist er kein Schmuck, sondern der Ausblender fuer Nachrichten, die hinter das
      Eingabefeld scrollen. */
+  /* Ohne Nachrichten traegt der Fuss keinen Grund -- es gibt nichts, worueber er liegen
+     muesste. Die Ausblendung darueber MUSS mit weg, sonst schwebt ein 16px hoher heller
+     Streifen ueber dem leeren Begruessungsschirm. Beim Umbau am 21.09. zuerst uebersehen und
+     erst im Prueftand aufgefallen, weil der genau in diesem Zustand stand. */
   #ask-mira:not(.has-messages) .am-composer-area { background: none; }
+  #ask-mira:not(.has-messages) .am-composer-area::before { display: none; }
   /* Der Ruhe-Schatten des Composers bleibt hinter dem Fokusring stehen, sonst springt die
      Eingabezeile beim Hineinklicken flach. Dark Mode braucht keine eigene Regel mehr: die
      --up-focus-Tokens kippen ueber .up-root[data-theme] von selbst. */
@@ -2430,7 +2455,16 @@
     .am-rec-wave { flex: 1 1 auto; max-width: 256px; }
   }
 
-  .am-hint { max-width: 920px; margin: 10px auto 0; width: 100%; font-size: 11px; color: var(--am-muted-2); text-align: center; }
+  /* DER HINWEIS IST WEG (21.09. angefordert): "Mira answers based on your selected workspace
+     data." stand unter dem Eingabefeld. display: none UND nicht nur aus der Vorlage geloescht --
+     bubble/ask_mira_bubble.html ist eine Vorlage fuer NEUE Einbauten und erreicht das laengst
+     eingebaute Element nicht. Die Regel hier kommt ueber den Pin und wirkt sofort; im Markup ist
+     er zusaetzlich raus, damit eine Neuinstallation ihn gar nicht erst mitbringt.
+     SEIN PLATZ BLEIBT: 32px unter dem Eingabefeld, ausdruecklich so gewollt -- ohne das
+     ruecken Feld und Fusskante aneinander, und der Bereich wirkt unten abgeschnitten.
+     (Gelesen als "der Raum, wo der Text stand, bleibt 32px". Wenn stattdessen die Polsterung
+     OBEN am Fuss gemeint war, ist es eine Zeile weiter unten.) */
+  .am-hint { display: none; }
 
   /* ===================== PREVIOUS CHATS -- die Seitenleiste =====================
      Eine ECHTE Leiste: sie draengt den Inhalt zur Seite, statt ihn zu ueberdecken. Deshalb ist
@@ -3542,6 +3576,8 @@
 /* Kein Polster und kein Verlauf: das Dashboard gibt die Spalte vor (dieselben 920px wie Mira),
    und der Verlauf ist der Ausblender fuer Nachrichten, die es hier nicht gibt. */
 #ask-mira.up-root.is-launcher .am-composer-area { padding: 0; margin: 0; background: none; overflow: visible; }
+/* Derselbe Grund wie oben: kein Fussgrund, also auch keine Ausblendung darueber. */
+#ask-mira.up-root.is-launcher .am-composer-area::before { display: none; }
 #ask-mira.up-root.is-launcher .am-composer-shell,
 #ask-mira.up-root.is-launcher .am-composer { max-width: none; }
 /* 16px mehr Hoehe (11.09. angefordert), nur im Launcher: 8 oben und 8 unten auf die 16px rundum
