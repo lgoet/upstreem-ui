@@ -28,9 +28,13 @@ GRUNDLINIE = os.path.join(HIER, ".skala_grundlinie.json")
 # Die Skalen. Sie stehen hier ein zweites Mal -- in core.css sind es CSS-Variablen, und ein
 # Python-Skript kann die nicht lesen. Wer dort etwas aendert, aendert es hier mit; die Namen
 # daneben sind die der Token, damit man beim Suchen beides findet.
+# Die Basis der Radien. Die konzentrischen Kinder (Basis minus 1, siehe unten) kommen
+# rechnerisch dazu und stehen deshalb nicht in der Liste.
+RADIUS_BASIS = {4, 6, 8, 10, 12, 16}
+
 SKALA = {
-    "font-size":     ({"11px", "12px", "13px", "14px", "16px", "22px"},
-                      "--up-fs-xs/s/m/l/xl/kpi"),
+    "font-size":     ({"11px", "12px", "13px", "14px", "16px", "22px", "28px"},
+                      "--up-fs-xs/s/m/l/xl/2xl/3xl"),
     # Schnitt ist ein BEREICH und keine Liste: Geist ist eine variable Schrift, also rendert
     # auch 450 oder 550 wirklich, und an 37 Stellen ist genau das gewollt -- eine halbe Stufe
     # zwischen zwei Nachbarn. Falsch ist nur, was ausserhalb des geladenen Bereichs liegt: das
@@ -38,8 +42,14 @@ SKALA = {
     # 600 aussahen, obwohl 650, 700 oder 750 dastand.
     "font-weight":   (None,
                       "400..700 -- das ist der Bereich, den core.css laedt"),
-    "border-radius": ({"4px", "6px", "8px", "12px", "16px", "999px", "50%"},
-                      "--up-r-xs/s/m/l/xl/voll -- Menues behalten --up-dd-radius (14px)"),
+    # Radius: die Basis PLUS ihre konzentrischen Kinder. Ein Element mit 1px Rahmen in einer
+    # 8er-Ecke braucht innen 7 -- sonst laeuft der Spalt zwischen beiden Rundungen ungleich
+    # breit. Die erste Fassung dieses Skripts kannte die Regel nicht und meldete 185 voellig
+    # richtige Werte als Fehler; wer die "repariert" haette, haette die App verschlechtert.
+    # (Die Regel steht im STYLEGUIDE Zeile 424 und ist in der Fachliteratur die Standardformel:
+    # innen = aussen minus Abstand.)
+    "border-radius": (set(), "--up-r-xs/s/m/l/xl/2xl/voll, deren konzentrische Kinder"
+                             " (Basis minus 1) und --up-dd-radius (14px) fuer Menues"),
     "dauer":         ({"0ms", "120ms", "200ms", "260ms"},
                       "--up-t-1/2/3"),
 }
@@ -79,15 +89,38 @@ def ohne_kommentare(t):
 
 def einzelwerte(roh):
     """Eine Angabe wie '0 8px 0 12px' oder '8px 8px 0 0' in ihre Teile zerlegen.
-    Mehrteilige Radien und Polster sind der Normalfall, nicht die Ausnahme."""
+    Mehrteilige Radien und Polster sind der Normalfall, nicht die Ausnahme.
+
+    clamp() UND calc() GEHEN ABSICHTLICH DURCH, das ist keine Luecke. In clamp() stehen neun
+    Ueberschriften ganzseitiger Flaechen (auth-page, onboarding, ask-mira, prompt-research), die
+    mit dem Fenster mitwachsen sollen -- dieselbe Ueberlegung wie bei der Landingpage: eine ganze
+    Seite ist kein Dashboard und vertraegt eine groessere Spreizung. calc() rechnet meist aus
+    einem Token (der konzentrische Radius zum Beispiel) und ist damit schon auf der Skala."""
     roh = roh.strip().rstrip("!important").strip()
     if FREI.match(roh):
         return []
-    # var() und calc() koennen Leerzeichen enthalten -- die nicht zerschneiden
-    if "var(" in roh or "calc(" in roh:
+    # JEDER Funktionsaufruf bleibt am Stueck. Erste Fassung pruefte nur auf var( und calc( --
+    # ein clamp(20px, 2.4vw, 26px) wurde dann an den Kommas zerschnitten und als DREI Verstoesse
+    # gemeldet ("clamp(20px,", "2.4vw,", "26px)"). Gefunden vom Gegentest, nicht im Betrieb.
+    if "(" in roh:
         return []
     teile = [t for t in re.split(r"[\s/]+", roh) if t]
     return [t for t in teile if not FREI.match(t)]
+
+
+def radius_ok(w):
+    """Auf der Basis, ein konzentrisches Kind davon (Basis minus 1), voll rund, oder der
+    Menuetoken. Alles andere ist eine Abweichung."""
+    if w.lower() in ("999px", "9999px", "50%"):
+        return True
+    m = re.match(r"^(\d+(?:\.\d+)?)px$", w, re.I)
+    if not m:
+        return False
+    v = float(m.group(1))
+    if v != int(v):            # Nachkommastelle: immer falsch, daher kommen 3.23 und 7.04
+        return False
+    v = int(v)
+    return v in RADIUS_BASIS or (v + 1) in RADIUS_BASIS or v == 14   # 14 = --up-dd-radius
 
 
 def pruefe(pfad):
@@ -96,12 +129,15 @@ def pruefe(pfad):
     text = ohne_kommentare(open(pfad, encoding="utf-8").read())
     raus = collections.defaultdict(collections.Counter)
 
-    for eig in ("font-size", "border-radius"):
-        erlaubt = SKALA[eig][0]
-        for m in re.finditer(r"(?<![-\w])" + eig + r"\s*:\s*([^;{}]+)", text):
-            for w in einzelwerte(m.group(1)):
-                if w.lower() not in erlaubt:
-                    raus[eig][w] += 1
+    for m in re.finditer(r"(?<![-\w])font-size\s*:\s*([^;{}]+)", text):
+        for w in einzelwerte(m.group(1)):
+            if w.lower() not in SKALA["font-size"][0]:
+                raus["font-size"][w] += 1
+
+    for m in re.finditer(r"(?<![-\w])border-radius\s*:\s*([^;{}]+)", text):
+        for w in einzelwerte(m.group(1)):
+            if not radius_ok(w):
+                raus["border-radius"][w] += 1
 
     # Schnitt: Bereichspruefung statt Liste -- siehe die Begruendung oben an SKALA.
     for m in re.finditer(r"(?<![-\w])font-weight\s*:\s*([^;{}]+)", text):

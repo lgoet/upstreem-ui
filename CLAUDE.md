@@ -88,17 +88,36 @@ es für Schriftgröße, Radius, Höhe, Dauer und Tiefe keine gemeinsame Quelle �
 Entscheidungen wurde in jeder der 43 Dateien neu getroffen. Gemessen kamen dabei **34
 Schriftgrößen** und **57 Radien** heraus, wo sechs und fünf gemeint waren.
 
-| | Skala | Token |
-|---|---|---|
-| Schriftgröße | 11 · 12 · 13 · 14 · 16 · 22 | `--up-fs-xs/s/m/l/xl/kpi` |
-| Schnitt | **Bereich** 400–700 | `--up-fw-n/m/h/b` |
-| Radius | 4 · 6 · 8 · 12 · 16 · 999 | `--up-r-xs/s/m/l/xl/voll` |
-| Höhe | 24 · 28 · 32 · 40 · 55 | `--up-h-chip/seg/btn/gross/row` |
-| Dauer | 120 · 200 · 260 | `--up-t-1/2/3` |
-| Kurve | 2 | `--up-ease`, `--up-ease-auf` |
-| Tiefe | 4 | `--up-e-1..4` |
+| | Skala | Token | gegengeprüft an |
+|---|---|---|---|
+| Schriftgröße | 11 · 12 · 13 · 14 · 16 · 22 · 28 | `--up-fs-xs/s/m/l/xl/2xl/3xl` | Polaris (8 Stufen), EightShapes, Dashboard-Ratgeber (6) |
+| Schnitt | **Bereich** 400–700 | `--up-fw-n/m/h/b` | der geladenen Achse in `core.css` |
+| Radius | 4 · 6 · 8 · 10 · 12 · 16 · 999 **plus konzentrische Kinder** | `--up-r-xs/s/m/l/xl/2xl/voll` | Primer (3/6/12), Konzentrik-Formel |
+| Höhe | 24 · 28 · 32 · 40 · 55 | `--up-h-chip/seg/btn/gross/row` | Primer, identisch (24/28/32/40/48) |
+| Dauer | 120 · 200 · 260 | `--up-t-1/2/3` | Material 3 (UI-Band 100–300) |
+| Kurve | 2 | `--up-ease`, `--up-ease-auf` | — |
+| Tiefe | 4 | `--up-e-1..4` | Atlassian (sunken/default/raised/overlay) |
 
-Drei Dinge, die man dabei wissen muss:
+**Die Skalen kommen aus DEINEM Bestand, nicht von außen.** Jede Stufe ist die, die die App
+ohnehin am häufigsten trägt; die Fachsysteme oben waren die Gegenprobe, nicht die Vorlage. Zwei
+Korrekturen sind dabei herausgekommen, beide wichtig:
+
+- **28px gehört auf die Skala.** Die erste Fassung endete bei 22 und hätte `.up-ph-heading`
+  (`core.css:3601`, der Kopf **aller sieben** Seiten) auf Dialogtitelgröße gedrückt. Die
+  Hierarchie war da — sie war nur je Stufe uneinheitlich (Titel als 20/22/23/23.5, Kennzahlen als
+  21/22/23). Das ist etwas anderes, als keine zu haben.
+- **Kein modulares Verhältnis.** Ein Faktor wie 1.2 erzeugt bei dieser Dichte Bruchteile
+  (13.2, 15.8), die je Browser anders runden — genau daher kommen die 216 halben Pixel im
+  Bestand. Die Stufen sind von Hand gesetzt.
+
+Vier Dinge, die man dabei wissen muss:
+
+- **Konzentrische Radien sind kein Fehler.** Von 763 Radiusangaben liegen 443 auf der Basis und
+  **185 auf Basis minus 1** — das sind die konzentrischen Kinder: ein Element mit 1px Rahmen in
+  einer 8er-Ecke braucht innen 7, sonst läuft der Spalt zwischen beiden Rundungen ungleich
+  breit. Die Regel steht seit langem im STYLEGUIDE (Zeile 424, Logo-Box), sie hatte nur keinen
+  Namen. Wirklich falsch sind nur die **35 mit Nachkommastelle**. `.check_skala.py` lässt Basis
+  minus 1 durch — die erste Fassung tat das nicht und meldete 185 völlig richtige Werte.
 
 - **Der Schnitt ist ein Bereich, keine Liste.** Geist wird als *variable* Schrift geladen
   (`@import … wght@400..700`), also rendert auch 450 oder 550 wirklich — an 37 Stellen ist genau
@@ -115,13 +134,19 @@ Drei Dinge, die man dabei wissen muss:
 `.check_skala.py` hält das. Es arbeitet mit einer **Grundlinie** (`.skala_grundlinie.json`): was
 am Einführungstag schon dastand, ist als Bestand vermerkt und blockiert nie einen Commit —
 gemeldet wird nur, was **dazukommt**. Ein Prüfer, der am ersten Tag tausend Treffer meldet, wird
-weggeklickt. Der Bestand (Stand 21.09.: 1553 Angaben, davon 673 Farbliterale, 319 Schriftgrößen,
-293 Radien, 268 Dauern) wird abgebaut, wenn eine Datei ohnehin angefasst wird. Nach dem
-Aufräumen einer Datei: `python3 .check_skala.py --grundlinie`.
+weggeklickt. Der Bestand (Stand 21.09.: **1295** Angaben — 673 Farbliterale, 318 Schriftgrößen,
+268 Dauern, 65 Radien) wird abgebaut, wenn eine Datei ohnehin angefasst wird. Nach dem Aufräumen
+einer Datei: `python3 .check_skala.py --grundlinie`.
+
+Er erkennt auch, wenn ein bekannter Wert nur **häufiger** wird: eine 16. Angabe auf `12.5px` in
+einer Datei mit 15 im Bestand fällt auf ("Bestand war 15").
 
 Ausgenommen sind `vendor-coloris.min.css` (Fremdcode) und `landing-hero.css` — eine Landingpage
 ist kein Dashboard und verträgt eine größere Spreizung; 38px Überschrift ist dort richtig und in
-der App falsch.
+der App falsch. Ebenso gehen **`clamp()` und `calc()` durch**: in `clamp()` stehen neun
+Überschriften ganzseitiger Flächen (auth-page, onboarding, ask-mira, prompt-research), die mit
+dem Fenster mitwachsen sollen — dieselbe Überlegung; `calc()` rechnet meist aus einem Token und
+ist damit schon auf der Skala.
 
 
 ## 2. Daten von Bubble: leer und kaputt sind zwei Dinge

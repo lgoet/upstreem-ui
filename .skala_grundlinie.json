@@ -1,9 +1,5 @@
 {
  "add-brand.css": {
-  "border-radius": {
-   "5px": 1,
-   "9px": 3
-  },
   "farbe": {
    "rgba(176,32,12,0.06)": 1,
    "rgba(176,32,12,0.16)": 1,
@@ -15,12 +11,6 @@
   }
  },
  "add-prompts.css": {
-  "border-radius": {
-   "10px": 2,
-   "3px": 3,
-   "7px": 2,
-   "9px": 5
-  },
   "farbe": {
    "rgba(0,0,0,.06)": 1
   },
@@ -36,16 +26,9 @@
   "border-radius": {
    ".285e": 1,
    "0.28e": 1,
-   "10px": 14,
-   "11px": 5,
    "13px": 3,
-   "14px": 7,
    "1px": 1,
-   "32px": 3,
-   "3px": 3,
-   "5px": 8,
-   "7px": 8,
-   "9px": 5
+   "32px": 3
   },
   "dauer": {
    "110ms": 2,
@@ -185,24 +168,15 @@
    "15px": 3,
    "17px": 1,
    "18px": 1,
-   "2.4vw,": 1,
-   "26px)": 1,
-   "3.4vw,": 1,
    "34px": 1,
-   "36px)": 1,
    "8px": 1,
    "9.5px": 3,
-   "clamp(20px,": 1,
-   "clamp(27px,": 1,
    "inhe": 4
   }
  },
  "auth-page.css": {
   "border-radius": {
-   "10px": 1,
-   "11px": 1,
-   "32px": 1,
-   "5px": 1
+   "32px": 1
   },
   "dauer": {
    "210ms": 1
@@ -237,29 +211,11 @@
    "rgba(255,255,255,.5)": 1,
    "rgba(255,255,255,.55)": 2,
    "rgba(46,158,99,.12)": 1
-  },
-  "font-size": {
-   ".95vw,": 1,
-   "1.1vw,": 1,
-   "1.25vw,": 1,
-   "14px)": 1,
-   "17px)": 1,
-   "19px)": 1,
-   "3.1vw,": 1,
-   "4.6vh),": 1,
-   "44px)": 1,
-   "46px)": 1,
-   "clamp(12px,": 1,
-   "clamp(13px,": 1,
-   "clamp(14px,": 1,
-   "clamp(26px,": 2,
-   "min(3.1vw,": 1
   }
  },
  "brand-detail.css": {
   "border-radius": {
-   "2.6px": 1,
-   "5px": 1
+   "2.6px": 1
   },
   "font-size": {
    "15px": 1,
@@ -269,10 +225,6 @@
   }
  },
  "brand-editor.css": {
-  "border-radius": {
-   "14px": 1,
-   "7px": 1
-  },
   "dauer": {
    "140ms": 1
   },
@@ -287,9 +239,6 @@
   }
  },
  "brands-overview.css": {
-  "border-radius": {
-   "10px": 1
-  },
   "dauer": {
    "140ms": 2,
    "160ms": 1,
@@ -320,10 +269,6 @@
   }
  },
  "citations-combo-chart.css": {
-  "border-radius": {
-   "3px": 1,
-   "5px": 1
-  },
   "farbe": {
    "#14b8a6": 4,
    "#6f6f6f": 1,
@@ -334,22 +279,15 @@
  },
  "core.css": {
   "border-radius": {
-   "10px": 1,
-   "11px": 1,
-   "14px": 1,
    "18px": 1,
    "1px": 1,
    "2px": 2,
    "3.23px": 1,
-   "3px": 3,
    "4.28px": 1,
    "4.29px": 1,
-   "5px": 7,
    "6.4px": 1,
    "7.04px": 1,
-   "7.6px": 1,
-   "7px": 8,
-   "9px": 14
+   "7.6px": 1
   },
   "dauer": {
    "100ms": 2,
@@ -369,15 +307,12 @@
    "14.5px": 2,
    "15px": 2,
    "17px": 1,
-   "28px": 1,
    "8.8px": 1,
    "9px": 1
   }
  },
  "create-with-ai.css": {
   "border-radius": {
-   "10px": 1,
-   "14px": 1,
    "18px": 1
   },
   "dauer": {
@@ -411,9 +346,7 @@
  },
  "discover-brands.css": {
   "border-radius": {
-   "14px": 1,
-   "20px": 1,
-   "5px": 2
+   "20px": 1
   },
   "dauer": {
    "210ms": 1
@@ -433,9 +366,6 @@
   }
  },
  "domain-detail.css": {
-  "border-radius": {
-   "5px": 1
-  },
   "dauer": {
    "160ms": 1
   },
@@ -447,11 +377,6 @@
   }
  },
  "domains-table.css": {
-  "border-radius": {
-   "5px": 2,
-   "7px": 6,
-   "9px": 1
-  },
   "dauer": {
    "140ms": 3,
    "180ms": 1
@@ -479,9 +404,6 @@
   }
  },
  "drawer-topbar.css": {
-  "border-radius": {
-   "5px": 1
-  },
   "font-size": {
    "9px": 1
   }
@@ -506,10 +428,6 @@
   }
  },
  "notification-card.css": {
-  "border-radius": {
-   "11px": 1,
-   "7px": 1
-  },
   "dauer": {
    "140ms": 3
   },
@@ -555,14 +473,8 @@
  },
  "onboarding-page.css": {
   "border-radius": {
-   "10px": 5,
    "13px": 1,
-   "14px": 2,
-   "3px": 2,
-   "5px": 4,
-   "6.5px": 1,
-   "7px": 2,
-   "9px": 1
+   "6.5px": 1
   },
   "dauer": {
    "160ms": 1,
@@ -588,20 +500,12 @@
    "15px": 1,
    "18px": 1,
    "20px": 1,
-   "26px": 1,
-   "3.6vh),": 1,
-   "30px)": 1,
-   "clamp(22px,": 1,
-   "min(2.4vw,": 1
+   "26px": 1
   }
  },
  "opportunities.css": {
   "border-radius": {
-   "10px": 1,
-   "11px": 1,
-   "3.2px": 2,
-   "5px": 6,
-   "9px": 1
+   "3.2px": 2
   },
   "dauer": {
    "140ms": 12,
@@ -635,11 +539,8 @@
  },
  "performance-detail.css": {
   "border-radius": {
-   "10px": 1,
    "2.5px": 1,
-   "5px": 1,
-   "7.4px": 1,
-   "7px": 1
+   "7.4px": 1
   },
   "farbe": {
    "#1f1f1b": 1,
@@ -697,10 +598,7 @@
    "3.2px": 1,
    "3.75px": 1,
    "32px": 1,
-   "4.25px": 2,
-   "5px": 1,
-   "7px": 1,
-   "9px": 3
+   "4.25px": 2
   },
   "dauer": {
    "140ms": 2
@@ -716,10 +614,6 @@
   }
  },
  "preferences.css": {
-  "border-radius": {
-   "10px": 1,
-   "3px": 1
-  },
   "farbe": {
    "#fff": 1,
    "rgba(0,0,0,.45)": 1
@@ -732,12 +626,10 @@
  },
  "prompt-research.css": {
   "border-radius": {
-   "11px": 3,
    "13px": 2,
    "18px": 1,
    "24px": 2,
-   "2px": 1,
-   "3px": 2
+   "2px": 1
   },
   "dauer": {
    "140ms": 9,
@@ -773,20 +665,13 @@
    "11.5px": 2,
    "12.5px": 6,
    "15px": 4,
-   "18px": 1,
-   "33px)": 1,
-   "3vw,": 1,
-   "clamp(25px,": 1
+   "18px": 1
   }
  },
  "prompts-table.css": {
   "border-radius": {
    "1px": 1,
-   "32px": 1,
-   "3px": 1,
-   "5px": 3,
-   "7px": 2,
-   "9px": 4
+   "32px": 1
   },
   "dauer": {
    "160ms": 5,
@@ -835,14 +720,8 @@
  },
  "quick-actions.css": {
   "border-radius": {
-   "10px": 2,
-   "14px": 1,
-   "3px": 2,
-   "5px": 7,
    "6.4px": 1,
-   "7.6px": 1,
-   "7px": 4,
-   "9px": 1
+   "7.6px": 1
   },
   "dauer": {
    "140ms": 1,
@@ -907,11 +786,8 @@
  },
  "response-detail.css": {
   "border-radius": {
-   "10px": 1,
-   "14px": 3,
    "1px": 1,
    "4.4px": 1,
-   "5px": 2,
    "7.1px": 1,
    "7.4px": 2,
    "7.7px": 1,
@@ -929,10 +805,6 @@
   }
  },
  "responses-table.css": {
-  "border-radius": {
-   "14px": 1,
-   "5px": 3
-  },
   "dauer": {
    "140ms": 2
   },
@@ -952,10 +824,7 @@
  },
  "settings-brand.css": {
   "border-radius": {
-   "10px": 1,
-   "2px": 1,
-   "7px": 1,
-   "9px": 6
+   "2px": 1
   },
   "dauer": {
    "150ms": 2,
@@ -1005,13 +874,11 @@
  "sidebar.css": {
   "border-radius": {
    "4.4px": 1,
-   "5px": 2,
    "6.4px": 2,
    "6.5px": 1,
    "6.7px": 1,
    "7.3px": 2,
-   "7.7px": 2,
-   "7px": 1
+   "7.7px": 2
   },
   "dauer": {
    "140ms": 5,
@@ -1033,10 +900,6 @@
   }
  },
  "team-orga.css": {
-  "border-radius": {
-   "10px": 1,
-   "7px": 1
-  },
   "farbe": {
    "#3b82f6": 1,
    "rgba(176,32,12,0.16)": 1,
@@ -1054,10 +917,6 @@
   }
  },
  "topcitations-dashboard.css": {
-  "border-radius": {
-   "5px": 1,
-   "7px": 1
-  },
   "dauer": {
    "150ms": 3
   },
@@ -1075,18 +934,12 @@
   }
  },
  "topics-manager.css": {
-  "border-radius": {
-   "9px": 1
-  },
   "font-size": {
    "12.5px": 1,
    "13.5px": 1
   }
  },
  "url-detail.css": {
-  "border-radius": {
-   "10px": 1
-  },
   "dauer": {
    "160ms": 1
   },
@@ -1101,10 +954,6 @@
   }
  },
  "urls-table.css": {
-  "border-radius": {
-   "5px": 1,
-   "7px": 4
-  },
   "farbe": {
    "#1f1f1b": 1,
    "#e0e0e0": 1
@@ -1116,8 +965,7 @@
  },
  "visibility-chart.css": {
   "border-radius": {
-   "2px": 1,
-   "9px": 1
+   "2px": 1
   },
   "farbe": {
    "#1c1c1f": 1,
