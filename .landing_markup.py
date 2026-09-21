@@ -60,6 +60,15 @@ ERSATZ = {
     "IS_PROCESSING_2": "no",
     "IS_PROCESSING": "no",
     "TEAM_ID": "t1",
+    # Die vier Logo-Plaetze der Leiste (seit dem Umbau der eingeklappten Fassung). OHNE sie bricht
+    # dieser Lauf mit "unersetzte Platzhalter" ab -- und genau daran ist er seit dem 20.09. jedes
+    # Mal gescheitert, weshalb das Markup der Landingpage auf einem alten Stand der App stehen
+    # blieb. Die Dateien sind dieselben, die die App benutzt: Schriftzug fuer die offene Leiste,
+    # 1:1-Zeichen fuer die eingeklappte, je Thema eine Fassung.
+    "UPSTREEM_LOGO_SMALL_DARK": "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/upstreem-mark-square-e0e0e0.svg",
+    "UPSTREEM_LOGO_SMALL": "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/upstreem-mark-square-1f1f1f.svg",
+    "UPSTREEM_LOGO_DARK": "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/upstreem-lockup-e0e0e0.svg",
+    "UPSTREEM_LOGO": "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/upstreem-lockup-1f1f1f.svg",
     "EXPORT_INSTANCE_ID": "",
     "BRAND_NAME": "Kestrel",
     "BRAND_LOGO_URL": "",
