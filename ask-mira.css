@@ -23,7 +23,12 @@
      Fehlermeldung. Deshalb steht die Palette in einem eigenen Selektor mit beiden Orten; die
      MASSE des Bauteils (Breite, Hoehe, Kasten) bleiben allein bei #ask-mira, die gehoeren dem
      Fenster nicht. */
-  #ask-mira, .am-set-backdrop {
+  /* .am-cm STEHT HIER MIT DRIN, seit das Chat-Menue am Koerper haengt (21.09.). Die --am-*
+     werden an DIESER Stelle deklariert und nicht an .up-root -- ein Menue ausserhalb der
+     Komponente loest sie sonst gar nicht auf und stand durchsichtig da (gemessen:
+     background-color rgba(0,0,0,0)). Dasselbe war schon bei .am-set-backdrop noetig, aus
+     demselben Grund. */
+  #ask-mira, .am-set-backdrop, .am-cm {
     /* --up-surface, NOT --vc-bg. Core keeps two different darks apart: --vc-bg (#1b1b1b) is the
        CARD/panel colour, --up-surface (#121212) is the page behind them. --am-bg is Mira's page
        background -- the shell, the composer-area fade, the composer in dark -- so it is the second
@@ -3058,8 +3063,14 @@
   .am-prev-empty { padding: 28px 12px; text-align: center; color: var(--am-muted); font-size: 13px; }
 
   /* ---- chat context menu (three-dots) ---- */
+  /* BREITE AUSDRUECKLICH, seit das Menue am Koerper haengt (21.09.): es traegt dort up-root,
+     damit seine --am-*-Farben ueberhaupt aufloesen, und .up-root bringt eine Breite mit. Als
+     Kind der Komponente war das egal, am Koerper stand das Menue damit 1084px breit in einem
+     1100px-Fenster (gemessen). max-content ist, was ein Kontextmenue immer wollte; der Deckel
+     haelt es auf einem schmalen Telefon im Bild. */
   .am-cm {
     position: fixed; z-index: 2147483600; min-width: 184px;
+    width: max-content; max-width: calc(100vw - 16px);
     background: var(--am-card); border: 1px solid var(--am-border); border-radius: 14px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.14); padding: 6px;
     opacity: 0; transform: translateY(-4px) scale(0.985); pointer-events: none;

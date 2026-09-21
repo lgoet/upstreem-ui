@@ -7081,8 +7081,46 @@
 
   /* ---- chat three-dots context menu ---- */
   var elChatMenu = document.createElement('div');
-  elChatMenu.className = 'am-cm'; elChatMenu.id = 'am-chat-menu';
-  root.appendChild(elChatMenu);
+  /* up-root am-root TRAGEN DIE FARBEN. Das Menue haengt nicht mehr in der Komponente (siehe
+     gleich darunter), und alle seine Farben kommen aus --am-*, die an .up-root deklariert
+     sind -- ohne diese zwei Klassen stuende es farblos da. data-theme wird beim Oeffnen
+     nachgezogen, weil der Nutzer das Thema wechseln kann, waehrend die Seite steht. */
+  elChatMenu.className = 'am-cm up-root am-root'; elChatMenu.id = 'am-chat-menu';
+  /* AM KOERPER, NICHT IN DER KOMPONENTE (21.09., gemessen).
+     Das Menue ist position: fixed und rechnete mit Bildschirmkoordinaten -- das stimmt aber nur,
+     solange kein Vorfahre einen eigenen Bezugsrahmen aufmacht. Sobald einer ein transform traegt
+     (auf einer Bubble-Seite macht das jede Animation), ist "fixed" nicht mehr am Fenster
+     verankert, sondern an diesem Vorfahren, und dieselbe Rechnung landet irgendwo.
+     GEMESSEN mit einem Kaefig-Vorfahren ueber der Komponente: das Menue stand bei 1149 bis 1331
+     in einem 1100px-Fenster -- 231px draussen, und ein Treffertest an seiner rechten Kante fand
+     es nicht mehr. Ohne Kaefig war dieselbe Rechnung richtig, deshalb war es im Prueftand nicht
+     zu sehen und blieb zweimal stehen.
+     menuEscape aus core hilft hier NICHT, und das ist kein Versehen: es erkennt ein Panel, das
+     VERDECKT ist, ueber einen Treffertest. Ein Panel ausserhalb des Bildes trifft gar nichts,
+     und "kein Punkt im Bild" heisst dort ausdruecklich "nichts behaupten". Gemessen: es
+     eskaliert nicht, und das ist fuer seinen Zweck richtig.
+     Am Koerper gibt es keinen Kaefig mehr -- damit stimmt die Rechnung wieder ueberall. */
+  document.body.appendChild(elChatMenu);
+  /* DAS THEMA WIRD NACHGEZOGEN, NICHT GEERBT. Am Koerper steht das Menue ausserhalb der
+     Komponente -- data-theme und damit die dunklen --vc-* erreichen es nur, wenn es sie selbst
+     traegt. Drei Anlaesse, damit es nie daneben liegt: beim Anlegen, bei jedem Oeffnen, und
+     wenn jemand das Thema umstellt, waehrend die Seite steht (UC.onTheme). */
+  function cmThema(){
+    try {
+      /* DIESELBE LOGIK WIE IN CORE, nicht dagegen: core setzt data-theme nur fuer DUNKEL und
+         entfernt es sonst (core.js, "if (wantDark) setAttribute else removeAttribute") -- hell
+         ist der Zustand ohne Attribut. Wer hier "light" hineinschreibt, bekommt es beim
+         naechsten Themenlauf wieder weggenommen; gemessen: das Attribut stand nach dem Laden
+         auf null, obwohl diese Zeile lief.
+         Warum es ueberhaupt von Hand passiert, obwohl das Menue .up-root traegt: darauf zu
+         bauen, dass core auch ein Element am Koerper erwischt, waere eine Annahme. Zwei Zeilen
+         sind billiger als ein Menue, das im Dunkeln weiss leuchtet. */
+      if (root.getAttribute('data-theme') === 'dark') elChatMenu.setAttribute('data-theme', 'dark');
+      else elChatMenu.removeAttribute('data-theme');
+    } catch(e){}
+  }
+  cmThema();
+  try { var _kt = window.UpstreemCore; if (_kt && _kt.onTheme) _kt.onTheme(cmThema); } catch(e){}
   var cmChatId = null;
   var cmFromTopbar = false;   // true while the menu was opened from the chat-view topbar chevron
 
@@ -7132,14 +7170,23 @@
     // topbar chevron sits far left -> extend the menu to the RIGHT (left edge under the chevron);
     // sidebar dots -> keep the menu's right edge aligned with the button.
     var left = cmFromTopbar ? r.left : (r.right - mw);
-    /* GEKLEMMT WIRD AN BEIDEM: an der Komponente UND am Bildschirm (19.09. gemeldet -- "steht
-       die Leiste rechts, ist das Menue rechts ausserhalb vom Bildschirm abgeschnitten").
-       Bisher stand hier nur die Wurzel. Das reicht, solange sie im Bild liegt -- mit der
-       Chatleiste rechts reicht sie aber bis an den Fensterrand und darueber hinaus, und ein
-       Rand, der selbst ausserhalb liegt, klemmt nichts. */
+    /* GEKLEMMT WIRD AM BILDSCHIRM, NICHT MEHR AN DER KOMPONENTE (21.09., dritter Anlauf).
+       Erst stand hier nur die Wurzel, dann Wurzel UND Fenster -- und es kam trotzdem
+       abgeschnitten zurueck. Im Prueftand liess sich das nicht nachstellen: die ganze Kette
+       ueber dem Menue ist kaefigfrei (kein transform, kein filter, kein contain), das Menue ist
+       position: fixed und lag bei 1100px Fenster mit 9px Luft drin.
+       Also nicht noch eine Rechnung, sondern die Klasse des Fehlers weg. Zwei Dinge:
+       1. Geklemmt wird NUR noch am Fenster. Die Wurzel als Grenze war der Gedanke "das Menue
+          soll die Komponente nicht verlassen" -- genau das ist aber, was ein Kontextmenue duerfen
+          muss, wenn die Komponente am Bildrand klebt. Verlangt ist "immer komplett im
+          Bildschirm", und das ist der Bildschirm, nicht die Komponente.
+       2. Das Menue geht in den Top Layer (menuEscape unten). Dort kann es kein Vorfahre mehr
+          wegschneiden -- auch keiner, der morgen ein transform bekommt, was auf einer
+          Bubble-Seite jederzeit passieren kann. Ein position: fixed ist nur so lange sicher,
+          wie kein Vorfahr einen Kaefig aufmacht. */
     var fensterB = window.innerWidth || document.documentElement.clientWidth || 0;
-    var rechts = fensterB ? Math.min(rootRect.right, fensterB) : rootRect.right;
-    var minL = Math.max(rootRect.left, 0) + 8, maxL = rechts - mw - 8;
+    var rechts = fensterB || rootRect.right;
+    var minL = 8, maxL = rechts - mw - 8;
     if (maxL < minL) maxL = minL;
     if (left < minL) left = minL;
     if (left > maxL) left = maxL;
@@ -7150,15 +7197,17 @@
     // submenu: always fly RIGHT in the topbar (menu is already far left); otherwise flip when the left is tight
     var sub = elChatMenu.querySelector('.am-cm-sub');
     if (sub){
-      var roomLeft = left - Math.max(rootRect.left, 0);
-      /* Nach rechts nur ausklappen, wenn dort auch Platz IST -- sonst steht das Untermenue
-         ausserhalb des Bildes, und wir haetten den Fehler eine Ebene tiefer wiederholt. */
+      /* Auch hier gegen das FENSTER gerechnet und nicht gegen die Wurzel -- aus demselben
+         Grund wie oben. Sonst kippt das Untermenue nach der falschen Seite, sobald die
+         Komponente am Rand klebt. */
+      var roomLeft = left;
       var roomRight = rechts - (left + mw);
       var nachRechts = cmFromTopbar ? roomRight >= 160 : (roomLeft < 200 && roomRight >= 160);
       if (nachRechts) sub.classList.add('flip-right');
       else sub.classList.remove('flip-right');
     }
     elChatMenu.style.visibility = '';
+    cmThema();
   }
   elChatMenu.addEventListener('click', function(e){
     var opt = e.target.closest('[data-cm-act],[data-cm-move]'); if (!opt) return;
