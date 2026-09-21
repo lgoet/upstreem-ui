@@ -26,106 +26,106 @@
    mit unaufloesbarem Wert waere kein Globus, sondern ein volles Rechteck. */
 :root {
       --up-globus: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20'/%3E%3Cpath d='M2 12h20'/%3E%3C/svg%3E");
+
+  /* ================= DIE MASSE ==========================================================
+     AN :root UND NICHT AN .up-root (21.09., nach einem selbst gebauten Fehler). Diese Werte
+     haengen an KEINEM Thema und an keiner Akzentfarbe -- eine 12px bleibt eine 12px. Sie
+     gehoeren deshalb an die Wurzel des Dokuments, nicht an die der Komponente.
+     WARUM DAS WICHTIG IST: mehrere Teile der App haengen bewusst am <body> und damit
+     AUSSERHALB von .up-root -- die Massenleiste der Prompts-Tabelle (position: fixed, sie
+     muesste sonst gegen jeden transformierten Bubble-Container ankaempfen), Tooltips, Menues.
+     Dort loest eine Variable aus .up-root nicht auf. Bei einer FARBE faellt das sofort auf;
+     bei einer Kurve in einer transition-KURZSCHREIBWEISE ist die ganze Angabe ungueltig, und
+     dann verschwindet nicht die Kurve, sondern die ANIMATION. Genau so sind am 21.09. das
+     Ein- und Ausgleiten der Massenleiste und das Aufklappen ihrer Themenauswahl ausgefallen,
+     nachdem ich ihre Uebergaenge auf var(--up-ease) umgestellt hatte -- vier Regeln, alle
+     still.
+     core macht es bei --up-globus direkt darueber aus demselben Grund genauso.
+     WAS HIER NICHT STEHT: --up-e-* (die Tiefen). Die aendern sich mit dem Thema und bleiben
+     deshalb an .up-root, zusammen mit den Farben.
+
+  /* Schrift. SIEBEN Stufen, und die Zahl ist nachgeschlagen, nicht geschaetzt: Polaris faehrt
+     8 Stufen (12/14/16/20/24/28/32/40), Nathan Curtis (EightShapes) empfiehlt "mit wenigen
+     anfangen und nur wachsen, wenn eine Komponente es wirklich verlangt", die Ratgeber fuer
+     dichte Dashboards nennen 6.
+     ERSTE FASSUNG DIESES BLOCKS HATTE SECHS UND WAR FALSCH: sie endete bei 22 und haette
+     damit .up-ph-heading (28px, der Kopf ALLER SIEBEN Seiten) auf Dialogtitelgroesse
+     gedrueckt -- eine sichtbare Entwertung der obersten Stufe der App. Die Hierarchie WAR
+     da, sie war nur je Stufe uneinheitlich; das ist etwas anderes, als keine zu haben.
+     KEIN MODULARES VERHAELTNIS. Die Stufen sind von Hand gesetzt, nach dem, was die App
+     wirklich braucht -- ein Faktor wie 1.2 erzeugt an dieser Dichte Bruchteile (13.2, 15.8),
+     die je Browser anders runden. Genau daher kommen die 216 halben Pixel im Bestand. */
+  --up-fs-xs:  11px;   /* Nebenbeschriftung, Einheiten, Zaehler        (52) */
+  --up-fs-s:   12px;   /* Tabellenzelle, Chip, Menueeintrag           (176) */
+  --up-fs-m:   13px;   /* Fliesstext, Knopfbeschriftung               (164) */
+  --up-fs-l:   14px;   /* Zeilentitel, Chart-Ueberschrift             (100) */
+  --up-fs-xl:  16px;   /* Abschnittstitel, Seitenbeschreibung          (26) */
+  --up-fs-2xl: 22px;   /* Dialogtitel UND die grosse Zahl einer Kennzahl -- in der App
+                          heute 20, 21, 22, 23 und 23.5; eine Rolle, fuenf Werte    (22) */
+  --up-fs-3xl: 28px;   /* .up-ph-heading, der Kopf jeder Seite              (core:3601) */
+  --up-fs-display: 38px; /* DIE EINE grosse Zahl einer Karte -- die Aussage, nicht der
+                          Rahmen daneben. Eigene Stufe, weil das eine eigene Rolle ist und
+                          keine Ueberschrift: sie steht allein und wird nicht gelesen,
+                          sondern abgelesen. Heute nur .upt-kpi-quota-used; ask-mira.css
+                          traegt dieselbe Rolle auf 34px und zieht nach, wenn die Datei
+                          drankommt.                                     (prompts-table) */
+  /* AUSSERHALB DER SKALA, mit Grund: neun font-size in clamp() (auth-page, onboarding,
+     ask-mira, prompt-research). Das sind Ueberschriften auf ganzseitigen Flaechen, die mit
+     dem Fenster mitwachsen -- dieselbe Ueberlegung wie bei der Landingpage: eine ganze Seite
+     ist kein Dashboard. .check_skala.py laesst clamp() deshalb ausdruecklich durch. */
+
+  /* Schriftschnitt. Die vier Stufen, die die App traegt -- und alle vier liegen im
+     geladenen Bereich (siehe @import oben); das war vor dem 21.09. bei 700 nicht so.
+     SIE SIND KEINE AUSSCHLIESSLICHE LISTE. Geist wird als variable Schrift geladen, also
+     rendert auch 450 oder 550 wirklich, und an 37 Stellen steht genau das -- als halbe
+     Stufe zwischen zwei Nachbarn, bewusst gesetzt. Was NICHT geht, ist ein Wert ausserhalb
+     von 400..700: der wird still auf den Rand gezogen und sieht dann aus wie der Nachbar.
+     .check_skala.py prueft deshalb den BEREICH und nicht diese vier Zahlen. */
+  --up-fw-n:  400;     /* Fliesstext, Nebentext                        (67) */
+  --up-fw-m:  500;     /* der Normalfall der App                      (324) */
+  --up-fw-h:  600;     /* Ueberschrift, aktiver Zustand               (172) */
+  --up-fw-b:  700;     /* echtes Fett: Treffermarkierung, <strong>          */
+
+  /* Radius. Sechs Stufen plus rund -- und DIE HAELFTE DER ARBEIT MACHT DIE KONZENTRIK.
+     Nachgezaehlt ueber alle 763 Radiusangaben der App:
+         443  liegen auf der Basis unten
+         185  liegen auf Basis minus 1 -- das sind KEINE Abweichungen, sondern die
+              konzentrischen Kinder: ein Element mit 1px Rahmen in einer 8er-Ecke braucht
+              innen 7, sonst laeuft der Spalt zwischen beiden Rundungen ungleich breit.
+              Die Regel steht seit langem im STYLEGUIDE (Zeile 424: "Logo-Box 24x24px,
+              radius 8px, Bild 22x22px radius 7px"), sie hatte nur keinen Namen.
+          69  sind voll rund
+          35  sind wirklich krumm (3.23, 4.28, 7.04, 8.9 ...) -- nur DIE sind der Fehler,
+              und sie kommen aus der Skalierungsregel in §1 ohne Raster zum Einrasten.
+     DIE FORMEL, die die Fachliteratur uebereinstimmend nennt: innen = aussen minus Abstand.
+     Also `calc(var(--up-r-m) - 1px)` bei 1px Rahmen -- oder eben 7px hingeschrieben, was
+     dasselbe ist und lesbarer bleibt. .check_skala.py laesst Basis minus 1 durch. */
+  --up-r-xs:   4px;    /* Punkt, Haken, Plakette -- das Kleinste       (66) */
+  --up-r-s:    6px;    /* Chip, Pille, kleines Feld                    (64) */
+  --up-r-m:    8px;    /* Knopf, Eingabe, Segment, Logoplatte         (180) */
+  --up-r-l:   10px;    /* Kachel, Vorschaubild                         (35) */
+  --up-r-xl:  12px;    /* Karte innen, Drawer-Kopf                     (58) */
+  --up-r-2xl: 16px;    /* Chart-Box, Modal, grosse Karte               (31) */
+  --up-r-voll: 999px;  /* alles, was ganz rund ist                     (69) */
+
+  /* Hoehen der Bedienelemente. Vier Stufen, eine Zeilenhoehe -- und das ist die Leiter, die
+     GitHub Primer unabhaengig davon fuehrt (24/28/32/40/48). Dass beide auf dieselben vier
+     Zahlen kommen, ist der beste Hinweis darauf, dass sie richtig sind. */
+  --up-h-chip: 24px;   /* .up-sent, Plaketten                          (53) */
+  --up-h-seg:  28px;   /* kleines Segment                              (47) */
+  --up-h-btn:  32px;   /* Knopf, Eingabe, Werkzeugleiste              (112) */
+  --up-h-gross: 40px;  /* Hauptknopf, Suchfeld                         (33) */
+  --up-h-row:  55px;   /* Tabellenzeile -- steht so im STYLEGUIDE           */
+
+  /* Bewegung. Drei Dauern, zwei Kurven -- nach dem, WAS sich bewegt, nicht wie weit.
+     Die zwei Kurven sind die, die in der App schon am haeufigsten ausgeschrieben stehen. */
+  --up-t-1: 120ms;     /* Farbe, Deckkraft, Hover -- reiner Zustand   (133) */
+  --up-t-2: 200ms;     /* Groesse und Position                        (129) */
+  --up-t-3: 260ms;     /* Flaechen: Drawer, Modal, Seitenwechsel       (16) */
+  --up-ease:     cubic-bezier(.2, 0, .38, .9);   /* hin und zurueck   (13) */
+  --up-ease-auf: cubic-bezier(.22, 1, .36, 1);   /* nur Auftritte      (9) */
 }
 .up-root {
-      /* ================= DIE MASSE ==========================================================
-         Angelegt am 21.09. Bis dahin standen in core.css 56 Token, und bis auf sechs
-         (--up-dd-*, --up-focus-*) waren alle davon Farben: fuer Schriftgroesse, Radius, Hoehe,
-         Dauer und Tiefe gab es keine gemeinsame Quelle. Jede dieser Entscheidungen wurde
-         deshalb in jeder der 43 Dateien neu getroffen -- gemessen kamen dabei 34 Schriftgroessen
-         und 57 Radien heraus, wo sechs und fuenf gemeint waren.
-
-         ERFUNDEN IST HIER NICHTS. Jeder Wert unten ist der, der in der App ohnehin am
-         haeufigsten steht; die Zahl in Klammern ist, wie oft er vor dem Anlegen vorkam. Der
-         Block macht also nichts Neues -- er gibt dem, was schon da ist, einen Namen, damit die
-         naechste Regel ihn tippen kann, statt ihn auszurechnen.
-
-         WAS ER NICHT ANFASST: --up-dd-radius (14px), --up-dd-pad, --up-dd-gap, --up-sub-gap und
-         --up-focus-w. Die gab es vorher und sie sind in sich stimmig; die Menues behalten ihren
-         eigenen Radius. Zwei Skalen nebeneinander waeren schlechter als eine mit einer
-         benannten Ausnahme. */
-
-      /* Schrift. SIEBEN Stufen, und die Zahl ist nachgeschlagen, nicht geschaetzt: Polaris faehrt
-         8 Stufen (12/14/16/20/24/28/32/40), Nathan Curtis (EightShapes) empfiehlt "mit wenigen
-         anfangen und nur wachsen, wenn eine Komponente es wirklich verlangt", die Ratgeber fuer
-         dichte Dashboards nennen 6.
-         ERSTE FASSUNG DIESES BLOCKS HATTE SECHS UND WAR FALSCH: sie endete bei 22 und haette
-         damit .up-ph-heading (28px, der Kopf ALLER SIEBEN Seiten) auf Dialogtitelgroesse
-         gedrueckt -- eine sichtbare Entwertung der obersten Stufe der App. Die Hierarchie WAR
-         da, sie war nur je Stufe uneinheitlich; das ist etwas anderes, als keine zu haben.
-         KEIN MODULARES VERHAELTNIS. Die Stufen sind von Hand gesetzt, nach dem, was die App
-         wirklich braucht -- ein Faktor wie 1.2 erzeugt an dieser Dichte Bruchteile (13.2, 15.8),
-         die je Browser anders runden. Genau daher kommen die 216 halben Pixel im Bestand. */
-      --up-fs-xs:  11px;   /* Nebenbeschriftung, Einheiten, Zaehler        (52) */
-      --up-fs-s:   12px;   /* Tabellenzelle, Chip, Menueeintrag           (176) */
-      --up-fs-m:   13px;   /* Fliesstext, Knopfbeschriftung               (164) */
-      --up-fs-l:   14px;   /* Zeilentitel, Chart-Ueberschrift             (100) */
-      --up-fs-xl:  16px;   /* Abschnittstitel, Seitenbeschreibung          (26) */
-      --up-fs-2xl: 22px;   /* Dialogtitel UND die grosse Zahl einer Kennzahl -- in der App
-                              heute 20, 21, 22, 23 und 23.5; eine Rolle, fuenf Werte    (22) */
-      --up-fs-3xl: 28px;   /* .up-ph-heading, der Kopf jeder Seite              (core:3601) */
-      --up-fs-display: 38px; /* DIE EINE grosse Zahl einer Karte -- die Aussage, nicht der
-                              Rahmen daneben. Eigene Stufe, weil das eine eigene Rolle ist und
-                              keine Ueberschrift: sie steht allein und wird nicht gelesen,
-                              sondern abgelesen. Heute nur .upt-kpi-quota-used; ask-mira.css
-                              traegt dieselbe Rolle auf 34px und zieht nach, wenn die Datei
-                              drankommt.                                     (prompts-table) */
-      /* AUSSERHALB DER SKALA, mit Grund: neun font-size in clamp() (auth-page, onboarding,
-         ask-mira, prompt-research). Das sind Ueberschriften auf ganzseitigen Flaechen, die mit
-         dem Fenster mitwachsen -- dieselbe Ueberlegung wie bei der Landingpage: eine ganze Seite
-         ist kein Dashboard. .check_skala.py laesst clamp() deshalb ausdruecklich durch. */
-
-      /* Schriftschnitt. Die vier Stufen, die die App traegt -- und alle vier liegen im
-         geladenen Bereich (siehe @import oben); das war vor dem 21.09. bei 700 nicht so.
-         SIE SIND KEINE AUSSCHLIESSLICHE LISTE. Geist wird als variable Schrift geladen, also
-         rendert auch 450 oder 550 wirklich, und an 37 Stellen steht genau das -- als halbe
-         Stufe zwischen zwei Nachbarn, bewusst gesetzt. Was NICHT geht, ist ein Wert ausserhalb
-         von 400..700: der wird still auf den Rand gezogen und sieht dann aus wie der Nachbar.
-         .check_skala.py prueft deshalb den BEREICH und nicht diese vier Zahlen. */
-      --up-fw-n:  400;     /* Fliesstext, Nebentext                        (67) */
-      --up-fw-m:  500;     /* der Normalfall der App                      (324) */
-      --up-fw-h:  600;     /* Ueberschrift, aktiver Zustand               (172) */
-      --up-fw-b:  700;     /* echtes Fett: Treffermarkierung, <strong>          */
-
-      /* Radius. Sechs Stufen plus rund -- und DIE HAELFTE DER ARBEIT MACHT DIE KONZENTRIK.
-         Nachgezaehlt ueber alle 763 Radiusangaben der App:
-             443  liegen auf der Basis unten
-             185  liegen auf Basis minus 1 -- das sind KEINE Abweichungen, sondern die
-                  konzentrischen Kinder: ein Element mit 1px Rahmen in einer 8er-Ecke braucht
-                  innen 7, sonst laeuft der Spalt zwischen beiden Rundungen ungleich breit.
-                  Die Regel steht seit langem im STYLEGUIDE (Zeile 424: "Logo-Box 24x24px,
-                  radius 8px, Bild 22x22px radius 7px"), sie hatte nur keinen Namen.
-              69  sind voll rund
-              35  sind wirklich krumm (3.23, 4.28, 7.04, 8.9 ...) -- nur DIE sind der Fehler,
-                  und sie kommen aus der Skalierungsregel in §1 ohne Raster zum Einrasten.
-         DIE FORMEL, die die Fachliteratur uebereinstimmend nennt: innen = aussen minus Abstand.
-         Also `calc(var(--up-r-m) - 1px)` bei 1px Rahmen -- oder eben 7px hingeschrieben, was
-         dasselbe ist und lesbarer bleibt. .check_skala.py laesst Basis minus 1 durch. */
-      --up-r-xs:   4px;    /* Punkt, Haken, Plakette -- das Kleinste       (66) */
-      --up-r-s:    6px;    /* Chip, Pille, kleines Feld                    (64) */
-      --up-r-m:    8px;    /* Knopf, Eingabe, Segment, Logoplatte         (180) */
-      --up-r-l:   10px;    /* Kachel, Vorschaubild                         (35) */
-      --up-r-xl:  12px;    /* Karte innen, Drawer-Kopf                     (58) */
-      --up-r-2xl: 16px;    /* Chart-Box, Modal, grosse Karte               (31) */
-      --up-r-voll: 999px;  /* alles, was ganz rund ist                     (69) */
-
-      /* Hoehen der Bedienelemente. Vier Stufen, eine Zeilenhoehe -- und das ist die Leiter, die
-         GitHub Primer unabhaengig davon fuehrt (24/28/32/40/48). Dass beide auf dieselben vier
-         Zahlen kommen, ist der beste Hinweis darauf, dass sie richtig sind. */
-      --up-h-chip: 24px;   /* .up-sent, Plaketten                          (53) */
-      --up-h-seg:  28px;   /* kleines Segment                              (47) */
-      --up-h-btn:  32px;   /* Knopf, Eingabe, Werkzeugleiste              (112) */
-      --up-h-gross: 40px;  /* Hauptknopf, Suchfeld                         (33) */
-      --up-h-row:  55px;   /* Tabellenzeile -- steht so im STYLEGUIDE           */
-
-      /* Bewegung. Drei Dauern, zwei Kurven -- nach dem, WAS sich bewegt, nicht wie weit.
-         Die zwei Kurven sind die, die in der App schon am haeufigsten ausgeschrieben stehen. */
-      --up-t-1: 120ms;     /* Farbe, Deckkraft, Hover -- reiner Zustand   (133) */
-      --up-t-2: 200ms;     /* Groesse und Position                        (129) */
-      --up-t-3: 260ms;     /* Flaechen: Drawer, Modal, Seitenwechsel       (16) */
-      --up-ease:     cubic-bezier(.2, 0, .38, .9);   /* hin und zurueck   (13) */
-      --up-ease-auf: cubic-bezier(.22, 1, .36, 1);   /* nur Auftritte      (9) */
-
       /* Tiefe. Vier Stufen, EINE Schattenfarbe -- es aendern sich nur Versatz und Unschaerfe.
          Vier ist auch, was Atlassian fuehrt (sunken, default, raised, overlay); Material und
          Carbon fahren eine 0..24-Leiter, die aber fuer eine App dieser Groesse Zierrat ist.
@@ -1568,14 +1568,43 @@
       --uhm-h0: #34231e; --uhm-h1: #583428; --uhm-h2: #824937; --uhm-h3: #a85e46; --uhm-h4: #c87155;
     }
     .up-topicchip-lbl { overflow: hidden; text-overflow: ellipsis; }
+    /* ---- DER GEWAEHLT-ZUSTAND EINES THEMAS IST EINE CHECKBOX (21.09. angefordert) ----------
+       Vorher war es ein Haken, der beim Waehlen EINFUHR: width 0 -> 14, Deckkraft 0 -> 1. Der
+       eigentliche Unterschied ist nicht das Aussehen, sondern dass er vorher GAR NICHT DA war.
+       Ein Chip ohne Zeichen sah aus wie ein Etikett; dass man ihn anklicken kann, erfuhr man
+       erst danach. Die Checkbox steht von Anfang an da, leer, und sagt damit: hier waehlt man.
+       Gemeldet als Unterschied zwischen zwei Oberflaechen -- die Themen-Filterliste
+       (filters/topics-filter.js, .up-filter-item mit .up-filter-check) hatte die Checkbox
+       laengst, die Chips in der Themenauswahl und im Bearbeiten-Popup nicht.
+
+       ES IST DIESELBE CHECKBOX wie in .up-filter-check, nur eine Nummer kleiner: 14 statt 16,
+       Radius 4 statt 5, Haken 10 statt 11, Rahmen 1.5 unveraendert -- alle Werte im Verhaeltnis
+       14/16 mitgezogen, wie es §1 fuer ein verkleinertes Bauteil verlangt. 16px waeren in einem
+       28px hohen Chip zu schwer; die 14 sind ausserdem die Breite, die der alte Haken schon
+       belegte.
+       Dieselben Uebergangstoken (--up-cb-t / --up-cb-ease) wie die grosse Fassung.
+
+       DER RAHMEN LIEGT AUF currentColor UND NICHT AUF --vc-border: der Chip ist mit der Farbe
+       des Themas eingetoent, und ein neutrales Grau verschwindet darauf je nach Thema mal mehr,
+       mal weniger. currentColor ist die Schriftfarbe des Chips, also immer im selben Verhaeltnis
+       zu seinem Grund -- auf jedem Thema und in beiden Themen gleich gut sichtbar.
+
+       STATISCHE CHIPS SIND NICHT BETROFFEN: .up-topicchip.is-static traegt gar kein
+       Haken-Element (geprueft ueber alle Komponenten), sie zeigen also weiterhin nur Emoji und
+       Namen. */
     .up-topicchip-check { display: inline-flex; align-items: center; justify-content: center;
-      width: 0; height: 14px; border-radius: 4px; opacity: 0; overflow: hidden; flex: 0 0 auto;
-      margin-left: 0; transform: translateX(6px);
-      background: var(--up-accent); color: var(--up-accent-fg);
-      transition: width 200ms cubic-bezier(.2,0,.38,.9), opacity 200ms cubic-bezier(.2,0,.38,.9),
-                  transform 200ms cubic-bezier(.2,0,.38,.9), margin-left 200ms cubic-bezier(.2,0,.38,.9); }
-    .up-topicchip-check.is-on { width: 14px; opacity: 1; transform: translateX(0); margin-left: 2px; }
-    .up-topicchip-check svg { width: 9px; height: 9px; display: block; flex: 0 0 auto; }
+      width: 14px; height: 14px; flex: 0 0 auto; margin-left: 2px;
+      border-radius: 4px; border: 1.5px solid color-mix(in srgb, currentColor 32%, transparent);
+      background: transparent; color: inherit;
+      transition: background-color var(--up-cb-t) var(--up-cb-ease),
+                  border-color var(--up-cb-t) var(--up-cb-ease); }
+    .up-topicchip-check.is-on { background: var(--up-accent); border-color: var(--up-accent);
+      color: var(--up-accent-fg); }
+    .up-topicchip-check svg { width: 10px; height: 10px; display: block; flex: 0 0 auto;
+      opacity: 0; transform: scale(.7);
+      transition: opacity var(--up-cb-t) var(--up-cb-ease),
+                  transform var(--up-cb-t) var(--up-cb-ease); }
+    .up-topicchip-check.is-on svg { opacity: 1; transform: scale(1); }
     /* Matches .ust-cell[data-theme="dark"] .ust-tag exactly (prompts-table.js's own topics-column
        widget) -- same chip, same colours, everywhere. [data-theme="dark"] on ANY ancestor matches
        here (the bulk-topics bar, both topic-modal backdrops, the grouping create/edit modal, the
