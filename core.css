@@ -1749,7 +1749,25 @@
     .up-pop-opt .up-check svg { width: 16px; height: 16px; display: block; }
     .up-pop-opt.is-active .up-check { opacity: 1; transform: scale(1); }
     .up-pop-div { height: 1px; background: var(--vc-border); margin: 7px 4px; }
-    .up-pop-sub { padding: 8px 10px 14px; }
+    /* Unten 8 statt 14: derselbe Abstand unter der Ueberschrift wie bei .up-pop-head. Es ist
+       dieselbe Rolle, und zwei Werte dafuer waren nur gewachsen. Oben bleiben die 8, die
+       zusammen mit dem Trenner darueber (7px Aussenabstand) die Zaesur bilden. */
+    .up-pop-sub { padding: 8px 10px 8px; }
+
+    /* ---- 4px ZWISCHEN DEN ZEILEN, in JEDEM Dropdown (21.09. angefordert) -----------------
+       Gemessen war es vorher NULL: die Zeilen trugen nur ihre eigene Polsterung (9px 10px) und
+       klebten aneinander. Mit 9px Radius und einem Hover-Grund, der die ganze Zeile faerbt,
+       sahen zwei benachbarte Zeilen im Hover aus wie ein Block.
+
+       Nachbarschaftsregel und KEIN gap am Menue: ein gap am Elternteil faenge auch die
+       Ueberschrift und die Trenner mit ein -- die haben ihre eigenen Abstaende (4/10/8 bzw.
+       7px Aussenabstand), und die waeren dann zweimal da. So bekommt der Abstand nur, was
+       zwischen ZWEI Zeilen liegt: nie vor der ersten, nie nach der letzten, nie um einen
+       Trenner herum.
+
+       .up-dense-btn ist ABSICHTLICH nicht dabei: das ist der waagerechte Segmentstreifen
+       (siehe .up-dense bei den Segmentleisten), dort waere ein senkrechter Abstand sinnlos. */
+    :is(.up-pop-opt, .up-pop-row) + :is(.up-pop-opt, .up-pop-row) { margin-top: 4px; }
     .up-dense { display: inline-flex; width: 100%; padding: 0; gap: 0; background: var(--vc-switch-bg); border-radius: 8px; height: 34px; }
     /* 0 8px: die Beschriftung steht nicht mehr auf der Kante ihrer Haelfte. Wirkt dort, wo der
        Schalter sich nach seinem Inhalt richtet (die Zeile im Einstellungsfenster); in einem
@@ -4006,11 +4024,19 @@
    andere Dropdown. Nur die Verankerung ist hier. Oeffnet nach LINKS, weil die Zeile am rechten
    Rand ihres Behaelters sitzt. */
 .upt-group-rowmenu, .up-cg-rowmenu { top: calc(100% - 2px); right: 4px; left: auto; width: 128px; padding: 6px;
-  display: flex; flex-direction: column; gap: 2px; }
+  display: flex; flex-direction: column; }
+/* KEIN eigener gap mehr (war 2px). Die Zeilen darin sind .up-pop-opt, und deren Abstand kommt
+   seit dem 21.09. aus der einen Regel weiter oben -- 4px, wie in jedem Dropdown. Ein gap hier
+   haette sich mit ihr ADDIERT: gemessen waeren es 6px geworden, also ausgerechnet in dem Menue,
+   das am kompaktesten sein soll, der groesste Abstand der App. */
 /* 32px, flach, nicht aus Polsterung gerechnet -- jede Menuezeile dieser App ist 32px hoch. */
 .upt-group-rowmenu .up-pop-opt, .up-cg-rowmenu .up-pop-opt { justify-content: flex-start; height: 32px; padding: 0 10px; font-size: 13px; }
-.upt-group-rowmenu .up-pop-opt.is-danger, .up-cg-rowmenu .up-pop-opt.is-danger { color: #b0200c; }
-.upt-group-rowmenu .up-pop-opt.is-danger:hover, .up-cg-rowmenu .up-pop-opt.is-danger:hover { background: rgba(176,32,12,.08); }
+/* Gefahrenrot ueber den Token, wie in prompts-table.css. Dort steht die Kopie dieses Menues
+   ("Byte-for-byte the Grouping popover's own row menu"), und die ist am 21.09. umgestellt
+   worden -- die beiden waeren im dunklen Thema sonst auseinandergelaufen: hier #b0200c, dort
+   das hellere #d25d5d von --vt-down. */
+.upt-group-rowmenu .up-pop-opt.is-danger, .up-cg-rowmenu .up-pop-opt.is-danger { color: var(--vt-down); }
+.upt-group-rowmenu .up-pop-opt.is-danger:hover, .up-cg-rowmenu .up-pop-opt.is-danger:hover { background: color-mix(in srgb, var(--vt-down) 8%, transparent); }
 
 /* Beim Ziehen wird die Zeile ihr eigener Platzhalter, statt nur zu dimmen: der echte Inhalt
    verschwindet, zwei graue Bloecke treten an seine Stelle, ein Rahmen markiert den Platz. Reiner
