@@ -129,14 +129,14 @@
      Bestehende Einbauten bleiben unberuehrt: ist ein .mqa-trigger schon da, wird nichts gebaut. */
   var MQA_MARKUP =
     '<button class="mqa-trigger" type="button" aria-label="Open quick actions">' +
-      '<svg class="mqa-trigger-ic" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>' +
+      '<svg class="mqa-trigger-ic" viewBox="0 0 24 24"><path d="M17 17L21 21"/><path d="M19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19C15.4183 19 19 15.4183 19 11Z"/></svg>' +
       '<span class="mqa-trigger-label">Quick Actions</span>' +
       '<span class="mqa-kbd" data-kbd>\u2318K</span>' +
     '</button>' +
     '<div class="mqa-overlay" role="presentation" aria-hidden="true">' +
       '<div class="mqa-modal" role="dialog" aria-modal="true" aria-label="Quick actions">' +
         '<div class="mqa-search">' +
-          '<svg class="mqa-search-ic" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>' +
+          '<svg class="mqa-search-ic" viewBox="0 0 24 24"><path d="M17 17L21 21"/><path d="M19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19C15.4183 19 19 15.4183 19 11Z"/></svg>' +
           '<span class="mqa-chips" id="mqa-chips"></span>' +
           '<span class="mqa-inputwrap">' +
             '<input class="mqa-input" type="text" autocomplete="off" spellcheck="false" placeholder="" aria-label="Search" />' +
@@ -145,10 +145,10 @@
           '<span class="mqa-ph-cmd" id="mqa-ph-cmd" aria-hidden="true">/ for filters</span>' +
           '<span class="mqa-kbd mqa-esc" id="mqa-esc">esc</span>' +
           '<button class="mqa-fav is-hidden" type="button" id="mqa-fav" aria-pressed="false" aria-label="Save as Favorite">' +
-            '<svg viewBox="0 0 24 24"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" /></svg>' +
+            '<svg viewBox="0 0 24 24"><path d="M13.7276 3.44418L15.4874 6.99288C15.7274 7.48687 16.3673 7.9607 16.9073 8.05143L20.0969 8.58575C22.1367 8.92853 22.6167 10.4206 21.1468 11.8925L18.6671 14.3927C18.2471 14.8161 18.0172 15.6327 18.1471 16.2175L18.8571 19.3125C19.417 21.7623 18.1271 22.71 15.9774 21.4296L12.9877 19.6452C12.4478 19.3226 11.5579 19.3226 11.0079 19.6452L8.01827 21.4296C5.8785 22.71 4.57865 21.7522 5.13859 19.3125L5.84851 16.2175C5.97849 15.6327 5.74852 14.8161 5.32856 14.3927L2.84884 11.8925C1.389 10.4206 1.85895 8.92853 3.89872 8.58575L7.08837 8.05143C7.61831 7.9607 8.25824 7.48687 8.49821 6.99288L10.258 3.44418C11.2179 1.51861 12.7777 1.51861 13.7276 3.44418Z"/></svg>' +
           '</button>' +
           '<button class="mqa-clear is-hidden" type="button" id="mqa-clear" aria-label="Reset search">' +
-            '<svg viewBox="0 0 24 24"><path d="M10 11v6" /> <path d="M14 11v6" /> <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /> <path d="M3 6h18" /> <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>' +
+            '<svg viewBox="0 0 24 24"><path d="M19.5 5.5L18.8803 15.5251C18.7219 18.0864 18.6428 19.3671 18.0008 20.2879C17.6833 20.7431 17.2747 21.1273 16.8007 21.416C15.8421 22 14.559 22 11.9927 22C9.42312 22 8.1383 22 7.17905 21.4149C6.7048 21.1257 6.296 20.7408 5.97868 20.2848C5.33688 19.3626 5.25945 18.0801 5.10461 15.5152L4.5 5.5"/><path d="M3 5.5H21M16.0557 5.5L15.3731 4.09173C14.9196 3.15626 14.6928 2.68852 14.3017 2.39681C14.215 2.3321 14.1231 2.27454 14.027 2.2247C13.5939 2 13.0741 2 12.0345 2C10.9688 2 10.436 2 9.99568 2.23412C9.8981 2.28601 9.80498 2.3459 9.71729 2.41317C9.32164 2.7167 9.10063 3.20155 8.65861 4.17126L8.05292 5.5"/><path d="M9.5 16.5L9.5 10.5"/><path d="M14.5 16.5L14.5 10.5"/></svg>' +
           '</button>' +
         '</div>' +
         /* Die zwei Woerter in EIGENEN Spans. Vorher trug der Knopf sie als eigene Textknoten
@@ -158,7 +158,7 @@
            richtigen Reihenfolge. */
         '<button class="mqa-entercta is-hidden" type="button" id="mqa-entercta">' +
           '<span>Press</span>' +
-          '<span class="mqa-kbd"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4v7a4 4 0 0 1-4 4H4" /> <path d="m9 10-5 5 5 5" /></svg>Enter</span>' +
+          '<span class="mqa-kbd"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 6H15.5C17.9853 6 20 8.01472 20 10.5C20 12.9853 17.9853 15 15.5 15H4"/><path d="M6.99998 12C6.99998 12 4.00001 14.2095 4 15C3.99999 15.7906 7 18 7 18"/></svg>Enter</span>' +
           '<span>to search</span>' +
         '</button>' +
         '<div class="mqa-scroll"><div class="mqa-results" aria-live="polite"></div></div>' +
@@ -200,12 +200,12 @@
   var TYPE_LABEL    = { brand:"Brands", domain:"Domains", url:"URLs", prompt:"Prompts" };
   var TYPE_SINGULAR = { brand:"Brand",  domain:"Domain",  url:"URL",  prompt:"Prompt" };
 
-  var GLOBE = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" /> <path d="M2 12h20" /></svg>';
+  var GLOBE = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12C8 18 12 22 12 22C12 22 16 18 16 12C16 6 12 2 12 2C12 2 8 6 8 12Z"/><path d="M21 15H3"/><path d="M21 9H3"/></svg>';
   var STATIC = [
-    { action:"add_new_prompt",  label:"Add New Prompt",  hint:"", icon:'<svg viewBox="0 0 24 24"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z" /></svg>' },
-    { action:"add_new_brand",   label:"Add New Brand",   hint:"", icon:'<svg viewBox="0 0 24 24"><path d="M4 10c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2"/><path d="M10 16c-1.1 0-2-.9-2-2v-4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2"/><rect width="8" height="8" x="14" y="14" rx="2"/></svg>' },
-    { action:"export_data",     label:"Export Your Data",hint:"", icon:'<svg viewBox="0 0 24 24"><path d="M12 15V3" /> <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /> <path d="m7 10 5 5 5-5" /></svg>' },
-    { action:"edit_your_brand", label:"Edit Your Brand", hint:"", icon:'<svg viewBox="0 0 24 24"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/></svg>' }
+    { action:"add_new_prompt",  label:"Add New Prompt",  hint:"", icon:'<svg viewBox="0 0 24 24"><path d="M5.22576 11.3294L12.224 2.34651C12.7713 1.64397 13.7972 2.08124 13.7972 3.01707V9.96994C13.7972 10.5305 14.1995 10.985 14.6958 10.985H18.0996C18.8729 10.985 19.2851 12.0149 18.7742 12.6706L11.776 21.6535C11.2287 22.356 10.2028 21.9188 10.2028 20.9829V14.0301C10.2028 13.4695 9.80048 13.015 9.3042 13.015H5.90035C5.12711 13.015 4.71494 11.9851 5.22576 11.3294Z"/></svg>' },
+    { action:"add_new_brand",   label:"Add New Brand",   hint:"", icon:'<svg viewBox="0 0 24 24"><path d="M20.7275 14.365C21 14.8998 21 15.5999 21 17C21 18.4001 21 19.1002 20.7275 19.635C20.4878 20.1054 20.1054 20.4878 19.635 20.7275C19.1002 21 18.4001 21 17 21C15.5999 21 14.8998 21 14.365 20.7275C13.8946 20.4878 13.5122 20.1054 13.2725 19.635C13 19.1002 13 18.4001 13 17C13 15.5999 13 14.8998 13.2725 14.365C13.5122 13.8946 13.8946 13.5122 14.365 13.2725C14.8998 13 15.5999 13 17 13C18.4001 13 19.1002 13 19.635 13.2725C20.1054 13.5122 20.4878 13.8946 20.7275 14.365Z"/><path d="M15.9235 10C15.8832 9.75397 15.8216 9.54965 15.7275 9.36502C15.4878 8.89462 15.1054 8.51217 14.635 8.27248C14.1002 8 13.4001 8 12 8C10.5999 8 9.8998 8 9.36502 8.27248C8.89462 8.51217 8.51217 8.89462 8.27248 9.36502C8 9.8998 8 10.5999 8 12C8 13.4001 8 14.1002 8.27248 14.635C8.51217 15.1054 8.89462 15.4878 9.36502 15.7275C9.54965 15.8216 9.75397 15.8832 10 15.9235"/><path d="M10.9235 5C10.8832 4.75397 10.8216 4.54965 10.7275 4.36502C10.4878 3.89462 10.1054 3.51217 9.63498 3.27248C9.1002 3 8.40013 3 7 3C5.59987 3 4.8998 3 4.36502 3.27248C3.89462 3.51217 3.51217 3.89462 3.27248 4.36502C3 4.8998 3 5.59987 3 7C3 8.40013 3 9.1002 3.27248 9.63498C3.51217 10.1054 3.89462 10.4878 4.36502 10.7275C4.54965 10.8216 4.75397 10.8832 5 10.9235"/></svg>' },
+    { action:"export_data",     label:"Export Your Data",hint:"", icon:'<svg viewBox="0 0 24 24"><path d="M16.9504 12.1817C17.1981 12.814 16.5076 13.5726 15.1267 15.0899C13.6702 16.6902 12.9201 17.4904 12 17.5C11.0799 17.4904 10.3298 16.6902 8.87331 15.0899C7.49239 13.5726 6.80193 12.814 7.04964 12.1817C7.05868 12.1586 7.06851 12.1359 7.0791 12.1135C7.34928 11.542 8.24477 11.5029 10 11.5002V4.99998C10 4.53501 10 4.30253 10.0511 4.11179C10.1898 3.59414 10.5941 3.1898 11.1118 3.05111C11.3025 3 11.535 3 12 3C12.4649 3 12.6974 3 12.8882 3.05111C13.4058 3.1898 13.8102 3.59414 13.9489 4.11179C14 4.30253 14 4.53501 14 4.99998V11.5002C15.7552 11.5029 16.6507 11.542 16.9209 12.1135C16.9315 12.1359 16.9413 12.1586 16.9504 12.1817Z"/><path d="M5.00006 21H19.0001"/></svg>' },
+    { action:"edit_your_brand", label:"Edit Your Brand", hint:"", icon:'<svg viewBox="0 0 24 24"><path d="M7.99219 16L8.71615 13.1041C8.89023 12.4078 9.25026 11.772 9.75776 11.2644L16.4171 4.60509L17.4071 3.6151C18.2272 2.79497 19.557 2.79497 20.3771 3.6151C21.1972 4.43524 21.1972 5.76493 20.3771 6.58507L19.3871 7.57506L12.7277 14.2344C12.2202 14.7419 11.5843 15.102 10.888 15.276L7.99219 16Z"/><path d="M18.9921 13.5C18.9921 16.7875 18.9921 18.4312 18.0842 19.5376C17.918 19.7401 17.7322 19.9258 17.5297 20.092C16.4234 21 14.7796 21 11.4921 21H10.9922C7.22095 21 5.33535 21 4.16378 19.8284C2.99222 18.6569 2.99219 16.7712 2.99219 13V12.5C2.99219 9.21252 2.99219 7.56879 3.90013 6.46244C4.06636 6.2599 4.25208 6.07417 4.45463 5.90794C5.56098 5 7.20471 5 10.4922 5"/></svg>' }
   ];
 
   var isOpen = false, query = "", latestReqId = null, state = "idle", debTimer = 0, _lastCompleted = null;
@@ -676,20 +676,20 @@
   // what the number actually means depends on the type:
   //   url/domain -> share of citations, brand -> share of voice, prompt -> your own visibility
   var METRIC_LABEL = { url: "Share", domain: "Share", brand: "Share", prompt: "Visibility" };
-  var ARR_UP   = '<svg viewBox="0 0 24 24"><path d="M7 7h10v10" /> <path d="M7 17 17 7" /></svg>';
-  var ARR_DOWN = '<svg viewBox="0 0 24 24"><path d="m7 7 10 10" /> <path d="M17 7v10H7" /></svg>';
-  var DASH     = '<svg viewBox="0 0 24 24"><path d="M5 12h14" /></svg>';
+  var ARR_UP   = '<svg viewBox="0 0 24 24"><path d="M9 6.65032C9 6.65032 15.9383 6.10759 16.9154 7.08463C17.8924 8.06167 17.3496 15 17.3496 15M16.5 7.5L6.5 17.5"/></svg>';
+  var ARR_DOWN = '<svg viewBox="0 0 24 24"><path d="M9 17.3497C9 17.3497 15.9383 17.8924 16.9154 16.9154C17.8924 15.9383 17.3496 9 17.3496 9M16.5 16.5L6.5 6.5"/></svg>';
+  var DASH     = '<svg viewBox="0 0 24 24"><path d="M20.9922 12L2.99219 12"/></svg>';
   // per-row "more" menu — see rowHtml()/the row-menu block near the bottom of this file
   /* Lucide "ellipsis", wortgleich: drei Kreise mit r=1, gezeichnet mit stroke-width 2 -- nicht
      gefuellt. Vorher stand hier fill="currentColor" ohne Strich, und damit waren die Punkte nur
      halb so gross wie ueberall sonst in der App. Literal statt UC.icon, weil diese Datei
      absichtlich ohne core lauffaehig bleibt (siehe Kopf) -- die Form ist dieselbe, die
      UC.icon("moreHorizontal") liefert. */
-  var MORE_SVG   = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>';
-  var OPEN_SVG   = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /> <path d="m12 5 7 7-7 7" /></svg>';
-  var NEWTAB_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6" /> <path d="M10 14 21 3" /> <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></svg>';
+  var MORE_SVG   = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.00449 12.5V12M18.0045 12.5V12M12.0045 12.5V12M7.00449 12.5C7.00449 11.9477 6.55677 11.5 6.00449 11.5C5.4522 11.5 5.00449 11.9477 5.00449 12.5C5.00449 13.0523 5.4522 13.5 6.00449 13.5C6.55677 13.5 7.00449 13.0523 7.00449 12.5ZM19.0045 12.5C19.0045 11.9477 18.5568 11.5 18.0045 11.5C17.4522 11.5 17.0045 11.9477 17.0045 12.5C17.0045 13.0523 17.4522 13.5 18.0045 13.5C18.5568 13.5 19.0045 13.0523 19.0045 12.5ZM13.0045 12.5C13.0045 11.9477 12.5568 11.5 12.0045 11.5C11.4522 11.5 11.0045 11.9477 11.0045 12.5C11.0045 13.0523 11.4522 13.5 12.0045 13.5C12.5568 13.5 13.0045 13.0523 13.0045 12.5Z"/></svg>';
+  var OPEN_SVG   = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.00005 6C9.00005 6 15 10.4189 15 12C15 13.5812 9 18 9 18"/></svg>';
+  var NEWTAB_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.14339 10.691L9.35031 10.4841C11.329 8.50532 14.5372 8.50532 16.5159 10.4841C18.4947 12.4628 18.4947 15.671 16.5159 17.6497L13.6497 20.5159C11.671 22.4947 8.46279 22.4947 6.48405 20.5159C4.50532 18.5372 4.50532 15.329 6.48405 13.3503L6.9484 12.886"/><path d="M17.0516 11.114L17.5159 10.6497C19.4947 8.67095 19.4947 5.46279 17.5159 3.48405C15.5372 1.50532 12.329 1.50532 10.3503 3.48405L7.48405 6.35031C5.50532 8.32904 5.50532 11.5372 7.48405 13.5159C9.46279 15.4947 12.671 15.4947 14.6497 13.5159L14.8566 13.309"/></svg>';
   /* Lucide pin -- fuer "Pin to sidebar" im Zeilenmenue. */
-  var PIN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>';
+  var PIN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21L8 16"/><path d="M13.2585 18.8714C9.51516 18.0215 5.97844 14.4848 5.12853 10.7415C4.99399 10.1489 4.92672 9.85266 5.12161 9.37197C5.3165 8.89129 5.55457 8.74255 6.03071 8.44509C7.10705 7.77265 8.27254 7.55888 9.48209 7.66586C11.1793 7.81598 12.0279 7.89104 12.4512 7.67048C12.8746 7.44991 13.1622 6.93417 13.7376 5.90269L14.4664 4.59604C14.9465 3.73528 15.1866 3.3049 15.7513 3.10202C16.316 2.89913 16.6558 3.02199 17.3355 3.26771C18.9249 3.84236 20.1576 5.07505 20.7323 6.66449C20.978 7.34417 21.1009 7.68401 20.898 8.2487C20.6951 8.8134 20.2647 9.05346 19.4039 9.53358L18.0672 10.2792C17.0376 10.8534 16.5229 11.1406 16.3024 11.568C16.0819 11.9955 16.162 12.8256 16.3221 14.4859C16.4399 15.7068 16.2369 16.88 15.5555 17.9697C15.2577 18.4458 15.1088 18.6839 14.6283 18.8786C14.1477 19.0733 13.8513 19.006 13.2585 18.8714Z"/></svg>';
   function trendHtml(v){
     if (v == null || v === "" || isNaN(Number(v))) return '<span class="mqa-trend is-flat">' + DASH + '</span>';   // no trend
     var n = Number(v), a = Math.abs(n);
@@ -792,11 +792,11 @@
           /* Feather "book-open", the same glyph the dashboard header's Docs button carries. Taken
              from the set rather than drawn here: a hand-made icon never quite matches the stroke
              weight and optical size of the ones around it. */
-          '<svg viewBox="0 0 24 24"><path d="M12 5v16" /> <path d="M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z" /></svg>' +
+          '<svg viewBox="0 0 24 24"><path d="M7.99978 3.5H6.60021C4.43183 3.5 3.34764 3.5 2.67399 4.17362C2.00034 4.84724 2.00029 5.93144 2.00021 8.09982L2 13.3998C1.99992 15.5684 1.99987 16.6526 2.67353 17.3263C3.34719 18 4.43146 18 6.6 18H8.95042C10.4329 18 11.7092 19.0464 11.9999 20.5V5.5C11.0556 4.24097 9.99989 3.5 7.99978 3.5Z"/><path d="M16.0001 3.5H17.3997C19.5681 3.5 20.6523 3.5 21.3259 4.17362C21.9996 4.84724 21.9996 5.93144 21.9997 8.09982L21.9999 13.3998C22 15.5684 22 16.6526 21.3264 17.3263C20.6527 18 19.5684 18 17.3999 18H15.0495C13.567 18 12.2907 19.0464 12 20.5V5.5C12.9443 4.24097 14 3.5 16.0001 3.5Z"/></svg>' +
         '</span>' +
         '<span class="mqa-main"><span class="mqa-primary">Reference</span></span>' +
         '<span class="mqa-ref-chev">' +
-          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9"/></svg>' +
         '</span>' +
       '</button>';
     if (!refListOpen) return html + '</div>';
@@ -810,7 +810,7 @@
           '<span class="mqa-main"><span class="mqa-primary">' + esc(tx(r.label)) + '</span></span>' +
           (hint ? '<span class="mqa-action-hint">' + esc(tx(hint)) + '</span>' : '') +
           '<span class="mqa-ref-chev">' +
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9"/></svg>' +
           '</span>' +
         '</button>';
       /* Only the OPEN entry's body is in the DOM. The alternative — every body present and hidden
@@ -898,11 +898,11 @@
           /* Feather "command". NOT the zap glyph: that one is already "Add New Prompt", one row
              below inside this very group, and a head row wearing its own child's icon reads as a
              duplicate rather than as a heading. */
-          '<svg viewBox="0 0 24 24"><path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" /></svg>' +
+          '<svg viewBox="0 0 24 24"><path d="M15 9V15H9V9H15Z"/><path d="M15 15H18C19.6569 15 21 16.3431 21 18C21 19.6569 19.6569 21 18 21C16.3431 21 15 19.6569 15 18V15Z"/><path d="M9 15.002H6C4.34315 15.002 3 16.3451 3 18.002C3 19.6588 4.34315 21.002 6 21.002C7.65685 21.002 9 19.6588 9 18.002V15.002Z"/><path d="M15 9L15 6C15 4.34315 16.3431 3 18 3C19.6569 3 21 4.34315 21 6C21 7.65685 19.6569 9 18 9H15Z"/><path d="M9 9V6C9 4.34315 7.65685 3 6 3C4.34315 3 3 4.34315 3 6C3 7.65685 4.34315 9 6 9H9Z"/></svg>' +
         '</span>' +
         '<span class="mqa-main"><span class="mqa-primary">Actions</span></span>' +
         '<span class="mqa-ref-chev">' +
-          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9"/></svg>' +
         '</span>' +
       '</button>';
     if (!actionsOpen){ actionsWrap.innerHTML = html + '</div>'; animSection = ""; return; }
@@ -912,7 +912,7 @@
         '<span class="mqa-action-ic">' + a.icon + '</span>' +
         '<span class="mqa-main"><span class="mqa-primary">' + esc(tx(a.label)) + '</span></span>' +
         (a.hint ? '<span class="mqa-action-hint">' + esc(tx(a.hint)) + '</span>' : '') +
-        '<span class="mqa-enter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg></span>' +
+        '<span class="mqa-enter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.00005 18C9.00005 18 15 13.5811 15 12C15 10.4188 9 6 9 6"/></svg></span>' +
       '</button>';
     });
     html += '</div></div>';
@@ -946,7 +946,7 @@
     _viewed.unshift(copy);
     _viewed = _viewed.slice(0, VIEWED_MAX);
   }
-  var CLOCK = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>';
+  var CLOCK = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8V12L14 14"/></svg>';
   function recentLoad(){ return _recent; }
   function recentSave(list){ _recent = list; }
   function recentKey(e){ return (e.query || "") + "|" + [e.scope, e.rank, e.type, e.market, e.mentioning].join("|"); }
@@ -968,7 +968,7 @@
      Bubble's iframe preview), so every access is wrapped: a failure degrades to "no favourites",
      never to a broken palette. */
   var FAV_MAX = 5;
-  var STAR = '<svg viewBox="0 0 24 24"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" /></svg>';
+  var STAR = '<svg viewBox="0 0 24 24"><path d="M13.7276 3.44418L15.4874 6.99288C15.7274 7.48687 16.3673 7.9607 16.9073 8.05143L20.0969 8.58575C22.1367 8.92853 22.6167 10.4206 21.1468 11.8925L18.6671 14.3927C18.2471 14.8161 18.0172 15.6327 18.1471 16.2175L18.8571 19.3125C19.417 21.7623 18.1271 22.71 15.9774 21.4296L12.9877 19.6452C12.4478 19.3226 11.5579 19.3226 11.0079 19.6452L8.01827 21.4296C5.8785 22.71 4.57865 21.7522 5.13859 19.3125L5.84851 16.2175C5.97849 15.6327 5.74852 14.8161 5.32856 14.3927L2.84884 11.8925C1.389 10.4206 1.85895 8.92853 3.89872 8.58575L7.08837 8.05143C7.61831 7.9607 8.25824 7.48687 8.49821 6.99288L10.258 3.44418C11.2179 1.51861 12.7777 1.51861 13.7276 3.44418Z"/></svg>';
   var favEl = overlay.querySelector("#mqa-fav");
   function favStoreKey(){ return "mqa_fav_" + (TEAM || "_"); }
   function favLoad(){
@@ -1030,7 +1030,7 @@
     FILTERS = saved;
     return out;
   }
-  var ENTER_CHEV = '<span class="mqa-enter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg></span>';
+  var ENTER_CHEV = '<span class="mqa-enter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.00005 18C9.00005 18 15 13.5811 15 12C15 10.4188 9 6 9 6"/></svg></span>';
   function entryLineHtml(e){
     return '<span class="mqa-main"><span class="mqa-primary mqa-recent-line">' + miniChips(e) +
       (e.query ? '<span class="mqa-recent-q">' + esc(e.query) + '</span>' : '') + '</span></span>';
@@ -1177,7 +1177,7 @@
     if (clearEl) clearEl.classList.toggle("is-hidden", !busy);
   }
   if (clearEl) clearEl.addEventListener("click", function(e){ e.stopPropagation(); clearAll(); input.focus(); });
-  var XSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>';
+  var XSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6L6.00081 17.9992M17.9992 18L6 6.00085"/></svg>';
   function renderChips(){
     var h = "";
     ["scope","rank","type","urltype","market","mentioning"].forEach(function(slot){
@@ -1234,7 +1234,7 @@
       lead +
       '<span class="mqa-main"><span class="mqa-primary"' + (dot ? ' style="color:' + escAttr(dot) + '"' : '') + '>' + esc(tx(label)) + '</span></span>' +
       (hint ? '<span class="mqa-cmd-hint">' + esc(tx(hint)) + '</span>' : '') +
-      '<span class="mqa-enter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg></span>' +
+      '<span class="mqa-enter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.00005 18C9.00005 18 15 13.5811 15 12C15 10.4188 9 6 9 6"/></svg></span>' +
     '</button>';
   }
   // returns true when the input is in command mode and the list was rendered

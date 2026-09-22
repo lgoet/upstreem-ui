@@ -574,7 +574,7 @@
           ? '<img class="combo-filter-favicon" src="' + esc(ds.__favicon) + '"/>'
           : '<span class="combo-filter-dot" style="background:' + ds.__baseColor + '"></span>';
         return '<div class="combo-filter-item ' + (checked ? "is-checked" : "") + '" data-id="' + esc(String(ds.__id)) + '" style="--cc-fltclr:' + ds.__baseColor + '" title="' + esc(ds.label) + '">' +
-          '<span class="combo-filter-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg></span>' +
+          '<span class="combo-filter-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13.2592L7.58583 15.9568C8.2525 16.6523 8.58583 17 9.00004 17C9.41425 17 9.74759 16.6523 10.4143 15.9568L19 7"/></svg></span>' +
           icon + '<span class="combo-filter-name">' + esc(ds.label) + '</span></div>';
       }).join("");
       filterMenu.innerHTML = head + items;

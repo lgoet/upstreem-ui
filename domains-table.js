@@ -86,7 +86,7 @@
      (.udt-subrows.is-entering/.is-closing { animation: ... 200ms ... }) — there is no shared
      CSS custom property for a keyframe's duration, so the two are kept in sync by hand. */
   var SUB_ANIM_MS = 200;
-  var CHEV_SVG = '<svg class="udt-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>';
+  var CHEV_SVG = '<svg class="udt-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9"/></svg>';
   var SUB_SEARCH_SVG = UC.icon("search", 2);
   var SUB_X_SVG = UC.icon("x", 2.2);
 
@@ -511,7 +511,7 @@
       var typeCtl = '<div class="udt-sub-filter' + (subTypeOpen ? " is-open" : "") + '">' +
         '<button class="up-filter-btn udt-sub-filterbtn' + (selCount ? " is-active" : "") + '" type="button" data-subfilter>' +
           '<span class="up-filter-btn-lbl">' + (selCount ? selCount + " selected" : "All URL Types") + '</span>' +
-          '<svg class="up-filter-btn-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>' +
+          '<svg class="up-filter-btn-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9"/></svg>' +
         '</button>' +
         '<div class="up-filter-menu udt-sub-filtermenu' + (subTypeOpen ? " is-shown" : "") + '" role="menu">' +
           '<div class="up-filter-head"><span class="up-filter-title">URL Types</span>' +
@@ -598,10 +598,10 @@
         '<div class="up-pager">' + info +
           (pageCount > 1 ?
             '<button class="up-page up-page-prev" type="button" aria-label="Previous page" data-subpage-prev' + (cur <= 1 ? " disabled" : "") + '>' +
-              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg></button>' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18C15 18 9.00001 13.5811 9 12C8.99999 10.4188 15 6 15 6"/></svg></button>' +
             '<span class="udt-sub-pages">' + pages + '</span>' +
             '<button class="up-page up-page-next" type="button" aria-label="Next page" data-subpage-next' + (cur >= pageCount ? " disabled" : "") + '>' +
-              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg></button>'
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.00005 18C9.00005 18 15 13.5811 15 12C15 10.4188 9 6 9 6"/></svg></button>'
             : "") +
         '</div>' +
       '</div>';
@@ -1081,7 +1081,7 @@
       var search = list.length
         ? '<div class="up-ment-searchwrap">' +
             '<input class="up-ment-search" type="text" placeholder="Search brands..." autocomplete="off" spellcheck="false" value="' + esc(mentQuery) + '"/>' +
-            '<button class="up-ment-searchclear" type="button" aria-label="Clear brand search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg></button>' +
+            '<button class="up-ment-searchclear" type="button" aria-label="Clear brand search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6.00081 17.9992M17.9992 18L6 6.00085"/></svg></button>' +
           '</div>'
         : '';
       elMentMenu.innerHTML = head + search +

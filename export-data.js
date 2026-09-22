@@ -36,7 +36,7 @@
   ];
 
   var CHECK_SVG = '<span class="uex-opt-check" aria-hidden="true">' +
-    '<svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg></span>';
+    '<svg viewBox="0 0 24 24"><path d="M5 13.2592L7.58583 15.9568C8.2525 16.6523 8.58583 17 9.00004 17C9.41425 17 9.74759 16.6523 10.4143 15.9568L19 7"/></svg></span>';
 
   function isYes(v){ return /^(1|true|yes|y)$/i.test(String(v == null ? "" : v).trim()); }
   /* Kennt core ein Thema, gewinnt core: data-isdark ist die Momentaufnahme aus dem Moment, in dem
@@ -185,7 +185,7 @@
              der Knopf sprang und sah aus wie nirgends sonst in der App. */
           '<button class="up-popup-close uex-close" type="button" aria-label="Close">' +
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
-              'stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>' +
+              'stroke-linecap="round"><path d="M18 6L6.00081 17.9992M17.9992 18L6 6.00085"/></svg>' +
           '</button>' +
         '</div>' +
         '<div class="uex-body">' +
@@ -200,14 +200,10 @@
             '<div class="uex-grid is-presets"></div>' +
             '<div class="uex-custom-wrap">' +
               '<button class="uex-opt uex-custom-btn" type="button">' +
-                '<svg viewBox="0 0 24 24" aria-hidden="true">' +
-                  '<path d="M8 2v3"></path><path d="M16 2v3"></path>' +
-                  '<rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M3 9h18"></path>' +
-                  
-                '</svg>' +
+                '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 2V6M8 2V6"/><path d="M13 4H11C7.22876 4 5.34315 4 4.17157 5.17157C3 6.34315 3 8.22876 3 12V14C3 17.7712 3 19.6569 4.17157 20.8284C5.34315 22 7.22876 22 11 22H13C16.7712 22 18.6569 22 19.8284 20.8284C21 19.6569 21 17.7712 21 14V12C21 8.22876 21 6.34315 19.8284 5.17157C18.6569 4 16.7712 4 13 4Z"/><path d="M3 10H21"/></svg>' +
                 '<span class="uex-opt-label uex-custom-text">Custom range</span>' +
                 '<span class="uex-opt-check" aria-hidden="true">' +
-                  '<svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg>' +
+                  '<svg viewBox="0 0 24 24"><path d="M5 13.2592L7.58583 15.9568C8.2525 16.6523 8.58583 17 9.00004 17C9.41425 17 9.74759 16.6523 10.4143 15.9568L19 7"/></svg>' +
                 '</span>' +
               '</button>' +
               '<div class="uex-cal-slot"></div>' +
@@ -222,11 +218,7 @@
         '<div class="uex-foot">' +
           '<button class="uex-submit" type="button">' +
             '<span class="uex-submit-icon">' +
-              '<svg viewBox="0 0 24 24" aria-hidden="true">' +
-                '<path d="M12 15V3"></path>' +
-                '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>' +
-                '<path d="m7 10 5 5 5-5"></path>' +
-              '</svg>' +
+              '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.9504 12.1817C17.1981 12.814 16.5076 13.5726 15.1267 15.0899C13.6702 16.6902 12.9201 17.4904 12 17.5C11.0799 17.4904 10.3298 16.6902 8.87331 15.0899C7.49239 13.5726 6.80193 12.814 7.04964 12.1817C7.05868 12.1586 7.06851 12.1359 7.0791 12.1135C7.34928 11.542 8.24477 11.5029 10 11.5002V4.99998C10 4.53501 10 4.30253 10.0511 4.11179C10.1898 3.59414 10.5941 3.1898 11.1118 3.05111C11.3025 3 11.535 3 12 3C12.4649 3 12.6974 3 12.8882 3.05111C13.4058 3.1898 13.8102 3.59414 13.9489 4.11179C14 4.30253 14 4.53501 14 4.99998V11.5002C15.7552 11.5029 16.6507 11.542 16.9209 12.1135C16.9315 12.1359 16.9413 12.1586 16.9504 12.1817Z"/><path d="M5.00006 21H19.0001"/></svg>' +
             '</span>' +
             '<span class="uex-submit-text">Export</span>' +
           '</button>' +
@@ -263,11 +255,7 @@
     var elSubmitText = overlay.querySelector(".uex-submit-text");
     var SPINNER_SVG = '<span class="uex-spin" aria-hidden="true"></span>';
     var EXPORT_SVG =
-      '<svg viewBox="0 0 24 24" aria-hidden="true">' +
-        '<path d="M12 15V3"></path>' +
-        '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>' +
-        '<path d="m7 10 5 5 5-5"></path>' +
-      '</svg>';
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.9504 12.1817C17.1981 12.814 16.5076 13.5726 15.1267 15.0899C13.6702 16.6902 12.9201 17.4904 12 17.5C11.0799 17.4904 10.3298 16.6902 8.87331 15.0899C7.49239 13.5726 6.80193 12.814 7.04964 12.1817C7.05868 12.1586 7.06851 12.1359 7.0791 12.1135C7.34928 11.542 8.24477 11.5029 10 11.5002V4.99998C10 4.53501 10 4.30253 10.0511 4.11179C10.1898 3.59414 10.5941 3.1898 11.1118 3.05111C11.3025 3 11.535 3 12 3C12.4649 3 12.6974 3 12.8882 3.05111C13.4058 3.1898 13.8102 3.59414 13.9489 4.11179C14 4.30253 14 4.53501 14 4.99998V11.5002C15.7552 11.5029 16.6507 11.542 16.9209 12.1135C16.9315 12.1359 16.9413 12.1586 16.9504 12.1817Z"/><path d="M5.00006 21H19.0001"/></svg>';
 
     function syncTheme(){
       var dark = dunkelJetzt(root.getAttribute("data-isdark"));
