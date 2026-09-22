@@ -401,15 +401,14 @@
     var letztesBody = null;
     function renderEmptyState(filtered){
       letztesBody = null;
-      elTbody.innerHTML = '<div class="up-empty">' +
-        '<div class="up-empty-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' +
-          '<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>' +
-        '<div class="up-empty-h">' + (filtered ? "No matching URLs" : "No URLs yet") + '</div>' +
-        '<div class="up-empty-t">' + (filtered
-          ? "Nothing matches the current search and filters."
-          : "URLs appear here once your prompts have been run.") + '</div>' +
-        (filtered ? '<button class="up-empty-btn" type="button" data-clearall>Clear filters</button>' : "") +
-      '</div>';
+      /* Siehe prompts-table: der Baustein bringt Symbol, Ueberschrift, Filtertext und
+         Raeum-Knopf mit; hier bleibt der eine Satz, den nur diese Tabelle kennt. Die Lupe kam
+         vorher aus einer eigenen Handzeichnung (r=7, Kreis und Linie) -- die Schwestertabelle
+         zeichnete dieselbe Lupe mit r=8 und einem Pfad. */
+      elTbody.innerHTML = UC.leerHtml({
+        gefiltert: filtered, was: "URLs", icon: "globe",
+        text: filtered ? null : "URLs appear here once your prompts have been run."
+      });
     }
     function renderTable(){
       /* SOFT reload (sort): the result set is the same, just re-ordered — the rows on screen are

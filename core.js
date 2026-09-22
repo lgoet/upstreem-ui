@@ -15857,6 +15857,52 @@
     '</div>';
   }
 
+  /* ---- DER LEERZUSTAND ALS BAUSTEIN (22.09.) --------------------------------------------------
+     Der FEHLERzustand hat seinen Baustein seit langem -- die Zeilen daruber. Der LEERzustand
+     hatte keinen, obwohl er haeufiger vorkommt: vierzehn Dateien schrieben dieselben vier Zeilen
+     selbst, prompts-table allein fuenfzehnmal. Was dabei auseinanderlief, ist genau das, was §5
+     verbietet: prompts-table und urls-table ZEICHNETEN ihre Lupe von Hand, und zwar verschieden
+     (ein Pfad mit r=8 gegen Kreis-und-Linie mit r=7). Zwei Zeichnungen desselben Symbols in zwei
+     Schwestertabellen, die nebeneinander stehen.
+
+     Zwei Faelle sind ueberall gleich und stehen deshalb als Standard hier: GEFILTERT (die Suche
+     oder ein Filter trifft nichts -- Lupe, "No matching ...", ein Knopf zum Raeumen) und RUHE
+     (es gibt noch keine Daten). Der TEXT im Ruhefall kommt vom Aufrufer: nur er weiss, warum
+     seine Liste leer ist ("Prompts appear here once your team has added them" gehoert in die
+     prompts-table, nicht hierher). Ohne Text faellt die Zeile weg statt leer Platz zu nehmen.
+
+     mini: .up-empty-mini ist die einzeilige Fassung fuer kleine Kaesten (ein Satz, kein Symbol,
+     kein Knopf) -- sie steht in core.css als eigene Regel und ist kein verkleinertes .up-empty. */
+  function leerHtml(opt){
+    opt = opt || {};
+    var gef = !!opt.gefiltert;
+    var was = opt.was || "items";
+    var titel = opt.titel != null ? opt.titel
+              : (gef ? "No matching " + was : "No " + was + " yet");
+    if (opt.mini) return '<div class="up-empty-mini' + (opt.klasse ? " " + opt.klasse : "") + '">' +
+      esc(t_(titel)) + '</div>';
+    var text  = opt.text != null ? opt.text
+              : (gef ? "Nothing matches the current search and filters." : "");
+    /* GEFILTERT gewinnt die Lupe, IMMER -- sie ist die gemeinsame Aussage "deine Suche trifft
+       nichts", und genau dafuer gibt es diesen Baustein. opt.icon ist das Symbol des RUHEfalls
+       (das Zeichen der Komponente) und darf die Lupe nicht verdraengen; gemessen war es anders
+       herum, und derselbe Zustand trug in zwei Schwestertabellen zwei verschiedene Symbole.
+       Wer die Lupe wirklich ersetzen muss, nennt iconGefiltert.
+       Im Ruhefall gibt es KEIN Standardsymbol. Ein geratener Name waere "inbox" gewesen -- den
+       gibt es in dieser Sammlung nicht, und icon() haette eine leere Huelle geliefert: 28px hoch
+       plus 12px Abstand, also ein sichtbares Loch ueber der Ueberschrift. */
+    var sym   = opt.icon === false ? false
+              : (gef ? (opt.iconGefiltert || "search") : (opt.icon || false));
+    var knopf = opt.knopf != null ? opt.knopf : (gef ? "Clear filters" : "");
+    return '<div class="up-empty' + (opt.klasse ? " " + opt.klasse : "") + '">' +
+      (sym === false ? "" : '<div class="up-empty-ic">' + icon(sym, 1.6) + '</div>') +
+      '<div class="up-empty-h">' + esc(t_(titel)) + '</div>' +
+      (text ? '<div class="up-empty-t">' + esc(t_(text)) + '</div>' : "") +
+      (knopf ? '<button class="up-empty-btn" type="button" ' + (opt.knopfAttr || "data-clearall") +
+               '>' + esc(t_(knopf)) + '</button>' : "") +
+    '</div>';
+  }
+
   /* ══ Custom Groupings ═══════════════════════════════════════════════════════════════════════
      Eine Gruppierung ist eine benannte Kombination aus bis zu drei Themen: ein Prompt zaehlt zur
      Gruppe, wenn er ALLE davon traegt. Sie lebt im localStorage, teambezogen, ohne Backend --
@@ -16383,6 +16429,7 @@
     normParams: normParams,
     makeToolGroup: makeToolGroup,
     leseFehlerHtml: leseFehlerHtml,
+    leerHtml: leerHtml,
     getTeam: getTeam,
     setUpstreemTeam: setUpstreemTeam,
     storeKey: storeKey,

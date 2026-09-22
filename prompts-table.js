@@ -2147,19 +2147,17 @@
     function clearEmptyGrace(){ if (emptyGraceTimer){ clearTimeout(emptyGraceTimer); emptyGraceTimer = null; } }
     function renderEmptyState(filtered){
       letztesBody = null;
-      elTbody.innerHTML = '<div class="up-empty">' +
-        '<div class="up-empty-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' +
-          '<path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg></div>' +
-        '<div class="up-empty-h">' + (filtered ? "No matching prompts" : "No prompts yet") + '</div>' +
-        /* "search and filters", nicht nur "search": der Zustand wird auch von einem gesetzten
-           Mentioned-Filter ausgeloest, bei leerem Suchfeld. Der Text behauptete dann, die Suche
-           sei schuld, und der Knopf hiess "Clear search", obwohl er beides raeumt. Die drei
-           Schwestertabellen schreiben an derselben Stelle seit jeher "Clear filters". */
-        '<div class="up-empty-t">' + (filtered
-          ? "Nothing matches the current search and filters."
-          : "Prompts appear here once your team has added them.") + '</div>' +
-        (filtered ? '<button class="up-empty-btn" type="button" data-clearall>Clear filters</button>' : "") +
-      '</div>';
+      /* Symbol, Ueberschrift, "search and filters" und der Raeum-Knopf stehen als Standard in
+         UC.leerHtml -- hier bleibt nur, was diese Tabelle wirklich allein hat: der Satz fuer den
+         Ruhefall. ("search and filters" und nicht nur "search", weil der Zustand auch von einem
+         gesetzten Mentioned-Filter bei leerem Suchfeld kommt; der Text behauptete dann, die
+         Suche sei schuld, und der Knopf hiess "Clear search", obwohl er beides raeumt.)
+         Die Lupe war hier von Hand gezeichnet und in urls-table daneben ANDERS von Hand
+         gezeichnet -- jetzt beide dieselbe aus UC.icon. */
+      elTbody.innerHTML = UC.leerHtml({
+        gefiltert: filtered, was: "prompts", icon: "zap",
+        text: filtered ? null : "Prompts appear here once your team has added them."
+      });
     }
 
 
