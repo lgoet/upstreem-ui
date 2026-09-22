@@ -236,11 +236,11 @@
       if (warteUhr) clearTimeout(warteUhr);
       warteUhr = setTimeout(function(){
         warteUhr = null;
-        if (state.hasData || state.error) return;
+        if (state.hasData || state.fehler) return;
         /* Unsichtbar heisst: diese Seite ist gar nicht offen, Bubble haelt sie nur im DOM --
            siehe domain-detail. Dann weiter warten statt "No data" auf Vorrat setzen. */
         if (!UC.istSichtbar(root)) { warteStarten(); return; }
-        state.error = "No data";
+        state.fehler = "No data";
         state.loading = false;
         render();
       }, WARTE_MS);
@@ -358,7 +358,7 @@
       /* Steht ein Fehler, ist das Warten vorbei -- dann hier KEIN Skelettbalken mehr. Sonst sagt
          die Karte an zwei Stellen Verschiedenes: die Kurve meldet "kommt nichts mehr", der KPI
          daneben laeuft weiter. Gemessen nach dem Ablauf der Wartezeit. */
-      if (state.error) {
+      if (state.fehler) {
         elVal.innerHTML = '<span class="up-num is-empty">\u2013</span>';
         elTrend.innerHTML = "";
         return;
@@ -382,7 +382,7 @@
       if (!CHART_MODES[state.mode]) return;
       /* Der Fehlerfall kommt VOR dem Skelett: sonst laeuft der Ladezustand endlos weiter und
          sieht aus wie "gleich da", obwohl nichts mehr kommt. */
-      if (state.error) { line.empty(state.error); return; }
+      if (state.fehler) { line.empty(state.fehler); return; }
       if (istLaden() || !state.hasData) { line.skeleton(); return; }
       var p = state.series;
       /* Eine Serie aus einem anderen Modus kann hier nur noch stehen, wenn setSeries den Modus
@@ -571,7 +571,7 @@
         if (ok) {
           state.series = p;
           state.hasData = true;
-          state.error = null;
+          state.fehler = null;
           /* Die gelieferte Granularitaet gewinnt: wenn der Workflow automatisch auf Woche oder
              Monat wechselt, muss der Schalter das zeigen -- sonst steht dort Day, waehrend eine
              Wochenkurve daneben liegt. Dieselben Feldnamen wie im visibility-chart: granularity,
@@ -584,7 +584,7 @@
              und danach zurueck -- ein Flackern, das aussieht wie ein Fehler. */
         } else {
           state.series = null;
-          state.error = (p && p.__parseError) || !p
+          state.fehler = (p && p.__parseError) || !p
             ? "The chart data could not be read."
             : "The chart data arrived without a series.";
         }
@@ -627,7 +627,7 @@
         letzteKurve = false;
         /* Auch die Suche zuruecksetzen: sonst zeigt die naechste Marke eine gefilterte Liste,
            ohne dass irgendwo ein Suchbegriff zu sehen waere. */
-        state.varQuery = ""; state.error = null;
+        state.varQuery = ""; state.fehler = null;
         if (elSInput) { elSInput.value = ""; }
         if (elSearch) { elSearch.classList.remove("is-open", "has-text"); }
         /* Ab jetzt laeuft die Uhr: ein Reset ist der Anfang einer Wartezeit auf neue Daten. */

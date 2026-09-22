@@ -170,7 +170,24 @@ render();
 ```
 
 Im Render kommt der Fehlerfall **vor** dem Skelett — sonst sieht endloses Laden aus wie "gleich da".
-`reset()` löscht `state.error` mit.
+`reset()` löscht den Fehlerzustand mit.
+
+**Zwei Fehlerzustände, zwei Namen — nicht verwechseln (22.09.):**
+
+| Feld | Form | Bedeutung | Gerendert als |
+|---|---|---|---|
+| `state.leseFehler` | Schalter (true/false) | Die Nutzlast war unlesbar | `UC.leseFehlerHtml("brands")` |
+| `state.fehler` | Text, oder eine Tabelle davon | EINE konkrete Meldung | der Text selbst |
+
+`leseFehler` steht in 18 Dateien, `fehler` in 8. Der Unterschied ist echt und soll bleiben:
+power-dashboard führt `state.fehler` je Abschnitt (`.overview`, `.brands`), onboarding-page je
+Formularfeld — das sind Meldungs**tabellen**, kein Schalter. `state.error` gibt es seit dem 22.09.
+nicht mehr; brand-detail, domain-detail und response-detail hießen als einzige englisch.
+
+Der **Leerzustand** hat seit dem 22.09. ebenfalls einen Baustein: `UC.leerHtml({ gefiltert, was,
+icon, titel, text, knopf, mini })`. Gefiltert bringt er Lupe, "No matching …" und den Räum-Knopf
+mit; der Satz für den Ruhefall kommt vom Aufrufer. Kein Symbol ohne Angabe — ein geratener Name
+liefert eine leere Hülle und damit ein Loch über der Überschrift.
 
 Zahlenfelder immer durch `num()`/`toNum()` (gibt `null` statt `NaN`), Listen durch `isArr()` prüfen,
 bevor `.map()` darauf läuft. Ein `undefined.map` reißt den ganzen Run-JS-Step mit — also auch die

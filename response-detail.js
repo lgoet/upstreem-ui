@@ -254,13 +254,13 @@
       if (warteUhr) clearTimeout(warteUhr);
       warteUhr = setTimeout(function () {
         warteUhr = null;
-        if (state.hasData || state.error) return;
+        if (state.hasData || state.fehler) return;
         /* Unsichtbar heisst: diese Seite ist gar nicht offen, Bubble haelt sie nur im DOM. Dann
            wartet niemand, und "No data" jetzt zu setzen hiesse, es steht beim spaeteren Oeffnen
            der Seite schon da, bevor der Pageload-Workflow ueberhaupt laufen konnte. Also weiter
            warten statt melden. */
         if (!UC.istSichtbar(root)) { warteStarten(); return; }
-        state.error = "No data";
+        state.fehler = "No data";
         state.loading = false;
         render();
       }, WARTE_MS);
@@ -335,7 +335,7 @@
 
     /* ---- Kopfzeile ------------------------------------------------------------------------- */
     function renderHead() {
-      if (state.error) { elPrompt.textContent = ""; elKpis.innerHTML = ""; return; }
+      if (state.fehler) { elPrompt.textContent = ""; elKpis.innerHTML = ""; return; }
       if (istLaden() || !state.data) {
         elPrompt.innerHTML = '<span class="urd-sk urd-sk-prompt"></span>' +
                              '<span class="urd-sk urd-sk-prompt2"></span>';
@@ -399,7 +399,7 @@
 
     /* ---- Mentions ------------------------------------------------------------------------- */
     function renderMents() {
-      if (state.error) { elMents.innerHTML = '<span class="urd-empty">' + esc(state.error) + "</span>"; return; }
+      if (state.fehler) { elMents.innerHTML = '<span class="urd-empty">' + esc(state.fehler) + "</span>"; return; }
       if (istLaden() || !state.data) {
         elMents.innerHTML = new Array(4).join("x").split("x")
           .map(function () { return '<span class="urd-sk urd-sk-ment"></span>'; }).join("");
@@ -457,7 +457,7 @@
     ];
     var letzteMessung = null;
     function renderBody() {
-      if (state.error) { elBody.innerHTML = '<span class="urd-empty">' + esc(state.error) + "</span>"; return; }
+      if (state.fehler) { elBody.innerHTML = '<span class="urd-empty">' + esc(state.fehler) + "</span>"; return; }
       if (istLaden() || !state.data) {
         /* Das Skelett hat jetzt die FORM einer Antwort, nicht nur ihre Masse: Absatz, Ueberschrift,
            Absatz, Ueberschrift, Absatz, Schluss. Eine Wand aus gleich langen Balken sieht aus wie
@@ -554,7 +554,7 @@
       var gesamt = d && isArr(d.citations) ? d.citations.length : 0;
       /* Sichtbar nur, wenn es eine eigene Marke gibt UND der Filter etwas aendern kann: bei 0
          Treffern oder wenn ALLE Quellen sie nennen, gibt es nichts zu filtern. */
-      var zeigen = !!marke && !istLaden() && !state.error && treffer > 0 && treffer < gesamt;
+      var zeigen = !!marke && !istLaden() && !state.fehler && treffer > 0 && treffer < gesamt;
       if (!zeigen) {
         if (brandGebaut) { elBrandWrap.innerHTML = ""; brandGebaut = ""; }
         if (state.brandFilter) state.brandFilter = "";
@@ -575,7 +575,7 @@
        liefert genau das Paar). Der Chip wird auseinandergenommen, weil das Logo hier gross links
        neben der Karte steht und der Name darueber. */
     function renderAbsender() {
-      if (istLaden() || !state.data || state.error) {
+      if (istLaden() || !state.data || state.fehler) {
         elAv.innerHTML = '<span class="urd-sk urd-sk-av"></span>';
         elHlBtn.hidden = true;
         return;
@@ -702,7 +702,7 @@
     }
 
     function renderCites() {
-      var leer = state.error ? esc(state.error) : null;
+      var leer = state.fehler ? esc(state.fehler) : null;
       if (leer) { elGrid.innerHTML = '<span class="urd-empty">' + leer + "</span>"; elList.innerHTML = ""; return; }
       if (istLaden() || !state.data) {
         elGrid.innerHTML = "xxxx".split("").map(function () {
@@ -985,7 +985,7 @@
            einer Klammer scheitern. */
         if (isArr(p)) p = p.length ? p[0] : null;
         var ok = p && typeof p === "object" && (p.prompt_text != null || p.response_json || p.id);
-        state.error = ok ? null : "The response data could not be read.";
+        state.fehler = ok ? null : "The response data could not be read.";
         state.data = ok ? p : null;
         state.hasData = !!ok;
         state.loading = false;
@@ -999,14 +999,14 @@
            werden die alten weggeworfen. Sonst kann ein verzoegertes Neuzeichnen sie zurueckholen,
            und dann stand die Antwort der vorigen Ausfuehrung unter dem neuen Prompt. */
         if (state.loading) {
-          state.data = null; state.hasData = false; state.error = null;
+          state.data = null; state.hasData = false; state.fehler = null;
           warteStarten();
         } else warteBeenden();
         render();
         return true;
       },
       reset: function () {
-        state.data = null; state.hasData = false; state.error = null; state.loading = false;
+        state.data = null; state.hasData = false; state.fehler = null; state.loading = false;
         /* Die Ansicht bleibt, wie der Nutzer sie gestellt hat -- sie ist eine Einstellung, keine
            Daten. Sie hier auf Grid zu zwingen hiesse, sie bei jedem Reset zu ueberschreiben und
            die Speicherung damit wieder aufzuheben. */

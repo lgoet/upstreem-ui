@@ -416,12 +416,12 @@
       if (warteUhr) clearTimeout(warteUhr);
       warteUhr = setTimeout(function () {
         warteUhr = null;
-        if (state.hasData || state.error) return;
+        if (state.hasData || state.fehler) return;
         /* Unsichtbar heisst: diese Seite ist gar nicht offen, Bubble haelt sie nur im DOM. Dann
            wartet niemand, und "No data" jetzt zu setzen hiesse, es steht beim spaeteren Oeffnen
            der Seite schon da, bevor der Pageload-Workflow ueberhaupt laufen konnte. */
         if (!UC.istSichtbar(root)) { warteStarten(); return; }
-        state.error = "No data";
+        state.fehler = "No data";
         state.loading = false;
         render();
       }, WARTE_MS);
@@ -567,7 +567,7 @@
        zeichnen -- die frueheren Skelett- und Rueckfallwege des Zeichens sind mit ihm weg. */
 
     function renderKpi() {
-      if (state.error) {
+      if (state.fehler) {
         elVal.innerHTML = '<span class="up-num is-empty">–</span>';
         elTrend.innerHTML = "";
         return;
@@ -589,7 +589,7 @@
     function istLaden() { return !!state.loading; }
 
     function renderChart() {
-      if (state.error) { line.empty(state.error); return; }
+      if (state.fehler) { line.empty(state.fehler); return; }
       if (istLaden() || !state.hasData) { line.skeleton(); return; }
 
       if (state.mode === "citation") {
@@ -642,7 +642,7 @@
     }
 
     function renderFunnel() {
-      if (state.error) { elFunnel.innerHTML = '<div class="up-chart-empty">' + esc(state.error) + '</div>'; return; }
+      if (state.fehler) { elFunnel.innerHTML = '<div class="up-chart-empty">' + esc(state.fehler) + '</div>'; return; }
       if (istLaden() || !state.funnel) {
         elFunnel.innerHTML = '<div class="udd-fn-sk">' +
           '<span class="udd-fn-sk-head"></span><span class="udd-fn-sk-body"></span></div>';
@@ -695,7 +695,7 @@
 
     function renderTypes() {
       if (!typeChart) return;
-      if (state.error) { elTypeBody.innerHTML = '<div class="up-chart-empty">' + esc(state.error) + "</div>"; return; }
+      if (state.fehler) { elTypeBody.innerHTML = '<div class="up-chart-empty">' + esc(state.fehler) + "</div>"; return; }
       if (istLaden() || !isArr(state.types)) { typeChart.skeleton(); return; }
       var vorbereitet = UC.prepTypeData("url", state.types, isDark);
       if (!vorbereitet.length) { typeChart.empty("No URL types for this period."); return; }
@@ -835,7 +835,7 @@
 
     function renderBars() {
       if (!modelDonut) return;
-      if (state.error) { modelDonut.empty(state.error); return; }
+      if (state.fehler) { modelDonut.empty(state.fehler); return; }
       if (istLaden() || !isArr(state.model)) { modelDonut.skeleton(); return; }
       var mi = modelItems();
       if (!mi.length) { modelDonut.empty("No model data for this period."); return; }
@@ -963,11 +963,11 @@
            sonst laeuft das Skelett endlos und sieht aus wie "gleich da". */
         var ok = p && typeof p === "object" && !isArr(p);
         if (!ok) {
-          state.error = "The domain data could not be read.";
+          state.fehler = "The domain data could not be read.";
           state.hasData = false; state.loading = false;
           warteBeenden(); render(); return;
         }
-        state.error = null;
+        state.fehler = null;
         if (p.header && typeof p.header === "object") state.header = p.header;
         var ts = p.timeseries && typeof p.timeseries === "object" ? p.timeseries : {};
         if (isArr(ts.citation_share_over_time)) state.share = ts.citation_share_over_time;
@@ -984,7 +984,7 @@
            nichts gefunden hat. Das ist KEIN Ladezustand: ohne diese Zeile blieben alle Abschnitte
            im Skelett stehen, optisch nicht von "gleich da" zu unterscheiden, obwohl die Antwort
            laengst da und leer ist. Genau der stille Ausfall, den §2 verbietet. */
-        if (!state.hasData) state.error = "No data for this domain.";
+        if (!state.hasData) state.fehler = "No data for this domain.";
         state.loading = false;
         warteBeenden();
         /* VOR granPruefen: der Wert aus dem Payload ist die Wahrheit, granPruefen korrigiert
@@ -1025,7 +1025,7 @@
         if (state.loading) {
           state.header = null; state.share = null; state.urls = null;
           state.model = null; state.funnel = null; state.types = null;
-          state.hasData = false; state.error = null;
+          state.hasData = false; state.fehler = null;
           state.urlsStale = false; state.urlsError = null;
           warteStarten();
         } else warteBeenden();
@@ -1045,7 +1045,7 @@
       reset: function () {
         state.header = null; state.share = null; state.urls = null;
         state.model = null; state.funnel = null; state.types = null;
-        state.hasData = false; state.error = null;
+        state.hasData = false; state.fehler = null;
         state.urlsStale = false; state.urlsError = null; urlWarteBeenden();
         state.gran = "day"; GRAN_STORE[instanceId] = "day";
         state.scope = SCOPE_FEST;
