@@ -11,6 +11,10 @@
                     Leiste, den kein Kit-Knopf kennt.
      .usn-pin-edit  eine Breite, die aufgeht. Sieht wie .up-search aus, ist aber kein Eingabefeld --
                     es faehrt ein Loeschknopf aus, und die Breite ist die des Knopfes.
+     .usn-bar.is-mini .usn-txt / .usn-fade  (22.09. nachgetragen -- der vierte Treffer, der in
+                    dieser Liste fehlte). Das ist ueberhaupt kein Bauteil, sondern der
+                    EINGEKLAPPTE Zustand: Breite auf 0, Deckkraft auf 0, alles animiert. Der
+                    Pruefer sieht "Breite, Deckkraft, transition" und denkt an einen Knopf.
    Wo es ein Kit-Bauteil gibt, wird es benutzt: .up-iconbtn, .up-tip, .up-menu, .up-pop-opt,
    .up-stack, .up-logo-box, .up-sk.
 
