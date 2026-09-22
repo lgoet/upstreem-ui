@@ -4882,15 +4882,30 @@
     function kpiTeil(kl, teil){
       return kpiZeile ? kpiZeile.querySelector("." + kl + " .upt-kpi-" + teil) : null;
     }
-    /* Wie viele Zeilen in eine Karte passen: 280px minus Kopf, Fuss und Polster, geteilt durch
-       die Zeilenhoehe aus der CSS (16px Balken + 2x3px Polster = 22). Gerechnet und nicht
-       geraten, damit eine Aenderung der Kartenhoehe hier nicht stillschweigend abschneidet. */
-    var KPI_ZEILE_PX = 22;
+    /* Wie viele Zeilen in eine Karte passen: Koerperhoehe geteilt durch die Zeilenhoehe.
+       DIE 22 WAREN FALSCH. Sie standen fuer "16px Balken + 2x3px Polster" -- aber nicht der
+       Balken bestimmt die Hoehe der Zeile, sondern die hoechste Spalte, und das ist die
+       PROZENTSPALTE: 13px Schrift auf 1.5 sind 19,5px Zeilenfeld. Macht 19,5 + 2x3 = 25,5.
+       Gemessen am 22.09. Folge: kpiPlatz gab 7 zurueck, wo sechs Zeilen hinpassten, die Liste
+       war 178,5px hoch in einem 155,5px hohen Koerper -- und weil der Koerper seinen Inhalt
+       ZENTRIERT, wurden oben UND unten je 11,5px abgeschnitten. Genau so gemeldet.
+       Die Karte hat beim Verkleinern der Balkenliste alles mitgezogen (32 -> 16 Balken,
+       Radius 8 -> 4, Polster 10 -> 5, Abstand 8 -> 4, Zeilenpolster 5 -> 3), nur die
+       Textspalten nicht -- deshalb passt die Rechnung "Balken + Polster" hier nicht. */
+    var KPI_ZEILE_PX = 25.5;
+    /* Gemessen schlaegt gerechnet: steht schon eine Zeile im Baum, gilt IHRE Hoehe. Damit
+       ueberlebt die Rechnung jede spaetere Aenderung an Schriftgroesse, Zeilenhoehe oder
+       Polsterung, ohne dass jemand die Konstante nachzieht. */
+    function kpiZeilenHoehe(){
+      var zeile = kpiZeile && kpiZeile.querySelector(".upt-kpi-topics .up-bar-row");
+      var h = zeile ? zeile.getBoundingClientRect().height : 0;
+      return h > 8 ? h : KPI_ZEILE_PX;
+    }
     function kpiPlatz(){
       var koerper = kpiTeil("upt-kpi-topics", "body");
       if (!koerper) return 6;
       var h = koerper.clientHeight;
-      return Math.max(3, Math.min(9, Math.floor((h || 176) / KPI_ZEILE_PX)));
+      return Math.max(3, Math.min(9, Math.floor((h || 176) / kpiZeilenHoehe())));
     }
 
     function kpiTopics(rows){
@@ -4935,12 +4950,28 @@
          war das als zwei Einfahr-Animationen hintereinander -- so gemeldet am 03.09.
          Verglichen wird der fertige, sortierte Auszug samt Platz: sonst bliebe eine Aenderung der
          Kartenhoehe (schmale Ansicht) unbemerkt. */
-      var zeigen = mitZahl.slice(0, platz);
-      var sig = platz + "|" + zeigen.map(function(x){
-        return x.key + ":" + x.share + ":" + x.color; }).join(",");
-      if (sig !== kpiBarsSig){
-        kpiBarsSig = sig;
-        kpiBars.render(zeigen);
+      function auszug(n){
+        var z = mitZahl.slice(0, n);
+        return { zeigen: z, sig: n + "|" + z.map(function(x){
+          return x.key + ":" + x.share + ":" + x.color; }).join(",") };
+      }
+      var a = auszug(platz);
+      if (a.sig !== kpiBarsSig){
+        kpiBarsSig = a.sig;
+        kpiBars.render(a.zeigen);
+        /* NACHRECHNEN. Beim allerersten Zeichnen steht noch keine Zeile im Baum, an der sich
+           messen liesse -- da gilt die Konstante. Jetzt steht eine da: passt die gemessene
+           Zeilenhoehe nicht zur Annahme, EINMAL kuerzer zeichnen. Ohne das haette ein
+           kuenftiger Griff an die Schriftgroesse dasselbe Abschneiden wieder zur Folge, nur
+           ohne Meldung. Nur nach unten: ein zu kurzer Auszug steht im Fuss als "+N more". */
+        var echterPlatz = kpiPlatz();
+        if (echterPlatz < platz){
+          platz = echterPlatz;
+          kpiLetztePlatz = platz;
+          a = auszug(platz);
+          kpiBarsSig = a.sig;
+          kpiBars.render(a.zeigen);
+        }
       }
       kpiTopicsFuss();
 

@@ -1181,7 +1181,13 @@
 /* 16px unter der Kopfzeile und 16px vor der Fusszeile -- so angefordert. Beides als Aussenabstand
    am Koerper und nicht als Polster an der Karte: die Karte hat rundum 16px, und ein zweiter Wert
    an derselben Kante liesse die drei Karten spaeter auseinanderlaufen. */
-.upt-kpi-body { flex: 1 1 auto; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: center; margin: 16px 0; }
+/* safe center und nicht center: solange der Inhalt PASST, ist beides dasselbe -- eine kurze
+   Liste steht mittig wie bisher. Passt er nicht, faellt "safe" auf start zurueck, statt den
+   Ueberhang je zur Haelfte oben und unten abzuschneiden. Genau das war am 22.09. gemeldet
+   ("oben und unten bars abgeschnitten"): oben verschwindet damit nie wieder etwas, auch wenn
+   sich die Zeilenhoehe kuenftig noch einmal aendert. Die Zahl der Zeilen rechnet das JS
+   (kpiPlatz), diese Zeile ist die Versicherung dahinter. */
+.upt-kpi-body { flex: 1 1 auto; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: safe center; margin: 16px 0; }
 .upt-kpi-foot {
   flex: 0 0 auto; display: flex; align-items: center; gap: 8px;
   font-size: 11px; color: var(--vc-muted);

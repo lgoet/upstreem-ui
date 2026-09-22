@@ -227,8 +227,28 @@
        davor ein Sonderweg: ein Bild von Bubbles CDN ueber einem Symbol, dazu zwei Helligkeits-
        filter in der CSS, weil ein fremdes SVG sich weder faerben noch als Maske verwenden laesst
        (kein CORS-Header). Der ganze Weg ist mit dem Wechsel auf blend hinfaellig. */
+    /* TESTWEISE EIN ANDERER ZEICHENSATZ (22.09.).
+       Die vierzehn Zeichen der Seitenleiste laufen auf Hugeicons stroke-rounded statt auf
+       Lucide. Die Zeichen selbst stehen in core (ICON_PATHS, Praefix hg) -- hier steht nur,
+       welcher Punkt welches bekommt. WAS NICHT DRIN STEHT, BLEIBT LUCIDE: der Umschalter
+       (sidebarPanels) und der Haken im Hinweis sind keine Navigationszeichen.
+       Zurueck geht es, indem diese Tabelle geleert wird -- ic() faellt dann von selbst auf den
+       Lucide-Namen zurueck, und kein Aufrufer muss angefasst werden.
+       Die Zuordnung steht in core ueber den Eintraegen, je mit der Begruendung, warum GENAU
+       dieses Zeichen und nicht das namensgleiche. */
+    var HG_SATZ = {
+      home: "hgHome", zap: "hgZap", globe: "hgGlobe", squareStack: "hgSquareStack",
+      chartColumnUp: "hgChartColumnUp", listTodo: "hgListTodo", telescope: "hgTelescope",
+      blend: "hgBlend", folders: "hgFolders", bolt: "hgBolt", users: "hgUsers",
+      dollarSign: "hgDollarSign", settings2: "hgSettings2", logOut: "hgLogOut"
+    };
+    /* 1.5 fuer Hugeicons, 1.8 fuer Lucide. Die beiden Saetze sind fuer verschiedene
+       Strichstaerken gezeichnet -- Hugeicons fuehrt mehr Linien je Zeichen, und mit 1.8 laufen
+       sie an den engen Stellen zu. Die 1.8 fuer Lucide bleiben, damit ein Zeichen, das NICHT in
+       der Tabelle steht, aussieht wie bisher. */
     function ic(name){
-      return UC.icon(name, 1.8);
+      var hg = HG_SATZ[name];
+      return hg ? UC.icon(hg, 1.5) : UC.icon(name, 1.8);
     }
     /* .up-logo-box aus core: ein Element, Buchstabe darunter, Bild darueber. Faellt das Bild
        aus, verliert die Box has-img und der Buchstabe wird sichtbar. */

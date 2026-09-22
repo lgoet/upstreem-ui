@@ -1,0 +1,41 @@
+<meta charset="utf-8"><title>Sidebar-Icons: vorher / nachher</title>
+<style>
+html,body{margin:0;background:#1f1f1b;color:#e0e0e0;font:14px/1.4 Geist,system-ui,sans-serif}
+.raster{display:grid;grid-template-columns:repeat(2,1fr);gap:0 28px;padding:18px 22px;max-width:770px}
+.zeile{display:grid;grid-template-columns:34px 34px 1fr;align-items:center;gap:14px;
+  padding:7px 0;border-bottom:1px solid #2a2a2e}
+.kopf{display:grid;grid-template-columns:34px 34px 1fr;gap:14px;padding:0 0 6px;
+  font-size:10px;color:#808080}
+.lbl{font-size:13px}
+.q{font:10px ui-monospace,monospace;color:#707070}
+svg{display:block;margin:0 auto}
+</style><body><div class="raster" id="r"></div>
+<script>
+fetch("core.js?n="+Math.random(),{cache:"no-store"}).then(function(r){return r.text();}).then(function(t){
+  var s=document.createElement("script"); s.textContent=t; document.head.appendChild(s);
+  var UC=window.UpstreemCore;
+  var P=[["home","hgHome","Dashboard","Home11"],["zap","hgZap","Prompt Insights","Zap"],
+   ["globe","hgGlobe","Citations","Globe02"],["squareStack","hgSquareStack","Brands","SquareStack"],
+   ["chartColumnUp","hgChartColumnUp","Performance","ChartColumnIncreasing"],
+   ["listTodo","hgListTodo","Opportunities","ListTodo"],
+   ["telescope","hgTelescope","Prompt Research","Telescope01"],["blend","hgBlend","Mira","Blend"],
+   ["folders","hgFolders","Teams","Folders"],["bolt","hgBolt","Settings","Bolt"],
+   ["users","hgUsers","Team Organisation","Users"],["dollarSign","hgDollarSign","Billing","DollarSign"],
+   ["settings2","hgSettings2","Preferences","PreferenceHorizontal"],["logOut","hgLogOut","Log out","LogOut"]];
+  var r=document.getElementById("r");
+  function gr(sv){ return sv.replace('width="24" height="24"','width="26" height="26"')
+                           .replace(/<svg /,'<svg width="26" height="26" '); }
+  for (var sp=0; sp<2; sp++){
+    var sr=document.createElement("div");
+    sr.innerHTML='<div class="kopf"><span>alt</span><span>neu</span><span></span></div>';
+    P.slice(sp*7,sp*7+7).forEach(function(p){
+      var d=document.createElement("div"); d.className="zeile";
+      d.innerHTML='<span>'+gr(UC.icon(p[0],1.8))+'</span><span>'+gr(UC.icon(p[1],1.5))+'</span>'+
+        '<span><div class="lbl">'+p[2]+'</div><div class="q">'+p[0]+' &rarr; '+p[3]+'</div></span>';
+      sr.appendChild(d);
+    });
+    r.appendChild(sr);
+  }
+  window.__fertig=1;
+});
+</script>
