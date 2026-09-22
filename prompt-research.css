@@ -475,7 +475,8 @@
   font-family: inherit; font-size: 13px; font-weight: 500; text-align: left;
 }
 .upr-menu-item svg { width: 16px; height: 16px; flex: 0 0 auto; display: block; }
-.upr-menu-item.is-danger { color: #b0200c; }
+/* Siehe core: --vt-down traegt im Dunkeln #d25d5d, das Literal hier zeigte dort das helle Rot. */
+.upr-menu-item.is-danger { color: var(--vt-down, #b0200c); }
 .upr-menu-item.is-danger:hover { background: color-mix(in srgb, #b0200c 8%, transparent); }
 /* Column widths for core's .up-thead/.up-row grid. Prompt gets the room, actions a fixed lane.
    No scrollport here any more: the page scrolls, so core's .up-sticky .up-box (overflow:visible)
@@ -704,7 +705,7 @@
 .upr-history-item:hover .upr-history-actions,
 .upr-history-item:focus-visible .upr-history-actions,
 .upr-history-actions:focus-within { opacity: 1; }
-.upr-history-delete:hover { color: #b0200c; }
+.upr-history-delete:hover { color: var(--vt-down, #b0200c); }
 
 /* ---------- responsive ---------- */
 @media (max-width: 1040px) {

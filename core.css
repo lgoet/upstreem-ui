@@ -3710,8 +3710,14 @@
 .up-topicmodal-foot { display: flex; align-items: center; gap: 10px; }
 .up-topicmodal-delete { height: 32px; padding: 0 14px; border-radius: 9px; border: 1px solid var(--vc-border);
   background: transparent; color: var(--vc-muted); font: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer; }
-.up-topicmodal-delete:hover { border-color: #b0200c; color: #b0200c; }
-.up-topicmodal-delete.is-armed { border-color: #b0200c; background: #b0200c; color: #fff; }
+/* --vt-down MIT Rueckfall, und der Rueckfall ist kein Schoenheitsfehler: der Schleier dieses
+   Dialogs wird an vier Stellen gebaut und nur an zwei davon mit .up-root (preferences.js und
+   ask-mira.js ja, prompts-table.js und core.js nein). Ohne .up-root ist die Marke unaufloesbar,
+   und eine color-Deklaration mit unaufloesbarem var() ist als Ganzes ungueltig -- der Knopf
+   verlaere dann seine Warnfarbe ganz. So bekommt er im Dunkeln das helle Rot #d25d5d, wo die
+   Marke ankommt, und sonst weiter das alte #b0200c. */
+.up-topicmodal-delete:hover { border-color: var(--vt-down, #b0200c); color: var(--vt-down, #b0200c); }
+.up-topicmodal-delete.is-armed { border-color: var(--vt-down, #b0200c); background: var(--vt-down, #b0200c); color: #fff; }
 .up-topicmodal-delete.is-armed:hover { opacity: .9; }
 /* Nur noch die Lage -- Aussehen kommt aus .up-btn-pri. */
 .up-topicmodal-save { margin-left: auto; }

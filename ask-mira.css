@@ -727,10 +727,13 @@
   #ask-mira .uo-kpi { border: 1px solid var(--uo-border); border-radius: 12px; background: var(--uo-card); padding: 12px 13px; min-width: 0; }
   #ask-mira .uo-kpi-label { font-size: 11px; color: var(--uo-muted); font-weight: 500; }
   #ask-mira .uo-kpi-val { margin-top: 6px; font-size: 16px; font-weight: 550; letter-spacing: -0.02em; color: var(--uo-text); display: flex; align-items: center; flex-wrap: wrap; gap: 4px 7px; }
-  #ask-mira .uo-kpi-val .is-pos { color: #2ea84a; } #ask-mira .uo-kpi-val .is-neg { color: #b0200c; }
+  /* --vt-up/--vt-down statt der hellen Werte: im Dunkeln stehen dort #60d25d und #d25d5d, und
+     genau diese zwei Zeilen zeigten das dunkle Rot #b0200c auf dunklem Grund. Rueckfall auf die
+     alten Werte, falls die Marke einmal nicht ankommt. */
+  #ask-mira .uo-kpi-val .is-pos { color: var(--vt-up, #2ea84a); } #ask-mira .uo-kpi-val .is-neg { color: var(--vt-down, #b0200c); }
   #ask-mira .uo-trend { font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
   #ask-mira .uo-trend svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  #ask-mira .uo-trend.up { color: #2ea84a; } #ask-mira .uo-trend.down { color: #b0200c; }
+  #ask-mira .uo-trend.up { color: var(--vt-up, #2ea84a); } #ask-mira .uo-trend.down { color: var(--vt-down, #b0200c); }
   #ask-mira .uo-meta-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 2px 18px; }
   #ask-mira .uo-meta-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--uo-border); }
   #ask-mira .uo-meta-k { font-size: 13px; color: var(--uo-muted); } #ask-mira .uo-meta-v { font-size: 13px; font-weight: 600; color: var(--uo-text); text-align: right; }
