@@ -1522,6 +1522,24 @@
         if (werte[name]) elBulk.style.setProperty(name, werte[name]);
       });
     }
+    /* DER AKZENT KANN SICH JEDERZEIT AENDERN (22.09.). akzentSyncen lief bisher an genau zwei
+       Stellen: beim ERSTEN Anlegen der Leiste und beim Themenwechsel. Stellt der Nutzer den
+       Akzent in den Einstellungen um, erfaehrt die Leiste davon nichts -- core setzt data-accent
+       am <html>, aber die Leiste ist keine .up-root, die Akzentregeln aus core treffen sie also
+       nie; sie traegt ihre Werte als INLINE-Style, und der bleibt stehen.
+       GEMESSEN: nach setPref("accent","indigo") stand am <html> indigo und eine .up-root lieferte
+       #5E6AD2 -- die Leiste hielt #1f1f1b, und der Apply-Knopf blieb damit schwarz auf schwarz
+       statt indigo. Nach einem Themenwechsel sprang derselbe Knopf sofort auf #5E6AD2; daran war
+       zu sehen, dass nicht die Umrechnung fehlt, sondern der Anlass.
+       Derselbe Zuhoerer, den core fuer akzentAnwenden benutzt, und derselbe Einmal-Riegel am
+       root wie bei __uptWSicher weiter unten -- ohne den haette jede Wurzel der Seite einen
+       eigenen. */
+    if (!root.__uptAkzentHorcht){
+      root.__uptAkzentHorcht = true;
+      window.addEventListener("up-prefs-change", function(e){
+        if (!e || !e.detail || e.detail.name === "accent") akzentSyncen();
+      });
+    }
     /* Patches just the "N selected" text (slide + fade, same technique as the topic count) when
        a row checkbox toggles — the common case, and by far the most frequent call into the bar.
        renderBulkBar() rebuilds the whole innerHTML, which would destroy this very span before any
