@@ -2369,7 +2369,9 @@
     /* EIN Zeichen fuer beide Umschalter (den im Kopf der Gruppenliste und den in der Werkzeugleiste):
        ein Klick auf einen von beiden heisst immer "Gruppenleiste umschalten".
 
-       Dasselbe wie oben rechts in der Hauptleiste -- UC.icon("sidebarPanels"). Hier stand vorher
+       UC.icon("sidebarPanels"). Bis zum 22.09. war das wortgleich das Zeichen oben rechts in
+       der Hauptleiste; die traegt seitdem hgLayoutLeft aus dem Hugeicons-Satz (Testlauf, siehe
+       BAR_SVG in sidebar.js). Bleibt der Satz, gehoert dieses Zeichen nachgezogen. Hier stand vorher
        das gestrichelte Lucide "panel-left"; zwei verschiedene Zeichen fuer dieselbe Handlung sind
        an zwei Orten zwei verschiedene Aussagen. Es ist gefuellt und hat einen 16er viewBox, wird
        ueber .up-iconbtn svg also 1:1 gerendert -- die Haarlinien des Rahmens bleiben genau einen

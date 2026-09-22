@@ -211,12 +211,17 @@
     var esc = UC.esc;
     var instanceId = root.getAttribute("data-instance") || "default";
     /* Erst hier, nicht auf Modulebene: UC steht beim Laden dieser Datei noch nicht fest. */
-    /* Der Umschalter oben rechts traegt jetzt das gefuellte Zeichen aus core (sidebarPanels):
-       schmaler Balken, Luecke, groesseres Feld. Die Farben stehen an .usn-toggle -- Drittfarbe im
-       Ruhezustand, Primaerfarbe beim Hover -- und ein gefuelltes SVG mit fill="currentColor" folgt
-       ihnen von selbst. Der Knopf am Telefon (fab) bekommt dasselbe Zeichen: es ist derselbe
-       Umschalter, nur an anderer Stelle. */
-    if (!BAR_SVG) BAR_SVG = UC.icon("sidebarPanels");
+    /* Der Umschalter oben rechts traegt seit dem 22.09. hgLayoutLeft aus dem Hugeicons-Satz --
+       vorher das gefuellte sidebarPanels (Bootstrap Icons, eigener 16er Kasten). Die Farben
+       stehen an .usn-toggle (Drittfarbe in Ruhe, Primaerfarbe beim Hover); ein Strichzeichen
+       mit stroke="currentColor" folgt ihnen genauso wie das gefuellte davor.
+       1.5 wie bei jedem anderen Hugeicon hier: die CSS zwingt das Zeichen auf 16px, aus dem
+       24er Kasten wird damit ein Faktor 0,667 und der Strich landet auf einem Pixel.
+       Der Knopf am Telefon (fab) bekommt dasselbe Zeichen: derselbe Umschalter, andere Stelle.
+       SIDEBARPANELS LEBT WEITER: es ist der Schalter des Seitenpanels in der Prompts-Tabelle.
+       Die beiden waren bis heute dasselbe Zeichen -- wer sie wieder zusammenfuehren will, zieht
+       prompts-table nach (SIDEBAR_ICON dort). */
+    if (!BAR_SVG) BAR_SVG = UC.icon("hgLayoutLeft", 1.5);
     var fire = UC.makeFire(root, { label: "sidebar", eventPrefix: "" });
 
     function attr(n, f){
@@ -231,7 +236,8 @@
        Die vierzehn Zeichen der Seitenleiste laufen auf Hugeicons stroke-rounded statt auf
        Lucide. Die Zeichen selbst stehen in core (ICON_PATHS, Praefix hg) -- hier steht nur,
        welcher Punkt welches bekommt. WAS NICHT DRIN STEHT, BLEIBT LUCIDE: der Umschalter
-       (sidebarPanels) und der Haken im Hinweis sind keine Navigationszeichen.
+       Der Haken im Hinweis ist kein Navigationszeichen und bleibt Lucide; der Umschalter
+       laeuft ueber BAR_SVG und nicht ueber diese Tabelle, siehe oben.
        Zurueck geht es, indem diese Tabelle geleert wird -- ic() faellt dann von selbst auf den
        Lucide-Namen zurueck, und kein Aufrufer muss angefasst werden.
        Die Zuordnung steht in core ueber den Eintraegen, je mit der Begruendung, warum GENAU
