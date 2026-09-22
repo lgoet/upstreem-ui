@@ -2571,6 +2571,7 @@
   "upt-brand-logo",
   "upt-brand-toggle",
   "upt-brand-toggle-lbl",
+  "upt-breite-sofort",
   "upt-bulkbar",
   "upt-bulkbar-btn",
   "upt-bulkbar-count",
@@ -3115,7 +3116,7 @@
   "globals": 187,
   "payloadkeys": 102,
   "dataattrs": 253,
-  "klassen": 2228,
+  "klassen": 2229,
   "keyframes": 66
  }
 }

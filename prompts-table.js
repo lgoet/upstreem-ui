@@ -1580,24 +1580,31 @@
     function breiteSchreiben(wert){
       var jetzt = 0;
       try { jetzt = elBulk.getBoundingClientRect().width; } catch(e){}
-      var altUeb = elBulk.style.transition;
-      elBulk.style.transition = "none";
+      /* Eine KLASSE und nicht style.transition = "none": die Klasse nimmt genau width aus der
+         Uebergangsliste, opacity und transform bleiben drin. Die Kurzschrift zu loeschen nahm
+         die beiden mit -- und weil renderBulkBar die Leiste eine Zeile vorher mit is-on
+         einfahren laesst, war damit die Einfahr-Bewegung weg. Am 22.09. gemeldet. */
+      elBulk.classList.add("upt-breite-sofort");
       elBulk.style.width = wert;
       var neuBreite = 0;
       try { neuBreite = elBulk.getBoundingClientRect().width; } catch(e){}
-      if (neuBreite > jetzt + 0.5){
-        /* Gewachsen -- so bleibt es, ohne Uebergang. Die Marke erst im naechsten Takt
-           zurueckgeben, sonst faengt der Browser den Wechsel doch noch als Uebergang ein. */
-        elBulk.style.transition = "";
+      /* OHNE BEWEGUNG in zwei Faellen:
+         WACHSEN -- sonst haengt der Grund 200ms hinter dem Inhalt zurueck und das letzte
+         Segment steht neben der Leiste.
+         ERSTES ERSCHEINEN -- dann gibt es kein Vorher, von dem aus sich animieren liesse. Die
+         Breite aus der CSS (536px) ist in dem Moment nur der Ausgangswert eines unsichtbaren
+         Elements, kein Zustand, den je jemand gesehen hat; von ihr aus zu schrumpfen sah aus,
+         als wuerde die Leiste beim Auftauchen enger werden. Auch das am 22.09. gemeldet. */
+      if (neuBreite > jetzt + 0.5 || !elBulk.classList.contains("is-on")){
         void elBulk.offsetWidth;
-        if (altUeb) elBulk.style.transition = altUeb;
+        elBulk.classList.remove("upt-breite-sofort");
         return;
       }
-      /* Geschrumpft (oder gleich geblieben): zurueck auf den Ausgangswert, Uebergang wieder
-         anschalten, dann das Ziel setzen -- so laeuft die Bewegung wie bisher. */
+      /* Geschrumpft: zurueck auf den Ausgangswert, Uebergang wieder anschalten, dann das Ziel
+         setzen -- so laeuft die Bewegung wie bisher. */
       elBulk.style.width = jetzt ? (jetzt + "px") : "";
       void elBulk.offsetWidth;
-      elBulk.style.transition = altUeb || "";
+      elBulk.classList.remove("upt-breite-sofort");
       void elBulk.offsetWidth;
       elBulk.style.width = wert;
     }
@@ -1724,6 +1731,12 @@
       Array.prototype.forEach.call(bar.querySelectorAll("button"), function(b){ b.tabIndex = 0; });
       bar.setAttribute("aria-hidden", "false");
       root.classList.add("is-bulk");
+      /* DIE BREITE VOR dem Einfahren. Sie muss stehen, BEVOR is-on faellt -- sonst faehrt die
+         Leiste in der Breite aus der CSS ein und stellt sich erst waehrend der Bewegung auf
+         ihren Inhalt um. Genau so gemeldet: "sieht aus, als wuerde es breiter starten und
+         direkt schmaler werden". breiteSchreiben erkennt an dem noch fehlenden is-on, dass
+         hier nichts zu animieren ist. */
+      bulkBreiteSetzen();
       if (!bar.classList.contains("is-on")){
         /* Force a style/layout flush so the browser has actually computed the from-state before
            the class flips — otherwise both states land in one frame and the transition is
@@ -1733,7 +1746,6 @@
         void bar.offsetWidth;
         bar.classList.add("is-on");
       }
-      bulkBreiteSetzen();
     }
 
     /* ---- topic editor ----

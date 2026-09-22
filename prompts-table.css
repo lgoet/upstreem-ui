@@ -316,6 +316,14 @@
 .upt-bulkbar.is-topics [data-bulk-topics] {
   background: transparent; color: var(--vc-text); border-color: var(--vc-hover-border);
 }
+/* NUR width aus der Uebergangsliste nehmen, nichts sonst. Das JS setzt diese Klasse fuer die
+   Dauer EINES Schreibvorgangs (siehe breiteSchreiben), wenn die Breite ohne Bewegung stehen
+   soll -- beim Wachsen und beim ersten Erscheinen.
+   transition-property und nicht die ganze Kurzschrift: die Kurzschrift wuerde auch Dauer und
+   Kurve neu setzen und damit die Zeile darunter schlagen, die im Ruhemodus alles auf 1ms
+   zieht. Und ausdruecklich nicht style.transition = "none" im JS -- das nimmt opacity und
+   transform mit, und genau daran ist am 22.09. die Einfahr-Bewegung verschwunden. */
+.upt-bulkbar.upt-breite-sofort { transition-property: opacity, transform; }
 @media (prefers-reduced-motion: reduce){ .upt-bulkbar { transition-duration: 1ms; } }
 .upt-bulkbar[data-theme="dark"] {
   /* Die DUNKLE Leiste -- sie steht im HELLEN Thema der App (data-theme nennt ihr eigenes
