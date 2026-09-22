@@ -64,6 +64,18 @@
   TYPEN["whats-new"] = TYPEN["whats_new"];
   /* Ein unbekannter Typ darf die Karte nicht verschlucken: die Nachricht ist wichtiger als ihr
      Symbol. Also das neutrale Info-Zeichen und der Typ als Bezeichnung, so wie er kam. */
+  /* Die Karte fuer einen Payload, der ANKAM, sich aber nicht lesen liess. notification_type
+     bleibt leer: typOf faellt dann auf "Notice" mit dem Info-Zeichen und "Dismiss" zurueck, also
+     die neutrale Form -- eine Stoerung soll nicht wie eine Ankuendigung aussehen. cta_label leer,
+     damit der Hauptknopf verschwindet; wegklicken laesst sie sich ueber den Zweitknopf wie jede
+     andere. */
+  var LESEFEHLER = {
+    id: "__unc_lesefehler", notification_type: "",
+    title: "A notification could not be displayed",
+    body: "Please reload the page and try again.",
+    cta_label: ""
+  };
+
   function typOf(t) {
     var k = String(t == null ? "" : t).toLowerCase().trim();
     return TYPEN[k] || { icon: "info", label: k || "Notice", zweit: "Dismiss", dunkel: true };
@@ -357,11 +369,24 @@
     var ctrl = {
       root: root,
       set: function (payload) {
+        /* Kam ueberhaupt TEXT an? Das entscheidet unten zwischen leer und kaputt, und es muss
+           VOR dem Lesen stehen -- danach sind beide Faelle nicht mehr zu unterscheiden. */
+        var kamText = !(payload && typeof payload === "object") &&
+                      !!String(payload == null ? "" : payload).trim();
         var p = UC.parseLoose ? UC.parseLoose(payload, "notifications") : payload;
         /* Eine Liste, eine einzelne Zeile oder nichts -- alle drei kommen aus Bubble vor. Was
            nicht lesbar war, leert die Liste statt eine alte Karte stehen zu lassen: eine
            Benachrichtigung, die es nicht mehr gibt, darf nicht weiterleuchten. */
-        state.list = isArr(p) ? p : (p && typeof p === "object" && p.id != null ? [p] : []);
+        var gelesen = isArr(p) ? p : (p && typeof p === "object" && p.id != null ? [p] : null);
+        /* LEER und KAPUTT sind zwei Dinge, und hier sahen sie gleich aus. Gemessen an zehn
+           Nutzlasten: ein ABGESCHNITTENER Payload, einer aus reinem Text und ein LEERER liefern
+           alle drei nichts -- die Karte blieb in allen drei Faellen einfach aus, und eine
+           Nachricht, die das Team geschickt hat, war spurlos weg. Kam Text an, der sich nicht
+           lesen liess, ist das ein Fehler und bekommt seine eigene, wegklickbare Karte. Kam gar
+           nichts an, bleibt es still wie bisher -- dann gibt es auch nichts zu melden. */
+        if (gelesen) state.list = gelesen;
+        else if (kamText) state.list = [LESEFEHLER];
+        else state.list = [];
         render();
       },
       dismiss: function (notifId) {

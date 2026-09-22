@@ -253,6 +253,7 @@
     var elCustomWrap = overlay.querySelector(".uex-custom-wrap");
     var elCalSlot = overlay.querySelector(".uex-cal-slot");
     var elSummary = overlay.querySelector(".uex-summary");
+    var elBody    = overlay.querySelector(".uex-body");
     var elDialog  = overlay.querySelector(".uex-dialog");
     var elBody    = overlay.querySelector(".uex-body");
     var elClose   = overlay.querySelector(".uex-close");
@@ -302,7 +303,30 @@
         esc(prettyDate(state.from)) + "</b> to <b>" + esc(prettyDate(state.to)) +
         "</b> &mdash; <b>" + dayCount(state.from, state.to) + "</b> days.";
     }
-    function renderAll(){ renderTypes(); renderPresets(); renderSummary(); }
+    /* renderAll zeichnet Typen, Voreinstellungen und Zusammenfassung -- also den GANZEN Inhalt
+       des Dialogs. Am Aufruf beim Oeffnen stand ein leerer Faenger ohne Rueckfall: warf hier
+       etwas, ging der Dialog leer auf, und leer sah damit genauso aus wie kaputt. Jetzt sagt er,
+       dass er sich nicht aufbauen liess, und was zu tun ist. Kein interner Name, kein Verweis
+       auf die Konsole.
+       window.UpstreemCore direkt und mit Rueckfall, wie ueberall in dieser Datei: sie kommt ohne
+       core aus (siehe setContext), und gerade der Fehlerfall darf nicht an einem fehlenden UC
+       scheitern. */
+    function aufbauFehler(){
+      if (!elBody) return;
+      var C = window.UpstreemCore;
+      elBody.innerHTML = (C && C.leerHtml)
+        ? C.leerHtml({ icon: "info", knopf: "",
+            titel: "Export options could not be shown",
+            text: "Please reload the page and try again." })
+        : '<div class="up-empty">' +
+            '<div class="up-empty-h">Export options could not be shown</div>' +
+            '<div class="up-empty-t">Please reload the page and try again.</div>' +
+          '</div>';
+    }
+    function renderAll(){
+      try { renderTypes(); renderPresets(); renderSummary(); }
+      catch(e){ aufbauFehler(); }
+    }
 
     function applyPreset(key){
       var p = PRESETS.filter(function(x){ return x.key === key; })[0];
@@ -537,7 +561,7 @@
       /* Still, aus demselben Grund. Der Dialog oeffnet, und fehlt der Kalender, steht das
          als Hinweis unter dem Custom-Knopf. */
       catch(e){}
-      try { renderAll(); } catch(e){}
+      renderAll();
       lastFocus = document.activeElement;
       overlay.inert = false;
       overlay.setAttribute("aria-hidden", "false");

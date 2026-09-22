@@ -431,6 +431,17 @@
     "The data could not be read. Please reload the page.":
       "Die Daten konnten nicht gelesen werden. Bitte lade die Seite neu.",
     "data": "Die Daten",
+    /* Der Export-Dialog, wenn sich sein Inhalt nicht aufbauen liess. Eigener Wortlaut und nicht
+       der Lesefehler daruber: dort sind DATEN unlesbar, hier kam der Dialog selbst nicht
+       zustande -- fuer den Nutzer zwei verschiedene Dinge. */
+    /* Der Export-Dialog, wenn sich sein Inhalt nicht aufbauen liess, und die
+       Benachrichtigungskarte, wenn ihre Nutzlast ankam, aber unlesbar war. Eigener Wortlaut und
+       nicht der Lesefehler daruber: dort sind DATEN unlesbar, hier kam das Bauteil selbst nicht
+       zustande -- fuer den Nutzer zwei verschiedene Dinge.
+       "Please reload the page and try again." steht hier NICHT: den Schluessel gibt es weiter
+       unten schon, und der spaetere addMessages-Block gewinnt. Ein Eintrag hier waere tot. */
+    "Export options could not be shown": "Die Export-Optionen konnten nicht angezeigt werden",
+    "A notification could not be displayed": "Eine Benachrichtigung konnte nicht angezeigt werden",
 
     /* ── Spaltenkoepfe, die in mehreren Tabellen vorkommen ─────────────────────────────────────
        Nach dem Glossar bleiben Prompt, Visibility, Ranking, Sentiment, Brand(s), Domain(s),
