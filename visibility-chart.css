@@ -27,7 +27,6 @@
 .vot-heading { font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .vot-head-tools { display: flex; align-items: center; gap: 8px; margin-left: auto; flex: 0 0 auto; }
 
-.up-root[data-theme="dark"] .up-root[data-theme="dark"] 
 .vot-box {
   flex: 1 1 auto; min-height: 0; height: 427px;
   border: 1px solid var(--vc-border); background: var(--vc-bg); overflow: hidden;

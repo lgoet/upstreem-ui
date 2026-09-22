@@ -44,7 +44,6 @@
 .ubo-status-tag { font-size: 14px; font-weight: 500; color: var(--vc-muted); margin-right: 6px; }
 .ubo-status-tag:empty { display: none; }
 
-.up-root[data-theme="dark"] 
 .ubo-box {
   border: 1px solid var(--vc-border); background: var(--vc-bg); border-radius: 16px;
   overflow: hidden; display: flex; flex-direction: column;
@@ -56,7 +55,6 @@
 
 /* ---------- chart type switch (Linechart | Landscape) + status switch (Active | Inactive) ----------
    Both are the app's standard segmented control, identical to .vc-gran / .upt-status. */
-.up-root[data-theme="dark"] 
 /* Y-axis switch — Landscape only. The line chart's gear ("Chart Settings") is meaningless for a
    scatter of logos; the one thing that IS adjustable here is what the Y axis plots. */
 .ubo-yaxis { display: none; align-items: center; }

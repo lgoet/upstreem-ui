@@ -47,7 +47,6 @@
 .tcd-panel-body { flex: 1 1 auto; min-height: 0; padding: 16px; position: relative; display: flex; flex-direction: column; transition: opacity 200ms ease; }
 
 /* ---------- icon buttons (32x32) — local, see file header for why ---------- */
-.up-root[data-theme="dark"] .up-root[data-theme="dark"] 
 /* dark button tooltip (own implementation — see file header) */
 
 /* Go-To: primary-font-color bg */

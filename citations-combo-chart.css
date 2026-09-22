@@ -31,7 +31,6 @@
    sie sucht: .up-iconbtn faerbt beim Ueberfahren eine FLAECHE ein, die Zeichenknoepfe dieser
    Komponente haben nie eine gehabt -- dort wechselt nur die Farbe des Zeichens. Dieselbe
    Begruendung gilt fuer .vot-iconbtn und .tcd-iconbtn. */
-.up-root[data-theme="dark"] .up-root[data-theme="dark"] 
 .combo-box {
   flex: 1 1 auto; min-height: 0; height: 430px;
   border: 1px solid var(--vc-border); background: var(--vc-bg); overflow: hidden;
@@ -123,7 +122,6 @@
 .cc-top-total { margin-right: auto; display: none; align-items: baseline; gap: 6px; }
 .cc-top-total .n { font-size: 16px; font-weight: 500; color: var(--vc-text); line-height: 1; }
 .cc-top-total .lbl { font-size: 12px; font-weight: 400; color: var(--vc-third); }
-.up-root[data-theme="dark"] 
 /* the chart body the type-chart kit renders into */
 .up-donut-body { width: 100%; position: relative; flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
 .up-donut-body > .up-bars, .up-donut-body > .up-donut-layout,
