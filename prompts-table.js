@@ -1359,9 +1359,7 @@
     var CLOSE_SVG = UC.icon("x", 2.4);
     /* Aus core statt inline: UC ist hier im Scope (die Zeile darunter holt sich plus
        ebenso), und "tags" gibt es dort seit dem Wechsel von einem auf zwei Anhaenger. */
-    var TAG_SVG = UC.icon("tags", 2);
     var PLUS_SVG = UC.icon("plus", 2);
-    var TRASH_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
     var SMILE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 10V9" /> <path d="M16.472 15a6 6 0 01-8.943 0" /> <path d="M9 10V9" /> <circle cx="12" cy="12" r="10" /></svg>';
     /* First stop of the tag creator this table will eventually need in full — for now it lives
        only where a brand-new topic can be named: the inline "no matches, create it" row.
@@ -1564,23 +1562,40 @@
          rather than existing-but-disabled. Delete takes its place as the second action instead. */
       var isInactive = state.status === "inactive";
       var wasOpen = !isInactive && bar.classList.contains("is-topics");
-      var topicsBtn = isInactive ? "" :
-        '<button class="up-filter-btn upt-bulkbar-btn" type="button" data-bulk-topics aria-expanded="' + (wasOpen ? "true" : "false") + '">' + TAG_SVG + 'Topics</button>';
-      var deleteBtn = isInactive ?
-        '<button class="up-filter-btn upt-bulkbar-btn upt-bulkbar-delete" type="button" data-bulk-delete>' + TRASH_SVG + '<span class="upt-bulkbar-delete-lbl">Delete</span></button>' : "";
+      /* EIN Werkzeug: 16px Polster, darin ein 32x32-Knopf mit einem 16px-Zeichen. Alle fuenf
+         Segmente sind gleich gebaut, nur Zeichen, Ereignis und Tooltip unterscheiden sich.
+         data-tip ist der Chip des Hauses -- die Leiste ist als eigene Tooltip-Wurzel angemeldet
+         (siehe ensureBulkBar), also feuert er hier genauso wie in der Tabelle. */
+      function werkzeug(attr, zeichen, tip, extra){
+        return '<span class="upt-bulkbar-sep"></span>' +
+          '<span class="upt-bulkbar-seg">' +
+            '<button class="upt-bulkbar-ic' + (extra ? " " + extra : "") + '" type="button" ' + attr +
+              ' data-tip="' + esc(t(tip)) + '" aria-label="' + esc(t(tip)) + '">' +
+              UC.icon(zeichen, 2) +
+            '</button>' +
+          '</span>';
+      }
+      /* Topics und Loeschen schliessen sich aus: in der Inaktiv-Ansicht gibt es keine Topics
+         (inaktive Prompts werden nicht verschlagwortet), dort steht Loeschen an derselben
+         Stelle. Die Zahl der Segmente bleibt damit in beiden Ansichten gleich. */
+      var ersterWerkzeug = isInactive
+        ? werkzeug('data-bulk-delete', "trash", "Delete", "upt-bulkbar-delete")
+        : werkzeug('data-bulk-topics aria-expanded="' + (wasOpen ? "true" : "false") + '"', "tags", "Topics");
       bar.innerHTML =
         '<div class="upt-bulkbar-row' + (isInactive ? " is-inactive" : "") + '">' +
-          /* Only the number lives in its own span — "selected" never moves, and syncBulkBarCount()
-             only ever touches this inner span, not the whole phrase. */
-          '<span class="upt-bulkbar-count" role="status" aria-live="polite">' +
-            '<span class="upt-bulkbar-count-n" data-n="' + n + '">' + UC.fmtInt(n) + '</span>' +
-            '<span class="upt-bulkbar-count-lbl">selected</span>' +
+          '<span class="upt-bulkbar-count-seg">' +
+            /* Only the number lives in its own span — "selected" never moves, and syncBulkBarCount()
+               only ever touches this inner span, not the whole phrase. */
+            '<span class="upt-bulkbar-count" role="status" aria-live="polite">' +
+              '<span class="upt-bulkbar-count-n" data-n="' + n + '">' + UC.fmtInt(n) + '</span>' +
+              '<span class="upt-bulkbar-count-lbl">selected</span>' +
+            '</span>' +
+            escape +
           '</span>' +
-          escape +
-          topicsBtn +
-          '<button class="up-filter-btn upt-bulkbar-btn" type="button" data-bulk-status>' + esc(statusLabel) + '</button>' +
-          deleteBtn +
-          '<button class="upt-bulkbar-x" type="button" data-bulk-clear aria-label="Clear selection">' + CLOSE_SVG + '</button>' +
+          ersterWerkzeug +
+          werkzeug('data-bulk-copy', "copy", "Copy prompts") +
+          werkzeug('data-bulk-status', "power", statusLabel) +
+          werkzeug('data-bulk-clear', "x", "Clear selection") +
         '</div>' +
         '<div class="upt-bulkpanel" aria-hidden="' + (wasOpen ? "false" : "true") + '"></div>';
       if (wasOpen) renderTopicMenu();   // innerHTML above threw the open panel away
@@ -1905,20 +1920,63 @@
        render() round-trip — same reasoning as syncBulkBarCount() staying out of renderBulkBar()
        for the common case. */
     function bulkDeleteBtn(){ return elBulk && elBulk.querySelector("[data-bulk-delete]"); }
+    /* Der scharfgestellte Zustand sagt sich seit dem 22.09. ueber TOOLTIP und Farbe statt ueber
+       eine Beschriftung -- das Werkzeug ist jetzt ein 32x32-Zeichen ohne Text. Die zwei Stufen
+       bleiben: erster Klick stellt scharf (rot), zweiter loescht. */
+    function bulkDeleteTip(btn, text){
+      if (!btn) return;
+      btn.setAttribute("data-tip", t(text));
+      btn.setAttribute("aria-label", t(text));
+    }
     function disarmBulkDelete(){
       var btn = bulkDeleteBtn();
       if (!btn || !btn.classList.contains("is-armed")) return;
       btn.classList.remove("is-armed");
-      var lbl = btn.querySelector(".upt-bulkbar-delete-lbl");
-      if (lbl) lbl.textContent = "Delete";
+      bulkDeleteTip(btn, "Delete");
+    }
+    /* ---- Auswahl als Text kopieren (22.09.) ----
+       Kommagetrennte Liste der Prompt-TEXTE, nicht der Ids: kopiert wird, was der Nutzer sieht.
+       Nur die Zeilen, die WIRKLICH geladen sind -- bei "alle auswaehlen" ueber mehrere Seiten
+       liegen die uebrigen Texte gar nicht im Browser, und eine Liste, die schweigend die Haelfte
+       weglaesst, waere schlimmer als eine, die sagt, wie viele sie hat. Deshalb sagt die Meldung
+       die Zahl.
+       Ein Text mit Komma wird in Anfuehrungszeichen gesetzt, sonst liest sich die Liste falsch --
+       dieselbe Regel wie in einer CSV. */
+    function bulkCopyPrompts(){
+      var ids = {}, n = 0;
+      selectedIds().forEach(function(id){ ids[id] = true; });
+      var texte = [];
+      (state.rows || []).forEach(function(r){
+        var id = String(r && r.prompt_id);
+        if (!ids[id]) return;
+        var txt = String(r.prompt_text == null ? "" : r.prompt_text).replace(/\s+/g, " ").trim();
+        if (!txt) return;
+        texte.push(txt.indexOf(",") >= 0 ? '"' + txt.replace(/"/g, '""') + '"' : txt);
+        n++;
+      });
+      if (!texte.length){
+        if (UC.toast) UC.toast(t("Nothing to copy"), { icon: "info" });
+        return;
+      }
+      var text = texte.join(", ");
+      function fertig(ok){
+        if (!UC.toast) return;
+        if (!ok) { UC.toast(t("Could not copy"), { icon: "info" }); return; }
+        UC.toast(t("{n} prompts copied").replace("{n}", UC.fmtInt(n)), { icon: "check" });
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(function(){ fertig(true); },
+          function(){ fertig(UC.legacyCopy ? UC.legacyCopy(text) : false); });
+        return;
+      }
+      fertig(UC.legacyCopy ? UC.legacyCopy(text) : false);
     }
     function applyBulkDelete(){
       var btn = bulkDeleteBtn();
       if (!btn) return;
       if (!btn.classList.contains("is-armed")){
         btn.classList.add("is-armed");
-        var lbl = btn.querySelector(".upt-bulkbar-delete-lbl");
-        if (lbl) lbl.textContent = "Confirm delete?";
+        bulkDeleteTip(btn, "Confirm delete?");
         return;
       }
       var p = selectionPayload();
@@ -4003,6 +4061,7 @@
           addTopicModal.open("create", null);
           return;
         }
+        if (e.target.closest("[data-bulk-copy]")){ bulkCopyPrompts(); return; }
         if (e.target.closest("[data-bulk-status]")){ setTopicMenuOpen(false); applyBulkStatus(); return; }
         if (e.target.closest("[data-bulk-delete]")){ applyBulkDelete(); return; }
         return;

@@ -1178,6 +1178,12 @@
     "{n} selected": "{n} ausgewählt",
     "Select all {n} prompts": "Alle {n} Prompts auswählen",
     "Clear selection": "Auswahl aufheben",
+    /* Die Massenleiste der Prompts-Tabelle, seit sie Werkzeuge statt Beschriftungen zeigt. */
+    "Copy prompts": "Prompts kopieren",
+    "{n} prompts copied": "{n} Prompts kopiert",
+    "Nothing to copy": "Nichts zu kopieren",
+    "Could not copy": "Kopieren nicht möglich",
+    "Confirm delete?": "Wirklich löschen?",
     "Bulk actions": "Sammelaktionen",
     "Set Active": "Auf aktiv setzen",
     "Set Inactive": "Auf inaktiv setzen",
@@ -15318,6 +15324,9 @@
               '<path d="M16.2 4.8c2 2 2.26 5.11.8 7.47"/><path d="M19.1 1.9a9.96 9.96 0 0 1 0 14.1"/>' +
               '<path d="M9.5 18h5"/><path d="m8 22 4-11 4 11"/>',
     clock:    '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+    /* power: der Ein-/Aus-Knopf. Steht in der Massenleiste fuer "auf inaktiv setzen" bzw.
+       "auf aktiv setzen" -- ein Zustand, kein Loeschen, und genau das sagt dieses Zeichen. */
+    power:    '<path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/>',
     /* database: der Zylinder. Stand als Handzeichnung in prompts-table ueber dem Leerzustand der
        Gruppen -- dieselben drei Formen wie hier, nur ausserhalb der Sammlung. */
     database: '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/>' +
