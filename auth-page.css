@@ -590,7 +590,7 @@
 .uau-mic { background: transparent; border-radius: 11px; color: var(--vc-text); }
 .uau-mic svg { width: 56%; height: 56%; display: block; }
 .uau-send { border-radius: 50%; background: var(--up-accent); color: var(--up-accent-fg);
-  box-shadow: 0 1px 3px rgba(0,0,0,.16); }
+  box-shadow: var(--up-e-1, 0 1px 3px rgba(0,0,0,.16)); }
 .uau-send svg { width: 52%; height: 52%; display: block; }
 .uau-panel-f { font-size: clamp(12px, .95vw, 14px); font-weight: 500; color: var(--vc-muted); }
 

@@ -564,7 +564,7 @@
   .am-opps-inline.is-in { opacity: 1; transform: none; }
   .am-oppc-spin { animation: amOppcSpin .7s linear infinite; transform-origin: 50% 50%; }
   @keyframes amOppcSpin { to { transform: rotate(360deg); } }
-  .am-toast { position: absolute; left: 50%; bottom: 92px; transform: translate(-50%, 8px); z-index: 90; max-width: min(90%, 440px); padding: 10px 14px; border-radius: 12px; background: var(--am-text); color: var(--am-card); font-size: 13px; font-weight: 500; line-height: 1.35; box-shadow: 0 12px 30px rgba(0,0,0,0.2); opacity: 0; pointer-events: none; transition: opacity .18s ease, transform .18s ease; text-align: center; }
+  .am-toast { position: absolute; left: 50%; bottom: 92px; transform: translate(-50%, 8px); z-index: 90; max-width: min(90%, 440px); padding: 10px 14px; border-radius: 12px; background: var(--am-text); color: var(--am-card); font-size: 13px; font-weight: 500; line-height: 1.35; box-shadow: var(--up-e-2, 0 12px 30px rgba(0,0,0,0.2)); opacity: 0; pointer-events: none; transition: opacity .18s ease, transform .18s ease; text-align: center; }
   .am-toast.is-on { opacity: 1; transform: translate(-50%, 0); }
   .am-url-pop button svg { width: 15px; height: 15px; flex: 0 0 auto; color: var(--am-muted); stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .am-url-pop .am-url-pop-sub { color: var(--am-muted); font-size: 12px; }
@@ -705,7 +705,7 @@
   #ask-mira .uo-status.is-open .uo-status-btn { background: var(--uo-soft-2); border-color: var(--uo-border-strong); color: var(--uo-text); }
   #ask-mira .uo-status-label { line-height: 1; }
   #ask-mira .uo-status-chev { width: 12px; height: 12px; margin-left: 1px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; opacity: 0.65; transition: transform .16s ease; }
-  #ask-mira .uo-status-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 40; min-width: 168px; padding: 5px; border: 1px solid var(--uo-border); border-radius: 12px; background: var(--uo-card); box-shadow: 0 14px 34px rgba(0,0,0,0.13); opacity: 0; transform: translateY(-4px) scale(0.98); transform-origin: top right; pointer-events: none; transition: opacity .14s ease, transform .14s ease; }
+  #ask-mira .uo-status-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 40; min-width: 168px; padding: 5px; border: 1px solid var(--uo-border); border-radius: 12px; background: var(--uo-card); box-shadow: var(--up-e-3, 0 14px 34px rgba(0,0,0,0.13)); opacity: 0; transform: translateY(-4px) scale(0.98); transform-origin: top right; pointer-events: none; transition: opacity .14s ease, transform .14s ease; }
   #ask-mira .uo-status.is-open .uo-status-menu { opacity: 1; transform: none; pointer-events: auto; }
   #ask-mira .uo-status-opt { width: 100%; height: 32px; padding: 0 9px; border: 0; border-radius: 8px; background: transparent; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 550; color: var(--uo-text); cursor: pointer; font-family: inherit; text-align: left; }
   #ask-mira .uo-status-opt:hover { background: var(--uo-soft); }
@@ -1195,7 +1195,7 @@
   .am-cat-card:hover .am-cat-ic { transform: rotate(-4deg) scale(1.02); box-shadow: 0 3px 9px rgba(20,22,28,.10); color: var(--am-text); }
   .am-cat-ic svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
   .am-cat-name { flex: 1 1 auto; min-width: 0; }
-  #ask-mira[data-theme="dark"] .am-cat-ic { background: rgba(42,42,42,0.3); border-color: #28282c; box-shadow: 0 1px 4px rgba(0,0,0,.28); }
+  #ask-mira[data-theme="dark"] .am-cat-ic { background: rgba(42,42,42,0.3); border-color: #28282c; box-shadow: var(--up-e-1, 0 1px 4px rgba(0,0,0,.28)); }
   #ask-mira[data-theme="dark"] .am-cat-card:hover .am-cat-ic { background: rgba(53,54,56,0.3); color: #ececec; box-shadow: 0 3px 10px rgba(0,0,0,.38); }
   /* Das Chevron rueckt beim Ueberfahren 4px nach rechts. transform und nicht margin: ein
      transform laesst den Browser nicht neu umbrechen, die Karte darum bleibt also ruhig.
@@ -1294,7 +1294,7 @@
   .am-rep-range-menu {
     position: absolute; top: calc(100% + var(--up-dd-gap)); right: 0; min-width: 184px; z-index: 60;
     background: var(--up-menu-bg); border: 1px solid var(--up-menu-border); border-radius: var(--up-dd-radius);
-    box-shadow: 0 12px 32px rgba(0,0,0,0.14); padding: var(--up-dd-pad);
+    box-shadow: var(--up-e-2, 0 12px 32px rgba(0,0,0,0.14)); padding: var(--up-dd-pad);
     opacity: 0; transform: translateY(-4px) scale(0.985); pointer-events: none;
     transition: opacity 120ms ease, transform 120ms ease; max-height: 320px; overflow-y: auto;
   }
@@ -1387,7 +1387,7 @@
   /* Die zwei dunklen Sonderzeilen fuer die Reportkarte sind weg: --am-bg und
      --vt-row-hover-solid drehen sich mit dem Thema, und #2a2a2a war deckend, aber zu hell --
      dieselbe Meldung wie bei den Kategoriekarten. */
-  #ask-mira[data-theme="dark"] .am-rep-ic { background: rgba(42,42,42,0.3); border-color: #28282c; box-shadow: 0 1px 4px rgba(0,0,0,.28); }
+  #ask-mira[data-theme="dark"] .am-rep-ic { background: rgba(42,42,42,0.3); border-color: #28282c; box-shadow: var(--up-e-1, 0 1px 4px rgba(0,0,0,.28)); }
   #ask-mira[data-theme="dark"] .am-rep-card:hover .am-rep-ic { background: rgba(53,54,56,0.3); color: #ececec; box-shadow: 0 3px 10px rgba(0,0,0,.38); }
 
   /* ===================== COMPOSER ===================== */
@@ -1440,7 +1440,7 @@
     position: absolute; right: calc(100% + 8px); top: 50%; transform: translateY(-50%) translateX(6px);
     width: max-content; min-width: 150px; max-width: 300px; max-height: 340px; overflow-y: auto; overflow-x: hidden; padding: 5px;
     border: 1px solid var(--am-border); border-radius: 12px; background: var(--am-card);
-    box-shadow: 0 14px 34px rgba(0,0,0,0.13);
+    box-shadow: var(--up-e-3, 0 14px 34px rgba(0,0,0,0.13));
     opacity: 0; pointer-events: none; transition: opacity 120ms ease, transform 120ms ease;
   }
   .am-msgnav-menu::after { content: ""; position: absolute; top: 0; bottom: 0; right: -10px; width: 10px; }
@@ -1453,7 +1453,7 @@
   }
   .am-msgnav-item:hover { background: var(--am-soft); }
   .am-msgnav-item.is-active { background: var(--am-soft-2); }
-  #ask-mira[data-theme="dark"] .am-msgnav-menu { box-shadow: 0 14px 34px rgba(0,0,0,0.55); }
+  #ask-mira[data-theme="dark"] .am-msgnav-menu { box-shadow: var(--up-e-3, 0 14px 34px rgba(0,0,0,0.55)); }
   .am-scroll-bottom {
     position: absolute; left: 50%; bottom: 100%; transform: translate(-50%, 6px);
     height: 36px; width: 36px; border-radius: 999px; cursor: pointer;
@@ -1572,7 +1572,7 @@
   .am-seg-thumb {
     position: absolute; z-index: 1; top: 3px; left: 3px; height: 28px;
     border-radius: 7px; background: var(--am-card); border: 1px solid var(--am-border);
-    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+    box-shadow: var(--up-e-1, 0 1px 2px rgba(0,0,0,0.06));
     transition: transform 200ms cubic-bezier(0.22,0.61,0.36,1), width 200ms cubic-bezier(0.22,0.61,0.36,1);
   }
 
@@ -1921,13 +1921,13 @@
   .am-eff-dot.is-fill { background: rgba(255,255,255,0.85); }
   .am-eff-thumb {
     position: absolute; top: 2.5px; left: 2.5px; width: 23px; height: 23px; border-radius: 999px;
-    background: #ffffff; box-shadow: 0 1px 2px rgba(0,0,0,0.2); pointer-events: none;
+    background: #ffffff; box-shadow: var(--up-e-1, 0 1px 2px rgba(0,0,0,0.2)); pointer-events: none;
     transition: transform 200ms ease;
   }
   /* Weiss in BEIDEN Themen, und das ist gerechnet: der dunkle Daumen der Schalterfamilie
      (#e0e0e0) misst auf dem Verlauf 2.79 gegen das Blau und 2.97 gegen das Lila -- beides unter
      den 3.0, die WCAG 1.4.11 fuer ein Bedienelement verlangt. Weiss schafft 3.68 und 3.92. */
-  #ask-mira[data-theme="dark"] .am-eff-thumb { box-shadow: 0 1px 2px rgba(0,0,0,0.45); }
+  #ask-mira[data-theme="dark"] .am-eff-thumb { box-shadow: var(--up-e-1, 0 1px 2px rgba(0,0,0,0.45)); }
   .am-eff-track:focus-visible { outline: none; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 
   /* Die Beschriftungen stehen UNTER der Schiene und nicht darauf. Gerechnet: weisser Text auf
@@ -2413,12 +2413,12 @@
     width: 32px; height: 32px; border: 0; border-radius: 50%; flex: 0 0 auto;
     background: var(--am-primary); color: var(--am-bg); cursor: pointer;
     display: inline-flex; align-items: center; justify-content: center; position: relative;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+    box-shadow: var(--up-e-1, 0 1px 2px rgba(0,0,0,0.12));
     transition: background 120ms ease, transform 120ms ease, box-shadow 120ms ease, opacity 120ms ease;
   }
   .am-send:hover { background: #585855; box-shadow: none; }
   .am-send:active { transform: scale(0.95); }
-  .am-send:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+  .am-send:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: var(--up-e-1, 0 1px 2px rgba(0,0,0,0.08)); }
   .am-ic-send { width: 18px; height: 18px; }
   .am-send-spinner {
     display: none; width: 16px; height: 16px; border-radius: 999px;
@@ -2464,7 +2464,7 @@
   .am-rec-btn .am-ic { width: 18px; height: 18px; }
   .am-rec-cancel { background: var(--am-soft-2); color: var(--am-text); }
   .am-rec-cancel:hover { background: #e9e9ec; }
-  .am-rec-confirm { background: var(--am-primary); color: var(--am-bg); box-shadow: 0 1px 2px rgba(0,0,0,0.12); }
+  .am-rec-confirm { background: var(--am-primary); color: var(--am-bg); box-shadow: var(--up-e-1, 0 1px 2px rgba(0,0,0,0.12)); }
   .am-rec-confirm:hover { background: #585855; box-shadow: none; }
   .am-rec-note { max-width: 920px; margin: 8px auto 0; width: 100%; text-align: center; font-size: 12px; line-height: 1.4; color: #b0200c; display: none; }
   .am-rec-note.is-on { display: block; animation: amRecIn 160ms ease both; }
@@ -3013,7 +3013,7 @@
   .am-dd-menu {
     position: absolute; left: 0; right: 0; top: calc(100% + 8px); z-index: 100;
     background: var(--am-card); border: 1px solid var(--am-border); border-radius: 14px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.10); padding: 8px;
+    box-shadow: var(--up-e-2, 0 10px 30px rgba(0,0,0,0.10)); padding: 8px;
     opacity: 0; transform: translateY(-4px) scale(0.985); pointer-events: none;
     transition: opacity 120ms ease, transform 120ms ease;
   }
@@ -3233,7 +3233,7 @@
     position: fixed; z-index: 2147483600; min-width: 184px;
     width: max-content; max-width: calc(100vw - 16px);
     background: var(--am-card); border: 1px solid var(--am-border); border-radius: 14px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.14); padding: 6px;
+    box-shadow: var(--up-e-2, 0 10px 30px rgba(0,0,0,0.14)); padding: 6px;
     opacity: 0; transform: translateY(-4px) scale(0.985); pointer-events: none;
     transition: opacity 120ms ease, transform 120ms ease;
   }
@@ -3263,7 +3263,7 @@
        6 + 6 + 1 = 13 ergibt echte 6px Luft zur Menuekante. */
     position: absolute; top: -6px; right: calc(100% + 13px); min-width: 188px; max-width: 230px;
     background: var(--am-card); border: 1px solid var(--am-border); border-radius: 14px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.14); padding: 6px;
+    box-shadow: var(--up-e-2, 0 10px 30px rgba(0,0,0,0.14)); padding: 6px;
     opacity: 0; transform: translateX(4px) scale(0.985); pointer-events: none;
     transition: opacity 120ms ease, transform 120ms ease; z-index: 2;
   }

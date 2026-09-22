@@ -504,7 +504,7 @@
 .mqa-tip {
   position: fixed; z-index: 2147483600; width: 248px; padding: 8px;
   border-radius: 14px; background: #1f1f1b;
-  box-shadow: 0 12px 32px rgba(0,0,0,.28);
+  box-shadow: var(--up-e-2, 0 12px 32px rgba(0,0,0,.28));
   font-family: var(--mqa-font); text-align: left; box-sizing: border-box;
   opacity: 0; pointer-events: none; transform: translateY(-4px);
   transition: opacity .14s ease, transform .14s ease;

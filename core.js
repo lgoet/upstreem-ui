@@ -518,8 +518,6 @@
        Datenbank. "Web-Quellen-Typ-Anteil" waere kein Fortschritt. */
     "Citations": "Web-Quellen",
     "Citation": "Web-Quelle",
-    "Citation Types": "Citation-Typen",
-    "URL Types": "URL-Typen",
     "Lanes": "Spuren",
 
     /* ── Fusszeile und Auswahl ─────────────────────────────────────────────────────────────── */
@@ -528,8 +526,6 @@
     "Descending": "Absteigend",
     "Ascending": "Aufsteigend",
     "Deselect all": "Auswahl aufheben",
-    "Clear selection": "Auswahl leeren",
-    "Apply": "Übernehmen",
     "Reset": "Zurücksetzen",
     /* "Zitiert" und nicht "Verwendet": die Spalte zaehlt, wie oft die URL als Citation auftrat --
        das ist im Deutschen zitiert, und es haelt die Naehe zum Wort Citation, das stehen bleibt. */
@@ -563,23 +559,14 @@
        Das fuehrende Leerzeichen gehoert dazu: der Satz klebt sie direkt an. */
     " for this prompt": " für diesen Prompt",
     " in AI answers for this prompt": " in KI-Antworten auf diesen Prompt",
-    " for the tracked prompts": " für die beobachteten Prompts",
     " for this domain": " für diese Domain",
     " for this URL": " für diese URL",
     "domain": "Domain",
     "URL": "URL",
 
     /* ── Beschreibungen der Seitenkoepfe (stehen im Bubble-Markup) ───────────────────────────── */
-    "Monitor your AI visibility, performance, and latest developments":
-      "Beobachte deine KI-Sichtbarkeit, die Performance und die letzten Entwicklungen",
-    "Manage Prompts, Topics and monitor latest Responses":
-      "Prompts und Topics verwalten, neueste KI-Antworten ansehen",
-    "Manage tasks, prioritize opportunities, and track progress":
-      "Aufgaben verwalten, Opportunities priorisieren, Fortschritt verfolgen",
     "Manage the teams you are a member of, and switch between them":
       "Verwalte die Teams, in denen du Mitglied bist, und wechsle zwischen ihnen",
-    "Manage your brand, your team and your plan.":
-      "Verwalte deine Brand, dein Team und deinen Tarif.",
     "Find the prompts your audience actually asks AI, and turn the ones worth owning into tracked prompts.":
       "Finde die Prompts, die dein Publikum der KI wirklich stellt, und mache aus den lohnenden beobachtete Prompts.",
 
@@ -616,8 +603,6 @@
     "Search markets": "Märkte suchen",
     "Select a market": "Markt wählen",
     "No matches": "Keine Treffer",
-    "Nothing matches the current search and filters.":
-      "Zu dieser Suche und diesen Filtern gibt es nichts.",
     "The data could not be read.": "Die Daten konnten nicht gelesen werden.",
 
     /* ── Zustaende ─────────────────────────────────────────────────────────────────────────── */
@@ -810,15 +795,11 @@
     "Deactivated": "Deaktiviert",
     "Active Brands": "Aktive Brands",
     "Active Prompts": "Aktive Prompts",
-    "Add New Brand": "Neue Brand",
-    "Add New Prompt": "Neuer Prompt",
-    "Edit Your Brand": "Deine Brand bearbeiten",
     "More options": "Weitere Optionen",
     "Switch": "Wechseln",
     "Switching…": "Wird gewechselt…",
     "Exporting…": "Wird exportiert…",
     "Export data": "Daten exportieren",
-    "Export Your Data": "Deine Daten exportieren",
     "Copy URL": "URL kopieren",
     "Copy domain": "Domain kopieren",
     "Copied to clipboard": "In die Zwischenablage kopiert",
@@ -841,14 +822,12 @@
     "Reset search": "Suche zurücksetzen",
     "Y axis": "Y-Achse",
     "Top": "Top",
-    "Prompts vs Responses": "Prompts gegen KI-Antworten",
     "Total Responses analyzed:": "Ausgewertete KI-Antworten:",
     "Next page": "Nächste Seite",
     "Previous page": "Vorige Seite",
 
     /* ── Sortierung ─────────────────────────────────────────────────────────────────────────── */
     "Name A–Z": "Name A–Z",
-    "Biggest risers first": "Stärkster Anstieg zuerst",
     "Custom range": "Eigener Zeitraum",
     "Custom range is unavailable. Please reload the page.":
       "Eigener Zeitraum ist nicht verfügbar. Bitte lade die Seite neu.",
@@ -856,14 +835,9 @@
     /* ── Filter ─────────────────────────────────────────────────────────────────────────────── */
     "Filter Citation Types": "Citation-Typen filtern",
     "Filter Citation and URL Types": "Citation- und URL-Typen filtern",
-    "Filter by URL type": "Nach URL-Typ filtern",
-    "Filter by citation type": "Nach Citation-Typ filtern",
     "Brands mentioned": "Erwähnte Brands",
-    "Mentioning": "Erwähnt",
     "Mentioned Count": "Anzahl Erwähnungen",
     "All URL Types": "Alle URL-Typen",
-    "Citation type": "Citation-Typ",
-    "URL type": "URL-Typ",
     "Types": "Typen",
     "Share Trend": "Anteil-Trend",
 
@@ -896,8 +870,6 @@
       "URLs erscheinen hier, sobald deine Prompts gelaufen sind.",
     "Responses appear here once your prompts have been run.":
       "Responses erscheinen hier, sobald deine Prompts gelaufen sind.",
-    "Prompts appear here once your team has added them.":
-      "Prompts erscheinen hier, sobald dein Team sie angelegt hat.",
     "The list has not arrived yet. Reload the page if this stays empty.":
       "Die Liste ist noch nicht da. Lade die Seite neu, wenn das leer bleibt.",
     "The scan has not returned anything yet. Refresh the page if this stays empty.":
@@ -909,8 +881,6 @@
     /* ── Ladezustaende des Brand-Suchlaufs ──────────────────────────────────────────────────── */
     "Reading your AI answers…": "Deine KI-Antworten werden gelesen…",
     "Collecting mentioned brand names…": "Erwähnte Brand-Namen werden gesammelt…",
-    "Removing brands you already track…": "Bereits beobachtete Brands werden entfernt…",
-    "Ranking by visibility…": "Wird nach Visibility sortiert…",
 
     /* ── Stufen im Performance-Raster ───────────────────────────────────────────────────────── */
     "At Risk": "Gefährdet",
@@ -1008,15 +978,11 @@
     "No persona": "Keine Persona",
     "No industries found": "Keine Branchen gefunden",
     "No file selected": "Keine Datei gewählt",
-    "That file has no rows.": "Diese Datei hat keine Zeilen.",
-    "That file could not be read.": "Diese Datei konnte nicht gelesen werden.",
     "The file could not be read.": "Die Datei konnte nicht gelesen werden.",
     "The rows could not be loaded.": "Die Zeilen konnten nicht geladen werden.",
     "The domain data could not be read.": "Die Domain-Daten konnten nicht gelesen werden.",
     "The response data could not be read.": "Die Response-Daten konnten nicht gelesen werden.",
     "The conversion data could not be read.": "Die Konversionsdaten konnten nicht gelesen werden.",
-    "No header row recognised, first column read as the prompt.":
-      "Keine Kopfzeile erkannt, die erste Spalte wird als Prompt gelesen.",
 
     /* ── Details, Drawer, Bedienung ─────────────────────────────────────────────────────────── */
     "Details": "Details",
@@ -1274,8 +1240,6 @@
     "Switch to wide view": "Zur breiten Ansicht",
 
     /* Seitenkopf */
-    "Manage Prompts, Topics and monitor latest Responses":
-      "Prompts und Topics verwalten, neueste KI-Antworten ansehen"
   });
   /* ── Vierter Teil: GANZE Absaetze, so wie sie auf dem Schirm stehen ───────────────────────────
      Diese Liste ist nicht aus dem Quelltext gegriffen, sondern von der laufenden Seite gelesen:
@@ -1315,8 +1279,6 @@
       "Beobachte deine AI Visibility, die Performance und die neuesten Entwicklungen",
     "Manage tasks, prioritize opportunities, and track progress":
       "Aufgaben verwalten, Opportunities priorisieren und den Fortschritt verfolgen",
-    "Manage tracked brands, compare performance, and discover untracked competitors":
-      "Verfolgte Brands verwalten, Leistung vergleichen und unbeobachtete Wettbewerber entdecken",
     "Explore topic performance, compare brands, and uncover strengths and gaps":
       "Themen-Performance erkunden, Brands vergleichen, Stärken und Lücken aufdecken",
     "Manage Prompts, Topics and monitor latest Responses":
@@ -1542,8 +1504,6 @@
 
     /* prompt-research */
     "Show Less": "Weniger zeigen",
-    "The estimated frequency that users actually use this or a very similar prompt.":
-      "Die geschätzte Häufigkeit, mit der Nutzer diesen oder einen sehr ähnlichen Prompt wirklich verwenden.",
 
     /* create-with-ai */
     "AI assistant": "KI-Assistent",
@@ -1582,8 +1542,6 @@
       "Ein Prompt ist die Frage, die du beobachtest. Eine Response ist die Antwort EINES Modells auf diesen Prompt zu einem Zeitpunkt. Jeder Prompt sammelt pro Lauf eine Response je Modell -- das Verhältnis ist eins zu vielen. Alle Kennzahlen der App werden über Responses gerechnet und am Prompt gezeigt. Deshalb ändern sich die Zahlen eines Prompts, ohne dass jemand den Prompt bearbeitet hat. ",
     "Model identifies which LLM produced a response. Single select compares one model against the full picture. Multi select pools several models into one number. Models often disagree about which sources to cite, so a metric that looks flat across all models can hide a large movement inside one of them. ":
       "Model sagt, welches LLM eine Response erzeugt hat. Einzelauswahl vergleicht ein Modell mit dem Gesamtbild. Mehrfachauswahl fasst mehrere Modelle zu einer Zahl zusammen. Modelle sind sich oft uneinig, welche Quellen sie zitieren -- eine Kennzahl, die über alle Modelle flach aussieht, kann in einem einzelnen eine große Bewegung verbergen. ",
-    "Sentiment scores how positively your brand is described, on a scale from 0 to 100, where 50 is neutral. It is measured only in answers that mention your brand, so it carries no information about how often that happens. Read it alongside Visibility, not instead of it. ":
-      "Sentiment bewertet, wie positiv deine Brand beschrieben wird -- auf einer Skala von 0 bis 100, wobei 50 neutral ist. Gemessen wird nur in Antworten, die deine Brand erwähnen; wie oft das geschieht, sagt der Wert also nicht. Lies ihn neben Visibility, nicht an ihrer Stelle. ",
     "Topics are your own labels on prompts. The app never creates them. Filtering by two topics in Or mode returns prompts carrying either topic. And mode returns only prompts carrying both, which is usually a much smaller set. ":
       "Topics sind deine eigenen Etiketten an Prompts. Die App legt nie welche an. Filterst du nach zwei Topics im Modus Oder, kommen Prompts mit dem einen ODER dem anderen. Im Modus Und kommen nur Prompts mit beiden -- meist eine deutlich kleinere Menge. ",
     "Trend compares the selected period against the preceding period of equal length. A 30 day range is compared against the 30 days before it. Values are percentage points, not percent of the previous value: a move from 6% to 8% is shown as +2, never as +33%. No chip is shown when the change rounds to zero. ":
@@ -1670,69 +1628,17 @@
     "Add New Brand": "Neue Brand anlegen",
     "Export Your Data": "Daten exportieren",
     "Edit Your Brand": "Brand bearbeiten",
-    "Citation Types": "Citation Types",
-    "URL Types": "URL Types",
     "Prompts vs Responses": "Prompts und Responses",
     "1 : many": "1 : viele",
     "lower is better": "kleiner ist besser",
     "own vs competitor": "eigene gegen Wettbewerb",
     "Or / And": "Oder / Und",
     "Single / Multi": "Einzeln / Mehrfach",
-    "Citation Type classifies the SOURCE of a cited URL. Every URL an AI answer cites receives exactly one type. Use it to see which kinds of sources the answers about you are built from.":
-      "Citation Type sagt, was für eine QUELLE eine zitierte URL ist. Jede URL, die eine " +
-      "KI-Antwort zitiert, bekommt genau einen Typ. Damit siehst du, aus welchen Arten von " +
-      "Quellen die Antworten über dich gebaut sind.",
-    "URL Type classifies the cited PAGE itself, independently of who published it. A competitor's pricing page and a magazine's ranking list are both citations, but they are different kinds of page and different opportunities. Citation Type describes the source, URL Type describes the page.":
-      "URL Type sagt, was für eine SEITE die zitierte URL selbst ist -- unabhängig davon, wer " +
-      "sie veröffentlicht hat. Die Preisseite eines Wettbewerbers und die Bestenliste eines " +
-      "Magazins sind beide Zitate, aber verschiedene Arten von Seite und verschiedene Chancen. " +
-      "Citation Type beschreibt die Quelle, URL Type die Seite.",
-    "Share is the percentage of all citations in the selected period that point to one URL, domain or brand. Shares across all rows sum to 100%. A rising share means gaining ground relative to everything else, not simply being cited more often. Domain Share applies the same calculation inside a single domain: the percentage of that domain's own citations carried by one URL.":
-      "Share ist der Anteil aller Zitate im gewählten Zeitraum, die auf eine URL, eine Domain " +
-      "oder eine Brand zeigen. Die Anteile aller Zeilen ergeben zusammen 100%. Ein steigender " +
-      "Anteil heisst, dass etwas gegenüber allem anderen gewinnt -- nicht einfach, dass es " +
-      "öfter zitiert wird. Domain Share ist dieselbe Rechnung innerhalb einer Domain: der " +
-      "Anteil der Zitate dieser Domain, den eine einzelne URL traegt.",
-    "Trend compares the selected period against the preceding period of equal length. A 30 day range is compared against the 30 days before it. Values are percentage points, not percent of the previous value: a move from 6% to 8% is shown as +2, never as +33%. No chip is shown when the change rounds to zero.":
-      "Trend vergleicht den gewählten Zeitraum mit dem gleich langen davor. Ein Zeitraum von 30 " +
-      "Tagen wird mit den 30 Tagen davor verglichen. Die Werte sind Prozentpunkte und nicht " +
-      "Prozent des Vorwerts: von 6% auf 8% steht als +2 da, nie als +33%. Rundet die Änderung " +
-      "auf null, steht kein Chip da.",
-    "Rank is the average position your brand takes within an answer that mentions it. Position 1 is the first brand named. Lower is better, so the trend chip is inverted: a falling rank number is displayed as a positive move. Values are shown to one decimal because typical changes are smaller than a full position.":
-      "Rank ist die durchschnittliche Position deiner Brand innerhalb einer Antwort, die sie " +
-      "erwähnt. Position 1 ist die zuerst genannte Brand. Kleiner ist besser, deshalb ist der " +
-      "Trend-Chip umgekehrt: eine fallende Rangzahl steht als Verbesserung da. Angezeigt wird " +
-      "eine Nachkommastelle, weil die ueblichen Änderungen kleiner sind als eine ganze Position.",
     "Sentiment scores how positively your brand is described, on a scale from 0 to 100, where 50 is neutral. It is measured only in answers that mention your brand, so it carries no information about how often that happens. Read it alongside Visibility, not instead of it. ":
       "Sentiment bewertet, wie positiv deine Brand beschrieben wird, auf einer Skala von 0 bis " +
       "100, wobei 50 neutral ist. Gemessen wird es nur in Antworten, die deine Brand erwähnen -- " +
       "es sagt also nichts darüber, wie oft das passiert. Lies es neben Visibility, nicht " +
       "statt ihr. ",
-    "Visibility is the percentage of runs for a prompt in which your brand was mentioned at all. 20% means one answer in five named you. Visibility measures reach. Rank and Sentiment describe what happened inside the answers that did mention you.":
-      "Visibility ist der Anteil der Läufe eines Prompts, in denen deine Brand überhaupt " +
-      "erwähnt wurde. 20% heisst: eine von fünf Antworten hat dich genannt. Visibility misst " +
-      "die Reichweite. Rank und Sentiment beschreiben, was innerhalb der Antworten passiert ist, " +
-      "die dich erwähnt haben.",
-    "A Prompt is the question you track. A Response is one model's answer to that prompt at one point in time. Each prompt collects one response per model per run, so the relationship is one to many. All aggregates in the app are computed across responses and displayed against the prompt. This is why a prompt's numbers change without the prompt itself being edited.":
-      "Ein Prompt ist die Frage, die du beobachtest. Eine Response ist die Antwort EINES Modells " +
-      "auf diesen Prompt zu einem Zeitpunkt. Je Lauf sammelt ein Prompt eine Response je Modell " +
-      "-- das Verhältnis ist also eins zu viele. Alle Kennzahlen der App werden über die " +
-      "Responses gerechnet und am Prompt angezeigt. Deshalb ändern sich die Zahlen eines " +
-      "Prompts, ohne dass am Prompt selbst etwas geändert wurde.",
-    "Brand Mentions lists which tracked brands appear on a cited page. Your own brand and your competitors are stored the same way and differ only by role, so a single page can carry both. Pages that mention competitors but not you are usually the ones worth acting on.":
-      "Brand Mentions sagt, welche beobachteten Brands auf einer zitierten Seite vorkommen. " +
-      "Deine eigene Brand und die Wettbewerber liegen gleich und unterscheiden sich nur in der " +
-      "Rolle -- eine Seite kann also beides tragen. Seiten, die Wettbewerber nennen und dich " +
-      "nicht, sind meist die, an denen sich Arbeit lohnt.",
-    "Topics are your own labels on prompts. The app never creates them. Filtering by two topics in Or mode returns prompts carrying either topic. And mode returns only prompts carrying both, which is usually a much smaller set.":
-      "Topics sind deine eigenen Etiketten auf Prompts. Die App legt nie eines an. Filterst du " +
-      "nach zwei Topics, liefert Oder alle Prompts mit einem der beiden, Und nur die mit beiden " +
-      "-- und das sind meist deutlich weniger.",
-    "Model identifies which LLM produced a response. Single select compares one model against the full picture. Multi select pools several models into one number. Models often disagree about which sources to cite, so a metric that looks flat across all models can hide a large movement inside one of them.":
-      "Model sagt, welches LLM eine Response erzeugt hat. Einzelauswahl vergleicht ein Modell " +
-      "mit dem Gesamtbild. Mehrfachauswahl fasst mehrere Modelle zu einer Zahl zusammen. Modelle " +
-      "sind sich oft uneinig, welche Quellen sie zitieren -- eine Kennzahl, die über alle " +
-      "Modelle flach aussieht, kann in einem davon eine grosse Bewegung verstecken.",
 
     /* ══ RESPONSE DETAIL (08.09.: "bei DE Settings sind noch einige Texte auf Englisch") ══════ */
     "just now": "gerade eben",
@@ -1826,7 +1732,6 @@
     /* settings-brand schreibt das kaufmaennische Und als HTML-Entitaet -- im DOM steht danach ein
        gewoehnliches "&", und genau der Textknoten wird gesucht. Beide Formen stehen hier, damit
        es auch dann trifft, wenn jemand die Vorlage einmal ohne Entitaet einfuegt. */
-    "Brand Name & Matching Aliases": "Brand-Name & passende Aliase",
     "Brand Name &amp; Matching Aliases": "Brand-Name & passende Aliase",
     /* Muster mit eingesetztem Markennamen: der ganze Textknoten steht sonst in keinem Katalog. */
     "{brand} mentioned": "{brand} erwähnt",
@@ -1862,7 +1767,6 @@
     "Competition": "Wettbewerb",
     "You": "Du",
     "Your Content": "Deine Inhalte",
-    "Other": "Sonstige",
     "Homepage": "Startseite",
     "Product / Service": "Produkt / Leistung",
     "Marketplace": "Marktplatz",

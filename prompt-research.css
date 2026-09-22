@@ -258,7 +258,7 @@
   background: var(--up-accent); color: var(--up-accent-fg);
   display: inline-flex; align-items: center; gap: 9px;
   font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+  box-shadow: var(--up-e-1, 0 1px 2px rgba(0,0,0,0.12));
   transition: opacity 160ms ease, box-shadow 160ms ease;
 }
 .upr-start-btn:hover { opacity: .9; box-shadow: none; }
@@ -319,7 +319,7 @@
 .upr-dd-menu {
   position: absolute; left: 0; right: 0; top: calc(100% + 8px); z-index: 60;
   background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.10); padding: 8px;
+  box-shadow: var(--up-e-2, 0 10px 30px rgba(0,0,0,0.10)); padding: 8px;
   opacity: 0; transform: translateY(-4px) scale(0.985); pointer-events: none;
   transition: opacity 140ms ease, transform 140ms ease;
 }
@@ -587,7 +587,7 @@
   width: 44px; height: 44px; border-radius: 13px; display: grid; place-items: center;
   background: linear-gradient(180deg, var(--vc-bg), var(--vc-heading-bg));
   border: 1px solid var(--vc-border); color: var(--vc-text);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  box-shadow: var(--up-e-1, 0 1px 2px rgba(0,0,0,0.04));
 }
 .upr-l2-mark svg { width: 30px; height: 30px; display: block; }
 .upr-l2-name { margin-top: 14px; max-width: 100%; font-size: 18px; font-weight: 600; color: var(--vc-text);

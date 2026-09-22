@@ -282,7 +282,7 @@
   border-radius: var(--up-r-3xl);
   background: var(--up-surface);
   border: 1px solid var(--vc-border);
-  box-shadow: 0 14px 34px rgba(0,0,0,0.14);
+  box-shadow: var(--up-e-3, 0 14px 34px rgba(0,0,0,0.14));
   font-family: Geist, Inter, system-ui, -apple-system, sans-serif;
   color: var(--vc-text);
   opacity: 0; pointer-events: none;
@@ -351,7 +351,7 @@
      still reads as "the same dark nothing" against an already-dark page, no matter how much you
      turn the opacity up — it needs actual white mixed in to read as a highlight/frame at all. */
   --upt-frame: rgba(255,255,255,.08);
-  box-shadow: 0 14px 34px rgba(0,0,0,0.6);
+  box-shadow: var(--up-e-3, 0 14px 34px rgba(0,0,0,0.6));
 }
 /* Same dim treatment the table itself gets from .up-root.is-reloading (core.css) — this bar lives
    outside .up-root on document.body, so it needs its own copy rather than inheriting that rule.

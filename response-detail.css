@@ -119,7 +119,7 @@
 
 .urd-hlpop { position: absolute; top: calc(100% + 6px); right: 0; z-index: 30; min-width: 248px;
   background: var(--up-surface, var(--vc-bg)); border: 1px solid var(--vc-border);
-  border-radius: 12px; box-shadow: 0 12px 32px rgba(0,0,0,0.14); padding: 6px;
+  border-radius: 12px; box-shadow: var(--up-e-2, 0 12px 32px rgba(0,0,0,0.14)); padding: 6px;
   display: none; flex-direction: column; box-sizing: border-box; }
 .urd-hlwrap.is-open .urd-hlpop { display: flex; }
 .urd-hlgrp { display: flex; flex-direction: column; gap: 1px; }
