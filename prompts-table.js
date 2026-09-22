@@ -2054,7 +2054,13 @@
       etRow = row; etStaged = {}; etOriginal = {}; etAddOpen = false;
       (row.tags || []).forEach(function(t){ etStaged[topicId(t)] = true; etOriginal[topicId(t)] = true; });
       etModal = document.createElement("div");
-      etModal.className = "up-topicmodal-backdrop upt-et-backdrop";
+      /* up-root up-portal MUSS mit, wie in preferences.js und ask-mira.js. Der Schleier haengt
+         am <body>, und ohne .up-root erreicht ihn KEINE Marke aus core: --up-accent ist dann
+         unaufloesbar, und .up-topicchip-check.is-on { background: var(--up-accent) } ist als
+         ganze Regel ungueltig -- die gewaehlten Topics sehen hier deshalb voellig anders aus als
+         im Popover, obwohl beide dieselbe Klasse tragen. Gemeldet, mehrfach. Dasselbe gilt fuer
+         jede andere Farbe des Dialogs. */
+      etModal.className = "up-root up-portal up-topicmodal-backdrop upt-et-backdrop";
       if (isDark) etModal.setAttribute("data-theme", "dark");
       etModal.innerHTML =
         '<div class="up-topicmodal-card" role="dialog" aria-modal="true" aria-label="Edit Topics">' +

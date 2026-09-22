@@ -8595,7 +8595,10 @@
     function ensureModal(){
       if (modalBackdrop && document.body.contains(modalBackdrop)) return modalBackdrop;
       modalBackdrop = document.createElement("div");
-      modalBackdrop.className = "up-topicmodal-backdrop";
+      /* Siehe prompts-table: ohne .up-root erreicht diesen Schleier keine Marke aus core, und
+         jede Regel mit einem var() darin faellt als Ganzes aus. preferences.js und ask-mira.js
+         machen es seit jeher richtig. */
+      modalBackdrop.className = "up-root up-portal up-topicmodal-backdrop";
       modalBackdrop.setAttribute("aria-hidden", "true");
       modalBackdrop.innerHTML =
         '<div class="up-topicmodal-card" role="dialog" aria-modal="true" aria-labelledby="up-topicmodal-title-' + Math.random().toString(36).slice(2) + '">' +
