@@ -686,11 +686,21 @@
          data-active ist beim Bau noch leer, und der Rueckfall heisst dashboard -- das sah aus wie
          ein Sprung von Dashboard auf den richtigen Punkt. Solange die Leiste ihre Skelette zeigt,
          muss auch die Markierung nichts sagen; setSidebarReady() loest beides gemeinsam aus. */
+      /* GLEICH UEBERSETZT schreiben, nicht englisch und dann von core nachziehen lassen. Das
+         war die Ursache des Flimmerns beim Seitenaufbau ("die Sidebar-Texte springen drei- bis
+         sechsmal zwischen DE und US"): renderNav laeuft im Aufbau mehrfach, schrieb jedes Mal
+         die englische Beschriftung, und JEDE Luecke bis zum Sprachlauf ist sichtbar -- egal wie
+         kurz sie ist. Ein Takt laesst sich verkuerzen, eine Luecke nicht auf null bringen.
+         data-i18n haelt weiter das englische Original: daran erkennt der Sprachlauf das Element
+         und kann beim Umschalten auf Englisch zurueck. Genau die Form, die er selbst erzeugt --
+         der Knopf steht damit sofort in seinem Endzustand, und der naechste Lauf findet nichts
+         mehr zu tun. Dieselbe Loesung wie im Kontomenue dieser Datei (UC.t dort seit jeher). */
+      var lbl = (UC.t ? UC.t(it.label) : it.label);
       return '<button class="usn-item' + ((state.enthuellt && it.key === state.aktiv) ? " is-active" : "") + '" ' +
-        'type="button" data-nav-key="' + esc(it.key) + '" data-tiplabel="' + esc(it.label) + '" ' +
+        'type="button" data-nav-key="' + esc(it.key) + '" data-tiplabel="' + esc(lbl) + '" ' +
         'data-tip-place="right">' +
         '<span class="usn-ic">' + ic(it.icon) + '</span>' +
-        '<span class="usn-txt">' + esc(it.label) + '</span>' + extra + '</button>';
+        '<span class="usn-txt" data-i18n="' + esc(it.label) + '">' + esc(lbl) + '</span>' + extra + '</button>';
     }
     /* ---- Die Markenzeile ----
        Bild, wenn data-upstreem-logo eine Quelle nennt, sonst der Schriftzug als Text. Das Attribut
@@ -769,7 +779,9 @@
         return '<div class="usn-block' + (zu ? " is-closed" : "") + '" data-block="' + esc(b.head) + '">' +
           '<button class="usn-head up-blockhead usn-fade" type="button" data-head="' + esc(b.head) + '" ' +
           'aria-expanded="' + (zu ? "false" : "true") + '">' +
-            '<span class="usn-head-lbl">' + esc(b.head) + '</span>' +
+            /* Siehe navItemHtml: sofort uebersetzt, data-i18n haelt das Original. */
+            '<span class="usn-head-lbl" data-i18n="' + esc(b.head) + '">' +
+              esc(UC.t ? UC.t(b.head) : b.head) + '</span>' +
             '<span class="usn-head-chev">' + ic("chevronDown") + '</span>' +
           '</button>' +
           '<div class="usn-block-body" data-body>' + inhalt + '</div>' +
