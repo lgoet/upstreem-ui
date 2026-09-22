@@ -373,7 +373,14 @@
            VOR dem Lesen stehen -- danach sind beide Faelle nicht mehr zu unterscheiden. */
         var kamText = !(payload && typeof payload === "object") &&
                       !!String(payload == null ? "" : payload).trim();
-        var p = UC.parseLoose ? UC.parseLoose(payload, "notifications") : payload;
+        /* readBubble und NICHT parseLoose (CLAUDE.md §2a: der EINE geteilte Leseweg). Der
+           Unterschied ist hier keiner auf dem Papier -- gemessen am 22.09.: ein NACKTER Emoji
+           als Wert ("note": 💎, wie ihn ein Bubble-Ausdruck ohne Anfuehrungszeichen liefert)
+           gibt bei parseLoose null, bei readBubble die Zeile. Ein zitierter Emoji im Titel
+           traegt beides -- deshalb faellt es erst auf, wenn ein Feld GANZ aus einem Emoji
+           besteht. Und genau hier steht Text, den Menschen schreiben. */
+        var p = UC.readBubble ? UC.readBubble(payload)
+              : (UC.parseLoose ? UC.parseLoose(payload, "notifications") : payload);
         /* Eine Liste, eine einzelne Zeile oder nichts -- alle drei kommen aus Bubble vor. Was
            nicht lesbar war, leert die Liste statt eine alte Karte stehen zu lassen: eine
            Benachrichtigung, die es nicht mehr gibt, darf nicht weiterleuchten. */
