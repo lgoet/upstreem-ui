@@ -507,8 +507,6 @@
            Mentioned? / {brand} mentioned?   fragt (Spaltenkopf, Schalter unentschieden)  -> ?
            {brand} is mentioned / is not     sagt etwas aus (Schalter gesetzt)            -> kein ?
        Damit steht das Fragezeichen an jeder fragenden Stelle der App und an keiner anderen. */
-    "Mentioned?": "Erwähnt?",
-    "Mentioned": "Erwähnt",
     "Brand Mentions": "Brand-Erwähnungen",
     /* Citations heisst auf Deutsch "Web-Quellen" -- so angefordert, und damit faellt dieses eine
        Wort aus dem Glossar heraus. Der breite Lauf (breiterLauf) greift damit ueberall, wo das
@@ -520,7 +518,6 @@
        Datenbank. "Web-Quellen-Typ-Anteil" waere kein Fortschritt. */
     "Citations": "Web-Quellen",
     "Citation": "Web-Quelle",
-    "Citation Type": "Citation-Typ",
     "Citation Types": "Citation-Typen",
     "URL Types": "URL-Typen",
     "Lanes": "Spuren",
@@ -537,8 +534,6 @@
     /* "Zitiert" und nicht "Verwendet": die Spalte zaehlt, wie oft die URL als Citation auftrat --
        das ist im Deutschen zitiert, und es haelt die Naehe zum Wort Citation, das stehen bleibt. */
     "Used": "Zitiert",
-    "Top Domains": "Top-Domains",
-    "Top URLs": "Top-URLs",
     "Top Brands": "Top-Brands",
     "Responses": "KI-Antworten",
     /* Einzahl fuer die Leiste ueber einem Drawer ("KI-Antwort / <Titel>"). Dieselbe Wortwahl wie
@@ -610,22 +605,17 @@
     "Dismiss": "Ausblenden",
     "Show": "Zeigen",
     "Hide": "Ausblenden",
-    "Maximize": "Vergrößern",
     "Open in new tab": "In neuem Tab öffnen",
 
     /* ── Filter auf Brand-Erwähnungen (vier Tabellen teilen diese Texte) ───────────────────── */
     "All Brands": "Alle Brands",
-    "All Types": "Alle Typen",
-    "Mentioned brands": "Erwähnte Brands",
     "Filter for your brand mentions": "Nach Erwähnungen deiner Brand filtern",
     "Filter for brand mentions": "Nach Brand-Erwähnungen filtern",
     "Search brands...": "Brands suchen...",
     "Clear brand search": "Brand-Suche löschen",
     "Search markets": "Märkte suchen",
     "Select a market": "Markt wählen",
-    "No brands available": "Keine Brands vorhanden",
     "No matches": "Keine Treffer",
-    "Search, filters and settings": "Suche, Filter und Einstellungen",
     "Nothing matches the current search and filters.":
       "Zu dieser Suche und diesen Filtern gibt es nichts.",
     "The data could not be read.": "Die Daten konnten nicht gelesen werden.",
@@ -753,7 +743,6 @@
     "Export": "Exportieren",
     "Minimize": "Verkleinern",
     "Maximize": "Vergrößern",
-    "Open": "Öffnen",
     /* Zeitraster an den Charts */
     "Day": "Tag",
     "Week": "Woche",
@@ -769,7 +758,6 @@
     "New Grouping": "Neue Gruppierung",
     "Edit Grouping": "Gruppierung bearbeiten",
     "Create grouping": "Gruppierung anlegen",
-    "Save": "Speichern",
     "Group color": "Farbe der Gruppe",
     "Group name…": "Name der Gruppe…",
     "Search topics": "Topics suchen",
@@ -820,14 +808,10 @@
     "Actions": "Aktionen",
     "Activate": "Aktivieren",
     "Deactivated": "Deaktiviert",
-    "Set Active": "Auf aktiv setzen",
-    "Set Inactive": "Auf inaktiv setzen",
     "Active Brands": "Aktive Brands",
     "Active Prompts": "Aktive Prompts",
     "Add New Brand": "Neue Brand",
     "Add New Prompt": "Neuer Prompt",
-    "Bulk actions": "Sammelaktionen",
-    "Delete": "Löschen",
     "Edit Your Brand": "Deine Brand bearbeiten",
     "More options": "Weitere Optionen",
     "Switch": "Wechseln",
@@ -838,8 +822,6 @@
     "Copy URL": "URL kopieren",
     "Copy domain": "Domain kopieren",
     "Copied to clipboard": "In die Zwischenablage kopiert",
-    "Save as Favorite": "Als Favorit speichern",
-    "Remove Favorite": "Favorit entfernen",
     "Favorites": "Favoriten",
     "Recent": "Zuletzt",
     "Recent Searches": "Zuletzt gesucht",
@@ -847,23 +829,9 @@
     "Plan": "Tarif",
     "Metrics": "Kennzahlen",
     "Performance": "Performance",
-    "Grouping": "Gruppierung",
     "New grouping": "Neue Gruppierung",
-    "Sort Groups": "Gruppen sortieren",
-    "Sort groups": "Gruppen sortieren",
-    "Search groups": "Gruppen suchen",
-    "Search groups…": "Gruppen suchen…",
-    "Only show custom groupings": "Nur eigene Gruppierungen zeigen",
-    "No group data available.": "Keine Gruppendaten vorhanden.",
-    "No topic group matches the current search.": "Keine Topic-Gruppe passt zu dieser Suche.",
-    "No topic": "Kein Topic",
-    "Search or create topics...": "Topics suchen oder anlegen...",
 
     /* ── Ansichten und Umschalter ───────────────────────────────────────────────────────────── */
-    "List view": "Listenansicht",
-    "Wide view": "Breite Ansicht",
-    "Switch to list view": "Zur Listenansicht",
-    "Switch to wide view": "Zur breiten Ansicht",
     "Show Pages": "Seiten zeigen",
     "Hide Pages": "Seiten ausblenden",
     "Show pages": "Seiten zeigen",
@@ -873,7 +841,6 @@
     "Reset search": "Suche zurücksetzen",
     "Y axis": "Y-Achse",
     "Top": "Top",
-    "Trending": "Im Trend",
     "Prompts vs Responses": "Prompts gegen KI-Antworten",
     "Total Responses analyzed:": "Ausgewertete KI-Antworten:",
     "Next page": "Nächste Seite",
@@ -881,7 +848,6 @@
 
     /* ── Sortierung ─────────────────────────────────────────────────────────────────────────── */
     "Name A–Z": "Name A–Z",
-    "Best performing first": "Beste zuerst",
     "Biggest risers first": "Stärkster Anstieg zuerst",
     "Custom range": "Eigener Zeitraum",
     "Custom range is unavailable. Please reload the page.":
@@ -892,18 +858,11 @@
     "Filter Citation and URL Types": "Citation- und URL-Typen filtern",
     "Filter by URL type": "Nach URL-Typ filtern",
     "Filter by citation type": "Nach Citation-Typ filtern",
-    "Filter by market": "Nach Markt filtern",
     "Brands mentioned": "Erwähnte Brands",
     "Mentioning": "Erwähnt",
-    "Mentions a brand": "Erwähnt eine Brand",
     "Mentioned Count": "Anzahl Erwähnungen",
-    "Only URLs": "Nur URLs",
-    "Only brands": "Nur Brands",
-    "Only domains": "Nur Domains",
-    "Only prompts": "Nur Prompts",
     "All URL Types": "Alle URL-Typen",
     "Citation type": "Citation-Typ",
-    "URL Type": "URL-Typ",
     "URL type": "URL-Typ",
     "Types": "Typen",
     "Share Trend": "Anteil-Trend",
@@ -911,13 +870,11 @@
     /* ── Leerzustaende. Sie sind das, was man am haeufigsten sieht, wenn etwas fehlt. ───────── */
     "No URLs yet": "Noch keine URLs",
     "No domains yet": "Noch keine Domains",
-    "No prompts yet": "Noch keine Prompts",
     "No responses yet": "Noch keine KI-Antworten",
     "No teams yet": "Noch keine Teams",
     "No results yet": "Noch keine Ergebnisse",
     "No matching URLs": "Keine passenden URLs",
     "No matching domains": "Keine passenden Domains",
-    "No matching prompts": "Keine passenden Prompts",
     "No matching responses": "Keine passenden KI-Antworten",
     "No match": "Kein Treffer",
     "No command": "Kein Befehl",
@@ -952,7 +909,6 @@
     /* ── Ladezustaende des Brand-Suchlaufs ──────────────────────────────────────────────────── */
     "Reading your AI answers…": "Deine KI-Antworten werden gelesen…",
     "Collecting mentioned brand names…": "Erwähnte Brand-Namen werden gesammelt…",
-    "Matching names against cited domains…": "Namen werden mit zitierten Domains abgeglichen…",
     "Removing brands you already track…": "Bereits beobachtete Brands werden entfernt…",
     "Ranking by visibility…": "Wird nach Visibility sortiert…",
 
@@ -1051,9 +1007,7 @@
     "No keywords": "Keine Keywords",
     "No persona": "Keine Persona",
     "No industries found": "Keine Branchen gefunden",
-    "No markets found": "Keine Märkte gefunden",
     "No file selected": "Keine Datei gewählt",
-    "No usable rows found.": "Keine verwertbaren Zeilen gefunden.",
     "That file has no rows.": "Diese Datei hat keine Zeilen.",
     "That file could not be read.": "Diese Datei konnte nicht gelesen werden.",
     "The file could not be read.": "Die Datei konnte nicht gelesen werden.",
@@ -1078,7 +1032,6 @@
     "Top URLs": "Top-URLs",
     "Newest": "Neueste",
     "Later": "Später",
-    "Add": "Hinzufügen",
     "Set": "Setzen",
     "Off": "Aus",
     "Copied": "Kopiert",
@@ -1139,9 +1092,7 @@
 
     /* ── Prompts und Brands hinzufuegen ─────────────────────────────────────────────────────── */
     "Add prompts": "Prompts hinzufügen",
-    "Add this prompt": "Diesen Prompt hinzufügen",
     "Adding…": "Wird hinzugefügt…",
-    "Add Brand": "Brand hinzufügen",
     "Add brand": "Brand hinzufügen",
     "Could not add this brand. Please try again.":
       "Diese Brand konnte nicht hinzugefügt werden. Bitte versuche es noch einmal.",
@@ -1159,8 +1110,6 @@
     "Business model": "Geschäftsmodell",
     "Hybrid (B2B & B2C)": "Gemischt (B2B und B2C)",
     "Default market": "Standardmarkt",
-    "Market for all new prompts": "Markt für alle neuen Prompts",
-    "Topics for all new prompts": "Topics für alle neuen Prompts",
 
     /* ── Einstellungen: Marke, Logo, Modelle, Team ──────────────────────────────────────────── */
     "Paste a direct link to your image file.": "Füge einen direkten Link zu deiner Bilddatei ein.",
@@ -1180,7 +1129,6 @@
     "Your plan allows": "Dein Tarif erlaubt",
     "Invite new members": "Neue Mitglieder einladen",
     "Remove from team": "Aus dem Team entfernen",
-    "Leave": "Verlassen",
     "Leave team": "Team verlassen",
     "Delete team": "Team löschen",
     "Click again to delete": "Zum Löschen noch einmal klicken",
@@ -1303,7 +1251,6 @@
     "Clear filters": "Filter zurücksetzen",
 
     /* Leerzustaende der Tabelle */
-    "No prompts yet": "Noch keine Prompts",
     "No matching prompts": "Keine passenden Prompts",
     "Prompts appear here once your team has added them.":
       "Prompts erscheinen hier, sobald dein Team sie angelegt hat.",
@@ -1388,7 +1335,6 @@
     /* ---- Topic-Editor ---- */
     /* "Darstellung" und nicht "Aussehen": darunter stehen Emoji und Farbe, also wie das Topic
        DARGESTELLT wird. "Aussehen" klingt nach dem Topic selbst. */
-    "Appearance": "Darstellung",
     "Search topics...": "Topics suchen...",
     "This topic no longer exists": "Dieses Topic gibt es nicht mehr",
 
@@ -1404,8 +1350,6 @@
        Die Schluessel OHNE ? bleiben stehen und werden gebraucht: das Markup der Tabellen ist in
        Bubble von Hand eingefuegt und kann noch Jahre "Mentioned" ohne Fragezeichen enthalten,
        ohne dass ein CDN-Pin es erreicht. */
-    "{brand} mentioned?": "{brand} erwähnt?",
-    "{brand} mentioned": "{brand} erwähnt",
     /* Die AUSGESCHALTETEN Stellungen desselben Schalters. Im Top Citations Dashboard traegt er
        drei Beschriftungen, nicht eine, und die beiden gesetzten Zustaende standen in keinem
        Katalog -- gemeldet am 07.09. als "Brand X mentioned ist im DE noch nicht korrekt".
@@ -1453,7 +1397,6 @@
     "Download template": "Vorlage herunterladen",
 
     /* ---- Filterleiste, zweiter Durchgang ---- */
-    "Back": "Zurück",
     "Reset Filters": "Filter zurücksetzen",
 
     /* ---- Einladungstabelle in team-orga ----
@@ -1654,10 +1597,6 @@
     "Pin to sidebar": "An die Seitenleiste heften",
     "Go to parent domain": "Zur übergeordneten Domain",
     "Remove favorite": "Favorit entfernen",
-    "Single / Multi": "Einzeln / Mehrfach",
-    "Or / And": "Oder / Und",
-    "lower is better": "kleiner ist besser",
-    "own vs competitor": "eigene gegen Wettbewerb",
     "Enter": "Enter",
 
     /* url-detail: Felder, Erklaersaetze und die Einbettungen */
@@ -1701,8 +1640,6 @@
        "Switch to Acme" faende hier nie einen Eintrag. */
     "Switch to": "Wechseln zu",
     "No active billing plan": "Kein aktiver Tarif",
-    "Brand Name & Matching Aliases": "Brand-Name & passende Aliase",
-    "Edit brand": "Brand bearbeiten",
     "Go to parent prompt": "Zum übergeordneten Prompt",
     "No models available yet.": "Noch keine Modelle verfügbar.",
 
@@ -1954,7 +1891,6 @@
     "Distribution of this domain in AI models": "Verteilung dieser Domain in den KI-Modellen",
     /* Zwei Muster, weil ein Name bzw. eine Zahl darin steht: der ganze Textknoten waere sonst in
        keinem Katalog zu finden. domain-detail.js setzt sie ueber UC.t ein. */
-    "URLs mentioning {brand}": "URLs, die {brand} erwähnen",
     "{pct} of cited URLs": "{pct} der zitierten URLs",
     "your brand": "deine Brand",
     /* Muster: die Zahl kommt formatiert aus fmtTotal, der Satz aus dem Katalog. */
@@ -1983,14 +1919,12 @@
        wirklich haengt, und beim Durchsehen der JS-Dateien faellt so etwas nie auf.
        Gefunden mit einem Abgleich aller placeholder- und aria-label-Werte aus Vorlagen UND
        Komponenten gegen den Katalog -- 25 Texte ohne Eintrag. */
-    "Est. Volume": "Gesch. Volumen",
     "The estimated frequency that users actually use this or a very similar prompt.":
       "Wie oft Nutzer diesen oder einen sehr ähnlichen Prompt tatsächlich verwenden.",
     "Applied everywhere \u2014 refresh to update open views":
       "Überall angewendet \u2014 offene Ansichten mit Neuladen aktualisieren",
     "Per view again \u2014 refresh to update open views":
       "Wieder je Ansicht \u2014 offene Ansichten mit Neuladen aktualisieren",
-    "Highlights": "Hervorhebungen",
     "Appearance": "Darstellung",
     "How brands, citations and responses are marked in answers":
       "Wie Brands, Quellen und Antworten in den Antworten markiert werden",
