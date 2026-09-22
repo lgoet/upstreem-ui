@@ -211,10 +211,10 @@
     var esc = UC.esc;
     var instanceId = root.getAttribute("data-instance") || "default";
     /* Erst hier, nicht auf Modulebene: UC steht beim Laden dieser Datei noch nicht fest. */
-    /* Der Umschalter oben rechts traegt seit dem 22.09. hgLayoutLeft aus dem Hugeicons-Satz --
-       vorher das gefuellte sidebarPanels (Bootstrap Icons, eigener 16er Kasten). panelLeft,
-       weil DIESE Leiste links steht -- der Satz fuehrt beide Seiten, gespiegelt wird nirgends
-       mehr, wo die Seite feststeht. Die Farben
+    /* Der Umschalter oben rechts traegt panelLeft, weil DIESE Leiste links steht. Bis zum
+       22.09. lag hier das gefuellte sidebarPanels (Bootstrap Icons, eigener 16er Kasten) --
+       das einzige Zeichen der App, das nicht aus dem Satz kam. Der Satz fuehrt beide Seiten;
+       gespiegelt wird nirgends mehr. Die Farben
        stehen an .usn-toggle (Drittfarbe in Ruhe, Primaerfarbe beim Hover); ein Strichzeichen
        mit stroke="currentColor" folgt ihnen genauso wie das gefuellte davor.
        1.5 wie bei jedem anderen Hugeicon hier: die CSS zwingt das Zeichen auf 16px, aus dem

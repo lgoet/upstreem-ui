@@ -1,3 +1,12 @@
+/* .check_reinvention meldet in dieser Datei 41 Stellen als Nachbau -- alle .am-*. Der
+   Vergleich laeuft ueber "hat Hintergrund, Rahmen, Radius, Hoehe und transition", und das
+   trifft jeden Knopf und jedes Feld; dieselbe Sorte Fehlalarm steht am Kopf von
+   prompts-table.css beschrieben. Sie sind ALT: am 22.09. nachgeprueft, keiner von ihnen
+   gehoert zu einer Regel, die diese Datei seitdem dazubekommen hat -- der Pruefer meldet sie
+   nur, weil die Datei ueberhaupt angefasst wurde. Ein Teil traegt seine Begruendung schon
+   einzeln darueber (".am-send -- prompt research .upr-start-button (primary)").
+   WAS ICH NICHT GETAN HABE: jede der 41 einzeln gegen ihr Kit-Bauteil geprueft. Das ist eine
+   eigene Runde und gehoert nicht in eine Zeichen-Umstellung. Offen und benannt. */
 /* upstreem ask-mira.css — component styles. Load AFTER core.css.
 
    Mira is the agent surface: hero, composer, previous-chats panel, and the chat itself. Ported
@@ -205,10 +214,17 @@
   .am-ghost-btn:hover { background: var(--am-soft); border-color: var(--vc-hover-border, #6f6f6f); color: var(--am-text); }
   .am-ghost-btn .am-ic { width: 15px; height: 15px; }
   /* Das Zeichen im Knopf ist die Seitenleiste aus core (panelLeft), GESPIEGELT: die Liste der
-     Chats faehrt von rechts herein, die Leiste der App von links. Dasselbe Zeichen fuer dieselbe
-     Sache, nur zur richtigen Seite gedreht. Ersetzt wird das SVG der Vorlage beim Start
-     (ask-mira.js) -- eine Aenderung an der Vorlage allein erreicht ein eingebautes Element nicht. */
-  .am-prev-btn .am-prev-ic { transform: scaleX(-1); }
+     Chats faehrt von rechts herein, die Leiste der App von links. Ersetzt wird das SVG der
+     Vorlage beim Start (ask-mira.js) -- eine Aenderung an der Vorlage allein erreicht ein
+     eingebautes Element nicht.
+     Die Spiegelung ist am 22.09. entfallen: der Satz fuehrt panelLeft UND panelRight, das
+     Zeichen kommt also schon in der richtigen Richtung.
+     Die KLASSE bleibt und bekommt die eine Angabe, die sie wirklich braucht: ein SVG ist
+     von Haus aus inline und traegt damit die Unterlaenge einer Textzeile unter sich -- im
+     Knopf sass es dadurch zwei Pixel zu hoch. Sie steht ausserdem im Bubble-Template
+     (ask_mira_bubble.html), ist also Teil des ausgelieferten Markups; eine Klasse dort ohne
+     jede Regel hier waere ein Waise, den beim naechsten Lesen niemand mehr einordnen kann. */
+  .am-prev-btn .am-prev-ic { display: block; }
   .am-prev-btn { align-self: flex-start; margin-top: 2px; }
 
   /* ===================== CHAT ===================== */
@@ -2556,8 +2572,8 @@
      eingeklappten Zustand (22.09.). */
   .am-mini-toggle { flex: 0 0 32px; width: 32px; height: 32px; margin-bottom: 8px;
     color: var(--vc-muted); }
-  .am-mini-toggle svg { width: 16px; height: 16px; display: block; transform: scaleX(-1); }
-  #ask-mira.is-side-left .am-mini-toggle svg { transform: scaleX(1); }
+  /* Groesse und Seitenwahl stehen weiter unten bei .am-prev-panel .am-side-toggle svg --
+     es ist derselbe Umschalter, nur eingeklappt. */
   .am-mini-items { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 100%; }
   /* Die Zeile der Hauptleiste im Mini-Zustand: 36px hoch, mittig, kein Polster, kein Zwischenraum.
      .check_reinvention meldet hier .up-seg-btn (Segmented-Control). Fehlalarm ueber die
@@ -2866,17 +2882,9 @@
   /* Kopfzeile gespiegelt: Logo links, Umschalter rechts. row-reverse und nicht zwei Regeln fuer
      die Kinder -- die Reihenfolge ist die Aussage, nicht die Position der einzelnen Knoepfe. */
   #ask-mira.is-side-left .am-prev-head { flex-direction: row-reverse; }
-  /* DAS ZEICHEN ZURUECK, NICHT NOCHMAL GESPIEGELT. Der Umschalter traegt im Grundzustand
-     schon scaleX(-1) (siehe .am-prev-panel .am-side-toggle svg weiter unten) -- die Leiste
-     steht rechts, das Zeichen zeigt nach rechts. Mein erster Anlauf setzte hier NOCHMAL
-     scaleX(-1), und das ist derselbe Wert: gemessen stand in BEIDEN Zustaenden
-     matrix(-1,0,0,1,0,0), die Regel bewirkte also gar nichts.
-     Steht die Leiste links, muss das Zeichen in seine urspruengliche Richtung -- also
-     scaleX(1). Die drei Selektoren, weil ein eingebautes Element den Umschalter je nach
-     Fassung unter einer anderen Klasse traegt. */
-  #ask-mira.is-side-left .am-prev-head .am-side-toggle svg,
-  #ask-mira.is-side-left .am-prev-head .am-icon-btn svg,
-  #ask-mira.is-side-left .am-prev-head .up-iconbtn svg { transform: scaleX(1); }
+  /* Hier stand bis zum 22.09. eine Gegenspiegelung fuer den Umschalter. Sie ist entfallen:
+     die Seite entscheidet jetzt, WELCHES Zeichen sichtbar ist (.am-side-l / .am-side-r weiter
+     unten), nicht mehr, wie herum ein einzelnes gedreht wird. */
   /* Das Wegschieben lief ueber einen negativen RECHTEN Rand -- links muss es der linke sein. */
   #ask-mira.is-side-left .am-prev-panel { margin: 0 0 0 calc(-1 * var(--am-side-w)); }
   #ask-mira.side-ready.is-side-left .am-prev-panel { transition: margin-left 200ms ease; }
@@ -2888,7 +2896,7 @@
     border-bottom: 0;
   }
   /* Umschalter links, Logo rechts -- gespiegelt zu einer linken Leiste, weil diese rechts sitzt.
-     Das Zeichen ist dasselbe wie in der Hauptleiste (UC.icon("sidebarPanels")), samt Groesse und
+     Das Zeichen ist dasselbe wie in der Hauptleiste (UC.icon("panelLeft")), samt Groesse und
      Deckkraft: ein Umschalter, der an zwei Orten anders aussieht, liest sich als zwei Dinge. */
   /* --vc-third, GENAU wie .usn-bar .up-iconbtn.usn-toggle in der Hauptleiste. Hier stand
      --am-muted, und das ist --vc-muted: eine Stufe kraeftiger. Sichtbar wurde es als "Mira ist
@@ -2906,10 +2914,18 @@
      Der Umschalter ist ein Bedienelement und stand leiser da als der Text daneben. */
   .am-prev-panel .up-iconbtn.am-side-toggle { color: var(--vc-muted); }
   .am-prev-panel .up-iconbtn.am-side-toggle:hover { background: var(--am-soft); color: var(--vc-text); }
-  /* Gespiegelt: das Zeichen zeigt eine Leiste an der linken Kante, diese hier sitzt rechts.
-     scaleX(-1) wie am Zeichen des "All Chats"-Knopfes daneben -- dieselbe Drehung, damit die zwei
-     nicht in verschiedene Richtungen deuten. */
-  .am-prev-panel .am-side-toggle svg { width: 16px; height: 16px; opacity: .8; transform: scaleX(-1); }
+  /* ZWEI ZEICHEN IM BAUM, EINES SICHTBAR (22.09.). Die Leiste kann links oder rechts stehen,
+     und das Zeichen muss mitdrehen. Bis heute lag EIN Zeichen da und ein transform: scaleX(-1)
+     darauf -- das hielt nur, weil das alte Zeichen spiegelsymmetrisch war. Jetzt liegen
+     panelLeft und panelRight nebeneinander, und hier faellt die Entscheidung, welches gilt.
+     Diese Regel ist der Grundfall: die Leiste steht RECHTS. */
+  .am-prev-panel .am-side-toggle svg,
+  .am-mini-toggle svg { width: 16px; height: 16px; display: block; }
+  .am-prev-panel .am-side-toggle svg { opacity: .8; }
+  .am-side-l { display: none; }
+  .am-side-r { display: block; }
+  #ask-mira.is-side-left .am-side-l { display: block; }
+  #ask-mira.is-side-left .am-side-r { display: none; }
   .am-prev-panel .am-side-toggle:hover svg { opacity: 1; }
   /* Das Markenzeichen der Leiste IST das des Kopfes (.am-brand mit .am-logo-mark und
      .am-wordmark) -- hier stehen nur die kleineren Masse. Faktor etwa 0,53 auf alles, damit das

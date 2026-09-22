@@ -15,7 +15,7 @@ pre{white-space:pre-wrap;background:#111;color:#eee;padding:8px}</style>
 fetch("core.js?n="+Math.random(),{cache:"no-store"}).then(function(r){return r.text()}).then(function(t){
   var s=document.createElement("script"); s.textContent=t; document.head.appendChild(s);
   setTimeout(function(){
-    var svg = UC.icon("sidebarPanels");
+    var svg = UC.icon("panelLeft", 1.5);
     document.getElementById("g").innerHTML=svg;
     document.getElementById("e1").innerHTML=svg;
     document.getElementById("e2").innerHTML=svg;

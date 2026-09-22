@@ -1162,9 +1162,11 @@
   "am-shell",
   "am-side-grip",
   "am-side-item",
+  "am-side-l",
   "am-side-lbl",
   "am-side-logo",
   "am-side-nav",
+  "am-side-r",
   "am-side-toggle",
   "am-skel-line",
   "am-status-dot",
@@ -3116,7 +3118,7 @@
   "globals": 187,
   "payloadkeys": 102,
   "dataattrs": 253,
-  "klassen": 2229,
+  "klassen": 2231,
   "keyframes": 66
  }
 }

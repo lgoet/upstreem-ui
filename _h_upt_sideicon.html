@@ -6,7 +6,7 @@
 /* Die Frage: traegt der Umschalter in der Gruppenliste JETZT dasselbe Zeichen wie der oben rechts
    in der Hauptleiste? Verglichen wird nicht "sieht gleich aus", sondern das gerenderte Markup und
    die gerechnete Groesse -- beides muss uebereinstimmen. Die Hauptleiste wird dafuer nicht
-   nachgebaut: es wird direkt UC.icon("sidebarPanels") gefragt, also genau das, was sidebar.js
+   nachgebaut: es wird direkt UC.icon("panelLeft", 1.5) gefragt, also genau das, was sidebar.js
    dort einsetzt (BAR_SVG). */
 window.__err=[]; window.addEventListener("error",function(e){window.__err.push(String(e.message));});
 try { for (var i=window.localStorage.length-1;i>=0;i--){ var k=window.localStorage.key(i);
@@ -36,8 +36,8 @@ Promise.all(D.map(hol)).then(function(t){
   var R={};
   var UC=window.UpstreemCore;
   /* Das Zeichen, das sidebar.js oben rechts einsetzt -- an der Quelle abgelesen, nicht geraten. */
-  R.hauptleiste_nutzt = /UC\.icon\("sidebarPanels"\)/.test(window.__sidebarQuelle) ? 'UC.icon("sidebarPanels")' : "ANDERS";
-  var soll = UC.icon("sidebarPanels");
+  R.hauptleiste_nutzt = /UC\.icon\("panelLeft"/.test(window.__sidebarQuelle) ? 'UC.icon("panelLeft", 1.5)' : "ANDERS";
+  var soll = UC.icon("panelLeft", 1.5);
 
   var seite = upt.querySelector(".upt-grp-widebtn");     /* im Kopf der Gruppenliste */
   var kopf  = upt.querySelector(".upt-heading-widebtn"); /* der Zwilling in der Ueberschrift */

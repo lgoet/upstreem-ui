@@ -6653,7 +6653,14 @@
          der erste Versuch hat an dieser Zeile geworfen und den Kopfbereich leer gelassen. Die
          Nachbarschaft macht es genauso (siehe moreHorizontal weiter oben). */
       var kern = window.UpstreemCore;
-      um.innerHTML = (kern && kern.icon) ? kern.icon('panelLeft', 1.5) : '';
+      /* BEIDE Seiten im Baum, die CSS zeigt die passende (am-side-l / am-side-r). Vorher lag
+         hier EIN Zeichen und ein transform: scaleX(-1) darauf. Das hielt nur, weil dieses
+         Zeichen zufaellig spiegelsymmetrisch ist -- beim naechsten Zeichen waere es still
+         falsch geworden. Der Satz fuehrt beide Seiten, also werden sie auch benutzt. */
+      um.innerHTML = (kern && kern.icon)
+        ? '<span class="am-side-l">' + kern.icon('panelLeft', 1.5) + '</span>' +
+          '<span class="am-side-r">' + kern.icon('panelRight', 1.5) + '</span>'
+        : '';
       um.addEventListener('click', closePrev);
       /* DASSELBE Markenzeichen wie oben links im Kopf: .am-brand aus Zeichen (blend) und
          Schriftzug "mira". Nicht ein anderes Zeichen in kleiner -- die Klassen sind die des
@@ -6688,7 +6695,9 @@
         mini.innerHTML =
           '<span class="am-mini-logo" aria-hidden="true">' + ic('blend') + '</span>' +
           '<button class="up-iconbtn am-mini-toggle" type="button" data-mini="open"' +
-            ' aria-label="Expand sidebar" data-tip="Expand sidebar">' + ic('panelLeft') + '</button>' +
+            ' aria-label="Expand sidebar" data-tip="Expand sidebar">' +
+            '<span class="am-side-l">' + ic('panelLeft') + '</span>' +
+            '<span class="am-side-r">' + ic('panelRight') + '</span>' + '</button>' +
           '<div class="am-mini-items">' +
             '<button class="am-mini-btn" type="button" data-mini="new" aria-label="New chat"' +
               ' data-tip="New chat" data-tip-place="right">' + ic('plus') + '</button>' +
@@ -8440,7 +8449,9 @@
     var alt = b.querySelector('svg');
     if (!alt) return;
     var huelle = document.createElement('div');
-    huelle.innerHTML = kern.icon('panelLeft', 2);
+    /* panelRight: die Chatliste faehrt von RECHTS herein. Bis zum 22.09. stand hier
+       panelLeft mit einer Spiegelung in der CSS -- der Satz kannte nur eine Seite. */
+    huelle.innerHTML = kern.icon('panelRight', 1.7);
     var neu = huelle.firstChild;
     if (!neu) return;
     neu.setAttribute('class', 'am-ic am-prev-ic');

@@ -1,42 +1,43 @@
-<meta charset="utf-8"><title>Sidebar-Icons: vorher / nachher</title>
+<meta charset="utf-8"><title>Der Zeichensatz</title>
 <style>
 html,body{margin:0;background:#1f1f1b;color:#e0e0e0;font:14px/1.4 Geist,system-ui,sans-serif}
-.raster{display:grid;grid-template-columns:repeat(2,1fr);gap:0 28px;padding:18px 22px;max-width:770px}
-.zeile{display:grid;grid-template-columns:34px 34px 1fr;align-items:center;gap:14px;
-  padding:7px 0;border-bottom:1px solid #2a2a2e}
-.kopf{display:grid;grid-template-columns:34px 34px 1fr;gap:14px;padding:0 0 6px;
-  font-size:10px;color:#808080}
-.lbl{font-size:13px}
-.q{font:10px ui-monospace,monospace;color:#707070}
+.kopf{padding:18px 22px 6px;font-size:13px;color:#a0a0a0}
+.kopf b{color:#e0e0e0}
+.r{display:grid;grid-template-columns:repeat(6,1fr);gap:2px 14px;padding:10px 22px 30px}
+.z{display:grid;grid-template-columns:28px 1fr;align-items:center;gap:10px;
+   padding:6px 0;border-bottom:1px solid #2a2a2e}
+.n{font:11px ui-monospace,monospace;color:#9a9a9a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 svg{display:block;margin:0 auto}
-</style><body><div class="raster" id="r"></div>
+.fehl{color:#d25d5d}
+</style><body>
+<div class="kopf">Alle Zeichen aus <b>UC.icon</b> -- Hugeicons 4.3.5, stroke-rounded, Strichstaerke 1.5.
+  <span id="zahl"></span></div>
+<div class="r" id="r"></div>
 <script>
+/* Zeigt den Satz, wie er GERADE ist -- die Namen holt es aus core selbst, nicht aus einer
+   Liste hier. Damit kann das Blatt nicht veralten: kommt ein Zeichen dazu, steht es hier.
+   Vorher stand hier eine Gegenueberstellung alt/neu mit fest eingetragenen hg-Schluesseln --
+   die gab es nach der Umstellung nicht mehr, und das Blatt zeigte nur noch Fehler. */
 fetch("core.js?n="+Math.random(),{cache:"no-store"}).then(function(r){return r.text();}).then(function(t){
   var s=document.createElement("script"); s.textContent=t; document.head.appendChild(s);
   var UC=window.UpstreemCore;
-  var P=[["home","hgHome","Dashboard","Home03"],["zap","hgZap","Prompt Insights","Flash"],
-   ["globe","hgGlobe","Citations","Globe02"],["squareStack","hgSquareStack","Brands","SquareStack"],
-   ["chartColumnUp","hgChartColumnUp","Performance","Chart"],
-   ["listTodo","hgListTodo","Opportunities","Kanban"],
-   ["telescope","hgTelescope","Prompt Research","Investigation"],["blend","hgBlend","Mira","AiMagic"],
-   ["folders","hgFolders","Teams","FolderLibrary"],["bolt","hgBolt","Settings","Bolt"],
-   ["users","hgUsers","Team Organisation","Users"],["dollarSign","hgDollarSign","Billing","DollarSign"],
-   ["settings2","hgSettings2","Preferences","PreferenceHorizontal"],["logOut","hgLogOut","Log out","LogOut"],
-   ["sidebarPanels","hgLayoutLeft","Leisten-Umschalter","LayoutAlignLeft"]];
-  var r=document.getElementById("r");
-  function gr(sv){ return sv.replace('width="24" height="24"','width="26" height="26"')
-                           .replace(/<svg /,'<svg width="26" height="26" '); }
-  for (var sp=0; sp<2; sp++){
-    var sr=document.createElement("div");
-    sr.innerHTML='<div class="kopf"><span>alt</span><span>neu</span><span></span></div>';
-    P.slice(sp*8,sp*8+8).forEach(function(p){
-      var d=document.createElement("div"); d.className="zeile";
-      d.innerHTML='<span>'+gr(UC.icon(p[0],1.8))+'</span><span>'+gr(UC.icon(p[1],1.5))+'</span>'+
-        '<span><div class="lbl">'+p[2]+'</div><div class="q">'+p[0]+' &rarr; '+p[3]+'</div></span>';
-      sr.appendChild(d);
-    });
-    r.appendChild(sr);
-  }
-  window.__fertig=1;
+  var namen=[], alt=console.error;
+  console.error=function(m){ var s2=String(m), i=s2.indexOf("vorhanden sind: ");
+    if(i>=0) namen=s2.slice(i+16).split(", "); };
+  UC.icon("--gibtesnicht--"); console.error=alt;
+  namen.sort();
+  var r=document.getElementById("r"), leer=0;
+  namen.forEach(function(n){
+    var sv=UC.icon(n,1.5).replace('width="24"','width="22"').replace('height="24"','height="22"');
+    var d=document.createElement("div"); d.className="z";
+    var h=document.createElement("div"); h.innerHTML=sv;
+    var ok = h.firstChild && h.firstChild.children.length;
+    if(!ok) leer++;
+    d.innerHTML='<span>'+sv+'</span><span class="n'+(ok?'':' fehl')+'">'+n+(ok?'':' LEER')+'</span>';
+    r.appendChild(d);
+  });
+  document.getElementById("zahl").textContent =
+    namen.length + " Zeichen" + (leer ? " -- " + leer + " LEER" : " -- alle gefuellt");
+  window.__erg={ zeichen:namen.length, leer:leer }; window.__fertig=1;
 });
 </script>

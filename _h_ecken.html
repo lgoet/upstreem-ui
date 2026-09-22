@@ -11,7 +11,7 @@ canvas{border:1px solid #ccc;image-rendering:pixelated;margin-top:8px}</style>
 fetch("core.js?n="+Math.random(),{cache:"no-store"}).then(function(r){return r.text()}).then(function(t){
   var s=document.createElement("script"); s.textContent=t; document.head.appendChild(s);
   setTimeout(function(){
-    var UC=window.UpstreemCore, svg=UC.icon("sidebarPanels");
+    var UC=window.UpstreemCore, svg=UC.icon("panelLeft", 1.5);
     var vb=/viewBox="0 0 ([\d.]+) ([\d.]+)"/.exec(svg), W=parseFloat(vb[1]), H=parseFloat(vb[2]);
     var S=20, c=document.getElementById("c"), ctx=c.getContext("2d");
     c.width=Math.round(W*S); c.height=Math.round(H*S);
