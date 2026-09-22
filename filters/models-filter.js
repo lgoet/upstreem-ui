@@ -73,16 +73,16 @@
   var ICON = {
     /* Feather "layers" -- the stack glyph. Feather has no icon literally called stack; layers is
        the one that reads as a stack of models and is what the rest of the app already ships. */
-    stack: '<svg viewBox="0 0 24 24"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z" /> <path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12" /> <path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17" /></svg>',
-    chev: '<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg>',
-    search: '<svg viewBox="0 0 24 24"><path d="m21 21-4.34-4.34" /> <circle cx="11" cy="11" r="8" /></svg>',
+    stack: '<svg viewBox="0 0 24 24"><path d="M8.64298 3.14559L6.93816 3.93362C4.31272 5.14719 3 5.75397 3 6.75C3 7.74603 4.31272 8.35281 6.93817 9.56638L8.64298 10.3544C10.2952 11.1181 11.1214 11.5 12 11.5C12.8786 11.5 13.7048 11.1181 15.357 10.3544L17.0618 9.56638C19.6873 8.35281 21 7.74603 21 6.75C21 5.75397 19.6873 5.14719 17.0618 3.93362L15.357 3.14559C13.7048 2.38186 12.8786 2 12 2C11.1214 2 10.2952 2.38186 8.64298 3.14559Z"/><path d="M20.788 11.0972C20.9293 11.2959 21 11.5031 21 11.7309C21 12.7127 19.6873 13.3109 17.0618 14.5072L15.357 15.284C13.7048 16.0368 12.8786 16.4133 12 16.4133C11.1214 16.4133 10.2952 16.0368 8.64298 15.284L6.93817 14.5072C4.31272 13.3109 3 12.7127 3 11.7309C3 11.5031 3.07067 11.2959 3.212 11.0972"/><path d="M20.3767 16.2661C20.7922 16.5971 21 16.927 21 17.3176C21 18.2995 19.6873 18.8976 17.0618 20.0939L15.357 20.8707C13.7048 21.6236 12.8786 22 12 22C11.1214 22 10.2952 21.6236 8.64298 20.8707L6.93817 20.0939C4.31272 18.8976 3 18.2995 3 17.3176C3 16.927 3.20778 16.5971 3.62334 16.2661"/></svg>',
+    chev: '<svg viewBox="0 0 24 24"><path d="M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9"/></svg>',
+    search: '<svg viewBox="0 0 24 24"><path d="M17 17L21 21"/><path d="M19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19C15.4183 19 19 15.4183 19 11Z"/></svg>',
     /* Same clear-X core's search fields use, stroke-width and all. */
-    x: '<svg viewBox="0 0 24 24" stroke-width="3.5"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>',
+    x: '<svg viewBox="0 0 24 24" stroke-width="3.5"><path d="M18 6L6.00081 17.9992M17.9992 18L6 6.00085"/></svg>',
     /* Feather "x" at its own stroke weight, for the clear-X that replaces the chevron on hover.
        The one above is the SEARCH field's clear icon and deliberately heavier (3.5) because it
        sits inside an input at a smaller optical size. Reusing it on the trigger made a chunky
        cross next to a 1.8-weight chevron. */
-    xThin: '<svg viewBox="0 0 24 24"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>',
+    xThin: '<svg viewBox="0 0 24 24"><path d="M18 6L6.00081 17.9992M17.9992 18L6 6.00085"/></svg>',
     /* Sortieren: arrow-down-up aus core, dieselbe Form wie an jedem Sortierknopf der Toolbars.
        Hier standen drei zur Mitte schmaler werdende Linien -- die Filterform, nicht die
        Sortierform, und damit trug ein Filter-Menue zwei verschiedene Zeichen fuer zwei

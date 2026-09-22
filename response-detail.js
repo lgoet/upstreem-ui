@@ -51,7 +51,10 @@
   var esc = UC.esc, isYes = UC.isYes;
 
   var VIEWS = [
-    { key: "grid", label: "Grid", icon: "layoutGrid" },
+    /* card und listIcon -- dieselben zwei Zeichen wie der Umschalter der Responses Table und
+       der der Opportunities (22.09. so angesagt). Vorher layoutGrid, das ist das Raster aus
+       vier Kacheln und sagt "Galerie", nicht "Karten". */
+    { key: "grid", label: "Grid", icon: "card" },
     { key: "list", label: "List", icon: "listIcon" }
   ];
   /* Die Ansicht ueberlebt das Neueinspritzen des Markups durch Bubble -- sonst springt sie beim

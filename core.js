@@ -1853,8 +1853,11 @@
     "Search URLs": "URLs durchsuchen",
     "Search domains": "Domains durchsuchen",
     "Search responses": "Antworten durchsuchen",
-    "Search opportunities": "Chancen durchsuchen",
-    "Search opportunities...": "Chancen durchsuchen…",
+    /* OPPORTUNITIES BLEIBT OPPORTUNITIES, auch auf Deutsch (22.09.) -- dieselbe Ansage wie
+       bei Brands. Es ist der Name der Seite und des Bauteils, kein Wort, das uebersetzt wird.
+       Hier stand "Chancen". */
+    "Search opportunities": "Opportunities durchsuchen",
+    "Search opportunities...": "Opportunities durchsuchen…",
     "Search your workspace": "Workspace durchsuchen",
     "Type in domain...": "Domain eingeben…",
     "Type in url...": "URL eingeben…",
@@ -9883,6 +9886,8 @@
         if (a && menu.contains(a)){ if (rec.opener && rec.opener.focus) rec.opener.focus(); else a.blur(); }
         if (rec.opener && document.activeElement === rec.opener && rec.opener.blur) rec.opener.blur();
       } catch(e){}
+      /* Erst die Kinder, dann sich selbst: was IN diesem Menue offen steht, geht mit. */
+      kinderSchliessen(menu);
       dropEscape(menu);
       wrap.classList.remove("is-open");
       menu.classList.remove("is-shown");
@@ -13608,10 +13613,49 @@
     return panel.__upEscapeRelease;
   }
 
+  /* ---- KINDER GEHEN MIT (22.09.) -----------------------------------------------------------
+     Ein Dropdown kann ein zweites IN SICH oeffnen -- der Topics-Filter traegt einen eigenen
+     Sortierer, mehrere Filter tun das. Beim Oeffnen ist dieser Fall seit jeher bedacht: ein
+     Panel, das den neuen Ausloeser enthaelt, ist ein Vorfahr und bleibt stehen (siehe
+     dropdownOpened). Beim SCHLIESSEN fehlte die Gegenrichtung. Ging der Topics-Filter zu, blieb
+     sein Sortierer offen stehen -- ein Menue ohne alles darum, das auf nichts mehr zeigt.
+     Genau so gemeldet, und ausdruecklich fuer ALLE Filter-Dropdowns.
+     Geprueft wird am LEBENDEN DOM (contains), wie beim Oeffnen: es muss nichts zwischen
+     Komponenten verdrahtet werden, die voneinander nichts wissen. Beide Register werden
+     durchgegangen -- die Dropdowns und die Popover -, weil ein Kind in jedem der beiden
+     stecken kann. Rueckwaerts, weil die Schliessroutinen selbst aus der Liste entfernen. */
+  function kinderSchliessen(behaelter){
+    if (!behaelter) return;
+    var i, o, p;
+    for (i = OPEN_DD.length - 1; i >= 0; i--){
+      o = OPEN_DD[i];
+      if (!o || o.panel === behaelter) continue;
+      var drin = false;
+      try { drin = !!(behaelter.contains(o.panel) || (o.owner && behaelter.contains(o.owner))); } catch(e){}
+      if (!drin) continue;
+      OPEN_DD.splice(i, 1);
+      try { o.close(); } catch(e){}
+    }
+    for (i = POPOVERS.length - 1; i >= 0; i--){
+      p = POPOVERS[i];
+      if (!p || !p.wrap || !p.menu) continue;
+      if (!p.wrap.classList.contains("is-open")) continue;
+      if (p.menu === behaelter) continue;
+      var drin2 = false;
+      try { drin2 = !!(behaelter.contains(p.menu) || behaelter.contains(p.wrap)); } catch(e){}
+      if (!drin2) continue;
+      dropEscape(p.menu);
+      p.wrap.classList.remove("is-open");
+      p.menu.classList.remove("is-shown");
+      p.menu.setAttribute("aria-hidden", "true");
+      if (p.onClose) { try { p.onClose(false); } catch(e){} }
+    }
+  }
+
   function ddClose(entry){
     var i = OPEN_DD.indexOf(entry);
     if (i >= 0) OPEN_DD.splice(i, 1);
-    if (entry) dropEscape(entry.panel);
+    if (entry){ kinderSchliessen(entry.panel); dropEscape(entry.panel); }
   }
   function dropdownOpened(panel, close, ownerEl){
     var self = { panel: panel, close: close, owner: ownerEl || panel };
@@ -15390,11 +15434,13 @@
     /* Alter Name, gleiche Form. chevronUpDown hiess das hier, bevor Lucide den Satz stellte;
        der Schluessel bleibt, damit kein Aufrufer bricht. */
     chevronUpDown: '<path d="M18 14C18 14 13.5811 19 12 19C10.4188 19 6 14 6 14"/><path d="M18 9.99996C18 9.99996 13.5811 5.00001 12 5C10.4188 4.99999 6 10 6 10"/>',
-    /* Wie chevronsUpDown, aber die beiden Haelften stehen 3 Rastereinheiten weiter auseinander
-       (je 0.75 nach aussen; bei 16px Darstellung 1px insgesamt). Bewusst KEINE Lucide-Geometrie, sondern eine Variante davon: im
-       Team-Schalter der Sidebar standen die Pfeile zu dicht beieinander. Woanders nicht
-       benutzen -- wer den Standard will, nimmt chevronsUpDown. */
-    chevronsUpDownWide: '<path d="M18 14C18 14 13.5811 19 12 19C10.4188 19 6 14 6 14"/><path d="M18 9.99996C18 9.99996 13.5811 5.00001 12 5C10.4188 4.99999 6 10 6 10"/>',
+    /* Wie chevronsUpDown, aber die beiden Haelften stehen WEITER AUSEINANDER: je 2 Einheiten
+       nach aussen, also 4 mehr Abstand dazwischen, und die Mitte bleibt bei y=12.
+       Am 22.09. NEU GERECHNET. Beim Wechsel des Satzes hatten alle drei Chevron-Schluessel
+       dieselbe Form bekommen -- "Wide" war damit dem Namen nach breit und dem Bild nach nicht,
+       und der Teamwechsler oben in der Leiste sah aus wie jeder andere Chevron. Genau so
+       gemeldet. Wer den Standardabstand will, nimmt chevronsUpDown. */
+    chevronsUpDownWide: '<path d="M18 16C18 16 13.5811 21 12 21C10.4188 21 6 16 6 16"/><path d="M18 7.99996C18 7.99996 13.5811 3.00001 12 3C10.4188 2.99999 6 8 6 8"/>',
     /* Rahmen mit senkrechter Trennlinie -- das Sidebar-Symbol. */
     panelLeft:'<path d="M11 3H13C16.7712 3 18.6569 3 19.8284 4.17157C21 5.34315 21 7.22876 21 11V13C21 16.7712 21 18.6569 19.8284 19.8284C18.6569 21 16.7712 21 13 21H11C7.22876 21 5.34315 21 4.17157 19.8284C3 18.6569 3 16.7712 3 13V11C3 7.22876 3 5.34315 4.17157 4.17157C5.34315 3 7.22876 3 11 3Z"/>' +
                '<path d="M8.00488 16.0049L8.00488 8.00488"/>',
@@ -15763,6 +15809,25 @@
   TOOLBAR_SEL['.cc-seg-btn[data-chart="bar"], .tcl-seg-btn[data-chart="bar"]'] = ICON_PATHS.chartBarDec;
   TOOLBAR_SEL['.cc-seg-btn[data-chart="doughnut"], .tcl-seg-btn[data-chart="doughnut"]'] = ICON_PATHS.donut;
   TOOLBAR_SEL["#am-mic"] = ICON_PATHS.mic;
+  /* ---- Ansichts-Umschalter (22.09. benannt) ------------------------------------------------
+     Drei Paare, alle drei im Bubble-Markup und damit nur ueber diesen Weg erreichbar:
+       Opportunities   Board -> LayoutDashboard, Liste -> ListView
+       Responses Table Karten -> DashboardSquare01, Tabelle -> ListView
+       Response Detail derselbe Satz, dort baut das JS die Knoepfe (siehe VIEWS dort).
+     Die Liste traegt in allen dreien dasselbe Zeichen -- das war der Punkt der Ansage. */
+  TOOLBAR_SEL['[data-mode="board"]'] = ICON_PATHS.layoutDashboard;
+  TOOLBAR_SEL['[data-mode="list"]']  = ICON_PATHS.listIcon;
+  TOOLBAR_SEL['.urt-viewswitch [data-view="cards"]'] = ICON_PATHS.card;
+  TOOLBAR_SEL['.urt-viewswitch [data-view="table"]'] = ICON_PATHS.listIcon;
+  /* Der Knopf "Look for new Opportunities" im Seitenkopf (22.09. benannt: GlobalSearch). Er
+     steht im Markup des Seitenkopfs, nicht in einer Komponente -- also nur ueber diesen Weg.
+     Der Selektor haengt an der Wurzel des Opportunities-Kopfs: derselbe Knopf heisst auf der
+     Prompts-Seite .up-ph-addbtn und traegt dort ein Plus. */
+  TOOLBAR_SEL['.oph-root .up-ph-addbtn'] = ICON_PATHS.globalSearch;
+  /* Der Start-Knopf von Prompt Research traegt seit dem 22.09. das Papierflieger-Zeichen
+     (SendIcon) statt der Rakete -- er sieht jetzt aus wie der Senden-Knopf in Mira, und beide
+     sagen dasselbe. Er steht im Bubble-Markup, also ueber diesen Weg. */
+  TOOLBAR_SEL['#upr-start-button'] = ICON_PATHS.send;
   /* Jetzt steht der Satz -- erst hier darf der Nachzug ueber das Dokument. */
   nachzugHochlauf();
 
@@ -16347,7 +16412,13 @@
       suche = ""; sucheOffen = false; alleZeigen = false;
       if (bearbeitet) (bearbeitet.tag_ids || []).forEach(function(id){ picked[String(id)] = true; });
       modal = document.createElement("div");
-      modal.className = "up-topicmodal-backdrop up-cgm-backdrop upt-gm-backdrop";
+      /* up-root MUSS mit (22.09.). Das Fenster haengt an document.body, also AUSSERHALB
+         jeder Komponentenwurzel -- und dort loest keine der Marken auf (weder --up- noch --vc-). Eine
+         Regel wie "background: var(--up-accent)" ist dann als GANZES ungueltig, und der
+         Primaerknopf unten rechts stand ohne Fuellung da: gemeldet als "ist kein
+         Primaerbutton". Dieselbe Ursache wie beim Topic-Edit-Fenster der Prompts-Tabelle,
+         das deshalb seit laengerem "up-root up-portal" traegt. */
+      modal.className = "up-root up-portal up-topicmodal-backdrop up-cgm-backdrop upt-gm-backdrop";
       if (getIsDark()) modal.setAttribute("data-theme", "dark");
       modal.innerHTML =
         '<div class="up-topicmodal-card" role="dialog" aria-modal="true" aria-label="' +

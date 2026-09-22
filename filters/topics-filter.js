@@ -68,15 +68,15 @@
        waren der Grund fuer den Bericht. Aus core geholt statt hier kopiert -- ein zweiter
        Handstrich waere derselbe Fehler noch einmal. */
     tag: UC.icon ? UC.icon("tags", 2) : "",
-    chev: '<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg>',
-    search: '<svg viewBox="0 0 24 24"><path d="m21 21-4.34-4.34" /> <circle cx="11" cy="11" r="8" /></svg>',
+    chev: '<svg viewBox="0 0 24 24"><path d="M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9"/></svg>',
+    search: '<svg viewBox="0 0 24 24"><path d="M17 17L21 21"/><path d="M19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19C15.4183 19 19 15.4183 19 11Z"/></svg>',
     /* Same clear-X core's search fields use, stroke-width and all. */
-    x: '<svg viewBox="0 0 24 24" stroke-width="3.5"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>',
+    x: '<svg viewBox="0 0 24 24" stroke-width="3.5"><path d="M18 6L6.00081 17.9992M17.9992 18L6 6.00085"/></svg>',
     /* Feather "x" at its own stroke weight, for the clear-X that replaces the chevron on hover.
        The one above is the SEARCH field's clear icon and deliberately heavier (3.5) because it
        sits inside an input at a smaller optical size. Reusing it on the trigger made a chunky
        cross next to a 1.8-weight chevron. */
-    xThin: '<svg viewBox="0 0 24 24"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>',
+    xThin: '<svg viewBox="0 0 24 24"><path d="M18 6L6.00081 17.9992M17.9992 18L6 6.00085"/></svg>',
     /* Sortieren: arrow-down-up aus core, dieselbe Form wie an jedem Sortierknopf der Toolbars.
        Hier standen drei zur Mitte schmaler werdende Linien -- die Filterform, nicht die
        Sortierform, und damit trug ein Filter-Menue zwei verschiedene Zeichen fuer zwei
@@ -87,10 +87,14 @@
     check: UC.icon("check", 3),
     cbOff: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/></svg>',
     cbOn:  '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M17.2 8.8 10.4 15.6 6.8 12" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    plus: '<svg viewBox="0 0 24 24"><path d="M5 12h14" /> <path d="M12 5v14" /></svg>',
+    plus: '<svg viewBox="0 0 24 24"><path d="M11.9922 4.00012V20.0001M19.9922 12.0001H3.99222"/></svg>',
     /* prompts-table's GRP_ICON verbatim. The same control has to look the same in both places, and
        these two are the only ones in the app that open custom groupings. */
-    group: '<svg viewBox="0 0 24 24" stroke-width="1.7"><rect x="3.75" y="5.25" width="16.5" height="5.25" rx="1.5"/><rect x="11.25" y="13.5" width="9" height="5.25" rx="1.5"/><polyline points="3.75,13.5 6.75,16.5 3.75,19.5"/></svg>'
+    /* Aus dem Satz (22.09.): combine, dasselbe Zeichen wie der Gruppierungsknopf der
+       Prompts-Tabelle. Hier stand ein von Hand gezeichnetes SVG -- zwei Rechtecke und ein
+       Winkel --, das nach der Umstellung als einziges Zeichen dieses Filters alt geblieben
+       waere. Der Rahmen bleibt: er traegt Groesse und Strichbreite. */
+    group: '<svg viewBox="0 0 24 24" stroke-width="1.7"><path d="M15 18H13C12.0681 18 11.6022 18 11.2346 17.8478C10.7446 17.6448 10.3552 17.2554 10.1522 16.7654C10 16.3978 10 15.9319 10 15C10 14.0681 10 13.6022 10.1522 13.2346C10.3552 12.7446 10.7446 12.3552 11.2346 12.1522C11.6022 12 12.0681 12 13 12H15C15.9319 12 16.3978 12 16.7654 12.1522C17.2554 12.3552 17.6448 12.7446 17.8478 13.2346C18 13.6022 18 14.0681 18 15C18 15.9319 18 16.3978 17.8478 16.7654C17.6448 17.2554 17.2554 17.6448 16.7654 17.8478C16.3978 18 15.9319 18 15 18Z"/><path d="M10 13C9.06812 13 8.60218 13 8.23463 12.8478C7.74458 12.6448 7.35523 12.2554 7.15224 11.7654C7 11.3978 7 10.9319 7 10C7 9.06812 7 8.60218 7.15224 8.23463C7.35523 7.74458 7.74458 7.35523 8.23463 7.15224C8.60218 7 9.06812 7 10 7H12C12.9319 7 13.3978 7 13.7654 7.15224C14.2554 7.35523 14.6448 7.74458 14.8478 8.23463C15 8.60218 15 9.06812 15 10C15 10.9319 15 11.3978 14.8478 11.7654"/><path d="M16.5 21.5C17.4293 21.5 17.894 21.5 18.2804 21.4231C19.8671 21.1075 21.1075 19.8671 21.4231 18.2804C21.5 17.894 21.5 17.4293 21.5 16.5M7.5 2.5C6.57069 2.5 6.10603 2.5 5.71964 2.57686C4.13288 2.89249 2.89249 4.13288 2.57686 5.71964C2.5 6.10603 2.5 6.57069 2.5 7.5M7.5 21.5C6.57069 21.5 6.10603 21.5 5.71964 21.4231C4.13288 21.1075 2.89249 19.8671 2.57686 18.2804C2.5 17.894 2.5 17.4293 2.5 16.5M16.5 2.5C17.4293 2.5 17.894 2.5 18.2804 2.57686C19.8671 2.89249 21.1075 4.13288 21.4231 5.71964C21.5 6.10603 21.5 6.57069 21.5 7.5"/></svg>',
   };
 
   /* Custom groupings are written by the prompts table and read here. Same localStorage key, same

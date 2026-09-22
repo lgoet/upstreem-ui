@@ -72,16 +72,16 @@
 
   var ICON = {
     /* Feather "map-pin". Taken from the set, not drawn here. */
-    pin: '<svg viewBox="0 0 24 24"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" /> <circle cx="12" cy="10" r="3" /></svg>',
-    chev: '<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg>',
-    search: '<svg viewBox="0 0 24 24"><path d="m21 21-4.34-4.34" /> <circle cx="11" cy="11" r="8" /></svg>',
+    pin: '<svg viewBox="0 0 24 24"><path d="M14.4978 9.5C14.4978 10.8807 13.3785 12 11.9978 12C10.6171 12 9.4978 10.8807 9.4978 9.5C9.4978 8.11929 10.6171 7 11.9978 7C13.3785 7 14.4978 8.11929 14.4978 9.5Z"/><path d="M3.997 16.5C3.18485 18.5304 2.77878 19.5455 3.12686 20.3199C3.22151 20.5305 3.35191 20.7231 3.51228 20.8892C4.10202 21.5 5.1954 21.5 7.38216 21.5H16.6118C18.7986 21.5 19.892 21.5 20.4817 20.8892C20.6421 20.7231 20.7725 20.5305 20.8671 20.3199C21.2152 19.5455 20.8091 18.5303 19.997 16.5"/><path d="M13.2552 17.9936C12.9179 18.3184 12.4671 18.5 11.998 18.5C11.5288 18.5 11.078 18.3184 10.7407 17.9936C7.6521 15.0008 3.51299 11.6575 5.53151 6.80373C6.62291 4.17932 9.24275 2.5 11.998 2.5C14.7532 2.5 17.373 4.17933 18.4644 6.80373C20.4804 11.6514 16.3514 15.0111 13.2552 17.9936Z"/></svg>',
+    chev: '<svg viewBox="0 0 24 24"><path d="M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9"/></svg>',
+    search: '<svg viewBox="0 0 24 24"><path d="M17 17L21 21"/><path d="M19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19C15.4183 19 19 15.4183 19 11Z"/></svg>',
     /* Same clear-X core's search fields use, stroke-width and all. */
-    x: '<svg viewBox="0 0 24 24" stroke-width="3.5"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>',
+    x: '<svg viewBox="0 0 24 24" stroke-width="3.5"><path d="M18 6L6.00081 17.9992M17.9992 18L6 6.00085"/></svg>',
     /* Feather "x" at its own stroke weight, for the clear-X that replaces the chevron on hover.
        The one above is the SEARCH field's clear icon and deliberately heavier (3.5) because it
        sits inside an input at a smaller optical size. Reusing it on the trigger made a chunky
        cross next to a 1.8-weight chevron. */
-    xThin: '<svg viewBox="0 0 24 24"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>',
+    xThin: '<svg viewBox="0 0 24 24"><path d="M18 6L6.00081 17.9992M17.9992 18L6 6.00085"/></svg>',
     /* Sortieren: arrow-down-up aus core, dieselbe Form wie an jedem Sortierknopf der Toolbars.
        Hier standen drei zur Mitte schmaler werdende Linien -- die Filterform, nicht die
        Sortierform, und damit trug ein Filter-Menue zwei verschiedene Zeichen fuer zwei

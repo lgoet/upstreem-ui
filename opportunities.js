@@ -655,7 +655,16 @@
     return '<div class="uo-m-head">'+
         '<div class="uo-m-actions">'+
           '<button class="uo-m-act up-iconbtn" id="uo-m-ignore" type="button" data-tip="Ignore" aria-label="Ignore opportunity"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.25 5L19.25 19"/><path d="M22.25 12C22.25 6.47715 17.7728 2 12.25 2C6.72715 2 2.25 6.47715 2.25 12C2.25 17.5228 6.72715 22 12.25 22C17.7728 22 22.25 17.5228 22.25 12Z"/></svg></button>'+
-          '<button class="uo-m-act up-iconbtn" id="uo-m-goto" type="button" data-tip="Open URL" aria-label="Open URL"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.14339 10.691L9.35031 10.4841C11.329 8.50532 14.5372 8.50532 16.5159 10.4841C18.4947 12.4628 18.4947 15.671 16.5159 17.6497L13.6497 20.5159C11.671 22.4947 8.46279 22.4947 6.48405 20.5159C4.50532 18.5372 4.50532 15.329 6.48405 13.3503L6.9484 12.886"/><path d="M17.0516 11.114L17.5159 10.6497C19.4947 8.67095 19.4947 5.46279 17.5159 3.48405C15.5372 1.50532 12.329 1.50532 10.3503 3.48405L7.48405 6.35031C5.50532 8.32904 5.50532 11.5372 7.48405 13.5159C9.46279 15.4947 12.671 15.4947 14.6497 13.5159L14.8566 13.309"/></svg></button>'+
+          /* ZWEI KNOEPFE, ZWEI ABSICHTEN (22.09.). Vorher tat EINER beides: er meldete
+             open_url an Bubble -- worauf der URL-Drawer der App aufgeht -- UND oeffnete die
+             Seite zusaetzlich in einem neuen Tab. Wer den Drawer wollte, bekam ungefragt einen
+             Tab dazu; wer den Tab wollte, bekam den Drawer.
+             Links das Kettenzeichen: NUR extern, kein Ereignis an Bubble.
+             Rechts daneben der bisherige Knopf: NUR das Ereignis, also nur der Drawer. */
+          '<button class="uo-m-act up-iconbtn" id="uo-m-extern" type="button" data-tip="Open in new tab" aria-label="Open in new tab">'+
+            (UC && UC.icon ? UC.icon('externalLink', 2) : '')+'</button>'+
+          '<button class="uo-m-act up-iconbtn" id="uo-m-goto" type="button" data-tip="Open URL details" aria-label="Open URL details"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.14339 10.691L9.35031 10.4841C11.329 8.50532 14.5372 8.50532 16.5159 10.4841C18.4947 12.4628 18.4947 15.671 16.5159 17.6497L13.6497 20.5159C11.671 22.4947 8.46279 22.4947 6.48405 20.5159C4.50532 18.5372 4.50532 15.329 6.48405 13.3503L6.9484 12.886"/><path d="M17.0516 11.114L17.5159 10.6497C19.4947 8.67095 19.4947 5.46279 17.5159 3.48405C15.5372 1.50532 12.329 1.50532 10.3503 3.48405L7.48405 6.35031C5.50532 8.32904 5.50532 11.5372 7.48405 13.5159C9.46279 15.4947 12.671 15.4947 14.6497 13.5159L14.8566 13.309"/></svg></button>'+
+
           '<button class="uo-m-act up-iconbtn" id="uo-m-close" type="button" data-tip="Close" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6.00081 17.9992M17.9992 18L6 6.00085"/></svg></button>'+
         '</div>'+
         '<div class="uo-m-source">'+favHtml(item.lead_favicon, item.lead_domain)+
@@ -699,8 +708,15 @@
     modal.querySelector('#uo-m-close').addEventListener('click', closeDetail);
     var ign = modal.querySelector('#uo-m-ignore');
     if (ign) ign.addEventListener('click', function(){ emit('ignore_opportunity', { opportunity_id: id }); setStatus(id, 'ignored'); });
+    /* Der URL-Knopf meldet NUR noch -- den Drawer oeffnet Bubble darauf. Kein window.open
+       mehr: das war die zweite Haelfte des doppelten Oeffnens (22.09. gemeldet). */
     var goto = modal.querySelector('#uo-m-goto');
-    if (goto) goto.addEventListener('click', function(){ emit('open_url', { opportunity_id: id, lead_url: item.lead_url, lead_title: item.lead_title, lead_domain: item.lead_domain }); if (item.lead_url) window.open(item.lead_url, '_blank', 'noopener'); });
+    if (goto) goto.addEventListener('click', function(){ emit('open_url', { opportunity_id: id, lead_url: item.lead_url, lead_title: item.lead_title, lead_domain: item.lead_domain }); });
+    /* Und der neue daneben oeffnet NUR extern -- ohne Ereignis, damit der Drawer zubleibt. */
+    var extern = modal.querySelector('#uo-m-extern');
+    if (extern) extern.addEventListener('click', function(){
+      if (item.lead_url) window.open(item.lead_url, '_blank', 'noopener');
+    });
     var cta = modal.querySelector('#uo-cta');
     /* DAS BRETT OEFFNET DAS FENSTER SELBST (16.09. angefordert). Vorher ging nur die Meldung
        raus, und ein Bubble-Workflow baute den Payload von Hand zusammen -- gemeldet als

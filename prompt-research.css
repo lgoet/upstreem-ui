@@ -22,6 +22,11 @@
    Fehlalarme: der Vergleich laeuft ueber "hat Hintergrund, Rahmen, Radius, Hoehe und transition",
    und das trifft auf jeden Knopf und jedes Feld zu. .up-seg-btn ist die Haelfte eines Umschalters
    in einer gemeinsamen Schiene mit is-active auf weisser Flaeche -- davon ist hier keines eines.
+   ZWEI DAVON SIND AM 22.09. NEU GESCHRIEBEN und bleiben trotzdem Fehlalarme: .upr-start-btn
+   traegt jetzt Wert fuer Wert die Geometrie von .am-send (Miras Senden-Knopf) -- das ist eine
+   Uebernahme, keine Erfindung, und sie war ausdruecklich so angefordert. .upr-dd-trigger steht
+   auf 32px Hoehe wie jeder andere Ausloeser der App; vorher waren es 40, und DAS war die
+   Abweichung.
    Diese Komponente zeichnet ihre Oberflaeche komplett selbst (eigener Kopf, eigene Zeitleiste); wo
    es ein Kit-Bauteil gibt, wird es benutzt: .up-explain, .up-filter-menu, .up-pop-opt, .up-check,
    .up-logo-box, .up-scroll. Die Treffer sind alt und tauchen nur auf, weil die Datei fuer die
@@ -232,11 +237,20 @@
    border-color statt border: 0, damit der 1px als Platz stehen bleibt. */
 .up-root[data-theme="dark"].upr-root .upr-composer { background: var(--vc-field); }
 .up-root[data-theme="dark"].upr-root .upr-composer:not(:focus-within) { border-color: transparent; }
+/* NACH DEM VORBILD VON MIRA (22.09. angefordert). Die Werte sind nicht neu erfunden, sondern
+   aus .am-composer uebernommen -- dieselbe Zahl, nicht eine aehnliche:
+     Rundung   24 -> 32
+     Polster   16 rundum -> 16px 8px 8px. Oben bleibt 16, weil dort das Eingabefeld sitzt und
+               seinen Platz nicht aendern soll; links, rechts und unten ruecken auf 8, damit die
+               Aktionszeile naeher an die Kante kommt. Genau die Begruendung steht an .am-composer.
+     Abstand   16 -> 14
+   Die Ausrichtung bleibt "end": in Mira steht "center", weil dort das Feld einzeilig startet --
+   hier ist es 90px hoch, und der Knopf gehoert an seinen Fuss. */
 .upr-composer {
   width: 100%; min-height: 130px;
-  border: 1px solid var(--vc-border); border-radius: 24px; background: var(--vc-bg);
+  border: 1px solid var(--vc-border); border-radius: 32px; background: var(--vc-bg);
   box-shadow: 0 0 4px rgba(0, 0, 0, 0.05);
-  padding: 16px; display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: end;
+  padding: 16px 8px 8px; display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: end;
   position: relative; transition: border-color 170ms ease, box-shadow 170ms ease;
 }
 .upr-composer:focus-within { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); outline: 0; }
@@ -253,14 +267,20 @@
 .upr-actions { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
 /* Primary action. Deliberately bigger than core's 32px .up-export: it is the single call to
    action on a landing surface, not one control among many in a toolbar. */
+/* DER KREIS AUS MIRA (22.09.): 32x32, randlos, border-radius 50%, Akzentfuellung, der Schatten
+   der ersten Tiefenstufe -- Wert fuer Wert .am-send. Vorher eine 40px hohe Pille mit Text
+   ("Start Research") und Radius 11.
+   Die BESCHRIFTUNG faellt damit weg. Sie steht als aria-label und data-tip weiter am Knopf --
+   fuer die Vorlesehilfe und fuer den Hinweis beim Ueberfahren --, nur nicht mehr als Wort im
+   Feld: in einem 32px-Kreis ist dafuer kein Platz, und das Zeichen sagt dasselbe. */
 .upr-start-btn {
-  height: 40px; padding: 0 18px; border: 0; border-radius: 11px;
+  width: 32px; height: 32px; padding: 0; border: 0; border-radius: 50%; flex: 0 0 auto;
   background: var(--up-accent); color: var(--up-accent-fg);
-  display: inline-flex; align-items: center; gap: 9px;
-  font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
   box-shadow: var(--up-e-1, 0 1px 2px rgba(0,0,0,0.12));
   transition: opacity 160ms ease, box-shadow 160ms ease;
 }
+.upr-start-btn > span { display: none; }   /* die Beschriftung, siehe oben */
 .upr-start-btn:hover { opacity: .9; box-shadow: none; }
 .upr-start-btn:disabled { opacity: 0.55; cursor: not-allowed; box-shadow: none; }
 .upr-start-btn svg { width: 16px; height: 16px; display: block; flex: 0 0 auto; }
@@ -297,7 +317,10 @@
    than hanging off a toolbar icon button like core's .up-menu does. */
 .upr-dd { position: relative; width: 100%; }
 .upr-dd-trigger {
-  width: 100%; height: 40px; border: 1px solid var(--vc-border); border-radius: 11px;
+  /* 32px wie jeder andere Ausloeser der App (22.09. angefordert) -- hier standen 40, und
+     damit war dieser Bereich der einzige mit einer eigenen Hoehe. Der Radius geht im selben
+     Verhaeltnis mit (§1): 11 auf 32/40, also 9. */
+  width: 100%; height: 32px; border: 1px solid var(--vc-border); border-radius: 9px;
   background: var(--vc-bg); color: var(--vc-text); padding: 0 11px;
   font-family: inherit; font-size: 13px; font-weight: 500; outline: none; cursor: pointer;
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
@@ -307,7 +330,9 @@
 .upr-dd.is-open .upr-dd-trigger { border-color: var(--vc-hover-border); }   /* §6a */
 .upr-dd-value { display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .upr-dd-chevron { width: 16px; height: 16px; flex: 0 0 auto; color: var(--vc-muted); transition: transform 160ms ease; }
-.upr-dd.is-open .upr-dd-chevron { transform: rotate(180deg); }
+/* KEINE DREHUNG (22.09.). Ein Chevron, das sich beim Oeffnen umdreht, ist in dieser App
+   ausdruecklich unerwuenscht und mehrfach angemahnt worden -- hier war die letzte Stelle, an
+   der es noch stand. Dass das Menue offen ist, sagt der Rahmen des Ausloesers (Zeile darueber). */
 /* Querformat-Kachel wie ueberall sonst in der App (prompts-table .upt-flag 18x14 r3,
    markets-filter .umk-opt-flag 22x16 r3): hier stand ein KREIS, und ein Kreis schneidet eine
    Flagge zuerst auf ein Quadrat zu. Bei Deutschland faellt das nicht auf -- drei Querstreifen

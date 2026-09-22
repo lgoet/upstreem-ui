@@ -324,6 +324,22 @@ Kein Fix gilt als fertig, bevor er im lokalen Harness (`_h_*.html`, `python3 -m 
 
 Vor jedem Commit zusätzlich `.contract_snapshot.py` / `.contract_diff.py`: **0 Entfernungen.**
 
+### §28 gilt auch in JS — und dort ist der Rauchtest die Wache
+
+`.scan_comments.py` prüft **nur CSS**. Am 22.09. stand in einem `core.js`-Kommentar `--up-*` gefolgt
+von `*/` — das schloss den Kommentar, der Rest des Absatzes wurde Code, und core.js hatte einen
+Syntaxfehler: **die ganze App tot**, nicht nur eine Regel daneben. Gefunden hat es der Rauchtest im
+Browser (`new Function` über alle 39 Dateien), nicht der Prüfer.
+
+Den Prüfer auf JS auszuweiten ist einmal versucht und wieder verworfen worden: er kann ein `*/` in
+einem **Regex-Literal** (`/\*\*([^*]+)\*\*/g`) nicht von einem echten unterscheiden und meldete
+neun Fehlalarme. Ein Prüfer mit neun Fehlalarmen wird weggeklickt — dieselbe Überlegung wie bei der
+Grundlinie von `.check_skala.py`.
+
+**Also: nach jeder Änderung an einem JS-Kommentar den Rauchtest laufen lassen.** Und beim Schreiben
+daran denken, dass `*/` in Prosa vorkommt, wo man es nicht erwartet — in Pfadangaben (`--up-*/--vc-*`),
+in Klassenlisten (`.up-cg-*/.up-cgm-*`) und in Dateimustern.
+
 ### Löschen ist keine Mustersuche (22.09., drei Fehler an einem Tag)
 
 Ein Löschbereich, dessen **Anfang oder Ende ein Textmuster bestimmt**, löscht früher oder später

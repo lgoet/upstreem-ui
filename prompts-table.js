@@ -1440,7 +1440,11 @@
          they're given, so without registering the bar as its own root no [data-tip] inside it
          would ever fire. The tooltip ELEMENT and its state are page singletons, so this shares
          one tooltip with the table rather than creating a second. */
-      UC.makeTooltips(elBulk, function(){ return isDark; });
+      /* UMGEKEHRT wie die Leiste selbst (22.09. angefordert). Die Leiste laeuft auf der
+         Palette des ANDEREN Themas -- ein Hinweischip in der Farbe der App schwebt darueber
+         wie ein Fremdkoerper. Derselbe Gedanke wie beim data-theme der Leiste ein paar Zeilen
+         weiter unten: was auf ihr liegt, gehoert zu ihrem Grund, nicht zu dem der Seite. */
+      UC.makeTooltips(elBulk, function(){ return !isDark; });
       document.body.appendChild(elBulk);
       akzentSyncen();
       return elBulk;
@@ -5474,7 +5478,17 @@
         /* Separate from the bulk topic panel above — this is the "Add Topic" modal, which can be
            open on its own (it isn't nested inside the bulk bar's is-topics state). */
         if (hadModal) addTopicModal.close();
-        persist(); render();
+        persist();
+        /* DIESELBEN NACHZUEGE WIE clearSelection (22.09.). Hier stand nur render() -- und der
+           baut die Zeilen nicht neu, wenn sich an den Daten nichts geaendert hat. Die Haken der
+           sichtbaren Zeilen blieben deshalb stehen, obwohl state.selected leer war: gemeldet als
+           "Checkboxen sehen noch selected aus, und ein Klick darauf waehlt den Prompt AUS-
+           gewaehlt". Genau das ist der Zustand, in dem Anzeige und Wahrheit auseinanderlaufen.
+           fireSelect gehoert dazu, weil Bubble sonst weiter die alte Auswahl kennt. */
+        syncRowChecks(); syncSelectAll(); syncSelCount();
+        renderBulkBar(); fireSelect(); syncStagedTopicsToSelection();
+        if (groupingOn()) renderGroups();
+        render();
         return true;
       },
       destroy: function(){

@@ -3228,6 +3228,19 @@
   color: var(--vc-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
   gap: 7px; font-family: inherit; font-size: 12px; font-weight: 500; line-height: 1; }
 .up-seg-btn svg, .cc-seg-btn svg, .ubo-seg-btn svg, .tcl-seg-btn svg { width: 14px; height: 14px; color: var(--vc-muted); display: block; }
+/* DAS BALKEN-ZEICHEN LIEGT QUER (22.09. angefordert, "90 Grad nach rechts drehen", und das
+   fuer ALLE Doughnut/Balken-Umschalter). Die Balken stehen im Satz senkrecht auf einer
+   waagerechten Achse; neben dem Ring gelesen sagt das "Saeulen", gemeint ist aber die
+   liegende Rangliste, die der Umschalter tatsaechlich zeigt.
+   Eine DREHUNG und kein anderes Zeichen: es soll dasselbe Zeichen bleiben wie ueberall sonst,
+   nur in der Lage, die hier die Aussage traegt. transform-origin mittig, damit es im
+   26px-Knopf nicht wandert.
+   [data-chart="bar"] trifft beide Umschalter-Familien (cc- und tcl-); domain-detail baut
+   seinen mit denselben Klassen. */
+.cc-seg-btn[data-chart="bar"] svg,
+.tcl-seg-btn[data-chart="bar"] svg,
+.up-seg-btn[data-chart="bar"] svg,
+.ubo-seg-btn[data-chart="bar"] svg { transform: rotate(90deg); transform-origin: 50% 50%; }
 .up-seg-btn:hover, .up-seg-btn:hover svg,
 .cc-seg-btn:hover, .cc-seg-btn:hover svg,
 .ubo-seg-btn:hover, .ubo-seg-btn:hover svg,

@@ -425,7 +425,9 @@
    anfuehren, sondern dort sein, wenn man ihn sucht. Die Farbe wechselt dabei wie bisher von der
    Dritt- auf die Primaerfarbe (zwei Zeilen weiter oben), die Deckkraft kommt dazu. */
 .usn-bar .usn-toggle svg {
-  width: 16px; height: 16px; opacity: .8;
+  /* 18px wie die Zeichen der Navigationspunkte darunter (22.09.) -- der Umschalter stand
+     als einziger auf 16 und wirkte daneben zu klein. */
+  width: 18px; height: 18px; opacity: .8;
   transition: opacity var(--usn-t) var(--usn-ease);
 }
 .usn-bar .up-iconbtn.usn-toggle:hover svg { opacity: 1; }
@@ -467,6 +469,11 @@
   height: 36px; border-radius: 12px; background: transparent;
   border: 1px solid var(--vc-border); color: var(--vc-muted);
 }
+/* WEISS im hellen Thema (22.09. angefordert). Transparent nahm den Ton der Leiste an und las
+   sich als ausgegraut statt als Eingabefeld -- die Leiste ist im Hellen #f9f8f9, der Ausloeser
+   soll sich davon abheben wie jedes andere Feld. Im DUNKLEN bleibt er transparent: dort traegt
+   die Leiste ohnehin einen eigenen Ton, und eine helle Flaeche waere ein Fremdkoerper. */
+.usn-bar:not([data-theme="dark"]) .mqa-trigger { background: var(--vc-bg); }
 /* --usn-sel und NICHT --up-sel-bg (21.09.): --up-sel-bg ist #f4f2f4, gemacht fuer eine Zeile in
    einem WEISSEN Menue. Auf der weissen Leiste war das ein Sprung von elf Stufen; auf der jetzt
    getoenten (#f9f8f9) waeren es noch fuenf, und der Hover laege damit deutlich flacher als jeder
@@ -640,11 +647,12 @@
    Beschriftungen aller Zeilen an derselben Stelle beginnen zu lassen. */
 .usn-ic { position: relative; width: 22px; height: 22px; flex: 0 0 22px; color: var(--vc-muted);
   display: inline-flex; align-items: center; justify-content: center; }
-/* 17px, am 22.09. wieder zurueck. Am 07.09. waren sie von 17 auf 16 gegangen; mit dem neuen
-   Satz tragen sie duennere Striche (1.5 statt 1.8) und wirken dadurch kleiner, als sie sind --
-   ein Pixel gleicht das aus. Die SPALTE bleibt bei 22px: an ihr haengen die Markenlogos der
-   angehefteten Zeilen und der Textanfang aller Zeilen, das Zeichen sitzt nur mittig darin. */
-.usn-ic svg { width: 17px; height: 17px; display: block; }
+/* 18px (22.09., zweite Anhebung). Der Weg: 17 -> 16 am 07.09., mit dem neuen Satz zurueck auf
+   17, jetzt 18 -- Hugeicons traegt duennere Striche (1.5 statt 1.8) und wirkt dadurch kleiner
+   als der alte Satz bei gleicher Kantenlaenge. Die SPALTE bleibt bei 22px: an ihr haengen die
+   Markenlogos der angehefteten Zeilen und der Textanfang aller Zeilen, das Zeichen sitzt nur
+   mittig darin. 18 in 22 laesst je 2px Luft. */
+.usn-ic svg { width: 18px; height: 18px; display: block; }
 /* Mira traegt jetzt dasselbe Zeichen wie jeder andere Punkt (blend aus UC.icon). Hier standen
    davor rund 25 Zeilen fuer einen Sonderweg: eine Bilddatei von Bubbles CDN ueber dem Symbol, dazu
    zwei gerechnete Helligkeitsfilter (3.58 hell, 0.714 dunkel) und eine Groessenkorrektur von
