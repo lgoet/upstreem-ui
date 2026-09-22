@@ -8009,17 +8009,38 @@
        Woran endet der Aufbau? An der Ruhe: 600ms ohne eine einzige Mutation. Ein Ereignis dafuer
        gibt es nicht (up-page-ready existiert in diesem Repo nicht, nachgesehen), und eine feste
        Frist waere geraten -- eine langsame Verbindung baut laenger.
-       Was man dafuer in Kauf nimmt: waehrend des Aufbaus kann ein Text bis zu einen halben
-       Takt lang unuebersetzt stehen. Dort baut sich die Seite ohnehin gerade auf; danach
-       blitzt nichts mehr, weil der synchrone Weg zurueck ist. */
+       Was das am 21.09. gekostet hat: waehrend des Aufbaus stand ein Text bis zu einen halben
+       Takt lang unuebersetzt da. Die Annahme, das falle im Aufbau nicht auf, war falsch -- es
+       fiel sofort auf (siehe buendelPlanen weiter unten). Seit dem 22.09. laeuft das Buendel
+       deshalb auf dem naechsten Bildruecklauf statt erst nach dem Takt: gebuendelt wie bisher,
+       aber vor dem Zeichnen. Der Takt bleibt nur noch als Auffangnetz fuer den Fall, dass kein
+       Bild gezeichnet wird. */
     var AUFBAU_STILL = 600, AUFBAU_TAKT = 500;
-    var imAufbau = true, ruheUhr = null, buendelUhr = null, buendel = [];
+    var imAufbau = true, ruheUhr = null, buendelUhr = null, buendelBild = 0, buendel = [];
     function buendelJetzt(){
       if (buendelUhr){ clearTimeout(buendelUhr); buendelUhr = null; }
+      if (buendelBild){ try { cancelAnimationFrame(buendelBild); } catch(e){} buendelBild = 0; }
       if (!buendel) { buendel = []; laufUeber([document]); return; }
       if (!buendel.length) return;
       var z = buendel; buendel = [];
       laufUeber(z);
+    }
+    /* ZWEI Wecker fuer dasselbe Buendel, und der erste, der klingelt, gewinnt (22.09.).
+       Der Takt allein war falsch: gemeldet als "die Sidebar-Texte springen beim Seitenaufbau
+       drei- bis sechsmal zwischen Deutsch und Englisch hin und her". Jeder renderNav der Sidebar
+       schreibt die ENGLISCHEN Beschriftungen ins DOM, und bis zu einen halben Takt spaeter zog
+       die Uebersetzung nach -- also stand Englisch sichtbar da, einmal je Neuzeichnung. Im
+       Prueftand nachgestellt: drei Sprachwechsel, die laengste englische Phase ueber einen Takt.
+       Ein Bildruecklauf laeuft VOR dem Zeichnen des naechsten Bildes. Damit buendelt es weiter
+       (alles, was in einem Bild anfaellt, ist ein Lauf statt vieler -- darum ging es am 21.09.),
+       aber nichts Englisches wird je gezeichnet. Der Takt bleibt als Auffangnetz daneben: in
+       einem verdeckten Tab ruht der Bildruecklauf, und dort gibt es zwar nichts zu sehen, aber
+       das Buendel soll trotzdem abgearbeitet werden. */
+    function buendelPlanen(){
+      if (!buendelUhr) buendelUhr = setTimeout(buendelJetzt, AUFBAU_TAKT);
+      if (!buendelBild && typeof requestAnimationFrame === "function"){
+        buendelBild = requestAnimationFrame(function(){ buendelBild = 0; buendelJetzt(); });
+      }
     }
     function laufUeber(ziele){
       for (var t3 = 0; t3 < ziele.length; t3++){
@@ -8136,7 +8157,7 @@
               else { buendel = null; break; }
             }
           }
-          if (!buendelUhr) buendelUhr = setTimeout(buendelJetzt, AUFBAU_TAKT);
+          buendelPlanen();
         } else {
           laufUeber(ziele);
         }
