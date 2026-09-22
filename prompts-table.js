@@ -2871,10 +2871,7 @@
       /* Der Fehlerfall VOR dem Skelett: endloses Laden sieht aus wie "gleich da", und genau so
          wurde es gemeldet. */
       if (state.groupsTimeout && !state.groupsHasData){
-        elTbody.innerHTML = '<div class="up-empty">' +
-          '<div class="up-empty-h">No groups</div>' +
-          '<div class="up-empty-t">No group data available.</div>' +
-        '</div>';
+        elTbody.innerHTML = UC.leerHtml({ titel: "No groups", text: "No group data available." });
         applyCols();
         if (state.groupsWide && elGrpSidelist) elGrpSidelist.innerHTML = "";
         return;
@@ -2894,14 +2891,17 @@
         /* Same .up-empty-* markup the flat empty state uses — only the wording differs, because
            "no prompts" sends you looking for the wrong problem when the group payload is what is
            missing. */
-        elTbody.innerHTML = '<div class="up-empty">' +
-          '<div class="up-empty-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' +
-            '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg></div>' +
-          '<div class="up-empty-h">No groups</div>' +
-          '<div class="up-empty-t">' + ((state.query || state.brandMentioned)
+        /* Der Zylinder war hier von Hand gezeichnet; er steht jetzt als "database" in der
+           Sammlung. Die Ueberschrift bleibt "No groups" statt des Standards "No matching
+           groups": fehlt die Nutzlast, ist nicht die Suche schuld, und "no prompts" schickt
+           einen ohnehin auf die falsche Faehrte. Deshalb titel von Hand. */
+        elTbody.innerHTML = UC.leerHtml({
+          gefiltert: !!(state.query || state.brandMentioned), titel: "No groups", icon: "database",
+          iconGefiltert: "database", knopf: "",
+          text: (state.query || state.brandMentioned)
             ? "No topic group matches the current search."
-            : "No group data available.") + '</div>' +
-        '</div>';
+            : "No group data available."
+        });
         if (state.groupsWide && elGrpSidelist) elGrpSidelist.innerHTML = "";
         return;
       }

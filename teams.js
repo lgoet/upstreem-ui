@@ -583,19 +583,19 @@
            Antwort ohne Teams. */
         if (state.parseError) return UC.leseFehlerHtml("teams");
         var suche = !!String(state.query || "").trim();
-        return '<div class="up-empty">' +
-          '<div class="up-empty-ic">' + UC.icon(suche ? "search" : "folders", 1.7) + '</div>' +
-          '<div class="up-empty-h">' +
-            (suche ? "No team matches your search"
-                   : (state.hasData ? "You are not a member of any team" : "No teams yet")) +
-          '</div>' +
-          '<div class="up-empty-t">' +
-            (suche ? "Try a shorter search term."
-                   : (state.hasData
-                        ? "Create a team to start tracking a brand."
-                        : "The list has not arrived yet. Reload the page if this stays empty.")) +
-          '</div>' +
-        '</div>';
+        /* Symbol und Markup aus dem Baustein; die Wortwahl bleibt, weil sie hier drei Faelle
+           unterscheidet, die nur diese Liste kennt. Kein Raeum-Knopf -- die Suche steht ueber
+           der Liste und wird dort geleert. Die Strichstaerke des Symbols war hier 1.7 und ist
+           jetzt die 1.6 des Bausteins, wie in jedem anderen Leerzustand. */
+        return UC.leerHtml({
+          gefiltert: suche, icon: "folders", knopf: "",
+          titel: suche ? "No team matches your search"
+               : (state.hasData ? "You are not a member of any team" : "No teams yet"),
+          text: suche ? "Try a shorter search term."
+              : (state.hasData
+                   ? "Create a team to start tracking a brand."
+                   : "The list has not arrived yet. Reload the page if this stays empty.")
+        });
       }
 
       function renderTable() {

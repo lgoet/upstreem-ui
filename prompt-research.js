@@ -74,7 +74,6 @@
     search:      ic('<path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/>' +
                     '<path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/>' +
                     '<circle cx="12" cy="12" r="3"/><path d="m16 16-1.9-1.9"/>'),
-    clock:       ic('<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>'),
     x:           ic('<path d="M18 6 6 18" /> <path d="m6 6 12 12" />'),
     trash:       ic('<path d="M10 11v6" /> <path d="M14 11v6" /> <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /> <path d="M3 6h18" /> <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />'),
     send:        ic('<path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/>'),
@@ -686,9 +685,12 @@
     if (historyCountEl) historyCountEl.textContent = String(previousResearches.length);
     if (!historyList) return;
     if (!previousResearches.length){
-      historyList.innerHTML = '<div class="up-empty"><div class="up-empty-ic">' + ICON.clock + '</div>' +
-        '<div class="up-empty-h">No completed researches yet</div>' +
-        '<div class="up-empty-t">Finished researches show up here so you can reopen them.</div></div>';
+      /* Die Uhr stand als eigene Zeichnung in dieser Datei; dieselben zwei Formen fuehrt die
+         Sammlung als "clock". */
+      historyList.innerHTML = UC.leerHtml({
+        icon: "clock", titel: "No completed researches yet",
+        text: "Finished researches show up here so you can reopen them."
+      });
       return;
     }
     historyList.innerHTML = previousResearches.map(function(item, index){

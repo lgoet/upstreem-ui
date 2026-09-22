@@ -825,15 +825,14 @@
     var letztesBody = null;
     function renderEmptyState(filtered){
       letztesBody = null;
-      elTbody.innerHTML = '<div class="up-empty">' +
-        '<div class="up-empty-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' +
-          '<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>' +
-        '<div class="up-empty-h">' + (filtered ? "No matching domains" : "No domains yet") + '</div>' +
-        '<div class="up-empty-t">' + (filtered
-          ? "Nothing matches the current search and filters."
-          : "Domains appear here once your prompts have been run.") + '</div>' +
-        (filtered ? '<button class="up-empty-btn" type="button" data-clearall>Clear filters</button>' : "") +
-      '</div>';
+      /* Dritte der vier Schwestertabellen am selben Baustein. Die Lupe stand hier als eigene
+         Zeichnung (Kreis r=7 mit Linie) -- prompts-table zeichnete daneben eine mit r=8 und
+         einem Pfad. Jetzt beide aus UC.icon, und der Ruhefall traegt das Zeichen der Tabelle
+         statt einer Lupe, die eine Suche behauptet, die es nicht gab. */
+      elTbody.innerHTML = UC.leerHtml({
+        gefiltert: filtered, was: "domains", icon: "globe",
+        text: filtered ? null : "Domains appear here once your prompts have been run."
+      });
     }
     function renderTable(){
       /* SOFT reload (sort): the result set is the same, just re-ordered — the rows on screen are

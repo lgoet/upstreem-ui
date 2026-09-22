@@ -15466,6 +15466,10 @@
               '<path d="M16.2 4.8c2 2 2.26 5.11.8 7.47"/><path d="M19.1 1.9a9.96 9.96 0 0 1 0 14.1"/>' +
               '<path d="M9.5 18h5"/><path d="m8 22 4-11 4 11"/>',
     clock:    '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+    /* database: der Zylinder. Stand als Handzeichnung in prompts-table ueber dem Leerzustand der
+       Gruppen -- dieselben drei Formen wie hier, nur ausserhalb der Sammlung. */
+    database: '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/>' +
+              '<path d="M3 12A9 3 0 0 0 21 12"/>',
     /* Fuer das Power Dashboard (11./12.09.), alle Lucide, woertlich aus dem vendorten
        lucide-Paket (Version 1.8.0) uebernommen, nicht nachgezeichnet:
          calendar             vor dem Zeitraum in "Overview".

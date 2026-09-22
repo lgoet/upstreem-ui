@@ -57,7 +57,6 @@
        genau diesen Kompass (page-headers/brands-page-header.js, PAGES). Zwei Bilder fuer eine
        Sache waren es vorher. Pfad woertlich von dort uebernommen, nicht nachgezeichnet. */
     radar:  '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="1.8"><circle cx="12" cy="12" r="10" /> <path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z" /></svg>',
-    empty:  '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="1.7"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>',
     /* Feather "box" als neutrales Markenlogo im Erklaerbeispiel. Nichts selbstgezeichnetes und
        nichts, was nach einer echten Firma aussieht -- es steht nur fuer "irgendeine Marke". */
     brand:  '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="1.9"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /> <path d="m3.3 7 8.7 5 8.7-5" /> <path d="M12 22V12" /></svg>'
@@ -478,35 +477,34 @@
         var head = headHtml();
 
         if (!rows.length) {
-          elTable.innerHTML = head +
-            '<div class="up-empty">' +
-              '<div class="up-empty-ic">' + ICON.empty + "</div>" +
-              /* Drei verschiedene Gruende, nichts zu zeigen, und drei verschiedene Texte. Der
-                 dritte ist der wichtigste: solange NIE Daten ankamen, darf hier keine Aussage
-                 ueber das Ergebnis stehen. Vorher stand da "Every brand we could match to a domain
-                 is already tracked" -- ein Befund, den zu dem Zeitpunkt niemand kennt, weil der
-                 Scan noch laeuft oder gar nicht erst angelaufen ist. Ein ausgefallener Aufruf sah
-                 damit genauso aus wie ein sauberes Ergebnis. */
-              /* Vierter Fall, seit der Parse-Fehler nicht mehr als "leer" durchgeht: die Daten
-                 KAMEN an, waren aber unlesbar. Das ist ein Fehler und muss auch so heissen. */
-              '<div class="up-empty-h">' + (state.parseError ? "Could not load brands" :
-                (state.query ? "No brand matches your search" :
-                (state.hasData ? "No untracked brands found" : "No results yet"))) + "</div>" +
-              /* Der Fehlertext sagt, was der Nutzer TUN kann, und sonst nichts. Vorher stand hier
-                 "The data arrived in a form this component could not parse. See the browser
-                 console for details." -- eine Entwicklermeldung im Nutzer-UI: "this component"
-                 ist ein interner Name, und die Konsole liest niemand, den es angeht.
-                 Gleicher Wortlaut wie UC.leseFehlerHtml, damit ueberall dasselbe dasteht. */
-              '<div class="up-empty-t">' + (state.parseError
-                ? "The data could not be read. Please reload the page."
-                : state.query
-                ? "Try a shorter search term."
-                : !state.hasData
-                  ? "The scan has not returned anything yet. Refresh the page if this stays empty."
-                  : (state.matched
-                      ? "Every brand we could match to a domain is already tracked. Turn off Matched Brands to match on names alone."
-                      : "No brand names were found in your AI answers for this period.")) + "</div>" +
-            "</div>";
+          /* Der Lesefehler ist ein FEHLER und kein Leerzustand -- er hat seinen eigenen
+             Baustein. Hier stand sein Wortlaut nachgebaut, mit dem Kommentar "Gleicher Wortlaut
+             wie UC.leseFehlerHtml, damit ueberall dasselbe dasteht": genau das haelt jetzt der
+             Baustein selbst, statt es in dieser Datei nachzupflegen. */
+          if (state.parseError){
+            elTable.innerHTML = head + UC.leseFehlerHtml("brands");
+            applyCols(); syncColsBadge();
+            return;
+          }
+          /* Drei verschiedene Gruende, nichts zu zeigen, und drei verschiedene Texte. Der dritte
+             ist der wichtigste: solange NIE Daten ankamen, darf hier keine Aussage ueber das
+             Ergebnis stehen. Vorher stand da "Every brand we could match to a domain is already
+             tracked" -- ein Befund, den zu dem Zeitpunkt niemand kennt, weil der Scan noch laeuft
+             oder gar nicht erst angelaufen ist. Ein ausgefallener Aufruf sah damit genauso aus
+             wie ein sauberes Ergebnis.
+             Die Lupe kam bisher aus ICON.empty, einer eigenen Zeichnung in dieser Datei -- der
+             dritten desselben Symbols im Repo. Kein Raeum-Knopf: diese Liste hat keinen. */
+          elTable.innerHTML = head + UC.leerHtml({
+            icon: "search", knopf: "",
+            titel: state.query ? "No brand matches your search"
+                 : (state.hasData ? "No untracked brands found" : "No results yet"),
+            text: state.query ? "Try a shorter search term."
+                : (!state.hasData
+                    ? "The scan has not returned anything yet. Refresh the page if this stays empty."
+                    : (state.matched
+                        ? "Every brand we could match to a domain is already tracked. Turn off Matched Brands to match on names alone."
+                        : "No brand names were found in your AI answers for this period."))
+          });
           applyCols(); syncColsBadge();
           return;
         }

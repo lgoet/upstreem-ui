@@ -538,15 +538,12 @@
         Object.keys(state.mentionApplied).some(function(k){ return state.mentionApplied[k]; });
     }
     function emptyHtml(filtered){
-      return '<div class="up-empty">' +
-        '<div class="up-empty-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' +
-          '<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>' +
-        '<div class="up-empty-h">' + (filtered ? "No matching responses" : "No responses yet") + '</div>' +
-        '<div class="up-empty-t">' + (filtered
-          ? "Nothing matches the current search and filters."
-          : "Responses appear here once your prompts have been run.") + '</div>' +
-        (filtered ? '<button class="up-empty-btn" type="button" data-clearall>Clear filters</button>' : "") +
-      '</div>';
+      /* Vierte und letzte der Schwestertabellen -- damit tragen alle vier denselben
+         Leerzustand aus einer Quelle, und die vierte Handzeichnung der Lupe faellt weg. */
+      return UC.leerHtml({
+        gefiltert: filtered, was: "responses", icon: "messageCircle",
+        text: filtered ? null : "Responses appear here once your prompts have been run."
+      });
     }
     /* Wie in prompts-table: derselbe Rumpf wird nicht neu gesetzt. Hier zusaetzlich der
        TRAEGER im Merker, denn diese Tabelle hat zwei -- Karten und Zeilen. Ohne ihn wuerde ein
