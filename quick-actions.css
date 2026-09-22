@@ -311,7 +311,16 @@
 .mqa-results .mqa-group + .mqa-group { margin-top: 9px; }   /* more air between categories */
 /* Etikett-Behandlung aus core (.up-label): 12px / 600 / --vc-third, normale
    Schreibung. Versalien und Sperrung sind am 21.09. aus der ganzen App raus. */
-.mqa-group-head { padding: 6px 10px 4px; font-size: 12px; font-weight: 600; color: var(--vc-third); }
+/* --am-muted-2 und NICHT var(--vc-third): diese Datei ist eigenstaendig, sie kennt core.css
+   nicht und haengt nicht unter .up-root (siehe den Kopf der Datei und die Begruendung an
+   --am-border-strong). --vc-third steht in core an .up-root -- hier war es damit UNAUFLOESBAR,
+   die ganze color-Deklaration ungueltig, und die Ueberschrift erbte. Gemessen in beiden Themen:
+   rgb(0,0,0). Auf Hell sah das aus wie die Primaerfarbe, auf Dunkel wie ein schwarzer Text auf
+   dunklem Grund -- genau so gemeldet, fuer "Domains", "URLs", "Zuletzt gesucht" und jede andere
+   Gruppe, denn sie alle tragen diese eine Klasse.
+   --am-muted-2 ist die lokale Entsprechung der dritten Stufe: #9ca3af hell, #6f6f6f dunkel,
+   gegen #9e9e9e / #808080 in core. */
+.mqa-group-head { padding: 6px 10px 4px; font-size: 12px; font-weight: 600; color: var(--am-muted-2); }
 .mqa-row, .mqa-action {
   display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; border: 0; background: transparent;
   padding: 8px 10px; border-radius: 10px; cursor: pointer; font-family: var(--mqa-font); color: var(--am-text);
@@ -624,8 +633,12 @@
 .mqa-refgroup .mqa-ref-chev, .mqa-actgroup .mqa-ref-chev,
 /* Der Enter-Pfeil gehoert dazu: er erbt sonst die Textfarbe der Zeile und war damit als
    einziges Zeichen dieser beiden Zeilen noch in der Primaerfarbe. */
-.mqa-refgroup .mqa-enter, .mqa-actgroup .mqa-enter,
-.mqa-refgroup .mqa-group-head, .mqa-actgroup .mqa-group-head { color: var(--am-muted); }
+/* Die Gruppenkoepfe sind hier RAUS. Sie standen in dieser Liste, solange ihre Grundregel auf
+   das unaufloesbare --vc-third zeigte und deshalb schwarz erbte: --am-muted war dagegen eine
+   Daempfung. Seit die Grundregel die dritte Stufe traegt, waere --am-muted eine VERSTAERKUNG --
+   diese beiden Koepfe stuenden dann kraeftiger da als alle anderen, also das Gegenteil dessen,
+   wofuer die Regel gebaut wurde. */
+.mqa-refgroup .mqa-enter, .mqa-actgroup .mqa-enter { color: var(--am-muted); }
 .mqa-refgroup .mqa-action.is-active .mqa-primary,
 .mqa-actgroup .mqa-action.is-active .mqa-primary,
 .mqa-refgroup .mqa-action.is-active .mqa-action-ic,
