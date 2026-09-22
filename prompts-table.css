@@ -235,19 +235,20 @@
      ANDEREN. Das ist der ganze Trick: die Leiste schwebt ueber der Seite und war als weisse
      Flaeche auf weisser Seite schwer zu finden -- deshalb lag frueher ein verwaschener Ring
      darum, der jetzt entfallen kann.
-     Die Marken stehen hier ohnehin lokal (die Leiste haengt am <body>), also ist der Tausch ein
-     Tausch der Werte und sonst nichts: jedes Kindelement -- Chips, Suchfeld, Knoepfe, Zaehler --
-     liest weiter dieselben Marken und sitzt damit automatisch richtig auf dem dunklen Grund. */
-  --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-border: #3e3e44;
-  --vc-heading-bg: #232326; --vc-switch-bg: #232326; --vc-third: #808080;
-  --vt-row-hover-solid: #232326;
-  --vc-hover-border: #707070; --up-surface: #232326;
+     WICHTIG dabei: data-theme auf der Leiste nennt ihr EIGENES Thema, nicht das der App (siehe
+     renderBulkBar). Nur so treffen die [data-theme="dark"]-Regeln aus core -- Topic-Chips,
+     Primaerknopf -- den Grund, auf dem sie wirklich liegen. Dieser Block hier gilt also, wenn
+     die Leiste HELL ist, und das ist sie im dunklen Thema der App. */
+  --vc-text: #1f1f1b; --vc-muted: #6b6f78; --vc-border: #dcdbdd;
+  --vc-heading-bg: #f9f8f9; --vc-switch-bg: #f9f8f9; --vc-third: #9e9e9e;
+  --vt-row-hover-solid: #f9f8f9;
+  --vc-hover-border: #6f6f6f; --up-surface: #ffffff;
   /* Der Akzent muss mitdrehen. Sein Standardwert IST die Schriftfarbe des Themas -- also genau
      der Grund dieser Leiste, und ein Primaerknopf darauf waere unsichtbar. Hier steht deshalb
      der Akzent des anderen Themas; eine selbst gewaehlte Akzentfarbe (html[data-accent]) traegt
      das JS weiter nach, siehe akzentSyncen. */
-  --up-accent: #e0e0e0; --up-accent-fg: #1b1b1b; --up-accent-ink: #e0e0e0;
-  --up-switch-off: #444444;
+  --up-accent: #1f1f1b; --up-accent-fg: #ffffff; --up-accent-ink: #1f1f1b;
+  --up-switch-off: #d6d6d4;
   /* Fokus-Tokens gehoeren mit in diese Liste. Die Bar haengt am body, nicht unter .up-root, wo sie
      definiert sind. Fehlen sie, ist var(--up-focus) leer und die :focus-within-Regel des
      Topic-Suchfeldes ist ungueltig -- sie steht dann zwar in der Datei, tut aber nichts. */
@@ -290,7 +291,7 @@
   /* Der Grund ist die SCHRIFTFARBE des Themas, nicht --up-surface. Im Hellen also #1f1f1b,
      im Dunkeln #e0e0e0 (siehe die Dunkel-Regel weiter unten). Kein Rahmen mehr: eine Flaeche,
      die sich so deutlich vom Seitengrund abhebt, braucht keine Kontur. */
-  background: #1f1f1b;
+  background: #e0e0e0;
   border: 0;
   box-shadow: var(--up-e-3, 0 14px 34px rgba(0,0,0,0.14));
   font-family: Geist, Inter, system-ui, -apple-system, sans-serif;
@@ -317,16 +318,19 @@
 }
 @media (prefers-reduced-motion: reduce){ .upt-bulkbar { transition-duration: 1ms; } }
 .upt-bulkbar[data-theme="dark"] {
-  /* Das Gegenstueck: im dunklen Thema traegt die Leiste den HELLEN Grund (#e0e0e0, die
-     Schriftfarbe des dunklen Themas) und darin die helle Palette. Spiegelbild der Regel oben. */
-  --vc-text: #1f1f1b; --vc-muted: #6b6f78; --vc-border: #dcdbdd;
-  --vc-heading-bg: #f9f8f9; --vc-switch-bg: #f9f8f9; --vc-third: #9e9e9e;
-  --vt-row-hover-solid: #f9f8f9;
-  --vc-hover-border: #6f6f6f; --up-surface: #ffffff;
-  --up-accent: #1f1f1b; --up-accent-fg: #ffffff; --up-accent-ink: #1f1f1b;
-  --up-switch-off: #d6d6d4;
-  --up-focus: #4A9EFF; --up-focus-ring: rgba(74,158,255,0.20);
-  background: #e0e0e0;
+  /* Die DUNKLE Leiste -- sie steht im HELLEN Thema der App (data-theme nennt ihr eigenes
+     Thema, siehe oben). Grund #1f1f1b, also die Schriftfarbe des hellen Themas, und darin die
+     dunkle Palette. Spiegelbild der Regel oben. */
+  --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-border: #3e3e44;
+  --vc-heading-bg: #232326; --vc-switch-bg: #232326; --vc-third: #808080;
+  --vt-row-hover-solid: #232326;
+  --vc-hover-border: #707070; --up-surface: #232326;
+  --up-accent: #e0e0e0; --up-accent-fg: #1b1b1b; --up-accent-ink: #e0e0e0;
+  --up-switch-off: #444444;
+  /* Wortgleich aus core.css (dort am dunklen Thema, Zeile ~3660). Hier stand bis zum 22.09. die
+     HELLE Fokusfarbe -- beim Tausch der beiden Paletten mitgewandert und nicht mitgedreht. */
+  --up-focus: #6DB2FF; --up-focus-ring: rgba(109,178,255,0.28);
+  background: #1f1f1b;
   box-shadow: var(--up-e-3, 0 14px 34px rgba(0,0,0,0.6));
 }
 /* Same dim treatment the table itself gets from .up-root.is-reloading (core.css) — this bar lives
@@ -347,15 +351,17 @@
    war damit immer da, auch wenn der Knopf fehlte, und wenn er kam, lief er ueber den Trenner
    hinaus. Jetzt bestimmt der Inhalt die Breite der ganzen Leiste (siehe bulkBreiteSetzen im JS),
    und dieses Segment ist so breit wie das, was drin steht.
-   16px links und rechts NEBEN dem Select-all-Text: 8 aus dem Polster dieses Segments, 8 aus
-   seiner eigenen Marge -- dieselben 16, die der gap zum Zaehler haelt. */
+   12px Polster wie in jedem Werkzeug-Segment -- EIN Rhythmus fuer alle fuenf. Links steht der
+   Zaehler damit 12 von der Aussenkante, rechts endet das Segment 12 vor dem Trenner.
+   16px links und rechts NEBEN dem Select-all-Text, wenn er da ist: links haelt der gap die 16,
+   rechts 12 aus dem Polster plus 4 aus der Marge des Knopfes. */
 .upt-bulkbar-count-seg { flex: 0 0 auto; display: flex; align-items: center;
-  gap: 16px; padding: 0 8px; white-space: nowrap; }
+  gap: 16px; padding: 0 12px; white-space: nowrap; }
 /* Ein Trenner in der Rahmenfarbe des UMGEKEHRTEN Themas -- die steht hier ohnehin an
    --vc-border, weil die ganze Leiste auf der anderen Palette laeuft. */
 .upt-bulkbar-sep { flex: 0 0 1px; width: 1px; background: var(--vc-border); align-self: stretch; }
-/* Ein Werkzeug-Segment: 16px Polster, darin ein 32x32-Knopf, senkrecht mittig. */
-.upt-bulkbar-seg { flex: 0 0 auto; display: flex; align-items: center; padding: 0 8px; }
+/* Ein Werkzeug-Segment: 12px Polster, darin ein 32x32-Knopf, senkrecht mittig. */
+.upt-bulkbar-seg { flex: 0 0 auto; display: flex; align-items: center; padding: 0 12px; }
 .upt-bulkbar-ic {
   width: 32px; height: 32px; flex: 0 0 auto; padding: 0; border: 0; background: transparent;
   border-radius: 8px; cursor: pointer; color: var(--vc-text);
@@ -363,6 +369,9 @@
   transition: background 120ms var(--up-ease), color 120ms var(--up-ease);
 }
 .upt-bulkbar-ic svg { width: 16px; height: 16px; display: block; }
+/* Das Etikett laeuft spitz zu und wirkt dadurch kleiner als Kopie, Ein-Aus und das Kreuz --
+   ein Pixel mehr gleicht das optisch aus, ohne dass es gemessen auffaellt. */
+.upt-bulkbar-ic[data-bulk-topics] svg { width: 17px; height: 17px; }
 .upt-bulkbar-ic:hover { background: var(--vt-row-hover-solid); }
 .upt-bulkbar-ic:disabled { opacity: .4; cursor: default; }
 /* Der offene Topics-Zustand markiert seinen Knopf, wie jeder andere geoeffnete Ausloeser. */
@@ -371,7 +380,7 @@
    ein overflow:hidden inline-block, und ein atomarer Inline-Kasten mit overflow != visible nimmt
    laut Spezifikation seine UNTERE Randkante als Grundlinie statt der Textgrundlinie -- die Zahl
    sass dadurch ein paar Pixel ueber "selected". */
-.upt-bulkbar-count { font-size: 16px; font-weight: 500; color: var(--vc-text); white-space: nowrap;
+.upt-bulkbar-count { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap;
   flex: 0 0 auto; display: inline-flex; align-items: baseline; gap: 5px; }
 /* Nur diese innere Span wird animiert -- siehe syncBulkBarCount(). inline-block und
    overflow:hidden geben ihr eine Transformation und einen Beschnitt; min-width, rechtsbuendig
@@ -384,9 +393,9 @@
   font-family: inherit; font-size: 13px; font-weight: 500; color: var(--vc-muted);
   text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; flex: 0 0 auto; }
 .upt-bulkbar-link:hover { color: var(--vc-text); }
-/* Die zweiten 8px auf der rechten Seite -- zusammen mit dem Polster des Segments die 16, die
-   auch links stehen. */
-.upt-bulkbar-count-seg .upt-bulkbar-link { margin-right: 8px; }
+/* Die fehlenden 4px -- zusammen mit den 12 aus dem Polster die 16, die der gap auch links
+   vom Knopf haelt. */
+.upt-bulkbar-count-seg .upt-bulkbar-link { margin-right: 4px; }
 /* Dasselbe Rot wie .up-topicmodal-delete in core -- EINE Gefahrenfarbe fuer die ganze App.
    In Ruhe neutral wie jedes andere Werkzeug, erst Hover und der scharfgestellte Zustand
    werden rot. */
@@ -415,7 +424,9 @@
 }
 .upt-bulkbar.is-topics .upt-bulkpanel {
   max-height: 340px; opacity: 1;
-  margin-top: var(--upt-sep-gap); padding-top: var(--upt-sep-gap); padding-bottom: 16px;
+  /* 8px weniger Abstand nach oben als das Polster darunter: die Linie sitzt damit direkt
+     unter der Knopfzeile statt frei darunter zu schweben. */
+  margin-top: calc(var(--upt-sep-gap) - 8px); padding-top: var(--upt-sep-gap); padding-bottom: 16px;
   border-top-color: var(--vc-border);
 }
 /* The emoji/color picker for the inline create row needs more room than the usual chip grid —

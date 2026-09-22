@@ -1848,7 +1848,6 @@
   "uo-status-menu",
   "uo-status-opt",
   "uo-tag",
-  "uo-tag-emoji",
   "uo-tag-more",
   "uo-tagmore",
   "uo-tags",
@@ -2576,10 +2575,13 @@
   "upt-bulkbar-count",
   "upt-bulkbar-count-lbl",
   "upt-bulkbar-count-n",
+  "upt-bulkbar-count-seg",
   "upt-bulkbar-delete",
+  "upt-bulkbar-ic",
   "upt-bulkbar-link",
   "upt-bulkbar-row",
-  "upt-bulkbar-x",
+  "upt-bulkbar-seg",
+  "upt-bulkbar-sep",
   "upt-bulkpanel",
   "upt-check",
   "upt-colorblob",
@@ -3112,7 +3114,7 @@
   "globals": 187,
   "payloadkeys": 102,
   "dataattrs": 252,
-  "klassen": 2226,
+  "klassen": 2228,
   "keyframes": 66
  }
 }

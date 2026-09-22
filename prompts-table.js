@@ -1524,10 +1524,23 @@
     function bulkBreiteSetzen(){
       if (!elBulk) return;
       if (elBulk.classList.contains("is-topics")){ elBulk.style.width = ""; return; }
-      var alt = elBulk.style.width;
-      elBulk.style.width = "max-content";
-      var ziel = elBulk.offsetWidth;
-      elBulk.style.width = alt || "";
+      var zeile = elBulk.querySelector(".upt-bulkbar-row");
+      if (!zeile) return;
+      /* Gemessen wird die ZEILE, nicht die Leiste. Die Leiste enthaelt auch den Topics-Bereich,
+         und dessen Chipliste misst sich auf max-content als EINE lange Zeile -- beim Zuklappen
+         war die Leiste dadurch ueber den ganzen Bildschirm gezogen (22.09. gemeldet). Der
+         Bereich ist dann zwar eingeklappt (max-height 0, overflow hidden), seine BREITE zaehlt
+         aber weiter.
+         max-content ist eine innere Groesse: sie haengt nicht am Elternteil, die Zeile darf
+         beim Messen also ruhig breiter sein als die Leiste. */
+      var altZeile = zeile.style.width, altLeiste = elBulk.style.width;
+      zeile.style.width = "max-content";
+      /* AUFRUNDEN und nicht offsetWidth: der rundet ab, und eine Zeile, die 489,6px braucht,
+         bekaeme 489 -- die fehlenden 0,6px holt sich das Layout dann aus dem Polster, und links
+         vom Zaehler wurde es sichtbar enger, sobald "Select all" dazukam. Genau so gemeldet. */
+      var ziel = Math.ceil(zeile.getBoundingClientRect().width);
+      zeile.style.width = altZeile || "";
+      elBulk.style.width = altLeiste || "";
       void elBulk.offsetWidth;
       elBulk.style.width = ziel + "px";
     }
@@ -1536,7 +1549,12 @@
       var on = n > 0;
       var bar = on ? ensureBulkBar() : elBulk;
       if (!bar) return;
-      bar.setAttribute("data-theme", isDark ? "dark" : "light");
+      /* UMGEKEHRT zum Thema der App, und das ist der Punkt: die Leiste laeuft auf der Palette
+         des ANDEREN Themas, also ist sie im hellen Thema eine DUNKLE Flaeche. core faerbt
+         Topic-Chips, Primaerknoepfe und anderes ueber [data-theme="dark"] -- steht hier das
+         Thema der App, bekommen die Kinder die Behandlung des falschen Grundes. Genau so
+         gemeldet: Chips und Apply im falschen Thema. (22.09.) */
+      bar.setAttribute("data-theme", isDark ? "light" : "dark");
       /* Same treatment as the table's own soft-reload dim, but this bar lives on document.body
          (outside .up-root), so it can't just piggyback on .up-root.is-reloading — it needs its
          own class. Nothing on it should be clickable while the table is mid-load; a bulk action

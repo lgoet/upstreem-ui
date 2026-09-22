@@ -1706,6 +1706,13 @@
        own scoped copy -- which is exactly how this chip went uncovered in the grouping modal/popup
        before: only the bulk-topics bar had ever added one. */
     [data-theme="dark"] .up-topicchip { background: color-mix(in srgb, var(--ust-tag-color, #6b7280) 22%, transparent); color: #e0e0e0; }
+    /* Die is-on-Stufe MUSS hier wiederholt werden. [data-theme="dark"] .up-topicchip wiegt 0-2-1
+       und schlaegt damit .up-topicchip.is-on (0-2-0) -- die Zeile darueber faerbt also BEIDE
+       Zustaende gleich, und im dunklen Thema war ein gewaehlter Chip vom ungewaehlten nur noch am
+       Haken zu unterscheiden. Am 22.09. an der Bulk-Leiste aufgefallen, gilt aber ueberall.
+       22 -> 34 statt 10 -> 20 wie im hellen: auf dunklem Grund traegt eine Tonung weniger weit,
+       der Sockel liegt deshalb schon hoeher und der Schritt ist entsprechend groesser. */
+    [data-theme="dark"] .up-topicchip.is-on { background: color-mix(in srgb, var(--ust-tag-color, #6b7280) 34%, transparent); }
     /* ONE chip grid for the whole app -- 8px row+column gap (flex-wrap's own `gap` gives both for
        free). Was missing a base rule entirely: every consumer either duplicated this declaration
        itself (prompts-table's .upt-gm-list) or, like the Edit Topics popup, simply had no gap at
