@@ -2919,9 +2919,12 @@
      darauf -- das hielt nur, weil das alte Zeichen spiegelsymmetrisch war. Jetzt liegen
      panelLeft und panelRight nebeneinander, und hier faellt die Entscheidung, welches gilt.
      Diese Regel ist der Grundfall: die Leiste steht RECHTS. */
+  /* 18px und Deckkraft .8 -- Wert fuer Wert der Umschalter der Hauptleiste (sidebar.css:
+     .usn-bar .usn-toggle svg). Am 22.09. angesagt: "genau so gross und genau gleiche Farbe wie
+     das in der Hauptsidebar". Die Farbe liegt am Knopf (--vc-muted, eine Regel weiter oben),
+     die Groesse hier; beide standen auf 16 gegen 18. */
   .am-prev-panel .am-side-toggle svg,
-  .am-mini-toggle svg { width: 16px; height: 16px; display: block; }
-  .am-prev-panel .am-side-toggle svg { opacity: .8; }
+  .am-mini-toggle svg { width: 18px; height: 18px; display: block; opacity: .8; }
   .am-side-l { display: none; }
   .am-side-r { display: block; }
   #ask-mira.is-side-left .am-side-l { display: block; }
