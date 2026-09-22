@@ -63,7 +63,7 @@
   | "Create this with AI"        | bubble_fn_opportunity_create_with_ai       | {"opportunity_id":"…"} |
   | Source link / Open-URL icon  | bubble_fn_opportunity_open_url             | {"opportunity_id":"…","lead_url":"https://…","lead_title":"…","lead_domain":"…"} |
   | Ignore icon in the drawer    | bubble_fn_opportunity_ignore               | {"opportunity_id":"…"} |
-  | Mentioned-competitor click   | bubble_fn_opportunity_competitor_click     | ENTFAELLT seit 22.09., feuert nicht mehr -- {"opportunity_id":"…","competitor_name":"…","company_id":"…","favicon_url":"…"} |
+  | Mentioned-competitor click   | bubble_fn_opportunity_competitor_click     | {"opportunity_id":"…","competitor_name":"…","company_id":"…","favicon_url":"…"} |
 
   Regex for a Bubble "extract" step, same convention as every other component:
     (?<="opportunity_id":")[^"]*      (?<="status":")[^"]*        (?<="status_key":")[^"]*

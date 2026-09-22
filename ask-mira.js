@@ -1537,9 +1537,6 @@
     var gapNeg  = Number(item.gap) < 0;
     var arrowUp   = '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M7 7h10v10" /> <path d="M7 17 17 7" /></svg>';
     var arrowDown = '<svg width="24" height="24" viewBox="0 0 24 24"><path d="m7 7 10 10" /> <path d="M17 7v10H7" /></svg>';
-    var comps = asArrayLoose(item.mentioned_competitors);
-    var compTotal = Number(item.competitor_count); if (!isFinite(compTotal)) compTotal = comps.length;
-    var compMore = compTotal - comps.length;
     var statusPill = item.status ? statusControlHtml(item) : '';
 
     var meta = '<div class="uo-meta-grid">'+
@@ -1552,22 +1549,11 @@
     var topics = asArrayLoose(item.topics);
     var topicsHtml = topics.length ? '<div class="uo-tags">'+_oppTagPills(topics)+'</div>' : '';
 
-    /* Gedeckelt auf drei, wie in opportunities.js. Die Chips brechen um, also waechst die Liste
-       bei vielen Wettbewerbern in immer neue Reihen und schiebt die aufgeklappte Karte im Chat
-       ueber ihren Rand hinaus -- genau der abgeschnittene Zustand, den man dann sieht. Versteckt
-       wird per Klasse statt per slice, damit der Zaehler den Rest ohne Neuaufbau nachreichen
-       kann. Klick liegt auf elMessages, siehe dort. */
-    var vorne = 3;
-    var lokal = Math.max(0, comps.length - vorne);
-    var gesamtMehr = lokal + Math.max(0, compMore);
-    var chip = !gesamtMehr ? ''
-      : lokal
-        ? '<button type="button" class="uo-comp-more" data-comp-expand data-comp-rest="'+Math.max(0, compMore)+'">+'+gesamtMehr+' more</button>'
-        : '<span class="uo-comp-more">+'+gesamtMehr+' more</span>';
-
-    var compList = comps.length ? '<div class="uo-sec">Mentioned competitors</div><div class="uo-comp-list'+(lokal ? ' is-capped' : '')+'">'+
-      comps.map(function(c){ c = c || {}; return '<span class="uo-comp">'+_oppFav(c.favicon_url, c.name)+'<span class="uo-comp-name">'+esc(c.name||'')+'</span></span>'; }).join('')+
-      chip+'</div>' : '';
+    /* Der Abschnitt "Mentioned competitors" ist am 22.09. NUR HIER entfallen, auf Wunsch:
+       in der Opportunities-Seite selbst bleibt er. Mira baut die aufgeklappte Karte naemlich
+       selbst und hatte eine eigene Kopie davon -- entfernt ist die Kopie, nicht das Original.
+       item.mentioned_competitors wird in dieser Datei nicht mehr gelesen; die Nutzlast darf es
+       weiter mitbringen. */
 
     return '<div class="uo-card am-opp-card">'+
       '<div class="uo-card-top">'+
@@ -1581,7 +1567,6 @@
       '</div>'+
       topicsHtml+
       '<div class="uo-sec">Details</div>'+meta+
-      compList+
     '</div>';
   }
   function oppRowHtml(item){   // compact list-mode row (1:1 with the Opportunities list view), the default collapsed view
@@ -1900,23 +1885,6 @@
   }
   // click -> disable + loading, hand off to Bubble (adds team_id/user_id and calls the RPC)
   elMessages.addEventListener('click', function(e){
-    /* Wettbewerber-Zaehler aufklappen. Steht vor dem Aktions-Button, weil beide in derselben
-       Karte liegen und ein Zaehler nie eine Opportunity anlegen soll. */
-    var mehr = e.target.closest ? e.target.closest('[data-comp-expand]') : null;
-    if (mehr){
-      var liste = mehr.closest('.uo-comp-list');
-      if (liste) liste.classList.remove('is-capped');
-      var rest = Number(mehr.getAttribute('data-comp-rest')) || 0;
-      if (!rest){ mehr.remove(); return; }
-      /* Was der Server gar nicht mitgeschickt hat, bleibt als reiner Text stehen -- den Zaehler
-         ersatzlos zu entfernen wuerde die Liste als vollstaendig ausgeben. */
-      var bleibt = document.createElement('span');
-      bleibt.className = 'uo-comp-more';
-      bleibt.textContent = '+' + rest + ' more';
-      mehr.parentNode.replaceChild(bleibt, mehr);
-      return;
-    }
-
     var btn = e.target.closest ? e.target.closest('.am-oppc-btn') : null;
     if (!btn || btn.disabled) return;
     var aid = btn.getAttribute('data-mira-action-id') || '';
