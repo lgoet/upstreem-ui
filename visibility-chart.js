@@ -579,14 +579,14 @@
       var allSelected = list.length > 0 && selCount === list.length;
       var showReset = !isAtInitialSelection();
       var showDeselectAll = atMax || allSelected;
-      var head = '<div class="up-filter-head"><span class="up-filter-title">Companies</span>' +
+      var head = '<div class="up-filter-head"><span class="up-filter-title">Brands</span>' +
         '<span class="vot-filter-head-actions">' +
           (showReset ? '<button class="up-pop-action" type="button" data-companies-reset>Reset</button>' : '') +
           (showDeselectAll ? '<button class="up-pop-action" type="button" data-companies-clear>Deselect all</button>' : '') +
           '<span class="vot-filter-count">' + selCount + '/' + Math.min(list.length, MAX_FILTER_SEL) + '</span>' +
         '</span></div>';
       var search = '<div class="up-ment-searchwrap">' +
-          '<input class="up-ment-search" type="text" placeholder="Search companies..." autocomplete="off" spellcheck="false" value="' + esc(filterQuery) + '"/>' +
+          '<input class="up-ment-search" type="text" placeholder="Search brands..." autocomplete="off" spellcheck="false" value="' + esc(filterQuery) + '"/>' +
           '<button class="up-ment-searchclear" type="button" aria-label="Clear company search">' +
             /* UC.icon statt eines eigenen Kreuzes: dieselbe Form wie jedes andere x der App,
                Strichstaerke 2.2 wie bisher -- das Zeichen sitzt in einem Feld und ist dort

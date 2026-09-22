@@ -1661,7 +1661,6 @@
     "No types": "Keine Typen",
     "No series": "Keine Reihen",
     "No companies": "Keine Unternehmen",
-    "Companies": "Unternehmen",
     "Clear All": "Alle löschen",
     /* "Or" FEHLTE, "And" stand da -- daher der halb uebersetzte Umschalter im Topics-Dropdown
        (07.09. gemeldet). Beide Beschriftungen stehen im Markup des Filters, der Sprachlauf findet

@@ -1190,7 +1190,11 @@
     .up-root[data-theme="dark"] .up-filter-dim-btn.is-active { background: var(--vc-switch-pill); border-color: var(--vc-switch-border); }
     /* Fixed height so the row doesn't grow when the Reset button appears — otherwise the whole
        menu jumps a few pixels the moment you tick the first item. */
-    .up-filter-head { flex: 0 0 auto; height: 26px; display: flex; align-items: center; justify-content: space-between; padding: 0 9px; margin-bottom: 6px; }
+    /* KEINE waagerechte Polsterung. Sie stand bei 9px, und die Ueberschrift sass damit 9px
+       rechts von allem anderen im Menue: Suchfeld, Zeilen und deren Hoverflaeche beginnen an
+       der Polsterkante des Menues (8px). Gemessen im Firmen-Dropdown: Titel 18px, Suchfeld
+       und Zeilen 9px. Gemeldet am 22.09. mit Bild. */
+    .up-filter-head { flex: 0 0 auto; height: 26px; display: flex; align-items: center; justify-content: space-between; padding: 0; margin-bottom: 6px; }
     /* Werte siehe .up-label weiter unten -- hier stand dieselbe Kombination ein zweites Mal. */
     .up-filter-reset { border: 0; background: transparent; color: var(--vc-muted); font-family: inherit; font-size: 11px; font-weight: 500; cursor: pointer; padding: 2px 4px; border-radius: 6px; }
     .up-filter-reset:hover { color: var(--vc-text); }
@@ -1852,7 +1856,10 @@
     .up-blockhead,
     .up-filter-title,
     .up-topicmodal-label { font-size: 12px; font-weight: 600; color: var(--vc-third); }
-    .up-pop-head { padding: 4px 10px 8px; }
+    /* Waagerecht 0, aus demselben Grund wie .up-filter-head: die Ueberschrift steht buendig
+       mit der Kante der Zeilen darunter (deren Hoverflaeche beginnt an der Polsterkante des
+       Menues), nicht eingerueckt gegen sie. */
+    .up-pop-head { padding: 4px 0 8px; }
     /* ---------- Blockueberschrift (12.09., aus sidebar.css hierher gezogen) ----------
        Die kleine Versalzeile UEBER einem Inhaltsblock -- in der Hauptseitenleiste die Zeile vor
        jedem Menuebereich (.usn-head), im Power Dashboard vor "Recent chats" und "Overview". Nicht
