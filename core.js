@@ -15357,7 +15357,8 @@
        manches gleich und zeichnet anderes (GlobeIcon ist ein Globus auf einem Standfuss,
        FolderLibraryIcon ein Kasten). Verglichen wurde Paar fuer Paar in _h_icons_hg.html.
        Neun Zeichen sind ausdruecklich benannt worden und folgen keinem Namensgleichklang:
-       libraryBig -> SquareLibrary, settings2 -> FilterVertical, donut -> PieChart,
+       libraryBig -> BookOpen01 (bis 22.09. SquareLibrary), settings2 -> FilterVertical,
+       donut -> PieChart,
        chartBarDec -> ChartNoAxesColumnDecreasing, calendar -> Calendar04,
        listFilterPlus -> ListFilterPlus, combine -> Combine, externalLink -> Link01,
        tags -> CollectionsBookmark.
@@ -15376,16 +15377,13 @@
     camera:   '<path d="M12.6974 3.5H11.303C10.5884 3.5 10.2311 3.5 9.91067 3.612C9.71499 3.68039 9.53113 3.77879 9.36568 3.90367C9.09474 4.10816 8.89655 4.40544 8.50018 5L8.50017 5.00001C8.29717 5.30453 7.99794 5.75337 7.87867 5.87871C7.58314 6.18927 7.19563 6.39666 6.77329 6.47029C6.60284 6.5 6.41985 6.5 6.05387 6.5C5.07379 6.5 4.58376 6.5 4.18307 6.61342C3.18074 6.89716 2.39734 7.68055 2.1136 8.68289C2.00018 9.08357 2.00018 9.57361 2.00018 10.5537V14.5C2.00018 17.3284 2.00018 18.7426 2.87886 19.6213C3.75754 20.5 5.17176 20.5 8.00018 20.5H16.0002C18.8286 20.5 20.2428 20.5 21.1215 19.6213C22.0002 18.7426 22.0002 17.3284 22.0002 14.5V10.5537C22.0002 9.57361 22.0002 9.08357 21.8868 8.68289C21.603 7.68055 20.8196 6.89716 19.8173 6.61342C19.4166 6.5 18.9266 6.5 17.9465 6.5C17.5805 6.5 17.3975 6.5 17.2271 6.47029C16.8047 6.39666 16.4172 6.18927 16.1217 5.87871C16.0024 5.75336 15.7032 5.30451 15.5002 5C15.1038 4.40544 14.9056 4.10816 14.6347 3.90367C14.4692 3.77879 14.2854 3.68039 14.0897 3.612C13.7693 3.5 13.412 3.5 12.6974 3.5Z"/>' +
             '<path d="M16.0002 13C16.0002 15.2091 14.2093 17 12.0002 17C9.79104 17 8.00018 15.2091 8.00018 13C8.00018 10.7909 9.79104 9 12.0002 9C14.2093 9 16.0002 10.7909 16.0002 13Z"/>' +
             '<path d="M19.1252 9.5H19.0002M19.2502 9.5C19.2502 9.63807 19.1383 9.75 19.0002 9.75C18.8621 9.75 18.7502 9.63807 18.7502 9.5C18.7502 9.36193 18.8621 9.25 19.0002 9.25C19.1383 9.25 19.2502 9.36193 19.2502 9.5Z"/>',
-    /* tags und libraryBig: woertlich aus lucide-static wie alle anderen. tags stand bisher als
-       Inline-SVG im Prompts-Seitenkopf und wird jetzt auch vom Onboarding gebraucht -- zweiter
-       Verbraucher, also hierher. libraryBig ist das Zeichen des Begleitkastens im Onboarding. */
+    /* tags stand bisher als Inline-SVG im Prompts-Seitenkopf und wird jetzt auch vom
+       Onboarding gebraucht -- zweiter Verbraucher, also hierher. */
     tags:     '<path d="M3 17.9808V12.7075C3 9.07416 3 7.25748 4.09835 6.12874C5.1967 5 6.96447 5 10.5 5C14.0355 5 15.8033 5 16.9017 6.12874C18 7.25748 18 9.07416 18 12.7075V17.9808C18 20.2867 18 21.4396 17.2755 21.8523C15.8724 22.6514 13.2405 19.9852 11.9906 19.1824C11.2657 18.7168 10.9033 18.484 10.5 18.484C10.0967 18.484 9.73425 18.7168 9.00938 19.1824C7.7595 19.9852 5.12763 22.6514 3.72454 21.8523C3 21.4396 3 20.2867 3 17.9808Z"/>' +
           '<path d="M9 2H11C15.714 2 18.0711 2 19.5355 3.46447C21 4.92893 21 7.28595 21 12V18"/>',
-    libraryBig: '<path d="M13.9916 9.71545L18.8212 8.40196"/>' +
-                '<path d="M13.3322 7.21514C13.0947 6.31531 12.9759 5.86539 13.0806 5.47836C13.1488 5.22667 13.2813 4.99708 13.4652 4.81224C13.748 4.528 14.197 4.40588 15.0951 4.16165C16.0053 3.9141 16.4604 3.79033 16.8515 3.89515C17.1058 3.96329 17.3377 4.09715 17.5238 4.28329C17.8102 4.56961 17.9306 5.02563 18.1714 5.93765L21.0349 16.7849C21.2725 17.6847 21.3913 18.1346 21.2865 18.5217C21.2184 18.7734 21.0859 19.0029 20.902 19.1878C20.6192 19.472 20.1701 19.5941 19.2721 19.8384C18.3619 20.0859 17.9068 20.2097 17.5156 20.1049C17.2614 20.0367 17.0295 19.9029 16.8433 19.7167C16.557 19.4304 16.4366 18.9744 16.1958 18.0624L13.3322 7.21514Z"/>' +
-                '<path d="M2.66736 6.38C2.66736 5.44539 2.66736 4.97808 2.86832 4.63C2.99997 4.40198 3.18933 4.21262 3.41736 4.08097C3.76543 3.88 4.23274 3.88 5.16736 3.88C6.10197 3.88 6.56928 3.88 6.91736 4.08097C7.14539 4.21262 7.33474 4.40198 7.4664 4.63C7.66736 4.97808 7.66736 5.44539 7.66736 6.38V17.6199C7.66736 18.5545 7.66736 19.0218 7.4664 19.3699C7.33474 19.5979 7.14539 19.7873 6.91736 19.9189C6.56928 20.1199 6.10197 20.1199 5.16736 20.1199C4.23274 20.1199 3.76543 20.1199 3.41736 19.9189C3.18933 19.7873 2.99997 19.5979 2.86832 19.3699C2.66736 19.0218 2.66736 18.5545 2.66736 17.6199V6.38Z"/>' +
-                '<path d="M2.66736 8.95508H7.66736"/><path d="M7.66736 8.95508H12.6674"/>' +
-                '<path d="M7.66736 6.38C7.66736 5.44539 7.66736 4.97808 7.86832 4.63C7.99997 4.40198 8.18933 4.21262 8.41736 4.08097C8.76543 3.88 9.23274 3.88 10.1674 3.88C11.102 3.88 11.5693 3.88 11.9174 4.08097C12.1454 4.21262 12.3347 4.40198 12.4664 4.63C12.6674 4.97808 12.6674 5.44539 12.6674 6.38V17.6199C12.6674 18.5545 12.6674 19.0218 12.4664 19.3699C12.3347 19.5979 12.1454 19.7873 11.9174 19.9189C11.5693 20.1199 11.102 20.1199 10.1674 20.1199C9.23274 20.1199 8.76543 20.1199 8.41736 19.9189C8.18933 19.7873 7.99997 19.5979 7.86832 19.3699C7.66736 19.0218 7.66736 18.5545 7.66736 17.6199V6.38Z"/>',
+    /* libraryBig steht NICHT hier, sondern unten als Verweis auf bookOpen (Suche:
+       "DOCS IST BOOKOPEN01"). Eine zweite Kopie derselben Zeichnung waere genau die Stelle,
+       die beim naechsten Wechsel stehen bleibt. */
     /* Lucide scan-square. Zeichen des Knopfes "Look for new Opportunities" im
        Opportunities-Seitenkopf -- vier Ecken und ein Feld darin, also "durchsuchen", und nicht
        das Zielkreuz, das dort vorher stand (drei Kreise, gelesen als "zielen"). Woertlich aus
@@ -15910,6 +15908,14 @@
      sicher, und sicher ist hier besser: es sind die am haeufigsten sichtbaren Zeichen der App. */
   TOOLBAR_SEL[".up-thsort-up"]   = ICON_PATHS.chevronUp;
   TOOLBAR_SEL[".up-thsort-down"] = ICON_PATHS.chevronDown;
+  /* DOCS IST BOOKOPEN01 (22.09.). libraryBig zeigt auf DIESELBE Zeichnung wie bookOpen statt
+     eine zweite Kopie des Pfades zu fuehren -- zwei Namen, ein Bild, eine Quelle. Der Schluessel
+     bleibt, weil zwei Aufrufer ihn tragen (das Onboarding zweimal) und weil "libraryBig" dort
+     sagt, WOFUER das Zeichen steht, nicht wie es aussieht. */
+  ICON_PATHS.libraryBig = ICON_PATHS.bookOpen;
+  /* Der Docs-Knopf im Dashboard-Kopf. Er steht im Markup der Seitenkopf-Komponente, die nicht
+     am Pin haengt -- also ueber den Stempel. */
+  TOOLBAR_SEL[".dph-docsbtn"] = ICON_PATHS.bookOpen;
   TOOLBAR_ICONS["up-cols-btn"] = ICON_PATHS.settings;
   ["ubo-cols-btn", "uo-settings-btn"].forEach(function(k){
     if (Object.prototype.hasOwnProperty.call(TOOLBAR_ICONS, k)) TOOLBAR_ICONS[k] = ICON_PATHS.settings;
