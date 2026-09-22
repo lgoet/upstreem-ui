@@ -197,7 +197,12 @@
     font-size: 13px; font-weight: 500; cursor: pointer; flex: 0 0 auto;
     transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
   }
-  .am-ghost-btn:hover { background: var(--am-soft); border-color: #6f6f6f; color: var(--am-text); }
+  /* Die Hover-Kante kommt aus --vc-hover-border (#6f6f6f hell, #707070 dunkel) -- so steht
+     es in dieser Datei seit jeher an .am-scroll-bottom und .am-ask-sel. Die uebrigen
+     fuenfzehn Stellen trugen das helle Literal, und dafuer standen daneben fuenf eigene
+     Dunkel-Regeln. Die sind jetzt weg: die Marke traegt beide Werte. Der Rueckfall bleibt,
+     weil Miras Dialoge am <body> haengen koennen. (22.09.) */
+  .am-ghost-btn:hover { background: var(--am-soft); border-color: var(--vc-hover-border, #6f6f6f); color: var(--am-text); }
   .am-ghost-btn .am-ic { width: 15px; height: 15px; }
   /* Das Zeichen im Knopf ist die Seitenleiste aus core (panelLeft), GESPIEGELT: die Liste der
      Chats faehrt von rechts herein, die Leiste der App von links. Dasselbe Zeichen fuer dieselbe
@@ -679,7 +684,7 @@
     /* alias the page's --uo-* tokens onto Mira's --am-* tokens so the card looks identical in light & dark */
     --uo-card: var(--am-card); --uo-text: var(--am-text); --uo-muted: var(--am-muted); --uo-muted-2: var(--am-muted-2);
     --uo-border: var(--am-border); --uo-border-strong: var(--am-border-strong); --uo-soft: var(--am-soft); --uo-soft-2: var(--am-soft-2);
-    --uo-primary: var(--am-primary); --uo-hover-bg: var(--am-soft); --uo-hover-border: #6f6f6f;
+    --uo-primary: var(--am-primary); --uo-hover-bg: var(--am-soft); --uo-hover-border: var(--vc-hover-border, #6f6f6f);
     --uo-pot-a: var(--am-border-strong); --uo-pot-b: var(--am-text); --uo-shadow-sm: var(--am-shadow-sm); --uo-shadow: var(--am-shadow);
     display: flex; flex-direction: column; gap: 12px; margin-top: 18px;
   }
@@ -792,7 +797,7 @@
     font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer;
     display: inline-flex; align-items: center; gap: 7px; transition: background 120ms ease, border-color 120ms ease;
   }
-  #ask-mira .am-opp-showmore:hover { background: var(--am-soft); border-color: #6f6f6f; }
+  #ask-mira .am-opp-showmore:hover { background: var(--am-soft); border-color: var(--vc-hover-border, #6f6f6f); }
 
   /* action buttons (Create / Confirm) — primary button matching the Opportunities CTA */
   #ask-mira .am-msg-buttons { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
@@ -806,7 +811,7 @@
   #ask-mira .am-cta:hover { opacity: 0.88; }
   #ask-mira .am-cta:active { transform: translateY(1px); }
   #ask-mira .am-cta.is-secondary { background: var(--am-card); color: var(--am-text); border-color: var(--am-border-strong); box-shadow: none; }
-  #ask-mira .am-cta.is-secondary:hover { background: var(--am-soft); border-color: #6f6f6f; opacity: 1; }
+  #ask-mira .am-cta.is-secondary:hover { background: var(--am-soft); border-color: var(--vc-hover-border, #6f6f6f); opacity: 1; }
 
   /* Thinking / loading */
   /* Waehrend des Ladens steht das Arbeitsprotokoll an genau der Stelle, an der es spaeter ueber der
@@ -1094,8 +1099,8 @@
     color: var(--am-text); font-size: 14px; font-weight: 500; line-height: 1.4;
     transition: border-color 120ms ease, background 120ms ease, box-shadow 120ms ease;
   }
-  .am-suggest-card:hover { border-color: #6f6f6f; background: #f9f8f9; }
-  #ask-mira[data-theme="dark"] .am-suggest-card:hover { border-color: #707070; background: #232326; }
+  .am-suggest-card:hover { border-color: var(--vc-hover-border, #6f6f6f); background: #f9f8f9; }
+  #ask-mira[data-theme="dark"] .am-suggest-card:hover { background: #232326; }
   .am-suggest-card > span:nth-child(2) { min-width: 0; flex: 1 1 auto; }
   .am-suggest-ic {
     width: 22px; height: 22px; flex: 0 0 auto;
@@ -1208,7 +1213,7 @@
     font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer; flex: 0 0 auto;
     transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
   }
-  .am-gallery-back:hover { background: var(--am-soft); border-color: #6f6f6f; color: var(--am-text); }
+  .am-gallery-back:hover { background: var(--am-soft); border-color: var(--vc-hover-border, #6f6f6f); color: var(--am-text); }
   .am-gallery-back svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   /* Der Zurueck-Knopf traegt in JEDER Kategorie kein Wort mehr, also ist er quadratisch: 24x24,
      kein Polster, kein Zwischenraum. Radius 8 statt 9 -- auf 24px Kante wirkt 9 fast rund.
@@ -1246,11 +1251,11 @@
     color: var(--am-text); font-family: inherit; font-size: 13px; font-weight: 500;
     transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
   }
-  .am-rep-range:hover { background: var(--am-soft); border-color: #6f6f6f; }
+  .am-rep-range:hover { background: var(--am-soft); border-color: var(--vc-hover-border, #6f6f6f); }
   .am-rep-range-wrap.is-open .am-rep-range,
-  .am-rep-range-wrap.is-open .am-rep-range:hover { background: var(--am-soft); border-color: #6f6f6f; color: var(--am-text); box-shadow: none; }
+  .am-rep-range-wrap.is-open .am-rep-range:hover { background: var(--am-soft); border-color: var(--vc-hover-border, #6f6f6f); color: var(--am-text); box-shadow: none; }
   #ask-mira[data-theme="dark"] .am-rep-range-wrap.is-open .am-rep-range,
-  #ask-mira[data-theme="dark"] .am-rep-range-wrap.is-open .am-rep-range:hover { background: var(--am-soft); border-color: #707070; }
+  #ask-mira[data-theme="dark"] .am-rep-range-wrap.is-open .am-rep-range:hover { background: var(--am-soft); }
 
   /* ---------- DIE BEIDEN DROPDOWNS IM REPORTING-KOPF TRAGEN KEINE FLAECHE (20.09.) ----------
      Gemeldet: "im Darkmode die Topics und Last x days Dropdowns: ohne Background, wie alle
@@ -1376,7 +1381,7 @@
   .am-rep-card.is-editable .am-rep-edit { opacity: 1; pointer-events: auto; }
   .am-rep-card.is-editable .am-rep-go { opacity: 0; pointer-events: none; }
   #ask-mira[data-theme="dark"] .am-rep-edit { background: #232326; border-color: #28282c; }
-  #ask-mira[data-theme="dark"] .am-rep-edit:hover { color: #ececec; border-color: #707070; background: #353638; }
+  #ask-mira[data-theme="dark"] .am-rep-edit:hover { color: #ececec; background: #353638; }
   /* dark mode: report cards without background, like the category cards */
   /* Die zwei dunklen Sonderzeilen fuer die Reportkarte sind weg: --am-bg und
      --vt-row-hover-solid drehen sich mit dem Thema, und #2a2a2a war deckend, aber zu hell --
@@ -1524,7 +1529,7 @@
   /* model selector (right side) — matches the standard ghost-button trigger */
   .am-model { position: relative; flex: 0 0 auto; }
   .am-model-btn { display: inline-flex; align-items: center; gap: 9px; height: 40px; padding: 0 11px 0 14px; border: 1px solid var(--am-border); border-radius: 11px; background: var(--am-card); color: var(--am-muted); font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; transition: background 120ms ease, border-color 120ms ease, color 120ms ease; }
-  .am-model-btn:hover, .am-model.is-open .am-model-btn { background: var(--am-soft); border-color: #6f6f6f; color: var(--am-text); }
+  .am-model-btn:hover, .am-model.is-open .am-model-btn { background: var(--am-soft); border-color: var(--vc-hover-border, #6f6f6f); color: var(--am-text); }
   .am-model-ic { width: 20px; height: 20px; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; color: inherit; }
   .am-model-ic svg { width: 20px; height: 20px; display: block; }
   .am-model-name { letter-spacing: -0.01em; }
@@ -2970,8 +2975,8 @@
     display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
     transition: background 120ms ease, border-color 120ms ease;
   }
-  .am-settings-btn:hover { background: var(--am-soft); border-color: #6f6f6f; }
-  .am-settings-btn.is-open { background: var(--am-soft); border-color: #6f6f6f; }
+  .am-settings-btn:hover { background: var(--am-soft); border-color: var(--vc-hover-border, #6f6f6f); }
+  .am-settings-btn.is-open { background: var(--am-soft); border-color: var(--vc-hover-border, #6f6f6f); }
   .am-settings-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .am-hl-panel {
     margin: 0 16px; border: 1px solid transparent; border-radius: 12px; box-sizing: border-box;
@@ -2994,12 +2999,12 @@
     display: flex; align-items: center; justify-content: space-between; gap: 10px;
     transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
   }
-  .am-dd-trigger:hover { border-color: #6f6f6f; background: var(--am-soft); }
+  .am-dd-trigger:hover { border-color: var(--vc-hover-border, #6f6f6f); background: var(--am-soft); }
   .am-dd.is-open .am-dd-trigger,
-  .am-dd.is-open .am-dd-trigger:hover { border-color: #6f6f6f; background: var(--am-card); box-shadow: none; }
-  #ask-mira[data-theme="dark"] .am-dd-trigger:hover { border-color: #707070; background: #232326; }
+  .am-dd.is-open .am-dd-trigger:hover { border-color: var(--vc-hover-border, #6f6f6f); background: var(--am-card); box-shadow: none; }
+  #ask-mira[data-theme="dark"] .am-dd-trigger:hover { background: #232326; }
   #ask-mira[data-theme="dark"] .am-dd.is-open .am-dd-trigger,
-  #ask-mira[data-theme="dark"] .am-dd.is-open .am-dd-trigger:hover { border-color: #707070; background: var(--am-card); box-shadow: none; }
+  #ask-mira[data-theme="dark"] .am-dd.is-open .am-dd-trigger:hover { background: var(--am-card); box-shadow: none; }
   .am-dd-value { display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
   .am-dd-chev { width: 16px; height: 16px; flex: 0 0 auto; color: #6b7280; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform 120ms ease; }
   .am-dd-menu {
@@ -3026,7 +3031,7 @@
   #ask-mira[data-theme="dark"] .am-dd-opt:hover { background: #232326; }
   #ask-mira[data-theme="dark"] .am-dd-opt.is-selected { background: #252525; }
   #ask-mira[data-theme="dark"] .am-dd-opt.is-selected .am-dd-check { background: #e0e0e0; border-color: #e0e0e0; color: #1f1f1b; }
-  .am-newchat:hover { background: var(--am-soft); border-color: #6f6f6f; }
+  .am-newchat:hover { background: var(--am-soft); border-color: var(--vc-hover-border, #6f6f6f); }
   #ask-mira .am-newchat .am-ic { width: 14px; height: 14px; }
   .am-prev-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 6px 10px 16px; display: flex; flex-direction: column; gap: 2px; }
   /* "Show all 42" / "Show less" unter einem Projekt. Kein eigenes Bauteil: es ist dieselbe Zeile
@@ -3376,7 +3381,7 @@
     display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
     transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
   }
-  .am-ct-back:hover { background: var(--am-soft); color: var(--am-text); border-color: #6f6f6f; }
+  .am-ct-back:hover { background: var(--am-soft); color: var(--am-text); border-color: var(--vc-hover-border, #6f6f6f); }
   .am-ct-back svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .am-ct-name {
     display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%;
@@ -3414,7 +3419,7 @@
     display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: var(--am-muted);
     transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
   }
-  .am-ct-mini:hover { background: var(--am-soft); color: var(--am-text); border-color: #6f6f6f; }
+  .am-ct-mini:hover { background: var(--am-soft); color: var(--am-text); border-color: var(--vc-hover-border, #6f6f6f); }
   .am-ct-mini svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .am-chat-titlebar.is-editing .am-ct-name, .am-chat-titlebar.is-editing .am-ct-chev { display: none; }
   .am-chat-titlebar.is-editing .am-ct-input, .am-chat-titlebar.is-editing .am-ct-edit-actions { display: inline-flex; }
