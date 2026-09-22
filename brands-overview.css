@@ -44,15 +44,7 @@
 .ubo-status-tag { font-size: 14px; font-weight: 500; color: var(--vc-muted); margin-right: 6px; }
 .ubo-status-tag:empty { display: none; }
 
-.ubo-iconbtn {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 32px; height: 32px; border: 0; border-radius: 8px;
-  background: transparent; color: #6f6f6f; cursor: pointer; padding: 0; flex: 0 0 auto; position: relative;
-}
-.up-root[data-theme="dark"] .ubo-iconbtn { color: #a0a0a0; }
-.ubo-iconbtn:hover, .up-root[data-theme="dark"] .ubo-iconbtn:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
-.ubo-iconbtn svg { width: 16px; height: 16px; display: block; }
-
+.up-root[data-theme="dark"] 
 .ubo-box {
   border: 1px solid var(--vc-border); background: var(--vc-bg); border-radius: 16px;
   overflow: hidden; display: flex; flex-direction: column;

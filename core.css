@@ -735,17 +735,44 @@
     .up-root.is-tools-off .up-toolgroup { transition: none; }
     .up-root.is-tools-off .up-toolhost { padding: 0; margin-top: 0; margin-bottom: 0; }
 
-    .up-iconbtn {
+    /* ---- DER ZEICHENKNOPF, und seit dem 22.09. mit einer LEISEN FASSUNG ------------------
+       Fuenf Komponenten hatten diesen Knopf nachgebaut: .ubo-iconbtn, .vot-iconbtn,
+       .tcd-iconbtn, .combo-iconbtn, .upt-kpi-eye -- jeweils dieselben acht Angaben, dazu je
+       eine eigene Dunkel- und SVG-Regel. Vier davon trugen eine BEGRUENDUNG im Kommentar,
+       warum sie das Bauteil nicht benutzen: sein :hover legt eine Flaeche unter das Zeichen,
+       und diese Knoepfe wollen nur die Farbe wechseln. Die Begruendung war richtig -- aber
+       sie beschreibt eine VARIANTE, keinen Grund fuer fuenf Kopien. Dieselbe Erklaerung stand
+       viermal in vier Dateien.
+       Jetzt: die Geometrie steht EINMAL hier, und der Unterschied heisst .is-quiet. Die fuenf
+       Klassennamen stehen in den Selektorlisten mit, damit kein Markup in fuenf Komponenten
+       angefasst werden muss; neuer Code schreibt .up-iconbtn bzw. .up-iconbtn.is-quiet.
+       .ubo-iconbtn war die einzige BYTEGLEICHE Kopie -- inklusive Hover mit Flaeche; sie
+       braucht die Variante nicht und haengt an der lauten Fassung.
+       (Die Farbe #6f6f6f steht hier weiter als Literal. Sie gehoert in ein Token, aber das
+       ist die Farbrunde und nicht diese.) */
+    .up-iconbtn,
+    .ubo-iconbtn, .vot-iconbtn, .tcd-iconbtn, .combo-iconbtn, .upt-kpi-eye {
       display: inline-flex; align-items: center; justify-content: center;
       width: 32px; height: 32px; border: 0; border-radius: 8px;
       background: transparent; color: #6f6f6f; cursor: pointer; padding: 0; flex: 0 0 auto; position: relative;
     }
-    .up-root[data-theme="dark"] .up-iconbtn { color: #a0a0a0; }
+    .up-root[data-theme="dark"] :is(.up-iconbtn,
+      .ubo-iconbtn, .vot-iconbtn, .tcd-iconbtn, .combo-iconbtn, .upt-kpi-eye) { color: #a0a0a0; }
     /* the dark base rule above is more specific than .up-iconbtn:hover, so the hover colour
        needs its own dark rule or it never turns primary in dark mode. */
-    .up-root[data-theme="dark"] .up-iconbtn:hover { color: var(--vc-text); }
-    .up-iconbtn:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
-    .up-iconbtn svg { width: 16px; height: 16px; display: block; }
+    .up-root[data-theme="dark"] :is(.up-iconbtn,
+      .ubo-iconbtn, .vot-iconbtn, .tcd-iconbtn, .combo-iconbtn, .upt-kpi-eye):hover { color: var(--vc-text); }
+    /* LAUT: Farbe und Flaeche. Der Normalfall -- ein Knopf in einer Werkzeugleiste. */
+    .up-iconbtn:not(.is-quiet):hover,
+    .ubo-iconbtn:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
+    /* LEISE: nur die Farbe. Fuer Knoepfe, die in einer Kopfzeile neben einem Titel sitzen --
+       dort zieht eine Hover-Flaeche die Zeile optisch auf. */
+    .up-iconbtn.is-quiet:hover,
+    .vot-iconbtn:hover, .tcd-iconbtn:hover, .combo-iconbtn:hover, .upt-kpi-eye:hover {
+      color: var(--vc-text); background: transparent; }
+    :is(.up-iconbtn,
+      .ubo-iconbtn, .vot-iconbtn, .tcd-iconbtn, .combo-iconbtn, .upt-kpi-eye) svg {
+      width: 16px; height: 16px; display: block; }
 
     /* ---------- der LEISE Trigger: derselbe Knopf wie .up-iconbtn, nur mit Beschriftung --------
        core unterscheidet weiter unten schon zwei Sorten Trigger: einen BESCHRIFTETEN mit Rahmen

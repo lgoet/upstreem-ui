@@ -1173,11 +1173,9 @@
    .up-iconbtn: dessen :hover legt einen Hintergrund unter das Icon, den diese Knoepfe nie
    hatten -- es aendert sich nur die Farbe. Die Begruendung steht schon am Kopf von
    citations-combo-chart.css; hier ist derselbe Knopf an derselben Stelle. */
-.upt-kpi-eye {
-  display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
-  width: 32px; height: 32px; margin: -6px -6px -6px 0; padding: 0;
-  border: 0; border-radius: 8px; background: transparent; color: var(--vc-muted); cursor: pointer;
-}
+/* Aussehen kommt seit dem 22.09. aus core (Zeichenknopf, leise Fassung). Hier bleibt nur der
+   negative Aussenabstand -- der ist wirklich oertlich, siehe die Begruendung darunter. */
+.upt-kpi-eye { margin: -6px -6px -6px 0; }
 /* Negativer Aussenabstand: die Kopfzeile ist nur so hoch wie ihr Titel (siehe oben), ein 32px
    hoher Knopf wuerde sie also aufziehen und die 16px Polster oben brechen. Rechts ebenso, damit
    das Icon optisch auf der Kante des Polsters sitzt und nicht 6px eingerueckt. */

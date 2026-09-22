@@ -47,16 +47,7 @@
 .tcd-panel-body { flex: 1 1 auto; min-height: 0; padding: 16px; position: relative; display: flex; flex-direction: column; transition: opacity 200ms ease; }
 
 /* ---------- icon buttons (32x32) — local, see file header for why ---------- */
-.tcd-iconbtn {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 32px; height: 32px; border: 0; border-radius: 8px;
-  background: transparent; color: #6f6f6f; cursor: pointer; padding: 0; flex: 0 0 auto; position: relative;
-}
-.up-root[data-theme="dark"] .tcd-iconbtn { color: #a0a0a0; }
-.tcd-iconbtn:hover { color: var(--vc-text); }
-.up-root[data-theme="dark"] .tcd-iconbtn:hover { color: var(--vc-text); }
-.tcd-iconbtn svg { width: 16px; height: 16px; display: block; }
-
+.up-root[data-theme="dark"] .up-root[data-theme="dark"] 
 /* dark button tooltip (own implementation — see file header) */
 
 /* Go-To: primary-font-color bg */
