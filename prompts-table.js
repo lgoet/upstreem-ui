@@ -1463,13 +1463,59 @@
 
        --up-accent-ink kommt mit: Charts in der Leiste gibt es heute nicht, aber wer eines
        einbaut, faende sonst dieselbe Luecke ein zweites Mal. */
+    var AKZENT_MARKEN = ["--up-accent", "--up-accent-fg", "--up-accent-ink"];
+    /* DIE EINE Stelle, die die Umkehrung ausspricht. Die Leiste laeuft auf der Palette des
+       ANDEREN Themas -- im hellen Thema der App ist sie eine dunkle Flaeche. Wer das Thema der
+       Leiste braucht (data-theme, Akzent), fragt hier und rechnet es nicht selbst nach.
+       Aus isDark und nicht aus dem Attribut: akzentSyncen laeuft auch vor dem ersten
+       renderBulkBar (aus ensureBulkBar) und beim Themenwechsel davor -- das Attribut waere an
+       beiden Stellen noch das vorherige. */
+    function leistenThema(){ return isDark ? "light" : "dark"; }
+    /* Eine unsichtbare .up-root am body, nur um core zu FRAGEN, welcher Akzent zu einem Thema
+       gehoert. Die Leiste selbst ist keine .up-root, die Akzentregeln (html[data-accent] .up-root,
+       plus eine eigene Fassung je Thema) treffen sie also nie -- und die Tabelle daneben kann
+       nicht antworten, weil sie im ANDEREN Thema steht als die Leiste. */
+    function akzentFuer(thema){
+      /* Wird angelegt, gelesen und WIEDER ENTFERNT. Eine dauerhaft im Dokument stehende
+         .up-root taucht in jedem querySelectorAll(".up-root") auf -- unter anderem in der
+         Themen-Wache von core -- und das ist ein Nebenwirkungsrisiko fuer einen reinen
+         Nachschlagevorgang. Die Funktion laeuft nur beim Anlegen der Leiste und beim
+         Themenwechsel, ein Umbruch pro Aufruf faellt nicht ins Gewicht.
+         data-theme steht hier AUSDRUECKLICH: stampTheme in core fuellt nur, wo das Attribut
+         fehlt, fasst eine ausdruecklich gesetzte Probe also nicht an. */
+      var probe = document.createElement("div");
+      probe.className = "up-root";
+      probe.setAttribute("data-theme", thema);
+      probe.setAttribute("aria-hidden", "true");
+      probe.style.cssText = "position:fixed;left:-9999px;top:0;width:0;height:0;" +
+        "overflow:hidden;pointer-events:none";
+      document.body.appendChild(probe);
+      var aus = null;
+      try {
+        var cs = getComputedStyle(probe);
+        aus = {};
+        AKZENT_MARKEN.forEach(function(name){ aus[name] = String(cs.getPropertyValue(name) || "").trim(); });
+      } catch (e) { aus = null; }
+      if (probe.parentNode) probe.parentNode.removeChild(probe);
+      return aus;
+    }
+    /* Der Akzent der Leiste folgte bisher BLIND dem der Tabelle -- und das war falsch, sobald
+       gar keiner eingestellt ist: ohne html[data-accent] IST der Akzent die Schriftfarbe des
+       Themas, im hellen Thema also #1f1f1b. Genau das ist der Grund der (dunklen) Leiste, und
+       der Apply-Knopf verschwand darin. Am 22.09. gemeldet.
+       Richtig ist: ohne eigene Wahl gelten die Werte aus der Palette der Leiste (siehe
+       prompts-table.css) -- hier also NICHTS setzen. Ist eine Farbe gewaehlt, gilt die fuer die
+       ganze App, aber in der Fassung fuer das Thema der LEISTE: core haelt zu jedem Akzent eine
+       eigene Stufe je Thema (indigo dunkel #7C8AF0 statt #5E6AD2), und die Leiste laeuft auf dem
+       anderen Thema als die Seite. */
     function akzentSyncen(){
-      if (!elBulk || !root) return;
-      var cs;
-      try { cs = getComputedStyle(root); } catch (e) { return; }
-      ["--up-accent", "--up-accent-fg", "--up-accent-ink"].forEach(function(name){
-        var wert = String(cs.getPropertyValue(name) || "").trim();
-        if (wert) elBulk.style.setProperty(name, wert);
+      if (!elBulk) return;
+      AKZENT_MARKEN.forEach(function(name){ elBulk.style.removeProperty(name); });
+      if (!document.documentElement.getAttribute("data-accent")) return;
+      var werte = akzentFuer(leistenThema());
+      if (!werte) return;
+      AKZENT_MARKEN.forEach(function(name){
+        if (werte[name]) elBulk.style.setProperty(name, werte[name]);
       });
     }
     /* Patches just the "N selected" text (slide + fade, same technique as the topic count) when
@@ -1521,9 +1567,45 @@
        MIT offenen Topics gilt weiter die feste Breite aus der CSS: dort wickelt die Chipliste um,
        und eine inhaltsgetriebene Breite wuerde alle Chips auf EINER Zeile messen -- genau daran
        ist die erste Fassung dieser Leiste gescheitert, siehe den Kommentar an .upt-bulkbar. */
+    /* WACHSEN GEHT SOFORT, SCHRUMPFEN DARF LAUFEN (22.09.).
+       Die Leiste animiert ihre Breite (transition: width 200ms). Beim SCHRUMPFEN ist das
+       harmlos: der Inhalt ist in dem Moment schon schmaler, der Grund laeuft ihm nur nach.
+       Beim WACHSEN ist es ein Fehler -- der Inhalt steht sofort in voller Breite da, der Grund
+       zieht 200ms lang hinterher, und was hinten ueberhaengt, steht neben der Leiste statt
+       darauf. Betroffen ist immer das LETZTE Segment, also das Kreuz: gemessen ragte es 93px
+       heraus, sobald "Select all N prompts" auftauchte und die Leiste von 399 auf 492 wuchs.
+       Genau so gemeldet ("das x icon button segment verschwindet").
+       Bleibt die Animation irgendwo stehen -- verdeckter Tab, ein zweiter Schreibvorgang
+       mittendrin -- ist der Zustand nicht mehr voruebergehend, sondern bleibt. */
+    function breiteSchreiben(wert){
+      var jetzt = 0;
+      try { jetzt = elBulk.getBoundingClientRect().width; } catch(e){}
+      var altUeb = elBulk.style.transition;
+      elBulk.style.transition = "none";
+      elBulk.style.width = wert;
+      var neuBreite = 0;
+      try { neuBreite = elBulk.getBoundingClientRect().width; } catch(e){}
+      if (neuBreite > jetzt + 0.5){
+        /* Gewachsen -- so bleibt es, ohne Uebergang. Die Marke erst im naechsten Takt
+           zurueckgeben, sonst faengt der Browser den Wechsel doch noch als Uebergang ein. */
+        elBulk.style.transition = "";
+        void elBulk.offsetWidth;
+        if (altUeb) elBulk.style.transition = altUeb;
+        return;
+      }
+      /* Geschrumpft (oder gleich geblieben): zurueck auf den Ausgangswert, Uebergang wieder
+         anschalten, dann das Ziel setzen -- so laeuft die Bewegung wie bisher. */
+      elBulk.style.width = jetzt ? (jetzt + "px") : "";
+      void elBulk.offsetWidth;
+      elBulk.style.transition = altUeb || "";
+      void elBulk.offsetWidth;
+      elBulk.style.width = wert;
+    }
     function bulkBreiteSetzen(){
       if (!elBulk) return;
-      if (elBulk.classList.contains("is-topics")){ elBulk.style.width = ""; return; }
+      /* Offen gilt die feste Breite aus der CSS (792px) -- und das ist immer ein Wachsen:
+         zugeklappt ist die Leiste inhaltsbreit und bleibt weit darunter. */
+      if (elBulk.classList.contains("is-topics")){ breiteSchreiben(""); return; }
       var zeile = elBulk.querySelector(".upt-bulkbar-row");
       if (!zeile) return;
       /* Gemessen wird die ZEILE, nicht die Leiste. Die Leiste enthaelt auch den Topics-Bereich,
@@ -1541,8 +1623,7 @@
       var ziel = Math.ceil(zeile.getBoundingClientRect().width);
       zeile.style.width = altZeile || "";
       elBulk.style.width = altLeiste || "";
-      void elBulk.offsetWidth;
-      elBulk.style.width = ziel + "px";
+      breiteSchreiben(ziel + "px");
     }
     function renderBulkBar(){
       var n = bulkCount();
@@ -1554,7 +1635,7 @@
          Topic-Chips, Primaerknoepfe und anderes ueber [data-theme="dark"] -- steht hier das
          Thema der App, bekommen die Kinder die Behandlung des falschen Grundes. Genau so
          gemeldet: Chips und Apply im falschen Thema. (22.09.) */
-      bar.setAttribute("data-theme", isDark ? "light" : "dark");
+      bar.setAttribute("data-theme", leistenThema());
       /* Same treatment as the table's own soft-reload dim, but this bar lives on document.body
          (outside .up-root), so it can't just piggyback on .up-root.is-reloading — it needs its
          own class. Nothing on it should be clickable while the table is mid-load; a bulk action

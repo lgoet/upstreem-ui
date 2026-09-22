@@ -558,6 +558,7 @@
  ],
  "dataattrs": [
   "data-acc-key",
+  "data-accent",
   "data-act",
   "data-action",
   "data-alias",
@@ -3113,7 +3114,7 @@
   "fnattrs": 103,
   "globals": 187,
   "payloadkeys": 102,
-  "dataattrs": 252,
+  "dataattrs": 253,
   "klassen": 2228,
   "keyframes": 66
  }

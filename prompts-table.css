@@ -370,12 +370,17 @@
 }
 .upt-bulkbar-ic svg { width: 16px; height: 16px; display: block; }
 /* Das Etikett laeuft spitz zu und wirkt dadurch kleiner als Kopie, Ein-Aus und das Kreuz --
-   ein Pixel mehr gleicht das optisch aus, ohne dass es gemessen auffaellt. */
-.upt-bulkbar-ic[data-bulk-topics] svg { width: 17px; height: 17px; }
+   zwei Pixel mehr gleichen das optisch aus. 16 -> 17 war am 22.09. noch zu wenig. */
+.upt-bulkbar-ic[data-bulk-topics] svg { width: 18px; height: 18px; }
 .upt-bulkbar-ic:hover { background: var(--vt-row-hover-solid); }
 .upt-bulkbar-ic:disabled { opacity: .4; cursor: default; }
 /* Der offene Topics-Zustand markiert seinen Knopf, wie jeder andere geoeffnete Ausloeser. */
 .upt-bulkbar.is-topics [data-bulk-topics] { background: var(--vt-row-hover-solid); }
+/* Offen ist die Leiste 792px breit (feste Breite, damit die Chipliste umbricht) -- die Knopfzeile
+   braucht davon nur gut die Haelfte, und der Rest stand bisher als Leerraum RECHTS. Der Zaehler
+   schiebt die vier Werkzeuge deshalb an die rechte Kante: er bleibt links, wo er auch zugeklappt
+   steht, und die Werkzeuge sitzen unter dem rechten Rand des Topics-Bereichs. */
+.upt-bulkbar.is-topics .upt-bulkbar-count-seg { margin-right: auto; }
 /* inline-flex + align-items:baseline statt eines einfachen span: die animierte Zahl darunter ist
    ein overflow:hidden inline-block, und ein atomarer Inline-Kasten mit overflow != visible nimmt
    laut Spezifikation seine UNTERE Randkante als Grundlinie statt der Textgrundlinie -- die Zahl
@@ -424,9 +429,11 @@
 }
 .upt-bulkbar.is-topics .upt-bulkpanel {
   max-height: 340px; opacity: 1;
-  /* 8px weniger Abstand nach oben als das Polster darunter: die Linie sitzt damit direkt
-     unter der Knopfzeile statt frei darunter zu schweben. */
-  margin-top: calc(var(--upt-sep-gap) - 8px); padding-top: var(--upt-sep-gap); padding-bottom: 16px;
+  /* KEIN Abstand nach oben. Die senkrechten Trenner der Knopfzeile laufen ueber deren volle
+     48px; jeder Abstand hier setzt die waagerechte Linie tiefer, und genau die Luecke dazwischen
+     war gemeldet (zuletzt 4px). Buendig heisst 0 -- das Polster nach unten traegt den Abstand
+     zum Inhalt allein. */
+  margin-top: 0; padding-top: var(--upt-sep-gap); padding-bottom: 16px;
   border-top-color: var(--vc-border);
 }
 /* The emoji/color picker for the inline create row needs more room than the usual chip grid —
