@@ -812,6 +812,7 @@
   "data-ziel"
  ],
  "klassen": [
+  "am-",
   "am-act-btn",
   "am-act-l",
   "am-act-r",
@@ -3118,7 +3119,7 @@
   "globals": 187,
   "payloadkeys": 102,
   "dataattrs": 253,
-  "klassen": 2231,
+  "klassen": 2232,
   "keyframes": 66
  }
 }

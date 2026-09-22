@@ -240,7 +240,7 @@
         '<button type="button" class="up-iconbtn utb-domain" data-utb-domain hidden ' +
           'data-tip="' + esc(UC.t("Go to parent domain")) + '" ' +
           'aria-label="' + esc(UC.t("Go to parent domain")) + '">' +
-          UC.icon("globe", 2) + '</button>' +
+          UC.icon("domain", 2) + '</button>' +
         /* Nur bei einer KI-Antwort, und links vom Pin (so angefordert): der Weg zurueck zum
            Prompt, der sie erzeugt hat. Dasselbe zap wie im Prompts-Seitenkopf und wie vor dem
            Namen einer Prompt-Zeile -- damit ist ohne Beschriftung zu sehen, wohin es geht. */

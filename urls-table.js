@@ -406,7 +406,7 @@
          vorher aus einer eigenen Handzeichnung (r=7, Kreis und Linie) -- die Schwestertabelle
          zeichnete dieselbe Lupe mit r=8 und einem Pfad. */
       elTbody.innerHTML = UC.leerHtml({
-        gefiltert: filtered, was: "URLs", icon: "globe",
+        gefiltert: filtered, was: "URLs", icon: "domain",
         text: filtered ? null : "URLs appear here once your prompts have been run."
       });
     }

@@ -830,7 +830,7 @@
          einem Pfad. Jetzt beide aus UC.icon, und der Ruhefall traegt das Zeichen der Tabelle
          statt einer Lupe, die eine Suche behauptet, die es nicht gab. */
       elTbody.innerHTML = UC.leerHtml({
-        gefiltert: filtered, was: "domains", icon: "globe",
+        gefiltert: filtered, was: "domains", icon: "domain",
         text: filtered ? null : "Domains appear here once your prompts have been run."
       });
     }
