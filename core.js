@@ -7680,10 +7680,48 @@
      eingehaengten Teilbaum -- und Bubble haengt ganze Seitenbereiche auf einmal ein, geparkte
      Ansichten mittendrin. Im Prueftand war die geparkte Ansicht danach vollstaendig uebersetzt:
      240 von 240 Texten, also gar keine Ersparnis. */
+  /* ---- MESSUNG DES SPRACHLAUFS, ausgeschaltet ----------------------------------------------
+     Das Flimmern beim Seitenaufbau ("die Sidebar-Texte springen zwischen DE und US") liess sich
+     im Prueftand nicht mehr nachstellen, nachdem das Buendel auf den Bildruecklauf gelegt wurde
+     -- beim Nutzer trat es weiter auf. Raten hat dreimal nichts gebracht, also misst es sich
+     jetzt dort, wo es passiert.
+     EINSCHALTEN: localStorage.setItem("up_diag_sprache","1") und neu laden.
+     AUSLESEN:    copy(JSON.stringify(window.__upSprachLog))
+     AUSSCHALTEN: localStorage.removeItem("up_diag_sprache")
+     Ohne die Marke kostet das einen Wahrheitswert je Lauf und schreibt nichts -- §5 (keine
+     Debug-Ausgaben in der ausgelieferten App) bleibt gewahrt, es gibt keine Konsolenzeile. */
+  var DIAG_SPR = false;
+  try { DIAG_SPR = window.localStorage.getItem("up_diag_sprache") === "1"; } catch(e){}
+  if (DIAG_SPR){
+    try {
+      window.__upSprachLog = [];
+      /* Jede Aenderung eines Textes in der Leiste mitschreiben -- mit Zeitpunkt, damit sichtbar
+         wird, WIE LANGE Englisch stand. */
+      var diagSeen = {};
+      new MutationObserver(function(){
+        var el = document.querySelector(".usn-head-lbl, .usn-lbl");
+        if (!el) return;
+        var t = el.textContent.trim();
+        if (diagSeen.letzt === t) return;
+        diagSeen.letzt = t;
+        window.__upSprachLog.push({ ms: Math.round(performance.now()), was: "text", wert: t });
+      }).observe(document.documentElement, { subtree: true, childList: true, characterData: true });
+    } catch(e){}
+  }
   function spracheLauf(scope){
     var start = (scope && scope.querySelectorAll) ? scope : document.body;
     try { document.documentElement.setAttribute("data-up-locale", getPref("locale") || "en"); } catch(e){}
     var bereiche = sichtbareBereiche(start);
+    if (DIAG_SPR){
+      try {
+        window.__upSprachLog.push({
+          ms: Math.round(performance.now()), was: "lauf",
+          ziel: (start === document.body ? "body" : (start.className || start.tagName || "?")).toString().slice(0, 40),
+          bereiche: bereiche.length,            /* 0 = uebersprungen, nichts uebersetzt */
+          imAufbau: (typeof window.__upImAufbau === "function" ? window.__upImAufbau() : null)
+        });
+      } catch(e){}
+    }
     for (var b = 0; b < bereiche.length; b++) spracheImAst(bereiche[b]);
   }
   function spracheImAst(scope){
@@ -8026,6 +8064,8 @@
        deshalb auf dem naechsten Bildruecklauf statt erst nach dem Takt: gebuendelt wie bisher,
        aber vor dem Zeichnen. Der Takt bleibt nur noch als Auffangnetz fuer den Fall, dass kein
        Bild gezeichnet wird. */
+    /* Fuer die Messung oben lesbar machen, ohne die Variable nach aussen zu stellen. */
+    window.__upImAufbau = function(){ return imAufbau; };
     var AUFBAU_STILL = 600, AUFBAU_TAKT = 500;
     var imAufbau = true, ruheUhr = null, buendelUhr = null, buendelBild = 0, buendel = [];
     function buendelJetzt(){

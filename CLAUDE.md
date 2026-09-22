@@ -324,6 +324,23 @@ Kein Fix gilt als fertig, bevor er im lokalen Harness (`_h_*.html`, `python3 -m 
 
 Vor jedem Commit zusätzlich `.contract_snapshot.py` / `.contract_diff.py`: **0 Entfernungen.**
 
+### Löschen ist keine Mustersuche (22.09., drei Fehler an einem Tag)
+
+Ein Löschbereich, dessen **Anfang oder Ende ein Textmuster bestimmt**, löscht früher oder später
+etwas anderes mit. Alle drei Fälle vom 22.09. waren dieselbe Sorte:
+
+| Was ich tat | Was wegging |
+|---|---|
+| Regex `\.klasse \{[^}]*\}` | traf mitten in einer Zeile, ließ `.up-root[data-theme="dark"]` als Präfix stehen — vier Dateien gingen in den Dark-Mode-Zweig (`b6cf87b`) |
+| Schnitt von `var comps` bis zum Ende des Ausdrucks | nahm `kpis` und `meta` mit, die Karte warf `kpis is not defined` |
+| Zeilen entfernen, die `uo-comp` enthalten | zog eine Zeile **aus einem Kommentar** heraus, das `*/` blieb verwaist stehen |
+
+**Regel:** Entweder ein **exakter, vollständiger Textblock** als Anker (`s.count(alt) == 1`,
+sonst Abbruch) oder ein Zeilenbereich, dessen **beide Grenzen** vorher von Hand gelesen wurden.
+Nie ein Muster, das über mehrere Regeln oder in Kommentare hineinlaufen kann. Danach immer
+`.scan_comments.py` und eine Syntaxprobe — bei JS **im Browser gegen `new Function`**, nicht an
+der Klammerzahl: die täuscht, weil Klammern in Zeichenketten mitzählen.
+
 ---
 
 ## 4. Nach jedem Commit, unaufgefordert
