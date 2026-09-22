@@ -3741,7 +3741,7 @@
 }
 
 .up-topicmodal-foot { display: flex; align-items: center; gap: 10px; }
-.up-topicmodal-delete { height: 34px; padding: 0 14px; border-radius: 9px; border: 1px solid var(--vc-border);
+.up-topicmodal-delete { height: 32px; padding: 0 14px; border-radius: 9px; border: 1px solid var(--vc-border);
   background: transparent; color: var(--vc-muted); font: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer; }
 .up-topicmodal-delete:hover { border-color: #b0200c; color: #b0200c; }
 .up-topicmodal-delete.is-armed { border-color: #b0200c; background: #b0200c; color: #fff; }

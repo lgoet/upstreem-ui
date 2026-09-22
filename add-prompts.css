@@ -121,7 +121,7 @@
 .uap-droptext b { font-weight: 600; color: var(--vc-text); }
 
 .uap-tmpl {
-  margin-top: 10px; height: 30px; padding: 0 10px 0 8px;
+  margin-top: 10px; height: 32px; padding: 0 10px 0 8px;
   display: inline-flex; align-items: center; gap: 6px;
   border: 1px solid var(--vc-border); border-radius: 9px; background: transparent;
   color: var(--vc-muted); font: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
@@ -322,14 +322,14 @@
 .uap-noopt { padding: 14px 8px; font-size: 13px; color: var(--vc-third); text-align: center; }
 
 .uap-cancel {
-  height: 34px; padding: 0 14px; border-radius: 9px; border: 1px solid var(--vc-border);
+  height: 32px; padding: 0 14px; border-radius: 9px; border: 1px solid var(--vc-border);
   background: transparent; color: var(--vc-muted);
   font: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer;
   transition: border-color 120ms ease, color 120ms ease;
 }
 .uap-cancel:hover { border-color: var(--vc-hover-border); color: var(--vc-text); }
 .uap-save {
-  height: 34px; padding: 0 20px; border: 0; border-radius: 9px;
+  height: 32px; padding: 0 20px; border: 0; border-radius: 9px;
   background: var(--up-accent); color: var(--up-accent-fg); cursor: pointer;
   font-family: inherit; font-size: 12.5px; font-weight: 600; transition: opacity 120ms ease;
 }
