@@ -1494,7 +1494,7 @@
       var newTxt = UC.fmtInt(n);
       var prev = Number(numEl.getAttribute("data-n"));
       numEl.setAttribute("data-n", n);
-      if (isNaN(prev) || prev === n){ numEl.textContent = newTxt; return; }
+      if (isNaN(prev) || prev === n){ numEl.textContent = newTxt; bulkBreiteSetzen(); return; }
       var dir = n > prev ? 1 : -1;
       numEl.style.transition = "none";
       numEl.style.transform = "translateY(0)";
@@ -1507,6 +1507,29 @@
       numEl.style.transition = "transform 180ms cubic-bezier(.2,0,.38,.9), opacity 140ms ease";
       numEl.style.transform = "translateY(0)";
       numEl.style.opacity = "1";
+      /* Drei Stellen sind breiter als zwei -- die Leiste zieht mit, in derselben Bewegung. */
+      bulkBreiteSetzen();
+    }
+    /* ---- DIE BREITE FOLGT DEM INHALT (22.09.) ----
+       "Select all N prompts" taucht auf und verschwindet wieder. Frueher hatte die Leiste eine
+       FESTE Breite, also war der Platz dafuer immer reserviert -- und wenn der Knopf kam, lief er
+       rechts ueber den Trenner hinaus statt die Leiste zu verbreitern.
+       Jetzt wird gemessen statt geraten: kurz auf max-content stellen, ablesen, den alten Wert
+       zurueckschreiben und erst dann den Zielwert setzen. Das Ablesen erzwingt einen Layoutlauf,
+       der Browser hat den ALTEN Wert also schon berechnet, wenn der neue kommt -- nur so laeuft
+       der Uebergang ueberhaupt an (dieselbe Mechanik wie das void bar.offsetWidth beim Einfahren).
+       MIT offenen Topics gilt weiter die feste Breite aus der CSS: dort wickelt die Chipliste um,
+       und eine inhaltsgetriebene Breite wuerde alle Chips auf EINER Zeile messen -- genau daran
+       ist die erste Fassung dieser Leiste gescheitert, siehe den Kommentar an .upt-bulkbar. */
+    function bulkBreiteSetzen(){
+      if (!elBulk) return;
+      if (elBulk.classList.contains("is-topics")){ elBulk.style.width = ""; return; }
+      var alt = elBulk.style.width;
+      elBulk.style.width = "max-content";
+      var ziel = elBulk.offsetWidth;
+      elBulk.style.width = alt || "";
+      void elBulk.offsetWidth;
+      elBulk.style.width = ziel + "px";
     }
     function renderBulkBar(){
       var n = bulkCount();
@@ -1611,6 +1634,7 @@
         void bar.offsetWidth;
         bar.classList.add("is-on");
       }
+      bulkBreiteSetzen();
     }
 
     /* ---- topic editor ----
@@ -1850,6 +1874,8 @@
         try { document.activeElement.blur(); } catch(e){}
       }
       elBulk.classList.toggle("is-topics", !!open);
+      /* Die Breite haengt am Zustand: offen die feste aus der CSS, zu die des Inhalts. */
+      bulkBreiteSetzen();
       if (!open){
         elBulk.classList.remove("is-picking");
         /* Explicit, not just "the next open reseeds anyway": a staged draft that outlives the

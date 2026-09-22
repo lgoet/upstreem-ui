@@ -286,7 +286,7 @@
      Ellipse, die den Inhalt an allen vier Ecken abschneidet. Der Ring darunter rechnet seit jeher
      mit calc(32px + Ringbreite), blieb also richtig -- genau daran war es zu sehen: runder Grund
      in einem rechteckigen Rahmen. Gemeldet am 22.09. mit Screenshot. */
-  border-radius: var(--up-r-3xl);
+  border-radius: var(--up-r-2xl);
   /* Der Grund ist die SCHRIFTFARBE des Themas, nicht --up-surface. Im Hellen also #1f1f1b,
      im Dunkeln #e0e0e0 (siehe die Dunkel-Regel weiter unten). Kein Rahmen mehr: eine Flaeche,
      die sich so deutlich vom Seitengrund abhebt, braucht keine Kontur. */
@@ -341,15 +341,21 @@
    Zaehler | Topics (bzw. Loeschen) | Kopieren | Aktiv/Inaktiv | Schliessen.
    Genau 64 hoch und ohne eigenes Polster -- jedes Segment bringt seine 16px selbst mit, damit
    die Trenner ueber die volle Hoehe laufen und nicht in einer Polsterzone enden. */
-.upt-bulkbar-row { display: flex; flex-direction: row; align-items: stretch; height: 64px; }
-/* Der Zaehler nimmt den uebrigen Platz; die Werkzeuge sitzen rechts. */
-.upt-bulkbar-count-seg { flex: 1 1 auto; min-width: 0; display: flex; align-items: center;
-  gap: 12px; padding: 0 16px; }
+.upt-bulkbar-row { display: flex; flex-direction: row; align-items: stretch; height: 48px; }
+/* Der Zaehler waechst mit seinem Inhalt, er reserviert NICHTS. Frueher stand hier
+   flex: 1 1 auto auf einer Leiste mit fester Breite -- der Platz fuer "Select all N prompts"
+   war damit immer da, auch wenn der Knopf fehlte, und wenn er kam, lief er ueber den Trenner
+   hinaus. Jetzt bestimmt der Inhalt die Breite der ganzen Leiste (siehe bulkBreiteSetzen im JS),
+   und dieses Segment ist so breit wie das, was drin steht.
+   16px links und rechts NEBEN dem Select-all-Text: 8 aus dem Polster dieses Segments, 8 aus
+   seiner eigenen Marge -- dieselben 16, die der gap zum Zaehler haelt. */
+.upt-bulkbar-count-seg { flex: 0 0 auto; display: flex; align-items: center;
+  gap: 16px; padding: 0 8px; white-space: nowrap; }
 /* Ein Trenner in der Rahmenfarbe des UMGEKEHRTEN Themas -- die steht hier ohnehin an
    --vc-border, weil die ganze Leiste auf der anderen Palette laeuft. */
 .upt-bulkbar-sep { flex: 0 0 1px; width: 1px; background: var(--vc-border); align-self: stretch; }
 /* Ein Werkzeug-Segment: 16px Polster, darin ein 32x32-Knopf, senkrecht mittig. */
-.upt-bulkbar-seg { flex: 0 0 auto; display: flex; align-items: center; padding: 0 16px; }
+.upt-bulkbar-seg { flex: 0 0 auto; display: flex; align-items: center; padding: 0 8px; }
 .upt-bulkbar-ic {
   width: 32px; height: 32px; flex: 0 0 auto; padding: 0; border: 0; background: transparent;
   border-radius: 8px; cursor: pointer; color: var(--vc-text);
@@ -365,7 +371,7 @@
    ein overflow:hidden inline-block, und ein atomarer Inline-Kasten mit overflow != visible nimmt
    laut Spezifikation seine UNTERE Randkante als Grundlinie statt der Textgrundlinie -- die Zahl
    sass dadurch ein paar Pixel ueber "selected". */
-.upt-bulkbar-count { font-size: 14px; font-weight: 600; color: var(--vc-text); white-space: nowrap;
+.upt-bulkbar-count { font-size: 16px; font-weight: 500; color: var(--vc-text); white-space: nowrap;
   flex: 0 0 auto; display: inline-flex; align-items: baseline; gap: 5px; }
 /* Nur diese innere Span wird animiert -- siehe syncBulkBarCount(). inline-block und
    overflow:hidden geben ihr eine Transformation und einen Beschnitt; min-width, rechtsbuendig
@@ -378,6 +384,9 @@
   font-family: inherit; font-size: 13px; font-weight: 500; color: var(--vc-muted);
   text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; flex: 0 0 auto; }
 .upt-bulkbar-link:hover { color: var(--vc-text); }
+/* Die zweiten 8px auf der rechten Seite -- zusammen mit dem Polster des Segments die 16, die
+   auch links stehen. */
+.upt-bulkbar-count-seg .upt-bulkbar-link { margin-right: 8px; }
 /* Dasselbe Rot wie .up-topicmodal-delete in core -- EINE Gefahrenfarbe fuer die ganze App.
    In Ruhe neutral wie jedes andere Werkzeug, erst Hover und der scharfgestellte Zustand
    werden rot. */
@@ -386,8 +395,10 @@
    richtig, --up-accent-fg waere im Dunkeln fast schwarz. */
 .upt-bulkbar-delete.is-armed { background: var(--vt-down); color: #fff; }
 .upt-bulkbar-delete.is-armed:hover { opacity: .9; }
-/* Keep the bar off the last row while it's up. */
-.upt-root.is-bulk { padding-bottom: 148px; }   /* + the 8px frame */
+/* Haelt die letzte Zeile frei, solange die Leiste steht: sie sitzt 80px ueber dem unteren
+   Rand und ist 48 hoch, endet also bei 128 -- 148 laesst 20px Luft. (Der Zusatz fuer den
+   verwaschenen Ring ist am 22.09. entfallen, den Ring gibt es nicht mehr.) */
+.upt-root.is-bulk { padding-bottom: 148px; }
 
 /* ---------- topic section ----------
    Not a dropdown: it slides out of the bar's own lower edge, so there is one surface instead of
