@@ -751,14 +751,10 @@
 
   /* topic chips — reused 1:1 from the Opportunities module */
   #ask-mira .uo-tags { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 18px; }
-  #ask-mira .uo-tag {
-    height: 26px; padding: 0 10px; border-radius: 8px; display: inline-flex; align-items: center; gap: 7px;
-    font-size: 12px; line-height: 1; font-weight: 500; white-space: nowrap; flex: 0 0 auto;
-    border: 1px solid color-mix(in srgb, var(--uo-tag, #6b7280) 40%, transparent);
-    background: color-mix(in srgb, var(--uo-tag, #6b7280) 10%, transparent);
-    color: var(--uo-tag, #4b5563);
-  }
-  #ask-mira .uo-tag-emoji { font-size: 12px; line-height: 1; }
+  /* .uo-tag stand hier bis zum 22.09.: Miras Opportunity-Karten bauen seit dem den
+     gemeinsamen .up-topicchip aus core, wie das Opportunities-Modul auch. Die Regeln des
+     alten Chips waren danach tot. .uo-tags (der Behaelter) und .uo-tag-more (der
+     "+n"-Chip) bleiben, beide werden weiter gebaut. */
   #ask-mira .uo-tag-more { height: 26px; padding: 0 10px; border-radius: 8px; display: inline-flex; align-items: center; flex: 0 0 auto; border: 0; background: var(--am-soft-2); color: var(--am-muted); font-size: 12px; line-height: 1; font-weight: 600; white-space: nowrap; }
 
   /* ---- list rows (1:1 with the Opportunities list mode) — default collapsed view ---- */
@@ -3519,7 +3515,8 @@
   #ask-mira[data-theme="dark"] .am-icon-action:hover { background: #232326; color: #e0e0e0; }
   #ask-mira[data-theme="dark"] .am-icon-action[aria-expanded="true"] { background: #242424; color: #e0e0e0; }
   /* topic chips — dark mode (1:1 with the Opportunities page: white text, deeper tints) */
-  #ask-mira[data-theme="dark"] .uo-tag { color: #e0e0e0; background: color-mix(in srgb, var(--uo-tag, #6b7280) 22%, transparent); border-color: color-mix(in srgb, var(--uo-tag, #6b7280) 45%, transparent); }
+  /* Die dunkle Fassung von .uo-tag ist mit dem Chip selbst entfallen (22.09.) --
+     .up-topicchip bringt sein dunkles Thema aus core mit. */
 
 
 /* Die Meta-Zeile (Markenlogo + "<Marke> Workspace" ueber dem Schriftzug) ist entfernt, samt

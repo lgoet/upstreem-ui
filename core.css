@@ -278,9 +278,16 @@
          Seit dem 22.09. ein fester Wert, gemessen gegen die Pille (#ffffff) und gegen die beiden
          hellen Gruende (Flaeche #ffffff, Kopfzeile #f9f8f9), rohe Kanaele mit Augengewichten:
              zur Pille 17 Stufen, zur Flaeche 17, zur Kopfzeile 11.
-         Vorher 13/13 auf Weiss und 12/19 auf der Kopfzeile: derselbe Rahmen, aber EIN Ton statt
-         dreien. Was der feste Wert kostet, steht im dunklen Thema -- dort ist er ein Kompromiss. */
-      --vc-switch-rail: #efedef;
+         Der Wert war erst #efedef (17 Stufen unter Weiss) und ist am 22.09. auf Anforderung
+         aufgehellt worden -- "mir sind die so zu dunkel". #f2f2f2 ist GENAU der Ton, den die
+         durchscheinende Fassung auf weissem Grund gerendert hat, also der Stand, den die App
+         vor dem 22.09. gezeigt hat:
+             zur Pille 13 Stufen, zur Flaeche 13, zur Kopfzeile 7.
+         Auf der Kopfzeile (#f9f8f9) ist das die schwaechste Stelle -- vorher waren es dort 12,
+         weil sich der Ton mit dem Grund mitbewegte. Das ist der Preis des festen Werts und war
+         die bewusste Wahl. Noch heller ginge nur bis #f9f8f9 selbst, dann steht die Schiene auf
+         der Kopfzeile gar nicht mehr und zur Pille bleiben 6 Stufen. */
+      --vc-switch-rail: #f2f2f2;
       /* Die Flaeche eines Eingabefelds, SOLIDE. Es gab sie bisher nur als 60%-Variante
          (--vc-switch-bg im Dunkeln, --up-sel-bg, --vt-row-hover) -- und wo ein Chip auf einer Karte
          liegt, die selbst schon getoent ist, addieren sich zwei Halbtransparenzen zu einem dritten

@@ -1493,15 +1493,26 @@
   function _oppCiteColor(c){ return _OPP_CITE_COLOR[c] || '#6b6f78'; }
   function _oppStatusKey(s){ s = String(s||'').toLowerCase(); if (s.indexOf('progress')>=0) return 'in_progress'; if (s==='done'||s==='completed') return 'done'; if (s==='ignored') return 'ignored'; return 'pending'; }
   function _oppStatusLabel(s){ return (String(s||'').toLowerCase()==='created') ? 'Pending' : String(s||''); }   // value stays "Created"; only the label says "Pending"
-  function _oppTagPills(topics, limit){   // 1:1 reuse of the Opportunities module chip rendering
+  /* Der Kommentar hier sagte "1:1 reuse of the Opportunities module chip rendering", und genau
+     das war es NICHT mehr: das Opportunities-Modul baut seit der Umstellung .up-topicchip mit
+     --ust-tag-color, diese Kopie baute weiter .uo-tag mit --uo-tag -- den Chip, den die App
+     sonst nirgends mehr zeigt. Gemeldet am 22.09. ("noch ganz alte Topic stylings"). Jetzt
+     wortgleich mit tagPills aus opportunities.js; ein Kommentar, der Gleichheit behauptet, ist
+     keine Gleichheit. */
+  function _oppTagPills(topics, limit){
     var list = Array.isArray(topics) ? topics : [];
     var shown = limit ? list.slice(0, limit) : list;
     var hidden = list.length - shown.length;
     var html = shown.map(function(t){
       t = t || {};
       var color = t.hex_light || t.hex_dark || '#6b7280';
-      return '<span class="uo-tag" style="--uo-tag:'+_escAttr(color)+';">'+(t.emoji?'<span class="uo-tag-emoji">'+esc(t.emoji)+'</span>':'')+'<span>'+esc(t.name||'')+'</span></span>';
+      return '<span class="up-topicchip" style="--ust-tag-color:'+_escAttr(color)+';">'+
+        (t.emoji?'<span class="up-topicchip-e">'+esc(t.emoji)+'</span>':'')+
+        '<span class="up-topicchip-lbl">'+esc(t.name||'')+'</span></span>';
     }).join('');
+    /* Der "+n"-Chip behaelt seinen lokalen Namen: fuer .uo-tag-more steht hier eine Regel, fuer
+       .uo-tagmore (so heisst er in opportunities.css) nicht -- und opportunities.css wird in
+       Mira nicht geladen. */
     if (hidden > 0) html += '<span class="uo-tag-more">+'+hidden+'</span>';
     return html;
   }
