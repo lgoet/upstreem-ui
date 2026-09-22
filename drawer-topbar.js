@@ -154,7 +154,9 @@
      Leiste dasselbe Zeichen wie in der Navigation, aus der man kommt.
      Ein mitgeschicktes data-logo wird fuer diese zwei Typen NICHT verwendet: das Zeichen sagt
      den Typ, und zwei Quellen fuer dieselbe Stelle waeren die naechste Meldung. */
-  var TYP_ZEICHEN = { prompt: "zap", response: "scan" };
+  /* response traegt seit dem 22.09. das Zeichen der Antwort (Chat01) statt scan -- ueberall
+     dasselbe, wie angesagt: Seitenkopf, Miras Quellenliste, Responses-Tabelle und hier. */
+  var TYP_ZEICHEN = { prompt: "zap", response: "response" };
   /* ---- Wo es kein Anheften gibt (07.09. angefordert) ----
      Die Seitenleiste fuehrt ORTE, zu denen man zurueckkehrt. Zwei Typen sind keine:
        response       das Ergebnis eines Laufs, kein Ort.

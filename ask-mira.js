@@ -284,7 +284,7 @@
      schlaegt die Angabe im Attribut ohnehin -- die 1.7 sind der Wert fuer alles andere. */
   var ICON_NAMEN = {
     user: 'user', trend: 'trendingUp', source: 'externalLink', flag: 'flag', smile: 'smile',
-    clock: 'clock', copy: 'copy', download: 'download', zap: 'zap', maximize: 'maximize',
+    clock: 'clock', copy: 'copy', download: 'download', zap: 'zap', maximize: 'response',
     globe: 'globe', link: 'externalLink', fileText: 'fileText', star: 'star', swords: 'swords',
     prompt: 'zap', citation: 'fileText', competitor: 'swords', recommendation: 'star',
     brand: 'squareStack', thumbsUp: 'thumbsUp', thumbsDown: 'thumbsDown', check: 'check',
@@ -305,6 +305,8 @@
     brand:         { label: 'Your Brand',     color: '#3a8ea3', icon: ICON.copy },
     competitor:    { label: 'Competitor',     color: '#d9852e', icon: ICON.swords },
     prompt:        { label: 'Prompt',         color: '#8b5cf6', icon: ICON.zap },
+    /* ICON.maximize zeigt seit dem 22.09. auf den Schluessel response (Chat01) -- Miras
+       eigener Name bleibt, damit die 53 Aufrufstellen unveraendert bleiben. */
     prompt_run:    { label: 'Response',       color: '#7a8aa0', icon: ICON.maximize },
     response:      { label: 'Response',       color: '#7a8aa0', icon: ICON.maximize },
     domain:        { label: 'Domain',         color: '#2ec27e', icon: ICON.globe },
@@ -8099,9 +8101,13 @@
   }
 
   var SET_SEITEN = [
-    { key: 'highlights', label: 'Highlights', icon: 'sparkle',
+    /* Die zwei Zeichen des Einstellungsfensters, am 22.09. benannt: Hervorhebungen tragen
+       LocationStar02 (Schluessel highlight), die Darstellung den Pinsel (paint). Vorher
+       sparkle und layoutGrid -- das eine sagt "KI", das andere "Kachelraster", und beide sagen
+       nicht, was die Seite einstellt. */
+    { key: 'highlights', label: 'Highlights', icon: 'highlight',
       titel: 'Highlights', sub: 'How brands, citations and responses are marked in answers' },
-    { key: 'appearance', label: 'Appearance', icon: 'layoutGrid',
+    { key: 'appearance', label: 'Appearance', icon: 'paint',
       titel: 'Appearance', sub: 'Where the chat sidebar sits' }
   ];
 

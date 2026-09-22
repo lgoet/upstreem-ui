@@ -253,6 +253,13 @@
   padding: 16px 8px 8px; display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: end;
   position: relative; transition: border-color 170ms ease, box-shadow 170ms ease;
 }
+/* DER TEXT STEHT 16 VON OBEN UND 16 VON LINKS (22.09. angefordert). Gemessen waren es 31 und 9:
+   die 31 kamen von align-items:end -- das Feld ist 90px hoch, sein Platz im Gitter hoeher, also
+   sass es unten und schob den Text nach unten. Die 9 kamen vom 8er Polster der Schale.
+   align-self: stretch holt das Feld an die Oberkante zurueck (der Knopf behaelt sein "end", er
+   gehoert an den Fuss), die Marge holt die fehlenden 8px links. Dieselbe Mechanik wie Miras
+   .am-input-wrap, nur mit den Zahlen dieser Komponente. */
+.upr-composer .upr-textarea { align-self: stretch; margin-left: 8px; }
 .upr-composer:focus-within { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); outline: 0; }
 .upr-textarea {
   width: 100%; min-height: 90px; max-height: 180px; resize: none; border: 0; outline: 0;
@@ -283,7 +290,15 @@
 .upr-start-btn > span { display: none; }   /* die Beschriftung, siehe oben */
 .upr-start-btn:hover { opacity: .9; box-shadow: none; }
 .upr-start-btn:disabled { opacity: 0.55; cursor: not-allowed; box-shadow: none; }
-.upr-start-btn svg { width: 16px; height: 16px; display: block; flex: 0 0 auto; }
+/* OPTISCH MITTIG, nicht geometrisch. Gemessen sitzt der Umriss des Papierfliegers exakt in
+   der Kastenmitte (11,99/12) -- sein LINIENSCHWERPUNKT aber bei 13,64, also 1,64 Einheiten
+   rechts davon. Genau das sieht man im runden Knopf. Zum Vergleich: Miras Pfeil hat dort 12,0,
+   deshalb faellt es dort nicht auf.
+   1,64 Einheiten auf 24 ergeben bei 16px Kantenlaenge 1,1px. Senkrecht wird NICHT korrigiert:
+   dort liegt der Schwerpunkt bei 10,33, und Miras Pfeil bei 10,26 -- dieselbe Neigung, und die
+   ist im Haus offenbar in Ordnung. */
+.upr-start-btn svg { width: 16px; height: 16px; display: block; flex: 0 0 auto;
+  transform: translateX(-1.1px); }
 .upr-start-btn.is-running svg { animation: uprSpin 900ms linear infinite; }
 @keyframes uprSpin { to { transform: rotate(360deg); } }
 .upr-settings-toggle { width: 40px; height: 40px; border-radius: 11px; }

@@ -15679,9 +15679,12 @@
     /* Download04Icon -- Herunterladen, in Miras Antwortleiste */
     download: '<path d="M2.99969 17.0002C2.99969 17.9302 2.99969 18.3952 3.10192 18.7767C3.37932 19.8119 4.18796 20.6206 5.22324 20.898C5.60474 21.0002 6.06972 21.0002 6.99969 21.0002L16.9997 21.0002C17.9297 21.0002 18.3947 21.0002 18.7762 20.898C19.8114 20.6206 20.6201 19.8119 20.8975 18.7767C20.9997 18.3952 20.9997 17.9302 20.9997 17.0002"/>' +
               '<path d="M16.4998 11.5002C16.4998 11.5002 13.1856 16.0002 11.9997 16.0002C10.8139 16.0002 7.49976 11.5002 7.49976 11.5002M11.9997 15.0002V3.00016"/>',
-    /* Maximize01Icon -- Aufziehen: der Antwort-Treffertyp in Miras Quellenliste */
-    maximize: '<path d="M7.5 8.5H16.5M7.5 12.5H13"/>' +
-              '<path d="M22 10.5C22 9.72921 21.9865 8.97679 21.9609 8.2503C21.8772 5.87683 21.8353 4.69009 20.8699 3.71745C19.9046 2.74481 18.6843 2.6926 16.2438 2.58819C14.9048 2.5309 13.4791 2.5 12 2.5C10.5209 2.5 9.09517 2.5309 7.7562 2.58819C5.3157 2.6926 4.09545 2.74481 3.13007 3.71745C2.16469 4.69009 2.12282 5.87683 2.03909 8.2503C2.01346 8.97679 2 9.72921 2 10.5C2 11.2708 2.01346 12.0232 2.03909 12.7497C2.12282 15.1232 2.16469 16.3099 3.13007 17.2826C4.09545 18.2552 5.31573 18.3074 7.7563 18.4118C8.4902 18.4432 9.25016 18.4667 10.0307 18.4815C10.7718 18.4955 11.1424 18.5026 11.468 18.6266C11.7936 18.7506 12.0675 18.9855 12.6155 19.4553L14.795 21.3242C14.9273 21.4376 15.0958 21.5 15.2701 21.5C15.6732 21.5 16 21.1732 16 20.7701V18.4219C16.0816 18.4186 16.1629 18.4153 16.2438 18.4118C18.6843 18.3074 19.9046 18.2552 20.8699 17.2825C21.8353 16.3099 21.8772 15.1232 21.9609 12.7497C21.9865 12.0232 22 11.2708 22 10.5Z"/>',
+    /* Maximize01Icon -- AUFZIEHEN, und nichts sonst. Bis zum 22.09. stand hier das Zeichen
+       der ANTWORT: als der Response-Typ benannt wurde, ist dieser Schluessel umbelegt worden,
+       statt einen eigenen zu bekommen -- damit bedeutete er zwei Dinge. Die Antwort hat jetzt
+       ihren eigenen (response), und maximize heisst wieder maximieren. */
+    maximize: '<path d="M19.9264 22.2516V20.691C19.9264 20.288 20.0525 19.8966 20.2639 19.5531C21.7583 17.1245 22.2279 14.5196 21.9002 13.505C20.857 11.3418 17.3758 10.4907 15.76 10.2878L16.7966 5.12292C16.9705 4.30387 16.3513 3.47938 15.4135 3.28136C14.4758 3.08334 13.5746 3.58679 13.4007 4.40583L11.3462 14.0815L8.77462 12.4424C8.77462 12.4424 7.47969 11.406 6.44041 12.4424C5.40114 13.4788 6.44041 14.7701 6.44041 14.7701L10.3488 19.7776C10.6003 20.0997 10.7468 20.4908 10.7688 20.8984L10.8401 22.2177"/>' +
+              '<path d="M7.32936 1.85194C7.32936 1.85194 9.54861 1.58797 9.867 1.90156C10.1124 2.14335 9.867 4.36134 9.867 4.36134M9.867 1.90156L6.89808 4.84002M4.6477 9.59694C4.6477 9.59694 2.42845 9.86092 2.11005 9.54732C1.86463 9.30553 2.11005 7.08754 2.11005 7.08754M2.11005 9.54732L5.07898 6.60886"/>',
     /* StarIcon -- Empfehlung -- der Treffertyp mit dem hoechsten Gewicht */
     star: '<path d="M13.7276 3.44418L15.4874 6.99288C15.7274 7.48687 16.3673 7.9607 16.9073 8.05143L20.0969 8.58575C22.1367 8.92853 22.6167 10.4206 21.1468 11.8925L18.6671 14.3927C18.2471 14.8161 18.0172 15.6327 18.1471 16.2175L18.8571 19.3125C19.417 21.7623 18.1271 22.71 15.9774 21.4296L12.9877 19.6452C12.4478 19.3226 11.5579 19.3226 11.0079 19.6452L8.01827 21.4296C5.8785 22.71 4.57865 21.7522 5.13859 19.3125L5.84851 16.2175C5.97849 15.6327 5.74852 14.8161 5.32856 14.3927L2.84884 11.8925C1.389 10.4206 1.85895 8.92853 3.89872 8.58575L7.08837 8.05143C7.61831 7.9607 8.25824 7.48687 8.49821 6.99288L10.258 3.44418C11.2179 1.51861 12.7777 1.51861 13.7276 3.44418Z"/>',
     /* SwordsIcon -- Wettbewerber, in Miras Quellenliste und in den Vorschlaegen */
@@ -15779,6 +15782,13 @@
        der Seitenleiste, und die zwei bedeuten Verschiedenes. Bis zum 22.09. teilten sie sich
        eines, weil der Satz nur eine Weltkugel fuehrte. */
     domain: '<circle cx="12" cy="12" r="10"/><ellipse cx="12" cy="12" rx="4" ry="10"/><path d="M2 12H22"/>',
+    /* Chat01Icon -- DIE ANTWORT. Ueberall dasselbe Zeichen: die Zeile im Seitenkopf, die
+       Treffertypen in Miras Quellenliste (response und prompt_run), die Leiste ueber dem
+       Antwort-Drawer, die Responses-Tabelle. Ausdruecklich ein EIGENER Schluessel und nicht
+       maximize: der heisst maximieren, und ein Schluessel, der zwei Dinge bedeutet, wird beim
+       naechsten Wechsel an einer der beiden Stellen falsch. */
+    response: '<path d="M7.5 8.5H16.5M7.5 12.5H13"/>' +
+              '<path d="M2 10.5C2 9.72921 2.01346 8.97679 2.03909 8.2503C2.12282 5.87683 2.16469 4.69009 3.13007 3.71745C4.09545 2.74481 5.3157 2.6926 7.7562 2.58819C9.09517 2.5309 10.5209 2.5 12 2.5C13.4791 2.5 14.9048 2.5309 16.2438 2.58819C18.6843 2.6926 19.9046 2.74481 20.8699 3.71745C21.8353 4.69009 21.8772 5.87683 21.9609 8.2503C21.9865 8.97679 22 9.72921 22 10.5C22 11.2708 21.9865 12.0232 21.9609 12.7497C21.8772 15.1232 21.8353 16.3099 20.8699 17.2826C19.9046 18.2552 18.6843 18.3074 16.2437 18.4118C15.5098 18.4432 14.7498 18.4667 13.9693 18.4815C13.2282 18.4955 12.8576 18.5026 12.532 18.6266C12.2064 18.7506 11.9325 18.9855 11.3845 19.4553L9.20503 21.3242C9.07273 21.4376 8.90419 21.5 8.72991 21.5C8.32679 21.5 8 21.1732 8 20.7701V18.4219C7.91842 18.4186 7.83715 18.4153 7.75619 18.4118C5.31569 18.3074 4.09545 18.2552 3.13007 17.2825C2.16469 16.3099 2.12282 15.1232 2.03909 12.7497C2.01346 12.0232 2 11.2708 2 10.5Z"/>',
     card: '<path d="M13.6903 19.4567C13.5 18.9973 13.5 18.4149 13.5 17.25C13.5 16.0851 13.5 15.5027 13.6903 15.0433C13.944 14.4307 14.4307 13.944 15.0433 13.6903C15.5027 13.5 16.0851 13.5 17.25 13.5C18.4149 13.5 18.9973 13.5 19.4567 13.6903C20.0693 13.944 20.556 14.4307 20.8097 15.0433C21 15.5027 21 16.0851 21 17.25C21 18.4149 21 18.9973 20.8097 19.4567C20.556 20.0693 20.0693 20.556 19.4567 20.8097C18.9973 21 18.4149 21 17.25 21C16.0851 21 15.5027 21 15.0433 20.8097C14.4307 20.556 13.944 20.0693 13.6903 19.4567Z"/>' +
           '<path d="M13.6903 8.95671C13.5 8.49728 13.5 7.91485 13.5 6.75C13.5 5.58515 13.5 5.00272 13.6903 4.54329C13.944 3.93072 14.4307 3.44404 15.0433 3.1903C15.5027 3 16.0851 3 17.25 3C18.4149 3 18.9973 3 19.4567 3.1903C20.0693 3.44404 20.556 3.93072 20.8097 4.54329C21 5.00272 21 5.58515 21 6.75C21 7.91485 21 8.49728 20.8097 8.95671C20.556 9.56928 20.0693 10.056 19.4567 10.3097C18.9973 10.5 18.4149 10.5 17.25 10.5C16.0851 10.5 15.5027 10.5 15.0433 10.3097C14.4307 10.056 13.944 9.56928 13.6903 8.95671Z"/>' +
           '<path d="M3.1903 19.4567C3 18.9973 3 18.4149 3 17.25C3 16.0851 3 15.5027 3.1903 15.0433C3.44404 14.4307 3.93072 13.944 4.54329 13.6903C5.00272 13.5 5.58515 13.5 6.75 13.5C7.91485 13.5 8.49728 13.5 8.95671 13.6903C9.56928 13.944 10.056 14.4307 10.3097 15.0433C10.5 15.5027 10.5 16.0851 10.5 17.25C10.5 18.4149 10.5 18.9973 10.3097 19.4567C10.056 20.0693 9.56928 20.556 8.95671 20.8097C8.49728 21 7.91485 21 6.75 21C5.58515 21 5.00272 21 4.54329 20.8097C3.93072 20.556 3.44404 20.0693 3.1903 19.4567Z"/>' +
@@ -15828,6 +15838,25 @@
      (SendIcon) statt der Rakete -- er sieht jetzt aus wie der Senden-Knopf in Mira, und beide
      sagen dasselbe. Er steht im Bubble-Markup, also ueber diesen Weg. */
   TOOLBAR_SEL['#upr-start-button'] = ICON_PATHS.send;
+  /* Die Zeile "Responses" in der Navigation des Seitenkopfs. Ihre Zeichen liefert die
+     Seitenkopf-Komponente als fertiges Markup an makePageNav -- vom Pin aus nur hier
+     erreichbar. data-page traegt den Schluessel der Seite. */
+  TOOLBAR_SEL['.up-ph-navitem[data-page="responses"] .up-ph-navicon'] = ICON_PATHS.response;
+  TOOLBAR_SEL['.up-ph-navitem[data-page="response"] .up-ph-navicon']  = ICON_PATHS.response;
+  /* EIN ZAHNRAD FUER DIE GANZE APP. In TOOLBAR_ICONS stand eine eigene Kopie; als der
+     Schluessel settings am 22.09. auf eine andere Fassung ging, liefen die beiden auseinander
+     -- die Werkzeugleiste trug ein anderes Zahnrad als Miras Leiste. Gemeldet. Ueberschrieben
+     wird hier statt oben, weil ICON_PATHS dort noch nicht zugewiesen ist. */
+  /* DIE SORTIERPFEILE DER TABELLENKOEPFE (22.09. gemeldet: "stimmen auch alle nicht").
+     Sie stehen als festes Markup in elf Vorlagen und tragen eigene Klassen -- der Nachzug ueber
+     die Form erreicht sie nur, solange ihre alte Fassung eindeutig ist. Ueber die Klasse ist es
+     sicher, und sicher ist hier besser: es sind die am haeufigsten sichtbaren Zeichen der App. */
+  TOOLBAR_SEL[".up-thsort-up"]   = ICON_PATHS.chevronUp;
+  TOOLBAR_SEL[".up-thsort-down"] = ICON_PATHS.chevronDown;
+  TOOLBAR_ICONS["up-cols-btn"] = ICON_PATHS.settings;
+  ["ubo-cols-btn", "uo-settings-btn"].forEach(function(k){
+    if (Object.prototype.hasOwnProperty.call(TOOLBAR_ICONS, k)) TOOLBAR_ICONS[k] = ICON_PATHS.settings;
+  });
   /* Jetzt steht der Satz -- erst hier darf der Nachzug ueber das Dokument. */
   nachzugHochlauf();
 
