@@ -12,6 +12,7 @@
    means it never needs core.css loaded at all. */
 #mira-quick-actions, .mqa-overlay {
   --am-text: #1f1f1b; --am-muted: #6b6f78; --am-muted-2: #9ca3af;
+  --am-up: #2ea84a; --am-down: #b0200c;
   --am-border: #e5e7eb; --am-border-strong: #d9dde3;
   --am-soft: #f7f8fa; --am-soft-2: #f3f4f6;
   /* --am-card is the PANEL surface and stays fully opaque -- the open panel has to be readable
@@ -51,6 +52,7 @@
    Markup kennen koennte -- den Wert zu erklaeren ist billiger. */
 #mira-quick-actions[data-theme="dark"], .mqa-overlay[data-theme="dark"] {
   --am-text: #e0e0e0; --am-muted: #a0a0a0; --am-muted-2: #6f6f6f;
+  --am-up: #60d25d; --am-down: #d25d5d;
   --am-border: #3e3e44; --am-border-strong: #34343a;
   --am-soft: #28282c; --am-soft-2: #ffffff0d; --am-card: #232326; --am-trigger-bg: #1a1a1a;
   --am-overlay: rgba(0,0,0,0.55);
@@ -229,11 +231,13 @@
 .mqa-trend { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 4px; }
 .mqa-trend svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; display: block; }
 .mqa-trend-n { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; }
-.mqa-trend.is-up   { color: #2ea84a; }
-.mqa-trend.is-down { color: #b0200c; }
+/* --am-up/--am-down statt vier Literalen. Die Werte sind dieselben wie --vt-up/--vt-down in
+   core, aber diese Datei ist eigenstaendig und sieht core nicht (siehe ihren Kopf) -- also eine
+   EIGENE Marke mit denselben Werten, nicht die fremde. Die zwei Dunkel-Regeln fallen damit weg:
+   die Marke steht in beiden Paletten dieser Datei. (22.09.) */
+.mqa-trend.is-up   { color: var(--am-up); }
+.mqa-trend.is-down { color: var(--am-down); }
 .mqa-trend.is-flat { color: var(--am-muted-2); }
-[data-theme="dark"] .mqa-trend.is-up   { color: #60d25d; }
-[data-theme="dark"] .mqa-trend.is-down { color: #d25d5d; }
 .mqa-metric-lbl { font-weight: 450; color: var(--am-muted-2); margin-right: 4px; }
 .mqa-esc { flex: 0 0 auto; text-transform: uppercase; }
 .mqa-esc.is-hidden, .mqa-clear.is-hidden, .mqa-fav.is-hidden { display: none; }

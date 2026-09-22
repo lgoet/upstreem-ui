@@ -61,13 +61,14 @@
   color: var(--vc-muted); cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 500; line-height: 1;
   display: inline-flex; align-items: center; justify-content: center; }
 .tcd-mode-btn:hover { color: var(--vc-text); }
-.tcd-mode-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
+/* --vc-switch-pill statt #ffffff/#28282c: dieselbe Pille wie in core, dort steht die
+   Marke seit dem 22.09. Die eigene Dunkel-Regel faellt damit weg. */
+.tcd-mode-btn.is-active { background: var(--vc-switch-pill); color: var(--vc-text); border-color: var(--vc-switch-border); }
 /* Derselbe Fall wie die gleitende Pille in core.css: der aktive Knopf liegt UEBER seiner
    Schiene, nicht darunter. Hier stand #08090a, der Grund der Seite -- ein Rest des
    Farbtauschs, nicht eine Entscheidung. Diese Regel greift, solange der gleitende Streifen
    noch nicht gemessen hat (danach uebernimmt .is-gleitend), also genau beim ersten Bild.
    #28282c auf #34343a, wie ueberall sonst das Gewaehlte. */
-.up-root[data-theme="dark"] .tcd-mode-btn.is-active { background: #28282c; border-color: #34343a; }
 
 /* right heading with total-count */
 .tcd-heading-right { display: flex; align-items: center; }
@@ -132,15 +133,17 @@
    (menu shell, dimension switch, head/list/item/check/submit) reuses core.css's shared
    .up-filter-* classes, see file header. ================= */
 .tcd-filter { position: relative; flex: 0 0 auto; }
+/* --vc-text-invert statt zweier Literale: der Grund traegt schon var(--vc-text), die Schrift
+   darauf war von Hand gebaut -- #e0e0e0 hell und eine eigene Dunkel-Regel mit #1f1f1b. Genau die
+   zwei Werte fuehrt --vc-text-invert. Die Dunkel-Regel faellt damit weg. (22.09.) */
 .tcd-filter-badge {
   position: absolute; top: -3px; right: -3px; z-index: 2;
   min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;
-  background: var(--vc-text); color: #e0e0e0;
+  background: var(--vc-text); color: var(--vc-text-invert);
   font-family: inherit; font-size: 10px; font-weight: 600; line-height: 1;
   display: none; align-items: center; justify-content: center;
   font-variant-numeric: tabular-nums; pointer-events: none;
 }
-.up-root[data-theme="dark"] .tcd-filter-badge { color: #1f1f1b; }
 .tcd-filter-badge.is-visible { display: inline-flex; }
 .tcd-filter.is-open .tcd-filter-btn { color: var(--vc-text); background: var(--vc-heading-bg); }
 

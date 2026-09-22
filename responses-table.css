@@ -108,15 +108,17 @@
    table's own copy of the actual styling was simply never written, so the badge rendered as bare
    unstyled text next to the gear icon instead of a small pill. Exactly the bug prompts-table had
    before its own copy was added. */
+/* --vc-text-invert statt zweier Literale: der Grund traegt schon var(--vc-text), die Schrift
+   darauf war von Hand gebaut -- #e0e0e0 hell und eine eigene Dunkel-Regel mit #1f1f1b. Genau die
+   zwei Werte fuehrt --vc-text-invert. Die Dunkel-Regel faellt damit weg. (22.09.) */
 .urt-cols-badge {
   position: absolute; top: -3px; right: -3px; z-index: 2;
   min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;
-  background: var(--vc-text); color: #e0e0e0;
+  background: var(--vc-text); color: var(--vc-text-invert);
   font-family: inherit; font-size: 10px; font-weight: 600; line-height: 1;
   display: none; align-items: center; justify-content: center;
   font-variant-numeric: tabular-nums; pointer-events: none;
 }
-.up-root[data-theme="dark"] .urt-cols-badge { color: #1f1f1b; }
 .urt-cols-badge.is-visible { display: inline-flex; }
 
 .urt-fader { position: relative; flex: 0 0 auto; }

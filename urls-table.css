@@ -193,16 +193,18 @@
     
     /* active-columns count badge on the columns (gear) button — same styling as the combo chart's
        visible-series badge over its fader button. */
-    .uut-cols-badge {
+    /* --vc-text-invert statt zweier Literale: der Grund traegt schon var(--vc-text), die Schrift
+   darauf war von Hand gebaut -- #e0e0e0 hell und eine eigene Dunkel-Regel mit #1f1f1b. Genau die
+   zwei Werte fuehrt --vc-text-invert. Die Dunkel-Regel faellt damit weg. (22.09.) */
+.uut-cols-badge {
       position: absolute; top: -3px; right: -3px; z-index: 2;
       min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;
-      background: var(--vc-text); color: #e0e0e0;
+      background: var(--vc-text); color: var(--vc-text-invert);
       font-family: inherit; font-size: 10px; font-weight: 600; line-height: 1;
       display: none; align-items: center; justify-content: center;
       font-variant-numeric: tabular-nums; pointer-events: none;
     }
-    .up-root[data-theme="dark"] .uut-cols-badge { color: #1f1f1b; }
-    .uut-cols-badge.is-visible { display: inline-flex; }
+        .uut-cols-badge.is-visible { display: inline-flex; }
     
     
     

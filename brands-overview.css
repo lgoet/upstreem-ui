@@ -66,13 +66,14 @@
   background: transparent; color: var(--vc-muted); font-family: inherit; font-size: 12px; font-weight: 500;
   cursor: pointer; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; }
 .ubo-yaxis-btn:hover { color: var(--vc-text); }
-.ubo-yaxis-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
+/* --vc-switch-pill statt #ffffff/#28282c: dieselbe Pille wie in core, dort steht die
+   Marke seit dem 22.09. Die eigene Dunkel-Regel faellt damit weg. */
+.ubo-yaxis-btn.is-active { background: var(--vc-switch-pill); color: var(--vc-text); border-color: var(--vc-switch-border); }
 /* Derselbe Fall wie die gleitende Pille in core.css: der aktive Knopf liegt UEBER seiner
    Schiene, nicht darunter. Hier stand #08090a, der Grund der Seite -- ein Rest des
    Farbtauschs, nicht eine Entscheidung. Diese Regel greift, solange der gleitende Streifen
    noch nicht gemessen hat (danach uebernimmt .is-gleitend), also genau beim ersten Bild.
    #28282c auf #34343a, wie ueberall sonst das Gewaehlte. */
-.up-root[data-theme="dark"] .ubo-yaxis-btn.is-active { background: #28282c; border-color: #34343a; }
 
 /* Hide/Show the whole chart container — same behaviour and same icon pair as citations-combo-chart */
 .ubo-hide .ic-show { display: none; }

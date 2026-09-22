@@ -1099,8 +1099,9 @@
     color: var(--am-text); font-size: 14px; font-weight: 500; line-height: 1.4;
     transition: border-color 120ms ease, background 120ms ease, box-shadow 120ms ease;
   }
-  .am-suggest-card:hover { border-color: var(--vc-hover-border, #6f6f6f); background: #f9f8f9; }
-  #ask-mira[data-theme="dark"] .am-suggest-card:hover { background: #232326; }
+  /* --vt-row-hover-solid traegt #f9f8f9 hell und #232326 dunkel -- genau die zwei Werte, die
+     hier als Literal und Dunkel-Regel standen. Die Regel darunter faellt weg. (22.09.) */
+  .am-suggest-card:hover { border-color: var(--vc-hover-border, #6f6f6f); background: var(--vt-row-hover-solid, #f9f8f9); }
   .am-suggest-card > span:nth-child(2) { min-width: 0; flex: 1 1 auto; }
   .am-suggest-ic {
     width: 22px; height: 22px; flex: 0 0 auto;
@@ -2381,7 +2382,9 @@
     display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
     transition: background 120ms ease, color 120ms ease;
   }
-  .am-icon-action:hover { background: #f9f8f9; color: #1f1f1b; }
+  /* Siehe .am-suggest-card: zwei Marken statt vier Literalen, --up-accent-ink traegt
+     #1f1f1b hell und #e0e0e0 dunkel. Die Dunkel-Regel weiter unten faellt weg. */
+  .am-icon-action:hover { background: var(--vt-row-hover-solid, #f9f8f9); color: var(--up-accent-ink, #1f1f1b); }
   /* DIE FLAECHE BEIM UEBERFAHREN IST 32x32, der Knopf bleibt 40x40. Das Ziel, das man treffen
      muss, soll gross sein; die Farbe, die man sieht, klein -- ein 40er Feld hinter einem 18px
      grossen Zeichen wirkt wie ein zweiter Knopf. Ueber ::before und nicht ueber die
@@ -3510,7 +3513,6 @@
   #ask-mira[data-theme="dark"] .am-bubble span[data-mira-source-signal="unclear"] { background: rgba(251,191,36,0.13);  color:#fde68a; }
 
   /* Dark-mode hover / focus parity with prompt research */
-  #ask-mira[data-theme="dark"] .am-icon-action:hover { background: #232326; color: #e0e0e0; }
   #ask-mira[data-theme="dark"] .am-icon-action[aria-expanded="true"] { background: #242424; color: #e0e0e0; }
   /* topic chips — dark mode (1:1 with the Opportunities page: white text, deeper tints) */
   /* Die dunkle Fassung von .uo-tag ist mit dem Chip selbst entfallen (22.09.) --
