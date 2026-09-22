@@ -226,6 +226,12 @@
       --up-sub-gap: 4px;
       --up-dd-shadow: 0 10px 28px rgba(0,0,0,.14);
       --vc-switch-bg: #f9f8f9; --vc-switch-border: #e4e2e4; --vc-third: #9e9e9e;
+      /* Die PILLE auf der Schiene -- das Gegenstueck zu --vc-switch-rail. Sie stand als
+         Literal an sieben Stellen, jede mit einer eigenen Dunkel-Regel daneben (#ffffff und
+         #28282c). Eine Marke statt vierzehn Werten; der Rahmen kam schon immer aus
+         --vc-switch-border. Wer eine eigene Palette aufmacht, muss sie mitfuehren -- das sind
+         genau die Geltungsbereiche, die auch --vc-switch-border setzen (fuenf, gezaehlt). */
+      --vc-switch-pill: #ffffff;
       /* Die SCHIENE eines Schalters -- ein eigener Token und nicht --vc-switch-bg, der die
          Flaeche eines Segmentumschalters meint. Als TOKEN und nicht als fester Wert in der
          Regel: ein fester Wert erbt nicht ueber eine Attributgrenze, und der Schalter steht
@@ -416,6 +422,7 @@
       --up-e-3: 0 14px 34px rgba(0,0,0,.38);
       --up-e-4: 0 20px 48px rgba(0,0,0,.46);
       --vc-switch-bg: #232326; --vc-switch-border: #34343a; --vc-third: #808080;
+      --vc-switch-pill: #28282c;
       --up-switch-off: #444444;   /* siehe hell */
       /* Die Textfassung des Blau-Lila-Paares, hier HERAUFgedreht statt herunter -- der Text
          steht auf --vc-field #2a2a2a. Gerechnet: 4.61 und 5.07, beide ueber den 4.5 aus AA.
@@ -1100,8 +1107,8 @@
       font: inherit; font-size: 12px; font-weight: 500; line-height: 1;
       display: inline-flex; align-items: center; justify-content: center; }
     .up-pagesize-btn:hover:not(.is-active) { color: var(--vc-text); }
-    .up-pagesize-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
-    .up-root[data-theme="dark"] .up-pagesize-btn.is-active { background: #28282c; border-color: #34343a; }
+    .up-pagesize-btn.is-active { background: var(--vc-switch-pill); color: var(--vc-text); border-color: var(--vc-switch-border); }
+    .up-root[data-theme="dark"] .up-pagesize-btn.is-active { background: var(--vc-switch-pill); border-color: var(--vc-switch-border); }
 
     .up-pager { display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto; margin-left: auto; }
     .up-pager-info { font-size: 12px; font-weight: 400; color: var(--vc-muted); white-space: nowrap; margin-right: 8px; }
@@ -1172,8 +1179,8 @@
       color: var(--vc-muted); cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 500; line-height: 1;
       display: inline-flex; align-items: center; justify-content: center; flex: 1 1 50%; }
     .up-filter-dim-btn:hover { color: var(--vc-text); }
-    .up-filter-dim-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
-    .up-root[data-theme="dark"] .up-filter-dim-btn.is-active { background: #28282c; border-color: #34343a; }
+    .up-filter-dim-btn.is-active { background: var(--vc-switch-pill); color: var(--vc-text); border-color: var(--vc-switch-border); }
+    .up-root[data-theme="dark"] .up-filter-dim-btn.is-active { background: var(--vc-switch-pill); border-color: var(--vc-switch-border); }
     /* Fixed height so the row doesn't grow when the Reset button appears — otherwise the whole
        menu jumps a few pixels the moment you tick the first item. */
     .up-filter-head { flex: 0 0 auto; height: 26px; display: flex; align-items: center; justify-content: space-between; padding: 0 9px; margin-bottom: 6px; }
@@ -1371,7 +1378,7 @@
        Aussage. */
     .up-subhost { display: none; }
     .up-subhost.is-on { display: block; }
-    .up-root[data-theme="dark"] .up-submenu { background: var(--up-menu-bg); border-color: #34343a; }
+    .up-root[data-theme="dark"] .up-submenu { background: var(--up-menu-bg); border-color: var(--vc-switch-border); }
     /* Offen wird ueber eine KLASSE, nicht ueber :hover. Der Unterschied ist nicht kosmetisch: die
        Zeile laesst sich auch anklicken und bleibt dann offen, bis eine andere Zeile oder ein Klick
        nach draussen kommt -- mit :hover waere das nicht ausdrueckbar. Den Zeiger verfolgt
@@ -1797,7 +1804,7 @@
     .up-root[data-theme="dark"] .up-ment-menu,
     .up-root[data-theme="dark"] .up-cols-menu,
     .up-root[data-theme="dark"] .up-sort-menu,
-    .up-root[data-theme="dark"] .up-filter-menu { border-color: #34343a; }
+    .up-root[data-theme="dark"] .up-filter-menu { border-color: var(--vc-switch-border); }
     .up-root[data-theme="dark"] .up-sort-menu { background: var(--up-menu-bg); }
     /* Hier stand bis zum 22.09. eine zweite Schienenfarbe, nur fuer Umschalter INNERHALB dunkler
        Menues: die durchscheinende Schiene hellte ihren Grund auf und stand im Menue (#232326)
@@ -1896,8 +1903,8 @@
       display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
     .up-dense-btn svg { width: 15px; height: 15px; }
     .up-dense-btn:hover { color: var(--vc-text); }
-    .up-dense-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
-    .up-root[data-theme="dark"] .up-dense-btn.is-active { background: #28282c; border-color: #34343a; }
+    .up-dense-btn.is-active { background: var(--vc-switch-pill); color: var(--vc-text); border-color: var(--vc-switch-border); }
+    .up-root[data-theme="dark"] .up-dense-btn.is-active { background: var(--vc-switch-pill); border-color: var(--vc-switch-border); }
     /* icon-only variant (row-height 3-way switch): no label, so it never outgrows the menu */
     .up-dense-btn-icon { flex: 1 1 33.333%; padding: 0; gap: 0; }
     .up-dense-btn-icon svg { width: 16px; height: 16px; }
@@ -1977,7 +1984,7 @@
     .up-scale-menu {
       --vc-text: #1f1f1b; --vc-muted: #6b6f78; --vc-third: #9e9e9e; --vc-border: #dcdbdd;
       --vc-heading-bg: #f9f8f9; --vc-hover-border: #6f6f6f; --vc-bg: #ffffff;
-      --vc-switch-bg: #f9f8f9; --vc-switch-border: #e4e2e4;
+      --vc-switch-bg: #f9f8f9; --vc-switch-border: #e4e2e4; --vc-switch-pill: #ffffff;
       --up-dd-radius: 14px; --up-dd-pad: 8px; --up-dd-shadow: 0 10px 28px rgba(0,0,0,.14);
       --up-sel-bg: #f4f2f4;
       position: fixed; z-index: 100050; width: 248px;
@@ -2003,12 +2010,12 @@
          Linears Leiter, auf #1c1c1f also praktisch unsichtbar. */
       --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-third: #808080; --vc-border: #3e3e44;
       --vc-heading-bg: #232326; --vc-hover-border: #707070; --vc-bg: #1c1c1f; --up-switch-off: #444444;
-      --vc-switch-bg: #232326; --vc-switch-border: #34343a;
+      --vc-switch-bg: #232326; --vc-switch-border: #34343a; --vc-switch-pill: #28282c;
       --up-dd-shadow: 0 10px 28px rgba(0,0,0,.32); --up-sel-bg: #28282c;
     }
     /* .up-dense-btn.is-active's own dark override above is scoped to .up-root — this menu lives
        outside it, so the Line Width switch needs its own copy of the same colors. */
-    .up-scale-menu[data-theme="dark"] .up-dense-btn.is-active { background: #28282c; border-color: #34343a; }
+    .up-scale-menu[data-theme="dark"] .up-dense-btn.is-active { background: var(--vc-switch-pill); border-color: var(--vc-switch-border); }
     /* Und aus demselben Grund der Knopf des Schalters: seine dunklen Farben haengen an
        .up-root[data-theme="dark"], und dieses Menue haengt am <body>. Ohne die zwei Zeilen bliebe
        der Knopf im Dunklen weiss -- auf der hellen Bahn des eingeschalteten Zustands ist er dann
@@ -2050,9 +2057,9 @@
       color: var(--vc-muted); cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 500; line-height: 1;
       display: inline-flex; align-items: center; justify-content: center; }
     .vc-gran-btn:hover, .cc-gran-btn:hover { color: var(--vc-text); }
-    .vc-gran-btn.is-active, .cc-gran-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
+    .vc-gran-btn.is-active, .cc-gran-btn.is-active { background: var(--vc-switch-pill); color: var(--vc-text); border-color: var(--vc-switch-border); }
     .up-root[data-theme="dark"] .vc-gran-btn.is-active,
-    .up-root[data-theme="dark"] .cc-gran-btn.is-active { background: #28282c; border-color: #34343a; }
+    .up-root[data-theme="dark"] .cc-gran-btn.is-active { background: var(--vc-switch-pill); border-color: var(--vc-switch-border); }
     .vc-gran-btn.is-disabled, .cc-gran-btn.is-disabled { opacity: 0.4; pointer-events: none; cursor: default; }
 
     .up-scale-opt { display: flex; flex-direction: column; gap: 8px; padding: 9px 10px; border-radius: 9px; cursor: pointer; }
@@ -3115,7 +3122,7 @@
   content: ""; position: absolute; left: 0; top: 0; z-index: 0; box-sizing: border-box;
   width: var(--up-seg-w, 0); height: var(--up-seg-h, 100%);
   transform: translate(var(--up-seg-x, 0), var(--up-seg-y, 0));
-  border-radius: 8px; background: #ffffff; border: 1px solid var(--vc-switch-border);
+  border-radius: 8px; background: var(--vc-switch-pill); border: 1px solid var(--vc-switch-border);
   opacity: 0; pointer-events: none;
 }
 /* Sichtbar und beweglich erst, wenn core gemessen hat. Die Deckkraft faehrt NICHT mit: sonst
@@ -3142,7 +3149,7 @@
    Gemeldet als "die Switcher in Dropdowns sind jetzt kaputt", und das waren sie.
    Jetzt bg-quaternary (#28282c) auf border-secondary -- eine Stufe ueber der Schiene, wie ueberall
    sonst das Gewaehlte. Sieben Stellen, alle mit demselben Muster. */
-[data-theme="dark"] .uap-tabs::before { background: #28282c; border-color: #34343a; }
+[data-theme="dark"] .uap-tabs::before { background: var(--vc-switch-pill); border-color: var(--vc-switch-border); }
 /* ---- UND DIE SCHIENE DARUNTER --------------------------------------------------------------
    Gemeldet am 07.09. zuerst fuer das Dunkle ("die grossen Switcher, die 32px hoch sind, muessen
    denselben Grund bekommen wie die kleinen, weil der Selected-State sich sonst zu wenig davon
@@ -3210,12 +3217,12 @@
    Markup dieser Switcher steht in der vom Nutzer eingefuegten Bubble-Seite, nicht in einer Datei
    die ein CDN-Pin erreicht. Ein Rename hier haette deren Seiten zerlegt -- citations-combo-chart
    bricht sogar seine ganze Initialisierung ab, wenn es seine Buttons nicht findet. */
-.up-seg-btn.is-active, .cc-seg-btn.is-active, .ubo-seg-btn.is-active, .tcl-seg-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
+.up-seg-btn.is-active, .cc-seg-btn.is-active, .ubo-seg-btn.is-active, .tcl-seg-btn.is-active { background: var(--vc-switch-pill); color: var(--vc-text); border-color: var(--vc-switch-border); }
 .up-seg-btn.is-active svg, .cc-seg-btn.is-active svg, .ubo-seg-btn.is-active svg, .tcl-seg-btn.is-active svg { color: var(--vc-text); }
 [data-theme="dark"] .up-seg-btn.is-active,
 [data-theme="dark"] .cc-seg-btn.is-active,
 [data-theme="dark"] .ubo-seg-btn.is-active,
-[data-theme="dark"] .tcl-seg-btn.is-active { background: #28282c; border-color: #34343a; }
+[data-theme="dark"] .tcl-seg-btn.is-active { background: var(--vc-switch-pill); border-color: var(--vc-switch-border); }
 
 /* ---------- "X mentioned?" yes/no cell ----------
    Shared by urls-table and responses-table (both had their own byte-identical copy under a local

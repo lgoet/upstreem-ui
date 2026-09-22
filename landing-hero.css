@@ -2776,6 +2776,7 @@
    der Schalter auf einer hellen, ruhigen Flaeche und soll leiser sein als in der App. */
 .ulh-preis-schalter {
   --vc-switch-rail: #f9f9f9;
+  --vc-switch-pill: #ffffff;
   --vc-switch-border: #e0e2e6;
   --vc-text: var(--ulh-text);
   --vc-muted: var(--ulh-muted);
