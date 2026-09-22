@@ -637,7 +637,7 @@
     var statusKey = statusKeyOf(item);
     /* is-lg ist die 32px-Stufe von .up-seg in core: Hoehe 32, Flaeche --vc-switch-bg, Knoepfe
        32px hoch. Genau die Werte, die jeder andere 32px-Umschalter der App traegt -- vorher stand
-       hier die kleine Stufe (26px, --vc-switch-soft) und fiel daneben auf. Eine Klasse statt
+       hier die kleine Stufe (26px, --vc-switch-rail) und fiel daneben auf. Eine Klasse statt
        eigener Werte: der Umschalter bleibt EIN Bauteil. */
     var statusSeg = '<div class="up-seg is-lg uo-status-seg" data-id="'+esc(item.id)+'">'+
       COL_ORDER.map(function(k){ return COLUMNS.find(function(c){ return c.key === k; }); })

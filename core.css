@@ -262,20 +262,19 @@
          sichtbar dieselbe Familie. Hell auf #ffffff: 4.72 und 4.63. Dunkel steht weiter unten. */
       --up-blau-text: #286fe1;
       --up-lila-text: #8e58d8;
-      /* DIE SCHIENE EINES UMSCHALTERS LIEGT UNTER IHREM GRUND, nicht darueber -- und genau das
-         war sie bis zum 07.09. nicht. Hier stand ein aufgehellter Ton (60 Prozent von
-         --vc-switch-bg), im Dunkeln ein aufgehelltes Grau. Aufhellen heisst aber, sich der Pille
-         zu naehern, denn die Pille ist der HELLERE Teil. Gemessen (rohe Kanalwerte mit
-         Augengewichten, Skala 0 bis 255):
-             hell,  auf Weiss:  Schiene #fbfbfb  Pille #ffffff  ->  4.1 Stufen
-             dunkel, im Menue:  Schiene #252528  Pille #28282c  ->  3.0 Stufen
-         Drei Stufen sind nichts, und genau so wurde es gemeldet: "die Switcher in allen Dropdowns
-         brauchen andere Farben, im Darkmode sind sie kaum erkennbar."
-         Jetzt eine SCHWARZE Halbtransparenz. Damit vertieft sie jeden Grund, auf dem sie liegt --
-         Karte, Kopfzeile oder Menue --, und die Pille steht immer darueber statt daneben. Ein
-         fester Wert koennte das nicht: die drei Gruende liegen im Dunkeln 11 bis 19 Stufen
-         auseinander, ein Wert unter dem einen waere ueber dem anderen. */
-      --vc-switch-soft: rgba(0,0,0,0.05);
+      /* DIE SCHIENE EINES UMSCHALTERS -- ein einziger, DECKENDER Ton, fuer jede Groesse und
+         jeden Grund. Zwei Fassungen liegen dahinter. Bis zum 07.09. stand hier ein aufgehellter
+         Ton, und Aufhellen heisst, sich der Pille zu naehern, denn die Pille ist der hellere
+         Teil: auf Weiss 4.1 Stufen, im dunklen Menue 3.0. Gemeldet als "die Switcher in allen
+         Dropdowns brauchen andere Farben, im Darkmode sind sie kaum erkennbar". Danach eine
+         schwarze Halbtransparenz -- die loeste den Kontrast, brachte aber je Grund einen anderen
+         Ton und im Dunkeln eine zweite Fassung nur fuer Menues.
+         Seit dem 22.09. ein fester Wert, gemessen gegen die Pille (#ffffff) und gegen die beiden
+         hellen Gruende (Flaeche #ffffff, Kopfzeile #f9f8f9), rohe Kanaele mit Augengewichten:
+             zur Pille 17 Stufen, zur Flaeche 17, zur Kopfzeile 11.
+         Vorher 13/13 auf Weiss und 12/19 auf der Kopfzeile: derselbe Rahmen, aber EIN Ton statt
+         dreien. Was der feste Wert kostet, steht im dunklen Thema -- dort ist er ein Kompromiss. */
+      --vc-switch-rail: #efedef;
       /* Die Flaeche eines Eingabefelds, SOLIDE. Es gab sie bisher nur als 60%-Variante
          (--vc-switch-bg im Dunkeln, --up-sel-bg, --vt-row-hover) -- und wo ein Chip auf einer Karte
          liegt, die selbst schon getoent ist, addieren sich zwei Halbtransparenzen zu einem dritten
@@ -425,23 +424,20 @@
          zweites Paar, weil er gegen den Grund gelesen werden muss und nicht auf ihm liegt. */
       --up-blau-text: #4c90ff;
       --up-lila-text: #b280ff;
-      /* AUFGEHELLT, und zwar wieder -- mit einer Einschraenkung, die zwei Zeilen weiter unten
-         steht. Am 07.09. war der Wert erst schwarz (0.22), damit die Pille sich abhebt. Das war
-         auf Karten und in Menues richtig und auf dem GRUND DER SEITE falsch: der ist mit #101114
-         selbst fast schwarz, ein Zwanzigstel Schwarz darauf ergibt #0d0d10 -- vier Stufen DARUNTER,
-         also unsichtbar. Und genau dort steht die Mehrzahl der Umschalter: in den Werkzeugleisten
-         der Tabellen, und deren Kopfzeile ist durchsichtig, also die Seite.
-         Gemeldet als "im Darkmode ist der Background des unselektierten kaum erkennbar, im
-         Vergleich zum Page-BG". Gerechnet (Skala 0 bis 255):
-             auf der Seite  aufgehellt #191919 (25.1) -> 8 ueber der Seite, 15 unter der Pille
-             auf der Seite  geschwaerzt #0d0d10 (12.6) -> 4 UNTER der Seite
-             auf der Karte  aufgehellt #212123 (33.1) -> 5 ueber der Karte, 7 unter der Pille
-         EIN Wert kann beides nicht: die Seite ist die dunkelste Flaeche der App, dort MUSS die
-         Schiene heller werden; im Menue (#232326) ist Aufhellen dagegen fast die Pille selbst.
-         Deshalb steht der aufgehellte Wert hier als Regelfall und der geschwaerzte weiter unten
-         nur INNERHALB der Menues. Zwei Werte fuer eine Rolle sind hier nicht Drift, sondern die
-         Antwort auf zwei verschiedene Untergruende. */
-      --vc-switch-soft: rgba(42,42,42,0.35);
+      /* Der deckende Gegenwert -- und hier ist er ein Kompromiss, der benannt gehoert. Im
+         Dunkeln liegen die drei Gruende einer Schiene 19 Stufen auseinander: Seitenschale
+         #101114 (16), Komponentenflaeche #1c1c1f (28), Kopfzeile und Menue #232326 (35). Die
+         Pille steht bei #28282c (40). Ein Ton, der von allen dreien mindestens 6 Stufen entfernt
+         ist, EXISTIERT NICHT: 28 und 35 liegen nur 7 auseinander, also muss jeder Wert, der von
+         28 wegbleibt, unter 22 liegen -- und dann bleiben zur Schale hoechstens 6.
+         #17171a ist das Maximum dieses Minimums, gewichtet auf die Schale, weil dort die
+         Mehrzahl der Umschalter steht (Werkzeugleisten der Tabellen, deren Kopfzeile
+         durchsichtig ist). Gemessen, rohe Kanaele mit Augengewichten:
+             zur Schale 6 Stufen, zur Komponentenflaeche 5, zum Menue 12, zur Pille 17.
+         Mit der Halbtransparenz davor: 9/15, 5/7 und 9/14. Die Schale verliert 3 Stufen, die
+         PILLE gewinnt ueberall -- und die war zweimal der Anlass der Beschwerde. Dafuer faellt
+         die zweite Fassung fuer Menues weg, die es bis hierhin brauchte. */
+      --vc-switch-rail: #17171a;
       --vc-field: #232326;
       /* Die Kopfleiste jeder Tabelle: eine Stufe HELLER als die Tabellenflaeche (--vc-bg
          #1b1b1b), nicht dunkler. Hier stand #121212 -- die Farbe der SEITE, die Leiste sass
@@ -1098,7 +1094,7 @@
     .up-pagesize { display: inline-flex; align-items: center; gap: 8px; flex: 0 0 auto; }
     .up-pagesize-lbl { font-size: 12px; font-weight: 400; color: var(--vc-muted); white-space: nowrap; }
     .up-pagesize-seg { display: inline-flex; align-items: center; gap: 0; height: 32px; padding: 0;
-      background: var(--vc-switch-bg); border-radius: 8px; }
+      background: var(--vc-switch-rail); border-radius: 8px; }
     .up-pagesize-btn { height: 32px; min-width: 34px; padding: 0 9px; border: 1px solid transparent; border-radius: 8px;
       background: transparent; color: var(--vc-muted); cursor: pointer;
       font: inherit; font-size: 12px; font-weight: 500; line-height: 1;
@@ -1171,7 +1167,7 @@
     .up-filter-menu.is-shown { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
     .up-root[data-theme="dark"] .up-filter-menu { background: var(--up-menu-bg); }
     .up-filter-dim { flex: 0 0 auto; margin: 2px 2px 8px; display: inline-flex; padding: 0; gap: 0;
-      background: var(--vc-switch-bg); border-radius: 8px; border: 0; height: 32px; width: 100%; }
+      background: var(--vc-switch-rail); border-radius: 8px; border: 0; height: 32px; width: 100%; }
     .up-filter-dim-btn { height: 32px; padding: 0 12px; border: 1px solid transparent; border-radius: 8px; background: transparent;
       color: var(--vc-muted); cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 500; line-height: 1;
       display: inline-flex; align-items: center; justify-content: center; flex: 1 1 50%; }
@@ -1803,25 +1799,10 @@
     .up-root[data-theme="dark"] .up-sort-menu,
     .up-root[data-theme="dark"] .up-filter-menu { border-color: #34343a; }
     .up-root[data-theme="dark"] .up-sort-menu { background: var(--up-menu-bg); }
-    /* ---- DIE SCHIENE EINES UMSCHALTERS IM MENUE ------------------------------------------------
-       Im Menue liegt der Grund bei #232326 -- also hoeher als die Karte und dicht unter der Pille
-       (#28282c). Eine aufgehellte Schiene waere dort praktisch die Pille selbst (drei Stufen, so
-       gemeldet am 07.09. fuer die Switcher in den Dropdowns). Hier vertieft sie ihren Grund
-       stattdessen: 25 Prozent Schwarz auf #232326 ergibt #1a1a1c, neun Stufen unter dem Menue und
-       vierzehn unter der Pille.
-       Der Regelfall bleibt aufgehellt (siehe die Begruendung am Token) -- er gilt fuer die Seite
-       und fuer Karten. Genannt sind alle Kaesten, die ihren Grund auf --up-menu-bg setzen, plus
-       die drei Filter-Dropdowns, die ausserhalb dieser Bibliothek gebaut sind, aber ihre Klassen
-       mitfuehren. Ein Umschalter, der in keinem davon steht, behaelt den Regelfall. */
-    .up-root[data-theme="dark"] .up-filter-menu,
-    .up-root[data-theme="dark"] .up-ment-menu,
-    .up-root[data-theme="dark"] .up-menu,
-    .up-root[data-theme="dark"] .up-cols-menu,
-    .up-root[data-theme="dark"] .up-submenu,
-    .up-root[data-theme="dark"] .up-sort-menu,
-    .up-root[data-theme="dark"] .umf-menu,
-    .up-root[data-theme="dark"] .umk-menu,
-    .up-root[data-theme="dark"] .utf-menu { --vc-switch-soft: rgba(0,0,0,0.25); }
+    /* Hier stand bis zum 22.09. eine zweite Schienenfarbe, nur fuer Umschalter INNERHALB dunkler
+       Menues: die durchscheinende Schiene hellte ihren Grund auf und stand im Menue (#232326)
+       damit drei Stufen unter der Pille, also praktisch auf ihr. Ein deckender Ton haengt nicht
+       mehr am Grund, deshalb braucht es die Ausnahme nicht mehr -- siehe --vc-switch-rail. */
     .up-sort.is-open .up-sort-btn { color: var(--vc-text); background: var(--vc-heading-bg); }
     .up-pop-head-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 18px; }   /* reserve the Select-all button height up front so nothing resizes */
     .up-pop-action { border: 0; background: transparent; color: var(--vc-muted); font-family: inherit;
@@ -1906,7 +1887,7 @@
        .up-dense-btn ist ABSICHTLICH nicht dabei: das ist der waagerechte Segmentstreifen
        (siehe .up-dense bei den Segmentleisten), dort waere ein senkrechter Abstand sinnlos. */
     :is(.up-pop-opt, .up-pop-row) + :is(.up-pop-opt, .up-pop-row) { margin-top: 4px; }
-    .up-dense { display: inline-flex; width: 100%; padding: 0; gap: 0; background: var(--vc-switch-bg); border-radius: 8px; height: 34px; }
+    .up-dense { display: inline-flex; width: 100%; padding: 0; gap: 0; background: var(--vc-switch-rail); border-radius: 8px; height: 34px; }
     /* 0 8px: die Beschriftung steht nicht mehr auf der Kante ihrer Haelfte. Wirkt dort, wo der
        Schalter sich nach seinem Inhalt richtet (die Zeile im Einstellungsfenster); in einem
        Chart-Menue hat .up-dense width:100%, dort bleibt die Breite wie sie war. */
@@ -2048,7 +2029,7 @@
     /* Granularity switcher (Day/Week/Month). Lives here because visibility-chart AND
        brands-overview both show it; the vc- prefix is kept rather than renamed because it is in
        already-deployed visibility-chart markup (same reasoning as .vot-scale-btn above). */
-    /* 26px hoch und nicht 32, Polster 8 statt 12, Flaeche --vc-switch-soft: die Fassung, die in der
+    /* 26px hoch und nicht 32, Polster 8 statt 12, Flaeche --vc-switch-rail: die Fassung, die in der
        Hero-Sektion der Landingpage entstanden ist und von dort uebernommen wurde. Alle drei Masse
        zusammen (STYLEGUIDE 1) -- eine 32er-Pille mit 8px Polster waere zu weit, eine 26er mit 12px
        zu eng. Die Schrift bleibt bei 12px/500: die 11px im Schaustueck kommen aus dessen eigener
@@ -2059,7 +2040,7 @@
    .up-seg/.cc-seg weiter unten: sein Markup liegt in der von Hand eingefuegten Bubble-Seite, ein
    Umbenennen wuerde sie zerlegen. Vorher stand eine wortgleiche Kopie in citations-combo-chart.css
    -- und jede Aenderung hier (Mindestbreite, Farbe) erreichte ihn deshalb nicht. */
-.vc-gran, .cc-gran { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-soft); border-radius: 8px; border: 0; height: 26px; flex: 0 0 auto; align-self: flex-start; }
+.vc-gran, .cc-gran { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-rail); border-radius: 8px; border: 0; height: 26px; flex: 0 0 auto; align-self: flex-start; }
 /* Im Combo-Chart steht er in einer Zeile mit Knoepfen und deshalb mittig. */
 .cc-gran { align-self: center; }
 /* min-width 26 = die Hoehe: mit den kurzen Beschriftungen D, W und M (core.js, stampGran) ist
@@ -3108,7 +3089,7 @@
    Zwei bleiben oben buendig, und beide aus demselben Grund: sie stehen nicht in einer Zeile mit
    Knoepfen, sondern in der oberen Ecke einer Kachel, deren Kopf mehrzeilig ist -- .vc-gran im
    Visibility-Chart und .tcl-seg im Zitatteil. Ihre Ausnahme steht unten. */
-.up-seg, .cc-seg, .ubo-seg, .tcl-seg { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-soft); border-radius: 8px; border: 0; height: 26px; flex: 0 0 auto; align-self: center; }
+.up-seg, .cc-seg, .ubo-seg, .tcl-seg { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-rail); border-radius: 8px; border: 0; height: 26px; flex: 0 0 auto; align-self: center; }
 .tcl-seg { align-self: flex-start; }
 
 /* ---- Der gleitende Umschalter --------------------------------------------------------------
@@ -3162,39 +3143,19 @@
    Jetzt bg-quaternary (#28282c) auf border-secondary -- eine Stufe ueber der Schiene, wie ueberall
    sonst das Gewaehlte. Sieben Stellen, alle mit demselben Muster. */
 [data-theme="dark"] .uap-tabs::before { background: #28282c; border-color: #34343a; }
-/* ---- UND DIE SCHIENE DARUNTER, bei den GROSSEN Umschaltern -----------------------------------
+/* ---- UND DIE SCHIENE DARUNTER --------------------------------------------------------------
    Gemeldet am 07.09. zuerst fuer das Dunkle ("die grossen Switcher, die 32px hoch sind, muessen
    denselben Grund bekommen wie die kleinen, weil der Selected-State sich sonst zu wenig davon
    unterscheidet"), danach fuer alle Dropdowns ("kaum erkennbar, der Kontrast ist zu niedrig").
-   Beides ist dieselbe Ursache: die grossen trugen --vc-switch-bg, den VOLLEN Ton, und der liegt
-   dicht an der Pille. Nachgerechnet gegen die Pille (rohe Kanalwerte mit Augengewichten):
-       dunkel  Schiene #232326  Pille #28282c   ->   5.0 Stufen
-       hell    Schiene #f9f8f9  Pille #ffffff   ->   6.7 Stufen
-   Jetzt tragen sie in BEIDEN Themen die Schiene der kleinen Form (--vc-switch-soft, seit dem
-   07.09. eine schwarze Halbtransparenz, siehe dort). Daraus werden 13 bis 24 Stufen, je Grund.
-   Die Groessenunterscheidung beim GRUND faellt damit ganz weg -- ihr Anlass war, dass die alte,
-   aufhellende Schiene den grossen Umschalter blass aussehen liess. Eine Schiene, die ihren Grund
-   VERTIEFT, hat das Problem nicht, und zwei Werte fuer eine Rolle waren immer der schlechtere
-   Teil dieser Regel. Was bleibt, ist der Unterschied in der HOEHE.
-   Alle grossen Schienen an EINER Stelle, damit die naechste Groessenaenderung sie nicht wieder
-   auseinanderlaufen laesst. Die Spezifitaet reicht in jedem Fall: .up-root legt eine Stufe auf
-   den jeweiligen Grundselektor, also gewinnt sie unabhaengig von der Ladereihenfolge auch gegen
-   die Regeln in den Komponentendateien -- und die Menues haengen zwar am body, tragen aber
-   selbst .up-root (up-portal), der Selektor trifft sie also. */
-.up-root .up-pagesize-seg,
-.up-root .up-filter-dim,
-.up-root .up-dense,
-.up-root .up-seg.is-lg,
-.up-root .cc-seg.is-lg,
-.up-root .ubo-seg.is-lg,
-.up-root .tcl-seg.is-lg,
-.up-root .up-seg.umf-seg,
-.up-root .up-seg.umk-seg,
-.up-root .up-seg[aria-label="Match mode"],
-.up-root .tcd-mode,
-.up-root .udt-sub-dispseg,
-.up-root .uca-format-seg,
-.up-root .uap-tabs { background: var(--vc-switch-soft); }
+   Ursache war, dass die GROESSE den Grund bestimmte: die grossen trugen den vollen Ton, der
+   dicht an der Pille liegt (dunkel 5.0 Stufen, hell 6.7).
+   Hier stand danach eine Regel mit vierzehn Selektoren, die alle grossen Umschalter auf den Ton
+   der kleinen zwang. Sie ist am 22.09. weggefallen: die Schiene haengt jetzt an EINER Marke
+   (--vc-switch-rail), die Groesse aendert nur noch die Hoehe, und damit gibt es nichts mehr
+   nachzuziehen. Die Regel hatte ausserdem einen stillen Preis -- sie ueberschrieb per .up-root
+   die Komponentendateien, und deren eigene Grundangaben waren dadurch wirkungslos, ohne dass man
+   es ihnen ansah: acht tote Zeilen, gefunden beim Messen. Jetzt nennt jede Schiene ihren Grund
+   selbst, und es gibt nur einen. */
 /* Die Knoepfe stehen ueber dem Streifen. */
 .is-gleitend > button { position: relative; z-index: 1; }
 /* Und die aktive Stufe gibt ihre eigene Flaeche ab, SOBALD der Streifen misst. Drei Stufen der
@@ -3215,18 +3176,17 @@
 /* ---- Die zweite GROESSE des Umschalters ----------------------------------------------------
    is-lg ist der Umschalter, der nicht als Werkzeug in einer Kopfzeile steht, sondern allein ueber
    dem Inhalt und die Ansicht der ganzen Seite waehlt (brand-detail, domain-detail).
-   Und die Groesse bestimmt den GRUND: der kleine traegt den durchscheinenden Ton
-   (--vc-switch-soft), der grosse den vollen (--vc-switch-bg, hell #f4f2f4). Vorher stand die Hoehe
-   in den Komponenten und der Grund nur hier -- ein 32px hoher Umschalter bekam damit den Ton des
-   kleinen und stand zu blass da. Beide Werte gehoeren zusammen, also stehen sie zusammen. */
+   Die Groesse bestimmt den GRUND nicht mehr: seit dem 22.09. tragen kleine wie grosse
+   Umschalter --vc-switch-rail, und der steht in der Grundregel von .up-seg weiter oben. Hier
+   bleibt nur, was die Groesse wirklich aendert -- die Hoehe. */
 .up-seg.is-lg, .cc-seg.is-lg, .ubo-seg.is-lg, .tcl-seg.is-lg,
 /* Die Umschalter der drei Filter-Dropdowns: Models (umf-seg), Markets (umk-seg) und der
    Match-Modus der Topics, der keine eigene Klasse hat und deshalb an seiner Beschriftung
    gefasst wird -- aria-label steht so in seinem Markup. Sie stehen in Elementen ausserhalb
-   dieser Bibliothek, tragen aber ihre Klassen: ohne is-lg bekamen sie die kleine Form mit dem
-   durchscheinenden Ton, obwohl sie in einem Dropdown genauso 32 sein sollen wie ueberall sonst. */
+   dieser Bibliothek, tragen aber ihre Klassen: ohne is-lg bekamen sie die kleine Form, obwohl
+   sie in einem Dropdown genauso 32 sein sollen wie ueberall sonst. */
 .up-seg.umf-seg, .up-seg.umk-seg, .up-seg[aria-label="Match mode"] {
-  height: 32px; background: var(--vc-switch-bg);
+  height: 32px;
 }
 .up-seg.is-lg .up-seg-btn, .cc-seg.is-lg .cc-seg-btn,
 .ubo-seg.is-lg .ubo-seg-btn, .tcl-seg.is-lg .tcl-seg-btn,
@@ -3978,8 +3938,8 @@
    Bedeutungen". Alles, was in einem Menue liegt, zieht mit: Zeilen, Schalterzeilen, die
    Icon-Knoepfe der Kopfzeile, das X im Suchfeld.
 
-   Dasselbe Muster wie --vc-switch-soft weiter oben, das aus demselben Grund je Menue
-   ueberschrieben wird. Die Trigger sind NICHT betroffen: sie sind Geschwister des Menues, keine
+   Die Schiene eines Umschalters folgte diesem Muster bis zum 22.09. ebenfalls; sie braucht es
+   seit ihrem deckenden Ton nicht mehr. Die Trigger sind NICHT betroffen: sie sind Geschwister des Menues, keine
    Kinder, und ihr geoeffneter Zustand bleibt der Kopfzeilenton auf der Seitenflaeche. */
 .up-root .up-filter-menu, .up-root .up-menu, .up-root .up-cols-menu,
 .up-root .up-sort-menu, .up-root .up-ment-menu, .up-root .up-pop,

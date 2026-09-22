@@ -2770,10 +2770,12 @@
    border: 1px solid var(--vc-border) fiel weg, die Karten standen ohne Kontur auf der Seite. */
 .ulh-preis { padding: clamp(64px, 9vw, 128px) 0 clamp(48px, 7vw, 96px); }
 /* Der Schalter ist .up-seg aus core. Seine Marken stehen hier lokal -- ohne sie bekaeme er weder
-   Grund noch Rahmen. Die Werte sind die hellen aus core.css, unveraendert. */
+   Grund noch Rahmen. Die Schiene ist genau der Ton, den diese Sektion bis zum 22.09. gerendert
+   hat (rgba(245,245,245,0.6) auf --ulh-grund), jetzt deckend ausgeschrieben. Damit bleibt die
+   Landingpage unveraendert, obwohl core seither einen kraeftigeren Schienenton fuehrt: hier steht
+   der Schalter auf einer hellen, ruhigen Flaeche und soll leiser sein als in der App. */
 .ulh-preis-schalter {
-  --vc-switch-soft: rgba(245, 245, 245, 0.6);
-  --vc-switch-bg: #f5f5f5;
+  --vc-switch-rail: #f9f9f9;
   --vc-switch-border: #e0e2e6;
   --vc-text: var(--ulh-text);
   --vc-muted: var(--ulh-muted);

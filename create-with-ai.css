@@ -266,7 +266,7 @@
    dunkel), aber der Name gehoert zum Bauteil. Jede andere Segmentleiste der App nimmt
    --vc-switch-*; wer spaeter den Grund der Umschalter aendert, haette diese eine sonst
    uebersehen. Keine sichtbare Aenderung. */
-.uca-format-seg { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-bg); border-radius: 8px; height: 32px; }
+.uca-format-seg { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-rail); border-radius: 8px; height: 32px; }
 .uca-fmt {
   position: relative; height: 32px; padding: 0 14px; border: 1px solid transparent; border-radius: 8px; background: transparent;
   color: var(--vc-muted); font: inherit; font-size: 13px; font-weight: 550; cursor: pointer; white-space: nowrap;

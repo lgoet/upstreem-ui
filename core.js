@@ -6969,7 +6969,7 @@
      .tcd-mode-btn ...), und eine Liste davon waere beim naechsten neuen Umschalter wieder
      unvollstaendig. Der Streifen selbst ist ein span und faellt deshalb nicht mit hinein. */
   /* Die Liste ist nicht geraten, sondern aus den Stilen gezogen: es sind genau die Kaesten, die
-     .vc-switch-bg oder .vc-switch-soft als Flaeche tragen und Knoepfe enthalten -- also alles, was
+     .vc-switch-bg oder .vc-switch-rail als Flaeche tragen und Knoepfe enthalten -- also alles, was
      in dieser App wie ein Umschalter aussieht. Wer einen neuen baut, traegt ihn hier ein.
      .upt-status (Active/Inactive in der Prompt-Tabelle), .udt-sub-dispseg und .uap-tabs haben
      zuerst gefehlt: sie heissen nicht "seg" und sind mir deshalb durchgegangen. */

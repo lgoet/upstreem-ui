@@ -305,7 +305,7 @@
    line-height 1 ohne anzustossen. Eine kleinere Schrift waere hier der eine Wert, der nicht
    mitmusste. */
 .udt-sub-dispseg { display: inline-flex; align-items: center; gap: 0; height: 24px; padding: 0;
-  background: var(--vc-switch-bg); border-radius: 6px; flex: 0 0 auto; }
+  background: var(--vc-switch-rail); border-radius: 6px; flex: 0 0 auto; }
 .udt-sub-disp-btn { height: 24px; min-width: 34px; padding: 0 8px; border: 1px solid transparent; border-radius: 6px;
   background: transparent; color: var(--vc-muted); cursor: pointer;
   font: inherit; font-size: 12px; font-weight: 500; line-height: 1;
