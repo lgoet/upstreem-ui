@@ -6660,7 +6660,7 @@
          der erste Versuch hat an dieser Zeile geworfen und den Kopfbereich leer gelassen. Die
          Nachbarschaft macht es genauso (siehe moreHorizontal weiter oben). */
       var kern = window.UpstreemCore;
-      um.innerHTML = (kern && kern.icon) ? kern.icon('sidebarPanels') : '';
+      um.innerHTML = (kern && kern.icon) ? kern.icon('panelLeft', 1.5) : '';
       um.addEventListener('click', closePrev);
       /* DASSELBE Markenzeichen wie oben links im Kopf: .am-brand aus Zeichen (blend) und
          Schriftzug "mira". Nicht ein anderes Zeichen in kleiner -- die Klassen sind die des
@@ -6695,7 +6695,7 @@
         mini.innerHTML =
           '<span class="am-mini-logo" aria-hidden="true">' + ic('blend') + '</span>' +
           '<button class="up-iconbtn am-mini-toggle" type="button" data-mini="open"' +
-            ' aria-label="Expand sidebar" data-tip="Expand sidebar">' + ic('sidebarPanels') + '</button>' +
+            ' aria-label="Expand sidebar" data-tip="Expand sidebar">' + ic('panelLeft') + '</button>' +
           '<div class="am-mini-items">' +
             '<button class="am-mini-btn" type="button" data-mini="new" aria-label="New chat"' +
               ' data-tip="New chat" data-tip-place="right">' + ic('plus') + '</button>' +

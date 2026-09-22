@@ -2552,7 +2552,10 @@
      rechts -- die Leiste steht rechts. Steht sie links, zeigt er in seine urspruengliche
      Richtung. Dieselbe Rechnung wie am .am-side-toggle der grossen Leiste, nur hier noch einmal,
      weil dieser Knopf nicht in .am-prev-head haengt. */
-  .am-mini-toggle { flex: 0 0 32px; width: 32px; height: 32px; margin-bottom: 8px; }
+  /* Zweitfarbe wie der Umschalter der grossen Leiste -- es ist derselbe Knopf, nur im
+     eingeklappten Zustand (22.09.). */
+  .am-mini-toggle { flex: 0 0 32px; width: 32px; height: 32px; margin-bottom: 8px;
+    color: var(--vc-muted); }
   .am-mini-toggle svg { width: 16px; height: 16px; display: block; transform: scaleX(-1); }
   #ask-mira.is-side-left .am-mini-toggle svg { transform: scaleX(1); }
   .am-mini-items { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 100%; }
@@ -2899,7 +2902,9 @@
      rgb(160,160,160) gegen die rgb(128,128,128) der Hauptleiste. Im Hellen fiel es nicht auf,
      weil dort keine solche Regel steht.
      Ueber die Spezifitaet geloest und nicht ueber die Ladereihenfolge -- CLAUDE.md 1. */
-  .am-prev-panel .up-iconbtn.am-side-toggle { color: var(--vc-third); }
+  /* Zweitfarbe und nicht Drittfarbe (22.09. angefordert, gleichlautend fuer die Hauptleiste).
+     Der Umschalter ist ein Bedienelement und stand leiser da als der Text daneben. */
+  .am-prev-panel .up-iconbtn.am-side-toggle { color: var(--vc-muted); }
   .am-prev-panel .up-iconbtn.am-side-toggle:hover { background: var(--am-soft); color: var(--vc-text); }
   /* Gespiegelt: das Zeichen zeigt eine Leiste an der linken Kante, diese hier sitzt rechts.
      scaleX(-1) wie am Zeichen des "All Chats"-Knopfes daneben -- dieselbe Drehung, damit die zwei

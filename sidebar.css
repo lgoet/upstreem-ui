@@ -406,7 +406,10 @@
    primaerfarben, sobald der Team-Schalter offen war. */
 /* Radius 12 wie alle Flaechen der Leiste -- das Kit gibt .up-iconbtn 8 mit. */
 .usn-bar .up-iconbtn { border-radius: 12px; }
-.usn-bar .up-iconbtn.usn-toggle { color: var(--vc-third); }
+/* Zweitfarbe und nicht Drittfarbe (22.09. angefordert). Der Umschalter war der leiseste
+   Punkt der Leiste -- leiser als die Ueberschriften darunter, obwohl er ein Bedienelement ist
+   und die keine sind. Dieselbe Aenderung steht an Miras Umschalter (ask-mira.css). */
+.usn-bar .up-iconbtn.usn-toggle { color: var(--vc-muted); }
 .usn-bar .up-iconbtn.usn-toggle:hover { background: var(--usn-sel); color: var(--vc-text); }
 .usn-bar .up-iconbtn:hover { background: var(--usn-sel); color: var(--vc-text); }
 /* Ganz nach rechts: der Knopf gehoert an die Kante der Leiste, nicht hinter den Teamnamen.
@@ -560,7 +563,12 @@
    Konflikte ueber Spezifitaet loesen, nie ueber Ladereihenfolge. font-family (LANGFORM) trifft
    nur, was diese Regel wirklich will -- keine Knopf-Schriftart des Betriebssystems --, und laesst
    Groesse, Gewicht und Laufweite von .up-blockhead in Ruhe. */
+/* 500 statt der 600 aus .up-blockhead (22.09. angefordert: "die sind mir zu fett"). NUR die
+   Leiste: .up-blockhead traegt auch die Filter-Titel, die Etiketten der Topic-Dialoge und die
+   Blockkoepfe des Power Dashboards, und die stehen woanders und in anderer Nachbarschaft.
+   Die Unterscheidung zum Fliesstext bleibt: 12px, Drittfarbe, und eine Stufe ueber 400. */
 .usn-head {
+  font-weight: 500;
   width: 100%; display: flex; align-items: center; gap: 6px;
   padding: 0 8px 6px; border: 0; background: transparent; cursor: pointer;
   font-family: inherit; white-space: nowrap; text-align: left;
@@ -632,10 +640,11 @@
    Beschriftungen aller Zeilen an derselben Stelle beginnen zu lassen. */
 .usn-ic { position: relative; width: 22px; height: 22px; flex: 0 0 22px; color: var(--vc-muted);
   display: inline-flex; align-items: center; justify-content: center; }
-/* 16px und nicht 17 (07.09. angefordert, "1x1 px kleiner"). Die SPALTE bleibt bei 22px: an ihr
-   haengen die Markenlogos der angehefteten Zeilen und der Textanfang aller Zeilen, das Zeichen
-   sitzt nur mittig darin. Ein Pixel weniger am Symbol verschiebt also nichts. */
-.usn-ic svg { width: 16px; height: 16px; display: block; }
+/* 17px, am 22.09. wieder zurueck. Am 07.09. waren sie von 17 auf 16 gegangen; mit dem neuen
+   Satz tragen sie duennere Striche (1.5 statt 1.8) und wirken dadurch kleiner, als sie sind --
+   ein Pixel gleicht das aus. Die SPALTE bleibt bei 22px: an ihr haengen die Markenlogos der
+   angehefteten Zeilen und der Textanfang aller Zeilen, das Zeichen sitzt nur mittig darin. */
+.usn-ic svg { width: 17px; height: 17px; display: block; }
 /* Mira traegt jetzt dasselbe Zeichen wie jeder andere Punkt (blend aus UC.icon). Hier standen
    davor rund 25 Zeilen fuer einen Sonderweg: eine Bilddatei von Bubbles CDN ueber dem Symbol, dazu
    zwei gerechnete Helligkeitsfilter (3.58 hell, 0.714 dunkel) und eine Groessenkorrektur von

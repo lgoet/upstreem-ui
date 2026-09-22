@@ -2377,13 +2377,17 @@
        Feather icons' weight at THEIR 16x16 size, but this icon renders 20x20 (see the size note
        below), and stroke-width doesn't scale with the forced CSS box -- 2 was too heavy at the
        bigger size. */
-    var GRP_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.75" y="5.25" width="16.5" height="5.25" rx="1.5"/><rect x="11.25" y="13.5" width="9" height="5.25" rx="1.5"/><polyline points="3.75,13.5 6.75,16.5 3.75,19.5"/></svg>';
+    /* Aus core wie jedes andere Zeichen (§5). Hier stand bis zum 22.09. ein von Hand
+       gezeichnetes SVG -- die einzige Stelle der App, an der eines nicht aus dem Satz kam, und
+       damit die einzige, die bei einem Satzwechsel stehen geblieben waere. Das svg der Vorlage
+       traegt Groesse und Strichbreite aus der CSS des Knopfes, gebraucht wird nur der Inhalt. */
+    var GRP_ICON = UC.icon("combine", 1.7);
     /* EIN Zeichen fuer beide Umschalter (den im Kopf der Gruppenliste und den in der Werkzeugleiste):
        ein Klick auf einen von beiden heisst immer "Gruppenleiste umschalten".
 
-       UC.icon("sidebarPanels"). Bis zum 22.09. war das wortgleich das Zeichen oben rechts in
-       der Hauptleiste; die traegt seitdem hgLayoutLeft aus dem Hugeicons-Satz (Testlauf, siehe
-       BAR_SVG in sidebar.js). Bleibt der Satz, gehoert dieses Zeichen nachgezogen. Hier stand vorher
+       panelLeft, weil die Gruppenliste LINKS neben der Tabelle sitzt (insertBefore(panel, box)
+       weiter unten). Wortgleich das Zeichen oben rechts in der Hauptleiste -- dieselbe Sache,
+       dieselbe Seite, dasselbe Zeichen. Hier stand vorher
        das gestrichelte Lucide "panel-left"; zwei verschiedene Zeichen fuer dieselbe Handlung sind
        an zwei Orten zwei verschiedene Aussagen. Es ist gefuellt und hat einen 16er viewBox, wird
        ueber .up-iconbtn svg also 1:1 gerendert -- die Haarlinien des Rahmens bleiben genau einen
@@ -2392,7 +2396,7 @@
        Was NICHT mitkommt: die 80 Prozent Deckkraft im Ruhezustand. Die gibt es in der Hauptleiste,
        weil der Umschalter dort die Leiste nicht anfuehren soll. Hier ist er einer von vier
        gleichrangigen Knoepfen -- zurueckgenommen waere er dort der einzige blasse. */
-    var SIDEBAR_ICON = UC.icon("sidebarPanels");
+    var SIDEBAR_ICON = UC.icon("panelLeft", 1.7);
     /* Same three-line glyph .up-sort-btn already uses elsewhere — a second, differently-scoped
        Sorter needs its own classes (see below) so it doesn't collide with the flat table's own
        .up-sort-btn click handling, but it should still look like the same control. */

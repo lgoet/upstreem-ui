@@ -225,9 +225,10 @@
      Bubble HTML element the user pasted once, so a change in bubble/prompt_research_bubble.html
      only reaches a FRESH install. From JS the CDN pin alone carries it. Idempotent by nature. */
   (function(){
-    /* Die Seitenleiste aus core (panelLeft), GESPIEGELT: die Liste der Recherchen faehrt von
-       rechts herein, die Leiste der App von links. Dasselbe Zeichen fuer dieselbe Sache, nur zur
-       richtigen Seite gedreht. Vorher stand hier die runde Sprechblase -- die sagt "Chat" und
+    /* panelRight aus core: die Liste der Recherchen faehrt von RECHTS herein. Bis zum 22.09.
+       stand hier panelLeft mit einer Spiegelung in der CSS (.upr-leiste-ic, scaleX(-1)) -- der
+       Satz kannte nur eine Seite. Jetzt fuehrt er beide, und eine gedrehte Kopie ist keine
+       Abbildung mehr noetig. Vorher stand hier die runde Sprechblase -- die sagt "Chat" und
        nicht "Liste, die von der Seite kommt". */
     /* Die FORMEN aus core, nicht aus einer Kopie: icon() liefert ein ganzes svg, gebraucht wird
        hier nur sein Inhalt (das svg der Vorlage bleibt stehen, es traegt Groesse und Strichbreite
@@ -235,14 +236,14 @@
     var LEISTE = (function(){
       if (!UC || !UC.icon) return "";
       var h = document.createElement('div');
-      h.innerHTML = UC.icon('panelLeft', 2);
+      h.innerHTML = UC.icon('panelRight', 1.7);
       return h.firstChild ? h.firstChild.innerHTML : "";
     })();
     ['#upr-open-history', '#upr-open-history-results'].forEach(function(sel){
       var btn = root.querySelector(sel);
       if (!btn) return;
       var svg = btn.querySelector('svg');
-      if (svg && LEISTE){ svg.innerHTML = LEISTE; svg.classList.add('upr-leiste-ic'); }
+      if (svg && LEISTE){ svg.innerHTML = LEISTE; }
       /* Only the text node carries the label -- replacing it directly leaves the <svg> alone,
          which innerHTML/textContent on the button would not. */
       for (var i = 0; i < btn.childNodes.length; i++){

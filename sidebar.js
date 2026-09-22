@@ -139,7 +139,7 @@
        "prefswin", die zwei koennen sich in keiner Richtung mehr verwechseln.
        Es heisst "Preferences" und nicht "Settings" -- "Your Brand" darueber IST die
        Einstellungsseite dieser App, und zwei Dinge mit demselben Namen sind eines zu viel. */
-    { items: [{ key: "prefswin", label: "Preferences", icon: "settings2" }] },
+    { items: [{ key: "prefswin", label: "Preferences", icon: "preference" }] },
     { head: "Theme", theme: true, items: [
       { key: "light",  label: "Light"  },
       { key: "dark",   label: "Dark"   },
@@ -212,7 +212,9 @@
     var instanceId = root.getAttribute("data-instance") || "default";
     /* Erst hier, nicht auf Modulebene: UC steht beim Laden dieser Datei noch nicht fest. */
     /* Der Umschalter oben rechts traegt seit dem 22.09. hgLayoutLeft aus dem Hugeicons-Satz --
-       vorher das gefuellte sidebarPanels (Bootstrap Icons, eigener 16er Kasten). Die Farben
+       vorher das gefuellte sidebarPanels (Bootstrap Icons, eigener 16er Kasten). panelLeft,
+       weil DIESE Leiste links steht -- der Satz fuehrt beide Seiten, gespiegelt wird nirgends
+       mehr, wo die Seite feststeht. Die Farben
        stehen an .usn-toggle (Drittfarbe in Ruhe, Primaerfarbe beim Hover); ein Strichzeichen
        mit stroke="currentColor" folgt ihnen genauso wie das gefuellte davor.
        1.5 wie bei jedem anderen Hugeicon hier: die CSS zwingt das Zeichen auf 16px, aus dem
@@ -221,7 +223,7 @@
        SIDEBARPANELS LEBT WEITER: es ist der Schalter des Seitenpanels in der Prompts-Tabelle.
        Die beiden waren bis heute dasselbe Zeichen -- wer sie wieder zusammenfuehren will, zieht
        prompts-table nach (SIDEBAR_ICON dort). */
-    if (!BAR_SVG) BAR_SVG = UC.icon("hgLayoutLeft", 1.5);
+    if (!BAR_SVG) BAR_SVG = UC.icon("panelLeft", 1.5);
     var fire = UC.makeFire(root, { label: "sidebar", eventPrefix: "" });
 
     function attr(n, f){
@@ -232,29 +234,12 @@
        davor ein Sonderweg: ein Bild von Bubbles CDN ueber einem Symbol, dazu zwei Helligkeits-
        filter in der CSS, weil ein fremdes SVG sich weder faerben noch als Maske verwenden laesst
        (kein CORS-Header). Der ganze Weg ist mit dem Wechsel auf blend hinfaellig. */
-    /* TESTWEISE EIN ANDERER ZEICHENSATZ (22.09.).
-       Die vierzehn Zeichen der Seitenleiste laufen auf Hugeicons stroke-rounded statt auf
-       Lucide. Die Zeichen selbst stehen in core (ICON_PATHS, Praefix hg) -- hier steht nur,
-       welcher Punkt welches bekommt. WAS NICHT DRIN STEHT, BLEIBT LUCIDE: der Umschalter
-       Der Haken im Hinweis ist kein Navigationszeichen und bleibt Lucide; der Umschalter
-       laeuft ueber BAR_SVG und nicht ueber diese Tabelle, siehe oben.
-       Zurueck geht es, indem diese Tabelle geleert wird -- ic() faellt dann von selbst auf den
-       Lucide-Namen zurueck, und kein Aufrufer muss angefasst werden.
-       Die Zuordnung steht in core ueber den Eintraegen, je mit der Begruendung, warum GENAU
-       dieses Zeichen und nicht das namensgleiche. */
-    var HG_SATZ = {
-      home: "hgHome", zap: "hgZap", globe: "hgGlobe", squareStack: "hgSquareStack",
-      chartColumnUp: "hgChartColumnUp", listTodo: "hgListTodo", telescope: "hgTelescope",
-      blend: "hgBlend", folders: "hgFolders", bolt: "hgBolt", users: "hgUsers",
-      dollarSign: "hgDollarSign", settings2: "hgSettings2", logOut: "hgLogOut"
-    };
-    /* 1.5 fuer Hugeicons, 1.8 fuer Lucide. Die beiden Saetze sind fuer verschiedene
-       Strichstaerken gezeichnet -- Hugeicons fuehrt mehr Linien je Zeichen, und mit 1.8 laufen
-       sie an den engen Stellen zu. Die 1.8 fuer Lucide bleiben, damit ein Zeichen, das NICHT in
-       der Tabelle steht, aussieht wie bisher. */
+    /* 1.5 und nicht 2: der Satz ist fuer diese Strichstaerke gezeichnet, und die Zeichen der
+       Leiste sind mit 17px die kleinsten der App -- mit 2 laufen sie an den engen Stellen zu.
+       Hier stand bis zum 22.09. eine Umschalttabelle (HG_SATZ), solange nur die Leiste auf dem
+       neuen Satz lief. Jetzt laeuft die ganze App darauf, und die Tabelle ist ersatzlos weg. */
     function ic(name){
-      var hg = HG_SATZ[name];
-      return hg ? UC.icon(hg, 1.5) : UC.icon(name, 1.8);
+      return UC.icon(name, 1.5);
     }
     /* .up-logo-box aus core: ein Element, Buchstabe darunter, Bild darueber. Faellt das Bild
        aus, verliert die Box has-img und der Buchstabe wird sichtbar. */
