@@ -320,7 +320,13 @@
    Gruppe, denn sie alle tragen diese eine Klasse.
    --am-muted-2 ist die lokale Entsprechung der dritten Stufe: #9ca3af hell, #6f6f6f dunkel,
    gegen #9e9e9e / #808080 in core. */
-.mqa-group-head { padding: 6px 10px 4px; font-size: 12px; font-weight: 600; color: var(--am-muted-2); }
+/* Unten 8 und nicht 4: derselbe Abstand unter der Ueberschrift wie bei .up-pop-head in core,
+   also in jedem Dropdown der App. Gemessen zwischen Kopftext und erstem Eintragstext: die
+   Kern-Liste steht bei 17px (8 Kopfpolster + 9 Zeilenpolster), hier waren es 12 -- die
+   Ueberschrift klebte am ersten Ergebnis. Mit 8 sind es 16; der eine Pixel Unterschied kommt
+   aus dem Zeilenpolster dieser Liste (8 statt 9) und ist ihr eigener Rhythmus.
+   Oben bleibt 6: das ist der Abstand zur vorigen Gruppe und haengt an .mqa-group. */
+.mqa-group-head { padding: 6px 10px 8px; font-size: 12px; font-weight: 600; color: var(--am-muted-2); }
 .mqa-row, .mqa-action {
   display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; border: 0; background: transparent;
   padding: 8px 10px; border-radius: 10px; cursor: pointer; font-family: var(--mqa-font); color: var(--am-text);
