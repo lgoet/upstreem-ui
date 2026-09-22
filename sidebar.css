@@ -576,6 +576,12 @@
    Die Unterscheidung zum Fliesstext bleibt: 12px, Drittfarbe, und eine Stufe ueber 400. */
 .usn-head {
   font-weight: 500;
+  /* Etwas mehr Laufweite (22.09. angefordert). Vorher normal, also 0 -- .up-blockhead setzt
+     keine. .02em und keine erfundene Zahl: das ist die kleinere der zwei Stufen, die diese
+     Leiste ohnehin fuehrt (.usn-acc-mail steht auf .02em, der Teamname auf .04em). Die
+     Ueberschriften stehen damit eine Stufe unter dem Teamnamen und ueber dem Fliesstext --
+     dieselbe Staffelung wie bei Groesse und Schnitt. */
+  letter-spacing: .02em;
   width: 100%; display: flex; align-items: center; gap: 6px;
   padding: 0 8px 6px; border: 0; background: transparent; cursor: pointer;
   font-family: inherit; white-space: nowrap; text-align: left;
