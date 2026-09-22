@@ -6778,6 +6778,16 @@
       var b = els[i];
       var t = toolbarSchluessel(b);
       if (!t || b.getAttribute("data-up-ic") === t.key) continue;
+      /* IST DAS GETROFFENE ELEMENT SELBST EIN SVG? Dann nicht darin suchen. Die Sortierpfeile
+         der Tabellenkoepfe (.up-thsort-up/-down) sind das svg -- querySelector fand nichts, und
+         der Zweig darunter schrieb ein svg IN das svg. Sichtbar blieb das alte Zeichen; genau
+         so gemeldet am 22.09. ("in Brands Overview stimmen sie, ueberall sonst nicht" -- dort
+         baut das JS sie ueber UC.icon, deshalb war die eine Tabelle richtig). */
+      if (b.tagName && b.tagName.toLowerCase() === "svg"){
+        b.innerHTML = t.pfad;
+        b.setAttribute("data-up-ic", t.key);
+        continue;
+      }
       var alt = b.querySelector("svg");
       /* Die Strichstaerke aus dem vorhandenen SVG uebernehmen: das X im Suchfeld traegt 2.2,
          die anderen 2, und das ist Absicht -- ein einheitlicher Wert wuerde ein halbes Dutzend
@@ -8969,11 +8979,40 @@
 
     function esc(v){ var d = document.createElement("div"); d.textContent = String(v == null ? "" : v); return d.innerHTML; }
 
+    /* DIE ZEICHEN DER ZEILEN KOMMEN AUS DEM SATZ, nicht aus dem Aufrufer (22.09.).
+       Die Seitenkopf-Komponente liefert p.icon als fertiges Markup, und sie liegt nicht am Pin
+       -- ihre Zeichen blieben deshalb als einzige der Kopfzeile auf dem alten Stand. Ueber den
+       Klassen-Stempel war es nicht zu erreichen: der braeuchte den data-page-Wert, und den kennt
+       nur der Aufrufer. Also hier, und zwar ueber BEIDES -- den Wert UND die Beschriftung:
+       welches der zwei die Komponente schickt, ist von hier aus nicht zu wissen.
+       Kennt der Satz einen Namen nicht, bleibt p.icon unveraendert. Eine Komponente, die
+       bewusst ein eigenes Zeichen schickt, verliert es also nicht -- nur die drei bekannten
+       Zeilen der Prompts-Seite werden auf den Satz gezogen. */
+    var NAV_ZEICHEN = {
+      prompt: "zap", prompts: "zap", "prompt insights": "zap",
+      topic: "tags", topics: "tags",
+      response: "response", responses: "response",
+      "ki antworten": "response", "ai answers": "response"
+    };
+    function navZeichen(p){
+      var k = ICON_PATHS && (NAV_ZEICHEN[String(p.value || "").toLowerCase()] ||
+                             NAV_ZEICHEN[String(p.label || "").toLowerCase()]);
+      if (!k || !ICON_PATHS[k]) return p.icon;
+      /* Nur die FORMEN tauschen, die Huelle des Aufrufers bleibt: sie traegt Groesse und
+         Strichbreite, die die CSS der Kopfzeile erwartet. Bringt er gar kein svg mit, baut
+         icon() eines. */
+      var h = document.createElement("div");
+      h.innerHTML = String(p.icon || "");
+      var svg = h.querySelector("svg");
+      if (!svg) return icon(k, 1.8);
+      svg.innerHTML = ICON_PATHS[k];
+      return h.innerHTML;
+    }
     nav.innerHTML = pages.map(function(p){
       var on = p.value === selected;
       return '<div class="up-ph-navitem' + (on ? " is-selected" : "") + '" role="tab" tabindex="0" ' +
         'aria-selected="' + (on ? "true" : "false") + '" data-page="' + esc(p.value) + '">' +
-        '<span class="up-ph-navicon">' + p.icon + '</span>' +
+        '<span class="up-ph-navicon">' + navZeichen(p) + '</span>' +
         '<span class="up-ph-navlabel">' + esc(t_(p.label)) + '</span>' +
       '</div>';
     }).join("") + '<div class="up-ph-navunderline"></div>';
@@ -9795,6 +9834,8 @@
       /* Animiert wird nur der WECHSEL von einer offenen Zeile zur naechsten. Beim ersten
          Oeffnen gibt es keinen Weg zurueckzulegen -- da blendet die Schale ein, wie jedes
          andere Dropdown der App. */
+      /* Beim WECHSEL dasselbe: was in der bisherigen Zeile offen stand, geht mit ihr. */
+      if (alt){ try { kinderSchliessen(altRow); } catch(e){} }
       anwenden(!!alt);
       if (alt && cfg.onClose) { try { cfg.onClose(alt, altRow); } catch(e){} }
       if (cfg.onOpen) { try { cfg.onOpen(key, zeileVon(key)); } catch(e){} }
@@ -9804,6 +9845,14 @@
       if (!offen) { gepinnt = false; anwenden(); return; }
       var alt = offen, altRow = zeileVon(alt);
       offen = null; gepinnt = false;
+      /* WAS IN DER ZEILE OFFEN WAR, GEHT MIT (22.09.). Ein Untermenue kann selbst Dropdowns
+         enthalten -- im "More filters" liegt der Topics-Filter, und der hat einen eigenen
+         Sortierer. Ging das Untermenue ueber den Zeiger zu, blieb der Sortierer stehen: diese
+         Schliessroutine gehoert der Untermenue-Mechanik und laeuft an ddClose vorbei, also lief
+         auch der Nachfahren-Schluss nie. Beide Orte werden gefragt, weil der Inhalt je nach
+         Bauweise in der ZEILE oder in der gemeinsamen SCHALE liegt. */
+      try { kinderSchliessen(altRow); } catch(e){}
+      try { if (SHELL) kinderSchliessen(SHELL); } catch(e){}
       anwenden();
       if (cfg.onClose) { try { cfg.onClose(alt, altRow); } catch(e){} }
     }
@@ -13634,6 +13683,15 @@
       try { drin = !!(behaelter.contains(o.panel) || (o.owner && behaelter.contains(o.owner))); } catch(e){}
       if (!drin) continue;
       OPEN_DD.splice(i, 1);
+      /* dropEscape ZUERST und ausdruecklich. Hier stand nur o.close() -- und das reicht nicht:
+         ein eskaliertes Panel liegt im TOP LAYER (popover="manual" + showPopover, siehe
+         menuEscape). Der Top Layer haengt nicht am Kaskaden-Ergebnis; ein entfernter is-open
+         ODER ein display:none bringt ein Element dort nicht heraus, nur hidePopover() tut das.
+         Genau daran blieb am 22.09. das Sortiermenue des Topics-Filters stehen, waehrend sein
+         Filter zuging: sein close() nahm ihm die Klasse, der Top Layer zeigte es weiter.
+         ddClose macht es fuer das schliessende Panel selbst genauso -- fuer seine Kinder fehlte
+         es. */
+      try { dropEscape(o.panel); } catch(e){}
       try { o.close(); } catch(e){}
     }
     for (i = POPOVERS.length - 1; i >= 0; i--){
@@ -15323,8 +15381,11 @@
        Verbraucher, also hierher. libraryBig ist das Zeichen des Begleitkastens im Onboarding. */
     tags:     '<path d="M3 17.9808V12.7075C3 9.07416 3 7.25748 4.09835 6.12874C5.1967 5 6.96447 5 10.5 5C14.0355 5 15.8033 5 16.9017 6.12874C18 7.25748 18 9.07416 18 12.7075V17.9808C18 20.2867 18 21.4396 17.2755 21.8523C15.8724 22.6514 13.2405 19.9852 11.9906 19.1824C11.2657 18.7168 10.9033 18.484 10.5 18.484C10.0967 18.484 9.73425 18.7168 9.00938 19.1824C7.7595 19.9852 5.12763 22.6514 3.72454 21.8523C3 21.4396 3 20.2867 3 17.9808Z"/>' +
           '<path d="M9 2H11C15.714 2 18.0711 2 19.5355 3.46447C21 4.92893 21 7.28595 21 12V18"/>',
-    libraryBig: '<path d="M2.49219 12C2.49219 7.52166 2.49219 5.28249 3.88343 3.89124C5.27467 2.5 7.51384 2.5 11.9922 2.5C16.4705 2.5 18.7097 2.5 20.1009 3.89124C21.4922 5.28249 21.4922 7.52166 21.4922 12C21.4922 16.4783 21.4922 18.7175 20.1009 20.1088C18.7097 21.5 16.4705 21.5 11.9922 21.5C7.51384 21.5 5.27467 21.5 3.88343 20.1088C2.49219 18.7175 2.49219 16.4783 2.49219 12Z"/>' +
-                '<path d="M6.99219 7V17"/><path d="M10.9922 7V17"/><path d="M13.9922 7L16.9922 17"/>',
+    libraryBig: '<path d="M13.9916 9.71545L18.8212 8.40196"/>' +
+                '<path d="M13.3322 7.21514C13.0947 6.31531 12.9759 5.86539 13.0806 5.47836C13.1488 5.22667 13.2813 4.99708 13.4652 4.81224C13.748 4.528 14.197 4.40588 15.0951 4.16165C16.0053 3.9141 16.4604 3.79033 16.8515 3.89515C17.1058 3.96329 17.3377 4.09715 17.5238 4.28329C17.8102 4.56961 17.9306 5.02563 18.1714 5.93765L21.0349 16.7849C21.2725 17.6847 21.3913 18.1346 21.2865 18.5217C21.2184 18.7734 21.0859 19.0029 20.902 19.1878C20.6192 19.472 20.1701 19.5941 19.2721 19.8384C18.3619 20.0859 17.9068 20.2097 17.5156 20.1049C17.2614 20.0367 17.0295 19.9029 16.8433 19.7167C16.557 19.4304 16.4366 18.9744 16.1958 18.0624L13.3322 7.21514Z"/>' +
+                '<path d="M2.66736 6.38C2.66736 5.44539 2.66736 4.97808 2.86832 4.63C2.99997 4.40198 3.18933 4.21262 3.41736 4.08097C3.76543 3.88 4.23274 3.88 5.16736 3.88C6.10197 3.88 6.56928 3.88 6.91736 4.08097C7.14539 4.21262 7.33474 4.40198 7.4664 4.63C7.66736 4.97808 7.66736 5.44539 7.66736 6.38V17.6199C7.66736 18.5545 7.66736 19.0218 7.4664 19.3699C7.33474 19.5979 7.14539 19.7873 6.91736 19.9189C6.56928 20.1199 6.10197 20.1199 5.16736 20.1199C4.23274 20.1199 3.76543 20.1199 3.41736 19.9189C3.18933 19.7873 2.99997 19.5979 2.86832 19.3699C2.66736 19.0218 2.66736 18.5545 2.66736 17.6199V6.38Z"/>' +
+                '<path d="M2.66736 8.95508H7.66736"/><path d="M7.66736 8.95508H12.6674"/>' +
+                '<path d="M7.66736 6.38C7.66736 5.44539 7.66736 4.97808 7.86832 4.63C7.99997 4.40198 8.18933 4.21262 8.41736 4.08097C8.76543 3.88 9.23274 3.88 10.1674 3.88C11.102 3.88 11.5693 3.88 11.9174 4.08097C12.1454 4.21262 12.3347 4.40198 12.4664 4.63C12.6674 4.97808 12.6674 5.44539 12.6674 6.38V17.6199C12.6674 18.5545 12.6674 19.0218 12.4664 19.3699C12.3347 19.5979 12.1454 19.7873 11.9174 19.9189C11.5693 20.1199 11.102 20.1199 10.1674 20.1199C9.23274 20.1199 8.76543 20.1199 8.41736 19.9189C8.18933 19.7873 7.99997 19.5979 7.86832 19.3699C7.66736 19.0218 7.66736 18.5545 7.66736 17.6199V6.38Z"/>',
     /* Lucide scan-square. Zeichen des Knopfes "Look for new Opportunities" im
        Opportunities-Seitenkopf -- vier Ecken und ein Feld darin, also "durchsuchen", und nicht
        das Zielkreuz, das dort vorher stand (drei Kreise, gelesen als "zielen"). Woertlich aus
