@@ -262,7 +262,11 @@
 /* ---------- Ausgabeformat ---------- */
 .uca-format { margin-top: 26px; }
 .uca-format-label { font-size: 12px; color: var(--vc-muted); font-weight: 500; margin-bottom: 10px; }
-.uca-format-seg { display: inline-flex; padding: 0; gap: 0; background: var(--vc-heading-bg); border-radius: 8px; height: 32px; }
+/* --vc-switch-bg und nicht --vc-heading-bg (22.09.): DERSELBE Wert (#f9f8f9 hell, #232326
+   dunkel), aber der Name gehoert zum Bauteil. Jede andere Segmentleiste der App nimmt
+   --vc-switch-*; wer spaeter den Grund der Umschalter aendert, haette diese eine sonst
+   uebersehen. Keine sichtbare Aenderung. */
+.uca-format-seg { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-bg); border-radius: 8px; height: 32px; }
 .uca-fmt {
   position: relative; height: 32px; padding: 0 14px; border: 1px solid transparent; border-radius: 8px; background: transparent;
   color: var(--vc-muted); font: inherit; font-size: 13px; font-weight: 550; cursor: pointer; white-space: nowrap;
