@@ -378,11 +378,12 @@
        ACTIONS_MIN sits above that so the cell never has to clip. */
     .uut-actions { display: inline-flex; align-items: center; gap: 2px; flex: 0 0 auto; }
     .uut-td-actions { overflow: hidden; }
-    .uut-actbtn {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 28px; height: 28px; border: 0; border-radius: 7px;
-      background: transparent; color: var(--vc-third); cursor: pointer; padding: 0; flex: 0 0 auto;
-    }
+    /* Entfallen: der Inhalt stand vollstaendig im Kit (core.css, Zeichenknopf). */
+    /* --vc-third und NICHT die Kitfarbe (#6f6f6f): dieser Knopf erscheint erst beim
+       Zeilen-Hover bzw. sitzt im Feld und soll ZURUECKTRETEN. Beim Umbau auf das Kit am
+       22.09. stand er kurz auf 111 statt 158 -- deutlich dunkler, im Prueftand aufgefallen.
+       Bewusste Abweichung, eine Eigenschaft. */
+        .uut-actbtn { color: var(--vc-third); }
     .uut-actbtn:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
     .uut-actbtn svg { width: 15px; height: 15px; display: block; }
 

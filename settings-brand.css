@@ -229,9 +229,9 @@
    Tippen sichtbar darunter. Die Core-Regel dafuer haengt an .up-ment-searchwrap, und dieses Feld
    steht nicht darin. */
 .usb-ddcustom-in { width: 100%; min-width: 0; padding-right: 34px; }
+/* Aussehen kommt aus core (Zeichenknopf, leise Fassung, Groessenstufe) -- hier nur das Oertliche. */
 .usb-ddcustom-clear { position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
-  display: none; align-items: center; justify-content: center; width: 20px; height: 20px;
-  padding: 0; border: 0; border-radius: 6px; background: none; color: var(--vc-muted); cursor: pointer; }
+  display: none; }
 .usb-ddcustom-clear svg { width: 13px; height: 13px; display: block; }
 .usb-ddcustom-clear:hover { color: var(--vc-text); }
 .usb-ddcustom-in:not(:placeholder-shown) ~ .usb-ddcustom-clear { display: inline-flex; }

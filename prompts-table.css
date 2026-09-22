@@ -434,9 +434,8 @@
   font-family: inherit; font-size: 13px; color: var(--vc-text); }
 /* Slot always reserved (visibility, not display) so the field's width doesn't shift when the x
    appears — same trick as the main table's own search box. */
-.upt-topicsearch-clear { flex: 0 0 20px; width: 20px; height: 20px; border: 0; border-radius: 6px;
-  background: transparent; color: var(--vc-muted); cursor: pointer; padding: 0; margin-left: 4px;
-  display: inline-flex; align-items: center; justify-content: center; visibility: hidden; }
+/* Aussehen kommt aus core (Zeichenknopf, leise Fassung, Groessenstufe) -- hier nur das Oertliche. */
+.upt-topicsearch-clear { flex: 0 0 20px; margin-left: 4px; visibility: hidden; }
 .upt-topicsearch-clear svg { width: 13px; height: 13px; display: block; }
 .upt-topicsearch-clear:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
 .upt-topichead.has-text .upt-topicsearch-clear { visibility: visible; }
@@ -574,9 +573,7 @@
    12px left and then slid the rest of the way. Same total spacing, one animated element. */
 .upt-selcount.is-on { max-width: 220px; opacity: 1; margin-left: 8px; margin-right: 12px; padding: 0 4px 0 9px; transform: translateX(0); pointer-events: auto; }
 @media (prefers-reduced-motion: reduce){ .upt-selcount { transition-duration: 1ms; } }
-.upt-selcount-clear { width: 18px; height: 18px; border: 0; padding: 0; border-radius: 5px;
-  background: transparent; color: var(--vc-muted); cursor: pointer; flex: 0 0 auto;
-  display: inline-flex; align-items: center; justify-content: center; }
+/* Entfallen: der Inhalt stand vollstaendig im Kit (core.css, Zeichenknopf). */
 .upt-selcount-clear svg { width: 12px; height: 12px; display: block; }
 .upt-selcount-clear:hover { background: var(--vc-switch-bg); color: var(--vc-text); }
 
@@ -760,9 +757,8 @@
   border: 0; background: transparent; color: var(--vc-text); font: inherit; font-size: 13px; outline: 0; }
 .upt-grp-sidesearch-in::placeholder { color: var(--vc-third); }
 /* Slot always reserved (visibility, not display) so nothing shifts when the x appears/disappears. */
-.upt-grp-sidesearch-clear { flex: 0 0 20px; width: 20px; height: 20px; border: 0; border-radius: 6px;
-  background: transparent; color: var(--vc-muted); cursor: pointer; padding: 0; margin-left: 4px;
-  display: inline-flex; align-items: center; justify-content: center; }
+/* Aussehen kommt aus core (Zeichenknopf, leise Fassung, Groessenstufe) -- hier nur das Oertliche. */
+.upt-grp-sidesearch-clear { flex: 0 0 20px; margin-left: 4px; }
 .upt-grp-sidesearch-clear svg { width: 13px; height: 13px; display: block; }
 .upt-grp-sidesearch-clear:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
 .upt-grp-sidelist { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0;

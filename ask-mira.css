@@ -3205,11 +3205,7 @@
   .am-prev-item.is-editing .am-prev-item-title, .am-prev-item.is-editing .am-prev-actions, .am-prev-item.is-editing .am-prev-pin-ind { display: none; }
   .am-prev-item.is-editing .am-prev-item-input, .am-prev-item.is-editing .am-prev-edit-actions { display: inline-flex; }
 
-  .am-prev-mini {
-    display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
-    width: 24px; height: 24px; border: 0; border-radius: 6px; background: transparent;
-    color: var(--am-muted); cursor: pointer; padding: 0;
-  }
+  /* Entfallen: der Inhalt stand vollstaendig im Kit (core.css, Zeichenknopf). */
   .am-prev-mini:hover { background: var(--am-soft-2); color: var(--am-text); }
   .am-prev-mini svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .am-prev-mini[data-prev-act="save"]:hover, .am-prev-mini[data-proj-act="save"]:hover { color: #1a7f4b; }

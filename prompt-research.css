@@ -244,11 +244,9 @@
   width: 100%; min-height: 90px; max-height: 180px; resize: none; border: 0; outline: 0;
   background: transparent; color: var(--vc-text); font-size: 15px; line-height: 1.45; font-weight: 400; padding: 0;
 }
-.upr-clear-input {
-  position: absolute; top: 14px; right: 14px; width: 24px; height: 24px;
-  border: 0; border-radius: 6px; background: transparent; color: var(--vc-third);
-  display: none; align-items: center; justify-content: center; cursor: pointer; padding: 0;
-}
+/* Aussehen kommt aus core (Zeichenknopf, leise Fassung, Groessenstufe) -- hier nur das Oertliche. */
+.upr-clear-input { color: var(--vc-third); position: absolute; top: 14px; right: 14px;
+  display: none; }
 .upr-clear-input svg { width: 14px; height: 14px; display: block; }
 .upr-clear-input:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
 .upr-composer.has-value .upr-clear-input { display: inline-flex; }

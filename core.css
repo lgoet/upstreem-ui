@@ -751,27 +751,75 @@
        (Die Farbe #6f6f6f steht hier weiter als Literal. Sie gehoert in ein Token, aber das
        ist die Farbrunde und nicht diese.) */
     .up-iconbtn,
-    .ubo-iconbtn, .vot-iconbtn, .tcd-iconbtn, .combo-iconbtn, .upt-kpi-eye {
+    :is(.ubo-iconbtn, .vot-iconbtn, .tcd-iconbtn, .combo-iconbtn, .upt-kpi-eye,
+      .udt-actbtn, .uut-actbtn, .am-prev-mini, .upr-clear-input,
+      .udt-sub-search-x, .upt-topicsearch-clear, .upt-grp-sidesearch-clear,
+      .usb-ddcustom-clear, .upt-selcount-clear) {
       display: inline-flex; align-items: center; justify-content: center;
       width: 32px; height: 32px; border: 0; border-radius: 8px;
       background: transparent; color: #6f6f6f; cursor: pointer; padding: 0; flex: 0 0 auto; position: relative;
     }
     .up-root[data-theme="dark"] :is(.up-iconbtn,
-      .ubo-iconbtn, .vot-iconbtn, .tcd-iconbtn, .combo-iconbtn, .upt-kpi-eye) { color: #a0a0a0; }
+      .ubo-iconbtn, .vot-iconbtn, .tcd-iconbtn, .combo-iconbtn, .upt-kpi-eye,
+      .udt-actbtn, .uut-actbtn, .am-prev-mini, .upr-clear-input,
+      .udt-sub-search-x, .upt-topicsearch-clear, .upt-grp-sidesearch-clear,
+      .usb-ddcustom-clear, .upt-selcount-clear) { color: #a0a0a0; }
     /* the dark base rule above is more specific than .up-iconbtn:hover, so the hover colour
        needs its own dark rule or it never turns primary in dark mode. */
     .up-root[data-theme="dark"] :is(.up-iconbtn,
-      .ubo-iconbtn, .vot-iconbtn, .tcd-iconbtn, .combo-iconbtn, .upt-kpi-eye):hover { color: var(--vc-text); }
+      .ubo-iconbtn, .vot-iconbtn, .tcd-iconbtn, .combo-iconbtn, .upt-kpi-eye,
+      .udt-actbtn, .uut-actbtn, .am-prev-mini, .upr-clear-input,
+      .udt-sub-search-x, .upt-topicsearch-clear, .upt-grp-sidesearch-clear,
+      .usb-ddcustom-clear, .upt-selcount-clear):hover { color: var(--vc-text); }
     /* LAUT: Farbe und Flaeche. Der Normalfall -- ein Knopf in einer Werkzeugleiste. */
     .up-iconbtn:not(.is-quiet):hover,
     .ubo-iconbtn:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
     /* LEISE: nur die Farbe. Fuer Knoepfe, die in einer Kopfzeile neben einem Titel sitzen --
        dort zieht eine Hover-Flaeche die Zeile optisch auf. */
     .up-iconbtn.is-quiet:hover,
-    .vot-iconbtn:hover, .tcd-iconbtn:hover, .combo-iconbtn:hover, .upt-kpi-eye:hover {
+    /* .udt-actbtn und .uut-actbtn stehen hier NICHT: ihr eigener :hover setzt weiterhin eine
+       Flaeche (var(--vc-heading-bg)), sie gehoeren also zur lauten Fassung. Beim ersten Umbau
+       waren sie faelschlich in dieser Liste -- wirkungslos, weil die oertliche Regel spaeter
+       kommt, aber irrefuehrend. */
+    :is(.vot-iconbtn, .tcd-iconbtn, .combo-iconbtn, .upt-kpi-eye,
+        .am-prev-mini, .upr-clear-input,
+        .udt-sub-search-x, .upt-topicsearch-clear, .upt-grp-sidesearch-clear,
+        .usb-ddcustom-clear, .upt-selcount-clear):hover {
       color: var(--vc-text); background: transparent; }
+
+    /* ---- DIE GROESSENLEITER (22.09.) --------------------------------------------------------
+       Neun weitere Nachbauten waren kleinere Fassungen desselben Knopfes. Gemessen:
+           28/7/15  Zeilenaktion in einer Tabelle      .udt-actbtn .uut-actbtn
+           24/6/14  kleine Aktion im Fliesstext        .am-prev-mini .upr-clear-input
+           20/6/13  das X in einem Suchfeld            vier Stueck
+           18/5/12  das X in einer Plakette            .upt-selcount-clear -- EINE Verwendung
+       DREI STUFEN UND NICHT VIER: 28 und 24 stehen schon auf der Hoehenleiter der App
+       (--up-h-seg, --up-h-chip). 20 ist neu, aber belegt: VIER unabhaengige Komponenten sind
+       auf genau diese Zahl gekommen, das ist eine Rolle und keine Streuung. 18 dagegen hatte
+       EINE Verwendung, zwei Pixel neben 20 und in derselben Rolle -- eine Verwendung
+       rechtfertigt keine Stufe, also geht sie auf 20.
+       DER RADIUS WIRD MITGEZOGEN (§1): 32/8 ist 0.25, und 28/7 sowie 24/6 halten das bereits.
+       20 stand auf 6 (0.30) und geht auf 5 -- vier Stellen um einen Pixel.
+       DAS ZEICHEN WAECHST RELATIV MIT, und das ist kein Versehen: 16/32 = 0.50, aber
+       13/20 = 0.65. Ein kleiner Knopf braucht ein verhaeltnismaessig groesseres Zeichen, sonst
+       verschwindet es. Die gemessenen Werte bleiben. */
+    .up-iconbtn.is-28, .udt-actbtn, .uut-actbtn { width: 28px; height: 28px; border-radius: 7px; }
+    :is(.up-iconbtn.is-28, .udt-actbtn, .uut-actbtn) svg { width: 15px; height: 15px; }
+
+    .up-iconbtn.is-24, .am-prev-mini, .upr-clear-input { width: 24px; height: 24px; border-radius: 6px; }
+    :is(.up-iconbtn.is-24, .am-prev-mini, .upr-clear-input) svg { width: 14px; height: 14px; }
+
+    .up-iconbtn.is-20,
+    .udt-sub-search-x, .upt-topicsearch-clear, .upt-grp-sidesearch-clear,
+    .usb-ddcustom-clear, .upt-selcount-clear { width: 20px; height: 20px; border-radius: 5px; }
+    :is(.up-iconbtn.is-20,
+        .udt-sub-search-x, .upt-topicsearch-clear, .upt-grp-sidesearch-clear,
+        .usb-ddcustom-clear, .upt-selcount-clear) svg { width: 13px; height: 13px; }
     :is(.up-iconbtn,
-      .ubo-iconbtn, .vot-iconbtn, .tcd-iconbtn, .combo-iconbtn, .upt-kpi-eye) svg {
+      .ubo-iconbtn, .vot-iconbtn, .tcd-iconbtn, .combo-iconbtn, .upt-kpi-eye,
+      .udt-actbtn, .uut-actbtn, .am-prev-mini, .upr-clear-input,
+      .udt-sub-search-x, .upt-topicsearch-clear, .upt-grp-sidesearch-clear,
+      .usb-ddcustom-clear, .upt-selcount-clear) svg {
       width: 16px; height: 16px; display: block; }
 
     /* ---------- der LEISE Trigger: derselbe Knopf wie .up-iconbtn, nur mit Beschriftung --------
