@@ -3283,6 +3283,21 @@
   /* Beim Umbenennen tritt er zurueck, genau wie die Pin-Marke und die Knoepfe: die Zeile gehoert
      dann dem Eingabefeld. */
   .am-prev-item.is-editing .am-prev-spin { display: none; }
+  /* ---- DER BLAUE PUNKT: ANTWORT IST DA (23.09. angefordert) ---------------------------------
+     Er nimmt GENAU den Platz des Kreisels ein -- dieselben 12px, derselbe Kasten, dieselbe
+     Bewegung beim Auf- und Zugehen. Nur so wandert die Zeile beim Wechsel vom einen zum anderen
+     nicht. Deshalb steht er auch nicht als eigenes Element im Markup, sondern als Inhalt
+     desselben Kastens: hat die Zeile has-antwort, wird der Kreisel ausgeblendet und der Punkt
+     gezeichnet.
+     #2f6df6 ist dasselbe Blau wie "New Message" unten im Chat (.am-scroll-bottom.has-new) --
+     eine Signalfarbe fuer eine Aussage, an zwei Orten. */
+  .am-prev-item.has-antwort .am-prev-spin { width: 12px; margin-right: 0; opacity: 1; }
+  .am-prev-item.has-antwort .am-prev-spin .am-act-spinner { display: none; }
+  .am-prev-item.has-antwort .am-prev-spin::before {
+    content: ""; width: 8px; height: 8px; margin: 0 2px; border-radius: var(--up-r-voll);
+    background: #2f6df6; flex: 0 0 auto;
+    /* Kein Pulsieren: der Punkt sagt "fertig", nicht "es passiert etwas". */
+  }
   .am-prev-pin-ind { display: none; flex: 0 0 auto; color: var(--am-muted-2); }
   .am-prev-item.is-pinned .am-prev-pin-ind { display: inline-flex; }
   .am-prev-pin-ind svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }

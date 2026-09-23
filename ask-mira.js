@@ -3380,13 +3380,55 @@
        S.isLoading    im Chat laeuft eine Antwort
      Der zweite ist der laengere von beiden und der Grund, warum die Marke nuetzlich ist: wer
      waehrend einer laufenden Antwort in der Leiste stoebert, sieht, welcher Chat noch arbeitet. */
+  /* ---- WER WARTET, UND WER FERTIG IST (23.09.) ------------------------------------------------
+     Bis heute haftete die Lademarke am AKTIVEN Chat: wer wegwechselte, nahm sie mit, und der
+     Chat, der wirklich arbeitete, stand ohne da. Beides gehoert an den Chat selbst.
+     _wartend  Chats, deren Antwort unterwegs ist -- ein Objekt und keine einzelne Kennung,
+               damit ZWEI gleichzeitig wartende Chats kein Problem sind (ausdruecklich gefragt).
+     _fertig   Chats, deren Antwort da ist, waehrend der Nutzer woanders stand. Sie tragen den
+               blauen Punkt, bis er sie oeffnet.
+     Beides lebt nur in dieser Sitzung: nach einem Neuladen sind die Antworten ohnehin in der
+     Liste, und ein Punkt, der einen laengst gelesenen Chat markiert, waere eine Luege. */
+  var _wartend = {}, _fertig = {};
+  /* Der Chat, dessen Antwort GERADE laeuft -- gemerkt beim Anfang, gebraucht beim Ende.
+     Ohne ihn meldet setLoading(false) den Chat fertig, in dem der Nutzer inzwischen steht. */
+  var _laufenderChat = '';
+  function wartendSetzen(id, an){
+    id = String(id || ''); if (!id) return;
+    if (an){ _wartend[id] = 1; delete _fertig[id]; }
+    else { delete _wartend[id]; }
+    ladeMarkeSetzen();
+  }
+  /* Die Antwort ist da. Steht der Nutzer in diesem Chat, hat er sie vor sich -- dann gibt es
+     nichts zu melden. Steht er woanders, bekommt der Chat den Punkt. */
+  function fertigMelden(id){
+    id = String(id || ''); if (!id) return;
+    delete _wartend[id];
+    if (String(S.activeChatId || '') !== id) _fertig[id] = 1;
+    ladeMarkeSetzen();
+  }
+  function fertigLoeschen(id){
+    id = String(id || ''); if (!id) return;
+    if (_fertig[id]){ delete _fertig[id]; ladeMarkeSetzen(); }
+  }
   function ladeMarkeSetzen(){
     if (!elPrevList) return;
-    var laeuft = !!(S.chatLoading || S.isLoading);
     var aktiv = S.activeChatId == null ? null : String(S.activeChatId);
+    /* Der Zustandsschalter zaehlt nur noch als RUECKFALL -- naemlich dann, wenn die Buchfuehrung
+       (noch) niemanden kennt. Genau ein Fall braucht das: das allererste Absenden, bei dem der
+       Chat seine Kennung noch gar nicht hat.
+       Vorher galt er immer, und das machte jeden Chat, in den der Nutzer wechselte, zum
+       Wartenden -- gemessen am 23.09.: nach dem Wechsel trug auch der neue Chat den Kreisel,
+       obwohl dort nichts lief. */
+    var keinerNotiert = true;
+    for (var _k in _wartend){ if (Object.prototype.hasOwnProperty.call(_wartend, _k)){ keinerNotiert = false; break; } }
+    var aktivLaeuft = keinerNotiert && !!(S.chatLoading || S.isLoading);
     elPrevList.querySelectorAll('.am-prev-item').forEach(function(el){
-      el.classList.toggle('is-busy', laeuft && aktiv !== null &&
-        String(el.getAttribute('data-chat-id')) === aktiv);
+      var id = String(el.getAttribute('data-chat-id') || '');
+      var busy = !!_wartend[id] || (aktivLaeuft && aktiv !== null && id === aktiv);
+      el.classList.toggle('is-busy', busy);
+      /* Der Punkt weicht dem Kreisel: wer noch arbeitet, ist nicht fertig. */
+      el.classList.toggle('has-antwort', !busy && !!_fertig[id]);
     });
   }
   function aktivMarkieren(){
@@ -4189,6 +4231,10 @@
      der Nutzer merkt nichts. Kommt sie nicht, endet der Ladezustand und es steht da, dass es
      nicht geklappt hat. */
   function anBubbleSenden(payload, versuch){
+    /* Wer absendet, will in DIESEM Chat bleiben -- auch wenn nebenan gerade eine Antwort
+       fertig wird. Beim allerersten Absenden gibt es noch keine Kennung; dann bleibt die Wahl
+       leer, und der Setter darf den frisch angelegten Chat oeffnen. Genau richtig. */
+    if (!versuch) nutzerWahl(S.activeChatId || '');
     var fn = window.bubble_fn_ask_mira_send;
     if (typeof fn === 'function'){ fn(JSON.stringify(payload)); return; }
     if (versuch < 12){
@@ -5040,8 +5086,26 @@
 
   /* ---------------- Public API ---------------- */
   function setLoading(v){
+    var vorher = S.isLoading;
     S.isLoading = !!v;
     root.classList.toggle('is-loading', S.isLoading);
+    /* DEN CHAT IN DIE BUECHER (23.09.). Der Zustandsschalter allein reicht nicht mehr: er gilt
+       fuer den Chat, in dem der Nutzer GERADE steht, und genau das soll er nicht mehr. Hier
+       wandert die Kennung in _wartend beziehungsweise wieder heraus -- ab da traegt der Chat
+       seine Marke selbst, auch wenn der Nutzer laengst woanders ist.
+       BEIM ENDE ZAEHLT DER CHAT, DER ANGEFANGEN HAT, nicht der aktive. Gemessen am 23.09.: wer
+       waehrend einer laufenden Antwort wegwechselt, liess setLoading(false) den FALSCHEN Chat
+       fertig melden -- der neue bekam die Marke, der wartende behielt sie. _laufenderChat haelt
+       die Kennung vom Anfang bis zum Ende dieser einen Antwort fest.
+       Das Ende NUR bei einem echten Wechsel von true auf false: setLoading(false) kommt auch
+       aus Wegen, die mit dieser Antwort nichts zu tun haben. */
+    if (S.isLoading){
+      var _chat = String(S.activeChatId || '');
+      if (_chat){ _laufenderChat = _chat; wartendSetzen(_chat, true); }
+    } else if (vorher && _laufenderChat){
+      fertigMelden(_laufenderChat);
+      _laufenderChat = '';
+    }
     ladeMarkeSetzen();
     /* Die Uhr haengt am Zustand, nicht an einem einzelnen Aufruf: jedes Lebenszeichen stellt sie
        neu, ihr Ausbleiben laesst sie ablaufen. */
@@ -6068,6 +6132,14 @@
   /* Der Griff zum Leeren des Feldes wird weiter unten gesetzt, wo feldAuspacken lebt -- diese
      Ebene sieht es nicht. Ein direkter Aufruf waere hier ein ReferenceError zur Laufzeit, und
      node --check faellt darauf nicht herein: beim Pruefen ist ein unbekannter Name erlaubt. */
+  /* WAS DER NUTZER SELBST GEWAEHLT HAT (23.09.). Nur drei Handlungen setzen das: der Klick auf
+     einen Chat in der Leiste, "Neuer Chat" und das Absenden einer Frage. Alles andere -- vor
+     allem die Meldung aus Bubble, dass eine Antwort fertig ist -- darf den Nutzer nicht mehr
+     versetzen. Siehe die Pruefung in askMiraSetActiveChat.
+     Leer heisst "noch keine Wahl": der erste Aufruf nach dem Laden geht damit durch, ein
+     Deeplink oder der Umzug aus dem Dashboard oeffnet weiterhin, was er soll. */
+  var _nutzerChat = '';
+  function nutzerWahl(id){ _nutzerChat = String(id == null ? '' : id); }
   var _feldLeeren = null;
   window.askMiraSetActiveChat = function(chatId, fireEvent, titel){
     /* EINE LEERE KENNUNG WIRFT DIE AUSWAHL NICHT MEHR WEG (17.09. gemeldet: "Antwort kommt, dann
@@ -6115,7 +6187,25 @@
        UND NICHT WAEHREND DES UMZUGS AUS DEM DASHBOARD: dort wandert der Feldinhalt absichtlich
        mit nach Mira und wird gleich gesendet -- _umzugOhneFeld sagt genau diesen einen Fall an. */
     var _vorherigerChat = S.activeChatId;
+    /* ---- KEIN UNGEFRAGTER SPRUNG MEHR (23.09. angefordert) --------------------------------
+       Bubble ruft diesen Setter auch, wenn eine ANTWORT fertig ist -- und riss den Nutzer damit
+       aus dem Chat, in den er inzwischen gewechselt war. Genau das soll aufhoeren: wer
+       weggeklickt hat, bleibt, wo er ist, und erfaehrt es ueber den Punkt in der Leiste.
+       Woran der Nutzerwille haengt: _nutzerChat wird NUR dort gesetzt, wo er selbst handelt --
+       Klick in der Liste, neuer Chat, Absenden. Ein Aufruf mit einer ANDEREN Kennung ist damit
+       kein Wunsch, sondern eine Meldung, und wird als solche behandelt.
+       Der erste Aufruf nach dem Laden hat keinen Nutzerwillen gegen sich und geht durch -- so
+       oeffnet ein Deeplink oder der Umzug aus dem Dashboard weiterhin, was er soll. */
+    var _will = String(_nutzerChat || '');
+    var _neu  = String(chatId || '');
+    if (_will && _neu && _neu !== _will){
+      fertigMelden(_neu);
+      if (fireEvent) { /* der Aufrufer wollte ein Ereignis -- das gibt es unten, aber ohne Wechsel */ }
+      return;
+    }
     S.activeChatId = chatId;
+    /* Ein geoeffneter Chat ist gelesen: der Punkt hat sich erledigt. */
+    fertigLoeschen(chatId);
     if (chatId && _vorherigerChat !== chatId && _feldLeeren) _feldLeeren();
     var _c = chatId ? findChat(chatId) : null;
     /* Ein mitgegebener Titel wird in die Liste geschrieben: dann finden ihn Kopfzeile UND Leiste
@@ -7326,6 +7416,8 @@
     S.messages = [];                                   // drop the previous chat's messages so the skeleton shows
     runDrop();                                         // anderer Chat -> das Protokoll der letzten Antwort gilt nicht mehr
     clearTimeout(_chatLoadT); _chatLoadT = setTimeout(function(){ if (S.chatLoading){ S.chatLoading = false; ladeMarkeSetzen(); renderMessages(); renderChatTitlebar(); } }, 12000);
+    /* Der Nutzer waehlt -- ab hier gilt seine Wahl gegen jede Meldung aus Bubble. */
+    nutzerWahl(id);
     window.askMiraSetActiveChat(id, false);
     renderMessages(); renderChatTitlebar();
     if (window.bubble_fn_ask_mira_select_chat) window.bubble_fn_ask_mira_select_chat(id);
@@ -7621,6 +7713,9 @@
     runDrop();
     if (S.isLoading) setLoading(false);   // stop the loader + clear its timers, else has-messages stays on via isLoading
     renderMessages();
+    /* Auch "neuer Chat" ist eine Wahl: eine fertige Antwort anderswo darf ihn nicht
+       wegziehen, waehrend er hier schon tippt. */
+    nutzerWahl('');
     if (window.bubble_fn_ask_mira_new_chat) window.bubble_fn_ask_mira_new_chat();
     else window.dispatchEvent(new CustomEvent('askmira:new-chat', {}));
     closePrevWennSchmal();
