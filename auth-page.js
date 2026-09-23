@@ -83,9 +83,13 @@
     '<path fill="#FBBC05" d="M5.27 14.27a7.2 7.2 0 0 1 0-4.54V6.62H1.29a12 12 0 0 0 0 10.76l3.98-3.11z"/>' +
     '<path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.44-3.44C17.95 1.19 15.24 0 12 0A12 12 0 0 0 1.29 6.62l3.98 3.11C6.22 6.86 8.87 4.75 12 4.75z"/></svg>';
 
-  /* Sonne und Mond, Feather-Geometrie. Nicht ueber UC.icon: die Icon-Namen dort sind nicht
-     garantiert vorhanden, und ein leerer Knopf auf der Anmeldeseite waere schlechter als zwei
-     Pfade hier. Strichstaerke und Rundungen wie im Rest des Satzes. */
+  /* Woertlich aus dem Zeichensatz in core.js (Hugeicons stroke-rounded, seit dem 22.09.) --
+     am 23.09. Pfad fuer Pfad gegengeprueft: SUN/MOON/LOCK/CHECK/MIC/UP sind buchstabengleich
+     mit sun/moon/lock/check/mic/arrowUp. Nicht ueber UC.icon geholt, und das bleibt so: diese
+     Seite laeuft VOR der Anmeldung, core ist dort nicht garantiert da, und ein leerer Knopf auf
+     der Anmeldeseite waere schlechter als ein paar Pfade hier.
+     WER HIER ETWAS AENDERT, aendert es auch in core -- sonst laufen Anmeldeseite und App
+     auseinander, und das faellt niemandem auf, weil die beiden nie nebeneinander stehen. */
   var SUN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
     'stroke-linecap="round" stroke-linejoin="round"><path d="M17 12C17 14.7614 14.7614 17 12 17C9.23858 17 7 14.7614 7 12C7 9.23858 9.23858 7 12 7C14.7614 7 17 9.23858 17 12Z"/><path d="M12 2V3.5M12 20.5V22M19.0708 19.0713L18.0101 18.0106M5.98926 5.98926L4.9286 4.9286M22 12H20.5M3.5 12H2M19.0713 4.92871L18.0106 5.98937M5.98975 18.0107L4.92909 19.0714"/></svg>';
   var MOON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +

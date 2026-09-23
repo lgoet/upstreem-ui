@@ -139,7 +139,13 @@
        "prefswin", die zwei koennen sich in keiner Richtung mehr verwechseln.
        Es heisst "Preferences" und nicht "Settings" -- "Your Brand" darueber IST die
        Einstellungsseite dieser App, und zwei Dinge mit demselben Namen sind eines zu viel. */
-    { items: [{ key: "prefswin", label: "Preferences", icon: "preference" }] },
+    /* DER FADER, NICHT DIE WAAGERECHTEN REGLER (23.09. angefordert). Bis heute stand hier
+       "preference" (PreferenceHorizontal) und im Einstellungsfenster selbst bei "My
+       Preferences" der Fader "settings2" (FilterVertical) -- also zwei Zeichen fuer
+       denselben Ort. Der Knopf und das Fenster, das er oeffnet, tragen jetzt dasselbe.
+       Die Begruendung in core.js an "preference" (Fader = filtern, Regler = einstellen)
+       gilt fuer den Satz weiter; hier wiegt schwerer, dass Knopf und Ziel zusammengehoeren. */
+    { items: [{ key: "prefswin", label: "Preferences", icon: "settings2" }] },
     { head: "Theme", theme: true, items: [
       { key: "light",  label: "Light"  },
       { key: "dark",   label: "Dark"   },

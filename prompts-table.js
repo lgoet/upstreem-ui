@@ -1702,10 +1702,20 @@
          reads like a rounded guess when it is in fact an exact figure.
          Ein Platzhaltersatz und kein Zusammenkleben -- "Select all" und "prompts" waren zwei
          Stuecke um eine Zahl, und Stuecke lassen sich nicht uebersetzen. */
-      else if (hasMorePages() && pageFullySelected()) escape = '<button class="upt-bulkbar-link" type="button" data-bulk-all>' +
-        esc(t("Select all {n} prompts").replace("{n}", UC.fmtInt(currentTotal()))) + '</button>';
-      else if (groupHasMorePages() && groupPageFullySelected()) escape = '<button class="upt-bulkbar-link" type="button" data-bulk-group-all>' +
-        esc(t("Select all {n} prompts").replace("{n}", UC.fmtInt(toNum(state.gTotal)))) + '</button>';
+      /* data-tip mit demselben Text: auf schmalen Fenstern kuerzt die CSS diesen Knopf mit einer
+         Ellipse (siehe .upt-bulkbar-link), damit die vier Werkzeuge nicht aus der Leiste laufen.
+         Gekuerzt muss der volle Satz trotzdem erreichbar bleiben -- die Leiste ist bei
+         UC.makeTooltips angemeldet, der Hinweis erscheint also wie ueberall sonst. */
+      else if (hasMorePages() && pageFullySelected()) escape = (function(){
+        var txt = t("Select all {n} prompts").replace("{n}", UC.fmtInt(currentTotal()));
+        return '<button class="upt-bulkbar-link" type="button" data-bulk-all data-tip="' +
+          esc(txt) + '">' + esc(txt) + '</button>';
+      })();
+      else if (groupHasMorePages() && groupPageFullySelected()) escape = (function(){
+        var txt = t("Select all {n} prompts").replace("{n}", UC.fmtInt(toNum(state.gTotal)));
+        return '<button class="upt-bulkbar-link" type="button" data-bulk-group-all data-tip="' +
+          esc(txt) + '">' + esc(txt) + '</button>';
+      })();
 
       var statusLabel = state.status === "inactive" ? "Set Active" : "Set Inactive";
       /* Inactive prompts aren't tagged — Topics management only ever makes sense for the active
@@ -4716,9 +4726,10 @@
       if (root.classList.contains("up-sticky")) syncTheadOffset();
       /* Die Themen-Fusszeile haengt an state.totalCount, das erst mit den Zeilen kommt. */
       kpiTopicsFuss();
-      /* Hat die Tabelle jetzt ihre Daten, sind die drei Karten dran: gemerkte Nutzlast rein,
-         Skelett raus. Der Aufruf steht am Ende von render(), weil genau hier state.hasData
-         umschlaegt -- und er kostet nach dem ersten Mal nichts (kpiWartet ist dann false). */
+      /* Die drei Karten an den Ladezustand der Tabelle angleichen -- Skelett rein oder raus.
+         Der Aufruf steht am Ende von render(), weil hier sowohl state.loading als auch
+         state.hasData ihren neuen Wert haben. Kostet nichts, wenn sich nichts geaendert hat:
+         kpiNachziehen prueft den Merker. */
       kpiNachziehen();
     }
 
@@ -4742,7 +4753,15 @@
        lesen sich falsch, als waere die Tabelle haengengeblieben. So gemeldet am 03.09.
        Nur beim ersten Mal: bei jedem spaeteren Laden (Filter, Seitenwechsel) sind die Karten
        richtig und sollen stehen bleiben -- sie haengen nicht an der Tabellenabfrage. */
-    var kpiWartet = true;
+    /* STEHT DAS SKELETT GERADE? -- nicht "hat es schon einmal gestanden". Der Unterschied ist
+       der ganze Punkt der Aenderung vom 23.09.: frueher war das hier ein Einmal-Tor (kpiWartet),
+       das nach dem ersten Datensatz fuer immer fiel. Danach haingen die drei Karten an drei
+       verschiedenen Ablagen und zeichneten unabhaengig -- also konnte eine im Skelett stehen und
+       die zwei daneben fertig sein. Genau so gemeldet.
+       Der Merker verhindert ausserdem, dass ein zweites Ereignis waehrend desselben
+       Ladevorgangs dieselbe Zeichnung noch einmal setzt: die Skelettbewegung finge sonst von
+       vorne an, und zwar nur in der einen Karte, deren Ablage gerade gefeuert hat. */
+    var kpiSkelettSteht = false;
     /* Die letzten Nutzlasten der drei Ablagen. Waehrend das Skelett steht, kommen sie schon an --
        ohne sie zu merken waere die Karte nach dem Warten leer, bis die Ablage ZUFAELLIG noch
        einmal etwas schickt. Genau die Sorte stiller Ausfall, die hier nicht mehr vorkommen soll. */
@@ -4841,13 +4860,30 @@
       try { eigene = (UC.getMarkets ? UC.getMarkets() : []) || []; } catch(e){}
       karte.hidden = eigene.length < 2;
     }
-    function kpiWartend(){
-      if (!kpiWartet) return false;
-      /* state.hasData ist das Signal, das die Tabelle selbst benutzt: es steht, sobald eine
-         Nutzlast angekommen ist -- auch eine leere und auch ein Lesefehler (Zeile 4846). Genau
-         das ist gemeint, nicht "es sind Zeilen da". */
-      if (state.hasData && !state.loading){ kpiWartet = false; return false; }
-      return true;
+    /* EIN Schalter fuer alle drei Karten, bei JEDEM Ladevorgang -- nicht nur beim ersten.
+       Dasselbe Muster wie Miras Chatliste im power-dashboard: dort entscheidet eine Zeile
+       (state.loading || !state.overview) fuer die ganze Liste, und niemals steht ein Eintrag
+       im Ladezustand und der daneben nicht.
+       state.hasData ist das Signal, das die Tabelle selbst benutzt: es steht, sobald eine
+       Nutzlast angekommen ist -- auch eine leere und auch ein Lesefehler. Genau das ist
+       gemeint, nicht "es sind Zeilen da".
+       WAS DAMIT AUFGEGEBEN WIRD, ausdruecklich: bis zum 23.09. blieben die Karten bei jedem
+       SPAETEREN Laden (Filter, Seitenwechsel) stehen, weil sie an eigenen Ablagen haengen und
+       nicht an der Tabellenabfrage. Das war richtig gedacht und sah trotzdem falsch aus, sobald
+       die Ablagen ungleich feuerten. Gleichlauf schlaegt Standfestigkeit. */
+    /* WORTGLEICH DER AUSDRUCK DER TABELLE. renderTable() zeigt sein Skelett bei
+       "isBusy() ODER !state.hasData" (siehe den Kommentar am Anfangswert von extLoading) -- wer
+       mit der Tabelle gleichlaufen will, nimmt denselben Ausdruck und keinen aehnlichen.
+       state.loading allein reichte NICHT und das war beim ersten Versuch am 23.09. der Fehler:
+       setPromptsTableLoading, also der Weg, auf dem Bubble "loading yes" schickt, setzt
+       state.extLoading -- nicht state.loading. Gemessen: die Tabelle ging in ihre 15
+       Skelettzeilen, die drei Karten blieben auf ihren Daten stehen. isBusy() deckt beide. */
+    function kpiWartend(){ return !state.hasData || isBusy(); }
+    /* Das Skelett setzen, aber nur wenn es nicht schon steht -- siehe kpiSkelettSteht. */
+    function kpiSkeletteEinmal(){
+      if (kpiSkelettSteht) return;
+      kpiSkelettSteht = true;
+      kpiSkelette();
     }
     function kpiSkelette(){
       /* Signatur loeschen: nach einem Skelett MUSS das naechste Zeichnen laufen, auch wenn die
@@ -4910,11 +4946,14 @@
         });
       }
     }
-    /* Einmal, sobald das Warten vorbei ist. Danach ein Nullvorgang -- die Karten haengen an
-       ihren eigenen Ablagen, nicht an der Tabellenabfrage. */
+    /* Laeuft am Ende von render() und damit in BEIDE Richtungen (23.09.): faengt ein Ladevorgang
+       an, gehen alle drei Karten zusammen ins Skelett; ist er vorbei, kommen alle drei zusammen
+       zurueck. Vorher ging es nur einmal und nur heraus. */
     function kpiNachziehen(){
-      if (!kpiZeile || !kpiWartet) return;
-      if (kpiWartend()) return;                  /* setzt kpiWartet auf false, wenn es soweit ist */
+      if (!kpiZeile) return;
+      if (kpiWartend()){ kpiSkeletteEinmal(); return; }
+      if (!kpiSkelettSteht) return;              /* schon gezeichnet, nichts zu tun */
+      kpiSkelettSteht = false;
       kpiTopics(kpiRohTopics != null ? kpiRohTopics : (UC.getTopics ? UC.getTopics() : []));
       kpiMarkets(kpiRohMarkets != null ? kpiRohMarkets : (UC.getMarkets ? UC.getMarkets() : []));
       kpiQuota(kpiRohQuota != null ? kpiRohQuota : (UC.getQuota ? UC.getQuota() : null));
@@ -4953,7 +4992,7 @@
       if (!koerper) return;
       kpiRohTopics = rows;                  /* fuer den Nachzug, wenn die Tabelle fertig ist */
       kpiKits();
-      if (kpiWartend()){ kpiSkelette(); return; }
+      if (kpiWartend()){ kpiSkeletteEinmal(); return; }
       var liste = Array.isArray(rows) ? rows.filter(Boolean) : [];
       /* toNum und nicht Number: ein fehlender Zaehler ist null, nicht NaN -- sonst sortiert NaN
          die Liste durcheinander und "NaN" stuende in der Karte. */
@@ -5052,7 +5091,7 @@
     function kpiMarkets(rows){
       kpiRohMarkets = rows;
       kpiKits();
-      if (kpiWartend()){ kpiSkelette(); return; }
+      if (kpiWartend()){ kpiSkeletteEinmal(); return; }
       var koerper = kpiTeil("upt-kpi-markets", "body");
       if (!koerper) return;
       var liste = Array.isArray(rows) ? rows.filter(Boolean) : [];
@@ -5120,7 +5159,7 @@
     function kpiQuota(q){
       kpiRohQuota = q;
       kpiKits();
-      if (kpiWartend()){ kpiSkelette(); return; }
+      if (kpiWartend()){ kpiSkeletteEinmal(); return; }
       var koerper = kpiTeil("upt-kpi-quota", "body");
       var karte = kpiZeile ? kpiZeile.querySelector(".upt-kpi-quota") : null;
       if (!koerper || !karte) return;
