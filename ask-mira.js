@@ -5367,16 +5367,68 @@
   function nfAus(){ if (_nfT){ clearTimeout(_nfT); _nfT = 0; } _nfI = 0; _nfAktiv = false; _nfSeit = 0; _nfChat = ''; }
   /* Die zwei Anlaesse von aussen. EINMAL angemeldet, nicht je Lauf -- nfLaeuftNoch() entscheidet
      bei jedem Ereignis neu, ob es ueberhaupt etwas zu holen gibt. */
+  /* ---- DIE ZWEITE LUECKE: WAS AUSSERHALB DES LAUFENDEN CHATS PASSIERT (23.09.) --------------
+     Alles oben haengt an nfLaeuftNoch() -- also daran, dass GERADE eine Antwort laeuft. Ein
+     geaenderter Chat-Titel oder eine Nachricht in einem ANDEREN Chat faellt durch: dafuer ist
+     nie eine Uhr an, und beim Zurueckkommen holt sie niemand nach. Genau so gemeldet
+     ("Message Received oder Titel updated").
+     KEIN TAKT, KEIN POLLING. Gefeuert wird nur, wenn der Tab wirklich zurueckkommt -- und nur,
+     wenn er lange genug weg war. Ein Wechsel zur Nachrichten-App und zurueck loest nichts aus;
+     die Realtime-Verbindung ueberlebt ein paar Sekunden Hintergrund problemlos, und ein
+     Workflow je App-Wechsel waere die teuerste Art, ein Problem zu loesen, das es dann nicht
+     gibt.
+     Der Haken heisst bubble_fn_ask_mira_refresh_chats (PLURAL, nicht zu verwechseln mit dem
+     refresh_chat oben): er soll die LISTE neu setzen, also dasselbe tun wie der Page-Load-
+     Schritt, der askMiraSetPreviousChats fuellt. Fehlt er, passiert nichts -- kein Fehler, kein
+     Ersatzweg. Einen zu erfinden waere dasselbe Missverstaendnis wie select_chat oben. */
+  var LISTE_BODEN = 20000;          /* darunter war der Tab nicht lange genug weg */
+  var _listeWeg = 0, _listeGemeckert = false;
+  function listeNachholen(grund){
+    var fn = window.bubble_fn_ask_mira_refresh_chats;
+    if (typeof fn !== 'function'){
+      if (!_listeGemeckert && window.console){
+        _listeGemeckert = true;
+        console.warn('[AskMira] Chatliste wird beim Zurueckkommen NICHT aufgefrischt: ' +
+          'bubble_fn_ask_mira_refresh_chats fehlt. Dieser Workflow soll nur die Liste neu ' +
+          'setzen (derselbe Schritt wie im Page Load, der askMiraSetPreviousChats fuellt).');
+      }
+      return false;
+    }
+    try { fn(String(S.activeChatId || '')); } catch(e){ return false; }
+    try { root.dispatchEvent(new CustomEvent('askmira:listenachholen',
+          { detail: { grund: grund }, bubbles: true })); } catch(e){}
+    return true;
+  }
+  function zurueckAusDemHintergrund(grund){
+    /* Der laufende Chat hat seinen eigenen Weg (nachfassen) -- der geht zuerst. */
+    if (nfLaeuftNoch()) nachfassen(grund);
+    if (!_listeWeg) return;
+    var weg = Date.now() - _listeWeg;
+    _listeWeg = 0;
+    if (weg >= LISTE_BODEN) listeNachholen(grund);
+  }
   try {
     document.addEventListener('visibilitychange', function(){
-      if (!document.hidden && nfLaeuftNoch()) nachfassen('sichtbar');
+      if (document.hidden){ _listeWeg = Date.now(); return; }
+      zurueckAusDemHintergrund('sichtbar');
     });
-    window.addEventListener('online', function(){ if (nfLaeuftNoch()) nachfassen('online'); });
+    window.addEventListener('online', function(){
+      if (nfLaeuftNoch()) nachfassen('online');
+      /* Eine wiederhergestellte Verbindung heisst immer, dass etwas gefehlt haben kann --
+         hier ohne Bodenpruefung, denn "offline" ist kein kurzer App-Wechsel. */
+      listeNachholen('online');
+    });
     /* iOS holt eine Seite aus dem Vor-/Zurueck-Speicher zurueck, ohne sie neu zu laden --
        visibilitychange bleibt dabei aus. */
     window.addEventListener('pageshow', function(e){
-      if (e && e.persisted && nfLaeuftNoch()) nachfassen('pageshow');
+      if (!e || !e.persisted) return;
+      if (nfLaeuftNoch()) nachfassen('pageshow');
+      listeNachholen('pageshow');
     });
+    /* pagehide statt nur visibilitychange: iOS schickt beim Wegwischen genau das und
+       manchmal KEIN visibilitychange -- ohne diese Zeile bliebe _listeWeg auf 0 und die
+       Rueckkehr zaehlte als "war gar nicht weg". */
+    window.addEventListener('pagehide', function(){ _listeWeg = Date.now(); });
   } catch(e){}
 
   /* HIER STAND nfAus(). Es ist weg, und das ist der Kern der Sache: diese Funktion laeuft auch,
