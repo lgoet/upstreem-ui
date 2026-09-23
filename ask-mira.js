@@ -7438,6 +7438,19 @@
        stand das Menue unter ihr. Genau die Groessenordnung, die gemeldet wurde. */
     var fensterB = document.documentElement.clientWidth || window.innerWidth || 0;
     var rechts = fensterB || rootRect.right;
+    /* DIE GRENZE IST DIE KANTE DER LEISTE, NICHT DIE DES FENSTERS (23.09., dritter Anlauf).
+       Die zwei Versuche davor haben gegen clientWidth geklemmt -- also gegen den Bildschirmrand.
+       Rechts von der Chatliste liegt aber noch Seite: das Menue blieb damit zwar im Fenster,
+       stand aber ueber die Leiste hinaus, zu der es gehoert. Genau das war gemeldet, und ich
+       habe zweimal am falschen Mass gerechnet.
+       Steht die Leiste LINKS, gilt weiter das Fenster: dann ist rechts von ihr die ganze Seite,
+       und eine Kante gibt es dort nicht. Eine Leiste ohne Breite (zugeklappt, noch nicht
+       eingehaengt) zaehlt nicht mit. */
+    var leisteEl = root.querySelector('.am-prev-panel');
+    if (leisteEl && !root.classList.contains('is-side-left')){
+      var rl = leisteEl.getBoundingClientRect();
+      if (rl.width > 0 && rl.right > 0) rechts = Math.min(rechts, rl.right);
+    }
     var minL = 8, maxL = rechts - mw - 8;
     if (maxL < minL) maxL = minL;
     if (left < minL) left = minL;
