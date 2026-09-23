@@ -6029,7 +6029,14 @@
   /* Nach einem Verbindungsabriss: neu subscriben macht Bubble, den Rest hier. In der Luecke
      koennen Ereignisse gefallen sein, also wird der offene Chat einmal nachgeladen und die
      Liste geholt -- beides ueber die Wege, die es ohnehin gibt. */
+  /* DER ERSTE AUFRUF IST KEIN WIEDERVERBINDEN. Haengt das in Bubble an "Channel Subscribed",
+     kommt er einmal bei jedem Seitenaufbau -- und dort ist gerade alles frisch geladen. Ihn
+     mitzumachen hiesse: jeder Aufbau der Mira-Ansicht loest sofort ein zweites Laden derselben
+     Daten aus. Erst ab dem zweiten Mal ist es wirklich eine Luecke. */
+  var _rtVerbunden = 0;
   window.askMiraRealtimeReconnected = function(){
+    _rtVerbunden++;
+    if (_rtVerbunden === 1) return false;
     rtVerfallPruefen();
     rtOffenenChatHolen('reconnect');
     try { listeNachholen('reconnect'); } catch(e){}
