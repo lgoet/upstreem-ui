@@ -5973,8 +5973,26 @@
        geraten werden -- das Feld tool entscheidet.
        NUR fuer den offenen Chat. Das Protokoll gehoert zu der Antwort, die der Nutzer gerade vor
        sich hat; aus einem fremden Chat waere es eine Zeile ueber etwas, das er nicht sieht. */
+    var mitgenommen = false;
     var werkzeug = rtText(p.tool);
-    if (werkzeug && offen){ try { window.askMiraSetTool(werkzeug); } catch(e){} }
+    if (werkzeug && offen){ try { window.askMiraSetTool(werkzeug); } catch(e){} mitgenommen = true; }
+
+    /* DIE LOGOS DER LADEZEILE, auf demselben Weg und aus demselben Grund. Beide Setter schieben
+       die Bilder in den gerade laufenden Schritt (runRefreshLogos), wenn eine Antwort laeuft --
+       ohne sie bleibt die Zeile bilderlos.
+       Als KOMMALISTE von Domains, nicht als JSON-Feld: die Nutzlast bleibt damit flach, jedes
+       Feld ein Text, und Bubbles Schema muss keine verschachtelte Liste aufschluesseln.
+       Eine nackte Domain reicht -- _normFavicon und _normBrandLogo bauen daraus die Bildadresse. */
+    function rtListe(v){
+      return rtText(v).split(',').map(function(x){ return x.trim(); }).filter(Boolean).slice(0, 20);
+    }
+    if (offen){
+      var quellen = rtListe(p.favicons);
+      if (quellen.length) try { window.askMiraSetFavicons(quellen); } catch(e){}
+      var marken = rtListe(p.brand_logos);
+      if (marken.length) try { window.askMiraSetBrandLogos(marken); } catch(e){}
+      if (quellen.length || marken.length) mitgenommen = true;
+    }
 
     if (art === 'mira_turn_started'){
       if (!chat) return false;
@@ -6068,12 +6086,13 @@
       try { window.askMiraResolveVoice(gesprochen, rtText(p.message_id)); } catch(e){}
       return true;
     }
-    /* Ein reines Werkzeug-Ereignis ist oben schon erledigt -- es traegt einen eigenen aeusseren
-       Namen, den diese Datei nicht kennen muss. */
-    if (werkzeug) return true;
-    rtMeckern('art:' + art, 'Realtime: "' + art + '" kennt diese Komponente nicht. ' +
-      'Erwartet werden mira_turn_started, mira_message_success, mira_message_error, ' +
-      'mira_title_updated und mira_user_transcript.');
+    /* Ein reines Ladezeilen-Ereignis ist oben schon erledigt -- es traegt einen eigenen aeusseren
+       Namen, den diese Datei nicht kennen muss. Also kein "kenne ich nicht" darueber. */
+    if (mitgenommen) return true;
+    rtMeckern('art:' + art, 'Realtime: "' + art + '" kam an, trug aber nichts Verwertbares. ' +
+      'Bekannt sind mira_turn_started, mira_message_success, mira_message_error, ' +
+      'mira_title_updated und mira_user_transcript -- dazu jedes Ereignis, das tool, favicons ' +
+      'oder brand_logos fuellt. Ist das die Ladezeile, steht ihr Feld leer.');
     return false;
   };
 
