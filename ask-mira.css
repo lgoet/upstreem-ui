@@ -1409,8 +1409,11 @@
   /* ===================== COMPOSER ===================== */
   .am-composer-area {
     flex: 0 0 auto; position: relative; z-index: 2;
-    /* unten 32px: der Platz des entfernten Hinweises, siehe .am-hint weiter unten */
-    padding: 10px clamp(14px, 3vw, 28px) 32px;
+    /* OBEN 8 (23.09. angefordert): der Abstand zwischen dem Ende der Ausblendung und der
+       Oberkante des Eingabefeldes. Die Ausblendung (::before) sitzt genau auf dieser Kante --
+       diese Polsterung ist also die deckende Zone dazwischen, und die soll 8 sein, nicht 10.
+       Unten 32px: der Platz des entfernten Hinweises, siehe .am-hint weiter unten. */
+    padding: 8px clamp(14px, 3vw, 28px) 32px;
     /* DECKEND, nicht mehr verlaufend. Hier stand linear-gradient(to top, var(--am-bg) 70%,
        transparent) -- gedacht als Ausblendung des Textes darueber, aber wirkungslos: die 70%
        decken fast die ganze Flaeche, und die Rampe wurde in die 10px Kopfpolsterung gequetscht.
@@ -1629,7 +1632,11 @@
      --up-focus-Tokens kippen ueber .up-root[data-theme] von selbst. */
   .am-composer:focus-within { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring), var(--am-shadow-sm); }
   .am-textarea {
-    width: 100%; min-height: 26px; max-height: 200px; resize: none;
+    /* 34 statt 26 (23.09. angefordert: "das inputfeld 8px mehr in height"). Die Mindesthoehe
+       des Textfeldes bestimmt die Hoehe des ganzen Kastens, solange nur eine Zeile darin
+       steht -- der Kasten geht damit von 119 auf 127. Nicht ueber das Polster geloest: das
+       haette den Text nach unten geschoben statt ihm Platz zu geben. */
+    width: 100%; min-height: 34px; max-height: 200px; resize: none;
     border: 0; outline: 0; background: transparent; color: var(--am-text);
     font-size: 14px; line-height: 1.5; padding: 1px 0 0; margin: 0; overflow-y: auto;
     align-self: center;
