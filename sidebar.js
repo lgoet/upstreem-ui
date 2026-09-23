@@ -55,6 +55,20 @@
   var STORE = window.__usnStore = window.__usnStore || {};
   function speicher(id){ return STORE[id] || (STORE[id] = {}); }
 
+  /* WECHSEL-MARKE (23.09., dritter Anlauf). Zwischen dem Klick auf ein anderes Team und dem
+     Neuaufbau der Seite duerfen die Pins des neuen Teams nicht erscheinen -- sie liegen im
+     Speicher unter dem neuen Schluessel und waeren sofort lesbar, waehrend alles daneben noch
+     dem alten Team gehoert.
+     Zwei Anlaeufe davor haben das ueber state.laedt geloest. Das hilft nicht, wenn Bubble die
+     Leiste beim Wechsel NEU AUFBAUT: der Zustand ist dann frisch und laedt wieder false.
+     Diese Marke liegt im sessionStorage und ueberlebt genau das. Geloescht wird sie hier, im
+     Modulkopf -- der laeuft einmal je SEITENAUFBAU (der Loader entdoppelt die Datei). Ab da ist
+     ein Wechsel wieder echt und die Pins gehoeren wieder angezeigt. */
+  var WECHSEL_KEY = "usn_teamwechsel";
+  try { sessionStorage.removeItem(WECHSEL_KEY); } catch(e){}
+  function wechselMarke(){ try { return sessionStorage.getItem(WECHSEL_KEY) || ""; } catch(e){ return ""; } }
+  function wechselMarkeSetzen(id){ try { sessionStorage.setItem(WECHSEL_KEY, String(id)); } catch(e){} }
+
   var BREIT = 900, MINI = 500;
   var W_WIDE = 250, W_MINI = 64;
 
@@ -1144,6 +1158,9 @@
         /* LADEZUSTAND VOR dem Neuzeichnen. Er stand bis zum 23.09. drei Zeilen weiter unten --
            renderTeam() lief also noch mit laedt === false und zeichnete die Pin-Gruppe ein
            letztes Mal, und zwar schon mit dem neuen Team. Genau das eine Bild war gemeldet. */
+        /* Die Marke VOR allem anderen: ab hier ist jede Pin-Anzeige eine Behauptung ueber ein
+           Team, dessen uebrige Daten noch nicht da sind. */
+        wechselMarkeSetzen(id);
         ladenSetzen(true);
         if (neu){ state.team = neu; vorrat.team = neu; renderTeam(); }
         menuZu();
@@ -1497,7 +1514,10 @@
          uebrige Daten noch nicht da sind. Die alten Pins stehen zu lassen waere falsch (sie gehoeren
          dem vorigen Team), die neuen zu laden sieht aus wie ein fertiger Wechsel, der es nicht ist.
          Also leer, und der naechste Seitenaufbau bringt sie. */
-      state.pins = erstesMal ? pinsLesen() : [];
+      /* Die Marke schlaegt "erstes Mal": nach einem Klick auf DIESES Team sind die Pins bis zum
+         naechsten Seitenaufbau tabu, auch wenn die Leiste inzwischen neu gebaut wurde. */
+      var frischGewechselt = wechselMarke() && wechselMarke() === String(t);
+      state.pins = (erstesMal && !frischGewechselt) ? pinsLesen() : [];
       renderNav();
     }
     function pinHinzu(p){

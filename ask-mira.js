@@ -8394,7 +8394,11 @@
             '</div>' +
           '</div>' +
         '</div>' +
-        '<div class="ums-row">' +
+        '<div class="ums-row' + (eng ? ' is-gesperrt' : '') + '">' +
+          /* GANZE ZEILE AUSGEGRAUT AM TELEFON (23.09. nachgefasst: "komplett ausgrauen den
+             ganzen Menuepunkt"). Vorher waren nur die zwei Knoepfe disabled -- Titel und
+             Erklaersatz standen in voller Farbe daneben und sahen aus wie eine Einstellung,
+             die man treffen kann. Die Klasse faerbt die Zeile als Ganzes. */
           '<div class="ums-rowtext">' +
             '<div class="ums-rowtitle">' + esc(UCt('Chat sidebar')) + '</div>' +
             '<div class="ums-rowdesc am-set-note">' + esc(UCt(

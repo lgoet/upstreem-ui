@@ -73,27 +73,14 @@
     var elHeading   = root.querySelector(".up-heading");
     var elHeadTools = root.querySelector(".up-head-tools");
     var elHead      = root.querySelector(".up-head");
-    /* DIESELBE KLEBELEISTE WIE DIE NACHBARN (23.09.). Bis heute stand hier ausdruecklich "diese
-       Seite hat keinen klebenden Kopf" -- und das war der Fehler: die Topics-Verwaltung steht auf
-       derselben Seite wie prompts-table und responses-table, unter demselben Seitenkopf, und die
-       beiden kleben bei 171px. Ohne makeSticky scrollt diese Toolbar einfach weiter und
-       verschwindet zur Haelfte hinter dem Kopf, statt sauber darunter stehenzubleiben. Genau so
-       gemeldet ("Topics Management toolbar obere Haelfte"), und der Nutzer hat den Kopf im
-       Inspektor als das darueberliegende Element identifiziert.
-       Ohne data-sticky-top am Element greift der Standard aus core.css (171px) -- derselbe Wert,
-       den die Nachbarvorlagen ausdruecklich setzen. Ein eingebautes Element wirkt damit sofort,
-       ohne dass jemand ein Attribut nachtragen muss. */
-    /* makeSticky STELLT nur bereit, es schaltet nicht ein -- applySticky ist der Schalter, und
-       den ruft der Aufrufer. Wortgleich die drei Zeilen aus prompts-table.js (dort 4701-4703):
-       einmal sofort, und danach bei jeder Fensteraenderung, weil die Klebeleiste unter 1000px
-       Breite ausgeht. Ohne den Aufruf bleibt die Klasse up-sticky aus und die CSS greift nie --
-       am 23.09. genau so gemessen (position blieb static). */
-    if (elHead && UC.makeSticky){
-      var _sticky = UC.makeSticky(root, elHead);
-      if (UC.aufResize) UC.aufResize(function(){ _sticky.applySticky(); });
-      else window.addEventListener("resize", UC.rafThrottle(function(){ _sticky.applySticky(); }));
-      _sticky.applySticky();
-    }
+    /* KEINE KLEBELEISTE HIER, und das ist nach einem Fehlversuch bewusst so (23.09.).
+       Ich hatte makeSticky eingebaut, weil die Nachbarn auf derselben Seite bei 171px kleben und
+       diese Toolbar hinter den Seitenkopf scrollte. Das hat die Komponente zerlegt: .up-sticky
+       bringt in core.css einen DECKENDEN Streifen mit (.up-head::before, --up-sticky-top hoch,
+       Grund --up-surface), der unbedingt Teil der Kopfzeilenbox ist -- nicht erst beim Scrollen.
+       In dieser Komponente deckte er alles unter der Toolbar zu: obere Haelfte sichtbar, darunter
+       weiss bis "Eigene Gruppierungen". Genau so gemeldet.
+       Wer das noch einmal angeht, loest zuerst den Deckstreifen -- nicht den Aufruf. */
     var elSearch    = root.querySelector(".up-search");
     var elSearchIn  = root.querySelector(".up-search-input");
     var elSort      = root.querySelector(".up-sort");

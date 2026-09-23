@@ -2818,6 +2818,12 @@
     line-height: 1.35; }
   .am-set-backdrop .ums-rowdesc, .am-set-backdrop .am-set-note { font-size: 13px; font-weight: 400; color: var(--vc-muted);
     line-height: 1.5; max-width: 46ch; }
+  /* EINE GESPERRTE EINSTELLUNGSZEILE (23.09.). Nicht nur die Knoepfe: Titel und Erklaersatz
+     gehoeren dazu, sonst liest sich die Zeile als waehlbar und nur der Regler klemmt.
+     Mit .am-set-backdrop davor wie die Nachbarregeln dieser Gruppe -- das Fenster haengt am
+     Koerper und die Zeilen gibt es nur darin. */
+  .am-set-backdrop .ums-row.is-gesperrt { opacity: .45; }
+  .am-set-backdrop .ums-row.is-gesperrt .up-seg-btn { cursor: default; }
   .am-set-backdrop .ums-rowctl, .am-set-backdrop .am-set-seg { flex: 0 0 auto; display: flex; align-items: center; gap: 8px;
     padding-top: 1px; }
   /* Die Highlight-Zeilen werden AUS DER LEISTE HERUEBERGEHAENGT, nicht neu gebaut -- sie sind
