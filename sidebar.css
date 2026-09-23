@@ -1030,7 +1030,10 @@
 /* Doppelte Klasse im Selektor, damit Groesse, Flaeche und display gegen .up-iconbtn ueber die
    Spezifitaet gewinnen und nicht ueber die Ladereihenfolge. */
 .up-root.up-portal.usn-fab {
-  position: fixed; left: 0; top: 0; z-index: 9902;
+  /* 32 VON OBEN (23.09. angefordert). Der Knopf klebte an der Oberkante und stand damit auf
+     Hoehe der Topbar der Seite -- er soll darunter sitzen, mit demselben Abstand, den die Leiste
+     selbst zu ihrem oberen Rand haelt. */
+  position: fixed; left: 0; top: 32px; z-index: 9902;
   width: 32px; height: 36px; min-width: 0;
   border-radius: 0 12px 12px 0; border: 0; padding: 0;
   background: var(--usn-bg); color: var(--vc-text); cursor: pointer;
