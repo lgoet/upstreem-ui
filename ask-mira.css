@@ -656,6 +656,7 @@
     #ask-mira.side-ready .am-prev-panel { transition: transform 200ms ease; }
     #ask-mira.prev-open .am-prev-panel { transform: translateX(0); margin-right: 0; }
     .am-prev-scrim { display: block; }
+
     /* HIER ist das Ausblenden richtig: in diesem Fenster liegt die Liste als Overlay ueber dem
        Chat, daneben ist kein Platz. Oben stand diese Regel pauschal und traf damit auch den
        Desktop, wo die Liste neben dem Chat sitzt. */
@@ -2586,8 +2587,30 @@
     padding: 14px 12px 16px;
     background: var(--am-bg); border-left: 1px solid var(--am-border-strong);
   }
-  /* Sie ersetzt die grosse Leiste, steht also genau dann da, wenn die zu ist. */
-  #ask-mira.side-mounted:not(.prev-open) .am-mini { display: flex; }
+  /* Sie ersetzt die grosse Leiste, steht also genau dann da, wenn die zu ist -- UND NUR AB 721px
+     (23.09. angefordert: "keine eingeklappte sidebar option im mobilemode in mira. nur hint und
+     dann grosse sidebar"). Am Telefon nahm sie 64 der 375px weg, fuer eine Leiste, die dort
+     ohnehin als Overlay aufgeht. Der Weg hinein ist der Knopf in der Kopfzeile, der Weg hinaus
+     der Schleier daneben -- dieselben zwei Wege wie bei der Hauptleiste am Telefon.
+     Als Medienbedingung an der ANZEIGE-Regel und nicht als spaeteres display:none: die
+     Ausblendung braeuchte sonst entweder !important oder die Ladereihenfolge, und beides ist in
+     dieser App ausgeschlossen (CLAUDE.md §1). Hier gibt es die Regel unter 721px schlicht nicht.
+     721 und nicht 720, damit sie sich mit dem Overlay-Block (max-width: 720px) nicht ueberlappt. */
+  @media (min-width: 721px) {
+    #ask-mira.side-mounted:not(.prev-open) .am-mini { display: flex; }
+  }
+  /* DER UEBERGANG, und zwar ASYMMETRISCH -- dieselbe Ueberlegung wie in sidebar.css an
+     .usn-txt (23.09. angefordert: "warum machen wir da nicht die gleiche logik wie in der
+     hauptsidebar"). Die grosse Leiste faehrt 200ms ueber margin-right heraus, die schmale
+     stand im ersten Bild schon voll da -- das war der Sprung.
+     Jetzt blendet sie ein, NACHDEM die grosse draussen ist (Verzoegerung 140 von 200), und
+     beim Aufklappen sofort aus (Verzoegerung 0). Eine Uebergangsangabe gilt fuer den Zustand,
+     in DEN gewechselt wird: die Regel unten fuers Einblenden, die hier fuers Ausblenden.
+     Die Breite bleibt ungetaktet -- die 64px muessen sofort stehen, sonst haette das Layout
+     200ms lang ein Loch. */
+  .am-mini { opacity: 0; transition: opacity 120ms ease 0ms; }
+  #ask-mira.side-mounted:not(.prev-open) .am-mini { opacity: 1; transition-delay: 140ms; }
+  #ask-mira:not(.side-ready) .am-mini { transition: none; }
   /* Und auf derselben Seite wie sie: links heisst order -1 und der Rahmen auf der anderen Kante. */
   #ask-mira.is-side-left .am-mini { order: -1; border-left: 0; border-right: 1px solid var(--am-border-strong); }
   .am-mini-logo {
