@@ -2869,11 +2869,19 @@
    Sized to match .up-donut-wrap/.up-donut-layout exactly (200px cap, 220px once collapsed) —
    this used to be its own slightly-smaller 180px guess, which is why the skeleton circle visibly
    grew the instant the real chart replaced it. */
-.up-donut-sk { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 28px; width: 100%; pointer-events: none; }
+/* max-height ueberall (23.09. gemeldet: der Ring clippt unten in der Maerkte-Karte). Die Breite
+   war gedeckelt, die HOEHE nicht: aspect-ratio 1 machte aus min(52%, 200px) eine ebenso hohe
+   Box -- gemessen 192px in einem 173px-Koerper, also 19px unter der Kante abgeschnitten.
+   Der Ring haengt an einem svg mit viewBox, er skaliert also von selbst mit, sobald die Box
+   niedriger wird, und bleibt dabei rund. Dieselbe Ueberlegung wie beim Balken-Skelett, nur
+   greift sie hier ueber die Hoehe statt ueber die Zeile. */
+.up-donut-sk { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 28px; width: 100%; max-height: 100%; pointer-events: none; }
 .up-donut-sk.is-collapsed { flex-direction: column; gap: 18px; }
-.up-sk-chart { flex: 0 0 auto; width: min(52%, 200px); aspect-ratio: 1; }
+.up-sk-chart { flex: 0 0 auto; width: min(52%, 200px); aspect-ratio: 1; max-height: 100%; }
 .up-donut-sk.is-collapsed .up-sk-chart { width: min(75%, 220px); }
-.up-sk-chart svg { width: 100%; height: 100%; display: block; }
+/* object-fit: contain haelt den Ring rund, wenn max-height die Box flacher macht als breit --
+   ohne das zoege das svg in die Breite. */
+.up-sk-chart svg { width: 100%; height: 100%; display: block; object-fit: contain; }
 .up-sk-ring { stroke: var(--vc-sk); }
 .up-sk-g0 { stop-color: var(--vc-sk); }
 .up-sk-g1 { stop-color: #ffffff; }
