@@ -6737,13 +6737,25 @@
   /* EIN Selektor fuer alles, nicht einer pro Knopfklasse. Vorher lief pro Durchlauf ein
      querySelectorAll je Eintrag -- bei 19 Eintraegen also 19 Durchsuchungen des ganzen Dokuments.
      Jetzt eine, danach wird am Element entschieden, welcher Eintrag gilt. */
-  var TOOLBAR_ALLE = null;
+  /* Der gebaute Selektor wird gemerkt -- ABER NUR, SOLANGE DIE LISTEN GLEICH GROSS BLEIBEN
+     (23.09.). Vorher war das ein Einmal-Cache, und genau daran sind alle Nachtraege gescheitert:
+     der erste Sweep laeuft, WAEHREND core.js noch durchlaeuft -- gemessen stand TOOLBAR_SEL da
+     bei 3 Eintraegen, am Ende sind es 17. Der Selektor blieb auf 352 Zeichen stehen und hat die
+     14 spaeteren nie enthalten: Chart-Umschalter, Sortierpfeile, Mikrofon, Ansichts-Umschalter,
+     Docs-Knopf, Seitenkopf-Zeichen. Alle wurden nie gefunden, und jede Meldung darueber sah aus
+     wie ein Problem des einzelnen Zeichens.
+     Zwei Object.keys je Sweep sind dagegen nichts -- der Lauf selbst ist ein querySelectorAll
+     ueber den Teilbaum. Die Zahl reicht als Merkmal: Eintraege werden hier nur hinzugefuegt,
+     nie ersetzt oder entfernt. */
+  var TOOLBAR_ALLE = null, TOOLBAR_ALLE_N = -1;
   function toolbarSelektor(){
-    if (TOOLBAR_ALLE) return TOOLBAR_ALLE;
+    var anzahl = Object.keys(TOOLBAR_ICONS).length + Object.keys(TOOLBAR_SEL).length;
+    if (TOOLBAR_ALLE && anzahl === TOOLBAR_ALLE_N) return TOOLBAR_ALLE;
     var teile = [], k;
     for (k in TOOLBAR_ICONS) if (Object.prototype.hasOwnProperty.call(TOOLBAR_ICONS, k)) teile.push("." + k);
     for (k in TOOLBAR_SEL) if (Object.prototype.hasOwnProperty.call(TOOLBAR_SEL, k)) teile.push(k);
     TOOLBAR_ALLE = teile.join(",");
+    TOOLBAR_ALLE_N = anzahl;
     return TOOLBAR_ALLE;
   }
   function toolbarSchluessel(el){
