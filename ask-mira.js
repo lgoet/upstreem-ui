@@ -5965,6 +5965,17 @@
     /* DIE EINE ZEILE, DIE ALLES TRAEGT: gehoert das Ereignis zum offenen Chat? */
     var offen = chat && chat === rtText(S.activeChatId);
 
+    /* DER WERKZEUGSCHRITT (23.09. nachgetragen). In der Spezifikation der sechs Faelle stand er
+       nicht -- er hat aber seinen eigenen Auslöser und steuert Miras Laufzeitprotokoll
+       ("Reading your brand data" und die drei anderen). Ohne ihn steht der Loader still.
+       Er wird VOR der Verzweigung geprueft und nicht in einem eigenen Zweig: so ist es egal, ob
+       er allein kommt oder an einem anderen Ereignis mitreist, und der aeussere Name muss nicht
+       geraten werden -- das Feld tool entscheidet.
+       NUR fuer den offenen Chat. Das Protokoll gehoert zu der Antwort, die der Nutzer gerade vor
+       sich hat; aus einem fremden Chat waere es eine Zeile ueber etwas, das er nicht sieht. */
+    var werkzeug = rtText(p.tool);
+    if (werkzeug && offen){ try { window.askMiraSetTool(werkzeug); } catch(e){} }
+
     if (art === 'mira_turn_started'){
       if (!chat) return false;
       /* Kommt es NACH dem Abschluss desselben Turns herein -- verspaetet oder doppelt --, darf
@@ -6057,6 +6068,9 @@
       try { window.askMiraResolveVoice(gesprochen, rtText(p.message_id)); } catch(e){}
       return true;
     }
+    /* Ein reines Werkzeug-Ereignis ist oben schon erledigt -- es traegt einen eigenen aeusseren
+       Namen, den diese Datei nicht kennen muss. */
+    if (werkzeug) return true;
     rtMeckern('art:' + art, 'Realtime: "' + art + '" kennt diese Komponente nicht. ' +
       'Erwartet werden mira_turn_started, mira_message_success, mira_message_error, ' +
       'mira_title_updated und mira_user_transcript.');

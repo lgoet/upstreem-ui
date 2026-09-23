@@ -197,7 +197,8 @@
 <script>
 /* PRUEFSTAND 4: ALLE Felder immer dabei, die meisten leer -- und der Weg ohne Backtick. */
 var P=[]; function z(t){P.push(t);document.getElementById("out").textContent=P.join("\n");}
-var FEHLER=[]; window.addEventListener("error",function(e){FEHLER.push(String(e.message));});
+var FEHLER=[]; window.__amWarnRT=[];
+(function(){var w=console.warn;console.warn=function(){try{window.__amWarnRT.push([].slice.call(arguments).join(" "));}catch(e){}return w.apply(console,arguments);};})(); window.addEventListener("error",function(e){FEHLER.push(String(e.message));});
 var RUFE=[];
 window.bubble_fn_ask_mira_refresh_chat=function(id){RUFE.push("refresh_chat:"+id);};
 window.bubble_fn_ask_mira_refresh_chats=function(){RUFE.push("refresh_chats");};
@@ -252,6 +253,24 @@ setTimeout(function(){
   z("8 is_new_session \"true\" -> Zeile: " +
     schicken(voll({event:"mira_turn_started", session_id:"NEU2", assistant_message_id:"m4", is_new_session:"true", preview:"Frage ohne Backtick"})) +
     " -> " + (zeile("NEU2") ? "angelegt, Titel " + JSON.stringify(titelVon("NEU2")) : "NICHT angelegt"));
+
+  z("");
+  z("DER WERKZEUGSCHRITT (Loader):");
+  function protokoll(){ var e = document.querySelectorAll("#am-messages .am-run-step, #am-messages .am-run-lead");
+    return [].map.call(e, function(x){ return x.textContent.trim().replace(/\s+/g," "); }).filter(Boolean); }
+  /* erst laufen lassen, sonst nimmt setTool nichts an -- so ist es gebaut */
+  schicken(voll({event:"mira_turn_started", session_id:"A", assistant_message_id:"t0"}));
+  schicken(voll({event:"mira_tool_started", session_id:"A", tool:"company_lookup"}));
+  z("tool company_lookup, offener Chat: " + JSON.stringify(protokoll()));
+  schicken(voll({event:"mira_tool_started", session_id:"A", tool:"citation_overview"}));
+  z("tool citation_overview dazu:        " + JSON.stringify(protokoll()));
+  var vorFremd = protokoll().length;
+  schicken(voll({event:"mira_tool_started", session_id:"FREMD", tool:"response_detail"}));
+  z("tool aus FREMDEM Chat:              Zeilen " + vorFremd + " -> " + protokoll().length + " (richtig: unveraendert)");
+  z("unbekannter Werkzeugname:           " + schicken(voll({event:"mira_tool_started", session_id:"A", tool:"gibts_nicht"})) +
+    " -> Zeilen " + protokoll().length + " (richtig: unveraendert)");
+  z("meckert der Eingang ueber mira_tool_started? " +
+    ((window.__amWarnRT||[]).filter(function(t){return t.indexOf("mira_tool_started")>=0;}).length ? "JA (falsch)" : "nein (richtig)"));
 
   z("");
   z("DER WEG OHNE BACKTICK (verstecktes Element):");
