@@ -1,6 +1,6 @@
 <meta charset="utf-8">
-<link rel="stylesheet" href="core.css?v=rt9">
-<link rel="stylesheet" href="ask-mira.css?v=rt9">
+<link rel="stylesheet" href="core.css?v=p9">
+<link rel="stylesheet" href="ask-mira.css?v=p9">
 <body style="margin:0;font-family:system-ui,sans-serif">
 <pre id="out" style="font:11px/1.5 ui-monospace,monospace;background:#f6f6f6;padding:8px;margin:0;white-space:pre-wrap">bereit</pre>
 <div class="up-root am-root" id="ask-mira"
@@ -191,210 +191,94 @@
 
   </div>
 </div>
-<script src="core.js?v=rt9"></script>
-<script src="ask-mira.js?v=rt9"></script>
+<script src="core.js?v=p9"></script>
+<script src="ask-mira.js?v=p9"></script>
 <script>
-/* PRUEFSTAND fuer den Nutzer-Kanal. Alle Werte kommen als Text -- genau wie aus Bubble. */
-var P = [];
-function z(t){ P.push(t); document.getElementById("out").textContent = P.join("\n"); }
-var FEHLER = [];
-window.__amWarn = [];
-(function(){ var w = console.warn; console.warn = function(){ try { window.__amWarn.push([].slice.call(arguments).join(" ")); } catch(e){} return w.apply(console, arguments); }; })();
-window.addEventListener("error", function(e){ FEHLER.push(String(e.message)); });
-var RUFE = [];
-window.bubble_fn_ask_mira_refresh_chat  = function(id){ RUFE.push("refresh_chat:" + id); };
-window.bubble_fn_ask_mira_refresh_chats = function(){ RUFE.push("refresh_chats"); };
-window.bubble_fn_ask_mira_select_chat   = function(id){ RUFE.push("select_chat:" + id); };
-
-function zeile(id){
-  var els = document.querySelectorAll('.am-prev-item');
-  for (var i=0;i<els.length;i++) if (String(els[i].getAttribute('data-chat-id'))===String(id)) return els[i];
-  return null;
-}
-function stand(id){
-  var el = zeile(id);
-  if (!el) return "(keine Zeile)";
-  return (el.classList.contains("is-busy") ? "busy" : "") +
-         (el.classList.contains("has-antwort") ? "punkt" : "") ||
-         "ruhig";
-}
-function titelVon(id){ var el = zeile(id); if(!el) return "(keine Zeile)";
-  var t = el.querySelector(".am-prev-item-title"); return t ? t.textContent.trim() : "(kein Titel)"; }
-function reihenfolge(){ return [].map.call(document.querySelectorAll('.am-prev-item'),
-  function(e){ return String(e.getAttribute('data-chat-id')); }); }
-
-function lauf(){
-  P = [];
-  z("gibt es askMiraRealtime? " + (typeof window.askMiraRealtime));
-  if (typeof window.askMiraRealtime !== "function"){ z("ENDE -- Funktion fehlt (alte Fassung?)"); return; }
-
-  window.askMiraSetPreviousChats(JSON.stringify([
-    { id:"A", title:"Alter Chat A", updated_at:"2026-09-20T10:00:00Z" },
-    { id:"B", title:"Alter Chat B", updated_at:"2026-09-19T10:00:00Z" }
-  ]));
-  window.askMiraSetActiveChat("A", false);
-  z("Start: aktiv=A, Liste=" + JSON.stringify(reihenfolge()));
-
-  /* 1 -- turn_started in einem FREMDEN, NEUEN Chat. Alles als Text. */
-  RUFE = [];
-  window.askMiraRealtime({ event:"mira_turn_started", session_id:"C",
-    is_new_session:"true", preview:"Frische Frage", created_at:"2026-09-23T09:00:00Z",
-    assistant_message_id:"m1" });
-  z("1 turn_started(C,neu): Zeile C=" + stand("C") + " Titel=" + JSON.stringify(titelVon("C")) +
-    " Reihenfolge=" + JSON.stringify(reihenfolge()) + " aktiv=" + window.__amAktiv() +
-    " Rufe=" + JSON.stringify(RUFE));
-
-  /* 2 -- success fuer C, waehrend A offen ist: NUR der Punkt, kein Nachladen. */
-  RUFE = [];
-  window.askMiraRealtime({ event:"mira_message_success", session_id:"C",
-    assistant_message_id:"m1", status:"success", updated_at:"2026-09-23T09:01:00Z" });
-  z("2 success(C, fremd): Zeile C=" + stand("C") + " aktiv=" + window.__amAktiv() +
-    " Rufe=" + JSON.stringify(RUFE));
-
-  /* 2b -- dasselbe Ereignis noch einmal: darf nichts tun. */
-  RUFE = [];
-  var vorher = document.querySelectorAll('.am-prev-item').length;
-  window.askMiraRealtime({ event:"mira_message_success", session_id:"C",
-    assistant_message_id:"m1", status:"success" });
-  z("2b Wiederholung: Zeilen " + vorher + " -> " + document.querySelectorAll('.am-prev-item').length +
-    " Rufe=" + JSON.stringify(RUFE));
-
-  /* 3 -- Chat C oeffnen: Punkt weg. */
-  window.askMiraSetActiveChat("C", false);
-  z("3 C geoeffnet: Zeile C=" + stand("C") + " aktiv=" + window.__amAktiv());
-
-  /* 4 -- turn_started im OFFENEN Chat: Denkzustand an. */
-  RUFE = [];
-  window.askMiraRealtime({ event:"mira_turn_started", session_id:"C", is_new_session:"false",
-    assistant_message_id:"m2" });
-  z("4 turn_started(C, offen): is-loading=" +
-    document.getElementById("ask-mira").classList.contains("is-loading") +
-    " Zeile C=" + stand("C") + " Rufe=" + JSON.stringify(RUFE));
-
-  /* 5 -- success im OFFENEN Chat: Nachladen ueber refresh_chat, kein select_chat. */
-  RUFE = [];
-  window.askMiraRealtime({ event:"mira_message_success", session_id:"C",
-    assistant_message_id:"m2", status:"success" });
-  z("5 success(C, offen): is-loading=" +
-    document.getElementById("ask-mira").classList.contains("is-loading") +
-    " Rufe=" + JSON.stringify(RUFE));
-
-  /* 6 -- Titel fuer den FREMDEN Chat B: nur die Liste, kein Wechsel. */
-  var vorherAktiv = window.__amAktiv();
-  window.askMiraRealtime({ event:"mira_title_updated", session_id:"B", title:"Neu benannt" });
-  z("6 title_updated(B, fremd): Titel B=" + JSON.stringify(titelVon("B")) +
-    " aktiv " + vorherAktiv + " -> " + window.__amAktiv());
-
-  /* 7 -- Titel fuer den OFFENEN Chat. Der Kopf tippt den Titel, also erst nach der Animation
-     ablesen -- beim ersten Versuch stand dort noch der alte Text, und das war die Messung,
-     nicht der Code. */
-  window.askMiraSetMessages(JSON.stringify([
-    { id:"u1", role:"user", content:"Frische Frage", created_at:"2026-09-23T09:00:00Z" },
-    { id:"a1", role:"assistant", content:"Hier ist die Antwort.", status:"success", created_at:"2026-09-23T09:01:00Z" }
-  ]), "C");
-  window.askMiraRealtime({ event:"mira_title_updated", session_id:"C", title:"Offen benannt" });
-  z("7 title_updated(C, offen): Liste=" + JSON.stringify(titelVon("C")) + " Kopfzeile: gleich");
-
-  /* 8 -- Fehler im offenen Chat: aussen success, innen error. */
-  RUFE = [];
-  var vorN = document.querySelectorAll("#am-messages .am-msg").length;
-  window.askMiraRealtime({ event:"mira_message_error", session_id:"C", assistant_message_id:"m3",
-    error_message:"RPC timeout at node 7", execution_id:"exec_abc123" });
-  var txt = document.getElementById("am-messages").textContent;
-  z("8 message_error(C, offen): is-loading=" +
-    document.getElementById("ask-mira").classList.contains("is-loading") +
-    " Zeile C=" + stand("C") +
-    " Meldung sichtbar=" + (txt.indexOf("Please try again") >= 0) +
-    " | Diagnose im UI? exec=" + (txt.indexOf("exec_abc123") >= 0) +
-    " timeout=" + (txt.indexOf("RPC timeout") >= 0) +
-    " Rufe=" + JSON.stringify(RUFE));
-
-  /* 9 -- Fehler in einem FREMDEN Chat: Marke weg, nichts im offenen Chat. */
-  var vorTxt = document.getElementById("am-messages").textContent.length;
-  window.askMiraRealtime({ event:"mira_turn_started", session_id:"B", is_new_session:"false", assistant_message_id:"m4" });
-  var bBusy = stand("B");
-  window.askMiraRealtime({ event:"mira_message_error", session_id:"B", assistant_message_id:"m4",
-    error_message:"x", execution_id:"y" });
-  z("9 error(B, fremd): B " + bBusy + " -> " + stand("B") +
-    " | Text im offenen Chat unveraendert=" +
-    (document.getElementById("am-messages").textContent.length === vorTxt));
-
-  /* 10 -- fremdes Ereignis ohne session_id und unbekannte Art. */
-  z("10 ohne session_id: " + window.askMiraRealtime({ event:"mira_turn_started" }) +
-    " | unbekannte Art: " + window.askMiraRealtime({ event:"mira_irgendwas", session_id:"C" }) +
-    " | kaputt: " + window.askMiraRealtime("{nicht: json") +
-    " | als Text: " + window.askMiraRealtime('{"event":"mira_title_updated","session_id":"B","title":"Aus Text"}') +
-    " -> B=" + JSON.stringify(titelVon("B")));
-
-  /* 11 -- Der erste Aufruf ist der Seitenaufbau und muss NICHTS nachholen, der zweite schon. */
-  RUFE = [];
-  var r1 = window.askMiraRealtimeReconnected();
-  var n1 = RUFE.length;
-  var r2 = window.askMiraRealtimeReconnected();
-  z("11 Reconnect: erster Aufruf=" + r1 + " Rufe=" + n1 +
-    " | zweiter Aufruf=" + r2 + " Rufe=" + JSON.stringify(RUFE));
-
-  /* 12 -- Transkript nur im offenen Chat. */
-  z("12 transcript fremd: " + window.askMiraRealtime({ event:"mira_user_transcript", session_id:"A",
-      user_message:"Text aus dem Sprachfeld", message_id:"v1" }));
-
-  /* 13 -- ZWEI TURNS GLEICHZEITIG in zwei Chats. Der Abnahmefall aus der Spezifikation. */
-  window.askMiraRealtime({ event:"mira_turn_started", session_id:"A", is_new_session:"false", assistant_message_id:"p1" });
-  window.askMiraRealtime({ event:"mira_turn_started", session_id:"B", is_new_session:"false", assistant_message_id:"p2" });
-  var beide = "A=" + stand("A") + " B=" + stand("B");
-  window.askMiraRealtime({ event:"mira_message_success", session_id:"A", assistant_message_id:"p1", status:"success" });
-  z("13 zwei Turns: " + beide + "  -> nach Abschluss von A: A=" + stand("A") + " B=" + stand("B"));
-  window.askMiraRealtime({ event:"mira_message_success", session_id:"B", assistant_message_id:"p2", status:"success" });
-
-  /* 14 -- Sprachnachricht im offenen Chat: der Platzhalter wird ersetzt. */
-  window.askMiraSetMessages(JSON.stringify([
-    { id:"voice_1783413384884", role:"user", content:"", status:"pending_voice", created_at:"2026-09-23T09:05:00Z" }
-  ]), "C");
-  var vorV = document.getElementById("am-messages").textContent.indexOf("LeadGen-Prompts") >= 0;
-  window.askMiraRealtime({ event:"mira_user_transcript", session_id:"C", role:"user",
-    message_id:"voice_1783413384884", user_message:"Wo werde ich in LeadGen-Prompts zitiert?" });
-  z("14 transcript(C, offen): Text vorher da=" + vorV + " nachher da=" +
-    (document.getElementById("am-messages").textContent.indexOf("LeadGen-Prompts") >= 0));
-
-  /* 15 -- DER NEUE CHAT OHNE KENNUNG. Abgeschickt, Bubble hat die session_id noch nicht
-     zurueckgegeben -- das turn_started faellt in die Luecke. */
-  /* Der ECHTE Weg zu einem neuen Chat: der Zurueck-Knopf der Kopfzeile ("Start New Chat").
-     askMiraSetActiveChat("") taugt dafuer nicht -- eine leere Kennung wirft die Auswahl
-     absichtlich NICHT weg (17.09. so entschieden). */
-  document.getElementById("am-ct-back").click();
-  /* Ein echtes Absenden -- nur so steht _lastSendTs wirklich. */
-  var ta = document.getElementById("am-textarea");
-  ta.value = "Ganz frischer Chat";
-  ta.dispatchEvent(new Event("input", { bubbles:true }));
+/* DER BLAUE PUNKT: er darf NUR heissen "hier liegt eine Antwort, die beim letzten Besuch
+   noch nicht da war". Alles andere muss den Kreisel behalten. */
+var P=[]; function z(t){P.push(t);document.getElementById("out").textContent=P.join("\n");}
+var FEHLER=[]; window.addEventListener("error",function(e){FEHLER.push(String(e.message));});
+window.bubble_fn_ask_mira_send=function(){};
+window.bubble_fn_ask_mira_new_chat=function(){};
+window.bubble_fn_ask_mira_refresh_chat=function(){};
+window.bubble_fn_ask_mira_refresh_chats=function(){};
+function zeile(id){var e=document.querySelectorAll('.am-prev-item');
+ for(var i=0;i<e.length;i++) if(String(e[i].getAttribute('data-chat-id'))===String(id)) return e[i]; return null;}
+function stand(id){var el=zeile(id); if(!el) return "(keine Zeile)";
+ if (el.classList.contains("is-busy")) return "KREISEL";
+ if (el.classList.contains("has-antwort")) return "PUNKT";
+ return "ruhig";}
+function nutzerKlick(id){ var el = zeile(id); if (el) el.click(); }
+function senden(txt){
+  var ta=document.getElementById("am-textarea"); ta.value=txt;
+  ta.dispatchEvent(new Event("input",{bubbles:true}));
   document.getElementById("am-send").click();
-  window.askMiraRealtime({ event:"mira_turn_started", session_id:"D", is_new_session:"true",
-    preview:"Ganz frischer Chat", created_at:"2026-09-23T10:00:00Z", assistant_message_id:"n1" });
-  var dAktiv = String(window.__amAktiv());
-  RUFE = [];
-  window.askMiraRealtime({ event:"mira_message_success", session_id:"D", assistant_message_id:"n1", status:"success" });
-  z("15 neuer Chat ohne Kennung: uebernommen=" + (dAktiv === "D") + " Zeile D=" + stand("D") +
-    " Rufe=" + JSON.stringify(RUFE));
-
-  /* 16 -- DER BLAETTERWEG DARF NICHT ABGESTELLT WERDEN. Zwei fertige Antworten aus fremden
-     Chats ohne neuen Zeitstempel hatten das Nachladen der Liste dauerhaft beendet. */
-  var vorMehr = document.querySelectorAll('.am-prev-item').length;
-  window.askMiraRealtime({ event:"mira_turn_started", session_id:"A", is_new_session:"false", assistant_message_id:"q1" });
-  window.askMiraRealtime({ event:"mira_message_success", session_id:"A", assistant_message_id:"q1", status:"success" });
-  window.askMiraRealtime({ event:"mira_turn_started", session_id:"B", is_new_session:"false", assistant_message_id:"q2" });
-  window.askMiraRealtime({ event:"mira_message_success", session_id:"B", assistant_message_id:"q2", status:"success" });
-  var meckern = 0;
-  (window.__amWarn || []).forEach(function(t){ if (t.indexOf("nicht mehr nachgefragt") >= 0) meckern++; });
-  z("16 zwei fremde Antworten ohne Zeitstempel: Zeilen " + vorMehr + " -> " +
-    document.querySelectorAll('.am-prev-item').length +
-    " | 'nicht mehr nachgefragt' in der Konsole: " + meckern);
-
-  setTimeout(function(){
-    z("");
-    z("7b Kopfzeile nach der Tippanimation: " +
-      JSON.stringify(document.getElementById("am-ct-text").textContent.trim()));
-    z("Fehler auf der Seite: " + (FEHLER.length ? JSON.stringify(FEHLER) : "keine"));
-  }, 1200);
 }
-window.__amAktiv = function(){ return (document.querySelector(".am-prev-item.is-active")||{getAttribute:function(){return "?";}}).getAttribute("data-chat-id"); };
-setTimeout(lauf, 400);
+setTimeout(function(){
+  window.askMiraSetPreviousChats(JSON.stringify([
+    {id:"A",title:"Chat A",updated_at:"x"},{id:"B",title:"Chat B",updated_at:"y"}]));
+  window.askMiraSetActiveChat("A", false);
+  window.askMiraSetMessages(JSON.stringify([{id:"u0",role:"user",content:"Alt",created_at:"x"}]), "A");
+
+  z("1  In A fragen:");
+  senden("Frage in A");
+  z("   A=" + stand("A") + "   (muss KREISEL sein)");
+
+  z("");
+  z("2  Sofort 'Neuer Chat' klicken (goToStart):");
+  document.getElementById("am-ct-back").click();
+  z("   A=" + stand("A") + "   (muss KREISEL bleiben -- A wartet weiter)");
+
+  z("");
+  z("3  Im neuen Chat fragen und dessen Antwort kommt:");
+  senden("Frage im neuen Chat");
+  window.askMiraRealtime({event:"mira_turn_started", session_id:"NEU", is_new_session:"true",
+    preview:"Frage im neuen Chat", assistant_message_id:"n1"});
+  window.askMiraRealtime({event:"mira_message_success", session_id:"NEU", assistant_message_id:"n1"});
+  z("   A=" + stand("A") + "   (muss KREISEL bleiben -- A ist nicht fertig)");
+  z("   NEU=" + stand("NEU"));
+
+  z("");
+  z("4  Jetzt kommt As Antwort wirklich:");
+  window.askMiraRealtime({event:"mira_message_success", session_id:"A", assistant_message_id:"a1"});
+  z("   A=" + stand("A") + "   (jetzt und erst jetzt: PUNKT)");
+
+  z("");
+  z("5  A oeffnen -- Punkt weg:");
+  window.askMiraSetActiveChat("A", false);
+  z("   A=" + stand("A"));
+
+  z("");
+  z("6  Chatwechsel waehrend A laeuft (ueber setMessages):");
+  window.askMiraSetActiveChat("A", false);
+  senden("Noch eine Frage in A");
+  var vor = stand("A");
+  window.askMiraSetActiveChat("B", false);
+  window.askMiraSetMessages(JSON.stringify([{id:"b1",role:"assistant",content:"Alte Antwort in B",status:"success",created_at:"y"}]), "B");
+  z("   A: " + vor + " -> " + stand("A") + "   (muss KREISEL bleiben)");
+
+  z("");
+  z("7  Nachrichten fuer einen FREMDEN Chat, Antwort laeuft dort noch:");
+  window.askMiraSetMessages(JSON.stringify([
+    {id:"x1",role:"user",content:"Frage",created_at:"x"},
+    {id:"x2",role:"assistant",content:"",status:"running",created_at:"x"}]), "B");
+  z("   B=" + stand("B") + "   (muss KREISEL sein, kein PUNKT)");
+  z("   dann mit fertiger Antwort:");
+  window.askMiraSetMessages(JSON.stringify([
+    {id:"x1",role:"user",content:"Frage",created_at:"x"},
+    {id:"x2",role:"assistant",content:"Fertig",status:"success",created_at:"x"}]), "B");
+  z("   B=" + stand("B") + "   (jetzt PUNKT)");
+
+  z("");
+  z("8  Senden scheitert (kein bubble_fn): kein Punkt, kein Kreisel");
+  nutzerKlick("A");
+  var _s = window.bubble_fn_ask_mira_send; window.bubble_fn_ask_mira_send = undefined;
+  senden("Geht nicht raus");
+  setTimeout(function(){
+    z("   A=" + stand("A") + "   (muss ruhig sein -- es kam nie etwas)");
+    window.bubble_fn_ask_mira_send = _s;
+    z("");
+    z("Fehler auf der Seite: " + (FEHLER.length?JSON.stringify(FEHLER):"keine"));
+  }, 2600);   /* die Sendeversuche laufen bis ~1,4 s */
+}, 600);
 </script>

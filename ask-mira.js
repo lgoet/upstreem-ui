@@ -336,6 +336,43 @@
   /* ---------------- Elements ---------------- */
   var elMessages   = root.querySelector('#am-messages');
   var elChat       = root.querySelector('#am-chat');
+  /* WIE BREIT IST DIE SCROLLBAR HIER? (23.09.) Zwei Dinge haengen daran: die Sprungleiste soll
+     neben ihr stehen und nicht auf ihr, und die Ausblendung ueber dem Eingabefeld soll vor ihr
+     enden, statt sie auszugrauen. Beides steht in der CSS und liest --am-sbw.
+     GEMESSEN statt angenommen: auf macOS legt sich die Leiste ueber den Inhalt und ist 0 breit,
+     unter Windows nimmt sie 15 bis 17 Pixel weg. Ein fester Wert waere auf der einen Seite eine
+     Luecke und auf der anderen zu wenig. offsetWidth minus clientWidth ist genau der Unterschied
+     -- und er wird erst gemessen, wenn wirklich gescrollt werden kann, sonst ist er immer 0. */
+  function scrollbarBreiteSetzen(){
+    if (!elChat) return;
+    var b = elChat.offsetWidth - elChat.clientWidth;
+    if (!(b >= 0 && b < 40)) return;                       /* unplausibel -> lieber nichts setzen */
+    if (elChat.scrollHeight <= elChat.clientHeight && !b) return;   /* nichts zu scrollen, nichts zu sagen */
+    if (b !== _sbwLetzt){ _sbwLetzt = b; root.style.setProperty('--am-sbw', b + 'px'); }
+    /* WO STEHT DIE SPRUNGLEISTE? Sie liegt absolut in der WURZEL, die Scrollbar an der rechten
+       Kante des CHATS -- und zwischen beiden liegt je nach Zustand nichts, die schmale Leiste
+       oder die ganze Chatliste. Die vier festen Abstaende (10, 74, --am-side-w + 10) waren
+       Nachbauten dieser Geometrie, und gemessen lagen sie daneben: 74 ergab 1198, die Scrollbar
+       begann bei 1192. Statt die Faelle nachzurechnen, wird der Abstand einmal gemessen:
+       vom rechten Rand der Wurzel bis zur rechten Kante des Chats, plus die Scrollbar, plus die
+       10, die ueberall sonst auch zwischen zwei Dingen stehen. Das stimmt in jedem Zustand --
+       Liste offen, eingeklappt, links, und im Overlay ebenso. */
+    var rr = root.getBoundingClientRect(), cr = elChat.getBoundingClientRect();
+    var navr = Math.max(0, Math.round(rr.right - cr.right)) + b + 10;
+    if (navr !== _navrLetzt){ _navrLetzt = navr; root.style.setProperty('--am-navr', navr + 'px'); }
+  }
+  var _sbwLetzt = -1, _navrLetzt = -1;
+  /* Die Chatbreite aendert sich nicht nur beim Fensterwechsel, sondern jedes Mal, wenn die
+     Chatliste auf- oder zugeht -- und dann stimmt der gemessene Abstand nicht mehr. Gemessen:
+     mit offener Liste stand die Sprungleiste 74px zu weit links, weil der Wert vom vorigen
+     Zustand stehenblieb. Der Beobachter haengt am Chat selbst, also genau an dem Kasten, dessen
+     rechte Kante zaehlt. Geschrieben werden nur Variablen an der Wurzel -- die aendern die Breite
+     des Chats nicht, es kann also keine Schleife entstehen. */
+  try {
+    if (elChat && window.ResizeObserver){
+      new ResizeObserver(function(){ scrollbarBreiteSetzen(); }).observe(elChat);
+    }
+  } catch(e){}
   var elSuggGrid   = root.querySelector('#am-suggested-grid');
   var elSugg       = root.querySelector('#am-suggested');
   var elSuggLbl    = root.querySelector('#am-suggested-label');
@@ -4270,7 +4307,7 @@
     window.dispatchEvent(new CustomEvent('askmira:send', { detail: payload }));
     if (window.bubble_fn_ask_mira_send) return;   /* in der Zwischenzeit doch noch aufgetaucht */
     _pendingAnswer = false;
-    try { setLoading(false); } catch(e){}
+    try { setLoading(false, 'aus'); } catch(e){}   /* nichts gesendet, also auch keine Antwort */
     /* Das Laufzeitprotokoll wegwerfen, BEVOR die Meldung kommt. Sonst haengt Miras "Gearbeitet
        12s" davor -- die Uhr laeuft ab dem Absenden, und hier wurde nie gearbeitet. Gemessen: ohne
        diese Zeile stand da "Worked for 12s ... The message could not be sent". */
@@ -5109,7 +5146,22 @@
   });
 
   /* ---------------- Public API ---------------- */
-  function setLoading(v){
+  /* ZWEITES, FREIWILLIGES ARGUMENT: WARUM DER LADEZUSTAND ENDET (23.09. gemeldet).
+     Bis hierher war jedes Ende dasselbe Ende -- und damit bekam der verlassene Chat einen blauen
+     Punkt, obwohl seine Antwort noch gar nicht da war. Gemeldet: Chat anfangen, sofort einen
+     neuen anfangen, und der erste traegt den Punkt. Ursache war goToStart: es ruft setLoading
+     (false), damit der Kreisel dieser ANSICHT aufhoert -- gemeint war nie, dass die Antwort da
+     ist.
+     Der Punkt darf genau eines heissen: hier liegt eine Antwort, die beim letzten Besuch noch
+     nicht da war. Also drei Ausgaenge statt einem:
+       'antwort'     die Antwort ist da        -> fertig melden, Punkt wenn der Nutzer woanders ist
+       'aus'         der Turn ist vorbei, ohne Antwort (Senden gescheitert, Stummuhr, Sprach-
+                     transkription abgelehnt) -> Marke weg, aber KEIN Punkt
+       'verlassen'   nur die Ansicht wechselt  -> die Buecher bleiben, wie sie sind: der Chat
+                     wartet weiter und behaelt seinen Kreisel in der Leiste
+     Ohne Angabe bleibt es bei 'antwort' -- das ist der Weg, aus dem die allermeisten Aufrufe
+     kommen (askMiraSetMessages und askMiraAddMessage). */
+  function setLoading(v, grund){
     var vorher = S.isLoading;
     S.isLoading = !!v;
     root.classList.toggle('is-loading', S.isLoading);
@@ -5126,8 +5178,14 @@
     if (S.isLoading){
       var _chat = String(S.activeChatId || '');
       if (_chat){ _laufenderChat = _chat; wartendSetzen(_chat, true); }
-    } else if (vorher && _laufenderChat){
-      fertigMelden(_laufenderChat);
+      /* KEIN CHAT OFFEN heisst: ein NEUER Chat faengt an, dessen Kennung erst mit Bubbles
+         Antwort kommt. Den Merker dann stehen zu lassen war der zweite Teil des gemeldeten
+         Fehlers: das Ende DIESER Antwort meldete den vorigen Chat fertig -- also einen blauen
+         Punkt auf einem Chat, dessen Antwort noch unterwegs ist. */
+      else _laufenderChat = '';
+    } else if (vorher && _laufenderChat && grund !== 'verlassen'){
+      if (grund === 'aus') wartendSetzen(_laufenderChat, false);
+      else fertigMelden(_laufenderChat);
       _laufenderChat = '';
     }
     ladeMarkeSetzen();
@@ -5542,7 +5600,7 @@
                           content: L().antwortHaengt, created_at: new Date().toISOString() });
       }
       _pendingAnswer = false;
-      setLoading(false);
+      setLoading(false, 'aus');   /* die Uhr ist abgelaufen, gekommen ist nichts */
       renderMessages();
     }, STUMM_FRIST);
   }
@@ -5584,7 +5642,20 @@
     return id !== String(S.activeChatId || '');
   }
   window.askMiraSetMessages = function(messages, chatId){
-    if (fremderChat(chatId)){ fertigMelden(chatId); return; }
+    if (fremderChat(chatId)){
+      /* Nachrichten fuer einen ANDEREN Chat: nicht zeichnen, nur buchen -- und dabei
+         unterscheiden, ob dort wirklich eine Antwort liegt. Endet die Nutzlast auf einer noch
+         laufenden Assistant-Nachricht, wartet der Chat weiter und behaelt seinen Kreisel; der
+         blaue Punkt darf nur heissen, dass die Antwort DA ist. Dieselbe Unterscheidung macht
+         askMiraAddMessage seit dem 23.09. schon. */
+      var _p = messages;
+      if (typeof _p === 'string') _p = looseJsonParse(_p);
+      var _arr = Array.isArray(_p) ? _p : (_p && Array.isArray(_p.messages) ? _p.messages : null);
+      var _letzt = _arr && _arr.length ? normalizeMessage(_arr[_arr.length - 1]) : null;
+      if (_letzt && isPendingAssistant(_letzt)) wartendSetzen(chatId, true);
+      else fertigMelden(chatId);
+      return;
+    }
     /* EINE NUTZLAST, DIE NICHTS NEUES BRINGT, DARF DEN CHAT NICHT NEU ZEICHNEN.
        Bis hierher loeste JEDE Nutzlast renderMessages aus -- elMessages.innerHTML komplett neu,
        Bilder neu, Scrollposition zurueck auf unten. Beim Oeffnen eines Chats faellt das nicht
@@ -5684,7 +5755,12 @@
       _sendStartTs = 0;
     }
     _scrollMode = 'bottom';
-    setLoading(_running); // toggles the loading state to match the RPC status and re-renders
+    /* WESSEN ENDE IST DAS? (23.09.) Kommen hier die Nachrichten eines ANDEREN Chats, dann endet
+       nicht die laufende Antwort -- dann sieht der Nutzer nur woanders hin. Der wartende Chat
+       behaelt seinen Kreisel und bekommt seinen Punkt erst, wenn seine Antwort wirklich da ist.
+       Ohne diese Unterscheidung trug der verlassene Chat den Punkt schon beim Wegklicken. */
+    var _fremdesEnde = _laufenderChat && _laufenderChat !== String(S.activeChatId || '');
+    setLoading(_running, _fremdesEnde ? 'verlassen' : 'antwort');
     _maybeHomeIfUnknownChat();   // no active chat known -> fall back to the main page
   };
   window.askMiraAddMessage = function(message, chatId){
@@ -6563,7 +6639,12 @@
     var _will = String(_nutzerChat || '');
     var _neu  = String(chatId || '');
     if (_will && _neu && _neu !== _will){
-      fertigMelden(_neu);
+      /* NUR VERWEIGERN, NICHTS BEHAUPTEN (23.09. korrigiert). Hier stand fertigMelden(_neu) --
+         aus der Zeit, als ein aufgezwungener Wechsel das EINZIGE Zeichen dafuer war, dass in
+         jenem Chat eine Antwort liegt. Das war nie ein Beweis, und seit der Nutzer-Kanal
+         mira_message_success liefert, ist es auch nicht mehr noetig: der Punkt kommt von dort,
+         und er heisst genau eines -- hier liegt eine Antwort, die beim letzten Besuch noch nicht
+         da war. Ein abgelehnter Wechsel sagt darueber nichts. */
       if (fireEvent) { /* der Aufrufer wollte ein Ereignis -- das gibt es unten, aber ohne Wechsel */ }
       return;
     }
@@ -7146,9 +7227,18 @@
   }
   function seiteMerken(offen){ try { localStorage.setItem(SIDE_KEY, offen ? '1' : '0'); } catch(e){} }
 
-  function openPrev(){ renderPrevious(); root.classList.add('prev-open'); elPrevPanel.setAttribute('aria-hidden','false'); elPrevScrim.hidden = false; if (elPrevList) elPrevList.scrollTop = 0; _standMerken(); seiteMerken(true); }
-  function closePrev(){ root.classList.remove('prev-open'); elPrevPanel.setAttribute('aria-hidden','true'); if (typeof openHlPanel === 'function') openHlPanel(false); seiteMerken(false); }
-  function togglePrev(){ if (root.classList.contains('prev-open')) closePrev(); else openPrev(); }
+  function openPrev(){ renderPrevious(); root.classList.add('prev-open'); elPrevPanel.setAttribute('aria-hidden','false'); seitenBreiteNachmessen(); elPrevScrim.hidden = false; if (elPrevList) elPrevList.scrollTop = 0; _standMerken(); seiteMerken(true); }
+  function closePrev(){ root.classList.remove('prev-open'); elPrevPanel.setAttribute('aria-hidden','true'); seitenBreiteNachmessen(); if (typeof openHlPanel === 'function') openHlPanel(false); seiteMerken(false); }
+  function togglePrev(){ if (root.classList.contains('prev-open')) closePrev(); else openPrev(); seitenBreiteNachmessen(); }
+  /* NACH JEDEM AUF UND ZU NEU MESSEN. Der Beobachter am Chat (siehe scrollbarBreiteSetzen) faengt
+     das ebenfalls -- aber ResizeObserver meldet nur, wenn der Browser zeichnet, und im
+     Hintergrundtab tut er das nicht. Ein Zustandswechsel, den wir selbst ausloesen, muss ohne
+     dieses Netz auskommen: einmal sofort, einmal nach dem Uebergang, weil die Breite erst am
+     Ende der Bewegung feststeht. Der Setzer schreibt nur, wenn sich der Wert wirklich aendert. */
+  function seitenBreiteNachmessen(){
+    scrollbarBreiteSetzen();
+    setTimeout(scrollbarBreiteSetzen, 320);
+  }
   /* Einen Chat oeffnen schliesst die Leiste NICHT mehr. Sie ist jetzt Teil des Layouts -- sie
      verdeckt nichts, also gibt es nichts zuzuklappen, und wer durch mehrere Chats geht, musste
      sie bisher jedes Mal neu aufmachen.
@@ -8082,7 +8172,8 @@
     }
     S.activeChatId = null; S.messages = []; S.titlePending = false;
     runDrop();
-    if (S.isLoading) setLoading(false);   // stop the loader + clear its timers, else has-messages stays on via isLoading
+    /* NUR die Ansicht: der verlassene Chat wartet weiter und behaelt seinen Kreisel. */
+    if (S.isLoading) setLoading(false, 'verlassen');
     renderMessages();
     /* Auch "neuer Chat" ist eine Wahl: eine fertige Antwort anderswo darf ihn nicht
        wegziehen, waehrend er hier schon tippt. */
@@ -9218,6 +9309,10 @@
     function updateVisible(){
       var wide = root.getBoundingClientRect().width >= 900;   // only when there's enough width
       root.classList.toggle('has-msgnav', wide && items.length >= 2);   // ...and from the 2nd user message on
+      /* Hier und nicht in renderMessages: das laeuft ohnehin bei jeder Aenderung am Chat und bei
+         jedem Fensterwechsel, und es ist genau der Moment, in dem die Sprungleiste ihren Platz
+         braucht. Der Setzer schreibt nur, wenn sich der Wert wirklich aendert. */
+      scrollbarBreiteSetzen();
     }
     function setActive(){
       raf = 0;
@@ -9447,7 +9542,7 @@
     window.askMiraRejectVoice = function(messageId){
       var idx = _findPendingVoice(messageId); if (idx >= 0) S.messages.splice(idx, 1);
       _pendingAnswer = false;
-      try { setLoading(false); } catch(_){}
+      try { setLoading(false, 'aus'); } catch(_){}   /* Transkription abgelehnt, es kommt nichts */
       try { renderMessages(); } catch(_){}
     };
     /* Bubble helper: drop a returned transcript into the composer input instead (review-before-send flow) */

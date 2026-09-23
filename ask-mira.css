@@ -661,9 +661,9 @@
        Chat, daneben ist kein Platz. Oben stand diese Regel pauschal und traf damit auch den
        Desktop, wo die Liste neben dem Chat sitzt. */
     #ask-mira.prev-open .am-msgnav { opacity: 0; pointer-events: none; }
-    #ask-mira.prev-open:not(.is-side-left) .am-msgnav { right: 10px; }
+    #ask-mira.prev-open:not(.is-side-left) .am-msgnav { right: var(--am-navr, calc(10px + var(--am-sbw, 0px))); }
     /* Auch die schmale Leiste gibt es hier nicht -- in diesem Fenster liegt alles uebereinander. */
-    #ask-mira.side-mounted:not(.prev-open):not(.is-side-left) .am-msgnav { right: 10px; }
+    #ask-mira.side-mounted:not(.prev-open):not(.is-side-left) .am-msgnav { right: var(--am-navr, calc(10px + var(--am-sbw, 0px))); }
   }
 
   @media (max-width: 720px) {
@@ -1439,8 +1439,14 @@
      die Nachrichten darunter ab.
      var(--am-bg) und kein festes Weiss: im dunklen Thema muss dieselbe Rampe in #101114
      auslaufen, nicht in Weiss. */
+  /* DER VERLAUF HOERT VOR DER SCROLLBAR AUF (23.09. gemeldet: "die scrollbar ist unterm
+     gradient im z index, sodass auch sie ausgegraut aussieht"). Der Fuss liegt auf z-index 2,
+     der Chat auf 1 -- also deckt dieses Stueck die untersten 32px der Scrollbar mit ab. Ueber
+     sie zu legen geht nicht: eine native Scrollbar ist kein Element und kennt keinen z-index.
+     Also endet der Verlauf rechts vor ihr. Zu sehen ist davon nichts: die Nachrichten sind auf
+     920px begrenzt und mittig, in diesen letzten Pixeln steht ohnehin kein Text. */
   .am-composer-area::before {
-    content: ""; position: absolute; left: 0; right: 0; top: -32px; height: 32px;
+    content: ""; position: absolute; left: 0; right: var(--am-sbw, 0px); top: -32px; height: 32px;
     /* GEWICHTET, nicht linear (21.09. nachgefasst: "der soll unten staerker sein, das soll ja
        ein richtiger uebergang von gradient auf voll bg color werden"). Ein gleichmaessiger
        Verlauf erreicht die volle Deckung erst ganz unten -- dann stoesst der Text bis dicht an
@@ -1457,7 +1463,15 @@
     pointer-events: none;
   }
   /* ===== right-edge message navigation (scroll spy) ===== */
-  .am-msgnav { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); z-index: 30; display: none; transition: opacity 120ms ease; }
+  /* DIE SCROLLBAR GEHOERT GANZ NACH AUSSEN (23.09. gemeldet: "die scroll bar soll bitte ganz
+     rechts am rand sein, zwischen sprung nav und sidebar border"). Sie ist die native Leiste von
+     .am-chat und sitzt damit an dessen rechter Kante -- genau dort, wo bisher auch die
+     Sprungleiste stand, also uebereinander. Verschoben wird die Sprungleiste, nicht die
+     Scrollbar: die laesst sich nicht versetzen, ohne den Scroller selbst umzubauen.
+     --am-sbw ist die GEMESSENE Breite der Leiste (offsetWidth - clientWidth, in ask-mira.js beim
+     Start gesetzt). Auf macOS mit ueberlagernder Scrollbar ist sie 0, und dann aendert sich
+     nichts -- ein fester Wert haette dort eine Luecke gerissen. */
+  .am-msgnav { position: absolute; right: var(--am-navr, calc(10px + var(--am-sbw, 0px))); top: 50%; transform: translateY(-50%); z-index: 30; display: none; transition: opacity 120ms ease; }
   /* NEBEN DER CHATLISTE, NICHT DARAUF (23.09. gemeldet). Hier stand ein pauschales opacity: 0,
      sobald die Liste offen ist -- gedacht fuer den schmalen Fall, in dem die Liste als Overlay
      ueber dem Chat liegt. Auf dem Desktop ist sie aber ein Flex-Geschwister: der Chat endet an
@@ -1469,14 +1483,14 @@
      Rand, und der ist dann frei.
      Das Ausblenden gilt weiter, aber nur noch im Overlay-Fall: die Regel steht jetzt im
      @media (max-width: 720px) weiter unten. */
-  #ask-mira.prev-open:not(.is-side-left) .am-msgnav { right: calc(var(--am-side-w) + 10px); }
+  #ask-mira.prev-open:not(.is-side-left) .am-msgnav { right: var(--am-navr, calc(var(--am-side-w) + 10px + var(--am-sbw, 0px))); }
   /* EINGEKLAPPT IST NICHT WEG (23.09. nachgefasst). Ist die grosse Liste zu, steht an ihrer
      Stelle die schmale Leiste .am-mini -- 64px, flex: 0 0 64px, Teil des Layouts wie die grosse
      auch. Die Sprungleiste stand dort trotzdem auf 10px und damit auf ihr.
      side-mounted:not(.prev-open) ist woertlich die Bedingung, unter der .am-mini erscheint
      (siehe dort) -- damit sind die zwei Regeln aneinander gebunden und koennen nicht
      auseinanderlaufen. 64 ist die Breite der Leiste, die 10 derselbe Abstand wie sonst. */
-  #ask-mira.side-mounted:not(.prev-open):not(.is-side-left) .am-msgnav { right: 74px; }
+  #ask-mira.side-mounted:not(.prev-open):not(.is-side-left) .am-msgnav { right: var(--am-navr, calc(74px + var(--am-sbw, 0px))); }
   #ask-mira.has-msgnav .am-msgnav { display: block; }
   .am-msgnav-ticks { width: 16px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
   .am-msgnav-tick { width: 16px; height: 4px; border-radius: var(--up-r-voll); background: color-mix(in srgb, var(--am-text) 30%, transparent); transition: background 120ms ease; }
