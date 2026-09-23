@@ -32,7 +32,14 @@
     "askMiraSetTool","askMiraSetFaviconsFromEl","askMiraSetBrandLogosFromEl",
     "askMiraSetToolFromEl","askMiraGetState","askMiraOpportunityResult",
     "askMiraResolveVoice","askMiraRejectVoice","askMiraSetTranscript","askMiraVoiceCancel",
-    "askMiraSetChatsLoading", "askMiraAddReference", "askMiraOpen"
+    "askMiraSetChatsLoading", "askMiraAddReference", "askMiraOpen",
+    /* AUCH DER REALTIME-EINGANG (23.09. im Audit gefunden). Die Subscription steht beim
+       Seitenaufbau, die Komponente startet erst danach -- amBoot wartet auf core und versucht
+       es bei 100, 300, 800 und 1800 ms erneut. Wer die Seite neu laedt, waehrend eine Antwort
+       laeuft, bekommt genau in dieser Luecke mira_progress und womoeglich das fertige
+       mira_message_success. Ohne Stub faellt beides in ein window.askMiraRealtime, das es noch
+       nicht gibt -- der try im Run-JS-Schritt schluckt es, und nichts sagt, dass etwas fehlt. */
+    "askMiraRealtime", "askMiraRealtimeReconnected"
   ];
   var __amBootQueue = window.__amBootQueue = window.__amBootQueue || [];
 
@@ -3732,8 +3739,7 @@
       for (var q = 0; q < recents.length; q++){
         if (recents[q] && String(recents[q].id) === offenId){ idx = q; break; }
       }
-      if (idx > 0) recents.unshift(recents.splice(idx, 1)[0]);
-      else if (idx < 0){
+      if (idx < 0){
         /* Auch nicht in einem Projekt? Dann kennt ihn die Liste gar nicht -- eigene Zeile. */
         var imProjekt = (S.previousChats || []).some(function(c){ return c && String(c.id) === offenId; });
         if (!imProjekt) recents.unshift({ id: S.activeChatId, title: '', _lokal: true });
@@ -3741,6 +3747,22 @@
     }
     var recentsAlle = sortPinnedFirst(recents);
     if (S.prevFenster < LISTE_SCHRITT) S.prevFenster = LISTE_SCHRITT;
+    /* EINEN CHAT ZU OEFFNEN IST KEINE AKTIVITAET (23.09. gemeldet). Bis hierher wanderte der
+       offene Chat bei JEDEM Zeichnen an die Spitze -- also auch, wenn man ihn nur ansah. Die
+       Reihenfolge behauptet aber etwas anderes: sie sagt "zuletzt passiert", und das sind
+       geschriebene und empfangene Nachrichten, Umbenennen, Verschieben. Lesen ist nichts davon.
+       Der Grund, aus dem das Vorziehen am 17.09. eingebaut wurde, bleibt trotzdem gueltig: die
+       Leiste zeigt nur die ersten S.prevFenster Zeilen, und ein offener Chat dahinter waere
+       unsichtbar UND unmarkiert. Deshalb wird jetzt nur noch DAS geheilt -- wer im Fenster steht,
+       bleibt, wo er steht. Geprueft wird nach dem Sortieren: die angepinnten stehen davor und
+       koennen den offenen Chat allein durch ihre Zahl hinausschieben. */
+    if (S.activeChatId){
+      var offen2 = String(S.activeChatId), pos = -1;
+      for (var q2 = 0; q2 < recentsAlle.length; q2++){
+        if (recentsAlle[q2] && String(recentsAlle[q2].id) === offen2){ pos = q2; break; }
+      }
+      if (pos >= S.prevFenster) recentsAlle.unshift(recentsAlle.splice(pos, 1)[0]);
+    }
     var recentsHTML = recentsAlle.slice(0, S.prevFenster).map(chatItemHTML).join('');
     if (!recentsHTML) recentsHTML = '<div class="am-prev-proj-empty">No recent chats</div>';
     /* Waehrend auf die naechste Seite gewartet wird, stehen unten drei Skelettzeilen (15.09.
@@ -5973,9 +5995,11 @@
        geraten werden -- das Feld tool entscheidet.
        NUR fuer den offenen Chat. Das Protokoll gehoert zu der Antwort, die der Nutzer gerade vor
        sich hat; aus einem fremden Chat waere es eine Zeile ueber etwas, das er nicht sieht. */
-    var mitgenommen = false;
+    /* mitgenommen heisst "verstanden", nicht "angewendet": ein Werkzeugschritt aus einem fremden
+       Chat wird bewusst verworfen -- darueber darf die Meldung unten nicht anschlagen. */
     var werkzeug = rtText(p.tool);
-    if (werkzeug && offen){ try { window.askMiraSetTool(werkzeug); } catch(e){} mitgenommen = true; }
+    var mitgenommen = !!werkzeug;
+    if (werkzeug && offen){ try { window.askMiraSetTool(werkzeug); } catch(e){} }
 
     if (art === 'mira_turn_started'){
       if (!chat) return false;
@@ -6756,6 +6780,13 @@
     if (!st) return;                       // unbekannter Name: die Liste bleibt, wie sie ist
     S.currentTool = key;
     if (st === runTail()) return;          // derselbe Typ -> nichts aendert sich
+    /* EIN VENTIL GEGEN DIE FLUT (23.09. im Audit gemessen). Jeder wartende Schritt braucht
+       _RUN_DWELL, also 1,5 Sekunden, bis er erscheint. 500 wechselnde Werkzeugmeldungen -- ein
+       Fehler im sendenden Ablauf reicht dafuer -- ergaeben zwoelf Minuten Warteschlange, und
+       runFinish zeichnet sie beim Eintreffen der Antwort ALLE auf einmal. Ein echter Turn hat
+       eine Handvoll Schritte; jenseits von 24 ist nichts mehr zu erzaehlen, und die spaeteren
+       fallen weg, statt die Oberflaeche zu blockieren. */
+    if (_runQ.length >= 24) return;
     S.toolState = st;
     _runQ.push({ st: st, key: key });
     runDrain();
