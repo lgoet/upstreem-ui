@@ -7446,6 +7446,20 @@
     if (top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - 4);   // flip up if needed
     elChatMenu.style.left = Math.round(left) + 'px';
     elChatMenu.style.top = Math.round(top) + 'px';
+    /* NACHMESSEN, nicht nur vorausrechnen (23.09. gemeldet: "das clipt immernoch rechts ausm
+       bildschirm raus"). Die Klemmung darueber rechnet mit mw -- der Breite, die das Menue
+       hatte, SOLANGE es unsichtbar war. Nach dem Einblenden kann sie groesser sein: ein
+       Untermenue, ein langer Projektname, eine Schrift, die spaeter faellt. Dann steht das
+       Menue laengst, und die Rechnung von vorhin war auf einem Wert, den es nicht mehr gibt.
+       Hier wird die WIRKLICHE Kante gelesen und der Rest zurueckgeschoben -- ein Layoutlauf
+       mehr, einmal pro Oeffnen, und dafuer kann das Menue unter keinen Umstaenden mehr
+       rechts herauslaufen. Dieselben 8px wie in der Rechnung oben. */
+    var echt = elChatMenu.getBoundingClientRect();
+    var ueber = echt.right - (rechts - 8);
+    if (ueber > 0){
+      left = Math.max(8, left - ueber);
+      elChatMenu.style.left = Math.round(left) + 'px';
+    }
     // submenu: always fly RIGHT in the topbar (menu is already far left); otherwise flip when the left is tight
     var sub = elChatMenu.querySelector('.am-cm-sub');
     if (sub){
