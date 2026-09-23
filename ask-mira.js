@@ -554,6 +554,7 @@
       oppExists: 'Already added',
       oppError: 'Couldn\u2019t add the opportunity. Please try again.',
       sendFailed: 'The message could not be sent. Please try again.',
+      turnFailed: 'Mira couldn\u2019t finish this answer. Please try again.',
       runNow: 'Working for', runDone: 'Worked for', thoughtMoment: 'Thought for a moment',
       galleryBack: 'All categories',
       gallery: [
@@ -672,6 +673,7 @@
       oppExists: 'Bereits hinzugefügt',
       oppError: 'Opportunity konnte nicht hinzugefügt werden. Bitte erneut versuchen.',
       sendFailed: 'Die Nachricht konnte nicht gesendet werden. Bitte erneut versuchen.',
+      turnFailed: 'Mira konnte diese Antwort nicht abschliessen. Bitte erneut versuchen.',
       runNow: 'Arbeitet seit', runDone: 'Gearbeitet', thoughtMoment: 'Kurz nachgedacht',
       galleryBack: 'Alle Kategorien',
       gallery: [
@@ -5799,6 +5801,239 @@
       return;
     }
     setLoading(v);
+  };
+
+  /* ============================================================================================
+     DER NUTZER-KANAL (23.09.) -- EIN EINGANG FUER ALLE REALTIME-EREIGNISSE
+
+     Bis heute lag ein Kanal je CHAT an, und der Kanal selbst war die Zuordnung: was hereinkam,
+     gehoerte zwangslaeufig zum offenen Chat. Beim Chatwechsel wurde umgestellt -- und die
+     Antwort des alten Chats lief ins Leere. Das war die Ursache der fehlenden Ereignisse.
+     Jetzt liegt EIN Kanal je NUTZER an. Damit kommen auch Ereignisse aus Chats herein, die
+     niemand ansieht, und die Zuordnung macht payload.session_id. Jeder Zweig hier prueft sie
+     als Erstes.
+
+     WARUM EINE FUNKTION UND NICHT SECHS. Bubble braucht so nur EINEN Workflow auf
+     "Message Received": das rohe JSON hier hereinreichen, fertig. Das Verzweigen auf
+     payload.event passiert an einer Stelle, in einer Sprache, in der man es lesen und pruefen
+     kann -- statt in sechs Bubble-Zweigen, die auseinanderlaufen, sobald ein Feld dazukommt.
+     Die alten Einzelsetter bleiben unveraendert: wer sie heute ruft, ruft sie weiter.
+
+     ALLE WERTE SIND TEXT. Auch is_new_session ("true"/"false") und status ("success").
+     Nirgends === true, nirgends === "success" ohne vorheriges Kleinschreiben. */
+
+  /* Die laufenden Turns, je Chat: { seit, amid }. Aus Fall 1 an, aus Fall 2 und 6 aus.
+     10 Minuten Verfall -- dieselbe Frist, nach der das Backend einen toten Turn abraeumt. Ohne
+     sie klebte eine Markierung bis zum Seitenwechsel an einer Zeile, deren Antwort nie kommt. */
+  var RT_VERFALL = 600000;
+  var _rtLaeuft = {};
+  /* Schon gesehene Abschluesse, damit ein doppelt geliefertes Ereignis nichts zweimal tut.
+     Der Schluessel ist die assistant_message_id -- genau die Kennung, die eine Wiederholung
+     als solche ausweist. */
+  var _rtGesehen = {};
+  function rtWahr(v){ return String(v == null ? '' : v).trim().toLowerCase() === 'true'; }
+  function rtText(v){ return String(v == null ? '' : v).trim(); }
+  function rtVerfallPruefen(){
+    var jetzt = Date.now(), weg = [];
+    for (var k in _rtLaeuft){
+      if (!Object.prototype.hasOwnProperty.call(_rtLaeuft, k)) continue;
+      if (jetzt - _rtLaeuft[k].seit > RT_VERFALL) weg.push(k);
+    }
+    /* NUR die Markierung in der Liste. Der OFFENE Chat braucht hier nichts: seine Stummuhr
+       (STUMM_FRIST, 240s) hat den Kreisel laengst beendet und dem Nutzer gesagt, was er tun
+       kann. Hier noch einmal zuzuschlagen hiesse: zwei Meldungen fuer einen Ausfall. */
+    for (var i = 0; i < weg.length; i++){ delete _rtLaeuft[weg[i]]; wartendSetzen(weg[i], false); }
+  }
+  /* Das Gedaechtnis fuer Wiederholungen bleibt klein: es soll ein doppelt zugestelltes Ereignis
+     abfangen, nicht eine Sitzungsgeschichte fuehren. */
+  function rtGesehenMerken(amid){
+    if (!amid) return;
+    var n = 0; for (var k in _rtGesehen){ if (Object.prototype.hasOwnProperty.call(_rtGesehen,k)) n++; }
+    if (n > 200) _rtGesehen = {};
+    _rtGesehen[amid] = 1;
+  }
+  /* Eine Uhr, die NUR aufraeumt -- kein Abfragen, kein Nachladen. Sie laeuft nur, solange
+     ueberhaupt ein Turn offen ist, und stellt sich danach selbst ab. */
+  var _rtUhr = 0;
+  function rtUhrStellen(){
+    if (_rtUhr) return;
+    _rtUhr = setInterval(function(){
+      rtVerfallPruefen();
+      var leer = true;
+      for (var k in _rtLaeuft){ if (Object.prototype.hasOwnProperty.call(_rtLaeuft, k)){ leer = false; break; } }
+      if (leer){ clearInterval(_rtUhr); _rtUhr = 0; }
+    }, 30000);
+  }
+
+  /* Die Chatliste um eine Zeile ergaenzen, ohne sie neu zu setzen -- fuer is_new_session.
+     Steht der Chat schon drin, wird nur aufgefrischt; so vertraegt auch das ein doppeltes
+     Ereignis. */
+  function rtChatAnlegen(id, titel, wann){
+    id = rtText(id); if (!id) return;
+    if (findChat(id)){
+      /* Bekannter Chat: nur auffrischen. Der Anhaengeweg tut genau das und ueberschreibt
+         einen vorhandenen Titel nicht mit einem leeren. */
+      try { window.askMiraAppendPreviousChats([{ id: id, title: titel || '', updated_at: wann || '' }]); } catch(e){}
+      return;
+    }
+    /* NEUER Chat gehoert nach OBEN, nicht ans Ende. askMiraAppendPreviousChats haengt an --
+       das ist fuer nachgeladene Seiten richtig und fuer einen gerade entstandenen Chat falsch;
+       er stuende unter 200 aelteren. Deshalb derselbe Griff wie in askMiraSetActiveChat. */
+    S.previousChats = (S.previousChats || []).slice();
+    S.previousChats.unshift({ id: id, title: titel || '', updated_at: wann || '' });
+    S.prevFenster = (S.prevFenster || 0) + 1;
+    renderPrevious();
+    try { titelNachziehen(); } catch(e){}
+  }
+
+  /* Den offenen Chat nachladen -- derselbe Workflow wie beim Nachfassen, damit es genau EINEN
+     Weg gibt: NUR die Nachrichten, ohne Ladezustand, ohne Titelwechsel, ohne Scrollen. */
+  function rtOffenenChatHolen(grund){
+    var fn = window.bubble_fn_ask_mira_refresh_chat;
+    if (typeof fn !== 'function'){
+      if (!_nfGemeckert && window.console){
+        _nfGemeckert = true;
+        console.warn('[AskMira] Realtime kam an, aber bubble_fn_ask_mira_refresh_chat fehlt -- ' +
+          'die Antwort kann nicht nachgeladen werden. Dieser Workflow soll NUR die Nachrichten ' +
+          'des Chats neu laden. select_chat ist dafuer nicht geeignet: es oeffnet den Chat und ' +
+          'bringt den sichtbaren Ladezustand mit.');
+      }
+      return false;
+    }
+    /* Die Uhr des Nachfassens mitziehen: sonst faellt ihr naechster Takt direkt hinter dieses
+       Nachladen und holt dieselben Nachrichten ein zweites Mal. */
+    _nfLetzte = Date.now();
+    try { fn(S.activeChatId); } catch(e){ return false; }
+    try { root.dispatchEvent(new CustomEvent('askmira:nachfassen',
+          { detail: { chat_id: S.activeChatId, grund: 'realtime:' + grund }, bubbles: true })); } catch(e){}
+    return true;
+  }
+
+  /* Der Fehlerfall sieht aus wie der beim Absenden -- dieselbe Stelle, dieselbe Form, ein
+     anderer Satz: dort kam die Frage nicht weg, hier kam die Antwort nicht zurueck. Die
+     Laufzeituhr faellt vorher weg, sonst stuende "Worked for 42s" vor der Meldung. */
+  function rtFehlerZeigen(amid){
+    try { runDrop(); } catch(e){}
+    S.messages.push({ id: 'rt_err_' + (amid || String(S.messages.length)), role: 'assistant',
+      content: L().turnFailed,
+      created_at: new Date().toISOString() });
+    try { renderMessages(); } catch(e){}
+  }
+
+  window.askMiraRealtime = function(payload){
+    var p = payload;
+    if (typeof p === 'string'){ p = looseJsonParse(p); }
+    if (!p || typeof p !== 'object') return false;
+    /* Manche Wege reichen das Ereignis in einer Huelle herein. */
+    if (p.payload && typeof p.payload === 'object' && p.payload.event) p = p.payload;
+
+    var art  = rtText(p.event).toLowerCase();
+    var chat = rtText(p.session_id);
+    var amid = rtText(p.assistant_message_id || p.message_id);
+    if (!art) return false;
+
+    /* DIE EINE ZEILE, DIE ALLES TRAEGT: gehoert das Ereignis zum offenen Chat? */
+    var offen = chat && chat === rtText(S.activeChatId);
+
+    if (art === 'mira_turn_started'){
+      if (!chat) return false;
+      /* Kommt es NACH dem Abschluss desselben Turns herein -- verspaetet oder doppelt --, darf
+         es den Kreisel nicht wieder anwerfen. Der Abschluss hat die Kennung schon vermerkt. */
+      if (amid && _rtGesehen[amid]) return true;
+      /* DER NEUE CHAT, DER NOCH KEINE KENNUNG HAT. Wer gerade abgeschickt hat, sitzt in einem
+         Chat, dessen session_id erst mit der Antwort aus Bubble zurueckkommt. Faellt das
+         turn_started in diese Luecke, waere es hier ein FREMDER Chat: der Nutzer bekaeme einen
+         blauen Punkt auf die Zeile, in der er selbst steht, und die Antwort wuerde nicht
+         nachgeladen. Die Kennung wird deshalb uebernommen -- aber nur, wenn alle drei Dinge
+         zugleich gelten: kein offener Chat, ein NEUER Turn, und ein Absenden aus dieser Sitzung
+         vor weniger als einer Minute. Ohne die dritte Bedingung risse ein zweites Geraet den
+         Nutzer in dessen Chat. */
+      if (!offen && !rtText(S.activeChatId) && rtWahr(p.is_new_session) &&
+          _lastSendTs && (Date.now() - _lastSendTs) < 60000){
+        try { window.askMiraSetActiveChat(chat, false, ''); } catch(e){}
+        offen = chat === rtText(S.activeChatId);
+      }
+      /* Ein neuer Chat erscheint SOFORT in der Liste, nicht erst mit der Antwort. */
+      if (rtWahr(p.is_new_session)) rtChatAnlegen(chat, rtText(p.preview), rtText(p.created_at));
+      _rtLaeuft[chat] = { seit: Date.now(), amid: amid };
+      rtUhrStellen();
+      wartendSetzen(chat, true);
+      /* Im offenen Chat auch den Denkzustand -- so zieht ein zweiter Tab oder ein zweites
+         Geraet mit, ohne dass hier jemand abgeschickt haette. */
+      if (offen) try { setLoading(true); } catch(e){}
+      return true;
+    }
+
+    if (art === 'mira_message_success'){
+      if (!chat) return false;
+      if (amid && _rtGesehen[amid]) return true;          /* Wiederholung: nichts noch einmal tun */
+      rtGesehenMerken(amid);
+      delete _rtLaeuft[chat];
+      if (offen){
+        try { setLoading(false); } catch(e){}
+        /* Der Inhalt kommt NICHT aus dem Ereignis -- es ist nur der Ausloeser. */
+        rtOffenenChatHolen('message_success');
+      } else {
+        /* Fremder Chat: nur die Zeile. Kein Nachladen, kein Flackern im offenen Chat.
+           Der Zeitstempel wird mitgefuehrt, die Zeile aber NICHT live nach oben gezogen: sie
+           steht unter dem Zeiger des Nutzers, und ein Sprung waehrend er die Liste liest ist
+           schlimmer als eine Reihenfolge, die erst beim naechsten Laden stimmt. Das Signal,
+           dass hier etwas fertig ist, traegt der blaue Punkt. */
+        fertigMelden(chat);
+        rtChatAnlegen(chat, '', rtText(p.updated_at));
+      }
+      return true;
+    }
+
+    if (art === 'mira_message_error'){
+      if (!chat) return false;
+      if (amid && _rtGesehen[amid]) return true;
+      rtGesehenMerken(amid);
+      delete _rtLaeuft[chat];
+      /* Die zwei technischen Felder gehoeren NICHT in die Oberflaeche -- hoechstens hierhin. */
+      if (window.console) try { console.warn('[AskMira] Turn fehlgeschlagen',
+          { session: chat, message: rtText(p.error_message), execution: rtText(p.execution_id) }); } catch(e){}
+      wartendSetzen(chat, false);
+      if (offen){
+        try { setLoading(false); } catch(e){}
+        /* Derselbe Satz wie an jeder anderen Stelle dieser Datei: was der Nutzer TUN kann,
+           nicht was kaputt war. */
+        try { rtFehlerZeigen(amid); } catch(e){}
+      }
+      return true;
+    }
+
+    if (art === 'mira_title_updated'){
+      if (!chat) return false;
+      var titel = rtText(p.title);
+      if (!titel) return false;
+      /* Nur den Titel tauschen -- kein Neuladen. In der Liste immer, in der Kopfzeile nur,
+         wenn es der offene Chat ist. */
+      rtChatAnlegen(chat, titel, '');
+      if (offen){
+        S.titlePending = false;
+        try { window.askMiraSetActiveChat(chat, false, titel); } catch(e){}
+      }
+      return true;
+    }
+
+    if (art === 'mira_user_transcript'){
+      /* Der einzige Fall mit Text, den wir direkt zeigen -- und nur im offenen Chat. */
+      if (!offen) return true;
+      try { window.askMiraResolveVoice(rtText(p.user_message), rtText(p.message_id)); } catch(e){}
+      return true;
+    }
+    return false;
+  };
+
+  /* Nach einem Verbindungsabriss: neu subscriben macht Bubble, den Rest hier. In der Luecke
+     koennen Ereignisse gefallen sein, also wird der offene Chat einmal nachgeladen und die
+     Liste geholt -- beides ueber die Wege, die es ohnehin gibt. */
+  window.askMiraRealtimeReconnected = function(){
+    rtVerfallPruefen();
+    rtOffenenChatHolen('reconnect');
+    try { listeNachholen('reconnect'); } catch(e){}
+    return true;
   };
   /* ---- WER SCHREIBT DIE CHATLISTE, UND WIE LANG WAR SIE? (16.09.) -------------------------
      Gemeldet: nach dem Weg Dashboard -> Chip -> Mira steht in der Leiste manchmal nur EIN Chat,
