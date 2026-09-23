@@ -5977,23 +5977,6 @@
     var werkzeug = rtText(p.tool);
     if (werkzeug && offen){ try { window.askMiraSetTool(werkzeug); } catch(e){} mitgenommen = true; }
 
-    /* DIE LOGOS DER LADEZEILE, auf demselben Weg und aus demselben Grund. Beide Setter schieben
-       die Bilder in den gerade laufenden Schritt (runRefreshLogos), wenn eine Antwort laeuft --
-       ohne sie bleibt die Zeile bilderlos.
-       Als KOMMALISTE von Domains, nicht als JSON-Feld: die Nutzlast bleibt damit flach, jedes
-       Feld ein Text, und Bubbles Schema muss keine verschachtelte Liste aufschluesseln.
-       Eine nackte Domain reicht -- _normFavicon und _normBrandLogo bauen daraus die Bildadresse. */
-    function rtListe(v){
-      return rtText(v).split(',').map(function(x){ return x.trim(); }).filter(Boolean).slice(0, 20);
-    }
-    if (offen){
-      var quellen = rtListe(p.favicons);
-      if (quellen.length) try { window.askMiraSetFavicons(quellen); } catch(e){}
-      var marken = rtListe(p.brand_logos);
-      if (marken.length) try { window.askMiraSetBrandLogos(marken); } catch(e){}
-      if (quellen.length || marken.length) mitgenommen = true;
-    }
-
     if (art === 'mira_turn_started'){
       if (!chat) return false;
       /* Kommt es NACH dem Abschluss desselben Turns herein -- verspaetet oder doppelt --, darf
@@ -6091,8 +6074,8 @@
     if (mitgenommen) return true;
     rtMeckern('art:' + art, 'Realtime: "' + art + '" kam an, trug aber nichts Verwertbares. ' +
       'Bekannt sind mira_turn_started, mira_message_success, mira_message_error, ' +
-      'mira_title_updated und mira_user_transcript -- dazu jedes Ereignis, das tool, favicons ' +
-      'oder brand_logos fuellt. Ist das die Ladezeile, steht ihr Feld leer.');
+      'mira_title_updated und mira_user_transcript -- dazu jedes Ereignis, das tool fuellt. ' +
+      'Ist das die Ladezeile, steht ihr Feld tool leer.');
     return false;
   };
 
