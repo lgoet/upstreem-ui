@@ -787,7 +787,15 @@
       elNav.innerHTML = BLOECKE.map(function(b){
         /* Die Pinned-Gruppe entsteht nur, wenn etwas angeheftet ist -- eine Ueberschrift ohne
            Inhalt ist kein Abschnitt, sondern ein Loch. */
-        if (b.pinned && !state.pins.length) return "";
+        /* WAEHREND DES WECHSELS GAR NICHT (23.09. erneut gemeldet). state.laedt steht zwischen
+           dem Klick auf ein anderes Team und dem Neuaufbau der Seite. In diesem Fenster sind die
+           Pins des NEUEN Teams schon lesbar (der Speicherschluessel haengt am Team, siehe
+           pinKey), die uebrigen Daten daneben aber noch die des alten -- eine Gruppe, die dann
+           schon das neue Team zeigt, behauptet einen Wechsel, der noch laeuft.
+           pinsNachziehen leert die Liste bei einem Wechsel bereits; das hier ist der Riegel fuer
+           den Fall, dass die Leiste dabei NEU aufgebaut wird -- dann ist pinsFuerTeam wieder
+           null, "erstes Mal" ist wahr, und die neuen Pins kaemen doch herein. */
+        if (b.pinned && (state.laedt || !state.pins.length)) return "";
         var zu = state.zu.indexOf(b.head) >= 0;
         var inhalt = b.pinned ? state.pins.map(pinHtml).join("")
                               : b.items.map(navItemHtml).join("");
@@ -1133,12 +1141,14 @@
         var neu = (state.teams || []).filter(function(x){ return String(x.id) === id; })[0];
         /* Sofort umstellen, nicht auf die Antwort warten: der Teamwechsel laedt die halbe Seite
            neu, und eine Leiste, die dabei den alten Namen zeigt, sieht aus wie ein Fehlklick. */
+        /* LADEZUSTAND VOR dem Neuzeichnen. Er stand bis zum 23.09. drei Zeilen weiter unten --
+           renderTeam() lief also noch mit laedt === false und zeichnete die Pin-Gruppe ein
+           letztes Mal, und zwar schon mit dem neuen Team. Genau das eine Bild war gemeldet. */
+        ladenSetzen(true);
         if (neu){ state.team = neu; vorrat.team = neu; renderTeam(); }
         menuZu();
-        /* Und ab hier laedt die Leiste: die Seite wird gleich neu gebaut, alle Zahlen und Listen
-           daneben gehoeren dem alten Team. Statt sie stehen zu lassen, bis der Neuaufbau sie
-           ersetzt, gehen sie in ihren Ladezustand zurueck. */
-        ladenSetzen(true);
+        /* Der Ladezustand steht schon oben -- die Seite wird gleich neu gebaut, alle Zahlen und
+           Listen daneben gehoeren dem alten Team. */
         fire("data-team-fn", "usnTeam", { team_id: id });
         return;
       }

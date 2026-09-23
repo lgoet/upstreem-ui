@@ -2662,10 +2662,15 @@
   .am-mini-head { margin-bottom: 2px; padding: 0 6px; }
   .am-mini-opt span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
   .am-mini-leer { padding: 10px 12px; font-size: 13px; color: var(--am-muted); white-space: nowrap; }
-  /* DER "ALL CHATS"-KNOPF FAELLT WEG (21.09. angefordert). Er steht im Markup der Vorlage und
-     wuerde ein bereits eingebautes Element nie verlassen -- deshalb hier ausgeblendet und nicht
-     dort entfernt. Seine Aufgabe hat die schmale Leiste uebernommen. */
-  #ask-mira .am-prev-btn { display: none; }
+  /* DER "ALL CHATS"-KNOPF FAELLT WEG (21.09. angefordert) -- ABER NUR AB 721px (23.09.).
+     Er steht im Markup der Vorlage und wuerde ein bereits eingebautes Element nie verlassen,
+     deshalb hier ausgeblendet und nicht dort entfernt. Seine Aufgabe hatte die schmale Leiste
+     uebernommen -- und die gibt es am Telefon seit heute nicht mehr. Damit war der Weg in die
+     Chatliste dort zu: kein Knopf, keine schmale Leiste. Genau so gemeldet.
+     Ab 721px bleibt es wie gehabt, darunter ist er der "Hint" wie in der Hauptleiste. */
+  @media (min-width: 721px) {
+    #ask-mira .am-prev-btn { display: none; }
+  }
   /* KEIN ZIEHGRIFF AN DER EINGEKLAPPTEN LEISTE (21.09. gemeldet). Der Griff gehoert der grossen
      Leiste und liegt an deren linker Kante -- eingeklappt steht die genau dort, wo jetzt die
      schmale steht, und man konnte mitten in ihr ziehen. Dabei schob sich die grosse von hinten

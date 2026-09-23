@@ -8245,9 +8245,22 @@
     } catch(e){ return false; }
   }
 
+  /* AM TELEFON IMMER RECHTS (23.09. angefordert). Unter 721px liegt die Chatliste als Overlay
+     ueber dem Chat -- "links" oder "rechts" ist dort keine Anordnung mehr, sondern nur die Kante,
+     von der sie hereinfaehrt, und der Rest der CSS (der Rahmen der schmalen Leiste, die
+     Sprungleiste, der Griff) rechnet in diesem Fenster mit rechts.
+     721 ist dieselbe Grenze wie im Overlay-Block der CSS -- eine Zahl, zwei Stellen, und die
+     hier liest sie ueber matchMedia, damit sie nicht auseinanderlaufen koennen.
+     Die gespeicherte Wahl bleibt unangetastet: wer am Telefon war und wieder an den Rechner
+     geht, findet seine Seite wieder. */
+  function schmalesFenster(){
+    try { return window.matchMedia && window.matchMedia('(max-width: 720px)').matches; }
+    catch(e){ return false; }
+  }
   /* Die Seite anwenden. EINE Klasse an der Wurzel traegt alles Weitere (siehe ask-mira.css). */
   function seiteAnwenden(seite, vomNutzer){
     var links = seite === 'left';
+    if (schmalesFenster()) links = false;
     root.classList.toggle('is-side-left', links);
     if (!S.settings) S.settings = {};
     S.settings.side = links ? 'left' : 'right';
@@ -8338,6 +8351,8 @@
       hlDemoZeichnen();
     } else {
       var links = seiteLinks();
+      /* Am Telefon ist die Seite keine Wahl -- der Umschalter unten wird damit gesperrt. */
+      var eng = schmalesFenster();
       var blasen = blasenLesen();
       /* Die Zeilenform der Vorlage: Titel und Erklaersatz links, der Regler rechts. */
       body.innerHTML =
@@ -8365,10 +8380,16 @@
           '<div class="ums-rowctl am-set-seg">' +
             /* LINKS steht links und RECHTS rechts -- die Reihenfolge im Umschalter ist
                dieselbe Aussage wie das Wort darin. Umgekehrt liest sie sich als Fehler. */
+            /* AM TELEFON GESPERRT (23.09.): dort liegt die Leiste als Overlay, die Seite ist
+               keine Wahl mehr (siehe schmalesFenster bei seiteAnwenden). Ein Umschalter, der
+               sichtbar ist und nichts bewirkt, ist schlechter als ein gesperrter -- deshalb
+               disabled und mit einem Hinweis, warum. */
             '<div class="up-seg is-lg" role="tablist">' +
-              '<button class="up-seg-btn' + (links ? ' is-active' : '') + '" type="button" data-am-side="left">' +
+              '<button class="up-seg-btn' + (links ? ' is-active' : '') + '" type="button" data-am-side="left"' +
+                (eng ? ' disabled data-tip="' + esc(UCt('Only on a wider screen')) + '"' : '') + '>' +
                 esc(UCt('Left')) + '</button>' +
-              '<button class="up-seg-btn' + (!links ? ' is-active' : '') + '" type="button" data-am-side="right">' +
+              '<button class="up-seg-btn' + (!links ? ' is-active' : '') + '" type="button" data-am-side="right"' +
+                (eng ? ' disabled data-tip="' + esc(UCt('Only on a wider screen')) + '"' : '') + '>' +
                 esc(UCt('Right')) + '</button>' +
             '</div>' +
           '</div>' +
