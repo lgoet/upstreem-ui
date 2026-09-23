@@ -5540,7 +5540,27 @@
      kurz auf"). Er haelt den ROHEN Text der zuletzt angenommenen Nutzlast und den Chat, zu dem
      er gehoerte. */
   var _letzteRoh = '', _letzterRohChat = '';
-  window.askMiraSetMessages = function(messages){
+  /* ---- FUER WELCHEN CHAT IST DIESE NUTZLAST? (23.09.) ----------------------------------------
+     Die drei Setter darunter schrieben bisher IMMER in den offenen Chat -- eine Chat-Kennung
+     kannten sie nicht. Solange das Realtime-Element auf genau eine Session hoert, geht das auf:
+     was ankommt, gehoert zwangslaeufig zum offenen Chat.
+     Wer aber auf eine Ebene darueber filtert (user_id statt session_id) -- und nur so kommen
+     Antworten fuer Chats an, die der Nutzer gerade nicht offen hat --, der bekommt Nutzlasten
+     fuer FREMDE Chats. Ohne diese Weiche landete die Antwort von Chat A in Chat B.
+     RUECKWAERTSKOMPATIBEL: ohne zweites Argument bleibt alles, wie es war. Wer die Kennung
+     mitgibt, bekommt die Zuordnung:
+         askMiraSetMessages(rohtext, "<session id>")
+         askMiraAddMessage(rohtext, "<session id>")
+         askMiraSetLoading("yes", "<session id>")
+     Passt sie nicht zum offenen Chat, wird NICHT gerendert -- die Buchfuehrung nimmt sie auf,
+     und der Chat bekommt in der Leiste seinen Kreisel beziehungsweise den blauen Punkt. */
+  function fremderChat(chatId){
+    var id = String(chatId == null ? '' : chatId);
+    if (!id) return false;                                  /* keine Angabe: wie bisher */
+    return id !== String(S.activeChatId || '');
+  }
+  window.askMiraSetMessages = function(messages, chatId){
+    if (fremderChat(chatId)){ fertigMelden(chatId); return; }
     /* EINE NUTZLAST, DIE NICHTS NEUES BRINGT, DARF DEN CHAT NICHT NEU ZEICHNEN.
        Bis hierher loeste JEDE Nutzlast renderMessages aus -- elMessages.innerHTML komplett neu,
        Bilder neu, Scrollposition zurueck auf unten. Beim Oeffnen eines Chats faellt das nicht
@@ -5643,7 +5663,18 @@
     setLoading(_running); // toggles the loading state to match the RPC status and re-renders
     _maybeHomeIfUnknownChat();   // no active chat known -> fall back to the main page
   };
-  window.askMiraAddMessage = function(message){
+  window.askMiraAddMessage = function(message, chatId){
+    /* Eine Nachricht fuer einen anderen Chat: nur melden, nicht zeichnen. Eine UNFERTIGE
+       Antwort (der Platzhalter waehrend der Arbeit) meldet dagegen "wartet noch" -- sonst
+       stuende der Punkt schon da, waehrend die Antwort noch laeuft. */
+    if (fremderChat(chatId)){
+      var _roh = message;
+      if (typeof _roh === 'string'){ var _p = looseJsonParse(_roh); _roh = _p ? (Array.isArray(_p) ? _p[0] : _p) : null; }
+      var _nm = _roh && typeof _roh === 'object' ? normalizeMessage(_roh) : null;
+      if (_nm && _nm.role === 'assistant' && isPendingAssistant(_nm)) wartendSetzen(chatId, true);
+      else fertigMelden(chatId);
+      return;
+    }
     if (typeof message === 'string'){ var p = looseJsonParse(message); if (!p) return; message = Array.isArray(p) ? p[0] : p; }
     if (!message || typeof message !== 'object') return;
     var nm = normalizeMessage(message);
@@ -5757,8 +5788,13 @@
     }
     return applied;
   };
-  window.askMiraSetLoading = function(v){
+  window.askMiraSetLoading = function(v, chatId){
     if (typeof v === 'string') v = (v === 'true' || v === '1' || v === 'yes');
+    /* Fuer einen anderen Chat: nur die Buecher, kein Ladezustand in der offenen Ansicht. */
+    if (fremderChat(chatId)){
+      if (v) wartendSetzen(chatId, true); else fertigMelden(chatId);
+      return;
+    }
     if (!v && _pendingAnswer){
       return;
     }
