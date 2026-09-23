@@ -6048,9 +6048,13 @@
     }
 
     if (art === 'mira_user_transcript'){
-      /* Der einzige Fall mit Text, den wir direkt zeigen -- und nur im offenen Chat. */
+      /* Der einzige Fall mit Text, den wir direkt zeigen -- und nur im offenen Chat.
+         OHNE Text passiert nichts: die Felder kommen immer alle mit, auch leer, und eine leere
+         Transkription wuerde sonst den Platzhalter durch nichts ersetzen. */
       if (!offen) return true;
-      try { window.askMiraResolveVoice(rtText(p.user_message), rtText(p.message_id)); } catch(e){}
+      var gesprochen = rtText(p.user_message);
+      if (!gesprochen) return true;
+      try { window.askMiraResolveVoice(gesprochen, rtText(p.message_id)); } catch(e){}
       return true;
     }
     rtMeckern('art:' + art, 'Realtime: "' + art + '" kennt diese Komponente nicht. ' +
@@ -6414,7 +6418,16 @@
       ['mira-favicons-data', window.askMiraSetFavicons],
       ['mira-brandlogos-data', window.askMiraSetBrandLogos],
       ['mira-tool-data', window.askMiraSetTool],
-      ['mira-title-pending-data', window.askMiraSetTitlePending]
+      ['mira-title-pending-data', window.askMiraSetTitlePending],
+      /* DER REALTIME-WEG OHNE BACKTICK (23.09.). Ein Run-JS-Schritt reicht die Nutzlast durch ein
+         Backtick -- und dort sind Backtick, ${ und Backslash toedlich: der SCHRITT stirbt beim
+         Parsen, die Komponente wird nie gerufen, und es kommt auch kein weiteres Ereignis mehr
+         an. In der Nutzlast steht mit preview der Fragetext des Nutzers, also genau die Sorte
+         Text, die so etwas enthalten kann. Ueber ein verstecktes Element geht kein Zeichen durch
+         einen Parser: Bubble schreibt hinein, der Beobachter liest heraus, fertig.
+         Die Funktion wird erst hier aufgeloest und nicht beim Bau der Tabelle -- sie steht weiter
+         oben in der Datei, und ein direkter Verweis waere je nach Aufrufzeitpunkt undefined. */
+      ['mira-realtime-data', function(v){ if (window.askMiraRealtime) window.askMiraRealtime(v); }]
     ];
     map.forEach(function(pair){
       var id = pair[0], fn = pair[1];
