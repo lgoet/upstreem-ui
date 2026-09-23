@@ -661,6 +661,8 @@
        Desktop, wo die Liste neben dem Chat sitzt. */
     #ask-mira.prev-open .am-msgnav { opacity: 0; pointer-events: none; }
     #ask-mira.prev-open:not(.is-side-left) .am-msgnav { right: 10px; }
+    /* Auch die schmale Leiste gibt es hier nicht -- in diesem Fenster liegt alles uebereinander. */
+    #ask-mira.side-mounted:not(.prev-open):not(.is-side-left) .am-msgnav { right: 10px; }
   }
 
   @media (max-width: 720px) {
@@ -1467,6 +1469,13 @@
      Das Ausblenden gilt weiter, aber nur noch im Overlay-Fall: die Regel steht jetzt im
      @media (max-width: 720px) weiter unten. */
   #ask-mira.prev-open:not(.is-side-left) .am-msgnav { right: calc(var(--am-side-w) + 10px); }
+  /* EINGEKLAPPT IST NICHT WEG (23.09. nachgefasst). Ist die grosse Liste zu, steht an ihrer
+     Stelle die schmale Leiste .am-mini -- 64px, flex: 0 0 64px, Teil des Layouts wie die grosse
+     auch. Die Sprungleiste stand dort trotzdem auf 10px und damit auf ihr.
+     side-mounted:not(.prev-open) ist woertlich die Bedingung, unter der .am-mini erscheint
+     (siehe dort) -- damit sind die zwei Regeln aneinander gebunden und koennen nicht
+     auseinanderlaufen. 64 ist die Breite der Leiste, die 10 derselbe Abstand wie sonst. */
+  #ask-mira.side-mounted:not(.prev-open):not(.is-side-left) .am-msgnav { right: 74px; }
   #ask-mira.has-msgnav .am-msgnav { display: block; }
   .am-msgnav-ticks { width: 16px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
   .am-msgnav-tick { width: 16px; height: 4px; border-radius: var(--up-r-voll); background: color-mix(in srgb, var(--am-text) 30%, transparent); transition: background 120ms ease; }
