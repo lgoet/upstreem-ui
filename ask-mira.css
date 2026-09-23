@@ -2547,12 +2547,14 @@
      zweizeilig werden und wieder zurueckspringen. So bewegt sich nichts im Inneren.
      #ask-mira hat overflow: hidden, die geschlossene Leiste ist damit sauber abgeschnitten. */
   .am-prev-scrim {
-    /* Kein Verwischen mehr: eine Leiste, die Teil des Layouts ist, hat keinen Hintergrund, den
-       sie abdunkeln muesste. Am Telefon liegt sie weiterhin darueber -- dort kommt die Blende
-       im Medienblock unten zurueck. */
+    /* Eine Leiste, die Teil des Layouts ist, hat keinen Hintergrund, den sie abdunkeln muesste --
+       deshalb display: none im Normalfall. Am Telefon liegt sie darueber, und dort GRAUT der
+       Schleier aus (23.09. angefordert: "wie in der hauptsidebar").
+       Die zwei Werte sind woertlich die von .usn-scrim in sidebar.css: .30 hell, .45 dunkel,
+       dazu eine leichte Unschaerfe. Zwei Blenden in einer App sollen gleich aussehen. */
     display: none;
-    position: absolute; inset: 0; z-index: 8; background: transparent;
-    backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); opacity: 0; pointer-events: none;
+    position: absolute; inset: 0; z-index: 8; background: rgba(0,0,0,.30);
+    backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px); opacity: 0; pointer-events: none;
     transition: opacity 200ms ease;
   }
   /* Die Breite steht in einer Variablen, weil sie an DREI Stellen gebraucht wird: Spur, Breite
@@ -2599,6 +2601,14 @@
   @media (min-width: 721px) {
     #ask-mira.side-mounted:not(.prev-open) .am-mini { display: flex; }
   }
+  /* DIE BLENDE EINSCHALTEN. Diese Regel fehlte ganz: der Schleier stand auf opacity 0 und
+     pointer-events: none, und nichts hat das je umgeschaltet -- er war unsichtbar UND
+     durchlaessig. Damit gab es am Telefon weder das Ausgrauen noch den Klick daneben zum
+     Schliessen, obwohl der Zuhoerer dafuer seit jeher da ist (elPrevScrim -> closePrev).
+     Dass mein frueherer Test ihn trotzdem "schliessen" sah, lag daran, dass ein
+     scrim.click() im Skript pointer-events gar nicht erst fragt. */
+  #ask-mira.prev-open .am-prev-scrim { opacity: 1; pointer-events: auto; }
+  #ask-mira[data-theme="dark"] .am-prev-scrim { background: rgba(0,0,0,.45); }
   /* DER UEBERGANG, und zwar ASYMMETRISCH -- dieselbe Ueberlegung wie in sidebar.css an
      .usn-txt (23.09. angefordert: "warum machen wir da nicht die gleiche logik wie in der
      hauptsidebar"). Die grosse Leiste faehrt 200ms ueber margin-right heraus, die schmale
@@ -3416,8 +3426,13 @@
     #ask-mira { height: 100%; max-height: 100%; overflow: hidden; }
     .am-bubble { overflow-wrap: break-word; }
 
-    /* #9 — "View Previous" wird oben rechts zu "Chats" + Icon */
-    .am-prev-btn { order: 0; width: auto; align-self: center; margin-top: 0; flex: 0 0 auto; padding: 0 10px; }
+    /* #9 — "View Previous" wird oben rechts zu "Chats" + Icon.
+       margin-left: auto schiebt ihn ans RECHTE Ende der Kopfzeile (23.09. gemeldet: er stand
+       links). order: 0 allein sagt nur, in welcher Reihenfolge die Kinder stehen, nicht wo die
+       Gruppe endet -- der freie Platz muss VOR ihm liegen, und genau das macht der Aussenabstand
+       auf auto. */
+    .am-prev-btn { order: 0; width: auto; align-self: center; margin-top: 0; margin-left: auto;
+      flex: 0 0 auto; padding: 0 10px; }
     .am-prev-label-full { display: none; }
     .am-prev-label-short { display: inline; }
 
@@ -3649,7 +3664,15 @@
   }
   #ask-mira.side-ready .am-prev-panel { transition: transform 200ms ease; }
   #ask-mira.prev-open .am-prev-panel { transform: translateX(0); margin-right: 0; }
-  #ask-mira .am-prev-scrim { display: block; }
+  /* DIE BLENDE UEBER display, NICHT UEBER opacity (23.09., nach drei Fehlversuchen).
+     Der Schleier stand auf opacity 0, und keine meiner Regeln hat das umgeschaltet -- gemessen
+     kam pointer-events: auto aus DERSELBEN Regel durch, opacity nicht. Woran das lag, habe ich
+     nicht herausgefunden, und weitersuchen kostet mehr, als es wert ist: display ist der
+     Schalter, den dieses Element ohnehin traegt, und er ist eindeutig.
+     Der Preis ist das Einblenden -- die Blende ist sofort da statt ueber 200ms. Sichtbar ohne
+     Uebergang ist besser als unsichtbar mit. */
+  #ask-mira .am-prev-scrim { display: none; opacity: 1; }
+  #ask-mira.prev-open .am-prev-scrim { display: block; pointer-events: auto; }
 }
 
 /* ---------- LAUNCHER: Mira im Power Dashboard (11.09.) ----------------------------------------

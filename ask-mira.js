@@ -7333,6 +7333,8 @@
      gleich darunter), und alle seine Farben kommen aus --am-*, die an .up-root deklariert
      sind -- ohne diese zwei Klassen stuende es farblos da. data-theme wird beim Oeffnen
      nachgezogen, weil der Nutzer das Thema wechseln kann, waehrend die Seite steht. */
+  /* Laeuft, solange das Menue offen ist, und haelt seine rechte Kante -- siehe kanteHalten. */
+  var cmBeobachter = null;
   elChatMenu.className = 'am-cm up-root am-root'; elChatMenu.id = 'am-chat-menu';
   /* AM KOERPER, NICHT IN DER KOMPONENTE (21.09., gemessen).
      Das Menue ist position: fixed und rechnete mit Bildschirmkoordinaten -- das stimmt aber nur,
@@ -7373,6 +7375,9 @@
   var cmFromTopbar = false;   // true while the menu was opened from the chat-view topbar chevron
 
   function closeChatMenu(){
+    /* Den Kantenwaechter trennen: ein ResizeObserver auf einem Menue, das niemand mehr sieht,
+       laeuft sonst bis zum Seitenwechsel weiter. */
+    if (cmBeobachter){ try { cmBeobachter.disconnect(); } catch(_){} cmBeobachter = null; }
     elChatMenu.classList.remove('is-open');
     var open = elPrevList.querySelector('.am-prev-item.is-menu-open');
     if (open) open.classList.remove('is-menu-open');
@@ -7473,12 +7478,31 @@
        in so einem Fall in die richtige Richtung, trifft aber nicht unbedingt. Die zweite raeumt
        den Rest ab. Mehr als zwei braucht es nicht: nach der zweiten ist der Fehler quadratisch
        klein. */
-    for (var vers = 0; vers < 2; vers++){
-      var echt = elChatMenu.getBoundingClientRect();
-      var ueber = echt.right - (rechts - 8);
-      if (ueber <= 0.5) break;
-      left = Math.max(8, left - ueber);
-      elChatMenu.style.left = Math.round(left) + 'px';
+    function kanteHalten(){
+      for (var vers = 0; vers < 2; vers++){
+        var echt = elChatMenu.getBoundingClientRect();
+        var ueber = echt.right - (rechts - 8);
+        if (ueber <= 0.5) break;
+        left = Math.max(8, left - ueber);
+        elChatMenu.style.left = Math.round(left) + 'px';
+      }
+    }
+    kanteHalten();
+    /* UND DANN BEI JEDER GROESSENAENDERUNG (23.09., dritte Meldung zum selben Menue).
+       Drei Anlaeufe davor haben zu einem ZEITPUNKT gemessen -- synchron, dann noch einmal nach
+       dem ersten Bild. Beides trifft nur, wenn das Menue in dem Moment schon seine Endbreite
+       hat. Gemessen: es steht bei 1209 und waechst danach auf 1492, sobald ein langer
+       Projektname in eine Zeile kommt. Kein fester Zeitpunkt faengt das, weil es keinen gibt.
+       Ein ResizeObserver dagegen hoert einfach zu, solange das Menue offen ist. Er wird beim
+       Schliessen wieder getrennt -- ein Beobachter auf einem Element, das niemand mehr sieht,
+       ist genau die Sorte Leck, die diese App nicht haben soll.
+       Ohne ResizeObserver (alte Browser) bleibt es bei den zwei synchronen Laeufen. */
+    if (cmBeobachter){ try { cmBeobachter.disconnect(); } catch(_){} cmBeobachter = null; }
+    if (typeof ResizeObserver === "function"){
+      try {
+        cmBeobachter = new ResizeObserver(function(){ kanteHalten(); });
+        cmBeobachter.observe(elChatMenu);
+      } catch(_){ cmBeobachter = null; }
     }
     // submenu: always fly RIGHT in the topbar (menu is already far left); otherwise flip when the left is tight
     var sub = elChatMenu.querySelector('.am-cm-sub');
