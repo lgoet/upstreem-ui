@@ -35,6 +35,17 @@
     "askMiraSetChatsLoading", "askMiraAddReference", "askMiraOpen"
   ];
   var __amBootQueue = window.__amBootQueue = window.__amBootQueue || [];
+
+  /* ZUR AUFRUFZEIT AUFGELOEST, nicht zur Ladezeit (23.09.). Die Zeichen dieser Datei werden
+     an Stellen gebraucht, an denen die lokale Variable UC noch gar nicht existiert -- sie
+     wird erst INNERHALB der zwei Controller geholt. Ein amFormen() auf Modulebene ist
+     deshalb ein ReferenceError beim Laden, und der nimmt die ganze Datei mit: genau so ist
+     Mira am 23.09. gestorben. window.UpstreemCore statt UC, und die Pruefung mit -- ein
+     fehlendes core soll ein leeres Zeichen ergeben, nicht den Absturz. */
+  function amFormen(name){
+    var C = window.UpstreemCore;
+    return (C && C.iconFormen) ? C.iconFormen(name) : "";
+  }
   if (!window.__amBootStubbed){
     window.__amBootStubbed = true;
     API_NAMES.forEach(function(n){
@@ -164,7 +175,7 @@
     panel.setAttribute('aria-hidden', 'true');
     panel.innerHTML =
       '<div class="am-pick-search">' +
-        '<svg width="24" height="24" class="am-pick-sic" viewBox="0 0 24 24" aria-hidden="true">' + UC.iconFormen("search") + '</svg>' +
+        '<svg width="24" height="24" class="am-pick-sic" viewBox="0 0 24 24" aria-hidden="true">' + amFormen("search") + '</svg>' +
         /* Die gesetzten Filter stehen IM Feld, links vor der Eingabe -- wie in der Palette.
            Ein Filter, der ueber dem Feld stuende, waere eine Angabe ueber die Suche; hier ist
            er ein TEIL der Suche. */
@@ -200,7 +211,7 @@
     plus.setAttribute('aria-expanded', 'false');
     plus.setAttribute('data-tip', 'Add a reference');
     plus.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" class="am-ic" fill="none" stroke="currentColor" ' +
-      'stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + UC.iconFormen("plus") + '</svg>';
+      'stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + amFormen("plus") + '</svg>';
 
     var eff = document.createElement('div');
     eff.className = 'am-eff'; eff.id = 'am-eff';
@@ -211,13 +222,13 @@
               'aria-expanded="false">' +
         '<span class="am-eff-name" id="am-eff-name"></span>' +
         '<span class="am-eff-lvl" id="am-eff-lvl"></span>' +
-        '<svg width="24" height="24" class="am-eff-chev" viewBox="0 0 24 24" aria-hidden="true">' + UC.iconFormen("chevronDown") + '</svg>' +
+        '<svg width="24" height="24" class="am-eff-chev" viewBox="0 0 24 24" aria-hidden="true">' + amFormen("chevronDown") + '</svg>' +
       '</button>' +
       '<div class="am-eff-menu" id="am-eff-menu" role="dialog" aria-label="Model and effort">' +
         '<button class="am-eff-head" type="button" id="am-eff-head" aria-expanded="false">' +
           '<span class="am-eff-hname" id="am-eff-hname"></span>' +
           '<span class="am-eff-hlvl" id="am-eff-hlvl"></span>' +
-          '<svg width="24" height="24" class="am-eff-hchev" viewBox="0 0 24 24" aria-hidden="true">' + UC.iconFormen("chevronRight") + '</svg>' +
+          '<svg width="24" height="24" class="am-eff-hchev" viewBox="0 0 24 24" aria-hidden="true">' + amFormen("chevronRight") + '</svg>' +
         '</button>' +
         /* EIN Rumpf um beide Ansichten. Seine Hoehe wird gemessen und gesetzt (effRumpf),
            damit das Menue beim Umschalten weich waechst statt zu springen: max-height auf
@@ -376,7 +387,7 @@
     var ic = elOpenPrev.querySelector('.am-ic');
     /* AUS DEM SATZ (23.09.). Hier stand ein Lucide message-circle als roher Pfad -- der letzte
        in dieser Datei. messageCircle ist dieselbe runde Sprechblase, nur aus dem Satz. */
-        if (ic) ic.innerHTML = UC.iconFormen("messageCircle");
+        if (ic) ic.innerHTML = amFormen("messageCircle");
   })();
   var elClosePrev  = root.querySelector('#am-close-prev');
   var elNewChat    = root.querySelector('#am-new-chat');
@@ -716,11 +727,11 @@
   };
   var SUGG_ICONS = [ICON.trend, ICON.source, ICON.competitor, ICON.smile, ICON.clock];
   var GALLERY_ICONS = [
-    '<svg width="24" height="24" viewBox="0 0 24 24">' + UC.iconFormen("trendingUp") + '</svg>',
-    '<svg width="24" height="24" viewBox="0 0 24 24">' + UC.iconFormen("eye") + '</svg>',
-    '<svg width="24" height="24" viewBox="0 0 24 24">' + UC.iconFormen("link") + '</svg>',
-    '<svg width="24" height="24" viewBox="0 0 24 24">' + UC.iconFormen("chatDots") + '</svg>',
-    '<svg width="24" height="24" viewBox="0 0 24 24">' + UC.iconFormen("activity") + '</svg>'
+    '<svg width="24" height="24" viewBox="0 0 24 24">' + amFormen("trendingUp") + '</svg>',
+    '<svg width="24" height="24" viewBox="0 0 24 24">' + amFormen("eye") + '</svg>',
+    '<svg width="24" height="24" viewBox="0 0 24 24">' + amFormen("link") + '</svg>',
+    '<svg width="24" height="24" viewBox="0 0 24 24">' + amFormen("chatDots") + '</svg>',
+    '<svg width="24" height="24" viewBox="0 0 24 24">' + amFormen("activity") + '</svg>'
   ];
 
   var lang = 'en';
@@ -1239,7 +1250,10 @@
     return (m && m.logo_url) ? String(m.logo_url) : '';
   }
   // small "response" fallback icon (message bubble), used when no model logo resolves
-  var RESP_FALLBACK_SVG = '<svg width="24" height="24" viewBox="0 0 24 24">' + UC.iconFormen("chatDots") + '</svg>';
+  /* Funktion statt Konstante: der Wert braucht amFormen, und das braucht core --
+     auf Modulebene ist core beim Laden dieser Datei nicht garantiert da (siehe die
+     Boot-Wiederholung im Kopf). Ausgewertet wird jetzt beim ersten Gebrauch. */
+  function RESP_FALLBACK_SVG(){ return '<svg width="24" height="24" viewBox="0 0 24 24">' + amFormen("chatDots") + '</svg>'; }
   // Decide the marker that precedes a matched entity, based on the current Settings:
   //  brand/competitor -> S.settings.brand  ('logo' | 'icon' | 'none')
   //  url/domain/citation/prompt -> S.settings.citation ('favicon' | 'icon' | 'none')
@@ -1267,9 +1281,9 @@
         var rim = document.createElement('img');
         rim.src = logoUrl; rim.alt = '';
         rim.setAttribute('loading','lazy'); rim.setAttribute('referrerpolicy','no-referrer'); rim.setAttribute('draggable','false');
-        rim.onerror = function(){ box.innerHTML = RESP_FALLBACK_SVG; };
+        rim.onerror = function(){ box.innerHTML = RESP_FALLBACK_SVG(); };
         box.appendChild(rim);
-      } else { box.innerHTML = RESP_FALLBACK_SVG; }
+      } else { box.innerHTML = RESP_FALLBACK_SVG(); }
       return box;
     }
     if (mode === 'icon') return iconFor();
@@ -1444,10 +1458,10 @@
      sondern als blosse Formen in einer Tabelle. Die Namen sind nach dem BILD gewaehlt, wie im
      Satz ueblich: Verweis nach aussen, Kamera, Liste, steigende Linie. */
   var _OPP_REC_ICON = {
-    create_matching_content: UC.iconFormen("externalLink"),
-    build_presence: UC.iconFormen("camera"),
-    get_listed: UC.iconFormen("listIcon"),
-    improve_existing_content: UC.iconFormen("trendingUp")
+    create_matching_content: amFormen("externalLink"),
+    build_presence: amFormen("camera"),
+    get_listed: amFormen("listIcon"),
+    improve_existing_content: amFormen("trendingUp")
   };
   var _OPP_CITE = { Brand_Platform:'Brand Platforms', UGC_Community:'UGC / Community', Competition:'Competition', Editorial:'Editorial', Institutional:'Institutional', Knowledge_Base:'Knowledge Base', You:'Your Content' };
   var _OPP_CITE_COLOR = { Editorial:'#14b8a6', UGC_Community:'#0ea5e9', Knowledge_Base:'#6366f1', Brand_Platform:'#d946ef', Institutional:'#64748b', Competition:'#f97316', You:'#f43f5e' };
@@ -1480,7 +1494,7 @@
       '<button class="uo-status-btn" type="button" aria-haspopup="true" aria-expanded="false" title="Change status">'+
         '<span class="uo-status-dot" style="--uo-stat:'+meta.color+';"></span>'+
         '<span class="uo-status-label">'+esc(meta.label)+'</span>'+
-        '<svg width="24" height="24" class="uo-status-chev" viewBox="0 0 24 24">' + UC.iconFormen("chevronDown") + '</svg>'+
+        '<svg width="24" height="24" class="uo-status-chev" viewBox="0 0 24 24">' + amFormen("chevronDown") + '</svg>'+
       '</button>'+
       '<div class="uo-status-menu" role="menu">'+statusOptionsHtml(key)+'</div>'+
     '</div>';
@@ -1532,8 +1546,8 @@
     if (!item || typeof item !== 'object') return '';
     var trendUp = Number(item.trend_pct) >= 0;
     var gapNeg  = Number(item.gap) < 0;
-    var arrowUp   = '<svg width="24" height="24" viewBox="0 0 24 24">' + UC.iconFormen("arrowUpRight") + '</svg>';
-    var arrowDown = '<svg width="24" height="24" viewBox="0 0 24 24">' + UC.iconFormen("arrowDownRight") + '</svg>';
+    var arrowUp   = '<svg width="24" height="24" viewBox="0 0 24 24">' + amFormen("arrowUpRight") + '</svg>';
+    var arrowDown = '<svg width="24" height="24" viewBox="0 0 24 24">' + amFormen("arrowDownRight") + '</svg>';
     var statusPill = item.status ? statusControlHtml(item) : '';
 
     var meta = '<div class="uo-meta-grid">'+
@@ -1769,14 +1783,17 @@
      direkt statt ueber das Kit: dieselben Feather-Pfade, die UC.icon("plus")/("check") liefert,
      nur ohne Abhaengigkeit an einer Stelle, die nachweislich faellt. */
   var OPPC_PLUS  = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
-                   'stroke-linecap="round" stroke-linejoin="round">' + UC.iconFormen("plus") + '</svg>';
+                   'stroke-linecap="round" stroke-linejoin="round">' + amFormen("plus") + '</svg>';
   var OPPC_CHECK = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" ' +
-                   'stroke-linecap="round" stroke-linejoin="round">' + UC.iconFormen("check") + '</svg>';
-  var OPPC_SPIN  = '<svg width="24" height="24" class="am-oppc-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round">' + UC.iconFormen("loader") + '</svg>';
+                   'stroke-linecap="round" stroke-linejoin="round">' + amFormen("check") + '</svg>';
+  /* Funktion statt Konstante: der Wert braucht amFormen, und das braucht core --
+     auf Modulebene ist core beim Laden dieser Datei nicht garantiert da (siehe die
+     Boot-Wiederholung im Kopf). Ausgewertet wird jetzt beim ersten Gebrauch. */
+  function OPPC_SPIN(){ return '<svg width="24" height="24" class="am-oppc-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round">' + amFormen("loader") + '</svg>'; }
   function _oppcApplyState(btn, state){
     var lab = btn.querySelector('.am-oppc-label'), ic = btn.querySelector('.am-oppc-ic');
     btn.classList.remove('is-loading', 'is-exists');
-    if (state === 'loading'){ btn.classList.add('is-loading'); btn.disabled = true; if (ic) ic.innerHTML = OPPC_SPIN; if (lab) lab.textContent = L().oppAdding; }
+    if (state === 'loading'){ btn.classList.add('is-loading'); btn.disabled = true; if (ic) ic.innerHTML = OPPC_SPIN(); if (lab) lab.textContent = L().oppAdding; }
     else if (state === 'exists'){ btn.classList.add('is-exists'); btn.disabled = true; if (ic) ic.innerHTML = OPPC_CHECK; if (lab) lab.textContent = L().oppExists; }
     else { btn.disabled = false; if (ic) ic.innerHTML = OPPC_PLUS; if (lab) lab.textContent = L().oppAdd; }
   }
@@ -2736,7 +2753,7 @@
     var titel = escAttr(L().galleryBack || 'All categories');
     return '<button class="am-gallery-back am-gallery-back-ic" type="button" data-gallery-back' +
            ' aria-label="' + titel + '" data-tip="' + titel + '">' +
-           '<svg width="24" height="24" viewBox="0 0 24 24">' + UC.iconFormen("chevronLeft") + '</svg></button>';
+           '<svg width="24" height="24" viewBox="0 0 24 24">' + amFormen("chevronLeft") + '</svg></button>';
   }
   function renderGalleryNow(){
     var label = root.querySelector('#am-suggested-label');
@@ -2756,7 +2773,7 @@
         return '<button class="am-cat-card'+(full ? ' am-cat-card-full' : '')+'" type="button" data-cat="'+i+'">'+
           '<span class="am-cat-ic">'+(GALLERY_ICONS[i] || ICON.trend)+'</span>'+
           '<span class="am-cat-name">'+esc(cat.name)+'</span>'+
-          '<span class="am-cat-chev"><svg width="24" height="24" viewBox="0 0 24 24">' + UC.iconFormen("chevronRight") + '</svg></span>'+
+          '<span class="am-cat-chev"><svg width="24" height="24" viewBox="0 0 24 24">' + amFormen("chevronRight") + '</svg></span>'+
         '</button>';
       }
       var repIdx = -1;
@@ -2767,7 +2784,7 @@
           '<span class="am-cat-ic">'+(GALLERY_ICONS[repIdx] || ICON.fileText)+'</span>'+
           '<span class="am-cat-text"><span class="am-cat-label">'+esc(g[repIdx].name)+'</span>'+
             '<span class="am-cat-desc">'+esc(g[repIdx].desc || 'Full reports on your AI visibility')+'</span></span>'+
-          '<span class="am-cat-chev"><svg width="24" height="24" viewBox="0 0 24 24">' + UC.iconFormen("chevronRight") + '</svg></span>'+
+          '<span class="am-cat-chev"><svg width="24" height="24" viewBox="0 0 24 24">' + amFormen("chevronRight") + '</svg></span>'+
         '</button>';
       }
       html += '<div class="am-cat-grid">' + g.map(function(cat, i){
@@ -2798,7 +2815,7 @@
         var grp = o.group || 'd';
         if (grp !== prevGroup){ menu += '<div class="am-rep-range-sep"></div>'; prevGroup = grp; }
         menu += '<button class="am-rep-range-opt'+(o.id===_reportRange?' is-sel':'')+'" type="button" data-rep-range="'+escAttr(o.id)+'">'+esc(o.label)+
-          '<span class="am-rep-range-check"><svg width="24" height="24" viewBox="0 0 24 24">' + UC.iconFormen("check") + '</svg></span></button>';
+          '<span class="am-rep-range-check"><svg width="24" height="24" viewBox="0 0 24 24">' + amFormen("check") + '</svg></span></button>';
       });
       var rhtml = '<div class="am-gallery-head am-rep-head">'+
         zurueckKnopfHtml()+
@@ -2807,9 +2824,9 @@
         repTopicsMarkup(de)+
         '<div class="am-rep-range-wrap">'+
           '<button class="am-rep-range" type="button" data-rep-range-toggle>'+
-            '<svg width="24" height="24" class="am-rep-cal" viewBox="0 0 24 24">' + UC.iconFormen("calendar") + '</svg>'+
+            '<svg width="24" height="24" class="am-rep-cal" viewBox="0 0 24 24">' + amFormen("calendar") + '</svg>'+
             '<span class="am-rep-range-lbl">'+esc(repRangeLabel())+'</span>'+
-            '<svg width="24" height="24" class="am-rep-range-chev" viewBox="0 0 24 24">' + UC.iconFormen("chevronDown") + '</svg>'+
+            '<svg width="24" height="24" class="am-rep-range-chev" viewBox="0 0 24 24">' + amFormen("chevronDown") + '</svg>'+
           '</button>'+
           '<div class="am-rep-range-menu">'+menu+'</div>'+
         '</div>'+
@@ -2819,7 +2836,7 @@
           '<span class="am-rep-ic">'+(ICON[r.icon] || ICON.trend)+'</span>'+
           '<span class="am-rep-text"><span class="am-rep-label">'+esc(r.label)+'</span><span class="am-rep-desc">'+esc(r.desc || '')+'</span></span>'+
           '<span class="am-rep-edit" data-rep-edit role="button" tabindex="-1" aria-label="Edit prompt" title="Edit prompt">'+ICON.pencil+'</span>'+
-          '<span class="am-rep-go"><svg width="24" height="24" viewBox="0 0 24 24">' + UC.iconFormen("chevronRight") + '</svg></span>'+
+          '<span class="am-rep-go"><svg width="24" height="24" viewBox="0 0 24 24">' + amFormen("chevronRight") + '</svg></span>'+
         '</button>';
       }).join('') + '</div>';
       elSuggGrid.innerHTML = rhtml;
@@ -2838,7 +2855,7 @@
           var label = (q && typeof q === 'object') ? (q.label || q.prompt || '') : q;
           var prompt = (q && typeof q === 'object') ? (q.prompt || q.label || '') : q;
           return '<button class="am-gallery-prompt" type="button" data-q="'+escAttr(prompt)+'"><span>'+esc(label)+'</span>'+
-            '<span class="am-gallery-prompt-chev"><svg width="24" height="24" viewBox="0 0 24 24">' + UC.iconFormen("chevronRight") + '</svg></span></button>';
+            '<span class="am-gallery-prompt-chev"><svg width="24" height="24" viewBox="0 0 24 24">' + amFormen("chevronRight") + '</svg></span></button>';
         }).join('')+
       '</div></div>';
     }).join('');
@@ -4000,7 +4017,7 @@
              von core nicht -- ein Katalogeintrag allein waere ohne Wirkung geblieben. */
           (m.desc ? '<span class="am-eff-opt-desc">' + esc(UCt(m.desc)) + '</span>' : '') +
         '</span>' +
-        '<svg width="24" height="24" class="am-eff-check" viewBox="0 0 24 24" aria-hidden="true">' + UC.iconFormen("check") + '</svg>' +
+        '<svg width="24" height="24" class="am-eff-check" viewBox="0 0 24 24" aria-hidden="true">' + amFormen("check") + '</svg>' +
       '</button>';
     }).join('');
   }
@@ -4195,7 +4212,10 @@
   }
 
   /* ===== "Ask Mira" selection -> quoted gray chip (prompt_research X-delete mechanic) ===== */
-  var QUOTE_X = '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">' + UC.iconFormen("x") + '</svg>';
+  /* Funktion statt Konstante: der Wert braucht amFormen, und das braucht core --
+     auf Modulebene ist core beim Laden dieser Datei nicht garantiert da (siehe die
+     Boot-Wiederholung im Kopf). Ausgewertet wird jetzt beim ersten Gebrauch. */
+  function QUOTE_X(){ return '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">' + amFormen("x") + '</svg>'; }
 
   function getQuoteValue(){
     if (!elQuoteSlot) return '';
@@ -4214,7 +4234,7 @@
     span.innerHTML =
       '<span class="am-inline-quote-body">' +
         '<span class="am-inline-quote-label">\u201c' + esc(value) + '\u201d</span>' +
-        '<span class="am-inline-quote-remove" role="button" tabindex="-1" aria-label="Zitat entfernen" title="Entfernen">' + QUOTE_X + '</span>' +
+        '<span class="am-inline-quote-remove" role="button" tabindex="-1" aria-label="Zitat entfernen" title="Entfernen">' + QUOTE_X() + '</span>' +
       '</span>';
     return span;
   }
@@ -4305,7 +4325,13 @@
       })
     : null;
 
-  var XSVG = '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">' + UC.iconFormen("x") + '</svg>';
+  /* Funktion statt Konstante: der Wert braucht amFormen, und das braucht core --
+
+     auf Modulebene ist core beim Laden dieser Datei nicht garantiert da (siehe die
+
+     Boot-Wiederholung im Kopf). Ausgewertet wird jetzt beim ersten Gebrauch. */
+
+  function XSVG(){ return '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">' + amFormen("x") + '</svg>'; }
 
   /* ---- Die gesetzten Filter als Chips IM Suchfeld ---------------------------------------- */
   function pickChipsZeichnen(){
@@ -4319,7 +4345,7 @@
         '<span class="am-pick-chip-v"' + (c.dot ? ' style="color:' + esc(c.dot) + '"' : '') + '>' +
           esc(c.label) + '</span>' +
         '<button class="am-pick-chip-x" type="button" data-rm="' + esc(c.fach) + '" ' +
-          'aria-label="Remove filter">' + XSVG + '</button>' +
+          'aria-label="Remove filter">' + XSVG() + '</button>' +
       '</span>';
     }).join('');
     /* Der Platzhalter macht Platz: stehen Chips im Feld, waere er eine zweite Aufforderung. */
@@ -4791,7 +4817,7 @@
         ? ((UCg && UCg.icon) ? UCg.icon('zap', 2) : '')
         : (String(it.type) === 'brand'
             ? '<span class="am-pick-tag-av-t">' + esc(String(lbl).charAt(0).toUpperCase()) + '</span>'
-            : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">' + UC.iconFormen("globe") + '</svg>');
+            : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">' + amFormen("globe") + '</svg>');
       var rueck = '<span class="am-pick-tag-av-fb">' + inner + '</span>';
       return '<span class="am-pick-tag up-entchip is-lifted is-static" data-i="' + i + '">' +
         '<span class="' + kl + '">' +
@@ -4801,7 +4827,7 @@
         '</span>' +
         '<span class="am-pick-tag-lbl">' + esc(lbl) + '</span>' +
         '<button class="am-pick-tag-x" type="button" aria-label="Remove reference" data-x="' + i + '">' +
-          '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">' + UC.iconFormen("x") + '</svg>' +
+          '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">' + amFormen("x") + '</svg>' +
         '</button>' +
       '</span>';
     }).join('');
@@ -4923,7 +4949,7 @@
   elAskSel.type = 'button';
   elAskSel.className = 'am-ask-sel';
   elAskSel.id = 'am-ask-sel';
-  elAskSel.innerHTML = '<svg width="24" height="24" class="am-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + UC.iconFormen("chatDots") + '</svg><span>Ask Mira</span>';
+  elAskSel.innerHTML = '<svg width="24" height="24" class="am-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + amFormen("chatDots") + '</svg><span>Ask Mira</span>';
   root.appendChild(elAskSel);
 
   var _askSelText = '';
@@ -6468,8 +6494,8 @@
   }
   function showUrlPop(wrap){
     var visit = visitUrlFor(wrap);
-    var iconVisit = '<svg width="24" height="24" viewBox="0 0 24 24">' + UC.iconFormen("link") + '</svg>';
-    var iconDetail = '<svg width="24" height="24" viewBox="0 0 24 24">' + UC.iconFormen("fileText") + '</svg>';
+    var iconVisit = '<svg width="24" height="24" viewBox="0 0 24 24">' + amFormen("link") + '</svg>';
+    var iconDetail = '<svg width="24" height="24" viewBox="0 0 24 24">' + amFormen("fileText") + '</svg>';
     urlPop.innerHTML =
       '<button type="button" data-pop="detail" class="is-primary">'+iconDetail+'<span>'+esc(L().urlDetail)+'</span></button>' +
       '<button type="button" data-pop="visit">'+iconVisit+'<span>'+esc(urlPreview(visit, 34))+'</span></button>';
