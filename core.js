@@ -15467,23 +15467,23 @@
           '<path d="M7.5 16.5C6.10355 16.5 5.40533 16.5 4.84402 16.3036C3.83866 15.9518 3.0482 15.1613 2.69641 14.156C2.5 13.5947 2.5 12.8964 2.5 11.5V9.5C2.5 6.20017 2.5 4.55025 3.52513 3.52513C4.55025 2.5 6.20017 2.5 9.5 2.5H11.5C12.8964 2.5 13.5947 2.5 14.156 2.69641C15.1613 3.0482 15.9518 3.83866 16.3036 4.84402C16.5 5.40533 16.5 6.10355 16.5 7.5"/>',
     /* Lucide chart-pie: der Doughnut-Knopf des Umschalters. Stand bisher als rohes SVG im
        Bubble-Markup des Combo-Charts -- jetzt im Kit, damit domain-detail denselben Knopf hat. */
-    /* CHARTRING UND NICHT PIECHART (23.09.). Der Umschalter steht ueber einem DOUGHNUT --
-       einem Ring mit Loch -- und PieChart zeichnet ein Tortenstueck. Zwei verschiedene
-       Diagrammarten, und der Knopf versprach die falsche. ChartRing ist zwei Kreise
-       (r=4 innen, r=10 aussen) mit drei Trennstrichen: genau das Bild daneben.
-       Woertlich aus @hugeicons/core-free-icons@4.3.5, ChartRingIcon. */
-    donut:    '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/>' +
-              '<path d="M9 9L5 5M16 12H22M12 16V22"/>',
+    /* PIECHART, und das bleibt so. Am 23.09. habe ich es einmal auf ChartRing gedreht,
+       weil ein Doughnut-Chart ein Ring ist -- der Nutzer hat es zurueckgeholt: der Knopf
+       trug PieChart bereits richtig. Wer hier wieder "aber ein Doughnut hat ein Loch"
+       denkt, hat dieselbe Runde schon gekostet.
+       Woertlich aus @hugeicons/core-free-icons@4.3.5, PieChartIcon. */
+    donut:    '<path d="M20.5 15.8278C17.9985 21.756 9.86407 23.4835 5.20143 18.8641C0.629484 14.3347 2.04493 6.12883 8.05653 3.5"/>' +
+              '<path d="M17.6831 12.5C19.5708 12.5 20.5146 12.5 21.1241 11.655C21.1469 11.6234 21.1848 11.5667 21.2052 11.5336C21.7527 10.6471 21.4705 9.966 20.9063 8.60378C20.3946 7.36853 19.6447 6.24615 18.6993 5.30073C17.7538 4.35531 16.6315 3.60536 15.3962 3.0937C14.034 2.52946 13.3529 2.24733 12.4664 2.79477C12.4333 2.81523 12.3766 2.85309 12.345 2.87587C11.5 3.4854 11.5 4.42922 11.5 6.31686V8.42748C11.5 10.3473 11.5 11.3072 12.0964 11.9036C12.6928 12.5 13.6527 12.5 15.5725 12.5H17.6831Z"/>',
     /* chart-bar-decreasing, dieselbe Form, die TOOLBAR_SEL auf die Combo-Knoepfe stempelt. */
-    /* CHARTBARDECREASING UND NICHT CHARTNOAXESCOLUMNDECREASING (23.09.). Hugeicons
-       unterscheidet die beiden so, wie die Diagrammlehre es tut: BAR laeuft waagerecht,
-       COLUMN senkrecht. Der Umschalter steht ueber einer WAAGERECHTEN Balkenliste
-       (makeBarList, Beschriftung links, Balken rechts -- siehe core: "doughnut, or a
-       horizontal bar list"), und ich hatte beim Umstellen am 22.09. die Spalten-Fassung
-       genommen. Drei waagerechte Balken absteigender Laenge plus Achse.
-       Woertlich aus @hugeicons/core-free-icons@4.3.5, ChartBarDecreasingIcon. */
+    /* CHARTBARBIG, angefordert am 23.09. Zwei gefuellte waagerechte Balken plus die Achse --
+       das Bild der Balkenliste daneben. Davor standen hier nacheinander
+       ChartNoAxesColumnDecreasing (senkrechte Spalten, falsch) und ChartBarDecreasing
+       (drei duenne Striche); der Name bleibt chartBarDec, weil zwei Umschalter und ein
+       Stempeleintrag ihn tragen und der Schluessel sagt, WOFUER das Zeichen steht.
+       Woertlich aus @hugeicons/core-free-icons@4.3.5, ChartBarBigIcon. */
     chartBarDec: '<path d="M3 3V13C3 16.7712 3 18.6569 4.17157 19.8284C5.34315 21 7.22876 21 11 21H21"/>' +
-                 '<path d="M7 6H19"/><path d="M7 11H15"/><path d="M7 16H11"/>',
+                 '<path d="M7 8V9C7 9.55228 7.44772 10 8 10H18C18.5523 10 19 9.55228 19 9V8C19 7.44772 18.5523 7 18 7H8C7.44772 7 7 7.44772 7 8Z"/>' +
+                 '<path d="M7 15V16C7 16.5523 7.44772 17 8 17H14C14.5523 17 15 16.5523 15 16V15C15 14.4477 14.5523 14 14 14H8C7.44772 14 7 14.4477 7 15Z"/>',
     barChart2:'<path d="M7 19.5V4.5C7 4.03406 7 3.80109 6.92388 3.61732C6.82239 3.37229 6.62771 3.17761 6.38268 3.07612C6.19891 3 5.96594 3 5.5 3C5.03406 3 4.80109 3 4.61732 3.07612C4.37229 3.17761 4.17761 3.37229 4.07612 3.61732C4 3.80109 4 4.03406 4 4.5V19.5C4 19.9659 4 20.1989 4.07612 20.3827C4.17761 20.6277 4.37229 20.8224 4.61732 20.9239C4.80109 21 5.03406 21 5.5 21C5.96594 21 6.19891 21 6.38268 20.9239C6.62771 20.8224 6.82239 20.6277 6.92388 20.3827C7 20.1989 7 19.9659 7 19.5Z"/>' +
                '<path d="M13.5 19.5V15.5C13.5 15.0341 13.5 14.8011 13.4239 14.6173C13.3224 14.3723 13.1277 14.1776 12.8827 14.0761C12.6989 14 12.4659 14 12 14C11.5341 14 11.3011 14 11.1173 14.0761C10.8723 14.1776 10.6776 14.3723 10.5761 14.6173C10.5 14.8011 10.5 15.0341 10.5 15.5V19.5C10.5 19.9659 10.5 20.1989 10.5761 20.3827C10.6776 20.6277 10.8723 20.8224 11.1173 20.9239C11.3011 21 11.5341 21 12 21C12.4659 21 12.6989 21 12.8827 20.9239C13.1277 20.8224 13.3224 20.6277 13.4239 20.3827C13.5 20.1989 13.5 19.9659 13.5 19.5Z"/>' +
                '<path d="M20 19.5V9.5C20 9.03406 20 8.80109 19.9239 8.61732C19.8224 8.37229 19.6277 8.17761 19.3827 8.07612C19.1989 8 18.9659 8 18.5 8C18.0341 8 17.8011 8 17.6173 8.07612C17.3723 8.17761 17.1776 8.37229 17.0761 8.61732C17 8.80109 17 9.03406 17 9.5V19.5C17 19.9659 17 20.1989 17.0761 20.3827C17.1776 20.6277 17.3723 20.8224 17.6173 20.9239C17.8011 21 18.0341 21 18.5 21C18.9659 21 19.1989 21 19.3827 20.9239C19.6277 20.8224 19.8224 20.6277 19.9239 20.3827C20 20.1989 20 19.9659 20 19.5Z"/>',
