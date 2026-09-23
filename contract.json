@@ -701,6 +701,7 @@
   "data-preset",
   "data-processing",
   "data-processing2",
+  "data-prompt-fn",
   "data-range-apply-delay",
   "data-range-apply-fn",
   "data-range-fn",
@@ -3118,7 +3119,7 @@
   "fnattrs": 103,
   "globals": 187,
   "payloadkeys": 102,
-  "dataattrs": 253,
+  "dataattrs": 254,
   "klassen": 2232,
   "keyframes": 66
  }

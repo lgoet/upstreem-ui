@@ -360,8 +360,14 @@
       elPin.hidden = !!OHNE_PIN[t];
       /* Der Weg zum uebergeordneten Prompt gibt es nur bei einer KI-Antwort -- sie ist das
          einzige Element, das einen Prompt UEBER sich hat. Im Ladezustand weg, wie Stift und
-         Globus: welcher Typ kommt, weiss die Leiste da noch nicht. */
-      elPrompt.hidden = laedt || (t !== "response");
+         Globus: welcher Typ kommt, weiss die Leiste da noch nicht.
+         UND NUR, WENN ER VERDRAHTET IST (23.09.). data-prompt-fn traegt den Namen der
+         Bubble-Funktion; fehlt das Attribut, feuerte der Klick bisher ins Leere -- der Knopf war
+         da, sah aus wie jeder andere und tat nichts. Gemeldet als "Klick auf parent prompt".
+         Dieselbe Regel, die zwei Zeilen weiter unten fuer den Mira-Knopf steht und dort
+         woertlich begruendet ist: ein Knopf, dessen Klick nichts tut, ist schlimmer als keiner.
+         Damit macht das fehlende Attribut sich selbst sichtbar, statt still zu bleiben. */
+      elPrompt.hidden = laedt || (t !== "response") || !root.getAttribute("data-prompt-fn");
       /* Der Mira-Knopf nur, wenn der Bezug VOLLSTAENDIG ist -- miraBezug() entscheidet das, an
          einer Stelle: bei der Domain reicht der Name, Marke und Prompt brauchen zusaetzlich ihre
          Kennung, die URL ihre Adresse. Ein Knopf, dessen Klick nichts tut, waere schlimmer als

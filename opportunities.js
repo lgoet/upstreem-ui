@@ -134,22 +134,18 @@
   });
   try { (inlinePortal ? root : document.body).appendChild(portal); } catch(_){}
 
-  /* TOP LAYER, nicht z-index. A z-index race against the host is not winnable: this drawer sat at
-     9900, and a Bubble wrapper around the component with a higher z-index (they hand those out
-     freely) puts the ENTIRE board above it -- reproduced exactly, the drawer opened correctly and
-     painted behind .uo-col-head. No number fixes that, because the number is compared inside the
-     host's stacking context, not against it.
-     The popover API moves the element into the browser's top layer, which is painted after the
-     whole document and is unaffected by any ancestor's stacking context or z-index. "manual" so it
-     is not light-dismissed: the scrim and Escape already handle closing, and auto-dismiss would
-     also close it on every click inside the board behind it.
-     Feature-detected: where showPopover does not exist the element stays exactly as it was, still
-     body-mounted with its 9900/9895 pair, i.e. the previous behaviour. */
-  var canPopover = !inlinePortal &&
-    typeof portal.showPopover === "function" && typeof portal.hidePopover === "function";
-  if (canPopover) { try { portal.setAttribute("popover", "manual"); } catch(_){ canPopover = false; } }
-  function portalShow(){ if (canPopover){ try { portal.showPopover(); } catch(_){} } }
-  function portalHide(){ if (canPopover){ try { portal.hidePopover(); } catch(_){} } }
+  /* KEIN TOP LAYER MEHR (23.09. angefordert). Hier stand die oberste Ebene des Browsers, und die
+     Begruendung war richtig -- aber nur fuer den Zustand, in dem sie geschrieben wurde: damals
+     steckte die Schublade noch IN der Komponente, und ein Bubble-Wrapper mit hoeherem z-index
+     legte das ganze Board darueber. Gegen einen Vorfahren ist kein z-index zu gewinnen.
+     Seither haengt der Portal-Kasten am <body> (siehe appendChild oben). Damit gibt es den
+     Vorfahren nicht mehr, gegen den man verlieren koennte: Schleier und Schublade stehen im
+     Stapelkontext des Wurzelelements, und ihre 9903/9904 werden direkt gegen die Drawer der App
+     (9905-9930) verglichen -- also genau eine Ebene darunter, und das ist die Anforderung.
+     Die oberste Ebene konnte das NICHT leisten: sie kennt kein Verhaeltnis zu z-index-Werten. Was
+     dort liegt, liegt ueber allem, auch ueber den Drawern. Genau das war die Meldung.
+     Der Landingpage-Fall (inlinePortal) hat die oberste Ebene ohnehin nie benutzt. */
+
 
   /* ---------- state ---------- */
   /* Standard sind PENDING und IN PROGRESS (12.09. angefordert). "Done" ist erledigte Arbeit: sie
@@ -700,7 +696,6 @@
     modal.innerHTML = detailHtml(item);
     if (closeTimer){ clearTimeout(closeTimer); closeTimer = null; }
     portal.setAttribute('data-theme', isDark() ? 'dark' : 'light');   // the portal is outside the root's theme attribute
-    portalShow();
     portal.classList.add('detail-open');
     void modal.offsetWidth;
     requestAnimationFrame(function(){ portal.classList.add('detail-in'); });
@@ -746,7 +741,7 @@
     portal.classList.remove('detail-in');
     lockPageScroll(false);
     // 200ms = the 180ms slide-out plus a small buffer, same number the host app's drawer uses
-    closeTimer = setTimeout(function(){ portal.classList.remove('detail-open'); portalHide(); if (modalEl) modalEl.innerHTML = ''; }, 200);
+    closeTimer = setTimeout(function(){ portal.classList.remove('detail-open'); if (modalEl) modalEl.innerHTML = ''; }, 200);
   }
   /* Scroll-lock, matching the host app's drawer system: while a drawer is open #main stops
      scrolling, and its position is restored on close so the page does not jump. Everything here is

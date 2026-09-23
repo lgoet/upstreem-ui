@@ -63,17 +63,37 @@
        stand im Markup, der Zuhoerer dazu fehlte. */
     if (UC.makeTooltips) UC.makeTooltips(root, function(){ return isDark; });
 
-    /* This page has no sticky header (no data-sticky-top concept), so it never calls
-       UC.makeSticky — but the sort dropdown is still a plain position:absolute child that needs
-       to escape any overflow:hidden Bubble container shorter than the menu itself. Unclip once,
-       unconditionally, and never re-clip (unlike the sticky-header path, which only unclips while
-       actually stuck) — this page's menus must never be cut off, full stop. */
+    /* Der Sortier-Dropdown ist ein position:absolute-Kind und muss aus jedem Bubble-Behaelter
+       heraus, der kuerzer ist als das Menue. Einmal entklippen, bedingungslos, und nie wieder
+       zuklippen (anders als der Klebe-Pfad, der nur waehrend des Klebens entklippt) -- die Menues
+       dieser Seite duerfen unter keinen Umstaenden abgeschnitten werden. */
     UC.unclipAncestors(root, false);
 
     var elHeadCount = root.querySelector(".up-head-count");
     var elHeading   = root.querySelector(".up-heading");
     var elHeadTools = root.querySelector(".up-head-tools");
     var elHead      = root.querySelector(".up-head");
+    /* DIESELBE KLEBELEISTE WIE DIE NACHBARN (23.09.). Bis heute stand hier ausdruecklich "diese
+       Seite hat keinen klebenden Kopf" -- und das war der Fehler: die Topics-Verwaltung steht auf
+       derselben Seite wie prompts-table und responses-table, unter demselben Seitenkopf, und die
+       beiden kleben bei 171px. Ohne makeSticky scrollt diese Toolbar einfach weiter und
+       verschwindet zur Haelfte hinter dem Kopf, statt sauber darunter stehenzubleiben. Genau so
+       gemeldet ("Topics Management toolbar obere Haelfte"), und der Nutzer hat den Kopf im
+       Inspektor als das darueberliegende Element identifiziert.
+       Ohne data-sticky-top am Element greift der Standard aus core.css (171px) -- derselbe Wert,
+       den die Nachbarvorlagen ausdruecklich setzen. Ein eingebautes Element wirkt damit sofort,
+       ohne dass jemand ein Attribut nachtragen muss. */
+    /* makeSticky STELLT nur bereit, es schaltet nicht ein -- applySticky ist der Schalter, und
+       den ruft der Aufrufer. Wortgleich die drei Zeilen aus prompts-table.js (dort 4701-4703):
+       einmal sofort, und danach bei jeder Fensteraenderung, weil die Klebeleiste unter 1000px
+       Breite ausgeht. Ohne den Aufruf bleibt die Klasse up-sticky aus und die CSS greift nie --
+       am 23.09. genau so gemessen (position blieb static). */
+    if (elHead && UC.makeSticky){
+      var _sticky = UC.makeSticky(root, elHead);
+      if (UC.aufResize) UC.aufResize(function(){ _sticky.applySticky(); });
+      else window.addEventListener("resize", UC.rafThrottle(function(){ _sticky.applySticky(); }));
+      _sticky.applySticky();
+    }
     var elSearch    = root.querySelector(".up-search");
     var elSearchIn  = root.querySelector(".up-search-input");
     var elSort      = root.querySelector(".up-sort");
