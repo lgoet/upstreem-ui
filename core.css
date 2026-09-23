@@ -2892,8 +2892,16 @@
 
 /* ---------- bar-mode skeleton (same shimmer, shaped like .up-bar-track rows) ---------- */
 .up-bars-sk { display: flex; flex-direction: column; gap: 0; width: 100%; pointer-events: none; }
-.up-bar-sk-row { display: flex; align-items: center; padding: 5px 0; }
-.up-bar-sk-track { display: block; height: 32px; border-radius: 8px; background: var(--vc-sk); position: relative; overflow: hidden; }
+/* DIE HOEHE DER ECHTEN ZEILE, NICHT EINE EIGENE (23.09. gemeldet: "der skeleton des bar charts
+   clippt unten ueber die card grenze"). Gemessen in der Topics-Karte der Prompts-Tabelle: eine
+   echte Balkenzeile ist 26px hoch, fuenf davon 128px in einem 172px-Koerper. Das Skelett stand
+   auf 42 je Zeile -- fuenf davon 210px, also 38 ueber den Koerper und 4 sichtbar ueber die
+   Kartenkante hinaus (der Koerper zentriert mit justify-content: safe center, der Ueberlauf
+   verteilt sich also nach oben UND unten).
+   20 Spur + 2x3 Polster = 26, dieselbe Zeile wie daneben. Damit springt beim Wechsel vom
+   Skelett zur Liste auch nichts mehr. */
+.up-bar-sk-row { display: flex; align-items: center; padding: 3px 0; }
+.up-bar-sk-track { display: block; height: 20px; border-radius: 6px; background: var(--vc-sk); position: relative; overflow: hidden; }
 .up-bar-sk-track::after {
   content: ""; position: absolute; inset: 0;
   background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.14) 50%, rgba(255,255,255,0) 100%);
