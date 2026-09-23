@@ -656,6 +656,11 @@
     #ask-mira.side-ready .am-prev-panel { transition: transform 200ms ease; }
     #ask-mira.prev-open .am-prev-panel { transform: translateX(0); margin-right: 0; }
     .am-prev-scrim { display: block; }
+    /* HIER ist das Ausblenden richtig: in diesem Fenster liegt die Liste als Overlay ueber dem
+       Chat, daneben ist kein Platz. Oben stand diese Regel pauschal und traf damit auch den
+       Desktop, wo die Liste neben dem Chat sitzt. */
+    #ask-mira.prev-open .am-msgnav { opacity: 0; pointer-events: none; }
+    #ask-mira.prev-open:not(.is-side-left) .am-msgnav { right: 10px; }
   }
 
   @media (max-width: 720px) {
@@ -1450,7 +1455,18 @@
   }
   /* ===== right-edge message navigation (scroll spy) ===== */
   .am-msgnav { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); z-index: 30; display: none; transition: opacity 120ms ease; }
-  #ask-mira.prev-open .am-msgnav { opacity: 0; pointer-events: none; }
+  /* NEBEN DER CHATLISTE, NICHT DARAUF (23.09. gemeldet). Hier stand ein pauschales opacity: 0,
+     sobald die Liste offen ist -- gedacht fuer den schmalen Fall, in dem die Liste als Overlay
+     ueber dem Chat liegt. Auf dem Desktop ist sie aber ein Flex-Geschwister: der Chat endet an
+     ihrer Kante, und die Sprungleiste stand trotzdem an right: 10px der WURZEL, also auf der
+     Liste. Sie rueckt jetzt um deren Breite plus denselben Abstand nach innen.
+     Nur bei prev-open: zugeklappt ist die Liste um ihre volle Breite ausgerueckt (margin-right
+     negativ), dann sind die 10px richtig.
+     Steht die Liste LINKS, aendert sich rechts nichts -- die Leiste haengt ohnehin am rechten
+     Rand, und der ist dann frei.
+     Das Ausblenden gilt weiter, aber nur noch im Overlay-Fall: die Regel steht jetzt im
+     @media (max-width: 720px) weiter unten. */
+  #ask-mira.prev-open:not(.is-side-left) .am-msgnav { right: calc(var(--am-side-w) + 10px); }
   #ask-mira.has-msgnav .am-msgnav { display: block; }
   .am-msgnav-ticks { width: 16px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
   .am-msgnav-tick { width: 16px; height: 4px; border-radius: var(--up-r-voll); background: color-mix(in srgb, var(--am-text) 30%, transparent); transition: background 120ms ease; }

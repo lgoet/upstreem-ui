@@ -7454,9 +7454,16 @@
        Hier wird die WIRKLICHE Kante gelesen und der Rest zurueckgeschoben -- ein Layoutlauf
        mehr, einmal pro Oeffnen, und dafuer kann das Menue unter keinen Umstaenden mehr
        rechts herauslaufen. Dieselben 8px wie in der Rechnung oben. */
-    var echt = elChatMenu.getBoundingClientRect();
-    var ueber = echt.right - (rechts - 8);
-    if (ueber > 0){
+    /* ZWEI Runden, und die zweite ist kein Aberglaube: steckt das Menue in einem Vorfahren mit
+       transform/filter/will-change, ist sein position:fixed dort eingesperrt -- style.left zaehlt
+       dann ab dessen Kante, getBoundingClientRect liest aber den Viewport. Eine Runde korrigiert
+       in so einem Fall in die richtige Richtung, trifft aber nicht unbedingt. Die zweite raeumt
+       den Rest ab. Mehr als zwei braucht es nicht: nach der zweiten ist der Fehler quadratisch
+       klein. */
+    for (var vers = 0; vers < 2; vers++){
+      var echt = elChatMenu.getBoundingClientRect();
+      var ueber = echt.right - (rechts - 8);
+      if (ueber <= 0.5) break;
       left = Math.max(8, left - ueber);
       elChatMenu.style.left = Math.round(left) + 'px';
     }
