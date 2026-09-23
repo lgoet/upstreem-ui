@@ -15487,6 +15487,15 @@
     donut:    '<path d="M20.5 15.8278C17.9985 21.756 9.86407 23.4835 5.20143 18.8641C0.629484 14.3347 2.04493 6.12883 8.05653 3.5"/>' +
               '<path d="M17.6831 12.5C19.5708 12.5 20.5146 12.5 21.1241 11.655C21.1469 11.6234 21.1848 11.5667 21.2052 11.5336C21.7527 10.6471 21.4705 9.966 20.9063 8.60378C20.3946 7.36853 19.6447 6.24615 18.6993 5.30073C17.7538 4.35531 16.6315 3.60536 15.3962 3.0937C14.034 2.52946 13.3529 2.24733 12.4664 2.79477C12.4333 2.81523 12.3766 2.85309 12.345 2.87587C11.5 3.4854 11.5 4.42922 11.5 6.31686V8.42748C11.5 10.3473 11.5 11.3072 12.0964 11.9036C12.6928 12.5 13.6527 12.5 15.5725 12.5H17.6831Z"/>',
     /* chart-bar-decreasing, dieselbe Form, die TOOLBAR_SEL auf die Combo-Knoepfe stempelt. */
+    /* DIE ZWEI ZEICHEN, DIE MIRA SELBST FUEHRTE (23.09.). Sie standen hart im Markup von
+       ask-mira.js -- Hugeicons waren es schon, nur eben nicht aus dem Satz. Beim Aufraeumen
+       der 29 dortigen Inline-Zeichen waren das die einzigen zwei ohne Entsprechung hier.
+       chatDots ist NICHT messageCircle: der traegt nur den Kreis, dieser die drei Punkte
+       darin. messageCircle steht im Power-Dashboard und bleibt, wie er ist. */
+    link:     '<path d="M9.14339 10.691L9.35031 10.4841C11.329 8.50532 14.5372 8.50532 16.5159 10.4841C18.4947 12.4628 18.4947 15.671 16.5159 17.6497L13.6497 20.5159C11.671 22.4947 8.46279 22.4947 6.48405 20.5159C4.50532 18.5372 4.50532 15.329 6.48405 13.3503L6.9484 12.886"/>' +
+              '<path d="M17.0516 11.114L17.5159 10.6497C19.4947 8.67095 19.4947 5.46279 17.5159 3.48405C15.5372 1.50532 12.329 1.50532 10.3503 3.48405L7.48405 6.35031C5.50532 8.32904 5.50532 11.5372 7.48405 13.5159C9.46279 15.4947 12.671 15.4947 14.6497 13.5159L14.8566 13.309"/>',
+    chatDots: '<path d="M21.5 12C21.5 17.2467 17.2467 21.5 12 21.5C10.3719 21.5 8.8394 21.0904 7.5 20.3687C5.63177 19.362 4.37462 20.2979 3.26592 20.4658C3.09774 20.4913 2.93024 20.4302 2.80997 20.31C2.62741 20.1274 2.59266 19.8451 2.6935 19.6074C3.12865 18.5818 3.5282 16.6382 2.98341 15C2.6698 14.057 2.5 13.0483 2.5 12C2.5 6.75329 6.75329 2.5 12 2.5C17.2467 2.5 21.5 6.75329 21.5 12Z"/>' +
+              '<path d="M12.1257 12H12.0007M8.125 12H8M16.125 12H16M12.2507 12C12.2507 12.1381 12.1388 12.25 12.0007 12.25C11.8627 12.25 11.7507 12.1381 11.7507 12C11.7507 11.8619 11.8627 11.75 12.0007 11.75C12.1388 11.75 12.2507 11.8619 12.2507 12ZM8.25 12C8.25 12.1381 8.13807 12.25 8 12.25C7.86193 12.25 7.75 12.1381 7.75 12C7.75 11.8619 7.86193 11.75 8 11.75C8.13807 11.75 8.25 11.8619 8.25 12ZM16.25 12C16.25 12.1381 16.1381 12.25 16 12.25C15.8619 12.25 15.75 12.1381 15.75 12C15.75 11.8619 15.8619 11.75 16 11.75C16.1381 11.75 16.25 11.8619 16.25 12Z"/>',
     /* CHARTBARBIG -- LIEGENDE Balken, und sie bleiben liegend (23.09.). Bis heute drehte
        core.css jedes Balken-Zeichen der Umschalter um 90 Grad; diese Regel ist entfallen,
        siehe dort. Das Zeichen traegt seine Lage jetzt selbst, so wie jedes andere auch --
@@ -16238,6 +16247,12 @@
     if (!m) return ICON_MASS;
     return 'width="' + m[1] + '" height="' + m[2] + '"';
   }
+  /* NUR DIE FORMEN, ohne den svg-Rahmen. Fuer Markup, das seinen Rahmen selbst stellt --
+     etwa weil eine Klasse daran haengt, die die Groesse traegt. Genau der Fall in Mira, wo
+     29 Zeichen hart im Markup standen, weil icon() den Rahmen mitbringt und die Klasse
+     dabei verloren ging. Leerer String statt undefined: ein unbekannter Name soll ein
+     leeres Zeichen ergeben, nicht "undefined" im Markup. */
+  function iconFormen(name){ return ICON_PATHS[name] || ""; }
   function icon(name, strokeWidth){
     var f = ICON_FILLED[name];
     /* Ein Eintrag darf sein eigenes svg mitbringen, wenn er einen anderen viewBox braucht als den
@@ -16811,6 +16826,7 @@
     BUILD: BUILD,
     EMPTY_GRACE_MS: EMPTY_GRACE_MS,
     icon: icon,
+    iconFormen: iconFormen,
     /* Der Nachzug auch nach aussen: er laeuft von selbst mit jedem Wurzel-Lauf, aber ein
        Bauteil, das sein Markup selbst nachtraeglich einsetzt, kann ihn so gezielt anstossen --
        und ein Prueftand kann ihn messen. */

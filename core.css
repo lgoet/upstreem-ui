@@ -140,6 +140,12 @@
       --up-e-2: 0 10px 28px rgba(0,0,0,.14);   /* = --up-dd-shadow, hell */
       --up-e-3: 0 14px 34px rgba(0,0,0,.16);
       --up-e-4: 0 20px 48px rgba(0,0,0,.20);
+      /* DIE FUENFTE TIEFE: SEITLICH (23.09.). Die vier Stufen darueber werfen nach UNTEN --
+         fuer eine Schublade, die von rechts einfaehrt, ist das die falsche Richtung. Der Wert
+         stand bis heute vier Mal einzeln in den Dateien (Opportunity-Karte, Prompt Research,
+         Onboarding-Hilfe, Mira als Drawer), zweimal mit .15 und zweimal mit .18 -- vier
+         Schubladen, die nebeneinander nie zu sehen sind und deshalb auseinanderliefen. */
+      --up-e-drawer: -12px 0 32px rgba(0,0,0,.15);
       /* ===================================================================================== */
 
       /* --vc-muted ist um vier Einheiten dunkler als vorher (#6f737c), und das ist KEINE neue
@@ -428,6 +434,8 @@
       --up-e-2: 0 10px 28px rgba(0,0,0,.32);
       --up-e-3: 0 14px 34px rgba(0,0,0,.38);
       --up-e-4: 0 20px 48px rgba(0,0,0,.46);
+      /* Dunkel kraeftiger, dieselbe Staffelung wie bei den vier Stufen darueber. */
+      --up-e-drawer: -12px 0 32px rgba(0,0,0,.42);
       --vc-switch-bg: #232326; --vc-switch-border: #34343a; --vc-third: #808080;
       --vc-switch-pill: #28282c;
       --up-switch-off: #444444;   /* siehe hell */

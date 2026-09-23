@@ -1286,7 +1286,7 @@
      nach LINKS geworfen, weil beide am rechten Rand haengen und von dort hereinkommen. Hier
      standen zwei Lagen mit blauem Stich und eine eigene Dunkel-Fassung -- die faellt mit weg,
      der Drawer hat auch keine. */
-  box-shadow: -12px 0 32px rgba(0,0,0,.15);
+  box-shadow: var(--up-e-drawer);
   opacity: 0; transform: translateX(8px); pointer-events: none;
   transition: opacity var(--uob-t) var(--uob-ease), transform var(--uob-t) var(--uob-ease);
 }

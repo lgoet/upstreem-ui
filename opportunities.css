@@ -393,7 +393,7 @@
   position: fixed; top: 6px; right: 6px; bottom: 6px; z-index: 9904; width: min(720px, 86%);
   display: none; flex-direction: column;
   background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: 16px;
-  box-shadow: -12px 0 32px rgba(0,0,0,0.15); overflow: hidden;
+  box-shadow: var(--up-e-drawer); overflow: hidden;
   transform: translateX(110%); transition: transform 180ms ease-in;
   will-change: transform; backface-visibility: hidden;
 }

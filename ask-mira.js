@@ -164,7 +164,7 @@
     panel.setAttribute('aria-hidden', 'true');
     panel.innerHTML =
       '<div class="am-pick-search">' +
-        '<svg width="24" height="24" class="am-pick-sic" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 17L21 21"/><path d="M19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19C15.4183 19 19 15.4183 19 11Z"/></svg>' +
+        '<svg width="24" height="24" class="am-pick-sic" viewBox="0 0 24 24" aria-hidden="true">' + UC.iconFormen("search") + '</svg>' +
         /* Die gesetzten Filter stehen IM Feld, links vor der Eingabe -- wie in der Palette.
            Ein Filter, der ueber dem Feld stuende, waere eine Angabe ueber die Suche; hier ist
            er ein TEIL der Suche. */
@@ -200,7 +200,7 @@
     plus.setAttribute('aria-expanded', 'false');
     plus.setAttribute('data-tip', 'Add a reference');
     plus.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" class="am-ic" fill="none" stroke="currentColor" ' +
-      'stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.9922 4.00012V20.0001M19.9922 12.0001H3.99222"/></svg>';
+      'stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + UC.iconFormen("plus") + '</svg>';
 
     var eff = document.createElement('div');
     eff.className = 'am-eff'; eff.id = 'am-eff';
@@ -211,13 +211,13 @@
               'aria-expanded="false">' +
         '<span class="am-eff-name" id="am-eff-name"></span>' +
         '<span class="am-eff-lvl" id="am-eff-lvl"></span>' +
-        '<svg width="24" height="24" class="am-eff-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9"/></svg>' +
+        '<svg width="24" height="24" class="am-eff-chev" viewBox="0 0 24 24" aria-hidden="true">' + UC.iconFormen("chevronDown") + '</svg>' +
       '</button>' +
       '<div class="am-eff-menu" id="am-eff-menu" role="dialog" aria-label="Model and effort">' +
         '<button class="am-eff-head" type="button" id="am-eff-head" aria-expanded="false">' +
           '<span class="am-eff-hname" id="am-eff-hname"></span>' +
           '<span class="am-eff-hlvl" id="am-eff-hlvl"></span>' +
-          '<svg width="24" height="24" class="am-eff-hchev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.00005 18C9.00005 18 15 13.5811 15 12C15 10.4188 9 6 9 6"/></svg>' +
+          '<svg width="24" height="24" class="am-eff-hchev" viewBox="0 0 24 24" aria-hidden="true">' + UC.iconFormen("chevronRight") + '</svg>' +
         '</button>' +
         /* EIN Rumpf um beide Ansichten. Seine Hoehe wird gemessen und gesetzt (effRumpf),
            damit das Menue beim Umschalten weich waechst statt zu springen: max-height auf
@@ -374,8 +374,9 @@
        also ohne dass jemand kurz das Englische sieht. Das Zeichen dagegen haengt an keinem
        Katalog und gehoert hierhin. */
     var ic = elOpenPrev.querySelector('.am-ic');
-    // feather message-circle (round). The square message-square is the one the composer uses.
-    if (ic) ic.innerHTML = '<path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719" />';
+    /* AUS DEM SATZ (23.09.). Hier stand ein Lucide message-circle als roher Pfad -- der letzte
+       in dieser Datei. messageCircle ist dieselbe runde Sprechblase, nur aus dem Satz. */
+        if (ic) ic.innerHTML = UC.iconFormen("messageCircle");
   })();
   var elClosePrev  = root.querySelector('#am-close-prev');
   var elNewChat    = root.querySelector('#am-new-chat');
@@ -715,11 +716,11 @@
   };
   var SUGG_ICONS = [ICON.trend, ICON.source, ICON.competitor, ICON.smile, ICON.clock];
   var GALLERY_ICONS = [
-    '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M3 17L7 13C7.88256 12.1174 8.32385 11.6762 8.86543 11.6274C8.95496 11.6193 9.04504 11.6193 9.13457 11.6274C9.67615 11.6762 10.1174 12.1174 11 13C11.8826 13.8826 12.3238 14.3238 12.8654 14.3726C12.955 14.3807 13.045 14.3807 13.1346 14.3726C13.6762 14.3238 14.1174 13.8826 15 13L20 8"/><path d="M16 7.27657C16 7.27657 20.101 6.65426 20.7234 7.27661C21.3458 7.89896 20.7234 12 20.7234 12"/></svg>',
-    '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M2 8C2 8 6.47715 3 12 3C17.5228 3 22 8 22 8"/><path d="M21.544 13.045C21.848 13.4713 22 13.6845 22 14C22 14.3155 21.848 14.5287 21.544 14.955C20.1779 16.8706 16.6892 21 12 21C7.31078 21 3.8221 16.8706 2.45604 14.955C2.15201 14.5287 2 14.3155 2 14C2 13.6845 2.15201 13.4713 2.45604 13.045C3.8221 11.1294 7.31078 7 12 7C16.6892 7 20.1779 11.1294 21.544 13.045Z"/><path d="M15 14C15 12.3431 13.6569 11 12 11C10.3431 11 9 12.3431 9 14C9 15.6569 10.3431 17 12 17C13.6569 17 15 15.6569 15 14Z"/></svg>',
-    '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M9.14339 10.691L9.35031 10.4841C11.329 8.50532 14.5372 8.50532 16.5159 10.4841C18.4947 12.4628 18.4947 15.671 16.5159 17.6497L13.6497 20.5159C11.671 22.4947 8.46279 22.4947 6.48405 20.5159C4.50532 18.5372 4.50532 15.329 6.48405 13.3503L6.9484 12.886"/><path d="M17.0516 11.114L17.5159 10.6497C19.4947 8.67095 19.4947 5.46279 17.5159 3.48405C15.5372 1.50532 12.329 1.50532 10.3503 3.48405L7.48405 6.35031C5.50532 8.32904 5.50532 11.5372 7.48405 13.5159C9.46279 15.4947 12.671 15.4947 14.6497 13.5159L14.8566 13.309"/></svg>',
-    '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M21.5 12C21.5 17.2467 17.2467 21.5 12 21.5C10.3719 21.5 8.8394 21.0904 7.5 20.3687C5.63177 19.362 4.37462 20.2979 3.26592 20.4658C3.09774 20.4913 2.93024 20.4302 2.80997 20.31C2.62741 20.1274 2.59266 19.8451 2.6935 19.6074C3.12865 18.5818 3.5282 16.6382 2.98341 15C2.6698 14.057 2.5 13.0483 2.5 12C2.5 6.75329 6.75329 2.5 12 2.5C17.2467 2.5 21.5 6.75329 21.5 12Z"/><path d="M12.1257 12H12.0007M8.125 12H8M16.125 12H16M12.2507 12C12.2507 12.1381 12.1388 12.25 12.0007 12.25C11.8627 12.25 11.7507 12.1381 11.7507 12C11.7507 11.8619 11.8627 11.75 12.0007 11.75C12.1388 11.75 12.2507 11.8619 12.2507 12ZM8.25 12C8.25 12.1381 8.13807 12.25 8 12.25C7.86193 12.25 7.75 12.1381 7.75 12C7.75 11.8619 7.86193 11.75 8 11.75C8.13807 11.75 8.25 11.8619 8.25 12ZM16.25 12C16.25 12.1381 16.1381 12.25 16 12.25C15.8619 12.25 15.75 12.1381 15.75 12C15.75 11.8619 15.8619 11.75 16 11.75C16.1381 11.75 16.25 11.8619 16.25 12Z"/></svg>',
-    '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M4.31802 19.682C3 18.364 3 16.2426 3 12C3 7.75736 3 5.63604 4.31802 4.31802C5.63604 3 7.75736 3 12 3C16.2426 3 18.364 3 19.682 4.31802C21 5.63604 21 7.75736 21 12C21 16.2426 21 18.364 19.682 19.682C18.364 21 16.2426 21 12 21C7.75736 21 5.63604 21 4.31802 19.682Z"/><path d="M7 14L9.79289 11.2071C10.1834 10.8166 10.8166 10.8166 11.2071 11.2071L12.7929 12.7929C13.1834 13.1834 13.8166 13.1834 14.2071 12.7929L17 10"/></svg>'
+    '<svg width="24" height="24" viewBox="0 0 24 24">' + UC.iconFormen("trendingUp") + '</svg>',
+    '<svg width="24" height="24" viewBox="0 0 24 24">' + UC.iconFormen("eye") + '</svg>',
+    '<svg width="24" height="24" viewBox="0 0 24 24">' + UC.iconFormen("link") + '</svg>',
+    '<svg width="24" height="24" viewBox="0 0 24 24">' + UC.iconFormen("chatDots") + '</svg>',
+    '<svg width="24" height="24" viewBox="0 0 24 24">' + UC.iconFormen("activity") + '</svg>'
   ];
 
   var lang = 'en';
@@ -1238,7 +1239,7 @@
     return (m && m.logo_url) ? String(m.logo_url) : '';
   }
   // small "response" fallback icon (message bubble), used when no model logo resolves
-  var RESP_FALLBACK_SVG = '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M21.5 12C21.5 17.2467 17.2467 21.5 12 21.5C10.3719 21.5 8.8394 21.0904 7.5 20.3687C5.63177 19.362 4.37462 20.2979 3.26592 20.4658C3.09774 20.4913 2.93024 20.4302 2.80997 20.31C2.62741 20.1274 2.59266 19.8451 2.6935 19.6074C3.12865 18.5818 3.5282 16.6382 2.98341 15C2.6698 14.057 2.5 13.0483 2.5 12C2.5 6.75329 6.75329 2.5 12 2.5C17.2467 2.5 21.5 6.75329 21.5 12Z"/><path d="M12.1257 12H12.0007M8.125 12H8M16.125 12H16M12.2507 12C12.2507 12.1381 12.1388 12.25 12.0007 12.25C11.8627 12.25 11.7507 12.1381 11.7507 12C11.7507 11.8619 11.8627 11.75 12.0007 11.75C12.1388 11.75 12.2507 11.8619 12.2507 12ZM8.25 12C8.25 12.1381 8.13807 12.25 8 12.25C7.86193 12.25 7.75 12.1381 7.75 12C7.75 11.8619 7.86193 11.75 8 11.75C8.13807 11.75 8.25 11.8619 8.25 12ZM16.25 12C16.25 12.1381 16.1381 12.25 16 12.25C15.8619 12.25 15.75 12.1381 15.75 12C15.75 11.8619 15.8619 11.75 16 11.75C16.1381 11.75 16.25 11.8619 16.25 12Z"/></svg>';
+  var RESP_FALLBACK_SVG = '<svg width="24" height="24" viewBox="0 0 24 24">' + UC.iconFormen("chatDots") + '</svg>';
   // Decide the marker that precedes a matched entity, based on the current Settings:
   //  brand/competitor -> S.settings.brand  ('logo' | 'icon' | 'none')
   //  url/domain/citation/prompt -> S.settings.citation ('favicon' | 'icon' | 'none')
@@ -1438,11 +1439,15 @@
      opportunities -> cards rendered with the Opportunities page's own styling/fields.
      actions       -> buttons that emit a JS event carrying the full action (type/action_key/payload). */
   var _OPP_MONTHS = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+  /* AUS DEM SATZ statt selbst gezeichnet (23.09.). Hier standen vier Lucide-Reste -- sie sind
+     bei der Migration vom 22.09. durchgerutscht, weil sie nicht als <svg> im Markup stehen,
+     sondern als blosse Formen in einer Tabelle. Die Namen sind nach dem BILD gewaehlt, wie im
+     Satz ueblich: Verweis nach aussen, Kamera, Liste, steigende Linie. */
   var _OPP_REC_ICON = {
-    create_matching_content: '<polyline points="16 3 21 3 21 8"/><line x1="10" y1="14" x2="21" y2="3"/><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/>',
-    build_presence: '<polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>',
-    get_listed: '<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3.5" cy="6" r="1.2"/><circle cx="3.5" cy="12" r="1.2"/><circle cx="3.5" cy="18" r="1.2"/>',
-    improve_existing_content: '<path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/>'
+    create_matching_content: UC.iconFormen("externalLink"),
+    build_presence: UC.iconFormen("camera"),
+    get_listed: UC.iconFormen("listIcon"),
+    improve_existing_content: UC.iconFormen("trendingUp")
   };
   var _OPP_CITE = { Brand_Platform:'Brand Platforms', UGC_Community:'UGC / Community', Competition:'Competition', Editorial:'Editorial', Institutional:'Institutional', Knowledge_Base:'Knowledge Base', You:'Your Content' };
   var _OPP_CITE_COLOR = { Editorial:'#14b8a6', UGC_Community:'#0ea5e9', Knowledge_Base:'#6366f1', Brand_Platform:'#d946ef', Institutional:'#64748b', Competition:'#f97316', You:'#f43f5e' };
@@ -1475,7 +1480,7 @@
       '<button class="uo-status-btn" type="button" aria-haspopup="true" aria-expanded="false" title="Change status">'+
         '<span class="uo-status-dot" style="--uo-stat:'+meta.color+';"></span>'+
         '<span class="uo-status-label">'+esc(meta.label)+'</span>'+
-        '<svg width="24" height="24" class="uo-status-chev" viewBox="0 0 24 24"><path d="M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9"/></svg>'+
+        '<svg width="24" height="24" class="uo-status-chev" viewBox="0 0 24 24">' + UC.iconFormen("chevronDown") + '</svg>'+
       '</button>'+
       '<div class="uo-status-menu" role="menu">'+statusOptionsHtml(key)+'</div>'+
     '</div>';
@@ -1527,8 +1532,8 @@
     if (!item || typeof item !== 'object') return '';
     var trendUp = Number(item.trend_pct) >= 0;
     var gapNeg  = Number(item.gap) < 0;
-    var arrowUp   = '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M9 6.65032C9 6.65032 15.9383 6.10759 16.9154 7.08463C17.8924 8.06167 17.3496 15 17.3496 15M16.5 7.5L6.5 17.5"/></svg>';
-    var arrowDown = '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M9 17.3497C9 17.3497 15.9383 17.8924 16.9154 16.9154C17.8924 15.9383 17.3496 9 17.3496 9M16.5 16.5L6.5 6.5"/></svg>';
+    var arrowUp   = '<svg width="24" height="24" viewBox="0 0 24 24">' + UC.iconFormen("arrowUpRight") + '</svg>';
+    var arrowDown = '<svg width="24" height="24" viewBox="0 0 24 24">' + UC.iconFormen("arrowDownRight") + '</svg>';
     var statusPill = item.status ? statusControlHtml(item) : '';
 
     var meta = '<div class="uo-meta-grid">'+
@@ -1764,10 +1769,10 @@
      direkt statt ueber das Kit: dieselben Feather-Pfade, die UC.icon("plus")/("check") liefert,
      nur ohne Abhaengigkeit an einer Stelle, die nachweislich faellt. */
   var OPPC_PLUS  = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
-                   'stroke-linecap="round" stroke-linejoin="round"><path d="M11.9922 4.00012V20.0001M19.9922 12.0001H3.99222"/></svg>';
+                   'stroke-linecap="round" stroke-linejoin="round">' + UC.iconFormen("plus") + '</svg>';
   var OPPC_CHECK = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" ' +
-                   'stroke-linecap="round" stroke-linejoin="round"><path d="M5 13.2592L7.58583 15.9568C8.2525 16.6523 8.58583 17 9.00004 17C9.41425 17 9.74759 16.6523 10.4143 15.9568L19 7"/></svg>';
-  var OPPC_SPIN  = '<svg width="24" height="24" class="am-oppc-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 3V6"/><path d="M12 18V21"/><path d="M21 12L18 12"/><path d="M6 12L3 12"/><path d="M18.3635 5.63672L16.2422 7.75804"/><path d="M7.75804 16.2422L5.63672 18.3635"/><path d="M18.3635 18.3635L16.2422 16.2422"/><path d="M7.75804 7.75804L5.63672 5.63672"/></svg>';
+                   'stroke-linecap="round" stroke-linejoin="round">' + UC.iconFormen("check") + '</svg>';
+  var OPPC_SPIN  = '<svg width="24" height="24" class="am-oppc-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round">' + UC.iconFormen("loader") + '</svg>';
   function _oppcApplyState(btn, state){
     var lab = btn.querySelector('.am-oppc-label'), ic = btn.querySelector('.am-oppc-ic');
     btn.classList.remove('is-loading', 'is-exists');
@@ -2731,7 +2736,7 @@
     var titel = escAttr(L().galleryBack || 'All categories');
     return '<button class="am-gallery-back am-gallery-back-ic" type="button" data-gallery-back' +
            ' aria-label="' + titel + '" data-tip="' + titel + '">' +
-           '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M15 18C15 18 9.00001 13.5811 9 12C8.99999 10.4188 15 6 15 6"/></svg></button>';
+           '<svg width="24" height="24" viewBox="0 0 24 24">' + UC.iconFormen("chevronLeft") + '</svg></button>';
   }
   function renderGalleryNow(){
     var label = root.querySelector('#am-suggested-label');
@@ -2751,7 +2756,7 @@
         return '<button class="am-cat-card'+(full ? ' am-cat-card-full' : '')+'" type="button" data-cat="'+i+'">'+
           '<span class="am-cat-ic">'+(GALLERY_ICONS[i] || ICON.trend)+'</span>'+
           '<span class="am-cat-name">'+esc(cat.name)+'</span>'+
-          '<span class="am-cat-chev"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M9.00005 18C9.00005 18 15 13.5811 15 12C15 10.4188 9 6 9 6"/></svg></span>'+
+          '<span class="am-cat-chev"><svg width="24" height="24" viewBox="0 0 24 24">' + UC.iconFormen("chevronRight") + '</svg></span>'+
         '</button>';
       }
       var repIdx = -1;
@@ -2762,7 +2767,7 @@
           '<span class="am-cat-ic">'+(GALLERY_ICONS[repIdx] || ICON.fileText)+'</span>'+
           '<span class="am-cat-text"><span class="am-cat-label">'+esc(g[repIdx].name)+'</span>'+
             '<span class="am-cat-desc">'+esc(g[repIdx].desc || 'Full reports on your AI visibility')+'</span></span>'+
-          '<span class="am-cat-chev"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M9.00005 18C9.00005 18 15 13.5811 15 12C15 10.4188 9 6 9 6"/></svg></span>'+
+          '<span class="am-cat-chev"><svg width="24" height="24" viewBox="0 0 24 24">' + UC.iconFormen("chevronRight") + '</svg></span>'+
         '</button>';
       }
       html += '<div class="am-cat-grid">' + g.map(function(cat, i){
@@ -2793,7 +2798,7 @@
         var grp = o.group || 'd';
         if (grp !== prevGroup){ menu += '<div class="am-rep-range-sep"></div>'; prevGroup = grp; }
         menu += '<button class="am-rep-range-opt'+(o.id===_reportRange?' is-sel':'')+'" type="button" data-rep-range="'+escAttr(o.id)+'">'+esc(o.label)+
-          '<span class="am-rep-range-check"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M5 13.2592L7.58583 15.9568C8.2525 16.6523 8.58583 17 9.00004 17C9.41425 17 9.74759 16.6523 10.4143 15.9568L19 7"/></svg></span></button>';
+          '<span class="am-rep-range-check"><svg width="24" height="24" viewBox="0 0 24 24">' + UC.iconFormen("check") + '</svg></span></button>';
       });
       var rhtml = '<div class="am-gallery-head am-rep-head">'+
         zurueckKnopfHtml()+
@@ -2802,9 +2807,9 @@
         repTopicsMarkup(de)+
         '<div class="am-rep-range-wrap">'+
           '<button class="am-rep-range" type="button" data-rep-range-toggle>'+
-            '<svg width="24" height="24" class="am-rep-cal" viewBox="0 0 24 24"><path d="M16 2V6M8 2V6"/><path d="M13 4H11C7.22876 4 5.34315 4 4.17157 5.17157C3 6.34315 3 8.22876 3 12V14C3 17.7712 3 19.6569 4.17157 20.8284C5.34315 22 7.22876 22 11 22H13C16.7712 22 18.6569 22 19.8284 20.8284C21 19.6569 21 17.7712 21 14V12C21 8.22876 21 6.34315 19.8284 5.17157C18.6569 4 16.7712 4 13 4Z"/><path d="M3 10H21"/></svg>'+
+            '<svg width="24" height="24" class="am-rep-cal" viewBox="0 0 24 24">' + UC.iconFormen("calendar") + '</svg>'+
             '<span class="am-rep-range-lbl">'+esc(repRangeLabel())+'</span>'+
-            '<svg width="24" height="24" class="am-rep-range-chev" viewBox="0 0 24 24"><path d="M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9"/></svg>'+
+            '<svg width="24" height="24" class="am-rep-range-chev" viewBox="0 0 24 24">' + UC.iconFormen("chevronDown") + '</svg>'+
           '</button>'+
           '<div class="am-rep-range-menu">'+menu+'</div>'+
         '</div>'+
@@ -2814,7 +2819,7 @@
           '<span class="am-rep-ic">'+(ICON[r.icon] || ICON.trend)+'</span>'+
           '<span class="am-rep-text"><span class="am-rep-label">'+esc(r.label)+'</span><span class="am-rep-desc">'+esc(r.desc || '')+'</span></span>'+
           '<span class="am-rep-edit" data-rep-edit role="button" tabindex="-1" aria-label="Edit prompt" title="Edit prompt">'+ICON.pencil+'</span>'+
-          '<span class="am-rep-go"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M9.00005 18C9.00005 18 15 13.5811 15 12C15 10.4188 9 6 9 6"/></svg></span>'+
+          '<span class="am-rep-go"><svg width="24" height="24" viewBox="0 0 24 24">' + UC.iconFormen("chevronRight") + '</svg></span>'+
         '</button>';
       }).join('') + '</div>';
       elSuggGrid.innerHTML = rhtml;
@@ -2833,7 +2838,7 @@
           var label = (q && typeof q === 'object') ? (q.label || q.prompt || '') : q;
           var prompt = (q && typeof q === 'object') ? (q.prompt || q.label || '') : q;
           return '<button class="am-gallery-prompt" type="button" data-q="'+escAttr(prompt)+'"><span>'+esc(label)+'</span>'+
-            '<span class="am-gallery-prompt-chev"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M9.00005 18C9.00005 18 15 13.5811 15 12C15 10.4188 9 6 9 6"/></svg></span></button>';
+            '<span class="am-gallery-prompt-chev"><svg width="24" height="24" viewBox="0 0 24 24">' + UC.iconFormen("chevronRight") + '</svg></span></button>';
         }).join('')+
       '</div></div>';
     }).join('');
@@ -3995,7 +4000,7 @@
              von core nicht -- ein Katalogeintrag allein waere ohne Wirkung geblieben. */
           (m.desc ? '<span class="am-eff-opt-desc">' + esc(UCt(m.desc)) + '</span>' : '') +
         '</span>' +
-        '<svg width="24" height="24" class="am-eff-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13.2592L7.58583 15.9568C8.2525 16.6523 8.58583 17 9.00004 17C9.41425 17 9.74759 16.6523 10.4143 15.9568L19 7"/></svg>' +
+        '<svg width="24" height="24" class="am-eff-check" viewBox="0 0 24 24" aria-hidden="true">' + UC.iconFormen("check") + '</svg>' +
       '</button>';
     }).join('');
   }
@@ -4190,7 +4195,7 @@
   }
 
   /* ===== "Ask Mira" selection -> quoted gray chip (prompt_research X-delete mechanic) ===== */
-  var QUOTE_X = '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L6.00081 17.9992M17.9992 18L6 6.00085"/></svg>';
+  var QUOTE_X = '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">' + UC.iconFormen("x") + '</svg>';
 
   function getQuoteValue(){
     if (!elQuoteSlot) return '';
@@ -4300,7 +4305,7 @@
       })
     : null;
 
-  var XSVG = '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L6.00081 17.9992M17.9992 18L6 6.00085"/></svg>';
+  var XSVG = '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">' + UC.iconFormen("x") + '</svg>';
 
   /* ---- Die gesetzten Filter als Chips IM Suchfeld ---------------------------------------- */
   function pickChipsZeichnen(){
@@ -4786,7 +4791,7 @@
         ? ((UCg && UCg.icon) ? UCg.icon('zap', 2) : '')
         : (String(it.type) === 'brand'
             ? '<span class="am-pick-tag-av-t">' + esc(String(lbl).charAt(0).toUpperCase()) + '</span>'
-            : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="M8 12C8 18 12 22 12 22C12 22 16 18 16 12C16 6 12 2 12 2C12 2 8 6 8 12Z"/><path d="M21 15H3"/><path d="M21 9H3"/></svg>');
+            : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">' + UC.iconFormen("globe") + '</svg>');
       var rueck = '<span class="am-pick-tag-av-fb">' + inner + '</span>';
       return '<span class="am-pick-tag up-entchip is-lifted is-static" data-i="' + i + '">' +
         '<span class="' + kl + '">' +
@@ -4796,7 +4801,7 @@
         '</span>' +
         '<span class="am-pick-tag-lbl">' + esc(lbl) + '</span>' +
         '<button class="am-pick-tag-x" type="button" aria-label="Remove reference" data-x="' + i + '">' +
-          '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L6.00081 17.9992M17.9992 18L6 6.00085"/></svg>' +
+          '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">' + UC.iconFormen("x") + '</svg>' +
         '</button>' +
       '</span>';
     }).join('');
@@ -4918,7 +4923,7 @@
   elAskSel.type = 'button';
   elAskSel.className = 'am-ask-sel';
   elAskSel.id = 'am-ask-sel';
-  elAskSel.innerHTML = '<svg width="24" height="24" class="am-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 12C21.5 17.2467 17.2467 21.5 12 21.5C10.3719 21.5 8.8394 21.0904 7.5 20.3687C5.63177 19.362 4.37462 20.2979 3.26592 20.4658C3.09774 20.4913 2.93024 20.4302 2.80997 20.31C2.62741 20.1274 2.59266 19.8451 2.6935 19.6074C3.12865 18.5818 3.5282 16.6382 2.98341 15C2.6698 14.057 2.5 13.0483 2.5 12C2.5 6.75329 6.75329 2.5 12 2.5C17.2467 2.5 21.5 6.75329 21.5 12Z"/><path d="M12.1257 12H12.0007M8.125 12H8M16.125 12H16M12.2507 12C12.2507 12.1381 12.1388 12.25 12.0007 12.25C11.8627 12.25 11.7507 12.1381 11.7507 12C11.7507 11.8619 11.8627 11.75 12.0007 11.75C12.1388 11.75 12.2507 11.8619 12.2507 12ZM8.25 12C8.25 12.1381 8.13807 12.25 8 12.25C7.86193 12.25 7.75 12.1381 7.75 12C7.75 11.8619 7.86193 11.75 8 11.75C8.13807 11.75 8.25 11.8619 8.25 12ZM16.25 12C16.25 12.1381 16.1381 12.25 16 12.25C15.8619 12.25 15.75 12.1381 15.75 12C15.75 11.8619 15.8619 11.75 16 11.75C16.1381 11.75 16.25 11.8619 16.25 12Z"/></svg><span>Ask Mira</span>';
+  elAskSel.innerHTML = '<svg width="24" height="24" class="am-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + UC.iconFormen("chatDots") + '</svg><span>Ask Mira</span>';
   root.appendChild(elAskSel);
 
   var _askSelText = '';
@@ -6463,8 +6468,8 @@
   }
   function showUrlPop(wrap){
     var visit = visitUrlFor(wrap);
-    var iconVisit = '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M9.14339 10.691L9.35031 10.4841C11.329 8.50532 14.5372 8.50532 16.5159 10.4841C18.4947 12.4628 18.4947 15.671 16.5159 17.6497L13.6497 20.5159C11.671 22.4947 8.46279 22.4947 6.48405 20.5159C4.50532 18.5372 4.50532 15.329 6.48405 13.3503L6.9484 12.886"/><path d="M17.0516 11.114L17.5159 10.6497C19.4947 8.67095 19.4947 5.46279 17.5159 3.48405C15.5372 1.50532 12.329 1.50532 10.3503 3.48405L7.48405 6.35031C5.50532 8.32904 5.50532 11.5372 7.48405 13.5159C9.46279 15.4947 12.671 15.4947 14.6497 13.5159L14.8566 13.309"/></svg>';
-    var iconDetail = '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M8 18H16"/><path d="M8 14H16"/><path d="M8 10H10"/><path d="M13 2.5V3C13 5.82843 13 7.24264 13.8787 8.12132C14.7574 9 16.1716 9 19 9H19.5M20 10.6569V14C20 17.7712 20 19.6569 18.8284 20.8284C17.6569 22 15.7712 22 12 22C8.22876 22 6.34315 22 5.17157 20.8284C4 19.6569 4 17.7712 4 14V9.45584C4 6.21082 4 4.58831 4.88607 3.48933C5.06508 3.26731 5.26731 3.06508 5.48933 2.88607C6.58831 2 8.21082 2 11.4558 2C12.1614 2 12.5141 2 12.8372 2.11401C12.9044 2.13772 12.9702 2.165 13.0345 2.19575C13.3436 2.34355 13.593 2.593 14.0919 3.09188L18.8284 7.82843C19.4065 8.40649 19.6955 8.69552 19.8478 9.06306C20 9.4306 20 9.83935 20 10.6569Z"/></svg>';
+    var iconVisit = '<svg width="24" height="24" viewBox="0 0 24 24">' + UC.iconFormen("link") + '</svg>';
+    var iconDetail = '<svg width="24" height="24" viewBox="0 0 24 24">' + UC.iconFormen("fileText") + '</svg>';
     urlPop.innerHTML =
       '<button type="button" data-pop="detail" class="is-primary">'+iconDetail+'<span>'+esc(L().urlDetail)+'</span></button>' +
       '<button type="button" data-pop="visit">'+iconVisit+'<span>'+esc(urlPreview(visit, 34))+'</span></button>';

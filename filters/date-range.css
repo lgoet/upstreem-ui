@@ -70,7 +70,7 @@
      Polster sitzt darum in den beiden Haelften -- Spalte und Kalender bringen es selbst mit. */
   padding: 0; border: 1px solid var(--vc-border); border-radius: var(--up-dd-radius);
   background: var(--up-menu-bg); color: var(--vc-text);
-  box-shadow: 0 10px 28px rgba(0,0,0,.14);
+  box-shadow: var(--up-dd-shadow);
   opacity: 0; transform: translateY(-4px) scale(0.985); pointer-events: none;
   transition: opacity 140ms ease, transform 140ms ease;
 }

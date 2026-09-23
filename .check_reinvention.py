@@ -139,7 +139,9 @@ def geaendert():
 
 def main():
     if "--alle" in sys.argv:
-        ziele = sorted(glob.glob(os.path.join(HIER, "*.css")))
+        # Rekursiv: filters/ und page-headers/ fehlten hier, waehrend geaendert() sie liefert --
+        # dieselbe Luecke wie in .check_skala.py, am 23.09. dort behoben.
+        ziele = sorted(glob.glob(os.path.join(HIER, "**", "*.css"), recursive=True))
     else:
         ziele = [a for a in sys.argv[1:] if a.endswith(".css")] or geaendert()
     if not ziele:

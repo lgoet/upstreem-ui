@@ -109,7 +109,7 @@
 .utf-sort-menu {
   position: absolute; top: calc(100% + var(--up-dd-gap)); right: 0; z-index: 3;
   width: 148px; padding: var(--up-dd-pad); border: 1px solid var(--vc-border); border-radius: var(--up-dd-radius);
-  background: var(--up-menu-bg); box-shadow: 0 10px 24px rgba(0,0,0,.14);
+  background: var(--up-menu-bg); box-shadow: var(--up-dd-shadow);
   display: none;
 }
 .utf-sort.is-open .utf-sort-menu { display: block; }

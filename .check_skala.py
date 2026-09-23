@@ -200,8 +200,12 @@ def geaendert():
 
 
 def alle_css():
-    return sorted(glob.glob(os.path.join(HIER, "*.css")) +
-                  glob.glob(os.path.join(HIER, "page-headers", "*.css")))
+    # filters/ FEHLTE hier (23.09.). geaendert() liefert die Dateien aus git diff und findet sie
+    # sehr wohl -- alle_css() nicht, und damit kamen sie nie in die Grundlinie. Folge: eine
+    # einzige geaenderte Zeile in filters/date-range.css meldete 50 Altangaben als "NEU".
+    # Genau so wird ein Pruefer weggeklickt. Rekursiv statt zwei Verzeichnisse von Hand, damit
+    # das naechste Unterverzeichnis nicht dieselbe Luecke aufreisst.
+    return sorted(glob.glob(os.path.join(HIER, "**", "*.css"), recursive=True))
 
 
 def schreibe_grundlinie():
