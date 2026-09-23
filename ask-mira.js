@@ -5870,10 +5870,20 @@
      Ereignis. */
   function rtChatAnlegen(id, titel, wann){
     id = rtText(id); if (!id) return;
-    if (findChat(id)){
-      /* Bekannter Chat: nur auffrischen. Der Anhaengeweg tut genau das und ueberschreibt
-         einen vorhandenen Titel nicht mit einem leeren. */
-      try { window.askMiraAppendPreviousChats([{ id: id, title: titel || '', updated_at: wann || '' }]); } catch(e){}
+    var vorhanden = findChat(id);
+    if (vorhanden){
+      /* NICHT ueber askMiraAppendPreviousChats. Das ist der BLAETTERWEG, und der zaehlt mit:
+         eine Seite ohne neue Chats gilt ihm als Leerlauf, und beim zweiten Mal stellt er das
+         Nachladen der Liste dauerhaft ab (_mehrEnde). Gemessen am 23.09. in der Konsole -- zwei
+         fertige Antworten aus fremden Chats ohne neuen Zeitstempel haben genau das ausgeloest:
+         "Zum zweiten Mal hintereinander: es wird nicht mehr nachgefragt." Ab da laedt die
+         Chatliste beim Scrollen nichts mehr nach.
+         Eine einzelne Zeile aufzufrischen ist kein Blaettern. Also hier, direkt, und nur was
+         wirklich etwas sagt -- ein leerer Titel loescht keinen vorhandenen. */
+      var geaendert = false;
+      if (titel && titel !== vorhanden.title){ vorhanden.title = titel; geaendert = true; }
+      if (wann && wann !== vorhanden.updated_at){ vorhanden.updated_at = wann; geaendert = true; }
+      if (geaendert){ renderPrevious(); try { titelNachziehen(); } catch(e){} }
       return;
     }
     /* NEUER Chat gehoert nach OBEN, nicht ans Ende. askMiraAppendPreviousChats haengt an --
@@ -5920,17 +5930,37 @@
     try { renderMessages(); } catch(e){}
   }
 
+  /* BEIM EINRICHTEN MUSS MAN SEHEN, WAS ANKOMMT. Ein Ereignis, das hier still im Nichts
+     verschwindet, laesst sich in Bubble nicht finden: dort sieht alles richtig aus. Deshalb
+     sagt jeder der drei Ausgaenge einmal, was los ist -- einmal je Art, nicht bei jedem
+     Ereignis, sonst steht die Konsole nach zehn Minuten voll. */
+  var _rtGemeckert = {};
+  function rtMeckern(schluessel, text){
+    if (_rtGemeckert[schluessel] || !window.console) return;
+    _rtGemeckert[schluessel] = 1;
+    try { console.warn('[AskMira] ' + text); } catch(e){}
+  }
   window.askMiraRealtime = function(payload){
     var p = payload;
     if (typeof p === 'string'){ p = looseJsonParse(p); }
-    if (!p || typeof p !== 'object') return false;
+    if (!p || typeof p !== 'object'){
+      rtMeckern('unlesbar', 'Realtime: der Payload war nicht lesbar. In Bubble traegt das ' +
+        'rohe JSON entweder "Last JSON message" oder "Last message" -- nimm im Run-JS-Schritt ' +
+        'den anderen der beiden.');
+      return false;
+    }
     /* Manche Wege reichen das Ereignis in einer Huelle herein. */
     if (p.payload && typeof p.payload === 'object' && p.payload.event) p = p.payload;
 
     var art  = rtText(p.event).toLowerCase();
     var chat = rtText(p.session_id);
     var amid = rtText(p.assistant_message_id || p.message_id);
-    if (!art) return false;
+    if (!art){
+      rtMeckern('ohne-event', 'Realtime: der Payload kam an, trug aber kein Feld "event". ' +
+        'Pruefe "Expected JSON message response" -- was dort nicht im Beispiel steht, ' +
+        'schluesselt das Plugin nicht auf.');
+      return false;
+    }
 
     /* DIE EINE ZEILE, DIE ALLES TRAEGT: gehoert das Ereignis zum offenen Chat? */
     var offen = chat && chat === rtText(S.activeChatId);
@@ -6023,6 +6053,9 @@
       try { window.askMiraResolveVoice(rtText(p.user_message), rtText(p.message_id)); } catch(e){}
       return true;
     }
+    rtMeckern('art:' + art, 'Realtime: "' + art + '" kennt diese Komponente nicht. ' +
+      'Erwartet werden mira_turn_started, mira_message_success, mira_message_error, ' +
+      'mira_title_updated und mira_user_transcript.');
     return false;
   };
 

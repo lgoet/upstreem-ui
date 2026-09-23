@@ -198,6 +198,8 @@
 var P = [];
 function z(t){ P.push(t); document.getElementById("out").textContent = P.join("\n"); }
 var FEHLER = [];
+window.__amWarn = [];
+(function(){ var w = console.warn; console.warn = function(){ try { window.__amWarn.push([].slice.call(arguments).join(" ")); } catch(e){} return w.apply(console, arguments); }; })();
 window.addEventListener("error", function(e){ FEHLER.push(String(e.message)); });
 var RUFE = [];
 window.bubble_fn_ask_mira_refresh_chat  = function(id){ RUFE.push("refresh_chat:" + id); };
@@ -372,6 +374,19 @@ function lauf(){
   window.askMiraRealtime({ event:"mira_message_success", session_id:"D", assistant_message_id:"n1", status:"success" });
   z("15 neuer Chat ohne Kennung: uebernommen=" + (dAktiv === "D") + " Zeile D=" + stand("D") +
     " Rufe=" + JSON.stringify(RUFE));
+
+  /* 16 -- DER BLAETTERWEG DARF NICHT ABGESTELLT WERDEN. Zwei fertige Antworten aus fremden
+     Chats ohne neuen Zeitstempel hatten das Nachladen der Liste dauerhaft beendet. */
+  var vorMehr = document.querySelectorAll('.am-prev-item').length;
+  window.askMiraRealtime({ event:"mira_turn_started", session_id:"A", is_new_session:"false", assistant_message_id:"q1" });
+  window.askMiraRealtime({ event:"mira_message_success", session_id:"A", assistant_message_id:"q1", status:"success" });
+  window.askMiraRealtime({ event:"mira_turn_started", session_id:"B", is_new_session:"false", assistant_message_id:"q2" });
+  window.askMiraRealtime({ event:"mira_message_success", session_id:"B", assistant_message_id:"q2", status:"success" });
+  var meckern = 0;
+  (window.__amWarn || []).forEach(function(t){ if (t.indexOf("nicht mehr nachgefragt") >= 0) meckern++; });
+  z("16 zwei fremde Antworten ohne Zeitstempel: Zeilen " + vorMehr + " -> " +
+    document.querySelectorAll('.am-prev-item').length +
+    " | 'nicht mehr nachgefragt' in der Konsole: " + meckern);
 
   setTimeout(function(){
     z("");
