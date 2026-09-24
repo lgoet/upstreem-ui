@@ -426,7 +426,7 @@
   border: 1px solid var(--vc-border); border-radius: 8px; background: transparent; color: var(--vc-text);
   font-size: 13px; font-weight: 500; line-height: 1; vertical-align: middle; max-width: 100%;
 }
-.upr-inline-tag-ico { width: 13px; height: 13px; flex: 0 0 auto; opacity: 0.8; }
+.upr-inline-tag-ico { width: 13px; height: 13px; flex: 0 0 auto; color: var(--vc-fourth); }
 .upr-inline-tag-label { overflow: hidden; text-overflow: ellipsis; max-width: 240px; }
 .upr-inline-tag-sep { color: var(--vc-muted); margin: 0 5px 0 2px; }
 /* The remove control grows out of zero width on hover, so a row of pills does not jitter as the

@@ -861,7 +861,9 @@
    item" check needs it, since plain CSS has no previous-sibling selector. */
 .upt-grp-sidecount { display: flex; align-items: center; flex: 0 0 auto; max-width: 64px; overflow: hidden;
   font-size: 12px; color: var(--vc-fourth); white-space: nowrap;
-  transition: opacity 120ms ease, max-width 120ms ease; }
+  /* Dieselbe Kurve wie das Dreipunktmenue gegenueber -- die zwei tauschen den Platz, also
+     muessen sie im selben Takt laufen, sonst zuckt die Zeile in der Mitte. */
+  transition: max-width 200ms cubic-bezier(.2,0,.38,.9), opacity 160ms ease; }
 .upt-grp-sideitem:hover .upt-grp-sidecount,
 .upt-grp-sideitem:has(.upt-grp-menuwrap.is-open) .upt-grp-sidecount { opacity: 0; max-width: 0; }
 /* Only the sidelist's copy of the group-actions button is hover-revealed -- the inline header's
@@ -869,8 +871,17 @@
    with the label the way this compact 44px row would if it stayed permanently visible. Same
    width-collapse idiom as .upt-grp-sidecount above, mirrored, so the two genuinely swap places
    instead of just fading in/out on top of each other. */
+/* EXAKT DIE KURVE DER QUICK ACTIONS (24.09. angefordert: "die ist zu hektisch"). Dort steht
+   .mqa-rowmenu-btn mit 200ms auf der Breite und 160ms auf der Deckkraft, beides auf
+   cubic-bezier(.2,0,.38,.9) beziehungsweise ease. Hier standen 120ms auf beidem -- fast doppelt
+   so schnell und mit gleichzeitigem Ende, was das Zucken ausmacht. Die Deckkraft laeuft jetzt
+   VOR der Breite aus, dadurch wirkt das Aufgehen gefuehrt statt gesprungen.
+   160ms steht NICHT auf der Dauernskala (120/200/260) und bleibt trotzdem: die Vorgabe war
+   "nutze genau diese Animation", und 160 ist der Wert, den die Quick Actions dort fuehren. Eine
+   Kopie, die um 40ms abweicht, ist keine Kopie -- und die zwei Zeilen wuerden beim naechsten
+   Nachziehen wieder auseinanderlaufen. */
 .upt-grp-sideitem .upt-grp-menuwrap { max-width: 0; opacity: 0; overflow: hidden;
-  transition: opacity 120ms ease, max-width 120ms ease; }
+  transition: max-width 200ms cubic-bezier(.2,0,.38,.9), opacity 160ms ease; }
 .upt-grp-sideitem:hover .upt-grp-menuwrap,
 .upt-grp-sideitem .upt-grp-menuwrap.is-open { max-width: 32px; opacity: 1; }
 /* The actions dropdown itself (.upt-grp-actmenu) is a child of THIS wrapper, position:absolute so

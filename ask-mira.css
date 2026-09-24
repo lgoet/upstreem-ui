@@ -309,10 +309,10 @@
   .am-user-body:not(.is-clamped) .am-user-p-full { display: block; }
   .am-user-more {
     margin-top: 8px; padding: 0; border: 0; background: transparent;
-    color: var(--am-user-text); opacity: 0.6; cursor: pointer;
+    color: var(--am-user-text); color: var(--am-muted-3); cursor: pointer;
     font: inherit; font-size: 13px; font-weight: 600; line-height: 1.2;
   }
-  .am-user-more:hover { opacity: 1; text-decoration: underline; }
+  .am-user-more:hover { color: var(--am-text); text-decoration: underline; }
   /* voice message: skeleton lines imitating text while the transcript is pending */
   .am-user-skel { display: flex; flex-direction: column; gap: 8px; padding: 3px 0; min-width: 120px; }
   .am-user-skel-line {
@@ -330,7 +330,7 @@
     color: var(--am-muted); font-size: 13px; font-weight: 500;
     margin: 0 0 9px; line-height: 1;
   }
-  .am-thought-chev { width: 14px; height: 14px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: 0.75; }
+  .am-thought-chev { width: 14px; height: 14px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; color: var(--am-muted-3); }
 
   /* Hover message actions (ChatGPT-style) */
   .am-msg-actions {
@@ -729,7 +729,7 @@
   #ask-mira .uo-status-btn:hover { background: var(--uo-soft-2); border-color: var(--uo-border-strong); color: var(--uo-text); }
   #ask-mira .uo-status.is-open .uo-status-btn { background: var(--uo-soft-2); border-color: var(--uo-border-strong); color: var(--uo-text); }
   #ask-mira .uo-status-label { line-height: 1; }
-  #ask-mira .uo-status-chev { width: 12px; height: 12px; margin-left: 1px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; opacity: 0.65; transition: transform .16s ease; }
+  #ask-mira .uo-status-chev { width: 12px; height: 12px; margin-left: 1px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; color: var(--am-muted-3); transition: transform .16s ease; }
   #ask-mira .uo-status-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 40; min-width: 168px; padding: 5px; border: 1px solid var(--uo-border); border-radius: 12px; background: var(--uo-card); box-shadow: var(--up-e-3, 0 14px 34px rgba(0,0,0,0.13)); opacity: 0; transform: translateY(-4px) scale(0.98); transform-origin: top right; pointer-events: none; transition: opacity .14s ease, transform .14s ease; }
   #ask-mira .uo-status.is-open .uo-status-menu { opacity: 1; transform: none; pointer-events: auto; }
   #ask-mira .uo-status-opt { width: 100%; height: 32px; padding: 0 9px; border: 0; border-radius: 8px; background: transparent; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 550; color: var(--uo-text); cursor: pointer; font-family: inherit; text-align: left; }
@@ -1594,7 +1594,7 @@
   .am-model-ic { width: 20px; height: 20px; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; color: inherit; }
   .am-model-ic svg { width: 20px; height: 20px; display: block; }
   .am-model-name { letter-spacing: -0.01em; }
-  .am-model-chev { width: 14px; height: 14px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; opacity: 0.75; transition: transform .16s ease; }
+  .am-model-chev { width: 14px; height: 14px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; color: var(--am-muted-3); transition: transform .16s ease; }
   .am-model-menu { position: absolute; bottom: calc(100% + 8px); right: 0; z-index: 60; width: 300px; max-width: 78vw; padding: 6px; border: 1px solid var(--am-border); border-radius: 14px; background: var(--am-card); box-shadow: 0 16px 40px rgba(0,0,0,0.16); opacity: 0; transform: translateY(6px) scale(0.98); transform-origin: bottom right; pointer-events: none; transition: opacity .15s ease, transform .15s ease; }
   .am-model.is-open .am-model-menu { opacity: 1; transform: none; pointer-events: auto; }
   .am-model-opt { display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; border: 0; background: transparent; padding: 0 10px; border-radius: 10px; cursor: pointer; font-family: inherit; color: var(--am-text); transition: background .12s ease; }
@@ -1602,8 +1602,9 @@
   .am-model-opt[data-model="pro"] { height: 64px; }
   .am-model-opt[data-model="flash"] { height: 64px; }
   .am-model-opt.is-active { background: #f0f0ef; }
-  .am-model-opt:not(.is-active) { opacity: 0.6; }
-  .am-model-opt:not(.is-active):hover { opacity: 1; }
+  /* Farbe statt Deckkraft -- dafuer gibt es die vierte Stufe (24.09.). */
+  .am-model-opt:not(.is-active) { color: var(--am-muted-3); }
+  .am-model-opt:not(.is-active):hover { color: var(--am-text); }
   .am-model-opt:hover { background: var(--am-soft); }
   #ask-mira[data-theme="dark"] .am-model-opt:hover { background: #232326; }
   #ask-mira[data-theme="dark"] .am-model-opt.is-active { background: #252525; }
@@ -1847,7 +1848,7 @@
      als er. */
   .am-eff-lvl { flex: 0 0 auto; font-weight: 500; color: var(--am-muted-2); transition: color 200ms ease; }
   .am-eff-chev { width: 13px; height: 13px; flex: 0 0 auto; fill: none; stroke: currentColor;
-    stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; opacity: 0.75; }
+    stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; color: var(--am-muted-3); }
 
   /* ---- Das Menue darueber -------------------------------------------------------------- */
   .am-eff-menu {
@@ -1884,7 +1885,7 @@
   /* KEIN Drehen des Chevrons beim Oeffnen -- mehrfach angemahnt. Es zeigt nach rechts und
      bleibt dort; dass etwas offen ist, sagt die ausgeklappte Liste selbst. */
   .am-eff-hchev { width: 14px; height: 14px; flex: 0 0 auto; fill: none; stroke: currentColor;
-    stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; opacity: 0.7; }
+    stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; color: var(--am-muted-3); }
 
   /* ---- Die Schiene ---------------------------------------------------------------------
      Jede Zahl ist aus .up-switch (core.css) mit dem Faktor 28/22 abgeleitet, damit der Slider

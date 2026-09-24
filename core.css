@@ -1656,7 +1656,24 @@
        Kurve braucht, gibt es zwei Verbraucher -- und zwei Kopien einer Palette sind genau die
        Stelle, an der die eine irgendwann eine andere Blaustufe hat als die andere. Auf .up-root,
        damit jede Komponente sie erbt. */
-    .up-root {
+    /* ---- DIE SCHRIFTSTUFEN GELTEN IM GANZEN DOKUMENT (24.09.) --------------------------------
+     Sie standen nur auf .up-root -- und das reicht nicht: die Quick-Actions-Oberflaeche haengt
+     am body (sie muss, .mqa-modal wuerde sonst beschnitten), ebenso die koerpermontierten
+     Menues. Dort loesten var(--vc-*) ins Leere auf, sobald eine Komponente darauf zeigte statt
+     eigene Werte zu fuehren -- gemeldet als "die Lupe fehlt und der Platzhalter ist zu stark":
+     ohne Farbe faellt stroke auf keinen Wert und color auf die des Dokuments zurueck.
+     Hier stehen sie deshalb noch einmal fuer alles ausserhalb einer Wurzel. .up-root und
+     .up-root[data-theme="dark"] sind spezifischer und gewinnen weiterhin, diese Zeilen aendern
+     also nichts an dem, was schon funktioniert. */
+  :root {
+    --vc-text: #1f1f1b; --vc-muted: #3e4146; --vc-third: #6b6f78; --vc-fourth: #80858e;
+    --vc-text-invert: #e0e0e0;
+  }
+  [data-theme="dark"] {
+    --vc-text: #e0e0e0; --vc-muted: #c9cbd0; --vc-third: #a0a0a0; --vc-fourth: #6c717a;
+    --vc-text-invert: #1f1f1b;
+  }
+  .up-root {
       --uhm-h0: #f0f3f8; --uhm-h1: #c8d4e5; --uhm-h2: #8aa4c4; --uhm-h3: #4a6e96; --uhm-h4: #1e3a5f;
     }
     .up-root[data-theme="dark"] {

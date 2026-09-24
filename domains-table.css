@@ -162,7 +162,7 @@
    plain number, and hiding it until hover meant you had to already know the drilldown existed to
    find it. It sits at third-colour weight at rest so a table you are only scanning still reads
    quietly, and comes up to full strength together with the label on hover/open. */
-.udt-chev { width: 13px; height: 13px; flex: 0 0 auto; opacity: .55; overflow: hidden;
+.udt-chev { width: 13px; height: 13px; flex: 0 0 auto; color: var(--vc-fourth); overflow: hidden;
   transition: opacity 140ms ease, transform 180ms ease; }
 .udt-pagesbtn:hover .udt-chev, .udt-pagesbtn:focus-visible .udt-chev, .udt-pagesbtn.is-open .udt-chev {
   opacity: 1; }

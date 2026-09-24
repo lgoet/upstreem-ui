@@ -126,7 +126,7 @@
 .mqa-search-ic { width: 18px; height: 18px; flex: 0 0 auto; fill: none; stroke: var(--am-muted-2); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .mqa-inputwrap { position: relative; flex: 1 1 auto; min-width: 60px; display: flex; align-items: center; }
 .mqa-input { flex: 1 1 auto; min-width: 60px; border: 0; outline: 0; background: transparent; color: var(--am-text); font-family: var(--mqa-font); font-size: 15px; font-weight: 450; letter-spacing: -0.01em; padding: 0; touch-action: auto; position: relative; z-index: 1; }
-.mqa-input::placeholder { color: var(--am-muted-2); }
+.mqa-input::placeholder { color: var(--am-muted-3); }
 /* KEIN HINEINZOOMEN BEIM FOKUS AUF DEM TELEFON. iOS-Safari zoomt die Seite, sobald ein Feld mit
    einer Schrift unter 16px den Fokus bekommt -- 15px reichen dafuer schon. Die Regel steht auch
    in core.css (dort fuer die ganze App); DIESE Datei braucht ihre eigene, weil ihr Bubble-Loader
@@ -142,12 +142,15 @@
   color: var(--am-muted-2); pointer-events: none; z-index: 0;
 }
 .mqa-ph.is-hidden, .mqa-ph-cmd.is-hidden { display: none; }
-/* the "/" hint sits on the right, a shade lighter, 11px off the esc key (same gap as the search icon) */
+/* Der "/"-Hinweis rechts, 11px vom esc-Feld (derselbe Abstand wie zur Lupe).
+   FARBE STATT RANDFARBE (24.09. gemeldet: "deutlich zu schwach"): hier stand
+   var(--am-border-strong) -- eine RANDfarbe als Schriftfarbe. Ein Rand darf viel blasser sein
+   als Text, er wird nicht gelesen. Jetzt die vierte Schriftstufe, die es genau dafuer gibt,
+   und in beiden Themen dieselbe. */
 .mqa-ph-cmd {
   flex: 0 0 auto; font-size: 13px; font-weight: 450; white-space: nowrap;
-  color: var(--am-border-strong); pointer-events: none;
+  color: var(--am-muted-3); pointer-events: none;
 }
-[data-theme="dark"] .mqa-ph-cmd { color: var(--vc-fourth); }
 
 /* avatar in a command sub-menu row (market flag / brand logo) */
 /* Marken- und Marktkachel, Form aus der Prompts-Table uebernommen: die Marke traegt die Kachel der
