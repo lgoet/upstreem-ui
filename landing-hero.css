@@ -412,8 +412,21 @@
    liegt damit bei 720 + 690 = 1410ms, und darauf ist der Ablauf in landing-hero.js bezogen. */
 .ulh-stage { opacity: 0; }
 .ulh-root.is-shown .ulh-stage { opacity: 1; }
-.ulh-root.is-entering .ulh-frame  { animation: ulhRise 690ms var(--ulh-ease) backwards; }
-.ulh-root.is-entering .dph-root   { animation: ulhRise 620ms var(--ulh-ease) 240ms backwards; }
+/* ---- STUFE 0: DER TEXTBLOCK UEBER DEM FENSTER (24.09. angefordert) --------------------------
+   "Erst der GET-MENTIONED-Chip, dann die h1, usw. -- natuerlich vor dem Hero-Fenster darunter."
+   Vier Stufen zu 110ms, jede 560ms lang; die letzte endet bei 900, und erst danach faengt der
+   Rahmen an. Dieselbe Bewegung wie alles andere (ulhRise), damit die Seite eine Handschrift hat.
+   backwards: vor der eigenen Verzoegerung ist ein Teil unsichtbar -- ohne das blitzen alle vier
+   gleichzeitig auf und springen dann zurueck. */
+.ulh-root.is-entering .ulh-eyebrow { animation: ulhRise 560ms var(--ulh-ease) backwards; }
+.ulh-root.is-entering .ulh-h1      { animation: ulhRise 560ms var(--ulh-ease) 120ms backwards; }
+.ulh-root.is-entering .ulh-sub     { animation: ulhRise 560ms var(--ulh-ease) 240ms backwards; }
+.ulh-root.is-entering .ulh-cta     { animation: ulhRise 560ms var(--ulh-ease) 340ms backwards; }
+/* ---- STUFE 1: DAS FENSTER, ABER NOCH OHNE DEN INHALT DER DASHBOARD-SEITE --------------------
+   Rahmen samt Leiste und Hintergruenden, dann der Seitenkopf. Der Inhalt kommt in Stufe 2 und
+   haengt nicht mehr an einer Uhr -- siehe unten. */
+.ulh-root.is-entering .ulh-frame  { animation: ulhRise 690ms var(--ulh-ease) 440ms backwards; }
+.ulh-root.is-entering .dph-root   { animation: ulhRise 620ms var(--ulh-ease) 640ms backwards; }
 /* NICHT MEHR ZWEI GROSSE RECHTECKE (21.09. gemeldet: "Bitte eine richtige Appear animation im
    Dashboard, das sieht aktuell sehr mau aus"). Vorher stiegen .vot-root und .tcd-root als je ein
    Block herauf -- zwei Bewegungen fuer vier Kaesten, und in einer Sektion, in der das Brett der
@@ -429,15 +442,56 @@
    inzwischen abgefallen ist.
    Das Ende liegt bei 710 + 620 = 1330ms und damit weiter unter ERSCHEINEN_MS (1410) --
    an der Uhr in landing-hero.js aendert sich nichts. */
-.ulh-root.is-entering .vot-unit-left  .vot-head { animation: ulhRise 560ms var(--ulh-ease) 400ms backwards; }
-.ulh-root.is-entering .vot-unit-left  .vot-box  { animation: ulhRise 620ms var(--ulh-ease) 470ms backwards; }
-.ulh-root.is-entering .vot-unit-right .vot-head { animation: ulhRise 560ms var(--ulh-ease) 460ms backwards; }
-.ulh-root.is-entering .vot-unit-right .vot-box  { animation: ulhRise 620ms var(--ulh-ease) 530ms backwards; }
-.ulh-root.is-entering .tcd-unit-left  .tcd-head { animation: ulhRise 560ms var(--ulh-ease) 580ms backwards; }
-.ulh-root.is-entering .tcd-unit-left  .tcd-box  { animation: ulhRise 620ms var(--ulh-ease) 650ms backwards; }
-.ulh-root.is-entering .tcd-unit-right .tcd-head { animation: ulhRise 560ms var(--ulh-ease) 640ms backwards; }
-.ulh-root.is-entering .tcd-unit-right .tcd-box  { animation: ulhRise 620ms var(--ulh-ease) 710ms backwards; }
+/* ---- STUFE 2: DER INHALT DER DASHBOARD-SEITE ------------------------------------------------
+   NICHT MEHR AN EINER UHR, SONDERN AN is-inhalt (24.09. -- "die Appear-Animation beim ersten Load
+   ist immer noch etwas hakelig, das muss butter smooth sein").
+   Woher das Hakeln kam: die vier Kaesten liefen auf festen Verzoegerungen los, waehrend Chart.js
+   im selben Moment seine zwei Charts AUFBAUTE. Eine Transformation, die ueber den Compositor
+   laufen koennte, teilt sich dann den Hauptstrang mit Layout und Zeichnen -- und genau das sieht
+   man als Stocken. Die Uhr wusste davon nichts; sie lief einfach ab.
+   Jetzt setzt landing-hero.js die Klasse is-inhalt erst, wenn das Chart WIRKLICH steht (dieselbe
+   Bedingung, auf die auch der Szenenwechsel wartet). Bis dahin ist der Inhalt unsichtbar -- das
+   Fenster steht mit Rahmen, Leiste, Hintergruenden und Seitenkopf da, genau wie verlangt.
+   Danach vier Stufen ohne Konkurrenz: Visibility links, Visibility rechts, Citations links,
+   Citations rechts. */
+.ulh-root:not(.is-inhalt) .vot-unit-left  .vot-head,
+.ulh-root:not(.is-inhalt) .vot-unit-left  .vot-box,
+.ulh-root:not(.is-inhalt) .vot-unit-right .vot-head,
+.ulh-root:not(.is-inhalt) .vot-unit-right .vot-box,
+.ulh-root:not(.is-inhalt) .tcd-unit-left  .tcd-head,
+.ulh-root:not(.is-inhalt) .tcd-unit-left  .tcd-box,
+.ulh-root:not(.is-inhalt) .tcd-unit-right .tcd-head,
+.ulh-root:not(.is-inhalt) .tcd-unit-right .tcd-box { opacity: 0; }
+.ulh-root.is-inhalt .vot-unit-left  .vot-head { animation: ulhRise 560ms var(--ulh-ease) backwards; }
+.ulh-root.is-inhalt .vot-unit-left  .vot-box  { animation: ulhRise 620ms var(--ulh-ease) 70ms backwards; }
+.ulh-root.is-inhalt .vot-unit-right .vot-head { animation: ulhRise 560ms var(--ulh-ease) 60ms backwards; }
+.ulh-root.is-inhalt .vot-unit-right .vot-box  { animation: ulhRise 620ms var(--ulh-ease) 130ms backwards; }
+.ulh-root.is-inhalt .tcd-unit-left  .tcd-head { animation: ulhRise 560ms var(--ulh-ease) 260ms backwards; }
+.ulh-root.is-inhalt .tcd-unit-left  .tcd-box  { animation: ulhRise 620ms var(--ulh-ease) 330ms backwards; }
+.ulh-root.is-inhalt .tcd-unit-right .tcd-head { animation: ulhRise 560ms var(--ulh-ease) 320ms backwards; }
+.ulh-root.is-inhalt .tcd-unit-right .tcd-box  { animation: ulhRise 620ms var(--ulh-ease) 390ms backwards; }
 @media (prefers-reduced-motion: reduce) {
+  .ulh-root:not(.is-inhalt) .vot-unit-left  .vot-head,
+  .ulh-root:not(.is-inhalt) .vot-unit-left  .vot-box,
+  .ulh-root:not(.is-inhalt) .vot-unit-right .vot-head,
+  .ulh-root:not(.is-inhalt) .vot-unit-right .vot-box,
+  .ulh-root:not(.is-inhalt) .tcd-unit-left  .tcd-head,
+  .ulh-root:not(.is-inhalt) .tcd-unit-left  .tcd-box,
+  .ulh-root:not(.is-inhalt) .tcd-unit-right .tcd-head,
+  .ulh-root:not(.is-inhalt) .tcd-unit-right .tcd-box { opacity: 1; }
+  .ulh-root.is-entering .ulh-eyebrow,
+  .ulh-root.is-entering .ulh-h1,
+  .ulh-root.is-entering .ulh-sub,
+  .ulh-root.is-entering .ulh-cta,
+  .ulh-root.is-inhalt .vot-unit-left  .vot-head,
+  .ulh-root.is-inhalt .vot-unit-left  .vot-box,
+  .ulh-root.is-inhalt .vot-unit-right .vot-head,
+  .ulh-root.is-inhalt .vot-unit-right .vot-box,
+  .ulh-root.is-inhalt .tcd-unit-left  .tcd-head,
+  .ulh-root.is-inhalt .tcd-unit-left  .tcd-box,
+  .ulh-root.is-inhalt .tcd-unit-right .tcd-head,
+  .ulh-root.is-inhalt .tcd-unit-right .tcd-box,
+  .ulh-quell-box.is-da .udd-card,
   .ulh-root.is-entering .ulh-frame,
   .ulh-root.is-entering .dph-root,
   .ulh-root.is-entering .vot-unit-left  .vot-head,
@@ -1001,6 +1055,15 @@
 
 /* Die Zeilen in Miras Antworttabelle kommen einzeln herein, wie die der Prompts-Tabelle.
    --ulh-i setzt landing-hero.js an jeder Zeile, sobald die Antwort steht. */
+/* ---- WENIGER LUFT ZWISCHEN KOPFZEILE UND CHAT (24.09. angefordert) --------------------------
+   "Mach das Gap zwischen Topbar mit Titel und Start Mira-Chat-Content etwas kleiner, dass man die
+   Nachricht + die Evidence-Chips + die Bottom-Buttons sieht."
+   In der App hat der Chat oben 25px Polster -- richtig fuer ein Fenster, das so hoch ist wie der
+   Bildschirm. Hier ist der Ausschnitt fest, und die 25px fehlen unten bei der Knopfreihe.
+   8px statt 25: die Nachricht faengt naeher an der Zeile an, und die 17px stehen der Antwort zur
+   Verfuegung. Nur in diesem Schaustueck -- die App bleibt bei 25. */
+.ulh-root .ulh-mira .am-chat { padding-top: 8px; }
+
 .ulh-root .ulh-mira.is-zeilen .am-msg table tbody tr {
   animation: ulhRise 320ms var(--ulh-ease) backwards;
   animation-delay: calc(var(--ulh-i, 0) * 60ms);
@@ -1314,6 +1377,20 @@
    damit kein Browser durch ein anderes Grau blendet.
    z-index am Kopf und an seinen Kindern, NICHT -1 am Strich: ein negativer Wert haette ihn hinter
    den Grund der Seite gelegt (dort liegt die Fuellung von .ulh-root), und dann waere er weg. */
+/* ---- DER AUFTRITT DER QUELLEN-SEKTION IN STUFEN (24.09. angefordert) ------------------------
+   "Erst sichtbar ist der Bereich mit Container, Backgrounds und der gesamten Heading Row, dann
+   kommen mit etwas Verzoegerung die oberen beiden Elemente rein, dann die unteren beiden."
+   .ulh-quell-box ist der Kasten samt Hintergrund und Domainzeile -- er kommt wie bisher ueber
+   .ulh-auf herein. Die vier Karten darin warten und laufen danach zu zweit nach: oben links,
+   oben rechts, dann unten links, unten rechts. Dieselbe Bewegung wie im Hero (ulhRise).
+   Die Verzoegerungen zaehlen ab is-da, also ab dem Moment, in dem der Kasten hereinkommt; 260ms
+   Vorsprung lassen ihn zuerst ankommen. */
+.ulh-quell-box:not(.is-da) .udd-card { opacity: 0; }
+.ulh-quell-box.is-da .udd-chartcard            { animation: ulhRise 560ms var(--ulh-ease) 260ms backwards; }
+.ulh-quell-box.is-da .udd-funnelcard           { animation: ulhRise 560ms var(--ulh-ease) 330ms backwards; }
+.ulh-quell-box.is-da .udd-row2 .udd-typecard   { animation: ulhRise 560ms var(--ulh-ease) 470ms backwards; }
+.ulh-quell-box.is-da .udd-row2 .udd-modelcard  { animation: ulhRise 560ms var(--ulh-ease) 540ms backwards; }
+
 .ulh-quell-kopf { position: relative; z-index: 0; }
 .ulh-quell-kopf > * { position: relative; z-index: 1; }
 .ulh-quell-kopf::before {

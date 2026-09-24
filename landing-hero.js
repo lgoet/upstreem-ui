@@ -4159,7 +4159,13 @@
      Alles ueber Uhren und nicht ueber Scrollen: die Sektion steht am Seitenanfang und laeuft einmal
      durch. Ob spaeter der Scrollstand die Szenen treibt, ist Schritt 3 -- dann tauscht nur der
      Ausloeser, nicht der Ablauf. */
-  var ERSCHEINEN_MS = 1410;      /* muss zur CSS passen: letzte Stufe 710ms Verzoegerung + 620ms Lauf */
+  /* Das Ende von STUFE 1 -- Textblock, Rahmen, Seitenkopf. Die letzte Stufe dort faengt bei
+     640ms an und laeuft 620ms: 1260, plus Reserve fuer einen Frame Verzug beim Klassenwechsel.
+     Der INHALT der Dashboard-Seite haengt nicht mehr an dieser Uhr, sondern an is-inhalt
+     (inhaltZeigen) -- siehe landing-hero.css. */
+  var ERSCHEINEN_MS = 1300;
+  /* Die vier Kaesten der Dashboard-Seite: letzte Stufe 390ms Verzoegerung plus 620ms Lauf. */
+  var INHALT_MS = 1010;
   /* Mira kommt als EINE Stufe herein, nicht als vier -- also nur der Lauf, ohne Verzoegerungen. */
   var MIRA_RISE_MS = 690;
   var AUSBLENDEN_MS = 345;       /* halb so lang wie eine Erscheinensstufe */
@@ -4382,10 +4388,15 @@
        Liste der frueheren Chats und nimmt dessen title (renderChatTitlebar in ask-mira.js). Ohne
        diese Liste blieb dort das Ladeskelett stehen. titlePending muss dazu aus, sonst zeigt die
        Zeile weiter den Lader -- auch mit vorhandenem Titel. */
+    /* DER TITEL KOMMT SPAETER UND WIRD GETIPPT (24.09. angefordert: "wenn der Titel reinkommt in
+       die Topbar, mach das auch mit der Typeanimation wie in der Hauptapp").
+       Also erst OHNE Namen in die Liste: die Kopfzeile zeigt dann ihr Skelett, genau wie in der
+       App, solange ein Titel entsteht. Mit der Antwort kommt der Name und schreibt sich Zeichen
+       fuer Zeichen (miraTitelTippen, unten im selben Ablauf). */
     if (window.askMiraSetPreviousChats) window.askMiraSetPreviousChats([
-      { id: "lh-chat", title: "AI Visibility Report Q3 2026", updated_at: new Date().toISOString() }
+      { id: "lh-chat", title: "", updated_at: new Date().toISOString() }
     ]);
-    if (window.askMiraSetTitlePending) window.askMiraSetTitlePending("no");
+    if (window.askMiraSetTitlePending) window.askMiraSetTitlePending("yes");
     /* Die Quellen-Chips sollen ihr Zeichen zeigen und nicht das allgemeine Kettensymbol: die
        Voreinstellung fuer Zitate ist "icon", hier "favicon". Marke und Antwort stehen ohnehin auf
        logo, werden aber mitgegeben, damit die drei Werte an einer Stelle stehen. */
@@ -4440,10 +4451,38 @@
       if (window.askMiraExpectAnswer) window.askMiraExpectAnswer();
       if (window.askMiraSetMessages) window.askMiraSetMessages(m);
       if (window.askMiraTypeLastAnswer) window.askMiraTypeLastAnswer();
+      miraTitelSetzen(root);
       hellHalten(root);
       ohneTipps(root);
       miraZeilenAnsetzen(root);
     }, MIRA_DENKT_MS);
+  }
+
+  /* ---- DER CHATTITEL SCHREIBT SICH IN DIE KOPFZEILE -------------------------------------------
+     In der App tippt sich der Titel in die ZEILE DER SEITENLEISTE (titelAustippen in ask-mira.js).
+     Auf der Landingpage ist die grosse Chatliste zu -- zu sehen ist nur die Kopfzeile, und dort
+     soll dieselbe Bewegung passieren.
+     Warum hier und nicht ueber die Komponente: Miras Tippen haengt an der Zeile in der Liste, und
+     die gibt es hier nicht. Die Kopfzeile schreibt ihren Text in einem Zug (renderChatTitlebar).
+     Also wird der Titel ganz normal gesetzt -- Liste, titlePending, aktiver Chat, alles ueber die
+     vorgesehenen Setzer -- und danach der Text der Kopfzeile ueberschrieben, Zeichen fuer Zeichen.
+     Waehrend der Szene zeichnet nichts die Kopfzeile neu; der letzte Schreiber gewinnt.
+     Dasselbe Tempo wie die getippte Frage darueber (34ms je Zeichen). */
+  var MIRA_TITEL = "AI Visibility Report Q3 2026";
+  function miraTitelSetzen(root){
+    if (window.askMiraSetPreviousChats) window.askMiraSetPreviousChats([
+      { id: "lh-chat", title: MIRA_TITEL, updated_at: new Date().toISOString() }
+    ]);
+    if (window.askMiraSetTitlePending) window.askMiraSetTitlePending("no");
+    if (window.askMiraSetActiveChat) window.askMiraSetActiveChat("lh-chat");
+    var el = root.querySelector("#am-ct-text");
+    if (!el) return;
+    var i = 0;
+    (function tick(){
+      if (!el.isConnected) return;
+      el.textContent = MIRA_TITEL.slice(0, ++i);
+      if (i < MIRA_TITEL.length) setTimeout(tick, MIRA_ZEICHEN_MS);
+    })();
   }
 
   /* Die Zeilen der Antworttabelle kommen einzeln herein, wie die der Prompts-Liste.
@@ -5833,7 +5872,8 @@
         donutLaufen(root);
         taktgeber(root);
         szeneAnsetzen(root);
-        miraAnsetzen(root);
+        /* miraAnsetzen steht NICHT mehr hier: die Uhr faengt an, wenn der Inhalt der
+           Dashboard-Seite steht, und das entscheidet inhaltZeigen. */
         return;
       }
       if (++n > VERSUCHE){
@@ -5891,6 +5931,46 @@
     root.classList.add("is-shown");
     root.classList.add("is-entering");
     setTimeout(function(){ root.classList.remove("is-entering"); }, ERSCHEINEN_MS + 190);
+    inhaltZeigen(root);
+  }
+
+  /* ---- STUFE 2: DER INHALT KOMMT, WENN ER FERTIG IST -- NICHT, WENN EINE UHR ABLAEUFT --------
+     Gemeldet: "die Appear-Animation beim ersten Load ist immer noch etwas hakelig".
+     Der Grund war eine Gleichzeitigkeit: die vier Kaesten liefen auf festen Verzoegerungen los,
+     waehrend Chart.js im selben Moment seine zwei Charts aufbaute. Eine Bewegung, die sonst der
+     Compositor allein traegt, teilt sich dann den Hauptstrang mit Layout und Zeichnen -- und das
+     sieht man.
+     Also dieselbe Bedingung, auf die auch der erste Szenenwechsel wartet: eine lebende
+     Chart-Instanz UND die volle Zahl an Zeilen in der Zitattabelle. Erst dann faellt is-inhalt,
+     und die vier Kaesten haben die Bahn fuer sich.
+     Zwei Sicherungen. Die FRUEHESTE Zeit haelt die Reihenfolge ein: der Inhalt darf nicht vor dem
+     Rahmen da sein, auch wenn die Charts blitzschnell stehen. Und nach sechs Sekunden kommt er
+     ohnehin -- ein Dashboard ohne Inhalt ist schlechter als eines, das nicht perfekt hereinkommt
+     (kein Chart.js vom CDN, gedrosselter Tab).
+     Die Uhr fuer Mira haengt hier dran und nicht mehr am blossen Erscheinen: die Ruhe vor dem
+     Wechsel soll ab dem Moment zaehlen, in dem das Dashboard fertig DASTEHT. */
+  var INHALT_FRUEH = 1150;       /* kurz vor dem Ende von Stufe 1 -- die Kaesten setzen darauf auf */
+  var INHALT_SPAET = 6000;       /* Notbremse */
+  function inhaltZeigen(root){
+    if (root.__ulhInhaltAn) return;
+    root.__ulhInhaltAn = true;
+    var start = Date.now(), fertig = false;
+    function zeigen(){
+      if (fertig) return;
+      fertig = true;
+      root.classList.add("is-inhalt");
+      miraAnsetzen(root, INHALT_MS + MIRA_WARTEN);
+    }
+    (function warten(){
+      if (fertig) return;
+      var alt2 = Date.now() - start;
+      if (alt2 >= INHALT_SPAET){ zeigen(); return; }
+      var leinwand = root.querySelector(".up-line-canvas");
+      var lebt = leinwand && window.Chart && window.Chart.getChart && window.Chart.getChart(leinwand);
+      var zeilen = root.querySelectorAll(".vot-unit-right .vt-row").length === MARKEN.length;
+      if (lebt && zeilen && alt2 >= INHALT_FRUEH){ zeigen(); return; }
+      setTimeout(warten, 90);
+    })();
   }
 
   /* Sechs Sekunden nach dem Ende des Erscheinens wechselt die Sektion auf Mira. Feste Uhr und
