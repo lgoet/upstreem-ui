@@ -15492,6 +15492,13 @@
        der 29 dortigen Inline-Zeichen waren das die einzigen zwei ohne Entsprechung hier.
        chatDots ist NICHT messageCircle: der traegt nur den Kreis, dieser die drei Punkte
        darin. messageCircle steht im Power-Dashboard und bleibt, wie er ist. */
+    /* ZWEI KETTEN-ZEICHEN, und das ist Absicht (24.09.). link darueber ist das HugeIcons-Glyph,
+       das die App an vielen Stellen traegt. linkFeather ist das Feather-"link" -- es steht seit
+       jeher im Citations-Seitenkopf fuer "eine URL", handgezeichnet und damit unteilbar. Beim
+       Angleichen der Evidence-Chips in Mira war die Vorgabe ausdruecklich DIESES Zeichen. Statt
+       es ein zweites Mal zu zeichnen, steht es hier -- und der Seitenkopf holt es von hier. */
+    linkFeather: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>' +
+      '<path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
     link:     '<path d="M9.14339 10.691L9.35031 10.4841C11.329 8.50532 14.5372 8.50532 16.5159 10.4841C18.4947 12.4628 18.4947 15.671 16.5159 17.6497L13.6497 20.5159C11.671 22.4947 8.46279 22.4947 6.48405 20.5159C4.50532 18.5372 4.50532 15.329 6.48405 13.3503L6.9484 12.886"/>' +
               '<path d="M17.0516 11.114L17.5159 10.6497C19.4947 8.67095 19.4947 5.46279 17.5159 3.48405C15.5372 1.50532 12.329 1.50532 10.3503 3.48405L7.48405 6.35031C5.50532 8.32904 5.50532 11.5372 7.48405 13.5159C9.46279 15.4947 12.671 15.4947 14.6497 13.5159L14.8566 13.309"/>',
     chatDots: '<path d="M21.5 12C21.5 17.2467 17.2467 21.5 12 21.5C10.3719 21.5 8.8394 21.0904 7.5 20.3687C5.63177 19.362 4.37462 20.2979 3.26592 20.4658C3.09774 20.4913 2.93024 20.4302 2.80997 20.31C2.62741 20.1274 2.59266 19.8451 2.6935 19.6074C3.12865 18.5818 3.5282 16.6382 2.98341 15C2.6698 14.057 2.5 13.0483 2.5 12C2.5 6.75329 6.75329 2.5 12 2.5C17.2467 2.5 21.5 6.75329 21.5 12Z"/>' +

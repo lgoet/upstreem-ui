@@ -1525,7 +1525,13 @@
      DIE NACHBARN GEHEN MIT: der ueberfahrene ganz gross, die direkten Nachbarn deutlich, die
      uebernaechsten noch leicht. So laeuft eine Welle mit dem Zeiger, statt dass ein einzelner
      Strich springt. 200ms ease auf alles, damit das Durchfahren fliesst. */
-  .am-msgnav-ticks { width: 44px; display: flex; flex-direction: column; align-items: stretch; gap: 0; }
+  /* --am-nav-kraft skaliert den WEG, den ein Strich beim Ueberfahren zuruecklegt -- nicht seine
+     Ruhebreite. Deshalb steht in jeder Zeile unten calc(Ruhebreite + Weg * Kraft): bei voller
+     Kraft kommen genau die 15/20/26px von vorher heraus. Warum ueberhaupt: siehe build() in
+     ask-mira.js -- mit drei Strichen fuellt die volle Welle die halbe Leiste. */
+  .am-msgnav-ticks { width: 44px; display: flex; flex-direction: column; align-items: stretch; gap: 0; --am-nav-kraft: 1; }
+  .am-msgnav-ticks.is-kraft-drei { --am-nav-kraft: 0.75; }
+  .am-msgnav-ticks.is-kraft-halb { --am-nav-kraft: 0.5; }
   .am-msgnav-tick {
     height: 11px; display: flex; align-items: center; justify-content: flex-end;
     cursor: pointer; background: transparent;
@@ -1536,9 +1542,9 @@
     transition: width 200ms ease, height 200ms ease, background 200ms ease;
   }
   .am-msgnav-tick.is-active i { background: var(--am-text); }
-  .am-msgnav-tick.is-n2 i { width: 15px; background: color-mix(in srgb, var(--am-text) 38%, transparent); }
-  .am-msgnav-tick.is-n1 i { width: 20px; height: 3px; background: color-mix(in srgb, var(--am-text) 62%, transparent); }
-  .am-msgnav-tick.is-n0 i { width: 26px; height: 3px; background: var(--am-text); }
+  .am-msgnav-tick.is-n2 i { width: calc(12px + 3px * var(--am-nav-kraft)); background: color-mix(in srgb, var(--am-text) 38%, transparent); }
+  .am-msgnav-tick.is-n1 i { width: calc(12px + 8px * var(--am-nav-kraft)); height: 3px; background: color-mix(in srgb, var(--am-text) 62%, transparent); }
+  .am-msgnav-tick.is-n0 i { width: calc(12px + 14px * var(--am-nav-kraft)); height: 3px; background: var(--am-text); }
   .am-msgnav-tick:focus-visible { outline: 0; }
   .am-msgnav-tick:focus-visible i { box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 
@@ -3344,10 +3350,9 @@
     width: 0; margin-right: -6px; opacity: 0;
     transition: width 200ms ease, margin-right 200ms ease, opacity 200ms ease;
   }
-  .am-prev-item.is-busy .am-prev-spin,
-  /* Auch ohne Titel: zwischen fertiger Antwort und fertigem Titel steht sonst eine ganz leere
-     Zeile da (17.09. angefordert -- "in der Phase einfach keinen Text, nur den Loadingspinner"). */
-  .am-prev-item.is-untitled .am-prev-spin { width: 12px; margin-right: 0; opacity: 1; }
+  /* Ohne Titel NICHT mehr (24.09.): dort steht jetzt ein Skelett im Text, und das sagt dasselbe.
+     Kreisel und Skelett nebeneinander waeren zwei Ansagen fuer einen Zustand. */
+  .am-prev-item.is-busy .am-prev-spin { width: 12px; margin-right: 0; opacity: 1; }
   @media (prefers-reduced-motion: reduce){ .am-prev-spin { transition: none; } }
   .am-prev-spin .am-act-spinner { width: 12px; height: 12px; border-width: 1.7px; }
   /* Beim Umbenennen tritt er zurueck, genau wie die Pin-Marke und die Knoepfe: die Zeile gehoert
@@ -3372,6 +3377,19 @@
   .am-prev-item.is-pinned .am-prev-pin-ind { display: inline-flex; }
   .am-prev-pin-ind svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .am-prev-item-title { font-size: 13px; font-weight: 500; color: var(--am-text); flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* SKELETT STATT TEXT, SOLANGE KEIN NAME DA IST (24.09. angefordert). Vorher stand in dieser
+     Zeit der abgeschickte Text des Nutzers als Behelfsname -- der ist kein Name und hat dem
+     echten Titel den Tippeffekt genommen. Derselbe Verlauf, dieselbe Bewegung und dieselbe
+     Rundung wie .am-ct-skeleton in der Titelleiste; 104px ist die Breite eines kurzen Titels
+     in dieser 13px-Zeile, also so breit wie das, was gleich dort steht. */
+  .am-prev-item.is-untitled .am-prev-item-title {
+    flex: 0 0 auto; width: 104px; height: 11px; border-radius: 6px;
+    background: linear-gradient(90deg, var(--am-soft-2) 25%, var(--am-soft) 50%, var(--am-soft-2) 75%);
+    background-size: 300% 100%; animation: amSkelShimmer 1.25s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce){
+    .am-prev-item.is-untitled .am-prev-item-title { animation: none; }
+  }
   .am-prev-item-input {
     flex: 1 1 auto; min-width: 0; height: 26px; box-sizing: border-box;
     font-size: 13px; font-weight: 500; color: var(--am-text);

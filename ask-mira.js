@@ -71,28 +71,28 @@
      was kam zuerst -- das Ereignis oder das Nachfassen? Ohne diese Auskunft raet man, und Raten
      hat hier drei Tage gekostet.
 
-     EINSCHALTEN, eins von beidem:
-         window.askMiraDebug(true)        fuer diese Sitzung
-         ?amdebug=1  an der URL           ueberlebt auch einen Neuaufbau der Seite
+     EINSCHALTEN:  window.askMiraDebug(true)    -- bleibt gespeichert, ueberlebt den Neuaufbau
      AUSSCHALTEN:  window.askMiraDebug(false)
      ZUSAMMENFASSUNG:  window.askMiraDiag()   -- eine Tabelle, ohne dass man mitlesen musste.
+     GANZE SPUR:       window.askMiraVerlauf()
 
      Die Zaehlung laeuft IMMER mit, auch ohne eingeschaltete Ausgabe: sie kostet nichts und ist
-     genau dann da, wenn man sie braucht -- naemlich hinterher. */
-  /* AN, OHNE SCHALTER (24.09. ausdruecklich so verlangt). CLAUDE.md 5 sagt "keine
-     Debug-Ausgaben in der ausgelieferten App" -- das gilt weiter und wird wieder hergestellt,
-     sobald das Realtime steht. Solange es nicht steht, ist eine stumme App das groessere
-     Problem: drei Runden sind daran vergangen, dass niemand sehen konnte, ob ein Ereignis
-     ueberhaupt ankommt.
-     Der Weg ueber ?amdebug=1 ist RAUS: die App wertet ihre eigenen Suchparameter aus und ist
-     davon auf das Dashboard gesprungen. Abschalten geht mit askMiraDebug(false). */
+     genau dann da, wenn man sie braucht -- naemlich hinterher. Nur die KONSOLENZEILEN haengen
+     am Schalter. */
+  /* WIEDER AUS (24.09.). Die Ausgabe stand drei Runden lang unbedingt an, weil niemand sehen
+     konnte, ob ein Realtime-Ereignis ueberhaupt ankommt -- das ist geklaert, und CLAUDE.md 5
+     ("keine Debug-Ausgaben in der ausgelieferten App") gilt wieder.
+     Verloren geht dabei nichts: askMiraDiag() und askMiraVerlauf() antworten unveraendert, denn
+     aufgezeichnet wird weiter. Und einschalten ist eine Zeile in der Konsole, die im
+     localStorage stehen bleibt -- der Weg ueber ?amdebug=1 ist raus, die App wertet ihre eigenen
+     Suchparameter aus und ist davon auf das Dashboard gesprungen. */
   var AMD = {
-    an: true, start: Date.now(),
+    an: false, start: Date.now(),
     rt: [], rtAngenommen: 0, rtVerworfen: 0,
     nachfass: 0, nachfassZeiten: [],
     setter: {}, scroll: [], spur: []
   };
-  try { if (window.localStorage && localStorage.getItem('am_debug') === '0') AMD.an = false; } catch(e){}
+  try { if (window.localStorage && localStorage.getItem('am_debug') === '1') AMD.an = true; } catch(e){}
   function amT(){ return ((Date.now() - AMD.start) / 1000).toFixed(1) + 's'; }
   /* EINE Spur fuer alles, in der Reihenfolge, in der es passiert ist. askMiraDiag zeigt
      Tabellen -- die sind zum Lesen gut und zum Weitergeben schlecht. Diese hier ist ZUM
@@ -414,6 +414,10 @@
     user: 'user', trend: 'trendingUp', source: 'externalLink', flag: 'flag', smile: 'smile',
     clock: 'clock', copy: 'copy', download: 'download', zap: 'zap', maximize: 'response',
     globe: 'globe', link: 'externalLink', fileText: 'fileText', star: 'star', swords: 'swords',
+    /* urlLink ist das Feather-"link" -- dasselbe Zeichen, das der Citations-Pageheader fuer
+       URLs traegt. link (externalLink) bleibt daneben stehen: das ist der Pfeil-aus-dem-Kasten
+       fuer "oeffnet woanders", eine andere Aussage als "das ist eine URL". */
+    urlLink: 'linkFeather',
     prompt: 'zap', citation: 'fileText', competitor: 'swords', recommendation: 'star',
     brand: 'squareStack', thumbsUp: 'thumbsUp', thumbsDown: 'thumbsDown', check: 'check',
     trash: 'trash', pencil: 'squarePen', x: 'x', telescope: 'telescope', settings: 'settings',
@@ -438,7 +442,7 @@
     prompt_run:    { label: 'Response',       color: '#7a8aa0', icon: ICON.maximize },
     response:      { label: 'Response',       color: '#7a8aa0', icon: ICON.maximize },
     domain:        { label: 'Domain',         color: '#2ec27e', icon: ICON.globe },
-    url:           { label: 'URL',            color: '#3b82f6', icon: ICON.link },
+    url:           { label: 'URL',            color: '#3b82f6', icon: ICON.urlLink },
     citation:      { label: 'Citation',       color: '#6b7280', icon: ICON.fileText },
     recommendation:{ label: 'Recommendation', color: '#2ec27e', icon: ICON.star }
   };
@@ -1216,6 +1220,37 @@
       elChat.scrollTo({ top: Math.max(0, top), behavior: smooth ? 'smooth' : 'auto' });
     });
   }
+  /* ---- BEIM OEFFNEN EINES CHATS (24.09. angefordert) ---------------------------------------
+     Zwei Faelle, zwei Ziele:
+       gelesen    -> ans Ende. SOFORT, ohne Lauf. Gemeldet war genau der Lauf: "beim Navigieren
+                     zu einem Chat wird immer von oben bis ganz unten gescrollt" -- bei 80
+                     Nachrichten ist das eine Sekunde Kino fuer nichts.
+       ungelesen  -> an den ANFANG der letzten Mira-Nachricht. Da faengt das an, was er noch
+                     nicht gelesen hat; das Ende der Antwort waere die Mitte des Satzes.
+     Beides ohne Animation, und das ist mehr als Geschmack: solange ein weicher Lauf unterwegs
+     ist, sieht _startTyping ein _atBottom von false, haelt die Ansicht fest und blendet
+     "New Message" ein. Das war das gemeldete Bild -- man landet oben, mit dem blauen Kaestchen.
+     Dieselben 12px Luft ueber der Nachricht wie in scrollNewMessageTop. */
+  /* Die Marke traegt die Kennung mit: askMiraSetActiveChat wird fuer denselben Chat MEHRFACH
+     gerufen -- einmal aus chatWaehlen beim Klick, danach noch einmal aus Bubble, wenn der
+     Workflow zurueckkommt. Der erste Aufruf loescht den Punkt; der zweite saehe ihn nicht mehr
+     und wuerde die Marke wieder loeschen. Also wird sie nur GESETZT, und sie faellt erst, wenn
+     ein ANDERER Chat geoeffnet wird oder sie verbraucht ist. */
+  var _oeffnenUngelesen = false, _oeffnenUngelesenFuer = '';
+  function scrollOeffnen(ungelesen){
+    requestAnimationFrame(function(){
+      var ziel = elChat.scrollHeight;
+      if (ungelesen){
+        var asst = elMessages.querySelectorAll('.am-msg.is-assistant:not(.am-msg-loading):not(.am-msg-run)');
+        var letzte = asst.length ? asst[asst.length - 1] : null;
+        if (letzte){
+          ziel = letzte.getBoundingClientRect().top - elChat.getBoundingClientRect().top + elChat.scrollTop - 12;
+          ziel = Math.max(0, ziel);
+        }
+      }
+      elChat.scrollTo({ top: ziel, behavior: 'auto' });
+    });
+  }
   // On send: immediately (no animation) put the new user message near the top and RESERVE the space
   // below it, so the loading state — and later the taller tool loader — land in their final position
   // right away and never need a second scroll.
@@ -1444,7 +1479,8 @@
     if (mode === 'none') return null;
     function iconFor(){
       var svg = isBrand ? (t === 'competitor' ? ICON.swords : markenZeichen())
-              : (t === 'domain' ? ICON.globe : t === 'prompt' ? ICON.zap : isResp ? ICON.maximize : ICON.link);
+              : (t === 'domain' ? ICON.globe : t === 'prompt' ? ICON.zap : isResp ? ICON.maximize
+                 : t === 'url' ? ICON.urlLink : ICON.link);
       var span = document.createElement('span'); span.className = 'am-inline-ic'; span.innerHTML = svg; return span;
     }
     // Response chips: a small logo box holding the model logo (matches the landing-page component)
@@ -2510,15 +2546,22 @@
        Jetzt gewinnt der Ladezustand. 'bottom' ist fuer das OEFFNEN eines Chats gedacht, und dabei
        wartet man auf nichts. */
     else if (S.isLoading) { _amWeg = 'laedt: _pinSendScroll' + (_pinFuer === _sendStartTs && _sendStartTs ? ' (schon verankert, nichts getan)' : ''); _pinSendScroll(); }
-    else if (_scrollMode === 'bottom') { _amWeg = 'bottom: ganz nach unten'; elMessages.style.minHeight = ''; scrollToBottom(true); }
-    /* NICHTS NEUES -> GAR NICHTS ANFASSEN (24.09. nachgebessert). Der Zweig stand vorher GANZ
-       OBEN und setzte dabei minHeight zurueck -- das ist aber der reservierte Platz unter dem
-       Ladezustand, den _pinSendScroll gerade erst gestellt hat. Gemeldet als "der Ladestate
-       rutscht runter, der Whitespace unten geht weg": das Nachfassen zeichnete waehrend des
-       Wartens neu, der Zweig griff, und die Reserve war weg.
-       Jetzt steht er HINTER dem Ladezustand -- waehrend gewartet wird, gilt weiter
-       _pinSendScroll -- und er fasst weder die Scrollposition noch die Reserve an. */
+    /* NICHTS NEUES -> GAR NICHTS ANFASSEN (24.09. nachgebessert, am selben Tag noch einmal
+       vorgezogen). Der Zweig stand zuerst GANZ OBEN und setzte dabei minHeight zurueck -- das
+       ist aber der reservierte Platz unter dem Ladezustand, den _pinSendScroll gerade erst
+       gestellt hat. Gemeldet als "der Ladestate rutscht runter, der Whitespace unten geht weg".
+       Also hinter den Ladezustand. Dort stand er dann aber HINTER 'bottom', und weil
+       askMiraSetMessages _scrollMode bei JEDEM Aufruf auf 'bottom' setzt, sprang jedes
+       Nachfassen mit unveraenderten Nachrichten ans Ende -- der Nutzer las, die Ansicht rutschte.
+       Jetzt steht er zwischen beiden: der Ladezustand gewinnt, danach gewinnt "unveraendert". */
     else if (_gleicheNachrichten){ _amWeg = 'nichts Neues: unberuehrt'; }
+    else if (_scrollMode === 'bottom') {
+      var _ungelesen = _oeffnenUngelesen && _oeffnenUngelesenFuer === String(S.activeChatId || '');
+      _amWeg = 'oeffnen: ' + (_ungelesen ? 'Anfang der letzten Antwort' : 'sofort ans Ende');
+      elMessages.style.minHeight = '';
+      scrollOeffnen(_ungelesen);
+      _oeffnenUngelesen = false;   /* gilt genau fuer dieses eine Oeffnen */
+    }
     else { _amWeg = 'neue Nachricht: scrollNewMessageTop'; elMessages.style.minHeight = ''; scrollNewMessageTop(true); }
     try {
       AMD.scroll.push({ zeit: amT(), weg: _amWeg, vorher: Math.round(elChat.scrollTop),
@@ -3661,12 +3704,43 @@
      fuer Zeichen. Gemerkt wird das je Kennung -- welche Zeile ohne Titel dastand und welche schon
      getippt wurde -- sonst tippt jedes Neuzeichnen der Liste alles noch einmal. */
   var _ohneTitel = {}, _titelGetippt = {}, _tippStand = {}, _tippGen = {};
+  /* ---- "New Chat" IST KEIN NAME (24.09. angefordert) ---------------------------------------
+     Die Datenbank traegt diesen Platzhalter ein, sobald eine Sitzung entsteht; der Titelschritt
+     laeuft danach und braucht ein paar Sekunden. Faellt ein Nachfassen in diese Luecke, holt es
+     den Platzhalter ab -- und wer ihn anzeigt, hat die Zeile beschriftet, bevor sie einen Namen
+     hatte. Der echte Titel wird dann nicht mehr getippt, weil die Zeile fuer den Tippeffekt
+     schon als benannt gilt. Genau das war vorher auch mit dem Vorschautext des Nutzers los.
+     Gefiltert wird nur, SOLANGE gewartet wird: benennt jemand einen Chat von Hand "New Chat",
+     soll das stehen bleiben. Die Frist ist die Notbremse -- bleibt der Titelschritt ganz aus,
+     steht nach 90 Sekunden lieber der Platzhalter da als ein Skelett, das nie aufhoert. */
+  var TITEL_PLATZHALTER = { 'new chat': 1, 'neuer chat': 1, 'untitled chat': 1, 'untitled': 1 };
+  var _titelWartet = {};
+  function titelWarten(id){
+    var kid = String(id == null ? '' : id); if (!kid || _titelWartet[kid]) return;
+    _titelWartet[kid] = setTimeout(function(){
+      delete _titelWartet[kid];
+      try { renderPrevious(); titelNachziehen(); } catch(e){}
+    }, 90000);
+  }
+  function titelFertig(id){
+    var kid = String(id == null ? '' : id); if (!_titelWartet[kid]) return;
+    clearTimeout(_titelWartet[kid]); delete _titelWartet[kid];
+  }
+  /* Der EINE Weg, an einen anzeigbaren Titel zu kommen -- Liste, Kopfzeile und Nachzieher lesen
+     alle hierueber, sonst zeigte eine Stelle den Platzhalter und die andere das Skelett. */
+  function chatTitel(c){
+    if (!c) return '';
+    var t = c.title == null ? '' : String(c.title);
+    if (!t) return '';
+    if (_titelWartet[String(c.id)] && TITEL_PLATZHALTER[t.trim().toLowerCase()]) return '';
+    return t;
+  }
   function chatItemHTML(c){
     var active = chatAktivSichtbar(c.id) ? ' is-active' : '';
     var isP = amTruthy(c.is_pinned);
     var pinned = isP ? ' is-pinned' : '';
     var kid = String(c.id);
-    var echterTitel = c.title ? String(c.title) : '';
+    var echterTitel = chatTitel(c);
     /* OHNE TITEL HEISST: der Spinner steht da (17.09. angefordert). Nicht nur waehrend die
        Antwort laeuft -- zwischen fertiger Antwort und fertigem Titel liegen ein paar Sekunden,
        und eine leere Zeile ohne jedes Zeichen waere in dieser Zeit ein Loch in der Liste.
@@ -6156,6 +6230,9 @@
      Ereignis. */
   function rtChatAnlegen(id, titel, wann){
     id = rtText(id); if (!id) return;
+    /* Ein Titel, der wirklich einer ist, beendet das Warten -- danach wird nichts mehr
+       gefiltert und die Zeile tippt ihn. */
+    if (titel && !TITEL_PLATZHALTER[String(titel).trim().toLowerCase()]) titelFertig(id);
     var vorhanden = findChat(id);
     if (vorhanden){
       /* NICHT ueber askMiraAppendPreviousChats. Das ist der BLAETTERWEG, und der zaehlt mit:
@@ -6310,7 +6387,15 @@
         offen = chat === rtText(S.activeChatId);
       }
       /* Ein neuer Chat erscheint SOFORT in der Liste, nicht erst mit der Antwort. */
-      if (rtWahr(p.is_new_session)) rtChatAnlegen(chat, rtText(p.preview), rtText(p.created_at));
+      if (rtWahr(p.is_new_session)){
+        /* OHNE BEHELFSNAMEN (24.09. angefordert). Vorher stand hier rtText(p.preview) -- der
+           abgeschickte Text des Nutzers als Uebergangstitel. Zwei Dinge daran waren falsch: er
+           ist kein Name, und er nimmt dem echten Titel den Tippeffekt weg (getippt wird nur,
+           was in eine Zeile kommt, die vorher leer war). Jetzt bleibt sie leer und traegt das
+           Skelett, bis mira_title_updated den Namen bringt. */
+        titelWarten(chat);
+        rtChatAnlegen(chat, '', rtText(p.created_at));
+      }
       _rtLaeuft[chat] = { seit: Date.now(), amid: amid };
       rtUhrStellen();
       wartendSetzen(chat, true);
@@ -6902,7 +6987,12 @@
     }
     amZaehl('setActiveChat', String(chatId || '(leer)').slice(0, 8) + (titel ? ' titel=' + titel : ''));
     S.activeChatId = chatId;
-    /* Ein geoeffneter Chat ist gelesen: der Punkt hat sich erledigt. */
+    /* Ein geoeffneter Chat ist gelesen: der Punkt hat sich erledigt. Vorher aber noch ablesen,
+       DASS er dran war -- das entscheidet gleich, wohin gescrollt wird (siehe scrollOeffnen).
+       Hier und nicht spaeter: fertigLoeschen raeumt die Marke in derselben Zeile ab. */
+    var _oid = String(chatId || '');
+    if (_fertig[_oid]){ _oeffnenUngelesen = true; _oeffnenUngelesenFuer = _oid; }
+    else if (_oeffnenUngelesenFuer !== _oid){ _oeffnenUngelesen = false; _oeffnenUngelesenFuer = _oid; }
     fertigLoeschen(chatId);
     /* ERST SICHERN, DANN HOLEN -- und nur bei einem echten Wechsel. Der Umzug aus dem
        Dashboard ist ausgenommen, dort wandert der Inhalt absichtlich mit (_umzugOhneFeld). */
@@ -6923,7 +7013,7 @@
         _c = findChat(chatId);
       }
     }
-    if (_c && _c.title) S.titlePending = false;   // opened a chat that already has a title -> show it (no skeleton)
+    if (_c && chatTitel(_c)) S.titlePending = false;   // opened a chat that already has a title -> show it (no skeleton)
     renderPrevious();
     if (window.__amRenderChatTitlebar) window.__amRenderChatTitlebar();
     if (fireEvent && window.bubble_fn_ask_mira_select_chat) window.bubble_fn_ask_mira_select_chat(chatId);
@@ -6935,7 +7025,10 @@
   window.askMiraSetTitlePending = function(pending){
     if (amTruthy(pending)){
       var c = S.activeChatId ? findChat(S.activeChatId) : null;
-      var firstMessage = !(c && c.title);         // no title yet == first message / title being generated
+      var firstMessage = !(c && chatTitel(c));    // no title yet == first message / title being generated
+      /* Derselbe Zustand fuer die Zeile in der Liste: solange hier ein Titel entsteht, ist
+         "New Chat" aus der Datenbank kein Name, sondern der Platzhalter davor. */
+      if (firstMessage && S.activeChatId) titelWarten(S.activeChatId);
       S.titlePending = firstMessage;              // not the first message -> keep the existing title
     } else {
       S.titlePending = false;
@@ -7963,6 +8056,8 @@
     var newTitle = (inp ? inp.value : '').trim();
     if (!newTitle){ prevExitEdit(item); return; }
     var c = findChat(id); if (c) c.title = newTitle;
+    titelFertig(id);   /* von Hand benannt: ab jetzt gilt auch "New Chat" als echter Name */
+    item.classList.remove('is-untitled');   /* sonst bleibt das Skelett ueber dem neuen Namen stehen */
     var titleEl = item.querySelector('.am-prev-item-title'); if (titleEl) titleEl.textContent = newTitle;
     prevExitEdit(item);
     amFire('rename_chat', { chat_id: id, title: newTitle }, 'rename-chat');
@@ -8750,7 +8845,7 @@
     if (elChatTitlebar.classList.contains('is-editing')) return;   // don't clobber an active edit
     var id = S.activeChatId;
     var c = id ? findChat(id) : null;
-    var title = (c && c.title) ? String(c.title) : '';
+    var title = chatTitel(c);
     // The skeleton is driven by title_pending: while a title is being generated we show the loader; once
     // title_pending is false the title is ready and shown. (No title yet + not pending = data still loading
     // -> keep the skeleton as a graceful fallback rather than an empty bar.)
@@ -8776,7 +8871,7 @@
   function titelNachziehen(){
     if (!S.activeChatId) return;
     var c = findChat(S.activeChatId);
-    if (!c || !c.title) return;
+    if (!c || !chatTitel(c)) return;
     S.titlePending = false;
     renderChatTitlebar();
   }
@@ -8797,6 +8892,7 @@
     var newTitle = (elCtInput ? elCtInput.value : '').trim();
     if (!newTitle){ ctDiscard(); return; }
     var c = findChat(id); if (c) c.title = newTitle;
+    titelFertig(id);   /* von Hand benannt: ab jetzt gilt auch "New Chat" als echter Name */
     if (elCtText) elCtText.textContent = newTitle;
     var sideTitle = elPrevList.querySelector('.am-prev-item[data-chat-id="'+cssEsc(id)+'"] .am-prev-item-title');
     if (sideTitle) sideTitle.textContent = newTitle;
@@ -9631,6 +9727,15 @@
         return '<span class="am-msgnav-tick" role="button" tabindex="0" data-idx="' + i +
                '" aria-label="' + _escAttr(u.frage.slice(0, 80)) + '"><i></i></span>';
       }).join('');
+      /* DER AUSSCHLAG HAENGT AN DER ANZAHL (24.09. angefordert). Die Welle ist fuer eine lange
+         Leiste gebaut: der ueberfahrene Strich waechst von 12 auf 26px, und mit drei Strichen
+         sieht dieselbe Bewegung masslos aus -- sie fuellt dann die halbe Leiste. Also weniger
+         Weg, wenn wenig dasteht: unter 4 die Haelfte, bei 4 und 5 drei Viertel, ab 6 der volle
+         Ausschlag wie bisher. Die Farbe bleibt unveraendert -- sie sagt, WO der Zeiger steht,
+         und das soll auch bei drei Strichen deutlich sein. */
+      var n = items.length;
+      ticks.classList.toggle('is-kraft-halb', n < 4);
+      ticks.classList.toggle('is-kraft-drei', n === 4 || n === 5);
     }
     /* DIE NACHBARN GEHEN MIT (nach dem Vorbild): der ueberfahrene ganz gross, die direkten
        Nachbarn deutlich, die uebernaechsten noch leicht. Dadurch laeuft eine Welle mit dem

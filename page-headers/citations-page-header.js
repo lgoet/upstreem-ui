@@ -35,14 +35,19 @@
     [100, 300, 800, 1800].forEach(function(ms){ setTimeout(cphRun, ms); });
   }
 
-  /* Feather "globe" / "link" (not "link-2") -- no existing icon for either concept elsewhere in
-     this repo to reuse, so these are the standard Feather glyphs for "a domain" and "a URL/link". */
-  var PAGES = [
+  /* ERST BEIM GEBRAUCH BAUEN, NICHT AUF MODULEBENE. Das Zeichen fuer URLs kommt seit dem 24.09.
+     aus core (linkFeather) -- und ob window.UpstreemCore beim LADEN dieser Datei schon dasteht,
+     ist nicht gesagt. Eine Liste als Konstante haette in dem Fall ein leeres Feld getragen, und
+     zwar stillschweigend. cphRun laeuft erst, wenn cphBoot core gefunden hat, also wird sie dort
+     gebaut.
+     Der Globus ist weiter von Hand gezeichnet: core traegt zwar ein globe, das ist aber ein
+     anderes Zeichen, und diese Leiste zu aendern war nicht verlangt. */
+  function pagesBauen(UC){ return [
     { value: "domains", label: "Domains",
       icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" /> <path d="M2 12h20" /></svg>' },
     { value: "urls", label: "URLs",
-      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /> <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>' }
-  ];
+      icon: UC.icon('linkFeather', 2) }
+  ]; }
 
   function cphRun(){
     var UC = window.UpstreemCore;
@@ -69,7 +74,7 @@
     if (UC.makePageHeaderMeta) UC.makePageHeaderMeta(root);
 
     UC.makePageNav(root, {
-      pages: PAGES,
+      pages: pagesBauen(UC),
       onSelect: function(value){ fire("data-nav-fn", "cphNav", { page: value }); }
     });
 
