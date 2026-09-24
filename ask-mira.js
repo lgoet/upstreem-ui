@@ -2502,8 +2502,15 @@
     var _amWeg = '';
     if (!S.messages.length){ _amWeg = 'leer: scrollTop 0'; elMessages.style.minHeight = ''; if (!S.isLoading){ elChat.scrollTop = 0; } }
     else if (_typeUnits) { _amWeg = 'tippt: setzt sich selbst'; elMessages.style.minHeight = ''; }
+    /* SOLANGE EINE ANTWORT LAEUFT, GEHOERT DIE POSITION DEM LADEZUSTAND (24.09. gemessen).
+       Der Zweig 'bottom' stand davor -- und askMiraSetMessages setzt _scrollMode bei JEDEM
+       Aufruf auf 'bottom'. Holte das Nachfassen waehrend des Wartens die Nachrichten, sprang die
+       Ansicht also ans Ende und riss den gerade gesetzten Anker weg. Im Protokoll war das die
+       Zeile 'bottom: ganz nach unten' mitten zwischen zwei 'laedt'-Zeilen.
+       Jetzt gewinnt der Ladezustand. 'bottom' ist fuer das OEFFNEN eines Chats gedacht, und dabei
+       wartet man auf nichts. */
+    else if (S.isLoading) { _amWeg = 'laedt: _pinSendScroll' + (_pinFuer === _sendStartTs && _sendStartTs ? ' (schon verankert, nichts getan)' : ''); _pinSendScroll(); }
     else if (_scrollMode === 'bottom') { _amWeg = 'bottom: ganz nach unten'; elMessages.style.minHeight = ''; scrollToBottom(true); }
-    else if (S.isLoading) { _amWeg = 'laedt: _pinSendScroll'; _pinSendScroll(); }
     /* NICHTS NEUES -> GAR NICHTS ANFASSEN (24.09. nachgebessert). Der Zweig stand vorher GANZ
        OBEN und setzte dabei minHeight zurueck -- das ist aber der reservierte Platz unter dem
        Ladezustand, den _pinSendScroll gerade erst gestellt hat. Gemeldet als "der Ladestate
