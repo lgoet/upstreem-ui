@@ -2350,10 +2350,31 @@
       _forceTypeNext = false;                       // consume ONLY when we actually type a new answer
       if (_forceTimer){ clearTimeout(_forceTimer); _forceTimer = null; }
     }
+    /* HAT SICH UEBERHAUPT ETWAS GEAENDERT? (24.09. gemeldet: "wenn die Nachricht fertig
+       gescrollt ist, springt der Scrollcontainer wieder nach oben".)
+       Der Grund stand unten: ein Zeichnen mit _scrollMode 'newmsg' ruft scrollNewMessageTop und
+       schiebt den Anfang der letzten Nachricht nach oben. Beim EINTREFFEN einer Antwort ist das
+       richtig -- danach nicht mehr. Und danach passiert es trotzdem, weil dieselbe Antwort
+       mehrfach hereinkommt: das Nachfassen holt den Chat alle paar Sekunden erneut, und schon
+       ein geaenderter Zeitstempel reicht, damit der Vergleich der Rohnutzlast nicht greift.
+       Ergebnis: die Antwort ist fertig getippt, der Nutzer liest -- und die Ansicht springt
+       zurueck an den Anfang.
+       Aendert sich an den Nachrichten NICHTS, bleibt die Scrollposition jetzt, wo sie ist.
+       Verglichen wird dieselbe Schluesselliste, die zwei Zeilen darueber schon fuer _isAppend
+       gebraucht wird -- keine zweite Buchfuehrung. */
+    var _gleicheNachrichten = _prevMsgKeys.length === _curKeys.length;
+    if (_gleicheNachrichten){
+      for (var _gk = 0; _gk < _curKeys.length; _gk++){
+        if (_prevMsgKeys[_gk] !== _curKeys[_gk]){ _gleicheNachrichten = false; break; }
+      }
+    }
     _prevMsgKeys = _curKeys;
     _prevLoading = S.isLoading;
 
-    if (!S.messages.length){ elMessages.style.minHeight = ''; if (!S.isLoading){ elChat.scrollTop = 0; } }
+    if (_gleicheNachrichten && !_typeUnits && S.messages.length && !_loadingDone){
+      elMessages.style.minHeight = '';   /* nichts Neues -- die Ansicht bleibt, wo sie steht */
+    }
+    else if (!S.messages.length){ elMessages.style.minHeight = ''; if (!S.isLoading){ elChat.scrollTop = 0; } }
     else if (_typeUnits) { elMessages.style.minHeight = ''; /* _startTyping positions the scroll itself */ }
     else if (_scrollMode === 'bottom') { elMessages.style.minHeight = ''; scrollToBottom(true); }
     else if (S.isLoading) _pinSendScroll();   // send -> jump straight to the final position, reserve loader space

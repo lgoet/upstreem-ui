@@ -75,7 +75,7 @@
          Idempotent: initRoot kann mehrfach laufen. */
       if (!searchBtn.getAttribute("data-oph-btn")){
         searchBtn.setAttribute("data-oph-btn", "1");
-        searchBtn.innerHTML = (UC.icon ? UC.icon("scanSquare", 2) : "") +
+        searchBtn.innerHTML = (UC.icon ? UC.icon("searchVisual", 2) : "") +
           '<span>Look for<span class="up-ph-addbtn-full"> new Opportunities</span></span>';
       }
       searchBtn.addEventListener("click", function(){ fire("data-search-fn", "ophSearch", {}); });
