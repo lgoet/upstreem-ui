@@ -7323,6 +7323,29 @@
   window.askMiraGetState = function(){ return JSON.stringify(S); };
 
   /* ---------------- Events ---------------- */
+  /* ---- DAS GANZE FELD IST DAS FELD (24.09. angefordert) --------------------------------------
+     Gemeldet: "es gibt Bereiche im unteren Teil des Containers, zum Beispiel zwischen Add-Icon
+     und Model-Changer -- wenn man da klickt, passiert einfach nichts." Stimmt: das Eingabefeld
+     ist nur die eine Zeile oben, der Rest der Karte ist Polster und Knopfleiste. Wer die Karte
+     als Eingabefeld ansieht -- und so sieht sie aus -- klickt ins Leere.
+     Jetzt holt jeder Klick in die Karte den Fokus ins Feld, ausser er gilt etwas anderem.
+     Auf MOUSEDOWN und mit preventDefault, nicht auf click: ein Mousedown auf ein nicht
+     fokussierbares Element nimmt dem Feld den Fokus schon WEG, bevor irgendein click-Handler
+     laeuft. Ohne preventDefault waere das erst ein Blur und dann ein Focus -- also ein Flackern
+     des Textzeigers und ein verlorener Markierungsbereich. So passiert beides gar nicht erst.
+     Die Ausnahmen sind alles, was selbst etwas tut, plus die zwei Flaechen im Composer, die
+     eine eigene Oberflaeche sind: der Picker (am-pick-panel, mit eigenem Suchfeld) und die
+     Aufnahme (am-rec). */
+  var COMP_EIGEN = 'button, a[href], input, textarea, select, label, [role="button"], ' +
+                   '[contenteditable], [data-action], .am-pick-panel, .am-rec, .up-entchip';
+  if (elComposer) elComposer.addEventListener('mousedown', function(e){
+    if (e.button !== 0) return;                         /* nur die linke Taste */
+    var t = e.target;
+    if (!t || !t.closest || t.closest(COMP_EIGEN)) return;
+    if (elTextarea.disabled) return;
+    e.preventDefault();
+    try { elTextarea.focus(); } catch(_){}
+  });
   elTextarea.addEventListener('input', function(){ autosize(); refreshSend(); updateLoopState(); });
   elTextarea.addEventListener('keydown', function(e){
     if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); }
