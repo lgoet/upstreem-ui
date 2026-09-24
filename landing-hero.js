@@ -3037,6 +3037,21 @@
      alten Scheiben (core rechnet sie beim Zeichnen aus brighten/darken, und die zwei Funktionen
      gibt es nur dort). renderDonut baut Legende UND Ring richtig neu; das Ueberblenden darum
      macht daraus eine Bewegung statt eines Sprungs. */
+  var FEN_URL_RING = 260;        /* 200ms Eingangsanimation des Rings plus Zugabe */
+  var FEN_URL_RING_MAX = 1200;   /* Notbremse: danach wird aufgeblendet, egal was die Leinwand sagt */
+  function ringWartenDann(koerper, fertig){
+    var t0 = Date.now(), letzte = -1, gleich = 0;
+    (function takt(){
+      var cv = koerper.querySelector("canvas");
+      var b = cv ? Math.round(cv.getBoundingClientRect().width) : 0;
+      if (b > 0 && b === letzte) gleich++; else gleich = 0;
+      letzte = b;
+      var alt = Date.now() - t0;
+      if ((gleich >= 3 && alt >= FEN_URL_RING) || alt >= FEN_URL_RING_MAX){ fertig(); return; }
+      setTimeout(takt, 40);
+    })();
+  }
+
   function donutLaufen(root){
     if (root.__ulhDonutAn) return;
     root.__ulhDonutAn = true;
@@ -3050,7 +3065,17 @@
         koerper.__ulhDonut.renderDonut(urlScheiben(kern, FEN_URL_STAND[fenUrlIndex]));
         /* Der Kopf des Fensters nennt keine Zahl (die steht in der Mitte des Rings), es gibt hier
            also nichts weiter nachzuziehen. */
-        koerper.classList.remove("is-wechsel");
+        /* ERST AUFBLENDEN, WENN DER NEUE RING WIRKLICH STEHT (24.09. gemeldet: "es ist kurz ganz
+           klein etwas weiter links oben, bevor es gross wird -- das Chart darf sich in den
+           Abmessungen nie auch nur 1ms veraendern").
+           Genau das beschreibt den Aufbau eines frisch gezeichneten Doughnuts: der Ring waechst
+           aus der Mitte (200ms Eingangsanimation im Kit), und die Leinwand bekommt ihr Mass erst,
+           wenn Chart.js sie gemessen hat (resizeDelay 120 plus der Beobachter am Kasten). Beides
+           lief bisher SICHTBAR ab, weil die Unschaerfe im selben Augenblick wegging.
+           Jetzt bleibt sie liegen, bis zwei Dinge zutreffen: die Leinwand hat dreimal
+           hintereinander dasselbe Mass, und seit dem Zeichnen ist mindestens RING_MS vergangen.
+           Die Notbremse sorgt dafuer, dass das Fenster nie unscharf stehen bleibt. */
+        ringWartenDann(koerper, function(){ koerper.classList.remove("is-wechsel"); });
       }, FEN_URL_AUS);
     };
   }
@@ -4164,8 +4189,8 @@
      Der INHALT der Dashboard-Seite haengt nicht mehr an dieser Uhr, sondern an is-inhalt
      (inhaltZeigen) -- siehe landing-hero.css. */
   var ERSCHEINEN_MS = 1300;
-  /* Die vier Kaesten der Dashboard-Seite: letzte Stufe 390ms Verzoegerung plus 620ms Lauf. */
-  var INHALT_MS = 1010;
+  /* Die vier Kaesten der Dashboard-Seite: letzte Stufe 230ms Verzoegerung plus 620ms Lauf. */
+  var INHALT_MS = 850;
   /* Mira kommt als EINE Stufe herein, nicht als vier -- also nur der Lauf, ohne Verzoegerungen. */
   var MIRA_RISE_MS = 690;
   var AUSBLENDEN_MS = 345;       /* halb so lang wie eine Erscheinensstufe */
@@ -4277,7 +4302,10 @@
      Chips. Die Zahlen kommen aus demselben Zustand B, in den der Filterwechsel das Dashboard
      gebracht hat: eine Antwort mit anderen Zahlen als das Fenster darueber waere der auffaelligste
      Widerspruch, den diese Sektion haben koennte. */
-  var MIRA_ZEILEN = 4;
+  /* DREI STATT VIER (24.09. angefordert: "entferne eine Tabellen-Row, damit man diesmal wirklich
+     die Evidence-Chips unten und die Buttons sieht"). Eine Zeile ist rund 38px -- zusammen mit dem
+     kleineren Polster oben (landing-hero.css) reicht der Ausschnitt jetzt bis unter die Knopfreihe. */
+  var MIRA_ZEILEN = 3;
 
   function miraAntwort(){
     var tab = tabelle("b");
@@ -5150,7 +5178,8 @@
      Verschieben. */
   /* 800 -> 1300 (21.09. gemeldet: "zu hektisch"). Ein Zug ist die einzige Bewegung, die das
      Brett zeigt, und sie soll sich lesen lassen, nicht huschen. */
-  var CHANCEN_ZUG = 1300;
+  /* 1300 -> 910, also 30 Prozent schneller (24.09. angefordert). */
+  var CHANCEN_ZUG = 910;
   /* Angefasst wird nur noch EINE Karte: die, die sich danach als Schublade oeffnet. Bei den zwei
      Zuegen fiel es weg -- eine Karte, die vor dem Wandern gedrueckt wird, erklaert die Bewegung
      nicht besser, und drei Druckstellen in zehn Sekunden sind eine zu viel.
@@ -5301,7 +5330,9 @@
   /* 5200 -> 3200 (24.09. angefordert: "der bleibt zu lange stehen, gut zwei Sekunden kuerzer").
      Das ist der Stand NACH dem zweiten Zug -- die Karte liegt in Done, und danach geht die
      Schublade auf. */
-  var CHANCEN_HALT = 3200;      /* Endzustand des Bretts, bevor die Karte aufgeht */
+  /* 5200 -> 3200 -> 2400: noch einmal kuerzer (24.09.). Das ist der Stand NACH dem zweiten Zug --
+     die Karte liegt in Done, und danach geht die Schublade auf. */
+  var CHANCEN_HALT = 2400;      /* Endzustand des Bretts, bevor die Karte aufgeht */
   var CHANCEN_OFFEN = 4000;     /* wie lange die Schublade offen bleibt */
   var CHANCEN_ZU = 520;         /* das Zufahren der Schublade, bevor die Seite geht */
 
@@ -5727,11 +5758,22 @@
          Deshalb hier derselbe Weg zurueck, den der Wechsel hin genommen hat, nur ohne Dauer. */
       chartWandern(root, reihen("a"), 0);
 
-      /* 5. Die Seite kommt zurueck, gestaffelt wie jede andere. */
+      /* 5. Die Seite kommt zurueck -- UND ZWAR MIT DEMSELBEN AUFTRITT WIE BEIM ERSTEN LADEN
+         (24.09. angefordert: "wenn die Animation einmal durchgeloopt ist, dann bitte auch beim
+         naechsten Dashboard-Appear wieder der gleiche Appear-Effekt mit dem Delay und
+         Hochsliden der Komponenten -- also doch in jeder Runde").
+         Dafuer faellt is-inhalt ab und die Wache dazu wird zurueckgesetzt: die vier Kaesten sind
+         damit wieder unsichtbar, und inhaltZeigen laesst sie gestaffelt hereinkommen, sobald das
+         Chart steht. Der Textblock ueber dem Fenster bleibt unberuehrt -- er war nie weg.
+         miraAnsetzen ruft inhaltZeigen dabei nicht noch einmal an: die eigene Uhr unten steht
+         schon im selben Durchlauf und kommt zuerst (__ulhMiraAn). */
+      root.classList.remove("is-inhalt");
+      root.__ulhInhaltAn = false;
       main.classList.remove("is-weg");
       main.classList.add("is-da");
       main.classList.add("is-kommt");
       setTimeout(function(){ main.classList.remove("is-kommt"); }, NEUSTART_KOMMT);
+      inhaltZeigen(root);
 
       /* 6. Nachfassen wie beim ersten Aufbau: core stempelt neu eingefuegte Wurzeln mit dem
          gerade gueltigen Thema, die Komponenten setzen ihre Tooltips beim Zeichnen, und der
@@ -5949,7 +5991,10 @@
      (kein Chart.js vom CDN, gedrosselter Tab).
      Die Uhr fuer Mira haengt hier dran und nicht mehr am blossen Erscheinen: die Ruhe vor dem
      Wechsel soll ab dem Moment zaehlen, in dem das Dashboard fertig DASTEHT. */
-  var INHALT_FRUEH = 1150;       /* kurz vor dem Ende von Stufe 1 -- die Kaesten setzen darauf auf */
+  /* 1150 -> 880 (24.09.: "mach den Delay etwas kleiner, das soll von oben bis unten eine schoene
+     smoothe Animation sein"). Der Rahmen faengt bei 440 an und laeuft 690 -- bei 880 ist er zu
+     zwei Dritteln durch, und der Inhalt setzt darauf auf, statt zu warten, bis alles steht. */
+  var INHALT_FRUEH = 880;
   var INHALT_SPAET = 6000;       /* Notbremse */
   function inhaltZeigen(root){
     if (root.__ulhInhaltAn) return;

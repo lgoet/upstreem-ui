@@ -462,14 +462,18 @@
 .ulh-root:not(.is-inhalt) .tcd-unit-left  .tcd-box,
 .ulh-root:not(.is-inhalt) .tcd-unit-right .tcd-head,
 .ulh-root:not(.is-inhalt) .tcd-unit-right .tcd-box { opacity: 0; }
+/* ENGER GESTAFFELT (24.09.: "mach den Delay etwas kleiner, das soll von oben bis unten eine
+   schoene smoothe Animation sein"). Die Abstaende waren 0/70/60/130/260/330/320/390 -- vor allem
+   die 130ms Pause zwischen dem Visibility-Chart und den Zitaten lasen sich als zwei Auftritte
+   statt als einer, der durchlaeuft. Jetzt laeuft er ohne Absatz von oben nach unten durch. */
 .ulh-root.is-inhalt .vot-unit-left  .vot-head { animation: ulhRise 560ms var(--ulh-ease) backwards; }
-.ulh-root.is-inhalt .vot-unit-left  .vot-box  { animation: ulhRise 620ms var(--ulh-ease) 70ms backwards; }
-.ulh-root.is-inhalt .vot-unit-right .vot-head { animation: ulhRise 560ms var(--ulh-ease) 60ms backwards; }
-.ulh-root.is-inhalt .vot-unit-right .vot-box  { animation: ulhRise 620ms var(--ulh-ease) 130ms backwards; }
-.ulh-root.is-inhalt .tcd-unit-left  .tcd-head { animation: ulhRise 560ms var(--ulh-ease) 260ms backwards; }
-.ulh-root.is-inhalt .tcd-unit-left  .tcd-box  { animation: ulhRise 620ms var(--ulh-ease) 330ms backwards; }
-.ulh-root.is-inhalt .tcd-unit-right .tcd-head { animation: ulhRise 560ms var(--ulh-ease) 320ms backwards; }
-.ulh-root.is-inhalt .tcd-unit-right .tcd-box  { animation: ulhRise 620ms var(--ulh-ease) 390ms backwards; }
+.ulh-root.is-inhalt .vot-unit-left  .vot-box  { animation: ulhRise 620ms var(--ulh-ease) 45ms backwards; }
+.ulh-root.is-inhalt .vot-unit-right .vot-head { animation: ulhRise 560ms var(--ulh-ease) 40ms backwards; }
+.ulh-root.is-inhalt .vot-unit-right .vot-box  { animation: ulhRise 620ms var(--ulh-ease) 85ms backwards; }
+.ulh-root.is-inhalt .tcd-unit-left  .tcd-head { animation: ulhRise 560ms var(--ulh-ease) 150ms backwards; }
+.ulh-root.is-inhalt .tcd-unit-left  .tcd-box  { animation: ulhRise 620ms var(--ulh-ease) 195ms backwards; }
+.ulh-root.is-inhalt .tcd-unit-right .tcd-head { animation: ulhRise 560ms var(--ulh-ease) 190ms backwards; }
+.ulh-root.is-inhalt .tcd-unit-right .tcd-box  { animation: ulhRise 620ms var(--ulh-ease) 230ms backwards; }
 @media (prefers-reduced-motion: reduce) {
   .ulh-root:not(.is-inhalt) .vot-unit-left  .vot-head,
   .ulh-root:not(.is-inhalt) .vot-unit-left  .vot-box,
@@ -2448,7 +2452,21 @@
    nicht anstossen, er laesst nur mehr Luft. Und es gilt ausschliesslich im Schaustueck -- jede
    dieser Regeln haengt an .ulh-app und erreicht die App nicht.
    Die Zeilenhoehen der beiden Tabellen ziehen unten mit, das war die ausdrueckliche Ansage. */
-.ulh-app .up-ph-heading { font-size: 27px; }
+/* ---- DER KLEINE SEITENKOPF (24.09. angefordert) ---------------------------------------------
+   "Bitte nutze den kleinen Pageheader, wie wir das in der Hauptapp schon im Power-Mode haben.
+   Gerne auch mit dem Switcher oben, auf Analytic gestellt."
+   Zwei Dinge, die in der App zusammengehoeren, sind hier getrennt: die GEOMETRIE des kleinen
+   Kopfes haengt dort an .is-power, und .is-power heisst zugleich "Agentic" am Umschalter. Auf
+   der Landingpage soll aber der kleine Kopf stehen UND der Umschalter auf Analytic -- das ist
+   der Zustand, den diese Sektion zeigt. Also die Geometrie hier direkt, ohne die Klasse:
+   dieselben vier Werte wie in dashboard-page-header.css (.dph-root.is-power).
+   Nur im Fenster dieser Sektion; die App entscheidet das weiter ueber ihren Modus. */
+.ulh-app .dph-root .up-ph-desc { display: none; }
+.ulh-app .dph-root .up-ph-top { align-items: center; }
+.ulh-app .dph-root { padding-top: 8px; padding-bottom: 40px; }
+/* 20px wie im kleinen Kopf der App -- und damit ersetzt diese Zeile die 27px von vorher, die fuer
+   den grossen Kopf gerechnet waren. */
+.ulh-app .up-ph-heading { font-size: 20px; margin: 0; }
 .ulh-app .n { font-size: 15px; }
 .ulh-app .up-ph-desc { font-size: 14px; }
 .ulh-app .dph-kpi-label,
