@@ -2371,13 +2371,18 @@
     _prevMsgKeys = _curKeys;
     _prevLoading = S.isLoading;
 
-    if (_gleicheNachrichten && !_typeUnits && S.messages.length && !_loadingDone){
-      elMessages.style.minHeight = '';   /* nichts Neues -- die Ansicht bleibt, wo sie steht */
-    }
-    else if (!S.messages.length){ elMessages.style.minHeight = ''; if (!S.isLoading){ elChat.scrollTop = 0; } }
+    if (!S.messages.length){ elMessages.style.minHeight = ''; if (!S.isLoading){ elChat.scrollTop = 0; } }
     else if (_typeUnits) { elMessages.style.minHeight = ''; /* _startTyping positions the scroll itself */ }
     else if (_scrollMode === 'bottom') { elMessages.style.minHeight = ''; scrollToBottom(true); }
     else if (S.isLoading) _pinSendScroll();   // send -> jump straight to the final position, reserve loader space
+    /* NICHTS NEUES -> GAR NICHTS ANFASSEN (24.09. nachgebessert). Der Zweig stand vorher GANZ
+       OBEN und setzte dabei minHeight zurueck -- das ist aber der reservierte Platz unter dem
+       Ladezustand, den _pinSendScroll gerade erst gestellt hat. Gemeldet als "der Ladestate
+       rutscht runter, der Whitespace unten geht weg": das Nachfassen zeichnete waehrend des
+       Wartens neu, der Zweig griff, und die Reserve war weg.
+       Jetzt steht er HINTER dem Ladezustand -- waehrend gewartet wird, gilt weiter
+       _pinSendScroll -- und er fasst weder die Scrollposition noch die Reserve an. */
+    else if (_gleicheNachrichten){ /* die Ansicht bleibt, wie sie ist */ }
     else { elMessages.style.minHeight = ''; scrollNewMessageTop(true); }
     _scrollMode = 'newmsg';
     updateLoopState();
