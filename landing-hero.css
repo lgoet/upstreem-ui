@@ -1947,6 +1947,16 @@
    und sie NUR an den zwei anderen Seiten schmaler gemacht. */
 .ulh-fen-urls    { --ulh-fb: 324px; --ulh-fh: 304px; --ulh-fz: 0.8;
                    right: calc(100% - 11px); bottom: -45px; }
+/* 15 PROZENT KLEINER, UND ZWAR WIRKLICH SKALIERT (24.09. angefordert). Nicht die Masse kuerzen --
+   dann waeren Schrift, Ring und Legende unveraendert gross und nur enger. Ein transform
+   verkleinert alles im selben Verhaeltnis.
+   Der Ursprung liegt an der VERANKERTEN Ecke (rechts unten, siehe die Regel darueber), damit die
+   Lage bleibt, wo sie war -- die Kachel schrumpft nach innen und wandert nicht.
+   Zwei Zustaende, beide mit dem Faktor: der Startzustand des Auftritts (0.94 * 0.85 = 0.799) und
+   der Ruhezustand, in dem die allgemeine Regel sonst transform: none setzt. Eine Klasse mehr im
+   Selektor als dort, damit die Spezifitaet entscheidet und nicht die Reihenfolge. */
+.ulh-fen.ulh-fen-urls { transform-origin: right bottom; transform: translate(90px, 0) scale(.799); }
+.ulh-root.is-klein .ulh-fen.ulh-fen-urls { transform: scale(.85); }
 /* Rechts, auf einem Viertel der Hoehe: weit oben, aber nicht an der Oberkante. Direkt neben dem
    Hauptfenster, 4px Luft, keine Ueberdeckung. Die Hoehe ist die, die die Karte bei dieser
    Breite von sich aus braucht -- so muss sie nicht gestreckt werden und traegt keine Luft:
@@ -2039,12 +2049,16 @@
    im Kit), das faellt in dieselbe Bewegung.
    Die Ruecklaufzeit ist laenger als die Hinlaufzeit (320 gegen 260ms): scharf werden darf laenger
    dauern als unscharf werden, das ist die Richtung, in der man hinsieht. */
-.ulh-fen-donut { transition: opacity 320ms var(--ulh-ease), filter 320ms var(--ulh-ease),
-                             transform 320ms var(--ulh-ease); }
+/* NUR UNSCHAERFE UND DECKKRAFT, KEIN MASSSTAB MEHR (24.09. gemeldet: "das Chart selber resized
+   waehrenddessen, das darf es nicht tun -- es muss einfach ausblurren und wieder einbluren, das
+   war auch mal korrekt"). Hier stand transform: scale(0.965) mit dabei, und genau das sah aus
+   wie ein Chart, das seine Groesse aendert. Die Messung dazu: Ring, Leinwand und Legende bleiben
+   ueber den Wechsel hinweg gleich gross (268x223 / 141x141 / 268x48) -- was sich bewegt hat, war
+   allein diese Skalierung. */
+.ulh-fen-donut { transition: opacity 320ms var(--ulh-ease), filter 320ms var(--ulh-ease); }
 .ulh-fen-donut.is-wechsel {
-  opacity: 0; filter: blur(7px); transform: scale(0.965);
-  transition: opacity 260ms var(--ulh-ease), filter 260ms var(--ulh-ease),
-              transform 260ms var(--ulh-ease);
+  opacity: 0; filter: blur(7px);
+  transition: opacity 260ms var(--ulh-ease), filter 260ms var(--ulh-ease);
 }
 
 /* ---- Drittes Fenster: eine Antwortkarte ----

@@ -2514,6 +2514,32 @@
      Umweg ueber die gespeicherte Vorliebe des Besuchers. Ein Klick haette beides getan -- erst
      Citation Share zeichnen, dann umschalten, und dabei die Vorliebe des Besuchers ueberschrieben.
      "domain" ist der URL-Share-Modus (so heisst er in der Komponente). */
+  /* ---- ALLE BESCHRIFTUNGEN DES MODELL-BALKENCHARTS NACH AUSSEN (24.09. angefordert) --------
+     core entscheidet je Zeile neu: passt Logo, Name und Wert in den Balken, stehen sie drin,
+     sonst daneben (renderBars in makeTypeChart). Bei vier Modellen heisst das zwei innen und zwei
+     daneben -- eine Spalte, die in der Mitte die Seite wechselt.
+     Hier wird dieselbe Entscheidung fuer alle Zeilen auf "daneben" gestellt, und zwar ueber
+     genau die Griffe, die core selbst benutzt: die Deckkraft der inneren Teile auf 0, der aeussere
+     Kasten an das Balkenende plus 8px. Kein Eingriff in core -- das waere eine Aenderung an der
+     Hauptapp, und die ist in dieser Runde ausgeschlossen.
+     Nachgefasst wird mehrfach: das Chart laesst die Balken wachsen und setzt die Beschriftungen
+     danach selbst noch einmal. */
+  function balkenNachAussen(root){
+    var zeilen = root.querySelectorAll(".udd-root .up-bar-row");
+    for (var i = 0; i < zeilen.length; i++){
+      var z = zeilen[i];
+      var fuellung = z.querySelector(".up-bar-fill");
+      var name = z.querySelector(".up-bar-name");
+      var pin = z.querySelector(".up-bar-pct-in");
+      var aussen = z.querySelector(".up-bar-outside");
+      if (!fuellung || !aussen) continue;
+      if (name) name.style.opacity = "0";
+      if (pin) pin.style.opacity = "0";
+      aussen.style.left = Math.round(fuellung.offsetWidth + 8) + "px";
+      aussen.style.opacity = "1";
+    }
+  }
+
   function quellFuellen(){
     /* Erst das Thema, dann die Daten: die Charts nehmen ihre Farben beim Zeichnen, und das
        passiert im selben Zug wie das Setzen der Daten. */
@@ -2533,6 +2559,14 @@
       if (tippSetzen()){ tippWachen(); return; }
       if (versuche++ < 40) setTimeout(tipp, 150);
     })();
+    /* Die Beschriftungen des Modell-Charts nach aussen -- nach dem Wachsen der Balken, und
+       mehrfach: die Komponente setzt sie beim Zeichnen und beim Wachsen selbst noch einmal. */
+    [300, 700, 1400, 2600].forEach(function(ms){
+      setTimeout(function(){
+        var w = document.querySelector(".ulh-root");
+        if (w) try { balkenNachAussen(w); } catch (e){}
+      }, ms);
+    });
   }
 
   /* Den Tooltip auf die MITTE der Reihe setzen. Zuerst stand er auf dem vorletzten Punkt, weil das
@@ -2580,9 +2614,21 @@
      nach VERSUCHE_TIPP Anlaeufen ist ohnehin Schluss -- was bis dahin nicht steht, steht auch
      nach einer Minute nicht, und ein Chart, das sich dabei jede Sekunde neu zeichnet, ist der
      schlechtere Zustand als ein Chart ohne Kasten. */
-  var VERSUCHE_TIPP = 40;          /* 40 x 1,5s = eine Minute */
-  var TIPP_RUHIG = 3;              /* so oft hintereinander sichtbar = fertig */
+  /* NOCH EINMAL ENGER (24.09. gemeldet: "das Linechart oben links updatet sich immernoch ab und
+     zu"). Die zwei Grenzen von oben haben den Dauerlauf beendet, aber nicht das Nachzeichnen:
+     eine Minute lang lief die Uhr weiter, und JEDER Takt ohne sichtbaren Kasten rief tippSetzen
+     -- und darin steckt chart.update("none"). Der Kasten ist aber nicht immer sichtbar: core
+     blendet ihn ueber die Deckkraft, und waehrend dieser Blende misst der Waechter eine Null.
+     Drei Aenderungen:
+       - der Waechter laeuft nur EINMAL je Seite (__ulhTippWacht),
+       - zwei ruhige Takte statt drei reichen als Beweis, dass er steht,
+       - und nach 12 Anlaeufen (18s) ist Schluss statt nach 40 (60s).
+     Was danach passiert, passiert ohne dieses Chart. */
+  var VERSUCHE_TIPP = 12;          /* 12 x 1,5s = 18 Sekunden */
+  var TIPP_RUHIG = 2;              /* so oft hintereinander sichtbar = fertig */
   function tippWachen(){
+    if (window.__ulhTippWacht) return;
+    window.__ulhTippWacht = true;
     var n = 0, steht = 0;
     var uhr = setInterval(function(){
       var wurzel = document.querySelector('.udd-root[data-instance="' + ID.udd + '"]');
@@ -2866,7 +2912,19 @@
      Sieben benannte Typen und der graue Rest -- acht Punkte, die in drei Reihen zu 3/3/2 umbrechen.
      Vorher waren es neun und die letzte Reihe war voll; jetzt steht sie fuer sich.
      Der Rest ist die SUMME der uebrigen Typen und keine erfundene Zahl: beide Spalten ergeben 100. */
+  /* DREI VERTEILUNGEN, und jede steht fuer eine ANDERE ART VON QUELLE (24.09. angefordert:
+     "eines was eher zu einer Editorial passt, eines was eher zu einer Competitor / Corporate
+     page passt und eines was eher eine UGC Seite ist"). Vorher waren es zwei, und beide sahen
+     redaktionell aus -- der Wechsel zeigte dann nur andere Zahlen, nicht eine andere Welt.
+     Jede Verteilung traegt SIEBEN benannte Typen plus den Rest, und alle Beschriftungen sind
+     etwa gleich lang: die Legende bricht damit in allen drei Zustaenden in 3/3/2 um, also
+     dieselbe Hoehe -- gemessen 268x48 bei acht Punkten. Waere eine laenger (der Satz hat mit
+     "Product / Service" einen 114px-Fall), braeuchte sie vier Reihen, die Legende wuerde hoeher
+     und der Ring darueber kleiner. Genau das soll beim Wechsel nicht passieren.
+     Der Rest ist die SUMME der uebrigen Typen und keine erfundene Zahl: jede Spalte ergibt 100. */
   var FEN_URL_STAND = [
+    /* 1. REDAKTION: Artikel, Ratgeber und Bestenlisten tragen die Antworten -- so sieht der Mix
+       aus, wenn die Modelle aus Magazinen und Fachportalen zitieren. */
     { zitate: 71400, rest: 14.0, typen: [
       { type: "article",       share_pct: 22.8 },
       { type: "guide",         share_pct: 16.4 },
@@ -2876,26 +2934,29 @@
       { type: "review",        share_pct: 8.2 },
       { type: "documentation", share_pct: 6.5 }
     ]},
-    /* DIE ZWEITE VERTEILUNG, neu gesetzt (21.09. gemeldet: "eine Version des URL-Types-Fensters
-       ist kaputt"). Hier standen marketplace / homepage / product_service / company_info --
-       der Quellenmix eines Onlineshops, nicht der eines Automarktes. Und die Beschriftungen
-       waren die laengsten des ganzen Satzes ("Product / Service" allein misst 114px), es gingen
-       also nur zwei Punkte in eine Reihe, waehrend die erste Verteilung drei traegt: zwei
-       Zustaende desselben Fensters mit verschiedener Legendenhoehe.
-       Jetzt tragen beide SIEBEN benannte Typen plus Rest, alle mit kurzen Beschriftungen -- die
-       Legende hat in beiden Zustaenden dieselbe Hoehe, und der Wechsel ist ein Wechsel der
-       Anteile und kein Umbau.
-       Die Aussage ist trotzdem eine andere als oben: dort tragen Artikel und Ratgeber die
-       Antworten, hier Tests, Vergleiche und Videos -- so sieht der Quellenmix aus, wenn jemand
-       ein bestimmtes Modell sucht statt einer Kategorie. */
-    { zitate: 54100, rest: 7.8, typen: [
-      { type: "review",     share_pct: 21.6 },
-      { type: "comparison", share_pct: 18.4 },
-      { type: "article",    share_pct: 15.9 },
-      { type: "forum",      share_pct: 12.7 },
-      { type: "video",      share_pct: 10.3 },
-      { type: "listicle",   share_pct: 8.1 },
-      { type: "homepage",   share_pct: 5.2 }
+    /* 2. DIE SEITE EINES WETTBEWERBERS: Startseite, Unternehmensangaben und Dokumentation vorn.
+       Das ist das Bild, wenn ein Hersteller vor allem ueber sein EIGENES Angebot zitiert wird --
+       und der Grund, warum eine Marke ihre eigenen Seiten im Blick haben muss. */
+    { zitate: 48200, rest: 10.6, typen: [
+      { type: "homepage",     share_pct: 24.3 },
+      { type: "company_info", share_pct: 18.1 },
+      { type: "directory",    share_pct: 14.6 },
+      { type: "guide",        share_pct: 11.4 },
+      { type: "article",      share_pct: 8.7 },
+      { type: "review",       share_pct: 7.2 },
+      { type: "forum",        share_pct: 5.1 }
+    ]},
+    /* 3. NUTZERINHALTE: Foren und soziale Beitraege vorn, dazu Video und Erfahrungsberichte --
+       LinkedIn, Facebook, Reddit und YouTube. Der Mix, bei dem nicht die Redaktion entscheidet,
+       was ueber eine Marke gesagt wird, sondern ihre Kundschaft. */
+    { zitate: 63500, rest: 6.9, typen: [
+      { type: "forum",       share_pct: 27.5 },
+      { type: "social_post", share_pct: 21.2 },
+      { type: "video",       share_pct: 13.8 },
+      { type: "review",      share_pct: 10.9 },
+      { type: "listicle",    share_pct: 8.4 },
+      { type: "article",     share_pct: 6.6 },
+      { type: "guide",       share_pct: 4.7 }
     ]}
   ];
   var FEN_URL_MS = 7000;
@@ -5806,7 +5867,14 @@
     if (typeof ResizeObserver !== "undefined"){
       try { new ResizeObserver(function(){ mass(root); }).observe(root); } catch (e){}
     }
-    window.addEventListener("resize", function(){ mass(root); });
+    window.addEventListener("resize", function(){
+      mass(root);
+      /* Das Modell-Chart setzt seine Beschriftungen bei jedem Groessenwechsel selbst neu -- und
+         entscheidet dabei wieder je Zeile. Also danach erneut nach aussen holen. */
+      [60, 400, 1200].forEach(function(ms){
+        setTimeout(function(){ try { balkenNachAussen(root); } catch (e){} }, ms);
+      });
+    });
   }
 
   /* Das Erscheinen anstossen. is-shown BLEIBT und macht das Fenster ueberhaupt sichtbar,
