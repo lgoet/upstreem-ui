@@ -526,7 +526,11 @@
     "Descending": "Absteigend",
     "Ascending": "Aufsteigend",
     "Deselect all": "Auswahl aufheben",
-    "Reset": "Zurücksetzen",
+    /* RESET BLEIBT RESET (24.09. ausdruecklich verlangt: "alle Filter-Reset-Buttons werden mit
+       'Leeren' uebersetzt -- bitte nirgendwo 'Leeren' schreiben, das bleibt in DE auch Reset").
+       Der Eintrag bleibt trotzdem stehen: ohne ihn meldet .finde_untexte.py das Wort als Text
+       ohne Katalogeintrag, und beim naechsten Durchgang uebersetzt es jemand wieder. */
+    "Reset": "Reset",
     /* "Zitiert" und nicht "Verwendet": die Spalte zaehlt, wie oft die URL als Citation auftrat --
        das ist im Deutschen zitiert, und es haelt die Naehe zum Wort Citation, das stehen bleibt. */
     "Used": "Zitiert",
@@ -1220,7 +1224,7 @@
     /* Filter auf Brand-Erwähnungen */
     "Mentioned brands": "Erwähnte Brands",
     "No brands available": "Keine Brands vorhanden",
-    "Clear filters": "Filter zurücksetzen",
+    "Clear filters": "Reset Filters",
 
     /* Leerzustaende der Tabelle */
     "No matching prompts": "Keine passenden Prompts",
@@ -1335,7 +1339,7 @@
     "Drop a CSV here": "CSV hier ablegen",
     "or click to choose a file": "oder klicken, um eine Datei zu wählen",
     "Clear all": "Alle entfernen",
-    "Clear": "Leeren",
+    "Clear": "Reset",              /* derselbe Knopf, anderer englischer Name -- siehe "Reset" */
     "Remove": "Entfernen",
     "Type a prompt and press Enter": "Prompt eintippen und Enter drücken",
     "Add this prompt": "Diesen Prompt hinzufügen",
@@ -1365,7 +1369,7 @@
     "Download template": "Vorlage herunterladen",
 
     /* ---- Filterleiste, zweiter Durchgang ---- */
-    "Reset Filters": "Filter zurücksetzen",
+    "Reset Filters": "Reset Filters",
 
     /* ---- Einladungstabelle in team-orga ----
        Beim Messen der Spaltenbreite aufgefallen: die Tabelle war sonst deutsch, diese drei nicht. */

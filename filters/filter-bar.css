@@ -26,7 +26,15 @@
    Ein Flex mit 8px, wie jede Werkzeugreihe der App. min-width: 0 an allem, was Text traegt,
    sonst schiebt eine lange Chipliste die Leiste aus ihrem Container. */
 .ufb-root { display: block; min-width: 0; }
-.ufb-bar { display: flex; align-items: center; gap: 8px; min-width: 0; }
+/* DIE LEISTE BRICHT IMMER UM, NICHT ERST UNTER 768px (24.09. gemeldet: "wenn die Screenwidth
+   kleiner wird, ueberlagern sich irgendwann die Chips mit dem Alle-loeschen-Knopf -- die muessen
+   untereinander brechen, der Container muss in der Hoehe groesser werden, das muss 100 Prozent
+   klein-width- und mobilkompatibel sein, ohne Ausnahme").
+   Vorher haengte der Umbruch an der SEITENbreite (is-wrap ab 768). In einer Werkzeugzeile ist
+   diese Leiste aber oft schmal, waehrend die Seite breit ist -- dann war kein Umbruch erlaubt und
+   die Chips schoben sich in den Knopf. flex-wrap braucht keine Schwelle: es bricht genau dann,
+   wenn der Platz nicht reicht, und bei drei Chips auf einem breiten Schirm passiert gar nichts. */
+.ufb-bar { display: flex; align-items: center; gap: 8px; row-gap: 8px; flex-wrap: wrap; min-width: 0; }
 
 /* ---------- der Knopf ----------
    Text in Primaerfarbe, davor settings-2, dahinter der Chevron nach unten. Das Bauteil ist
@@ -95,7 +103,9 @@
    von dessen Rahmen: ein Bauteil, dem man den Rahmen nimmt, ist ein anderes Bauteil.
    Rechts im Chip ein X, das GENAU DIESEN Filter leert -- mit Abstand zum Text, damit es nicht als
    Teil des Wortes gelesen wird. */
-.ufb-chips { display: flex; align-items: center; gap: 8px; min-width: 0; }
+/* Und die Chips untereinander statt in einer Zeile, die laenger wird als ihr Platz. Dasselbe
+   Mittel, derselbe Grund -- ohne Schwelle, ohne Messung. */
+.ufb-chips { display: flex; align-items: center; gap: 8px; row-gap: 8px; flex-wrap: wrap; min-width: 0; }
 /* UMRISS STATT FLAECHE (24.09. angefordert, mit einem Sortier-Chip als Vorbild): kein Grund,
    ein Rahmen, davor das Zeichen des Filters, dann der leise Bezug und der laute Wert, dahinter
    das X.
@@ -114,8 +124,10 @@
    "Topic:" sagen zusammen, WOVON die Rede ist; der Wert ist die Aussage. */
 .ufb-chip-ic { flex: 0 0 14px; width: 14px; height: 14px; display: inline-flex; color: var(--vc-third); }
 .ufb-chip-ic svg { width: 14px; height: 14px; display: block; }
+/* Unterlaengen: siehe die Begruendung an .utf-opt-name in topics-filter.css. */
 .ufb-chip-lbl { font-size: 13px; font-weight: 500; color: var(--vc-text);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+  padding: 2px 0; margin: -2px 0; }
 /* Der Name des Filters davor ist die leisere Haelfte -- "Topic:" ist der Bezug, der Wert ist die
    Aussage. Dritte Farbe statt --vc-muted: im Vorbild ist der Abstand zwischen beiden Haelften
    deutlich groesser als eine Stufe. */
@@ -186,7 +198,9 @@
 /* Der Zaehler steht am rechten Ende des Spiegels und damit unmittelbar VOR dem Winkel -- genau
    die Stelle, an der er auch am Trigger des Filters sitzt. Dass er dorthin rutscht, macht der
    Text: er ist das einzige Kind, das waechst. */
-.ufb-mirror-fallback { overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+/* Unterlaengen: siehe die Begruendung an .utf-opt-name in topics-filter.css. */
+.ufb-mirror-fallback { padding: 2px 0; margin: -2px 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   min-width: 0; flex: 1 1 auto; color: var(--vc-text); }
 .ufb-mirror > * { flex: 0 0 auto; }
 .ufb-mirror svg { width: 16px; height: 16px; display: block; color: var(--vc-muted); }
@@ -331,13 +345,15 @@
    zwei ZEILEN sagt nichts, also faellt er weg. Die Chips laufen dann waagerecht, damit eine lange
    Liste nicht "Clear All" aus dem Bild schiebt -- und ohne sichtbare Leiste, die in einer
    Werkzeugzeile nur Laerm waere. */
-.ufb-root.is-wrap .ufb-bar { flex-wrap: wrap; row-gap: 8px; }
+/* flex-wrap steht jetzt an .ufb-bar selbst (siehe oben) und gilt damit auf JEDER Breite. Hier
+   bleibt, was wirklich nur fuer die schmale Seite gilt: der Trennstrich zwischen zwei ZEILEN sagt
+   nichts, die Chips bekommen die volle Zeile, und "Clear All" ruecht an den linken Rand.
+   Der WAAGERECHTE LAUF IST RAUS. Er stand hier, damit eine lange Liste den Knopf nicht aus dem
+   Bild schiebt -- verlangt ist aber ausdruecklich das Gegenteil: untereinander brechen und den
+   Container hoeher werden lassen. Eine seitlich scrollende Zeile ohne sichtbare Leiste ist auf
+   einem Telefon ausserdem eine Liste, von der man nicht weiss, dass es sie gibt. */
 .ufb-root.is-wrap .ufb-sep { display: none; }
-.ufb-root.is-wrap .ufb-chips {
-  flex: 1 1 100%; overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none;
-  padding-bottom: 1px;
-}
-.ufb-root.is-wrap .ufb-chips::-webkit-scrollbar { display: none; }
+.ufb-root.is-wrap .ufb-chips { flex: 1 1 100%; }
 .ufb-root.is-wrap .ufb-clear { margin-left: 0; }
 
 /* Der Finger braucht mehr Flaeche als der Zeiger: 34 -> 40px, und dieselbe Stufe, an der core

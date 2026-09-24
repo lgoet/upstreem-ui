@@ -136,7 +136,17 @@
 /* 13px, dasselbe Mass wie die Zeilen des More-Filters-Dropdowns (.ufb-row). Vorher 14 -- und
    sobald beide Kaesten nebeneinander stehen, sieht man den einen Pixel: die Liste wirkte groesser
    als das Menue, aus dem sie kommt. Gemessen: Zeile im Menue 13, Option hier 14. */
-.utf-opt-name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 500; }
+/* UNTERLAENGEN NICHT ABSCHNEIDEN (24.09. gemeldet: "Buchstaben wie g oder y werden unten
+   abgeschnitten, Platz ist genug"). Platz ist wirklich genug -- der Fehler sitzt eine Ebene
+   tiefer: overflow: hidden (das die Auslassungspunkte braucht) beschneidet den INHALTSKASTEN,
+   und der ist bei line-height: normal genau eine Zeilenhoehe hoch. Die Tinte von g, y und p
+   reicht bei Geist darunter hinaus. Gemessen: Kasten 17px, scrollHeight ebenfalls 17 -- der
+   Browser meldet also KEIN Ueberlaufen, geschnitten wird trotzdem, weil Tinte und Kasten zwei
+   verschiedene Dinge sind.
+   Zwei Pixel Polster oben und unten geben der Tinte Raum, der negative Rand nimmt sie aus dem
+   Layout wieder heraus -- die Zeile bleibt exakt so hoch wie vorher. */
+.utf-opt-name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 500;
+  padding: 2px 0; margin: -2px 0; }
 .utf-opt-count { flex: 0 0 auto; font-size: 12px; font-weight: 500; color: var(--vc-fourth); }
 .utf-pinsep { height: 1px; margin: 5px 9px; background: var(--vc-border); }
 .utf-empty { padding: 14px 10px; text-align: center; color: var(--vc-third); font-size: 12.5px; }

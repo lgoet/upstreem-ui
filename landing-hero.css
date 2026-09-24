@@ -1854,6 +1854,22 @@
    .ulh-vis-dom behaelt die Sperre -- dort liegt ein aufgeklappter Drilldown mit Fuellung darin. */
 .ulh-vis-dom { overflow: hidden; }
 .ulh-vis-tab .up-thead { border-radius: 12px 12px 0 0; }
+/* DIE EIGENE EBENE STEHT SCHON IN RUHE (24.09. gemeldet: "auf Windows kommen im gehoverten
+   Zustand an den Ecken so komische Zacken und Striche, an allen vier Rahmen dieser Opportunity
+   Card").
+   Das ist die Treppe, die entsteht, wenn ein 1px-Haarstrich MIT der Flaeche skaliert wird: der
+   Browser rastert das Element in seiner ungehobenen Groesse und zieht die Textur danach auf
+   106 Prozent. Auf macOS faellt das kaum auf, unter Windows steht die Treppe an den vier Kanten
+   und besonders in den Rundungen.
+   will-change: transform IN RUHE ist der Griff dafuer -- dann legt der Browser die eigene Ebene
+   an, BEVOR die Bewegung beginnt, und rastert sie fuer den Endzustand. Auf dem Hover gesetzt
+   waere es zu spaet: die Ebene entstuende mitten in der Fahrt, mit genau der Textur, um die es
+   geht. backface-visibility dazu, weil Windows-Chrome sonst je nach Treiber weiter auf dem
+   alten Weg rastert.
+   Nur diese zwei Zeilen tragen es und nicht jede Zeile der Vorschau: eine eigene Ebene je Zeile
+   waere Speicher fuer nichts. */
+.ulh-vis-tab .up-row.is-mitte,
+.ulh-vis-chancen .uo-row.is-mitte { will-change: transform; backface-visibility: hidden; }
 .ulh-card:hover .ulh-vis-tab .up-row.is-mitte,
 .ulh-card:hover .ulh-vis-chancen .uo-row.is-mitte {
   transform: scale(1.06);
@@ -1865,6 +1881,10 @@
               inset 0 0 0 1px var(--ulh-border);
   position: relative; z-index: 4;
 }
+/* DIE PROMPT-ZEILE KOMMT NUR ZU 60 PROZENT HERAUS (24.09. angefordert). 6 Prozent Zuwachs mal
+   0.6 sind 3.6 -- also scale(1.036). Die Chancen-Zeile bleibt bei den vollen 1.06: dort ist die
+   Karte das Thema der Vorschau, in der Tabelle ist es die Tabelle. */
+.ulh-root .ulh-card:hover .ulh-vis-tab .up-row.is-mitte { transform: scale(1.036); }
 
 
 

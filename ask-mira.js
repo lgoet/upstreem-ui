@@ -461,7 +461,20 @@
     if (!elChat) return;
     var b = elChat.offsetWidth - elChat.clientWidth;
     if (!(b >= 0 && b < 40)) return;                       /* unplausibel -> lieber nichts setzen */
-    if (elChat.scrollHeight <= elChat.clientHeight && !b) return;   /* nichts zu scrollen, nichts zu sagen */
+    /* HIER STAND EIN FRUEHER AUSSTIEG (24.09. gemeldet: "die Scrollbar wird unten immer noch vom
+       Gradient ueberdeckt, und sie liegt leicht ueber den Sprungnavigations-Items -- nur auf
+       Windows").
+       Der Ausstieg lautete: "nichts zu scrollen und keine Leiste -> gar nichts sagen". Gemeint war
+       Sparsamkeit, gemessen ist es ein Loch: er steigt aus, BEVOR --am-navr gesetzt wird. Solange
+       der Chat leer ist, steht die Sprungleiste damit auf ihrem Rueckfall aus der CSS, und der
+       rechnet die Geometrie nach, statt sie zu messen. Kommen die Nachrichten, aendert sich die
+       GROESSE von .am-chat nicht (flex: 1 1 0) -- der Beobachter daran schweigt also, und die
+       Werte bleiben stehen, wie sie beim leeren Chat waren: --am-sbw auf 0, der Verlauf ueber der
+       ganzen Breite, die Sprungleiste zu weit rechts. Auf macOS faellt beides nicht auf, weil die
+       Leiste dort 0 breit ist und sich ueberlagert.
+       offsetWidth minus clientWidth ist ohnehin genau dann 0, wenn es nichts zu scrollen gibt --
+       die zweite Bedingung sagte also nichts, was b nicht schon sagt. Sie ist raus, und beide
+       Werte werden jedes Mal geschrieben. */
     if (b !== _sbwLetzt){ _sbwLetzt = b; root.style.setProperty('--am-sbw', b + 'px'); }
     /* WO STEHT DIE SPRUNGLEISTE? Sie liegt absolut in der WURZEL, die Scrollbar an der rechten
        Kante des CHATS -- und zwischen beiden liegt je nach Zustand nichts, die schmale Leiste
@@ -2624,6 +2637,12 @@
     updateLoopState();
     if (_typeUnits) _startTyping(_newBub, _typeUnits);
     if (typeof updateScrollBtn === 'function') setTimeout(updateScrollBtn, 80);
+    /* NACH DEM ZEICHNEN NACHMESSEN. Der Beobachter an .am-chat meldet nur Groessenaenderungen des
+       KASTENS -- der Kasten ist aber flex: 1 1 0 und bleibt gleich gross, waehrend sein INHALT
+       waechst. Genau in diesem Moment entsteht unter Windows die Scrollbar, und genau dann muessen
+       --am-sbw und --am-navr neu gesetzt werden (Verlauf und Sprungleiste haengen daran).
+       Zweimal, weil die Hoehe der Nachrichten erst nach dem Zeichnen feststeht. */
+    try { scrollbarBreiteSetzen(); setTimeout(scrollbarBreiteSetzen, 120); } catch(e){}
   }
 
   var _greetIdx = -1;
