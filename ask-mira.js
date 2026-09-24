@@ -1005,6 +1005,55 @@
       last.nodeValue = last.nodeValue.replace(trailRe, '');
     }
   }
+  /* ---- EINE ZEILE, DIE MEHR ZELLEN HAT ALS DER KOPF SPALTEN (24.09. gemeldet) ---------------
+     Gemeldet an einer Antwort mit zweispaltigem Kopf, in der EINE Zeile drei Zellen trug:
+     "Globaler Anteil | 5,36 % | Global Rank #6". Der Browser macht daraus eine dritte Spalte,
+     die es im Kopf nicht gibt -- sie steht rechts aus der Karte heraus, ohne Hintergrund und
+     ohne Rundung, und genau so sah es aus.
+     Diese Tabellen schreibt das Modell. Dass es sich dabei verzaehlt, laesst sich hier nicht
+     verhindern, nur abfangen -- dieselbe Ueberlegung wie bei jeder anderen Nutzlast: kaputt darf
+     nicht wie kaputt AUSSEHEN. WEGGEWORFEN WIRD NICHTS: der Inhalt ueberzaehliger Zellen wandert
+     ans Ende der letzten gueltigen. Eine Zeile mit zu WENIG Zellen wird aufgefuellt, damit
+     Rahmen und Hintergrund an der Kartenkante enden.
+     Gezaehlt wird ueber colspan -- ohne das zaehlt eine zusammengefasste Zelle als eine und die
+     Zeile gilt faelschlich als zu kurz. */
+  function tabelleAusrichten(tab){
+    var kopf = tab.querySelector('thead tr') || tab.querySelector('tr');
+    if (!kopf) return;
+    function breite(zeile){
+      var n = 0;
+      for (var i = 0; i < zeile.children.length; i++){
+        var c = parseInt(zeile.children[i].getAttribute('colspan'), 10);
+        n += (isFinite(c) && c > 0) ? c : 1;
+      }
+      return n;
+    }
+    var soll = breite(kopf);
+    if (!soll) return;
+    var zeilen = tab.querySelectorAll('tr');
+    for (var z = 0; z < zeilen.length; z++){
+      var zeile = zeilen[z];
+      if (zeile === kopf) continue;
+      /* Verschachtelte Tabellen gehoeren nicht dieser hier -- sie haben ihren eigenen Kopf. */
+      if (zeile.closest('table') !== tab) continue;
+      var ist = breite(zeile);
+      while (ist > soll && zeile.children.length > 1){
+        var ueber = zeile.lastElementChild, ziel = ueber.previousElementSibling;
+        if (!ziel) break;
+        if (ueber.textContent.trim()){
+          ziel.appendChild(document.createTextNode(' '));
+          while (ueber.firstChild) ziel.appendChild(ueber.firstChild);
+        }
+        zeile.removeChild(ueber);
+        ist = breite(zeile);
+      }
+      while (ist < soll){
+        var erst = zeile.firstElementChild;
+        zeile.appendChild(document.createElement(erst && erst.tagName === 'TH' ? 'th' : 'td'));
+        ist++;
+      }
+    }
+  }
   function sanitizeHtml(dirty){
     try {
       var s = String(dirty == null ? '' : dirty);
@@ -1016,6 +1065,7 @@
       sanitizeInto(parsed.body, out, document);
       // wrap tables for horizontal scroll
       out.querySelectorAll('table').forEach(function(t){
+        try { tabelleAusrichten(t); } catch(e){}
         if (t.parentNode && t.parentNode.classList && t.parentNode.classList.contains('am-table-scroll')) return;
         var w = document.createElement('div'); w.className = 'am-table-scroll';
         t.parentNode.insertBefore(w, t); w.appendChild(t);
@@ -3714,16 +3764,26 @@
      soll das stehen bleiben. Die Frist ist die Notbremse -- bleibt der Titelschritt ganz aus,
      steht nach 90 Sekunden lieber der Platzhalter da als ein Skelett, das nie aufhoert. */
   var TITEL_PLATZHALTER = { 'new chat': 1, 'neuer chat': 1, 'untitled chat': 1, 'untitled': 1 };
-  var _titelWartet = {};
+  var _titelWartet = {}, _titelFrist = {};
   function titelWarten(id){
-    var kid = String(id == null ? '' : id); if (!kid || _titelWartet[kid]) return;
+    var kid = String(id == null ? '' : id);
+    /* _titelFrist heisst "die Frist ist fuer diesen Chat schon einmal abgelaufen" -- und genau
+       daran haengt, dass die Uhr NICHT wieder gestellt wird. Ohne diesen Riegel liefe eine
+       Schleife: die Uhr zeichnet die Leiste neu, das Zeichnen findet die Zeile immer noch ohne
+       Namen und stellt die Uhr erneut. Fuer einen Chat, der nie einen Titel bekommt, waere das
+       alle 90 Sekunden ein Neuzeichnen der ganzen Liste -- und damit auch das Ende jeder gerade
+       offenen Umbenennung. */
+    if (!kid || _titelWartet[kid] || _titelFrist[kid]) return;
     _titelWartet[kid] = setTimeout(function(){
       delete _titelWartet[kid];
+      _titelFrist[kid] = 1;
       try { renderPrevious(); titelNachziehen(); } catch(e){}
     }, 90000);
   }
   function titelFertig(id){
-    var kid = String(id == null ? '' : id); if (!_titelWartet[kid]) return;
+    var kid = String(id == null ? '' : id); if (!kid) return;
+    delete _titelFrist[kid];          /* ein echter Name setzt auch die Frist zurueck */
+    if (!_titelWartet[kid]) return;
     clearTimeout(_titelWartet[kid]); delete _titelWartet[kid];
   }
   /* Der EINE Weg, an einen anzeigbaren Titel zu kommen -- Liste, Kopfzeile und Nachzieher lesen
@@ -3748,7 +3808,18 @@
        haengt allein am fehlenden Titel. */
     var ohneTitel = echterTitel ? '' : ' is-untitled';
     var tippen = '', schon = '';
-    if (!echterTitel){ _ohneTitel[kid] = true; }
+    if (!echterTitel){
+      _ohneTitel[kid] = true;
+      /* HIER WIRD DAS WARTEN GESETZT, nicht erst beim Realtime (24.09. nachgebessert). Eine
+         Zeile ohne Namen IST der Beweis, dass gerade einer entsteht -- egal, wer sie gezeichnet
+         hat. Vorher haftete die Marke allein am turn_started, und kam Bubbles Chatliste zuerst
+         (gemessen: setActiveChat zeichnet die Zeile, danach traegt setPreviousChats den
+         Platzhalter "New Chat" nach), galt der Platzhalter als Name: die Leiste tippte "New
+         Chat" aus und die Kopfzeile schrieb ihn hin. Die 90-Sekunden-Frist aus titelWarten
+         gilt weiter -- ein Chat, der wirklich nie einen Namen bekommt, bleibt nicht ewig im
+         Skelett stehen. */
+      titelWarten(kid);
+    }
     else if ((_ohneTitel[kid] || _tippStand[kid] != null) && !_titelGetippt[kid]){
       tippen = echterTitel;
       schon = echterTitel.slice(0, _tippStand[kid] || 0);
@@ -4043,8 +4114,22 @@
       }
       if (pos >= S.prevFenster) recentsAlle.unshift(recentsAlle.splice(pos, 1)[0]);
     }
+    /* ---- DIE ZEILE, DIE ES NOCH NICHT GIBT (24.09. gemeldet) --------------------------------
+       "Oben in der Topbar ist das Skelett schon, in der Leiste sehe ich es nicht."
+       Der Grund steht ein paar Zeilen hoeher: die Leiste traegt den offenen Chat selbst ein,
+       sobald sie SEINE KENNUNG hat. Beim allerersten Absenden gibt es die aber noch nicht --
+       sie kommt mit Bubbles Antwort oder mit dem Realtime. Die Kopfzeile braucht keine Kennung
+       und steht deshalb sofort im Skelett, die Leiste blieb bis dahin leer.
+       Also eine Zeile ohne Kennung, solange gesendet wird und noch kein Chat offen ist. Sie ist
+       nicht anklickbar (pointer-events in der CSS) und traegt keinen erfundenen Namen -- sie
+       sagt genau das, was wahr ist: hier entsteht gleich etwas. Sobald die Kennung da ist,
+       uebernimmt die echte Zeile. */
+    var _neueZeile = (!S.activeChatId && S.isLoading)
+      ? '<div class="am-prev-item is-untitled is-platzhalter" aria-hidden="true">' +
+          '<span class="am-prev-item-title"></span></div>'
+      : '';
     var recentsHTML = recentsAlle.slice(0, S.prevFenster).map(chatItemHTML).join('');
-    if (!recentsHTML) recentsHTML = '<div class="am-prev-proj-empty">No recent chats</div>';
+    if (!recentsHTML && !_neueZeile) recentsHTML = '<div class="am-prev-proj-empty">No recent chats</div>';
     /* Waehrend auf die naechste Seite gewartet wird, stehen unten drei Skelettzeilen (15.09.
        angefordert). Vorher passierte sichtbar nichts, bis die Antwort da war -- und wer nichts
        sieht, scrollt noch einmal, was den naechsten Aufruf ausloest.
@@ -4060,6 +4145,7 @@
        war ausdruecklich das Verhalten, das man von anderen Anwendungen kennt. */
     else if (recentsAlle.length > S.prevFenster || _mehrDraussen())
       recentsHTML += '<div class="am-prev-fuehler" data-prev-fuehler aria-hidden="true"></div>';
+    recentsHTML = _neueZeile + recentsHTML;   /* ganz oben: sie ist die juengste */
 
     elPrevList.innerHTML =
       '<div class="am-prev-section'+(S.collapsed.projects?' is-collapsed':'')+'" data-section="projects">'+
@@ -5437,6 +5523,12 @@
       _laufenderChat = '';
     }
     ladeMarkeSetzen();
+    /* SOLANGE KEIN CHAT OFFEN IST, HAENGT EINE ZEILE AM LADEZUSTAND (24.09.). Der neue Chat hat
+       noch keine Kennung und kommt deshalb in keiner Liste vor -- renderPrevious setzt fuer ihn
+       eine Platzhalterzeile, und die muss beim Anfang UND beim Ende neu gezeichnet werden.
+       ladeMarkeSetzen reicht dafuer nicht: es schaltet nur Klassen an vorhandenen Zeilen.
+       Nur beim WECHSEL, nicht bei jedem Aufruf -- setLoading kommt oft mit demselben Wert. */
+    if (vorher !== S.isLoading && !S.activeChatId) renderPrevious();
     /* Die Uhr haengt am Zustand, nicht an einem einzelnen Aufruf: jedes Lebenszeichen stellt sie
        neu, ihr Ausbleiben laesst sie ablaufen. */
     if (S.isLoading) stummUhrStellen(); else stummUhrLoeschen();

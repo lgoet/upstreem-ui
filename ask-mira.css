@@ -3328,6 +3328,9 @@
     display: flex; align-items: center; gap: 6px; width: 100%; text-align: left;
     border: 0; border-radius: 8px; background: transparent; padding: 0 8px; height: 34px; cursor: pointer;
   }
+  /* Die Zeile fuer den Chat, dessen Kennung noch nicht da ist (siehe renderPrevious): kein
+     Ziel fuer den Zeiger, kein Aufleuchten beim Ueberfahren -- es gibt nichts zu oeffnen. */
+  .am-prev-item.is-platzhalter { pointer-events: none; }
   .am-prev-item:hover { background: var(--am-soft); }
   .am-prev-item.is-active { background: var(--am-soft-2); }
   .am-prev-item.is-dragging { opacity: 0.4; }
