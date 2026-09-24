@@ -49,6 +49,7 @@
     --am-text: var(--vc-text);
     --am-muted: var(--vc-muted);
     --am-muted-2: var(--vc-third);
+    --am-muted-3: var(--vc-fourth);      /* Zaehler, Zeitstempel, inaktive Zustaende */
     --am-border: var(--vc-border);
     --am-border-strong: var(--vc-border);
     --am-soft: var(--vc-heading-bg);
@@ -1681,7 +1682,7 @@
     font-size: 14px; line-height: 1.5; padding: 1px 0 0; margin: 0; overflow-y: auto;
     align-self: center;
   }
-  .am-textarea::placeholder { color: #888d97; }
+  .am-textarea::placeholder { color: var(--am-muted-2); }
 
   /* Grok-style looping placeholder */
   /* DAS EINGABEFELD BLEIBT, WO ES WAR -- UND RUECKT 4px WEITER HINEIN (15.09. angefordert).
@@ -1699,7 +1700,7 @@
   .am-composer.loop-on .am-ph-loop { display: block; }
   .am-ph-text {
     position: absolute; left: 0; top: 0; right: 0;
-    font-size: 14px; line-height: 1.5; color: #888d97;
+    font-size: 14px; line-height: 1.5; color: var(--am-muted-2);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     transform: translateY(0); opacity: 1;
     transition: transform 260ms cubic-bezier(0.22,1,0.36,1), opacity 200ms ease-out;
@@ -3123,7 +3124,7 @@
   #ask-mira[data-theme="dark"] .am-dd.is-open .am-dd-trigger,
   #ask-mira[data-theme="dark"] .am-dd.is-open .am-dd-trigger:hover { background: var(--am-card); box-shadow: none; }
   .am-dd-value { display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-  .am-dd-chev { width: 16px; height: 16px; flex: 0 0 auto; color: #6b7280; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform 120ms ease; }
+  .am-dd-chev { width: 16px; height: 16px; flex: 0 0 auto; color: var(--am-muted-2); fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform 120ms ease; }
   .am-dd-menu {
     position: absolute; left: 0; right: 0; top: calc(100% + 8px); z-index: 100;
     background: var(--am-card); border: 1px solid var(--am-border); border-radius: 14px;

@@ -49,11 +49,25 @@
 /* ---------- icon buttons (32x32) — local, see file header for why ---------- */
 /* dark button tooltip (own implementation — see file header) */
 
-/* Go-To: primary-font-color bg */
-.tcd-goto { background: var(--up-accent) !important; color: var(--up-accent-fg); transition: opacity 120ms ease; }
-/* Hover wie bei jedem Primaerknopf: Deckkraft statt zweier fester Grautoene je Thema. Die
-   kannten die Akzentwahl nicht und sprangen im Hover auf den alten Standardton zurueck. */
-.tcd-goto:hover { opacity: .88; }
+/* Go-To: Akzentflaeche, Zeichen in der Gegenfarbe.
+   ZWEI KLASSEN, ZWEI HERKUENFTE (24.09. gemeldet: "Hoverstate kaputt, das Icon wird nicht
+   lesbar"). Der Knopf traegt .tcd-goto UND .tcd-iconbtn. Fuer die zweite gilt in core die
+   Regel der Icon-Knopf-Familie:
+       :is(.vot-iconbtn, .tcd-iconbtn, ...):hover { color: var(--vc-text); background: transparent; }
+   Im Hover wurde daraus also dunkler Text auf der Akzentflaeche -- das Zeichen verschwand.
+   Die Flaeche ueberlebte nur, weil hier ein !important stand.
+   Geloest ueber SPEZIFITAET und nicht ueber Ladereihenfolge oder !important (CLAUDE.md 1):
+   zwei Klassen statt einer schlagen das :is() der core-Regel, und die dunkle Fassung schlaegt
+   die dunkle core-Regel. Damit faellt auch das !important weg.
+   Der Hover ist der eines jeden Primaerknopfes: nur die Deckkraft, Flaeche und Zeichen bleiben. */
+.tcd-root .tcd-goto.tcd-iconbtn {
+  background: var(--up-accent); color: var(--up-accent-fg); transition: opacity 120ms ease; }
+.up-root[data-theme="dark"] .tcd-goto.tcd-iconbtn {
+  background: var(--up-accent); color: var(--up-accent-fg); }
+.tcd-root .tcd-goto.tcd-iconbtn:hover,
+.up-root[data-theme="dark"] .tcd-goto.tcd-iconbtn:hover {
+  opacity: .88; background: var(--up-accent); color: var(--up-accent-fg); }
+
 
 /* ---------- mode switcher (Domains / URLs) — replaces the left heading ---------- */
 .tcd-mode { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-rail); border-radius: 8px; border: 0; height: 32px; flex: 0 0 auto; }

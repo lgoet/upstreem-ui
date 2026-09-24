@@ -158,7 +158,27 @@
          Die anderen beiden Schriftfarben sind unveraendert. --vc-third liegt mit 2.53 auf der
          Karte unter 3, war aber schon auf Weiss bei 2.68: das ist Beiwerk (Platzhalter, Rauten,
          Einheiten) und war nie AA-Text. */
-      --vc-text: #1f1f1b; --vc-muted: #6b6f78; --vc-border: #e4e2e4;
+      /* ---- DIE VIER SCHRIFTSTUFEN (24.09.) --------------------------------------------------
+         Vorher waren es drei, und sie waren keine Reihe: hell ging es 16.5 -> 5.0 -> 2.7, also
+         von sehr dunkel mit einem Sprung auf mittelgrau und dann unter die Wahrnehmungsgrenze.
+         2.68 gegen Weiss reisst beide Schwellen (4.5 fuer normalen, 3.0 fuer grossen Text) --
+         und die Stufe stand nicht auf grossem Text: von 248 Vorkommen lagen 53 auf 12px, 22 auf
+         13px, 12 auf 11px. Im Dunkelmodus war dieselbe Stufe mit 4.30 in Ordnung; die zwei
+         Themen waren also verschieden gebaut.
+         Jetzt vier Sprossen in gleichmaessigen Schritten, nach dem Vorbild von Linear (dort
+         14.3 / 10.3 / 5.0 / 3.7 im Hellen und 18.7 / 13.6 / 6.1 / 3.5 im Dunklen -- am 24.09.
+         aus der laufenden App ausgelesen, nicht aus einer Token-Liste abgeschrieben, die
+         gefundenen Listen geben den Hellmodus falsch wieder):
+             --vc-text    16.53 / 12.88    Ueberschriften, Fliesstext
+             --vc-muted   10.25 / 10.47    zweite Ebene: Beschriftungen, Werte neben dem Text
+             --vc-third    5.04 /  6.50    Metadaten, Hilfstexte -- der alte --vc-muted-Ton
+             --vc-fourth   3.71 /  3.47    Zaehler, Zeitstempel, inaktive Zustaende
+         Die vierte Stufe unterschreitet 4.5 mit Absicht; bei Linear tut sie das auch. Sie
+         traegt nur, was man ueberlesen darf. Was Inhalt ist, steht auf Stufe drei oder hoeher.
+         ZWEITE ACHSE, noch offen: der Schnitt. Linear unterscheidet 12px/510 in der zweiten von
+         12px/400 in der dritten Stufe -- dieselbe Groesse, zwei Ebenen. Die Schnittskala
+         (400-700) gibt es hier auch, sie ist nur noch nicht an die Farbe gekoppelt. */
+      --vc-text: #1f1f1b; --vc-muted: #3e4146; --vc-border: #e4e2e4;
       /* Die Primaerfarbe des ANDEREN Themas -- also genau der Wert, der zwei Bloecke weiter unten
          als --vc-text steht. Gebraucht fuer Zeichen AUF einer Flaeche in der Primaerfarbe: die
          16px-Plaettchen der Mira-Chips (16.09. angefordert). Kein Weiss und kein --vc-bg: auf
@@ -231,7 +251,7 @@
          --up-dd-gap auch den Abstand vom Trigger zum Panel setzt -- der bleibt 6. */
       --up-sub-gap: 4px;
       --up-dd-shadow: 0 10px 28px rgba(0,0,0,.14);
-      --vc-switch-bg: #f9f8f9; --vc-switch-border: #e4e2e4; --vc-third: #9e9e9e;
+      --vc-switch-bg: #f9f8f9; --vc-switch-border: #e4e2e4; --vc-third: #6b6f78; --vc-fourth: #80858e;
       /* Die PILLE auf der Schiene -- das Gegenstueck zu --vc-switch-rail. Sie stand als
          Literal an sieben Stellen, jede mit einer eigenen Dunkel-Regel daneben (#ffffff und
          #28282c). Eine Marke statt vierzehn Werten; der Rahmen kam schon immer aus
@@ -391,7 +411,7 @@
          (Tabellen, Panels, Felder), darum ist #34343a der richtige der beiden: 24 Stufen ueber
          der Karte. Gemeldet als "die Border-Color macht einen komischen Eindruck", und das war
          sie auch: sichtbar auf dem Grund, verschwunden auf allem anderen. */
-      --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-border: #34343a;
+      --vc-text: #e0e0e0; --vc-muted: #c9cbd0; --vc-border: #34343a;
       /* Gegenstueck zum hellen Thema: dort steht hier #e0e0e0, hier der Textton von dort. */
       --vc-text-invert: #1f1f1b;
       --vc-bg: #1c1c1f; --vc-heading-bg: #232326; --vc-sk: #28282c; --up-surface: #101114;
@@ -436,7 +456,7 @@
       --up-e-4: 0 20px 48px rgba(0,0,0,.46);
       /* Dunkel kraeftiger, dieselbe Staffelung wie bei den vier Stufen darueber. */
       --up-e-drawer: -12px 0 32px rgba(0,0,0,.42);
-      --vc-switch-bg: #232326; --vc-switch-border: #34343a; --vc-third: #808080;
+      --vc-switch-bg: #232326; --vc-switch-border: #34343a; --vc-third: #a0a0a0; --vc-fourth: #6c717a;
       --vc-switch-pill: #28282c;
       --up-switch-off: #444444;   /* siehe hell */
       /* Die Textfassung des Blau-Lila-Paares, hier HERAUFgedreht statt herunter -- der Text
@@ -775,13 +795,13 @@
       .usb-ddcustom-clear, .upt-selcount-clear) {
       display: inline-flex; align-items: center; justify-content: center;
       width: 32px; height: 32px; border: 0; border-radius: 8px;
-      background: transparent; color: #6f6f6f; cursor: pointer; padding: 0; flex: 0 0 auto; position: relative;
+      background: transparent; color: var(--vc-third); cursor: pointer; padding: 0; flex: 0 0 auto; position: relative;
     }
     .up-root[data-theme="dark"] :is(.up-iconbtn,
       .ubo-iconbtn, .vot-iconbtn, .tcd-iconbtn, .combo-iconbtn, .upt-kpi-eye,
       .udt-actbtn, .uut-actbtn, .am-prev-mini, .upr-clear-input,
       .udt-sub-search-x, .upt-topicsearch-clear, .upt-grp-sidesearch-clear,
-      .usb-ddcustom-clear, .upt-selcount-clear) { color: #a0a0a0; }
+      .usb-ddcustom-clear, .upt-selcount-clear) { color: var(--vc-third); }
     /* the dark base rule above is more specific than .up-iconbtn:hover, so the hover colour
        needs its own dark rule or it never turns primary in dark mode. */
     .up-root[data-theme="dark"] :is(.up-iconbtn,
@@ -2011,7 +2031,7 @@
     }
 
     .up-scale-menu {
-      --vc-text: #1f1f1b; --vc-muted: #6b6f78; --vc-third: #9e9e9e; --vc-border: #dcdbdd;
+      --vc-text: #1f1f1b; --vc-muted: #3e4146; --vc-third: #6b6f78; --vc-fourth: #80858e; --vc-border: #dcdbdd;
       --vc-heading-bg: #f9f8f9; --vc-hover-border: #6f6f6f; --vc-bg: #ffffff;
       --vc-switch-bg: #f9f8f9; --vc-switch-border: #e4e2e4; --vc-switch-pill: #ffffff;
       --up-dd-radius: 14px; --up-dd-pad: 8px; --up-dd-shadow: 0 10px 28px rgba(0,0,0,.14);
@@ -2037,7 +2057,7 @@
          der Prompts-Tabelle, die zwei Panels von brands-overview, der Tooltip der Matrix und der
          Markendialog. Der letzte trug sogar noch #23252a -- border-primary aus der Zeit vor
          Linears Leiter, auf #1c1c1f also praktisch unsichtbar. */
-      --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-third: #808080; --vc-border: #3e3e44;
+      --vc-text: #e0e0e0; --vc-muted: #c9cbd0; --vc-third: #a0a0a0; --vc-fourth: #6c717a; --vc-border: #3e3e44;
       --vc-heading-bg: #232326; --vc-hover-border: #707070; --vc-bg: #1c1c1f; --up-switch-off: #444444;
       --vc-switch-bg: #232326; --vc-switch-border: #34343a; --vc-switch-pill: #28282c;
       --up-dd-shadow: 0 10px 28px rgba(0,0,0,.32); --up-sel-bg: #28282c;
@@ -3662,7 +3682,7 @@
 .up-topicmodal-backdrop[data-theme="dark"] { background: rgba(0,0,0,.35); }
 
 .up-topicmodal-card {
-  --vc-text: #1f1f1b; --vc-muted: #6b6f78; --vc-third: #9e9e9e; --vc-border: #dcdbdd;
+  --vc-text: #1f1f1b; --vc-muted: #3e4146; --vc-third: #6b6f78; --vc-fourth: #80858e; --vc-border: #dcdbdd;
   --vc-heading-bg: #f9f8f9; --vc-hover-border: #6f6f6f; --up-surface: #ffffff; --vc-sk: #eeedef;
   /* Die Fokus-Tokens MUESSEN hier mit rein. Diese Karte haengt am body, nicht unter .up-root, wo
      die Tokens definiert sind -- ohne sie ist var(--up-focus) leer, und eine Deklaration mit einer
@@ -3686,7 +3706,7 @@
 }
 .up-topicmodal-backdrop.is-shown .up-topicmodal-card { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
 .up-topicmodal-backdrop[data-theme="dark"] .up-topicmodal-card {
-  --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-third: #808080; --vc-border: #3e3e44;
+  --vc-text: #e0e0e0; --vc-muted: #c9cbd0; --vc-third: #a0a0a0; --vc-fourth: #6c717a; --vc-border: #3e3e44;
   --vc-heading-bg: #232326; --vc-hover-border: #707070; --up-surface: #1c1c1f; --vc-sk: #28282c; --up-switch-off: #444444;
   --up-focus: #6DB2FF; --up-focus-ring: rgba(109,178,255,0.28);
 }

@@ -52,11 +52,11 @@
 .udb-explain-logo {
   width: 18px; height: 18px; flex: 0 0 18px; border-radius: 5px;
   display: inline-flex; align-items: center; justify-content: center;
-  background: #f0f0ef; color: #8a8a85;
+  background: #f0f0ef; color: var(--vc-third);
 }
 /* Auch diese Karte haengt am body und wird im Dark Mode dunkel. Ein hellgrauer Kasten mit
    hellgrauem Zeichen darauf ist dort das hellste Element der Platte. */
-.up-explain[data-theme="dark"] .udb-explain-logo { background: #303030; color: #9e9e9e;
+.up-explain[data-theme="dark"] .udb-explain-logo { background: #303030; color: var(--vc-third);
 }
 .udb-explain-logo svg { width: 12px; height: 12px; display: block; }
 

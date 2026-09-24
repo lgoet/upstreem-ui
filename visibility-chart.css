@@ -94,10 +94,25 @@
 .vot-sort { position: relative; flex: 0 0 auto; }
 .vot-sort.is-open .vot-sort-btn { color: var(--vc-text); background: var(--vc-heading-bg); }
 
-/* Go-To button: primary FONT color as bg, icon = the other theme's primary font color */
-.vot-goto { background: var(--up-accent) !important; color: var(--up-accent-fg); transition: opacity 120ms ease; }
-/* Hover wie bei jedem Primaerknopf -- siehe .tcd-goto, dieselbe Stelle, derselbe Grund. */
-.vot-goto:hover { opacity: .88; }
+/* Go-To: Akzentflaeche, Zeichen in der Gegenfarbe.
+   ZWEI KLASSEN, ZWEI HERKUENFTE (24.09. gemeldet: "Hoverstate kaputt, das Icon wird nicht
+   lesbar"). Der Knopf traegt .vot-goto UND .vot-iconbtn. Fuer die zweite gilt in core die
+   Regel der Icon-Knopf-Familie:
+       :is(.vot-iconbtn, .tcd-iconbtn, ...):hover { color: var(--vc-text); background: transparent; }
+   Im Hover wurde daraus also dunkler Text auf der Akzentflaeche -- das Zeichen verschwand.
+   Die Flaeche ueberlebte nur, weil hier ein !important stand.
+   Geloest ueber SPEZIFITAET und nicht ueber Ladereihenfolge oder !important (CLAUDE.md 1):
+   zwei Klassen statt einer schlagen das :is() der core-Regel, und die dunkle Fassung schlaegt
+   die dunkle core-Regel. Damit faellt auch das !important weg.
+   Der Hover ist der eines jeden Primaerknopfes: nur die Deckkraft, Flaeche und Zeichen bleiben. */
+.vot-root .vot-goto.vot-iconbtn {
+  background: var(--up-accent); color: var(--up-accent-fg); transition: opacity 120ms ease; }
+.up-root[data-theme="dark"] .vot-goto.vot-iconbtn {
+  background: var(--up-accent); color: var(--up-accent-fg); }
+.vot-root .vot-goto.vot-iconbtn:hover,
+.up-root[data-theme="dark"] .vot-goto.vot-iconbtn:hover {
+  opacity: .88; background: var(--up-accent); color: var(--up-accent-fg); }
+
 
 /* dark button tooltip — own implementation, not core.css's .up-tip (see file header) */
 

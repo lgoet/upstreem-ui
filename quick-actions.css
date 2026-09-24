@@ -11,7 +11,12 @@
    already carried its own complete token set before the migration. Keeping its own --am-* scope
    means it never needs core.css loaded at all. */
 #mira-quick-actions, .mqa-overlay {
-  --am-text: #1f1f1b; --am-muted: #6b6f78; --am-muted-2: #9ca3af;
+  /* AUF DIE KERN-TOKEN ZEIGEN, nicht abschreiben (24.09.). Hier standen eigene Werte -- und
+     eine eigene dritte Stufe (#9ca3af hell, #6f6f6f dunkel) neben der von core. Damit lief
+     dieses Fach bei jeder Aenderung an der Schriftskala aus dem Takt; die vierte Stufe haette
+     es gar nicht bekommen. */
+  --am-text: var(--vc-text); --am-muted: var(--vc-muted); --am-muted-2: var(--vc-third);
+  --am-muted-3: var(--vc-fourth);
   --am-up: #2ea84a; --am-down: #b0200c;
   --am-border: #e5e7eb; --am-border-strong: #d9dde3;
   --am-soft: #f7f8fa; --am-soft-2: #f3f4f6;
@@ -51,7 +56,8 @@
    seit dem 07.09. nicht mehr. Ein Umbenennen waere eine Aenderung an einem Namen, den fremdes
    Markup kennen koennte -- den Wert zu erklaeren ist billiger. */
 #mira-quick-actions[data-theme="dark"], .mqa-overlay[data-theme="dark"] {
-  --am-text: #e0e0e0; --am-muted: #a0a0a0; --am-muted-2: #6f6f6f;
+  --am-text: var(--vc-text); --am-muted: var(--vc-muted); --am-muted-2: var(--vc-third);
+  --am-muted-3: var(--vc-fourth);
   --am-up: #60d25d; --am-down: #d25d5d;
   --am-border: #3e3e44; --am-border-strong: #34343a;
   --am-soft: #28282c; --am-soft-2: #ffffff0d; --am-card: #232326; --am-trigger-bg: #1a1a1a;
@@ -141,7 +147,7 @@
   flex: 0 0 auto; font-size: 13px; font-weight: 450; white-space: nowrap;
   color: var(--am-border-strong); pointer-events: none;
 }
-[data-theme="dark"] .mqa-ph-cmd { color: #4a4a4a; }
+[data-theme="dark"] .mqa-ph-cmd { color: var(--vc-fourth); }
 
 /* avatar in a command sub-menu row (market flag / brand logo) */
 /* Marken- und Marktkachel, Form aus der Prompts-Table uebernommen: die Marke traegt die Kachel der
@@ -538,7 +544,7 @@
   border-radius: 5px; border: 1px solid #e4e2e4; background: #f4f4f5;
   color: #1f1f1b; font-size: 11px; font-weight: 600;
 }
-.mqa-tip-arrow { color: #9a9a9a; font-size: 11px; }
+.mqa-tip-arrow { color: var(--vc-fourth); font-size: 11px; }
 .mqa-tip .mqa-mini { color: #1f1f1b; }
 /* Dark Mode dreht die Karte um, die Platte bleibt eine eigene Flaeche -- exakt wie beim Explainer. */
 .mqa-tip[data-theme="dark"] { background: #eeedef; }

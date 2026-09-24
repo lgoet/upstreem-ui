@@ -134,7 +134,7 @@
    Die Lichtkante innen laesst die Flaeche gewoelbt wirken statt aufgeklebt. */
 .unc-tile {
   flex: 0 0 auto; width: 44px; height: 44px; border-radius: 11px; box-sizing: border-box;
-  display: grid; place-items: center; color: #1f1f1f;
+  display: grid; place-items: center; color: var(--vc-text);   /* war #1f1f1f -- eine Ziffer neben --vc-text */
   background: linear-gradient(150deg, #ffffff 0%, #efeeeb 100%);
   border: 1px solid rgba(31,31,31,0.11);
   /* Zwei Schatten: die Lichtkante innen laesst die Flaeche gewoelbt wirken, der weiche darunter
