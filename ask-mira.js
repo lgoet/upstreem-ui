@@ -9622,11 +9622,26 @@
         return { id: id, el: el, frage: frageZu(id, el), antwort: antwortZu(id) };
       });
     }
+    /* ZWEI EBENEN JE STRICH: aussen die TREFFERFLAECHE, innen der sichtbare Strich.
+       Der Strich ist 2px hoch -- darauf zu zielen ist Arbeit. Die Flaechen stossen aneinander,
+       es gibt also keine tote Zone zwischen zwei Strichen, und sie reichen weit nach links: wer
+       nah genug ist, dass die Vorschau steht, trifft auch beim Klicken. */
     function build(){
       ticks.innerHTML = items.map(function(u, i){
         return '<span class="am-msgnav-tick" role="button" tabindex="0" data-idx="' + i +
-               '" aria-label="' + _escAttr(u.frage.slice(0, 80)) + '"></span>';
+               '" aria-label="' + _escAttr(u.frage.slice(0, 80)) + '"><i></i></span>';
       }).join('');
+    }
+    /* DIE NACHBARN GEHEN MIT (nach dem Vorbild): der ueberfahrene ganz gross, die direkten
+       Nachbarn deutlich, die uebernaechsten noch leicht. Dadurch laeuft eine Welle mit dem
+       Zeiger mit, statt dass ein einzelner Strich springt. */
+    function welle(idx){
+      for (var i = 0; i < ticks.children.length; i++){
+        var el = ticks.children[i], d = Math.abs(i - idx);
+        el.classList.toggle('is-n0', idx >= 0 && d === 0);
+        el.classList.toggle('is-n1', idx >= 0 && d === 1);
+        el.classList.toggle('is-n2', idx >= 0 && d === 2);
+      }
     }
     function updateVisible(){
       var wide = root.getBoundingClientRect().width >= 900;   // only when there's enough width
@@ -9676,13 +9691,10 @@
     }
     ticks.addEventListener('mouseover', function(e){
       var tk = e.target.closest('.am-msgnav-tick'); if (!tk) return;
-      for (var i=0;i<ticks.children.length;i++) ticks.children[i].classList.toggle('is-hover', ticks.children[i] === tk);
+      welle(+tk.getAttribute('data-idx'));
       vorschauZeigen(+tk.getAttribute('data-idx'));
     });
-    ticks.addEventListener('mouseleave', function(){
-      for (var i=0;i<ticks.children.length;i++) ticks.children[i].classList.remove('is-hover');
-      vorschauAus();
-    });
+    nav.addEventListener('mouseleave', function(){ welle(-1); vorschauAus(); });
     ticks.addEventListener('click', function(e){
       var tk = e.target.closest('.am-msgnav-tick'); if (!tk) return;
       springen(+tk.getAttribute('data-idx'));
@@ -9693,9 +9705,10 @@
     });
     ticks.addEventListener('focusin', function(e){
       var tk = e.target.closest('.am-msgnav-tick'); if (!tk) return;
+      welle(+tk.getAttribute('data-idx'));
       vorschauZeigen(+tk.getAttribute('data-idx'));
     });
-    ticks.addEventListener('focusout', vorschauAus);
+    ticks.addEventListener('focusout', function(){ welle(-1); vorschauAus(); });
 
     if (typeof MutationObserver !== 'undefined'){ try { new MutationObserver(function(){ refresh(); }).observe(elMessages, { childList:true }); } catch(_){} }
     elChat.addEventListener('scroll', onScroll, { passive:true });

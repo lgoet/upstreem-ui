@@ -1,6 +1,6 @@
 <meta charset="utf-8">
-<link rel="stylesheet" href="core.css?v=nav1">
-<link rel="stylesheet" href="ask-mira.css?v=nav1">
+<link rel="stylesheet" href="core.css?v=nav3">
+<link rel="stylesheet" href="ask-mira.css?v=nav3">
 <body style="margin:0;font-family:system-ui,sans-serif">
 <pre id="out" style="font:11px/1.5 ui-monospace,monospace;background:#f6f6f6;padding:8px;margin:0;white-space:pre-wrap">bereit</pre>
 <div class="up-root am-root" id="ask-mira"
@@ -191,8 +191,8 @@
 
   </div>
 </div>
-<script src="core.js?v=nav1"></script>
-<script src="ask-mira.js?v=nav1"></script>
+<script src="core.js?v=nav3"></script>
+<script src="ask-mira.js?v=nav3"></script>
 <script>
 var P=[]; function z(t){P.push(t);document.getElementById("out").textContent=P.join("\n");}
 var FEHLER=[]; window.addEventListener("error",function(e){FEHLER.push(String(e.message));});
@@ -217,6 +217,16 @@ setTimeout(function(){
     z("Striche:              " + ticks.length + "   (max 20 von 24 Fragen)");
     z("Strich ruhend:        " + (cs0?cs0.width+" x "+cs0.height:"-"));
     z("altes Dropdown weg:   " + !document.querySelector(".am-msgnav-menu"));
+    /* Der AKTIVE darf nur farbig sein, nicht groesser */
+    var akt=document.querySelector(".am-msgnav-tick.is-active");
+    if (akt){ var ia=getComputedStyle(akt.querySelector("i"));
+      z("aktiver Strich:       " + ia.width + " x " + ia.height + "  (muss 12px x 2px sein)");
+      z("  Farbe aktiv:        " + ia.backgroundColor); }
+    /* Trefferflaeche: wie hoch ist der Kasten, auf den man klicken kann? */
+    var box=getComputedStyle(ticks[3]);
+    z("Trefferflaeche:       " + box.width + " x " + box.height + "  (Strich ist 12x2)");
+    var r3=ticks[3].getBoundingClientRect(), r4=ticks[4].getBoundingClientRect();
+    z("  Luecke dazwischen:  " + Math.round(r4.top - r3.bottom) + "px  (muss 0 sein)");
     /* Vorschau ueber den 5. Strich */
     var t5=ticks[5];
     t5.dispatchEvent(new MouseEvent("mouseover",{bubbles:true}));
@@ -229,8 +239,13 @@ setTimeout(function(){
     z("  Tabellenzeile drin? " + (a.textContent.indexOf("|")>=0));
     z("  Markdown drin?      " + (/[*#`]/.test(a.textContent)));
     z("  Link-URL drin?      " + (a.textContent.indexOf("http")>=0));
-    var cs5=getComputedStyle(t5);
-    z("Strich im Hover:      " + cs5.width + " x " + cs5.height + "  Farbe " + cs5.backgroundColor);
+    try { document.getAnimations().forEach(function(a){ try{a.finish();}catch(e){} }); } catch(e){}
+    function masse(i){ var e=ticks[i]&&ticks[i].querySelector("i"); if(!e) return "-";
+      var c=getComputedStyle(e); return c.width+" x "+c.height; }
+    z("Welle um den 5.:      " +
+      "  [3] " + masse(3) + "   [4] " + masse(4) + "   [5] " + masse(5) + "   [6] " + masse(6) + "   [7] " + masse(7));
+    z("  Klassen:            " +
+      [3,4,5,6,7].map(function(i){ return i+":"+(ticks[i].className.replace("am-msgnav-tick","").trim()||"-"); }).join("  "));
     z("Vorschau steht links: " + (vor.getBoundingClientRect().right <= document.querySelector(".am-msgnav-ticks").getBoundingClientRect().left + 1));
     z("");
     z("Fehler: " + (FEHLER.length?JSON.stringify(FEHLER):"keine"));

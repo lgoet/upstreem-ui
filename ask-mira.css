@@ -1513,20 +1513,34 @@
   #ask-mira.side-mounted:not(.prev-open):not(.is-side-left) .am-msgnav { right: var(--am-navr, calc(74px + var(--am-sbw, 0px))); }
   #ask-mira.has-msgnav .am-msgnav { display: block; }
   /* ---- DIE STRICHE ------------------------------------------------------------------------
-     Im Ruhezustand kleiner und duenner als vorher (12x2 statt 16x4) -- sie sollen da sein, nicht
-     rufen. Der ueberfahrene und der aktive werden groesser UND traegt die Primaerfarbe; die
-     Breite waechst mit, sonst sieht "aktiv" nur nach dunkler aus.
-     align-items: flex-end, damit die Striche an der RECHTEN Kante buendig sind: dort liegt der
-     Rand, und ein wachsender Strich soll nach links aufgehen, nicht in beide Richtungen. */
-  .am-msgnav-ticks { width: 18px; display: flex; flex-direction: column; align-items: flex-end; gap: 9px; }
+     ZWEI EBENEN: aussen die Trefferflaeche, innen der sichtbare Strich. Der Strich ist 2px hoch
+     -- darauf zu zielen waere Arbeit. Die Flaechen sind 11px hoch und stossen aneinander (gap 0),
+     es gibt also KEINE tote Zone zwischen zwei Strichen, und sie reichen 44px nach links: wer nah
+     genug steht, dass die Vorschau offen ist, trifft auch beim Klicken. Der Abstand der Striche
+     bleibt derselbe wie vorher (2px Strich + 9px Luft = 11px Raster).
+
+     DER AKTIVE IST NUR FARBIG, NICHT GROESSER (24.09. praezisiert). Groesse heisst hier "der
+     Zeiger ist gerade hier" -- das darf der Ruhezustand nicht behaupten.
+
+     DIE NACHBARN GEHEN MIT: der ueberfahrene ganz gross, die direkten Nachbarn deutlich, die
+     uebernaechsten noch leicht. So laeuft eine Welle mit dem Zeiger, statt dass ein einzelner
+     Strich springt. 200ms ease auf alles, damit das Durchfahren fliesst. */
+  .am-msgnav-ticks { width: 44px; display: flex; flex-direction: column; align-items: stretch; gap: 0; }
   .am-msgnav-tick {
-    width: 12px; height: 2px; border-radius: var(--up-r-voll); cursor: pointer;
-    background: color-mix(in srgb, var(--am-text) 22%, transparent);
-    transition: background 120ms ease, width 120ms cubic-bezier(.2,0,.38,.9), height 120ms ease;
+    height: 11px; display: flex; align-items: center; justify-content: flex-end;
+    cursor: pointer; background: transparent;
   }
-  .am-msgnav-tick:hover, .am-msgnav-tick.is-hover { width: 18px; height: 3px; background: var(--am-text); }
-  .am-msgnav-tick.is-active { width: 18px; height: 3px; background: var(--am-text); }
-  .am-msgnav-tick:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+  .am-msgnav-tick i {
+    display: block; width: 12px; height: 2px; border-radius: var(--up-r-voll);
+    background: color-mix(in srgb, var(--am-text) 22%, transparent);
+    transition: width 200ms ease, height 200ms ease, background 200ms ease;
+  }
+  .am-msgnav-tick.is-active i { background: var(--am-text); }
+  .am-msgnav-tick.is-n2 i { width: 15px; background: color-mix(in srgb, var(--am-text) 38%, transparent); }
+  .am-msgnav-tick.is-n1 i { width: 20px; height: 3px; background: color-mix(in srgb, var(--am-text) 62%, transparent); }
+  .am-msgnav-tick.is-n0 i { width: 26px; height: 3px; background: var(--am-text); }
+  .am-msgnav-tick:focus-visible { outline: 0; }
+  .am-msgnav-tick:focus-visible i { box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 
   /* ---- DIE VORSCHAU ------------------------------------------------------------------------
      Links der Striche, weil die Leiste am rechten Rand haengt (im Vorbild liegt sie rechts --
