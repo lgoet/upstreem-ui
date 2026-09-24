@@ -3654,8 +3654,13 @@
        8 Polster ergibt 8 bis 48, Mitte 28, und die Leiste landete bei 28.
        Mit 40 ist der Inhaltskasten 8 bis 40 -- Mitte 24, und die 30px-Leiste sitzt bei 9 bis
        39. Die linke Kante stimmte die ganze Zeit: beide beginnen bei 266. */
-    height: 40px; min-height: 40px;
-    padding: 8px 16px 0;   /* same 16px side inset as the idle hero, so the bar does not shift sideways on the transition */
+    /* UNTEN DASSELBE POLSTER WIE OBEN (24.09. angefordert) -- unten stand 0. Die Hoehe waechst
+       im selben Zug von 40 auf 48: bei border-box haette das Polster sonst den INHALTSkasten
+       zusammengedrueckt, die Leiste waere um 4px nach oben gerutscht und saesse nicht mehr auf
+       der Linie, um die es oben geht. Mit 48 und 8/8 ist der Inhaltskasten wieder 8 bis 40,
+       Mitte 24 -- dieselbe Linie, nur eine Zeile, die acht Pixel mehr Luft hat. */
+    height: 48px; min-height: 48px;
+    padding: 8px 16px;   /* same 16px side inset as the idle hero, so the bar does not shift sideways on the transition */
     display: flex; align-items: center;
   }
   #ask-mira.has-messages .am-hero-inner { max-width: none; gap: 12px; flex-wrap: nowrap; }

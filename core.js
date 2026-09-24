@@ -1594,6 +1594,9 @@
 
     /* sidebar: Handgriffe (die Navigation selbst bleibt englisch) */
     "Collapse sidebar": "Seitenleiste einklappen",
+    /* Der Gegenpart dazu -- gesetzt von sidebar.js an demselben Knopf und von Miras
+       eingeklappter Leiste. Fehlte, also stand dort im DE-Setting englisch "Expand sidebar". */
+    "Expand sidebar": "Seitenleiste ausklappen",
     "No teams found": "Keine Teams gefunden",
     "Remove from pinned": "Von den Angehefteten entfernen",
     "Rename pinned item": "Angehefteten Eintrag umbenennen",
@@ -2028,6 +2031,12 @@
     "Project name": "Projektname",
     "Rename project": "Projekt umbenennen",
     "Delete project": "Projekt löschen",
+    /* 24.09. gemeldet: der Tooltip auf dem Chatnamen stand im DE-Setting englisch da. Die drei
+       darunter standen daneben und fehlten aus demselben Grund -- sie stehen roh im Markup
+       beziehungsweise in einem data-tip, und ohne Katalogeintrag bleibt ein data-tip englisch. */
+    "Rename chat": "Chat umbenennen",
+    "New chat": "Neuer Chat",
+    "Pinned chats": "Angepinnte Chats",
     "Chat name": "Chat-Name",
     "Change status": "Status ändern",
     "Add as opportunity": "Als Opportunity hinzufügen",
@@ -7690,6 +7699,30 @@
     var start = (scope && scope.querySelectorAll) ? scope : document.body;
     try { document.documentElement.setAttribute("data-up-locale", getPref("locale") || "en"); } catch(e){}
     var bereiche = sichtbareBereiche(start);
+    /* ---- DIE ELEMENTE AUF DEM WEG (24.09. gefunden) ----------------------------------------
+       sichtbareBereiche STEIGT AB, solange ein Element Kinder hat, und gibt am Ende nur die
+       Blaetter dieses Abstiegs heraus. Wer unterwegs durchlaufen wurde, ist nie Wurzel eines
+       Astes -- und seine eigenen Beschriftungsattribute sieht danach niemand mehr: das
+       querySelectorAll der Aeste liegt UNTER ihm, und attributeStellen prueft nur die jeweilige
+       Astwurzel selbst.
+       Gemessen an Miras eingeklappter Leiste: .am-mini-toggle trug "Expand sidebar" weiter
+       englisch, waehrend die Knoepfe eine Ebene TIEFER (.am-mini-items > button) uebersetzt
+       waren. Der Unterschied war nur die Ebene -- die sind Astwurzeln, er ist es nicht.
+       Der Weg nach oben ist hoechstens BEREICH_TIEFE lang und wird je Element einmal gegangen,
+       das kostet nichts. Nur Attribute: Text unterhalb eines Astes holt breiterLauf, und ein
+       Element mit Kindern UND eigenem Text ist der Fall, den eigenerText ohnehin schuetzt. */
+    var gesehen = [];
+    try { einAttribut(start); } catch(e){}
+    for (var w = 0; w < bereiche.length; w++){
+      var p = bereiche[w];
+      while (p && p !== start){
+        p = p.parentElement;
+        if (!p || p === start) break;
+        if (gesehen.indexOf(p) >= 0) break;
+        gesehen.push(p);
+        try { einAttribut(p); } catch(e){}
+      }
+    }
     for (var b = 0; b < bereiche.length; b++) spracheImAst(bereiche[b]);
   }
 
