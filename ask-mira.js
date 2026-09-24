@@ -79,16 +79,20 @@
 
      Die Zaehlung laeuft IMMER mit, auch ohne eingeschaltete Ausgabe: sie kostet nichts und ist
      genau dann da, wenn man sie braucht -- naemlich hinterher. */
+  /* AN, OHNE SCHALTER (24.09. ausdruecklich so verlangt). CLAUDE.md 5 sagt "keine
+     Debug-Ausgaben in der ausgelieferten App" -- das gilt weiter und wird wieder hergestellt,
+     sobald das Realtime steht. Solange es nicht steht, ist eine stumme App das groessere
+     Problem: drei Runden sind daran vergangen, dass niemand sehen konnte, ob ein Ereignis
+     ueberhaupt ankommt.
+     Der Weg ueber ?amdebug=1 ist RAUS: die App wertet ihre eigenen Suchparameter aus und ist
+     davon auf das Dashboard gesprungen. Abschalten geht mit askMiraDebug(false). */
   var AMD = {
-    an: false, start: Date.now(),
+    an: true, start: Date.now(),
     rt: [], rtAngenommen: 0, rtVerworfen: 0,
     nachfass: 0, nachfassZeiten: [],
     setter: {}, scroll: [], spur: []
   };
-  try {
-    if (/[?&]amdebug=1/.test(location.search)) AMD.an = true;
-    if (window.localStorage && localStorage.getItem('am_debug') === '1') AMD.an = true;
-  } catch(e){}
+  try { if (window.localStorage && localStorage.getItem('am_debug') === '0') AMD.an = false; } catch(e){}
   function amT(){ return ((Date.now() - AMD.start) / 1000).toFixed(1) + 's'; }
   /* EINE Spur fuer alles, in der Reihenfolge, in der es passiert ist. askMiraDiag zeigt
      Tabellen -- die sind zum Lesen gut und zum Weitergeben schlecht. Diese hier ist ZUM
