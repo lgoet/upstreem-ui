@@ -199,7 +199,7 @@
 .udr-day.is-out { pointer-events: none; background: none; border-color: transparent; }
 .udr-day:hover:not(:disabled):not(.is-start):not(.is-end) { background: var(--vc-heading-bg); }
 .udr-day:focus-visible { border-color: var(--vc-hover-border); }
-.udr-day:disabled { color: var(--vc-third); opacity: .42; cursor: default; }
+.udr-day:disabled { color: var(--vc-fourth); opacity: .42; cursor: default; }
 /* The range is the cell background only. Square middle, rounded ends -- no overlapping shadows. */
 /* Das Band zwischen Anfang und Ende trug --vc-heading-bg, also denselben Ton wie jede
    Kopfzeile der App -- hell kaum vom Panelgrund zu trennen, dunkel gar nicht. Dieselbe Leiter

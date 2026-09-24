@@ -119,7 +119,7 @@
 }
 .udb-track:hover { opacity: .88; }
 .udb-track svg { width: 13px; height: 13px; flex: 0 0 13px; display: block; }
-.udb-track:disabled { background: var(--vc-heading-bg); color: var(--vc-third); cursor: default; }
+.udb-track:disabled { background: var(--vc-heading-bg); color: var(--vc-fourth); cursor: default; }
 /* Schmal: nur noch das Icon, quadratisch. Die Beschriftung faellt weg, nicht der Knopf -- er ist
    der einzige Grund, warum diese Tabelle ueberhaupt da ist. Die Stufe kommt aus core
    Eigene Klasse, NICHT core's is-t2: das heisst dort "Aktionsspalte ganz ausblenden". */

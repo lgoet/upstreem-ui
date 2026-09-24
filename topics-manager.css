@@ -26,7 +26,7 @@
    Die Klasse bleibt stehen und nicht nur im Markup -- .contract_diff.py liest Klassennamen aus den
    CSS-Dateien, und ein Name, der dort verschwindet, koennte fremden Code brechen. */
 .utm-topicchip-e { font-size: 12px; line-height: 1; flex: 0 0 auto; }
-.utm-topicchip-count { flex: 0 0 auto; font-size: 11px; font-weight: 600; color: var(--vc-third);
+.utm-topicchip-count { flex: 0 0 auto; font-size: 11px; font-weight: 600; color: var(--vc-fourth);
   font-variant-numeric: tabular-nums; }
 
 /* Loading skeleton: same shape as the real chip, filled with the shared skeleton pulse instead of

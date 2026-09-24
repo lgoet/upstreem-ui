@@ -686,7 +686,7 @@
    Wert bleibt als Stellschraube stehen -- er ist Augenmass, keine Messung. */
 .usn-item > .usn-txt { position: relative; top: 0; }
 .usn-count {
-  flex: 0 0 auto; font-size: 12px; font-weight: 500; color: var(--vc-third);
+  flex: 0 0 auto; font-size: 12px; font-weight: 500; color: var(--vc-fourth);
   font-variant-numeric: tabular-nums;
 }
 .usn-count:empty { display: none; }

@@ -752,7 +752,7 @@
   #ask-mira .uo-source-domain { font-size: 11px; color: var(--uo-muted-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   /* Etikett-Behandlung aus core (.up-label): 12px / 600 / --vc-third, normale
      Schreibung. Versalien und Sperrung sind am 21.09. aus der ganzen App raus. */
-  #ask-mira .uo-sec { margin: 18px 0 11px; font-size: 12px; font-weight: 600; color: var(--vc-third); }
+  #ask-mira .uo-sec { margin: 18px 0 11px; font-size: 12px; font-weight: 600; color: var(--am-muted-2); }
   #ask-mira .uo-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
   #ask-mira .uo-kpi { border: 1px solid var(--uo-border); border-radius: 12px; background: var(--uo-card); padding: 12px 13px; min-width: 0; }
   #ask-mira .uo-kpi-label { font-size: 11px; color: var(--uo-muted); font-weight: 500; }
@@ -1077,7 +1077,7 @@
   /* Etikett-Behandlung aus core (.up-label): 12px / 600 / --vc-third, normale
      Schreibung. Versalien und Sperrung sind am 21.09. aus der ganzen App raus. */
   .am-suggested-label {
-    margin: 0 0 11px; font-size: 12px; font-weight: 600; color: var(--vc-third);
+    margin: 0 0 11px; font-size: 12px; font-weight: 600; color: var(--am-muted-2);
   }
   .am-suggested-grid { display: block; }
   /* Die Kopfzeile der Kategorien ist ein Schalter. Das Winkelzeichen liegt rechts, ist im Ruhe-
@@ -1221,7 +1221,7 @@
   .am-cat-ic svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
   .am-cat-name { flex: 1 1 auto; min-width: 0; }
   #ask-mira[data-theme="dark"] .am-cat-ic { background: rgba(42,42,42,0.3); border-color: #28282c; box-shadow: var(--up-e-1, 0 1px 4px rgba(0,0,0,.28)); }
-  #ask-mira[data-theme="dark"] .am-cat-card:hover .am-cat-ic { background: rgba(53,54,56,0.3); color: #ececec; box-shadow: 0 3px 10px rgba(0,0,0,.38); }
+  #ask-mira[data-theme="dark"] .am-cat-card:hover .am-cat-ic { background: rgba(53,54,56,0.3); color: var(--am-text); box-shadow: 0 3px 10px rgba(0,0,0,.38); }
   /* Das Chevron rueckt beim Ueberfahren 4px nach rechts. transform und nicht margin: ein
      transform laesst den Browser nicht neu umbrechen, die Karte darum bleibt also ruhig.
      Der Uebergang steht in DIESER Regel und nicht in einer weiter oben: zwei Regeln mit
@@ -1253,7 +1253,7 @@
   .am-gallery-sub:first-child { margin-top: 0; }
   /* Etikett-Behandlung aus core (.up-label): 12px / 600 / --vc-third, normale
      Schreibung. Versalien und Sperrung sind am 21.09. aus der ganzen App raus. */
-  .am-gallery-subhead { margin: 0 0 6px; font-size: 12px; font-weight: 600; color: var(--vc-third); }
+  .am-gallery-subhead { margin: 0 0 6px; font-size: 12px; font-weight: 600; color: var(--am-muted-2); }
   .am-gallery-prompts { display: flex; flex-direction: column; gap: 2px; }
   .am-gallery-prompt {
     text-align: left; border: 0; background: transparent; cursor: pointer; width: 100%;
@@ -1407,13 +1407,13 @@
   .am-rep-card.is-editable .am-rep-edit { opacity: 1; pointer-events: auto; }
   .am-rep-card.is-editable .am-rep-go { opacity: 0; pointer-events: none; }
   #ask-mira[data-theme="dark"] .am-rep-edit { background: #232326; border-color: #28282c; }
-  #ask-mira[data-theme="dark"] .am-rep-edit:hover { color: #ececec; background: #353638; }
+  #ask-mira[data-theme="dark"] .am-rep-edit:hover { color: var(--am-text); background: #353638; }
   /* dark mode: report cards without background, like the category cards */
   /* Die zwei dunklen Sonderzeilen fuer die Reportkarte sind weg: --am-bg und
      --vt-row-hover-solid drehen sich mit dem Thema, und #2a2a2a war deckend, aber zu hell --
      dieselbe Meldung wie bei den Kategoriekarten. */
   #ask-mira[data-theme="dark"] .am-rep-ic { background: rgba(42,42,42,0.3); border-color: #28282c; box-shadow: var(--up-e-1, 0 1px 4px rgba(0,0,0,.28)); }
-  #ask-mira[data-theme="dark"] .am-rep-card:hover .am-rep-ic { background: rgba(53,54,56,0.3); color: #ececec; box-shadow: 0 3px 10px rgba(0,0,0,.38); }
+  #ask-mira[data-theme="dark"] .am-rep-card:hover .am-rep-ic { background: rgba(53,54,56,0.3); color: var(--am-text); box-shadow: 0 3px 10px rgba(0,0,0,.38); }
 
   /* ===================== COMPOSER ===================== */
   .am-composer-area {
@@ -1845,7 +1845,7 @@
      Farbe trug. Die Farbcodierung bleibt dort, wo sie hingehoert: an der Schiene im Menue. In der
      Fusszeile des Feldes ist die Stufe eine Beifuegung zum Modellnamen und darf nicht lauter sein
      als er. */
-  .am-eff-lvl { flex: 0 0 auto; font-weight: 500; color: var(--vc-third); transition: color 200ms ease; }
+  .am-eff-lvl { flex: 0 0 auto; font-weight: 500; color: var(--am-muted-2); transition: color 200ms ease; }
   .am-eff-chev { width: 13px; height: 13px; flex: 0 0 auto; fill: none; stroke: currentColor;
     stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; opacity: 0.75; }
 
@@ -2004,7 +2004,7 @@
     /* --vc-muted und nicht --vc-third: gerechnet misst third im Dunkeln 3.97 auf dem
        Menuegrund und faellt damit durch die 4.5 aus WCAG AA -- bei 11.5px zaehlt kein
        Grosstext-Bonus. muted schafft es. Die AKTIVE Stufe bleibt --am-text (11.87). */
-    font-size: 11px; font-weight: 500; color: var(--vc-muted); letter-spacing: 0.01em;
+    font-size: 11px; font-weight: 500; color: var(--am-muted); letter-spacing: 0.01em;
     transition: color 200ms ease;
   }
   .am-eff-lbl:nth-child(1) { margin-left: -2px; }
@@ -2019,7 +2019,7 @@
      eigenes max-height mehr. Nur die Deckkraft faehrt. */
   .am-eff-note {
     position: absolute; left: 6px; right: 6px; top: 0; margin: 0;
-    font-size: 11px; line-height: 1.35; color: var(--vc-muted);
+    font-size: 11px; line-height: 1.35; color: var(--am-muted);
     opacity: 0; visibility: hidden; transition: opacity 200ms ease, visibility 0s linear 200ms;
   }
   #ask-mira.is-flash .am-eff .am-eff-note { opacity: 1; visibility: visible; transition-delay: 0s; }
@@ -2099,8 +2099,8 @@
     color: var(--am-text); font-family: inherit; font-size: 14px; font-weight: 450;
     letter-spacing: -0.01em; padding: 0;
   }
-  .am-pick-input::placeholder { color: var(--vc-third); }
-  .am-pick-count { flex: 0 0 auto; font-size: 11px; font-weight: 500; color: var(--vc-third); font-variant-numeric: tabular-nums; }
+  .am-pick-input::placeholder { color: var(--am-muted-2); }
+  .am-pick-count { flex: 0 0 auto; font-size: 11px; font-weight: 500; color: var(--vc-fourth); font-variant-numeric: tabular-nums; }
 
   /* Die Ueberschrift ueber den Befehlschips: sie sagt, was die Chips darunter sind.
      KEIN Versal -- es ist eine Frage an den Nutzer und keine Rubrik, und in Grossbuchstaben
@@ -2131,7 +2131,7 @@
   .am-pick-h {
     margin: 0; flex: 0 0 auto; white-space: nowrap;
     font-size: 12px; font-weight: 600; letter-spacing: 0;
-    color: var(--vc-muted);   /* siehe .am-eff-lbl: third misst im Dunkeln nur 3.97 */
+    color: var(--am-muted);   /* siehe .am-eff-lbl: third misst im Dunkeln nur 3.97 */
   }
   /* ---- DIE BEFEHLE ALS CHIPS, an der Stelle des Umschalters ----------------------------
      Der Umschalter ist weg (08.09.). Er konnte nur den TYP -- und damit lagen Markt,
@@ -2170,7 +2170,7 @@
   #ask-mira[data-theme="dark"] .am-pick-cmd:hover { background: var(--vc-border); }
   /* Der Schraegstrich sagt, dass man den Befehl auch TIPPEN kann -- der Chip ist die Abkuerzung,
      nicht der einzige Weg. */
-  .am-pick-cmd-slash { color: var(--vc-third); font-weight: 600; }
+  .am-pick-cmd-slash { color: var(--am-muted-2); font-weight: 600; }
   .am-pick-cmd-lbl { white-space: nowrap; }
 
   /* ---- DIE GESETZTEN FILTER, als Chips IM Suchfeld -------------------------------------- */
@@ -2235,18 +2235,18 @@
   /* Etikett-Behandlung aus core (.up-label): 12px / 600 / --vc-third, normale
      Schreibung. Versalien und Sperrung sind am 21.09. aus der ganzen App raus. */
   .am-pick-cghead {
-    padding: 6px 10px 4px; font-size: 12px; font-weight: 600; color: var(--vc-third);
+    padding: 6px 10px 4px; font-size: 12px; font-weight: 600; color: var(--am-muted-2);
   }
   .am-pick-cav {
     width: 22px; height: 22px; flex: 0 0 auto; border-radius: 6px; overflow: hidden;
     display: flex; align-items: center; justify-content: center;
-    background: var(--am-soft); color: var(--vc-third);
+    background: var(--am-soft); color: var(--am-muted-2);
     font-size: 13px; font-weight: 600;
   }
   .am-pick-cav.is-flag { width: 22px; height: 16px; border-radius: 3px; }
   .am-pick-cav img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .am-pick-cav.is-slash { background: transparent; }
-  .am-pick-chint { flex: 0 0 auto; font-size: 11px; color: var(--vc-third); }
+  .am-pick-chint { flex: 0 0 auto; font-size: 11px; color: var(--am-muted-2); }
 
   /* Der negative Seitenrand holt die 10px Zeilenpolster von .am-pick-row wieder herein: die
      Hover-Flaeche einer Zeile soll bis an das Panel-Polster reichen, der TEXT darin aber mit dem
@@ -2299,12 +2299,12 @@
      erlaeutert, ist das die Hausfarbe -- die Zahl steht hier, damit sie niemand suchen muss. */
   .am-pick-note-sub {
     max-width: 42ch; margin: 0 auto; font-size: 11px; line-height: 1.45;
-    color: var(--vc-third);
+    color: var(--am-muted-2);
   }
   /* Nur der Ruhehinweis traegt ein Zeichen. 22px, also die Groesse, die core einem Zeichen
      ueber einer Leermeldung gibt; leiser als der Satz darunter, denn es erklaert ihn, es
      ersetzt ihn nicht. */
-  .am-pick-note-ic { display: block; margin: 0 auto 9px; width: 22px; height: 22px; color: var(--vc-third); }
+  .am-pick-note-ic { display: block; margin: 0 auto 9px; width: 22px; height: 22px; color: var(--am-muted-2); }
   .am-pick-note-ic svg { width: 22px; height: 22px; display: block; fill: none; stroke: currentColor;
     stroke-linecap: round; stroke-linejoin: round; }
   .am-pick-sk { display: flex; align-items: center; gap: 11px; padding: 8px 10px; }
@@ -2651,7 +2651,7 @@
   /* Zweitfarbe wie der Umschalter der grossen Leiste -- es ist derselbe Knopf, nur im
      eingeklappten Zustand (22.09.). */
   .am-mini-toggle { flex: 0 0 32px; width: 32px; height: 32px; margin-bottom: 8px;
-    color: var(--vc-muted); }
+    color: var(--am-muted); }
   /* Groesse und Seitenwahl stehen weiter unten bei .am-prev-panel .am-side-toggle svg --
      es ist derselbe Umschalter, nur eingeklappt. */
   .am-mini-items { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 100%; }
@@ -2766,22 +2766,22 @@
   /* Etikett-Behandlung aus core (.up-label): 12px / 600 / --vc-third, normale
      Schreibung. Versalien und Sperrung sind am 21.09. aus der ganzen App raus. */
   .am-set-backdrop .ums-navhead, .am-set-backdrop .am-set-navhead {
-    padding: 10px 10px 6px; font-size: 12px; font-weight: 600; color: var(--vc-third);
+    padding: 10px 10px 6px; font-size: 12px; font-weight: 600; color: var(--am-muted-2);
   }
   .am-set-backdrop .ums-nav, .am-set-backdrop .am-set-nav {
     min-height: 36px; height: 36px; padding: 0 8px; border-radius: 12px; gap: 10px;
-    font-size: 14px; font-weight: 500; color: var(--vc-text); background: transparent;
+    font-size: 14px; font-weight: 500; color: var(--am-text); background: transparent;
     transition: background 120ms cubic-bezier(.4,0,.2,1), color 120ms cubic-bezier(.4,0,.2,1);
   }
   .am-set-backdrop .ums-nav + .ums-nav { margin-top: 2px; }
   .am-set-backdrop .ums-nav svg { width: 17px; height: 17px; flex: 0 0 17px; display: block;
-    color: var(--vc-muted); }
+    color: var(--am-muted); }
   .am-set-backdrop .ums-aside .ums-nav:hover {
     background: color-mix(in srgb, var(--vc-text) 3.5%, transparent); }
   .am-set-backdrop .ums-aside .ums-nav.is-on {
     background: color-mix(in srgb, var(--vc-text) 5%, transparent);
-    color: var(--vc-text); font-weight: 550; }
-  .am-set-backdrop .ums-nav.is-on svg { color: var(--vc-text); }
+    color: var(--am-text); font-weight: 550; }
+  .am-set-backdrop .ums-nav.is-on svg { color: var(--am-text); }
   /* Im Dunkeln waere color-mix auf der Textfarbe ein fast weisser Schleier -- dieselbe eigene
      Auswahlflaeche wie in der Sidebar und in preferences.css. */
   .am-set-backdrop[data-theme="dark"] .ums-aside .ums-nav:hover {
@@ -2822,16 +2822,16 @@
   .am-set-backdrop .ums-headtext { display: flex; flex-direction: column; gap: 6px;
     min-width: 0; flex: 1 1 auto; }
   .am-set-backdrop .ums-title, .am-set-backdrop .am-set-title { font-size: 22px; font-weight: 500; line-height: 1.2;
-    color: var(--vc-text); }
-  .am-set-backdrop .ums-sub, .am-set-backdrop .am-set-sub { font-size: 16px; font-weight: 400; color: var(--vc-third);
+    color: var(--am-text); }
+  .am-set-backdrop .ums-sub, .am-set-backdrop .am-set-sub { font-size: 16px; font-weight: 400; color: var(--am-muted-2);
     line-height: 1.3; }
   .am-set-backdrop .ums-row { display: flex; align-items: flex-start;
     justify-content: space-between; gap: 24px; padding: 16px 0; }
   .am-set-backdrop .ums-rowtext { display: flex; flex-direction: column; gap: 4px;
     min-width: 0; flex: 1 1 auto; }
-  .am-set-backdrop .ums-rowtitle { font-size: 14px; font-weight: 500; color: var(--vc-text);
+  .am-set-backdrop .ums-rowtitle { font-size: 14px; font-weight: 500; color: var(--am-text);
     line-height: 1.35; }
-  .am-set-backdrop .ums-rowdesc, .am-set-backdrop .am-set-note { font-size: 13px; font-weight: 400; color: var(--vc-muted);
+  .am-set-backdrop .ums-rowdesc, .am-set-backdrop .am-set-note { font-size: 13px; font-weight: 400; color: var(--am-muted);
     line-height: 1.5; max-width: 46ch; }
   /* EINE GESPERRTE EINSTELLUNGSZEILE (23.09.). Nicht nur die Knoepfe: Titel und Erklaersatz
      gehoeren dazu, sonst liest sich die Zeile als waehlbar und nur der Regler klemmt.
@@ -2857,23 +2857,23 @@
   .am-set-backdrop .ums-sel {
     display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 10px;
     border: 1px solid var(--vc-border); border-radius: 8px;
-    background: var(--vc-bg); color: var(--vc-muted);
+    background: var(--vc-bg); color: var(--am-muted);
     font-family: inherit; font-size: 13px; font-weight: 500; line-height: 1;
     white-space: nowrap; cursor: pointer; outline: 0;
     transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease;
   }
   .am-set-backdrop .ums-sel:hover,
   .am-set-backdrop .ums-selwrap.is-open .ums-sel {
-    color: var(--vc-text); background: var(--vc-heading-bg); border-color: var(--vc-hover-border);
+    color: var(--am-text); background: var(--vc-heading-bg); border-color: var(--vc-hover-border);
   }
-  .am-set-backdrop .ums-sel-val { color: var(--vc-text); }
+  .am-set-backdrop .ums-sel-val { color: var(--am-text); }
   .am-set-backdrop .ums-sel svg { width: 16px; height: 16px; flex: 0 0 16px; display: block;
-    color: var(--vc-text); }
+    color: var(--am-text); }
   .am-set-backdrop .ums-menu.ums-menu { width: 232px; right: 0; left: auto; }
   .am-set-backdrop .ums-menu .up-optrow { min-height: 34px; padding: 0 9px; font-size: 13px;
     font-weight: 500; }
   .am-set-backdrop .ums-menu .up-optrow .ums-opt-check { margin-left: auto; flex: 0 0 16px;
-    width: 16px; height: 16px; opacity: 0; color: var(--vc-text); }
+    width: 16px; height: 16px; opacity: 0; color: var(--am-text); }
   .am-set-backdrop .ums-menu .up-optrow.is-on .ums-opt-check { opacity: 1; }
   .am-set-backdrop .ums-menu .up-optrow svg { width: 16px; height: 16px; display: block; }
   /* DAS MENUE DARF NICHT AM RAND DES FENSTERS ABGESCHNITTEN WERDEN. .ums-main traegt
@@ -3003,8 +3003,8 @@
      Ueber die Spezifitaet geloest und nicht ueber die Ladereihenfolge -- CLAUDE.md 1. */
   /* Zweitfarbe und nicht Drittfarbe (22.09. angefordert, gleichlautend fuer die Hauptleiste).
      Der Umschalter ist ein Bedienelement und stand leiser da als der Text daneben. */
-  .am-prev-panel .up-iconbtn.am-side-toggle { color: var(--vc-muted); }
-  .am-prev-panel .up-iconbtn.am-side-toggle:hover { background: var(--am-soft); color: var(--vc-text); }
+  .am-prev-panel .up-iconbtn.am-side-toggle { color: var(--am-muted); }
+  .am-prev-panel .up-iconbtn.am-side-toggle:hover { background: var(--am-soft); color: var(--am-text); }
   /* ZWEI ZEICHEN IM BAUM, EINES SICHTBAR (22.09.). Die Leiste kann links oder rechts stehen,
      und das Zeichen muss mitdrehen. Bis heute lag EIN Zeichen da und ein transform: scaleX(-1)
      darauf -- das hielt nur, weil das alte Zeichen spiegelsymmetrisch war. Jetzt liegen
@@ -3148,7 +3148,7 @@
   .am-dd-opt.is-selected .am-dd-check::before { content: "✓"; font-size: 11px; line-height: 1; }
   #ask-mira[data-theme="dark"] .am-dd-opt:hover { background: #232326; }
   #ask-mira[data-theme="dark"] .am-dd-opt.is-selected { background: #252525; }
-  #ask-mira[data-theme="dark"] .am-dd-opt.is-selected .am-dd-check { background: #e0e0e0; border-color: #e0e0e0; color: #1f1f1b; }
+  #ask-mira[data-theme="dark"] .am-dd-opt.is-selected .am-dd-check { background: #e0e0e0; border-color: #e0e0e0; color: var(--vc-text-invert); }
   .am-newchat:hover { background: var(--am-soft); border-color: var(--vc-hover-border, #6f6f6f); }
   #ask-mira .am-newchat .am-ic { width: 14px; height: 14px; }
   .am-prev-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 6px 10px 16px; display: flex; flex-direction: column; gap: 2px; }
@@ -3158,10 +3158,10 @@
   .am-prev-mehr {
     display: block; width: 100%; text-align: left; border: 0; background: transparent;
     padding: 0 8px; height: 32px; border-radius: 9px; cursor: pointer;
-    font-family: inherit; font-size: 13px; font-weight: 500; color: var(--vc-third);
+    font-family: inherit; font-size: 13px; font-weight: 500; color: var(--am-muted-2);
     transition: color 120ms ease, background-color 120ms ease;
   }
-  .am-prev-mehr:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
+  .am-prev-mehr:hover { color: var(--am-text); background: var(--vc-heading-bg); }
   /* Der Fuehler fuer das Nachladen: er wird nie gesehen, er muss nur in den sichtbaren Bereich
      geraten koennen. 1px statt 0, weil ein Element ohne Hoehe von IntersectionObserver in
      manchen Browsern gar nicht erst gemeldet wird. */
@@ -3231,7 +3231,7 @@
   .am-prev-section.is-collapsed .am-prev-sec-chev svg { transform: rotate(-90deg); }
   /* Etikett-Behandlung aus core (.up-label): 12px / 600 / --vc-third, normale
      Schreibung. Versalien und Sperrung sind am 21.09. aus der ganzen App raus. */
-  .am-prev-sec-label { font-size: 12px; font-weight: 600; color: var(--vc-third); flex: 0 0 auto; }
+  .am-prev-sec-label { font-size: 12px; font-weight: 600; color: var(--am-muted-2); flex: 0 0 auto; }
   .am-prev-sec-spacer { flex: 1 1 auto; }
   .am-prev-add-proj { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 0; border-radius: 6px; background: transparent; color: var(--am-muted); cursor: pointer; padding: 0; opacity: 0; transition: opacity 120ms ease, background 120ms ease; }
   .am-prev-sec-head:hover .am-prev-add-proj { opacity: 1; }
@@ -3601,7 +3601,7 @@
      main ist etwas heller"). Dort steht --vc-third (.usn-bar .up-iconbtn.usn-toggle), hier stand
      --am-text -- das ist die volle Textfarbe und damit deutlich kraeftiger. Zwei Zeichen mit
      derselben Bedeutung an zwei Raendern desselben Bildschirms sollen gleich aussehen. */
-  #ask-mira .am-prev-btn { color: var(--vc-third); }
+  #ask-mira .am-prev-btn { color: var(--am-muted-2); }
   /* mobile/compact chat topbar: 16px side padding so the back & "Chats" buttons don't touch the edges */
   #ask-mira.is-compact.has-messages .am-hero { padding-left: 16px; padding-right: 16px; }
   @media (max-width: 720px) {
@@ -3636,7 +3636,7 @@
   }
   #ask-mira[data-theme="dark"] .am-send:hover { background: #a0a0a0; box-shadow: none; }
   #ask-mira[data-theme="dark"] .am-bubble tbody tr:nth-child(even) td { background: rgba(255,255,255,0.022); }
-  #ask-mira[data-theme="dark"] .am-ev-pill { background: transparent; border-color: #23252a; color: #a0a0a0; }
+  #ask-mira[data-theme="dark"] .am-ev-pill { background: transparent; border-color: #23252a; color: var(--am-muted-2); }
   #ask-mira[data-theme="dark"] .am-ev-pill:hover { background: #1e1e1e; border-color: #555; }
 
   /* Inline markers — dark mode. Explicit data-theme only; the OS-preference twins that used
@@ -3648,7 +3648,7 @@
   #ask-mira[data-theme="dark"] .am-bubble span[data-mira-source-signal="unclear"] { background: rgba(251,191,36,0.13);  color:#fde68a; }
 
   /* Dark-mode hover / focus parity with prompt research */
-  #ask-mira[data-theme="dark"] .am-icon-action[aria-expanded="true"] { background: #242424; color: #e0e0e0; }
+  #ask-mira[data-theme="dark"] .am-icon-action[aria-expanded="true"] { background: #242424; color: var(--am-text); }
   /* topic chips — dark mode (1:1 with the Opportunities page: white text, deeper tints) */
   /* Die dunkle Fassung von .uo-tag ist mit dem Chip selbst entfallen (22.09.) --
      .up-topicchip bringt sein dunkles Thema aus core mit. */

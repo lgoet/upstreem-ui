@@ -1019,7 +1019,7 @@
     .up-tsk .up-var-sov, .up-tsk .up-var-cnt { justify-content: flex-end; }
     /* Der Bezugswert steht kleiner daneben, nicht als eigene Spalte: er erklaert die Zahl links,
        er ist keine zweite Zahl. */
-    .up-var-of { font-size: 12px; font-weight: 400; color: var(--vc-third); white-space: nowrap; }
+    .up-var-of { font-size: 12px; font-weight: 400; color: var(--vc-fourth); white-space: nowrap; }
 
     /* ---- Variantentabelle auf schmalen Breiten ----------------------------------------------
        Die zwei Zahlenspalten stehen fest auf je 150px. Auf einem Telefon ist das der ganze
@@ -1733,7 +1733,7 @@
        grouping dropdown's own chips), so a new consumer gets this for free instead of needing its
        own scoped copy -- which is exactly how this chip went uncovered in the grouping modal/popup
        before: only the bulk-topics bar had ever added one. */
-    [data-theme="dark"] .up-topicchip { background: color-mix(in srgb, var(--ust-tag-color, #6b7280) 22%, transparent); color: #e0e0e0; }
+    [data-theme="dark"] .up-topicchip { background: color-mix(in srgb, var(--ust-tag-color, #6b7280) 22%, transparent); color: var(--vc-text); }
     /* Die is-on-Stufe MUSS hier wiederholt werden. [data-theme="dark"] .up-topicchip wiegt 0-2-1
        und schlaegt damit .up-topicchip.is-on (0-2-0) -- die Zeile darueber faerbt also BEIDE
        Zustaende gleich, und im dunklen Thema war ein gewaehlter Chip vom ungewaehlten nur noch am
@@ -2723,7 +2723,7 @@
        Ausloesers, und die Grundregel oben wuerde ihn um 4px nach unten schieben. Den Wert setzt
        placeTip() direkt am Element -- eine Regel hier verlor gegen die Grundregel, gemessen blieb
        transform: translateY(4px) aktiv. Eingeblendet wird allein ueber die Deckkraft. */
-    .up-tip[data-theme="dark"] { background: #f0f0f0; color: #1f1f1b; }
+    .up-tip[data-theme="dark"] { background: #f0f0f0; color: var(--vc-text-invert); }
     /* Tooltips keep the same dark card in both themes: they float above the page, not inside
        the surface, so inverting them made them read as a different component. */
 
@@ -3143,7 +3143,7 @@
 .up-stack-empty svg { width: 14px; height: 14px; display: block; }
 
 .up-num.is-empty, .up-sent-val.is-empty, .up-stack-empty,
-.tct-num.is-empty, .udt-sub-share.is-empty { color: var(--vc-third); font-weight: 500; }
+.tct-num.is-empty, .udt-sub-share.is-empty { color: var(--vc-fourth); font-weight: 500; }
 
 /* ---------- icon segmented control ----------
    Lifted verbatim from topcitations-dashboard's doughnut/bar switch (.tcl-seg), which is the
@@ -3496,7 +3496,7 @@
 .up-ment-badge svg { width: 8px; height: 8px; display: block; color: var(--up-surface, #fff); }
 .up-ment-cell.is-yes .up-ment-badge { background: var(--vt-up); }
 .up-ment-cell.is-no  .up-ment-badge { background: var(--vt-down); }
-.up-root[data-theme="dark"] .up-ment-badge svg { color: #1f1f1b; }
+.up-root[data-theme="dark"] .up-ment-badge svg { color: var(--vc-text-invert); }
 
 /* ---------- "<brand logo> mentioned?" column header ----------
    urls-table established this; it lives here so every table with the column gets the same thing. */
@@ -4078,7 +4078,7 @@
 .up-varring svg { display: block; width: 22.4px; height: 22.4px; }
 .up-varring-track { stroke: var(--vc-heading-bg); }
 .up-varring-fill { stroke: var(--up-accent); transition: stroke-dasharray 240ms ease; }
-.up-var-of { font-size: 12px; font-weight: 400; color: var(--vc-third); white-space: nowrap; }
+.up-var-of { font-size: 12px; font-weight: 400; color: var(--vc-fourth); white-space: nowrap; }
 
 /* ══ Custom Groupings ═══════════════════════════════════════════════════════════════════════════
    Diese Regeln standen in prompts-table.css und sind hierher GEWANDERT, Werte unveraendert. Grund:
@@ -4193,7 +4193,7 @@
 .up-cg-row:hover .up-cg-more, .up-cg-row.is-menuopen .up-cg-more { opacity: 1; }
 .up-cg-eye:hover, .up-cg-more:hover,
 .up-cg-row.is-menuopen .up-cg-more { color: var(--vc-text); background: var(--vc-heading-bg); }
-.upt-group-eye.is-off, .up-cg-eye.is-off { color: var(--vc-third); }
+.upt-group-eye.is-off, .up-cg-eye.is-off { color: var(--vc-fourth); }
 /* Ein verstecktes Grouping liest sich auch in der Liste als versteckt. */
 .up-cg-row:has(.up-cg-eye.is-off) .up-pop-label,
 .up-cg-row:has(.up-cg-eye.is-off) .up-cg-dot { opacity: .45; }

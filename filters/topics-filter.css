@@ -137,7 +137,7 @@
    sobald beide Kaesten nebeneinander stehen, sieht man den einen Pixel: die Liste wirkte groesser
    als das Menue, aus dem sie kommt. Gemessen: Zeile im Menue 13, Option hier 14. */
 .utf-opt-name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 500; }
-.utf-opt-count { flex: 0 0 auto; font-size: 12px; font-weight: 500; color: var(--vc-third); }
+.utf-opt-count { flex: 0 0 auto; font-size: 12px; font-weight: 500; color: var(--vc-fourth); }
 .utf-pinsep { height: 1px; margin: 5px 9px; background: var(--vc-border); }
 .utf-empty { padding: 14px 10px; text-align: center; color: var(--vc-third); font-size: 12.5px; }
 

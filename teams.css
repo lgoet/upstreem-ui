@@ -131,7 +131,7 @@
    dabei noch klickbar aussieht, wird ein zweites Mal gedrueckt. Die Sperre loest sich nach
    8 Sekunden von selbst wieder -- ein Workflow, der nie antwortet, darf keinen toten Knopf
    hinterlassen (teams.js, WECHSEL_FREI_MS). */
-.uts-switch:disabled { background: var(--vc-heading-bg); color: var(--vc-third); cursor: default; }
+.uts-switch:disabled { background: var(--vc-heading-bg); color: var(--vc-fourth); cursor: default; }
 .uts-switch:disabled:hover { opacity: 1; }
 
 /* ---------- Zeile ----------

@@ -275,7 +275,7 @@
    statt geloescht zu werden: kommt spaeter etwas anderes in den Fuss, steht seine Anordnung noch
    da und muss nur wieder sichtbar gemacht werden. */
 .uo-card-foot { display: none; align-items: center; justify-content: space-between; gap: 10px; margin-top: 16px; }
-.uo-date { font-size: 12px; color: var(--vc-third); font-weight: 500; display: inline-flex; align-items: center; gap: 5px; }
+.uo-date { font-size: 12px; color: var(--vc-fourth); font-weight: 500; display: inline-flex; align-items: center; gap: 5px; }
 .uo-date svg { width: 13px; height: 13px; flex: 0 0 auto; }
 
 /* ---------- potential bars ----------

@@ -196,7 +196,7 @@
 .usb-opt { justify-content: space-between; }
 .usb-opt-main { display: inline-flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 auto; }
 .usb-opt-name { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.usb-opt-count { flex: 0 0 auto; font-size: 12px; color: var(--vc-third); font-variant-numeric: tabular-nums; }
+.usb-opt-count { flex: 0 0 auto; font-size: 12px; color: var(--vc-fourth); font-variant-numeric: tabular-nums; }
 /* Flagge wie in add-prompts: 16x12 mit leichtem Rahmen, damit eine weisse Fahne nicht im
    Kartenhintergrund verschwindet. */
 .usb-flag { width: 16px; height: 12px; flex: 0 0 16px; object-fit: cover; border-radius: 2px;

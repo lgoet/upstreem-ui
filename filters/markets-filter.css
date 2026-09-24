@@ -137,7 +137,7 @@
 .umk-opt-name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 500; }
 /* Where the topics picker puts a usage count. A model has none, and the provider is the thing that
    actually disambiguates two similarly named markets. */
-.umk-opt-count { flex: 0 0 auto; font-size: 12px; font-weight: 500; color: var(--vc-third); }
+.umk-opt-count { flex: 0 0 auto; font-size: 12px; font-weight: 500; color: var(--vc-fourth); }
 .umk-empty { padding: 14px 10px; text-align: center; color: var(--vc-third); font-size: 12.5px; }
 
 /* ---------- foot: Single / Multi ----------

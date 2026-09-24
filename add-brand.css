@@ -74,7 +74,7 @@
 
 /* Zeichenzaehler unter dem Feld, rechtsbuendig. Er faerbt sich erst am Limit ein -- ein dauerhaft
    roter Zaehler waere eine Warnung ohne Anlass. */
-.uab-count { align-self: flex-end; font-size: 12px; font-weight: 500; color: var(--vc-third);
+.uab-count { align-self: flex-end; font-size: 12px; font-weight: 500; color: var(--vc-fourth);
   font-variant-numeric: tabular-nums; line-height: 1; }
 .uab-count.is-full { color: var(--vt-down); }
 

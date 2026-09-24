@@ -50,7 +50,7 @@
 .uto-root:not(.can-invite) .uto-secbtn { display: none; }
 
 /* Die Zusammenfassung rechts im Kopf des Protokolls -- Anzahl der Eintraege, leise. */
-.uto-seccount { font-size: 12.5px; font-weight: 500; color: var(--vc-third); flex: 0 0 auto; }
+.uto-seccount { font-size: 12.5px; font-weight: 500; color: var(--vc-fourth); flex: 0 0 auto; }
 
 /* ---------- Tabellenschale (Vorbild .ube-table) ---------- */
 /* KEIN overflow: hidden. Das war der Grund, warum das Zeilenmenue abgeschnitten war -- es ist
