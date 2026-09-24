@@ -1781,12 +1781,16 @@
           '<span class="udt-logo-box has-img"><span class="udt-logo-ltr">' + d.dom.charAt(0).toUpperCase() + '</span>' +
             '<img src="' + quellzeichen(d.dom) + '" alt=""/></span>' +
           '<span class="udt-dom-wrap"><span class="udt-dom-title">' + d.dom + '</span>' +
-            /* Das Zeichen kommt ueber data-ic nach (zeichenSetzen), nicht ueber kern.icon: diese
-               Funktion laeuft beim BAUEN, und da ist core noch nicht sicher da -- gemeldet als
-               "da fehlen noch die chevron down bei den x pages". */
+            /* KEIN CHEVRON MEHR (24.09. gemeldet: "direkt nach den x pages ist ein komisches
+               Element sichtbar, was ist das? mach das weg").
+               Was man sah, war ein ANGESCHNITTENER Strich: in der App traegt das SVG SELBST die
+               Klasse udt-chev, und deren 13x13 wirken damit auf das Zeichen. Hier stand die
+               Klasse an einem span und das Zeichen kam mit seinen eigenen 24px hinein --
+               13px Kasten, overflow: hidden, 24px Inhalt. Uebrig blieb ein Strichstueck.
+               Weg statt repariert, weil hier ohnehin niemand etwas aufklappt: die Zeile ist
+               schon offen, der Knopf traegt pointer-events: none. */
             '<button class="up-pages udt-pagesbtn' + (d.offen ? " is-open" : "") + '" type="button" tabindex="-1">' +
               '<span class="udt-pagesbtn-lbl">' + d.seiten + ' pages</span>' +
-              '<span class="udt-chev" data-ic="chevronDown" data-ic-w="2.2"></span>' +
             '</button>' +
           '</span>' +
         '</div>' +
@@ -2769,10 +2773,18 @@
 
   /* Eine Zeile des Panels. logo/name/domain wie in der Leiste, der Haken rechts kommt mit und ist
      nur in der aktiven Zeile zu sehen (core.css: .up-pop-opt.is-active .up-check). */
-  function teamZeile(i, aktiv, chip){
+  /* DIE ROLLE WIRD MITGEGEBEN und nicht aus dem Chip erraten (24.09. gemeldet: "es kommt vor,
+     dass Zeile 2 und 3 beide dieselbe Firma zeigen").
+     Genau daran lag es: die Marke data-team-row hiess "fest", sobald eine Zeile einen Chip trug.
+     Sony steht im OBEREN Topf und traegt einen -- kam Sony in Zeile 2, hiess sie ab da "fest",
+     es gab zwei "fest"-Zeilen und keine "wechsel". Der naechste Tausch fand fuer "wechsel"
+     nichts mehr und schrieb stattdessen ZWEIMAL aus dem unteren Topf: erst in Zeile 2, dann in
+     Zeile 3 -- und aus einem Topf von vier koennen dabei zweimal dieselbe Firma kommen.
+     Die zwei Toepfe sind ueberschneidungsfrei; mit fester Rolle kann es dazu nicht mehr kommen. */
+  function teamZeile(i, aktiv, chip, rolle){
     var m = TEAMS[i % TEAMS.length];
     return '<div class="up-pop-opt usn-teamrow' + (aktiv ? " is-active" : "") + '" data-team-row="' +
-        (aktiv ? "aktiv" : (chip ? "fest" : "wechsel")) + '">' +
+        (rolle || (aktiv ? "aktiv" : "wechsel")) + '">' +
       '<span class="up-logo-box has-img"><img src="' + m.logo + '" alt=""/>' +
         '<span class="up-logo-ltr">' + m.name.charAt(0) + '</span></span>' +
       '<span class="usn-teamrow-txt">' +
@@ -2794,9 +2806,9 @@
               '<input class="up-ddsearch-in" type="text" placeholder="Search teams" readonly tabindex="-1"/>' +
             '</div>' +
             '<div class="usn-teamlist">' +
-              teamZeile(FEN_TEAM_AKTIV, true, null) +
-              teamZeile(FEN_TEAM_WECHSEL[0], false, chipFuer(FEN_TEAM_WECHSEL[0])) +
-              teamZeile(FEN_TEAM_WECHSEL2[0], false, chipFuer(FEN_TEAM_WECHSEL2[0])) +
+              teamZeile(FEN_TEAM_AKTIV, true, null, "aktiv") +
+              teamZeile(FEN_TEAM_WECHSEL[0], false, chipFuer(FEN_TEAM_WECHSEL[0]), "wechsel") +
+              teamZeile(FEN_TEAM_WECHSEL2[0], false, chipFuer(FEN_TEAM_WECHSEL2[0]), "fest") +
             '</div>' +
           '</div>' +
         '</div>' +
@@ -2819,7 +2831,7 @@
       zeile.classList.add("is-tausch");
       setTimeout(function(){
         var huelle = document.createElement("div");
-        huelle.innerHTML = teamZeile(index, false, chip);
+        huelle.innerHTML = teamZeile(index, false, chip, art);   /* die Rolle bleibt die der Zeile */
         var frisch = huelle.firstChild;
         frisch.classList.add("is-tausch");
         if (zeile.parentNode) zeile.parentNode.replaceChild(frisch, zeile);
@@ -3159,6 +3171,30 @@
   /* Die drei Zeichen in der Treiberzeile. Aus UC.icon und nicht selbst gezeichnet -- chartColumnUp,
      users und dollarSign stehen alle in core. Nachgesetzt und nicht beim Bauen, weil die Buehne
      steht, bevor core geladen ist; deshalb steht der Aufruf auch in der Uhrenkette. */
+  /* ---- DER SENDEKNOPF TRAEGT EINEN PFEIL (24.09. gemeldet: "da stimmt das Icon nicht, ist ein
+     arrow up in der Hauptapp") ------------------------------------------------------------------
+     Das Markup dieser Sektion wird aus den Bubble-Vorlagen erzeugt, und dort steht im Sendeknopf
+     das, was core arrowUp nennt -- das ist aber ein Chevron (ein Haken ohne Schaft, siehe
+     core.js). Miras Element in der App traegt einen echten Pfeil, und die Landingpage soll
+     zeigen, was der Nutzer sieht.
+     Gezeichnet und nicht aus UC.icon: core hat keinen Pfeil nach oben, sein arrowUp IST der
+     Chevron. Ihn dort zu aendern hiesse, die Hauptapp zu aendern -- und diese Runde ist
+     ausdruecklich nur fuer die Landingpage. Also hier, mit derselben Form wie in Miras Element:
+     Schaft plus Spitze, Feather.
+     Nachgezogen wird wie jedes andere Zeichen im Fenster -- die Vorlage kommt spaeter als diese
+     Datei, und der Knopf wird beim Umbau des Composers noch einmal angefasst. */
+  var SENDE_PFEIL = '<svg width="24" height="24" viewBox="0 0 24 24" class="am-ic am-ic-send"' +
+    ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"' +
+    ' stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12L12 5L19 12"/></svg>';
+  function sendePfeil(root){
+    var knopf = root.querySelector("#am-send");
+    if (!knopf) return;
+    var alt = knopf.querySelector("svg.am-ic-send");
+    if (!alt || knopf.__ulhPfeil) return;
+    knopf.__ulhPfeil = true;
+    alt.outerHTML = SENDE_PFEIL;
+  }
+
   function zeichenSetzen(root){
     var kern = window.UpstreemCore;
     if (!kern || !kern.icon) return;
@@ -3175,6 +3211,7 @@
       el.insertAdjacentHTML("afterbegin", svg);
       el.removeAttribute("data-ic");
     }
+    sendePfeil(root);
   }
 
   /* Der Umschalter heisst hier D, W und M. Die langen Namen stehen im Markup der Komponente, und
@@ -4071,7 +4108,11 @@
      Bleiben 3280ms Stillstand. Genau die bekommen Mira und die Prompts-Liste jetzt auch.
      MIRA_WARTEN bleibt die Uhr fuer das Dashboard -- sie zaehlt ab dem Erscheinen und muss die
      Bewegung darin mit abdecken. */
-  var STAND_MS = 3280;
+  /* 3280 -> 6200 (24.09. angefordert). Der Endzustand von Mira soll zwei Sekunden laenger
+     stehen, und die Prompts-Liste GENAU SO LANGE wie Mira -- deshalb bekommen beide dieselbe
+     Zahl: PROMPTS_WARTEN ist die Ruhe nach Miras fertiger Antwort, STAND_MS die nach den
+     eingelaufenen Zeilen der Liste. */
+  var STAND_MS = 6200;
   var MIRA_WARTEN = 8000;        /* nach dem Ende des Erscheinens, Bewegung inbegriffen */
   var MIRA_FRAGE = "Create an AI Visibility Report for Q3 2026";
   var MIRA_ZEICHEN_MS = 34;      /* je Zeichen -- 43 Zeichen ergeben rund 1.5 Sekunden */
@@ -4581,16 +4622,19 @@
   /* Die Themen. Farben aus derselben Familie wie die Markenfarben oben, damit die Sektion einen Ton
      hat und nicht zwei. hex_light und hex_dark, weil die Themenchips beide Themen kennen. */
   var THEMEN = [
-    { id: "t1", name: "Pricing",         emoji: "💸", hex_light: "#b3541e", hex_dark: "#e0a06a" },
-    { id: "t2", name: "Comparisons",     emoji: "⚖️", hex_light: "#1f6feb", hex_dark: "#7aa9f0" },
-    { id: "t3", name: "Electric",        emoji: "🔋", hex_light: "#1a7f5a", hex_dark: "#6fc7a4" },
-    { id: "t4", name: "Charging",        emoji: "🔌", hex_light: "#8957e5", hex_dark: "#b79af0" },
-    { id: "t5", name: "Fleet",           emoji: "🏢", hex_light: "#0e7490", hex_dark: "#6bb6c9" },
-    { id: "t6", name: "Safety",          emoji: "🛡️", hex_light: "#be185d", hex_dark: "#e78bb0" },
-    { id: "t7", name: "Test Drive",      emoji: "🚗", hex_light: "#6f737c", hex_dark: "#a8adb6" },
+    /* OHNE EMOJI (24.09., zum zweiten Mal angefordert). Die Chips tragen sie in der Prompts-Liste
+       und in den Chancen; die Felder sind hier ganz weg statt leer, damit auch nichts mehr
+       durchrutschen kann -- jede Stelle prueft auf t.emoji und laesst den Kasten dann aus. */
+    { id: "t1", name: "Pricing",         hex_light: "#b3541e", hex_dark: "#e0a06a" },
+    { id: "t2", name: "Comparisons",     hex_light: "#1f6feb", hex_dark: "#7aa9f0" },
+    { id: "t3", name: "Electric",        hex_light: "#1a7f5a", hex_dark: "#6fc7a4" },
+    { id: "t4", name: "Charging",        hex_light: "#8957e5", hex_dark: "#b79af0" },
+    { id: "t5", name: "Fleet",           hex_light: "#0e7490", hex_dark: "#6bb6c9" },
+    { id: "t6", name: "Safety",          hex_light: "#be185d", hex_dark: "#e78bb0" },
+    { id: "t7", name: "Test Drive",      hex_light: "#6f737c", hex_dark: "#a8adb6" },
     /* Das achte Thema gibt es, seit die Matrix acht Zeilen zeigt. Es steht auch den anderen
        Vorschauen zur Verfuegung -- die nehmen sich ihre Themen vom Anfang der Liste. */
-    { id: "t8", name: "Servicing",      emoji: "🔧", hex_light: "#a16207", hex_dark: "#d9b45f" }
+    { id: "t8", name: "Servicing",      hex_light: "#a16207", hex_dark: "#d9b45f" }
   ];
 
   /* Die eigenen Gruppierungen. NUR diese werden gezeigt (Modus "custom"), keine automatischen
@@ -4774,7 +4818,9 @@
      bleibt irgendwann sehr lange bei Mira stehen". */
   /* 2200 -> 4200. Das ist die Standzeit NACH Miras fertiger Antwort, und genau die war zu kurz:
      die Antwort war eben erst fertig getippt, und zwei Sekunden spaeter war die Seite weg. */
-  var PROMPTS_WARTEN = 4200;
+  /* 4200 -> 6200: zwei Sekunden laenger auf der fertigen Antwort stehen bleiben (24.09.
+     angefordert), und derselbe Wert wie STAND_MS bei der Prompts-Liste. */
+  var PROMPTS_WARTEN = 6200;
 
   function promptsAnsetzen(root){
     if (root.__ulhPromptsAn) return;
@@ -5152,7 +5198,10 @@
      (1720ms) steckt in jedem Zug, und was hier steht, ist die RUHE danach. */
   var CHANCEN_ERST = 2150;      /* nach dem Fuellen -- die Karten stehen bei ~1750 */
   var CHANCEN_ZWEIT = 1500;     /* Ruhe zwischen den zwei Zuegen -- 700 war zu knapp (21.09.) */
-  var CHANCEN_HALT = 5200;      /* Endzustand des Bretts, bevor die Karte aufgeht */
+  /* 5200 -> 3200 (24.09. angefordert: "der bleibt zu lange stehen, gut zwei Sekunden kuerzer").
+     Das ist der Stand NACH dem zweiten Zug -- die Karte liegt in Done, und danach geht die
+     Schublade auf. */
+  var CHANCEN_HALT = 3200;      /* Endzustand des Bretts, bevor die Karte aufgeht */
   var CHANCEN_OFFEN = 4000;     /* wie lange die Schublade offen bleibt */
   var CHANCEN_ZU = 520;         /* das Zufahren der Schublade, bevor die Seite geht */
 

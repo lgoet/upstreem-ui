@@ -1756,6 +1756,14 @@
 .ulh-vis .up-row:hover, .ulh-vis .uo-row:hover, .ulh-vis .udt-subrow:hover {
   background: var(--vc-bg); border-color: var(--vc-border);
 }
+/* AUSSER DIE KOPFZEILE (24.09. gemeldet: "auf der Topbar der Domains-Tabelle ist ein Hoverstate
+   drauf"). Sie traegt in dieser Tabelle dieselbe Klasse wie eine Datenzeile, steht aber auf
+   --vc-heading-bg -- die Regel darueber setzte sie beim Ueberfahren auf --vc-bg, und damit war
+   ausgerechnet am Kopf ein Hover zu sehen, den sie abschalten sollte. Gemessen: Ruhe
+   rgb(249,248,249), Hover var(--vc-bg).
+   Eine Klasse mehr im Selektor statt einer Regel weiter unten: gleiche Spezifitaet haette die
+   Reihenfolge entscheiden lassen. */
+.ulh-root .ulh-vis .up-row.up-thead:hover { background: var(--vc-heading-bg); }
 /* Die Tabelle der Prompt-Karte schneidet NICHT ab -- weder beim Heben noch beim Senken. Vorher
    stand overflow: hidden an ihr und wurde beim Hover auf visible gestellt; overflow kennt aber
    keinen Zwischenschritt, es springt. Beim Verlassen sprang es sofort zurueck auf hidden, und die
@@ -1797,11 +1805,14 @@
 .ulh-vis-dom .udt-dom-wrap { flex-direction: row; align-items: center; gap: 12px; }
 .ulh-vis-dom .udt-dom-title { flex: 0 1 auto; }
 .ulh-vis-dom .udt-pagesbtn { flex: 0 0 auto; }
-/* Das Zeichen im Seiten-Knopf: dieselbe Groesse wie in der App, und im offenen Zustand gedreht --
-   das macht dort .udt-pagesbtn.is-open selbst, hier steht nur die Groesse, weil das SVG erst
-   nachtraeglich hineinkommt. */
-.ulh-vis-chev { display: inline-flex; }
-.ulh-vis-chev svg { width: 12px; height: 12px; display: block; }
+
+/* ---- Die Balken der Zitattypen im Hero-Fenster ----
+   8px flacher als in der App (Spur 32 -> 24, Zeile 42 -> 34): in einem Schaustueck zaehlt, WIE
+   VIELE Typen man sieht, nicht wie luftig ein einzelner steht -- bei gleicher Kastenhoehe sind
+   das zwei Balken mehr (24.09. angefordert).
+   Nur im Fenster dieser Sektion (.ulh-app), die App bleibt bei 32. */
+.ulh-app .tcd-root .up-bar-track { height: 24px; }
+.ulh-app .tcd-root .up-bar-fill  { border-radius: 6px; }   /* konzentrisch zur flacheren Spur */
 
 /* ---- Karte 4: die Chancenliste ----
    .uo-row wie im Listenmodus der App. Der Kasten darum haelt nur den Abstand. */
