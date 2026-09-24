@@ -83,13 +83,20 @@
     an: false, start: Date.now(),
     rt: [], rtAngenommen: 0, rtVerworfen: 0,
     nachfass: 0, nachfassZeiten: [],
-    setter: {}, scroll: []
+    setter: {}, scroll: [], spur: []
   };
   try {
     if (/[?&]amdebug=1/.test(location.search)) AMD.an = true;
     if (window.localStorage && localStorage.getItem('am_debug') === '1') AMD.an = true;
   } catch(e){}
   function amT(){ return ((Date.now() - AMD.start) / 1000).toFixed(1) + 's'; }
+  /* EINE Spur fuer alles, in der Reihenfolge, in der es passiert ist. askMiraDiag zeigt
+     Tabellen -- die sind zum Lesen gut und zum Weitergeben schlecht. Diese hier ist ZUM
+     KOPIEREN: eine Zeile je Ereignis, Klartext, ohne Objekte zum Aufklappen. */
+  function amSpur(was, detail){
+    AMD.spur.push(('     ' + amT()).slice(-7) + '  ' + was + (detail ? '  ' + detail : ''));
+    if (AMD.spur.length > 400) AMD.spur.shift();
+  }
   function amLog(bereich){
     if (!AMD.an || !window.console) return;
     var rest = [].slice.call(arguments, 1);
@@ -98,6 +105,7 @@
   }
   function amZaehl(name, zusatz){
     AMD.setter[name] = (AMD.setter[name] || 0) + 1;
+    amSpur('setter ' + (name + '              ').slice(0, 16), zusatz == null ? '' : String(zusatz));
     amLog('setter ' + name, zusatz == null ? '' : zusatz);
   }
   window.askMiraDebug = function(an){
@@ -106,6 +114,18 @@
     if (window.console) console.log('[mira] Diagnose ' + (AMD.an ? 'AN' : 'aus') +
       '. Zusammenfassung jederzeit mit askMiraDiag()');
     return AMD.an;
+  };
+  /* ZUM KOPIEREN: eine Zeitleiste als reiner Text. Genau das schickt man weiter. */
+  window.askMiraVerlauf = function(){
+    var kopf = 'MIRA VERLAUF  (' + amT() + ' seit dem Laden)\n' +
+      'Realtime: ' + AMD.rt.length + ' angekommen, ' + AMD.rtAngenommen + ' angenommen, ' +
+      AMD.rtVerworfen + ' verworfen   |   Polling: ' + AMD.nachfass + '\n' +
+      ['send','new_chat','select_chat','refresh_chat','refresh_chats'].map(function(n){
+        return n + '=' + (typeof window['bubble_fn_ask_mira_' + n] === 'function' ? 'da' : 'FEHLT');
+      }).join('  ') + '\n' + new Array(78).join('-');
+    var txt = kopf + '\n' + AMD.spur.join('\n');
+    if (window.console) console.log(txt);
+    return txt;
   };
   window.askMiraDiag = function(){
     var z = {
@@ -116,6 +136,7 @@
       'davon verworfen': AMD.rtVerworfen,
       'Nachfass-Abrufe (Polling)': AMD.nachfass
     };
+    if (window.console) console.log('[mira] Zum Weitergeben: askMiraVerlauf() -- eine Zeitleiste als Text.');
     var arten = {};
     AMD.rt.forEach(function(e){ arten[e.art || '(ohne event)'] = (arten[e.art || '(ohne event)'] || 0) + 1; });
     var fn = {};
@@ -2475,6 +2496,7 @@
       AMD.scroll.push({ zeit: amT(), weg: _amWeg, vorher: Math.round(elChat.scrollTop),
                         laedt: !!S.isLoading, nachrichten: S.messages.length, tippt: !!_typeUnits });
       if (AMD.scroll.length > 60) AMD.scroll.shift();
+      amSpur('SCROLL             ', _amWeg + '  top=' + Math.round(elChat.scrollTop));
       amLog('SCROLL ' + _amWeg, 'scrollTop=' + Math.round(elChat.scrollTop));
     } catch(e){}
     _scrollMode = 'newmsg';
@@ -5611,6 +5633,7 @@
     }
     _nfLetzte = jetzt;
     AMD.nachfass++; AMD.nachfassZeiten.push(amT());
+    amSpur('POLLING            ', 'Grund=' + grund + ' chat=' + String(S.activeChatId || '-').slice(0, 8));
     amLog('NACHFASSEN (Polling) Grund=' + grund, 'Chat ' + String(S.activeChatId || '').slice(0, 8));
     try { fn(S.activeChatId); } catch(e){ return false; }
     /* Fuer den Prueftand und fuer eine Seite ohne Bubble -- und als Spur in der Diagnose. */
@@ -6187,10 +6210,17 @@
                     offen: String(S.activeChatId || '').slice(0, 8),
                     amid: _pp ? String(_pp.assistant_message_id || _pp.message_id || '').slice(0, 8) : '',
                     tool: _pp ? String(_pp.tool || '') : '',
+                    titel: _pp ? String(_pp.title || '') : '',
+                    neu: _pp ? String(_pp.is_new_session || '') : '',
                     angenommen: _amErg === true });
       if (AMD.rt.length > 200) AMD.rt.shift();
       if (_amErg) AMD.rtAngenommen++; else AMD.rtVerworfen++;
-      amLog('REALTIME ' + (_amErg ? 'angenommen' : 'VERWORFEN'), AMD.rt[AMD.rt.length - 1]);
+      var _e = AMD.rt[AMD.rt.length - 1];
+      amSpur('REALTIME ' + (_amErg ? 'ok      ' : 'VERWORFEN') + ' ' + (_e.art || '(ohne event)'),
+             'chat=' + (_e.chat || '-') + ' offen=' + (_e.offen || '-') +
+             (_e.tool ? ' tool=' + _e.tool : '') + (_e.titel ? ' titel="' + _e.titel + '"' : '') +
+             (_e.amid ? ' amid=' + _e.amid : ''));
+      amLog('REALTIME ' + (_amErg ? 'angenommen' : 'VERWORFEN'), _e);
     } catch(e){}
     return _amErg;
   };
