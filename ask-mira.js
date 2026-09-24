@@ -4264,6 +4264,7 @@
     var userMsg = { id: 'local_'+Date.now(), role: 'user', content: full, created_at: new Date().toISOString() };
     S.messages.push(userMsg);
     elTextarea.value = ''; clearQuote(); clearPicks(); autosize(); refreshSend();
+    delete _entwuerfe[entwurfSchluessel(S.activeChatId)];   /* abgeschickt ist kein Entwurf mehr */
     _pendingAnswer = true;
     _lastSendTs = Date.now();
     /* VOR setLoading: runStart liest diesen Zeitstempel und erkennt daran, ob es dieselbe Frage
@@ -4273,7 +4274,11 @@
     setLoading(true);
     renderMessages();
 
-    var payload = { chat_id: S.activeChatId, message: full, answer_detail: S.answerDetail, model: S.model };
+    /* ALS TEXT, und leer heisst LEER (24.09.). Ein null wird in Bubbles Ausdruck zu "null"
+       oder verschwindet je nach Feld -- beides sieht fuer den Ablauf dahinter nicht wie "neue
+       Sitzung" aus. Ein leerer Text tut das. */
+    var payload = { chat_id: S.activeChatId == null ? '' : String(S.activeChatId),
+                    message: full, answer_detail: S.answerDetail, model: S.model };
     anBubbleSenden(payload, 0);
   }
 
@@ -4295,7 +4300,7 @@
     /* Wer absendet, will in DIESEM Chat bleiben -- auch wenn nebenan gerade eine Antwort
        fertig wird. Beim allerersten Absenden gibt es noch keine Kennung; dann bleibt die Wahl
        leer, und der Setter darf den frisch angelegten Chat oeffnen. Genau richtig. */
-    if (!versuch) nutzerWahl(S.activeChatId || '');
+    if (!versuch) nutzerWahl(S.activeChatId || NEUER_CHAT);
     var fn = window.bubble_fn_ask_mira_send;
     if (typeof fn === 'function'){ fn(JSON.stringify(payload)); return; }
     if (versuch < 12){
@@ -6579,8 +6584,41 @@
      Leer heisst "noch keine Wahl": der erste Aufruf nach dem Laden geht damit durch, ein
      Deeplink oder der Umzug aus dem Dashboard oeffnet weiterhin, was er soll. */
   var _nutzerChat = '';
+  /* "NEUER CHAT" IST EINE WAHL, UND ZWAR EINE HARTE (24.09. gemeldet). Bis hierher setzte
+     goToStart nutzerWahl('') -- der Kommentar dort sagte "auch neuer Chat ist eine Wahl", der
+     Wert sagte das Gegenteil: leer heisst in der Pruefung unten "noch keine Wahl", und damit war
+     der Schutz aus. Folge: waehrend die Antwort des alten Chats lief, holte ihn Bubbles Setter
+     zurueck -- S.activeChatId stand wieder auf dem ALTEN Chat, und die naechste Frage ging mit
+     dessen Kennung hinaus. Fuer n8n sahen das zwei Fragen aus derselben Sitzung.
+     NEUER_CHAT ist deshalb ein eigener Wert. Durchgelassen wird dann genau eine Kennung: eine,
+     die die Liste noch NICHT kennt -- das kann nur der gerade entstehende Chat sein. Jede
+     bekannte Kennung ist der alte Chat, der sich zurueckholen will. */
+  var NEUER_CHAT = '\u0000neu';
   function nutzerWahl(id){ _nutzerChat = String(id == null ? '' : id); }
   var _feldLeeren = null;
+  /* DER ENTWURF BLEIBT JE CHAT STEHEN (24.09. angefordert). Wer in Chat A etwas tippt und
+     wegwechselt, findet es beim Zurueckkommen wieder vor. Bisher war es weg: beim Wechsel wurde
+     das Feld geleert, und mehr passierte nicht.
+     Nur fuer diese Sitzung -- ein Entwurf, der einen Neustart ueberlebt, waere eine Zusage, die
+     die Komponente nicht halten kann (der Text liegt nirgends ausser hier). Der Startschirm hat
+     seinen eigenen Platz unter NEUER_CHAT: was man dort angefangen hat, gehoert zu keinem Chat
+     und darf trotzdem nicht verloren gehen.
+     Die zwei Griffe werden weiter unten gesetzt, wo feldEinpacken lebt -- diese Ebene sieht es
+     nicht (derselbe Grund wie bei _feldLeeren). */
+  var _entwuerfe = {};
+  var _feldMerken = null, _feldHolen = null;
+  function entwurfSchluessel(id){ return String(id == null || id === '' ? NEUER_CHAT : id); }
+  function entwurfSichern(id){
+    if (!_feldMerken) return;
+    var z = _feldMerken();
+    var leer = !String(z.text || '').trim() && !(z.picks && z.picks.length);
+    if (leer) delete _entwuerfe[entwurfSchluessel(id)];
+    else _entwuerfe[entwurfSchluessel(id)] = z;
+  }
+  function entwurfHolen(id){
+    if (!_feldHolen) return;
+    _feldHolen(_entwuerfe[entwurfSchluessel(id)] || { text: '', picks: [] });
+  }
   window.askMiraSetActiveChat = function(chatId, fireEvent, titel){
     /* EINE LEERE KENNUNG WIRFT DIE AUSWAHL NICHT MEHR WEG (17.09. gemeldet: "Antwort kommt, dann
        geht der Titel oben wieder in den Ladezustand und der Chat ist in der Leiste nicht mehr
@@ -6638,7 +6676,12 @@
        oeffnet ein Deeplink oder der Umzug aus dem Dashboard weiterhin, was er soll. */
     var _will = String(_nutzerChat || '');
     var _neu  = String(chatId || '');
-    if (_will && _neu && _neu !== _will){
+    if (_will === NEUER_CHAT){
+      /* Auf dem Startschirm: nur die Kennung des gerade entstehenden Chats darf herein. */
+      if (!_neu || findChat(_neu)) return;
+      nutzerWahl(_neu);                     /* ab jetzt gilt sie als gewaehlt */
+    }
+    else if (_will && _neu && _neu !== _will){
       /* NUR VERWEIGERN, NICHTS BEHAUPTEN (23.09. korrigiert). Hier stand fertigMelden(_neu) --
          aus der Zeit, als ein aufgezwungener Wechsel das EINZIGE Zeichen dafuer war, dass in
          jenem Chat eine Antwort liegt. Das war nie ein Beweis, und seit der Nutzer-Kanal
@@ -6651,7 +6694,12 @@
     S.activeChatId = chatId;
     /* Ein geoeffneter Chat ist gelesen: der Punkt hat sich erledigt. */
     fertigLoeschen(chatId);
-    if (chatId && _vorherigerChat !== chatId && _feldLeeren) _feldLeeren();
+    /* ERST SICHERN, DANN HOLEN -- und nur bei einem echten Wechsel. Der Umzug aus dem
+       Dashboard ist ausgenommen, dort wandert der Inhalt absichtlich mit (_umzugOhneFeld). */
+    if (chatId && _vorherigerChat !== chatId && !_umzugOhneFeld){
+      entwurfSichern(_vorherigerChat);
+      entwurfHolen(chatId);
+    }
     var _c = chatId ? findChat(chatId) : null;
     /* Ein mitgegebener Titel wird in die Liste geschrieben: dann finden ihn Kopfzeile UND Leiste
        ueber denselben Weg wie jeden anderen, und es gibt keine zweite Quelle, die auseinanderlaufen
@@ -8170,6 +8218,7 @@
       if (elTextarea){ try { elTextarea.focus(); } catch(e){} }
       return;
     }
+    entwurfSichern(S.activeChatId);
     S.activeChatId = null; S.messages = []; S.titlePending = false;
     runDrop();
     /* NUR die Ansicht: der verlassene Chat wartet weiter und behaelt seinen Kreisel. */
@@ -8177,7 +8226,8 @@
     renderMessages();
     /* Auch "neuer Chat" ist eine Wahl: eine fertige Antwort anderswo darf ihn nicht
        wegziehen, waehrend er hier schon tippt. */
-    nutzerWahl('');
+    nutzerWahl(NEUER_CHAT);
+    entwurfHolen('');
     if (window.bubble_fn_ask_mira_new_chat) window.bubble_fn_ask_mira_new_chat();
     else window.dispatchEvent(new CustomEvent('askmira:new-chat', {}));
     closePrevWennSchmal();
@@ -8251,6 +8301,8 @@
     if (_umzugOhneFeld) return;
     feldAuspacken({ text: '', picks: [] });
   };
+  _feldMerken = feldEinpacken;
+  _feldHolen  = feldAuspacken;
   /* ---- DER RUECKWEG HAENGT NICHT MEHR AM EREIGNIS (19.09.) --------------------------------
      Gemeldet: von einem anderen View auf Mira gewechselt zeigt die Ansicht nichts. Die Messung
      auf der Seite: Miras Wurzel steht im Dashboard (#view-dashboard, opacity 0, z-index -1),

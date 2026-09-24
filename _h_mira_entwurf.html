@@ -1,6 +1,6 @@
 <meta charset="utf-8">
-<link rel="stylesheet" href="core.css?v=p11">
-<link rel="stylesheet" href="ask-mira.css?v=p11">
+<link rel="stylesheet" href="core.css?v=e1">
+<link rel="stylesheet" href="ask-mira.css?v=e1">
 <body style="margin:0;font-family:system-ui,sans-serif">
 <pre id="out" style="font:11px/1.5 ui-monospace,monospace;background:#f6f6f6;padding:8px;margin:0;white-space:pre-wrap">bereit</pre>
 <div class="up-root am-root" id="ask-mira"
@@ -191,94 +191,67 @@
 
   </div>
 </div>
-<script src="core.js?v=p11"></script>
-<script src="ask-mira.js?v=p11"></script>
+<script src="core.js?v=e1"></script>
+<script src="ask-mira.js?v=e1"></script>
 <script>
-/* DER BLAUE PUNKT: er darf NUR heissen "hier liegt eine Antwort, die beim letzten Besuch
-   noch nicht da war". Alles andere muss den Kreisel behalten. */
 var P=[]; function z(t){P.push(t);document.getElementById("out").textContent=P.join("\n");}
 var FEHLER=[]; window.addEventListener("error",function(e){FEHLER.push(String(e.message));});
-window.bubble_fn_ask_mira_send=function(){};
-window.bubble_fn_ask_mira_new_chat=function(){};
-window.bubble_fn_ask_mira_refresh_chat=function(){};
-window.bubble_fn_ask_mira_refresh_chats=function(){};
+var GESENDET=[];
+window.bubble_fn_ask_mira_send = function(j){ GESENDET.push(JSON.parse(j)); };
+window.bubble_fn_ask_mira_new_chat = function(){};
+window.bubble_fn_ask_mira_refresh_chat = function(){};
+window.bubble_fn_ask_mira_refresh_chats = function(){};
+window.bubble_fn_ask_mira_select_chat = function(){};
 function zeile(id){var e=document.querySelectorAll('.am-prev-item');
  for(var i=0;i<e.length;i++) if(String(e[i].getAttribute('data-chat-id'))===String(id)) return e[i]; return null;}
-function stand(id){var el=zeile(id); if(!el) return "(keine Zeile)";
- if (el.classList.contains("is-busy")) return "KREISEL";
- if (el.classList.contains("has-antwort")) return "PUNKT";
- return "ruhig";}
-function nutzerKlick(id){ var el = zeile(id); if (el) el.click(); }
-function senden(txt){
-  var ta=document.getElementById("am-textarea"); ta.value=txt;
-  ta.dispatchEvent(new Event("input",{bubbles:true}));
-  document.getElementById("am-send").click();
-}
+function feld(){ return document.getElementById("am-textarea").value; }
+function tippen(t){ var ta=document.getElementById("am-textarea"); ta.value=t; ta.dispatchEvent(new Event("input",{bubbles:true})); }
+function senden(t){ tippen(t); document.getElementById("am-send").click(); }
+function klick(id){ var e=zeile(id); if(e) e.click(); }
+function S(){ return JSON.parse(window.askMiraGetState()); }
+
 setTimeout(function(){
   window.askMiraSetPreviousChats(JSON.stringify([
     {id:"A",title:"Chat A",updated_at:"x"},{id:"B",title:"Chat B",updated_at:"y"}]));
   window.askMiraSetActiveChat("A", false);
-  window.askMiraSetMessages(JSON.stringify([{id:"u0",role:"user",content:"Alt",created_at:"x"}]), "A");
+  window.askMiraSetMessages(JSON.stringify([{id:"u",role:"user",content:"alt",created_at:"x"}]), "A");
 
-  z("1  In A fragen:");
+  z("A  ENTWUERFE");
+  tippen("Halbfertige Frage in A");
+  klick("B");
+  window.askMiraSetActiveChat("B", false);
+  window.askMiraSetMessages(JSON.stringify([{id:"u2",role:"user",content:"alt B",created_at:"y"}]), "B");
+  z("A1 in A getippt, nach B gewechselt: Feld=" + JSON.stringify(feld()) + "   (muss leer sein)");
+  tippen("Etwas anderes in B");
+  klick("A");
+  window.askMiraSetActiveChat("A", false);
+  window.askMiraSetMessages(JSON.stringify([{id:"u",role:"user",content:"alt",created_at:"x"}]), "A");
+  z("A2 zurueck in A: Feld=" + JSON.stringify(feld()) + "   (muss der A-Entwurf sein)");
+  klick("B");
+  window.askMiraSetActiveChat("B", false);
+  z("A3 wieder in B: Feld=" + JSON.stringify(feld()) + "   (muss der B-Entwurf sein)");
+
+  z("");
+  z("B  DIE KENNUNG BEIM NEUEN CHAT");
+  window.askMiraSetActiveChat("A", false);
+  window.askMiraSetMessages(JSON.stringify([{id:"u",role:"user",content:"alt",created_at:"x"}]), "A");
+  GESENDET=[];
   senden("Frage in A");
-  z("   A=" + stand("A") + "   (muss KREISEL sein)");
-
-  z("");
-  z("2  Sofort 'Neuer Chat' klicken (goToStart):");
-  document.getElementById("am-ct-back").click();
-  z("   A=" + stand("A") + "   (muss KREISEL bleiben -- A wartet weiter)");
-
-  z("");
-  z("3  Im neuen Chat fragen und dessen Antwort kommt:");
+  z("B1 in A gesendet: chat_id=" + JSON.stringify(GESENDET[0] && GESENDET[0].chat_id));
+  document.getElementById("am-ct-back").click();      /* Neuer Chat */
+  z("B2 nach 'Neuer Chat': activeChatId=" + JSON.stringify(S().activeChatId));
+  /* jetzt versucht Bubble, den alten Chat zurueckzuholen -- genau das passiert im Realbetrieb */
+  window.askMiraSetActiveChat("A", false);
+  z("B3 Bubble will zurueck nach A: activeChatId=" + JSON.stringify(S().activeChatId) + "   (muss leer bleiben)");
+  GESENDET=[];
   senden("Frage im neuen Chat");
-  window.askMiraRealtime({event:"mira_turn_started", session_id:"NEU", is_new_session:"true",
-    preview:"Frage im neuen Chat", assistant_message_id:"n1"});
-  window.askMiraRealtime({event:"mira_message_success", session_id:"NEU", assistant_message_id:"n1"});
-  z("   A=" + stand("A") + "   (muss KREISEL bleiben -- A ist nicht fertig)");
-  z("   NEU=" + stand("NEU"));
+  z("B4 im neuen Chat gesendet: chat_id=" + JSON.stringify(GESENDET[0] && GESENDET[0].chat_id) + "   (muss \"\" sein)");
+  /* und jetzt meldet Bubble die frische Sitzungskennung -- die MUSS durchkommen */
+  window.askMiraSetActiveChat("NEU7", false);
+  z("B5 Bubble meldet die neue Kennung: activeChatId=" + JSON.stringify(S().activeChatId) + "   (muss NEU7 sein)");
+  window.askMiraSetActiveChat("A", false);
+  z("B6 danach nochmal A aufgedraengt: activeChatId=" + JSON.stringify(S().activeChatId) + "   (muss NEU7 bleiben)");
 
-  z("");
-  z("4  Jetzt kommt As Antwort wirklich:");
-  window.askMiraRealtime({event:"mira_message_success", session_id:"A", assistant_message_id:"a1"});
-  z("   A=" + stand("A") + "   (jetzt und erst jetzt: PUNKT)");
-
-  z("");
-  z("5  A oeffnen -- Punkt weg (echter Klick, wie der Nutzer es tut):");
-  nutzerKlick("A"); window.askMiraSetActiveChat("A", false);
-  z("   A=" + stand("A"));
-
-  z("");
-  z("6  Chatwechsel waehrend A laeuft (ueber setMessages):");
-  nutzerKlick("A"); window.askMiraSetActiveChat("A", false);
-  senden("Noch eine Frage in A");
-  var vor = stand("A");
-  nutzerKlick("B"); window.askMiraSetActiveChat("B", false);
-  window.askMiraSetMessages(JSON.stringify([{id:"b1",role:"assistant",content:"Alte Antwort in B",status:"success",created_at:"y"}]), "B");
-  z("   A: " + vor + " -> " + stand("A") + "   (muss KREISEL bleiben)");
-
-  z("");
-  z("7  Nachrichten fuer einen FREMDEN Chat, Antwort laeuft dort noch:");
-  window.askMiraSetMessages(JSON.stringify([
-    {id:"x1",role:"user",content:"Frage",created_at:"x"},
-    {id:"x2",role:"assistant",content:"",status:"running",created_at:"x"}]), "B");
-  z("   B=" + stand("B") + "   (muss KREISEL sein, kein PUNKT)");
-  z("   dann mit fertiger Antwort:");
-  window.askMiraSetMessages(JSON.stringify([
-    {id:"x1",role:"user",content:"Frage",created_at:"x"},
-    {id:"x2",role:"assistant",content:"Fertig",status:"success",created_at:"x"}]), "B");
-  z("   B=" + stand("B") + "   (jetzt PUNKT)");
-
-  z("");
-  z("8  Senden scheitert (kein bubble_fn): kein Punkt, kein Kreisel");
-  nutzerKlick("A");
-  var _s = window.bubble_fn_ask_mira_send; window.bubble_fn_ask_mira_send = undefined;
-  senden("Geht nicht raus");
-  setTimeout(function(){
-    z("   A=" + stand("A") + "   (muss ruhig sein -- es kam nie etwas)");
-    window.bubble_fn_ask_mira_send = _s;
-    z("");
-    z("Fehler auf der Seite: " + (FEHLER.length?JSON.stringify(FEHLER):"keine"));
-  }, 2600);   /* die Sendeversuche laufen bis ~1,4 s */
-}, 600);
+  setTimeout(function(){ z(""); z("Fehler auf der Seite: " + (FEHLER.length?JSON.stringify(FEHLER):"keine")); }, 600);
+}, 700);
 </script>
