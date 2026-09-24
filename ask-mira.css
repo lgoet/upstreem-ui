@@ -228,6 +228,25 @@
   .am-prev-btn .am-prev-ic { display: block; }
   .am-prev-btn { align-self: flex-start; margin-top: 2px; }
 
+  /* ---- NICHTS ZEIGEN, BEVOR MIRA DA IST (24.09.) -------------------------------------------
+     Die Wurzel steht im Dokument, bevor ask-mira.js sie in die Hand nimmt. Bei einem frischen
+     Pin holt jsDelivr die Datei erstmalig, und in dieser Luecke sieht man das rohe Markup:
+     Ueberschrift, "Try asking" und ein leeres Eingabefeld, alles ohne die Masse, die die
+     Komponente setzt -- gemeldet als "ein komisches Mira-Fenster, das ich so gar nicht habe".
+     visibility statt display: der Platz bleibt reserviert, die Seite springt beim Erscheinen
+     also nicht.
+     DIE SELBSTHEILUNG IST PFLICHT: kommt das Skript gar nicht (CDN weg, Fehler beim Laden),
+     darf die Komponente nicht fuer immer unsichtbar bleiben. Die Animation macht sie nach 2,6s
+     von selbst sichtbar; die Klasse am-bereit ist schneller, wenn alles normal laeuft. */
+  #ask-mira:not(.am-bereit) .am-shell {
+    visibility: hidden;
+    animation: amNotbremse 0ms linear 2600ms forwards;
+  }
+  @keyframes amNotbremse { to { visibility: visible; } }
+  @media (prefers-reduced-motion: reduce){
+    #ask-mira:not(.am-bereit) .am-shell { animation-duration: 0ms; animation-delay: 2600ms; }
+  }
+
   /* ===================== CHAT ===================== */
   .am-chat {
     flex: 1 1 0; min-height: 0; position: relative; z-index: 1;
@@ -1493,27 +1512,48 @@
      auseinanderlaufen. 64 ist die Breite der Leiste, die 10 derselbe Abstand wie sonst. */
   #ask-mira.side-mounted:not(.prev-open):not(.is-side-left) .am-msgnav { right: var(--am-navr, calc(74px + var(--am-sbw, 0px))); }
   #ask-mira.has-msgnav .am-msgnav { display: block; }
-  .am-msgnav-ticks { width: 16px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
-  .am-msgnav-tick { width: 16px; height: 4px; border-radius: var(--up-r-voll); background: color-mix(in srgb, var(--am-text) 30%, transparent); transition: background 120ms ease; }
-  .am-msgnav-tick.is-active, .am-msgnav-tick.is-hover { background: var(--am-text); }
-  .am-msgnav-menu {
-    position: absolute; right: calc(100% + 8px); top: 50%; transform: translateY(-50%) translateX(6px);
-    width: max-content; min-width: 150px; max-width: 300px; max-height: 340px; overflow-y: auto; overflow-x: hidden; padding: 5px;
+  /* ---- DIE STRICHE ------------------------------------------------------------------------
+     Im Ruhezustand kleiner und duenner als vorher (12x2 statt 16x4) -- sie sollen da sein, nicht
+     rufen. Der ueberfahrene und der aktive werden groesser UND traegt die Primaerfarbe; die
+     Breite waechst mit, sonst sieht "aktiv" nur nach dunkler aus.
+     align-items: flex-end, damit die Striche an der RECHTEN Kante buendig sind: dort liegt der
+     Rand, und ein wachsender Strich soll nach links aufgehen, nicht in beide Richtungen. */
+  .am-msgnav-ticks { width: 18px; display: flex; flex-direction: column; align-items: flex-end; gap: 9px; }
+  .am-msgnav-tick {
+    width: 12px; height: 2px; border-radius: var(--up-r-voll); cursor: pointer;
+    background: color-mix(in srgb, var(--am-text) 22%, transparent);
+    transition: background 120ms ease, width 120ms cubic-bezier(.2,0,.38,.9), height 120ms ease;
+  }
+  .am-msgnav-tick:hover, .am-msgnav-tick.is-hover { width: 18px; height: 3px; background: var(--am-text); }
+  .am-msgnav-tick.is-active { width: 18px; height: 3px; background: var(--am-text); }
+  .am-msgnav-tick:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+
+  /* ---- DIE VORSCHAU ------------------------------------------------------------------------
+     Links der Striche, weil die Leiste am rechten Rand haengt (im Vorbild liegt sie rechts --
+     gespiegelt). Sie steht auf der HOEHE des ueberfahrenen Strichs und nicht mittig zur Leiste:
+     bei zwanzig Strichen waere der Weg fuer das Auge sonst weit.
+     translateY(-50%) zentriert sie auf diese Hoehe; top setzt die JS je Strich. */
+  .am-msgnav-vor {
+    position: absolute; right: calc(100% + 12px); top: 50%;
+    width: 300px; padding: 11px 13px;
     border: 1px solid var(--am-border); border-radius: 12px; background: var(--am-card);
     box-shadow: var(--up-e-3, 0 14px 34px rgba(0,0,0,0.13));
-    opacity: 0; pointer-events: none; transition: opacity 120ms ease, transform 120ms ease;
+    opacity: 0; pointer-events: none;
+    transform: translateY(-50%) translateX(6px);
+    transition: opacity 120ms ease, transform 120ms ease;
   }
-  .am-msgnav-menu::after { content: ""; position: absolute; top: 0; bottom: 0; right: -10px; width: 10px; }
-  .am-msgnav.is-hover .am-msgnav-menu { opacity: 1; pointer-events: auto; transform: translateY(-50%) translateX(0); }
-  .am-msgnav-item {
-    display: block; width: 100%; max-width: 100%; text-align: left; border: 0; background: transparent; box-sizing: border-box;
-    height: 32px; line-height: 32px; padding: 0 10px; border-radius: 8px; cursor: pointer; font-family: inherit;
-    font-size: 13px; font-weight: 500; color: var(--am-text);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: background 120ms ease;
+  .am-msgnav.is-vorschau .am-msgnav-vor { opacity: 1; transform: translateY(-50%) translateX(0); }
+  /* EINE Zeile Frage, bis zu DREI Zeilen Antwort -- so angefordert. line-clamp statt fester
+     Hoehe: eine kurze Antwort soll auch eine kurze Karte ergeben. */
+  .am-msgnav-frage {
+    font-size: 13px; font-weight: 550; color: var(--am-text); line-height: 1.45;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  .am-msgnav-item:hover { background: var(--am-soft); }
-  .am-msgnav-item.is-active { background: var(--am-soft-2); }
-  #ask-mira[data-theme="dark"] .am-msgnav-menu { box-shadow: var(--up-e-3, 0 14px 34px rgba(0,0,0,0.55)); }
+  .am-msgnav-antwort {
+    margin-top: 5px; font-size: 12px; font-weight: 400; color: var(--am-muted); line-height: 1.5;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  #ask-mira[data-theme="dark"] .am-msgnav-vor { box-shadow: var(--up-e-3, 0 14px 34px rgba(0,0,0,0.55)); }
   .am-scroll-bottom {
     position: absolute; left: 50%; bottom: 100%; transform: translate(-50%, 6px);
     height: 36px; width: 36px; border-radius: 999px; cursor: pointer;

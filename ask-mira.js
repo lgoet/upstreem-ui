@@ -384,6 +384,15 @@
   var root = el || document.getElementById('ask-mira');
   if (!root || root.__askMiraInit) return;
   root.__askMiraInit = true;
+  /* AB HIER IST DIE KOMPONENTE DA (24.09. gemeldet: "beim Pageload mit neuem Pin seh ich ab und
+     zu ein komisches Mira-Fenster, was ich so in der App gar nicht habe").
+     Das war kein fremdes Fenster -- das war Miras eigenes Markup, BEVOR sie es in die Hand
+     genommen hat: die Wurzel steht schon im Dokument, das Skript kommt erst mit dem CDN. Bei
+     einem frischen Pin holt jsDelivr die Datei erstmalig, und dieser Moment wird lang genug, um
+     ihn zu sehen. Die CSS blendet die Schale aus, bis diese Klasse steht -- mit einer
+     Selbstheilung nach 2,6s in der CSS, damit ein Skript, das gar nicht kommt, die Komponente
+     nicht fuer immer unsichtbar macht. */
+  root.classList.add('am-bereit');
 
   /* ZUERST: das Markup auf die zweite Fassung bringen. Der Elementblock darunter holt die
      neuen Knoepfe per querySelector -- die muessen also schon stehen. */
@@ -516,6 +525,12 @@
     if (full) full.textContent = L().allChats;
     var kurz = elOpenPrev.querySelector('.am-prev-label-short');
     if (kurz) kurz.textContent = L().allChatsShort;
+    /* "New Chat" stand als fester Text im Markup und blieb deshalb auch auf Deutsch englisch
+       (24.09. gemeldet). Der Knopf gehoert der Komponente, also beschriftet sie ihn -- wie den
+       Chatlisten-Knopf darueber. Der Griff geht ueber das <span>, das Zeichen davor bleibt. */
+    var nc = root.querySelector('#am-new-chat span:not([class])') ||
+             root.querySelector('#am-new-chat span:last-child');
+    if (nc && !nc.querySelector('svg')) nc.textContent = L().newChat;
   }
   (function(){
     if (!elOpenPrev) return;
@@ -671,6 +686,7 @@
       ],
       urlVisit: 'Visit',
       allChats: 'All Chats', allChatsShort: 'Chats',
+      newChat: 'New Chat',
       /* Der Picker und der Aufwand-Slider. Die Beschriftungen der drei Stufen stehen NICHT hier,
          sondern in EFF_LABELS -- sie werden bei jedem Zustandswechsel neu geschrieben, und was
          ein Zustandswechsel schreibt, erreicht der breite Sprachlauf von core nicht. */
@@ -795,6 +811,7 @@
       ],
       urlVisit: 'Besuchen',
       allChats: 'Alle Chats', allChatsShort: 'Chats',
+      newChat: 'Neuer Chat',
       pickHeading: 'Filter',
       pickIdle: 'In deinen Daten suchen',
       pickEmpty: 'Keine Treffer',
@@ -9522,28 +9539,87 @@
     reset(); requestAnimationFrame(reset); setTimeout(reset, 60); setTimeout(reset, 250);
   })();
 
-  /* ===== right-edge message navigation (scroll spy over user messages) ===== */
+  /* ===== DIE SPRUNGLEISTE AM RECHTEN RAND (24.09. neu gebaut) ==============================
+     Vorher: kleine Striche, und beim Ueberfahren klappte ein DROPDOWN mit einer Zeile je Frage
+     auf, in dem man dann noch einmal zielen musste. Zwei Schritte fuer einen Sprung.
+     Jetzt: die Striche sind im Ruhezustand kleiner und duenner. Wer einen ueberfaehrt, sieht
+     ihn gross und in der Primaerfarbe -- und daneben eine VORSCHAU: eine Zeile Frage, bis zu
+     drei Zeilen Antwort. Geklickt wird der Strich selbst, das Dropdown faellt weg.
+     Die Vorschau steht LINKS der Striche, weil die Leiste am rechten Rand haengt (im Vorbild
+     liegt sie rechts, dort sitzt die Leiste links -- gespiegelt).
+     KLARTEXT, und das ist der Punkt: keine Tabellen, keine Entity-Auszeichnungen, kein
+     Markdown. Was hier steht, soll man LESEN koennen, nicht entziffern.
+     20 statt 10: so weit reicht ein Gespraech, in dem man zurueckspringen will. */
   (function msgNav(){
     if (!elMessages || !elChat) return;
     var nav = document.createElement('div'); nav.className = 'am-msgnav';
-    var menu = document.createElement('div'); menu.className = 'am-msgnav-menu'; menu.setAttribute('role','menu');
+    var vor = document.createElement('div'); vor.className = 'am-msgnav-vor';
+    vor.innerHTML = '<div class="am-msgnav-frage"></div><div class="am-msgnav-antwort"></div>';
     var ticks = document.createElement('div'); ticks.className = 'am-msgnav-ticks';
-    nav.appendChild(menu); nav.appendChild(ticks);
+    nav.appendChild(vor); nav.appendChild(ticks);
     root.appendChild(nav);
+    var elFrage = vor.querySelector('.am-msgnav-frage');
+    var elAntwort = vor.querySelector('.am-msgnav-antwort');
 
-    var MAX = 10, items = [], raf = 0;
-    function textFor(id, el){
-      var m = null; for (var i=0;i<S.messages.length;i++){ if (String(S.messages[i].id) === String(id)){ m = S.messages[i]; break; } }
-      var t = m ? ((m.pending_voice && !m.content) ? 'Voice message' : String(m.content||'')) : (el ? el.textContent : '');
-      return String(t).replace(/\s+/g,' ').trim() || 'Message';
+    var MAX = 20, items = [], raf = 0;
+
+    /* Aus dem, was in der Nachricht steht, wird lesbarer Fliesstext. Reihenfolge ist wichtig:
+       erst die Auszeichnungen raus, dann die Tabellenzeilen, dann die Reste. */
+    function klartext(t){
+      t = String(t == null ? '' : t);
+      t = t.replace(/<[^>]*>/g, ' ');                       /* falls doch HTML mitkommt */
+      t = t.replace(/```[\s\S]*?```/g, ' ');                 /* Codebloecke */
+      /* ZEILENWEISE, SOLANGE ES NOCH ZEILEN GIBT: Aufzaehlungspunkte und Ueberschriften stehen
+         am ZEILENANFANG. Wer erst zusammenfuegt und dann putzt, findet keinen Anfang mehr --
+         dann blieb "- Punkt eins - Punkt zwei" stehen. */
+      t = t.split('\n').map(function(z){
+        return z.replace(/^\s*[-+*]\s+/, '').replace(/^\s*\d+[.)]\s+/, '').replace(/^\s*#+\s*/, '').trim();
+      }).filter(function(g){
+        if (!g) return false;
+        if (/^\|/.test(g)) return false;                     /* Tabellenzeile */
+        if (/^[\s|:-]+$/.test(g)) return false;              /* Tabellentrenner */
+        return true;
+      }).join(' ');
+      t = t.replace(/!\[[^\]]*\]\([^)]*\)/g, ' ');           /* Bilder */
+      t = t.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1');         /* Links: nur der Text */
+      t = t.replace(/[*_`>#]+/g, '');                        /* Markdown-Zeichen */
+      return t.replace(/\s+/g, ' ').trim();
+    }
+    function nachrichtZu(id){
+      for (var i = 0; i < S.messages.length; i++){
+        if (String(S.messages[i].id) === String(id)) return { m: S.messages[i], i: i };
+      }
+      return null;
+    }
+    function antwortZu(id){
+      var tr = nachrichtZu(id); if (!tr) return '';
+      for (var i = tr.i + 1; i < S.messages.length; i++){
+        var m = S.messages[i];
+        if (!m) continue;
+        if (m.role === 'user') break;                        /* die naechste Frage -> keine Antwort dazwischen */
+        if (m.role === 'assistant') return klartext(m.content || '');
+      }
+      return '';
+    }
+    function frageZu(id, el){
+      var tr = nachrichtZu(id);
+      var m = tr && tr.m;
+      if (m && m.pending_voice && !m.content) return 'Voice message';
+      var t = m ? klartext(m.content || '') : (el ? klartext(el.textContent) : '');
+      return t || 'Message';
     }
     function collect(){
       var els = Array.prototype.slice.call(elMessages.querySelectorAll('.am-msg.is-user')).slice(-MAX);
-      items = els.map(function(el){ var id = el.getAttribute('data-id'); return { id:id, el:el, text: textFor(id, el) }; });
+      items = els.map(function(el){
+        var id = el.getAttribute('data-id');
+        return { id: id, el: el, frage: frageZu(id, el), antwort: antwortZu(id) };
+      });
     }
     function build(){
-      ticks.innerHTML = items.map(function(u,i){ return '<span class="am-msgnav-tick" data-idx="'+i+'"></span>'; }).join('');
-      menu.innerHTML = items.map(function(u,i){ return '<button class="am-msgnav-item" type="button" data-idx="'+i+'" title="'+_escAttr(u.text)+'">'+esc(u.text)+'</button>'; }).join('');
+      ticks.innerHTML = items.map(function(u, i){
+        return '<span class="am-msgnav-tick" role="button" tabindex="0" data-idx="' + i +
+               '" aria-label="' + _escAttr(u.frage.slice(0, 80)) + '"></span>';
+      }).join('');
     }
     function updateVisible(){
       var wide = root.getBoundingClientRect().width >= 900;   // only when there's enough width
@@ -9566,27 +9642,53 @@
         for (var i=0;i<items.length;i++){ if (items[i].el.getBoundingClientRect().top <= anchor) active = i; else break; }
       }
       for (var t=0;t<ticks.children.length;t++) ticks.children[t].classList.toggle('is-active', t===active);
-      for (var k=0;k<menu.children.length;k++) menu.children[k].classList.toggle('is-active', k===active);
     }
     function onScroll(){ if (!raf) raf = requestAnimationFrame(setActive); }
     function refresh(){ collect(); build(); updateVisible(); setActive(); }
 
-    menu.addEventListener('mouseover', function(e){ var it=e.target.closest('.am-msgnav-item'); if(!it) return; var t=ticks.children[+it.getAttribute('data-idx')]; if(t) t.classList.add('is-hover'); });
-    menu.addEventListener('mouseout',  function(e){ var it=e.target.closest('.am-msgnav-item'); if(!it) return; var t=ticks.children[+it.getAttribute('data-idx')]; if(t) t.classList.remove('is-hover'); });
-    menu.addEventListener('click', function(e){
-      var it=e.target.closest('.am-msgnav-item'); if(!it) return;
-      var u=items[+it.getAttribute('data-idx')];
-      if (u && u.el){ var top = u.el.getBoundingClientRect().top - elChat.getBoundingClientRect().top + elChat.scrollTop - 14; elChat.scrollTo({ top: Math.max(0, top), behavior:'smooth' }); }
-    });
+    /* Die Vorschau steht auf der Hoehe des ueberfahrenen Strichs -- nicht mittig zur Leiste.
+       Sonst waendert das Auge zwischen zwei Orten, und bei zwanzig Strichen ist das weit. */
+    function vorschauZeigen(idx){
+      var u = items[idx]; if (!u) return;
+      var tk = ticks.children[idx]; if (!tk) return;
+      elFrage.textContent = u.frage;
+      elAntwort.textContent = u.antwort;
+      elAntwort.style.display = u.antwort ? '' : 'none';
+      var tr = tk.getBoundingClientRect(), nr = nav.getBoundingClientRect();
+      vor.style.top = Math.round(tr.top - nr.top + tr.height / 2) + 'px';
+      nav.classList.add('is-vorschau');
+    }
+    function vorschauAus(){ nav.classList.remove('is-vorschau'); }
 
-    // keep the menu open while moving from the ticks across the gap onto the menu
-    var hideT = 0;
-    function showMenu(){ clearTimeout(hideT); nav.classList.add('is-hover'); }
-    function hideMenu(){ clearTimeout(hideT); hideT = setTimeout(function(){ nav.classList.remove('is-hover'); }, 160); }
-    nav.addEventListener('mouseenter', showMenu);
-    nav.addEventListener('mouseleave', hideMenu);
-    menu.addEventListener('mouseenter', showMenu);
-    menu.addEventListener('mouseleave', hideMenu);
+    function springen(idx){
+      var u = items[idx];
+      if (!u || !u.el) return;
+      var top = u.el.getBoundingClientRect().top - elChat.getBoundingClientRect().top + elChat.scrollTop - 14;
+      elChat.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+      vorschauAus();
+    }
+    ticks.addEventListener('mouseover', function(e){
+      var tk = e.target.closest('.am-msgnav-tick'); if (!tk) return;
+      for (var i=0;i<ticks.children.length;i++) ticks.children[i].classList.toggle('is-hover', ticks.children[i] === tk);
+      vorschauZeigen(+tk.getAttribute('data-idx'));
+    });
+    ticks.addEventListener('mouseleave', function(){
+      for (var i=0;i<ticks.children.length;i++) ticks.children[i].classList.remove('is-hover');
+      vorschauAus();
+    });
+    ticks.addEventListener('click', function(e){
+      var tk = e.target.closest('.am-msgnav-tick'); if (!tk) return;
+      springen(+tk.getAttribute('data-idx'));
+    });
+    ticks.addEventListener('keydown', function(e){
+      var tk = e.target.closest('.am-msgnav-tick'); if (!tk) return;
+      if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); springen(+tk.getAttribute('data-idx')); }
+    });
+    ticks.addEventListener('focusin', function(e){
+      var tk = e.target.closest('.am-msgnav-tick'); if (!tk) return;
+      vorschauZeigen(+tk.getAttribute('data-idx'));
+    });
+    ticks.addEventListener('focusout', vorschauAus);
 
     if (typeof MutationObserver !== 'undefined'){ try { new MutationObserver(function(){ refresh(); }).observe(elMessages, { childList:true }); } catch(_){} }
     elChat.addEventListener('scroll', onScroll, { passive:true });
