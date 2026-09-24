@@ -8294,10 +8294,45 @@
       timer: null, btn: null, placedRect: null, lastScrollAt: 0, wide: false, suppressed: false
     });
 
+    /* ---- WOGEGEN "fixed" WIRKLICH MISST (24.09. gemeldet: "die Tooltips sind meilenweit von
+       ihrer korrekten Position entfernt") -------------------------------------------------------
+       Der Chip steht auf position: fixed und bekommt Fensterkoordinaten -- das stimmt genau
+       solange, wie ueber ihm KEIN Element mit transform, filter, perspective, will-change oder
+       contain steht. So ein Element wird zum Bezugsrahmen auch fuer fixed, und dann zaehlt
+       "left: 475px" ab SEINER Kante statt ab der des Fensters.
+       Genau das ist hier der Fall: paint() zieht den Chip in ein offenes Popover um, damit er
+       nicht darunter verschwindet (Top Layer) -- und die Menues der Filter und des Kalenders
+       fahren ueber transform ein (.udr-menu, .utf-menu: translateY(-4px) scale(.985) -> scale(1);
+       auch scale(1) ist NICHT none). Gemessen am Kalender: left/top standen auf 475/420, also
+       richtig, gezeichnet wurde bei 929/518 -- 458px zu weit rechts und 92px zu tief.
+       offsetParent hilft nicht: fuer ein Element mit position: fixed gibt die Norm null zurueck.
+       Also den Bezugsrahmen selbst suchen und seine Kante abziehen. Der Rahmen fuer fixed ist der
+       POLSTERKASTEN, deshalb kommen die Rahmenbreiten mit weg. */
+    function bezugsRahmen(el){
+      var p = el.parentElement;
+      while (p && p.nodeType === 1 && p !== document.documentElement){
+        var c = getComputedStyle(p);
+        if ((c.transform && c.transform !== "none") ||
+            (c.perspective && c.perspective !== "none") ||
+            (c.filter && c.filter !== "none") ||
+            (c.willChange && /transform|perspective|filter/.test(c.willChange)) ||
+            (c.contain && /paint|layout|strict|content/.test(c.contain))) return p;
+        p = p.parentElement;
+      }
+      return null;
+    }
+    function nullpunkt(){
+      var w = bezugsRahmen(tip);
+      if (!w) return { x: 0, y: 0 };
+      var wr = w.getBoundingClientRect(), wc = getComputedStyle(w);
+      return { x: wr.left + (parseFloat(wc.borderLeftWidth) || 0),
+               y: wr.top  + (parseFloat(wc.borderTopWidth)  || 0) };
+    }
     function placeTip(){
       if (!S.btn) return;
       tip.style.transform = "";
       var r = S.btn.getBoundingClientRect();
+      var n0 = nullpunkt();
       /* Die Masse ueber offsetWidth/offsetHeight, NICHT indem der Tooltip zum Messen nach 0,0
          geschoben wird. Das alte Vorgehen setzte left und top auf 0, las die Groesse und setzte
          danach die echte Position -- zeichnete der Browser dazwischen einen Frame, blitzte der
@@ -8320,8 +8355,8 @@
           var links = r.left - 8 - tw;
           lx = links >= 6 ? links : Math.max(6, vw - tw - 6);
         }
-        tip.style.left = lx + "px";
-        tip.style.top = Math.max(6, Math.min(r.top + r.height / 2 - th / 2, vh - th - 6)) + "px";
+        tip.style.left = (lx - n0.x) + "px";
+        tip.style.top = (Math.max(6, Math.min(r.top + r.height / 2 - th / 2, vh - th - 6)) - n0.y) + "px";
         /* Die Grundregel von .up-tip schiebt den Chip um 4px nach unten und faehrt ihn von dort
            ein. Rechts angesetzt ist das falsch: er soll auf der Mitte des Ausloesers sitzen, und
            gemessen sass er dadurch 4px zu tief. Also keine Verschiebung -- und den Uebergang auf
@@ -8337,14 +8372,14 @@
       /* the wide variant left-aligns to the trigger (long text, centring looks arbitrary),
          the normal chip centres under it */
       var left = S.wide ? r.left : (r.left + r.width / 2 - tr.width / 2);
-      tip.style.left = Math.max(6, Math.min(left, vw - tr.width - 6)) + "px";
+      tip.style.left = (Math.max(6, Math.min(left, vw - tr.width - 6)) - n0.x) + "px";
       /* Unter dem Ausloeser, solange dort Platz ist -- sonst darueber. Vorher stand er immer
          darunter und lief am unteren Rand aus dem Bild: der Tooltip war dann da, aber nicht zu
          sehen, was von "springt weg" nicht zu unterscheiden ist. */
       var untenNoetig = r.bottom + 8 + tr.height + 6;
-      tip.style.top = (untenNoetig <= vh || r.top - 8 - tr.height < 6)
-        ? (r.bottom + 8) + "px"
-        : (r.top - 8 - tr.height) + "px";
+      tip.style.top = ((untenNoetig <= vh || r.top - 8 - tr.height < 6)
+        ? (r.bottom + 8)
+        : (r.top - 8 - tr.height)) - n0.y + "px";
       S.placedRect = r;
     }
     function hideTip(){

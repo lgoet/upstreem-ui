@@ -180,8 +180,11 @@
 .utf-grp-opt { padding-right: 16px; }
 /* The extra top padding is breathing room ABOVE the heading, not below it: the section is the
    first child of the list, so without it the label sits flush against the search row. */
-.utf-grp-head { padding: 7px 9px 5px; font-size: 10.5px; font-weight: 600; letter-spacing: 0.05em;
-  text-transform: uppercase; color: var(--vc-third); }
+/* KEINE VERSALIEN (24.09. gemeldet: "die Heading ist noch in uppercase, also wahrscheinlich das
+   alte Heading-Format"). Stimmt -- das ist die stehende Vorgabe fuer die ganze App: unterschieden
+   wird ueber Groesse, Schnitt und Farbe, nicht ueber Grossbuchstaben. Also 12px in der dritten
+   Farbe, ohne Sperrung, wie jede andere leise Beschriftung. */
+.utf-grp-head { padding: 7px 9px 5px; font-size: 12px; font-weight: 500; color: var(--vc-third); }
 .utf-grp-none { padding: 4px 10px 8px; font-size: 12.5px; color: var(--vc-third); }
 /* The grouping's own glyph where a topic carries its colour chip: same slot, so the two row types
    line up on one left edge. Larger than the topic dot on purpose -- an outlined icon reads smaller

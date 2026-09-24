@@ -606,7 +606,12 @@
         liste.forEach(function (f) {
           var c = chipText(f);
           if (!c) return;
-          teile.push('<span class="ufb-chip" data-chip="' + esc(f.key) + '">' +
+          /* DAS ZEICHEN DES FILTERS VORNE (24.09. angefordert, mit dem Sortier-Chip als Vorbild:
+             Zeichen, leiser Bezug, lauter Wert, X). Es ist dasselbe, das die Zeile im Panel
+             traegt (ufb-row-ic) und das der Filter an seinem Trigger fuehrt -- ein Chip mit
+             einem ANDEREN Zeichen waere ein zweiter Name fuer dieselbe Sache. */
+          teile.push('<span class="up-entchip is-static ufb-chip" data-chip="' + esc(f.key) + '">' +
+            '<span class="ufb-chip-ic">' + UC.icon(f.icon, 2) + '</span>' +
             '<span class="ufb-chip-lbl"><span class="ufb-chip-key">' + esc(c.key) + ': </span>' +
             esc(c.wert) + '</span>' +
             '<button class="ufb-chip-x" type="button" data-chip-clear="' + esc(f.key) + '" ' +
@@ -678,6 +683,14 @@
          kommen komplett aus UC.makeSubmenu. */
       var sub = UC.makeSubmenu({
         panel: elMenu, rowSel: ".up-subwrap", keyAttr: "data-sub", drill: schmal,
+        /* EINE SEKUNDE NACHLAUF STATT DER 260ms DES KITS (24.09. angefordert: "wenn man ueber Topics hovert,
+           das Dropdown daneben aufgeht und man dann rueberhovert, soll es offen bleiben, auch
+           wenn der Nutzer mal ein paar hundert Millisekunden nicht darauf hovert").
+           Die Vorgabe des Kits deckt die Luecke zwischen Zeile und Kasten -- gemeint ist hier
+           mehr: eine Liste, in der jemand mit dem Zeiger sucht, darf nicht zugehen, weil er
+           kurz daneben liegt. Gilt fuer alle drei Zeilen, weil es am Kit haengt und nicht an
+           einer davon. */
+        closeDelay: 1000,
         /* EIN Kasten fuer alle Zeilen -- siehe die Schale im Markup oben. */
         shell: elSub, hostAttr: "data-sub-host",
         onOpen: function (key) {

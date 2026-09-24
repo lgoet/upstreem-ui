@@ -96,17 +96,30 @@
    Rechts im Chip ein X, das GENAU DIESEN Filter leert -- mit Abstand zum Text, damit es nicht als
    Teil des Wortes gelesen wird. */
 .ufb-chips { display: flex; align-items: center; gap: 8px; min-width: 0; }
+/* UMRISS STATT FLAECHE (24.09. angefordert, mit einem Sortier-Chip als Vorbild): kein Grund,
+   ein Rahmen, davor das Zeichen des Filters, dann der leise Bezug und der laute Wert, dahinter
+   das X.
+   UND DAS IST GENAU .up-entchip AUS CORE -- 28px hoch, Radius 8, 1px Rand in --vc-border, Grund
+   --vc-bg. Der Chip trug vorher eine eigene gefuellte Form (--vc-field) und stand damit als
+   einziges Bauteil der Leiste ausserhalb des Satzes; der Kopf dieser Datei nennt .up-entchip
+   seit jeher als DAS Chip-Bauteil hier. Also wird es jetzt auch benutzt, und lokal bleibt nur,
+   was wirklich dieser Leiste gehoert: ein engeres Polster rechts, weil dort das X sitzt, die
+   Abstaende der drei Teile und das Abschneiden langer Werte.
+   Damit faellt auch die Meldung von .check_reinvention.py weg, die den eigenen Rand hier fuer
+   eine nachgebaute Sentiment-Pille gehalten hat. */
 .ufb-chip {
-  display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto;
-  height: 28px; padding: 0 5px 0 10px; border-radius: 8px;
-  background: var(--vc-field);
-  white-space: nowrap; overflow: hidden; min-width: 0; max-width: 100%; box-sizing: border-box;
+  flex: 0 0 auto; gap: 6px; padding: 0 5px 0 9px;
 }
-.ufb-chip-lbl { font-size: 12px; font-weight: 500; color: var(--vc-text);
+/* 14x14, ausdruecklich so verlangt. Dieselbe dritte Farbe wie der Bezug daneben -- Zeichen und
+   "Topic:" sagen zusammen, WOVON die Rede ist; der Wert ist die Aussage. */
+.ufb-chip-ic { flex: 0 0 14px; width: 14px; height: 14px; display: inline-flex; color: var(--vc-third); }
+.ufb-chip-ic svg { width: 14px; height: 14px; display: block; }
+.ufb-chip-lbl { font-size: 13px; font-weight: 500; color: var(--vc-text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 /* Der Name des Filters davor ist die leisere Haelfte -- "Topic:" ist der Bezug, der Wert ist die
-   Aussage. */
-.ufb-chip-key { color: var(--vc-muted); font-weight: 500; }
+   Aussage. Dritte Farbe statt --vc-muted: im Vorbild ist der Abstand zwischen beiden Haelften
+   deutlich groesser als eine Stufe. */
+.ufb-chip-key { color: var(--vc-third); font-weight: 500; }
 /* Das X: 18px, damit es im 28px-Chip Luft hat, und in der dritten Farbe -- es ist der Ausgang,
    nicht die Aussage. Beim Ueberfahren wird es die primaere.
 
@@ -188,6 +201,13 @@
    zieht einziehen() sie wieder herein. */
 .ufb-wrap.is-leer { display: none; }
 .ufb-caret svg { width: 16px; height: 16px; display: block; }
+/* DAS ZEICHEN RUECKT BEIM UEBERFAHREN 4px NACH RECHTS (24.09. angefordert, wie die Chevrons an
+   Miras Kategoriekarten). Ausschleifend, damit es geht und nicht springt -- und nur, solange die
+   Zeile nicht ohnehin offen steht: dort ist das Untermenue schon die Antwort auf die Geste. */
+.ufb-caret { transition: transform 200ms var(--up-ease-auf), color 120ms ease; }
+.ufb-row:hover .ufb-caret { transform: translateX(4px); }
+@media (prefers-reduced-motion: reduce){ .ufb-caret { transition: color 120ms ease; }
+  .ufb-row:hover .ufb-caret { transform: none; } }
 /* Der Winkel dreht sich NICHT. Er zeigt, wo das Untermenue herauskommt, und das wechselt nicht. */
 .up-subwrap.is-subopen > .ufb-row .ufb-caret { color: var(--vc-text); }
 

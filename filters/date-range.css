@@ -105,9 +105,13 @@
   /* Innen ein Pixel weniger als aussen, sonst schneidet die Ecke der Spalte die des Panels. */
   border-radius: calc(var(--up-dd-radius) - 1px) 0 0 calc(var(--up-dd-radius) - 1px);
 }
+/* KEINE VERSALIEN -- derselbe Rest desselben alten Formats wie in .utf-grp-head (24.09.). Die
+   Vorgabe gilt fuer die ganze App: Groesse, Schnitt und Farbe unterscheiden, nicht Grossbuchstaben.
+   Gleiche Werte wie dort, damit die beiden Kopfzeilen in zwei Dropdowns derselben Leiste nicht
+   verschieden aussehen. */
 .udr-presets-head {
-  padding: 3px 9px 9px; color: var(--vc-muted);
-  font-size: 11px; font-weight: 600; line-height: 1; letter-spacing: .04em; text-transform: uppercase;
+  padding: 3px 9px 9px; color: var(--vc-third);
+  font-size: 12px; font-weight: 500; line-height: 1;
 }
 .udr-preset {
   display: flex; align-items: center; width: 100%; height: 36px; padding: 0 8px;
