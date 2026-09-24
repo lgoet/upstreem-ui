@@ -1101,7 +1101,17 @@
   // On send: immediately (no animation) put the new user message near the top and RESERVE the space
   // below it, so the loading state — and later the taller tool loader — land in their final position
   // right away and never need a second scroll.
+  /* EINMAL JE ABSENDEN, NICHT BEI JEDEM ZEICHNEN (24.09. gemeldet: "waehrend des Loaders wird
+     iwann was gerefresht und der Whitespace unten geht weg").
+     Diese Funktion setzt minHeight zurueck, misst neu und scrollt -- richtig genau einmal, wenn
+     die Frage abgeschickt ist. Aufgerufen wurde sie aber bei JEDEM Zeichnen, solange geladen
+     wird, und das Nachfassen zeichnet alle paar Sekunden. Dann verschiebt sich die Reserve mit
+     dem wachsenden Loader, und die Ansicht rutscht.
+     _sendStartTs wechselt mit jedem Absenden -- daran haengt die Marke. */
+  var _pinFuer = 0;
   function _pinSendScroll(){
+    if (_pinFuer === _sendStartTs && _sendStartTs) return;
+    _pinFuer = _sendStartTs;
     requestAnimationFrame(function(){
       var msgs = elMessages.querySelectorAll('.am-msg:not(.am-msg-loading):not(.am-msg-run)');
       var last = msgs.length ? msgs[msgs.length - 1] : null;
@@ -5791,6 +5801,16 @@
        behaelt seinen Kreisel und bekommt seinen Punkt erst, wenn seine Antwort wirklich da ist.
        Ohne diese Unterscheidung trug der verlassene Chat den Punkt schon beim Wegklicken. */
     var _fremdesEnde = _laufenderChat && _laufenderChat !== String(S.activeChatId || '');
+    /* DIE MARKE GEHOERT AN DIE NACHRICHTEN, NICHT AN DEN ZUSTANDSSCHALTER (24.09. gemeldet:
+       "wechsle ich in den Chat, ist die Nachricht da, der Chat steht aber weiter auf loading").
+       setLoading raeumt nur auf, wenn S.isLoading vorher true WAR und _laufenderChat gesetzt
+       ist. Beides trifft nicht zu, wenn der Nutzer einfach in einen wartenden Chat wechselt:
+       dort kommen fertige Nachrichten an, und die Zeile dreht weiter.
+       Hier steht die Auskunft direkt: liegt die letzte Antwort fertig vor, wartet dieser Chat
+       nicht mehr. fertigMelden setzt den Punkt nur, wenn der Nutzer woanders steht -- im
+       geoeffneten Chat raeumt es die Marke wortlos ab, und genau das ist richtig. */
+    var _dieserChat = String(chatId == null ? (S.activeChatId || '') : chatId);
+    if (_dieserChat && !_running) fertigMelden(_dieserChat);
     setLoading(_running, _fremdesEnde ? 'verlassen' : 'antwort');
     _maybeHomeIfUnknownChat();   // no active chat known -> fall back to the main page
   };
