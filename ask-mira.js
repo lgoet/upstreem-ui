@@ -63,6 +63,82 @@
     });
   }
 
+  /* ==========================================================================================
+     DER DIAGNOSEMODUS (24.09.). Aus, solange ihn niemand einschaltet -- CLAUDE.md 5 verbietet
+     Debug-Ausgaben in der ausgelieferten App, und das gilt weiter.
+     Er existiert, weil sich eine Frage aus dem Code allein nicht beantworten laesst: KOMMT ein
+     Realtime-Ereignis ueberhaupt in der Komponente an? Wird es angenommen oder verworfen? Und
+     was kam zuerst -- das Ereignis oder das Nachfassen? Ohne diese Auskunft raet man, und Raten
+     hat hier drei Tage gekostet.
+
+     EINSCHALTEN, eins von beidem:
+         window.askMiraDebug(true)        fuer diese Sitzung
+         ?amdebug=1  an der URL           ueberlebt auch einen Neuaufbau der Seite
+     AUSSCHALTEN:  window.askMiraDebug(false)
+     ZUSAMMENFASSUNG:  window.askMiraDiag()   -- eine Tabelle, ohne dass man mitlesen musste.
+
+     Die Zaehlung laeuft IMMER mit, auch ohne eingeschaltete Ausgabe: sie kostet nichts und ist
+     genau dann da, wenn man sie braucht -- naemlich hinterher. */
+  var AMD = {
+    an: false, start: Date.now(),
+    rt: [], rtAngenommen: 0, rtVerworfen: 0,
+    nachfass: 0, nachfassZeiten: [],
+    setter: {}, scroll: []
+  };
+  try {
+    if (/[?&]amdebug=1/.test(location.search)) AMD.an = true;
+    if (window.localStorage && localStorage.getItem('am_debug') === '1') AMD.an = true;
+  } catch(e){}
+  function amT(){ return ((Date.now() - AMD.start) / 1000).toFixed(1) + 's'; }
+  function amLog(bereich){
+    if (!AMD.an || !window.console) return;
+    var rest = [].slice.call(arguments, 1);
+    try { console.log.apply(console, ['%c[mira ' + amT() + '] ' + bereich,
+      'color:#2f6df6;font-weight:600'].concat(rest)); } catch(e){}
+  }
+  function amZaehl(name, zusatz){
+    AMD.setter[name] = (AMD.setter[name] || 0) + 1;
+    amLog('setter ' + name, zusatz == null ? '' : zusatz);
+  }
+  window.askMiraDebug = function(an){
+    AMD.an = an !== false;
+    try { if (window.localStorage) localStorage.setItem('am_debug', AMD.an ? '1' : '0'); } catch(e){}
+    if (window.console) console.log('[mira] Diagnose ' + (AMD.an ? 'AN' : 'aus') +
+      '. Zusammenfassung jederzeit mit askMiraDiag()');
+    return AMD.an;
+  };
+  window.askMiraDiag = function(){
+    var z = {
+      'Diagnose an': AMD.an,
+      'Laeuft seit': amT(),
+      'Realtime-Ereignisse gesamt': AMD.rt.length,
+      'davon angenommen': AMD.rtAngenommen,
+      'davon verworfen': AMD.rtVerworfen,
+      'Nachfass-Abrufe (Polling)': AMD.nachfass
+    };
+    var arten = {};
+    AMD.rt.forEach(function(e){ arten[e.art || '(ohne event)'] = (arten[e.art || '(ohne event)'] || 0) + 1; });
+    var fn = {};
+    ['send','new_chat','select_chat','refresh_chat','refresh_chats'].forEach(function(n){
+      fn['bubble_fn_ask_mira_' + n] = (typeof window['bubble_fn_ask_mira_' + n] === 'function') ? 'da' : 'FEHLT';
+    });
+    if (!window.console) return z;
+    console.log('%c===== MIRA DIAGNOSE =====', 'font-weight:700;font-size:13px');
+    console.table(z);
+    console.log('%cRealtime nach Art:', 'font-weight:600'); console.table(arten);
+    console.log('%cBubble-Funktionen:', 'font-weight:600'); console.table(fn);
+    console.log('%cDie letzten 12 Realtime-Ereignisse:', 'font-weight:600');
+    console.table(AMD.rt.slice(-12));
+    console.log('%cDie letzten 12 Scroll-Entscheidungen:', 'font-weight:600');
+    console.table(AMD.scroll.slice(-12));
+    if (!AMD.rt.length){
+      console.warn('[mira] KEIN EINZIGES Realtime-Ereignis angekommen. Dann liegt es NICHT an ' +
+        'dieser Komponente: entweder ruft der Bubble-Workflow window.askMiraRealtime nicht, ' +
+        'oder er laeuft gar nicht. Pruefe den Workflow auf "Message Received".');
+    }
+    return z;
+  };
+
   function amBoot(triesLeft){
     if (!window.UpstreemCore){
       if (triesLeft > 0){ setTimeout(function(){ amBoot(triesLeft - 1); }, 100); return; }
@@ -2381,10 +2457,11 @@
     _prevMsgKeys = _curKeys;
     _prevLoading = S.isLoading;
 
-    if (!S.messages.length){ elMessages.style.minHeight = ''; if (!S.isLoading){ elChat.scrollTop = 0; } }
-    else if (_typeUnits) { elMessages.style.minHeight = ''; /* _startTyping positions the scroll itself */ }
-    else if (_scrollMode === 'bottom') { elMessages.style.minHeight = ''; scrollToBottom(true); }
-    else if (S.isLoading) _pinSendScroll();   // send -> jump straight to the final position, reserve loader space
+    var _amWeg = '';
+    if (!S.messages.length){ _amWeg = 'leer: scrollTop 0'; elMessages.style.minHeight = ''; if (!S.isLoading){ elChat.scrollTop = 0; } }
+    else if (_typeUnits) { _amWeg = 'tippt: setzt sich selbst'; elMessages.style.minHeight = ''; }
+    else if (_scrollMode === 'bottom') { _amWeg = 'bottom: ganz nach unten'; elMessages.style.minHeight = ''; scrollToBottom(true); }
+    else if (S.isLoading) { _amWeg = 'laedt: _pinSendScroll'; _pinSendScroll(); }
     /* NICHTS NEUES -> GAR NICHTS ANFASSEN (24.09. nachgebessert). Der Zweig stand vorher GANZ
        OBEN und setzte dabei minHeight zurueck -- das ist aber der reservierte Platz unter dem
        Ladezustand, den _pinSendScroll gerade erst gestellt hat. Gemeldet als "der Ladestate
@@ -2392,8 +2469,14 @@
        Wartens neu, der Zweig griff, und die Reserve war weg.
        Jetzt steht er HINTER dem Ladezustand -- waehrend gewartet wird, gilt weiter
        _pinSendScroll -- und er fasst weder die Scrollposition noch die Reserve an. */
-    else if (_gleicheNachrichten){ /* die Ansicht bleibt, wie sie ist */ }
-    else { elMessages.style.minHeight = ''; scrollNewMessageTop(true); }
+    else if (_gleicheNachrichten){ _amWeg = 'nichts Neues: unberuehrt'; }
+    else { _amWeg = 'neue Nachricht: scrollNewMessageTop'; elMessages.style.minHeight = ''; scrollNewMessageTop(true); }
+    try {
+      AMD.scroll.push({ zeit: amT(), weg: _amWeg, vorher: Math.round(elChat.scrollTop),
+                        laedt: !!S.isLoading, nachrichten: S.messages.length, tippt: !!_typeUnits });
+      if (AMD.scroll.length > 60) AMD.scroll.shift();
+      amLog('SCROLL ' + _amWeg, 'scrollTop=' + Math.round(elChat.scrollTop));
+    } catch(e){}
     _scrollMode = 'newmsg';
     updateLoopState();
     if (_typeUnits) _startTyping(_newBub, _typeUnits);
@@ -5527,6 +5610,8 @@
       return false;
     }
     _nfLetzte = jetzt;
+    AMD.nachfass++; AMD.nachfassZeiten.push(amT());
+    amLog('NACHFASSEN (Polling) Grund=' + grund, 'Chat ' + String(S.activeChatId || '').slice(0, 8));
     try { fn(S.activeChatId); } catch(e){ return false; }
     /* Fuer den Prueftand und fuer eine Seite ohne Bubble -- und als Spur in der Diagnose. */
     try { root.dispatchEvent(new CustomEvent('askmira:nachfassen',
@@ -5683,6 +5768,7 @@
     return id !== String(S.activeChatId || '');
   }
   window.askMiraSetMessages = function(messages, chatId){
+    amZaehl('setMessages', 'chat=' + String(chatId == null ? '(aktiv)' : chatId).slice(0, 8));
     if (fremderChat(chatId)){
       /* Nachrichten fuer einen ANDEREN Chat: nicht zeichnen, nur buchen -- und dabei
          unterscheiden, ob dort wirklich eine Antwort liegt. Endet die Nutzlast auf einer noch
@@ -6090,6 +6176,25 @@
     try { console.warn('[AskMira] ' + text); } catch(e){}
   }
   window.askMiraRealtime = function(payload){
+    var _amRoh = payload;
+    var _amErg = _askMiraRealtimeInnen(payload);
+    try {
+      var _pp = _amRoh;
+      if (typeof _pp === 'string'){ try { _pp = JSON.parse(_pp); } catch(e){ _pp = null; } }
+      if (_pp && _pp.payload && typeof _pp.payload === 'object') _pp = _pp.payload;
+      AMD.rt.push({ zeit: amT(), art: _pp ? String(_pp.event || '') : '(unlesbar)',
+                    chat: _pp ? String(_pp.session_id || '').slice(0, 8) : '',
+                    offen: String(S.activeChatId || '').slice(0, 8),
+                    amid: _pp ? String(_pp.assistant_message_id || _pp.message_id || '').slice(0, 8) : '',
+                    tool: _pp ? String(_pp.tool || '') : '',
+                    angenommen: _amErg === true });
+      if (AMD.rt.length > 200) AMD.rt.shift();
+      if (_amErg) AMD.rtAngenommen++; else AMD.rtVerworfen++;
+      amLog('REALTIME ' + (_amErg ? 'angenommen' : 'VERWORFEN'), AMD.rt[AMD.rt.length - 1]);
+    } catch(e){}
+    return _amErg;
+  };
+  function _askMiraRealtimeInnen(payload){
     var p = payload;
     if (typeof p === 'string'){ p = looseJsonParse(p); }
     if (!p || typeof p !== 'object'){
@@ -6228,7 +6333,7 @@
       'mira_title_updated und mira_user_transcript -- dazu jedes Ereignis, das tool fuellt. ' +
       'Ist das die Ladezeile, steht ihr Feld tool leer.');
     return false;
-  };
+  }
 
   /* Nach einem Verbindungsabriss: neu subscriben macht Bubble, den Rest hier. In der Luecke
      koennen Ereignisse gefallen sein, also wird der offene Chat einmal nachgeladen und die
@@ -6737,6 +6842,7 @@
       if (fireEvent) { /* der Aufrufer wollte ein Ereignis -- das gibt es unten, aber ohne Wechsel */ }
       return;
     }
+    amZaehl('setActiveChat', String(chatId || '(leer)').slice(0, 8) + (titel ? ' titel=' + titel : ''));
     S.activeChatId = chatId;
     /* Ein geoeffneter Chat ist gelesen: der Punkt hat sich erledigt. */
     fertigLoeschen(chatId);
@@ -6949,6 +7055,7 @@
      Zweimal derselbe Zustand hintereinander bleibt EINE Zeile: die laufende bleibt unveraendert
      stehen, samt ihrem Text und ihren Logos. Erst ein anderer Zustand macht eine neue auf. */
   window.askMiraSetTool = function(tool){
+    amZaehl('setTool', tool);
     var key = String(tool == null ? '' : tool).trim().toLowerCase();
     var st = _TOOL_STATE[key] || '';
     if (!S.isLoading){ S.currentTool = key; S.toolState = st; return; }
