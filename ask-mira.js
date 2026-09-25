@@ -107,6 +107,16 @@
     try { console.log.apply(console, ['%c[mira ' + amT() + '] ' + bereich,
       'color:#2f6df6;font-weight:600'].concat(rest)); } catch(e){}
   }
+  /* EIN FEHLENDER BUBBLE-HAKEN steht in der Spur und -- nur bei eingeschalteter Diagnose -- in der
+     Konsole, nicht mehr als console.warn (25.09. angefordert: "dass Mira diese ganzen Logs nicht
+     macht"). Es sind Einrichtungshinweise fuer optionale Haken, keine Fehler, und bei drei
+     Mira-Wurzeln auf einer Seite stand jeder dreimal da. Verloren geht nichts: askMiraDiag() und
+     askMiraVerlauf() zeigen weiter, welcher Haken FEHLT, und die Spur haelt fest, wann er
+     gebraucht worden waere. */
+  function amHakenFehlt(haken, folge){
+    amSpur('HAKEN FEHLT      ', haken + ' -- ' + folge);
+    amLog('Haken fehlt: ' + haken, folge);
+  }
   function amZaehl(name, zusatz){
     AMD.setter[name] = (AMD.setter[name] || 0) + 1;
     amSpur('setter ' + (name + '              ').slice(0, 16), zusatz == null ? '' : String(zusatz));
@@ -124,7 +134,7 @@
     var kopf = 'MIRA VERLAUF  (' + amT() + ' seit dem Laden)\n' +
       'Realtime: ' + AMD.rt.length + ' angekommen, ' + AMD.rtAngenommen + ' angenommen, ' +
       AMD.rtVerworfen + ' verworfen   |   Polling: ' + AMD.nachfass + '\n' +
-      ['send','new_chat','select_chat','refresh_chat','refresh_chats'].map(function(n){
+      ['send','new_chat','select_chat','refresh_chat','refresh_chats','realtime_resubscribe'].map(function(n){
         return n + '=' + (typeof window['bubble_fn_ask_mira_' + n] === 'function' ? 'da' : 'FEHLT');
       }).join('  ') + '\n' + new Array(78).join('-');
     var txt = kopf + '\n' + AMD.spur.join('\n');
@@ -144,7 +154,7 @@
     var arten = {};
     AMD.rt.forEach(function(e){ arten[e.art || '(ohne event)'] = (arten[e.art || '(ohne event)'] || 0) + 1; });
     var fn = {};
-    ['send','new_chat','select_chat','refresh_chat','refresh_chats'].forEach(function(n){
+    ['send','new_chat','select_chat','refresh_chat','refresh_chats','realtime_resubscribe'].forEach(function(n){
       fn['bubble_fn_ask_mira_' + n] = (typeof window['bubble_fn_ask_mira_' + n] === 'function') ? 'da' : 'FEHLT';
     });
     if (!window.console) return z;
@@ -1165,7 +1175,7 @@
   function emitMoveStatus(oid, newStatus, oldStatus){
     var payload = { opportunity_id: oid, recommendation_id: oid, status: newStatus, previous_status: oldStatus };
     if (typeof window.bubble_fn_ask_mira_move_opportunity_status === 'function') window.bubble_fn_ask_mira_move_opportunity_status(JSON.stringify(payload));
-    else { window.dispatchEvent(new CustomEvent('askmira:opportunity-move-status', { detail: payload })); console.log('Ask Mira move opportunity status:', payload); }
+    else { window.dispatchEvent(new CustomEvent('askmira:opportunity-move-status', { detail: payload })); amHakenFehlt('bubble_fn_ask_mira_move_opportunity_status', JSON.stringify(payload)); }
   }
   function applyStatus(opt){
     var st = opt.closest('.uo-status'); if (!st) return;
@@ -2179,7 +2189,7 @@
     if (aid) _oppcState[aid] = { status: 'loading' };
     _oppcApplyState(btn, 'loading');
     if (typeof window.bubble_fn_ask_mira_create_opportunity === 'function') window.bubble_fn_ask_mira_create_opportunity(JSON.stringify(payload));
-    else { window.dispatchEvent(new CustomEvent('askmira:create-opportunity', { detail: payload })); console.log('Ask Mira create opportunity:', payload); }
+    else { window.dispatchEvent(new CustomEvent('askmira:create-opportunity', { detail: payload })); amHakenFehlt('bubble_fn_ask_mira_create_opportunity', JSON.stringify(payload)); }
   });
   // Bubble reports the RPC result: { action_id, status, recommendation, error }.
   // Created OR AlreadyExists (with a recommendation) -> show the normal opportunity card.
@@ -5850,16 +5860,16 @@
        Titel, das Scrollen an den Anfang. Ihn als stille Hintergrundauffrischung zu missbrauchen
        war der zweite Teil des Aufblitzens -- und der schlimmere, weil er den sichtbaren
        Ladezustand mitbringt.
-       Fehlt bubble_fn_ask_mira_refresh_chat, wird NICHT nachgefasst. Einmal in die Konsole, was
-       zu tun ist; stillschweigend etwas Falsches zu tun ist schlechter als nichts zu tun. */
+       Fehlt bubble_fn_ask_mira_refresh_chat, wird NICHT nachgefasst -- stillschweigend etwas
+       Falsches zu tun ist schlechter als nichts zu tun. Der Hinweis steht in der Diagnose
+       (amHakenFehlt), nicht mehr in der Konsole. */
     var fn = window.bubble_fn_ask_mira_refresh_chat;
     if (typeof fn !== 'function'){
-      if (!_nfGemeckert && window.console){
+      if (!_nfGemeckert){
         _nfGemeckert = true;
-        console.warn('[AskMira] Nachfassen aus: bubble_fn_ask_mira_refresh_chat fehlt. ' +
-          'Dieser Workflow soll NUR die Nachrichten des Chats neu laden -- ohne ' +
-          'askMiraSetChatLoading, ohne Titelwechsel, ohne Scrollen. select_chat ist dafuer ' +
-          'nicht geeignet: es oeffnet den Chat und bringt den sichtbaren Ladezustand mit.');
+        amHakenFehlt('bubble_fn_ask_mira_refresh_chat', 'Nachfassen aus. Der Workflow soll NUR die ' +
+          'Nachrichten des Chats neu laden -- ohne askMiraSetChatLoading, ohne Titelwechsel, ohne ' +
+          'Scrollen; select_chat ist dafuer nicht geeignet.');
       }
       nfAus();
       return false;
@@ -5914,11 +5924,11 @@
   function listeNachholen(grund){
     var fn = window.bubble_fn_ask_mira_refresh_chats;
     if (typeof fn !== 'function'){
-      if (!_listeGemeckert && window.console){
+      if (!_listeGemeckert){
         _listeGemeckert = true;
-        console.warn('[AskMira] Chatliste wird beim Zurueckkommen NICHT aufgefrischt: ' +
-          'bubble_fn_ask_mira_refresh_chats fehlt. Dieser Workflow soll nur die Liste neu ' +
-          'setzen (derselbe Schritt wie im Page Load, der askMiraSetPreviousChats fuellt).');
+        amHakenFehlt('bubble_fn_ask_mira_refresh_chats', 'Chatliste wird beim Zurueckkommen nicht ' +
+          'aufgefrischt. Der Workflow soll nur die Liste neu setzen (derselbe Schritt wie im Page ' +
+          'Load, der askMiraSetPreviousChats fuellt).');
       }
       return false;
     }
@@ -6395,12 +6405,11 @@
   function rtOffenenChatHolen(grund){
     var fn = window.bubble_fn_ask_mira_refresh_chat;
     if (typeof fn !== 'function'){
-      if (!_nfGemeckert && window.console){
+      if (!_nfGemeckert){
         _nfGemeckert = true;
-        console.warn('[AskMira] Realtime kam an, aber bubble_fn_ask_mira_refresh_chat fehlt -- ' +
-          'die Antwort kann nicht nachgeladen werden. Dieser Workflow soll NUR die Nachrichten ' +
-          'des Chats neu laden. select_chat ist dafuer nicht geeignet: es oeffnet den Chat und ' +
-          'bringt den sichtbaren Ladezustand mit.');
+        amHakenFehlt('bubble_fn_ask_mira_refresh_chat', 'Realtime kam an, die Antwort kann nicht ' +
+          'nachgeladen werden. Der Workflow soll NUR die Nachrichten des Chats neu laden; ' +
+          'select_chat ist dafuer nicht geeignet.');
       }
       return false;
     }
@@ -6647,13 +6656,12 @@
     if (jetzt - _rtNeuZuletzt < RT_NEU_ABSTAND_MS) return false;
     var fn = window.bubble_fn_ask_mira_realtime_resubscribe;
     if (typeof fn !== 'function'){
-      if (!_rtNeuGemeckert && window.console){
+      if (!_rtNeuGemeckert){
         _rtNeuGemeckert = true;
-        console.warn('[AskMira] Das Realtime-Abo muesste erneuert werden (' + grund + '), aber ' +
-          'bubble_fn_ask_mira_realtime_resubscribe fehlt. Lege ein JavaScript-to-Bubble-Element ' +
-          'mit genau diesem Namen an (Trigger event angehakt) und haenge daran DIESELBEN Schritte, ' +
-          'mit denen der View-First-/Mira-Pageload-Workflow das Abo auf mira_user_<id> stellt. ' +
-          'Bis dahin laeuft nach dem Aufwachen alles ueber das Nachfassen.');
+        amHakenFehlt('bubble_fn_ask_mira_realtime_resubscribe', 'Realtime-Abo muesste erneuert ' +
+          'werden (' + grund + '). Daran gehoeren DIESELBEN Schritte, mit denen der View-First-/' +
+          'Mira-Pageload-Workflow das Abo auf mira_user_<id> stellt. Bis dahin laeuft nach dem ' +
+          'Aufwachen alles ueber das Nachfassen.');
       }
       return false;
     }
