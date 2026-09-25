@@ -1,0 +1,334 @@
+/* upstreem invite-page.css — die Einladungsseite als GANZE Seite (Praefix `uiv`).
+
+   ── Was hier aus core kommt, und was nicht ──────────────────────────────
+   Aus core, unveraendert:
+     .up-btn-pri.is-lg / .up-btn-sec.is-lg   Haupt- und Nebenknopf (die grosse Stufe, 25.09.)
+     .up-formerr / .up-formerr-in            der gewohnte Fehlerkasten
+     .up-iconbtn                             die Knoepfe oben rechts
+     .up-tsk-bar / .up-tsk-logo              das Skelett (wie das Tarifskelett im Onboarding)
+     .up-entchip.is-static                   die Rolle (wie in team-orga)
+     .up-bgart-flimmer                       der Grund, samt Maske fuer die freie Mitte
+     --vc-* / --up-*                         alle Farben, Dauern, Kurven
+   Hier steht nur, was es genau einmal gibt: die Anordnung der Seite, die Kachel des Teams, der
+   Haken im Knopf und die Choreografie zwischen den drei Flaechen.
+
+   Die Masse der Seite sind die der Anmeldung und des Onboardings, WORTGLEICH: Wurzelpolster und
+   Kopfzeile aus .uob-root/.uob-top, die Ueberschrift aus .uau-h1, der Einzug aus uau-rise. Wer
+   von hier ins Onboarding weitergeht, soll keinen Pixel springen sehen. */
+
+.uiv-root {
+  /* Der Einzug hat seine EIGENE Dauer, wortgleich zu --uau-in und --uob-in: dort wartet niemand
+     auf eine Reaktion, dort sieht jemand der Seite beim Ankommen zu. */
+  --uiv-in: 420ms;
+  /* Das waagerechte Polster als Variable, wie im Onboarding: die Kopfzeile rechnet damit und
+     haelt IMMER 32px zum Bildschirmrand, auch wenn das Polster schrumpft. */
+  --uiv-px: clamp(16px, 3vw, 32px);
+  /* min-height und nicht height wie im Onboarding: dort ist die Mitte ein eigener Scrollbereich,
+     hier ist der Inhalt kurz. Wird er doch laenger als der Schirm (Telefon quer, lange
+     Fehlermeldung), waechst die Seite mit, statt die Mitte oben unerreichbar abzuschneiden. */
+  min-height: 100vh;
+  min-height: 100dvh;
+  /* Spalte, Schrift (Geist), Textfarbe und box-sizing kommen von .up-root. KEIN font-family:
+     inherit wie in auth-page/onboarding -- bei gleicher Spezifitaet gewinnt dort die spaeter
+     geladene Datei, und die Seite erbt dann die Schrift der Bubble-Seite statt Geist. */
+  /* --up-surface und nicht --vc-bg, aus demselben Grund wie im Onboarding: das ist der Grund der
+     Seite, --vc-bg der einer Karte. Im Dunkeln liegen die beiden 20 Stufen auseinander. */
+  background: var(--up-surface);
+  padding: clamp(16px, 2.4vh, 24px) var(--uiv-px) clamp(16px, 2.4vh, 28px);
+  /* Eigener Stapelkontext, damit der Grund mit z-index -1 HINTER dem Inhalt und VOR der fremden
+     Seite bleibt -- an fremder Stapelung wird nichts angefasst (11.08.). */
+  isolation: isolate;
+}
+.uiv-root *::before, .uiv-root *::after { box-sizing: border-box; }
+/* hidden muss gewinnen, auch gegen Bauteile aus core, die ein display setzen (.up-iconbtn,
+   .up-btn-sec). Zwei Klassen Spezifitaet reichen: jedes davon hat eine. */
+.uiv-root [hidden] { display: none; }
+
+/* ---------- Grund ----------
+   Wortgleich zu .uob-bg. Er liegt immer im Dokument und traegt nur seine Deckkraft: ein Element,
+   das mit seiner Klasse verschwindet, verschwindet sofort, ein Uebergang braucht etwas, das
+   bleibt. is-bg setzt das JS nach dem ersten Zeichnen. */
+.uiv-bg {
+  position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  opacity: 0; transition: opacity var(--uiv-in) var(--up-ease);
+}
+.uiv-root.is-bg .uiv-bg { opacity: 1; }
+/* Auf dem Telefon nicht, wie im Onboarding: das Raster kostet dort Akku und zeigt nichts, was
+   der Inhalt nicht schon sagt. */
+.uiv-root.is-narrow .uiv-bg { display: none; }
+
+/* ---------- Kopfzeile ----------
+   Wortgleich zu .uob-top: Logo links, die Ausgaenge rechts, und oben IMMER 32px zum Rand. */
+.uiv-top {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding-inline: max(0px, calc(32px - var(--uiv-px)));
+  /* Haelt die Zeile auch dann auf Knopfhoehe, wenn niemand angemeldet ist und rechts nur der
+     Themenknopf steht -- sonst rutschte die Mitte um die fehlenden Pixel. */
+  min-height: 32px;
+}
+.uiv-logo { height: 18px; width: auto; flex: 0 0 auto; display: block; }
+.uiv-topr { display: flex; align-items: center; gap: 4px; }
+/* Der Abstand vor dem Themenknopf wie im Onboarding (.uob-themebtn): er ist kein Ausgang und
+   steht deshalb einen Hauch abseits. */
+.uiv-topr .uiv-themebtn { margin-left: 4px; }
+/* .up-iconbtn bringt keinen Fokusring mit; ohne ihn zeigte der Browser seinen eigenen Umriss.
+   Derselbe Ring wie an jedem Knopf dieser Seite. */
+.uiv-top .up-iconbtn:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+
+/* ---------- Mitte ---------- */
+.uiv-mid {
+  flex: 1 1 auto; min-height: 0;
+  display: flex; align-items: center; justify-content: center;
+  padding-block: clamp(24px, 6vh, 64px);
+}
+/* Die Buehne: ALLE Flaechen im selben Rasterfeld. Sie ist so hoch wie die hoechste von ihnen,
+   also springt nichts, wenn eine aus- und die naechste einblendet.
+   Die BUEHNE ist breit, jede Flaeche setzt ihre eigene Breite und zentriert sich selbst. Vorher
+   war die Buehne 400px und der breitere Willkommenssatz lief rechts ueber: ein Rasterelement,
+   das groesser ist als sein Feld, richtet Chrome am Anfang aus statt mittig (gemessen 28px
+   neben der Achse). */
+.uiv-stage { display: grid; width: 100%; max-width: 640px; }
+.uiv-pane {
+  grid-area: 1 / 1; min-width: 0; align-self: center; justify-self: center;
+  /* 400px: breit genug fuer einen langen Teamnamen in zwei Zeilen, schmal genug, dass der Knopf
+     nicht zur Leiste wird. */
+  width: 100%; max-width: 400px;
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  /* In Ruhe: unsichtbar und nicht bedienbar, aber IM Fluss -- sonst sprang die Spalte.
+     visibility wechselt beim Ausblenden am ENDE (Versatz = Dauer), beim Einblenden sofort. */
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity var(--up-t-2) var(--up-ease), transform var(--up-t-3) var(--up-ease),
+              filter var(--up-t-3) var(--up-ease), visibility 0ms linear var(--up-t-3);
+}
+.uiv-pane.is-an {
+  opacity: 1; visibility: visible; pointer-events: auto; transform: none; filter: none;
+  transition: opacity var(--up-t-2) var(--up-ease), transform var(--up-t-3) var(--up-ease),
+              filter var(--up-t-3) var(--up-ease), visibility 0ms linear 0ms;
+}
+/* Beim Annehmen tritt die Einladung ZURUECK: ein Stueck nach oben, einen Hauch kleiner, unscharf.
+   Sie verschwindet nicht einfach -- sie macht Platz. */
+.uiv-invite:not(.is-an) { transform: translateY(-8px) scale(.985); filter: blur(4px); }
+/* Willkommen kommt von unten und wird dabei scharf, mit 120ms Versatz auf das Ausfahren -- so
+   stehen nie beide Texte gleichzeitig halb im Bild. Die Kurve ist die fuer Auftritte. */
+.uiv-welcome:not(.is-an) { transform: translateY(12px); filter: blur(6px); }
+.uiv-stage .uiv-welcome.is-an {
+  transition: opacity var(--uiv-in) var(--up-ease-auf) 120ms, transform var(--uiv-in) var(--up-ease-auf) 120ms,
+              filter var(--uiv-in) var(--up-ease-auf) 120ms, visibility 0ms linear 0ms;
+}
+
+/* ---------- Skelett ----------
+   Balken aus core, Masse der echten Einladung: Oberzeile, Kachel, Name, Knopf -- mit denselben
+   Abstaenden wie unten, damit beim Eintreffen der Daten nichts an eine andere Stelle faehrt.
+   Zwei Klassen, damit die Masse gegen .up-tsk-bar gewinnen, ohne auf die Ladereihenfolge zu
+   bauen. */
+.up-tsk-bar.uiv-sk-eyebrow { display: block; width: 180px; height: 12px; border-radius: 6px; margin-block: 4px; }
+.up-tsk-logo.uiv-sk-logo   { display: block; width: 64px; height: 64px; border-radius: 16px; margin-top: 20px; }
+.up-tsk-bar.uiv-sk-name    { display: block; width: 220px; max-width: 80%; height: 32px; border-radius: 8px; margin-top: 24px; }
+.up-tsk-bar.uiv-sk-cta     { display: block; width: 100%; height: 40px; border-radius: 12px; margin-top: 38px; }
+/* Die Kontozeile nur, wenn es sie gleich auch geben wird -- sonst waechst die Spalte beim
+   Eintreffen um ihre Hoehe, und die ganze Mitte rueckt ein Stueck nach oben. */
+.up-tsk-bar.uiv-sk-who     { display: none; width: 200px; max-width: 70%; height: 10px; border-radius: 5px; margin-top: 21px; }
+.uiv-root.has-who .up-tsk-bar.uiv-sk-who { display: block; }
+/* Das Skelett blendet beim Aufbau ein, statt aufzuspringen. */
+@keyframes uiv-fade { from { opacity: 0; } }
+.uiv-stage .uiv-skel.is-an { animation: uiv-fade var(--uiv-in) var(--up-ease) backwards; }
+
+/* ---------- Einladung ---------- */
+.uiv-eyebrow {
+  margin: 0; font-size: 14px; line-height: 1.45; font-weight: 500; color: var(--vc-muted);
+  text-wrap: balance;
+}
+.uiv-brand { margin-top: 20px; display: flex; flex-direction: column; align-items: center; gap: 18px; max-width: 100%; }
+
+/* Die Kachel: dieselbe wie .uob-ident-logo im Onboarding, auf Heldengroesse. Hell in BEIDEN
+   Themen -- im Dunkeln liegt --vt-logo-bg darunter, damit ein dunkles Favicon ueberhaupt einen
+   Grund hat --, mit Rahmen nur im Hellen. Die Groesse: 64 aussen, 1 Rahmen, 3 Luft, 56 Bild; der
+   Bildradius ist konzentrisch gerechnet (16 - 1 - 3 = 12). */
+.uiv-brand-logo {
+  position: relative; flex: 0 0 auto;
+  width: 64px; height: 64px; border-radius: 16px;
+  background: var(--vc-bg); border: 1px solid var(--vc-border);
+  box-shadow: var(--up-e-1);
+  display: grid; place-items: center; overflow: hidden;
+}
+.uiv-root[data-theme="dark"] .uiv-brand-logo { border-color: transparent; background: var(--vt-logo-bg); }
+.uiv-brand-logo > * { grid-area: 1 / 1; }
+.uiv-brand-logo img { width: 56px; height: 56px; border-radius: 12px; object-fit: contain; display: block; }
+/* Ein kleines Favicon steht in seiner eigenen Groesse und wird nicht hochgerechnet. */
+.uiv-brand-logo.is-klein img { width: 32px; height: 32px; border-radius: 6px; }
+/* Der Buchstabe liegt IMMER darunter; ein Bild, das ausfaellt, gibt ihn frei. Solange eines da
+   ist, bleibt er weg -- ein durchsichtiges Logo zeigte ihn sonst durch. */
+.uiv-brand-ltr { font-size: 28px; line-height: 1; font-weight: 600; color: var(--vc-third); }
+.uiv-brand-logo.has-img .uiv-brand-ltr { visibility: hidden; }
+/* Auf der hellen Kachel im Dunkeln braucht der Buchstabe die DUNKLE Schrift -- genau dafuer gibt
+   es --vc-text-invert (dunkel: #1f1f1b). --vc-third waere dort hellgrau auf hellgrau. */
+.uiv-root[data-theme="dark"] .uiv-brand-ltr,
+.uiv-root[data-theme="dark"] .uiv-brand-logo.is-zeichen { color: var(--vc-text-invert); }
+/* Ohne Team: das Team-Zeichen statt eines Buchstabens. */
+.uiv-brand-logo.is-zeichen { color: var(--vc-third); }
+.uiv-brand-logo.is-zeichen svg { width: 26px; height: 26px; display: block; }
+
+/* Der Name ist die Ueberschrift der Seite: Masse wortgleich zu .uau-h1. min(vw, vh), damit er
+   auf einem flachen Fenster nicht 44px hoch bleibt und den Rest hinausdrueckt. */
+.uiv-brand-name {
+  margin: 0; max-width: 100%;
+  font-size: clamp(26px, min(3.1vw, 4.6vh), 44px); line-height: 1.06;
+  font-weight: 600; letter-spacing: -.025em; color: var(--vc-text);
+  text-wrap: balance; overflow-wrap: anywhere;
+}
+/* Ohne Team steht hier ein Satz statt eines Namens -- einen Satz in 44px liest niemand gern. */
+.uiv-brand-name.is-klein { font-size: clamp(22px, min(2.2vw, 3.4vh), 28px); line-height: 1.2; }
+
+.uiv-ctx {
+  margin: 14px 0 0; max-width: 100%;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px;
+  font-size: 14px; line-height: 1.45; color: var(--vc-muted);
+}
+.uiv-ctx b { font-weight: 600; color: var(--vc-text); overflow-wrap: anywhere; }
+/* Die Rolle: der Chip aus team-orga -- ohne Logo faellt das linke Polster fuer eines weg (dort
+   dieselbe Regel). Den grossen Anfangsbuchstaben setzt das JS, damit der Katalog greift. */
+.uiv-ctx .up-entchip.uiv-role { padding: 0 10px; }
+.uiv-rolelbl { font-size: 12px; font-weight: 500; color: var(--vc-text); }
+
+/* Fehlerkasten und Knoepfe als EIN Block: der Kasten steht ueber dem Knopf, sein eigener Abstand
+   (18px, aus core) entsteht erst mit ihm. 14 + 18 = 32 -- genau der Abstand, den der Knopf auf
+   der Anmeldeseite zu allem darueber hat. */
+.uiv-act { width: 100%; margin-top: 14px; }
+.uiv-actions { margin-top: 18px; display: flex; flex-direction: column; gap: 10px; }
+.uiv-cta, .uiv-cta2 { width: 100%; }
+
+/* ---------- Der Hauptknopf: Kreisel und Haken ----------
+   Der Kreisel tritt NEBEN die Beschriftung, er ersetzt sie nicht -- ein Knopf ohne Text wirkt
+   kaputt statt beschaeftigt. Wortgleich zu .uau-spin. */
+.uiv-cta { position: relative; overflow: hidden; }
+.uiv-cta-t {
+  display: block;
+  transition: opacity var(--up-t-1) var(--up-ease), transform var(--up-t-2) var(--up-ease);
+}
+.uiv-cta-spin {
+  width: 15px; height: 15px; flex: 0 0 auto;
+  border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%;
+  animation: uiv-spin 620ms linear infinite;
+  display: none;
+}
+.uiv-cta.is-busy .uiv-cta-spin { display: block; }
+@keyframes uiv-spin { to { transform: rotate(360deg); } }
+/* Der Haken zeichnet sich: die Beschriftung geht nach oben weg, und der Strich laeuft in 420ms
+   von links unten nach rechts oben. stroke-dasharray 24 ist etwas laenger als der Pfad (19.8),
+   so ist er bei vollem Versatz sicher ganz verborgen. */
+.uiv-cta-check {
+  position: absolute; left: 50%; top: 50%; width: 20px; height: 20px; margin: -10px 0 0 -10px;
+  overflow: visible; pointer-events: none;
+}
+.uiv-cta-check path {
+  fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 24; stroke-dashoffset: 24;
+}
+.uiv-cta.is-done .uiv-cta-t { opacity: 0; transform: translateY(-10px); }
+.uiv-cta.is-done .uiv-cta-check path {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset var(--uiv-in) var(--up-ease-auf) 120ms;
+}
+/* Beschaeftigt oder fertig: kein Hover-Dimmen und kein Zeiger. Die Spezifitaet liegt ueber der
+   Hover-Regel des Core-Knopfes (.up-btn-pri:not(:disabled):hover), nicht die Reihenfolge. */
+.uiv-root .uiv-cta:is(.is-busy, .is-done):hover { opacity: 1; }
+.uiv-cta:is(.is-busy, .is-done), .uiv-cta2[aria-disabled="true"] { cursor: default; }
+
+/* ---------- Konto ----------
+   Die leise Zeile unter dem Knopf. Farbe und Knopfform wie die Fusszeile der Anmeldeseite. */
+.uiv-who {
+  margin: 16px 0 0; max-width: 100%;
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 0 5px;
+  font-size: 13px; line-height: 1.45; color: var(--vc-third);
+}
+.uiv-who b { font-weight: 500; color: var(--vc-muted); overflow-wrap: anywhere; }
+.uiv-notyou {
+  font: inherit; font-weight: 600; color: var(--vc-text);
+  background: none; border: 0; padding: 0; cursor: pointer; border-radius: 4px;
+  transition: opacity var(--up-t-2) var(--up-ease);
+}
+.uiv-notyou:hover { opacity: .7; }
+.uiv-notyou:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+
+/* ---------- Willkommen ----------
+   "Welcome to" und der Schriftzug in EINER Zeile, der Schriftzug wie ein Wort gesetzt. Die
+   Groesse eine Stufe unter dem Teamnamen -- der Satz ist ein Uebergang, kein zweiter Titel.
+   Breiter als die Einladung darf er sein: wenn er steht, ist sie weg, und neben ihm steht nichts.
+   Mit 400px brach "Willkommen bei" + Schriftzug auf Deutsch in zwei Zeilen (gemessen 450px Bedarf
+   bei 34px). So breit wie sein Satz, hoechstens so breit wie die Buehne. */
+.uiv-stage .uiv-welcome { width: max-content; max-width: 100%; }
+.uiv-welcome-h {
+  margin: 0; max-width: 100%;
+  font-size: clamp(24px, min(2.6vw, 3.9vh), 34px); line-height: 1.25;
+  font-weight: 600; letter-spacing: -.025em; color: var(--vc-text);
+  text-wrap: balance;
+}
+/* Hoehe und Lage des Schriftzugs sind am upstreem-Lockup gemessen (viewBox 715 x 108, Grundlinie
+   der Schrift bei 81, also 75 Prozent): .9em hoch, damit seine x-Hoehe der des Satzes entspricht
+   (gemessen 18.1 zu 18.2px bei 34px), und um ein Viertel seiner Hoehe unter die Grundlinie
+   gesenkt, damit beide Grundlinien zusammenfallen (gemessen 0.1px Abstand). */
+.uiv-welcome-logo { display: inline-block; height: .9em; width: auto; vertical-align: -.225em; }
+/* Ohne Schriftzug steht das Wort -- in der Schrift des Satzes, auf seiner Grundlinie. */
+.uiv-welcome-logo.is-wort { height: auto; vertical-align: baseline; }
+/* Der Kreisel wie in Mira (.am-act-spinner): der Lauf in der Primaerschrift, die Bahn ein
+   Viertel davon. Er kommt NACH dem Satz, sonst stehen zwei Bewegungen gleichzeitig im Bild. */
+.uiv-welcome-spin {
+  margin-top: 28px; width: 20px; height: 20px; flex: 0 0 auto; border-radius: 999px;
+  color: var(--vc-text);
+  border: 2px solid color-mix(in srgb, currentColor 28%, transparent);
+  border-top-color: currentColor;
+  animation: uiv-spin 720ms linear infinite;
+  opacity: 0; transition: opacity var(--up-t-3) var(--up-ease);
+}
+.uiv-welcome.is-an .uiv-welcome-spin { opacity: 1; transition-delay: 520ms; }
+
+/* ---------- Einzug beim ersten Erscheinen ----------
+   Wie uau-rise auf der Anmeldeseite, 18px Weg und 420ms, dazu eine Stufe fuer die Kachel: sie
+   waechst aus 94 Prozent heran, der Rest steigt nur. Vier Stufen im Abstand von 110ms --
+   feiner gestaffelt wirkt es nicht sorgfaeltiger, sondern langsam.
+   backwards ist der Punkt, an dem so etwas sonst kaputtgeht: ohne ihn stehen die Bloecke waehrend
+   ihres Versatzes sichtbar da und springen erst dann auf 0. Die Klasse faellt nach dem letzten
+   Durchlauf ab (EINZUG_MS im JS), damit spaetere Uebergaenge nicht gegen eine Animation laufen. */
+@keyframes uiv-rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes uiv-pop {
+  from { opacity: 0; transform: translateY(12px) scale(.94); }
+  to   { opacity: 1; transform: none; }
+}
+.uiv-root.is-entering .uiv-eyebrow,
+.uiv-root.is-entering .uiv-brand-name,
+.uiv-root.is-entering .uiv-ctx,
+.uiv-root.is-entering .uiv-act,
+.uiv-root.is-entering .uiv-who {
+  animation: uiv-rise var(--uiv-in) var(--up-ease-auf) backwards;
+}
+.uiv-root.is-entering .uiv-brand-logo { animation: uiv-pop var(--uiv-in) var(--up-ease-auf) backwards; }
+.uiv-root.is-entering .uiv-eyebrow    { animation-delay: 0ms; }
+.uiv-root.is-entering .uiv-brand-logo { animation-delay: 70ms; }
+.uiv-root.is-entering .uiv-brand-name { animation-delay: 110ms; }
+.uiv-root.is-entering .uiv-ctx,
+.uiv-root.is-entering .uiv-act        { animation-delay: 220ms; }
+.uiv-root.is-entering .uiv-who        { animation-delay: 330ms; }
+
+/* ---------- schmal ----------
+   Auf dem Telefon traegt die Mitte weniger Luft -- die Spalte ist dort ohnehin der ganze Schirm.
+   Die Kachel bleibt bei 64: sie ist das Erste, woran man das Team erkennt. */
+.uiv-root.is-vnarrow .uiv-mid { padding-block: 20px; }
+/* "Not you?" in eigener Zeile und ohne Trennpunkt: eine lange Firmenadresse bricht auf 375px
+   sonst so um, dass der Punkt am ANFANG einer Zeile steht (gemessen mit einer 51 Zeichen langen
+   Adresse) -- ein Trenner, der nichts trennt. */
+.uiv-root.is-vnarrow .uiv-dot { display: none; }
+.uiv-root.is-vnarrow .uiv-notyou { flex-basis: 100%; }
+
+/* Wer Bewegung abgestellt hat, bekommt die Zustaende trotzdem -- nur ohne Weg dorthin. Blenden
+   bleiben (sie bewegen nichts), Wege, Unschaerfe, Staffelung und Zeichnen fallen weg. */
+@media (prefers-reduced-motion: reduce) {
+  .uiv-root { --uiv-in: 1ms; }
+  .uiv-root.is-entering * { animation: none; }
+  .uiv-invite:not(.is-an), .uiv-welcome:not(.is-an) { transform: none; filter: none; }
+  .uiv-cta.is-done .uiv-cta-check path { transition: none; }
+  .uiv-cta-t { transition: none; }
+  .uiv-cta-spin, .uiv-welcome-spin { animation: none; }
+}

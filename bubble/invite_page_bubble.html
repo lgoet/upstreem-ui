@@ -1,0 +1,213 @@
+<!-- ==========================================================================================
+     upstreem — Invite Page: die Seite hinter dem Einladungslink (Praefix `uiv`)
+
+     Die GANZE Seite ist dieses eine HTML-Element, wie Auth Page und Onboarding: Kopfzeile mit
+     Logo, die Einladung in der Mitte, der Grund dahinter. Auf der Bubble-Seite gehoert nichts
+     darum herum. Element auf volle Breite und volle Hoehe, ohne eigenes Padding.
+
+     ── FRISCHE INSTALLATION ────────────────────────────────────────────────────────────────
+     Diese Datei ist eine VORLAGE. Aenderungen daran erreichen ein bereits eingebautes Element
+     NICHT -- dort muss dasselbe von Hand nachgezogen werden.
+
+     ── WAS DIE SEITE ZEIGT ─────────────────────────────────────────────────────────────────
+       (laden)   Skelett, bis setInvitePage kommt. Nach 15s ohne Antwort: Fehlerkasten
+                 "We could not load your invitation. Please reload the page."
+       gueltig   "You've been invited to join" / Logo + Name des Teams / "Invited by ..."
+                   angemeldet       -> Knopf "Accept invite", darunter "Signed in as ... · Not you?"
+                   nicht angemeldet -> Knopf "Sign up"
+       Fehler    die Meldung des RPC im gewohnten Fehlerkasten, dazu der Weg hinaus:
+                   angemeldet       -> "Back to dashboard" und "Log out"
+                   nicht angemeldet -> "Back to sign in"
+       Annehmen  Haken zeichnet sich im Knopf, dann "Welcome to [upstreem-Logo]" mit Kreisel.
+                 Ab da navigiert DEIN Workflow weiter.
+
+     Kopfzeile: upstreem-Logo links. Rechts fuer Angemeldete "Dashboard" und "Log out" (wie im
+     Onboarding), dazu immer der Themenknopf.
+
+     ── ATTRIBUTE ───────────────────────────────────────────────────────────────────────────
+       data-instance    eindeutig pro Platzierung, z.B. "invite". Alle Setter sprechen darueber.
+       data-cdn-pin     Commit-Hash. NIEMALS leer lassen: leer zieht "@main", und das liefern
+                        jsDelivr und der Browser aus einem bis zu tagealten Cache.
+       data-logo        URL des upstreem-Schriftzugs (dieselbe wie auf der Auth Page).
+       data-logo-dark   Optional: der Schriftzug fuer den Dark Mode.
+       data-isdark      "yes"/"no". Wird beobachtet, ein Umschalten braucht keinen Neuaufbau.
+       data-logged-in   "yes"/"no": ist gerade jemand angemeldet? Als TEXT einsetzen, z.B.
+                        <Current User is logged in:formatted as text> bzw. der entsprechende
+                        Zustand deines Anmelde-Plugins. Wird beobachtet: schreibt Bubble ihn
+                        spaeter um, zieht die Seite nach.
+       data-user-email  Optional: die Adresse des angemeldeten Kontos -> "Signed in as ...".
+                        Ohne sie faellt die Zeile weg; nicht angemeldet ist sie egal.
+       data-accept-fn / data-signup-fn / data-logout-fn / data-dashboard-fn / data-back-fn
+                        die Namen der fuenf JavaScript-to-Bubble-Elemente (siehe unten).
+
+     ── EVENTS (JavaScript to Bubble, Trigger event AN, Wert wird nicht gebraucht) ──────────
+       uivAccept     "Accept invite". Nur angemeldet, nur bei gueltiger Einladung.
+                     Die Seite zeigt SOFORT den Haken und danach den Willkommensbildschirm --
+                     sie wartet nicht auf deinen Workflow. Der nimmt die Einladung an und
+                     navigiert. Scheitert er: setInvitePageError (Pflicht, siehe unten).
+       uivSignup     "Sign up". Nicht angemeldet, gueltige Einladung. -> Auth Page MIT Token:
+                     /signup?token=<token>&email=<adresse> (siehe signup_invite_setup.md 4c).
+       uivDashboard  "Back to dashboard" im Fehlerfall und "Dashboard" in der Kopfzeile.
+       uivLogout     "Log out" in der Kopfzeile, "Not you?" und der zweite Knopf im Fehlerfall.
+       uivBack       "Back to sign in" im Fehlerfall, nicht angemeldet.
+
+       Fehlt ein Element, sagt die Seite es statt still nichts zu tun: "Accept invite" zeigt
+       "We could not accept your invitation. Please reload the page.", die anderen Knoepfe
+       "Something went wrong. Please reload the page." -- und die Konsole nennt den Namen.
+
+     ── SETTER ──────────────────────────────────────────────────────────────────────────────
+       setInvitePage(instanceId, <RPC-Antwort, roh>)
+         Die Antwort des Einladungs-RPC aus dem Pageload. Gelesen werden:
+           ok            true/false (auch yes/no). Fehlt es: gueltig, wenn KEINE Meldung und
+                         ein Teamname da ist.
+           message       die Fehlermeldung, erscheint woertlich im Kasten.
+                         (auch: error, error_message, reason)
+           brand_name    Name des Teams/der Brand   (auch: team_name, name, brand.name)
+           brand_logo    Logo-URL                   (auch: brand_logo_url, logo_url, team_logo, logo)
+           inviter_name  wer eingeladen hat         (auch: invited_by_name, invited_by) -- optional
+           role          als was                    (auch: invited_role) -- optional
+         Gueltig:  {"ok": true, "brand_name": "Acme", "brand_logo": "https://...",
+                    "inviter_name": "Anna Schmidt", "role": "member"}
+         Fehler:   {"ok": false, "message": "This invitation has expired. Please ask your team
+                    for a new one.", "brand_name": "Acme", "brand_logo": "https://..."}
+         Schickt der RPC im Fehlerfall das Team mit, steht "Your invitation to join Acme" ueber
+         der Meldung. Ohne Team: "This invitation can't be used".
+         Unlesbare Antwort: Fehlerkasten "We could not read your invitation. Please reload the
+         page." -- nie ein endloses Skelett.
+         Waehrend Haken oder Willkommen laufen, aendert ein zweiter Aufruf nichts mehr (Bubble
+         schickt den Pageload manchmal doppelt).
+
+       setInvitePageError(instanceId, text)
+         Zurueck zur Einladung, mit der Meldung im Kasten und dem Weg hinaus. PFLICHT im
+         Fehlerzweig des Accept-Workflows: ohne ihn steht der Willkommensbildschirm 25 Sekunden
+         und meldet dann "This is taking longer than expected. Please reload the page."
+
+       resetInvitePage(instanceId)
+         Zurueck ins Skelett. Nur noetig, wenn die Seite ohne Neuladen neu befuellt wird.
+
+     ── DIE NOTBREMSEN ──────────────────────────────────────────────────────────────────────
+       15s ohne setInvitePage     -> "We could not load your invitation. Please reload the page."
+       15s nach Sign up/Dashboard/Back ohne Seitenwechsel -> Knopf frei, "This is taking longer ..."
+       25s Willkommen ohne Seitenwechsel -> zurueck zur Einladung, "This is taking longer ..."
+     Das sind Netze, nicht der Normalweg. Steht einer dieser Saetze im Alltag da, fehlt in
+     einem Workflow der Rueckweg.
+
+     ── DER RUN-JS-SCHRITT IM PAGELOAD (Hausform, CLAUDE.md 2a) ─────────────────────────────
+     EIN Backtick um den ROHEN Text, beide Ersetzungen, window.<name>, eigenes try. Kein
+     JSON.parse, kein :formatted as JSON-safe, kein handgebautes Objekt mit JSON.stringify.
+     Die kleine Warteschleife ist Absicht: diese Seite laedt KEINEN Seitenkopf-Vorlader, und der
+     Pageload-Workflow kann schneller sein als invite-page.js vom CDN. Sobald die Datei da ist,
+     nimmt ihre Warteschlange den Aufruf an.
+
+       (function () {
+         var ROH = `<Antwort des Einladungs-RPC, roh>`
+           .replace(/:\s*([,}\]])/g, ": null$1")
+           .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+         var n = 0;
+         (function go () {
+           if (typeof window.setInvitePage === "function") {
+             try { window.setInvitePage("invite", ROH); } catch (e) {}
+             return;
+           }
+           if (n++ < 60) setTimeout(go, 100);
+         })();
+       })();
+
+     Liefert dein RPC keinen Rohtext, sondern einzelne Felder, setzt Bubble den Text im Backtick
+     selbst zusammen -- leere Werte und nacktes yes/no reparieren die zwei Ersetzungen:
+
+         var ROH = `{"ok": <RPC's ok>, "message": "<RPC's message>",
+                     "brand_name": "<RPC's brand_name>", "brand_logo": "<RPC's brand_logo>",
+                     "inviter_name": "<RPC's inviter_name>", "role": "<RPC's role>"}`
+
+     Im Backtick gefaehrlich ist nur ein Backtick, ein ${ oder ein Backslash in einem WERT.
+     Teamnamen und Meldungen tragen das nicht; kommt je ein Modelltext hinein, muss der RPC den
+     Backtick entfernen (replace(feld, chr(96), '')).
+
+     ── DER FEHLERZWEIG IM ACCEPT-WORKFLOW ──────────────────────────────────────────────────
+
+       (function () {
+         var TXT = `<Fehlermeldung des Accept-RPC>`;
+         try { if (window.setInvitePageError) window.setInvitePageError("invite", TXT); } catch (e) {}
+       })();
+
+     ── STATISCH ZUM TESTEN (in die Konsole der Seite) ──────────────────────────────────────
+     BEISPIELDATEN, nicht deine: sie zeigen nur die drei Zustaende. Mit der echten Antwort
+     deines RPC ersetzen, sobald du sie hast.
+
+       setInvitePage("invite", '{"ok": true, "brand_name": "Acme", "inviter_name": "Anna Schmidt", "role": "admin"}')
+       setInvitePage("invite", '{"ok": false, "message": "This invitation has expired. Please ask your team for a new one.", "brand_name": "Acme"}')
+       setInvitePage("invite", '{"ok": false, "message": "This invitation has been revoked."}')
+       setInvitePageError("invite", "We could not accept your invitation. Please try again.")
+       resetInvitePage("invite")
+========================================================================================== -->
+
+<div class="up-root uiv-root"
+     data-instance="INSTANCE_ID"
+     data-cdn-pin="CDN_PIN"
+     data-logo="LOGO_URL"
+     data-logo-dark="LOGO_DARK_URL"
+     data-isdark="IS_DARK"
+     data-logged-in="LOGGED_IN"
+     data-user-email="USER_EMAIL"
+     data-accept-fn="bubble_fn_uivAccept"
+     data-signup-fn="bubble_fn_uivSignup"
+     data-logout-fn="bubble_fn_uivLogout"
+     data-dashboard-fn="bubble_fn_uivDashboard"
+     data-back-fn="bubble_fn_uivBack"></div>
+
+<script>
+(function(){
+  /* Loader nach STYLEGUIDE 26: den Pin ueber getElementsByClassName lesen, NIEMALS ueber
+     document.currentScript — Bubble fuehrt Scripts nicht in DOM-Reihenfolge aus.
+     Wortgleich zum Loader der Auth Page. */
+  function echterPin(p){
+    /* trim: ein Leerzeichen aus der Bubble-Konstante ergaebe sonst .../upstreem-ui@ abc /core.js.
+       Gespaltener Platzhalter: wer "CDN_PIN" global ersetzt, soll diesen Waechter nicht treffen. */
+    p = String(p == null ? "" : p).trim();
+    return (p && p !== "CDN_" + "PIN") ? p : "";
+  }
+  function readPin(cls){
+    var i, p, els = document.getElementsByClassName(cls);
+    for (i = 0; i < els.length; i++){
+      p = echterPin(els[i].getAttribute("data-cdn-pin"));
+      if (p) return (window.__upPin = p);
+    }
+    /* Rueckfall: einen Pin nehmen, der auf DIESER Seite schon gilt -- Bubble fuehrt diesen
+       Loader manchmal aus, bevor die eigene Wurzel im Dokument steht. Geraten wird nichts. */
+    if (echterPin(window.__upPin)) return window.__upPin;
+    var alle = document.querySelectorAll ? document.querySelectorAll("[data-cdn-pin]") : [];
+    for (i = 0; i < alle.length; i++){
+      p = echterPin(alle[i].getAttribute("data-cdn-pin"));
+      if (p) return (window.__upPin = p);
+    }
+    var L0 = window.__upAssetsLoaded, k, m;
+    for (k in L0){
+      if (!Object.prototype.hasOwnProperty.call(L0, k)) continue;
+      m = String(L0[k] || "").match(/upstreem-ui@([^/]+)\//);
+      if (m && m[1] && m[1] !== "main") return (window.__upPin = m[1]);
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("uiv-root") + "/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  /* Entdoppelt nach DATEINAME: zwei Elemente mit verschiedenen Pins laden dieselbe Datei nicht
+     zweimal. Der erste Pin gewinnt, ein zweiter wird gemeldet. */
+  function once(url, make){
+    var name = url.slice(url.lastIndexOf("/") + 1);
+    if (L[name]){
+      if (L[name] !== url && window.console) console.warn("upstreem: " + name +
+        " ist schon von einem anderen Pin geladen. Geladen bleibt " + L[name] +
+        ", ignoriert wird " + url + ". Setzt alle Elemente auf denselben Pin.");
+      return;
+    }
+    L[name] = url; make(url);
+  }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+
+  /* core zuerst, async=false haelt die Reihenfolge ein. */
+  css("core.css");          js("core.js");
+  css("invite-page.css");   js("invite-page.js");
+})();
+</script>

@@ -1,0 +1,70 @@
+<!-- Pruefstand: der Run-JS-Schritt der Einladungsseite laeuft BEVOR invite-page.js da ist.
+     Genau so auf der echten Seite moeglich: sie hat keinen Seitenkopf-Vorlader, und der
+     Pageload-Workflow kann schneller sein als das CDN. Die Dateien kommen hier 700ms spaeter.
+     Erwartung: der Schritt wartet, liefert dann, und die Seite zeigt die Einladung.
+     ?form=roh     die Antwort des RPC als Rohtext
+     ?form=felder  Bubble setzt den Text aus Feldern zusammen, mit leeren Werten und nacktem yes
+     ?form=ohneschleife  Gegenprobe: ohne Warteschleife geht der Aufruf verloren -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="core.css?v=uivf1">
+<link rel="stylesheet" href="invite-page.css?v=uivf1">
+<style>html, body { margin: 0; }</style>
+<body>
+<div class="up-root uiv-root" data-instance="invite" data-cdn-pin=""
+     data-logo="_h_uiv_lockup.svg" data-logo-dark="_h_uiv_lockup_dark.svg"
+     data-logged-in="yes" data-user-email="lukas@upstreem.com"
+     data-accept-fn="bubble_fn_uivAccept" data-signup-fn="bubble_fn_uivSignup"
+     data-logout-fn="bubble_fn_uivLogout" data-dashboard-fn="bubble_fn_uivDashboard"
+     data-back-fn="bubble_fn_uivBack"></div>
+<script>
+  window.__vorDemLaden = typeof window.setInvitePage;
+  var form = new URLSearchParams(location.search).get("form") || "roh";
+  if (form === "ohneschleife"){
+    /* GEGENPROBE: die Hausform ohne Warteschleife. Hier muss der Aufruf verloren gehen und die
+       Seite im Skelett bleiben -- sonst beweist die Schleife oben nichts. */
+    (function () {
+      var ROH = `{"ok": true, "brand_name": "Acme Robotics"}`;
+      try { if (window.setInvitePage) window.setInvitePage("invite", ROH); } catch (e) {}
+    })();
+  } else if (form === "roh"){
+    /* ---- WORTGLEICH aus bubble/invite_page_bubble.html, nur der Bubble-Ausdruck ersetzt ---- */
+    (function () {
+      var ROH = `{"ok": true, "brand_name": "Acme Robotics", "brand_logo": "_h_uiv_marke128.svg", "inviter_name": "Anna Schmidt", "role": "member"}`
+        .replace(/:\s*([,}\]])/g, ": null$1")
+        .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+      var n = 0;
+      (function go () {
+        if (typeof window.setInvitePage === "function") {
+          try { window.setInvitePage("invite", ROH); } catch (e) {}
+          return;
+        }
+        if (n++ < 60) setTimeout(go, 100);
+      })();
+    })();
+  } else {
+    /* Die zweite Form aus der Vorlage: Bubble setzt den Text aus Feldern zusammen. So kommt er an,
+       wenn inviter_name und role leer sind und ok ein nacktes yes ist. */
+    (function () {
+      var ROH = `{"ok": yes, "message": "",
+                  "brand_name": "Acme Robotics", "brand_logo": "_h_uiv_marke128.svg",
+                  "inviter_name": , "role": }`
+        .replace(/:\s*([,}\]])/g, ": null$1")
+        .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+      var n = 0;
+      (function go () {
+        if (typeof window.setInvitePage === "function") {
+          try { window.setInvitePage("invite", ROH); } catch (e) {}
+          return;
+        }
+        if (n++ < 60) setTimeout(go, 100);
+      })();
+    })();
+  }
+  setTimeout(function(){
+    ["core.js?v=uivf1", "invite-page.js?v=uivf1"].forEach(function(f){
+      var s = document.createElement("script"); s.src = f; s.async = false; document.head.appendChild(s);
+    });
+  }, 700);
+</script>
+</body>

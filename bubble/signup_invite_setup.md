@@ -202,10 +202,15 @@ verlangt.)
 
 ### 4c. Der Einladungslink
 
-In der Einladungsmail auf **`/signup?token=<token>&email=<adresse>`** zeigen. Die Seite liest
-beides: Signup-Modus, Adresse fest, kein Google, kein Codefeld. Wer schon ein Konto hat, klickt
-unten „Sign in" — das Token faehrt mit, und der Login-Workflow nimmt die Einladung an (wie
-heute).
+Seit dem 25.09. zeigt die Einladungsmail auf die **Einladungsseite** (invite-page, Vorlage
+`bubble/invite_page_bubble.html`), z.B. **`/invite?token=<token>&email=<adresse>`**. Dort sieht
+man zuerst, zu welchem Team man eingeladen ist:
+
+- **angemeldet** → „Accept invite" nimmt die Einladung direkt an (Workflow auf `uivAccept`);
+- **nicht angemeldet** → „Sign up" (`uivSignup`) fuehrt weiter auf
+  **`/signup?token=<token>&email=<adresse>`**. Die Auth Page liest beides: Signup-Modus, Adresse
+  fest, kein Google, kein Codefeld. Wer schon ein Konto hat, klickt dort unten „Sign in" — das
+  Token faehrt mit, und der Login-Workflow nimmt die Einladung an.
 
 ---
 
@@ -236,7 +241,7 @@ bleibt die App zu statt offen.
 |---|---|---|
 | 1 | `/signup` ohne Token | Login-Formular, unten „No account yet? Ask your team for an invite." |
 | 2 | `/login` | Login mit Google, kein „Sign up"-Link |
-| 3 | Einladungslink | Signup, Adresse fest, **kein** Google-Knopf |
+| 3 | Einladungslink, nicht angemeldet → „Sign up" | Signup, Adresse fest, **kein** Google-Knopf |
 | 4 | Einladungslink → Konto anlegen | Konto da, Team-Mitglied, Einladung `accepted` |
 | 5 | Denselben Einladungslink noch einmal | Meldung „This invitation is not valid anymore" |
 | 6 | Einladungslink, Adresse im Feld von Hand geaendert | geht nicht (Feld ist fest) — und serverseitig abgewiesen |

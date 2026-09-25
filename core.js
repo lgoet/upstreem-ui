@@ -1146,6 +1146,34 @@
     "Something went wrong. Please try again.":
       "Da ist etwas schiefgegangen. Bitte versuche es noch einmal.",
 
+    /* ── Einladungsseite (invite-page.js, 25.09.) ──────────────────────────────────────────────
+       Die Oberzeile steht UEBER dem Teamnamen, deshalb endet der Satz offen: "Du wurdest
+       eingeladen zu" / "Acme". "as" und "Joining as" stehen vor dem Rollen-Chip. */
+    "You’ve been invited to join": "Du wurdest eingeladen zu",
+    "Your invitation to join": "Deine Einladung zu",
+    "This invitation can’t be used": "Diese Einladung lässt sich nicht verwenden",
+    "Your team": "Dein Team",
+    "as": "als",
+    "Joining as": "Beitritt als",
+    "Owner": "Besitzer",
+    "Accept invite": "Einladung annehmen",
+    "Back to dashboard": "Zurück zum Dashboard",
+    "Back to sign in": "Zurück zur Anmeldung",
+    "Signed in as": "Angemeldet als",
+    "Not you?": "Nicht du?",
+    "Welcome to": "Willkommen bei",
+    "Loading": "Wird geladen",
+    "We could not load your invitation. Please reload the page.":
+      "Deine Einladung konnte nicht geladen werden. Bitte lade die Seite neu.",
+    "We could not read your invitation. Please reload the page.":
+      "Deine Einladung konnte nicht gelesen werden. Bitte lade die Seite neu.",
+    "We could not accept your invitation. Please reload the page.":
+      "Deine Einladung konnte nicht angenommen werden. Bitte lade die Seite neu.",
+    "This is taking longer than expected. Please reload the page.":
+      "Das dauert länger als erwartet. Bitte lade die Seite neu.",
+    "Something went wrong. Please reload the page.":
+      "Da ist etwas schiefgegangen. Bitte lade die Seite neu.",
+
     /* ── Brand-Hervorhebung in den Charts ───────────────────────────────────────────────────── */
     "Your brand only": "Nur deine Brand",
     "No brand highlighting": "Keine Hervorhebung",

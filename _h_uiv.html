@@ -1,0 +1,93 @@
+<!-- Pruefstand der Einladungsseite (invite-page.js). Alles ueber die Adresse:
+       ?drin=yes|no         angemeldet?
+       &mail=a@b.de         data-user-email
+       &dunkel=yes|no       data-isdark
+       &fall=ok|okohne|fehler|fehlerohne|kaputt|muell|leer|keiner|spaet
+       &logo=128|40|16|kaputt|keins
+       &empfaenger=nein     die fuenf bubble_fn_* fehlen (Bubble-Element nicht angelegt)
+     Ergebnis in window.__log (gefeuerte Ereignisse) und window.__stand() (was zu sehen ist). -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="core.css?v=uiv1">
+<link rel="stylesheet" href="invite-page.css?v=uiv1">
+<style>html, body { margin: 0; }</style>
+<body>
+<script>
+  var Q = new URLSearchParams(location.search);
+  function q(n, f){ var v = Q.get(n); return v == null ? f : v; }
+  window.__log = [];
+  if (q("empfaenger", "ja") !== "nein"){
+    ["uivAccept", "uivSignup", "uivLogout", "uivDashboard", "uivBack"].forEach(function(n){
+      window["bubble_fn_" + n] = function(v){ window.__log.push([n, v]); };
+    });
+  }
+  var LOGOS = { "128": "_h_uiv_marke128.svg", "40": "_h_uiv_marke40.svg", "16": "_h_uiv_marke16.svg",
+                "kaputt": "_h_uiv_gibtsnicht.png", "keins": "" };
+  window.__logo = LOGOS[q("logo", "128")];
+  var dunkel = q("dunkel", "no");
+  document.write(
+    '<div class="up-root uiv-root" data-instance="invite" data-cdn-pin=""' +
+    ' data-logo="_h_uiv_lockup.svg" data-logo-dark="_h_uiv_lockup_dark.svg"' +
+    ' data-isdark="' + dunkel + '" data-logged-in="' + q("drin", "yes") + '"' +
+    ' data-user-email="' + q("mail", "lukas@upstreem.com") + '"' +
+    ' data-accept-fn="bubble_fn_uivAccept" data-signup-fn="bubble_fn_uivSignup"' +
+    ' data-logout-fn="bubble_fn_uivLogout" data-dashboard-fn="bubble_fn_uivDashboard"' +
+    ' data-back-fn="bubble_fn_uivBack"></div>');
+</script>
+<script src="core.js?v=uiv1"></script>
+<script src="invite-page.js?v=uiv1"></script>
+<script>
+  /* Die Faelle -- so, wie der Run-JS-Schritt sie schickt: roher Text, beide Ersetzungen. */
+  function roh(t){
+    return t.replace(/:\s*([,}\]])/g, ": null$1")
+            .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t2) { return ": " + (v === "yes") + t2; });
+  }
+  var L = window.__logo;
+  var FAELLE = {
+    ok:         '{"ok": yes, "brand_name": "Acme Robotics", "brand_logo": "' + L + '", "inviter_name": "Anna Schmidt", "role": "member"}',
+    okohne:     '{"ok": yes, "brand_name": "Acme Robotics", "brand_logo": "' + L + '", "inviter_name": , "role": }',
+    fehler:     '{"ok": no, "message": "This invitation has expired. Please ask your team for a new one.", "brand_name": "Acme Robotics", "brand_logo": "' + L + '"}',
+    fehlerohne: '{"ok": no, "message": "This invitation has been revoked."}',
+    kaputt:     '{"ok": yes, "brand_name": "Acme',
+    muell:      'Internal Server Error',
+    leer:       ''
+  };
+  var fall = q("fall", "ok");
+  if (FAELLE.hasOwnProperty(fall)){
+    (function(){ var R = roh(FAELLE[fall]); try { window.setInvitePage("invite", R); } catch(e){} })();
+  } else if (fall === "spaet"){
+    setTimeout(function(){ window.setInvitePage("invite", roh(FAELLE.ok)); }, 1500);
+  }
+  /* "keiner": es kommt nie eine Antwort -- die Notbremse muss greifen. */
+
+  window.__stand = function(){
+    var r = document.querySelector(".uiv-root");
+    function t(sel){ var e = r.querySelector(sel); return e ? e.textContent.trim() : null; }
+    function sicht(sel){
+      var e = r.querySelector(sel); if (!e) return "fehlt";
+      var cs = getComputedStyle(e);
+      if (e.closest("[hidden]") || cs.display === "none" || cs.visibility === "hidden") return "weg";
+      return "da";
+    }
+    var an = r.querySelector(".uiv-pane.is-an");
+    return {
+      phase: r.getAttribute("data-phase"),
+      flaeche: an ? an.getAttribute("data-pane") : null,
+      eyebrow: sicht(".uiv-eyebrow") === "da" ? t(".uiv-eyebrow") : "(weg)",
+      name: t(".uiv-brand-name"),
+      kachel: (r.querySelector(".uiv-brand-logo") || {}).className,
+      ctx: sicht(".uiv-ctx") === "da" ? t(".uiv-ctx") : "(weg)",
+      fehler: r.querySelector(".up-formerr").classList.contains("is-on") ? t(".up-formerr-in") : "(zu)",
+      knopf: t(".uiv-cta-t") + " [" + r.querySelector(".uiv-cta").getAttribute("data-was") + "]" +
+             (r.querySelector(".uiv-cta").classList.contains("is-busy") ? " busy" : "") +
+             (r.querySelector(".uiv-cta").classList.contains("is-done") ? " done" : ""),
+      zweiter: sicht(".uiv-cta2") === "da" ? t(".uiv-cta2") : "(weg)",
+      konto: sicht(".uiv-who") === "da" ? t(".uiv-who") : "(weg)",
+      kopf: [].map.call(r.querySelectorAll(".uiv-topr .up-iconbtn"), function(b){
+              return (b.getAttribute("data-act") || "thema") + ":" + (b.hidden ? "weg" : "da"); }).join(" "),
+      thema: r.getAttribute("data-theme") || "hell",
+      log: JSON.stringify(window.__log)
+    };
+  };
+</script>
+</body>

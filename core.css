@@ -1821,6 +1821,43 @@
     .up-topicmodal-save:focus-visible,
     .upt-topicapply:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 
+    /* ---------- Die GROSSE Stufe: .is-lg an .up-btn-pri und .up-btn-sec (25.09.) ----------
+       Die ganzseitigen Flaechen -- Anmeldung, Onboarding und jetzt die Einladungsseite -- tragen
+       einen groesseren Hauptknopf als die App: 40px hoch, Radius 12, 14px in 600. Bisher stand er
+       ZWEIMAL als Kopie (.uau-primary in auth-page.css, .uob-next in onboarding-page.css, dort
+       ausdruecklich "Geometrie 1:1 .uau-primary"). Die Einladungsseite waere die dritte gewesen --
+       also ist er jetzt hier, als Stufe des Core-Knopfes: Farbe, Zustaende, Hover und Fokus
+       bleiben die von .up-btn-pri/.up-btn-sec, nur die Geometrie waechst, und zwar ALLE Werte
+       zusammen (Hoehe, Polster, Radius, Abstand, Schrift, Zeichen).
+       Die zwei bestehenden Kopien bleiben vorerst, wie sie sind -- sie tragen exakt diese Werte. */
+    .up-btn-pri.is-lg, .up-btn-sec.is-lg {
+      height: 40px; padding: 0 20px; border-radius: 12px; gap: 9px;
+      font-size: 14px; font-weight: 600; letter-spacing: -.01em; }
+    .up-btn-pri.is-lg svg, .up-btn-sec.is-lg svg { width: 15px; height: 15px; }
+
+    /* ---------- Formularfehler: der Kasten ueber dem Knopf (25.09. nach core gezogen) ----------
+       Das "gewohnte Fehlerformat" der ganzseitigen Flaechen. Es stand ZWEIMAL wortgleich da
+       (.uau-formerr-in in auth-page.css, .uob-banner-in in onboarding-page.css); die
+       Einladungsseite waere die dritte Kopie gewesen.
+       Die Huelle faehrt ueber grid-template-rows 0fr -> 1fr auf -- ohne gemessene Pixelhoehe, also
+       auch bei zwei Zeilen Text richtig, und ohne dass der Rest darunter springt. .is-on zeigt ihn.
+       --vc-neg-border/-bg sind nirgends gesetzt, es gelten die Rueckfallwerte -- dieselben wie in
+       beiden Vorlaeufern, also sieht er genau so aus wie dort. */
+    .up-formerr {
+      display: grid; grid-template-rows: 0fr; opacity: 0; margin-top: 0;
+      transition: grid-template-rows var(--up-t-2) var(--up-ease), opacity var(--up-t-2) var(--up-ease),
+                  margin-top var(--up-t-2) var(--up-ease);
+    }
+    .up-formerr > * { overflow: hidden; min-height: 0; }
+    .up-formerr.is-on { grid-template-rows: 1fr; opacity: 1; margin-top: 18px; }
+    .up-formerr-in {
+      padding: 10px 12px; border-radius: 10px;
+      border: 1px solid var(--vc-neg-border, rgba(200, 60, 60, .28));
+      background: var(--vc-neg-bg, rgba(200, 60, 60, .08));
+      font-size: 13px; line-height: 1.45; color: var(--vc-text); text-align: left;
+    }
+    @media (prefers-reduced-motion: reduce){ .up-formerr { transition: none; } }
+
     /* ---------- Zeilenknopf: die kleine Fassung von .up-btn-sec, die beim Zeilen-Hover kommt ----
        Entstanden als .ubo-editbtn in brands-overview ("Edit" je Marke). Zweiter Verbraucher ist
        "Show Pages" / "Hide Pages" in der Domains-Tabelle, und damit gehoert es hierher: zwei
