@@ -172,6 +172,16 @@
 /* Widerrufen ist die Aktion, die etwas wegnimmt -- Warnfarbe erst beim Ueberfahren, wie im
    Zeilenmenue der Mitglieder. */
 .uto-invact .uto-danger:hover { color: var(--vt-down); border-color: var(--vt-down); }
+/* WAEHREND DES LADENS gesperrt (team-orga.js setzt disabled an jeden Knopf, bis alle drei
+   Tabellen zurueck sind). Das Aussehen ist das von .up-btn-sec:disabled aus core -- Deckkraft .45,
+   normaler Zeiger, kein Hover --, hier nur mit genug Gewicht gegen die eigenen Regeln oben:
+   .uto-invact .up-rowbtn setzt opacity: 1 mit derselben Spezifitaet wie core's :disabled, und die
+   Warnfarbe von Revoke haengt am Hover. */
+.uto-invact .up-rowbtn:disabled { opacity: .45; cursor: default; }
+.uto-invact .up-rowbtn:disabled:hover { color: var(--vc-muted); border-color: var(--vc-border); background: transparent; }
+.uto-act .up-iconbtn:disabled { opacity: .45; cursor: default; }
+.uto-root .uto-secbtn:disabled { opacity: .45; cursor: default; }
+.uto-logtoggle:disabled { cursor: default; }
 
 /* ---------- Protokoll: die technische Tabelle ---------- */
 /* Aufklappbar, und der Kopf ist der Schalter. Der Winkel dreht sich NICHT (mehrfach so

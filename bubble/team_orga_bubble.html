@@ -28,10 +28,9 @@
      renderTeamOrga({ instanceId, members, permissions, viewer_role, pending_invites })
      setTeamOrgaInvites(INSTANCE_ID, { count, invites })
      setTeamOrgaLog(INSTANCE_ID, [ ... ])
-     setTeamOrgaLoading(INSTANCE_ID, "yes")     Skelett an, waehrend die RPCs laufen -- mit der
-                                                Zeilenzahl und Hoehe von vorher
-     setTeamOrgaLoading(INSTANCE_ID, "yes", "invites,log")   nur diese Abschnitte laden
-                                                (members, invites, log); jeder endet mit SEINEM Schritt
+     setTeamOrgaLoading(INSTANCE_ID, "yes")     alle drei Tabellen im Skelett, mit der Zeilenzahl
+                                                und Hoehe von vorher; kein Knopf klickbar, bis
+                                                alle drei Schritte angekommen sind
      resetTeamOrga(INSTANCE_ID)                 zurueck aufs Skelett, bis neu geliefert wird
 
   WER WAS DARF -- das entscheidet der SERVER, nicht diese Komponente
@@ -227,16 +226,12 @@
 })();
 </script>
 
-  DER LADESCHRITT -- einmal am ANFANG des Workflows, vor dem ersten RPC. Die Abschnitte zeigen
-  ihr Skelett mit so vielen Zeilen wie vorher und in derselben Hoehe; jeder endet von selbst,
-  sobald SEIN Schritt ankommt. Kommt einer nie, zeigt er nach 25s wieder seinen letzten Stand.
-  Die Liste im dritten Wert nennt, welche Abschnitte der Workflow neu laedt -- ohne Liste alle
-  drei. Wer "alle" sagt, aber nur zwei Schritte folgen laesst, laesst den dritten bis zur
-  Warte-Uhr schimmern.
-
-     Seitenaufbau, Teamwechsel         kein dritter Wert (alle drei)
-     nach Invite, Resend, Revoke       "invites,log"
-     nach Remove, Rolle aendern        "members,log"
+  DER LADESCHRITT -- einmal am ANFANG des Workflows, vor dem ersten RPC. Er setzt IMMER alle
+  drei Tabellen ins Skelett, mit so vielen Zeilen wie vorher und in derselben Hoehe, und sperrt
+  jeden Knopf der Komponente. Jede Tabelle endet von selbst, sobald IHR Schritt ankommt; klickbar
+  wird es wieder, wenn alle drei da sind. Also nach dem Ladeschritt immer alle drei Schritte
+  laufen lassen -- eine Tabelle, deren Schritt nie kommt, zeigt nach 25s wieder ihren letzten
+  Stand.
 
 <script>
 (function () {
@@ -386,10 +381,8 @@
      bubble_fn_utoRemove   -> RPC "remove member" (user_id)         danach: Daten neu holen
      bubble_fn_utoRole     -> RPC "set role" (user_id, role)        danach: Daten neu holen
 
-  "Danach: Daten neu holen" heisst: der Ladeschritt mit der passenden Liste, dann die RPCs und
-  ihre Schritte erneut. Am einfachsten alle drei; mindestens den Abschnitt, den die Aktion
-  aendert (Einladen, Resend, Revoke: Einladungen -- Remove, Rolle: Mitglieder), und das
-  Protokoll, denn jede Aktion schreibt dort einen Eintrag.
+  "Danach: Daten neu holen" heisst: der Ladeschritt, dann alle drei RPCs und ihre Schritte
+  erneut. Jede Aktion schreibt ausserdem einen Eintrag ins Protokoll.
   Ohne das steht die Seite auf dem alten Stand und der Nutzer klickt ein zweites Mal.
   ============================================================================================
 -->

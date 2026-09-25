@@ -24,9 +24,9 @@
      renderTeamOrga({ instanceId, members, permissions, viewer_role, pending_invites })
      setTeamOrgaInvites(INSTANCE_ID, { count, invites })      die offenen Einladungen
      setTeamOrgaLog(INSTANCE_ID, [ ... ])                     das Protokoll
-     setTeamOrgaLoading(INSTANCE_ID, "yes")                   Skelett, waehrend die RPCs laufen --
-                                                              mit der Zeilenzahl und Hoehe von vorher
-     setTeamOrgaLoading(INSTANCE_ID, "yes", "invites,log")    nur diese Abschnitte (members, invites, log)
+     setTeamOrgaLoading(INSTANCE_ID, "yes")                   alle drei Tabellen im Skelett, mit der
+                                                              Zeilenzahl und Hoehe von vorher; kein
+                                                              Knopf klickbar, bis alles da ist
      resetTeamOrga(INSTANCE_ID)                               zurueck aufs Skelett, bis neu geliefert wird
 
    Die drei Nutzlasten kommen getrennt, weil sie im Backend aus drei Abfragen kommen -- und seit
@@ -708,6 +708,12 @@
         mindestHoehe(elMembers, "members");
         mindestHoehe(elInvites, "invites");
         mindestHoehe(elLog, "log");
+        /* Solange irgendein Abschnitt laedt, ist KEIN Knopf der Komponente klickbar (25.09.
+           angefordert: "Buttons nicht klickbar, Loading einfach") -- auch nicht die Zeilen eines
+           Abschnitts, der schon zurueck ist, waehrend die anderen noch laden. disabled und nicht
+           nur pointer-events: so kommen auch Tab und Enter nicht durch. */
+        var laedtNoch = state.laedt.members || state.laedt.invites || state.laedt.log;
+        Array.prototype.forEach.call(elBody.querySelectorAll("button"), function (b) { b.disabled = laedtNoch; });
 
         /* Kein Zaehler neben einem Lesefehler -- er zaehlte die Eintraege von VORHER. */
         var logZahl = state.logLeseFehler ? 0 : state.log.length;
@@ -774,6 +780,10 @@
       /* ---------------- Klicks ---------------- */
       root.addEventListener("click", function (e) {
         if (!e.target.closest) return;
+        /* Ein gesperrter Knopf (waehrend des Ladens, siehe render) tut nichts -- auch dann nicht,
+           wenn der Klick auf seinem Zeichen landet und der Browser ihn doch zustellt. */
+        var gesperrt = e.target.closest("button");
+        if (gesperrt && gesperrt.disabled) return;
 
         if (e.target.closest("[data-uto-invite]")) {
           if (!darfEinladen()) return;
@@ -968,25 +978,11 @@
       }
 
       /* ---------------- Laden ----------------
-         setTeamOrgaLoading(id, "yes")                  alle drei Abschnitte laden neu
-         setTeamOrgaLoading(id, "yes", "invites,log")   nur diese (members, invites, log)
-         setTeamOrgaLoading(id, "no")                   Laden beenden, ohne neue Daten
-         Jeder Abschnitt endet von selbst, sobald SEIN Setter ankommt. Die Liste gibt es, weil nach
-         einer Aktion nur die betroffenen Schritte neu laufen (Revoke: Einladungen und Verlauf) --
-         ein "alles laedt" liesse die Mitglieder dann bis zur Warte-Uhr im Skelett stehen. */
+         setTeamOrgaLoading(id, "yes")   IMMER alle drei Tabellen (25.09. so angefordert: "Loading
+                                         einfach"). Jede endet von selbst, sobald IHR Setter
+                                         ankommt; bis alle drei da sind, ist kein Knopf klickbar.
+         setTeamOrgaLoading(id, "no")    Laden beenden, ohne neue Daten. */
       var ALLE = ["members", "invites", "log"];
-      var BEREICH = { members: "members", member: "members", invites: "invites", invite: "invites",
-                      log: "log", logs: "log" };
-      function bereicheAus(v) {
-        var liste = [];
-        String(v == null ? "" : v).split(/[\s,;]+/).forEach(function (w) {
-          var b = BEREICH[w.toLowerCase()];
-          if (b && liste.indexOf(b) < 0) liste.push(b);
-        });
-        /* Nichts Lesbares (leer, ein Bubble-Platzhalter, ein Tippfehler): dann alle drei. Lieber
-           einmal zu viel Skelett als ein Abschnitt, der alte Zeilen als frische ausgibt. */
-        return liste.length ? liste : ALLE.slice();
-      }
       function tabelleVon(b) { return b === "members" ? elMembers : (b === "invites" ? elInvites : elLog); }
       function mindestHoehe(el, b) {
         el.style.minHeight = (state.laedt[b] && state.hoehe[b]) ? state.hoehe[b] + "px" : "";
@@ -1010,9 +1006,9 @@
         state.hoehe[b] = 0;
         if (!state.laedt.members && !state.laedt.invites && !state.laedt.log) warteBeenden();
       }
-      function setLoading(v, bereiche) {
+      function setLoading(v) {
         var an = isYes(v);
-        bereicheAus(bereiche).forEach(function (b) {
+        ALLE.forEach(function (b) {
           if (!an) { ladenFertig(b); return; }
           /* Die Hoehe VOR dem Umschalten messen -- danach stuende schon das Skelett da. Laedt der
              Abschnitt schon, bleibt die erste Messung: ein zweites "yes" mitten im Laden wuerde
@@ -1105,7 +1101,7 @@
         },
         setTeamOrgaInvites: function (id, p) { each(id || "default", function (c) { c.setInvites(p); }); },
         setTeamOrgaLog: function (id, p) { each(id || "default", function (c) { c.setLog(p); }); },
-        setTeamOrgaLoading: function (id, v, bereiche) { each(id || "default", function (c) { c.setLoading(v, bereiche); }); },
+        setTeamOrgaLoading: function (id, v) { each(id || "default", function (c) { c.setLoading(v); }); },
         resetTeamOrga: function (id) { each(id || "default", function (c) { c.reset(); }); }
       },
       forwardShape: { renderTeamOrga: "params", resetTeamOrga: "id" }
