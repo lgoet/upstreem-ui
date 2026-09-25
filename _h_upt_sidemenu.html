@@ -1,0 +1,43 @@
+<!-- Pruefstand Prompts-Tabelle: Dreipunktmenue in der Seitenleiste des Listenmodus (25.09.).
+       ?v=alt       prompts-table_alt.js/.css (Stand HEAD) fuer die Gegenprobe
+       &wide=no     aufklappbare Koepfe statt Listenmodus -- dort bleibt das Menue, wie es war
+     Drei Themengruppen und eine Custom Grouping, per setPromptsTableGroups wie aus Bubble.
+     Ergebnis: window.__R -->
+<meta charset="utf-8"><title>prompts-table: Menue der Gruppenliste</title>
+<style>html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif;background:#fff}
+#b{padding:20px;width:1300px}#out{padding:10px;font:11px/1.5 ui-monospace,monospace;white-space:pre-wrap}</style>
+<body><div id="b"></div><pre id="out">laeuft…</pre>
+<script>
+window.__err=[]; window.addEventListener("error",function(e){window.__err.push(String(e.message));});
+window.__ev=[]; window.bubble_fn_uptGroups=function(v){ window.__ev.push(["uptGroups",v]); };
+window.bubble_fn_uptGenerateMore=function(v){ window.__ev.push(["uptGenerateMore",v]); };
+var Q=new URLSearchParams(location.search), ALT=Q.get("v")==="alt", WIDE=Q.get("wide")!=="no";
+try { for (var i=window.localStorage.length-1;i>=0;i--){ var k=window.localStorage.key(i);
+  if (k && /^upt_/.test(k)) window.localStorage.removeItem(k); }
+  window.localStorage.setItem("upt_grouped__s","yes");
+  window.localStorage.setItem("upt_groupswide__s", WIDE ? "yes" : "no");
+  window.localStorage.setItem("pref_theme","light"); } catch(e){}
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var D=["core.css","core.js",ALT?"prompts-table_alt.css":"prompts-table.css",ALT?"prompts-table_alt.js":"prompts-table.js","bubble/prompts_table_bubble.html"];
+Promise.all(D.map(hol)).then(function(t){
+  var m={}; D.forEach(function(f,i){ m[f]=t[i]; });
+  [D[0],D[2]].forEach(function(f){ var s=document.createElement("style"); s.setAttribute("data-quelle",f); s.textContent=m[f]; document.head.appendChild(s); });
+  var w=document.createElement("div"); w.innerHTML=wurzelAus(m["bubble/prompts_table_bubble.html"]);
+  var r=w.querySelector(".upt-root");
+  r.setAttribute("data-instance","s"); r.setAttribute("data-cdn-pin","s"); r.setAttribute("data-isdark","no");
+  document.getElementById("b").appendChild(r);
+  [D[1],D[3]].forEach(function(f){ var j=document.createElement("script"); j.setAttribute("data-quelle",f); j.textContent=m[f]; document.head.appendChild(j); });
+  return new Promise(function(ok){ setTimeout(ok,1200); });
+}).then(function(){
+  window.setPromptsTableGroups("s", JSON.stringify([
+    { group_key:"t_pricing", tag_id:"t_pricing", tag_name:"Pricing", prompts_count:12, is_custom:false, is_untagged:false },
+    { group_key:"t_support", tag_id:"t_support", tag_name:"Support", prompts_count:7,  is_custom:false, is_untagged:false },
+    { group_key:"cg_meine",  tag_name:"Meine Gruppe", prompts_count:9, is_custom:true, is_untagged:false },
+    { group_key:"__untagged", tag_name:"", prompts_count:3, is_custom:false, is_untagged:true }
+  ]));
+  window.__bereit=true;
+  document.getElementById("out").textContent="bereit";
+}).catch(function(e){ document.getElementById("out").textContent="FEHLER: "+e.message; window.__bereit=true; });
+</script>

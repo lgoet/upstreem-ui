@@ -3010,28 +3010,35 @@
           groupMenuBtnHtml(id, custom) +
         '</div>';
     }
-    /* Group actions -- Edit/Delete (custom groupings only) + Generate More (always), reached via
-       one always-visible 3-dot button, not a hover reveal: on a touch device or with a mouse that
-       never happens to rest over the row, a hover-only action is an action you can't discover.
-       Shared verbatim between the inline header (grpHeadHtml) and the wide view's sidelist row
-       (renderGroupSidelist) -- same actions, same order, same look, wherever a group row appears.
+    /* Group actions -- Edit/Delete (custom groupings only) + Generate More (inline header only
+       since 25.09.), reached via one always-visible 3-dot button, not a hover reveal: on a touch
+       device or with a mouse that never happens to rest over the row, a hover-only action is an
+       action you can't discover.
+       Shared between the inline header (grpHeadHtml) and the wide view's sidelist row
+       (renderGroupSidelist): same markup, same order, same look. The sidelist shows it on custom
+       groupings only and without Generate More (mitMehr=false) -- asked for on 25.09.
        grpActionMenu tracks which single group's menu is open (module state, like grpRowMenu);
        closing on outside click is handled by its own document listener further down, since this
        menu isn't nested inside any single makePopover-registered wrap the way grpRowMenu is
        (nested inside the Grouping popover, which already closes it for free). */
     var grpActionMenu = null;
-    function groupActionsMenuHtml(id, custom){
+    /* mitMehr: ob "Generate More" im Menue steht. In der SEITENLEISTE des Listenmodus nicht mehr
+       (25.09. angefordert) -- dort bekommen nur noch Custom Groupings ein Menue, und zwar nur mit
+       Edit und Delete; eine Themengruppe hat dort gar keins (siehe renderGroupSidelist). Der Kopf
+       der aufklappbaren Ansicht behaelt sein Menue samt "Generate More" -- nach ihm war nicht
+       gefragt, und das Ereignis uptGenerateMore haengt allein an ihm. */
+    function groupActionsMenuHtml(id, custom, mitMehr){
       return '<div class="up-menu upt-grp-actmenu is-shown" role="menu">' +
         (custom ? '<div class="up-pop-opt" data-grp-headedit="' + esc(id) + '">Edit</div>' : "") +
-        '<div class="up-pop-opt" data-grp-more="' + esc(id) + '">Generate More</div>' +
+        (mitMehr !== false ? '<div class="up-pop-opt" data-grp-more="' + esc(id) + '">Generate More</div>' : "") +
         (custom ? '<div class="up-pop-opt is-danger" data-grp-headdel="' + esc(id) + '">Delete</div>' : "") +
       '</div>';
     }
-    function groupMenuBtnHtml(id, custom){
+    function groupMenuBtnHtml(id, custom, mitMehr){
       var open = grpActionMenu === id;
       return '<div class="upt-grp-menuwrap' + (open ? " is-open" : "") + '">' +
         '<button class="upt-grp-menubtn" type="button" data-grp-menubtn="' + esc(id) + '" aria-label="Group actions" aria-haspopup="menu" aria-expanded="' + (open ? "true" : "false") + '">' + UC.icon("moreHorizontal", 2) + '</button>' +
-        (open ? groupActionsMenuHtml(id, custom) : "") +
+        (open ? groupActionsMenuHtml(id, custom, mitMehr) : "") +
       '</div>';
     }
 
@@ -3197,7 +3204,11 @@
           '" role="button" tabindex="0" data-grp-side="' + esc(id) + '">' +
           '<span class="upt-grp-sidechip">' + groupChipHtml(g) + '</span>' +
           '<span class="upt-grp-sidecount">' + (n == null ? "–" : esc(UC.fmtTotal(n))) + '</span>' +
-          groupMenuBtnHtml(id, custom) +
+          /* Das Dreipunktmenue NUR an Custom Groupings, und dort ohne "Generate More" (25.09.
+             angefordert). Eine Themengruppe hat hier nichts zu bearbeiten oder zu loeschen --
+             ihr einziger Eintrag war "Generate More", und der ist hier gestrichen. Ohne Menue
+             bleibt ihre Zahl auch beim Ueberfahren stehen (siehe prompts-table.css). */
+          (custom ? groupMenuBtnHtml(id, custom, false) : "") +
         '</div>';
       }).join("");
     }

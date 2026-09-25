@@ -864,7 +864,10 @@
   /* Dieselbe Kurve wie das Dreipunktmenue gegenueber -- die zwei tauschen den Platz, also
      muessen sie im selben Takt laufen, sonst zuckt die Zeile in der Mitte. */
   transition: max-width 200ms cubic-bezier(.2,0,.38,.9), opacity 160ms ease; }
-.upt-grp-sideitem:hover .upt-grp-sidecount,
+/* Nur eine Zeile MIT Menue tauscht die Zahl gegen die drei Punkte. Themengruppen haben seit dem
+   25.09. keins mehr (nur Custom Groupings) -- ohne das :has() verschwaende ihre Zahl beim
+   Ueberfahren und an ihrer Stelle staende nichts. */
+.upt-grp-sideitem:has(.upt-grp-menuwrap):hover .upt-grp-sidecount,
 .upt-grp-sideitem:has(.upt-grp-menuwrap.is-open) .upt-grp-sidecount { opacity: 0; max-width: 0; }
 /* Only the sidelist's copy of the group-actions button is hover-revealed -- the inline header's
    (see below) is always visible, since a KPI row has room and a click target there never competes
