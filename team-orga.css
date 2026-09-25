@@ -98,14 +98,17 @@
 .uto-name { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .uto-nametxt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   font-size: 13.5px; font-weight: 500; color: var(--vc-text); }
-/* Die Marke fuer die eigene Zeile: BLAU, und zwar mit den Werten des Chips der Landingpage
-   (.ulh-feat-chip) -- rgba(59,130,246,.10) als Flaeche, #3b82f6 als Schrift, Radius 7. Nur die
-   Groesse ist kleiner, weil sie in einer 52px-Zeile neben einem Namen steht und nicht ueber einer
-   Ueberschrift: 20px hoch statt 22, Polster 7 statt 9, Schrift 11 statt 11.5.
-   Derselbe Ton in hell und dunkel: eine 10-prozentige Blaufläche traegt auf beiden Gruenden, und
-   #3b82f6 ist auf beiden lesbar -- deshalb steht hier kein zweiter Satz Werte. */
+/* Die Marke fuer die eigene Zeile traegt die AKZENTFARBE (25.09. angefordert: "immer in
+   Primaer-/Akzentfarbe"). Vorher stand hier fest das Blau des Landingpage-Chips (#3b82f6), das
+   keiner gewaehlten Akzentfarbe folgte.
+   --up-accent-ink und nicht --up-accent: die Marke steht als SCHRIFT auf dem Seitengrund, und
+   die Tinte ist genau der Ton, der fuer diese Lage je Thema gemessen ist (core.css, AA gegen den
+   Grund). Die Flaeche ist dieselbe Tinte mit 10 Prozent -- dasselbe Verhaeltnis wie vorher beim
+   Blau. Am Standard ist das ein leises Grau mit fast schwarzer Schrift, bei Indigo, Azur oder
+   Terrakotta deren Ton; hell und dunkel ohne zweiten Satz Werte, weil die Tinte selbst dreht.
+   Masse unveraendert: 20px hoch, Polster 7, Radius 7, Schrift 11. */
 .uto-you { flex: 0 0 auto; height: 20px; padding: 0 7px; border-radius: 7px;
-  background: rgba(59, 130, 246, 0.10); color: #3b82f6;
+  background: color-mix(in srgb, var(--up-accent-ink) 10%, transparent); color: var(--up-accent-ink);
   font-size: 11px; font-weight: 600; letter-spacing: .02em; line-height: 20px; }
 .uto-mail { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Datum und Rolle sind Angaben zur Zeile, nicht ihre Aussage -- also die leisere Farbe. */
@@ -264,16 +267,28 @@
 .uto-root.is-narrow .uto-c-mail, .uto-root.is-narrow .uto-c-when { display: none; }
 /* SCHMAL: die beiden Knoepfe werden zu Zeichen. Gemeldet am 07.09.: "im Mobilmode werden keine
    Buttons bei Pending Invites angezeigt" -- sie waren da, aber die Spalte war 196px breit und der
-   Text darin brauchte mehr, also stand nichts Brauchbares mehr. Zwei 32px-Knoepfe plus 6px Luft
-   und 2px Rand sind 72px, und die Spalte richtet sich danach statt umgekehrt.
+   Text darin brauchte mehr, also stand nichts Brauchbares mehr.
    Der Text verschwindet, nicht der Knopf: der Sinn steht im data-tip, und der Finger trifft ein
-   32px-Ziel besser als eine Beschriftung. */
-.uto-root.is-narrow .uto-invites { --up-cols: minmax(0, 1fr) 108px 72px; }
-:root[data-up-locale="de"] .uto-root.is-narrow .uto-invites { --up-cols: minmax(0, 1fr) 108px 72px; }
+   32px-Ziel besser als eine Beschriftung.
+   98px und nicht 72 (25.09. gemeldet, mit Bild: die Knoepfe standen links ueber der
+   Spaltenlinie in "Rolle"). Die 72 waren zwei 32px-Knoepfe plus 6px Luft plus 2px -- ohne die
+   POLSTERUNG der Zelle aus core (.up-td: 12 links, 16 rechts). Gemessen: 12 + 32 + 6 + 32 + 16 =
+   98. Bei 72 blieben 44px Inhalt fuer 70px Knoepfe; die 26px Ueberstand liefen wegen
+   justify-content: flex-end nach LINKS, 12 davon fing die linke Polsterung, 14 lagen ueber der
+   Linie -- genau so gemessen, in beiden Sprachen. */
+.uto-root.is-narrow .uto-invites { --up-cols: minmax(0, 1fr) 108px 98px; }
+:root[data-up-locale="de"] .uto-root.is-narrow .uto-invites { --up-cols: minmax(0, 1fr) 108px 98px; }
 .uto-root.is-narrow .uto-invact .up-rowbtn {
   width: 32px; height: 32px; min-width: 32px; padding: 0; gap: 0; justify-content: center;
 }
 .uto-root.is-narrow .uto-invact .up-rowbtn span { display: none; }
+/* Und GANZ schmal (unter 500px, is-vnarrow) duerfen sie nicht wegfallen. core blendet dort jeden
+   .up-rowbtn aus -- gedacht fuer den optionalen Zeilenknopf in der fuehrenden Zelle ("Show Pages"
+   in der Domains-Tabelle), der den Namen aus dem Bild schiebt. Hier stehen sie in einer eigenen
+   Spalte und sind die einzigen Aktionen der Zeile: gemessen bei 380px waren beide display: none,
+   Resend und Revoke also auf dem Telefon gar nicht erreichbar. Vier Klassen gegen die drei von
+   core. */
+.uto-root.is-vnarrow .uto-invact .up-rowbtn { display: inline-flex; }
 .uto-root.is-narrow .uto-invites.no-actions { --up-cols: minmax(0, 1fr) 108px; }
 .uto-root.is-narrow .uto-inv-by, .uto-root.is-narrow .uto-c-by { display: none; }
 /* Das Protokoll auf drei Spalten: Ziel und Details fallen weg. Fuenf Spalten auf 372px waeren

@@ -38,7 +38,7 @@
      utoInvite   { team_id, email, role }              Einladen im Dialog bestaetigt
      utoResend   { team_id, invite_id, email, role }   "Resend" an einer offenen Einladung
      utoRevoke   { team_id, invite_id, email }         "Revoke" an einer offenen Einladung
-     utoRemove   { team_id, user_id, email, self }     "Remove from team" bzw. "Leave team"
+     utoRemove   { team_id, user_id, email, self }     "Remove from team" (self immer false, s. u.)
      utoRole     { team_id, user_id, email, role }     "Set Member" / "Set Admin" / "Set Owner"
 
    Nach JEDEM dieser fuenf muss der Workflow die Daten neu holen und die Schritte erneut laufen lassen --
@@ -376,11 +376,12 @@
       /* ---------------- wer darf was ----------------
          NUR die Sichtbarkeit im Menue. Die Pruefung steht im RPC -- siehe Kopf dieser Datei.
          Die Regeln, wie vorgegeben:
-           - Member verwalten niemanden -- koennen aber selbst gehen.
+           - Member verwalten niemanden.
            - Admins verwalten MEMBER: entfernen und zum Admin machen. Admins und Besitzer nicht.
            - Besitzer duerfen alles.
            - Der LETZTE Besitzer kann sich weder entfernen noch seine Rolle abgeben.
-           - Die EIGENE Zeile hat immer "Leave team" (ausser man ist der letzte Besitzer).
+           - Die EIGENE Zeile bietet kein Entfernen und kein "Leave team" (25.09. angefordert):
+             das Team verlaesst man unter Your Brand, Danger Zone, "Leave Team" (settings-brand).
 
          Was hier NICHT mehr mitentscheidet: die drei Flags can_invite / can_manage_members /
          can_manage_roles. Zuerst musste BEIDES zutreffen, Flag und Regel -- und damit war das
@@ -412,9 +413,10 @@
       }
       function darfEntfernen(m) {
         if (letzterBesitzer(m)) return false;
-        /* Die EIGENE Zeile immer: gehen ist keine Verwaltung von jemand anderem, und ein Mitglied
-           ohne diesen Weg muss jemanden bitten, es hinauszuwerfen. */
-        if (istSelbst(m)) return true;
+        /* Die EIGENE Zeile nie (25.09. angefordert). Bis dahin stand hier "Leave team" -- das
+           gibt es aber schon unter Your Brand (settings-brand, Danger Zone), und zwei Ausgaenge
+           aus demselben Team an zwei Stellen waren einer zu viel. */
+        if (istSelbst(m)) return false;
         var mr = rolleName(m.role), vr = rolleName(state.viewerRole);
         if (vr === "owner") return true;
         if (vr === "admin") return mr === "member";
@@ -447,10 +449,7 @@
                    lbl: "Set " + z.charAt(0).toUpperCase() + z.slice(1) });
         });
         if (darfEntfernen(m)) {
-          /* Die eigene Zeile heisst "Leave team" -- es ist derselbe Vorgang, aber nicht dieselbe
-             Aussage, und ein Nutzer soll nicht auf "Remove" klicken muessen, um zu gehen. */
-          e.push({ art: "remove", ic: istSelbst(m) ? "logOut" : "userMinus",
-                   lbl: istSelbst(m) ? "Leave team" : "Remove from team", gefahr: true });
+          e.push({ art: "remove", ic: "userMinus", lbl: "Remove from team", gefahr: true });
         }
         return e;
       }
@@ -705,12 +704,17 @@
                 (x.ziel ? ' data-uto-target="' + esc(x.ziel) + '"' : "") + '>' +
                 UC.icon(x.ic, 2) + '<span class="uto-menu-lbl">' + esc(x.lbl) + '</span></button>';
             }).join("")
-          /* Kein leeres Kaestchen: der Grund steht drin. Zwei Faelle fuehren hierhin -- der letzte
-             Besitzer, und ein Admin, der einen anderen Admin oder den Besitzer ansieht. */
+          /* Kein leeres Kaestchen: der Grund steht drin. Drei Faelle fuehren hierhin -- der letzte
+             Besitzer, ein Admin, der einen anderen Admin oder den Besitzer ansieht, und die
+             EIGENE Zeile eines Admins oder Members: seit dort "Leave team" fehlt, bleibt nichts.
+             "You cannot manage this member." waere ueber die eigene Zeile falsch, also steht dort,
+             wo das Gehen jetzt wohnt. */
           : '<div class="uto-menu-leer">' +
               (letzterBesitzer(m)
                 ? "The last owner cannot be changed or removed."
-                : "You cannot manage this member.") +
+                : (istSelbst(m)
+                    ? "You can leave the team under Your Brand."
+                    : "You cannot manage this member.")) +
             '</div>';
         menu.innerHTML = html;
         var zeile = btn.closest(".up-row");
@@ -784,6 +788,9 @@
         if (!m) return;
         if (was === "remove") {
           if (!darfEntfernen(m)) return;
+          /* self bleibt im Payload, obwohl es seit dem 25.09. immer false ist (die eigene Zeile
+             bietet kein Entfernen mehr): ein bestehender Workflow liest das Feld womoeglich mit
+             Regex, und ein fehlendes Feld liefert dort leeren Text statt "false". */
           fire("data-remove-fn", "utoRemove",
                { user_id: feld(m.user_id), email: feld(m.email), self: istSelbst(m) });
           return;

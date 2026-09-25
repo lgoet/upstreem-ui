@@ -1109,6 +1109,9 @@
     "The last owner cannot be changed or removed.":
       "Der letzte Besitzer kann nicht geändert oder entfernt werden.",
     "You cannot manage this member.": "Dieses Mitglied kannst du nicht verwalten.",
+    /* "Your Brand" heisst im Katalog "Deine Brand" -- derselbe Name wie der Reiter, auf den der
+       Satz zeigt. */
+    "You can leave the team under Your Brand.": "Das Team verlässt du unter Deine Brand.",
     "This element is not connected yet. Please reload the page.":
       "Dieses Element ist noch nicht verbunden. Bitte lade die Seite neu.",
 

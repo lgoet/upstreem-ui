@@ -39,6 +39,8 @@
      Admin    verwaltet MEMBER: entfernen und zum Admin machen. Admins und Besitzer nicht.
      Owner    alles -- ausser: der LETZTE Besitzer kann sich weder entfernen noch seine Rolle
               abgeben, sonst stuende ein Team ohne Besitzer da.
+     Eigene Zeile  kein Entfernen und kein "Leave team" (seit 25.09.): das Team verlaesst man
+              unter Your Brand, Danger Zone. utoRemove kommt deshalb immer mit "self":false.
 
   Das ist AUSSCHLIESSLICH die Sichtbarkeit im Menue. Die Pruefung muss im RPC stehen: ein Klick,
   den nur die Seite verbietet, ist ein Loch. In der Beispielnutzlast steht viewer_role "admin" mit
