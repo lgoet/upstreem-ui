@@ -20,16 +20,19 @@
    ist core's Modalschale mit den Innenmassen von add-brand, das Zeilenmenue ist .up-iconbtn +
    UC.makePopover + .up-optrow. Siehe den Kopf von team-orga.css, dort steht die Liste mit Zahlen.
 
-   ── Daten hinein (ein Run-JS-Schritt, siehe bubble/team_orga_bubble.html) ───
+   ── Daten hinein (drei Run-JS-Schritte, siehe bubble/team_orga_bubble.html) ──
      renderTeamOrga({ instanceId, members, permissions, viewer_role, pending_invites })
-     setTeamOrgaInvites(INSTANCE_ID, { count, invites })      Einladungen einzeln nachliefern
+     setTeamOrgaInvites(INSTANCE_ID, { count, invites })      die offenen Einladungen
      setTeamOrgaLog(INSTANCE_ID, [ ... ])                     das Protokoll
      setTeamOrgaLoading(INSTANCE_ID, "yes")                   Skelett, waehrend der RPC laeuft
-     resetTeamOrga(INSTANCE_ID)                               zurueck auf leer
+     resetTeamOrga(INSTANCE_ID)                               zurueck aufs Skelett, bis neu geliefert wird
 
-   Die drei Nutzlasten kommen getrennt, weil sie im Backend aus drei Abfragen kommen. Jede fuer
-   sich darf fehlen: fehlt das Protokoll, steht dort "No entries yet" -- die Mitgliederliste
-   funktioniert trotzdem.
+   Die drei Nutzlasten kommen getrennt, weil sie im Backend aus drei Abfragen kommen -- und seit
+   dem 25.09. auch aus drei eigenen Run-JS-Schritten, in beliebiger Reihenfolge. Jeder Abschnitt
+   wartet auf SEINE Nutzlast und zeigt bis dahin sein Skelett; keiner behauptet "leer", nur weil
+   ein anderer Schritt zuerst kam. Das gilt auch fuers Protokoll: ohne seinen Schritt bleibt es im
+   Ladezustand. Frueher stand dort dann "No entries yet" -- bei einem Team mit dreizehn Eintraegen.
+   Leer ("", [], "invites": ,) zeigt den Leerzustand, unlesbar einen Lesefehler im Abschnitt.
 
    ── Ereignisse heraus (jedes mit einem JSON-Text als erstem Parameter) ──────
      utoInvite   { team_id, email, role }              Einladen im Dialog bestaetigt
@@ -38,7 +41,7 @@
      utoRemove   { team_id, user_id, email, self }     "Remove from team" bzw. "Leave team"
      utoRole     { team_id, user_id, email, role }     "Set Member" / "Set Admin" / "Set Owner"
 
-   Nach JEDEM dieser vier muss der Workflow die Daten neu holen und die drei Setter erneut rufen --
+   Nach JEDEM dieser fuenf muss der Workflow die Daten neu holen und die Schritte erneut laufen lassen --
    diese Datei aendert ihren Zustand NICHT von sich aus. Der Grund ist derselbe wie ueberall in
    dieser App: die Wahrheit steht im Server, und eine Zeile, die sich schon geaendert hat, waehrend
    der RPC noch laeuft, luegt bei jedem Fehlschlag. */
@@ -287,6 +290,15 @@
         viewerRole: "member", viewerId: "", viewerMail: "",
         logOffen: false,
         busy: true, hatDaten: false,
+        /* Kamen die offenen Einladungen schon ueber setTeamOrgaInvites? Dann gewinnt diese Liste
+           ueber pending_invites in der Mitglieder-Nutzlast (siehe render1). */
+        invitesEigen: false,
+        /* Je Abschnitt: ist seine Nutzlast schon da, und war sie lesbar? Seit jeder Abschnitt
+           seinen eigenen Run-JS-Schritt hat, kommen sie einzeln und in beliebiger Reihenfolge --
+           ein Abschnitt, dessen Schritt noch unterwegs ist, zeigt das Skelett und nicht "No
+           pending invites". Leer und noch-nicht-da sind zwei Dinge, unlesbar ist ein drittes. */
+        invitesDa: false, logDa: false,
+        invitesLeseFehler: false, logLeseFehler: false,
         fehler: null            /* Text fuer das UI, nicht fuer die Konsole */
       };
 
@@ -456,7 +468,22 @@
             '<div class="up-th">Role</div>' +
             (mitAkt ? AKT_KOPF() : "") +
           '</div>';
-        if (state.busy) return kopf + UC.skeletonRows(3, mitAkt ? 5 : 4);
+        /* Skelett auch, solange die MITGLIEDER noch nicht da sind -- nicht nur bei busy. Seit
+           Mitglieder und Einladungen zwei Schritte haben, kann der Einladungs-Schritt zuerst
+           ankommen; er beendet busy, und die Tabelle behauptete dann "No members yet", obwohl
+           die Mitglieder nur noch unterwegs waren. Leer und noch-nicht-da sind zwei Dinge.
+           Die Spalten bekommt core als EIN Objekt. Vorher stand hier skeletonRows(3, 5), und aus
+           zwei Zahlen machte core sieben Zeilen ohne eine einzige Zelle -- 364px leere Flaeche
+           statt Balken, in allen drei Tabellen. cls traegt die Klasse der echten Zelle mit, weil
+           das schmale Bild Spalten ueber genau diese Klassen ausblendet. */
+        if (state.busy || !state.hatDaten) {
+          return kopf + UC.skeletonRows({ count: 3, cols: [
+            { w: 120, jitter: 26 },
+            { w: 140, jitter: 26, cls: "uto-mail" },
+            { w: 78, cls: "uto-when" },
+            { w: 58, cls: "uto-role" }
+          ].concat(mitAkt ? [{ w: 0, cls: "uto-act" }] : []) });
+        }
         if (!state.members.length) {
           return kopf + '<div class="up-empty-mini">No members yet</div>';
         }
@@ -513,6 +540,12 @@
       }
 
       /* ---------------- Einladungen ---------------- */
+      /* Skelett, waehrend busy UND solange die Einladungen noch nicht kamen. EINE Stelle, weil
+         render() daraus auch die Aktionsspalte ableitet -- das Skelett hat fuenf Zellen, und
+         Spuren und Zellen muessen dasselbe sagen. */
+      function invitesWarten() {
+        return !state.invitesLeseFehler && (state.busy || !state.invitesDa);
+      }
       function invitesHtml(mitAkt) {
         var kopf =
           '<div class="up-thead">' +
@@ -522,7 +555,16 @@
             '<div class="up-th uto-c-by">Invited by</div>' +
             (mitAkt ? AKT_KOPF("uto-invact") : "") +
           '</div>';
-        if (state.busy) return kopf + UC.skeletonRows(2, mitAkt ? 5 : 4);
+        /* Der Lesefehler VOR dem Skelett: er ist eine Aussage, das Skelett waere keine. */
+        if (state.invitesLeseFehler) return kopf + UC.leseFehlerHtml("pending invites");
+        if (invitesWarten()) {
+          return kopf + UC.skeletonRows({ count: 2, cols: [
+            { w: 140, jitter: 26 },
+            { w: 58, cls: "uto-role" },
+            { w: 78, cls: "uto-when" },
+            { w: 130, jitter: 20, cls: "uto-inv-by" }
+          ].concat(mitAkt ? [{ w: 0, cls: "uto-invact" }] : []) });
+        }
         if (!state.invites.length) {
           return kopf + '<div class="up-empty-mini">No pending invites</div>';
         }
@@ -553,7 +595,18 @@
             '<div class="up-th uto-c-target">Target</div>' +
             '<div class="up-th uto-c-meta">Details</div>' +
           '</div>';
-        if (state.busy) return kopf + UC.skeletonRows(4, 5);
+        if (state.logLeseFehler) return kopf + UC.leseFehlerHtml("the activity log");
+        /* 80px am Datum: im schmalen Bild ist die Spalte 112px breit, abzueglich der 28px
+           Polsterung der Zelle bleiben 84 -- ein breiterer Balken wuerde dort abgeschnitten. */
+        if (state.busy || !state.logDa) {
+          return kopf + UC.skeletonRows({ count: 4, cols: [
+            { w: 80 },
+            { w: 100, jitter: 14 },
+            { w: 130, jitter: 20 },
+            { w: 130, jitter: 20, cls: "uto-c-target" },
+            { w: 150, jitter: 24, cls: "uto-c-meta" }
+          ] });
+        }
         if (!state.log.length) return kopf + '<div class="up-empty-mini">No entries yet</div>';
         return kopf + state.log.map(function (l) {
           var ev = feld(l.event_type) || "unknown";
@@ -615,7 +668,8 @@
            Der Wert wird EINMAL berechnet und sowohl an das Markup als auch an die Klasse gegeben:
            das ist die Stelle, an der Rasterspuren und Zellen zusammenbleiben. */
         var mAkt = true;
-        var iAkt = state.busy || (state.invites.length > 0 && darfWiderrufen());
+        var iAkt = invitesWarten() ||
+                   (!state.invitesLeseFehler && state.invites.length > 0 && darfWiderrufen());
         elMembers.classList.toggle("no-actions", !mAkt);
         elInvites.classList.toggle("no-actions", !iAkt);
 
@@ -623,8 +677,9 @@
         elInvites.innerHTML = invitesHtml(iAkt);
         elLog.innerHTML = logHtml();
 
-        elLogCnt.textContent = state.log.length
-          ? state.log.length + (state.log.length === 1 ? " entry" : " entries") : "";
+        /* Kein Zaehler neben einem Lesefehler -- er zaehlte die Eintraege von VORHER. */
+        var logZahl = state.logLeseFehler ? 0 : state.log.length;
+        elLogCnt.textContent = logZahl ? logZahl + (logZahl === 1 ? " entry" : " entries") : "";
         elLogBox.hidden = !state.logOffen;
         elToggle.setAttribute("aria-expanded", state.logOffen ? "true" : "false");
         elLogChev.innerHTML = UC.icon(state.logOffen ? "chevronUp" : "chevronDown", 2);
@@ -764,7 +819,20 @@
              Element. Steht nirgends etwas, gibt es keine "You"-Marke -- geraten wird nicht. */
           state.viewerId = feld(o.viewer_user_id) || feld(root.getAttribute("data-user"));
           state.viewerMail = feld(o.viewer_email) || feld(root.getAttribute("data-user-email"));
-          if (isArr(o.pending_invites)) state.invites = o.pending_invites.slice();
+          /* NUR, wenn die Einladungen nicht schon ueber ihren eigenen Setter kamen (25.09.). Der
+             Mitglieder-RPC schickt "pending_invites": [] mit -- und seit Mitglieder und
+             Einladungen zwei eigene Run-JS-Schritte haben, leerte jedes Neuladen der Mitglieder
+             die Einladungsliste, sobald es NACH dem Einladungs-Schritt lief (gemessen: erst
+             Einladungen, dann Mitglieder -> Liste leer). Der eigene Setter ist die genauere
+             Quelle, also gewinnt er, egal in welcher Reihenfolge die Schritte laufen. */
+          if (isArr(o.pending_invites) && !state.invitesEigen) {
+            state.invites = o.pending_invites.slice();
+            /* Eine LEERE Liste von hier beendet das Warten aber nicht: die echte Nutzlast
+               schickt "pending_invites": [] auch dann, wenn es offene Einladungen gibt (Beispiel
+               vom 25.09.: hier [], im Einladungs-RPC eine). Als Aussage genommen, stand "No
+               pending invites" da, bis der Einladungs-Schritt ankam. */
+            if (state.invites.length) state.invitesDa = true;
+          }
           state.hatDaten = true;
           state.fehler = null;
         } else {
@@ -781,45 +849,78 @@
          alte Schritt der Vorlage hatte vorher selbst geparst und Objekte uebergeben.
          Ausgepackt wird nur, was eindeutig ein Umschlag ist: genau ein Eintrag, und der traegt
          die Liste unter einem der genannten Schluessel. Eine echte Liste mit einer einzigen
-         Einladung bleibt, wie sie ist. */
+         Einladung bleibt, wie sie ist.
+         null zaehlt mit: laesst Bubble eine LEERE Liste weg ("invites": ,), macht die
+         Sanitizer-Zeile ein null daraus -- und ohne Auspacken wurde der Umschlag wieder zur
+         Einladung, als Zeile "–" mit Resend und Revoke (gemessen am 25.09.). Eine Einladung
+         selbst hat keinen Schluessel "invites", ein Protokolleintrag kein "logs" oder "entries". */
       function auspacken(o, schluessel) {
         if (isArr(o) && o.length === 1 && o[0] && typeof o[0] === "object" && !isArr(o[0])) {
-          for (var i = 0; i < schluessel.length; i++) if (isArr(o[0][schluessel[i]])) return o[0];
+          for (var i = 0; i < schluessel.length; i++) {
+            var w = o[0][schluessel[i]];
+            if (isArr(w) || w === null) return o[0];
+          }
         }
         return o;
       }
+      /* Die Liste aus dem ausgepackten Wert. null unter dem Schluessel ist LEER, nicht kaputt
+         (siehe oben); kaputt ist nur, was gar keine Liste hergibt -- dann null. */
+      function listeAus(o, schluessel) {
+        if (isArr(o)) return o;
+        if (!o || typeof o !== "object") return null;
+        var i;
+        for (i = 0; i < schluessel.length; i++) if (isArr(o[schluessel[i]])) return o[schluessel[i]];
+        for (i = 0; i < schluessel.length; i++) if (o[schluessel[i]] === null) return [];
+        return null;
+      }
+      /* Ein WIRKLICH leerer Text ist leer, nicht kaputt -- dieselbe Linie wie normParams in core
+         (§46): "" und "[]" sind der normale Leerzustand, erst Text, der sich nicht lesen laesst,
+         ist ein Lesefehler. */
+      function roh(p) { return (typeof p === "string" && !p.trim()) ? [] : p; }
       function setInvites(p) {
+        p = roh(p);
         var o = auspacken((p && typeof p === "object") ? p : UC.readBubble(p), ["invites"]);
-        var liste = isArr(o) ? o : (o && isArr(o.invites) ? o.invites : null);
+        var liste = listeAus(o, ["invites"]);
         if (liste) {
           /* Nur OFFENE: der Server schickt in dieser Nutzlast auch zurueckgezogene und
              angenommene mit (revoked_at / accepted_at gesetzt). Die gehoeren ins Protokoll, nicht
              in eine Liste, die "Pending" heisst. */
+          state.invitesEigen = true;
+          state.invitesDa = true;
+          state.invitesLeseFehler = false;
           state.invites = liste.filter(function (v) {
             if (!v || typeof v !== "object") return false;
             if (feld(v.revoked_at) || feld(v.accepted_at)) return false;
             var st = String(v.status == null ? "" : v.status).trim().toLowerCase();
             return !st || st === "pending";
           });
-        } else if (window.console) {
-          console.warn("[team-orga] " + instanceId + ": setTeamOrgaInvites konnte die Nutzlast " +
-            "nicht lesen. Die Liste der offenen Einladungen bleibt, wie sie war.");
+        } else {
+          /* Unlesbar ist nicht leer (§2): der Abschnitt sagt es, statt still die alte Liste
+             stehen zu lassen -- die dann Resend und Revoke an Einladungen anbietet, von denen
+             niemand weiss, ob es sie noch gibt. */
+          state.invitesLeseFehler = true;
+          if (window.console) console.warn("[team-orga] " + instanceId +
+            ": setTeamOrgaInvites konnte die Nutzlast nicht lesen.");
         }
         state.busy = false;
         render();
       }
       function setLog(p) {
+        p = roh(p);
         var o = auspacken((p && typeof p === "object") ? p : UC.readBubble(p), ["logs", "entries"]);
-        var liste = isArr(o) ? o : (o && isArr(o.logs) ? o.logs : (o && isArr(o.entries) ? o.entries : null));
+        var liste = listeAus(o, ["logs", "entries"]);
         if (liste) {
+          state.logDa = true;
+          state.logLeseFehler = false;
           /* Neueste zuerst. Der RPC liefert es schon so, aber eine Liste, deren Reihenfolge man
              annimmt, ist eine Liste, die eines Tages verkehrt steht. */
           state.log = liste.slice().sort(function (a, b) {
             return new Date(txt(b && b.created_at)).getTime() - new Date(txt(a && a.created_at)).getTime();
           });
-        } else if (window.console) {
-          console.warn("[team-orga] " + instanceId + ": setTeamOrgaLog konnte die Nutzlast nicht " +
-            "lesen. Das Protokoll bleibt, wie es war.");
+        } else {
+          state.logLeseFehler = true;
+          if (window.console) console.warn("[team-orga] " + instanceId +
+            ": setTeamOrgaLog konnte die Nutzlast nicht lesen.");
         }
         state.busy = false;
         render();
@@ -832,7 +933,15 @@
         setLoading: function (v) { state.busy = isYes(v); render(); },
         reset: function () {
           state.members = []; state.invites = []; state.log = [];
-          state.hatDaten = false; state.fehler = null; state.busy = false;
+          state.hatDaten = false; state.fehler = null; state.busy = false; state.invitesEigen = false;
+          state.invitesDa = false; state.logDa = false;
+          state.invitesLeseFehler = false; state.logLeseFehler = false;
+          /* Die Rechte mit: sonst stand nach dem Zuruecksetzen "Invite new Members" noch da, und
+             Einladungen, die VOR den Mitgliedern ankamen, trugen Resend und Revoke -- beides nach
+             den Rechten des vorigen Teams (gemessen am 25.09.). Bis die Mitglieder kommen, gilt,
+             was beim Start gilt. */
+          state.perm = { can_invite: false, can_manage_roles: false, can_manage_members: false };
+          state.viewerRole = "member"; state.viewerId = ""; state.viewerMail = "";
           state.logOffen = false;
           render();
         },

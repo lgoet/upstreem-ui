@@ -2455,7 +2455,12 @@
     "Actor": "Wer",
     "Target": "Wen",
     "Resend": "Erneut senden",
-    "Revoke": "Zurückziehen"
+    "Revoke": "Zurückziehen",
+    /* Was im Lesefehler steht ("{was} konnte nicht geladen werden"). Im Singular, weil der Satz
+       "konnte" sagt -- "Die offenen Einladungen konnte" waere falsch. */
+    "team members": "Die Mitgliederliste",
+    "pending invites": "Die Liste der offenen Einladungen",
+    "the activity log": "Der Verlauf"
   });
   function t(text){
     var l = getPref("locale");

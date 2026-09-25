@@ -23,12 +23,13 @@
   8. Der Seitenkopf der Settings-Seite ist ein EIGENES Element (page-headers/settings-...). Diese
      Komponente bringt keinen mit -- sie faengt mit dem Abschnitt "Team Members" an.
 
-  DATEN HINEIN (ein Run-javascript-Schritt, unten in diesem Kommentar)
+  DATEN HINEIN (drei Run-javascript-Schritte, je einer hinter seinem RPC, Reihenfolge egal --
+  unten in diesem Kommentar, dynamisch und statisch)
      renderTeamOrga({ instanceId, members, permissions, viewer_role, pending_invites })
      setTeamOrgaInvites(INSTANCE_ID, { count, invites })
      setTeamOrgaLog(INSTANCE_ID, [ ... ])
      setTeamOrgaLoading(INSTANCE_ID, "yes")     Skelett an, waehrend die RPCs laufen
-     resetTeamOrga(INSTANCE_ID)                 zurueck auf leer
+     resetTeamOrga(INSTANCE_ID)                 zurueck aufs Skelett, bis neu geliefert wird
 
   WER WAS DARF -- das entscheidet der SERVER, nicht diese Komponente
   Die Komponente zeigt eine Aktion nur, wenn BEIDES zutrifft: das passende Flag aus
@@ -169,24 +170,77 @@
 
 <!--
   ============================================================================================
-  RUN JAVASCRIPT — Schritt 1: STATISCH, mit den echten Daten
+  RUN JAVASCRIPT — DREI SCHRITTE, einer je Abschnitt (seit 25.09.)
   ============================================================================================
-  Dieser Schritt gehoert ZUERST in den Page-Load-Workflow, noch vor jedem RPC. Er zeigt die Seite
-  mit echten Daten, damit man sofort sieht, ob das Element ueberhaupt laeuft -- dieselbe Regel wie
-  bei jeder anderen Komponente dieses Repos.
+  Mitglieder, offene Einladungen und Protokoll kommen aus drei RPCs, und jeder RPC hat seinen
+  EIGENEN Run-javascript-Schritt direkt hinter sich. Die Reihenfolge ist egal: ein Abschnitt,
+  dessen Schritt noch nicht kam, zeigt sein Skelett, und kein Schritt ueberschreibt einen anderen
+  Abschnitt. (Bis zum 25.09. stand hier EIN Schritt fuer alle drei. Getrennt leerte jedes
+  Neuladen der Mitglieder die Einladungen, weil der Mitglieder-RPC "pending_invites": [] mitschickt
+  -- behoben in team-orga.js: die Einladungen aus ihrem eigenen Setter gewinnen.)
 
-  ES SIND DIE DATEN DES ECHTEN TEAMS, unveraendert aus den drei RPCs uebernommen. Sie stehen
-  wortgleich auch in _h_uto_daten.js, mit dem die Komponente geprueft wurde.
+  Jeder Schritt in der Hausform (CLAUDE.md 2a): der ROHE Text des RPC in einen Backtick, beide
+  Sanitizer-Zeilen dahinter, so in den Setter. KEIN JSON.parse im Schritt -- die Komponente liest
+  selbst (readBubble), und nur so zeigt sie einen kaputten Text als Lesefehler statt still leer.
+  renderTeamOrga braucht keine instanceId im Text: ohne sie gilt "default", und das trifft die
+  eine Teamverwaltung der Seite. Die beiden anderen Setter bekommen INSTANCE_ID.
 
-  Kopiere den Block zwischen den beiden Markierungen in einen "Run javascript"-Schritt und ersetze
-  INSTANCE_ID durch dieselbe Kennung wie oben im Markup.
+  Was ein Abschnitt aus dem Text macht (gemessen am 25.09. gegen team-orga.js):
+     lesbar                              die Zeilen
+     "", [] oder ein leerer Listenwert   der Leerzustand ("No pending invites", "No entries yet")
+     unlesbar oder abgeschnitten         "Could not load ..." IM Abschnitt, die anderen bleiben
+     Mitglieder unlesbar                 der Lesefehler statt der ganzen Seite (wie bisher)
+     Schritt fehlt ganz                  das Skelett bleibt -- auch beim Protokoll
 
-  ---- ANFANG ----
+  ---- SCHRITT 1: MITGLIEDER (hinter dem Mitglieder-RPC) ----
 <script>
-(function(){
-  var ID = "INSTANCE_ID";
+(function () {
+  var MITGLIEDER = `RPC_MEMBERS_JSON`
+    .replace(/:\s*([,}\]])/g, ": null$1")
+    .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+  try { if (window.renderTeamOrga) window.renderTeamOrga(MITGLIEDER); } catch (e) {}
+})();
+</script>
 
-  var MAIN = {
+  ---- SCHRITT 2: OFFENE EINLADUNGEN (hinter dem Einladungs-RPC) ----
+<script>
+(function () {
+  var EINLADUNGEN = `RPC_INVITES_JSON`
+    .replace(/:\s*([,}\]])/g, ": null$1")
+    .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+  try { if (window.setTeamOrgaInvites) window.setTeamOrgaInvites("INSTANCE_ID", EINLADUNGEN); } catch (e) {}
+})();
+</script>
+
+  ---- SCHRITT 3: PROTOKOLL (hinter dem Protokoll-RPC) ----
+<script>
+(function () {
+  var PROTOKOLL = `RPC_LOG_JSON`
+    .replace(/:\s*([,}\]])/g, ": null$1")
+    .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+  try { if (window.setTeamOrgaLog) window.setTeamOrgaLog("INSTANCE_ID", PROTOKOLL); } catch (e) {}
+})();
+</script>
+
+  Einmal am Anfang des Workflows, damit das Skelett laeuft, solange die RPCs unterwegs sind:
+
+<script>
+  if (typeof window.setTeamOrgaLoading === "function") window.setTeamOrgaLoading("INSTANCE_ID", "yes");
+</script>
+
+  ============================================================================================
+  DIESELBEN DREI SCHRITTE STATISCH, mit den echten Daten
+  ============================================================================================
+  Zum Einbauen: erst diese drei, dann die echten. Sie zeigen die Seite mit echten Daten, damit
+  man sofort sieht, ob das Element ueberhaupt laeuft -- dieselbe Regel wie bei jeder anderen
+  Komponente dieses Repos. Dieselbe Form wie oben, nur steht im Backtick der Text, den die drei
+  RPCs des echten Teams geliefert haben, unveraendert. Wortgleich auch in _h_uto_daten.js, mit
+  dem die Komponente geprueft wurde. INSTANCE_ID durch dieselbe Kennung wie oben im Markup.
+
+  ---- STATISCH 1: MITGLIEDER ----
+<script>
+(function () {
+  var MITGLIEDER = `{
   "members": [
     { "role": "owner", "email": "l.goetzkes@online.de",
       "user_id": "7bedb728-e252-493d-b5c6-f9bed0b0b2d3",
@@ -201,9 +255,17 @@
   "permissions": { "can_invite": true, "can_manage_roles": false, "can_manage_members": true },
   "viewer_role": "admin",
   "pending_invites": []
-};
+}`
+    .replace(/:\s*([,}\]])/g, ": null$1")
+    .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+  try { if (window.renderTeamOrga) window.renderTeamOrga(MITGLIEDER); } catch (e) {}
+})();
+</script>
 
-  var INVITES = {
+  ---- STATISCH 2: OFFENE EINLADUNGEN ----
+<script>
+(function () {
+  var EINLADUNGEN = `{
   "count": 1,
   "invites": [
     { "status": "pending", "invite_id": "480291d9-80c4-4f0f-9269-24ee59c0130b",
@@ -214,9 +276,17 @@
       "invited_role": "member", "invited_email": "l.test@test.de",
       "created_by_email": "lukas@upstreem.ai" }
   ]
-};
+}`
+    .replace(/:\s*([,}\]])/g, ": null$1")
+    .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+  try { if (window.setTeamOrgaInvites) window.setTeamOrgaInvites("INSTANCE_ID", EINLADUNGEN); } catch (e) {}
+})();
+</script>
 
-  var LOG = [
+  ---- STATISCH 3: PROTOKOLL ----
+<script>
+(function () {
+  var PROTOKOLL = `[
   { "log_id": "e6f049cd-44c3-4217-b674-19c082116fa1", "created_at": "2026-08-31T13:42:33.011787+00:00",
     "event_type": "member_invited", "actor_user_id": "aea6e317-d901-419b-b2b2-5ca3573ea2f5",
     "actor_email": "lukas@upstreem.ai", "actor_display_name": "Lukas Götzkes",
@@ -282,50 +352,11 @@
     "actor_email": "l.goetzkes@online.de", "actor_display_name": "Lukas Götzkes",
     "target_user_id": null, "target_email": "leenen@lee-up.de",
     "meta": { "invite_id": "aca0c4b2-8335-443a-b221-c17da42bcad7", "invited_role": "admin" } }
-];
-
-  MAIN.instanceId = ID;
-  window.renderTeamOrga(MAIN);
-  window.setTeamOrgaInvites(ID, INVITES);
-  window.setTeamOrgaLog(ID, LOG);
-})();
-</script>
-  ---- ENDE ----
-
-  ============================================================================================
-  RUN JAVASCRIPT — Schritt 2: die ECHTEN RPCs (Hausform, CLAUDE.md 2a)
-  ============================================================================================
-  Sobald Schritt 1 sichtbar funktioniert, kommt derselbe Aufruf mit den Bubble-Ausdruecken:
-  der ROHE Text jedes RPC in einen eigenen Backtick, beide Sanitizer-Zeilen dahinter, und so in
-  den Setter. KEIN JSON.parse im Schritt -- die Komponente liest selbst (readBubble), und nur so
-  zeigt sie einen kaputten Text als Lesefehler statt still leer.
-  (Bis zum 25.09. stand hier ein Schritt mit JSON.parse. Der hat einen Fehler verdeckt: mit dem
-  rohen Text zeichnete setTeamOrgaInvites den Umschlag {"count", "invites"} als eine Einladung
-  ohne Adresse. Behoben in team-orga.js; dieser Schritt ist gegen die Komponente gelaufen.)
-  renderTeamOrga braucht keine instanceId im Text: ohne sie gilt "default", und das trifft die
-  eine Teamverwaltung der Seite.
-
-<script>
-(function () {
-  var MITGLIEDER = `RPC_MEMBERS_JSON`
+]`
     .replace(/:\s*([,}\]])/g, ": null$1")
     .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
-  var EINLADUNGEN = `RPC_INVITES_JSON`
-    .replace(/:\s*([,}\]])/g, ": null$1")
-    .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
-  var PROTOKOLL = `RPC_LOG_JSON`
-    .replace(/:\s*([,}\]])/g, ": null$1")
-    .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
-  try { if (window.renderTeamOrga) window.renderTeamOrga(MITGLIEDER); } catch (e) {}
-  try { if (window.setTeamOrgaInvites) window.setTeamOrgaInvites("INSTANCE_ID", EINLADUNGEN); } catch (e) {}
   try { if (window.setTeamOrgaLog) window.setTeamOrgaLog("INSTANCE_ID", PROTOKOLL); } catch (e) {}
 })();
-</script>
-
-  Vorher, damit das Skelett laeuft, solange die RPCs unterwegs sind:
-
-<script>
-  if (typeof window.setTeamOrgaLoading === "function") window.setTeamOrgaLoading("INSTANCE_ID", "yes");
 </script>
 
   ============================================================================================
@@ -339,7 +370,9 @@
      bubble_fn_utoRemove   -> RPC "remove member" (user_id)         danach: Daten neu holen
      bubble_fn_utoRole     -> RPC "set role" (user_id, role)        danach: Daten neu holen
 
-  "Danach: Daten neu holen" heisst: dieselben drei Setter erneut rufen. Ohne das steht die Seite
-  auf dem alten Stand und der Nutzer klickt ein zweites Mal.
+  "Danach: Daten neu holen" heisst: die RPCs und ihre Schritte erneut. Am einfachsten alle drei;
+  mindestens den Abschnitt, den die Aktion aendert (Einladen, Resend, Revoke: Einladungen --
+  Remove, Rolle: Mitglieder), und das Protokoll, denn jede Aktion schreibt dort einen Eintrag.
+  Ohne das steht die Seite auf dem alten Stand und der Nutzer klickt ein zweites Mal.
   ============================================================================================
 -->
