@@ -1125,6 +1125,13 @@
     "You’re all set": "Alles fertig",
     "Already have an account?": "Du hast schon ein Konto?",
     "Don’t have an account?": "Du hast noch kein Konto?",
+    /* Steht im Login statt des Sign-up-Links, seit ein Konto nur noch ueber eine Einladung
+       entsteht (25.09.). */
+    "No account yet? Ask your team for an invite.": "Noch kein Konto? Lass dich von deinem Team einladen.",
+    "This invitation is not valid anymore. Please ask your team for a new one.":
+      "Diese Einladung gilt nicht mehr. Bitte lass dir von deinem Team eine neue schicken.",
+    "An invitation is required.": "Dafür brauchst du eine Einladung.",
+    "We could not create your account. Please try again.": "Dein Konto konnte nicht angelegt werden. Bitte versuch es noch einmal.",
     "Your password": "Dein Passwort",
     "At least 8 characters": "Mindestens 8 Zeichen",
     "At least 8 characters.": "Mindestens 8 Zeichen.",

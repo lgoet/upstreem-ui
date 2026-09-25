@@ -1,3 +1,8 @@
+> **ERSETZT am 25.09.2026 durch [`signup_invite_setup.md`](signup_invite_setup.md).** Der
+> Registrierungscode ist gestrichen — ein Konto entsteht nur noch ueber eine Einladung. Diese
+> Datei bleibt als Hintergrund stehen (Warum die Sperre in Supabase sitzen muss); gebaut wird
+> nach der neuen.
+
 # Signup sperren: Registrierungscode oder Einladung
 
 Stand 21.09.2026. Gehoert zu `auth-page.js` / `bubble/auth_page_bubble.html`.

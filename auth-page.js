@@ -50,7 +50,12 @@
       check: "", side: "Forgot password?",
       pwHint: "Your password",
       cta: "Sign in", ctaBusy: "Signing in",
-      footTxt: "Don’t have an account?", footLink: "Sign up"
+      footTxt: "Don’t have an account?", footLink: "Sign up",
+      /* OHNE EINLADUNG GIBT ES KEINEN SIGNUP (25.09. entschieden: "du musst zu einem Team
+         eingeladen werden, dann kannst du dich registrieren, sonst nicht, Punkt"). Der Link
+         waere eine Tuer, hinter der eine Wand steht -- also statt seiner ein Satz, der sagt, wie
+         man hineinkommt. */
+      footOhne: "No account yet? Ask your team for an invite."
     },
     signup: {
       hallo: "Hey there,", h1: "Let’s get you set up",
@@ -436,8 +441,22 @@
       elCheckTxt.textContent = t.check;
       root.querySelector(".uau-opts").classList.toggle("is-solo", !t.check);
       elPrimTxt.textContent = state.busy ? t.ctaBusy : t.cta;
-      elFootTxt.textContent = t.footTxt;
+      /* Ohne Einladung gibt es nichts, wohin der Link fuehren koennte: nur der Satz, kein
+         Knopf. Mit Einladung bleibt der Wechsel -- wer schon ein Konto hat, tritt dem Team damit
+         bei, statt ein zweites anzulegen. */
+      var ohneWeg = state.mode === "login" && !state.token;
+      elFootTxt.textContent = ohneWeg ? TEXTE.login.footOhne : t.footTxt;
       elFootBtn.textContent = t.footLink;
+      elFootBtn.hidden = ohneWeg;
+      /* GOOGLE NUR ZUM ANMELDEN (25.09. entschieden). In Supabase sind neue Konten abgeschaltet,
+         und damit legt auch Google keines mehr an -- im Signup waere der Knopf also ein Weg, der
+         mit einer Fehlermeldung endet. Wer eingeladen ist, legt sein Konto mit Adresse und
+         Passwort an; danach meldet er sich mit Google an derselben Adresse an (Supabase
+         verknuepft die Identitaeten, wenn die Adresse bestaetigt ist). */
+      var mitGoogle = state.mode === "login";
+      elGoogle.hidden = !mitGoogle;
+      var oder = root.querySelector(".uau-or");
+      if (oder) oder.hidden = !mitGoogle;
       /* current-password beim Anmelden, new-password beim Anlegen. Ohne den Unterschied schlaegt
          der Passwortverwalter im Signup ein BESTEHENDES Passwort vor statt ein neues zu
          erzeugen -- und der Nutzer legt ein Konto mit einem Passwort an, das er anderswo schon
@@ -527,7 +546,11 @@
        Wer ihn braucht, schreibt data-code-required="no" ausdruecklich hin.
        Ohne Wirkung bleibt er im Login und bei einer Einladung: ein Token ist selbst die
        Berechtigung. */
-    function codeVerlangt(){ return UC.isYes(attr("data-code-required", "yes")); }
+    /* VORGABE WIEDER "no" (25.09.): der Registrierungscode ist gestrichen -- ein Konto entsteht
+       NUR noch ueber eine Einladung. Ohne Token gibt es gar keinen Signup mehr (setMode), und mit
+       Token wurde der Code ohnehin nie verlangt; die Frage stellt sich also nicht mehr. Der
+       Schalter bleibt stehen, damit ein Element, das ihn ausdruecklich traegt, nicht bricht. */
+    function codeVerlangt(){ return UC.isYes(attr("data-code-required", "no")); }
     function codeAn(){ return state.mode === "signup" && codeVerlangt() && !state.token; }
     /* GROSS UND OHNE LEERZEICHEN -- das ist der VERTRAG mit Bubble (dort :uppercase vergleichen).
        Ein aus einer Mail kopierter Code bringt regelmaessig ein fuehrendes Leerzeichen oder einen
@@ -559,6 +582,10 @@
       renderMailFest();
       /* Eine Einladung nimmt die Codefrage weg -- sie ist selbst die Berechtigung. */
       renderCode();
+      /* Kommt das Token nach dem Modus, gilt jetzt, was verlangt war -- und faellt es weg, darf
+         kein Signup ohne Einladung stehen bleiben. */
+      var soll = (gewuenscht === "signup" && state.token) ? "signup" : "login";
+      if (soll !== state.mode){ state.mode = soll; state.errs = {}; state.formErr = ""; render(); }
     }
 
     function render(){ renderTexte(); zeigeFehler(); renderStaerke(); renderMailFest(); renderCode(); }
@@ -645,8 +672,18 @@
       });
     }
 
+    /* Der Modus, der VERLANGT war -- aus Adresse, Attribut oder Klick. Er bleibt gemerkt, weil
+       die Einladung spaeter kommen kann als der Modus (setInvite aus Bubble): /signup?token=...
+       liest beides beim Start, ein Bubble-Workflow reicht das Token aber womoeglich erst nach. */
+    var gewuenscht = "login";
     function setMode(m){
       m = (String(m || "").toLowerCase() === "signup") ? "signup" : "login";
+      gewuenscht = m;
+      /* SIGNUP NUR MIT EINLADUNG (25.09.). Ohne Token faellt jede Bitte um den Signup auf den
+         Login zurueck -- auch ein geteilter Link auf /signup. Das ist BEQUEMLICHKEIT, keine
+         Sicherheit: der Riegel sitzt in Supabase (bubble/signup_invite_setup.md). Hier steht
+         nur, dass niemand ein Formular ausfuellt, das ohnehin abgewiesen wuerde. */
+      if (m === "signup" && !state.token) m = "login";
       if (m === state.mode) return;
       state.mode = m;
       /* Fehler des anderen Modus mitnehmen waere falsch -- "At least 8 characters" gilt im Login
@@ -660,9 +697,10 @@
       var neu = state.mode === "login" ? "signup" : "login";
       setMode(neu);
       /* Hier MIT Verlaufseintrag: der Nutzer hat den Wechsel ausgeloest, also soll der
-         Zurueck-Knopf ihn zuruecknehmen. */
-      urlSetzen(neu, true);
-      fire("data-mode-fn", "uauMode", { mode: neu, token: state.token });
+         Zurueck-Knopf ihn zuruecknehmen. Geschrieben wird, was TATSAECHLICH gilt -- ohne
+         Einladung bleibt es beim Login, und die Adresse darf dann nicht "signup" behaupten. */
+      urlSetzen(state.mode, true);
+      fire("data-mode-fn", "uauMode", { mode: state.mode, token: state.token });
     });
     elSide.addEventListener("click", function(){
       fire("data-side-fn", "uauSide", { mode: state.mode, token: state.token,
@@ -822,7 +860,7 @@
 
     return {
       root: root,
-      setMode: function(m){ setMode(m); urlSetzen(m, false); },
+      setMode: function(m){ setMode(m); urlSetzen(state.mode, false); },
       setInvite: function(tok, mail){ setToken(tok, mail); return true; },
       setLoading: function(on){ setBusy(UC.isYes(on)); },
       setError: function(feldName, text){

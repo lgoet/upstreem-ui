@@ -24,15 +24,14 @@
                        gar keines dasteht.
        data-logo       URL des upstreem-Schriftzugs, 18px hoch dargestellt. Fehlt sie, bleibt
                        die Stelle leer statt ein kaputtes Bild zu zeigen.
-       data-code-required  "yes"/"no", **Standard "yes"**. Bei "yes" verlangt der SIGNUP zusaetzlich
-                       einen Registrierungscode -- ein Feld "Registration code" erscheint unter
-                       dem Passwort. Gilt NICHT bei einer Einladung (?token=): die ist selbst
-                       die Berechtigung, und zweimal danach zu fragen waere eine Huerde ohne
-                       Zweck. Gilt auch nicht im Login.
-                       ACHTUNG, das hier ist KEINE Sperre. Diese Datei laeuft im Browser des
-                       Nutzers; das Attribut entscheidet nur, ob er GEFRAGT wird. Gesperrt wird
-                       in Bubble -- die vollstaendige Anleitung dazu steht in
-                       bubble/signup_code_setup.md, und ohne sie ist die Anmeldung weiter offen.
+       SIGNUP NUR MIT EINLADUNG (seit 25.09.). Ohne ?token= gibt es keinen Signup: /signup
+                       zeigt dann den Login, und unten steht "No account yet? Ask your team for
+                       an invite." statt des Links. Mit Token: Signup, Adresse fest, KEIN
+                       Google-Knopf (Google meldet nur noch an). Der Riegel dazu sitzt in
+                       Supabase -- Anleitung: bubble/signup_invite_setup.md.
+       data-code-required  GESTRICHEN (25.09.). Standard jetzt "no", und die Seite fragt ohnehin
+                       nicht mehr: ohne Einladung gibt es keinen Signup, mit Einladung wurde der
+                       Code nie verlangt. Am Element ENTFERNEN.
        data-code       Optional: Vorgabewert fuer das Codefeld. Die Adresse schlaegt ihn:
                        ?code=ABC123 (auch ?invite_code=) fuellt das Feld vor, damit ein
                        verschickter Link nichts zum Abtippen laesst. Leerzeichen werden entfernt
@@ -248,7 +247,6 @@
      data-instance="INSTANCE_ID"
      data-cdn-pin="CDN_PIN"
      data-mode="login"
-     data-code-required="yes"
      data-logo="LOGO_URL"
      data-logo-dark="LOGO_DARK_URL"
      data-isdark="IS_DARK"

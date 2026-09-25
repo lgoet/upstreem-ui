@@ -293,6 +293,10 @@
    Derselbe Fehler wie bei .usb-uploadrow in settings-brand; wer display setzt, muss die
    Ausnahme mitschreiben. */
 .uau-check[hidden], .uau-side[hidden] { display: none; }
+/* Dieselbe Falle fuer Google, die Trennlinie davor und den Knopf in der Fusszeile (25.09.): sie
+   tragen display: inline-flex bzw. grid und schlagen damit [hidden]. Ohne diese Zeile stuende
+   der Google-Knopf im Signup weiter da, obwohl die Seite ihn ausgeblendet hat. */
+.uau-google[hidden], .uau-or[hidden], .uau-foot button[hidden] { display: none; }
 /* Die native Checkbox sieht auf jedem Betriebssystem anders aus und passt zu keinem davon zur
    App. accent-color faerbt nur die Fuellung, Form und Haken bleiben fremd. Also selbst gezeichnet,
    in derselben Sprache wie der Rest: abgerundetes Quadrat wie .up-sent-dot, gefuellt in
