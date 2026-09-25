@@ -88,10 +88,12 @@ def pruefe(pfad):
     gruppen = {}
     for zeile, sel, eig in regeln(pfad):
         for klasse in PAKETE:
-            if ("." + klasse) in sel:
+            # Mit Grenze, nicht als Teilzeichenkette (25.09.): ".up-row" steckt auch in ".up-rowbtn",
+            # dem Zeilenknopf -- der Check meldete dessen display-Regel als "gesprengtes Raster".
+            if re.search(r"\." + re.escape(klasse) + r"(?![\w-])", sel):
                 stamm = familie_von(klasse)
                 # Kontext = der Selektor ohne den Bauteilnamen, damit zwei Orte getrennt bleiben
-                ktx = re.sub(r"\.(%s)\b" % "|".join(sorted(PAKETE, key=len, reverse=True)),
+                ktx = re.sub(r"\.(%s)(?![\w-])" % "|".join(sorted(PAKETE, key=len, reverse=True)),
                              "", sel).strip()
                 sl = gruppen.setdefault((ktx, stamm), {"zeile": zeile, "sel": [], "eig": set()})
                 sl["eig"] |= eig
