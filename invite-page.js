@@ -78,6 +78,12 @@
     laedtNicht:   "We could not load your invitation. Please reload the page.",
     unlesbar:     "We could not read your invitation. Please reload the page.",
     allgemein:    "This invitation is not valid anymore. Please ask your team for a new one.",
+    /* Der Grund, wenn der RPC ihn verraet -- als Zustand (status, expires_at, revoked_at,
+       accepted_at) oder als Fehler aus der Datenbank. */
+    ungueltig:    "This invitation link is not valid. Please ask your team for a new one.",
+    abgelaufen:   "This invitation has expired. Please ask your team for a new one.",
+    zurueck:      "This invitation has been revoked. Please ask your team for a new one.",
+    benutzt:      "This invitation has already been used.",
     dauert:       "This is taking longer than expected. Please reload the page.",
     annehmenLos:  "We could not accept your invitation. Please reload the page.",
     klemmt:       "Something went wrong. Please reload the page."
@@ -111,6 +117,34 @@
     }
     function ic(name, w){ return UC.icon ? UC.icon(name, w || 2) : ""; }
     function str(v){ return v == null ? "" : String(v).trim(); }
+    /* Liegt ein Zeitpunkt in der Vergangenheit? Unlesbar zaehlt als nein -- ein kaputtes Datum
+       darf eine gueltige Einladung nicht sperren. */
+    function vorbei(v){
+      var s = str(v);
+      if (!s) return false;
+      var d = new Date(s);
+      return !isNaN(d.getTime()) && d.getTime() < Date.now();
+    }
+    /* Der Grund aus dem Zustand der Einladung, oder "" wenn nichts dagegen spricht. */
+    function zustandVon(p){
+      var st = str(p.status || p.invite_status).toLowerCase();
+      if (str(p.revoked_at) || st === "revoked" || st === "cancelled" || st === "canceled") return T.zurueck;
+      if (str(p.accepted_at) || st === "accepted" || st === "used") return T.benutzt;
+      if (st === "expired" || vorbei(p.expires_at)) return T.abgelaufen;
+      if (st && st !== "pending" && st !== "active" && st !== "open" && st !== "valid") return T.allgemein;
+      return "";
+    }
+    /* Die Meldung einer Datenbank-Ausnahme als Satz fuer den Nutzer. Bekannt ist "invalid invite
+       token" (gemessen am 25.09. in Supabase, get_team_invite_by_token_v2); der Rest nach
+       Stichwort, und was nichts trifft, bekommt den allgemeinen Satz. */
+    function freundlich(roh){
+      var m = str(roh).toLowerCase();
+      if (/expired/.test(m)) return T.abgelaufen;
+      if (/revoked|cancel/.test(m)) return T.zurueck;
+      if (/accepted|already|used/.test(m)) return T.benutzt;
+      if (/invalid|not found|unknown|token/.test(m)) return T.ungueltig;
+      return T.allgemein;
+    }
 
     var state = { phase: "loading", data: null, err: "", busy: false };
     var uhrLaden = null, uhrKnopf = null, uhrHaken = null, uhrWillkommen = null, uhrEinzug = null;
@@ -558,20 +592,37 @@
               : (p.team && typeof p.team === "object") ? p.team : {};
         state.data = {
           brand:   str(p.brand_name || p.team_name || b.name || (typeof p.brand === "string" ? p.brand : "") || p.name),
-          logo:    str(p.brand_logo || p.brand_logo_url || p.logo_url || p.team_logo || b.logo || b.logo_url || p.logo),
-          inviter: str(p.inviter_name || p.invited_by_name || p.invited_by || p.inviter),
+          logo:    str(p.brand_logo || p.brand_logo_url || p.logo_url || p.team_logo || p.team_logo_url ||
+                       b.logo || b.logo_url || p.logo),
+          /* created_by_email zuletzt: so heisst das Feld in den Einladungen, die team-orga
+             bekommt -- lieber eine Adresse als gar kein "Invited by". */
+          inviter: str(p.inviter_name || p.invited_by_name || p.invited_by || p.inviter ||
+                       p.created_by_name || p.created_by_email),
           role:    str(p.role || p.invited_role)
         };
-        /* error kann ein Objekt sein ({"message": ..., "code": ...}, so meldet Supabase) -- dann
-           gilt seine Meldung. Sonst stuende "[object Object]" im Kasten. */
-        var err = (p.error && typeof p.error === "object") ? p.error.message : p.error;
-        var msg = str(p.message || p.error_message || err || p.reason || p.msg);
+        /* EIN FEHLER AUS DER DATENBANK (25.09.): wirft der RPC eine Ausnahme ("invalid invite
+           token"), antwortet Supabase mit HTTP 400 und dieser Huelle -- {"code": "P0001",
+           "details": null, "hint": null, "message": "..."}. Bubble reicht sie durch, wenn am
+           API-Aufruf "Include errors in response" angehakt ist. Ihre message ist fuer Entwickler
+           geschrieben und kommt NICHT woertlich in den Kasten (keine Entwicklertexte im UI),
+           sondern als der Satz, der zu ihr passt. Dasselbe gilt fuer error als Objekt. */
+        var dbHuelle = (p.error && typeof p.error === "object") ? p.error
+                     : (p.code != null && p.message != null && ("hint" in p || "details" in p)) ? p : null;
+        var msg = dbHuelle ? freundlich(dbHuelle.message)
+                : str(p.message || p.error_message || p.error || p.reason || p.msg);
         var okRoh = p.ok != null ? p.ok : (p.valid != null ? p.valid : p.success);
+        /* DER ZUSTAND DER EINLADUNG, wenn der RPC ihn mitschickt. status allein reicht nicht:
+           in den Einladungen, die team-orga bekommt, bleibt eine abgelaufene Einladung auf
+           "pending" -- ablesen laesst es sich nur an expires_at. Ohne diese Pruefung zeigte eine
+           abgelaufene Einladung mit Teamnamen "Accept invite". */
+        var zustand = zustandVon(p);
         /* Gilt die Einladung? Steht ok da, entscheidet ok. Fehlt es, entscheidet die Meldung: ohne
-           Meldung und mit einem Team ist es eine gueltige Einladung. */
-        var gueltig = okRoh != null ? (okRoh === true || UC.isYes(okRoh)) : (!msg && !!state.data.brand);
+           Meldung und mit einem Team ist es eine gueltige Einladung. Ein Zustand, der dagegen
+           spricht (abgelaufen, zurueckgezogen, benutzt), gewinnt in beiden Faellen. */
+        var gueltig = !zustand &&
+          (okRoh != null ? (okRoh === true || UC.isYes(okRoh)) : (!msg && !!state.data.brand));
         state.phase = gueltig ? "ready" : "error";
-        state.err = gueltig ? "" : (msg || T.allgemein);
+        state.err = gueltig ? "" : (msg || zustand || T.allgemein);
         state.busy = false;
         if (uhrKnopf){ clearTimeout(uhrKnopf); uhrKnopf = null; }
         auftritt();

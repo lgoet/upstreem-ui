@@ -71,10 +71,18 @@
                          ein Teamname da ist.
            message       die Fehlermeldung, erscheint woertlich im Kasten.
                          (auch: error, error_message, reason)
-           brand_name    Name des Teams/der Brand   (auch: team_name, name, brand.name)
-           brand_logo    Logo-URL                   (auch: brand_logo_url, logo_url, team_logo, logo)
-           inviter_name  wer eingeladen hat         (auch: invited_by_name, invited_by) -- optional
+           brand_name    Name des Teams/der Brand   (auch: team_name, name, brand.name, team.name)
+           brand_logo    Logo-URL                   (auch: brand_logo_url, logo_url, team_logo,
+                                                     team_logo_url, logo)
+           inviter_name  wer eingeladen hat         (auch: invited_by_name, invited_by,
+                                                     created_by_name, created_by_email) -- optional
            role          als was                    (auch: invited_role) -- optional
+           status        pending gilt; expired, revoked, accepted nicht (auch: invite_status)
+           expires_at    liegt es in der Vergangenheit: abgelaufen -- auch bei status "pending",
+                         denn der bleibt nach Ablauf stehen (so in den team-orga-Einladungen)
+           revoked_at / accepted_at    gesetzt: zurueckgezogen bzw. schon benutzt
+         Jeder Grund hat seinen Satz ("This invitation has expired ...", "... has been revoked
+         ...", "... has already been used."), deutsch aus dem Katalog.
          Gueltig:  {"ok": true, "brand_name": "Acme", "brand_logo": "https://...",
                     "inviter_name": "Anna Schmidt", "role": "member"}
          Fehler:   {"ok": false, "message": "This invitation has expired. Please ask your team
@@ -83,6 +91,11 @@
          der Meldung. Ohne Team: "This invitation can't be used".
          Unlesbare Antwort: Fehlerkasten "We could not read your invitation. Please reload the
          page." -- nie ein endloses Skelett.
+         FEHLER AUS DER DATENBANK: wirft der RPC eine Ausnahme, kommt die Huelle von Supabase
+         {"code": "P0001", "details": null, "hint": null, "message": "invalid invite token"}
+         (auch verschachtelt als "error": {...}). Deren message ist ein Entwicklertext und steht
+         NICHT woertlich da: "invalid invite token" wird zu "This invitation link is not valid.
+         Please ask your team for a new one.", Unbekanntes zum allgemeinen Satz.
          Waehrend Haken oder Willkommen laufen, aendert ein zweiter Aufruf nichts mehr (Bubble
          schickt den Pageload manchmal doppelt).
 
@@ -100,6 +113,31 @@
        25s Willkommen ohne Seitenwechsel -> zurueck zur Einladung, "This is taking longer ..."
      Das sind Netze, nicht der Normalweg. Steht einer dieser Saetze im Alltag da, fehlt in
      einem Workflow der Rueckweg.
+
+     ── ZUERST: "Include errors in response and allow workflow actions to continue" ──────────
+     Am API-Aufruf des Einladungs-RPC (API Connector) ANHAKEN. Der RPC wirft bei einem
+     unbekannten Token eine Ausnahme, Supabase antwortet mit HTTP 400 -- ohne den Haken bricht
+     Bubble den Workflow dort ab ("The service ... just returned an error"), setInvitePage kommt
+     nie an, und nach 15s steht "We could not load your invitation" statt des wahren Grundes.
+     Mit dem Haken laeuft der Workflow weiter, und der Fehler geht in einen EIGENEN Schritt:
+
+       Schritt A  Only when Result of step 1's returned an error is "no"  -> die Antwort (unten)
+       Schritt B  Only when Result of step 1's returned an error is "yes" -> der Rohtext des
+                  Fehlers (error -> body) in denselben Setter:
+
+       (function () {
+         var ROH = `<Result of step 1's error body>`
+           .replace(/:\s*([,}\]])/g, ": null$1")
+           .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+         var n = 0;
+         (function go () {
+           if (typeof window.setInvitePage === "function") {
+             try { window.setInvitePage("invite", ROH); } catch (e) {}
+             return;
+           }
+           if (n++ < 60) setTimeout(go, 100);
+         })();
+       })();
 
      ── DER RUN-JS-SCHRITT IM PAGELOAD (Hausform, CLAUDE.md 2a) ─────────────────────────────
      EIN Backtick um den ROHEN Text, beide Ersetzungen, window.<name>, eigenes try. Kein

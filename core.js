@@ -1176,6 +1176,14 @@
       "Das dauert länger als erwartet. Bitte lade die Seite neu.",
     "Something went wrong. Please reload the page.":
       "Da ist etwas schiefgegangen. Bitte lade die Seite neu.",
+    /* Die Gruende, wenn der RPC sie verraet (Zustand oder Ausnahme aus der Datenbank, 25.09.). */
+    "This invitation link is not valid. Please ask your team for a new one.":
+      "Dieser Einladungslink ist ungültig. Bitte lass dir von deinem Team einen neuen schicken.",
+    "This invitation has expired. Please ask your team for a new one.":
+      "Diese Einladung ist abgelaufen. Bitte lass dir von deinem Team eine neue schicken.",
+    "This invitation has been revoked. Please ask your team for a new one.":
+      "Diese Einladung wurde zurückgezogen. Bitte lass dir von deinem Team eine neue schicken.",
+    "This invitation has already been used.": "Diese Einladung wurde bereits verwendet.",
 
     /* ── Brand-Hervorhebung in den Charts ───────────────────────────────────────────────────── */
     "Your brand only": "Nur deine Brand",
