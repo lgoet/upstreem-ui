@@ -2459,6 +2459,15 @@
     "Target": "Wen",
     "Resend": "Erneut senden",
     "Revoke": "Zurückziehen",
+    /* Die Zeilenmenues und der Zaehler des Verlaufs. Die ROLLENNAMEN bleiben englisch, auch
+       mitten im deutschen Satz -- so vorgegeben. */
+    "Set Member": "Zu Member machen",
+    "Set Admin": "Zu Admin machen",
+    "Set Owner": "Zu Owner machen",
+    "1 entry": "1 Eintrag",
+    "{n} entries": "{n} Einträge",
+    "Admins can invite and manage members. Members have read access to the team's data.":
+      "Admins können einladen und Mitglieder verwalten. Member haben Lesezugriff auf die Daten des Teams.",
     /* Was im Lesefehler steht ("{was} konnte nicht geladen werden"). Im Singular, weil der Satz
        "konnte" sagt -- "Die offenen Einladungen konnte" waere falsch. */
     "team members": "Die Mitgliederliste",
@@ -3164,8 +3173,11 @@
     var d = new Date(String(v));
     if (isNaN(d.getTime())) return null;
     function z(n){ return String(n).padStart(2, "0"); }
+    /* Der Monat durch t(), wie in der Beschriftung der Chart-Achse schon: in DE stand sonst
+       "04. May 2026". Der Katalog hat die Kuerzel ("May" -> "Mai"), aber ein ganzes Datum ist
+       kein Schluessel, und der Sprachlauf laesst Zellen ohnehin aus (25.09., team-orga). */
     return { t: d.getDate(), tt: z(d.getDate()), m: d.getMonth(), mm: z(d.getMonth() + 1),
-             j: d.getFullYear(), mon: MONTHS[d.getMonth()] };
+             j: d.getFullYear(), mon: t(MONTHS[d.getMonth()]) };
   }
   function fmtDateMuster(p, muster){
     if (!p) return "–";
@@ -7562,8 +7574,13 @@
      einzigen Liste blieben genau diese zwei Knoepfe englisch, waehrend alles um sie herum
      uebersetzt war. Ein Knopf in einer Zelle wird darum durchgelassen -- ein Markenname steht nie
      in einem Knopf, und wo er es doch tut (ein Chip), greift die HART-Liste. */
+  /* [translate='no'] ist das Attribut aus HTML fuer genau diesen Zweck (25.09.): ein Wort, das
+     wie Oberflaeche aussieht, aber ein NAME ist. Anlass waren die Rollen im Einladen-Dialog von
+     team-orga -- "Member" steht im Katalog (fuer andere Komponenten) und wurde dort zu
+     "Mitglied", obwohl Rollennamen englisch bleiben. Dasselbe Attribut haelt auch die
+     Uebersetzung des Browsers fern. */
   var SPRACHE_HART = "[class*='-chip'], [class*='-tag'], input, textarea, [contenteditable]," +
-                     "script, style, code, pre";
+                     "script, style, code, pre, [translate='no']";
   var SPRACHE_ZELLE = ".up-td, [class*='-td'], [class*='-cell']";
   var SPRACHE_KNOPF = "button, [role='button']";
   function spracheDarf(el){

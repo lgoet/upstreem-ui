@@ -28,7 +28,10 @@
      renderTeamOrga({ instanceId, members, permissions, viewer_role, pending_invites })
      setTeamOrgaInvites(INSTANCE_ID, { count, invites })
      setTeamOrgaLog(INSTANCE_ID, [ ... ])
-     setTeamOrgaLoading(INSTANCE_ID, "yes")     Skelett an, waehrend die RPCs laufen
+     setTeamOrgaLoading(INSTANCE_ID, "yes")     Skelett an, waehrend die RPCs laufen -- mit der
+                                                Zeilenzahl und Hoehe von vorher
+     setTeamOrgaLoading(INSTANCE_ID, "yes", "invites,log")   nur diese Abschnitte laden
+                                                (members, invites, log); jeder endet mit SEINEM Schritt
      resetTeamOrga(INSTANCE_ID)                 zurueck aufs Skelett, bis neu geliefert wird
 
   WER WAS DARF -- das entscheidet der SERVER, nicht diese Komponente
@@ -224,10 +227,21 @@
 })();
 </script>
 
-  Einmal am Anfang des Workflows, damit das Skelett laeuft, solange die RPCs unterwegs sind:
+  DER LADESCHRITT -- einmal am ANFANG des Workflows, vor dem ersten RPC. Die Abschnitte zeigen
+  ihr Skelett mit so vielen Zeilen wie vorher und in derselben Hoehe; jeder endet von selbst,
+  sobald SEIN Schritt ankommt. Kommt einer nie, zeigt er nach 25s wieder seinen letzten Stand.
+  Die Liste im dritten Wert nennt, welche Abschnitte der Workflow neu laedt -- ohne Liste alle
+  drei. Wer "alle" sagt, aber nur zwei Schritte folgen laesst, laesst den dritten bis zur
+  Warte-Uhr schimmern.
+
+     Seitenaufbau, Teamwechsel         kein dritter Wert (alle drei)
+     nach Invite, Resend, Revoke       "invites,log"
+     nach Remove, Rolle aendern        "members,log"
 
 <script>
-  if (typeof window.setTeamOrgaLoading === "function") window.setTeamOrgaLoading("INSTANCE_ID", "yes");
+(function () {
+  try { if (window.setTeamOrgaLoading) window.setTeamOrgaLoading("INSTANCE_ID", "yes"); } catch (e) {}
+})();
 </script>
 
   ============================================================================================
@@ -372,9 +386,10 @@
      bubble_fn_utoRemove   -> RPC "remove member" (user_id)         danach: Daten neu holen
      bubble_fn_utoRole     -> RPC "set role" (user_id, role)        danach: Daten neu holen
 
-  "Danach: Daten neu holen" heisst: die RPCs und ihre Schritte erneut. Am einfachsten alle drei;
-  mindestens den Abschnitt, den die Aktion aendert (Einladen, Resend, Revoke: Einladungen --
-  Remove, Rolle: Mitglieder), und das Protokoll, denn jede Aktion schreibt dort einen Eintrag.
+  "Danach: Daten neu holen" heisst: der Ladeschritt mit der passenden Liste, dann die RPCs und
+  ihre Schritte erneut. Am einfachsten alle drei; mindestens den Abschnitt, den die Aktion
+  aendert (Einladen, Resend, Revoke: Einladungen -- Remove, Rolle: Mitglieder), und das
+  Protokoll, denn jede Aktion schreibt dort einen Eintrag.
   Ohne das steht die Seite auf dem alten Stand und der Nutzer klickt ein zweites Mal.
   ============================================================================================
 -->

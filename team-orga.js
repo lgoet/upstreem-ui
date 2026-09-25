@@ -24,7 +24,9 @@
      renderTeamOrga({ instanceId, members, permissions, viewer_role, pending_invites })
      setTeamOrgaInvites(INSTANCE_ID, { count, invites })      die offenen Einladungen
      setTeamOrgaLog(INSTANCE_ID, [ ... ])                     das Protokoll
-     setTeamOrgaLoading(INSTANCE_ID, "yes")                   Skelett, waehrend der RPC laeuft
+     setTeamOrgaLoading(INSTANCE_ID, "yes")                   Skelett, waehrend die RPCs laufen --
+                                                              mit der Zeilenzahl und Hoehe von vorher
+     setTeamOrgaLoading(INSTANCE_ID, "yes", "invites,log")    nur diese Abschnitte (members, invites, log)
      resetTeamOrga(INSTANCE_ID)                               zurueck aufs Skelett, bis neu geliefert wird
 
    Die drei Nutzlasten kommen getrennt, weil sie im Backend aus drei Abfragen kommen -- und seit
@@ -165,10 +167,14 @@
                 '<div class="uto-hint">Admins can invite and manage members. Members have read ' +
                   'access to the team\'s data.</div>' +
               '</div>' +
-              /* .up-seg aus core -- zwei Werte, also ein Umschalter und kein Auswahlfeld. */
+              /* .up-seg aus core -- zwei Werte, also ein Umschalter und kein Auswahlfeld.
+                 translate="no" an den Knoepfen: es sind ROLLENNAMEN, und die bleiben englisch.
+                 Gemessen stand hier in DE "Mitglied" -- der Sprachlauf von core kennt "Member" aus
+                 anderen Komponenten. core laesst seit dem 25.09. alles unter translate="no" aus;
+                 dasselbe HTML-Attribut haelt auch die Uebersetzung des Browsers fern. */
               '<span class="up-seg is-lg uto-seg" role="group" aria-label="Role">' +
-                '<button class="up-seg-btn is-active" type="button" data-uto-role="member">Member</button>' +
-                '<button class="up-seg-btn" type="button" data-uto-role="admin">Admin</button>' +
+                '<button class="up-seg-btn is-active" type="button" data-uto-role="member" translate="no">Member</button>' +
+                '<button class="up-seg-btn" type="button" data-uto-role="admin" translate="no">Admin</button>' +
               '</span>' +
             '</div>' +
           '</div>' +
@@ -289,7 +295,18 @@
         perm: { can_invite: false, can_manage_roles: false, can_manage_members: false },
         viewerRole: "member", viewerId: "", viewerMail: "",
         logOffen: false,
-        busy: true, hatDaten: false,
+        hatDaten: false,
+        /* LAEDT GERADE NEU -- je Abschnitt, nicht als ein Schalter fuer alles (25.09.). Vorher
+           beendete JEDER Setter das Laden fuer alle drei: kam der Mitglieder-Schritt zuerst,
+           sprangen Einladungen und Verlauf mit ihren ALTEN Zeilen zurueck und wechselten einen
+           Augenblick spaeter noch einmal. Jetzt endet ein Abschnitt, wenn SEIN Schritt kommt.
+           Nicht beim Start gesetzt: ohne Daten zeigt ein Abschnitt sein Skelett ohnehin. */
+        laedt: { members: false, invites: false, log: false },
+        /* Die Hoehe jeder Tabelle in dem Moment, in dem ihr Laden begann. Das Skelett haelt sie
+           als Mindesthoehe, bis die Daten da sind -- auch ein leerer Abschnitt ("No pending
+           invites" ist hoeher als eine Skelettzeile) springt dann nicht. Vorbild: das Skelett
+           in performance-radar (Zeilenzahl von vorher plus gemessene Hoehe). */
+        hoehe: { members: 0, invites: 0, log: 0 },
         /* Kamen die offenen Einladungen schon ueber setTeamOrgaInvites? Dann gewinnt diese Liste
            ueber pending_invites in der Mitglieder-Nutzlast (siehe render1). */
         invitesEigen: false,
@@ -458,13 +475,19 @@
          muessen dasselbe sagen, sonst rutscht die letzte Zelle in eine zweite, unsichtbare
          Rasterzeile -- gemessen, bevor das hier stand: 4 Spuren, 5 Zellen, die fuenfte 40px unter
          dem Zeilenanfang in einer 52px hohen Zeile. Unsichtbar nur, weil sie leer war. */
+      /* Was diese Datei bei JEDEM Rendern neu baut -- Spaltenkoepfe, Leerzustaende, Zellen, die
+         Saetze der Zeilenmenues --, geht direkt durch UC.t, so wie Resend und Revoke schon
+         (25.09., gemeldet: "in DE noch viel auf Englisch"). Der Sprachlauf von core uebersetzt
+         nur, was beim Einfuegen sichtbar ist, und laesst Tabellenzellen aus. Gemessen blieben so
+         im Pruefstand die Menuesaetze, "expired" und "You" englisch, in der App zusaetzlich
+         "Target" im Protokollkopf. Die Rollennamen gehen NICHT durch UC.t (so vorgegeben). */
       function membersHtml(mitAkt) {
         var kopf =
           '<div class="up-thead">' +
-            '<div class="up-th">Name</div>' +
-            '<div class="up-th uto-c-mail">E Mail</div>' +
-            '<div class="up-th uto-c-when">Joined At</div>' +
-            '<div class="up-th">Role</div>' +
+            '<div class="up-th">' + esc(UC.t("Name")) + '</div>' +
+            '<div class="up-th uto-c-mail">' + esc(UC.t("E Mail")) + '</div>' +
+            '<div class="up-th uto-c-when">' + esc(UC.t("Joined At")) + '</div>' +
+            '<div class="up-th">' + esc(UC.t("Role")) + '</div>' +
             (mitAkt ? AKT_KOPF() : "") +
           '</div>';
         /* Skelett auch, solange die MITGLIEDER noch nicht da sind -- nicht nur bei busy. Seit
@@ -475,8 +498,10 @@
            zwei Zahlen machte core sieben Zeilen ohne eine einzige Zelle -- 364px leere Flaeche
            statt Balken, in allen drei Tabellen. cls traegt die Klasse der echten Zelle mit, weil
            das schmale Bild Spalten ueber genau diese Klassen ausblendet. */
-        if (state.busy || !state.hatDaten) {
-          return kopf + UC.skeletonRows({ count: 3, cols: [
+        if (state.laedt.members || !state.hatDaten) {
+          /* So viele Zeilen wie zuletzt da standen (mindestens eine, damit etwas schimmert); vor
+             den ersten Daten drei. */
+          return kopf + UC.skeletonRows({ count: state.hatDaten ? Math.max(1, state.members.length) : 3, cols: [
             { w: 120, jitter: 26 },
             { w: 140, jitter: 26, cls: "uto-mail" },
             { w: 78, cls: "uto-when" },
@@ -484,14 +509,14 @@
           ].concat(mitAkt ? [{ w: 0, cls: "uto-act" }] : []) });
         }
         if (!state.members.length) {
-          return kopf + '<div class="up-empty-mini">No members yet</div>';
+          return kopf + '<div class="up-empty-mini">' + esc(UC.t("No members yet")) + '</div>';
         }
         return kopf + state.members.map(function (m, i) {
           var name = feld(m.display_name) || feld(m.email) || "–";
           return '<div class="up-row" data-uto-row="' + i + '">' +
             '<div class="up-td uto-name">' +
               '<span class="uto-nametxt">' + esc(name) + '</span>' +
-              (istSelbst(m) ? '<span class="uto-you">You</span>' : "") +
+              (istSelbst(m) ? '<span class="uto-you">' + esc(UC.t("You")) + '</span>' : "") +
             '</div>' +
             '<div class="up-td uto-mail">' + esc(feld(m.email) || "–") + '</div>' +
             '<div class="up-td uto-when">' + esc(fmtDate(feld(m.joined_at))) + '</div>' +
@@ -543,21 +568,23 @@
          render() daraus auch die Aktionsspalte ableitet -- das Skelett hat fuenf Zellen, und
          Spuren und Zellen muessen dasselbe sagen. */
       function invitesWarten() {
-        return !state.invitesLeseFehler && (state.busy || !state.invitesDa);
+        return state.laedt.invites || (!state.invitesLeseFehler && !state.invitesDa);
       }
       function invitesHtml(mitAkt) {
         var kopf =
           '<div class="up-thead">' +
-            '<div class="up-th">Email</div>' +
-            '<div class="up-th">Role</div>' +
-            '<div class="up-th uto-c-when">Expires</div>' +
-            '<div class="up-th uto-c-by">Invited by</div>' +
+            '<div class="up-th">' + esc(UC.t("Email")) + '</div>' +
+            '<div class="up-th">' + esc(UC.t("Role")) + '</div>' +
+            '<div class="up-th uto-c-when">' + esc(UC.t("Expires")) + '</div>' +
+            '<div class="up-th uto-c-by">' + esc(UC.t("Invited by")) + '</div>' +
             (mitAkt ? AKT_KOPF("uto-invact") : "") +
           '</div>';
-        /* Der Lesefehler VOR dem Skelett: er ist eine Aussage, das Skelett waere keine. */
-        if (state.invitesLeseFehler) return kopf + UC.leseFehlerHtml("pending invites");
+        /* Der Lesefehler VOR dem Skelett: er ist eine Aussage, das Skelett waere keine. Nur ein
+           ausdruecklich neuer Ladeversuch (setTeamOrgaLoading) geht vor -- er raeumt die Meldung
+           weg, bis seine Antwort da ist; ist die wieder unlesbar, steht sie wieder da. */
+        if (state.invitesLeseFehler && !state.laedt.invites) return kopf + UC.leseFehlerHtml("pending invites");
         if (invitesWarten()) {
-          return kopf + UC.skeletonRows({ count: 2, cols: [
+          return kopf + UC.skeletonRows({ count: state.invitesDa ? Math.max(1, state.invites.length) : 2, cols: [
             { w: 140, jitter: 26 },
             { w: 58, cls: "uto-role" },
             { w: 78, cls: "uto-when" },
@@ -565,7 +592,7 @@
           ].concat(mitAkt ? [{ w: 0, cls: "uto-invact" }] : []) });
         }
         if (!state.invites.length) {
-          return kopf + '<div class="up-empty-mini">No pending invites</div>';
+          return kopf + '<div class="up-empty-mini">' + esc(UC.t("No pending invites")) + '</div>';
         }
         return kopf + state.invites.map(function (v, i) {
           var alt = abgelaufen(v.expires_at);
@@ -577,7 +604,7 @@
                 esc(rolleName(v.invited_role)) + '</span></span>' +
             '</div>' +
             '<div class="up-td uto-when"><span class="uto-inv-state' + (alt ? " is-expired" : "") +
-              '">' + (alt ? "expired" : esc(fmtDate(feld(v.expires_at)))) + '</span></div>' +
+              '">' + (alt ? esc(UC.t("expired")) : esc(fmtDate(feld(v.expires_at)))) + '</span></div>' +
             '<div class="up-td uto-inv-by">' + esc(feld(v.created_by_email) || "–") + '</div>' +
             (mitAkt ? invZelle(i) : "") +
           '</div>';
@@ -588,17 +615,19 @@
       function logHtml() {
         var kopf =
           '<div class="up-thead">' +
-            '<div class="up-th">Date</div>' +
-            '<div class="up-th">Event</div>' +
-            '<div class="up-th">Actor</div>' +
-            '<div class="up-th uto-c-target">Target</div>' +
-            '<div class="up-th uto-c-meta">Details</div>' +
+            '<div class="up-th">' + esc(UC.t("Date")) + '</div>' +
+            '<div class="up-th">' + esc(UC.t("Event")) + '</div>' +
+            '<div class="up-th">' + esc(UC.t("Actor")) + '</div>' +
+            '<div class="up-th uto-c-target">' + esc(UC.t("Target")) + '</div>' +
+            '<div class="up-th uto-c-meta">' + esc(UC.t("Details")) + '</div>' +
           '</div>';
-        if (state.logLeseFehler) return kopf + UC.leseFehlerHtml("the activity log");
+        if (state.logLeseFehler && !state.laedt.log) return kopf + UC.leseFehlerHtml("the activity log");
         /* 80px am Datum: im schmalen Bild ist die Spalte 112px breit, abzueglich der 28px
            Polsterung der Zelle bleiben 84 -- ein breiterer Balken wuerde dort abgeschnitten. */
-        if (state.busy || !state.logDa) {
-          return kopf + UC.skeletonRows({ count: 4, cols: [
+        /* Hoechstens 14 Zeilen: mehr zeigt der Kasten nie (max-height 476, danach scrollt er),
+           das Skelett waere darunter nur Arbeit ohne Wirkung. */
+        if (state.laedt.log || !state.logDa) {
+          return kopf + UC.skeletonRows({ count: state.logDa ? Math.max(1, Math.min(14, state.log.length)) : 4, cols: [
             { w: 80 },
             { w: 100, jitter: 14 },
             { w: 130, jitter: 20 },
@@ -606,7 +635,7 @@
             { w: 150, jitter: 24, cls: "uto-c-meta" }
           ] });
         }
-        if (!state.log.length) return kopf + '<div class="up-empty-mini">No entries yet</div>';
+        if (!state.log.length) return kopf + '<div class="up-empty-mini">' + esc(UC.t("No entries yet")) + '</div>';
         return kopf + state.log.map(function (l) {
           var ev = feld(l.event_type) || "unknown";
           var ton = EV_TON[ev] || "";
@@ -645,8 +674,9 @@
       /* ---------------- render ---------------- */
       var popovers = [];
       function render() {
-        /* Der Fehlerfall kommt VOR dem Skelett: endloses Laden sieht aus wie "gleich da". */
-        if (state.fehler) {
+        /* Der Fehlerfall kommt VOR dem Skelett: endloses Laden sieht aus wie "gleich da". Ein
+           ausdruecklich neuer Ladeversuch der Mitglieder geht vor, bis seine Antwort da ist. */
+        if (state.fehler && !state.laedt.members) {
           elLoadErr.hidden = false;
           elLoadErr.innerHTML = UC.leseFehlerHtml("team members");
           elBody.hidden = true;
@@ -675,10 +705,14 @@
         elMembers.innerHTML = membersHtml(mAkt);
         elInvites.innerHTML = invitesHtml(iAkt);
         elLog.innerHTML = logHtml();
+        mindestHoehe(elMembers, "members");
+        mindestHoehe(elInvites, "invites");
+        mindestHoehe(elLog, "log");
 
         /* Kein Zaehler neben einem Lesefehler -- er zaehlte die Eintraege von VORHER. */
         var logZahl = state.logLeseFehler ? 0 : state.log.length;
-        elLogCnt.textContent = logZahl ? logZahl + (logZahl === 1 ? " entry" : " entries") : "";
+        elLogCnt.textContent = !logZahl ? "" :
+          (logZahl === 1 ? UC.t("1 entry") : UC.t("{n} entries").replace("{n}", logZahl));
         elLogBox.hidden = !state.logOffen;
         elToggle.setAttribute("aria-expanded", state.logOffen ? "true" : "false");
         elLogChev.innerHTML = UC.icon(state.logOffen ? "chevronUp" : "chevronDown", 2);
@@ -702,7 +736,7 @@
                 '<button class="up-optrow' + (x.gefahr ? " uto-danger" : "") + '" type="button"' +
                 ' data-uto-do="' + esc(x.art) + '" data-uto-i="' + i + '"' +
                 (x.ziel ? ' data-uto-target="' + esc(x.ziel) + '"' : "") + '>' +
-                UC.icon(x.ic, 2) + '<span class="uto-menu-lbl">' + esc(x.lbl) + '</span></button>';
+                UC.icon(x.ic, 2) + '<span class="uto-menu-lbl">' + esc(UC.t(x.lbl)) + '</span></button>';
             }).join("")
           /* Kein leeres Kaestchen: der Grund steht drin. Drei Faelle fuehren hierhin -- der letzte
              Besitzer, ein Admin, der einen anderen Admin oder den Besitzer ansieht, und die
@@ -710,11 +744,11 @@
              "You cannot manage this member." waere ueber die eigene Zeile falsch, also steht dort,
              wo das Gehen jetzt wohnt. */
           : '<div class="uto-menu-leer">' +
-              (letzterBesitzer(m)
+              esc(UC.t(letzterBesitzer(m)
                 ? "The last owner cannot be changed or removed."
                 : (istSelbst(m)
                     ? "You can leave the team under Your Brand."
-                    : "You cannot manage this member.")) +
+                    : "You cannot manage this member."))) +
             '</div>';
         menu.innerHTML = html;
         var zeile = btn.closest(".up-row");
@@ -846,7 +880,7 @@
           state.members = []; state.hatDaten = false;
           state.fehler = "members";
         }
-        state.busy = false;
+        ladenFertig("members");
         render();
       }
       /* readBubble liefert ein OBJEKT als Liste mit EINEM Eintrag: aus {"count":1,"invites":[...]}
@@ -909,7 +943,7 @@
           if (window.console) console.warn("[team-orga] " + instanceId +
             ": setTeamOrgaInvites konnte die Nutzlast nicht lesen.");
         }
-        state.busy = false;
+        ladenFertig("invites");
         render();
       }
       function setLog(p) {
@@ -929,7 +963,65 @@
           if (window.console) console.warn("[team-orga] " + instanceId +
             ": setTeamOrgaLog konnte die Nutzlast nicht lesen.");
         }
-        state.busy = false;
+        ladenFertig("log");
+        render();
+      }
+
+      /* ---------------- Laden ----------------
+         setTeamOrgaLoading(id, "yes")                  alle drei Abschnitte laden neu
+         setTeamOrgaLoading(id, "yes", "invites,log")   nur diese (members, invites, log)
+         setTeamOrgaLoading(id, "no")                   Laden beenden, ohne neue Daten
+         Jeder Abschnitt endet von selbst, sobald SEIN Setter ankommt. Die Liste gibt es, weil nach
+         einer Aktion nur die betroffenen Schritte neu laufen (Revoke: Einladungen und Verlauf) --
+         ein "alles laedt" liesse die Mitglieder dann bis zur Warte-Uhr im Skelett stehen. */
+      var ALLE = ["members", "invites", "log"];
+      var BEREICH = { members: "members", member: "members", invites: "invites", invite: "invites",
+                      log: "log", logs: "log" };
+      function bereicheAus(v) {
+        var liste = [];
+        String(v == null ? "" : v).split(/[\s,;]+/).forEach(function (w) {
+          var b = BEREICH[w.toLowerCase()];
+          if (b && liste.indexOf(b) < 0) liste.push(b);
+        });
+        /* Nichts Lesbares (leer, ein Bubble-Platzhalter, ein Tippfehler): dann alle drei. Lieber
+           einmal zu viel Skelett als ein Abschnitt, der alte Zeilen als frische ausgibt. */
+        return liste.length ? liste : ALLE.slice();
+      }
+      function tabelleVon(b) { return b === "members" ? elMembers : (b === "invites" ? elInvites : elLog); }
+      function mindestHoehe(el, b) {
+        el.style.minHeight = (state.laedt[b] && state.hoehe[b]) ? state.hoehe[b] + "px" : "";
+      }
+      /* Die Warte-Uhr, mit benanntem Ende. 25s wie in brand-detail -- auch hier haengen drei RPCs
+         an einem Aufbau. Kommt der Schritt eines Abschnitts nie (der Workflow brach ab, der
+         Schritt steht nicht in diesem Workflow), endet sein Laden trotzdem: er zeigt wieder, was
+         vorher dastand, statt ewig zu schimmern. */
+      var WARTE_MS = 25000, warteUhr = null;
+      function warteBeenden() { if (warteUhr) { clearTimeout(warteUhr); warteUhr = null; } }
+      function warteStarten() {
+        warteBeenden();
+        warteUhr = setTimeout(function () {
+          warteUhr = null;
+          state.laedt = { members: false, invites: false, log: false };
+          render();
+        }, WARTE_MS);
+      }
+      function ladenFertig(b) {
+        state.laedt[b] = false;
+        state.hoehe[b] = 0;
+        if (!state.laedt.members && !state.laedt.invites && !state.laedt.log) warteBeenden();
+      }
+      function setLoading(v, bereiche) {
+        var an = isYes(v);
+        bereicheAus(bereiche).forEach(function (b) {
+          if (!an) { ladenFertig(b); return; }
+          /* Die Hoehe VOR dem Umschalten messen -- danach stuende schon das Skelett da. Laedt der
+             Abschnitt schon, bleibt die erste Messung: ein zweites "yes" mitten im Laden wuerde
+             sonst die Hoehe des Skeletts messen. Ein zugeklappter Verlauf misst 0 und bekommt
+             keine Mindesthoehe -- er ist ja nicht zu sehen. */
+          if (!state.laedt[b]) state.hoehe[b] = Math.round(tabelleVon(b).getBoundingClientRect().height);
+          state.laedt[b] = true;
+        });
+        if (an) warteStarten();
         render();
       }
 
@@ -937,10 +1029,13 @@
         render: render1,
         setInvites: setInvites,
         setLog: setLog,
-        setLoading: function (v) { state.busy = isYes(v); render(); },
+        setLoading: setLoading,
         reset: function () {
           state.members = []; state.invites = []; state.log = [];
-          state.hatDaten = false; state.fehler = null; state.busy = false; state.invitesEigen = false;
+          state.hatDaten = false; state.fehler = null; state.invitesEigen = false;
+          state.laedt = { members: false, invites: false, log: false };
+          state.hoehe = { members: 0, invites: 0, log: 0 };
+          warteBeenden();
           state.invitesDa = false; state.logDa = false;
           state.invitesLeseFehler = false; state.logLeseFehler = false;
           /* Die Rechte mit: sonst stand nach dem Zuruecksetzen "Invite new Members" noch da, und
@@ -961,6 +1056,9 @@
         setTheme: function (t) { if (UC.setUpstreemTheme) UC.setUpstreemTheme(t); }
       };
       root.__utoController = ctrl;
+      /* Sprache: Koepfe, Leerzustaende und Zellen sind beim Zeichnen geschrieben -- also neu
+         zeichnen. Nur bei der Sprache, wie im power-dashboard. */
+      if (UC.onPrefs) UC.onPrefs(function (d) { if (!d || d.name === "locale") render(); });
       render();
       if (spaet) spaet.drain(instanceId, ctrl);
     }
@@ -1007,7 +1105,7 @@
         },
         setTeamOrgaInvites: function (id, p) { each(id || "default", function (c) { c.setInvites(p); }); },
         setTeamOrgaLog: function (id, p) { each(id || "default", function (c) { c.setLog(p); }); },
-        setTeamOrgaLoading: function (id, v) { each(id || "default", function (c) { c.setLoading(v); }); },
+        setTeamOrgaLoading: function (id, v, bereiche) { each(id || "default", function (c) { c.setLoading(v, bereiche); }); },
         resetTeamOrga: function (id) { each(id || "default", function (c) { c.reset(); }); }
       },
       forwardShape: { renderTeamOrga: "params", resetTeamOrga: "id" }
