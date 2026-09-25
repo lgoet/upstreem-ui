@@ -774,8 +774,22 @@
         state.busy = false;
         render();
       }
+      /* readBubble liefert ein OBJEKT als Liste mit EINEM Eintrag: aus {"count":1,"invites":[...]}
+         wird [{"count":1,"invites":[...]}]. Gemessen am 25.09. -- setTeamOrgaInvites hielt diese
+         Liste fuer die Einladungen selbst und zeichnete den Umschlag als eine Einladung ohne
+         Adresse ("–"). Aufgefallen ist es erst mit dem ROHEN Text aus dem Run-JS-Schritt; der
+         alte Schritt der Vorlage hatte vorher selbst geparst und Objekte uebergeben.
+         Ausgepackt wird nur, was eindeutig ein Umschlag ist: genau ein Eintrag, und der traegt
+         die Liste unter einem der genannten Schluessel. Eine echte Liste mit einer einzigen
+         Einladung bleibt, wie sie ist. */
+      function auspacken(o, schluessel) {
+        if (isArr(o) && o.length === 1 && o[0] && typeof o[0] === "object" && !isArr(o[0])) {
+          for (var i = 0; i < schluessel.length; i++) if (isArr(o[0][schluessel[i]])) return o[0];
+        }
+        return o;
+      }
       function setInvites(p) {
-        var o = (p && typeof p === "object") ? p : UC.readBubble(p);
+        var o = auspacken((p && typeof p === "object") ? p : UC.readBubble(p), ["invites"]);
         var liste = isArr(o) ? o : (o && isArr(o.invites) ? o.invites : null);
         if (liste) {
           /* Nur OFFENE: der Server schickt in dieser Nutzlast auch zurueckgezogene und
@@ -795,7 +809,7 @@
         render();
       }
       function setLog(p) {
-        var o = (p && typeof p === "object") ? p : UC.readBubble(p);
+        var o = auspacken((p && typeof p === "object") ? p : UC.readBubble(p), ["logs", "entries"]);
         var liste = isArr(o) ? o : (o && isArr(o.logs) ? o.logs : (o && isArr(o.entries) ? o.entries : null));
         if (liste) {
           /* Neueste zuerst. Der RPC liefert es schon so, aber eine Liste, deren Reihenfolge man
