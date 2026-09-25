@@ -1,0 +1,60 @@
+<!-- Pruefstand URL-Tabelle: Types-Dropdown (Vorgabe-Reiter, Apply-Knopf), Filter-Erkennung, Reset.
+       ?v=neu|alt     neu = Arbeitsstand, alt = Dateien aus HEAD (core_alt.*, urls-table_alt.js)
+       &dm=yes|no     data-domain-mode (im Domain-Drawer steht die Tabelle auf yes)
+     Markup: _h_uut_markup_aktuell.html -- frisch aus bubble/urls_table_bubble.html gezogen, nicht
+     die alte Handkopie _h_uut_markup.html. Alles per fetch mit no-store: ein ?v= hat in dieser
+     Sammlung mehrfach eine alte Datei geliefert.
+     Ergebnis: window.__ev (gefeuerte Ereignisse), window.__fehler, window.__bereit. -->
+<meta charset="utf-8"><title>urls table reset</title>
+<style>html,body{margin:0;font-family:system-ui,sans-serif;background:#fff}
+#buehne{padding:20px 20px 40px;min-width:1100px}</style>
+<body><div id="buehne"></div>
+<script>
+window.__fehler=[]; window.addEventListener("error",function(e){window.__fehler.push(String(e.message))});
+window.__ev=[];
+["uutSearch","uutSort","uutPage","uutFilter","uutRowClick","uutBrand","uutMentioned"].forEach(function(n){
+  window["bubble_fn_"+n]=function(v){ window.__ev.push([n,v]); };
+});
+try{ localStorage.clear(); localStorage.setItem("pref_theme","light"); }catch(e){}
+var Q = new URLSearchParams(location.search);
+var ALT = Q.get("v") === "alt";
+var DM = Q.get("dm") || "no";
+var CSS = ALT ? ["core_alt.css","urls-table.css"] : ["core.css","urls-table.css"];
+var JS  = ALT ? ["core_alt.js","urls-table_alt.js"] : ["core.js","urls-table.js"];
+function hol(f){ return fetch(f + "?t=" + Date.now(), {cache:"no-store"}).then(function(r){ return r.text(); }); }
+hol("_h_uut_markup_aktuell.html").then(function(t){
+  t = t.replace('data-instance="INSTANCE_ID"', 'data-instance="u1"')
+       .replace('data-cdn-pin="CDN_PIN"', 'data-cdn-pin=""')
+       .replace('data-isdark="IS_DARK"', 'data-isdark="no"')
+       .replace('data-domain-mode="DOMAIN_MODE"', 'data-domain-mode="' + DM + '"')
+       .replace('data-brand-name="BRAND_NAME"', 'data-brand-name="Acme"')
+       .replace('data-brand-logo="BRAND_LOGO"', 'data-brand-logo=""');
+  document.getElementById("buehne").innerHTML = t;
+  return Promise.all(CSS.map(function(f){ return hol(f).then(function(x){
+    var e = document.createElement("style"); e.setAttribute("data-quelle", f); e.textContent = x; document.head.appendChild(e); }); }));
+}).then(function(){
+  return JS.reduce(function(k, f){ return k.then(function(){ return hol(f).then(function(x){
+    var e = document.createElement("script"); e.setAttribute("data-quelle", f); e.textContent = x; document.head.appendChild(e); }); }); }, Promise.resolve());
+}).then(function(){
+  setTimeout(function(){
+    window.setUrlsTableBrands("u1", [
+      { company_id: "b1", name: "Acme", logo_url: "" },
+      { company_id: "b2", name: "Globex", logo_url: "" },
+      { company_id: "b3", name: "Initech", logo_url: "" }
+    ]);
+    window.renderUrlsTable({ instanceId: "u1", totalCount: 3, rows: [
+      { url:"https://a.de/eins", title:"Seite eins", domain:"a.de", favicon:"", global_share_pct: 12.5,
+        domainshare_pct: 41.2, share_delta_pct: 3.4, url_type:"article", citation_type:"Editorial",
+        has_user_brand:"yes", last_seen:"2026-09-18", companies_preview:[], companies_preview_totalcount:0 },
+      { url:"https://b.de/zwei", title:"Seite zwei", domain:"b.de", favicon:"", global_share_pct: 4.1,
+        domainshare_pct: null, share_delta_pct: -1.2, url_type:"homepage", citation_type:"Institutional",
+        has_user_brand:"no", last_seen:"2026-09-17", companies_preview:[], companies_preview_totalcount:0 },
+      { url:"https://c.de/drei", title:"Seite drei", domain:"c.de", favicon:"", global_share_pct: 2.0,
+        domainshare_pct: null, share_delta_pct: 0.2, url_type:"guide", citation_type:"Editorial",
+        has_user_brand:"no", last_seen:"2026-09-16", companies_preview:[], companies_preview_totalcount:0 }
+    ]});
+    window.__bereit = true;
+  }, 150);
+});
+</script>
+</body>

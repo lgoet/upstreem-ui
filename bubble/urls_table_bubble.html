@@ -100,6 +100,11 @@
   window.renderUrlsTable({ instanceId: "...", rows: [...], totalCount: 123 });
   window.setUrlsTableLoading("INSTANCE_ID", "yes" | "no");
   window.resetUrlsTable("INSTANCE_ID");
+      Setzt Suche, Citation Types UND URL Types, "Brand mentioned", Mentioned brands,
+      Sortierung, Seite und Zeilen je Seite zurueck und schliesst offene Dropdowns. Table
+      Settings (Spalten, Zeilenhoehe) und gezogene Spaltenbreiten BLEIBEN (seit 25.09.; vorher
+      wurden die Breiten mit zurueckgesetzt). Still: kein Ereignis -- deine Bubble-States fuer
+      die Filter im selben Workflow selbst leeren. Fertiger Schritt: bubble/runjs/urls_table_reset.js
 
   ⚠ HAND rows OVER AS THE RAW BACKTICK STRING — DO NOT PRE-PARSE IT
   ──────────────────────────────────────────────────────────────────

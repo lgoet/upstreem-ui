@@ -14138,6 +14138,28 @@
     if (i >= 0) OFFENE_DRAWER.splice(i, 1);
   });
   function openDrawers(){ return OFFENE_DRAWER.slice(); }
+  /* ---- EINEN DRAWER OEFFNEN, WIE DIE HOST-APP ES TUT (25.09.) --------------------------------
+     Die Host-App oeffnet jeden Drawer mit openDrawer(art, id) und meldet die Kennung von sich aus
+     an bubble_fn_drawer_<art>. Ein Klick, der einen Drawer oeffnen soll, braucht also KEINEN
+     eigenen Bubble-Workflow. Stand bisher als zumDrawer() in power-dashboard.js; URL Detail
+     braucht dasselbe (Mention-Chips und Conversion-Zeilen -> Brand-Drawer), also steht es hier
+     einmal. Die Ebenen regelt die Host-App: openDrawer schliesst jeden offenen Drawer derselben
+     oder einer hoeheren Ebene -- aus dem URL-Drawer (Ebene 2) heraus geht der Brand-Drawer
+     (Ebene 1) also sauber auf, statt unter dem offenen zu liegen.
+     Gibt es openDrawer auf der Seite nicht (Pruefstand, Landingpage), steht eine Zeile in der
+     Konsole -- kein stiller Ausfall. wer: Name der Komponente fuer genau diese Zeile. */
+  function drawerOeffnen(art, id, wer){
+    id = String(id == null ? "" : id).trim();
+    if (!art || !id) return false;
+    var name = "[" + (wer || "upstreem") + "] openDrawer(\"" + art + "\")";
+    if (typeof window.openDrawer === "function"){
+      try { window.openDrawer(art, id); return true; }
+      catch(e){ if (window.console) console.warn(name + " hat geworfen:", e); return false; }
+    }
+    if (window.console) console.warn(name + " gibt es auf dieser Seite nicht. Das Ereignis ist " +
+      "trotzdem gefeuert.");
+    return false;
+  }
   /* Alle offenen schliessen, von oben nach unten. zusaetzlich: Namen, die sicher mit sollen,
      auch wenn sie nicht in der Liste stehen -- ein Drawer, der geoeffnet wurde, BEVOR core
      openDrawer eingewickelt hatte, kennt die Liste nicht. Die Topbar gibt deshalb ihren eigenen
@@ -17252,7 +17274,7 @@
        die Ablage selbst bleibt privat, damit niemand einen Wert hineinschreibt, den kein
        Formatierer kennt. */
     getPref: getPref, setPref: setPref, setLocaleReload: setLocaleReload,
-    openDrawers: openDrawers, closeAllDrawers: closeAllDrawers,
+    openDrawers: openDrawers, closeAllDrawers: closeAllDrawers, drawerOeffnen: drawerOeffnen,
     onPrefs: onPrefs, getUpstreemThemeChoice: getUpstreemThemeChoice,
     PREF_DEFAULT: PREF_DEFAULT, PREF_ERLAUBT: PREF_ERLAUBT,
     fmtNum: fmtNum, fmtDateMuster: fmtDateMuster, datumsTeile: datumsTeile,

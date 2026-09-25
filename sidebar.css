@@ -1,20 +1,18 @@
 /* upstreem sidebar.css — die App-Navigation (Praefix `usn`). Braucht core.css.
 
-   .check_reinvention.py meldet hier drei Stellen als Nachbau. Alle drei sind Fehlalarme derselben
-   Art -- der Vergleich laeuft ueber "hat Hintergrund, Rahmen, Radius, Hoehe und transition", und das
-   trifft jede anklickbare Zeile:
+   .check_reinvention.py meldet hier drei Stellen als Nachbau (Stand 25.09.). Alle drei sind
+   Fehlalarme derselben Art -- der Vergleich laeuft ueber "hat Hintergrund, Rahmen, Radius, Hoehe
+   und transition", und das trifft jede anklickbare Zeile:
      .usn-team      der Team-Umschalter oben. Kein Segmented Control: er hat keine Geschwister, aus
                     denen er einen Zustand auswaehlt, sondern oeffnet ein Menue. Hoehe und Radius
                     folgen der Leiste, nicht dem Bauteil.
      .usn-item      eine Navigationszeile. Dasselbe Argument: sie markiert, WO man ist, und schaltet
                     nicht zwischen Ansichten um. Sie traegt ausserdem den eingeklappten Zustand der
                     Leiste, den kein Kit-Knopf kennt.
-     .usn-pin-edit  eine Breite, die aufgeht. Sieht wie .up-search aus, ist aber kein Eingabefeld --
-                    es faehrt ein Loeschknopf aus, und die Breite ist die des Knopfes.
-     .usn-bar.is-mini .usn-txt / .usn-fade  (22.09. nachgetragen -- der vierte Treffer, der in
-                    dieser Liste fehlte). Das ist ueberhaupt kein Bauteil, sondern der
-                    EINGEKLAPPTE Zustand: Breite auf 0, Deckkraft auf 0, alles animiert. Der
-                    Pruefer sieht "Breite, Deckkraft, transition" und denkt an einen Knopf.
+     .usn-bar.is-mini .usn-txt / .usn-fade  (22.09. nachgetragen). Das ist ueberhaupt kein
+                    Bauteil, sondern der EINGEKLAPPTE Zustand: Breite auf 0, Deckkraft auf 0, alles
+                    animiert. Der Pruefer sieht "Breite, Deckkraft, transition" und denkt an einen
+                    Knopf.
    Wo es ein Kit-Bauteil gibt, wird es benutzt: .up-iconbtn, .up-tip, .up-menu, .up-pop-opt,
    .up-stack, .up-logo-box, .up-sk.
 
@@ -795,8 +793,10 @@
 .usn-pin-x {
   flex: 0 0 14px; width: 14px; height: 14px; display: inline-flex; align-items: center; justify-content: center;
   color: var(--vc-third); opacity: 0; cursor: pointer;
-  transition: opacity 140ms var(--usn-ease), color var(--usn-t) var(--usn-ease),
-              margin-left 200ms cubic-bezier(.2,0,.38,.9);
+  /* Der Abstand zum Stift steht FEST (siehe .usn-pin-edit): 10px Zeilenabstand minus 4 = 6px.
+     Frueher rueckte das x beim Hover per margin-left in 200ms heran -- auch das war Bewegung. */
+  margin-left: -4px;
+  transition: opacity 140ms var(--usn-ease), color var(--usn-t) var(--usn-ease);
 }
 .usn-pin-x svg { width: 12px; height: 12px; display: block; }
 /* SOFORT, OHNE VERZOEGERUNG (21.09. angefordert). Hier standen 220ms -- das x kam also
@@ -808,48 +808,31 @@
 .usn-bar.is-mini .usn-pin-x { display: none; }
 
 /* ---- Umbenennen: der Stift ----
-   Das Aufziehen ist das von .mqa-rowmenu-btn in quick-actions: max-width, opacity und der
-   Aussenabstand wandern, nicht display -- die Zeile schiebt sich also auf, statt dass etwas
-   hineinspringt. Uebernommen sind auch die Zeiten und die Kurve.
+   GENAU WIE DAS x DANEBEN (25.09. angefordert: "gleiches Appear-Verhalten wie der x-Button").
+   Bis dahin fuhr der Stift auf: max-width 0 -> 14px, dazu margin-left und opacity, und das x
+   rueckte per margin-left nach -- beim Ueberfahren bewegte sich also die Zeile, und der Name
+   wurde im selben Moment um die Breite des Stifts gekuerzt. Jetzt stehen beide Zeichen immer an
+   ihrem Platz, unsichtbar, und kommen NUR ueber die Deckkraft: dieselben 140ms und dieselbe
+   Kurve wie das x, derselbe Abstand von 6px (10px Zeilenabstand minus 4) wie vorher im offenen
+   Zustand. Der Name ist damit in Ruhe genau so lang wie beim Hover -- nichts springt.
 
-   Der Aussenabstand ist hier negativ, und das ist der Punkt: .usn-item ist ein Flex mit
-   gap: 10px, ein Kind mit Breite 0 traegt seine Luecke also trotzdem. -10px frisst sie im
-   Ruhezustand ganz weg (sonst stuende dauerhaft ein 10px-Loch vor dem x), -4px laesst im
-   offenen Zustand 6px stehen -- denselben Abstand, den das Vorbild als margin-left setzt.
-   Das x rueckt dann mit, damit die beiden Zeichen als Paar stehen und nicht 10px auseinander.
-
-   Die Verzoegerung sind die 750ms des Vorbilds, und sie kommt wie dort aus einer Uhr in JS und
-   nicht aus transition-delay: eine CSS-Verzoegerung laeuft auch dann los, wenn der Zeiger die
-   Zeile nur streift, und haette bei jedem Ueberfahren der Liste eine Reihe von Stiften
-   nachgezogen. Die Klasse is-editready setzt der Zuhoerer in sidebar.js.
-
-   .check_reinvention meldet hier .up-search (die ausfahrende Suche). Fehlalarm ueber die
-   gemeinsamen Eigenschaften "Breite waechst, overflow versteckt, mit Uebergang": .up-search ist
-   ein Suchfeld samt Lupe, Eingabe und Loeschknopf, das eine Toolbar aufzieht. Hier faehrt ein
-   14px-Zeichen in eine Zeile ein. Das echte Vorbild ist .mqa-rowmenu-btn, und dessen Werte sind
-   uebernommen, nicht neu erfunden -- es liegt in quick-actions und ist dort an die Maße jener
-   Zeile gebunden, also nicht ohne Umbau zu teilen. */
+   pointer-events: none in Ruhe bleibt: der unsichtbare Stift soll nicht umbenennen, wenn jemand
+   die Zeile an genau dieser Stelle anklickt, um zum Eintrag zu springen. is-editready setzt der
+   Zuhoerer in sidebar.js weiterhin; es haelt den Stift nach einem Klick ohne Hover offen. */
 .usn-pin-edit {
-  flex: 0 0 auto; width: 14px; height: 14px;
+  flex: 0 0 14px; width: 14px; height: 14px;
   display: inline-flex; align-items: center; justify-content: center;
-  color: var(--vc-third); cursor: pointer; overflow: hidden;
-  max-width: 0; opacity: 0; margin-left: -10px; pointer-events: none;
-  transition: max-width 140ms ease, opacity 140ms ease,
-              margin-left 140ms ease, color var(--usn-t) var(--usn-ease);
+  color: var(--vc-third); cursor: pointer;
+  opacity: 0; margin-left: -4px; pointer-events: none;
+  transition: opacity 140ms var(--usn-ease), color var(--usn-t) var(--usn-ease);
 }
 .usn-pin-edit svg { width: 12px; height: 12px; display: block; }
 /* DER STIFT KOMMT MIT DEM ZEIGER, NICHT 750ms SPAETER (21.09. angefordert: "beides einfach
    sofort da"). Der Hover-Zustand steht deshalb VOR is-editready und sagt dasselbe; die Klasse
    bleibt als zweiter Ausloeser stehen, damit der Zuhoerer in sidebar.js nichts davon merkt und
-   der Stift auch nach einem Klick ohne Hover offen bleibt.
-   Die Zeiten sind die des Vorbilds aus dem Domains-Table (140ms ease), nicht mehr die 200ms des
-   Aufziehens -- es faehrt jetzt nichts mehr auf, es blendet ein. */
+   der Stift auch nach einem Klick ohne Hover offen bleibt. */
 .usn-pin:hover .usn-pin-edit,
-.usn-pin.is-editready .usn-pin-edit {
-  max-width: 14px; opacity: 1; margin-left: -4px; pointer-events: auto;
-}
-.usn-pin:hover .usn-pin-x,
-.usn-pin.is-editready .usn-pin-x { margin-left: -4px; }
+.usn-pin.is-editready .usn-pin-edit { opacity: 1; pointer-events: auto; }
 .usn-pin-edit:hover { color: var(--vc-text); }
 .usn-bar.is-mini .usn-pin-edit { display: none; }
 /* ---- Umbenennen: das Feld ----

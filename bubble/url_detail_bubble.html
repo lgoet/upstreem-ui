@@ -36,6 +36,13 @@
                  company_name ist FREITEXT -- ein Anfuehrungszeichen im Markennamen kommt als \"
                  an, deshalb das escape-feste Muster und dahinter ein
                    :find & replace  \"  ->  "
+                 KEIN WORKFLOW NOETIG (seit 25.09.): die Komponente ruft selbst
+                   openDrawer("brand", company_id)
+                 -- derselbe Weg wie die Zeilen im Power Dashboard. openDrawer meldet die Kennung
+                 von sich aus an bubble_fn_drawer_brand und schliesst dabei den URL-Drawer (Ebene
+                 2 wird beim Oeffnen von Ebene 1 zugemacht). Das Ereignis feuert trotzdem weiter,
+                 fuer alles, was ZUSAETZLICH passieren soll. Oeffnet dein Workflow darauf den
+                 Drawer ebenfalls, nimm den Schritt heraus -- sonst geht er zweimal auf.
 
   ── Setter ──────────────────────────────────────────────────────────────────────────────────
       window.setUrlDetail("INSTANCE_ID", <text>)             das url_detailed-Objekt

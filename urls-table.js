@@ -178,25 +178,11 @@
       appliedSel: saved.appliedSel || {},      // what was last submitted
       filterUrlSel: saved.filterUrlSel || {},  // live checkbox state (url types)
       appliedUrlSel: saved.appliedUrlSel || {},
-      /* URL Types ist die Vorgabe -- das ist eine URL-Tabelle, und die Frage "was fuer eine
-         Seite ist das" ist hier die naehere. Im Domain-Modus dreht es sich: eine Domain hat einen
-         Zitationstyp, ein Seitentyp gehoert zu einer einzelnen Seite. Genau dieselbe Regel wie
-         defaultDim(mode) im Top Citations Dashboard, wo derselbe Dropdown steht.
-         Eine GESPEICHERTE Wahl gewinnt: das ist die Entscheidung des Nutzers, keine Vorgabe. */
-      /* NICHT aus dem Gespeicherten. Der Umschalter im Filter-Dropdown folgt dem MODUS der
-         Tabelle: eine URL-Tabelle fragt zuerst "was fuer eine Seite ist das" (URL Type), eine
-         Domain-Tabelle "was fuer eine Quelle ist das" (Citation Type). Bis hierher gewann eine
-         frueher getroffene Wahl -- wer einmal auf Citation gestellt hatte, sah das beim naechsten
-         Seitenaufbau wieder, und genau das wurde gemeldet. Die AUSWAHL in beiden Listen bleibt
-         weiter gespeichert; nur welche Liste offen ist, entscheidet der Modus. */
+      /* Welcher Reiter im Types-Dropdown offen ist. NICHT aus dem Gespeicherten und NICHT vom
+         Modus der Tabelle -- beim OEFFNEN wird er jedes Mal auf URL Type gestellt (siehe den
+         Oeffnen-Zweig im Klick-Zuhoerer und vorgabeDim). Die AUSWAHL in beiden Listen bleibt
+         gespeichert; nur der offene Reiter faengt immer bei URL Type an. */
       filterDim: vorgabeDim(),
-      /* Hat der Nutzer den Umschalter SELBST angefasst? Solange nicht, folgt die Vorgabe dem
-         Modus der Tabelle -- auch dann noch, wenn Bubble data-domain-mode erst nach dem Mount
-         aufloest. Genau davor warnt der Kommentar an vorgabeDim, und bis hierher half er nur
-         halb: die Vorgabe wurde EINMAL beim Aufbau gelesen, und was danach am Attribut kam,
-         erreichte sie nicht mehr. Gemeldet am 10.09.: der Filter stand beim ersten Oeffnen auf
-         Citation Type statt auf URL Type. */
-      dimGewaehlt: false,
       brandMentioned: saved.brandMentioned || "",
       pageSize: saved.pageSize || DEFAULT_PAGE_SIZE,
       page: saved.page || 1,                   // 1-based; offset is derived, never stored
@@ -292,13 +278,21 @@
     function trendChip(delta, suffix){
       return UC.trendChip(delta, { decimals: true, suffix: suffix });
     }
+    /* URL TYPE, IMMER (25.09., ausdruecklich und nicht zum ersten Mal: "URL TABLE ALL TYPES
+       DROPDOWN OEFFNEN -> IMMER DEFAULT URL TYPES"). Zweimal ist das zurueckgekommen, und beide
+       Male aus einem eigenen Grund:
+         - Hier stand "domainModus() ? citation_type : url_type", nach dem Vorbild von
+           defaultDim(mode) im Top Citations Dashboard. Im Domain-Drawer steht diese Tabelle aber
+           auf data-domain-mode=yes -- dort ging der Dropdown also auf Citation Type auf. Die
+           Zeilen sind auch dort URLs, und eine URL hat einen URL-Typ.
+         - Ein einmal angeklickter Reiter blieb fuer jedes weitere Oeffnen stehen (dimGewaehlt),
+           bis die Seite neu lud.
+       Jetzt: kein Modus, kein Merker. Der Oeffnen-Zweig setzt den Reiter bei JEDEM Oeffnen auf
+       diesen Wert, umgeschaltet wird nur innerhalb eines offenen Menues. */
+    function vorgabeDim(){ return "url_type"; }
     /* Domain-Modus: die Tabelle steht auf einer Domain-Detailseite und zeigt den Anteil AN DIESER
        DOMAIN statt am Gesamtmarkt. Als TEXT gelesen, wie data-isdark -- Bubble liefert "yes"/"no",
        und der unersetzte Platzhalter aus der Vorlage zaehlt als nein. */
-    /* Dieselbe Regel wie defaultDim(mode) im Top Citations Dashboard. Als Funktion und nicht als
-       Konstante: data-domain-mode ist ein Attribut der Platzierung, und Bubble loest es
-       gelegentlich erst nach dem Mount auf. */
-    function vorgabeDim(){ return domainModus() ? "citation_type" : "url_type"; }
     function domainModus(){
       var v = String(root.getAttribute("data-domain-mode") || "").trim();
       if (!v || v === "DOMAIN_MODE") return false;
@@ -399,6 +393,17 @@
        andere Belegung des Rumpfs (Skelett, Leerzustand, Lesefehler) loescht den Merker, sonst
        wuerde ein spaeterer Render mit gleichen Daten das Skelett stehen lassen. */
     var letztesBody = null;
+    /* Ist irgendein Filter aktiv? EINE Stelle fuer die Frage -- sie stand zweimal da (Leerzustand
+       und einklappbare Werkzeugleiste), und BEIDE Kopien kannten die URL Types nicht (25.09.
+       gefunden): ein Ergebnis, das allein ein URL-Type-Filter leer machte, las sich als "No URLs
+       yet" ohne Raeum-Knopf, und die Werkzeugleiste durfte einklappen und die Ursache verstecken.
+       Die Marken-Mehrfachauswahl zaehlt mit; ohne sie hatte ein allein durch sie leeres Ergebnis
+       denselben Fehler. */
+    function filterAktiv(){
+      function eins(o){ return Object.keys(o || {}).some(function(k){ return o[k]; }); }
+      return !!state.query || eins(state.appliedSel) || eins(state.appliedUrlSel) ||
+             !!state.brandMentioned || eins(state.mentionApplied);
+    }
     function renderEmptyState(filtered){
       letztesBody = null;
       /* Siehe prompts-table: der Baustein bringt Symbol, Ueberschrift, Filtertext und
@@ -423,12 +428,7 @@
          als "No URLs yet", und der Nutzer sucht den Fehler in seinen Filtern. */
       if (state.leseFehler){ clearEmptyGrace(); letztesBody = null; elTbody.innerHTML = UC.leseFehlerHtml("URLs"); return; }
       if (!state.rows.length){
-        var filtered = !!state.query ||
-          Object.keys(state.appliedSel).some(function(k){ return state.appliedSel[k]; }) ||
-          !!state.brandMentioned ||
-          /* the brands multiselect counts as a filter too — without this clause an empty result
-             caused purely by it read as "No URLs yet" and offered no way to clear it */
-          Object.keys(state.mentionApplied).some(function(k){ return state.mentionApplied[k]; });
+        var filtered = filterAktiv();
         if (filtered){ clearEmptyGrace(); renderEmptyState(true); return; }
         /* An unfiltered empty result can be an interim "clearing" step before the real data lands
            a moment later (e.g. a workflow that clears the table before kicking off a new query) —
@@ -538,11 +538,6 @@
       /* Two dimensions in one dropdown, exactly like the TopCitations URL mode: a URL has both a
          citation type (what kind of source) and a url type (what kind of page). Each keeps its own
          selection, so switching the tab back and forth doesn't lose anything. */
-      /* Solange der Nutzer nicht selbst umgeschaltet hat, gilt der Modus der Tabelle -- hier
-         gelesen und nicht beim Aufbau gemerkt, damit ein spaet aufgeloestes data-domain-mode
-         noch ankommt. Hat er umgeschaltet, gewinnt seine Wahl; das ist eine Entscheidung und
-         keine Vorgabe. */
-      if (!state.dimGewaehlt) state.filterDim = vorgabeDim();
       var dim = state.filterDim || vorgabeDim();
       var isUrlDim = dim === "url_type";
       var sel = isUrlDim ? state.filterUrlSel : state.filterSel;
@@ -1125,7 +1120,9 @@
         state.softReload = false; dim.end();
         persist(); syncFilterBadge(); syncBrand(); syncMentLabel(); populateFilter(); populateMent();
         search.cancel(); runSearch();
-        fire("data-filter-fn", "uutFilter", { citation_types: "" });
+        /* url_types gehoert dazu: der Apply-Weg meldet beide Listen, und ein Workflow, der
+           url_types liest, fand es hier bisher gar nicht und behielt den alten Wert. */
+        fire("data-filter-fn", "uutFilter", { citation_types: "", url_types: "" });
         fire("data-mentioned-fn", "uutMentioned", { brands: "" });
         fire("data-brand-fn", "uutBrand", { brand_mentioned: "" });
         return;
@@ -1225,7 +1222,9 @@
       if (filterBtn){
         var openF = !elFilter.classList.contains("is-open");
         closePops(elFilter);
-        if (openF){ state.filterSel = cloneSel(state.appliedSel); state.filterUrlSel = cloneSel(state.appliedUrlSel); populateFilter(); }
+        /* Jedes Oeffnen beginnt auf URL Type (siehe vorgabeDim) -- auch wenn beim letzten Mal
+           Citation Type offen war. */
+        if (openF){ state.filterDim = vorgabeDim(); state.filterSel = cloneSel(state.appliedSel); state.filterUrlSel = cloneSel(state.appliedUrlSel); populateFilter(); }
         setPopOpen(elFilter, openF);
         return;
       }
@@ -1240,8 +1239,7 @@
 
       // --- filter menu ---
       var dimBtn = e.target.closest("[data-dim]");
-      if (dimBtn){ state.filterDim = dimBtn.getAttribute("data-dim"); state.dimGewaehlt = true;
-                   persist(); populateFilter(); return; }
+      if (dimBtn){ state.filterDim = dimBtn.getAttribute("data-dim"); persist(); populateFilter(); return; }
       var fi = e.target.closest(".up-filter-item");
       if (fi){
         var key = fi.getAttribute("data-type");
@@ -1497,12 +1495,7 @@
        zwei Wahrheiten ueber dieselbe Frage waeren eine zu viel. */
     var toolGroup = UC.makeToolGroup ? UC.makeToolGroup({
       root: root, tools: elHeadTools,
-      filterActive: function(){
-        return !!state.query ||
-          Object.keys(state.appliedSel).some(function(k){ return state.appliedSel[k]; }) ||
-          !!state.brandMentioned ||
-          Object.keys(state.mentionApplied).some(function(k){ return state.mentionApplied[k]; });
-      },
+      filterActive: filterAktiv,
       prefKey: UC.prefKey ? UC.prefKey("uut_tools__" + instanceId) : null,
       tip: "Search, filters and settings"
     }) : null;
@@ -1573,19 +1566,33 @@
         if (!state.extLoading){ state.loading = false; state.softReload = false; dim.end(); }   // "fertig" beendet auch ein internes Nachladen
         persist(); render();
       },
+      /* RESET: alles, was bestimmt, WELCHE Zeilen man sieht und in welcher Reihenfolge, zurueck
+         auf die Vorgabe -- Suche, beide Typ-Listen, "Brand mentioned", die Marken-Auswahl,
+         Sortierung, Seite und Zeilen je Seite. Was dagegen einstellt, WIE die Tabelle aussieht,
+         bleibt (25.09.: "AUSSER TABLE SETTINGS"): sichtbare Spalten und Zeilenhoehe aus den Table
+         Settings, dazu die gezogenen Spaltenbreiten -- die hat der Nutzer von Hand gesetzt. Bis
+         hierher wurden die Breiten mit zurueckgesetzt.
+         STILL, wie jeder reset* dieser Bibliothek: kein Ereignis an Bubble. Der Aufrufer laedt
+         danach ohnehin frisch, und sechs Filterereignisse loesten sechs Neuladungen aus.
+         Neu dazu: offene Menues gehen zu (sie zeigten sonst die alte Auswahl), eine noch
+         wartende Sucheingabe wird verworfen (sie feuerte sonst NACH dem Reset), und das
+         Marken-Menue wird neu gebaut. */
       reset: function(){
-        state.query = ""; elSearchIn.value = ""; elSearch.classList.remove("is-open");
+        closePops();
+        search.cancel();
+        state.query = ""; elSearchIn.value = ""; elSearch.classList.remove("is-open", "has-text");
+        /* Auf schmalen Schirmen uebernimmt die offene Suche die ganze Leiste -- geschlossen muss
+           sie die Leiste auch wieder freigeben, sonst bleibt die Uebernahme ohne Suchfeld stehen. */
+        search.syncTakeover();
         state.filterSel = {}; state.appliedSel = {};
         state.filterUrlSel = {}; state.appliedUrlSel = {}; state.filterDim = vorgabeDim();
         state.brandMentioned = "";
+        state.mentionSel = {}; state.mentionApplied = {};
         state.sortField = DEFAULT_SORT.field; state.sortDir = DEFAULT_SORT.dir;
         state.pageSize = DEFAULT_PAGE_SIZE; state.page = 1;
-        state.mentionSel = {}; state.mentionApplied = {};
-        state.widths = {}; writeWidths();
         state.softReload = false; dim.end();
         state.leseFehler = false;   /* ein Reset raeumt auch den Lesefehler weg, sonst ueberlebt er den Neuladeversuch */
-        elSearch.classList.remove("has-text");
-        persist(); populateSort(); populateFilter(); render();
+        persist(); populateSort(); populateFilter(); populateMent(); render();
         return true;
       },
       destroy: function(){
@@ -1639,7 +1646,21 @@
     return true;
   }
   function doLoading(id, on){ var c = resolve(id); if (!c) return false; c.setLoading(on); return true; }
-  function doReset(id){ var c = resolve(id); if (!c) return false; return c.reset(); }
+  /* Der Reset trifft ALLE gebauten Kopien mit dieser id, nicht nur die sichtbare wie resolve():
+     Bubble legt dieselbe Platzierung gelegentlich doppelt an, und eine versteckte Kopie kaeme
+     sonst spaeter mit den alten Filtern wieder zum Vorschein. Eine noch NICHT gebaute (geparkte)
+     Kopie wird dafuer nicht extra aufgebaut: sie liest beim Aufbau den gemeinsamen Speicher
+     STORE[id], und den hat der Reset gerade zurueckgesetzt. Ist gar keine gebaut, baut resolve()
+     die sichtbare, damit der Aufruf nicht ins Leere geht. */
+  function doReset(id){
+    var r = rootsWithId(String(id || "").trim()), n = 0;
+    for (var i = 0; i < r.length; i++){
+      var c = r[i].__uutController;
+      if (c && c.reset()) n++;
+    }
+    if (!n){ var c0 = resolve(id); if (c0 && c0.reset()) n++; }
+    return n > 0;
+  }
 
   /* Fills the "Mentioned brands" dropdown. Accepts an array or a JSON string of
      {company_id, name, logo_url} (id/brand_id/logo/favicon also accepted). Routed

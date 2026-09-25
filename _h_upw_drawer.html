@@ -1,0 +1,35 @@
+<!-- Pruefstand Power Dashboard -> openDrawer (25.09.). Der Klick auf eine Zeile laeuft seit heute
+     ueber UC.drawerOeffnen in core statt ueber die eigene Kopie -- hier wird belegt, dass er dabei
+     genau dasselbe tut: openDrawer("brand", company_id). Attrappe von openDrawer wie in der
+     Host-App; Ergebnis in window.__drawer und window.__ev. -->
+<meta charset="utf-8"><title>power-dashboard drawer</title>
+<style>html, body { margin: 0; background: #fff; } #huelle { padding: 24px; width: 1200px; }</style>
+<body>
+<div id="huelle">
+  <div class="up-root upw-root" data-instance="pd1" data-isdark="no" data-brand-name="LeeUp Media"
+       data-view="dashboard" data-rowclick-fn="bubble_fn_upwRowClick"></div>
+</div>
+<script>
+window.__fehler = []; window.__ev = []; window.__drawer = [];
+window.addEventListener("error", function (e) { window.__fehler.push(String(e.message)); });
+window.bubble_fn_upwRowClick = function (p) { window.__ev.push(["upwRowClick", p]); };
+window.openDrawer = function (art, id) { window.__drawer.push([art, id]); };
+try { localStorage.setItem("pref_theme", "light"); } catch (e) {}
+Promise.all(["core.css", "power-dashboard.css", "core.js", "power-dashboard.js"].map(function (f) {
+  return fetch(f + "?n=" + Math.random(), { cache: "no-store" }).then(function (r) { return r.text(); })
+    .then(function (t) { return [f, t]; });
+})).then(function (paare) {
+  paare.forEach(function (p) {
+    var e = document.createElement(/\.css$/.test(p[0]) ? "style" : "script");
+    e.textContent = p[1]; document.head.appendChild(e);
+  });
+  setTimeout(function () {
+    window.renderPowerDashboard(`{ "instanceId": "pd1", "brands": [
+      { "company_id": "d1", "position": 1, "name": "Anfragenfluss", "visibility_pct": 5.2, "visibility_delta_pct": 4.0, "avg_rank": 2.6, "avg_rank_delta": -0.4, "sentiment": 75, "sentiment_delta": 2.1 },
+      { "company_id": "d2", "position": 2, "name": "LeeUp Media", "visibility_pct": 3.0, "visibility_delta_pct": 1.0, "avg_rank": 3.3, "avg_rank_delta": -0.9, "sentiment": 76, "sentiment_delta": 1.6, "is_own": true }
+    ] }`);
+    window.__bereit = true;
+  }, 200);
+});
+</script>
+</body>

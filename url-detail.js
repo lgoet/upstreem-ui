@@ -748,10 +748,17 @@
          zwei Ereignisse fuer einen Weg sind eines zu viel. */
       var ziel = e.target.closest && e.target.closest(".uud-ment, .uud-cbody");
       if (ziel) {
+        var markeId = ziel.getAttribute("data-brand") || "";
         fire("data-brand-fn", "uudBrand", {
-          company_id: ziel.getAttribute("data-brand") || "",
+          company_id: markeId,
           company_name: ((ziel.querySelector(".up-ment-name") || ziel.querySelector(".uud-cname")) || {}).textContent || ""
         });
+        /* UND DER DRAWER GEHT SELBST AUF (25.09. gemeldet: "der Klick macht in Bubble nix").
+           Das Ereignis gab es, verdrahtet war es nie -- und es braucht auch keinen Workflow:
+           openDrawer der Host-App oeffnet den Brand-Drawer und meldet die Kennung selbst an
+           bubble_fn_drawer_brand, derselbe Weg wie die Zeilen im Power Dashboard. Das Ereignis
+           feuert weiter, fuer alles, was ZUSAETZLICH passieren soll. */
+        if (UC.drawerOeffnen) UC.drawerOeffnen("brand", markeId, "url-detail");
       }
     });
     root.addEventListener("keydown", function (e) {

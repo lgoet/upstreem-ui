@@ -1030,13 +1030,8 @@
         'dieser Seite nicht. Das Ereignis ist trotzdem gefeuert.');
       return false;
     }
-    function zumDrawer(art, id){
-      if (!id) return false;
-      if (typeof window.openDrawer === "function"){ try { window.openDrawer(art, id); return true; } catch(e){} }
-      if (window.console) console.warn('[power-dashboard] openDrawer("' + art + '") gibt es auf ' +
-        'dieser Seite nicht. Das Ereignis ist trotzdem gefeuert.');
-      return false;
-    }
+    /* Seit dem 25.09. in core (UC.drawerOeffnen): URL Detail braucht denselben Weg. */
+    function zumDrawer(art, id){ return UC.drawerOeffnen ? UC.drawerOeffnen(art, id, "power-dashboard") : false; }
     if (elAllBrands) elAllBrands.addEventListener("click", function(){
       fire("data-brands-fn", "upwBrands", {});
       zurAnsicht("brands");

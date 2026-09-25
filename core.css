@@ -1261,8 +1261,13 @@
     .up-filter-tag { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 7px;
       font-size: 12px; font-weight: 600; white-space: nowrap; max-width: 100%; overflow: hidden; }
     .up-filter-tag-lbl { overflow: hidden; text-overflow: ellipsis; }
-    /* Nur noch die Lage -- Aussehen kommt aus .up-btn-pri weiter unten. */
-    .up-filter-submit { width: 100%; margin-top: 6px; }
+    /* Nur noch die Lage -- Aussehen kommt aus .up-btn-pri weiter unten.
+       flex: 0 0 auto ist PFLICHT (25.09. gemeldet: "Anwenden im URL-Type-Reiter nur 16px hoch").
+       Das Menue ist eine Flex-Spalte mit max-height 400px, und ein Flex-Kind schrumpft von sich
+       aus mit, sobald der Inhalt nicht passt -- bis auf seine Texthoehe. Bei den sieben Citation
+       Types passte alles, bei den vierzehn URL Types lief die Liste ueber, und der Knopf wurde
+       anteilig mitgestaucht. Schrumpfen soll allein die Liste; sie scrollt. */
+    .up-filter-submit { width: 100%; margin-top: 6px; flex: 0 0 auto; }
     /* DERSELBE HOVER WIE .up-btn-pri, und das ist der Punkt (19.09. gemeldet: "im Darkmode kommt
        als Hoverstate der klassische Grund aus dem Standard-Setting -- das muessen einfach Core-
        Buttons sein"). Hier standen zwei feste Grautoene, einer je Thema: sie waren die
