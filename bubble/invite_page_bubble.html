@@ -26,8 +26,16 @@
 
      ── ATTRIBUTE ───────────────────────────────────────────────────────────────────────────
        data-instance    eindeutig pro Platzierung, z.B. "invite". Alle Setter sprechen darueber.
-       data-cdn-pin     Commit-Hash. NIEMALS leer lassen: leer zieht "@main", und das liefern
+       data-cdn-pin     LEER LASSEN, wenn der Kopf-Vorlader (bubble/page_header_preload.html) auf
+                        dieser Seite laeuft -- dann gilt dessen Pin (window.__upPin), und es gibt
+                        ihn genau einmal auf der Seite. Der Loader unten faellt von selbst darauf
+                        zurueck, der Pin-Waechter des Vorladers ueberspringt ein leeres Feld.
+                        OHNE Vorlader dagegen NIEMALS leer: dann zieht es "@main", und das liefern
                         jsDelivr und der Browser aus einem bis zu tagealten Cache.
+                        Pruefen in der Konsole der Seite:
+                          ({ vorlader: window.__upPreloadFassung, pin: window.__upPin,
+                             datei: (window.__upAssetsLoaded || {})["invite-page.js"] })
+                        vorlader eine Zahl, datei eine Adresse mit demselben Pin -- nicht @main.
        data-logo        URL des upstreem-Schriftzugs (dieselbe wie auf der Auth Page).
        data-logo-dark   Optional: der Schriftzug fuer den Dark Mode.
        data-isdark      "yes"/"no". Wird beobachtet, ein Umschalten braucht keinen Neuaufbau.
