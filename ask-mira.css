@@ -54,6 +54,19 @@
     --am-border-strong: var(--vc-border);
     --am-soft: var(--vc-heading-bg);
     --am-soft-2: var(--vc-heading-bg);
+    /* DIE SKELETTE HABEN EIGENE TOENE (25.09. gemeldet: "wenn ein neuer Chat losgeschickt wird,
+       sehe ich in der Sidebar weiterhin keinen Skeleton-Loader -- oder liegt da ein Skeleton
+       ueber allem, und man erkennt es nicht wegen der Background-Color?"). Genau das.
+       Alle vier Skelette dieser Datei liefen auf linear-gradient(--am-soft-2, --am-soft,
+       --am-soft-2) -- und beide Namen zeigen auf DIESELBE Farbe, --vc-heading-bg. Aus dem
+       Schimmer war damit eine flache Flaeche geworden, und zwar in genau der Farbe der aktiven
+       Zeile (.am-prev-item.is-active). Ein neuer Chat IST die aktive Zeile: das Skelett stand da,
+       gleiche Farbe auf gleicher Farbe.
+       Jetzt die Toene, die jedes andere Skelett der App traegt: --vc-sk als dunkle Stufe,
+       --vc-heading-bg als helle. Die dunkle ist auf dem Grund der aktiven Zeile sichtbar, die
+       helle laeuft als Glanz darueber -- in beiden Themen. */
+    --am-sk-a: var(--vc-sk);
+    --am-sk-b: var(--vc-heading-bg);
     --am-primary: var(--vc-text);
     --am-user-bg: var(--vc-heading-bg);
     --am-user-text: var(--vc-text);
@@ -1886,7 +1899,7 @@
     display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 9px 0 10px;
     border: 1px solid transparent; border-radius: 10px; background: transparent;
     color: var(--am-muted); font-family: inherit; font-size: 13px; font-weight: 400;
-    letter-spacing: -0.01em; cursor: pointer; max-width: 100%;
+    cursor: pointer; max-width: 100%;
     transition: background 200ms ease, color 200ms ease;
   }
   .am-eff-btn:hover, .am-eff.is-open .am-eff-btn {
@@ -1934,7 +1947,7 @@
   .am-eff-head {
     display: flex; align-items: center; gap: 8px; width: 100%; height: 30px; padding: 0 4px;
     border: 0; border-radius: 8px; background: transparent; color: var(--am-text);
-    font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: -0.01em;
+    font-family: inherit; font-size: 14px; font-weight: 600;
     cursor: pointer; transition: background 200ms ease;
   }
   .am-eff-head:hover { background: var(--up-sel-bg, var(--am-soft)); }
@@ -2044,8 +2057,21 @@
     background: var(--vc-muted); pointer-events: none; transition: background 200ms ease;
   }
   .am-eff-dot.is-fill { background: rgba(255,255,255,0.85); }
+  /* GANZE PIXEL (25.09. gemeldet: "wenn der Switcher auf Mittel steht, sollte um den weissen
+     Knopf eine gleichmaessige, ueberall gleich hohe und breite blaue Flaeche sein -- es sind nur
+     ein paar px, aber man erkennt, dass sie nicht ueberall gleich ist").
+     Rechnerisch war sie gleich: 2.5 + 23 + 2.5 = 28, und die Fuellung endet mit demselben Einzug
+     hinter dem Daumen. Gezeichnet wurde sie es nicht. 2.5px liegen auf einem halben Pixel, und
+     ein Kreis und ein abgerundetes Rechteck werden an einer halben Pixelgrenze VERSCHIEDEN
+     geglaettet -- oben kam der Ring mit 2, unten mit 3 heraus. Dazu kam die mittlere Stufe: der
+     Daumen stand dort bei der Haelfte des Weges, und die ist bei einer ungeraden Schienenbreite
+     wieder ein halber Pixel. Genau deshalb fiel es nur auf "Mittel" auf.
+     Jetzt 3 + 22 + 3 = 28: der Ring ist 3px, der Daumen 22, und keiner der Werte hat eine
+     Nachkommastelle. Die Stufe rundet ask-mira.js auf ganze Pixel (effZeichnen), Daumen und
+     Fuellung aus DERSELBEN gerundeten Zahl -- sie koennen nicht mehr auseinanderlaufen. Die
+     Rundung der Fuellung (14) und die des Daumens (11) plus Einzug (3) bleiben konzentrisch. */
   .am-eff-thumb {
-    position: absolute; top: 2.5px; left: 2.5px; width: 23px; height: 23px; border-radius: 999px;
+    position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 999px;
     background: #ffffff; box-shadow: var(--up-e-1, 0 1px 2px rgba(0,0,0,0.2)); pointer-events: none;
     transition: transform 200ms ease;
   }
@@ -2065,7 +2091,7 @@
     /* --vc-muted und nicht --vc-third: gerechnet misst third im Dunkeln 3.97 auf dem
        Menuegrund und faellt damit durch die 4.5 aus WCAG AA -- bei 11.5px zaehlt kein
        Grosstext-Bonus. muted schafft es. Die AKTIVE Stufe bleibt --am-text (11.87). */
-    font-size: 11px; font-weight: 500; color: var(--am-muted); letter-spacing: 0.01em;
+    font-size: 12px; font-weight: 500; color: var(--am-muted);
     transition: color 200ms ease;
   }
   .am-eff-lbl:nth-child(1) { margin-left: -2px; }
@@ -2080,7 +2106,7 @@
      eigenes max-height mehr. Nur die Deckkraft faehrt. */
   .am-eff-note {
     position: absolute; left: 6px; right: 6px; top: 0; margin: 0;
-    font-size: 11px; line-height: 1.35; color: var(--am-muted);
+    font-size: 12px; line-height: 1.4; color: var(--am-muted);
     opacity: 0; visibility: hidden; transition: opacity 200ms ease, visibility 0s linear 200ms;
   }
   #ask-mira.is-flash .am-eff .am-eff-note { opacity: 1; visibility: visible; transition-delay: 0s; }
@@ -2101,8 +2127,18 @@
   .am-eff-opt:hover { background: var(--up-sel-bg, var(--am-soft)); }
   .am-eff-opt.is-active { background: var(--up-sel-bg, var(--am-soft)); }
   .am-eff-opt-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-  .am-eff-opt-name { font-size: 13px; font-weight: 600; letter-spacing: -0.01em; }
-  .am-eff-opt-desc { font-size: 11px; line-height: 1.35; color: var(--am-muted);
+  /* EINE SCHRIFTORDNUNG FUER DEN GANZEN UMSCHALTER (25.09. gemeldet: "da muessen wir bitte
+     einmal unsere Font-Klassen checken, das sieht alles nicht ganz passend aus").
+     Gemessen standen in diesem einen Menue drei Sperrungen nebeneinander (-0.01em an Knopf, Kopf
+     und Modellnamen, +0.01em an den Stufen, keine an Beschreibung und Hinweis) und zwei
+     Kleinstufen (11 fuer Stufen, Beschreibung und Hinweis, 13/14 fuer alles andere). Die
+     Sperrung ist raus -- die App traegt sie sonst nirgends --, und die kleine Schrift steht auf
+     12 statt 11: 11 ist die Stufe fuer Zaehler und Zeitstempel, hier stehen Beschriftungen, die
+     man liest und anklickt.
+     Die Gewichte bleiben, wie sie sind: der Knopf traegt 400 auf ausdruecklichen Wunsch
+     (13.09.), Kopf und Modellnamen 600, die Stufen 500 und die aktive 600. */
+  .am-eff-opt-name { font-size: 13px; font-weight: 600; }
+  .am-eff-opt-desc { font-size: 12px; line-height: 1.4; color: var(--am-muted);
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .am-eff-check { width: 15px; height: 15px; flex: 0 0 auto; fill: none; stroke: var(--am-text);
     stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
@@ -3274,10 +3310,10 @@
   .am-prev-skel-head { height: 10px; width: 34%; border-radius: 5px; margin: 8px 8px 6px; }
   .am-prev-skel-row { height: 34px; display: flex; align-items: center; padding: 0 8px; }
   .am-prev-skel-line { height: 10px; border-radius: 5px; display: block; }
-  .am-prev-skel-head, .am-prev-skel-line { background: linear-gradient(90deg, var(--am-soft-2) 25%, var(--am-soft) 50%, var(--am-soft-2) 75%); background-size: 300% 100%; animation: amSkelShimmer 1.25s ease-in-out infinite; }
+  .am-prev-skel-head, .am-prev-skel-line { background: linear-gradient(90deg, var(--am-sk-a) 25%, var(--am-sk-b) 50%, var(--am-sk-a) 75%); background-size: 300% 100%; animation: amSkelShimmer 1.25s ease-in-out infinite; }
   /* chat-loading skeleton (shown while a clicked chat is still loading) */
   .am-msg-skel .am-bubble { min-width: 130px; }
-  .am-skel-line { display: block; height: 13px; border-radius: 6px; margin: 0 0 10px; background: linear-gradient(90deg, var(--am-soft-2) 25%, var(--am-soft) 50%, var(--am-soft-2) 75%); background-size: 300% 100%; animation: amSkelShimmer 1.25s ease-in-out infinite; }
+  .am-skel-line { display: block; height: 13px; border-radius: 6px; margin: 0 0 10px; background: linear-gradient(90deg, var(--am-sk-a) 25%, var(--am-sk-b) 50%, var(--am-sk-a) 75%); background-size: 300% 100%; animation: amSkelShimmer 1.25s ease-in-out infinite; }
   .am-skel-line:last-child { margin-bottom: 0; }
   .am-msg-skel.is-user .am-skel-line { background: linear-gradient(90deg, rgba(255,255,255,0.35) 25%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0.35) 75%); background-size: 300% 100%; }
   #ask-mira[data-theme="dark"] .am-msg-skel.is-user .am-skel-line { background: linear-gradient(90deg, rgba(255,255,255,0.12) 25%, rgba(255,255,255,0.22) 50%, rgba(255,255,255,0.12) 75%); background-size: 300% 100%; }
@@ -3385,9 +3421,14 @@
      echten Titel den Tippeffekt genommen. Derselbe Verlauf, dieselbe Bewegung und dieselbe
      Rundung wie .am-ct-skeleton in der Titelleiste; 104px ist die Breite eines kurzen Titels
      in dieser 13px-Zeile, also so breit wie das, was gleich dort steht. */
+  /* EINE STUFE KRAEFTIGER ALS DIE ANDEREN SKELETTE (25.09.). Die Chat-Skelette stehen auf weissen
+     Karten, dieses hier auf dem Grund der AKTIVEN Zeile -- ein neuer Chat ist immer die aktive.
+     --vc-sk hebt sich davon nur um 11 Stufen ab (hell: eeedef auf f9f8f9), im Dunkeln um 5
+     (28282c auf 232326) -- das ist "man erkennt es nicht". --vc-border steht 21 bzw. 17 Stufen
+     davon ab und ist in beiden Themen klar zu sehen. */
   .am-prev-item.is-untitled .am-prev-item-title {
     flex: 0 0 auto; width: 104px; height: 11px; border-radius: 6px;
-    background: linear-gradient(90deg, var(--am-soft-2) 25%, var(--am-soft) 50%, var(--am-soft-2) 75%);
+    background: linear-gradient(90deg, var(--vc-border) 25%, var(--am-sk-b) 50%, var(--vc-border) 75%);
     background-size: 300% 100%; animation: amSkelShimmer 1.25s ease-in-out infinite;
   }
   @media (prefers-reduced-motion: reduce){
@@ -3606,7 +3647,7 @@
   .am-ct-text { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; max-width: 46vw; }
   .am-ct-skeleton {
     display: none; width: 168px; height: 24px; border-radius: 7px;
-    background: linear-gradient(90deg, var(--am-soft-2) 25%, var(--am-soft) 50%, var(--am-soft-2) 75%);
+    background: linear-gradient(90deg, var(--am-sk-a) 25%, var(--am-sk-b) 50%, var(--am-sk-a) 75%);
     background-size: 300% 100%; animation: amSkelShimmer 1.25s ease-in-out infinite;
   }
   .am-chat-titlebar.is-loading .am-ct-name { cursor: default; }

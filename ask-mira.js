@@ -3750,7 +3750,10 @@
     var keinerNotiert = true;
     for (var _k in _wartend){ if (Object.prototype.hasOwnProperty.call(_wartend, _k)){ keinerNotiert = false; break; } }
     var aktivLaeuft = keinerNotiert && !!(S.chatLoading || S.isLoading);
-    elPrevList.querySelectorAll('.am-prev-item').forEach(function(el){
+    /* Die Platzhalterzeile ist ausgenommen: sie hat keine Kennung, und die Rechnung hier kaeme
+       fuer sie auf "nicht beschaeftigt" -- sie verloere ihren Kreisel in dem Moment, in dem sie
+       ihn braucht. Ihr Zustand steht fest im Markup (renderPrevious). */
+    elPrevList.querySelectorAll('.am-prev-item:not(.is-platzhalter)').forEach(function(el){
       var id = String(el.getAttribute('data-chat-id') || '');
       var busy = !!_wartend[id] || (aktivLaeuft && aktiv !== null && id === aktiv);
       el.classList.toggle('is-busy', busy);
@@ -3760,7 +3763,7 @@
   }
   function aktivMarkieren(){
     if (!elPrevList) return;
-    elPrevList.querySelectorAll('.am-prev-item').forEach(function(el){
+    elPrevList.querySelectorAll('.am-prev-item:not(.is-platzhalter)').forEach(function(el){
       el.classList.toggle('is-active', chatAktivSichtbar(el.getAttribute('data-chat-id')));
     });
     ladeMarkeSetzen();
@@ -4143,8 +4146,15 @@
        nicht anklickbar (pointer-events in der CSS) und traegt keinen erfundenen Namen -- sie
        sagt genau das, was wahr ist: hier entsteht gleich etwas. Sobald die Kennung da ist,
        uebernimmt die echte Zeile. */
+    /* MIT KREISEL (25.09.): die Zeile ist nicht nur ohne Namen, sie ARBEITET auch -- die Antwort
+       laeuft. Jede andere Zeile in diesem Zustand traegt den Kreisel links (is-busy), und genau
+       der fehlte hier: in der ersten Sekunde nach dem Absenden stand nur ein Skelett ohne das
+       Zeichen, das in der App "hier laeuft etwas" heisst. Dasselbe Markup wie in chatItemHTML,
+       damit der Kreisel an derselben Stelle steht und beim Uebergang zur echten Zeile nicht
+       springt. */
     var _neueZeile = (!S.activeChatId && S.isLoading)
-      ? '<div class="am-prev-item is-untitled is-platzhalter" aria-hidden="true">' +
+      ? '<div class="am-prev-item is-untitled is-busy is-active is-platzhalter" aria-hidden="true">' +
+          '<span class="am-prev-spin" aria-hidden="true"><span class="am-act-spinner"></span></span>' +
           '<span class="am-prev-item-title"></span></div>'
       : '';
     var recentsHTML = recentsAlle.slice(0, S.prevFenster).map(chatItemHTML).join('');
@@ -4267,7 +4277,7 @@
      Schienenhoehe ab -- die ist 27 und nicht 28, also kam dort 2 statt 2.5 heraus, und die zwei
      Rechnungen liefen um einen halben Pixel je Stufe auseinander. Gemessen: Ueberstaende von
      2 / 4 / 6px, wo ueberall derselbe stehen sollte. */
-  var EFF_EINZUG = 2.5;
+  var EFF_EINZUG = 3;      /* ganze Pixel -- siehe .am-eff-thumb in ask-mira.css */
   /* offsetWidth und NICHT getBoundingClientRect(): das Menue faehrt beim Oeffnen mit einem
      scale() heran, und ein gerendertes Mass ist waehrenddessen KLEINER als das Layoutmass.
      Der Daumen faehrt aber in Layoutpixeln (left + translateX), die Fuellung skaliert dagegen
@@ -4277,7 +4287,7 @@
      Vorfahren unberuehrt. */
   function effBreiten(){
     if (!elEffTrack || !elEffThumb) return null;
-    return { b: elEffTrack.offsetWidth || 0, d: elEffThumb.offsetWidth || 23 };
+    return { b: elEffTrack.offsetWidth || 0, d: elEffThumb.offsetWidth || 22 };
   }
   function effWeg(){
     var m = effBreiten();
@@ -4295,7 +4305,12 @@
       elEffTrack.setAttribute('aria-label', 'Answer effort');
     }
     var weg = effWeg();
-    if (elEffThumb) elEffThumb.style.transform = 'translateX(' + (weg * i / 2) + 'px)';
+    /* Die Stufe auf GANZE Pixel, und zwar EINMAL: Daumen, Fuellung und Punkte lesen alle diese
+       eine Zahl. Auf der mittleren Stufe war weg/2 bei ungerader Schienenbreite ein halber
+       Pixel -- genau dort war der Ring ungleich. */
+    function stufeX(k){ return Math.round(weg * k / 2); }
+    var x = stufeX(i);
+    if (elEffThumb) elEffThumb.style.transform = 'translateX(' + x + 'px)';
     /* DIE FUELLUNG UMSCHLIESST DEN DAUMEN -- auf JEDER Stufe (15.09. angefordert).
        Vorher endete sie an seiner MITTE (+2px). Auf Ultra fiel das nicht auf: dort steht der
        Daumen am Anschlag, der Anteil wird auf 1 gedeckelt, und die Fuellung reicht ohnehin bis
@@ -4308,18 +4323,20 @@
        GEMESSEN vorher: 2 / 4 / 6px auf den drei Stufen -- gleich sah das nur auf Ultra aus,
        weil der Anteil dort ohnehin gedeckelt wurde. */
     if (elEffFill){
-      var m = effBreiten() || { b: 0, d: 23 };
+      var m = effBreiten() || { b: 0, d: 22 };
       var b = m.b, d = m.d;
       /* Linke Kante des Daumens + seine Breite + derselbe Einzug rechts. Auf der letzten Stufe
          ergibt das genau die Schienenbreite (EINZUG + weg + d + EINZUG = b, weil weg als
          b - d - 2*EINZUG definiert ist) -- also Anteil 1, wie Ultra es schon zeigte. */
-      var ende = Math.min(b, EFF_EINZUG + weg * i / 2 + d + EFF_EINZUG);
+      var ende = Math.min(b, EFF_EINZUG + x + d + EFF_EINZUG);
       elEffFill.style.width = (b > 0 ? ende : 0) + 'px';
     }
     /* Die drei Punkte: auf der gefuellten Seite weiss, dahinter leise. */
     var punkte = elEffTrack ? elEffTrack.querySelectorAll('.am-eff-dot') : [];
     for (var k = 0; k < punkte.length; k++){
-      punkte[k].style.left = (2.5 + (elEffThumb ? 11.5 : 11.5) + weg * k / 2 - 2) + 'px';
+      /* Mitte des Daumens auf Stufe k, minus der halbe Punkt. EINZUG + d/2 ist die Mitte
+         des Daumens in Ruhe -- beide ganzzahlig, also auch der Punkt. */
+      punkte[k].style.left = (EFF_EINZUG + 11 + stufeX(k) - 2) + 'px';
       punkte[k].classList.toggle('is-fill', k <= i);
     }
     root.classList.toggle('is-ultra', i === 2);
@@ -4398,7 +4415,9 @@
     if (!elEffTrack) return effIndex(S.answerDetail);
     var r = elEffTrack.getBoundingClientRect();
     if (r.width <= 0) return effIndex(S.answerDetail);
-    var p = (clientX - r.left - 2.5 - 11.5) / Math.max(1, effWeg());
+    /* Die Mitte des Daumens in Ruhe: Einzug plus halber Daumen -- dieselbe Geometrie wie beim
+       Zeichnen, damit Klick und Anzeige auf dieselbe Stufe kommen. */
+    var p = (clientX - r.left - EFF_EINZUG - 11) / Math.max(1, effWeg());
     return Math.max(0, Math.min(2, Math.round(p * 2)));
   }
   function effSetzen(i){
@@ -4615,6 +4634,7 @@
     delete _entwuerfe[entwurfSchluessel(S.activeChatId)];   /* abgeschickt ist kein Entwurf mehr */
     _pendingAnswer = true;
     _lastSendTs = Date.now();
+    try { rtStilleAnsetzen(); } catch(e){}   /* kommt in 10s kein Realtime-Ereignis, ist das Abo tot */
     /* VOR setLoading: runStart liest diesen Zeitstempel und erkennt daran, ob es dieselbe Frage
        ist. Stand er danach, sah der erste Lauf ihn noch nicht -- und jeder weitere Durchlauf sah
        einen anderen Wert als der Lauf davor. */
@@ -6415,6 +6435,7 @@
     try { console.warn('[AskMira] ' + text); } catch(e){}
   }
   window.askMiraRealtime = function(payload){
+    rtStilleAus();          /* es kam etwas an -- das Abo lebt */
     var _amRoh = payload;
     var _amErg = _askMiraRealtimeInnen(payload);
     try {
@@ -6588,6 +6609,100 @@
       'Ist das die Ladezeile, steht ihr Feld tool leer.');
     return false;
   }
+
+  /* ---- DAS REALTIME-ABO NACH DEM AUFWACHEN ERNEUERN (25.09. gemeldet) -----------------------
+     "Wenn ich Mira heute oeffne, den Laptop zuklappe, morgen wieder oeffne und einen Chat
+     abschicke, klappen die Grundfunktionen -- aber nur durch das Polling. Das Realtime-Event ist
+     nicht am Start, weil es durch den View-First- bzw. Mira-Pageload-Workflow kommt."
+     Genau so. Waehrend der Rechner schlaeft, schliesst der Server die WebSocket-Verbindung (sie
+     lebt von einem Herzschlag, der dann ausbleibt), und das Abo in Bubble entsteht nur beim
+     Aufbau der Ansicht. Nach dem Aufwachen stoesst es niemand wieder an. Die Komponente hat
+     alles nachgeholt, was sie selbst holen kann (nachfassen, listeNachholen) -- darum sah es aus,
+     als liefe alles. Nur Bubble kann das Abo erneuern, und bisher hat sie Bubble nie darum
+     gebeten.
+     Jetzt schon: bubble_fn_ask_mira_realtime_resubscribe. Vier Anlaesse, und einer davon ist ein
+     BEWEIS statt einer Vermutung:
+       - Der Tab war laenger als eine Minute verdeckt oder ohne Fokus (visibilitychange, blur,
+         pagehide -- und zurueck ueber visible, focus, pageshow).
+       - Die Netzverbindung kommt zurueck (online).
+       - Die erste Eingabe nach zehn Minuten ohne jede Eingabe. Das faengt den Fall, in dem der
+         Deckel bei offenem, fokussiertem Fenster zugeht -- dann meldet der Browser beim Aufwachen
+         GAR nichts, und die erste Taste ist der erste Hinweis. Sie kommt Sekunden VOR dem
+         Absenden, Bubble hat also Zeit, das Abo zu stellen, bevor der Turn beginnt.
+       - Der Beweis: zehn Sekunden nach einem Absenden ist kein einziges Realtime-Ereignis
+         angekommen. Dann IST das Abo tot, egal warum. Diese Antwort holt das Nachfassen, ab der
+         naechsten laeuft es wieder ueber Realtime.
+     Hoechstens alle 20 Sekunden, damit drei Anlaesse auf einmal nicht drei Abos stellen. Ein
+     doppelt zugestelltes Ereignis waere ohnehin harmlos -- _rtGesehen verwirft Wiederholungen.
+     Wenn Bubble danach neu verbunden hat, ruft es askMiraRealtimeReconnected (darunter), und die
+     Komponente holt nach, was in der Luecke gefallen sein kann. */
+  var RT_NEU_WEG_MS     = 60000;     /* so lange weg -> die Verbindung ist mit hoher Sicherheit tot */
+  var RT_NEU_EINGABE_MS = 600000;    /* zehn Minuten ohne jede Eingabe */
+  var RT_NEU_STILLE_MS  = 10000;     /* so lange nach dem Absenden ohne ein einziges Ereignis */
+  var RT_NEU_ABSTAND_MS = 20000;     /* hoechstens so oft fragen */
+  var _rtNeuZuletzt = 0, _rtNeuGemeckert = false, _rtWegSeit = 0;
+  var _rtLetzteEingabe = Date.now(), _rtStilleUhr = 0;
+  function realtimeNeuVerbinden(grund){
+    var jetzt = Date.now();
+    if (jetzt - _rtNeuZuletzt < RT_NEU_ABSTAND_MS) return false;
+    var fn = window.bubble_fn_ask_mira_realtime_resubscribe;
+    if (typeof fn !== 'function'){
+      if (!_rtNeuGemeckert && window.console){
+        _rtNeuGemeckert = true;
+        console.warn('[AskMira] Das Realtime-Abo muesste erneuert werden (' + grund + '), aber ' +
+          'bubble_fn_ask_mira_realtime_resubscribe fehlt. Lege ein JavaScript-to-Bubble-Element ' +
+          'mit genau diesem Namen an (Trigger event angehakt) und haenge daran DIESELBEN Schritte, ' +
+          'mit denen der View-First-/Mira-Pageload-Workflow das Abo auf mira_user_<id> stellt. ' +
+          'Bis dahin laeuft nach dem Aufwachen alles ueber das Nachfassen.');
+      }
+      return false;
+    }
+    _rtNeuZuletzt = jetzt;
+    try { amSpur('realtime NEU      ', grund); amLog('Realtime: Abo erneuern', grund); } catch(e){}
+    try { fn(String(grund || '')); } catch(e){ return false; }
+    try { root.dispatchEvent(new CustomEvent('askmira:realtime-neu',
+          { detail: { grund: grund }, bubbles: true })); } catch(e){}
+    return true;
+  }
+  function rtWegMerken(){ if (!_rtWegSeit) _rtWegSeit = Date.now(); }
+  function rtZurueck(anlass){
+    if (!_rtWegSeit) return;
+    var weg = Date.now() - _rtWegSeit;
+    _rtWegSeit = 0;
+    if (weg >= RT_NEU_WEG_MS) realtimeNeuVerbinden(anlass + ' nach ' + Math.round(weg / 1000) + 's');
+  }
+  /* Nach dem Absenden: wartet die Uhr, bis irgendein Realtime-Ereignis kommt. Jedes Ereignis
+     (askMiraRealtime) stellt sie ab -- es muss nicht zu diesem Turn gehoeren, schon eines
+     beweist, dass das Abo lebt. */
+  function rtStilleAnsetzen(){
+    clearTimeout(_rtStilleUhr);
+    _rtStilleUhr = setTimeout(function(){
+      _rtStilleUhr = 0;
+      realtimeNeuVerbinden('kein Realtime-Ereignis ' + (RT_NEU_STILLE_MS / 1000) + 's nach dem Absenden');
+    }, RT_NEU_STILLE_MS);
+  }
+  function rtStilleAus(){ if (_rtStilleUhr){ clearTimeout(_rtStilleUhr); _rtStilleUhr = 0; } }
+  try {
+    document.addEventListener('visibilitychange', function(){
+      if (document.hidden) rtWegMerken(); else rtZurueck('sichtbar');
+    });
+    window.addEventListener('blur', rtWegMerken);
+    window.addEventListener('focus', function(){ rtZurueck('Fokus'); });
+    window.addEventListener('pagehide', rtWegMerken);
+    window.addEventListener('pageshow', function(e){ if (e && e.persisted) realtimeNeuVerbinden('pageshow'); });
+    window.addEventListener('online', function(){ realtimeNeuVerbinden('online'); });
+    /* passive und am Dokument: das kostet nichts, und es muss auch eine Eingabe AUSSERHALB von
+       Mira zaehlen -- wer nach dem Aufwachen zuerst woanders klickt, ist genauso wach. */
+    ['keydown', 'pointerdown'].forEach(function(art){
+      document.addEventListener(art, function(){
+        var jetzt = Date.now();
+        if (jetzt - _rtLetzteEingabe >= RT_NEU_EINGABE_MS){
+          realtimeNeuVerbinden('erste Eingabe nach ' + Math.round((jetzt - _rtLetzteEingabe) / 60000) + ' min');
+        }
+        _rtLetzteEingabe = jetzt;
+      }, { passive: true, capture: true });
+    });
+  } catch(e){}
 
   /* Nach einem Verbindungsabriss: neu subscriben macht Bubble, den Rest hier. In der Luecke
      koennen Ereignisse gefallen sein, also wird der offene Chat einmal nachgeladen und die

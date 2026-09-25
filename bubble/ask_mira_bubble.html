@@ -257,6 +257,27 @@
      sind fluechtig und stehen nirgends nach. Zurueck kommt die fertige Antwort -- und damit
      endet der Kreisel, was der eigentliche Schaden war.
 
+     ── DAS REALTIME-ABO NACH DEM AUFWACHEN ERNEUERN (25.09.) ─────────────────────
+     Das Abo auf mira_user_<id> entsteht im View-First- bzw. Mira-Pageload-Workflow -- und nur
+     dort. Klappt jemand den Laptop zu, schliesst der Server die Verbindung; nach dem Aufwachen
+     laeuft dann alles ueber das Nachfassen (Antworten kommen an, aber ohne Arbeitsschritte im
+     Loader und ohne genaue Laufzeit). Die Komponente erkennt das und bittet um ein neues Abo:
+
+         Function name  bubble_fn_ask_mira_realtime_resubscribe
+         Value type     text        (der Anlass, nur fuer die Fehlersuche)
+         Trigger event  angehakt
+
+     Der Workflow daran: DIESELBEN Schritte, mit denen der View-First-/Pageload-Workflow das Abo
+     stellt -- und davor das alte abmelden, falls das Plugin einen Schritt dafuer hat. Danach wie
+     beim ersten Mal askMiraRealtimeReconnected() rufen (am "Channel Subscribed"-Ereignis, wie
+     gehabt); ab dem zweiten Aufruf holt die Komponente nach, was in der Luecke gefallen ist.
+
+     Gefragt wird: nach mehr als einer Minute verdeckt oder ohne Fokus, wenn das Netz
+     zurueckkommt, bei der ersten Eingabe nach zehn Minuten Pause -- und immer dann, wenn zehn
+     Sekunden nach einem Absenden kein einziges Realtime-Ereignis angekommen ist. Hoechstens alle
+     20 Sekunden. Ein doppelt zugestelltes Ereignis ist harmlos, die Komponente verwirft
+     Wiederholungen. Fehlt die Funktion, sagt die Konsole das einmal.
+
      ── NACHLADEN BEIM SCROLLEN (15.09.) ─────────────────────────────────────────
      Die Leiste zeigt 15 Chats und deckt beim Herunterscrollen die naechsten 15 auf. Ist alles
      aufgedeckt, was geladen wurde, meldet sie sich:

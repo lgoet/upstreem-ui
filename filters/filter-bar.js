@@ -690,7 +690,10 @@
            mehr: eine Liste, in der jemand mit dem Zeiger sucht, darf nicht zugehen, weil er
            kurz daneben liegt. Gilt fuer alle drei Zeilen, weil es am Kit haengt und nicht an
            einer davon. */
-        closeDelay: 1000,
+        /* 1000 -> 500 (25.09.), nachdem der eigentliche Fehler behoben war: eine verwaiste Uhr
+           im Kit schloss das Menue auch dann, wenn der Zeiger darauf stand -- die lange
+           Nachlaufzeit hatte das nur verdeckt. */
+        closeDelay: 500,
         /* EIN Kasten fuer alle Zeilen -- siehe die Schale im Markup oben. */
         shell: elSub, hostAttr: "data-sub-host",
         onOpen: function (key) {

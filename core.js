@@ -9969,13 +9969,34 @@
       clearTimeout(uhrAuf);
       uhrAuf = setTimeout(function(){ open(key, false); }, AUF);
     });
+    /* DIE ALTE UHR ZUERST LOESCHEN (25.09. gemeldet: "ich bin auf der Maerkte-Zeile, hovere von
+       da aus 200ms auf die Hauptapp und dann direkt auf das Maerkte-Dropdown -- 800ms spaeter
+       verschwindet es trotzdem").
+       Hier stand uhrZu = setTimeout(...) ohne clearTimeout davor. Auf dem Weg aus dem Panel
+       faehrt der Zeiger fast immer noch ueber dessen Rand -- Polster, keine Zeile --, und der
+       Zweig oben stellt dafuer schon eine Uhr. Dann kam pointerleave und stellte eine ZWEITE,
+       und die Variable zeigte nur noch auf die. Kam der Zeiger danach auf das Untermenue,
+       loeschte der Zweig dort genau diese zweite -- die erste lief verwaist weiter und schloss
+       das Menue, obwohl der Zeiger darauf stand. Die 800ms aus der Meldung sind genau das:
+       1000ms ab der ersten Uhr, minus die 200ms Umweg. */
     panel.addEventListener("pointerleave", function(e){
       if (drill()) return;
       if (e.pointerType === "touch") return;
       clearTimeout(uhrAuf);
+      clearTimeout(uhrZu);
       if (gepinnt) return;
       uhrZu = setTimeout(close, ZU);
     });
+    /* DIE SCHALE IST EINE EIGENE ZONE. Bisher kam ein Zeiger in der Schale nur ueber das
+       Aufsteigen des pointerover im Panel an. Haengt eine eingezogene Komponente darin einen
+       eigenen Zuhoerer mit stopPropagation an, kaeme dort nie etwas an -- und die Schale waere
+       fuer diese Logik unsichtbar. Direkt an ihr haengt es an keinem fremden Zuhoerer. */
+    if (SHELL){
+      SHELL.addEventListener("pointerenter", function(e){
+        if (e.pointerType === "touch") return;
+        clearTimeout(uhrZu); clearTimeout(uhrAuf);
+      });
+    }
     /* Klick: feststellen. Ein zweiter Klick auf dieselbe Zeile geht wieder zu -- das ist die
        Erwartung an einen Aufklapper, und im Hineingehen ist es der Weg zurueck. */
     panel.addEventListener("click", function(e){
