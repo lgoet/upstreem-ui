@@ -7,7 +7,6 @@
      .up-iconbtn                             die Knoepfe oben rechts
      .up-tsk-bar / .up-tsk-logo              das Skelett (wie das Tarifskelett im Onboarding)
      .up-entchip.is-static                   die Rolle (wie in team-orga)
-     .up-bgart-flimmer                       der Grund, samt Maske fuer die freie Mitte
      --vc-* / --up-*                         alle Farben, Dauern, Kurven
    Hier steht nur, was es genau einmal gibt: die Anordnung der Seite, die Kachel des Teams, der
    Haken im Knopf und die Choreografie zwischen den drei Flaechen.
@@ -31,31 +30,17 @@
   /* Spalte, Schrift (Geist), Textfarbe und box-sizing kommen von .up-root. KEIN font-family:
      inherit wie in auth-page/onboarding -- bei gleicher Spezifitaet gewinnt dort die spaeter
      geladene Datei, und die Seite erbt dann die Schrift der Bubble-Seite statt Geist. */
-  /* --up-surface und nicht --vc-bg, aus demselben Grund wie im Onboarding: das ist der Grund der
-     Seite, --vc-bg der einer Karte. Im Dunkeln liegen die beiden 20 Stufen auseinander. */
-  background: var(--up-surface);
+  /* DER GRUND DER ANMELDESEITE, schlicht und ohne Flimmerraster (25.09. angefordert: "einfach
+     normale Hintergrundfarbe wie auf Signup"). .uau-root traegt var(--vc-bg) -- im Hellen Weiss,
+     im Dunkeln #1c1c1f --, und genau das steht hier; vorher war es --up-surface wie im Onboarding,
+     im Dunkeln 20 Stufen dunkler als die Anmeldung. */
+  background: var(--vc-bg);
   padding: clamp(16px, 2.4vh, 24px) var(--uiv-px) clamp(16px, 2.4vh, 28px);
-  /* Eigener Stapelkontext, damit der Grund mit z-index -1 HINTER dem Inhalt und VOR der fremden
-     Seite bleibt -- an fremder Stapelung wird nichts angefasst (11.08.). */
-  isolation: isolate;
 }
 .uiv-root *::before, .uiv-root *::after { box-sizing: border-box; }
 /* hidden muss gewinnen, auch gegen Bauteile aus core, die ein display setzen (.up-iconbtn,
    .up-btn-sec). Zwei Klassen Spezifitaet reichen: jedes davon hat eine. */
 .uiv-root [hidden] { display: none; }
-
-/* ---------- Grund ----------
-   Wortgleich zu .uob-bg. Er liegt immer im Dokument und traegt nur seine Deckkraft: ein Element,
-   das mit seiner Klasse verschwindet, verschwindet sofort, ein Uebergang braucht etwas, das
-   bleibt. is-bg setzt das JS nach dem ersten Zeichnen. */
-.uiv-bg {
-  position: absolute; inset: 0; z-index: -1; pointer-events: none;
-  opacity: 0; transition: opacity var(--uiv-in) var(--up-ease);
-}
-.uiv-root.is-bg .uiv-bg { opacity: 1; }
-/* Auf dem Telefon nicht, wie im Onboarding: das Raster kostet dort Akku und zeigt nichts, was
-   der Inhalt nicht schon sagt. */
-.uiv-root.is-narrow .uiv-bg { display: none; }
 
 /* ---------- Kopfzeile ----------
    Wortgleich zu .uob-top: Logo links, die Ausgaenge rechts, und oben IMMER 32px zum Rand. */

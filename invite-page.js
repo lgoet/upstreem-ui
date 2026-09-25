@@ -163,11 +163,9 @@
              'onerror="' + tausch + '"/>';
     }
     function shell(){
+      /* KEIN Flimmerraster im Hintergrund (25.09. angefordert: "normale Hintergrundfarbe wie auf
+         Signup"). Die Seite steht auf ihrer Grundfarbe, siehe invite-page.css. */
       return '' +
-        /* Der Grund des Onboardings, 1:1: dasselbe Flimmerraster aus core, mit denselben Werten
-           weiter unten. Die Einladung ist der Schritt VOR dem Onboarding, beide sollen sich als
-           eine Strecke lesen. Die Maske in core haelt die Mitte frei. */
-        '<div class="uiv-bg" aria-hidden="true"><span class="up-bgart-flimmer" data-flimmer></span></div>' +
         '<header class="uiv-top">' +
           wortmarke("uiv-logo", false) +
           '<div class="uiv-topr">' +
@@ -527,23 +525,9 @@
     if (UC.onResize) UC.onResize(root, messeBreite);
     else window.addEventListener("resize", messeBreite);
 
-    /* Das Flimmerraster, mit den Werten des Onboardings (onboarding-page.js) -- 1:1, damit beide
-       Seiten denselben Grund haben. Das Kit haelt selbst an, wenn der Tab verdeckt ist oder die
-       Huelle aus dem Dokument fliegt. */
-    var elFlimmer = root.querySelector("[data-flimmer]");
-    if (elFlimmer && UC.makeFlickerGrid){
-      try {
-        UC.makeFlickerGrid(elFlimmer, { squareSize: 3, gap: 20, blinksPerSecond: 0.2, blinkMs: 1100,
-                                        baseOpacity: 0.10, maxOpacity: 0.4, fps: 30 });
-      } catch(e){}
-    }
-
     syncTheme();
     render();
     ladenStellen();
-    /* Das Tor wie im Onboarding: der Grund kommt, sobald die Seite steht. Kein
-       requestAnimationFrame davor -- das feuert in einem verdeckten Tab nie. */
-    root.classList.add("is-bg");
 
     return {
       root: root,
