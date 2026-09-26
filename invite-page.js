@@ -84,6 +84,9 @@
     abgelaufen:   "This invitation has expired. Please ask your team for a new one.",
     zurueck:      "This invitation has been revoked. Please ask your team for a new one.",
     benutzt:      "This invitation has already been used.",
+    /* Unter "Sign up", solange niemand angemeldet ist (26.09. angefordert): annehmen kann nur,
+       wer ein Konto hat -- und wer schon eins hat, meldet sich auf derselben Seite an. */
+    erstKonto:    "Sign up or sign in to accept this invitation.",
     dauert:       "This is taking longer than expected. Please reload the page.",
     annehmenLos:  "We could not accept your invitation. Please reload the page.",
     klemmt:       "Something went wrong. Please reload the page."
@@ -133,6 +136,23 @@
       if (st === "expired" || vorbei(p.expires_at)) return T.abgelaufen;
       if (st && st !== "pending" && st !== "active" && st !== "open" && st !== "valid") return T.allgemein;
       return "";
+    }
+    /* Ein Text, der kein JSON ist: steckt JSON darin (Bubbles Fehlersatz, HTML-kodiert), das
+       ausgepackte Objekt; sonst ein kurzer Satz als Meldung; sonst null (dann bleibt es beim
+       Lesefehler). Eine geschweifte Klammer ohne lesbares JSON dahinter ist ein abgeschnittener
+       Payload und KEINE Meldung. */
+    function ausFehlertext(raw){
+      var d = String(raw).replace(/&quot;/g, '"').replace(/&#0?39;|&apos;/g, "'")
+        .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").trim();
+      if (!d) return null;
+      var i = d.indexOf("{"), j = d.lastIndexOf("}");
+      if (i >= 0){
+        if (j <= i) return null;
+        var innen = UC.readBubble ? UC.readBubble(d.slice(i, j + 1)) : null;
+        if (Array.isArray(innen)) innen = innen[0];
+        return (innen && typeof innen === "object") ? innen : null;
+      }
+      return d.length <= 300 ? d : null;
     }
     /* Die Meldung einer Datenbank-Ausnahme als Satz fuer den Nutzer. Bekannt ist "invalid invite
        token" (gemessen am 25.09. in Supabase, get_team_invite_by_token_v2); der Rest nach
@@ -411,6 +431,13 @@
                           '<button class="uiv-notyou" type="button" data-act="logout">' + T.notYou + '</button>');
         if (elWho.__uivHtml !== who){ elWho.__uivHtml = who; elWho.innerHTML = who; }
         elWho.hidden = false;
+      } else if (!angemeldet && !fehler && state.phase === "ready"){
+        /* Nicht angemeldet und die Einladung gilt: der Satz, dass erst ein Konto noetig ist. In
+           derselben leisen Zeile, in der Angemeldete ihr Konto sehen -- ein eigenes Element, damit
+           der Katalog von core ihn uebersetzt. */
+        var hinweis = '<span>' + T.erstKonto + '</span>';
+        if (elWho.__uivHtml !== hinweis){ elWho.__uivHtml = hinweis; elWho.innerHTML = hinweis; }
+        elWho.hidden = false;
       } else {
         elWho.__uivHtml = ""; elWho.innerHTML = ""; elWho.hidden = true;
       }
@@ -568,6 +595,24 @@
       setData: function(raw){
         var p = UC.readBubble ? UC.readBubble(raw) : null;
         if (Array.isArray(p)) p = p[0];
+        /* TEXT STATT JSON (26.09.). Scheitert der API-Aufruf in Bubble, kommt hier oft kein JSON
+           an, sondern ein Satz: Bubbles eigene Meldung ("... just returned an error (HTTP 400)
+           ... Raw error: {&quot;code&quot;: ...}", HTML-kodiert) oder nur die Statuszeile
+           ("Bad Request"). Beides ist eine Aussage ueber die Einladung und kein unlesbarer
+           Payload: das JSON darin wird ausgepackt, ein blosser Satz geht als Meldung durch
+           freundlich(). */
+        var fehlertext = "";
+        if ((!p || typeof p !== "object") && typeof raw === "string"){
+          var aus = ausFehlertext(raw);
+          if (aus && typeof aus === "object") p = aus;
+          else if (typeof aus === "string") fehlertext = aus;
+        }
+        if (fehlertext && state.phase !== "accepting" && state.phase !== "welcome"){
+          if (uhrLaden){ clearTimeout(uhrLaden); uhrLaden = null; }
+          state.data = { brand: "", logo: "", inviter: "", role: "" };
+          state.phase = "error"; state.err = freundlich(fehlertext); state.busy = false;
+          auftritt(); render(); return true;
+        }
         /* Verpackt geliefert ({"data": {...}}, so reichen manche Plugins die Antwort durch): dann
            gilt das Innere. Ohne das stuende eine gueltige Einladung als "nicht mehr gueltig" da. */
         if (p && typeof p === "object" && p.data && typeof p.data === "object" &&

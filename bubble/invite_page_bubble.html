@@ -15,7 +15,8 @@
                  "We could not load your invitation. Please reload the page."
        gueltig   "You've been invited to join" / Logo + Name des Teams / "Invited by ..."
                    angemeldet       -> Knopf "Accept invite", darunter "Signed in as ... · Not you?"
-                   nicht angemeldet -> Knopf "Sign up"
+                   nicht angemeldet -> Knopf "Sign up", darunter "Sign up or sign in to accept
+                                       this invitation."
        Fehler    die Meldung des RPC im gewohnten Fehlerkasten, dazu der Weg hinaus:
                    angemeldet       -> "Back to dashboard" und "Log out"
                    nicht angemeldet -> "Back to sign in"
@@ -119,7 +120,19 @@
      unbekannten Token eine Ausnahme, Supabase antwortet mit HTTP 400 -- ohne den Haken bricht
      Bubble den Workflow dort ab ("The service ... just returned an error"), setInvitePage kommt
      nie an, und nach 15s steht "We could not load your invitation" statt des wahren Grundes.
-     Mit dem Haken laeuft der Workflow weiter, und der Fehler geht in einen EIGENEN Schritt:
+     Mit dem Haken laeuft der Workflow weiter, und der Fehler geht in einen EIGENEN Schritt.
+     WIRKT ER NICHT, steht in der Konsole weiter "... just returned an error (HTTP 400)" und
+     danach "Workflow failed" -- dann sitzt der Haken nicht an dem Aufruf, der wirklich laeuft:
+       - Haken am Aufruf im API Connector setzen und "Reinitialize call" druecken, erst dann gibt
+         es am Ergebnis "returned an error" und "error" (mit body darin);
+       - der Aufruf muss Schritt 1 DIESES Workflows sein, als Aktion. Steht er zusaetzlich
+         irgendwo als Datenquelle ("Get data from an external API", etwa im Text eines Elements)
+         -- "Element invite - The service ..." in der Meldung deutet darauf --, bricht dort
+         dasselbe ab, und dort hilft keine Bedingung im Workflow.
+     In Schritt B gehoert der BODY des Fehlers, nicht "status message" (das ist nur "Bad
+     Request"). Kommt trotzdem nur ein Satz an -- die Statuszeile oder Bubbles eigene Meldung mit
+     "Raw error: {...}" --, liest die Seite ihn als Meldung und zeigt den passenden Satz, nicht
+     "We could not read your invitation".
 
        Schritt A  Only when Result of step 1's returned an error is "no"  -> die Antwort (unten)
        Schritt B  Only when Result of step 1's returned an error is "yes" -> der Rohtext des

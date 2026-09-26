@@ -1184,6 +1184,8 @@
     "This invitation has been revoked. Please ask your team for a new one.":
       "Diese Einladung wurde zurückgezogen. Bitte lass dir von deinem Team eine neue schicken.",
     "This invitation has already been used.": "Diese Einladung wurde bereits verwendet.",
+    "Sign up or sign in to accept this invitation.":
+      "Registriere dich oder melde dich an, um die Einladung anzunehmen.",
 
     /* ── Brand-Hervorhebung in den Charts ───────────────────────────────────────────────────── */
     "Your brand only": "Nur deine Brand",
