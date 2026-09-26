@@ -37,6 +37,9 @@
 
 /* ---------- Abschnitt ---------- */
 .uto-sec { display: flex; flex-direction: column; gap: 12px; }
+/* Ein ganzer Abschnitt faellt weg, wenn ein Member schaut (Einladungen, Verlauf). display: flex
+   oben wuerde das hidden-Attribut sonst ueberstimmen; Klasse plus Attribut gewinnt. */
+.uto-sec[hidden] { display: none; }
 .uto-sechead { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .uto-sectext { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .uto-sectitle { font-size: 16px; font-weight: 500; color: var(--vc-text); margin: 0; line-height: 1.3; }

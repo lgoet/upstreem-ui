@@ -37,7 +37,13 @@
   Die Komponente zeigt eine Aktion nur, wenn BEIDES zutrifft: das passende Flag aus
   permissions steht auf true UND die Rollenregel erlaubt es. Die Regeln sind:
 
-     Member   sieht keine Aktion.
+     Member   sieht keine Aktion -- und seit dem 26.09. weder "Invite new Members" noch die
+              offenen Einladungen noch den Verlauf. Entschieden an viewer_role der Mitglieder-
+              Nutzlast ("member", gross oder klein); fehlt das Feld, bleibt alles sichtbar.
+              Die Setter fuer Einladungen und Verlauf werden dann verworfen. Damit die zwei RPCs
+              gar nicht erst laufen: Einladungs- und Verlaufsschritt im Workflow mit
+              "Only when <viewer_role> is not member". Und der SERVER muss beide Abfragen fuer
+              Member abweisen -- das Ausblenden hier ist nur die Oberflaeche.
      Admin    verwaltet MEMBER: entfernen und zum Admin machen. Admins und Besitzer nicht.
      Owner    alles -- ausser: der LETZTE Besitzer kann sich weder entfernen noch seine Rolle
               abgeben, sonst stuende ein Team ohne Besitzer da.

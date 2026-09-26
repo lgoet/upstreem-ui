@@ -294,6 +294,10 @@
         members: [], invites: [], log: [],
         perm: { can_invite: false, can_manage_roles: false, can_manage_members: false },
         viewerRole: "member", viewerId: "", viewerMail: "",
+        /* viewer_role so, wie der Server ihn schickt (klein geschrieben, sonst leer). rolleName
+           macht aus einem FEHLENDEN Wert vorsichtshalber "member" -- fuer die Rechte im Menue
+           richtig, fuer das Ausblenden ganzer Abschnitte nicht (siehe nurMitglied). */
+        viewerRoleRoh: "",
         logOffen: false,
         hatDaten: false,
         /* LAEDT GERADE NEU -- je Abschnitt, nicht als ein Schalter fuer alles (25.09.). Vorher
@@ -378,6 +382,8 @@
       var elMembers = root.querySelector("[data-uto-members]");
       var elInvites = root.querySelector("[data-uto-invites]");
       var elLogBox  = root.querySelector("[data-uto-logbox]");
+      var elSecInvites = elInvites.closest(".uto-sec");
+      var elSecLog     = elLogBox.closest(".uto-sec");
       var elLog     = root.querySelector("[data-uto-log]");
       var elLogChev = root.querySelector("[data-uto-logchev]");
       var elLogCnt  = root.querySelector("[data-uto-logcount]");
@@ -449,7 +455,14 @@
         if (vr === "admin") return mr === "member" && zr === "admin";
         return false;
       }
-      function darfEinladen() { return !!state.perm.can_invite; }
+      /* EIN MEMBER sieht weder die offenen Einladungen noch den Verlauf und laedt niemanden ein
+         (26.09. angefordert). Entschieden wird an viewer_role der Mitglieder-Nutzlast, und NUR,
+         wenn dort ausdruecklich "member" steht (gross oder klein): fehlt das Feld, bleibt alles
+         sichtbar wie bisher, statt einem Admin still zwei Abschnitte wegzunehmen.
+         Das ist die OBERFLAECHE. Dass ein Member die Daten gar nicht erst bekommt, muss der
+         Server sicherstellen -- die RPCs fuer Einladungen und Verlauf muessen Member abweisen. */
+      function nurMitglied() { return state.hatDaten && state.viewerRoleRoh === "member"; }
+      function darfEinladen() { return !!state.perm.can_invite && !nurMitglied(); }
       function darfWiderrufen() {
         /* Wer einladen darf, darf auch zuruecknehmen -- sonst haengt eine falsch verschickte
            Einladung sieben Tage in der Liste. */
@@ -686,6 +699,9 @@
         elBody.hidden = false;
 
         root.classList.toggle("can-invite", darfEinladen());
+        var mitglied = nurMitglied();
+        elSecInvites.hidden = mitglied;
+        elSecLog.hidden = mitglied;
 
         /* Offene Popover gehen mit ihrem Markup weg -- sonst bleiben Karteileichen in der
            Registry von core stehen und ein Escape schliesst Menues, die es nicht mehr gibt. */
@@ -703,8 +719,10 @@
         elInvites.classList.toggle("no-actions", !iAkt);
 
         elMembers.innerHTML = membersHtml(mAkt);
-        elInvites.innerHTML = invitesHtml(iAkt);
-        elLog.innerHTML = logHtml();
+        /* Fuer einen Member werden die zwei Tabellen gar nicht erst gebaut: ausgeblendete Zeilen
+           staenden sonst trotzdem im DOM. */
+        elInvites.innerHTML = mitglied ? "" : invitesHtml(iAkt);
+        elLog.innerHTML = mitglied ? "" : logHtml();
         mindestHoehe(elMembers, "members");
         mindestHoehe(elInvites, "invites");
         mindestHoehe(elLog, "log");
@@ -866,6 +884,7 @@
             can_manage_members: perm.can_manage_members === true || isYes(perm.can_manage_members)
           };
           state.viewerRole = rolleName(o.viewer_role);
+          state.viewerRoleRoh = txt(o.viewer_role).toLowerCase();
           /* Die eigene Zeile: entweder sagt der Payload, wer der Leser ist, oder das Attribut am
              Element. Steht nirgends etwas, gibt es keine "You"-Marke -- geraten wird nicht. */
           state.viewerId = feld(o.viewer_user_id) || feld(root.getAttribute("data-user"));
@@ -891,6 +910,10 @@
           state.fehler = "members";
         }
         ladenFertig("members");
+        /* Ist der Betrachter ein Member, kommen Einladungen und Verlauf nicht (oder werden
+           verworfen) -- ihr Laden endet hier, sonst blieben die Knoepfe bis zur Warte-Uhr
+           gesperrt. */
+        if (nurMitglied()) { ladenFertig("invites"); ladenFertig("log"); }
         render();
       }
       /* readBubble liefert ein OBJEKT als Liste mit EINEM Eintrag: aus {"count":1,"invites":[...]}
@@ -929,6 +952,10 @@
          ist ein Lesefehler. */
       function roh(p) { return (typeof p === "string" && !p.trim()) ? [] : p; }
       function setInvites(p) {
+        /* Ein Member bekommt keine offenen Einladungen zu sehen: die Nutzlast wird gar nicht erst
+           gelesen. Kommt sie VOR den Mitgliedern, ist die Rolle noch unbekannt -- dann wird sie
+           gelesen, und die Mitglieder blenden den Abschnitt danach aus. */
+        if (nurMitglied()) { ladenFertig("invites"); render(); return; }
         p = roh(p);
         var o = auspacken((p && typeof p === "object") ? p : UC.readBubble(p), ["invites"]);
         var liste = listeAus(o, ["invites"]);
@@ -957,6 +984,7 @@
         render();
       }
       function setLog(p) {
+        if (nurMitglied()) { ladenFertig("log"); render(); return; }   /* wie setInvites */
         p = roh(p);
         var o = auspacken((p && typeof p === "object") ? p : UC.readBubble(p), ["logs", "entries"]);
         var liste = listeAus(o, ["logs", "entries"]);
@@ -1010,6 +1038,8 @@
         var an = isYes(v);
         ALLE.forEach(function (b) {
           if (!an) { ladenFertig(b); return; }
+          /* Ein Member sieht nur die Mitglieder -- nur die laden neu. */
+          if (b !== "members" && nurMitglied()) return;
           /* Die Hoehe VOR dem Umschalten messen -- danach stuende schon das Skelett da. Laedt der
              Abschnitt schon, bleibt die erste Messung: ein zweites "yes" mitten im Laden wuerde
              sonst die Hoehe des Skeletts messen. Ein zugeklappter Verlauf misst 0 und bekommt
@@ -1040,6 +1070,7 @@
              was beim Start gilt. */
           state.perm = { can_invite: false, can_manage_roles: false, can_manage_members: false };
           state.viewerRole = "member"; state.viewerId = ""; state.viewerMail = "";
+          state.viewerRoleRoh = "";
           state.logOffen = false;
           render();
         },
