@@ -3,7 +3,6 @@
    ── Was hier aus core kommt, und was nicht ──────────────────────────────
    Aus core, unveraendert:
      .up-btn-pri.is-lg / .up-btn-sec.is-lg   Haupt- und Nebenknopf (die grosse Stufe, 25.09.)
-     .up-formerr / .up-formerr-in            der gewohnte Fehlerkasten
      .up-iconbtn                             die Knoepfe oben rechts
      .up-tsk-bar / .up-tsk-logo              das Skelett (wie das Tarifskelett im Onboarding)
      .up-entchip.is-static                   die Rolle (wie in team-orga)
@@ -175,10 +174,21 @@
 .uiv-ctx .up-entchip.uiv-role { padding: 0 10px; }
 .uiv-rolelbl { font-size: 12px; font-weight: 500; color: var(--vc-text); }
 
-/* Fehlerkasten und Knoepfe als EIN Block: der Kasten steht ueber dem Knopf, sein eigener Abstand
-   (18px, aus core) entsteht erst mit ihm. 14 + 18 = 32 -- genau der Abstand, den der Knopf auf
-   der Anmeldeseite zu allem darueber hat. */
+/* Meldung und Knoepfe als EIN Block: die Meldung steht 14px unter der Ueberschrift, der Knopf
+   18px unter ihr. Ohne Meldung bleibt es beim Abstand von vorher -- 14 + 18 = 32, genau der
+   Abstand, den der Knopf auf der Anmeldeseite zu allem darueber hat. */
 .uiv-act { width: 100%; margin-top: 14px; }
+/* Die Meldung: ein schlichter Satz, mittig, in der leisen Schriftfarbe -- kein Kasten, kein Rot
+   (26.09. angefordert, "wie Linear"). Dass etwas nicht stimmt, sagt die Ueberschrift darueber
+   ("This invitation can't be used"); der Satz sagt, was man tun kann. Masse wie .uiv-ctx, die im
+   gueltigen Fall an derselben Stelle steht. */
+.uiv-errmsg {
+  margin: 0 auto; max-width: 400px;
+  font-size: 14px; line-height: 1.45; color: var(--vc-muted);
+  /* balance und nicht pretty: mittig und zweizeilig liest sich nur, wenn beide Zeilen etwa gleich
+     lang sind -- mit pretty stand "new one." allein in der zweiten. */
+  text-align: center; text-wrap: balance; overflow-wrap: anywhere;
+}
 .uiv-actions { margin-top: 18px; display: flex; flex-direction: column; gap: 10px; }
 .uiv-cta, .uiv-cta2 { width: 100%; }
 

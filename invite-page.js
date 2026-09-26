@@ -259,8 +259,13 @@
               '</div>' +
               '<p class="uiv-ctx" data-ctx></p>' +
               '<div class="uiv-act">' +
-                /* Der gewohnte Fehlerkasten, seit dem 25.09. in core. */
-                '<div class="up-formerr" data-err><div><div class="up-formerr-in" data-err-txt role="alert"></div></div></div>' +
+                /* Die Meldung als schlichter Satz unter der Ueberschrift, mittig wie alles hier
+                   (26.09. angefordert: "ganz normale Error Message, wie Linear"). Bis dahin stand
+                   hier der Fehlerkasten aus core (.up-formerr: Rahmen, rote Flaeche,
+                   linksbuendig) -- der gehoert zu Formularen, und auf dieser Seite steht die
+                   Meldung fuer die ganze Seite. Ein Element mit eigenem Text, damit der Katalog
+                   von core ihn uebersetzt. */
+                '<p class="uiv-errmsg" data-err data-err-txt role="alert" hidden></p>' +
                 '<div class="uiv-actions">' +
                   '<button class="up-btn-pri is-lg uiv-cta" type="button" data-cta>' +
                     '<span class="uiv-cta-t" data-cta-t></span>' +
@@ -386,6 +391,9 @@
          ist, in der Groesse eines Titels und mit dem Team-Zeichen in der Kachel. */
       var mitMarke = !!d.brand;
       kachel(d);
+      /* Im Fehlerfall keine Kachel (26.09.): ohne Team stand dort nur der Platzhalter, und auch
+         mit Team ist die Meldung die Aussage der Seite, nicht das Logo. */
+      elLogo.hidden = fehler;
       if (fehler && !mitMarke){
         elEyebrow.hidden = true;
         elName.textContent = T.ohneTeam;
@@ -411,7 +419,7 @@
       elCtx.hidden = !ctx;
 
       elErrTxt.textContent = state.err || "";
-      elErr.classList.toggle("is-on", !!state.err);
+      elErr.hidden = !state.err;
 
       /* EIN Hauptknopf. Im Fehlerfall ist er der Weg hinaus und kein zweiter Versuch: den Grund
          des Fehlers kann hier niemand beheben. */
