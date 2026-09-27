@@ -2304,7 +2304,7 @@
       }
     })(root);
   }
-  function messageHtml(m, poolTerms, isLastAsst, istLetzte){
+  function messageHtml(m, poolTerms, isLastAsst, istLetzte, still){
     var role = (m.role === 'user') ? 'user' : 'assistant';
     var body, poolTypes = [];
     if (role === 'assistant' && m.content_html){
@@ -2352,7 +2352,8 @@
        Antwort ein Stueck, obwohl er an derselben Stelle stehen bleiben soll. */
     var kopf = thoughtHtml(m, role, isLastAsst);
     var mitRun = (kopf.indexOf('am-run') >= 0) ? ' has-run' : '';
-    return '<div class="am-msg is-'+role+mitRun+'" data-id="'+esc(m.id||'')+'">'+
+    /* still: stand schon im letzten Durchgang da -> ohne Einblenden (siehe _gezeigt). */
+    return '<div class="am-msg is-'+role+mitRun+(still ? ' is-still' : '')+'" data-id="'+esc(m.id||'')+'">'+
            '<div class="am-msg-main">'+kopf+'<div class="am-bubble">'+body+ev+extras+'</div>'+actionsHtml(m, role)+folgefragenHtml(m, role, istLetzte)+'</div></div>';
   }
 
@@ -2365,6 +2366,25 @@
      Gilt genau einen Durchgang und nicht wie _forceTypeNext bis zum Verbrauch -- ein Rest davon
      haette sonst die naechste geoeffnete Unterhaltung abgetippt. */
   var _typeErwartet = false;
+  /* WAS SCHON ZU SEHEN WAR (27.09., siehe .am-msg.is-still in ask-mira.css). renderMessages baut
+     die Liste bei jedem Durchgang neu, und jede neue .am-msg blendete mit amMsgIn von Deckkraft 0
+     ein -- nach einem Nachladen, einem Titel oder einem Wechsel des Ladezustands flackerte also
+     der ganze Chat. Hier steht, was der letzte Durchgang gezeigt hat; das blendet nicht noch
+     einmal ein. Die eigene Frage zaehlt zusaetzlich ueber ihren Text: nach dem Absenden kommt sie
+     mit der Kennung des Servers statt der lokalen zurueck, fuers Auge ist es dieselbe Blase. */
+  var _gezeigt = { keys: {}, sig: {} };
+  var _ladeStill = false;       /* der Lade-Eintrag stand schon da -> ohne Einblenden neu setzen */
+  function _zeigSig(m){ return String((m && (m.content || m.content_html)) || '').replace(/\s+/g, ' ').trim().slice(0, 300); }
+  function _schonGezeigt(warDa, m){
+    if (!m) return false;
+    if (warDa.keys[_msgKey(m)]) return true;
+    return m.role === 'user' && !!warDa.sig[_zeigSig(m)];
+  }
+  function _gezeigtMerken(liste){
+    var g = { keys: {}, sig: {} };
+    liste.forEach(function(m){ if (!m) return; g.keys[_msgKey(m)] = 1; if (m.role === 'user') g.sig[_zeigSig(m)] = 1; });
+    return g;
+  }
   var _forceTimer = null;
   var _typingActive = false;
   function _msgKey(m){
@@ -2559,6 +2579,8 @@
       setHasMessages(true);                           // show the chat view immediately while it loads
       elMessages.innerHTML = _chatSkeletonHtml();
       elMessages.style.minHeight = '';
+      /* Ein Chat wird geoeffnet: was danach kommt, ist fuer das Auge neu und darf einblenden. */
+      _gezeigt = { keys: {}, sig: {} };
       return;
     }
     setHasMessages(S.messages.length > 0 || S.isLoading);
@@ -2568,7 +2590,12 @@
     for (var li = S.messages.length - 1; li >= 0; li--){ if (S.messages[li] && S.messages[li].role === 'assistant'){ lastAsstIdx = li; break; } }
     _runEmitted = false;
     var letzteIdx = S.messages.length - 1;   /* die letzte NACHRICHT, nicht die letzte Antwort -- siehe folgefragenHtml */
-    elMessages.innerHTML = S.messages.map(function(m, idx){ return messageHtml(m, poolTerms, idx === lastAsstIdx, idx === letzteIdx); }).join('');
+    /* Was der letzte Durchgang schon zeigte, blendet nicht noch einmal ein (siehe _gezeigt).
+       Der Lade-Eintrag wird VOR dem Ersetzen abgelesen -- danach ist er weg. */
+    var _warDa = _gezeigt;
+    _ladeStill = !!elMessages.querySelector('.am-msg-loading');
+    elMessages.innerHTML = S.messages.map(function(m, idx){ return messageHtml(m, poolTerms, idx === lastAsstIdx, idx === letzteIdx, _schonGezeigt(_warDa, m)); }).join('');
+    _gezeigt = _gezeigtMerken(S.messages);
     elMessages.querySelectorAll('.am-inline-logo').forEach(function(img){
       img.addEventListener('error', function(){
         var span = document.createElement('span');
@@ -2579,7 +2606,9 @@
     });
     if (S.isLoading){
       _updateLoadingUI();
+      _ladeStill = false;   /* gilt nur fuer diesen einen Neuaufbau */
     } else {
+      _ladeStill = false;
       /* Der Lauf ist fertig, die Antwort aber noch nicht da: Bubble schickt sie manchmal NACH dem
          Ende des Ladens. Dann steht das Protokoll allein am Ende -- sonst blitzt die ganze Liste
          fuer einen Moment weg und kaeme mit der Antwort neu. */
@@ -3719,7 +3748,8 @@
     }
     if (!ex){
       elMessages.insertAdjacentHTML('beforeend',
-        '<div class="am-msg is-assistant am-msg-loading"><div class="am-msg-main">' +
+        /* Stand er vor dem Neuaufbau schon da, kommt er ohne Einblenden zurueck (_ladeStill). */
+        '<div class="am-msg is-assistant am-msg-loading' + (_ladeStill ? ' is-still' : '') + '"><div class="am-msg-main">' +
         '<div class="am-run is-live"></div></div></div>');
     }
     runMount();

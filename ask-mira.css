@@ -875,6 +875,12 @@
      Antwort steht: in .am-msg-main, nicht in einer Blase. Dadurch wandert beim Wechsel von der
      Ladezeile zur Antwort nichts. */
   .am-msg.has-run { animation: none; }
+  /* KEIN ZWEITES EINBLENDEN (27.09. gemeldet: "nach 1-2 Sekunden und wenn der Titel kommt flasht
+     der Chat kurz weg und kommt wieder"). renderMessages baut die Liste bei jedem Durchgang neu,
+     und amMsgIn beginnt bei Deckkraft 0 -- jedes Neuzeichnen blendete also den ganzen Chat aus und
+     wieder ein, auch wenn sich nichts geaendert hatte. is-still traegt, was schon zu sehen war
+     (ask-mira.js, _gezeigt); einblenden darf nur, was wirklich neu ist. */
+  .am-msg.is-still { animation: none; }
   .am-think-loop { position: relative; height: 19px; overflow: hidden; min-width: 220px; }
   .am-think-text {
     position: absolute; left: 0; top: 0; white-space: nowrap;
@@ -3570,7 +3576,16 @@
 
   @media (max-width: 720px) {
     /* #3 — kein horizontales Scrollen: alles auf Containerbreite begrenzen */
-    #ask-mira, .am-shell, .am-hero, .am-hero-inner, .am-chat, .am-messages, .am-composer-area { max-width: 100%; box-sizing: border-box; overflow-x: hidden; }
+    #ask-mira, .am-shell, .am-hero, .am-hero-inner, .am-chat, .am-messages { max-width: 100%; box-sizing: border-box; overflow-x: hidden; }
+    /* DER COMPOSER-BEREICH NUR SEITLICH KAPPEN (27.09. gemeldet: "im Mobilemode fehlt beim
+       Hochscrollen der Knopf nach unten und der New-message-Hinweis"). Er stand oben in der Liste
+       mit overflow-x: hidden -- und das macht overflow-y nach der CSS-Spezifikation zu auto: der
+       Bereich kappte damit auch nach OBEN. Genau dort sitzen .am-scroll-bottom (bottom: 100%) und
+       die Ausblendung (::before, top: -32px); beide gab es auf dem Telefon nie. clip kappt nur die
+       eine Achse und laesst die andere sichtbar. Die Gegenregeln fuer die Menues (is-model-open,
+       is-pick-open, is-eff-open) waren dieselbe Beschneidung, nur je Fall umgangen -- sie bleiben
+       stehen und schaden nicht. */
+    .am-composer-area { max-width: 100%; box-sizing: border-box; overflow-x: clip; }
     /* NEVER scrollable itself — only .am-chat scrolls. The height comes from the host container,
        exactly as on desktop: a viewport height here would overflow the Bubble group we sit in, and
        that overflow lands in the page's scroll range as empty space past the end of the app. The
