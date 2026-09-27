@@ -4,10 +4,12 @@
    has what's genuinely specific to the Prompts table: the checkbox, the prompt cell (clamp +
    3-way row height), the market flag, and the date cell. */
 
-/* .check_reinvention meldet in dieser Datei zehn Stellen als Nachbau (.upt-brand-toggle,
-   .upt-status-btn, .upt-bulkbar-ic, .upt-topicsearch-clear, .upt-topiccreate, .upt-topiccreate-pick,
-   .upt-topicapply, .upt-selcount-clear, .upt-grp-sidesearch-clear, .upt-grp-menubtn). Alle
-   Fehlalarme derselben Art: der Vergleich laeuft ueber "hat Hintergrund, Rahmen, Radius, Hoehe und
+/* .check_reinvention meldet in dieser Datei Stellen als Nachbau (.upt-brand-toggle,
+   .upt-bulkbar-ic, .upt-topicsearch-clear, .upt-topiccreate, .upt-topiccreate-pick,
+   .upt-topicapply, .upt-selcount-clear, .upt-grp-sidesearch-clear, .upt-grp-menubtn). Einer stand
+   hier frueher mit in der Liste und war KEIN Fehlalarm: .upt-status-btn war ein echter Nachbau von
+   .up-seg-btn und ist seit dem 27.09. ein Alias in core. Die uebrigen sind Fehlalarme derselben
+   Art: der Vergleich laeuft ueber "hat Hintergrund, Rahmen, Radius, Hoehe und
    transition", und das trifft jeden Knopf und jedes Eingabefeld. Wo es ein Kit-Bauteil gibt, wird
    es benutzt -- .up-iconbtn, .up-btn, .up-btn-sec, .up-pop-opt, .up-menu, .up-switch, .up-dense,
    .up-topicchip, .up-topicmodal-* und seit dieser Runde die Gruppierungs-Teile .up-cg- und
@@ -200,21 +202,12 @@
    the same kind of control as the row-height switch. No margin-left tuning needed here any more:
    it is just another child of .up-head-tools now, spaced by that container's own flex gap like
    every other toolbar icon. */
-/* Wie die uebrigen kleinen Umschalter: 26px, Schienenton, mittig in der Zeile. */
-.upt-status { display: inline-flex; align-items: center; gap: 0; height: 26px;
-  padding: 0; background: var(--vc-switch-rail); border-radius: 8px; flex: 0 0 auto; align-self: center; }
-.upt-status-btn { height: 26px; padding: 0 8px; border: 1px solid transparent; border-radius: 8px;
-  background: transparent; color: var(--vc-muted); cursor: pointer; font-family: inherit;
-  font-size: 12px; font-weight: 500; line-height: 1; white-space: nowrap;
-  display: inline-flex; align-items: center; gap: 6px; }
-.upt-status-btn:hover { color: var(--vc-text); }
-.upt-status-btn.is-active { background: var(--vc-bg); color: var(--vc-text); border-color: var(--vc-switch-border); }
-/* Derselbe Fall wie die gleitende Pille in core.css: der aktive Knopf liegt UEBER seiner
-   Schiene, nicht darunter. Hier stand #08090a, der Grund der Seite -- ein Rest des
-   Farbtauschs, nicht eine Entscheidung. Diese Regel greift, solange der gleitende Streifen
-   noch nicht gemessen hat (danach uebernimmt .is-gleitend), also genau beim ersten Bild.
-   #28282c auf #34343a, wie ueberall sonst das Gewaehlte. */
-.up-root[data-theme="dark"] .upt-status-btn.is-active { background: var(--up-sel-bg); border-color: var(--vc-switch-border); }
+/* Aussehen, Groesse und Pille kommen seit dem 27.09. aus core: .upt-status und .upt-status-btn
+   stehen dort als Alias von .up-seg/.up-seg-btn (kleine Form, 26px). Hier stand eine Kopie, deren
+   Pille aus --vc-bg bzw. --up-sel-bg kam statt aus --vc-switch-pill -- gleich, solange die Pille
+   fest #28282c war, und nach dem Anheben der Schiene im Dunkeln unsichtbar (auf der Karte 0.1
+   Stufen) bzw. im Menue UNTER der Schiene (-6.9). Der Kasten steht im Bubble-Markup, darum der
+   Alias und keine neue Klasse. */
 .up-root.is-searchtakeover .upt-status { display: none; }
 /* "(Inactive)" qualifier before the "Prompts" heading label -- built once in JS (see the same
    IIFE above), text never changes, only its visibility does. Secondary/muted, matching the

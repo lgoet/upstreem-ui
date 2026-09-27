@@ -69,20 +69,11 @@
   opacity: .88; background: var(--up-accent); color: var(--up-accent-fg); }
 
 
-/* ---------- mode switcher (Domains / URLs) — replaces the left heading ---------- */
-.tcd-mode { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-rail); border-radius: 8px; border: 0; height: 32px; flex: 0 0 auto; }
-.tcd-mode-btn { height: 32px; padding: 0 12px; border: 1px solid transparent; border-radius: 8px; background: transparent;
-  color: var(--vc-muted); cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 500; line-height: 1;
-  display: inline-flex; align-items: center; justify-content: center; }
-.tcd-mode-btn:hover { color: var(--vc-text); }
-/* --vc-switch-pill statt #ffffff/#28282c: dieselbe Pille wie in core, dort steht die
-   Marke seit dem 22.09. Die eigene Dunkel-Regel faellt damit weg. */
-.tcd-mode-btn.is-active { background: var(--vc-switch-pill); color: var(--vc-text); border-color: var(--vc-switch-border); }
-/* Derselbe Fall wie die gleitende Pille in core.css: der aktive Knopf liegt UEBER seiner
-   Schiene, nicht darunter. Hier stand #08090a, der Grund der Seite -- ein Rest des
-   Farbtauschs, nicht eine Entscheidung. Diese Regel greift, solange der gleitende Streifen
-   noch nicht gemessen hat (danach uebernimmt .is-gleitend), also genau beim ersten Bild.
-   #28282c auf #34343a, wie ueberall sonst das Gewaehlte. */
+/* ---------- mode switcher (Domains / URLs) — replaces the left heading ----------
+   Seit dem 27.09. ganz aus core: .tcd-mode und .tcd-mode-btn stehen dort als Alias von .up-seg
+   in der grossen Form (32px, Polster 16). Hier stand bis dahin eine Kopie mit 12px Polster --
+   dieselbe Hoehe, aber ein eigenes Mass ohne Begruendung, und jede Aenderung am Bauteil lief an
+   ihr vorbei. Die Markup-Klassen bleiben, sie stehen in der eingefuegten Bubble-Seite. */
 
 /* right heading with total-count */
 .tcd-heading-right { display: flex; align-items: center; }

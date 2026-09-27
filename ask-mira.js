@@ -117,6 +117,15 @@
     amSpur('HAKEN FEHLT      ', haken + ' -- ' + folge);
     amLog('Haken fehlt: ' + haken, folge);
   }
+  /* HINWEISE ZUM WORKFLOW gehen denselben Weg (27.09.: "bitte die ganzen Logs entfernen"): immer in
+     die Spur, in die Konsole nur mit askMiraDebug(true). Gemeint sind Zustaende, keine Fehler --
+     eine leere Chatliste, die ignoriert wird, eine geschrumpfte Liste, eine Nachladeseite ohne
+     Neues. Die erste davon feuert laut ihrem eigenen Kommentar im normalen Betrieb. Was wirklich
+     kaputt ist (ein unlesbarer Payload), bleibt eine Warnung in der Konsole. */
+  function amHinweis(art, text){
+    amSpur('HINWEIS          ', art + ' -- ' + text);
+    amLog('Hinweis: ' + art, text);
+  }
   function amZaehl(name, zusatz){
     AMD.setter[name] = (AMD.setter[name] || 0) + 1;
     amSpur('setter ' + (name + '              ').slice(0, 16), zusatz == null ? '' : String(zusatz));
@@ -6973,7 +6982,7 @@
        Der Preis, und er ist klein: loescht jemand ANDERSWO seinen letzten Chat, steht die Leiste
        eine Runde laenger voll. Das eigene Loeschen raeumt die Zeile ohnehin selbst weg. */
     if (!einListe.length && altListe.length){
-      if (window.console) console.warn('[AskMira] askMiraSetPreviousChats kam mit einer LEEREN ' +
+      amHinweis('askMiraSetPreviousChats', 'kam mit einer LEEREN ' +
         'Liste, waehrend die Leiste ' + altListe.length + ' Chats haelt -- sie bleiben stehen. ' +
         'Im Workflow ist das Feld leer geblieben (der RPC war noch nicht zurueck, oder der ' +
         'Schritt liest das falsche Ergebnis). window.askMiraChatTrace() zeigt alle Schreibzugriffe.');
@@ -7039,10 +7048,10 @@
        gerade offene Chat in der neuen Liste ueberhaupt vorkommt -- fehlt er, ist die Liste
        veraltet, und genau dann bleiben Titel und Markierung aus. */
     var weniger = vorher > 5 && S.previousChats.length < vorher / 2;
-    if (weniger && window.console){
+    if (weniger){
       var offenDrin = !S.activeChatId ||
         S.previousChats.some(function(c){ return c && String(c.id) === String(S.activeChatId); });
-      console.warn('[AskMira] die Chatliste ist gerade von ' + vorher + ' auf ' +
+      amHinweis('Chatliste geschrumpft', 'von ' + vorher + ' auf ' +
         S.previousChats.length + ' Eintraege geschrumpft (Quelle: ' +
         (_vonAutoBind ? 'das versteckte Element mira-chats-data' : 'ein direkter Aufruf von askMiraSetPreviousChats') +
         '). Die Komponente kuerzt nie selbst -- so ist der Payload angekommen.' +
@@ -7206,7 +7215,7 @@
        Endlosschleife entsteht trotzdem nicht. */
     if (!dazu.length){
       _leerlauf++;
-      if (window.console) console.warn('[AskMira] die nachgeladene Seite brachte ' + neu.length +
+      amHinweis('Nachladen', 'die nachgeladene Seite brachte ' + neu.length +
         ' Chats, davon 0 neue -- die Leiste hat schon ' + (S.previousChats || []).length + '. ' +
         (_leerlauf >= 2
           ? 'Zum zweiten Mal hintereinander: es wird nicht mehr nachgefragt.'
@@ -7806,12 +7815,12 @@
   function fireFeedback(messageId, rating){
     var payload = { chat_id: S.activeChatId, message_id: messageId, rating: rating };
     if (window.bubble_fn_ask_mira_feedback) window.bubble_fn_ask_mira_feedback(JSON.stringify(payload));
-    else { window.dispatchEvent(new CustomEvent('askmira:feedback', { detail: payload })); console.log('Ask Mira feedback:', payload); }
+    else { window.dispatchEvent(new CustomEvent('askmira:feedback', { detail: payload })); amHakenFehlt('bubble_fn_ask_mira_feedback', JSON.stringify(payload)); }
   }
   function fireExportPdf(messageId){
     var payload = { assistant_message_id: messageId, session_id: S.activeChatId };
     if (window.bubble_fn_ask_mira_export_pdf) window.bubble_fn_ask_mira_export_pdf(JSON.stringify(payload));
-    else { window.dispatchEvent(new CustomEvent('askmira:export-pdf', { detail: payload })); console.log('Ask Mira export to pdf:', payload); }
+    else { window.dispatchEvent(new CustomEvent('askmira:export-pdf', { detail: payload })); amHakenFehlt('bubble_fn_ask_mira_export_pdf', JSON.stringify(payload)); }
   }
   /* DER SPINNER BLEIBT MINDESTENS SO LANGE STEHEN (19.09. angefordert: "mach die Zeit, bis der
      Spinner verschwindet, doppelt so lang"). Eine eigene Dauer hatte er nie -- er lief genau so
@@ -7875,7 +7884,7 @@
       title: wrap.getAttribute('data-title') || ''
     };
     if (window.bubble_fn_ask_mira_open_evidence) window.bubble_fn_ask_mira_open_evidence(JSON.stringify(payload));
-    else { window.dispatchEvent(new CustomEvent('askmira:open_evidence', { detail: payload })); console.log('Ask Mira open evidence:', payload); }
+    else { window.dispatchEvent(new CustomEvent('askmira:open_evidence', { detail: payload })); amHakenFehlt('bubble_fn_ask_mira_open_evidence', JSON.stringify(payload)); }
   }
   function showUrlPop(wrap){
     var visit = visitUrlFor(wrap);
@@ -8470,8 +8479,9 @@
          man beheben); bei jedem Klick wiederholt war sie nur Laerm. */
       if (!_stummGemeldet[dom]){
         _stummGemeldet[dom] = true;
-        if (window.console) console.info('[AskMira] ' + dom + ': kein bubble_fn_ask_mira_' + fn +
-          ' auf der Seite -- die Meldung geht nur als Ereignis askmira:' + dom + ' hinaus.');
+        /* In die Diagnose, nicht in die Konsole (27.09.: "bitte die ganzen Logs entfernen") --
+           dieselbe Regel wie seit dem 25.09. fuer alle fehlenden Haken, siehe amHakenFehlt. */
+        amHakenFehlt('bubble_fn_ask_mira_' + fn, 'Die Meldung geht nur als Ereignis askmira:' + dom + ' hinaus.');
       }
     }
   }
@@ -9930,7 +9940,7 @@
     var payload = { brand: S.settings.brand, citation: S.settings.citation, response: S.settings.response };
     hlMerken();          /* zuerst merken: die Meldung an Bubble darf nicht darueber entscheiden */
     if (window.bubble_fn_ask_mira_settings_change) window.bubble_fn_ask_mira_settings_change(JSON.stringify(payload));
-    else { window.dispatchEvent(new CustomEvent('askmira:settings-change', { detail: payload })); console.log('Ask Mira settings change:', payload); }
+    else { window.dispatchEvent(new CustomEvent('askmira:settings-change', { detail: payload })); amHakenFehlt('bubble_fn_ask_mira_settings_change', JSON.stringify(payload)); }
     /* Die Attribute setzt sonst nur renderMessages -- und an ihnen haengt der Kastenstil der
        Zitate. hlDemoZeichnen setzt sie mit, damit der Auszug im Fenster auch dann sofort stimmt,
        wenn gar kein Chat offen ist. */
@@ -10285,7 +10295,7 @@
       payload = payload || {};
       var fn = { start:'bubble_fn_ask_mira_voice_start', cancel:'bubble_fn_ask_mira_voice_cancel', submit:'bubble_fn_ask_mira_voice', error:'bubble_fn_ask_mira_voice_error' }[name];
       if (fn && typeof window[fn] === 'function') window[fn](JSON.stringify(payload));
-      else { window.dispatchEvent(new CustomEvent('askmira:voice-'+name, { detail: payload })); console.log('Ask Mira voice '+name+':', payload); }
+      else { window.dispatchEvent(new CustomEvent('askmira:voice-'+name, { detail: payload })); amHakenFehlt(fn || ('bubble_fn_ask_mira_voice_' + name), JSON.stringify(payload)); }
     }
     function showNote(msg){ if (!noteEl) return; noteEl.textContent = msg; noteEl.classList.add('is-on'); clearTimeout(noteEl._t); noteEl._t = setTimeout(function(){ noteEl.classList.remove('is-on'); }, 4500); }
     function hideNote(){ if (noteEl) noteEl.classList.remove('is-on'); }

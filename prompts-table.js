@@ -3163,7 +3163,7 @@
            groups": fehlt die Nutzlast, ist nicht die Suche schuld, und "no prompts" schickt
            einen ohnehin auf die falsche Faehrte. Deshalb titel von Hand. */
         elTbody.innerHTML = UC.leerHtml({
-          gefiltert: !!(state.query || state.brandMentioned), titel: "No groups", icon: "database",
+          gefiltert: !!(state.query || state.brandMentioned), titel: "No groups", icon: "combine",
           iconGefiltert: "database", knopf: "",
           text: (state.query || state.brandMentioned)
             ? "No topic group matches the current search."

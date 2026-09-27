@@ -465,6 +465,8 @@
           eingezogen[f.key] = w;
           etwasNeu = true;
           spiegelBeobachten(f, w);
+          /* Ein Filter, der hier ankommt, war womoeglich draussen -- siehe nachziehen. */
+          nachziehen(f);
         });
         var sichtbar = 0;
         liste.forEach(function (f) {
@@ -541,6 +543,25 @@
         w.__ufbObs = new MutationObserver(function () { spiegeln(f); render(); });
         w.__ufbObs.observe(trig, { childList: true, subtree: true, characterData: true,
                                    attributes: true, attributeFilter: ["class", "style"] });
+      }
+
+      /* ---------------- den Filter auf Stand bringen (27.09.) ----------------
+         Diese Leiste ist der Grund, warum eine Filterwurzel ueberhaupt aus dem Dokument faellt:
+         baut Bubble die Leiste neu, haengen die eingezogenen Filter bis zum Heimweg (Waechter,
+         bis 700ms) im abgehaengten Baum der alten. Setzt die Seite GENAU DANN eine Ablage
+         (setUpstreemModels/Markets beim Seitenaufbau), streicht core ihr Abo -- und der Filter
+         zeigt fuer die ganze Sitzung "No models yet". Gemeldet 27.09. im Gruppierungsmodus: dort
+         kippt data-topics-visible beim Seitenaufbau, und Bubble baut die Leiste genau in dem
+         Augenblick neu, in dem der Page-Load-Workflow laeuft (_h_flt.html, Szenario s6).
+         Wer die Knoten bewegt, sagt es ihnen: beim Einziehen und beim Aufgehen ruft die Leiste
+         sync() des Filters. Das ist SEINE oeffentliche Auskunft, wie getSelected -- der Filter
+         entscheidet selbst, ob er etwas verpasst hat (ein Zahlenvergleich), und holt es dann
+         nach. Kein Beobachter, keine Uhr. Ein Filter aus einer aelteren Datei ohne sync() wird
+         einfach uebergangen. */
+      function nachziehen(f) {
+        var w = eingezogen[f.key];
+        var c = w && w[f.ctrl];
+        if (c && typeof c.sync === "function") { try { c.sync(); } catch (e) {} }
       }
 
       /* ---------------- Zustand lesen ----------------
@@ -671,6 +692,8 @@
         var kippen = (elMore.getBoundingClientRect().left + elMore.clientLeft +
                       elMenu.offsetWidth) > (vw - 8);
         einziehen();
+        /* Auch die Filter, die schon hier standen: der Moment, in dem ihre Liste sichtbar wird. */
+        liste.forEach(nachziehen);
         spiegelnAlle();
         render();
         pop.open();

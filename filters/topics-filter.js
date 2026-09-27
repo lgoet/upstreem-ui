@@ -90,11 +90,11 @@
     plus: '<svg viewBox="0 0 24 24"><path d="M11.9922 4.00012V20.0001M19.9922 12.0001H3.99222"/></svg>',
     /* prompts-table's GRP_ICON verbatim. The same control has to look the same in both places, and
        these two are the only ones in the app that open custom groupings. */
-    /* Aus dem Satz (22.09.): combine, dasselbe Zeichen wie der Gruppierungsknopf der
-       Prompts-Tabelle. Hier stand ein von Hand gezeichnetes SVG -- zwei Rechtecke und ein
-       Winkel --, das nach der Umstellung als einziges Zeichen dieses Filters alt geblieben
-       waere. Der Rahmen bleibt: er traegt Groesse und Strichbreite. */
-    group: '<svg viewBox="0 0 24 24" stroke-width="1.7"><path d="M15 18H13C12.0681 18 11.6022 18 11.2346 17.8478C10.7446 17.6448 10.3552 17.2554 10.1522 16.7654C10 16.3978 10 15.9319 10 15C10 14.0681 10 13.6022 10.1522 13.2346C10.3552 12.7446 10.7446 12.3552 11.2346 12.1522C11.6022 12 12.0681 12 13 12H15C15.9319 12 16.3978 12 16.7654 12.1522C17.2554 12.3552 17.6448 12.7446 17.8478 13.2346C18 13.6022 18 14.0681 18 15C18 15.9319 18 16.3978 17.8478 16.7654C17.6448 17.2554 17.2554 17.6448 16.7654 17.8478C16.3978 18 15.9319 18 15 18Z"/><path d="M10 13C9.06812 13 8.60218 13 8.23463 12.8478C7.74458 12.6448 7.35523 12.2554 7.15224 11.7654C7 11.3978 7 10.9319 7 10C7 9.06812 7 8.60218 7.15224 8.23463C7.35523 7.74458 7.74458 7.35523 8.23463 7.15224C8.60218 7 9.06812 7 10 7H12C12.9319 7 13.3978 7 13.7654 7.15224C14.2554 7.35523 14.6448 7.74458 14.8478 8.23463C15 8.60218 15 9.06812 15 10C15 10.9319 15 11.3978 14.8478 11.7654"/><path d="M16.5 21.5C17.4293 21.5 17.894 21.5 18.2804 21.4231C19.8671 21.1075 21.1075 19.8671 21.4231 18.2804C21.5 17.894 21.5 17.4293 21.5 16.5M7.5 2.5C6.57069 2.5 6.10603 2.5 5.71964 2.57686C4.13288 2.89249 2.89249 4.13288 2.57686 5.71964C2.5 6.10603 2.5 6.57069 2.5 7.5M7.5 21.5C6.57069 21.5 6.10603 21.5 5.71964 21.4231C4.13288 21.1075 2.89249 19.8671 2.57686 18.2804C2.5 17.894 2.5 17.4293 2.5 16.5M16.5 2.5C17.4293 2.5 17.894 2.5 18.2804 2.57686C19.8671 2.89249 21.1075 4.13288 21.4231 5.71964C21.5 6.10603 21.5 6.57069 21.5 7.5"/></svg>',
+    /* Aus dem Satz: combine, dasselbe Zeichen wie der Gruppierungsknopf der Prompts-Tabelle.
+       Am 22.09. stand hier trotz dieses Kommentars eine WORTGLEICHE KOPIE der Pfade -- beim
+       Tausch auf Lucide "combine" (27.09.) waere sie als einziges Zeichen alt geblieben. Jetzt
+       wirklich aus core, wie tag oben. 1.7 wie vorher: der Rahmen der Knoepfe ist 15/16px. */
+    group: UC.icon ? UC.icon("combine", 1.7) : "",
   };
 
   /* Custom groupings are written by the prompts table and read here. Same localStorage key, same
@@ -129,6 +129,9 @@
   }
   function toNum(v) { var n = Number(v); return isFinite(n) ? n : 0; }
   function isYes(v) { return UC.isYes ? UC.isYes(v) : String(v).toLowerCase() === "yes"; }
+  /* Der Stand der Themen-Ablage in core (siehe sync). null, wenn core ihn noch nicht kennt --
+     dann laeuft alles wie vor dem 27.09. */
+  function stand() { return UC.storeStand ? UC.storeStand("topics") : null; }
 
   function initRoot(root) {
     if (!root) return null;
@@ -137,6 +140,9 @@
        this is what made the date range picker invisible to its own API for a whole page session. */
     if (root.__utfCtrl) {
       if (CONTROLLERS.indexOf(root.__utfCtrl) < 0) CONTROLLERS.push(root.__utfCtrl);
+      /* Wer draussen war, kann dabei einen Stand verpasst haben -- siehe sync. Die Abfrage auf
+         die Methode, weil eine zweite, aeltere Kopie dieser Datei (anderer Pin) sie nicht hat. */
+      if (typeof root.__utfCtrl.sync === "function") root.__utfCtrl.sync();
       return root.__utfCtrl;
     }
 
@@ -238,6 +244,13 @@
     var elList    = root.querySelector(".utf-list");
     var elGrpBtn  = root.querySelector(".utf-grpbtn");
     var unregister = null;
+    /* gesehen: der Stand der Ablage, den die Liste gerade zeigt. abmelden: das Abo, damit sync()
+       es erneuern kann, nachdem der Store es gestrichen hat. */
+    var gesehen = null, abmelden = null;
+    function anmelden() {
+      if (abmelden) abmelden();
+      abmelden = UC.onTopics ? UC.onTopics(function (list) { ctrl.setTopics(list); }, root) : null;
+    }
 
     /* ---------------- data helpers ---------------- */
     function hex(t) { return (isDark ? t.hex_dark : t.hex_light) || t.hex_light || t.hex_dark || "#808080"; }
@@ -398,7 +411,13 @@
     function render() { renderList(); renderTrigger(); renderMode(); renderSortMenu(); renderGroupsBtn(); }
 
     function persist() {
-      STATE[instanceId] = { selected: selected.slice(), mode: mode, sortKey: sortKey, groupsOpen: groupsOpen };
+      /* Auch die LISTE samt ihrem Stand, aus demselben Grund wie in models-filter.js: ein neu
+         gebautes Element macht mit derselben Liste weiter, auch mit einer, die nur ueber
+         setTopicsFilterTopics kam. Ein Verweis: topics wird nur ersetzt, nie veraendert.
+         Eine LEERE Liste wird nicht gemerkt -- nach einem Reset liest ein neu gebautes Element
+         wie bisher aus der Ablage. */
+      STATE[instanceId] = { selected: selected.slice(), mode: mode, sortKey: sortKey, groupsOpen: groupsOpen,
+                            liste: topics.length ? topics : null, stand: gesehen };
     }
 
     /* ---------------- publish ----------------
@@ -487,6 +506,8 @@
       elMenu.classList.toggle("is-shown", open);
       elTrigger.setAttribute("aria-expanded", open ? "true" : "false");
       if (open) {
+        /* Beim Aufgehen den Stand pruefen -- ein Zahlenvergleich, siehe sync. */
+        ctrl.sync();
         cursor = -1;
         /* Flip to the right edge when a left-aligned panel would leave the viewport. Set once on
            open, never on scroll -- the panel is absolute, so it moves with its trigger for free. */
@@ -717,6 +738,9 @@
       instanceId: instanceId,
       setTopics: function (rows) {
         topics = Array.isArray(rows) ? rows.slice() : [];
+        /* Jede Liste, die hier ankommt, ist mindestens so neu wie die Ablage in diesem Augenblick
+           -- auch eine aus setTopicsFilterTopics. */
+        gesehen = stand();
         /* The ARRIVAL of a fresh list is the confirmation, not what is in it.
            This used to look for the new name in the list, and that hung the modal open on
            '\'f98()' -- any transformation on the way through Bubble (entity escaping, trimming,
@@ -754,10 +778,28 @@
            "No topics yet"; der naechste Load fuellt sie wieder. Der seitenweite Store
            bleibt unangetastet -- an dem haengen auch andere Komponenten. */
         topics = [];
+        /* Der Reset ist neuer als der jetzige Stand der Ablage: sync() holt den alten Stand also
+           NICHT zurueck, erst das naechste Setzen fuellt die Liste wieder. */
+        gesehen = stand();
         /* "Alles clearen" schliesst die Sortierung mit ein -- wie beim Datumsfilter, der
            auf seine Vorgabe zurueckgeht statt nur die Auswahl zu leeren. */
         sortKey = DEFAULT_SORT; sortOpen = false; cursor = -1;
         setOpen(false); persist(); render();             // SILENT, like every other reset in the repo
+      },
+      /* DEN VERPASSTEN STAND NACHHOLEN (27.09.) -- die ausfuehrliche Begruendung steht in
+         models-filter.js. Kurz: der Store streicht ein Abo, dessen Wurzel beim Setzen nicht im
+         Dokument steht, und diese Wurzel war oft nur kurz draussen (Bubble baut die "More
+         Filters"-Leiste neu, in der sie steckt). Dann stand hier fuer die Sitzung "No topics
+         yet" (_h_flt.html, s6). Ist die Ablage weiter als die Liste: Abo erneuern, Stand
+         nachholen, geparkte Instanz-Aufrufe laufen lassen. Kosten: ein Zahlenvergleich. */
+      sync: function () {
+        if (!root.isConnected) return;               /* draussen: nichts nachholen, nichts senden */
+        var jetzt = stand();
+        if (jetzt != null && jetzt !== gesehen) {
+          anmelden();
+          ctrl.setTopics(UC.getTopics ? UC.getTopics() : []);
+        }
+        if (spaet) spaet.drain(instanceId, ctrl);
       },
       getSelected: function () { return { topic_ids: selected.join(","), tag_mode: mode }; }
     };
@@ -769,15 +811,21 @@
        into the markup at page build, so it is the right thing for the very first paint -- but if
        a "Load Topics" step already ran (or this instance is only being built now, several Bubble
        re-renders in), the store holds the newer list and the seed would be a step backwards. */
+    /* Davor noch die EIGENE Liste der vorigen Wurzel, solange die Ablage seitdem nicht weiter ist:
+       ein neu gebautes Element macht dort weiter, wo das alte stand (siehe persist). Ist die
+       Ablage weiter, gewinnt sie wie bisher. */
+    var jetzt = stand();
     var fromStore = UC.getTopics ? UC.getTopics() : [];
-    if (fromStore && fromStore.length) topics = fromStore;
+    if (saved.liste && jetzt != null && saved.stand === jetzt) topics = saved.liste.slice();
+    else if (fromStore && fromStore.length) topics = fromStore;
     else if (seeded) topics = Array.isArray(seeded) ? seeded : [];
+    gesehen = jetzt;
     render();
 
     /* ...and stay subscribed, so one setUpstreemTopics() call updates every picker on the page --
        including this one if it mounts later, which is the case a per-instance setter could never
        reach. Selection survives: setTopics keeps ids that are still in the list. */
-    if (UC.onTopics) UC.onTopics(function (list) { ctrl.setTopics(list); }, root);
+    anmelden();
 
     if (spaet) spaet.drain(instanceId, ctrl);
     return ctrl;

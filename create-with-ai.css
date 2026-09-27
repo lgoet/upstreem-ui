@@ -262,19 +262,12 @@
 /* ---------- Ausgabeformat ---------- */
 .uca-format { margin-top: 26px; }
 .uca-format-label { font-size: 12px; color: var(--vc-muted); font-weight: 500; margin-bottom: 10px; }
-/* --vc-switch-bg und nicht --vc-heading-bg (22.09.): DERSELBE Wert (#f9f8f9 hell, #232326
-   dunkel), aber der Name gehoert zum Bauteil. Jede andere Segmentleiste der App nimmt
-   --vc-switch-*; wer spaeter den Grund der Umschalter aendert, haette diese eine sonst
-   uebersehen. Keine sichtbare Aenderung. */
-.uca-format-seg { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-rail); border-radius: 8px; height: 32px; }
-.uca-fmt {
-  position: relative; height: 32px; padding: 0 14px; border: 1px solid transparent; border-radius: 8px; background: transparent;
-  color: var(--vc-muted); font: inherit; font-size: 13px; font-weight: 550; cursor: pointer; white-space: nowrap;
-  display: inline-flex; align-items: center;
-  transition: background .14s ease, color .14s ease, border-color .14s ease;
-}
-.uca-fmt:hover { color: var(--vc-text); }
-.uca-fmt.is-active { background: var(--up-surface); color: var(--vc-text); border-color: var(--vc-border); }
+/* Der Umschalter IST seit dem 27.09. .up-seg.is-lg aus core (Klassen im Markup, create-with-ai.js).
+   Hier stand ein Nachbau mit eigenen Massen (13px/550, Polster 14) und einer Pille aus
+   --up-surface -- im Dunkeln #101114, der Grund der Seite, also UNTER der Schiene statt darueber.
+   Geblieben ist nur, was es genau hier gibt: "Plain text" ist zweiwortig und bricht in einem
+   schmalen Fenster sonst mitten im Knopf um. */
+.uca-format .uca-fmt { white-space: nowrap; }
 
 /* ---------- Erklaerkarte der Formate ----------
    Das ist die App-Erklaerkarte (.up-explain aus core), nicht mehr ein eigener Tooltip-Typ. Sie

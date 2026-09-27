@@ -56,17 +56,14 @@
 /* ---- body: switcher, input, staged list ----
    One flex column so the list can take the leftover height and scroll on its own. Everything
    above it keeps its natural height, so a long list never pushes the input off the card. */
-.uap-tabs {
-  display: inline-flex; align-self: flex-start; gap: 2px; padding: 2px;
-  border-radius: 10px; background: var(--vc-switch-rail); border: 1px solid var(--vc-switch-border);
-}
-.uap-tab {
-  height: 28px; padding: 0 14px; border: 0; border-radius: 8px; background: transparent;
-  color: var(--vc-muted); font: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer;
-  transition: background 120ms ease, color 120ms ease;
-}
-.uap-tab:hover { color: var(--vc-text); }
-.uap-tab.is-on { background: var(--vc-bg); color: var(--vc-text); box-shadow: var(--up-e-1, 0 1px 2px rgba(0,0,0,.06)); }
+/* Der Umschalter IST seit dem 27.09. .up-seg.is-lg aus core (Klassen im Markup, add-prompts.js).
+   Hier stand ein Nachbau in eigener Bauart -- eingerueckte Reiter in einer umrandeten Schiene,
+   Pille aus --vc-bg mit Schatten, 12.5px -- und die Pille war im Dunkeln die Farbe der Karte,
+   auf der er lag. Geblieben ist nur das Oertliche, mit zwei Klassen gegen die eine von core:
+   links buendig in der Spalte (core stellt einen Umschalter mittig in seine Zeile), und
+   "Import CSV" bricht nicht um. */
+.uap-card .uap-tabs { align-self: flex-start; }
+.uap-card .uap-tab { white-space: nowrap; }
 
 /* The two input modes swap; only one is in the layout at a time. */
 .uap-card .uap-input-csv { display: none; }

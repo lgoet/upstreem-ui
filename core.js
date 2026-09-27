@@ -14688,6 +14688,30 @@
     for (var i = 0; i < q.length; i++){ try { setMarkets(q[i], "setUpstreemMarkets (queued)"); } catch(e){} }
   })();
 
+  /* ---- DER STAND EINER ABLAGE (27.09.) ----------------------------------------------------
+     Jede Ablage zaehlt ihre Setz-Vorgaenge (seq). Hier ist diese Zahl lesbar, damit ein Abnehmer
+     feststellen kann, ob er einen Stand VERPASST hat -- ein Zahlenvergleich statt eines zweiten
+     Abos, einer Uhr oder eines Beobachters.
+     Der Grund ist gemessen: ein Abonnent, dessen Wurzel beim Setzen nicht im Dokument steht,
+     wird gestrichen (siehe setTopics). Das ist richtig fuer eine Wurzel, die Bubble weggeworfen
+     hat -- und falsch fuer eine, die nur kurz draussen war. Genau das passiert den drei
+     Filterwurzeln, wenn Bubble die "More Filters"-Leiste neu baut, in der sie stecken: bis die
+     Leiste sie heimschickt (bis zu 700ms), haengen sie in einem abgehaengten Baum. Fiel der
+     Page-Load-Schritt in dieses Fenster, blieben Models und Markets fuer die ganze Sitzung auf
+     "No models yet" (_h_flt.html, Szenario s6). Mit dieser Zahl holt der Filter den Stand nach,
+     sobald er wieder steht. */
+  function storeStand(name){
+    switch (name){
+      case "topics":     return TOPICS.seq || 0;
+      case "models":     return MODELS.seq || 0;
+      case "markets":    return MARKETS.seq || 0;
+      case "allMarkets": return ALL_MARKETS.seq || 0;
+      case "brands":     return BRANDS.seq || 0;
+      case "quota":      return QUOTA.seq || 0;
+    }
+    return 0;
+  }
+
   /* ---------------------------------------------------------------------------------------------
      Brand store. Vierter Store derselben Bauart wie Topics und Markets, und aus demselben Grund:
      mehrere Komponenten brauchen dieselbe Markenliste, und ohne Store haengt jede an ihrem eigenen
@@ -15958,12 +15982,15 @@
        naechsten Lesen die Frage aufwirft, wer es braucht. */
     listFilterPlus: '<path d="M3 7.49805H11"/><path d="M15 7.49768L21 7.49769M17.995 10.502L17.995 4.50195"/><path d="M6 13.498H18"/><path d="M9 19.498H15"/>',
 
-    /* combine: der Gruppierungsknopf der Prompts-Tabelle. Er trug bis zum 22.09. ein von Hand
-       gezeichnetes SVG direkt in prompts-table.js -- also genau das, was §5 verbietet, und die
-       einzige Stelle der App, an der ein Zeichen nicht aus diesem Satz kam. */
-    combine: '<path d="M15 18H13C12.0681 18 11.6022 18 11.2346 17.8478C10.7446 17.6448 10.3552 17.2554 10.1522 16.7654C10 16.3978 10 15.9319 10 15C10 14.0681 10 13.6022 10.1522 13.2346C10.3552 12.7446 10.7446 12.3552 11.2346 12.1522C11.6022 12 12.0681 12 13 12H15C15.9319 12 16.3978 12 16.7654 12.1522C17.2554 12.3552 17.6448 12.7446 17.8478 13.2346C18 13.6022 18 14.0681 18 15C18 15.9319 18 16.3978 17.8478 16.7654C17.6448 17.2554 17.2554 17.6448 16.7654 17.8478C16.3978 18 15.9319 18 15 18Z"/>' +
-             '<path d="M10 13C9.06812 13 8.60218 13 8.23463 12.8478C7.74458 12.6448 7.35523 12.2554 7.15224 11.7654C7 11.3978 7 10.9319 7 10C7 9.06812 7 8.60218 7.15224 8.23463C7.35523 7.74458 7.74458 7.35523 8.23463 7.15224C8.60218 7 9.06812 7 10 7H12C12.9319 7 13.3978 7 13.7654 7.15224C14.2554 7.35523 14.6448 7.74458 14.8478 8.23463C15 8.60218 15 9.06812 15 10C15 10.9319 15 11.3978 14.8478 11.7654"/>' +
-             '<path d="M16.5 21.5C17.4293 21.5 17.894 21.5 18.2804 21.4231C19.8671 21.1075 21.1075 19.8671 21.4231 18.2804C21.5 17.894 21.5 17.4293 21.5 16.5M7.5 2.5C6.57069 2.5 6.10603 2.5 5.71964 2.57686C4.13288 2.89249 2.89249 4.13288 2.57686 5.71964C2.5 6.10603 2.5 6.57069 2.5 7.5M7.5 21.5C6.57069 21.5 6.10603 21.5 5.71964 21.4231C4.13288 21.1075 2.89249 19.8671 2.57686 18.2804C2.5 17.894 2.5 17.4293 2.5 16.5M16.5 2.5C17.4293 2.5 17.894 2.5 18.2804 2.57686C19.8671 2.89249 21.1075 4.13288 21.4231 5.71964C21.5 6.10603 21.5 6.57069 21.5 7.5"/>',
+    /* combine: das Zeichen fuer GRUPPIERUNGEN, ueberall -- der Gruppierungsknopf der Prompts-
+       Tabelle und der Knopf fuer eigene Gruppierungen im Topics-Filter. Wortgleich Lucide
+       "combine" (27.09. angefordert: "bitte nutze fuer Grouping ueberall das Icon CombineIcon",
+       gegengelesen an lucide-static und am Repo von lucide). Hier stand bis dahin unter demselben
+       Namen das frueher in prompts-table.js gezeichnete Zeichen (zwei Quadrate im Eckrahmen) --
+       der Name versprach Lucide, die Pfade waren keins. */
+    combine: '<path d="M14 3a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1"/><path d="M19 3a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1"/>' +
+             '<path d="m7 15 3 3"/><path d="m7 21 3-3H5a2 2 0 0 1-2-2v-2"/>' +
+             '<rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="3" width="7" height="7" rx="1"/>',
     /* Die zwei WAAGERECHTEN Regler. Sie waren bis zum 23.09. die Zeile "Preferences" im
        Konto-Menue der Seitenleiste -- seither traegt die den Fader (settings2), damit der Knopf
        aussieht wie das Fenster, das er oeffnet ("My Preferences" in preferences.js). Damit hat
@@ -17124,6 +17151,7 @@
     getModels: getModels,
     setModels: setModels,
     onModels: onModels,
+    storeStand: storeStand,
     getQuota: getQuota,
     setQuota: setQuota,
     onQuota: onQuota,

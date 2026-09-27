@@ -2578,18 +2578,25 @@
        allen vier Seiten 16px, und trotzdem sah es nach 32 aus. Der Kreis bleibt ein Kreis:
        border-radius: 50% skaliert mit, das Zeichen darin sitzt zentriert. */
     width: 32px; height: 32px; border: 0; border-radius: 50%; flex: 0 0 auto;
-    background: var(--am-primary); color: var(--am-bg); cursor: pointer;
+    /* PRIMAER-/AKZENTFARBE wie jeder Hauptknopf der App (core: .up-btn-pri), nicht mehr die
+       Schriftfarbe (27.09. angefordert). Mit der Standardfarbe sieht das gleich aus; mit einer
+       gewaehlten Akzentfarbe (Indigo, Azur, ...) stand der Knopf bisher als einziger grau da. */
+    background: var(--up-accent); color: var(--up-accent-fg); cursor: pointer;
     display: inline-flex; align-items: center; justify-content: center; position: relative;
     box-shadow: var(--up-e-1, 0 1px 2px rgba(0,0,0,0.12));
     transition: background 120ms ease, transform 120ms ease, box-shadow 120ms ease, opacity 120ms ease;
   }
-  .am-send:hover { background: #585855; box-shadow: none; }
+  /* Hover wie core (.up-btn-pri): dieselbe Farbe, leicht zurueckgenommen -- eine feste zweite Farbe
+     (hier stand #585855, im Dunkeln #a0a0a0) passte zu keiner Akzentfarbe ausser der alten. */
+  .am-send:not(:disabled):hover { opacity: .88; box-shadow: none; }
   .am-send:active { transform: scale(0.95); }
   .am-send:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: var(--up-e-1, 0 1px 2px rgba(0,0,0,0.08)); }
   .am-ic-send { width: 18px; height: 18px; }
   .am-send-spinner {
     display: none; width: 16px; height: 16px; border-radius: 999px;
-    border: 2px solid color-mix(in srgb, var(--am-bg) 35%, transparent); border-top-color: var(--am-bg);
+    /* currentColor = --up-accent-fg des Knopfes (27.09.): der Kreisel steht auf der Akzentfarbe und
+       nimmt deren Schriftfarbe, statt --am-bg, das nur zur alten Textfarben-Flaeche passte. */
+    border: 2px solid color-mix(in srgb, currentColor 35%, transparent); border-top-color: currentColor;
     animation: amSpin 720ms linear infinite; position: absolute;
   }
   #ask-mira.is-loading .am-ic-send { display: none; }
@@ -3771,7 +3778,6 @@
       linear-gradient(to bottom, rgba(255,255,255,0.022) 1px, transparent 1px);
     background-size: 44px 44px;
   }
-  #ask-mira[data-theme="dark"] .am-send:hover { background: #a0a0a0; box-shadow: none; }
   #ask-mira[data-theme="dark"] .am-bubble tbody tr:nth-child(even) td { background: rgba(255,255,255,0.022); }
   #ask-mira[data-theme="dark"] .am-ev-pill { background: transparent; border-color: #23252a; color: var(--am-muted-2); }
   #ask-mira[data-theme="dark"] .am-ev-pill:hover { background: #1e1e1e; border-color: #555; }

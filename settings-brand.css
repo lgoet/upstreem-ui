@@ -34,6 +34,10 @@
 /* ---------- Karte ---------- */
 .usb-card { border: 1px solid var(--vc-border); border-radius: 16px; background: var(--vc-bg); padding: 4px 16px; }
 .usb-div { height: 1px; background: var(--vc-border); margin: 0 -16px; }
+/* "Delete Team" samt Trennlinie nur fuer Owner (27.09., settings-brand.js istOwner). Die Klasse
+   setzt render() aus data-user-role; ohne sie bleibt beides weg. :not() hebt die Spezifitaet ueber
+   .usb-row und .usb-div, ohne dass die Stelle in der Datei entscheidet. */
+.usb-root:not(.usb-owner) [data-nur-owner] { display: none; }
 
 /* align-items:flex-start, nicht center: wird die Beschreibung links zweizeilig, saehe ein
    zentriertes Bedienelement rechts aus, als gehoere es zwischen die beiden Zeilen. */

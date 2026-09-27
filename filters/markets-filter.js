@@ -125,6 +125,9 @@
     u = String(u == null ? "" : u).trim();
     return u.indexOf("//") === 0 ? "https:" + u : u;
   }
+  /* Der Stand der Markt-Ablage in core (siehe sync). null, wenn core ihn noch nicht kennt --
+     dann laeuft alles wie vor dem 27.09. */
+  function stand() { return UC.storeStand ? UC.storeStand("markets") : null; }
 
   function initRoot(root) {
     if (!root) return null;
@@ -132,6 +135,9 @@
        still valid, it was only pruned from CONTROLLERS while its root was off-document. */
     if (root.__umkCtrl) {
       if (CONTROLLERS.indexOf(root.__umkCtrl) < 0) CONTROLLERS.push(root.__umkCtrl);
+      /* Wer draussen war, kann dabei einen Stand verpasst haben -- siehe sync. Die Abfrage auf
+         die Methode, weil eine zweite, aeltere Kopie dieser Datei (anderer Pin) sie nicht hat. */
+      if (typeof root.__umkCtrl.sync === "function") root.__umkCtrl.sync();
       return root.__umkCtrl;
     }
 
@@ -231,6 +237,16 @@
     var elMode    = root.querySelector(".umk-foot");
     var elList    = root.querySelector(".umk-list");
     var unregister = null;
+    /* gesehen: der Stand der Ablage, den die Liste gerade zeigt. abmelden: das Abo, damit sync()
+       es erneuern kann, nachdem der Store es gestrichen hat. */
+    var gesehen = null, abmelden = null;
+    function anmelden() {
+      if (abmelden) abmelden();
+      /* Also the receiving end of UC.marketsChanged(): a workflow that added or deleted a prompt
+         calls it, the page re-runs the RPC and calls setUpstreemMarkets, and every picker gets the
+         new list AND the new prompt counts without knowing about each other. */
+      abmelden = UC.onMarkets ? UC.onMarkets(function (list) { ctrl.setMarkets(list); }, root) : null;
+    }
 
     /* ---------------- data helpers ---------------- */
     /* alpha2 is the identity. alpha3 is accepted as a fallback only so a payload that ships one
@@ -374,7 +390,13 @@
     function render() { renderList(); renderTrigger(); renderMode(); renderSortMenu(); }
 
     function persist() {
-      STATE[instanceId] = { selected: selected.slice(), mode: mode, sortKey: sortKey };
+      /* Auch die LISTE samt ihrem Stand, aus demselben Grund wie in models-filter.js: ein neu
+         gebautes Element macht mit derselben Liste weiter, auch mit einer, die nur ueber
+         setMarketsFilterMarkets kam. Ein Verweis: markets wird nur ersetzt, nie veraendert.
+         Eine LEERE Liste wird nicht gemerkt -- nach einem Reset liest ein neu gebautes Element
+         wie bisher aus der Ablage. */
+      STATE[instanceId] = { selected: selected.slice(), mode: mode, sortKey: sortKey,
+                            liste: markets.length ? markets : null, stand: gesehen };
     }
 
     /* ---------------- publish ----------------
@@ -462,6 +484,8 @@
       elMenu.classList.toggle("is-shown", open);
       elTrigger.setAttribute("aria-expanded", open ? "true" : "false");
       if (open) {
+        /* Beim Aufgehen den Stand pruefen -- ein Zahlenvergleich, siehe sync. */
+        ctrl.sync();
         cursor = -1;
         /* Flip to the right edge when a left-aligned panel would leave the viewport. Set once on
            open, never on scroll -- the panel is absolute, so it moves with its trigger for free. */
@@ -644,6 +668,9 @@
       instanceId: instanceId,
       setMarkets: function (rows) {
         markets = Array.isArray(rows) ? rows.slice() : [];
+        /* Jede Liste, die hier ankommt, ist mindestens so neu wie die Ablage in diesem Augenblick
+           -- auch eine aus setMarketsFilterMarkets. */
+        gesehen = stand();
         /* Drop selections whose market no longer exists, otherwise the trigger counts something the
            list cannot show and Clear is the only way out. */
         var keys = {};
@@ -672,10 +699,28 @@
            "No markets yet"; der naechste Load fuellt sie wieder. Der seitenweite Store
            bleibt unangetastet -- an dem haengen auch andere Komponenten. */
         markets = [];
+        /* Der Reset ist neuer als der jetzige Stand der Ablage: sync() holt den alten Stand also
+           NICHT zurueck, erst das naechste Setzen fuellt die Liste wieder. */
+        gesehen = stand();
         /* "Alles clearen" schliesst die Sortierung mit ein -- wie beim Datumsfilter, der
            auf seine Vorgabe zurueckgeht statt nur die Auswahl zu leeren. */
         sortKey = DEFAULT_SORT; sortOpen = false; cursor = -1;
         setOpen(false); persist(); render();             // SILENT, like every other reset in the repo
+      },
+      /* DEN VERPASSTEN STAND NACHHOLEN (27.09.) -- die ausfuehrliche Begruendung steht in
+         models-filter.js. Kurz: der Store streicht ein Abo, dessen Wurzel beim Setzen nicht im
+         Dokument steht, und diese Wurzel war oft nur kurz draussen (Bubble baut die "More
+         Filters"-Leiste neu, in der sie steckt). Dann stand hier fuer die Sitzung "No markets
+         yet" (_h_flt.html, s6). Ist die Ablage weiter als die Liste: Abo erneuern, Stand
+         nachholen, geparkte Instanz-Aufrufe laufen lassen. Kosten: ein Zahlenvergleich. */
+      sync: function () {
+        if (!root.isConnected) return;               /* draussen: nichts nachholen, nichts senden */
+        var jetzt = stand();
+        if (jetzt != null && jetzt !== gesehen) {
+          anmelden();
+          ctrl.setMarkets(UC.getMarkets ? UC.getMarkets() : []);
+        }
+        if (spaet) spaet.drain(instanceId, ctrl);
       },
       getSelected: function () { return { market_codes: selected.join(","), select_mode: mode }; }
     };
@@ -686,19 +731,21 @@
     /* Order matters: the page-wide store WINS over the seed block. The seed is the value baked into
        the markup at page build, right for the first paint -- but if a "Load Markets" step already
        ran, the store holds the newer list and the seed would be a step backwards. */
+    /* Davor noch die EIGENE Liste der vorigen Wurzel, solange die Ablage seitdem nicht weiter ist:
+       ein neu gebautes Element macht dort weiter, wo das alte stand (siehe persist). Ist die
+       Ablage weiter, gewinnt sie wie bisher. */
+    var jetzt = stand();
     var fromStore = UC.getMarkets ? UC.getMarkets() : [];
-    if (fromStore && fromStore.length) markets = fromStore;
+    if (saved.liste && jetzt != null && saved.stand === jetzt) markets = saved.liste.slice();
+    else if (fromStore && fromStore.length) markets = fromStore;
     else if (seeded) markets = Array.isArray(seeded) ? seeded : [];
+    gesehen = jetzt;
     render();
 
     /* ...and stay subscribed, so one setUpstreemMarkets() call updates every picker on the page --
        including this one if it mounts later, which is the case a per-instance setter could never
        reach. Selection survives: setMarkets keeps keys that are still in the list. */
-    /* ...and stay subscribed. Also the receiving end of UC.marketsChanged(): a workflow that added
-       or deleted a prompt calls it, the page re-runs the RPC and calls setUpstreemMarkets, and
-       every picker on the page gets the new list AND the new prompt counts without knowing about
-       each other. */
-    if (UC.onMarkets) UC.onMarkets(function (list) { ctrl.setMarkets(list); }, root);
+    anmelden();
 
     if (spaet) spaet.drain(instanceId, ctrl);
     return ctrl;

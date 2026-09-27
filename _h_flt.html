@@ -1,0 +1,450 @@
+<meta charset="utf-8">
+<title>laeuft</title>
+<!-- Pruefstand "More Filters leer" (27.09.). Baut die Werkzeugzeile der Prompts-Seite nach:
+     vier Bubble-HTML-Elemente (Leiste + Topics/Models/Markets), jedes ein Behaelter, dessen Inhalt
+     Bubble bei einer Aenderung per jQuery .html() NEU setzt -- also: alle Kinder DES BEHAELTERS
+     raus, frisches Vorlagen-Markup rein. Eine Filterwurzel, die die Leiste zu sich gezogen hat,
+     ist dann kein Kind des Behaelters mehr.
+     ?s=<szenario>  &v=alt laedt die HEAD-Fassungen (*_alt.js) -- die Gegenprobe.
+     Szenarien: s6 (Seitenaufbau mit Gruppierung: Leiste neu, Page-Load-Setter im Fenster; &grp=0
+     ohne Gruppierung), s6k Gegenprobe, s6w (Filter sofort heimgeschickt; &ohneWatch=1 misst den
+     Weg ueber die Leiste allein), s1/s1k (Listen je Instanz bzw. Store + Themenwechsel), s3
+     (Auffrischen im Fenster, dann Reset + Laden), s7 (Instanz-Setter im Fenster), s8 (Leiste kurz
+     ausgehaengt), s9 (&leiste=0: Filter allein), s10 (Reset-Verhalten), s11 (Auswahl und
+     Ereignisse, &weg=1), kosten (Zaehler im Normalfall).
+     Betrieb: der Server auf 8099 darf ~/Documents nicht lesen -- Dateien nach /private/tmp/uprt/flt
+     kopieren, HEAD-Fassungen per git show als core_alt.js und filters/*_alt.js daneben. -->
+<script>
+/* UHR-ERSATZ. Im verdeckten Tab laufen setTimeout/setInterval erst nach >=1000ms und rAF gar
+   nicht. Hier ueber MessageChannel, mit echter Zeit (performance.now): die Reihenfolge und die
+   Abstaende bleiben, nur die Drosselung faellt weg. window.__uhrStop haelt alles an. */
+(function(){
+  var timers = {}, nid = 1, mc = new MessageChannel(), an = false, raf = [];
+  function jetzt(){ return performance.now(); }
+  function kick(){ if (!an && !window.__uhrStop){ an = true; mc.port2.postMessage(0); } }
+  mc.port1.onmessage = function(){
+    an = false;
+    if (window.__uhrStop) return;
+    var r = raf; raf = [];
+    for (var i = 0; i < r.length; i++){ try { r[i](jetzt()); } catch(e){ window.__fehler && window.__fehler.push("raf: " + e.message); } }
+    var t = jetzt(), due = [];
+    for (var k in timers) if (timers[k].at <= t) due.push(timers[k]);
+    due.sort(function(a, b){ return a.at - b.at || a.id - b.id; });
+    for (var j = 0; j < due.length; j++){
+      var tm = due[j];
+      if (!timers[tm.id]) continue;
+      if (tm.iv) tm.at = t + tm.ms; else delete timers[tm.id];
+      try { tm.fn.apply(window, tm.args); } catch(e){ window.__fehler && window.__fehler.push("uhr: " + e.message); }
+    }
+    for (var x in timers){ kick(); return; }
+    if (raf.length) kick();
+  };
+  function neu(fn, ms, args, iv){
+    var id = nid++;
+    timers[id] = { id: id, fn: typeof fn === "function" ? fn : new Function(String(fn)),
+                   at: jetzt() + Math.max(0, +ms || 0), ms: Math.max(4, +ms || 0), args: args, iv: iv };
+    kick(); return id;
+  }
+  window.setTimeout = function(fn, ms){ return neu(fn, ms, [].slice.call(arguments, 2), false); };
+  window.setInterval = function(fn, ms){ return neu(fn, ms, [].slice.call(arguments, 2), true); };
+  window.clearTimeout = window.clearInterval = function(id){ delete timers[id]; };
+  window.requestAnimationFrame = function(cb){ raf.push(cb); kick(); return raf.length; };
+  window.cancelAnimationFrame = function(){};
+})();
+window.__fehler = [];
+window.addEventListener("error", function(e){ window.__fehler.push(String(e.message)); });
+window.__ev = [];
+["utfTopics_prompts","utfTopicsApply_prompts","umfModels_prompts","umfApply_prompts","umkMarkets_prompts","umkApply_prompts"].forEach(function(n){
+  window["bubble_fn_" + n] = function(j){ window.__ev.push([n, j]); };
+});
+try { localStorage.clear(); } catch(e){}
+var Q = new URLSearchParams(location.search), ALT = Q.get("v") === "alt", SZ = Q.get("s") || "s6";
+function ext(f){ return ALT ? f.replace(/(\.js)$/, "_alt$1") : f; }
+var T = "?t=" + Date.now();
+["core.css","filters/filter-bar.css","filters/topics-filter.css","filters/models-filter.css","filters/markets-filter.css"]
+  .forEach(function(f){ document.write('<link rel="stylesheet" href="' + f + T + '">'); });
+</script>
+<style>
+  *,*::before,*::after{transition:none!important;animation:none!important}
+  body{margin:0;padding:16px;font:13px/1.4 sans-serif;width:1200px}
+  #zeile{display:flex;gap:8px;align-items:center;min-height:40px}
+  #out{font:11px/1.5 ui-monospace,monospace;background:#111;color:#eee;padding:10px;white-space:pre-wrap;margin-top:260px}
+</style>
+<body>
+<div id="zeile">
+  <div class="bubble-element HTML" id="c-bar"></div>
+  <div class="bubble-element HTML" id="c-top"></div>
+  <div class="bubble-element HTML" id="c-mod"></div>
+  <div class="bubble-element HTML" id="c-mkt"></div>
+</div>
+<pre id="out">laeuft</pre>
+<script src="frische.js?t=1"></script>
+<script>
+/* Die Vorlagen: die Wurzeln aus filters/bubble/*.html, mit den festen Ids der Prompts-Seite.
+   Der Loader steht als inertes Skript daneben -- er ist das Geschwister, an dem die Leiste sich
+   beim ersten Einziehen die Heimatadresse merkt. */
+var LADER = '<script type="text/x-lader"><\/script>';
+var VORLAGE = {
+  "c-bar": function(o){ return '<div class="up-root ufb-root" data-instance="filterbar_prompts" data-cdn-pin="x"' +
+    ' data-isdark="' + (o.dunkel ? "yes" : "no") + '" data-topics-instance="topics_prompts"' +
+    ' data-models-instance="models_prompts" data-markets-instance="markets_prompts"' +
+    ' data-topics-visible="' + (o.gruppiert ? "no" : "yes") + '"></div>' + LADER; },
+  "c-top": function(o){ return '<div class="up-root utf-root" data-instance="topics_prompts" data-cdn-pin="x"' +
+    ' data-isdark="' + (o.dunkel ? "yes" : "no") + '" data-isprocessing="' + (o.laedt ? "yes" : "no") + '"' +
+    ' data-topics-fn="bubble_fn_utfTopics_prompts" data-topics-apply-fn="bubble_fn_utfTopicsApply_prompts">' +
+    '<script class="utf-topics-json" type="application/json">TOPICS_JSON<\/script></div>' + LADER; },
+  "c-mod": function(o){ return '<div class="up-root umf-root" data-instance="models_prompts" data-cdn-pin="x"' +
+    ' data-isdark="' + (o.dunkel ? "yes" : "no") + '" data-isprocessing="' + (o.laedt ? "yes" : "no") + '"' +
+    ' data-models-fn="bubble_fn_umfModels_prompts" data-models-apply-fn="">' +
+    '<script class="umf-models-json" type="application/json">MODELS_JSON<\/script></div>' + LADER; },
+  "c-mkt": function(o){ return '<div class="up-root umk-root" data-instance="markets_prompts" data-cdn-pin="x"' +
+    ' data-isdark="' + (o.dunkel ? "yes" : "no") + '" data-isprocessing="' + (o.laedt ? "yes" : "no") + '"' +
+    ' data-markets-fn="bubble_fn_umkMarkets_prompts" data-markets-apply-fn="">' +
+    '<script class="umk-markets-json" type="application/json">MARKETS_JSON<\/script></div>' + LADER; }
+};
+/* Genau das, was jQuery .html() mit einem Markup tut, das <script> enthaelt: empty() -- alle
+   KINDER DES BEHAELTERS raus --, dann append. Was die Leiste woandershin gezogen hat, ist kein
+   Kind mehr und bleibt, wo es ist. */
+function bubbleSetzt(id, o){
+  var c = document.getElementById(id);
+  while (c.firstChild) c.removeChild(c.firstChild);
+  c.insertAdjacentHTML("beforeend", VORLAGE[id](o || {}));
+}
+["c-bar","c-top","c-mod","c-mkt"].forEach(function(id){ bubbleSetzt(id, {}); });
+/* ?leiste=0: die Filter stehen allein, ohne "More Filters" (Szenario s9). */
+if (new URLSearchParams(location.search).get("leiste") === "0") document.getElementById("c-bar").innerHTML = "";
+
+var TOPICS = [
+  { id: "t1", name: "Leadgen", hex_light: "#2563eb", hex_dark: "#2563eb", prompt_count: 42 },
+  { id: "t2", name: "Solar", hex_light: "#059669", hex_dark: "#059669", prompt_count: 31 },
+  { id: "t3", name: "Waermepumpe", hex_light: "#d97706", hex_dark: "#d97706", prompt_count: 18 }
+];
+var MODELS = [
+  { key: "gpt-4o",  display_name: "GPT-4o",        provider: "OpenAI",     is_active: true, logo_url: "" },
+  { key: "claude",  display_name: "Claude Sonnet", provider: "Anthropic",  is_active: true, logo_url: "" },
+  { key: "gemini",  display_name: "Gemini 2.0",    provider: "Google",     is_active: true, logo_url: "" },
+  { key: "perplex", display_name: "Perplexity",    provider: "Perplexity", is_active: true, logo_url: "" }
+];
+var MARKETS = [
+  { alpha2: "DE", name: "Germany",     prompt_count: 120 },
+  { alpha2: "AT", name: "Austria",     prompt_count: 40 },
+  { alpha2: "CH", name: "Switzerland", prompt_count: 22 }
+];
+/* Der Page-Load-Schritt der Seite: die drei seitenweiten Setter, roh als Text, wie ein
+   Run-JS-Schritt sie uebergibt. */
+function ladeStore(t, m, k){
+  window.setUpstreemTopics(JSON.stringify(t || TOPICS));
+  window.setUpstreemModels(JSON.stringify(m || MODELS));
+  window.setUpstreemMarkets(JSON.stringify(k || MARKETS));
+}
+function ladeJeInstanz(t, m, k){
+  window.setTopicsFilterTopics("topics_prompts", JSON.stringify(t || TOPICS));
+  window.setModelsFilterModels("models_prompts", JSON.stringify(m || MODELS));
+  window.setMarketsFilterMarkets("markets_prompts", JSON.stringify(k || MARKETS));
+}
+</script>
+<script>
+document.write('<script src="' + ext("core.js") + T + '"><\/script>');
+["filters/topics-filter.js","filters/models-filter.js","filters/markets-filter.js","filters/filter-bar.js"].forEach(function(f){
+  document.write('<script src="' + ext(f) + T + '"><\/script>');
+});
+</script>
+<script>
+function w(ms){ return new Promise(function(ok){ setTimeout(ok, ms); }); }
+var STORE = { utf: "__upTopics", umf: "__upModels", umk: "__upMarkets" };
+var ZEILE = { utf: "utf-opt", umf: "umf-opt", umk: "umk-opt" };
+var LEER  = { utf: "utf-empty", umf: "umf-empty", umk: "umk-empty" };
+/* Was die Leiste JETZT zeigen wuerde: die Wurzel in ihrem Untermenue, deren Listenzeilen, der
+   Leertext, und ob diese Wurzel noch beim seitenweiten Store angemeldet ist. */
+function stand(){
+  var bar = document.querySelector("#c-bar .ufb-root");
+  var o = { leiste: bar ? (bar.__ufbCtrl ? "eingerichtet" : "ohne Controller") : "fehlt" };
+  ["umf","umk","utf"].forEach(function(p){
+    var alle = document.querySelectorAll("." + p + "-root");
+    var drin = bar ? bar.querySelector("." + p + "-root") : null;
+    var liste = drin ? drin.querySelector("." + p + "-list") : null;
+    var leer = liste ? liste.querySelector("." + LEER[p]) : null;
+    var S = window[STORE[p]];
+    o[p] = {
+      imDok: alle.length,
+      inLeiste: !!drin,
+      zeilen: liste ? liste.querySelectorAll("." + ZEILE[p]).length : null,
+      leer: leer ? leer.textContent : "",
+      abo: drin && S ? S.subs.some(function(s){ return s.owner === drin; }) : null,
+      store: S ? S.list.length : null
+    };
+  });
+  return o;
+}
+function kurz(o){
+  function f(p){ var x = o[p]; return p + ": " + (x.inLeiste ? x.zeilen + " Zeilen" + (x.leer ? ' "' + x.leer + '"' : "") : "nicht in der Leiste") +
+    " | abo " + x.abo + " | Store " + x.store + " | Wurzeln im Dok " + x.imDok; }
+  return "Leiste " + o.leiste + "\n    " + f("umf") + "\n    " + f("umk") + "\n    " + f("utf");
+}
+async function oeffnen(){
+  var bar = document.querySelector("#c-bar .ufb-root");
+  var btn = bar && bar.querySelector(".ufb-btn");
+  if (btn) btn.click();
+  await w(80);
+}
+
+/* ZAEHLER: jede Frage nach dem Stand laeuft ueber UC.storeStand -- also laesst sich an genau
+   einer Stelle zaehlen, WER fragt (sync, setModels, Aufbau) und wie oft nachgeholt wird. */
+var Z = { fragen: {}, nachgeholt: 0 };
+function zaehlerAn(){
+  var UC = window.UpstreemCore;
+  if (!UC || !UC.storeStand || UC.__gezaehlt) return;
+  UC.__gezaehlt = 1;
+  var orig = UC.storeStand;
+  UC.storeStand = function(n){
+    var st = String(new Error().stack || "");
+    var wer = /\.sync /.test(st) ? (/nachziehen/.test(st) ? "sync von der Leiste" : /setOpen/.test(st) ? "sync beim Aufgehen" : /initRoot/.test(st) ? "sync beim Wiederaufnehmen" : "sync sonst")
+            : /\.set(Models|Markets|Topics) /.test(st) ? "Liste gesetzt" : /\.reset /.test(st) ? "reset" : "Aufbau";
+    Z.fragen[wer] = (Z.fragen[wer] || 0) + 1;
+    return orig(n);
+  };
+  ["getModels","getMarkets","getTopics"].forEach(function(k){
+    var o = UC[k];
+    UC[k] = function(){ if (/\.sync /.test(String(new Error().stack || ""))) Z.nachgeholt++; return o.apply(UC, arguments); };
+  });
+}
+function zaehlerText(){ return "Standfragen " + JSON.stringify(Z.fragen) + " | nachgeholte Listen " + Z.nachgeholt; }
+
+var SZENARIEN = {
+  /* Wie s6, aber der Waechter der alten Leiste schickt die Filter SOFORT heim -- noch bevor
+     watchRoots einmal nachsehen konnte. Dann sieht watchRoots dieselbe Wurzelmenge wie vorher
+     und weckt niemanden: nur das Einziehen der neuen Leiste kann den Stand nachholen. */
+  s6w: async function(L){
+    await w(900);
+    zaehlerAn();
+    var alt = document.querySelector("#c-bar .ufb-root");
+    bubbleSetzt("c-bar", { gruppiert: true });
+    ladeStore();
+    if (alt && alt.__ufbHeim) alt.__ufbHeim();
+    L("1 Leiste neu, Setter, Filter im selben Augenblick heimgeschickt\n    " + kurz(stand()));
+    await w(3200);
+    L("2 nach 3,2s\n    " + kurz(stand()));
+    L("    " + zaehlerText());
+    await oeffnen();
+    L("3 More Filters geoeffnet\n    " + kurz(stand()));
+  },
+  /* Die Leiste selbst bleibt DIESELBE, haengt aber kurz aus (Bubble haengt Knoten mal aus und
+     wieder ein), und genau dann laufen die Page-Load-Setter. Kein Einziehen, keine neue Wurzel,
+     keine geaenderte Wurzelmenge: nur das Aufgehen kann es noch retten. */
+  s8: async function(L){
+    await w(900);
+    zaehlerAn();
+    var bar = document.querySelector("#c-bar .ufb-root"), eltern = bar.parentNode, nach = bar.nextSibling;
+    eltern.removeChild(bar);
+    ladeStore();
+    eltern.insertBefore(bar, nach);
+    L("1 Leiste kurz ausgehaengt, Setter, wieder eingehaengt\n    " + kurz(stand()));
+    await w(2500);
+    L("2 nach 2,5s, noch zu\n    " + kurz(stand()));
+    L("    " + zaehlerText());
+    await oeffnen();
+    L("3 More Filters geoeffnet\n    " + kurz(stand()));
+    L("    " + zaehlerText());
+  },
+  /* Ohne Leiste (?leiste=0): der Models-Filter steht allein, seine Wurzel haengt kurz aus, die
+     Setter laufen dazwischen. Gemessen wird die Liste, nachdem der Nutzer ihn aufmacht. */
+  s9: async function(L){
+    await w(900);
+    zaehlerAn();
+    var r = document.querySelector("#c-mod .umf-root"), eltern = r.parentNode, nach = r.nextSibling;
+    eltern.removeChild(r);
+    ladeStore();
+    eltern.insertBefore(r, nach);
+    await w(1500);
+    var n0 = r.querySelectorAll(".umf-opt").length;
+    L("1 Models-Filter allein, kurz ausgehaengt, Setter dazwischen: " + n0 + " Zeilen" +
+      (r.querySelector(".umf-empty") ? ' "' + r.querySelector(".umf-empty").textContent + '"' : ""));
+    r.querySelector(".umf-trigger").click();
+    await w(80);
+    var n1 = r.querySelectorAll(".umf-opt").length;
+    L("2 aufgemacht: " + n1 + " Zeilen" + (r.querySelector(".umf-empty") ? ' "' + r.querySelector(".umf-empty").textContent + '"' : "") +
+      " | Panel offen " + r.querySelector(".umf-menu").classList.contains("is-shown"));
+    L("    " + zaehlerText());
+  },
+  /* Reset-Verhalten darf sich nicht aendern: nach dem Reset bleibt die Liste leer, auch beim
+     Aufgehen, bis das naechste Laden kommt. Und ein Neubau NACH dem Reset liest wie bisher aus
+     der Ablage. */
+  s10: async function(L){
+    await w(900);
+    ladeStore();
+    await w(300);
+    zaehlerAn();
+    window.resetModelsFilter("models_prompts"); window.resetMarketsFilter("markets_prompts");
+    await w(300);
+    L("1 Reset\n    " + kurz(stand()));
+    await oeffnen();
+    L("2 More Filters geoeffnet (Reset darf NICHT zurueckgeholt werden)\n    " + kurz(stand()));
+    document.body.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true })); document.body.click();
+    ["c-bar","c-top","c-mod","c-mkt"].forEach(function(id){ bubbleSetzt(id, { dunkel: true }); });
+    await w(3200);
+    L("3 Themenwechsel nach dem Reset, nach 3,2s\n    " + kurz(stand()));
+    ladeStore();
+    await w(300);
+    L("4 naechstes Laden\n    " + kurz(stand()));
+    L("    " + zaehlerText());
+  },
+  /* AUSWAHL UND EREIGNISSE: Auswahl steht (still von Bubble gesetzt), die Leiste wird neu gebaut
+     und im Fenster kommt dieselbe Liste noch einmal. Das Nachholen darf nichts senden und die
+     Auswahl nicht anfassen; die Chips muessen die Namen tragen. ?weg=1: die neue Liste hat
+     "claude" nicht mehr -- dann muss der Filter die Auswahl kuerzen und GENAU EINMAL senden,
+     wie es der verpasste Aufruf getan haette. */
+  s11: async function(L){
+    await w(900);
+    ladeStore();
+    await w(300);
+    window.setModelsFilterSelected("models_prompts", "gpt-4o,claude");
+    window.setMarketsFilterSelected("markets_prompts", "DE");
+    await w(300);
+    var bar = document.querySelector("#c-bar .ufb-root");
+    L("1 Auswahl gesetzt, Chips: " + JSON.stringify([].map.call(bar.querySelectorAll(".ufb-chip-lbl"), function(c){ return c.textContent; })));
+    window.__ev.length = 0;
+    bubbleSetzt("c-bar", { gruppiert: true });
+    var weg = Q.get("weg") === "1";
+    ladeStore(null, weg ? MODELS.filter(function(m){ return m.key !== "claude"; }) : null, null);
+    await w(3200);
+    var bar2 = document.querySelector("#c-bar .ufb-root");
+    var mr = bar2 && bar2.querySelector(".umf-root"), kr = bar2 && bar2.querySelector(".umk-root");
+    L("2 Leiste neu + dieselbe Liste" + (weg ? " OHNE claude" : "") + " im Fenster, nach 3,2s\n    " + kurz(stand()));
+    L("    Auswahl Models " + JSON.stringify(mr && mr.__umfCtrl ? mr.__umfCtrl.getSelected().model_keys : "?") +
+      " | Markets " + JSON.stringify(kr && kr.__umkCtrl ? kr.__umkCtrl.getSelected().market_codes : "?"));
+    L("    Chips: " + JSON.stringify([].map.call(bar2.querySelectorAll(".ufb-chip-lbl"), function(c){ return c.textContent; })));
+    L("    Ereignisse: " + JSON.stringify(window.__ev));
+  },
+  /* KOSTEN im Normalfall: Store vor dem Neubau gefuellt (wie s6k), dann 5s Ruhe. Wie oft wird
+     nach dem Stand gefragt, wie oft wirklich nachgeholt? */
+  kosten: async function(L){
+    await w(900);
+    zaehlerAn();
+    ladeStore();
+    await w(300);
+    bubbleSetzt("c-bar", { gruppiert: true });
+    await w(3200);
+    L("1 Store gefuellt, Leiste neu gebaut, nach 3,2s\n    " + kurz(stand()));
+    L("    " + zaehlerText());
+    Z.fragen = {}; Z.nachgeholt = 0;
+    await w(5000);
+    L("2 5s Ruhe\n    " + zaehlerText());
+    await oeffnen();
+    L("3 More Filters geoeffnet\n    " + zaehlerText());
+  },
+  /* Der Seitenaufbau mit Gruppierung: Leiste und Filter stehen, die Leiste hat die Filter
+     eingezogen, dann kippt data-topics-visible (Gruppierung aus einer frueheren Sitzung) und Bubble
+     baut die Leiste NEU -- und im selben Augenblick ruft der Page-Load-Workflow die drei Setter. */
+  s6: async function(L){
+    await w(900);
+    L("1 Leiste steht, Filter eingezogen, Store noch leer\n    " + kurz(stand()));
+    bubbleSetzt("c-bar", { gruppiert: Q.get("grp") !== "0" });
+    ladeStore();
+    L("2 Leiste von Bubble neu gebaut + Page-Load-Setter im selben Augenblick\n    " + kurz(stand()));
+    await w(3200);
+    L("3 nach 3,2s (Waechter und neue Leiste waren dran)\n    " + kurz(stand()));
+    await oeffnen();
+    L("4 More Filters geoeffnet\n    " + kurz(stand()));
+  },
+  /* Gegenprobe zu s6: dieselbe Folge, nur kommen die Setter VOR dem Neubau. */
+  s6k: async function(L){
+    await w(900);
+    ladeStore();
+    await w(300);
+    L("1 Store gefuellt, Leiste steht\n    " + kurz(stand()));
+    bubbleSetzt("c-bar", { gruppiert: true });
+    L("2 Leiste von Bubble neu gebaut\n    " + kurz(stand()));
+    await w(3200);
+    L("3 nach 3,2s\n    " + kurz(stand()));
+    await oeffnen();
+    L("4 More Filters geoeffnet\n    " + kurz(stand()));
+  },
+  /* Liste ueber die Instanz-Setter statt ueber den Store, dann ein Themenwechsel: Bubble baut
+     alle vier Elemente neu (data-isdark kippt). */
+  s1: async function(L){
+    await w(900);
+    ladeJeInstanz();
+    await w(300);
+    L("1 Listen je Instanz geliefert\n    " + kurz(stand()));
+    ["c-bar","c-top","c-mod","c-mkt"].forEach(function(id){ bubbleSetzt(id, { dunkel: true, gruppiert: true }); });
+    L("2 Themenwechsel: alle vier Elemente neu\n    " + kurz(stand()));
+    await w(3200);
+    L("3 nach 3,2s\n    " + kurz(stand()));
+    await oeffnen();
+    L("4 More Filters geoeffnet\n    " + kurz(stand()));
+  },
+  /* Gegenprobe zu s1: Store statt Instanz-Setter. */
+  s1k: async function(L){
+    await w(900);
+    ladeStore();
+    await w(300);
+    L("1 Store gefuellt\n    " + kurz(stand()));
+    ["c-bar","c-top","c-mod","c-mkt"].forEach(function(id){ bubbleSetzt(id, { dunkel: true, gruppiert: true }); });
+    L("2 Themenwechsel: alle vier Elemente neu\n    " + kurz(stand()));
+    await w(3200);
+    L("3 nach 3,2s\n    " + kurz(stand()));
+    await oeffnen();
+    L("4 More Filters geoeffnet\n    " + kurz(stand()));
+  },
+  /* Store gefuellt; Gruppierung an (Leiste neu), und ein Auffrischen des Stores faellt in das
+     Fenster, in dem die Filter draussen sind. Spaeter Reset + Laden (etwa ein Teamwechsel). */
+  s3: async function(L){
+    await w(900);
+    ladeStore();
+    await w(300);
+    L("1 Store gefuellt\n    " + kurz(stand()));
+    bubbleSetzt("c-bar", { gruppiert: true });
+    ladeStore();
+    await w(3200);
+    L("2 Leiste neu + Auffrischen im Fenster, nach 3,2s\n    " + kurz(stand()));
+    window.resetTopicsFilter("topics_prompts"); window.resetModelsFilter("models_prompts"); window.resetMarketsFilter("markets_prompts");
+    ladeStore();
+    await w(400);
+    L("3 Reset + Laden\n    " + kurz(stand()));
+    await oeffnen();
+    L("4 More Filters geoeffnet\n    " + kurz(stand()));
+  },
+  /* Instanz-Setter im Fenster, in dem die Filter draussen sind: der Aufruf wird geparkt. Kommt
+     dieselbe Wurzel zurueck, wird er dann nachgeholt? Neue Liste hat 5 Modelle statt 4. */
+  s7: async function(L){
+    await w(900);
+    ladeJeInstanz();
+    await w(300);
+    L("1 Listen je Instanz geliefert (4 Modelle, 3 Maerkte)\n    " + kurz(stand()));
+    bubbleSetzt("c-bar", { gruppiert: true });
+    var M5 = MODELS.concat([{ key: "llama", display_name: "Llama", provider: "Meta", is_active: true, logo_url: "" }]);
+    var K4 = MARKETS.concat([{ alpha2: "FR", name: "France", prompt_count: 3 }]);
+    window.setModelsFilterModels("models_prompts", JSON.stringify(M5));
+    window.setMarketsFilterMarkets("markets_prompts", JSON.stringify(K4));
+    await w(3200);
+    L("2 Leiste neu + Instanz-Setter (5 Modelle, 4 Maerkte) im Fenster, nach 3,2s\n    " + kurz(stand()));
+    await oeffnen();
+    L("3 More Filters geoeffnet\n    " + kurz(stand()));
+  }
+};
+
+(async function(){
+  var log = [];
+  function L(s){ log.push(s); document.getElementById("out").textContent = log.join("\n"); }
+  /* FRISCHE ZUERST: die neue Fassung setzt am Controller eine Methode, die HEAD nicht kennt. */
+  await w(300);
+  var r = document.querySelector(".umf-root");
+  var hatSync = !!(r && r.__umfCtrl && typeof r.__umfCtrl.sync === "function");
+  var hatStand = !!(window.UpstreemCore && typeof window.UpstreemCore.storeStand === "function");
+  /* ?ohneWatch=1: die watchRoots-Beobachter der drei Filter abmelden. Dann kann nur noch die
+     Leiste (Einziehen, Aufgehen) den Stand nachholen -- so wird ihr Weg einzeln gemessen. */
+  if (Q.get("ohneWatch") === "1" && window.__upRootWatch){
+    var G = window.__upRootWatch, vorher = G.watchers.length;
+    G.watchers = G.watchers.filter(function(x){ return ["utf-root","umf-root","umk-root"].indexOf(x.selector) < 0; });
+    L("watchRoots der Filter abgemeldet: " + (vorher - G.watchers.length));
+  }
+  L("Fassung " + (ALT ? "HEAD (_alt)" : "neu") + " | Szenario " + SZ + " | Fenster " + innerWidth + "x" + innerHeight);
+  L("Frische: ctrl.sync " + hatSync + ", UC.storeStand " + hatStand + "  (HEAD: beides false)");
+  await SZENARIEN[SZ](L);
+  L("Fehler: " + JSON.stringify(window.__fehler));
+  L("Ereignisse an Bubble: " + window.__ev.length + " " + JSON.stringify(window.__ev.map(function(e){ return e[0]; })));
+  window.__erg = { log: log.slice(), stand: stand() };
+  document.title = "fertig";
+  window.__uhrStop = true;
+})();
+</script>

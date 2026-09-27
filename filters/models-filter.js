@@ -125,6 +125,9 @@
     u = String(u == null ? "" : u).trim();
     return u.indexOf("//") === 0 ? "https:" + u : u;
   }
+  /* Der Stand der Modell-Ablage in core (siehe sync). null, wenn core ihn noch nicht kennt --
+     dann laeuft alles wie vor dem 27.09. */
+  function stand() { return UC.storeStand ? UC.storeStand("models") : null; }
 
   function initRoot(root) {
     if (!root) return null;
@@ -132,6 +135,9 @@
        still valid, it was only pruned from CONTROLLERS while its root was off-document. */
     if (root.__umfCtrl) {
       if (CONTROLLERS.indexOf(root.__umfCtrl) < 0) CONTROLLERS.push(root.__umfCtrl);
+      /* Wer draussen war, kann dabei einen Stand verpasst haben -- siehe sync. Die Abfrage auf
+         die Methode, weil eine zweite, aeltere Kopie dieser Datei (anderer Pin) sie nicht hat. */
+      if (typeof root.__umfCtrl.sync === "function") root.__umfCtrl.sync();
       return root.__umfCtrl;
     }
 
@@ -231,6 +237,13 @@
     var elMode    = root.querySelector(".umf-foot");
     var elList    = root.querySelector(".umf-list");
     var unregister = null;
+    /* gesehen: der Stand der Ablage, den die Liste gerade zeigt. abmelden: das Abo, damit sync()
+       es erneuern kann, nachdem der Store es gestrichen hat. */
+    var gesehen = null, abmelden = null;
+    function anmelden() {
+      if (abmelden) abmelden();
+      abmelden = UC.onModels ? UC.onModels(function (list) { ctrl.setModels(list); }, root) : null;
+    }
 
     /* ---------------- data helpers ---------------- */
     function keyOf(m) { return String(m && m.key != null ? m.key : ""); }
@@ -401,7 +414,16 @@
     function render() { renderList(); renderTrigger(); renderMode(); renderSortMenu(); }
 
     function persist() {
-      STATE[instanceId] = { selected: selected.slice(), mode: mode, sortKey: sortKey };
+      /* Auch die LISTE samt ihrem Stand: baut Bubble das Element neu (Themenwechsel,
+         data-isprocessing), macht die neue Wurzel mit derselben Liste weiter -- auch mit einer,
+         die nur ueber setModelsFilterModels kam und in keiner Ablage steht. Ohne das stand dort
+         "No models yet" (_h_flt.html, Szenario s1). Ein Verweis, keine Kopie: models wird nur
+         ersetzt, nie veraendert.
+         Eine LEERE Liste wird nicht gemerkt: nach einem Reset oder einer leeren Lieferung liest
+         ein neu gebautes Element wie bisher aus der Ablage. Der Merker soll eine gelieferte Liste
+         retten, nicht eine leere festschreiben. */
+      STATE[instanceId] = { selected: selected.slice(), mode: mode, sortKey: sortKey,
+                            liste: models.length ? models : null, stand: gesehen };
     }
 
     /* ---------------- publish ----------------
@@ -489,6 +511,9 @@
       elMenu.classList.toggle("is-shown", open);
       elTrigger.setAttribute("aria-expanded", open ? "true" : "false");
       if (open) {
+        /* Beim Aufgehen den Stand pruefen -- der Moment, in dem eine verpasste Liste sichtbar
+           wuerde. Ein Zahlenvergleich; gezeichnet wird nur, wenn wirklich etwas fehlte. */
+        ctrl.sync();
         cursor = -1;
         /* Flip to the right edge when a left-aligned panel would leave the viewport. Set once on
            open, never on scroll -- the panel is absolute, so it moves with its trigger for free. */
@@ -675,6 +700,9 @@
       instanceId: instanceId,
       setModels: function (rows) {
         models = Array.isArray(rows) ? rows.slice() : [];
+        /* Jede Liste, die hier ankommt, ist mindestens so neu wie die Ablage in diesem Augenblick
+           -- auch eine aus setModelsFilterModels. Erst ein spaeteres Setzen der Ablage ist neuer. */
+        gesehen = stand();
         /* Drop selections whose model no longer exists, otherwise the trigger counts something the
            list cannot show and Clear is the only way out. */
         var keys = {};
@@ -703,10 +731,35 @@
            "No models yet"; der naechste Load fuellt sie wieder. Der seitenweite Store
            bleibt unangetastet -- an dem haengen auch andere Komponenten. */
         models = [];
+        /* Der Reset ist neuer als der jetzige Stand der Ablage: sync() holt den alten Stand also
+           NICHT zurueck, erst das naechste Setzen fuellt die Liste wieder. */
+        gesehen = stand();
         /* "Alles clearen" schliesst die Sortierung mit ein -- wie beim Datumsfilter, der
            auf seine Vorgabe zurueckgeht statt nur die Auswahl zu leeren. */
         sortKey = DEFAULT_SORT; sortOpen = false; cursor = -1;
         setOpen(false); persist(); render();             // SILENT, like every other reset in the repo
+      },
+      /* DEN VERPASSTEN STAND NACHHOLEN (27.09.). Der Store streicht einen Abonnenten, dessen
+         Wurzel beim Setzen nicht im Dokument steht -- richtig fuer eine Wurzel, die Bubble
+         weggeworfen hat, falsch fuer eine, die nur kurz draussen war. Genau das passiert hier:
+         die "More Filters"-Leiste zieht diese Wurzel zu sich, und baut Bubble die Leiste neu,
+         haengt sie bis zum Heimweg (bis 700ms) in einem abgehaengten Baum. Fiel der
+         Page-Load-Schritt in dieses Fenster, bekam der Filter die Liste nie und stand fuer die
+         ganze Sitzung auf "No models yet", ohne einen Fehler in der Konsole (gemeldet 27.09. im
+         Gruppierungsmodus, nachgestellt in _h_flt.html, Szenario s6).
+         Ist die Ablage weiter als die Liste, wird das Abo erneuert und der Stand nachgeholt --
+         genau das, was der verpasste Aufruf getan haette. Ein Instanz-Aufruf, der in derselben
+         Zeit geparkt wurde (makeLate), laeuft jetzt statt erst beim naechsten Neubau.
+         Gerufen beim Wiederaufnehmen (initRoot), beim Aufgehen und von der Leiste, wenn sie einen
+         Filter einzieht oder aufgeht. Kosten: ein Zahlenvergleich. Keine Uhr, kein Beobachter. */
+      sync: function () {
+        if (!root.isConnected) return;               /* draussen: nichts nachholen, nichts senden */
+        var jetzt = stand();
+        if (jetzt != null && jetzt !== gesehen) {
+          anmelden();
+          ctrl.setModels(UC.getModels ? UC.getModels() : []);
+        }
+        if (spaet) spaet.drain(instanceId, ctrl);
       },
       getSelected: function () { return { model_keys: selected.join(","), select_mode: mode }; }
     };
@@ -717,15 +770,21 @@
     /* Order matters: the page-wide store WINS over the seed block. The seed is the value baked into
        the markup at page build, right for the first paint -- but if a "Load Models" step already
        ran, the store holds the newer list and the seed would be a step backwards. */
+    /* Davor noch die EIGENE Liste der vorigen Wurzel, solange die Ablage seitdem nicht weiter ist:
+       ein neu gebautes Element macht dort weiter, wo das alte stand (siehe persist). Ist die
+       Ablage weiter, gewinnt sie wie bisher. */
+    var jetzt = stand();
     var fromStore = UC.getModels ? UC.getModels() : [];
-    if (fromStore && fromStore.length) models = fromStore;
+    if (saved.liste && jetzt != null && saved.stand === jetzt) models = saved.liste.slice();
+    else if (fromStore && fromStore.length) models = fromStore;
     else if (seeded) models = Array.isArray(seeded) ? seeded : [];
+    gesehen = jetzt;
     render();
 
     /* ...and stay subscribed, so one setUpstreemModels() call updates every picker on the page --
        including this one if it mounts later, which is the case a per-instance setter could never
        reach. Selection survives: setModels keeps keys that are still in the list. */
-    if (UC.onModels) UC.onModels(function (list) { ctrl.setModels(list); }, root);
+    anmelden();
 
     if (spaet) spaet.drain(instanceId, ctrl);
     return ctrl;

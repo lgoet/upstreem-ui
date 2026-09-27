@@ -241,6 +241,10 @@
                   industry: saved.industry, summary: saved.summary };
     var meta  = { brandName: vM.brandName || "", brandLogo: vM.brandLogo || "",
                   teamName: vM.teamName || "", teamId: vM.teamId || "",
+                  /* Die Rolle des Betrachters im Team (owner | admin | member), aus data-user-role.
+                     Leer heisst: unbekannt -- und unbekannt bekommt das Loeschen NICHT zu sehen
+                     (siehe data-nur-owner). */
+                  rolle: vM.rolle || "",
                   modelLimit: vM.modelLimit != null ? vM.modelLimit : 3,
                   canManage: vM.canManage != null ? vM.canManage : true,
                   markets: Array.isArray(vM.markets) ? vM.markets : [],
@@ -565,8 +569,10 @@
                 '<button class="usb-dangerbtn" type="button" data-leave>' + ICON.logout + '<span>Leave team</span></button>' +
               '</div>' +
             '</div>' +
-            '<div class="usb-div"></div>' +
-            '<div class="usb-row">' +
+            /* Trennlinie und Zeile gehoeren zusammen: ohne die Zeile stuende sonst eine Linie
+               unter "Leave Team" ins Leere. Sichtbar nur fuer Owner (27.09., siehe render). */
+            '<div class="usb-div" data-nur-owner></div>' +
+            '<div class="usb-row" data-nur-owner>' +
               '<div class="usb-rowtext">' +
                 '<div class="usb-rowtitle">Delete Team</div>' +
                 '<div class="usb-rowdesc">Deletes the workspace and every brand, prompt and report ' +
@@ -620,7 +626,7 @@
         draft: { models: cloneModels(draft.models), marketId: draft.marketId,
                  businessModel: draft.businessModel, industry: draft.industry, summary: draft.summary },
         meta: { brandName: meta.brandName, brandLogo: meta.brandLogo, teamName: meta.teamName,
-                teamId: meta.teamId, modelLimit: meta.modelLimit, canManage: meta.canManage,
+                teamId: meta.teamId, rolle: meta.rolle, modelLimit: meta.modelLimit, canManage: meta.canManage,
                 markets: meta.markets, marketsRaw: meta.marketsRaw, industries: meta.industries.slice(),
                 logoFileName: meta.logoFileName },
         logoUrl: String(elUrlIn.value || "")
@@ -1129,7 +1135,9 @@
         return;
       }
       if (t.closest("[data-leave]")){ openDanger("leave"); return; }
-      if (t.closest("[data-delete]")){ openDanger("delete"); return; }
+      /* Nur ein Owner loescht -- auch dann, wenn jemand den versteckten Knopf aus dem Code
+         heraus anklickt. Die RPC prueft es ein zweites Mal; hier soll es gar nicht erst beginnen. */
+      if (t.closest("[data-delete]")){ if (istOwner()) openDanger("delete"); return; }
     });
     /* draft.summary zieht bei JEDEM Tastendruck mit, nicht erst beim Speichern. render() schrieb
        vorher saved.summary ins Feld -- jedes Neuzeichnen ohne Fokus im Feld (ein Attribut, das
@@ -1158,6 +1166,11 @@
     function onDlgKey(e){ if (e.key === "Escape"){ e.stopPropagation(); closeDanger(); } }
     function goLabel(){ return dlgMode === "delete" ? "Delete team" : "Leave team"; }
 
+    /* NUR DER OWNER LOESCHT DAS TEAM (27.09. angefordert: "Members sollen das Team nicht loeschen
+       koennen, nur Owner -- die RPC macht das auch, trotzdem soll es da schon nicht sichtbar
+       sein"). Die Rolle kommt aus data-user-role; fehlt sie, bleibt das Loeschen verborgen -- lieber
+       einem Owner einmal zu wenig zeigen als einem Member einen Knopf, der dann scheitert. */
+    function istOwner(){ return meta.rolle === "owner"; }
     function openDanger(mode){
       closeDanger();
       /* closeDanger raeumt den Knoten erst nach 180ms weg. Oeffnet man in dieser Zeit den
@@ -1244,6 +1257,7 @@
          die Klasse wieder abraeumen, obwohl setLoading("yes") sie gerade gesetzt hat -- genau so
          verschwand der Ladezustand des Pageloads wieder. */
       root.classList.toggle("is-loading", !!root.__usbLoading);
+      root.classList.toggle("usb-owner", istOwner());
       renderBrand();
       renderModels();
       renderBusiness();
@@ -1269,11 +1283,14 @@
        Die Attribute heissen data-brand-*, nicht data-market/data-summary: der Root traegt sonst
        dieselben Namen wie die Marker im eigenen Markup, und ein document.querySelector faengt den
        Root statt des Feldes. Genau darueber bin ich beim Testen gestolpert. */
+    var PLATZHALTER = { BRAND_NAME: 1, BRAND_LOGO: 1, BRAND_LOGO_URL: 1, TEAM_ID: 1, TEAM_NAME: 1,
+                        INDUSTRY: 1, SUMMARY: 1, MARKET: 1, BUSINESS: 1, USER_ROLE: 1 };
     var ATTRS = [
       ["data-brand-name",   function(v){ meta.brandName = v; }],
       ["data-brand-logo",   function(v){ meta.brandLogo = v; }],
       ["data-team-id",      function(v){ meta.teamId = v; }],
       ["data-team-name",    function(v){ meta.teamName = v; }],
+      ["data-user-role",    function(v){ meta.rolle = String(v).trim().toLowerCase(); }],
       ["data-brand-market",       function(v){ saved.marketId = v.trim().toLowerCase(); draft.marketId = saved.marketId; }],
       ["data-brand-business",     function(v){ saved.businessModel = normBiz(v, true); draft.businessModel = saved.businessModel; }],
       ["data-brand-industry",     function(v){
@@ -1292,8 +1309,11 @@
         if (raw == null) continue;
         var v = String(raw);
         /* Ein nicht ersetzter Bubble-Platzhalter ist KEIN Wert. Ohne diese Zeile stuende im
-           Markennamen woertlich "BRAND_NAME", bis der Ausdruck aufloest. */
-        if (/^[A-Z_]{3,}$/.test(v.trim())) continue;
+           Markennamen woertlich "BRAND_NAME", bis der Ausdruck aufloest.
+           NUR die Platzhalter dieser Vorlage (27.09.). Hier stand /^[A-Z_]{3,}$/, und damit galt
+           jeder Name aus Grossbuchstaben als Platzhalter: ein Team "ADAC" oder eine Marke "BMW"
+           kamen nie an, der Dialog nannte weiter den Namen von vorher (gemessen). */
+        if (PLATZHALTER[v.trim()]) continue;
         ATTRS[i][1](v);
         got = true;
       }
@@ -1351,10 +1371,18 @@
         zeigeLesefehler(false);
         p = stripTeamPrefix(p);
         var brand = p.brand || {}, team = p.team || {};
-        if (brand.name != null) meta.brandName = String(brand.name);
+        /* EIN LEERER WERT UEBERSCHREIBT NICHTS (27.09. gemeldet: im Dialog stand "Type this team
+           to confirm", obwohl data-team-name gesetzt war). Ein leerer Bubble-Ausdruck im
+           Run-JS-Schritt kommt hier als "" an -- und wischte den Namen aus dem Element weg, und
+           das Attribut aendert sich danach nicht mehr, um ihn zurueckzuholen. Name und Kennung
+           sind nie legitim leer. Das Logo schon (entfernt), darum bleibt es beim alten Weg. */
+        function wert(v){ return v != null && String(v).trim() !== ""; }
+        if (wert(brand.name)) meta.brandName = String(brand.name);
         if (brand.logo != null) meta.brandLogo = String(brand.logo);
-        if (team.name != null)  meta.teamName = String(team.name);
-        if (team.id != null)    meta.teamId = String(team.id);
+        if (wert(team.name))  meta.teamName = String(team.name);
+        if (wert(team.id))    meta.teamId = String(team.id);
+        var rolleP = p.user_role != null ? p.user_role : (team.role != null ? team.role : p.viewer_role);
+        if (wert(rolleP)) meta.rolle = String(rolleP).trim().toLowerCase();
 
         /* Die Modellzeilen kommen so, wie die RPC sie liefert. Jede Zeile traegt neben dem Modell
            auch den Plan-Kontext (active_models_limit, user_can_manage) -- der ist in allen Zeilen

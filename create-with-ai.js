@@ -211,9 +211,13 @@
 
             '<div class="uca-format">' +
               '<div class="uca-format-label">Output format</div>' +
-              '<div class="uca-format-seg" data-format-seg>' +
+              /* Der grosse Umschalter aus core (up-seg is-lg), seit dem 27.09. -- vorher ein
+                 Nachbau mit eigener Pille aus --up-surface, die im Dunkeln der Grund der SEITE war
+                 und damit unter ihrer Schiene lag. uca-format-seg und uca-fmt bleiben: an ihnen
+                 haengen renderFormat und die Erklaerkarte. */
+              '<div class="up-seg is-lg uca-format-seg" data-format-seg>' +
                 ["markdown", "html", "plain"].map(function(k){
-                  return '<button class="uca-fmt' + (k === "markdown" ? " is-active" : "") + '" type="button" ' +
+                  return '<button class="up-seg-btn uca-fmt' + (k === "markdown" ? " is-active" : "") + '" type="button" ' +
                     'data-fmt="' + k + '" data-explain="' + k + '">' + esc(FORMATS[k].h) + "</button>";
                 }).join("") +
               "</div>" +

@@ -57,23 +57,17 @@
    Both are the app's standard segmented control, identical to .vc-gran / .upt-status. */
 /* Y-axis switch — Landscape only. The line chart's gear ("Chart Settings") is meaningless for a
    scatter of logos; the one thing that IS adjustable here is what the Y axis plots. */
-.ubo-yaxis { display: none; align-items: center; }
+/* Aussehen, Groesse und Pille kommen seit dem 27.09. aus core (.ubo-yaxis steht dort als Alias
+   von .up-seg, die Knoepfe als Alias von .up-seg-btn). Hier stand bis dahin eine Kopie davon,
+   Wert fuer Wert. Geblieben ist nur das Oertliche: sichtbar nur in der Landscape-Ansicht.
+   Zwei Klassen und nicht eine: die Grundregel in core setzt display mit EINER Klasse, und
+   gewinnen soll das hier ueber die Spezifitaet, nicht ueber die Ladereihenfolge. Das JS schreibt
+   die Sichtbarkeit ohnehin noch einmal inline (syncChartMode) -- das hier gilt bis dahin. */
+.ubo-root .ubo-yaxis { display: none; }
 .ubo-root.is-landscape .ubo-yaxis { display: inline-flex; }
 .ubo-root.is-landscape .ubo-scale-btn { display: none; }
-/* Wie die uebrigen kleinen Umschalter: 26px, Radius 8, weicher Grund, mittig in der Zeile. */
-.ubo-yaxis { padding: 0; gap: 0; background: var(--vc-switch-rail); border-radius: 8px; height: 26px; align-self: center; }
-.ubo-yaxis-btn { height: 26px; padding: 0 8px; border: 1px solid transparent; border-radius: 8px;
-  background: transparent; color: var(--vc-muted); font-family: inherit; font-size: 12px; font-weight: 500;
-  cursor: pointer; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; }
-.ubo-yaxis-btn:hover { color: var(--vc-text); }
-/* --vc-switch-pill statt #ffffff/#28282c: dieselbe Pille wie in core, dort steht die
-   Marke seit dem 22.09. Die eigene Dunkel-Regel faellt damit weg. */
-.ubo-yaxis-btn.is-active { background: var(--vc-switch-pill); color: var(--vc-text); border-color: var(--vc-switch-border); }
-/* Derselbe Fall wie die gleitende Pille in core.css: der aktive Knopf liegt UEBER seiner
-   Schiene, nicht darunter. Hier stand #08090a, der Grund der Seite -- ein Rest des
-   Farbtauschs, nicht eine Entscheidung. Diese Regel greift, solange der gleitende Streifen
-   noch nicht gemessen hat (danach uebernimmt .is-gleitend), also genau beim ersten Bild.
-   #28282c auf #34343a, wie ueberall sonst das Gewaehlte. */
+/* "Sentiment" und "Ranking" brechen nicht um, auch nicht in einer engen Kopfzeile. */
+.ubo-root .ubo-yaxis-btn { white-space: nowrap; }
 
 /* Hide/Show the whole chart container — same behaviour and same icon pair as citations-combo-chart */
 .ubo-hide .ic-show { display: none; }

@@ -313,21 +313,16 @@
    dieselbe Groesse, die .up-seg in core.css in seinen 26px traegt, und sie steht in 24px mit
    line-height 1 ohne anzustossen. Eine kleinere Schrift waere hier der eine Wert, der nicht
    mitmusste. */
-.udt-sub-dispseg { display: inline-flex; align-items: center; gap: 0; height: 24px; padding: 0;
-  background: var(--vc-switch-rail); border-radius: 6px; flex: 0 0 auto; }
-.udt-sub-disp-btn { height: 24px; min-width: 34px; padding: 0 8px; border: 1px solid transparent; border-radius: 6px;
-  background: transparent; color: var(--vc-muted); cursor: pointer;
-  font: inherit; font-size: 12px; font-weight: 500; line-height: 1;
-  display: inline-flex; align-items: center; justify-content: center; }
-.udt-sub-disp-btn:hover:not(.is-active) { color: var(--vc-text); }
-/* --vc-switch-pill statt #ffffff/#28282c: dieselbe Pille wie in core, dort steht die
-   Marke seit dem 22.09. Die eigene Dunkel-Regel faellt damit weg. */
-.udt-sub-disp-btn.is-active { background: var(--vc-switch-pill); color: var(--vc-text); border-color: var(--vc-switch-border); }
-/* Derselbe Fall wie die gleitende Pille in core.css: der aktive Knopf liegt UEBER seiner
-   Schiene, nicht darunter. Hier stand #08090a, der Grund der Seite -- ein Rest des
-   Farbtauschs, nicht eine Entscheidung. Diese Regel greift, solange der gleitende Streifen
-   noch nicht gemessen hat (danach uebernimmt .is-gleitend), also genau beim ersten Bild.
-   #28282c auf #34343a, wie ueberall sonst das Gewaehlte. */
+/* SEIT DEM 27.09. KOMMT ALLES UEBRIGE AUS CORE: .udt-sub-dispseg und .udt-sub-disp-btn stehen dort
+   als Alias von .up-seg/.up-seg-btn -- Schiene, Pille, Schrift, Farben, Hover. Hier bleibt nur
+   diese eine, angeforderte Groesse, und zwar als ganzes Paket. Die eigenen Klassennamen bleiben
+   (STYLEGUIDE, Drilldown-Bedienelemente: kein Kit darf ihn fuer sein eigenes Element halten).
+   Zwei Klassen: die Aliasregeln in core haben eine, gewonnen wird ueber die Spezifitaet.
+   Die gleitende Pille (::before, core) zieht die Rundung jetzt mit. Sie stand auf den 8px aus
+   core, waehrend Schiene und Knoepfe 6 hatten -- eine 8er-Pille in einer 6er-Schiene. */
+.udt-sub-tools .udt-sub-dispseg { height: 24px; border-radius: 6px; }
+.udt-sub-tools .udt-sub-dispseg::before { border-radius: 6px; }
+.udt-sub-tools .udt-sub-disp-btn { height: 24px; min-width: 34px; border-radius: 6px; }
 .udt-sub-closebtn { margin-left: auto; flex: 0 0 auto; }
 
 .udt-sub-search { display: inline-flex; align-items: center; gap: 6px; height: 32px;

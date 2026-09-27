@@ -294,10 +294,11 @@
          sichtbar dieselbe Familie. Hell auf #ffffff: 4.72 und 4.63. Dunkel steht weiter unten. */
       --up-blau-text: #286fe1;
       --up-lila-text: #8e58d8;
-      /* DIE SCHIENE EINES UMSCHALTERS -- ein einziger, DECKENDER Ton, fuer jede Groesse und
-         jeden Grund. Zwei Fassungen liegen dahinter. Bis zum 07.09. stand hier ein aufgehellter
-         Ton, und Aufhellen heisst, sich der Pille zu naehern, denn die Pille ist der hellere
-         Teil: auf Weiss 4.1 Stufen, im dunklen Menue 3.0. Gemeldet als "die Switcher in allen
+      /* DIE SCHIENE EINES UMSCHALTERS -- im Hellen ein einziger, DECKENDER Ton, fuer jede Groesse
+         und jeden Grund. (Im Dunkeln seit dem 27.09. nicht mehr: dort hebt sie ihren Grund an,
+         Begruendung im dunklen Block.) Zwei Fassungen liegen dahinter. Bis zum 07.09. stand hier
+         ein aufgehellter Ton, und Aufhellen heisst, sich der Pille zu naehern, denn die Pille ist
+         der hellere Teil: auf Weiss 4.1 Stufen, im dunklen Menue 3.0. Gemeldet als "die Switcher in allen
          Dropdowns brauchen andere Farben, im Darkmode sind sie kaum erkennbar". Danach eine
          schwarze Halbtransparenz -- die loeste den Kontrast, brachte aber je Grund einen anderen
          Ton und im Dunkeln eine zweite Fassung nur fuer Menues.
@@ -457,7 +458,10 @@
       /* Dunkel kraeftiger, dieselbe Staffelung wie bei den vier Stufen darueber. */
       --up-e-drawer: -12px 0 32px rgba(0,0,0,.42);
       --vc-switch-bg: #232326; --vc-switch-border: #34343a; --vc-third: #a0a0a0; --vc-fourth: #6c717a;
-      --vc-switch-pill: #28282c;
+      /* Die Pille hebt ihre Schiene noch einmal an, statt einen festen Ton zu tragen -- sie muss
+         der Schiene folgen, die das seit dem 27.09. auch tut (Begruendung bei --vc-switch-rail).
+         Der feste Ton #28282c laege im Menue UNTER der angehobenen Schiene (40 gegen 47). */
+      --vc-switch-pill: rgba(255,255,255,.07);
       --up-switch-off: #444444;   /* siehe hell */
       /* Die Textfassung des Blau-Lila-Paares, hier HERAUFgedreht statt herunter -- der Text
          steht auf --vc-field #2a2a2a. Gerechnet: 4.61 und 5.07, beide ueber den 4.5 aus AA.
@@ -466,20 +470,24 @@
          zweites Paar, weil er gegen den Grund gelesen werden muss und nicht auf ihm liegt. */
       --up-blau-text: #4c90ff;
       --up-lila-text: #b280ff;
-      /* Der deckende Gegenwert -- und hier ist er ein Kompromiss, der benannt gehoert. Im
-         Dunkeln liegen die drei Gruende einer Schiene 19 Stufen auseinander: Seitenschale
-         #101114 (16), Komponentenflaeche #1c1c1f (28), Kopfzeile und Menue #232326 (35). Die
-         Pille steht bei #28282c (40). Ein Ton, der von allen dreien mindestens 6 Stufen entfernt
-         ist, EXISTIERT NICHT: 28 und 35 liegen nur 7 auseinander, also muss jeder Wert, der von
-         28 wegbleibt, unter 22 liegen -- und dann bleiben zur Schale hoechstens 6.
-         #17171a ist das Maximum dieses Minimums, gewichtet auf die Schale, weil dort die
-         Mehrzahl der Umschalter steht (Werkzeugleisten der Tabellen, deren Kopfzeile
-         durchsichtig ist). Gemessen, rohe Kanaele mit Augengewichten:
-             zur Schale 6 Stufen, zur Komponentenflaeche 5, zum Menue 12, zur Pille 17.
-         Mit der Halbtransparenz davor: 9/15, 5/7 und 9/14. Die Schale verliert 3 Stufen, die
-         PILLE gewinnt ueberall -- und die war zweimal der Anlass der Beschwerde. Dafuer faellt
-         die zweite Fassung fuer Menues weg, die es bis hierhin brauchte. */
-      --vc-switch-rail: #17171a;
+      /* DIE SCHIENE HEBT IM DUNKELN IHREN GRUND AN, statt einen festen Ton zu tragen (27.09.).
+         Gemeldet: "Im Darkmode sind die Background der ganzen Switcher recht schwer zu erkennen
+         auf unserem Page Background." Die Ursache stand hier als benannter Kompromiss: ein
+         DECKENDER Ton muss zwischen drei Gruenden liegen, die 18 Stufen auseinander sind (Seite
+         #101114 = 17, Karte #1c1c1f = 28, Kopfzeile und Menue #232326 = 35), und #17171a war das
+         Maximum dieses Minimums -- auf der Seite 6 Stufen ueber dem Grund, auf der Karte 5
+         darunter. Die Seite ist aber genau der Grund der meisten Umschalter (die Werkzeugleisten
+         der Tabellen sind durchsichtig), und 6 Stufen bei L* 5 verschwinden auf jedem Bildschirm
+         mit etwas Umgebungslicht. Dieselbe Meldung kam am 07.09. schon einmal.
+         Ein Ton kann das nicht, ein ANHEBEN kann es: 5,5 Prozent Weiss legt auf JEDEN Grund
+         dieselbe Stufe -- Seite +13, Karte +12, Kopfzeile und Menue +12, also so viel wie im
+         Hellen (#f2f2f2 auf Weiss: 13). Die Pille geht mit (--vc-switch-pill oben) und steht auf
+         jedem Grund 14 bis 15 Stufen ueber der Schiene (vorher 17, hell 13). Gemessen mit
+         _h_sw_mess.html, rohe Kanaele mit Augengewichten wie ueberall in dieser Datei.
+         Aufgegeben ist damit das Ziel vom 22.09., EIN Ton je Rolle: er hat den haeufigsten Fall
+         unsichtbar gemacht. Eine Liste von Flaechen mit eigener Schienenfarbe braucht es auch
+         jetzt nicht -- die Stufe haengt am Grund, nicht an der Flaeche. */
+      --vc-switch-rail: rgba(255,255,255,.055);
       --vc-field: #232326;
       /* Die Kopfleiste jeder Tabelle: eine Stufe HELLER als die Tabellenflaeche (--vc-bg
          #1b1b1b), nicht dunkler. Hier stand #121212 -- die Farbe der SEITE, die Leiste sass
@@ -1913,8 +1921,10 @@
     .up-root[data-theme="dark"] .up-sort-menu { background: var(--up-menu-bg); }
     /* Hier stand bis zum 22.09. eine zweite Schienenfarbe, nur fuer Umschalter INNERHALB dunkler
        Menues: die durchscheinende Schiene hellte ihren Grund auf und stand im Menue (#232326)
-       damit drei Stufen unter der Pille, also praktisch auf ihr. Ein deckender Ton haengt nicht
-       mehr am Grund, deshalb braucht es die Ausnahme nicht mehr -- siehe --vc-switch-rail. */
+       damit drei Stufen unter der Pille, also praktisch auf ihr. Seit dem 27.09. hellt die
+       Schiene im Dunkeln wieder auf -- aber die Pille hellt mit auf, damals stand sie fest. Der
+       Abstand zwischen beiden ist damit auf jedem Grund derselbe, und die Ausnahme bleibt
+       ueberfluessig -- siehe --vc-switch-rail. */
     .up-sort.is-open .up-sort-btn { color: var(--vc-text); background: var(--vc-heading-bg); }
     .up-pop-head-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 18px; }   /* reserve the Select-all button height up front so nothing resizes */
     .up-pop-action { border: 0; background: transparent; color: var(--vc-muted); font-family: inherit;
@@ -2093,6 +2103,7 @@
       --vc-text: #1f1f1b; --vc-muted: #3e4146; --vc-third: #6b6f78; --vc-fourth: #80858e; --vc-border: #dcdbdd;
       --vc-heading-bg: #f9f8f9; --vc-hover-border: #6f6f6f; --vc-bg: #ffffff;
       --vc-switch-bg: #f9f8f9; --vc-switch-border: #e4e2e4; --vc-switch-pill: #ffffff;
+      --vc-switch-rail: #f2f2f2;   /* fehlte -- siehe die dunkle Fassung darunter */
       --up-dd-radius: 14px; --up-dd-pad: 8px; --up-dd-shadow: 0 10px 28px rgba(0,0,0,.14);
       --up-sel-bg: #f4f2f4;
       position: fixed; z-index: 100050; width: 248px;
@@ -2118,7 +2129,11 @@
          Linears Leiter, auf #1c1c1f also praktisch unsichtbar. */
       --vc-text: #e0e0e0; --vc-muted: #c9cbd0; --vc-third: #a0a0a0; --vc-fourth: #6c717a; --vc-border: #3e3e44;
       --vc-heading-bg: #232326; --vc-hover-border: #707070; --vc-bg: #1c1c1f; --up-switch-off: #444444;
-      --vc-switch-bg: #232326; --vc-switch-border: #34343a; --vc-switch-pill: #28282c;
+      --vc-switch-bg: #232326; --vc-switch-border: #34343a;
+      /* Schiene und Pille wie im dunklen .up-root-Block (27.09.): beide heben ihren Grund an.
+         Die Schiene fehlte hier ganz -- .up-dense darin malte seine Bahn aus einer Marke, die an
+         diesem Menue nicht aufloeste, also gar nicht. */
+      --vc-switch-rail: rgba(255,255,255,.055); --vc-switch-pill: rgba(255,255,255,.07);
       --up-dd-shadow: 0 10px 28px rgba(0,0,0,.32); --up-sel-bg: #28282c;
     }
     /* .up-dense-btn.is-active's own dark override above is scoped to .up-root — this menu lives
@@ -3218,7 +3233,22 @@
    Zwei bleiben oben buendig, und beide aus demselben Grund: sie stehen nicht in einer Zeile mit
    Knoepfen, sondern in der oberen Ecke einer Kachel, deren Kopf mehrzeilig ist -- .vc-gran im
    Visibility-Chart und .tcl-seg im Zitatteil. Ihre Ausnahme steht unten. */
-.up-seg, .cc-seg, .ubo-seg, .tcl-seg { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-rail); border-radius: 8px; border: 0; height: 26px; flex: 0 0 auto; align-self: center; }
+/* VIER WEITERE ALIASE (27.09.), aus demselben Grund wie .cc-seg/.ubo-seg/.tcl-seg: es waren
+   Nachbauten dieses Bauteils in den Komponentendateien, Wert fuer Wert abgeschrieben, und jeder
+   lief auf seine Art auseinander -- .upt-status malte seine Pille aus --vc-bg/--up-sel-bg statt aus
+   der Pillenmarke und stand damit nach dem Anheben der Schiene im Dunkeln UNTER ihr (gemessen:
+   im Menue -6.9 Stufen). Gefunden beim Aufraeumen nach der Meldung "Switcher im Darkmode kaum zu
+   erkennen", mit der Frage, ob noch Individualbauten da sind.
+     .ubo-yaxis        Y-Achse der Landscape-Matrix (brands-overview)   Markup in der Bubble-Seite
+     .tcd-mode         Domains/URLs in Top Citations, grosse Form unten  Markup in der Bubble-Seite
+     .upt-status       Active/Inactive der Prompts-Tabelle              Kasten in der Bubble-Seite
+     .udt-sub-dispseg  Title/URL im Drilldown der Domains-Tabelle       eigene 24px, siehe dort
+   Alias und nicht Umbenennung: die ersten drei stehen im eingefuegten Bubble-Markup, das kein
+   CDN-Pin erreicht. Der vierte darf nach STYLEGUIDE (Drilldown-Bedienelemente) die Klasse von
+   core gar nicht tragen -- ein ungezieltes querySelector eines Kits wuerde ihn sonst fuer das
+   eigene Element halten. In domains-table.css bleibt nur seine Groesse. */
+.up-seg, .cc-seg, .ubo-seg, .tcl-seg,
+.ubo-yaxis, .tcd-mode, .upt-status, .udt-sub-dispseg { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-rail); border-radius: 8px; border: 0; height: 26px; flex: 0 0 auto; align-self: center; }
 .tcl-seg { align-self: flex-start; }
 
 /* ---- Der gleitende Umschalter --------------------------------------------------------------
@@ -3269,8 +3299,9 @@
    Flaeche der App, mitten auf einem helleren Umschalter. Der Wert kam nicht aus einer
    Entscheidung: die alte Pille trug #121212, und der Tausch machte daraus stumpf #08090a.
    Gemeldet als "die Switcher in Dropdowns sind jetzt kaputt", und das waren sie.
-   Jetzt bg-quaternary (#28282c) auf border-secondary -- eine Stufe ueber der Schiene, wie ueberall
-   sonst das Gewaehlte. Sieben Stellen, alle mit demselben Muster. */
+   Danach bg-quaternary (#28282c) auf border-secondary, seit dem 27.09. --vc-switch-pill als
+   Anhebung der Schiene: auf jedem Grund 14 bis 15 Stufen ueber ihr (siehe dort). Sieben Stellen,
+   alle mit demselben Muster. */
 [data-theme="dark"] .uap-tabs::before { background: var(--vc-switch-pill); border-color: var(--vc-switch-border); }
 /* ---- UND DIE SCHIENE DARUNTER --------------------------------------------------------------
    Gemeldet am 07.09. zuerst fuer das Dunkle ("die grossen Switcher, die 32px hoch sind, muessen
@@ -3314,23 +3345,32 @@
    gefasst wird -- aria-label steht so in seinem Markup. Sie stehen in Elementen ausserhalb
    dieser Bibliothek, tragen aber ihre Klassen: ohne is-lg bekamen sie die kleine Form, obwohl
    sie in einem Dropdown genauso 32 sein sollen wie ueberall sonst. */
-.up-seg.umf-seg, .up-seg.umk-seg, .up-seg[aria-label="Match mode"] {
+.up-seg.umf-seg, .up-seg.umk-seg, .up-seg[aria-label="Match mode"],
+/* Domains/URLs in Top Citations ersetzt dort die Ueberschrift und war schon als Nachbau 32 hoch,
+   nur mit 12px Polster statt 16 -- ohne Begruendung, also Drift. Kein is-lg im Markup (Bubble),
+   deshalb an seiner Wurzel gefasst: zwei Klassen schlagen die eine der Grundregel. */
+.tcd-root .tcd-mode {
   height: 32px;
 }
 .up-seg.is-lg .up-seg-btn, .cc-seg.is-lg .cc-seg-btn,
 .ubo-seg.is-lg .ubo-seg-btn, .tcl-seg.is-lg .tcl-seg-btn,
 .up-seg.umf-seg .up-seg-btn, .up-seg.umk-seg .up-seg-btn,
-.up-seg[aria-label="Match mode"] .up-seg-btn { height: 32px; padding: 0 16px; }
+.up-seg[aria-label="Match mode"] .up-seg-btn,
+.tcd-root .tcd-mode-btn { height: 32px; padding: 0 16px; }
 
 /* gap + type spec: this control was lifted from an ICON-ONLY switcher, so a button carrying an icon
    AND a label had its two children touching, and its text fell back to whatever the page inherited.
    Both are set here rather than per component -- gap is a no-op on the single-child icon variants
    that already use this, and the type matches .vc-gran-btn, the app's other labelled switcher
    (STYLEGUIDE §2: switcher label 12px/500). */
-.up-seg-btn, .cc-seg-btn, .ubo-seg-btn, .tcl-seg-btn { height: 26px; padding: 0 8px; border: 1px solid transparent; border-radius: 8px; background: transparent;
+/* Die Knoepfe der vier Aliase vom 27.09. (siehe die Grundregel oben) stehen in jeder dieser Regeln
+   mit: .ubo-yaxis-btn, .tcd-mode-btn, .upt-status-btn, .udt-sub-disp-btn. */
+.up-seg-btn, .cc-seg-btn, .ubo-seg-btn, .tcl-seg-btn,
+.ubo-yaxis-btn, .tcd-mode-btn, .upt-status-btn, .udt-sub-disp-btn { height: 26px; padding: 0 8px; border: 1px solid transparent; border-radius: 8px; background: transparent;
   color: var(--vc-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
   gap: 7px; font-family: inherit; font-size: 12px; font-weight: 500; line-height: 1; }
-.up-seg-btn svg, .cc-seg-btn svg, .ubo-seg-btn svg, .tcl-seg-btn svg { width: 14px; height: 14px; color: var(--vc-muted); display: block; }
+.up-seg-btn svg, .cc-seg-btn svg, .ubo-seg-btn svg, .tcl-seg-btn svg,
+.ubo-yaxis-btn svg, .tcd-mode-btn svg, .upt-status-btn svg, .udt-sub-disp-btn svg { width: 14px; height: 14px; color: var(--vc-muted); display: block; }
 /* HIER STAND EINE DREHUNG UM 90 GRAD, und sie ist am 23.09. entfallen. Sie kam am 22.09. auf
    Wunsch dazu, weil das Zeichen damals senkrechte Saeulen zeigte, der Umschalter aber eine
    liegende Rangliste meint. Seit das Zeichen ChartBarBig ist, LIEGT es schon -- die Drehung
@@ -3341,17 +3381,21 @@
 .up-seg-btn:hover, .up-seg-btn:hover svg,
 .cc-seg-btn:hover, .cc-seg-btn:hover svg,
 .ubo-seg-btn:hover, .ubo-seg-btn:hover svg,
-.tcl-seg-btn:hover, .tcl-seg-btn:hover svg { color: var(--vc-text); }
+.tcl-seg-btn:hover, .tcl-seg-btn:hover svg,
+.ubo-yaxis-btn:hover, .tcd-mode-btn:hover, .upt-status-btn:hover, .udt-sub-disp-btn:hover { color: var(--vc-text); }
 /* Die drei Aliase sind KEIN Stil-Duplikat, sondern der Verzicht auf eine Umbenennung: das
    Markup dieser Switcher steht in der vom Nutzer eingefuegten Bubble-Seite, nicht in einer Datei
    die ein CDN-Pin erreicht. Ein Rename hier haette deren Seiten zerlegt -- citations-combo-chart
    bricht sogar seine ganze Initialisierung ab, wenn es seine Buttons nicht findet. */
-.up-seg-btn.is-active, .cc-seg-btn.is-active, .ubo-seg-btn.is-active, .tcl-seg-btn.is-active { background: var(--vc-switch-pill); color: var(--vc-text); border-color: var(--vc-switch-border); }
+.up-seg-btn.is-active, .cc-seg-btn.is-active, .ubo-seg-btn.is-active, .tcl-seg-btn.is-active,
+.ubo-yaxis-btn.is-active, .tcd-mode-btn.is-active, .upt-status-btn.is-active, .udt-sub-disp-btn.is-active { background: var(--vc-switch-pill); color: var(--vc-text); border-color: var(--vc-switch-border); }
 .up-seg-btn.is-active svg, .cc-seg-btn.is-active svg, .ubo-seg-btn.is-active svg, .tcl-seg-btn.is-active svg { color: var(--vc-text); }
 [data-theme="dark"] .up-seg-btn.is-active,
 [data-theme="dark"] .cc-seg-btn.is-active,
 [data-theme="dark"] .ubo-seg-btn.is-active,
-[data-theme="dark"] .tcl-seg-btn.is-active { background: var(--vc-switch-pill); border-color: var(--vc-switch-border); }
+[data-theme="dark"] .tcl-seg-btn.is-active,
+[data-theme="dark"] .ubo-yaxis-btn.is-active, [data-theme="dark"] .tcd-mode-btn.is-active,
+[data-theme="dark"] .upt-status-btn.is-active, [data-theme="dark"] .udt-sub-disp-btn.is-active { background: var(--vc-switch-pill); border-color: var(--vc-switch-border); }
 
 /* ---------- "X mentioned?" yes/no cell ----------
    Shared by urls-table and responses-table (both had their own byte-identical copy under a local

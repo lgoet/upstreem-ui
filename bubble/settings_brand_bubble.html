@@ -75,6 +75,11 @@
       Beide feuern ERST, wenn der Nutzer den Teamnamen korrekt getippt hat. Delete zusaetzlich
       erst nach einem zweiten Klick auf denselben Knopf. Kommt eines dieser Events an, ist die
       Bestaetigung vollstaendig durchlaufen -- du brauchst keinen weiteren Sicherheitsdialog.
+      team_id kommt aus data-team-id, team_name aus data-team-name. Im Workflow:
+        team_id    = Regex (?<="team_id":")[^"]*   auf den Wert des Events
+        team_name  = Regex (?<="team_name":")[^"]*
+      "Delete team" sieht seit dem 27.09. NUR ein Owner (data-user-role = owner, siehe unten);
+      die RPC prueft es trotzdem, das ist die zweite Sperre.
 
   ── Der Speicher-Rundlauf: Settings -> Seite -> Header -> zurueck ────────────
   Nach dem Speichern zeigt der Team-Header oben auf der Seite noch die alten Daten. Der
@@ -148,6 +153,10 @@
     data-brand-logo        Logo-URL
     data-team-id           Team-ID, geht in die Leave/Delete-Events
     data-team-name         Teamname, muss im Danger-Dialog getippt werden
+    data-user-role         Rolle des Betrachters im Team: owner | admin | member (Gross-/Klein-
+                           schreibung egal). NUR bei owner steht "Delete Team" da. Fehlt das
+                           Attribut oder ist es leer, bleibt das Loeschen fuer alle verborgen.
+                           Als TEXT, z.B. Current User's Team Member's role (27.09.).
     data-brand-market      Alpha-2 des Standardmarkts, z.B. "de"
     data-brand-business    "b2b" | "b2c" | "hybrid"
     data-brand-industry    die gewaehlte Branche
@@ -226,6 +235,7 @@
      data-brand-logo="BRAND_LOGO_URL"
      data-team-id="TEAM_ID"
      data-team-name="TEAM_NAME"
+     data-user-role="USER_ROLE"
      data-brand-market="de"
      data-brand-business="b2b"
      data-brand-industry="INDUSTRY"

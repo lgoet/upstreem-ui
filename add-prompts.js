@@ -636,6 +636,11 @@
   function renderTabs() {
     M.card.classList.toggle("is-csv", S.tab === "csv");
     Array.prototype.forEach.call(M.tabs.querySelectorAll("[data-tab]"), function (b) {
+      /* is-active ist der Zustand, den der Umschalter aus core kennt -- an ihm misst core die
+         gleitende Pille (segLesen sucht button.is-active). Mit is-on allein stand .uap-tabs zwar
+         in der Liste der gleitenden Umschalter, glitt aber nie. is-on bleibt fuer alles, was
+         ausserhalb noch daran haengen koennte. */
+      b.classList.toggle("is-active", b.getAttribute("data-tab") === S.tab);
       b.classList.toggle("is-on", b.getAttribute("data-tab") === S.tab);
       b.setAttribute("aria-selected", b.getAttribute("data-tab") === S.tab ? "true" : "false");
     });
@@ -668,9 +673,12 @@
           '<button type="button" class="uap-close" data-act="close" aria-label="Close">' + ICON.x + '</button>' +
         '</div>' +
 
-        '<div class="uap-tabs" role="tablist">' +
-          '<button type="button" class="uap-tab" role="tab" data-tab="manual">Manual</button>' +
-          '<button type="button" class="uap-tab" role="tab" data-tab="csv">Import CSV</button>' +
+        /* Der grosse Umschalter aus core (27.09.). Vorher ein Nachbau mit eingerueckten Reitern,
+           Rahmen, Schatten und einer Pille aus --vc-bg -- im Dunkeln die Farbe der Karte, auf
+           der er lag. uap-tabs/uap-tab bleiben als Griff fuer M.tabs und die Klick-Delegation. */
+        '<div class="up-seg is-lg uap-tabs" role="tablist">' +
+          '<button type="button" class="up-seg-btn uap-tab" role="tab" data-tab="manual">Manual</button>' +
+          '<button type="button" class="up-seg-btn uap-tab" role="tab" data-tab="csv">Import CSV</button>' +
         '</div>' +
 
         '<div class="uap-input-manual">' +
