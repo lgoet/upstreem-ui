@@ -212,6 +212,23 @@
      corners, so an in-flow tooltip would be cut off on the edge cells.
      --------------------------------------------------------------------------- */
   var tipEl = null, tipRaf = null, tipX = 0, tipY = 0;
+  /* KEIN TOOLTIP OHNE ZEIGER (27.09. gemeldet: auf dem Telefon blockierten die Tooltips der
+     Matrix sehr oft den Tipp, der den Detailbereich oeffnet).
+     Ein Fingertipp schickt vor seinem click ein nachgemachtes mouseover. Darauf ging hier der
+     Tooltip auf -- und iOS Safari wertet eine SICHTBARE Aenderung als Antwort auf dieses
+     mouseover als "das war ein Hover" und schickt den click gar nicht erst: das Detail oeffnete
+     erst der zweite Tipp. Ohne Tooltip aendert das mouseover nichts, und der erste Tipp ist der
+     Klick.
+     Dasselbe Kennzeichen wie ueberall in der App: (hover: none). core.css blendet darunter die
+     Knopf-Tooltips (.up-tip) aus, prompts-table liest es fuer die Zeilenhoehe, und diese
+     Komponente nimmt darunter schon den Hover-Effekt der Zelle zurueck (performance-radar.css).
+     Keine Fensterbreite: ein schmales Fenster am Schreibtisch hat eine Maus und soll den
+     Tooltip behalten. Gelesen bei JEDEM Ereignis und nicht einmal beim Laden -- ein Tablet
+     bekommt eine Maus angesteckt, ohne dass die Seite neu laedt. */
+  var OHNE_HOVER = (function(){
+    try { return window.matchMedia ? window.matchMedia("(hover: none)") : null; } catch(e){ return null; }
+  })();
+  function ohneHover(){ return !!(OHNE_HOVER && OHNE_HOVER.matches); }
   function ensureTip(){
     if (tipEl && document.body.contains(tipEl)) return tipEl;
     tipEl = document.createElement("div");
@@ -1462,8 +1479,9 @@
       hideTip();
     }
 
-    /* hover tooltip */
+    /* hover tooltip -- nur mit echtem Zeiger, siehe ohneHover() */
     elGrid.addEventListener("mouseover", function(e){
+      if (ohneHover()) return;
       var cell = e.target.closest(".uhm-cell");
       if (!cell || cell.classList.contains("is-empty") || cell.classList.contains("is-sk")) return;
       var data = state.cellMap[cell.getAttribute("data-key")];

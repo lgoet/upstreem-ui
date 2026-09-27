@@ -258,8 +258,15 @@
    sass es unten und schob den Text nach unten. Die 9 kamen vom 8er Polster der Schale.
    align-self: stretch holt das Feld an die Oberkante zurueck (der Knopf behaelt sein "end", er
    gehoert an den Fuss), die Marge holt die fehlenden 8px links. Dieselbe Mechanik wie Miras
-   .am-input-wrap, nur mit den Zahlen dieser Komponente. */
-.upr-composer .upr-textarea { align-self: stretch; margin-left: 8px; }
+   .am-input-wrap, nur mit den Zahlen dieser Komponente.
+   DAS SICHTBARE FELD IST .upr-tag-editor (27.09. nachgezogen, gemeldet: das Polster links sei zu
+   klein, es muesse so gross sein wie oben). Die Regel stand bis dahin nur am <textarea> -- und
+   das blendet prompt-research.js aus (initTagEditor, display: none); geschrieben wird in das
+   contenteditable davor. Gemessen stand der Text deshalb weiter bei 31 von oben und 9 von links
+   (Schreibtisch) bzw. 17 und 9 (Telefon). Das <textarea> bleibt in der Regel: laeuft der Editor
+   nicht an, ist es das Feld. */
+.upr-composer .upr-textarea,
+.upr-composer .upr-tag-editor { align-self: stretch; margin-left: 8px; }
 .upr-composer:focus-within { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); outline: 0; }
 .upr-textarea {
   width: 100%; min-height: 90px; max-height: 180px; resize: none; border: 0; outline: 0;
@@ -419,6 +426,18 @@
   color: var(--vc-third); pointer-events: none; font-size: 15px; line-height: 1.6;
 }
 .upr-composer.has-value .upr-tag-editor { padding-right: 34px; }
+/* KEIN HINEINZOOMEN BEIM FOKUS AUF DEM TELEFON (27.09. gemeldet). iOS Safari zoomt die Seite,
+   sobald ein Feld mit einer Schrift unter 16px den Fokus bekommt -- 15px reichen dafuer. core.css
+   verhindert das app-weit unter derselben Abfrage, aber nur fuer input, textarea und select; das
+   Feld hier ist ein contenteditable-div und faellt durch diese Regel. Gemessen im Telefonmodus:
+   <textarea> und <input> auf 16px, der Editor, in den getippt wird, auf 15.
+   Der Platzhalter zieht mit, sonst springt die Schrift beim ersten Zeichen um einen Pixel.
+   .upr-composer davor hebt die Spezifitaet ueber die Basisregeln oben (0,2,0 gegen 0,1,0 bzw.
+   0,3,1 gegen 0,2,1) -- die Reihenfolge in der Datei entscheidet nichts. */
+@media (hover: none) and (pointer: coarse) {
+  .upr-composer .upr-tag-editor,
+  .upr-composer .upr-tag-editor.is-empty::before { font-size: 16px; }
+}
 .upr-tag-editor.is-disabled { opacity: 0.55; pointer-events: none; }
 .upr-inline-tag { display: inline; white-space: nowrap; user-select: none; -webkit-user-select: none; }
 .upr-inline-tag-body {
@@ -545,16 +564,18 @@
 /* Deutsch: "Ignorieren" und "Beobachten" statt "Ignore" und "Track" -- gemessen 221px, plus
    Luft fuer eine andere Schriftmetrik. */
 :root[data-up-locale="de"] .upr-box { --upr-act-w: 236px; }
-/* --vt-head-bg is semi-transparent, which is fine for a header that never has anything behind it.
-   Pinned, the rows slide underneath — so the same opaque base core paints under its own sticky
-   thead goes here too. */
-/* Under the toolbar, not at the top of a box that no longer scrolls: the same offset every table
-   uses. --up-thead-off is the toolbar's measured height, kept in sync by UC.makeSticky. */
-.upr-box .up-thead {
-  position: sticky; top: calc(var(--up-sticky-top) + var(--up-thead-off)); z-index: 5;
-  background-image: linear-gradient(var(--vt-head-bg), var(--vt-head-bg));
-  background-color: var(--vc-bg);
-}
+/* KEINE EIGENE STICKY-REGEL FUER DEN SPALTENKOPF (27.09. entfernt). Hier stand
+   .upr-box .up-thead mit position: sticky, top = --up-sticky-top + --up-thead-off und dem deckenden
+   Grund -- OHNE .up-sticky davor. Im Sticky-Modus war sie wertgleich mit core (.up-sticky .up-thead:
+   dieselbe Lage, derselbe z-index, derselbe Grund) und damit ueberfluessig.
+   Ausserhalb davon war sie der Fehler, gemeldet auf dem Telefon ("Die Tabellen Header sind zu weit
+   unten, die Tabelle ist oben abgeschnitten und nicht sticky"): core schaltet Sticky erst ab
+   1000px Seitenbreite ein (makeSticky), darunter behaelt .up-box sein overflow: hidden -- und das
+   macht den Kasten selbst zum Scrollport. Der Kopf klebte also 48px (16 + 32) unter der Oberkante
+   eines Kastens, der nie scrollt: gemessen 49px tiefer als der Kasten, die erste Zeile 48px unter
+   ihm verdeckt, und beim Scrollen der Seite ging er mit weg.
+   Jetzt verhaelt sich der Kopf wie in jeder anderen Tabelle der App: ab 1000px klebt er ueber core,
+   darunter steht er oben im Kasten und scrollt mit. */
 .upr-box::-webkit-scrollbar { width: 10px; }
 .upr-box::-webkit-scrollbar-thumb { background: var(--vc-border); border: 3px solid var(--vc-bg); border-radius: 999px; }
 .upr-box .up-row { cursor: default; }

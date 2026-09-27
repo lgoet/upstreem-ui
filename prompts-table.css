@@ -958,7 +958,9 @@
 .upt-grp-kpi-val, .upt-grp-kpi-val .up-num, .upt-grp-kpi-val .up-sent-val {
   font-size: 13px; font-weight: 500; }
 
-/* ---- group actions: Edit/Delete (custom groupings only) + Generate More, one 3-dot menu ----
+/* ---- group actions: Edit/Delete (custom groupings only), one 3-dot menu ----
+   Generate More stand bis zum 27.09. mit darin; es wird nirgends mehr gezeigt (prompts-table.js,
+   mitMehr), und eine Themengruppe hat seitdem in keiner Ansicht ein Menue.
    Inline header: always visible, sits after the KPIs (position:relative wrapper, not absolute --
    there is no reveal to fade, so it just takes its own place in the flex row like anything else).
    Wide-view sidelist row: same button/menu, hover-revealed instead (see the "groups wide view"
@@ -966,8 +968,19 @@
    with four KPIs next to it. Rendered inline only while open (JS: grpActionMenu) -- same "absent
    means closed" pattern the Grouping popover's own custom-groupings row menu already uses, not a
    UC.makePopover instance, since only one of potentially many rows is ever open at a time. */
-.upt-grp-menuwrap { position: relative; flex: 0 0 auto; }
-.upt-grp-head .upt-grp-menuwrap { margin-left: 4px; }   /* head's own 12px gap + 4px = 16px to the KPIs */
+/* .upt-grp-menuslot ist der Platzhalter an Gruppen OHNE Menue im Kopf (27.09., prompts-table.js
+   grpHeadHtml). Er steht in denselben zwei Zeilen wie der Knopf, damit Marge und Flex nicht
+   auseinanderlaufen koennen; die Breite ist die des Knopfes (.upt-grp-menubtn, 24px). Damit
+   stehen die Kennzahlen jeder Zeile dort, wo sie mit Knopf stuenden -- Custom Groupings und
+   Themengruppen liegen im Modus "both" untereinander, und ohne den Platz liefen ihre Spalten um
+   40px versetzt. */
+.upt-grp-menuwrap, .upt-grp-menuslot { position: relative; flex: 0 0 auto; }
+.upt-grp-head .upt-grp-menuwrap,
+.upt-grp-head .upt-grp-menuslot { margin-left: 4px; }   /* head's own 12px gap + 4px = 16px to the KPIs */
+.upt-grp-menuslot { width: 24px; }
+/* Ohne Kennzahlen (is-vnarrow, siehe unten) gibt es nichts auszurichten -- dann bekommt der Name
+   der Gruppe den Platz. */
+.up-root.is-vnarrow .upt-grp-menuslot { display: none; }
 .upt-grp-menubtn { width: 24px; height: 24px; flex: 0 0 auto; border: 0; border-radius: 7px;
   background: transparent; color: var(--vc-third); cursor: pointer; padding: 0;
   display: inline-flex; align-items: center; justify-content: center;

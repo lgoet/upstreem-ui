@@ -3016,26 +3016,38 @@
             grpKpi("Prompts", counts) + grpKpi("Visibility", vis) +
             grpKpi("Ø Rank", rank) + grpKpi("Ø Sentiment", sent) +
           '</div>' +
-          groupMenuBtnHtml(id, custom) +
+          /* Seit dem 27.09. auch hier wie in der Seitenleiste: das Menue NUR an Custom Groupings,
+             und ohne "Generate More" ("das brauche ich da nicht mehr"). Eine Themengruppe und
+             "No topic" hatten nur diesen einen Eintrag -- ohne ihn bleibt kein Menue.
+             Statt des Knopfes steht dort ein leerer Platzhalter in seiner Breite: im Modus "both"
+             stehen Custom Groupings und Themengruppen untereinander, und ohne den Platz rueckten
+             die Kennzahlen der Themengruppen um Knopf, Marge und Abstand (40px) gegen die der
+             Custom Groupings nach rechts -- die vier Spalten liefen versetzt.
+             Eine EIGENE Klasse und nicht .upt-grp-menuwrap: der Schliesser fuer das offene Menue
+             nimmt jeden Klick in einer .upt-grp-menuwrap als Klick "im Menue" und liesse es offen. */
+          (custom ? groupMenuBtnHtml(id, custom, false)
+                  : '<div class="upt-grp-menuslot" aria-hidden="true"></div>') +
         '</div>';
     }
-    /* Group actions -- Edit/Delete (custom groupings only) + Generate More (inline header only
-       since 25.09.), reached via one always-visible 3-dot button, not a hover reveal: on a touch
-       device or with a mouse that never happens to rest over the row, a hover-only action is an
-       action you can't discover.
+    /* Group actions -- Edit/Delete, custom groupings only (Generate More is shown nowhere since
+       27.09., see mitMehr below), reached via one always-visible 3-dot button, not a hover
+       reveal: on a touch device or with a mouse that never happens to rest over the row, a
+       hover-only action is an action you can't discover.
        Shared between the inline header (grpHeadHtml) and the wide view's sidelist row
-       (renderGroupSidelist): same markup, same order, same look. The sidelist shows it on custom
-       groupings only and without Generate More (mitMehr=false) -- asked for on 25.09.
+       (renderGroupSidelist): same markup, same order, same look. Both show it on custom
+       groupings only and without Generate More (mitMehr=false) -- sidelist since 25.09., the
+       inline header since 27.09.
        grpActionMenu tracks which single group's menu is open (module state, like grpRowMenu);
        closing on outside click is handled by its own document listener further down, since this
        menu isn't nested inside any single makePopover-registered wrap the way grpRowMenu is
        (nested inside the Grouping popover, which already closes it for free). */
     var grpActionMenu = null;
-    /* mitMehr: ob "Generate More" im Menue steht. In der SEITENLEISTE des Listenmodus nicht mehr
-       (25.09. angefordert) -- dort bekommen nur noch Custom Groupings ein Menue, und zwar nur mit
-       Edit und Delete; eine Themengruppe hat dort gar keins (siehe renderGroupSidelist). Der Kopf
-       der aufklappbaren Ansicht behaelt sein Menue samt "Generate More" -- nach ihm war nicht
-       gefragt, und das Ereignis uptGenerateMore haengt allein an ihm. */
+    /* mitMehr: ob "Generate More" im Menue steht. Seit dem 27.09. uebergeben BEIDE Aufrufer false:
+       erst die Seitenleiste des Listenmodus (25.09.), jetzt auch der Kopf der aufklappbaren
+       Ansicht. Nur Custom Groupings haben noch ein Menue, mit Edit und Delete.
+       Der Eintrag und sein Klickzweig ([data-grp-more], feuert uptGenerateMore) bleiben stehen:
+       das Ereignis ist Teil des Vertrags mit Bubble, und zurueckholen hiesse, an EINER Stelle
+       true zu uebergeben. Solange keiner das tut, feuert uptGenerateMore nicht mehr. */
     function groupActionsMenuHtml(id, custom, mitMehr){
       return '<div class="up-menu upt-grp-actmenu is-shown" role="menu">' +
         (custom ? '<div class="up-pop-opt" data-grp-headedit="' + esc(id) + '">Edit</div>' : "") +

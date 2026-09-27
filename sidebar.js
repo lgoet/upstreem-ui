@@ -271,7 +271,9 @@
       var ltr = '<span class="up-logo-ltr">' + esc(String(name || "?").trim().charAt(0) || "?") + '</span>';
       if (!q) return '<span class="' + kl + '">' + ltr + '</span>';
       return '<span class="' + kl + ' has-img"><img src="' + esc(q) + '" alt="" referrerpolicy="no-referrer" ' +
-        'onerror="this.remove();this.parentNode.classList.remove(\'has-img\')"/>' + ltr + '</span>';
+        /* Erst die Klasse, dann das Bild -- nach remove() ist parentNode null, und der Buchstabe
+           blieb unter has-img versteckt (27.09., derselbe Fehler wie in opportunities.js). */
+        'onerror="this.parentNode.classList.remove(\'has-img\');this.remove()"/>' + ltr + '</span>';
     }
 
     /* Die manuelle Wahl ueberlebt den Seitenwechsel, aber nur innerhalb derselben

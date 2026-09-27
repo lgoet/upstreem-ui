@@ -259,7 +259,10 @@
     var ltr = '<span class="up-logo-ltr">'+esc(initials)+'</span>';
     if (!url) return '<span class="up-logo-box up-fav">'+ltr+'</span>';
     return '<span class="up-logo-box up-fav has-img"><img src="'+esc(url)+'" alt="" referrerpolicy="no-referrer" loading="lazy" ' +
-           'onerror="this.remove();this.parentNode.classList.remove(\'has-img\')">'+ltr+'</span>';
+           /* Erst die Klasse, dann das Bild: nach remove() ist parentNode null, der Aufruf warf, und
+              has-img blieb stehen -- ein Favicon, das nicht laedt, zeigte einen leeren Kasten statt
+              des Buchstabens (core.css blendet ihn unter has-img aus). 27.09. gefunden. */
+           'onerror="this.parentNode.classList.remove(\'has-img\');this.remove()">'+ltr+'</span>';
   }
   /* Every one of these is worth doing -- the bars rank them, they do not grade them. The old set
      (Minimal / Low / Medium / High) told a user that two thirds of their board was not worth the

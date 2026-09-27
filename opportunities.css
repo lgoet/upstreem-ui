@@ -405,14 +405,34 @@
 }
 .uo-root.detail-in .uo-modal { transform: translateX(0); transition: transform 220ms cubic-bezier(0.32, 0.72, 0, 1); }
 
-.uo-m-head { flex: 0 0 auto; padding: 16px 16px 14px; border-bottom: 1px solid var(--vc-border); position: relative; }
-.uo-m-actions { position: absolute; top: 12px; right: 12px; display: inline-flex; align-items: center; gap: 4px; }
-.uo-m-source { display: flex; align-items: center; gap: 10px; min-width: 0; padding-right: 116px; }
+/* DER KOPF IST EINE ZEILE, und die Knoepfe nehmen sich ihren Platz selbst (27.09. gemeldet: auf
+   dem Telefon liefen die Knoepfe oben rechts ueber den Titel der Quelle, sobald der Schirm
+   schmal wurde).
+   Vorher lagen die Knoepfe absolut oben rechts, und die Quelle hielt ihnen mit einem festen
+   padding-right von 116px (Telefon 108) den Platz frei -- ausgelegt fuer DREI Knoepfe. Am 22.09.
+   kam der vierte dazu ("Open in new tab"), 4 x 32 + 3 x 4 = 140px, und die Zahl blieb stehen: der
+   Titel lief bis zu 20px (Telefon 28px) unter "Ignore". Gemessen mit dem Beispiel aus der Vorlage
+   ("Welches CRM nutzt ihr 2026?"): bei 320, 360, 390 und 414px Breite.
+   Jetzt ein Flex-Kopf wie die Leiste ueber den Drawern (drawer-topbar.css: .utb-crumb nimmt den
+   Rest mit min-width 0, .utb-tools bleibt flex 0 0 auto) -- der Titel bricht in der Breite um,
+   die neben den Knoepfen WIRKLICH frei ist, egal wie viele es werden.
+   Die Knoepfe stehen dabei genau dort, wo sie standen (12px von oben und rechts): der Kopf hat
+   16px Polster, die -4px Marge gleicht das aus. order: 1, weil sie im Markup VOR der Quelle
+   kommen -- so bleibt die Tab-Reihenfolge, wie sie war.
+   Der Abstand zur Quelle ist der alte: 16px, auf dem Telefon 8 (siehe unten) -- genau das, was
+   die 116 und 108 fuer drei Knoepfe gelassen hatten. */
+.uo-m-head { flex: 0 0 auto; padding: 16px 16px 14px; border-bottom: 1px solid var(--vc-border); position: relative;
+  display: flex; align-items: flex-start; gap: 16px; }
+.uo-m-actions { order: 1; flex: 0 0 auto; margin: -4px -4px 0 0; display: inline-flex; align-items: center; gap: 4px; }
+.uo-m-source { flex: 1 1 auto; display: flex; align-items: center; gap: 10px; min-width: 0; }
 .uo-m-source .up-logo-box { width: 38px; height: 38px; border-radius: 10px; }
 .uo-m-source .up-logo-box img { width: 36px; height: 36px; border-radius: 9px; }
 .uo-m-source-meta { min-width: 0; }
-.uo-m-source-title { font-size: 14px; font-weight: 500; color: var(--vc-text); display: flex; align-items: center; gap: 7px; }
-.uo-m-source-link { cursor: pointer; }
+.uo-m-source-title { font-size: 14px; font-weight: 500; color: var(--vc-text); display: flex; align-items: center; gap: 7px; min-width: 0; }
+/* Ein Titel ohne Leerzeichen (eine URL als Seitentitel) hat keine Stelle zum Umbrechen und haelt
+   als Flex-Kind seine volle Breite -- dann laeuft er trotz Flex-Kopf ueber. overflow-wrap: anywhere
+   gibt ihm diese Stellen, min-width: 0 erlaubt das Schrumpfen. */
+.uo-m-source-link { cursor: pointer; min-width: 0; overflow-wrap: anywhere; }
 .uo-m-source-link:hover { text-decoration: underline; }
 .uo-m-source-row { display: flex; align-items: center; gap: 8px; margin-top: 5px; font-size: 12px; color: var(--vc-muted); flex-wrap: wrap; }
 .uo-cite { font-weight: 500; color: var(--uo-cite, var(--vc-muted)); }
@@ -557,7 +577,10 @@ button.uo-comp-more:hover { background: var(--vt-row-hover); color: var(--vc-tex
   .uo-row-tags { display: none; }
   /* Full-screen drawer on phones: a 86%-wide side panel on a 380px viewport is not a side panel. */
   .uo-modal { position: fixed; inset: 0; width: auto; border-radius: 0; }
-  .uo-m-source { padding-right: 108px; }
+  /* Statt des festen padding-right von 108px: derselbe knappere Abstand zu den Knoepfen wie
+     vorher, als Flex-Abstand (siehe .uo-m-head). .uo-modal davor, damit die Spezifitaet
+     entscheidet (0,2,0 gegen 0,1,0) und nicht die Stelle in der Datei. */
+  .uo-modal .uo-m-head { gap: 8px; }
   .uo-meta-grid, .uo-kpis { grid-template-columns: minmax(0,1fr); }
 }
 @media (max-width: 420px) {
