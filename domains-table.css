@@ -196,9 +196,16 @@
    (a fresh 60%-alpha copy of the solid heading-bg swatch, which read darker than the original;
    then that value's own alpha reduced by a further 60%, which read too faint) before landing
    back on exactly what it always was. Dark: exactly halfway between the app-level background
-   (--vc-bg, what's behind the whole table) and the table's own surface (--up-surface). */
+   (--vc-bg, what's behind the whole table) and the table's own surface (--up-surface).
+   HELL SEIT 27.09. EINE STUFE HELLER ("die ist mir zu dunkel, bitte eine hellere Variante"):
+   die halbe Strecke zwischen --vt-head-bg und der Tabellenflaeche --up-surface -- dieselbe
+   Rechnung wie im Dunkeln, nur mit dem Kopfgrund statt des App-Grunds. Einen Token zwischen
+   #f9f8f9 und Weiss gibt es in core nicht, also abgeleitet statt erfunden. Die erste Zeile ist
+   der Rueckfall fuer einen Browser ohne color-mix: er verwirft die zweite und bleibt beim alten
+   Ton, statt ganz ohne Flaeche dazustehen. */
 .udt-subrows { position: relative; flex: 0 0 auto;
   background: var(--vt-head-bg);
+  background: color-mix(in srgb, var(--vt-head-bg) 50%, var(--up-surface) 50%);
   border-bottom: 1px solid var(--vc-border);
   display: grid; grid-template-rows: 1fr;
   --udt-subcols: minmax(0, 1fr) 112px 128px 108px 34px; }

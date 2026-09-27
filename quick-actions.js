@@ -601,17 +601,48 @@
      Bubble-Seite daran haengt.
      Gibt es keine Kennung oder keine Export-Komponente auf der Seite, bleibt es beim alten Event:
      eine bestehende Verdrahtung darf durch diese Aenderung nicht ausfallen. */
+  /* DER KLICK OEFFNETE NICHTS (27.09. gemeldet: "Daten exportieren oeffnet nix, soll das Export-
+     Popup oeffnen"). Zwei Luecken, beide still:
+       - Die Kennung kommt von der Sidebar (sidebar.js reicht ihr data-export-instance durch).
+         Steht dort nichts oder noch der Platzhalter, fiel der Aufruf auf bubble_fn_qa_export_data
+         zurueck -- und haengt daran kein Workflow, passiert nichts.
+       - Stand eine Kennung da, zu der es auf DIESER Seite keinen Export-Traeger gibt, lieferte
+         upstreemExportOpen false. Das wurde nicht gelesen: der Klick galt als erledigt, das
+         Bubble-Event ging deshalb auch nicht hinaus.
+     Jetzt zaehlt nur ein wirklich geoeffneter Dialog. Die gesetzte Kennung hat Vorrang; sonst
+     nimmt Quick Actions den Export-Traeger, der auf der Seite liegt (der erste, ohne Platzhalter)
+     -- "Daten exportieren" meint den Export dieser Seite. Erst wenn es keinen gibt, bleibt es
+     beim alten Event. */
+  function exportTraeger(){
+    var ids = [], docs = [document];
+    try { if (window.top && window.top !== window && window.top.document) docs.push(window.top.document); } catch(_){}
+    docs.forEach(function(d){
+      var roots = d.querySelectorAll(".uex-root[data-instance]");
+      for (var i = 0; i < roots.length; i++){
+        var id = String(roots[i].getAttribute("data-instance") || "").trim();
+        if (!id || id === "INSTANCE_ID" || /^ROOTID_/.test(id) || ids.indexOf(id) >= 0) continue;
+        ids.push(id);
+      }
+    });
+    return ids;
+  }
   function oeffneExport(){
-    var id = String((root.getAttribute("data-export-instance") || "")).trim();
-    if (!id || id === "EXPORT_INSTANCE_ID") return false;
     var fn = window.upstreemExportOpen || (window.parent && window.parent.upstreemExportOpen) ||
              (window.top && window.top.upstreemExportOpen);
     if (typeof fn !== "function"){
       if (window.console) console.warn("[quick-actions] window.upstreemExportOpen nicht gefunden — liegt die Export-Komponente auf dieser Seite, und ist ihr Element SICHTBAR?");
       return false;
     }
-    try { fn(id); } catch(_){ return false; }
-    return true;
+    var gesetzt = String((root.getAttribute("data-export-instance") || "")).trim();
+    var kandidaten = [];
+    if (gesetzt && gesetzt !== "EXPORT_INSTANCE_ID") kandidaten.push(gesetzt);
+    exportTraeger().forEach(function(id){ if (kandidaten.indexOf(id) < 0) kandidaten.push(id); });
+    for (var k = 0; k < kandidaten.length; k++){
+      var auf = false;
+      try { auf = fn(kandidaten[k]); } catch(_){ auf = false; }
+      if (auf) return true;
+    }
+    return false;
   }
   // one distinct event per static action (no value)
   /* Aktion -> Fenster, das sie SELBST oeffnen kann. Dieselbe Bauart wie beim Export darunter, den
