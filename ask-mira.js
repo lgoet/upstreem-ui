@@ -665,6 +665,7 @@
   var STR = {
     en: {
       antwortHaengt: 'This is taking longer than expected. Mira keeps looking for the answer.',
+      antwortNichtGeladen: 'Mira’s answer is ready but didn’t load here. Open the chat again to see it.',
       placeholder: 'Ask Mira...',
       /* DER ERSTE Bezug in einem leeren Feld -> die naheliegende Frage steht dort als echter TEXT
          (17.09. angefordert, am 18.09. vom Platzhalter zum Text geworden). Wer etwas anderes
@@ -805,6 +806,7 @@
     },
     de: {
       antwortHaengt: 'Das dauert länger als erwartet. Mira sucht weiter nach der Antwort.',
+      antwortNichtGeladen: 'Miras Antwort ist fertig, kam hier aber nicht an. Öffne den Chat erneut, um sie zu sehen.',
       placeholder: 'Frag Mira...',
       bezugFrage: {
         brand:      'Was kannst du mir über diese Brand sagen?',
@@ -1130,6 +1132,26 @@
   var _sendStartTs = 0;
   var _pendingAnswer = false; // true while a running/streaming assistant answer is still awaited
   var _lastSendTs = 0;        // when the user last sent — a recent send means a live session (keep the chat)
+  /* ---- DIE ERWARTETE ANTWORT (27.09. vom Telefon gemeldet) --------------------------------------
+     "Folgeprompts in einem bestehenden Chat: der Loader hoert irgendwann auf, es sieht alles
+     abgeschlossen aus, aber die Mira-Antwort ist nicht da" -- und im neuen Chat "fehlt die
+     Type-Animation komplett". Beides hatte EINE Ursache, nachgestellt in _h_mira_ablauf.html:
+     der Loader endete, sobald IRGENDETWAS nach "fertig" aussah, nicht erst mit DER Antwort.
+       - mira_message_success beendete ihn sofort und holte die Nachrichten erst danach. Damit
+         war das Ende des Ladens schon gezeichnet, als die Antwort kam -- und getippt wird nur
+         an genau diesem Ende (siehe renderMessages) oder bei einem reinen Anhaengen, das die
+         eigene Frage mit ihrer lokalen Kennung verhindert. Kommt die Nachricht vor dem
+         Ereignis (Bubbles eigener Weg), tippte es; umgekehrt nie.
+       - Eine Lieferung ohne die neue Antwort (noch nicht geschrieben, oder ein alter Stand)
+         beendete den Loader ebenso, und nfErfolg hielt die ALTE Antwort am Ende des Chats fuer
+         die neue und stellte das Nachfassen ab. Danach suchte niemand mehr. Im neuen Chat gibt
+         es keine alte Antwort -- darum traf es nur die Folgefragen.
+     Jetzt merkt sich das Absenden, was schon da war. Fertig ist erst, wenn eine Antwort am Ende
+     steht, die es beim Absenden noch nicht gab; bis dahin bleibt der Loader, das Nachfassen
+     laeuft weiter, und nach "fertig gemeldet" wird zuegig nachgeladen. Kommt sie trotzdem nicht,
+     sagt der Chat es, statt fertig auszusehen (CLAUDE.md §2). */
+  var _erwartet = null;       // { chat, vorher: {key: 1}, frage, seit, bereit }
+  var ERWARTET_VERFALL = 600000;   /* dieselben 10 Minuten, nach denen das Backend einen Turn abraeumt */
   var _unknownChatTimer = null;
   // Show a "jump to latest" button (like ChatGPT/Claude) when scrolled up from the bottom.
   var elScrollBottom = root.querySelector('#am-scroll-bottom');
@@ -2339,6 +2361,10 @@
   var _prevLoading = false;
   var _typedKeys = Object.create(null);
   var _forceTypeNext = false;
+  /* Die erwartete Antwort ist eben angekommen (siehe _erwartet): der NAECHSTE Durchgang tippt sie.
+     Gilt genau einen Durchgang und nicht wie _forceTypeNext bis zum Verbrauch -- ein Rest davon
+     haette sonst die naechste geoeffnete Unterhaltung abgetippt. */
+  var _typeErwartet = false;
   var _forceTimer = null;
   var _typingActive = false;
   function _msgKey(m){
@@ -2585,8 +2611,9 @@
     var _lastKey = (lastAsstIdx >= 0 && lastAsstIdx === S.messages.length - 1) ? _curKeys[lastAsstIdx] : null;
     var _typeUnits = null;
     var _shouldType = _lastKey && !S.isLoading && !_typedKeys[_lastKey] && (
-      _forceTypeNext || _isAppend || _loadingDone
+      _forceTypeNext || _isAppend || _loadingDone || _typeErwartet
     );
+    _typeErwartet = false;   /* ein Durchgang, siehe oben */
     if (_shouldType){
       var _asstEls = elMessages.querySelectorAll('.am-msg.is-assistant:not(.am-msg-loading)');
       var _newBub = _asstEls.length ? _asstEls[_asstEls.length - 1].querySelector('.am-bubble') : null;
@@ -4652,6 +4679,7 @@
     delete _entwuerfe[entwurfSchluessel(S.activeChatId)];   /* abgeschickt ist kein Entwurf mehr */
     _pendingAnswer = true;
     _lastSendTs = Date.now();
+    antwortErwarten(userMsg);                /* ab hier wartet dieser Chat auf eine NEUE Antwort */
     try { rtStilleAnsetzen(); } catch(e){}   /* kommt in 10s kein Realtime-Ereignis, ist das Abo tot */
     /* VOR setLoading: runStart liest diesen Zeitstempel und erkennt daran, ob es dieselbe Frage
        ist. Stand er danach, sah der erste Lauf ihn noch nicht -- und jeder weitere Durchlauf sah
@@ -4698,6 +4726,7 @@
     window.dispatchEvent(new CustomEvent('askmira:send', { detail: payload }));
     if (window.bubble_fn_ask_mira_send) return;   /* in der Zwischenzeit doch noch aufgetaucht */
     _pendingAnswer = false;
+    _erwartet = null;                              /* nichts gesendet, also auch nichts zu erwarten */
     try { setLoading(false, 'aus'); } catch(e){}   /* nichts gesendet, also auch keine Antwort */
     /* Das Laufzeitprotokoll wegwerfen, BEVOR die Meldung kommt. Sonst haengt Miras "Gearbeitet
        12s" davor -- die Uhr laeuft ab dem Absenden, und hier wurde nie gearbeitet. Gemessen: ohne
@@ -5857,7 +5886,74 @@
     if (!letzte || letzte.role !== 'assistant') return;
     if (isPendingAssistant(letzte)) return;
     if (String(letzte.status || '').toLowerCase() === 'stalled') return;
+    /* EINE Antwort am Ende ist nicht DIE Antwort (27.09., siehe _erwartet). Liefert Bubble nach
+       einer Folgefrage einen Stand ohne sie, steht dort die ALTE -- und hier war dann Schluss mit
+       Nachfassen, obwohl die neue noch fehlte. */
+    if (erwartetHier() && !antwortNeuDa(S.messages)) return;
     nfAus();
+  }
+
+  /* ---- Die erwartete Antwort (siehe _erwartet oben) ------------------------------------------ */
+  /* Beim Absenden merken, was schon da ist. Die eigene Frage zaehlt nicht mit: sie traegt eine
+     lokale Kennung, die in keiner Lieferung wiederkommt. */
+  function antwortErwarten(frage){
+    var vorher = {};
+    S.messages.forEach(function(m){ if (m && m !== frage) vorher[_msgKey(m)] = 1; });
+    _erwartet = { chat: S.activeChatId ? String(S.activeChatId) : NEUER_CHAT, vorher: vorher,
+                  frage: frage || null, seit: Date.now(), bereit: false };
+    antwortFristLoeschen();
+  }
+  /* Gilt die Erwartung fuer den Chat, der gerade offen ist? Ein neuer Chat bekommt seine Kennung
+     erst nach dem Absenden -- die traegt askMiraSetActiveChat nach (Zweig NEUER_CHAT). */
+  function erwartetHier(){
+    if (!_erwartet) return false;
+    if (Date.now() - _erwartet.seit > ERWARTET_VERFALL){ _erwartet = null; return false; }
+    return _erwartet.chat === String(S.activeChatId || '');
+  }
+  /* Steht am Ende eine fertige Antwort, die es beim Absenden noch nicht gab? */
+  function antwortNeuDa(liste){
+    if (!_erwartet || !liste || !liste.length) return false;
+    var m = liste[liste.length - 1];
+    if (!m || m.role !== 'assistant' || isPendingAssistant(m)) return false;
+    if (String(m.status || '').toLowerCase() === 'stalled') return false;
+    /* Was die Komponente selbst hineinschreibt (Fehler, Haenger, Hinweise), ist keine Antwort. */
+    if (/^(local_|rt_err_|stumm_|nicht_geladen_)/.test(String(m.id || ''))) return false;
+    return !_erwartet.vorher[_msgKey(m)];
+  }
+  /* "Fertig" ist gemeldet, die Antwort aber noch nicht HIER: zuegig nachladen. Der Takt des
+     Nachfassens (12s, 18s, 27s) ist fuer das Warten auf eine laufende Antwort gedacht; eine
+     fertige, die nur noch geholt werden muss, soll nicht zwoelf Sekunden auf sich warten lassen. */
+  var _rtNachT = 0, RT_NACH_TAKTE = [1500, 3000, 6000, 12000];
+  function rtNachladenPlanen(){
+    if (_rtNachT) clearTimeout(_rtNachT);
+    var i = 0;
+    (function naechster(){
+      _rtNachT = setTimeout(function(){
+        _rtNachT = 0;
+        if (!_erwartet || !_erwartet.bereit || !erwartetHier() || antwortNeuDa(S.messages)) return;
+        if (!document.hidden) rtOffenenChatHolen('nachladen');
+        if (++i < RT_NACH_TAKTE.length) naechster();
+      }, RT_NACH_TAKTE[i]);
+    })();
+  }
+  /* Und wenn sie trotzdem nicht kommt: nicht fertig AUSSEHEN, sondern es sagen. Mit dem
+     Auffrischungs-Workflow 45 Sekunden (die Nachlade-Takte oben und drei Runden Nachfassen), ohne
+     ihn 8 -- dann kann sie nur noch ueber Bubbles eigenen Weg kommen, und der ist schnell oder
+     gar nicht. Das Nachfassen laeuft danach weiter; kommt sie spaeter doch, ersetzt sie den
+     Hinweis. */
+  var _antwortFristT = 0, ANTWORT_FRIST = 45000, ANTWORT_FRIST_OHNE = 8000;
+  function antwortFristLoeschen(){ if (_antwortFristT){ clearTimeout(_antwortFristT); _antwortFristT = 0; } }
+  function antwortFristStellen(ms){
+    antwortFristLoeschen();
+    _antwortFristT = setTimeout(function(){
+      _antwortFristT = 0;
+      if (!_erwartet || !_erwartet.bereit || !erwartetHier() || antwortNeuDa(S.messages)) return;
+      _erwartet = null;
+      _pendingAnswer = false;
+      S.messages.push({ id: 'nicht_geladen_' + Date.now(), role: 'assistant', status: 'stalled',
+                        content: L().antwortNichtGeladen, created_at: new Date().toISOString() });
+      setLoading(false, 'aus');
+    }, ms);
   }
   function nachfassen(grund){
     if (!nfLaeuftNoch()){ nfAus(); return false; }
@@ -6000,6 +6096,9 @@
                           content: L().antwortHaengt, created_at: new Date().toISOString() });
       }
       _pendingAnswer = false;
+      /* Die Erwartung endet mit der Meldung -- sonst hielte sie den Loader in der naechsten
+         Lieferung wieder an, obwohl der Chat schon gesagt hat, dass es haengt. */
+      _erwartet = null; antwortFristLoeschen();
       setLoading(false, 'aus');   /* die Uhr ist abgelaufen, gekommen ist nichts */
       renderMessages();
     }, STUMM_FRIST);
@@ -6130,7 +6229,20 @@
     // Show the loading/thinking state instead of an empty bubble (survives reloads / re-fetches).
     var _last = S.messages[S.messages.length - 1];
     var _running = isPendingAssistant(_last);
-    _pendingAnswer = _running;
+    /* DIE ERWARTETE ANTWORT (27.09., siehe _erwartet): steht sie am Ende, ist Schluss -- und sie
+       wird getippt, egal in welcher Reihenfolge Ereignis und Nachrichten kamen. Fehlt sie, ist
+       diese Lieferung ein Zwischenstand: der Loader bleibt, und die eigene Frage auch, falls der
+       Stand sie noch nicht traegt (sonst verschwaende sie fuer die Dauer des Wartens). */
+    var _wartetNoch = false, _jetztTippen = false;
+    if (erwartetHier()){
+      if (antwortNeuDa(S.messages)){ _erwartet = null; antwortFristLoeschen(); _jetztTippen = true; }
+      else if (!_running){
+        _wartetNoch = true;
+        var _ende = S.messages[S.messages.length - 1];
+        if (_erwartet.frage && (!_ende || _ende.role !== 'user')) S.messages.push(_erwartet.frage);
+      }
+    }
+    _pendingAnswer = _running || _wartetNoch;
     nfErfolg();      /* die Antwort ist da -> Schluss mit Nachfassen. Das ist das EINZIGE Ende. */
     /* EIN LADEZUSTAND MUSS IMMER ENDEN (CLAUDE.md). Die laufende Antwort endet normalerweise
        dadurch, dass Bubbles Realtime-Auslöser die Nachrichten neu setzt. Gemeldet am 07.09.:
@@ -6144,7 +6256,9 @@
     if (_running) laufUhrStellen(); else laufUhrLoeschen();
     if (_running){ S.messages.pop(); }
     // If a live answer arrives via setMessages without latency_ms, use the measured time.
-    if (S.isLoading && _sendStartTs && !_running){
+    /* Nicht bei einem Zwischenstand: die letzte Antwort dort ist die ALTE, und _sendStartTs
+       muss fuer die neue stehen bleiben. */
+    if (S.isLoading && _sendStartTs && !_running && !_wartetNoch){
       for (var i = S.messages.length - 1; i >= 0; i--){
         if (S.messages[i] && S.messages[i].role === 'assistant'){
           var lr = S.messages[i].latency_ms;
@@ -6170,8 +6284,11 @@
        nicht mehr. fertigMelden setzt den Punkt nur, wenn der Nutzer woanders steht -- im
        geoeffneten Chat raeumt es die Marke wortlos ab, und genau das ist richtig. */
     var _dieserChat = String(chatId == null ? (S.activeChatId || '') : chatId);
-    if (_dieserChat && !_running) fertigMelden(_dieserChat);
-    setLoading(_running, _fremdesEnde ? 'verlassen' : 'antwort');
+    if (_dieserChat && !_running && !_wartetNoch) fertigMelden(_dieserChat);
+    /* Das Tippen gehoert in genau den Durchgang, den setLoading jetzt zeichnet (siehe
+       _typeErwartet). */
+    if (_jetztTippen) _typeErwartet = true;
+    setLoading(_running || _wartetNoch, _fremdesEnde ? 'verlassen' : 'antwort');
     _maybeHomeIfUnknownChat();   // no active chat known -> fall back to the main page
   };
   window.askMiraAddMessage = function(message, chatId){
@@ -6189,8 +6306,14 @@
     if (typeof message === 'string'){ var p = looseJsonParse(message); if (!p) return; message = Array.isArray(p) ? p[0] : p; }
     if (!message || typeof message !== 'object') return;
     var nm = normalizeMessage(message);
+    /* Ist das DIE erwartete Antwort (siehe _erwartet)? Dann wird sie getippt -- im letzten
+       Durchgang unten, nicht in dem, den setLoading(false) davor zeichnet. */
+    var _erwarteteKam = false;
     if (nm.role === 'assistant'){
       if (isPendingAssistant(nm)){ _pendingAnswer = true; setLoading(true); return; }
+      if (erwartetHier() && antwortNeuDa(S.messages.concat([nm]))){
+        _erwartet = null; antwortFristLoeschen(); _erwarteteKam = true;
+      }
       // If the live answer didn't include latency_ms, fall back to the time we measured since send.
       var latRaw = nm.latency_ms != null ? nm.latency_ms : (nm.metadata && nm.metadata.latency_ms);
       var latNum = parseFloat(String(latRaw == null ? '' : latRaw).replace(',', '.').replace(/[^0-9.]/g, ''));
@@ -6203,6 +6326,7 @@
     /* NACH dem Einhaengen: nfErfolg sieht sich die LETZTE Nachricht an, und die ist erst ab
        hier diese hier. Davor haette es die vorherige geprueft. */
     nfErfolg();
+    if (_erwarteteKam) _typeErwartet = true;
     renderMessages();
   };
   /* Explicit typing controls — use these when you deliver answers by RELOADING the whole
@@ -6560,10 +6684,26 @@
       rtGesehenMerken(amid);
       delete _rtLaeuft[chat];
       if (offen){
-        try { setLoading(false); } catch(e){}
-        /* Der Inhalt kommt NICHT aus dem Ereignis -- es ist nur der Ausloeser. */
-        rtOffenenChatHolen('message_success');
+        if (erwartetHier() && !antwortNeuDa(S.messages)){
+          /* FERTIG GEMELDET HEISST NICHT ANGEKOMMEN (27.09., siehe _erwartet). Der Loader endet
+             erst mit der Antwort -- genau das Ende, an dem sie getippt wird. Hier stand
+             setLoading(false) VOR dem Nachladen: der Chat sah fertig aus, und kam die Antwort
+             danach (oder gar nicht), fehlte das Tippen beziehungsweise die Antwort. */
+          _erwartet.bereit = true;
+          var _geholt = rtOffenenChatHolen('message_success');
+          if (_geholt) rtNachladenPlanen();
+          antwortFristStellen(_geholt ? ANTWORT_FRIST : ANTWORT_FRIST_OHNE);
+        } else {
+          /* Nur beenden, was laeuft: setLoading(false) zeichnet sonst auch ohne Wechsel neu, und
+             ein Neuzeichnen mitten im Tippen setzt die ganze Antwort auf einen Schlag hin. */
+          if (S.isLoading){ try { setLoading(false); } catch(e){} }
+          /* Der Inhalt kommt NICHT aus dem Ereignis -- es ist nur der Ausloeser. */
+          rtOffenenChatHolen('message_success');
+        }
       } else {
+        /* Fertig in einem Chat, der gerade nicht offen ist: die Erwartung ist erfuellt, der Punkt
+           in der Leiste sagt den Rest. Wer zurueckkommt, oeffnet ihn -- da wird nicht getippt. */
+        if (_erwartet && _erwartet.chat === chat){ _erwartet = null; antwortFristLoeschen(); }
         /* Fremder Chat: nur die Zeile. Kein Nachladen, kein Flackern im offenen Chat.
            Der Zeitstempel wird mitgefuehrt, die Zeile aber NICHT live nach oben gezogen: sie
            steht unter dem Zeiger des Nutzers, und ein Sprung waehrend er die Liste liest ist
@@ -6583,6 +6723,8 @@
       /* Die zwei technischen Felder gehoeren NICHT in die Oberflaeche -- hoechstens hierhin. */
       if (window.console) try { console.warn('[AskMira] Turn fehlgeschlagen',
           { session: chat, message: rtText(p.error_message), execution: rtText(p.execution_id) }); } catch(e){}
+      /* Fehlgeschlagen ist auch ein Ende: nichts mehr zu erwarten (siehe _erwartet). */
+      if (_erwartet && _erwartet.chat === chat){ _erwartet = null; antwortFristLoeschen(); }
       wartendSetzen(chat, false);
       if (offen){
         try { setLoading(false); } catch(e){}
@@ -7216,6 +7358,8 @@
       /* Auf dem Startschirm: nur die Kennung des gerade entstehenden Chats darf herein. */
       if (!_neu || findChat(_neu)) return;
       nutzerWahl(_neu);                     /* ab jetzt gilt sie als gewaehlt */
+      /* Die Antwort, auf die der neue Chat wartet, gehoert ab jetzt zu dieser Kennung. */
+      if (_erwartet && _erwartet.chat === NEUER_CHAT) _erwartet.chat = _neu;
     }
     else if (_will && _neu && _neu !== _will){
       /* NUR VERWEIGERN, NICHTS BEHAUPTEN (23.09. korrigiert). Hier stand fertigMelden(_neu) --
@@ -10213,8 +10357,10 @@
       recFokusRaus();
       composer.classList.remove('is-recording'); recEl.setAttribute('aria-hidden', 'true');
       try {
-        S.messages.push({ id: mid, role: 'user', content: '', pending_voice: true, created_at: new Date().toISOString() });
+        var _sprachFrage = { id: mid, role: 'user', content: '', pending_voice: true, created_at: new Date().toISOString() };
+        S.messages.push(_sprachFrage);
         _pendingAnswer = true; _lastSendTs = Date.now(); _sendStartTs = Date.now();
+        antwortErwarten(_sprachFrage);       /* wie beim getippten Absenden, siehe _erwartet */
         setLoading(true); renderMessages();
       } catch(_){}
 

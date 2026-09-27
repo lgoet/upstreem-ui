@@ -1847,7 +1847,9 @@
        Gemeldet als "da sind noch viele Sachen wo die deutsche Sprache fehlt". Gemessen in
        _h_udd_deutsch.html, der die Seite zweimal aufbaut -- englisch und deutsch -- und Text fuer
        Text vergleicht: was in beiden gleich steht, ist nicht uebersetzt. Das waren diese. */
-    "Source Funnel": "Quellen-Trichter",
+    /* "Funnel" bleibt stehen (27.09. angefordert): so heisst der Abschnitt im Produkt, und
+       "Trichter" las sich wie ein anderes Werkzeug. */
+    "Source Funnel": "Quellen-Funnel",
     "How often this source is cited, how many of its cited URLs mention brands, and where your brand is still missing":
       "Wie oft diese Quelle zitiert wird, wie viele ihrer zitierten URLs Brands erwähnen und wo deine Brand noch fehlt",
     "What kind of pages of this domain get cited": "Welche Art von Seiten dieser Domain zitiert wird",

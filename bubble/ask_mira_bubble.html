@@ -257,6 +257,22 @@
      sind fluechtig und stehen nirgends nach. Zurueck kommt die fertige Antwort -- und damit
      endet der Kreisel, was der eigentliche Schaden war.
 
+     ── FERTIG GEMELDET HEISST NICHT ANGEKOMMEN (27.09.) ─────────────────────────
+     Gemeldet vom Telefon: Folgefrage, der Loader hoert auf, alles sieht fertig aus -- aber die
+     Antwort fehlt. Im neuen Chat kam sie, aber ohne Tippen. Ursache war die Komponente: sie
+     beendete den Loader schon bei mira_message_success und hielt danach jede Lieferung mit
+     einer Antwort am Ende fuer fertig, auch die ALTE vor der Folgefrage.
+     Seitdem merkt sich das Absenden, was schon da war. Der Loader bleibt, bis eine NEUE Antwort
+     am Ende steht; liefert refresh_chat noch einen alten Stand, fragt die Komponente nach 1,5 /
+     3 / 6 / 12 Sekunden erneut. Fuer Bubble aendert sich nichts.
+     Kommt die Antwort trotzdem nicht, steht im Chat:
+         "Mira's answer is ready but didn't load here. Open the chat again to see it."
+     Mit refresh_chat nach 45 Sekunden, OHNE ihn schon nach 8. Steht dieser Satz auf dem
+     Telefon, aber nicht am Rechner, dann gibt es bubble_fn_ask_mira_refresh_chat dort nicht:
+     Bubble legt die Funktion erst an, wenn ihr JavaScript-to-Bubble-Element gerendert wurde --
+     liegt es in einer Gruppe, die im Mobile-Layout verborgen ist, fehlt es genau dort.
+     Pruefen: am Rechner im Geraetemodus der Entwicklertools askMiraDiag() in der Konsole.
+
      ── DAS REALTIME-ABO NACH DEM AUFWACHEN ERNEUERN (25.09.) ─────────────────────
      Das Abo auf mira_user_<id> entsteht im View-First- bzw. Mira-Pageload-Workflow -- und nur
      dort. Klappt jemand den Laptop zu, schliesst der Server die Verbindung; nach dem Aufwachen
