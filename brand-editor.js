@@ -157,6 +157,15 @@
 
   function hexOk(v) { return /^#[0-9a-fA-F]{6}$/.test(txt(v).trim()); }
 
+  /* ---- EIN NEU GEBAUTES ELEMENT MACHT WEITER (27.09. gemeldet) ----
+     Themenwechsel -> Bubble baut das Element neu -> Skelett fuer immer. data-isdark ist ein
+     dynamischer Wert im Markup; aendert er sich, ersetzt Bubble die Wurzel, und initRoot baute
+     einen Controller mit data null und loading true. Bubble schickt die Marke nicht noch einmal
+     (sie hat sich ja nicht geaendert), also stand das Skelett, bis der Drawer neu geoeffnet
+     wurde. Hier liegt deshalb, nach Instanz getrennt, was zuletzt ankam -- samt Ladezustand und
+     Fehlermeldung. resetBrandEditor leert es mit. Dasselbe Muster wie responses-table.js. */
+  var STORE = (window.__ubeStore = window.__ubeStore || {});
+
   function initRoot(root) {
     if (!root) return null;
     if (root.__ubeController) return root.__ubeController;
@@ -181,7 +190,13 @@
         .observe(root, { attributes: true, attributeFilter: ["data-isdark"] });
     }
 
-    var state = { data: null, loading: true, fehler: "", farbe: "", farbeDirty: false, nameDirty: false, neu: "" };
+    var gemerkt = STORE[instanceId] || {};
+    var state = { data: gemerkt.data || null, loading: gemerkt.loading != null ? !!gemerkt.loading : true,
+                  fehler: gemerkt.fehler || "", farbe: "", farbeDirty: false, nameDirty: false, neu: "" };
+    /* Nach jeder Aenderung an Daten, Ladezustand oder Fehlermeldung (setData, setLoading, reset).
+       Die Eingaben, die gerade getippt werden, gehoeren NICHT hinein: sie sind kein gelieferter
+       Stand, und render() fuellt die Felder aus den Daten. */
+    function merken() { STORE[instanceId] = { data: state.data, loading: state.loading, fehler: state.fehler }; }
 
     root.innerHTML =
       '<div class="ube-loaderr up-empty" hidden></div>' +
@@ -773,17 +788,19 @@
         state.farbeDirty = false;
         /* Der Ladezustand endet IMMER -- auch bei kaputtem Payload. */
         state.loading = false;
+        merken();
         render();
         return true;
       },
       setLoading: function (v) {
         state.loading = UC.isYes(v);
-        if (state.loading) { state.fehler = ""; render(); return true; }
+        if (state.loading) { state.fehler = ""; merken(); render(); return true; }
         /* "no" OHNE Daten heisst: die RPC ist nicht durchgekommen. Ohne diese Zeile blieb das
            Skelett stehen (render zeigt es auch bei loading=false, solange data fehlt) -- also
            endloses Laden, das wie "gleich da" aussieht. Kommen die Daten doch noch, ueber-
            schreibt setData die Meldung. */
         if (!state.data) state.fehler = "This brand could not be loaded. Please open it again.";
+        merken();
         render();
         return true;
       },
@@ -791,6 +808,7 @@
         state.data = null; state.loading = true; state.fehler = "";
         state.farbe = ""; state.farbeDirty = false; state.neu = "";
         elIn.value = ""; elFarbIn.value = ""; elAddBtn.disabled = true;
+        merken();
         render();
         return true;
       }

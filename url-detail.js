@@ -52,6 +52,17 @@
   /* core exportiert kein isArr -- eine Zeile, kein Nachbau eines Bauteils. */
   function isArr(v) { return Object.prototype.toString.call(v) === "[object Array]"; }
 
+  /* ---- EIN NEU GEBAUTES ELEMENT MACHT WEITER (27.09. gemeldet) ----
+     "Es ist gar nicht noetig, dass beim Theme-Wechsel was in den Loading-yes-State geht."
+     Themenwechsel -> Bubble baut das Element neu (data-isdark ist ein dynamischer Wert im
+     Markup) -> neue Wurzel mit derselben data-instance, initRoot von vorn -> loading true, und
+     weil diese Komponente keine Warte-Uhr hat, pulsierte das Skelett fuer immer. Bubble schickt
+     die Daten nicht noch einmal, sie haben sich ja nicht geaendert.
+     Jetzt liegt der zuletzt gelieferte Stand hier, je Instanz, und eine neue Wurzel startet von
+     dort. Dasselbe Muster wie responses-table und urls-table; geschrieben wird er von persist()
+     in initRoot, nach jedem Setter. */
+  var STORE = (window.__uudStore = window.__uudStore || {});
+
   /* markdown_summary kann MITTEN im DETAIL-Objekt stehen und dabei selbst unescaptes JSON sein:
      {"summary": "..."} roh, ohne \" davor. Gemessen (24.08.): genau das bringt den Parser der
      GANZEN Zeile durcheinander, nicht nur dieses eine Feld -- "Unexpected token ':'" auf dem
@@ -390,18 +401,41 @@
     var isDark = UC.themeParam ? UC.themeParam(root.getAttribute("data-isdark")) : false;
     function dunkel() { return isDark; }
 
+    /* Der gemerkte Stand dieser Instanz, wenn es ihn gibt -- dann ist diese Wurzel ein Neuaufbau
+       und macht dort weiter, wo die alte stand (siehe STORE). Ohne ihn gelten genau die
+       Anfangswerte von vorher; gemerkt() liefert dann den zweiten Wert. */
+    var saved = STORE[instanceId] || null;
+    function gemerkt(k, sonst) { return saved && saved[k] != null ? saved[k] : sonst; }
+
     var state = {
-      data: null,
-      conv: [],
-      loading: true,
-      fehler: "",
+      data: gemerkt("data", null),
+      conv: gemerkt("conv", []),
+      /* true beim ersten Aufbau: die Seite steht, bevor der Workflow lief. Ein Neuaufbau
+         uebernimmt den Zustand der alten Wurzel -- nach den Daten also false. */
+      loading: gemerkt("loading", true),
+      fehler: gemerkt("fehler", ""),
       /* Der zuletzt eingebettete Anbieter samt Adresse. Ohne das baut jeder Render den iframe neu,
-         und ein laufendes Video springt beim ersten Datenupdate zurueck auf Anfang. */
+         und ein laufendes Video springt beim ersten Datenupdate zurueck auf Anfang.
+         NICHT aus dem Speicher: die neue Wurzel hat noch kein Embed, also muss der erste Render
+         es bauen -- mit einer gemerkten Kennung hielte renderEmbed es fuer schon vorhanden. */
       embedKey: "",
       oembed: null,
       /* Getrennt vom Payload gesetzt -- siehe setSummary. */
-      summary: ""
+      summary: gemerkt("summary", "")
     };
+
+    /* Den Stand dieser Instanz fuer einen Neuaufbau festhalten (siehe STORE). Aufgerufen NACH dem
+       Zeichnen: wirft render() an einem Payload, landet dieser nicht im Speicher -- sonst wuerfe
+       jeder spaetere Neuaufbau schon in initRoot, und die Komponente kaeme nie wieder hoch.
+       Nur eine Wurzel im Dokument schreibt: eine abgehaengte lebt in ihren Abonnements noch
+       weiter und wuerde den Stand der neuen sonst mit ihrem alten ueberschreiben. */
+    function persist() {
+      if (root.isConnected === false) return;
+      STORE[instanceId] = {
+        data: state.data, conv: state.conv, loading: !!state.loading,
+        fehler: state.fehler || "", summary: state.summary || ""
+      };
+    }
 
     if (UC.makeTooltips) UC.makeTooltips(root, dunkel);
 
@@ -812,6 +846,7 @@
            endlos und sieht aus wie ein Aufruf, der noch unterwegs ist. */
         state.loading = false;
         render();
+        persist();
         return true;
       },
       setConversion: function (payload) {
@@ -826,6 +861,7 @@
         }
         state.loading = false;
         render();
+        persist();
         return true;
       },
       /* Optional: fuer Aufbauten, die markdown_summary bereits als EIGENEN Bubble-Wert haben
@@ -837,12 +873,14 @@
         state.summary = (roh && typeof roh === "object") ? txt(roh.summary) : parseSummary(roh);
         state.loading = false;
         render();
+        persist();
         return true;
       },
       setLoading: function (v) {
         state.loading = UC.isYes(v);
         if (state.loading) state.fehler = "";
         render();
+        persist();
         return true;
       },
       reset: function () {
@@ -854,6 +892,9 @@
         elMents.innerHTML = ""; elMeta.textContent = ""; elSum.textContent = "";
         elConv.innerHTML = "";
         render();
+        /* Der geleerte Stand ersetzt den gemerkten: ein Neuaufbau nach dem Reset zeigt nicht die
+           alte Seite, sondern wartet wie diese Wurzel. */
+        persist();
         return true;
       }
     };

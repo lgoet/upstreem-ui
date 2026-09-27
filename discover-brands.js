@@ -31,6 +31,16 @@
     API.forEach(function (n) { window[n] = function () { Q.push([n, [].slice.call(arguments)]); }; });
   }
 
+  /* ---- EIN NEU GEBAUTES ELEMENT MACHT WEITER (27.09. gemeldet) ----
+     Themenwechsel -> Bubble baut das Element neu -> Ladeflaeche fuer immer. data-isdark ist ein
+     dynamischer Wert im Markup; aendert er sich, ersetzt Bubble die Wurzel, und initRoot baute
+     einen Controller, der mit "Scanning your AI answers" anfing -- der Anfangszustand ist
+     absichtlich loading: true. Bubble schickt die Liste aber nicht noch einmal (der Scan dauert
+     20 bis 30 Sekunden und ist laengst fertig), also lief die Animation, bis jemand die Seite neu
+     lud. Hier liegt deshalb, nach Instanz getrennt, was zuletzt ankam: Zeilen, Gesamtzahl, der
+     Lesefehler, Suche, der Matched-Schalter und ob die Ladeflaeche gerade stand. */
+  var STORE = (window.__udbStore = window.__udbStore || {});
+
   /* Statuszeilen der Ladeflaeche. Sie beschreiben die Schritte, die der RPC wirklich geht -- eine
      Zeile, die etwas anderes behauptet, waere schlimmer als gar keine. Alle 2,6s die naechste;
      bei 30 Sekunden Wartezeit laeuft die Liste knapp zweimal durch. */
@@ -130,15 +140,31 @@
       if (root.__udbController) return;
 
       var instanceId = root.getAttribute("data-instance") || "default";
+      var saved = STORE[instanceId] || {};
       var state = {
-        rows: [], totalResponses: null,
-        query: "", matched: true,
+        rows: Array.isArray(saved.rows) ? saved.rows : [],
+        totalResponses: saved.totalResponses != null ? saved.totalResponses : null,
+        query: typeof saved.query === "string" ? saved.query : "",
+        matched: saved.matched !== false,
         /* Startet im Ladezustand. Der Scan laeuft 20 bis 30 Sekunden, und bis zur ersten Antwort
            gibt es NICHTS zu zeigen -- ohne das stand hier der Leerzustand, was aussah, als waere
-           die Suche schon gelaufen und habe nichts gefunden. Der erste render() schaltet ab. */
-        loading: true, hasData: false,
+           die Suche schon gelaufen und habe nichts gefunden. Der erste render() schaltet ab.
+           AUSSER bei einem Neuaufbau (siehe STORE): dann gilt, was zuletzt galt. */
+        loading: saved.laden != null ? !!saved.laden : true,
+        hasData: !!saved.hasData,
+        parseError: !!saved.parseError,
         cols: {}, widths: {}
       };
+      /* Nach jeder Aenderung an Daten, Suche, Matched oder Ladeflaeche. Die Ladeflaeche wird an
+         der KLASSE gelesen und nicht an state.loading -- warum, steht in setLoading() weiter
+         unten: makeSearch schreibt das Flag, ohne die Flaeche einzuschalten. */
+      function merken() {
+        STORE[instanceId] = {
+          rows: state.rows, totalResponses: state.totalResponses, hasData: state.hasData,
+          parseError: !!state.parseError, query: state.query, matched: state.matched,
+          laden: root.classList.contains("is-loading")
+        };
+      }
 
 
       root.innerHTML =
@@ -150,7 +176,10 @@
                unten), und data-tip haengt zusaetzlich den kleinen dunklen Chip aus UC.makeTooltips
                daran -- dann standen zwei Tooltips gleichzeitig unter dem Knopf. Genau einer pro
                Element. */
-            '<button type="button" class="udb-matched is-on" data-matched aria-pressed="true">' +
+            /* Zustand aus state und nicht fest "an": nach einem Neuaufbau steht der Schalter, wie
+               der Nutzer ihn verlassen hat (siehe STORE). */
+            '<button type="button" class="udb-matched' + (state.matched ? ' is-on' : '') + '" data-matched ' +
+              'aria-pressed="' + (state.matched ? 'true' : 'false') + '">' +
               '<span class="udb-cb">' + ICON.check + '</span><span>Matched Brands</span>' +
             '</button>' +
             '<div class="up-search">' +
@@ -227,8 +256,15 @@
         root: root, box: elSearch, input: elSearchIn, state: state,
         mobileMax: 560, prefix: "udb",
         onRender: function () { renderTable(); },
-        onFire: function (payload) { fire("data-search-fn", "udbSearch", payload); }
+        onFire: function (payload) { fire("data-search-fn", "udbSearch", payload); },
+        persist: merken
       });
+      /* Eine gemerkte Suche (Neuaufbau, siehe STORE) auch SICHTBAR machen -- sonst filtert die
+         Liste, waehrend das Feld leer und zu ist. Dieselbe Zeile wie in den grossen Tabellen. */
+      if (state.query && elSearchIn) {
+        elSearchIn.value = state.query;
+        if (elSearch) elSearch.classList.add("is-open", "has-text");
+      }
 
       /* ---------------- Einstellungen ----------------
          Das ganze Tabellengeruest kommt aus UC.makeColumns: Rasterberechnung, Abwerfen bei
@@ -303,6 +339,7 @@
         if (root.classList.contains("is-searchtakeover")) { search.toggle(); return; }
         elSearchIn.value = ""; state.query = "";
         elSearch.classList.remove("has-text");
+        merken();
         search.cancel(); search.run();
         try { elSearchIn.focus(); } catch (e2) {}
       });
@@ -315,6 +352,7 @@
         /* Das Umschalten aendert die SERVERSEITIGE Auswahl, nicht nur die Anzeige: ohne Matching
            kommen andere Marken zurueck. Also Ladezustand an und auf neue Daten warten. */
         setLoading(true);
+        merken();
         fire("data-matched-fn", "udbMatched", { matched: state.matched ? "yes" : "no" });
       });
 
@@ -601,6 +639,7 @@
             if (window.console) console.error("discover-brands: die Zeilen liessen sich nicht lesen. " +
               "Die Konsolenwarnung darueber zeigt, an welcher Stelle das JSON gerissen ist.");
             setLoading(false);
+            merken();
             render();
             return;
           }
@@ -613,6 +652,7 @@
                 : (Array.isArray(list) && list[0] && list[0].runs_total != null ? list[0].runs_total : null));
           state.totalResponses = t == null ? null : Number(t);
           setLoading(false);
+          merken();
           render();
         },
         setLoading: function (v) {
@@ -620,6 +660,7 @@
              Versuch und steht noch da, waehrend frische Daten unterwegs sind. */
           if (UC.isYes(v)) state.parseError = false;
           setLoading(UC.isYes(v));
+          merken();
         },
         reset: function () {
           state.rows = []; state.totalResponses = null; state.hasData = false; state.parseError = false;
@@ -632,7 +673,7 @@
           if (elSearch) elSearch.classList.remove("is-open", "has-text");
           root.classList.remove("is-searchtakeover");
           search.cancel();
-          setLoading(false); render();
+          setLoading(false); merken(); render();
         },
         setTheme: function (t) { if (UC.setUpstreemTheme) UC.setUpstreemTheme(t); }
       };
@@ -641,13 +682,26 @@
 
       /* Ladezustand von Anfang an: root.classList und der Statustakt muessen zum state.loading
          aus dem Zustandsobjekt passen, sonst zeigt setLoading(false) beim ersten Render ins
-         Leere. */
-      root.classList.add("is-loading");
-      startStepTimer();
+         Leere. Bei einem Neuaufbau mit fertigen Daten (siehe STORE) ist state.loading false --
+         dann bleibt die Ladeflaeche aus, statt noch einmal den ganzen Scan vorzuspielen. */
+      if (state.loading) {
+        root.classList.add("is-loading");
+        startStepTimer();
+      }
       render();
     }
 
-    function each(id, fn) { mount.rootsWithId(id).forEach(function (r) { if (r.__udbController) fn(r.__udbController); }); }
+    /* Wurzel da, aber noch kein Controller -> JETZT einrichten, wie in teams.js. makeMount baut
+       erst nach seiner Anlaufkaskade auf (bis zu sechs Versuche, siehe LAZY-MOUNT in core.js);
+       kam die Lieferung vorher, fiel sie hier still weg, und die Ansicht stand fuer immer im
+       Scan. Gemessen am 27.09. im Pruefstand: Aufruf direkt nach dem Laden, Speicher leer,
+       Wurzel weiter is-loading. initRoot ist idempotent (erste Zeile). */
+    function each(id, fn) {
+      mount.rootsWithId(id).forEach(function (r) {
+        if (!r.__udbController) initRoot(r);
+        if (r.__udbController) fn(r.__udbController);
+      });
+    }
 
     mount = UC.makeMount({
       onMount: function (m) { mount = m; },

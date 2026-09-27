@@ -9126,9 +9126,15 @@
     var gemerkt = NAV_STORE[navKey];
     var gueltig = gemerkt != null && pages.some(function(p){ return p.value === gemerkt; });
     /* cfg.selected gewinnt weiter: gibt eine Komponente die Seite ausdruecklich vor, ist das die
-       Wahrheit und nicht der Merker. */
+       Wahrheit und nicht der Merker.
+       cfg.vorgabe (27.09.) ist das Gegenteil davon: die Startseite, solange es KEINEN Merker gibt.
+       Genau das braucht ein Seitenkopf, dessen Startseite im Markup steht (settings: data-page).
+       Als selected uebergeben, schlug sie den Merker -- und weil das Markup nach einem
+       Themenwechsel frisch aus der Vorlage kommt, sprang der Kopf auf "Your Brand" zurueck. */
     var selected = cfg.selected != null ? cfg.selected
                  : gueltig ? gemerkt
+                 : (cfg.vorgabe != null && pages.some(function(p){ return p.value === cfg.vorgabe; }))
+                   ? cfg.vorgabe
                  : (pages[0] && pages[0].value);
 
     function esc(v){ var d = document.createElement("div"); d.textContent = String(v == null ? "" : v); return d.innerHTML; }
@@ -14934,6 +14940,17 @@
     try {
       if (systemWahl) localStorage.removeItem("pref_theme");
       else localStorage.setItem("pref_theme", THEME.value);
+    } catch(e){}
+    /* DER SEITENGRUND FOLGT MIT (27.09. gemeldet: "im Darkmode ist der Page-Background oft weiss,
+       das, was man sieht, wenn man ueber den Bildschirm hinaus scrollt"). Den Grund von html und
+       body setzt das Kopf-Snippet (bubble/page_theme_preload.html) ueber data-up-pagetheme --
+       gesetzt wurde das Attribut aber NUR beim Laden der Seite. Nach einem Umschalten stand es
+       weiter auf dem alten Thema, und der Grund hinter der Seite blieb hell. Hier derselbe
+       Schluessel wie im Snippet: bei "System" faellt das Attribut weg, dann entscheidet dort die
+       Media Query. */
+    try {
+      if (systemWahl) document.documentElement.removeAttribute("data-up-pagetheme");
+      else document.documentElement.setAttribute("data-up-pagetheme", THEME.value);
     } catch(e){}
     var roots = document.querySelectorAll(".up-root");
     for (var i = 0; i < roots.length; i++) applyThemeTo(roots[i], dark);

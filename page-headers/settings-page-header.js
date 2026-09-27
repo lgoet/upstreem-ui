@@ -88,9 +88,14 @@
       ];
     }
 
+    /* data-page ist die STARTSEITE, keine Vorgabe fuer immer (27.09. gemeldet: "der Page Header
+       Settings wechselt beim Theme-Wechsel auf Your Brand zurueck"). Beim Themenwechsel baut
+       Bubble den Kopf neu, das Markup kommt frisch aus der Vorlage -- und als selected schlug
+       dessen data-page den Merker in makePageNav. Als vorgabe gilt sie nur beim ersten Aufbau
+       dieses Seitenbesuchs; danach gewinnt, was der Nutzer zuletzt gewaehlt hat. */
     var nav = UC.makePageNav(root, {
       pages: pages(),
-      selected: String(root.getAttribute("data-page") || "brand").trim() || "brand",
+      vorgabe: String(root.getAttribute("data-page") || "brand").trim() || "brand",
       onSelect: function(value){ fire("data-nav-fn", "sphNav", { page: value }); }
     });
 
@@ -104,7 +109,9 @@
         var keep = cur ? cur.getAttribute("data-page") : null;
         nav = UC.makePageNav(root, {
           pages: pages(),
-          selected: keep || "brand",
+          /* Die aktuelle Auswahl haelt fest; ohne eine greift der Merker, dann data-page. */
+          selected: keep || null,
+          vorgabe: String(root.getAttribute("data-page") || "brand").trim() || "brand",
           onSelect: function(value){ fire("data-nav-fn", "sphNav", { page: value }); }
         });
       }).observe(root, { attributes: true, attributeFilter: ["data-brand-logo"] });

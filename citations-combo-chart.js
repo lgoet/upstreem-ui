@@ -806,6 +806,17 @@
     CACHE[id] = CACHE[id] || {};
     CACHE[id].params = CACHE[id].params || {};
     for (var k in params){ if (params.hasOwnProperty(k) && params[k] !== undefined) CACHE[id].params[k] = params[k]; }
+    /* DER LESEFEHLER-VERMERK FAELLT MIT DER NAECHSTEN ECHTEN LIEFERUNG (27.09.).
+       Themenwechsel -> Bubble baut das Element neu -> applyCache spielt diesen Speicher ein. Er
+       wird hier nur ZUSAMMENGEFUEHRT, nie geleert: kam in dieser Sitzung EINMAL ein zerrissener
+       Payload, stand __parseError: true fuer immer darin -- auch nachdem laengst wieder heile
+       Daten kamen. update() prueft den Vermerk als Erstes und kehrt dann um; das neu gebaute
+       Element zeigte also "could not be read", waehrend das alte eben noch Daten zeigte.
+       Dieselbe Bedingung wie in update() ("Nur eine echte Lieferung loescht den Vermerk"), damit
+       das neue Element genau dort steht, wo das alte stand. */
+    if (!params.__parseError && (params.series != null || params.types != null || params.rows != null)){
+      delete CACHE[id].params.__parseError;
+    }
   }
   function cacheLoading(id, v){ if (!id) return; CACHE[id] = CACHE[id] || {}; CACHE[id].loading = isYes(v); }
   function applyCache(root, ctrl){

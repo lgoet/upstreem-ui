@@ -158,21 +158,66 @@
     var spaet = UC.makeLate ? UC.makeLate("teams", ".uts-root") : null;
     var mount;
 
+    /* ---- EIN NEU GEBAUTES ELEMENT MACHT WEITER (27.09. gemeldet) ----
+       "Es ist gar nicht noetig, dass beim Theme-Wechsel was in den Loading-yes-State geht."
+       Bubble baut ein HTML-Element NEU, sobald sich ein dynamischer Wert in seinem Markup
+       aendert -- beim Themenwechsel ist das data-isdark, dasselbe gilt fuer data-team und
+       data-brand-name/-logo. Die alte Wurzel fliegt weg, eine frische Kopie der Vorlage kommt
+       mit derselben data-instance, und initRoot fing bei null an: busy true, keine Zeilen.
+       Bubble schickt die Daten aber nicht noch einmal (sie haben sich ja nicht geaendert) --
+       also stand das Skelett fuer immer da.
+       Darum ein Speicher am window, je data-instance, wie in responses-table, urls-table und
+       domains-table: er ueberlebt den Neuaufbau, und die neue Wurzel startet mit dem, was die
+       alte zuletzt gezeigt hat. Geschrieben wird er am Ende von render() -- jede Aenderung in
+       dieser Datei endet dort, also gibt es keine Stelle, an der man ihn vergessen kann. */
+    var STORE = (window.__utsStore = window.__utsStore || {});
+
     function initRoot(root) {
       if (root.__utsController) return;
 
       var instanceId = root.getAttribute("data-instance") || "default";
+      /* Der Stand, den die vorige Wurzel dieser Instanz zuletzt gezeigt hat -- leer beim
+         allerersten Aufbau. Siehe STORE oben. */
+      var saved = STORE[instanceId] || {};
       var state = {
-        rows: [], serverTotal: null, currentTeamId: "",
-        query: "", page: 1, pageSize: UC.DEFAULT_PAGE_SIZE,
+        /* Die Zeilen liegen im Speicher schon normalisiert (normRows) und gehen unveraendert
+           zurueck. currentTeamId mit, weil es aus demselben Payload stammt und staerker ist als
+           data-team: ohne es stuende die "Active"-Pille nach dem Neuaufbau womoeglich nirgends. */
+        rows: Array.isArray(saved.rows) ? saved.rows : [],
+        serverTotal: saved.serverTotal != null ? saved.serverTotal : null,
+        currentTeamId: saved.currentTeamId || "",
+        /* Suche und Seite mit: sonst sprang die Liste bei jedem Themenwechsel auf Seite 1 und
+           verlor den Suchtext. Das Feld selbst fuellt der Block hinter UC.makeSearch. */
+        query: saved.query || "", page: saved.page || 1,
+        pageSize: saved.pageSize || UC.DEFAULT_PAGE_SIZE,
         /* busy ist der ECHTE Ladezustand, nicht state.loading: UC.makeSearch schreibt
            state.loading bei jedem run() selbst auf true (dort ist das Flag fuer die Dimm-Mechanik
            der grossen Tabellen gedacht). Haenge das Skelett daran, laeuft es nach dem ersten
-           Schliessen der Suche endlos. Also ein eigenes Feld, das nur diese Datei setzt. */
-        busy: true, hasData: false, parseError: false,
+           Schliessen der Suche endlos. Also ein eigenes Feld, das nur diese Datei setzt.
+           Beim allerersten Aufbau true (siehe "Ladezustand von Anfang an" unten). Bei einem
+           Neuaufbau gilt der gemerkte Wert: stand die Liste, steht sie sofort wieder da; lief
+           gerade ein Laden (setTeamsLoading "yes", Antwort noch unterwegs), laeuft es weiter,
+           und renderTeams beendet es wie immer an der neuen Wurzel. Der Themenwechsel selbst
+           setzt busy nie. */
+        busy: saved.busy != null ? !!saved.busy : true,
+        hasData: !!saved.hasData,
+        /* Der Lesefehler mit: sonst hiesse ein Neuaufbau nach einem kaputten Payload "hasData,
+           keine Zeilen" -- und das ist der Leerzustand, also der stille Ausfall (CLAUDE.md §2). */
+        parseError: !!saved.parseError,
         loading: false,
         cols: {}, widths: {}
       };
+      /* Nur eine Wurzel, die noch im Dokument steht, schreibt. Die alte lebt nach dem Neuaufbau
+         als abgehaengter Knoten weiter, samt ihrer Uhren (die Entprellung der Suche); zeichnete
+         sie danach noch einmal, ueberschriebe sie den Speicher mit ihrem veralteten Stand. */
+      function persist() {
+        if (!root.isConnected) return;
+        STORE[instanceId] = {
+          rows: state.rows, serverTotal: state.serverTotal, currentTeamId: state.currentTeamId,
+          hasData: state.hasData, parseError: state.parseError, busy: state.busy,
+          query: state.query, page: state.page, pageSize: state.pageSize
+        };
+      }
 
       /* ---------------- Seitenkopf ---------------- */
       var kopf =
@@ -300,7 +345,10 @@
         prefix: "uts", mobileMax: 560,
         onRender: function () { render(); },
         /* Kein state.page = 1 hier: das setzt makeSearch selbst, bevor es feuert. */
-        onFire: function (payload) { fire("data-search-fn", "utsSearch", payload); }
+        onFire: function (payload) { fire("data-search-fn", "utsSearch", payload); },
+        /* Der getippte Text in den Speicher, noch bevor die Entprellung laeuft -- ein Neuaufbau
+           in diesen 400ms verloere ihn sonst. */
+        persist: function () { persist(); }
       });
       /* Der eigene input-Zuhoerer ist WEG. Er lief neben dem Kit und rief render() nach 150ms --
          damit war die Suche schon fertig, bevor das Kit sein Ereignis feuern konnte, und es sah
@@ -322,10 +370,24 @@
         if (root.classList.contains("is-searchtakeover")) { search.toggle(); return; }
         elSearchIn.value = ""; state.query = ""; state.page = 1;
         elSearch.classList.remove("has-text");
-        clearTimeout(suchUhr); search.cancel();
+        /* Hier stand noch clearTimeout(suchUhr). Die Variable gibt es seit dem 01.09. (753c0b3,
+           eigener input-Zuhoerer entfernt) nicht mehr, und das Lesen eines nie deklarierten
+           Namens wirft einen ReferenceError -- das X brach damit VOR render() ab, die Tabelle
+           blieb gefiltert, obwohl das Feld leer war. Die Entprellung des Kits bricht cancel() ab. */
+        search.cancel();
         render();
         try { elSearchIn.focus(); } catch (e2) {}
       });
+      /* Ein Suchtext, der den Neuaufbau ueberlebt hat (siehe STORE), steht auch wieder im Feld --
+         sonst filterte die Tabelle nach einem Wort, das niemand sieht. Dieselbe Zeile wie in
+         responses-table und urls-table; syncTakeover dazu, weil ein offenes Feld auf einer
+         schmalen Komponente die Kopfzeile uebernimmt und das sonst erst beim naechsten
+         Aufklappen geschaehe. Gefeuert wird nichts: die Zeilen sind schon die zu diesem Text. */
+      if (state.query) {
+        elSearchIn.value = state.query;
+        elSearch.classList.add("is-open", "has-text");
+        search.syncTakeover();
+      }
 
       /* ---------------- Spalten ----------------
          Rasterrechnung, Abwerfen bei Platzmangel, Ziehgriff an der Teamspalte und das
@@ -651,6 +713,10 @@
            echten Text, Suchfeld auf- oder zugeklappt). Ohne das Nachmessen bleibt der
            Spaltenkopf am alten Versatz kleben. */
         if (root.classList.contains("up-sticky")) sticky.syncTheadOffset();
+        /* Den gezeigten Stand fuer einen Neuaufbau merken (siehe STORE). Hier und nicht an jeder
+           Aenderung einzeln: Payload, Laden, Reset, Suche, Seite und Seitengroesse enden alle in
+           render(). */
+        persist();
       }
 
       /* ---------------- Klicks ---------------- */
@@ -746,13 +812,20 @@
              der falschen Zeile behauptet, man sei in einem anderen Team. */
           state.currentTeamId = "";
           /* makeSearch hat KEIN reset() -- von Hand zuruecksetzen und die laufende Entprellung
-             abbrechen, sonst zeichnet nach dem Reset noch der alte Suchtext. */
+             abbrechen, sonst zeichnet nach dem Reset noch der alte Suchtext.
+             Ohne das clearTimeout(suchUhr), das hier stand: die Variable gibt es seit dem 01.09.
+             nicht mehr, der ReferenceError liess resetTeams VOR render() abbrechen -- die alten
+             Zeilen blieben stehen, obwohl der Zustand schon leer war. */
           state.query = "";
           if (elSearchIn) elSearchIn.value = "";
           if (elSearch) elSearch.classList.remove("is-open", "has-text");
           root.classList.remove("is-searchtakeover");
-          clearTimeout(suchUhr); search.cancel();
+          search.cancel();
           state.busy = false;
+          /* render() schreibt diesen LEEREN Stand in den Speicher (siehe STORE) -- ausdruecklich
+             und nicht bloss geloescht: ein Neuaufbau nach dem Reset zeigt dann dasselbe wie die
+             zurueckgesetzte Wurzel ("No teams yet"), statt die alten Zeilen zurueckzuholen oder
+             ohne Anlass ins Skelett zu gehen. */
           render();
         },
         setTheme: function (t) { if (UC.setUpstreemTheme) UC.setUpstreemTheme(t); }
@@ -763,7 +836,9 @@
       };
 
       /* Ladezustand von Anfang an: bis zum ersten Aufruf gibt es nichts zu zeigen, und der
-         Leerzustand waere die Behauptung, es sei schon geantwortet worden. */
+         Leerzustand waere die Behauptung, es sei schon geantwortet worden. Gilt nur beim
+         allerersten Aufbau -- eine neu gebaute Wurzel zeichnet hier den gemerkten Stand
+         (siehe STORE). */
       render();
       if (spaet) spaet.drain(instanceId, ctrl);
     }

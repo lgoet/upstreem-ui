@@ -32,9 +32,23 @@
   Thema, steht es danach hier drin, und dieses Snippet liest genau das.
 
   ── FARBEN ─────────────────────────────────────────────────────────────────────────────────────
-  #ffffff und #121212 sind --vc-bg aus core.css, hell und dunkel. Weichen sie dort einmal ab,
-  muessen sie hier mitgezogen werden -- das Snippet laeuft, BEVOR core.css da ist, kann seine
-  Variablen also nicht benutzen.
+  #ffffff und #101114 sind der Seitengrund aus core.css (--up-surface), hell und dunkel. Bis zum
+  27.09. stand hier #121212 -- der alte Wert. Weichen sie dort einmal ab, muessen sie hier
+  mitgezogen werden: das Snippet laeuft, BEVOR core.css da ist, kann seine Variablen also nicht
+  benutzen.
+
+  ── ZUR LAUFZEIT (27.09.) ──────────────────────────────────────────────────────────────────────
+  Das Attribut setzt dieses Snippet beim Laden. Beim UMSCHALTEN zieht core.js es seit dem 27.09.
+  nach (setUpstreemTheme) -- vorher blieb es auf dem Thema vom Laden stehen, und der Grund hinter
+  der Seite (das, was beim Ueberscrollen sichtbar wird) war nach einem Wechsel auf dunkel weiss.
+  color-scheme sagt dem Browser dasselbe fuer das, was er selbst malt: Scrollbalken und den Rand
+  beim Ueberscrollen.
+
+  ── BEIM EINFUEGEN ─────────────────────────────────────────────────────────────────────────────
+  Kommentare nur GANZ oder gar nicht mitnehmen. Ein Rest wie "... */" ohne sein "/*" davor ist
+  fuer den Browser ein Selektor: er verwirft damit die ganze naechste Regel -- genau so fehlte am
+  27.09. der dunkle Grund fuer "System". Im Zweifel die Fassung ohne Kommentare nehmen
+  (page_theme_preload_ohne_kommentare.html).
 -->
 <script>
 (function () {
@@ -73,26 +87,26 @@
 <style>
   /* Vorgabe HELL. Steht zuerst, damit die zwei Faelle darunter sie ueberschreiben koennen.
      Ohne !important: Bubble setzt den Seitengrund selbst, und !important hier hat schon einmal
-     verhindert, dass eine Seite ihren eigenen Grund bekommt. Reicht die Spezifitaet nicht, ist
-     der richtige Ort Bubbles Page-Einstellung, nicht ein !important hier. */
+     verhindert, dass eine Seite ihren eigenen Grund bekommt. */
   html, body { background-color: #ffffff; }
+  html { color-scheme: light; }
 
   /* "System" -- gilt nur, wenn der Nutzer NICHTS gewaehlt hat (kein Attribut gesetzt). Der
      :not()-Teil ist entscheidend: ohne ihn schlaegt ein dunkles Betriebssystem die ausdrueckliche
-     Wahl "hell". Genau dieser Fall fehlte im alten Snippet. */
+     Wahl "hell". */
   @media (prefers-color-scheme: dark) {
-    html:not([data-up-pagetheme]), html:not([data-up-pagetheme]) body { background-color: #121212; }
+    html:not([data-up-pagetheme]), html:not([data-up-pagetheme]) body { background-color: #101114; }
+    html:not([data-up-pagetheme]) { color-scheme: dark; }
   }
 
-  /* Die ausdrueckliche Wahl. Zwei Selektorteile mehr als die Vorgabe, gewinnt also ueber
+  /* Die ausdrueckliche Wahl. Ein Selektorteil mehr als die Vorgabe, gewinnt also ueber
      Spezifitaet und nicht ueber die Reihenfolge. */
-  html[data-up-pagetheme="dark"], html[data-up-pagetheme="dark"] body { background-color: #121212; }
+  html[data-up-pagetheme="dark"], html[data-up-pagetheme="dark"] body { background-color: #101114; }
+  html[data-up-pagetheme="dark"] { color-scheme: dark; }
   html[data-up-pagetheme="light"], html[data-up-pagetheme="light"] body { background-color: #ffffff; }
 
-  /* Der Loader: dieselbe Frage, dasselbe Attribut. Trifft die drei Bubble-Klassen, die waehrend
-     des Pageloads sichtbar sind. Stimmt einer der Namen in dieser App nicht, ist er hier
-     nachzutragen -- die Regel schadet nicht, wenn es die Klasse nicht gibt. */
+  /* Der Loader: dieselbe Frage, dasselbe Attribut. */
   html[data-up-pagetheme="dark"] .bubble-element.Group.loader,
   html[data-up-pagetheme="dark"] .page-loader,
-  html[data-up-pagetheme="dark"] #app-loader { background-color: #121212; }
+  html[data-up-pagetheme="dark"] #app-loader { background-color: #101114; }
 </style>

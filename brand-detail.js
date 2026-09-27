@@ -94,6 +94,17 @@
      so (window.__votGran), aus demselben Grund. */
   var MODE_STORE = (window.__ubdMode = window.__ubdMode || {});
   var GRAN_STORE = (window.__ubdGran = window.__ubdGran || {});
+  /* ---- EIN NEU GEBAUTES ELEMENT MACHT WEITER (27.09. gemeldet) ----
+     "Es ist gar nicht noetig, dass beim Theme-Wechsel was in den Loading-yes-State geht."
+     Themenwechsel -> Bubble baut das Element neu (data-isdark ist ein dynamischer Wert im
+     Markup) -> neue Wurzel mit derselben data-instance, initRoot von vorn -> Skelett fuer immer.
+     Bubble schickt die Daten nicht noch einmal, sie haben sich ja nicht geaendert. Modus und
+     Granularitaet lagen schon hier draussen, die DATEN nicht -- also kam der Switcher richtig
+     zurueck und darunter lief das Skelett.
+     Jetzt liegt auch der zuletzt gelieferte Stand hier, je Instanz, und eine neue Wurzel startet
+     von dort. Dasselbe Muster wie responses-table und urls-table. Geschrieben wird er von
+     persist() in initRoot, nach jedem Setter und jedem Klick, der Daten verwirft. */
+  var STORE = (window.__ubdStore = window.__ubdStore || {});
 
   var VAR_SCOPE = "overall";
   var VARSEC = UC.variationsSection ? UC.variationsSection({ prefix: "ubd", scope: VAR_SCOPE }) : "";
@@ -192,16 +203,20 @@
     var elSearch  = root.querySelector(".ubd-search");
     var elSInput  = elSearch ? elSearch.querySelector(".up-search-input") : null;
 
+    /* Der gemerkte Stand dieser Instanz, wenn es ihn gibt -- dann ist diese Wurzel ein Neuaufbau
+       und macht dort weiter, wo die alte stand (siehe STORE). Ohne ihn: der erste Aufbau, mit
+       genau den Anfangswerten von vorher. */
+    var saved = STORE[instanceId] || null;
     var state = {
       mode: MODE_STORE[instanceId] || "visibility",
       gran: GRAN_STORE[instanceId] || "day",
-      company: null,
-      series: null,        /* zuletzt empfangene Serie, mitsamt ihrem eigenen mode */
-      variations: null,
-      error: null,          /* Text statt Skelett, wenn ein Payload unlesbar war */
-      varQuery: "",
-      loading: false,
-      hasData: false
+      company: saved ? saved.company || null : null,
+      series: saved ? saved.series || null : null,          /* zuletzt empfangene Serie, mitsamt ihrem eigenen mode */
+      variations: saved ? saved.variations || null : null,
+      fehler: saved ? saved.fehler || null : null,          /* Text statt Skelett, wenn ein Payload unlesbar war */
+      varQuery: saved ? saved.varQuery || "" : "",
+      loading: saved ? !!saved.loading : false,
+      hasData: saved ? !!saved.hasData : false
     };
 
     /* Der Ladezustand kommt auf ZWEI Wegen: als Attribut vom Loader (data-processing, so wie in
@@ -236,6 +251,11 @@
       if (warteUhr) clearTimeout(warteUhr);
       warteUhr = setTimeout(function(){
         warteUhr = null;
+        /* Eine abgehaengte Wurzel wartet fuer niemanden mehr: Bubble hat das Element neu gebaut,
+           und die neue Wurzel fuehrt ihre eigene Uhr (siehe unten, saved.wartet). Ohne diese Zeile
+           lief die alte Uhr alle 25s weiter -- eine Wurzel ausserhalb des Dokuments wird nie
+           sichtbar, also stellte sie sich endlos neu. */
+        if (root.isConnected === false) return;
         if (state.hasData || state.fehler) return;
         /* Unsichtbar heisst: diese Seite ist gar nicht offen, Bubble haelt sie nur im DOM --
            siehe domain-detail. Dann weiter warten statt "No data" auf Vorrat setzen. */
@@ -243,9 +263,31 @@
         state.fehler = "No data";
         state.loading = false;
         render();
+        persist();
       }, WARTE_MS);
     }
     function warteBeenden(){ if (warteUhr){ clearTimeout(warteUhr); warteUhr = null; } }
+
+    /* Den Stand dieser Instanz fuer einen Neuaufbau festhalten (siehe STORE). Aufgerufen NACH dem
+       Zeichnen: wirft render() an einem Payload, landet dieser nicht im Speicher -- sonst wuerfe
+       jeder spaetere Neuaufbau schon in initRoot, und die Komponente kaeme nie wieder hoch.
+       wartet haelt fest, ob die Warte-Uhr lief. Die Uhr der alten Wurzel ist mit ihr verloren, und
+       ohne diesen Merker endete ein Warten, das vor dem Neuaufbau begann, nie mehr.
+       Nur eine Wurzel im Dokument schreibt: eine abgehaengte lebt in Uhren und Abonnements noch
+       eine Weile weiter und wuerde den Stand der neuen sonst mit ihrem alten ueberschreiben. */
+    function persist(){
+      if (root.isConnected === false) return;
+      STORE[instanceId] = {
+        company: state.company, series: state.series, variations: state.variations,
+        fehler: state.fehler || null, varQuery: state.varQuery || "",
+        loading: !!state.loading, hasData: !!state.hasData,
+        wartet: warteUhr != null
+      };
+    }
+    /* Lief beim Neuaufbau eine Wartezeit, laeuft sie hier weiter -- sonst ist ein Neuaufbau, der
+       mitten ins Warten faellt, wieder ein Skelett ohne Ende. Beim ersten Aufbau bleibt es wie
+       bisher: keine Uhr, die startet erst mit reset() oder setBrandDetailLoading("yes"). */
+    if (saved && saved.wartet) warteStarten();
 
     /* Ueber UC.themeParam und nicht ueber das Attribut allein: kennt core ein Thema, gewinnt
        core. Das Attribut ist die Momentaufnahme aus dem Lauf des Workflows -- steht die App
@@ -479,7 +521,11 @@
       /* Skelett ueber DASSELBE Kit wie die Zeilen: variationRows(null) liefert es mit den
          richtigen Zellklassen. Ein eigener skeletonRows-Aufruf hier hatte genau die Breiten
          nicht, an denen die Spalten haengen. */
-      if (state.loading || state.variations == null) {
+      /* istLaden() wie KPI und Kurve, nicht state.loading allein: der Ladezustand kann auch ueber
+         data-isprocessing kommen. Das zaehlt seit dem STORE doppelt -- Bubble baut das Element
+         neu, sobald das Attribut auf "yes" springt, und die neue Wurzel bringt die Varianten der
+         VORIGEN Marke mit. Ohne istLaden() stuenden die dann waehrend des Ladens da. */
+      if (istLaden() || state.variations == null) {
         elVBody.innerHTML = UC.variationRows(null, { rowClass: "up-vrow ubd-vrow" });
         return;
       }
@@ -495,23 +541,30 @@
        Server waere reine Latenz. Auf-/Zuklappen ist das geteilte .up-search aus core, damit sich
        das Feld anfuehlt wie in jeder anderen Tabelle. */
     if (elSearch && elSInput) {
+      /* Ein Neuaufbau bringt den Suchbegriff mit (STORE), also auch das offene Feld, in dem er
+         steht -- sonst stuende eine gefilterte Liste da, ohne dass irgendwo ein Suchbegriff zu
+         sehen waere. Dieselbe Ueberlegung wie an reset(). */
+      if (state.varQuery) {
+        elSInput.value = state.varQuery;
+        elSearch.classList.add("is-open", "has-text");
+      }
       elSearch.querySelector(".up-search-btn").addEventListener("click", function () {
         var open = !elSearch.classList.contains("is-open");
         elSearch.classList.toggle("is-open", open);
         if (open) { setTimeout(function () { try { elSInput.focus(); } catch (e) {} }, 60); }
         else if (state.varQuery) {
           state.varQuery = ""; elSInput.value = "";
-          elSearch.classList.remove("has-text"); renderVariations();
+          elSearch.classList.remove("has-text"); renderVariations(); persist();
         }
       });
       elSInput.addEventListener("input", function () {
         state.varQuery = String(elSInput.value || "").trim();
         elSearch.classList.toggle("has-text", !!elSInput.value.length);
-        renderVariations();
+        renderVariations(); persist();
       });
       elSearch.querySelector(".up-search-clear").addEventListener("click", function () {
         state.varQuery = ""; elSInput.value = ""; elSearch.classList.remove("has-text");
-        renderVariations(); try { elSInput.focus(); } catch (e) {}
+        renderVariations(); persist(); try { elSInput.focus(); } catch (e) {}
       });
     }
 
@@ -544,6 +597,9 @@
       state.mode = key; MODE_STORE[instanceId] = key;
       if (CHART_MODES[key]) { state.hasData = false; state.series = null; }
       render();
+      /* Die verworfene Serie auch im Speicher verwerfen: sonst holte ein Neuaufbau vor der
+         Antwort die Kurve des alten Modus zurueck. */
+      persist();
       fire("data-mode-fn", "bubble_fn_ubdMode", { mode: key, gran: state.gran });
     });
 
@@ -555,6 +611,7 @@
       state.gran = g; GRAN_STORE[instanceId] = g;
       state.hasData = false; state.series = null;
       render();
+      persist();
       fire("data-gran-fn", "bubble_fn_ubdGran", { mode: state.mode, gran: g });
     });
 
@@ -591,6 +648,7 @@
         state.loading = false;
         warteBeenden();
         render();
+        persist();
       },
       setCompany: function (payload) {
         var c = UC.parseLoose ? UC.parseLoose(payload, "brand-detail company") : payload;
@@ -599,6 +657,7 @@
         if (isArr(c)) c = c[0];
         if (c && typeof c === "object") state.company = c;
         render();
+        persist();
       },
       setVariations: function (rows) {
         var list = UC.parseLoose ? UC.parseLoose(rows, "brand-detail variations") : rows;
@@ -606,12 +665,14 @@
         state.loading = false;
         warteBeenden();
         render();
+        persist();
       },
       setLoading: function (v) {
         LOADING_EXPLICIT[instanceId] = true;
         state.loading = isYes(v);
         if (state.loading) warteStarten(); else warteBeenden();
         render();
+        persist();
       },
       reset: function (hart) {
         state.series = null; state.variations = null; state.hasData = false;
@@ -633,6 +694,9 @@
         /* Ab jetzt laeuft die Uhr: ein Reset ist der Anfang einer Wartezeit auf neue Daten. */
         warteStarten();
         render();
+        /* Der geleerte Stand ersetzt den gemerkten: ein Neuaufbau nach dem Reset zeigt nicht die
+           alte Marke, sondern wartet wie diese Wurzel -- mitsamt laufender Uhr. */
+        persist();
       },
       destroy: function () { try { line.destroy && line.destroy(); } catch (e) {} }
     };

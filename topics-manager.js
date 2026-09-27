@@ -91,6 +91,10 @@
       /* Aus dem Speicher zurueck, falls es diese Instanz schon einmal gab -- siehe persist(). */
       topics: Array.isArray(saved.topics) ? saved.topics : [],
       hasData: !!saved.hasData,
+      /* Der Lesefehler mit (27.09.: Themenwechsel -> Bubble baut das Element neu). Ohne ihn zeigte
+         ein Neuaufbau nach einem kaputten Payload die Themen von DAVOR, als waeren sie frisch --
+         der stille Ausfall, nur eine Stufe spaeter (CLAUDE.md §2). */
+      leseFehler: !!saved.leseFehler,
       loading: false, extLoading: false,
       query: saved.query || "",
       sortField: saved.sortField || DEFAULT_SORT.field,
@@ -106,7 +110,8 @@
          gegen eine leere Liste aufgeloest werden.
          Dieselbe Bauart wie __usnStore in der Sidebar, aus demselben Grund. */
       STORE[instanceId] = { query: state.query, sortField: state.sortField, sortDir: state.sortDir,
-                            topics: state.topics, hasData: state.hasData };
+                            topics: state.topics, hasData: state.hasData,
+                            leseFehler: !!state.leseFehler };
     }
     function isBusy(){ return !!state.loading || !!state.extLoading; }
 
@@ -353,6 +358,14 @@
       onTakeoverEnd: function(){ applyResponsive(); }
     });
     var searchDebounce = null;
+    /* Eine gemerkte Suche (Neuaufbau, 27.09.: Themenwechsel -> Bubble baut das Element neu) auch
+       SICHTBAR machen. state.query kommt schon aus dem Speicher und filtert die Chips -- ohne
+       diese Zeile war das Feld dabei leer und zu, und niemand sah, warum Themen fehlen.
+       Dieselbe Zeile wie in den grossen Tabellen. */
+    if (state.query && elSearchIn){
+      elSearchIn.value = state.query;
+      if (elSearch) elSearch.classList.add("is-open", "has-text");
+    }
     if (elSearchIn){
       elSearchIn.addEventListener("input", function(){
         state.query = String(elSearchIn.value || "").trim();
@@ -564,7 +577,8 @@
         if (params.__parseError){
           state.leseFehler = true; state.topics = []; state.hasData = true;
           state.loading = false; state.extLoading = false;
-          render(); return;
+          /* In den Speicher -- sonst stand nach einem Neuaufbau wieder die alte Liste da. */
+          persist(); render(); return;
         }
         if (params.isDark != null){
           /* NICHT isYes(params.isDark): der Parameter ist eine Momentaufnahme aus dem Moment,
@@ -601,6 +615,8 @@
            Versuch und steht noch da, waehrend frische Daten unterwegs sind. */
         if (state.extLoading) state.leseFehler = false;
         if (!state.extLoading) state.loading = false;
+        /* Der geraeumte Lesefehler auch im Speicher, sonst kaeme er mit einem Neuaufbau zurueck. */
+        persist();
         render();
       },
       reset: function(){

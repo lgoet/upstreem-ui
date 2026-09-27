@@ -343,7 +343,12 @@
       klasse: "",            /* wide | mini | hint -- aus der Fensterbreite */
       eingeklappt: prefLesen(),
       offen: false,          /* nur im hint-Zustand: faehrt die Leiste ueber den Inhalt */
-      aktiv: aktivNorm(attr("data-active", "dashboard")) || "dashboard",
+      /* Das Attribut gewinnt, wenn es einen Wert traegt -- es ist der dokumentierte Weg und kommt
+         bei einem Neuaufbau frisch aus Bubble. Traegt es keinen, gilt der zuletzt gesetzte Punkt
+         aus dem Speicher (Setter oder Klick) statt blind "dashboard": sonst sprang die Markierung
+         bei jedem Neuaufbau (27.09.: Themenwechsel -> Bubble baut das Element neu) auf Dashboard
+         zurueck, auf einer Seite, die den Punkt ueber setSidebarActive setzt. */
+      aktiv: aktivNorm(attr("data-active", "")) || vorrat.aktiv || "dashboard",
       teams: vorrat.teams || [], team: vorrat.team || null,
       /* Getrennt vom Inhalt: "noch nichts angekommen" ist ein anderer Zustand als "angekommen
          und leer". Nur der erste zeigt Skelette -- der zweite zeigt, was da ist. */
@@ -357,9 +362,14 @@
          einen Zaehler -- dann steht bis zum ersten Wert ein Skelett. Fehlt das Attribut ganz,
          gibt es keinen Zaehler und auch kein Skelett. Sonst haette eine Seite, die bewusst ohne
          Zahl arbeitet, dort fuer immer einen laufenden Balken. */
-      countErwartet: root.hasAttribute("data-prompt-count"),
-      count: attr("data-prompt-count"),
-      countDa: attr("data-prompt-count") !== "",
+      /* Dazu der Wert aus setSidebarCount, wenn das Attribut leer ist (27.09.: Themenwechsel ->
+         Bubble baut das Element neu). Das Attribut steht in der Vorlage als data-prompt-count="",
+         und eine Seite, die die Zahl ueber den Setter schickt, bekam nach dem Neuaufbau ein
+         Skelett fuer immer -- countErwartet war wahr, countDa falsch, und der Setter kommt nicht
+         noch einmal. Ein Attribut MIT Wert gewinnt weiter. */
+      countErwartet: root.hasAttribute("data-prompt-count") || !!vorrat.countDa,
+      count: attr("data-prompt-count") || (vorrat.countDa ? String(vorrat.count == null ? "" : vorrat.count) : ""),
+      countDa: attr("data-prompt-count") !== "" || !!vorrat.countDa,
       suche: "",
       /* Angeheftete Eintraege und zugeklappte Gruppen -- beide aus dem localStorage, siehe oben.
          Die Pins koennen hier noch leer sein, wenn das Team erst spaeter eintrifft; pinsNachziehen
@@ -1236,6 +1246,7 @@
            Messung) und im selben Tick fertig -- der Nutzer sieht die Markierung trotzdem sofort. */
         fire("data-nav-fn", "usnNav", { key: k });
         state.aktiv = k;
+        vorrat.aktiv = k;   /* fuer einen Neuaufbau, siehe aktiv im Zustand */
         aktivMarkieren();
         menuZu();
         /* Auf dem Telefon faehrt die Leiste nach der Wahl wieder ein -- sonst steht der Nutzer
@@ -1759,6 +1770,7 @@
       setLoading: function(v){ ladenSetzen(isYes(v)); return true; },
       setActive: function(k){
         state.aktiv = aktivNorm(k) || "dashboard";
+        vorrat.aktiv = state.aktiv;   /* fuer einen Neuaufbau, siehe aktiv im Zustand */
         /* Auch hier reicht die Markierung: die Liste selbst haengt nicht am aktiven Punkt. Beim
            allerersten Aufruf steht sie noch nicht -- dann baut renderNav sie. */
         if (elNav.querySelector(".usn-item")) aktivMarkieren(); else renderNav();
@@ -1769,6 +1781,8 @@
         /* Ein Setter-Aufruf ist eine Antwort -- auch eine leere. Danach kein Skelett mehr. */
         state.countDa = true;
         state.countErwartet = true;
+        /* Fuer einen Neuaufbau, siehe count im Zustand. */
+        vorrat.count = state.count; vorrat.countDa = true;
         /* Erst NACH der Enthuellung schreiben. Ohne diese Abfrage sprang die Prompt-Zahl allein
            um, sobald ihr Setter eintraf -- gemessen am 24.08.: sie verlor ihr Skelett 850ms vor
            allen anderen Feldern. Der Weg ueber das data-prompt-count-Attribut fragt schon so ab,

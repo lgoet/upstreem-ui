@@ -3614,10 +3614,20 @@
      sich nicht. Eine Zeile, damit die Rechnung in beiden Zustaenden dieselbe ist. */
   position: relative;
 }
-/* Im Dunkeln kein Rahmen, aber dieselbe Geometrie: der Rahmen wird durchsichtig UND die Platte
-   endet an der Polsterungskante (background-clip). Ohne das Zweite liefe der Grund unter den
-   durchsichtigen Rahmen weiter und der helle Ring waere 3px statt der bestellten 2. */
-.up-root[data-theme="dark"] .up-stack-vis { border-color: transparent; background-clip: padding-box; }
+/* Im Dunkeln kein Rahmen, und die helle Platte ist nur EINEN Pixel breiter als das Logo (27.09.
+   gemeldet: "die Brand-Chips haben im Darkmode eine zu dicke helle Border -- wie das Favicon in
+   der URL-Tabelle"). Dort sind es 22px Bild in einer 24px-Platte, also 1px Rand, und genau das
+   steht auch als Regel in performance-detail.css und quick-actions.css ("der helle Rand um ein
+   Logo ist ueberall in der App genau einen Pixel breit"). Hier waren es 2px -- die ganze
+   Polsterung.
+   Geloest ueber die MALFLAECHE, nicht ueber die Masse: die Platte endet an der Inhaltskante
+   (background-clip: content-box, also genau unter dem Bild), und den einen Pixel Rand malt der
+   Schatten des Bildes darunter in derselben Farbe. Rahmen, Polsterung und Bildgroesse bleiben
+   unberuehrt -- in beiden Themen dieselbe Geometrie, und die Kacheln mit eigenem Mass
+   (performance-detail ohne Rahmen, die kompakte Zeile) bekommen denselben 1px-Rand, ohne dass
+   ihr Bild im Dunkeln schrumpft. Der Ring folgt dem Radius des Bildes, er ist also konzentrisch. */
+.up-root[data-theme="dark"] .up-stack-vis { border-color: transparent; background-clip: content-box; }
+.up-root[data-theme="dark"] .up-stack-item img { box-shadow: 0 0 0 1px var(--vt-logo-bg); }
 /* only the gap-ring follows the row hover colour; the circle fill stays the (light-in-dark) logo bg.
    .urt-card:hover needs the identical rule -- without it, a card's brand/citation stack keeps its
    ring calibrated against the card's RESTING background, so hovering (which repaints the whole

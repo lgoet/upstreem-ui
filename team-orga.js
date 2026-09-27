@@ -128,6 +128,22 @@
     var spaet = UC.makeLate ? UC.makeLate("team-orga", ".uto-root") : null;
     var mount;
 
+    /* ---- EIN NEU GEBAUTES ELEMENT MACHT WEITER (27.09. gemeldet) ----
+       "Es ist gar nicht noetig, dass beim Theme-Wechsel was in den Loading-yes-State geht."
+       Bubble baut ein HTML-Element NEU, sobald sich ein dynamischer Wert in seinem Markup
+       aendert -- beim Themenwechsel ist das data-isdark, dasselbe gilt fuer data-user und
+       data-user-email. Die alte Wurzel fliegt weg, eine frische Kopie der Vorlage kommt mit
+       derselben data-instance, und initRoot fing bei null an: keine Mitglieder, keine
+       Einladungen, kein Verlauf, also alle drei Abschnitte im Skelett. Bubble schickt die drei
+       Nutzlasten aber nicht noch einmal (sie haben sich ja nicht geaendert) -- das Skelett
+       stand fuer immer da, und der aufgeklappte Verlauf war wieder zu.
+       Darum ein Speicher am window, je data-instance, wie in responses-table, urls-table und
+       domains-table: er ueberlebt den Neuaufbau, und die neue Wurzel startet mit dem, was die
+       alte zuletzt gezeigt hat -- Daten, Rolle und Rechte des Lesers, Lesefehler, der offene
+       Verlauf und ein Laden, das gerade lief. persist() steht an jeder Stelle, die den Zustand
+       aendert; resetTeamOrga loescht den Eintrag. */
+    var STORE = (window.__utoStore = window.__utoStore || {});
+
     /* ══ Der Einladen-Dialog ═══════════════════════════════════════════════════════════════════
        EINER fuer die ganze Seite, nicht einer je Wurzel: es gibt genau eine Teamverwaltung, und
        ein Dialog im <body> darf nicht mit dem Element sterben, das ihn geoeffnet hat. Genauso
@@ -290,37 +306,67 @@
       if (root.__utoController) return;
 
       var instanceId = root.getAttribute("data-instance") || "default";
+      /* Der Stand, den die vorige Wurzel dieser Instanz zuletzt gezeigt hat -- leer beim
+         allerersten Aufbau, und leer nach resetTeamOrga. Siehe STORE oben. perm, laedt und hoehe
+         werden beim Uebernehmen neu gebaut und nicht als Verweis geteilt: laedt und hoehe werden
+         an Ort und Stelle beschrieben, und die alte Wurzel darf mit ihren Uhren nicht in die neue
+         greifen. Die drei Listen gehen als Verweis -- kein Setter aendert sie an Ort und Stelle,
+         jeder ersetzt sie. */
+      var saved = STORE[instanceId] || {};
+      var sp = saved.perm || {};
+      /* Lief beim Neuaufbau gerade ein Laden (setTeamOrgaLoading "yes", Antworten noch
+         unterwegs)? Dann laeuft es weiter, mit dem REST seiner Warte-Uhr -- die Uhr der alten
+         Wurzel ist mit ihr verloren (Neustart unten, vor dem ersten render). Ist die Frist schon
+         um, endet es hier, genau wie es die alte Uhr getan haette. Ein Themenwechsel startet nie
+         ein Laden: ohne laufendes Laden steht hier nichts auf true. */
+      var restWarte = saved.warteBis ? saved.warteBis - Date.now() : 0;
+      var sl = (restWarte > 0 && saved.laedt) ? saved.laedt : {};
+      var sh = (restWarte > 0 && saved.hoehe) ? saved.hoehe : {};
       var state = {
-        members: [], invites: [], log: [],
-        perm: { can_invite: false, can_manage_roles: false, can_manage_members: false },
-        viewerRole: "member", viewerId: "", viewerMail: "",
+        members: isArr(saved.members) ? saved.members : [],
+        invites: isArr(saved.invites) ? saved.invites : [],
+        log: isArr(saved.log) ? saved.log : [],
+        perm: { can_invite: !!sp.can_invite, can_manage_roles: !!sp.can_manage_roles,
+                can_manage_members: !!sp.can_manage_members },
+        viewerRole: saved.viewerRole || "member",
+        /* Leer gemerkt heisst: der Payload nannte den Leser nicht, und das Attribut war beim
+           Lesen noch leer. Dann gilt, was render1 mit demselben Payload JETZT laese -- das
+           Attribut der neuen Wurzel. Bubble traegt data-user teils erst nach dem ersten Aufbau
+           nach, und genau dieses Nachtragen ist selbst ein Anlass fuer einen Neuaufbau. */
+        viewerId: saved.viewerId || (saved.hatDaten ? feld(root.getAttribute("data-user")) : ""),
+        viewerMail: saved.viewerMail || (saved.hatDaten ? feld(root.getAttribute("data-user-email")) : ""),
         /* viewer_role so, wie der Server ihn schickt (klein geschrieben, sonst leer). rolleName
            macht aus einem FEHLENDEN Wert vorsichtshalber "member" -- fuer die Rechte im Menue
            richtig, fuer das Ausblenden ganzer Abschnitte nicht (siehe nurMitglied). */
-        viewerRoleRoh: "",
-        logOffen: false,
-        hatDaten: false,
+        viewerRoleRoh: saved.viewerRoleRoh || "",
+        logOffen: !!saved.logOffen,
+        hatDaten: !!saved.hatDaten,
         /* LAEDT GERADE NEU -- je Abschnitt, nicht als ein Schalter fuer alles (25.09.). Vorher
            beendete JEDER Setter das Laden fuer alle drei: kam der Mitglieder-Schritt zuerst,
            sprangen Einladungen und Verlauf mit ihren ALTEN Zeilen zurueck und wechselten einen
            Augenblick spaeter noch einmal. Jetzt endet ein Abschnitt, wenn SEIN Schritt kommt.
-           Nicht beim Start gesetzt: ohne Daten zeigt ein Abschnitt sein Skelett ohnehin. */
-        laedt: { members: false, invites: false, log: false },
+           Nicht beim Start gesetzt: ohne Daten zeigt ein Abschnitt sein Skelett ohnehin. Nur
+           ein Neuaufbau mitten in einem Laden uebernimmt es (siehe restWarte). */
+        laedt: { members: !!sl.members, invites: !!sl.invites, log: !!sl.log },
         /* Die Hoehe jeder Tabelle in dem Moment, in dem ihr Laden begann. Das Skelett haelt sie
            als Mindesthoehe, bis die Daten da sind -- auch ein leerer Abschnitt ("No pending
            invites" ist hoeher als eine Skelettzeile) springt dann nicht. Vorbild: das Skelett
-           in performance-radar (Zeilenzahl von vorher plus gemessene Hoehe). */
-        hoehe: { members: 0, invites: 0, log: 0 },
+           in performance-radar (Zeilenzahl von vorher plus gemessene Hoehe). Bei einem
+           Neuaufbau mitten im Laden die Messung der alten Wurzel -- die neue stuende beim
+           Messen schon im Skelett. */
+        hoehe: { members: sh.members || 0, invites: sh.invites || 0, log: sh.log || 0 },
         /* Kamen die offenen Einladungen schon ueber setTeamOrgaInvites? Dann gewinnt diese Liste
            ueber pending_invites in der Mitglieder-Nutzlast (siehe render1). */
-        invitesEigen: false,
+        invitesEigen: !!saved.invitesEigen,
         /* Je Abschnitt: ist seine Nutzlast schon da, und war sie lesbar? Seit jeder Abschnitt
            seinen eigenen Run-JS-Schritt hat, kommen sie einzeln und in beliebiger Reihenfolge --
            ein Abschnitt, dessen Schritt noch unterwegs ist, zeigt das Skelett und nicht "No
-           pending invites". Leer und noch-nicht-da sind zwei Dinge, unlesbar ist ein drittes. */
-        invitesDa: false, logDa: false,
-        invitesLeseFehler: false, logLeseFehler: false,
-        fehler: null            /* Text fuer das UI, nicht fuer die Konsole */
+           pending invites". Leer und noch-nicht-da sind zwei Dinge, unlesbar ist ein drittes.
+           Die Lesefehler gehen mit durch den Neuaufbau: sonst stuende danach wieder ein Skelett
+           oder "leer" da, wo vorher die Meldung stand -- der stille Ausfall (CLAUDE.md §2). */
+        invitesDa: !!saved.invitesDa, logDa: !!saved.logDa,
+        invitesLeseFehler: !!saved.invitesLeseFehler, logLeseFehler: !!saved.logLeseFehler,
+        fehler: saved.fehler || null            /* Text fuer das UI, nicht fuer die Konsole */
       };
 
       var fire = UC.makeFire(root, { label: "team-orga", eventPrefix: "uto" });
@@ -810,6 +856,9 @@
         }
         if (e.target.closest("[data-uto-logtoggle]")) {
           state.logOffen = !state.logOffen;
+          /* Auch der offene Verlauf ueberlebt einen Neuaufbau (siehe STORE) -- sonst klappte er
+             bei jedem Themenwechsel zu. */
+          persist();
           render();
           return;
         }
@@ -914,6 +963,7 @@
            verworfen) -- ihr Laden endet hier, sonst blieben die Knoepfe bis zur Warte-Uhr
            gesperrt. */
         if (nurMitglied()) { ladenFertig("invites"); ladenFertig("log"); }
+        persist();
         render();
       }
       /* readBubble liefert ein OBJEKT als Liste mit EINEM Eintrag: aus {"count":1,"invites":[...]}
@@ -955,7 +1005,7 @@
         /* Ein Member bekommt keine offenen Einladungen zu sehen: die Nutzlast wird gar nicht erst
            gelesen. Kommt sie VOR den Mitgliedern, ist die Rolle noch unbekannt -- dann wird sie
            gelesen, und die Mitglieder blenden den Abschnitt danach aus. */
-        if (nurMitglied()) { ladenFertig("invites"); render(); return; }
+        if (nurMitglied()) { ladenFertig("invites"); persist(); render(); return; }
         p = roh(p);
         var o = auspacken((p && typeof p === "object") ? p : UC.readBubble(p), ["invites"]);
         var liste = listeAus(o, ["invites"]);
@@ -981,10 +1031,11 @@
             ": setTeamOrgaInvites konnte die Nutzlast nicht lesen.");
         }
         ladenFertig("invites");
+        persist();
         render();
       }
       function setLog(p) {
-        if (nurMitglied()) { ladenFertig("log"); render(); return; }   /* wie setInvites */
+        if (nurMitglied()) { ladenFertig("log"); persist(); render(); return; }   /* wie setInvites */
         p = roh(p);
         var o = auspacken((p && typeof p === "object") ? p : UC.readBubble(p), ["logs", "entries"]);
         var liste = listeAus(o, ["logs", "entries"]);
@@ -1002,6 +1053,7 @@
             ": setTeamOrgaLog konnte die Nutzlast nicht lesen.");
         }
         ladenFertig("log");
+        persist();
         render();
       }
 
@@ -1020,14 +1072,26 @@
          Schritt steht nicht in diesem Workflow), endet sein Laden trotzdem: er zeigt wieder, was
          vorher dastand, statt ewig zu schimmern. */
       var WARTE_MS = 25000, warteUhr = null;
-      function warteBeenden() { if (warteUhr) { clearTimeout(warteUhr); warteUhr = null; } }
-      function warteStarten() {
+      /* Das Ende der Uhr als Zeitpunkt, fuer den Speicher: eine neu gebaute Wurzel rechnet daraus
+         den Rest (restWarte oben) und laesst ihre eigene Uhr nur so lange laufen, wie die alte
+         noch gelaufen waere. 0 heisst: keine Uhr laeuft. */
+      var warteBis = 0;
+      function warteBeenden() {
+        if (warteUhr) { clearTimeout(warteUhr); warteUhr = null; }
+        warteBis = 0;
+      }
+      /* ms nur beim Neuaufbau (der Rest der alten Frist), sonst die vollen 25s. */
+      function warteStarten(ms) {
         warteBeenden();
+        var dauer = ms > 0 ? ms : WARTE_MS;
+        warteBis = Date.now() + dauer;
         warteUhr = setTimeout(function () {
           warteUhr = null;
+          warteBis = 0;
           state.laedt = { members: false, invites: false, log: false };
+          persist();
           render();
-        }, WARTE_MS);
+        }, dauer);
       }
       function ladenFertig(b) {
         state.laedt[b] = false;
@@ -1048,7 +1112,32 @@
           state.laedt[b] = true;
         });
         if (an) warteStarten();
+        persist();
         render();
+      }
+
+      /* Den Zustand fuer einen Neuaufbau merken (siehe STORE). Kopien fuer laedt, hoehe und perm:
+         laedt und hoehe werden an Ort und Stelle beschrieben, und ein geteiltes Objekt liesse die
+         alte Wurzel in die neue hineinschreiben. Die Listen werden nie an Ort und Stelle
+         geaendert (die Setter ersetzen sie), die gehen als Verweis.
+         Nur eine Wurzel, die noch im Dokument steht, schreibt: die alte lebt nach dem Neuaufbau
+         als abgehaengter Knoten weiter, samt Warte-Uhr und Sprach-Zuhoerer. Liefe ihre Uhr ab und
+         schriebe sie, stuende ihr veralteter Stand im Speicher -- ueber dem der neuen Wurzel. */
+      function persist() {
+        if (!root.isConnected) return;
+        STORE[instanceId] = {
+          members: state.members, invites: state.invites, log: state.log,
+          perm: { can_invite: state.perm.can_invite, can_manage_roles: state.perm.can_manage_roles,
+                  can_manage_members: state.perm.can_manage_members },
+          viewerRole: state.viewerRole, viewerRoleRoh: state.viewerRoleRoh,
+          viewerId: state.viewerId, viewerMail: state.viewerMail,
+          logOffen: state.logOffen, hatDaten: state.hatDaten, fehler: state.fehler,
+          invitesEigen: state.invitesEigen, invitesDa: state.invitesDa, logDa: state.logDa,
+          invitesLeseFehler: state.invitesLeseFehler, logLeseFehler: state.logLeseFehler,
+          laedt: { members: state.laedt.members, invites: state.laedt.invites, log: state.laedt.log },
+          hoehe: { members: state.hoehe.members, invites: state.hoehe.invites, log: state.hoehe.log },
+          warteBis: warteBis
+        };
       }
 
       var ctrl = {
@@ -1072,6 +1161,12 @@
           state.viewerRole = "member"; state.viewerId = ""; state.viewerMail = "";
           state.viewerRoleRoh = "";
           state.logOffen = false;
+          /* Und den Speicher dieser Instanz leeren (siehe STORE): sonst holte ein Neuaufbau nach
+             dem Zuruecksetzen die alten Mitglieder, Einladungen und den Verlauf zurueck -- ein
+             ausdrueckliches Reset darf ein Themenwechsel nicht rueckgaengig machen. Geloescht und
+             nicht mit dem leeren Stand ueberschrieben, weil der zurueckgesetzte Stand genau der
+             Anfangsstand ist: eine neue Wurzel ohne Eintrag zeigt dasselbe. */
+          delete STORE[instanceId];
           render();
         },
         /* Vom Dialog gerufen. Er kennt die Wurzel nicht und soll sie nicht kennen -- er bekommt
@@ -1086,6 +1181,11 @@
       /* Sprache: Koepfe, Leerzustaende und Zellen sind beim Zeichnen geschrieben -- also neu
          zeichnen. Nur bei der Sprache, wie im power-dashboard. */
       if (UC.onPrefs) UC.onPrefs(function (d) { if (!d || d.name === "locale") render(); });
+      /* Hat diese Wurzel ein laufendes Laden uebernommen (Neuaufbau mitten im Laden, siehe
+         restWarte), bekommt sie ihre Warte-Uhr zurueck -- mit dem Rest der Frist. Ohne sie
+         hinge ein Abschnitt, dessen Schritt nie kommt, fuer immer im Skelett: genau der Fall,
+         fuer den es die Uhr gibt. Beim allerersten Aufbau steht hier nichts auf true. */
+      if (state.laedt.members || state.laedt.invites || state.laedt.log) warteStarten(restWarte);
       render();
       if (spaet) spaet.drain(instanceId, ctrl);
     }

@@ -128,6 +128,17 @@
   var SCOPE_STORE = (window.__uddScope = window.__uddScope || {});
   var CHART_STORE = (window.__uddChart = window.__uddChart || {});
   var MCHART_STORE = (window.__uddMChart = window.__uddMChart || {});
+  /* ---- EIN NEU GEBAUTES ELEMENT MACHT WEITER (27.09. gemeldet) ----
+     "Es ist gar nicht noetig, dass beim Theme-Wechsel was in den Loading-yes-State geht."
+     Themenwechsel -> Bubble baut das Element neu (data-isdark ist ein dynamischer Wert im
+     Markup) -> neue Wurzel mit derselben data-instance, initRoot von vorn -> loading true,
+     Skelett, und nach 25s "No data". Bubble schickt die Daten nicht noch einmal, sie haben sich
+     ja nicht geaendert. Die vier Speicher darueber brachten Modus, Granularitaet und die beiden
+     Ring/Balken-Schalter zurueck -- die DATEN darunter nicht.
+     Jetzt liegt auch der zuletzt gelieferte Stand hier, je Instanz, und eine neue Wurzel startet
+     von dort. Dasselbe Muster wie responses-table und urls-table; geschrieben wird er von
+     persist() in initRoot. */
+  var STORE = (window.__uddStore = window.__uddStore || {});
 
   function isArr(v) { return Object.prototype.toString.call(v) === "[object Array]"; }
   function num(v) { return UC.toNum(v); }
@@ -318,29 +329,39 @@
        Fall nicht mehr von einer Neueinspritzung durch Bubble zu unterscheiden. */
     var modusAusSpeicher = !MODE_STORE[instanceId];
 
+    /* Der gemerkte Stand dieser Instanz, wenn es ihn gibt -- dann ist diese Wurzel ein Neuaufbau
+       und macht dort weiter, wo die alte stand (siehe STORE). Ohne ihn gelten genau die
+       Anfangswerte von vorher; gemerkt() liefert dann den zweiten Wert. */
+    var saved = STORE[instanceId] || null;
+    function gemerkt(k, sonst) { return saved && saved[k] != null ? saved[k] : sonst; }
+
     var state = {
       mode:  modusLesen(instanceId)  || "citation",
       gran:  GRAN_STORE[instanceId]  || "day",
       scope: SCOPE_FEST,
-      header: null, share: null, urls: null, model: null, funnel: null,
+      header: gemerkt("header", null), share: gemerkt("share", null), urls: gemerkt("urls", null),
+      model: gemerkt("model", null), funnel: gemerkt("funnel", null),
       brand: (root.getAttribute("data-brand") || "").trim(),
       /* loading startet auf true: die Komponente steht auf der Seite, bevor der Pageload-Workflow
          gelaufen ist, und in dieser Zeit LAEDT sie -- sie ist nicht leer. Beendet wird der Zustand
-         durch die Daten oder nach WARTE_MS durch die Warte-Uhr, nie durch nichts. */
-      loading: true, hasData: false, error: null,
+         durch die Daten oder nach WARTE_MS durch die Warte-Uhr, nie durch nichts.
+         Ein NEUAUFBAU dagegen laedt nicht: er uebernimmt den Ladezustand der alten Wurzel, und
+         der war nach den Daten false. */
+      loading: gemerkt("loading", true), hasData: gemerkt("hasData", false),
+      fehler: gemerkt("fehler", null),
       /* Die URL-Serie kommt aus einem EIGENEN Workflow, ausgeloest durch einen Klick. Deshalb hat
          sie ihren eigenen Wartezustand: urls === null heisst "noch nie etwas angekommen",
          urlsStale heisst "wir haben etwas, aber gerade neue Zahlen angefordert". Beides ist
          WARTEN und muss ein Skelett zeigen -- nicht "No URL data", denn das ist eine Aussage
          ueber die Daten und nicht ueber uns. urlsError ist das Ende der Geduld. */
-      urlsStale: false, urlsError: null,
+      urlsStale: gemerkt("urlsStale", false), urlsError: gemerkt("urlsError", null),
       /* Der Umschalter des Typ-Charts. Wie in Combo und Topcitations ist der Doughnut der Anfang;
          der Balkenmodus ist die Ansicht fuer viele Typen. Ueberlebt das Neueinspritzen. */
       chartMode: CHART_STORE[instanceId] || "doughnut",
       /* Beim Model Breakdown ist der BALKEN der Anfang (Vorgabe): zwei oder drei Modelle sind als
          Balken mit Logo und Prozentwert schneller zu lesen als als Ring. */
       modelMode: MCHART_STORE[instanceId] || "bar",
-      types: null
+      types: gemerkt("types", null)
     };
     if (state.brand === "BRAND_NAME") state.brand = "";
 
@@ -416,6 +437,11 @@
       if (warteUhr) clearTimeout(warteUhr);
       warteUhr = setTimeout(function () {
         warteUhr = null;
+        /* Eine abgehaengte Wurzel wartet fuer niemanden mehr: Bubble hat das Element neu gebaut,
+           und die neue Wurzel fuehrt ihre eigene Uhr (saved.wartet, unten). Ohne diese Zeile
+           stellte sich die alte Uhr alle 25s neu -- ausserhalb des Dokuments wird sie nie
+           sichtbar. */
+        if (root.isConnected === false) return;
         if (state.hasData || state.fehler) return;
         /* Unsichtbar heisst: diese Seite ist gar nicht offen, Bubble haelt sie nur im DOM. Dann
            wartet niemand, und "No data" jetzt zu setzen hiesse, es steht beim spaeteren Oeffnen
@@ -424,10 +450,34 @@
         state.fehler = "No data";
         state.loading = false;
         render();
+        persist();
       }, WARTE_MS);
     }
     function warteBeenden() { if (warteUhr) { clearTimeout(warteUhr); warteUhr = null; } }
-    warteStarten();
+
+    /* Den Stand dieser Instanz fuer einen Neuaufbau festhalten (siehe STORE). Aufgerufen NACH dem
+       Zeichnen: wirft render() an einem Payload, landet dieser nicht im Speicher -- sonst wuerfe
+       jeder spaetere Neuaufbau schon in initRoot, und die Komponente kaeme nie wieder hoch.
+       wartet/urlWartet halten fest, ob die beiden Uhren liefen: die Uhren der alten Wurzel sind
+       mit ihr verloren, und ohne die Merker endete ein Warten, das vor dem Neuaufbau begann, nie.
+       Nur eine Wurzel im Dokument schreibt: eine abgehaengte lebt in Uhren und Abonnements noch
+       eine Weile weiter und wuerde den Stand der neuen sonst mit ihrem alten ueberschreiben. */
+    function persist() {
+      if (root.isConnected === false) return;
+      STORE[instanceId] = {
+        header: state.header, share: state.share, urls: state.urls, model: state.model,
+        funnel: state.funnel, types: state.types,
+        hasData: !!state.hasData, fehler: state.fehler || null, loading: !!state.loading,
+        urlsStale: !!state.urlsStale, urlsError: state.urlsError || null,
+        wartet: warteUhr != null, urlWartet: urlUhr != null
+      };
+    }
+
+    /* Beim ersten Aufbau laeuft die Uhr sofort (siehe loading oben). Ein Neuaufbau startet sie
+       nur, wenn sie in der alten Wurzel lief -- einer mit Daten wartet auf nichts, und einer, bei
+       dem die Geduld schon zu Ende war, zeigt weiter "No data" statt noch einmal 25s Skelett. */
+    if (saved ? saved.wartet : true) warteStarten();
+    if (saved && saved.urlWartet) urlWarteStarten();
     /* Bubble spritzt das Markup neu ein, der Modus ueberlebt in MODE_STORE und ueber
        localStorage sogar das Seitenneuladen. Startet die Instanz also schon im URL Share, ist
        die Serie von der ersten Sekunde an unterwegs.
@@ -439,8 +489,13 @@
        ausloest, waere eine Schleife. Ein Tick Verzoegerung, damit der Workflow gebunden ist. */
     MODE_STORE[instanceId] = state.mode;
     if (state.mode === "domain") setTimeout(function () {
-      if (state.urls) return;
+      /* Nichts zu tun, wenn die URL-Serie da ist, ihre Uhr schon laeuft (Neuaufbau mitten im
+         Warten, siehe oben) oder ihre Geduld schon zu Ende war. Der letzte Fall ist der vom
+         27.09.: bisher raeumte urlWarteStarten() hier den Fehler weg, und ein Neuaufbau ging
+         zurueck ins Skelett. */
+      if ((state.urls && !state.urlsStale) || state.urlsError || urlUhr) return;
       urlWarteStarten();
+      persist();
       if (modusAusSpeicher) fire("data-mode-fn", "uddMode",
         { mode: state.mode, gran: state.gran, scope: state.scope });
     }, 0);
@@ -452,12 +507,15 @@
       if (urlUhr) clearTimeout(urlUhr);
       urlUhr = setTimeout(function () {
         urlUhr = null;
+        /* Wie bei der Hauptuhr: eine abgehaengte Wurzel wartet fuer niemanden mehr. */
+        if (root.isConnected === false) return;
         if (!urlWartet()) return;
         /* Siehe Hauptuhr oben: unsichtbar heisst, die Seite ist gar nicht offen. */
         if (!UC.istSichtbar(root)) { urlWarteStarten(); return; }
         state.urlsError = "No data";
         state.urlsStale = false;
         renderChart();
+        persist();
       }, WARTE_MS);
     }
     function urlWarteBeenden() { if (urlUhr) { clearTimeout(urlUhr); urlUhr = null; } }
@@ -870,12 +928,14 @@
       state.gran = g; GRAN_STORE[instanceId] = g;
       return true;
     }
-    function granPruefen() {
-      if (!UC.granAvailability) return;
-      var reihe = state.mode === "citation"
+    function granReihe() {
+      return state.mode === "citation"
         ? (isArr(state.share) ? state.share : [])
         : (state.urls && isArr(state.urls.points) ? state.urls.points : []);
-      var neu = UC.granAvailability(root, reihe, state.gran);
+    }
+    function granPruefen() {
+      if (!UC.granAvailability) return;
+      var neu = UC.granAvailability(root, granReihe(), state.gran);
       if (neu !== state.gran) {
         state.gran = neu; GRAN_STORE[instanceId] = neu;
         syncSeg();
@@ -894,6 +954,9 @@
         /* Der Wechsel nach Domain Share fordert die URL-Serie an: ab hier wird gewartet. */
         if (k === "domain" && !state.urls) urlWarteStarten();
         syncSeg(); renderKpi(); renderChart();
+        /* Die gestartete URL-Uhr mit in den Speicher: ein Neuaufbau vor der Antwort wartet dann
+           weiter, statt ohne Ende im Skelett zu stehen. */
+        persist();
         fire("data-mode-fn", "uddMode", { mode: k, gran: state.gran, scope: state.scope });
         return;
       }
@@ -932,6 +995,7 @@
            stehen, bis setDomainDetail die neue bringt -- dort ist sie nur veraltet, nicht falsch. */
         if (state.mode === "domain") { state.urlsStale = true; urlWarteStarten(); }
         syncSeg(); renderChart();
+        persist();
         fire("data-gran-fn", "uddGran", { mode: state.mode, gran: gk, scope: state.scope });
         return;
       }
@@ -965,7 +1029,9 @@
         if (!ok) {
           state.fehler = "The domain data could not be read.";
           state.hasData = false; state.loading = false;
-          warteBeenden(); render(); return;
+          /* Auch der Lesefehler in den Speicher: sonst stuende nach einem Neuaufbau wieder das
+             Skelett da, wo eben noch die Meldung stand -- leer und kaputt sind zwei Dinge. */
+          warteBeenden(); render(); persist(); return;
         }
         state.fehler = null;
         if (p.header && typeof p.header === "object") state.header = p.header;
@@ -992,6 +1058,7 @@
         granAusPayload(p);
         granPruefen();
         render();
+        persist();
         return true;
       },
       setUrls: function (payload) {
@@ -1009,6 +1076,7 @@
         warteBeenden(); urlWarteBeenden();
         if (state.mode === "domain") granPruefen();
         syncSeg(); renderChart();
+        persist();
         return true;
       },
       setLoading: function (v) {
@@ -1030,6 +1098,9 @@
           warteStarten();
         } else warteBeenden();
         render();
+        /* Das Wegwerfen gilt auch fuer den Speicher -- ein Neuaufbau darf die alte Domain nicht
+           zurueckholen, aus demselben Grund. */
+        persist();
         return true;
       },
       /* Reset raeumt DATEN weg, keine Einstellungen. Die Trennung ist der ganze Punkt:
@@ -1060,6 +1131,9 @@
           urlWarteStarten();
           fire("data-mode-fn", "uddMode", { mode: state.mode, gran: state.gran, scope: state.scope });
         }
+        /* Der geleerte Stand ersetzt den gemerkten, samt der beiden laufenden Uhren: ein
+           Neuaufbau nach dem Reset zeigt nicht die alte Domain, sondern wartet wie diese Wurzel. */
+        persist();
         return true;
       },
       destroy: function () { warteBeenden(); try { line.destroy && line.destroy(); } catch (e) {} }
@@ -1080,6 +1154,11 @@
       }).observe(root, { attributes: true, attributeFilter: ["data-brand", "data-isdark", "data-theme"] });
     }
 
+    /* Ein Neuaufbau bringt die Daten mit, aber nicht die gesperrten D/W/M-Knoepfe: die setzt
+       sonst nur granPruefen(), und das laeuft erst im naechsten Setter. Hier NUR die Klassen,
+       ohne Ereignis nach Bubble -- die Stufe selbst stimmt schon (GRAN_STORE), und ein
+       Themenwechsel darf keinen Workflow ausloesen. */
+    if (saved && UC.granAvailability) UC.granAvailability(root, granReihe(), state.gran);
 
     render();
     return ctrl;

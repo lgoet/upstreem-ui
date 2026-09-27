@@ -147,6 +147,18 @@
      beim Seitenaufbau an, weil "weniger ausgewaehlt als verfuegbar" auf jede normale Seite
      zutrifft, sobald die Auswahlliste aus dem globalen Store kommt. */
   var INIT_SEL = (window.__uhmInitSel = window.__uhmInitSel || {});
+  /* ---- EIN NEU GEBAUTES ELEMENT MACHT WEITER (27.09. gemeldet) ----
+     "Es ist gar nicht noetig, dass beim Theme-Wechsel was in den Loading-yes-State geht." Die
+     Stores darueber merken sich nur EINSTELLUNGEN -- die Matrix selbst lebte allein im state der
+     Wurzel. Bubble baut das Element beim Themewechsel neu (data-isdark ist dort ein dynamischer
+     Wert), initRoot zeichnete fuer die frische Wurzel sein Skelett, und weil Bubble die Daten
+     nicht noch einmal schickt (sie haben sich ja nicht geaendert), blieb es fuer immer stehen.
+     Jetzt liegt auch das, was gezeigt wird, am window, je Instanz -- dieselbe Antwort wie in
+     responses-table und urls-table. Gemerkt wird der ABGELEITETE Stand (Zellen, Achsen, die
+     angewandte Auswahl, Ladezustand, Lesefehler), nicht der letzte Payload: nach einem Apply im
+     Picker steht die lokal verengte Matrix auf dem Schirm, bevor die Antwort da ist, und genau
+     die soll ein Neuaufbau zeigen. Ein echter Seitenreload leert ihn wie die Stores darueber. */
+  var DATA_STORE = (window.__uhmStore = window.__uhmStore || {});
   /* Der Gewichtungs-Schalter ueberlebt als EINZIGE Einstellung den Reload: er beschreibt, WIE VIEL
      man sehen will, nicht was gerade untersucht wird. Metrik und Farbskala bleiben bewusst auf
      window -- die gehoeren zur laufenden Frage und sollen beim naechsten Besuch im Standard
@@ -351,29 +363,56 @@
     var instanceId = root.getAttribute("data-instance") || "default";
     var fire = UC.makeFire(root, { label: "performance-radar", eventPrefix: "uhm" });
 
+    /* Steht fuer diese Instanz schon ein Eintrag im Speicher (Lieferung, Ladezustand, Reset oder
+       Apply kam schon an), ist das hier ein NEUAUFBAU (siehe DATA_STORE): dann faengt der Zustand
+       beim gemerkten Stand an, nicht bei null. Ohne Eintrag bleibt alles wie vorher -- eine
+       Instanz, der noch nie jemand etwas gesagt hat, zeigt ihr Skelett (siehe Ende von
+       initRoot). */
+    var wiederaufbau = !!DATA_STORE[instanceId];
+    var saved = DATA_STORE[instanceId] || {};
+    function liste(v){ return Array.isArray(v) ? v : []; }
+
     var state = {
-      cells: [],
-      cellMap: {},
-      topics: [],            // rows, in render order
-      companies: [],         // columns, in render order
-      availTopics: [],
+      cells: liste(saved.cells),
+      cellMap: saved.cellMap || {},
+      ranges: saved.ranges || null,
+      topics: liste(saved.topics),         // rows, in render order
+      companies: liste(saved.companies),   // columns, in render order
+      availTopics: [],                     // abgeleitet, syncAvailable() rechnet sie neu
       availCompanies: [],
-      payloadTopics: [],
-      payloadCompanies: [],
+      payloadTopics: liste(saved.payloadTopics),
+      payloadCompanies: liste(saved.payloadCompanies),
       selTopics: {},         // picker draft: id -> bool
       selCompanies: {},
-      appliedTopics: [],     // what the last Apply actually sent, for the Reset affordance
-      appliedCompanies: [],
-      topicLimit: DEF_TOPIC_LIMIT,
-      companyLimit: DEF_COMPANY_LIMIT,
+      appliedTopics: liste(saved.appliedTopics),     // what the last Apply actually sent, for the Reset affordance
+      appliedCompanies: liste(saved.appliedCompanies),
+      topicLimit: saved.topicLimit || DEF_TOPIC_LIMIT,
+      companyLimit: saved.companyLimit || DEF_COMPANY_LIMIT,
       metric: METRIC_ALIAS[String(METRIC_STORE[instanceId] || "").toLowerCase()] || "visibility",
       scale: SCALE_STORE[instanceId] === "mono" ? "mono" : "color",
       weights: readWeights(instanceId),
       isDark: isYes(root.getAttribute("data-isdark")),
-      loading: false,
-      hasData: false,
+      loading: !!saved.loading,
+      hasData: !!saved.hasData,
+      leseFehler: !!saved.leseFehler,
+      /* Die zuletzt gemessene Rasterhoehe gehoert mit: steht ein Neuaufbau mitten in einem
+         Ladevorgang, soll sein Skelett so hoch sein wie das Raster davor (siehe renderSkeleton). */
+      lastGridH: saved.lastGridH || 0,
       layoutKey: ""          // "topicIds|companyIds" — decides patch vs rebuild
     };
+    /* Nach JEDER Aenderung an dem, was gezeigt wird: Lieferung, Ladezustand, Reset, Apply im
+       Picker. Metrik, Farbskala und Gewichtung haben ihre eigenen Stores oben. */
+    function persist(){
+      DATA_STORE[instanceId] = {
+        cells: state.cells, cellMap: state.cellMap, ranges: state.ranges,
+        topics: state.topics, companies: state.companies,
+        payloadTopics: state.payloadTopics, payloadCompanies: state.payloadCompanies,
+        appliedTopics: state.appliedTopics, appliedCompanies: state.appliedCompanies,
+        topicLimit: state.topicLimit, companyLimit: state.companyLimit,
+        loading: !!state.loading, hasData: !!state.hasData, leseFehler: !!state.leseFehler,
+        lastGridH: state.lastGridH || 0
+      };
+    }
 
     var elHeading = root.querySelector(".up-heading");
     var elSeg     = root.querySelector(".uhm-metric");
@@ -453,6 +492,10 @@
     if (!root.__uhmThemeObs){
       root.__uhmThemeObs = true;
       try {
+        /* Ein Themewechsel OHNE Neuaufbau (setUpstreemTheme schreibt data-isdark auf die Wurzel)
+           faerbt nur um: kein Ladezustand, kein Zuruecksetzen, keine neue Lieferung noetig. So
+           muss es bleiben -- der Ladezustand gehoert update, setLoading und reset, nie dem
+           Thema (27.09.: "beim Theme-Wechsel nichts in den Loading-yes-State"). */
         new MutationObserver(function(){
           if (syncTheme()){
             paintCells();
@@ -707,7 +750,7 @@
       return m;
     }
 
-    function buildGrid(){
+    function buildGrid(ruhig){
       applyTracks();
       var metric = state.metric, empty = emptyFill(), mx = maxMentions();
       var html = '<div class="uhm-corner"></div>';
@@ -724,7 +767,9 @@
       });
       elGrid.innerHTML = html;
       state.layoutKey = layoutKeyOf();
-      runAppear();
+      /* ruhig: ein Neuaufbau zeigt, was schon dastand (siehe Ende von initRoot). Der Auftritt
+         saehe dort aus wie frisch geladen -- und genau das soll ein Themewechsel nicht. */
+      if (!ruhig) runAppear();
     }
 
     /* Repaint WITHOUT touching the DOM structure — this is what makes the metric switch animate:
@@ -733,6 +778,13 @@
        Beim ERSTEN Aufbau laeuft das bewusst nicht (siehe buildGrid) -- dort waere die Transition
        kein Effekt, sondern ein Fehler. */
     function paintCells(){
+      /* Nur ueber einem echten Raster (27.09.). Der Themewechsel ruft hier herein, auch wenn
+         gerade das Skelett steht -- und dann bekam jede Skelettzelle die Leerfarbe INLINE und die
+         Klasse is-empty. Inline schlaegt .uhm-cell.is-sk { background: var(--vc-sk) }: das
+         Skelett pulsierte danach in der Farbe leerer Zellen weiter. Es folgt dem Thema ueber
+         seine Tokens von selbst, und layoutKey ist nur gesetzt, solange buildGrid echte Zellen
+         hingestellt hat (renderSkeleton und renderEmpty leeren ihn). */
+      if (!state.layoutKey) return;
       var metric = state.metric, empty = emptyFill(), mx = maxMentions();
       Array.prototype.forEach.call(elGrid.querySelectorAll(".uhm-cell"), function(el){
         var cell = state.cellMap[el.getAttribute("data-key")];
@@ -828,7 +880,7 @@
       state.layoutKey = "";
     }
 
-    function render(){
+    function render(ruhig){
       /* Solange geladen wird, gewinnt der Ladezustand -- auch wenn schon Daten dastehen. Sonst
          zeichnet der naechste render() waehrend eines laufenden Ladevorgangs die ALTEN Zahlen
          ueber das Skelett, und man sieht wieder Werte, die gerade ersetzt werden. */
@@ -841,7 +893,7 @@
       elGrid.style.minHeight = "";
       var key = layoutKeyOf();
       if (key === state.layoutKey && elGrid.querySelector(".uhm-cell:not(.is-sk)")) paintCells();
-      else buildGrid();
+      else buildGrid(ruhig);
       /* Fuer das naechste Skelett merken, wie hoch die echten Daten stehen. */
       try { state.lastGridH = Math.round(elGrid.getBoundingClientRect().height) || 0; } catch(e){}
       syncPickBtn();
@@ -1174,6 +1226,10 @@
         state.companies = nextC;
         render();
       }
+      /* Die angewandte Auswahl und die verengte Matrix gehoeren in den Speicher, BEVOR das Event
+         rausgeht -- baut Bubble das Element zwischen Apply und Antwort neu, zeigt die neue Wurzel
+         dasselbe wie die alte (siehe DATA_STORE). */
+      persist();
       soft.begin(state.hasData);
       /* VOR dem Bubble-Event leeren, aus demselben Grund wie beim Zellklick: der Workflow startet
          seine Run-JS-Schritte sofort, und ein Reset danach wuerde wegraeumen, was gerade
@@ -1490,7 +1546,9 @@
         if (params.__parseError){
           state.leseFehler = true; state.loading = false; state.hasData = false;
           root.classList.remove("is-loading");
-          render(); return;
+          /* Auch der Fehler wird gemerkt: sonst zeigte ein Neuaufbau danach wieder das Raster
+             von vorher, als waere nichts gewesen. */
+          render(); persist(); return;
         }
         /* Nur eine echte Lieferung loescht den Vermerk -- ein reiner Theme-Render darf ihn
            nicht wegraeumen, sonst stuende danach "No data" statt des Fehlers. */
@@ -1535,6 +1593,8 @@
         soft.end();
         syncSeg();
         render();
+        /* Nach render(), damit die frisch gemessene Rasterhoehe mitkommt. */
+        persist();
         if (pickPop.isOpen()) populatePicker();
       },
       /* Das Skelett gehoert bei JEDEM Ladevorgang gezeigt, nicht nur beim allerersten. Die
@@ -1550,9 +1610,13 @@
            Versuch und steht noch da, waehrend frische Daten unterwegs sind. */
         if (state.loading) state.leseFehler = false;
         root.classList.toggle("is-loading", state.loading);
-        if (!state.loading){ soft.end(); render(); return; }
+        /* Der Ladezustand wird mitgemerkt, und zwar in BEIDE Richtungen: laedt die Instanz
+           wirklich, zeigt auch ein Neuaufbau das Skelett (die Antwort kommt ja noch), ist sie
+           fertig, zeigt er das Raster. Ein Themewechsel allein setzt ihn nie. */
+        if (!state.loading){ soft.end(); render(); persist(); return; }
         soft.end();
         renderSkeleton();
+        persist();
       },
       reset: function(){
         state.cells = []; state.cellMap = {};
@@ -1568,6 +1632,11 @@
         renderEmpty();
         syncPickBtn();
         if (typeof toolGroup !== "undefined" && toolGroup) toolGroup.sync();
+        /* Der Reset erreicht auch den Speicher: er bekommt den geleerten Stand -- sonst braechte
+           der naechste Neuaufbau die Matrix zurueck, die gerade weggeraeumt wurde. Ueberschrieben
+           und NICHT geloescht: ohne Eintrag hielte der Neuaufbau die Instanz fuer frisch und
+           zeigte das Skelett statt des Leerzustands, der hier gerade steht. */
+        persist();
       },
       /* Von aussen schaltbar, damit nicht jeder Aufrufer das Menue oeffnen und eine Zeile darin
          anklicken muss. Gebraucht von der Landingpage, die die Heatmap vorfuehrt -- und in Bubble
@@ -1586,7 +1655,18 @@
     root.classList.toggle("has-weights", state.weights);
     syncSeg();
     if (elHeading && !elHeading.textContent.trim()) elHeading.textContent = "Performance Chart";
-    renderSkeleton();
+    if (wiederaufbau){
+      /* Neuaufbau (siehe DATA_STORE): sofort wieder zeigen, was dastand -- das Raster, den
+         Leerzustand, den Lesefehler, und das Skelett NUR, wenn die Instanz wirklich gerade laedt.
+         Die Auswahllisten und der Entwurf des Pickers sind abgeleitet und werden hier neu
+         gerechnet. Ruhig, also ohne Auftritt: siehe buildGrid. */
+      syncAvailable();
+      resetDraft();
+      root.classList.toggle("is-loading", state.loading);
+      render(true);
+    } else {
+      renderSkeleton();
+    }
     registerLegacyAliases();
     return ctrl;
   }

@@ -180,6 +180,17 @@
     return w ? (UC.t ? UC.t(w) : w) : "";
   }
 
+  /* ---- WAS DER SETTER GESCHICKT HAT, UEBERLEBT DEN NEUAUFBAU (27.09. gemeldet) ----
+     Themenwechsel -> Bubble baut das Element neu -> Skelett fuer immer. Der HAUPTWEG dieser
+     Leiste ist setDrawerTopbar (siehe bubble/drawer_topbar_bubble.html), und die Vorlage traegt
+     data-name="" -- die Leiste lebt also von dem, was der Setter geschickt hat. Das stand bisher
+     nur im Controller: die neue Wurzel begann mit leerem daten, name() war leer, und state.leer
+     hielt die Skelette, bis der Drawer das naechste Mal umgestellt wurde. Derselbe Verlust beim
+     Sprachwechsel, der die Leiste unten bewusst neu aufbaut.
+     Also hier, ausserhalb des Controllers und nach Instanz getrennt. resetDrawerTopbar leert ihn
+     mit -- danach gilt wieder, was die Attribute sagen. */
+  var STORE = (window.__utbStore = window.__utbStore || {});
+
   function initRoot(root) {
     if (!root || root.__utbController) return root && root.__utbController;
     var instanceId = root.getAttribute("data-instance") || "default";
@@ -188,7 +199,12 @@
     /* Der Setter schreibt in daten; ist ein Feld dort nicht gesetzt (undefined), gilt das
        Attribut. So bleibt der Anfangszustand aus dem Markup gueltig, und ein Schritt, der nur
        das Bild nachtraegt, loescht nicht den Namen. */
+    /* Als KOPIE aus dem Speicher und nicht als dasselbe Objekt: reset() ersetzt daten, und ein
+       geteiltes Objekt haette danach zwei Wahrheiten. datenMerken() legt den eigenen Stand ab. */
     var daten = {};
+    var gemerkt = STORE[instanceId];
+    if (gemerkt) Object.keys(gemerkt).forEach(function (k) { daten[k] = gemerkt[k]; });
+    function datenMerken() { STORE[instanceId] = daten; }
     function feld(schluessel, attrName) {
       var w = daten[schluessel] != null ? daten[schluessel] : attr(attrName);
       return String(w == null ? "" : w).trim();
@@ -385,7 +401,7 @@
        Element, das im Drawer schon nicht mehr offen ist.
        state.leer und NICHT das Loeschen der Attribute: die gehoeren Bubble. Sobald ein Name
        ankommt, ist der Zustand von selbst vorbei (siehe der Beobachter). */
-    function reset() { state.leer = true; daten = {}; render(); }
+    function reset() { state.leer = true; daten = {}; datenMerken(); render(); }
 
     /* ---- Der Setter (07.09.) ----
        readBubble und nicht JSON.parse: ein Bubble-Ausdruck liefert regelmaessig doppelt
@@ -418,6 +434,7 @@
       });
       if (o.item_id != null) daten.item_id = String(o.item_id);
       else if (o.id != null) daten.item_id = String(o.id);
+      datenMerken();
       /* Der Ladezustand endet, sobald ein Name da ist -- dieselbe Regel wie am Attributweg. */
       if (name()) state.leer = false;
       render();

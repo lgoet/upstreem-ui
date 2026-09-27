@@ -108,6 +108,18 @@
      Luft. Faellt sie zu frueh, bricht der letzte Block mitten im Einzug ab. */
   var EINZUG_MS = 1100;
 
+  /* ---- EIN NEU GEBAUTES ELEMENT MACHT WEITER (27.09. gemeldet) ----
+     Themenwechsel -> Bubble baut das Element neu -> Skelett, und nach 15s "We could not load
+     your invitation". Auf DIESER Seite liegt es besonders nahe: der Mond oben rechts ruft
+     setUpstreemTheme, Bubble schreibt data-isdark neu, und weil das ein dynamischer Wert im
+     Markup ist, ersetzt Bubble die Wurzel durch eine frische Kopie der Vorlage. Die neue Wurzel
+     begann in phase "loading", und die Antwort des RPC kommt nicht noch einmal -- sie hat sich ja
+     nicht geaendert. Aus einer gueltigen Einladung wurde so nach einem Klick auf den Mond eine
+     Fehlermeldung.
+     Hier liegt deshalb, nach Instanz getrennt, der zuletzt gezeigte Stand (Phase, Daten,
+     Meldung). resetInvitePage raeumt ihn mit auf. */
+  var STORE = (window.__uivStore = window.__uivStore || {});
+
   function makeController(root){
     var UC = window.UpstreemCore;
     var esc = UC.esc;
@@ -166,9 +178,26 @@
       return T.allgemein;
     }
 
-    var state = { phase: "loading", data: null, err: "", busy: false };
+    /* Derselbe Schluessel wie in resolve() weiter unten. Die Phase wird nur uebernommen, wenn sie
+       ein fertiger Stand ist; ein laufendes Annehmen wird zum Willkommensblock -- der Workflow
+       dahinter laeuft ja weiter, und ein zweites "Accept invite" waere eine Einladung zum
+       Doppelklick. busy nicht: der Kreisel im Knopf gehoert zu einer Uhr, die mit dem alten
+       Controller weg ist. */
+    var instanceId = String(root.getAttribute("data-instance") || "default");
+    var gemerkt = STORE[instanceId] || {};
+    var fertigGemerkt = gemerkt.phase === "ready" || gemerkt.phase === "error";
+    var annehmenGemerkt = gemerkt.phase === "accepting" || gemerkt.phase === "welcome";
+    var state = {
+      phase: fertigGemerkt ? gemerkt.phase : (annehmenGemerkt ? "welcome" : "loading"),
+      data: (fertigGemerkt || annehmenGemerkt) ? (gemerkt.data || null) : null,
+      err: fertigGemerkt ? (gemerkt.err || "") : "",
+      busy: false
+    };
+    function merken(){ STORE[instanceId] = { phase: state.phase, data: state.data, err: state.err }; }
     var uhrLaden = null, uhrKnopf = null, uhrHaken = null, uhrWillkommen = null, uhrEinzug = null;
-    var ersterAuftritt = true;
+    /* Der Einzug gehoert zum ERSTEN Erscheinen der Einladung. Ein Neuaufbau zeigt sie schon --
+       ein zweiter Einzug waere ein Flackern bei jedem Themenwechsel. */
+    var ersterAuftritt = state.phase === "loading";
 
     /* ---------------- Thema ----------------
        Dieselbe Reihenfolge wie auf der Anmeldeseite (auth-page.js): ein ausdrueckliches
@@ -351,6 +380,9 @@
 
     /* ---------------- Zeichnen ---------------- */
     function render(){
+      /* Jede Zustandsaenderung dieser Seite endet in render() -- Setter, Uhren, Klicks, reset.
+         Hier zu merken faengt also alle ein, ohne an jeder Stelle daran denken zu muessen. */
+      merken();
       var d = state.data || {};
       var angemeldet = drin();
       var fehler = state.phase === "error";
@@ -534,13 +566,20 @@
         if (state.phase !== "accepting") return;
         state.phase = "welcome";
         render();
-        uhrWillkommen = setTimeout(function(){
-          uhrWillkommen = null;
-          if (state.phase !== "welcome") return;
-          state.phase = "error"; state.err = T.dauert;
-          render();
-        }, WILLKOMMEN_MAX);
+        willkommenUhrStellen();
       }, HAKEN_STEHT);
+    }
+    /* Die Notbremse des Willkommensblocks. Eigene Funktion, weil ein Neuaufbau mitten im Annehmen
+       (siehe STORE) im Willkommensblock beginnt und dieselbe Uhr braucht -- ohne sie drehte der
+       Kreisel dort fuer immer, falls Bubble nicht weiternavigiert. */
+    function willkommenUhrStellen(){
+      if (uhrWillkommen) clearTimeout(uhrWillkommen);
+      uhrWillkommen = setTimeout(function(){
+        uhrWillkommen = null;
+        if (state.phase !== "welcome") return;
+        state.phase = "error"; state.err = T.dauert;
+        render();
+      }, WILLKOMMEN_MAX);
     }
 
     elCta.addEventListener("click", function(){
@@ -596,7 +635,10 @@
 
     syncTheme();
     render();
-    ladenStellen();
+    /* Die Laden-Uhr nur, wenn wirklich geladen wird. Ein Neuaufbau mit fertigem Stand (siehe
+       STORE) hat nichts zu erwarten -- die Uhr lief dort ohnehin ins Leere. */
+    if (state.phase === "loading") ladenStellen();
+    else if (state.phase === "welcome") willkommenUhrStellen();
 
     return {
       root: root,

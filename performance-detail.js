@@ -130,6 +130,20 @@
      dieselbe Spalte an zwei Orten Verschiedenes. */
   var VAR_EXPLAIN = UC.variationsExplain("on this topic");
 
+  /* ---- EIN NEU GEBAUTES ELEMENT MACHT WEITER (27.09. gemeldet) ----
+     "Es ist gar nicht noetig, dass beim Theme-Wechsel was in den Loading-yes-State geht." Bubble
+     baut das Element beim Themewechsel neu -- data-isdark ist in der Vorlage ein dynamischer Wert
+     (IS_DARK). makeController baute fuer die frische Wurzel den leeren Rahmen: keine Auswahl, also
+     "No cell selected", mitten in der offenen Detail-Gruppe und obwohl der Nutzer laengst eine
+     Zelle gewaehlt hatte. Was danach noch kam (Variations oder Kurve eines laufenden
+     Ladevorgangs), landete im Zwischenlager fuer "vor der Auswahl" und erschien nie: die Auswahl
+     kommt nur mit dem Zellklick, und den gibt es nicht noch einmal.
+     Dieselbe Antwort wie in responses-table und im Radar darueber: der Zustand liegt zusaetzlich
+     am window, je data-instance, und eine neue Wurzel derselben Instanz faengt dort an, wo die
+     alte aufgehoert hat -- Auswahl, Kennzahlen, Kurve, Variations, Suche, Ladezustand,
+     Lesefehler. Nur ein echter Seitenreload leert ihn. */
+  var STORE = (window.__updStore = window.__updStore || {});
+
 
   /* ============================================================================================
      Controller pro Root
@@ -138,19 +152,45 @@
     var instanceId = root.getAttribute("data-instance") || "default";
     var myCtrlId = "upd_" + Math.random().toString(36).slice(2) + "_" + (+new Date());
 
+    /* Neuaufbau (siehe STORE): beim gemerkten Stand anfangen statt bei null. Ohne Eintrag ist
+       das hier der Rahmen wie bisher, "No cell selected". */
+    var saved = STORE[instanceId] || {};
+    /* Die beiden Kurven-Faecher werden KOPIERT: setSeries schreibt an Ort und Stelle hinein, und
+       ein Fach, das sich zwei Controller teilen, aendert sich unter dem einen, ohne dass er
+       neu zeichnet. */
+    function serien(s){ s = s || {}; return { topic: s.topic || null, global: s.global || null }; }
+
     var state = {
-      company: null, topic: null, cell: null,
-      column: [],            // alle Marken auf DIESEM Topic, aus dem Raster des Radars
-      row: [],               // DIESE Marke ueber alle Topics, ebenfalls aus dem Raster
-      scope: "topic",        // "topic" | "global"
-      series: { topic: null, global: null },
-      globalKpis: null,      // optional per Setter; sonst aus state.row gerechnet
-      variations: null,      // null = noch nichts geliefert, [] = geliefert und leer
-      varQuery: "",
-      loading: false, hasData: false, isDark: false
+      company: saved.company || null, topic: saved.topic || null, cell: saved.cell || null,
+      column: Array.isArray(saved.column) ? saved.column : [],   // alle Marken auf DIESEM Topic, aus dem Raster des Radars
+      row: Array.isArray(saved.row) ? saved.row : [],            // DIESE Marke ueber alle Topics, ebenfalls aus dem Raster
+      scope: saved.scope === "global" ? "global" : "topic",      // "topic" | "global"
+      series: serien(saved.series),
+      globalKpis: saved.globalKpis || null,      // optional per Setter; sonst aus state.row gerechnet
+      /* null = noch nichts geliefert, [] = geliefert und leer -- der Unterschied ueberlebt den
+         Neuaufbau mit, darum Array.isArray und nicht ||. */
+      variations: Array.isArray(saved.variations) ? saved.variations : null,
+      varQuery: String(saved.varQuery || ""),
+      loading: !!saved.loading, hasData: !!saved.hasData, isDark: false,
+      leseFehler: !!saved.leseFehler
     };
     /* Zwischenlager fuer Daten, die vor der Auswahl eintreffen. Siehe setSelection(). */
-    var VORAB = { variations: null, series: { topic: null, global: null }, globalKpis: null };
+    var gemerktVorab = saved.vorab || {};
+    var VORAB = { variations: Array.isArray(gemerktVorab.variations) ? gemerktVorab.variations : null,
+                  series: serien(gemerktVorab.series), globalKpis: gemerktVorab.globalKpis || null };
+    /* Nach JEDER Aenderung am Zustand: Auswahl, nachgereichte Teile, Ladezustand, Reset, Suche,
+       Scope. Das Zwischenlager gehoert mit dazu -- kam ein Teil vor der Auswahl, soll er auch nach
+       einem Neuaufbau noch auf sie warten. */
+    function persist(){
+      STORE[instanceId] = {
+        company: state.company, topic: state.topic, cell: state.cell,
+        column: state.column, row: state.row, scope: state.scope,
+        series: serien(state.series), globalKpis: state.globalKpis, variations: state.variations,
+        varQuery: state.varQuery, loading: !!state.loading, hasData: !!state.hasData,
+        leseFehler: !!state.leseFehler,
+        vorab: { variations: VORAB.variations, series: serien(VORAB.series), globalKpis: VORAB.globalKpis }
+      };
+    }
 
     /* -------- Markup. Die Bubble-Datei traegt nur das Wurzel-Div; alles darunter baut die
        Komponente selbst. Es gibt hier keine Stellen, an denen der Nutzer etwas einsetzen soll,
@@ -523,6 +563,7 @@
       var all = elScope.querySelectorAll(".up-seg-btn");
       for (var i = 0; i < all.length; i++) all[i].classList.toggle("is-active", all[i] === btn);
       render();
+      persist();
       /* Die Kurve fuer den anderen Scope kann fehlen -- Bubble holt sie nach. Die KPIs stehen
          schon, weil sie aus dem Raster kommen. */
       if (!state.series[next] && state.company && state.topic){
@@ -592,16 +633,17 @@
       var open = !elSearch.classList.contains("is-open");
       elSearch.classList.toggle("is-open", open);
       if (open){ setTimeout(function(){ try { elSInput.focus(); } catch(e){} }, 60); }
-      else if (state.varQuery){ state.varQuery = ""; elSInput.value = ""; elSearch.classList.remove("has-text"); renderVariations(); }
+      else if (state.varQuery){ state.varQuery = ""; elSInput.value = ""; elSearch.classList.remove("has-text"); renderVariations(); persist(); }
     });
     elSInput.addEventListener("input", function(){
       state.varQuery = String(elSInput.value || "").trim();
       elSearch.classList.toggle("has-text", !!elSInput.value.length);
       renderVariations();
+      persist();
     });
     root.querySelector(".up-search-clear").addEventListener("click", function(){
       state.varQuery = ""; elSInput.value = ""; elSearch.classList.remove("has-text");
-      renderVariations(); try { elSInput.focus(); } catch(e){}
+      renderVariations(); persist(); try { elSInput.focus(); } catch(e){}
     });
 
     /* Der geteilte Tooltip. showTipWide zeigt den vollen Text, unsuppress hebt die Stummschaltung
@@ -693,7 +735,7 @@
       if (p.__parseError){
         state.leseFehler = true;
         state.company = null; state.topic = null;
-        setLoading(false); render(); return;
+        setLoading(false); render(); persist(); return;
       }
       state.leseFehler = false;
       var neu = paarSchluessel(p.company, p.topic);
@@ -745,6 +787,7 @@
       }
       state.hasData = !!(state.company && state.topic);
       render();
+      persist();
     }
     /* Sicherheitsnetz gegen einen Workflow, der sein setLoading("no") vergisst: sobald BEIDE
        nachgereichten Teile da sind -- Variations und die Kurve fuer den aktuellen Scope -- gibt es
@@ -760,25 +803,28 @@
     function setVariations(rows){
       if (typeof rows === "string"){ try { rows = JSON.parse(rows); } catch(e){ rows = null; } }
       var list = Array.isArray(rows) ? rows : [];
-      if (!state.company){ VORAB.variations = list; return; }
+      if (!state.company){ VORAB.variations = list; persist(); return; }
       state.variations = list;
       renderVariations();
+      persist();
       ladezustandPruefen();
     }
     function setSeries(payload){
       if (typeof payload === "string"){ try { payload = JSON.parse(payload); } catch(e){ payload = null; } }
       if (!payload) return;
       var scope = payload.scope === "global" ? "global" : "topic";
-      if (!state.company){ VORAB.series[scope] = payload; return; }
+      if (!state.company){ VORAB.series[scope] = payload; persist(); return; }
       state.series[scope] = payload;
       renderChart();
+      persist();
       ladezustandPruefen();
     }
     function setGlobal(kpi){
       if (typeof kpi === "string"){ try { kpi = JSON.parse(kpi); } catch(e){ kpi = null; } }
-      if (!state.company){ VORAB.globalKpis = kpi || null; return; }
+      if (!state.company){ VORAB.globalKpis = kpi || null; persist(); return; }
       state.globalKpis = kpi || null;
       if (state.scope === "global") renderKpis();
+      persist();
     }
     function setLoading(v){
       state.loading = UC.isYes ? UC.isYes(v) : (String(v) === "yes" || v === true);
@@ -795,6 +841,10 @@
       renderKpis();
       renderStanding();
       renderChart();
+      /* Mitgemerkt in beide Richtungen: laedt der Bereich wirklich, zeigt auch ein Neuaufbau die
+         Skelette (die Antwort kommt ja noch), ist er fertig, zeigt er die Zahlen. Ein
+         Themewechsel allein setzt den Ladezustand nie. */
+      persist();
     }
     function reset(){
       state.company = null; state.topic = null; state.cell = null;
@@ -809,6 +859,9 @@
       root.classList.remove("is-loading");
       try { line.destroy(); } catch(e){}
       render();
+      /* Der Reset erreicht auch den Speicher: er bekommt den geleerten Stand, sonst braechte der
+         naechste Neuaufbau die Zelle zurueck, die gerade geschlossen wurde. */
+      persist();
     }
     function setTheme(v){
       root.setAttribute("data-theme", String(v) === "dark" || v === true ? "dark" : "light");
@@ -836,6 +889,21 @@
       setGlobal: setGlobal, setLoading: setLoading, reset: reset, setTheme: setTheme,
       render: render
     };
+    /* Neuaufbau (siehe STORE): was nicht render() zeichnet, sondern fest im Rahmen steht, von Hand
+       nachziehen. Das Suchfeld samt Suche -- ein zugeklapptes Feld ueber einer gefilterten Liste
+       waere ein stiller Filter --, der Scope-Umschalter, falls er wieder eingesetzt ist, und die
+       Ladeklasse. Ohne Eintrag im Speicher tut keine der drei Zeilen etwas. */
+    if (state.varQuery && elSearch && elSInput){
+      elSInput.value = state.varQuery;
+      elSearch.classList.add("is-open", "has-text");
+    }
+    if (elScope){
+      var scopeKnoepfe = elScope.querySelectorAll(".up-seg-btn");
+      for (var sk = 0; sk < scopeKnoepfe.length; sk++){
+        scopeKnoepfe[sk].classList.toggle("is-active", scopeKnoepfe[sk].getAttribute("data-scope") === state.scope);
+      }
+    }
+    root.classList.toggle("is-loading", state.loading);
     root.__updController = ctrl;
     render();
     return ctrl;

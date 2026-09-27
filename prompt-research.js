@@ -41,6 +41,23 @@
     });
   }
 
+  /* ---- EIN NEU GEBAUTES ELEMENT MACHT WEITER (27.09. gemeldet) ----
+     "Es ist gar nicht noetig, dass beim Theme-Wechsel was in den Loading-yes-State geht."
+     Themenwechsel -> Bubble baut das Element neu (data-isdark ist ein dynamischer Wert) ->
+     Skelett fuer immer. Die neue Wurzel kommt frisch aus der Vorlage, initRoot baut sie von vorn
+     auf, und alles, was Bubble frueher geschickt hatte, ist weg: das Chip-Skelett der Vorschlaege
+     bleibt stehen (renderSuggestions ohne Liste blendet es nie aus), die Marktauswahl steht auf
+     "Loading markets...", die Liste der Recherchen ist leer, die Ergebnisse sind weg. Bubble
+     schickt nichts davon ein zweites Mal -- es hat sich ja nichts geaendert.
+     Also merkt sich die Komponente, was sie zeigt, am Fenster je data-instance, und eine neue
+     Wurzel startet aus diesem Vorrat. Dasselbe Muster wie responses-table und urls-table.
+     BESITZER ist die Wurzel, der die API gerade gehoert (die zuletzt aufgebaute): nur sie
+     schreibt. Die alte schreibt bis zu diesem Moment weiter, und das muss sie -- zwischen Neubau
+     und Aufbau der neuen Wurzel (bis zu einem Takt von watchRoots) gehen die Aufrufe noch an ihre
+     Closure, und genau die muss die neue Wurzel vorfinden. */
+  var STORE = (window.__uprStore = window.__uprStore || {});
+  var BESITZER = (window.__uprBesitzer = window.__uprBesitzer || {});
+
   function uprBoot(triesLeft){
     if (!window.UpstreemCore){
       if (triesLeft > 0){ setTimeout(function(){ uprBoot(triesLeft - 1); }, 100); return; }
@@ -93,6 +110,13 @@
   };
 
   function initRoot(root, UC){
+    /* Der Vorrat wird GANZ AM ANFANG gelesen, bevor irgendetwas hier ihn beschreiben koennte.
+       aufbau haelt merke() still, bis wiederherstellen() fertig ist -- sonst schriebe schon der
+       Grundaufbau (leere Liste, Zustand idle) ueber das, was gleich zurueckkommen soll. */
+    var instanceId = root.getAttribute('data-instance') || 'default';
+    var vorrat = STORE[instanceId] || null;
+    var aufbau = true;
+
     /* Page header, built HERE and not in the Bubble template on purpose. That template is a
        fresh-install file: it is pasted once and later edits never reach a page that already
        exists. Adding this block there would have shipped nothing to the live page. Built from JS,
@@ -421,6 +445,34 @@
   var acceptWithTags = true;
   var currentResearchMeta = { keywords: [], market: null, market_name: null, business_model: null, persona: null };
 
+  /* ---------- Vorrat fuer den Neuaufbau (siehe STORE oben) ----------
+     Was Bubble geliefert hat, so wie es kam: die Rohlisten, nicht die umgeformten -- jede Render-
+     Funktion formt beim Wiedereinsetzen selbst um, genau wie beim ersten Mal. null heisst "nie
+     geliefert": dann bleibt auch nach einem Neuaufbau das Skelett, denn dann laedt es wirklich. */
+  var gemerkteMaerkte = null, gemerkterVerlauf = null, gemerkteErgebnisse = null;
+  /* Ergebnisansicht mit Skelettzeilen: ein Job aus der Liste ist geoeffnet, setPrompts steht aus. */
+  var ergebnisLaedt = false;
+  /* Beginn des laufenden Recherche-Laufs -- fuer den Balken, damit ein Neuaufbau ihn nicht auf
+     0 zuruecksetzt. 0, solange nichts laeuft. */
+  var laufSeit = 0;
+  /* Das Eingabefeld baut initTagEditor weiter unten; dort werden diese beiden ersetzt. */
+  var eingabe = { stand: function(){ return []; }, setzen: function(){} };
+  function merke(){
+    if (aufbau || BESITZER[instanceId] !== root) return;
+    STORE[instanceId] = {
+      tags: suggestionTagsSource, tagsOffen: suggestionTagsExpanded,
+      maerkte: gemerkteMaerkte, markt: state.market, marktWunsch: _pendingMarket,
+      modell: state.business_model, persona: state.persona,
+      verlauf: gemerkterVerlauf,
+      zustand: root.getAttribute('data-research-state') || 'idle', laufSeit: laufSeit,
+      ergebnisse: gemerkteErgebnisse, ergebnisLaedt: ergebnisLaedt,
+      kontext: currentResearchMeta,
+      mitTags: acceptWithTags,
+      aktion: root.classList.contains('is-action-loading'),
+      eingabe: eingabe.stand()
+    };
+  }
+
   /* ---------- helpers ---------- */
   function esc(v){ return UC.esc ? UC.esc(v) : String(v == null ? '' : v); }
   /* UC.themeParam statt isYes: kennt core ein Thema, gewinnt core -- das Attribut ist nur die
@@ -549,11 +601,19 @@
   function balkenStarten(){
     var el = root.querySelector('#upr-bar');
     if (!el) return;
-    var t0 = Date.now();
-    el.style.width = '0%';
+    /* Ab laufSeit, nicht ab jetzt: nach einem Neuaufbau mitten im Lauf faehrt der Balken dort
+       weiter, wo er stand, statt auf 0 zurueckzuspringen. Frisch gestartet ist laufSeit jetzt --
+       die erste Breite ist dann 0 %, wie vorher. */
+    var t0 = laufSeit || Date.now();
+    function breite(){ return (BALKEN_ZIEL * (1 - Math.exp(-(Date.now() - t0) / BALKEN_HALB))).toFixed(1) + '%'; }
+    el.style.width = breite();
     var iv = setInterval(function(){
-      var t = Date.now() - t0;
-      el.style.width = (BALKEN_ZIEL * (1 - Math.exp(-t / BALKEN_HALB))).toFixed(1) + '%';
+      /* Hat eine neu gebaute Wurzel uebernommen, raeumt die alte ihre Schleifen selbst ab --
+         Balken, Satz und Marken liefen sonst im abgehaengten Knoten weiter, bis die Seite wechselt.
+         Eine Pruefung genuegt: _uprClearLoad nimmt alle Ladeuhren dieser Wurzel mit, und diese
+         hier tickt am haeufigsten. */
+      if (BESITZER[instanceId] !== root){ _uprClearLoad(); return; }
+      el.style.width = breite();
     }, BALKEN_TAKT);
     _uprLoadTimers.push(iv);
   }
@@ -591,6 +651,11 @@
     var isRunning = name === 'running';
     var isResults = name === 'results';
     var isError = name === 'error';
+    /* Beim UEBERGANG in "running" gesetzt, nicht bei jedem Aufruf: ein zweites setRunning() aus
+       Bubble liess den Balken sonst von vorn anfangen. Ein Neuaufbau setzt laufSeit vorher aus
+       dem Vorrat, dann bleibt es hier stehen. */
+    if (isRunning && !laufSeit) laufSeit = Date.now();
+    if (!isRunning) laufSeit = 0;
     root.setAttribute('data-research-state', name);
     /* The toolbar only exists in the results view, so its height can only be measured once that
        view is up — remeasure on every state change. applyStickyNow is a hoisted declaration and
@@ -613,6 +678,7 @@
     if (isRunning && settingsPanel){ settingsPanel.classList.remove('is-open'); if (settingsToggle){ settingsToggle.setAttribute('aria-expanded', 'false'); settingsToggle.classList.remove('is-active'); } }
     if (tableMenu && !isResults) tableMenuPop.close();
     if (isRunning) startLoaderAnim(); else stopLoaderAnim();
+    merke();
   }
 
   /* ---------- cells ---------- */
@@ -683,6 +749,10 @@
   }
   function renderPreviousResearches(rawItems){
     previousResearches = (Array.isArray(rawItems) ? rawItems : []).map(normalizeResearchMeta).filter(function(x){ return x.job_id; });
+    /* Gemerkt erst NACH dem Umformen: eine Liste, an der normalizeResearchMeta scheitert, darf
+       nicht in den Vorrat -- sonst scheiterte jeder Neuaufbau ein zweites Mal an ihr. */
+    gemerkterVerlauf = Array.isArray(rawItems) ? rawItems : [];
+    merke();
     if (historyCountEl) historyCountEl.textContent = String(previousResearches.length);
     if (!historyList) return;
     if (!previousResearches.length){
@@ -781,14 +851,22 @@
       : '';
   }
 
-  /* ---------- events out (names unchanged) ---------- */
-  function emitOpenResearchJob(item){
-    if (!item || !item.job_id) return;
-    updateResearchContext(item); renderResultsContext(); closeHistoryPanel();
+  /* Die Ergebnisansicht, waehrend ein geoeffneter Job laedt. Eigene Funktion, weil ein
+     Neuaufbau in genau diesem Moment dasselbe Bild braucht -- ohne das Event ein zweites Mal
+     zu feuern. ergebnisLaedt faellt erst mit den Zeilen (renderSuggestedPrompts). */
+  function ergebnisSkelett(){
+    ergebnisLaedt = true;
     renderSkeletonRows();
     if (resultsStage) resultsStage.classList.remove('is-empty');
     if (resultsCount) resultsCount.textContent = '…';
     root.querySelectorAll('[data-count-label]').forEach(function(el){ el.textContent = '(…)'; });
+  }
+
+  /* ---------- events out (names unchanged) ---------- */
+  function emitOpenResearchJob(item){
+    if (!item || !item.job_id) return;
+    updateResearchContext(item); renderResultsContext(); closeHistoryPanel();
+    ergebnisSkelett();
     setResearchState('results');
     if (historyList) historyList.scrollTop = 0;
     var payload = { job_id: item.job_id, keywords: item.keywords, market: item.market, market_name: item.market_name, business_model: item.business_model, persona: item.persona };
@@ -808,6 +886,9 @@
   function renderSuggestedPrompts(rawItems){
     var items = Array.isArray(rawItems) ? rawItems : [];
     currentSuggestedPrompts = items.map(normalizePromptItem).filter(function(item){ return item.prompt_text; });
+    /* Nach dem Umformen, aus demselben Grund wie in renderPreviousResearches. Gemerkt wird
+       ueber setResearchState unten. */
+    gemerkteErgebnisse = items; ergebnisLaedt = false;
     if (!currentResearchMeta.market && currentSuggestedPrompts.length) currentResearchMeta.market = currentSuggestedPrompts[0].market || null;
     var count = currentSuggestedPrompts.length;
     if (resultsCount) resultsCount.textContent = String(count);
@@ -841,6 +922,7 @@
       if (isLoading){ if (!el.hasAttribute('data-upr-prev-disabled')) el.setAttribute('data-upr-prev-disabled', el.disabled ? '1' : '0'); el.disabled = true; }
       else if (el.hasAttribute('data-upr-prev-disabled')){ el.disabled = el.getAttribute('data-upr-prev-disabled') === '1'; el.removeAttribute('data-upr-prev-disabled'); }
     });
+    merke();
   }
 
   /* ---------- composer ---------- */
@@ -856,6 +938,7 @@
   function renderSuggestions(sourceTags){
     var isFirstCall = Array.isArray(sourceTags);
     if (isFirstCall){ suggestionTagsSource = sourceTags; suggestionTagsExpanded = false; }
+    merke();
     var source = Array.isArray(suggestionTagsSource) ? suggestionTagsSource : readJsonScript('upr-suggested-keywords-json', []);
     var tags = source.map(normalizeSuggestionTag).filter(Boolean);
     var visibleTags = suggestionTagsExpanded ? tags : tags.slice(0, SUGGESTION_TAGS_LIMIT);
@@ -907,6 +990,7 @@
     if (valueEl) valueEl.innerHTML = (flag ? '<span class="upr-flag">' + flagHtml(flag, label) + '</span>' : '') + '<span>' + esc(label) + '</span>';
     if (dd.__pop) dd.__pop.close();
     syncDropdownOpenState();
+    merke();
   }
   function wireDropdown(dd){
     var trigger = dd.querySelector('.upr-dd-trigger');
@@ -1045,12 +1129,18 @@
   if (backToStartButton) backToStartButton.addEventListener('click', function(){ setResearchState('idle'); closeHistoryPanel(); });
 
   if (tableMenuTrigger) tableMenuTrigger.addEventListener('click', function(e){ e.stopPropagation(); tableMenuPop.toggle(); });
-  if (acceptWithTagsBtn) acceptWithTagsBtn.addEventListener('click', function(){
-    acceptWithTags = !acceptWithTags;
+  /* Als Funktion, damit ein Neuaufbau den Schalter so zuruecksetzen kann, wie er stand. */
+  function mitTagsSetzen(an){
+    acceptWithTags = !!an;
+    if (!acceptWithTagsBtn) return;
     acceptWithTagsBtn.classList.toggle('is-on', acceptWithTags);
     acceptWithTagsBtn.setAttribute('aria-pressed', acceptWithTags ? 'true' : 'false');
     var sw = acceptWithTagsBtn.querySelector('.up-switch');
     if (sw) sw.classList.toggle('is-on', acceptWithTags);
+  }
+  if (acceptWithTagsBtn) acceptWithTagsBtn.addEventListener('click', function(){
+    mitTagsSetzen(!acceptWithTags);
+    merke();
   });
   if (acceptAllButton) acceptAllButton.addEventListener('click', function(){
     tableMenuPop.close();
@@ -1213,6 +1303,7 @@
       composerEl.classList.toggle('has-value', !empty);
       var val = getValue();
       if (textarea.value !== val) textarea.value = val;
+      merke();
     }
     function placeCaretAfter(node){
       try { var sel = window.getSelection(), r = document.createRange(); r.setStartAfter(node); r.collapse(true); sel.removeAllRanges(); sel.addRange(r); } catch(e){}
@@ -1228,6 +1319,31 @@
         '</span><span class="upr-inline-tag-sep">,</span>';
       return span;
     }
+    /* Fuer den Neuaufbau: der Inhalt als Liste aus Marken, Text und Umbruechen, NICHT als
+       innerHTML. Zurueck kommt er ueber buildTag und Textknoten -- so wird nichts als Markup
+       wieder eingesetzt, was jemand hineinkopiert oder hineingezogen hat, und die Marken tragen
+       wieder dieselbe Bauart wie frisch gesetzte. */
+    eingabe = {
+      stand: function(){
+        var out = [];
+        Array.prototype.forEach.call(editor.childNodes, function(n){
+          if (isTag(n)) out.push({ tag: String(n.getAttribute('data-tag') || '') });
+          else if (n.nodeName === 'BR') out.push({ br: 1 });
+          else out.push({ text: String(n.textContent || '') });
+        });
+        return out;
+      },
+      setzen: function(liste){
+        editor.innerHTML = '';
+        (Array.isArray(liste) ? liste : []).forEach(function(x){
+          if (!x) return;
+          if (x.tag != null){ if (String(x.tag).trim()) editor.appendChild(buildTag(String(x.tag))); }
+          else if (x.br) editor.appendChild(document.createElement('br'));
+          else if (x.text) editor.appendChild(document.createTextNode(String(x.text)));
+        });
+        updateState();
+      }
+    };
     function ensureTrailingText(){
       var last = editor.lastChild;
       if (!last || last.nodeType !== 3){ last = document.createTextNode(' '); editor.appendChild(last); }
@@ -1322,6 +1438,8 @@
   })();
 
   /* ---------- public API (names and semantics byte-identical to the standalone) ---------- */
+  /* Ab hier gehoert die API dieser Wurzel -- und damit auch der Vorrat (siehe BESITZER oben). */
+  BESITZER[instanceId] = root;
   var api = window.upstreemPromptResearch = window.upstreemPromptResearch || {};
   api.setRunning  = function(){ setResearchState('running'); };
   api.setIdle     = function(){ setResearchState('idle'); };
@@ -1337,6 +1455,7 @@
   api.setResearchMeta = function(meta){
     if (typeof meta === 'string'){ try { meta = JSON.parse(meta); } catch(e){ meta = {}; } }
     updateResearchContext(meta || {}); renderResultsContext();
+    merke();
   };
   api.setPreviousResearches = function(items){
     if (typeof items === 'string'){ try { items = JSON.parse(items); } catch(e){ items = []; } }
@@ -1351,9 +1470,13 @@
   api.setMarkets       = function(items){
     if (typeof items === 'string'){ try { items = JSON.parse(items); } catch(e){ items = []; } }
     if (!Array.isArray(items)) return;
+    gemerkteMaerkte = items;
     var tag = root.querySelector('#upr-markets-json') || document.getElementById('upr-markets-json');
     if (tag) tag.textContent = JSON.stringify(items);
     renderMarketDropdown();   // claims _pendingMarket itself, see there
+    /* Nach renderMarketDropdown: das raeumt _pendingMarket erst NACH der Auswahl ab, und die
+       Auswahl hat schon gemerkt -- mit dem alten Wunsch. */
+    merke();
   };
 
   /* ---------- settings the host sets from outside ----------
@@ -1394,6 +1517,7 @@
     v = coerce(v);
     _pendingMarket = v;
     if (applyMarket(v)) _pendingMarket = null;
+    merke();
   };
   /* Business model is a plain three-option dropdown that is in the markup from the start, so no
      pending dance is needed -- but it DOES have a visible control, which the first version of this
@@ -1406,12 +1530,70 @@
     state.persona = s;
     var el = root.querySelector('.upr-persona-input, #upr-persona, [data-name="persona"] input');
     if (el && 'value' in el) el.value = s;
+    merke();
   };
 
   renderSuggestions();
   renderMarketDropdown();
   renderPreviousResearches([]);
   setResearchState('idle');
+
+  /* ---------- Neuaufbau: der Stand des Vorgaengers ----------
+     Ueber dieselben Wege, die Bubbles Aufrufe nehmen -- renderSuggestions, renderMarketDropdown,
+     setDropdownValue, renderSuggestedPrompts, setResearchState --, damit das Bild genau das ist,
+     das die Aufrufe damals ergeben haben. Nichts davon feuert ein Event an Bubble. */
+  function wiederherstellen(v){
+    if (Array.isArray(v.tags)){
+      renderSuggestions(v.tags);                     /* blendet das Chip-Skelett aus */
+      if (v.tagsOffen){ suggestionTagsExpanded = true; renderSuggestions(); }
+    }
+    /* Ein Marktwunsch des Hosts, der noch zu keiner Option passte, bleibt offen wie vorher --
+       ein spaeteres setMarkets greift ihn dann auf. Die sichtbare Auswahl kommt DANACH, sonst
+       gewaenne beim Neuaufbau die erste Option gegen das, was der Nutzer gewaehlt hatte. */
+    _pendingMarket = v.marktWunsch != null ? v.marktWunsch : null;
+    if (Array.isArray(v.maerkte)){
+      gemerkteMaerkte = v.maerkte;
+      var mTag = root.querySelector('#upr-markets-json') || document.getElementById('upr-markets-json');
+      if (mTag) mTag.textContent = JSON.stringify(v.maerkte);
+      renderMarketDropdown();
+    }
+    /* Auch ohne gemerkte Liste: kamen die Maerkte als Startwert im Markup (#upr-markets-json),
+       stehen die Optionen schon, und die Wahl des Nutzers gehoert wieder darauf. */
+    if (v.markt) applyMarket(v.markt);
+    selectDdValue(root.querySelector('.upr-dd[data-name="business_model"]'), v.modell);
+    selectDdValue(root.querySelector('.upr-dd[data-name="persona"]'), v.persona);
+    /* Direkt gesetzt, falls der Wert zu keiner Option passt (setPersona nimmt freien Text). */
+    if (v.modell != null) state.business_model = v.modell;
+    if (v.persona != null) state.persona = v.persona;
+    if (Array.isArray(v.verlauf)) renderPreviousResearches(v.verlauf);
+    if (v.kontext && typeof v.kontext === 'object'){
+      var k = v.kontext;
+      currentResearchMeta = { keywords: Array.isArray(k.keywords) ? k.keywords.slice() : [],
+        market: k.market || null, market_name: k.market_name || null,
+        business_model: k.business_model || null, persona: k.persona || null };
+    }
+    mitTagsSetzen(v.mitTags !== false);
+    eingabe.setzen(v.eingabe);
+    if (Array.isArray(v.ergebnisse)) renderSuggestedPrompts(v.ergebnisse);
+    if (v.ergebnisLaedt){ ergebnisSkelett(); renderResultsContext(); }
+    /* laufSeit erst HIER: renderSuggestedPrompts geht ueber setResearchState("results"), und
+       das setzt laufSeit auf 0. Gesetzt davor, finge der Balken wieder bei 0 an. */
+    laufSeit = v.zustand === 'running' ? (v.laufSeit || 0) : 0;
+    setResearchState(v.zustand || 'idle');
+    /* Zuletzt: setActionLoading merkt sich den disabled-Stand jedes Knopfs, und den legt
+       setResearchState eben erst fest. */
+    if (v.aktion) setActionLoading(true);
+  }
+  /* Scheitert das Wiedereinsetzen, steht die Wurzel im Grundzustand da -- wie vor dem 27.09.
+     nach jedem Neuaufbau --, aber sie lebt: aufbau faellt, die Warteschlange laeuft, und der
+     naechste Aufruf aus Bubble fuellt sie wieder. Ohne das try blieb aufbau stehen und die
+     Komponente merkte sich nie wieder etwas. */
+  if (vorrat){
+    try { wiederherstellen(vorrat); }
+    catch(e){ if (window.console) console.error('[prompt-research] restoring after rebuild failed:', e); }
+  }
+  aufbau = false;
+  merke();
 
   /* Replay whatever Bubble queued against the stubs, in call order. */
   var q = window.__uprBootQueue;

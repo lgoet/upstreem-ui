@@ -185,8 +185,22 @@
      obwohl der Meta-Save mit den Modellen nichts zu tun hat.
      Darum liegt sie ausserhalb des Controllers, an der Instanz-Kennung -- dasselbe Muster wie
      der Modus in brand-detail. Gemessen in _h_mod2: Ladezyklus und Attribut-Neuschrift lassen
-     die Karten stehen, die Neu-Injektion loeschte sie. */
-  var MODELS_STORE = (window.__usbModels = window.__usbModels || {});
+     die Karten stehen, die Neu-Injektion loeschte sie.
+
+     ---- EIN NEU GEBAUTES ELEMENT MACHT WEITER (27.09. gemeldet) ----
+     "Es ist gar nicht noetig, dass beim Theme-Wechsel was in den Loading-yes-State geht."
+     Themenwechsel -> Bubble baut das Element neu (data-isdark ist ein dynamischer Wert) ->
+     Skelett fuer immer. Der neue Controller startete mit loading = true, und beendet wird der
+     Ladezustand nur von setSettingsBrandLoading("no") oder renderSettingsBrand -- beides schickt
+     Bubble kein zweites Mal, die Daten haben sich ja nicht geaendert. Der Vorrat oben trug nur
+     die Modelle, nicht die Antwort auf "ist hier schon geladen worden".
+     Jetzt traegt er alles, was der Controller weiss: Ladezustand samt Beginn der Sperre,
+     Lesefehler, was der Server bestaetigt hat (saved), was auf dem Bildschirm steht (draft), die
+     Metadaten und das Linkfeld. Dasselbe Muster wie responses-table und urls-table (STORE je
+     data-instance, der Controller startet AUS dem Vorrat statt aus dem Nichts). Neuer Name,
+     weil sich die Form geaendert hat -- __usbModels liest niemand mehr. */
+  var STORE = (window.__usbStore = window.__usbStore || {});
+  var META_FELDER = ["marketId", "businessModel", "industry", "summary"];
 
   function makeController(root){
     var UC = window.UpstreemCore;
@@ -196,33 +210,59 @@
 
     /* Der Vorrat gilt nur fuer DAS Team, zu dem er aufgenommen wurde. Ohne diese Pruefung
        stuenden nach einem Teamwechsel kurz die Modelle des alten Teams da -- falsche Daten sind
-       schlimmer als der Ladezustand, den sie ueberbruecken sollen. */
+       schlimmer als der Ladezustand, den sie ueberbruecken sollen.
+       Ein nicht ersetzter Platzhalter ("TEAM_ID") ist KEIN Team: mit ihm verglichen, verwarf eine
+       Wurzel, deren Attribut noch nicht aufgeloest war, den ganzen Vorrat -- und stand wieder im
+       Skelett. Dieselbe Regel wie in readAttrs weiter unten. */
     var teamJetzt = String(root.getAttribute("data-team-id") || "").trim();
-    var vorrat = MODELS_STORE[instanceId];
+    if (/^[A-Z_]{3,}$/.test(teamJetzt)) teamJetzt = "";
+    var vorrat = STORE[instanceId];
     if (vorrat && vorrat.teamId && teamJetzt && vorrat.teamId !== teamJetzt) vorrat = null;
+    var vS = (vorrat && vorrat.saved) || {}, vD = (vorrat && vorrat.draft) || {}, vM = (vorrat && vorrat.meta) || {};
 
     /* saved = was der Server zuletzt bestaetigt hat, draft = was auf dem Bildschirm steht.
-       Der Speichern-Knopf vergleicht die beiden; ohne diese Trennung gaebe es kein "geaendert". */
-    var saved = { models: vorrat ? cloneModels(vorrat.models) : [], marketId: "", businessModel: "", industry: "", summary: "" };
-    var draft = { models: vorrat ? cloneModels(vorrat.models) : [], marketId: "", businessModel: "", industry: "", summary: "" };
-    var meta  = { brandName: "", brandLogo: "", teamName: "", teamId: "",
-                  modelLimit: vorrat ? vorrat.limit : 3,
-                  canManage: vorrat ? vorrat.canManage : true,
-                  markets: [], marketsRaw: [], industries: INDUSTRIES.slice(), logoFileName: "" };
+       Der Speichern-Knopf vergleicht die beiden; ohne diese Trennung gaebe es kein "geaendert".
+       Beide starten aus dem Vorrat. Die Meta-Felder ueberschreibt readAttrs weiter unten ohnehin
+       mit Bubbles Stand von JETZT; der Vorrat zaehlt dort nur fuer Werte, die allein ueber
+       renderSettingsBrand kamen, und fuer ungespeicherte Eingaben (entwurfZurueck). */
+    var saved = { models: cloneModels(Array.isArray(vS.models) ? vS.models : []),
+                  marketId: vS.marketId || "", businessModel: vS.businessModel || "",
+                  industry: vS.industry || "", summary: vS.summary || "" };
+    /* Die Modellauswahl kommt als Entwurf nur zurueck, wenn sie beim Merken WIRKLICH vom
+       Gespeicherten abwich. Bis zum 27.09. stand hier das Gegenteil ("eine ungespeicherte Auswahl
+       soll eine Neu-Injektion nicht ueberleben") -- gedacht fuer den Speicher-Rundlauf. Seit der
+       Themenwechsel denselben Neuaufbau ausloest, hiess das: Modell angeklickt, Theme umgestellt,
+       Klick weg. Ein Neuaufbau ist fuer den Nutzer unsichtbar und darf nichts verwerfen, was er
+       ohne ihn noch saehe. "Unsaved changes" fuer etwas Unberuehrtes entsteht dabei nicht: nach
+       jedem Speichern ist draft gleich saved, und renderSettingsBrand mit Modellen setzt den
+       Entwurf wie bisher auf den Serverstand. */
+    var vDModels = Array.isArray(vD.models) && keysOf(vD.models) !== keysOf(saved.models) ? vD.models : saved.models;
+    var draft = { models: cloneModels(vDModels), marketId: saved.marketId, businessModel: saved.businessModel,
+                  industry: saved.industry, summary: saved.summary };
+    var meta  = { brandName: vM.brandName || "", brandLogo: vM.brandLogo || "",
+                  teamName: vM.teamName || "", teamId: vM.teamId || "",
+                  modelLimit: vM.modelLimit != null ? vM.modelLimit : 3,
+                  canManage: vM.canManage != null ? vM.canManage : true,
+                  markets: Array.isArray(vM.markets) ? vM.markets : [],
+                  marketsRaw: Array.isArray(vM.marketsRaw) ? vM.marketsRaw : [],
+                  /* Eigene Kopie: onCustom haengt an diese Liste an. */
+                  industries: Array.isArray(vM.industries) ? vM.industries.slice() : INDUSTRIES.slice(),
+                  logoFileName: vM.logoFileName || "" };
 
-    /* Nach jedem Eintreffen frischer Modelle den Vorrat nachziehen -- NICHT den Entwurf: eine
-       ungespeicherte Auswahl soll eine Neu-Injektion nicht ueberleben, sonst zeigt die Seite
-       "Unsaved changes" fuer etwas, das der Nutzer in einem anderen Leben angeklickt hat. */
-    function merkeModelle(){
-      MODELS_STORE[instanceId] = { models: cloneModels(saved.models), limit: meta.modelLimit,
-                                   canManage: meta.canManage, teamId: meta.teamId || teamJetzt };
-    }
     /* Der Ladezustand ist der ANFANGSZUSTAND, nicht der Ausnahmefall. Ab dem Moment, in dem die
        Komponente steht, sind Skelette zu sehen -- und sie bleiben, bis ausdruecklich
        setSettingsBrandLoading(..., "no") kommt. Nur so gibt es nie den Zwischenzustand, in dem
        leere Felder wie echte, leere Werte aussehen. Auch ein render() beendet ihn nicht: die Daten
-       koennen in mehreren Aufrufen eintreffen, und wer fertig ist, weiss nur der Aufrufer. */
-    var loading = true;
+       koennen in mehreren Aufrufen eintreffen, und wer fertig ist, weiss nur der Aufrufer.
+       ABER nur beim ersten Aufbau dieser Instanz. Ein NEUAUFBAU uebernimmt den Stand seines
+       Vorgaengers: war dort fertig geladen, ist es hier auch -- sonst Skelett fuer immer (27.09.).
+       War dort gesperrt (Speichern laeuft), bleibt es gesperrt, mit der Restzeit der Notbremse:
+       ladenSeit ist der Moment, in dem die Sperre begann, siehe sperreFortsetzen. */
+    var loading = vorrat ? !!vorrat.loading : true;
+    var ladenSeit = (vorrat && vorrat.loading && vorrat.seit) || 0;
+    /* Der Lesefehler mit: sonst stuende nach einem Neuaufbau das Formular mit halben Werten da,
+       wo vorher "konnte nicht gelesen werden" stand -- der stille Ausfall (CLAUDE.md 2). */
+    var leseFehler = !!(vorrat && vorrat.leseFehler);
 
     /* UC.themeParam statt isYes: kennt core ein Thema, gewinnt core -- das Attribut ist nur die
        Momentaufnahme aus dem Lauf des Workflows. */
@@ -561,6 +601,56 @@
     var elLinkTgl    = root.querySelector("[data-link-toggle]");
     var elEditLbl    = root.querySelector(".usb-editbtn-lbl");
 
+    /* ---------------- Vorrat fuer den Neuaufbau ----------------
+       Aufgerufen nach JEDER Aenderung an saved, draft, meta, Ladezustand oder Lesefehler -- so
+       findet ein Neuaufbau immer den Stand vor, den der Vorgaenger zuletzt zeigte. Kopien statt
+       Verweise: draft.models wird beim Umschalten an Ort und Stelle geaendert, und der Nachfolger
+       soll nicht dieselben Objekte bearbeiten wie der tote Vorgaenger. */
+    function merke(){
+      /* Eine abgehaengte Wurzel schreibt nicht mehr. Ihr Nachfolger liest denselben Eintrag, und
+         ein Nachzuegler der alten (ein FileReader, der erst nach dem Neuaufbau fertig wird) wuerde
+         ihn sonst mit einem aelteren Stand ueberschreiben. Die Setter erreichen eine abgehaengte
+         Wurzel ohnehin nicht mehr: resolve() findet nur Wurzeln, die im Dokument stehen. */
+      if (root.isConnected === false) return;
+      STORE[instanceId] = {
+        teamId: meta.teamId || teamJetzt,
+        loading: loading, seit: loading ? ladenSeit : 0, leseFehler: leseFehler,
+        saved: { models: cloneModels(saved.models), marketId: saved.marketId,
+                 businessModel: saved.businessModel, industry: saved.industry, summary: saved.summary },
+        draft: { models: cloneModels(draft.models), marketId: draft.marketId,
+                 businessModel: draft.businessModel, industry: draft.industry, summary: draft.summary },
+        meta: { brandName: meta.brandName, brandLogo: meta.brandLogo, teamName: meta.teamName,
+                teamId: meta.teamId, modelLimit: meta.modelLimit, canManage: meta.canManage,
+                markets: meta.markets, marketsRaw: meta.marketsRaw, industries: meta.industries.slice(),
+                logoFileName: meta.logoFileName },
+        logoUrl: String(elUrlIn.value || "")
+      };
+    }
+    /* Ungespeicherte Meta-Eingaben ueber einen frisch gelesenen Stand legen. Nur ein Feld, das im
+       Stand VORHER geaendert und nicht gespeichert war, kommt als Entwurf zurueck; ein unberuehrtes
+       folgt dem, was jetzt im Attribut steht. Andersherum stuende nach einem Neuaufbau ein alter
+       Wert als "Unsaved changes" da, den niemand angefasst hat. */
+    function entwurfZurueck(vorher){
+      if (!vorher || !vorher.saved || !vorher.draft) return;
+      META_FELDER.forEach(function(k){
+        var d = vorher.draft[k];
+        if (d == null || d === vorher.saved[k]) return;
+        draft[k] = String(d);
+        /* Eine selbst eingetippte Branche muss auch im Dropdown stehen -- sonst zeigt der Trigger
+           einen Wert, den die Liste darunter nicht kennt. */
+        if (k === "industry" && draft[k] && meta.industries.indexOf(draft[k]) === -1) meta.industries.push(draft[k]);
+      });
+    }
+    function metaStand(){
+      var s = {}, d = {};
+      META_FELDER.forEach(function(k){ s[k] = saved[k]; d[k] = draft[k]; });
+      return { saved: s, draft: d };
+    }
+    /* Ein eingefuegter, aber noch nicht mit "Use link" uebernommener Link ist getippter Text wie
+       die Zusammenfassung -- er ueberlebt den Neuaufbau genauso. */
+    if (vorrat && vorrat.logoUrl) elUrlIn.value = String(vorrat.logoUrl);
+    elUrlIn.addEventListener("input", merke);
+
     /* ---------------- Marke + Logo ---------------- */
     function renderBrand(){
       elEditLbl.textContent = "Edit " + (meta.brandName || "your brand");
@@ -604,7 +694,7 @@
       rd.onload = function(){
         meta.brandLogo = String(rd.result);
         meta.logoFileName = f.name;
-        renderBrand();
+        renderBrand(); merke();
         fire("data-logofile-fn", "usbLogoFile",
              { name: f.name, type: f.type || "", size: f.size, data: String(rd.result) });
       };
@@ -816,7 +906,7 @@
         var m = findMarket(draft.marketId);
         return m ? '<img src="' + esc(flagUrl(m.id)) + '" alt="" onerror="this.style.visibility=&quot;hidden&quot;"/>' : ICON.pin;
       },
-      onPick: function(v){ draft.marketId = v; ddMarket.sync(); syncMeta(); }
+      onPick: function(v){ draft.marketId = v; ddMarket.sync(); syncMeta(); merke(); }
     });
     var ddIndustry = makeDropdown("industry", {
       placeholder: "Select an industry", empty: "No industries found",
@@ -827,12 +917,12 @@
       selected: function(){ return draft.industry; },
       selectedLabel: function(){ return draft.industry || ""; },
 
-      onPick: function(v){ draft.industry = v; ddIndustry.sync(); syncMeta(); },
+      onPick: function(v){ draft.industry = v; ddIndustry.sync(); syncMeta(); merke(); },
       onCustom: function(v){
         /* Die eigene Branche wandert in die Liste, damit sie beim naechsten Oeffnen oben
            mitsteht und nicht wie ein Fremdkoerper nur im Trigger klebt. */
         if (meta.industries.indexOf(v) === -1) meta.industries.push(v);
-        draft.industry = v; ddIndustry.sync(); syncMeta();
+        draft.industry = v; ddIndustry.sync(); syncMeta(); merke();
       }
     });
 
@@ -905,6 +995,7 @@
        siehe die Begruendung in render(). Er wird beim ersten Mal gebaut und danach nur noch
        ein- und ausgeblendet. */
     function zeigeLesefehler(an){
+      leseFehler = !!an;
       var koerper = root.querySelector(".usb-body");
       var kasten = root.querySelector(".usb-loaderr");
       if (an && !kasten){
@@ -916,8 +1007,19 @@
       if (kasten) kasten.hidden = !an;
       if (koerper) koerper.hidden = an;
     }
+    /* Die Notbremse als eigene Funktion: applyLoading stellt sie mit vollen BUSY_MAX, ein
+       Neuaufbau mitten in der Sperre mit der Restzeit (sperreFortsetzen). */
+    function zeitUeberschritten(){
+      busyTimer = null;
+      root.classList.remove("is-busy");
+      root.removeAttribute("inert");
+      stuck("Saving is taking longer than expected. Your last change may not have been stored - reload the page to see the current state.");
+    }
     function applyLoading(on){
       loading = UC.isYes(on);
+      /* Der Beginn der Sperre, fuer einen Neuaufbau mittendrin. Jeder Aufruf mit "yes" stellt die
+         Notbremse neu -- ladenSeit zieht genau so mit. */
+      ladenSeit = loading ? Date.now() : 0;
       /* Ein NEUER Ladeversuch raeumt den Lesefehler weg -- sonst ueberlebt er jeden weiteren
          Versuch, und das Formular bliebe versteckt, obwohl frische Daten unterwegs sind. */
       if (loading) zeigeLesefehler(false);
@@ -931,12 +1033,7 @@
         /* Offene Dropdowns zu, bevor gesperrt wird: ein Menue, das unter inert stehen bleibt,
            laesst sich weder bedienen noch schliessen. */
         if (UC.closePopovers) UC.closePopovers();
-        busyTimer = setTimeout(function(){
-          busyTimer = null;
-          root.classList.remove("is-busy");
-          root.removeAttribute("inert");
-          stuck("Saving is taking longer than expected. Your last change may not have been stored - reload the page to see the current state.");
-        }, BUSY_MAX);
+        busyTimer = setTimeout(zeitUeberschritten, BUSY_MAX);
       } else {
         stuck("");
       }
@@ -947,6 +1044,23 @@
         if (loading) b.disabled = true;
       });
       if (!loading){ renderModels(); syncMeta(); }
+      merke();
+    }
+    /* Eine Sperre, die der VORGAENGER gesetzt hatte (Speichern lief, als Bubble das Element neu
+       baute), laeuft hier weiter. Mit der Restzeit, nicht mit frischen 12s -- sonst verlaengerte
+       jeder Neuaufbau die Notbremse. Und bewusst OHNE closePopovers wie in applyLoading: das
+       schloesse jedes offene Menue der Seite, auch eines, das mit diesem Neuaufbau nichts zu tun
+       hat. In einer frisch gebauten Wurzel ist ohnehin keins offen. */
+    function sperreFortsetzen(){
+      Array.prototype.forEach.call(root.querySelectorAll(".usb-savebtn"), function(b){ b.disabled = true; });
+      var rest = BUSY_MAX - (Date.now() - ladenSeit);
+      if (rest > 0){
+        root.classList.add("is-busy");
+        root.setAttribute("inert", "");
+        busyTimer = setTimeout(zeitUeberschritten, rest);
+      } else {
+        zeitUeberschritten();
+      }
     }
 
     /* ---------------- Klicks ---------------- */
@@ -966,7 +1080,7 @@
         var url = String(elUrlIn.value || "").trim();
         if (!url){ elUrlIn.focus(); return; }
         meta.brandLogo = url; meta.logoFileName = "";
-        renderBrand(); logoError("");
+        renderBrand(); logoError(""); merke();
         fire("data-logourl-fn", "usbLogoUrl", { url: url });
         return;
       }
@@ -978,7 +1092,7 @@
         if (mb.classList.contains("is-locked") || mb.classList.contains("is-fixed")) return;
         var key = mb.getAttribute("data-model");
         draft.models.forEach(function(m){ if (m.key === key) m.active = !m.active; });
-        renderModels();
+        renderModels(); merke();
         return;
       }
       if (t.closest("[data-models-save]")){
@@ -986,7 +1100,7 @@
         /* Sofort merken, nicht erst wenn der Server antwortet: der Rundlauf baut das Element neu
            auf, und bis die frischen Modelle zurueck sind, ist der Vorrat das Einzige, was die
            Karten am Leben haelt. */
-        merkeModelle();
+        merke();
         renderModels();
         fire("data-models-fn", "usbModels",
              { model_keys: draft.models.filter(function(m){ return m.active; }).map(function(m){ return m.key; }).join(",") });
@@ -999,12 +1113,13 @@
         return;
       }
       var bz = t.closest("[data-biz]");
-      if (bz){ draft.businessModel = bz.getAttribute("data-biz"); renderBusiness(); syncMeta(); return; }
+      if (bz){ draft.businessModel = bz.getAttribute("data-biz"); renderBusiness(); syncMeta(); merke(); return; }
       if (t.closest("[data-meta-save]")){
         draft.summary = elSummary.value;
         saved.marketId = draft.marketId; saved.businessModel = draft.businessModel;
         saved.industry = draft.industry; saved.summary = draft.summary;
         syncMeta();
+        merke();                 /* wie beim Models-Save: gemerkt, bevor das Event hinausgeht */
         fire("data-meta-fn", "usbMeta", {
           market_id: draft.marketId, business_model: draft.businessModel,
           industry: draft.industry, summary: draft.summary
@@ -1016,7 +1131,11 @@
       if (t.closest("[data-leave]")){ openDanger("leave"); return; }
       if (t.closest("[data-delete]")){ openDanger("delete"); return; }
     });
-    elSummary.addEventListener("input", function(){ if (!loading) syncMeta(); });
+    /* draft.summary zieht bei JEDEM Tastendruck mit, nicht erst beim Speichern. render() schrieb
+       vorher saved.summary ins Feld -- jedes Neuzeichnen ohne Fokus im Feld (ein Attribut, das
+       Bubble nachschreibt, frische Modelle) warf den getippten Text weg. Jetzt schreibt es den
+       Entwurf, wie es die drei anderen Meta-Felder immer taten, und der Vorrat kennt ihn. */
+    elSummary.addEventListener("input", function(){ draft.summary = elSummary.value; if (!loading) syncMeta(); merke(); });
     elUrlIn.addEventListener("keydown", function(e){
       if (e.key === "Enter"){ e.preventDefault(); root.querySelector("[data-logo-save]").click(); }
     });
@@ -1115,8 +1234,10 @@
       });
     }
 
-    root.__usbLoading = true;
-    root.classList.add("is-loading");
+    /* Aus dem Vorrat, nicht fest auf true: ein Neuaufbau nach fertigem Laden zeigt sofort das
+       Formular (siehe loading oben). */
+    root.__usbLoading = loading;
+    root.classList.toggle("is-loading", loading);
 
     function render(){
       /* Der Ladezustand haengt am Root, nicht an dieser Closure. Sonst kann ein spaeteres render()
@@ -1128,8 +1249,10 @@
       renderBusiness();
       ddMarket.sync();
       ddIndustry.sync();
-      if (document.activeElement !== elSummary) elSummary.value = saved.summary || "";
+      /* Der Entwurf, nicht saved -- siehe den input-Handler der Zusammenfassung. */
+      if (document.activeElement !== elSummary) elSummary.value = draft.summary || "";
       syncMeta();
+      merke();
     }
 
     /* ---------------- Werte aus data-Attributen ----------------
@@ -1176,9 +1299,22 @@
       }
       return got;
     }
-    if (readAttrs()) { /* gleich gerendert, siehe render() weiter unten */ }
+    readAttrs();   /* gleich gerendert, siehe render() weiter unten */
+    /* Die Attribute gewinnen gegen den Vorrat -- sie sind Bubbles Stand von JETZT. Darueber kommt
+       nur, was der Nutzer beim Neuaufbau geaendert und noch nicht gespeichert hatte. */
+    entwurfZurueck(vorrat);
     if (window.MutationObserver){
-      new MutationObserver(function(){ if (readAttrs()) render(); }).observe(root, {
+      new MutationObserver(function(){
+        /* Ein Attribut, das Bubble an Ort und Stelle neu schreibt, ist derselbe Vorgang wie ein
+           Neuaufbau, nur ohne neuen Knoten. readAttrs setzt ALLE Felder neu, nicht nur das
+           geaenderte: ein neues Logo ueber "Use link" warf so eine halb getippte Zusammenfassung
+           weg. Dieselbe Regel wie beim Neuaufbau, damit beide Wege gleich aussehen. Nur nicht
+           ueber einen Teamwechsel hinweg -- ein Entwurf gehoert zu seinem Team. */
+        var vorher = metaStand(), teamVorher = meta.teamId;
+        if (!readAttrs()) return;
+        if (!teamVorher || meta.teamId === teamVorher) entwurfZurueck(vorher);
+        render();
+      }).observe(root, {
         attributes: true,
         attributeFilter: ATTRS.map(function(a){ return a[0]; })
       });
@@ -1196,6 +1332,11 @@
     if (UC.onAllMarkets) UC.onAllMarkets(function(){ ddMarket.sync(); }, root);
     else if (UC.onMarkets) UC.onMarkets(function(){ ddMarket.sync(); }, root);
     render();
+    /* Was der Vorgaenger zeigte, zeigt der Nachfolger -- ohne dass Bubble etwas schicken muss.
+       Nach render(), weil beides den gebauten Knoten braucht und render() die Speichern-Knoepfe
+       aus dem Entwurf freigibt, die eine laufende Sperre wieder zumacht. */
+    if (leseFehler) zeigeLesefehler(true);
+    if (loading && ladenSeit) sperreFortsetzen();
 
     return {
       render: function(p){
@@ -1206,7 +1347,7 @@
            Formular waere schlimmer als gar keins (der Nutzer speichert sonst falsche Werte),
            aber sein Markup muss stehen bleiben -- an genau diesen Knoten haengen alle
            Ereignisbindungen, und ein spaeterer erfolgreicher Aufruf schreibt in sie hinein. */
-        if (p.__parseError){ applyLoading("no"); zeigeLesefehler(true); return; }
+        if (p.__parseError){ applyLoading("no"); zeigeLesefehler(true); merke(); return; }
         zeigeLesefehler(false);
         p = stripTeamPrefix(p);
         var brand = p.brand || {}, team = p.team || {};
@@ -1249,9 +1390,9 @@
           }).filter(function(m){ return !!m.key; })
             .sort(function(a, b){ return a.sort - b.sort; });
           draft.models = cloneModels(saved.models);
-          merkeModelle();
         }
-        if (p.model_limit != null){ meta.modelLimit = UC.toNum(p.model_limit) || 0; merkeModelle(); }
+        /* Gemerkt wird am Ende ueber applyLoading und render(), nicht hier einzeln. */
+        if (p.model_limit != null) meta.modelLimit = UC.toNum(p.model_limit) || 0;
 
         var markets = p.markets;
         if (typeof markets === "string") markets = UC.parseBubbleJson(markets);
@@ -1296,6 +1437,7 @@
         if (fileName != null) meta.logoFileName = String(fileName);
         logoError("");
         renderBrand();
+        merke();
       },
       reset: function(){
         closeDanger();
@@ -1311,6 +1453,11 @@
         elLinkTgl.classList.remove("is-open");
         elLinkTgl.setAttribute("aria-expanded", "false");
         logoError("");
+        /* Was der Reset wegraeumt, raeumt er auch im Vorrat weg -- sonst braechte der naechste
+           Neuaufbau das geleerte Linkfeld und die aufgehobene Sperre zurueck. Entwuerfe und
+           gelieferte Daten bleiben, wie sie auch auf dem Bildschirm bleiben: der Reset war nie
+           ein "Aenderungen verwerfen", und ohne Daten stuende ein Neuaufbau wieder im Skelett. */
+        merke();
         return true;
       }
     };

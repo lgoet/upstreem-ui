@@ -48,6 +48,19 @@
 
   var UC, mount;
 
+  /* ---- EIN NEU GEBAUTES ELEMENT MACHT WEITER (27.09. gemeldet) ----
+     Themenwechsel -> Bubble baut das Element neu -> Skelett fuer immer. data-isdark steht als
+     dynamischer Wert an der Wurzel; aendert er sich, ersetzt Bubble sie durch eine frische Kopie
+     der Vorlage, und initRoot baut einen neuen Controller mit overview/brands/domains/urls = null.
+     Bubble schickt die Daten nicht noch einmal (sie haben sich ja nicht geaendert), also standen
+     Overview, beide Listen und die Chatliste im Skelett, bis der naechste Workflow lief -- und die
+     Bedarfsmeldung (upwNeeds) forderte beim Neuaufbau Marken und Zitierungen neu an, als waere
+     es ein erster Aufbau.
+     Deshalb liegt hier, ausserhalb des Controllers und nach Instanz getrennt, was zuletzt
+     geliefert wurde, samt Lesefehlern und Ladezustand. Dasselbe Muster wie responses-table.js
+     ("EIN NEU GEBAUTES ELEMENT MACHT WEITER"). */
+  var STORE = (window.__upwStore = window.__upwStore || {});
+
   /* ---------- KEINE BEISPIELDATEN MEHR (17.09.) ----------
      Hier standen die Werte aus dem Entwurf, damit das Dashboard vor dem Anschluss so aussieht wie
      gemeint -- und data-demo="no" schaltete sie ab. Beides ist weg, weil die Vorgabe ANDERSHERUM
@@ -226,31 +239,53 @@
     }
     function writeCmode(v){ try { window.localStorage.setItem(cmodeKey(), v); } catch(e){} }
 
+    /* Aus dem Speicher, falls es diese Instanz schon einmal gab (siehe STORE oben). null heisst
+       weiter "noch nie geliefert", eine leere Liste "geliefert und leer" -- der Speicher haelt
+       genau diese Werte, ohne sie umzudeuten. Die Lesefehler als KOPIE: die Tabelle gehoert dem
+       Controller, der sie fuehrt, und der vorige lebt mit seinen Uhren noch eine Weile weiter. */
+    var gemerkt = STORE[instanceId] || {};
+    var gemerkteFehler = {};
+    if (gemerkt.fehler && typeof gemerkt.fehler === "object"){
+      for (var gf in gemerkt.fehler){
+        if (Object.prototype.hasOwnProperty.call(gemerkt.fehler, gf)) gemerkteFehler[gf] = gemerkt.fehler[gf];
+      }
+    }
     var state = {
-      overview: null,
-      brands: null,
-      domains: null,
-      urls: null,
+      overview: gemerkt.overview || null,
+      brands: gemerkt.brands || null,
+      domains: gemerkt.domains || null,
+      urls: gemerkt.urls || null,
       /* citesLabel/range_label werden seit dem 14.09. NICHT mehr angezeigt: die Kopfzeile, die
          "8 brands · Last 30 days" trug, ist mit der grossen Tabelle weggefallen, und neben
          "Overview" stand der Zeitraum schon vorher nicht mehr. Der Zustand bleibt trotzdem
          stehen -- Bubble schickt das Feld weiter, und ein Setter, der einen Wert stillschweigend
          verwirft, ist schwerer zu erklaeren als einer, der ihn aufhebt. Wer ihn wieder zeigen
          will, hat ihn hier. */
-      citesLabel: "",
+      citesLabel: gemerkt.citesLabel || "",
       /* Die GESAMTZAHL, nicht die Laenge der obigen Arrays -- die zeigen nur die "top" 7, die
          Gesamtzahl kann groesser sein ("16 brands" auch wenn nur 7 Zeilen stehen). Fuer Brands
          gibt es dafuer schon overview.brand_count (dieselbe Zahl wie "#2 of 8 brands"); fuer
          Citations sind totalCountDomain/totalCountUrl NEU, wortgleich zu topcitations-dashboard,
          damit dieselbe RPC beide Komponenten fuellen kann. */
-      totalCountDomain: null,
-      totalCountUrl: null,
-      chips: null,
+      totalCountDomain: gemerkt.totalCountDomain != null ? gemerkt.totalCountDomain : null,
+      totalCountUrl: gemerkt.totalCountUrl != null ? gemerkt.totalCountUrl : null,
+      chips: gemerkt.chips || null,
       cmode: readCmode(),
       mode: readMode(),
-      loading: false,
-      fehler: {}
+      loading: !!gemerkt.loading,
+      fehler: gemerkteFehler
     };
+    /* Nach JEDER Aenderung an Daten, Lesefehlern oder Ladezustand -- also am Ende von update()
+       und setLoading(). Referenzen genuegen: ein Setter ersetzt die Listen, statt sie zu
+       veraendern. */
+    function merken(){
+      STORE[instanceId] = {
+        overview: state.overview, brands: state.brands, domains: state.domains, urls: state.urls,
+        citesLabel: state.citesLabel,
+        totalCountDomain: state.totalCountDomain, totalCountUrl: state.totalCountUrl,
+        chips: state.chips, loading: state.loading, fehler: state.fehler
+      };
+    }
 
     /* ---------- Markup ----------
        Die Komponente baut ihr Markup selbst; in Bubble steht nur die leere Wurzel. Dieselbe
@@ -1146,6 +1181,7 @@
         if (p.__parseError){
           state.fehler.overview = state.fehler.brands = state.fehler.domains = state.fehler.urls = true;
           state.loading = false;
+          merken();
           renderAll();
           return;
         }
@@ -1210,6 +1246,7 @@
         if (p.chips != null){ r = liste(p.chips); state.chips = r.kaputt ? null : r.wert; }
         /* Echte Daten beenden jeden Ladezustand -- auch einen ausdruecklichen ohne passendes "no". */
         if (p.overview != null || p.brands != null || p.top_domains != null || p.top_urls != null) state.loading = false;
+        merken();
         renderAll();
       },
       /* Ein NEUER Ladeversuch raeumt die Lesefehler weg -- wie in responses-table. Sonst stuende
@@ -1224,6 +1261,7 @@
            stehen, und ein globaler Griff wuerde dann das falsche treffen. */
         if (state.loading) chatUhrZurueck();
         else if (vorher) chatUhrStarten();
+        merken();
         renderAll();
       }
     };

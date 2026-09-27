@@ -120,22 +120,39 @@
        modes deliberately does not — the new mode gets its own default. */
     function defaultDim(mode){ return mode === "url" ? "url_type" : "citation_type"; }
 
+    /* ---- EIN NEU GEBAUTES ELEMENT MACHT WEITER (27.09. gemeldet) ----
+       Themenwechsel -> Bubble baut das Element neu -> Skelett fuer immer. data-isdark ist ein
+       dynamischer Wert im Markup; aendert er sich, ersetzt Bubble die Wurzel durch eine frische
+       Kopie der Vorlage und schickt die Daten NICHT noch einmal (sie haben sich ja nicht
+       geaendert). Der Speicher hier trug bisher nur Filter, Modus und Ladezustand -- Doughnut
+       und Tabelle begannen also mit hasChart/hasTable false, und renderChartSide/renderTableSide
+       zeigten beide das Skelett, bis zum naechsten Workflow. Jetzt stehen die gelieferten Listen
+       mit darin, dazu der Lesefehler (sonst hiesse ein Neuaufbau nach einem kaputten Payload
+       "Skelett" statt "Fehler") und die Wahl Doughnut/Bar (sonst springt die Anzeige zurueck).
+       Dasselbe Muster wie responses-table.js, "EIN NEU GEBAUTES ELEMENT MACHT WEITER". */
+    function gemerkteListe(k){ return Array.isArray(saved[k]) ? saved[k] : []; }
     var state = {
       loading: LOADING_EXPLICIT[instanceId] ? !!saved.loading : readProcessing(),
       optimisticLoading: false,
-      hasChart: false, hasTable: false,
+      hasChart: !!saved.hasChart, hasTable: !!saved.hasTable,
       /* Getrennt je Modus: eine Domain-Lieferung darf nicht dazu fuehren, dass die URL-Tabelle
          "No data" behauptet, obwohl fuer URLs noch nie etwas geliefert wurde. Genau das war der
          Fall -- hasTable galt fuer beide, und nach einem Moduswechsel stand sofort "No data". */
-      hasDomainRows: false, hasUrlRows: false,
+      hasDomainRows: !!saved.hasDomainRows, hasUrlRows: !!saved.hasUrlRows,
       /* Text einer Liste, die nicht zu lesen war. Steht er, zeigt die Tabelle IHN statt "No data". */
-      listenFehler: null,
+      listenFehler: saved.listenFehler || null,
       mode: saved.mode || "domain", userPickedMode: saved.userPickedMode || false,
-      chartMode: "doughnut", prepped: [], chartTotal: 0,
-      topDomains: [], topUrls: [],
+      chartMode: saved.chartMode === "bar" ? "bar" : "doughnut", prepped: [],
+      chartTotal: saved.chartTotal != null ? saved.chartTotal : 0,
+      topDomains: gemerkteListe("topDomains"), topUrls: gemerkteListe("topUrls"),
       totalCountDomain: (saved.totalCountDomain != null) ? saved.totalCountDomain : null,
       totalCountUrl: (saved.totalCountUrl != null) ? saved.totalCountUrl : null,
-      typesBreakdown: [], urlTypesBreakdown: [], baselineDomain: [], baselineUrl: [], brand: saved.brand || null,
+      typesBreakdown: gemerkteListe("typesBreakdown"), urlTypesBreakdown: gemerkteListe("urlTypesBreakdown"),
+      /* Die Grundlinie mit: steht beim Neuaufbau ein Typfilter, zeigt activeBreakdown() sonst die
+         gefilterte Lieferung als Ganzes -- die ausgegrauten Stuecke waeren dann verschwunden
+         statt grau. */
+      baselineDomain: gemerkteListe("baselineDomain"), baselineUrl: gemerkteListe("baselineUrl"),
+      brand: saved.brand || null,
       filterTypeSel: saved.filterTypeSel || {}, filterUrlTypeSel: saved.filterUrlTypeSel || {},
       appliedTypeSel: saved.appliedTypeSel || {}, appliedUrlTypeSel: saved.appliedUrlTypeSel || {},
       filterDimension: saved.filterDimension || defaultDim(saved.mode || "domain"), brandMentioned: saved.brandMentioned || ""
@@ -148,7 +165,14 @@
         filterTypeSel: state.filterTypeSel, filterUrlTypeSel: state.filterUrlTypeSel,
         appliedTypeSel: state.appliedTypeSel, appliedUrlTypeSel: state.appliedUrlTypeSel,
         filterDimension: state.filterDimension, brandMentioned: state.brandMentioned,
-        loading: state.loading
+        loading: state.loading,
+        /* Fuer einen Neuaufbau des Elements -- siehe den Kommentar ueber state. */
+        hasChart: state.hasChart, hasTable: state.hasTable,
+        hasDomainRows: state.hasDomainRows, hasUrlRows: state.hasUrlRows,
+        listenFehler: state.listenFehler, chartMode: state.chartMode, chartTotal: state.chartTotal,
+        topDomains: state.topDomains, topUrls: state.topUrls,
+        typesBreakdown: state.typesBreakdown, urlTypesBreakdown: state.urlTypesBreakdown,
+        baselineDomain: state.baselineDomain, baselineUrl: state.baselineUrl
       };
     }
     var topTotal = root.querySelector(".tcl-top-total");
@@ -800,6 +824,8 @@
         var chartBtn = e.target.closest(".tcl-seg-btn");
         if (chartBtn){
           state.chartMode = chartBtn.getAttribute("data-chart");
+          /* In den Speicher: ein Neuaufbau (Themenwechsel) stand sonst wieder auf Doughnut. */
+          persistState();
           renderChartSide();
           return;
         }
@@ -900,6 +926,9 @@
         state.topDomains = []; state.topUrls = [];
         state.hasTable = true; state.hasDomainRows = true; state.hasUrlRows = true;
         state.loading = false; state.optimisticLoading = false;
+        /* Der Fehler in den Speicher: ein Neuaufbau zeigte sonst die Listen von VOR dem kaputten
+           Payload, als waeren sie frisch -- der stille Ausfall, nur eine Stufe spaeter. */
+        persistState();
         render();
       },
       /*
@@ -933,8 +962,9 @@
            as visibility-chart's reset: a slide-in that re-uses this placement calls
            resetTopCitations() on open, and without this the old doughnut/bars + table re-rendered
            and re-animated during the open (stale data flash + extra paint). Fires NO Bubble event;
-           the caller loads fresh data next. persistState() does not store the data arrays, so a
-           Bubble re-render already starts empty — no cache to clear here. */
+           the caller loads fresh data next. Seit dem 27.09. traegt persistState() die Listen mit
+           (Neuaufbau beim Themenwechsel) -- der persistState()-Aufruf weiter unten schreibt die
+           geleerten Felder also auch in den Speicher, ein Neuaufbau danach beginnt leer. */
         state.topDomains = []; state.topUrls = [];
         state.typesBreakdown = []; state.urlTypesBreakdown = [];
         state.baselineDomain = []; state.baselineUrl = [];

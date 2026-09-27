@@ -76,6 +76,17 @@
     catch (e) {}
   }
 
+  /* ---- EIN NEU GEBAUTES ELEMENT MACHT WEITER (27.09. gemeldet) ----
+     "Es ist gar nicht noetig, dass beim Theme-Wechsel was in den Loading-yes-State geht."
+     Themenwechsel -> Bubble baut das Element neu (data-isdark ist ein dynamischer Wert im
+     Markup) -> neue Wurzel mit derselben data-instance, initRoot von vorn -> loading true,
+     Skelett, und nach 25s "No data". Bubble schickt die Daten nicht noch einmal, sie haben sich
+     ja nicht geaendert. Die Ansicht kam ueber VIEW_STORE zurueck, die Antwort darunter nicht.
+     Jetzt liegt auch der zuletzt gelieferte Stand hier, je Instanz, und eine neue Wurzel startet
+     von dort. Dasselbe Muster wie responses-table und urls-table; geschrieben wird er von
+     persist() in initRoot. */
+  var STORE = (window.__urdStore = window.__urdStore || {});
+
   function isArr(v) { return Object.prototype.toString.call(v) === "[object Array]"; }
 
   /* Spaltenzahl der Kachelansicht: nach dem PLATZ, gedeckelt auf die Zahl der Kacheln.
@@ -181,6 +192,7 @@
     var mitgeliefert = "";
     var elJson0 = root.querySelector('script[type="application/json"]');
     if (elJson0) mitgeliefert = String(elJson0.textContent || "");
+    var eigenerPayload = !!(mitgeliefert.trim() && mitgeliefert.indexOf("PAYLOAD" + "_JSON") < 0);
 
     root.innerHTML = shell();
     var fire = UC.makeFire(root, { label: "response-detail", eventPrefix: "urd" });
@@ -234,18 +246,32 @@
       } catch (e) {}
     }
 
-    /* Der Marken-Filter ist Ansichtssache und gilt nur fuer diese Antwort -- er wird NICHT
-       gespeichert. Wer eine Antwort oeffnet, will erst alle Quellen sehen. */
+    /* Der gemerkte Stand dieser Instanz, wenn es ihn gibt -- dann ist diese Wurzel ein Neuaufbau
+       und macht dort weiter, wo die alte stand (siehe STORE). Ohne ihn gelten genau die
+       Anfangswerte von vorher; gemerkt() liefert dann den zweiten Wert.
+       NICHT bei einem mitgelieferten JSON-Block: der ist dann die Quelle und wird unten ohnehin
+       gesetzt. Baut Bubble das Element neu, WEIL darin eine andere Antwort steht, zeigte ein
+       gemerkter Stand fuer einen Moment die vorige -- genau das, was setLoading unten verhindert. */
+    var saved = (!eigenerPayload && STORE[instanceId]) || null;
+    function gemerkt(k, sonst) { return saved && saved[k] != null ? saved[k] : sonst; }
+
+    /* Der Marken-Filter ist Ansichtssache und gilt nur fuer diese Antwort -- er wird NICHT in den
+       Einstellungen gespeichert. Wer eine Antwort oeffnet, will erst alle Quellen sehen. Einen
+       Neuaufbau DERSELBEN Antwort ueberlebt er aber (STORE): ein Themenwechsel ist kein Grund,
+       ihn wegzunehmen. reset() leert ihn wie bisher. */
     var state = {
       view: viewLesen(instanceId) || "grid",
-      brandFilter: "",
+      brandFilter: gemerkt("brandFilter", ""),
       hl: hlLesen(),
       /* loading startet auf true: die Komponente steht auf der Seite, bevor der Pageload-Workflow
          gelaufen ist, und in dieser Zeit LAEDT sie -- sie ist nicht leer. Ohne das zeigte jeder
          Abschnitt, der nur auf state.loading sieht, seinen Leerzustand, und die Seite las sich
          beim ersten Aufschlagen als "keine Daten" statt als "kommt gleich". Beendet wird der
-         Zustand durch die Daten oder nach WARTE_MS durch die Warte-Uhr, nie durch nichts. */
-      data: null, loading: true, hasData: false, error: null
+         Zustand durch die Daten oder nach WARTE_MS durch die Warte-Uhr, nie durch nichts.
+         Ein NEUAUFBAU dagegen laedt nicht: er uebernimmt den Ladezustand der alten Wurzel, und
+         der war nach den Daten false. */
+      data: gemerkt("data", null), loading: gemerkt("loading", true),
+      hasData: gemerkt("hasData", false), fehler: gemerkt("fehler", null)
     };
 
     /* ---- Ein Wartezustand, der endet -------------------------------------------------------
@@ -257,6 +283,11 @@
       if (warteUhr) clearTimeout(warteUhr);
       warteUhr = setTimeout(function () {
         warteUhr = null;
+        /* Eine abgehaengte Wurzel wartet fuer niemanden mehr: Bubble hat das Element neu gebaut,
+           und die neue Wurzel fuehrt ihre eigene Uhr (saved.wartet, unten). Ohne diese Zeile
+           stellte sich die alte Uhr alle 25s neu -- ausserhalb des Dokuments wird sie nie
+           sichtbar. */
+        if (root.isConnected === false) return;
         if (state.hasData || state.fehler) return;
         /* Unsichtbar heisst: diese Seite ist gar nicht offen, Bubble haelt sie nur im DOM. Dann
            wartet niemand, und "No data" jetzt zu setzen hiesse, es steht beim spaeteren Oeffnen
@@ -266,10 +297,32 @@
         state.fehler = "No data";
         state.loading = false;
         render();
+        persist();
       }, WARTE_MS);
     }
     function warteBeenden() { if (warteUhr) { clearTimeout(warteUhr); warteUhr = null; } }
-    warteStarten();
+
+    /* Den Stand dieser Instanz fuer einen Neuaufbau festhalten (siehe STORE). Aufgerufen NACH dem
+       Zeichnen: wirft render() an einem Payload, landet dieser nicht im Speicher -- sonst wuerfe
+       jeder spaetere Neuaufbau schon in initRoot, und die Komponente kaeme nie wieder hoch.
+       Danach auch deshalb, weil renderBrandFilter den Filter selbst leert, wenn es fuer die
+       Antwort nichts zu filtern gibt -- der Speicher soll den Stand nach dieser Entscheidung
+       tragen. wartet haelt fest, ob die Warte-Uhr lief: die der alten Wurzel ist mit ihr verloren.
+       Nur eine Wurzel im Dokument schreibt: eine abgehaengte lebt in Uhren und Abonnements noch
+       eine Weile weiter und wuerde den Stand der neuen sonst mit ihrem alten ueberschreiben. */
+    function persist() {
+      if (root.isConnected === false) return;
+      STORE[instanceId] = {
+        data: state.data, hasData: !!state.hasData, fehler: state.fehler || null,
+        loading: !!state.loading, brandFilter: state.brandFilter || "",
+        wartet: warteUhr != null
+      };
+    }
+
+    /* Beim ersten Aufbau laeuft die Uhr sofort (siehe loading oben). Ein Neuaufbau startet sie
+       nur, wenn sie in der alten Wurzel lief -- einer mit Daten wartet auf nichts, und einer, bei
+       dem die Geduld schon zu Ende war, zeigt weiter "No data" statt noch einmal 25s Skelett. */
+    if (saved ? saved.wartet : true) warteStarten();
 
     /* ---- Der Kasten, der die Quellen einer Gruppe auflistet ---------------------------------
        Auf Hover, nicht auf Klick: die Gruppe ist eine Zusammenfassung, und wer sie ueberfliegt,
@@ -806,6 +859,9 @@
     }
 
     function spaltenSetzen(anzahl) {
+      /* Eine abgehaengte Wurzel (Bubble hat das Element neu gebaut) bekommt nie wieder eine
+         Breite -- ohne diese Zeile liefe der Nachversuch darunter fuer sie alle 100ms, fuer immer. */
+      if (root.isConnected === false) return;
       var b = root.clientWidth || 0;
       if (!b) { setTimeout(function () { spaltenSetzen(anzahl); }, 100); return; }
       elGrid.style.setProperty("--urd-cols", String(spalten(b, anzahl)));
@@ -841,6 +897,7 @@
         state.brandFilter = state.brandFilter === "" ? "yes" : (state.brandFilter === "yes" ? "no" : "");
         syncBrandKlassen();
         renderCites();
+        persist();
         return;
       }
 
@@ -976,7 +1033,7 @@
     /* Trug das Element einen JSON-Block, wird er jetzt verwendet -- dann braucht es fuer den
        ersten Aufbau ueberhaupt keinen Run-JS-Schritt. Bubble setzt den dynamischen Ausdruck
        einfach als Inhalt des Blocks; dort ist jedes Zeichen erlaubt. */
-    if (mitgeliefert.trim() && mitgeliefert.indexOf("PAYLOAD" + "_JSON") < 0) {
+    if (eigenerPayload) {
       setTimeout(function () { ctrl.set(mitgeliefert); }, 0);
     }
 
@@ -994,6 +1051,7 @@
         state.loading = false;
         warteBeenden();
         render();
+        persist();
         return true;
       },
       setLoading: function (v) {
@@ -1006,6 +1064,8 @@
           warteStarten();
         } else warteBeenden();
         render();
+        /* Auch im Speicher weggeworfen -- ein Neuaufbau ist genau so ein spaeteres Neuzeichnen. */
+        persist();
         return true;
       },
       reset: function () {
@@ -1017,6 +1077,8 @@
         warteBeenden();
         glistSchliessen();
         render();
+        /* Der geleerte Stand ersetzt den gemerkten, Marken-Filter eingeschlossen. */
+        persist();
         return true;
       }
     };

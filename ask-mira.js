@@ -614,6 +614,14 @@
     settings: { brand: 'logo', citation: 'icon', response: 'logo' }
   };
   var S = window.askMiraState;
+  /* DIE CHATLEISTE LAEDT NICHT NOCH EINMAL (27.09.: Themenwechsel -> Bubble baut das Element neu).
+     Die Chats selbst ueberleben den Neuaufbau -- sie stehen in S, und S haengt am Fenster. Der
+     Schalter "die Liste ist beantwortet" stand aber im Abschluss dieser Funktion (_prevLoaded),
+     und der beginnt bei einem Neuaufbau wieder mit false: die Leiste zeigte bis zu sechs
+     Sekunden Skelette ueber einer Liste, die laengst da war, und Bubble schickt sie nicht noch
+     einmal. Deshalb spiegelt prevGeladenSetzen() den Schalter nach S, und hier wird er gelesen. */
+  if (S.prevGeladen) _prevLoaded = true;
+  function prevGeladenSetzen(v){ _prevLoaded = !!v; S.prevGeladen = _prevLoaded; }
   if (!S.settings) S.settings = { brand: 'logo', citation: 'icon', response: 'logo' };
   if (!S.settings.response) S.settings.response = 'logo';
   /* DIE HERVORHEBUNGEN UEBERLEBEN DAS NEULADEN (19.09. gemeldet: "die speichern nicht im
@@ -6878,7 +6886,7 @@
        Der wirklich leere Fall -- ein neuer Nutzer ohne Chats -- faellt nach sechs Sekunden ins
        Auffangnetz am Ende der Datei und zeigt dann die leere Leiste. Sechs Sekunden Skelett fuer
        einen neuen Nutzer sind besser als gar keins fuer alle anderen. */
-    if (S.previousChats.length) _prevLoaded = true;
+    if (S.previousChats.length) prevGeladenSetzen(true);
     renderPrevious();
     titelNachziehen();
     /* Fuer "Recent chats" im Power Dashboard: es zeichnet neu, sobald die Liste sich aendert. */
@@ -6901,10 +6909,10 @@
     var text = String(v == null ? "" : v).trim().toLowerCase();
     var laedt = !(text === "no" || text === "false" || text === "0" || text === "");
     clearTimeout(_prevAuffang); _prevAuffang = null;
-    _prevLoaded = !laedt;
+    prevGeladenSetzen(!laedt);
     if (laedt){
       _prevAuffang = setTimeout(function(){
-        if (!_prevLoaded){ _prevLoaded = true; renderPrevious(); }
+        if (!_prevLoaded){ prevGeladenSetzen(true); renderPrevious(); }
       }, 20000);
     }
     renderPrevious();
@@ -7043,7 +7051,7 @@
              neu.length, neu.length ? neu[0].title : '',
              !S.activeChatId ? '(kein Chat offen)'
                : (neu.some(function(c){ return c && String(c.id) === String(S.activeChatId); }) ? 'ja' : 'NEIN'));
-    _prevLoaded = true;
+    prevGeladenSetzen(true);
     /* Das Fenster waechst mit, sonst kaeme das Nachgeladene erst beim naechsten Scrollen zum
        Vorschein -- und der Nutzer saehe auf seine Bewegung hin: nichts. */
     S.prevFenster += dazu.length;
@@ -9850,7 +9858,7 @@
   /* Auffangnetz: kommt nie eine Sitzungsliste (ein Nutzer ohne Chats), hoeren die Skelette nach
      einer Weile von selbst auf. _prevAuffang haelt die Uhr, damit askMiraSetChatsLoading sie
      zuruecksetzen kann -- sonst raeumt sie ein ausdrueckliches "es laedt" nach sechs Sekunden ab. */
-  _prevAuffang = setTimeout(function(){ if (!_prevLoaded){ _prevLoaded = true; renderPrevious(); } }, 6000);
+  _prevAuffang = setTimeout(function(){ if (!_prevLoaded){ prevGeladenSetzen(true); renderPrevious(); } }, 6000);
   renderMessages();
   if (window.__amHeroReady) window.__amHeroReady();   // enable hero collapse animation only after first paint
   autosize(); refreshSend();

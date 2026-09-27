@@ -15,17 +15,16 @@
 })();
 </script>
 <style>
-
   html, body { background-color: #ffffff; }
-
+  html { color-scheme: light; }
   @media (prefers-color-scheme: dark) {
-    html:not([data-up-pagetheme]), html:not([data-up-pagetheme]) body { background-color: #121212; }
+    html:not([data-up-pagetheme]), html:not([data-up-pagetheme]) body { background-color: #101114; }
+    html:not([data-up-pagetheme]) { color-scheme: dark; }
   }
-
-  html[data-up-pagetheme="dark"], html[data-up-pagetheme="dark"] body { background-color: #121212; }
+  html[data-up-pagetheme="dark"], html[data-up-pagetheme="dark"] body { background-color: #101114; }
+  html[data-up-pagetheme="dark"] { color-scheme: dark; }
   html[data-up-pagetheme="light"], html[data-up-pagetheme="light"] body { background-color: #ffffff; }
-
   html[data-up-pagetheme="dark"] .bubble-element.Group.loader,
   html[data-up-pagetheme="dark"] .page-loader,
-  html[data-up-pagetheme="dark"] #app-loader { background-color: #121212; }
+  html[data-up-pagetheme="dark"] #app-loader { background-color: #101114; }
 </style>

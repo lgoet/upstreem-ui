@@ -750,13 +750,23 @@
     var LOADING_EXPLICIT = (window.__uboLoadingExplicit = window.__uboLoadingExplicit || {});
     function isLoading(){ return LOADING_EXPLICIT[instanceId] ? !!state.loading : readProcessing(); }
 
+    /* ---- ACTIVE/INACTIVE UND DIE SUCHE UEBERLEBEN DEN NEUAUFBAU (27.09. gemeldet) ----
+       Themenwechsel -> Bubble baut das Element neu -> die Daten kommen aus __uboCache zurueck,
+       die Ansicht aber nicht: der Reiter sprang auf Active, obwohl der Nutzer auf Inactive stand,
+       und eine Suche war weg, waehrend Bubble noch fuer die alte Auswahl lieferte. Beides ist
+       reiner Anzeigezustand dieser Platzierung -- also neben Sortierung und Granularitaet in
+       einen eigenen Speicher je Instanz. resetBrandsOverview raeumt ihn mit auf. */
+    var VIEW_STORE = (window.__uboView = window.__uboView || {});
+    var gemerkteAnsicht = VIEW_STORE[instanceId] || {};
     var state = {
       loading: readProcessing(),
       hasLine: false, hasTable: false, linePending: false,
       series: [], companies: [], filterCompanies: [], tableRows: [], inactiveRows: [],
       totalCount: null, totalCountInactive: null,
-      status: "active", query: ""
+      status: gemerkteAnsicht.status === "inactive" ? "inactive" : "active",
+      query: typeof gemerkteAnsicht.query === "string" ? gemerkteAnsicht.query : ""
     };
+    function ansichtMerken(){ VIEW_STORE[instanceId] = { status: state.status, query: state.query }; }
 
     var SORT_STORE  = (window.__uboSort = window.__uboSort || {});
     var GRAN_STORE  = (window.__uboGran = window.__uboGran || {});
@@ -1447,7 +1457,7 @@
       if (searchWrap) searchWrap.classList.toggle("has-text", !!(searchInput && searchInput.value));
     }
     function setQuery(v){
-      state.query = v; syncSearch(); renderTable();
+      state.query = v; ansichtMerken(); syncSearch(); renderTable();
       /* Die Suche entscheidet, ob die Werkzeugleiste offen bleiben muss. Sie aendert sich hier,
          ohne dass ein Zeiger im Spiel waere -- also ausdruecklich melden. */
       if (typeof toolGroup !== "undefined" && toolGroup) toolGroup.sync();
@@ -1463,6 +1473,13 @@
       if (searchWrap) searchWrap.classList.remove("is-open", "has-text");
       if (searchInput) searchInput.value = "";
       state.query = "";
+      ansichtMerken();
+    }
+    /* Eine gemerkte Suche (Neuaufbau, siehe VIEW_STORE) auch SICHTBAR machen -- sonst filtert die
+       Tabelle, waehrend das Feld leer und zu ist. Dieselbe Zeile wie in den grossen Tabellen. */
+    if (state.query && searchInput){
+      searchInput.value = state.query;
+      if (searchWrap) searchWrap.classList.add("is-open", "has-text");
     }
     if (searchInput) searchInput.addEventListener("input", function(){ setQuery(this.value); });
     if (searchClear) searchClear.addEventListener("click", function(){
@@ -1507,6 +1524,7 @@
           var s = st.getAttribute("data-status");
           if (s === state.status) return;
           state.status = s;
+          ansichtMerken();
           closePops(null);
           setHeadCount(); syncStatusSwitch(); renderTable();
           fireRaw("data-status-fn", "uboStatus", s);
@@ -1753,6 +1771,7 @@
         delete USER_FILTERED[instanceId];
         delete INIT_COMPANIES[instanceId];
         state.status = "active"; state.query = "";
+        ansichtMerken();
         state.series = []; state.companies = []; state.filterCompanies = [];
         state.tableRows = []; state.inactiveRows = [];
         state.totalCount = null; state.totalCountInactive = null;
@@ -1871,6 +1890,17 @@
     CACHE[id] = CACHE[id] || {};
     CACHE[id].params = CACHE[id].params || {};
     for (var k in params){ if (params.hasOwnProperty(k) && params[k] !== undefined) CACHE[id].params[k] = params[k]; }
+    /* DER LESEFEHLER-VERMERK FAELLT MIT DER NAECHSTEN ECHTEN LIEFERUNG (27.09.).
+       Themenwechsel -> Bubble baut das Element neu -> applyCache spielt diesen Speicher ein. Er
+       wird hier nur ZUSAMMENGEFUEHRT, nie geleert: kam in dieser Sitzung EINMAL ein zerrissener
+       Payload, stand __parseError: true fuer immer darin -- auch nachdem laengst wieder heile
+       Daten kamen. update() prueft den Vermerk als Erstes und kehrt dann um; das neu gebaute
+       Element zeigte also "could not be read", waehrend das alte eben noch Daten zeigte.
+       Dieselbe Bedingung wie in update() ("Nur eine echte Lieferung loescht den Vermerk"), damit
+       das neue Element genau dort steht, wo das alte stand. */
+    if (!params.__parseError && (params.rows != null || params.series != null || params.table != null)){
+      delete CACHE[id].params.__parseError;
+    }
   }
   function applyCache(root, ctrl){
     var id = root.getAttribute("data-instance");

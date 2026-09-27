@@ -643,7 +643,15 @@
       totalCount: saved.totalCount != null ? saved.totalCount : null,
       ohneTopic: saved.ohneTopic != null ? saved.ohneTopic : null,
       hasData: !!saved.hasData,
-      jeZeilen: false,   // waren hier jemals Zeilen? -- entscheidet das Gnadenfenster
+      /* Der Lesefehler mit (27.09.: Themenwechsel -> Bubble baut das Element neu). Ohne ihn hiess
+         ein Neuaufbau nach einem kaputten Payload "hasData, keine Zeilen" -- und das ist der
+         Leerzustand, also der stille Ausfall (CLAUDE.md §2). urls-, domains- und responses-table
+         tragen ihn im Speicher, diese Tabelle als einzige nicht. */
+      leseFehler: !!saved.leseFehler,
+      /* Waren hier jemals Zeilen? -- entscheidet das Gnadenfenster. Aus den gemerkten Zeilen
+         abgeleitet wie in den drei anderen Tabellen: ein Neuaufbau mit Zeilen ist kein erster
+         Aufbau, und ein spaeter leerer Datensatz bekaeme sonst die sechs Sekunden Skelett. */
+      jeZeilen: Array.isArray(saved.rows) && saved.rows.length > 0,
       /* "the automatic All-Prompts fetch has already gone out once" — see
          ensureFlatDataForAllPrompts(). Deliberately NOT derivable from loading/hasData: it has to
          survive setLoading("no") arriving before any rows do, AND a re-render of the Bubble
@@ -808,6 +816,7 @@
         brands: state.brands, mentionSel: state.mentionSel, mentionApplied: state.mentionApplied,
         status: state.status, topics: state.topics,
         rows: state.rows, totalCount: state.totalCount, ohneTopic: state.ohneTopic, hasData: state.hasData,
+        leseFehler: !!state.leseFehler,
         flatAsked: state.flatAsked,
         groups: state.groups, groupsHasData: state.groupsHasData
       };
@@ -4528,7 +4537,7 @@
                        String(root.getAttribute("data-processing2") || "");
     var explicitOverride = false;
     function isBusy(){ return !!state.loading || !!state.extLoading; }
-    var syncFromAttrs = function(){
+    var syncFromAttrs = function(muts){
       var wantDark = isYes(root.getAttribute("data-isdark"));
       var changed = false;
       if (wantDark !== isDark){
@@ -4537,6 +4546,12 @@
         if (window.__uptUstTopics) window.__uptUstTopics.setTheme(isDark ? "dark" : "light");
         changed = true;
       }
+      /* Reiner Themewechsel: Ladezustand nicht anfassen. Siehe UC.themeOnly -- die drei anderen
+         Tabellen haben diesen Ausstieg, hier fehlte er als einzige. setUpstreemTheme schreibt
+         data-isdark auf jede Wurzel; ohne den Ausstieg las der Beobachter bei jedem Umschalten
+         data-processing frisch und glich den Ladezustand daran ab -- ein Themenwechsel hat mit
+         dem Laden aber nichts zu tun, er darf ihn weder setzen noch beenden. */
+      if (UC.themeOnly && UC.themeOnly(muts)){ if (changed) render(); return; }
       var procAttr = String(root.getAttribute("data-processing") || "") + "|" +
                      String(root.getAttribute("data-processing2") || "");
       if (procAttr !== lastProcAttr){

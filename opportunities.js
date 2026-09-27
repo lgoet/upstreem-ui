@@ -157,6 +157,49 @@
                Gnadenfenster fuer den leeren Datensatz ist abgelaufen. leseFehler: der letzte
                Datensatz war nicht lesbar. Alles fuer render(), siehe dort. */
             hasData: false, jeKarten: false, leerFrei: false, leseFehler: false };
+
+  /* ---- EIN NEU GEBAUTES ELEMENT MACHT WEITER (27.09. gemeldet) ----
+     "Es ist gar nicht noetig, dass beim Theme-Wechsel was in den Loading-yes-State geht."
+     Bubble baut ein HTML-Element NEU, sobald sich ein dynamischer Wert darin aendert -- beim
+     Themewechsel ist das data-isdark. uoRun findet die frische Wurzel und richtet sie ein, und
+     dieses S startete leer: hasData false, also Skelett. Bubble schickt die Liste aber nicht noch
+     einmal (sie hat sich ja nicht geaendert) -- das Skelett stand fuer immer da.
+     Dieselbe Antwort wie in responses-table und urls-table: der Zustand liegt zusaetzlich am
+     window, je data-instance, und eine neue Wurzel derselben Instanz faengt dort an, wo die alte
+     aufgehoert hat -- mit Liste, Ladezustand, Lesefehler, Gnadenfenster und dem, was der Nutzer
+     eingestellt hat (Ansicht, Lanes, Sortierung, Suche). Nur ein echter Seitenreload leert ihn.
+     NICHT dabei ist detailId: die Schublade der alten Wurzel ist mit ihr gegangen (der
+     Portal-Kehraus oben raeumt sie weg), eine gemerkte Id behauptete eine offene Schublade. */
+  var STORE = (window.__uoStore = window.__uoStore || {});
+  var instanceId = root.getAttribute('data-instance') || 'default';
+  var saved = STORE[instanceId];
+  if (saved){
+    S.items = Array.isArray(saved.items) ? saved.items : [];
+    S.mode = saved.mode === 'list' ? 'list' : 'board';
+    /* Kopiert, nicht uebernommen: S.visible wird weiter unten an Ort und Stelle umgeschaltet. */
+    if (saved.visible) ['pending', 'in_progress', 'done', 'ignored'].forEach(function(k){ S.visible[k] = !!saved.visible[k]; });
+    S.query = String(saved.query || '');
+    S.sort = saved.sort === 'newest' ? 'newest' : 'priority';
+    S.externalOnly = !!saved.externalOnly;
+    S.loading = !!saved.loading;
+    S.hasData = !!saved.hasData; S.jeKarten = !!saved.jeKarten;
+    S.leerFrei = !!saved.leerFrei; S.leseFehler = !!saved.leseFehler;
+  }
+  /* Schreiben darf nur die Wurzel, der gerade die window.opportunities*-Funktionen gehoeren --
+     window.__uoAktiv, gesetzt unten im selben Zug, in dem initRoot die Setter uebernimmt. Die
+     alte Wurzel lebt nach dem Neuaufbau in ihren Uhren weiter (dem Gnadenfenster des
+     Leerzustands), und ohne diesen Riegel schriebe sie ihren veralteten Stand ueber den der
+     neuen. Ein Riegel ueber isConnected waere falsch herum: kommt ein Datensatz in der Luecke
+     zwischen Abriss und Neuaufbau, landet er noch bei der alten Wurzel -- und genau der muss dann
+     gespeichert werden, sonst faengt die neue ohne ihn an. */
+  function persist(){
+    if (window.__uoAktiv !== root) return;
+    STORE[instanceId] = {
+      items: S.items, mode: S.mode, visible: S.visible, query: S.query, sort: S.sort,
+      externalOnly: S.externalOnly, loading: S.loading, hasData: S.hasData,
+      jeKarten: S.jeKarten, leerFrei: S.leerFrei, leseFehler: S.leseFehler
+    };
+  }
   var COL_ORDER = ['ignored', 'pending', 'in_progress', 'done'];
 
   /* Column identity colours: status semantics, not the app's up/down or citation palettes, so they
@@ -544,6 +587,18 @@
   var leerUhr = null;
   function leerUhrWeg(){ if (leerUhr){ clearTimeout(leerUhr); leerUhr = null; } }
   function render(){
+    zeichnen();
+    /* Gemerkt wird HIER und nicht an den Stellen davor (siehe STORE oben): jeder Zustandswechsel
+       des Bretts endet in render() -- Liste, Ladezustand, Ansicht, Lanes, Sortierung, Suche,
+       verschobene Karten, das abgelaufene Gnadenfenster. Zwoelf einzelne Aufrufe waeren zwoelf
+       Gelegenheiten, einen zu vergessen, und ein vergessener waere ein Zustand, der den naechsten
+       Neuaufbau still nicht ueberlebt.
+       Und NACH dem Zeichnen: wirft zeichnen() an einer Liste, landet sie nicht im Speicher. Sonst
+       wuerfe jeder spaetere Neuaufbau schon in initRoot, und das Brett kaeme bis zum Reload nicht
+       wieder hoch -- der Speicher haelt so immer den letzten Stand, der sich zeichnen liess. */
+    persist();
+  }
+  function zeichnen(){
     var elTotal = root.querySelector('.uo-total');
     if (S.loading || !S.hasData){ leerUhrWeg(); renderSkeleton(); return; }
     if (S.leseFehler){
@@ -1018,6 +1073,11 @@
     var swExt0 = sortPop.querySelector('.uo-switch-external');
     if (swExt0) swExt0.classList.toggle('is-on', !!S.externalOnly);
   }
+  /* Dasselbe fuer Ansicht und Sortierung. Das Markup sagt immer Board und Priority -- nach einem
+     Neuaufbau (siehe STORE oben) kann S laengst auf List oder Newest stehen, und dann stuende der
+     Schalter auf dem einen und das Brett im anderen. */
+  if (modeSeg) modeSeg.querySelectorAll('.up-seg-btn[data-mode]').forEach(function(x){ x.classList.toggle('is-active', x.getAttribute('data-mode') === S.mode); });
+  if (sortPop) sortPop.querySelectorAll('.up-pop-opt[data-sort]').forEach(function(o){ o.classList.toggle('is-active', o.getAttribute('data-sort') === S.sort); });
 
   /* Core's .up-menu uses an opacity/scale appear animation keyed off .is-shown; the standalone had
      .is-open on a copy of the same menu, plus a hard display:none toggle on the column menus. */
@@ -1102,6 +1162,10 @@
   searchClear.addEventListener('click', function(){
     searchInput.value = ''; S.query = ''; syncSearch(); searchInput.focus(); render();
   });
+  /* Eine gemerkte Suche (Neuaufbau, siehe STORE oben) muss auch SICHTBAR wieder dastehen: ein
+     Filter, dessen Feld zugeklappt und leer ist, waere ein stiller Filter -- Karten fehlen, und
+     nichts sagt warum. */
+  if (S.query){ searchInput.value = S.query; searchWrap.classList.add('is-open'); syncSearch(); }
 
   /* ---------- sticky header ----------
      Same UC.makeSticky every table uses: it pins the toolbar at data-sticky-top and keeps
@@ -1169,6 +1233,10 @@
   /* ---------- public API ----------
      Names, signatures and semantics are byte-identical to the standalone. */
   function ingest(items){ S.items = (Array.isArray(items) ? items : []).map(function(it, i){ if (it.id == null) it.id = 'opp_' + i; return it; }); }
+  /* Ab hier gehoeren die Setter dieser Wurzel, also auch der Speicher (siehe persist). Genau an
+     dieser Stelle und nicht frueher: bricht initRoot vorher ab, fuettert Bubble weiter die alte
+     Wurzel, und die muss dann weiter merken duerfen. */
+  window.__uoAktiv = root;
   window.opportunitiesSetItems = function(items){
     /* Ein Text, der sich nicht lesen laesst, ist KEINE leere Liste: vorher wurde er zu [] und
        sah genau aus wie "es gibt keine Opportunities". Jetzt der Lesefehler. Leerer Text bleibt
@@ -1383,7 +1451,9 @@
   }
   /* Sonst: Skelett, bis opportunitiesSetItems() kommt -- ueber S.hasData, siehe render(). Die
      12s-Uhr, die hier stand, ist weg: sie hat das Laden beendet, ohne dass Daten da waren, und
-     danach stand "Nothing here yet" in jeder Spalte. */
+     danach stand "Nothing here yet" in jeder Spalte.
+     Ausser diese Instanz hatte schon Daten (Neuaufbau, siehe STORE oben): dann steht hier sofort
+     wieder das Brett von vorher, ohne Skelett und ohne auf Bubble zu warten. */
   render();
 
   }
