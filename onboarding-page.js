@@ -81,6 +81,10 @@
   function isArr(v) { return Object.prototype.toString.call(v) === "[object Array]"; }
   function txt(v) { return String(v == null ? "" : v).trim(); }
   function num(v) { var n = parseFloat(String(v == null ? "" : v).replace(",", ".")); return isFinite(n) ? n : null; }
+  /* Tiefe Kopie ueber JSON, null wenn es nicht geht (Kreisbezug). Gebraucht beim Neuaufbau, siehe
+     STORE: alles im Zustand kam als JSON aus Bubble oder ist daraus gebaut, JSON traegt es also
+     verlustfrei. */
+  function kopie(v) { try { return JSON.parse(JSON.stringify(v)); } catch (e) { return null; } }
 
   /* ---------- Schritte ---------------------------------------------------------------------
      Die Reihenfolge ist die Wahrheit ueber den Ablauf: Schiene, Zurueck-Knopf und die
@@ -542,17 +546,43 @@
   /* ==========================================================================================
      Controller
      ========================================================================================== */
+  /* ---- EIN NEU GEBAUTES ELEMENT MACHT WEITER (27.09.) ----
+     Bubble baut ein HTML-Element NEU, sobald sich ein dynamischer Wert in seinem Markup aendert
+     -- beim Themenwechsel ist das data-isdark, und diese Seite traegt ihren Themenknopf sogar
+     selbst oben rechts. Die alte Wurzel fliegt weg, eine frische Kopie der Vorlage kommt mit
+     derselben data-instance, und makeController fing bei null an: Bootkreisel, Formular, Schritt
+     1. Bubble schickt die Daten aber nicht noch einmal (sie haben sich ja nicht geaendert) -- wer
+     auf Prompts stand, stand danach vor dem leeren Formular, und das naechste Buendel oeffnete
+     mitten im Ablauf das Tor "fortsetzen oder von vorn".
+     Dazu ein zweiter Fehler: resolve() gab den ERSTEN Controller zurueck, und die Liste wuchs
+     nur. Nach einem Neuaufbau ging also jeder Setter an die alte, abgehaengte Wurzel -- die neue
+     bekam nie wieder Daten.
+     Darum ein Speicher am window, je data-instance, wie in responses-table und team-orga: er
+     ueberlebt den Neuaufbau, und die neue Wurzel macht mit dem weiter, was die alte zuletzt
+     gezeigt hat -- Schritt, Formular, Daten, Auswahl, Fehler, das Tor, eine laufende Uhr mit
+     ihrem Rest. Ein Themenwechsel faerbt nur um: kein Laden, kein Zuruecksetzen, kein anderer
+     Schritt, kein zweiter Einzug. */
+  var STORE = (window.__uobStore = window.__uobStore || {});
+
   function makeController(root) {
     var fire = UC.makeFire(root, { label: "onboarding-page", eventPrefix: "uob" });
     var instanceId = txt(root.getAttribute("data-instance")) || "onboarding";
+    /* Der Stand der vorigen Wurzel dieser Instanz, null beim allerersten Aufbau. Daran haengt
+       alles, was nur beim ERSTEN Aufbau passieren darf: die Adresse lesen, Markt und Zone raten,
+       der Einzug, die Fuenf-Sekunden-Uhr des Guides, der Bootkreisel. */
+    var saved = STORE[instanceId] || null;
+    var neuaufbau = !!saved;
 
     /* Die Adresse EINMAL lesen, jetzt -- bevor irgendein gehe() sie anfasst. gehe() schreibt den
        Schritt naemlich hinein, und der Aufbau ruft es (mit "brand"), bevor das Buendel da ist.
        Ohne diese Momentaufnahme liest zielSchritt() spaeter genau das, was die Komponente selbst
        gerade geschrieben hat, und landet immer auf brand -- gemessen, und zwar erst NACHDEM der
        Fix schon geschrieben war. Was hier steht, ist der Schritt, auf dem der Nutzer die Seite
-       verlassen hat. */
-    var schrittBeimAufbau = stepAusUrl();
+       verlassen hat.
+       Beim Neuaufbau NICHT neu lesen, sondern die Momentaufnahme des ersten Aufbaus uebernehmen:
+       in der Adresse steht dann, was die alte Wurzel selbst hineingeschrieben hat -- genau die
+       Falle, vor der dieser Absatz warnt. */
+    var schrittBeimAufbau = neuaufbau ? (saved.schrittBeimAufbau || "") : stepAusUrl();
 
     function attr(n, f) {
       var v = root.getAttribute(n);
@@ -624,29 +654,50 @@
       /* Steht das Tor offen? Es kommt vor den ersten Schritt, wenn schon ein Onboarding
          existiert: fortsetzen oder von vorn. */
       torAuf: false,
-      busy: false
+      busy: false,
+      /* Ein Schrittwechsel, der am Ende einer Uhr noch aussteht (siehe abschlussPlanen). Er steht
+         im Zustand und nicht nur in einem setTimeout, damit ein Neuaufbau ihn nicht verschluckt. */
+      abschluss: null
     };
+    /* Neuaufbau: der ganze Zustand der alten Wurzel, als TIEFE Kopie. Die alte lebt als
+       abgehaengter Knoten weiter; teilten sich beide die Objekte darin (Auswahl, Formular, eigene
+       Themen, die Neustart-Regel), schriebe jede Aenderung der einen in die andere. Ohne Kopie nur,
+       falls ein Payload als Objekt mit Kreisbezug hereinkam -- dann lieber geteilt als verloren. */
+    if (saved && saved.s) {
+      var gemerkt = kopie(saved.s) || saved.s;
+      for (var gk in gemerkt) {
+        if (Object.prototype.hasOwnProperty.call(gemerkt, gk)) state[gk] = gemerkt[gk];
+      }
+    }
     var BRAND_MAX = 5;
     /* Das Tor wird vom ERSTEN Buendel dieser Seitenansicht entschieden, danach nie wieder. Ein
        Buendel kommt auch spaeter noch -- jeder aendernde Workflow schickt am Ende eine frische
        Antwort --, und oeffnete das erneut das Tor, floege der Nutzer mitten aus seinem Schritt.
        Bewusst KEINE Abfrage auf den Bootzustand: der endet nach sechs Sekunden von selbst, und
-       auf der echten Seite vergehen bis zur Antwort der RPC schon mal neun. */
-    var torGeprueft = false;
+       auf der echten Seite vergehen bis zur Antwort der RPC schon mal neun.
+       "Diese Seitenansicht" schliesst einen Neuaufbau ein (siehe STORE): ohne die Marke oeffnete
+       das naechste Buendel nach einem Themenwechsel das Tor mitten im Ablauf. */
+    var torGeprueft = !!(saved && saved.torGeprueft);
     /* Ist der Neustart-Knopf scharf? Der erste Klick zeigt den Hinweis, der zweite fuehrt aus.
        Ein Zwischenschritt und kein Fenster: der Nutzer bleibt, wo er ist, und die Bestaetigung
        steht an derselben Stelle wie der Knopf, den er gedrueckt hat. */
     var overScharf = false;
     /* Hat der Nutzer schon etwas angefasst? Das Tor darf ihn nie aus laufender Arbeit reissen.
        Diese Marke ist das ehrlichere Kriterium als eine Uhr: sie sagt, ob ueberhaupt schon jemand
-       gehandelt hat, und nicht, ob eine willkuerliche Zahl von Sekunden vergangen ist. */
-    var angefasst = false;
+       gehandelt hat, und nicht, ob eine willkuerliche Zahl von Sekunden vergangen ist. Sie geht
+       mit durch den Neuaufbau -- gehandelt hat der Nutzer ja auf der alten Wurzel. */
+    var angefasst = !!(saved && saved.angefasst);
 
     /* ---- Thema ---------------------------------------------------------------------------- */
     var isDark = false;
     function istDunkelRoh() {
       if (UC.themeParam) {
-        var t = UC.themeParam(root, "data-isdark");
+        /* Der WERT des Attributs, nicht die Wurzel. Hier stand themeParam(root, "data-isdark"):
+           core nimmt nur einen Wert und las damit die Wurzel selbst als Ja/Nein -- immer nein.
+           Solange core ein Thema kennt, fiel das nicht auf (dann gewinnt core ohnehin); kennt es
+           keins, blieb die Seite hell, auch wenn Bubble data-isdark="yes" schrieb. Und genau mit
+           diesem Wert kommt eine neu gebaute Wurzel an. Jede andere Komponente ruft es so. */
+        var t = UC.themeParam(root.getAttribute("data-isdark"));
         if (t != null) return !!t;
       }
       var roh = root.getAttribute("data-isdark");
@@ -793,11 +844,14 @@
     /* ---- Das Flimmerraster starten ----
        Nach dem Einhaengen, weil das Kit die Groesse seiner Huelle messen muss. Es bringt seinen
        eigenen Ausschalter mit: es haelt an, wenn der Tab verdeckt ist, wenn die Huelle nicht im
-       Bild steht und wenn sie aus dem Dokument fliegt (Bubble baut Elemente neu) -- hier ist
-       also nichts abzuraeumen.
+       Bild steht und wenn sie aus dem Dokument fliegt (Bubble baut Elemente neu) -- das Zeichnen
+       raeumt sich also selbst ab. Was bleibt, sind seine Anmeldung beim Thema und seine
+       Beobachter, und die halten die alte Leinwand fest. Die gibt abbauen() frei, sobald eine neu
+       gebaute Wurzel diese abloest (siehe STORE) -- dafuer wird der Griff hier gemerkt.
        Die drei Zahlen sind die angeforderten Unterschiede zur Vorlage von magicui und stehen mit
        ihrer Begruendung bei UC.makeFlickerGrid. Sie stehen HIER und nicht dort als Vorgabe, weil
        eine zweite Seite mit demselben Grund sie anders wollen darf. */
+    var flimmer = null;
     if (UC.makeFlickerGrid){
       var elFlimmer = root.querySelector("[data-flimmer]");
       /* DIE VIER ZAHLEN SIND DIE ANGEFORDERTEN (07.09., woertlich aus dem Aufruf, den der
@@ -819,7 +873,7 @@
          und zurueck. Die Kurve steht im Kit.
          OHNE FARBE, wie bestellt: die Farbe ist --vc-text, also im Hellen Schwarz und im
          Dunkeln die dunkle Textfarbe -- kein Farbton, nur Helligkeit. */
-      if (elFlimmer) UC.makeFlickerGrid(elFlimmer, {
+      if (elFlimmer) flimmer = UC.makeFlickerGrid(elFlimmer, {
         squareSize: 3, gap: 20,       /* 23px Abstand -- wie angefordert */
         /* Der Ruhewert traegt das Raster, der Gipfel ist das Funkeln. 0.4 ist die
            angeforderte Deckkraft und hier der GIPFEL eines Blinkens; 0.10 ist der Ton, auf dem
@@ -1444,15 +1498,24 @@
        immer ein Platzhalter -- der Ausfall, der wie "gleich da" aussieht. Acht Sekunden: die
        Tarife sind drei Zeilen aus der Datenbank, und wer laenger wartet, wartet auf etwas, das
        nicht mehr kommt. */
-    var PLAN_MAX_MS = 8000, planUhr = null;
-    function planUhrStarten() {
+    /* planBis ist das Ende dieser Uhr als Zeitpunkt, fuer den Speicher (siehe STORE): eine neu
+       gebaute Wurzel laesst ihre Uhr nur noch den REST laufen -- sonst verlaengerte jeder
+       Themenwechsel das Skelett um volle acht Sekunden. 0 heisst: keine Uhr. */
+    var PLAN_MAX_MS = 8000, planUhr = null, planBis = 0;
+    function planUhrStarten(ms) {
       if (planUhr || state.plansGeholt || state.plans.length) return;
+      var dauer = ms != null ? Math.max(0, ms) : PLAN_MAX_MS;
+      planBis = Date.now() + dauer;
       planUhr = window.setTimeout(function () {
         planUhr = null;
-        if (state.plansGeholt || state.plans.length) return;
+        /* Abgehaengt: die Nachfolgerin hat die Uhr mit ihrem Rest uebernommen. */
+        if (!lebt()) return;
+        planBis = 0;
+        if (state.plansGeholt || state.plans.length) { persist(); return; }
         state.plansGeholt = true; state.plansFehler = true;
         render();
-      }, PLAN_MAX_MS);
+        persist();
+      }, dauer);
     }
 
     function viewPlan() {
@@ -1724,6 +1787,9 @@
 
     /* ---- Zeichnen -------------------------------------------------------------------------- */
     var letzteAnsicht = "";
+    /* Wahr genau fuer den ersten Durchgang einer neu gebauten Wurzel (siehe Start unten): was
+       dort gezeichnet wird, stand auf der alten Wurzel schon da und zieht nicht noch einmal ein. */
+    var stillerAufbau = false;
     function ansichtKey() {
       /* Vor allem anderen: solange nicht feststeht, ob es ein Projekt gibt, wird nichts gezeigt,
          was sich gleich wieder aendern koennte. */
@@ -2317,6 +2383,11 @@
       var host = root.querySelector("[data-tltags]");
       if (!host) return;
       [].forEach.call(host.children, function (el, i) {
+        /* Beim Neuaufbau standen die Marken auf der alten Wurzel schon da -- also stehen sie
+           sofort, ohne Staffel. Sofort heisst hier: noch in diesem Durchgang, bevor der Browser
+           ihren Stil zum ersten Mal rechnet. Dann gibt es keinen Ausgangszustand, von dem ihr
+           Uebergang (.34s, nicht an --uob-t) laufen koennte. */
+        if (stillerAufbau) { el.classList.add("is-in"); return; }
         window.setTimeout(function () { el.classList.add("is-in"); }, 120 + i * 140);
       });
     }
@@ -2589,7 +2660,7 @@
       }
 
       if (e.target.closest("[data-help-btn]")) {
-        if (hilfeUhr) { window.clearTimeout(hilfeUhr); hilfeUhr = null; }
+        hilfeUhrStoppen();
         state.hilfeVonHand = true;
         state.hilfeAuf = !state.hilfeAuf;
         hilfeSchreiben();
@@ -2597,7 +2668,7 @@
         return;
       }
       if (e.target.closest("[data-help-close]")) {
-        if (hilfeUhr) { window.clearTimeout(hilfeUhr); hilfeUhr = null; }
+        hilfeUhrStoppen();
         state.hilfeVonHand = true;
         state.hilfeAuf = false;
         hilfeSchreiben();
@@ -2608,6 +2679,10 @@
       var tb = e.target.closest("[data-theme-btn]");
       if (tb) {
         var neu = !isDark;
+        /* VOR dem Umschalten merken: setUpstreemTheme meldet das Thema an Bubble, und genau das
+           baut dieses Element neu. Geschieht das noch innerhalb des Aufrufs, liefe der
+           persist-Zuhoerer nach dem Klick schon auf einer abgehaengten Wurzel. */
+        persist();
         if (UC.setUpstreemTheme) UC.setUpstreemTheme(neu ? "dark" : "light");
         isDark = neu;
         syncTheme();
@@ -2803,6 +2878,16 @@
       var n = normUrl(e.target.value);
       if (n.url) { state.form.website = n.url; e.target.value = n.url; }
     }, true);
+
+    /* Nach jedem Klick, jeder Eingabe und jedem Verlassen eines Feldes den Stand merken (siehe
+       persist). Als eigene Zuhoerer NACH den eigentlichen und nicht als Zeile in ihnen: der
+       Klick-Zuhoerer allein hat ueber dreissig Ausgaenge. Auf demselben Element und in derselben
+       Phase laufen Zuhoerer in der Reihenfolge ihrer Anmeldung, diese also nach dem Handeln --
+       und das stopPropagation im Klick (data-open) haelt sie nicht auf, das koennte nur
+       stopImmediatePropagation. */
+    root.addEventListener("click", persist);
+    root.addEventListener("input", persist);
+    root.addEventListener("blur", persist, true);
 
     /* ---- Auswahl --------------------------------------------------------------------------- */
     function waehle(kind, id) {
@@ -3035,8 +3120,10 @@
          daher erst, wenn das Tor zugeht.
 
        Die Marke verhindert nur das DOPPELTE Melden derselben Ankunft. Wer zurueckgeht und wieder
-       vorkommt, wird erneut gemeldet -- er kommt ja wirklich wieder an. */
-    var schrittGemeldet = "";
+       vorkommt, wird erneut gemeldet -- er kommt ja wirklich wieder an. Ein Neuaufbau ist dagegen
+       KEINE Ankunft: die Marke geht mit (siehe STORE), sonst holte der naechste Setter nach einem
+       Themenwechsel die Daten des Schritts ein zweites Mal. */
+    var schrittGemeldet = saved ? (saved.schrittGemeldet || "") : "";
     function schrittMelden() {
       if (state.torAuf) return;
       if (schrittGemeldet === state.step) return;
@@ -3199,7 +3286,11 @@
        naehert sich dem Ende der laufenden Phase an und bleibt kurz davor stehen. Ein Balken, der
        zwischen zwei Meldungen einfriert, liest sich als Absturz -- die Recherche zu Ladeanzeigen
        ist da eindeutig, und vier Phasen mit je zehn Sekunden sind lang genug, dass es auffiele. */
-    var tick = null, t0 = 0, hilfeUhr = null;
+    /* t0 geht mit durch den Neuaufbau (siehe STORE), ebenso warteAb und uhrAn weiter unten: eine
+       laufende Uhr macht auf der neuen Wurzel dort weiter, wo sie war -- die Zeit am Rand zaehlt
+       weiter statt bei 0:00 neu, und die Spur zieht an derselben Stelle der Kurve weiter.
+       hilfeBis ist das Ende der Guide-Uhr als Zeitpunkt, aus demselben Grund wie planBis. */
+    var tick = null, t0 = saved ? (saved.t0 || 0) : 0, hilfeUhr = null, hilfeBis = 0;
     /* mitUhr: hat ein KLICK diesen Lauf gestartet? Dann zaehlt die Uhr. Kommt der Wartezustand
        dagegen aus den Daten (Neuladen mitten im Lauf), bleibt sie weg. */
     function warteStarten(art, mitUhr) {
@@ -3223,6 +3314,16 @@
       if (tick) { window.clearInterval(tick); tick = null; }
       warteUhrZeichnen();
     }
+    /* Neuaufbau mitten in einer Uhr: weiterlaufen lassen, nicht neu starten. warteStarten setzt
+       Phase, Spur und beide Anfangszeiten zurueck -- genau der Sprung, den ein Themenwechsel nicht
+       ausloesen darf. Hier kommt nur der Takt zurueck; die Zeiten stehen schon (aus dem Speicher),
+       und die Uhr am Rand zeigt sofort die richtige Zeit samt Hinweis. */
+    function warteFortsetzen() {
+      warteSek = -1;
+      warteUhrZeichnen();
+      if (tick) window.clearInterval(tick);
+      tick = window.setInterval(spurTick, 240);
+    }
     /* Die Uhr am Rand, ab dem Klick, der den Lauf gestartet hat. Sie hat einen EIGENEN Anfang
        und nicht t0: den setzt phaseSetzen bei jeder Phase neu, damit die Spur innerhalb der Phase
        wieder vorne zieht. Die Uhr zaehlt dagegen die ganze Wartezeit -- mit t0 spraenge sie bei
@@ -3233,7 +3334,7 @@
        Neuladen weiss niemand, wann er begonnen hat -- eine Uhr, die dann bei 0:00 anfaengt, zaehlt
        etwas anderes als die Wartezeit und ist damit falsch. Ohne Uhr auch kein Hinweis: der Satz
        "das dauert 3-5 Minuten" haengt an einer Zeit, die es hier nicht gibt. So angesagt am 26.08. */
-    var warteAb = 0, warteSek = -1, uhrAn = false;
+    var warteAb = saved ? (saved.warteAb || 0) : 0, warteSek = -1, uhrAn = !!(saved && saved.uhrAn);
     function warteUhrZeichnen() {
       if (!elWarte) return;
       /* Nur im ERSTEN Ladebild. Der Promptlauf hat seine eigene Dauer (rund neunzig Sekunden) und
@@ -3259,6 +3360,9 @@
        eine Luege; einer, der bei 95 steht, ist eine Auskunft. */
     var SPUR_DAUER = 90000, SPUR_KNICK = 85, SPUR_DECKEL = 95;
     function spurTick() {
+      /* Eine abgehaengte Wurzel tickt nicht weiter: sie zeichnete ins Leere, und ihre
+         Nachfolgerin hat den Takt schon uebernommen (warteFortsetzen). */
+      if (!lebt()) { if (tick) { window.clearInterval(tick); tick = null; } return; }
       var ziel, unten;
       if (state.warten === "prompts") {
         warteUhrZeichnen();
@@ -3273,7 +3377,7 @@
           /* Die letzten Prozent deutlich langsamer: eine Minute Zeitkonstante auf zehn Prozent. */
           w2 = SPUR_KNICK + (SPUR_DECKEL - SPUR_KNICK) * (1 - Math.exp(-(vp - SPUR_DAUER) / 60000));
         }
-        if (w2 > state.fortschritt) { state.fortschritt = w2; renderPhasen(); }
+        if (w2 > state.fortschritt) { state.fortschritt = w2; renderPhasen(); persist(); }
         return;
       }
       warteUhrZeichnen();
@@ -3291,7 +3395,7 @@
          kalibriert, nicht gerechnet. */
       var anteil = 1 - Math.exp(-v / 2600);
       var w = unten + (ziel - unten) * anteil;
-      if (w > state.fortschritt) { state.fortschritt = w; renderPhasen(); }
+      if (w > state.fortschritt) { state.fortschritt = w; renderPhasen(); persist(); }
     }
     function phaseSetzen(i) {
       var neu = Math.max(0, Math.min(PHASES.length, i));
@@ -3300,6 +3404,51 @@
       state.fortschritt = Math.max(state.fortschritt, (neu / PHASES.length) * 100);
       t0 = new Date().getTime();
       renderPhasen();
+    }
+
+    /* ---- Das Ende einer Uhr: 360ms Luft, dann der Schritt -------------------------------------
+       Beide Uhren enden gleich: die Spur faehrt auf 100, und erst 360ms spaeter kommt der Schritt
+       -- lang genug, dass man das Volllaufen sieht. Das stand frueher als nacktes setTimeout an
+       zwei Stellen. Fiel ein Neuaufbau in diese 360ms, lief die Uhr der alten Wurzel ins Leere,
+       und die neue stand fuer immer auf einer vollen Spur: danach schickt niemand mehr einen
+       Status. Darum steht der faellige Schritt im Zustand (state.abschluss, mit seinem Zeitpunkt),
+       und die neue Wurzel fuehrt ihn aus -- mit dem Rest der Zeit, oder sofort.
+       Die Uhren laufen wie vorher jede fuer sich: kommen zwei Enden kurz nacheinander, laufen
+       beide, und der zweite findet den Schritt schon gesetzt. state.abschluss ist nur das, was ein
+       Neuaufbau uebernimmt -- das juengste. */
+    function abschlussPlanen(a, ms) {
+      var dauer = Math.max(0, ms);
+      a.bis = Date.now() + dauer;
+      state.abschluss = a;
+      window.setTimeout(function () {
+        /* Abgehaengt: die Nachfolgerin hat den Schritt aus dem Speicher und fuehrt ihn selbst aus. */
+        if (!lebt()) return;
+        if (state.abschluss === a) state.abschluss = null;
+        abschlussAusfuehren(a);
+        persist();
+      }, dauer);
+    }
+    function abschlussAusfuehren(a) {
+      warteBeenden();
+      if (a.art === "prompts") { gehe("prompts", false); return; }
+      /* Hier stand: war der Nutzer auf brand, dann competitors, sonst prompts. Das war eine
+         Vermutung, und sie ging schief, sobald das Buendel VOR der Statusmeldung eintraf: es
+         setzte den Schritt schon auf competitors, und der Status danach schickte den Nutzer
+         deshalb auf prompts -- eine leere Promptliste, und in der Schiene standen Competitors
+         und Topics als erledigt. Genau so gemeldet am 26.08., ohne Neuladen, im normalen Weg.
+         Jetzt sagt die PHASE, was fertig wurde: 7 heisst Promptlauf, alles andere heisst
+         grosser Lauf -- und wohin der Nutzer danach gehoert, sagt zielSchritt() aus den
+         Daten. */
+      var ziel = (a.phase != null && a.phase >= PROMPT_PHASE) ? "prompts" : zielSchritt(a.ausLauf);
+      /* Nur vorwaerts. Steht der Nutzer schon weiter, holt ihn eine Statusmeldung nicht
+         zurueck -- sonst wirft ihn eine spaete Meldung von Topics auf Competitors. */
+      if (stepIndex(ziel) < stepIndex(state.step)) ziel = state.step;
+      var zi = stepIndex(ziel);
+      if (zi > state.maxErreicht) state.maxErreicht = zi;
+      /* gehe() kehrt um, wenn der Schritt schon steht -- dann muss hier gezeichnet werden,
+         sonst bleibt das Ladebild stehen, obwohl das Warten zu Ende ist. */
+      if (state.step === ziel) { render(); schrittMelden(); }
+      else gehe(ziel, false);
     }
 
     /* ---- Breite ------------------------------------------------------------------------------
@@ -3328,6 +3477,9 @@
       if (noetig > platz) root.classList.add("is-tight");
     }
     function messeBreite() {
+      /* Den Beobachter dahinter (UC.onResize) kann diese Datei nicht abmelden; also misst eine
+         abgehaengte Wurzel einfach nichts mehr. */
+      if (!lebt()) return;
       var w = root.clientWidth;
       root.classList.toggle("is-narrow", w < 760);
       root.classList.toggle("is-vnarrow", w < 460);
@@ -3357,11 +3509,16 @@
     }
     try { if (document.fonts && document.fonts.ready) document.fonts.ready.then(kopfPruefen); } catch (e) {}
 
-    /* ---- Zurueck-Taste des Browsers ---------------------------------------------------------- */
-    window.addEventListener("popstate", function () {
+    /* ---- Zurueck-Taste des Browsers ----------------------------------------------------------
+       Benannt, damit abbauen() ihn wieder abmelden kann: er haengt am window und hielte die alte
+       Wurzel sonst fuer immer fest. Bis dahin tut er auf einer abgehaengten nichts -- den Schritt
+       setzt die lebende. */
+    function aufZurueck() {
+      if (!lebt()) return;
       var k = stepAusUrl();
-      if (k && k !== state.step) { state.step = k; state.warten = ""; render(); }
-    });
+      if (k && k !== state.step) { state.step = k; state.warten = ""; render(); persist(); }
+    }
+    window.addEventListener("popstate", aufZurueck);
 
     /* EIN Leseweg fuer alles, was aus Bubble kommt -- jetzt UC.readBubble in core, weil
        url-detail denselben braucht. Was er kann und warum, steht dort. Der Rueckfall haelt die
@@ -3540,19 +3697,39 @@
        Der Preis: antwortet gar nichts, sieht ein neuer Nutzer zwoelf Sekunden ein Skelett statt
        sechs. Das ist der seltenere Fall und der harmlosere -- ein Formular, das erscheint und
        wieder verschwindet, kostet Vertrauen. */
-    var BOOT_MAX_MS = 12000, bootUhr = null;
+    /* bootBis wie planBis: das Ende als Zeitpunkt, damit eine neu gebaute Wurzel nur den Rest
+       wartet. 0 heisst: keine Uhr. */
+    var BOOT_MAX_MS = 12000, bootUhr = null, bootBis = 0;
     function bootBeenden() {
       if (bootUhr) { window.clearTimeout(bootUhr); bootUhr = null; }
+      bootBis = 0;
       if (!state.hochfahren) return false;
       state.hochfahren = false;
       return true;
     }
-    bootUhr = window.setTimeout(function () {
-      bootUhr = null;
-      /* Niemand hat geantwortet. Lieber das Formular als ein Skelett ohne Ende -- ein Nutzer, der
-         doch ein Projekt hat, landet spaeter trotzdem richtig, sobald der Setter eintrifft. */
-      if (state.hochfahren) { state.hochfahren = false; render(); }
-    }, BOOT_MAX_MS);
+    function bootUhrStarten(ms) {
+      var dauer = Math.max(0, ms);
+      bootBis = Date.now() + dauer;
+      bootUhr = window.setTimeout(function () {
+        bootUhr = null;
+        /* Abgehaengt: die Nachfolgerin wartet den Rest selbst. */
+        if (!lebt()) return;
+        bootBis = 0;
+        /* Niemand hat geantwortet. Lieber das Formular als ein Skelett ohne Ende -- ein Nutzer, der
+           doch ein Projekt hat, landet spaeter trotzdem richtig, sobald der Setter eintrifft. */
+        if (state.hochfahren) { state.hochfahren = false; render(); }
+        persist();
+      }, dauer);
+    }
+    /* Beim ersten Aufbau die volle Frist. Beim Neuaufbau nur, wenn die alte Wurzel noch hochfuhr,
+       und dann der Rest ihrer Frist -- ist er schon um, endet der Boot gleich, so wie ihn die alte
+       Uhr beendet haette. Fuhr sie OHNE Uhr hoch (setOnboardingLoading "yes" vor dem ersten
+       Projekt), bleibt es dabei: die alte hatte auch keine. Ein Themenwechsel startet also nie
+       einen Bootkreisel -- er setzt nur einen fort, der schon lief. */
+    if (state.hochfahren) {
+      if (!neuaufbau) bootUhrStarten(BOOT_MAX_MS);
+      else if (saved.bootBis) bootUhrStarten(saved.bootBis - Date.now());
+    }
 
     /* Wohin gehoert dieser Nutzer beim Aufbau?
 
@@ -3804,28 +3981,9 @@
              Erinnerung und kein Beleg. */
           var ausLauf = state.warten === "main";
           state.fortschritt = 100; renderPhasen();
-          window.setTimeout(function () {
-            warteBeenden();
-            /* Hier stand: war der Nutzer auf brand, dann competitors, sonst prompts. Das war eine
-               Vermutung, und sie ging schief, sobald das Buendel VOR der Statusmeldung eintraf: es
-               setzte den Schritt schon auf competitors, und der Status danach schickte den Nutzer
-               deshalb auf prompts -- eine leere Promptliste, und in der Schiene standen Competitors
-               und Topics als erledigt. Genau so gemeldet am 26.08., ohne Neuladen, im normalen Weg.
-               Jetzt sagt die PHASE, was fertig wurde: 7 heisst Promptlauf, alles andere heisst
-               grosser Lauf -- und wohin der Nutzer danach gehoert, sagt zielSchritt() aus den
-               Daten. */
-            var ziel = (num(s.phase) != null && num(s.phase) >= PROMPT_PHASE)
-                     ? "prompts" : zielSchritt(ausLauf);
-            /* Nur vorwaerts. Steht der Nutzer schon weiter, holt ihn eine Statusmeldung nicht
-               zurueck -- sonst wirft ihn eine spaete Meldung von Topics auf Competitors. */
-            if (stepIndex(ziel) < stepIndex(state.step)) ziel = state.step;
-            var zi = stepIndex(ziel);
-            if (zi > state.maxErreicht) state.maxErreicht = zi;
-            /* gehe() kehrt um, wenn der Schritt schon steht -- dann muss hier gezeichnet werden,
-               sonst bleibt das Ladebild stehen, obwohl das Warten zu Ende ist. */
-            if (state.step === ziel) { render(); schrittMelden(); }
-            else gehe(ziel, false);
-          }, 360);
+          /* Wohin es danach geht, entscheidet abschlussAusfuehren -- erst in 360ms, mit dem Stand
+             von dann, genau wie vorher im setTimeout an dieser Stelle. */
+          abschlussPlanen({ art: "status", phase: num(s.phase), ausLauf: ausLauf }, 360);
           return true;
         }
         /* Ein laufender Zustand muss den passenden Wartezustand SETZEN und nicht nur die Phase
@@ -3846,6 +4004,7 @@
       setPrompts: function (payload) { return listeSetzen(payload, "prompts"); },
       setPlans: function (payload) {
         if (planUhr) { window.clearTimeout(planUhr); planUhr = null; }
+        planBis = 0;
         var p = lies(payload);
         /* Der Ladezustand endet IMMER, auch bei einem Payload, den niemand lesen kann. Die Meldung
            steht im Rumpf und nicht mehr im Banner: sie gehoert an die Stelle, an der der Inhalt
@@ -3927,6 +4086,11 @@
         elStack.innerHTML = "";
         urlSetzen("brand", false);
         render();
+        /* Den Speicher NICHT loeschen (anders als team-orga): ohne Eintrag hielte sich ein
+           Neuaufbau fuer den allerersten Aufbau -- Bootkreisel, Einzug, Guide-Uhr, also genau der
+           Ladezustand, den ein Themenwechsel nie ausloesen darf. Das persist() nach jedem Aufruf
+           (siehe unten) schreibt stattdessen den zurueckgesetzten Stand, und ein Neuaufbau kommt
+           wieder genau hier an: leeres Formular, Schritt 1. */
         return true;
       }
     };
@@ -4012,7 +4176,7 @@
            genau der Fall, in dem der Nutzer eine leere Promptseite zu sehen bekam. */
         if (state.warten === "prompts" && rein.length) {
           state.fortschritt = 100; renderPhasen();
-          window.setTimeout(function () { warteBeenden(); gehe("prompts", false); }, 360);
+          abschlussPlanen({ art: "prompts" }, 360);
           return true;
         }
       }
@@ -4030,21 +4194,128 @@
       return true;
     }
 
+    /* ---- Neuaufbau: merken, pruefen, abbauen ---------------------------------------------------
+       Lebt diese Wurzel noch? Nach einem Neuaufbau haengt die alte als abgehaengter Knoten weiter
+       im Speicher, samt ihren Uhren. Jede Uhr fragt das zuerst -- sonst zeichnete sie ins Leere,
+       und schlimmer: sie schriebe ihren veralteten Stand ueber den der neuen Wurzel. */
+    function lebt() { return root.isConnected; }
+
+    /* Den Stand fuer einen Neuaufbau merken (siehe STORE). Kopiert wird nur die oberste Ebene; die
+       Objekte darin kopiert die neue Wurzel beim Uebernehmen -- einmal je Neuaufbau statt bei
+       jedem Tastendruck. Nur eine Wurzel, die noch im Dokument steht, schreibt.
+       Gerufen wird es an den EINGAENGEN, nicht an jeder Zuweisung: der Zustand aendert sich an
+       ueber sechzig Stellen, einige davon mitten im Zeichnen (renderRail setzt maxErreicht und
+       planGesehen, renderHilfe hilfeGesehen), und eine vergessene waere ein Stand, den der
+       Neuaufbau nicht kennt. Die Wege HINEIN sind wenige: Klick, Eingabe, Verlassen eines Feldes,
+       Browser-Zurueck, jeder Setter, jede Uhr. */
+    function persist() {
+      if (!root.isConnected) return;
+      var s = {};
+      for (var k in state) if (Object.prototype.hasOwnProperty.call(state, k)) s[k] = state[k];
+      STORE[instanceId] = {
+        s: s,
+        torGeprueft: torGeprueft, angefasst: angefasst, overScharf: overScharf,
+        schrittGemeldet: schrittGemeldet, schrittBeimAufbau: schrittBeimAufbau,
+        uhrAn: uhrAn, warteAb: warteAb, t0: t0,
+        bootBis: bootBis, planBis: planBis, hilfeBis: hilfeBis
+      };
+    }
+
+    /* Die abgeloeste Wurzel abbauen. Die Montage ruft das, sobald eine neu gebaute Wurzel derselben
+       Instanz steht: Uhren aus, Thema und Browser-Zurueck abmelden, das Flimmerraster stoppen.
+       Ohne das hielte jede dieser Anmeldungen den alten Controller samt Knoten und Leinwand fest
+       -- je Themenwechsel einer mehr. Die kurzen Uhren (Ausblenden, Einzug, Zaehlen) laufen aus
+       und fassen dabei nur noch die alten Knoten an. */
+    function abbauen() {
+      if (tick) { window.clearInterval(tick); tick = null; }
+      if (bootUhr) { window.clearTimeout(bootUhr); bootUhr = null; }
+      if (planUhr) { window.clearTimeout(planUhr); planUhr = null; }
+      if (hilfeUhr) { window.clearTimeout(hilfeUhr); hilfeUhr = null; }
+      if (knopfUhr) { window.clearTimeout(knopfUhr); knopfUhr = null; }
+      if (themaAb) { try { themaAb(); } catch (e) {} themaAb = null; }
+      window.removeEventListener("popstate", aufZurueck);
+      if (flimmer && flimmer.stop) { try { flimmer.stop(); } catch (e) {} flimmer = null; }
+    }
+
+    /* Nach JEDEM Aufruf von aussen den Stand merken -- hier einmal fuer alle Setter statt in
+       jedem: zusammen haben sie ueber zwanzig Ausgaenge. finally, damit auch ein Aufruf, der
+       mittendrin scheitert, den Stand hinterlaesst, den die Wurzel jetzt zeigt.
+       Und ein Aufruf an eine ABGEHAENGTE Wurzel geht an die lebende derselben Instanz. Ueber die
+       Setter am window kommt keiner mehr hierher (resolve), wohl aber ueber einen gemerkten
+       root.__uobController -- und der schriebe sonst die Adresse und schickte uobStep aus einer
+       Wurzel, die niemand mehr sieht. Gibt es keine lebende, bleibt es beim alten Weg. */
+    Object.keys(ctrl).forEach(function (name) {
+      var fn = ctrl[name];
+      if (typeof fn !== "function") return;
+      ctrl[name] = function () {
+        if (!lebt()) {
+          var lebend = resolve(instanceId);
+          if (lebend && lebend !== ctrl && lebend.instanceId === instanceId) {
+            return lebend[name].apply(lebend, arguments);
+          }
+        }
+        try { return fn.apply(ctrl, arguments); } finally { persist(); }
+      };
+    });
+    /* Fuer die Montage unten, nicht fuer Bubble -- und deshalb NACH dem Einwickeln: die Frage
+       nach dem Leben soll nichts schreiben. */
+    ctrl.lebt = lebt;
+    ctrl.abbauen = abbauen;
+
     root.__uobController = ctrl;
 
     /* ---- Start ------------------------------------------------------------------------------- */
-    state.form.market = eigenerMarkt();
-    state.form.timezone = eigeneZone();
-    state.form.business = BUSINESS_STD;
-    var ausUrl = stepAusUrl();
-    if (ausUrl) state.step = ausUrl; else urlSetzen("brand", false);
+    /* Markt, Zone und Schritt aus der Umgebung nur beim ERSTEN Aufbau. Beim Neuaufbau stehen sie
+       im uebernommenen Zustand: hier geraten, ueberschrieben sie, was der Nutzer gewaehlt hat, und
+       die Adresse traegt ohnehin schon den Schritt, auf dem er steht. */
+    if (!neuaufbau) {
+      state.form.market = eigenerMarkt();
+      state.form.timezone = eigeneZone();
+      state.form.business = BUSINESS_STD;
+      var ausUrl = stepAusUrl();
+      if (ausUrl) state.step = ausUrl; else urlSetzen("brand", false);
+    }
 
-    if (UC.onTheme) UC.onTheme(syncTheme, root);
+    /* Nur eine Wurzel, die noch im Dokument steht, folgt dem Thema. Die Abmeldung behaelt
+       abbauen() -- sonst hielte diese Anmeldung die alte Wurzel fuer immer fest. */
+    var themaAb = UC.onTheme ? UC.onTheme(function () { if (lebt()) syncTheme(); }, root) : null;
     syncTheme();
 
-    root.classList.add("is-entering");
-    render(true);
-    window.setTimeout(function () { root.classList.remove("is-entering"); }, 900);
+    if (!neuaufbau) {
+      root.classList.add("is-entering");
+      render(true);
+      window.setTimeout(function () { root.classList.remove("is-entering"); }, 900);
+    } else {
+      /* Neuaufbau: KEIN Einzug, und auch sonst nichts, was sich bewegt. Die Huelle ist oben schon
+         einmal vermessen (messeBreite), also liefe jeder Zustand, den render() jetzt setzt, als
+         Uebergang an -- die Schiene von null auf ihren Stand, Markenblock, Banner und Guide
+         klappten sichtbar auf, der Grund blendete ein. Das saehe aus wie ein zweiter
+         Seitenaufbau. Darum laufen alle Uebergaenge dieser Datei fuer genau diesen einen
+         Durchgang mit 0s: --uob-t und --uob-in sind die zwei Werte, an denen sie haengen (die
+         Regel fuer reduzierte Bewegung in onboarding-page.css benutzt denselben Griff). */
+      stillerAufbau = true;
+      root.style.setProperty("--uob-t", "0s");
+      root.style.setProperty("--uob-in", "0s");
+      /* Die Tarif-Uhr VOR dem Zeichnen, mit dem Rest der alten: render() startete sonst eine
+         frische ueber volle acht Sekunden. */
+      if (saved.planBis) planUhrStarten(saved.planBis - Date.now());
+      render(true);
+      /* Stand das Tor scharf ("Confirm" nach dem ersten Klick auf Start over)? Dann steht es
+         wieder so da. nachZeichnen hat die Marke fuer das frische Tor eben zurueckgesetzt, und
+         neustartKlick ist genau der Weg, der sie setzt. */
+      if (saved.overScharf && ansichtKey() === "resume") neustartKlick();
+      if (state.warten) warteFortsetzen();
+      /* Den Stil JETZT rechnen lassen, noch mit 0s -- erst danach duerfen die Uebergaenge wieder
+         laufen. Ohne diese Zeile rechnete der Browser erst nach dem Zuruecknehmen, und alles
+         liefe doch. */
+      void root.offsetWidth;
+      root.style.removeProperty("--uob-t");
+      root.style.removeProperty("--uob-in");
+      stillerAufbau = false;
+      /* Ein Schrittwechsel, der beim Abbau der alten Wurzel noch ausstand, mit seinem Rest --
+         oder sofort, wenn der schon um ist. */
+      if (state.abschluss) abschlussPlanen(state.abschluss, (state.abschluss.bis || 0) - Date.now());
+    }
 
     /* Der Guide meldet sich nach fuenf Sekunden von selbst -- lange genug, dass die Seite
        angekommen ist und der Blick auf dem Formular war, kurz genug, dass er noch zum ersten
@@ -4052,12 +4323,15 @@
        nicht wieder aufgedraengt (hilfeGelesen liest denselben Speicher).
        Ein Klick auf den Knopf davor bricht die Uhr ab, sonst spraenge die Tafel gleich nach dem
        Zumachen wieder auf. */
-    if (state.hilfeAuf) {
-      state.hilfeAuf = false;
-      renderHilfe();
+    function hilfeUhrStarten(ms) {
+      var dauer = Math.max(0, ms);
+      hilfeBis = Date.now() + dauer;
       hilfeUhr = window.setTimeout(function () {
         hilfeUhr = null;
-        if (state.hilfeVonHand) return;
+        /* Abgehaengt: die Nachfolgerin hat den Rest dieser Uhr uebernommen. */
+        if (!lebt()) return;
+        hilfeBis = 0;
+        if (state.hilfeVonHand) { persist(); return; }
         if (!hilfePasst()) {
           /* Kein Platz: die Tafel bleibt zu. Nicht aufgedraengt heisst aber nicht versteckt --
              der erste Render hat den Schritt schon als "gesehen" markiert, weil die Tafel gleich
@@ -4067,13 +4341,36 @@
           var k = hilfeSchluessel();
           if (k) delete state.hilfeGesehen[k];
           renderHilfe();
+          persist();
           return;
         }
         state.hilfeAuf = true;
         renderHilfe();
-      }, 5000);
+        persist();
+      }, dauer);
+    }
+    /* Abbrechen heisst auch: aus dem Speicher. Sonst holte ein Neuaufbau eine Uhr zurueck, die
+       der Nutzer mit seinem Klick laengst beendet hat. */
+    function hilfeUhrStoppen() {
+      if (hilfeUhr) { window.clearTimeout(hilfeUhr); hilfeUhr = null; }
+      hilfeBis = 0;
+    }
+    if (!neuaufbau && state.hilfeAuf) {
+      state.hilfeAuf = false;
+      renderHilfe();
+      hilfeUhrStarten(5000);
+    } else if (neuaufbau && saved.hilfeBis) {
+      /* Neuaufbau: die Uhr NICHT von vorn -- sonst spraenge der Guide nach jedem Themenwechsel
+         wieder auf. Stand sie noch aus, laeuft nur ihr Rest. Ist sie schon gelaufen oder
+         abgebrochen, steht hier nichts: dann ist die Tafel schon offen (state.hilfeAuf ist
+         uebernommen), oder der Nutzer hat sie selbst bedient. */
+      hilfeUhrStarten(saved.hilfeBis - Date.now());
     }
 
+    /* Der erste Stand gehoert sofort in den Speicher, auch einer, an dem noch niemand etwas getan
+       hat: ein Neuaufbau mitten im Bootkreisel braucht den Rest der Boot-Uhr, und einer vor der
+       Fuenf-Sekunden-Uhr des Guides deren Rest. */
+    persist();
     return ctrl;
   }
 
@@ -4084,6 +4381,18 @@
   function initRootNow(root) {
     if (root.__uobController) return root.__uobController;
     var c = makeController(root);
+    /* Die Vorgaengerin dieser Instanz abbauen: eine Wurzel mit derselben data-instance, die nicht
+       mehr im Dokument steht, ist die, die Bubble eben ersetzt hat (siehe STORE). Sie fliegt auch
+       aus der Liste -- resolve() fragt ohnehin nur lebende, aber die Liste hielte sie sonst fuer
+       immer fest. Nur DIESE Instanz: eine andere, die gerade nicht im Dokument haengt, hat hier
+       keine Nachfolgerin, und ueber sie ist nichts entschieden. */
+    for (var i = CONTROLLERS.length - 1; i >= 0; i--) {
+      var alt = CONTROLLERS[i];
+      if (alt.instanceId === c.instanceId && !alt.lebt()) {
+        try { alt.abbauen(); } catch (e) {}
+        CONTROLLERS.splice(i, 1);
+      }
+    }
     CONTROLLERS.push(c);
     return c;
   }
@@ -4091,12 +4400,25 @@
     var roots = document.querySelectorAll(".uob-root");
     for (var i = 0; i < roots.length; i++) initRootNow(roots[i]);
   }
+  /* Nur Controller, deren Wurzel noch im Dokument steht, und der NEUESTE zuerst. Hier stand der
+     erste Treffer einer Liste, die nur wuchs: nach einem Neuaufbau war das die alte, abgehaengte
+     Wurzel, und jeder Setter landete dort -- die sichtbare bekam nie wieder Daten. Der Rueckfall
+     fuer eine Kennung, die nicht passt, bleibt: gibt es genau EINE lebende Wurzel, ist sie gemeint. */
+  function lebendeSuchen(wunsch) {
+    var lebende = CONTROLLERS.filter(function (c) { return c.lebt(); });
+    for (var i = lebende.length - 1; i >= 0; i--) {
+      if (!wunsch || lebende[i].instanceId === wunsch) return lebende[i];
+    }
+    return lebende.length === 1 ? lebende[0] : null;
+  }
   function resolve(id) {
     var wunsch = String(id == null ? "" : id).trim();
-    for (var i = 0; i < CONTROLLERS.length; i++) {
-      if (!wunsch || CONTROLLERS[i].instanceId === wunsch) return CONTROLLERS[i];
-    }
-    return CONTROLLERS.length === 1 ? CONTROLLERS[0] : null;
+    var c = lebendeSuchen(wunsch);
+    /* Keiner gefunden: womoeglich hat Bubble die Wurzel eben ersetzt, und watchRoots richtet die
+       neue erst im naechsten Bild ein. Dann jetzt -- sonst ginge genau der Aufruf verloren, der in
+       dieses Bild faellt. */
+    if (!c) { initAll(); c = lebendeSuchen(wunsch); }
+    return c;
   }
 
   function uobRun() {

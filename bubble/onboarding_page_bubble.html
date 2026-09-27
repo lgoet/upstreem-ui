@@ -30,9 +30,12 @@
        data-instance   eindeutig pro Platzierung. Alle Setter sprechen ueber diese ID.
        data-cdn-pin    Commit-Hash. NIEMALS leer lassen: leer zieht "@main", und das liefern
                        jsDelivr und der Browser aus einem bis zu tagealten Cache.
-       data-isdark     "yes"/"no". Wird beobachtet, ein Umschalten braucht keinen Neuaufbau.
-                       Der Schalter oben rechts setzt das Thema ausserdem selbst, ueber
-                       setUpstreemTheme -- wie auf der Anmeldeseite.
+       data-isdark     "yes"/"no". Wird beobachtet. Ist der Wert dynamisch, baut Bubble das
+                       Element beim Umschalten trotzdem NEU (frisches Markup, keine Daten) --
+                       die Seite macht dann mit Schritt, Formular, Auswahl und laufender Uhr
+                       weiter (window.__uobStore, seit 27.09.). Der Schalter oben rechts setzt
+                       das Thema ausserdem selbst, ueber setUpstreemTheme -- wie auf der
+                       Anmeldeseite.
        data-logo       URL des upstreem-Schriftzugs, 18px hoch dargestellt. Fehlt sie, bleibt
                        die Stelle leer statt ein kaputtes Bild zu zeigen.
        data-logo-dark  Optional: eigener Schriftzug fuer den Dark Mode. Fehlt er, gilt data-logo
