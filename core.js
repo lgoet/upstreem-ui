@@ -2327,6 +2327,57 @@
     "the plans": "Die Tarifliste"
   });
 
+  /* Access Gate (28.09.): die Sperre der App ohne laufendes Abo. Die Tarifliste darin nimmt die
+     Zeilen von oben mit. {team}, {plan} und {date} setzt access-gate.js NACH der Uebersetzung ein
+     -- der Satz muss sie deshalb im Deutschen an der richtigen Stelle tragen. "Besitzer" wie die
+     Rolle "Owner" weiter oben. "Reaktiviere den Tarif" und nicht "ihn": derselbe zweite Satz steht
+     auch hinter "Das Abo für ... endete", und dort passte "ihn" nicht. */
+  addMessages("de", {
+    "Your subscription has ended": "Dein Abo ist beendet",
+    "Your free trial has ended": "Deine Testphase ist abgelaufen",
+    "The last payment didn't go through": "Die letzte Zahlung ist fehlgeschlagen",
+    "This team doesn't have a plan yet": "Dieses Team hat noch keinen Tarif",
+    "This team has been deleted": "Dieses Team wurde gelöscht",
+    "The {plan} plan for {team} ended on {date}.": "Der Tarif {plan} für {team} endete am {date}.",
+    "The {plan} plan for {team} is no longer active.": "Der Tarif {plan} für {team} ist nicht mehr aktiv.",
+    "The subscription for {team} ended on {date}.": "Das Abo für {team} endete am {date}.",
+    "The subscription for {team} is no longer active.": "Das Abo für {team} ist nicht mehr aktiv.",
+    "The free trial for {team} ended on {date}.": "Die Testphase für {team} endete am {date}.",
+    "The free trial for {team} has ended.": "Die Testphase für {team} ist abgelaufen.",
+    "The latest payment for {team} could not be collected.":
+      "Die letzte Zahlung für {team} konnte nicht eingezogen werden.",
+    "{team} needs an active plan to use upstreem.": "{team} braucht einen aktiven Tarif, um upstreem zu nutzen.",
+    "{team} was deleted on {date}.": "{team} wurde am {date} gelöscht.",
+    "{team} was deleted.": "{team} wurde gelöscht.",
+    "this team": "dieses Team",
+    "Reactivate it to pick up where you left off.":
+      "Reaktiviere den Tarif, um dort weiterzumachen, wo du aufgehört hast.",
+    "Choose a plan to pick up where you left off.":
+      "Wähle einen Tarif, um dort weiterzumachen, wo du aufgehört hast.",
+    "Choose a plan to keep using upstreem.": "Wähle einen Tarif, um upstreem weiter zu nutzen.",
+    "Update the payment method to restore access.":
+      "Aktualisiere die Zahlungsmethode, um den Zugang wiederherzustellen.",
+    "Ask a team owner to reactivate it.": "Bitte den Besitzer des Teams, das Abo zu reaktivieren.",
+    "Ask a team owner to choose a plan.": "Bitte den Besitzer des Teams, einen Tarif zu wählen.",
+    "Ask a team owner to update the payment method.":
+      "Bitte den Besitzer des Teams, die Zahlungsmethode zu aktualisieren.",
+    "Switch to another team or create a new one.": "Wechsle in ein anderes Team oder lege ein neues an.",
+    "Create a new team to keep using upstreem.": "Lege ein neues Team an, um upstreem weiter zu nutzen.",
+    "Reactivate {plan}": "{plan} reaktivieren",
+    "Continue with {plan}": "Weiter mit {plan}",
+    "Update payment method": "Zahlungsmethode aktualisieren",
+    "Create a new team": "Neues Team anlegen",
+    "Switch team": "Team wechseln",
+    "Open another team you belong to.": "Öffne ein anderes Team, in dem du Mitglied bist.",
+    "No other teams": "Keine anderen Teams",
+    "The team could not be switched right now. Please reload the page.":
+      "Das Team ließ sich gerade nicht wechseln. Bitte lade die Seite neu.",
+    "A new team could not be created right now. Please reload the page.":
+      "Ein neues Team ließ sich gerade nicht anlegen. Bitte lade die Seite neu.",
+    "You could not be logged out right now. Please reload the page.":
+      "Die Abmeldung hat gerade nicht geklappt. Bitte lade die Seite neu."
+  });
+
   /* Neunter Nachtrag: die Brand-Flaechen (Discover, Add Brand, Seitenkopf, Overview), die
      Prompt Recherche -- und vier Woerter aus dem Konto-Menue der Seitenleiste.
      DIE VIER SIND DER INTERESSANTE FALL: "Preferences", "Theme", "Light", "Dark" standen im
@@ -16653,6 +16704,147 @@
     '</div>';
   }
 
+  /* ══ Das Abo lesen: UC.aboLesen, UC.plaeneLesen (28.09.) ════════════════════════════════════
+     Aus settings-billing hierher gezogen, als access-gate die zweite Komponente wurde, die DIESELBE
+     Nutzlast liest. Zwei Leser derselben RPC laufen beim naechsten Feld auseinander -- und dann
+     stuende im Billing-Reiter ein laufender Tarif, waehrend das Gate dieselbe App sperrt. Das
+     Urteil "hat Zugang" gibt es deshalb genau einmal, hier.
+
+     DIE NUTZLAST DER ABO-RPC (28.09. geliefert), unveraendert aus dem ersten Run-JS-Schritt:
+       { "ok": true, "team_id": "…", "team_name": "…", "is_deleted": false, "deleted_at": null,
+         "billing": { "billing_plan_id", "plan_name", "billing_interval", "current_price_eur",
+                      "monthly_price_eur", "yearly_price_eur", "trial_days", "next_billing_at",
+                      "canceled_at", "ended_at", "access_ends_at", "trial_ends_at", "status",
+                      "is_active", "is_trialing", "is_past_due", "has_active_access",
+                      "cancel_at_period_end", "has_billing", "can_manage_billing", … } }
+     Ergebnis:
+       { ok: false }   unlesbar, oder die RPC sagt selbst ok:false -- kaputt, nicht leer
+       { ok: true, abo, teamId, teamName, verwalten, zugang, geloescht, geloeschtAm }
+         abo        null heisst lesbar, aber kein Abo (billing null, has_billing:false, alles leer)
+         verwalten  false NUR auf ein ausdrueckliches can_manage_billing:false, sonst null
+         zugang     false NUR auf ein ausdrueckliches has_active_access:false, true auf ein Ja,
+                    null = nicht gesagt. Das Gate sperrt nur auf false: es entscheidet nichts
+                    selbst, es zeigt das Urteil der RPC.
+         geloescht  is_deleted am Team (oben, nicht in billing)
+     Ohne den Umschlag "billing" wird das Objekt selbst gelesen, mit den frueheren Namen als
+     Rueckfall (plan_id, price_eur, next_billing_date) -- so stand es bis zum 28.09. in der Vorlage
+     von settings-billing. Leer und kaputt sind zwei Dinge (CLAUDE.md 2). */
+  function aboTxt(v){ return String(v == null ? "" : v).trim(); }
+  /* Ein ausdrueckliches Nein, in jeder Form, in der es ankommen kann: false aus echtem JSON,
+     "false"/"no" aus einem Bubble-Ausdruck. Fehlt der Wert, ist es KEIN Nein. */
+  function aboNein(v){
+    if (v === false) return true;
+    return /^(false|no|0)$/i.test(aboTxt(v));
+  }
+  function aboDatum(v){
+    if (v == null) return "";
+    /* Stripe zaehlt in SEKUNDEN seit 1970. Eine nackte Zahl wird deshalb umgerechnet, statt als
+       "–" zu enden -- new Date("1761868800") ist ungueltig. */
+    var s = aboTxt(v);
+    if (/^\d{9,13}$/.test(s)){
+      var n = Number(s);
+      if (n < 1e12) n *= 1000;
+      var d = new Date(n);
+      return isNaN(d.getTime()) ? s : d.toISOString();
+    }
+    return s.toLowerCase() === "null" ? "" : s;
+  }
+  function aboErgebnis(o){
+    var r = { ok: true, abo: null, teamId: "", teamName: "", verwalten: null, zugang: null,
+              geloescht: false, geloeschtAm: "" };
+    for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) r[k] = o[k];
+    return r;
+  }
+  function aboLesen(p){
+    if (p == null) return aboErgebnis({});
+    if (typeof p === "string"){
+      var s = p.trim();
+      /* "" ist ein leerer Bubble-Ausdruck (kein Abo gefunden), "null" die RPC ohne Zeile --
+         beides leer, nicht kaputt. */
+      if (!s || s === "null" || s === "[]" || s === "{}") return aboErgebnis({});
+      p = readBubble(s);
+      if (p == null) return { ok: false };
+    }
+    /* readBubble liefert ein Objekt als Liste mit EINEM Eintrag (team-orga, 25.09. gemessen).
+       Eine echte Liste von Zeilen nimmt die erste -- die RPC liefert eine Zeile je Team. */
+    if (isArr(p)){
+      if (!p.length) return aboErgebnis({});
+      p = p[0];
+    }
+    if (!p || typeof p !== "object" || isArr(p)) return { ok: false };
+    if (aboNein(p.ok)) return { ok: false };
+    /* Was am TEAM steht und nicht am Abo: wem es gehoert, und ob es das Team noch gibt. */
+    var team = { teamId: aboTxt(p.team_id), teamName: aboTxt(p.team_name),
+                 geloescht: isYes(p.is_deleted), geloeschtAm: aboDatum(p.deleted_at) };
+    var b = p;
+    if (Object.prototype.hasOwnProperty.call(p, "billing")){
+      b = p.billing;
+      if (b == null) return aboErgebnis(team);
+      if (typeof b !== "object" || isArr(b)) return { ok: false };
+    } else if (p.subscription && typeof p.subscription === "object"){
+      /* Der fruehere Umschlag {"subscription": {...}} -- gelesen wie bisher. */
+      b = isArr(p.subscription) ? (p.subscription[0] || {}) : p.subscription;
+    }
+    team.verwalten = aboNein(b.can_manage_billing) ? false : null;
+    team.zugang = aboNein(b.has_active_access) ? false : (isYes(b.has_active_access) ? true : null);
+    if (aboNein(b.has_billing)) return aboErgebnis(team);
+    function erstes(a, alt){ return a != null && aboTxt(a) !== "" ? a : alt; }
+    /* Verlaengert sich das Abo? Nur dann gibt es eine naechste Abbuchung. Die RPC liefert
+       next_billing_at auch fuer ein gekuendigtes Abo (gemessen an der Nutzlast vom 28.09.: status
+       "canceled", has_active_access false, next_billing_at 2027) -- das waere im Billing-Reiter
+       eine Abbuchung, die nie kommt. */
+    var status = aboTxt(b.status).toLowerCase();
+    var verlaengert = !aboNein(b.is_active) && !(b.cancel_at_period_end === true ||
+      /^(true|yes)$/i.test(aboTxt(b.cancel_at_period_end))) &&
+      status !== "canceled" && status !== "cancelled";
+    var abo = {
+      planId: aboTxt(erstes(b.billing_plan_id, b.plan_id)),
+      planName: aboTxt(b.plan_name),
+      interval: planInterval(b.billing_interval),
+      intervalRoh: aboTxt(b.billing_interval),
+      preis: toNum(erstes(b.current_price_eur, b.price_eur)),
+      naechste: verlaengert ? aboDatum(erstes(b.next_billing_at, b.next_billing_date)) : "",
+      gekuendigt: aboDatum(b.canceled_at),
+      zugangBis: aboDatum(b.access_ends_at),
+      testBis: aboDatum(b.trial_ends_at),
+      /* Hat das Team GERADE Zugang? Nur dann ist sein Tarif im Fenster "Current plan": ein
+         beendetes Abo muss man dort wieder buchen koennen, und ohne Knopf ginge das nicht. */
+      aktiv: !aboNein(b.has_active_access),
+      /* Fuer das Gate (access-gate.js): WIE es endete, und was eine Reaktivierung kostet. */
+      status: status,
+      beendet: aboDatum(b.ended_at),
+      zahlungOffen: isYes(b.is_past_due) || status === "past_due" || status === "unpaid",
+      testLaeuft: isYes(b.is_trialing) || status === "trialing",
+      monatPreis: toNum(b.monthly_price_eur),
+      jahrPreis: toNum(b.yearly_price_eur),
+      testTage: toNum(b.trial_days)
+    };
+    var leer = !abo.planId && !abo.planName && !abo.gekuendigt && !abo.zugangBis && !abo.testBis;
+    team.abo = leer ? null : abo;
+    return aboErgebnis(team);
+  }
+  /* Die Tarife: die Liste der Tarif-RPC, unveraendert. Auch ein Umschlag {"plans": [...]} geht.
+     Unlesbar ist, was keine Liste hergibt -- ODER eine Liste, in der kein einziger Eintrag eine Id
+     hat: dann kam etwas an, aber nichts davon ist ein Tarif, und "No plans available" waere
+     gelogen. Ergebnis { ok: true, liste } oder { ok: false }. */
+  function plaeneLesen(p){
+    if (p == null) return { ok: true, liste: [] };
+    if (typeof p === "string"){
+      var s = p.trim();
+      if (!s || s === "null" || s === "[]") return { ok: true, liste: [] };
+      p = readBubble(s);
+      if (p == null) return { ok: false };
+    }
+    if (!isArr(p) && p && typeof p === "object") p = [p];
+    if (!isArr(p)) return { ok: false };
+    if (p.length === 1 && p[0] && typeof p[0] === "object" && (isArr(p[0].plans) || p[0].plans === null)){
+      p = p[0].plans || [];
+    }
+    var liste = planListe(p);
+    if (p.length && !liste.length) return { ok: false };
+    return { ok: true, liste: liste };
+  }
+
   /* ══ Der Tarif als Pille (28.09.) ════════════════════════════════════════════════════════
      Die kleine Form vor dem Tarifnamen, wie in der Teams-Tabelle. Dort lag sie als eigene Tabelle
      in teams.js (PLAN_DOT); seit settings-billing sie ebenfalls zeigt ("die kleinen Shapes vor dem
@@ -17615,6 +17807,8 @@
     planPilleHtml: planPilleHtml,
     planInterval: planInterval,
     planListe: planListe,
+    aboLesen: aboLesen,
+    plaeneLesen: plaeneLesen,
     fmtEur: fmtEur,
     getTeam: getTeam,
     setUpstreemTeam: setUpstreemTeam,

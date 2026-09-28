@@ -51,7 +51,10 @@
      faengt bei null an -- Teamname und Konto standen also kurz richtig da und wurden dann wieder
      zu Skeletten, weil die Daten am ALTEN Controller hingen. Sie liegen deshalb hier, ausserhalb
      des Controllers, nach Instanz getrennt. Dasselbe Muster wie MODELS_STORE in settings-brand,
-     wo die Modelle nach dem Speichern verschwanden. */
+     wo die Modelle nach dem Speichern verschwanden.
+     access-gate.js LIEST hier mit (28.09.): .teams und .teamsDa je Instanz, fuer "Switch team" im
+     Fenster der Sperre -- dort sitzt sonst fest, wer in mehreren Teams ist. Wer die Form aendert,
+     zieht leistenTeams() in access-gate.js mit; sonst faellt dort der Teamwechsel still weg. */
   var STORE = window.__usnStore = window.__usnStore || {};
   function speicher(id){ return STORE[id] || (STORE[id] = {}); }
 

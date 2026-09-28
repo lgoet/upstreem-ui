@@ -1,0 +1,378 @@
+<!--
+  ============================================================================================
+  ACCESS GATE -- Bubble-Vorlage (die Sperre der App ohne laufendes Abo)
+  ============================================================================================
+  Ein Fenster ueber der ganzen App, das nicht zugeht. Es erscheint, sobald die Abo-RPC sagt, dass
+  das Team keinen Zugang hat (billing.has_active_access: false) oder dass das Team geloescht ist
+  (is_deleted: true), und bietet an, was den Zugang zurueckbringt: den alten Tarif wieder buchen,
+  einen anderen waehlen, die Zahlungsmethode richten -- dazu die Wege hinaus: anderes Team, neues
+  Team, abmelden. Hat das Team Zugang, zeigt das Element NICHTS.
+
+  DAS IST DAS SCHILD, NICHT DAS SCHLOSS -- siehe "DAS SCHLOSS" unten. Wer die Entwicklerwerkzeuge
+  oeffnet, nimmt das Fenster weg. Die Daten muss die Datenbank verweigern.
+
+  EINSETZEN
+  1. HTML-Element in DENSELBEN Reusable wie die Seitenleiste (sidebar_bubble.html) -- er steht auf
+     jeder Seite der App, und genau dort gehoert die Sperre hin. NICHT auf Anmeldung, Onboarding
+     und Einladung: dort gibt es noch kein Team, das gesperrt sein koennte.
+     Das Element zeigt nichts und ist 0x0 wie die Seitenleiste; das Fenster haengt am body. Es muss
+     trotzdem auf SICHTBAR stehen, und die JavaScript-to-Bubble-Elemente daneben ebenso -- ein
+     unsichtbares veroeffentlicht seine bubble_fn_* nicht, und jeder Knopf im Fenster saesse dann
+     auf "could not be ... Please reload the page".
+  2. INSTANCE_ID durch eine FESTE Kennung ersetzen (z. B. "access_gate"). Kein dynamischer
+     Ausdruck -- siehe bubble/STATISCHES_MARKUP_PFLICHT.md.
+  3. CDN_PIN durch den Commit-Hash ersetzen, denselben wie an allen anderen Elementen der Seite
+     und im Kopf-Snippet.
+  4. data-isdark bleibt "no". Das Thema kommt ueber window.setUpstreemTheme(); das Fenster folgt
+     von selbst.
+  5. data-team auf die Id des AKTUELLEN Teams (Current User's Team's unique id). Wechselt sie ohne
+     Neuladen, faellt die Sperre des alten Teams sofort weg.
+  6. Die drei Ereignisse der Seitenleiste NICHT neu bauen: data-team-fn, data-newteam-fn und
+     data-logout-fn bekommen DIESELBEN Namen wie an der Seitenleiste (dort data-team-fn,
+     data-newteam-fn, data-logout-fn). Die Werte haben dieselbe Form, die Workflows gibt es schon.
+     Neu sind nur drei: manage, plans, select-plan (siehe DIE WORKFLOWS).
+  7. Das Kopf-Snippet (bubble/page_header_preload_ohne_kommentare.html) laedt das Gate seit dem
+     28.09. gleich nach der Seitenleiste -- ein neues Snippet mit neuem Pin einsetzen.
+
+  DATEN HINEIN (zwei Run-javascript-Schritte, unten dynamisch und statisch)
+     setAccessGate(TEXT)        im Seiten-Workflow des Reusables ("Page is loaded"), hinter der
+                                Abo-RPC -- DERSELBEN wie im Billing-Reiter, derselbe Ausdruck
+     setAccessGatePlans(TEXT)   im Workflow von uagPlans, hinter der Tarif-RPC -- derselben wie im
+                                Billing-Reiter
+     resetAccessGate()          Fenster weg, Vorrat geleert -- nur fuer einen Teamwechsel OHNE
+                                Neuladen; mit Neuladen braucht es ihn nicht
+  Die Teams fuer "Switch team" kommen NICHT von hier: die liest das Gate aus der Seitenleiste
+  (setSidebarTeams), die sie auf jeder Seite ohnehin bekommt.
+
+  WANN DAS FENSTER KOMMT -- entschieden von der RPC, nicht von der Komponente (UC.aboLesen, derselbe
+  Leser wie im Billing-Reiter):
+     is_deleted: true                    "This team has been deleted" -- auch bei laufendem Abo.
+                                         KEIN "Reactivate": ein geloeschtes Team wieder zu buchen
+                                         hiesse, fuer etwas zu zahlen, das es nicht mehr gibt.
+                                         Knopf: "Create a new team"; darunter Switch team, Log out
+     billing.has_active_access: false, und dann nach Rang:
+       is_past_due / status past_due, unpaid
+                                         "The last payment didn't go through"
+                                         Knopf: "Update payment method" (Portal)
+       trial_ends_at, und das Abo endete mit der Testphase (spaetestens einen Tag danach)
+                                         "Your free trial has ended"
+                                         Knoepfe: "Continue with <Tarif>", "See all plans"
+       billing null / has_billing:false  "This team doesn't have a plan yet"
+                                         Knopf: "See all plans"
+       sonst (gekuendigt, abgelaufen)    "Your subscription has ended"
+                                         Knoepfe: "Reactivate <Tarif>", "See all plans"
+     can_manage_billing: false           dieselbe Lage, aber OHNE Kauf-Knoepfe -- statt dessen "Ask
+                                         a team owner to ..."; Stripe wuerde diesem Nutzer die
+                                         Kasse ohnehin verweigern
+     has_active_access true oder FEHLT, ok:false, unlesbar, Schritt kommt nie
+                                         KEIN Fenster. Ein Fehler in der Anlieferung sperrt keinen
+                                         zahlenden Kunden aus; das Schloss sitzt in der Datenbank.
+                                         Die Konsole sagt es ("[access-gate] ... nicht lesen").
+     "Reactivate"/"Continue with" gibt es nur mit billing_plan_id UND billing_interval -- ohne
+     Takt waere es eine Kasse zu einem geratenen Preis; dann steht "See all plans" allein da.
+     Unter jeder Lage: "Manage Billing" (nur gekuendigt/Testphase, fuer Rechnungen), "Switch
+     team" (nur mit einem anderen Team), "Log out" (immer).
+  Datum im Satz: access_ends_at, sonst ended_at, sonst canceled_at (bei der Testphase zuerst
+  trial_ends_at, beim geloeschten Team deleted_at) -- nur wenn es schon war. Ein Datum in der
+  Zukunft passt nicht zu "kein Zugang"; dann steht der Satz ohne ("is no longer active").
+
+  EREIGNISSE HERAUS (jedes mit einem JSON-Text als einzigem Parameter)
+
+  data-select-plan-fn  = "bubble_fn_uagSelectPlan"
+      {"team_id":"…","plan_id":"a980c741-…","plan_name":"Enterprise","billing_interval":"yearly",
+       "price_eur":4380,"monthly_price_eur":429,"yearly_price_eur":4380,"trial_days":0,
+       "current_plan_id":""}
+      DIESELBEN Schluessel in derselben Reihenfolge wie ublSelectPlan im Billing-Reiter: derselbe
+      Kassen-Workflow kann beide bedienen. Kommt aus "Reactivate <Tarif>" / "Continue with
+      <Tarif>" (der Tarif und Takt des alten Abos, price_eur zum heutigen Preis des Tarifs) oder
+      aus "Get started" auf einer Karte der Tarifliste. trial_days: beim Reaktivieren der Wert am
+      Abo, auf einer Karte der der Tarifliste -- ob ein zurueckkehrender Kunde noch einmal eine
+      Testphase bekommt, entscheidet EUER Workflow. Das Fenster bleibt dabei offen (es ist eine
+      Sperre); alle Knoepfe stehen 4s still, gegen zwei Kassen durch einen Doppelklick. Die Kasse
+      deshalb direkt oeffnen ("Open an external website", selber Tab) -- ein Bubble-Popup laege
+      UNTER dem Fenster.
+
+  data-plans-fn        = "bubble_fn_uagPlans"
+      {"team_id":"…","current_plan_id":""}
+      "See all plans" wurde geoeffnet. Der Workflow holt die Tarif-RPC und ruft Schritt 2. Bis die
+      Antwort da ist, stehen die Tarife vom letzten Mal (oder drei Kartenhuellen); nach 8s ohne
+      Antwort "Could not load the plans". Fehlt das Element, steht der Fehler sofort da.
+
+  data-manage-fn       = "bubble_fn_uagManage"
+      {"team_id":"…"}
+      "Update payment method" bzw. "Manage Billing": Portal-Sitzung (Stripe billing_portal) und
+      weiterleiten, im selben Tab -- derselbe Workflow wie ublManage im Billing-Reiter.
+
+  data-team-fn         = DERSELBE Name wie data-team-fn an der Seitenleiste
+      {"team_id":"…"}   -- team_id ist das GEWAEHLTE Team, wie bei usnTeam
+  data-newteam-fn      = DERSELBE Name wie data-newteam-fn an der Seitenleiste
+      {"team_id":"…","action":"new_team"}    -- wie usnNewTeam
+  data-logout-fn       = DERSELBE Name wie data-logout-fn an der Seitenleiste
+      {"team_id":"…","action":"logout"}      -- wie usnLogout
+
+  Fehlt ein Empfaenger, steht im Fenster, dass es gerade nicht ging ("... Please reload the
+  page."), statt dass ein Knopf still nichts tut -- in einem Fenster, das man nicht schliessen
+  kann, waere das eine Falle.
+
+  DIE WERTE IN BUBBLE LESEN (extract with Regex auf den Wert des Ereignisses) -- wie im
+  Billing-Reiter:
+         (?<="team_id":")[^"]*
+         (?<="plan_id":")[^"]*
+         (?<="plan_name":")[^"]*
+         (?<="billing_interval":")[^"]*
+         (?<="price_eur":)[0-9.]+
+         (?<="monthly_price_eur":)[0-9.]+
+         (?<="yearly_price_eur":)[0-9.]+
+         (?<="trial_days":)[0-9]+
+
+  DAS SCHLOSS -- was das Fenster NICHT kann und die Datenbank tun muss
+  1. EIN Urteil. Den Ausdruck, mit dem die Abo-RPC has_active_access berechnet, in eine eigene
+     Funktion legen (etwa team_has_access(p_team_id uuid) returns boolean, geloeschte Teams
+     eingeschlossen) und die Abo-RPC diese Funktion rufen lassen. Dann gibt es genau eine Stelle,
+     die "Zugang" definiert -- Fenster und Datenbank koennen nicht auseinanderlaufen.
+  2. Jede RPC, die Daten eines Teams liefert (Dashboard, Prompts, Citations, Brands, ...), prueft
+     am Anfang team_has_access und liefert ohne Zugang nichts -- etwa {"ok": false} ohne Daten.
+     Die Komponenten hinter dem Fenster zeigen dann ihren Lesefehler; den sieht niemand, er liegt
+     unter der Sperre.
+  3. Der taegliche Prompt-Lauf ueberspringt Teams ohne Zugang und geloeschte Teams. Sonst kostet
+     ein ausgelaufenes Team jeden Tag weiter Modellaufrufe.
+  4. Ein geloeschtes Team gehoert eigentlich schon beim Anmelden weg: ist das gespeicherte Team
+     des Nutzers geloescht, direkt ins Onboarding bzw. in ein anderes Team. Das Fenster faengt
+     nur ab, was trotzdem durchkommt.
+  5. Nach der Rueckkehr aus der Stripe-Kasse kann der Webhook ein paar Sekunden hinter der Seite
+     liegen: dann meldet die Abo-RPC noch has_active_access false, und das Fenster steht wieder da.
+     Auf der Rueckkehr-Seite die Abo-RPC nach einer kurzen Pause erneut rufen und Schritt 1
+     wiederholen -- das Fenster geht von selbst weg, sobald Zugang gemeldet wird.
+  ============================================================================================
+-->
+<div class="up-root uag-root"
+     data-instance="INSTANCE_ID"
+     data-cdn-pin="CDN_PIN"
+     data-isdark="no"
+     data-team="TEAM_ID"
+     data-select-plan-fn="bubble_fn_uagSelectPlan"
+     data-plans-fn="bubble_fn_uagPlans"
+     data-manage-fn="bubble_fn_uagManage"
+     data-team-fn="bubble_fn_usnTeam"
+     data-newteam-fn="bubble_fn_usnNewTeam"
+     data-logout-fn="bubble_fn_usnLogout"></div>
+
+<script>
+(function(){
+  /* ---- Boot-Stubs, VOR dem Nachladen ------------------------------------------------------
+     Bubble ruft den Setter im Seiten-Workflow, regelmaessig BEVOR access-gate.js geladen ist.
+     Ohne diesen Block liefe der Run-JS-Schritt in seinen typeof-Waechter und der Aufruf waere
+     WEG -- die App stuende offen, ohne dass irgendwo ein Fehler steht. Nur Namen, die es noch
+     nicht gibt: den Platzhalter des Kopf-Snippets holt access-gate.js selbst ab. */
+  window.__uagBootQueue = window.__uagBootQueue || [];
+  ["setAccessGate", "setAccessGatePlans", "resetAccessGate"].forEach(function(n){
+    if (typeof window[n] === "function") return;
+    window[n] = function(){ window.__uagBootQueue.push([n, [].slice.call(arguments)]); };
+  });
+
+  function echterPin(p){
+    /* trim: ein Leerzeichen aus der Bubble-Konstante ergaebe sonst .../upstreem-ui@ abc /core.js,
+       und jsDelivr antwortet mit 404. Gespaltener Platzhalter: wer "CDN_PIN" global im Element
+       ersetzt, wuerde sonst auch diesen Waechter treffen. */
+    p = String(p == null ? "" : p).trim();
+    return (p && p !== "CDN_" + "PIN") ? p : "";
+  }
+  function readPin(cls){
+    var i, p, els = document.getElementsByClassName(cls);
+    for (i = 0; i < els.length; i++){
+      p = echterPin(els[i].getAttribute("data-cdn-pin"));
+      if (p) return (window.__upPin = p);
+    }
+    /* Rueckfall: ein Pin, der auf DIESER Seite schon gilt (team_orga_bubble.html, 31.08.) --
+       Bubble fuehrt Scripts nicht in DOM-Reihenfolge aus, die eigene Wurzel steht dann evtl.
+       noch nicht im Dokument. */
+    if (echterPin(window.__upPin)) return window.__upPin;
+    var alle = document.querySelectorAll ? document.querySelectorAll("[data-cdn-pin]") : [];
+    for (i = 0; i < alle.length; i++){
+      p = echterPin(alle[i].getAttribute("data-cdn-pin"));
+      if (p) return (window.__upPin = p);
+    }
+    var L0 = window.__upAssetsLoaded, k, m;
+    for (k in L0){
+      if (!Object.prototype.hasOwnProperty.call(L0, k)) continue;
+      m = String(L0[k] || "").match(/upstreem-ui@([^/]+)\//);
+      if (m && m[1] && m[1] !== "main") return (window.__upPin = m[1]);
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("uag-root") + "/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  function once(url, make){
+    var name = url.slice(url.lastIndexOf("/") + 1);
+    if (L[name]){
+      if (L[name] !== url && window.console) console.warn("upstreem: " + name +
+        " ist schon von einem anderen Pin geladen. Geladen bleibt " + L[name] +
+        ", ignoriert wird " + url + ". Setzt alle Elemente auf denselben Pin.");
+      return;
+    }
+    L[name] = url; make(url);
+  }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+
+  css("core.css");   js("core.js");
+  css("access-gate.css");  js("access-gate.js");
+})();
+</script>
+
+<!--
+  ============================================================================================
+  RUN JAVASCRIPT -- ZWEI SCHRITTE, je einer hinter seiner RPC
+  ============================================================================================
+  Jeder Schritt ist REINES JavaScript fuer die Aktion "Run javascript" -- ohne <script>-Zeilen.
+  Hausform (CLAUDE.md 2a, wie bubble/urls_table_bubble.html "DER RUN-JS-SCHRITT"): der ROHE Text
+  der RPC in einen Backtick, beide Sanitizer-Zeilen dahinter, so in den Setter. KEIN JSON.parse,
+  kein JSON-safe, kein handgebautes Objekt -- die Komponente liest selbst (UC.aboLesen ueber
+  UC.readBubble). window.<name> statt des nackten Namens: haengt das Element an einem aelteren
+  Pin, ist der Name undefined statt eines ReferenceError, der den ganzen Schritt mitnimmt. Jeder
+  Aufruf in seinem eigenen try.
+  Schritt 1 ist WORTGLEICH Schritt 1 des Billing-Reiters mit einem anderen Setter: derselbe
+  Ausdruck, dieselbe RPC.
+
+  ---- SCHRITT 1: DAS ABO (Reusable, "Page is loaded", hinter der Abo-RPC) ----
+(function () {
+  var ABO = `RPC_SUBSCRIPTION_JSON`
+    .replace(/:\s*([,}\]])/g, ": null$1")
+    .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+  try { if (window.setAccessGate) window.setAccessGate(ABO); } catch (e) {}
+})();
+
+  ---- SCHRITT 2: DIE TARIFE (im Workflow von bubble_fn_uagPlans, hinter der Tarif-RPC) ----
+(function () {
+  var TARIFE = `RPC_PLANS_JSON`
+    .replace(/:\s*([,}\]])/g, ": null$1")
+    .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+  try { if (window.setAccessGatePlans) window.setAccessGatePlans(TARIFE); } catch (e) {}
+})();
+
+  ============================================================================================
+  DIESELBEN SCHRITTE STATISCH
+  ============================================================================================
+  Zum Einbauen: erst diese, dann die echten. Dieselbe Form wie oben, nur steht im Backtick der Text.
+
+  ---- STATISCH 1: DAS ABO -- die echte Antwort der Abo-RPC des Testkontos, unveraendert ----
+  Das Team "upstreem" ist GELOESCHT (is_deleted true, drei Sekunden nach der Kuendigung). Das
+  Fenster zeigt deshalb "This team has been deleted" mit "Create a new team" -- und KEIN
+  "Reactivate": ein geloeschtes Team wird nicht wieder verkauft.
+(function () {
+  var ABO = `{
+    "ok": true,
+    "billing": {
+        "status": "canceled",
+        "ended_at": "2026-07-30T10:18:28+00:00",
+        "is_active": false,
+        "plan_name": "Enterprise",
+        "trial_days": 0,
+        "canceled_at": "2026-07-30T10:18:28+00:00",
+        "has_billing": true,
+        "is_past_due": false,
+        "is_trialing": false,
+        "status_label": "Deleted",
+        "trial_ends_at": null,
+        "access_ends_at": "2026-07-30T10:18:28+00:00",
+        "billing_plan_id": "a980c741-807e-43dd-9617-8e06b82999ba",
+        "next_billing_at": "2027-05-02T10:47:48+00:00",
+        "prompts_per_day": 350,
+        "billing_interval": "yearly",
+        "yearly_price_eur": 4380.00,
+        "current_price_eur": 4380.00,
+        "has_active_access": false,
+        "monthly_price_eur": 429.00,
+        "can_manage_billing": true,
+        "current_period_end": "2027-05-02T10:47:48+00:00",
+        "cancel_requested_at": null,
+        "cancel_at_period_end": false,
+        "competitors_max_active": 15,
+        "cancellation_effective_at": null
+    },
+    "team_id": "2735aac6-d2cb-4110-976c-f6ac4dec8d5a",
+    "team_name": "upstreem",
+    "deleted_at": "2026-07-30T10:18:31.669+00:00",
+    "is_deleted": true,
+    "deletion_requested_at": "2026-07-30T10:18:31.669+00:00"
+}`
+    .replace(/:\s*([,}\]])/g, ": null$1")
+    .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+  try { if (window.setAccessGate) window.setAccessGate(ABO); } catch (e) {}
+})();
+
+  ---- STATISCH 1b: DASSELBE ABO, NUR NICHT GELOESCHT ----
+  Genau EIN Wert anders als oben: "is_deleted": false. So sieht ein gekuendigtes Team aus, das es
+  noch gibt: "Your subscription has ended", "The Enterprise plan for upstreem ended on
+  30 Jul 2026.", Knoepfe "See all plans" und "Reactivate Enterprise".
+(function () {
+  var ABO = `{
+    "ok": true,
+    "billing": {
+        "status": "canceled",
+        "ended_at": "2026-07-30T10:18:28+00:00",
+        "is_active": false,
+        "plan_name": "Enterprise",
+        "trial_days": 0,
+        "canceled_at": "2026-07-30T10:18:28+00:00",
+        "has_billing": true,
+        "is_past_due": false,
+        "is_trialing": false,
+        "status_label": "Deleted",
+        "trial_ends_at": null,
+        "access_ends_at": "2026-07-30T10:18:28+00:00",
+        "billing_plan_id": "a980c741-807e-43dd-9617-8e06b82999ba",
+        "next_billing_at": "2027-05-02T10:47:48+00:00",
+        "prompts_per_day": 350,
+        "billing_interval": "yearly",
+        "yearly_price_eur": 4380.00,
+        "current_price_eur": 4380.00,
+        "has_active_access": false,
+        "monthly_price_eur": 429.00,
+        "can_manage_billing": true,
+        "current_period_end": "2027-05-02T10:47:48+00:00",
+        "cancel_requested_at": null,
+        "cancel_at_period_end": false,
+        "competitors_max_active": 15,
+        "cancellation_effective_at": null
+    },
+    "team_id": "2735aac6-d2cb-4110-976c-f6ac4dec8d5a",
+    "team_name": "upstreem",
+    "deleted_at": "2026-07-30T10:18:31.669+00:00",
+    "is_deleted": false,
+    "deletion_requested_at": "2026-07-30T10:18:31.669+00:00"
+}`
+    .replace(/:\s*([,}\]])/g, ": null$1")
+    .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+  try { if (window.setAccessGate) window.setAccessGate(ABO); } catch (e) {}
+})();
+
+  ---- STATISCH 2: DIE TARIFE -- die echte Antwort der Tarif-RPC, unveraendert ----
+(function () {
+  var TARIFE = `[
+    {"id": "54be31d2-dc61-4a5e-8ea0-31c4370a4cb3", "name": "Essential", "monthly_price_eur": 89.00, "yearly_price_eur": 948.00, "prompts_per_day": 50, "competitors_max_active": 5, "trial_days": 14, "sort_order": null},
+    {"id": "3129be58-d59a-4221-ba53-7b2e4131cf5f", "name": "Professional", "monthly_price_eur": 205.00, "yearly_price_eur": 2220.00, "prompts_per_day": 150, "competitors_max_active": 10, "trial_days": 14, "sort_order": null},
+    {"id": "a980c741-807e-43dd-9617-8e06b82999ba", "name": "Enterprise", "monthly_price_eur": 429.00, "yearly_price_eur": 4380.00, "prompts_per_day": 350, "competitors_max_active": 15, "trial_days": 0, "sort_order": null}
+]`
+    .replace(/:\s*([,}\]])/g, ": null$1")
+    .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+  try { if (window.setAccessGatePlans) window.setAccessGatePlans(TARIFE); } catch (e) {}
+})();
+
+  ============================================================================================
+  DIE WORKFLOWS (im Reusable der Seitenleiste)
+  ============================================================================================
+  "Page is loaded":  Abo-RPC -> Schritt 1. Ohne ihn gibt es keine Sperre (siehe oben: ohne
+                     Nutzlast bleibt die App offen).
+
+  Drei NEUE JavaScript-to-Bubble-Elemente (Value type TEXT, "Trigger event" an):
+     bubble_fn_uagSelectPlan  -> plan_id, billing_interval, price_eur aus dem Wert lesen (Regex
+                                 oben) -> Checkout-Sitzung -> weiterleiten (selber Tab). Derselbe
+                                 Ablauf wie bubble_fn_ublSelectPlan im Billing-Reiter.
+     bubble_fn_uagPlans       -> Tarif-RPC -> Schritt 2
+     bubble_fn_uagManage      -> Portal-Sitzung (Stripe billing_portal, fuer team_id) -> weiterleiten
+                                 (selber Tab). Derselbe Ablauf wie bubble_fn_ublManage.
+  Teamwechsel, neues Team und Abmelden: KEINE neuen Elemente -- die Attribute zeigen auf die der
+  Seitenleiste (EINSETZEN, Punkt 6).
+  ============================================================================================
+-->

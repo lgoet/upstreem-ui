@@ -260,7 +260,8 @@
     "askMiraSetTitlePendingFromEl","askMiraSetTool","askMiraSetToolFromEl","askMiraSetTopics",
     "askMiraSetTopicsFromEl","askMiraSetTranscript","askMiraTypeLastAnswer",
     "askMiraVoiceCancel","closeAddBrand","closeAddPrompts","openAddBrand","openAddPrompts",
-    "renderTeams","resetAddBrand","resetAddPrompts","resetBilling","resetTeams","resetViewSwitch",
+    "renderTeams","resetAccessGate","resetAddBrand","resetAddPrompts","resetBilling","resetTeams",
+    "resetViewSwitch","setAccessGate","setAccessGatePlans",
     "setAddPromptsTheme","setBillingPlans","setBillingSubscription",
     "setTeamsLoading","setUpstreemAllMarkets",
     "setUpstreemBrands","setUpstreemDefaultMarket","setUpstreemMarkets","setUpstreemModels",
@@ -280,6 +281,11 @@
 
   cssRoh("core.css");  jsRoh("core.js");
   css("sidebar.css");  js("sidebar.js");
+  /* Das Gate (Sperre ohne laufendes Abo) mit der Seitenleiste und NICHT in Welle 2: es
+     steht wie sie auf jeder Seite der App, und bei VORRAT "idle" kaeme es sonst bis zu
+     2,5s spaeter -- so lange stuende die App offen, obwohl die Nutzlast laengst sagt, dass
+     sie gesperrt ist. Die Aufrufe davor faengt UP_API oben auf. */
+  css("access-gate.css");  js("access-gate.js");
 
   /* ── WELLE 2: der Vorrat ───────────────────────────────────────────────────
      Wann sie laeuft, entscheidet VORRAT oben. Bei "idle" requestIdleCallback mit Frist, damit es

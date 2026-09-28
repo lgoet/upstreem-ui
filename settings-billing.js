@@ -26,7 +26,7 @@
 
    ── Daten hinein (Run-JS, siehe bubble/settings_billing_bubble.html) ───────
      setBillingSubscription(TEXT)     die Nutzlast der Abo-RPC unveraendert: {ok, billing, team_id}
-                                      (Schluessel siehe aboLesen)
+                                      (Schluessel siehe UC.aboLesen in core)
      setBillingPlans(TEXT)            alle Tarife, die Liste der Tarif-RPC unveraendert
      resetBilling()                   zurueck ins Skelett, Vorrat geleert (Teamwechsel)
    Alle drei auch mit der Instanz davor: setBillingSubscription("INSTANCE_ID", TEXT). Ohne sie
@@ -91,7 +91,7 @@
 
     var MISSING = ["makeMount", "makeFire", "makeLate", "readBubble", "leseFehlerHtml", "leerHtml",
                    "icon", "esc", "fmtDate", "t", "toNum", "widthTiers", "themeParam",
-                   "makePlans", "planInterval", "planListe", "fmtEur"]
+                   "makePlans", "planInterval", "planListe", "fmtEur", "aboLesen", "plaeneLesen"]
       .filter(function (k) { return typeof UC[k] !== "function"; });
     if (MISSING.length && window.console) {
       console.error("[settings-billing] Die core.js auf dieser Seite ist AELTER als " +
@@ -148,125 +148,15 @@
     var spaet = UC.makeLate ? UC.makeLate("settings-billing", ".ubl-root") : null;
     var mount;
 
-    /* ---- Das Abo lesen ------------------------------------------------------------------------
-       DIE NUTZLAST DER ABO-RPC (28.09. geliefert), unveraendert aus dem ersten Run-JS-Schritt:
-         { "ok": true, "team_id": "…", "team_name": "…", …,
-           "billing": { "billing_plan_id", "plan_name", "billing_interval", "current_price_eur",
-                        "next_billing_at", "canceled_at", "access_ends_at", "trial_ends_at",
-                        "status", "is_active", "has_active_access", "cancel_at_period_end",
-                        "has_billing", "can_manage_billing", … } }
-       Die Tarif-Id kommt NUR von hier (billing_plan_id) -- nicht mehr aus einem Attribut am
-       Element (28.09. so bestellt). Gelesen wird:
-         ok:false                     die RPC sagt selbst, dass es nicht ging -> kaputt, nicht leer
-         billing null, has_billing:false   kein Abo -> "No active plan"
-         billing_plan_id, plan_name   der Tarif; die Id markiert ihn im Fenster (nur mit Zugang)
-         current_price_eur            Betrag JE TAKT (4380 im Jahr, nicht 365 im Monat)
-         next_billing_at              naechste Abbuchung -- nur bei einem Abo, das sich verlaengert
-         canceled_at, access_ends_at, trial_ends_at   nur als Zeile, wenn ein Wert da ist --
-                                      trial_ends_at vor heute gar nicht, heute/morgen als Wort
-         has_active_access            false: der Tarif ist im Fenster NICHT "Current plan"
-         can_manage_billing           false: kein "Manage Billing"
-         team_id                      geht in jedes Ereignis
-       Ohne den Umschlag "billing" wird das Objekt selbst gelesen, mit den frueheren Namen als
-       Rueckfall (plan_id, price_eur, next_billing_date) -- so stand es bis zum 28.09. in der Vorlage.
-       Ergebnis: { ok: true, abo, teamId, verwalten } oder { ok: false }. abo null heisst: lesbar,
-       aber kein Abo. Leer und kaputt sind zwei Dinge (CLAUDE.md 2). */
-    /* Ein ausdrueckliches Nein, in jeder Form, in der es ankommen kann: false aus echtem JSON,
-       "false"/"no" aus einem Bubble-Ausdruck. Fehlt der Wert, ist es KEIN Nein. */
-    function nein(v) {
-      if (v === false) return true;
-      return /^(false|no|0)$/i.test(String(v == null ? "" : v).trim());
-    }
-    function datum(v) {
-      if (v == null) return "";
-      /* Stripe zaehlt in SEKUNDEN seit 1970. Eine nackte Zahl wird deshalb umgerechnet, statt als
-         "–" zu enden -- new Date("1761868800") ist ungueltig. */
-      var s = txt(v);
-      if (/^\d{9,13}$/.test(s)) {
-        var n = Number(s);
-        if (n < 1e12) n *= 1000;
-        var d = new Date(n);
-        return isNaN(d.getTime()) ? s : d.toISOString();
-      }
-      return s.toLowerCase() === "null" ? "" : s;
-    }
-    function aboLesen(p) {
-      if (p == null) return { ok: true, abo: null };
-      if (typeof p === "string") {
-        var s = p.trim();
-        /* "" ist ein leerer Bubble-Ausdruck (kein Abo gefunden), "null" die RPC ohne Zeile --
-           beides leer, nicht kaputt. */
-        if (!s || s === "null" || s === "[]" || s === "{}") return { ok: true, abo: null };
-        p = UC.readBubble(s);
-        if (p == null) return { ok: false };
-      }
-      /* readBubble liefert ein Objekt als Liste mit EINEM Eintrag (team-orga, 25.09. gemessen).
-         Eine echte Liste von Zeilen nimmt die erste -- die RPC liefert eine Zeile je Team. */
-      if (isArr(p)) {
-        if (!p.length) return { ok: true, abo: null };
-        p = p[0];
-      }
-      if (!p || typeof p !== "object" || isArr(p)) return { ok: false };
-      if (nein(p.ok)) return { ok: false };
-      var teamId = txt(p.team_id);
-      var b = p;
-      if (Object.prototype.hasOwnProperty.call(p, "billing")) {
-        b = p.billing;
-        if (b == null) return { ok: true, abo: null, teamId: teamId, verwalten: null };
-        if (typeof b !== "object" || isArr(b)) return { ok: false };
-      } else if (p.subscription && typeof p.subscription === "object") {
-        /* Der fruehere Umschlag {"subscription": {...}} -- gelesen wie bisher. */
-        b = isArr(p.subscription) ? (p.subscription[0] || {}) : p.subscription;
-      }
-      var verwalten = nein(b.can_manage_billing) ? false : null;
-      if (nein(b.has_billing)) return { ok: true, abo: null, teamId: teamId, verwalten: verwalten };
-      function erstes(a, alt) { return a != null && txt(a) !== "" ? a : alt; }
-      /* Verlaengert sich das Abo? Nur dann gibt es eine naechste Abbuchung. Die RPC liefert
-         next_billing_at auch fuer ein gekuendigtes Abo (gemessen an der Nutzlast vom 28.09.: status
-         "canceled", has_active_access false, next_billing_at 2027) -- das waere in der Tabelle eine
-         Abbuchung, die nie kommt. Die Zeile bleibt (so bestellt), mit "–". */
-      var status = txt(b.status).toLowerCase();
-      var verlaengert = !nein(b.is_active) && !(b.cancel_at_period_end === true ||
-        /^(true|yes)$/i.test(String(b.cancel_at_period_end == null ? "" : b.cancel_at_period_end))) &&
-        status !== "canceled" && status !== "cancelled";
-      var abo = {
-        planId: txt(erstes(b.billing_plan_id, b.plan_id)),
-        planName: txt(b.plan_name),
-        interval: UC.planInterval(b.billing_interval),
-        intervalRoh: txt(b.billing_interval),
-        preis: UC.toNum(erstes(b.current_price_eur, b.price_eur)),
-        naechste: verlaengert ? datum(erstes(b.next_billing_at, b.next_billing_date)) : "",
-        gekuendigt: datum(b.canceled_at),
-        zugangBis: datum(b.access_ends_at),
-        testBis: datum(b.trial_ends_at),
-        /* Hat das Team GERADE Zugang? Nur dann ist sein Tarif im Fenster "Current plan": ein
-           beendetes Abo muss man dort wieder buchen koennen, und ohne Knopf ginge das nicht. */
-        aktiv: !nein(b.has_active_access)
-      };
-      var leer = !abo.planId && !abo.planName && !abo.gekuendigt && !abo.zugangBis && !abo.testBis;
-      return { ok: true, abo: leer ? null : abo, teamId: teamId, verwalten: verwalten };
-    }
-    /* ---- Die Tarife lesen ---------------------------------------------------------------------
-       Die Liste der Tarif-RPC, unveraendert. Auch ein Umschlag {"plans": [...]} geht. Unlesbar
-       ist, was keine Liste hergibt -- ODER eine Liste, in der kein einziger Eintrag eine Id hat:
-       dann kam etwas an, aber nichts davon ist ein Tarif, und "No plans available" waere gelogen. */
-    function plaeneLesen(p) {
-      if (p == null) return { ok: true, liste: [] };
-      if (typeof p === "string") {
-        var s = p.trim();
-        if (!s || s === "null" || s === "[]") return { ok: true, liste: [] };
-        p = UC.readBubble(s);
-        if (p == null) return { ok: false };
-      }
-      if (!isArr(p) && p && typeof p === "object") p = [p];
-      if (!isArr(p)) return { ok: false };
-      if (p.length === 1 && p[0] && typeof p[0] === "object" && (isArr(p[0].plans) || p[0].plans === null)) {
-        p = p[0].plans || [];
-      }
-      var liste = UC.planListe(p);
-      if (p.length && !liste.length) return { ok: false };
-      return { ok: true, liste: liste };
-    }
+    /* ---- Abo und Tarife lesen -------------------------------------------------------------------
+       Seit dem 28.09. in core (UC.aboLesen, UC.plaeneLesen): access-gate liest dieselbe Nutzlast,
+       und das Urteil "hat Zugang" darf es nur einmal geben -- sonst zeigte dieser Reiter einen
+       laufenden Tarif, waehrend das Gate dieselbe App sperrt. Was gelesen wird und welche Felder
+       herauskommen, steht dort. Fehlt der Leser (core auf einem aelteren Pin), meldet MISSING das
+       oben; hier wird die Nutzlast dann als unlesbar behandelt -- der Lesefehler im UI statt eines
+       Absturzes, der den ganzen Run-JS-Schritt mitnaehme. */
+    function aboLesen(p) { return UC.aboLesen ? UC.aboLesen(p) : { ok: false }; }
+    function plaeneLesen(p) { return UC.plaeneLesen ? UC.plaeneLesen(p) : { ok: false }; }
 
     /* ══ Eine Wurzel ═════════════════════════════════════════════════════════════════════════ */
     function initRoot(root) {
