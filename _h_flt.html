@@ -12,6 +12,8 @@
      (Auffrischen im Fenster, dann Reset + Laden), s7 (Instanz-Setter im Fenster), s8 (Leiste kurz
      ausgehaengt), s9 (&leiste=0: Filter allein), s10 (Reset-Verhalten), s11 (Auswahl und
      Ereignisse, &weg=1), kosten (Zaehler im Normalfall).
+     dup0..dup3 (28.09.): Duplikate nach einem Neubau der FILTER-Elemente -- dup0 ohne Neubau
+     (Gegenprobe), dup1 nur die Filter, dup2 alle vier (Themenwechsel), dup3 erst Filter, dann Leiste.
      Betrieb: der Server auf 8099 darf ~/Documents nicht lesen -- Dateien nach /private/tmp/uprt/flt
      kopieren, HEAD-Fassungen per git show als core_alt.js und filters/*_alt.js daneben. -->
 <script>
@@ -210,7 +212,90 @@ function zaehlerAn(){
 }
 function zaehlerText(){ return "Standfragen " + JSON.stringify(Z.fragen) + " | nachgeholte Listen " + Z.nachgeholt; }
 
+/* DUPLIKATE (28.09.): Bubble baut die FILTER-Elemente neu, waehrend ihre Wurzeln in der Leiste
+   stecken. Jede Wurzel traegt ihre Generation als Eigenschaft (kein Attribut -- das weckte die
+   Beobachter der Komponenten): 1 = beim Seitenaufbau, 2 = nach dem ersten Neubau. Gezaehlt wird je
+   Filter: Wurzeln im Dokument, in der Leiste (und welche Generation), daneben (und ob sichtbar). */
+var GEN = 1;
+function stempeln(){
+  ["utf","umf","umk"].forEach(function(p){
+    [].forEach.call(document.querySelectorAll("." + p + "-root"), function(r){ if (!r.__gen) r.__gen = GEN; });
+  });
+}
+function dupStand(){
+  var o = {};
+  ["utf","umf","umk"].forEach(function(p){
+    var alle = [].slice.call(document.querySelectorAll("." + p + "-root"));
+    var drin = alle.filter(function(r){ return !!r.closest(".ufb-root"); });
+    var drau = alle.filter(function(r){ return !r.closest(".ufb-root"); });
+    var sicht = drau.filter(function(r){ return r.getClientRects().length > 0 && getComputedStyle(r).visibility !== "hidden"; });
+    o[p] = { imDok: alle.length, inLeiste: drin.length, daneben: drau.length, sichtbar: sicht.length,
+             genLeiste: drin.map(function(r){ return r.__gen || "?"; }).join(","),
+             genDaneben: drau.map(function(r){ return r.__gen || "?"; }).join(","),
+             auswahl: drin.map(function(r){ return r.classList.contains("has-sel") ? "ja" : "nein"; }).join(",") };
+  });
+  return o;
+}
+function dupKurz(o){
+  return ["utf","umf","umk"].map(function(p){ var x = o[p];
+    return p + ": im Dok " + x.imDok + " | in der Leiste " + x.inLeiste + (x.inLeiste ? " (Gen " + x.genLeiste + ", Auswahl " + x.auswahl + ")" : "") +
+      " | daneben " + x.daneben + (x.daneben ? " (Gen " + x.genDaneben + ", sichtbar " + x.sichtbar + ")" : ""); }).join("\n    ");
+}
+function filterNeu(o){ ["c-top","c-mod","c-mkt"].forEach(function(id){ bubbleSetzt(id, o || {}); }); GEN++; stempeln(); }
+async function dupStart(L){
+  await w(900);
+  ladeStore();
+  window.setModelsFilterSelected("models_prompts", "gpt-4o");   /* eine Auswahl, die den Neubau ueberleben muss */
+  await w(300);
+  stempeln();
+  L("1 Seitenaufbau: Leiste hat die Filter eingezogen, Models gewaehlt\n    " + dupKurz(dupStand()));
+}
+async function dupEnde(L){
+  await oeffnen();
+  var bar = document.querySelector("#c-bar .ufb-root");
+  var m = bar && bar.querySelector(".umf-root");
+  L("   More Filters offen: Models-Liste in der Leiste " + (m ? m.querySelectorAll(".umf-opt").length : "-") + " Zeilen" +
+    " | Fehler " + JSON.stringify(window.__fehler));
+}
+
 var SZENARIEN = {
+  /* Gegenprobe: kein Neubau. Beide Fassungen muessen hier gleich stehen. */
+  dup0: async function(L){
+    await dupStart(L);
+    await w(2500);
+    L("2 nach 2,5s ohne Neubau\n    " + dupKurz(dupStand()));
+    await dupEnde(L);
+  },
+  /* Nur die drei Filter neu (etwa data-isprocessing kippt), die Leiste bleibt. */
+  dup1: async function(L){
+    await dupStart(L);
+    filterNeu({});
+    L("2 Bubble baut die drei Filter neu\n    " + dupKurz(dupStand()));
+    await w(2500);
+    L("3 nach 2,5s\n    " + dupKurz(dupStand()));
+    await dupEnde(L);
+  },
+  /* Themenwechsel: alle vier Elemente neu, im selben Augenblick. */
+  dup2: async function(L){
+    await dupStart(L);
+    bubbleSetzt("c-bar", { dunkel: true });
+    filterNeu({ dunkel: true });
+    L("2 Themenwechsel: alle vier neu\n    " + dupKurz(dupStand()));
+    await w(3200);
+    L("3 nach 3,2s (Waechter hat die alte Leiste heimgeschickt)\n    " + dupKurz(dupStand()));
+    await dupEnde(L);
+  },
+  /* Erst die Filter, eine Sekunde spaeter die Leiste. */
+  dup3: async function(L){
+    await dupStart(L);
+    filterNeu({});
+    await w(1000);
+    L("2 Filter neu, 1s spaeter\n    " + dupKurz(dupStand()));
+    bubbleSetzt("c-bar", {});
+    await w(3200);
+    L("3 dann die Leiste neu, nach 3,2s\n    " + dupKurz(dupStand()));
+    await dupEnde(L);
+  },
   /* Wie s6, aber der Waechter der alten Leiste schickt die Filter SOFORT heim -- noch bevor
      watchRoots einmal nachsehen konnte. Dann sieht watchRoots dieselbe Wurzelmenge wie vorher
      und weckt niemanden: nur das Einziehen der neuen Leiste kann den Stand nachholen. */

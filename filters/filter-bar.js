@@ -163,6 +163,22 @@
       }
     }
 
+    /* DER RUF EINER FRISCHEN FILTERWURZEL (28.09.). Die drei Filter rufen das am Ende ihres
+       Einrichtens, wenn eine NEUE Wurzel steht (nicht beim Wiederaufnehmen). Baut Bubble nur die
+       Filter neu, laeuft sonst kein Einziehen mehr: die Anlaufstaffel ist vorbei, und die Uhr
+       unten prueft nur die Sichtbarkeit. Ohne diesen Ruf bliebe die frische Wurzel neben der
+       Leiste stehen, bis jemand das Fenster zieht.
+       Kein Beobachter und keine Suche auf der Uhr -- der Ruf kommt genau dann, wenn es etwas zu
+       tun gibt. Gebuendelt auf EINEN Lauf: baut Bubble drei Filter auf einmal neu, rufen drei. */
+    var neuUhr = null;
+    window.__ufbWurzelNeu = function () {
+      if (neuUhr) return;
+      neuUhr = setTimeout(function () {
+        neuUhr = null;
+        for (var i = 0; i < CTRLS.length; i++) { if (CTRLS[i].einziehen) CTRLS[i].einziehen(); }
+      }, 0);
+    };
+
     function initRoot(root) {
       if (root.__ufbCtrl) return root.__ufbCtrl;
       root.classList.add("ufb-root");
@@ -258,6 +274,48 @@
          Stelle, dem Waechter unten, und zwar nur fuer eine Wurzel, die nicht mehr im Dokument
          steht. Mein erster Anlauf hatte daraus einen Mechanismus mit zwei Beobachtern gemacht --
          das Ergebnis war eine stehende Seite. */
+      /* ABGELOESTE WURZELN (28.09.). Baut Bubble ein FILTER-Element neu, entsteht eine frische
+         Wurzel mit derselben data-instance. Sie traegt die aktuellen Attribute (data-isdark,
+         data-isprocessing), und Auswahl und Liste hat sie aus der Ablage ihres Filters
+         wiederhergestellt -- die alte ist ab da eine Leiche von Bubble. Bis hierhin kam sie
+         trotzdem zurueck: beim Themenwechsel (Leiste UND Filter neu) setzte der Heimweg der alten
+         Leiste sie neben die frische, und beim Neubau nur der Filter blieb sie in der Leiste,
+         waehrend die frische daneben stand. Beides sichtbar als zweiter Topics-, Models- und
+         Markets-Knopf neben More Filters (_h_flt.html, dup1..dup3: "im Dok 2", eine daneben und
+         sichtbar), und die alte blieb bei ihrer Ablage angemeldet und zeichnete jede Liste mit.
+         Erkannt wird die Abloesung an der GLEICHEN data-instance, wortgleich und nicht am
+         Praefix: "topics_dash_2" ist eine zweite Platzierung, keine Abloesung von "topics_dash".
+         Ohne Kennung wird nichts verglichen.
+           frei    nur eine Wurzel, die keine ANDERE lebende Leiste haelt (Diebstahl-Riegel in
+                   einziehen)
+           gebaut  nur eine Wurzel, die ihr Filter schon eingerichtet hat. Eine frische Wurzel in
+                   einer geparkten, unsichtbaren Gruppe ist noch leer (Lazy-Mount in core); gegen
+                   sie wird nicht getauscht. Sie meldet sich selbst, sobald sie eingerichtet ist
+                   (window.__ufbWurzelNeu). */
+      function abloeser(f, alt, frei, gebaut) {
+        var id = String(alt.getAttribute("data-instance") || "").trim();
+        if (!id) return null;
+        var alle = document.querySelectorAll(f.rootSel);
+        for (var i = 0; i < alle.length; i++) {
+          var k = alle[i];
+          if (k === alt) continue;
+          if (String(k.getAttribute("data-instance") || "").trim() !== id) continue;
+          if (frei && k.__ufbHost && k.__ufbHost !== root && document.contains(k.__ufbHost)) continue;
+          if (gebaut && !k[f.ctrl]) continue;
+          return k;
+        }
+        return null;
+      }
+      /* Die abgeloeste Wurzel wegwerfen: ihr Spiegel-Beobachter ab, aus dem Baum. Mehr braucht es
+         nicht -- ihre Ablage streicht sie beim naechsten Setzen selbst (ein Abonnent, dessen Wurzel
+         nicht im Dokument steht, faellt raus), und ihren Zustand traegt die frische. Das ist kein
+         Stilllegen: der Filter lebt weiter, nur in EINER Wurzel statt in zweien. */
+      function verwerfen(alt) {
+        if (alt.__ufbObs) { try { alt.__ufbObs.disconnect(); } catch (e) {} alt.__ufbObs = null; }
+        if (alt.__ufbHost === root) alt.__ufbHost = null;
+        if (alt.parentNode) { try { alt.parentNode.removeChild(alt); } catch (e) {} }
+      }
+
       function heimschicken() {
         /* Ueber die LISTE und nicht ueber die gemerkten Heimatadressen: der Heimweg darf nicht
            daran haengen, dass die Buchfuehrung stimmt. Gemessen, warum das noetig ist -- beim
@@ -270,6 +328,11 @@
         liste.forEach(function (f) {
           var w = eingezogen[f.key];
           if (!w) return;
+          /* Hat Bubble den Filter inzwischen neu gebaut, geht die alte Wurzel NICHT heim: die frische
+             steht schon im Dokument (in ihrem Behaelter oder in der neuen Leiste), und die alte
+             waere daneben ein zweiter Knopf. Nur wenn es keine frische gibt, gilt der Satz oben --
+             dann ist der Heimweg das Einzige, was den Filter im Dokument haelt. */
+          if (abloeser(f, w, false, false)) { verwerfen(w); delete eingezogen[f.key]; return; }
           var h = heim[f.key];
           var ziel = (h && h.eltern && document.contains(h.eltern)) ? h.eltern : document.body;
           try {
@@ -428,8 +491,17 @@
           var host = elSub && elSub.querySelector('[data-sub-host="' + f.key + '"]');
           if (!host) return;
           var da = eingezogen[f.key];
-          if (da && document.contains(da) && da.parentNode === host) return;   /* steht schon */
-          var w = findeWurzel(f);
+          var w = null;
+          if (da && document.contains(da) && da.parentNode === host) {
+            /* Steht schon -- es sei denn, Bubble hat den Filter inzwischen neu gebaut: dann steht
+               die frische Wurzel daneben, und die hier traegt veraltete Attribute. Getauscht wird
+               gegen die frische, die alte fliegt raus (siehe abloeser). */
+            w = abloeser(f, da, true, true);
+            if (!w) return;   /* steht schon, und niemand loest sie ab */
+            verwerfen(da);
+            delete eingezogen[f.key];
+          }
+          if (!w) w = findeWurzel(f);
           if (!w) return;
           /* Eine Filterwurzel ist EIN Knoten und kann nur an einer Stelle stehen. Liegt sie schon
              in der Leiste eines anderen Elements, wird sie NICHT weggenommen -- gemessen, als ich
@@ -898,6 +970,8 @@
 
       var ctrl = {
         reset: function () { alleLeeren(); },
+        /* Fuer den Ruf einer frischen Filterwurzel (window.__ufbWurzelNeu, siehe unten). */
+        einziehen: function () { try { einziehen(); } catch (e) {} },
         /* Die Uhr unten ruft das je Leiste -- der Rueckhalt fuer den Fall, dass Bubble das
            Element neu rendert statt nur das Attribut zu setzen. */
         pruefeSicht: function () { try { sichtStellen(); } catch (e) {} },

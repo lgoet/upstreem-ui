@@ -748,6 +748,14 @@
     anmelden();
 
     if (spaet) spaet.drain(instanceId, ctrl);
+    /* EINE NEUE WURZEL MELDET SICH BEI DER LEISTE (28.09.). Baut Bubble dieses Element neu,
+       waehrend "More Filters" die alte Wurzel eingezogen hat, stand die frische bis dahin
+       daneben -- ein zweiter Markets-Knopf neben More Filters, und in der Leiste blieb die alte
+       mit veralteten Attributen. Die Leiste tauscht beim Einziehen (filter-bar.js, abloeser);
+       dieser Ruf sagt ihr nur, DASS eine neue da ist. Ohne Leiste auf der Seite gibt es den
+       Namen nicht, und nichts passiert. Nur hier, nicht beim Wiederaufnehmen oben: dort ist es
+       dieselbe Wurzel. */
+    if (typeof window.__ufbWurzelNeu === "function") { try { window.__ufbWurzelNeu(root); } catch (e) {} }
     return ctrl;
   }
 
