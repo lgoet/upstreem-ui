@@ -33,6 +33,10 @@
      Form, die Workflows gibt es schon. Neu sind nur drei: select-plan, plans, manage.
   7. Das Kopf-Snippet (bubble/page_header_preload_ohne_kommentare.html) laedt das Gate gleich nach
      der Seitenleiste -- das Snippet mit dem neuen Pin einsetzen.
+  8. Das Logo oben links nimmt das Gate von der Seitenleiste im selben Reusable
+     (data-upstreem-logo / data-upstreem-logo-dark) -- dafuer ist NICHTS zu tun. Ein eigenes nur,
+     wenn es ein anderes sein soll: data-logo und data-logo-dark am Element (dieselben Namen wie
+     auf der Anmeldeseite). Ohne jedes Bild steht der Schriftzug "upstreem" als Text da.
 
   DATEN HINEIN (Run-javascript-Schritte, unten dynamisch und statisch)
      setAccessGate(TEXT)        die Zeile der Quota-RPC, unveraendert -- im Seiten-Workflow des

@@ -2375,7 +2375,14 @@
     "A new team could not be created right now. Please reload the page.":
       "Ein neues Team ließ sich gerade nicht anlegen. Bitte lade die Seite neu.",
     "You could not be logged out right now. Please reload the page.":
-      "Die Abmeldung hat gerade nicht geklappt. Bitte lade die Seite neu."
+      "Die Abmeldung hat gerade nicht geklappt. Bitte lade die Seite neu.",
+    /* Die Statuspille ueber der Ueberschrift (28.09., neues Layout nach der Anmeldeseite) und der
+       Name der Wege-Leiste oben rechts fuer Vorleseprogramme. */
+    "Subscription ended": "Abo beendet",
+    "Trial ended": "Testphase abgelaufen",
+    "Payment failed": "Zahlung fehlgeschlagen",
+    "Team deleted": "Team gelöscht",
+    "Account": "Konto"
   });
 
   /* Neunter Nachtrag: die Brand-Flaechen (Discover, Add Brand, Seitenkopf, Overview), die

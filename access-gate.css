@@ -1,29 +1,30 @@
 /* upstreem access-gate.css — die Sperre der App ohne laufendes Abo (Praefix uag). Braucht core.css.
 
-   ── Vorbilder, deren Masse hier 1:1 uebernommen sind ─────────────────────────
-   Diese Datei erfindet keine Geometrie:
-     Schale         core .up-topicmodal-backdrop / -card (Schleier, Radius 18, Schatten, Palette
-                    fuer den body), wie der Einladen-Dialog in team-orga und das Tarif-Fenster in
-                    settings-billing -- up-root up-portal, am body
-     Karte          team-orga .uto-card: 520 breit, 16 Polster, 32 zwischen den Bloecken
-     Kopf           core .up-topicmodal-title / -sub: 22/500, darunter 16/400 in der dritten Farbe,
-                    8 dazwischen -- dieselben Werte, die team-orga als .uto-title/.uto-sub fuehrt
-     Fuss           team-orga .uto-dlgfoot: rechtsbuendig, Luecke 10
-     Knoepfe        .up-btn-pri / .up-btn-sec in der grossen Stufe .is-lg (40 hoch) -- die Stufe
-                    der ganzseitigen Flaechen (Anmeldung, Onboarding, Einladung): das Gate steht
-                    wie sie VOR der App und nicht in ihr
-     Zurueck        core .up-iconbtn (32)
-     Tarifliste     KEINE eigene: UC.makePlanDialog aus core, dasselbe Fenster wie im
-                    Billing-Reiter (Regeln .up-plandlg* in core.css). Es geht ueber dem Gate auf.
-     Teamzeilen     core .up-pop-opt mit .up-logo-box; Name und Domain wie im Teamschalter der
-                    Seitenleiste (sidebar.css .usn-teamrow-name / -dom)
-     Fehlerkasten   core .up-formerr, zu ohne Luecke wie in settings-billing
+   ── Das Vorbild ist die Anmeldeseite (28.09. angefordert) ─────────────────────
+   "Mach es groesser, die Buttons nach unten rechts, die Leiste unten als Topbar, oben links mein
+   upstreem-Logo, darunter der Inhalt -- vom Layout her orientiere dich an der Signup-Komponente."
+   Also steht das Fenster jetzt wie eine Seite und nicht wie ein Dialog, in drei Bloecken:
+     oben     Logo links, die leisen Wege rechts (Portal, Team wechseln, Abmelden) -- die Zeile
+              der Anmeldeseite (auth-page.css .uau-top: Logo links, Knopf rechts, 18px Logo)
+     Mitte    Status, eine grosse Ueberschrift und der Satz darunter, senkrecht mittig wie
+              .uau-mid; Groesse, Schnitt und Laufweite der Ueberschrift wie .uau-h1, die
+              Unterzeile in --vc-muted wie .uau-sub
+     unten    die Knoepfe, rechtsbuendig
+   Aus core bleiben: die Schale (.up-topicmodal-backdrop / -card, Schleier, Radius 18, Schatten,
+   Palette fuer den body), die Knoepfe in der grossen Stufe .is-lg (40 hoch -- die Stufe der
+   ganzseitigen Flaechen), die Statuspille (.up-sent), .up-iconbtn fuer Zurueck, der Fehlerkasten
+   (.up-formerr), die Teamzeilen (.up-pop-opt mit .up-logo-box).
+   Die Tarifliste ist KEIN Teil dieser Karte: UC.makePlanDialog aus core, dasselbe Fenster wie im
+   Billing-Reiter (.up-plandlg* in core.css), es geht ueber dem Gate auf.
 
    Was ABWEICHT und warum:
      z-index 100001  eins ueber core's Modal (100000): ein Fenster, das beim Eintreffen der Sperre
-                     schon offen war (Tarife, Export), liegt darunter und nicht darueber.
+                     schon offen war (Export, Themen), liegt darunter und nicht darueber.
      kein Schliessen es gibt kein X und keinen Klick auf den Grund; das Fenster geht nur, wenn die
-                     RPC wieder Zugang meldet (access-gate.js). */
+                     RPC wieder Zugang meldet (access-gate.js).
+     Telefon         unter 600px ist es die ganze Flaeche, ohne Rand und Radius -- eine Karte mit
+                     24px Schleier drumherum laesst auf 375px keinen Platz fuer eine Ueberschrift
+                     dieser Groesse, und eine Sperre ist dort ohnehin der ganze Bildschirm. */
 
 /* Die Wurzel im Bubble-Element zeigt nichts -- wie die Seitenleiste (sidebar.css .usn-root): das
    Element darf irgendwo liegen, das Fenster haengt am body. */
@@ -31,58 +32,103 @@
 
 /* Zwei Klassen gegen die eine von core. */
 .uag-backdrop.up-topicmodal-backdrop { z-index: 100001; }
-/* hidden muss hier ausdruecklich gelten: .up-iconbtn setzt display: inline-flex, und jede
-   Autorenregel schlaegt die des Browsers fuer [hidden] (settings-billing, derselbe Fall). */
+/* hidden muss hier ausdruecklich gelten: .up-iconbtn und .up-sent setzen display: inline-flex, und
+   jede Autorenregel schlaegt die des Browsers fuer [hidden] (settings-billing, derselbe Fall). */
 .uag-backdrop [hidden] { display: none; }
 
-/* 520 wie team-orga. Die Tarifliste steht nicht in dieser Karte, sie ist das Tarif-Fenster aus
-   core mit seiner eigenen Breite (1000). */
-.uag-backdrop .uag-card { width: 100%; max-width: 520px; }
+/* ---------- Die Karte ----------
+   760 breit und mindestens 480 hoch: gross genug, dass die Ueberschrift in der Groesse der
+   Anmeldeseite zwei Zeilen hat und die Knoepfe unten nicht am Text kleben. Die Mindesthoehe gibt
+   auf flachen Fenstern nach (min()), sonst ragte die Karte ueber den Schleier. Polster wie
+   .uau-form: senkrecht an vh, waagerecht an vw.
+   gap 0 statt der 32 von core: die drei Bloecke setzen ihre Abstaende selbst -- die Mitte
+   verteilt den freien Raum, eine feste Luecke daneben waere doppelt. */
+.uag-backdrop .uag-card {
+  width: 100%; max-width: 760px;
+  min-height: min(480px, calc(100vh - 48px));
+  padding: clamp(18px, 3vh, 28px) clamp(22px, 3.4vw, 40px);
+  gap: 0;
+}
 .uag-card:focus { outline: 0; }
 
-/* ---------- Kopf ---------- */
-.uag-head { display: flex; align-items: flex-start; gap: 12px; }
-.uag-heading { display: flex; flex-direction: column; gap: 8px; min-width: 0; flex: 1 1 auto; }
-/* Der Zurueck-Knopf steht VOR dem Titel und in der Hoehe seiner ersten Zeile: 22px in
-   Zeilenhoehe 1.25 sind 27.5 hoch, der Knopf 32 -- 2px nach oben legen beide Mitten
-   aufeinander (gemessen). Nach links in das Polster der Karte gezogen wie das X in core
-   (.up-popup-close, -8 in seine Ecke), damit das Zeichen und nicht die Trefferflaeche buendig
-   mit dem Text darunter steht. */
-.uag-backdrop .uag-back { margin: -2px 0 0 -8px; }
+/* ---------- oben: Logo und die leisen Wege ---------- */
+.uag-top { display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  flex: 0 0 auto; min-height: var(--up-h-btn); }
+.uag-marke { display: inline-flex; align-items: center; flex: 0 1 auto; min-width: 0; }
+/* 18px wie .uau-logo. Zwei Bilder, wenn es eine helle und eine dunkle Fassung gibt -- die CSS
+   waehlt am Thema des Schleiers, das core beim Umschalten selbst stempelt (up-portal). So wechselt
+   das Logo mit dem Thema, ohne dass diese Datei davon erfahren muss. */
+.uag-logo { height: 18px; width: auto; display: block; max-width: 180px; object-fit: contain; }
+.uag-backdrop:not([data-theme="dark"]) .uag-logo.is-dunkel,
+.uag-backdrop[data-theme="dark"] .uag-logo.is-hell { display: none; }
+/* Ohne Bild der Schriftzug als TEXT, wie in der Seitenleiste (.usn-brand-word) -- kein
+   nachgebautes Logo. Steht ein Bild da, tritt er zurueck; faellt es aus, entfernt es sich selbst
+   (access-gate.js) und der Schriftzug ist wieder da. */
+.uag-wort { font-size: var(--up-fs-xl); font-weight: var(--up-fw-h); letter-spacing: -0.02em;
+  line-height: 1; color: var(--vc-text); white-space: nowrap; }
+.uag-marke:has(img) .uag-wort { display: none; }
 
-/* ---------- Handlungen ---------- */
-.uag-actions { display: flex; flex-direction: column; gap: 16px; }
-.uag-foot { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
-.uag-foot:empty { display: none; }
-/* Zu nimmt der Fehlerkasten sonst die Luecke der Spalte mit (settings-billing, derselbe Fall). */
-.uag-actions > .uag-err:not(.is-on) { display: none; }
-.uag-actions > .uag-err.is-on { margin-top: 0; }
-
-/* Die leisen Wege: Portal, anderes Team, abmelden. Unter einer Linie und in der dritten Farbe --
-   sie sollen da sein, aber nicht mit dem Hauptknopf um die Entscheidung werben. Die Geometrie ist
-   die von .up-iconbtn.is-24 (24 hoch, Radius 6, dritte Farbe, Hover Flaeche plus Primaerfarbe,
-   kein Rahmen) -- nur mit Beschriftung. Das Bauteil selbst geht nicht: es ist fest 24 BREIT.
+/* Die leisen Wege stehen jetzt oben rechts, wo auf der Anmeldeseite der Themenknopf sitzt --
+   erreichbar, aber ohne mit den Knoepfen unten um die Entscheidung zu werben. Die Geometrie ist
+   die von .up-iconbtn (32 hoch, Radius 8, Hover Flaeche plus Primaerfarbe, kein Rahmen) -- nur
+   mit Beschriftung; das Bauteil selbst ist fest 32 BREIT.
    .check_reinvention.py haelt .uag-link fuer einen Nachbau von .up-seg-btn; es ist keiner -- ein
    Segment hat eine Schiene und einen aktiven Zustand, das hier ist ein einzelner Textknopf, und
    einen solchen ohne Rahmen gibt es in core nicht (.core_parts.py: link, leise, quiet, ghost --
-   kein Treffer). */
-.uag-meta { padding-top: 12px; border-top: 1px solid var(--vc-border); }
-.uag-meta:empty { display: none; }
-/* Um das Polster der Knoepfe (6) nach links: das Zeichen und nicht die Trefferflaeche steht buendig
-   mit dem Text darueber -- in JEDER Zeile, auch wenn die Reihe umbricht (375px, Deutsch). */
-.uag-wege { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-left: -6px; }
-.uag-link { height: var(--up-h-chip); padding: 0 6px; border: 0; border-radius: var(--up-r-s);
-  background: transparent; color: var(--vc-third); cursor: pointer;
+   kein Treffer).
+   -8 rechts: das Zeichen und nicht die Trefferflaeche steht buendig mit der Kante des Inhalts. */
+.uag-wege { display: flex; align-items: center; gap: 2px; flex: 0 1 auto; min-width: 0;
+  margin-right: -8px; }
+.uag-wege:empty { display: none; }
+.uag-link { height: var(--up-h-btn); padding: 0 10px; border: 0; border-radius: var(--up-r-m);
+  background: transparent; color: var(--vc-muted); cursor: pointer; white-space: nowrap;
   font-family: inherit; font-size: var(--up-fs-m); font-weight: var(--up-fw-m);
-  display: inline-flex; align-items: center; gap: 6px;
+  display: inline-flex; align-items: center; gap: 7px; flex: 0 0 auto;
   transition: background var(--up-t-1) ease, color var(--up-t-1) ease; }
-.uag-link svg { width: 14px; height: 14px; display: block; flex: 0 0 auto; }
+.uag-link svg { width: 15px; height: 15px; display: block; flex: 0 0 auto; }
 .uag-link:not(:disabled):hover { background: var(--vc-heading-bg); color: var(--vc-text); }
 .uag-link:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 .uag-link:disabled { opacity: .4; cursor: default; }
 
+/* ---------- Mitte: Status, Ueberschrift, Satz ----------
+   Senkrecht mittig wie .uau-mid; das Polster haelt Abstand zur Zeile oben und zu den Knoepfen,
+   auch wenn die Karte nicht hoeher ist als ihr Inhalt. */
+.uag-mid { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; min-height: 0;
+  padding: clamp(28px, 6vh, 56px) 0; }
+.uag-head { display: flex; align-items: flex-start; gap: 12px; }
+.uag-heading { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; }
+/* Die Lage in einem Wort, ueber der Ueberschrift: die Pille aus core, mit dem Punkt als Ton --
+   rot bei offener Zahlung und geloeschtem Team, sonst neutral (access-gate.js, STATUS). */
+.uag-status { align-self: flex-start; margin-bottom: 18px; }
+/* Die Ueberschrift der Anmeldeseite (.uau-h1): 600, eng gesetzt, mit dem Fenster wachsend. Die
+   Obergrenze 36 und nicht 44 -- die Karte ist 760 breit und nicht die halbe Seite. */
+.uag-title { margin: 0; max-width: 580px;
+  font-size: clamp(26px, min(3vw, 4.4vh), 36px); line-height: 1.08;
+  font-weight: var(--up-fw-h); letter-spacing: -0.025em; color: var(--vc-text); text-wrap: balance; }
+/* Die Unterzeile wie .uau-sub in --vc-muted und nicht in der dritten Farbe: sie ist hier der
+   eigentliche Inhalt (was los ist, was zu tun ist), keine Nebenzeile. 16 statt 14 -- sie steht
+   unter einer 36er Ueberschrift, nicht unter einer 22er. Lesebreite gut 60 Zeichen. */
+.uag-text { margin: 14px 0 0; max-width: 540px;
+  font-size: var(--up-fs-xl); line-height: 1.5; color: var(--vc-muted); text-wrap: pretty; }
+/* Der Zurueck-Knopf der Teamliste steht vor dem Titel, in der Hoehe seiner ersten Zeile, und
+   ragt um sein Polster nach links -- das Zeichen steht buendig mit dem Text darunter. Ohne
+   Versatz nach oben: 32 Knopf gegen gut 33 Zeile legen die Mitten aufeinander (gemessen 310/310;
+   mit 2px Versatz standen sie 2px auseinander). */
+.uag-backdrop .uag-back { margin: 0 0 0 -8px; }
+
+/* Die Teamliste unter Ueberschrift und Satz. */
+.uag-body { margin-top: 24px; }
+/* Der Fehlerkasten aus core, wenn ein Klick keinen Empfaenger fand; zu nimmt er keinen Platz. */
+.uag-mid > .uag-err:not(.is-on) { display: none; }
+.uag-mid > .uag-err.is-on { margin-top: 20px; }
+
+/* ---------- unten: die Knoepfe, rechts ---------- */
+.uag-foot { flex: 0 0 auto; display: flex; align-items: center; justify-content: flex-end; gap: 10px;
+  flex-wrap: wrap; }
+.uag-foot:empty { display: none; }
+
 /* ---------- Teamliste ---------- */
-.uag-teams { display: flex; flex-direction: column; gap: 4px; }
+.uag-teams { display: flex; flex-direction: column; gap: 4px; max-width: 540px; }
 /* .up-pop-opt ist in core ein div im Menue; hier ist es ein Knopf und bringt dessen Voreinstellung
    mit -- Rahmen, Grund, Schrift und Ausrichtung zurueck auf die der Menuezeile. */
 .uag-team { width: 100%; border: 0; background: transparent; font-family: inherit; text-align: left;
@@ -94,12 +140,34 @@
 .uag-team-dom { font-size: var(--up-fs-s); font-weight: var(--up-fw-n); color: var(--vc-muted);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* ---------- schmal ---------- */
-/* Die Karte ist 520 oder die Fensterbreite minus 48 (der Schleier polstert 24 je Seite) -- ihre
-   Breite haengt also am Fenster, und die Stufe darf es auch. Unter 600 stehen die Knoepfe
-   untereinander und ueber die volle Breite, der Hauptknopf oben: nebeneinander bricht "Alle Tarife
-   ansehen" neben "Enterprise reaktivieren" bei 327px Karte um, und der Hauptknopf rutschte
-   allein in eine zweite Zeile. */
+/* ---------- Auftritt ----------
+   Wie auf der Anmeldeseite kommt der Inhalt von unten herein, in zwei Stufen: erst was los ist,
+   dann was man tun kann. Logo und Wege stehen sofort -- das Fenster ist vom ersten Bild an
+   erkennbar. backwards, damit die Bloecke waehrend ihrer Verzoegerung nicht kurz fertig
+   aufblitzen. Die Klasse setzt access-gate.js beim Erscheinen und nimmt sie wieder ab. */
+@keyframes uag-auf { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.uag-card.is-kommt .uag-mid { animation: uag-auf var(--up-t-3) var(--up-ease) backwards; }
+.uag-card.is-kommt .uag-foot { animation: uag-auf var(--up-t-3) var(--up-ease) var(--up-t-1) backwards; }
+@media (prefers-reduced-motion: reduce) {
+  .uag-card.is-kommt .uag-mid, .uag-card.is-kommt .uag-foot { animation: none; }
+}
+
+/* ---------- Telefon ----------
+   Die ganze Flaeche: kein Schleierrand, kein Radius, kein Rahmen. Oben und unten die sicheren
+   Raender des Geraets (Notch, Home-Leiste). Die Mitte beginnt oben statt mittig -- wie auf der
+   schmalen Anmeldeseite (.uau-root.is-narrow .uau-mid) --, die Knoepfe stehen unten ueber die
+   volle Breite, der Hauptknopf oben: nebeneinander brach "Alle Tarife ansehen" neben "Enterprise
+   reaktivieren" bei 327px um, und der Hauptknopf rutschte allein in eine zweite Zeile.
+   Die Wege oben nur noch als Zeichen: drei Beschriftungen passen neben das Logo nicht auf 375px.
+   Ihr Name steht weiter als aria-label und title am Knopf. */
 @media (max-width: 600px) {
+  .uag-backdrop.up-topicmodal-backdrop { padding: 0; align-items: stretch; }
+  .uag-backdrop .uag-card { max-width: none; height: 100%; min-height: 0; max-height: none;
+    border: 0; border-radius: 0;
+    padding: calc(12px + env(safe-area-inset-top, 0px)) 20px calc(16px + env(safe-area-inset-bottom, 0px)); }
+  .uag-mid { justify-content: flex-start; padding: 32px 0 24px; }
+  .uag-title { font-size: 28px; }
+  .uag-link { width: var(--up-h-btn); padding: 0; justify-content: center; }
+  .uag-link span { display: none; }
   .uag-foot { flex-direction: column-reverse; align-items: stretch; }
 }

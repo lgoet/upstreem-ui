@@ -306,40 +306,48 @@
         back.setAttribute("aria-hidden", "true");
         back.setAttribute("data-uag-gate", instanceId);
         var n = ++SEQ;
+        /* Drei Bloecke wie auf der Anmeldeseite (28.09. angefordert, siehe access-gate.css):
+           oben Logo und die leisen Wege, in der Mitte was los ist, unten die Knoepfe. */
         back.innerHTML =
           '<div class="up-topicmodal-card uag-card" role="alertdialog" aria-modal="true"' +
             ' aria-labelledby="uag-t-' + n + '" aria-describedby="uag-d-' + n + '" tabindex="-1">' +
-            '<div class="uag-head">' +
-              '<button type="button" class="up-iconbtn uag-back" data-uag-back hidden>' +
-                UC.icon("arrowLeft", 2) + '</button>' +
-              '<div class="uag-heading">' +
-                '<h2 class="up-topicmodal-title uag-title" id="uag-t-' + n + '" data-uag-titel></h2>' +
-                '<p class="up-topicmodal-sub uag-text" id="uag-d-' + n + '" data-uag-text></p>' +
-              '</div>' +
+            '<div class="uag-top">' +
+              '<span class="uag-marke" data-uag-marke></span>' +
+              '<nav class="uag-wege" data-uag-meta></nav>' +
             '</div>' +
-            '<div class="uag-body" data-uag-body hidden></div>' +
-            '<div class="uag-actions" data-uag-actions>' +
-              '<div class="uag-foot" data-uag-foot></div>' +
+            '<div class="uag-mid">' +
+              '<div class="uag-head">' +
+                '<button type="button" class="up-iconbtn uag-back" data-uag-back hidden>' +
+                  UC.icon("arrowLeft", 2) + '</button>' +
+                '<div class="uag-heading">' +
+                  '<span class="up-sent uag-status" data-uag-status hidden>' +
+                    '<span class="up-sent-dot"></span><span class="up-sent-val"></span></span>' +
+                  '<h2 class="uag-title" id="uag-t-' + n + '" data-uag-titel></h2>' +
+                  '<p class="uag-text" id="uag-d-' + n + '" data-uag-text></p>' +
+                '</div>' +
+              '</div>' +
+              '<div class="uag-body" data-uag-body hidden></div>' +
               /* Der Fehlerkasten aus core, wie im Billing-Reiter: Huelle > Zwischenkasten >
                  Innenkasten, der Zwischenkasten zieht die 0fr-Zeile auf 0. */
               '<div class="up-formerr uag-err" data-uag-err role="alert"><div><div class="up-formerr-in"></div></div></div>' +
-              '<div class="uag-meta" data-uag-meta></div>' +
             '</div>' +
+            '<div class="uag-foot" data-uag-foot></div>' +
           '</div>';
         document.body.appendChild(back);
         G = {
           back: back,
           card: back.querySelector(".uag-card"),
           zurueck: back.querySelector("[data-uag-back]"),
+          marke: back.querySelector("[data-uag-marke]"),
+          status: back.querySelector("[data-uag-status]"),
           titel: back.querySelector("[data-uag-titel]"),
           text: back.querySelector("[data-uag-text]"),
           body: back.querySelector("[data-uag-body]"),
-          actions: back.querySelector("[data-uag-actions]"),
           foot: back.querySelector("[data-uag-foot]"),
           err: back.querySelector("[data-uag-err]"),
           meta: back.querySelector("[data-uag-meta]"),
           offen: false, ctrl: null, taste: null, wache: null, fehlend: 0,
-          teamUhr: null, sperre: null
+          teamUhr: null, sperre: null, kommtUhr: null
         };
         /* Ein Klick auf den Grund tut NICHTS -- es gibt kein Schliessen. Alles andere geht an den
            Controller, der das Fenster gerade fuehrt. */
@@ -462,25 +470,67 @@
           ' data-uag-tat="' + b.tat + '"' + (b.tat === "plans" ? ' aria-haspopup="dialog"' : "") + '>' +
           (b.ic ? UC.icon(b.ic, 2) : "") + '<span>' + lbl + '</span></button>';
       }
-      /* Die leisen Wege darunter. "Manage Billing" nur fuer ein Abo, das es gab (Rechnungen,
-         Zahlungsmethode) -- bei offener Zahlung ist es schon der Hauptknopf, ohne Abo gibt es im
-         Portal nichts zu sehen. "Switch team" nur, wenn es ein anderes Team gibt. Abmelden immer. */
-      function metaHtml(L) {
+      /* Die leisen Wege, oben rechts in der Kopfzeile (28.09.: "die Leiste unten als Topbar").
+         "Manage Billing" nur fuer ein Abo, das es gab (Rechnungen, Zahlungsmethode) -- bei offener
+         Zahlung ist es schon der Hauptknopf, ohne Abo gibt es im Portal nichts zu sehen. "Switch
+         team" nur, wenn es ein anderes Team gibt, und nicht in der Teamliste selbst. Abmelden
+         immer. Der Name steht auch als aria-label und title am Knopf: auf dem Telefon zeigen die
+         Wege nur ihr Zeichen (access-gate.css). */
+      function wegHtml(tat, ic, lbl) {
+        var t = esc(UC.t(lbl));
+        return '<button class="uag-link" type="button" data-uag-tat="' + tat + '" aria-label="' + t +
+          '" title="' + t + '">' + UC.icon(ic, 2) + '<span>' + t + '</span></button>';
+      }
+      function metaHtml(L, inListe) {
         var h = "";
-        if (L.verwalten && (L.art === "ended" || L.art === "trial")) {
-          h += '<button class="uag-link" type="button" data-uag-tat="manage">' + UC.icon("creditCard", 2) +
-            '<span>' + esc(UC.t("Manage Billing")) + '</span></button>';
+        if (!inListe && L.verwalten && (L.art === "ended" || L.art === "trial")) {
+          h += wegHtml("manage", "creditCard", "Manage Billing");
         }
-        if (andereTeams().length) {
-          h += '<button class="uag-link" type="button" data-uag-tat="teams">' + UC.icon("users", 2) +
-            '<span>' + esc(UC.t("Switch team")) + '</span></button>';
+        if (!inListe && andereTeams().length) h += wegHtml("teams", "users", "Switch team");
+        h += wegHtml("logout", "logOut", "Log out");
+        return h;
+      }
+      /* Die Lage in einem Wort, als Pille ueber der Ueberschrift. Rot nur, wo etwas schiefging
+         (offene Zahlung, geloeschtes Team); ein beendetes Abo oder eine abgelaufene Testphase
+         ist ein Zustand, kein Fehler, und bekommt den neutralen Ton. */
+      var STATUS = {
+        ended:   { lbl: "Subscription ended", ton: "var(--vc-third)" },
+        trial:   { lbl: "Trial ended",        ton: "var(--vc-third)" },
+        pastdue: { lbl: "Payment failed",     ton: "var(--vt-down)" },
+        noplan:  { lbl: "No active plan",     ton: "var(--vc-third)" },
+        deleted: { lbl: "Team deleted",       ton: "var(--vt-down)" }
+      };
+      /* Das Logo oben links. Eigene Quellen hat das Element nur, wenn Bubble sie setzt (data-logo,
+         data-logo-dark -- dieselben Namen wie auf der Anmeldeseite). Ohne sie nimmt es die der
+         Seitenleiste, die im selben Reusable steht und ihre Logos ohnehin traegt
+         (data-upstreem-logo, -dark): kein zweites Attribut, das in Bubble gepflegt werden muss.
+         Nur echte Adressen zaehlen -- ein Platzhalter aus einer Vorlage ("UPSTREEM_LOGO") laedt
+         nie. Ohne Bild der Schriftzug als Text, wie in der Seitenleiste. */
+      function logoQuelle(v) {
+        var q = txt(v);
+        if (/^\/\//.test(q)) q = "https:" + q;
+        return /^https?:\/\//i.test(q) || /^data:image\//i.test(q) ? q : "";
+      }
+      function markeHtml() {
+        var hell = logoQuelle(root.getAttribute("data-logo"));
+        var dunkel = logoQuelle(root.getAttribute("data-logo-dark"));
+        if (!hell && !dunkel) {
+          var leiste = document.querySelector(".usn-root");
+          if (leiste) {
+            hell = logoQuelle(leiste.getAttribute("data-upstreem-logo"));
+            dunkel = logoQuelle(leiste.getAttribute("data-upstreem-logo-dark"));
+          }
         }
-        h += '<button class="uag-link" type="button" data-uag-tat="logout">' + UC.icon("logOut", 2) +
-          '<span>' + esc(UC.t("Log out")) + '</span></button>';
-        /* Eine innere Reihe, die um das Polster der Knoepfe nach links rueckt: so steht auch eine
-           umbrochene zweite Zeile buendig (gemessen bei 375px Deutsch: "Abmelden" stand 6px
-           weiter rechts als "Abrechnung verwalten" darueber). */
-        return '<div class="uag-wege">' + h + '</div>';
+        hell = hell || dunkel; dunkel = dunkel || hell;
+        /* Bricht ein Bild, gehen BEIDE: sonst stuende im anderen Thema das eine, im einen gar
+           nichts -- der Schriftzug darunter tritt nur zurueck, solange ein Bild da ist. */
+        function bild(q, kl) {
+          return '<img class="uag-logo' + (kl ? " " + kl : "") + '" src="' + esc(q) + '" alt="upstreem"' +
+            ' onerror="var m=this.parentNode;[].slice.call(m.querySelectorAll(\'img\')).forEach(function(i){i.remove();})"/>';
+        }
+        var wort = '<span class="uag-wort" translate="no">upstreem</span>';
+        if (!hell) return wort;
+        return (hell === dunkel ? bild(hell, "") : bild(hell, "is-hell") + bild(dunkel, "is-dunkel")) + wort;
       }
 
       /* ---- Teams ----------------------------------------------------------------------------- */
@@ -524,10 +574,6 @@
         state.fehler = satz || "";
         G.err.querySelector(".up-formerr-in").textContent = satz ? UC.t(satz) : "";
         G.err.classList.toggle("is-on", !!satz);
-        /* In der Teamliste gibt es weder Knoepfe noch Wege darunter -- der leere Block naehme
-           trotzdem die 32px Luecke der Karte mit (gemessen: ein Streifen unter der Liste). Er
-           steht dort nur, solange ein Fehler zu sagen ist. */
-        G.actions.hidden = state.ansicht !== "info" && !satz;
       }
       function zeichnen() {
         var G = GATE[instanceId];
@@ -538,21 +584,26 @@
         /* Ohne andere Teams gibt es die Teamliste nicht -- auch nicht aus dem Vorrat. */
         if (state.ansicht === "teams" && !andereTeams().length) state.ansicht = "info";
         var teams = state.ansicht === "teams";
+        G.marke.innerHTML = markeHtml();
         G.zurueck.hidden = !teams;
         G.zurueck.setAttribute("aria-label", UC.t("Back"));
         G.body.hidden = !teams;
+        G.meta.setAttribute("aria-label", UC.t("Account"));
+        G.meta.innerHTML = metaHtml(L, teams);
+        var st = STATUS[L.art] || STATUS.ended;
+        G.status.hidden = teams;
+        G.status.querySelector(".up-sent-dot").style.background = st.ton;
+        G.status.querySelector(".up-sent-val").textContent = UC.t(st.lbl);
         if (teams) {
           G.titel.textContent = UC.t("Switch team");
           G.text.textContent = UC.t("Open another team you belong to.");
           G.body.innerHTML = teamsHtml();
           G.foot.innerHTML = "";
-          G.meta.innerHTML = "";
         } else {
           G.titel.textContent = UC.t(TITEL[L.art] || TITEL.ended);
           G.text.innerHTML = textHtml(L);
           G.body.innerHTML = "";
           G.foot.innerHTML = knoepfe(L).map(function (b) { return knopfHtml(b, L); }).join("");
-          G.meta.innerHTML = metaHtml(L);
           teamSuche(G);
         }
         fehlerZeigen(G, state.fehler);
@@ -572,6 +623,12 @@
            Topic-Modal, derselbe Kniff). */
         void G.back.offsetWidth;
         G.back.classList.add("is-shown");
+        /* Der Inhalt kommt in zwei Stufen herein (access-gate.css, Auftritt). Die Klasse geht nach
+           dem Durchlauf wieder ab, sonst liefe die Bewegung beim naechsten Erscheinen nicht noch
+           einmal -- und bei jedem Neuzeichnen nicht versehentlich mit. */
+        G.card.classList.add("is-kommt");
+        if (G.kommtUhr) clearTimeout(G.kommtUhr);
+        G.kommtUhr = setTimeout(function () { G.card.classList.remove("is-kommt"); G.kommtUhr = null; }, 700);
         G.taste = function (e) { if (G.ctrl) G.ctrl.taste(e); };
         /* Am window und in der Fangphase: das ist die allererste Station jeder Taste. Am document
            kaeme das zu spaet -- quick-actions hoert dort selbst in der Fangphase auf Cmd/Ctrl+K,
