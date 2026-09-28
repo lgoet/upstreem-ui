@@ -336,6 +336,13 @@
          --vt-logo-bg bleibt Weiss: die Platte hinter einem Favicon liegt AUF der Karte, ist also
          eine Stufe hoeher -- dasselbe, was im Dunkeln #e0e0e0 dort tut. */
       --vt-head-bg: #f9f8f9; --vt-logo-bg: #ffffff; --vt-row-hover: #f9f8f9;
+      /* Der Anfangsbuchstabe AUF dieser Platte, wenn das Logo fehlt (28.09.). Die Platte ist in
+         BEIDEN Themen hell (#ffffff / #e0e0e0), der Buchstabe stand aber auf --vc-muted -- im
+         Dunkeln #c9cbd0 auf #e0e0e0, gemessen 1.2:1, also unsichtbar. Hier im Hellen bleibt es
+         --vc-muted (nichts aendert sich), im Dunkeln unten --vc-text-invert: das ist die Tinte
+         fuer Zeichen auf #e0e0e0, genau diese Flaeche. power-dashboard hatte dasselbe schon
+         einmal fuer sich allein geflickt (.upw-chip-ic, --vc-bg). */
+      --vt-logo-ink: var(--vc-muted);
       --vt-row-hover-solid: #f9f8f9;
       --vt-up: #2ea84a; --vt-down: #b0200c;
       /* Markenauszeichnung im Antworttext. Die Farbe ist die der alten Response-Elemente,
@@ -514,6 +521,7 @@
          "komische Eindruck", der gemeldet wurde. Jetzt tertiary, also dieselbe Stufe wie jede
          andere Kopfzeile und jeder Hover. */
       --vt-head-bg: #232326; --vt-logo-bg: #e0e0e0; --vt-row-hover: #232326;
+      --vt-logo-ink: var(--vc-text-invert);
       /* Die Vorgabe der Akzentfarbe im Dunkeln -- wieder buchstabengleich das, was vorher aus
          --vc-text und --vc-bg kam. */
       --up-accent: #e0e0e0; --up-accent-fg: #1b1b1b; --up-accent-ink: #e0e0e0;
@@ -3075,7 +3083,7 @@
 .up-logo-box { width: 24px; height: 24px; border-radius: 8px; background: var(--vt-logo-bg); padding: 1px; flex: 0 0 auto;
   display: inline-flex; align-items: center; justify-content: center; position: relative; }
 .up-logo-box img { width: 22px; height: 22px; border-radius: 7px; object-fit: cover; display: block; }
-.up-logo-ltr { font-size: 11px; font-weight: 600; color: var(--vc-muted); line-height: 1; text-transform: uppercase; }
+.up-logo-ltr { font-size: 11px; font-weight: 600; color: var(--vt-logo-ink, var(--vc-muted)); line-height: 1; text-transform: uppercase; }
 .up-logo-box.has-img .up-logo-ltr { display: none; }
 
     /* ---------- Globus statt Buchstabe, wo das Bild ein FAVICON war ----------
@@ -3592,11 +3600,15 @@
    Alias erhalten, damit dort kein Markup angefasst werden muss. Die Werte sind unveraendert die
    der Vorbilder: 18px Logokachel aus .up-ment-logo, Flagge 18x14 mit Radius 3. */
 .up-model-chip, .urt-model-chip { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
-.up-model-ltr, .urt-model-ltr { font-size: 10px; font-weight: 600; color: var(--vc-muted); line-height: 1;
+.up-model-ltr, .urt-model-ltr { font-size: 10px; font-weight: 600; color: var(--vt-logo-ink, var(--vc-muted)); line-height: 1;
   text-transform: uppercase; }
 .up-ment-logo.has-img .up-model-ltr, .up-ment-logo.has-img .urt-model-ltr { display: none; }
 /* Im Dunkeln traegt die Kachel keinen Ton: die Modell-Logos sind dort selbst hell. */
 .up-root[data-theme="dark"] .up-model-chip .up-ment-logo { background: transparent; padding: 0; }
+/* Ohne Platte steht der Buchstabe auf der Karte -- dort die Schrift der Karte und nicht die Tinte
+   der hellen Platte (--vt-logo-ink), die gilt nur, wo die Platte liegt: in den Markenchips von
+   response-detail und url-detail (28.09., dort war der Buchstabe im Dunkeln unsichtbar). */
+.up-root[data-theme="dark"] .up-model-chip .up-model-ltr { color: var(--vc-muted); }
 
 .up-market, .upt-market { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
 .up-flag, .upt-flag { width: 18px; height: 14px; border-radius: 3px; overflow: hidden; flex: 0 0 auto;
@@ -3720,7 +3732,7 @@
   --up-stack-ring: var(--vt-row-hover-solid, var(--vc-bg)); }
 /* 5 statt 7: der Chip hat jetzt 1px Rahmen und 2px Polsterung, das Bild sitzt also 3px innen. */
 .up-stack-item img { width: 100%; height: 100%; border-radius: 5px; object-fit: contain; display: block; }
-.up-stack-ltr { font-size: 10px; font-weight: 600; color: var(--vc-muted); line-height: 1; text-transform: uppercase; }
+.up-stack-ltr { font-size: 10px; font-weight: 600; color: var(--vt-logo-ink, var(--vc-muted)); line-height: 1; text-transform: uppercase; }
 .up-stack-item.has-img .up-stack-ltr { display: none; }
 /* plain text, no circle: the overflow count is a label, not another brand */
 .up-stack-more {

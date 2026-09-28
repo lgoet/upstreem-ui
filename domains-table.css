@@ -25,7 +25,7 @@
 .udt-logo-box img { width: 22px; height: 22px; border-radius: 7px; object-fit: cover; display: block; }
 /* Letter fallback: a broken/missing favicon used to leave an empty square, which reads as a
    loading glitch. The initial keeps every row visually complete. */
-.udt-logo-ltr { font-size: 11px; font-weight: 600; color: var(--vc-muted); line-height: 1; text-transform: uppercase; }
+.udt-logo-ltr { font-size: 11px; font-weight: 600; color: var(--vt-logo-ink, var(--vc-muted)); line-height: 1; text-transform: uppercase; }
 .udt-logo-box.has-img .udt-logo-ltr { display: none; }
 
 /* Der "Show Pages"-Knopf je Zeile ist .up-rowbtn aus core -- dasselbe 24px-Bauteil wie "Edit" in
@@ -255,7 +255,7 @@
   padding: 1px; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center;
   position: relative; overflow: hidden; box-sizing: border-box; }
 .udt-sub-logo img { width: 19px; height: 19px; border-radius: 5px; object-fit: cover; display: block; }
-.udt-sub-ltr { font-size: 10px; font-weight: 600; color: var(--vc-muted); text-transform: uppercase; }
+.udt-sub-ltr { font-size: 10px; font-weight: 600; color: var(--vt-logo-ink, var(--vc-muted)); text-transform: uppercase; }
 .udt-sub-logo.has-img .udt-sub-ltr { display: none; }
 .udt-sub-title { min-width: 0; max-width: 620px; font-size: 13.5px; font-weight: 500;
   color: var(--vc-text); letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis;
