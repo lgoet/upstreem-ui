@@ -56,7 +56,11 @@
      billing.next_billing_at     Next billing date -- nur, wenn sich das Abo verlaengert (nicht bei
                                  status "canceled", is_active false oder cancel_at_period_end true),
                                  sonst "–". Die RPC liefert das Datum auch fuer ein gekuendigtes Abo.
-     billing.canceled_at, access_ends_at, trial_ends_at   nur als Zeile, wenn ein Wert kommt
+     billing.canceled_at, access_ends_at, trial_ends_at   nur als Zeile, wenn ein Wert kommt;
+                                 trial_ends_at ausserdem NICHT, wenn es vor heute liegt, und heute
+                                 bzw. morgen als "Today"/"Tomorrow" (deutsch Heute/Morgen)
+     billing.plan_name           steht als Pille mit der Tarifform wie in der Teams-Tabelle,
+                                 gedaempft ohne Zugang (has_active_access false)
      billing.can_manage_billing  false -> kein "Manage Billing"
   Datumswerte als ISO-Text; eine nackte Zahl gilt als Stripe-Zeitstempel in Sekunden.
   Was die Tabelle aus dem Text macht (gemessen am 28.09. gegen settings-billing.js):

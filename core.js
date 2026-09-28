@@ -716,6 +716,8 @@
     "brands": "Brands",
     "citations": "Web-Quellen",
     "Today": "Heute",
+    /* "Tomorrow" kam am 28.09. mit der Testphase in settings-billing dazu ("heute oder morgen"). */
+    "Tomorrow": "Morgen",
     "Yesterday": "Gestern",
     "Untitled chat": "Chat ohne Titel",
     "Sent.": "Sent.",
@@ -16651,6 +16653,41 @@
     '</div>';
   }
 
+  /* ══ Der Tarif als Pille (28.09.) ════════════════════════════════════════════════════════
+     Die kleine Form vor dem Tarifnamen, wie in der Teams-Tabelle. Dort lag sie als eigene Tabelle
+     in teams.js (PLAN_DOT); seit settings-billing sie ebenfalls zeigt ("die kleinen Shapes vor dem
+     aktuellen Tarif, wie aus der Teams-Tabelle"), steht sie hier -- EINE Farbe je Tarif fuer
+     beide Stellen, sonst liefen sie beim naechsten neuen Tarif auseinander.
+     Die Farben sind drei Nachbarn aus der Zitationstyp-Palette (Editorial, UGC, Knowledge-Base),
+     aufsteigend nach Stufe: Teal, Blau, Indigo. Ein Tarif ohne Eintrag (auch "Legacy Free")
+     bekommt den neutralen Grundton aus core.css (.up-planpill .up-sent-dot) -- die ehrliche
+     Aussage "keine der bekannten Stufen". Kommt ein Tarif dazu, ist das EINE Zeile hier.
+     Ohne laufenden Tarif (aktiv === false) bleibt es beim Grundton, der Name wird gedaempft und
+     ein Hinweis sagt warum. translate="no": der Tarifname ist ein Name.
+     opts.klasse: eine Klasse der Komponente dazu (teams: uts-plan). */
+  var PLAN_PUNKT = {
+    essential:    CITE_COLOR["Editorial"],
+    professional: CITE_COLOR["UGC / Community"],
+    enterprise:   CITE_COLOR["Knowledge-Base"]
+  };
+  function planFarbe(name){
+    var k = String(name == null ? "" : name).trim().toLowerCase();
+    return PLAN_PUNKT[k] || null;
+  }
+  function planPilleHtml(name, aktiv, opts){
+    opts = opts || {};
+    var n = String(name == null ? "" : name).trim();
+    var an = aktiv !== false;
+    /* Die Farbe INLINE, aber nur im laufenden Fall: ohne laufenden Tarif kommt der Grundton aus
+       core.css, und eine Inline-Farbe schluege jede Regel dort. */
+    var c = an ? planFarbe(n) : null;
+    return '<span class="up-sent up-planpill' + (opts.klasse ? " " + opts.klasse : "") + (an ? "" : " is-off") + '"' +
+        (an ? "" : ' data-tip="' + esc(t_("No active billing plan")) + '"') + ' translate="no">' +
+      '<span class="up-sent-dot"' + (c ? ' style="background:' + c + '"' : "") + '></span>' +
+      '<span class="up-sent-val">' + esc(n) + '</span>' +
+    '</span>';
+  }
+
   /* ══ Tarifkarten: UC.makePlans (28.09.) ══════════════════════════════════════════════════════
      DIE KARTE DER LANDINGPAGE, JETZT IN DER APP. Bestellt fuer settings-billing ("nimm exakt die
      und leg die in den core") -- mit EINEM Unterschied: der Nutzer sieht, welchen Tarif er hat.
@@ -17574,6 +17611,8 @@
     /* Tarifkarten (28.09.): die Karte der Landingpage als Bauteil, plus die drei Regeln, die ein
        Aufrufer ausserhalb der Karte braucht -- Takt lesen, Euro schreiben, Tarifliste pruefen. */
     makePlans: makePlans,
+    planFarbe: planFarbe,
+    planPilleHtml: planPilleHtml,
     planInterval: planInterval,
     planListe: planListe,
     fmtEur: fmtEur,

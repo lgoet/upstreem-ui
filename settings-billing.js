@@ -162,7 +162,8 @@
          billing_plan_id, plan_name   der Tarif; die Id markiert ihn im Fenster (nur mit Zugang)
          current_price_eur            Betrag JE TAKT (4380 im Jahr, nicht 365 im Monat)
          next_billing_at              naechste Abbuchung -- nur bei einem Abo, das sich verlaengert
-         canceled_at, access_ends_at, trial_ends_at   nur als Zeile, wenn ein Wert da ist
+         canceled_at, access_ends_at, trial_ends_at   nur als Zeile, wenn ein Wert da ist --
+                                      trial_ends_at vor heute gar nicht, heute/morgen als Wort
          has_active_access            false: der Tarif ist im Fenster NICHT "Current plan"
          can_manage_billing           false: kein "Manage Billing"
          team_id                      geht in jedes Ereignis
@@ -337,6 +338,9 @@
       /* Die Stufen der Breite, wie settings-brand: unter 768 steht der Knopf unter dem Text,
          unter 500 die Bezeichnung ueber dem Wert (settings-billing.css). */
       UC.widthTiers(root);
+      /* Fuer den Hinweis an einer gedaempften Tarifpille ("No active billing plan", data-tip) --
+         ohne die Kachel aus core stuende das Attribut da und niemand saehe es. */
+      if (UC.makeTooltips) UC.makeTooltips(root, isDark);
 
       /* ---- Zeichnen ---------------------------------------------------------------------------
          Jeder sichtbare Satz geht beim Zeichnen durch UC.t -- der Sprachlauf von core laesst
@@ -387,6 +391,29 @@
       function kasten(html) { return '<span class="ubl-wert">' + html + '</span>'; }
       /* Das Datum im Format des Nutzers. Laesst es sich nicht lesen, steht der Wert selbst da --
          ein "–" an einer Stelle, an der etwas geliefert wurde, sieht aus wie "nichts da". */
+      /* Wie viele KALENDERTAGE liegen zwischen heute und v -- in der Zeitzone des Nutzers, nicht in
+         Stunden: eine Testphase, die heute um 8 Uhr endete, endet "heute", auch wenn es 20 Uhr ist.
+         Math.round faengt die Tage mit 23 oder 25 Stunden der Zeitumstellung ab. null: unlesbar. */
+      function tageBis(v) {
+        var d = new Date(v);
+        if (isNaN(d.getTime())) return null;
+        var h = new Date();
+        var heute = new Date(h.getFullYear(), h.getMonth(), h.getDate());
+        var tag = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        return Math.round((tag - heute) / 86400000);
+      }
+      /* Das Ende der Testphase (28.09. angefordert): liegt es VOR heute, gibt es die Zeile nicht --
+         eine abgelaufene Testphase ist keine Angabe mehr, sondern Vergangenheit. Heute und morgen
+         stehen als Wort ("Today", "Tomorrow"), alles danach als Datum im Format des Nutzers.
+         Unlesbar: der Wert selbst, wie bei jedem anderen Datum hier (datumHtml). */
+      function testphaseHtml(v) {
+        var n = tageBis(v);
+        if (n == null) return datumHtml(v);
+        if (n < 0) return null;
+        if (n === 0) return esc(UC.t("Today"));
+        if (n === 1) return esc(UC.t("Tomorrow"));
+        return datumHtml(v);
+      }
       function datumHtml(v) {
         if (!v) return "–";
         var f = UC.fmtDate(v);
@@ -426,7 +453,11 @@
         var html = kopf();
         html += zeile("plan", "Current plan",
           (mitPlan
-            ? '<span class="ubl-plan" translate="no">' + esc(name || "–") + '</span>'
+            /* Die Pille aus core, wie in der Teams-Tabelle (28.09. angefordert: "die kleinen
+               Shapes vor dem aktuellen Tarif"). Gedaempft mit Hinweis, solange das Team keinen
+               Zugang hat (has_active_access false) -- dieselbe Aussage wie dort "No active
+               billing plan". */
+            ? UC.planPilleHtml(name || "–", !(a && a.aktiv === false), { klasse: "ubl-planpill" })
             : '<span class="ubl-plan is-none">' + esc(UC.t("No active plan")) + '</span>') +
           '<button class="up-btn-sec up-rowbtn ubl-plansbtn" type="button" data-ubl-plans' +
             ' aria-haspopup="dialog">' + esc(UC.t("See all plans")) + '</button>');
@@ -439,7 +470,8 @@
            laufenden Abo liest sich wie eine Warnung. */
         if (a && a.gekuendigt) html += zeile("canceled", "Canceled at", kasten(datumHtml(a.gekuendigt)));
         if (a && a.zugangBis) html += zeile("access", "Access ends at", kasten(datumHtml(a.zugangBis)));
-        if (a && a.testBis) html += zeile("trial", "Trial ends at", kasten(datumHtml(a.testBis)));
+        var testBis = a && a.testBis ? testphaseHtml(a.testBis) : null;
+        if (testBis) html += zeile("trial", "Trial ends at", kasten(testBis));
         return html;
       }
       function render() {

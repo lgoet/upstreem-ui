@@ -111,29 +111,16 @@
        Datei; der Name des fehlenden Kits zeigt direkt auf den veralteten Pin. */
     var MISSING = ["makeMount", "makeFire", "makeSearch", "makeColumns", "makePager", "makePopover",
                    "makeTooltips", "makeSticky", "makePageHeaderMeta", "widthTiers", "skeletonRows",
-                   "leseFehlerHtml", "icon", "esc"]
+                   "leseFehlerHtml", "icon", "esc", "planPilleHtml"]
       .filter(function (k) { return typeof UC[k] !== "function"; });
     if (MISSING.length && window.console) {
       console.error("[teams] Die core.js auf dieser Seite ist AELTER als teams.js, es fehlen: " +
         MISSING.join(", ") + ". Alle Elemente der Seite auf denselben Commit pinnen.");
     }
 
-    /* Tarif-Punkte. ABGELEITET und nicht erfunden: die drei Toene sind drei Nachbarn aus der
-       Zitationstyp-Palette der App (Editorial, UGC, Knowledge-Base), aufsteigend nach Tarifstufe
-       -- Teal, Blau, Indigo. Ein Tarif, der hier nicht steht (auch "Legacy Free"), bekommt den
-       neutralen Ton: das ist die ehrliche Aussage "keine der aktuellen Stufen". Kommt ein neuer
-       Tarif dazu, ist das EINE Zeile hier, und bis dahin faellt niemand aus dem Bild.
-       Schluessel klein geschrieben, verglichen wird kleingeschrieben -- ein umbenannter Tarif
-       aus Bubble soll nicht an der Gross-/Kleinschreibung scheitern. */
-    var PLAN_DOT = {
-      "essential":    UC.CITE_COLOR["Editorial"],
-      "professional": UC.CITE_COLOR["UGC / Community"],
-      "enterprise":   UC.CITE_COLOR["Knowledge-Base"]
-    };
-    function planFarbe(name) {
-      var k = String(name == null ? "" : name).trim().toLowerCase();
-      return PLAN_DOT[k] || null;
-    }
+    /* Tarif-Punkte: seit dem 28.09. in core (UC.planPilleHtml, UC.planFarbe), weil settings-billing
+       dieselbe Pille vor dem aktuellen Tarif zeigt. Hier stand die Farbtabelle (Editorial, UGC,
+       Knowledge-Base -- Teal, Blau, Indigo); zwei Kopien liefen beim naechsten Tarif auseinander. */
 
     /* Protokollrelative Adressen ("//cdn…") kommen aus Bubble wirklich vor -- in den Beispiel-
        daten traegt genau ein Team so eine Logo-URL. In einem https-Dokument laedt sie, in einem
@@ -545,19 +532,12 @@
                  (limit == null ? "" : '<span class="uts-quota-lim">/ ' + fmtInt(limit) + '</span>') +
                '</span>';
       }
-      /* Der Punkt bekommt seine Farbe INLINE, aber nur im laufenden Fall. Ohne laufenden Tarif
-         steht KEIN Inline-Wert da und die Daempfung kommt aus teams.css (.uts-plan.is-off) --
-         eine Inline-Farbe wuerde jede Regel dort schlagen, und dann gaebe es zwei Quellen fuer
-         dieselbe Farbe. */
+      /* Die Pille aus core (UC.planPilleHtml): Farbe inline nur im laufenden Fall, sonst der
+         Grundton aus core.css und der gedaempfte Name mit Hinweis. uts-plan bleibt als Klasse
+         daran -- das schmale Bild und die Pruefstaende greifen sie. */
       function planHtml(r) {
         if (!r.plan) return '<span class="up-num is-empty">–</span>';
-        var c = planFarbe(r.plan);
-        return '<span class="up-sent uts-plan' + (r.planAktiv ? "" : " is-off") + '"' +
-                 (r.planAktiv ? "" : ' data-tip="' + esc(UC.t("No active billing plan")) + '"') + '>' +
-                 '<span class="up-sent-dot"' +
-                   (r.planAktiv && c ? ' style="background:' + c + '"' : "") + '></span>' +
-                 '<span class="up-sent-val">' + esc(r.plan) + '</span>' +
-               '</span>';
+        return UC.planPilleHtml(r.plan, r.planAktiv, { klasse: "uts-plan" });
       }
       function cellHtml(key, r) {
         if (key === "prompts") return quotaHtml(r.promptsUsed, r.promptsLimit);

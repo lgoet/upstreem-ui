@@ -101,17 +101,9 @@
 .uts-date { font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
 
 /* ---------- Tarif ----------
-   Nur Farbe, keine Geometrie -- .up-sent bleibt unangetastet.
-
-   Der GRUNDton des Punktes steht hier und nicht in JS: .up-sent-dot bringt aus core keine
-   Hintergrundfarbe mit (die Sentiment-Zelle setzt sie immer inline), und ein Tarif ohne
-   Farbeintrag hatte damit einen unsichtbaren Punkt -- gemessen als rgba(0,0,0,0) bei
-   "Legacy Free". Der neutrale Ton ist die ehrliche Aussage "keine der bekannten Stufen"; eine
-   Zeile mit Farbeintrag ueberschreibt ihn inline.
-   Ohne laufenden Tarif bleibt es bei genau diesem Grundton (teams.js setzt dann bewusst keinen
-   Inline-Wert) und der Name wird gedaempft. */
-.uts-plan .up-sent-dot { background: var(--vc-third); }
-.uts-plan.is-off .up-sent-val { color: var(--vc-muted); }
+   Pille, Grundton des Punktes und die Daempfung ohne laufenden Tarif kommen seit dem 28.09. aus
+   core (UC.planPilleHtml, .up-planpill) -- settings-billing zeigt dieselbe Pille vor dem aktuellen
+   Tarif. Die Begruendung der zwei Regeln steht jetzt dort. */
 
 /* ---------- Wechselknopf ----------
    Geometrie: .up-export aus core. Hier nur, was diese Stelle eigen hat.

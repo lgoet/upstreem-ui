@@ -3214,6 +3214,14 @@
 .up-sent { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 6px; border: 1px solid var(--vc-border); border-radius: 6px; flex: 0 0 auto; }
 .up-sent-dot { width: 6px; height: 6px; border-radius: 2px; flex: 0 0 auto; }
 .up-sent-val { font-size: 13px; font-weight: 500; color: var(--vc-text); font-variant-numeric: tabular-nums; }
+/* Der Tarif als Pille (UC.planPilleHtml, 28.09. aus teams.css hierher, seit settings-billing sie
+   auch zeigt). Der Grundton des Punktes steht HIER und nicht im JS: .up-sent-dot bringt keine
+   Farbe mit (die Sentiment-Zelle setzt sie immer inline), und ein Tarif ohne Farbeintrag hatte
+   in teams einen unsichtbaren Punkt (gemessen rgba(0,0,0,0) bei "Legacy Free"). Ein Tarif mit
+   Eintrag ueberschreibt ihn inline; ohne laufenden Tarif bleibt es bei diesem Ton, der Name wird
+   gedaempft. */
+.up-planpill .up-sent-dot { background: var(--vc-third); }
+.up-planpill.is-off .up-sent-val { color: var(--vc-muted); }
 /* ---------- "nothing here" convention ----------
    ONE muted dash for every "no value" cell in the app — sentiment/rank/share percentages,
    brand-mention/citation stacks with zero items. Before this there were three different
