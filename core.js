@@ -10963,6 +10963,17 @@
        die Chrome als "requestAnimationFrame handler took" und "Forced reflow" meldet.
        Jetzt merkt sich der Beobachter, WELCHE Wurzel aufgetaucht ist, und weckt nur die. */
     function runAll(){
+      /* DER ZWEITE ANLAUF IST EIN NICHTS (28.09.). scheduleAll plant runAll zweimal, ueber rAF UND
+         ueber die Uhr (Begruendung dort). Der erste Lauf verbraucht G.hot und setzt G.pending
+         zurueck -- und ohne diesen Riegel fand der zweite G.hot leer vor, und leer heisst in der
+         Schleife unten "alle". Jede neu aufgetauchte Wurzel weckte so ALLE Beobachter: gemessen
+         am 27.09. weckte eine einzige .umk-root den umk-Beobachter zweimal und utf, umf und ufb je
+         einmal; auf der Prompts-Seite sind das alle 19 initAll fuer eine Wurzel.
+         G.pending ist genau dann gesetzt, wenn Arbeit ansteht: scheduleAll setzt es, und die
+         Wiederholung waehrend einer Ziehbewegung darunter laesst es stehen. Einen Aufruf, der
+         ohne G.pending einen vollen Durchgang erwartet, gibt es nicht -- der Weckruf fuer alle
+         ist window.__upWecken, und das Auffangnetz meldet ueber scheduleAll mit Selektor an. */
+      if (!G.pending) return;
       /* NICHT waehrend einer Ziehbewegung. onFound() sucht die Wurzel jeder Komponente und laesst
          sie sich neu einrichten -- in der Konsole des Nutzers stand genau dieser Handler mit 384ms
          und 305ms als laengste Aufgabe. Waehrend des Ziehens entstehen dauernd Knoten (Legenden,
@@ -11049,8 +11060,10 @@
       /* Auch hier beide Wege. Feuert rAF nicht (verdeckter Tab), blieb G.pending fuer immer auf
          true -- und damit war JEDE weitere Anmeldung ein Nichts: das Auffangnetz meldete brav,
          kam aber nie durch. Eine Komponente, die in einem Hintergrund-Tab dazukam, richtete sich
-         dann bis zum Tabwechsel nicht ein. runAll selbst ist gegen Doppelaufruf sicher, es setzt
-         G.pending zurueck und arbeitet nur die vorgemerkten Wurzeln ab. */
+         dann bis zum Tabwechsel nicht ein. Welcher der beiden zuerst kommt, macht die Arbeit; der
+         andere ist ein Nichts, weil runAll zuerst G.pending prueft. Hier stand bis zum 28.09.,
+         runAll sei "gegen Doppelaufruf sicher" -- das war es nicht: der zweite Lauf ging mit leerem
+         G.hot durch ALLE Beobachter (siehe den Riegel in runAll). */
       if (window.requestAnimationFrame) window.requestAnimationFrame(runAll);
       setTimeout(runAll, 24);
     }
