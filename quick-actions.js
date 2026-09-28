@@ -1680,25 +1680,25 @@
     clearAll();
   }
   /* ---------- filter tooltip: hover "/ for filters" ---------- */
-  /* Format der Spalten-Explainer aus dem Core (.up-explain): dunkle Karte, helle Beispielplatte
-     oben, darunter Ueberschrift und ein Fliesstext, mit einer Spitze auf das Element, das sie
-     geoeffnet hat. Vorher war das hier ein eigenes Tooltip-Format -- heller Grund, drei Absaetze,
-     eigene Rundung -- und damit das einzige Erklaerfeld der App, das anders aussah.
-     Die Farben stehen literal da, wie im Core auch: die Karte haengt ausserhalb der Wurzel, die
-     Variablen der Komponente reichen nicht bis hierher. Genau daran war die dunkle Variante des
-     Core-Explainers schon einmal unsichtbar geworden. */
+  /* DAS IST core's Erklaerkarte (.up-explain), nicht mehr ihre Kopie (28.09.): dunkle Karte,
+     helle Beispielplatte oben, darunter Ueberschrift und Fliesstext, mit einer Spitze auf das
+     Element, das sie geoeffnet hat. Die Klassen sind die des Bauteils -- liegt core.css auf der
+     Seite (ueber die Seitenleiste der Normalfall), kommt jeder Wert von dort, auch Grund und
+     Tinte aus --vc-inverse-bg/-ink.
+     mqa-tip bleibt als Marke daneben: quick-actions.css haelt darunter einen Rueckfall in
+     :where() bereit, fuer Seiten, auf denen dieser Loader allein steht und core.css fehlt. */
   var tipEl = document.createElement("div");
-  tipEl.className = "mqa-tip";
+  tipEl.className = "up-explain mqa-tip";
   tipEl.innerHTML =
-    '<div class="mqa-tip-vis">' +
+    '<div class="up-explain-vis">' +
       '<div class="mqa-tip-flow">' +
         '<span class="mqa-tip-key">/</span><span class="mqa-tip-arrow">→</span>' +
         '<span class="mqa-mini">URLs</span><span class="mqa-tip-arrow">→</span>' +
         '<span class="mqa-mini">Type You</span>' +
       '</div>' +
     '</div>' +
-    '<div class="mqa-tip-h">Filters</div>' +
-    '<div class="mqa-tip-t">Type / to pick what you are looking for, then stack filters like ' +
+    '<div class="up-explain-h">Filters</div>' +
+    '<div class="up-explain-t">Type / to pick what you are looking for, then stack filters like ' +
       '/type, /market or /mentioning. Every pick becomes a chip; keep typing to search inside ' +
       'them, backspace removes the last one.</div>';
   overlay.appendChild(tipEl);
@@ -1717,7 +1717,8 @@
     tipEl.style.left = Math.round(left) + "px"; tipEl.style.top = Math.round(top) + "px";
     /* Die Spitze zeigt auf den Hinweis, nicht auf die Mitte der Karte -- bei angestossenem
        linken oder rechten Rand faellt beides auseinander. */
-    tipEl.style.setProperty("--mqa-caret", Math.round(r.left + r.width / 2 - left) + "px");
+    /* --up-caret: der Name, den die Spitze von .up-explain liest (vorher --mqa-caret der Kopie). */
+    tipEl.style.setProperty("--up-caret", Math.round(r.left + r.width / 2 - left) + "px");
   }
   function hideTip(){ tipEl.classList.remove("is-on"); }
   if (phCmdEl){

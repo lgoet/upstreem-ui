@@ -1196,17 +1196,17 @@
         }).join("");
       }
       if (kind === "used"){
-        return '<span class="udt-explain-row">1.2k</span>';
+        return '<span class="up-explain-row">1.2k</span>';
       }
       if (kind === "share"){
-        return '<span class="udt-explain-row">18.4%' +
-               '<span class="udt-explain-up">' + TREND_UP + '</span>' +
-               '<span class="udt-explain-up">2.9%</span></span>' +
-               '<span class="udt-explain-row">6.1%' +
-               '<span class="udt-explain-down">' + TREND_DOWN + '</span>' +
-               '<span class="udt-explain-down">1.4%</span></span>';
+        return '<span class="up-explain-row">18.4%' +
+               '<span class="up-explain-up">' + TREND_UP + '</span>' +
+               '<span class="up-explain-up">2.9%</span></span>' +
+               '<span class="up-explain-row">6.1%' +
+               '<span class="up-explain-down">' + TREND_DOWN + '</span>' +
+               '<span class="up-explain-down">1.4%</span></span>';
       }
-      return '<span class="udt-explain-row">6.9%</span>';
+      return '<span class="up-explain-row">6.9%</span>';
     }
     /* Share text comes from UC.EXPLAIN_TEXT (core) — same wording urls-table's Share column uses,
        just "URL" swapped for "domain". Used/Citation Type have no counterpart elsewhere, local. */
@@ -1225,10 +1225,13 @@
       var info = explainInfo(kind);
       if (!info) return;
       explain.setAttribute("data-theme", isDark ? "dark" : "light");
+      /* Die Karte ist core's .up-explain samt Platte, Titel und Text -- dieselben Klassen wie in
+         urls-table. Hier stand bis zum 28.09. eine wortgleiche udt-explain-Kopie davon; lokal
+         bleibt nur der Chip des Zitationstyps (.udt-explain-chip), den es nur hier gibt. */
       explain.innerHTML =
-        '<div class="udt-explain-vis">' + explainVisual(kind) + '</div>' +
-        '<div class="udt-explain-h">' + esc(info.h) + '</div>' +
-        '<div class="udt-explain-t">' + esc(info.t) + '</div>';
+        '<div class="up-explain-vis">' + explainVisual(kind) + '</div>' +
+        '<div class="up-explain-h">' + esc(info.h) + '</div>' +
+        '<div class="up-explain-t">' + esc(info.t) + '</div>';
       explain.classList.add("is-on");
       var r = el.getBoundingClientRect();
       var er = explain.getBoundingClientRect();

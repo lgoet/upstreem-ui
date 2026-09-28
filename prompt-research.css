@@ -121,7 +121,9 @@
   width: 56px; height: 56px; border-radius: 18px;
   background: linear-gradient(180deg, var(--vc-bg), var(--vc-heading-bg));
   border: 1px solid var(--vc-border);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 12px 34px rgba(31,31,27,0.055);
+  /* e-3 wie sein Zwilling .udb-core in discover-brands (28.09.; vorher der alte Kartenschatten
+     aus Ask Mira, 0 12px 34px). */
+  box-shadow: var(--up-e-3);
   display: grid; place-items: center; position: relative; z-index: 2; color: var(--vc-text);
 }
 .upr-research-orb::after { content: ""; position: absolute; inset: 9px; border-radius: 13px; border: 1px solid var(--vc-border); pointer-events: none; }
@@ -249,7 +251,9 @@
 .upr-composer {
   width: 100%; min-height: 130px;
   border: 1px solid var(--vc-border); border-radius: 32px; background: var(--vc-bg);
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.05);
+  /* e-1: das Feld liegt auf der Seite (28.09.; vorher 0 0 4px .05, derselbe Wert wie Miras
+     Eingabefeld -- das ebenfalls auf e-1 steht). */
+  box-shadow: var(--up-e-1);
   padding: 16px 8px 8px; display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: end;
   position: relative; transition: border-color 170ms ease, box-shadow 170ms ease;
 }

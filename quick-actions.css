@@ -27,7 +27,12 @@
   --am-card: #ffffff;
   --am-trigger-bg: rgba(255,255,255,0.60);
   --am-overlay: rgba(17,18,20,0.30);
-  --am-shadow: 0 24px 64px rgba(17,18,20,0.18), 0 6px 16px rgba(17,18,20,0.07);
+  /* Die Palette liegt ueber einem Schleier, also die vierte Tiefe aus core (28.09.; vorher ein
+     eigener Zweilagen-Wert). Ohne core.css auf der Seite gilt der bisherige Wert als Rueckfall. */
+  --am-shadow: var(--up-e-4, 0 24px 64px rgba(17,18,20,0.18), 0 6px 16px rgba(17,18,20,0.07));
+  /* Grund und Tinte der Erklaerkarte (.up-explain, siehe "filter tooltip" weiter unten): die
+     umgekehrten Token aus core, und wo core fehlt, die Werte, die die Karte bisher hatte. */
+  --am-inv-bg: var(--vc-inverse-bg, #1f1f1b); --am-inv-ink: var(--vc-inverse-ink, #ffffff);
   /* Was referenced by three hover states (.mqa-chip-x, .mqa-clear, .mqa-recent-x) but never
      defined in the original file — those hovers silently painted no background at all. Value
      matches the icon-button hover tone used across the rest of the app (e.g. --vc-switch-bg). */
@@ -62,7 +67,8 @@
   --am-border: #3e3e44; --am-border-strong: #34343a;
   --am-soft: #28282c; --am-soft-2: #ffffff0d; --am-card: #232326; --am-trigger-bg: #1a1a1a;
   --am-overlay: rgba(0,0,0,0.55);
-  --am-shadow: 0 24px 64px rgba(0,0,0,0.55), 0 6px 16px rgba(0,0,0,0.4);
+  --am-shadow: var(--up-e-4, 0 24px 64px rgba(0,0,0,0.55), 0 6px 16px rgba(0,0,0,0.4));
+  --am-inv-bg: var(--vc-inverse-bg, #eeedef); --am-inv-ink: var(--vc-inverse-ink, #1f1f1b);
   --am-hover-bg: #28282c;
 }
 #mira-quick-actions, #mira-quick-actions *, #mira-quick-actions *::before, #mira-quick-actions *::after,
@@ -195,17 +201,17 @@
    Abheben. Zusammen sind es 2px Gesamtausdehnung statt 3 -- einen weniger als vorher.
    Im Dunkeln beide kraeftiger (24 und 16%), weil ein Schatten auf dunklem Grund weniger hergibt.
    Alle vier Deckkraefte am 09.09. um 40 Prozent zurueck (22/12 und 40/26 mal 0.6).
-   DIESE WERTE STEHEN AUCH IN CORE (.up-entchip.is-lifted) und muessen dort MITWANDERN: diese
-   Datei ist absichtlich eigenstaendig -- ihr Bubble-Loader zieht nur quick-actions.css/.js,
-   core ist auf ihrer Seite nicht im Baum. Deshalb eine Kopie und kein Import, und deshalb
-   dieser Hinweis an beiden Stellen. */
+   DER SCHATTEN IST SEIT DEM 28.09. DAS TOKEN --up-e-chip AUS CORE -- dieselben Zahlen, an einer
+   Stelle statt an acht. Diese Datei ist trotzdem eigenstaendig: ihr Bubble-Loader zieht nur
+   quick-actions.css/.js, und wo core nicht im Baum ist, gelten die Werte hier als Rueckfall
+   der var(). */
 .mqa-chip {
   display: inline-flex; align-items: center; gap: 6.5px; height: 26px; padding: 0 6.5px 0 9.75px;
   border-radius: 7.6px; border: 1px solid var(--am-border);
   background: color-mix(in srgb, var(--am-soft-2) 50%, transparent);
   /* Die weiche Lage zwei Pixel weiter (Streuung 2 -> 4, Versatz 1 -> 2). Die dichte Lage an der
      Kante bleibt: sie zeichnet die Kante, sie traegt nicht den Schatten. */
-  box-shadow: 0 1px 1px rgba(0,0,0,0.13), 0 2px 4px rgba(0,0,0,0.07);
+  box-shadow: var(--up-e-chip, 0 1px 1px rgba(0,0,0,0.13), 0 2px 4px rgba(0,0,0,0.07));
   /* 17.09.: SCHRIFT IN DER PRIMAERFARBE. Angefordert -- ein Chip, der im Suchfeld steht, ist eine
      Auswahl des Nutzers und keine Beschriftung. Der Unterschied zwischen Dimension und Wert
      bleibt am Gewicht (500 gegen 400). */
@@ -213,7 +219,7 @@
 }
 /* [data-theme="dark"] als Vorfahre, wie die Nachbarregeln dieser Datei. */
 [data-theme="dark"] .mqa-chip {
-  box-shadow: 0 1px 1px rgba(0,0,0,0.24), 0 2px 4px rgba(0,0,0,0.16); }
+  box-shadow: var(--up-e-chip, 0 1px 1px rgba(0,0,0,0.24), 0 2px 4px rgba(0,0,0,0.16)); }
 .mqa-chip b { font-weight: 400; color: var(--am-text); }   /* nur der Wert: -100 Gewicht, gleiche Farbe */
 .mqa-chip-x {
   width: 16px; height: 16px; border: 0; border-radius: 4px; background: transparent; cursor: pointer;
@@ -281,7 +287,8 @@
   border-radius: 6px; background: #1f1f1b; color: #ffffff;
   font-family: var(--mqa-font); font-size: 12px; font-weight: 500; line-height: 1;
   white-space: nowrap; pointer-events: none;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+  /* e-2 wie .up-tip in core (28.09.); ohne core der bisherige Wert. */
+  box-shadow: var(--up-e-2, 0 4px 14px rgba(0,0,0,0.18));
   opacity: 0; transform: translateY(4px);
   transition: opacity .14s ease, transform .14s ease;
 }
@@ -402,7 +409,8 @@
 .mqa-rowmenu {
   position: fixed; z-index: 2147483601; min-width: 180px; padding: 5px;
   border-radius: 10px; background: var(--am-card); border: 1px solid var(--am-border);
-  box-shadow: 0 10px 30px rgba(17,18,20,.14);
+  /* Ein Menue: e-2, dieselbe Tiefe wie jedes Dropdown der App (28.09.; vorher 0 10px 30px). */
+  box-shadow: var(--up-e-2, 0 10px 30px rgba(17,18,20,.14));
   opacity: 0; pointer-events: none; transform: translateY(4px);
   transition: opacity .12s ease, transform .12s ease;
 }
@@ -464,13 +472,13 @@
   flex: 0 0 auto; display: inline-flex; align-items: center; height: 22px; padding: 0 5.5px 0 8.25px;
   border-radius: 6.4px; border: 1px solid var(--am-border);
   background: color-mix(in srgb, var(--am-soft-2) 50%, transparent);
-  /* Einen Pixel weiter als vorher (Streuung 2 -> 3), also einen weniger als beim grossen Chip --
-     der kleine soll nicht staerker schweben als der grosse. */
-  box-shadow: 0 1px 1px rgba(0,0,0,0.13), 0 1px 3px rgba(0,0,0,0.07);
+  /* Mit core derselbe Schatten wie der grosse Chip (--up-e-chip, Begruendung dort). Der Rueckfall
+     ohne core behaelt die alte, einen Pixel engere Fassung. */
+  box-shadow: var(--up-e-chip, 0 1px 1px rgba(0,0,0,0.13), 0 1px 3px rgba(0,0,0,0.07));
   color: var(--am-muted); font-size: 11px; font-weight: 500; white-space: nowrap; gap: 5.5px;
 }
 [data-theme="dark"] .mqa-mini {
-  box-shadow: 0 1px 1px rgba(0,0,0,0.24), 0 1px 3px rgba(0,0,0,0.16); }
+  box-shadow: var(--up-e-chip, 0 1px 1px rgba(0,0,0,0.24), 0 1px 3px rgba(0,0,0,0.16)); }
 /* Nur der Wert: eine Stufe leichter und gedaempft, genau wie in .mqa-chip b. */
 .mqa-mini b { font-weight: 400; color: var(--am-muted-2); }
 .mqa-recent-q { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -506,58 +514,58 @@
    Hover-Text hier. Der Tooltip selbst bleibt unveraendert. */
 .mqa-ph-cmd { pointer-events: auto; transition: color 140ms ease; }
 .mqa-ph-cmd:hover { color: var(--am-muted); }
-/* Werte 1:1 aus core.css' .up-explain uebernommen -- Breite, Polsterung, Rundung, Grund, Schatten,
-   Spitze und die Umkehr im Dark Mode. Nachgebaut statt importiert: diese Datei laedt kein core.css
-   (siehe Kopf). Die Farben sind dort ohnehin literal, weil die Karte am Rand der Komponente haengt
-   und deren Variablen sie nicht erreichen -- hier gilt dasselbe. */
-.mqa-tip {
-  position: fixed; z-index: 2147483600; width: 248px; padding: 8px;
-  border-radius: 14px; background: #1f1f1b;
+/* DIE KARTE IST core's .up-explain (28.09.). quick-actions.js baut sie mit den Klassen des
+   Bauteils -- up-explain, up-explain-vis/-h/-t --, und liegt core.css auf der Seite, kommt jeder
+   Wert von dort. Das ist der Normalfall: die Seitenleiste laedt core.css und bringt diese Datei
+   mit. Vorher stand hier eine Kopie mit zwanzig festen Farben, die bei jeder Aenderung an core
+   von Hand nachgezogen werden musste.
+   OHNE core.css (der eigene Loader dieser Datei laedt es nicht, siehe Kopf) haette die Karte
+   keine einzige Regel. Dafuer steht darunter derselbe Satz noch einmal, in :where() -- also mit
+   Spezifitaet 0: er verliert gegen jede Regel aus core, egal in welcher Reihenfolge die Dateien
+   laden, und traegt nur dort, wo core fehlt. Grund und Tinte kommen aus --am-inv-bg/-ink (oben in
+   der Palette: das Token aus core, sonst der bisherige Wert); darum braucht auch der Rueckfall
+   keine eigene Dunkel-Regel. */
+:where(.mqa-tip) {
+  position: fixed; z-index: 2147483001; width: 248px; padding: 8px; border: 0;
+  border-radius: 14px; background: var(--am-inv-bg); color: var(--am-inv-ink);
   box-shadow: var(--up-e-2, 0 12px 32px rgba(0,0,0,.28));
   font-family: var(--mqa-font); text-align: left; box-sizing: border-box;
   opacity: 0; pointer-events: none; transform: translateY(-4px);
   transition: opacity .14s ease, transform .14s ease;
 }
-.mqa-tip * { box-sizing: border-box; }
-.mqa-tip.is-on { opacity: 1; transform: translateY(0); }
+:where(.mqa-tip *) { box-sizing: border-box; }
+:where(.mqa-tip.is-on) { opacity: 1; transform: translateY(0); }
 /* Spitze auf den Hinweis, nicht auf die Kartenmitte -- die beiden fallen auseinander, sobald die
-   Karte an den Fensterrand stoesst. */
-.mqa-tip::before {
-  content: ""; position: absolute; top: -6px; left: var(--mqa-caret, 50%);
+   Karte an den Fensterrand stoesst. --up-caret setzt quick-actions.js. */
+:where(.mqa-tip)::before {
+  content: ""; position: absolute; top: -6px; left: var(--up-caret, 50%);
   transform: translateX(-50%);
   border-left: 12px solid transparent; border-right: 12px solid transparent;
-  border-bottom: 11px solid #1f1f1b;
+  border-bottom: 11px solid var(--am-inv-bg);
 }
-.mqa-tip.is-flipped::before {
+:where(.mqa-tip.is-flipped)::before {
   top: auto; bottom: -10px;
-  border-bottom: 0; border-top: 11px solid #1f1f1b;
+  border-bottom: 0; border-top: 11px solid var(--am-inv-bg);
 }
-/* Die helle Beispielplatte des Explainers: hier zeigt sie den Ablauf eines Filters statt einer
-   Tabellenzelle -- dieselbe Rolle, dasselbe Plattenformat. */
-.mqa-tip-vis {
-  background: #ffffff; border-radius: 9px; padding: 11px 12px;
+:where(.mqa-tip .up-explain-vis) {
+  background: var(--am-inv-ink); color: var(--am-inv-bg); border-radius: 9px; padding: 11px 12px;
   display: flex; flex-direction: column; gap: 7px; align-items: flex-start;
   margin-bottom: 9px; min-height: 46px; justify-content: center;
 }
-.mqa-tip-h { font-size: 14.5px; font-weight: 600; line-height: 1.2; padding: 0 3px; margin-bottom: 4px; color: #ffffff; }
-.mqa-tip-t { font-size: 13.5px; font-weight: 400; line-height: 1.5; padding: 0 3px; color: rgba(255,255,255,0.68); }
+:where(.mqa-tip .up-explain-h) { font-size: 14.5px; font-weight: 600; line-height: 1.2; padding: 0 3px; margin-bottom: 4px; color: var(--am-inv-ink); }
+:where(.mqa-tip .up-explain-t) { font-size: 13.5px; font-weight: 400; line-height: 1.5; padding: 0 3px; color: color-mix(in srgb, var(--am-inv-ink) 68%, transparent); }
+/* Der INHALT der Platte ist eigen: sie zeigt den Ablauf eines Filters statt einer Tabellenzelle.
+   Seine Schrift ist die der Platte (--am-inv-bg); Rahmen und Grund der Taste bleiben fest, sie
+   zeigen eine Taste und keine Flaeche der Karte. */
 .mqa-tip-flow { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
 .mqa-tip-key {
   display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 20px; padding: 0 5px;
   border-radius: 5px; border: 1px solid #e4e2e4; background: #f4f4f5;
-  color: #1f1f1b; font-size: 11px; font-weight: 600;
+  color: var(--am-inv-bg); font-size: 11px; font-weight: 600;
 }
 .mqa-tip-arrow { color: var(--vc-fourth); font-size: 11px; }
-.mqa-tip .mqa-mini { color: #1f1f1b; }
-/* Dark Mode dreht die Karte um, die Platte bleibt eine eigene Flaeche -- exakt wie beim Explainer. */
-.mqa-tip[data-theme="dark"] { background: #eeedef; }
-.mqa-tip[data-theme="dark"]::before { border-bottom-color: #eeedef; }
-.mqa-tip[data-theme="dark"].is-flipped::before { border-top-color: #eeedef; }
-.mqa-tip[data-theme="dark"] .mqa-tip-h { color: #1f1f1b; }
-.mqa-tip[data-theme="dark"] .mqa-tip-t { color: rgba(31,31,27,0.66); }
-.mqa-tip[data-theme="dark"] .mqa-tip-vis { background: #1c1c1f; }
-.mqa-tip[data-theme="dark"] .mqa-tip-key { background: #232326; border-color: #4a4a4a; color: #f0f0f0; }
-.mqa-tip[data-theme="dark"] .mqa-mini { color: #f0f0f0; }
+.mqa-tip .mqa-mini { color: var(--am-inv-bg); }
+.mqa-tip[data-theme="dark"] .mqa-tip-key { background: #232326; border-color: #4a4a4a; }
 .mqa-modal:not(.has-results) .mqa-sep { display: none; }   /* no separator when there are no results/skeleton above */
 
 /* ---------- skeleton ---------- */

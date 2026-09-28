@@ -105,7 +105,7 @@
         '.ust-cell[data-theme="dark"]{--ust-more-color:#a0a0a0;}',
         '.ust-cell[data-theme="dark"] .ust-more{background:#232326;}',
         '.ust-cell[data-theme="dark"] .ust-more:hover{background:rgba(42,42,42,0.85);color:#e0e0e0;}',
-        '.ust-topics-popup.ust-topics-popup{position:fixed;z-index:2147483000;display:none;pointer-events:none;max-width:320px;padding:10px;border:1px solid #d9dde3;border-radius:12px;background:#fff;box-shadow:0 14px 34px rgba(0,0,0,0.14);font-family:Geist,Inter,system-ui,-apple-system,sans-serif;}',
+        '.ust-topics-popup.ust-topics-popup{position:fixed;z-index:2147483000;display:none;pointer-events:none;max-width:320px;padding:10px;border:1px solid #d9dde3;border-radius:12px;background:#fff;box-shadow:var(--up-e-2);font-family:Geist,Inter,system-ui,-apple-system,sans-serif;}',
         '.ust-topics-popup .ust-popup-inner{display:flex;flex-wrap:wrap;gap:8px;}',
         /* Border brightened vs. the plain --vc-border dark value (#353535) — against this popup's
            #151515 background that reads as barely-there/blurry. Same #454545 fix already applied
@@ -114,7 +114,11 @@
         /* #3e3e44 ist --up-menu-border aus core, der Rahmenwert fuer alles, was ueber der Seite
            schwebt. Hier stand #2c2e33 -- neun Helligkeitsstufen ueber der eigenen Flaeche des
            Kastens, also praktisch kein Rahmen. Derselbe Fall wie die Bulkbar. */
-        '.ust-topics-popup[data-theme="dark"]{background:#232326;border-color:#3e3e44;box-shadow:0 14px 34px rgba(0,0,0,0.6);}',
+        /* Der Schatten ist seit dem 28.09. --up-e-2 wie bei jedem Popover am Ausloeser (vorher
+           0 14px 34px, dunkel .6). Das Token erreicht das Popup am <body>, seit die Tiefen in core
+           an :root und [data-theme="dark"] stehen, und dreht mit dessen data-theme -- darum steht
+           in der Dunkel-Regel kein Schatten mehr. */
+        '.ust-topics-popup[data-theme="dark"]{background:#232326;border-color:#3e3e44;}',
         '.ust-topics-popup[data-theme="dark"] .ust-tag{background:color-mix(in srgb,var(--ust-tag-color,#6b7280) 22%,transparent);color:#e0e0e0;}'
       ].join('');
       document.head.appendChild(style);

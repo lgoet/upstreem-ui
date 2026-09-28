@@ -43,13 +43,13 @@
 .uca-star svg { width: 100%; height: 100%; display: block; }
 
 /* ---------- Portal-Wrapper, Overlay, Karte ---------- */
+/* Der Schatten der Karte ist seit dem 28.09. --up-e-4 aus core (liegt ueber einem Schleier); hier
+   stand ein eigener Zweilagen-Wert je Thema. Geblieben ist nur der Schleier. */
 .uca-portal {
   --uca-scrim: rgba(17,18,20,0.34);
-  --uca-shadow: 0 24px 64px rgba(17,18,20,0.18), 0 6px 16px rgba(17,18,20,0.07);
 }
 .uca-portal[data-theme="dark"] {
   --uca-scrim: rgba(0,0,0,0.60);
-  --uca-shadow: 0 24px 64px rgba(0,0,0,0.55), 0 6px 16px rgba(0,0,0,0.4);
 }
 /* Eingabefelder, Assistenten-Knoepfe und die Sekundaerknoepfe unten liegen AUF der Karte und
    tragen deshalb die Farbe der Karte. --up-surface ist im Dunkeln #121212 und damit dunkler als
@@ -90,7 +90,7 @@
   position: relative; width: min(600px, 100%); max-height: min(92vh, 900px);
   display: flex; flex-direction: column;
   background: var(--vc-bg); color: var(--vc-text);
-  border: 1px solid var(--vc-border); border-radius: 18px; box-shadow: var(--uca-shadow); overflow: hidden;
+  border: 1px solid var(--vc-border); border-radius: 18px; box-shadow: var(--up-e-4); overflow: hidden;
   transform: translateY(8px) scale(.985); opacity: 0;
   transition: transform .24s cubic-bezier(.22,1,.36,1), opacity .2s ease;
 }
@@ -271,8 +271,9 @@
 
 /* ---------- Erklaerkarte der Formate ----------
    Das ist die App-Erklaerkarte (.up-explain aus core), nicht mehr ein eigener Tooltip-Typ. Sie
-   haengt im <body>, ausserhalb jeder .up-root -- die --vc-Tokens loesen dort NICHT auf, jede Farbe
-   hier muss literal sein. Gleiche Begruendung wie bei .upd-explain-vis im Performance-Detail.
+   haengt im Portal dieses Popups. Grund, Tinte und Platte kommen aus core (--vc-inverse-bg/-ink,
+   seit 28.09.); die Probe hat deshalb keine eigene Farbe mehr, sie erbt die Schrift der Platte --
+   genau das #1f1f1b / #eeedef, das hier vorher zweimal von Hand stand.
    Breiter als die 248px des Standards, weil ein dreizeiliges Codebeispiel sonst mitten im Tag
    umbricht und dann weder als Markdown noch als HTML lesbar ist. */
 .up-explain.uca-explain { width: 320px; }
@@ -280,10 +281,8 @@
 .uca-sample {
   font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
   font-size: 11.5px; line-height: 1.65; white-space: pre; overflow-x: auto;
-  color: #1f1f1b;
 }
 .uca-sample::-webkit-scrollbar { height: 0; }
-.up-explain[data-theme="dark"] .uca-sample { color: #eeedef; }
 /* Markdown-Auszeichnung und HTML-Tags eingefaerbt, damit man auf einen Blick sieht, WAS das
    Format in den Text schreibt -- darum geht es bei der Wahl. Plain text bleibt bewusst einfarbig:
    dass dort nichts eingefaerbt ist, IST die Aussage. */

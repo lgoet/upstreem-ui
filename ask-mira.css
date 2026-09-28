@@ -71,8 +71,12 @@
     --am-user-bg: var(--vc-heading-bg);
     --am-user-text: var(--vc-text);
     --am-card: var(--vc-bg);
-    --am-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 12px 34px rgba(31,31,27,0.055);
-    --am-shadow-sm: 0 0 4px rgba(0,0,0,0.05);
+    /* Die zwei Schatten dieser Datei zeigen seit dem 28.09. auf die Tiefen aus core, statt eigene
+       Werte je Thema zu fuehren: --am-shadow traegt das URL-Popover und den Knopf "nach unten"
+       (haengen an einem Ausloeser: e-2), --am-shadow-sm Eingabefeld und Handlungsknopf (liegen
+       auf der Flaeche: e-1). Die dunkle Fassung kommt mit data-theme; ihr eigener Block ist weg. */
+    --am-shadow: var(--up-e-2);
+    --am-shadow-sm: var(--up-e-1);
     /* Mira accent (violet -> blue, kept subtle) — no core counterpart, this is the agent's own. */
     --am-accent: #7c5cff;
     --am-accent-2: #4f8bff;
@@ -1251,15 +1255,17 @@
     width: 34px; height: 46px; border-radius: 8px;
     display: flex; align-items: flex-start; justify-content: center; padding-top: 8px;
     background: var(--am-card); border: 1px solid var(--am-border); color: var(--am-muted);
-    box-shadow: 0 1px 4px rgba(20,22,28,.05);
+    /* Ruht auf der Karte: e-1. Beim Ueberfahren hebt sie sich: e-2 (28.09.; vorher zwei eigene
+       Werte, 0 1px 4px und 0 3px 9px, mit Blaustich). */
+    box-shadow: var(--up-e-1);
     transform: rotate(-8deg);
     transition: transform 200ms cubic-bezier(.2,.8,.3,1), box-shadow 200ms ease, color 120ms ease;
   }
-  .am-cat-card:hover .am-cat-ic { transform: rotate(-4deg) scale(1.02); box-shadow: 0 3px 9px rgba(20,22,28,.10); color: var(--am-text); }
+  .am-cat-card:hover .am-cat-ic { transform: rotate(-4deg) scale(1.02); box-shadow: var(--up-e-2); color: var(--am-text); }
   .am-cat-ic svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
   .am-cat-name { flex: 1 1 auto; min-width: 0; }
   #ask-mira[data-theme="dark"] .am-cat-ic { background: rgba(42,42,42,0.3); border-color: #28282c; box-shadow: var(--up-e-1, 0 1px 4px rgba(0,0,0,.28)); }
-  #ask-mira[data-theme="dark"] .am-cat-card:hover .am-cat-ic { background: rgba(53,54,56,0.3); color: var(--am-text); box-shadow: 0 3px 10px rgba(0,0,0,.38); }
+  #ask-mira[data-theme="dark"] .am-cat-card:hover .am-cat-ic { background: rgba(53,54,56,0.3); color: var(--am-text); box-shadow: var(--up-e-2); }
   /* Das Chevron rueckt beim Ueberfahren 4px nach rechts. transform und nicht margin: ein
      transform laesst den Browser nicht neu umbrechen, die Karte darum bleibt also ruhig.
      Der Uebergang steht in DIESER Regel und nicht in einer weiter oben: zwei Regeln mit
@@ -1417,11 +1423,12 @@
     width: 42px; height: 58px; border-radius: 10px;
     display: flex; align-items: flex-start; justify-content: center; padding-top: 11px;
     background: var(--am-card); border: 1px solid var(--am-border); color: var(--am-muted);
-    box-shadow: 0 1px 4px rgba(20,22,28,.05);
+    /* Wie .am-cat-ic: ruht auf e-1, hebt sich beim Ueberfahren auf e-2 (28.09.). */
+    box-shadow: var(--up-e-1);
     transform: rotate(-8deg);
     transition: transform 200ms cubic-bezier(.2,.8,.3,1), box-shadow 200ms ease, color 120ms ease;
   }
-  .am-rep-card:hover .am-rep-ic { transform: rotate(-4deg) scale(1.02); box-shadow: 0 3px 9px rgba(20,22,28,.10); color: var(--am-text); }
+  .am-rep-card:hover .am-rep-ic { transform: rotate(-4deg) scale(1.02); box-shadow: var(--up-e-2); color: var(--am-text); }
   .am-rep-ic svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
   .am-rep-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
   .am-rep-label { font-size: 14px; font-weight: 600; color: var(--am-text); }
@@ -1451,7 +1458,7 @@
      --vt-row-hover-solid drehen sich mit dem Thema, und #2a2a2a war deckend, aber zu hell --
      dieselbe Meldung wie bei den Kategoriekarten. */
   #ask-mira[data-theme="dark"] .am-rep-ic { background: rgba(42,42,42,0.3); border-color: #28282c; box-shadow: var(--up-e-1, 0 1px 4px rgba(0,0,0,.28)); }
-  #ask-mira[data-theme="dark"] .am-rep-card:hover .am-rep-ic { background: rgba(53,54,56,0.3); color: var(--am-text); box-shadow: 0 3px 10px rgba(0,0,0,.38); }
+  #ask-mira[data-theme="dark"] .am-rep-card:hover .am-rep-ic { background: rgba(53,54,56,0.3); color: var(--am-text); box-shadow: var(--up-e-2); }
 
   /* ===================== COMPOSER ===================== */
   .am-composer-area {
@@ -1614,6 +1621,8 @@
   .am-scroll-bottom.has-new {
     width: auto; padding: 0 15px 0 11px; gap: 7px;
     background: #2f6df6; border-color: #2f6df6; color: #fff;
+    /* AUSNAHME von den Tiefen (28.09. geprueft): das ist ein blauer Schein in der Farbe der Pille,
+       keine Tiefe -- er gehoert zur Meldung "neue Nachricht" wie ihr Blau und faellt mit ihr weg. */
     box-shadow: 0 6px 16px rgba(47,109,246,0.30);
   }
   .am-scroll-bottom.has-new:hover { background: #2b63dd; border-color: #2b63dd; }
@@ -1661,7 +1670,7 @@
   .am-detail-tip {
     position: absolute; bottom: calc(100% + 9px); left: 0; z-index: 80; white-space: nowrap;
     padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 500;
-    background: var(--am-text); color: var(--am-card); box-shadow: 0 6px 18px rgba(0,0,0,0.16);
+    background: var(--am-text); color: var(--am-card); box-shadow: var(--up-e-2);   /* ein Tooltip: e-2 (28.09.; vorher 0 6px 18px) */
     opacity: 0; transform: translateY(3px); pointer-events: none; transition: opacity .14s ease, transform .14s ease;
   }
   #ask-mira.is-flash .am-detail-row:hover .am-detail-tip { opacity: 1; transform: none; }
@@ -1674,7 +1683,7 @@
   .am-model-ic svg { width: 20px; height: 20px; display: block; }
   .am-model-name { letter-spacing: -0.01em; }
   .am-model-chev { width: 14px; height: 14px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; color: var(--am-muted-3); transition: transform .16s ease; }
-  .am-model-menu { position: absolute; bottom: calc(100% + 8px); right: 0; z-index: 60; width: 300px; max-width: 78vw; padding: 6px; border: 1px solid var(--am-border); border-radius: 14px; background: var(--am-card); box-shadow: 0 16px 40px rgba(0,0,0,0.16); opacity: 0; transform: translateY(6px) scale(0.98); transform-origin: bottom right; pointer-events: none; transition: opacity .15s ease, transform .15s ease; }
+  .am-model-menu { position: absolute; bottom: calc(100% + 8px); right: 0; z-index: 60; width: 300px; max-width: 78vw; padding: 6px; border: 1px solid var(--am-border); border-radius: 14px; background: var(--am-card); box-shadow: var(--up-e-2); opacity: 0; transform: translateY(6px) scale(0.98); transform-origin: bottom right; pointer-events: none; transition: opacity .15s ease, transform .15s ease; }
   .am-model.is-open .am-model-menu { opacity: 1; transform: none; pointer-events: auto; }
   .am-model-opt { display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; border: 0; background: transparent; padding: 0 10px; border-radius: 10px; cursor: pointer; font-family: inherit; color: var(--am-text); transition: background .12s ease; }
   .am-model-opt + .am-model-opt { margin-top: 8px; }
@@ -1697,7 +1706,8 @@
   .am-model-opt.is-active .am-model-check { opacity: 1; }
   .am-settings-panel.has-model-menu { overflow: visible; }
   #ask-mira.is-model-open .am-composer-area { overflow: visible; }
-  #ask-mira[data-theme="dark"] .am-model-menu { box-shadow: 0 16px 40px rgba(0,0,0,0.6); }
+  /* Modell- und Aufwandsmenue tragen seit dem 28.09. --up-e-2 wie jedes Menue der App (vorher
+     0 16px 40px, dunkel .6); die eigene Dunkel-Regel ist damit entfallen. */
   .am-detail-label { font-size: 12px; font-weight: 600; color: var(--am-muted); }
   .am-segmented {
     position: relative; display: inline-flex; padding: 3px;
@@ -1818,7 +1828,7 @@
     position: absolute; z-index: 30; transform: translate(-50%, -100%);
     height: 32px; padding: 0 11px; border-radius: 9px;
     border: 1px solid var(--am-border-strong); background: var(--am-card); color: var(--am-text);
-    box-shadow: 0 4px 14px rgba(0,0,0,0.12); cursor: pointer;
+    box-shadow: var(--up-e-2); cursor: pointer;   /* haengt an der Auswahl wie ein Tooltip: e-2 (28.09.) */
     display: none; align-items: center; gap: 6px;
     font-size: 13px; font-weight: 600; white-space: nowrap;
   }
@@ -1937,15 +1947,14 @@
     width: 264px; max-width: 78vw; box-sizing: border-box; padding: 8px;
     /* 14px wie .am-model-menu dieser Datei und wie --up-dd-radius in core. Ein drittes Mass
        in derselben Knopfzeile waere genau die Drift, die die Farbleiter in core beendet hat.
-       Der Schatten bleibt der dieser Komponente (.am-model-menu, .am-msgnav-menu) --
-       --up-dd-shadow waere hier der Fremdkoerper. */
+       Der Schatten ist seit dem 28.09. --up-e-2 wie bei .am-model-menu -- hier stand, ein
+       eigener Wert sei der dieser Komponente; vereinheitlicht wurde auf Anforderung. */
     border: 1px solid var(--up-menu-border, var(--am-border)); border-radius: 14px;
-    background: var(--up-menu-bg, var(--am-card)); box-shadow: 0 16px 40px rgba(0,0,0,0.16);
+    background: var(--up-menu-bg, var(--am-card)); box-shadow: var(--up-e-2);
     opacity: 0; transform: translateY(6px) scale(0.98); transform-origin: bottom right;
     pointer-events: none; transition: opacity 200ms ease, transform 200ms ease;
   }
   .am-eff.is-open .am-eff-menu { opacity: 1; transform: none; pointer-events: auto; }
-  #ask-mira[data-theme="dark"] .am-eff-menu { box-shadow: 0 16px 40px rgba(0,0,0,0.6); }
   /* Die Kopfzeile des Menues: Modell, Stufe, Chevron. Der Klick darauf klappt die Modellliste
      aus -- eine Schaltflaeche, zwei Tiefen.
      Dieselbe Zeile eine Ebene tiefer: sie nimmt Radius und Uebergang vom Knopf darueber, damit
@@ -2179,6 +2188,10 @@
     box-sizing: border-box; display: flex; flex-direction: column; padding: 16px;
     border: 1px solid var(--up-menu-border, var(--am-border)); border-radius: 32px;
     background: var(--up-menu-bg, var(--am-card)); box-shadow: 0 -2px 16px rgba(0,0,0,0.06);
+    /* AUSNAHME von den Tiefen (28.09. geprueft): das Panel liegt 8px neben dem Eingabefeld und
+       bildet mit ihm ein Paar, sein Schatten wirft darum vom Feld WEG (hier nach oben, im Dashboard
+       gespiegelt nach unten). Jede Stufe der Skala reicht ueber diese 8px auf das Feld -- e-2
+       schon mit 10px Versatz und 28px Unschaerfe. Dasselbe gilt fuer die drei Geschwisterwerte. */
     /* Der Deckel kommt vom JS: #ask-mira und .am-shell tragen beide overflow: hidden, also ist
        jedes Pixel ueber der Komponente weg. Eine feste vh-Zahl kann das nicht wissen. */
     max-height: var(--am-pick-max, 320px);
@@ -3766,8 +3779,6 @@
   #ask-mira[data-theme="dark"] {
     --am-user-bg: #2f2f2f;
     --am-user-text: #ececec;
-    --am-shadow: 0 1px 2px rgba(0,0,0,0.4), 0 12px 34px rgba(0,0,0,0.3);
-    --am-shadow-sm: 0 0 4px rgba(0,0,0,0.4);
     --am-accent: #9d83ff;
     --am-accent-2: #6ba0ff;
     --am-accent-soft: rgba(157,131,255,0.13);

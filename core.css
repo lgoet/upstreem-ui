@@ -41,8 +41,8 @@
      nachdem ich ihre Uebergaenge auf var(--up-ease) umgestellt hatte -- vier Regeln, alle
      still.
      core macht es bei --up-globus direkt darueber aus demselben Grund genauso.
-     WAS HIER NICHT STEHT: --up-e-* (die Tiefen). Die aendern sich mit dem Thema und bleiben
-     deshalb an .up-root, zusammen mit den Farben.
+     WAS HIER NICHT STEHT: --up-e-* (die Tiefen). Die aendern sich mit dem Thema und stehen
+     deshalb im naechsten Block, der eine dunkle Fassung hat -- dieser hier hat keine.
 
   /* Schrift. SIEBEN Stufen, und die Zahl ist nachgeschlagen, nicht geschaetzt: Polaris faehrt
      8 Stufen (12/14/16/20/24/28/32/40), Nathan Curtis (EightShapes) empfiehlt "mit wenigen
@@ -130,12 +130,31 @@
   --up-ease:     cubic-bezier(.2, 0, .38, .9);   /* hin und zurueck   (13) */
   --up-ease-auf: cubic-bezier(.22, 1, .36, 1);   /* nur Auftritte      (9) */
 }
-.up-root {
+/* ================= TIEFEN UND UMGEKEHRTE KARTE, AUCH AUSSERHALB EINER WURZEL ================
+   (28.09.) Die Tiefen standen bis heute nur an .up-root. Was am <body> haengt -- Erklaerkarte,
+   Tooltip, die Menues und Leisten mit eigener Palette --, erreichte sie nicht: dort loeste
+   var(--up-e-2) ins Leere auf, und es galt der Rueckfallwert, der an jeder Stelle ein anderer
+   war (.28, .22, .20, .16). Gemessen an der Erklaerkarte: am <body> 0 12px 32px .28, dieselbe
+   Karte im Portal von create-with-ai 0 10px 28px .14 -- ein Bauteil, zwei Schatten, je nachdem,
+   wo es haengt.
+   Deshalb stehen die Werte jetzt HIER, an :root und an .up-root zugleich, dunkel an jedem
+   [data-theme="dark"] -- dieselbe Loesung wie bei den vier Schriftstufen (24.09.), aber mit EINER
+   Quelle: im Block von .up-root stehen sie nicht noch einmal.
+   .up-root[data-theme="dark"] (0,2,0) steht in der dunklen Liste, damit an einer Wurzel die
+   Spezifitaet entscheidet und nicht die Reihenfolge -- .up-root aus der hellen Liste ist (0,1,0).
+   [data-theme="light"] steht in der hellen Liste, damit ein Element, das sein Thema selbst traegt
+   (die Erklaerkarte, ein Menue), auch in einem dunklen Vorfahren hell aufloest statt zu erben. */
+:root, .up-root, [data-theme="light"] {
       /* Tiefe. Vier Stufen, EINE Schattenfarbe -- es aendern sich nur Versatz und Unschaerfe.
          Vier ist auch, was Atlassian fuehrt (sunken, default, raised, overlay); Material und
          Carbon fahren eine 0..24-Leiter, die aber fuer eine App dieser Groesse Zierrat ist.
          --up-dd-shadow bleibt daneben bestehen: die Menues tragen ihn seit langem, und
-         e-2 ist absichtlich derselbe Ton, damit beides nebeneinander stimmt. */
+         e-2 ist absichtlich derselbe Ton, damit beides nebeneinander stimmt.
+         DIE ROLLEN (28.09., beim Aufraeumen von 42 Einzelwerten festgelegt):
+             e-1  liegt auf der Flaeche: Knopf, Feld, Regler, Chip, Kachel
+             e-2  haengt an einem Ausloeser: Menue, Popover, Tooltip, Erklaerkarte, Hover-Anhub
+             e-3  schwebt frei ueber dem Inhalt: Leiste, hervorgehobener Kasten
+             e-4  liegt ueber einem Schleier: Dialog, Palette, Benachrichtigung */
       --up-e-1: 0 1px 2px rgba(0,0,0,.06);
       --up-e-2: 0 10px 28px rgba(0,0,0,.14);   /* = --up-dd-shadow, hell */
       --up-e-3: 0 14px 34px rgba(0,0,0,.16);
@@ -146,8 +165,48 @@
          Onboarding-Hilfe, Mira als Drawer), zweimal mit .15 und zweimal mit .18 -- vier
          Schubladen, die nebeneinander nie zu sehen sind und deshalb auseinanderliefen. */
       --up-e-drawer: -12px 0 32px rgba(0,0,0,.15);
-      /* ===================================================================================== */
-
+      /* DIE SECHSTE TIEFE: DER GEHOBENE CHIP (28.09.). Zwei Lagen, und das ist keine Verzierung:
+         die dichte Lage (1px) zeichnet die Kante, die weiche (4px) hebt den Chip ab -- eine Lage
+         kann nur eines davon. Der Grund des Chips ist dafuer auf die Haelfte zurueckgenommen
+         (quick-actions.css, .mqa-chip): der Schatten TRAEGT die Abgrenzung. e-1 hat eine Lage bei
+         6 Prozent und haette den Chip auf der Eingabezeile verschwinden lassen.
+         Der Wert stand achtmal einzeln da (core .up-entchip.is-lifted, quick-actions .mqa-chip und
+         .mqa-mini, je hell und dunkel). Die kleine Fassung hatte die weiche Lage einen Pixel enger
+         (1px 3px) -- sie traegt jetzt denselben Wert; "nicht staerker schweben als der grosse",
+         die Bedingung von damals, haelt damit weiterhin. */
+      --up-e-chip: 0 1px 1px rgba(0,0,0,.13), 0 2px 4px rgba(0,0,0,.07);
+      /* DIE UMGEKEHRTE KARTE (28.09.): Grund und Tinte der Erklaerkarte (.up-explain), die sich
+         gegen das Thema dreht -- hell eine dunkle Karte, dunkel eine helle. Sie stand fuenfmal
+         als Literal da (core, domains-table, visibility-chart, quick-actions, create-with-ai),
+         je mit eigener Dunkel-Regel.
+         Kein vorhandenes Token trifft sie: --vc-text (#1f1f1b / #e0e0e0) waere als Grund im
+         Dunkeln 14 Stufen grauer, --vc-text-invert (#e0e0e0 / #1f1f1b) als Tinte im Hellen 31
+         Stufen matter als das Weiss der Ueberschrift. Beides haette die Karte sichtbar veraendert.
+         Die helle Beispielplatte IN der Karte ist dieselbe Umkehrung noch einmal: ihr Grund ist
+         die Tinte, ihre Schrift der Grund. Dafuer braucht es kein drittes Token. */
+      --vc-inverse-bg: #1f1f1b;
+      --vc-inverse-ink: #ffffff;
+}
+[data-theme="dark"], .up-root[data-theme="dark"] {
+      /* Die vier Tiefen im dunklen Thema. Sie sind NICHT die hellen mit mehr Deckkraft, auch
+         wenn die Zahlen so aussehen: auf dunklem Grund traegt ein Schatten kaum, deshalb liegt
+         die Arbeit dort beim helleren Rahmen (--vc-border, --up-menu-border), und der Schatten
+         setzt nur die Kante ab. Mehr als .32 macht daraus einen Fleck.
+         Die Masse selbst -- Schrift, Radius, Hoehe, Dauer -- stehen NICHT noch einmal hier:
+         die aendern sich mit dem Thema nicht, und ein zweiter Satz waere ein zweiter Ort zum
+         Auseinanderlaufen. */
+      --up-e-1: 0 1px 2px rgba(0,0,0,.24);
+      --up-e-2: 0 10px 28px rgba(0,0,0,.32);
+      --up-e-3: 0 14px 34px rgba(0,0,0,.38);
+      --up-e-4: 0 20px 48px rgba(0,0,0,.46);
+      /* Dunkel kraeftiger, dieselbe Staffelung wie bei den vier Stufen darueber. */
+      --up-e-drawer: -12px 0 32px rgba(0,0,0,.42);
+      --up-e-chip: 0 1px 1px rgba(0,0,0,.24), 0 2px 4px rgba(0,0,0,.16);
+      /* Die Erklaerkarte im Dunkeln: heller Grund, die Schrift im Ton der hellen Karte. */
+      --vc-inverse-bg: #eeedef;
+      --vc-inverse-ink: #1f1f1b;
+}
+.up-root {
       /* --vc-muted ist um vier Einheiten dunkler als vorher (#6f737c), und das ist KEINE neue
          Schriftfarbe, sondern der Ausgleich fuer den Grund, den ich verschoben habe: auf Weiss
          stand dieser Ton bei Kontrast 4.75, auf der neuen Karte (#f9f8f9) waren es 4.49 -- einen
@@ -459,19 +518,8 @@
          Entscheidung und keine Folge dieser hier. */
       --up-menu-bg: #232326; --up-sel-bg: #28282c; --up-menu-border: #3e3e44;
       --up-dd-shadow: 0 10px 28px rgba(0,0,0,.32);
-      /* Die vier Tiefen im dunklen Thema. Sie sind NICHT die hellen mit mehr Deckkraft, auch
-         wenn die Zahlen so aussehen: auf dunklem Grund traegt ein Schatten kaum, deshalb liegt
-         die Arbeit dort beim helleren Rahmen (--vc-border, --up-menu-border), und der Schatten
-         setzt nur die Kante ab. Mehr als .32 macht daraus einen Fleck.
-         Die Masse selbst -- Schrift, Radius, Hoehe, Dauer -- stehen NICHT noch einmal hier:
-         die aendern sich mit dem Thema nicht, und ein zweiter Satz waere ein zweiter Ort zum
-         Auseinanderlaufen. */
-      --up-e-1: 0 1px 2px rgba(0,0,0,.24);
-      --up-e-2: 0 10px 28px rgba(0,0,0,.32);
-      --up-e-3: 0 14px 34px rgba(0,0,0,.38);
-      --up-e-4: 0 20px 48px rgba(0,0,0,.46);
-      /* Dunkel kraeftiger, dieselbe Staffelung wie bei den vier Stufen darueber. */
-      --up-e-drawer: -12px 0 32px rgba(0,0,0,.42);
+      /* Die vier Tiefen im dunklen Thema stehen seit dem 28.09. im Block vor .up-root, an
+         [data-theme="dark"] -- dort erreichen sie auch, was am <body> haengt. */
       --vc-switch-bg: #232326; --vc-switch-border: #34343a; --vc-third: #a0a0a0; --vc-fourth: #6c717a;
       /* Die Pille hebt ihre Schiene noch einmal an, statt einen festen Ton zu tragen -- sie muss
          der Schiene folgen, die das seit dem 27.09. auch tut (Begruendung bei --vc-switch-rail).
@@ -1077,13 +1125,28 @@
     .up-th-info svg { width: 14px; height: 14px; display: block; }
     .up-th:hover .up-th-info { opacity: 1; }
     .up-th-info:hover { color: var(--vc-text); }
-    /* Appended to <body>, so it sits OUTSIDE .up-root — the component's CSS variables do not
-       reach here and every colour has to be literal. Using var(--vc-text) was exactly why the
-       dark panel rendered with no background at all. */
+    /* DIE ERKLAERKARTE -- EIN Bauteil fuer die ganze App (28.09. zusammengefuehrt).
+       Sie haengt am <body> oder im Portal ihres Konsumenten (UC.makeExplain cfg.mount), also
+       ausserhalb von .up-root. Deshalb stand hier jede Farbe literal, und vier Kopien daneben
+       taten dasselbe (domains-table, visibility-chart, quick-actions, create-with-ai). Seit die
+       umgekehrten Token (--vc-inverse-bg/-ink) und die Tiefen an :root und [data-theme="dark"]
+       stehen, erreichen sie die Karte ueberall: sie traegt ihr Thema selbst als data-theme, und
+       die dunkle Fassung kommt aus dem Token statt aus einer zweiten Regel je Farbe. */
     .up-explain {
       position: fixed; z-index: 2147483001; width: 248px; padding: 8px;
-      border-radius: 14px; background: #1f1f1b;
-      box-shadow: var(--up-e-2, 0 12px 32px rgba(0,0,0,.28));
+      /* border: 0 gegen den UA-Rahmen des Top Layers. UC.makeExplain hebt die Karte per
+         showPopover() nach oben, und das UA-Stylesheet gibt jedem [popover] "border: solid" --
+         gemessen 3px in Schwarz (CanvasText). Die Karten von makeExplain waren dadurch innen 6px
+         schmaler als die der Tabellen (226 statt 232) und trugen im Dunkeln einen schwarzen
+         Rahmen um den hellen Grund. core.js setzt margin und inset schon zurueck, den Rahmen
+         nicht. Aus demselben Grund steht color hier: sonst gilt CanvasText aus derselben Quelle. */
+      border: 0; border-radius: 14px;
+      background: var(--vc-inverse-bg); color: var(--vc-inverse-ink);
+      box-shadow: var(--up-e-2);
+      /* Ausdruecklich links: die Quick Actions haengen die Karte in ihren Schleier, und was
+         Bubble dort an Ausrichtung vorgibt, darf den Fliesstext nicht zentrieren. Stand bisher
+         nur in ihrer Kopie. */
+      text-align: left;
       opacity: 0; pointer-events: none; transition: opacity .14s ease, transform .14s ease;
       transform: translateY(-4px);
       font-family: Geist, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
@@ -1096,12 +1159,12 @@
       content: ""; position: absolute; top: -6px; left: var(--up-caret, 50%);
       transform: translateX(-50%);
       border-left: 12px solid transparent; border-right: 12px solid transparent;
-      border-bottom: 11px solid #1f1f1b;
+      border-bottom: 11px solid var(--vc-inverse-bg);
     }
     /* flipped above the header when there is no room below */
     .up-explain.is-flipped::before {
       top: auto; bottom: -10px;
-      border-bottom: 0; border-top: 11px solid #1f1f1b;
+      border-bottom: 0; border-top: 11px solid var(--vc-inverse-bg);
     }
     /* the visual sits in its own light panel on top; explanation below it on the dark ground */
 
@@ -1112,27 +1175,31 @@
 
     
     
-    /* dark mode inverts the whole card: light ground + dark text, and a dark inner panel with the
-       dark-mode metric colours. */
-    .up-explain[data-theme="dark"] { background: #eeedef; }
-    .up-explain[data-theme="dark"]::before { border-bottom-color: #eeedef; }
-    .up-explain[data-theme="dark"].is-flipped::before { border-top-color: #eeedef; }
+    /* Die drei Dunkel-Regeln fuer Grund und Spitze sind entfallen: das dreht jetzt das Token. */
     /* Explainer panel content — the light "visual sample" plate + heading/body text on the dark
-       ground. prompts-table and visibility-chart each carried their own byte-identical copy of
-       this under a upt-/vt- prefix; this is the one both should eventually point at instead. */
+       ground. prompts-table, urls-table, visibility-chart und domains-table trugen je eine
+       wortgleiche Kopie unter eigenem Praefix; seit dem 28.09. zeigen alle vier hierher. */
     /* Column flex, not a plain block: the rows inside are inline-flex, so in a block container
        they flow side by side instead of stacking -- Share showed its up-row and down-row on one
        line and URL Type put all three chips in a row. domains-table's own .udt-explain-vis always
        had this and looked right; the core copy that urls-table migrated onto had dropped it.
        Values kept identical to that rule so both tables render the same panel. */
+    /* Die Platte ist die Karte noch einmal umgekehrt: ihr Grund ist die Tinte der Karte, ihre
+       Schrift der Grund der Karte. Im Hellen genau die alten Werte (#ffffff / #1f1f1b); im
+       Dunkeln #1f1f1b statt #1c1c1f und #eeedef statt #f0f0f0 -- drei und zwei Stufen, und
+       create-with-ai trug fuer seine Probe schon genau diese Schrift. color steht an der Platte,
+       damit alles darauf die Schrift erbt, statt sie Zeile fuer Zeile zu setzen. */
     .up-explain-vis {
-      background: #ffffff; border-radius: 9px; padding: 11px 12px;
+      background: var(--vc-inverse-ink); color: var(--vc-inverse-bg);
+      border-radius: 9px; padding: 11px 12px;
       display: flex; flex-direction: column; gap: 7px; align-items: flex-start;
       margin-bottom: 9px; min-height: 46px; justify-content: center;
     }
-    .up-explain-h { font-size: 14.5px; font-weight: 600; line-height: 1.2; padding: 0 3px; margin-bottom: 4px; color: #ffffff; }
-    .up-explain-t { font-size: 13.5px; font-weight: 400; line-height: 1.5; padding: 0 3px; color: rgba(255,255,255,0.68); }
-    .up-explain-row { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 500; color: #1f1f1b; }
+    .up-explain-h { font-size: 14.5px; font-weight: 600; line-height: 1.2; padding: 0 3px; margin-bottom: 4px; color: var(--vc-inverse-ink); }
+    /* 68 Prozent der Tinte, in beiden Themen. Im Dunkeln standen 66 -- eine Mischung statt zweier
+       Werte, und die zwei Punkte mehr Deckung heben den Kontrast auf dem hellen Grund leicht an. */
+    .up-explain-t { font-size: 13.5px; font-weight: 400; line-height: 1.5; padding: 0 3px; color: color-mix(in srgb, var(--vc-inverse-ink) 68%, transparent); }
+    .up-explain-row { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 500; color: var(--vc-inverse-bg); }
     .up-explain-row svg { width: 14px; height: 14px; display: block; }
     .up-explain-up { color: #2ea84a; }
     .up-explain-down { color: #b0200c; }
@@ -1140,16 +1207,14 @@
        this sample must look like the actual table cell, not an older circular approximation of it. */
     /* Ohne Rahmen, seit der echte Chip keinen mehr hat -- die Zeile darueber verspricht, dass
        diese Probe aussieht wie die Zelle. */
+    /* Der 4px-Ring ist die Farbe der Platte (Tinte der Karte), damit sich die Punkte gegenseitig
+       ausschneiden wie in der Zelle -- er folgt der Platte jetzt ueber das Token, auch im Dunkeln. */
     .up-explain-dot { width: 28px; height: 28px; border-radius: 8px; background: #eeedef;
-      border: 0; box-shadow: 0 0 0 4px #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #6f6f6f; }
+      border: 0; box-shadow: 0 0 0 4px var(--vc-inverse-ink); display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #6f6f6f; }
     .up-explain-more { background: #f0f0f0; }
-    .up-explain[data-theme="dark"] .up-explain-h { color: #1f1f1b; }
-    .up-explain[data-theme="dark"] .up-explain-t { color: rgba(31,31,27,0.66); }
-    .up-explain[data-theme="dark"] .up-explain-vis { background: #1c1c1f; }
-    .up-explain[data-theme="dark"] .up-explain-row { color: #f0f0f0; }
     .up-explain[data-theme="dark"] .up-explain-up { color: #6ee7b7; }
     .up-explain[data-theme="dark"] .up-explain-down { color: #fca5a5; }
-    .up-explain[data-theme="dark"] .up-explain-dot { background: #28282c; border-color: #4a4a4a; box-shadow: 0 0 0 4px #1c1c1f; color: #b8b8b8; }
+    .up-explain[data-theme="dark"] .up-explain-dot { background: #28282c; border-color: #4a4a4a; color: #b8b8b8; }
     .up-explain[data-theme="dark"] .up-explain-more { background: #2c2c2c; }
 
     
@@ -2329,7 +2394,10 @@
        kosten nichts und schaden nicht. Die Arbeit macht jetzt der Token oben. */
     .up-root[data-theme="dark"] .up-switch,
     [data-theme="dark"] .up-switch { background: var(--up-switch-off, #444444); }
-    .up-switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 999px; background: #fff; box-shadow: var(--up-e-1, 0 1px 2px rgba(0,0,0,0.2)); transition: transform 160ms ease; }
+    /* Der Knopf: e-1 ohne Rueckfall (28.09.). In den Menues am <body> galt bisher der Rueckfall
+       0 1px 2px .2 -- dreimal so kraeftig wie derselbe Schalter in einer Wurzel. Seit die Tiefen an
+       :root stehen, sehen beide gleich aus. */
+    .up-switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 999px; background: #fff; box-shadow: var(--up-e-1); transition: transform 160ms ease; }
     .up-switch.is-on { background: var(--up-accent); }
     /* dark base .up-switch rule out-specifies .up-switch.is-on, so the ON track needs an
        explicit dark rule — otherwise it stays the dark off-colour.
@@ -2806,7 +2874,10 @@
       border-radius: 6px; background: #1f1f1b; color: #ffffff;
       font-family: Geist, system-ui, sans-serif; font-size: 12px; font-weight: 500; line-height: 1;
       white-space: nowrap; pointer-events: none;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+      /* e-2, die Tiefe von allem, was an einem Ausloeser haengt -- dieselbe wie die Erklaerkarte,
+         die ein grosser Tooltip ist. Vorher ein eigener Wert (0 4px 14px .18). Das Token
+         erreicht den Tooltip am <body>, seit die Tiefen an :root stehen. */
+      box-shadow: var(--up-e-2);
       opacity: 0; transform: translateY(4px);
       transition: opacity .14s ease, transform .14s ease;
     }
@@ -3527,28 +3598,21 @@
    (22/12 und 40/26 mal 0.6) -- der Chip soll sich abheben und nicht schweben.
    WARUM HIER UND NICHT NUR DORT: der Chip ist derselbe Gedanke an zwei Orten -- die Palette
    und der Picker in Ask Mira zeigen beide Brand, Prompt, Domain, URL. Die Palette BEHAELT
-   ihre eigene Kopie, weil ihr Bubble-Loader nur quick-actions.css zieht und core dort nicht
+   ihre eigene Geometrie, weil ihr Bubble-Loader nur quick-actions.css zieht und core dort nicht
    im Baum ist; dieselbe Begruendung wie bei ihren Farbpaletten. Diese Datei ist die Quelle.
-   WER DIESE VIER ZAHLEN AENDERT, AENDERT SIE AUCH IN quick-actions.css (.mqa-chip und
-   .mqa-mini). Dort steht derselbe Hinweis. Solange die Palette ohne core laeuft, ist das die
-   einzige Fassung, die haelt -- ein Import waere ein stiller Ausfall auf ihrer Seite. */
+   DER SCHATTEN IST SEIT DEM 28.09. EIN TOKEN (--up-e-chip, oben bei den Tiefen): die vier Zahlen
+   stehen nur noch dort, die dunkle Fassung kommt mit dem Thema. quick-actions.css liest dasselbe
+   Token und traegt die alten Werte nur noch als Rueckfall fuer Seiten ohne core. */
 .up-entchip.is-lifted {
   height: 26px; gap: 6.5px; padding: 0 6.5px 0 9.75px; border-radius: 7.6px;
   font-size: 12.5px; font-weight: 500;
   background: color-mix(in srgb, var(--vc-heading-bg) 50%, transparent);
-  box-shadow: 0 1px 1px rgba(0,0,0,0.13), 0 2px 4px rgba(0,0,0,0.07);
+  box-shadow: var(--up-e-chip);
 }
-.up-root[data-theme="dark"] .up-entchip.is-lifted {
-  box-shadow: 0 1px 1px rgba(0,0,0,0.24), 0 2px 4px rgba(0,0,0,0.16);
-}
-/* Die kleine Fassung (.mqa-mini): 22px statt 26, Radius 6.4, und der Schatten einen Pixel
-   enger -- der kleine Chip soll nicht staerker schweben als der grosse. */
+/* Die kleine Fassung (.mqa-mini): 22px statt 26, Radius 6.4. Der Schatten ist derselbe wie beim
+   grossen Chip -- die Begruendung steht bei --up-e-chip. */
 .up-entchip.is-lifted.is-sm {
   height: 22px; gap: 5.5px; padding: 0 5.5px 0 8.25px; border-radius: 6.4px; font-size: 11px;
-  box-shadow: 0 1px 1px rgba(0,0,0,0.13), 0 1px 3px rgba(0,0,0,0.07);
-}
-.up-root[data-theme="dark"] .up-entchip.is-lifted.is-sm {
-  box-shadow: 0 1px 1px rgba(0,0,0,0.24), 0 1px 3px rgba(0,0,0,0.16);
 }
 
 /* ---- Mention-Liste ---------------------------------------------------------------------------
@@ -3857,7 +3921,9 @@
   width: 100%; max-width: 420px; max-height: calc(100vh - 48px); overflow-y: auto;
   background: var(--up-surface); border: 1px solid var(--vc-border);
   border-radius: 18px;
-  box-shadow: var(--up-e-4, 0 20px 48px rgba(0,0,0,.22));
+  /* Ohne Rueckfall (28.09.): die Tiefen stehen jetzt an :root, das Token loest auch hier am body
+     auf. Bis dahin galt hier der Rueckfall (0 20px 48px .22) statt e-4, dunkel wie hell. */
+  box-shadow: var(--up-e-4);
   color: var(--vc-text); font-family: Geist, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   opacity: 0; transform: translateY(-4px) scale(.985); pointer-events: none;
@@ -4509,7 +4575,7 @@
    Text, hier stehen Favicon und Titel je Zeile und man muss sie anklicken koennen. */
 .up-rb-glist { position: absolute; z-index: 40; min-width: 240px; max-width: 380px;
   background: var(--up-surface, var(--vc-bg)); border: 1px solid var(--vc-border);
-  border-radius: 11px; box-shadow: var(--up-e-2, 0 12px 32px rgba(0,0,0,0.14)); padding: 5px;
+  border-radius: 11px; box-shadow: var(--up-e-2); padding: 5px;
   display: none; flex-direction: column; gap: 1px; }
 .up-rb-glist.is-open { display: flex; }
 .up-rb-glist button { display: flex; align-items: center; gap: 9px; width: 100%; border: 0;

@@ -399,7 +399,7 @@
     }
     function explainVisual(kind){
       if (kind === "ranking"){
-        return '<span class="vot-explain-row">' + HASH_ICON + '<span>2.3</span></span>';
+        return '<span class="up-explain-row">' + HASH_ICON + '<span>2.3</span></span>';
       }
       /* Mirrors the Sentiment CELL: coloured dot + score + trend, the way it actually renders in
          the table. This used to draw three empty coloured circles -- that is the Brand-Mentions
@@ -407,14 +407,14 @@
          explained nothing. Colours are literal because .up-explain is body-appended and the
          component's CSS variables do not reach it. */
       if (kind === "sentiment"){
-        return '<span class="vot-explain-row">' +
+        return '<span class="up-explain-row">' +
           '<span class="vot-explain-sent"><span class="vot-explain-sentdot" style="background:#60D25D"></span>78</span>' +
-          '<span class="vot-explain-up">' + UC.TREND_UP + '</span>' +
-          '<span class="vot-explain-up">4</span></span>';
+          '<span class="up-explain-up">' + UC.TREND_UP + '</span>' +
+          '<span class="up-explain-up">4</span></span>';
       }
-      return '<span class="vot-explain-row">18.4%' +
-             '<span class="vot-explain-up">' + UC.TREND_UP + '</span>' +
-             '<span class="vot-explain-up">2.9%</span></span>';
+      return '<span class="up-explain-row">18.4%' +
+             '<span class="up-explain-up">' + UC.TREND_UP + '</span>' +
+             '<span class="up-explain-up">2.9%</span></span>';
     }
     UC.makeExplain({
       root: root,
@@ -423,9 +423,11 @@
       html: function(kind){
         var info = explainInfo(kind);
         if (!info) return "";
-        return '<div class="vot-explain-vis">' + explainVisual(kind) + '</div>' +
-               '<div class="vot-explain-h">' + esc(info.h) + '</div>' +
-               '<div class="vot-explain-t">' + esc(info.t) + '</div>';
+        /* Platte, Titel und Text sind core's .up-explain-* -- bis zum 28.09. stand hier eine
+           wortgleiche vot-explain-Kopie davon. Lokal bleibt nur die Sentiment-Pille. */
+        return '<div class="up-explain-vis">' + explainVisual(kind) + '</div>' +
+               '<div class="up-explain-h">' + esc(info.h) + '</div>' +
+               '<div class="up-explain-t">' + esc(info.t) + '</div>';
       }
     });
 

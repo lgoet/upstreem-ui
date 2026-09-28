@@ -9,11 +9,12 @@
      und einem eigenen Dark-Block -- zwei Paletten in einer App laufen genau so lange gleich, bis
      jemand eine davon anfasst. Alles kommt jetzt aus core (--vc-*), das Umschalten macht ohnehin
      .up-root[data-theme="dark"].
-     Die drei Werte darunter gibt es in core nicht: der Schleier hinter dem Dialog, sein Schatten
-     und der Ton fuer den zweiten Knopf. */
+     Die Werte darunter gibt es in core nicht: der Schleier hinter dem Dialog und der Ton fuer
+     den zweiten Knopf. Der Schatten stand hier auch (--uex-shadow) -- er war seit dem Umzug der
+     Karte auf .up-topicmodal-card nicht mehr in Gebrauch, die Karte traegt --up-e-4 aus core.
+     Am 28.09. entfernt. */
   .uex-root, .uex-overlay {
     --uex-scrim: rgba(17,18,20,0.34);
-    --uex-shadow: 0 24px 64px rgba(17,18,20,0.18), 0 6px 16px rgba(17,18,20,0.07);
     --uex-t: 200ms;
     --uex-ease: cubic-bezier(.4, 0, .2, 1);
     font-family: inherit;
@@ -21,7 +22,6 @@
   }
   .uex-overlay[data-theme="dark"], .up-root[data-theme="dark"] .uex-root {
     --uex-scrim: rgba(0,0,0,0.60);
-    --uex-shadow: 0 24px 64px rgba(0,0,0,0.55), 0 6px 16px rgba(0,0,0,0.4);
   }
 
   /* ---------- Traeger ----------

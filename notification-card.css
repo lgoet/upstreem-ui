@@ -23,16 +23,11 @@
   position: fixed; right: 8px; bottom: 8px; z-index: 2147483500;
   width: 424px; box-sizing: border-box; overflow: hidden;
   background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: 16px;
-  /* Drei Lagen, damit die Karte nicht auf der Flaeche klebt: eine harte Kante, ein mittlerer und
-     ein weit gestreuter Schatten. Ein einzelner Schatten sieht bei dieser Groesse aus wie ein
-     Rahmen. */
-  /* Die erste Lage hat KEINEN Versatz: die drei anderen fallen nach unten, oben und rechts war
-     die Karte damit kantig abgeschnitten. Ein wenig Streuung in alle Richtungen legt sie auch
-     dort auf den Grund. */
-  box-shadow: 0 0 22px -6px rgba(31,31,31,0.12),
-              0 1px 2px rgba(31,31,31,0.05),
-              0 12px 28px -8px rgba(31,31,31,0.18),
-              0 32px 64px -24px rgba(31,31,31,0.24);
+  /* e-4, die Tiefe von allem, was ueber der ganzen Seite liegt (28.09. vereinheitlicht). Hier
+     standen vier eigene Lagen je Thema -- eine Kante ohne Versatz, damit die Karte oben und rechts
+     nicht kantig abgeschnitten wirkt, und drei nach unten. Die Kante zeichnet jetzt der Rahmen
+     (1px --vc-border), und e-4 streut mit 48px weit genug, um die Karte vom Grund zu loesen. */
+  box-shadow: var(--up-e-4);
   /* 420ms mit dieser Kurve: schnell heraus, weich hinein -- die Karte soll auffallen, ohne zu
      springen. `both` haelt den Anfangszustand, sonst blitzt sie vor dem ersten Bild auf. */
   animation: unc-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -42,17 +37,8 @@
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 /* Rueckwaerts beim Schliessen, halb so lang -- Verschwinden darf schneller sein als Erscheinen. */
-/* Im Dunkeln traegt derselbe Schatten nicht. 31,31,31 bei 5 bis 22 Prozent liegt auf einer Flaeche
-   in #121212 im Rauschen -- die Karte klebt auf dem Grund statt darueber zu schweben, und die drei
-   Lagen sind vergeudet. Also Schwarz und deutlich staerker, im selben Verhaeltnis, in dem core es
-   beim Dropdown-Schatten tut (--up-dd-shadow geht von .14 auf .32). Aus 0.05/0.16/0.22 wird
-   0.15/0.42/0.55. */
-.unc-card[data-theme="dark"] {
-  box-shadow: 0 0 22px -6px rgba(0,0,0,0.38),
-              0 1px 2px rgba(0,0,0,0.15),
-              0 12px 28px -8px rgba(0,0,0,0.45),
-              0 32px 64px -24px rgba(0,0,0,0.58);
-}
+/* Die eigene Dunkel-Regel fuer den Schatten ist entfallen: --up-e-4 dreht mit dem data-theme der
+   Karte selbst (dunkel .46 statt .20), dieselbe Staffelung, die hier von Hand stand. */
 .unc-card.is-closing {
   animation: unc-out 180ms cubic-bezier(0.4, 0, 1, 1) both;
 }
@@ -138,8 +124,10 @@
   background: linear-gradient(150deg, #ffffff 0%, #efeeeb 100%);
   border: 1px solid rgba(31,31,31,0.11);
   /* Zwei Schatten: die Lichtkante innen laesst die Flaeche gewoelbt wirken, der weiche darunter
-     hebt sie von der Karte ab. Ohne den zweiten liegt sie flach auf. */
-  box-shadow: inset 0 1px 0 #ffffff, 0 1px 2px rgba(31,31,31,0.05);
+     hebt sie von der Karte ab. Ohne den zweiten liegt sie flach auf. Der zweite ist e-1 (28.09.;
+     vorher 0 1px 2px .05 -- praktisch derselbe Wert); die Lichtkante ist eine innere Linie und
+     keine Tiefe, sie bleibt. */
+  box-shadow: inset 0 1px 0 #ffffff, var(--up-e-1);
 }
 /* Im Dark Mode waere ein weisses Feld der hellste Punkt der Karte und zoege alle Aufmerksamkeit.
    Dieselbe Bauart, nur aus der dunklen Palette: heller als die Karte, aber nicht leuchtend. */
@@ -147,7 +135,7 @@
   color: var(--vc-text);
   background: linear-gradient(150deg, #232326 0%, #1e1e1e 100%);
   border-color: rgba(255,255,255,0.10);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.3);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), var(--up-e-1);
 }
 .unc-tile svg { width: 20px; height: 20px; display: block; }
 /* padding-top 1px: die Grossbuchstaben der Typzeile sitzen optisch zu hoch gegen die Flaeche. */

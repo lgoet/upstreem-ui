@@ -178,18 +178,10 @@
    supposed to aim at was invisible. */
 .vt-th:hover .up-th-info { opacity: 1; }
 
-/* ---------- column explainer visuals (panel + tooltip shell are core.css's .up-explain) ---------- */
-.vot-explain-vis {
-  background: #ffffff; border-radius: 9px; padding: 11px 12px;
-  display: flex; flex-direction: column; gap: 7px; align-items: flex-start;
-  margin-bottom: 9px; min-height: 46px; justify-content: center;
-}
-.vot-explain-h { font-size: 14.5px; font-weight: 600; line-height: 1.2; padding: 0 3px; margin-bottom: 4px; color: #ffffff; }
-.vot-explain-t { font-size: 13.5px; font-weight: 400; line-height: 1.5; padding: 0 3px; color: rgba(255,255,255,0.68); }
-.vot-explain-row { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 500; color: #1f1f1b; }
-.vot-explain-row svg { width: 14px; height: 14px; display: block; }
-.vot-explain-up { color: #2ea84a; }
-.vot-explain-down { color: #b0200c; }
+/* ---------- column explainer visuals ----------
+   Karte, Platte, Titel, Text, Zeile und Trendfarben sind core's .up-explain-* (seit 28.09.; hier
+   stand eine wortgleiche vot-explain-Kopie mit zwoelf festen Farben). Lokal bleibt nur die
+   Sentiment-Pille darunter. */
 /* Literal copy of core's .up-sent / .up-sent-dot for the Sentiment preview. It cannot reuse those
    classes directly: .up-explain is appended to <body>, outside .up-root, so var(--vc-border) and
    friends resolve to nothing there (the same trap STYLEGUIDE §7 documents for the tooltip colours).
@@ -198,12 +190,6 @@
 .vot-explain-sent { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 6px;
   border: 1px solid #e4e2e4; border-radius: 6px; flex: 0 0 auto; font-variant-numeric: tabular-nums; }
 .vot-explain-sentdot { width: 6px; height: 6px; border-radius: 2px; flex: 0 0 auto; }
-.up-explain[data-theme="dark"] .vot-explain-h { color: #1f1f1b; }
-.up-explain[data-theme="dark"] .vot-explain-t { color: rgba(31,31,27,0.66); }
-.up-explain[data-theme="dark"] .vot-explain-vis { background: #1c1c1f; }
-.up-explain[data-theme="dark"] .vot-explain-row { color: #f0f0f0; }
-.up-explain[data-theme="dark"] .vot-explain-up { color: #6ee7b7; }
-.up-explain[data-theme="dark"] .vot-explain-down { color: #fca5a5; }
 .up-explain[data-theme="dark"] .vot-explain-sent { border-color: #23252a; }
 
 /* ============================================================
