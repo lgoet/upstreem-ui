@@ -4798,4 +4798,21 @@
 .up-plan-sk-z    { width: 88%; height: 12px; }
 .up-plan-sk-btn + .up-plan-sk-z { margin-top: 16px; }
 .up-plan-sk-z.is-kurz { width: 64%; }
+
+/* ---------- Das Tarif-Fenster (UC.makePlanDialog, 28.09.) ----------
+   Stand bis zum 28.09. als .ubl-* in settings-billing.css, dieselben Werte. Die Schale ist core's
+   Modal; hier steht nur, was dieses Fenster anders macht.
+   z-index 100002: ueber dem Access Gate (100001), das es als seine Tarifliste oeffnet, und ueber
+   core's anderen Fenstern (100000). Zwei Klassen gegen die eine von .up-topicmodal-backdrop. */
+.up-plandlg.up-topicmodal-backdrop { z-index: 100002; }
+/* 1000 = drei Karten zu gut 300 plus zwei Luecken zu 20 plus das Polster der Karte -- die Karten
+   der Landingpage stehen bei 1280 Fensterbreite knapp 390 breit, darunter wird ihre Merkmalsliste
+   eng. Zwei Klassen, weil .up-topicmodal-card eine eigene Breite (420) setzt. */
+.up-plandlg .up-plandlg-card { width: 100%; max-width: 1000px; }
+.up-plandlg-card:focus { outline: 0; }
+.up-plandlg-body { min-width: 0; }
+/* Der Fehlersatz unter den Karten steht nur da, wenn ein Klick keinen Empfaenger fand; zu ist er
+   eine Zeile der Hoehe 0 und naehme trotzdem die Luecke der Karte (32) mit. */
+.up-plandlg-card > .up-plandlg-err:not(.is-on) { display: none; }
+.up-plandlg-card > .up-plandlg-err.is-on { margin-top: 0; }
 @media (prefers-reduced-motion: reduce){ .up-plan-note { transition: none; } }

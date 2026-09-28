@@ -88,16 +88,10 @@
 .ubl-root.is-vnarrow .ubl-table .ubl-plansbtn { display: inline-flex; }
 
 /* ---------- das Fenster ---------- */
-/* Zwei Klassen, weil core's .up-topicmodal-card eine eigene Breite (420) setzt. 1000 = drei Karten
-   zu gut 300 plus zwei Luecken zu 20 plus das Polster der Karte -- die Karten der Landingpage
-   stehen bei 1280 Fensterbreite knapp 390 breit, darunter wird ihre Merkmalsliste eng. */
-.ubl-backdrop .ubl-card { width: 100%; max-width: 1000px; }
-.ubl-card:focus { outline: 0; }
-.ubl-planbody { min-width: 0; }
-/* Der Fehlersatz unter den Karten steht nur da, wenn ein Klick keinen Empfaenger fand; zu ist er
-   eine Zeile der Hoehe 0 und nimmt trotzdem die Luecke der Karte (32) mit. Weg damit, solange zu. */
-.ubl-card > .ubl-selerr:not(.is-on) { display: none; }
-.ubl-card > .ubl-selerr.is-on { margin-top: 0; }
+/* Seit dem 28.09. in core: UC.makePlanDialog mit den Regeln .up-plandlg* in core.css (dieselben
+   Werte wie vorher hier). Das Access Gate oeffnet dasselbe Fenster -- EIN Tarif-Fenster fuer
+   beide. Die Klassen .ubl-backdrop / .ubl-card / .ubl-planbody / .ubl-selerr traegt es weiter
+   (praefix "ubl"), nur ohne eigene Regeln. */
 
 /* ---------- schmal ---------- */
 /* Knopf unter den Text, wie team-orga (.uto-sechead). */

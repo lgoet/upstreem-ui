@@ -13,7 +13,8 @@
                     der ganzseitigen Flaechen (Anmeldung, Onboarding, Einladung): das Gate steht
                     wie sie VOR der App und nicht in ihr
      Zurueck        core .up-iconbtn (32)
-     Tarifliste     UC.makePlans; Kartenbreite 1000 wie settings-billing (.ubl-card)
+     Tarifliste     KEINE eigene: UC.makePlanDialog aus core, dasselbe Fenster wie im
+                    Billing-Reiter (Regeln .up-plandlg* in core.css). Es geht ueber dem Gate auf.
      Teamzeilen     core .up-pop-opt mit .up-logo-box; Name und Domain wie im Teamschalter der
                     Seitenleiste (sidebar.css .usn-teamrow-name / -dom)
      Fehlerkasten   core .up-formerr, zu ohne Luecke wie in settings-billing
@@ -34,10 +35,9 @@
    Autorenregel schlaegt die des Browsers fuer [hidden] (settings-billing, derselbe Fall). */
 .uag-backdrop [hidden] { display: none; }
 
-/* 520 wie team-orga; mit der Tarifliste 1000 wie settings-billing -- drei Karten brauchen den
-   Platz, und dieselbe Reihe soll hier nicht anders umbrechen als im Billing-Reiter. */
+/* 520 wie team-orga. Die Tarifliste steht nicht in dieser Karte, sie ist das Tarif-Fenster aus
+   core mit seiner eigenen Breite (1000). */
 .uag-backdrop .uag-card { width: 100%; max-width: 520px; }
-.uag-backdrop .uag-card.is-plans { max-width: 1000px; }
 .uag-card:focus { outline: 0; }
 
 /* ---------- Kopf ---------- */

@@ -16705,27 +16705,22 @@
   }
 
   /* ══ Das Abo lesen: UC.aboLesen, UC.plaeneLesen (28.09.) ════════════════════════════════════
-     Aus settings-billing hierher gezogen, als access-gate die zweite Komponente wurde, die DIESELBE
-     Nutzlast liest. Zwei Leser derselben RPC laufen beim naechsten Feld auseinander -- und dann
-     stuende im Billing-Reiter ein laufender Tarif, waehrend das Gate dieselbe App sperrt. Das
-     Urteil "hat Zugang" gibt es deshalb genau einmal, hier.
+     Aus settings-billing hierher gezogen. Das Access Gate las am 28.09. kurz dieselbe Nutzlast;
+     seit derselben Nacht liest es die schlanke Quota-RPC (get_team_plan_quota), weil die grosse
+     Abo-RPC nicht auf jeder Seite beim Seitenaufbau laufen soll (so entschieden). plaeneLesen
+     lesen weiterhin beide -- es ist dieselbe Tarif-RPC.
 
      DIE NUTZLAST DER ABO-RPC (28.09. geliefert), unveraendert aus dem ersten Run-JS-Schritt:
-       { "ok": true, "team_id": "…", "team_name": "…", "is_deleted": false, "deleted_at": null,
+       { "ok": true, "team_id": "…", "team_name": "…", …,
          "billing": { "billing_plan_id", "plan_name", "billing_interval", "current_price_eur",
-                      "monthly_price_eur", "yearly_price_eur", "trial_days", "next_billing_at",
-                      "canceled_at", "ended_at", "access_ends_at", "trial_ends_at", "status",
-                      "is_active", "is_trialing", "is_past_due", "has_active_access",
-                      "cancel_at_period_end", "has_billing", "can_manage_billing", … } }
+                      "next_billing_at", "canceled_at", "access_ends_at", "trial_ends_at",
+                      "status", "is_active", "has_active_access", "cancel_at_period_end",
+                      "has_billing", "can_manage_billing", … } }
      Ergebnis:
        { ok: false }   unlesbar, oder die RPC sagt selbst ok:false -- kaputt, nicht leer
-       { ok: true, abo, teamId, teamName, verwalten, zugang, geloescht, geloeschtAm }
+       { ok: true, abo, teamId, verwalten }
          abo        null heisst lesbar, aber kein Abo (billing null, has_billing:false, alles leer)
          verwalten  false NUR auf ein ausdrueckliches can_manage_billing:false, sonst null
-         zugang     false NUR auf ein ausdrueckliches has_active_access:false, true auf ein Ja,
-                    null = nicht gesagt. Das Gate sperrt nur auf false: es entscheidet nichts
-                    selbst, es zeigt das Urteil der RPC.
-         geloescht  is_deleted am Team (oben, nicht in billing)
      Ohne den Umschlag "billing" wird das Objekt selbst gelesen, mit den frueheren Namen als
      Rueckfall (plan_id, price_eur, next_billing_date) -- so stand es bis zum 28.09. in der Vorlage
      von settings-billing. Leer und kaputt sind zwei Dinge (CLAUDE.md 2). */
@@ -16750,8 +16745,7 @@
     return s.toLowerCase() === "null" ? "" : s;
   }
   function aboErgebnis(o){
-    var r = { ok: true, abo: null, teamId: "", teamName: "", verwalten: null, zugang: null,
-              geloescht: false, geloeschtAm: "" };
+    var r = { ok: true, abo: null, teamId: "", verwalten: null };
     for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) r[k] = o[k];
     return r;
   }
@@ -16773,9 +16767,7 @@
     }
     if (!p || typeof p !== "object" || isArr(p)) return { ok: false };
     if (aboNein(p.ok)) return { ok: false };
-    /* Was am TEAM steht und nicht am Abo: wem es gehoert, und ob es das Team noch gibt. */
-    var team = { teamId: aboTxt(p.team_id), teamName: aboTxt(p.team_name),
-                 geloescht: isYes(p.is_deleted), geloeschtAm: aboDatum(p.deleted_at) };
+    var team = { teamId: aboTxt(p.team_id) };
     var b = p;
     if (Object.prototype.hasOwnProperty.call(p, "billing")){
       b = p.billing;
@@ -16786,13 +16778,12 @@
       b = isArr(p.subscription) ? (p.subscription[0] || {}) : p.subscription;
     }
     team.verwalten = aboNein(b.can_manage_billing) ? false : null;
-    team.zugang = aboNein(b.has_active_access) ? false : (isYes(b.has_active_access) ? true : null);
     if (aboNein(b.has_billing)) return aboErgebnis(team);
     function erstes(a, alt){ return a != null && aboTxt(a) !== "" ? a : alt; }
     /* Verlaengert sich das Abo? Nur dann gibt es eine naechste Abbuchung. Die RPC liefert
        next_billing_at auch fuer ein gekuendigtes Abo (gemessen an der Nutzlast vom 28.09.: status
-       "canceled", has_active_access false, next_billing_at 2027) -- das waere im Billing-Reiter
-       eine Abbuchung, die nie kommt. */
+       "canceled", has_active_access false, next_billing_at 2027) -- das waere eine Abbuchung,
+       die nie kommt. */
     var status = aboTxt(b.status).toLowerCase();
     var verlaengert = !aboNein(b.is_active) && !(b.cancel_at_period_end === true ||
       /^(true|yes)$/i.test(aboTxt(b.cancel_at_period_end))) &&
@@ -16809,15 +16800,7 @@
       testBis: aboDatum(b.trial_ends_at),
       /* Hat das Team GERADE Zugang? Nur dann ist sein Tarif im Fenster "Current plan": ein
          beendetes Abo muss man dort wieder buchen koennen, und ohne Knopf ginge das nicht. */
-      aktiv: !aboNein(b.has_active_access),
-      /* Fuer das Gate (access-gate.js): WIE es endete, und was eine Reaktivierung kostet. */
-      status: status,
-      beendet: aboDatum(b.ended_at),
-      zahlungOffen: isYes(b.is_past_due) || status === "past_due" || status === "unpaid",
-      testLaeuft: isYes(b.is_trialing) || status === "trialing",
-      monatPreis: toNum(b.monthly_price_eur),
-      jahrPreis: toNum(b.yearly_price_eur),
-      testTage: toNum(b.trial_days)
+      aktiv: !aboNein(b.has_active_access)
     };
     var leer = !abo.planId && !abo.planName && !abo.gekuendigt && !abo.zugangBis && !abo.testBis;
     team.abo = leer ? null : abo;
@@ -17260,6 +17243,264 @@
       interval: function(){ return S.iv; },
       redraw: zeichnen
     };
+  }
+
+  /* ══ Das Tarif-Fenster: UC.makePlanDialog (28.09.) ═════════════════════════════════════════
+     Aus settings-billing hierher gezogen, als das Access Gate die zweite Stelle wurde, die "alle
+     Tarife" zeigt (28.09. gefragt: "kann ich nicht einfach das exakt gleiche Popup nutzen?").
+     Jetzt ist es EIN Fenster: die Schale aus core's Modal, die Karten aus makePlans, die Warte-Uhr,
+     der Fehler vor dem Skelett, Escape, die Fokusfalle und die Rueckgabe des Fokus. Die
+     Komponenten geben nur noch Daten hinein und bekommen Klicks heraus.
+
+     Am body und nicht im Element (wie vorher in settings-billing): kein overflow eines Bubble-
+     Vorfahren schneidet es ab, kein z-index eines fremden Vorfahren muss angefasst werden.
+     z-index 100002 (core.css .up-plandlg): ueber dem Access Gate (100001), damit das Gate es als
+     seine Tarifliste oeffnen kann -- und ueber core's anderen Fenstern (100000).
+
+     cfg:  key         je Verbraucher-Instanz EIN Fenster. Derselbe key liefert dasselbe Fenster
+                       samt Stand, nur mit den neuen Rueckrufen -- so ueberlebt es den Neuaufbau
+                       der Wurzel durch Bubble (Themenwechsel), ohne dass ein Rueckruf an einem
+                       toten Controller haengt.
+           praefix     Klassen und data-Attribute wie vorher im Verbraucher (settings-billing:
+                       "ubl" -> .ubl-backdrop, .ubl-card, [data-ubl-planbody], ...), damit
+                       vorhandene Griffe weiter greifen
+           isDark()    Thema beim Oeffnen; danach stempelt setUpstreemTheme() es (up-portal)
+           currentId() Id des Tarifs, der "Current plan" traegt ("" = keiner)
+           interval()  Vorbelegung des Schalters, solange der Nutzer nicht selbst umschaltet
+           onOpen()    beim Oeffnen, ZULETZT: die Tarife anfordern. false = kein Empfaenger --
+                       dann steht der Fehler sofort da statt nach 8s Schimmern
+           onSelect(info)  "Get started" (info: planInfo). false = kein Empfaenger -> der Satz im
+                       Fenster; sonst geht es zu (die Kasse oeffnet sich, ein Bubble-Popup laege
+                       darunter)
+     Rueckgabe: { open(opener), close(), isOpen(), setPlans(liste), setFehler(), sync(), redraw(),
+                  reset(), taste(e), zustand() } -- taste(e) fuer einen Verbraucher, der die Tasten
+                  selbst faengt (das Gate: seine Fangphase am window laesst keine Taste bis zum
+                  document durch). */
+  var PLAN_DLG = {};
+  var PLAN_DLG_SEQ = 0;
+  var PLAN_WARTE_MS = 8000;
+  function makePlanDialog(cfg){
+    cfg = cfg || {};
+    var key = String(cfg.key || "default");
+    var D = PLAN_DLG[key];
+    if (D){ D.cfg = cfg; return D.api; }
+    var p = String(cfg.praefix || "up-plandlg-x").replace(/[^a-z0-9-]/gi, "");
+    D = PLAN_DLG[key] = {
+      cfg: cfg, back: null, card: null, body: null, err: null,
+      offen: false, opener: null, kit: null, unten: false, uhr: null, gebunden: false,
+      /* Der Stand gehoert zum Fenster, nicht zur Wurzel des Verbrauchers: er ueberlebt dessen
+         Neuaufbau. */
+      S: { plans: null, fehler: false, warten: false, iv: "", ivGewaehlt: false }
+    };
+    var S = D.S;
+    function bauen(){
+      if (D.back && D.back.isConnected) return;
+      var back = document.createElement("div");
+      back.className = "up-root up-portal up-topicmodal-backdrop up-plandlg " + p + "-backdrop";
+      back.setAttribute("aria-hidden", "true");
+      back.setAttribute("data-" + p + "-dialog", key);
+      var tid = "up-plandlg-t-" + (++PLAN_DLG_SEQ);
+      back.innerHTML =
+        '<div class="up-topicmodal-card up-plandlg-card ' + p + '-card" role="dialog" aria-modal="true"' +
+          ' aria-labelledby="' + tid + '" tabindex="-1">' +
+          '<div class="up-topicmodal-head">' +
+            '<div class="up-topicmodal-heading">' +
+              '<h2 class="up-topicmodal-title" id="' + tid + '" data-' + p + '-dtitel></h2>' +
+              '<p class="up-topicmodal-sub" data-' + p + '-dsub></p>' +
+            '</div>' +
+            '<button type="button" class="up-popup-close" data-' + p + '-close>' + icon("x", 2) + '</button>' +
+          '</div>' +
+          '<div class="up-plandlg-body ' + p + '-planbody" data-' + p + '-planbody></div>' +
+          '<div class="up-formerr up-plandlg-err ' + p + '-selerr" data-' + p + '-selerr role="alert">' +
+            '<div><div class="up-formerr-in"></div></div></div>' +
+        '</div>';
+      document.body.appendChild(back);
+      D.back = back;
+      D.card = back.querySelector(".up-plandlg-card");
+      D.body = back.querySelector(".up-plandlg-body");
+      D.err = back.querySelector(".up-plandlg-err");
+      D.kit = null;
+      /* Schliessen auf dem Grund nur, wenn der Druck AUCH dort begann: wer in einer Karte Text
+         markiert und die Maus draussen loslaesst, bekommt einen click auf dem Grund -- und das
+         Fenster waere weg. */
+      back.addEventListener("pointerdown", function(e){ D.unten = e.target === back; });
+      back.addEventListener("click", function(e){
+        if (e.target === back){ var war = D.unten; D.unten = false; if (war) zu(); return; }
+        if (e.target.closest && e.target.closest("[data-" + p + "-close]")) zu();
+      });
+    }
+    function texte(){
+      D.back.querySelector("[data-" + p + "-dtitel]").textContent = t_("All plans");
+      D.back.querySelector("[data-" + p + "-dsub]").textContent = t_("Pick the plan that fits your team.");
+      D.back.querySelector("[data-" + p + "-close]").setAttribute("aria-label", t_("Close"));
+    }
+    function fehlerZeile(an){
+      if (!D.err) return;
+      D.err.querySelector(".up-formerr-in").textContent =
+        t_("This plan could not be selected right now. Please reload the page.");
+      D.err.classList.toggle("is-on", !!an);
+    }
+    function aktIv(){
+      if (S.ivGewaehlt && S.iv) return S.iv;
+      var v = typeof D.cfg.interval === "function" ? D.cfg.interval() : "";
+      /* Der Takt des Abos, sonst Jahr -- die Vorbelegung der Landingpage: der guenstigere Preis
+         soll zuerst dastehen. */
+      return v || S.iv || "yearly";
+    }
+    function aktId(){ return typeof D.cfg.currentId === "function" ? String(D.cfg.currentId() || "") : ""; }
+    /* Der Inhalt. Reihenfolge wie ueberall im Haus: der Fehler vor dem Skelett -- nur eine laufende
+       Anfrage geht vor, sie raeumt die Meldung weg, bis ihre Antwort da ist. */
+    function zeichnen(){
+      if (!D.offen || !D.body) return;
+      if (S.fehler && !S.warten){ D.kit = null; D.body.innerHTML = leseFehlerHtml("the plans"); return; }
+      if (S.plans && !S.plans.length){
+        D.kit = null;
+        D.body.innerHTML = leerHtml({ titel: "No plans available right now.", icon: "creditCard" });
+        return;
+      }
+      /* Karten oder Skelett: beides ist die Reihe aus makePlans, ohne Tarife zeichnet sie Huellen.
+         Die Rueckrufe fragen D.cfg -- nach einem Neuaufbau des Verbrauchers zeigen sie auf ihn. */
+      if (!D.kit || !D.body.contains(D.kit.el)){
+        D.kit = makePlans(D.body, {
+          plans: S.plans, interval: aktIv(), currentId: aktId(),
+          cta: "Get started", fuss: "Prices exclude VAT. Cancel any time.",
+          onInterval: function(iv){
+            S.iv = iv; S.ivGewaehlt = true;
+            if (typeof D.cfg.onInterval === "function"){ try { D.cfg.onInterval(iv); } catch(e){} }
+          },
+          onSelect: waehlen
+        });
+        return;
+      }
+      D.kit.setCurrent(aktId());
+      D.kit.setInterval(aktIv());
+      D.kit.setPlans(S.plans);
+    }
+    function uhrStoppen(){ if (D.uhr){ clearTimeout(D.uhr); D.uhr = null; } }
+    function uhrStarten(){
+      uhrStoppen();
+      D.uhr = setTimeout(function(){
+        D.uhr = null;
+        if (!S.warten) return;
+        S.warten = false;
+        /* Mit Vorrat bleibt der Vorrat stehen -- er ist die letzte gelesene Liste und wahrer als
+           ein Fehler. Ohne ihn waere weiteres Schimmern die Luege "gleich da". */
+        if (!S.plans) S.fehler = true;
+        zeichnen();
+      }, PLAN_WARTE_MS);
+    }
+    /* Tab bleibt im Fenster (aria-modal verspricht das); Escape schliesst NUR dieses Fenster und
+       geht nicht weiter, sonst schloesse dieselbe Taste ein Menue oder einen Drawer darunter. */
+    function fokusFalle(e){
+      var card = D.card;
+      var f = [].filter.call(card.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'),
+        function(x){ return !x.disabled && x.getClientRects().length > 0; });
+      if (!f.length){ e.preventDefault(); card.focus(); return; }
+      var erst = f[0], letzt = f[f.length - 1], a = document.activeElement;
+      if (e.shiftKey && (a === erst || a === card || !card.contains(a))){ e.preventDefault(); letzt.focus(); }
+      else if (!e.shiftKey && (a === letzt || !card.contains(a))){ e.preventDefault(); erst.focus(); }
+    }
+    function taste(e){
+      if (!D.offen) return;
+      if (e.key === "Escape" || e.key === "Esc"){ e.stopPropagation(); e.preventDefault(); zu(); return; }
+      if (e.key === "Tab") fokusFalle(e);
+    }
+    function zu(){
+      if (!D.offen) return;
+      /* Fokus weg, BEVOR aria-hidden kommt -- ein fokussiertes Element unter aria-hidden weist
+         Chrome mit einer Konsolenmeldung zurueck. */
+      if (D.back.contains(document.activeElement)){ try { document.activeElement.blur(); } catch(e){} }
+      D.offen = false;
+      D.back.classList.remove("is-shown");
+      D.back.setAttribute("aria-hidden", "true");
+      if (D.gebunden){ document.removeEventListener("keydown", taste, true); D.gebunden = false; }
+      uhrStoppen();
+      S.warten = false;
+      var op = D.opener;
+      D.opener = null;
+      try { if (op && op.isConnected && op.focus) op.focus(); } catch(e){}
+      if (typeof D.cfg.onClose === "function"){ try { D.cfg.onClose(); } catch(e){} }
+    }
+    function waehlen(info){
+      var ok = typeof D.cfg.onSelect === "function" ? D.cfg.onSelect(info) !== false : false;
+      if (!ok){ fehlerZeile(true); return; }
+      zu();
+    }
+    var api = {
+      open: function(opener){
+        bauen();
+        D.opener = opener || document.activeElement;
+        var dunkel = typeof D.cfg.isDark === "function" && D.cfg.isDark();
+        if (dunkel) D.back.setAttribute("data-theme", "dark"); else D.back.removeAttribute("data-theme");
+        texte();
+        fehlerZeile(false);
+        /* Ein neuer Ladeversuch: der alte Fehler geht weg, die Uhr laeuft. Liegen Tarife im Vorrat,
+           stehen sie sofort da und werden ersetzt, sobald die Antwort kommt. */
+        S.fehler = false;
+        S.warten = true;
+        uhrStarten();
+        D.offen = true;
+        /* Die Reihe wird bei jedem Oeffnen neu gebaut: ihr Takt und ihre Markierung kommen dann
+           frisch vom Verbraucher. Ein Bau kostet eine Handvoll Knoten. */
+        D.kit = null;
+        zeichnen();
+        D.back.setAttribute("aria-hidden", "false");
+        /* Einmal Layout erzwingen, sonst laeuft der Uebergang von opacity 0 nicht (core's
+           Topic-Modal, derselbe Kniff). */
+        void D.back.offsetWidth;
+        D.back.classList.add("is-shown");
+        if (!D.gebunden){ document.addEventListener("keydown", taste, true); D.gebunden = true; }
+        setTimeout(function(){ try { if (D.offen) D.card.focus(); } catch(e){} }, 40);
+        /* ZULETZT anfordern: antwortet der Workflow im selben Zug (ein statischer Schritt), findet
+           seine Antwort den Wartezustand schon gesetzt und beendet ihn. */
+        var ok = typeof D.cfg.onOpen === "function" ? D.cfg.onOpen() !== false : true;
+        if (!ok && S.warten){
+          uhrStoppen();
+          S.warten = false;
+          if (!S.plans) S.fehler = true;
+          zeichnen();
+        }
+      },
+      close: zu,
+      isOpen: function(){ return !!D.offen; },
+      setPlans: function(liste){
+        uhrStoppen();
+        S.warten = false;
+        S.plans = liste == null ? null : planListe(liste);
+        S.fehler = false;
+        zeichnen();
+      },
+      /* Unlesbar: der Fehler steht da, auch wenn es einen Vorrat gab -- wie bisher im Billing-Reiter. */
+      setFehler: function(){
+        uhrStoppen();
+        S.warten = false;
+        S.fehler = true;
+        zeichnen();
+      },
+      /* Markierung und Takt neu vom Verbraucher (ein frisches Abo, ein anderes Team). Den Takt nur,
+         wenn der Nutzer ihn nicht selbst gewaehlt hat. */
+      sync: function(){
+        if (!D.offen || !D.kit) return;
+        D.kit.setCurrent(aktId());
+        if (!S.ivGewaehlt) D.kit.setInterval(aktIv());
+      },
+      redraw: function(){
+        if (!D.offen) return;
+        texte();
+        fehlerZeile(D.err && D.err.classList.contains("is-on"));
+        if (D.kit) D.kit.redraw(); else zeichnen();
+      },
+      reset: function(){
+        zu();
+        uhrStoppen();
+        S.plans = null; S.fehler = false; S.warten = false; S.iv = ""; S.ivGewaehlt = false;
+      },
+      taste: taste,
+      zustand: function(){ return { plans: S.plans, fehler: S.fehler, warten: S.warten, iv: S.iv, ivGewaehlt: S.ivGewaehlt }; }
+    };
+    D.api = api;
+    return api;
   }
 
   /* ══ Custom Groupings ═══════════════════════════════════════════════════════════════════════
@@ -17803,6 +18044,7 @@
     /* Tarifkarten (28.09.): die Karte der Landingpage als Bauteil, plus die drei Regeln, die ein
        Aufrufer ausserhalb der Karte braucht -- Takt lesen, Euro schreiben, Tarifliste pruefen. */
     makePlans: makePlans,
+    makePlanDialog: makePlanDialog,
     planFarbe: planFarbe,
     planPilleHtml: planPilleHtml,
     planInterval: planInterval,

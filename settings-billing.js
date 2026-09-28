@@ -21,8 +21,8 @@
      Tabelle     die Tabellenschale von team-orga (Rahmen 1, Radius 12) mit core's .up-thead /
                  .up-row / .up-td, Kopf 45, Zeile 52, Zellen 13px
      Zeilenknopf .up-btn-sec.up-rowbtn aus core, dauerhaft sichtbar wie in team-orga
-     Fenster     core's Modalschale (.up-topicmodal-backdrop / -card / .up-popup-close)
-     Karten      UC.makePlans (core)
+     Fenster     UC.makePlanDialog (core, seit dem 28.09.): dasselbe Tarif-Fenster wie im Access
+                 Gate -- core's Modalschale mit den Karten aus UC.makePlans
 
    ── Daten hinein (Run-JS, siehe bubble/settings_billing_bubble.html) ───────
      setBillingSubscription(TEXT)     die Nutzlast der Abo-RPC unveraendert: {ok, billing, team_id}
@@ -91,7 +91,8 @@
 
     var MISSING = ["makeMount", "makeFire", "makeLate", "readBubble", "leseFehlerHtml", "leerHtml",
                    "icon", "esc", "fmtDate", "t", "toNum", "widthTiers", "themeParam",
-                   "makePlans", "planInterval", "planListe", "fmtEur", "aboLesen", "plaeneLesen"]
+                   "makePlans", "makePlanDialog", "planInterval", "planListe", "fmtEur", "aboLesen",
+                   "plaeneLesen"]
       .filter(function (k) { return typeof UC[k] !== "function"; });
     if (MISSING.length && window.console) {
       console.error("[settings-billing] Die core.js auf dieser Seite ist AELTER als " +
@@ -102,14 +103,13 @@
     /* ---- Die Uhren, jede mit benanntem Ende --------------------------------------------------
        WARTE_MS: bis das Abo da sein muss. 25s wie team-orga, brand-detail und domain-detail --
        ohne Ende ist "kommt gleich" nicht von "kommt nie" zu unterscheiden.
-       PLAN_WARTE_MS: bis die Tarife da sein muessen, nachdem das Fenster sie angefordert hat. 8s
-       wie im Onboarding (PLAN_MAX_MS): drei Zeilen aus der Datenbank, wer laenger wartet, wartet
-       auf etwas, das nicht mehr kommt.
+       Die Uhr fuer die Tarife (8s) fuehrt seit dem 28.09. das Fenster selbst (core,
+       makePlanDialog: PLAN_WARTE_MS).
        KLICK_SPERRE_MS: "Manage Billing" legt beim Klick eine Portal-Sitzung bei Stripe an. Ein
        Doppelklick waeren zwei Sitzungen und zwei Weiterleitungen; vier Sekunden decken die
        Rundreise ab und sind kurz genug, dass ein Nutzer, der aus einem neuen Tab zurueckkommt,
        den Knopf wieder bedienen kann. */
-    var WARTE_MS = 25000, PLAN_WARTE_MS = 8000, KLICK_SPERRE_MS = 4000;
+    var WARTE_MS = 25000, KLICK_SPERRE_MS = 4000;
 
     /* Bubble-Platzhalter sind kein Wert. NUR die dieser Vorlage und keine Regel ueber
        Grossbuchstaben: settings-brand hat am 27.09. gemessen, dass /^[A-Z_]{3,}$/ auch ein Team
@@ -125,23 +125,21 @@
        Wurzel fliegt weg,
        eine frische Kopie der Vorlage kommt mit derselben data-instance, und Bubble schickt die
        Nutzlasten NICHT noch einmal. Ohne Vorrat stuende danach das Skelett fuer immer da.
-       Also ein Speicher am window, je data-instance, wie team-orga und settings-brand: Abo,
-       Tarife, die Stellung des Schalters und eine laufende Warte-Uhr. Das Fenster ist nach einem
-       Neuaufbau zu -- es gehoerte der alten Wurzel. */
+       Also ein Speicher am window, je data-instance, wie team-orga und settings-brand: Abo und
+       Tarife. Das Fenster mit den Tarifen fuehrt seinen Stand selbst (core, makePlanDialog) und
+       ist nach einem Neuaufbau zu -- es gehoerte der alten Wurzel. */
     var STORE = (window.__ublStore = window.__ublStore || {});
-    /* Ein Fenster je Instanz, am body. Es lebt laenger als die Wurzel, die es geoeffnet hat, und
-       wird von der naechsten weiterbenutzt (D.ctrl zeigt auf den Controller, der es zuletzt
-       geoeffnet hat). */
+    /* Das Tarif-Fenster je Instanz -- seit dem 28.09. UC.makePlanDialog aus core, dasselbe, das das
+       Access Gate oeffnet. Es lebt laenger als die Wurzel, die es geoeffnet hat; derselbe key
+       liefert es der naechsten Wurzel mit deren Rueckrufen. */
     var DLG = {};
-    var DLG_SEQ = 0;
     /* Wechselt die Host-App die Ansicht (die Settings-Seite wird verlassen), geht ein offenes
-       Fenster zu. Es haengt am body und laege sonst mit z-index 100000 ueber der naechsten Seite --
-       settings-brand verlangt dafuer einen Reset-Aufruf aus Bubble; hier reicht der Zuhoerer, den
-       core ohnehin fuehrt (showView). EIN Zuhoerer fuer alle Instanzen, nicht einer je Wurzel. */
+       Fenster zu. Es haengt am body und laege sonst ueber der naechsten Seite -- settings-brand
+       verlangt dafuer einen Reset-Aufruf aus Bubble; hier reicht der Zuhoerer, den core ohnehin
+       fuehrt (showView). EIN Zuhoerer fuer alle Instanzen, nicht einer je Wurzel. */
     if (UC.onViewChange) UC.onViewChange(function () {
       Object.keys(DLG).forEach(function (k) {
-        var D = DLG[k];
-        if (D && D.offen && D.ctrl) D.ctrl.planeSchliessen();
+        if (DLG[k] && DLG[k].isOpen()) DLG[k].close();
       });
     });
 
@@ -181,15 +179,9 @@
         abo: saved.abo || null,
         aboDa: !!saved.aboDa,
         aboFehler: !!saved.aboFehler,
-        plans: isArr(saved.plans) ? saved.plans : null,
-        plansFehler: !!saved.plansFehler,
-        /* Laeuft gerade eine Anfrage fuer die Tarife? Nicht aus dem Vorrat: nach einem Neuaufbau
-           ist das Fenster zu, und das naechste Oeffnen fragt ohnehin neu. */
-        plansWarten: false,
-        /* Die Stellung des Schalters im Fenster. ivGewaehlt: der Nutzer hat selbst umgeschaltet --
-           dann bleibt es dabei, auch wenn ein frisches Abo einen anderen Takt meldet. */
-        iv: saved.iv || "",
-        ivGewaehlt: !!saved.ivGewaehlt
+        /* Die Tarifliste nur noch fuer den Namen in der Tabelle (planName); das Fenster haelt
+           seine eigene Liste, seinen Takt und seine Warte-Uhr (core, makePlanDialog). */
+        plans: isArr(saved.plans) ? saved.plans : null
       };
 
       var fire = UC.makeFire(root, { label: "settings-billing", eventPrefix: "ubl" });
@@ -433,23 +425,6 @@
         }, dauer);
       }
 
-      /* ---- Warte-Uhr fuer die Tarife ----------------------------------------------------------- */
-      var planUhr = null;
-      function planUhrStoppen() { if (planUhr) { clearTimeout(planUhr); planUhr = null; } }
-      function planUhrStarten() {
-        planUhrStoppen();
-        planUhr = setTimeout(function () {
-          planUhr = null;
-          if (!state.plansWarten) return;
-          state.plansWarten = false;
-          /* Mit Vorrat bleibt der Vorrat stehen -- er ist die letzte gelesene Liste und wahrer als
-             ein Fehler. Ohne ihn waere weiteres Schimmern die Luege "gleich da". */
-          if (!state.plans) state.plansFehler = true;
-          persist();
-          planeZeichnen();
-        }, PLAN_WARTE_MS);
-      }
-
       /* ---- Vorrat -------------------------------------------------------------------------------
          Nur eine Wurzel, die noch im Dokument steht, schreibt: die alte lebt nach dem Neuaufbau
          als abgehaengter Knoten weiter, samt Uhren, und wuerde den Stand der neuen sonst mit ihrem
@@ -459,190 +434,37 @@
         STORE[instanceId] = {
           teamId: state.teamId, aboTeam: state.aboTeam, verwalten: state.verwalten,
           abo: state.abo, aboDa: state.aboDa, aboFehler: state.aboFehler,
-          plans: state.plans, plansFehler: state.plansFehler,
-          iv: state.iv, ivGewaehlt: state.ivGewaehlt,
+          plans: state.plans,
           warteBis: warteBis
         };
       }
 
       /* ══ Das Fenster mit allen Tarifen ═══════════════════════════════════════════════════════
-         Die Schale ist core's Modal, wie der Einladen-Dialog in team-orga: up-root, damit die
-         Marken aus core dort gelten und der Themen-Durchlauf von core es findet; up-portal, weil
-         es ausserhalb jeder Komponentenwurzel am body haengt -- setUpstreemTheme() stempelt genau
-         diese beiden. Am body und nicht im Element, damit kein overflow eines Bubble-Vorfahren es
-         abschneidet und kein z-index eines fremden Vorfahren angefasst werden muss. */
-      function dialog() {
-        var D = DLG[instanceId];
-        if (D && D.back.isConnected) return D;
-        var back = document.createElement("div");
-        back.className = "up-root up-portal up-topicmodal-backdrop ubl-backdrop";
-        back.setAttribute("aria-hidden", "true");
-        back.setAttribute("data-ubl-dialog", instanceId);
-        var tid = "ubl-dlg-" + (++DLG_SEQ);
-        back.innerHTML =
-          '<div class="up-topicmodal-card ubl-card" role="dialog" aria-modal="true"' +
-            ' aria-labelledby="' + tid + '" tabindex="-1">' +
-            '<div class="up-topicmodal-head">' +
-              '<div class="up-topicmodal-heading">' +
-                '<h2 class="up-topicmodal-title" id="' + tid + '" data-ubl-dtitel></h2>' +
-                '<p class="up-topicmodal-sub" data-ubl-dsub></p>' +
-              '</div>' +
-              '<button type="button" class="up-popup-close" data-ubl-close>' + UC.icon("x", 2) + '</button>' +
-            '</div>' +
-            '<div class="ubl-planbody" data-ubl-planbody></div>' +
-            '<div class="up-formerr ubl-selerr" data-ubl-selerr role="alert"><div><div class="up-formerr-in"></div></div></div>' +
-          '</div>';
-        document.body.appendChild(back);
-        D = {
-          back: back,
-          card: back.querySelector(".ubl-card"),
-          body: back.querySelector("[data-ubl-planbody]"),
-          err: back.querySelector("[data-ubl-selerr]"),
-          offen: false, ctrl: null, opener: null, kit: null, taste: null, unten: false
-        };
-        /* Schliessen auf dem Grund nur, wenn der Druck AUCH dort begann: wer in einer Karte Text
-           markiert und die Maus draussen loslaesst, bekommt einen click auf dem Grund -- und das
-           Fenster waere weg. */
-        back.addEventListener("pointerdown", function (e) { D.unten = e.target === back; });
-        back.addEventListener("click", function (e) {
-          if (e.target === back) {
-            var war = D.unten;
-            D.unten = false;
-            if (war && D.ctrl) D.ctrl.planeSchliessen();
-            return;
-          }
-          if (e.target.closest && e.target.closest("[data-ubl-close]") && D.ctrl) D.ctrl.planeSchliessen();
-        });
-        DLG[instanceId] = D;
-        return D;
-      }
-      function aktuellesIv() {
-        if (state.ivGewaehlt && state.iv) return state.iv;
-        /* Der Takt des Abos, sonst Jahr -- die Vorbelegung der Landingpage: der guenstigere Preis
-           soll zuerst dastehen. */
-        return (state.abo && state.abo.interval) || state.iv || "yearly";
-      }
-      function selFehler(an) {
-        var D = DLG[instanceId];
-        if (!D) return;
-        D.err.querySelector(".up-formerr-in").textContent =
-          UC.t("This plan could not be selected right now. Please reload the page.");
-        D.err.classList.toggle("is-on", !!an);
-      }
-      /* Der Inhalt des Fensters. Reihenfolge wie ueberall im Haus: der Fehler vor dem Skelett --
-         nur eine laufende Anfrage geht vor, sie raeumt die Meldung weg, bis ihre Antwort da ist. */
-      function planeZeichnen() {
-        var D = DLG[instanceId];
-        if (!D || !D.offen || D.ctrl !== ctrl) return;
-        if (state.plansFehler && !state.plansWarten) {
-          D.kit = null;
-          D.body.innerHTML = UC.leseFehlerHtml("the plans");
-          return;
+         Seit dem 28.09. UC.makePlanDialog aus core -- dasselbe Fenster, das das Access Gate als
+         seine Tarifliste oeffnet (gefragt: "das exakt gleiche Popup"). Schale, Karten, Warte-Uhr
+         (8s), Fehler vor dem Skelett, Escape, Fokusfalle: alles dort. Hier steht nur, was DIESE
+         Komponente hineingibt und was sie mit den Klicks macht. praefix "ubl": das Fenster traegt
+         seine bisherigen Klassen und data-Attribute weiter (.ubl-backdrop, [data-ubl-planbody]).
+         Die Rueckrufe gehoeren dem Controller, der das Fenster zuletzt angefordert hat -- nach
+         einem Neuaufbau also der neuen Wurzel. */
+      var dlg = typeof UC.makePlanDialog === "function" ? UC.makePlanDialog({
+        key: "ubl:" + instanceId,
+        praefix: "ubl",
+        isDark: isDark,
+        /* "Current plan" nur, solange das Team Zugang hat (markierteId). */
+        currentId: function () { return markierteId(); },
+        /* Der Takt des Abos als Vorbelegung, solange der Nutzer nicht selbst umschaltet. */
+        interval: function () { return (state.abo && state.abo.interval) || ""; },
+        onOpen: function () {
+          return fire("data-plans-fn", "ublPlans", mitTeam({ current_plan_id: markierteId() }));
+        },
+        /* Zu geht das Fenster erst, wenn der Klick einen Empfaenger hatte (core); sonst steht der
+           Satz darin. Danach Kasse oder Tarifwechsel -- ein Bubble-Popup laege unter dem Fenster. */
+        onSelect: function (info) {
+          return fire("data-select-plan-fn", "ublSelectPlan", mitTeam(info));
         }
-        if (state.plans && !state.plans.length) {
-          D.kit = null;
-          D.body.innerHTML = UC.leerHtml({ titel: "No plans available right now.", icon: "creditCard" });
-          return;
-        }
-        /* Karten oder Skelett: beides ist die Reihe aus core, ohne Tarife zeichnet sie Huellen. */
-        if (!D.kit || !D.body.contains(D.kit.el)) {
-          D.kit = UC.makePlans(D.body, {
-            plans: state.plans,
-            interval: aktuellesIv(),
-            currentId: markierteId(),
-            cta: "Get started",
-            fuss: "Prices exclude VAT. Cancel any time.",
-            onInterval: function (iv) { state.iv = iv; state.ivGewaehlt = true; persist(); },
-            onSelect: waehlen
-          });
-          return;
-        }
-        D.kit.setCurrent(markierteId());
-        D.kit.setInterval(aktuellesIv());
-        D.kit.setPlans(state.plans);
-      }
-      function dialogTexte(D) {
-        D.back.querySelector("[data-ubl-dtitel]").textContent = UC.t("All plans");
-        D.back.querySelector("[data-ubl-dsub]").textContent = UC.t("Pick the plan that fits your team.");
-        D.back.querySelector("[data-ubl-close]").setAttribute("aria-label", UC.t("Close"));
-      }
-      /* Tab bleibt im Fenster (aria-modal verspricht das). Ohne die Falle landet der Fokus nach dem
-         letzten Knopf hinter dem Grund auf der Seite, die man nicht sieht. */
-      function fokusFalle(e, card) {
-        var f = [].filter.call(card.querySelectorAll(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'),
-          function (x) { return !x.disabled && x.getClientRects().length > 0; });
-        if (!f.length) { e.preventDefault(); card.focus(); return; }
-        var erst = f[0], letzt = f[f.length - 1], a = document.activeElement;
-        if (e.shiftKey && (a === erst || a === card || !card.contains(a))) { e.preventDefault(); letzt.focus(); }
-        else if (!e.shiftKey && (a === letzt || !card.contains(a))) { e.preventDefault(); erst.focus(); }
-      }
-      function aufTaste(e) {
-        var D = DLG[instanceId];
-        if (!D || !D.offen) return;
-        /* Escape nur fuer DIESES Fenster und nicht weiter: sonst schloesse dieselbe Taste auch ein
-           Menue oder einen Drawer darunter (core's Topic-Modal, dieselbe Ueberlegung). */
-        if (e.key === "Escape" || e.key === "Esc") { e.stopPropagation(); e.preventDefault(); planeSchliessen(); return; }
-        if (e.key === "Tab") fokusFalle(e, D.card);
-      }
-      function planeOeffnen(opener) {
-        var D = dialog();
-        D.ctrl = ctrl;
-        D.opener = opener || document.activeElement;
-        if (isDark()) D.back.setAttribute("data-theme", "dark"); else D.back.removeAttribute("data-theme");
-        dialogTexte(D);
-        selFehler(false);
-        /* Ein neuer Ladeversuch: der alte Fehler geht weg, die Uhr laeuft. Liegen Tarife im
-           Vorrat, stehen sie sofort da und werden ersetzt, sobald die Antwort kommt. */
-        state.plansFehler = false;
-        state.plansWarten = true;
-        planUhrStarten();
-        D.offen = true;
-        /* Die Reihe wird bei jedem Oeffnen neu gebaut: ihre Rueckrufe gehoeren zum Controller, der
-           sie gebaut hat, und nach einem Neuaufbau ist das ein toter. Ein Bau kostet eine Handvoll
-           Knoten -- gegen einen Klick, der den Zustand einer abgehaengten Wurzel veraendert. */
-        D.kit = null;
-        planeZeichnen();
-        D.back.setAttribute("aria-hidden", "false");
-        /* Einmal Layout erzwingen, sonst laeuft der Uebergang von opacity 0 nicht (core's
-           Topic-Modal, derselbe Kniff). */
-        void D.back.offsetWidth;
-        D.back.classList.add("is-shown");
-        D.taste = aufTaste;
-        document.addEventListener("keydown", D.taste, true);
-        setTimeout(function () { try { if (D.offen) D.card.focus(); } catch (e) {} }, 40);
-        persist();
-        /* ZULETZT feuern: antwortet der Workflow im selben Zug (ein statischer Schritt), findet
-           seine Antwort den Wartezustand schon gesetzt und beendet ihn -- andersherum setzte das
-           Oeffnen ihn danach wieder auf "wartet". */
-        fire("data-plans-fn", "ublPlans", mitTeam({ current_plan_id: markierteId() }));
-      }
-      function planeSchliessen() {
-        var D = DLG[instanceId];
-        if (!D || !D.offen) return;
-        /* Fokus weg, BEVOR aria-hidden kommt -- ein fokussiertes Element unter aria-hidden weist
-           Chrome mit einer Konsolenmeldung zurueck (core's Topic-Modal). */
-        if (D.back.contains(document.activeElement)) { try { document.activeElement.blur(); } catch (e) {} }
-        D.offen = false;
-        D.back.classList.remove("is-shown");
-        D.back.setAttribute("aria-hidden", "true");
-        if (D.taste) document.removeEventListener("keydown", D.taste, true);
-        D.taste = null;
-        planUhrStoppen();
-        state.plansWarten = false;
-        var op = D.opener;
-        D.opener = null;
-        try { if (op && op.isConnected && op.focus) op.focus(); } catch (e) {}
-      }
-      function waehlen(info) {
-        /* Zu geht das Fenster erst, wenn der Klick einen Empfaenger hatte. Ohne Empfaenger bliebe
-           sonst ein geschlossenes Fenster und keine Wirkung -- dann steht der Satz im Fenster. */
-        var ok = fire("data-select-plan-fn", "ublSelectPlan", mitTeam(info));
-        if (!ok) { selFehler(true); return; }
-        /* Und dann sofort zu: der Workflow fuehrt zur Kasse oder zeigt eine eigene Bestaetigung,
-           und ein Bubble-Popup laege UNTER diesem Fenster (z-index 100000). */
-        planeSchliessen();
-      }
+      }) : null;
+      if (dlg) DLG[instanceId] = dlg;
 
       /* ---- Klicks ------------------------------------------------------------------------------ */
       root.addEventListener("click", function (e) {
@@ -652,7 +474,7 @@
         if (b && b.disabled) return;
         if (t.closest("[data-ubl-manage]")) { manage(); return; }
         var pb = t.closest("[data-ubl-plans]");
-        if (pb) { planeOeffnen(pb); return; }
+        if (pb && dlg) { dlg.open(pb); return; }
       });
 
       /* ---- Setter ------------------------------------------------------------------------------ */
@@ -675,27 +497,21 @@
         persist();
         render();
         /* Steht das Fenster offen, bekommt es den Tarif von JETZT -- ein Wechsel kann gerade
-           durchgelaufen sein. Den Takt nur, wenn der Nutzer ihn nicht selbst gewaehlt hat. */
-        var D = DLG[instanceId];
-        if (D && D.offen && D.ctrl === ctrl && D.kit) {
-          D.kit.setCurrent(markierteId());
-          if (!state.ivGewaehlt) D.kit.setInterval(aktuellesIv());
-        }
+           durchgelaufen sein. Den Takt nur, wenn der Nutzer ihn nicht selbst gewaehlt hat (core). */
+        if (dlg) dlg.sync();
       }
       function plaeneSetzen(p) {
         var r = plaeneLesen(p);
-        planUhrStoppen();
-        state.plansWarten = false;
         if (r.ok) {
           state.plans = r.liste;
-          state.plansFehler = false;
+          if (dlg) dlg.setPlans(r.liste);
         } else {
-          state.plansFehler = true;
+          /* Unlesbar: das Fenster sagt es (core), auch wenn es einen Vorrat gab. */
+          if (dlg) dlg.setFehler();
           if (window.console) console.warn("[settings-billing] " + instanceId +
             ": setBillingPlans konnte die Nutzlast nicht lesen.");
         }
         persist();
-        planeZeichnen();
         /* Die Tabelle nimmt den Namen notfalls aus der Tarifliste (planName). */
         render();
       }
@@ -703,19 +519,17 @@
       var ctrl = {
         abo: aboSetzen,
         plaene: plaeneSetzen,
-        planeSchliessen: planeSchliessen,
         reset: function () {
-          planeSchliessen();
+          /* Fenster zu und sein Stand geleert (Liste, Takt) -- ein anderes Team, andere Tarife. */
+          if (dlg) dlg.reset();
           warteBeenden();
-          planUhrStoppen();
           if (sperrUhr) { clearTimeout(sperrUhr); sperrUhr = null; }
           elManage.disabled = false;
           elManage.removeAttribute("aria-busy");
           manageFehler(false);
           state.abo = null; state.aboDa = false; state.aboFehler = false;
           state.aboTeam = ""; state.verwalten = null;
-          state.plans = null; state.plansFehler = false; state.plansWarten = false;
-          state.iv = ""; state.ivGewaehlt = false;
+          state.plans = null;
           /* Geloescht und nicht mit dem leeren Stand ueberschrieben: der zurueckgesetzte Stand IST
              der Anfangsstand, und ein ausdrueckliches Reset darf ein Neuaufbau nicht
              rueckgaengig machen (team-orga). */
@@ -727,8 +541,7 @@
         /* Zahlen-, Datums- oder Sprachwahl geaendert (makeMount ruft das bei up-prefs-change). */
         redraw: function () {
           render();
-          var D = DLG[instanceId];
-          if (D && D.offen && D.ctrl === ctrl) { dialogTexte(D); selFehler(D.err.classList.contains("is-on")); if (D.kit) D.kit.redraw(); }
+          if (dlg) dlg.redraw();
         }
       };
       root.__ublController = ctrl;
@@ -743,16 +556,15 @@
           if (t && state.teamId && t !== state.teamId) { state.teamId = t; ctrl.reset(); persist(); return; }
           if (t) state.teamId = t;
           render();
-          var D = DLG[instanceId];
-          if (D && D.offen && D.ctrl === ctrl && D.kit) D.kit.setCurrent(markierteId());
+          if (dlg) dlg.sync();
           persist();
         }).observe(root, { attributes: true, attributeFilter: ["data-team"] });
       }
 
-      /* Ein Fenster, das die VORIGE Wurzel dieser Instanz offen liess, geht zu -- es redet mit
-         einem Controller, den es nicht mehr gibt (so bestellt: nach dem Neuaufbau ist es zu). */
-      var altD = DLG[instanceId];
-      if (altD && altD.offen && altD.ctrl && altD.ctrl !== ctrl) altD.ctrl.planeSchliessen();
+      /* Ein Fenster, das die VORIGE Wurzel dieser Instanz offen liess, geht zu (so bestellt: nach
+         dem Neuaufbau ist es zu). Offen sein kann es hier nur von ihr: diese Wurzel ist eben erst
+         entstanden. */
+      if (dlg && dlg.isOpen()) dlg.close();
 
       /* Die Warte-Uhr: beim ersten Aufbau voll, bei einem Neuaufbau mitten im Warten nur der Rest.
          Ist der Rest schon um, endet es sofort -- genau wie es die alte Uhr getan haette. Mit Daten

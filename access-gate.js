@@ -4,36 +4,41 @@
    ── Was die Komponente ist ──────────────────────────────────────────────────
    Ein Fenster ueber der ganzen App, das nicht zugeht (28.09. bestellt: "beim Betreten der App ein
    Popup, wo er zur Wiederaufnahme seines Abonnements aufgefordert wird, und der Zugang der App
-   damit eingeschraenkt"). Es erscheint, sobald die Abo-RPC sagt, dass das Team keinen Zugang hat
-   (has_active_access: false) oder dass es das Team nicht mehr gibt (is_deleted). Es sagt, was los
-   ist, und bietet genau die Handlungen an, die den Zugang zurueckbringen -- den alten Tarif wieder
-   buchen, einen anderen waehlen, die Zahlungsmethode richten -- und die Wege hinaus: ein anderes
-   Team, ein neues Team, abmelden. Ohne einen Weg hinaus saesse fest, wer in mehreren Teams ist
-   (auch jeder von upstreem, der ein ausgelaufenes Kundenteam oeffnet).
+   damit eingeschraenkt"). Es erscheint, sobald die Quota-RPC sagt, dass das Team keinen Zugang
+   hat (has_access: false). Es sagt, was los ist, und bietet genau die Handlungen an, die den
+   Zugang zurueckbringen -- den alten Tarif wieder buchen, einen anderen waehlen, die
+   Zahlungsmethode richten -- und die Wege hinaus: ein anderes Team, ein neues Team, abmelden.
+   Ohne einen Weg hinaus saesse fest, wer in mehreren Teams ist (auch jeder von upstreem, der ein
+   ausgelaufenes Kundenteam oeffnet).
 
    ── Was sie NICHT ist ───────────────────────────────────────────────────────
    Sie ist das Schild an der Tuer, nicht das Schloss. Wer die Entwicklerwerkzeuge oeffnet, nimmt
    das Fenster weg; die Daten dahinter muss die Datenbank verweigern -- jede RPC prueft den Zugang
-   des Teams, die taeglichen Prompt-Laeufe ueberspringen Teams ohne Zugang. Das steht in der
-   Vorlage (bubble/access_gate_bubble.html, "DAS SCHLOSS").
-   Sie entscheidet auch nichts: gesperrt wird NUR auf ein ausdrueckliches has_active_access:false
-   oder is_deleted:true, gelesen von UC.aboLesen -- demselben Leser wie im Billing-Reiter. Fehlt die
-   Angabe, ist die Nutzlast unlesbar oder kommt sie gar nicht, bleibt die App offen: ein Fehler in
-   der Anlieferung darf keinen zahlenden Kunden aussperren, und das Schloss sitzt ohnehin in der
-   Datenbank. Gemeldet wird das in der Konsole wie in settings-billing -- im UI gibt es hier keine
-   Flaeche, auf der ein Lesefehler stehen koennte, ohne die App zu sperren.
+   des Teams (bubble/access_gate_setup.md).
+   Sie entscheidet auch nichts: das Urteil faellt die Datenbank (team_access, dieselbe Funktion,
+   die jede RPC davor fragt) und liefert es in der Quota-RPC mit -- has_access und access_state.
+   Gesperrt wird NUR auf ein ausdrueckliches has_access:false. Fehlt die Angabe, ist die Nutzlast
+   unlesbar oder kommt sie gar nicht, bleibt die App offen: ein Fehler in der Anlieferung darf
+   keinen zahlenden Kunden aussperren, und das Schloss sitzt ohnehin in der Datenbank. Gemeldet
+   wird das in der Konsole wie in settings-billing -- im UI gibt es hier keine Flaeche, auf der
+   ein Lesefehler stehen koennte, ohne die App zu sperren.
+   Ein Loeschdatum in der ZUKUNFT (28.09. gemeldet: "is_deleted kann auch mit einem Datum in der
+   Zukunft kommen") ist deshalb hier kein Fall: bis zu diesem Datum hat das Team Zugang, und das
+   sagt team_access mit has_access:true.
 
    ── Woher die Masse kommen ──────────────────────────────────────────────────
    Nichts davon ist neu erfunden, siehe den Kopf von access-gate.css: die Schale ist core's Modal
-   wie in team-orga und settings-billing, die Karte hat die Masse des Einladen-Dialogs, die Tarife
-   sind UC.makePlans (dieselbe Reihe wie im Billing-Reiter), die Teamzeilen core's .up-pop-opt mit
-   .up-logo-box wie im Teamschalter der Seitenleiste.
+   wie in team-orga, die Karte hat die Masse des Einladen-Dialogs, die Teamzeilen sind core's
+   .up-pop-opt mit .up-logo-box wie im Teamschalter der Seitenleiste. Die Tarifliste ist KEIN
+   eigenes Fenster: es ist UC.makePlanDialog aus core -- exakt das Fenster des Billing-Reiters
+   (28.09. gefragt: "kann ich nicht einfach das exakt gleiche Popup nutzen?").
 
    ── Daten hinein (Run-JS, siehe bubble/access_gate_bubble.html) ────────────
-     setAccessGate(TEXT)        die Nutzlast der Abo-RPC unveraendert -- DIESELBE wie im
-                                Billing-Reiter (setBillingSubscription): {ok, team_id, team_name,
-                                is_deleted, deleted_at, billing:{…}}
-     setAccessGatePlans(TEXT)   alle Tarife, die Liste der Tarif-RPC unveraendert
+     setAccessGate(TEXT)        die Zeile der Quota-RPC get_team_plan_quota, unveraendert --
+                                derselbe Aufruf, der beim Seitenaufbau ohnehin laeuft, um die
+                                Felder des Gates erweitert (siehe quotaLesen)
+     setAccessGatePlans(TEXT)   alle Tarife, die Liste der Tarif-RPC unveraendert (wie
+                                setBillingPlans)
      resetAccessGate()          Fenster weg, Vorrat geleert (Teamwechsel ohne Neuladen)
    Alle drei auch mit der Instanz davor: setAccessGate("INSTANCE_ID", TEXT).
    Die Teams fuer "Switch team" kommen NICHT von Bubble: die Seitenleiste hat sie ohnehin (siehe
@@ -44,8 +49,8 @@
                       yearly_price_eur, trial_days, current_plan_id }
                     dieselben Schluessel wie ublSelectPlan im Billing-Reiter -- derselbe Workflow
                     zur Kasse kann beide bedienen. Aus "Reactivate …"/"Continue with …" (der Tarif
-                    aus dem Abo) oder aus einer Karte der Tarifliste.
-     uagPlans       { team_id, current_plan_id: "" }   Tarifliste geoeffnet -> Tarif-RPC holen
+                    aus der Quota-Zeile) oder aus einer Karte des Tarif-Fensters.
+     uagPlans       { team_id, current_plan_id: "" }   Tarif-Fenster geoeffnet -> Tarif-RPC holen
      uagManage      { team_id }                         Portal (Zahlungsmethode, Rechnungen)
      uagTeam        { team_id }        das GEWAEHLTE Team -- dieselbe Form wie usnTeam der Leiste
      uagNewTeam     { team_id, action: "new_team" }     dieselbe Form wie usnNewTeam
@@ -94,8 +99,8 @@
     var UC = window.UpstreemCore;
     var esc = UC.esc;
 
-    var MISSING = ["makeMount", "makeFire", "makeLate", "leseFehlerHtml", "leerHtml", "icon", "esc",
-                   "fmtDate", "t", "themeParam", "makePlans", "aboLesen", "plaeneLesen"]
+    var MISSING = ["makeMount", "makeFire", "makeLate", "leerHtml", "icon", "esc", "fmtDate", "t",
+                   "themeParam", "readBubble", "toNum", "planInterval", "plaeneLesen", "makePlanDialog"]
       .filter(function (k) { return typeof UC[k] !== "function"; });
     if (MISSING.length && window.console) {
       console.error("[access-gate] Die core.js auf dieser Seite ist AELTER als access-gate.js, es " +
@@ -106,20 +111,22 @@
        KLICK_SPERRE_MS: jeder Knopf hier legt bei Stripe etwas an (Kasse, Portal) oder laedt die
        Seite neu (Teamwechsel, Abmelden). Ein Doppelklick waeren zwei Sitzungen; vier Sekunden
        decken die Rundreise ab -- dieselbe Zahl wie "Manage Billing" im Billing-Reiter.
-       PLAN_WARTE_MS: bis die Tarife da sein muessen, nachdem die Liste sie angefordert hat -- 8s
-       wie im Billing-Reiter und im Onboarding.
        TEAM_SUCHE_MS: so lange wird nach der Teamliste der Seitenleiste gesehen, falls die nach der
        Sperre ankommt. Danach gibt es kein "Switch team" -- die Leiste bekommt ihre Liste im
        selben Seiten-Workflow, 20s sind weit mehr als dessen Laufzeit.
        WURZEL_PRUEF_MS: wie oft das offene Fenster prueft, ob sein Element noch auf der Seite
-       steht (siehe wurzelWache). */
-    var KLICK_SPERRE_MS = 4000, PLAN_WARTE_MS = 8000, TEAM_SUCHE_MS = 20000, WURZEL_PRUEF_MS = 1500;
+       steht (siehe wurzelWache).
+       Die Uhr fuer die Tarife (8s) fuehrt das Tarif-Fenster selbst (core, makePlanDialog). */
+    var KLICK_SPERRE_MS = 4000, TEAM_SUCHE_MS = 20000, WURZEL_PRUEF_MS = 1500;
 
     /* Bubble-Platzhalter sind kein Wert -- nur die dieser Vorlage (settings-billing, 27.09.). */
     var PLATZHALTER = { TEAM_ID: 1, INSTANCE_ID: 1 };
     function txt(v) { return String(v == null ? "" : v).trim(); }
     function feld(v) { var s = txt(v); return PLATZHALTER[s] ? "" : s; }
     function isArr(v) { return Object.prototype.toString.call(v) === "[object Array]"; }
+    /* Ein ausdrueckliches Nein, in jeder Form, in der es ankommen kann: false aus echtem JSON,
+       "false"/"no" aus einem Bubble-Ausdruck. Fehlt der Wert, ist es KEIN Nein. */
+    function nein(v) { return v === false || /^(false|no|0)$/i.test(txt(v)); }
     function zeit(v) {
       if (!v) return null;
       var d = new Date(v);
@@ -139,81 +146,90 @@
     var spaet = UC.makeLate ? UC.makeLate("access-gate", ".uag-root") : null;
     var mount;
 
-    /* ---- Das Urteil ----------------------------------------------------------------------------
-       Aus dem gelesenen Abo (UC.aboLesen) wird genau eine von fuenf Lagen -- oder null, dann ist
-       die App offen. Die Reihenfolge ist die Rangfolge:
-         deleted   is_deleted -- das Team gibt es nicht mehr. KEINE Reaktivierung: wer ein
-                   geloeschtes Team wieder bucht, bezahlt fuer etwas, das es nicht mehr gibt.
-                   Das gilt auch bei laufendem Abo -- ein geloeschtes Team ist nicht benutzbar.
-         pastdue   is_past_due oder status past_due/unpaid -- das Problem ist die Karte, nicht der
-                   Tarif. Der Weg ist das Portal (Zahlungsmethode), keine neue Kasse.
-         trial     die Testphase lief aus, ohne dass bezahlt wurde (testVorbei)
-         noplan    lesbar, aber kein Abo -- und die RPC sagt ausdruecklich "kein Zugang"
-         ended     alles andere ohne Zugang: gekuendigt, abgelaufen
+    /* ---- Die Quota-Zeile lesen --------------------------------------------------------------
+       get_team_plan_quota liefert EINE Zeile je Team, als Liste mit einem Eintrag (28.09.
+       geliefert: plan_id, plan_name, prompts_per_day, active_prompts, remaining_by_active,
+       competitors_max_active, competitors_active, competitors_remaining). Fuer das Gate kommt
+       dazu (bubble/access_gate_setup.md, Schritt 3):
+         team_id, team_name     wessen Zugang, fuer Ereignisse und den Satz
+         has_access             DAS URTEIL -- team_access(team_id), dieselbe Funktion wie vor
+                                jeder RPC
+         access_state           warum nicht: deleted | past_due | trial_ended | no_plan | ended
+         access_ended_at        seit wann nicht (beim geloeschten Team: das Loeschdatum)
+         can_manage_billing     darf DIESER Nutzer buchen
+         billing_interval       Takt des letzten Abos -- ohne ihn kein "Reactivate <Tarif>"
+         monthly_price_eur, yearly_price_eur   freiwillig: der Preis im Ereignis zur Kasse
+       Leer ("", "null", "[]") heisst: keine Zeile, also kein Urteil -- die App bleibt offen.
+       Unlesbar ist etwas anderes (CLAUDE.md 2): das meldet die Konsole, und die letzte gelesene
+       Lage bleibt stehen. */
+    function quotaLesen(p) {
+      if (p == null) return { ok: true, zeile: null };
+      if (typeof p === "string") {
+        var s = p.trim();
+        if (!s || s === "null" || s === "[]" || s === "{}") return { ok: true, zeile: null };
+        p = UC.readBubble(s);
+        if (p == null) return { ok: false };
+      }
+      /* readBubble liefert ein Objekt als Liste mit EINEM Eintrag; die RPC selbst auch. */
+      if (isArr(p)) {
+        if (!p.length) return { ok: true, zeile: null };
+        p = p[0];
+      }
+      if (!p || typeof p !== "object" || isArr(p)) return { ok: false };
+      if (nein(p.ok)) return { ok: false };
+      return { ok: true, zeile: p };
+    }
+    /* Das Urteil wird nur GELESEN. Gesperrt ist nur ein ausdrueckliches Nein; welche der fuenf
+       Lagen es ist, sagt access_state -- die Datenbank weiss, ob eine Testphase auslief oder eine
+       Zahlung offen ist, die Oberflaeche muesste es aus Datumswerten raten. Ein unbekannter Wert
+       ist "ended": der allgemeine Satz passt immer.
        verwalten: can_manage_billing:false -- dieser Nutzer kann nichts buchen. Er sieht dieselbe
        Lage, aber statt der Knoepfe den Satz, wen er fragen muss. */
-    function lageAus(r) {
-      if (!r || !r.ok) return null;
-      if (!r.geloescht && r.zugang !== false) return null;
-      var a = r.abo;
-      var art = r.geloescht ? "deleted"
-        : !a ? "noplan"
-        : a.zahlungOffen ? "pastdue"
-        : testVorbei(a) ? "trial"
-        : "ended";
-      return { art: art, verwalten: r.verwalten !== false, teamId: r.teamId || "",
-               teamName: r.teamName || "", geloeschtAm: r.geloeschtAm || "", abo: a || null };
-    }
-    /* Endete das Abo mit der Testphase? Dann ist es eine abgelaufene Testphase und kein
-       gekuendigtes Abo. Ein Abo, das nach der Testphase bezahlt lief und spaeter endete, traegt
-       trial_ends_at weiter -- es endete dann aber deutlich NACH ihr. Ein Tag Spielraum faengt ab,
-       dass Stripe die Kuendigung Sekunden bis Stunden nach dem Ende der Testphase schreibt. */
-    function testVorbei(a) {
-      if (a.testLaeuft) return true;
-      var t = zeit(a.testBis);
-      if (t == null) return false;
-      var e = zeit(a.zugangBis || a.beendet || a.gekuendigt);
-      return e == null || e <= t + 86400000;
+    var ARTEN = { deleted: "deleted", past_due: "pastdue", unpaid: "pastdue", trial_ended: "trial",
+                  no_plan: "noplan", ended: "ended" };
+    function lageAus(z) {
+      if (!z || !nein(z.has_access)) return null;
+      var st = txt(z.access_state).toLowerCase();
+      return {
+        art: ARTEN[st] || "ended",
+        verwalten: !nein(z.can_manage_billing),
+        teamId: txt(z.team_id),
+        teamName: txt(z.team_name),
+        endeAm: txt(z.access_ended_at),
+        planId: txt(z.plan_id),
+        planName: txt(z.plan_name),
+        interval: UC.planInterval(z.billing_interval),
+        monatPreis: UC.toNum(z.monthly_price_eur),
+        jahrPreis: UC.toNum(z.yearly_price_eur)
+      };
     }
     /* Das Datum im Satz: WANN es endete. Nur eines, das schon war -- ein Datum in der Zukunft bei
-       has_active_access:false passt nicht zusammen, und "endete am 3. Oktober" am 28. September
-       waere falsch. Dann steht der Satz ohne Datum ("is no longer active"). */
+       has_access:false passt nicht zusammen, und "endete am 3. Oktober" am 28. September waere
+       falsch. Dann steht der Satz ohne Datum ("is no longer active"). */
     function warDatum(v) {
       var t = zeit(v);
       if (t == null || t > Date.now()) return "";
       var f = UC.fmtDate(v);
       return f && f !== "–" ? f : "";
     }
-    function lageDatum(L) {
-      if (L.art === "deleted") return warDatum(L.geloeschtAm);
-      var a = L.abo;
-      if (!a) return "";
-      var ende = warDatum(a.zugangBis) || warDatum(a.beendet) || warDatum(a.gekuendigt);
-      return L.art === "trial" ? (warDatum(a.testBis) || ende) : ende;
-    }
     /* Kann "Reactivate …" den alten Tarif wieder buchen? Nur mit Id UND Takt: ohne Takt waere es
-       eine Kasse zu einem geratenen Preis -- dann fuehrt der Weg ueber die Tarifliste, wo der
+       eine Kasse zu einem geratenen Preis -- dann fuehrt der Weg ueber das Tarif-Fenster, wo der
        Nutzer den Takt selbst waehlt. */
-    function wiederbuchbar(L) {
-      return !!(L.abo && L.abo.planId && L.abo.interval);
-    }
+    function wiederbuchbar(L) { return !!(L.planId && L.interval); }
     /* Was "Reactivate …" meldet: dieselben Schluessel in derselben Reihenfolge wie ein Klick auf
-       eine Karte (core planInfo), damit EIN Workflow zur Kasse beide bedient. price_eur ist der
-       Betrag JE TAKT zum heutigen Preis des Tarifs; nur ohne den der Betrag des alten Abos.
-       trial_days wie es die RPC am Abo fuehrt -- ob ein zurueckkehrender Kunde noch einmal eine
-       Testphase bekommt, entscheidet der Workflow, nicht diese Datei. */
-    function reaktivInfo(a) {
-      var iv = a.interval;
-      var preis = iv === "monthly" ? a.monatPreis : (iv === "yearly" ? a.jahrPreis : null);
-      if (preis == null) preis = a.preis;
+       eine Karte (core planInfo), damit EIN Workflow zur Kasse beide bedient. Preise nur, wenn die
+       Quota-Zeile sie mitbringt; trial_days bleibt leer -- ob ein zurueckkehrender Kunde noch
+       einmal eine Testphase bekommt, entscheidet der Workflow, nicht diese Datei. */
+    function reaktivInfo(L) {
+      var preis = L.interval === "monthly" ? L.monatPreis : (L.interval === "yearly" ? L.jahrPreis : null);
       return {
-        plan_id: a.planId,
-        plan_name: a.planName,
-        billing_interval: iv,
+        plan_id: L.planId,
+        plan_name: L.planName,
+        billing_interval: L.interval,
         price_eur: preis,
-        monthly_price_eur: a.monatPreis,
-        yearly_price_eur: a.jahrPreis,
-        trial_days: a.testTage,
+        monthly_price_eur: L.monatPreis,
+        yearly_price_eur: L.jahrPreis,
+        trial_days: null,
         current_plan_id: ""
       };
     }
@@ -260,13 +276,9 @@
         teamId: saved.teamId || teamJetzt,
         /* Die Lage (lageAus). null: die App ist offen. */
         lage: saved.lage || null,
-        plans: isArr(saved.plans) ? saved.plans : null,
-        plansFehler: !!saved.plansFehler,
-        plansWarten: false,
-        /* Welche Seite des Fensters: info (die Nachricht), plans, teams. */
-        ansicht: saved.ansicht || "info",
-        iv: saved.iv || "",
-        ivGewaehlt: !!saved.ivGewaehlt,
+        /* Welche Seite des Fensters: info (die Nachricht) oder teams. Die Tarife sind kein Teil
+           davon -- sie sind das Tarif-Fenster aus core, das UEBER dem Gate aufgeht. */
+        ansicht: saved.ansicht === "teams" ? "teams" : "info",
         /* Der Satz im Fehlerkasten, wenn ein Klick keinen Empfaenger fand. */
         fehler: ""
       };
@@ -279,7 +291,7 @@
       root.innerHTML = "";
 
       /* ---- Das Fenster ------------------------------------------------------------------------
-         Die Schale ist core's Modal, wie das Tarif-Fenster im Billing-Reiter: up-root, damit die
+         Die Schale ist core's Modal, wie der Einladen-Dialog in team-orga: up-root, damit die
          Marken aus core gelten und der Themen-Durchlauf von core es findet; up-portal, weil es am
          body haengt -- setUpstreemTheme() stempelt genau diese beiden. Am body und nicht im
          Element: kein overflow eines Bubble-Vorfahren schneidet es ab, und kein z-index eines
@@ -305,14 +317,7 @@
                 '<p class="up-topicmodal-sub uag-text" id="uag-d-' + n + '" data-uag-text></p>' +
               '</div>' +
             '</div>' +
-            /* Zwei feste Gastgeber statt eines geteilten: die Tarifreihe bleibt stehen, wenn man
-               zur Nachricht zurueckgeht. Jede NEUE Reihe haengt in core einen Breitenwaechter an,
-               der nie wieder abgemeldet wird (makePlans, widthTiers) -- beim Hin und Her waeren es
-               sonst so viele Waechter wie Klicks. */
-            '<div class="uag-body" data-uag-body hidden>' +
-              '<div class="uag-planbody" data-uag-plans hidden></div>' +
-              '<div class="uag-teambody" data-uag-teams hidden></div>' +
-            '</div>' +
+            '<div class="uag-body" data-uag-body hidden></div>' +
             '<div class="uag-actions" data-uag-actions>' +
               '<div class="uag-foot" data-uag-foot></div>' +
               /* Der Fehlerkasten aus core, wie im Billing-Reiter: Huelle > Zwischenkasten >
@@ -329,13 +334,11 @@
           titel: back.querySelector("[data-uag-titel]"),
           text: back.querySelector("[data-uag-text]"),
           body: back.querySelector("[data-uag-body]"),
-          plans: back.querySelector("[data-uag-plans]"),
-          teams: back.querySelector("[data-uag-teams]"),
           actions: back.querySelector("[data-uag-actions]"),
           foot: back.querySelector("[data-uag-foot]"),
           err: back.querySelector("[data-uag-err]"),
           meta: back.querySelector("[data-uag-meta]"),
-          offen: false, ctrl: null, kit: null, taste: null, wache: null, fehlend: 0,
+          offen: false, ctrl: null, taste: null, wache: null, fehlend: 0,
           teamUhr: null, sperre: null
         };
         /* Ein Klick auf den Grund tut NICHTS -- es gibt kein Schliessen. Alles andere geht an den
@@ -344,6 +347,33 @@
         GATE[instanceId] = G;
         return G;
       }
+
+      /* ---- Das Tarif-Fenster -- dasselbe wie im Billing-Reiter (core, makePlanDialog) ----------
+         Es geht UEBER dem Gate auf (core.css: 100002 gegen 100001) und schliesst wie dort mit X,
+         Escape und Klick daneben -- darunter steht wieder das Gate. praefix "uagp" und nicht
+         "uag": dessen Klassen (.uag-backdrop, .uag-card) traegt schon das Gate selbst, und ihre
+         Regeln (Breite 520, z-index) duerfen das Tarif-Fenster nicht treffen. Derselbe key liefert
+         einer neu gebauten Wurzel dasselbe Fenster mit ihren Rueckrufen. */
+      var dlg = typeof UC.makePlanDialog === "function" ? UC.makePlanDialog({
+        key: "uag:" + instanceId,
+        praefix: "uagp",
+        isDark: isDark,
+        /* Kein Tarif ist "Current plan": ohne Zugang gibt es keinen laufenden. */
+        currentId: function () { return ""; },
+        interval: function () { return (state.lage && state.lage.interval) || ""; },
+        onOpen: function () {
+          return fire("data-plans-fn", "uagPlans", mitTeam({ current_plan_id: "" }));
+        },
+        onSelect: function (info) {
+          var ok = fire("data-select-plan-fn", "uagSelectPlan", mitTeam(info));
+          /* Das Tarif-Fenster geht danach zu, das Gate steht wieder da -- und seine Knoepfe
+             stehen dieselben 4s still wie nach einem eigenen Klick: ein "Reactivate" jetzt waere
+             die zweite Kasse. */
+          var G = GATE[instanceId];
+          if (ok && G) sperren(G, null);
+          return ok;
+        }
+      }) : null;
 
       /* ---- Die Saetze ----------------------------------------------------------------------------
          Jeder Satz geht beim Zeichnen durch UC.t: der Sprachlauf von core erreicht ein Fenster am
@@ -371,10 +401,9 @@
         return esc(anfang ? s.charAt(0).toUpperCase() + s.slice(1) : s);
       }
       function textHtml(L) {
-        var d = lageDatum(L);
+        var d = warDatum(L.endeAm);
         var dh = d ? esc(d) : "";
-        var plan = L.abo && L.abo.planName;
-        var w = { team: teamHtml(L, false), plan: plan ? nameHtml(plan) : "", date: dh };
+        var w = { team: teamHtml(L, false), plan: L.planName ? nameHtml(L.planName) : "", date: dh };
         var s1, s2;
         if (L.art === "deleted") {
           s1 = d ? setze("{team} was deleted on {date}.", { team: teamHtml(L, true), date: dh })
@@ -392,7 +421,7 @@
           s1 = setze("{team} needs an active plan to use upstreem.", { team: teamHtml(L, true) });
           s2 = L.verwalten ? "Pick the plan that fits your team." : "Ask a team owner to choose a plan.";
         } else {
-          s1 = plan
+          s1 = L.planName
             ? setze(d ? "The {plan} plan for {team} ended on {date}." : "The {plan} plan for {team} is no longer active.", w)
             : setze(d ? "The subscription for {team} ended on {date}." : "The subscription for {team} is no longer active.", w);
           s2 = !L.verwalten ? "Ask a team owner to reactivate it."
@@ -428,9 +457,10 @@
         return k;
       }
       function knopfHtml(b, L) {
-        var lbl = b.lbl.indexOf("{plan}") >= 0 ? setze(b.lbl, { plan: nameHtml(L.abo.planName || "") }) : esc(UC.t(b.lbl));
+        var lbl = b.lbl.indexOf("{plan}") >= 0 ? setze(b.lbl, { plan: nameHtml(L.planName || "") }) : esc(UC.t(b.lbl));
         return '<button class="' + (b.pri ? "up-btn-pri" : "up-btn-sec") + ' is-lg uag-btn" type="button"' +
-          ' data-uag-tat="' + b.tat + '">' + (b.ic ? UC.icon(b.ic, 2) : "") + '<span>' + lbl + '</span></button>';
+          ' data-uag-tat="' + b.tat + '"' + (b.tat === "plans" ? ' aria-haspopup="dialog"' : "") + '>' +
+          (b.ic ? UC.icon(b.ic, 2) : "") + '<span>' + lbl + '</span></button>';
       }
       /* Die leisen Wege darunter. "Manage Billing" nur fuer ein Abo, das es gab (Rechnungen,
          Zahlungsmethode) -- bei offener Zahlung ist es schon der Hauptknopf, ohne Abo gibt es im
@@ -494,9 +524,9 @@
         state.fehler = satz || "";
         G.err.querySelector(".up-formerr-in").textContent = satz ? UC.t(satz) : "";
         G.err.classList.toggle("is-on", !!satz);
-        /* In der Tarif- und der Teamliste gibt es weder Knoepfe noch Wege darunter -- der leere
-           Block naehme trotzdem die 32px Luecke der Karte mit (gemessen: ein Streifen unter der
-           Liste). Er steht dort nur, solange ein Fehler zu sagen ist. */
+        /* In der Teamliste gibt es weder Knoepfe noch Wege darunter -- der leere Block naehme
+           trotzdem die 32px Luecke der Karte mit (gemessen: ein Streifen unter der Liste). Er
+           steht dort nur, solange ein Fehler zu sagen ist. */
         G.actions.hidden = state.ansicht !== "info" && !satz;
       }
       function zeichnen() {
@@ -505,74 +535,28 @@
         var L = state.lage;
         if (!L) return;
         if (isDark()) G.back.setAttribute("data-theme", "dark"); else G.back.removeAttribute("data-theme");
-        var an = state.ansicht;
         /* Ohne andere Teams gibt es die Teamliste nicht -- auch nicht aus dem Vorrat. */
-        if (an === "teams" && !andereTeams().length) an = state.ansicht = "info";
-        /* Wer nicht verwalten darf, sieht keine Tarifliste (sie fuehrte in eine Kasse). */
-        if (an === "plans" && !L.verwalten) an = state.ansicht = "info";
-        G.card.classList.toggle("is-plans", an === "plans");
-        G.zurueck.hidden = an === "info";
-        G.body.hidden = an === "info";
-        G.plans.hidden = an !== "plans";
-        G.teams.hidden = an !== "teams";
+        if (state.ansicht === "teams" && !andereTeams().length) state.ansicht = "info";
+        var teams = state.ansicht === "teams";
+        G.zurueck.hidden = !teams;
         G.zurueck.setAttribute("aria-label", UC.t("Back"));
-        if (an === "plans") {
-          G.titel.textContent = UC.t("All plans");
-          G.text.textContent = UC.t("Pick the plan that fits your team.");
-          G.foot.innerHTML = "";
-          G.meta.innerHTML = "";
-          planeZeichnen(G);
-        } else if (an === "teams") {
+        G.body.hidden = !teams;
+        if (teams) {
           G.titel.textContent = UC.t("Switch team");
           G.text.textContent = UC.t("Open another team you belong to.");
-          G.teams.innerHTML = teamsHtml();
+          G.body.innerHTML = teamsHtml();
           G.foot.innerHTML = "";
           G.meta.innerHTML = "";
         } else {
           G.titel.textContent = UC.t(TITEL[L.art] || TITEL.ended);
           G.text.innerHTML = textHtml(L);
+          G.body.innerHTML = "";
           G.foot.innerHTML = knoepfe(L).map(function (b) { return knopfHtml(b, L); }).join("");
           G.meta.innerHTML = metaHtml(L);
           teamSuche(G);
         }
         fehlerZeigen(G, state.fehler);
         if (G.sperre) sperreAnwenden(G);
-      }
-      function aktuellesIv() {
-        if (state.ivGewaehlt && state.iv) return state.iv;
-        /* Der Takt des alten Abos, sonst Jahr -- die Vorbelegung der Landingpage. */
-        return (state.lage && state.lage.abo && state.lage.abo.interval) || state.iv || "yearly";
-      }
-      /* Der Inhalt der Tarifliste. Reihenfolge wie ueberall im Haus: der Fehler vor dem Skelett --
-         nur eine laufende Anfrage geht vor, sie raeumt die Meldung weg, bis ihre Antwort da ist. */
-      function planeZeichnen(G) {
-        if (state.plansFehler && !state.plansWarten) {
-          G.kit = null;
-          G.plans.innerHTML = UC.leseFehlerHtml("the plans");
-          return;
-        }
-        if (state.plans && !state.plans.length) {
-          G.kit = null;
-          G.plans.innerHTML = UC.leerHtml({ titel: "No plans available right now.", icon: "creditCard" });
-          return;
-        }
-        /* Die Rueckrufe fragen G.ctrl und nicht diesen Controller: die Reihe ueberlebt so auch einen
-           Neuaufbau der Wurzel. */
-        if (!G.kit || !G.plans.contains(G.kit.el)) {
-          G.kit = UC.makePlans(G.plans, {
-            plans: state.plans,
-            interval: aktuellesIv(),
-            /* Kein Tarif ist "Current plan": ohne Zugang gibt es keinen laufenden. */
-            currentId: "",
-            cta: "Get started",
-            fuss: "Prices exclude VAT. Cancel any time.",
-            onInterval: function (iv) { if (G.ctrl) G.ctrl.ivSetzen(iv); },
-            onSelect: function (info) { if (G.ctrl) G.ctrl.waehlen(info); }
-          });
-          return;
-        }
-        if (!state.ivGewaehlt) G.kit.setInterval(aktuellesIv());
-        G.kit.setPlans(state.plans);
       }
 
       /* ---- Zeigen und verbergen ------------------------------------------------------------------ */
@@ -600,6 +584,8 @@
       }
       function verbergen() {
         var G = GATE[instanceId];
+        /* Das Tarif-Fenster gehoert zur Sperre -- ist der Zugang zurueck, geht es mit. */
+        if (dlg && dlg.isOpen()) dlg.close();
         if (!G || !G.offen) return;
         /* Fokus weg, BEVOR aria-hidden kommt -- ein fokussiertes Element unter aria-hidden weist
            Chrome mit einer Konsolenmeldung zurueck. */
@@ -667,7 +653,6 @@
          tut, ist in einem Fenster, das man nicht schliessen kann, eine Falle. */
       var FEHLER = {
         reaktiv: "This plan could not be selected right now. Please reload the page.",
-        select: "This plan could not be selected right now. Please reload the page.",
         manage: "The billing portal could not be opened. Please reload the page.",
         team: "The team could not be switched right now. Please reload the page.",
         newteam: "A new team could not be created right now. Please reload the page.",
@@ -686,23 +671,6 @@
         var G = GATE[instanceId];
         if (G) setTimeout(function () { try { if (G.offen) G.card.focus(); } catch (e) {} }, 0);
       }
-      function planeOeffnen() {
-        state.plansFehler = false;
-        state.plansWarten = true;
-        planUhrStarten();
-        ansichtSetzen("plans");
-        /* ZULETZT feuern (wie im Billing-Reiter): antwortet der Workflow im selben Zug, findet seine
-           Antwort den Wartezustand schon gesetzt und beendet ihn. Fehlt der Empfaenger, kommt nie
-           eine Antwort -- dann steht der Fehler sofort da und nicht erst nach 8s Schimmern. */
-        var ok = fire("data-plans-fn", "uagPlans", mitTeam({ current_plan_id: "" }));
-        if (!ok && state.plansWarten) {
-          planUhrStoppen();
-          state.plansWarten = false;
-          if (!state.plans) state.plansFehler = true;
-          persist();
-          zeichnen();
-        }
-      }
       function klick(e) {
         var t = e.target;
         var G = GATE[instanceId];
@@ -719,29 +687,27 @@
         if (!el) return;
         var tat = el.getAttribute("data-uag-tat");
         var L = state.lage;
-        if (tat === "plans") { planeOeffnen(); return; }
+        if (tat === "plans") {
+          fehlerZeigen(G, "");
+          if (dlg) dlg.open(el);
+          return;
+        }
         if (tat === "teams") { ansichtSetzen("teams"); return; }
-        if (tat === "reaktiv" && L && L.abo) {
-          melden(G, tat, fire("data-select-plan-fn", "uagSelectPlan", mitTeam(reaktivInfo(L.abo))), el);
+        if (tat === "reaktiv" && L) {
+          melden(G, tat, fire("data-select-plan-fn", "uagSelectPlan", mitTeam(reaktivInfo(L))), el);
           return;
         }
         if (tat === "manage") { melden(G, tat, fire("data-manage-fn", "uagManage", mitTeam({})), el); return; }
         if (tat === "newteam") { melden(G, tat, fire("data-newteam-fn", "uagNewTeam", mitTeam({ action: "new_team" })), el); return; }
         if (tat === "logout") { melden(G, tat, fire("data-logout-fn", "uagLogout", mitTeam({ action: "logout" })), el); return; }
       }
-      function waehlen(info) {
-        var G = GATE[instanceId];
-        if (!G) return;
-        var ok = fire("data-select-plan-fn", "uagSelectPlan", mitTeam(info));
-        var knopf = null;
-        try { knopf = G.plans.querySelector('[data-up-plan-go="' + String(info.plan_id).replace(/"/g, "") + '"]'); } catch (e) {}
-        melden(G, "select", ok, knopf);
-      }
       /* Tab bleibt im Fenster (aria-modal verspricht das), Escape geht eine Seite zurueck und
          schliesst NIE. Und keine Taste erreicht die App dahinter: ihre Kurzbefehle wuerden sonst
          hinter der Sperre weiterarbeiten. stopPropagation und nicht preventDefault -- die Tasten
          des Browsers (neu laden, Adresszeile) bleiben, und ein Knopf im Fenster reagiert weiter
-         auf Enter und Leertaste, das ist seine eigene Voreinstellung und kein Zuhoerer. */
+         auf Enter und Leertaste, das ist seine eigene Voreinstellung und kein Zuhoerer.
+         Steht das Tarif-Fenster offen, bekommt ES die Taste: sein eigener Zuhoerer am document
+         hoert hinter dieser Fangphase nichts mehr (Escape schliesst es, Tab bleibt darin). */
       function fokusFalle(e, card) {
         var f = [].filter.call(card.querySelectorAll(
           'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'),
@@ -755,6 +721,7 @@
         var G = GATE[instanceId];
         if (!G || !G.offen) return;
         e.stopPropagation();
+        if (dlg && dlg.isOpen()) { dlg.taste(e); return; }
         if (e.key === "Escape" || e.key === "Esc") {
           e.preventDefault();
           if (state.ansicht !== "info") ansichtSetzen("info");
@@ -763,38 +730,17 @@
         if (e.key === "Tab") fokusFalle(e, G.card);
       }
 
-      /* ---- Warte-Uhr fuer die Tarife ----------------------------------------------------------- */
-      var planUhr = null;
-      function planUhrStoppen() { if (planUhr) { clearTimeout(planUhr); planUhr = null; } }
-      function planUhrStarten() {
-        planUhrStoppen();
-        planUhr = setTimeout(function () {
-          planUhr = null;
-          if (!state.plansWarten) return;
-          state.plansWarten = false;
-          /* Mit Vorrat bleibt der Vorrat stehen -- er ist die letzte gelesene Liste und wahrer als
-             ein Fehler. Ohne ihn waere weiteres Schimmern die Luege "gleich da". */
-          if (!state.plans) state.plansFehler = true;
-          persist();
-          zeichnen();
-        }, PLAN_WARTE_MS);
-      }
-
       /* ---- Vorrat -------------------------------------------------------------------------------
          Nur eine Wurzel, die noch im Dokument steht, schreibt: die alte lebt nach dem Neuaufbau als
          abgehaengter Knoten weiter und wuerde den Stand der neuen sonst ueberschreiben. */
       function persist() {
         if (!root.isConnected) return;
-        STORE[instanceId] = {
-          teamId: state.teamId, lage: state.lage,
-          plans: state.plans, plansFehler: state.plansFehler,
-          ansicht: state.ansicht, iv: state.iv, ivGewaehlt: state.ivGewaehlt
-        };
+        STORE[instanceId] = { teamId: state.teamId, lage: state.lage, ansicht: state.ansicht };
       }
 
       /* ---- Setter ------------------------------------------------------------------------------ */
       function aboSetzen(p) {
-        var r = UC.aboLesen ? UC.aboLesen(p) : { ok: false };
+        var r = quotaLesen(p);
         if (!r.ok) {
           /* Unlesbar: die LETZTE gelesene Lage bleibt stehen -- sie ist wahrer als ein Fehler, und
              ohne sie ist die App offen (siehe Kopf). */
@@ -803,11 +749,11 @@
             (state.lage ? "gesperrt" : "offen") + ").");
           return;
         }
-        var L = lageAus(r);
+        var L = lageAus(r.zeile);
         var vorher = state.lage;
         state.lage = L;
-        if (r.teamId) state.teamId = r.teamId;
-        /* Eine andere Lage beginnt auf der Nachricht, nicht auf einer Unterseite der alten. */
+        if (L && L.teamId) state.teamId = L.teamId;
+        /* Eine andere Lage beginnt auf der Nachricht, nicht auf der Teamliste der alten. */
         if (!L || !vorher || vorher.art !== L.art || vorher.verwalten !== L.verwalten) {
           state.ansicht = "info";
           state.fehler = "";
@@ -817,18 +763,13 @@
       }
       function plaeneSetzen(p) {
         var r = UC.plaeneLesen ? UC.plaeneLesen(p) : { ok: false };
-        planUhrStoppen();
-        state.plansWarten = false;
-        if (r.ok) {
-          state.plans = r.liste;
-          state.plansFehler = false;
-        } else {
-          state.plansFehler = true;
+        if (!dlg) return;
+        if (r.ok) dlg.setPlans(r.liste);
+        else {
+          dlg.setFehler();
           if (window.console) console.warn("[access-gate] " + instanceId +
             ": setAccessGatePlans konnte die Nutzlast nicht lesen.");
         }
-        persist();
-        zeichnen();
       }
 
       var ctrl = {
@@ -837,25 +778,21 @@
         plaene: plaeneSetzen,
         klick: klick,
         taste: taste,
-        waehlen: waehlen,
         zeichnen: zeichnen,
         verbergen: verbergen,
-        ivSetzen: function (iv) { state.iv = iv; state.ivGewaehlt = true; persist(); },
         reset: function () {
           verbergen();
-          planUhrStoppen();
+          if (dlg) dlg.reset();
           var G = GATE[instanceId];
           if (G && G.sperre) { clearTimeout(G.sperre.uhr); G.sperre = null; }
-          state.lage = null; state.plans = null; state.plansFehler = false; state.plansWarten = false;
-          state.ansicht = "info"; state.iv = ""; state.ivGewaehlt = false; state.fehler = "";
+          state.lage = null; state.ansicht = "info"; state.fehler = "";
           /* Geloescht und nicht mit dem leeren Stand ueberschrieben: ein ausdrueckliches Reset darf
              ein Neuaufbau nicht rueckgaengig machen. */
           delete STORE[instanceId];
         },
         /* Zahlen-, Datums- oder Sprachwahl geaendert (makeMount ruft das bei up-prefs-change). */
         redraw: function () {
-          var G = GATE[instanceId];
-          if (G && G.ctrl === ctrl && G.kit) G.kit.redraw();
+          if (dlg) dlg.redraw();
           zeichnen();
         }
       };
