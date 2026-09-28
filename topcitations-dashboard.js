@@ -433,8 +433,16 @@
         var pos = i + 1;
         var isUrl = state.mode === "url";
         var displayName = isUrl ? (r.title || r.url || "") : (r.domain || "");
+        /* Reddit wie in der URL-Tabelle (28.09. gemeldet: "da steht einfach nur die reddit
+           domain"). Der gescrapte Titel eines Reddit-Links ist fast immer "reddit.com" -- dann
+           liest core r/<sub> und den Beitragstitel aus der Adresse. Ein echter Titel gewinnt,
+           null heisst "wie bisher". */
+        var redditHtml = isUrl && UC.redditTitleHtml ? UC.redditTitleHtml(r.url, r.title, "") : null;
+        var nameHtml = redditHtml || esc(displayName);
         var idKey = isUrl ? (r.url || r.title) : r.domain;
-        var hoverTitle = isUrl && r.title && r.url && r.title !== r.url ? r.url : "";
+        /* Die volle Adresse beim Darueberfahren, sobald die Zeile sie nicht selbst zeigt -- auch
+           bei einem Reddit-Link ohne Titel, der vorher die Adresse als Namen trug. */
+        var hoverTitle = isUrl && r.url && ((r.title && r.title !== r.url) || redditHtml) ? r.url : "";
         var favicon = r.favicon || r.logo || "";
         var logo = favicon
           ? '<span class="up-logo-box up-fav has-img"><img src="' + esc(favicon) + '" onerror="this.parentNode.classList.remove(\'has-img\'); this.remove()"/></span>'
@@ -453,7 +461,7 @@
         var used = (r.used_total != null) ? '<span class="tct-used">' + esc(fmtTotal(r.used_total)) + '</span>' : "";
         return '<div class="tct-row" data-id="' + esc(String(idKey == null ? "" : idKey)) + '">' +
           '<div class="tct-td tct-td-idx">' + pos + '</div>' +
-          '<div class="tct-td tct-td-name">' + logo + '<span class="tct-name"' + (hoverTitle ? ' title="' + esc(hoverTitle) + '"' : '') + '>' + esc(displayName) + '</span>' + ROW_GOTO + '</div>' +
+          '<div class="tct-td tct-td-name">' + logo + '<span class="tct-name"' + (hoverTitle ? ' title="' + esc(hoverTitle) + '"' : '') + '>' + nameHtml + '</span>' + ROW_GOTO + '</div>' +
           '<div class="tct-td tct-td-type">' + typeTag + '</div>' +
           '<div class="tct-td tct-td-share">' + share + '</div>' +
           '<div class="tct-td tct-td-used">' + used + '</div></div>';

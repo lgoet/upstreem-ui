@@ -392,7 +392,17 @@
    Gebaut als Ueberlagerung, nicht als Ersatzmarkup: jede Zeile behaelt ihre echte Hoehe, also
    springt beim Umschalten nichts. --vc-sk und die upskt-Animation sind dieselben wie in den
    Tabellen-Skeletten. */
-.usb-root.is-loading .usb-skelbox { position: relative; }
+/* clip-path, weil der Schimmer (::after) mit translateX(-100%) STARTET, also eine ganze
+   Kastenbreite links neben seinem Kasten, und von dort quer hinueberlaeuft. Nichts schnitt ihn
+   ab -- das overflow:hidden am ::before wirkt nur auf dessen eigenen Inhalt, nicht auf den
+   Geschwister-Pseudo. Gemeldet 28.09.: "die Skeleton Loader gehen oft ueber die Grenzen der
+   Elemente hinaus" -- der Streifen lief ueber Titel und Beschreibung der Zeile daneben.
+   core schneidet seine Skelette mit overflow:hidden am Element selbst (.up-sk-dot). Hier sind
+   die Kaesten aber echte Layoutbehaelter (Zeilen, Raster, Zaehler); overflow:hidden machte aus
+   ihnen einen eigenen Formatierungskontext und verschoebe bei Inline-Kaesten die Grundlinie.
+   clip-path aendert am Layout nichts und gilt nur, solange geladen wird. Rundung wie die
+   Flaeche darunter (8px). */
+.usb-root.is-loading .usb-skelbox { position: relative; clip-path: inset(0 round 8px); }
 .usb-root.is-loading .usb-skelbox > * { visibility: hidden; }
 .usb-root.is-loading .usb-skelbox::before {
   content: ""; position: absolute; inset: 0; border-radius: 8px;

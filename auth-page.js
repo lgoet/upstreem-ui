@@ -89,8 +89,8 @@
     '<path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.44-3.44C17.95 1.19 15.24 0 12 0A12 12 0 0 0 1.29 6.62l3.98 3.11C6.22 6.86 8.87 4.75 12 4.75z"/></svg>';
 
   /* Woertlich aus dem Zeichensatz in core.js (Hugeicons stroke-rounded, seit dem 22.09.) --
-     am 23.09. Pfad fuer Pfad gegengeprueft: SUN/MOON/LOCK/CHECK/MIC/UP sind buchstabengleich
-     mit sun/moon/lock/check/mic/arrowUp. Nicht ueber UC.icon geholt, und das bleibt so: diese
+     am 23.09. Pfad fuer Pfad gegengeprueft: SUN/MOON/LOCK/CHECK/MIC sind buchstabengleich
+     mit sun/moon/lock/check/mic (UP nicht mehr, siehe dort). Nicht ueber UC.icon geholt, und das bleibt so: diese
      Seite laeuft VOR der Anmeldung, core ist dort nicht garantiert da, und ein leerer Knopf auf
      der Anmeldeseite waere schlechter als ein paar Pfade hier.
      WER HIER ETWAS AENDERT, aendert es auch in core -- sonst laufen Anmeldeseite und App
@@ -105,8 +105,14 @@
     'stroke-linecap="round" stroke-linejoin="round"><path d="M5 13.2592L7.58583 15.9568C8.2525 16.6523 8.58583 17 9.00004 17C9.41425 17 9.74759 16.6523 10.4143 15.9568L19 7"/></svg>';
   var MIC_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
     'stroke-linecap="round" stroke-linejoin="round"><path d="M7 6.5C7 4.01472 9.01472 2 11.5 2C13.9853 2 16 4.01472 16 6.5V11.5C16 13.9853 13.9853 16 11.5 16C9.01472 16 7 13.9853 7 11.5V6.5Z"/><path d="M11.5 19H11.0828C7.57267 19 4.57706 16.4623 4 13M11.5 19H11.9172C15.4273 19 18.4229 16.4623 19 13M11.5 19V22"/></svg>';
+  /* DIE AUSNAHME: der Sendeknopf traegt einen ECHTEN PFEIL, Schaft plus Spitze, und NICHT core
+     arrowUp (28.09. gemeldet: "das Icon im Mira-Send-Button ist noch falsch"). core arrowUp ist
+     ein Chevron ohne Schaft; Miras eingebautes Element in der App traegt aber einen Pfeil, und
+     diese Grafik soll zeigen, was der Nutzer dort sieht. Dieselbe Meldung kam am 24.09. fuer die
+     Landingpage -- dort steht dieselbe Form (landing-hero.js, SENDE_PFEIL). Beide Stellen
+     gleich halten. */
   var UP_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
-    'stroke-linecap="round" stroke-linejoin="round"><path d="M17.9998 15C17.9998 15 13.5809 9.00001 11.9998 9C10.4187 8.99999 5.99985 15 5.99985 15"/></svg>';
+    'stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12L12 5L19 12"/></svg>';
 
   /* ── Pruefungen ────────────────────────────────────────────────────────────
      Die E-Mail-Regel ist bewusst grob. Ein Muster, das RFC 5322 nachbildet, weist echte Adressen

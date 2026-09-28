@@ -1,0 +1,13 @@
+/* upstreem view-switch.css — der Umschalter "Pages / URLs" | "Responses" (Praefix `uvw`).
+   Aussehen, Groesse (32px, is-lg), Schiene und gleitende Pille kommen ALLE aus core
+   (.up-seg / .up-seg-btn). Hier steht nur, was die Huelle im Bubble-Element braucht. */
+
+/* Die Wurzel ist nur Huelle: keine Flaeche, keine eigene Hoehe -- das Element sitzt auf dem
+   Grund, auf dem Bubble es platziert, und die Schiene hebt diesen Grund an wie ueberall. Links
+   buendig in der Gruppe; core stellt einen Umschalter sonst mittig in seine Zeile. */
+.uvw-root { display: flex; align-items: center; }
+
+/* "Pages / URLs" traegt Leerzeichen und bricht in einer schmalen Bubble-Gruppe sonst mitten im
+   Knopf um -- dieselbe Regel wie "Plain text" in create-with-ai. Zwei Klassen gegen die eine der
+   Grundregel in core. */
+.uvw-root .up-seg-btn { white-space: nowrap; }

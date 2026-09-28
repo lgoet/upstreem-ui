@@ -541,6 +541,10 @@
        Brotkrume, und die anderen Typen dort (Brand, Prompt, Domain, URL) heissen auf Deutsch
        ohnehin gleich. */
     "Response": "KI-Antwort",
+    /* Der Umschalter view-switch (28.09.). "Unterseiten" und nicht "Seiten" (so steht "Pages"
+       weiter unten): gemeint sind die einzelnen Seiten EINER Domain, und so war es bestellt. Der
+       ganze Text ist EIN Schluessel -- der Katalog uebersetzt wortgleich, nicht stueckweise. */
+    "Pages / URLs": "Unterseiten / URLs",
     "Yes": "Ja",
     "No": "Nein",
 

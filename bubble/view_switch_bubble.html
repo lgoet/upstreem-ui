@@ -1,0 +1,124 @@
+<!--
+  ============================================================================================
+  upstreem view-switch  —  VORLAGE FUER EINE NEUINSTALLATION
+  ============================================================================================
+
+  Der Umschalter zwischen zwei Ansichten, 32px hoch, im Umschalter-Design der ganzen App:
+
+      [ Pages / URLs | Responses ]          Deutsch:  [ Unterseiten / URLs | KI-Antworten ]
+
+  Schiene, gleitende Pille und Groesse kommen aus core (.up-seg.is-lg) -- derselbe Umschalter
+  wie Domains/URLs in Top Citations. Die deutschen Texte kommen aus dem Katalog in core und
+  wechseln mit der Spracheinstellung, ohne dass hier etwas zu tun ist.
+
+  ── Einbau ──────────────────────────────────────────────────────────────────────
+  Ein HTML-Element, Hoehe 32px, Breite so breit wie der Umschalter: gemessen 206px englisch,
+  249px deutsch. Lieber 260px geben -- der Umschalter steht links buendig und bricht nicht um.
+
+  ── Die Attribute ───────────────────────────────────────────────────────────────
+       data-instance   Kennung, z.B. "VIEWSWITCH_[dynamic id]". Ein Setter mit "VIEWSWITCH"
+                       trifft jede Kopie, deren Kennung damit beginnt.
+       data-isdark     "yes" / "no" (Text)
+       data-value      "pages" (Vorgabe) | "responses" -- die Stufe beim ersten Aufbau. Wird LIVE
+                       mitgelesen: haengt sie an einem Custom State und der aendert sich, zieht der
+                       Umschalter nach (ohne Ereignis).
+       data-switch-fn  Name der Bubble-Funktion fuer den Wechsel, Vorgabe bubble_fn_uvwSwitch
+       data-cdn-pin    der Commit-Pin
+
+  Nach einem Themenwechsel baut Bubble das Element neu -- der Umschalter behaelt trotzdem die
+  zuletzt GEWAEHLTE Stufe (sie steht je data-instance in window.__uvwStore) und springt nicht
+  auf data-value zurueck.
+
+  ── Das Ereignis ────────────────────────────────────────────────────────────────
+  EINMAL PRO SEITE ein JavaScriptToBubble-Element namens  bubble_fn_uvwSwitch
+  (Value type TEXT, Trigger event an).
+      Wert:  pages        oder        responses
+  Reiner Text, kein JSON -- nichts herauszuschneiden. Es feuert NUR beim Klick auf die andere
+  Stufe: ein Klick auf die schon aktive meldet nichts, ein Setter-Aufruf auch nicht.
+
+  Im Workflow "When bubble_fn_uvwSwitch event": den Wert in einen Custom State schreiben und
+  daran die Ansicht haengen. Denselben State als data-value eintragen, dann stehen Umschalter
+  und Ansicht immer gleich.
+
+  ── Die Setter (optional) ───────────────────────────────────────────────────────
+  Nicht noetig, wenn data-value an einem State haengt. Fuer den Fall, dass ein Workflow die
+  Ansicht wechselt, ohne dass der Nutzer klickt:
+
+      (function () {
+        var WERT = `[Custom State des Umschalters]`;
+        try { if (window.setViewSwitch) window.setViewSwitch("VIEWSWITCH", WERT); } catch (e) {}
+      })();
+
+      statisch:   try { if (window.setViewSwitch) window.setViewSwitch("VIEWSWITCH", "responses"); } catch (e) {}
+      zurueck:    try { if (window.resetViewSwitch) window.resetViewSwitch("VIEWSWITCH"); } catch (e) {}
+
+  Stumm (kein Ereignis). Ein unbekannter Wert laesst den Umschalter stehen und nennt in der
+  Konsole die erlaubten Werte.
+
+  ── Dateien ─────────────────────────────────────────────────────────────────────
+  core.css, core.js, view-switch.css, view-switch.js
+  ============================================================================================
+-->
+
+<div class="up-root uvw-root"
+     data-instance  = "VIEWSWITCH_[dynamic id]"
+     data-isdark    = "[yes/no]"
+     data-cdn-pin   = "CDN_PIN"
+     data-value     = "pages"
+     data-switch-fn = "bubble_fn_uvwSwitch"></div>
+
+<script>
+(function(){
+  /* Loader nach STYLEGUIDE 26: den Pin ueber getElementsByClassName lesen, NIEMALS ueber
+     document.currentScript — Bubble fuehrt Scripts nicht in DOM-Reihenfolge aus. */
+  function echterPin(p){
+    /* trim: ein Leerzeichen aus der Bubble-Konstante ergaebe sonst .../upstreem-ui@ abc /core.js,
+       jsDelivr antwortet mit 404, und weder CSS noch JS landen. Ohne trim greift auch kein
+       Rueckfall, weil "   " truthy ist.
+       Gespaltener Platzhalter: wer "CDN_PIN" global im Element ersetzt, wuerde sonst auch diesen
+       Waechter treffen, und der Loader liefe dauerhaft auf @main, obwohl ein Pin gesetzt ist. */
+    p = String(p == null ? "" : p).trim();
+    return (p && p !== "CDN_" + "PIN") ? p : "";
+  }
+  function readPin(cls){
+    var i, p, els = document.getElementsByClassName(cls);
+    for (i = 0; i < els.length; i++){
+      p = echterPin(els[i].getAttribute("data-cdn-pin"));
+      if (p) return (window.__upPin = p);
+    }
+    /* Rueckfall: einen Pin nehmen, der auf DIESER Seite schon gilt -- Bubble fuehrt diesen
+       Loader auch aus, waehrend die eigene Wurzel noch nicht im Dokument steht (31.08.). */
+    if (echterPin(window.__upPin)) return window.__upPin;
+    var alle = document.querySelectorAll ? document.querySelectorAll("[data-cdn-pin]") : [];
+    for (i = 0; i < alle.length; i++){
+      p = echterPin(alle[i].getAttribute("data-cdn-pin"));
+      if (p) return (window.__upPin = p);
+    }
+    var L0 = window.__upAssetsLoaded, k, m;
+    for (k in L0){
+      if (!Object.prototype.hasOwnProperty.call(L0, k)) continue;
+      m = String(L0[k] || "").match(/upstreem-ui@([^/]+)\//);
+      if (m && m[1] && m[1] !== "main") return (window.__upPin = m[1]);
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("uvw-root") + "/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  /* Entdoppelt nach DATEINAME, nicht nach URL: der erste Pin gewinnt, ein zweiter wird gemeldet. */
+  function once(url, make){
+    var name = url.slice(url.lastIndexOf("/") + 1);
+    if (L[name]){
+      if (L[name] !== url && window.console) console.warn("upstreem: " + name +
+        " ist schon von einem anderen Pin geladen. Geladen bleibt " + L[name] +
+        ", ignoriert wird " + url + ". Setzt alle Elemente auf denselben Pin.");
+      return;
+    }
+    L[name] = url; make(url);
+  }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+
+  css("core.css");           js("core.js");
+  css("view-switch.css");    js("view-switch.js");
+})();
+</script>

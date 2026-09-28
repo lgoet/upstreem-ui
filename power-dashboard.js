@@ -717,11 +717,13 @@
       return url ? '<span class="up-logo-box has-img"><img src="' + esc(url) + '" alt="" referrerpolicy="no-referrer"/>' + ltr + '</span>'
                  : '<span class="up-logo-box">' + ltr + '</span>';
     }
-    function listenZeile(typ, id, idx, zeichen, name, titel, wertHtml, eigen){
+    /* nameHtml: fertiges Markup statt des Namens, bisher nur fuer Reddit-Adressen (siehe
+       renderCites). Ohne Angabe wird der Name wie immer maskiert. */
+    function listenZeile(typ, id, idx, zeichen, name, titel, wertHtml, eigen, nameHtml){
       return '<div class="upw-li' + (eigen ? " is-own" : "") + '" data-upw-row="' + typ + '" data-id="' + esc(String(id == null ? "" : id)) + '">' +
         '<span class="upw-li-idx">' + esc(String(idx)) + '</span>' +
         zeichen +
-        '<span class="upw-li-name" title="' + esc(titel || name) + '">' + esc(name) + '</span>' +
+        '<span class="upw-li-name" title="' + esc(titel || name) + '">' + (nameHtml || esc(name)) + '</span>' +
         '<span class="upw-li-val">' + wertHtml + '</span></div>';
     }
     /* DAS SKELETT TRAEGT DIE KLASSEN DER ECHTEN ZEILE (15.09.). Vorher hatte es eigene --
@@ -794,6 +796,9 @@
       if (!rows.length){ elCites.innerHTML = '<div class="upw-li-empty" data-i18n="No data">' + esc(t("No data")) + '</div>'; return; }
       elCites.innerHTML = rows.slice(0, LISTE_MAX).map(function(r, i){
         var name = url ? (r.title || r.url || "") : (r.domain || "");
+        /* Reddit wie in der URL-Tabelle und in Top Citations (28.09.): statt "reddit.com"
+           r/<sub> und der Beitragstitel aus der Adresse. null heisst "Name wie bisher". */
+        var nameHtml = url && UC.redditTitleHtml ? UC.redditTitleHtml(r.url, r.title, "") : null;
         var id = url ? (r.url || r.title || "") : (r.domain || "");
         var fav = r.favicon || r.logo || "";
         var anteil = num(url ? (r.global_share_pct != null ? r.global_share_pct : r.share_pct) : r.share_pct);
@@ -803,7 +808,7 @@
         return listenZeile(url ? "url" : "domain", id, fmtI(i + 1), zeichen, name,
           url && r.url ? r.url : name,
           '<span class="up-num' + (anteil == null ? " is-empty" : "") + '">' + fmtPct1(anteil) + '</span>' +
-            UC.trendChip(r.share_delta_pct, { decimals: true, suffix: "%" }), false);
+            UC.trendChip(r.share_delta_pct, { decimals: true, suffix: "%" }), false, nameHtml);
       }).join("");
     }
 
