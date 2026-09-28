@@ -11,6 +11,17 @@
    Warum das wichtig ist: ein nachgezeichnetes Dashboard veraltet ab dem Tag, an dem sich die App
    aendert. Das echte nicht. Und es ist scharf in jeder Groesse, weil es DOM ist und kein Bild. */
 
+/* Die Kante als registrierte Laenge (Begruendung an --ulh-kante unten). Kein Selektor und keine
+   Regel fuer die Seite darum: @property macht nur, dass eine Eigenschaft mit genau diesem Namen
+   als Laenge gerechnet wird -- es gibt sie ausserhalb dieser Sektion nicht. Ein Browser ohne
+   @property rechnet die Spur trotzdem richtig (var() setzt den Ausdruck dann als Text ein), und
+   landing-hero.js faellt fuer die Einpassung auf 64 zurueck. */
+@property --ulh-kante {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 64px;
+}
+
 .ulh-root {
   /* Die Landingpage traegt ihre Farben SELBST und nicht als --vc-*-Marken. Zwei Gruende, und der
      zweite ist der wichtigere:
@@ -48,7 +59,8 @@
      1440 und nicht 1300: das Fenster oben ist 1440 breit (so gewuenscht), und ein Inhalt, der aus
      seiner eigenen Spur herausragt, ist kein Gitter. Die 48px Mindestrand halten die Schienen auf
      schmalen Seiten von der Kante weg.
-     Ausgenommen sind die drei Nebenfenster: die ragen absichtlich darueber hinaus. */
+     Ausgenommen sind die drei Nebenfenster: die ragen ueber die Spur hinaus -- aber seit dem
+     28.09. nie mehr ueber --ulh-kante (siehe dort und einpassen() in landing-hero.js). */
   /* --ulh-rand: das Hauptfenster steht je Seite so weit INNERHALB der alten Spur. Es steckt in der
      Spur selbst und nicht in einem transform am Fenster: an dieser Spur haengen auch die beiden
      Schienen des Seitengitters und der Inhalt jeder Sektion. Wuerde nur das Fenster kleiner, stuenden
@@ -67,7 +79,17 @@
      waeren hier der Anfang davon, dass sie auseinanderlaufen. */
   --ulh-deckel: 1440px;
   --ulh-deckel-klein: 1300px;
-  --ulh-spur: min(100% - 48px - 2 * var(--ulh-rand), var(--ulh-deckel));
+  /* DIE KANTE: so weit bleibt das Hero-Fenster von jedem Seitenrand weg, 24 + 40 = 64px. Bis zum
+     28.09. stand die Rechnung nur in der Spur (100% - 48px - 2 * Rand). Seitdem braucht sie noch
+     jemand: die drei Nebenfenster duerfen nicht mehr aus der Seite laufen (gemeldet: "bei kleineren
+     Bildschirmen verlassen die Fenster einfach den Bildschirmrand ... links und rechts soll auf
+     Desktop immer ca. 64px Abstand bleiben"), und einpassen() in landing-hero.js rechnet mit
+     genau diesem Abstand. Also steht die Zahl einmal hier, und Spur und Einpassung lesen sie --
+     zwei Orte fuer dieselbe Zahl waeren wieder der Anfang vom Auseinanderlaufen.
+     Registriert ist sie (@property oben), damit getComputedStyle "64px" liefert und nicht den
+     Ausdruck "calc(24px + 40px)", den JavaScript nicht lesen kann. */
+  --ulh-kante: calc(24px + var(--ulh-rand));
+  --ulh-spur: min(100% - 2 * var(--ulh-kante), var(--ulh-deckel));
   /* Die Linie der Schienen. Heller als der Rahmen der Karten (#e7e9ec): sie laeuft ueber die ganze
      Hoehe der Seite und wird dadurch als Flaeche wahrgenommen, nicht als Linie. */
   --ulh-schiene: #ededf0;
@@ -2030,13 +2052,15 @@
    Doughnut braucht sie); der Inhaltskasten wird dafuer um denselben Faktor groesser, damit der
    Schirm weiter genau gefuellt ist. */
 .ulh-fen { position: absolute; z-index: 1; }
-/* Ein Fenster liegt VOR dem Hauptfenster, zwei dahinter. Ausdrueckliche Werte an allen drei
-   Stellen: bei gleichem z-index entschiede die Reihenfolge im Markup, und die soll hier nichts
-   bedeuten. */
+/* Ein Fenster liegt VOR dem Hauptfenster (die URL-Typen, is-vorn), zwei dahinter (Teams und die
+   Antwortkarte). Ausdrueckliche Werte an allen drei Stellen: bei gleichem z-index entschiede die
+   Reihenfolge im Markup, und die soll hier nichts bedeuten.
+   Die Antwortkarte lag bis zum 28.09. ebenfalls davor. Das war gleichgueltig, solange sie mit 4px
+   Luft NEBEN dem Hauptfenster stand -- seit sie sich auf schmaleren Seiten ueber seine Kante
+   schiebt (siehe "Lage" unten), entscheidet die Ebene, was man sieht. Angefordert war es so:
+   Teams und Antwortkarte schieben sich HINTER das Hauptfenster, die URL-Typen DAVOR. */
 .ulh-frame { position: relative; z-index: 2; width: 100%; }
 .ulh-fen.is-vorn { z-index: 3; }
-/* Zwei Fenster liegen davor. Sie ueberdecken das Hauptfenster deshalb nur um 8 und 16px -- was
-   vor etwas liegt, soll so wenig wie moeglich davon wegnehmen. */
 
 .ulh-fen-view {
   position: relative;
@@ -2064,14 +2088,22 @@
 }
 
 /* Der Auftritt: die Fenster kommen aus der Richtung, in der das Hauptfenster steht -- sie liegen
-   davor verdeckt hinter ihm und fahren heraus. Nicht von aussen herein: dann kaeme sie der Rand
-   der Sektion, an dem sie ohnehin angeschnitten sind, zuerst.
+   davor verdeckt hinter ihm und fahren heraus. Nicht von aussen herein: dann kaemen sie ueber den
+   Rand der Seite, von dem sie seit dem 28.09. ausdruecklich Abstand halten (siehe "Lage").
    Der Ausklang ist der lange der Verkleinerung (--ulh-aus), damit beide Bewegungen als eine
    gelesen werden. */
-.ulh-fen { opacity: 0; transition: opacity 700ms var(--ulh-ease), transform 1100ms var(--ulh-aus); }
+.ulh-fen { opacity: 0; transition: opacity 120ms var(--ulh-ease), transform 1100ms var(--ulh-aus); }
 .ulh-fen-teams, .ulh-fen-urls { transform: translate(90px, 0) scale(.94); }
 .ulh-fen-antwort { transform: translate(-90px, 0) scale(.94); }
-.ulh-root.is-klein .ulh-fen { opacity: 1; transform: none; }
+/* 700ms beim KOMMEN, 120 beim GEHEN (28.09.). Beim Zurueckscrollen waechst die Buehne wieder auf
+   ihre volle Groesse, und zwar schnell (--ulh-aus: nach 200ms steht sie schon bei Faktor 0.9) --
+   die Nebenfenster wachsen dabei mit nach aussen. Mit 700ms Ausblenden waren sie da noch zu zwei
+   Dritteln zu sehen und standen gemessen 23px UEBER dem Rand der Seite (1280px, 200ms nach dem
+   Wechsel); mit 180ms erreichten sie die Kante nach 123ms noch mit 7 Prozent Deckkraft. 120 (die
+   kurze Stufe der Dauern, --up-t-1) ist vorbei, bevor sie dort ankommen. Das Kommen bleibt, wie
+   es war: die Dauer steht deshalb im Zustand is-klein, denn ein Uebergang nimmt die Dauer des
+   Zustands, in den er laeuft. */
+.ulh-root.is-klein .ulh-fen { opacity: 1; transform: none; transition-duration: 700ms, 1100ms; }
 /* Sie kommen NACHEINANDER und nicht zu dritt: erst atmet die Verkleinerung durch, dann Teams, dann
    die Antwortkarte, dann die URL-Typen. Die Verzoegerung steht nur am Kommen -- beim Zurueckscrollen
    sollen sie zugleich verschwinden, sonst haengt eines hinter dem wieder wachsenden Fenster fest. */
@@ -2083,18 +2115,56 @@
 }
 
 /* ---- Lage ----
-   Alle drei stehen an einer KANTE des Hauptfensters und schieben sich 60px darunter: "right:
-   calc(100% - 60px)" heisst, die rechte Kante des Nebenfensters liegt 60px innerhalb der linken
-   Kante des Hauptfensters. Genau diese 60px sind die Ueberdeckung, an der man sieht, dass zwei
-   Fenster uebereinander liegen. */
+   Alle drei stehen an einer KANTE des Hauptfensters: Teams und die URL-Typen links, die
+   Antwortkarte rechts. "right: calc(100% + 4px)" heisst, die rechte Kante des Nebenfensters
+   liegt 4px links von der linken Kante des Hauptfensters.
+
+   EINGEPASST IN ZWEI STUFEN (28.09. angefordert: "bei kleineren Bildschirmen verlassen die
+   Fenster Team Switcher, URL Type und Response Detail einfach den Bildschirmrand. Das darf nicht
+   sein ... erst noch ein Stueck HINTER (bzw. im Fall von URL Type VOR) die Hauptfenster-Komponente
+   schieben. Dann soll alles anfangen herunterzuskalieren").
+   Gemessen vorher, im kleinen Zustand: schon bei 1920px Seitenbreite stand die Antwortkarte 2px
+   vor dem rechten Rand und ihr Schatten war abgeschnitten; bei 1280 lagen Teams 121px und die
+   Antwortkarte 140px AUSSERHALB der Seite, bei 1024 noch 83 und 98.
+     Stufe 1  --ulh-rein schiebt ein Fenster (in Pixeln der Buehne) auf das Hauptfenster zu, bis
+              es --ulh-kante vom Rand steht -- hoechstens so weit, dass --ulh-rein-max seiner
+              eigenen Breite hinter (bzw. ueber) dem Hauptfenster liegt, siehe gleich darunter.
+     Stufe 2  Reicht das nicht, wird die ganze Buehne kleiner als ihr Deckel-Faktor (kleinFaktor
+              in landing-hero.js) -- Hauptfenster und Nebenfenster zusammen, im selben transform
+              wie bisher, also ohne einen zweiten Massstab daneben.
+   Beide Werte rechnet einpassen() in landing-hero.js aus den gemessenen Kaesten; hier steht nur,
+   wo sie angreifen. Ein Fenster rueckt nur so weit, wie es muss: auf einer 2560er Seite bleibt
+   alles, wie es war.
+   --ulh-rein steht als Inline-Angabe am Fenster selbst, nicht an der Wurzel: jedes Fenster
+   braucht seinen eigenen Wert, und am Fenster gibt es keinen Vorfahren, der ihn ueberdecken
+   koennte. */
+/* DIE GRENZE DER ERSTEN STUFE: hoechstens 16 Prozent eines Fensters liegen hinter dem Hauptfenster
+   (bzw. bei den URL-Typen ueber ihm). Die Zahl liegt zwischen zwei gemessenen Kanten, und jede
+   Seite davon waere schlechter:
+     - Das Modellzeichen der Antwortkarte endet bei 14.8 Prozent ihrer Breite (von innen gezaehlt).
+       Darunter stuende es angeschnitten da -- ein halbes G ist schlechter als keins. Mit 16 ist
+       es ganz dahinter, und Stimmung (ab 19.6), Rang und Zeit bleiben stehen.
+     - Der Chip der Teams ("Pitch") endet bei 83.3 Prozent, also 16.7 von innen. Darueber wuerde er
+       angeschnitten; mit 16 bleibt er ganz, und nur der Haken der aktiven Zeile geht -- die Zeile
+       ist ohnehin hinterlegt.
+   Ein Viertel (erster Versuch) nahm der Antwortkarte zusaetzlich die Stimmung und schnitt den Chip
+   der Teams an. Den Anfang jeder Zeile des Auszugs kostet auch die 16 (der Text beginnt bei 6.5
+   Prozent) -- das ist der Preis dafuer, dass die Karte ueberhaupt dahinter rueckt, und er ist
+   angefordert. Danach wird verkleinert, nicht weiter versteckt. Die URL-Typen liegen davor und
+   verlieren nichts; fuer sie begrenzt dieselbe Zahl, wie viel sie von der Leiste des
+   Hauptfensters abdecken.
+   Das alles gilt fuer die GRENZE. Auf dem Weg dorthin (Stufe 1, gemessen zwischen gut 2040 und
+   1940px Seitenbreite) rueckt jedes Fenster stufenlos, und die Kante des Hauptfensters schneidet
+   dabei auch einmal durch das Zeichen -- so sieht ein Fenster hinter einem anderen eben aus. */
+.ulh-fen { --ulh-rein-max: .16; }
 /* 300x254: die Breite ist die des Panels in der App (sidebar.css: .usn-bar .usn-menu), die Hoehe
    ist ADDIERT und nicht geschaetzt -- 8 Polster + 32 Suchfeld + 6 Abstand + drei Zeilen a 64 mit
    4px dazwischen + 8 Polster. Mit 250 stand die dritte Zeile 4px unter der Kante (gemessen:
    scrollHeight 200 in 196). */
 /* Direkt NEBEN dem Hauptfenster statt darunter geschoben: die rechte Kante liegt 4px links von
-   seiner linken. Keine Ueberdeckung mehr -- dafuer steht mehr von dem Fenster ausserhalb der
-   Sektion, siehe die Verkleinerung in landing-hero.js. */
-.ulh-fen-teams   { --ulh-fb: 300px; --ulh-fh: 254px; right: calc(100% + 4px); top: -50px; }
+   seiner linken. Keine Ueberdeckung, solange die Seite breit genug ist -- sonst rueckt es um
+   --ulh-rein darunter (siehe oben). */
+.ulh-fen-teams   { --ulh-fb: 300px; --ulh-fh: 254px; right: calc(100% + 4px - var(--ulh-rein, 0px)); top: -50px; }
 /* 352 x 330, also ein Zehntel groesser als die 320 x 300 davor. Die Legende hat damit mehr Platz,
    und beide Verteilungen bleiben bei DREI Reihen: die redaktionelle bricht in 3/3/2 um, die der
    Marktplaetze in 2/2/2 (ihre Beschriftungen sind laenger, "Product / Service" allein ist 114px,
@@ -2108,8 +2178,8 @@
    Verankerung wandert um 5 mit -- der rechte Rand liegt 5px weiter links (16 -> 11), der untere
    5px hoeher (-50 -> -45). Nur die Masse zu kuerzen haette die Kachel an einer Ecke festgehalten
    und sie NUR an den zwei anderen Seiten schmaler gemacht. */
-.ulh-fen-urls    { --ulh-fb: 324px; --ulh-fh: 304px; --ulh-fz: 0.8;
-                   right: calc(100% - 11px); bottom: -45px; }
+.ulh-fen-urls    { --ulh-fb: 324px; --ulh-fh: 304px; --ulh-fz: 0.8; --ulh-fs: .85;
+                   right: calc(100% - 11px - var(--ulh-rein, 0px)); bottom: -45px; }
 /* 15 PROZENT KLEINER, UND ZWAR WIRKLICH SKALIERT (24.09. angefordert). Nicht die Masse kuerzen --
    dann waeren Schrift, Ring und Legende unveraendert gross und nur enger. Ein transform
    verkleinert alles im selben Verhaeltnis.
@@ -2117,20 +2187,28 @@
    Lage bleibt, wo sie war -- die Kachel schrumpft nach innen und wandert nicht.
    Zwei Zustaende, beide mit dem Faktor: der Startzustand des Auftritts (0.94 * 0.85 = 0.799) und
    der Ruhezustand, in dem die allgemeine Regel sonst transform: none setzt. Eine Klasse mehr im
-   Selektor als dort, damit die Spezifitaet entscheidet und nicht die Reihenfolge. */
-.ulh-fen.ulh-fen-urls { transform-origin: right bottom; transform: translate(90px, 0) scale(.799); }
-.ulh-root.is-klein .ulh-fen.ulh-fen-urls { transform: scale(.85); }
+   Selektor als dort, damit die Spezifitaet entscheidet und nicht die Reihenfolge.
+   Der Faktor steht seit dem 28.09. als --ulh-fs in der Regel darueber und nicht mehr zweimal als
+   Zahl hier: einpassen() in landing-hero.js muss wissen, wie breit die Kachel WIRKLICH dasteht,
+   und liest ihn von dort -- eine dritte Stelle mit 0.85 waere die, die beim naechsten Wert
+   vergessen wird. */
+.ulh-fen.ulh-fen-urls { transform-origin: right bottom; transform: translate(90px, 0) scale(calc(.94 * var(--ulh-fs))); }
+.ulh-root.is-klein .ulh-fen.ulh-fen-urls { transform: scale(var(--ulh-fs)); }
 /* Rechts, auf einem Viertel der Hoehe: weit oben, aber nicht an der Oberkante. Direkt neben dem
-   Hauptfenster, 4px Luft, keine Ueberdeckung. Die Hoehe ist die, die die Karte bei dieser
-   Breite von sich aus braucht -- so muss sie nicht gestreckt werden und traegt keine Luft:
-   gemessen 234px bei 272px Breite (Kopf 24, Frage 38, vier Zeilen Auszug 78, Fusszeile 28, dazu
-   Polster und Abstaende), plus 28px Polster des Fensters ergibt 262. */
-.ulh-fen-antwort { --ulh-fb: 325px; --ulh-fh: 262px; left: calc(100% + 4px); top: 25%; }
+   Hauptfenster, 4px Luft -- auf schmaleren Seiten um --ulh-rein darunter (siehe oben). Die Hoehe
+   ist die, die die Karte bei dieser Breite von sich aus braucht -- so muss sie nicht gestreckt
+   werden und traegt keine Luft: gemessen 234px bei 272px Breite (Kopf 24, Frage 38, vier Zeilen
+   Auszug 78, Fusszeile 28, dazu Polster und Abstaende), plus 28px Polster des Fensters ergibt
+   262. */
+.ulh-fen-antwort { --ulh-fb: 325px; --ulh-fh: 262px; left: calc(100% + 4px - var(--ulh-rein, 0px)); top: 25%; }
 
-/* Die Nebenfenster ragen links und rechts aus der Sektion heraus, und genau so ist es gedacht --
-   ein Fenster, das am Rand angeschnitten ist, sagt "die Flaeche geht weiter". overflow-x: clip und
-   nicht hidden: clip erzeugt keine Scrollflaeche, es gibt also keine waagerechte Scrollleiste und
-   auch kein "overscroll-behavior" auf einer Flaeche, die niemand bewegen darf. */
+/* Hier stand: "Die Nebenfenster ragen links und rechts aus der Sektion heraus, und genau so ist es
+   gedacht". Das gilt seit dem 28.09. nicht mehr -- sie bleiben ganz im Bild, siehe "Lage" oben.
+   Der Beschnitt bleibt trotzdem: er ist die Sicherung fuer die Augenblicke, in denen die
+   Einpassung noch nicht gerechnet hat (verdeckter Tab, erster Aufbau), und fuer die schmale
+   Fassung, in der das Hauptfenster rechts hinauslaeuft. overflow-x: clip und nicht hidden: clip
+   erzeugt keine Scrollflaeche, es gibt also keine waagerechte Scrollleiste und auch kein
+   "overscroll-behavior" auf einer Flaeche, die niemand bewegen darf. */
 .ulh-root { overflow-x: clip; background: var(--ulh-seite); }
 
 /* ---------- Das Gitter der Seite ----------
@@ -3140,7 +3218,10 @@
   /* 16px links und rechts statt 64. Beides steht in einer Zahl: die Spur ist die Kante, an der
      sich ALLES ausrichtet -- Leiste, Karten, Kasten der Quellen, Kurve. Wer sie aendert, aendert
      die ganze Seite auf einmal, und genau deshalb steht sie an einer Stelle. */
-  .ulh-root { --ulh-rand: 0px; --ulh-spur: calc(100% - 32px); }
+  /* Die Kante steht seit dem 28.09. als eigene Marke (siehe .ulh-root oben) -- hier also 16px, und
+     die Spur rechnet daraus, damit beide dasselbe sagen. Der Wert der Spur ist derselbe wie vorher
+     (100% - 32px). */
+  .ulh-root { --ulh-rand: 0px; --ulh-kante: 16px; --ulh-spur: calc(100% - 2 * var(--ulh-kante)); }
 
   /* ---- Das Fenster im Hero ----
      Es bleibt. Vorher war es ab 900px ganz weg -- die Sektion bestand dann aus einer Ueberschrift

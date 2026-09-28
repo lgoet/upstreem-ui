@@ -3303,9 +3303,11 @@
      und Seitenzaehler sind im Fenster ausgeblendet (landing-hero.css): in ein 4:3-Fenster gehoert
      die Karte und nicht die halbe Seite um sie herum. */
   function fensterAntwort(){
-    /* is-vorn: dieses Fenster liegt VOR dem Hauptfenster, wie das der URL-Typen. Deshalb ueberdeckt
-       es davon auch nur 16px -- was davor liegt, nimmt weg. */
-    return '<div class="ulh-fen ulh-fen-antwort is-vorn">' + chrom() +
+    /* KEIN is-vorn mehr (28.09.): die Karte schiebt sich auf schmaleren Seiten HINTER das
+       Hauptfenster, so war es angefordert -- nur die URL-Typen liegen davor. Solange sie mit 4px
+       Luft daneben stand, war die Ebene gleichgueltig; seit einpassen() sie ueber die Kante ruecken
+       kann, entscheidet sie, ob die Karte oder das Hauptfenster abgedeckt wird. */
+    return '<div class="ulh-fen ulh-fen-antwort">' + chrom() +
       '<div class="ulh-fen-view" data-up-keepclip>' +
         '<div class="ulh-fen-app" data-up-keepclip>' + (MARKUP.urt || "") + '</div>' +
       '</div>' +
@@ -3790,6 +3792,124 @@
        setSidebarOpen animiert die Breite (transition width in sidebar.css) -- wer unmittelbar danach
        offsetWidth liest, bekommt den Startwert 64 statt der 250 am Ende. Gemessen: die Spalte blieb
        auf 64px stehen und die Leiste lag ueber dem Seiteninhalt. */
+    /* Zuletzt die Nebenfenster: ihre Groesse haengt am Mass, das eben geschrieben wurde, und wann
+       immer sich die Breite aendert, laeuft genau diese Funktion. */
+    einpassen(root);
+  }
+
+  /* ---- Die Nebenfenster einpassen (28.09.) -------------------------------------------------
+     Gemeldet: "Bei kleineren Bildschirmen verlassen die Fenster Team Switcher, URL Type und
+     Response Detail einfach den Bildschirmrand. Das darf nicht sein. Es soll immer alles sichtbar
+     sein. Die Fenster sollen sich erst noch ein Stueck HINTER (bzw. im Fall von URL Type VOR) die
+     Hauptfenster-Komponente schieben. Dann soll alles anfangen herunterzuskalieren. Und links und
+     rechts soll auf Desktop immer ca. 64px Abstand zum Bildschirmrand bleiben."
+     Gemessen vorher, im kleinen Zustand: bei 1920px Seitenbreite stand die Antwortkarte 2px vor
+     dem rechten Rand (ihr Schatten abgeschnitten), bei 1280 lagen Teams 121px und die Antwortkarte
+     140px AUSSERHALB der Seite.
+
+     Die Rechnung, in Pixeln der BUEHNE (vor ihrem transform):
+       - Die Buehne wird um ihre Mitte verkleinert (transform-origin: center in landing-hero.css).
+         Ein Punkt u der Buehne steht beim Faktor s also bei  mitte + s * (u - S/2).
+       - Links darf nichts vor --ulh-kante stehen, rechts nichts hinter Breite minus Kante. Daraus
+         folgt je Seite, wie weit ein Fenster bei s hinausragen darf.
+       - Stufe 1: s bleibt beim Deckel-Faktor, und jedes Fenster rueckt so weit auf das
+         Hauptfenster zu, wie es muss -- hoechstens so weit, dass --ulh-rein-max seiner eigenen
+         Breite hinter (bzw. bei den URL-Typen ueber) dem Hauptfenster liegt. Gezaehlt wird die
+         UEBERDECKUNG und nicht der Weg: Teams und Antwortkarte stehen in Ruhe 4px daneben, die
+         URL-Typen liegen schon 11px darueber, und die Grenze soll fuer alle dasselbe bedeuten.
+       - Stufe 2: ragt ein Fenster auch mit voller Einrueckung hinaus, wird s kleiner, bis es
+         passt. s ist also das Kleinste aus dem Deckel-Faktor und dem, was jedes Fenster mit voller
+         Einrueckung zulaesst -- und die Einrueckungen werden danach fuer DIESES s gerechnet, damit
+         keines weiter rueckt als noetig.
+     Gemessen wird am LAYOUT (getComputedStyle: left, width, transform-origin) und nicht am
+     Rechteck auf dem Schirm: die Fenster tragen beim Auftritt eine eigene Bewegung (translate,
+     scale .94), und ein Rechteck mitten darin waere eine Momentaufnahme davon. Das Layout kennt
+     nur die Ruhelage. Die MITTE der Buehne kommt dagegen aus dem Rechteck -- sie bleibt unter jedem
+     Faktor stehen, weil um sie herum verkleinert wird, auch mitten in der Bewegung.
+     Das Ergebnis wirkt an zwei Stellen: --ulh-rein am Fenster (die CSS schiebt damit left/right)
+     und root.__ulhEinpassung, das kleinFaktor() liest. */
+  function einpassen(root){
+    var buehne = root.querySelector(".ulh-buehne");
+    if (!buehne) return;
+    var fenster = [].slice.call(root.querySelectorAll(".ulh-fen")).filter(function(el){
+      return getComputedStyle(el).display !== "none";
+    });
+    /* Unter 900px sind die Nebenfenster aus (landing-hero.css, KLEINE SCHIRME), und die Buehne
+       wird dort gar nicht verkleinert (anwenden) -- es gibt nichts einzupassen. */
+    if (!fenster.length){ root.__ulhEinpassung = null; return; }
+    var deckel = deckelFaktor(root);
+    var kante = parseFloat(getComputedStyle(root).getPropertyValue("--ulh-kante"));
+    /* Ohne @property kommt der Ausdruck statt der Zahl an; 64 ist dann der Wert, den die Spur aus
+       demselben Ausdruck rechnet. */
+    if (!(kante >= 0)) kante = 64;
+    var S = parseFloat(getComputedStyle(buehne).width);
+    var rr = root.getBoundingClientRect(), br = buehne.getBoundingClientRect();
+    /* Verkleinert ein Vorfahre die ganze Sektion, stehen die Rechtecke in dessen Mass und das
+       Layout nicht -- zurueckgerechnet, damit alles in derselben Einheit steht. */
+    var aussen = root.offsetWidth ? rr.width / root.offsetWidth : 1;
+    if (!S || !aussen) return;
+    var mitte = ((br.left + br.right) / 2 - rr.left) / aussen;
+    var platzL = mitte - kante, platzR = root.clientWidth - kante - mitte;
+    /* Das Hauptfenster muss selbst auch passen. Unterhalb des Deckels steht es im grossen Zustand
+       genau auf der Kante, also bei jedem s unter 1 von selbst -- die Zeile ist die Sicherung fuer
+       eine Seite, die nicht so gebaut ist. */
+    var s = Math.min(deckel, platzL / (S / 2), platzR / (S / 2));
+    var daten = fenster.map(function(el){
+      var cs = getComputedStyle(el);
+      var b = parseFloat(cs.width), l = parseFloat(cs.left);
+      /* Das eigene transform der Ruhelage: nur die URL-Typen tragen eins (--ulh-fs, um die
+         rechte untere Ecke). Sichtbar breit ist ein Fenster also b * fs, und wo diese Breite
+         steht, sagt der Ursprung. */
+      var fs = parseFloat(cs.getPropertyValue("--ulh-fs")) || 1;
+      var ox = parseFloat(cs.transformOrigin) || 0;
+      var vb = b * fs, vl = l + ox * (1 - fs);
+      var jetzt = parseFloat(el.style.getPropertyValue("--ulh-rein")) || 0;
+      var links = vl + vb / 2 < S / 2;
+      /* Die Lage OHNE Einrueckung: die AEUSSERE Kante (links die linke, rechts die rechte) und
+         wie weit das Fenster dann schon ueber dem Hauptfenster liegt (negativ: Luft dazwischen). */
+      var ruhe = links ? vl - jetzt : vl + vb + jetzt;
+      var ueber = links ? ruhe + vb : S - (ruhe - vb);
+      var d = { el: el, links: links, ruhe: ruhe,
+                name: (String(el.className).match(/ulh-fen-(\w+)/) || [])[1] || "?",
+                max: Math.max(0, (parseFloat(cs.getPropertyValue("--ulh-rein-max")) || 0) * vb - ueber) };
+      var weit = links ? S / 2 - d.ruhe - d.max : d.ruhe - S / 2 - d.max;
+      if (weit > 0) s = Math.min(s, (links ? platzL : platzR) / weit);
+      return d;
+    });
+    if (!(s > 0)) s = deckel;
+    /* Auf die vier Stellen, die anwenden() ins transform schreibt -- gerechnet wird mit dem Wert,
+       der wirklich dasteht. Muss verkleinert werden, nach UNTEN: ein Hauch kleiner haelt die
+       Kante, ein Hauch groesser nicht. Passt alles beim Deckel, bleibt es bei dessen gerundetem
+       Wert, sonst stuende das kleine Fenster auf breiten Seiten bei 1299.9 statt 1300. */
+    s = s < deckel ? Math.floor(s * 10000) / 10000 : +deckel.toFixed(4);
+    var rein = {};
+    daten.forEach(function(d){
+      var grenze = d.links ? S / 2 - platzL / s : S / 2 + platzR / s;
+      var x = d.links ? grenze - d.ruhe : d.ruhe - grenze;
+      x = Math.max(0, Math.min(d.max, x));
+      var wert = x.toFixed(2) + "px";
+      /* Nur schreiben, was sich aendert: mass() laeuft in der Uhrenkette mehrmals, und jedes
+         Schreiben macht das Layout schmutzig. */
+      if (d.el.style.getPropertyValue("--ulh-rein") !== wert) d.el.style.setProperty("--ulh-rein", wert);
+      rein[d.name] = +x.toFixed(2);
+    });
+    var vorher = root.__ulhEinpassung ? root.__ulhEinpassung.faktor : null;
+    root.__ulhEinpassung = { faktor: s, deckel: deckel, kante: kante, rein: rein };
+    /* Steht die Buehne schon klein da (Neuladen mitten auf der Seite, Fenster gezogen), soll der
+       neue Faktor sofort gelten und nicht erst mit dem naechsten Takt. */
+    if (!root.__ulhGroesseAnwenden) return;
+    /* Und OHNE die 1800ms-Fahrt, wenn sich der Faktor aendert, waehrend die Buehne schon klein
+       steht -- das ist ein gezogenes Fenster, kein Scrollen. Die Einrueckung (left/right) springt
+       sofort auf den neuen Wert, der Faktor liefe sonst noch fast zwei Sekunden hinterher, und so
+       lange stuenden die Nebenfenster zu gross und damit ueber dem Rand. Beim ersten Rechnen
+       (vorher null) nicht: dann laeuft gerade der Auftritt, und der soll fahren.
+       Der Weg ist der uebliche: Uebergang aus, Wert setzen, Stil einmal auswerten lassen
+       (offsetWidth), Uebergang zurueck -- danach gibt es keinen Unterschied mehr, der fahren
+       koennte. */
+    var springen = vorher !== null && vorher !== s && root.classList.contains("is-klein");
+    if (springen) buehne.style.transition = "none";
+    root.__ulhGroesseAnwenden();
+    if (springen){ void buehne.offsetWidth; buehne.style.transition = ""; }
   }
 
   /* ---------- Daten hineingeben ----------------------------------------------------------- */
@@ -4836,15 +4956,22 @@
      stehen in der CSS, und eine zweite Wahrheit hier waere beim naechsten Wert daneben.
      Bis dahin standen hier 0.76 der Spur samt Rand, auf breiten Seiten also rund 1094px -- die
      Verkleinerung sollte vor allem den drei Nebenfenstern Platz machen, die direkt neben dem
-     Hauptfenster stehen. Mit dem groesseren kleinen Zustand bekommen sie weniger davon: sie
-     ragen weiter aus der Sektion heraus und werden an ihrem Rand angeschnitten (overflow-x: clip
-     an der Wurzel). Angeschnitten waren sie auf schmaleren Seiten schon vorher, das gehoert zu
-     ihrer Rolle -- es beginnt jetzt nur bei breiteren Seiten. */
-  function kleinFaktor(root){
+     Hauptfenster stehen. Mit dem groesseren kleinen Zustand bekamen sie weniger davon und liefen
+     aus der Seite hinaus.
+     DAS IST SEIT DEM 28.09. NICHT MEHR SO: der Deckel-Faktor ist nur noch die OBERGRENZE. Passen
+     die Nebenfenster daneben nicht in die Seite, rechnet einpassen() einen kleineren Faktor --
+     erst rueckt jedes Fenster ein Stueck auf das Hauptfenster zu, dann wird die ganze Buehne
+     kleiner. kleinFaktor ist das Kleinere aus beidem; der Deckel allein steht in deckelFaktor,
+     weil einpassen() ihn als Anfang seiner Rechnung braucht. */
+  function deckelFaktor(root){
     var cs = getComputedStyle(root);
     var gross = parseFloat(cs.getPropertyValue("--ulh-deckel")) || 1440;
     var klein = parseFloat(cs.getPropertyValue("--ulh-deckel-klein")) || 1300;
     return Math.min(1, klein / gross);                    /* nie hochskalieren */
+  }
+  function kleinFaktor(root){
+    var d = deckelFaktor(root), e = root.__ulhEinpassung;
+    return e ? Math.min(d, e.faktor) : d;
   }
 
   function scrollGroesse(root){
@@ -4910,6 +5037,9 @@
         if (soll) root.classList.add("is-klein"); else root.classList.remove("is-klein");
       }
     }
+    /* Fuer einpassen(): rechnet es einen neuen Faktor, soll er sofort am Rahmen stehen und nicht
+       bis zum naechsten Takt warten (120ms, in denen ein Nebenfenster ueber den Rand ragen kann). */
+    root.__ulhGroesseAnwenden = anwenden;
 
     /* Eine Handhabe zum NACHSEHEN, wie __ulhSzene und __ulhMira. Sie schreibt nichts und zeigt
        nichts an, sie GIBT den Stand zurueck: welcher der vier Wege anschlaegt, was am Rahmen steht
@@ -4933,7 +5063,10 @@
         oben: Math.round(root.getBoundingClientRect().top),
         ruhe: ruhe == null ? null : Math.round(ruhe),
         im_rahmen: rt, ruhe_rahmen: ruheRahmen == null ? null : Math.round(ruheRahmen),
-        eltern_scroll: eltern
+        eltern_scroll: eltern,
+        /* Faktor, Kante und Einrueckung je Nebenfenster aus einpassen() -- damit auf einer
+           fremden Seite in einer Zeile zu sehen ist, ob die Einpassung gerechnet hat. */
+        einpassung: root.__ulhEinpassung || null
       };
     };
 
