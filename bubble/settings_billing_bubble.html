@@ -188,6 +188,8 @@
   ============================================================================================
   RUN JAVASCRIPT -- ZWEI SCHRITTE, je einer hinter seiner RPC
   ============================================================================================
+  Jeder Schritt ist REINES JavaScript fuer die Aktion "Run javascript" -- ohne <script>-Zeilen
+  (standen hier bis zum 28.09. und haetten den Schritt mit "Unexpected token '<'" beendet).
   Hausform (CLAUDE.md 2a, wie bubble/urls_table_bubble.html "DER RUN-JS-SCHRITT"): der ROHE Text
   der RPC in einen Backtick, beide Sanitizer-Zeilen dahinter, so in den Setter. KEIN JSON.parse,
   kein JSON-safe, kein handgebautes Objekt -- die Komponente liest selbst (UC.readBubble), und nur
@@ -199,24 +201,20 @@
   beiden RPCs traegt Text, in dem das vorkommt (Ids, Namen, Zahlen, Datumswerte).
 
   ---- SCHRITT 1: DAS ABO (hinter der Abo-RPC) ----
-<script>
 (function () {
   var ABO = `RPC_SUBSCRIPTION_JSON`
     .replace(/:\s*([,}\]])/g, ": null$1")
     .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
   try { if (window.setBillingSubscription) window.setBillingSubscription(ABO); } catch (e) {}
 })();
-</script>
 
   ---- SCHRITT 2: DIE TARIFE (im Workflow von bubble_fn_ublPlans, hinter der Tarif-RPC) ----
-<script>
 (function () {
   var TARIFE = `RPC_PLANS_JSON`
     .replace(/:\s*([,}\]])/g, ": null$1")
     .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
   try { if (window.setBillingPlans) window.setBillingPlans(TARIFE); } catch (e) {}
 })();
-</script>
 
   ============================================================================================
   DIESELBEN ZWEI SCHRITTE STATISCH
@@ -230,7 +228,6 @@
   genau der Form, die die Komponente liest: das Team auf "Professional" (die Id stammt aus der
   echten Tarifliste unten), jaehrlich, 2220 EUR im Jahr. Sobald die Abo-RPC steht, ersetzt ihr
   Ergebnis diesen Text.
-<script>
 (function () {
   var ABO = `{
   "plan_id": "3129be58-d59a-4221-ba53-7b2e4131cf5f",
@@ -246,10 +243,8 @@
     .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
   try { if (window.setBillingSubscription) window.setBillingSubscription(ABO); } catch (e) {}
 })();
-</script>
 
   ---- STATISCH 2: DIE TARIFE -- die echte Antwort der Tarif-RPC, unveraendert ----
-<script>
 (function () {
   var TARIFE = `[
     {"id": "54be31d2-dc61-4a5e-8ea0-31c4370a4cb3", "name": "Essential", "monthly_price_eur": 89.00, "yearly_price_eur": 948.00, "prompts_per_day": 50, "competitors_max_active": 5, "trial_days": 14, "sort_order": null},
@@ -260,7 +255,6 @@
     .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
   try { if (window.setBillingPlans) window.setBillingPlans(TARIFE); } catch (e) {}
 })();
-</script>
 
   ============================================================================================
   DIE WORKFLOWS
