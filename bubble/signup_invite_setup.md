@@ -1,5 +1,11 @@
 # Signup nur mit Einladung
 
+> **UEBERHOLT am 28.09.2026 -- nicht umsetzen.** Der Nutzer behaelt seinen Signup-Weg in Bubble;
+> der Riegel ist stattdessen der Auth-Hook "Before User Created" in Supabase, die Registrierung
+> bleibt dort AN. Anleitung: `bubble/datenbank_auftrag.md`, Abschnitt 2. Weiter gueltig ist hier
+> nur das Format des Einladungslinks (4c) und die Tabelle der Faelle in 5, soweit sie Google
+> betrifft.
+
 Stand 25.09.2026. Ersetzt `signup_code_setup.md` (Registrierungscode — gestrichen).
 Gehoert zu `auth-page.js` / `bubble/auth_page_bubble.html`.
 

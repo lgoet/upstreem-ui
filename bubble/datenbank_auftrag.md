@@ -31,8 +31,19 @@ fehlendes Feld bricht die Anzeige still.
    Ich führe aus und melde zurück.
 4. **Rückgabeformen nie brechen.** Felder dürfen dazukommen. Umbenennen oder Entfernen nur, wo es
    hier ausdrücklich steht.
-5. **Kein `raise exception` für "kein Zugang".** Bubble zeigt bei jedem Fehler ein Popup, auf
-   jeder Seite. Die Rückgabeform für "kein Zugang" steht in Abschnitt 1.
+5. **Werfen ist bei Lese-Funktionen erlaubt (28.09. korrigiert).** Hier stand vorher "kein
+   `raise exception`", mit der Begründung, Bubble zeige bei jedem Fehler ein Popup. Das stimmt
+   nicht. Bubble zeigt sein Fehlerfenster nur bei einem API-Aufruf, der als **Aktion** in einem
+   Workflow läuft UND bei dem "Include errors in response and allow workflow actions to continue"
+   aus ist. Ein Aufruf als **Data** liefert bei einem Fehler einfach nichts. Der Nutzer hat es am
+   28.09. mit einem gesperrten Team geprüft: kein Fenster, nur leere Anzeige.
+   - `app.require_team_access` (wirft `team_access_<state>`) bleibt also, und es ist die Form für
+     alle weiteren Lese-Funktionen in Abschnitt 1.
+   - Funktionen, die Bubble als **Aktion** aufruft (die Team-Verwaltung in Abschnitt 3: einladen,
+     entfernen, Rolle ändern, verlassen, löschen), antworten bei einer Ablehnung weiter mit
+     `ok:false` und werfen nicht.
+   - Erscheint beim Nutzer doch irgendwo ein Fehlerfenster, setzt er an genau diesem Aufruf den
+     Haken "Include errors…". Du musst dafür nichts umbauen.
 6. **`security definer` immer mit `set search_path`**, und Rechte ausdrücklich: `revoke` von
    `public`/`anon`, `grant` nur, wer es braucht.
 7. **Text, der durch Bubble läuft, hat drei Gifte** (Grund: Abschnitt 6):
@@ -124,8 +135,10 @@ es:
    - Team verlassen und Team löschen (das Team muss man auch ohne Abo loswerden können);
    - die Onboarding-Funktionen (bekannt: `onboarding_start_v1`, `onboarding_prompts_claim_v1`,
      dazu eine Finalize-Funktion `[NAME ERFRAGEN]`).
-3. Die Liste zeigst du mir. Ich bestätige, dann setzt du die Wache als ERSTE Anweisung ein, in der
-   Form, die zum Rückgabetyp passt:
+3. Die Liste zeigst du mir. Ich bestätige, dann setzt du die Wache als ERSTE Anweisung ein. Seit
+   dem 28.09. ist die Form `perform app.require_team_access(p_team_id);` (siehe Regel 5), wie in
+   den Competition-Funktionen und der Heatmap. Die Formen ohne Fehler bleiben der Rückfall, wenn
+   eine Funktion als Aktion aufgerufen wird:
    - **json/jsonb:**
      `if not app.team_has_access(p_team_id) then return json_build_object('ok', false, 'error', 'no_access'); end if;`
    - **table / setof / void (plpgsql):** `if not app.team_has_access(p_team_id) then return; end if;`
@@ -172,7 +185,45 @@ es:
   wörtlich beim Nutzer, also als ganzer englischer Satz, keine technische Meldung.
 - Der Google-Knopf steht nur im Login, nicht in der Registrierung.
 
-**Zwei Wege, du empfiehlst einen und begründest:**
+**ENTSCHIEDEN am 28.09.: Weg B, der Auth-Hook "Before User Created".** Der Nutzer will am
+Registrierungsweg nichts ändern: Bubble legt Eingeladene weiter selbst über das Supabase-Plugin
+an, die Registrierung in Supabase bleibt AN. Der Hook ist der Riegel dahinter, für jeden Weg
+(Passwort, Google, ein direkter Aufruf der API).
+
+So ist er gebaut (Quelle: supabase.com/docs/guides/auth/auth-hooks/before-user-created-hook;
+prüf das Format dort, bevor du schreibst):
+- **Eine Postgres-Funktion, kein HTTP-Hook.** Beim HTTP-Hook ist eine Ablehnung derzeit kaputt
+  (github.com/supabase/supabase/issues/38751: "Invalid payload sent to hook"). Dort geht es um
+  den HTTP-Weg; ob der Postgres-Weg sauber ablehnt, zeigt Test 2 unten.
+- Form: `app.hook_before_user_created(event jsonb) returns jsonb`, `language plpgsql`,
+  `security definer`, `set search_path = ''`, alle Namen voll qualifiziert.
+- Eingang: `event->'user'->>'email'` (dazu `event->'user'->'app_metadata'->>'provider'`, z.B.
+  `email` oder `google`). Der Nutzer existiert zu diesem Zeitpunkt noch NICHT in `auth.users`.
+- Durchlassen: `return '{}'::jsonb;`
+- Ablehnen:
+  `return jsonb_build_object('error', jsonb_build_object('http_code', 403, 'message', 'No invite found for this email address.'));`
+  Der Satz geht an den Nutzer. Er MUSS das Wort "invite" enthalten: daran erkennt die
+  Anmeldeseite (seit dem 28.09.) die Absage und zeigt einen eigenen, festen Satz dazu.
+- Regel: durchlassen genau dann, wenn es eine Einladung gibt mit
+  `lower(invited_email) = lower(<adresse>)`, `status = 'pending'` und `expires_at` leer oder in
+  der Zukunft (Tabelle `[NAME ERFRAGEN]`, siehe unten). Ein Token gibt es an dieser Stelle nicht:
+  Google trägt keine eigenen Daten durch den Anmeldefluss. Die Adresse der Einladung IST die
+  Bindung, denn das Token ging genau an sie.
+- Rechte: `grant usage on schema app to supabase_auth_admin;`,
+  `grant execute on function app.hook_before_user_created(jsonb) to supabase_auth_admin;`,
+  `revoke execute on function app.hook_before_user_created(jsonb) from public, anon, authenticated;`
+- Einschalten: Dashboard, Authentication, Hooks, "Before User Created", Typ Postgres, Schema
+  `app`, die Funktion. Prüf zuerst, ob der Hook in diesem Projekt angeboten wird (Version, Tarif).
+  Gibt es ihn nicht, sag es mir; dann ist der Rückfall ein `before insert`-Trigger auf
+  `auth.users`, der mit demselben Satz wirft.
+- Frag mich, ob Adressen auf `@upstreem.ai` ohne Einladung durchgehen sollen.
+- Nicht betroffen: wer schon ein Konto hat. Eine Google-Anmeldung mit derselben, bestätigten
+  Adresse verknüpft Supabase mit dem bestehenden Konto; dabei entsteht kein neuer Nutzer, der Hook
+  läuft nicht.
+- Legt irgendetwas Konten mit dem Service-Schlüssel an (`auth.admin.createUser`,
+  `inviteUserByEmail`), geht auch das durch den Hook: die Einladung muss dann VORHER stehen.
+
+Weg A zum Vergleich, NICHT umsetzen:
 - **Weg A (so war es am 25.09. geplant):**
   1. In Supabase "Allow new users to sign up" AUS (Authentication, Sign In / Providers bzw. User
      Signups; prüf, wo der Schalter in dieser Version steht).
@@ -184,13 +235,8 @@ es:
      Einladung auf `accepted`, Protokolleintrag `invite_accepted`.
   4. Folge: Google mit einer unbekannten Adresse wird von Supabase abgewiesen. Ein Eingeladener
      kann sich aber auch nicht per Google REGISTRIEREN, nur danach per Google anmelden.
-- **Weg B (prüfen, ob in dieser Supabase-Version verfügbar):** Der Auth-Hook "Before User Created"
-  (Postgres-Funktion oder HTTP).
-  1. Registrierungen bleiben an. Der Hook lehnt jedes neue Konto ab, dessen Adresse keine offene,
-     nicht abgelaufene Einladung hat, und zwar für jeden Weg, also auch Google.
-  2. Dann kann sich ein Eingeladener auch direkt per Google registrieren.
-  3. Wenn es den Hook gibt, ist das der sauberere Weg. Du prüfst die Verfügbarkeit, bevor du ihn
-     empfiehlst, und erfindest keine Konfiguration.
+  Weg A hätte den Registrierungsweg in Bubble umgebaut (Edge Function statt Plugin). Genau das
+  will der Nutzer nicht.
 
 **Dabei unbedingt:**
 - **Alte Trigger löschen.** Aus einer früheren Lösung mit Registrierungscodes können auf
@@ -222,8 +268,11 @@ es:
 **Abnahme (alle fünf):**
 1. `curl -X POST https://<projekt>.supabase.co/auth/v1/signup -H "apikey: <anon>" -H
    "Content-Type: application/json" -d '{"email":"fremd@example.com","password":"geheim123"}'`
-   liefert einen Fehler (bei Weg A 422 "Signups not allowed"), kein Konto.
-2. Google mit einer nie eingeladenen Adresse: abgewiesen, kein Konto in `auth.users`.
+   liefert einen Fehler mit dem Satz des Hooks, kein Konto.
+2. Google mit einer nie eingeladenen Adresse: abgewiesen, kein Konto in `auth.users`. Der Browser
+   landet wieder auf der Anmeldeseite, und dort steht "No invite found for this email address.
+   Ask your team to invite you, then use the link in the invite email." Steht dort nichts oder
+   der allgemeine Satz, schick mir die Adresse, auf der der Browser gelandet ist.
 3. Registrierung über einen gültigen Einladungslink: Konto da, Mitglied im Team, Einladung
    `accepted`, Protokolleintrag da.
 4. Derselbe Link ein zweites Mal: abgewiesen mit dem Satz oben.
@@ -455,7 +504,8 @@ Schick mir diese Liste mit deiner ersten Antwort zurück, dann suche ich die Nam
 10. Die Massenaktions-Funktion der Prompts-Tabelle
 
 Und die fünf Entscheidungen, die bei mir liegen:
-- Weg A oder B in Abschnitt 2;
+- ~~Weg A oder B in Abschnitt 2~~ (entschieden am 28.09.: Weg B, der Hook);
+- ob `@upstreem.ai`-Adressen ohne Einladung ein Konto anlegen dürfen;
 - darf der letzte owner das Team verlassen;
 - sollen `@upstreem.ai`-Mitglieder serverseitig geschützt sein;
 - Rolle oder Flag in Abschnitt 3;
