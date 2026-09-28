@@ -1,0 +1,280 @@
+<!--
+  ============================================================================================
+  SETTINGS / BILLING -- Bubble-Vorlage (dritter Reiter der Settings-Seite)
+  ============================================================================================
+  "Billing & Subscription": Ueberschrift, Beschreibung, der Knopf "Manage Billing" (oeffnet das
+  Stripe-Kundenportal), darunter die kleine Tabelle zum laufenden Abo. In der Zeile "Current plan"
+  oeffnet "See all plans" ein Fenster mit allen Tarifen -- dieselben Karten wie auf der
+  Landingpage (UC.makePlans aus core), der eigene Tarif mit "Current plan" statt "Get started".
+
+  EINSETZEN
+  1. HTML-Element in die Gruppe des Reiters "Billing" (settings-page-header: sphNav mit
+     page "billing"), dieses Markup hinein.
+  2. INSTANCE_ID durch eine FESTE Kennung ersetzen (z. B. "settings_billing"). Kein dynamischer
+     Ausdruck -- siehe bubble/STATISCHES_MARKUP_PFLICHT.md.
+  3. CDN_PIN durch den Commit-Hash ersetzen, denselben wie an allen anderen Elementen der Seite
+     und im Kopf-Snippet.
+  4. data-isdark bleibt "no" und wird NICHT dynamisch gesetzt. Das Thema kommt ueber
+     window.setUpstreemTheme("dark") / ("light"); das Fenster mit den Tarifen folgt von selbst.
+  5. data-team auf die Id des AKTUELLEN Teams (Current User's Team's unique id). Sie geht in jedes
+     Ereignis dieser Komponente als team_id -- das Portal und die Kasse gehoeren zu diesem Team.
+  6. data-plan-id (optional) auf die Id des laufenden Tarifs, als TEXT (z. B. Current User's
+     Team's Subscription's plan_id :formatted as text -- nie yes/no, nie Zahl). Nur der
+     Rueckfall: gewinnt immer plan_id aus dem Abo-Schritt unten. Steht keins von beiden, ist im
+     Fenster keine Karte als "Current plan" markiert, und jede zeigt "Get started" -- auch die,
+     die das Team schon hat.
+  7. FIT HEIGHT am HTML-Element und "Fit height to content" an der Gruppe darum. Die Tabelle
+     waechst um bis zu drei Zeilen (Canceled at / Access ends at / Trial ends at).
+  8. Das Kopf-Snippet der Seite (bubble/page_header_preload_ohne_kommentare.html) kennt diese
+     Komponente seit dem 28.09. -- ein neues Snippet mit neuem Pin einsetzen, sonst laedt der
+     Loader unten die Dateien roh und spaet nach.
+
+  DATEN HINEIN (zwei Run-javascript-Schritte, unten dynamisch und statisch)
+     setBillingSubscription(TEXT)   das Abo -- im Seiten-Workflow bzw. beim Oeffnen des Reiters,
+                                    hinter der Abo-RPC
+     setBillingPlans(TEXT)          alle Tarife -- im Workflow von bubble_fn_ublPlans, hinter der
+                                    Tarif-RPC. Darf AUCH schon beim Seitenaufbau laufen; dann
+                                    stehen die Karten beim ersten Oeffnen sofort da und werden
+                                    beim Oeffnen nur aufgefrischt.
+     resetBilling()                 zurueck ins Skelett, Vorrat geleert -- nach einem Teamwechsel,
+                                    bevor das neue Abo kommt
+  Beide Setter auch mit der Instanz davor: setBillingSubscription("INSTANCE_ID", TEXT). Ohne sie
+  trifft der Aufruf jede Platzierung; eine Seite hat genau eine.
+
+  DAS ABO -- die Schluessel, die die Komponente liest (so muss die RPC sie liefern)
+     {
+       "plan_id":           "3129be58-d59a-4221-ba53-7b2e4131cf5f",   markiert die Karte im Fenster
+       "plan_name":         "Professional",
+       "billing_interval":  "yearly",           "monthly" | "yearly" (auch "month"/"year")
+       "price_eur":         2220.00,            Betrag JE TAKT, also im Jahr 2220, nicht 185
+       "next_billing_date": "2026-10-28T09:00:00+00:00",
+       "canceled_at":       null,               die drei letzten stehen NUR als Zeile da,
+       "access_ends_at":    null,               wenn ein Wert kommt
+       "trial_ends_at":     null
+     }
+  Datumswerte als ISO-Text; eine nackte Zahl gilt als Stripe-Zeitstempel in Sekunden. Kommt die
+  RPC als Liste mit einer Zeile ([{...}]) oder als {"subscription": {...}}, geht das auch.
+  Was die Tabelle aus dem Text macht (gemessen am 28.09. gegen settings-billing.js):
+     lesbar, mit Tarif               die Zeilen
+     "", "null", "{}", "[]"          "Current plan: No active plan" und "See all plans"
+     unlesbar oder abgeschnitten     "Could not load your subscription" statt der Zeilen
+     Schritt kommt nie               Skelett, nach 25s derselbe Hinweis
+
+  DIE TARIFE -- die Liste der Tarif-RPC unveraendert. Gelesen werden:
+     id, name, monthly_price_eur, yearly_price_eur, prompts_per_day, competitors_max_active,
+     trial_days, sort_order -- und, falls die RPC sie spaeter liefert: description (Unterzeile),
+     ai_responses_per_month + ai_responses_more (die Zeile "Analyze up to ... AI responses"),
+     support_label (die letzte Zeile). Fehlen sie, gilt fuer die Unterzeile der Satz der
+     Landingpage zum Namen des Tarifs, die Antwortenzeile faellt weg, die Supportzeile kommt aus
+     der Position (erster Tarif "Standard email support", die anderen "Personal account manager").
+
+  EREIGNISSE HERAUS (jedes mit einem JSON-Text als einzigem Parameter)
+
+  data-manage-fn       = "bubble_fn_ublManage"
+      {"team_id":"…"}
+      "Manage Billing" wurde geklickt. Der Workflow legt eine Portal-Sitzung an (Stripe
+      billing_portal) und leitet auf ihre URL weiter -- IM SELBEN TAB. Ein neuer Tab NACH einem
+      API-Aufruf ist kein Klick des Nutzers mehr, und jeder Browser blockiert ihn als Popup.
+      Der Knopf ist danach 4s gesperrt (gegen zwei Sitzungen durch einen Doppelklick).
+
+  data-plans-fn        = "bubble_fn_ublPlans"
+      {"team_id":"…","current_plan_id":"3129be58-…"}
+      Das Fenster ist aufgegangen. Der Workflow holt die Tarif-RPC und ruft Schritt 2. Bis die
+      Antwort da ist, stehen die Tarife vom letzten Mal (oder drei Kartenhuellen); kommt nach 8s
+      nichts, steht "Could not load the plans" da.
+
+  data-select-plan-fn  = "bubble_fn_ublSelectPlan"
+      {"team_id":"…","plan_id":"54be31d2-…","plan_name":"Essential","billing_interval":"yearly",
+       "price_eur":948,"monthly_price_eur":89,"yearly_price_eur":948,"trial_days":14,
+       "current_plan_id":"3129be58-…"}
+      "Get started" auf einer Karte. billing_interval ist die Stellung des Schalters im Fenster,
+      price_eur der Betrag JE TAKT dazu. Das Fenster schliesst sofort (ein Bubble-Popup laege
+      sonst darunter). Danach Kasse bzw. Tarifwechsel; bleibt der Nutzer auf der Seite, am Ende
+      die Abo-RPC und Schritt 1 erneut, sonst steht der alte Tarif in der Tabelle.
+
+  Fehlt eines der drei Elemente, sagt die Komponente es dem Nutzer ("could not be opened" /
+  "could not be selected ... reload the page") statt still nichts zu tun.
+
+  DIE WERTE IN BUBBLE LESEN (extract with Regex auf den Wert des Ereignisses)
+     Ids, Namen und der Takt enthalten kein Anfuehrungszeichen:
+         (?<="team_id":")[^"]*
+         (?<="plan_id":")[^"]*
+         (?<="plan_name":")[^"]*
+         (?<="billing_interval":")[^"]*
+         (?<="current_plan_id":")[^"]*
+     Zahlen stehen OHNE Anfuehrungszeichen (null, wenn die RPC keine hatte):
+         (?<="price_eur":)[0-9.]+
+         (?<="monthly_price_eur":)[0-9.]+
+         (?<="yearly_price_eur":)[0-9.]+
+         (?<="trial_days":)[0-9]+
+     "price_eur" trifft NICHT in "monthly_price_eur" hinein: vor price_eur steht dort ein
+     Unterstrich, kein Anfuehrungszeichen.
+  ============================================================================================
+-->
+<div class="up-root ubl-root"
+     data-instance="INSTANCE_ID"
+     data-cdn-pin="CDN_PIN"
+     data-isdark="no"
+     data-team="TEAM_ID"
+     data-plan-id="PLAN_ID"
+     data-manage-fn="bubble_fn_ublManage"
+     data-plans-fn="bubble_fn_ublPlans"
+     data-select-plan-fn="bubble_fn_ublSelectPlan"></div>
+
+<script>
+(function(){
+  /* ---- Boot-Stubs, VOR dem Nachladen ------------------------------------------------------
+     Bubble ruft die Setter im Seiten-Workflow, regelmaessig BEVOR settings-billing.js geladen ist.
+     Ohne diesen Block laeuft der Run-JS-Schritt in seinen typeof-Waechter und der Aufruf ist WEG
+     -- die Tabelle steht danach im Skelett, ohne dass irgendwo ein Fehler steht. Nur Namen, die
+     es noch nicht gibt: den Platzhalter des Kopf-Snippets holt settings-billing.js selbst ab. */
+  window.__ublBootQueue = window.__ublBootQueue || [];
+  ["setBillingSubscription", "setBillingPlans", "resetBilling"].forEach(function(n){
+    if (typeof window[n] === "function") return;
+    window[n] = function(){ window.__ublBootQueue.push([n, [].slice.call(arguments)]); };
+  });
+
+  function echterPin(p){
+    /* trim: ein Leerzeichen aus der Bubble-Konstante ergaebe sonst .../upstreem-ui@ abc /core.js,
+       und jsDelivr antwortet mit 404. Gespaltener Platzhalter: wer "CDN_PIN" global im Element
+       ersetzt, wuerde sonst auch diesen Waechter treffen. */
+    p = String(p == null ? "" : p).trim();
+    return (p && p !== "CDN_" + "PIN") ? p : "";
+  }
+  function readPin(cls){
+    var i, p, els = document.getElementsByClassName(cls);
+    for (i = 0; i < els.length; i++){
+      p = echterPin(els[i].getAttribute("data-cdn-pin"));
+      if (p) return (window.__upPin = p);
+    }
+    /* Rueckfall: ein Pin, der auf DIESER Seite schon gilt (team_orga_bubble.html, 31.08.) --
+       Bubble fuehrt Scripts nicht in DOM-Reihenfolge aus, die eigene Wurzel steht dann evtl.
+       noch nicht im Dokument. */
+    if (echterPin(window.__upPin)) return window.__upPin;
+    var alle = document.querySelectorAll ? document.querySelectorAll("[data-cdn-pin]") : [];
+    for (i = 0; i < alle.length; i++){
+      p = echterPin(alle[i].getAttribute("data-cdn-pin"));
+      if (p) return (window.__upPin = p);
+    }
+    var L0 = window.__upAssetsLoaded, k, m;
+    for (k in L0){
+      if (!Object.prototype.hasOwnProperty.call(L0, k)) continue;
+      m = String(L0[k] || "").match(/upstreem-ui@([^/]+)\//);
+      if (m && m[1] && m[1] !== "main") return (window.__upPin = m[1]);
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("ubl-root") + "/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  function once(url, make){
+    var name = url.slice(url.lastIndexOf("/") + 1);
+    if (L[name]){
+      if (L[name] !== url && window.console) console.warn("upstreem: " + name +
+        " ist schon von einem anderen Pin geladen. Geladen bleibt " + L[name] +
+        ", ignoriert wird " + url + ". Setzt alle Elemente auf denselben Pin.");
+      return;
+    }
+    L[name] = url; make(url);
+  }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+
+  css("core.css");   js("core.js");
+  css("settings-billing.css");  js("settings-billing.js");
+})();
+</script>
+
+<!--
+  ============================================================================================
+  RUN JAVASCRIPT -- ZWEI SCHRITTE, je einer hinter seiner RPC
+  ============================================================================================
+  Hausform (CLAUDE.md 2a, wie bubble/urls_table_bubble.html "DER RUN-JS-SCHRITT"): der ROHE Text
+  der RPC in einen Backtick, beide Sanitizer-Zeilen dahinter, so in den Setter. KEIN JSON.parse,
+  kein JSON-safe, kein handgebautes Objekt -- die Komponente liest selbst (UC.readBubble), und nur
+  so zeigt sie einen kaputten Text als Lesefehler statt still leer. window.<name> statt des
+  nackten Namens: haengt das Element an einem aelteren Pin, ist der Name undefined statt eines
+  ReferenceError, der den ganzen Schritt mitnimmt. Jeder Aufruf in seinem eigenen try.
+
+  Im Backtick gefaehrlich sind nur ein Backtick, ${ und ein Backslash in einem WERT -- keine der
+  beiden RPCs traegt Text, in dem das vorkommt (Ids, Namen, Zahlen, Datumswerte).
+
+  ---- SCHRITT 1: DAS ABO (hinter der Abo-RPC) ----
+<script>
+(function () {
+  var ABO = `RPC_SUBSCRIPTION_JSON`
+    .replace(/:\s*([,}\]])/g, ": null$1")
+    .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+  try { if (window.setBillingSubscription) window.setBillingSubscription(ABO); } catch (e) {}
+})();
+</script>
+
+  ---- SCHRITT 2: DIE TARIFE (im Workflow von bubble_fn_ublPlans, hinter der Tarif-RPC) ----
+<script>
+(function () {
+  var TARIFE = `RPC_PLANS_JSON`
+    .replace(/:\s*([,}\]])/g, ": null$1")
+    .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+  try { if (window.setBillingPlans) window.setBillingPlans(TARIFE); } catch (e) {}
+})();
+</script>
+
+  ============================================================================================
+  DIESELBEN ZWEI SCHRITTE STATISCH
+  ============================================================================================
+  Zum Einbauen: erst diese zwei, dann die echten. Sie zeigen die Komponente mit Daten, damit man
+  sofort sieht, ob das Element ueberhaupt laeuft. Dieselbe Form wie oben, nur steht im Backtick
+  der Text.
+
+  ---- STATISCH 1: DAS ABO -- BEISPIEL, KEINE ECHTEN DATEN ----
+  Fuer das Abo gibt es noch keine Nutzlast aus der RPC. Das hier ist ein ERFUNDENES Beispiel in
+  genau der Form, die die Komponente liest: das Team auf "Professional" (die Id stammt aus der
+  echten Tarifliste unten), jaehrlich, 2220 EUR im Jahr. Sobald die Abo-RPC steht, ersetzt ihr
+  Ergebnis diesen Text.
+<script>
+(function () {
+  var ABO = `{
+  "plan_id": "3129be58-d59a-4221-ba53-7b2e4131cf5f",
+  "plan_name": "Professional",
+  "billing_interval": "yearly",
+  "price_eur": 2220.00,
+  "next_billing_date": "2026-10-28T09:00:00+00:00",
+  "canceled_at": null,
+  "access_ends_at": null,
+  "trial_ends_at": null
+}`
+    .replace(/:\s*([,}\]])/g, ": null$1")
+    .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+  try { if (window.setBillingSubscription) window.setBillingSubscription(ABO); } catch (e) {}
+})();
+</script>
+
+  ---- STATISCH 2: DIE TARIFE -- die echte Antwort der Tarif-RPC, unveraendert ----
+<script>
+(function () {
+  var TARIFE = `[
+    {"id": "54be31d2-dc61-4a5e-8ea0-31c4370a4cb3", "name": "Essential", "monthly_price_eur": 89.00, "yearly_price_eur": 948.00, "prompts_per_day": 50, "competitors_max_active": 5, "trial_days": 14, "sort_order": null},
+    {"id": "3129be58-d59a-4221-ba53-7b2e4131cf5f", "name": "Professional", "monthly_price_eur": 205.00, "yearly_price_eur": 2220.00, "prompts_per_day": 150, "competitors_max_active": 10, "trial_days": 14, "sort_order": null},
+    {"id": "a980c741-807e-43dd-9617-8e06b82999ba", "name": "Enterprise", "monthly_price_eur": 429.00, "yearly_price_eur": 4380.00, "prompts_per_day": 350, "competitors_max_active": 15, "trial_days": 0, "sort_order": null}
+]`
+    .replace(/:\s*([,}\]])/g, ": null$1")
+    .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+  try { if (window.setBillingPlans) window.setBillingPlans(TARIFE); } catch (e) {}
+})();
+</script>
+
+  ============================================================================================
+  DIE WORKFLOWS
+  ============================================================================================
+  Drei JavaScript-to-Bubble-Elemente mit genau diesen Namen (Value type TEXT, "Trigger event" an):
+
+     bubble_fn_ublManage      -> Portal-Sitzung anlegen (Stripe billing_portal, fuer team_id)
+                                 -> "Open an external website" mit ihrer URL, im selben Tab
+     bubble_fn_ublPlans       -> Tarif-RPC -> Schritt 2
+     bubble_fn_ublSelectPlan  -> plan_id, billing_interval, price_eur aus dem Wert lesen (Regex
+                                 oben) -> Checkout-Sitzung bzw. Tarifwechsel -> weiterleiten;
+                                 bleibt die Seite stehen: Abo-RPC -> Schritt 1
+
+  Und einmal beim Oeffnen des Reiters "Billing" (bzw. im Seiten-Workflow): Abo-RPC -> Schritt 1.
+  Ohne ihn steht die Tabelle 25s im Skelett und sagt dann "Could not load your subscription".
+  ============================================================================================
+-->

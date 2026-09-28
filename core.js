@@ -2286,6 +2286,45 @@
     "competitors": "Wettbewerber"
   });
 
+  /* Billing (28.09.): settings-billing und die Tarifkarten aus core (UC.makePlans). Die Zeilen der
+     Karten, die schon oben unter "Tarife" stehen (Most popular, die Merkmale, Monthly/Yearly),
+     gelten hier mit -- hier steht nur, was dazukommt. "Tarif" wie im Onboarding, "Abo" fuer die
+     laufende Abrechnung, du-Form wie ueberall. */
+  addMessages("de", {
+    "Billing & Subscription": "Abrechnung & Abo",
+    "Manage your plan, payment method, invoices, and cancellation settings securely through our billing portal.":
+      "Verwalte Tarif, Zahlungsmethode, Rechnungen und Kündigung sicher über unser Abrechnungsportal.",
+    "Manage Billing": "Abrechnung verwalten",
+    "The billing portal could not be opened. Please reload the page.":
+      "Das Abrechnungsportal ließ sich nicht öffnen. Bitte lade die Seite neu.",
+    "Current Subscription": "Aktuelles Abo",
+    "Current plan": "Aktueller Tarif",
+    "Billing per interval": "Betrag pro Zeitraum",
+    "Next billing date": "Nächste Abrechnung",
+    "Canceled at": "Gekündigt am",
+    "Access ends at": "Zugang endet am",
+    "Trial ends at": "Testphase endet am",
+    "No active plan": "Kein aktiver Tarif",
+    "See all plans": "Alle Tarife ansehen",
+    "All plans": "Alle Tarife",
+    "/ month": "/ Monat",
+    "/ year": "/ Jahr",
+    "Save {n}% billed yearly": "{n} % sparen bei jährlicher Abrechnung",
+    "Get started": "Loslegen",
+    "Track multiple models": "Mehrere Modelle beobachten",
+    "Prices exclude VAT. Cancel any time.": "Preise zzgl. MwSt. Jederzeit kündbar.",
+    "This plan could not be selected right now. Please reload the page.":
+      "Dieser Tarif lässt sich gerade nicht auswählen. Bitte lade die Seite neu.",
+    /* Die Unterzeilen der Karten, wortgleich zur Landingpage (PLAN_DESC in core). */
+    "Get started with basic monitoring and analytics": "Der Einstieg mit grundlegendem Monitoring und Auswertungen",
+    "Advanced monitoring and AI search insights": "Erweitertes Monitoring und Einblicke in die KI-Suche",
+    "Advanced features for growing businesses": "Erweiterte Funktionen für wachsende Unternehmen",
+    /* Was im Lesefehler steht ("{was} konnte nicht geladen werden") -- im Singular, weil der Satz
+       "konnte" sagt, wie bei team-orga. */
+    "your subscription": "Dein Abo",
+    "the plans": "Die Tarifliste"
+  });
+
   /* Neunter Nachtrag: die Brand-Flaechen (Discover, Add Brand, Seitenkopf, Overview), die
      Prompt Recherche -- und vier Woerter aus dem Konto-Menue der Seitenleiste.
      DIE VIER SIND DER INTERESSANTE FALL: "Preferences", "Theme", "Light", "Dark" standen im
@@ -16612,6 +16651,388 @@
     '</div>';
   }
 
+  /* ══ Tarifkarten: UC.makePlans (28.09.) ══════════════════════════════════════════════════════
+     DIE KARTE DER LANDINGPAGE, JETZT IN DER APP. Bestellt fuer settings-billing ("nimm exakt die
+     und leg die in den core") -- mit EINEM Unterschied: der Nutzer sieht, welchen Tarif er hat.
+
+     Woher was kommt, und das ist bewusst geteilt:
+       Aufbau und Aussehen  landing-hero.js preisKarte() und landing-hero.css (die ulh-preis-
+                            Regeln): Name, Unterzeile, Betrag mit "/ month", die Ersparnis, die
+                            aufklappt, der Knopf ueber die volle Breite, die Merkmalsliste in
+                            derselben Reihenfolge, "Most popular" auf der MITTLEREN Karte, der
+                            Schalter Monthly/Yearly als .up-seg.is-lg (der gleitende Streifen kommt
+                            von selbst, segLauf kennt .up-seg).
+       Die Daten            onboarding-page.js viewPlan(): dort liest die Karte schon genau diese
+                            RPC (monthly_price_eur, yearly_price_eur, prompts_per_day,
+                            competitors_max_active, trial_days, sort_order). Dieselben Regeln,
+                            nicht aehnliche: Jahrespreis auf den Monat umgerechnet, die Ersparnis
+                            GERECHNET, Sortierung nach sort_order und sonst nach Preis, "Most
+                            popular" nur bei genau drei Tarifen, die KI-Antworten nur, wenn die RPC
+                            sie liefert -- erfunden wird keine Zahl.
+
+     Der Unterschied zur Landingpage: cfg.currentId. Die Karte mit dieser Id traegt statt des
+     Knopfes die feste Zeile "Current plan" und den Ring. Den Ring hat auf der Landingpage die
+     mittlere Karte -- hier geht er an den Tarif des Nutzers, sonst stuenden zwei gleiche Ringe da
+     (der Akzent ist ab Werk die Schriftfarbe, genau wie der Ring der Landingpage), und niemand
+     wuesste, welcher "deiner" ist. Ohne currentId sieht die Reihe aus wie die Landingpage.
+
+     landing-hero und onboarding-page tragen ihre Kopien vorerst weiter (28.09. so beschlossen):
+     die Landingpage steht ausserhalb von .up-root mit eigenen Marken, das Onboarding ist ein
+     Ablauf mit eigener Dichte. Die Umstellung ist je ein Aufruf -- siehe die Uebergabe. */
+
+  /* Die Unterzeile je Tarif, WORTGLEICH aus landing-hero.js (TARIFE). Die RPC liefert keine
+     Beschreibung; steht spaeter eine im Payload (description), gewinnt sie. Nach dem NAMEN und
+     nicht nach der Position: heisst ein Tarif morgen anders, faellt die Zeile weg -- eine
+     falsche Unterzeile unter dem falschen Tarif waere schlimmer als keine. */
+  var PLAN_DESC = {
+    essential:    "Get started with basic monitoring and analytics",
+    professional: "Advanced monitoring and AI search insights",
+    enterprise:   "Advanced features for growing businesses"
+  };
+  var PLAN_SEQ = 0;
+
+  /* EIN Wort fuer den Abrechnungstakt, egal wie er ankommt: Stripe schreibt "month"/"year", ein
+     Option-Set in Bubble eher "Monthly"/"Yearly". Unbekanntes wird "" und nicht still "yearly" --
+     ein falscher Takt im Ereignis ist ein falscher Preis an der Kasse. */
+  function planInterval(v){
+    var s = String(v == null ? "" : v).trim().toLowerCase();
+    if (/^(month|monthly|monatlich)$/.test(s)) return "monthly";
+    if (/^(year|yearly|annual|annually|jaehrlich|jährlich)$/.test(s)) return "yearly";
+    return "";
+  }
+  /* Euro mit dem Euro-Zeichen VORN, wie im Onboarding (geld()), und den Trennzeichen aus der
+     Einstellung des Nutzers (fmtNum). ganz = auf ganze Euro runden: fuer den Monatsbetrag eines
+     Jahrespreises, dort ist die Nachkommastelle ein Rundungsrest und keine Information. Ohne
+     ganz bleiben Cent stehen, sobald es welche gibt -- ein Rechnungsbetrag darf nicht gerundet
+     werden. */
+  function fmtEur(v, ganz){
+    var n = toNum(v);
+    if (n == null) return "–";
+    var glatt = Math.abs(n - Math.round(n)) < 0.005;
+    var z = (ganz || glatt) ? fmtNum(Math.abs(Math.round(n)), 0) : fmtNum(Math.abs(n), 2);
+    return (n < 0 ? "-" : "") + "€" + z;
+  }
+  function planId(pl){
+    return String(pl == null ? "" : (pl.id != null ? pl.id : (pl.plan_id != null ? pl.plan_id : ""))).trim();
+  }
+  /* Die brauchbaren Tarife, sortiert. Ein Eintrag ohne Id ist keiner: der Knopf koennte ihn nicht
+     benennen, und das Ereignis ginge ohne plan_id hinaus. Sortierung wie im Onboarding (setPlans):
+     sort_order, wo beide eins haben, sonst der Monatspreis -- die Reihenfolge, in der ein Nutzer
+     Tarife erwartet. */
+  function planListe(rows){
+    if (!isArr(rows)) return [];
+    var out = [];
+    for (var i = 0; i < rows.length; i++){
+      var r = rows[i];
+      if (!r || typeof r !== "object" || isArr(r) || !planId(r)) continue;
+      out.push(r);
+    }
+    return out.sort(function(a, b){
+      var sa = toNum(a.sort_order), sb = toNum(b.sort_order);
+      if (sa != null && sb != null && sa !== sb) return sa - sb;
+      return (toNum(a.monthly_price_eur) || 0) - (toNum(b.monthly_price_eur) || 0);
+    });
+  }
+  /* Der Betrag, der je Takt ABGEBUCHT wird -- das geht ins Ereignis. Nicht zu verwechseln mit
+     planMonat, dem Betrag, der auf der Karte STEHT. */
+  function planPreis(pl, iv){
+    return iv === "monthly" ? toNum(pl.monthly_price_eur) : toNum(pl.yearly_price_eur);
+  }
+  /* Auf der Karte steht immer ein Monatsbetrag, beim Jahrestakt der Jahrespreis durch zwoelf --
+     nur so sind die Karten nebeneinander vergleichbar (Landingpage und Onboarding gleich). */
+  function planMonat(pl, iv){
+    var mon = toNum(pl.monthly_price_eur), jah = toNum(pl.yearly_price_eur);
+    return iv === "yearly" && jah != null ? jah / 12 : mon;
+  }
+  /* Gerechnet, nie getippt. Nur ein echter Vorteil wird genannt: das Onboarding zeigte bei einem
+     teureren Jahrespreis "Save -4%". */
+  function planSpar(pl){
+    var mon = toNum(pl.monthly_price_eur), jah = toNum(pl.yearly_price_eur);
+    if (mon == null || jah == null || mon <= 0) return null;
+    var s = Math.round(100 - (jah / (mon * 12)) * 100);
+    return s > 0 ? s : null;
+  }
+  /* Die Merkmale in der Reihenfolge der Landingpage. Jede Zeile mit einer Zahl kommt AUS DEN
+     DATEN oder gar nicht (Onboarding: antworten(), marken(), hilfe()):
+       - KI-Antworten je Monat stehen nur da, wenn die RPC ai_responses_per_month liefert. Die
+         Landingpage nennt 4,650 / 13,500 / ueber 30,000 -- das sind gesetzte Zahlen und keine
+         Formel (Faktoren 93, 90, 85.7), eine Rechnung hier liefe ihr davon.
+       - Brands zaehlt die EIGENE Marke mit: fuenf Wettbewerber sind "6 brands / competitors".
+       - Die Supportzeile aus support_label, sonst nach der Position wie im Onboarding.
+     Die Saetze gehen als Ganzes durch den Katalog -- die fette Zahl steht im Deutschen an anderer
+     Stelle. */
+  function planMerkmale(pl, i){
+    var z = [];
+    z.push("<b>" + esc(t_("Choose which models to track")) + "</b>");
+    z.push(esc(t_("Track multiple models")));
+    var pr = toNum(pl.prompts_per_day);
+    if (pr != null) z.push(t_("Track up to <b>{n} prompts</b>").replace("{n}", esc(fmtNum(Math.round(pr), 0))));
+    z.push(esc(t_("Prompts executed daily")));
+    var ant = toNum(pl.ai_responses_per_month);
+    if (ant != null){
+      var mehr = pl.ai_responses_more === true || isYes(pl.ai_responses_more);
+      z.push(t_(mehr ? "Analyze more than <b>{n} AI responses per month</b>"
+                     : "Analyze up to <b>{n} AI responses per month</b>")
+               .replace("{n}", esc(fmtNum(Math.round(ant), 0))));
+    }
+    z.push(esc(t_("Unlimited countries / languages")));
+    z.push(esc(t_("Unlimited seats for your team")));
+    var k = toNum(pl.competitors_max_active);
+    if (k != null) z.push(t_("Track up to <b>{n} brands / competitors</b>").replace("{n}", esc(String(Math.round(k) + 1))));
+    var hilfe = String(pl.support_label == null ? "" : pl.support_label).trim() ||
+                (i <= 0 ? "Standard email support" : "Personal account manager");
+    z.push(esc(t_(hilfe)));
+    return z;
+  }
+  /* Was der Knopf "Get started" meldet -- alles, was ein Workflow fuer Kasse oder Wechsel braucht,
+     damit er nichts nachschlagen muss. price_eur ist der Betrag JE TAKT (948 im Jahr), nicht der
+     Monatsbetrag der Karte (79). */
+  function planInfo(pl, iv, aktuell){
+    return {
+      plan_id: planId(pl),
+      plan_name: String(pl.name == null ? "" : pl.name).trim(),
+      billing_interval: iv,
+      price_eur: planPreis(pl, iv),
+      monthly_price_eur: toNum(pl.monthly_price_eur),
+      yearly_price_eur: toNum(pl.yearly_price_eur),
+      trial_days: toNum(pl.trial_days),
+      current_plan_id: aktuell || ""
+    };
+  }
+  /* Drei Huellen mit den Massen der echten Karte -- beim Eintreffen ruckt nur der Inhalt, nicht
+     das Raster. Drei, weil das der Normalfall ist (Onboarding: planSkelett). Die Balken sind
+     .up-tsk-bar, dasselbe Skelett wie in jeder Tabelle. */
+  function planSkelettHtml(n){
+    /* Zeile fuer Zeile wie die Karte: Name, zwei Zeilen Unterzeile, Betrag, Ersparnis, Knopf und
+       acht Merkmale. Mit nur drei Merkmalsbalken war die Huelle 180px hoch und die Karte 490 --
+       beim Eintreffen sprang das ganze Fenster um 300px. */
+    var z = "";
+    for (var k = 0; k < 8; k++) z += '<span class="up-tsk-bar up-plan-sk-z' + (k % 3 === 2 ? " is-kurz" : "") + '"></span>';
+    var karte = '<div class="up-plan is-skel" aria-hidden="true">' +
+      '<span class="up-tsk-bar up-plan-sk-name"></span>' +
+      '<span class="up-tsk-bar up-plan-sk-desc"></span>' +
+      '<span class="up-tsk-bar up-plan-sk-desc is-kurz"></span>' +
+      '<span class="up-tsk-bar up-plan-sk-amt"></span>' +
+      '<span class="up-tsk-bar up-plan-sk-note"></span>' +
+      '<span class="up-tsk-bar up-plan-sk-btn"></span>' +
+      z +
+    '</div>';
+    var out = "";
+    for (var i = 0; i < (n || 3); i++) out += karte;
+    return out;
+  }
+  function planKarteHtml(pl, i, alle, o){
+    var id = planId(pl);
+    var aktuell = !!o.aktuell && id.toLowerCase() === o.aktuell;
+    /* Empfohlen ist die MITTLERE von genau drei -- nicht die teuerste und nicht per Feld aus den
+       Daten, dort gibt es keins (Onboarding, viewPlan). */
+    var top = alle.length === 3 && i === 1;
+    var ring = o.aktuellDa ? aktuell : top;
+    var spar = planSpar(pl);
+    var monat = planMonat(pl, o.iv);
+    var name = String(pl.name == null ? "" : pl.name).trim() || "–";
+    var desc = String(pl.description == null ? "" : pl.description).trim() || PLAN_DESC[name.toLowerCase()] || "";
+    var nameId = "up-plan-n-" + (++PLAN_SEQ);
+    return '<div class="up-plan' + (top ? " is-top" : "") + (ring ? " is-ring" : "") +
+        (aktuell ? " is-current" : "") + '" data-up-plan="' + esc(id) + '"' +
+        (aktuell ? ' aria-current="true"' : "") + '>' +
+      (top ? '<span class="up-plan-tag">' + esc(t_("Most popular")) + '</span>' : "") +
+      /* translate="no": der Name ist ein Eigenname, der Sprachlauf und die Browser-Uebersetzung
+         lassen ihn damit in Ruhe. */
+      '<div class="up-plan-name" id="' + nameId + '" translate="no">' + esc(name) + '</div>' +
+      (desc ? '<p class="up-plan-desc">' + esc(t_(desc)) + '</p>' : "") +
+      '<div class="up-plan-price">' +
+        '<span class="up-plan-amt" data-up-wert="' + (monat == null ? "" : monat) + '">' +
+          esc(fmtEur(monat, true)) + '</span>' +
+        '<span class="up-plan-per">' + esc(t_("/ month")) + '</span>' +
+      '</div>' +
+      /* Die Ersparnis steht IMMER im Markup und klappt nur auf und zu -- so schiebt sie die
+         Kartenhoehe weich mit (Landingpage und Onboarding gleich). */
+      '<div class="up-plan-note' + (o.iv === "yearly" && spar ? " is-on" : "") + '"><span>' +
+        (spar ? esc(t_("Save {n}% billed yearly").replace("{n}", String(spar))) : "") + '</span></div>' +
+      '<div class="up-plan-cta">' +
+        (aktuell
+          /* Kein Knopf, sondern eine feste Zeile in der Geometrie des Knopfes: der Platz bleibt
+             gleich hoch, und nichts laedt zu einem Klick ein, der den eigenen Tarif noch einmal
+             kaufen wuerde. */
+          ? '<div class="up-plan-mine">' + icon("check", 2.6) + '<span>' + esc(t_("Current plan")) + '</span></div>'
+          : '<button class="up-btn-pri is-lg" type="button" data-up-plan-go="' + esc(id) + '"' +
+              ' aria-describedby="' + nameId + '">' + esc(o.cta) + '</button>') +
+      '</div>' +
+      '<ul class="up-plan-feats">' +
+        planMerkmale(pl, i).map(function(h){
+          return '<li class="up-plan-feat"><span class="up-plan-ic">' + icon("check", 2.6) + '</span>' +
+                 '<span>' + h + '</span></li>';
+        }).join("") +
+      '</ul>' +
+    '</div>';
+  }
+  /* Von der Zahl, die dasteht, auf die neue -- der Wechsel Monat/Jahr ZAEHLT, statt umzuspringen:
+     ein springender Preis liest sich wie ein anderer Tarif, ein zaehlender wie derselbe zu anderen
+     Bedingungen. Die Ausgangszahl steht als data-up-wert am Element und wird in jedem Bild
+     nachgefuehrt; so stimmt sie auch, wenn mitten im Zaehlen erneut umgeschaltet wird, und ein
+     Tausendertrenner im Text kann sie nicht verfaelschen.
+     Die Sicherung steht VOR der Animation (Onboarding, zaehle()): in einem verdeckten Tab steht
+     requestAnimationFrame still, und ohne die Uhr bliebe dort der ALTE Preis stehen. */
+  function planZaehlen(el, ziel, sofort){
+    if (el.__upLauf){ try { window.cancelAnimationFrame(el.__upLauf); } catch(e){} el.__upLauf = 0; }
+    if (el.__upEnde){ clearTimeout(el.__upEnde); el.__upEnde = 0; }
+    function setzen(v){
+      el.textContent = fmtEur(v, true);
+      el.setAttribute("data-up-wert", v == null ? "" : String(v));
+    }
+    var von = toNum(el.getAttribute("data-up-wert"));
+    var ruhig = false;
+    try { ruhig = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); } catch(e){}
+    if (ziel == null || von == null || sofort || ruhig || Math.abs(von - ziel) < 0.005){ setzen(ziel); return; }
+    var start = 0, DAUER = 380;
+    function fertig(){
+      if (el.__upLauf){ try { window.cancelAnimationFrame(el.__upLauf); } catch(e){} el.__upLauf = 0; }
+      el.__upEnde = 0;
+      setzen(ziel);
+    }
+    el.__upEnde = setTimeout(fertig, DAUER + 80);
+    if (!window.requestAnimationFrame){ fertig(); return; }
+    function schritt(ts){
+      if (!start) start = ts || 1;
+      var p = Math.min(1, ((ts || start) - start) / DAUER);
+      var v = von + (ziel - von) * (1 - Math.pow(1 - p, 3));
+      el.textContent = fmtEur(v, true);
+      el.setAttribute("data-up-wert", String(v));
+      if (p < 1) el.__upLauf = window.requestAnimationFrame(schritt);
+      else fertig();
+    }
+    el.__upLauf = window.requestAnimationFrame(schritt);
+  }
+  /* host: das Element, in das die Reihe gezeichnet wird (sein Inhalt wird ersetzt).
+     cfg:  plans       die Zeilen der Tarif-RPC; null = Skelett
+           interval    "monthly" | "yearly" (Vorgabe yearly wie auf der Landingpage: der
+                       guenstigere Preis steht zuerst da)
+           currentId   Id des Tarifs, den der Nutzer hat
+           cta         Beschriftung der Knoepfe (Vorgabe "Get started"), geht durch den Katalog
+           fuss        Satz unter der Reihe, geht durch den Katalog; ohne ihn keine Zeile
+           onSelect(info)   Klick auf einen Knopf, info siehe planInfo
+           onInterval(iv)   der Nutzer hat den Takt umgeschaltet
+     Rueckgabe: { el, setPlans, setCurrent, setInterval, interval, redraw } */
+  function makePlans(host, cfg){
+    cfg = cfg || {};
+    if (!host) return null;
+    var S = {
+      plans: cfg.plans == null ? null : planListe(cfg.plans),
+      iv: planInterval(cfg.interval) || "yearly",
+      aktuell: String(cfg.currentId == null ? "" : cfg.currentId).trim()
+    };
+    /* Steht in host schon eine Reihe aus einem frueheren Aufruf, wird IHR Element weiterbenutzt
+       und nur ihr Klick-Zuhoerer abgenommen. Ein Fenster baut die Reihe bei jedem Oeffnen neu
+       (settings-billing), und jedes frische Element hinge sonst einen weiteren Breitenwaechter an
+       (widthTiers -> aufResize), der nie wieder abgemeldet wird. */
+    var el = host.__upPlansEl;
+    if (!el || el.parentNode !== host){
+      el = document.createElement("div");
+      el.className = "up-plans";
+      host.innerHTML = "";
+      host.appendChild(el);
+      host.__upPlansEl = el;
+    }
+    if (typeof el.__upPlansAb === "function") el.__upPlansAb();
+
+    function finde(id){
+      id = String(id == null ? "" : id);
+      for (var i = 0; S.plans && i < S.plans.length; i++) if (planId(S.plans[i]) === id) return S.plans[i];
+      return null;
+    }
+    function schalterHtml(){
+      function knopf(v, lbl){
+        var an = S.iv === v;
+        return '<button class="up-seg-btn' + (an ? " is-active" : "") + '" type="button" role="tab"' +
+          ' aria-selected="' + (an ? "true" : "false") + '" data-up-interval="' + v + '">' + esc(t_(lbl)) + '</button>';
+      }
+      return '<div class="up-plans-switch"><div class="up-seg is-lg" role="tablist" aria-label="' +
+        esc(t_("Billing interval")) + '">' + knopf("monthly", "Monthly") + knopf("yearly", "Yearly") + '</div></div>';
+    }
+    function zeichnen(){
+      var reihe;
+      if (!S.plans){
+        reihe = '<div class="up-plans-row" style="--up-plan-cols:3" aria-busy="true">' + planSkelettHtml(3) + '</div>';
+      } else {
+        var a = S.aktuell.toLowerCase();
+        var o = { iv: S.iv, aktuell: a, cta: t_(cfg.cta || "Get started"),
+                  aktuellDa: !!a && S.plans.some(function(p){ return planId(p).toLowerCase() === a; }) };
+        /* Hoechstens vier Spalten, wie im Onboarding: ein vierter Tarif steht daneben, nicht allein
+           in einer zweiten Zeile. */
+        reihe = '<div class="up-plans-row" style="--up-plan-cols:' + Math.max(1, Math.min(4, S.plans.length)) + '">' +
+          S.plans.map(function(p, i, alle){ return planKarteHtml(p, i, alle, o); }).join("") + '</div>';
+      }
+      el.innerHTML = schalterHtml() + reihe +
+        (cfg.fuss ? '<p class="up-plans-foot">' + esc(t_(cfg.fuss)) + '</p>' : "");
+    }
+    /* Der Takt wechselt, ohne das Markup neu zu bauen: Schalter umstellen, Betraege zaehlen,
+       Ersparnis auf- oder zuklappen. Ein Neubau haette die Zahl springen lassen. */
+    function taktSetzen(iv, sofort){
+      iv = planInterval(iv);
+      if (!iv || iv === S.iv) return false;
+      S.iv = iv;
+      var sw = el.querySelectorAll("[data-up-interval]"), i;
+      for (i = 0; i < sw.length; i++){
+        var an = sw[i].getAttribute("data-up-interval") === iv;
+        sw[i].classList.toggle("is-active", an);
+        sw[i].setAttribute("aria-selected", an ? "true" : "false");
+      }
+      var karten = el.querySelectorAll(".up-plan[data-up-plan]");
+      for (i = 0; i < karten.length; i++){
+        var pl = finde(karten[i].getAttribute("data-up-plan"));
+        if (!pl) continue;
+        var betrag = karten[i].querySelector(".up-plan-amt");
+        if (betrag) planZaehlen(betrag, planMonat(pl, iv), sofort);
+        var notiz = karten[i].querySelector(".up-plan-note");
+        if (notiz) notiz.classList.toggle("is-on", iv === "yearly" && !!notiz.textContent.trim());
+      }
+      return true;
+    }
+    function klick(e){
+      var t = e.target;
+      if (!t || !t.closest) return;
+      var b = t.closest("[data-up-interval]");
+      if (b && el.contains(b)){
+        if (taktSetzen(b.getAttribute("data-up-interval")) && typeof cfg.onInterval === "function"){
+          try { cfg.onInterval(S.iv); } catch(err){}
+        }
+        return;
+      }
+      var go = t.closest("[data-up-plan-go]");
+      if (go && el.contains(go) && !go.disabled){
+        var pl = finde(go.getAttribute("data-up-plan-go"));
+        if (!pl || typeof cfg.onSelect !== "function") return;
+        try { cfg.onSelect(planInfo(pl, S.iv, S.aktuell)); }
+        catch(err){ if (window.console) console.warn("[plans] onSelect hat geworfen:", err); }
+      }
+    }
+    el.addEventListener("click", klick);
+    el.__upPlansAb = function(){ el.removeEventListener("click", klick); };
+    /* Die Stufe haengt an der Breite DER REIHE, nicht an der des Fensters: dieselbe Reihe steht in
+       einem Fenster von 1000px und in einer Spalte des Onboardings. Unter 760px stehen die Karten
+       untereinander -- drei Listen nebeneinander sind dort nicht mehr zu lesen (die Landingpage
+       stapelt aus demselben Grund, bei 900px Fensterbreite). widthTiers meldet sich je Element nur
+       einmal an (__upWidthTiers), ein weiterbenutztes Element also nicht noch einmal. */
+    widthTiers(el, { narrowAt: 760, vnarrowAt: 480 });
+    zeichnen();
+    return {
+      el: el,
+      setPlans: function(list){ S.plans = list == null ? null : planListe(list); zeichnen(); },
+      setCurrent: function(id){
+        var neu = String(id == null ? "" : id).trim();
+        if (neu === S.aktuell) return;
+        S.aktuell = neu;
+        if (S.plans) zeichnen();
+      },
+      /* Von aussen gesetzt (Neuaufbau, frisches Abo) springt der Betrag -- gezaehlt wird nur, wenn
+         der Nutzer selbst umschaltet und dabei hinsieht. */
+      setInterval: function(iv){ taktSetzen(iv, true); },
+      interval: function(){ return S.iv; },
+      redraw: zeichnen
+    };
+  }
+
   /* ══ Custom Groupings ═══════════════════════════════════════════════════════════════════════
      Eine Gruppierung ist eine benannte Kombination aus bis zu drei Themen: ein Prompt zaehlt zur
      Gruppe, wenn er ALLE davon traegt. Sie lebt im localStorage, teambezogen, ohne Backend --
@@ -17150,6 +17571,12 @@
     makeToolGroup: makeToolGroup,
     leseFehlerHtml: leseFehlerHtml,
     leerHtml: leerHtml,
+    /* Tarifkarten (28.09.): die Karte der Landingpage als Bauteil, plus die drei Regeln, die ein
+       Aufrufer ausserhalb der Karte braucht -- Takt lesen, Euro schreiben, Tarifliste pruefen. */
+    makePlans: makePlans,
+    planInterval: planInterval,
+    planListe: planListe,
+    fmtEur: fmtEur,
     getTeam: getTeam,
     setUpstreemTeam: setUpstreemTeam,
     storeKey: storeKey,

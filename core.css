@@ -4654,3 +4654,108 @@
 .up-root[data-theme="dark"] .up-bgart-bogen  { opacity: 1; }
 .up-root[data-theme="dark"] .up-bgart-raster { opacity: .33; }
 .up-root[data-theme="dark"] .up-bgart-marken { opacity: .5; }
+
+/* ══ Tarifkarten (UC.makePlans, 28.09.) ═════════════════════════════════════════════════════════
+   Die Karte der Landingpage (landing-hero.css, die ulh-preis-Regeln), in die App geholt. Gleich
+   geblieben sind der Aufbau, die Abstaende (Polster 28/26/30, Luecke 20, Name 6 ueber der
+   Unterzeile, Betrag 18 darunter, Knopf 20, Liste 22 mit 9 zwischen den Zeilen), das Etikett auf
+   der mittleren Karte, der Ring und die aufklappende Ersparnis.
+
+   AUF DIE SKALA GEZOGEN hat sich, was die Landingpage mit eigener Typoskala fuehren darf und die
+   App nicht (CLAUDE.md 1c):
+       Radius 18        -> 16  (--up-r-2xl)
+       Name 17          -> 16  (--up-fs-xl)
+       Betrag 38        -> var(--up-fs-display), also weiter 38: das ist die Stufe fuer genau
+                           diese Rolle, "die EINE grosse Zahl einer Karte"
+       Merkmale 13.5    -> 13  (--up-fs-m)
+       Etikett 11.5     -> 11  (--up-fs-xs)
+       Uebergang 220ms  -> --up-t-2 (200ms)
+       Knopf            -> .up-btn-pri.is-lg aus core (40 hoch, Radius 12, 14/600) statt des
+                           Landing-Knopfs (40, Radius 10, 14/500) -- ein zweiter Hauptknopf
+                           neben dem der App waere genau der Zwilling, den core verhindern soll
+   Die Onboarding-Fassung (15/26, dichter gesetzt) ist KEIN Vorbild hier: dort muss der ganze
+   Ablauf auf 760px Hoehe passen.
+
+   FARBEN nur aus Marken: die Karte steht in der App auf .up-root, und in einem Fenster am body
+   (settings-billing) haengt die Marke an dessen .up-root-Klasse. Die Ersparnis traegt dasselbe
+   Gruen wie Landingpage und Onboarding -- mit demselben Rueckfall wie dort, weil --vc-pos in
+   core nie gesetzt wurde. */
+.up-plans { display: flex; flex-direction: column; min-width: 0; }
+.up-plans-switch { display: flex; justify-content: center; }
+.up-plans-row {
+  margin-top: 26px;
+  display: grid; grid-template-columns: repeat(var(--up-plan-cols, 3), minmax(0, 1fr)); gap: 20px;
+  align-items: start;
+}
+/* Untereinander, sobald die REIHE schmal ist (widthTiers am .up-plans, siehe makePlans). Die
+   Unterzeile braucht dann keine Mindesthoehe mehr -- die haelt nur drei Koepfe nebeneinander auf
+   einer Linie. */
+.up-plans.is-narrow .up-plans-row { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+.up-plans.is-narrow .up-plan-desc { min-height: 0; }
+.up-plan {
+  position: relative; display: flex; flex-direction: column; text-align: left; min-width: 0;
+  padding: 28px 26px 30px; border: 1px solid var(--vc-border); border-radius: 16px;
+  background: var(--vc-bg); color: var(--vc-text); box-shadow: var(--up-e-1);
+}
+/* Zweiter Ring statt 2px Rahmen, sonst spraenge der Inhalt um einen Pixel gegen die Nachbarn
+   (derselbe Kniff wie auf der Landingpage und im Onboarding). Welche Karte ihn traegt, entscheidet
+   makePlans: der Tarif des Nutzers, sonst die mittlere. */
+.up-plan.is-ring { border-color: var(--up-accent); box-shadow: 0 0 0 1px var(--up-accent), var(--up-e-1); }
+.up-plan-tag {
+  position: absolute; top: -11px; left: 26px; height: 22px; padding: 0 10px; border-radius: 999px;
+  background: var(--up-accent); color: var(--up-accent-fg);
+  font-size: 11px; font-weight: 600; letter-spacing: .02em; white-space: nowrap;
+  display: inline-flex; align-items: center;
+}
+.up-plan-name { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; color: var(--vc-text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Die Unterzeile sagt, fuer WEN der Tarif ist -- sie gehoert vor die Zahl. Mindesthoehe fuer zwei
+   Zeilen, damit die drei Betraege nebeneinander auf einer Hoehe stehen. */
+.up-plan-desc { margin: 6px 0 0; font-size: 14px; line-height: 1.45; color: var(--vc-third);
+  text-wrap: pretty; min-height: 40px; }
+.up-plan-price { margin-top: 18px; display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.up-plan-amt { font-size: var(--up-fs-display); font-weight: 600; letter-spacing: -.035em;
+  line-height: 1.05; font-variant-numeric: tabular-nums; color: var(--vc-text); white-space: nowrap; }
+.up-plan-per { font-size: 14px; color: var(--vc-third); white-space: nowrap; }
+/* Klappt auf und zu (0fr -> 1fr) statt zu erscheinen: so schiebt sie die Kartenhoehe weich mit. */
+.up-plan-note { display: grid; grid-template-rows: 0fr; opacity: 0;
+  transition: grid-template-rows var(--up-t-2) var(--up-ease), opacity var(--up-t-2) var(--up-ease); }
+.up-plan-note > span { overflow: hidden; min-height: 0; display: block; padding-top: 6px;
+  font-size: 13px; font-weight: 500; color: var(--vc-pos, #2e9e63); }
+.up-plan-note.is-on { grid-template-rows: 1fr; opacity: 1; }
+.up-plan-cta { margin-top: 20px; display: flex; }
+.up-plan-cta > .up-btn-pri { width: 100%; }
+/* "Current plan" an der Stelle des Knopfes: dieselbe Geometrie wie .up-btn-pri.is-lg (40 hoch,
+   Radius 12, Polster 20, Abstand 9, 14/600), damit die Karte nicht kuerzer wird -- aber als
+   ruhige Flaeche und ohne Zeiger, weil es hier nichts zu kaufen gibt. Der Haken in der Tinte der
+   Akzentfarbe, wie die You-Marke in team-orga. */
+.up-plan-mine {
+  width: 100%; height: 40px; padding: 0 20px; border-radius: 12px; gap: 9px;
+  border: 1px solid var(--vc-border); background: var(--vc-heading-bg); color: var(--vc-text);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 600; letter-spacing: -.01em; white-space: nowrap;
+  cursor: default; user-select: none;
+}
+.up-plan-mine svg { width: 15px; height: 15px; flex: 0 0 auto; display: block; color: var(--up-accent-ink); }
+.up-plan-feats { margin: 22px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 9px; }
+.up-plan-feat { display: flex; align-items: flex-start; gap: 9px; font-size: 13px; line-height: 1.4; color: var(--vc-third); }
+.up-plan-feat b { font-weight: 600; color: var(--vc-text); }
+.up-plan-ic { display: inline-flex; flex: 0 0 auto; margin-top: 2px; color: var(--vc-text); }
+.up-plan-ic svg { width: 15px; height: 15px; display: block; }
+.up-plans-foot { margin: 30px 0 0; font-size: 13px; line-height: 1.45; color: var(--vc-third); }
+/* Das Skelett: Polster, Rahmen und Radius der echten Karte, damit das Raster beim Eintreffen der
+   Tarife stehen bleibt. Kein Schatten -- eine Huelle soll nicht wie eine fertige Karte wirken. */
+.up-plan.is-skel { gap: 10px; box-shadow: none; }
+/* Hoehen und Abstaende nach den Zeilen der Karte: Name 16, Unterzeile 2 x 12, Betrag 38 (18
+   darueber), Knopf 40 (20 darueber), Liste mit 22 darueber. Die Balken sind Platzhalter, keine
+   Nachbildung -- es geht darum, dass die Kartenhoehe beim Eintreffen stehen bleibt. */
+.up-plan-sk-name { width: 44%; height: 16px; }
+.up-plan-sk-desc { width: 86%; height: 12px; }
+.up-plan-sk-desc.is-kurz { width: 58%; }
+.up-plan-sk-amt  { width: 52%; height: 38px; border-radius: 8px; margin-top: 16px; }
+.up-plan-sk-note { width: 46%; height: 12px; }
+.up-plan-sk-btn  { width: 100%; height: 40px; border-radius: 12px; margin-top: 14px; }
+.up-plan-sk-z    { width: 88%; height: 12px; }
+.up-plan-sk-btn + .up-plan-sk-z { margin-top: 16px; }
+.up-plan-sk-z.is-kurz { width: 64%; }
+@media (prefers-reduced-motion: reduce){ .up-plan-note { transition: none; } }

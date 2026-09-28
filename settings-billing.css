@@ -1,0 +1,110 @@
+/* upstreem settings-billing.css — "Billing & Subscription" im Settings-Bereich (Praefix ubl).
+   Braucht core.css.
+
+   ── Vorbilder, deren Masse hier 1:1 uebernommen sind ───────────────────────
+   Diese Datei erfindet keine Geometrie. Sie steht auf derselben Settings-Seite wie settings-brand
+   und team-orga, also gelten deren Zahlen:
+
+     Abschnitt       settings-brand.css .usb-body / .usb-sec / .usb-sechead / .usb-sectitle /
+                     .usb-secsub: Lesebreite 720, 12 im Abschnitt, 4 zwischen Titel und Zeile,
+                     Titel 16/500 in --vc-text, Beschreibung 13/400 in --vc-third, Zeilenhoehe
+                     1.3 und 1.45
+     Kopf mit Knopf  team-orga.css .uto-sechead / .uto-sectext / .uto-secbtn: Text links, Knopf
+                     rechts, Luecke 16, schmal untereinander
+     Hauptknopf      .up-btn-pri aus core (32 hoch, Radius 9, 13/500, Akzentfarbe) -- derselbe,
+                     den settings-brand als .usb-savebtn mit exakt diesen Werten fuehrt
+     Tabellenschale  team-orga.css .uto-table: Rahmen 1, Radius 12, --vc-bg, KEIN overflow, die
+                     Ecken an Kopf und letzter Zeile (11 = 12 minus Rahmen, konzentrisch)
+     Zeilen          core .up-thead / .up-th / .up-row / .up-td mit --up-cols; Kopf 45, Zeile 52,
+                     Zelle 13px -- die Werte von team-orga
+     Zeilenknopf     core .up-btn-sec.up-rowbtn (24 hoch, Radius 7, 12px), dauerhaft sichtbar wie
+                     die Einladungsknoepfe in team-orga
+     Fenster         core .up-topicmodal-backdrop / -card / .up-popup-close, wie der
+                     Einladen-Dialog in team-orga; nur die Breite ist anders, drei Karten brauchen
+                     Platz
+     Karten          UC.makePlans aus core (.up-plans, .up-plan) -- hier steht dazu NICHTS
+
+   Was ABWEICHT und warum: die Tabelle hat genau eine Kopfzelle ueber beide Spalten. Es ist eine
+   Tabelle aus Bezeichnung und Wert; Spaltenkoepfe "Field / Value" saegen nichts, der Kopf ist ihre
+   Ueberschrift. */
+
+.ubl-root { display: block; width: 100%; box-sizing: border-box; }
+/* box-sizing fuer alles darin kommt aus core (.up-root *), wie in settings-brand. */
+
+/* 720px Lesebreite wie settings-brand: eine Tabelle aus zwei Spalten, die bis zur Fensterkante
+   laeuft, stellt den Wert einen halben Meter neben seine Bezeichnung. */
+.ubl-body { display: flex; flex-direction: column; gap: 40px; max-width: 720px; }
+
+/* ---------- Abschnitt ---------- */
+.ubl-sec { display: flex; flex-direction: column; gap: 12px; }
+.ubl-sechead { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.ubl-sectext { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ubl-sectitle { font-size: 16px; font-weight: 500; color: var(--vc-text); margin: 0; line-height: 1.3; }
+.ubl-secsub { font-size: 13px; font-weight: 400; color: var(--vc-third); margin: 0; line-height: 1.45; }
+/* Der Knopf darf nicht schrumpfen -- er steht neben einer Beschreibung, die umbrechen kann. */
+.ubl-manage { flex: 0 0 auto; }
+/* Der Fehlerkasten aus core (.up-formerr) steht nur da, wenn "Manage Billing" keinen Empfaenger
+   fand. Zu ist er 0px hoch, nimmt in der Spalte aber trotzdem die Luecke von 4px mit -- und genau
+   die veraendert den Abstand Beschreibung/Tabelle, der 1:1 der von settings-brand ist. */
+.ubl-sectext > .ubl-err:not(.is-on) { display: none; }
+
+/* ---------- Tabelle (Schale wie team-orga .uto-table) ---------- */
+.ubl-table { border: 1px solid var(--vc-border); border-radius: 12px; background: var(--vc-bg); min-width: 0;
+  --up-cols: 200px minmax(0, 1fr); }
+.ubl-table .up-thead { height: 45px; flex: 0 0 45px; }
+/* Die eine Kopfzelle ueber beide Spalten -- sie ist die Ueberschrift der Tabelle. */
+.ubl-table .ubl-th { grid-column: 1 / -1; }
+.ubl-table .up-td { font-size: 13px; color: var(--vc-text); }
+/* 52 wie in team-orga. Kein Zeiger und kein Hover: die Zeilen sind Angaben, keine Links -- eine
+   Flaeche, die beim Ueberfahren aufleuchtet, verspricht einen Klick, den es nicht gibt. */
+.ubl-table .up-row { height: 52px; flex: 0 0 52px; cursor: default; }
+.ubl-table .up-row:hover { background: transparent; }
+.ubl-table .up-row:last-child { border-bottom: 0; }
+.ubl-table > .up-thead { border-top-left-radius: 11px; border-top-right-radius: 11px; }
+.ubl-table > *:last-child { border-bottom-left-radius: 11px; border-bottom-right-radius: 11px; }
+
+/* Die Bezeichnung in der leiseren Farbe, der Wert in der vollen -- dieselbe Rangfolge wie Datum
+   und Name in team-orga. Zahlen in fester Ziffernbreite, aber LINKSBUENDIG (so vorgegeben).
+   Drei Klassen: .ubl-table .up-td setzt die Textfarbe schon mit zweien, ein blosses .ubl-key
+   verloere dagegen -- und die Stelle in der Datei soll nicht entscheiden. */
+.ubl-table .up-td.ubl-key { color: var(--vc-muted); }
+.ubl-val { font-variant-numeric: tabular-nums; }
+.ubl-wert { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ubl-plan { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.ubl-plan.is-none { font-weight: 400; color: var(--vc-third); }
+.ubl-per { color: var(--vc-third); }
+
+/* "See all plans": der Zeilenknopf aus core. Dort blendet er erst beim Ueberfahren der Zeile ein
+   -- hier ist er der einzige Weg zu den Tarifen und steht darum immer da (team-orga macht es mit
+   Resend/Revoke genauso). Die Geometrie bleibt die von core. */
+.ubl-table .ubl-plansbtn { opacity: 1; pointer-events: auto; }
+/* core blendet .up-rowbtn unter 500px ganz aus (fuer den optionalen Knopf in der fuehrenden Zelle
+   der Domains-Tabelle). Hier waere damit der Weg zu den Tarifen weg -- vier Klassen gegen die drei
+   von core, wie in team-orga. */
+.ubl-root.is-vnarrow .ubl-table .ubl-plansbtn { display: inline-flex; }
+
+/* ---------- das Fenster ---------- */
+/* Zwei Klassen, weil core's .up-topicmodal-card eine eigene Breite (420) setzt. 1000 = drei Karten
+   zu gut 300 plus zwei Luecken zu 20 plus das Polster der Karte -- die Karten der Landingpage
+   stehen bei 1280 Fensterbreite knapp 390 breit, darunter wird ihre Merkmalsliste eng. */
+.ubl-backdrop .ubl-card { width: 100%; max-width: 1000px; }
+.ubl-card:focus { outline: 0; }
+.ubl-planbody { min-width: 0; }
+/* Der Fehlersatz unter den Karten steht nur da, wenn ein Klick keinen Empfaenger fand; zu ist er
+   eine Zeile der Hoehe 0 und nimmt trotzdem die Luecke der Karte (32) mit. Weg damit, solange zu. */
+.ubl-card > .ubl-selerr:not(.is-on) { display: none; }
+.ubl-card > .ubl-selerr.is-on { margin-top: 0; }
+
+/* ---------- schmal ---------- */
+/* Knopf unter den Text, wie team-orga (.uto-sechead). */
+.ubl-root.is-narrow .ubl-sechead { flex-direction: column; }
+/* Unter 500 steht die Bezeichnung UEBER dem Wert. Nebeneinander blieben bei 343px (Telefon mit
+   16er Rand) nach der Bezeichnungsspalte -- "Billing per interval" braucht mit dem Zellpolster von
+   core 153px -- noch 125 fuer den Wert, und in der Zeile "Current plan" schob der Knopf den
+   Tarifnamen auf 0px zusammen (gemessen). Untereinander hat der Wert die volle Breite.
+   Die Trennlinie zwischen den Spalten faellt dabei weg: sie trennte zwei Spalten, die es nicht
+   mehr gibt. */
+.ubl-root.is-vnarrow .ubl-table { --up-cols: minmax(0, 1fr); }
+.ubl-root.is-vnarrow .ubl-table .up-row { height: auto; flex: 0 0 auto; padding: 10px 0; row-gap: 2px; }
+.ubl-root.is-vnarrow .ubl-table .up-td { height: auto; min-height: 24px; border-left: 0; }
+.ubl-root.is-vnarrow .ubl-table .up-td.ubl-key { font-size: 12px; }
