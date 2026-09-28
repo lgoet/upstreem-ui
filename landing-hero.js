@@ -2349,6 +2349,48 @@
      SEITE an ACMES Antworten hat, und Acme ist erfunden. */
   var QUELL_DOMAIN = "forbes.com";
 
+  /* ---- DIE FARBEN DER QUELLEN-SEKTION (28.09. angefordert) --------------------------------
+     "Die Farben sind noch sehr wild. URL-Type-Farben die bleiben. Aber alle anderen [...]
+     harmonischer, professioneller und schoener. Linear-Farben als Base vielleicht? Aber so, dass
+     es ins Gesamtfarbkonzept passt und wirklich subtil und professionell aussieht."
+     Vorher standen hier vier Farbwelten nebeneinander: Kurven und Trichter im Cyan des
+     Zitationstyps UGC (#34a1d1, dazu fuenf Abstufungen), die Modellbalken in den Markenfarben der
+     Modelle (Schwarz #111827, Petrol #20808d, Google-Blau #4285F4, Claude-Orange #d97757), und
+     dazwischen der Ring der URL-Typen. Das waren zu viele Aussagen fuer eine Karte.
+     Jetzt EINE Familie, abgeleitet und nicht erfunden -- aus den zwei Toenen, die diese Seite
+     ohnehin traegt, in OKLCH gemessen:
+       - die Grautoene der Seite (--ulh-muted #6f737c, --ulh-sub #767a82, --ulh-border #e0e2e6)
+         liegen alle bei Farbton 265 mit fast keiner Buntheit (0.006 bis 0.015),
+       - der blaue Faden (Chip #3b82f6, Leitlinie #2563eb, Acme #579cf1) liegt bei 255 bis 263.
+     Die Familie steht dazwischen, bei Farbton 262, und laeuft von einem gedeckten Blau zum
+     Grau der Seite: je heller die Stufe, desto weniger bunt. Das ist Linears Art, Daten zu
+     faerben -- ein Akzent, Abstufungen desselben Tons, der Rest tritt zurueck -- mit dem Blau
+     dieser Seite statt Linears Violett. Die Buntheit bleibt unter 0.13 (der Chip hat 0.19):
+     die Karte soll ruhig sein, nicht leuchten.
+     Stufen von Hand gesetzt (L/C in OKLCH), wie die Skalen in core.css -- kein Faktor, der
+     Zwischenwerte erzeugt:
+       linien    Kurven der fuenf URLs, nach Anteil: die staerkste Seite im Akzent, jede weitere
+                 heller und grauer. Die Tooltip-Kaestchen nehmen dieselben Farben.
+                 1 #3f66b0  L .52 C .125   Akzent
+                 2 #6083c2  L .61 C .105
+                 3 #7f9cd1  L .69 C .085
+                 4 #9cb2d9  L .76 C .062
+                 5 #b4c5e2  L .82 C .045   die leiseste Stufe: auf Weiss noch 1.75:1 -- eine
+                                           Stufe heller (L .86) war als 2px-Linie kaum noch da
+       modelle   die vier Modellbalken, nach Anteil -- dieselben ersten vier Stufen. Die Modelle
+                 erkennt man an Logo und Namen neben dem Balken; ihre Markenfarben waren eine
+                 zweite Farbwelt neben dem Ring.
+       trichter  die Flaeche des Trichters: Stufe 3. Die Deckkraft stuft core weiter ab
+                 (0.92/0.74/0.56), also bleibt die Aussage "immer weniger". Stufe 2 stand im
+                 Vergleich als schwerer blauer Block da -- es ist die groesste Farbflaeche der
+                 Sektion, und eine Flaeche traegt eine hellere Stufe als eine 2px-Linie.
+     Die URL-Typen (der Ring) bleiben ausdruecklich, wie sie sind. */
+  var QUELL_FARBEN = {
+    linien:   ["#3f66b0", "#6083c2", "#7f9cd1", "#9cb2d9", "#b4c5e2"],
+    modelle:  ["#3f66b0", "#6083c2", "#7f9cd1", "#9cb2d9"],
+    trichter: "#7f9cd1"
+  };
+
   /* Jeden BUCHSTABEN einzeln, damit die Farbe wirklich durch den Satz laeuft und nicht in
      Wortsprüngen. Die Buchstaben stecken in Wortkasten: ein Zeilenumbruch darf zwischen zwei
      Woertern liegen, nie zwischen zwei Buchstaben -- ohne den Kasten bricht der Browser mitten im
@@ -2559,7 +2601,11 @@
               '<span class="ulh-quell-domsub">Review platform &middot; cited in your market since January</span>' +
             '</span>' +
           '</div>' +
-          '<div class="ulh-quell-app up-root" data-theme="light" data-isdark="no" data-up-keepclip>' +
+          /* --ulh-q-trichter: die Trichterfarbe aus QUELL_FARBEN, als Variable an die Wurzel der
+             Sektion, weil der Trichter per CSS gefaerbt wird (landing-hero.css, .udd-fn-band) --
+             so steht die Palette an EINER Stelle, auch fuer den Teil, den die CSS zeichnet. */
+          '<div class="ulh-quell-app up-root" data-theme="light" data-isdark="no" data-up-keepclip' +
+            ' style="--ulh-q-trichter: ' + QUELL_FARBEN.trichter + '">' +
             (MARKUP.udd || "") +
           '</div>' +
         '</div>' +
@@ -2582,25 +2628,128 @@
      genau die Griffe, die core selbst benutzt: die Deckkraft der inneren Teile auf 0, der aeussere
      Kasten an das Balkenende plus 8px. Kein Eingriff in core -- das waere eine Aenderung an der
      Hauptapp, und die ist in dieser Runde ausgeschlossen.
-     Nachgefasst wird mehrfach: das Chart laesst die Balken wachsen und setzt die Beschriftungen
-     danach selbst noch einmal. */
+     NICHT MEHR NACH DER UHR, SONDERN WENN CORE PLATZIERT (28.09.). Vorher lief das hier zu vier
+     festen Zeitpunkten (300 bis 2600ms nach dem Fuellen). core platziert aber auch SPAETER: am
+     Ende des Wachsens (transitionend) und bei jeder Meldung seines ResizeObservers -- und beides
+     kommt erst, wenn der Browser zeichnet. Wird die Seite in einem Hintergrund-Tab geladen, ist
+     das lange nach 2600ms. Gemessen im Pruefstand (headless Chrome, der Kasten der Balken um 18
+     Prozent schmaler gestellt, core platziert daraufhin ueber seinen ResizeObserver neu): mit der
+     Uhr standen ChatGPT und Perplexity danach wieder INNEN, Google und Claude aussen -- und
+     blieben es auch nach dem Zuruecksetzen der Breite. Solange die Sektion in jeder Runde des
+     Hero neu gefuellt wurde, fiel das nicht auf -- das Neufuellen hat es jede Minute wieder
+     geradegezogen, mit genau dem Neuzeichnen, das weg sollte.
+     Jetzt zieht balkenBewachen nach, sobald core an den Zeilen schreibt. Das ist KEINE Uhr: ohne
+     Schreiben von core passiert hier nichts. Und es kann nicht kreisen: geschrieben wird nur, was
+     abweicht, und core hoert auf keine dieser Eigenschaften.
+     Die Lage kommt aus der ZIELbreite (der Prozentwert, den core an die Fuellung schreibt) und
+     nicht aus offsetWidth: mitten im Wachsen misst offsetWidth einen Zwischenstand, und die
+     Beschriftung haette am falschen Ende gestanden.
+     Eine Zeile, die core noch gar nicht platziert hat, bleibt unberuehrt -- erst waechst der
+     Balken, dann kommt die Schrift, so wie core es vorsieht. */
   function balkenNachAussen(root){
     var zeilen = root.querySelectorAll(".udd-root .up-bar-row");
     for (var i = 0; i < zeilen.length; i++){
       var z = zeilen[i];
       var fuellung = z.querySelector(".up-bar-fill");
+      var spur = z.querySelector(".up-bar-track");
       var name = z.querySelector(".up-bar-name");
       var pin = z.querySelector(".up-bar-pct-in");
       var aussen = z.querySelector(".up-bar-outside");
       if (!fuellung || !aussen) continue;
-      if (name) name.style.opacity = "0";
-      if (pin) pin.style.opacity = "0";
-      aussen.style.left = Math.round(fuellung.offsetWidth + 8) + "px";
-      aussen.style.opacity = "1";
+      var platziert = aussen.style.opacity === "1" ||
+        (name && name.style.opacity === "1") || (pin && pin.style.opacity === "1");
+      if (!platziert) continue;
+      var anteil = parseFloat(fuellung.style.width);
+      var px = (spur && spur.clientWidth && !isNaN(anteil)) ? spur.clientWidth * anteil / 100
+                                                           : fuellung.offsetWidth;
+      var links = Math.round(px + 8) + "px";
+      if (name && name.style.opacity !== "0") name.style.opacity = "0";
+      if (pin && pin.style.opacity !== "0") pin.style.opacity = "0";
+      if (aussen.style.left !== links) aussen.style.left = links;
+      if (aussen.style.opacity !== "1") aussen.style.opacity = "1";
     }
   }
+  /* Beobachtet nur, was core an den Balken schreibt (style) und ob die Zeilen neu entstehen
+     (childList), und nur unter der eigenen Wurzel. Einmal je Wurzel. */
+  function balkenBewachen(uddWurzel){
+    if (!uddWurzel || uddWurzel.__ulhBalkenWacht || !window.MutationObserver) return;
+    uddWurzel.__ulhBalkenWacht = true;
+    new MutationObserver(function(muts){
+      for (var i = 0; i < muts.length; i++){
+        var ziel = muts[i].target;
+        if (ziel && ziel.closest && ziel.closest(".up-bars, .udd-modelbody")){
+          try { balkenNachAussen(uddWurzel); } catch (e){}
+          return;
+        }
+      }
+    }).observe(uddWurzel, { subtree: true, childList: true, attributes: true, attributeFilter: ["style"] });
+  }
 
+  /* ---- Die Kurvenfarben der Quellen-Sektion (QUELL_FARBEN.linien) --------------------------
+     domain-detail rechnet die Farben seiner URL-Kurven selbst -- aus der Farbe des Zitationstyps
+     (familie() in domain-detail.js) -- und reicht sie als color an UC.buildLineDatasets. Einen
+     Weg ueber die Daten gibt es dafuer nicht, und die Komponente selbst zu aendern hiesse, die
+     Hauptapp zu aendern. Also nimmt die Landingpage genau diesen einen Uebergabepunkt: sie
+     legt eine Huelle um UC.buildLineDatasets, die NUR dann eingreift, wenn ALLE Reihen Seiten
+     dieser Sektion sind (die fuenf Adressen aus QUELL_SEITEN). Jede andere Kurve der Seite --
+     das Visibility-Chart im Hero -- geht unveraendert durch.
+     WARUM VOR dem Zeichnen und nicht danach am fertigen Chart: danach umzufaerben hiesse,
+     entweder die Eingangsanimation mit update("none") abzuschneiden oder erst Cyan und dann Blau
+     zu zeigen. Und makeLine baut bei einem Themenwechsel aus dem GEMERKTEN Ergebnis neu
+     (build(lastBuilt)) -- die Farben ueberleben so auch das, ohne dass hier jemand nachfasst.
+     Die Zuordnung haengt an der Adresse und nicht an der Reihenfolge: die Komponente sortiert
+     nach Gesamtanteil, QUELL_SEITEN steht in derselben Reihenfolge -- aendert sich eine der
+     beiden, behaelt jede Seite trotzdem ihre Farbe. */
+  function quellLinienFarben(){
+    var UC = window.UpstreemCore;
+    if (!UC || typeof UC.buildLineDatasets !== "function" || UC.buildLineDatasets.__ulhQuelle) return;
+    var farbe = {};
+    QUELL_SEITEN.forEach(function(s, i){
+      farbe["https://www." + QUELL_DOMAIN + s.p] = QUELL_FARBEN.linien[i % QUELL_FARBEN.linien.length];
+    });
+    var vorher = UC.buildLineDatasets;
+    var huelle = function(series, companies, scale){
+      var unsere = Object.prototype.toString.call(companies) === "[object Array]" &&
+        companies.length > 0 &&
+        companies.every(function(c){ return c && farbe[c.company_id]; });
+      if (unsere){
+        companies = companies.map(function(c){
+          var kopie = {};
+          for (var k in c) kopie[k] = c[k];
+          kopie.color = farbe[c.company_id];
+          return kopie;
+        });
+      }
+      return vorher.call(this, series, companies, scale);
+    };
+    huelle.__ulhQuelle = true;
+    UC.buildLineDatasets = huelle;
+  }
+
+  /* ---- EINMAL FUELLEN, DANN STEHEN LASSEN (28.09. gemeldet, "zum 100. Mal": "Die Komponente
+     refresht sich mit dem Zyklus des Hero Komponent. Das soll sie nicht machen.") -------------
+     GEMESSEN und nicht vermutet, im Pruefstand mit einem MutationObserver auf .udd-root, Haken an
+     Chart.js (neu/update/destroy je Chart der Komponente) und dem Aufrufstapel jedes Ausloesers:
+     am Ende jeder Runde ruft neustart() fuellen(), um das Dashboard auf Zustand A zurueckzustellen,
+     und fuellen() rief dabei JEDES MAL auch quellFuellen(). Darin steckten zwei Ausloeser:
+       1. themaHell() -> setUpstreemTheme("light"). core ruft dabei jeden Themen-Abonnenten, auch
+          wenn das Thema schon hell ist (THEME.subs ohne Vergleich). makeLine baut die Kurve
+          daraufhin neu -- destroy und ein neues Chart samt Eingangsanimation --, und domain-detail
+          zeichnet Ring, Trichter und Modellbalken neu.
+       2. setDomainDetail mit denselben Daten -> render() baut Trichter, Ring und Balken ein zweites
+          Mal, und tippSetzen() zeichnet die Kurve noch einmal nach.
+     Die frueheren Anlaeufe (21.09. und 24.09.) haben am Tooltip-Waechter gedreht -- der war nur
+     ein Nachlaeufer dieses Neufuellens, nicht seine Ursache.
+     Die Quellen-Sektion hat mit dem Kreislauf des Hero nichts zu tun: sie wird EINMAL gefuellt und
+     bleibt dann stehen. Die Marke haengt an der Wurzel der Komponente und nicht an der Datei: wird
+     die Wurzel je ersetzt, wird die neue auch wieder gefuellt. Gesetzt wird sie erst, wenn beide
+     Setter da sind -- fehlte domain-detail.js beim ersten Aufruf, holt die naechste Runde das
+     Fuellen nach, genau wie bisher. */
   function quellFuellen(){
+    var uddWurzel = document.querySelector('.udd-root[data-instance="' + ID.udd + '"]');
+    if (!uddWurzel || uddWurzel.__ulhQuellGefuellt) return;
+    if (!window.setDomainDetail || !window.setDomainDetailUrls) return;
+    uddWurzel.__ulhQuellGefuellt = true;
     /* Erst das Thema, dann die Daten: die Charts nehmen ihre Farben beim Zeichnen, und das
        passiert im selben Zug wie das Setzen der Daten. */
     themaHell();
@@ -2608,6 +2757,11 @@
     if (wurzel0) hellHalten(wurzel0);
     window.__uddMode = window.__uddMode || {};
     window.__uddMode[ID.udd] = "domain";
+    /* Die Farben der Kurven VOR den Daten: sie muessen im ersten Bild stimmen (siehe
+       quellLinienFarben). Die Beschriftungen der Modellbalken ebenfalls vorher -- der Waechter
+       sieht dann schon die ersten Zeilen entstehen. */
+    quellLinienFarben();
+    balkenBewachen(uddWurzel);
     if (window.setDomainDetail) window.setDomainDetail(ID.udd, JSON.stringify(quellHaupt()));
     if (window.setDomainDetailUrls) window.setDomainDetailUrls(ID.udd, JSON.stringify(quellUrls()));
     /* Der Tooltip soll STEHEN, nicht auf einen Mauszeiger warten -- auf einer Landingpage gibt es
@@ -2619,14 +2773,9 @@
       if (tippSetzen()){ tippWachen(); return; }
       if (versuche++ < 40) setTimeout(tipp, 150);
     })();
-    /* Die Beschriftungen des Modell-Charts nach aussen -- nach dem Wachsen der Balken, und
-       mehrfach: die Komponente setzt sie beim Zeichnen und beim Wachsen selbst noch einmal. */
-    [300, 700, 1400, 2600].forEach(function(ms){
-      setTimeout(function(){
-        var w = document.querySelector(".ulh-root");
-        if (w) try { balkenNachAussen(w); } catch (e){}
-      }, ms);
-    });
+    /* Die Beschriftungen des Modell-Charts nach aussen: das uebernimmt balkenBewachen (oben), und
+       zwar jedes Mal, wenn core sie setzt -- die vier festen Nachfass-Zeitpunkte, die hier
+       standen, kamen in einem Hintergrund-Tab zu frueh (siehe balkenNachAussen). */
   }
 
   /* Den Tooltip auf die MITTE der Reihe setzen. Zuerst stand er auf dem vorletzten Punkt, weil das
@@ -2757,14 +2906,22 @@
         { type: "directory", share_pct: 14.9 },
         { type: "guide", share_pct: 7.2 }
       ],
+      /* Die Balkenfarben kommen aus QUELL_FARBEN.modelle (28.09.) und nicht mehr aus den
+         Markenfarben der Modelle -- Begruendung dort. color_darkmode traegt dieselbe Stufe: die
+         Sektion ist immer hell (data-theme="light" an .ulh-quell-app), der Wert wird nie
+         gezeichnet, und eine zweite Reihe dafuer waere eine erfundene. */
       model_breakdown: [
-        { model: "ChatGPT", model_share_pct: 38.2, color_lightmode: "#111827", color_darkmode: "#F3F4F6",
+        { model: "ChatGPT", model_share_pct: 38.2,
+          color_lightmode: QUELL_FARBEN.modelle[0], color_darkmode: QUELL_FARBEN.modelle[0],
           model_logo_url: quellzeichen("openai.com") },
-        { model: "Perplexity", model_share_pct: 27.4, color_lightmode: "#20808d", color_darkmode: "#4fc3d0",
+        { model: "Perplexity", model_share_pct: 27.4,
+          color_lightmode: QUELL_FARBEN.modelle[1], color_darkmode: QUELL_FARBEN.modelle[1],
           model_logo_url: quellzeichen("perplexity.ai") },
-        { model: "Google AI Overviews", model_share_pct: 21.9, color_lightmode: "#4285F4", color_darkmode: "#8AB4F8",
+        { model: "Google AI Overviews", model_share_pct: 21.9,
+          color_lightmode: QUELL_FARBEN.modelle[2], color_darkmode: QUELL_FARBEN.modelle[2],
           model_logo_url: quellzeichen("google.com") },
-        { model: "Claude", model_share_pct: 12.5, color_lightmode: "#d97757", color_darkmode: "#e6a58b",
+        { model: "Claude", model_share_pct: 12.5,
+          color_lightmode: QUELL_FARBEN.modelle[3], color_darkmode: QUELL_FARBEN.modelle[3],
           model_logo_url: quellzeichen("claude.ai") }
       ],
       source_presence_funnel: {
@@ -3793,8 +3950,19 @@
       visModelleFuellen(w);
       ulhTakt(w);
       quellFuellen();
-      auftritte(w);
-      hellBewachen(w);
+      /* NUR BEIM ERSTEN FUELLEN (28.09. gemessen): fuellen() laeuft am Ende JEDES Zyklus erneut
+         (neustart), und beide starten etwas, das nie endet -- auftritte eine eigene
+         requestAnimationFrame-Schleife, hellBewachen einen eigenen Beobachter. Neu gestartet
+         stand nach jeder Runde einer mehr daneben: die Seite rechnete mit jedem Zyklus mehr. Die
+         Stuecke, die auftritte einblendet (.ulh-auf), und die Wurzeln, die hellBewachen hell
+         haelt, baut die Seite einmal beim Aufbau; die erste Schleife und der erste Beobachter
+         sehen sie also alle, auch spaeter hinzukommende Wurzeln (der Beobachter haengt an der
+         ganzen Sektion). */
+      if (!w.__ulhDauerAn){
+        w.__ulhDauerAn = true;
+        auftritte(w);
+        hellBewachen(w);
+      }
       navLauf(w);
       leisteAuslagern(w);
       mscFuellen(w);

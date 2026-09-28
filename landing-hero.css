@@ -1606,6 +1606,14 @@
    laeuft, ohne dass etwas dabei herauskommt (core.js, legendLayout). Mit Hoehe 0 und
    overflow: hidden bleibt die Breite messbar, und zu sehen ist trotzdem nichts. */
 .ulh-quell-app .udd-legend { height: 0; margin-top: 0; overflow: hidden; }
+/* ---- Die Farbe des Trichters (28.09., Palette der Quellen-Sektion) ---------------------------
+   domain-detail faerbt die drei Stufen mit der Farbe des Zitationstyps, und zwar als
+   fill-ATTRIBUT am Pfad. Ein Praesentationsattribut verliert gegen jede CSS-Regel, auch gegen
+   eine mit niedriger Spezifitaet -- diese eine Zeile reicht also, ohne Eingriff in die
+   Komponente. Die Deckkraft je Stufe (fill-opacity 0.92/0.74/0.56) bleibt die der Komponente.
+   Der Wert kommt aus QUELL_FARBEN in landing-hero.js und steht als Variable an .ulh-quell-app
+   (Begruendung und Herleitung der ganzen Palette dort). */
+.ulh-quell-app .udd-fn-band { fill: var(--ulh-q-trichter); }
 /* Der Anschnitt unten: eine weiche Kante statt einer harten Linie. Ohne sie endet die Seite wie
    abgeschnitten, mit ihr laeuft sie aus. */
 
