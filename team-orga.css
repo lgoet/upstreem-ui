@@ -110,9 +110,17 @@
    Blau. Am Standard ist das ein leises Grau mit fast schwarzer Schrift, bei Indigo, Azur oder
    Terrakotta deren Ton; hell und dunkel ohne zweiten Satz Werte, weil die Tinte selbst dreht.
    Masse unveraendert: 20px hoch, Polster 7, Radius 7, Schrift 11. */
-.uto-you { flex: 0 0 auto; height: 20px; padding: 0 7px; border-radius: 7px;
-  background: color-mix(in srgb, var(--up-accent-ink) 10%, transparent); color: var(--up-accent-ink);
-  font-size: 11px; font-weight: 600; letter-spacing: .02em; line-height: 20px; }
+/* Die Form teilen sich "You" und "upstreem Team" (28.09.): zwei Marken derselben Art an derselben
+   Stelle, also EINE Geometrie -- nur die Farbe ist je Marke eigen. */
+.uto-you, .uto-staff { flex: 0 0 auto; height: 20px; padding: 0 7px; border-radius: 7px;
+  font-size: 11px; font-weight: 600; letter-spacing: .02em; line-height: 20px; white-space: nowrap; }
+.uto-you { background: color-mix(in srgb, var(--up-accent-ink) 10%, transparent); color: var(--up-accent-ink); }
+/* DAS UPSTREEM-TEAM (28.09. angefordert): wer mit einer @upstreem.ai-Adresse im Team steht, ist
+   ein Admin von upstreem und kein Mitglied des Kunden. Die Farbe ist eine eigene Marke aus core
+   (--vc-staff-*, warmes Taupe, Begruendung dort) -- "neutral, aber eindeutig", und es gibt sie
+   sonst nirgends in der App. Deckend und nicht als Anteil der Schrift wie bei "You": die Flaeche
+   ist je Thema einzeln gemessen. */
+.uto-staff { background: var(--vc-staff-bg); color: var(--vc-staff-ink); }
 .uto-mail { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Datum und Rolle sind Angaben zur Zeile, nicht ihre Aussage -- also die leisere Farbe. */
 .uto-when { color: var(--vc-muted); font-variant-numeric: tabular-nums; }

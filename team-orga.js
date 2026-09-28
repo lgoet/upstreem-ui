@@ -475,12 +475,22 @@
         var mail = feld(state.viewerMail);
         return !!mail && txt(m.email).toLowerCase() === mail.toLowerCase();
       }
+      /* DAS UPSTREEM-TEAM (28.09. angefordert): wer mit einer @upstreem.ai-Adresse im Team steht,
+         ist ein Admin von upstreem und kein Mitglied des Kunden. Die Zeile traegt die Marke
+         "upstreem Team", und niemand im Team kann sie verwalten -- das Punktmenue ist gesperrt
+         (aktZelle), und darfRolle/darfEntfernen sagen zusaetzlich nein, falls ein Klick doch
+         durchkaeme. Erkannt am ENDE der Adresse, gross oder klein, ohne Leerzeichen: eine
+         Adresse wie "jemand@upstreem.ai.example.com" ist keine. */
+      function istUpstreem(m) {
+        return /@upstreem\.ai$/.test(txt(m && m.email).trim().toLowerCase());
+      }
       /* Der LETZTE Besitzer ist unantastbar -- weder entfernen noch Rolle abgeben. Sonst steht ein
          Team ohne Besitzer da, und das kann die Seite nicht wieder heilen. */
       function letzterBesitzer(m) {
         return rolleName(m.role) === "owner" && besitzerZahl() <= 1;
       }
       function darfEntfernen(m) {
+        if (istUpstreem(m)) return false;
         if (letzterBesitzer(m)) return false;
         /* Die EIGENE Zeile nie (25.09. angefordert). Bis dahin stand hier "Leave team" -- das
            gibt es aber schon unter Your Brand (settings-brand, Danger Zone), und zwei Ausgaenge
@@ -492,6 +502,7 @@
         return false;
       }
       function darfRolle(m, ziel) {
+        if (istUpstreem(m)) return false;
         var mr = rolleName(m.role), vr = rolleName(state.viewerRole), zr = rolleName(ziel);
         if (mr === zr) return false;
         if (letzterBesitzer(m)) return false;
@@ -575,6 +586,9 @@
           return '<div class="up-row" data-uto-row="' + i + '">' +
             '<div class="up-td uto-name">' +
               '<span class="uto-nametxt">' + esc(name) + '</span>' +
+              /* Vor "You": die Marke sagt, WER hier steht, "You" nur, dass man es selbst ist.
+                 translate="no" -- "upstreem Team" ist ein Name und bleibt in jeder Sprache so. */
+              (istUpstreem(m) ? '<span class="uto-staff" translate="no">upstreem Team</span>' : "") +
               (istSelbst(m) ? '<span class="uto-you">' + esc(UC.t("You")) + '</span>' : "") +
             '</div>' +
             '<div class="up-td uto-mail">' + esc(feld(m.email) || "–") + '</div>' +
@@ -585,7 +599,7 @@
                 '<span class="uto-rolelbl">' + esc(rolleName(m.role)) + '</span>' +
               '</span>' +
             '</div>' +
-            (mitAkt ? aktZelle(i) : "") +
+            (mitAkt ? aktZelle(i, istUpstreem(m)) : "") +
           '</div>';
         }).join("");
       }
@@ -597,10 +611,15 @@
       /* Der Punktknopf steht an JEDER Mitgliederzeile -- so vorgegeben, und ohne Bedingung: was
          die Zeile erlaubt, entscheidet erst das Menue (menueOeffnen). Erlaubt sie nichts, sagt es
          das in einem Satz statt leer aufzugehen. */
-      function aktZelle(i) {
+      /* fest: eine Zeile des upstreem-Teams (istUpstreem). Der Knopf steht trotzdem da -- die
+         Spalte bleibt gleich, und das Ausgegraute sagt, dass es hier nichts zu tun gibt (so
+         bestellt: "die drei Punkte-Menues sind ausgegraut"). data-uto-fest haelt ihn in render
+         gesperrt, auch wenn das Laden vorbei ist und alle anderen Knoepfe wieder frei werden. */
+      function aktZelle(i, fest) {
         return '<div class="up-td uto-act">' +
           '<span class="uto-menuwrap" data-uto-wrap>' +
             '<button class="up-iconbtn" type="button" aria-haspopup="menu" aria-expanded="false"' +
+              (fest ? ' disabled data-uto-fest' : '') +
               ' aria-label="Actions" data-uto-menubtn="member:' + i + '">' +
               UC.icon("moreHorizontal", 2.2) + '</button>' +
             '<div class="up-menu uto-menu" role="menu" aria-hidden="true"></div>' +
@@ -777,7 +796,10 @@
            Abschnitts, der schon zurueck ist, waehrend die anderen noch laden. disabled und nicht
            nur pointer-events: so kommen auch Tab und Enter nicht durch. */
         var laedtNoch = state.laedt.members || state.laedt.invites || state.laedt.log;
-        Array.prototype.forEach.call(elBody.querySelectorAll("button"), function (b) { b.disabled = laedtNoch; });
+        /* data-uto-fest: das Punktmenue einer upstreem-Zeile bleibt IMMER gesperrt (aktZelle). */
+        Array.prototype.forEach.call(elBody.querySelectorAll("button"), function (b) {
+          b.disabled = laedtNoch || b.hasAttribute("data-uto-fest");
+        });
 
         /* Kein Zaehler neben einem Lesefehler -- er zaehlte die Eintraege von VORHER. */
         var logZahl = state.logLeseFehler ? 0 : state.log.length;

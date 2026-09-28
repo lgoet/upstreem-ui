@@ -294,6 +294,14 @@
          sichtbar dieselbe Familie. Hell auf #ffffff: 4.72 und 4.63. Dunkel steht weiter unten. */
       --up-blau-text: #286fe1;
       --up-lila-text: #8e58d8;
+      /* DAS UPSTREEM-TEAM (28.09.): die Marke an Mitgliedern mit einer @upstreem.ai-Adresse in
+         team-orga -- "neutral, aber eindeutig, eine Farbe, die wir so noch nirgends haben". Warmes
+         Taupe: kein Signalton (nicht Rot, Gruen, Gelb, Blau), kein Violett oder Indigo (zwei der
+         Akzentfarben), und bewusst WARM, damit es nicht mit dem kuehlen Grau der leisen Schrift
+         (--vc-third #6b6f78) verwechselt wird. Die Braeune der Typpaletten sind gesaettigt und
+         orange (#9a5b2e, #b45309, #c2683b) -- das hier ist entsaettigt.
+         Gerechnet: Schrift #76634d auf der Flaeche #f2ede6 4.8:1, ueber AA fuer 11px. */
+      --vc-staff-ink: #76634d; --vc-staff-bg: #f2ede6;
       /* DIE SCHIENE EINES UMSCHALTERS -- im Hellen ein einziger, DECKENDER Ton, fuer jede Groesse
          und jeden Grund. (Im Dunkeln seit dem 27.09. nicht mehr: dort hebt sie ihren Grund an,
          Begruendung im dunklen Block.) Zwei Fassungen liegen dahinter. Bis zum 07.09. stand hier
@@ -470,6 +478,10 @@
          zweites Paar, weil er gegen den Grund gelesen werden muss und nicht auf ihm liegt. */
       --up-blau-text: #4c90ff;
       --up-lila-text: #b280ff;
+      /* Das upstreem-Team im Dunkeln (Begruendung im hellen Block): dieselbe Farbfamilie
+         HERAUFgedreht. #c9b596 auf #2b2620 7.5:1; die Flaeche liegt eine Stufe ueber der Karte
+         (#1c1c1f), damit der Chip als Kasten steht und nicht nur als Schrift. */
+      --vc-staff-ink: #c9b596; --vc-staff-bg: #2b2620;
       /* DIE SCHIENE HEBT IM DUNKELN IHREN GRUND AN, statt einen festen Ton zu tragen (27.09.).
          Gemeldet: "Im Darkmode sind die Background der ganzen Switcher recht schwer zu erkennen
          auf unserem Page Background." Die Ursache stand hier als benannter Kompromiss: ein
