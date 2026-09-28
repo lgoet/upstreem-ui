@@ -3301,6 +3301,17 @@
    gedaempft. */
 .up-planpill .up-sent-dot { background: var(--vc-third); }
 .up-planpill.is-off .up-sent-val { color: var(--vc-muted); }
+/* Der dauerhafte Entwicklerzugang ("Legacy Free", UC.planIstDev): kein Stufenpunkt, sondern ein
+   Prompt >_ und der Name in Monospace, der Rahmen gestrichelt -- er ist kein Tarif der Leiter
+   Essential/Professional/Enterprise und soll auch nicht so aussehen. Dieselbe Hoehe und dasselbe
+   Polster wie jede Pille, damit die Spalte ruhig bleibt; 12 statt 13, weil Monospace je Zeichen
+   breiter laeuft und die Tarifspalte der Teams-Tabelle bei 140 anfaengt. Eine Schrift wird nicht
+   geladen: ui-monospace ist auf jedem System da, auf dem Mac ist es SF Mono. */
+.up-planpill.is-dev { border-style: dashed; border-color: var(--vc-fourth); }
+.up-planpill.is-dev .up-sent-val,
+.up-planpill-prompt { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+.up-planpill.is-dev .up-sent-val { font-size: var(--up-fs-s); letter-spacing: -0.01em; }
+.up-planpill-prompt { font-size: var(--up-fs-xs); font-weight: var(--up-fw-b); color: var(--vc-third); line-height: 1; flex: 0 0 auto; }
 /* ---------- "nothing here" convention ----------
    ONE muted dash for every "no value" cell in the app — sentiment/rank/share percentages,
    brand-mention/citation stacks with zero items. Before this there were three different
@@ -4882,10 +4893,11 @@
    z-index 100002: ueber dem Access Gate (100001), das es als seine Tarifliste oeffnet, und ueber
    core's anderen Fenstern (100000). Zwei Klassen gegen die eine von .up-topicmodal-backdrop. */
 .up-plandlg.up-topicmodal-backdrop { z-index: 100002; }
-/* 1000 = drei Karten zu gut 300 plus zwei Luecken zu 20 plus das Polster der Karte -- die Karten
-   der Landingpage stehen bei 1280 Fensterbreite knapp 390 breit, darunter wird ihre Merkmalsliste
-   eng. Zwei Klassen, weil .up-topicmodal-card eine eigene Breite (420) setzt. */
-.up-plandlg .up-plandlg-card { width: 100%; max-width: 1000px; }
+/* 1160 (28.09. angefordert: "etwas mehr max width"; vorher 1000): drei Karten zu gut 350 plus
+   zwei Luecken zu 20 plus das Polster der Karte. Bei 1000 standen sie knapp 300 breit, die Karten
+   der Landingpage bei 1280 Fensterbreite knapp 390 -- darunter wird ihre Merkmalsliste eng.
+   Zwei Klassen, weil .up-topicmodal-card eine eigene Breite (420) setzt. */
+.up-plandlg .up-plandlg-card { width: 100%; max-width: 1160px; }
 .up-plandlg-card:focus { outline: 0; }
 .up-plandlg-body { min-width: 0; }
 /* Der Fehlersatz unter den Karten steht nur da, wenn ein Klick keinen Empfaenger fand; zu ist er

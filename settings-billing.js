@@ -339,7 +339,9 @@
                Shapes vor dem aktuellen Tarif"). Gedaempft mit Hinweis, solange das Team keinen
                Zugang hat (has_active_access false) -- dieselbe Aussage wie dort "No active
                billing plan". */
-            ? UC.planPilleHtml(name || "–", !(a && a.aktiv === false), { klasse: "ubl-planpill" })
+            /* Die Id faehrt mit: an ihr erkennt core den dauerhaften Entwicklerzugang, auch
+               wenn sein Name einmal anders lautet als "Legacy Free". */
+            ? UC.planPilleHtml(name || "–", !(a && a.aktiv === false), { klasse: "ubl-planpill", id: a && a.planId })
             : '<span class="ubl-plan is-none">' + esc(UC.t("No active plan")) + '</span>') +
           '<button class="up-btn-sec up-rowbtn ubl-plansbtn" type="button" data-ubl-plans' +
             ' aria-haspopup="dialog">' + esc(UC.t("See all plans")) + '</button>');

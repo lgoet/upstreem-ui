@@ -502,9 +502,13 @@
         if (!q) return state.rows;
         var n = UC.foldDiacritics(q);
         return state.rows.filter(function (r) {
+          /* Der Tarif so, wie er DASTEHT: "Legacy Free" zeigt die Pille als "Developer Access"
+             (UC.planAnzeige), also muss auch "developer" die Zeile finden. Der Rohname bleibt
+             mit drin -- wer ihn aus der Datenbank kennt, sucht danach. */
+          var planText = r.plan + (UC.planAnzeige ? " " + UC.planAnzeige(r.plan) : "");
           return UC.foldDiacritics(r.name).indexOf(n) !== -1 ||
                  UC.foldDiacritics(r.dom ? r.dom.text : "").indexOf(n) !== -1 ||
-                 UC.foldDiacritics(r.plan).indexOf(n) !== -1;
+                 UC.foldDiacritics(planText).indexOf(n) !== -1;
         });
       }
       function seite() {

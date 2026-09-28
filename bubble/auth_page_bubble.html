@@ -28,7 +28,15 @@
                        zeigt dann den Login, und unten steht "No account yet? Ask your team for
                        an invite." statt des Links. Mit Token: Signup, Adresse fest, KEIN
                        Google-Knopf (Google meldet nur noch an). Der Riegel dazu sitzt in
-                       Supabase -- Anleitung: bubble/signup_invite_setup.md.
+                       Supabase: seit 28.09. der Auth-Hook "Before User Created" (Anleitung:
+                       bubble/datenbank_auftrag.md, Abschnitt 2). Die Registrierung bleibt dort
+                       AN, der Signup-Workflow in Bubble bleibt, wie er ist.
+       GOOGLE-ABSAGE (seit 28.09.). Lehnt der Hook ein neues Google-Konto ab, schickt Supabase
+                       den Browser mit error/error_description in der Adresse zurueck. Die
+                       Seite liest das, zeigt einen festen englischen Satz ueber dem Formular
+                       und bereinigt die Adresse. Voraussetzung: die Weiterleitung nach Google
+                       (redirect_to im Supabase-Plugin) zeigt auf DIESE Seite. Zeigt sie auf
+                       eine andere, sieht niemand die Absage.
        data-code-required  GESTRICHEN (25.09.). Standard jetzt "no", und die Seite fragt ohnehin
                        nicht mehr: ohne Einladung gibt es keinen Signup, mit Einladung wurde der
                        Code nie verlangt. Am Element ENTFERNEN.
@@ -117,9 +125,9 @@
          code faehrt aus demselben Grund mit: GOOGLE LEGT AUCH KONTEN AN. Bei
          data-code-required="yes" im Signup feuert dieses Event erst, wenn etwas im Codefeld
          steht -- sonst waere die Codepflicht einen Knopf weiter umgangen. Den Fall "im
-         Login-Modus auf Google geklickt, ohne Konto" faengt die Seite NICHT ab; dafuer gibt es
-         Lage 3 aus bubble/signup_code_setup.md (Signups in GoTrue aus, oder ein Trigger
-         vor dem Einfuegen in auth.users).
+         Login-Modus auf Google geklickt, ohne Konto" faengt die Seite NICHT ab; das tut der
+         Auth-Hook in Supabase (bubble/datenbank_auftrag.md, Abschnitt 2), und seine Absage
+         zeigt die Seite nach der Rueckkehr an (siehe GOOGLE-ABSAGE oben).
 
        data-mode-fn    = "bubble_fn_uauMode_[dynamic id]"
          {"team_id":"","mode":"signup","token":"INV-abc123"}

@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261028;
+  var BUILD = 20261029;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -1671,6 +1671,7 @@
        "Switch to Acme" faende hier nie einen Eintrag. */
     "Switch to": "Wechseln zu",
     "No active billing plan": "Kein aktiver Tarif",
+    "Permanent free developer access": "Dauerhaft kostenloser Entwicklerzugang",
     "Go to parent prompt": "Zum übergeordneten Prompt",
     "No models available yet.": "Noch keine Modelle verfügbar.",
 
@@ -10905,6 +10906,65 @@
     });
   }
 
+  /* ---------- Kopfkante: wo die klebende Kopfgruppe der Seite endet (28.09.) ----------
+     --up-sticky-top stand seit Juli fest auf 171 -- die Hoehe, die die schwebende Kopfgruppe der
+     Tabellenseiten damals in Bubble hatte. Der Seitenkopf ist seitdem ein anderer (Meta-Zeile weg,
+     Reiter 32px unter der Beschreibung), und nach core.css ist die Gruppe heute 180 hoch: 16 + 68
+     + 64 + 16 im Seitenkopf, dazu ihr eigenes Polster von 16. Sie liegt mit z-index 19 ueber dem
+     Inhalt, und ihre unteren 9px -- durchsichtig, aber im Weg -- nahmen der geklebten Leiste den
+     oberen Streifen: zu sehen, nicht zu klicken (Punkt 30, Topics, zweimal gemeldet).
+     Also wird die Kante GEMESSEN statt angenommen: die klebende Box, in der der Seitenkopf
+     (.up-ph-root) steht, ihr top plus ihre Hoehe. Das gilt vor data-sticky-top, denn das Attribut
+     war nur eine Schaetzung genau dieser Kante.
+     Nur GELESEN: an der fremden Gruppe wird nichts gesetzt, keine Klasse, kein Stil (Host-Stapelung
+     nie umschreiben, 11.08.).
+     Gesucht wird der Seitenkopf mit dem NAECHSTEN gemeinsamen Vorfahren -- eine Seite mit geparkten
+     Ansichten traegt mehrere. Kein Treffer, und alles bleibt, wie es war:
+     - kein Seitenkopf (prompt-research und teams bauen ihren Kopf selbst);
+     - ein Kopf, der nicht klebt (Dashboard und Opportunities: er scrollt mit weg, dort gilt 16);
+     - eine klebende Box, deren Elternteil die Komponente NICHT enthaelt: sie haengt dann in einem
+       Rahmen, der mit ihr wegscrollt, und steht ueber der Komponente nie;
+     - ein eigener Scroller oder etwas Festes zwischen Komponente und Kopf (Drawer). */
+  function kopfGruppe(root){
+    if (!root || !root.parentElement) return null;
+    var n = root.parentElement, ph = null, weg = [], i, alle, cs;
+    while (n && n !== document.documentElement){
+      alle = n.getElementsByClassName("up-ph-root");
+      for (i = 0; i < alle.length && !ph; i++) if (!root.contains(alle[i])) ph = alle[i];
+      if (ph) break;
+      weg.push(n);
+      n = n.parentElement;
+    }
+    if (!ph || !n) return null;
+    for (i = 0; i < weg.length; i++){
+      try { cs = window.getComputedStyle(weg[i]); } catch(e){ return null; }
+      if (cs.position === "fixed") return null;
+      if ((cs.overflowY === "auto" || cs.overflowY === "scroll") && weg[i].scrollHeight > weg[i].clientHeight + 4) return null;
+    }
+    var box = null, m = ph;
+    while (m && m !== n){
+      try { cs = window.getComputedStyle(m); } catch(e){ return null; }
+      if (cs.position === "sticky" && cs.top !== "auto") box = m;
+      m = m.parentElement;
+    }
+    return (box && box.parentElement === n) ? box : null;
+  }
+  /* Taucht ein Seitenkopf auf, suchen die Leisten, die noch keinen haben, sofort neu. Bubble baut
+     in keiner festen Reihenfolge, und die Nachlaeufe in makeSticky decken nur die ersten Sekunden
+     ab -- danach riefe bei der Topics-Verwaltung niemand mehr applySticky, sie ruft es nur beim
+     Start und beim Groessenwechsel. Ein gemeinsamer Waechter fuer alle Leisten; wer mit false
+     antwortet (Wurzel nicht mehr im Dokument), faellt heraus. */
+  var _kopfNeuFns = null;
+  function aufSeitenkopf(fn){
+    if (!_kopfNeuFns){
+      _kopfNeuFns = [];
+      watchRoots("up-ph-root", function(){
+        _kopfNeuFns = _kopfNeuFns.filter(function(f){ try { return f() !== false; } catch(e){ return false; } });
+      });
+    }
+    _kopfNeuFns.push(fn);
+  }
+
   function makeSticky(root, headEl){
     /* GEMESSEN am 03.09.: syncTheadOffset stand mit 1569ms bei 8,4 Prozent -- es liest bei JEDEM
        Zeichnen die Hoehe der Werkzeugleiste und erzwingt damit ein Layout. Die Hoehe kann sich
@@ -10924,10 +10984,66 @@
        der Leiste, weil ihre Beschriftungen anders umbrechen. */
     window.addEventListener("resize", function(){ _theadH = null; }, { passive: true });
     window.addEventListener("up-prefs-change", function(){ _theadH = null; });
+    /* Die Kopfkante (siehe kopfGruppe) wird gesucht, bis die Box gefunden ist, danach nur noch
+       beobachtet: waechst die Gruppe (Reiter brechen um, eine Leiste darin geht auf, die Schrift
+       laedt nach), zieht die Leiste im selben Zug nach. */
+    var _kopf = null, _kopfRO = null, _kopfTop = 0, _kopfH = -1;
+    var _kopfSuche = -1e9, _kopfVersuche = 0, _kopfGesetzt = false;
+    function kopfKante(){
+      if (_kopf && !_kopf.isConnected){
+        if (_kopfRO) _kopfRO.disconnect();
+        _kopf = null; _kopfRO = null; _kopfH = -1;
+      }
+      if (!_kopf){
+        var jetzt = (window.performance && performance.now) ? performance.now() : +new Date();
+        if (_kopfVersuche >= 3 && jetzt - _kopfSuche < 3000) return null;
+        _kopfSuche = jetzt;
+        var box = kopfGruppe(root);
+        if (!box){
+          /* Bubble baut die Elemente in keiner festen Reihenfolge: steht der Seitenkopf beim
+             ersten Lauf noch nicht, kommt er meist kurz danach. Drei Nachlaeufe, danach nur noch
+             bei ohnehin faelligen Aufrufen und hoechstens alle drei Sekunden -- auf Seiten ohne
+             klebenden Kopf (Dashboard, Opportunities) waere jede Suche sonst verschenkt. */
+          if (_kopfVersuche < 3){ _kopfVersuche++; setTimeout(applySticky, 800 * _kopfVersuche); }
+          return null;
+        }
+        _kopf = box;
+        try { _kopfTop = parseFloat(window.getComputedStyle(box).top) || 0; } catch(e){ _kopfTop = 0; }
+        _kopfH = box.getBoundingClientRect().height;
+        if (window.ResizeObserver){
+          _kopfRO = new ResizeObserver(function(){
+            if (_kopf !== box) return;
+            var h = box.getBoundingClientRect().height;
+            if (h === _kopfH) return;
+            _kopfH = h;
+            if (root.classList.contains("up-sticky")){ stickyTopSetzen(true); syncDeckstreifen(); }
+          });
+          _kopfRO.observe(box);
+        }
+      }
+      /* Hoehe 0 heisst geparkte Ansicht: dann lieber der bisherige Wert als eine Leiste, die an
+         der Oberkante klebt. Der Waechter meldet sich, sobald die Ansicht aufgeht. */
+      if (!(_kopfH > 0)) return null;
+      return Math.ceil(_kopfTop + _kopfH);
+    }
+    aufSeitenkopf(function(){
+      if (!root.isConnected) return false;
+      if (!_kopf){ _kopfSuche = -1e9; applySticky(); }
+      return true;
+    });
+    function stickyTopSetzen(on){
+      var k = on ? kopfKante() : null;
+      if (k != null){ root.style.setProperty("--up-sticky-top", k + "px"); _kopfGesetzt = true; return; }
+      var v = root.getAttribute("data-sticky-top");
+      if (v) root.style.setProperty("--up-sticky-top", /^[0-9]+$/.test(v) ? v + "px" : v);
+      /* Nur zuruecknehmen, was von hier kam -- einen Wert, den jemand anders an die Wurzel
+         geschrieben hat, laesst das stehen. */
+      else if (_kopfGesetzt) root.style.removeProperty("--up-sticky-top");
+      _kopfGesetzt = false;
+    }
     function applySticky(){
       var pageW = window.innerWidth || document.documentElement.clientWidth || 0;
       var on = root.getAttribute("data-sticky") !== "no" && pageW >= 1000;
-      var v = root.getAttribute("data-sticky-top"); if (v) root.style.setProperty("--up-sticky-top", /^[0-9]+$/.test(v) ? v + "px" : v);
       root.classList.toggle("up-sticky", on);
       /* Always unclip, regardless of "on" -- sticky positioning is the reason this call exists
          here, but topbar dropdowns (position:absolute, not sticky) need the same escape from a
@@ -10938,6 +11054,9 @@
          a short Bubble wrapper, and re-clipping it left no room for a menu taller than the empty
          state. Mirrors topics-manager.js's own unconditional call for the same reason. */
       unclipAncestors(root, false);
+      /* Nach dem Entklemmen gemessen: erst dann steht fest, ob zwischen Wurzel und Seitenkopf
+         noch ein Scroller liegt. */
+      stickyTopSetzen(on);
       if (on){ syncTheadOffset(); syncDeckstreifen(); }
     }
     /* WIE HOCH MUSS DER DECKSTREIFEN WIRKLICH SEIN (19.09. gemessen im Domain-Drawer).
@@ -16882,17 +17001,37 @@
     var k = String(name == null ? "" : name).trim().toLowerCase();
     return PLAN_PUNKT[k] || null;
   }
+  /* DER DAUERHAFTE ENTWICKLERZUGANG (28.09. angefordert: "Wenn ein Team Legacy Free ist ...
+     dann ist das mein Permanent Free Developer Access. Das bitte in der Liste schoen, gern
+     etwas techy"). Erkannt an der Tarif-Id ODER am Namen: die Teams-Tabelle bekommt nur den
+     Namen (billing_plan), settings-billing hat die Id. Laut Nutzer meinen beide dasselbe. */
+  var PLAN_DEV_ID = "472ab9d4-b1e5-4bbb-9c76-9972d85e4703";
+  function planIstDev(name, id){
+    if (String(id == null ? "" : id).trim().toLowerCase() === PLAN_DEV_ID) return true;
+    return String(name == null ? "" : name).trim().toLowerCase() === "legacy free";
+  }
+  /* Was die Pille zeigt -- auch fuer die Suche: wer in der Teams-Tabelle "developer" tippt,
+     soll die Zeile finden, die so beschriftet ist. */
+  function planAnzeige(name, id){
+    return planIstDev(name, id) ? "Developer Access" : String(name == null ? "" : name).trim();
+  }
   function planPilleHtml(name, aktiv, opts){
     opts = opts || {};
     var n = String(name == null ? "" : name).trim();
     var an = aktiv !== false;
+    var dev = planIstDev(n, opts.id);
+    var tip = !an ? t_("No active billing plan") : (dev ? t_("Permanent free developer access") : "");
     /* Die Farbe INLINE, aber nur im laufenden Fall: ohne laufenden Tarif kommt der Grundton aus
        core.css, und eine Inline-Farbe schluege jede Regel dort. */
-    var c = an ? planFarbe(n) : null;
-    return '<span class="up-sent up-planpill' + (opts.klasse ? " " + opts.klasse : "") + (an ? "" : " is-off") + '"' +
-        (an ? "" : ' data-tip="' + esc(t_("No active billing plan")) + '"') + ' translate="no">' +
-      '<span class="up-sent-dot"' + (c ? ' style="background:' + c + '"' : "") + '></span>' +
-      '<span class="up-sent-val">' + esc(n) + '</span>' +
+    var c = (an && !dev) ? planFarbe(n) : null;
+    /* Statt des Punktes ein Prompt aus zwei Zeichen, in Monospace wie der Name dahinter. Kein
+       Symbol: der Satz in core hat keines fuer Terminal oder Code, und ein selbst gezeichnetes
+       gibt es nicht (CLAUDE.md, Abschnitt 5). */
+    return '<span class="up-sent up-planpill' + (dev ? " is-dev" : "") + (opts.klasse ? " " + opts.klasse : "") + (an ? "" : " is-off") + '"' +
+        (tip ? ' data-tip="' + esc(tip) + '"' : "") + ' translate="no">' +
+      (dev ? '<span class="up-planpill-prompt" aria-hidden="true">&gt;_</span>'
+           : '<span class="up-sent-dot"' + (c ? ' style="background:' + c + '"' : "") + '></span>') +
+      '<span class="up-sent-val">' + esc(dev ? planAnzeige(n, opts.id) : n) + '</span>' +
     '</span>';
   }
 
@@ -18081,6 +18220,8 @@
     makePlanDialog: makePlanDialog,
     planFarbe: planFarbe,
     planPilleHtml: planPilleHtml,
+    planIstDev: planIstDev,
+    planAnzeige: planAnzeige,
     planInterval: planInterval,
     planListe: planListe,
     aboLesen: aboLesen,

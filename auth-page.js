@@ -191,6 +191,53 @@
     } catch(e){}
   }
 
+  /* ── ABSAGE AUS DEM GOOGLE-WEG (28.09.) ─────────────────────────────────────
+     Ein neues Konto entsteht nur noch mit Einladung. Ohne sie lehnt Supabase die Anmeldung per
+     Google ab (Auth-Hook "Before User Created", bubble/datenbank_auftrag.md Abschnitt 2) und
+     schickt den Browser mit error, error_code und error_description zurueck, in der Suchzeile
+     UND im Anker. Liest die Seite das nicht, steht danach das leere Login da, als waere nichts
+     passiert, und der naechste Klick endet genauso.
+     Gezeigt wird nie der Servertext, sondern einer von zwei festen Saetzen. Welcher, entscheidet
+     das Wort "invite": der Hook traegt es in seiner Absage, und "Signups not allowed" (falls die
+     Registrierung einmal ganz aus ist) meint dasselbe. Jeder andere Fehler bekommt den
+     allgemeinen Satz -- auch einer, den GoTrue anders formuliert als erwartet, damit NIE nichts
+     dasteht.
+     Einmal je Seitenaufruf gelesen und hier gemerkt, danach die Adresse bereinigt: Bubble baut
+     das Element nach dem ersten Zeichnen oft neu auf, und die neue Wurzel faende in der
+     bereinigten Adresse nichts mehr. Ein Neuladen zeigt die Meldung dagegen nicht erneut. */
+  var _absage = null;
+  function oauthAbsage(){
+    if (_absage != null) return _absage;
+    _absage = "";
+    var q = {};
+    try {
+      [String(window.location.search || "").replace(/^\?/, ""),
+       String(window.location.hash || "").replace(/^#/, "")].forEach(function(s){
+        s.split("&").forEach(function(kv){
+          var i = kv.indexOf("=");
+          if (i < 1) return;
+          var k = kv.slice(0, i), v = kv.slice(i + 1);
+          try { v = decodeURIComponent(v.replace(/\+/g, " ")); } catch(e){}
+          if (!(k in q)) q[k] = v;
+        });
+      });
+    } catch(e){ return _absage; }
+    if (!q.error && !q.error_code && !q.error_description) return _absage;
+    var worte = (String(q.error_description || "") + " " + String(q.error_code || "")).toLowerCase();
+    _absage = /invite|signup_disabled|signups? not allowed/.test(worte)
+      ? "No invite found for this email address. Ask your team to invite you, then use the link in the invite email."
+      : "Google sign-in did not work. Please try again. New accounts need an invite from your team.";
+    try {
+      if (window.history && window.history.replaceState){
+        var u = new URL(window.location.href);
+        ["error", "error_code", "error_description", "sb"].forEach(function(k){ u.searchParams.delete(k); });
+        if (/(^|&)error(_code|_description)?=/.test(String(u.hash || "").replace(/^#/, ""))) u.hash = "";
+        window.history.replaceState(window.history.state, "", u.toString());
+      }
+    } catch(e){}
+    return _absage;
+  }
+
   function makeController(root){
     var UC = window.UpstreemCore;
     var esc = UC.esc;
@@ -454,11 +501,14 @@
       elFootTxt.textContent = ohneWeg ? TEXTE.login.footOhne : t.footTxt;
       elFootBtn.textContent = t.footLink;
       elFootBtn.hidden = ohneWeg;
-      /* GOOGLE NUR ZUM ANMELDEN (25.09. entschieden). In Supabase sind neue Konten abgeschaltet,
-         und damit legt auch Google keines mehr an -- im Signup waere der Knopf also ein Weg, der
-         mit einer Fehlermeldung endet. Wer eingeladen ist, legt sein Konto mit Adresse und
-         Passwort an; danach meldet er sich mit Google an derselben Adresse an (Supabase
-         verknuepft die Identitaeten, wenn die Adresse bestaetigt ist). */
+      /* GOOGLE NUR ZUM ANMELDEN (25.09. entschieden). Wer eingeladen ist, legt sein Konto mit
+         Adresse und Passwort an; danach meldet er sich mit Google an derselben Adresse an
+         (Supabase verknuepft die Identitaeten, wenn die Adresse bestaetigt ist).
+         Der Riegel dahinter ist seit dem 28.09. der Auth-Hook "Before User Created": die
+         Registrierung bleibt in Supabase AN, damit der Signup-Weg unveraendert bleibt, und der
+         Hook lehnt jedes neue Konto ohne offene Einladung ab -- auch eines, das ein Klick auf
+         diesen Knopf mit einem fremden Google-Konto anlegen wuerde. Seine Absage zeigt
+         oauthAbsage(). */
       var mitGoogle = state.mode === "login";
       elGoogle.hidden = !mitGoogle;
       var oder = root.querySelector(".uau-or");
@@ -540,8 +590,8 @@
        Grund als dem ueblichen "laeuft im Browser": der Publishable Key steht in jedem Client,
        und damit kann jeder ohne diese Seite direkt POST /auth/v1/signup an Supabase schicken.
        Eine Sperre in dieser Datei -- oder in einem Bubble-Workflow -- ist deshalb ein Schild,
-       kein Riegel. Der Riegel sitzt in GoTrue (Signups aus) oder in Postgres (Trigger vor dem
-       Einfuegen in auth.users); beides steht in bubble/signup_code_setup.md.
+       kein Riegel. Der Riegel sitzt in Supabase: seit dem 28.09. der Auth-Hook "Before User
+       Created" (bubble/datenbank_auftrag.md, Abschnitt 2).
        Hier steht nur, dass der Nutzer nicht erst auf eine Serverrunde warten muss, um zu
        erfahren, dass er nichts eingetippt hat.
        VORGABE IST "yes" (21.09. korrigiert). Erst stand hier "no" -- mit der Begruendung, ein
@@ -617,6 +667,9 @@
 
       state.errs = e;
       state.formErr = "";
+      /* Der Nutzer versucht es neu: eine Google-Absage von vorhin gehoert dann nicht mehr auf
+         eine neu aufgebaute Wurzel. */
+      _absage = "";
       zeigeFehler();
       var erste = e.name ? elName : (e.mail ? elMail : (e.pw ? elPw : (e.code ? elCode : null)));
       if (erste){ try { erste.focus(); } catch(x){} return false; }
@@ -687,7 +740,8 @@
       gewuenscht = m;
       /* SIGNUP NUR MIT EINLADUNG (25.09.). Ohne Token faellt jede Bitte um den Signup auf den
          Login zurueck -- auch ein geteilter Link auf /signup. Das ist BEQUEMLICHKEIT, keine
-         Sicherheit: der Riegel sitzt in Supabase (bubble/signup_invite_setup.md). Hier steht
+         Sicherheit: der Riegel sitzt in Supabase (Auth-Hook, bubble/datenbank_auftrag.md
+         Abschnitt 2). Hier steht
          nur, dass niemand ein Formular ausfuellt, das ohnehin abgewiesen wuerde. */
       if (m === "signup" && !state.token) m = "login";
       if (m === state.mode) return;
@@ -725,8 +779,9 @@
          umgangen. Geprueft wird nur im Signup: im Login gibt es nichts zu berechtigen, und ein
          bestehendes Konto nach einem Code zu fragen waere Unsinn.
          Den Fall "im Login-Modus auf Google geklickt, ohne Konto" faengt diese Pruefung NICHT
-         ab -- dort gibt es nichts zu pruefen, und GoTrue legt die Identitaet selbst an. Dafuer
-         gibt es Lage 3 in bubble/signup_code_setup.md. */
+         ab -- dort gibt es nichts zu pruefen. Dafuer sitzt der Auth-Hook in Supabase
+         (bubble/datenbank_auftrag.md, Abschnitt 2); seine Absage zeigt oauthAbsage(). */
+      _absage = "";
       if (codeAn() && !codeWert()){
         state.errs.code = "Please enter your registration code.";
         zeigeFehler();
@@ -819,6 +874,11 @@
     var codeVor = urlParam("code") || urlParam("invite_code") || attr("data-code");
     if (codeVor) elCode.value = String(codeVor).replace(/\s+/g, "").toUpperCase();
     renderCode();
+
+    /* NACH Modus und Einladung: setMode und setToken leeren die Formularzeile, wenn sie den
+       Modus wechseln -- eine vorher gesetzte Absage waere damit gleich wieder weg. */
+    var absage = oauthAbsage();
+    if (absage){ state.formErr = absage; zeigeFehler(); }
 
     /* Zurueck- und Vorwaerts-Knopf des Browsers. Ohne das zeigt die Seite nach einem Zurueck
        weiter den alten Modus, waehrend die Adresse schon den anderen nennt. */
