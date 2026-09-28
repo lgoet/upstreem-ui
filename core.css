@@ -3368,12 +3368,12 @@
    Umschalter --vc-switch-rail, und der steht in der Grundregel von .up-seg weiter oben. Hier
    bleibt nur, was die Groesse wirklich aendert -- die Hoehe. */
 .up-seg.is-lg, .cc-seg.is-lg, .ubo-seg.is-lg, .tcl-seg.is-lg,
-/* Die Umschalter der drei Filter-Dropdowns: Models (umf-seg), Markets (umk-seg) und der
-   Match-Modus der Topics, der keine eigene Klasse hat und deshalb an seiner Beschriftung
-   gefasst wird -- aria-label steht so in seinem Markup. Sie stehen in Elementen ausserhalb
-   dieser Bibliothek, tragen aber ihre Klassen: ohne is-lg bekamen sie die kleine Form, obwohl
-   sie in einem Dropdown genauso 32 sein sollen wie ueberall sonst. */
-.up-seg.umf-seg, .up-seg.umk-seg, .up-seg[aria-label="Match mode"],
+/* Der Umschalter im Topics-Dropdown (Match-Modus), der keine eigene Klasse hat und deshalb an
+   seiner Beschriftung gefasst wird -- aria-label steht so in seinem Markup. Er steht in einem
+   Element ausserhalb dieser Bibliothek, traegt aber ihre Klassen: ohne is-lg bekam er die
+   kleine Form, obwohl er in einem Dropdown genauso 32 sein soll wie ueberall sonst. Die
+   Umschalter von Models und Markets standen hier mit; die gibt es seit dem 28.09. nicht mehr. */
+.up-seg[aria-label="Match mode"],
 /* Domains/URLs in Top Citations ersetzt dort die Ueberschrift und war schon als Nachbau 32 hoch,
    nur mit 12px Polster statt 16 -- ohne Begruendung, also Drift. Kein is-lg im Markup (Bubble),
    deshalb an seiner Wurzel gefasst: zwei Klassen schlagen die eine der Grundregel. */
@@ -3382,7 +3382,6 @@
 }
 .up-seg.is-lg .up-seg-btn, .cc-seg.is-lg .cc-seg-btn,
 .ubo-seg.is-lg .ubo-seg-btn, .tcl-seg.is-lg .tcl-seg-btn,
-.up-seg.umf-seg .up-seg-btn, .up-seg.umk-seg .up-seg-btn,
 .up-seg[aria-label="Match mode"] .up-seg-btn,
 .tcd-root .tcd-mode-btn { height: 32px; padding: 0 16px; }
 

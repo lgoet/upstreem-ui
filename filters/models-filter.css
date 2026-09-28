@@ -152,35 +152,9 @@
   white-space: nowrap; font-size: 12px; font-weight: 500; color: var(--vc-third); }
 .umf-empty { padding: 14px 10px; text-align: center; color: var(--vc-third); font-size: 12.5px; }
 
-/* ---------- foot: Single / Multi ----------
-   Icon above, label below. Stacking them is what keeps both halves the same width whatever the
-   words are, and it is what was asked for. The switcher itself is core's .up-seg, so its frame,
-   active tone and dark-mode behaviour cannot drift from every other switcher in the app — only the
-   inner layout is set here. */
-.umf-foot { display: flex; align-items: center; gap: 10px; margin: 6px -10px 0; padding: 10px 10px 0; border-top: 1px solid var(--vc-border); }
-/* Nicht mehr ueber die ganze Breite: der Umschalter ist eine Nebenentscheidung und stand als
-   breitester Balken der Fusszeile da wie die Hauptsache. Je Seite 32px (also 64 gesamt) und
-   rechts angeschlagen -- margin-left: auto, weil in dieser Zeile sonst nichts steht.
-   Die doppelte Klasse ist noetig, nicht Geschmack: core setzt fuer genau diese zwei Umschalter
-   .up-seg.umf-seg .up-seg-btn { padding: 0 16px } (0,3,0). Ueber die Spezifitaet gewonnen,
-   nicht ueber die Ladereihenfolge. */
-.umf-seg { flex: 0 0 auto; margin-left: auto; }
-.up-seg.umf-seg .up-seg-btn.umf-seg-btn {
-  flex: 0 0 32px; width: 32px; padding: 4px;
-}
-/* Icon only, no label: the two states are Single and Multi, the icons say that on their own, and
-   the tooltip carries the sentence. */
-.umf-seg-btn { padding: 0; display: inline-flex; align-items: center; justify-content: center; }
-.umf-seg-ic { display: inline-flex; }
-/* Height-locked, width from the viewBox: the two glyphs are different widths on purpose (one dot
-   against three) and forcing them into one square would squash the triple. The dots are FILLED, so
-   the stroke rule the other icons in this file carry must not reach them -- with it every circle
-   grew a 2px outline and the three ran together. */
-/* 12 statt 15. Das Polster von 4px allein haette nichts geaendert: der Mehrfach-Punkt ist
-   23x15 (viewBox 0 0 23 15), die Inhaltsflaeche eines 32px-Knopfes mit 4px Polster ist 22 breit
-   -- er waere von 23 auf 22 geschrumpft, also unsichtbar. Mit 12 sind es 18.4x12 in 22x22, und
-   das Polster ist wirklich Luft. max-width als Netz, falls jemand die Hoehe wieder anhebt. */
-.umf-seg-ic svg { height: 12px; width: auto; max-width: 100%; display: block; }
+/* ---------- keine Fusszeile mehr (28.09.) ----------
+   Hier stand der Umschalter Einzel/Mehrfach mit seinem Trennstrich darueber (.umf-foot mit
+   border-top). Beides ist auf Wunsch weg; die Liste endet jetzt am Polster des Menues. */
 
 /* Inactive models: shown for context, greyed, not selectable. The checkbox goes too, because a
    checkbox that cannot be ticked is an invitation to try. */

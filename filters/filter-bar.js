@@ -230,6 +230,27 @@
       /* streng = ohne den Rueckfall unten. Fuer einen AUSGEBLENDETEN Filter wird nur nach der
          eingetragenen Id gesucht: "es gibt genau einen freien auf der Seite" ist eine Vermutung,
          und auf eine Vermutung hin die Auswahl eines fremden Filters zu leeren waere Schaden. */
+      /* Gehoert eine Filterwurzel einer ANDEREN Leiste? Ja, wenn die sie schon haelt -- oder wenn
+         eine andere Leiste sie mit GENAU diesem Namen verlangt, auch bevor sie sie eingezogen hat.
+         Der zweite Fall ist der gemeldete (28.09.): "models_v1_prompts" ist ein Praefix von
+         "models_v1_promptspotlight". Stand das eigene Element beim Start noch nicht im Dokument,
+         griff filterbar_prompts ueber den Praefix nach dem Filter der Spotlight-Leiste und
+         klagte ueber einen Diebstahl, den es nicht gab -- oder nahm ihn, wenn die Spotlight-Leiste
+         noch nicht gestartet war, und DANN klagte die. Die Ids in Bubble waren richtig. */
+      function fremdeWurzel(w, rid) {
+        if (w.__ufbHost && w.__ufbHost !== root && document.contains(w.__ufbHost)) return true;
+        if (!rid) return false;
+        var leisten = document.querySelectorAll(".ufb-root");
+        for (var j = 0; j < leisten.length; j++) {
+          if (leisten[j] === root) continue;
+          var will = "";
+          for (var k = 0; k < FILTERS.length; k++) {
+            will = String(leisten[j].getAttribute(FILTERS[k].attr) || "").trim();
+            if (will === rid) return true;
+          }
+        }
+        return false;
+      }
       function findeWurzel(f, streng) {
         var id = idVon(f);
         var alle = Array.prototype.slice.call(document.querySelectorAll(f.rootSel));
@@ -240,14 +261,17 @@
             rid = String(alle[i].getAttribute("data-instance") || "");
             if (rid === id) return alle[i];
           }
+          /* Der Praefix nur als Rueckfall, und nie auf eine Wurzel, die einer anderen Leiste
+             gehoert (siehe fremdeWurzel). Findet sich keine freie, kommt die eigene beim
+             naechsten Durchlauf ueber den genauen Namen. */
           for (i = 0; i < alle.length; i++) {
             rid = String(alle[i].getAttribute("data-instance") || "");
-            if (rid && rid.indexOf(id) === 0) return alle[i];
+            if (rid && rid.indexOf(id) === 0 && !fremdeWurzel(alle[i], rid)) return alle[i];
           }
         }
         if (streng) return null;
         var frei = alle.filter(function (w) {
-          return !(w.__ufbHost && w.__ufbHost !== root && document.contains(w.__ufbHost));
+          return !fremdeWurzel(w, String(w.getAttribute("data-instance") || ""));
         });
         if (frei.length === 1) {
           if (!gemeldet[f.key]) {
@@ -694,6 +718,9 @@
         }
         return { key: f.chip, wert: wert };
       }
+      /* UC.t, wo es das gibt -- eine aeltere core.js ohne Katalog laesst die englischen Worte stehen,
+         statt die Leiste zu zerlegen. */
+      function tr(s) { return UC.t ? UC.t(s) : s; }
       function renderChips() {
         var teile = [];
         liste.forEach(function (f) {
@@ -703,12 +730,20 @@
              Zeichen, leiser Bezug, lauter Wert, X). Es ist dasselbe, das die Zeile im Panel
              traegt (ufb-row-ic) und das der Filter an seinem Trigger fuehrt -- ein Chip mit
              einem ANDEREN Zeichen waere ein zweiter Name fuer dieselbe Sache. */
+          /* Die Worte laufen durch den Katalog (28.09. gemeldet: im deutschen Setting stand am X
+             "Clear Models"). Der Sprachlauf von core erreicht einen zusammengesetzten Satz nie --
+             "Clear Models" steht in keinem Katalog, nur "Clear {filter}". Also hier uebersetzen
+             und den Namen DANACH einsetzen, selbst schon uebersetzt. Der Bezug vorne ("Model: ")
+             aus demselben Grund. */
+          var name = tr(f.label);
+          var tip = tr("Clear {filter}").split("{filter}").join(name);
+          var aria = tr("Clear {filter} filter").split("{filter}").join(name);
           teile.push('<span class="up-entchip is-static ufb-chip" data-chip="' + esc(f.key) + '">' +
             '<span class="ufb-chip-ic">' + UC.icon(f.icon, 2) + '</span>' +
-            '<span class="ufb-chip-lbl"><span class="ufb-chip-key">' + esc(c.key) + ': </span>' +
+            '<span class="ufb-chip-lbl"><span class="ufb-chip-key">' + esc(tr(c.key)) + ': </span>' +
             esc(c.wert) + '</span>' +
             '<button class="ufb-chip-x" type="button" data-chip-clear="' + esc(f.key) + '" ' +
-              'aria-label="Clear ' + esc(f.label) + ' filter" data-tip="Clear ' + esc(f.label) + '">' +
+              'aria-label="' + esc(aria) + '" data-tip="' + esc(tip) + '">' +
               UC.icon("x", 2.6) + '</button>' +
           '</span>');
         });

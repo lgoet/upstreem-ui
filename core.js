@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261027;
+  var BUILD = 20261028;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -1357,6 +1357,12 @@
     "More Filters": "Mehr Filter",
     "No filters on this page": "Keine Filter auf dieser Seite",
     "These filters are not on this page yet": "Diese Filter gibt es auf dieser Seite noch nicht",
+    /* Das X am Chip (28.09.: im deutschen Setting stand dort "Clear Models"). Dieselben Worte
+       wie das X am Filter selbst ("Clear selection" / "Auswahl aufheben") -- es ist dieselbe
+       Handlung, und "Leeren" steht nirgends (24.09.). {filter} setzt filter-bar.js NACH dem
+       Uebersetzen ein, uebersetzt ("Modelle"). */
+    "Clear {filter}": "{filter}: Auswahl aufheben",
+    "Clear {filter} filter": "Filter {filter}: Auswahl aufheben",
 
     /* ---- Topic-Editor ---- */
     /* "Darstellung" und nicht "Aussehen": darunter stehen Emoji und Farbe, also wie das Topic

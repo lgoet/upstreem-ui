@@ -88,21 +88,7 @@
        verschiedene Dinge, die gleich aussahen. */
     sort: UC.icon("arrowUpDown", 2),
     /* core's CHECK_SVG verbatim, so the tick matches every other checked row in the app. */
-    check: UC.icon("check", 3),
-    /* Footer switcher: one dot against three. Filled circles, not outlined shapes, because at this
-       size an outline of a 5px dot is a smudge.
-
-       These two do NOT use the 24-box every other icon here uses, and that is the point: rendered
-       at height 15 a 24-box scales by 0.625, so a gap authored as 4 units draws as 2.5px and the
-       spec cannot be met at all -- three dots with 4px between them simply do not fit across 15px.
-       The viewBox is therefore 1:1 with the rendered pixels (height 15, width auto), so r=2.5 is a
-       5px dot and a 9-unit centre distance is exactly 4px of clear space. */
-    single: '<svg viewBox="0 0 5 15"><circle cx="2.5" cy="7.5" r="2.5" fill="currentColor" stroke="none"/></svg>',
-    multi:  '<svg viewBox="0 0 23 15">' +
-              '<circle cx="2.5"  cy="7.5" r="2.5" fill="currentColor" stroke="none"/>' +
-              '<circle cx="11.5" cy="7.5" r="2.5" fill="currentColor" stroke="none"/>' +
-              '<circle cx="20.5" cy="7.5" r="2.5" fill="currentColor" stroke="none"/>' +
-            '</svg>'
+    check: UC.icon("check", 3)
   };
 
   var SORTS = [
@@ -207,21 +193,6 @@
             '<button class="umk-clear" type="button">Clear</button>' +
           '</div>' +
           '<div class="umk-list" role="listbox" aria-multiselectable="true"></div>' +
-          '<div class="umk-foot">' +
-            /* core's .up-seg / .up-seg-btn -- the app's switcher, not a copy of it. Icon on top,
-               label underneath, which is what "Icons mit Tooltips darunter" asks for and also
-               keeps both buttons the same width regardless of word length. */
-            '<span class="up-seg umk-seg" role="group" aria-label="Selection mode">' +
-              '<button class="up-seg-btn umk-seg-btn" type="button" data-mode="single"' +
-                ' aria-label="Single select" data-tip="Single select. Picking another market replaces the current one.">' +
-                '<span class="umk-seg-ic">' + ICON.single + '</span>' +
-              '</button>' +
-              '<button class="up-seg-btn umk-seg-btn" type="button" data-mode="multi"' +
-                ' aria-label="Multi select" data-tip="Multi select. Combine several markets in one filter.">' +
-                '<span class="umk-seg-ic">' + ICON.multi + '</span>' +
-              '</button>' +
-            '</span>' +
-          '</div>' +
         '</div>' +
       '</div>';
 
@@ -234,7 +205,6 @@
     var elSearchIn= root.querySelector(".umk-search-in");
     var elSort    = root.querySelector(".umk-sort");
     var elSortMenu= root.querySelector(".umk-sort-menu");
-    var elMode    = root.querySelector(".umk-foot");
     var elList    = root.querySelector(".umk-list");
     var unregister = null;
     /* gesehen: der Stand der Ablage, den die Liste gerade zeigt. abmelden: das Abo, damit sync()
@@ -380,11 +350,11 @@
         }
       }
     }
+    /* Die Fusszeile mit dem Umschalter Einzel/Mehrfach gibt es seit dem 28.09. nicht mehr
+       (angefordert: "bei Models und Maerkte die Bottom Bar mit dem Single/Multi-Switcher weg,
+       samt Trenner"). Der Modus selbst bleibt: ohne Angabe ist es Mehrfachauswahl, und Bubble
+       kann ihn weiter ueber setMarketsFilterMode setzen -- dann traegt die Wurzel is-single. */
     function renderMode() {
-      var opts = elMode.querySelectorAll(".up-seg-btn");
-      for (var i = 0; i < opts.length; i++) {
-        opts[i].classList.toggle("is-active", opts[i].getAttribute("data-mode") === mode);
-      }
       root.classList.toggle("is-single", mode === "single");
     }
     function render() { renderList(); renderTrigger(); renderMode(); renderSortMenu(); }
@@ -473,7 +443,7 @@
       }
     }
 
-    /* Everything a click can change: the ticks, the trigger, the footer. NOT the list markup. */
+    /* Everything a click can change: the ticks and the trigger. NOT the list markup. */
     function commit() { persist(); syncRows(); renderTrigger(); renderMode(); emit(); }
 
     /* ---------------- open / close ---------------- */
@@ -583,16 +553,6 @@
       sortKey = b.getAttribute("data-sort");
       setSortOpen(false);
       persist(); render();                              // a re-sort changes no selection: no event
-    });
-
-    elMode.addEventListener("click", function (e) {
-      var b = e.target.closest ? e.target.closest("[data-mode]") : null;
-      if (!b) return;
-      /* publish=false: the switch itself is not a filter change. Single and Multi return the same
-         rows as long as at most one market is selected, so the only case that reaches Bubble is the
-         one where switching to Single actually DROPS selections -- applyMode emits on its own
-         then. Firing on every click meant a workflow re-ran for a state it already had. */
-      applyMode(b.getAttribute("data-mode"), false);
     });
 
     /* Switching Multi -> Single with several markets selected has to drop some of them, and the

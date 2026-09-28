@@ -63,21 +63,28 @@ html.uag-gesperrt [id^="content-"] { visibility: hidden; }
 /* ---------- Die Karte ----------
    760 breit und mindestens 480 hoch: gross genug, dass die Ueberschrift in der Groesse der
    Anmeldeseite zwei Zeilen hat und die Knoepfe unten nicht am Text kleben. Die Mindesthoehe gibt
-   auf flachen Fenstern nach (min()), sonst ragte die Karte ueber den Schleier. Polster wie
-   .uau-form: senkrecht an vh, waagerecht an vw.
+   auf flachen Fenstern nach (min()), sonst ragte die Karte ueber den Schleier.
+   EIN Polster fuer alle vier Seiten (28.09. gemeldet: "rechts groesser als unten, und oben?").
+   Vorher senkrecht clamp(18px, 3vh, 28px) und waagerecht clamp(22px, 3.4vw, 40px), nach dem
+   Vorbild der Anmeldeseite -- auf 1440x900 also 27 gegen 40. Dort steht das Formular frei auf
+   der Seite, hier in einer Karte mit Kante, und an einer Kante sieht man jeden Unterschied.
    gap 0 statt der 32 von core: die drei Bloecke setzen ihre Abstaende selbst -- die Mitte
    verteilt den freien Raum, eine feste Luecke daneben waere doppelt. */
 .uag-backdrop .uag-card {
   width: 100%; max-width: 760px;
   min-height: min(480px, calc(100vh - 48px));
-  padding: clamp(18px, 3vh, 28px) clamp(22px, 3.4vw, 40px);
+  padding: 32px;
   gap: 0;
 }
 .uag-card:focus { outline: 0; }
 
 /* ---------- oben: Logo und die leisen Wege ---------- */
+/* Die Zeile ist 32 hoch (die Trefferflaeche der Wege), das Logo 18. Ohne Ausgleich stuende das
+   Logo 7px tiefer als das Polster und oben saehe es groesser aus als an den anderen Seiten --
+   dieselbe Ueberlegung wie das -8 rechts an den Wegen: das Zeichen steht buendig mit dem
+   Polster, nicht die unsichtbare Trefferflaeche. (18 - 32) / 2 = -7. */
 .uag-top { display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  flex: 0 0 auto; min-height: var(--up-h-btn); }
+  flex: 0 0 auto; min-height: var(--up-h-btn); margin-top: calc((18px - var(--up-h-btn)) / 2); }
 .uag-marke { display: inline-flex; align-items: center; flex: 0 1 auto; min-width: 0; }
 /* 18px wie .uau-logo. Zwei Bilder, wenn es eine helle und eine dunkle Fassung gibt -- die CSS
    waehlt am Thema des Schleiers, das core beim Umschalten selbst stempelt (up-portal). So wechselt
@@ -174,8 +181,9 @@ html.uag-gesperrt [id^="content-"] { visibility: hidden; }
 }
 
 /* ---------- Telefon ----------
-   Die ganze Flaeche: kein Schleierrand, kein Radius, kein Rahmen. Oben und unten die sicheren
-   Raender des Geraets (Notch, Home-Leiste). Die Mitte beginnt oben statt mittig -- wie auf der
+   Die ganze Flaeche: kein Schleierrand, kein Radius, kein Rahmen. 20px an allen vier Seiten (wie
+   oben ein Wert fuer alle, nicht mehr 12/20/16), oben und unten dazu die sicheren Raender des
+   Geraets (Notch, Home-Leiste). Die Mitte beginnt oben statt mittig -- wie auf der
    schmalen Anmeldeseite (.uau-root.is-narrow .uau-mid) --, die Knoepfe stehen unten ueber die
    volle Breite, der Hauptknopf oben: nebeneinander brach "Alle Tarife ansehen" neben "Enterprise
    reaktivieren" bei 327px um, und der Hauptknopf rutschte allein in eine zweite Zeile.
@@ -185,7 +193,7 @@ html.uag-gesperrt [id^="content-"] { visibility: hidden; }
   .uag-backdrop.up-topicmodal-backdrop { padding: 0; align-items: stretch; }
   .uag-backdrop .uag-card { max-width: none; height: 100%; min-height: 0; max-height: none;
     border: 0; border-radius: 0;
-    padding: calc(12px + env(safe-area-inset-top, 0px)) 20px calc(16px + env(safe-area-inset-bottom, 0px)); }
+    padding: calc(20px + env(safe-area-inset-top, 0px)) 20px calc(20px + env(safe-area-inset-bottom, 0px)); }
   .uag-mid { justify-content: flex-start; padding: 32px 0 24px; }
   .uag-title { font-size: 28px; }
   .uag-link { width: var(--up-h-btn); padding: 0; justify-content: center; }

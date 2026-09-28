@@ -378,8 +378,13 @@
       suche: "",
       /* Angeheftete Eintraege und zugeklappte Gruppen -- beide aus dem localStorage, siehe oben.
          Die Pins koennen hier noch leer sein, wenn das Team erst spaeter eintrifft; pinsNachziehen
-         holt sie dann nach. */
-      pins: pinsLesen(), zu: zuLesen(),
+         holt sie dann nach.
+         NICHT waehrend eines Teamwechsels (28.09., vierter Anlauf, gemeldet: "Klick auf ein anderes
+         Team -> Dropdown zu -> die Pins des neuen Teams erscheinen sofort -> erst dann der Reload").
+         Baut Bubble die Leiste nach dem Klick neu auf, steht die NEUE Team-Id schon am Element,
+         und hier wurden ihre Pins gelesen, bevor irgendeine Marke gefragt wurde -- die Marke
+         pruefte bisher nur pinsNachziehen, und das kommt spaeter. */
+      pins: wechselMarke() ? [] : pinsLesen(), zu: zuLesen(),
       /* Alles auf einmal statt nacheinander. Die dynamischen Teile der Leiste kommen aus vier
          verschiedenen Quellen (Teams, Nutzer, Prompt-Zaehler, Marken-Store) und trafen beim
          Seitenaufbau in vier verschiedenen Momenten ein -- man sah vier Skelette einzeln
@@ -824,7 +829,10 @@
            pinsNachziehen leert die Liste bei einem Wechsel bereits; das hier ist der Riegel fuer
            den Fall, dass die Leiste dabei NEU aufgebaut wird -- dann ist pinsFuerTeam wieder
            null, "erstes Mal" ist wahr, und die neuen Pins kaemen doch herein. */
-        if (b.pinned && (state.laedt || !state.pins.length)) return "";
+        /* Und die Marke selbst: eine neu gebaute Leiste hat laedt === false, weiss also vom Wechsel
+           nichts -- die Marke im sessionStorage schon. Sie verschwindet erst mit dem Neuladen
+           (geloescht im Modulkopf), also genau dann, wenn die Pins wieder dazugehoeren. */
+        if (b.pinned && (state.laedt || !state.pins.length || wechselMarke())) return "";
         var zu = state.zu.indexOf(b.head) >= 0;
         var inhalt = b.pinned ? state.pins.map(pinHtml).join("")
                               : b.items.map(navItemHtml).join("");
@@ -1696,6 +1704,10 @@
       if (UC.onPrefs) UC.onPrefs(function(d){ if (!d || d.name === "branding") renderBrand(); });
     } catch(e){}
     renderTeam(); renderNav(); renderAcc();
+    /* Waehrend eines Teamwechsels neu gebaut? Dann in denselben Ladezustand wie die Leiste, auf
+       die geklickt wurde: alles daneben gehoert noch dem alten Team, und die Bedienung bleibt
+       gesperrt, bis die Seite neu laedt (siehe ladenSetzen). */
+    if (wechselMarke()) ladenSetzen(true);
     /* Die Panels stehen von Anfang an im Layout, also auch von Anfang an gefuellt -- sonst
        klappte beim ersten Oeffnen ein leerer Kasten auf und fuellte sich erst danach. */
     renderTeamMenu(); renderAccMenu();
