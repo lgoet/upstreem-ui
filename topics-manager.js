@@ -73,14 +73,24 @@
     var elHeading   = root.querySelector(".up-heading");
     var elHeadTools = root.querySelector(".up-head-tools");
     var elHead      = root.querySelector(".up-head");
-    /* KEINE KLEBELEISTE HIER, und das ist nach einem Fehlversuch bewusst so (23.09.).
-       Ich hatte makeSticky eingebaut, weil die Nachbarn auf derselben Seite bei 171px kleben und
-       diese Toolbar hinter den Seitenkopf scrollte. Das hat die Komponente zerlegt: .up-sticky
-       bringt in core.css einen DECKENDEN Streifen mit (.up-head::before, --up-sticky-top hoch,
-       Grund --up-surface), der unbedingt Teil der Kopfzeilenbox ist -- nicht erst beim Scrollen.
-       In dieser Komponente deckte er alles unter der Toolbar zu: obere Haelfte sichtbar, darunter
-       weiss bis "Eigene Gruppierungen". Genau so gemeldet.
-       Wer das noch einmal angeht, loest zuerst den Deckstreifen -- nicht den Aufruf. */
+    /* DIESELBE KLEBELEISTE WIE DIE NACHBARN (28.09., zweiter Anlauf). Ohne sie scrollt die Toolbar
+       unter den klebenden Seitenkopf, und dessen durchsichtiges Polster unten liegt dann ueber
+       ihrer oberen Haelfte -- das gemeldete "oben nicht klickbar" (Punkt 30, 28.09. erneut, mit
+       der Kopfgruppe als darueberliegendem Element). prompts-table und responses-table stehen
+       unter demselben Kopf und kleben bei 171px; sie haben das Problem darum nicht.
+       Der erste Anlauf (23.09.) scheiterte nicht am Aufruf, sondern daran, dass diese Wurzel ZWEI
+       .up-head hat: .up-sticky .up-head macht jeden davon klebend, und der zweite ("Custom
+       Groupings") brachte seinen deckenden Streifen mit (::before, 171px UEBER dem Kopf) -- der
+       lag genau auf der Themenliste: "darunter weiss bis Eigene Gruppierungen". Der zweite Kopf
+       ist jetzt in topics-manager.css ausgenommen und bleibt ein gewoehnlicher Kopf.
+       makeSticky STELLT nur bereit, applySticky ist der Schalter -- dieselben Zeilen wie in
+       prompts-table.js: einmal sofort, dann bei jeder Fensteraenderung (unter 1000px aus). */
+    if (elHead && UC.makeSticky){
+      var _sticky = UC.makeSticky(root, elHead);
+      if (UC.aufResize) UC.aufResize(function(){ _sticky.applySticky(); });
+      else window.addEventListener("resize", UC.rafThrottle(function(){ _sticky.applySticky(); }));
+      _sticky.applySticky();
+    }
     var elSearch    = root.querySelector(".up-search");
     var elSearchIn  = root.querySelector(".up-search-input");
     var elSort      = root.querySelector(".up-sort");

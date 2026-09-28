@@ -61,6 +61,17 @@
    .up-head bringt display:flex und die Ausrichtung mit, hier bleibt die Hoehe. */
 .utm-cg-head { min-height: 32px; margin-bottom: 12px; }
 .utm-cg-head .up-head-label { font-size: 14px; }
+/* Klebt nur die Toolbar oben (28.09.). core macht mit .up-sticky .up-head JEDEN Kopf der Wurzel
+   klebend, mit deckender Flaeche und dem Deckstreifen darueber (::before, --up-sticky-top hoch).
+   Dieser zweite Kopf steht mitten in der Seite; klebend deckte er die Themenliste darueber zu
+   (23.09. genau so passiert). Er bekommt seine gewoehnlichen Werte zurueck -- dieselben wie ohne
+   .up-sticky (Hoehe 32 aus .up-head, Abstand 12 von oben) --, keine Flaeche, keinen Streifen.
+   Vier Klassen gegen die zwei von core: ueber die Spezifitaet, nicht ueber die Ladereihenfolge. */
+.utm-root.up-sticky .up-head.utm-cg-head {
+  position: static; top: auto; z-index: auto; background: transparent;
+  height: 32px; padding-bottom: 0; margin-bottom: 12px;
+}
+.utm-root.up-sticky .up-head.utm-cg-head::before { content: none; }
 /* Derselbe gefuellte Knopf wie "Add Topic", nur eine Stufe kleiner: er ist die Aktion eines
    Abschnitts, nicht der Seite. Faktor 32/36 auf ALLE Werte des Bauteils -- Hoehe 36 -> 32,
    Polsterung 0 14 -> 0 12, Symbol 15 -> 14. */

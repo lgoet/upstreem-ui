@@ -63,126 +63,6 @@
     });
   }
 
-  /* ==========================================================================================
-     DER DIAGNOSEMODUS (24.09.). Aus, solange ihn niemand einschaltet -- CLAUDE.md 5 verbietet
-     Debug-Ausgaben in der ausgelieferten App, und das gilt weiter.
-     Er existiert, weil sich eine Frage aus dem Code allein nicht beantworten laesst: KOMMT ein
-     Realtime-Ereignis ueberhaupt in der Komponente an? Wird es angenommen oder verworfen? Und
-     was kam zuerst -- das Ereignis oder das Nachfassen? Ohne diese Auskunft raet man, und Raten
-     hat hier drei Tage gekostet.
-
-     EINSCHALTEN:  window.askMiraDebug(true)    -- bleibt gespeichert, ueberlebt den Neuaufbau
-     AUSSCHALTEN:  window.askMiraDebug(false)
-     ZUSAMMENFASSUNG:  window.askMiraDiag()   -- eine Tabelle, ohne dass man mitlesen musste.
-     GANZE SPUR:       window.askMiraVerlauf()
-
-     Die Zaehlung laeuft IMMER mit, auch ohne eingeschaltete Ausgabe: sie kostet nichts und ist
-     genau dann da, wenn man sie braucht -- naemlich hinterher. Nur die KONSOLENZEILEN haengen
-     am Schalter. */
-  /* WIEDER AUS (24.09.). Die Ausgabe stand drei Runden lang unbedingt an, weil niemand sehen
-     konnte, ob ein Realtime-Ereignis ueberhaupt ankommt -- das ist geklaert, und CLAUDE.md 5
-     ("keine Debug-Ausgaben in der ausgelieferten App") gilt wieder.
-     Verloren geht dabei nichts: askMiraDiag() und askMiraVerlauf() antworten unveraendert, denn
-     aufgezeichnet wird weiter. Und einschalten ist eine Zeile in der Konsole, die im
-     localStorage stehen bleibt -- der Weg ueber ?amdebug=1 ist raus, die App wertet ihre eigenen
-     Suchparameter aus und ist davon auf das Dashboard gesprungen. */
-  var AMD = {
-    an: false, start: Date.now(),
-    rt: [], rtAngenommen: 0, rtVerworfen: 0,
-    nachfass: 0, nachfassZeiten: [],
-    setter: {}, scroll: [], spur: []
-  };
-  try { if (window.localStorage && localStorage.getItem('am_debug') === '1') AMD.an = true; } catch(e){}
-  function amT(){ return ((Date.now() - AMD.start) / 1000).toFixed(1) + 's'; }
-  /* EINE Spur fuer alles, in der Reihenfolge, in der es passiert ist. askMiraDiag zeigt
-     Tabellen -- die sind zum Lesen gut und zum Weitergeben schlecht. Diese hier ist ZUM
-     KOPIEREN: eine Zeile je Ereignis, Klartext, ohne Objekte zum Aufklappen. */
-  function amSpur(was, detail){
-    AMD.spur.push(('     ' + amT()).slice(-7) + '  ' + was + (detail ? '  ' + detail : ''));
-    if (AMD.spur.length > 400) AMD.spur.shift();
-  }
-  function amLog(bereich){
-    if (!AMD.an || !window.console) return;
-    var rest = [].slice.call(arguments, 1);
-    try { console.log.apply(console, ['%c[mira ' + amT() + '] ' + bereich,
-      'color:#2f6df6;font-weight:600'].concat(rest)); } catch(e){}
-  }
-  /* EIN FEHLENDER BUBBLE-HAKEN steht in der Spur und -- nur bei eingeschalteter Diagnose -- in der
-     Konsole, nicht mehr als console.warn (25.09. angefordert: "dass Mira diese ganzen Logs nicht
-     macht"). Es sind Einrichtungshinweise fuer optionale Haken, keine Fehler, und bei drei
-     Mira-Wurzeln auf einer Seite stand jeder dreimal da. Verloren geht nichts: askMiraDiag() und
-     askMiraVerlauf() zeigen weiter, welcher Haken FEHLT, und die Spur haelt fest, wann er
-     gebraucht worden waere. */
-  function amHakenFehlt(haken, folge){
-    amSpur('HAKEN FEHLT      ', haken + ' -- ' + folge);
-    amLog('Haken fehlt: ' + haken, folge);
-  }
-  /* HINWEISE ZUM WORKFLOW gehen denselben Weg (27.09.: "bitte die ganzen Logs entfernen"): immer in
-     die Spur, in die Konsole nur mit askMiraDebug(true). Gemeint sind Zustaende, keine Fehler --
-     eine leere Chatliste, die ignoriert wird, eine geschrumpfte Liste, eine Nachladeseite ohne
-     Neues. Die erste davon feuert laut ihrem eigenen Kommentar im normalen Betrieb. Was wirklich
-     kaputt ist (ein unlesbarer Payload), bleibt eine Warnung in der Konsole. */
-  function amHinweis(art, text){
-    amSpur('HINWEIS          ', art + ' -- ' + text);
-    amLog('Hinweis: ' + art, text);
-  }
-  function amZaehl(name, zusatz){
-    AMD.setter[name] = (AMD.setter[name] || 0) + 1;
-    amSpur('setter ' + (name + '              ').slice(0, 16), zusatz == null ? '' : String(zusatz));
-    amLog('setter ' + name, zusatz == null ? '' : zusatz);
-  }
-  window.askMiraDebug = function(an){
-    AMD.an = an !== false;
-    try { if (window.localStorage) localStorage.setItem('am_debug', AMD.an ? '1' : '0'); } catch(e){}
-    if (window.console) console.log('[mira] Diagnose ' + (AMD.an ? 'AN' : 'aus') +
-      '. Zusammenfassung jederzeit mit askMiraDiag()');
-    return AMD.an;
-  };
-  /* ZUM KOPIEREN: eine Zeitleiste als reiner Text. Genau das schickt man weiter. */
-  window.askMiraVerlauf = function(){
-    var kopf = 'MIRA VERLAUF  (' + amT() + ' seit dem Laden)\n' +
-      'Realtime: ' + AMD.rt.length + ' angekommen, ' + AMD.rtAngenommen + ' angenommen, ' +
-      AMD.rtVerworfen + ' verworfen   |   Polling: ' + AMD.nachfass + '\n' +
-      ['send','new_chat','select_chat','refresh_chat','refresh_chats','realtime_resubscribe'].map(function(n){
-        return n + '=' + (typeof window['bubble_fn_ask_mira_' + n] === 'function' ? 'da' : 'FEHLT');
-      }).join('  ') + '\n' + new Array(78).join('-');
-    var txt = kopf + '\n' + AMD.spur.join('\n');
-    if (window.console) console.log(txt);
-    return txt;
-  };
-  window.askMiraDiag = function(){
-    var z = {
-      'Diagnose an': AMD.an,
-      'Laeuft seit': amT(),
-      'Realtime-Ereignisse gesamt': AMD.rt.length,
-      'davon angenommen': AMD.rtAngenommen,
-      'davon verworfen': AMD.rtVerworfen,
-      'Nachfass-Abrufe (Polling)': AMD.nachfass
-    };
-    if (window.console) console.log('[mira] Zum Weitergeben: askMiraVerlauf() -- eine Zeitleiste als Text.');
-    var arten = {};
-    AMD.rt.forEach(function(e){ arten[e.art || '(ohne event)'] = (arten[e.art || '(ohne event)'] || 0) + 1; });
-    var fn = {};
-    ['send','new_chat','select_chat','refresh_chat','refresh_chats','realtime_resubscribe'].forEach(function(n){
-      fn['bubble_fn_ask_mira_' + n] = (typeof window['bubble_fn_ask_mira_' + n] === 'function') ? 'da' : 'FEHLT';
-    });
-    if (!window.console) return z;
-    console.log('%c===== MIRA DIAGNOSE =====', 'font-weight:700;font-size:13px');
-    console.table(z);
-    console.log('%cRealtime nach Art:', 'font-weight:600'); console.table(arten);
-    console.log('%cBubble-Funktionen:', 'font-weight:600'); console.table(fn);
-    console.log('%cDie letzten 12 Realtime-Ereignisse:', 'font-weight:600');
-    console.table(AMD.rt.slice(-12));
-    console.log('%cDie letzten 12 Scroll-Entscheidungen:', 'font-weight:600');
-    console.table(AMD.scroll.slice(-12));
-    if (!AMD.rt.length){
-      console.warn('[mira] KEIN EINZIGES Realtime-Ereignis angekommen. Dann liegt es NICHT an ' +
-        'dieser Komponente: entweder ruft der Bubble-Workflow window.askMiraRealtime nicht, ' +
-        'oder er laeuft gar nicht. Pruefe den Workflow auf "Message Received".');
-    }
-    return z;
-  };
-
   function amBoot(triesLeft){
     if (!window.UpstreemCore){
       if (triesLeft > 0){ setTimeout(function(){ amBoot(triesLeft - 1); }, 100); return; }
@@ -1214,7 +1094,7 @@
   function emitMoveStatus(oid, newStatus, oldStatus){
     var payload = { opportunity_id: oid, recommendation_id: oid, status: newStatus, previous_status: oldStatus };
     if (typeof window.bubble_fn_ask_mira_move_opportunity_status === 'function') window.bubble_fn_ask_mira_move_opportunity_status(JSON.stringify(payload));
-    else { window.dispatchEvent(new CustomEvent('askmira:opportunity-move-status', { detail: payload })); amHakenFehlt('bubble_fn_ask_mira_move_opportunity_status', JSON.stringify(payload)); }
+    else { window.dispatchEvent(new CustomEvent('askmira:opportunity-move-status', { detail: payload })); }
   }
   function applyStatus(opt){
     var st = opt.closest('.uo-status'); if (!st) return;
@@ -2228,7 +2108,7 @@
     if (aid) _oppcState[aid] = { status: 'loading' };
     _oppcApplyState(btn, 'loading');
     if (typeof window.bubble_fn_ask_mira_create_opportunity === 'function') window.bubble_fn_ask_mira_create_opportunity(JSON.stringify(payload));
-    else { window.dispatchEvent(new CustomEvent('askmira:create-opportunity', { detail: payload })); amHakenFehlt('bubble_fn_ask_mira_create_opportunity', JSON.stringify(payload)); }
+    else { window.dispatchEvent(new CustomEvent('askmira:create-opportunity', { detail: payload })); }
   });
   // Bubble reports the RPC result: { action_id, status, recommendation, error }.
   // Created OR AlreadyExists (with a recommendation) -> show the normal opportunity card.
@@ -2681,17 +2561,16 @@
     _prevMsgKeys = _curKeys;
     _prevLoading = S.isLoading;
 
-    var _amWeg = '';
-    if (!S.messages.length){ _amWeg = 'leer: scrollTop 0'; elMessages.style.minHeight = ''; if (!S.isLoading){ elChat.scrollTop = 0; } }
-    else if (_typeUnits) { _amWeg = 'tippt: setzt sich selbst'; elMessages.style.minHeight = ''; }
+    if (!S.messages.length){ elMessages.style.minHeight = ''; if (!S.isLoading){ elChat.scrollTop = 0; } }
+    else if (_typeUnits) { elMessages.style.minHeight = ''; }
     /* SOLANGE EINE ANTWORT LAEUFT, GEHOERT DIE POSITION DEM LADEZUSTAND (24.09. gemessen).
        Der Zweig 'bottom' stand davor -- und askMiraSetMessages setzt _scrollMode bei JEDEM
        Aufruf auf 'bottom'. Holte das Nachfassen waehrend des Wartens die Nachrichten, sprang die
        Ansicht also ans Ende und riss den gerade gesetzten Anker weg. Im Protokoll war das die
-       Zeile 'bottom: ganz nach unten' mitten zwischen zwei 'laedt'-Zeilen.
+       Zeile 'bottom' mitten zwischen zwei Ladezeilen.
        Jetzt gewinnt der Ladezustand. 'bottom' ist fuer das OEFFNEN eines Chats gedacht, und dabei
        wartet man auf nichts. */
-    else if (S.isLoading) { _amWeg = 'laedt: _pinSendScroll' + (_pinFuer === _sendStartTs && _sendStartTs ? ' (schon verankert, nichts getan)' : ''); _pinSendScroll(); }
+    else if (S.isLoading) { _pinSendScroll(); }
     /* NICHTS NEUES -> GAR NICHTS ANFASSEN (24.09. nachgebessert, am selben Tag noch einmal
        vorgezogen). Der Zweig stand zuerst GANZ OBEN und setzte dabei minHeight zurueck -- das
        ist aber der reservierte Platz unter dem Ladezustand, den _pinSendScroll gerade erst
@@ -2700,22 +2579,14 @@
        askMiraSetMessages _scrollMode bei JEDEM Aufruf auf 'bottom' setzt, sprang jedes
        Nachfassen mit unveraenderten Nachrichten ans Ende -- der Nutzer las, die Ansicht rutschte.
        Jetzt steht er zwischen beiden: der Ladezustand gewinnt, danach gewinnt "unveraendert". */
-    else if (_gleicheNachrichten){ _amWeg = 'nichts Neues: unberuehrt'; }
+    else if (_gleicheNachrichten){ /* nichts anfassen, siehe oben */ }
     else if (_scrollMode === 'bottom') {
       var _ungelesen = _oeffnenUngelesen && _oeffnenUngelesenFuer === String(S.activeChatId || '');
-      _amWeg = 'oeffnen: ' + (_ungelesen ? 'Anfang der letzten Antwort' : 'sofort ans Ende');
       elMessages.style.minHeight = '';
       scrollOeffnen(_ungelesen);
       _oeffnenUngelesen = false;   /* gilt genau fuer dieses eine Oeffnen */
     }
-    else { _amWeg = 'neue Nachricht: scrollNewMessageTop'; elMessages.style.minHeight = ''; scrollNewMessageTop(true); }
-    try {
-      AMD.scroll.push({ zeit: amT(), weg: _amWeg, vorher: Math.round(elChat.scrollTop),
-                        laedt: !!S.isLoading, nachrichten: S.messages.length, tippt: !!_typeUnits });
-      if (AMD.scroll.length > 60) AMD.scroll.shift();
-      amSpur('SCROLL             ', _amWeg + '  top=' + Math.round(elChat.scrollTop));
-      amLog('SCROLL ' + _amWeg, 'scrollTop=' + Math.round(elChat.scrollTop));
-    } catch(e){}
+    else { elMessages.style.minHeight = ''; scrollNewMessageTop(true); }
     _scrollMode = 'newmsg';
     updateLoopState();
     if (_typeUnits) _startTyping(_newBub, _typeUnits);
@@ -2861,7 +2732,6 @@
   function pushRepTopics(){
     if (!elSuggGrid || !elSuggGrid.querySelector('.am-rep-topics')) return;
     try {
-      if (window.console && window.__amDebugTopics) console.log('[ask-mira] push', (S.topics||[]).length, 'topics');
       if (window.setTopicsFilterTopics) window.setTopicsFilterTopics(REP_TOPICS_ID, repTopicsMitZaehler());
       if (window.setTopicsFilterSelected) window.setTopicsFilterSelected(REP_TOPICS_ID, _reportTopics.join(','));
       if (window.setTopicsFilterMode) window.setTopicsFilterMode(REP_TOPICS_ID, _reportTopicMode);
@@ -5907,7 +5777,7 @@
      _nfAktiv geht aus an genau drei Stellen: die Antwort ist da (nfErfolg, aus
      askMiraSetMessages/askMiraAddMessage heraus), der Nutzer ist in einem anderen Chat, oder
      die Notbremse greift. */
-  var _nfAktiv = false, _nfGemeckert = false;
+  var _nfAktiv = false;
   function nfLaeuftNoch(){
     if (!_nfAktiv) return false;
     var jetzt = String(S.activeChatId || '');
@@ -6004,25 +5874,15 @@
        war der zweite Teil des Aufblitzens -- und der schlimmere, weil er den sichtbaren
        Ladezustand mitbringt.
        Fehlt bubble_fn_ask_mira_refresh_chat, wird NICHT nachgefasst -- stillschweigend etwas
-       Falsches zu tun ist schlechter als nichts zu tun. Der Hinweis steht in der Diagnose
-       (amHakenFehlt), nicht mehr in der Konsole. */
+       Falsches zu tun ist schlechter als nichts zu tun. */
     var fn = window.bubble_fn_ask_mira_refresh_chat;
     if (typeof fn !== 'function'){
-      if (!_nfGemeckert){
-        _nfGemeckert = true;
-        amHakenFehlt('bubble_fn_ask_mira_refresh_chat', 'Nachfassen aus. Der Workflow soll NUR die ' +
-          'Nachrichten des Chats neu laden -- ohne askMiraSetChatLoading, ohne Titelwechsel, ohne ' +
-          'Scrollen; select_chat ist dafuer nicht geeignet.');
-      }
       nfAus();
       return false;
     }
     _nfLetzte = jetzt;
-    AMD.nachfass++; AMD.nachfassZeiten.push(amT());
-    amSpur('POLLING            ', 'Grund=' + grund + ' chat=' + String(S.activeChatId || '-').slice(0, 8));
-    amLog('NACHFASSEN (Polling) Grund=' + grund, 'Chat ' + String(S.activeChatId || '').slice(0, 8));
     try { fn(S.activeChatId); } catch(e){ return false; }
-    /* Fuer den Prueftand und fuer eine Seite ohne Bubble -- und als Spur in der Diagnose. */
+    /* Fuer den Prueftand und fuer eine Seite ohne Bubble. */
     try { root.dispatchEvent(new CustomEvent('askmira:nachfassen',
       { detail: { chat_id: S.activeChatId, grund: grund }, bubbles: true })); } catch(e){}
     return true;
@@ -6063,16 +5923,10 @@
      Schritt, der askMiraSetPreviousChats fuellt. Fehlt er, passiert nichts -- kein Fehler, kein
      Ersatzweg. Einen zu erfinden waere dasselbe Missverstaendnis wie select_chat oben. */
   var LISTE_BODEN = 20000;          /* darunter war der Tab nicht lange genug weg */
-  var _listeWeg = 0, _listeGemeckert = false;
+  var _listeWeg = 0;
   function listeNachholen(grund){
     var fn = window.bubble_fn_ask_mira_refresh_chats;
     if (typeof fn !== 'function'){
-      if (!_listeGemeckert){
-        _listeGemeckert = true;
-        amHakenFehlt('bubble_fn_ask_mira_refresh_chats', 'Chatliste wird beim Zurueckkommen nicht ' +
-          'aufgefrischt. Der Workflow soll nur die Liste neu setzen (derselbe Schritt wie im Page ' +
-          'Load, der askMiraSetPreviousChats fuellt).');
-      }
       return false;
     }
     try { fn(String(S.activeChatId || '')); } catch(e){ return false; }
@@ -6180,7 +6034,6 @@
     return id !== String(S.activeChatId || '');
   }
   window.askMiraSetMessages = function(messages, chatId){
-    amZaehl('setMessages', 'chat=' + String(chatId == null ? '(aktiv)' : chatId).slice(0, 8));
     if (fremderChat(chatId)){
       /* Nachrichten fuer einen ANDEREN Chat: nicht zeichnen, nur buchen -- und dabei
          unterscheiden, ob dort wirklich eine Antwort liegt. Endet die Nutzlast auf einer noch
@@ -6576,12 +6429,6 @@
   function rtOffenenChatHolen(grund){
     var fn = window.bubble_fn_ask_mira_refresh_chat;
     if (typeof fn !== 'function'){
-      if (!_nfGemeckert){
-        _nfGemeckert = true;
-        amHakenFehlt('bubble_fn_ask_mira_refresh_chat', 'Realtime kam an, die Antwort kann nicht ' +
-          'nachgeladen werden. Der Workflow soll NUR die Nachrichten des Chats neu laden; ' +
-          'select_chat ist dafuer nicht geeignet.');
-      }
       return false;
     }
     /* Die Uhr des Nachfassens mitziehen: sonst faellt ihr naechster Takt direkt hinter dieses
@@ -6616,30 +6463,7 @@
   }
   window.askMiraRealtime = function(payload){
     rtStilleAus();          /* es kam etwas an -- das Abo lebt */
-    var _amRoh = payload;
-    var _amErg = _askMiraRealtimeInnen(payload);
-    try {
-      var _pp = _amRoh;
-      if (typeof _pp === 'string'){ try { _pp = JSON.parse(_pp); } catch(e){ _pp = null; } }
-      if (_pp && _pp.payload && typeof _pp.payload === 'object') _pp = _pp.payload;
-      AMD.rt.push({ zeit: amT(), art: _pp ? String(_pp.event || '') : '(unlesbar)',
-                    chat: _pp ? String(_pp.session_id || '').slice(0, 8) : '',
-                    offen: String(S.activeChatId || '').slice(0, 8),
-                    amid: _pp ? String(_pp.assistant_message_id || _pp.message_id || '').slice(0, 8) : '',
-                    tool: _pp ? String(_pp.tool || '') : '',
-                    titel: _pp ? String(_pp.title || '') : '',
-                    neu: _pp ? String(_pp.is_new_session || '') : '',
-                    angenommen: _amErg === true });
-      if (AMD.rt.length > 200) AMD.rt.shift();
-      if (_amErg) AMD.rtAngenommen++; else AMD.rtVerworfen++;
-      var _e = AMD.rt[AMD.rt.length - 1];
-      amSpur('REALTIME ' + (_amErg ? 'ok      ' : 'VERWORFEN') + ' ' + (_e.art || '(ohne event)'),
-             'chat=' + (_e.chat || '-') + ' offen=' + (_e.offen || '-') +
-             (_e.tool ? ' tool=' + _e.tool : '') + (_e.titel ? ' titel="' + _e.titel + '"' : '') +
-             (_e.amid ? ' amid=' + _e.amid : ''));
-      amLog('REALTIME ' + (_amErg ? 'angenommen' : 'VERWORFEN'), _e);
-    } catch(e){}
-    return _amErg;
+    return _askMiraRealtimeInnen(payload);
   };
   function _askMiraRealtimeInnen(payload){
     var p = payload;
@@ -6838,24 +6662,16 @@
   var RT_NEU_EINGABE_MS = 600000;    /* zehn Minuten ohne jede Eingabe */
   var RT_NEU_STILLE_MS  = 10000;     /* so lange nach dem Absenden ohne ein einziges Ereignis */
   var RT_NEU_ABSTAND_MS = 20000;     /* hoechstens so oft fragen */
-  var _rtNeuZuletzt = 0, _rtNeuGemeckert = false, _rtWegSeit = 0;
+  var _rtNeuZuletzt = 0, _rtWegSeit = 0;
   var _rtLetzteEingabe = Date.now(), _rtStilleUhr = 0;
   function realtimeNeuVerbinden(grund){
     var jetzt = Date.now();
     if (jetzt - _rtNeuZuletzt < RT_NEU_ABSTAND_MS) return false;
     var fn = window.bubble_fn_ask_mira_realtime_resubscribe;
     if (typeof fn !== 'function'){
-      if (!_rtNeuGemeckert){
-        _rtNeuGemeckert = true;
-        amHakenFehlt('bubble_fn_ask_mira_realtime_resubscribe', 'Realtime-Abo muesste erneuert ' +
-          'werden (' + grund + '). Daran gehoeren DIESELBEN Schritte, mit denen der View-First-/' +
-          'Mira-Pageload-Workflow das Abo auf mira_user_<id> stellt. Bis dahin laeuft nach dem ' +
-          'Aufwachen alles ueber das Nachfassen.');
-      }
       return false;
     }
     _rtNeuZuletzt = jetzt;
-    try { amSpur('realtime NEU      ', grund); amLog('Realtime: Abo erneuern', grund); } catch(e){}
     try { fn(String(grund || '')); } catch(e){ return false; }
     try { root.dispatchEvent(new CustomEvent('askmira:realtime-neu',
           { detail: { grund: grund }, bubbles: true })); } catch(e){}
@@ -6917,34 +6733,6 @@
     try { listeNachholen('reconnect'); } catch(e){}
     return true;
   };
-  /* ---- WER SCHREIBT DIE CHATLISTE, UND WIE LANG WAR SIE? (16.09.) -------------------------
-     Gemeldet: nach dem Weg Dashboard -> Chip -> Mira steht in der Leiste manchmal nur EIN Chat,
-     und zwar ein sehr alter. In der Komponente gibt es dafuer keine Stelle: nichts hier kuerzt
-     die Liste, der Setter ERSETZT sie mit dem, was hereingereicht wird -- also kommt genau ein
-     Eintrag herein. Woher, laesst sich von hier aus nicht sehen: der Setter wird von Bubble
-     gerufen (direkt oder ueber das versteckte Element mira-chats-data, das die Auto-Bindung
-     beobachtet).
-     Deshalb keine Vermutung, sondern eine Spur: jeder Schreibzugriff wird mit Zahl, Quelle und
-     erstem Titel gemerkt, und ein Einbruch von vielen auf hoechstens zwei meldet sich von selbst
-     in der Konsole. window.askMiraChatTrace() gibt sie aus. Damit ist nach EINEM Nachstellen
-     klar, ob Bubble eine Ein-Eintrag-Liste schickt -- und welcher Aufrufer es war. */
-  var _chatSpur = [];
-  /* WAS KAM AN -- nicht nur, was danach dasteht (17.09. nachgeschaerft). Die Spur zeigte bisher
-     die Laenge und den ersten Titel des ERGEBNISSES; bei einer Zusammenfuehrung ist das aber der
-     alte Kopf, und ueber die Nutzlast sagt es nichts. Fuer die Frage "welcher Workflow schickt
-     welche Seite" braucht es genau die: wie viele kamen, welcher stand vorn, und war der offene
-     Chat dabei. */
-  function chatSpur(quelle, anzahl, ersterTitel, rein, ersterRein, offenDrin){
-    _chatSpur.push({ t: new Date().toISOString().slice(11, 23), quelle: quelle,
-                     rein: rein, ersterRein: String(ersterRein || '').slice(0, 40),
-                     offenerChatDabei: offenDrin,
-                     danach: anzahl, ersterDanach: String(ersterTitel || '').slice(0, 40) });
-    if (_chatSpur.length > 40) _chatSpur.shift();
-  }
-  window.askMiraChatTrace = function(){
-    try { console.table(_chatSpur); } catch(e){ try { console.log(_chatSpur); } catch(_){} }
-    return _chatSpur.slice();
-  };
   window.askMiraSetPreviousChats = function(chats){
     if (typeof chats === 'string'){
       var parsed = looseJsonParse(chats);
@@ -6954,7 +6742,6 @@
       }
       chats = parsed;
     }
-    var vorher = (S.previousChats || []).length;
     /* ---- EINE TEIL-NEUSENDUNG ERSETZT NICHT MEHR DIE GANZE LISTE (17.09.) ------------------
        Der Fall, der dreimal gemeldet wurde: geblaettert (90 Chats), auf das Dashboard, ueber
        einen Chip zurueck -- und die Leiste steht wieder auf 38, der ERSTEN Seite. Irgendein
@@ -6982,13 +6769,6 @@
        Der Preis, und er ist klein: loescht jemand ANDERSWO seinen letzten Chat, steht die Leiste
        eine Runde laenger voll. Das eigene Loeschen raeumt die Zeile ohnehin selbst weg. */
     if (!einListe.length && altListe.length){
-      amHinweis('askMiraSetPreviousChats', 'kam mit einer LEEREN ' +
-        'Liste, waehrend die Leiste ' + altListe.length + ' Chats haelt -- sie bleiben stehen. ' +
-        'Im Workflow ist das Feld leer geblieben (der RPC war noch nicht zurueck, oder der ' +
-        'Schritt liest das falsche Ergebnis). window.askMiraChatTrace() zeigt alle Schreibzugriffe.');
-      chatSpur(_vonAutoBind ? 'mira-chats-data (leer, ignoriert)' : 'setPreviousChats (leer, ignoriert)',
-               altListe.length, altListe.length ? altListe[0].title : '', 0, '',
-               !S.activeChatId ? '(kein Chat offen)' : 'unveraendert');
       renderPrevious();
       return;
     }
@@ -7012,8 +6792,7 @@
          Jede Seite, die Bubble nachliefert, ist ein Ausschnitt der Liste, die die Leiste schon
          haelt -- und der Code macht genau das Richtige damit, er haengt sie an. Eine Warnung
          gehoert zu etwas, das jemand beheben kann; hier gibt es nichts zu beheben, und sie kam
-         bei jedem Nachladen. Die Spur bleibt: window.askMiraChatTrace() zeigt weiter jeden
-         Schreibzugriff mitsamt Quelle. */
+         bei jedem Nachladen. */
     } else {
       /* DER OFFENE CHAT UEBERLEBT AUCH EINE VOLLSTAENDIGE ERSETZUNG (17.09. gemessen). Eine
          veraltete Liste, die ihn nicht kennt, nahm sonst genau den Eintrag wieder mit, den wir
@@ -7030,35 +6809,6 @@
         }
       }
       S.previousChats = einListe;
-    }
-    chatSpur(_vonAutoBind ? 'mira-chats-data' : 'setPreviousChats', S.previousChats.length,
-             S.previousChats.length ? S.previousChats[0].title : '',
-             einListe.length, einListe.length ? einListe[0].title : '',
-             !S.activeChatId ? '(kein Chat offen)'
-               : (einListe.some(function(c){ return c && String(c.id) === String(S.activeChatId); }) ? 'ja' : 'NEIN'));
-    /* Der Einbruch, der gemeldet wurde -- und er wird gemeldet, nicht repariert: eine kuerzere
-       Liste ist ein voellig legitimer Vorgang (anderes Team, geloeschter Chat), und stillschweigend
-       an der alten festzuhalten waere geraten. Was hier steht, ist der Messwert. */
-    /* WANN IST EIN EINBRUCH EINER? Erst galt "von mehr als fuenf auf hoechstens zwei" -- zu eng.
-       Gemeldet am 17.09.: nach dem Weg Mira -> Dashboard -> Chip stand die Leiste wieder auf 38
-       Eintraegen, obwohl vorher laengst weiter geblaettert war. 90 auf 38 ist kein Randfall,
-       sondern derselbe Vorgang: irgendwo schickt ein Workflow die ERSTE Seite noch einmal, und
-       der Setter ersetzt damit alles Nachgeladene.
-       Jetzt meldet sich jede Halbierung. Und die entscheidende Zusatzangabe steht dabei: ob der
-       gerade offene Chat in der neuen Liste ueberhaupt vorkommt -- fehlt er, ist die Liste
-       veraltet, und genau dann bleiben Titel und Markierung aus. */
-    var weniger = vorher > 5 && S.previousChats.length < vorher / 2;
-    if (weniger){
-      var offenDrin = !S.activeChatId ||
-        S.previousChats.some(function(c){ return c && String(c.id) === String(S.activeChatId); });
-      amHinweis('Chatliste geschrumpft', 'von ' + vorher + ' auf ' +
-        S.previousChats.length + ' Eintraege geschrumpft (Quelle: ' +
-        (_vonAutoBind ? 'das versteckte Element mira-chats-data' : 'ein direkter Aufruf von askMiraSetPreviousChats') +
-        '). Die Komponente kuerzt nie selbst -- so ist der Payload angekommen.' +
-        (offenDrin ? '' : ' Der offene Chat "' + S.activeChatId + '" steht NICHT in der neuen Liste -- ' +
-          'sie ist also aelter als er. Seine Zeile bleibt trotzdem oben stehen; einen TITEL hat er ' +
-          'aber nirgendwo her. Wer ihn kennt, gibt ihn mit: askMiraSetActiveChat(id, false, titel).') +
-        ' window.askMiraChatTrace() zeigt alle Schreibzugriffe dieser Sitzung.');
     }
     /* Eine LEERE Liste beendet das Laden NICHT. Bubble ruft diesen Setter regelmaessig einmal mit
        einer leeren Liste, bevor der RPC zurueck ist -- und das machte aus dem Skelett augenblicklich
@@ -7215,23 +6965,12 @@
        Endlosschleife entsteht trotzdem nicht. */
     if (!dazu.length){
       _leerlauf++;
-      amHinweis('Nachladen', 'die nachgeladene Seite brachte ' + neu.length +
-        ' Chats, davon 0 neue -- die Leiste hat schon ' + (S.previousChats || []).length + '. ' +
-        (_leerlauf >= 2
-          ? 'Zum zweiten Mal hintereinander: es wird nicht mehr nachgefragt.'
-          : 'Das kann ein verrutschter Offset sein -- blaettere mit dem next_offset aus der ' +
-            'vorigen Antwort. Ein weiterer Versuch ist noch moeglich.'));
       if (_leerlauf >= 2) _mehrEnde = true;
       renderPrevious();
       return;
     }
     _leerlauf = 0;
     S.previousChats = (S.previousChats || []).concat(dazu);
-    chatSpur('appendPreviousChats', S.previousChats.length,
-             S.previousChats.length ? S.previousChats[0].title : '',
-             neu.length, neu.length ? neu[0].title : '',
-             !S.activeChatId ? '(kein Chat offen)'
-               : (neu.some(function(c){ return c && String(c.id) === String(S.activeChatId); }) ? 'ja' : 'NEIN'));
     prevGeladenSetzen(true);
     /* Das Fenster waechst mit, sonst kaeme das Nachgeladene erst beim naechsten Scrollen zum
        Vorschein -- und der Nutzer saehe auf seine Bewegung hin: nichts. */
@@ -7246,7 +6985,6 @@
   // Drop your dynamic JSON into a hidden <textarea id="mira-msgs-data">…</textarea> (and the
   // topics/chats/projects equivalents) in Bubble — NO Run-JS needed, nothing is ever inlined
   // into JS, so backticks/quotes/umlauts/newlines can never break anything. ----
-  var _vonAutoBind = false;
   function _amAutoBind(){
     var map = [
       ['mira-msgs-data',     window.askMiraSetMessages],
@@ -7275,11 +7013,7 @@
       var last = null;
       var read = function(){ return ('value' in el && el.value != null && el.value !== '') ? el.value : (el.textContent || ''); };
       var apply = function(){ var v = read(); if (v == null) return; v = String(v); if (v === last) return; if (!v.trim()) return; last = v;
-        /* Nur fuer die Spur: der Setter soll sagen koennen, ob Bubble ihn direkt gerufen hat oder
-           ob das versteckte Element sich geaendert hat. */
-        _vonAutoBind = true;
-        try { fn(v); } catch(e){ try { console.warn('[AskMira] auto-bind '+id+' failed', e); } catch(_){} }
-        _vonAutoBind = false; };
+        try { fn(v); } catch(e){ try { console.warn('[AskMira] auto-bind '+id+' failed', e); } catch(_){} } };
       apply(); // initial read
       try { new MutationObserver(apply).observe(el, { childList: true, characterData: true, subtree: true }); } catch(e){}
     });
@@ -7410,7 +7144,6 @@
       if (fireEvent) { /* der Aufrufer wollte ein Ereignis -- das gibt es unten, aber ohne Wechsel */ }
       return;
     }
-    amZaehl('setActiveChat', String(chatId || '(leer)').slice(0, 8) + (titel ? ' titel=' + titel : ''));
     S.activeChatId = chatId;
     /* Ein geoeffneter Chat ist gelesen: der Punkt hat sich erledigt. Vorher aber noch ablesen,
        DASS er dran war -- das entscheidet gleich, wohin gescrollt wird (siehe scrollOeffnen).
@@ -7631,7 +7364,6 @@
      Zweimal derselbe Zustand hintereinander bleibt EINE Zeile: die laufende bleibt unveraendert
      stehen, samt ihrem Text und ihren Logos. Erst ein anderer Zustand macht eine neue auf. */
   window.askMiraSetTool = function(tool){
-    amZaehl('setTool', tool);
     var key = String(tool == null ? '' : tool).trim().toLowerCase();
     var st = _TOOL_STATE[key] || '';
     if (!S.isLoading){ S.currentTool = key; S.toolState = st; return; }
@@ -7815,12 +7547,12 @@
   function fireFeedback(messageId, rating){
     var payload = { chat_id: S.activeChatId, message_id: messageId, rating: rating };
     if (window.bubble_fn_ask_mira_feedback) window.bubble_fn_ask_mira_feedback(JSON.stringify(payload));
-    else { window.dispatchEvent(new CustomEvent('askmira:feedback', { detail: payload })); amHakenFehlt('bubble_fn_ask_mira_feedback', JSON.stringify(payload)); }
+    else { window.dispatchEvent(new CustomEvent('askmira:feedback', { detail: payload })); }
   }
   function fireExportPdf(messageId){
     var payload = { assistant_message_id: messageId, session_id: S.activeChatId };
     if (window.bubble_fn_ask_mira_export_pdf) window.bubble_fn_ask_mira_export_pdf(JSON.stringify(payload));
-    else { window.dispatchEvent(new CustomEvent('askmira:export-pdf', { detail: payload })); amHakenFehlt('bubble_fn_ask_mira_export_pdf', JSON.stringify(payload)); }
+    else { window.dispatchEvent(new CustomEvent('askmira:export-pdf', { detail: payload })); }
   }
   /* DER SPINNER BLEIBT MINDESTENS SO LANGE STEHEN (19.09. angefordert: "mach die Zeit, bis der
      Spinner verschwindet, doppelt so lang"). Eine eigene Dauer hatte er nie -- er lief genau so
@@ -7884,7 +7616,7 @@
       title: wrap.getAttribute('data-title') || ''
     };
     if (window.bubble_fn_ask_mira_open_evidence) window.bubble_fn_ask_mira_open_evidence(JSON.stringify(payload));
-    else { window.dispatchEvent(new CustomEvent('askmira:open_evidence', { detail: payload })); amHakenFehlt('bubble_fn_ask_mira_open_evidence', JSON.stringify(payload)); }
+    else { window.dispatchEvent(new CustomEvent('askmira:open_evidence', { detail: payload })); }
   }
   function showUrlPop(wrap){
     var visit = visitUrlFor(wrap);
@@ -8467,22 +8199,14 @@
   });
 
   /* ---------------- events helper ---------------- */
-  var _stummGemeldet = {};
   function amFire(fn, payload, dom){
     var f = window['bubble_fn_ask_mira_'+fn];
     if (f) f(JSON.stringify(payload));
     else {
       window.dispatchEvent(new CustomEvent('askmira:'+dom, { detail: payload }));
-      /* EINMAL je Ereignisart, nicht bei jedem Aufruf. Ohne Bubble-Funktion geht die Meldung nur
-         als CustomEvent hinaus -- das ist der Fall im Pruefstand und auf jeder Seite, die dieses
-         eine Ereignis nicht verdrahtet hat. Die Zeile sagt EINMAL, dass niemand zuhoert (das kann
-         man beheben); bei jedem Klick wiederholt war sie nur Laerm. */
-      if (!_stummGemeldet[dom]){
-        _stummGemeldet[dom] = true;
-        /* In die Diagnose, nicht in die Konsole (27.09.: "bitte die ganzen Logs entfernen") --
-           dieselbe Regel wie seit dem 25.09. fuer alle fehlenden Haken, siehe amHakenFehlt. */
-        amHakenFehlt('bubble_fn_ask_mira_' + fn, 'Die Meldung geht nur als Ereignis askmira:' + dom + ' hinaus.');
-      }
+      /* Ohne Bubble-Funktion geht die Meldung nur als CustomEvent hinaus -- der Fall im
+         Pruefstand und auf jeder Seite, die dieses eine Ereignis nicht verdrahtet hat. Ohne
+         Konsolenzeile (27.09.: "bitte die ganzen Logs entfernen"). */
     }
   }
   function findChat(id){ return (S.previousChats||[]).filter(function(c){ return String(c.id)===String(id); })[0]; }
@@ -9940,7 +9664,7 @@
     var payload = { brand: S.settings.brand, citation: S.settings.citation, response: S.settings.response };
     hlMerken();          /* zuerst merken: die Meldung an Bubble darf nicht darueber entscheiden */
     if (window.bubble_fn_ask_mira_settings_change) window.bubble_fn_ask_mira_settings_change(JSON.stringify(payload));
-    else { window.dispatchEvent(new CustomEvent('askmira:settings-change', { detail: payload })); amHakenFehlt('bubble_fn_ask_mira_settings_change', JSON.stringify(payload)); }
+    else { window.dispatchEvent(new CustomEvent('askmira:settings-change', { detail: payload })); }
     /* Die Attribute setzt sonst nur renderMessages -- und an ihnen haengt der Kastenstil der
        Zitate. hlDemoZeichnen setzt sie mit, damit der Auszug im Fenster auch dann sofort stimmt,
        wenn gar kein Chat offen ist. */
@@ -10295,7 +10019,7 @@
       payload = payload || {};
       var fn = { start:'bubble_fn_ask_mira_voice_start', cancel:'bubble_fn_ask_mira_voice_cancel', submit:'bubble_fn_ask_mira_voice', error:'bubble_fn_ask_mira_voice_error' }[name];
       if (fn && typeof window[fn] === 'function') window[fn](JSON.stringify(payload));
-      else { window.dispatchEvent(new CustomEvent('askmira:voice-'+name, { detail: payload })); amHakenFehlt(fn || ('bubble_fn_ask_mira_voice_' + name), JSON.stringify(payload)); }
+      else { window.dispatchEvent(new CustomEvent('askmira:voice-'+name, { detail: payload })); }
     }
     function showNote(msg){ if (!noteEl) return; noteEl.textContent = msg; noteEl.classList.add('is-on'); clearTimeout(noteEl._t); noteEl._t = setTimeout(function(){ noteEl.classList.remove('is-on'); }, 4500); }
     function hideNote(){ if (noteEl) noteEl.classList.remove('is-on'); }
