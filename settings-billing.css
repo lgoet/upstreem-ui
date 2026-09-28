@@ -43,6 +43,10 @@
 .ubl-secsub { font-size: 13px; font-weight: 400; color: var(--vc-third); margin: 0; line-height: 1.45; }
 /* Der Knopf darf nicht schrumpfen -- er steht neben einer Beschreibung, die umbrechen kann. */
 .ubl-manage { flex: 0 0 auto; }
+/* can_manage_billing: false setzt hidden (settings-billing.js, render). Das Attribut allein
+   reicht nicht: .up-btn-pri setzt display: inline-flex, und jede Autorenregel schlaegt die des
+   Browsers fuer [hidden]. Zwei Klassen plus Attribut schlagen die eine Klasse aus core. */
+.ubl-root .ubl-manage[hidden] { display: none; }
 /* Der Fehlerkasten aus core (.up-formerr) steht nur da, wenn "Manage Billing" keinen Empfaenger
    fand. Zu ist er 0px hoch, nimmt in der Spalte aber trotzdem die Luecke von 4px mit -- und genau
    die veraendert den Abstand Beschreibung/Tabelle, der 1:1 der von settings-brand ist. */

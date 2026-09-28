@@ -18,11 +18,10 @@
      window.setUpstreemTheme("dark") / ("light"); das Fenster mit den Tarifen folgt von selbst.
   5. data-team auf die Id des AKTUELLEN Teams (Current User's Team's unique id). Sie geht in jedes
      Ereignis dieser Komponente als team_id -- das Portal und die Kasse gehoeren zu diesem Team.
-  6. data-plan-id (optional) auf die Id des laufenden Tarifs, als TEXT (z. B. Current User's
-     Team's Subscription's plan_id :formatted as text -- nie yes/no, nie Zahl). Nur der
-     Rueckfall: gewinnt immer plan_id aus dem Abo-Schritt unten. Steht keins von beiden, ist im
-     Fenster keine Karte als "Current plan" markiert, und jede zeigt "Get started" -- auch die,
-     die das Team schon hat.
+  6. KEINE Tarif-Id am Element (28.09.): data-plan-id gibt es nicht mehr. Welcher Tarif der
+     laufende ist, sagt der erste Run-JS-Schritt (billing.billing_plan_id, siehe DAS ABO). Ein
+     schon eingebautes Element, das das Attribut noch traegt, stoert nicht -- es wird nicht mehr
+     gelesen; am besten trotzdem herausnehmen.
   7. FIT HEIGHT am HTML-Element und "Fit height to content" an der Gruppe darum. Die Tabelle
      waechst um bis zu drei Zeilen (Canceled at / Access ends at / Trial ends at).
   8. Das Kopf-Snippet der Seite (bubble/page_header_preload_ohne_kommentare.html) kennt diese
@@ -41,24 +40,30 @@
   Beide Setter auch mit der Instanz davor: setBillingSubscription("INSTANCE_ID", TEXT). Ohne sie
   trifft der Aufruf jede Platzierung; eine Seite hat genau eine.
 
-  DAS ABO -- die Schluessel, die die Komponente liest (so muss die RPC sie liefern)
-     {
-       "plan_id":           "3129be58-d59a-4221-ba53-7b2e4131cf5f",   markiert die Karte im Fenster
-       "plan_name":         "Professional",
-       "billing_interval":  "yearly",           "monthly" | "yearly" (auch "month"/"year")
-       "price_eur":         2220.00,            Betrag JE TAKT, also im Jahr 2220, nicht 185
-       "next_billing_date": "2026-10-28T09:00:00+00:00",
-       "canceled_at":       null,               die drei letzten stehen NUR als Zeile da,
-       "access_ends_at":    null,               wenn ein Wert kommt
-       "trial_ends_at":     null
-     }
-  Datumswerte als ISO-Text; eine nackte Zahl gilt als Stripe-Zeitstempel in Sekunden. Kommt die
-  RPC als Liste mit einer Zeile ([{...}]) oder als {"subscription": {...}}, geht das auch.
+  DAS ABO -- die Nutzlast der Abo-RPC, UNVERAENDERT in Schritt 1 (so am 28.09. geliefert):
+     { "ok": true, "team_id": "…", "team_name": "…", …, "billing": { … } }
+  Gelesen wird davon:
+     ok                          false -> "Could not load your subscription" (die RPC sagt es selbst)
+     team_id                     geht in jedes Ereignis (gewinnt gegen data-team)
+     billing                     null oder has_billing:false -> "Current plan: No active plan"
+     billing.billing_plan_id     der Tarif. Markiert seine Karte im Fenster als "Current plan" und
+                                 geht als current_plan_id hinaus -- aber nur, solange
+                                 has_active_access nicht false ist: ein beendetes Abo muss man dort
+                                 wieder buchen koennen
+     billing.plan_name           Current plan
+     billing.billing_interval    Billing interval ("monthly" | "yearly", auch "month"/"year")
+     billing.current_price_eur   Billing per interval, Betrag JE TAKT (4380 im Jahr, nicht 365)
+     billing.next_billing_at     Next billing date -- nur, wenn sich das Abo verlaengert (nicht bei
+                                 status "canceled", is_active false oder cancel_at_period_end true),
+                                 sonst "–". Die RPC liefert das Datum auch fuer ein gekuendigtes Abo.
+     billing.canceled_at, access_ends_at, trial_ends_at   nur als Zeile, wenn ein Wert kommt
+     billing.can_manage_billing  false -> kein "Manage Billing"
+  Datumswerte als ISO-Text; eine nackte Zahl gilt als Stripe-Zeitstempel in Sekunden.
   Was die Tabelle aus dem Text macht (gemessen am 28.09. gegen settings-billing.js):
-     lesbar, mit Tarif               die Zeilen
-     "", "null", "{}", "[]"          "Current plan: No active plan" und "See all plans"
-     unlesbar oder abgeschnitten     "Could not load your subscription" statt der Zeilen
-     Schritt kommt nie               Skelett, nach 25s derselbe Hinweis
+     lesbar, mit Tarif                 die Zeilen
+     "", "null", "{}", billing null    "Current plan: No active plan" und "See all plans"
+     ok:false, unlesbar, abgeschnitten "Could not load your subscription" statt der Zeilen
+     Schritt kommt nie                 Skelett, nach 25s derselbe Hinweis
 
   DIE TARIFE -- die Liste der Tarif-RPC unveraendert. Gelesen werden:
      id, name, monthly_price_eur, yearly_price_eur, prompts_per_day, competitors_max_active,
@@ -82,6 +87,8 @@
       Das Fenster ist aufgegangen. Der Workflow holt die Tarif-RPC und ruft Schritt 2. Bis die
       Antwort da ist, stehen die Tarife vom letzten Mal (oder drei Kartenhuellen); kommt nach 8s
       nichts, steht "Could not load the plans" da.
+      current_plan_id = billing.billing_plan_id aus Schritt 1 -- LEER, solange das Team keinen
+      Zugang hat (has_active_access false). Dasselbe gilt fuer ublSelectPlan.
 
   data-select-plan-fn  = "bubble_fn_ublSelectPlan"
       {"team_id":"…","plan_id":"54be31d2-…","plan_name":"Essential","billing_interval":"yearly",
@@ -116,7 +123,6 @@
      data-cdn-pin="CDN_PIN"
      data-isdark="no"
      data-team="TEAM_ID"
-     data-plan-id="PLAN_ID"
      data-manage-fn="bubble_fn_ublManage"
      data-plans-fn="bubble_fn_ublPlans"
      data-select-plan-fn="bubble_fn_ublSelectPlan"></div>
@@ -223,21 +229,46 @@
   sofort sieht, ob das Element ueberhaupt laeuft. Dieselbe Form wie oben, nur steht im Backtick
   der Text.
 
-  ---- STATISCH 1: DAS ABO -- BEISPIEL, KEINE ECHTEN DATEN ----
-  Fuer das Abo gibt es noch keine Nutzlast aus der RPC. Das hier ist ein ERFUNDENES Beispiel in
-  genau der Form, die die Komponente liest: das Team auf "Professional" (die Id stammt aus der
-  echten Tarifliste unten), jaehrlich, 2220 EUR im Jahr. Sobald die Abo-RPC steht, ersetzt ihr
-  Ergebnis diesen Text.
+  ---- STATISCH 1: DAS ABO -- die echte Antwort der Abo-RPC vom 28.09., unveraendert ----
+  Ein gekuendigtes Enterprise-Abo (status "canceled", has_active_access false): die Tabelle zeigt
+  Enterprise, Yearly, 4.380 EUR im Jahr, "–" als naechste Abbuchung, dazu Canceled at und Access
+  ends at; im Fenster traegt KEINE Karte "Current plan".
 (function () {
   var ABO = `{
-  "plan_id": "3129be58-d59a-4221-ba53-7b2e4131cf5f",
-  "plan_name": "Professional",
-  "billing_interval": "yearly",
-  "price_eur": 2220.00,
-  "next_billing_date": "2026-10-28T09:00:00+00:00",
-  "canceled_at": null,
-  "access_ends_at": null,
-  "trial_ends_at": null
+    "ok": true,
+    "billing": {
+        "status": "canceled",
+        "ended_at": "2026-07-30T10:18:28+00:00",
+        "is_active": false,
+        "plan_name": "Enterprise",
+        "trial_days": 0,
+        "canceled_at": "2026-07-30T10:18:28+00:00",
+        "has_billing": true,
+        "is_past_due": false,
+        "is_trialing": false,
+        "status_label": "Deleted",
+        "trial_ends_at": null,
+        "access_ends_at": "2026-07-30T10:18:28+00:00",
+        "billing_plan_id": "a980c741-807e-43dd-9617-8e06b82999ba",
+        "next_billing_at": "2027-05-02T10:47:48+00:00",
+        "prompts_per_day": 350,
+        "billing_interval": "yearly",
+        "yearly_price_eur": 4380.00,
+        "current_price_eur": 4380.00,
+        "has_active_access": false,
+        "monthly_price_eur": 429.00,
+        "can_manage_billing": true,
+        "current_period_end": "2027-05-02T10:47:48+00:00",
+        "cancel_requested_at": null,
+        "cancel_at_period_end": false,
+        "competitors_max_active": 15,
+        "cancellation_effective_at": null
+    },
+    "team_id": "2735aac6-d2cb-4110-976c-f6ac4dec8d5a",
+    "team_name": "upstreem",
+    "deleted_at": "2026-07-30T10:18:31.669+00:00",
+    "is_deleted": true,
+    "deletion_requested_at": "2026-07-30T10:18:31.669+00:00"
 }`
     .replace(/:\s*([,}\]])/g, ": null$1")
     .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });

@@ -25,7 +25,8 @@
      Karten      UC.makePlans (core)
 
    ── Daten hinein (Run-JS, siehe bubble/settings_billing_bubble.html) ───────
-     setBillingSubscription(TEXT)     das Abo, ein Objekt (Schluessel siehe aboLesen)
+     setBillingSubscription(TEXT)     die Nutzlast der Abo-RPC unveraendert: {ok, billing, team_id}
+                                      (Schluessel siehe aboLesen)
      setBillingPlans(TEXT)            alle Tarife, die Liste der Tarif-RPC unveraendert
      resetBilling()                   zurueck ins Skelett, Vorrat geleert (Teamwechsel)
    Alle drei auch mit der Instanz davor: setBillingSubscription("INSTANCE_ID", TEXT). Ohne sie
@@ -36,7 +37,10 @@
      ublPlans       { team_id, current_plan_id }              Fenster geoeffnet -> Tarif-RPC holen
      ublSelectPlan  { team_id, plan_id, plan_name, billing_interval, price_eur,
                       monthly_price_eur, yearly_price_eur, trial_days, current_plan_id }
-   team_id kommt aus data-team; fehlt es, haengt core die Team-Id der Seite an (makeFire). */
+   team_id kommt aus der Nutzlast des Abos (team_id), sonst aus data-team, sonst haengt core die
+   Team-Id der Seite an (makeFire). current_plan_id ist der Tarif, auf den das Team GERADE Zugang
+   hat (billing_plan_id bei has_active_access), sonst leer.
+   Die Tarif-Id kommt NICHT uebers Element: data-plan-id gibt es seit dem 28.09. nicht mehr. */
 (function () {
   "use strict";
 
@@ -145,14 +149,33 @@
     var mount;
 
     /* ---- Das Abo lesen ------------------------------------------------------------------------
-       Die Schluessel (so in der Vorlage dokumentiert, die RPC liefert sie so oder wird so gebaut):
-         plan_id, plan_name          der laufende Tarif; plan_id markiert ihn im Fenster
-         billing_interval            "monthly" | "yearly" (auch month/year, Stripe-Schreibweise)
-         price_eur                   Betrag JE TAKT (2220 im Jahr, nicht 185 im Monat)
-         next_billing_date           naechste Abbuchung
+       DIE NUTZLAST DER ABO-RPC (28.09. geliefert), unveraendert aus dem ersten Run-JS-Schritt:
+         { "ok": true, "team_id": "…", "team_name": "…", …,
+           "billing": { "billing_plan_id", "plan_name", "billing_interval", "current_price_eur",
+                        "next_billing_at", "canceled_at", "access_ends_at", "trial_ends_at",
+                        "status", "is_active", "has_active_access", "cancel_at_period_end",
+                        "has_billing", "can_manage_billing", … } }
+       Die Tarif-Id kommt NUR von hier (billing_plan_id) -- nicht mehr aus einem Attribut am
+       Element (28.09. so bestellt). Gelesen wird:
+         ok:false                     die RPC sagt selbst, dass es nicht ging -> kaputt, nicht leer
+         billing null, has_billing:false   kein Abo -> "No active plan"
+         billing_plan_id, plan_name   der Tarif; die Id markiert ihn im Fenster (nur mit Zugang)
+         current_price_eur            Betrag JE TAKT (4380 im Jahr, nicht 365 im Monat)
+         next_billing_at              naechste Abbuchung -- nur bei einem Abo, das sich verlaengert
          canceled_at, access_ends_at, trial_ends_at   nur als Zeile, wenn ein Wert da ist
-       Ergebnis: { ok: true, abo } oder { ok: false }. abo null heisst: lesbar, aber kein Abo --
-       die Tabelle sagt dann "No active plan". Leer und kaputt sind zwei Dinge (CLAUDE.md 2). */
+         has_active_access            false: der Tarif ist im Fenster NICHT "Current plan"
+         can_manage_billing           false: kein "Manage Billing"
+         team_id                      geht in jedes Ereignis
+       Ohne den Umschlag "billing" wird das Objekt selbst gelesen, mit den frueheren Namen als
+       Rueckfall (plan_id, price_eur, next_billing_date) -- so stand es bis zum 28.09. in der Vorlage.
+       Ergebnis: { ok: true, abo, teamId, verwalten } oder { ok: false }. abo null heisst: lesbar,
+       aber kein Abo. Leer und kaputt sind zwei Dinge (CLAUDE.md 2). */
+    /* Ein ausdrueckliches Nein, in jeder Form, in der es ankommen kann: false aus echtem JSON,
+       "false"/"no" aus einem Bubble-Ausdruck. Fehlt der Wert, ist es KEIN Nein. */
+    function nein(v) {
+      if (v === false) return true;
+      return /^(false|no|0)$/i.test(String(v == null ? "" : v).trim());
+    }
     function datum(v) {
       if (v == null) return "";
       /* Stripe zaehlt in SEKUNDEN seit 1970. Eine nackte Zahl wird deshalb umgerechnet, statt als
@@ -183,24 +206,44 @@
         p = p[0];
       }
       if (!p || typeof p !== "object" || isArr(p)) return { ok: false };
-      /* Ein Umschlag {"subscription": {...}} wird ausgepackt -- die RPC darf ihr Ergebnis so
-         benennen, ohne dass die Komponente ins Leere greift. */
-      if (p.subscription && typeof p.subscription === "object") {
-        p = isArr(p.subscription) ? (p.subscription[0] || {}) : p.subscription;
+      if (nein(p.ok)) return { ok: false };
+      var teamId = txt(p.team_id);
+      var b = p;
+      if (Object.prototype.hasOwnProperty.call(p, "billing")) {
+        b = p.billing;
+        if (b == null) return { ok: true, abo: null, teamId: teamId, verwalten: null };
+        if (typeof b !== "object" || isArr(b)) return { ok: false };
+      } else if (p.subscription && typeof p.subscription === "object") {
+        /* Der fruehere Umschlag {"subscription": {...}} -- gelesen wie bisher. */
+        b = isArr(p.subscription) ? (p.subscription[0] || {}) : p.subscription;
       }
+      var verwalten = nein(b.can_manage_billing) ? false : null;
+      if (nein(b.has_billing)) return { ok: true, abo: null, teamId: teamId, verwalten: verwalten };
+      function erstes(a, alt) { return a != null && txt(a) !== "" ? a : alt; }
+      /* Verlaengert sich das Abo? Nur dann gibt es eine naechste Abbuchung. Die RPC liefert
+         next_billing_at auch fuer ein gekuendigtes Abo (gemessen an der Nutzlast vom 28.09.: status
+         "canceled", has_active_access false, next_billing_at 2027) -- das waere in der Tabelle eine
+         Abbuchung, die nie kommt. Die Zeile bleibt (so bestellt), mit "–". */
+      var status = txt(b.status).toLowerCase();
+      var verlaengert = !nein(b.is_active) && !(b.cancel_at_period_end === true ||
+        /^(true|yes)$/i.test(String(b.cancel_at_period_end == null ? "" : b.cancel_at_period_end))) &&
+        status !== "canceled" && status !== "cancelled";
       var abo = {
-        planId: txt(p.plan_id),
-        planName: txt(p.plan_name),
-        interval: UC.planInterval(p.billing_interval),
-        intervalRoh: txt(p.billing_interval),
-        preis: UC.toNum(p.price_eur),
-        naechste: datum(p.next_billing_date),
-        gekuendigt: datum(p.canceled_at),
-        zugangBis: datum(p.access_ends_at),
-        testBis: datum(p.trial_ends_at)
+        planId: txt(erstes(b.billing_plan_id, b.plan_id)),
+        planName: txt(b.plan_name),
+        interval: UC.planInterval(b.billing_interval),
+        intervalRoh: txt(b.billing_interval),
+        preis: UC.toNum(erstes(b.current_price_eur, b.price_eur)),
+        naechste: verlaengert ? datum(erstes(b.next_billing_at, b.next_billing_date)) : "",
+        gekuendigt: datum(b.canceled_at),
+        zugangBis: datum(b.access_ends_at),
+        testBis: datum(b.trial_ends_at),
+        /* Hat das Team GERADE Zugang? Nur dann ist sein Tarif im Fenster "Current plan": ein
+           beendetes Abo muss man dort wieder buchen koennen, und ohne Knopf ginge das nicht. */
+        aktiv: !nein(b.has_active_access)
       };
       var leer = !abo.planId && !abo.planName && !abo.gekuendigt && !abo.zugangBis && !abo.testBis;
-      return { ok: true, abo: leer ? null : abo };
+      return { ok: true, abo: leer ? null : abo, teamId: teamId, verwalten: verwalten };
     }
     /* ---- Die Tarife lesen ---------------------------------------------------------------------
        Die Liste der Tarif-RPC, unveraendert. Auch ein Umschlag {"plans": [...]} geht. Unlesbar
@@ -239,6 +282,11 @@
 
       var state = {
         teamId: saved.teamId || teamJetzt,
+        /* Das Team aus der Nutzlast (team_id) -- es gewinnt fuer die Ereignisse gegen data-team:
+           die RPC sagt, zu wem das Abo gehoert, das hier steht. */
+        aboTeam: saved.aboTeam || "",
+        /* can_manage_billing: false blendet "Manage Billing" aus; null heisst "nicht gesagt". */
+        verwalten: saved.verwalten === false ? false : null,
         abo: saved.abo || null,
         aboDa: !!saved.aboDa,
         aboFehler: !!saved.aboFehler,
@@ -302,11 +350,17 @@
         elManageErr.querySelector(".up-formerr-in").textContent =
           UC.t("The billing portal could not be opened. Please reload the page.");
       }
-      /* Die aktuelle Tarif-Id: aus dem Abo, sonst aus data-plan-id (TEXT, so in der Vorlage).
-         Das Attribut ist der Rueckfall fuer ein Abo ohne plan_id -- ohne Markierung staende an
-         JEDER Karte "Get started", auch an der, die der Nutzer schon hat. */
+      /* Die Tarif-Id des Abos -- NUR aus dem ersten Run-JS-Schritt (billing_plan_id). Bis zum 28.09.
+         gab es daneben data-plan-id am Element; so bestellt, dass sie nicht mehr uebers Element
+         kommt, damit das Element ohne Ausdruck fuer den Tarif auskommt. */
       function aktuelleId() {
-        return (state.abo && state.abo.planId) || feld(root.getAttribute("data-plan-id")) || "";
+        return (state.abo && state.abo.planId) || "";
+      }
+      /* Die Id, die im Fenster "Current plan" traegt und als current_plan_id hinausgeht: dieselbe,
+         aber nur solange das Team Zugang hat (has_active_access). Ein beendetes Abo hat keinen
+         laufenden Tarif -- seine Karte bekommt wieder "Get started". */
+      function markierteId() {
+        return state.abo && state.abo.aktiv === false ? "" : aktuelleId();
       }
       /* Der Name: aus dem Abo, sonst aus der Tarifliste, falls sie schon da ist. */
       function planName() {
@@ -390,15 +444,19 @@
       }
       function render() {
         texte();
+        /* can_manage_billing: false -- der Knopf fuehrte in ein Portal, das die RPC diesem Nutzer
+           verweigert. Ausgeblendet erst auf ein ausdrueckliches Nein; solange nichts gesagt ist,
+           steht er da (settings-billing.css, [hidden]). */
+        elManage.hidden = state.verwalten === false;
         elTable.innerHTML = tabelleHtml();
       }
 
       /* ---- Manage Billing ---------------------------------------------------------------------- */
-      /* team_id VORN und aus DIESEM Element, nicht aus dem ersten [data-team] der Seite: das
-         Portal gehoert zu dem Team, dessen Abo hier steht. Ohne Attribut haengt core die Team-Id
-         der Seite an (makeFire). */
+      /* team_id VORN: zuerst die aus der Nutzlast (das Team, dem das Abo hier gehoert), sonst
+         data-team DIESES Elements, nicht das erste [data-team] der Seite. Ohne beides haengt core
+         die Team-Id der Seite an (makeFire). */
       function mitTeam(o) {
-        var tid = feld(root.getAttribute("data-team"));
+        var tid = state.aboTeam || feld(root.getAttribute("data-team"));
         if (!tid) return o;
         var out = { team_id: tid };
         for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) out[k] = o[k];
@@ -477,7 +535,8 @@
       function persist() {
         if (!root.isConnected) return;
         STORE[instanceId] = {
-          teamId: state.teamId, abo: state.abo, aboDa: state.aboDa, aboFehler: state.aboFehler,
+          teamId: state.teamId, aboTeam: state.aboTeam, verwalten: state.verwalten,
+          abo: state.abo, aboDa: state.aboDa, aboFehler: state.aboFehler,
           plans: state.plans, plansFehler: state.plansFehler,
           iv: state.iv, ivGewaehlt: state.ivGewaehlt,
           warteBis: warteBis
@@ -568,7 +627,7 @@
           D.kit = UC.makePlans(D.body, {
             plans: state.plans,
             interval: aktuellesIv(),
-            currentId: aktuelleId(),
+            currentId: markierteId(),
             cta: "Get started",
             fuss: "Prices exclude VAT. Cancel any time.",
             onInterval: function (iv) { state.iv = iv; state.ivGewaehlt = true; persist(); },
@@ -576,7 +635,7 @@
           });
           return;
         }
-        D.kit.setCurrent(aktuelleId());
+        D.kit.setCurrent(markierteId());
         D.kit.setInterval(aktuellesIv());
         D.kit.setPlans(state.plans);
       }
@@ -634,7 +693,7 @@
         /* ZULETZT feuern: antwortet der Workflow im selben Zug (ein statischer Schritt), findet
            seine Antwort den Wartezustand schon gesetzt und beendet ihn -- andersherum setzte das
            Oeffnen ihn danach wieder auf "wartet". */
-        fire("data-plans-fn", "ublPlans", mitTeam({ current_plan_id: aktuelleId() }));
+        fire("data-plans-fn", "ublPlans", mitTeam({ current_plan_id: markierteId() }));
       }
       function planeSchliessen() {
         var D = DLG[instanceId];
@@ -682,6 +741,8 @@
           state.abo = r.abo;
           state.aboDa = true;
           state.aboFehler = false;
+          if (r.teamId) state.aboTeam = r.teamId;
+          state.verwalten = r.verwalten === false ? false : null;
         } else {
           /* Unlesbar ist nicht leer (CLAUDE.md 2): die Tabelle sagt es, statt still das alte Abo
              stehen zu lassen. */
@@ -695,7 +756,7 @@
            durchgelaufen sein. Den Takt nur, wenn der Nutzer ihn nicht selbst gewaehlt hat. */
         var D = DLG[instanceId];
         if (D && D.offen && D.ctrl === ctrl && D.kit) {
-          D.kit.setCurrent(aktuelleId());
+          D.kit.setCurrent(markierteId());
           if (!state.ivGewaehlt) D.kit.setInterval(aktuellesIv());
         }
       }
@@ -730,6 +791,7 @@
           elManage.removeAttribute("aria-busy");
           manageFehler(false);
           state.abo = null; state.aboDa = false; state.aboFehler = false;
+          state.aboTeam = ""; state.verwalten = null;
           state.plans = null; state.plansFehler = false; state.plansWarten = false;
           state.iv = ""; state.ivGewaehlt = false;
           /* Geloescht und nicht mit dem leeren Stand ueberschrieben: der zurueckgesetzte Stand IST
@@ -749,9 +811,10 @@
       };
       root.__ublController = ctrl;
 
-      /* Aendert Bubble data-team oder data-plan-id AN ORT UND STELLE (ohne Neuaufbau), gilt ab
-         sofort der neue Wert. Ein anderes Team heisst: das Abo hier ist das falsche -- zurueck ins
-         Skelett, bis das neue kommt. */
+      /* Aendert Bubble data-team AN ORT UND STELLE (ohne Neuaufbau), gilt ab sofort der neue Wert.
+         Ein anderes Team heisst: das Abo hier ist das falsche -- zurueck ins Skelett, bis das neue
+         kommt. (data-plan-id stand hier bis zum 28.09. mit; die Tarif-Id kommt jetzt nur noch aus
+         dem Run-JS-Schritt.) */
       if (window.MutationObserver) {
         new MutationObserver(function () {
           var t = feld(root.getAttribute("data-team"));
@@ -759,9 +822,9 @@
           if (t) state.teamId = t;
           render();
           var D = DLG[instanceId];
-          if (D && D.offen && D.ctrl === ctrl && D.kit) D.kit.setCurrent(aktuelleId());
+          if (D && D.offen && D.ctrl === ctrl && D.kit) D.kit.setCurrent(markierteId());
           persist();
-        }).observe(root, { attributes: true, attributeFilter: ["data-team", "data-plan-id"] });
+        }).observe(root, { attributes: true, attributeFilter: ["data-team"] });
       }
 
       /* Ein Fenster, das die VORIGE Wurzel dieser Instanz offen liess, geht zu -- es redet mit
