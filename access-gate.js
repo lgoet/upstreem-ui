@@ -10,6 +10,8 @@
    Zahlungsmethode richten -- und die Wege hinaus: ein anderes Team, ein neues Team, abmelden.
    Ohne einen Weg hinaus saesse fest, wer in mehreren Teams ist (auch jeder von upstreem, der ein
    ausgelaufenes Kundenteam oeffnet).
+   Solange es steht, geht kein Drawer der App auf, auch nicht aus einem Link (siehe "Kein Drawer
+   hinter der Sperre").
 
    ── Was sie NICHT ist ───────────────────────────────────────────────────────
    Sie ist das Schild an der Tuer, nicht das Schloss. Wer die Entwicklerwerkzeuge oeffnet, nimmt
@@ -100,7 +102,8 @@
     var esc = UC.esc;
 
     var MISSING = ["makeMount", "makeFire", "makeLate", "leerHtml", "icon", "esc", "fmtDate", "t",
-                   "themeParam", "readBubble", "toNum", "planInterval", "plaeneLesen", "makePlanDialog"]
+                   "themeParam", "readBubble", "toNum", "planInterval", "plaeneLesen", "makePlanDialog",
+                   "drawerRiegel"]
       .filter(function (k) { return typeof UC[k] !== "function"; });
     if (MISSING.length && window.console) {
       console.error("[access-gate] Die core.js auf dieser Seite ist AELTER als access-gate.js, es " +
@@ -118,6 +121,48 @@
        steht (siehe wurzelWache).
        Die Uhr fuer die Tarife (8s) fuehrt das Tarif-Fenster selbst (core, makePlanDialog). */
     var KLICK_SPERRE_MS = 4000, TEAM_SUCHE_MS = 20000, WURZEL_PRUEF_MS = 1500;
+
+    /* ---- Kein Drawer hinter der Sperre (28.09.) -------------------------------------------------
+       Bestellt: "dass in dem Zustand keine Drawer offen sein koennen -- wenn man mit einem
+       Drawer-Link auf die Seite kommt und das Team keinen Zugang hat, sollen sich die Drawer gar
+       nicht erst oeffnen, oder zumindest nicht angezeigt werden." Drei Teile, fuer zwei
+       Reihenfolgen:
+         - Die Sperre kommt ZUERST (der Normalfall): die Host-App stellt einen Drawer aus der
+           Adresse (?detail=...) erst mit drawersReady() her, und das steht am ENDE des
+           Seiten-Workflows, hinter der Quota-RPC. Dann haelt der Riegel aus core den Aufruf von
+           openDrawer auf -- es geht nichts auf, und der Bubble-Workflow des Drawers mit seinen
+           RPCs laeuft gar nicht erst los.
+         - Der Drawer war SCHON offen, als die Sperre kam (Quota-Zeile langsamer als der Rest):
+           dann geht er zu, siehe drawerZu.
+         - Und ausgeblendet ist jeder Drawer, solange die Sperre steht (access-gate.css): fuer
+           die 180ms, in denen einer hinausgleitet, und fuer eine Host-App ohne closeAllDrawers.
+       Alles haengt an EINER Klasse am <html>. Sie folgt dem, was zu sehen ist -- irgendein Gate
+       mit is-shown --, und keinem Zaehler: so bleibt sie richtig, egal wie viele Wurzeln,
+       Neuaufbauten oder Kopien dieser Datei es auf der Seite gab. */
+    var SPERR_KLASSE = "uag-gesperrt";
+    function sperrMarke() {
+      document.documentElement.classList.toggle(SPERR_KLASSE, !!document.querySelector(".uag-backdrop.is-shown"));
+    }
+    if (typeof UC.drawerRiegel === "function") {
+      UC.drawerRiegel(function () { return document.documentElement.classList.contains(SPERR_KLASSE); });
+    }
+    /* Ein offener Drawer geht zu, mit dem Werkzeug der Host-App selbst (window.closeAllDrawers,
+       Drawer-System v4): es schliesst alle, nimmt den Scroll-Lock von #main und den Drawer aus der
+       Adresse, genau wie ein Klick auf das X -- ein Neuladen oeffnet ihn also nicht wieder, und
+       nach einem Teamwechsel ohne Neuladen steht nicht der Drawer des alten Teams da.
+       Nur, wenn wirklich einer offen ist: ohne offenen Drawer naehme closeAllDrawers trotzdem die
+       Klasse drawer-locked von #main, und die setzen auch opportunities und prompt-research fuer
+       ihre eigenen Flaechen. Fehlt das Werkzeug (aeltere Host-App), schliesst core die Drawer,
+       deren Oeffnen es mitbekommen hat; was dann noch offen ist, bleibt ausgeblendet. */
+    function drawerZu() {
+      if (!document.querySelector('[id^="drawer-"].open')) return;
+      try {
+        if (typeof window.closeAllDrawers === "function") window.closeAllDrawers();
+        else if (typeof UC.closeAllDrawers === "function") UC.closeAllDrawers();
+      } catch (e) {
+        if (window.console) console.warn("[access-gate] Die offenen Drawer liessen sich nicht schliessen:", e);
+      }
+    }
 
     /* Bubble-Platzhalter sind kein Wert -- nur die dieser Vorlage (settings-billing, 27.09.). */
     var PLATZHALTER = { TEAM_ID: 1, INSTANCE_ID: 1 };
@@ -320,8 +365,6 @@
                 '<button type="button" class="up-iconbtn uag-back" data-uag-back hidden>' +
                   UC.icon("arrowLeft", 2) + '</button>' +
                 '<div class="uag-heading">' +
-                  '<span class="up-sent uag-status" data-uag-status hidden>' +
-                    '<span class="up-sent-dot"></span><span class="up-sent-val"></span></span>' +
                   '<h2 class="uag-title" id="uag-t-' + n + '" data-uag-titel></h2>' +
                   '<p class="uag-text" id="uag-d-' + n + '" data-uag-text></p>' +
                 '</div>' +
@@ -339,7 +382,6 @@
           card: back.querySelector(".uag-card"),
           zurueck: back.querySelector("[data-uag-back]"),
           marke: back.querySelector("[data-uag-marke]"),
-          status: back.querySelector("[data-uag-status]"),
           titel: back.querySelector("[data-uag-titel]"),
           text: back.querySelector("[data-uag-text]"),
           body: back.querySelector("[data-uag-body]"),
@@ -490,16 +532,9 @@
         h += wegHtml("logout", "logOut", "Log out");
         return h;
       }
-      /* Die Lage in einem Wort, als Pille ueber der Ueberschrift. Rot nur, wo etwas schiefging
-         (offene Zahlung, geloeschtes Team); ein beendetes Abo oder eine abgelaufene Testphase
-         ist ein Zustand, kein Fehler, und bekommt den neutralen Ton. */
-      var STATUS = {
-        ended:   { lbl: "Subscription ended", ton: "var(--vc-third)" },
-        trial:   { lbl: "Trial ended",        ton: "var(--vc-third)" },
-        pastdue: { lbl: "Payment failed",     ton: "var(--vt-down)" },
-        noplan:  { lbl: "No active plan",     ton: "var(--vc-third)" },
-        deleted: { lbl: "Team deleted",       ton: "var(--vt-down)" }
-      };
+      /* Keine Statuspille ueber der Ueberschrift mehr (28.09.: "mach den Team-geloescht-Chip
+         weg"). Sie sagte in zwei Woertern, was die Ueberschrift direkt darunter in einem Satz sagt
+         -- in allen fuenf Lagen, deshalb ist sie fuer alle weg, nicht nur fuer das geloeschte Team. */
       /* Das Logo oben links. Eigene Quellen hat das Element nur, wenn Bubble sie setzt (data-logo,
          data-logo-dark -- dieselben Namen wie auf der Anmeldeseite). Ohne sie nimmt es die der
          Seitenleiste, die im selben Reusable steht und ihre Logos ohnehin traegt
@@ -590,10 +625,6 @@
         G.body.hidden = !teams;
         G.meta.setAttribute("aria-label", UC.t("Account"));
         G.meta.innerHTML = metaHtml(L, teams);
-        var st = STATUS[L.art] || STATUS.ended;
-        G.status.hidden = teams;
-        G.status.querySelector(".up-sent-dot").style.background = st.ton;
-        G.status.querySelector(".up-sent-val").textContent = UC.t(st.lbl);
         if (teams) {
           G.titel.textContent = UC.t("Switch team");
           G.text.textContent = UC.t("Open another team you belong to.");
@@ -623,6 +654,9 @@
            Topic-Modal, derselbe Kniff). */
         void G.back.offsetWidth;
         G.back.classList.add("is-shown");
+        /* Erst die Klasse, dann zu: so gleitet der Drawer schon ausgeblendet hinaus. */
+        sperrMarke();
+        drawerZu();
         /* Der Inhalt kommt in zwei Stufen herein (access-gate.css, Auftritt). Die Klasse geht nach
            dem Durchlauf wieder ab, sonst liefe die Bewegung beim naechsten Erscheinen nicht noch
            einmal -- und bei jedem Neuzeichnen nicht versehentlich mit. */
@@ -649,6 +683,7 @@
         if (G.back.contains(document.activeElement)) { try { document.activeElement.blur(); } catch (e) {} }
         G.offen = false;
         G.back.classList.remove("is-shown");
+        sperrMarke();
         G.back.setAttribute("aria-hidden", "true");
         if (G.taste) window.removeEventListener("keydown", G.taste, true);
         G.taste = null;

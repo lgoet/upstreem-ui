@@ -6,14 +6,15 @@
    Also steht das Fenster jetzt wie eine Seite und nicht wie ein Dialog, in drei Bloecken:
      oben     Logo links, die leisen Wege rechts (Portal, Team wechseln, Abmelden) -- die Zeile
               der Anmeldeseite (auth-page.css .uau-top: Logo links, Knopf rechts, 18px Logo)
-     Mitte    Status, eine grosse Ueberschrift und der Satz darunter, senkrecht mittig wie
-              .uau-mid; Groesse, Schnitt und Laufweite der Ueberschrift wie .uau-h1, die
-              Unterzeile in --vc-muted wie .uau-sub
+     Mitte    eine grosse Ueberschrift und der Satz darunter, senkrecht mittig wie .uau-mid;
+              Groesse, Schnitt und Laufweite der Ueberschrift wie .uau-h1, die Unterzeile in
+              --vc-muted wie .uau-sub. Keine Statuspille darueber (28.09. wieder entfernt: sie
+              wiederholte die Ueberschrift in zwei Woertern).
      unten    die Knoepfe, rechtsbuendig
    Aus core bleiben: die Schale (.up-topicmodal-backdrop / -card, Schleier, Radius 18, Schatten,
    Palette fuer den body), die Knoepfe in der grossen Stufe .is-lg (40 hoch -- die Stufe der
-   ganzseitigen Flaechen), die Statuspille (.up-sent), .up-iconbtn fuer Zurueck, der Fehlerkasten
-   (.up-formerr), die Teamzeilen (.up-pop-opt mit .up-logo-box).
+   ganzseitigen Flaechen), .up-iconbtn fuer Zurueck, der Fehlerkasten (.up-formerr), die
+   Teamzeilen (.up-pop-opt mit .up-logo-box).
    Die Tarifliste ist KEIN Teil dieser Karte: UC.makePlanDialog aus core, dasselbe Fenster wie im
    Billing-Reiter (.up-plandlg* in core.css), es geht ueber dem Gate auf.
 
@@ -22,6 +23,8 @@
                      schon offen war (Export, Themen), liegt darunter und nicht darueber.
      kein Schliessen es gibt kein X und keinen Klick auf den Grund; das Fenster geht nur, wenn die
                      RPC wieder Zugang meldet (access-gate.js).
+     Drawer          die Drawer der Host-App sind ausgeblendet, solange das Fenster steht
+                     (unten, "Die Drawer der App").
      Telefon         unter 600px ist es die ganze Flaeche, ohne Rand und Radius -- eine Karte mit
                      24px Schleier drumherum laesst auf 375px keinen Platz fuer eine Ueberschrift
                      dieser Groesse, und eine Sperre ist dort ohnehin der ganze Bildschirm. */
@@ -32,9 +35,30 @@
 
 /* Zwei Klassen gegen die eine von core. */
 .uag-backdrop.up-topicmodal-backdrop { z-index: 100001; }
-/* hidden muss hier ausdruecklich gelten: .up-iconbtn und .up-sent setzen display: inline-flex, und
-   jede Autorenregel schlaegt die des Browsers fuer [hidden] (settings-billing, derselbe Fall). */
+/* hidden muss hier ausdruecklich gelten: .up-iconbtn setzt display: inline-flex, und jede
+   Autorenregel schlaegt die des Browsers fuer [hidden] (settings-billing, derselbe Fall). */
 .uag-backdrop [hidden] { display: none; }
+
+/* ---------- Die Drawer der App, solange die Sperre steht (28.09.) ----------
+   Bestellt: "dass sich die Drawer gar nicht erst oeffnen, oder zumindest nicht angezeigt werden".
+   Das Oeffnen haelt der Riegel aus core auf, und ein Drawer, der schon offen war, geht zu
+   (access-gate.js, "Kein Drawer hinter der Sperre"). Diese Regel ist das Netz darunter: fuer die
+   180ms, in denen er hinausgleitet, und fuer eine Host-App ohne closeAllDrawers -- sonst stuende
+   er rechts neben der Karte durch den Schleier sichtbar. Die Namen sind die der Host-App --
+   #drawer-<art>, sein Hintergrund #backdrop-<art> und sein Inhalt #content-<art>, dieselben, an
+   denen ihr Drawer-Skript sie findet und opportunities.js und prompt-research.js einen offenen
+   erkennen.
+   Der Inhalt steht mit Absicht EINZELN in der Liste: das CSS der Host-App setzt
+   [id^="content-"].ready { visibility: visible } -- ein Kind, das visible sagt, ist sichtbar, auch
+   wenn sein Drawer hidden ist. Ohne diese Zeile stuende der Inhalt allein ueber dem leeren Platz
+   des Drawers. Unsere Regel schlaegt ihre ueber die Spezifitaet (0,2,1 gegen 0,2,0); die Host-App
+   setzt visibility nirgends mit !important, nur opacity, transform und z-index.
+   visibility und sonst nichts: display verliert gegen den Stil, den Bubble ans Element schreibt,
+   und opacity, transform, filter oder z-index an einem fremden Element sind verboten -- sie
+   veraendern die Stapelung der Host-App (11.08.). visibility tut das nicht. */
+html.uag-gesperrt [id^="drawer-"],
+html.uag-gesperrt [id^="backdrop-"],
+html.uag-gesperrt [id^="content-"] { visibility: hidden; }
 
 /* ---------- Die Karte ----------
    760 breit und mindestens 480 hoch: gross genug, dass die Ueberschrift in der Groesse der
@@ -90,16 +114,13 @@
 .uag-link:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 .uag-link:disabled { opacity: .4; cursor: default; }
 
-/* ---------- Mitte: Status, Ueberschrift, Satz ----------
+/* ---------- Mitte: Ueberschrift, Satz ----------
    Senkrecht mittig wie .uau-mid; das Polster haelt Abstand zur Zeile oben und zu den Knoepfen,
    auch wenn die Karte nicht hoeher ist als ihr Inhalt. */
 .uag-mid { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; min-height: 0;
   padding: clamp(28px, 6vh, 56px) 0; }
 .uag-head { display: flex; align-items: flex-start; gap: 12px; }
 .uag-heading { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; }
-/* Die Lage in einem Wort, ueber der Ueberschrift: die Pille aus core, mit dem Punkt als Ton --
-   rot bei offener Zahlung und geloeschtem Team, sonst neutral (access-gate.js, STATUS). */
-.uag-status { align-self: flex-start; margin-bottom: 18px; }
 /* Die Ueberschrift der Anmeldeseite (.uau-h1): 600, eng gesetzt, mit dem Fenster wachsend. Die
    Obergrenze 36 und nicht 44 -- die Karte ist 760 breit und nicht die halbe Seite. */
 .uag-title { margin: 0; max-width: 580px;

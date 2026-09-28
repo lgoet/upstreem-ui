@@ -37,6 +37,12 @@
      (data-upstreem-logo / data-upstreem-logo-dark) -- dafuer ist NICHTS zu tun. Ein eigenes nur,
      wenn es ein anderes sein soll: data-logo und data-logo-dark am Element (dieselben Namen wie
      auf der Anmeldeseite). Ohne jedes Bild steht der Schriftzug "upstreem" als Text da.
+  9. Drawer: solange das Fenster steht, geht KEIN Drawer der App auf -- auch keiner aus einem
+     Link (?detail=...), den das Drawer-Skript nach drawersReady() wiederherstellt, und sein
+     Workflow (bubble_fn_drawer_<art>) laeuft gar nicht erst los. Dafuer ist nichts zu tun,
+     solange SCHRITT 1 unten im Seiten-Workflow VOR "drawersReady()" steht -- und da steht er,
+     weil drawersReady() ans ENDE des Workflows gehoert. Kaeme die Quota-Zeile erst danach, ginge
+     der Drawer kurz auf und mit dem Fenster wieder zu (closeAllDrawers des Drawer-Skripts).
 
   DATEN HINEIN (Run-javascript-Schritte, unten dynamisch und statisch)
      setAccessGate(TEXT)        die Zeile der Quota-RPC, unveraendert -- im Seiten-Workflow des

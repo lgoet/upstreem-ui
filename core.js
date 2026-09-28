@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261026;
+  var BUILD = 20261027;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -2376,12 +2376,8 @@
       "Ein neues Team ließ sich gerade nicht anlegen. Bitte lade die Seite neu.",
     "You could not be logged out right now. Please reload the page.":
       "Die Abmeldung hat gerade nicht geklappt. Bitte lade die Seite neu.",
-    /* Die Statuspille ueber der Ueberschrift (28.09., neues Layout nach der Anmeldeseite) und der
-       Name der Wege-Leiste oben rechts fuer Vorleseprogramme. */
-    "Subscription ended": "Abo beendet",
-    "Trial ended": "Testphase abgelaufen",
-    "Payment failed": "Zahlung fehlgeschlagen",
-    "Team deleted": "Team gelöscht",
+    /* Der Name der Wege-Leiste oben rechts fuer Vorleseprogramme. Die Statuspille daneben ist
+       seit dem 28.09. wieder weg, mit ihren vier Woertern. */
     "Account": "Konto"
   });
 
@@ -14232,6 +14228,8 @@
      Sichtbarkeit im Takt nachsehen oder einen Beobachter mitlaufen lassen.
      Wie bei showView: der Aufruf geht VOR dem Original durch, und das Original laeuft unberuehrt
      weiter -- wer sich hier eintraegt, kann den Drawer nicht verhindern und nicht verzoegern.
+     (Verhindern kann nur ein Riegel, siehe drawerRiegel -- und den setzt allein die Sperre der
+     App ohne Abo.)
      Die Argumente gehen unveraendert mit (art, id), damit ein Empfaenger weiss, WAS aufgeht. */
   /* BEIDE Richtungen, auf und zu. Nur "auf" zu kennen reicht nicht: wer wissen will, welche
      Drawer JETZT offen sind, muss auch erfahren, wenn einer geht -- sonst bleibt er fuer immer in
@@ -14252,12 +14250,34 @@
       catch(e){ if (window.console) console.warn("[drawer] ein Empfaenger von " + was + " hat geworfen:", e); }
     }
   }
-  function wrapDrawerFn(name, liste){
+  /* ---- EIN RIEGEL VOR DEM DRAWER (28.09.) ----------------------------------------------------
+     Die Zuhoerer oben koennen einen Drawer nicht verhindern, mit Absicht. Genau EINE Stelle muss
+     es koennen: die Sperre der App ohne Abo (access-gate.js). Steht sie, soll kein Drawer
+     aufgehen -- auch keiner, den die Host-App aus der Adresse wiederherstellt (?detail=... nach
+     drawersReady()), denn mit ihm liefe sein Bubble-Workflow los, mit den RPCs eines Teams ohne
+     Zugang.
+     Ein Riegel ist eine Frage: antwortet einer mit true, laeuft openDrawer NICHT -- weder die
+     Zuhoerer (die Liste der offenen Drawer bekaeme sonst einen, der nie aufging) noch das
+     Original. Wirft er, gilt das als offen: ein Fehler in einem Riegel darf nie jeden Drawer der
+     App lahmlegen. closeDrawer hat keinen Riegel -- zu geht immer. */
+  var DRAWER_RIEGEL = [];
+  function drawerRiegel(fn){
+    if (typeof fn === "function") DRAWER_RIEGEL.push(fn);
+    return function(){ var i = DRAWER_RIEGEL.indexOf(fn); if (i >= 0) DRAWER_RIEGEL.splice(i, 1); };
+  }
+  function drawerVerriegelt(args){
+    for (var i = 0; i < DRAWER_RIEGEL.length; i++){
+      try { if (DRAWER_RIEGEL[i].apply(null, args) === true) return true; } catch(e){}
+    }
+    return false;
+  }
+  function wrapDrawerFn(name, liste, mitRiegel){
     var orig = window[name];
     if (typeof orig !== "function") return false;
     if (orig.__upWrapped) return true;
     var wrapped = function(){
       var args = [].slice.call(arguments);
+      if (mitRiegel && drawerVerriegelt(args)) return;
       try { feuern(liste, args, name); } catch(e){}
       return orig.apply(this, arguments);
     };
@@ -14342,8 +14362,8 @@
   }
 
   (function watchForDrawerFns(triesLeft){
-    var a = wrapDrawerFn("openDrawer", DRAWER_SUBS);
-    var b = wrapDrawerFn("closeDrawer", DRAWER_ZU_SUBS);
+    var a = wrapDrawerFn("openDrawer", DRAWER_SUBS, true);
+    var b = wrapDrawerFn("closeDrawer", DRAWER_ZU_SUBS, false);
     if (a && b) return;
     if (triesLeft <= 0) return;
     setTimeout(function(){ watchForDrawerFns(triesLeft - 1); }, 200);
@@ -18022,6 +18042,7 @@
     messbar: messbar,
     onDrawerOpen: onDrawerOpen,
     onDrawerClose: onDrawerClose,
+    drawerRiegel: drawerRiegel,
     fireViewChange: fireViewChange,
     CITE_COLOR: CITE_COLOR,
     CITE_ALIAS: CITE_ALIAS,
