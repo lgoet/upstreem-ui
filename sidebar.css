@@ -702,7 +702,9 @@
 /* Ring und Ueberlappung sind hier NICHT verkleinert: der Abstand, den man zwischen zwei Logos
    sieht, IST der Ring, und der Versatz haengt daran. Mit 2px Ring und -3.1px Versatz standen die
    Chips sichtbar enger als dieselben Logos in den Tabellen. Beide Werte jetzt wie dort: 4px. */
-.usn-chips .up-stack-vis { box-shadow: 0 0 0 4px var(--usn-bg); }
+/* --up-stack-ring: dieselbe Farbe fuer die Flaeche, die ein Folgechip im Dunkeln zwischen Ring und
+   Logo malt (core.css, "DER VORGAENGER SCHIEN DURCH") -- sonst stuende dort die Tabellenfarbe. */
+.usn-chips .up-stack-vis { box-shadow: 0 0 0 4px var(--usn-bg); --up-stack-ring: var(--usn-bg); }
 /* 27 statt 28. Faktor 0.964 -- der Radius geht anteilig mit (8 -> 7.7). Polsterung (2px) und
    der Ueberlappungsversatz (-4px) bleiben: beides sind ganzzahlige Pixelwerte, die eine
    Aenderung von 3.6% nicht ueberleben, und der Versatz haengt zusaetzlich am Ring. */
