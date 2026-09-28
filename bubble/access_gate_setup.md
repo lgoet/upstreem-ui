@@ -27,29 +27,49 @@ zuerst baut und sich im Urteil vertut, sperrt zahlende Kunden aus.
 
 ## 1. Nachsehen, wie Teams und Abos bei dir heissen
 
-Im SQL-Editor. Nicht raten: die Namen in Schritt 2 sind Platzhalter, eingesetzt nach den Feldern,
-die deine Abo-RPC am 28.09. geliefert hat.
+Im SQL-Editor. Deine Funktionen und Tabellen liegen im Schema **`app`** (28.09. bestaetigt), nicht
+in `public`. Nichts raten: die Funktionen werden nach ihrem INHALT gesucht, nicht nach einem
+Namen. (Die erste Fassung dieses Schritts fragte nach `public.get_team_billing` -- ein geratener
+Name im falschen Schema, der mit "function does not exist" endete.)
+
+Die Abo-RPC heisst `app.get_team_billing_status_v1`, die Quota-RPC `app.get_team_plan_quota`
+(28.09. vom Nutzer). Beide mit ihrem Text, in EINER Abfrage -- ueber pg_proc und nicht ueber
+`'...'::regproc`, das bei zwei Fassungen desselben Namens abbricht:
 
 ```sql
--- a) Wo liegen Teams und Abos?
-select table_schema, table_name
+-- a) Abo-RPC und Quota-RPC samt Text:
+select p.oid::regprocedure       as funktion,
+       pg_get_functiondef(p.oid) as definition
+  from pg_proc p
+  join pg_namespace n on n.oid = p.pronamespace
+ where n.nspname = 'app'
+   and p.proname in ('get_team_billing_status_v1', 'get_team_plan_quota');
+
+-- b) Falls die Rechnung fuer has_active_access noch woanders steht: jede Funktion in app,
+--    deren Text den Namen enthaelt.
+select p.oid::regprocedure as funktion
+  from pg_proc p
+  join pg_namespace n on n.oid = p.pronamespace
+ where n.nspname = 'app'
+   and p.prosrc ilike '%has_active_access%';
+
+-- c) Die Tabellen im Schema app:
+select table_name
   from information_schema.tables
- where table_schema = 'public'
-   and (table_name ilike '%team%' or table_name ilike '%billing%' or table_name ilike '%subscr%');
-
--- b) Welche Spalten haben sie? (Namen aus a einsetzen)
-select table_name, column_name, data_type
-  from information_schema.columns
- where table_schema = 'public'
-   and table_name in ('teams', 'team_billing')
- order by table_name, ordinal_position;
-
--- c) Wie rechnet deine Abo-RPC has_active_access und can_manage_billing?
---    Den Namen der RPC aus Bubble nehmen (API Connector), hier einsetzen:
-select pg_get_functiondef('public.get_team_billing'::regproc);
+ where table_schema = 'app'
+ order by 1;
 ```
 
-**Wichtig ist c):** Deine Abo-RPC rechnet `has_active_access` schon. **Genau dieser Ausdruck**
+Liefert a) nichts, steckt die Rechnung in einer Sicht:
+
+```sql
+select table_name
+  from information_schema.views
+ where table_schema = 'app'
+   and view_definition ilike '%has_active_access%';
+```
+
+**Wichtig ist a):** Deine Abo-RPC rechnet `has_active_access` schon. **Genau dieser Ausdruck**
 gehoert in Schritt 2, nicht der Vorschlag unten. Zwei Rechnungen fuer "hat Zugang" laufen
 frueher oder spaeter auseinander, und dann zeigt der Billing-Reiter "aktiv", waehrend das Gate
 sperrt.
@@ -74,22 +94,22 @@ diesem Datum Zugang. Deshalb prueft die Funktion `deleted_at <= now()` und nicht
 `is_deleted`.
 
 ```sql
-create or replace function public.team_access(p_team_id uuid)
+create or replace function app.team_access(p_team_id uuid)
 returns table (has_access boolean, access_state text, access_ended_at timestamptz)
 language sql
 stable
 security definer
-set search_path = public
+set search_path = app, public
 as $$
   with
   t as (                                          -- ANPASSEN: eure Team-Tabelle
     select tm.id, tm.deleted_at
-      from public.teams tm
+      from app.teams tm
      where tm.id = p_team_id
   ),
   b as (                                          -- ANPASSEN: die Tabelle hinter eurer Abo-RPC
     select tb.*
-      from public.team_billing tb
+      from app.team_billing tb
      where tb.team_id = p_team_id
      order by tb.created_at desc                  -- die juengste Zeile, falls es mehrere gibt
      limit 1
@@ -141,34 +161,34 @@ as $$
 $$;
 
 -- Kurzform fuer die Wachen in Schritt 4.
-create or replace function public.team_has_access(p_team_id uuid)
+create or replace function app.team_has_access(p_team_id uuid)
 returns boolean
 language sql
 stable
 security definer
-set search_path = public
+set search_path = app, public
 as $$
-  select coalesce((select a.has_access from public.team_access(p_team_id) a), false);
+  select coalesce((select a.has_access from app.team_access(p_team_id) a), false);
 $$;
 ```
 
 Rechte wie bei deinen anderen RPCs (Bubble ruft mit demselben Schluessel):
 
 ```sql
-grant execute on function public.team_access(uuid)     to authenticated, service_role;
-grant execute on function public.team_has_access(uuid) to authenticated, service_role;
+grant execute on function app.team_access(uuid)     to authenticated, service_role;
+grant execute on function app.team_has_access(uuid) to authenticated, service_role;
 ```
 
 **Pruefen**, bevor irgendetwas gesperrt wird:
 
 ```sql
 -- das Testkonto (geloescht am 30.07.): erwartet false | deleted | 2026-07-30 ...
-select * from public.team_access('2735aac6-d2cb-4110-976c-f6ac4dec8d5a');
+select * from app.team_access('2735aac6-d2cb-4110-976c-f6ac4dec8d5a');
 
 -- alle Teams auf einen Blick. Jede Zeile mit false ansehen: stimmt das?
 select tm.id, tm.name, a.*
-  from public.teams tm
-  cross join lateral public.team_access(tm.id) a
+  from app.teams tm
+  cross join lateral app.team_access(tm.id) a
  order by a.has_access, tm.name;
 ```
 
@@ -209,10 +229,10 @@ select
   a.access_ended_at,
   <ausdruck aus der abo-rpc>        as can_manage_billing,
   tb.billing_interval
-from public.teams tm                                  -- ANPASSEN
-cross join lateral public.team_access(p_team_id) a
+from app.teams tm                                  -- ANPASSEN
+cross join lateral app.team_access(p_team_id) a
 left join lateral (                                   -- ANPASSEN: letzte Abo-Zeile
-  select b.billing_interval from public.team_billing b
+  select b.billing_interval from app.team_billing b
    where b.team_id = p_team_id order by b.created_at desc limit 1
 ) tb on true
 -- ... die vorhandenen Joins fuer Tarif und Zaehler, als LEFT JOIN ...
@@ -253,7 +273,7 @@ select p.oid::regprocedure             as funktion,
   from pg_proc p
   join pg_namespace n on n.oid = p.pronamespace
   join pg_language  l on l.oid = p.prolang
- where n.nspname = 'public'
+ where n.nspname = 'app'
    and pg_get_function_arguments(p.oid) ilike '%team%'
  order by 1;
 ```
@@ -272,17 +292,17 @@ braucht:
 
 ```sql
 -- plpgsql, RETURNS json / jsonb -- die Form, die die Komponenten als "kaputt" lesen:
-if not public.team_has_access(p_team_id) then
+if not app.team_has_access(p_team_id) then
   return json_build_object('ok', false, 'error', 'no_access');
 end if;
 
 -- plpgsql, RETURNS TABLE(...) / SETOF ... -- keine Zeilen:
-if not public.team_has_access(p_team_id) then
+if not app.team_has_access(p_team_id) then
   return;
 end if;
 
 -- plpgsql, RETURNS void (Schreib-RPCs: Prompts anlegen, Marken aendern, ...):
-if not public.team_has_access(p_team_id) then
+if not app.team_has_access(p_team_id) then
   return;
 end if;
 ```
@@ -290,7 +310,7 @@ end if;
 ```sql
 -- language sql: die Bedingung in das WHERE der letzten Abfrage
 ... where <bisherige Bedingung>
-      and public.team_has_access(p_team_id)
+      and app.team_has_access(p_team_id)
 ```
 
 **Kein `raise exception`.** Bubble zeigt bei einem Fehler aus dem API Connector jedem Nutzer ein
@@ -307,7 +327,7 @@ Der Lauf, der die Prompts eines Teams bei den Modellen abfragt (Cron, Edge Funct
 noch Teams mit Zugang:
 
 ```sql
-... where public.team_has_access(t.id)
+... where app.team_has_access(t.id)
 ```
 
 Sonst kostet ein ausgelaufenes oder geloeschtes Team jeden Tag weiter Modellaufrufe.
@@ -319,7 +339,7 @@ Sonst kostet ein ausgelaufenes oder geloeschtes Team jeden Tag weiter Modellaufr
 In der Abo-RPC `has_active_access` aus derselben Funktion nehmen:
 
 ```sql
-(select a.has_access from public.team_access(p_team_id) a)   as has_active_access
+(select a.has_access from app.team_access(p_team_id) a)   as has_active_access
 ```
 
 Dann koennen Billing-Reiter ("No active billing plan") und Gate nicht verschiedener Meinung
