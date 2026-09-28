@@ -52,10 +52,22 @@
   /* --ulh-rand: das Hauptfenster steht je Seite so weit INNERHALB der alten Spur. Es steckt in der
      Spur selbst und nicht in einem transform am Fenster: an dieser Spur haengen auch die beiden
      Schienen des Seitengitters und der Inhalt jeder Sektion. Wuerde nur das Fenster kleiner, stuenden
-     die Schienen 40px daneben -- genau das war der Fehler beim ersten Versuch.
-     Der Deckel geht mit: 1440 minus beide Raender. */
+     die Schienen 40px daneben -- genau das war der Fehler beim ersten Versuch. */
   --ulh-rand: 40px;
-  --ulh-spur: min(100% - 48px - 2 * var(--ulh-rand), calc(1440px - 2 * var(--ulh-rand)));
+  /* DER DECKEL IST WIEDER 1440 (28.09. angefordert: "im initialen, grossen Zustand Max Width
+     1440px ... wichtig max width, also schoen mitskalieren bei kleinerer page width"). Bis dahin
+     zog der Rand auch vom Deckel ab (1440 - 80 = 1360). Jetzt gilt er nur noch unterhalb des
+     Deckels: bis 1568px Seitenbreite steht das Fenster wie bisher 64px von jeder Kante, darueber
+     waechst es bis 1440 und bleibt dort.
+     Der Deckel steht an der SPUR und nicht allein am Fenster, aus demselben Grund wie der Rand:
+     Schienen, Leiste und Sektionen richten sich an ihr aus, und ein Fenster, das 40px ueber seine
+     Schienen hinaussteht, ist genau der Versatz, der am 28.08. schon einmal zurueckgenommen wurde.
+     --ulh-deckel-klein ist der Deckel der verkleinerten Fassung beim Scrollen. landing-hero.js
+     liest BEIDE Zahlen (kleinFaktor) und rechnet daraus den Faktor -- zwei Orte fuer dieselbe Zahl
+     waeren hier der Anfang davon, dass sie auseinanderlaufen. */
+  --ulh-deckel: 1440px;
+  --ulh-deckel-klein: 1300px;
+  --ulh-spur: min(100% - 48px - 2 * var(--ulh-rand), var(--ulh-deckel));
   /* Die Linie der Schienen. Heller als der Rahmen der Karten (#e7e9ec): sie laeuft ueber die ganze
      Hoehe der Seite und wird dadurch als Flaeche wahrgenommen, nicht als Linie. */
   --ulh-schiene: #ededf0;
@@ -510,8 +522,10 @@
 }
 
 /* ---------- Kleiner, sobald die Seite bewegt wird ----------
-   Das ganze Fenster geht auf 80 Prozent -- WIRKLICH skaliert, nicht schmaler: Schriftgroessen,
-   Abstaende und Polster darin bleiben im Verhaeltnis genau, wie sie sind. Ein transform kann das,
+   Das ganze Fenster geht auf seinen kleinen Zustand (seit 28.09. 1300 von 1440, also gut 90
+   Prozent; der Faktor kommt aus kleinFaktor in landing-hero.js) -- WIRKLICH skaliert, nicht
+   schmaler: Schriftgroessen, Abstaende und Polster darin bleiben im Verhaeltnis genau, wie sie
+   sind. Ein transform kann das,
    eine Aenderung der Breite nicht (dort waeren die Schriften unveraendert gross und alles andere
    enger).
    transform-origin: center: der Kasten darum behaelt seine Layouthoehe, also waechst der Abstand
@@ -1743,22 +1757,62 @@
   background: var(--vc-bg);
   box-shadow: 0 1px 2px rgba(11, 13, 24, .04), 0 8px 20px rgba(11, 13, 24, .05);
 }
-/* Die Kopfzeile der Tabelle ist in der App fett und gross, weil sie dort sortierbar ist. In einer
-   Vorschau ist sie eine Beschriftung: leichter, kleiner, ruhiger. */
+/* EIN SCHNITT JE ROLLE, IN BEIDEN TABELLENKARTEN GLEICH (28.09. angefordert: "erhoehe das font
+   weight in Prompts table und Domain table + Drilldown Cards Komponente leicht und mach es
+   einheitlich. man kann einige Sachen da noch nicht so gut lesen").
+   Gemessen standen in den zwei Karten drei Schnitte durcheinander: 400 (Seitenzahl im Knopf der
+   Domainzeilen), 500 (fast aller Text, die Kopfzeilen beider Tabellen, die Themenchips) und 600
+   (Kopfzeile des Drilldowns, Typ-Pillen, Marktkuerzel, Trend). Dieselbe Rolle trug je nach
+   Bauteil einen anderen Wert, weil jede dieser Regeln aus einer anderen Datei kommt (core,
+   domains-table, diese hier) -- die Kopfzeile des Drilldowns stand also eine Stufe ueber der
+   Kopfzeile der Tabelle direkt darueber.
+   Jetzt drei Namen und zwei Stufen, und jeder Wert ging nach oben oder blieb:
+     --ulh-vis-kopf   600  Spaltenkoepfe, auch die des Drilldowns (dort stand es schon)
+     --ulh-vis-text   550  alles, was man liest: Prompt, Domain, Seitentitel, Zahlen, Daten,
+                           Seitenzahl, die Beschriftungen der Werkzeugleiste im Drilldown
+     --ulh-vis-pille  600  was in einer Pille steht: Themen, Typen, Marktkuerzel, Trend
+   550 und nicht 600 fuer den Text: die Vorschau ist auf 74 Prozent verkleinert, der Text steht also
+   bei 9 bis 12.6px -- dort macht eine halbe Stufe ihn lesbar, eine ganze macht aus den Zeilen
+   Balken. Geist ist als variable Schrift geladen (400..700), 550 rendert also wirklich als 550.
+   Die Rangordnung zwischen Haupt- und Nebentext traegt weiter die Farbe, nicht der Schnitt.
+   Die Selektoren tragen die Karte als Klasse davor und gewinnen damit ueber die Spezifitaet gegen
+   die Regeln der Bauteile (je eine Klasse) -- nicht ueber die Reihenfolge der Dateien. */
+.ulh-vis-tab, .ulh-vis-dom { --ulh-vis-kopf: 600; --ulh-vis-text: 550; --ulh-vis-pille: 600; }
+/* Die Kopfzeile der Tabelle ist in der App gross, weil sie dort sortierbar ist. In einer Vorschau
+   ist sie eine Beschriftung: kleiner und ruhiger -- das tragen Groesse und Farbe, der Schnitt ist
+   der aller Kopfzeilen (siehe oben). */
 .ulh-vis-tab .up-thead, .ulh-vis-dom .up-thead {
   position: static; border: 0; border-radius: 0;
-  font-size: 11px; font-weight: 500; letter-spacing: .01em; color: var(--vc-muted);
+  font-size: 11px; font-weight: var(--ulh-vis-kopf); letter-spacing: .01em; color: var(--vc-muted);
   height: 40px; flex: 0 0 40px; text-transform: none;
 }
-.ulh-vis-tab .up-thead .up-td, .ulh-vis-dom .up-thead .up-td { font-weight: 500; }
+.ulh-vis-tab .up-thead .up-td, .ulh-vis-dom .up-thead .up-td,
+.ulh-vis-dom .udt-sub-head { font-weight: var(--ulh-vis-kopf); }
+.ulh-vis-tab .up-num, .ulh-vis-tab .up-stack-more,
+.ulh-vis-dom .udt-dom-title, .ulh-vis-dom .udt-num, .ulh-vis-dom .udt-date,
+.ulh-vis-dom .udt-pagesbtn .udt-pagesbtn-lbl, .ulh-vis-dom .udt-sub-title,
+.ulh-vis-dom .udt-sub-share, .ulh-vis-dom .udt-sub-date, .ulh-vis-dom .udt-sub-disp-btn,
+.ulh-vis-dom .up-filter-btn-lbl, .ulh-vis-dom .udt-sub-search-in { font-weight: var(--ulh-vis-text); }
+.ulh-vis-tab .up-topicchip-lbl, .ulh-vis-tab .up-market-code,
+.ulh-vis-dom .tct-tag-lbl, .ulh-vis-dom .up-trend { font-weight: var(--ulh-vis-pille); }
 .ulh-vis-tab .up-row, .ulh-vis-dom .up-row { border-bottom: 1px solid var(--ulh-border); }
 .ulh-vis-tab .up-row:last-child, .ulh-vis-dom .up-row:last-child { border-bottom: 0; }
 .ulh-vis-tab .up-td:first-child, .ulh-vis-dom .up-td:first-child { border-left: 0; }
-/* Die Prompt-Zeile einen Tick groesser und kraeftiger (21.09. angefordert: "1px groesser, 100
-   mehr weight"). Sie ist in dieser Karte der Gegenstand -- die Zahlen daneben erklaeren sie nur --
-   und stand in derselben Staerke da wie alles andere. */
+/* Die Prompt-Zeile ist in dieser Karte der Gegenstand -- die Zahlen daneben erklaeren sie nur.
+   21.09.: kraeftiger ("100 mehr weight"). 28.09.: noch einmal 1px groesser ("mach bitte die
+   Prompt-Text font size 1px groesser"), also 17px.
+   Die Zahl steht jetzt HIER. Vorher setzte in der ganzen Kette niemand eine Groesse: die 16px
+   waren die Vorgabe des Browsers, geerbt ueber <html>, und damit eine Groesse, die der Gastgeber
+   der Seite bestimmt und nicht diese Datei (gemessen: .up-td, .ulh-vis-in, .ulh-card und die
+   Wurzel standen alle auf 16px, keine Regel dazu). */
 .ulh-vis-prompt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  font-weight: 500; }
+  font-size: 17px; font-weight: var(--ulh-vis-text); }
+/* Der Ring zwischen den Markenzeichen ist der ABSTAND zum Nachbarn und traegt die Farbe der Zeile
+   (core.css, .up-stack-vis). Beim Ueberfahren nimmt core dafuer die Hoverfarbe der Zeile -- die
+   Zeilen der Vorschau behalten ihren Grund aber (weiter unten: "Der eigene Hover der Bauteile
+   faellt weg"), und der Ring stuende dann als grauer Kranz um jedes Zeichen. Also bleibt er beim
+   Grund. Eine Klasse mehr als die Regel in core. */
+.ulh-vis .up-row:hover .up-stack-vis { box-shadow: 0 0 0 4px var(--vc-bg); --up-stack-ring: var(--vc-bg); }
 
 /* DER AUFGEKLAPPTE BEREICH IN DER QUELLENKARTE IST HELLER (21.09. angefordert). --vt-head-bg ist
    der Ton der Tabellenkoepfe; in einer Karte, die selbst schon auf --vc-bg steht, liest er sich
@@ -2298,7 +2352,22 @@
      dazu ein deutlich kuerzerer Text (siehe landing-hero.js)
    Alles zusammen, nicht einzeln: jede einzelne Massnahme haette nicht gereicht. */
 .ulh-app .am-chat { padding-top: 12px; padding-bottom: 24px; }
-.ulh-app .am-msg .am-bubble { font-size: 15px; }
+/* Schrift und Zeilenhoehe der Nachrichten stehen als ZWEI Marken und nicht als Zahlen in der
+   Regel: das Eingabefeld darunter liest dieselben zwei (siehe gleich danach). Die Zeilenhoehe ist
+   die aus ask-mira.css (.am-bubble, 1.7) -- hier nur benannt, nicht geaendert. */
+.ulh-app { --ulh-mira-schrift: 15px; --ulh-mira-zeile: 1.7; }
+.ulh-app .am-msg .am-bubble { font-size: var(--ulh-mira-schrift); line-height: var(--ulh-mira-zeile); }
+/* DAS EINGABEFELD SCHREIBT WIE DIE NACHRICHT (28.09. angefordert: "mach die Font Settings des
+   Inputs im Inputfeld genau so, wie die der Mira Nachricht im Chat"). In der App steht die Frage
+   im Feld bei 14px und 1.5, nach dem Abschicken in der Blase bei 16 und 1.7 -- im Schaustueck bei
+   15 und 1.7, siehe oben. Man sieht hier genau diesen Uebergang, wenn die getippte Frage in den
+   Chat wandert, und dabei sprang die Schrift um eine Stufe.
+   Gemessen stimmten Familie, Schnitt (400), Laufweite (normal) und Farbe (--am-text) schon
+   ueberein, verschieden waren nur Groesse und Zeilenhoehe -- also werden nur diese zwei gesetzt.
+   Mit der Kennung, damit die Regel ueber die Spezifitaet gewinnt: ask-mira.css setzt die Groesse
+   an .am-textarea zweimal, einmal in der Grundregel und einmal fuer schmale Fenster (16px ab
+   720px abwaerts). Nur im Fenster dieser Sektion (.ulh-app), die App bleibt, wie sie ist. */
+.ulh-app #ask-mira .am-textarea { font-size: var(--ulh-mira-schrift); line-height: var(--ulh-mira-zeile); }
 .ulh-app .am-msg .am-bubble > .am-table-scroll { margin: 10px 0 24px; }
 .ulh-app .am-msg .am-bubble > p { margin-bottom: 8px; }
 .ulh-app .am-msg .am-bubble > h3 { margin-bottom: 4px; }
