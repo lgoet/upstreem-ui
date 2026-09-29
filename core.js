@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261045;
+  var BUILD = 20261046;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -9466,11 +9466,11 @@
        Kennt der Satz einen Namen nicht, bleibt p.icon unveraendert. Eine Komponente, die
        bewusst ein eigenes Zeichen schickt, verliert es also nicht -- nur die drei bekannten
        Zeilen der Prompts-Seite werden auf den Satz gezogen.
-       Seit dem 29.09. auch "All Prompts" (squareTerminal) und "Tracked" der Brands-Seite
+       Seit dem 29.09. auch "All Prompts" (scroll, Hugeicons Scroll01) und "Tracked" der Brands-Seite
        (chatPreview), beide ausdruecklich so angefordert. Ueber den Wert, nicht nur die
        Beschriftung: "Tracked" heisst auf Deutsch anders, "tracked" bleibt. */
     var NAV_ZEICHEN = {
-      allprompts: "squareTerminal", "all prompts": "squareTerminal",
+      allprompts: "scroll", "all prompts": "scroll",
       tracked: "chatPreview",
       prompt: "zap", prompts: "zap", "prompt insights": "zap",
       topic: "tags", topics: "tags",
@@ -16257,14 +16257,18 @@
        lucide-static wie jedes andere Zeichen hier. */
     scanSquare: '<path d="M16.0042 2.5C17.9974 2.61348 19.2576 2.93381 20.1619 3.83811C21.0662 4.74243 21.3865 6.00268 21.5 7.99598M7.99582 2.5C6.00261 2.61348 4.74241 2.93381 3.83812 3.83811C2.9338 4.74243 2.61347 6.00268 2.5 7.99598M21.5 16.004C21.3865 17.9973 21.0662 19.2576 20.1619 20.1619C19.2576 21.0662 17.9973 21.3865 16.004 21.5M2.5 16.004C2.61347 17.9973 2.9338 19.2576 3.83812 20.1619C4.74244 21.0662 6.00268 21.3865 7.99597 21.5"/>' +
                 '<path d="M5 12H19"/>',
-    /* Hugeicons SquareTerminal und ChatPreview01 (29.09. angefordert): die Zeichen der Reiter
+    /* Hugeicons Scroll01 und ChatPreview01 (29.09. angefordert): die Zeichen der Reiter
        "All Prompts" (Prompts-Seitenkopf) und "Tracked" (Brands-Seitenkopf). Beide stehen in
        derselben Familie wie der Rest des Satzes -- woertlich aus
-       @hugeicons/core-free-icons@4.3.5 (dist/esm/SquareTerminalIcon.js, ChatPreview01Icon.js),
-       nicht nachgezeichnet. Die Seitenkoepfe bekommen sie ueber NAV_ZEICHEN in UC.makePageNav. */
-    squareTerminal: '<path d="M7.49219 7.5L8.71873 8.55719C9.23437 9.00163 9.49219 9.22386 9.49219 9.5C9.49219 9.77614 9.23437 9.99836 8.71873 10.4428L7.49219 11.5"/>' +
-                    '<path d="M11.4922 12.5H15.4922"/>' +
-                    '<path d="M11.9922 21C15.7419 21 17.6168 21 18.9311 20.0451C19.3556 19.7367 19.7289 19.3634 20.0373 18.9389C20.9922 17.6246 20.9922 15.7497 20.9922 12C20.9922 8.25027 20.9922 6.3754 20.0373 5.06107C19.7289 4.6366 19.3556 4.26331 18.9311 3.95491C17.6168 3 15.7419 3 11.9922 3C8.24246 3 6.36759 3 5.05326 3.95491C4.62879 4.26331 4.2555 4.6366 3.9471 5.06107C2.99219 6.3754 2.99219 8.25027 2.99219 12C2.99219 15.7497 2.99219 17.6246 3.9471 18.9389C4.2555 19.3634 4.62879 19.7367 5.05326 20.0451C6.36759 21 8.24246 21 11.9922 21Z"/>',
+       @hugeicons/core-free-icons@4.3.5 (dist/esm/Scroll01Icon.js, ChatPreview01Icon.js),
+       nicht nachgezeichnet. Die Seitenkoepfe bekommen sie ueber NAV_ZEICHEN in UC.makePageNav.
+       "All Prompts" trug am selben Tag kurz SquareTerminal -- ersetzt, nicht daneben behalten:
+       ein Zeichen, das niemand mehr ruft, ist die naechste Drift. */
+    scroll: '<path d="M6 9H4.57143C3.56905 9 3.06786 9 2.70195 8.77009C2.51115 8.6502 2.3498 8.48885 2.22991 8.29805C2 7.93214 2 7.43095 2 6.42857V5C2 3.89543 2.89543 3 4 3C5.10457 3 6 3.89543 6 5V9Z"/>' +
+            '<path d="M6 9V19C6 20.1046 6.89543 21 8 21M8 21H19.1429C19.9408 21 20.3398 21 20.6606 20.8878C21.2351 20.6867 21.6867 20.2351 21.8878 19.6606C22 19.3398 22 18.9408 22 18.1429C22 17.5444 22 17.2451 21.9158 17.0046C21.7651 16.5737 21.4263 16.2349 20.9954 16.0842C20.7549 16 20.4556 16 19.8571 16H13C11.5858 16 10.8787 16 10.4393 16.4393C10 16.8787 10 17.5858 10 19C10 20.1046 9.10457 21 8 21Z"/>' +
+            '<path d="M4 3H14C16.357 3 17.5355 3 18.2678 3.73223C19 4.46447 19 5.64298 19 8V16"/>' +
+            '<path d="M10 7H15"/>' +
+            '<path d="M10 11H13"/>',
     chatPreview: '<path d="M21.9609 9C21.9865 9.72648 22 10.2302 22 11.001C22 11.7718 21.9865 12.5242 21.9609 13.2507C21.8772 15.6242 21.8353 16.8109 20.8699 17.7836C19.9046 18.7562 18.6843 18.8084 16.2437 18.9128C15.5098 18.9442 14.7498 18.9677 13.9693 18.9825C13.2282 18.9965 12.8576 19.0036 12.532 19.1276C12.2064 19.2516 11.9325 19.4865 11.3845 19.9563L9.20503 21.8252C9.07273 21.9386 8.90419 22.001 8.72991 22.001C8.32679 22.001 8 21.6742 8 21.2711V18.9229C7.91842 18.9196 7.83715 18.9163 7.75619 18.9128C5.31569 18.8084 4.09545 18.7562 3.13007 17.7836C2.16469 16.8109 2.12282 15.6242 2.03909 13.2507C2.01346 12.5242 2 11.7718 2 11.001C2 10.2302 2.01346 9.47779 2.03909 8.75131C2.12282 6.37784 2.16469 5.1911 3.13007 4.21846C4.09545 3.24582 5.3157 3.19361 7.7562 3.08919C8.48051 3.0582 9.2302 3.01483 10 3"/>' +
                  '<path d="M22 5C22 5 19.958 8 17 8C14.042 8 12 5 12 5C12 5 14 2 17 2C20 2 22 5 22 5Z"/>' +
                  '<path d="M12.1257 11H12.0007M8.125 11H8M12.2507 11C12.2507 11.1381 12.1388 11.25 12.0007 11.25C11.8627 11.25 11.7507 11.1381 11.7507 11C11.7507 10.8619 11.8627 10.75 12.0007 10.75C12.1388 10.75 12.2507 10.8619 12.2507 11ZM8.25 11C8.25 11.1381 8.13807 11.25 8 11.25C7.86193 11.25 7.75 11.1381 7.75 11C7.75 10.8619 7.86193 10.75 8 10.75C8.13807 10.75 8.25 10.8619 8.25 11Z"/>' +

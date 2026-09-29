@@ -4218,11 +4218,12 @@
    anchor to the same bottom:0, so neither ever causes a layout shift switching between the 1px
    (unselected) and 2px (selected) look. */
 .up-ph-nav::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--vc-border); }
-/* Rechts 2px mehr als links (29.09. angefordert: "dann sieht es symmetrischer aus mit den
-   Icons"). Das Zeichen vorne hat in seinem 16er-Kasten eigene Luft, die Schrift hinten keine --
-   bei gleichem Polster stand der Strich darunter links sichtbar weiter ueber als rechts. */
+/* Rechts 3px mehr als links (29.09. angefordert: erst 2 -- "dann sieht es symmetrischer aus mit
+   den Icons" --, am Abend noch 1 dazu: "so dass der aktive Strich 1px rechts weiter geht"). Das
+   Zeichen vorne hat in seinem 16er-Kasten eigene Luft, die Schrift hinten keine -- bei gleichem
+   Polster stand der Strich darunter links sichtbar weiter ueber als rechts. */
 .up-ph-navitem { display: flex; align-items: center; justify-content: center; gap: 6px;
-  height: 32px; padding: 0 14px 0 12px; cursor: pointer; user-select: none; }
+  height: 32px; padding: 0 15px 0 12px; cursor: pointer; user-select: none; }
 /* Die NICHT gewaehlten Reiter in der Drittfarbe, Zeichen und Schrift (29.09. angefordert, vorher
    --vc-muted). Damit steht die Reiterzeile im selben Ton wie die Brotkrumen darueber, deren
    Vorstufen auch --vc-third tragen; Hover hebt weiter auf --vc-text, gewaehlt bleibt Akzent. */
@@ -4315,15 +4316,16 @@
    Der Abstand von einer Beschriftung zum naechsten Zeichen bleibt, was er war: 12 + 4 + 12 = 28.
    Die Klickflaeche auch -- ::before reicht je die halbe Luecke nach aussen, die zwei Haelften
    treffen sich in der Mitte.
-   RECHTS 2px Polster (29.09. nachmittags, "symmetrischer mit den Icons"): der Strich laeuft 2px
-   ueber das Textende hinaus, so wie das Zeichen vorne in seinem Kasten Luft hat. Die Luecke
-   wird dafuer 26 -- vom Textende bis zum naechsten Zeichen bleiben es 2 + 26 = 28, kein Reiter
-   rueckt. ::before je 13, die Haelften treffen sich weiter in der Mitte. */
-.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-nav { margin-top: 0; gap: 26px; }
+   RECHTS 3px Polster (29.09.: nachmittags 2, "symmetrischer mit den Icons"; abends 1 mehr, "so
+   dass der aktive Strich 1px rechts weiter geht"): der Strich laeuft 3px ueber das Textende
+   hinaus. Die Luecke wird dafuer 25 -- vom Textende bis zum naechsten Zeichen bleiben es
+   3 + 25 = 28, kein Reiter rueckt. ::before links 13, rechts 12: zusammen genau die Luecke,
+   ohne halbe Pixel und ohne dass sich zwei Reiter ueberlappen. */
+.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-nav { margin-top: 0; gap: 25px; }
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem {
-  height: calc(var(--up-h-btn) + 16px); padding: 0 2px 0 0; position: relative; }
+  height: calc(var(--up-h-btn) + 16px); padding: 0 3px 0 0; position: relative; }
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem::before {
-  content: ""; position: absolute; top: 0; bottom: 0; left: -13px; right: -13px; }
+  content: ""; position: absolute; top: 0; bottom: 0; left: -13px; right: -12px; }
 /* Der ERSTE Reiter reicht nach links nur bis an die Kante der Gruppe: seit er bei 8 steht, lagen
    5 der 13px schon ausserhalb -- ueber dem Rand der Seitenleiste. */
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem:first-child::before { left: calc(-1 * var(--up-ph-rand-l, 0px)); }
@@ -4333,7 +4335,7 @@
    auseinander. Und keine verlaengerte Klickflaeche: bei 4px Luecke griffe sie 10px in den
    Nachbarn, und der spaetere Nachbar liegt oben -- ein Klick rechts in Reiter 1 waehlte Reiter 2. */
 .up-ph-root.is-narrow:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-nav { gap: 4px; }
-.up-ph-root.is-narrow:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem { padding: 0 14px 0 12px; }
+.up-ph-root.is-narrow:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem { padding: 0 15px 0 12px; }
 .up-ph-root.is-narrow:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem::before { content: none; }
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-nav::after {
   left: calc(-1 * var(--up-ph-rand-l, 0px)); right: calc(-1 * var(--up-ph-rand-r, 0px)); }

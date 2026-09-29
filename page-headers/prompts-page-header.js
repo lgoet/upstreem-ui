@@ -45,7 +45,7 @@
      label. Feather icons, inlined (same convention every other component in this repo uses for
      its own icon constants). */
   var PAGES = [
-    /* Kein Zeichen HIER (29.09.): "All Prompts" traegt Hugeicons SquareTerminal, und das kommt
+    /* Kein Zeichen HIER (29.09.): "All Prompts" traegt Hugeicons Scroll01, und das kommt
        aus core -- UC.makePageNav ordnet den Wert ueber NAV_ZEICHEN zu. Eine Kopie der Form in
        dieser Datei waere die Stelle, die beim naechsten Wechsel stehen bleibt. */
     { value: "allprompts", label: "All Prompts", icon: "" },
