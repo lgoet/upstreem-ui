@@ -2244,6 +2244,20 @@
     margin: 24px 0 10px;
   }
   .am-pick-crow.is-leer { display: none; }
+  /* SEIT DEM 29.09. NACHTS FAEHRT DIE ZEILE AUF UND ZU (Filter-Knopf, 200ms ease): max-height
+     aus pickFilterZeigen, Deckkraft und Abstand hier. overflow: hidden NUR zu und waehrend der
+     Fahrt -- offen und zur Ruhe gekommen setzt pickFilterZeigen es auf visible, sonst schnitte
+     es den Fokusrahmen der Chips ab, der ausserhalb des Knopfs liegt. (Ein Polster als Raum
+     dafuer ging nicht: mit border-box kommt max-height 0 nicht unter das Polster, gemessen
+     blieben 8px stehen.)
+     UEBER DIE ID, NICHT DIE KLASSE: .am-pick-crow tragen auch die Befehlszeilen, die nach einem
+     "/" in der Liste stehen (pickBefehleZeichnen, .am-pick-row.am-pick-crow). An der Klasse hing
+     das Zuklappen bis hierher mit an ihnen -- gemessen 4 von 4 Befehlen unsichtbar, solange der
+     Filter zu war. */
+  #am-pick-crow {
+    overflow: hidden;
+    transition: max-height var(--up-t-2) ease, opacity var(--up-t-2) ease, margin var(--up-t-2) ease;
+  }
   .am-pick-h {
     margin: 0; flex: 0 0 auto; white-space: nowrap;
     font-size: 12px; font-weight: 600; letter-spacing: 0;
@@ -2462,13 +2476,13 @@
   .am-pick-fan-c.is-zeichen { color: var(--am-muted-2); }
   .am-pick-fan-c.is-zeichen svg { width: 16px; height: 16px; display: block; fill: none; stroke: currentColor;
     stroke-linecap: round; stroke-linejoin: round; }
-  @media (prefers-reduced-motion: reduce){ .am-tload-logo.am-pick-fan-c { transition: none; } }
+  @media (prefers-reduced-motion: reduce){ .am-tload-logo.am-pick-fan-c, #am-pick-crow { transition: none; } }
 
   /* ---- DIE BEFEHLSCHIPS STANDARDMAESSIG ZU (29.09. angefordert) ----------------------------
      Die Zeile mit Brand, Prompt, Domain, URL kommt erst ueber den Filter-Knopf oben rechts
      (.am-pick-filterbtn, geometrisch .up-iconbtn.is-28 aus core). Offen traegt der Knopf den
      Zustand seines Hovers -- so sieht man, dass er gedrueckt ist. */
-  #ask-mira:not(.is-pick-filter) .am-pick-crow { display: none; }
+  #ask-mira:not(.is-pick-filter) #am-pick-crow { max-height: 0; opacity: 0; margin-top: 0; margin-bottom: 0; }
   .am-pick-filterbtn[aria-expanded="true"] { color: var(--vc-text); background: var(--vc-heading-bg); }
 
   .am-pick-sk { display: flex; align-items: center; gap: 11px; padding: 8px 10px; }

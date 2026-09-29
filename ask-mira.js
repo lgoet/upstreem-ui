@@ -4742,9 +4742,39 @@
   /* Die Befehlschips auf und zu (29.09.). Der Zustand haengt an der Wurzel (.is-pick-filter), die
      CSS blendet .am-pick-crow sonst aus. Beim Schliessen des Panels geht er wieder zu --
      "per default versteckt" gilt fuer jedes Oeffnen. */
+  /* AUF UND ZU MIT 200ms ease (29.09. nachts angefordert). Die Hoehe wird GEMESSEN: max-height
+     faehrt von 0 auf die echte Hoehe der Zeile und zurueck -- eine feste Obergrenze liesse sie in
+     einem Bruchteil der Zeit aufspringen und haengt davon ab, ob die Chips umbrechen. Offen steht
+     danach wieder "none", damit ein Umbruch spaeter nicht abgeschnitten wird. Deckkraft und Abstand
+     macht die CSS (.am-pick-crow). */
   function pickFilterZeigen(auf){
-    root.classList.toggle('is-pick-filter', !!auf);
+    auf = !!auf;
+    var war = root.classList.contains('is-pick-filter');
     if (elPickFilter) elPickFilter.setAttribute('aria-expanded', auf ? 'true' : 'false');
+    if (auf === war) return;
+    var c = elPickCrow;
+    if (!c){ root.classList.toggle('is-pick-filter', auf); return; }
+    clearTimeout(c.__filterUhr);
+    if (auf){
+      /* ERST messen, DANN die Klasse: scrollHeight erzwingt eine Stilberechnung, und mit der
+         Klasse schon dran steht max-height dort auf "none". Von "none" aus gibt es keinen
+         Uebergang -- die Zeile sprang auf, nur Deckkraft und Abstand liefen (gemessen). Zu
+         gemessen liefert scrollHeight trotzdem die volle Hoehe, overflow ist da hidden. */
+      var hoch = c.scrollHeight;
+      root.classList.add('is-pick-filter');
+      c.style.maxHeight = hoch + 'px';
+      c.__filterUhr = setTimeout(function(){
+        if (!root.classList.contains('is-pick-filter')) return;
+        c.style.maxHeight = 'none'; c.style.overflow = 'visible';
+      }, 240);
+    } else {
+      c.style.overflow = '';
+      c.style.maxHeight = c.getBoundingClientRect().height + 'px';
+      void c.offsetHeight;
+      root.classList.remove('is-pick-filter');
+      c.style.maxHeight = '0px';
+      c.__filterUhr = setTimeout(function(){ if (!root.classList.contains('is-pick-filter')) c.style.maxHeight = ''; }, 240);
+    }
   }
   if (elPickFilter) elPickFilter.addEventListener('click', function(e){
     e.stopPropagation();
@@ -4925,22 +4955,54 @@
   var FAECHER = [ { w: 0, n: 0, z: 5 }, { w: -12, n: 1, z: 4 }, { w: 12, n: 1, z: 4 },
                   { w: -24, n: 2, z: 3 }, { w: 24, n: 2, z: 3 } ];
   var FAECHER_ZEICHEN = ['squareStack', 'globe', 'externalLink', 'zap', 'tags'];
+  /* WOHER DIE LOGOS KOMMEN (29.09. nachts ergaenzt): zuerst Miras eigene Vorraete; fehlen die --
+     "auf dem Agentic Dashboard zuerst geoeffnet sind die Logos noch nicht da" --, dann aus den
+     zwei Listen des Dashboards, Wettbewerbsfeld und Trending Citations (power-dashboard.js meldet
+     sie als window.__upwLogoVorrat). "Relativ gleichmaessig": Marken und Quellen werden je fuer
+     sich gemischt und dann nach der LAGE verteilt -- Mitte und die zwei aeusseren Karten die eine
+     Art, die zwei dazwischen die andere. Von links nach rechts also immer abwechselnd, drei zu
+     zwei; welche Art aussen liegt, entscheidet der Zufall. Nach dem Listenplatz abwechselnd
+     gezogen standen beide Quellen links und alle Marken rechts (gemessen: M-Q-M-Q-M in der Liste
+     ergab Q Q M M M auf dem Bildschirm). Fehlt eine Art, springt die andere ein. Innerhalb einer
+     Art kommt Miras Vorrat vor dem des Dashboards. */
   function faecherWahl(){
-    var alle = _tlBrandList().map(function(b){ return { src: b.src, fb: b.fb_src || '', label: b.label, color: b.color }; })
-      .concat(_tlFaviconList().map(function(f){ return { src: f.src, fb: '', label: f.label, color: '' }; }));
+    var vorrat = window.__upwLogoVorrat || {}, gesehen = {};
+    function einmal(x){ if (!x || !x.src || gesehen[x.src]) return false; gesehen[x.src] = true; return true; }
+    var marken = _tlShuffle(_tlBrandList().map(function(b){ return { src: b.src, fb: b.fb_src || '', label: b.label, color: b.color }; }))
+      .concat(_tlShuffle((vorrat.marken || []).map(function(b){ return { src: b.src, fb: b.fb_src || '', label: b.label, color: b.color || '' }; })))
+      .filter(einmal);
+    var quellen = _tlShuffle(_tlFaviconList().map(function(f){ return { src: f.src, fb: '', label: f.label, color: '' }; }))
+      .concat(_tlShuffle((vorrat.quellen || []).map(function(f){ return { src: f.src, fb: '', label: f.label, color: '' }; })))
+      .filter(einmal);
+    var zahl = marken.length + quellen.length;
     var w = window.__amFaecher;
-    if (w && (w.length >= FAECHER.length || w.length >= alle.length)) return w;
-    w = _tlShuffle(alle).slice(0, FAECHER.length);
-    window.__amFaecher = w;
-    return w;
+    if (w && (w.length >= FAECHER.length || w.length >= zahl)) return w;
+    /* Aussen (Mitte und aeusseres Paar) braucht drei Karten, innen zwei. Reicht eine Art nur
+       fuer EINE, geht sie in die Mitte, reicht sie fuer genau zwei, nach innen -- sonst stuende
+       die einzelne Quelle schief neben der Mitte: M Q M M M. Erst danach der Zufall. */
+    var nm = marken.length, nq = quellen.length;
+    var markeAussen = (nm === 1 || nq === 2) ? true : (nq === 1 || nm === 2) ? false : Math.random() < 0.5;
+    var aus = [];
+    FAECHER.forEach(function(p){
+      var marke = (p.n % 2 === 0) === markeAussen;
+      var x = marke ? (marken.shift() || quellen.shift()) : (quellen.shift() || marken.shift());
+      if (x) aus.push(x);
+    });
+    window.__amFaecher = aus;
+    return aus;
   }
   function pickRuheZeigen(){
     if (!elPickList) return;
     var fan = elPickList.querySelector('.am-pick-fan');
+    var wahl = faecherWahl();
+    /* Neu bauen, wenn die Wahl eine andere ist -- sie wechselt nur, solange der Faecher noch
+       Zeichen statt Logos trug und inzwischen Logos angekommen sind. */
+    if (fan && fan.__wahl !== wahl) fan = null;
     if (!fan){
       elPickList.innerHTML = '<div class="am-pick-fan" aria-hidden="true"></div>';
       fan = elPickList.firstChild;
-      var wahl = faecherWahl(), UCg = window.UpstreemCore;
+      fan.__wahl = wahl;
+      var UCg = window.UpstreemCore;
       FAECHER.forEach(function(p, i){
         var it = wahl[i], c;
         if (it) c = _tlChip('am-tload-logo am-pick-fan-c', it.src, it.fb, it.label, it.color);

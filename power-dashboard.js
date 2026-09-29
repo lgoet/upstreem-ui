@@ -1162,7 +1162,29 @@
       }
     });
 
-    function renderAll(){ renderChips(); renderChats(); renderKpis(); renderBrands(); renderCites(); syncAlle(); }
+    /* DIE LOGOS DER ZWEI LISTEN FUER MIRAS FAECHER (29.09. nachts angefordert): "wenn man das
+       Add-Dropdown auf dem Agentic Dashboard zuerst oeffnet, sind die Logos noch nicht da -- dann
+       soll er sich relativ gleichmaessig aus Wettbewerbsfeld und Trending Citations bedienen".
+       Miras eigene Vorraete (askMiraSetBrandLogos/-Favicons) kommen erst mit ihrer Ansicht; diese
+       Listen stehen hier schon. Also meldet das Dashboard sie am Fenster, in Miras Form:
+       marken {src, fb_src, label, color}, quellen {src, label}. Doppelte Bilder nur einmal --
+       mehrere URLs derselben Domain tragen dasselbe Zeichen. Gleichmaessig mischt Mira. */
+    function logoVorratMelden(){
+      var gesehen = {};
+      function einmal(u){ if (!u || gesehen[u]) return false; gesehen[u] = true; return true; }
+      var marken = (state.brands || []).map(function(b){
+        var u = b && (b.logo_url || b.favicon_url || "");
+        /* Scheitert das Logo, versucht Miras Kachel das Favicon, erst danach den Buchstaben. */
+        var fb = b && b.logo_url && b.favicon_url ? b.favicon_url : "";
+        return einmal(u) ? { src: u, fb_src: fb, label: String(b.name || ""), color: "" } : null;
+      }).filter(Boolean);
+      var quellen = (state.domains || []).concat(state.urls || []).map(function(r){
+        var u = r && (r.favicon || r.logo || "");
+        return einmal(u) ? { src: u, label: String(r.domain || r.title || r.url || "") } : null;
+      }).filter(Boolean);
+      try { window.__upwLogoVorrat = { marken: marken.slice(0, 20), quellen: quellen.slice(0, 20) }; } catch(e){}
+    }
+    function renderAll(){ renderChips(); renderChats(); renderKpis(); renderBrands(); renderCites(); syncAlle(); logoVorratMelden(); }
 
     /* Sprache: Beschriftungen und Chips sind beim Zeichnen geschrieben -- also neu zeichnen. Nur
        bei der Sprache, nicht bei jeder Einstellung (siehe setDashboardMode in core). */

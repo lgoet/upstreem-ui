@@ -27,6 +27,9 @@
 .up-root.upw-root { --up-sticky-top: 16px; }
 .upw-col {
   --upw-pad: clamp(14px, 3vw, 28px);
+  /* Der Ueberstand von Mira und den breiten Bloecken ueber die Spalte, EIN Wert fuer beide
+     (29.09. nachts) -- Begruendung und Rechnung an .upw-wide weiter unten. */
+  --upw-bleed: min(64px, max(0px, calc(var(--upw-frei, 0px) - 16px)));
   max-width: calc(920px + 2 * var(--upw-pad)); margin: 0 auto;
   padding: 8px var(--upw-pad) 48px; box-sizing: border-box;
 }
@@ -40,15 +43,15 @@
    NUR ab der Breite, ab der die Tabellen und Kennzahlen ohnehin nebeneinander stehen
    (widthTiers, is-narrow ab 760px): darunter ist kein Platz fuer ein zusaetzliches Aufweiten, und
    die Karten liefen sonst über den Bildschirmrand hinaus. */
-/* SEIT DEM 29.09. NACHTS IST MIRA SO BREIT WIE DER REST ("das Mira-Inputfeld genauso breit wie
-   der Rest der Seite, aber die max width 16px pro Seite kleiner"). Vorher 72px je Seite SCHMALER
-   als die Spalte. Jetzt derselbe Ueberstand wie .upw-wide darunter -- also auch nur, was wirklich
-   da ist, siehe dort --, nur bei 64 statt 80 gedeckelt: auf breiten Fenstern 1048 neben 1080, und
-   wo der Rest seinen Deckel nicht erreicht, genau gleich breit. Die Chips stehen im selben Kasten
-   und bleiben mittig. Der Klassenname bleibt, er steht im Markup von power-dashboard.js. */
+/* SEIT DEM 29.09. NACHTS IST MIRA GENAU SO BREIT WIE DER REST. Angefordert war "das Mira-
+   Inputfeld genauso breit wie der Rest der Seite, aber die max width 16px pro Seite kleiner" --
+   zuerst nur an Mira umgesetzt (1048 neben 1080, gemeldet: "da sind 16px links und rechts"), dann
+   richtig: der kleinere Deckel gilt fuer die ganze Seite, Mira und die Karten enden an derselben
+   Kante, beide ueber --upw-bleed an .upw-col. Vorher 72px je Seite SCHMALER als die Spalte. Die
+   Chips stehen im selben Kasten und bleiben mittig. Der Klassenname bleibt, er steht im Markup
+   von power-dashboard.js. */
 .upw-narrow {
-  --upw-bleed-mira: min(64px, max(0px, calc(var(--upw-frei, 0px) - 16px)));
-  margin-left: calc(-1 * var(--upw-bleed-mira)); margin-right: calc(-1 * var(--upw-bleed-mira));
+  margin-left: calc(-1 * var(--upw-bleed)); margin-right: calc(-1 * var(--upw-bleed));
 }
 /* DER UEBERSTAND NIMMT SICH NUR, WAS WIRKLICH DA IST (21.09., dritter Anlauf).
    Erster Anlauf: feste -80px. Zweiter: (100vw - 100%) / 2. Der zweite war der Fehler, der
@@ -64,9 +67,9 @@
    dann 0, und die breite Huelle bleibt genau in der Spalte. Sie ist dann schmaler als gewollt,
    aber sie ragt NIE hinaus -- der Fehler kann sich also nicht wiederholen, wenn die JS spaeter
    einmal nicht laeuft.
-   16px Sicherheitsabstand, 80px Deckel, max() haelt bei null: unveraendert. */
+   16px Sicherheitsabstand, Deckel 64 (bis 29.09. nachts 80 -- "max width 16px pro Seite kleiner"),
+   max() haelt bei null. Der Wert selbst steht an .upw-col, Mira nimmt denselben. */
 .upw-wide {
-  --upw-bleed: min(80px, max(0px, calc(var(--upw-frei, 0px) - 16px)));
   margin-left: calc(-1 * var(--upw-bleed)); margin-right: calc(-1 * var(--upw-bleed));
 }
 .upw-root.is-narrow .upw-narrow,
