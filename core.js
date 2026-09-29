@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261048;
+  var BUILD = 20261049;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -9307,6 +9307,25 @@
     gruppe.classList.add("up-ph-gruppe");
   }
 
+  /* WOGEGEN DER KOPF SEINEN RAND MISST (29.09. nachts; Teams: "da fehlen 16px links und rechts",
+     Settings: "der ist kaputt"). Bisher nur gegen eine Bubble-GRUPPE um das HTML-Element -- in
+     Ansichten, in denen das HTML-Element direkt im Reusable der Ansicht oder in einem anderen
+     Behaelter steht, lief die Randmessung darum nie: kein Polster, der Inhalt lag an der Kante.
+     Im Nachbau genau so: Teams im Reusable -> Krume 0, Tabelle 0/0; Settings -> Krume 0.
+     Jetzt zaehlt jedes Bubble-Element um das HTML-Element -- ausser der Seite selbst und allem,
+     was die Seitenleiste mit umfasst: dessen linke Kante waere die des Fensters, und der Kopf
+     zoege sich ueber die Leiste. Das Durchlassen der Klicks bleibt bei der Gruppe
+     (kopfPolsterDurchlassen); an einem Reusable wird nichts gesetzt, nur gemessen. */
+  function kopfRahmen(root){
+    var html = root && root.parentElement, gr = html && html.parentElement;
+    if (!html || !html.classList || !html.classList.contains("bubble-element")) return null;
+    if (!gr || !gr.classList || !gr.classList.contains("bubble-element") || gr.classList.contains("Page")) return null;
+    if (root.__upKopfRahmen === gr) return gr;
+    if (gr.querySelector && gr.querySelector(".usn-root")) return null;
+    root.__upKopfRahmen = gr;
+    return gr;
+  }
+
   function makePageHeaderMeta(root){
     kopfPolsterDurchlassen(root);
     var nameEl = root.querySelector(".pph-metaname");
@@ -9614,8 +9633,8 @@
         attributes: true, attributeFilter: ["class", "aria-selected"] });
     }
     /* DIE LINIEN BIS AN DIE KANTE DER BUBBLE-GRUPPE (29.09.). Der Kopf hat kein Seitenpolster; was
-       er an Abstand zum Rand hat, gibt die Gruppe um ihn (kopfPolsterDurchlassen markiert sie als
-       .up-ph-gruppe). Die Linien sollen bis an deren Kante laufen, also so weit ueber das Element
+       er an Abstand zum Rand hat, gibt der Behaelter um sein HTML-Element (kopfRahmen: eine Gruppe,
+       seit dem 29.09. nachts auch ein Reusable oder jedes andere Bubble-Element). Die Linien sollen bis an deren Kante laufen, also so weit ueber das Element
        hinaus, wie die Gruppe Polster hat -- gemessen, weil das 16 oder 0 sein kann. Relativ zur
        Gruppe gemessen, nicht zur Seite: das stimmt auch in einer geparkten Ansicht; ohne Flaeche
        (content-visibility) zaehlt das Polster der Gruppe. */
@@ -9646,8 +9665,8 @@
     var ZIEL_R = cfg.komponente ? BLOCK_EINZUG : KOPF_EINZUG_R;
     function linieMessen(){
       kopfPolsterDurchlassen(root);
-      var gr = root.parentElement && root.parentElement.parentElement;
-      if (!gr || !gr.classList || !gr.classList.contains("up-ph-gruppe")) return;
+      var gr = kopfRahmen(root);
+      if (!gr) return;
       /* Auch die GRUPPE beobachten: steht das HTML-Element mit fester Hoechstbreite mittig in
          ihr, waechst beim Fensterziehen nur die Gruppe -- die Wurzel behaelt ihre Breite, und
          ihr eigener Beobachter schwiege, waehrend der Versatz sich aendert. */
