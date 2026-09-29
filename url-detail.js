@@ -216,9 +216,17 @@
       key: "linkedin", label: "LinkedIn",
       passt: function (u) { return /linkedin\.com\/.*(?:activity-|urn:li:(?:activity|share|ugcPost):)(\d{6,})/i.test(u); },
       art: "iframe", hoehe: 600,
+      /* DER TYP DER KENNUNG KOMMT AUS DER ADRESSE (30.09. gemeldet: jede LinkedIn-Einbettung
+         zeigte "Seite nicht gefunden", obwohl es die Beitraege gibt). Hier stand fest
+         urn:li:share: -- eine Beitragsadresse (/posts/...-activity-<id>-...) traegt aber eine
+         ACTIVITY-Kennung, und unter share gibt es diese Nummer nicht. Gemessen an zwei
+         oeffentlichen Beitraegen (Person und Unternehmen): share -> "Seite nicht gefunden",
+         activity -> der Beitrag. Steht der Typ ausdruecklich in der Adresse (urn:li:share:,
+         urn:li:ugcPost:), gilt er so. */
       src: function (u) {
-        var m = /(?:activity-|urn:li:(?:activity|share|ugcPost):)(\d{6,})/i.exec(u);
-        return "https://www.linkedin.com/embed/feed/update/urn:li:share:" + (m ? m[1] : "");
+        var m = /(?:urn:li:(activity|share|ugcPost):|activity-)(\d{6,})/i.exec(u);
+        var art = m && m[1] ? m[1] : "activity";
+        return "https://www.linkedin.com/embed/feed/update/urn:li:" + art + ":" + (m ? m[2] : "");
       }
     },
     {
@@ -363,6 +371,11 @@
         '<div class="uud-conv"></div>' +
       '</div>' +
 
+      /* Gibt es zu einer URL GAR NICHTS zu zeigen -- keine Mentions, keine Einbettung, keine
+         Beschreibung, keine Zusammenfassung, keine Conversion --, steht hier ein kleiner
+         Platzhalter statt einer Seite, die nach den Kennzahlen einfach aufhoert (30.09.). */
+      '<div class="uud-sect uud-sect-leer" hidden></div>' +
+
       '<div class="uud-fehler" hidden></div>';
   }
 
@@ -397,6 +410,10 @@
     var elConvSect = root.querySelector(".uud-sect-conv");
     var elConv   = root.querySelector(".uud-conv");
     var elFehler = root.querySelector(".uud-fehler");
+    var elLeerSect = root.querySelector(".uud-sect-leer");
+    /* Der Leerzustand aus core (UC.leerHtml): Symbol und eine Zeile, kein Knopf -- es gibt hier
+       nichts, was der Nutzer tun koennte. */
+    if (elLeerSect && UC.leerHtml) elLeerSect.innerHTML = UC.leerHtml({ icon: "fileText", titel: "No data for this URL yet" });
 
     var isDark = UC.themeParam ? UC.themeParam(root.getAttribute("data-isdark")) : false;
     function dunkel() { return isDark; }
@@ -756,6 +773,10 @@
       /* Der Fehlerfall steht VOR dem Skelett. Endloses Laden sieht sonst aus wie "gleich da",
          und genau daran sucht man dann an der falschen Stelle. */
       root.classList.toggle("is-loading", !!state.loading && !state.fehler);
+      /* Erst zu, dann -- nur ganz unten, wenn wirklich alles leer ist -- wieder auf: im Ladezustand
+         und im Fehlerfall kehrt render() vorher zurueck, und der Platzhalter der VORIGEN URL
+         stuende sonst ueber dem Skelett der naechsten. */
+      if (elLeerSect) elLeerSect.hidden = true;
       elFehler.hidden = !state.fehler;
       if (state.fehler) { elFehler.textContent = state.fehler; return; }
       /* Kopf und KPI-Leiste werden AUCH im Ladezustand gezeichnet. Ohne das blieben die Werte
@@ -769,6 +790,8 @@
       renderMeta();
       renderSum();
       renderConv();
+      if (elLeerSect) elLeerSect.hidden = !(elMentSect.hidden && elEmbedSect.hidden &&
+        elMetaSect.hidden && elSumSect.hidden && elConvSect.hidden);
     }
 
     /* ---- Klicks ------------------------------------------------------------------------------ */

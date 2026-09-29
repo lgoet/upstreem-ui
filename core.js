@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261055;
+  var BUILD = 20261056;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -1330,6 +1330,19 @@
     /* Die schmale Fassung der drei Knoepfe: ein eigenes Wort, kein abgeschnittener Satz. */
     "Add": "Hinzufügen",
     "Look for": "Suchen",
+    /* Was eine LinkedIn-Adresse ist, vorn im Plattformtitel (parseLinkedinUrl, 30.09.). "Article",
+       "Profile" und "Group" stehen schon im Katalog. "Event page" statt "Event": "Event" ist dort
+       "Ereignis", und eine LinkedIn-Veranstaltung ist keins. */
+    "Post": "Beitrag",
+    "Company": "Unternehmen",
+    "Showcase page": "Showcase-Seite",
+    "School": "Bildungseinrichtung",
+    "Job": "Job",
+    "Event page": "Veranstaltung",
+    "Newsletter": "Newsletter",
+    "Course": "Kurs",
+    /* Der Platzhalter im URL-Detail, wenn es zu einer URL gar nichts zu zeigen gibt (30.09.). */
+    "No data for this URL yet": "Zu dieser URL gibt es noch keine Daten",
     /* Das Ladebild der Opportunities-Suche (UC.makeLadebild, 30.09.): Name und Statuszeilen. */
     "Looking for new Opportunities": "Neue Opportunities werden gesucht",
     "Reading the sources AI cites for your prompts…": "Die Quellen zu deinen Prompts werden gelesen…",
@@ -3031,7 +3044,15 @@
   function isGenericUrlTitle(title, url){
     var t = String(title == null ? "" : title).trim().toLowerCase();
     if (!t || t === String(url == null ? "" : url).trim().toLowerCase()) return true;
-    try { return t === new URL(String(url)).hostname.replace(/^www\./, "").toLowerCase(); }
+    try {
+      var host = new URL(String(url)).hostname.toLowerCase();
+      if (t === host || t === host.replace(/^www\./, "")) return true;
+      /* AUCH DIE STAMMDOMAIN EINER LAENDERSUBDOMAIN (30.09.): de.linkedin.com und fr.linkedin.com
+         tragen als Titel "linkedin.com" -- verglichen wurde bis hierher nur mit dem vollen
+         Hostnamen, also galt dort der Platzhalter als echter Titel. Nur ein Titel, der selbst wie
+         eine Domain aussieht (kein Leerzeichen, mit Punkt), und nur als ENDE des Hostnamens. */
+      return /^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(t) && host.slice(-(t.length + 1)) === "." + t;
+    }
     catch(e){ return false; }
   }
   /* Returns HTML (r/sub, then a muted "/", then the parsed slug when Reddit's own link had one)
@@ -3048,6 +3069,128 @@
       out += ' <span class="up-reddit-sep">/</span> ' + highlight(parsed.slug, q);
     }
     return out;
+  }
+
+  /* ---------- LinkedIn URL -> lesbarer Titel (30.09. angefordert) ----------
+     "Wie bei Reddit": in der URL-Tabelle der Domain linkedin.com stand fast ueberall "linkedin.com"
+     als Titel, nur hier und da der echte. Der gescrapte Titel ist bei LinkedIn meist die Domain --
+     die Seite liefert ihn nur angemeldet. Die ADRESSE sagt aber fast immer, was die Seite ist:
+       /posts/{autor}_{worte}-activity-{id}   Beitrag: Autor vorn, die ersten Worte des Beitrags
+       /pulse/{worte}-{kennung}               Artikel: der Titel, ohne LinkedIns Zufallskennung
+       /company/, /showcase/, /school/        Unternehmens-, Showcase-, Bildungsseite: der Name
+       /in/{name}                             Profil
+       /jobs/view/, /events/, /newsletters/, /groups/, /learning/   Job, Veranstaltung, ...
+     Wie bei Reddit steht vorn in der dritten Textfarbe, WAS es ist (beim Beitrag: WER), dann der
+     Text. Alle Laender-Subdomains zaehlen (de., fr., www., ...). Ein echter gescrapter Titel
+     gewinnt immer -- das hier ist nur der Ersatz fuer den Platzhalter.
+     Die Worte kommen kleingeschrieben und ohne Fuellwoerter aus der Adresse ("how-edge-ai-
+     revolutionising-auditing"); vorn gross, gaengige Abkuerzungen gross (AI, SEO, CRM, ...).
+     "it" steht absichtlich NICHT in der Liste: als Wort ("why it matters") ist es haeufiger als
+     als Abkuerzung. */
+  var LI_ABK = { ai: "AI", genai: "GenAI", seo: "SEO", sea: "SEA", crm: "CRM", saas: "SaaS", b2b: "B2B",
+    b2c: "B2C", api: "API", apis: "APIs", iam: "IAM", siem: "SIEM", edr: "EDR", gdpr: "GDPR",
+    dsgvo: "DSGVO", hr: "HR", ux: "UX", ui: "UI", esg: "ESG", roi: "ROI", kpi: "KPI", kpis: "KPIs",
+    llm: "LLM", llms: "LLMs", aeo: "AEO", ceo: "CEO", cto: "CTO", cfo: "CFO", cmo: "CMO", coo: "COO",
+    ml: "ML", nlp: "NLP", erp: "ERP", sql: "SQL", aws: "AWS", gpt: "GPT", chatgpt: "ChatGPT",
+    usa: "USA", uk: "UK", eu: "EU", iot: "IoT", pr: "PR", b2g: "B2G", linkedin: "LinkedIn" };
+  function liWorte(teil){
+    var roh = String(teil || "");
+    try { roh = decodeURIComponent(roh); } catch(e){}
+    return roh.split(/[-_\s]+/).filter(Boolean);
+  }
+  /* LinkedIns Zufallskennung am Ende eines Artikels: meist fuenf Zeichen ("w0kec", "qtbnf",
+     "igldf"), manchmal kuerzer ("1c"). Weg damit, wenn sie
+       - Buchstaben UND Ziffern mischt (bis 6 Zeichen),
+       - fuenf Buchstaben ohne a/e/i/o/u sind ("qtbnf", "tygyf"), oder
+       - fuenf Buchstaben mit vier Konsonanten am Stueck sind ("igldf", y zaehlt als Vokal) --
+         das kommt in echten Woertern praktisch nicht vor; drei am Stueck schon ("world",
+         "first", "sight"), die bleiben.
+     Reine Zahlen bleiben -- "2025" am Ende eines Titels ist eine Jahreszahl. Einzelne Kennungen
+     sehen wie ein Wort aus ("ciehf") und bleiben stehen; lieber das als ein echtes Wort
+     abzuschneiden. */
+  function liOhneKennung(w){
+    var z = w[w.length - 1];
+    if (w.length > 1 && z && /^[a-z0-9]{1,6}$/i.test(z) &&
+        ((/\d/.test(z) && /[a-z]/i.test(z)) ||
+         (z.length === 5 && (!/[aeiou]/i.test(z) || /[^aeiouy0-9]{4}/i.test(z))))) {
+      return w.slice(0, -1);
+    }
+    return w;
+  }
+  function liAbk(x){ var k = x.toLowerCase(); return LI_ABK[k] || null; }
+  /* Satz: vorn gross, Abkuerzungen gross, sonst wie geschrieben. Name: jedes Wort gross. */
+  function liSatz(w){
+    return w.map(function(x, i){
+      var a = liAbk(x); if (a) return a;
+      return i === 0 ? x.charAt(0).toUpperCase() + x.slice(1) : x;
+    }).join(" ");
+  }
+  function liName(w){
+    return w.map(function(x){ var a = liAbk(x); return a || (x.charAt(0).toUpperCase() + x.slice(1)); }).join(" ");
+  }
+  /* Ein Handle wie "john-doe-1a2b3c4d" traegt hinten oft eine Kennung: die faellt weg, solange
+     davor noch ein Name steht. Reine Ziffernfolgen (eine Unternehmens-Id statt eines Namens)
+     ergeben keinen Namen. */
+  function liHandle(teil){
+    var w = liWorte(teil);
+    while (w.length > 1 && /\d/.test(w[w.length - 1]) && (/^\d+$/.test(w[w.length - 1]) || w[w.length - 1].length >= 5)) w.pop();
+    if (w.length === 1 && /^\d+$/.test(w[0])) return "";
+    return liName(w);
+  }
+  function parseLinkedinUrl(url){
+    var u;
+    try { u = new URL(String(url == null ? "" : url)); } catch(e){ return null; }
+    if (!/(^|\.)linkedin\.com$/i.test(u.hostname)) return null;
+    var p = u.pathname.replace(/\/+$/, "");
+    var m;
+    if ((m = /^\/posts\/([^\/]+?)-activity-\d{6,}/i.exec(p))){
+      var teil = m[1], strich = teil.indexOf("_");
+      var autor = liHandle(strich >= 0 ? teil.slice(0, strich) : teil);
+      var worte = strich >= 0 ? liWorte(teil.slice(strich + 1)) : [];
+      if (!autor) return { vorn: t_("Post"), text: worte.length ? liSatz(worte) : "" };
+      return { vorn: autor, text: worte.length ? liSatz(worte) : t_("Post") };
+    }
+    if (/^\/feed\/update\/urn:li:(?:activity|share|ugcPost):\d+/i.test(p)) return { vorn: t_("Post"), text: "" };
+    if ((m = /^\/pulse\/([^\/]+)/i.exec(p))){
+      var aw = liOhneKennung(liWorte(m[1]));
+      return { vorn: t_("Article"), text: aw.length ? liSatz(aw) : "" };
+    }
+    var seiten = [["company", "Company"], ["showcase", "Showcase page"], ["school", "School"], ["in", "Profile"], ["groups", "Group"]];
+    for (var i = 0; i < seiten.length; i++){
+      if ((m = new RegExp("^\\/" + seiten[i][0] + "\\/([^\\/]+)", "i").exec(p))){
+        return { vorn: t_(seiten[i][1]), text: liHandle(m[1]) };
+      }
+    }
+    var mitId = [["jobs\\/view", "Job"], ["events", "Event page"], ["newsletters", "Newsletter"], ["learning", "Course"]];
+    for (var j = 0; j < mitId.length; j++){
+      if ((m = new RegExp("^\\/" + mitId[j][0] + "\\/([^\\/]+)", "i").exec(p))){
+        /* Die Nummer hinten (oft ohne Strich angehaengt: "ai-summit-berlin7123...") ist die Id. */
+        var rest = liWorte(m[1].replace(/-?\d{6,}$/, ""));
+        /* Jobs: "senior-data-analyst-at-acme" -> "Senior data analyst at Acme". Die Firma hinter
+           dem letzten "at" ist ein Name und bekommt grosse Anfangsbuchstaben. */
+        var at = rest.lastIndexOf("at");
+        if (j === 0 && at > 0 && at < rest.length - 1) {
+          return { vorn: t_(mitId[j][1]), text: liSatz(rest.slice(0, at)) + " at " + liName(rest.slice(at + 1)) };
+        }
+        return { vorn: t_(mitId[j][1]), text: rest.length ? liSatz(rest) : "" };
+      }
+    }
+    return null;
+  }
+  function linkedinTitleHtml(url, title, q){
+    if (!isGenericUrlTitle(title, url)) return null;
+    var p = parseLinkedinUrl(url);
+    if (!p) return null;
+    var out = '<span class="up-reddit-sub">' + highlight(p.vorn, q) + '</span>';
+    if (p.text) out += ' <span class="up-reddit-sep">/</span> ' + highlight(p.text, q);
+    return out;
+  }
+  /* DER PLATTFORMTITEL: Reddit, sonst LinkedIn, sonst null ("zeichne deinen Titel wie immer").
+     Exportiert wird er AUCH unter dem alten Namen redditTitleHtml -- fuenf Aufrufer (URL- und
+     Domain-Tabelle, Power Dashboard, Top Citations, Landingpage) bekommen LinkedIn damit ohne
+     eine Aenderung an ihrer Datei. */
+  function plattformTitelHtml(url, title, q){
+    return redditTitleHtml(url, title, q) || linkedinTitleHtml(url, title, q);
   }
   /* ---------- readBubble ----------
      parseBubbleJson mit drei Ergaenzungen, die jeder Konsument sonst selbst schreibt -- und die
@@ -19106,7 +19249,9 @@
     getUpstreemTheme: getUpstreemTheme,
     themeParam: themeParam,
     highlight: highlight,
-    redditTitleHtml: redditTitleHtml,
+    redditTitleHtml: plattformTitelHtml,
+    plattformTitelHtml: plattformTitelHtml,
+    parseLinkedinUrl: parseLinkedinUrl,
     esc: esc,
     parseBubbleJson: parseBubbleJson,
     readBubble: readBubble,
