@@ -68,6 +68,12 @@
    prefers-reduced-motion: wer Bewegung abbestellt hat, bekommt den Sprung -- dieselbe Regel wie
    ueberall im Kit. */
 .dph-root.is-hoehenwechsel { transition: height 200ms ease; overflow: hidden; }
+/* ANALYTIC: KEIN BODENPOLSTER unter der Kopfzeile (29.09. nachts: "im Analytic-Modus ist das Gap
+   unterm Topbar zu gross"). Der Kopf ist in beiden Modi derselbe; der Unterschied kommt vom Inhalt
+   darunter, der im Analytic-Dashboard eigenen Abstand nach oben mitbringt. Also nimmt der Kopf dort
+   seine 16px zurueck. Ueber das html-Attribut UND die Wurzelklasse, damit beim Laden im
+   Power-Modus nichts springt (das Attribut steht vor dem JS, die Klasse erst danach). */
+html:not([data-up-dashboard="power"]) .dph-root.up-ph-root:not(.is-power) { padding-bottom: 0; }
 @media (prefers-reduced-motion: reduce) {
   .dph-root.is-hoehenwechsel { transition: none; }
 }
