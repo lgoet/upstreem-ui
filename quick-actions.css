@@ -275,8 +275,10 @@
 }
 .mqa-fav svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
 .mqa-fav:hover { color: var(--am-text); background: var(--am-hover-bg); }
-.mqa-fav.is-on { color: var(--am-text); }
-.mqa-fav.is-on svg { fill: currentColor; }
+/* GESPEICHERT HEISST GEDRUECKT, NICHT GEFUELLT (29.09. spaet: "niemals gefuellte Icons").
+   Der Stern bleibt ein Strich; der Zustand liegt am Knopf -- Farbe und Grund seines Hovers, wie
+   der Filter-Knopf in Mira (.am-pick-filterbtn[aria-expanded="true"]). */
+.mqa-fav.is-on { color: var(--am-text); background: var(--am-hover-bg); }
 
 /* Label chip for the two input-bar buttons. Same contract as core.css's .up-tip: dark card in
    BOTH themes (it floats above the page, not inside the surface), fixed-positioned so it is never
@@ -499,7 +501,7 @@
   border: 0; border-radius: 5px; background: transparent; padding: 0; color: var(--am-muted-2);
   transition: opacity .12s ease, color .12s ease, background .12s ease;
 }
-.mqa-fav-ic svg { width: 14px; height: 14px; fill: currentColor; stroke: currentColor; stroke-width: 1.9; stroke-linejoin: round; }
+.mqa-fav-ic svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
 .mqa-fav-x { opacity: 0; cursor: pointer; }
 .mqa-fav-x svg { width: 11px; height: 11px; }
 .mqa-action:hover .mqa-fav-x, .mqa-action.is-active .mqa-fav-x { opacity: 1; }

@@ -740,11 +740,11 @@
               '</div>' +
               '<div class="up-td uud-cnum">' +
                 (pct == null ? LEER :
-                  /* Dieselbe Gut/Schlecht-Skala wie Sentiment (UC.sentColor) und seit dem 29.09.
-                     auch dieselbe Marke: der Balken aus UC.sentHtml, die Zahl als Prozent. Hier
-                     stand ein eigener runder Punkt mit eigenem Abstand -- "dieselbe Marke wie
-                     .up-sent-dot", nur eben nachgebaut. */
-                  UC.sentHtml(pct, { text: UC.fmtPct(pct, 1) })) +
+                  /* NUR DIE ZAHL (29.09. spaet angefordert, "bei Conversion ist der Sentiment-
+                     Balken sichtbar -- weg damit"). Die Quote ist keine Stimmung; der Balken aus
+                     UC.sentHtml faerbte sie auf der Sentiment-Skala ein. .up-num traegt dieselbe
+                     Schrift wie die Zahl darin (14/500, tabular-nums), die Zeile bleibt gleich. */
+                  '<span class="up-num">' + esc(UC.fmtPct(pct, 1)) + '</span>') +
               '</div>' +
             '</div>';
           }).join("") +

@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261049;
+  var BUILD = 20261050;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -9569,6 +9569,10 @@
     });
 
     positionUnderline(nav.querySelector(".up-ph-navitem.is-selected"), false);
+    /* Fuer UC.makePageCrumbs: setzt es .up-ph-root erst NACH diesem Aufbau, wechseln die Reiter
+       ihr Polster, ohne dass sich die Breite der Wurzel aendern muss -- und onResize meldet nur
+       Breiten. Der Strich stand dann 27px ueber dem Textende statt 3 (gemessen). */
+    nav.__upStrichNeu = function(){ positionUnderline(nav.querySelector(".up-ph-navitem.is-selected"), false); };
     /* is-narrow/is-vnarrow: measured off the ROOT's own box width via ResizeObserver, not a CSS
        media query -- consistent with every other component in this repo, and correct if a page
        header ever ends up in a narrower Bubble container than the full page (it doesn't today,
@@ -9625,6 +9629,18 @@
         '</span>' +
         (akt ? '<span class="up-ph-crumbsep" aria-hidden="true">' + icon("chevronRight", 2) + '</span>' +
                '<span class="up-ph-crumb is-akt"><span class="up-ph-crumbname">' + esc(akt) + '</span></span>' : '');
+    }
+    /* EIN SEITENKOPF TRAEGT .up-ph-root, AUCH WENN SEIN MARKUP ES NICHT MITBRINGT (29.09. spaet).
+       Die Settings-Vorlage hatte in ihrer ersten Fassung (13.08., 3464856) nur "up-root sph-root";
+       am selben Tag nachgezogen -- aber die Vorlage erreicht ein schon eingebautes Element nicht.
+       Jede Regel des Kopf-Baukastens haengt an .up-ph-root, ohne sie stand der Kopf im alten Mass:
+       Krume 28px, Beschreibung sichtbar, keine Linie, Reiter mit 12/15 Polster (gemeldet: "da
+       stimmt nix", im Nachbau mit der alten Vorlage genau so gemessen). Die Prompts-Vorlage hatte
+       dieselbe Luecke einmal. Nicht bei cfg.komponente: dort ist die Wurzel die ganze Komponente
+       (Teams, Prompt Research), und die Klasse zoege ihr die Kopfregeln ueber alles. */
+    if (!cfg.komponente && !root.classList.contains("up-ph-root")){
+      root.classList.add("up-ph-root");
+      if (nav && nav.__upStrichNeu) nav.__upStrichNeu();
     }
     root.classList.add("has-crumbs");
     zeichnen();
@@ -12849,9 +12865,14 @@
     var fmt = cfg.fmt || function(v){ return fmtPct(v); };
     var letzte = null;
 
-    function zeichnen(items){
+    /* opts.ohneFahrt (29.09. spaet): die Balken stehen sofort auf ihrer Breite, statt von 0
+       einzufahren. Fuer einen Aufrufer, der DIESELBEN Daten ein zweites Mal zeichnet -- nach
+       einem Skelett, nach Bubbles Neubau der Wurzel. Die Einfahrt sagt "das ist neu"; beim
+       zweiten Mal war sie die zweite Animation hintereinander (Prompts-Karten, gemeldet). */
+    function zeichnen(items, opts){
       if (!mount) return;
       letzte = items;
+      var ohneFahrt = !!(opts && opts.ohneFahrt);
       var d = (items || []).slice().filter(Boolean);
       if (!d.length){ mount.innerHTML = '<div class="up-chart-empty">No data</div>'; return; }
       var spalte = cfg.labelCol ? !!cfg.labelCol() : false;
@@ -12869,7 +12890,8 @@
                          'onerror="this.style.display=&quot;none&quot;"/>' : '') +
               '<span class="up-bar-labeltxt">' + esc(it.name) + '</span></span>' : '') +
           '<div class="up-bar-track">' +
-            '<div class="up-bar-fill" style="background:' + esc(it.color) + ';width:0%">' +
+            '<div class="up-bar-fill" style="background:' + esc(it.color) + ';width:' +
+              (ohneFahrt ? Math.max(Number(it.share) || 0, 0) : 0) + '%">' +
               (spalte ? '' : '<span class="up-bar-name" style="color:' + txt + ';opacity:0">' + esc(it.name) + '</span>') +
               '<span class="up-bar-pct up-bar-pct-in" style="color:' + txtPct + ';opacity:0">' + esc(fmt(it.share)) + '</span>' +
             '</div>' +
@@ -12941,12 +12963,15 @@
           if (fill) fill.style.width = Math.max(Number(d[i].share) || 0, 0) + "%";
         });
       }
-      requestAnimationFrame(function(){ requestAnimationFrame(function(){ breitenSetzen(); }); });
-      /* Notbremse: in einem verdeckten Tab laeuft requestAnimationFrame nicht. Ohne diese Zeile
-         blieben die Balken dort auf 0% stehen -- und stuenden auch dann noch leer da, wenn der
-         Nutzer zurueckwechselt, weil der Rueckruf nur EINMAL vorgesehen war. */
-      setTimeout(function(){ if (rows[0] && rows[0].querySelector(".up-bar-fill").style.width === "0%") breitenSetzen(); }, 300);
-      setTimeout(alle, 640);
+      if (ohneFahrt) alle();
+      else {
+        requestAnimationFrame(function(){ requestAnimationFrame(function(){ breitenSetzen(); }); });
+        /* Notbremse: in einem verdeckten Tab laeuft requestAnimationFrame nicht. Ohne diese Zeile
+           blieben die Balken dort auf 0% stehen -- und stuenden auch dann noch leer da, wenn der
+           Nutzer zurueckwechselt, weil der Rueckruf nur EINMAL vorgesehen war. */
+        setTimeout(function(){ if (rows[0] && rows[0].querySelector(".up-bar-fill").style.width === "0%") breitenSetzen(); }, 300);
+        setTimeout(alle, 640);
+      }
       if (window.ResizeObserver){
         var ro = new ResizeObserver(function(){ alle(); });
         ro.observe(mount);
@@ -13873,8 +13898,18 @@
     function empty(msg){ destroy(); body.innerHTML = '<div class="up-chart-empty">' + esc(msg || t_("No data")) + '</div>'; }
     function isEmpty(d){ return !d.length || d.every(function(x){ return !(Number(x.share) > 0); }); }
 
-    function renderDonut(d){
+    /* opts.ohneFahrt: ohne die 200ms-Einblendung von Chart.js -- derselbe Fall wie bei
+       makeBarList, dieselben Daten ein zweites Mal. */
+    /* NUR DER NEUESTE AUFTRAG ZEICHNET (29.09. spaet). Der Ring entsteht erst, wenn Chart.js
+       geladen ist -- beim ersten Seitenaufbau also spaeter. Kamen bis dahin zwei Auftraege (Skelett
+       dazwischen, oder eine zweite Nutzlast), liefen beide Rueckrufe gegen DASSELBE Canvas: der
+       aeltere baute seinen Ring, der neuere scheiterte still an "Canvas is already in use" (im
+       try). Gemessen: der zweite Auftrag kam ohne Einblendung, gezeichnet wurde der erste mit. */
+    var donutZug = 0;
+    function renderDonut(d, opts){
       if (!isOwner()) return;
+      var ohneFahrt = !!(opts && opts.ohneFahrt);
+      var zug = ++donutZug;
       destroy();
       d = d || [];
       letzteZeichnung = { art: "donut", daten: d };
@@ -13915,7 +13950,7 @@
       }
       applyCollapse();
       loadChartJs().then(function(){
-        if (!isOwner()) return;
+        if (!isOwner() || zug !== donutZug) return;
         var canvas = body.querySelector("canvas");
         if (!canvas) return;
         var ctx = canvas.getContext("2d");
@@ -13944,7 +13979,7 @@
             options: { responsive: true, maintainAspectRatio: false, resizeDelay: 120, layout: { padding: 8 },
               /* Eigener Schluessel fuer ringWidthPlugin -- Chart.js laesst fremde Optionen durch. */
               upRingPx: cfg.ringPx || null,
-              animation: { duration: 200, easing: "easeOutQuad" },
+              animation: ohneFahrt ? false : { duration: 200, easing: "easeOutQuad" },
               plugins: { legend: { display:false }, tooltip: { enabled:false, external: donutTooltip } },
               onClick: (clickable && !allZero) ? function(evt, elements){
                 if (!elements || !elements.length) return;

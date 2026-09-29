@@ -4856,27 +4856,37 @@
        localStorage je Instanz, dasselbe Muster wie rhKey/gKey hier in der Datei. Das window-Feld
        bleibt als schneller Zwischenspeicher: es beantwortet den Neubau der Wurzel ohne Zugriff
        auf den Speicher, und beide werden zusammen geschrieben. */
-    function kpiKey(){ return "upt_kpizu__" + instanceId; }
+    /* ZU IST DIE VORGABE (29.09. spaet angefordert: "die Verteilung nach Topics und die anderen
+       Cards per Default erstmal ausblenden"). Ohne gemerkten Stand also zu.
+       Der Schluessel ist NEU (upt_kpizu2__), und das ist noetig: bis hierher schrieb schon der
+       AUFBAU den Stand in den Speicher, nicht erst ein Klick -- unter dem alten Schluessel stand
+       damit bei jedem, der die Seite je geoeffnet hat, ein "no" aus der Zeit, als offen die
+       Vorgabe war. Die neue Vorgabe haette niemanden erreicht. Ab jetzt schreibt nur noch ein
+       Klick (merken), damit eine spaetere Aenderung der Vorgabe nicht wieder daran scheitert. */
+    function kpiKey(){ return "upt_kpizu2__" + instanceId; }
     function kpiAugeStand(){ return (window.__uptKpiZu = window.__uptKpiZu || {}); }
     function kpiAugeGelesen(){
       var w = kpiAugeStand();
       if (Object.prototype.hasOwnProperty.call(w, instanceId)) return !!w[instanceId];
-      try { return window.localStorage.getItem(kpiKey()) === "yes"; } catch(e){ return false; }
+      try {
+        var v = window.localStorage.getItem(kpiKey());
+        return v == null ? true : v === "yes";
+      } catch(e){ return true; }
     }
     function kpiAugeBinden(){
       var btn = kpiZeile && kpiZeile.querySelector("[data-kpi-eye]");
       if (!btn) return;
-      kpiAugeSetzen(kpiAugeGelesen());
+      kpiAugeSetzen(kpiAugeGelesen(), false);
       btn.addEventListener("click", function(){
-        kpiAugeSetzen(!kpiZeile.classList.contains("is-hidden-view"));
+        kpiAugeSetzen(!kpiZeile.classList.contains("is-hidden-view"), true);
       });
     }
-    function kpiAugeSetzen(zu){
+    function kpiAugeSetzen(zu, merken){
       var btn = kpiZeile && kpiZeile.querySelector("[data-kpi-eye]");
       if (!kpiZeile || !btn) return;
       kpiZeile.classList.toggle("is-hidden-view", zu);
       kpiAugeStand()[instanceId] = zu;
-      try { window.localStorage.setItem(kpiKey(), zu ? "yes" : "no"); } catch(e){}
+      if (merken) try { window.localStorage.setItem(kpiKey(), zu ? "yes" : "no"); } catch(e){}
       btn.setAttribute("aria-expanded", zu ? "false" : "true");
       var txt = UC.t(zu ? "Show" : "Hide");
       btn.setAttribute("data-tip", txt);
@@ -4928,8 +4938,9 @@
     }
     function kpiSkelette(){
       /* Signatur loeschen: nach einem Skelett MUSS das naechste Zeichnen laufen, auch wenn die
-         Daten dieselben sind wie beim letzten echten Zeichnen. */
-      kpiBarsSig = null;
+         Daten dieselben sind wie beim letzten echten Zeichnen. EINFAHREN muss es deshalb nicht --
+         das entscheidet kpiGezeigt(). */
+      kpiBarsSig = null; kpiRingSig = null; kpiQuotaSig = null;
       if (kpiBars) kpiBars.skeleton(5);
       if (kpiRing) kpiRing.skeleton();
       var qk = kpiTeil("upt-kpi-quota", "body");
@@ -5078,7 +5089,9 @@
       var a = auszug(platz);
       if (a.sig !== kpiBarsSig){
         kpiBarsSig = a.sig;
-        kpiBars.render(a.zeigen);
+        var fahrt = kpiGezeigt().bars !== a.sig;
+        kpiGezeigt().bars = a.sig;
+        kpiBars.render(a.zeigen, { ohneFahrt: !fahrt });
         /* NACHRECHNEN. Beim allerersten Zeichnen steht noch keine Zeile im Baum, an der sich
            messen liesse -- da gilt die Konstante. Jetzt steht eine da: passt die gemessene
            Zeilenhoehe nicht zur Annahme, EINMAL kuerzer zeichnen. Ohne das haette ein
@@ -5090,7 +5103,8 @@
           kpiLetztePlatz = platz;
           a = auszug(platz);
           kpiBarsSig = a.sig;
-          kpiBars.render(a.zeigen);
+          kpiGezeigt().bars = a.sig;
+          kpiBars.render(a.zeigen, { ohneFahrt: !fahrt });
         }
       }
       kpiTopicsFuss();
@@ -5101,7 +5115,18 @@
        meist vorher da. render() zieht sie deshalb nach -- ohne die Balken neu zu bauen, denn die
        haengen nur an den Themen. Genau so gemessen: die Zeile blieb leer, obwohl zehn Prompts
        kein Thema hatten. */
-    var kpiLetzteTopics = null, kpiLetztePlatz = 0, kpiBarsSig = null;
+    var kpiLetzteTopics = null, kpiLetztePlatz = 0, kpiBarsSig = null, kpiRingSig = null, kpiQuotaSig = null;
+    /* WAS JEDE KARTE SCHON EINMAL GEZEIGT HAT, je Instanz am FENSTER (29.09. spaet). Gemeldet:
+       "beim ersten Pageload zwei direkt aufeinanderfolgende Appear-Animationen". Gemessen mit
+       HEAD: jede Ladephase (Skelett, dann dieselben Daten), jeder Neubau der Wurzel durch Bubble
+       und jede zweite Markt-Nutzlast liess Balken und Ring ein zweites Mal einfahren -- die
+       Signaturen oben sitzen an der Wurzel und werden vom Skelett geloescht. Diese hier nicht:
+       sie beantworten nur "ist das neu", und nur Neues faehrt ein. Dasselbe noch einmal steht
+       sofort da. */
+    function kpiGezeigt(){
+      var w = (window.__uptKpiGezeigt = window.__uptKpiGezeigt || {});
+      return (w[instanceId] = w[instanceId] || {});
+    }
     function kpiTopicsFuss(){
       if (!kpiLetzteTopics) return;
       var rest = kpiLetzteTopics.length - kpiLetztePlatz;
@@ -5174,8 +5199,15 @@
       if (note) note.textContent = liste.length
         ? UC.t("{n} markets").replace("{n}", UC.fmtTotal(liste.length)) : "";
 
-      if (!liste.length){ kpiRing.skeleton(); return; }
-      kpiRing.renderDonut(mitZahl);
+      if (!liste.length){ kpiRingSig = null; kpiRing.skeleton(); return; }
+      /* Dieselben Maerkte noch einmal: nichts tun. Ohne diese Sperre baute jede weitere
+         Markt-Nutzlast den Ring neu, samt Einblendung (gemessen: zwei Nutzlasten, zwei Ringe). */
+      var sigM = mitZahl.map(function(x){ return x.key + ":" + x.anzahl + ":" + x.color; }).join(",");
+      if (sigM === kpiRingSig) return;
+      kpiRingSig = sigM;
+      var fahrtM = kpiGezeigt().ring !== sigM;
+      kpiGezeigt().ring = sigM;
+      kpiRing.renderDonut(mitZahl, { ohneFahrt: !fahrtM });
     }
 
     /* ---- Das Skelett der Kontingent-Karte (07.09. angefordert) ----
@@ -5216,6 +5248,10 @@
       /* Reihenfolge nach §2: Fehlerzustand VOR dem Skelett. Ein Payload, der da war, aber keine
          Zahlen trug, ist etwas anderes als "noch nichts da" -- sonst sieht endloses Laden aus wie
          "gleich da". */
+      /* Dasselbe Kontingent noch einmal: nichts tun -- wie beim Ring (kpiRingSig). */
+      var sigQ = q ? [genutzt, kontingent, q.plan || ""].join("|") : null;
+      if (sigQ != null && sigQ === kpiQuotaSig) return;
+      kpiQuotaSig = sigQ;
       if (q && (genutzt == null || kontingent == null || kontingent <= 0)){
         koerper.innerHTML = '<div class="up-chart-empty">' +
           esc(UC.t("The allowance could not be read.")) + '</div>';
@@ -5229,18 +5265,22 @@
         return;
       }
       var anteil = Math.max(0, Math.min(100, (genutzt / kontingent) * 100));
+      /* Schon einmal gezeigt: der Balken kommt gleich mit seiner Breite, ohne Fahrt. */
+      var fahrtQ = kpiGezeigt().quota !== sigQ;
+      kpiGezeigt().quota = sigQ;
       koerper.innerHTML =
         '<div class="upt-kpi-quota-num">' +
           '<span class="upt-kpi-quota-used">' + esc(UC.fmtTotal(genutzt)) + '</span>' +
           '<span class="upt-kpi-quota-total">/ ' + esc(UC.fmtTotal(kontingent)) + '</span>' +
         '</div>' +
-        '<div class="upt-kpi-quota-bar"><div class="upt-kpi-quota-fill"></div></div>';
+        '<div class="upt-kpi-quota-bar"><div class="upt-kpi-quota-fill"' +
+          (fahrtQ ? '' : ' style="width:' + anteil + '%"') + '></div></div>';
       karte.classList.toggle("is-over", genutzt > kontingent);
       /* Die Breite im naechsten Bild, damit die Fahrt sichtbar ist -- ein Wert, der zugleich mit
          dem Element kommt, springt ohne Uebergang. BEIDE Wege, nicht nur rAF: in einem verdeckten
          Tab feuert rAF nie, und dann stuende der Balken fuer immer auf 0. Im Harness genau so
          gemessen (leere Breite). Der zweite Anlauf setzt denselben Wert, das kostet nichts. */
-      var fill = koerper.querySelector(".upt-kpi-quota-fill");
+      var fill = fahrtQ ? koerper.querySelector(".upt-kpi-quota-fill") : null;
       if (fill){
         var setzeBreite = function(){ fill.style.width = anteil + "%"; };
         if (window.requestAnimationFrame) window.requestAnimationFrame(setzeBreite);
