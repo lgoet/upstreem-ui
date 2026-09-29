@@ -4255,21 +4255,22 @@
    :is(). Die uebrigen folgen; dann wird aus der Liste .up-ph-root allein.
    Ueber die Wurzelklassen und nicht ueber .has-crumbs: die Geometrie soll stehen, BEVOR das JS
    laeuft, sonst springt der Kopf beim Laden von 164px auf 48. */
-/* DAS SEITLICHE POLSTER SITZT IM ELEMENT (29.09., zweimal bestaetigt: "mach 16px padding left
-   right dazu"): 16px links und rechts. Die Bubble-Gruppe um den Kopf traegt dafuer KEINES mehr --
-   solange sie ihre 16px noch hat, stehen Krumen und Knoepfe 32px vom Rand und die Linien enden
-   16px davor (so auf der echten Seite gesehen, bevor das Bubble-Polster raus war). Nur mit dem
-   Polster HIER koennen die Linien bis an die Kante laufen, waehrend der Inhalt 16px Luft hat. */
-.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) { padding-top: 8px; padding-left: 16px; padding-right: 16px; }
+/* DER SEITENKOPF HAT KEIN SEITENPOLSTER (30.09.: "gib den ganzen Komponenten 16px padding left
+   und right, nur nicht den Topbars ... die Topbars haben sogar 16px zu viel, im Content, in beiden,
+   Nav und ganz oben"). Das Polster tragen jetzt die Komponenten darunter (Regel weiter unten);
+   was der Kopf an Abstand zum Rand hat, gibt allein seine Bubble-Gruppe. Zwei Anlaeufe davor
+   hatten hier 16px stehen -- zusammen mit Bubble 32. */
+.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) { padding-top: 8px; }
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-desc { display: none; }
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-top {
   align-items: center; min-height: var(--up-h-btn); padding-bottom: 8px; position: relative; }
-/* Die Linie laeuft durch das Polster bis an die Kante des Elements: -16px je Seite, genau das
-   Polster oben -- und schliesst damit buendig mit dem Rand ab, sobald die Bubble-Gruppe selbst
-   kein Polster mehr hat. */
+/* Die Linie laeuft bis an die Kante der Bubble-Gruppe um den Kopf, also so weit UEBER das Element
+   hinaus, wie die Gruppe Polster hat -- 16 oder 0, je nachdem, ob es in Bubble schon raus ist.
+   UC.makePageCrumbs misst das (--up-ph-rand-l/-r); ohne Messung liegt sie unter dem Element. */
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-top::after {
   content: ""; position: absolute; bottom: 0; height: 1px; pointer-events: none;
-  left: -16px; right: -16px; background: var(--vc-border); }
+  left: calc(-1 * var(--up-ph-rand-l, 0px)); right: calc(-1 * var(--up-ph-rand-r, 0px));
+  background: var(--vc-border); }
 /* Die Ueberschrift als Krumenzeile: 14px, auf der Mitte der 32px-Zeile. Vor dem JS steht hier der
    Seitenname aus der Vorlage -- in derselben Groesse, also ohne Sprung. */
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-heading {
@@ -4281,17 +4282,29 @@
    Linie. Reiterleiste: von dieser Linie bis zu ihrer eigenen Grundlinie ebenfalls 48 -- ohne
    Abstand darueber, die Reiter selbst 48 hoch, ihr Text also auf der Mitte der Leiste statt am
    Boden. Der Strich des gewaehlten Reiters sitzt weiter auf der Grundlinie.
-   Auch ihre Grundlinie laeuft bis an die Kante des Elements, wie die erste. */
+   Auch ihre Grundlinie laeuft bis an die Kante der Bubble-Gruppe, wie die erste. */
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-nav { margin-top: 0; }
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-navitem { height: calc(var(--up-h-btn) + 16px); }
-.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-nav::after { left: -16px; right: -16px; }
+.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-nav::after {
+  left: calc(-1 * var(--up-ph-rand-l, 0px)); right: calc(-1 * var(--up-ph-rand-r, 0px)); }
 .up-ph-crumb { display: inline-flex; align-items: center; gap: 6px; min-width: 0; color: var(--vc-third); }
 .up-ph-crumb.is-akt { color: var(--vc-text); }
-.up-ph-crumbic { display: inline-flex; flex: 0 0 auto; }
-.up-ph-crumbic svg { width: 16px; height: 16px; display: block; }
 .up-ph-crumbsep { display: inline-flex; flex: 0 0 auto; color: var(--vc-third); }
 .up-ph-crumbsep svg { width: 14px; height: 14px; display: block; }
 .up-ph-crumbname { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---------- DIE KOMPONENTEN TRAGEN IHR SEITENPOLSTER SELBST (30.09. angefordert) ----------
+   "Gib den ganzen Komponenten einfach 16px padding left und right, nur nicht den Topbars."
+   Bisher gab die Bubble-Gruppe der Ansicht allen Bloecken das Polster -- auch dem Seitenkopf, und
+   dessen Linien liefen deshalb nicht bis an den Rand. Jetzt tragen es die Bloecke selbst, und in
+   Bubble kommt es raus.
+   NUR in den vier Ansichten mit dem neuen Seitenkopf (die #view-Behaelter des Kopfskripts) --
+   dieselben Komponenten in einem Drawer behalten ihr Mass. NUR die grossen Bloecke: Kalender,
+   Filterknoepfe und Umschalter stehen nebeneinander in einer Zeile; 16px an jedem waeren Luecken
+   zwischen ihnen. Keiner dieser Wurzeln hatte bisher ein eigenes Seitenpolster. */
+:is(#view-dashboard, #view-prompts, #view-citations, #view-brands)
+  .up-root:is(.vot-root, .tcd-root, .combo-root, .upw-root, .upt-root, .urt-root, .utm-root,
+              .uut-root, .udt-root, .ubo-root, .udb-root, .ufb-root) { padding-left: 16px; padding-right: 16px; }
 
 /* ---------- responsive (classes set by UC.makePageNav via UC.onResize) ---------- */
 /* is-narrow (<768px default): tabs go from auto-width/left-packed to even thirds, still centered

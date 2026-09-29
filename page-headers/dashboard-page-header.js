@@ -349,11 +349,10 @@
       fire.spaet("data-mode-fn", "dphMode", { mode: modeStart });
     }
 
-    /* Brotkrumen statt Ueberschrift (29.09.): nur "Dashboard", Zeichen und Name in der
-       Primaerfarbe. KEINE Unterseite dahinter (29.09. spaet: "Analytic und Agentic sind ja eher
+    /* Brotkrumen statt Ueberschrift (29.09.): nur "Dashboard", in der Primaerfarbe. KEINE Unterseite dahinter (29.09. spaet: "Analytic und Agentic sind ja eher
        Ansichten") -- der Modus steht im Umschalter rechts, nicht in der Krume. Beide Modi tragen
        denselben kompakten Kopf aus core.css. */
-    if (UC.makePageCrumbs) UC.makePageCrumbs(root, { icon: "home", name: "Dashboard" });
+    if (UC.makePageCrumbs) UC.makePageCrumbs(root, { name: "Dashboard" });
 
     var searchBtn = root.querySelector(".dph-searchbtn");
     if (searchBtn){

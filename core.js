@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261037;
+  var BUILD = 20261038;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -9540,9 +9540,10 @@
 
   /* ---------- Brotkrumen im Seitenkopf (29.09. angefordert) ----------
      "in der heading oben auch so kleine breadcrumbs, je nach dem wo in der page navigation man
-     sich aktuell befindet": das Zeichen aus der Seitenleiste, der Name der Seite, ein Chevron und
-     die Unterseite. Zeichen, Name und Chevron in der dritten Farbe, die aktuelle Unterseite in
-     der Primaerfarbe. Eine Seite ohne Unterseiten zeigt Zeichen und Name in der Primaerfarbe.
+     sich aktuell befindet": der Name der Seite, ein Chevron und die Unterseite. Name und Chevron in
+     der dritten Farbe, die aktuelle Unterseite in der Primaerfarbe. Eine Seite ohne Unterseiten
+     zeigt den Namen in der Primaerfarbe. Das Zeichen der Seite vorne ist seit dem 30.09. raus
+     (angefordert); cfg.icon wird nicht mehr gelesen.
      Die Krumen stehen IN der h1 -- sie ist weiter die Ueberschrift der Seite, nur klein. Gebaut
      aus JS und nicht aus der Vorlage, weil die Vorlage ein eingebautes Element nicht erreicht
      (CLAUDE.md 4); die Geometrie der Zeile steht dagegen in core.css und gilt schon, bevor dieses
@@ -9572,7 +9573,6 @@
       stand = schl;
       h.innerHTML =
         '<span class="up-ph-crumb' + (akt ? '' : ' is-akt') + '">' +
-          (cfg.icon ? '<span class="up-ph-crumbic" aria-hidden="true">' + icon(cfg.icon, 1.5) + '</span>' : '') +
           '<span class="up-ph-crumbname" data-i18n="' + esc(cfg.name || "") + '">' + esc(name) + '</span>' +
         '</span>' +
         (akt ? '<span class="up-ph-crumbsep" aria-hidden="true">' + icon("chevronRight", 2) + '</span>' +
@@ -9584,9 +9584,27 @@
       new MutationObserver(zeichnen).observe(quelle, { subtree: true, childList: true, characterData: true,
         attributes: true, attributeFilter: ["class", "aria-selected"] });
     }
-    /* Die Trennlinien laufen seit dem 29.09. spaet per CSS bis an die Kante des Elements (-16px
-       durch sein eigenes Polster) -- hier wird nichts mehr gemessen. */
-    return { zeichnen: zeichnen };
+    /* DIE LINIEN BIS AN DIE KANTE DER BUBBLE-GRUPPE (30.09.). Der Kopf hat kein Seitenpolster; was
+       er an Abstand zum Rand hat, gibt die Gruppe um ihn (kopfPolsterDurchlassen markiert sie als
+       .up-ph-gruppe). Die Linien sollen bis an deren Kante laufen, also so weit ueber das Element
+       hinaus, wie die Gruppe Polster hat -- gemessen, weil das 16 oder 0 sein kann. Relativ zur
+       Gruppe gemessen, nicht zur Seite: das stimmt auch in einer geparkten Ansicht; ohne Flaeche
+       (content-visibility) zaehlt das Polster der Gruppe. */
+    function linieMessen(){
+      kopfPolsterDurchlassen(root);
+      var gr = root.parentElement && root.parentElement.parentElement;
+      if (!gr || !gr.classList || !gr.classList.contains("up-ph-gruppe")) return;
+      var r = root.getBoundingClientRect(), g = gr.getBoundingClientRect(), l, re;
+      if (r.width && g.width){ l = r.left - g.left; re = g.right - r.right; }
+      else { var cs = getComputedStyle(gr); l = parseFloat(cs.paddingLeft) || 0; re = parseFloat(cs.paddingRight) || 0; }
+      root.style.setProperty("--up-ph-rand-l", Math.max(0, Math.round(l)) + "px");
+      root.style.setProperty("--up-ph-rand-r", Math.max(0, Math.round(re)) + "px");
+    }
+    linieMessen();
+    setTimeout(linieMessen, 400);
+    if (onResize) onResize(root, linieMessen);
+    onViewChange(function(){ setTimeout(linieMessen, 300); });
+    return { zeichnen: zeichnen, linieMessen: linieMessen };
   }
 
   /* Plays the .up-ph-iconbtn spin (core.css: 1s ease-in-out, one turn) on a button, re-triggerable
