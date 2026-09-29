@@ -113,13 +113,17 @@
    inside the other (see UC.dropdownOpened). */
 .umk-sort-menu {
   position: absolute; top: calc(100% + var(--up-dd-gap)); right: 0; z-index: 3;
-  width: 148px; padding: var(--up-dd-pad); border: 1px solid var(--vc-border); border-radius: var(--up-dd-radius);
+  /* BREITE NACH INHALT, 148px als Untergrenze (29.09.). Die feste Breite reichte fuer das
+     Englische; im Deutschen brach "Am häufigsten genutzt" auf zwei Zeilen um (gemessen:
+     Topics und Markets, dazu "Zuletzt genutzt"). Das Menue haengt rechts am Knopf und waechst
+     damit nach links, in das Panel hinein. */
+  width: max-content; min-width: 148px; padding: var(--up-dd-pad); border: 1px solid var(--vc-border); border-radius: var(--up-dd-radius);
   background: var(--up-menu-bg); box-shadow: var(--up-dd-shadow);
   display: none;
 }
 .umk-sort.is-open .umk-sort-menu { display: block; }
 /* Geometry only — hover, selected tone and the 16x16 check come from core's .up-optrow. */
-.umk-sort-opt { height: 32px; padding: 0 9px; font-size: 12.5px; font-weight: 500; }
+.umk-sort-opt { height: 32px; padding: 0 9px; font-size: 12.5px; font-weight: 500; white-space: nowrap; }
 
 /* ---------- list ---------- */
 .umk-list { display: flex; flex-direction: column; gap: 4px; max-height: 244px; overflow-y: auto; padding: 2px 0; }

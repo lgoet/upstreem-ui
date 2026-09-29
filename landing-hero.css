@@ -2061,13 +2061,14 @@
    Doughnut braucht sie); der Inhaltskasten wird dafuer um denselben Faktor groesser, damit der
    Schirm weiter genau gefuellt ist. */
 .ulh-fen { position: absolute; z-index: 1; }
-/* Ein Fenster liegt VOR dem Hauptfenster (die URL-Typen, is-vorn), zwei dahinter (Teams und die
-   Antwortkarte). Ausdrueckliche Werte an allen drei Stellen: bei gleichem z-index entschiede die
-   Reihenfolge im Markup, und die soll hier nichts bedeuten.
-   Die Antwortkarte lag bis zum 28.09. ebenfalls davor. Das war gleichgueltig, solange sie mit 4px
-   Luft NEBEN dem Hauptfenster stand -- seit sie sich auf schmaleren Seiten ueber seine Kante
-   schiebt (siehe "Lage" unten), entscheidet die Ebene, was man sieht. Angefordert war es so:
-   Teams und Antwortkarte schieben sich HINTER das Hauptfenster, die URL-Typen DAVOR. */
+/* Zwei Fenster liegen VOR dem Hauptfenster (die URL-Typen und die Antwortkarte, is-vorn), eines
+   dahinter (Teams). Ausdrueckliche Werte an allen drei Stellen: bei gleichem z-index entschiede
+   die Reihenfolge im Markup, und die soll hier nichts bedeuten.
+   Die Antwortkarte hat die Seite zweimal gewechselt: bis zum 28.09. davor, dann dahinter
+   ("Teams und Antwortkarte schieben sich HINTER das Hauptfenster"), seit dem 29.09. spaet wieder
+   davor ("ueber dem Hauptfenster, nicht dahinter"). Gleichgueltig ist das nur, solange sie mit
+   4px Luft NEBEN dem Hauptfenster steht -- auf schmaleren Seiten schiebt sie sich ueber seine
+   Kante (siehe "Lage" unten), und dann entscheidet die Ebene, was man sieht. */
 .ulh-frame { position: relative; z-index: 2; width: 100%; }
 .ulh-fen.is-vorn { z-index: 3; }
 
@@ -2171,7 +2172,10 @@
    beginnt bei 32.2 -- 30 schneidet nichts an, die Stimmung liegt jetzt ganz dahinter. In den Teams
    stehen die Namen linksbuendig weit aussen, hinter der Grenze liegen nur Haken und Leerraum.
    Gemessen bringt das bei gleicher Seitenbreite ein groesseres Hauptfenster: 1440 -> 976 statt
-   928, 1280 -> 856 statt 814, 1100 -> 721 statt 686. */
+   928, 1280 -> 856 statt 814, 1100 -> 721 statt 686.
+   Seit die Antwortkarte wieder VOR dem Hauptfenster liegt (29.09. spaet), verliert sie dabei
+   nichts mehr -- die 30 Prozent begrenzen jetzt, wie viel sie vom rechten Rand des Hauptfensters
+   abdeckt, genau wie bei den URL-Typen links. */
 .ulh-fen { --ulh-rein-max: .30; }
 /* 300x254: die Breite ist die des Panels in der App (sidebar.css: .usn-bar .usn-menu), die Hoehe
    ist ADDIERT und nicht geschaetzt -- 8 Polster + 32 Suchfeld + 6 Abstand + drei Zeilen a 64 mit

@@ -948,8 +948,12 @@
   flex: 0 0 auto; min-width: 76px; }
 .upt-grp-kpi-val { display: inline-flex; align-items: center; gap: 6px; }
 /* Dieselbe Etikett-Behandlung wie im Rest der App (core: .up-label). Stand auf 11px/500 in
-   Versalien mit Sperrung -- siehe die Begruendung dort. */
-.upt-grp-kpi-lbl { font-size: 12px; font-weight: 600; color: var(--vc-muted); white-space: nowrap; }
+   Versalien mit Sperrung -- siehe die Begruendung dort.
+   In der dritten Schriftfarbe (29.09. angefordert: "Labels unter den Werten alle in dritt font
+   color"). Der Wert darueber ist, was man liest; das Etikett sagt nur, welcher es ist, und tritt
+   damit eine Stufe weiter zurueck als --vc-muted. Gilt in beiden Ansichten, Wide und Inline --
+   es ist dieselbe Gruppenzeile. */
+.upt-grp-kpi-lbl { font-size: 12px; font-weight: 600; color: var(--vc-third); white-space: nowrap; }
 .upt-grp-inactive { font-size: 11px; font-weight: 500; color: var(--vc-fourth); }
 /* All four KPI values (Prompts' .up-num, Visibility's .up-num, Rank's .up-rank-group .up-num,
    Sentiment's .up-sent-val) forced to the same 13px/500 here -- their shared classes come from

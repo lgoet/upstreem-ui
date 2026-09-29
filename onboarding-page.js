@@ -3458,8 +3458,9 @@
        Logo: bei 480px Fensterbreite standen die Ausgaenge 21px ausserhalb des Bildschirms, bei
        380px 121px -- der Themenknopf war ganz draussen und die Seite scrollte seitwaerts.
        Reicht der Platz nicht, fallen die Beschriftungen weg und die Icons bleiben. Das ist die
-       einzige Stelle, die nachgibt, bevor Inhalt den Schirm verlaesst -- lieber die 32px zum
-       Rand halten und ein Wort weniger zeigen als einen Knopf, den niemand erreicht.
+       einzige Stelle, die nachgibt, bevor Inhalt den Schirm verlaesst -- lieber den Abstand zum
+       Rand halten (seit dem 29.09. 16 links, 8 rechts wie in der Hauptapp) und ein Wort weniger
+       zeigen als einen Knopf, den niemand erreicht.
        Gemessen wird im SICHTBAREN Zustand: mit display:none haben die Beschriftungen Breite 0,
        dann passt es, dann kommen sie zurueck, dann passt es nicht. Dieselbe Schaukel wie bei
        den Schienenbeschriftungen, und derselbe Ausweg. */

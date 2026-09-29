@@ -3971,9 +3971,13 @@
    pickDeckel rechnet den Platz nach unten. */
 /* 8 wie oben (15.09.): im Dashboard klappt das Panel nach UNTEN auf, es ist aber derselbe
    Abstand zum selben Eingabefeld -- zwei Zahlen dafuer waeren zwei Orte zum Vergessen. */
-#ask-mira.up-root.is-launcher .am-pick-panel { top: calc(100% + 8px); bottom: auto; transform-origin: top center;
+/* is-pick-unten (29.09. spaet): dieselbe Richtung ohne Launcher, fuer eine Mira, deren Feld auf
+   dem Startschirm weit oben steht -- gesetzt von der Vorfuehrung der Landingpage ("das Add-Dropdown
+   soll sich unten oeffnen, nicht oben"). Nur OHNE Nachrichten: im Chat steht das Feld unten, und
+   darunter ist kein Platz. pickDeckel rechnet in beiden Faellen den Platz nach unten. */
+#ask-mira.up-root:is(.is-launcher, .is-pick-unten:not(.has-messages)) .am-pick-panel { top: calc(100% + 8px); bottom: auto; transform-origin: top center;
   box-shadow: 0 2px 16px rgba(0,0,0,0.06); }
-#ask-mira.up-root.is-launcher:not(.is-pick-open) .am-pick-panel { transform: translateY(-6px) scale(0.99); }
-#ask-mira.up-root.is-launcher[data-theme="dark"] .am-pick-panel { box-shadow: 0 2px 16px rgba(0,0,0,0.3); }
+#ask-mira.up-root:is(.is-launcher, .is-pick-unten:not(.has-messages)):not(.is-pick-open) .am-pick-panel { transform: translateY(-6px) scale(0.99); }
+#ask-mira.up-root:is(.is-launcher, .is-pick-unten:not(.has-messages))[data-theme="dark"] .am-pick-panel { box-shadow: 0 2px 16px rgba(0,0,0,0.3); }
 #ask-mira.up-root.is-launcher .am-eff-menu { top: calc(100% + 8px); bottom: auto; transform-origin: top right; }
 #ask-mira.up-root.is-launcher .am-eff:not(.is-open) .am-eff-menu { transform: translateY(-6px) scale(0.98); }

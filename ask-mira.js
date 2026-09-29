@@ -5208,6 +5208,13 @@
        ist dann der unter dem Feld bis zur Fensterkante, dieselben 24px abgezogen. Mindestens 240:
        das Dashboard scrollt, und ein Panel mit zwei Zeilen waere keines. */
     if (istLauncher()) platz = Math.max(240, Math.round(window.innerHeight - r.bottom - 24));
+    /* is-pick-unten (ask-mira.css): ebenfalls nach unten, aber in Miras eigenem Kasten -- der
+       traegt overflow: hidden, also zaehlt der Platz bis zu SEINER Unterkante und nicht bis zu
+       der des Fensters. Im Chat gilt die Klasse nicht (dort steht das Feld unten), also auch
+       diese Rechnung nicht. */
+    else if (root.classList.contains('is-pick-unten') && !root.classList.contains('has-messages')){
+      platz = Math.max(180, Math.round(rr.bottom - r.bottom - 24));
+    }
     elPickPanel.style.setProperty('--am-pick-max', platz + 'px');
     if (elPickScroll) elPickScroll.style.maxHeight = Math.max(96, platz - 118) + 'px';
   }
@@ -9033,6 +9040,12 @@
     _heim = null; _heimEltern = null; _launchView = '';
     try { if (root.__amFit) root.__amFit(); } catch(e){}
     try { autosize(); picksEinziehen(); } catch(e){}
+    /* Die kompakte Fassung haengt an der Hoehe des PLATZES, und die hat sich eben geaendert: im
+       Dashboard 132px, zu Hause die ganze Ansicht. Also hier sofort neu messen, ohne die Sperre
+       fuer das Tippen -- der Kasten ist umgezogen, nicht von einer Tastatur verkleinert. Auf den
+       gedrosselten Beobachter zu warten hiesse: ein Takt in der kompakten Fassung, Feld unten,
+       dann der Sprung. */
+    try { root.classList.toggle('is-compact', compactMessen()); } catch(e){}
   }
   root.__amAbtreten = function(){
     if (!istLauncher()) return;
@@ -9910,10 +9923,21 @@
   setTimeout(_amAutoBind, 300);            // …and again once Bubble has rendered/populated them
 
   /* #3 — collapse header on small element height (desktop), like mobile */
-  function updateCompact(){
-    if (document.activeElement === elTextarea) return;   // don't re-evaluate while typing (keyboard shrinks the box)
+  function compactMessen(){
     var h = root.getBoundingClientRect().height || root.clientHeight || 0;
-    root.classList.toggle('is-compact', h > 0 && h < 560);
+    return h > 0 && h < 560;
+  }
+  function updateCompact(){
+    /* WAEHREND GETIPPT WIRD, NUR IN EINE RICHTUNG (29.09.). Die Sperre ist fuer die Tastatur am
+       Telefon da: sie verkleinert den Kasten, und das soll nicht auf die kompakte Fassung
+       umschalten. Groesser macht sie ihn nie -- ein gewachsener Kasten darf die Klasse also auch
+       mit Fokus im Feld wieder abgeben. Vorher blieb sie kleben: als Launcher im Dashboard ist
+       Mira 132px hoch und traegt sie, "Ask Mira" aus Quick Actions holt sie nach Hause und setzt
+       im selben Zug den Fokus ins Feld -- danach nahm nichts sie mehr weg, und das Feld stand in
+       der vollen Ansicht ganz unten (gemessen: 83% der Hoehe statt 66%). */
+    var klein = compactMessen();
+    if (klein && document.activeElement === elTextarea) return;
+    root.classList.toggle('is-compact', klein);
   }
   updateCompact();
   amAufResize(updateCompact, { hoehe: true });

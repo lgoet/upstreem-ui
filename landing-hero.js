@@ -1231,6 +1231,24 @@
            Fenster), und diese Regeln sollen ueber die Spezifitaet gewinnen. */
         '#ask-mira .am-textarea,#ask-mira .am-ph-text{font-size:16px;line-height:1.7;}' +
         '#ask-mira .am-ph-loop{height:28px;}' +
+        /* DIE TREFFERLISTE DES ADD-DROPDOWNS KLEINER (29.09. spaet angefordert: "Schriften und
+           Logos erscheinen mir da zu gross"). Alle Masse der Zeile ziehen mit, jedes auf die
+           naechste Stufe der Skala: Name 14 -> 12, Nebenzeile und Gruppenkopf 12 -> 11, Kachel
+           30 -> 24 (Radius 8 -> 6, Flagge 24x18 -> 20x15, Rueckfallzeichen 15 -> 13), Polster
+           senkrecht 8 -> 7, Luecke 11 -> 9. Die Zeile misst damit 38 statt 46.
+           Seitlich bleiben die 10: .am-pick-scroll holt genau diese 10 mit einem negativen Rand
+           wieder herein (ask-mira.css), damit der Text mit dem Suchfeld darueber fluchtet -- mit 9
+           stuende er einen Pixel daneben. Die Typangabe rechts bleibt bei 11, der kleinsten Stufe.
+           Nur hier: in der App bleibt die Liste, wie sie ist. */
+        '#ask-mira .am-pick-cgroup{padding:3px 0 2px;}' +
+        '#ask-mira .am-pick-cgroup+.am-pick-cgroup{margin-top:8px;}' +
+        '#ask-mira .am-pick-cghead{padding:5px 10px 3px;font-size:11px;}' +
+        '#ask-mira .am-pick-row{padding:7px 10px;gap:9px;}' +
+        '#ask-mira .am-pick-av{width:24px;height:24px;border-radius:6px;}' +
+        '#ask-mira .am-pick-av.is-flag{width:20px;height:15px;border-radius:3px;}' +
+        '#ask-mira .am-pick-av-fb svg{width:13px;height:13px;}' +
+        '#ask-mira .am-pick-primary{font-size:12px;}' +
+        '#ask-mira .am-pick-secondary{font-size:11px;}' +
       '</style></head><body>' + (MARKUP.mira || "") +
       '<script src="' + basis + 'core.js"><\/script>' +
       '<script src="' + basis + 'ask-mira.js"><\/script>' +
@@ -1241,6 +1259,13 @@
            existiert, wenn ask-mira.js gelaufen ist. */
         '(function(){var n=0;(function go(){if(window.askMiraSetTheme){' +
         'window.askMiraSetTheme("light");return;}if(n++<60)setTimeout(go,50);})();})();' +
+        /* DAS ADD-DROPDOWN OEFFNET NACH UNTEN (29.09. spaet angefordert). Das Feld steht hier auf
+           dem Startschirm im oberen Drittel, weil Kategorien und Hinweis ausgeblendet sind --
+           unter ihm ist Platz, ueber ihm steht die Begruessung. is-pick-unten ist Miras eigener
+           Schalter dafuer (ask-mira.css, pickDeckel in ask-mira.js); er gilt nur ohne
+           Nachrichten, im Chat steht das Feld wieder unten. Die Zeile laeuft nach ask-mira.js,
+           also steht die Wurzel schon da -- und das Dropdown ist noch zu, es springt nichts. */
+        '(function(){var m=document.getElementById("ask-mira");if(m)m.classList.add("is-pick-unten");})();' +
         /* Sehen ja, bedienen nein -- in der Abfangphase, bevor die Komponente es sieht. Ein
            pointer-events: none am Rahmen haette auch das Hovern mitgenommen. */
         /* Das Mausrad gehoert der SEITE. ask-mira haengt einen eigenen Radgriff an den Chat, der
@@ -3420,11 +3445,12 @@
      und Seitenzaehler sind im Fenster ausgeblendet (landing-hero.css): in ein 4:3-Fenster gehoert
      die Karte und nicht die halbe Seite um sie herum. */
   function fensterAntwort(){
-    /* KEIN is-vorn mehr (28.09.): die Karte schiebt sich auf schmaleren Seiten HINTER das
-       Hauptfenster, so war es angefordert -- nur die URL-Typen liegen davor. Solange sie mit 4px
-       Luft daneben stand, war die Ebene gleichgueltig; seit einpassen() sie ueber die Kante ruecken
-       kann, entscheidet sie, ob die Karte oder das Hauptfenster abgedeckt wird. */
-    return '<div class="ulh-fen ulh-fen-antwort">' + chrom() +
+    /* WIEDER is-vorn (29.09. spaet angefordert: "das Response-Detail-Fenster ueber dem
+       Hauptfenster platzieren, nicht dahinter"). Vom 28.09. bis hierher lag sie dahinter, auch das
+       war so angefordert. Solange sie mit 4px Luft daneben steht, ist die Ebene gleichgueltig; seit
+       einpassen() sie ueber die Kante ruecken kann, entscheidet sie, ob die Karte oder das
+       Hauptfenster abgedeckt wird -- jetzt deckt die Karte, wie die URL-Typen links. */
+    return '<div class="ulh-fen ulh-fen-antwort is-vorn">' + chrom() +
       '<div class="ulh-fen-view" data-up-keepclip>' +
         '<div class="ulh-fen-app" data-up-keepclip>' + (MARKUP.urt || "") + '</div>' +
       '</div>' +
