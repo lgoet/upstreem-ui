@@ -302,11 +302,15 @@
         return esc(f === "–" ? v : f);
       }
       function taktText(a) {
+        /* Der Entwicklerzugang (core aboLesen, dev: true) hat kein Intervall und keinen Preis --
+           "–" in beiden Zeilen laesse sich lesen wie "Daten fehlen". */
+        if (a.dev) return UC.t("Permanent");
         if (a.interval === "monthly") return UC.t("Monthly");
         if (a.interval === "yearly") return UC.t("Yearly");
         return a.intervalRoh || "–";
       }
       function preisHtml(a) {
+        if (a.dev) return esc(UC.t("Free"));
         if (a.preis == null) return "–";
         return esc(UC.fmtEur(a.preis)) + (a.interval
           ? ' <span class="ubl-per">' + esc(UC.t(a.interval === "yearly" ? "/ year" : "/ month")) + '</span>'

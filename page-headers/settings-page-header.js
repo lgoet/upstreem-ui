@@ -80,9 +80,19 @@
       return '<img class="sph-navlogo" src="' + UC.esc(url) + '" alt="" ' +
              'onerror="this.style.display=&quot;none&quot;"/>';
     }
+    /* DIE WERTE SIND DIE DER SEITENLEISTE (29.09. angefordert: "team, billing und preferences
+       statt brand"). Das Konto-Menue der Leiste fuehrt dieselben drei Unterseiten unter
+       preferences / team / billing (sidebar.js), und Bubble verdrahtet beide mit denselben
+       Werten -- mit "brand" hier passte der erste Reiter zu nichts. Ein data-page="brand" an
+       einem schon eingebauten Element gilt weiter, als preferences (startSeite). */
+    function startSeite(){
+      var v = String(root.getAttribute("data-page") || "").trim().toLowerCase();
+      if (!v || v === "brand") return "preferences";
+      return v;
+    }
     function pages(){
       return [
-        { value: "brand",   label: "Your Brand",        icon: brandIcon() },
+        { value: "preferences", label: "Your Brand",    icon: brandIcon() },
         { value: "team",    label: "Team Organisation", icon: iconTeam() },
         { value: "billing", label: "Billing",           icon: iconBilling() }
       ];
@@ -95,7 +105,7 @@
        dieses Seitenbesuchs; danach gewinnt, was der Nutzer zuletzt gewaehlt hat. */
     var nav = UC.makePageNav(root, {
       pages: pages(),
-      vorgabe: String(root.getAttribute("data-page") || "brand").trim() || "brand",
+      vorgabe: startSeite(),
       onSelect: function(value){ fire("data-nav-fn", "sphNav", { page: value }); }
     });
 
@@ -111,7 +121,7 @@
           pages: pages(),
           /* Die aktuelle Auswahl haelt fest; ohne eine greift der Merker, dann data-page. */
           selected: keep || null,
-          vorgabe: String(root.getAttribute("data-page") || "brand").trim() || "brand",
+          vorgabe: startSeite(),
           onSelect: function(value){ fire("data-nav-fn", "sphNav", { page: value }); }
         });
       }).observe(root, { attributes: true, attributeFilter: ["data-brand-logo"] });

@@ -4059,6 +4059,12 @@
    itself back up against the old 32px padding; with 16px there is nothing left to pull back, so
    those margins are 0 now and only the is-vnarrow variants below still offset. */
 .up-ph-root { padding: 16px 0 16px; background: transparent; }
+/* Die Bubble-Gruppe um den Seitenkopf (core.js kopfPolsterDurchlassen, 29.09.): ihre eigene leere
+   Flaeche -- das untere Polster von 16px und die Luecken -- faengt keine Klicks mehr, sie gehen an
+   das, was darunter liegt (die Toolbar der Topics-Verwaltung). Die direkten Kinder holen sich die
+   Klicks zurueck, alles darin bleibt bedienbar. Nur pointer-events, keine Stapelung. */
+.up-ph-gruppe { pointer-events: none; }
+.up-ph-gruppe > * { pointer-events: auto; }
 
 .up-ph-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .up-ph-left { display: flex; flex-direction: column; min-width: 0; }

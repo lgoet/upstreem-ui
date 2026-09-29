@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261029;
+  var BUILD = 20261030;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -1672,6 +1672,9 @@
     "Switch to": "Wechseln zu",
     "No active billing plan": "Kein aktiver Tarif",
     "Permanent free developer access": "Dauerhaft kostenloser Entwicklerzugang",
+    /* settings-billing beim Entwicklerzugang: Intervall und Preis */
+    "Permanent": "Dauerhaft",
+    "Free": "Kostenlos",
     "Go to parent prompt": "Zum übergeordneten Prompt",
     "No models available yet.": "Noch keine Modelle verfügbar.",
 
@@ -9098,7 +9101,31 @@
      Bubble sets these attributes on the root LATER and edits them in place rather than replacing
      the node, so a one-shot read at init leaves the header showing nothing. The MutationObserver
      is what makes it survive that, and it is exactly the guard the tables already use. */
+  /* DAS POLSTER DER KOPFGRUPPE LAESST KLICKS DURCH (29.09.).
+     Punkt 30 zum dritten Mal: "16px padding bottom, sind genau das, was da ueber steht". Die
+     Bubble-Gruppe um den Seitenkopf (beim Nutzer baUaLaZaH: Polster 0 0 16, z-index 19 nach
+     Bubbles Ebenenfolge) liegt mit ihrem durchsichtigen unteren Polster ueber der Toolbar der
+     Topics-Verwaltung. Zu sehen ist die Toolbar, zu klicken nicht.
+     Die Kanten-Messung in makeSticky hilft dort nicht: sie greift nur bei einem KLEBENDEN Kopf,
+     und die Diagnose beim Nutzer ergab keinen (kopf_klebt: false). Also wird das Polster
+     klickdurchlaessig: die Gruppe bekommt eine Klasse, und core.css setzt auf ihr
+     pointer-events: none und auf ihren direkten Kindern wieder auto. Die leere Flaeche der
+     Gruppe -- Polster und Luecken -- laesst den Klick zur Toolbar darunter durch; alles, was IN
+     der Gruppe steht (Seitenkopf, Filterleisten), bleibt bedienbar.
+     KEIN z-index, keine Position, keine Stapelung: an der fremden Gruppe aendert sich nur, ob
+     ihre eigene leere Flaeche Klicks faengt (Host-Stapelung nie umschreiben, 11.08.).
+     Gemeint ist genau die Gruppe um das HTML-Element des Seitenkopfs -- nicht weiter oben. */
+  function kopfPolsterDurchlassen(root){
+    var html = root && root.parentElement;
+    if (!html || !html.classList || !html.classList.contains("bubble-element")) return;
+    var gruppe = html.parentElement;
+    if (!gruppe || !gruppe.classList || !gruppe.classList.contains("bubble-element") ||
+        !gruppe.classList.contains("Group")) return;
+    gruppe.classList.add("up-ph-gruppe");
+  }
+
   function makePageHeaderMeta(root){
+    kopfPolsterDurchlassen(root);
     var nameEl = root.querySelector(".pph-metaname");
     var logoEl = root.querySelector(".up-ph-metalogo");
     function syncFromAttrs(){
@@ -16920,6 +16947,24 @@
     if (!p || typeof p !== "object" || isArr(p)) return { ok: false };
     if (aboNein(p.ok)) return { ok: false };
     var team = { teamId: aboTxt(p.team_id) };
+    /* DER DAUERHAFTE ENTWICKLERZUGANG (29.09. angefordert: "billing ist doch das wichtige, weil
+       da sonst einfach steht kein Plan"). "Legacy Free" hat kein Abo -- has_billing false oder
+       gar kein billing --, und die Zeilen darunter brachen genau dort ab: abo null, "No active
+       plan". Deshalb VOR diesem Abbruch: Id oder Name des Tarifs, wo immer die RPC sie hinlegt
+       (im Umschlag billing oder daneben), und ist es der Entwicklerzugang, gibt es ein Abo mit
+       dev: true. Zugang hat es, solange die RPC nicht ausdruecklich Nein sagt. */
+    var bb = (p.billing && typeof p.billing === "object" && !isArr(p.billing)) ? p.billing : {};
+    var devId = aboTxt(bb.billing_plan_id != null ? bb.billing_plan_id
+              : bb.plan_id != null ? bb.plan_id
+              : p.billing_plan_id != null ? p.billing_plan_id : p.plan_id);
+    var devName = aboTxt(bb.plan_name != null ? bb.plan_name : p.plan_name);
+    if (planIstDev(devName, devId)){
+      team.verwalten = aboNein(bb.can_manage_billing != null ? bb.can_manage_billing : p.can_manage_billing) ? false : null;
+      team.abo = { planId: devId, planName: devName, dev: true, interval: "", intervalRoh: "",
+                   preis: null, naechste: "", gekuendigt: "", zugangBis: "", testBis: "",
+                   aktiv: !aboNein(bb.has_active_access != null ? bb.has_active_access : p.has_active_access) };
+      return aboErgebnis(team);
+    }
     var b = p;
     if (Object.prototype.hasOwnProperty.call(p, "billing")){
       b = p.billing;

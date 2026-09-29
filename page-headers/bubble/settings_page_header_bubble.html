@@ -20,13 +20,16 @@
                      Der Platzhalter heisst BRAND_LOGO_URL, nicht BRAND_LOGO -- genau diesen Namen
                      erkennt makePageHeaderMeta als "noch nicht ersetzt" und laesst das Bild leer,
                      statt den Platzhalter als Bildadresse zu laden.
-  data-page        = welcher Reiter beim Laden aktiv ist: "brand" | "team" | "billing".
-                     Weglassen heisst "brand".
+  data-page        = welcher Reiter beim Laden aktiv ist: "preferences" | "team" | "billing"
+                     (seit 29.09. dieselben Werte wie das Konto-Menue der Seitenleiste).
+                     Weglassen heisst "preferences"; ein altes "brand" gilt als "preferences".
 
   ── Event ────────────────────────────────────────────────────────────────────
   data-nav-fn = "bubble_fn_sphNav_[dynamic id]"
 
-    fn('{"page":"team"}')     page: "brand" | "team" | "billing"
+    fn('{"page":"team"}')     page: "preferences" | "team" | "billing"
+                              (bis 28.09. hiess der erste "brand" -- Bedingungen im
+                              sphNav-Workflow auf "preferences" umstellen)
 
     Der Reiter ist bereits umgeschaltet, wenn das Event ankommt -- der Unterstrich wandert ohne
     Serverantwort. Beantworte es damit, die passende Gruppe einzublenden, etwa ueber denselben
@@ -45,7 +48,7 @@
      data-isdark="no"
      data-brand-name="BRAND_NAME"
      data-brand-logo="BRAND_LOGO_URL"
-     data-page="brand"
+     data-page="preferences"
      data-nav-fn="bubble_fn_sphNav_ID">
   <div class="up-ph-top">
     <div class="up-ph-left">
