@@ -3369,7 +3369,33 @@
   .ulh-quell-app .up-donut-wrap,
   .ulh-quell-app .up-donut-sk .up-sk-chart { width: min(44.2%, 170px); }
 
-  .ulh-nav-in { gap: 12px; }
+  /* ---- DAS GITTER WIRD DER RAND (30.09. angefordert) ----
+     "Alles bis auf die Hero-Seite: das Gitter kann die Aussengrenze werden, als wenn wir
+     reinzoomen. Die vertikalen Linien kommen weg, aber der Platz links und rechts von ihnen auch."
+     Gemessen bei 375px lag Text in einer Karte 56px vom Rand: 16 Kante, 8 zur Schiene, 1+4+1
+     Kasten, 26 Polster der Karte. Die Kante ist hier doppelt -- die Kaesten bringen ihren
+     Abstand selbst mit.
+     Also bekommen die Sektionen mit Kaesten die ganze Breite als Spur. Ueber die Variable und
+     nicht ueber .ulh-spur: sie erbt, und so ziehen auch die Kurve der GEO-Sektion und alles
+     andere mit, was mit der Spur rechnet. Die Kaesten behalten ihre 8px, jetzt zum Bildrand.
+     --ulh-kante bleibt, wo es ist: landing-hero.js rechnet damit das Hero-Fenster ein.
+     NICHT hier: Leiste und Hero (sie behalten ihre 16px, so war es verlangt), die Stimme und der
+     Fuss -- dort steht Text ohne eigenes Polster direkt in der Spur, und ohne die 16px stiesse er
+     an den Bildrand. */
+  .ulh-feat, .ulh-quell, .ulh-msc, .ulh-geo, .ulh-preis { --ulh-spur: 100%; }
+  /* Die Schienen selbst, und die zwei Striche hinter dem Kopf der Quellen, die genau auf ihnen
+     lagen. Das Muster zwischen den Strichen bleibt -- es ist Textur, kein Gitter. */
+  .ulh-schienen, .ulh-quell-kopf::before { display: none; }
+  /* Was bisher ohne eigenes Polster an der Schiene stand, braucht jetzt eines: die Ueberschrift der
+     Quellen (24 wie die Koepfe der anderen Sektionen, .ulh-feat-kopf) und die vier Zahlen der
+     GEO-Sektion (16 -- ihr Strich bleibt, wo er war). */
+  .ulh-quell-kopf { padding: 0 24px; }
+  .ulh-geo-kpis { padding: 0 16px; }
+
+  /* Die Leiste zeichnet die Schienen mit eigenen Raendern weiter (siehe .ulh-nav-in). Ohne die
+     Schienen darunter stuenden dort zwei Stummel, die beim Scrollen ueber jeder Sektion mitfahren.
+     Ihr Inhalt bleibt, wo er war -- die Leiste gehoert zum Hero. */
+  .ulh-nav-in { gap: 12px; border-left: 0; border-right: 0; }
   .ulh-nav-rechts .ulh-btn { padding: 0 10px; }
 }
 @media (max-width: 560px) {
