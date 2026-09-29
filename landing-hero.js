@@ -3384,7 +3384,16 @@
       /* Der Ring steht in einem 300px-Fenster: die Legende gehoert UNTER ihn, und genau das macht
          is-collapsed. Die Schwelle liegt darum ueber der Fensterbreite und nicht bei den 420 aus
          core -- gemessen wird mit getBoundingClientRect, also in der VERKLEINERTEN Groesse. */
-      collapseAt: 9999
+      collapseAt: 9999,
+      /* OHNE Verzoegerung beim Nachmessen (29.09. spaet gemeldet, mit Bild: "eine Version des URL
+         Type Charts ist manchmal kaputt" -- der Ring halb so gross in der Ecke links oben, die
+         Zahl in der Mitte richtig). Das Fenster steht in der verkleinerten Buehne: Chart.js misst
+         beim Anlegen die sichtbare Groesse (91px), sein Beobachter gleich danach die im Layout
+         (196px). Mit den 120ms aus core zeichnete es dazwischen die alte Geometrie in die neue
+         Leinwand und blieb dort stehen, wenn die Nachrechnung auf das Ende der Eingangsanimation
+         fiel -- darum "manchmal" und darum "eine Version". Begruendung und Messung in core
+         (makeTypeChart, resizeDelay). */
+      resizeDelay: 0
     });
     koerper.__ulhDonut = werk;
     werk.renderDonut(urlScheiben(kern, FEN_URL_STAND[fenUrlIndex]));

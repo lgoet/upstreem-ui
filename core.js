@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261052;
+  var BUILD = 20261053;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -14160,8 +14160,19 @@
                 spacing: 0, borderWidth: 0, borderRadius: CORNER, hoverOffset: HOVER }] },
             plugins: [constantGapPlugin, ringWidthPlugin],
             /* resizeDelay: derselbe Grund wie beim Linienchart -- ohne ihn zeichnet Chart.js
-               waehrend des Ziehens bei jeder Bildaenderung neu. */
-            options: { responsive: true, maintainAspectRatio: false, resizeDelay: 120, layout: { padding: 8 },
+               waehrend des Ziehens bei jeder Bildaenderung neu.
+               cfg.resizeDelay (29.09. spaet): 0 fuer einen Ring in einem SKALIERTEN Vorfahren.
+               Chart.js misst beim Anlegen die sichtbare Groesse (getBoundingClientRect, unter
+               transform: scale kleiner), sein ResizeObserver danach die Layoutgroesse. Mit
+               Verzoegerung vergroessert es die Leinwand sofort, zeichnet aber die alte Geometrie
+               hinein -- halber Ring links oben -- und rechnet erst 120ms spaeter neu. Faellt diese
+               Rechnung genau auf das Ende der 200ms-Eingangsanimation, zeichnet Chart.js 4.4.4
+               danach gar nicht mehr, und der kaputte Ring bleibt stehen (gemessen in 4 von 5
+               Zeitlagen, gemeldet aus dem URL-Types-Fenster der Landingpage). Mit 0 rechnet es im
+               selben Augenblick, in dem es die Leinwand aendert. In der App misst beides gleich
+               (kein transform), dort bleibt es bei 120. */
+            options: { responsive: true, maintainAspectRatio: false,
+              resizeDelay: cfg.resizeDelay != null ? cfg.resizeDelay : 120, layout: { padding: 8 },
               /* Eigener Schluessel fuer ringWidthPlugin -- Chart.js laesst fremde Optionen durch. */
               upRingPx: cfg.ringPx || null,
               animation: ohneFahrt ? false : { duration: 200, easing: "easeOutQuad" },
