@@ -166,6 +166,13 @@
       });
     })();
 
+    /* Brotkrumen statt Ueberschrift (29.09.): Zeichen und Name wie in der Seitenleiste, ohne
+       Unterseiten beide in der Primaerfarbe. Der Kopf steht IN dieser Komponente, also misst
+       UC.makePageCrumbs die ganze Wurzel: sie bekommt den Randabstand der Seitenkoepfe (16 vom
+       Rand der Bubble-Gruppe), und die Linie unter dem Kopf laeuft bis an deren Kante -- siehe
+       core.css, "DER KOMPAKTE KOPF IN EINER KOMPONENTE". */
+    if (UC.makePageCrumbs) UC.makePageCrumbs(root, { icon: "telescope", name: "Prompt Research" });
+
     /* The top-right action belongs to the PAGE, not to the start screen: it was absolutely
        positioned inside .upr-content, so the new page header pushed it down with it. Lifted to
        the root, where the CSS pins it to 16px from the top and right like every other page's. */

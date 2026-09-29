@@ -823,8 +823,13 @@
    from the root's top edge -- identical numbers on both. If it still sits lower on the live page,
    the extra comes from the Bubble element's OWN top spacing above this component, which nothing in
    here can see; --upr-head-top is the knob for that, settable per placement via data-head-top. */
-.upr-root { --upr-head-top: 6px; }
-.upr-root .upr-pagehead { padding: var(--upr-head-top) 0 24px; }
+/* SEIT DEM 29.09. DER KOMPAKTE KOPF wie auf allen anderen Seiten: 8 oben, die 32er-Zeile mit
+   den Krumen, 8 darunter, die Linie im letzten Pixel (y 48, auf der Hoehe der Seitenleiste).
+   16 darunter bis zum Startfeld. Linie, Krumen und Randabstand kommen aus core.css (Block "DER
+   KOMPAKTE KOPF IN EINER KOMPONENTE"); data-head-top bleibt der Regler fuer eine Gruppe mit
+   eigenem Polster oben. */
+.upr-root { --upr-head-top: 8px; }
+.upr-root .upr-pagehead { padding: var(--upr-head-top) 0 8px; margin-bottom: 16px; }
 
 /* The button used to be the first thing on the page and carried the page's own top padding. The
    page header now sits above it, so that padding would double up as a gap -- 16px is the standard
@@ -833,8 +838,13 @@
    top-right action. It used to be absolute inside .upr-content, so once the page header moved in
    above it, it came along and ended up under the heading. prompt-research.js lifts the element out
    to the root so this rule has something to anchor against. */
+/* Im kompakten Kopf (29.09.) steht der Knopf IN dessen Zeile: oben dieselbe Luft wie die Zeile
+   (--upr-head-top), bei 32px Knopfhoehe also genau mittig in 8 + 32 + 8. Rechts so weit innen
+   wie der Inhalt -- right 0 waere die Kante der Wurzel, und die liegt seit dem Randabstand aus
+   UC.makePageCrumbs 16px weiter aussen als ihr Inhalt, wenn Bubble kein Polster mehr gibt. */
 .upr-root { position: relative; }
-.upr-root > .upr-history-entry { position: absolute; top: 0; right: 0; z-index: 7; padding-top: 0; }
+.upr-root > .upr-history-entry { position: absolute; top: var(--upr-head-top); right: var(--up-ph-innen-r, 0px);
+  z-index: 7; padding-top: 0; }
 
 /* Die Vorschau-Leiste in der Erklaerkarte. Die Karte haengt am document.body, dort loesen die
    --upr-vol-*-Tokens nicht auf -- darum feste Werte, aber MIT Dark-Pendant. Vorher standen sie

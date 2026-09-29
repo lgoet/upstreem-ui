@@ -109,6 +109,11 @@
       onSelect: function(value){ fire("data-nav-fn", "sphNav", { page: value }); }
     });
 
+    /* Brotkrumen statt Ueberschrift (29.09.): Zeichen und Name wie in der Seitenleiste
+       (sidebar.js BLOECKE), dahinter der gewaehlte Reiter. Baut der Beobachter unten die
+       Reiter neu, zieht die Krume ueber ihren eigenen Beobachter an .up-ph-nav mit. Siehe UC.makePageCrumbs. */
+    if (UC.makePageCrumbs) UC.makePageCrumbs(root, { icon: "bolt", name: "Settings" });
+
     /* Die Logo-URL kommt oft erst nach dem ersten Rendern. makePageNav schreibt sein Markup nur
        einmal, also wird hier neu gebaut, sobald sich das Attribut aendert -- sonst bliebe das
        Ersatz-Icon stehen, obwohl das Logo laengst da ist. Der ausgewaehlte Reiter wird dabei

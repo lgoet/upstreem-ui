@@ -306,6 +306,12 @@
       }
       /* Meta-Zeile und data-isdark-Nachsynchronisierung, wie in jedem Seitenkopf der App. */
       if (UC.makePageHeaderMeta) UC.makePageHeaderMeta(root);
+      /* Brotkrumen statt Ueberschrift (29.09.): Zeichen und Name wie in der Seitenleiste, ohne
+         Unterseiten beide in der Primaerfarbe. Der Kopf steht IN dieser Komponente, also misst
+         UC.makePageCrumbs die ganze Wurzel: sie bekommt den Randabstand der Seitenkoepfe (16 vom
+         Rand der Bubble-Gruppe), und die Linie unter dem Kopf laeuft bis an deren Kante -- siehe
+         core.css, "DER KOMPAKTE KOPF IN EINER KOMPONENTE". */
+      if (UC.makePageCrumbs) UC.makePageCrumbs(root, { icon: "folders", name: "Teams" });
       /* Oben links auf der Seite steht diese Komponente, also traegt sie die Luft fuer den
          mobilen Seitenleisten-Schalter -- dieselbe Klasse wie ask-mira und prompt-research. */
       root.classList.add("up-sidebar-clear");
@@ -449,6 +455,17 @@
       UC.widthTiers(root);
       UC.onResize(root, function () { applyCols(); });
 
+      /* 16 statt der 171 aus der Vorlage (29.09.): die Komponente traegt seit heute den kompakten
+         Seitenkopf (48 hoch), und der scrollt mit ihr weg -- eine schwebende Kopfgruppe ueber ihr,
+         deren Unterkante die 171 einmal beschrieben, gibt es auf dieser Seite nicht. Mit 171
+         drueckte das Kleben die Werkzeugleiste schon IN RUHE nach unten: gemessen 123px Luecke
+         unter der Kopflinie (vorher, mit dem hohen Kopf, 55). Dieselbe Zahl und derselbe Grund wie
+         in prompt-research.js. Ein ANDERER Wert in data-sticky-top bleibt stehen -- den hat jemand
+         bewusst gesetzt; nur die alte Vorgabe wird ersetzt. */
+      (function klebKante() {
+        var st = String(root.getAttribute("data-sticky-top") || "").trim();
+        if (!st || st === "171" || st === "171px") root.setAttribute("data-sticky-top", "16");
+      })();
       var sticky = UC.makeSticky(root, root.querySelector(".up-head"));
       /* Nicht an jedem Bild: applySticky misst die Kopfzeile und laeuft die Vorfahrenkette hoch.
          Am Ende der Bewegung reicht -- die Leiste klebt waehrend des Ziehens ohnehin da, wo sie

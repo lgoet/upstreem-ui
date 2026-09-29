@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261042;
+  var BUILD = 20261043;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -9447,8 +9447,13 @@
        welches der zwei die Komponente schickt, ist von hier aus nicht zu wissen.
        Kennt der Satz einen Namen nicht, bleibt p.icon unveraendert. Eine Komponente, die
        bewusst ein eigenes Zeichen schickt, verliert es also nicht -- nur die drei bekannten
-       Zeilen der Prompts-Seite werden auf den Satz gezogen. */
+       Zeilen der Prompts-Seite werden auf den Satz gezogen.
+       Seit dem 29.09. auch "All Prompts" (squareTerminal) und "Tracked" der Brands-Seite
+       (chatPreview), beide ausdruecklich so angefordert. Ueber den Wert, nicht nur die
+       Beschriftung: "Tracked" heisst auf Deutsch anders, "tracked" bleibt. */
     var NAV_ZEICHEN = {
+      allprompts: "squareTerminal", "all prompts": "squareTerminal",
+      tracked: "chatPreview",
       prompt: "zap", prompts: "zap", "prompt insights": "zap",
       topic: "tags", topics: "tags",
       response: "response", responses: "response",
@@ -9460,11 +9465,12 @@
       if (!k || !ICON_PATHS[k]) return p.icon;
       /* Nur die FORMEN tauschen, die Huelle des Aufrufers bleibt: sie traegt Groesse und
          Strichbreite, die die CSS der Kopfzeile erwartet. Bringt er gar kein svg mit, baut
-         icon() eines. */
+         icon() eines -- mit 2, der Strichbreite, die jede Huelle der Seitenkoepfe traegt (die
+         Reiter "All Prompts" und "Tracked" schicken seit dem 29.09. bewusst keins). */
       var h = document.createElement("div");
       h.innerHTML = String(p.icon || "");
       var svg = h.querySelector("svg");
-      if (!svg) return icon(k, 1.8);
+      if (!svg) return icon(k, 2);
       svg.innerHTML = ICON_PATHS[k];
       return h.innerHTML;
     }
@@ -16221,6 +16227,18 @@
        lucide-static wie jedes andere Zeichen hier. */
     scanSquare: '<path d="M16.0042 2.5C17.9974 2.61348 19.2576 2.93381 20.1619 3.83811C21.0662 4.74243 21.3865 6.00268 21.5 7.99598M7.99582 2.5C6.00261 2.61348 4.74241 2.93381 3.83812 3.83811C2.9338 4.74243 2.61347 6.00268 2.5 7.99598M21.5 16.004C21.3865 17.9973 21.0662 19.2576 20.1619 20.1619C19.2576 21.0662 17.9973 21.3865 16.004 21.5M2.5 16.004C2.61347 17.9973 2.9338 19.2576 3.83812 20.1619C4.74244 21.0662 6.00268 21.3865 7.99597 21.5"/>' +
                 '<path d="M5 12H19"/>',
+    /* Hugeicons SquareTerminal und ChatPreview01 (29.09. angefordert): die Zeichen der Reiter
+       "All Prompts" (Prompts-Seitenkopf) und "Tracked" (Brands-Seitenkopf). Beide stehen in
+       derselben Familie wie der Rest des Satzes -- woertlich aus
+       @hugeicons/core-free-icons@4.3.5 (dist/esm/SquareTerminalIcon.js, ChatPreview01Icon.js),
+       nicht nachgezeichnet. Die Seitenkoepfe bekommen sie ueber NAV_ZEICHEN in UC.makePageNav. */
+    squareTerminal: '<path d="M7.49219 7.5L8.71873 8.55719C9.23437 9.00163 9.49219 9.22386 9.49219 9.5C9.49219 9.77614 9.23437 9.99836 8.71873 10.4428L7.49219 11.5"/>' +
+                    '<path d="M11.4922 12.5H15.4922"/>' +
+                    '<path d="M11.9922 21C15.7419 21 17.6168 21 18.9311 20.0451C19.3556 19.7367 19.7289 19.3634 20.0373 18.9389C20.9922 17.6246 20.9922 15.7497 20.9922 12C20.9922 8.25027 20.9922 6.3754 20.0373 5.06107C19.7289 4.6366 19.3556 4.26331 18.9311 3.95491C17.6168 3 15.7419 3 11.9922 3C8.24246 3 6.36759 3 5.05326 3.95491C4.62879 4.26331 4.2555 4.6366 3.9471 5.06107C2.99219 6.3754 2.99219 8.25027 2.99219 12C2.99219 15.7497 2.99219 17.6246 3.9471 18.9389C4.2555 19.3634 4.62879 19.7367 5.05326 20.0451C6.36759 21 8.24246 21 11.9922 21Z"/>',
+    chatPreview: '<path d="M21.9609 9C21.9865 9.72648 22 10.2302 22 11.001C22 11.7718 21.9865 12.5242 21.9609 13.2507C21.8772 15.6242 21.8353 16.8109 20.8699 17.7836C19.9046 18.7562 18.6843 18.8084 16.2437 18.9128C15.5098 18.9442 14.7498 18.9677 13.9693 18.9825C13.2282 18.9965 12.8576 19.0036 12.532 19.1276C12.2064 19.2516 11.9325 19.4865 11.3845 19.9563L9.20503 21.8252C9.07273 21.9386 8.90419 22.001 8.72991 22.001C8.32679 22.001 8 21.6742 8 21.2711V18.9229C7.91842 18.9196 7.83715 18.9163 7.75619 18.9128C5.31569 18.8084 4.09545 18.7562 3.13007 17.7836C2.16469 16.8109 2.12282 15.6242 2.03909 13.2507C2.01346 12.5242 2 11.7718 2 11.001C2 10.2302 2.01346 9.47779 2.03909 8.75131C2.12282 6.37784 2.16469 5.1911 3.13007 4.21846C4.09545 3.24582 5.3157 3.19361 7.7562 3.08919C8.48051 3.0582 9.2302 3.01483 10 3"/>' +
+                 '<path d="M22 5C22 5 19.958 8 17 8C14.042 8 12 5 12 5C12 5 14 2 17 2C20 2 22 5 22 5Z"/>' +
+                 '<path d="M12.1257 11H12.0007M8.125 11H8M12.2507 11C12.2507 11.1381 12.1388 11.25 12.0007 11.25C11.8627 11.25 11.7507 11.1381 11.7507 11C11.7507 10.8619 11.8627 10.75 12.0007 10.75C12.1388 10.75 12.2507 10.8619 12.2507 11ZM8.25 11C8.25 11.1381 8.13807 11.25 8 11.25C7.86193 11.25 7.75 11.1381 7.75 11C7.75 10.8619 7.86193 10.75 8 10.75C8.13807 10.75 8.25 10.8619 8.25 11Z"/>' +
+                 '<path d="M17.125 5H17M17.25 5C17.25 5.13807 17.1381 5.25 17 5.25C16.8619 5.25 16.75 5.13807 16.75 5C16.75 4.86193 16.8619 4.75 17 4.75C17.1381 4.75 17.25 4.86193 17.25 5Z"/>',
     /* Vier Zeichen fuer die Teamverwaltung (team-orga): einladen, aufklappen, entfernen und die
        Besitzerrolle. Woertlich aus lucide-static wie jedes andere hier.
        chevronUp gehoert dazu, weil der Winkel am Protokoll sein ZEICHEN wechselt und sich nicht

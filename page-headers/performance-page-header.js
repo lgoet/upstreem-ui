@@ -54,6 +54,10 @@
        hier den ganzen initRoot mit: keine Meta-Zeile, keine Nav, und weil dieses Kit auch die
        data-isdark-Nachsynchronisierung macht, beim ersten Laden auch das falsche Theme. */
     if (UC.makePageHeaderMeta) UC.makePageHeaderMeta(root);
+
+    /* Brotkrumen statt Ueberschrift (29.09.): Zeichen und Name wie in der Seitenleiste
+       (sidebar.js BLOECKE); ohne Unterseiten beide in der Primaerfarbe. Siehe UC.makePageCrumbs. */
+    if (UC.makePageCrumbs) UC.makePageCrumbs(root, { icon: "chartColumnUp", name: "Performance" });
   }
 
   pfphBoot(30);

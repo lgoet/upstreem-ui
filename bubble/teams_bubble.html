@@ -25,8 +25,10 @@
      kein Schaden, aber die Pille an der falschen Zeile waere eine falsche Auskunft, darum wird
      hier nicht geraten. Der Wert darf auch im Payload stehen (siehe current_team_id unten); dann
      gewinnt der Payload.
-  6. data-sticky-top auf die Hoehe der Topbar dieser Seite (in der App 171). Damit klebt die
-     Werkzeugleiste beim Scrollen direkt darunter. "no" in data-sticky schaltet das Kleben ab.
+  6. data-sticky-top bleibt 16 (seit 29.09.; vorher 171). Der Seitenkopf steht IN dieser
+     Komponente und scrollt mit ihr weg, die Werkzeugleiste klebt also 16px unter der Oberkante.
+     teams.js ersetzt einen alten Wert 171 von selbst durch 16; ein anderer Wert bleibt stehen.
+     "no" in data-sticky schaltet das Kleben ab.
   7. FIT HEIGHT am HTML-Element und "Fit height to content" auch an der Gruppe darum. Die Tabelle
      waechst mit der Zahl der Teams; steht dort eine feste Hoehe, schneidet Bubble den Rest ab.
      Nachpruefen laesst sich das auf der Seite mit  window.upstreemScrollDiag()  -- der Aufruf
@@ -116,7 +118,7 @@
      data-team="TEAM_ID"
      data-brand-name="BRAND_NAME"
      data-brand-logo="BRAND_LOGO_URL"
-     data-sticky-top="171"
+     data-sticky-top="16"
      data-switch-fn="bubble_fn_usnTeam"
      data-newteam-fn="bubble_fn_usnNewTeam"></div>
 

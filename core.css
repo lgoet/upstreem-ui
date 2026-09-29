@@ -4218,8 +4218,11 @@
    anchor to the same bottom:0, so neither ever causes a layout shift switching between the 1px
    (unselected) and 2px (selected) look. */
 .up-ph-nav::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--vc-border); }
+/* Rechts 2px mehr als links (29.09. angefordert: "dann sieht es symmetrischer aus mit den
+   Icons"). Das Zeichen vorne hat in seinem 16er-Kasten eigene Luft, die Schrift hinten keine --
+   bei gleichem Polster stand der Strich darunter links sichtbar weiter ueber als rechts. */
 .up-ph-navitem { display: flex; align-items: center; justify-content: center; gap: 6px;
-  height: 32px; padding: 0 12px; cursor: pointer; user-select: none; }
+  height: 32px; padding: 0 14px 0 12px; cursor: pointer; user-select: none; }
 /* Die NICHT gewaehlten Reiter in der Drittfarbe, Zeichen und Schrift (29.09. angefordert, vorher
    --vc-muted). Damit steht die Reiterzeile im selben Ton wie die Brotkrumen darueber, deren
    Vorstufen auch --vc-third tragen; Hover hebt weiter auf --vc-text, gewaehlt bleibt Akzent. */
@@ -4254,8 +4257,11 @@
    hoch mit 8px darunter, ihre Linie liegt also bei y 47 bis 48. Hier dasselbe: 8 oben, eine
    32px-Zeile (die Hoehe der Knoepfe rechts, --up-h-btn), 8 darunter, die Linie im letzten Pixel.
    Derselbe Abgleich stand schon am Power-Kopf des Dashboards und hat dort gepasst.
-   ZUERST fuer vier Seiten (Dashboard, Prompt Insights, Citations, Brands) -- darum die Liste im
-   :is(). Die uebrigen folgen; dann wird aus der Liste .up-ph-root allein.
+   ZUERST fuer vier Seiten (Dashboard, Prompt Insights, Citations, Brands), am 29.09. nachmittags
+   die drei uebrigen eigenen Koepfe dazu (Performance, Opportunities, Settings). Die Liste im
+   :is() bleibt trotzdem: .up-ph-root allein traefe auch die Vorfuehrkoepfe der Landingpage
+   (landing-hero.js), die ihre eigenen Masse tragen. Teams und Prompt Research bauen ihren Kopf
+   IN der Komponente -- fuer sie steht der Block weiter unten (.uts-pagehead, .upr-pagehead).
    Ueber die Wurzelklassen und nicht ueber .has-crumbs: die Geometrie soll stehen, BEVOR das JS
    laeuft, sonst springt der Kopf beim Laden von 164px auf 48. */
 /* DER INHALT DES SEITENKOPFS STEHT IMMER 16px VOM RAND -- nie mehr, nie weniger (29.09.).
@@ -4264,25 +4270,28 @@
    eigentlich der duenne Separator sein sollten"). Also rechnet UC.makePageCrumbs aus, wie viel
    Polster die Bubble-Gruppe schon gibt, und legt hier nur den Rest auf 16 drauf
    (--up-ph-innen-l/-r). Die Linien laufen davon unabhaengig bis an die Kante der Gruppe. */
-.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) {
+.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) {
   padding-top: 8px; padding-left: var(--up-ph-innen-l, 0px); padding-right: var(--up-ph-innen-r, 0px);
   /* Gibt Bubble MEHR als 16 (Gruppenpolster plus Versatz des HTML-Elements), zieht sich das Element
      um den Ueberschuss nach aussen und wird um genau so viel breiter. */
   margin-left: calc(-1 * var(--up-ph-zug-l, 0px)); margin-right: calc(-1 * var(--up-ph-zug-r, 0px));
   width: calc(100% + var(--up-ph-zug-l, 0px) + var(--up-ph-zug-r, 0px)); }
-.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-desc { display: none; }
-.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-top {
+.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-desc,
+.up-ph-top:is(.uts-pagehead, .upr-pagehead) .up-ph-desc { display: none; }
+.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-top {
   align-items: center; min-height: var(--up-h-btn); padding-bottom: 8px; position: relative; }
 /* Die Linie laeuft bis an die Kante der Bubble-Gruppe um den Kopf, also so weit UEBER das Element
    hinaus, wie die Gruppe Polster hat -- 16 oder 0, je nachdem, ob es in Bubble schon raus ist.
    UC.makePageCrumbs misst das (--up-ph-rand-l/-r); ohne Messung liegt sie unter dem Element. */
-.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-top::after {
+.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-top::after,
+.up-ph-top:is(.uts-pagehead, .upr-pagehead)::after {
   content: ""; position: absolute; bottom: 0; height: 1px; pointer-events: none;
   left: calc(-1 * var(--up-ph-rand-l, 0px)); right: calc(-1 * var(--up-ph-rand-r, 0px));
   background: var(--vc-border); }
 /* Die Ueberschrift als Krumenzeile: 14px, auf der Mitte der 32px-Zeile. Vor dem JS steht hier der
    Seitenname aus der Vorlage -- in derselben Groesse, also ohne Sprung. */
-.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-heading {
+.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-heading,
+.up-ph-top:is(.uts-pagehead, .upr-pagehead) .up-ph-heading {
   display: flex; align-items: center; gap: 6px; min-width: 0; margin: 0;
   font-size: var(--up-fs-l); font-weight: 500; line-height: var(--up-h-btn); letter-spacing: 0;
   color: var(--vc-third); white-space: nowrap; }
@@ -4302,21 +4311,25 @@
    dem nur die duenne Linie liegen soll.
    Der Abstand von einer Beschriftung zum naechsten Zeichen bleibt, was er war: 12 + 4 + 12 = 28.
    Die Klickflaeche auch -- ::before reicht je die halbe Luecke nach aussen, die zwei Haelften
-   treffen sich in der Mitte. */
-.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-nav { margin-top: 0; gap: 28px; }
-.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-navitem {
-  height: calc(var(--up-h-btn) + 16px); padding: 0; position: relative; }
-.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-navitem::before {
-  content: ""; position: absolute; top: 0; bottom: 0; left: -14px; right: -14px; }
+   treffen sich in der Mitte.
+   RECHTS 2px Polster (29.09. nachmittags, "symmetrischer mit den Icons"): der Strich laeuft 2px
+   ueber das Textende hinaus, so wie das Zeichen vorne in seinem Kasten Luft hat. Die Luecke
+   wird dafuer 26 -- vom Textende bis zum naechsten Zeichen bleiben es 2 + 26 = 28, kein Reiter
+   rueckt. ::before je 13, die Haelften treffen sich weiter in der Mitte. */
+.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-nav { margin-top: 0; gap: 26px; }
+.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem {
+  height: calc(var(--up-h-btn) + 16px); padding: 0 2px 0 0; position: relative; }
+.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem::before {
+  content: ""; position: absolute; top: 0; bottom: 0; left: -13px; right: -13px; }
 /* Im SCHMALEN Kopf (is-narrow, unter 768) teilen sich die Reiter die Breite (flex 1 1 0, Inhalt
    mittig) -- dort gibt es keine linke Kante, die unter dem Krumenzeichen stehen koennte. Also die
    alte Geometrie: 4px Luecke und 12px Seitenpolster, sonst laegen die gestreckten Reiter 28px
    auseinander. Und keine verlaengerte Klickflaeche: bei 4px Luecke griffe sie 10px in den
    Nachbarn, und der spaetere Nachbar liegt oben -- ein Klick rechts in Reiter 1 waehlte Reiter 2. */
-.up-ph-root.is-narrow:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-nav { gap: 4px; }
-.up-ph-root.is-narrow:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-navitem { padding: 0 12px; }
-.up-ph-root.is-narrow:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-navitem::before { content: none; }
-.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-nav::after {
+.up-ph-root.is-narrow:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-nav { gap: 4px; }
+.up-ph-root.is-narrow:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem { padding: 0 14px 0 12px; }
+.up-ph-root.is-narrow:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem::before { content: none; }
+.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-nav::after {
   left: calc(-1 * var(--up-ph-rand-l, 0px)); right: calc(-1 * var(--up-ph-rand-r, 0px)); }
 .up-ph-crumb { display: inline-flex; align-items: center; gap: 6px; min-width: 0; color: var(--vc-third); }
 .up-ph-crumb.is-akt { color: var(--vc-text); }
@@ -4327,6 +4340,30 @@
 .up-ph-crumbsep { display: inline-flex; flex: 0 0 auto; color: var(--vc-third); }
 .up-ph-crumbsep svg { width: 14px; height: 14px; display: block; }
 .up-ph-crumbname { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+
+/* Ein Kopf OHNE Reiterleiste endet an seiner Linie (29.09. nachmittags, Performance und
+   Opportunities): wie der Dashboard-Kopf im Analysemodus. Den Abstand zum naechsten Block gibt
+   darunter die Bubble-Gruppe (16), sonst stuenden 32 unter einer einzelnen Zeile. */
+.up-ph-root:is(.pfph-root, .oph-root) { padding-bottom: 0; }
+
+/* ---------- DER KOMPAKTE KOPF IN EINER KOMPONENTE (29.09. nachmittags) ----------
+   Teams und Prompt Research bauen ihren Seitenkopf SELBST, als erstes Kind ihrer Wurzel
+   (.uts-pagehead, .upr-pagehead) -- ein eigenes Kopf-Element mit eigener Bubble-Gruppe gibt es
+   dort nicht. Also misst UC.makePageCrumbs die Komponente: sie steht wie ein Kopf in ihrer
+   Gruppe, und dieselbe Rechnung legt ihren GANZEN Inhalt -- Kopf, Tabelle, Startfeld -- auf 16px
+   vom Rand (--up-ph-innen-l/-r) oder zieht sie um Bubbles Ueberschuss hinaus (--up-ph-zug-l/-r).
+   Damit ist es gleich, ob in Bubble noch 16 Polster an der Gruppe stehen oder 0: der Inhalt
+   steht bei 16, die Linie unter dem Kopf laeuft bis an die Kante der Gruppe (--up-ph-rand-l/-r).
+   Ueber .has-crumbs: die setzt makePageCrumbs im selben Zug, in dem die Komponente ihren Kopf
+   baut -- vorher steht noch nichts auf der Seite, das springen koennte.
+   Beschreibung, Linie und Ueberschrift teilen sich die Regeln des kompakten Kopfs oben. Hoehe
+   und Luft der Zeile stehen in der Komponente (teams.css, prompt-research.css), weil dort ihr
+   Regler data-head-top sitzt; hier nur, was keinen Regler braucht. */
+.up-root:is(.uts-root, .upr-root).has-crumbs {
+  padding-left: var(--up-ph-innen-l, 0px); padding-right: var(--up-ph-innen-r, 0px);
+  margin-left: calc(-1 * var(--up-ph-zug-l, 0px)); margin-right: calc(-1 * var(--up-ph-zug-r, 0px));
+  width: calc(100% + var(--up-ph-zug-l, 0px) + var(--up-ph-zug-r, 0px)); }
+.up-ph-top:is(.uts-pagehead, .upr-pagehead) { align-items: center; min-height: var(--up-h-btn); position: relative; }
 
 /* ---------- DIE KOMPONENTEN TRAGEN IHR SEITENPOLSTER SELBST (29.09. angefordert) ----------
    "Gib den ganzen Komponenten einfach 16px padding left und right, nur nicht den Topbars."
@@ -4343,6 +4380,20 @@
 :is(#view-dashboard, #view-prompts, #view-citations, #view-brands)
   .up-root:is(.vot-root, .tcd-root, .combo-root, .upw-root, .upt-root, .urt-root, .utm-root,
               .uut-root, .udt-root, .ubo-root, .udb-root) { padding-left: 16px; padding-right: 16px; }
+
+/* ---------- DIESELBEN 16px IN DEN FUENF UEBRIGEN ANSICHTEN (29.09. nachmittags) ----------
+   Mit den Koepfen von Performance, Opportunities, Prompt Research, Teams und Settings muss auch
+   dort das Seitenpolster aus Bubble raus -- sonst enden die Linien der Koepfe wieder 16px vor dem
+   Rand. Die Bloecke tragen es dann selbst, wie in den ersten vier Ansichten.
+   Ueber [id^="view-"] und nicht ueber die Namen: bestaetigt sind nur #view-opportunities und
+   #view-settings, die uebrigen setzt das Kopf-Skript der App (view-<name>), und ein falsch
+   geratener Name liesse die Regel still ins Leere laufen. Drawer liegen in keiner Ansicht.
+   Nicht dabei: .uo-root bringt seine 16px seit jeher selbst mit; .uts-root und .upr-root tragen
+   ihren Kopf in sich und rechnen ihren Randabstand mit ihm (Block darueber). .upd-root ist eine
+   Karte mit Rahmen -- Polster laege INNERHALB des Rahmens, also Aussenabstand, und dafuer
+   width auto statt der 100% von .up-root, sonst ragte sie um 32px hinaus. */
+[id^="view-"] .up-root:is(.uhm-root, .usb-root, .uto-root, .ubl-root) { padding-left: 16px; padding-right: 16px; }
+[id^="view-"] .up-root.upd-root { width: auto; margin-left: 16px; margin-right: 16px; }
 
 /* ---------- responsive (classes set by UC.makePageNav via UC.onResize) ---------- */
 /* is-narrow (<768px default): tabs go from auto-width/left-packed to even thirds, still centered

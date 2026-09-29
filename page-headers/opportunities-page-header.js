@@ -62,6 +62,10 @@
        data-isdark-Nachsynchronisierung macht, beim ersten Laden auch das falsche Theme. */
     if (UC.makePageHeaderMeta) UC.makePageHeaderMeta(root);
 
+    /* Brotkrumen statt Ueberschrift (29.09.): Zeichen und Name wie in der Seitenleiste
+       (sidebar.js BLOECKE); ohne Unterseiten beide in der Primaerfarbe. Siehe UC.makePageCrumbs. */
+    if (UC.makePageCrumbs) UC.makePageCrumbs(root, { icon: "listTodo", name: "Opportunities" });
+
     var searchBtn = root.querySelector(".up-ph-addbtn");
     if (searchBtn){
       /* Beschriftung und Zeichen aus JS und nicht aus der Vorlage: page-headers/bubble/*.html ist

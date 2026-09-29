@@ -45,8 +45,10 @@
      label. Feather icons, inlined (same convention every other component in this repo uses for
      its own icon constants). */
   var PAGES = [
-    { value: "allprompts", label: "All Prompts",
-      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z" /></svg>' },
+    /* Kein Zeichen HIER (29.09.): "All Prompts" traegt Hugeicons SquareTerminal, und das kommt
+       aus core -- UC.makePageNav ordnet den Wert ueber NAV_ZEICHEN zu. Eine Kopie der Form in
+       dieser Datei waere die Stelle, die beim naechsten Wechsel stehen bleibt. */
+    { value: "allprompts", label: "All Prompts", icon: "" },
     { value: "mentions", label: "Responses",
       icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3" /> <path d="M21 8V5a2 2 0 0 0-2-2h-3" /> <path d="M3 16v3a2 2 0 0 0 2 2h3" /> <path d="M16 21h3a2 2 0 0 0 2-2v-3" /></svg>' },
     /* Lucide "tags", nicht "tag": der Abschnitt fuehrt die Themen als Menge, und zwei

@@ -31,10 +31,14 @@
    der Abstand ueber der Meta-Zeile und laesst sich per data-head-top je Platzierung setzen --
    dieselbe Schraube wie --upr-head-top in prompt-research, aus demselben Grund: manche
    Bubble-Container bringen ihr eigenes Polster mit, andere nicht.
-   Unten 32px, weil 32 in dieser App der Abstand ZWISCHEN ZWEI BLOECKEN ist. .up-head bringt
-   darunter noch seine eigenen 16px zur Tabelle mit. */
-.uts-root { --uts-head-top: 16px; }
-.uts-root .uts-pagehead { padding: var(--uts-head-top) 0 32px; }
+   SEIT DEM 29.09. DER KOMPAKTE KOPF wie auf allen anderen Seiten: 8 oben, die 32er-Zeile mit
+   den Krumen, 8 darunter, die Linie im letzten Pixel -- sie liegt damit auf der Hoehe der Linie
+   in der Seitenleiste (y 48), solange die Bubble-Gruppe oben kein eigenes Polster hat; sonst
+   ist data-head-top der Regler. Unter der Linie 16 bis zur Kopfzeile der Tabelle, wie unter
+   jedem Kopf ohne Reiterleiste. Linie, Krumen und Randabstand kommen aus core.css (Block "DER
+   KOMPAKTE KOPF IN EINER KOMPONENTE"). */
+.uts-root { --uts-head-top: 8px; }
+.uts-root .uts-pagehead { padding: var(--uts-head-top) 0 8px; margin-bottom: 16px; }
 
 /* Der Seitenkopf muss UEBER dem Deckstreifen liegen, den core unter die klebende Werkzeugleiste
    malt (.up-sticky .up-head::before): ein deckender Streifen von der Hoehe --up-sticky-top,
