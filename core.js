@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261031;
+  var BUILD = 20261032;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -3135,9 +3135,40 @@
       var p = from;
       while (p < n && /\s/.test(src.charAt(p))) p++;
       var a = p < n ? src.charAt(p) : "";
-      if (a === "" || a === "," || a === "}" || a === "]") return true;
+      if (a === "") return true;
+      /* In einem WERT reicht das Zeichen dahinter nicht (29.09.). Gemeldet an Mira: "Miras
+         Antwort kam an, konnte aber nicht geoeffnet werden" -- "Unexpected identifier
+         'klassische'". Der Text trug ein Anfuehrungszeichen direkt vor einem Komma, etwa
+           ... nennt es "Digitalisierung", klassische Agenturen ...
+         und das Komma liess es als Ende des Wertes gelten; danach stand "klassische" ohne
+         Anfuehrungszeichen da. Also wird nachgesehen, ob hinter dem Komma bzw. der Klammer
+         wirklich JSON weitergeht -- Fliesstext tut das nie. */
+      if (a === ",") return wert ? jsonNachKomma(p + 1) : true;
+      if (a === "}" || a === "]") return wert ? jsonNachKlammer(p + 1) : true;
       /* Ein Doppelpunkt beendet nur einen SCHLUESSEL. In einem Wert gehoert er zum Text. */
       return a === ":" && !wert;
+    }
+    /* Was darf nach dem Komma hinter einem Wert stehen? In einem OBJEKT der naechste Schluessel
+       -- Text in Anfuehrungszeichen, dann ein Doppelpunkt --, in einer LISTE der naechste Wert.
+       Dazu die schliessende Klammer eines ueberzaehligen Kommas. Alles andere ist Fliesstext. */
+    function jsonNachKomma(p){
+      while (p < n && /\s/.test(src.charAt(p))) p++;
+      var b = p < n ? src.charAt(p) : "";
+      if (b === "" || b === "}" || b === "]") return true;
+      if (stapel[stapel.length - 1] === "arr") return /["{\[\-0-9tfny]/.test(b);
+      if (b !== '"') return false;
+      var q = src.indexOf('"', p + 1);
+      if (q < 0) return false;
+      var r = q + 1;
+      while (r < n && /\s/.test(src.charAt(r))) r++;
+      return src.charAt(r) === ":";
+    }
+    /* Nach einer schliessenden Klammer geht JSON mit Komma, einer weiteren Klammer oder dem Ende
+       weiter -- Text wie  {"a": "b"} im Satz  nicht. */
+    function jsonNachKlammer(p){
+      while (p < n && /\s/.test(src.charAt(p))) p++;
+      var b = p < n ? src.charAt(p) : "";
+      return b === "" || b === "," || b === "}" || b === "]";
     }
     /* Raw control characters are fine in Bubble's output but ILLEGAL inside a JS string literal.
        An LLM answer in response_preview contains line breaks as a matter of course, and copying
