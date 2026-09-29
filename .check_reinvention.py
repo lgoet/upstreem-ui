@@ -22,7 +22,7 @@ PAKETE = {
     "up-sent":     ({"height", "padding", "border", "border-radius"},
                     "Sentiment hat keinen Kasten mehr -- Rahmen/Polster/Hoehe gehoeren nicht an .up-sent"),
     "up-sent-dot": ({"width", "height", "border-radius"},
-                    "Balken 3x12 aus core -- in jedem Kontext gleich, nicht umbauen"),
+                    "Balken 3x12 aus core -- Breite, Hoehe und Radius nur zusammen (Agentic-KPI: 4x16)"),
     "up-seg-btn":  ({"height", "border", "border-radius", "background"},
                     "fertiger Segmented-Control -- nur positionieren, nicht umstylen"),
     "vc-gran-btn": ({"height", "border", "border-radius", "background"},
@@ -67,9 +67,13 @@ def regeln(pfad):
 
 # Bauteile, die als Familie zusammen bewertet werden: wer eines anfasst, muss die Geschwister
 # mitziehen. Der Check summiert dafuer alle Regeln EINER Datei, die zur Familie gehoeren.
-FAMILIEN = {
-    "up-sent": ["up-sent", "up-sent-val", "up-sent-dot"],
-}
+# Die Familie "up-sent" (Kasten, Zahl und Punkt als EIN Paket) ist am 29.09. abends entfallen:
+# seit Sentiment keinen Kasten mehr hat, sind die drei unabhaengig -- .up-sent darf keinen Kasten
+# bekommen, der Balken stimmt nur aus Breite, Hoehe und Radius zusammen, die Zahl ist frei. Die
+# Vereinigung zaehlte die Hoehe des BALKENS gegen das Paket des Kastens und meldete einen richtig
+# skalierten 4x16-Balken als gesprengt; und seit up-sent-val nicht mehr in PAKETE steht, brach
+# sie mit KeyError ab, sobald eine Regel eines der Glieder traf.
+FAMILIEN = {}
 
 
 def familie_von(klasse):

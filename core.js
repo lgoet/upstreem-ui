@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261044;
+  var BUILD = 20261045;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -9631,7 +9631,18 @@
        am Aussenabstand GELESEN, nicht gemerkt: kommt die Regel aus core.css nicht an (andere
        Fassung, verlorene Spezifitaet), ist der Aussenabstand 0 und die Rechnung bleibt stehen,
        statt bei jedem Lauf um den Ueberschuss zu wachsen. */
-    var KOPF_EINZUG = 16;
+    /* LINKS 8, RECHTS 16 (29.09. abends angefordert: "Left padding runter auf das, was bei den
+       32er-Knoepfen an Luft nach oben und unten zur Linie ist"). Die Knoepfe stehen in der 48er-
+       Zeile mit 8 ueber und 8 unter sich; links vor dem Krumenzeichen jetzt dieselben 8. Rechts
+       bleibt es bei 16 -- angefordert war nur links.
+       Die Reiterleiste darunter zieht mit (sie steht im selben Inhalt), das Zeichen des ersten
+       Reiters bleibt also genau unter dem Krumenzeichen.
+       cfg.komponente (Teams, Prompt Research): dort ist die Wurzel eine KOMPONENTE mit Kopf, und
+       ihr Inhalt -- die Tabelle, das Startfeld -- bleibt bei 16 wie jeder Block. Nur ihre
+       Kopfzeile zieht sich um die Differenz nach aussen (--up-ph-kopfzug-l, core.css). Die Linie
+       laeuft in beiden Faellen um die 8 der Kopfzeile bis an die Kante der Gruppe. */
+    var KOPF_EINZUG = 16, KOPF_EINZUG_L = 8, BLOCK_EINZUG = 16;
+    var ZIEL_L = cfg.komponente ? BLOCK_EINZUG : KOPF_EINZUG_L;
     function linieMessen(){
       kopfPolsterDurchlassen(root);
       var gr = root.parentElement && root.parentElement.parentElement;
@@ -9646,15 +9657,16 @@
       if (r.width && g.width){ l = r.left - g.left + zl; re = g.right - r.right + zr; }
       else { var gs = getComputedStyle(gr); l = parseFloat(gs.paddingLeft) || 0; re = parseFloat(gs.paddingRight) || 0; }
       l = Math.max(0, l); re = Math.max(0, re);
-      var pl = Math.max(0, KOPF_EINZUG - l), pr = Math.max(0, KOPF_EINZUG - re);
-      var xl = Math.max(0, l - KOPF_EINZUG), xr = Math.max(0, re - KOPF_EINZUG);
+      var pl = Math.max(0, ZIEL_L - l), pr = Math.max(0, KOPF_EINZUG - re);
+      var xl = Math.max(0, l - ZIEL_L), xr = Math.max(0, re - KOPF_EINZUG);
       root.style.setProperty("--up-ph-innen-l", pl + "px");
       root.style.setProperty("--up-ph-innen-r", pr + "px");
       root.style.setProperty("--up-ph-zug-l", xl + "px");
       root.style.setProperty("--up-ph-zug-r", xr + "px");
-      /* Der Inhalt steht jetzt in JEDEM Fall genau KOPF_EINZUG von der Kante der Gruppe, also
-         laufen die Linien genau so weit ueber ihn hinaus. */
-      root.style.setProperty("--up-ph-rand-l", KOPF_EINZUG + "px");
+      /* Die Kopfzeile steht jetzt in JEDEM Fall genau KOPF_EINZUG_L links und KOPF_EINZUG rechts
+         von der Kante der Gruppe, also laufen die Linien genau so weit ueber sie hinaus. */
+      root.style.setProperty("--up-ph-kopfzug-l", (ZIEL_L - KOPF_EINZUG_L) + "px");
+      root.style.setProperty("--up-ph-rand-l", KOPF_EINZUG_L + "px");
       root.style.setProperty("--up-ph-rand-r", KOPF_EINZUG + "px");
     }
     linieMessen();
