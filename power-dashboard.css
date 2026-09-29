@@ -40,7 +40,16 @@
    NUR ab der Breite, ab der die Tabellen und Kennzahlen ohnehin nebeneinander stehen
    (widthTiers, is-narrow ab 760px): darunter ist kein Platz fuer ein zusaetzliches Aufweiten, und
    die Karten liefen sonst über den Bildschirmrand hinaus. */
-.upw-narrow { margin-left: 72px; margin-right: 72px; }
+/* SEIT DEM 29.09. NACHTS IST MIRA SO BREIT WIE DER REST ("das Mira-Inputfeld genauso breit wie
+   der Rest der Seite, aber die max width 16px pro Seite kleiner"). Vorher 72px je Seite SCHMALER
+   als die Spalte. Jetzt derselbe Ueberstand wie .upw-wide darunter -- also auch nur, was wirklich
+   da ist, siehe dort --, nur bei 64 statt 80 gedeckelt: auf breiten Fenstern 1048 neben 1080, und
+   wo der Rest seinen Deckel nicht erreicht, genau gleich breit. Die Chips stehen im selben Kasten
+   und bleiben mittig. Der Klassenname bleibt, er steht im Markup von power-dashboard.js. */
+.upw-narrow {
+  --upw-bleed-mira: min(64px, max(0px, calc(var(--upw-frei, 0px) - 16px)));
+  margin-left: calc(-1 * var(--upw-bleed-mira)); margin-right: calc(-1 * var(--upw-bleed-mira));
+}
 /* DER UEBERSTAND NIMMT SICH NUR, WAS WIRKLICH DA IST (21.09., dritter Anlauf).
    Erster Anlauf: feste -80px. Zweiter: (100vw - 100%) / 2. Der zweite war der Fehler, der
    gemeldet wurde -- 100vw ist die Breite des FENSTERS, die Spalte steht aber in #main, und
