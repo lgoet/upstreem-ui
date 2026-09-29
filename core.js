@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261038;
+  var BUILD = 20261039;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -9590,15 +9590,26 @@
        hinaus, wie die Gruppe Polster hat -- gemessen, weil das 16 oder 0 sein kann. Relativ zur
        Gruppe gemessen, nicht zur Seite: das stimmt auch in einer geparkten Ansicht; ohne Flaeche
        (content-visibility) zaehlt das Polster der Gruppe. */
+    /* Und der INHALT steht immer KOPF_EINZUG vom Rand der Gruppe: was die Gruppe an Polster schon
+       gibt, zaehlt mit, nur der Rest kommt als Polster ans Element (--up-ph-innen-l/-r). So
+       entsteht weder doppeltes Polster (Bubble 16 + hier 16) noch keines (beides 0) -- in beiden
+       Faellen gemeldet. Die Linien laufen um Gruppe PLUS dieses Polster hinaus. */
+    var KOPF_EINZUG = 16;
     function linieMessen(){
       kopfPolsterDurchlassen(root);
       var gr = root.parentElement && root.parentElement.parentElement;
-      if (!gr || !gr.classList || !gr.classList.contains("up-ph-gruppe")) return;
-      var r = root.getBoundingClientRect(), g = gr.getBoundingClientRect(), l, re;
-      if (r.width && g.width){ l = r.left - g.left; re = g.right - r.right; }
-      else { var cs = getComputedStyle(gr); l = parseFloat(cs.paddingLeft) || 0; re = parseFloat(cs.paddingRight) || 0; }
-      root.style.setProperty("--up-ph-rand-l", Math.max(0, Math.round(l)) + "px");
-      root.style.setProperty("--up-ph-rand-r", Math.max(0, Math.round(re)) + "px");
+      var l = 0, re = 0;
+      if (gr && gr.classList && gr.classList.contains("up-ph-gruppe")){
+        var r = root.getBoundingClientRect(), g = gr.getBoundingClientRect();
+        if (r.width && g.width){ l = r.left - g.left; re = g.right - r.right; }
+        else { var cs = getComputedStyle(gr); l = parseFloat(cs.paddingLeft) || 0; re = parseFloat(cs.paddingRight) || 0; }
+      }
+      l = Math.max(0, Math.round(l)); re = Math.max(0, Math.round(re));
+      var pl = Math.max(0, KOPF_EINZUG - l), pr = Math.max(0, KOPF_EINZUG - re);
+      root.style.setProperty("--up-ph-innen-l", pl + "px");
+      root.style.setProperty("--up-ph-innen-r", pr + "px");
+      root.style.setProperty("--up-ph-rand-l", (l + pl) + "px");
+      root.style.setProperty("--up-ph-rand-r", (re + pr) + "px");
     }
     linieMessen();
     setTimeout(linieMessen, 400);
