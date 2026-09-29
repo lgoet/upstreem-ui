@@ -53,6 +53,17 @@
     var C = window.UpstreemCore;
     return (C && C.iconFormen) ? C.iconFormen(name) : "";
   }
+  /* DER FILTER-KNOPF DES PICKERS (29.09. angefordert): die Befehlschips (Brand, Prompt, Domain,
+     URL) sind standardmaessig ZU und kommen erst ueber ihn. Form .up-iconbtn.is-28 aus core,
+     Zeichen Hugeicons FilterIcon (in core: listFilter). EINE Stelle fuer das Markup: composerUmbauen
+     baut ihn in einen neuen Composer, amInit haengt ihn in einen, der schon v5 traegt. */
+  function pickFilterKnopf(){
+    return '<button class="up-iconbtn is-28 am-pick-filterbtn" id="am-pick-filterbtn" type="button" ' +
+        'aria-expanded="false" aria-controls="am-pick-crow" aria-label="Filter" data-tip="Filter">' +
+      '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+        'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + amFormen("listFilter") + '</svg>' +
+    '</button>';
+  }
   if (!window.__amBootStubbed){
     window.__amBootStubbed = true;
     API_NAMES.forEach(function(n){
@@ -192,6 +203,8 @@
             'spellcheck="false" aria-label="Search your workspace">' +
         '</span>' +
         '<span class="am-pick-count" id="am-pick-count"></span>' +
+        /* Oben rechts: der Filter-Knopf, siehe pickFilterKnopf. */
+        pickFilterKnopf() +
       '</div>' +
       /* Ueberschrift UND Chips in einer Zeile, 16px auseinander, links ausgerichtet. Die
          Ueberschrift fragt, die Chips antworten -- untereinander las sich das wie zwei
@@ -4716,6 +4729,27 @@
   var elPickCrow   = root.querySelector('#am-pick-crow');
   var elPickCount  = root.querySelector('#am-pick-count');
   var elPicks      = root.querySelector('#am-picks');
+  var elPickFilter = root.querySelector('#am-pick-filterbtn');
+  /* Ein Composer, der die Fassung v5 schon traegt -- die Vorlage und jedes eingebaute Mira --,
+     wird nicht neu gebaut (composerUmbauen bricht beim Stempel ab). Der Knopf kam danach dazu,
+     also wird er hier nachgehaengt: hinter die Zahl, oben rechts in der Suchzeile. Idempotent. */
+  if (!elPickFilter && elPickCount && elPickCount.parentNode){
+    var fbHuelle = document.createElement('div');
+    fbHuelle.innerHTML = pickFilterKnopf();
+    elPickFilter = fbHuelle.firstChild;
+    elPickCount.parentNode.insertBefore(elPickFilter, elPickCount.nextSibling);
+  }
+  /* Die Befehlschips auf und zu (29.09.). Der Zustand haengt an der Wurzel (.is-pick-filter), die
+     CSS blendet .am-pick-crow sonst aus. Beim Schliessen des Panels geht er wieder zu --
+     "per default versteckt" gilt fuer jedes Oeffnen. */
+  function pickFilterZeigen(auf){
+    root.classList.toggle('is-pick-filter', !!auf);
+    if (elPickFilter) elPickFilter.setAttribute('aria-expanded', auf ? 'true' : 'false');
+  }
+  if (elPickFilter) elPickFilter.addEventListener('click', function(e){
+    e.stopPropagation();
+    pickFilterZeigen(!root.classList.contains('is-pick-filter'));
+  });
   /* DER STREIFEN GEHOERT IN DAS TEXTFELD (11.09.): die Bezuege stehen als erstes in der
      Chatbox, der Text geht direkt dahinter weiter. Hier umgehaengt und nicht in der Vorlage:
      die erreicht ein bereits eingebautes Element nicht, und dort steht der Streifen noch ueber
@@ -4858,8 +4892,10 @@
     }
     return s;
   }
-  /* zeichen: nur der Ruhehinweis traegt eines. Bei einem Fehler oder einem leeren Ergebnis
-     waere ein Bild ueber dem Satz eine Verzierung an der falschen Stelle. */
+  /* zeichen: trug nur der Ruhehinweis -- der ist seit dem 29.09. der Logo-Faecher
+     (pickRuheZeigen), hier kommen nur noch Fehler und leere Ergebnisse an, und ueber denen waere
+     ein Bild eine Verzierung an der falschen Stelle. Der Parameter bleibt fuer den Fall, dass
+     wieder ein Hinweis mit Zeichen gebraucht wird. */
   function pickHinweis(titel, unter, zeichen){
     var UCg = window.UpstreemCore;
     var bild = (zeichen && UCg && UCg.icon)
@@ -4870,6 +4906,59 @@
     return '<div class="am-pick-note">' + bild +
            '<div class="am-pick-note-t">' + esc(titel) + '</div>' +
            (unter ? '<div class="am-pick-note-sub">' + esc(unter) + '</div>' : '') + '</div>';
+  }
+  /* ---- DER FAECHER IM RUHEZUSTAND (29.09. angefordert) --------------------------------------
+     "Das 'In deinen Daten suchen' und das Datenbank-Zeichen kommen weg. Stattdessen eine kleine
+     Grafik: Karten, aufgefaechert -- eine mittig ganz vorne, dahinter links und rechts, dahinter
+     nochmal links und rechts. Darin zufaellige Marken- und URL-Logos, dieselben wie im Lader,
+     einmal je Neuladen neu gewuerfelt. Je 32x32, leicht ueberlappend."
+     Gebaut wie eine Hand Spielkarten: alle fuenf Karten liegen auf demselben Platz und drehen sich
+     um EINEN gemeinsamen Punkt weit unter ihnen (transform-origin in ask-mira.css). So stehen sie
+     von selbst auf einem Bogen, die aeusseren etwas tiefer. Beim Oeffnen faechern sie aus der Mitte
+     auf, die aeusseren 40ms spaeter -- aufgefaechert und nicht als Block.
+     Die Karte IST die Logokachel des Laders (.am-tload-logo, samt Rueckfall auf den Anfangs-
+     buchstaben), nur groesser -- es sind dieselben Logos, also dieselbe Kachel.
+     Die Wahl liegt am FENSTER: ein Themenwechsel baut Mira neu, und der Faecher soll dabei nicht
+     andere Logos zeigen. Neu gewuerfelt wird nur, solange er noch keine fuenf echten Logos hatte
+     und inzwischen mehr angekommen sind -- Bubble liefert die Logos oft erst nach dem ersten
+     Oeffnen. Fehlt eins, steht dort das Zeichen eines der Typen, nach denen man sucht. */
+  var FAECHER = [ { w: 0, n: 0, z: 5 }, { w: -12, n: 1, z: 4 }, { w: 12, n: 1, z: 4 },
+                  { w: -24, n: 2, z: 3 }, { w: 24, n: 2, z: 3 } ];
+  var FAECHER_ZEICHEN = ['squareStack', 'globe', 'externalLink', 'zap', 'tags'];
+  function faecherWahl(){
+    var alle = _tlBrandList().map(function(b){ return { src: b.src, fb: b.fb_src || '', label: b.label, color: b.color }; })
+      .concat(_tlFaviconList().map(function(f){ return { src: f.src, fb: '', label: f.label, color: '' }; }));
+    var w = window.__amFaecher;
+    if (w && (w.length >= FAECHER.length || w.length >= alle.length)) return w;
+    w = _tlShuffle(alle).slice(0, FAECHER.length);
+    window.__amFaecher = w;
+    return w;
+  }
+  function pickRuheZeigen(){
+    if (!elPickList) return;
+    var fan = elPickList.querySelector('.am-pick-fan');
+    if (!fan){
+      elPickList.innerHTML = '<div class="am-pick-fan" aria-hidden="true"></div>';
+      fan = elPickList.firstChild;
+      var wahl = faecherWahl(), UCg = window.UpstreemCore;
+      FAECHER.forEach(function(p, i){
+        var it = wahl[i], c;
+        if (it) c = _tlChip('am-tload-logo am-pick-fan-c', it.src, it.fb, it.label, it.color);
+        else {
+          c = document.createElement('span');
+          c.className = 'am-tload-logo am-pick-fan-c is-zeichen';
+          c.innerHTML = (UCg && UCg.icon) ? UCg.icon(FAECHER_ZEICHEN[i], 1.8) : '';
+        }
+        c.style.setProperty('--w', p.w + 'deg');
+        c.style.setProperty('--n', String(p.n));
+        c.style.zIndex = String(p.z);
+        fan.appendChild(c);
+      });
+    }
+    /* Bei JEDEM Oeffnen neu auffaechern: erst zusammenlegen, dann im naechsten Bild auf. */
+    fan.classList.remove('is-auf');
+    void fan.offsetWidth;
+    requestAnimationFrame(function(){ fan.classList.add('is-auf'); });
   }
   var _pickZahlUhr = 0;
   /* DIE TREFFERZAHL WIRD NICHT MEHR ANGEZEIGT (09.09.): sie stand fast immer auf 8, der
@@ -5042,7 +5131,7 @@
       filters: function(){ return _filter ? _filter.payload() : null; },
       onLoading: function(){ if (elPickList) elPickList.innerHTML = pickSkelett(); pickZahl(null); },
       onIdle: function(){
-        if (elPickList) elPickList.innerHTML = pickHinweis(L().pickIdle, '', 'databaseSearch');
+        pickRuheZeigen();
         pickZahl(null);
       },
       onResults: pickZeichnen,
@@ -5093,11 +5182,11 @@
       var su = pickSucheAn();
       if (!su){
         if (elPickList) elPickList.innerHTML = pickHinweis(L().pickOffline, L().pickOfflineSub);
-      } else if (elPickList && !elPickList.innerHTML){
-        elPickList.innerHTML = pickHinweis(L().pickIdle, '', 'databaseSearch');
+      } else if (elPickList && (!elPickList.innerHTML || elPickList.querySelector('.am-pick-fan'))){
+        pickRuheZeigen();
       }
       setTimeout(function(){ try { elPickInput.focus(); } catch(e){} }, 60);
-    } else { _pickFrage = ''; if (_pickSuche) _pickSuche.abbrechen(); }
+    } else { _pickFrage = ''; if (_pickSuche) _pickSuche.abbrechen(); pickFilterZeigen(false); }
   }
   if (elPickBtn) elPickBtn.addEventListener('click', function(e){ e.stopPropagation(); pickOeffnen(); });
   if (elPickInput){
