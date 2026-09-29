@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261039;
+  var BUILD = 20261041;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -9542,7 +9542,7 @@
      "in der heading oben auch so kleine breadcrumbs, je nach dem wo in der page navigation man
      sich aktuell befindet": der Name der Seite, ein Chevron und die Unterseite. Name und Chevron in
      der dritten Farbe, die aktuelle Unterseite in der Primaerfarbe. Eine Seite ohne Unterseiten
-     zeigt den Namen in der Primaerfarbe. Das Zeichen der Seite vorne ist seit dem 30.09. raus
+     zeigt den Namen in der Primaerfarbe. Das Zeichen der Seite vorne ist seit dem 29.09. raus
      (angefordert); cfg.icon wird nicht mehr gelesen.
      Die Krumen stehen IN der h1 -- sie ist weiter die Ueberschrift der Seite, nur klein. Gebaut
      aus JS und nicht aus der Vorlage, weil die Vorlage ein eingebautes Element nicht erreicht
@@ -9584,7 +9584,7 @@
       new MutationObserver(zeichnen).observe(quelle, { subtree: true, childList: true, characterData: true,
         attributes: true, attributeFilter: ["class", "aria-selected"] });
     }
-    /* DIE LINIEN BIS AN DIE KANTE DER BUBBLE-GRUPPE (30.09.). Der Kopf hat kein Seitenpolster; was
+    /* DIE LINIEN BIS AN DIE KANTE DER BUBBLE-GRUPPE (29.09.). Der Kopf hat kein Seitenpolster; was
        er an Abstand zum Rand hat, gibt die Gruppe um ihn (kopfPolsterDurchlassen markiert sie als
        .up-ph-gruppe). Die Linien sollen bis an deren Kante laufen, also so weit ueber das Element
        hinaus, wie die Gruppe Polster hat -- gemessen, weil das 16 oder 0 sein kann. Relativ zur
@@ -9594,22 +9594,39 @@
        gibt, zaehlt mit, nur der Rest kommt als Polster ans Element (--up-ph-innen-l/-r). So
        entsteht weder doppeltes Polster (Bubble 16 + hier 16) noch keines (beides 0) -- in beiden
        Faellen gemeldet. Die Linien laufen um Gruppe PLUS dieses Polster hinaus. */
+    /* UND WENN BUBBLE MEHR ALS 16 GIBT: dann zieht sich das Element um den Ueberschuss nach aussen
+       (--up-ph-zug-l/-r, negativer Aussenabstand plus breiter). Gemeldet: "es sind 2-4px mehr als
+       16" -- im Nachbau genau so: Gruppe 16 plus 3px Versatz des HTML-Elements ergab 19, weil
+       hier bisher nur Polster DAZUgelegt werden konnte. Gemessen wird immer gegen die Lage OHNE
+       diesen Zug, sonst schaukelte sich die Messung mit sich selbst auf -- und der Zug wird dafuer
+       am Aussenabstand GELESEN, nicht gemerkt: kommt die Regel aus core.css nicht an (andere
+       Fassung, verlorene Spezifitaet), ist der Aussenabstand 0 und die Rechnung bleibt stehen,
+       statt bei jedem Lauf um den Ueberschuss zu wachsen. */
     var KOPF_EINZUG = 16;
     function linieMessen(){
       kopfPolsterDurchlassen(root);
       var gr = root.parentElement && root.parentElement.parentElement;
-      var l = 0, re = 0;
-      if (gr && gr.classList && gr.classList.contains("up-ph-gruppe")){
-        var r = root.getBoundingClientRect(), g = gr.getBoundingClientRect();
-        if (r.width && g.width){ l = r.left - g.left; re = g.right - r.right; }
-        else { var cs = getComputedStyle(gr); l = parseFloat(cs.paddingLeft) || 0; re = parseFloat(cs.paddingRight) || 0; }
-      }
-      l = Math.max(0, Math.round(l)); re = Math.max(0, Math.round(re));
+      if (!gr || !gr.classList || !gr.classList.contains("up-ph-gruppe")) return;
+      /* Auch die GRUPPE beobachten: steht das HTML-Element mit fester Hoechstbreite mittig in
+         ihr, waechst beim Fensterziehen nur die Gruppe -- die Wurzel behaelt ihre Breite, und
+         ihr eigener Beobachter schwiege, waehrend der Versatz sich aendert. */
+      if (onResize && root.__upKopfGruppe !== gr){ root.__upKopfGruppe = gr; onResize(gr, linieMessen); }
+      var rs = getComputedStyle(root), l, re;
+      var zl = Math.max(0, -(parseFloat(rs.marginLeft) || 0)), zr = Math.max(0, -(parseFloat(rs.marginRight) || 0));
+      var r = root.getBoundingClientRect(), g = gr.getBoundingClientRect();
+      if (r.width && g.width){ l = r.left - g.left + zl; re = g.right - r.right + zr; }
+      else { var gs = getComputedStyle(gr); l = parseFloat(gs.paddingLeft) || 0; re = parseFloat(gs.paddingRight) || 0; }
+      l = Math.max(0, l); re = Math.max(0, re);
       var pl = Math.max(0, KOPF_EINZUG - l), pr = Math.max(0, KOPF_EINZUG - re);
+      var xl = Math.max(0, l - KOPF_EINZUG), xr = Math.max(0, re - KOPF_EINZUG);
       root.style.setProperty("--up-ph-innen-l", pl + "px");
       root.style.setProperty("--up-ph-innen-r", pr + "px");
-      root.style.setProperty("--up-ph-rand-l", (l + pl) + "px");
-      root.style.setProperty("--up-ph-rand-r", (re + pr) + "px");
+      root.style.setProperty("--up-ph-zug-l", xl + "px");
+      root.style.setProperty("--up-ph-zug-r", xr + "px");
+      /* Der Inhalt steht jetzt in JEDEM Fall genau KOPF_EINZUG von der Kante der Gruppe, also
+         laufen die Linien genau so weit ueber ihn hinaus. */
+      root.style.setProperty("--up-ph-rand-l", KOPF_EINZUG + "px");
+      root.style.setProperty("--up-ph-rand-r", KOPF_EINZUG + "px");
     }
     linieMessen();
     setTimeout(linieMessen, 400);

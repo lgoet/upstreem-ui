@@ -4220,9 +4220,12 @@
 .up-ph-nav::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--vc-border); }
 .up-ph-navitem { display: flex; align-items: center; justify-content: center; gap: 6px;
   height: 32px; padding: 0 12px; cursor: pointer; user-select: none; }
-.up-ph-navicon { display: inline-flex; flex: 0 0 auto; color: var(--vc-muted); transition: color 120ms ease; }
+/* Die NICHT gewaehlten Reiter in der Drittfarbe, Zeichen und Schrift (29.09. angefordert, vorher
+   --vc-muted). Damit steht die Reiterzeile im selben Ton wie die Brotkrumen darueber, deren
+   Vorstufen auch --vc-third tragen; Hover hebt weiter auf --vc-text, gewaehlt bleibt Akzent. */
+.up-ph-navicon { display: inline-flex; flex: 0 0 auto; color: var(--vc-third); transition: color 120ms ease; }
 .up-ph-navicon svg { width: 16px; height: 16px; display: block; }
-.up-ph-navlabel { font-size: 14px; font-weight: 500; color: var(--vc-muted); white-space: nowrap; transition: color 120ms ease; }
+.up-ph-navlabel { font-size: 14px; font-weight: 500; color: var(--vc-third); white-space: nowrap; transition: color 120ms ease; }
 /* DER GEWAEHLTE REITER GANZ IN DER AKZENTFARBE (18.09. angefordert): Zeichen, Schrift und der
    Streifen darunter. Nur hier -- die Seitenleiste bleibt in ihrer Schriftfarbe, dort ist die
    Auswahl eine Flaeche und kein Strich.
@@ -4255,14 +4258,18 @@
    :is(). Die uebrigen folgen; dann wird aus der Liste .up-ph-root allein.
    Ueber die Wurzelklassen und nicht ueber .has-crumbs: die Geometrie soll stehen, BEVOR das JS
    laeuft, sonst springt der Kopf beim Laden von 164px auf 48. */
-/* DER INHALT DES SEITENKOPFS STEHT IMMER 16px VOM RAND -- nie mehr, nie weniger (30.09.).
+/* DER INHALT DES SEITENKOPFS STEHT IMMER 16px VOM RAND -- nie mehr, nie weniger (29.09.).
    Drei Meldungen zu genau dieser Zahl: erst 32 (16 aus Bubble plus 16 hier, "16px zu viel"), dann
    0 (hier raus, Bubble-Polster auch weg: der Strich des ersten Reiters lag auf den 16px, "die
    eigentlich der duenne Separator sein sollten"). Also rechnet UC.makePageCrumbs aus, wie viel
    Polster die Bubble-Gruppe schon gibt, und legt hier nur den Rest auf 16 drauf
    (--up-ph-innen-l/-r). Die Linien laufen davon unabhaengig bis an die Kante der Gruppe. */
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) {
-  padding-top: 8px; padding-left: var(--up-ph-innen-l, 0px); padding-right: var(--up-ph-innen-r, 0px); }
+  padding-top: 8px; padding-left: var(--up-ph-innen-l, 0px); padding-right: var(--up-ph-innen-r, 0px);
+  /* Gibt Bubble MEHR als 16 (Gruppenpolster plus Versatz des HTML-Elements), zieht sich das Element
+     um den Ueberschuss nach aussen und wird um genau so viel breiter. */
+  margin-left: calc(-1 * var(--up-ph-zug-l, 0px)); margin-right: calc(-1 * var(--up-ph-zug-r, 0px));
+  width: calc(100% + var(--up-ph-zug-l, 0px) + var(--up-ph-zug-r, 0px)); }
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-desc { display: none; }
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-top {
   align-items: center; min-height: var(--up-h-btn); padding-bottom: 8px; position: relative; }
@@ -4295,7 +4302,7 @@
 .up-ph-crumbsep svg { width: 14px; height: 14px; display: block; }
 .up-ph-crumbname { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 
-/* ---------- DIE KOMPONENTEN TRAGEN IHR SEITENPOLSTER SELBST (30.09. angefordert) ----------
+/* ---------- DIE KOMPONENTEN TRAGEN IHR SEITENPOLSTER SELBST (29.09. angefordert) ----------
    "Gib den ganzen Komponenten einfach 16px padding left und right, nur nicht den Topbars."
    Bisher gab die Bubble-Gruppe der Ansicht allen Bloecken das Polster -- auch dem Seitenkopf, und
    dessen Linien liefen deshalb nicht bis an den Rand. Jetzt tragen es die Bloecke selbst, und in
@@ -4303,10 +4310,13 @@
    NUR in den vier Ansichten mit dem neuen Seitenkopf (die #view-Behaelter des Kopfskripts) --
    dieselben Komponenten in einem Drawer behalten ihr Mass. NUR die grossen Bloecke: Kalender,
    Filterknoepfe und Umschalter stehen nebeneinander in einer Zeile; 16px an jedem waeren Luecken
-   zwischen ihnen. Keiner dieser Wurzeln hatte bisher ein eigenes Seitenpolster. */
+   zwischen ihnen. Keiner dieser Wurzeln hatte bisher ein eigenes Seitenpolster.
+   Die Filterleiste "More Filters" (.ufb-root) stand anfangs mit in der Liste und ist am selben
+   Tag wieder raus (gemeldet): sie steht in der Zeile neben dem Kalender, ist also genau so ein
+   Knopf und kein Block. */
 :is(#view-dashboard, #view-prompts, #view-citations, #view-brands)
   .up-root:is(.vot-root, .tcd-root, .combo-root, .upw-root, .upt-root, .urt-root, .utm-root,
-              .uut-root, .udt-root, .ubo-root, .udb-root, .ufb-root) { padding-left: 16px; padding-right: 16px; }
+              .uut-root, .udt-root, .ubo-root, .udb-root) { padding-left: 16px; padding-right: 16px; }
 
 /* ---------- responsive (classes set by UC.makePageNav via UC.onResize) ---------- */
 /* is-narrow (<768px default): tabs go from auto-width/left-packed to even thirds, still centered
