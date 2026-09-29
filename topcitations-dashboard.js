@@ -334,10 +334,10 @@
        Zeilenumbrueche, nacktes yes/no, abgeschnittene Textfelder. Top Citations war die einzige
        Komponente mit einem eigenen Weg, und genau daran ist der URL-Modus gestorben:
        "NATURE ONE \"rave. now. together.\"" im Titel, Liste weg, "No data". */
-    function liste(v, name){
-      if (Array.isArray(v)) { state.listenFehler = null; return v; }
+    function liste(v, name, unlesbar){
+      if (Array.isArray(v)) return v;
       var text = (v == null) ? "" : String(v).trim();
-      if (!text) { state.listenFehler = null; return []; }
+      if (!text) return [];
       var p = null;
       /* Faellt zurueck, statt zu werfen: ein Pin, dessen core.js aelter ist als parseBubbleJson,
          haette die ganze Komponente mitgenommen -- und mit ihr den Rest des Run-JS-Steps. */
@@ -347,8 +347,9 @@
       /* Leer und unlesbar sind zwei Dinge (§46): parseBubbleJson gibt beides als [] zurueck.
          Eine WIRKLICH leere Lieferung ist als leeres Klammerpaar zu erkennen -- alles andere,
          das nichts ergibt, ist ein Lesefehler und gehoert sichtbar ins UI. */
-      if (p.length || /^\[\s*\]$/.test(text)) { state.listenFehler = null; return p; }
-      state.listenFehler = "The " + name.replace(/_/g, " ") + " could not be read.";
+      if (p.length || /^\[\s*\]$/.test(text)) return p;
+      /* Nur MELDEN, nicht setzen: update() sammelt ueber alle Listen einer Lieferung. */
+      unlesbar.push(name);
       return [];
     }
     function checkTrendFit(){
@@ -1032,8 +1033,14 @@
            Schweigen dieses Workflows ueber die andere Haelfte. Sind beide leer, ist es eine echte
            Leermeldung (Filter ohne Treffer) und wird uebernommen -- Domains entstehen aus URLs,
            den Zustand "keine URLs, aber Domains" gibt es in den Daten nicht. */
-        var neueDomains = params.top_domains != null ? liste(params.top_domains, "top_domains") : null;
-        var neueUrls    = params.top_urls    != null ? liste(params.top_urls,    "top_urls")    : null;
+        /* Welche Listen DIESER Lieferung waren unlesbar -- gesammelt ueber alle vier und erst
+           danach in listenFehler geschrieben (29.09.). Vorher setzte liste() den Fehler je Aufruf
+           und loeschte ihn beim naechsten lesbaren: types_breakdown scheiterte, das leere
+           url_types_breakdown dahinter raeumte den Fehler weg, und der Doughnut sagte
+           "0 Citations, No data" -- kaputt sah aus wie leer, nur die Konsole wusste es (§46). */
+        var unlesbar = [];
+        var neueDomains = params.top_domains != null ? liste(params.top_domains, "top_domains", unlesbar) : null;
+        var neueUrls    = params.top_urls    != null ? liste(params.top_urls,    "top_urls",    unlesbar) : null;
         var halbePost   = !!neueDomains && !!neueUrls && (neueDomains.length > 0) !== (neueUrls.length > 0);
         if (neueDomains && !(halbePost && !neueDomains.length)){
           state.topDomains = neueDomains; state.hasTable = true; state.hasDomainRows = true;
@@ -1041,8 +1048,10 @@
         if (neueUrls && !(halbePost && !neueUrls.length)){
           state.topUrls = neueUrls; state.hasTable = true; state.hasUrlRows = true;
         }
-        if (params.types_breakdown != null){ state.typesBreakdown = liste(params.types_breakdown, "types_breakdown"); state.hasChart = true; }
-        if (params.url_types_breakdown != null){ state.urlTypesBreakdown = liste(params.url_types_breakdown, "url_types_breakdown"); }
+        if (params.types_breakdown != null){ state.typesBreakdown = liste(params.types_breakdown, "types_breakdown", unlesbar); state.hasChart = true; }
+        if (params.url_types_breakdown != null){ state.urlTypesBreakdown = liste(params.url_types_breakdown, "url_types_breakdown", unlesbar); }
+        if (neueDomains || neueUrls || params.types_breakdown != null || params.url_types_breakdown != null)
+          state.listenFehler = unlesbar.length ? "The " + unlesbar[0].replace(/_/g, " ") + " could not be read." : null;
         if (params.isDark != null){
           /* NICHT isYes(params.isDark): der Parameter ist eine Momentaufnahme aus dem Moment,
              in dem Bubble den Payload gebaut hat. Kennt core ein Thema, gewinnt core -- sonst
