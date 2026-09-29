@@ -64,6 +64,18 @@
         'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + amFormen("listFilter") + '</svg>' +
     '</button>';
   }
+  /* DER LEEREN-KNOPF DES PICKERS (29.09. spaet angefordert: "steht im Add-Dropdown etwas drin,
+     ganz rechts, animiert 200ms, ein Trash-Icon reinkommen lassen, der den Input cleart"). Rechts
+     im FELD, also links vom Filter-Knopf: der bleibt oben rechts stehen und rueckt nicht, sobald
+     getippt wird. Form .up-iconbtn.is-28 wie der Filter, Zeichen trash aus core (dasselbe wie der
+     Leeren-Knopf in Quick Actions). Eine Stelle fuer das Markup, wie beim Filter-Knopf. */
+  function pickLeerKnopf(){
+    return '<button class="up-iconbtn is-28 am-pick-clearbtn" id="am-pick-clearbtn" type="button" ' +
+        'tabindex="-1" aria-hidden="true" aria-label="Clear" data-tip="Clear">' +
+      '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+        'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + amFormen("trash") + '</svg>' +
+    '</button>';
+  }
   if (!window.__amBootStubbed){
     window.__amBootStubbed = true;
     API_NAMES.forEach(function(n){
@@ -203,6 +215,8 @@
             'spellcheck="false" aria-label="Search your workspace">' +
         '</span>' +
         '<span class="am-pick-count" id="am-pick-count"></span>' +
+        /* Der Leeren-Knopf, nur mit Inhalt -- siehe pickLeerKnopf. */
+        pickLeerKnopf() +
         /* Oben rechts: der Filter-Knopf, siehe pickFilterKnopf. */
         pickFilterKnopf() +
       '</div>' +
@@ -4739,6 +4753,14 @@
     elPickFilter = fbHuelle.firstChild;
     elPickCount.parentNode.insertBefore(elPickFilter, elPickCount.nextSibling);
   }
+  /* Derselbe Grund fuer den Leeren-Knopf: vor den Filter-Knopf. Idempotent. */
+  var elPickClear = root.querySelector('#am-pick-clearbtn');
+  if (!elPickClear && elPickFilter && elPickFilter.parentNode){
+    var lkHuelle = document.createElement('div');
+    lkHuelle.innerHTML = pickLeerKnopf();
+    elPickClear = lkHuelle.firstChild;
+    elPickFilter.parentNode.insertBefore(elPickClear, elPickFilter);
+  }
   /* Die Befehlschips auf und zu (29.09.). Der Zustand haengt an der Wurzel (.is-pick-filter), die
      CSS blendet .am-pick-crow sonst aus. Beim Schliessen des Panels geht er wieder zu --
      "per default versteckt" gilt fuer jedes Oeffnen. */
@@ -4850,7 +4872,28 @@
     }).join('');
     /* Der Platzhalter macht Platz: stehen Chips im Feld, waere er eine zweite Aufforderung. */
     if (elPickInput) elPickInput.placeholder = liste.length ? '' : L().pickPlaceholder;
+    pickLeerSync();
   }
+  /* Da ist er, sobald das Feld etwas traegt -- Text ODER einen Filter-Chip, beide stehen IM Feld
+     (Backspace nimmt den letzten Chip, siehe dort). Zu ist er aus der Tab-Reihe. */
+  function pickLeerSync(){
+    if (!elPickClear) return;
+    var voll = !!(elPickInput && elPickInput.value) || !!(_filter && _filter.gesetzt());
+    elPickClear.classList.toggle('is-da', voll);
+    elPickClear.tabIndex = voll ? 0 : -1;
+    elPickClear.setAttribute('aria-hidden', voll ? 'false' : 'true');
+  }
+  if (elPickClear) elPickClear.addEventListener('click', function(e){
+    e.stopPropagation();
+    if (elPickInput) elPickInput.value = '';
+    _pickFrage = '';
+    if (_filter) _filter.leeren();
+    pickChipsZeichnen(); pickCmdsZeichnen();
+    /* Wie ein Tippen ins leere Feld: die Suche geht in ihren Ruhezustand, dort steht der Faecher. */
+    var su = pickSucheAn(); if (su) su.tippen('', _filter ? _filter.bereich() : '');
+    pickLeerSync();
+    try { elPickInput.focus(); } catch(err){}
+  });
 
   /* ---- Die Befehle, die JETZT gelten, als Chips ------------------------------------------ */
   function pickCmdsZeichnen(){
@@ -4942,85 +4985,23 @@
      Grafik: Karten, aufgefaechert -- eine mittig ganz vorne, dahinter links und rechts, dahinter
      nochmal links und rechts. Darin zufaellige Marken- und URL-Logos, dieselben wie im Lader,
      einmal je Neuladen neu gewuerfelt. Je 32x32, leicht ueberlappend."
-     Gebaut wie eine Hand Spielkarten: alle fuenf Karten liegen auf demselben Platz und drehen sich
-     um EINEN gemeinsamen Punkt weit unter ihnen (transform-origin in ask-mira.css). So stehen sie
-     von selbst auf einem Bogen, die aeusseren etwas tiefer. Beim Oeffnen faechern sie aus der Mitte
-     auf, die aeusseren 40ms spaeter -- aufgefaechert und nicht als Block.
-     Die Karte IST die Logokachel des Laders (.am-tload-logo, samt Rueckfall auf den Anfangs-
-     buchstaben), nur groesser -- es sind dieselben Logos, also dieselbe Kachel.
-     Die Wahl liegt am FENSTER: ein Themenwechsel baut Mira neu, und der Faecher soll dabei nicht
-     andere Logos zeigen. Neu gewuerfelt wird nur, solange er noch keine fuenf echten Logos hatte
-     und inzwischen mehr angekommen sind -- Bubble liefert die Logos oft erst nach dem ersten
-     Oeffnen. Fehlt eins, steht dort das Zeichen eines der Typen, nach denen man sucht. */
-  var FAECHER = [ { w: 0, n: 0, z: 5 }, { w: -12, n: 1, z: 4 }, { w: 12, n: 1, z: 4 },
-                  { w: -24, n: 2, z: 3 }, { w: 24, n: 2, z: 3 } ];
-  var FAECHER_ZEICHEN = ['squareStack', 'globe', 'externalLink', 'zap', 'tags'];
-  /* WOHER DIE LOGOS KOMMEN (29.09. nachts ergaenzt): zuerst Miras eigene Vorraete; fehlen die --
-     "auf dem Agentic Dashboard zuerst geoeffnet sind die Logos noch nicht da" --, dann aus den
-     zwei Listen des Dashboards, Wettbewerbsfeld und Trending Citations (power-dashboard.js meldet
-     sie als window.__upwLogoVorrat). "Relativ gleichmaessig": Marken und Quellen werden je fuer
-     sich gemischt und dann nach der LAGE verteilt -- Mitte und die zwei aeusseren Karten die eine
-     Art, die zwei dazwischen die andere. Von links nach rechts also immer abwechselnd, drei zu
-     zwei; welche Art aussen liegt, entscheidet der Zufall. Nach dem Listenplatz abwechselnd
-     gezogen standen beide Quellen links und alle Marken rechts (gemessen: M-Q-M-Q-M in der Liste
-     ergab Q Q M M M auf dem Bildschirm). Fehlt eine Art, springt die andere ein. Innerhalb einer
-     Art kommt Miras Vorrat vor dem des Dashboards. */
-  function faecherWahl(){
-    var vorrat = window.__upwLogoVorrat || {}, gesehen = {};
-    function einmal(x){ if (!x || !x.src || gesehen[x.src]) return false; gesehen[x.src] = true; return true; }
-    var marken = _tlShuffle(_tlBrandList().map(function(b){ return { src: b.src, fb: b.fb_src || '', label: b.label, color: b.color }; }))
-      .concat(_tlShuffle((vorrat.marken || []).map(function(b){ return { src: b.src, fb: b.fb_src || '', label: b.label, color: b.color || '' }; })))
-      .filter(einmal);
-    var quellen = _tlShuffle(_tlFaviconList().map(function(f){ return { src: f.src, fb: '', label: f.label, color: '' }; }))
-      .concat(_tlShuffle((vorrat.quellen || []).map(function(f){ return { src: f.src, fb: '', label: f.label, color: '' }; })))
-      .filter(einmal);
-    var zahl = marken.length + quellen.length;
-    var w = window.__amFaecher;
-    if (w && (w.length >= FAECHER.length || w.length >= zahl)) return w;
-    /* Aussen (Mitte und aeusseres Paar) braucht drei Karten, innen zwei. Reicht eine Art nur
-       fuer EINE, geht sie in die Mitte, reicht sie fuer genau zwei, nach innen -- sonst stuende
-       die einzelne Quelle schief neben der Mitte: M Q M M M. Erst danach der Zufall. */
-    var nm = marken.length, nq = quellen.length;
-    var markeAussen = (nm === 1 || nq === 2) ? true : (nq === 1 || nm === 2) ? false : Math.random() < 0.5;
-    var aus = [];
-    FAECHER.forEach(function(p){
-      var marke = (p.n % 2 === 0) === markeAussen;
-      var x = marke ? (marken.shift() || quellen.shift()) : (quellen.shift() || marken.shift());
-      if (x) aus.push(x);
-    });
-    window.__amFaecher = aus;
-    return aus;
-  }
+     SEIT DEM 29.09. SPAET EIN BAUSTEIN IN CORE (UC.makeFaecher): Quick Actions bekommt denselben
+     Faecher, und zwei Kopien waeren beim naechsten Wunsch auseinandergelaufen. Woher die Logos
+     kommen, wie sie verteilt werden, Farben, Lagen und das Auffaechern stehen dort. Hier bleibt,
+     WO er steht und WANN er aufgeht: bei jedem Oeffnen des Dropdowns neu (vorher nur beim ersten
+     -- Ursache an makeFaecher), darunter "Search your workspace" (29.09. spaet).
+     Der Schluessel "mira" haelt die Wahl getrennt von der in Quick Actions. Fehlt der Baustein
+     (aeltere core am Pin), steht der alte Ruhehinweis da statt eines leeren Feldes. */
+  var _faecher = null;
   function pickRuheZeigen(){
     if (!elPickList) return;
-    var fan = elPickList.querySelector('.am-pick-fan');
-    var wahl = faecherWahl();
-    /* Neu bauen, wenn die Wahl eine andere ist -- sie wechselt nur, solange der Faecher noch
-       Zeichen statt Logos trug und inzwischen Logos angekommen sind. */
-    if (fan && fan.__wahl !== wahl) fan = null;
-    if (!fan){
-      elPickList.innerHTML = '<div class="am-pick-fan" aria-hidden="true"></div>';
-      fan = elPickList.firstChild;
-      fan.__wahl = wahl;
-      var UCg = window.UpstreemCore;
-      FAECHER.forEach(function(p, i){
-        var it = wahl[i], c;
-        if (it) c = _tlChip('am-tload-logo am-pick-fan-c', it.src, it.fb, it.label, it.color);
-        else {
-          c = document.createElement('span');
-          c.className = 'am-tload-logo am-pick-fan-c is-zeichen';
-          c.innerHTML = (UCg && UCg.icon) ? UCg.icon(FAECHER_ZEICHEN[i], 1.8) : '';
-        }
-        c.style.setProperty('--w', p.w + 'deg');
-        c.style.setProperty('--n', String(p.n));
-        c.style.zIndex = String(p.z);
-        fan.appendChild(c);
-      });
+    var UCf = window.UpstreemCore;
+    if (!UCf || !UCf.makeFaecher){ elPickList.innerHTML = pickHinweis(L().pickIdle, '', 'databaseSearch'); return; }
+    if (!_faecher || !elPickList.contains(_faecher.el)){
+      _faecher = UCf.makeFaecher(elPickList, { schluessel: 'mira', text: 'Search your workspace',
+        dunkel: function(){ return root.getAttribute('data-theme') === 'dark'; } });
     }
-    /* Bei JEDEM Oeffnen neu auffaechern: erst zusammenlegen, dann im naechsten Bild auf. */
-    fan.classList.remove('is-auf');
-    void fan.offsetWidth;
-    requestAnimationFrame(function(){ fan.classList.add('is-auf'); });
+    _faecher.zeigen();
   }
   var _pickZahlUhr = 0;
   /* DIE TREFFERZAHL WIRD NICHT MEHR ANGEZEIGT (09.09.): sie stand fast immer auf 8, der
@@ -5119,6 +5100,7 @@
      Befehlsmodus eine Anfrage nach Bubble. */
   function pickEingabe(){
     var roh = elPickInput ? elPickInput.value : '';
+    pickLeerSync();
     /* Tippt der Nutzer den Befehlspfad selbst weg, ist die beiseitegelegte Suche hinfaellig --
        sonst kaeme sie beim naechsten Befehl als Ueberraschung zurueck. */
     if (roh.charAt(0) !== '/') _pickFrage = '';
@@ -5244,9 +5226,10 @@
       var su = pickSucheAn();
       if (!su){
         if (elPickList) elPickList.innerHTML = pickHinweis(L().pickOffline, L().pickOfflineSub);
-      } else if (elPickList && (!elPickList.innerHTML || elPickList.querySelector('.am-pick-fan'))){
+      } else if (elPickList && (!elPickList.innerHTML || elPickList.querySelector('.up-fan-block'))){
         pickRuheZeigen();
       }
+      pickLeerSync();
       setTimeout(function(){ try { elPickInput.focus(); } catch(e){} }, 60);
     } else { _pickFrage = ''; if (_pickSuche) _pickSuche.abbrechen(); pickFilterZeigen(false); }
   }

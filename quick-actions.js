@@ -151,6 +151,8 @@
             '<svg viewBox="0 0 24 24"><path d="M19.5 5.5L18.8803 15.5251C18.7219 18.0864 18.6428 19.3671 18.0008 20.2879C17.6833 20.7431 17.2747 21.1273 16.8007 21.416C15.8421 22 14.559 22 11.9927 22C9.42312 22 8.1383 22 7.17905 21.4149C6.7048 21.1257 6.296 20.7408 5.97868 20.2848C5.33688 19.3626 5.25945 18.0801 5.10461 15.5152L4.5 5.5"/><path d="M3 5.5H21M16.0557 5.5L15.3731 4.09173C14.9196 3.15626 14.6928 2.68852 14.3017 2.39681C14.215 2.3321 14.1231 2.27454 14.027 2.2247C13.5939 2 13.0741 2 12.0345 2C10.9688 2 10.436 2 9.99568 2.23412C9.8981 2.28601 9.80498 2.3459 9.71729 2.41317C9.32164 2.7167 9.10063 3.20155 8.65861 4.17126L8.05292 5.5"/><path d="M9.5 16.5L9.5 10.5"/><path d="M14.5 16.5L14.5 10.5"/></svg>' +
           '</button>' +
         '</div>' +
+        /* Der Logo-Faecher unter dem Suchfeld (29.09. spaet), siehe syncFan. */
+        '<div class="mqa-fan is-zu" id="mqa-fan" aria-hidden="true"><div class="mqa-fan-in"></div></div>' +
         /* Die zwei Woerter in EIGENEN Spans. Vorher trug der Knopf sie als eigene Textknoten
            links und rechts der Taste -- ein Satz aus drei Knoten, und den laesst der Sprachlauf
            absichtlich liegen: Knoten fuer Knoten uebersetzt ergibt im Deutschen Unsinn. So
@@ -1412,6 +1414,15 @@
         '<span class="mqa-rowmenu-opt-ic">' + OPEN_SVG + '</span>Open</button>' +
       '<button class="mqa-rowmenu-opt" type="button" data-rowmenu-act="newtab">' +
         '<span class="mqa-rowmenu-opt-ic">' + NEWTAB_SVG + '</span>Open in new tab</button>' +
+      /* "ASK MIRA" (29.09. spaet angefordert: "auch im More-Dropdown, mit denselben Wegen wie die
+         Knoepfe in den Topbars -- Quick Actions muss nur mitgeben, ob Brand, Domain, Prompt, URL").
+         Der Weg ist UC.anMira, derselbe wie in drawer-topbar.js, ohne Verdrahtung in Bubble. Das
+         Zeichen ist das der Topbar (blend, der Mira-Punkt der Seitenleiste) und LINKS vom Pin,
+         wie dort. Ohne core oder ohne vollstaendigen Bezug ist die Zeile weg (openRowMenu). */
+      '<button class="mqa-rowmenu-opt" type="button" data-rowmenu-act="mira">' +
+        '<span class="mqa-rowmenu-opt-ic"><svg viewBox="0 0 24 24">' +
+          ((window.UpstreemCore && window.UpstreemCore.iconFormen) ? window.UpstreemCore.iconFormen("blend") : "") +
+        '</svg></span>Ask Mira</button>' +
       '<button class="mqa-rowmenu-opt" type="button" data-rowmenu-act="pin">' +
         '<span class="mqa-rowmenu-opt-ic">' + PIN_SVG + '</span>Pin to sidebar</button>';
     overlay.appendChild(rowMenuEl);
@@ -1429,6 +1440,10 @@
         var it = itemForMenu(kind, idx); if (it) openItemInNewTab(it);
       } else if (act === "pin"){
         var it2 = itemForMenu(kind, idx); if (it2) pinToSidebar(it2);
+      } else if (act === "mira"){
+        /* Erst die Palette zu, dann der Wechsel: Mira soll frei vor einem stehen. */
+        var UCm = window.UpstreemCore, bez = (UCm && UCm.miraBezug) ? UCm.miraBezug(itemForMenu(kind, idx)) : null;
+        if (bez && UCm.anMira){ close(); UCm.anMira(bez); }
       }
     });
     return rowMenuEl;
@@ -1481,6 +1496,8 @@
     ensureRowMenu();
     if (rowMenuOpenKind != null) closeRowMenu();
     rowMenuOpenKind = kind; rowMenuOpenIdx = idx;
+    var miraOpt = rowMenuEl.querySelector('[data-rowmenu-act="mira"]'), UCo = window.UpstreemCore;
+    if (miraOpt) miraOpt.hidden = !(UCo && UCo.anMira && UCo.miraBezug && UCo.miraBezug(itemForMenu(kind, idx)));
     btn.classList.add("is-open");
     var rowEl = btn.closest(".mqa-row"); if (rowEl) rowEl.classList.add("is-menuopen");
     rowMenuEl.classList.add("is-on");
@@ -1534,7 +1551,51 @@
     rows = Array.prototype.slice.call(modal.querySelectorAll(".mqa-row, .mqa-action"))
       .filter(function(el){ return el.offsetParent !== null; });
     // every render funnels through here, and both of these depend only on state+filters
-    syncCta(); syncFav();
+    syncCta(); syncFav(); syncFan();
+  }
+  /* ---------- DER LOGO-FAECHER UNTER DEM SUCHFELD (29.09. spaet angefordert) ----------
+     "Hier will ich den gleichen Faecher haben, direkt unter dem Inputfeld, mit genug Platz drueber
+     und drunter. Sobald man was sucht, Tags eingibt oder Referenzen aufmacht, soll er
+     verschwinden -- aber immer mit der Animation erscheinen und immer mit 200ms ease
+     verschwinden. Aus den gleichen Quellen, und getrennt von dem in Mira."
+     Der Faecher ist der Baustein aus core (UC.makeFaecher): Quellen, Verteilung, Karten, Farben
+     und das Auffaechern stehen dort, der Schluessel "qa" haelt die Wahl getrennt von "mira".
+     Hier nur, WANN er steht: Palette offen, kein Text, kein Tag, Referenz zu, Ruhezustand.
+     Aufgefaechert wird beim Uebergang von zu nach offen -- nicht bei jedem refreshRows, das
+     laeuft nach JEDEM Zeichnen und liesse die Karten sonst bei jedem Tastendruck neu fahren.
+     Ohne core auf der Seite (diese Palette laeuft ausdruecklich auch ohne) bleibt er zu.
+     Das Markup kommt auch in eine schon eingebaute Palette: ihre Vorlage aus Bubble bringt es
+     nicht mit, und der Bauweg oben ueberspringt eine Palette, die schon einen Ausloeser hat. */
+  var fanEl = overlay.querySelector("#mqa-fan"), fanApi = null, fanSofort = false;
+  if (!fanEl){
+    var fanSuche = overlay.querySelector(".mqa-search");
+    if (fanSuche && fanSuche.parentNode){
+      fanEl = document.createElement("div");
+      fanEl.className = "mqa-fan is-zu"; fanEl.id = "mqa-fan"; fanEl.setAttribute("aria-hidden", "true");
+      fanEl.innerHTML = '<div class="mqa-fan-in"></div>';
+      fanSuche.parentNode.insertBefore(fanEl, fanSuche.nextSibling);
+    }
+  }
+  function syncFan(){
+    if (!fanEl) return;
+    var UCf = window.UpstreemCore;
+    var soll = isOpen && state === "idle" && !input.value && !anyFilter() && !refListOpen && !refOpen &&
+               !!(UCf && UCf.makeFaecher);
+    var zu = fanEl.classList.contains("is-zu");
+    if (soll && zu){
+      if (!fanApi) fanApi = UCf.makeFaecher(fanEl.firstChild, { schluessel: "qa", text: "Search your workspace",
+        dunkel: function(){ return overlay.getAttribute("data-theme") === "dark"; } });
+      /* Beim OEFFNEN der Palette steht die Huelle sofort -- nur die Karten faechern auf. Ohne das
+         fuhr sie mit auf (gemessen: zwei Uebergaenge beim Oeffnen): refreshRows misst die Zeilen
+         (offsetParent), bevor es hierher kommt, und hat den zugeklappten Stand damit schon
+         festgeschrieben. Ueber die Palette selbst faehrt dabei ihr eigenes Aufgehen (mqaPop). */
+      if (fanSofort) fanEl.classList.add("is-sofort");
+      fanEl.classList.remove("is-zu");
+      if (fanSofort){ void fanEl.offsetHeight; fanEl.classList.remove("is-sofort"); }
+      if (fanApi) fanApi.zeigen();
+    } else if (!soll && !zu){
+      fanEl.classList.add("is-zu");
+    }
   }
   function clearActive(){ activeIndex = -1; for (var k = 0; k < rows.length; k++) rows[k].classList.remove("is-active"); }
   function setActive(i, doScroll){
@@ -1579,6 +1640,9 @@
   function onInput(){
     var raw = input.value;
     syncPh();
+    /* Sofort, nicht erst nach dem Zeichnen: der erste Buchstabe laeuft unter MIN in renderIdle,
+       ein "/" in renderCommands -- beide gehen ueber refreshRows, aber so ist es unabhaengig davon. */
+    syncFan();
     /* Sobald gesucht wird, ist das Glossar im Weg: es steht ueber den Treffern und schiebt sie
        aus dem Blick. Nur anfassen, wenn wirklich etwas offen ist -- onInput laeuft bei jedem
        Tastendruck, und ein buildStatic() pro Anschlag waere verschenkt. */
@@ -1664,8 +1728,10 @@
        results area, it does not rebuild the Actions markup, so without this the section would come
        back exactly as the previous session left it. */
     collapseReference();
+    fanSofort = true;
     buildStatic();
     renderIdle();
+    fanSofort = false;
     setTimeout(function(){ try { input.focus(); input.select(); } catch(_){} }, 20);
   }
   function close(){

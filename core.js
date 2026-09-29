@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261050;
+  var BUILD = 20261051;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -12986,6 +12986,164 @@
     return { render: zeichnen, skeleton: skelett, redraw: function(){ if (letzte) zeichnen(letzte); } };
   }
 
+  /* ---------- DER LOGO-FAECHER (UC.makeFaecher, 29.09. -- aus ask-mira nach core) ----------
+     Fuenf Karten mit Marken- und Quellenlogos, aufgefaechert wie eine Hand Spielkarten: alle
+     liegen auf demselben Platz und drehen sich um EINEN Punkt weit unter ihnen (transform-origin
+     in core.css), die Mitte vorne, dahinter links und rechts, dahinter noch einmal. Zuerst in Miras
+     Add-Dropdown (statt "In deinen Daten suchen"), seit dem 29.09. spaet auch in Quick Actions --
+     "den gleichen Faecher". Zwei Kopien waeren beim naechsten Wunsch auseinandergelaufen.
+     Der Block traegt selbst .up-root: in Quick Actions liegt er in einem Overlay ausserhalb jeder
+     Komponente, und ohne die Klasse gaebe es dort keine Masse und Farben -- so macht es auch die
+     Landingpage mit ihrer Grafik. Das Thema kommt beim Zeigen aus cfg.dunkel(), danach haelt es
+     der Themenlauf von core (er schreibt data-theme auf jede .up-root). */
+  var FAECHER_LAGEN = [ { w: 0, n: 0, z: 5 }, { w: -12, n: 1, z: 4 }, { w: 12, n: 1, z: 4 },
+                        { w: -24, n: 2, z: 3 }, { w: 24, n: 2, z: 3 } ];
+  /* Ohne Logo steht auf der Karte das Zeichen eines Typs, nach dem man sucht. */
+  var FAECHER_ZEICHEN = ["squareStack", "globe", "externalLink", "zap", "tags"];
+  /* WOHER DIE LOGOS KOMMEN, in der Reihenfolge ihrer Verlaesslichkeit:
+       1. Miras Vorraete (askMiraSetBrandLogos / askMiraSetFavicons, window.askMiraState) -- das
+          sind die Logos des Laders, so war der Faecher angefordert;
+       2. die zwei Listen des Agentic Dashboards, Wettbewerbsfeld und Trending Citations
+          (power-dashboard.js meldet sie als window.__upwLogoVorrat) -- dort ist Miras Vorrat beim
+          ersten Oeffnen noch leer;
+       3. der Markenspeicher (setUpstreemBrands), den fast jede Seite fuellt;
+       4. was die Seite schon GEZEIGT hat: geladene Logos in den Logo-Platten der Tabellen, auch in
+          geparkten Ansichten. Eine Platte mit .up-fav zeigt eine Seite, also eine Quelle; jede
+          andere eine Marke. Nur Bilder, die wirklich geladen sind -- ein kaputtes Logo wuerde im
+          Faecher genauso kaputt stehen.
+     ("Wenn gar nichts von beiden da ist, gaebe es andere Quellen, die das Ding abklappern
+     koennte?" -- 3 und 4 sind die Antwort.) */
+  function logoVorrat(){
+    var marken = [], quellen = [];
+    function url(u){ u = String(u || "").trim(); if (u.indexOf("//") === 0) u = "https:" + u; return /^https?:\/\//i.test(u) ? u : ""; }
+    function stufe(liste, roh, marke){
+      var aus = [];
+      (roh || []).forEach(function(x){
+        if (!x) return;
+        var src = url(x.src || x.logo_url || x.favicon_url || x.favicon || x.logo);
+        if (!src) return;
+        aus.push({ src: src, fb: marke ? url(x.fb_src || x.fb) : "", label: String(x.label || x.name || x.domain || "") });
+      });
+      /* Jede Stufe fuer sich gemischt: der Zufall waehlt INNERHALB einer Quelle, die Reihenfolge
+         der Quellen bleibt. */
+      shuffle(aus).forEach(function(x){ liste.push(x); });
+    }
+    var am = window.askMiraState || {};
+    stufe(marken, am.brandLogos, true); stufe(quellen, am.favicons, false);
+    var upw = window.__upwLogoVorrat || {};
+    stufe(marken, upw.marken, true); stufe(quellen, upw.quellen, false);
+    try { stufe(marken, getBrands(), true); } catch(e){}
+    var dom = { m: [], q: [] };
+    try {
+      var bilder = document.querySelectorAll(".up-logo-box.has-img img, .up-ment-logo img, .up-stack-item img, .up-bar-logo");
+      for (var i = 0; i < bilder.length && i < 80; i++){
+        var b = bilder[i];
+        if (!b.complete || !b.naturalWidth) continue;
+        (b.closest && b.closest(".up-fav") ? dom.q : dom.m).push({ src: b.currentSrc || b.src, label: b.alt || "" });
+      }
+    } catch(e){}
+    stufe(marken, dom.m, true); stufe(quellen, dom.q, false);
+    return { marken: marken, quellen: quellen };
+  }
+  function shuffle(a){ a = a.slice(); for (var i = a.length - 1; i > 0; i--){ var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  /* DIE WAHL JE FAECHER (schluessel), am Fenster: ein Neubau der Wurzel (Themenwechsel) zeigt
+     dieselben Logos, gewuerfelt wird einmal je Seitenaufbau. Neu gewuerfelt wird nur, solange ein
+     Faecher noch keine fuenf Logos hatte und inzwischen mehr da sind -- Bubble liefert oft erst
+     nach dem ersten Oeffnen.
+     GETRENNT (29.09. spaet: "die Faecher in Mira und in Quick Actions nicht gleich"): was ein
+     ANDERER Faecher schon zeigt, kommt hier zuletzt dran -- doppelt nur, wenn es sonst nicht fuer
+     fuenf reicht.
+     VERTEILT NACH DER LAGE: Mitte und aeusseres Paar die eine Art, das innere Paar die andere, von
+     links nach rechts also abwechselnd, drei zu zwei. Reicht eine Art nur fuer EINE Karte, geht sie
+     in die Mitte, fuer genau zwei nach innen -- sonst stuende sie schief neben der Mitte. */
+  function faecherWahl(schluessel){
+    var st = (window.__upFaecher = window.__upFaecher || {});
+    var v = logoVorrat(), gesehen = {}, belegt = {};
+    Object.keys(st).forEach(function(k){ if (k !== schluessel) (st[k] || []).forEach(function(x){ belegt[x.src] = 1; }); });
+    function einmal(x){ if (gesehen[x.src]) return false; gesehen[x.src] = true; return true; }
+    function frei(l){ return l.filter(function(x){ return !belegt[x.src]; }).concat(l.filter(function(x){ return belegt[x.src]; })); }
+    var marken = frei(v.marken.filter(einmal)), quellen = frei(v.quellen.filter(einmal));
+    var w = st[schluessel];
+    if (w && (w.length >= FAECHER_LAGEN.length || w.length >= marken.length + quellen.length)) return w;
+    var nm = marken.length, nq = quellen.length;
+    /* Welche Art aussen liegt (drei Karten) und welche innen (zwei): zuerst die Symmetrie (siehe
+       oben), dann die Aufteilung, die am wenigsten zeigt, was ein anderer Faecher schon zeigt --
+       gemessen: der Zufall legte die knappe Art nach aussen, und Mira und Quick Actions teilten
+       sich zwei Quellen, obwohl sechs Marken frei waren. Erst bei Gleichstand der Zufall. */
+    var um = marken.filter(function(x){ return !belegt[x.src]; }).length;
+    var uq = quellen.filter(function(x){ return !belegt[x.src]; }).length;
+    var doppeltM = Math.max(0, 3 - um) + Math.max(0, 2 - uq), doppeltQ = Math.max(0, 3 - uq) + Math.max(0, 2 - um);
+    var markeAussen = (nm === 1 || nq === 2) ? true : (nq === 1 || nm === 2) ? false :
+      (doppeltM !== doppeltQ) ? doppeltM < doppeltQ : Math.random() < 0.5;
+    var aus = [];
+    FAECHER_LAGEN.forEach(function(p){
+      var marke = (p.n % 2 === 0) === markeAussen;
+      var x = marke ? (marken.shift() || quellen.shift()) : (quellen.shift() || marken.shift());
+      if (x) aus.push(x);
+    });
+    st[schluessel] = aus;
+    return aus;
+  }
+  function faecherKarte(it, p, i){
+    var c = document.createElement("span");
+    c.className = "up-fan-c";
+    if (it){
+      var im = document.createElement("img");
+      im.alt = ""; im.referrerPolicy = "no-referrer";
+      var fbVersucht = false;
+      /* Erst das Favicon als Rueckfall, dann der Anfangsbuchstabe auf der Platte -- wie in jeder
+         Logo-Platte der App (.up-logo-ltr). */
+      im.onerror = function(){
+        if (it.fb && !fbVersucht){ fbVersucht = true; im.src = it.fb; return; }
+        c.classList.add("is-fb");
+        c.textContent = String(it.label || "?").charAt(0).toUpperCase();
+      };
+      im.src = it.src;
+      c.appendChild(im);
+    } else {
+      c.classList.add("is-zeichen");
+      c.innerHTML = icon(FAECHER_ZEICHEN[i], 1.8);
+    }
+    c.style.setProperty("--w", p.w + "deg");
+    c.style.setProperty("--n", String(p.n));
+    c.style.zIndex = String(p.z);
+    return c;
+  }
+  /* cfg: { schluessel, text, dunkel() }. Gibt { el, zeigen } zurueck.
+     zeigen() faechert JEDES MAL neu auf (29.09. spaet: "beim ersten Oeffnen animieren die Karten
+     so cool rein -- das sollen sie immer machen"). Das Zusammenlegen davor laeuft OHNE Uebergang
+     (.is-still): in Mira lief es mit Uebergang und Verzoegerung, 16ms spaeter ging der Faecher
+     schon wieder auf -- die Karten standen nie auf 0, und der Browser verwarf die Fahrt. Gemessen:
+     erstes Oeffnen vier Uebergaenge, jedes weitere keiner. Aufgefaechert wird im selben Zug, nicht
+     im naechsten Bild: der Stil ist nach dem Messen schon festgeschrieben, und ein verdeckter Tab
+     ruft requestAnimationFrame nie. */
+  function makeFaecher(host, cfg){
+    cfg = cfg || {};
+    var schluessel = cfg.schluessel || "standard";
+    if (!host) return null;
+    host.innerHTML = '<div class="up-root up-fan-block"><div class="up-fan" aria-hidden="true"></div>' +
+      (cfg.text ? '<div class="up-fan-cap" data-i18n="' + esc(cfg.text) + '">' + esc(t_(cfg.text)) + '</div>' : '') +
+      '</div>';
+    var el = host.firstChild, fan = el.firstChild;
+    function zeigen(){
+      var dunkel = false;
+      try { dunkel = !!(cfg.dunkel && cfg.dunkel()); } catch(e){}
+      el.setAttribute("data-theme", dunkel ? "dark" : "light");
+      var wahl = faecherWahl(schluessel);
+      if (fan.__wahl !== wahl){
+        fan.textContent = "";
+        FAECHER_LAGEN.forEach(function(p, i){ fan.appendChild(faecherKarte(wahl[i], p, i)); });
+        fan.__wahl = wahl;
+      }
+      fan.classList.add("is-still");
+      fan.classList.remove("is-auf");
+      void fan.offsetWidth;
+      fan.classList.remove("is-still");
+      fan.classList.add("is-auf");
+    }
+    return { el: el, zeigen: zeigen };
+  }
+
   /* ---------- makeScaleMenu ----------
      The gear-button "Chart Settings" dropdown shared by every line chart: colour scale + the
      app-wide Line Width section. Deliberately NOT built on makePopover — that primitive's
@@ -14928,6 +15086,43 @@
     });
     OFFENE_DRAWER.length = 0;
     return n;
+  }
+
+  /* ---------- EINE ENTITAET AN MIRA GEBEN (29.09. spaet, aus drawer-topbar nach core) ----------
+     Angefordert: "Ask Mira" auch im Mehr-Menue der Treffer in Quick Actions -- "dieselben Wege
+     wie die Knoepfe in den Topbars, Quick Actions muss nur mitgeben, ob Brand, Domain, Prompt,
+     URL". Der Weg stand bis hierher nur in drawer-topbar.js (zuMira); zwei Kopien waeren beim
+     naechsten Fix auseinandergelaufen. Drei Schritte, in dieser Reihenfolge:
+       1. alle offenen Drawer zu (zusaetzlich: Namen, die sicher offen sind);
+       2. die Ansicht wechseln, mit dem Weg der App: showView("mira");
+       3. der Bezug an Mira -- ist sie auf der Seite, direkt ueber askMiraAddReference, sonst
+          ueber den sessionStorage, den Mira beim Start abholt. NUR EINER der zwei Wege: mit
+          beiden kaeme der Bezug zweimal an, und ein Eintrag, den niemand abholt, stuende beim
+          naechsten Laden einer ganz anderen Seite wieder im Feld.
+     Kein Ereignis an Bubble: Drawer und Ansicht erledigt das hier selbst. */
+  function anMira(bezug, zusaetzlich){
+    if (!bezug) return false;
+    try { closeAllDrawers(zusaetzlich || []); } catch(e){}
+    try { if (typeof window.showView === "function") window.showView("mira"); } catch(e){}
+    var wurzel = document.getElementById("ask-mira");
+    var miraDa = !!(wurzel && wurzel.__askMiraInit) && typeof window.askMiraAddReference === "function";
+    if (miraDa){ try { window.askMiraAddReference(bezug); } catch(e){} }
+    else { try { sessionStorage.setItem("am_pending_ref", JSON.stringify(bezug)); } catch(e){} }
+    return true;
+  }
+  /* DIE FORM DES BEZUGS je Typ ist die eines Treffers aus Miras Suche (UC.entityItems) --
+     dieselben Felder, die UC.entityId, UC.entityLabel und UC.entityBild lesen. So entsteht in
+     Mira dieselbe Pille, als haette der Nutzer den Eintrag ueber das Plus gewaehlt. Eingang ist
+     ein Eintrag in derselben Form (Quick Actions liefert genau die); fehlt, was der Typ braucht,
+     gibt es keinen Bezug. Die Topbar baut ihren aus Attributen und bleibt bei ihrer Fassung. */
+  function miraBezug(it){
+    if (!it) return null;
+    var t = String(it.type || "");
+    if (t === "domain" && it.domain) return { type: "domain", domain: it.domain, name: it.domain, favicon: it.favicon || "", id: it.id || it.domain };
+    if (t === "brand" && it.id != null && it.name) return { type: "brand", id: it.id, name: it.name, logo: it.logo || it.logo_url || "" };
+    if (t === "prompt" && it.id != null && it.prompt_text) return { type: "prompt", id: it.id, prompt_text: it.prompt_text, name: it.prompt_text, market: it.market || "" };
+    if (t === "url" && it.url) return { type: "url", url: it.url, title: it.title || "", name: it.title || it.url, favicon: it.favicon || "" };
+    return null;
   }
 
   (function watchForDrawerFns(triesLeft){
@@ -18847,6 +19042,8 @@
     MARKT_FARBEN: MARKT_FARBEN,
     marktFarbe: marktFarbe,
     makeBarList: makeBarList,
+    makeFaecher: makeFaecher,
+    logoVorrat: logoVorrat,
     rowDwell: rowDwell,
     makePager: makePager,
     makeHeadSort: makeHeadSort,
@@ -18953,6 +19150,7 @@
        Formatierer kennt. */
     getPref: getPref, setPref: setPref, setLocaleReload: setLocaleReload,
     openDrawers: openDrawers, closeAllDrawers: closeAllDrawers, drawerOeffnen: drawerOeffnen,
+    anMira: anMira, miraBezug: miraBezug,
     onPrefs: onPrefs, getUpstreemThemeChoice: getUpstreemThemeChoice,
     PREF_DEFAULT: PREF_DEFAULT, PREF_ERLAUBT: PREF_ERLAUBT,
     fmtNum: fmtNum, fmtDateMuster: fmtDateMuster, datumsTeile: datumsTeile,

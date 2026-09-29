@@ -3160,6 +3160,41 @@
 .up-logo-ltr { font-size: 11px; font-weight: 600; color: var(--vt-logo-ink, var(--vc-muted)); line-height: 1; text-transform: uppercase; }
 .up-logo-box.has-img .up-logo-ltr { display: none; }
 
+/* ---------- DER LOGO-FAECHER (UC.makeFaecher, 29.09.) ----------
+   Fuenf Karten auf einem Platz, gedreht um EINEN Punkt weit unter ihnen: transform-origin 50%
+   440% liegt 141px unter der Karte, so stehen sie von selbst auf einem Bogen, die aeusseren etwas
+   tiefer. Die Mitte liegt vorne (z-index aus dem JS), jede Lage faehrt 40ms nach der inneren auf.
+   DIE KARTE IST EINE LOGO-PLATTE: --vt-logo-bg wie .up-logo-box, hell auch im Dunkeln (29.09.
+   spaet: "im Darkmode hellen Background in den Cards, wie in anderen Logo-Chips"); Buchstabe und
+   Zeichen darauf in --vt-logo-ink. Der Ring in der Farbe der Flaeche dahinter trennt die
+   ueberlappenden Karten -- ein Einbau auf anderem Grund setzt --up-fan-ring (Quick Actions).
+   Das Logo steht mit 20px mittig und wird NICHT beschnitten (contain): cover schnitt breite Logos
+   ab, gemessen an der Wolke von Salesforce.
+   Der Bogen (aus Mira uebernommen): bei 12 Grad liegt die Mitte der Nachbarkarte 26px daneben,
+   bei 24 Grad 51 -- die Karten ueberlappen um gut 6px, und jedes Logo bleibt ganz sichtbar (bei
+   350% waren es 15px Deckung). Die aeusseren sitzen 3 und 11px tiefer; 160 x 60 umschliesst den
+   ganzen Bogen. */
+.up-root.up-fan-block { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.up-fan { position: relative; width: 160px; height: 60px; pointer-events: none; }
+.up-fan-c {
+  position: absolute; left: calc(50% - 16px); top: 4px; width: 32px; height: 32px; box-sizing: border-box;
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+  border-radius: var(--up-r-l); background: var(--vt-logo-bg); color: var(--vt-logo-ink, var(--vc-muted));
+  font-size: var(--up-fs-l); font-weight: var(--up-fw-h); line-height: 1;
+  box-shadow: 0 0 0 2px var(--up-fan-ring, var(--up-menu-bg)), var(--up-e-chip);
+  transform-origin: 50% 440%; transform: rotate(0deg);
+  transition: transform var(--up-t-3) var(--up-ease-auf);
+  transition-delay: calc(var(--n, 0) * 40ms);
+}
+.up-fan.is-auf .up-fan-c { transform: rotate(var(--w, 0deg)); }
+/* Das Zusammenlegen vor dem Auffaechern laeuft ohne Uebergang -- Begruendung an makeFaecher. */
+.up-fan.is-still .up-fan-c { transition: none; }
+.up-fan-c img { width: 20px; height: 20px; object-fit: contain; border-radius: var(--up-r-xs); display: block; }
+.up-fan-c.is-zeichen svg { width: 16px; height: 16px; display: block; }
+/* "In der Drittfarbe und recht duenn" (29.09. spaet) -- 400 ist der duennste Schnitt der Achse. */
+.up-fan-cap { font-size: var(--up-fs-m); font-weight: var(--up-fw-n); line-height: 1.4; color: var(--vc-third); white-space: nowrap; }
+@media (prefers-reduced-motion: reduce){ .up-fan-c { transition: none; } }
+
     /* ---------- Globus statt Buchstabe, wo das Bild ein FAVICON war ----------
        Ein Favicon, das nicht laedt, hinterliess den Anfangsbuchstaben der Domain -- ein "R" fuer
        reddit.com sagt nichts, und bei einer Subdomain ist es schlicht falsch. Fuer Seiten steht

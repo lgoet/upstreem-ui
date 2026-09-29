@@ -133,6 +133,24 @@
 .mqa-inputwrap { position: relative; flex: 1 1 auto; min-width: 60px; display: flex; align-items: center; }
 .mqa-input { flex: 1 1 auto; min-width: 60px; border: 0; outline: 0; background: transparent; color: var(--am-text); font-family: var(--mqa-font); font-size: 15px; font-weight: 450; letter-spacing: -0.01em; padding: 0; touch-action: auto; position: relative; z-index: 1; }
 .mqa-input::placeholder { color: var(--am-muted-3); }
+/* ---------- der Logo-Faecher unter dem Suchfeld (29.09. spaet, siehe syncFan) ----------
+   Der Faecher ist der Baustein aus core (UC.makeFaecher, .up-fan-* in core.css) -- die Palette
+   laedt core.css zwar nicht selbst, aber der Faecher kommt nur, wenn core da ist (syncFan), und
+   mit core kommt auf jeder Seite der App auch core.css. Hier steht nur die Huelle, die auf- und
+   zufaehrt: ein Raster von 1fr auf 0fr, 200ms ease wie angefordert -- dieselbe Technik wie der
+   Koerper eines Referenz-Eintrags weiter unten. Ein Polster kann nicht auf 0 fahren, deshalb
+   liegt der Abstand IM Kind und faehrt mit ein. Beim Oeffnen der Palette faehrt nichts: das
+   Overlay ist bis dahin display: none, der Faecher steht also sofort und faechert nur auf. */
+.mqa-fan { display: grid; grid-template-rows: 1fr; opacity: 1; flex: 0 0 auto;
+  transition: grid-template-rows var(--up-t-2, 200ms) ease, opacity var(--up-t-2, 200ms) ease; }
+.mqa-fan.is-zu { grid-template-rows: 0fr; opacity: 0; }
+.mqa-fan.is-sofort { transition: none; }
+.mqa-fan-in { min-height: 0; overflow: hidden; }
+/* 20 ueber dem Block (plus 4 Kartenversatz = 24 unter dem Suchfeld), 4 darunter (plus die 18 der
+   naechsten Gruppe = 26 bis zur ersten Zeile): "genug Platz drueber und drunter", und beides etwa
+   gleich. Vorher 16 gegen 30 (gemessen). */
+.mqa-fan-in > .up-fan-block { padding: 20px 0 4px; }
+@media (prefers-reduced-motion: reduce){ .mqa-fan { transition: none; } }
 /* KEIN HINEINZOOMEN BEIM FOKUS AUF DEM TELEFON. iOS-Safari zoomt die Seite, sobald ein Feld mit
    einer Schrift unter 16px den Fokus bekommt -- 15px reichen dafuer schon. Die Regel steht auch
    in core.css (dort fuer die ganze App); DIESE Datei braucht ihre eigene, weil ihr Bubble-Loader
@@ -423,6 +441,9 @@
   font-family: var(--mqa-font); font-size: 12.5px; font-weight: 500; color: var(--am-text);
 }
 .mqa-rowmenu-opt:hover { background: var(--am-soft); }
+/* Die eigene display-Regel oben schlaegt [hidden] aus dem Browser-Stylesheet -- ohne diese Zeile
+   bliebe "Ask Mira" auch ohne Bezug stehen (derselbe Fall wie .upt-kpi[hidden]). */
+.mqa-rowmenu-opt[hidden] { display: none; }
 .mqa-rowmenu-opt-ic { flex: 0 0 auto; width: 15px; height: 15px; display: inline-flex; color: var(--am-muted); }
 .mqa-rowmenu-opt-ic svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; display: block; }
 
