@@ -248,11 +248,9 @@
 .uud-cnum { flex: 0 0 108px; justify-content: flex-end; }
 .uud-cname { font-size: 13.5px; font-weight: 500; color: var(--vc-text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-/* Shape, Luecke, Zahl. Die Farbe traegt der Shape (UC.sentColor: rot schlecht, gruen gut), die
-   Zahl steht in der Primaerfarbe -- ein farbiger Zahlenwert liest sich als Warnung, nicht als
-   Messwert. Ein runder Punkt mit 6px -- dieselbe Marke wie .up-tag-dot und .up-sent-dot in core. */
-.uud-cpct { display: inline-flex; align-items: center; gap: 8px; }
-.uud-cdot { width: 6px; height: 6px; border-radius: 999px; flex: 0 0 auto; }
+/* Shape und Zahl kommen aus core (UC.sentHtml mit opts.text, seit dem 29.09.): Balken 4x16 in
+   der Farbe der Bewertung, die Zahl in der Primaerfarbe -- ein farbiger Zahlenwert laese sich als
+   Warnung, nicht als Messwert. Hier stand ein eigener runder 6px-Punkt. */
 
 /* ---- Ladezustand -----------------------------------------------------------------------------
    Kein eigenes Skelett-Markup: die Abschnitte stehen bereits, sie bekommen nur den Puls von core

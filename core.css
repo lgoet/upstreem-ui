@@ -1201,6 +1201,9 @@
     .up-explain-t { font-size: 13.5px; font-weight: 400; line-height: 1.5; padding: 0 3px; color: color-mix(in srgb, var(--vc-inverse-ink) 68%, transparent); }
     .up-explain-row { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 500; color: var(--vc-inverse-bg); }
     .up-explain-row svg { width: 14px; height: 14px; display: block; }
+    /* Die Sentiment-Vorschau (UC.sentHtml) in der Zeile: Zahl in Schrift und Farbe der Zeile, wie
+       "18.4%" daneben -- die Karte haengt ausserhalb von .up-root, --vc-text loest dort nicht auf. */
+    .up-explain-row .up-sent-val { font-size: inherit; color: inherit; }
     .up-explain-up { color: #2ea84a; }
     .up-explain-down { color: #b0200c; }
     /* Matches the real .up-stack-item/.up-stack-vis chip exactly (28x28, radius 8, 4px ring) —
@@ -3290,9 +3293,28 @@
 .up-num { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; flex: 0 0 auto; font-variant-numeric: tabular-nums; }
 .up-rank-group { display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto; }
 .up-hash { width: 12px; height: 12px; color: var(--vc-third); flex: 0 0 auto; display: block; }
-.up-sent { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 6px; border: 1px solid var(--vc-border); border-radius: 6px; flex: 0 0 auto; }
-.up-sent-dot { width: 6px; height: 6px; border-radius: 2px; flex: 0 0 auto; }
-.up-sent-val { font-size: 13px; font-weight: 500; color: var(--vc-text); font-variant-numeric: tabular-nums; }
+/* ---------- SENTIMENT OHNE KASTEN (29.09. angefordert) ----------
+   "Aktuell ist das ja in so Containern, das moechte ich nicht mehr. Die Zahl soll in gleicher
+   Fontsize sein wie Visibility oder Rank, der Container darum -- Border und Paddings -- weg. Und
+   der Shape davor bitte 4px breit und 16px hoch."
+   Also kein Rahmen, kein Polster, keine feste Hoehe: ein Balken 4x16 in der Farbe des Werts
+   (UC.sentColor, inline), daneben die Zahl in genau der Schrift von .up-num (14/500) -- dieselbe
+   wie Visibility und Rank in derselben Zeile. Rund an den Enden: bei 4px Breite ist der volle
+   Radius die halbe Breite.
+   Das Markup kommt NUR aus UC.sentHtml(wert). Vorher baute jede Komponente ihren eigenen String
+   (neun Stellen, eine davon mit eigenem Kasten). Wo Visibility und Rank groesser stehen
+   (Kennzahlkarten), zieht der Kontext NUR .up-sent-val mit; der Balken bleibt 4x16. */
+.up-sent { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+.up-sent-dot { width: 4px; height: 16px; border-radius: var(--up-r-voll); flex: 0 0 auto; }
+.up-sent-val { font-size: var(--up-fs-l); font-weight: 500; color: var(--vc-text); white-space: nowrap;
+  font-variant-numeric: tabular-nums; }
+/* DIE PILLE MIT RAHMEN bleibt -- fuer das, was kein Messwert ist: den Tarif (UC.planPilleHtml) und
+   den Status "Active" in Teams. Beide nutzen dasselbe Markup wie Sentiment, sind aber Plaketten.
+   Hier stehen die Werte, die .up-sent bis zum 29.09. selbst trug: 24px, Polster 6, Rahmen, Radius
+   6, Punkt 6x6 mit Radius 2 (ein abgerundetes Quadrat, kein Kreis), Schrift 13. */
+.up-sent.up-pille { height: var(--up-h-chip); padding: 0 6px; border: 1px solid var(--vc-border); border-radius: var(--up-r-s); }
+.up-pille .up-sent-dot { width: 6px; height: 6px; border-radius: 2px; }
+.up-pille .up-sent-val { font-size: var(--up-fs-m); }
 /* Der Tarif als Pille (UC.planPilleHtml, 28.09. aus teams.css hierher, seit settings-billing sie
    auch zeigt). Der Grundton des Punktes steht HIER und nicht im JS: .up-sent-dot bringt keine
    Farbe mit (die Sentiment-Zelle setzt sie immer inline), und ein Tarif ohne Farbeintrag hatte
@@ -3315,7 +3337,9 @@
    Polster wie jede Pille, damit die Spalte ruhig bleibt; 12 statt 13, weil Monospace je Zeichen
    breiter laeuft und die Tarifspalte der Teams-Tabelle bei 140 anfaengt. Eine Schrift wird nicht
    geladen: ui-monospace ist auf jedem System da, auf dem Mac ist es SF Mono. */
-.up-planpill.is-dev { border-style: dashed; border-color: var(--vc-fourth); }
+/* .up-sent davor: die Pille bekommt ihren Rahmen seit dem 29.09. aus .up-sent.up-pille (zwei Klassen),
+   und die Abweichung gewinnt ueber die Spezifitaet, nicht ueber die Reihenfolge. */
+.up-sent.up-planpill.is-dev { border-style: dashed; border-color: var(--vc-fourth); }
 .up-planpill.is-dev .up-sent-val,
 .up-planpill-prompt { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
 .up-planpill.is-dev .up-sent-val { font-size: var(--up-fs-s); letter-spacing: -0.01em; }

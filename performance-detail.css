@@ -73,17 +73,10 @@
 .upd-kpi-val { margin-top: 8px; display: flex; align-items: center; gap: 8px; min-width: 0; }
 /* Der Wert traegt hier die groessere Stufe als in einer Tabellenzelle: er ist die Aussage der
    Kachel, nicht ein Feld unter vielen. */
-.upd-kpi-val .up-num { font-size: 18px; font-weight: 500; }
-/* Sentiment zwei Punkte kleiner als die anderen KPI-Zahlen: der Wert steht in einer Pille mit
-   Punkt davor und traegt damit optisch mehr Gewicht als eine nackte Zahl -- bei gleicher Groesse
-   wirkt er groesser als die drei anderen Kacheln.
-   16px statt 13px heisst Faktor 16/13 = 1.23 auf ALLE Masse der Pille, nicht nur auf die Schrift:
-   Hoehe 24 -> 29.5, Polsterung 6 -> 7.4, Radius 6 -> 7.4, Abstand 6 -> 7.4, Punkt 6 -> 7.4 mit
-   Radius 2 -> 2.5. Vorher stand hier nur die Schriftgroesse, und 16px Text in einer 24px hohen
-   Pille stossen an den Rahmen -- genau der Fehler, den .check_reinvention hier gemeldet hat. */
-.upd-kpi-val .up-sent { height: 29.5px; padding: 0 7.4px; border-radius: 7.4px; gap: 7.4px; }
-.upd-kpi-val .up-sent-dot { width: 7.4px; height: 7.4px; border-radius: 2.5px; }
-.upd-kpi-val .up-sent-val { font-size: 16px; font-weight: 500; }
+/* Sentiment in DERSELBEN Groesse wie die drei anderen Kacheln (29.09.). Vorher zwei Punkte
+   kleiner, weil der Wert in einer Pille stand und damit mehr Gewicht trug; seit Sentiment keinen
+   Kasten mehr hat (core: Balken 4x16 + Zahl), gibt es dieses Mehrgewicht nicht mehr. */
+.upd-kpi-val .up-num, .upd-kpi-val .up-sent-val { font-size: 18px; font-weight: 500; }
 .upd-kpi-val .up-rank-group .up-hash { width: 12px; height: 12px; }
 .upd-kpi-trend { display: inline-flex; align-items: center; }
 .upd-dash { font-size: 18px; color: var(--vc-third); }

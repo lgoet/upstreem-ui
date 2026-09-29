@@ -11,14 +11,14 @@
      grid-template-columns   schreibt UC.makeColumns als --up-cols auf die Wurzel, .up-thead und
                              .up-row lesen es. Eine eigene Rasterrechnung waere eine zweite
                              Mechanik neben der, die jede andere Tabelle benutzt.
-     Tarif-Pille             .up-sent samt .up-sent-dot und .up-sent-val. Feste 24px, der Punkt
+     Tarif-Pille             .up-sent.up-pille samt .up-sent-dot und .up-sent-val. Feste 24px, der Punkt
                              ist ein abgerundetes Quadrat. Nur die FARBE des Punktes kommt von
                              hier, und die als Inline-Wert je Zeile -- an der Geometrie wird
                              nichts angefasst, sonst stoesst der Text an den Rahmen (CLAUDE.md 1).
      Wechselknopf            .up-export, derselbe gefuellte Knopf wie "Export" in den Tabellen
                              und "+ Add Brand" im Seitenkopf. Er bringt Hoehe, Radius, Polsterung,
                              Schrift und den Hover mit; unten steht nur der schmale Zustand.
-     "Active"-Pille          ebenfalls .up-sent, mit --vt-up als Punktfarbe. Das ist die Farbe,
+     "Active"-Pille          ebenfalls .up-sent.up-pille, mit --vt-up als Punktfarbe. Das ist die Farbe,
                              die in dieser App "aufwaerts, gut" heisst.
      Teamlogo                .up-logo-box mit .up-logo-ltr als Rueckfall -- genau wie der
                              Teamwaehler in der Seitenleiste. OHNE .up-fav: das waere der

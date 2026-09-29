@@ -69,7 +69,7 @@
     UC.buildLineDatasets = function(){ return { labels: [], datasets: [] }; };
   }
 
-  var esc = UC.esc, isYes = UC.isYes, fmt1 = UC.fmt1, sentColor = UC.sentColor, highlight = UC.highlight;
+  var esc = UC.esc, isYes = UC.isYes, fmt1 = UC.fmt1, highlight = UC.highlight;
   var CHECK_SVG = UC.CHECK_SVG;
 
   /* ================================================================
@@ -401,9 +401,7 @@
       el.setAttribute("data-theme", isDark() ? "dark" : "light");
       var vis  = pt.x != null ? UC.fmtPct(pt.x, 1) : "–";   /* eine Stelle, wie in der Tabelle */
       var sv   = pt.sentiment, rv = pt.avg_rank;
-      var sentHtml = (sv == null) ? '<span class="ubo-mxtip-empty">–</span>'
-        : '<span class="up-sent"><span class="up-sent-dot" style="background:' + sentColor(sv) + '"></span>' +
-          '<span class="up-sent-val">' + Math.round(sv) + '</span></span>';
+      var sentHtml = (sv == null) ? '<span class="ubo-mxtip-empty">–</span>' : UC.sentHtml(sv);
       var rankHtml = (rv == null) ? '<span class="ubo-mxtip-empty">–</span>'
         : '<span class="up-rank-group">' + HASH_SVG + '<span class="up-num">' + fmt1(rv) + '</span></span>';
       el.innerHTML =
@@ -999,11 +997,7 @@
         UC.trendChip(r.visibility_delta_pct, { decimals: false, inverted: false, suffix: "%" });
       var rank = '<span class="up-rank-group">' + HASH_ICON + '<span class="up-num">' + fmt1(r.avg_rank) + '</span></span>' +
         UC.trendChip(r.avg_rank_delta, { decimals: true, inverted: true });
-      var sNull = (r.sentiment == null || r.sentiment === "" || !isFinite(Number(r.sentiment)));
-      var sc = sNull ? "#9E9E9E" : sentColor(r.sentiment);
-      var sent = '<span class="up-sent"><span class="up-sent-dot" style="background:' + sc + '"></span>' +
-        '<span class="up-sent-val' + (sNull ? " is-empty" : "") + '">' + (sNull ? "–" : Math.round(Number(r.sentiment))) + '</span></span>' +
-        UC.trendChip(r.sentiment_delta, { decimals: true, inverted: false });
+      var sent = UC.sentHtml(r.sentiment) + UC.trendChip(r.sentiment_delta, { decimals: true, inverted: false });
       var id = String(r.company_id == null ? "" : r.company_id);
       var h = '<div class="up-row" data-id="' + esc(id) + '">' +
         '<div class="up-td up-td-idx">' + pos + '</div>' +

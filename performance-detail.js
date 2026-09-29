@@ -53,7 +53,7 @@
      nackten "UC.x is not a function", das die Ursache nicht nennt. Einmal benennen, dann
      abstufen: ohne makeLine bleibt die Kurve leer, alles andere funktioniert weiter. */
   var MISSING = ["makeMount", "makeLine", "buildLineDatasets", "makeTooltips", "makeExplain", "makeFire", "trendChip",
-                 "sentColor", "esc", "fmt1"]
+                 "sentHtml", "esc", "fmt1"]
     .filter(function(k){ return typeof UC[k] !== "function"; });
   if (MISSING.length && window.console){
     console.error("[performance-detail] The core.js on this page is OLDER than performance-detail.js " +
@@ -68,7 +68,7 @@
     UC.buildLineDatasets = function(){ return { labels: [], datasets: [] }; };
   }
 
-  var esc = UC.esc, fmt1 = UC.fmt1, sentColor = UC.sentColor, toNum = UC.toNum;
+  var esc = UC.esc, fmt1 = UC.fmt1, toNum = UC.toNum;
   /* Trefferhervorhebung aus dem Core -- dieselbe <mark class="up-hl">-Markierung, die die
      Tabellen in ihren Suchergebnissen setzen. */
   var highlight = UC.highlight || function(t){ return esc(t); };
@@ -351,9 +351,7 @@
       var dash = '<span class="upd-dash">-</span>';
 
       var visHtml  = vis == null ? dash : '<span class="up-num">' + fmtPctShort(vis, true) + '</span>';
-      var sentHtml = sv == null ? dash
-        : '<span class="up-sent"><span class="up-sent-dot" style="background:' + sentColor(sv) + '"></span>' +
-          '<span class="up-sent-val">' + Math.round(sv) + '</span></span>';
+      var sentHtml = sv == null ? dash : UC.sentHtml(sv);
       var rankHtml = rv == null ? dash
         : '<span class="up-rank-group">' + HASH_SVG + '<span class="up-num">' + fmt1(rv) + '</span></span>';
       var mentHtml = ment == null ? dash : '<span class="up-num">' + Math.round(ment) + '</span>';

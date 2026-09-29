@@ -740,16 +740,11 @@
               '</div>' +
               '<div class="up-td uud-cnum">' +
                 (pct == null ? LEER :
-                  /* UC.sentColor ist die Gut/Schlecht-Skala dieser App: rot unter 25, orange bis 40,
-                     grau bis 60, hellgruen bis 75, gruen darueber -- dieselben Schwellen, die die
-                     Sentiment-Spalte in prompts-table und visibility-chart benutzen. Eine zweite
-                     Skala fuer denselben Gedanken waere eine Skala zu viel.
-                     Die Farbe traegt der Shape, die Zahl steht in der Primaerfarbe: der Wert soll
-                     lesbar sein, die Bewertung daneben stehen. */
-                  '<span class="uud-cpct">' +
-                    '<span class="uud-cdot" style="background:' + esc(UC.sentColor(pct)) + '"></span>' +
-                    '<span class="up-num">' + esc(UC.fmtPct(pct, 1)) + '</span>' +
-                  '</span>') +
+                  /* Dieselbe Gut/Schlecht-Skala wie Sentiment (UC.sentColor) und seit dem 29.09.
+                     auch dieselbe Marke: der Balken aus UC.sentHtml, die Zahl als Prozent. Hier
+                     stand ein eigener runder Punkt mit eigenem Abstand -- "dieselbe Marke wie
+                     .up-sent-dot", nur eben nachgebaut. */
+                  UC.sentHtml(pct, { text: UC.fmtPct(pct, 1) })) +
               '</div>' +
             '</div>';
           }).join("") +

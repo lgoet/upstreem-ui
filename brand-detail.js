@@ -356,18 +356,14 @@
       elHeading.textContent = m.heading;
     }
 
-    /* Die grosse Zahl benutzt DIESELBEN Bauteile wie jede Tabellenzelle: Sentiment als .up-sent
-       mit farbigem Punkt, Rang als .up-rank-group mit vorangestellter Raute. Nur die Schriftgroesse
-       ist hier groesser -- das Muster bleibt, damit dieselbe Zahl ueberall gleich aussieht. */
+    /* Die grosse Zahl benutzt DIESELBEN Bauteile wie jede Tabellenzelle: Sentiment aus
+       UC.sentHtml (Balken + Zahl, ohne Kasten), Rang als .up-rank-group mit vorangestellter Raute.
+       Nur die Schriftgroesse ist hier groesser -- das Muster bleibt, damit dieselbe Zahl ueberall
+       gleich aussieht. */
     function kpiInner(m, kpi) {
       var v = num(kpi && kpi[m.metric]);
       if (v == null) return '<span class="up-num">–</span>';
-      if (m.fmt === "sent") {
-        return '<span class="up-sent">' +
-                 '<span class="up-sent-dot" style="background:' + (UC.sentColor ? UC.sentColor(v) : "") + '"></span>' +
-                 '<span class="up-sent-val">' + Math.round(v) + '</span>' +
-               '</span>';
-      }
+      if (m.fmt === "sent") return UC.sentHtml ? UC.sentHtml(v) : '<span class="up-num">' + Math.round(v) + '</span>';
       if (m.fmt === "rank") {
         return '<span class="up-rank-group">' + HASH + '<span class="up-num">' +
                  /* Durch core, damit das Trennzeichen dem Zahlenformat des Nutzers folgt. */

@@ -692,7 +692,8 @@
           UC.trendChip(o.visibility_delta_pct, { decimals: true, suffix: "%" }), fussVis) +
         kpiKarte("Avg. Rank", '<span class="up-num">' + fmtR(rank) + '</span>',
           UC.trendChip(o.avg_rank_delta, { decimals: true, inverted: true }), fussRank) +
-        kpiKarte("Sentiment", '<span class="up-num">' + fmtI(sent) + '</span>',
+        /* Sentiment mit dem Balken aus core, wie ueberall (29.09.) -- hier stand die nackte Zahl. */
+        kpiKarte("Sentiment", sent == null ? '<span class="up-num">' + fmtI(sent) + '</span>' : UC.sentHtml(sent),
           UC.trendChip(o.sentiment_delta, { decimals: true }), fussSent);
     }
     function kpiSkelett(){

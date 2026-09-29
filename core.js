@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261035;
+  var BUILD = 20261036;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -4229,6 +4229,30 @@
     if (v <= 60) return "#9E9E9E";
     if (v <= 75) return "#9FD25D";
     return "#60D25D";
+  }
+  /* ---------- Sentiment: EIN Baustein fuer das Markup (29.09.) ----------
+     Balken 4x16 in der Farbe des Werts plus die ganze Zahl (CLAUDE.md 2b: Sentiment ohne
+     Nachkommastelle), ohne Kasten -- core.css .up-sent. Vorher baute jede Komponente ihren
+     eigenen String: neun Stellen, zwei Leerdarstellungen, eine mit eigenem Kasten.
+       v            0-100; leer oder unlesbar ergibt den gedaempften Strich (.is-empty) --
+                    gleich breit wie ein Wert, damit die Spalte ruhig bleibt
+       opts.klasse  Zusatzklasse an .up-sent (etwa fuer eine groessere Zahl im Kontext)
+       opts.leer    Text statt des Strichs, wenn es keinen Wert gibt
+       opts.text    eigener Text statt der ganzen Zahl -- fuer einen Wert, der dieselbe
+                    Gut/Schlecht-Skala traegt, aber anders geschrieben wird (url-detail: "25.4%")
+     Die Farbe folgt dem Wert, DER DASTEHT: der ganzen Zahl, sonst standen "25" rot und "25"
+     orange nebeneinander (25.4 lag ueber der Schwelle). Mit opts.text dem genauen Wert. */
+  function sentHtml(v, opts){
+    opts = opts || {};
+    var n = (v == null || v === "") ? NaN : Number(v);
+    var k = "up-sent" + (opts.klasse ? " " + opts.klasse : "");
+    if (!isFinite(n)) {
+      return '<span class="' + k + ' is-empty"><span class="up-sent-val is-empty">' +
+        esc(opts.leer != null ? opts.leer : "\u2013") + '</span></span>';
+    }
+    var r = Math.round(n), mitText = opts.text != null;
+    return '<span class="' + k + '"><span class="up-sent-dot" style="background:' + sentColor(mitText ? n : r) + '"></span>' +
+      '<span class="up-sent-val">' + (mitText ? esc(opts.text) : r) + '</span></span>';
   }
 
   /* Brand-mention chip stack: overlapping favicon circles + "+N" overflow. Shared by urls-table
@@ -17344,7 +17368,7 @@
     /* Statt des Punktes ein Prompt aus zwei Zeichen, in Monospace wie der Name dahinter. Kein
        Symbol: der Satz in core hat keines fuer Terminal oder Code, und ein selbst gezeichnetes
        gibt es nicht (CLAUDE.md, Abschnitt 5). */
-    return '<span class="up-sent up-planpill' + (dev ? " is-dev" : "") + (opts.klasse ? " " + opts.klasse : "") + (an ? "" : " is-off") + '"' +
+    return '<span class="up-sent up-pille up-planpill' + (dev ? " is-dev" : "") + (opts.klasse ? " " + opts.klasse : "") + (an ? "" : " is-off") + '"' +
         (tip ? ' data-tip="' + esc(tip) + '"' : "") + ' translate="no">' +
       (dev ? '<span class="up-planpill-prompt" aria-hidden="true">&gt;_</span>'
            : '<span class="up-sent-dot"' + (c ? ' style="background:' + c + '"' : "") + '></span>') +
@@ -18644,6 +18668,7 @@
     /* ---- table primitives ---- */
     trendChip: trendChip,
     sentColor: sentColor,
+    sentHtml: sentHtml,
     brandStack: brandStack,
     relativeTime: relativeTime,
     modelChip: modelChip,

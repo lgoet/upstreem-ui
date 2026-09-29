@@ -252,7 +252,6 @@
     function trendChip(delta, decimals, inverted, suffix){
       return UC.trendChip(delta, { decimals: decimals, inverted: inverted, suffix: suffix });
     }
-    var sentColor = UC.sentColor;
     var ROW_GOTO = '<span class="up-row-goto">' + UC.GOTO_SVG + '</span>';
     function renderTable(){
       var rows = Array.isArray(state.tableRows) ? state.tableRows : [];
@@ -283,9 +282,7 @@
         var visNull = (r.visibility_pct == null || r.visibility_pct === "");
         var vis = '<span class="up-num' + (visNull ? " is-empty" : "") + '">' + (visNull ? "–" : UC.fmtPct(r.visibility_pct)) + '</span>' + trendChip(r.visibility_delta_pct, false, false, "%");
         var rank = '<span class="up-rank-group">' + HASH_ICON + '<span class="up-num">' + fmt1(r.avg_rank) + '</span></span>' + trendChip(r.avg_rank_delta, true, true);
-        var sentNull = (r.sentiment == null || r.sentiment === "" || !isFinite(Number(r.sentiment)));
-        var sc = sentNull ? "#9E9E9E" : sentColor(r.sentiment);
-        var sent = '<span class="up-sent"><span class="up-sent-dot" style="background:' + sc + '"></span><span class="up-sent-val' + (sentNull ? " is-empty" : "") + '">' + (sentNull ? "–" : Math.round(Number(r.sentiment))) + '</span></span>' + trendChip(r.sentiment_delta, true, false);
+        var sent = UC.sentHtml(r.sentiment) + trendChip(r.sentiment_delta, true, false);
         return '<div class="vt-row' + gap + '" data-id="' + esc(String(r.company_id == null ? "" : r.company_id)) + '">' +
           '<div class="vt-td vt-td-idx">' + (pos != null ? pos : "") + '</div>' +
           '<div class="vt-td vt-td-brand">' + logo + '<span class="vt-brand-name">' + esc(r.name == null ? "" : r.name) + '</span>' + ROW_GOTO + '</div>' +
@@ -408,7 +405,7 @@
          component's CSS variables do not reach it. */
       if (kind === "sentiment"){
         return '<span class="up-explain-row">' +
-          '<span class="vot-explain-sent"><span class="vot-explain-sentdot" style="background:#60D25D"></span>78</span>' +
+          UC.sentHtml(78) +
           '<span class="up-explain-up">' + UC.TREND_UP + '</span>' +
           '<span class="up-explain-up">4</span></span>';
       }

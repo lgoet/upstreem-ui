@@ -562,7 +562,9 @@
           /* Das Team, in dem man steht. KEIN gesperrter Wechselknopf: ein Knopf, der aussieht
              wie einer und nichts tut, ist die schlechtere Auskunft. --vt-up ist die Farbe, die
              in dieser App "gut" heisst. */
-          return '<span class="up-sent uts-active">' +
+          /* up-pille: eine Plakette mit Rahmen wie der Tarif daneben -- kein Messwert, also
+             nicht der rahmenlose Sentiment-Balken (29.09.). */
+          return '<span class="up-sent up-pille uts-active">' +
                    '<span class="up-sent-dot" style="background:var(--vt-up)"></span>' +
                    '<span class="up-sent-val">' + esc(UC.t("Active")) + '</span>' +
                  '</span>';

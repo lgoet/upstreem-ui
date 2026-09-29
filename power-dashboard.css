@@ -354,7 +354,9 @@
 .upw-kpi-main { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .upw-kpi-label { font-size: 13px; font-weight: 500; color: var(--vc-muted); }
 .upw-kpi-row { display: flex; align-items: center; gap: 10px; min-height: 28px; }
-.upw-kpi-val .up-num { font-size: 21px; font-weight: 500; line-height: 1.15; letter-spacing: -0.4px;
+/* .up-sent-val mit in der Liste (29.09.): die Sentiment-Karte zeigt seitdem den Baustein aus core
+   (Balken 4x16 + Zahl), und die Zahl steht so gross wie Visibility und Rank daneben. */
+.upw-kpi-val .up-num, .upw-kpi-val .up-sent-val { font-size: 21px; font-weight: 500; line-height: 1.15; letter-spacing: -0.4px;
   font-variant-numeric: tabular-nums; }
 .upw-kpi-trend { display: inline-flex; align-items: center; }
 .upw-kpi-trend .up-trend { font-size: 15px; }
@@ -552,7 +554,7 @@
 .upw-root.is-vnarrow .upw-kpi-foot { justify-content: flex-start; }
 /* Eine Stufe kleiner, damit "3.0%" und sein Trend in einem Drittel der Telefonbreite nebeneinander
    bleiben -- gemessen passt es bei 375px, darunter bricht der Trend unter die Zahl. */
-.upw-root.is-vnarrow .upw-kpi-val .up-num { font-size: 18px; }
+.upw-root.is-vnarrow .upw-kpi-val .up-num, .upw-root.is-vnarrow .upw-kpi-val .up-sent-val { font-size: 18px; }
 .upw-root.is-vnarrow .upw-kpi-trend .up-trend { font-size: 13px; }
 .upw-root.is-vnarrow .upw-kpi-trend .up-trend svg { width: 14px; height: 14px; }
 .upw-root.is-vnarrow .upw-kpi-label { font-size: 12px; }

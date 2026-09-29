@@ -70,22 +70,17 @@
    moeglichst wenig springt. */
 .ubd-kpi-val .up-tsk-bar   { height: 24px; width: 88px; border-radius: 6px; }
 .ubd-kpi-trend .up-tsk-bar { height: 18px; width: 58px; border-radius: 5px; }
-.ubd-kpi-val .up-num { font-size: inherit; font-weight: 500; letter-spacing: inherit;
+/* Sentiment steht seit dem 29.09. ohne Kasten (core: Balken 4x16 + Zahl) -- die Zahl ist damit
+   eine Kennzahl wie jede andere und bekommt dieselbe Groesse wie Visibility und Rank hier. Die
+   Pillenrechnung (Faktor 17/13 auf Hoehe, Polster, Radius, Punkt) faellt mit dem Kasten weg; der
+   Balken bleibt 4x16 aus core. */
+.ubd-kpi-val .up-num, .ubd-kpi-val .up-sent-val { font-size: inherit; font-weight: 500; letter-spacing: inherit;
   font-variant-numeric: tabular-nums; }
-/* Sentiment eine Stufe groesser als in einer Tabellenzelle -- aber VOLLSTAENDIG, nicht nur die
-   Schrift. Die Pille aus core misst 24px Hoehe bei 13px Schrift; 17px ergibt Faktor 17/13, und
-   in genau dem Verhaeltnis wachsen Hoehe (31), Innenabstand (8), Eckenradius (8), der Abstand
-   zum Punkt (8) und der Punkt selbst (8 bei 2.6 Radius). Nur die Schrift anzuheben wuerde die
-   Pille sprengen: der Text stiesse oben und unten an den Rahmen, und aus dem abgerundeten
-   Quadrat des Punktes wuerde bei falschem Radius ein Kreis.
-   Der Rang bleibt beim Core-Mass -- dort waechst die nackte Zahl (.up-num) ohnehin auf 21px,
-   und die Raute ist auf sie abgestimmt. */
+/* Der Rang bleibt beim Core-Mass -- dort waechst die nackte Zahl (.up-num) ohnehin mit, und die
+   Raute ist auf sie abgestimmt. */
 /* Raute im Verhaeltnis zur Zahl: core setzt 12px bei 13px Zellschrift, hier 21 bei 23. Ohne das
    sitzt eine 12px-Raute neben einer 23px-Zahl und sieht aus wie ein Fehler. */
 .ubd-kpi-val .up-hash { width: 21px; height: 21px; }
-.ubd-kpi-val .up-sent { height: 31px; padding: 0 8px; border-radius: 8px; gap: 8px; }
-.ubd-kpi-val .up-sent-val { font-size: 17px; }
-.ubd-kpi-val .up-sent-dot { width: 8px; height: 8px; border-radius: 2.6px; }
 /* Der Trend bleibt eine Randnotiz zur Zahl, keine zweite Zahl -- aber einen Punkt groesser als
    in einer Tabellenzelle, weil die Zahl daneben hier deutlich groesser ist. */
 .ubd-kpi-trend { display: inline-flex; align-items: center; }

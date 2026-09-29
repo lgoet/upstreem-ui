@@ -17,12 +17,12 @@ HIER = os.path.dirname(os.path.abspath(__file__))
 
 # Bauteile, deren Werte nur zusammen stimmen: {Klasse: (Paket, Begruendung)}
 PAKETE = {
-    "up-sent":     ({"font-size", "height", "padding", "border-radius", "gap"},
-                    "Pille mit fester Hoehe -- Schrift ohne height/padding/radius sprengt sie"),
-    "up-sent-val": ({"font-size"},
-                    "gehoert zu .up-sent: Schriftgroesse nur zusammen mit der Pille aendern"),
+    # Sentiment seit dem 29.09. OHNE Kasten: die Zahl darf der Schrift von Visibility/Rank im
+    # jeweiligen Kontext folgen (.up-sent-val font-size ist frei), der Balken ist fest 4x16.
+    "up-sent":     ({"height", "padding", "border", "border-radius"},
+                    "Sentiment hat keinen Kasten mehr -- Rahmen/Polster/Hoehe gehoeren nicht an .up-sent"),
     "up-sent-dot": ({"width", "height", "border-radius"},
-                    "abgerundetes Quadrat -- Groesse ohne Radius macht daraus einen Kreis"),
+                    "Balken 4x16 aus core -- in jedem Kontext gleich, nicht umbauen"),
     "up-seg-btn":  ({"height", "border", "border-radius", "background"},
                     "fertiger Segmented-Control -- nur positionieren, nicht umstylen"),
     "vc-gran-btn": ({"height", "border", "border-radius", "background"},
@@ -41,7 +41,7 @@ PAKETE = {
 SIGNATUREN = {
     "up-seg-btn":  ({"height", "border", "border-radius", "background", "transition", "cursor"},
                     "Segmented-Control-Knopf (.up-seg-btn)"),
-    "up-sent":     ({"height", "border-radius", "gap", "border"}, "Sentiment-Pille (.up-sent)"),
+    "up-planpill": ({"height", "border-radius", "gap", "border"}, "Pille mit Rahmen (.up-planpill)"),
     "up-search":   ({"width", "transition", "overflow"}, "Slide-out-Suche (.up-search)"),
     "up-iconbtn":  ({"width", "height", "border-radius", "cursor", "background"},
                     "Icon-Knopf (.up-iconbtn)"),

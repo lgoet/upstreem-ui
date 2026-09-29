@@ -2187,13 +2187,7 @@
     function rankCell(v){
       return '<span class="up-rank-group">' + HASH_ICON + '<span class="up-num">' + fmt1(v) + '</span></span>';
     }
-    function sentCell(v){
-      var n = (v == null || v === "") ? null : Number(v);
-      var bad = n == null || !isFinite(n);
-      var sc = bad ? "#9E9E9E" : UC.sentColor(n);
-      return '<span class="up-sent"><span class="up-sent-dot" style="background:' + sc + '"></span>' +
-             '<span class="up-sent-val' + (bad ? " is-empty" : "") + '">' + (bad ? "–" : Math.round(n)) + '</span></span>';
-    }
+    function sentCell(v){ return UC.sentHtml(v); }
     function marketCell(m){
       var code = String(m == null ? "" : m).trim().toUpperCase();
       if (!code) return '<span class="up-num is-empty">–</span>';
@@ -2998,11 +2992,10 @@
       var rank = (rankN == null) ? '<span class="up-num is-empty">–</span>'
         : '<span class="up-rank-group">' + HASH_ICON + '<span class="up-num">' + fmt1(rankN) + '</span></span>';
       var sN = toNum(g.avg_sentiment);
-      /* No .up-sent box here: in a header row of four KPIs the boxed one read as a control among
-         plain numbers. Dot plus number, same colour logic. */
-      var sent = (sN == null) ? '<span class="up-num is-empty">–</span>'
-        : '<span class="upt-grp-sent"><span class="up-sent-dot" style="background:' + UC.sentColor(sN) + '"></span>' +
-          '<span class="up-sent-val">' + Math.round(sN) + '</span></span>';
+      /* Hier stand ein eigener Bau ohne Kasten (.upt-grp-sent), weil die Pille zwischen blanken
+         Zahlen wie ein Bedienelement wirkte. Seit dem 29.09. hat Sentiment ueberall keinen Kasten
+         mehr -- also derselbe Baustein wie in jeder Zelle. */
+      var sent = (sN == null) ? '<span class="up-num is-empty">–</span>' : UC.sentHtml(sN);
 
       /* Select-all-for-this-group checkbox -- ONLY exists while this group is the open one, exactly
          like the flat table's own header checkbox exists unconditionally in its heading row (not a

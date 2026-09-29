@@ -31,7 +31,7 @@
       isYes = UC.isYes, highlight = UC.highlight, esc = UC.esc, toNum = UC.toNum, fmt1 = UC.fmt1, fmtInt = UC.fmtInt,
       fmtDate = UC.fmtDate, fmtTotal = UC.fmtTotal, foldDiacritics = UC.foldDiacritics, germanExpand = UC.germanExpand,
       resolveBubbleFn = UC.resolveBubbleFn, CHECK_SVG = UC.CHECK_SVG, GOTO_SVG = UC.GOTO_SVG,
-      sentColor = UC.sentColor, brandStack = UC.brandStack;
+      brandStack = UC.brandStack;
   /* Everything below was added to core.js recently. A page with mixed data-cdn-pins keeps
      whichever core.js executed LAST, so this file can end up running against an older one —
      and an unguarded call there throws inside initRoot and kills the whole component. Each
@@ -392,12 +392,7 @@
          rank cell in the app. fmtInt (not fmt1): user_rank is an ordinal, not an average. */
       return '<span class="up-rank-group">' + HASH_ICON + '<span class="up-num">' + fmtInt(n) + '</span></span>';
     }
-    function sentCell(v){
-      var n = (v == null || v === "") ? null : Number(v);
-      if (n == null || !isFinite(n)) return '<span class="up-sent-val is-empty">–</span>';
-      return '<span class="up-sent"><span class="up-sent-dot" style="background:' + sentColor(n) + '"></span>' +
-             '<span class="up-sent-val">' + Math.round(n) + '</span></span>';
-    }
+    function sentCell(v){ return UC.sentHtml(v); }
     /* total comes straight from sources_totalcount now — a real per-row citations count the RPC
        added specifically for this. Do NOT use `total_count`: that's the RESULT-SET total (drives
        pagination/the heading count), reused identically on every row, and passing it here printed

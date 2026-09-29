@@ -39,13 +39,16 @@ Der Fehler, der sich in dieser Sitzung dreimal wiederholt hat:
 
 ```css
 /* FALSCH — sprengt die Pille: 15px Text in 24px Höhe stößt an den Rahmen */
-.xyz-kpi .up-sent-val { font-size: 15px; }
+.xyz-kpi .up-planpill .up-sent-val { font-size: 15px; }
 
 /* RICHTIG — Faktor 15/13 auf alles */
-.xyz-kpi .up-sent      { height: 28px; padding: 0 7px; border-radius: 7px; gap: 7px; }
-.xyz-kpi .up-sent-val  { font-size: 15px; }
-.xyz-kpi .up-sent-dot  { width: 7px; height: 7px; border-radius: 2.5px; }
+.xyz-kpi .up-planpill              { height: 28px; padding: 0 7px; border-radius: 7px; gap: 7px; }
+.xyz-kpi .up-planpill .up-sent-val { font-size: 15px; }
+.xyz-kpi .up-planpill .up-sent-dot { width: 7px; height: 7px; border-radius: 2.5px; }
 ```
+
+Sentiment selbst hat seit dem 29.09. **keinen** Kasten mehr: Balken 4×16 plus Zahl in der Schrift
+von `.up-num`, Markup nur aus `UC.sentHtml(v)`. Dort zieht ein Kontext nur die Schrift der Zahl mit.
 
 **Markup in core heißt nicht, dass das Bauteil geteilt ist.** Prüfen, ob die CSS auch in `core.css`
 steht — sonst kommen die Zeilen mit den richtigen Klassen heraus, für die es keine Regeln gibt.

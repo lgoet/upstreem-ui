@@ -15,6 +15,8 @@ HIER = os.path.dirname(os.path.abspath(__file__))
 # Stichwoerter -> Klassenpraefixe. Deutsch und englisch, weil beides in den Anfragen vorkommt.
 THEMEN = {
     "sentiment":  ["up-sent"],
+    "pille":      ["up-pille", "up-planpill"], "pill": ["up-pille", "up-planpill"],
+    "tarif":      ["up-planpill"], "plan": ["up-planpill"],
     "rang":       ["up-rank", "up-hash"], "rank": ["up-rank", "up-hash"],
     "trend":      ["up-trend"],
     "zahl":       ["up-num"], "number": ["up-num"],
@@ -37,9 +39,10 @@ THEMEN = {
 
 # Was einem beim Ueberschreiben um die Ohren fliegt.
 WARNUNG = {
-    "up-sent":  "Pille mit FESTER Hoehe. Schrift aendern heisst height/padding/radius/gap/dot\n"
-                "  im selben Verhaeltnis mitziehen -- sonst stoesst der Text an den Rahmen.\n"
-                "  Der Punkt ist ein abgerundetes QUADRAT (radius 2 bei 6px), kein Kreis.",
+    "up-sent":  "Sentiment OHNE Kasten (seit 29.09.): Balken 4x16 (.up-sent-dot, Farbe aus\n"
+                "  UC.sentColor) + Zahl in der Schrift von .up-num. Markup NUR aus UC.sentHtml(v).\n"
+                "  Groessere Zahl im Kontext: nur .up-sent-val font-size mitziehen, der Balken bleibt.\n"
+                "  .up-planpill nutzt dasselbe Markup, ist aber eine Pille MIT Rahmen (eigene Regeln).",
     "up-row":   "GRID mit var(--up-cols), kein Flex. Eine Tabelle ohne dieses Raster braucht eine\n"
                 "  eigene display:flex-Regel, sonst erbt sie fremde Spaltenbreiten.",
     "up-seg":   "Fertiger Segmented-Control samt Hoehe, Rahmen und aktivem Zustand.\n"

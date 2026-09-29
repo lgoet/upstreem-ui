@@ -66,7 +66,7 @@
   /* Every component on a page shares ONE core.js — the last data-cdn-pin loaded wins. If that
      copy predates a kit this file needs, name the cause once instead of dying later on a bare
      "UC.x is not a function", then degrade to something that still draws. */
-  var MISSING = ["makeMount", "makePopover", "makeTooltips", "makeFire", "sentColor"]
+  var MISSING = ["makeMount", "makePopover", "makeTooltips", "makeFire", "sentColor", "sentHtml"]
     .filter(function(k){ return typeof UC[k] !== "function"; });
   if (MISSING.length && window.console){
     console.error("[performance-radar] The core.js running on this page is OLDER than " +
@@ -263,9 +263,7 @@
     }
     var visHtml = vis == null ? '<span class="uhm-tip-empty">-</span>'
       : '<span class="up-num">' + fmtPctShort(vis) + '</span>';
-    var sentHtml = sv == null ? '<span class="uhm-tip-empty">-</span>'
-      : '<span class="up-sent"><span class="up-sent-dot" style="background:' + sentColor(sv) + '"></span>' +
-        '<span class="up-sent-val">' + Math.round(sv) + '</span></span>';
+    var sentHtml = sv == null ? '<span class="uhm-tip-empty">-</span>' : UC.sentHtml(sv);
     var rankHtml = rv == null ? '<span class="uhm-tip-empty">-</span>'
       : '<span class="up-rank-group">' + HASH_SVG + '<span class="up-num">' + fmt1(rv) + '</span></span>';
     var mentHtml = ment == null ? '<span class="uhm-tip-empty">-</span>'
