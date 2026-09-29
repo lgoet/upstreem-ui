@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261046;
+  var BUILD = 20261048;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -9619,7 +9619,7 @@
        hinaus, wie die Gruppe Polster hat -- gemessen, weil das 16 oder 0 sein kann. Relativ zur
        Gruppe gemessen, nicht zur Seite: das stimmt auch in einer geparkten Ansicht; ohne Flaeche
        (content-visibility) zaehlt das Polster der Gruppe. */
-    /* Und der INHALT steht immer KOPF_EINZUG vom Rand der Gruppe: was die Gruppe an Polster schon
+    /* Und der INHALT steht immer KOPF_EINZUG_L/_R vom Rand der Gruppe: was die Gruppe an Polster schon
        gibt, zaehlt mit, nur der Rest kommt als Polster ans Element (--up-ph-innen-l/-r). So
        entsteht weder doppeltes Polster (Bubble 16 + hier 16) noch keines (beides 0) -- in beiden
        Faellen gemeldet. Die Linien laufen um Gruppe PLUS dieses Polster hinaus. */
@@ -9631,18 +9631,19 @@
        am Aussenabstand GELESEN, nicht gemerkt: kommt die Regel aus core.css nicht an (andere
        Fassung, verlorene Spezifitaet), ist der Aussenabstand 0 und die Rechnung bleibt stehen,
        statt bei jedem Lauf um den Ueberschuss zu wachsen. */
-    /* LINKS 8, RECHTS 16 (29.09. abends angefordert: "Left padding runter auf das, was bei den
-       32er-Knoepfen an Luft nach oben und unten zur Linie ist"). Die Knoepfe stehen in der 48er-
-       Zeile mit 8 ueber und 8 unter sich; links vor dem Krumenzeichen jetzt dieselben 8. Rechts
-       bleibt es bei 16 -- angefordert war nur links.
-       Die Reiterleiste darunter zieht mit (sie steht im selben Inhalt), das Zeichen des ersten
-       Reiters bleibt also genau unter dem Krumenzeichen.
+    /* LINKS 16, RECHTS 8 (29.09. abends). Angefordert war "das Padding runter auf das, was bei den
+       32er-Knoepfen an Luft nach oben und unten zur Linie ist" -- gemeint RECHTS; eine erste
+       Fassung hatte links auf 8 gesetzt und ist zurueckgenommen ("das war vorher richtig").
+       Die Knoepfe stehen in der 48er-Zeile mit 8 ueber und 8 unter sich; rechts neben dem
+       letzten jetzt dieselben 8. Links bleiben die 16, an denen das Krumenzeichen und darunter
+       das erste Reiterzeichen stehen.
        cfg.komponente (Teams, Prompt Research): dort ist die Wurzel eine KOMPONENTE mit Kopf, und
-       ihr Inhalt -- die Tabelle, das Startfeld -- bleibt bei 16 wie jeder Block. Nur ihre
-       Kopfzeile zieht sich um die Differenz nach aussen (--up-ph-kopfzug-l, core.css). Die Linie
-       laeuft in beiden Faellen um die 8 der Kopfzeile bis an die Kante der Gruppe. */
-    var KOPF_EINZUG = 16, KOPF_EINZUG_L = 8, BLOCK_EINZUG = 16;
+       ihr Inhalt -- die Tabelle, das Startfeld -- bleibt bei 16 wie jeder Block, rechts wie links.
+       Nur ihre Kopfzeile zieht sich rechts um die Differenz nach aussen (--up-ph-kopfzug-r,
+       core.css). Die Linien laufen in beiden Faellen bis an die Kante der Gruppe. */
+    var KOPF_EINZUG_L = 16, KOPF_EINZUG_R = 8, BLOCK_EINZUG = 16;
     var ZIEL_L = cfg.komponente ? BLOCK_EINZUG : KOPF_EINZUG_L;
+    var ZIEL_R = cfg.komponente ? BLOCK_EINZUG : KOPF_EINZUG_R;
     function linieMessen(){
       kopfPolsterDurchlassen(root);
       var gr = root.parentElement && root.parentElement.parentElement;
@@ -9657,17 +9658,18 @@
       if (r.width && g.width){ l = r.left - g.left + zl; re = g.right - r.right + zr; }
       else { var gs = getComputedStyle(gr); l = parseFloat(gs.paddingLeft) || 0; re = parseFloat(gs.paddingRight) || 0; }
       l = Math.max(0, l); re = Math.max(0, re);
-      var pl = Math.max(0, ZIEL_L - l), pr = Math.max(0, KOPF_EINZUG - re);
-      var xl = Math.max(0, l - ZIEL_L), xr = Math.max(0, re - KOPF_EINZUG);
+      var pl = Math.max(0, ZIEL_L - l), pr = Math.max(0, ZIEL_R - re);
+      var xl = Math.max(0, l - ZIEL_L), xr = Math.max(0, re - ZIEL_R);
       root.style.setProperty("--up-ph-innen-l", pl + "px");
       root.style.setProperty("--up-ph-innen-r", pr + "px");
       root.style.setProperty("--up-ph-zug-l", xl + "px");
       root.style.setProperty("--up-ph-zug-r", xr + "px");
-      /* Die Kopfzeile steht jetzt in JEDEM Fall genau KOPF_EINZUG_L links und KOPF_EINZUG rechts
+      /* Die Kopfzeile steht jetzt in JEDEM Fall genau KOPF_EINZUG_L links und KOPF_EINZUG_R rechts
          von der Kante der Gruppe, also laufen die Linien genau so weit ueber sie hinaus. */
       root.style.setProperty("--up-ph-kopfzug-l", (ZIEL_L - KOPF_EINZUG_L) + "px");
+      root.style.setProperty("--up-ph-kopfzug-r", (ZIEL_R - KOPF_EINZUG_R) + "px");
       root.style.setProperty("--up-ph-rand-l", KOPF_EINZUG_L + "px");
-      root.style.setProperty("--up-ph-rand-r", KOPF_EINZUG + "px");
+      root.style.setProperty("--up-ph-rand-r", KOPF_EINZUG_R + "px");
     }
     linieMessen();
     setTimeout(linieMessen, 400);
@@ -11255,7 +11257,9 @@
      - eine klebende Box, deren Elternteil die Komponente NICHT enthaelt: sie haengt dann in einem
        Rahmen, der mit ihr wegscrollt, und steht ueber der Komponente nie;
      - ein eigener Scroller oder etwas Festes zwischen Komponente und Kopf (Drawer). */
-  function kopfGruppe(root){
+  /* info (optional) bekommt .flach = true, wenn in DERSELBEN Ansicht ein Seitenkopf steht, der
+     aber nicht klebt -- er scrollt mit weg. Siehe stickyTopSetzen in makeSticky. */
+  function kopfGruppe(root, info){
     if (!root || !root.parentElement) return null;
     var n = root.parentElement, ph = null, weg = [], i, alle, cs;
     while (n && n !== document.documentElement){
@@ -11277,7 +11281,14 @@
       if (cs.position === "sticky" && cs.top !== "auto") box = m;
       m = m.parentElement;
     }
-    return (box && box.parentElement === n) ? box : null;
+    if (box && box.parentElement === n) return box;
+    /* Nur ein Kopf der EIGENEN Ansicht zaehlt: steht die Komponente in einer Ansicht ohne Kopf,
+       findet die Suche oben irgendwann den Kopf einer geparkten Nachbaransicht. */
+    if (info){
+      var ansicht = root.closest ? root.closest('[id^="view-"]') : null;
+      if (ansicht && ph.closest && ph.closest('[id^="view-"]') === ansicht) info.flach = true;
+    }
+    return null;
   }
   /* Taucht ein Seitenkopf auf, suchen die Leisten, die noch keinen haben, sofort neu. Bubble baut
      in keiner festen Reihenfolge, und die Nachlaeufe in makeSticky decken nur die ersten Sekunden
@@ -11318,7 +11329,7 @@
        beobachtet: waechst die Gruppe (Reiter brechen um, eine Leiste darin geht auf, die Schrift
        laedt nach), zieht die Leiste im selben Zug nach. */
     var _kopf = null, _kopfRO = null, _kopfTop = 0, _kopfH = -1;
-    var _kopfSuche = -1e9, _kopfVersuche = 0, _kopfGesetzt = false;
+    var _kopfSuche = -1e9, _kopfVersuche = 0, _kopfGesetzt = false, _kopfFlach = false;
     function kopfKante(){
       if (_kopf && !_kopf.isConnected){
         if (_kopfRO) _kopfRO.disconnect();
@@ -11328,7 +11339,9 @@
         var jetzt = (window.performance && performance.now) ? performance.now() : +new Date();
         if (_kopfVersuche >= 3 && jetzt - _kopfSuche < 3000) return null;
         _kopfSuche = jetzt;
-        var box = kopfGruppe(root);
+        var info = {};
+        var box = kopfGruppe(root, info);
+        _kopfFlach = !!info.flach;
         if (!box){
           /* Bubble baut die Elemente in keiner festen Reihenfolge: steht der Seitenkopf beim
              ersten Lauf noch nicht, kommt er meist kurz danach. Drei Nachlaeufe, danach nur noch
@@ -11365,6 +11378,17 @@
       var k = on ? kopfKante() : null;
       if (k != null){ root.style.setProperty("--up-sticky-top", k + "px"); _kopfGesetzt = true; return; }
       var v = root.getAttribute("data-sticky-top");
+      /* DER KOPF IST DA, KLEBT ABER NICHT (29.09. abends gemeldet, Topics: "ich seh keine Topics,
+         die Komponente ist runtergerutscht, oben viel Whitespace"). Dann scrollt er mit weg, und
+         die Leiste gehoert an die Oberkante -- 16, wie auf Dashboard und Opportunities. Die 171
+         (CSS-Vorgabe, und die Vorlage der Tabellen) waren die Hoehe der alten Kopfgruppe; mit dem
+         kompakten Kopf liegt die Leiste in Ruhe hoeher, und das Kleben drueckte sie dann um die
+         Differenz nach unten -- gemessen 43px Luecke, und weil sticky den Platz im Fluss behaelt,
+         lag die Leiste ueber der ersten Reihe Themen. Nur die alte Vorgabe wird ersetzt; ein
+         anderer Wert in data-sticky-top ist bewusst gesetzt und bleibt. */
+      if (on && _kopfFlach && (!v || /^\s*171(px)?\s*$/.test(v))){
+        root.style.setProperty("--up-sticky-top", "16px"); _kopfGesetzt = true; return;
+      }
       if (v) root.style.setProperty("--up-sticky-top", /^[0-9]+$/.test(v) ? v + "px" : v);
       /* Nur zuruecknehmen, was von hier kam -- einen Wert, den jemand anders an die Wurzel
          geschrieben hat, laesst das stehen. */

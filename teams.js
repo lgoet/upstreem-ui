@@ -311,7 +311,7 @@
          UC.makePageCrumbs die ganze Wurzel: sie bekommt den Randabstand der Seitenkoepfe (16 vom
          Rand der Bubble-Gruppe), und die Linie unter dem Kopf laeuft bis an deren Kante -- siehe
          core.css, "DER KOMPAKTE KOPF IN EINER KOMPONENTE". */
-      /* komponente: die Tabelle bleibt bei 16 wie jeder Block, nur die Kopfzeile steht bei 8. */
+      /* komponente: die Tabelle bleibt bei 16 wie jeder Block, nur die Kopfzeile reicht rechts bis 8. */
       if (UC.makePageCrumbs) UC.makePageCrumbs(root, { icon: "folders", name: "Teams", komponente: true });
       /* Oben links auf der Seite steht diese Komponente, also traegt sie die Luft fuer den
          mobilen Seitenleisten-Schalter -- dieselbe Klasse wie ask-mira und prompt-research. */

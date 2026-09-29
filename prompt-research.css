@@ -839,12 +839,13 @@
    above it, it came along and ended up under the heading. prompt-research.js lifts the element out
    to the root so this rule has something to anchor against. */
 /* Im kompakten Kopf (29.09.) steht der Knopf IN dessen Zeile: oben dieselbe Luft wie die Zeile
-   (--upr-head-top), bei 32px Knopfhoehe also genau mittig in 8 + 32 + 8. Rechts so weit innen
-   wie der Inhalt -- right 0 waere die Kante der Wurzel, und die liegt seit dem Randabstand aus
-   UC.makePageCrumbs 16px weiter aussen als ihr Inhalt, wenn Bubble kein Polster mehr gibt. */
+   (--upr-head-top), bei 32px Knopfhoehe also genau mittig in 8 + 32 + 8. Rechts dort, wo die
+   Kopfzeile endet: am Inhalt der Wurzel (--up-ph-innen-r -- right 0 waere ihre Kante, und die
+   liegt ohne Bubble-Polster 16 weiter aussen), abzueglich dessen, was die Kopfzeile rechts
+   hinausgezogen ist (--up-ph-kopfzug-r, seit 29.09. abends 8: Knoepfe rechts bei 8). */
 .upr-root { position: relative; }
-.upr-root > .upr-history-entry { position: absolute; top: var(--upr-head-top); right: var(--up-ph-innen-r, 0px);
-  z-index: 7; padding-top: 0; }
+.upr-root > .upr-history-entry { position: absolute; top: var(--upr-head-top);
+  right: calc(var(--up-ph-innen-r, 0px) - var(--up-ph-kopfzug-r, 0px)); z-index: 7; padding-top: 0; }
 
 /* Die Vorschau-Leiste in der Erklaerkarte. Die Karte haengt am document.body, dort loesen die
    --upr-vol-*-Tokens nicht auf -- darum feste Werte, aber MIT Dark-Pendant. Vorher standen sie

@@ -171,7 +171,7 @@
        UC.makePageCrumbs die ganze Wurzel: sie bekommt den Randabstand der Seitenkoepfe (16 vom
        Rand der Bubble-Gruppe), und die Linie unter dem Kopf laeuft bis an deren Kante -- siehe
        core.css, "DER KOMPAKTE KOPF IN EINER KOMPONENTE". */
-    /* komponente: das Startfeld bleibt bei 16 wie jeder Block, nur die Kopfzeile steht bei 8. */
+    /* komponente: das Startfeld bleibt bei 16 wie jeder Block, nur die Kopfzeile reicht rechts bis 8. */
     if (UC.makePageCrumbs) UC.makePageCrumbs(root, { icon: "telescope", name: "Prompt Research", komponente: true });
 
     /* The top-right action belongs to the PAGE, not to the start screen: it was absolutely

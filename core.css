@@ -4265,9 +4265,10 @@
    IN der Komponente -- fuer sie steht der Block weiter unten (.uts-pagehead, .upr-pagehead).
    Ueber die Wurzelklassen und nicht ueber .has-crumbs: die Geometrie soll stehen, BEVOR das JS
    laeuft, sonst springt der Kopf beim Laden von 164px auf 48. */
-/* SEIT DEM 29.09. ABENDS LINKS 8 STATT 16: "Left padding runter auf das, was bei den 32er-Knoepfen
-   an Luft nach oben und unten zur Linie ist" -- 8. Rechts bleibt 16. Die Zahlen setzt
-   UC.makePageCrumbs (KOPF_EINZUG_L / KOPF_EINZUG), die Rechnung darunter gilt unveraendert.
+/* SEIT DEM 29.09. ABENDS RECHTS 8 STATT 16: "das Padding runter auf das, was bei den 32er-Knoepfen
+   an Luft nach oben und unten zur Linie ist" -- 8, gemeint rechts (eine erste Fassung setzte
+   links, zurueckgenommen). Links bleibt 16. Die Zahlen setzt UC.makePageCrumbs
+   (KOPF_EINZUG_L / KOPF_EINZUG_R), die Rechnung darunter gilt unveraendert.
    DER INHALT DES SEITENKOPFS STEHT IMMER 16px VOM RAND -- nie mehr, nie weniger (29.09.).
    Drei Meldungen zu genau dieser Zahl: erst 32 (16 aus Bubble plus 16 hier, "16px zu viel"), dann
    0 (hier raus, Bubble-Polster auch weg: der Strich des ersten Reiters lag auf den 16px, "die
@@ -4326,9 +4327,9 @@
   height: calc(var(--up-h-btn) + 16px); padding: 0 3px 0 0; position: relative; }
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem::before {
   content: ""; position: absolute; top: 0; bottom: 0; left: -13px; right: -12px; }
-/* Der ERSTE Reiter reicht nach links nur bis an die Kante der Gruppe: seit er bei 8 steht, lagen
-   5 der 13px schon ausserhalb -- ueber dem Rand der Seitenleiste. */
-.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem:first-child::before { left: calc(-1 * var(--up-ph-rand-l, 0px)); }
+/* Der ERSTE Reiter reicht nach links hoechstens bis an die Kante der Gruppe -- bei einem Einzug
+   unter 13 laege sonst ein Teil der Klickflaeche ueber dem Rand der Seitenleiste. */
+.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem:first-child::before { left: calc(-1 * min(13px, var(--up-ph-rand-l, 0px))); }
 /* Im SCHMALEN Kopf (is-narrow, unter 768) teilen sich die Reiter die Breite (flex 1 1 0, Inhalt
    mittig) -- dort gibt es keine linke Kante, die unter dem Krumenzeichen stehen koennte. Also die
    alte Geometrie: 4px Luecke und 12px Seitenpolster, sonst laegen die gestreckten Reiter 28px
@@ -4371,11 +4372,11 @@
   padding-left: var(--up-ph-innen-l, 0px); padding-right: var(--up-ph-innen-r, 0px);
   margin-left: calc(-1 * var(--up-ph-zug-l, 0px)); margin-right: calc(-1 * var(--up-ph-zug-r, 0px));
   width: calc(100% + var(--up-ph-zug-l, 0px) + var(--up-ph-zug-r, 0px)); }
-/* Die Kopfzeile steht bei 8 wie in jedem Seitenkopf, der Inhalt der Komponente darunter bei 16:
-   also zieht sie sich um die Differenz nach aussen (--up-ph-kopfzug-l aus UC.makePageCrumbs,
-   ohne JS 0). */
+/* Die Kopfzeile steht rechts bei 8 wie in jedem Seitenkopf, der Inhalt der Komponente darunter
+   bei 16: also zieht sie sich um die Differenz nach aussen (--up-ph-kopfzug-l/-r aus
+   UC.makePageCrumbs, ohne JS 0; links ist die Differenz heute 0). */
 .up-ph-top:is(.uts-pagehead, .upr-pagehead) { align-items: center; min-height: var(--up-h-btn); position: relative;
-  margin-left: calc(-1 * var(--up-ph-kopfzug-l, 0px)); }
+  margin-left: calc(-1 * var(--up-ph-kopfzug-l, 0px)); margin-right: calc(-1 * var(--up-ph-kopfzug-r, 0px)); }
 
 /* ---------- DIE KOMPONENTEN TRAGEN IHR SEITENPOLSTER SELBST (29.09. angefordert) ----------
    "Gib den ganzen Komponenten einfach 16px padding left und right, nur nicht den Topbars."
