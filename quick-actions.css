@@ -166,6 +166,8 @@
   color: var(--am-muted-2); pointer-events: none; z-index: 0;
 }
 .mqa-ph.is-hidden, .mqa-ph-cmd.is-hidden { display: none; }
+/* Die kurze Fassung gibt es nur im mobilen Modus (siehe max-width 560 unten). */
+.mqa-ph-kurz { display: none; }
 /* Der "/"-Hinweis rechts, 11px vom esc-Feld (derselbe Abstand wie zur Lupe).
    FARBE STATT RANDFARBE (24.09. gemeldet: "deutlich zu schwach"): hier stand
    var(--am-border-strong) -- eine RANDfarbe als Schriftfarbe. Ein Rand darf viel blasser sein
@@ -614,6 +616,15 @@
 @media (max-width: 560px) {
   .mqa-overlay { padding: 8vh 10px 12px; }
   .mqa-modal { max-height: 80vh; }
+  /* DIE OBERE ZEILE NUR NOCH LUPE UND PLATZHALTER (29.09. spaet angefordert: "alles raus ausser
+     Such-Icon und Placeholder, den deutlich kuerzer, kein '/ for filters', kein ESC"). Ein Telefon
+     hat keine Escape-Taste. Stern und Papierkorb gehen mit, so war es verlangt; leeren kann man
+     das Feld mit der Tastatur. Die Chips bleiben: sie erscheinen nur, wenn ein Filter gesetzt ist,
+     und ohne sie filterte die Liste unsichtbar -- und liesse sich nicht mehr zuruecksetzen.
+     Zwei Klassen im Selektor, damit die Spezifitaet entscheidet und nicht die Reihenfolge. */
+  .mqa-search .mqa-ph-cmd, .mqa-search .mqa-esc, .mqa-search .mqa-fav, .mqa-search .mqa-clear { display: none; }
+  .mqa-ph .mqa-ph-lang { display: none; }
+  .mqa-ph .mqa-ph-kurz { display: inline; }
 }
 
 /* ---------- reference: the in-app glossary ----------

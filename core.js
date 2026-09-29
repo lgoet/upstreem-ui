@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261053;
+  var BUILD = 20261054;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -2500,6 +2500,8 @@
        Befehlsname und "You" ein gespeicherter Citation-Typ. Uebersetzt waere es eine Anleitung,
        die nicht funktioniert. */
     "Search brands, domains, URLs, prompts…": "Brands, Domains, URLs, Prompts durchsuchen…",
+    /* Die kurze Fassung desselben Platzhalters, im mobilen Modus (29.09. spaet). */
+    "Search…": "Suchen…",
     "/ for filters": "/ für Filter",
     "Press": "Drücke",
     "to search": "zum Suchen",

@@ -140,7 +140,13 @@
           '<span class="mqa-chips" id="mqa-chips"></span>' +
           '<span class="mqa-inputwrap">' +
             '<input class="mqa-input" type="text" autocomplete="off" spellcheck="false" placeholder="" aria-label="Search" />' +
-            '<span class="mqa-ph" id="mqa-ph" aria-hidden="true">Search brands, domains, URLs, prompts\u2026</span>' +
+            /* Zwei Fassungen, die CSS waehlt: die lange am Schreibtisch, die kurze im mobilen
+               Modus (quick-actions.css, max-width 560). Je ein eigener Span, damit der
+               Sprachlauf jede fuer sich uebersetzt. */
+            '<span class="mqa-ph" id="mqa-ph" aria-hidden="true">' +
+              '<span class="mqa-ph-lang">Search brands, domains, URLs, prompts\u2026</span>' +
+              '<span class="mqa-ph-kurz">Search\u2026</span>' +
+            '</span>' +
           '</span>' +
           '<span class="mqa-ph-cmd" id="mqa-ph-cmd" aria-hidden="true">/ for filters</span>' +
           '<span class="mqa-kbd mqa-esc" id="mqa-esc">esc</span>' +
@@ -1197,6 +1203,17 @@
   /* ---------- chips ---------- */
   var chipsEl = overlay.querySelector("#mqa-chips");
   var phEl    = overlay.querySelector("#mqa-ph");
+  /* NACHRUESTEN (29.09. spaet): ein Element, das Bubble noch mit der alten Vorlage baut, traegt im
+     Platzhalter nur den langen Satz als nackten Text -- dann fehlt die kurze Fassung fuer den
+     mobilen Modus, und die CSS haette nichts zu waehlen. Also hier in dieselbe Form bringen wie
+     das Markup oben. Der englische Grundtext kommt aus data-i18n, falls der Sprachlauf schon
+     uebersetzt hat; er uebersetzt die zwei neuen Spans beim naechsten Durchgang selbst. */
+  if (phEl && !phEl.querySelector(".mqa-ph-kurz")){
+    var phLang = phEl.getAttribute("data-i18n") || phEl.textContent || "Search brands, domains, URLs, prompts\u2026";
+    phEl.removeAttribute("data-i18n");
+    phEl.innerHTML = '<span class="mqa-ph-lang">' + esc(phLang) + '</span>' +
+                     '<span class="mqa-ph-kurz">Search\u2026</span>';
+  }
   var phCmdEl = overlay.querySelector("#mqa-ph-cmd");
   var escEl   = overlay.querySelector("#mqa-esc");
   var clearEl = overlay.querySelector("#mqa-clear");
