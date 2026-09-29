@@ -3199,6 +3199,38 @@
 .up-fan-cap { font-size: var(--up-fs-m); font-weight: var(--up-fw-n); line-height: 1.4; color: var(--vc-third); white-space: nowrap; }
 @media (prefers-reduced-motion: reduce){ .up-fan-c { transition: none; } }
 
+/* ---------- Das Ladebild fuer lange Laeufe (UC.makeLadebild, 30.09.) ----------
+   Kachel, Name, Unterzeile, Balken, wechselnder Satz -- die Form des zweiten Ladeschirms im
+   Onboarding, die prompt-research uebernommen hat (dort die l2-Klassen). Die Werte von dort, auf die Skala
+   gelegt: Name 16 (xl) statt 18, Kachelradius 12 (xl) statt 13, Fahrt des Balkens 260 (t-3)
+   statt 620 -- UC.makeLadebild taktet im selben Mass. Die Hoehe der Statuszeile ist fest (19):
+   der Text wechselt, und ohne feste Hoehe huepfte alles darunter bei jedem Wechsel. */
+.up-lb { display: flex; flex-direction: column; align-items: center; text-align: center;
+  width: min(100%, 420px); margin: 0 auto; }
+.up-lb-mark {
+  width: 44px; height: 44px; border-radius: var(--up-r-xl); display: grid; place-items: center;
+  background: linear-gradient(180deg, var(--vc-bg), var(--vc-heading-bg));
+  border: 1px solid var(--vc-border); color: var(--vc-text); box-shadow: var(--up-e-1);
+}
+.up-lb-mark svg { width: 24px; height: 24px; display: block; }
+.up-lb-name { margin-top: 14px; max-width: 100%; font-size: var(--up-fs-xl); font-weight: var(--up-fw-h);
+  color: var(--vc-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.up-lb-sub { margin-top: 3px; max-width: 100%; font-size: var(--up-fs-m); color: var(--vc-third);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.up-lb-bar { margin-top: clamp(20px, 3.4vh, 30px); width: 100%; max-width: 320px; height: 3px;
+  border-radius: var(--up-r-voll); background: var(--vc-sk); overflow: hidden; }
+.up-lb-fill { display: block; height: 100%; width: 0; border-radius: var(--up-r-voll);
+  background: var(--up-accent); transition: width var(--up-t-3) linear; }
+.up-lb-loop { position: relative; height: 19px; overflow: hidden; width: 100%; margin-top: 16px; }
+.up-lb-text {
+  position: absolute; left: 0; right: 0; top: 0; white-space: nowrap;
+  font-size: var(--up-fs-m); color: var(--vc-muted); transform: translateY(0); opacity: 1;
+  transition: transform var(--up-t-3) cubic-bezier(0.22,1,0.36,1), opacity var(--up-t-2) ease-out;
+}
+.up-lb-text.is-out { transform: translateY(-95%); opacity: 0; }
+.up-lb-text.is-in  { transform: translateY(95%);  opacity: 0; }
+@media (prefers-reduced-motion: reduce){ .up-lb-fill, .up-lb-text { transition: none; } }
+
     /* ---------- Globus statt Buchstabe, wo das Bild ein FAVICON war ----------
        Ein Favicon, das nicht laedt, hinterliess den Anfangsbuchstaben der Domain -- ein "R" fuer
        reddit.com sagt nichts, und bei einer Subdomain ist es schlicht falsch. Fuer Seiten steht
@@ -4203,6 +4235,11 @@
 .up-ph-desc { margin: 0; font-size: 16px; font-weight: 450; color: var(--vc-muted); line-height: 1.4; }
 
 .up-ph-addbtn { flex: 0 0 auto; margin-top: 0; }
+/* Belegt, solange der Lauf dauert, den der Knopf angestossen hat (30.09., zuerst "Look for new
+   Opportunities"): gedimmt und ohne Zeiger, damit ein zweiter Klick keinen zweiten Lauf startet.
+   Was gerade passiert, zeigt das Ladebild auf der Seite (UC.makeLadebild) -- der Knopf sagt nur,
+   dass er gerade nichts annimmt. */
+.up-ph-addbtn.is-busy { opacity: .55; pointer-events: none; cursor: default; }
 
 /* 32x32, icon-only, primary color at rest (var(--vc-text)) with a hover background -- deliberately
    NOT .up-iconbtn (that one is muted-by-default, primary-on-hover) or .up-export (a filled button):

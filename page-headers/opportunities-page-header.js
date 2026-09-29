@@ -82,7 +82,28 @@
         searchBtn.innerHTML = (UC.icon ? UC.icon("searchVisual", 2) : "") +
           '<span>Look for<span class="up-ph-addbtn-full"> new Opportunities</span></span>';
       }
-      searchBtn.addEventListener("click", function(){ fire("data-search-fn", "ophSearch", {}); });
+      /* DER KNOPF IST JETZT MIT DER KOMPONENTE VERBUNDEN (30.09.): ausser dem Ereignis an Bubble
+         geht ein Fensterereignis an opportunities.js, und dort steht ab sofort das Ladebild der
+         Suche -- vorher geschah nach dem Klick sichtbar nichts, bis irgendwann eine neue Liste
+         kam. Zwei Elemente ohne gemeinsame Wurzel, also ueber window.
+         Solange die Suche laeuft, ist der Knopf belegt: ein zweiter Klick startete sonst einen
+         zweiten Lauf in Bubble. Den Stand meldet die Komponente (upstreem-opportunities-sucht);
+         ein neu gebauter Kopf liest ihn beim Start aus window.__uoSucheLaeuft nach. */
+      searchBtn.addEventListener("click", function(){
+        if (window.__uoSucheLaeuft) return;
+        fire("data-search-fn", "ophSearch", {});
+        try { window.dispatchEvent(new CustomEvent("upstreem-opportunities-suche")); } catch(e){}
+      });
+      var belegt = function(an){
+        an = !!an;
+        searchBtn.classList.toggle("is-busy", an);
+        searchBtn.setAttribute("aria-busy", an ? "true" : "false");
+        searchBtn.disabled = an;
+      };
+      belegt(window.__uoSucheLaeuft);
+      window.addEventListener("upstreem-opportunities-sucht", function(e){
+        belegt(e && e.detail && e.detail.laeuft);
+      });
     }
   }
 

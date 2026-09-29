@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261054;
+  var BUILD = 20261055;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -1330,6 +1330,14 @@
     /* Die schmale Fassung der drei Knoepfe: ein eigenes Wort, kein abgeschnittener Satz. */
     "Add": "Hinzufügen",
     "Look for": "Suchen",
+    /* Das Ladebild der Opportunities-Suche (UC.makeLadebild, 30.09.): Name und Statuszeilen. */
+    "Looking for new Opportunities": "Neue Opportunities werden gesucht",
+    "Reading the sources AI cites for your prompts…": "Die Quellen zu deinen Prompts werden gelesen…",
+    "Finding pages that name competitors but not you…": "Seiten mit Wettbewerbern ohne dich werden gesucht…",
+    "Comparing your share with competitors…": "Dein Anteil wird mit Wettbewerbern verglichen…",
+    "Ranking opportunities by potential…": "Opportunities werden nach Potenzial sortiert…",
+    "The search is taking longer than usual. New opportunities will appear here once it finishes.":
+      "Die Suche dauert länger als üblich. Neue Opportunities erscheinen hier, sobald sie fertig ist.",
     "Database": "Datenbank",
     /* Das dritte Wort der Meta-Zeile. "Workspace" steht schon weiter oben, "Organisation" ist im
        Deutschen dasselbe Wort mit derselben Schreibung -- der Eintrag steht trotzdem hier, weil
@@ -13173,6 +13181,91 @@
     return { el: el, zeigen: zeigen };
   }
 
+  /* ---------- DAS LADEBILD FUER LANGE LAEUFE (30.09.) ----------
+     Kachel mit Zeichen, Name, Unterzeile, Balken, wechselnder Satz: die Form des zweiten
+     Ladeschirms im Onboarding (uob-load.is-compact), die prompt-research als erste uebernommen hat
+     (dort die l2-Klassen). Als Baustein, seit Opportunities dasselbe Bild fuer seine Suche braucht --
+     die dritte Kopie waere die, die beim naechsten Fix vergessen wird. prompt-research und
+     Onboarding tragen ihre Fassung noch selbst; sie koennen hierher umziehen.
+     DIE MASSE AUF DER SKALA (core.css, .up-lb): Name 16 statt 18, Kachelradius 12 statt 13 --
+     die Altwerte der Vorbilder liegen ausserhalb und stehen dort nur als Bestand.
+     DER BALKEN wie in prompt-research: eine abflachende Kurve gegen 92 Prozent, nie von selbst auf
+     100 -- ein voller Balken, unter dem sich weiter etwas dreht, ist eine Luege ueber den Stand.
+     Voll wird er erst mit stop(). Der Takt ist die Dauer der Fahrt in der CSS (--up-t-3, 260ms):
+     ein kuerzerer schnitte jede Fahrt ab, ein laengerer liesse den Balken zwischendurch stehen.
+     cfg:  icon     Name aus UC.icon (Kachelzeichen)
+           name     die Zeile unter der Kachel, sub die leisere darunter (leer = keine)
+           saetze   die wechselnde Statuszeile; sie soll nur Schritte nennen, die wirklich laufen
+           satzMs   Wechsel der Statuszeile (2800 wie prompt-research), halbMs die Kurve (26000)
+     start(seit): seit ist der Startzeitpunkt -- nach einem Neuaufbau mitten im Lauf faehrt der
+     Balken dort weiter, wo er stand. Rueckgabe { el, start, stop, laeuft }. */
+  var LADEBILD_TAKT = 260;
+  function makeLadebild(host, cfg){
+    cfg = cfg || {};
+    if (!host) return null;
+    var el = document.createElement("div");
+    el.className = "up-lb";
+    el.setAttribute("role", "status");
+    el.setAttribute("aria-live", "polite");
+    function zeile(klasse, text){
+      return '<div class="' + klasse + '"' + (text ? ' data-i18n="' + esc(text) + '"' : '') + '>' +
+        esc(text ? t_(text) : "") + '</div>';
+    }
+    el.innerHTML =
+      '<div class="up-lb-mark">' + (cfg.icon ? icon(cfg.icon, 2) : "") + '</div>' +
+      zeile("up-lb-name", cfg.name || "") +
+      (cfg.sub ? zeile("up-lb-sub", cfg.sub) : "") +
+      '<div class="up-lb-bar"><span class="up-lb-fill"></span></div>' +
+      '<div class="up-lb-loop"><span class="up-lb-text"></span></div>';
+    host.appendChild(el);
+    var fill = el.querySelector(".up-lb-fill"), textEl = el.querySelector(".up-lb-text");
+    var saetze = (cfg.saetze || []).slice();
+    var satzMs = cfg.satzMs || 2800, halbMs = cfg.halbMs || 26000;
+    var t0 = 0, uhren = [], idx = 0, an = false;
+    function satzSetzen(i){
+      var s = saetze[i] || "";
+      textEl.setAttribute("data-i18n", s);
+      textEl.textContent = t_(s);
+    }
+    function breite(){ return (92 * (1 - Math.exp(-(Date.now() - t0) / halbMs))).toFixed(1) + "%"; }
+    function aufraeumen(){ uhren.forEach(function(u){ clearTimeout(u); clearInterval(u); }); uhren = []; }
+    function stop(){
+      an = false;
+      aufraeumen();
+      fill.style.width = "100%";
+    }
+    function start(seit){
+      if (an) return;
+      an = true;
+      t0 = seit || Date.now();
+      fill.style.width = breite();
+      idx = 0;
+      if (saetze.length) satzSetzen(0);
+      /* Ein Bild, das aus dem Dokument genommen wurde (die Buehne zeichnet neu), raeumt seine Uhren
+         selbst ab -- sonst liefen Balken und Satz im abgehaengten Knoten weiter. */
+      uhren.push(setInterval(function(){
+        if (!el.isConnected){ stop(); return; }
+        fill.style.width = breite();
+      }, LADEBILD_TAKT));
+      if (saetze.length > 1){
+        uhren.push(setInterval(function(){
+          textEl.classList.add("is-out");
+          uhren.push(setTimeout(function(){
+            idx = (idx + 1) % saetze.length;
+            textEl.style.transition = "none";
+            textEl.classList.remove("is-out");
+            textEl.classList.add("is-in");
+            satzSetzen(idx);
+            void textEl.offsetWidth;
+            textEl.style.transition = "";
+            textEl.classList.remove("is-in");
+          }, 240));
+        }, satzMs));
+      }
+    }
+    return { el: el, start: start, stop: stop, laeuft: function(){ return an; } };
+  }
+
   /* ---------- makeScaleMenu ----------
      The gear-button "Chart Settings" dropdown shared by every line chart: colour scale + the
      app-wide Line Width section. Deliberately NOT built on makePopover — that primitive's
@@ -19084,6 +19177,7 @@
     makeBarList: makeBarList,
     makeFaecher: makeFaecher,
     logoVorrat: logoVorrat,
+    makeLadebild: makeLadebild,
     rowDwell: rowDwell,
     makePager: makePager,
     makeHeadSort: makeHeadSort,

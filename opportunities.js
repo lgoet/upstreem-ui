@@ -42,7 +42,7 @@
   window.__uoBootStubbed = true;
   ["opportunitiesSetItems", "opportunitiesSetLoading", "opportunitiesSetMode",
    "opportunitiesSetShowIgnored", "opportunitiesSetVisibleBoards", "opportunitiesSetTheme",
-   "opportunitiesOpenDetail", "opportunitiesCloseDetail"].forEach(function(n){
+   "opportunitiesOpenDetail", "opportunitiesCloseDetail", "opportunitiesSetSearching"].forEach(function(n){
     if (typeof window[n] === "function") return;
     window[n] = function(){ Q.push([n, [].slice.call(arguments)]); };
   });
@@ -156,7 +156,11 @@
             /* hasData: kam je ein Datensatz an? jeKarten: war je eine Karte da? leerFrei: das
                Gnadenfenster fuer den leeren Datensatz ist abgelaufen. leseFehler: der letzte
                Datensatz war nicht lesbar. Alles fuer render(), siehe dort. */
-            hasData: false, jeKarten: false, leerFrei: false, leseFehler: false };
+            hasData: false, jeKarten: false, leerFrei: false, leseFehler: false,
+            /* suche: die Suche nach neuen Opportunities laeuft (Knopf im Seitenkopf oder
+               opportunitiesSetSearching), sucheSeit ihr Beginn -- fuer den Balken des Ladebilds
+               und die Obergrenze, auch ueber einen Neuaufbau hinweg (siehe STORE). */
+            suche: false, sucheSeit: 0 };
 
   /* ---- EIN NEU GEBAUTES ELEMENT MACHT WEITER (27.09. gemeldet) ----
      "Es ist gar nicht noetig, dass beim Theme-Wechsel was in den Loading-yes-State geht."
@@ -184,6 +188,7 @@
     S.loading = !!saved.loading;
     S.hasData = !!saved.hasData; S.jeKarten = !!saved.jeKarten;
     S.leerFrei = !!saved.leerFrei; S.leseFehler = !!saved.leseFehler;
+    S.suche = !!saved.suche; S.sucheSeit = +saved.sucheSeit || 0;
   }
   /* Schreiben darf nur die Wurzel, der gerade die window.opportunities*-Funktionen gehoeren --
      window.__uoAktiv, gesetzt unten im selben Zug, in dem initRoot die Setter uebernimmt. Die
@@ -197,7 +202,8 @@
     STORE[instanceId] = {
       items: S.items, mode: S.mode, visible: S.visible, query: S.query, sort: S.sort,
       externalOnly: S.externalOnly, loading: S.loading, hasData: S.hasData,
-      jeKarten: S.jeKarten, leerFrei: S.leerFrei, leseFehler: S.leseFehler
+      jeKarten: S.jeKarten, leerFrei: S.leerFrei, leseFehler: S.leseFehler,
+      suche: S.suche, sucheSeit: S.sucheSeit
     };
   }
   var COL_ORDER = ['ignored', 'pending', 'in_progress', 'done'];
@@ -601,8 +607,78 @@
        wieder hoch -- der Speicher haelt so immer den letzten Stand, der sich zeichnen liess. */
     persist();
   }
+  /* ---- DIE SUCHE NACH NEUEN OPPORTUNITIES (30.09. angefordert) ----
+     "Ist der Knopf im Seitenkopf eigentlich verbunden? Wird da ein Ladezustand gezeigt?" -- war er
+     nicht: der Knopf feuerte ophSearch an Bubble, und hier geschah nichts, bis irgendwann eine neue
+     Liste kam. Jetzt steht waehrend der Suche das Ladebild aus core (UC.makeLadebild, die Form von
+     prompt-research) auf der Buehne, das Brett ist so lange weg.
+       Anfang  der Knopf im Seitenkopf (Fensterereignis upstreem-opportunities-suche, siehe
+               opportunities-page-header.js) oder opportunitiesSetSearching("yes") aus Bubble.
+       Ende    die naechste Liste (opportunitiesSetItems) -- das ist der Abschluss der Suche --
+               oder opportunitiesSetSearching("no"), etwa im Fehlerzweig des Workflows.
+       Grenze  SUCHE_MAX_MS. Kommt bis dahin nichts, wird die Suche nicht still weitergedreht: das
+               Brett kommt zurueck und ein Hinweis sagt, dass die Ergebnisse spaeter erscheinen.
+     Die Statuszeilen nennen, was die Karten verraten, woraus eine Opportunity entsteht: zitierte
+     Quellen, genannte Wettbewerber, Anteil und Luecke, das Potenzial. */
+  var SUCHE_SAETZE = [
+    "Reading the sources AI cites for your prompts…",
+    "Finding pages that name competitors but not you…",
+    "Comparing your share with competitors…",
+    "Ranking opportunities by potential…"
+  ];
+  var SUCHE_MAX_MS = 180000;
+  var ladebild = null, sucheUhr = null;
+  function sucheMelden(){
+    /* Fuer den Knopf im Seitenkopf: er steht so lange auf "belegt". Zusaetzlich am window, weil ein
+       neu gebauter Seitenkopf den Stand beim Start nachlesen muss -- ein Ereignis hat er verpasst. */
+    window.__uoSucheLaeuft = S.suche;
+    try { window.dispatchEvent(new CustomEvent("upstreem-opportunities-sucht", { detail: { laeuft: S.suche } })); } catch(e){}
+  }
+  function sucheUhrStellen(){
+    if (sucheUhr){ clearTimeout(sucheUhr); sucheUhr = null; }
+    if (!S.suche) return;
+    var rest = SUCHE_MAX_MS - (Date.now() - (S.sucheSeit || Date.now()));
+    sucheUhr = setTimeout(function(){
+      sucheUhr = null;
+      if (!S.suche || window.__uoAktiv !== root) return;
+      sucheEnde();
+      var UCt = window.UpstreemCore;
+      var satz = "The search is taking longer than usual. New opportunities will appear here once it finishes.";
+      if (UCt && UCt.toast) UCt.toast(UCt.t ? UCt.t(satz) : satz, { icon: "info", timeout: 6000 });
+    }, Math.max(0, rest));
+  }
+  function sucheStart(){
+    if (S.suche) return;
+    S.suche = true; S.sucheSeit = Date.now();
+    sucheUhrStellen(); sucheMelden(); render();
+  }
+  function sucheEnde(){
+    if (!S.suche) return;
+    S.suche = false; S.sucheSeit = 0;
+    sucheUhrStellen(); sucheMelden();
+    /* Erst den Balken voll zeigen, dann das Brett: ein Bild, das mittendrin verschwindet, sieht
+       nach Abbruch aus. 400ms sind die Fahrt auf 100 (260) und ein kurzer Halt. */
+    var lb = ladebild; ladebild = null;
+    if (lb && lb.laeuft() && lb.el.isConnected){ lb.stop(); setTimeout(render, 400); }
+    else render();
+  }
+  function sucheZeichnen(){
+    var stage = root.querySelector('.uo-stage');
+    if (!stage) return;
+    /* Steht das Bild schon, bleibt es stehen -- ein Neuzeichnen waehrend der Suche (Ansicht,
+       Lanes, Suche im Brett) soll den Balken nicht von vorn anfangen lassen. */
+    if (ladebild && stage.contains(ladebild.el)) return;
+    var UCl = window.UpstreemCore;
+    if (!UCl || !UCl.makeLadebild){ renderSkeleton(); return; }
+    stage.innerHTML = '<div class="uo-suche"></div>';
+    ladebild = UCl.makeLadebild(stage.firstChild, { icon: "searchVisual",
+      name: "Looking for new Opportunities", saetze: SUCHE_SAETZE });
+    if (ladebild) ladebild.start(S.sucheSeit || Date.now());
+  }
+
   function zeichnen(){
     var elTotal = root.querySelector('.uo-total');
+    if (S.suche){ leerUhrWeg(); sucheZeichnen(); return; }
     if (S.loading || !S.hasData){ leerUhrWeg(); renderSkeleton(); return; }
     if (S.leseFehler){
       leerUhrWeg();
@@ -1255,6 +1331,9 @@
     ingest(items);
     if (S.items.length){ S.jeKarten = true; S.leerFrei = false; }
     if (S.detailId && !S.items.find(function(x){ return String(x.id)===String(S.detailId); })) closeDetail();
+    /* Die Liste ist der Abschluss der Suche (siehe SUCHE_SAETZE oben): sucheEnde zeichnet selbst,
+       nach dem vollen Balken. */
+    if (S.suche){ sucheEnde(); return; }
     render();
   };
   /* !!v war hier falsch, und zwar genau andersherum als gedacht: Bubble uebergibt "yes"/"no" als
@@ -1271,6 +1350,10 @@
     return t === "yes" || t === "true" || t === "1";
   }
   window.opportunitiesSetLoading = function(v){ S.loading = isYesVal(v); render(); };
+  /* Die Suche von aussen an- oder abschalten -- "yes"/"no" als Text wie jeder Setter hier. "no"
+     ist der Weg fuer den Fehlerzweig des Workflows hinter ophSearch; im Normalfall beendet die
+     neue Liste die Suche von selbst. */
+  window.opportunitiesSetSearching = function(v){ if (isYesVal(v)) sucheStart(); else sucheEnde(); };
   /* modeSeg statt root.querySelectorAll: dieselbe Begruendung wie beim Aussen-Schalter oben --
      die Leiste kann ausgeliehen in einer fremden Kopfzeile stehen. */
   window.opportunitiesSetMode = function(m){ if (m==='board'||m==='list'){ S.mode = m; if (modeSeg) modeSeg.querySelectorAll('.up-seg-btn').forEach(function(x){ x.classList.toggle('is-active', x.getAttribute('data-mode')===m); }); render(); } };
@@ -1447,7 +1530,21 @@
     return out;
   };
 
+  /* Der Knopf im Seitenkopf meldet sich als Fensterereignis (zwei Elemente, keine gemeinsame
+     Wurzel). EIN Hoerer fuer die Seite, nicht einer je Wurzel: er ruft den Setter, und der gehoert
+     immer der aktuellen Wurzel -- nach einem Neuaufbau liefe ein Hoerer der alten sonst ins Leere
+     oder doppelt. */
+  if (!window.__uoSucheHoerer){
+    window.__uoSucheHoerer = true;
+    window.addEventListener("upstreem-opportunities-suche", function(){
+      if (typeof window.opportunitiesSetSearching === "function") window.opportunitiesSetSearching("yes");
+    });
+  }
+
   /* ---------- init ---------- */
+  /* Lief beim Neuaufbau gerade eine Suche, laeuft sie hier weiter: Obergrenze neu gestellt, der
+     Knopf im Seitenkopf bleibt belegt, das Bild faehrt ab dem gemerkten Beginn. */
+  if (S.suche){ sucheUhrStellen(); sucheMelden(); }
   var injected = looseParse((root.querySelector('.uo-data-json')||{}).textContent || '');
   if (Array.isArray(injected) && injected.length){
     S.loading = false; S.hasData = true; S.jeKarten = true; ingest(injected);

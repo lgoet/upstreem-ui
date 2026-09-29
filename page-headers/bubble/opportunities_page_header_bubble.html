@@ -37,6 +37,9 @@
   clicked. This component does not generate anything itself; wiring the resulting workflow up to the
   actual generation run is a Bubble-side decision. (The event name stays ophSearch — renaming it
   would break the workflow already bound to it.)
+  Seit dem 30.09. startet der Klick ausserdem das Ladebild der Suche in der Opportunities-
+  Komponente (Fensterereignis, keine Verdrahtung in Bubble), und der Knopf bleibt belegt, bis die
+  neue Liste kommt oder opportunitiesSetSearching("no") -- siehe bubble/opportunities_bubble.html.
 
   ── Filling the component ─────────────────────────────────────────────────────
   Nothing to fill — every attribute above is set once when the element is placed (Property

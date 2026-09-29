@@ -79,6 +79,14 @@
 
 /* ---------- board ---------- */
 .uo-stage { flex: 1 1 auto; position: relative; }
+/* Die Buehne waehrend der Suche nach neuen Opportunities (UC.makeLadebild, opportunities.js).
+   IM FLUSS und mit fester Mindesthoehe, wie die Ladeflaeche in discover-brands: als Ueberlagerung
+   ueber dem Brett erbte sie dessen Hoehe, und die Mitte laege bei einem langen Brett unterhalb des
+   Sichtfelds. Das Einblenden als Animation: aus dem Neuzeichnen heraus gibt es keinen Startwert. */
+.uo-suche { display: grid; place-items: center; min-height: 420px; padding: clamp(24px, 4vw, 48px);
+  animation: uoSucheIn var(--up-t-3) ease both; }
+@keyframes uoSucheIn { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce){ .uo-suche { animation: none; } }
 .uo-board { display: flex; gap: 16px; align-items: stretch; }
 
 /* KEINE FLAECHE MEHR AN DER SPALTE (08.09. angefordert). Das Brett bestand aus drei grossen

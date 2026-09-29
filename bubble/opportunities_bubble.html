@@ -86,6 +86,7 @@
 
     window.opportunitiesSetItems(LIST);            // array (or a JSON string of one)
     window.opportunitiesSetLoading("yes"/"no");    // skeleton on; "no" ends it only once data came
+    window.opportunitiesSetSearching("yes"/"no");  // the SEARCH loading image (30.09.), see below
     window.opportunitiesSetTheme("dark"/"light");  // optional, data-isdark also works
     window.opportunitiesSetMode("board"/"list");
     window.opportunitiesSetShowIgnored(true/false);
@@ -95,6 +96,19 @@
     //   in den ersten Blick. Wer es anders will, schickt diesen Aufruf mit done:true.
     window.opportunitiesOpenDetail("OPPORTUNITY_ID");
     window.opportunitiesCloseDetail();
+
+  ── Die Suche nach neuen Opportunities (30.09.) ─────────────────────────────
+  Der Knopf "Look for new Opportunities" im Seitenkopf (opportunities-page-header) startet das
+  Ladebild der Suche SELBST: waehrend Bubble das Ereignis ophSearch bearbeitet, steht auf der
+  Buehne das Ladebild (Kachel, "Looking for new Opportunities", Balken, wechselnde Statuszeile),
+  und der Knopf nimmt keinen zweiten Klick an. Kein zusaetzlicher Schritt noetig, wenn:
+    - der Workflow hinter ophSearch am Ende die Liste neu schickt (opportunitiesSetItems, der
+      uebliche Refresh). Die Liste beendet die Suche: Balken auf 100, dann das Brett.
+  Einmal pro Workflow dazu empfohlen:
+    - im FEHLERZWEIG opportunitiesSetSearching("no") -- sonst dreht das Ladebild bis zur
+      Obergrenze (3 Minuten) und endet dann mit dem Hinweis, dass es laenger dauert.
+  Von aussen anstossen (etwa aus einem anderen Knopf): opportunitiesSetSearching("yes").
+
 
   Until opportunitiesSetItems() is called the board shows a skeleton in the shape of the current
   view (cards on the board, rows in the list) -- with NO timeout (changed 11.09.): the empty state
