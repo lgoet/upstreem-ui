@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261033;
+  var BUILD = 20261034;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -3119,7 +3119,7 @@
       if (heil && typeof heil === "object") return [heil];
     } catch(e){}
     if (src.charAt(0) === "{") src = "[" + src + "]";
-    var out = "", i = 0, n = src.length, inStr = false, esc2 = false, ch, c, start, v;
+    var n = src.length;
     /* Schluessel oder Wert -- und das entscheidet, was einen String beenden kann.
        Nach einem SCHLUESSEL kommt ein Doppelpunkt, nach einem WERT ein Komma, eine schliessende
        Klammer oder das Ende. Frueher stand der Doppelpunkt fuer beide in der Liste, und genau
@@ -3131,6 +3131,21 @@
        Der Stapel unten merkt sich nur, ob wir in einem Objekt oder in einer Liste stehen: nach
        einem Komma folgt im Objekt ein Schluessel, in der Liste ein Wert. */
     var stapel = [], letztes = "", istWert = false;
+    /* Zwei Leseregeln (29.09.). Der Blick hinter das Komma (jsonNachKomma) hat Miras Antworten
+       gerettet und am selben Tag die Zitationstypen der Top Citations zerlegt: deren
+       Bubble-Vorlage schreibt die Schluessel NACKT -- { type: "Editorial", share_pct: 8.2 } --,
+       gueltiges JavaScript, das hier immer gelesen wurde. Der Blick kannte nur Schluessel in
+       Anfuehrungszeichen; hinter "Editorial", sah er Fliesstext, und das Chart war weg.
+       Seitdem kennt er beide Formen (nackt, unten), und scheitert die strenge Lesung trotzdem,
+       liest die alte Regel noch einmal: jedes Komma hinter einem Anfuehrungszeichen beendet den
+       Wert. Die alte Regel ZUERST waere falsch herum -- sie liest  "Handwerk", Fokus: Region  in
+       einem Text ohne Fehler, aber als zwei Felder, und der Rest des Satzes fehlt still. */
+    var streng = true;
+    /* Schreibt der Payload selbst nackte Schluessel? Gemerkt am Doppelpunkt ausserhalb eines
+       Strings, vor dem kein Anfuehrungszeichen steht. Bis dahin ist ein nacktes Wort mit
+       Doppelpunkt fuer den Blick Text: in Miras Antwort steht  "Handwerk", Fokus: Region  im
+       Satz, und dort ist "Fokus:" kein Schluessel. */
+    var nackt = false;
     function terminates(from, wert){
       var p = from;
       while (p < n && /\s/.test(src.charAt(p))) p++;
@@ -3143,8 +3158,8 @@
          und das Komma liess es als Ende des Wertes gelten; danach stand "klassische" ohne
          Anfuehrungszeichen da. Also wird nachgesehen, ob hinter dem Komma bzw. der Klammer
          wirklich JSON weitergeht -- Fliesstext tut das nie. */
-      if (a === ",") return wert ? jsonNachKomma(p + 1) : true;
-      if (a === "}" || a === "]") return wert ? jsonNachKlammer(p + 1) : true;
+      if (a === ",") return wert && streng ? jsonNachKomma(p + 1) : true;
+      if (a === "}" || a === "]") return wert && streng ? jsonNachKlammer(p + 1) : true;
       /* Ein Doppelpunkt beendet nur einen SCHLUESSEL. In einem Wert gehoert er zum Text. */
       return a === ":" && !wert;
     }
@@ -3155,7 +3170,9 @@
       while (p < n && /\s/.test(src.charAt(p))) p++;
       var b = p < n ? src.charAt(p) : "";
       if (b === "" || b === "}" || b === "]") return true;
-      if (stapel[stapel.length - 1] === "arr") return /["{\[\-0-9tfny]/.test(b);
+      /* In der Liste auch ein zweites Komma: ein leerer Eintrag einer Bubble-Liste kommt als ,, */
+      if (stapel[stapel.length - 1] === "arr") return /["{\[\-0-9tfny,]/.test(b);
+      if (nackt && /^[A-Za-z_$][\w$]*\s*:/.test(src.substr(p, 64))) return true;
       if (b !== '"') return false;
       var q = src.indexOf('"', p + 1);
       if (q < 0) return false;
@@ -3184,64 +3201,73 @@
       return "\\u" + "0000".slice(h.length) + h;
     }
     function isCtrl(c2){ return c2 < " " || c2 === "\u2028" || c2 === "\u2029"; }
-    while (i < n){
-      ch = src.charAt(i);
-      if (inStr){
-        if (esc2){ out += ch; esc2 = false; i++; continue; }
-        if (ch === "\\"){
-          /* Bubble truncates long text fields at a fixed length. When the cut lands on a
-             backslash the result is `…text\"` — that stray backslash escapes the closing quote
-             and swallows the rest of the payload. A backslash sitting directly before what is
-             unambiguously a terminating quote is that truncation artefact, never a real escape. */
-          if (src.charAt(i + 1) === '"' && terminates(i + 2, istWert)){ i++; continue; }
-          out += ch; esc2 = true; i++; continue;
-        }
-        if (ch === '"'){
-          /* Bubble's text fields (titles, descriptions) sometimes carry a literal, un-escaped
-             quote of their own — e.g. a description containing von "Meine Top 3" geht. Blindly
-             toggling inStr off at THAT quote corrupts every field after it. */
-          out += ch;
-          if (terminates(i + 1, istWert)){ inStr = false; letztes = '"'; }
-          else out = out.slice(0, -1) + '\\"';
+    function lesen(){
+      var out = "", i = 0, inStr = false, esc2 = false, ch, c, start, v;
+      stapel = []; letztes = ""; istWert = false; nackt = false;
+      while (i < n){
+        ch = src.charAt(i);
+        if (inStr){
+          if (esc2){ out += ch; esc2 = false; i++; continue; }
+          if (ch === "\\"){
+            /* Bubble truncates long text fields at a fixed length. When the cut lands on a
+               backslash the result is `…text\"` — that stray backslash escapes the closing quote
+               and swallows the rest of the payload. A backslash sitting directly before what is
+               unambiguously a terminating quote is that truncation artefact, never a real escape. */
+            if (src.charAt(i + 1) === '"' && terminates(i + 2, istWert)){ i++; continue; }
+            out += ch; esc2 = true; i++; continue;
+          }
+          if (ch === '"'){
+            /* Bubble's text fields (titles, descriptions) sometimes carry a literal, un-escaped
+               quote of their own — e.g. a description containing von "Meine Top 3" geht. Blindly
+               toggling inStr off at THAT quote corrupts every field after it. */
+            out += ch;
+            if (terminates(i + 1, istWert)){ inStr = false; letztes = '"'; }
+            else out = out.slice(0, -1) + '\\"';
+            i++; continue;
+          }
+          out += (isCtrl(ch) ? escCtrl(ch) : ch);
           i++; continue;
         }
-        out += (isCtrl(ch) ? escCtrl(ch) : ch);
-        i++; continue;
-      }
-      if (ch === '"'){
-        /* Ein String, der auf einen Doppelpunkt folgt, ist ein WERT; einer direkt in einer Liste
-           auch. Alles andere ist ein Schluessel. */
-        istWert = (letztes === ":") || (stapel[stapel.length - 1] === "arr");
-        inStr = true; out += ch; i++; continue;
-      }
-      if (ch === "{"){ stapel.push("obj"); letztes = ch; out += ch; i++; continue; }
-      if (ch === "["){ stapel.push("arr"); letztes = ch; out += ch; i++; continue; }
-      if (ch === "}" || ch === "]"){ stapel.pop(); letztes = ch; out += ch; i++; continue; }
-      if (ch !== ":"){ if (!/\s/.test(ch)) letztes = ch; out += ch; i++; continue; }
-      letztes = ":";
+        if (ch === '"'){
+          /* Ein String, der auf einen Doppelpunkt folgt, ist ein WERT; einer direkt in einer Liste
+             auch. Alles andere ist ein Schluessel. */
+          istWert = (letztes === ":") || (stapel[stapel.length - 1] === "arr");
+          inStr = true; out += ch; i++; continue;
+        }
+        if (ch === "{"){ stapel.push("obj"); letztes = ch; out += ch; i++; continue; }
+        if (ch === "["){ stapel.push("arr"); letztes = ch; out += ch; i++; continue; }
+        if (ch === "}" || ch === "]"){ stapel.pop(); letztes = ch; out += ch; i++; continue; }
+        if (ch !== ":"){ if (!/\s/.test(ch)) letztes = ch; out += ch; i++; continue; }
+        if (letztes !== '"' && stapel[stapel.length - 1] === "obj") nackt = true;
+        letztes = ":";
 
-      out += ch; i++;                                     // the colon itself
-      while (i < n && /\s/.test(src.charAt(i))){ out += src.charAt(i); i++; }
-      if (i >= n) break;
-      c = src.charAt(i);
-      if (c === '"' || c === "[" || c === "{") continue;   // already quoted or structured
+        out += ch; i++;                                     // the colon itself
+        while (i < n && /\s/.test(src.charAt(i))){ out += src.charAt(i); i++; }
+        if (i >= n) break;
+        c = src.charAt(i);
+        if (c === '"' || c === "[" || c === "{") continue;   // already quoted or structured
 
-      start = i;
-      while (i < n && src.charAt(i) !== "," && src.charAt(i) !== "}" && src.charAt(i) !== "]") i++;
-      v = src.slice(start, i).replace(/^\s+|\s+$/g, "");
-      if (v === ""){ out += "null"; continue; }
-      if (v === "true" || v === "false" || v === "null"){ out += v; continue; }
-      if (/^-?\d+(\.\d+)?([eE][+-]?\d+)?$/.test(v)){ out += v; continue; }
-      if (/^yes$/i.test(v)){ out += "true"; continue; }
-      if (/^no$/i.test(v)){ out += "false"; continue; }
-      out += '"' + v.replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"';
+        start = i;
+        while (i < n && src.charAt(i) !== "," && src.charAt(i) !== "}" && src.charAt(i) !== "]") i++;
+        v = src.slice(start, i).replace(/^\s+|\s+$/g, "");
+        if (v === ""){ out += "null"; continue; }
+        if (v === "true" || v === "false" || v === "null"){ out += v; continue; }
+        if (/^-?\d+(\.\d+)?([eE][+-]?\d+)?$/.test(v)){ out += v; continue; }
+        if (/^yes$/i.test(v)){ out += "true"; continue; }
+        if (/^no$/i.test(v)){ out += "false"; continue; }
+        out += '"' + v.replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"';
+      }
+      return out.replace(/,\s*([}\]])/g, "$1");            // trailing comma before a closer
     }
-    out = out.replace(/,\s*([}\]])/g, "$1");              // trailing comma before a closer
     var parsed;
-    try { parsed = eval("(" + out + ")"); }
+    try { parsed = eval("(" + lesen() + ")"); }
     catch(e){
-      if (window.console) console.warn("[UpstreemCore] parseBubbleJson failed:", e.message, raw);
-      return [];
+      streng = false;
+      try { parsed = eval("(" + lesen() + ")"); }
+      catch(e2){
+        if (window.console) console.warn("[UpstreemCore] parseBubbleJson failed:", e.message + " / " + e2.message, raw);
+        return [];
+      }
     }
     if (typeof parsed === "string"){                      // Bubble sometimes double-encodes
       try { return parseBubbleJson(parsed); } catch(e2){ return []; }
