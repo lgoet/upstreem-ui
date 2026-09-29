@@ -47,7 +47,7 @@ Der Fehler, der sich in dieser Sitzung dreimal wiederholt hat:
 .xyz-kpi .up-planpill .up-sent-dot { width: 7px; height: 7px; border-radius: 2.5px; }
 ```
 
-Sentiment selbst hat seit dem 29.09. **keinen** Kasten mehr: Balken 4×16 plus Zahl in der Schrift
+Sentiment selbst hat seit dem 29.09. **keinen** Kasten mehr: Balken 3×12 plus Zahl in der Schrift
 von `.up-num`, Markup nur aus `UC.sentHtml(v)`. Dort zieht ein Kontext nur die Schrift der Zahl mit.
 
 **Markup in core heißt nicht, dass das Bauteil geteilt ist.** Prüfen, ob die CSS auch in `core.css`

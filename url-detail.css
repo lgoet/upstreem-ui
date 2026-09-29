@@ -248,7 +248,7 @@
 .uud-cnum { flex: 0 0 108px; justify-content: flex-end; }
 .uud-cname { font-size: 13.5px; font-weight: 500; color: var(--vc-text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-/* Shape und Zahl kommen aus core (UC.sentHtml mit opts.text, seit dem 29.09.): Balken 4x16 in
+/* Shape und Zahl kommen aus core (UC.sentHtml mit opts.text, seit dem 29.09.): Balken 3x12 in
    der Farbe der Bewertung, die Zahl in der Primaerfarbe -- ein farbiger Zahlenwert laese sich als
    Warnung, nicht als Messwert. Hier stand ein eigener runder 6px-Punkt. */
 

@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261036;
+  var BUILD = 20261037;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -4231,7 +4231,7 @@
     return "#60D25D";
   }
   /* ---------- Sentiment: EIN Baustein fuer das Markup (29.09.) ----------
-     Balken 4x16 in der Farbe des Werts plus die ganze Zahl (CLAUDE.md 2b: Sentiment ohne
+     Balken 3x12 in der Farbe des Werts plus die ganze Zahl (CLAUDE.md 2b: Sentiment ohne
      Nachkommastelle), ohne Kasten -- core.css .up-sent. Vorher baute jede Komponente ihren
      eigenen String: neun Stellen, zwei Leerdarstellungen, eine mit eigenem Kasten.
        v            0-100; leer oder unlesbar ergibt den gedaempften Strich (.is-empty) --
@@ -9584,36 +9584,9 @@
       new MutationObserver(zeichnen).observe(quelle, { subtree: true, childList: true, characterData: true,
         attributes: true, attributeFilter: ["class", "aria-selected"] });
     }
-    /* DIE TRENNLINIE GEHT DURCH, von der Seitenleiste bis zum rechten Rand -- wie die Linie in der
-       Leiste selbst, die ebenfalls von Kante zu Kante laeuft. Der Seitenkopf sitzt in einer
-       Bubble-Gruppe mit eigenem Seitenabstand; ohne diese Messung endete die Linie dort und
-       stuende als Strich unter dem Kopf statt als Kante der Seite.
-       Gemessen gegen #main (der Scroller der App, clientWidth ohne Scrollbalken) und links gegen
-       die rechte Kante der Seitenleiste: liegt #main UNTER der Leiste (Polster statt Versatz),
-       soll die Linie an der Leiste enden und nicht unter ihr weiterlaufen. Eine GEPARKTE Ansicht
-       misst falsch -- sie liegt mit position: fixed ueber der ganzen Seite --, also dort nicht;
-       die Messung kommt, sobald die Ansicht offen ist. */
-    function linieMessen(){
-      if (!root.isConnected) return;
-      if (root.closest && root.closest('[id^="view-"]:not(.view-on)')) return;
-      var r = root.getBoundingClientRect();
-      if (!r.width) return;
-      var main = document.getElementById("main"), ml = 0, mr = document.documentElement.clientWidth;
-      if (main){ var m = main.getBoundingClientRect(); ml = m.left + (main.clientLeft || 0); mr = ml + main.clientWidth; }
-      var leiste = document.querySelector(".usn-bar");
-      if (leiste){ var lr = leiste.getBoundingClientRect(); if (lr.width && lr.right > ml && lr.right < r.left + 1) ml = lr.right; }
-      root.style.setProperty("--up-ph-rand-l", Math.max(0, Math.round(r.left - ml)) + "px");
-      root.style.setProperty("--up-ph-rand-r", Math.max(0, Math.round(mr - r.right)) + "px");
-    }
-    linieMessen();
-    /* Die Seitenleiste baut sich nach dem Seitenkopf auf; bis dahin kennt die Messung ihre Kante
-       nicht und zieht die Linie unter sie. Zwei Nachmessungen fangen das, danach reicht der
-       Beobachter (Ein-/Ausklappen der Leiste veraendert die Breite dieser Wurzel). */
-    setTimeout(linieMessen, 400);
-    setTimeout(linieMessen, 1500);
-    if (onResize) onResize(root, linieMessen);
-    onViewChange(function(){ setTimeout(linieMessen, 300); });
-    return { zeichnen: zeichnen, linieMessen: linieMessen };
+    /* Die Trennlinien laufen seit dem 29.09. spaet per CSS bis an die Kante des Elements (-16px
+       durch sein eigenes Polster) -- hier wird nichts mehr gemessen. */
+    return { zeichnen: zeichnen };
   }
 
   /* Plays the .up-ph-iconbtn spin (core.css: 1s ease-in-out, one turn) on a button, re-triggerable

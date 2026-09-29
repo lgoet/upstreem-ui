@@ -116,7 +116,7 @@
   /* Hoehen der Bedienelemente. Vier Stufen, eine Zeilenhoehe -- und das ist die Leiter, die
      GitHub Primer unabhaengig davon fuehrt (24/28/32/40/48). Dass beide auf dieselben vier
      Zahlen kommen, ist der beste Hinweis darauf, dass sie richtig sind. */
-  --up-h-chip: 24px;   /* .up-sent, Plaketten                          (53) */
+  --up-h-chip: 24px;   /* .up-pille (Tarif, Status), Plaketten         (53) */
   --up-h-seg:  28px;   /* kleines Segment                              (47) */
   --up-h-btn:  32px;   /* Knopf, Eingabe, Werkzeugleiste              (112) */
   --up-h-gross: 40px;  /* Hauptknopf, Suchfeld                         (33) */
@@ -3296,16 +3296,17 @@
 /* ---------- SENTIMENT OHNE KASTEN (29.09. angefordert) ----------
    "Aktuell ist das ja in so Containern, das moechte ich nicht mehr. Die Zahl soll in gleicher
    Fontsize sein wie Visibility oder Rank, der Container darum -- Border und Paddings -- weg. Und
-   der Shape davor bitte 4px breit und 16px hoch."
-   Also kein Rahmen, kein Polster, keine feste Hoehe: ein Balken 4x16 in der Farbe des Werts
+   der Shape davor bitte 4px breit und 16px hoch." Nachgeschaerft am selben Abend: 3px breit, 12px
+   hoch.
+   Also kein Rahmen, kein Polster, keine feste Hoehe: ein Balken 3x12 in der Farbe des Werts
    (UC.sentColor, inline), daneben die Zahl in genau der Schrift von .up-num (14/500) -- dieselbe
    wie Visibility und Rank in derselben Zeile. Rund an den Enden: bei 4px Breite ist der volle
    Radius die halbe Breite.
    Das Markup kommt NUR aus UC.sentHtml(wert). Vorher baute jede Komponente ihren eigenen String
    (neun Stellen, eine davon mit eigenem Kasten). Wo Visibility und Rank groesser stehen
-   (Kennzahlkarten), zieht der Kontext NUR .up-sent-val mit; der Balken bleibt 4x16. */
+   (Kennzahlkarten), zieht der Kontext NUR .up-sent-val mit; der Balken bleibt 3x12. */
 .up-sent { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; }
-.up-sent-dot { width: 4px; height: 16px; border-radius: var(--up-r-voll); flex: 0 0 auto; }
+.up-sent-dot { width: 3px; height: 12px; border-radius: var(--up-r-voll); flex: 0 0 auto; }
 .up-sent-val { font-size: var(--up-fs-l); font-weight: 500; color: var(--vc-text); white-space: nowrap;
   font-variant-numeric: tabular-nums; }
 /* DIE PILLE MIT RAHMEN bleibt -- fuer das, was kein Messwert ist: den Tarif (UC.planPilleHtml) und
@@ -4254,24 +4255,35 @@
    :is(). Die uebrigen folgen; dann wird aus der Liste .up-ph-root allein.
    Ueber die Wurzelklassen und nicht ueber .has-crumbs: die Geometrie soll stehen, BEVOR das JS
    laeuft, sonst springt der Kopf beim Laden von 164px auf 48. */
-.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) { padding-top: 8px; }
+/* DAS SEITLICHE POLSTER SITZT IM ELEMENT (29.09. spaet): 16px links und rechts, statt wie bisher
+   in der Bubble-Gruppe um den Kopf. Dort kommt es raus -- sonst stuende es doppelt. Nur so koennen
+   die zwei Trennlinien bis an die Kante des Elements laufen (-16px, siehe unten), waehrend Krumen,
+   Knoepfe und Reiter 16px Luft behalten. */
+.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) { padding-top: 8px; padding-left: 16px; padding-right: 16px; }
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-desc { display: none; }
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-top {
   align-items: center; min-height: var(--up-h-btn); padding-bottom: 8px; position: relative; }
-/* Die Linie durch den ganzen Inhaltsbereich: --up-ph-rand-l/-r misst UC.makePageCrumbs gegen
-   #main. Ohne Messung (0) liegt sie unter dem Kopf -- nie breiter als die Seite. */
+/* Die Linie laeuft durch das Polster bis an die Kante des Elements: -16px je Seite, genau das
+   Polster oben. Vorher mass JS den Abstand bis #main -- das hing am Aufbau der Bubble-Seite;
+   jetzt haengt es nur noch an diesem Element (29.09. spaet angefordert: "buendig abschliessen"). */
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-top::after {
   content: ""; position: absolute; bottom: 0; height: 1px; pointer-events: none;
-  left: calc(-1 * var(--up-ph-rand-l, 0px)); right: calc(-1 * var(--up-ph-rand-r, 0px));
-  background: var(--vc-border); }
+  left: -16px; right: -16px; background: var(--vc-border); }
 /* Die Ueberschrift als Krumenzeile: 14px, auf der Mitte der 32px-Zeile. Vor dem JS steht hier der
    Seitenname aus der Vorlage -- in derselben Groesse, also ohne Sprung. */
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-heading {
   display: flex; align-items: center; gap: 6px; min-width: 0; margin: 0;
   font-size: var(--up-fs-l); font-weight: 500; line-height: var(--up-h-btn); letter-spacing: 0;
   color: var(--vc-third); white-space: nowrap; }
-/* Die Reiterleiste darunter: 16 statt 32 -- ueber ihr steht jetzt eine Linie, keine Beschreibung. */
-.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-nav { margin-top: 16px; }
+/* DIE REITERLEISTE IST SO HOCH WIE DIE KOPFZEILE (29.09. spaet angefordert: "dass die Topbar und
+   die Bar darunter mit der Subpage gleich gross sind"). Kopfzeile: 8 + 32 + 8 = 48 bis zur ersten
+   Linie. Reiterleiste: von dieser Linie bis zu ihrer eigenen Grundlinie ebenfalls 48 -- ohne
+   Abstand darueber, die Reiter selbst 48 hoch, ihr Text also auf der Mitte der Leiste statt am
+   Boden. Der Strich des gewaehlten Reiters sitzt weiter auf der Grundlinie.
+   Auch ihre Grundlinie laeuft bis an die Kante des Elements, wie die erste. */
+.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-nav { margin-top: 0; }
+.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-navitem { height: calc(var(--up-h-btn) + 16px); }
+.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-nav::after { left: -16px; right: -16px; }
 .up-ph-crumb { display: inline-flex; align-items: center; gap: 6px; min-width: 0; color: var(--vc-third); }
 .up-ph-crumb.is-akt { color: var(--vc-text); }
 .up-ph-crumbic { display: inline-flex; flex: 0 0 auto; }

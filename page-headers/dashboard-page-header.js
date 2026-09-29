@@ -349,16 +349,11 @@
       fire.spaet("data-mode-fn", "dphMode", { mode: modeStart });
     }
 
-    /* Brotkrumen statt Ueberschrift (29.09.): "Dashboard", dahinter der gewaehlte Modus. Die
-       Trennung Power/Standard im Kopf ist damit weg -- beide Modi tragen denselben kompakten Kopf
-       aus core.css, und der Modus steht in der letzten Krume. */
-    if (UC.makePageCrumbs) UC.makePageCrumbs(root, {
-      icon: "home", name: "Dashboard", quelle: modeSeg || root,
-      aktuell: function(){
-        var l = root.querySelector(".dph-modebtn.is-active .dph-modelbl");
-        return l ? l.textContent : "";
-      }
-    });
+    /* Brotkrumen statt Ueberschrift (29.09.): nur "Dashboard", Zeichen und Name in der
+       Primaerfarbe. KEINE Unterseite dahinter (29.09. spaet: "Analytic und Agentic sind ja eher
+       Ansichten") -- der Modus steht im Umschalter rechts, nicht in der Krume. Beide Modi tragen
+       denselben kompakten Kopf aus core.css. */
+    if (UC.makePageCrumbs) UC.makePageCrumbs(root, { icon: "home", name: "Dashboard" });
 
     var searchBtn = root.querySelector(".dph-searchbtn");
     if (searchBtn){

@@ -39,7 +39,7 @@ THEMEN = {
 
 # Was einem beim Ueberschreiben um die Ohren fliegt.
 WARNUNG = {
-    "up-sent":  "Sentiment OHNE Kasten (seit 29.09.): Balken 4x16 (.up-sent-dot, Farbe aus\n"
+    "up-sent":  "Sentiment OHNE Kasten (seit 29.09.): Balken 3x12 (.up-sent-dot, Farbe aus\n"
                 "  UC.sentColor) + Zahl in der Schrift von .up-num. Markup NUR aus UC.sentHtml(v).\n"
                 "  Groessere Zahl im Kontext: nur .up-sent-val font-size mitziehen, der Balken bleibt.\n"
                 "  .up-planpill nutzt dasselbe Markup, ist aber eine Pille MIT Rahmen (eigene Regeln).",

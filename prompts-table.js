@@ -3911,8 +3911,9 @@
           '<span class="up-explain-down">' + UC.TREND_DOWN + '</span>' +
           '<span class="up-explain-down">0.4</span></span>';
       }
+      /* Die Vorschau zeigt Sentiment so, wie die Zelle es zeigt: Balken + Zahl aus core (29.09.). */
       if (kind === "sentiment"){
-        return '<span class="up-explain-row">78' +
+        return '<span class="up-explain-row">' + UC.sentHtml(78) +
           '<span class="up-explain-up">' + UC.TREND_UP + '</span>' +
           '<span class="up-explain-up">4</span></span>';
       }

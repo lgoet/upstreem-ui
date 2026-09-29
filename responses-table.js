@@ -1149,7 +1149,8 @@
          numbers here are as illustrative/fake as prompts-table's own (2.3/0.4, 78/4), not a claim
          that a single response has a 30-day trend. Consistency of the sample beats correctness of
          a number nobody reads literally. */
-      if (kind === "sentiment") return '<span class="up-explain-row">78' +
+      /* Die Vorschau zeigt Sentiment so, wie die Zelle es zeigt: Balken + Zahl aus core (29.09.). */
+      if (kind === "sentiment") return '<span class="up-explain-row">' + UC.sentHtml(78) +
         '<span class="up-explain-up">' + UC.TREND_UP + '</span>' +
         '<span class="up-explain-up">4</span></span>';
       if (kind === "rank") return '<span class="up-explain-row">' + UC.HASH_ICON + '2.3' +

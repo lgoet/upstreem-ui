@@ -18,11 +18,11 @@ HIER = os.path.dirname(os.path.abspath(__file__))
 # Bauteile, deren Werte nur zusammen stimmen: {Klasse: (Paket, Begruendung)}
 PAKETE = {
     # Sentiment seit dem 29.09. OHNE Kasten: die Zahl darf der Schrift von Visibility/Rank im
-    # jeweiligen Kontext folgen (.up-sent-val font-size ist frei), der Balken ist fest 4x16.
+    # jeweiligen Kontext folgen (.up-sent-val font-size ist frei), der Balken ist fest 3x12.
     "up-sent":     ({"height", "padding", "border", "border-radius"},
                     "Sentiment hat keinen Kasten mehr -- Rahmen/Polster/Hoehe gehoeren nicht an .up-sent"),
     "up-sent-dot": ({"width", "height", "border-radius"},
-                    "Balken 4x16 aus core -- in jedem Kontext gleich, nicht umbauen"),
+                    "Balken 3x12 aus core -- in jedem Kontext gleich, nicht umbauen"),
     "up-seg-btn":  ({"height", "border", "border-radius", "background"},
                     "fertiger Segmented-Control -- nur positionieren, nicht umstylen"),
     "vc-gran-btn": ({"height", "border", "border-radius", "background"},

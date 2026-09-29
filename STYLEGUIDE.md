@@ -370,7 +370,7 @@ gezeigt (statt eines nichtssagenden „0.0%").
 | Tabellen-Zelle (Brand-Name) | 14px | 500 | `--vc-text` | ellipsis |
 | Tabellen-Zahlen (`.vt-num`) | 14px | 500 | `--vc-text` | — |
 | Trend-Chip | 13px | 600 | `--vt-up`/`--vt-down` | gap 4px zum Icon |
-| Sentiment-Wert | 13px | 500 | `--vc-text` | — |
+| Sentiment-Wert | 14px (wie `.up-num`; im Kontext so gross wie Visibility/Rank daneben) | 500 | `--vc-text` | — |
 | Legend-Name (Line-Chart) | 12px | 500 | `--vc-text` | max-width + ellipsis |
 | Dropdown-Head (SORT BY, COMPANIES) | 11px | 600 | `--vc-muted` | uppercase, letter-spacing 0.04em |
 | Dropdown-Item | 13px – 13.5px | 500 | `--vc-text` | — |
@@ -783,7 +783,7 @@ die Spaltenüberschrift. **Kein `cursor: help`** — der Cursor bleibt wie im Re
 - Brand-Spalte hat eine **harte Mindestbreite von 120px** — schrumpft nie weiter, egal wie eng der Rest wird.
 - Logo-Box 24×24px (radius 8, 1px Padding), Bild 22×22px (radius 7).
 - Trend-Chip: Icon 16×16 + Text, `gap:4px`, Farbe je nach Richtung/Invertierung (`--vt-up`/`--vt-down`).
-- Sentiment-Chip: `height:24px; padding:0 6px; border:1px solid var(--vc-border); radius:6px;` + 6×6px Dot (radius 2, Ampel-Farbe).
+- Sentiment (seit 29.09.): **kein Kasten** -- Balken 3×12px (voller Radius, Ampel-Farbe) + Zahl wie `.up-num`, Markup nur aus `UC.sentHtml(v)`. Die Pille mit Rahmen (`.up-sent.up-pille`: 24px, Polster 6, Rahmen, Radius 6, Punkt 6×6) gibt es nur noch fuer Plaketten, die kein Messwert sind (Tarif, Team-Status).
 - Eigene Zeile für „Own Brand außerhalb Top 7": 4px Extra-Marge + 1px Top-Border, nur wenn `position > 7`.
 
 **Responsive Degradierung** (in dieser Reihenfolge, je enger):

@@ -1178,6 +1178,25 @@
         emitCurrent: function (grund) { return emit(committed.from, committed.to, grund || "activate"); },
         /* Nur die States, nur ueber den Boot-Kanal -- nie ein Ladevorgang. */
         nurStates: function (grund) { return emit(committed.from, committed.to, grund === "boot" ? "boot" : "activate"); },
+        /* Nur die States, ueber den RANGE-Kanal -- fuer eine Ansicht ohne Boot-Element. Der
+           Range-Workflow setzt die States und ruft am Ende per Snippet das Apply; dieses Apply
+           traegt data-range-json, also genau j3, und applyFangen laesst es ins Leere laufen.
+           data-range-apply steht auf "no": ein Snippet, das darauf prueft, ruft es gar nicht erst. */
+        statesUeberRange: function () {
+          var p3 = {
+            instance_id: instanceId,
+            date_from: iso(committed.from), date_to: iso(committed.to),
+            preset: committedPreset || "", reason: "activate",
+            event_id: instanceId + "_" + Date.now() + "_states"
+          };
+          var j3 = JSON.stringify(p3);
+          root.setAttribute("data-range-json", j3);
+          root.setAttribute("data-range-reason", "activate");
+          root.setAttribute("data-range-apply", "no");
+          var an = String(root.getAttribute("data-range-apply-fn") || "").trim();
+          if (an) { applyFangen(an); APPLY_SPERRE[an] = j3; }
+          return callFn("data-range-fn", "bubble_fn_udr_date_range", j3);
+        },
         /* NUR den Nachlade-Kanal, ohne die States anzufassen -- fuer eine Ansicht, deren Daten von
            einem anderen Zeitraum sind. Die States hat die Uebergabe davor schon gesetzt; hier
            fehlt allein der Ladevorgang. */
@@ -1442,6 +1461,10 @@
      Nutzlast innerhalb von vier Sekunden nur einmal durch, gleich in welcher Reihenfolge die
      zwei kommen. Eine NEUE Auswahl hat eine neue event_id und kommt immer durch. */
   var APPLY_ZULETZT = window.__udrApplyZuletzt || (window.__udrApplyZuletzt = {});
+  /* Ein Apply, das NICHT laden soll: der Range-Kanal wurde nur fuer die States gerufen
+     (statesUeberRange), und sein Snippet ruft danach trotzdem das Apply -- mit genau dieser
+     Nutzlast. Einmal wegfangen, dann ist der Eintrag verbraucht. */
+  var APPLY_SPERRE = window.__udrApplySperre || (window.__udrApplySperre = {});
   function amFensterWickeln(name, wickel){
     var d = null;
     try { d = Object.getOwnPropertyDescriptor(window, name); } catch(e){}
@@ -1462,6 +1485,7 @@
     amFensterWickeln(name, function(original){
       return function(wert){
         var t0 = Date.now(), z = APPLY_ZULETZT[name];
+        if (typeof wert === "string" && wert && APPLY_SPERRE[name] === wert) { delete APPLY_SPERRE[name]; return; }
         if (typeof wert === "string" && wert && z && z.json === wert && t0 - z.t < 4000) return;
         if (typeof wert === "string" && wert) APPLY_ZULETZT[name] = { json: wert, t: t0 };
         return original.apply(this, arguments);
@@ -1513,27 +1537,45 @@
     return out;
   }
   function vorErstlauf(name, weiter){
+    /* view_first laeuft IMMER, genau einmal -- auch wenn beim Uebergeben etwas wirft. Ohne diesen
+       Riegel haette ein Fehler hier die Ansicht nie laden lassen. */
+    var gelaufen = false;
     function los(){
+      if (gelaufen) return;
+      gelaufen = true;
       try { weiter(); }
       catch(e){ if (window.console) console.warn("[date-range] view_first_" + name + " hat geworfen:", e); }
     }
-    /* Auch bei AUSGESCHALTETEM Schalter: dann mit dem eigenen Zeitraum des Kalenders. Die
-       Aufbau-Uebergabe tut das seit jeher ("Schalter aus -> der eigene Stand des Pickers"), kam
-       aber erst, wenn Bubbles Bruecke stand -- im Nachbau NACH view_first, die Startansicht lud
-       also mit Bubbles Vorgabe. Hier steht sie davor. */
-    var cs = ansichtsKalender(name);
+    /* NUR bei aktivem Schalter. Ein Anlauf, auch ohne Schalter den eigenen Zeitraum des Kalenders
+       zu uebergeben, ist am 29.09. spaet wieder raus: er aenderte, womit die Ansichten laden, fuer
+       jeden, der den Schalter nie eingeschaltet hat. */
+    if (!syncAn()) return los();
+    var cs = [];
+    try { cs = ansichtsKalender(name); } catch(e){}
     if (!cs.length) return los();
     var n = 0;
     (function versuch(){
-      var fehlt = false, i;
-      for (i = 0; i < cs.length; i++) if (!bootDa(cs[i])) fehlt = true;
-      if (fehlt && n++ < ERSTLAUF_WARTEN){ setTimeout(versuch, 25); return; }
-      var ziel = syncAn() ? syncPreset() : null;
-      for (i = 0; i < cs.length; i++){
-        var c = cs[i];
-        if (ziel && TEILBAR[ziel] && c.getRange().preset !== ziel) c.setPreset(ziel, false);
-        zustandGeben(c);
-        var sg = sigVon(c); if (sg) STAND[c.instanceId] = sg;
+      try {
+        var fehlt = false, i;
+        for (i = 0; i < cs.length; i++) if (!bootDa(cs[i])) fehlt = true;
+        if (fehlt && n++ < ERSTLAUF_WARTEN){ setTimeout(versuch, 25); return; }
+        var ziel = syncPreset();
+        for (i = 0; i < cs.length; i++){
+          var c = cs[i];
+          if (TEILBAR[ziel] && c.getRange().preset !== ziel) c.setPreset(ziel, false);
+          var sg = sigVon(c);
+          if (bootDa(c)) zustandGeben(c);
+          /* OHNE BOOT-ELEMENT der Range-Kanal, aber nur fuer die States (29.09. spaet). Ohne jeden
+             Rueckfall lud eine solche Ansicht mit dem alten Zeitraum -- gemeldet als "die Kalender
+             funktionieren jetzt noch schlechter als vorher". Der Range-Workflow setzt die States;
+             das Apply, das sein Snippet danach ruft, faengt applyFangen ab (APPLY_SPERRE) --
+             geladen wird in view_first, einmal. */
+          else if (sg && GEGEBEN[c.instanceId] !== sg && typeof c.statesUeberRange === "function" &&
+                   c.statesUeberRange()) GEGEBEN[c.instanceId] = sg;
+          if (sg) STAND[c.instanceId] = sg;
+        }
+      } catch(e){
+        if (window.console) console.warn("[date-range] Zeitraum vor view_first_" + name + " nicht uebergeben:", e);
       }
       los();
     })();

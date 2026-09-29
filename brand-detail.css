@@ -70,10 +70,10 @@
    moeglichst wenig springt. */
 .ubd-kpi-val .up-tsk-bar   { height: 24px; width: 88px; border-radius: 6px; }
 .ubd-kpi-trend .up-tsk-bar { height: 18px; width: 58px; border-radius: 5px; }
-/* Sentiment steht seit dem 29.09. ohne Kasten (core: Balken 4x16 + Zahl) -- die Zahl ist damit
+/* Sentiment steht seit dem 29.09. ohne Kasten (core: Balken 3x12 + Zahl) -- die Zahl ist damit
    eine Kennzahl wie jede andere und bekommt dieselbe Groesse wie Visibility und Rank hier. Die
    Pillenrechnung (Faktor 17/13 auf Hoehe, Polster, Radius, Punkt) faellt mit dem Kasten weg; der
-   Balken bleibt 4x16 aus core. */
+   Balken bleibt 3x12 aus core. */
 .ubd-kpi-val .up-num, .ubd-kpi-val .up-sent-val { font-size: inherit; font-weight: 500; letter-spacing: inherit;
   font-variant-numeric: tabular-nums; }
 /* Der Rang bleibt beim Core-Mass -- dort waechst die nackte Zahl (.up-num) ohnehin mit, und die

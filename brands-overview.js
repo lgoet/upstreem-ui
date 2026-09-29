@@ -907,7 +907,13 @@
 
     /* ---------- table ---------- */
     var HASH_ICON = UC.HASH_ICON.replace('<svg ', '<svg class="up-hash" ');
-    var MORE_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11.9967 12.5V12M11.9967 6.5V6M11.9967 18.5V18M12.9967 12.5C12.9967 11.9477 12.549 11.5 11.9967 11.5C11.4444 11.5 10.9967 11.9477 10.9967 12.5C10.9967 13.0523 11.4444 13.5 11.9967 13.5C12.549 13.5 12.9967 13.0523 12.9967 12.5ZM12.9967 6.5C12.9967 5.94772 12.549 5.5 11.9967 5.5C11.4444 5.5 10.9967 5.94772 10.9967 6.5C10.9967 7.05228 11.4444 7.5 11.9967 7.5C12.549 7.5 12.9967 7.05228 12.9967 6.5ZM12.9967 18.5C12.9967 17.9477 12.549 17.5 11.9967 17.5C11.4444 17.5 10.9967 17.9477 10.9967 18.5C10.9967 19.0523 11.4444 19.5 11.9967 19.5C12.549 19.5 12.9967 19.0523 12.9967 18.5Z"/></svg>';
+    /* Das Dreipunktmenue aus core (29.09. spaet): moreVertical ist dasselbe Zeichen, das hier als
+       eigene Kopie stand -- aber GEFUELLT ohne Strich. Der Pfad ist ein Strich-Zeichen (Hugeicons):
+       jeder Punkt ein Kreis mit Radius 1, der seine Groesse erst durch den Strich bekommt. Gefuellt
+       blieb er 2 von 24 Einheiten breit, bei 16px also gut 1px -- "sieht sehr klein aus". Mit
+       Strich 2 wie jedes andere Punktemenue der App (moreHorizontal in Opportunities, Mira und den
+       Gruppenaktionen). */
+    var MORE_SVG = UC.icon("moreVertical", 2);
 
     /* The table kit: grid template, column dropping, the Brand column's drag handle and the
        Table Settings menu all come from core now. The Inactive view is a different table (Brand /
@@ -1180,8 +1186,9 @@
     }
     function explainVisual(kind){
       if (kind === "ranking") return '<span class="up-explain-row">' + HASH_ICON + '<span>2.3</span></span>';
+      /* Die Vorschau zeigt Sentiment so, wie die Zelle es zeigt: Balken + Zahl aus core (29.09.). */
       if (kind === "sentiment"){
-        return '<span class="up-explain-row">78' +
+        return '<span class="up-explain-row">' + UC.sentHtml(78) +
           '<span class="up-explain-up">' + UC.TREND_UP + '</span><span class="up-explain-up">4</span></span>';
       }
       return '<span class="up-explain-row">18.4%' +

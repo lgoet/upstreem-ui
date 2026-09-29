@@ -75,7 +75,7 @@
    Kachel, nicht ein Feld unter vielen. */
 /* Sentiment in DERSELBEN Groesse wie die drei anderen Kacheln (29.09.). Vorher zwei Punkte
    kleiner, weil der Wert in einer Pille stand und damit mehr Gewicht trug; seit Sentiment keinen
-   Kasten mehr hat (core: Balken 4x16 + Zahl), gibt es dieses Mehrgewicht nicht mehr. */
+   Kasten mehr hat (core: Balken 3x12 + Zahl), gibt es dieses Mehrgewicht nicht mehr. */
 .upd-kpi-val .up-num, .upd-kpi-val .up-sent-val { font-size: 18px; font-weight: 500; }
 .upd-kpi-val .up-rank-group .up-hash { width: 12px; height: 12px; }
 .upd-kpi-trend { display: inline-flex; align-items: center; }
