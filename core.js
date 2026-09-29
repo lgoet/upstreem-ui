@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261043;
+  var BUILD = 20261044;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -129,6 +129,8 @@
   }
   var OTHER_LIGHT = "#8c8f96", OTHER_DARK = "#a8abb2", CHIP_BG_DARK = "#242424";
   var MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  /* Sonntag zuerst, weil Date.getDay() dort bei 0 anfaengt. */
+  var WEEKDAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
   /* Search behaviour lifted verbatim from quick_actions.html so both feel identical. */
   var DEBOUNCE = 400, MIN = 2;
   /* Sort coalescing window. Shorter than search: a click is a deliberate act, so the result
@@ -798,6 +800,9 @@
     "January": "Januar", "February": "Februar", "March": "März", "April": "April", "June": "Juni",
     "July": "Juli", "August": "August", "September": "September", "October": "Oktober",
     "November": "November", "December": "Dezember",
+    /* Wochentage (29.09.): fuer UC.fmtDateLong, das Datum ueber dem Gruss im Agentic Dashboard. */
+    "Monday": "Montag", "Tuesday": "Dienstag", "Wednesday": "Mittwoch", "Thursday": "Donnerstag",
+    "Friday": "Freitag", "Saturday": "Samstag", "Sunday": "Sonntag",
 
     /* ── Zustaende und Knoepfe ──────────────────────────────────────────────────────────────── */
     "Actions": "Aktionen",
@@ -3369,6 +3374,19 @@
     }
   }
   function fmtDate(v){ return fmtDateMuster(datumsTeile(v), getPref("date")); }
+  /* Das Datum als Zeile ueber einem Gruss (29.09., Agentic Dashboard): "Tuesday, 29. September".
+     Wochentag und Monat ausgeschrieben, ohne Jahr -- es ist HEUTE, das Jahr sagt dort nichts.
+     Die Reihenfolge folgt dem Datumsformat des Nutzers: im amerikanischen der Monat zuerst
+     ("Tuesday, September 29"), sonst der Tag mit Punkt, wie im Standardformat der App
+     ("24. Jul 2026"). Beide Namen durch t(), damit es auf Deutsch "Dienstag, 29. September" heisst.
+     Ohne Wert gilt jetzt. */
+  function fmtDateLong(v){
+    var d = v instanceof Date ? v : (v == null || v === "" ? new Date() : new Date(String(v)));
+    if (isNaN(d.getTime())) return "–";
+    var tag = t(WEEKDAYS[d.getDay()]), mon = t(MONTHS_LONG[d.getMonth()]);
+    return getPref("date") === "mon-d-y" ? tag + ", " + mon + " " + d.getDate()
+                                         : tag + ", " + d.getDate() + ". " + mon;
+  }
   function foldDiacritics(s){
     var t = String(s == null ? "" : s);
     try { t = t.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); } catch(e){}
@@ -18679,6 +18697,7 @@
     fmt1: fmt1,
     fmtInt: fmtInt,
     fmtDate: fmtDate,
+    fmtDateLong: fmtDateLong,
     foldDiacritics: foldDiacritics,
     germanExpand: germanExpand,
     makeEntitySearch: makeEntitySearch,

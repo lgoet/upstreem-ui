@@ -4376,9 +4376,13 @@
    zwischen ihnen. Keiner dieser Wurzeln hatte bisher ein eigenes Seitenpolster.
    Die Filterleiste "More Filters" (.ufb-root) stand anfangs mit in der Liste und ist am selben
    Tag wieder raus (gemeldet): sie steht in der Zeile neben dem Kalender, ist also genau so ein
-   Knopf und kein Block. */
+   Knopf und kein Block.
+   Ebenso .upw-root (das Agentic Dashboard, am selben Tag gefunden): seine Spalte traegt ihr
+   Polster selbst (--upw-pad in power-dashboard.css), im schmalen Fenster ausdruecklich 16
+   ("ueberall 16px im mobile Dashboard", 15.09.). Die 16 hier kamen DAZU -- 32 statt 16, genau
+   die Verdopplung, vor der der Kommentar dort warnt. */
 :is(#view-dashboard, #view-prompts, #view-citations, #view-brands)
-  .up-root:is(.vot-root, .tcd-root, .combo-root, .upw-root, .upt-root, .urt-root, .utm-root,
+  .up-root:is(.vot-root, .tcd-root, .combo-root, .upt-root, .urt-root, .utm-root,
               .uut-root, .udt-root, .ubo-root, .udb-root) { padding-left: 16px; padding-right: 16px; }
 
 /* ---------- DIESELBEN 16px IN DEN FUENF UEBRIGEN ANSICHTEN (29.09. nachmittags) ----------

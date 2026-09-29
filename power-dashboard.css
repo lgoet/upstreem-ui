@@ -63,6 +63,19 @@
 .upw-root.is-narrow .upw-narrow,
 .upw-root.is-narrow .upw-wide { margin-left: 0; margin-right: 0; }
 
+/* ---------- Gruss oben links (29.09. angefordert) ----------
+   "Eine Zeile mit dem Datum, klein in der Drittfarbe, darunter der Gruss in groesserer Schrift,
+   das Ganze links." Datum 13/500 in --vc-third -- Groesse und Farbe der Zeitangabe in der
+   Chatliste (.upw-chat-when). Gruss 28/500 (--up-fs-3xl), die Stufe, die die Seitenkoepfe als Ueberschrift trugen,
+   bevor sie kompakt wurden: die groesste Schrift der App, damit klar die Ueberschrift dieser
+   Ansicht; -0.5px Laufweite wie dort, weil 28px bei 0 sichtbar auseinanderlaeuft.
+   4px zwischen den Zeilen: das Datum gehoert zum Gruss, nicht davor. 24px bis zu Mira darunter
+   -- der Abstand zwischen zwei Bloecken dieser Spalte (.upw-chips steht mit derselben Zahl ab). */
+.upw-greet { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin-bottom: 24px; }
+.upw-greet-date { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); line-height: 1.3; color: var(--vc-third); }
+.upw-greet-text { margin: 0; font-size: var(--up-fs-3xl); font-weight: var(--up-fw-m); line-height: 1.2;
+  letter-spacing: -0.5px; color: var(--vc-text); }
+
 
 /* ---------- Mira ----------
    Der Platz fuer die geliehene Wurzel. Bis sie da ist, ihr Umriss: dieselbe Hoehe, derselbe

@@ -1770,6 +1770,14 @@
           id: String(p.id || p.user_id || p.unique_id || "")
         };
         vorrat.user = state.user; vorrat.userDa = true;
+        /* Den Nutzer auch fuer andere melden (29.09.): der Gruss im Agentic Dashboard braucht den
+           Vornamen, und die Leiste ist die einzige Stelle, an der er ankommt. Kein zweiter Setter
+           in Bubble -- derselbe Payload, nur weitergereicht. Am Fenster, weil die Leiste bei einem
+           Themenwechsel neu gebaut wird; das Ereignis, damit ein schon stehender Gruss nachzieht. */
+        try {
+          window.__upNutzer = state.user;
+          window.dispatchEvent(new CustomEvent("up-nutzer", { detail: state.user }));
+        } catch (e) {}
         renderAcc();
         return true;
       },

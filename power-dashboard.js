@@ -48,6 +48,61 @@
 
   var UC, mount;
 
+  /* ---- DER GRUSS OBEN LINKS (29.09. angefordert) ----
+     "Im Agentic Dashboard oben links als erstes auf der Seite: eine Zeile mit dem Datum, klein in
+     der Drittfarbe, darunter 'Guten Morgen <Vorname>' -- oder Guten Abend, Hi, Hey, Guten Tag, je
+     nach Uhrzeit -- in groesserer Schrift, links."
+     Fuenf Woerter, fuenf Tageszeiten, nach der Uhr des Rechners, auf dem die Seite laeuft:
+       05-11 Good morning, 11-14 Hi, 14-18 Good afternoon, 18-23 Good evening, 23-05 Hey.
+     Die Woerter sind englisch wie jeder sichtbare Text; der deutsche Katalog steht in upwRun.
+     Der VORNAME ist das erste Wort des Anzeigenamens. Den bekommt die Seitenleiste ueber
+     setSidebarUser; sidebar.js meldet ihn als window.__upNutzer und mit dem Ereignis
+     "up-nutzer" -- kein eigener Setter in Bubble. Eine aeltere Leiste meldet nichts, dann steht
+     er noch in ihrem Vorrat (window.__usnStore). Ohne Namen steht der Gruss allein, nie ein
+     Platzhalter. Eine E-Mail ist kein Vorname und wird nicht zerlegt.
+     EINE Uhr fuer alle Gruesse der Seite, einmal je Minute: wer das Dashboard ueber eine
+     Tageszeitgrenze offen laesst, sieht den neuen Gruss, nach Mitternacht das neue Datum.
+     Geschrieben wird nur, was sich geaendert hat. */
+  function grussWort(h){
+    if (h >= 5 && h < 11) return "Good morning";
+    if (h >= 11 && h < 14) return "Hi";
+    if (h >= 14 && h < 18) return "Good afternoon";
+    if (h >= 18 && h < 23) return "Good evening";
+    return "Hey";
+  }
+  function vorname(){
+    var u = window.__upNutzer;
+    if (!u || !u.name){
+      var vorrat = window.__usnStore || {};
+      for (var k in vorrat){ if (vorrat[k] && vorrat[k].user && vorrat[k].user.name){ u = vorrat[k].user; break; } }
+    }
+    var n = String((u && u.name) || "").trim();
+    if (!n || n.indexOf("@") >= 0) return "";
+    return n.split(/\s+/)[0];
+  }
+  function grussZeichnen(root){
+    var C = window.UpstreemCore;
+    var elD = root && root.querySelector("[data-upw-greet-date]");
+    var elG = root && root.querySelector("[data-upw-greet-text]");
+    if (!C || !elD || !elG) return;
+    var jetzt = new Date(), name = vorname(), wort = grussWort(jetzt.getHours());
+    var datum = C.fmtDateLong ? C.fmtDateLong(jetzt) : jetzt.toDateString();
+    var gruss = (C.t ? C.t(wort) : wort) + (name ? ", " + name : "");
+    if (elD.textContent !== datum) elD.textContent = datum;
+    if (elG.textContent !== gruss) elG.textContent = gruss;
+  }
+  function alleGruesse(){
+    Array.prototype.forEach.call(document.querySelectorAll(".upw-root"), grussZeichnen);
+  }
+  /* Einmal je Seite, auch wenn die Datei zweimal geladen wird. */
+  if (!window.__upwGrussUhr){
+    window.__upwGrussUhr = true;
+    window.addEventListener("up-nutzer", alleGruesse);
+    /* Sprache oder Datumsformat umgestellt: dieselbe Zeile in der neuen Form. */
+    window.addEventListener("up-prefs-change", alleGruesse);
+    setInterval(alleGruesse, 60000);
+  }
+
   /* ---- EIN NEU GEBAUTES ELEMENT MACHT WEITER (27.09. gemeldet) ----
      Themenwechsel -> Bubble baut das Element neu -> Skelett fuer immer. data-isdark steht als
      dynamischer Wert an der Wurzel; aendert er sich, ersetzt Bubble sie durch eine frische Kopie
@@ -136,6 +191,12 @@
 
   function upwRun(){
     UC = window.UpstreemCore;
+    /* "Guten Tag" fuer den Nachmittag: so steht es in der Anfrage, und "Guten Nachmittag" sagt
+       niemand. Hi und Hey bleiben -- als Eintrag, damit sie nicht als unuebersetzt gelten. */
+    if (UC.addMessages) UC.addMessages("de", {
+      "Good morning": "Guten Morgen", "Good afternoon": "Guten Tag", "Good evening": "Guten Abend",
+      "Hi": "Hi", "Hey": "Hey"
+    });
     mount = UC.makeMount({
       onMount: function(m){ mount = m; },
       rootClass: "upw-root", notPortal: true,
@@ -293,6 +354,14 @@
        beim naechsten Pin nicht mitwandert. */
     root.innerHTML =
       '<div class="upw-col">' +
+        /* Der Gruss (29.09.), als ERSTES auf der Seite. In der Huelle .upw-wide: seine linke
+           Kante ist die der breiten Karten darunter (Overview, Competitive field), also die linke
+           Kante dieser Seite -- Mira und die Chips sind bewusst schmaler. Gefuellt von
+           grussZeichnen, siehe oben. */
+        '<div class="upw-wide upw-greet">' +
+          '<div class="upw-greet-date" data-upw-greet-date></div>' +
+          '<h2 class="upw-greet-text" data-upw-greet-text></h2>' +
+        '</div>' +
         /* ZWEI HUELLEN, GEGENLAEUFIG BREITER (11.09. angefordert): Mira und ihre Chips sollen
            72px je Seite SCHMALER sein als die Spalte, Overview/Recent-chats/die Tabelle 80px je
            Seite BREITER -- die Masse stehen an .upw-narrow/.upw-wide in power-dashboard.css, hier
@@ -380,6 +449,7 @@
         '</div>' +
       '</div>';
 
+    grussZeichnen(root);
     var elSlot = root.querySelector("[data-upw-mira]");
     var elChips = root.querySelector("[data-upw-chips]");
     var elChats = root.querySelector("[data-upw-chatlist]");
