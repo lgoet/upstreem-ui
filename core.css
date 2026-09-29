@@ -4292,12 +4292,38 @@
    Abstand darueber, die Reiter selbst 48 hoch, ihr Text also auf der Mitte der Leiste statt am
    Boden. Der Strich des gewaehlten Reiters sitzt weiter auf der Grundlinie.
    Auch ihre Grundlinie laeuft bis an die Kante der Bubble-Gruppe, wie die erste. */
-.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-nav { margin-top: 0; }
-.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-navitem { height: calc(var(--up-h-btn) + 16px); }
+/* DAS ZEICHEN DES ERSTEN REITERS STEHT GENAU UNTER DEM ZEICHEN DER KRUMENZEILE (29.09.
+   angefordert: "wenn in der Topbar ein Icon waere, dann waere dieses Icon mittig exakt ueber dem
+   Icon des Subpage-Nav-Items darunter"). Beide Zeichen sind 16 breit, also muessen ihre linken
+   Kanten gleich liegen: auf dem Inhaltsabstand der Kopfzeile. Mit den 12px Seitenpolster im
+   Reiter lag das Zeichen darunter 12px weiter rechts. Hier hat der Reiter keins: sein Kasten IST
+   Zeichen plus Beschriftung, und der Strich des gewaehlten Reiters -- UC.makePageNav misst den
+   Kasten -- beginnt am Zeichen statt 12px davor. Damit bleibt er auch aus dem Randstreifen, auf
+   dem nur die duenne Linie liegen soll.
+   Der Abstand von einer Beschriftung zum naechsten Zeichen bleibt, was er war: 12 + 4 + 12 = 28.
+   Die Klickflaeche auch -- ::before reicht je die halbe Luecke nach aussen, die zwei Haelften
+   treffen sich in der Mitte. */
+.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-nav { margin-top: 0; gap: 28px; }
+.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-navitem {
+  height: calc(var(--up-h-btn) + 16px); padding: 0; position: relative; }
+.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-navitem::before {
+  content: ""; position: absolute; top: 0; bottom: 0; left: -14px; right: -14px; }
+/* Im SCHMALEN Kopf (is-narrow, unter 768) teilen sich die Reiter die Breite (flex 1 1 0, Inhalt
+   mittig) -- dort gibt es keine linke Kante, die unter dem Krumenzeichen stehen koennte. Also die
+   alte Geometrie: 4px Luecke und 12px Seitenpolster, sonst laegen die gestreckten Reiter 28px
+   auseinander. Und keine verlaengerte Klickflaeche: bei 4px Luecke griffe sie 10px in den
+   Nachbarn, und der spaetere Nachbar liegt oben -- ein Klick rechts in Reiter 1 waehlte Reiter 2. */
+.up-ph-root.is-narrow:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-nav { gap: 4px; }
+.up-ph-root.is-narrow:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-navitem { padding: 0 12px; }
+.up-ph-root.is-narrow:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-navitem::before { content: none; }
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-nav::after {
   left: calc(-1 * var(--up-ph-rand-l, 0px)); right: calc(-1 * var(--up-ph-rand-r, 0px)); }
 .up-ph-crumb { display: inline-flex; align-items: center; gap: 6px; min-width: 0; color: var(--vc-third); }
 .up-ph-crumb.is-akt { color: var(--vc-text); }
+/* Das Zeichen der Seite vor ihrem Namen, in dessen Farbe (erbt von .up-ph-crumb). 16 breit wie
+   das Reiterzeichen darunter -- die Gleichheit ist die Ausrichtung, siehe oben. */
+.up-ph-crumbic { display: inline-flex; flex: 0 0 auto; }
+.up-ph-crumbic svg { width: 16px; height: 16px; display: block; }
 .up-ph-crumbsep { display: inline-flex; flex: 0 0 auto; color: var(--vc-third); }
 .up-ph-crumbsep svg { width: 14px; height: 14px; display: block; }
 .up-ph-crumbname { min-width: 0; overflow: hidden; text-overflow: ellipsis; }

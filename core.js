@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261041;
+  var BUILD = 20261042;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -9540,10 +9540,14 @@
 
   /* ---------- Brotkrumen im Seitenkopf (29.09. angefordert) ----------
      "in der heading oben auch so kleine breadcrumbs, je nach dem wo in der page navigation man
-     sich aktuell befindet": der Name der Seite, ein Chevron und die Unterseite. Name und Chevron in
-     der dritten Farbe, die aktuelle Unterseite in der Primaerfarbe. Eine Seite ohne Unterseiten
-     zeigt den Namen in der Primaerfarbe. Das Zeichen der Seite vorne ist seit dem 29.09. raus
-     (angefordert); cfg.icon wird nicht mehr gelesen.
+     sich aktuell befindet": das Zeichen der Seite, ihr Name, ein Chevron und die Unterseite.
+     Zeichen, Name und Chevron in der dritten Farbe, die aktuelle Unterseite in der Primaerfarbe.
+     Eine Seite ohne Unterseiten zeigt Zeichen und Name in der Primaerfarbe.
+     Das Zeichen war am 29.09. kurz raus (angefordert) und ist am selben Tag wieder da -- als
+     Massstab der Ausrichtung: es steht mittig genau ueber dem Zeichen des ersten Reiters. Beide
+     sind 16 breit; die Gleichheit der linken Kanten haelt core.css (Reiter ohne Seitenpolster im
+     kompakten Kopf). Strichbreite 2 wie die Reiterzeichen darunter, nicht 1.5 wie in der
+     Seitenleiste: die zwei stehen hier direkt uebereinander.
      Die Krumen stehen IN der h1 -- sie ist weiter die Ueberschrift der Seite, nur klein. Gebaut
      aus JS und nicht aus der Vorlage, weil die Vorlage ein eingebautes Element nicht erreicht
      (CLAUDE.md 4); die Geometrie der Zeile steht dagegen in core.css und gilt schon, bevor dieses
@@ -9573,6 +9577,7 @@
       stand = schl;
       h.innerHTML =
         '<span class="up-ph-crumb' + (akt ? '' : ' is-akt') + '">' +
+          (cfg.icon ? '<span class="up-ph-crumbic" aria-hidden="true">' + icon(cfg.icon, 2) + '</span>' : '') +
           '<span class="up-ph-crumbname" data-i18n="' + esc(cfg.name || "") + '">' + esc(name) + '</span>' +
         '</span>' +
         (akt ? '<span class="up-ph-crumbsep" aria-hidden="true">' + icon("chevronRight", 2) + '</span>' +
