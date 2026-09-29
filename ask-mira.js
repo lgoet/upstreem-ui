@@ -359,18 +359,26 @@
     return o;
   })();
 
+  /* ton: der Name eines Tons aus der Zitationstyp-Palette in core (UC.typeColor), kein Hex.
+     Bis zum 30.09. stand hier je Typ ein eigenes, kraeftiges Hex (#8b5cf6, #2ec27e, #3b82f6 ...)
+     -- gemeldet als "zu knallig, nicht unser Farbschema". Jetzt kommt jeder Ton aus derselben
+     Palette wie die Typ-Chips der Citations-Seite, in beiden Themen, und evPill/ask-mira.css
+     nehmen ihn nur zur Haelfte (siehe .am-ev-ic). Die Zuordnung folgt der Bedeutung: die eigene
+     Marke ist dort "You", der Wettbewerber "Competition"; Prompt behaelt sein Violett, Domain
+     und Empfehlung ihr Gruen (jetzt das Petrol von Editorial), URL ihr Blau. Citation hat
+     keinen Ton -- sie steht nur in der Drittfarbe. */
   var EVIDENCE = {
-    brand:         { label: 'Your Brand',     color: '#3a8ea3', icon: ICON.copy },
-    competitor:    { label: 'Competitor',     color: '#d9852e', icon: ICON.swords },
-    prompt:        { label: 'Prompt',         color: '#8b5cf6', icon: ICON.zap },
+    brand:         { label: 'Your Brand',     ton: 'You',             icon: ICON.copy },
+    competitor:    { label: 'Competitor',     ton: 'Competition',     icon: ICON.swords },
+    prompt:        { label: 'Prompt',         ton: 'Knowledge-Base',  icon: ICON.zap },
     /* ICON.maximize zeigt seit dem 22.09. auf den Schluessel response (Chat01) -- Miras
        eigener Name bleibt, damit die 53 Aufrufstellen unveraendert bleiben. */
-    prompt_run:    { label: 'Response',       color: '#7a8aa0', icon: ICON.maximize },
-    response:      { label: 'Response',       color: '#7a8aa0', icon: ICON.maximize },
-    domain:        { label: 'Domain',         color: '#2ec27e', icon: ICON.globe },
-    url:           { label: 'URL',            color: '#3b82f6', icon: ICON.urlLink },
-    citation:      { label: 'Citation',       color: '#6b7280', icon: ICON.fileText },
-    recommendation:{ label: 'Recommendation', color: '#2ec27e', icon: ICON.star }
+    prompt_run:    { label: 'Response',       ton: 'Institutional',   icon: ICON.maximize },
+    response:      { label: 'Response',       ton: 'Institutional',   icon: ICON.maximize },
+    domain:        { label: 'Domain',         ton: 'Editorial',       icon: ICON.globe },
+    url:           { label: 'URL',            ton: 'UGC / Community', icon: ICON.urlLink },
+    citation:      { label: 'Citation',       ton: '',                icon: ICON.fileText },
+    recommendation:{ label: 'Recommendation', ton: 'Editorial',       icon: ICON.star }
   };
 
   /* ---------------- Elements ---------------- */
@@ -1317,7 +1325,15 @@
   function evPill(type, label){
     var art = String(type||'').toLowerCase();
     var def = EVIDENCE[art];
-    var color = def ? def.color : '#6b7280';
+    /* BEIDE Toene an die Pille, der helle und der dunkle: askMiraSetTheme schaltet data-theme
+       zur Laufzeit um, ohne die Nachrichten neu zu zeichnen -- ein beim Zeichnen gewaehltes Hex
+       stuende dann im falschen Thema. ask-mira.css waehlt je Thema. Ohne Ton oder ohne core
+       fehlen beide Variablen, und das Zeichen steht in der Drittfarbe. */
+    var kern = window.UpstreemCore, stil = '';
+    if (def && def.ton && kern && kern.typeColor){
+      stil = ' style="--am-ev-hell:' + esc(kern.typeColor(def.ton, 'cite', false)) +
+             ';--am-ev-dunkel:' + esc(kern.typeColor(def.ton, 'cite', true)) + ';"';
+    }
     var icon = (art === 'brand') ? markenZeichen() : (def ? def.icon : ICON.flag);
     /* NUR "<svg width="24" height="24"" suchen. Der Groessen-Lauf vom 09.09. hat hier auch die SUCHZEICHENKETTE
        getroffen -- sie passte zufaellig weiter, weil UC.icon genau diese Attribute in genau
@@ -1325,7 +1341,7 @@
        mehr und die Klasse fehlte stillschweigend. */
     var ic = icon.replace('<svg', '<svg class="am-ev-ic"');
     var text = label || (def ? def.label : (type || 'Info'));
-    return '<span class="am-ev-pill" style="--am-ev-color:'+esc(color)+';">'+ic+'<span>'+esc(text)+'</span></span>';
+    return '<span class="am-ev-pill"'+stil+'>'+ic+'<span>'+esc(text)+'</span></span>';
   }
   function evidenceHtml(m, extraTypes){
     if (!m || typeof m !== 'object') return '';

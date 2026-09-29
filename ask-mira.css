@@ -739,7 +739,17 @@
     transition: background 120ms ease, border-color 120ms ease;
   }
   .am-ev-pill:hover { background: var(--am-soft); border-color: var(--am-border-strong); }
-  .am-ev-pill .am-ev-ic { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; color: var(--am-ev-color, var(--am-muted)); flex: 0 0 auto; }
+  /* DIE FARBE DES ZEICHENS (30.09.: "zu knallig, subtiler und professioneller, in unserem
+     Farbschema"). Der Ton kommt aus der Zitationstyp-Palette in core (evPill setzt ihn, hell und
+     dunkel), und davon steht nur die Haelfte da -- die andere Haelfte ist die Drittfarbe, in der
+     das Zeichen ohne Ton stuende. So behaelt jeder Typ seine Richtung (Rose, Orange, Violett,
+     Petrol, Blau), aber keiner leuchtet heraus. Die Drittfarbe als Partner und nicht Grau: sie
+     wechselt mit dem Thema, und das Zeichen bleibt damit neben dem Text der Pille eine Stufe
+     leiser als er. Fehlt der Ton, ergibt die Mischung die Drittfarbe selbst. */
+  .am-ev-pill .am-ev-ic { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+    color: color-mix(in srgb, var(--am-ev-hell, var(--am-muted-2)) 50%, var(--am-muted-2)); flex: 0 0 auto; }
+  #ask-mira[data-theme="dark"] .am-ev-pill .am-ev-ic {
+    color: color-mix(in srgb, var(--am-ev-dunkel, var(--am-muted-2)) 50%, var(--am-muted-2)); }
 
   /* ===== Opportunity cards in messages (reuses the Opportunities page card styling) ===== */
   #ask-mira .am-opps {
