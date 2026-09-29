@@ -166,13 +166,34 @@
    laeuft unter der Kopfzeile durch statt zwischen Logo und Knoepfen.
    Bis hierher stand sie IM Polster, 32px von Rand und Oberkante, ohne Grund und ohne Linie. */
 .uob-top {
-  flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  position: relative;
+  flex: 0 0 auto; position: relative;
+  /* DREI SPALTEN, SEIT DIE SCHIENE HIER STEHT (30.09.): Logo, Fortschrittsschiene, Knoepfe. Die
+     aeusseren wachsen gleich stark, damit die Schiene in der Mitte der Seite steht -- ueber der
+     Spalte des Inhalts, nicht irgendwo zwischen Logo und Knoepfen. Keine wird schmaler als ihr
+     Inhalt; nachgeben muss die mittlere, bis 560px ist sie breit.
+     Im schmalen Fenster (is-narrow, weiter unten) zwei Reihen: Logo und Knoepfe, darunter die
+     Schiene ueber die ganze Breite. */
+  display: grid;
+  /* Die Mitte gibt nach, BEVOR die Seiten ungleich werden: sie ist hoechstens so breit, dass
+     links und rechts je die breitere Seite (--uob-seite, misst kopfPruefen) plus Luecke bleibt.
+     Ohne Messung gilt 144 -- vier Knoepfe zu 32 mit ihren Abstaenden. */
+  grid-template-columns: minmax(max-content, 1fr)
+                         minmax(0, min(560px, calc(100% - 2 * (var(--uob-seite, 144px) + 24px))))
+                         minmax(max-content, 1fr);
+  grid-template-areas: "logo rail rechts";
+  align-items: center; column-gap: 24px;
   margin: calc(-1 * var(--uob-pt)) calc(-1 * var(--uob-px)) 0;
   min-height: calc(var(--up-h-btn) + 16px);
-  padding: 8px 8px 8px 16px;
+  /* Das Polster ist SYMMETRISCH, 16 und 16, und die Knoepfe ziehen sich um 8 nach aussen: so
+     stehen sie weiter 8 vom rechten Rand, wie in der App, und die mittlere Spalte liegt trotzdem
+     genau auf der Seitenmitte. Mit 16 links und 8 rechts stand die Schiene 4px rechts davon
+     (gemessen 704 bei 700). */
+  padding: 8px 16px;
   background: var(--up-surface);
 }
+.uob-top > .uob-logo { grid-area: logo; justify-self: start; }
+.uob-top > .uob-rail { grid-area: rail; }
+.uob-top > .uob-topr { grid-area: rechts; justify-self: end; margin-right: -8px; }
 /* Die Linie wie in core (.up-ph-top::after): im unteren Polster, also ohne die 48 zu verlaengern. */
 .uob-top::after {
   content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
@@ -242,19 +263,24 @@
    der Nutzer soll VOR der ersten Eingabe wissen, worauf er sich einlaesst -- das ist der ganze
    Zweck. Die Linie ist eine einzige Spur mit einer gefuellten Deckschicht darueber; die Deckung
    waechst in --uob-t. Zwei getrennte Balken je Abschnitt waeren dasselbe Bild mit vier
-   Uebergaengen statt einem. */
+   Uebergaengen statt einem.
+   SEIT DEM 30.09. IN DER KOPFZEILE (siehe .uob-top) und nicht mehr in einer eigenen Zeile
+   darunter -- darum weder Rand nach oben noch Hoechstbreite hier: beides gibt jetzt die mittlere
+   Spalte der Kopfzeile vor. */
 .uob-rail {
   /* position: relative ist hier PFLICHT, nicht Kosmetik: die Trefferflaechen sind absolut
      gesetzt und suchen sich sonst den naechsten positionierten Vorfahren -- gemessen wurden sie
      dann 792 Pixel hoch und lagen als unsichtbare Knopfschicht ueber der halben Seite. */
   position: relative;
-  flex: 0 0 auto; width: 100%; max-width: 820px; margin: clamp(18px, 3.2vh, 34px) auto 0;
-  /* 8px sind der Ueberstand der Punkte an den Enden der Schiene. Dazu der Ausgleich auf 32px
-     zum Bildschirmrand -- bis zum 29.09. derselbe wie in der Kopfzeile, die seitdem wie die der
-     Hauptapp bei 16/8 steht. Die Schiene bleibt bei 32: sie ist Inhalt, keine Leiste, und steht
-     damit weiter innen als Logo und Knoepfe darueber.
-     Padding statt margin, damit die Zentrierung ueber margin:auto erhalten bleibt. */
-  padding-inline: calc(8px + max(0px, calc(32px - var(--uob-px))));
+  width: 100%; min-width: 0;
+  /* Seitlich 16: die Punkte ragen 8 ueber die Enden der Linie, die Beschriftungen haengen mittig
+     darunter und ragen noch weiter ("Prompts" rund 25). Mit 16 bleiben daneben gut 15px bis zu den
+     Knoepfen. labelsPruefen in onboarding-page.js liest das Polster aus der CSS, es muss hier also
+     nicht mit einer Zahl im Skript uebereinstimmen.
+     5px oben stellen den Block OPTISCH in die Mitte der 48: die Punkte ragen 6px ueber die Linie,
+     die Beschriftung darunter hat keinen Ueberstand -- ohne den Versatz stand er 3px zu hoch.
+     Mit 5 + 2 + 10 + 15 ist er genau die 32 der Zeile, die Kopfzeile bleibt 48 hoch. */
+  padding: 5px 16px 0;
 }
 .uob-rail-line { position: relative; height: 2px; border-radius: 999px; background: var(--vc-sk); }
 /* Eine Flaeche, kein Verlauf. Hier stand kurz einer, der den Abschnitt bis Competitors
@@ -313,7 +339,10 @@
    994px und scrollte seitwaerts, bei 380px bis 420px. Geklippt wird dabei nur Flaeche, die
    ohnehin ausserhalb der Schiene liegt; der Punkt selbst und seine ganze innere Haelfte
    bleiben klickbar. */
-.uob-rail-hits { position: absolute; left: 0; right: 0; top: -10px; bottom: -22px; overflow: hidden; }
+/* Oben und unten 8: so weit reicht die Kopfzeile ueber den Kasten der Schiene hinaus (ihr
+   Polster). Vorher waren es 10 und 22 -- in der eigenen Zeile lag darunter Luft, in der Kopfzeile
+   laege darunter der Inhalt, und die Flaeche finge dort Klicks ab. */
+.uob-rail-hits { position: absolute; left: 0; right: 0; top: -8px; bottom: -8px; overflow: hidden; }
 .uob-rail-hit {
   position: absolute; top: 0; bottom: 0; left: var(--uob-x, 0%);
   transform: translateX(-50%);
@@ -336,7 +365,7 @@
 /* Die Beschriftungen sitzen ebenfalls absolut und GENAU mittig unter ihrem Punkt -- vorher
    verteilte sie ein flex mit space-between, dann steht die erste linksbuendig unter einem
    mittigen Punkt und die Zuordnung stimmt nur in der Mitte der Leiste. */
-.uob-rail-labels { position: relative; height: 15px; margin-top: 12px; }
+.uob-rail-labels { position: relative; height: 15px; margin-top: 10px; }
 .uob-rail-labels span {
   position: absolute; left: var(--uob-x, 0%); transform: translateX(-50%);
   white-space: nowrap;
@@ -1192,7 +1221,6 @@
    lieber enger als scrollend, denn drei Karten nebeneinander lassen sich nicht scrollen, ohne
    dass man sie nicht mehr vergleichen kann. */
 .uob-root[data-view="plan"] .uob-mid { padding-top: clamp(8px, 1.4vh, 18px); padding-bottom: clamp(8px, 1.4vh, 18px); }
-.uob-root[data-view="plan"] .uob-rail { margin-top: clamp(14px, 2.2vh, 24px); }
 
 /* ---------- Knopfzeile ----------
    Beide Knoepfe sind bewusst die der Anmeldeseite und nicht .up-btn-sec/.up-seg-btn aus core:
@@ -1283,11 +1311,12 @@
 .uob-help {
   position: absolute; right: clamp(12px, 2vw, 24px);
   /* Direkt unter der Kopfzeile mit den Knoepfen, 16px Luft dazwischen. Die Kopfzeile steht seit
-     dem 29.09. an der Oberkante der Wurzel und ist 8 + 32 + 8 hoch -- der Wert rechnet das aus
-     demselben Token, statt eine Zahl zu raten (vorher: Polster des Roots plus 32).
+     dem 29.09. an der Oberkante der Wurzel. Ihre Hoehe misst kopfPruefen (--uob-kopf-h): seit die
+     Schiene darin steht, ist sie im schmalen Fenster zweireihig. Ohne Messung gilt die eine Reihe,
+     8 + 32 + 8, aus demselben Token (vorher: Polster des Roots plus 32).
      Damit liegt die Tafel ueber dem rechten Ende der Fortschrittsschiene. Das ist der Preis
      dafuer, dass sie oben steht: sie ist zuklappbar, die Schiene nicht. */
-  top: calc(var(--up-h-btn) + 16px + 16px); z-index: 60;
+  top: calc(var(--uob-kopf-h, calc(var(--up-h-btn) + 16px)) + 16px); z-index: 60;
   width: 320px; max-width: calc(100% - 24px);
   max-height: calc(100% - 130px);
   display: flex; flex-direction: column;
@@ -1461,13 +1490,16 @@
   from { opacity: 0; transform: translateY(18px); }
   to   { opacity: 1; transform: none; }
 }
-.uob-root.is-entering .uob-rail,
 .uob-root.is-entering .uob-ident,
 .uob-root.is-entering .uob-head,
 .uob-root.is-entering .uob-body,
 .uob-root.is-entering .uob-nav {
   animation: uob-rise var(--uob-in) var(--uob-ease) backwards;
 }
+/* Die Schiene steigt nicht auf, sie blendet nur ein: sie steht in der Kopfzeile, und 18px von
+   unten kaeme sie ueber deren Linie herein. */
+@keyframes uob-fade { from { opacity: 0; } to { opacity: 1; } }
+.uob-root.is-entering .uob-rail { animation: uob-fade var(--uob-in) var(--uob-ease) backwards; }
 .uob-root.is-entering .uob-rail                          { animation-delay: 0ms; }
 .uob-root.is-entering .uob-ident,
 .uob-root.is-entering .uob-head                          { animation-delay: 130ms; }
@@ -1500,6 +1532,19 @@
    durchlaufen. Also stapelt alles, die Liste bekommt mehr Hoehe (es gibt nichts daneben), und
    die Knopfzeile dreht sich um. */
 .uob-root.is-narrow { --uob-px: 16px; --uob-pt: 14px; padding: var(--uob-pt) var(--uob-px) 18px; }
+/* Die Kopfzeile in zwei Reihen: oben Logo und Knoepfe wie bisher, darunter die Schiene ueber die
+   ganze Breite -- in der Mitte zwischen beiden waere fuer fuenf Stationen kein Platz (bei 390px
+   blieben rund 70). Die Linie bleibt unter allem, die Schiene steht also weiter IN der Kopfzeile.
+   14 zwischen den Reihen: die Punkte ragen 6 ueber die Linie, es bleiben 8 bis zu den Knoepfen.
+   Die Schiene steht zwischen 16 und 16 -- das symmetrische Polster der Kopfzeile. */
+.uob-root.is-narrow .uob-top {
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "logo rechts" "rail rail";
+  column-gap: 16px; row-gap: 14px; padding-bottom: 10px;
+}
+/* Seitlich 24 wie in der eigenen Zeile bis zum 30.09.: ueber die ganze Breite reicht die letzte
+   Beschriftung sonst bis 1.5px an den Bildschirmrand (gemessen bei 390, "Prompts"). */
+.uob-root.is-narrow .uob-top > .uob-rail { padding: 0 24px; }
 .uob-root.is-narrow .uob-col,
 .uob-root.is-narrow .uob-nav { max-width: none; }
 .uob-root.is-narrow .uob-frow { grid-template-columns: 1fr; }

@@ -777,6 +777,18 @@
                 'onerror="this.replaceWith(Object.assign(document.createElement(\'span\'),' +
                 '{className:\'uob-logo\'}))"/>'
               : '<span class="uob-logo"></span>') +
+        /* DIE FORTSCHRITTSSCHIENE STEHT IN DER KOPFZEILE (30.09. angefordert: "die
+           Progress-Leiste oben bitte in die Topbar mit rein"). In der Mitte zwischen Logo und
+           Knoepfen; im schmalen Fenster in einer zweiten Reihe darunter, aber weiter ueber der
+           Linie der Kopfzeile (onboarding-page.css, .uob-top). */
+        '<div class="uob-rail" role="group" aria-label="Setup progress" data-rail>' +
+          '<div class="uob-rail-line">' +
+            '<div class="uob-rail-fill" data-rail-fill></div>' +
+            '<div class="uob-rail-dots" data-rail-dots></div>' +
+          '</div>' +
+          '<div class="uob-rail-labels" data-rail-labels></div>' +
+          '<div class="uob-rail-hits" data-rail-hits></div>' +
+        '</div>' +
         '<div class="uob-topr">' +
           /* Die Beschriftungen stecken in einem eigenen Element und die Knoepfe tragen
              aria-label und data-tip: faellt die Beschriftung bei Platzmangel weg, bleibt der
@@ -792,15 +804,6 @@
             'data-tip="Log out">' + ic("logOut", 1.8) + '<span class="uob-link-t">Log out</span></button>' +
           '<button class="uob-themebtn" type="button" data-theme-btn aria-label="Switch theme"></button>' +
         '</div>' +
-      '</div>' +
-
-      '<div class="uob-rail" role="group" aria-label="Setup progress" data-rail>' +
-        '<div class="uob-rail-line">' +
-          '<div class="uob-rail-fill" data-rail-fill></div>' +
-          '<div class="uob-rail-dots" data-rail-dots></div>' +
-        '</div>' +
-        '<div class="uob-rail-labels" data-rail-labels></div>' +
-        '<div class="uob-rail-hits" data-rail-hits></div>' +
       '</div>' +
 
       '<div class="uob-mid">' +
@@ -2048,7 +2051,7 @@
          damit sich benachbarte Flaechen weder ueberlappen noch eine Luecke lassen. */
       if (elRail.clientWidth) {
         elRailHits.style.setProperty("--uob-w-hit",
-          Math.max(44, Math.round((elRail.clientWidth - 16) / letzte)) + "px");
+          Math.max(44, Math.round(railSpanne() / letzte)) + "px");
       }
 
       var pos = wartet ? i + 0.5 : i;
@@ -2056,14 +2059,32 @@
       if (elRailFill) elRailFill.style.width = breite + "%";
       labelsPruefen(liste.length);
       root.setAttribute("data-view", k);
+      kopfPruefen();
+    }
+
+    /* Die Hoehe der Kopfzeile fuer die Guide-Tafel (--uob-kopf-h, onboarding-page.css). NUR wenn
+       sie gerade zu sehen ist: im Bootzustand ist sie display:none, und die 0 von dort stellte die
+       Tafel ueber die Kopfzeile (gemessen am 30.09.: top 16px). kopfPruefen laeuft darum auch
+       nach jedem Zeichnen der Schiene und nicht nur bei einer Groessenaenderung -- vom Boot zum
+       ersten Schritt aendert sich an der Wurzel nichts, was ein Beobachter meldet. */
+    function kopfHoeheMerken() {
+      var kopf = root.querySelector(".uob-top");
+      if (kopf && kopf.offsetHeight) root.style.setProperty("--uob-kopf-h", kopf.offsetHeight + "px");
     }
 
     /* Passt die breiteste Beschriftung nicht mehr zwischen zwei Punkte, verschwinden alle. Ein
        fester Breakpoint waere hier falsch: wie breit "Competitors" ist, haengt an der Schrift und
        nicht am Fenster. */
+    /* Die Laenge der Linie: die Schiene ohne ihr seitliches Polster. Aus der CSS gelesen und nicht
+       als Zahl -- seit die Schiene in der Kopfzeile steht, hat sie breit 16 und schmal 24 je
+       Seite, und die feste 16 fuer beide Seiten zusammen stimmte fuer keins von beiden. */
+    function railSpanne() {
+      var cs = window.getComputedStyle(elRail);
+      return elRail.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0);
+    }
     function labelsPruefen(anzahl) {
       if (!elRail || !elRailLbls || anzahl < 2) return;
-      var spanne = elRail.clientWidth - 16;             /* 16 = Polster der Schiene */
+      var spanne = railSpanne();
       if (spanne <= 0) return;
       var abstand = spanne / (anzahl - 1);
       /* Gemessen wird IMMER im sichtbaren Zustand. Ohne die zwei Zeilen schaukelt sich das auf:
@@ -3476,6 +3497,18 @@
       var luecke = isFinite(lueckeRoh) ? lueckeRoh : 16;
       var noetig = logo.offsetWidth + rechts.offsetWidth + luecke;
       if (noetig > platz) root.classList.add("is-tight");
+      /* Die breitere der zwei Seiten (--uob-seite): nur wenn Logo- und Knopfspalte gleich breit
+         sind, steht die Schiene auf der Seitenmitte -- vorher gab die Logospalte als erste nach,
+         und bei 800px stand die Schiene 56px links der Mitte. Die Knoepfe ragen 8px ins Polster
+         (margin-right -8 in onboarding-page.css), also zaehlen sie 8 weniger. */
+      if (rechts.offsetWidth) {
+        root.style.setProperty("--uob-seite", Math.max(logo.offsetWidth, rechts.offsetWidth - 8) + "px");
+      }
+      /* Die Hoehe der Kopfzeile fuer die Guide-Tafel darunter. Sie ist nicht mehr fest: im
+         schmalen Fenster steht die Schiene in einer zweiten Reihe, und ohne Beschriftungen ist
+         diese Reihe niedriger. Gemessen wird nach labelsPruefen (siehe messeBreite), also mit
+         der Reihe, die wirklich dasteht. */
+      kopfHoeheMerken();
     }
     function messeBreite() {
       /* Den Beobachter dahinter (UC.onResize) kann diese Datei nicht abmelden; also misst eine
