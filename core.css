@@ -4217,6 +4217,45 @@
 .up-ph-navunderline { position: absolute; bottom: 0; left: 0; width: 0; height: 2px; background: var(--up-accent-ink);
   z-index: 1; transition: left 200ms ease, width 200ms ease; }
 
+/* ---------- DER KOMPAKTE SEITENKOPF MIT BROTKRUMEN (29.09. angefordert) ----------
+   "Aktuell nehmen die mir zu viel Platz ein und sind groesstenteils nicht aligned mit dem Layout
+   der Sidebar." Also: keine Beschreibung mehr, die Ueberschrift wird zu kleinen Brotkrumen
+   (UC.makePageCrumbs), und die Kopfzeile bekommt eine Trennlinie auf GENAU der Hoehe der Linie in
+   der Seitenleiste.
+   Die Zahlen sind abgelesen, nicht gewaehlt: .usn-bar hat 8px Polster oben, .usn-brand ist 32px
+   hoch mit 8px darunter, ihre Linie liegt also bei y 47 bis 48. Hier dasselbe: 8 oben, eine
+   32px-Zeile (die Hoehe der Knoepfe rechts, --up-h-btn), 8 darunter, die Linie im letzten Pixel.
+   Derselbe Abgleich stand schon am Power-Kopf des Dashboards und hat dort gepasst.
+   ZUERST fuer vier Seiten (Dashboard, Prompt Insights, Citations, Brands) -- darum die Liste im
+   :is(). Die uebrigen folgen; dann wird aus der Liste .up-ph-root allein.
+   Ueber die Wurzelklassen und nicht ueber .has-crumbs: die Geometrie soll stehen, BEVOR das JS
+   laeuft, sonst springt der Kopf beim Laden von 164px auf 48. */
+.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) { padding-top: 8px; }
+.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-desc { display: none; }
+.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-top {
+  align-items: center; min-height: var(--up-h-btn); padding-bottom: 8px; position: relative; }
+/* Die Linie durch den ganzen Inhaltsbereich: --up-ph-rand-l/-r misst UC.makePageCrumbs gegen
+   #main. Ohne Messung (0) liegt sie unter dem Kopf -- nie breiter als die Seite. */
+.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-top::after {
+  content: ""; position: absolute; bottom: 0; height: 1px; pointer-events: none;
+  left: calc(-1 * var(--up-ph-rand-l, 0px)); right: calc(-1 * var(--up-ph-rand-r, 0px));
+  background: var(--vc-border); }
+/* Die Ueberschrift als Krumenzeile: 14px, auf der Mitte der 32px-Zeile. Vor dem JS steht hier der
+   Seitenname aus der Vorlage -- in derselben Groesse, also ohne Sprung. */
+.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-heading {
+  display: flex; align-items: center; gap: 6px; min-width: 0; margin: 0;
+  font-size: var(--up-fs-l); font-weight: 500; line-height: var(--up-h-btn); letter-spacing: 0;
+  color: var(--vc-third); white-space: nowrap; }
+/* Die Reiterleiste darunter: 16 statt 32 -- ueber ihr steht jetzt eine Linie, keine Beschreibung. */
+.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root) .up-ph-nav { margin-top: 16px; }
+.up-ph-crumb { display: inline-flex; align-items: center; gap: 6px; min-width: 0; color: var(--vc-third); }
+.up-ph-crumb.is-akt { color: var(--vc-text); }
+.up-ph-crumbic { display: inline-flex; flex: 0 0 auto; }
+.up-ph-crumbic svg { width: 16px; height: 16px; display: block; }
+.up-ph-crumbsep { display: inline-flex; flex: 0 0 auto; color: var(--vc-third); }
+.up-ph-crumbsep svg { width: 14px; height: 14px; display: block; }
+.up-ph-crumbname { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+
 /* ---------- responsive (classes set by UC.makePageNav via UC.onResize) ---------- */
 /* is-narrow (<768px default): tabs go from auto-width/left-packed to even thirds, still centered
    internally (.up-ph-navitem already centers its own icon+label). A page header's own "Add X"

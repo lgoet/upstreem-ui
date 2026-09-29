@@ -606,8 +606,11 @@
          JavaScriptToBubble-Elemente existierten, vermerkte sich trotzdem als erledigt und
          blockierte damit auch noch den Ansichtswechsel. */
       function emit(from, to, grund) {
-        if (isProcessing()) return false;
         grund = grund || "user";
+        /* Eine reine State-Uebergabe haengt nicht am Ladezustand (29.09.): sie laedt nichts, und
+           sie steht jetzt unmittelbar vor view_first -- genau dann, wenn die Seite ohnehin laedt.
+           Der Riegel ist fuer Klicks in einen Kalender, dessen Tabelle gerade laedt. */
+        if (grund !== "boot" && grund !== "activate" && isProcessing()) return false;
         emitSeq += 1;
         var payload = {
           instance_id: instanceId,
@@ -618,6 +621,15 @@
           event_id: instanceId + "_" + Date.now() + "_" + emitSeq
         };
         var json = JSON.stringify(payload);
+        /* Ein Klick setzt die States dieses Kalenders (Range-Kanal) und laedt seine Ansicht nach
+           (Apply). Beides festhalten (29.09.): vorher blieb STAND auf dem alten Zeitraum stehen,
+           und beim Zurueckkehren galt die Ansicht, in der geklickt wurde, als veraltet -- sie lud
+           ein zweites Mal, obwohl sie laengst den neuen Zeitraum zeigte. */
+        if (grund === "user") {
+          var sigKlick = payload.date_from + "|" + payload.date_to + "|" + payload.preset;
+          STAND[instanceId] = sigKlick;
+          GEGEBEN[instanceId] = sigKlick;
+        }
         /* data-range-json ist der letzte Zeitraum, den EIN MENSCH ausgewaehlt hat -- und nur der.
            Der Nutzer hat am 03.09. gezeigt, was auf seiner Seite am Ende des
            date_range-Workflows laeuft:
@@ -697,17 +709,23 @@
              Sonst ist nicht ein Element unvollstaendig, sondern die Bruecke nach Bubble steht
              noch gar nicht -- und die Meldung schickte den Nutzer auf die falsche Spur (genau so
              passiert: sie nannte das boot-Element, waehrend keine einzige bubble_fn existierte). */
+          /* KEIN RUECKFALL MEHR AUF DEN RANGE-KANAL (29.09.). An ihm haengt der Nachlade-
+             Workflow; eine Uebergabe darueber war deshalb immer ein Ladevorgang -- und weil die
+             Ansicht ueber view_first ohnehin laedt, der zweite. Gemeldet, mehrmals: "es triggert
+             alles doppelt". Fehlt der Boot-Kanal, wird das jetzt gesagt statt ueberbrueckt: EINE
+             Zeile je fehlendem Element, mit dem Namen, den es in Bubble tragen muss. */
+          var bootName = root.getAttribute("data-boot-fn") || "bubble_fn_udr_date_boot";
           var rangeDa = typeof UC.resolveBubbleFn(
             root.getAttribute("data-range-fn") || "bubble_fn_udr_date_range") === "function";
-          if (rangeDa && !window.__udrBootFnGesagt && window.console) {
-            window.__udrBootFnGesagt = true;
-            console.warn("[date-range] " + (root.getAttribute("data-boot-fn") ||
-              "bubble_fn_udr_date_boot") + " gibt es nicht. Der Zeitraum geht deshalb ueber " +
-              "bubble_fn_udr_date_range an Bubble -- und weil daran der Nachlade-Workflow haengt, " +
-              "laedt die Seite beim Aufbau womoeglich zweimal. Abhilfe: ein JavaScriptToBubble " +
-              "mit diesem Namen anlegen und in seinem Workflow NUR die beiden Datums-States aus " +
-              "date_from und date_to setzen, ohne Refresh.");
+          var gesagt = window.__udrBootFehlt || (window.__udrBootFehlt = {});
+          if (rangeDa && !gesagt[bootName] && window.console) {
+            gesagt[bootName] = 1;
+            console.warn("[date-range] " + bootName + " gibt es nicht. Ohne diesen Kanal bekommt " +
+              "die Ansicht ihren Zeitraum nicht vor dem Laden und zeigt den vom Seitenaufbau. " +
+              "Abhilfe: ein JavaScriptToBubble mit diesem Namen anlegen und in seinem Workflow " +
+              "NUR die beiden Datums-States aus date_from und date_to setzen, ohne Refresh.");
           }
+          return false;
         }
         var rangeGetroffen = callFn("data-range-fn", "bubble_fn_udr_date_range", json);
         if (!rangeGetroffen && !nurStates && window.console) {
@@ -841,6 +859,17 @@
          Kalender, dass ihr Zeitraum abweicht, und laedt sie einmal nach (siehe "veraltet" im
          Ansichtswechsel). */
       function syncWeitergeben(key){
+        /* ?range= folgt dem geteilten Zeitraum, gleich in welchem Kalender er geaendert wurde --
+           sobald IRGENDEIN Kalender der Seite die Adresse fuehrt (29.09.). Vorher schrieb nur
+           ein Kalender MIT data-url-range, und ein Wechsel in einem anderen liess sie stehen.
+           NUR hier, im Klickpfad: 22137bd schrieb sie aus dem Einstellungs-Ereignis, und das lief
+           auch beim Seitenaufbau. */
+        if (!urlAn(root)) {
+          for (var u = 0; u < CONTROLLERS.length; u++) {
+            var cu = CONTROLLERS[u];
+            if (cu && cu.root && cu.root.isConnected && urlAn(cu.root)) { urlSchreiben(key); break; }
+          }
+        }
         for (var i = 0; i < CONTROLLERS.length; i++) {
           var c = CONTROLLERS[i];
           if (!c || c.instanceId === instanceId || !nimmtTeil(c.instanceId)) continue;
@@ -1082,8 +1111,11 @@
       /* urlPreset() zuerst: es ist der Zeitraum, mit dem Bubble diesen Aufbau gefahren hat.
          Anzeige und Daten muessen zusammenpassen, sonst zeigt der Kalender "Last 30 Days" ueber
          Zahlen aus sieben Tagen. */
+      /* ?range= nur VOR dem Aufbau (29.09.): danach kann die Adresse hinter dem geteilten
+         Zeitraum zurueckliegen, und ein Kalender, der erst mit seiner Ansicht mountet, zeigte
+         den Wert vom Seitenaufbau. Nur die Anzeige -- applyPreset ohne Emit laedt nichts. */
       if (syncAn() && nimmtTeil(instanceId))
-        applyPreset((urlAn(root) && urlPreset()) || syncPreset(), false);
+        applyPreset((!bootGetan() && urlAn(root) && urlPreset()) || syncPreset(), false);
       syncSperren();
       /* Aendert die Einstellung woanders (anderer Picker, Einstellungen), zieht dieser mit. */
       window.addEventListener("up-prefs-change", function (e) {
@@ -1131,7 +1163,7 @@
            im Fach (der stellt deshalb den geteilten Zeitraum mit um). */
         reset: function () {
           var ziel = (syncAn() && nimmtTeil(instanceId))
-            ? ((urlAn(root) && urlPreset()) || syncPreset())
+            ? ((!bootGetan() && urlAn(root) && urlPreset()) || syncPreset())
             : DEFAULT_PRESET;
           return applyPreset(ziel, false);
         },
@@ -1144,6 +1176,8 @@
         /* Feuert den aktuellen Stand, ohne ihn zu aendern -- fuer upstreemDatesActivate und die
            Uebergabe beim Aufbau. Der Grund geht mit, damit kein seitenweiter Workflow anspringt. */
         emitCurrent: function (grund) { return emit(committed.from, committed.to, grund || "activate"); },
+        /* Nur die States, nur ueber den Boot-Kanal -- nie ein Ladevorgang. */
+        nurStates: function (grund) { return emit(committed.from, committed.to, grund === "boot" ? "boot" : "activate"); },
         /* NUR den Nachlade-Kanal, ohne die States anzufassen -- fuer eine Ansicht, deren Daten von
            einem anderen Zeitraum sind. Die States hat die Uebergabe davor schon gesetzt; hier
            fehlt allein der Ladevorgang. */
@@ -1161,9 +1195,18 @@
             event_id: instanceId + "_" + Date.now() + "_stale"
           };
           var j2 = JSON.stringify(p2);
-          /* Der saubere Weg: der eigene Nachlade-Kanal. */
-          if (root.getAttribute("data-range-apply-fn"))
+          var sigN = p2.date_from + "|" + p2.date_to + "|" + p2.preset;
+          /* Der saubere Weg: der eigene Nachlade-Kanal -- aber das Apply laedt mit den States,
+             die DA SIND (29.09.). Gemessen im Nachbau: eine Ansicht lud ueber den Apply-Kanal mit
+             dem Zeitraum vom Seitenaufbau, weil ihr den neuen nie jemand gegeben hatte. Also
+             erst die States ueber den Boot-Kanal (nur wenn Bubble sie noch nicht hat), dann das
+             Apply. Ohne Boot-Kanal der Range-Kanal unten, der beides in einem Workflow tut. */
+          if (root.getAttribute("data-range-apply-fn") &&
+              (GEGEBEN[instanceId] === sigN || emit(committed.from, committed.to, "activate"))) {
+            GEGEBEN[instanceId] = sigN;
             return callFn("data-range-apply-fn", null, j2);
+          }
+          GEGEBEN[instanceId] = sigN;
 
           /* Sonst der Weg, den die Seite ohnehin hat. Gemessen am 03.09.: auf der echten Seite
              ist data-range-apply-fn nicht gesetzt -- das Apply-Event wird dort am ENDE des
@@ -1189,6 +1232,7 @@
       };
       root.__udrCtrl = ctrl;
       CONTROLLERS.push(ctrl);
+      applyFangen(root.getAttribute("data-range-apply-fn"));
       /* Der Aufbau-Fall: der erste teilnehmende Kalender der Seite gibt seinen Zeitraum an
          Bubble. setTimeout(0) und nicht sofort: dieser Aufruf loest einen Bubble-Workflow aus,
          und der soll nicht mitten im Mounten dieses Elements laufen.
@@ -1352,30 +1396,11 @@
      keinen einzigen Bubble-Kanal traf, galt damit als erledigt: der Aufbau lief ins Leere UND der
      spaetere Ansichtswechsel wurde uebersprungen ("schonUebergeben: true" bei falschem Zeitraum).
      Gemeldet am 03.09., und im Log der Seite genau so zu sehen. */
-  /* Der Merker sperrt den AUFBAU, nicht den Ansichtswechsel. Er hat einmal beides gesperrt, und
-     das war ein Fehlerherd: nach dem ersten Besuch einer Ansicht kam bei jedem weiteren Wechsel
-     dorthin keine Uebergabe mehr, die Datums-States blieben also auf dem Stand des letzten
-     Aufrufs. Solange sich der Zeitraum nicht aendert, faellt das nicht auf -- sobald er sich
-     woanders aendert, sind sie falsch, und der STAND-Vergleich merkt es nicht (er vergleicht den
-     Zeitraum des Pickers, nicht den der States). Gemeldet am 04.09.: "man wechselt State, dann
-     View, und der date range state dort wird nicht geupdated".
-     Ein Ansichtswechsel kostet dafuer EINEN Bubble-Aufruf, den Aufbau-Kanal, und der laedt nichts
-     nach (siehe emit). Zwei States setzen ist billiger als zwei falsche States. */
-  function uebergeben(c, grund){
-    if (!c || typeof c.emitCurrent !== "function") return false;
-    /* Grund ZUERST setzen, dann die Sperre pruefen. Umgekehrt lief der Ansichtswechsel (der ohne
-       Grund ruft, also "activate" meint) in die Aufbau-Sperre und uebergab nichts -- gemessen:
-       boot=0 beim zweiten Wechsel auf dieselbe Ansicht. */
-    grund = grund || "activate";
-    if (grund !== "activate" && UEBERGEBEN[c.instanceId]) return false;
-    var ok = c.emitCurrent(grund);
-    if (ok){
-      UEBERGEBEN[c.instanceId] = 1;
-    }
-    return !!ok;
-  }
-  /* Ein Aufruf von aussen ist eine ausdrueckliche Anweisung und feuert IMMER -- der Merker haelt
-     nur die automatischen Uebergaben auseinander. */
+  /* uebergeben() ist RAUS (29.09.). Es gab bei jedem Ansichtswechsel die States und fiel ohne
+     Boot-Kanal auf den Range-Kanal zurueck. Beides macht jetzt zustandGeben: nur der Boot-Kanal,
+     und nur wenn Bubble diesen Zeitraum noch nicht hat (GEGEBEN, unten). Der Fall vom 04.09.
+     ("man wechselt State, dann View, und der date range state dort wird nicht geupdated") ist
+     damit weiter abgedeckt: die States bekommt jede Ansicht vor ihrem view_first. */
   /* Mit WELCHEM Zeitraum sind die Daten einer Ansicht geladen? Der gemeldete Fall (03.09.):
      Dashboard mit last30 aufgebaut, in Citations auf last3 gewechselt, zurueck zum Dashboard --
      Kalender und URL stehen auf last3, die Zahlen im Dashboard sind aber noch die von last30.
@@ -1385,7 +1410,134 @@
      beim Aktivieren ab, wird EINMAL nachgeladen, und zwar nur diese Ansicht. Eine Alternative
      waere, bei jeder Aenderung die ganze Seite neu zu laden -- der Aufbau kostet dort 9 Sekunden,
      also nein. */
-  var STAND = {};
+  /* Am Fenster, nicht im Modul (29.09.): date-range.js laeuft auf der echten Seite zweimal (zwei
+     Einbindungen), und beide Laeufe muessen dieselbe Antwort geben -- sonst haelt der eine eine
+     Ansicht fuer veraltet, die der andere gerade bedient hat. */
+  var STAND = window.__udrStand || (window.__udrStand = {});
+  /* ---- WAS HAT BUBBLE SCHON? (29.09.) -----------------------------------------------------
+     GEGEBEN haelt je Kalender, welchen Zeitraum Bubbles States zuletzt von hier bekommen haben.
+     Jede State-Uebergabe fragt zuerst: ist es derselbe, wird nichts gerufen. Vorher ging bei
+     JEDEM Ansichtswechsel eine Uebergabe raus (der Grund "activate" umging den Merker), und wo
+     der Boot-Kanal fehlte, fiel sie auf den Range-Kanal zurueck -- an dem der Nachlade-Workflow
+     haengt. Zusammen: ein Ladevorgang je Umschalten, zusaetzlich zu view_first. */
+  var GEGEBEN = window.__udrGegeben || (window.__udrGegeben = {});
+  function bootDa(c){
+    var r = c && c.root;
+    return !!r && typeof UC.resolveBubbleFn(r.getAttribute("data-boot-fn") || "bubble_fn_udr_date_boot") === "function";
+  }
+  function zustandGeben(c, grund){
+    if (!c || typeof c.nurStates !== "function") return false;
+    var sig = sigVon(c);
+    if (!sig) return false;
+    if (GEGEBEN[c.instanceId] === sig) return true;
+    var ok = c.nurStates(grund);
+    if (ok){ GEGEBEN[c.instanceId] = sig; UEBERGEBEN[c.instanceId] = 1; }
+    return !!ok;
+  }
+  /* ---- EIN APPLY JE AENDERUNG (29.09.) ------------------------------------------------------
+     Das Apply einer Auswahl kann auf der echten Seite zweimal kommen: vom Snippet am Ende des
+     date_range-Workflows (liest data-range-json und ruft bubble_fn_udr_apply_<ansicht>) UND von
+     hier, wenn data-range-apply-fn gesetzt ist -- die Vorlage setzt es. Beide tragen dasselbe
+     JSON mit derselben event_id. Also wird die Funktion am Fenster umwickelt und laesst dieselbe
+     Nutzlast innerhalb von vier Sekunden nur einmal durch, gleich in welcher Reihenfolge die
+     zwei kommen. Eine NEUE Auswahl hat eine neue event_id und kommt immer durch. */
+  var APPLY_ZULETZT = window.__udrApplyZuletzt || (window.__udrApplyZuletzt = {});
+  function amFensterWickeln(name, wickel){
+    var d = null;
+    try { d = Object.getOwnPropertyDescriptor(window, name); } catch(e){}
+    if (d && d.get && d.get.__udrWickel) return;
+    if (d && d.configurable === false) return;
+    var gewickelt;
+    function setze(f){ gewickelt = typeof f === "function" ? wickel(f) : f; }
+    function hole(){ return gewickelt; }
+    hole.__udrWickel = true;
+    var vorher = d && ("value" in d) ? d.value : undefined;
+    try { Object.defineProperty(window, name, { configurable: true, enumerable: true, get: hole, set: setze }); }
+    catch(e){ return; }
+    if (vorher !== undefined) setze(vorher);
+  }
+  function applyFangen(name){
+    name = String(name || "").trim();
+    if (!name || !/^bubble_fn_/.test(name)) return;
+    amFensterWickeln(name, function(original){
+      return function(wert){
+        var t0 = Date.now(), z = APPLY_ZULETZT[name];
+        if (typeof wert === "string" && wert && z && z.json === wert && t0 - z.t < 4000) return;
+        if (typeof wert === "string" && wert) APPLY_ZULETZT[name] = { json: wert, t: t0 };
+        return original.apply(this, arguments);
+      };
+    });
+  }
+  /* ---- VIEW_FIRST IST DER LADER, DER KALENDER GIBT NUR DEN ZEITRAUM (29.09.) ---------------
+     Vorschlag des Nutzers, und er stimmt: "wir haben doch diese view first events, die
+     triggern daten eh neu". Eine Ansicht laedt ihre Daten in view_first_<name>; das Kopfskript
+     ruft es beim ersten Oeffnen und nach resetView(name) erneut. Der Kalender muss also nur
+     dafuer sorgen, dass die Datums-States der Ansicht stimmen, BEVOR ihr view_first laeuft --
+     dann gibt es genau einen Ladevorgang, mit dem richtigen Zeitraum.
+
+     Warum am view_first und nicht am Ansichtswechsel: der Wechsel (UC.onViewChange) kommt VOR
+     dem Original von showView, und beim ersten Oeffnen ging die Uebergabe dort ins Leere -- die
+     Bubble-Funktionen der Ansicht standen noch nicht. view_first dagegen kommt in jedem Fall,
+     auch beim Seitenaufbau, und seine Geschwister im selben Reusable stehen dann.
+     Der Griff: bubble_fn_view_first_<name> wird am Fenster umwickelt. Das Kopfskript ruft ueber
+     window[name], der Wickel sitzt also genau dazwischen, gleich wer ruft. Setzt Bubble die
+     Funktion neu (Neuaufbau beim Themenwechsel), faengt der Setter das ab. */
+  var ERSTLAUF_WARTEN = 16;   /* mal 25ms: so lange darf view_first auf den Boot-Kanal warten */
+  function erstlaufFangen(name){
+    name = String(name || "").trim();
+    if (!name || !/^[\w-]+$/.test(name)) return;
+    amFensterWickeln("bubble_fn_view_first_" + name, function(original){
+      return function(){
+        var args = arguments, self = this;
+        vorErstlauf(name, function(){ return original.apply(self, args); });
+      };
+    });
+  }
+  function alleErstlaeufeFangen(){
+    var v = document.querySelectorAll('[id^="view-"]');
+    for (var i = 0; i < v.length; i++) erstlaufFangen(v[i].id.slice(5));
+  }
+  /* Die Kalender, die ZU dieser Ansicht gehoeren -- am DOM entschieden (sie liegen in ihrem
+     Behaelter), nicht am Namen. Noch nicht eingerichtete werden hier eingerichtet: beim ersten
+     Oeffnen ist das Element da, aber der Beobachter kam noch nicht dazu. */
+  function ansichtsKalender(name){
+    var box = document.getElementById("view-" + name), out = [];
+    if (!box) return out;
+    var wurzeln = box.querySelectorAll(".udr-root, [data-udr-root]");
+    for (var i = 0; i < wurzeln.length; i++){
+      if (!istStartkandidat(String(wurzeln[i].getAttribute("data-instance") || ""))) continue;
+      var c = null;
+      try { c = initRoot(wurzeln[i]); } catch(e){}
+      if (c) out.push(c);
+    }
+    return out;
+  }
+  function vorErstlauf(name, weiter){
+    function los(){
+      try { weiter(); }
+      catch(e){ if (window.console) console.warn("[date-range] view_first_" + name + " hat geworfen:", e); }
+    }
+    /* Auch bei AUSGESCHALTETEM Schalter: dann mit dem eigenen Zeitraum des Kalenders. Die
+       Aufbau-Uebergabe tut das seit jeher ("Schalter aus -> der eigene Stand des Pickers"), kam
+       aber erst, wenn Bubbles Bruecke stand -- im Nachbau NACH view_first, die Startansicht lud
+       also mit Bubbles Vorgabe. Hier steht sie davor. */
+    var cs = ansichtsKalender(name);
+    if (!cs.length) return los();
+    var n = 0;
+    (function versuch(){
+      var fehlt = false, i;
+      for (i = 0; i < cs.length; i++) if (!bootDa(cs[i])) fehlt = true;
+      if (fehlt && n++ < ERSTLAUF_WARTEN){ setTimeout(versuch, 25); return; }
+      var ziel = syncAn() ? syncPreset() : null;
+      for (i = 0; i < cs.length; i++){
+        var c = cs[i];
+        if (ziel && TEILBAR[ziel] && c.getRange().preset !== ziel) c.setPreset(ziel, false);
+        zustandGeben(c);
+        var sg = sigVon(c); if (sg) STAND[c.instanceId] = sg;
+      }
+      los();
+    })();
+  }
   function sigVon(c){
     try {
       var r = typeof c.getRange === "function" ? c.getRange() : null;
@@ -1401,9 +1553,13 @@
        ueberschrieb die richtigen Datumsangaben von einer Sekunde davor. Diese Funktion kann kein
        null schicken: sie liest den Stand des Pickers, nicht ein Attribut, das erst geschrieben
        werden muss. */
+    /* Seit dem 29.09. mit Merker: hat Bubble genau diesen Zeitraum schon, wird nichts gerufen.
+       Steht der Aufruf in einem view_first, hat der Wickel davor ihn meist schon gegeben -- ein
+       zweiter Boot-Aufruf ohne neue Information war genau die Sorte Doppelung, die hier weg
+       soll. */
+    if (!c) c = ansichtsKalender(name)[0] || null;
     if (!c || typeof c.emitCurrent !== "function") return false;
-    UEBERGEBEN[c.instanceId] = 1;
-    return c.emitCurrent();
+    return zustandGeben(c);
   };
   /* EINMAL JE SEITENAUFBAU, und der Merker sitzt am WINDOW statt im Modul. Der Grund ist
      date-range.js ZWEIMAL geladen -- zwei Komponenten, zwei CDN-Einbindungen. Dann laeuft udrBoot
@@ -1437,8 +1593,20 @@
      Daraus fuehrt dieser Abschnitt die Liste der offenen Drawer. Das DOM wird nur noch fuer eine
      einzige Frage benutzt, und nur bei einem Drawer-Kalender: welcher von ihnen gehoert zu dem
      Drawer, der gerade aufgegangen ist (siehe drawerKalender). */
+  /* Die offene Ansicht nach dem Kopfskript: es setzt view-on an genau eine. Beim Seitenaufbau ist
+     das die einzige Auskunft -- showView lief noch nicht, und die Startansicht steht nicht in der
+     Adresse (das Skript loescht ?view= fuer die Vorgabe). */
+  function offeneAnsicht(){
+    var el = document.querySelector('[id^="view-"].view-on');
+    return el ? el.id.slice(5) : "";
+  }
   function sichtbarImFenster(el){
     if (!el || el.offsetParent === null) return false;
+    /* Eine GEPARKTE Ansicht liegt im Fenster -- das Kopfskript schiebt sie mit position: fixed
+       auf 0,0 und macht sie nur durchsichtig. Der Flaechentest hielt sie deshalb fuer sichtbar,
+       und eine Aenderung im Dashboard lud Citations und Prompts unsichtbar mit, mit dem Zeitraum
+       vom Seitenaufbau (im Nachbau gemessen, 29.09.). Die offene Ansicht traegt view-on. */
+    if (el.closest && el.closest('[id^="view-"]:not(.view-on)')) return false;
     var r = el.getBoundingClientRect();
     if (r.width <= 0 || r.height <= 0) return false;
     var h = window.innerHeight || 0, w = window.innerWidth || 0;
@@ -1497,13 +1665,17 @@
     }
     if (ids.length) OFFENE_DRAWER[String(art || "")] = ids;
   }
-  if (UC.onDrawerOpen) UC.onDrawerOpen(function(art){
+  /* Einmal je Seite, wie der Ansichtswechsel: zwei Einbindungen dieser Datei haetten jeden
+     veralteten Drawer zweimal nachgeladen. */
+  var drawerErster = !window.__udrDrawerAngemeldet;
+  window.__udrDrawerAngemeldet = true;
+  if (UC.onDrawerOpen && drawerErster) UC.onDrawerOpen(function(art){
     setTimeout(function(){ drawerBedienen(art); }, 300);
     setTimeout(function(){ drawerBedienen(art); }, 900);
   });
   /* Zu heisst RAUS aus der Liste. Ohne diese Zeile bliebe der Drawer fuer immer "offen" und
      wuerde bei jeder Aenderung mitbedient -- unsichtbar, also ein Ladevorgang fuer nichts. */
-  if (UC.onDrawerClose) UC.onDrawerClose(function(art){
+  if (UC.onDrawerClose && drawerErster) UC.onDrawerClose(function(art){
     delete OFFENE_DRAWER[String(art || "")];
   });
 
@@ -1542,7 +1714,7 @@
       gesehen[c.instanceId] = 1;
       ziele.push(c);
     }
-    var name = (UC.currentView && UC.currentView()) || urlAnsicht();
+    var name = (UC.currentView && UC.currentView()) || offeneAnsicht() || urlAnsicht();
     if (name) dazu(pickerFuer(name));
     else {
       /* WEDER showView gerufen NOCH ?view= in der Adresse. Dann -- und nur dann -- der Blick ins
@@ -1615,56 +1787,40 @@
       if (sg) STAND[c.instanceId] = sg;
     }
   }
-  if (UC.onViewChange) UC.onViewChange(function (name) {
-    if (!name) return;
-    if (!syncAn()){ return; }
-    if (!nimmtTeil(name)){ return; }
-    var c = pickerFuer(name);
-    if (!c){ return; }
-    if (!nimmtTeil(c.instanceId)){
-      return;
-    }
-    /* Der Wechsel uebergibt -- und zwar ueber den Aufbau-Kanal, also NUR States, ohne Nachladen.
-       Zwei Fehlgriffe davor: erst ging er ueber den Range-Kanal (das war der zweite Durchlauf beim
-       Wechsel), dann war er ganz abgeschaltet, weil ich die States fuer seitenweit hielt. Gemessen
-       ist beides widerlegt: die Citations-Ansicht lud danach mit p_date_from: null. Jede Ansicht
-       hat eigene Datums-States, jede braucht ihre Uebergabe -- nur eben eine stille. */
-    var sig = sigVon(c), alt = STAND[c.instanceId];
-    var veraltet = !!(alt && sig && alt !== sig);
-    /* Bei einer VERALTETEN Ansicht wird der Aufbau-Kanal uebersprungen. Zwei Bubble-Ereignisse
-       fuer einen Wechsel waren einer zu viel, und im Log des Nutzers stand genau das:
-
-         +17995  kanal boot  -> States setzen
-         +18259  kanal range -> States setzen UND nachladen
-
-       Der Boot-Aufruf loest auf dieser Seite einen Ladevorgang aus, und zwar mit States, die noch
-       nicht angekommen sind -- also mit den ALTEN Daten. Danach laedt der Range-Aufruf noch einmal
-       richtig. Gemeldet als "einmal mit alten Daten, voellig unnoetig".
-       Der Range-Kanal kann beides in EINEM Workflow, in der richtigen Reihenfolge: erst die States
-       setzen, dann das Apply. Fuer eine veraltete Ansicht ist er also der ganze Vorgang.
-       Ist die Ansicht NICHT veraltet, bleibt es beim Aufbau-Kanal allein: dort soll nichts laden. */
-    if (!veraltet) uebergeben(c);
-    /* Veraltet: diese Ansicht wurde schon einmal mit einem ANDEREN Zeitraum bedient. Dann fehlt
-       nach der Uebergabe nur noch der Ladevorgang -- und den kennt der Nachlade-Kanal.
-       Beim ERSTEN Aktivieren (alt ist leer) nicht: dort laedt die Ansicht ueber ihren eigenen
-       Workflow, und ein zweiter Aufruf waere der doppelte Durchlauf. */
-    if (veraltet && typeof c.nachladen === "function"){
-      UEBERGEBEN[c.instanceId] = 1;
-      /* NACH dem Umschalten, nicht davor. core meldet den Ansichtswechsel VOR dem Original von
-         showView -- die neue Ansicht ist in diesem Moment noch versteckt. Die Uebergabe der
-         States darf und soll dort liegen (sie muss vor dem Laden stehen), ein REFRESH aber nicht:
-         eine Bubble-Gruppe, die noch nicht sichtbar ist, laedt nicht oder verwirft das Ergebnis.
-         Genau das Bild: der Range-Kanal traf (getroffen: true), der Workflow lief, und nichts
-         aenderte sich.
-         250ms, nicht 0: showView blendet die Gruppe im naechsten Task ein, und Bubble braucht
-         danach noch einen Durchgang, bis sie als sichtbar gilt. */
+  /* ---- DER ANSICHTSWECHSEL (29.09. neu) ---------------------------------------------------
+     Er entscheidet nur noch EINES: ist die Ansicht veraltet -- mit einem anderen Zeitraum geladen
+     als dem, der jetzt gilt? Dann resetView(name): das Kopfskript ruft gleich darauf view_first
+     erneut, und dessen Wickel (vorErstlauf) gibt vorher die States. EIN Ladevorgang, ueber den
+     Weg, den die Ansicht ohnehin hat.
+     Vorher lud der Kalender selbst nach (Range-Kanal, 250ms spaeter) und uebergab bei jedem
+     Wechsel zusaetzlich die States. Beim ersten Oeffnen ging die Uebergabe ins Leere (die
+     Bubble-Funktionen der Ansicht standen noch nicht), und die Ansicht lud mit dem Zeitraum vom
+     Seitenaufbau -- gemeldet als "switcht nicht zum neuen Wert, erst beim zweiten Besuch".
+     Einmal je Seite angemeldet, nicht je Einbindung: zwei Laeufe dieser Datei haetten zweimal
+     nachgeladen. */
+  if (UC.onViewChange && !window.__udrAnsichtAngemeldet) {
+    window.__udrAnsichtAngemeldet = true;
+    UC.onViewChange(function (name) {
+      if (!name) return;
+      erstlaufFangen(name);
+      if (!syncAn() || !nimmtTeil(name)) return;
+      var c = pickerFuer(name);
+      if (!c || !nimmtTeil(c.instanceId)) return;   /* erster Besuch: der Wickel an view_first uebernimmt */
+      var sig = sigVon(c), alt = STAND[c.instanceId];
+      if (!(alt && sig && alt !== sig)) return;
+      if (typeof window.resetView === "function" && bootDa(c)) {
+        window.resetView(name);
+        return;
+      }
+      /* Ohne resetView (eine andere Seite als die App) oder ohne Boot-Kanal bleibt der alte Weg:
+         der Range-Kanal setzt die States UND laedt nach -- ebenfalls genau ein Ladevorgang.
+         NACH dem Umschalten: eine Bubble-Gruppe, die noch nicht sichtbar ist, verwirft ihn. */
+      STAND[c.instanceId] = sig;
       setTimeout(function(){
-        if (!c.root || !c.root.isConnected) return;
-        c.nachladen();
+        if (c.root && c.root.isConnected) c.nachladen();
       }, 250);
-    }
-    if (sig) STAND[c.instanceId] = sig;
-  });
+    });
+  }
   window.addEventListener("up-prefs-change", function (e) {
     var n = e && e.detail && e.detail.name;
     if (!n || n === "date_preset" || n === "date_sync") UEBERGEBEN = {};
@@ -1675,7 +1831,8 @@
     };
 
     initAll();
-    if (UC.watchRoots) UC.watchRoots("udr-root", initAll);
+    alleErstlaeufeFangen();
+    if (UC.watchRoots) UC.watchRoots("udr-root", function(){ initAll(); alleErstlaeufeFangen(); });
 
     /* Die Aufbau-Uebergabe steht jetzt in initRoot -- hier ist nichts mehr zu tun.
        IMMER, nicht nur bei aktivem Schalter. Vorher hing diese Uebergabe an syncAn(), und damit
@@ -1722,12 +1879,11 @@
     /* Steht der Kanal, ueber den der Aufbau gehen wird? Reine Abfrage, kein Aufruf.
        Der Aufbau-Kanal zuerst, der Range-Kanal als dokumentierter Rueckfall -- dieselbe
        Reihenfolge wie in emit(), damit hier nicht auf etwas anderes gewartet wird als gerufen. */
+    /* Nur noch der Boot-Kanal (29.09.): der Range-Kanal war der Rueckfall, und an ihm haengt
+       der Nachlade-Workflow -- beim Aufbau also der zweite Ladevorgang neben view_first. */
     function bootKanal(root){
       var b = root.getAttribute("data-boot-fn") || "bubble_fn_udr_date_boot";
-      if (typeof UC.resolveBubbleFn(b) === "function") return "boot";
-      var r = root.getAttribute("data-range-fn") || "bubble_fn_udr_date_range";
-      if (typeof UC.resolveBubbleFn(r) === "function") return "range";
-      return null;
+      return typeof UC.resolveBubbleFn(b) === "function" ? "boot" : null;
     }
     /* KEINE Bedingung mehr vor der Uebergabe -- und das ist die Ruecknahme eines Fehlers von mir.
        Ich hatte zwei Ausnahmen eingebaut ("Schalter aus" und "der Zeitraum steht in der URL"), die
@@ -1761,7 +1917,7 @@
           bootMerken();
           /* Die Startansicht laedt gleich mit genau diesem Zeitraum -- festhalten, sonst gilt sie
              beim ersten Zurueckkehren als veraltet und wird ohne Not nachgeladen. */
-          var s0 = sigVon(c); if (s0) STAND[c.instanceId] = s0;
+          var s0 = sigVon(c); if (s0) { STAND[c.instanceId] = s0; GEGEBEN[c.instanceId] = s0; }
           startlageFesthalten();
           return;
         }
@@ -1778,7 +1934,7 @@
         /* Wache legen, BEVOR wir selbst rufen: dann steht unser eigener Aufruf als erste Zeile
            drin, und alles danach ist fremd. */
         bootMerken();
-        uebergeben(c, "boot");
+        zustandGeben(c, "boot");
         var s1 = sigVon(c); if (s1) STAND[c.instanceId] = s1;
         startlageFesthalten();
         /* Ab jetzt steht der Zeitraum in der URL. Der naechste Aufbau braucht diese Uebergabe

@@ -244,6 +244,25 @@
   background: var(--vc-border);
 }
 .usn-brand.is-off { display: none; }
+/* ---- DIE LINIE BLEIBT, AUCH OHNE BRANDING (29.09. angefordert) ----
+   "Wenn User das upstreem Branding ausschalten, dann bleibt der Separator auf gleicher Hoehe
+   kuenftig sichtbar. Also dann steht oben halt Teamlogo + Name und darunter der Separator."
+   Ohne Marke ist die Teamzeile die erste Zeile (y 8 bis 40). Sie bekommt dieselben 8px darunter
+   und dieselbe Linie wie die Markenzeile -- damit liegt die Linie wieder bei y 47 bis 48, auf
+   der Hoehe der Seitenkoepfe (core.css, kompakter Seitenkopf). Danach 16px bis zur naechsten
+   Zeile, wie unter der Markenzeile; die 24px Oberabstand von Quick Actions bzw. Navigation
+   gehoerten zur Luecke UNTER der Teamzeile und fallen hier weg. */
+.usn-brand.is-off + .usn-top { position: relative; box-sizing: content-box;
+  padding-bottom: 8px; margin-bottom: 16px; }
+.usn-brand.is-off + .usn-top::after {
+  content: ""; position: absolute; left: -8px; right: -8px; bottom: 0; height: 1px;
+  background: var(--vc-border); pointer-events: none; }
+.usn-brand.is-off ~ .usn-qa:not(:empty) { margin-top: 0; }
+.usn-brand.is-off ~ .usn-qa:empty + .usn-nav { margin-top: 0; }
+/* Eingeklappt wie die Markenzeile dort: 16px darunter, die Linie bis an die Kante bei 12px
+   Polster. Die Wurzelklasse davor, weil .usn-bar.is-mini .usn-top den Aussenabstand auf 0 setzt. */
+.usn-bar.is-mini .usn-brand.is-off + .usn-top { padding-bottom: 16px; margin-bottom: 16px; }
+.usn-bar.is-mini .usn-brand.is-off + .usn-top::after { left: -12px; right: -12px; }
 .usn-brand-mark { display: inline-flex; align-items: center; min-width: 0; overflow: hidden;
   /* 0 6px wie .usn-team: so beginnt der Schriftzug genau ueber dem Teamlogo. */
   padding: 0 6px;

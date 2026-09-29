@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261034;
+  var BUILD = 20261035;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -9514,6 +9514,84 @@
     return { selectPage: selectPage, positionUnderline: positionUnderline };
   }
 
+  /* ---------- Brotkrumen im Seitenkopf (29.09. angefordert) ----------
+     "in der heading oben auch so kleine breadcrumbs, je nach dem wo in der page navigation man
+     sich aktuell befindet": das Zeichen aus der Seitenleiste, der Name der Seite, ein Chevron und
+     die Unterseite. Zeichen, Name und Chevron in der dritten Farbe, die aktuelle Unterseite in
+     der Primaerfarbe. Eine Seite ohne Unterseiten zeigt Zeichen und Name in der Primaerfarbe.
+     Die Krumen stehen IN der h1 -- sie ist weiter die Ueberschrift der Seite, nur klein. Gebaut
+     aus JS und nicht aus der Vorlage, weil die Vorlage ein eingebautes Element nicht erreicht
+     (CLAUDE.md 4); die Geometrie der Zeile steht dagegen in core.css und gilt schon, bevor dieses
+     JS laeuft -- beim Laden springt also nichts.
+     cfg.icon und cfg.name sind dieselben wie in der Seitenleiste (sidebar.js BLOECKE): dasselbe
+     Zeichen, derselbe Katalogname.
+     cfg.aktuell() nennt die Unterseite; ohne Angabe die gewaehlte der Reiterleiste. cfg.quelle
+     ist das Element, dessen Auswahl sich aendert -- ein Beobachter daran zieht die letzte Krume
+     nach, gleich ob per Klick, Tastatur, selectPage oder Sprachwechsel. */
+  function makePageCrumbs(root, cfg){
+    cfg = cfg || {};
+    var h = root && root.querySelector(".up-ph-heading");
+    if (!h) return null;
+    var nav = root.querySelector(".up-ph-nav");
+    var aktuell = cfg.aktuell || function(){
+      var l = nav && nav.querySelector(".up-ph-navitem.is-selected .up-ph-navlabel");
+      return l ? l.textContent : "";
+    };
+    var quelle = cfg.quelle || nav;
+    var stand = null;
+    function zeichnen(){
+      var akt = "";
+      try { akt = String(aktuell() || "").replace(/\s+/g, " ").trim(); } catch(e){}
+      var name = t_(cfg.name || "");
+      var schl = akt + "|" + name;
+      if (schl === stand) return;
+      stand = schl;
+      h.innerHTML =
+        '<span class="up-ph-crumb' + (akt ? '' : ' is-akt') + '">' +
+          (cfg.icon ? '<span class="up-ph-crumbic" aria-hidden="true">' + icon(cfg.icon, 1.5) + '</span>' : '') +
+          '<span class="up-ph-crumbname" data-i18n="' + esc(cfg.name || "") + '">' + esc(name) + '</span>' +
+        '</span>' +
+        (akt ? '<span class="up-ph-crumbsep" aria-hidden="true">' + icon("chevronRight", 2) + '</span>' +
+               '<span class="up-ph-crumb is-akt"><span class="up-ph-crumbname">' + esc(akt) + '</span></span>' : '');
+    }
+    root.classList.add("has-crumbs");
+    zeichnen();
+    if (quelle && window.MutationObserver){
+      new MutationObserver(zeichnen).observe(quelle, { subtree: true, childList: true, characterData: true,
+        attributes: true, attributeFilter: ["class", "aria-selected"] });
+    }
+    /* DIE TRENNLINIE GEHT DURCH, von der Seitenleiste bis zum rechten Rand -- wie die Linie in der
+       Leiste selbst, die ebenfalls von Kante zu Kante laeuft. Der Seitenkopf sitzt in einer
+       Bubble-Gruppe mit eigenem Seitenabstand; ohne diese Messung endete die Linie dort und
+       stuende als Strich unter dem Kopf statt als Kante der Seite.
+       Gemessen gegen #main (der Scroller der App, clientWidth ohne Scrollbalken) und links gegen
+       die rechte Kante der Seitenleiste: liegt #main UNTER der Leiste (Polster statt Versatz),
+       soll die Linie an der Leiste enden und nicht unter ihr weiterlaufen. Eine GEPARKTE Ansicht
+       misst falsch -- sie liegt mit position: fixed ueber der ganzen Seite --, also dort nicht;
+       die Messung kommt, sobald die Ansicht offen ist. */
+    function linieMessen(){
+      if (!root.isConnected) return;
+      if (root.closest && root.closest('[id^="view-"]:not(.view-on)')) return;
+      var r = root.getBoundingClientRect();
+      if (!r.width) return;
+      var main = document.getElementById("main"), ml = 0, mr = document.documentElement.clientWidth;
+      if (main){ var m = main.getBoundingClientRect(); ml = m.left + (main.clientLeft || 0); mr = ml + main.clientWidth; }
+      var leiste = document.querySelector(".usn-bar");
+      if (leiste){ var lr = leiste.getBoundingClientRect(); if (lr.width && lr.right > ml && lr.right < r.left + 1) ml = lr.right; }
+      root.style.setProperty("--up-ph-rand-l", Math.max(0, Math.round(r.left - ml)) + "px");
+      root.style.setProperty("--up-ph-rand-r", Math.max(0, Math.round(mr - r.right)) + "px");
+    }
+    linieMessen();
+    /* Die Seitenleiste baut sich nach dem Seitenkopf auf; bis dahin kennt die Messung ihre Kante
+       nicht und zieht die Linie unter sie. Zwei Nachmessungen fangen das, danach reicht der
+       Beobachter (Ein-/Ausklappen der Leiste veraendert die Breite dieser Wurzel). */
+    setTimeout(linieMessen, 400);
+    setTimeout(linieMessen, 1500);
+    if (onResize) onResize(root, linieMessen);
+    onViewChange(function(){ setTimeout(linieMessen, 300); });
+    return { zeichnen: zeichnen, linieMessen: linieMessen };
+  }
+
   /* Plays the .up-ph-iconbtn spin (core.css: 1s ease-in-out, one turn) on a button, re-triggerable
      mid-spin. A plain classList.add("is-spinning") is a no-op on a button already mid-animation --
      the class name doesn't change, so nothing tells the browser to restart it. Removing the class,
@@ -12002,18 +12080,16 @@
      und sah aus wie ein anderer Strich. */
   var LINE_TENSION = 0.3, LINE_POINT_HOVER = 4, LINE_POINT_HIT = 6;
   var X_MAX_TICKS = 7, Y_PAD = 1.15;
-  /* Welche x-Beschriftungen stehen? Entschieden aus der ANZAHL der Werte und nicht aus der Breite
-     -- siehe die Begruendung an ticks.autoSkip in makeLine.
-     Erste und letzte immer, dazwischen gleichmaessig verteilt. Die Rundung kann zwei Indizes auf
-     denselben Platz legen; das ist harmlos, es stehen dann eben weniger als X_MAX_TICKS. */
+  /* Welche x-Beschriftungen stehen? Entschieden aus der ANZAHL der Werte und der Breite, nie von
+     Chart.js selbst -- siehe die Begruendung an ticks.autoSkip in makeLine. Regel: xTickSatz. */
   var _xTickCache = { schl: "", set: null };
   /* WIE VIELE BESCHRIFTUNGEN PASSEN? (17.09.) Gemeldet: auf dem Telefon ueberschneiden sich im
      Monatsmodus die Namen. Die Zahl der Ticks stand fest auf sieben -- sieben Monatsnamen brauchen
      aber mehr Platz als ein Telefon hat.
      Die Breite darf hier mitreden, und sie darf es aus einem bestimmten Grund: der alte Fehler
      (das Chart rueckte beim Einblenden von rechts herein) kam NICHT daher, dass die Anzahl mit der
-     Breite ging, sondern daher, dass autoSkip die LETZTE Beschriftung wegliess. Erste und letzte
-     stehen hier immer; ausgeduennt wird nur die Mitte.
+     Breite ging, sondern daher, dass sich mit der letzten Beschriftung der rechte Rand der
+     Zeichenflaeche verschob. Den haelt jetzt layout.padding in makeLine fest (xRandRechts).
      Die Luecke wird am ENGSTEN Paar gemessen, nicht am Durchschnitt. Die gleichmaessige Verteilung
      rundet (sieben Ticks auf zwoelf Monate ergeben die Schritte 2,2,2,1,2,2), und dieses eine
      kurze Paar ist das, was sich beruehrt -- bei 250px Achse standen dort gemessene 3px. Deshalb
@@ -12023,23 +12099,33 @@
      Formate sind bekannt: "MM-DD" ist rund 34px breit, ein kurzer Monatsname rund 24px
      (gemessen: 19.7px bei 12px Schrift, aufgerundet). */
   var MIN_LUECKE = 8;
-  /* EIN SCHRITT FUER ALLE, VOM NEUESTEN PUNKT AUS (29.09.). Gemeldet: "die Values unten auf der
-     x-Achse sind nicht einheitlich, das Gap zwischen denen ist nicht einheitlich, und die
-     vertikalen Gridlines passen da auch nicht zu -- in allen Charts". Die Verteilung von erstem bis
-     letztem Punkt musste runden: 14 Wochenpunkte auf 7 Beschriftungen ergaben die Indizes
-     0, 2, 4, 7, 9, 11, 13 -- Schritte 2, 2, 3, 2, 2, 2, also einmal 21 Tage statt 14.
-     Jetzt EIN Schritt s, gezaehlt vom neuesten Punkt rueckwaerts: n-1, n-1-s, n-1-2s ... Der neueste
-     steht damit immer da -- er ist die Aussage, und an ihm hing das Nachrutschen (siehe
-     ticks.autoSkip in makeLine). Der aelteste steht nur, wenn er auf den Schritt faellt.
+  /* EIN SCHRITT FUER ALLE, VOM ERSTEN PUNKT AUS (29.09., zweite Fassung). Die Verteilung von
+     erstem bis letztem Punkt musste runden (14 Wochenpunkte auf 7 Beschriftungen: Schritte
+     2, 2, 3, 2, 2, 2), also gibt es EINEN Schritt s. Die erste Fassung zaehlte ihn vom neuesten
+     Punkt rueckwaerts -- und liess damit links eine Luecke: vor der ersten Beschriftung stand ein
+     Rest ohne Datum, und die erste senkrechte Linie sass naeher am Rand als alle anderen
+     zueinander. Gemeldet mit Bild: "die x achsen muessen immer mit nem datum vorne anfangen.
+     niemals darf am anfang ne luecke sein".
+     Jetzt 0, s, 2s ...: die erste Beschriftung steht am linken Rand, jede Linie danach im selben
+     Abstand. Der neueste Punkt steht nur, wenn er auf den Schritt faellt; rechts bleibt dann ein
+     Rest kleiner als s, wie in jeder Zeitachse.
      s ist der kleinste Schritt mit hoechstens max Beschriftungen; bei Tagen ab einer Woche ein
      Vielfaches von 7, damit alle Beschriftungen auf denselben Wochentag fallen. */
   function xTickSatz(n, max, gran){
     var s = 1, set = {}, p;
     while (Math.floor((n - 1) / s) + 1 > max) s++;
     if (gran === "day" && s > 7 && s % 7) s = Math.ceil(s / 7) * 7;
-    for (p = n - 1; p >= 0; p -= s) set[p] = 1;
+    for (p = 0; p <= n - 1; p += s) set[p] = 1;
     return { set: set, eng: s };
   }
+  /* Der rechte Rand der Zeichenflaeche, fest. Steht die letzte Beschriftung, reserviert Chart.js
+     ihre halbe Breite plus seinen Tick-Abstand von 3px; steht sie nicht, reserviert es nichts --
+     und die Flaeche sprang um diese 20px, sobald eine andere Breite die letzte Beschriftung ein-
+     oder ausblendete (das alte Nachrutschen). Chart.js nimmt das Groessere aus layout.padding und
+     seinem eigenen Wert, also bleibt der Rand mit dieser Zeile in jedem Fall derselbe.
+     Gemessen bei 12px Geist: "08-08" ist mit 35.4px die breiteste Ziffernfolge (17.7 + 3 -> 21),
+     "May" mit 23.2px der breiteste kurze Monatsname (11.6 + 3 -> 15). */
+  function xRandRechts(gran){ return gran === "month" ? 15 : 21; }
   function xTickZeigen(i, n, breite, gran){
     if (!n || n <= 2) return true;
     var schl = n + "/" + Math.round(breite || 0) + "/" + gran;
@@ -13142,7 +13228,9 @@
             /* separate, faster curve for the legend-hover cross-highlight than the initial draw */
             transitions: { highlight: { animation: { duration: 200, easing: "easeOutQuad" } } },
             interaction: { mode: "index", intersect: false },
-            layout: { padding: { top: 8, right: 2, bottom: 0, left: 0 } },
+            layout: { padding: function(){
+              return { top: 8, right: single ? 2 : xRandRechts((cfg.gran && cfg.gran()) || "day"), bottom: 0, left: 0 };
+            } },
             plugins: { legend: { display: false }, tooltip: { enabled: false, external: makeLineTooltip(wrap, isDark, cfg.gran, einheit, cfg.tipLabel, cfg.decimals) } },
             scales: {
               x: { grid: { display:false }, offset: single, border: { display:true, color: tc.border, width:1 },
@@ -13158,11 +13246,10 @@
                       Auf die Reihenfolge zu warten oder danach nachzurechnen behandelt nur den
                       Zeitpunkt, nicht den Grund -- das waren meine zwei ersten Anlaeufe.
 
-                      Jetzt entscheidet die DATENLAENGE, welche Beschriftungen stehen, und die
-                      aendert sich mit der Breite nicht. Gewaehlt werden hoechstens X_MAX_TICKS
-                      im GLEICHEN Schritt vom neuesten Punkt aus (xTickSatz, 29.09.), und die
-                      LETZTE ist immer dabei -- der fehlende rechte Punkt kann damit nicht mehr
-                      vorkommen.
+                      Jetzt entscheiden Datenlaenge und Breite ueber xTickSatz: hoechstens
+                      X_MAX_TICKS im GLEICHEN Schritt vom ersten Punkt aus (29.09.), die erste
+                      steht immer am linken Rand. Den rechten Rand haelt layout.padding fest
+                      (xRandRechts), ob die letzte steht oder nicht.
                       Die uebrigen geben "" zurueck: sie bleiben als Gitterposition erhalten (das
                       Raster und die Fuehrungslinie haengen daran), messen aber keine Breite. */
                    ticks: { autoSkip:false, maxRotation:0, color: tc.muted,
@@ -18631,6 +18718,7 @@
     cgSetHidden: cgSetHidden,
     cgDelete: cgDelete,
     makePageNav: makePageNav,
+    makePageCrumbs: makePageCrumbs,
     makePageHeaderMeta: makePageHeaderMeta,
     syncTheme: syncTheme,
     themeOnly: themeOnly,

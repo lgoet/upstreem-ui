@@ -41,12 +41,9 @@
    bei einer einzelnen Zeile ohne Beschreibung schief aussah.
    is-power sitzt an der WURZEL (dashboard-page-header.js, modeZeigen) statt an .dph-mode: ein
    Umschalter kann fehlen (kein data-mode-fn-Empfaenger), der Modus selbst nicht. */
-.dph-root.is-power .up-ph-desc,
-html[data-up-dashboard="power"] .dph-root .up-ph-desc { display: none; }
-.dph-root.is-power .up-ph-heading,
-html[data-up-dashboard="power"] .dph-root .up-ph-heading { font-size: 20px; margin: 0; }
-.dph-root.is-power .up-ph-top,
-html[data-up-dashboard="power"] .dph-root .up-ph-top { align-items: center; }
+/* Die drei Power-Regeln (Beschreibung aus, 20px-Ueberschrift, Zeile mittig) sind RAUS (29.09.):
+   der kompakte Kopf mit Brotkrumen aus core.css gilt jetzt fuer BEIDE Modi. "Wobei die Trennung
+   dann ja nicht mehr noetig ist" -- genau. */
 /* ---------- Power: die Topbar ist so hoch wie der Logoblock der Leiste (15.09. angefordert) ----
    "genauso viel height wie im main sidebar der Bereich oben links mit dem upstreem Logo".
    GEMESSEN an der echten Leiste: .usn-bar hat padding-top 8px, .usn-brand ist 32px hoch mit 8px
@@ -58,10 +55,9 @@ html[data-up-dashboard="power"] .dph-root .up-ph-top { align-items: center; }
    KEINE Trennlinie hier (15.09. nachgereicht: "den separator wieder raus"). Die Hoehe ist das
    Gemeinsame mit der Leiste, nicht die Linie.
    Gilt NUR unter .is-power: die anderen sechs Seitenkoepfe behalten ihre 16/16 aus core. */
-.dph-root.is-power,
-html[data-up-dashboard="power"] .dph-root { padding-top: 8px; padding-bottom: 40px; }
-/* 40 statt 8 (15.09. nachgereicht: "nochmal 32px padding bottom mehr"). Die Topbar ENDET
-   weiterhin bei 48 -- die 32 sind Luft darunter, kein hoeherer Balken. */
+/* Hier stand das Polster des Power-Kopfs (8 oben, 40 unten). Die 48px-Zeile mit der Linie der
+   Seitenleiste ist seit dem 29.09. der Kopf ALLER Modi (core.css, kompakter Seitenkopf); die 32px
+   Luft darunter waren fuer einen Kopf ohne Linie gedacht und fallen mit ihr weg. */
 
 /* ---------- Der Hoehenwechsel Standard/Power wird animiert (15.09. angefordert) ----------
    200ms ease. Eine Hoehe von auf auto ist nicht animierbar, und die Beschreibung verschwindet

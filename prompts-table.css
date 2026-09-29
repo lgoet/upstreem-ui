@@ -901,6 +901,16 @@
    though it reads correctly in a static test harness with a fixed <link> order. */
 .up-root .upt-heading-widebtn { display: none; margin-right: 4px; }
 .up-root.is-grouped:not(.is-groups-wide) .upt-heading-widebtn { display: inline-flex; }
+/* EINFAHREN BEIM UMSCHALTEN (29.09.: "animiere diese appear bitte auch mit 200ms ease"). Nur
+   unter .is-grp-wechsel, das toggleGroupsWide fuer genau diesen Augenblick setzt -- beim
+   Seitenaufbau steht das Zeichen einfach da. Breite und Abstand wachsen mit, damit die
+   Ueberschrift daneben gleitet statt zu springen. */
+@keyframes upt-widebtn-rein { from { opacity: 0; width: 0; min-width: 0; margin-right: 0; } }
+.up-root.is-grp-wechsel.is-grouped:not(.is-groups-wide) .upt-heading-widebtn {
+  animation: upt-widebtn-rein var(--up-t-2) ease; overflow: hidden; }
+@media (prefers-reduced-motion: reduce) {
+  .up-root.is-grp-wechsel .upt-heading-widebtn { animation: none; }
+}
 /* Same belt-and-suspenders reasoning for the sidepanel's own toggle -- it already visually
    disappears when the panel collapses to 0 width (see .upt-grp-sidepanel above), but an explicit
    display toggle here means that stays true even if something about the panel's own collapse

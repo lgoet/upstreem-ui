@@ -82,6 +82,10 @@
       onSelect: function(value){ fire("data-nav-fn", "pphNav", { page: value }); }
     });
 
+    /* Brotkrumen statt Ueberschrift (29.09.): Zeichen und Name wie in der Seitenleiste
+       (sidebar.js BLOECKE), dahinter der gewaehlte Reiter. Siehe UC.makePageCrumbs. */
+    if (UC.makePageCrumbs) UC.makePageCrumbs(root, { icon: "zap", name: "Prompt Insights" });
+
     if (UC.makeTooltips) UC.makeTooltips(root, function(){ return UC.isYes(root.getAttribute("data-isdark")); });
 
     var addBtn = root.querySelector(".up-ph-addbtn");

@@ -2795,6 +2795,11 @@
       state.groupsWide = !state.groupsWide;
       writeGroupsWide(state.groupsWide);
       root.classList.toggle("is-groups-wide", state.groupsWide);
+      /* Das Zeichen links neben der Ueberschrift faehrt beim UMSCHALTEN ein (29.09., 200ms ease),
+         nicht bei jedem Aufbau -- also eine Klasse nur fuer diesen Augenblick. */
+      root.classList.add("is-grp-wechsel");
+      clearTimeout(root.__grpWechselUhr);
+      root.__grpWechselUhr = setTimeout(function(){ root.classList.remove("is-grp-wechsel"); }, 260);
       /* The flat rows have to be requested on the SWITCH, not only from renderGroupWideBody().
          That was the one place ensureFlatDataForAllPrompts() was ever called, so a page that
          loaded straight into the other mode had only ever run the grouped-headers RPC -- flipping

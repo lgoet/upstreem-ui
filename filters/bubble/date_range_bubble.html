@@ -84,9 +84,23 @@
      workflow should set the two date states and NOTHING else — no refresh. Create it by copying
      the two "Set state" actions out of your data-range-fn workflow.
 
-     Leave data-boot-fn off and the handover falls back to data-range-fn, with one console line
-     saying so: a page without a date range is worse than a page that loads twice, and neither
-     should happen silently.
+     Leave data-boot-fn off and there is NO handover (changed 29.09.): it used to fall back to
+     data-range-fn, and because the reload workflow hangs off that one, every fallback was a
+     second load next to view_first. One console line names the missing element instead:
+       [date-range] bubble_fn_udr_date_boot_<view> gibt es nicht ...
+     Every view with a date range needs its own boot element.
+
+     ── view_first is the loader (29.09.) ────────────────────────────────────────
+     Each view loads its data in its view_first_<name> workflow (called by the page's view script
+     on the first open, and again after resetView(name)). The picker's only job is to make sure
+     the view's date states are right BEFORE that workflow runs, so there is exactly one load:
+       - bubble_fn_view_first_<name> is wrapped on window; right before it runs, the view's
+         picker hands its range over through data-boot-fn (states only). Nothing to set up.
+       - a view whose data is from another range (Apply everywhere changed it since) gets
+         resetView(name) when it is opened, so view_first runs again -- with the new states.
+       - the picker itself no longer reloads a view on activation.
+     The apply channel is delivered ONCE per change even if both the snippet at the end of the
+     date_range workflow and data-range-apply-fn call it (same payload, same event_id).
 
      ── The range in the URL: one page-load step, no waiting ─────────────────────
      Bubble's JavaScriptToBubble bridge is not up until seconds into the page load (measured on
