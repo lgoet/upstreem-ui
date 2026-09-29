@@ -90,7 +90,10 @@
 
 /* ---- KPI-Zeile -------------------------------------------------------------------------------
    Werte aus .ubd-kpi: die grosse Zahl steht ueber der Kurve, nicht daneben. */
-.udd-kpi { display: flex; align-items: center; gap: 12px; margin: 10px 0 16px; min-height: 30px; }
+/* 18 oben, 24 unten (29.09. angefordert: "mehr Gap ueber und unter der Share-Prozentzahl und dem
+   Trend, das ist zu cramped"; vorher 10 und 16). Die Kurve darunter wird dadurch um 16px flacher --
+   so bestellt. */
+.udd-kpi { display: flex; align-items: center; gap: 12px; margin: 18px 0 24px; min-height: 30px; }
 .udd-kpi[hidden] { display: none; }
 .udd-kpi-val { font-size: 23px; line-height: 1.15; letter-spacing: -0.4px; }
 .udd-kpi-val .up-num { font-size: inherit; font-weight: 500; letter-spacing: inherit;
@@ -186,6 +189,11 @@
    beide Karten gleich hoch, ohne dass ein Chart nach oben gezogen wird. */
 .udd-row2 > .udd-card { min-width: 0; }
 .udd-typecard, .udd-modelcard { display: flex; flex-direction: column; }
+/* Die Modell-Logos im Balken OHNE Platte (29.09. angefordert: "den weissen Background hinter den
+   LLM-Logos weg"). core legt hinter .up-bar-logo --vt-logo-bg (hell Weiss, dunkel #e0e0e0) -- fuer
+   Favicons fremder Seiten gedacht, die auf Transparenz schlecht aussehen. Die Modell-Logos sind
+   dafuer gezeichnet, auf farbigem Grund zu stehen. Nur in dieser Karte. */
+.udd-modelcard .up-bar-logo { background: transparent; }
 /* Die Hoehe aendert sich beim Umschalten zwischen Ring und Balken -- 200ms ease (Vorgabe), damit
    der Sprung als Bewegung lesbar ist und nicht als Ruck. */
 .udd-typecard, .udd-modelcard { transition: min-height 200ms ease; }

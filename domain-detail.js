@@ -847,7 +847,13 @@
     }) : null;
 
     function modelItems() {
-      return (isArr(state.model) ? state.model : []).map(function (m) {
+      /* AUCH DIE MODELLBALKEN IN DER RUHIGEN FAMILIE (29.09. nachgereicht: "du hast das Model
+         Breakdown Chart nicht angepasst"). So auch auf der Landingpage (QUELL_FARBEN.modelle):
+         nach Anteil, der groesste im Akzent, jeder weitere eine Stufe heller. Die Markenfarben der
+         Modelle waren eine zweite Farbwelt neben dem Ring -- erkannt wird ein Modell an Logo und
+         Namen. Die Reihenfolge der Farbe folgt dem Anteil, nicht dem Payload, damit derselbe Rang
+         immer dieselbe Farbe traegt. */
+      var liste = (isArr(state.model) ? state.model : []).map(function (m) {
         return {
           key: String(m.model || ""),
           name: String(m.model || ""),
@@ -856,6 +862,12 @@
           logo: String(m.model_logo_url || "")
         };
       });
+      var fam = ruhig(isDark, null);
+      if (fam[0]) {
+        liste.slice().sort(function (a, b) { return b.share - a.share; })
+          .forEach(function (it, i) { it.color = fam[i % fam.length]; });
+      }
+      return liste;
     }
 
     function syncModelSeg() {

@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261032;
+  var BUILD = 20261033;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -11997,15 +11997,22 @@
      Formate sind bekannt: "MM-DD" ist rund 34px breit, ein kurzer Monatsname rund 24px
      (gemessen: 19.7px bei 12px Schrift, aufgerundet). */
   var MIN_LUECKE = 8;
-  function xTickSatz(n, max){
-    var set = {}, pos = [], k = max - 1, j, p;
-    for (j = 0; j <= k; j++){
-      p = Math.round(j * (n - 1) / k);
-      if (!set[p]){ set[p] = 1; pos.push(p); }
-    }
-    var eng = n - 1;
-    for (j = 1; j < pos.length; j++) if (pos[j] - pos[j - 1] < eng) eng = pos[j] - pos[j - 1];
-    return { set: set, eng: eng };
+  /* EIN SCHRITT FUER ALLE, VOM NEUESTEN PUNKT AUS (29.09.). Gemeldet: "die Values unten auf der
+     x-Achse sind nicht einheitlich, das Gap zwischen denen ist nicht einheitlich, und die
+     vertikalen Gridlines passen da auch nicht zu -- in allen Charts". Die Verteilung von erstem bis
+     letztem Punkt musste runden: 14 Wochenpunkte auf 7 Beschriftungen ergaben die Indizes
+     0, 2, 4, 7, 9, 11, 13 -- Schritte 2, 2, 3, 2, 2, 2, also einmal 21 Tage statt 14.
+     Jetzt EIN Schritt s, gezaehlt vom neuesten Punkt rueckwaerts: n-1, n-1-s, n-1-2s ... Der neueste
+     steht damit immer da -- er ist die Aussage, und an ihm hing das Nachrutschen (siehe
+     ticks.autoSkip in makeLine). Der aelteste steht nur, wenn er auf den Schritt faellt.
+     s ist der kleinste Schritt mit hoechstens max Beschriftungen; bei Tagen ab einer Woche ein
+     Vielfaches von 7, damit alle Beschriftungen auf denselben Wochentag fallen. */
+  function xTickSatz(n, max, gran){
+    var s = 1, set = {}, p;
+    while (Math.floor((n - 1) / s) + 1 > max) s++;
+    if (gran === "day" && s > 7 && s % 7) s = Math.ceil(s / 7) * 7;
+    for (p = n - 1; p >= 0; p -= s) set[p] = 1;
+    return { set: set, eng: s };
   }
   function xTickZeigen(i, n, breite, gran){
     if (!n || n <= 2) return true;
@@ -12020,10 +12027,10 @@
       var nutz = breite - labW / 2;
       var proSchritt = (nutz > 0) ? (nutz / (n - 1)) : 0;
       var max = Math.min(X_MAX_TICKS, n);
-      var satz = xTickSatz(n, max);
+      var satz = xTickSatz(n, max, gran);
       while (max > 2 && proSchritt > 0 && (satz.eng * proSchritt - labW) < MIN_LUECKE){
         max--;
-        satz = xTickSatz(n, max);
+        satz = xTickSatz(n, max, gran);
       }
       _xTickCache = { schl: schl, set: satz.set };
     }
@@ -12178,17 +12185,18 @@
      rechte Linie fallen damit auf den Rand der Zeichenflaeche, und die Maschen sind quadratisch
      im Verhaeltnis, nicht in Pixeln.
 
-     Die senkrechten haengen ABSICHTLICH nicht an den x-Ticks. Deren Zahl richtet sich nach der
-     Datenlaenge (xTickZeigen, siehe makeLine) und schwankt zwischen 5 und 7 -- ein Raster, dessen
-     Maschenweite sich mit der Anzahl der Tage aendert, ist kein gleichmaessiges Raster.
+     Die senkrechten hingen bis zum 29.09. ABSICHTLICH nicht an den x-Ticks, weil deren Abstaende
+     schwankten. Seit xTickSatz einen gleichen Schritt waehlt, sind die Beschriftungen selbst ein
+     gleichmaessiges Raster -- und die senkrechten stehen jetzt genau auf ihnen (gemeldet: "die
+     Gridlines passen nicht zu den Werten"). Ihre Zahl folgt damit den Beschriftungen, nicht mehr
+     RASTER_N; das feste Raster bleibt nur fuer eine Achse ohne Beschriftungen.
 
      KEINE LINIE AM RECHTEN RAND (07.09.): "bitte ueberall auf die ganz rechte vertikale
      gestrichelte Gridline verzichten, weil ganz links ist ja auch keine". Links steht die
      y-Achse, dort braucht das Raster keine eigene Linie -- rechts steht nichts, und eine Linie
-     genau auf der Kante der Zeichenflaeche liest sich als Rahmen, nicht als Raster. Es bleiben
-     also RASTER_N - 1 senkrechte Linien, und die Maschen sind weiter gleich breit: geteilt wird
-     unveraendert in RASTER_N Spalten, nur die letzte Trennung faellt weg. Waagerecht bleibt es
-     bei RASTER_N -- dort traegt jede Linie eine Beschriftung, auch die oberste. */
+     genau auf der Kante der Zeichenflaeche liest sich als Rahmen, nicht als Raster. Die
+     Beschriftung am rechten Rand (der neueste Punkt) bekommt deshalb keine Linie. Waagerecht
+     bleibt es bei RASTER_N -- dort traegt jede Linie eine Beschriftung, auch die oberste. */
   var RASTER_N = 4;
   var dashedGridPlugin = {
     id: "upDashedGrid",
@@ -12208,10 +12216,28 @@
         if (yp < ca.top - 0.5 || yp > ca.bottom + 0.5) return;
         ctx.beginPath(); ctx.moveTo(ca.left, Math.round(yp) + 0.5); ctx.lineTo(ca.right, Math.round(yp) + 0.5); ctx.stroke();
       });
-      /* senkrecht: dieselben Bruchteile, aber ohne die Linie auf der rechten Kante */
-      for (var i = 1; i < RASTER_N; i++){
-        var xp = ca.left + breite * (i / RASTER_N);
-        ctx.beginPath(); ctx.moveTo(Math.round(xp) + 0.5, ca.top); ctx.lineTo(Math.round(xp) + 0.5, ca.bottom); ctx.stroke();
+      /* SENKRECHT AUF DEN BESCHRIFTUNGEN (29.09.). Vorher teilten die Linien die Breite fest in
+         RASTER_N Spalten -- mit Absicht losgeloest von den x-Ticks, weil deren Abstaende
+         schwankten. Seit dem gleichen Schritt (xTickSatz) sind die Beschriftungen selbst ein
+         gleichmaessiges Raster, und gemeldet war genau das Auseinanderlaufen ("die vertikalen
+         Gridlines passen da auch nicht zu"). Also eine Linie je Beschriftung -- nicht auf der
+         y-Achse links und weiter keine auf der rechten Kante (07.09.). */
+      var x = chart.scales.x, xt = (x && x.ticks) || [];
+      if (x && typeof x.getPixelForTick === "function" && xt.length > 1){
+        for (var i = 0; i < xt.length; i++){
+          var lab = xt[i] && xt[i].label;
+          if (Array.isArray(lab)) lab = lab.join("");
+          if (lab == null || lab === "") continue;
+          var xp = x.getPixelForTick(i);
+          if (xp == null || isNaN(xp) || xp <= ca.left + 1 || xp >= ca.right - 1) continue;
+          ctx.beginPath(); ctx.moveTo(Math.round(xp) + 0.5, ca.top); ctx.lineTo(Math.round(xp) + 0.5, ca.bottom); ctx.stroke();
+        }
+      } else {
+        /* Ohne beschriftete Kategorien-Achse das feste Raster wie bisher. */
+        for (var j = 1; j < RASTER_N; j++){
+          var xq = ca.left + breite * (j / RASTER_N);
+          ctx.beginPath(); ctx.moveTo(Math.round(xq) + 0.5, ca.top); ctx.lineTo(Math.round(xq) + 0.5, ca.bottom); ctx.stroke();
+        }
       }
       ctx.restore();
     }
@@ -13108,8 +13134,9 @@
 
                       Jetzt entscheidet die DATENLAENGE, welche Beschriftungen stehen, und die
                       aendert sich mit der Breite nicht. Gewaehlt werden hoechstens X_MAX_TICKS
-                      gleichmaessig verteilte, und die ERSTE und die LETZTE sind immer dabei -- der
-                      fehlende rechte Punkt kann damit nicht mehr vorkommen.
+                      im GLEICHEN Schritt vom neuesten Punkt aus (xTickSatz, 29.09.), und die
+                      LETZTE ist immer dabei -- der fehlende rechte Punkt kann damit nicht mehr
+                      vorkommen.
                       Die uebrigen geben "" zurueck: sie bleiben als Gitterposition erhalten (das
                       Raster und die Fuehrungslinie haengen daran), messen aber keine Breite. */
                    ticks: { autoSkip:false, maxRotation:0, color: tc.muted,
