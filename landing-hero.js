@@ -393,20 +393,23 @@
                  brauchen. Mira steht von Anfang an im Markup -- sie richtet sich an ihrer echten
                  Groesse ein (Chathoehe, is-compact, Scrollsperre), und mit display: none haette
                  sie eine Hoehe von 0 gemessen. */
+              /* data-up-kopfrahmen (29.09. spaet): die Seite ist fuer den Seitenkopf, was in der
+                 App die Bubble-Gruppe ist -- er misst gegen sie und steht damit wie dort: Inhalt
+                 16 links und 8 rechts vom Rand, die Linien bis an die Kante (UC.makePageCrumbs). */
               '<div class="ulh-seiten">' +
-                '<div class="ulh-seite ulh-main">' +
+                '<div class="ulh-seite ulh-main" data-up-kopfrahmen>' +
                   (MARKUP.dph || "") + (MARKUP.vot || "") + (MARKUP.tcd || "") +
                 '</div>' +
                 '<div class="ulh-seite ulh-mira">' + (MARKUP.mira || "") + '</div>' +
-                '<div class="ulh-seite ulh-prompts">' +
+                '<div class="ulh-seite ulh-prompts" data-up-kopfrahmen>' +
                   (MARKUP.pph || "") + (MARKUP.upt || "") +
                 '</div>' +
-                '<div class="ulh-seite ulh-chancen">' +
+                '<div class="ulh-seite ulh-chancen" data-up-kopfrahmen>' +
                   (MARKUP.oph || "") + (MARKUP.uo || "") +
                 '</div>' +
                 /* Fuenfte Seite: Performance. Sie steht am Ende des Kreislaufs, weil sie die Frage
                    beantwortet, die nach den Chancen kommt -- "und wo stehe ich je Thema?". */
-                '<div class="ulh-seite ulh-perf">' +
+                '<div class="ulh-seite ulh-perf" data-up-kopfrahmen>' +
                   (MARKUP.hph || "") + (MARKUP.uhm || "") +
                 '</div>' +
               '</div>' +
@@ -1041,6 +1044,23 @@
      Komponente ihr Arbeitsprotokoll waehrend des Ladens, mit Zeichen und Text je Schritt. */
   function mscFaelle(){
     return [
+      /* DER ERSTE FALL ZEIGT DAS ADD-DROPDOWN (29.09. spaet angefordert: "Add-Dropdown auf, kurz
+         ohne Eingabe sichtbar, also der Ruhezustand, dann tippt der Nutzer den Namen eines
+         Wettbewerbers ein, z.B. BMW, und fragt etwas darueber"). wahl ist das Wort, das im
+         Dropdown gesucht wird; der erste Treffer wird uebernommen und steht als Bezug im Feld,
+         bevor die Frage getippt wird. Die Zahlen sind die der Demodaten (MARKEN, Zustand b):
+         BMW 32.1 Sichtbarkeit und 75 Stimmung, Acme 38.9 und 79. */
+      { wahl: "BMW", q: "How is BMW doing against us this month?",
+        titel: "BMW against Acme",
+        werkzeuge: ["brand_overview", "prompt_insights"],
+        dauer: 16000,
+        html: '<p>' + markeChip("bm") + ' is named in <strong>32.1%</strong> of the answers to your ' +
+          'prompts, ' + markeChip("ac") + ' in <strong>38.9%</strong>. Two places where BMW still ' +
+          'leads:</p><ul>' +
+          '<li>Charging questions: <strong>41%</strong> against your 29%.</li>' +
+          '<li>The winter range thread on ' + quelleChip(1) + ' recommends BMW and does not name you.</li>' +
+          '</ul><p>Sentiment is close: <strong>75</strong> for BMW, <strong>79</strong> for you.</p>' },
+
       { q: "What are people saying about Acme right now?",
         titel: "Sentiment, last 30 days",
         werkzeuge: ["brand_overview", "source_mentions_overview"],
@@ -1229,8 +1249,11 @@
            der Einfangphase gestoppt, bevor er ueberhaupt laeuft; ohne preventDefault reicht der
            Browser das Rad an das Fenster darueber weiter. */
         'document.addEventListener("wheel",function(e){e.stopPropagation();},true);' +
-        'document.addEventListener("click",function(e){e.preventDefault();e.stopPropagation();},true);' +
-        'document.addEventListener("keydown",function(e){e.preventDefault();e.stopPropagation();},true);' +
+        /* Nur ECHTE Klicks und Tasten (isTrusted): die Vorfuehrung oeffnet selbst das Add-Dropdown
+           und waehlt darin einen Treffer (mscLauf, waehlen) -- ueber el.click(), und das ist nicht
+           isTrusted. Der Besucher bleibt ausgesperrt wie bisher. */
+        'document.addEventListener("click",function(e){if(!e.isTrusted)return;e.preventDefault();e.stopPropagation();},true);' +
+        'document.addEventListener("keydown",function(e){if(!e.isTrusted)return;e.preventDefault();e.stopPropagation();},true);' +
         /* KEINE Tooltips, nirgends -- dieselbe Regel wie im Hero-Fenster (ohneTipps). Die
            Attribute kommen mit jeder neuen Nachricht nach, deshalb ein Beobachter und nicht ein
            einmaliger Durchgang. data-explain gehoert dazu: daran haengt die Erklaerkarte von core,
@@ -1295,6 +1318,17 @@
        an BEIDEN (messages.length > 0 || isLoading), und mit noch stehendem Ladezustand bliebe sie
        offen. Genau dieselbe Reihenfolge wie im Neustart des Hero-Fensters. */
     function leeren(){
+      /* Das Add-Dropdown zu und die Bezuege aus dem Feld: der erste Fall laesst BMW als Pille dort
+         stehen, und die gehoert nicht zur naechsten Frage. askMiraClearInput ist der Weg der
+         Komponente selbst (Feld, Zitat, Bezuege). */
+      var ask = d.getElementById("ask-mira");
+      if (ask && ask.classList.contains("is-pick-open")){
+        var auf = d.querySelector("#am-pick-btn");
+        if (auf) auf.click();
+      }
+      var suchfeld = d.querySelector("#am-pick-input");
+      if (suchfeld && suchfeld.value){ suchfeld.value = ""; tippEreignis(suchfeld); }
+      if (w.askMiraClearInput) w.askMiraClearInput();
       /* Das Eingabefeld kommt zurueck, BEVOR Mira es in die Mitte faehrt -- sonst faehrt ein
          unsichtbares Feld. Dieselbe Reihenfolge wie im Neustart des Hero-Fensters. */
       var flaeche = d.querySelector(".am-composer-area");
@@ -1449,8 +1483,83 @@
       leeren();
       planen(meine, function(){
         var f = faelle[i % faelle.length]; i++;
-        tippen(meine, f.q, function(){ klicken(meine, function(){ fall(meine, f); }); });
+        function fragen(){ tippen(meine, f.q, function(){ klicken(meine, function(){ fall(meine, f); }); }); }
+        if (f.wahl) waehlen(meine, f.wahl, fragen); else fragen();
       }, MSC_LEER_MS);
+    }
+
+    /* ---- Das Add-Dropdown vorfuehren (der erste Fall, f.wahl) ----
+       Auf, im Ruhezustand stehen lassen (Faecher und "Search your workspace"), das Wort tippen,
+       die Treffer stehen lassen, den ersten uebernehmen, zu. Geoeffnet und gewaehlt wird ueber
+       die Knoepfe der Komponente selbst (el.click -- die Sperre im iframe laesst nur solche
+       Klicks durch), getippt wie die Frage: Zeichen fuer Zeichen mit input-Ereignis, daran haengt
+       die Suche. Die Zeiten: die Suche wartet 400ms auf das letzte Zeichen (core,
+       makeEntitySearch), die Antwort unten kommt nach 280. */
+    var MSC_WAHL_RUHE_MS = 1600;    /* das offene Dropdown ohne Eingabe */
+    var MSC_WAHL_ZEICHEN_MS = 110;  /* langsamer als die Frage: drei Buchstaben sollen lesbar ankommen */
+    var MSC_WAHL_LISTE_MS = 1100;   /* die Treffer stehen, bevor einer gewaehlt wird */
+    var MSC_WAHL_PILLE_MS = 700;    /* der Bezug steht im Feld, dann geht das Dropdown zu */
+    function waehlen(meine, wort, fertig){
+      var knopf = d.querySelector("#am-pick-btn"), such = d.querySelector("#am-pick-input");
+      if (!knopf || !such){ fertig(); return; }
+      knopf.click();
+      planen(meine, function(){
+        var k = 0;
+        (function schritt(){
+          if (meine !== lauf) return;
+          such.value = wort.slice(0, ++k);
+          tippEreignis(such);
+          if (k < wort.length) setTimeout(schritt, MSC_WAHL_ZEICHEN_MS);
+          else planen(meine, nehmen, 400 + 280 + MSC_WAHL_LISTE_MS);
+        })();
+      }, MSC_WAHL_RUHE_MS);
+      function nehmen(){
+        /* Mira schreibt beim ersten Bezug eine Vorlage-Frage ins LEERE Feld ("What can you tell me
+           about this brand?", frageNachziehen) -- in der App richtig, hier stuende sie eine
+           Sekunde da und wuerde dann vom Tippen der eigenen Frage ueberschrieben (gemessen). Und
+           abgeschickt truege die Blase den rohen Bezugsblock ("Context: - Brand: BMW (uid: bm)"),
+           so zeichnet ihn die App. Ein unsichtbares Zeichen haelt das Feld nicht-leer; das Tippen
+           ersetzt es. */
+        var ta = d.querySelector("#am-textarea");
+        if (ta && !ta.value) ta.value = "\u200B";
+        var zeile = d.querySelector("#am-pick-list .am-pick-row[data-esi]");
+        if (zeile) zeile.click();
+        planen(meine, function(){
+          if (d.getElementById("ask-mira").classList.contains("is-pick-open")) knopf.click();
+          planen(meine, fertig, 300);
+        }, MSC_WAHL_PILLE_MS);
+      }
+    }
+
+    /* DIE SUCHE DES ADD-DROPDOWNS fragt in der App Bubble (bubble_fn_quick_actions_search) und
+       bekommt die Antwort ueber UC.entitySearchDeliver zurueck. Hier gibt es kein Bubble, also
+       antwortet die Vorfuehrung selbst -- aus den Demodaten der Seite: Marken, Domains und die
+       Prompts der Vorschau. Ohne das stuende nach acht Sekunden "keine Antwort" im Dropdown. */
+    w.bubble_fn_quick_actions_search = function(json){
+      var anfrage = {};
+      try { anfrage = JSON.parse(json); } catch (e){}
+      var q = String(anfrage.query || "").trim().toLowerCase();
+      if (!q) return;
+      function trifft(t){ return String(t || "").toLowerCase().indexOf(q) >= 0; }
+      var items = MARKEN.concat(MARKEN_WEITER).filter(function(m){ return trifft(m.name); })
+        .map(function(m){ return { type: "brand", id: m.id, name: m.name, logo: m.logo }; })
+        .concat(QUELLEN.filter(function(s){ return trifft(s.domain); })
+          .map(function(s){ return { type: "domain", domain: s.domain, favicon: s.logo }; }))
+        .concat(VIS_ZEILEN.filter(function(z){ return trifft(z.prompt); })
+          .map(function(z, k){ return { type: "prompt", id: "lh-p" + k, prompt_text: z.prompt,
+                                        market: String(z.markt || "").toLowerCase() }; }));
+      setTimeout(function(){
+        var U = w.UpstreemCore;
+        if (U && U.entitySearchDeliver) U.entitySearchDeliver("results", { requestId: anfrage.requestId, items: items });
+      }, 280);
+    };
+    /* Die Logos fuer den Faecher im Dropdown: dieselben Vorraete wie in der App -- die Marken und
+       die Quellen der Seite. Ohne sie zeigte der Faecher im ersten Fall nur Zeichen. */
+    function vorraete(){
+      if (w.askMiraSetBrandLogos) w.askMiraSetBrandLogos(MARKEN.map(function(b){ return { logo_url: b.logo, name: b.name }; }));
+      if (w.askMiraSetFavicons) w.askMiraSetFavicons(QUELLEN.filter(function(s){
+        return s.citation_type !== "You" && s.citation_type !== "Brand_Platform"; })
+        .map(function(s){ return { favicon_url: s.logo, domain: s.domain }; }));
     }
 
     /* Handhabe zum Nachsehen: einen Fall sofort zeigen, ohne das Tippen abzuwarten. Sie schreibt
@@ -1461,7 +1570,7 @@
     /* Erst anfangen, wenn die Komponente im iframe wirklich steht. */
     var versuche = 0;
     (function warten(){
-      if (d.querySelector("#am-textarea") && w.askMiraSetMessages){ naechster(); return; }
+      if (d.querySelector("#am-textarea") && w.askMiraSetMessages){ vorraete(); naechster(); return; }
       if (versuche++ < 120) setTimeout(warten, 100);
     })();
   }
@@ -1738,13 +1847,21 @@
        landing-hero.css rechnen mit dieser Summe). Gebraucht werden 100px fuer vier Zeichen
        (28 + 3 x 24, sie ueberlappen um 4), 22 fuer das "+N" und 28 Zellpolster -- der Rest ist
        der Weg, den die Zeichen beim Ueberfahren zur Seite gehen (16px). */
-    var html = '<div class="ulh-vis-tab" style="--up-cols: minmax(0,1fr) 96px 180px minmax(0,190px) 84px;">' +
+    /* THEMEN 125 (29.09. spaet, "die Topics sind truncated, mach das nicht"): die Chips werden
+       nicht mehr gestaucht, sondern brechen um (landing-hero.css, .ulh-vis-themen) -- die Spalte
+       muss also nur den breitesten EINZELNEN Chip fassen: "Comparisons" 96.6 plus 28 Polster.
+       Zwei nebeneinander braeuchten 195, und bei 190 wurden sie gestaucht und abgeschnitten.
+       Die frei werdenden 65px gehen an die Prompt-Spalte (1fr): bei 1280 sah man vorher 106px
+       von jedem Prompt, keiner passte. */
+    var html = '<div class="ulh-vis-tab" style="--up-cols: minmax(0,1fr) 96px 180px 125px 84px;">' +
       '<div class="up-row up-thead">' + kopf.map(function(t){
         return '<div class="up-td">' + t + '</div>'; }).join("") + '</div>';
     html += VIS_ZEILEN.map(function(z, i){
       var leer = '<span class="up-num is-empty">–</span>';
+      /* Ohne Nachkommastelle (29.09. spaet angefordert, hier und in der Domain-Karte): in einer
+         Vorschau liest man die Groessenordnung, nicht die Zehntel. proz ist UC.fmtPct. */
       var sicht = z.vis == null ? leer
-        : '<span class="up-num">' + eine(z.vis) + '%</span>';
+        : '<span class="up-num">' + proz(z.vis) + '</span>';
       /* Der Stapel ist UC.brandStack aus core -- derselbe Aufruf wie in der Zelle der
          Prompts-Tabelle (prompts-table.js), mit denselben Klassen und derselben CSS. Die Zeichen
          sind die aus MARKEN (Acme als eigenes Zeichen, die Hersteller ueber den Favicon-Dienst),
@@ -1851,7 +1968,7 @@
             '</button>' +
           '</span>' +
         '</div>' +
-        '<div class="up-td up-td-share"><span class="udt-num">' + eine(d.share) + '%</span>' +
+        '<div class="up-td up-td-share"><span class="udt-num">' + proz(d.share) + '</span>' +
           (kern && kern.trendChip ? kern.trendChip(d.delta, { suffix: "%" }) : "") + '</div>' +
         '<div class="up-td up-td-type">' + tag(d.typ, "domain") + '</div>' +
         '<div class="up-td up-td-lastseen"><span class="udt-date">' + d.gesehen + '</span></div>' +
@@ -1903,7 +2020,7 @@
                 '<img src="' + quellzeichen(d.dom) + '" alt=""/></span>' +
               '<span class="udt-sub-title">' + titel + '</span>' +
             '</span>' +
-            '<span class="udt-sub-share">' + eine(u.anteil) + '%</span>' +
+            '<span class="udt-sub-share">' + proz(u.anteil) + '</span>' +
             '<span class="udt-sub-type">' + tag(u.typ, "url") + '</span>' +
             '<span class="udt-sub-date">' + u.gesehen + '</span>' +
             '<span class="udt-sub-goto">' + (kern && kern.GOTO_SVG ? kern.GOTO_SVG : "") + '</span>' +
@@ -4963,6 +5080,11 @@
      erst rueckt jedes Fenster ein Stueck auf das Hauptfenster zu, dann wird die ganze Buehne
      kleiner. kleinFaktor ist das Kleinere aus beidem; der Deckel allein steht in deckelFaktor,
      weil einpassen() ihn als Anfang seiner Rechnung braucht. */
+  /* Bis zu dieser Seitenbreite sind die drei Nebenfenster aus und die Buehne wird nicht
+     verkleinert -- dieselbe Zahl wie die Medienabfrage in landing-hero.css ("DIE NEBENFENSTER GEHEN
+     AB 1200px"). Stehen die zwei verschieden, gibt es einen Bereich ohne Nebenfenster, in dem die
+     Buehne trotzdem schrumpft, oder einen mit Nebenfenstern, die ueber den Rand ragen. */
+  var NEBENFENSTER_BIS = 1200;
   function deckelFaktor(root){
     var cs = getComputedStyle(root);
     var gross = parseFloat(cs.getPropertyValue("--ulh-deckel")) || 1440;
@@ -5026,9 +5148,10 @@
          mehr: sie macht Platz fuer die drei Nebenfenster, und die sind ab 900px ausgeblendet.
          Was bleibt, waere ein Fenster, das beim Scrollen schrumpft und dessen Schrift dabei
          unlesbar wird -- auf einem Telefon zaehlt jedes Pixel Schriftgroesse.
-         900 ist dieselbe Schwelle wie in der CSS; sie steht hier als Zahl, weil ein Stylesheet
-         seine Medienabfragen nicht herausgibt. */
-      var schmal = (window.innerWidth || document.documentElement.clientWidth || 0) <= 900;
+         Die Schwelle ist die, ab der die Nebenfenster weg sind (NEBENFENSTER_BIS, 1200 seit dem
+         29.09. spaet, vorher 900) -- dieselbe wie in der CSS; sie steht hier als Zahl, weil ein
+         Stylesheet seine Medienabfragen nicht herausgibt. */
+      var schmal = (window.innerWidth || document.documentElement.clientWidth || 0) <= NEBENFENSTER_BIS;
       var wunsch = (soll && !schmal) ? "scale(" + kleinFaktor(root).toFixed(4) + ")" : "scale(1)";
       /* Nur schreiben, wenn sich etwas aendert -- sonst waere das ein Stilschreiben je Takt, und
          jedes davon macht das Layout schmutzig. */

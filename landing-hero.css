@@ -1834,9 +1834,11 @@
    Die Zahl steht jetzt HIER. Vorher setzte in der ganzen Kette niemand eine Groesse: die 16px
    waren die Vorgabe des Browsers, geerbt ueber <html>, und damit eine Groesse, die der Gastgeber
    der Seite bestimmt und nicht diese Datei (gemessen: .up-td, .ulh-vis-in, .ulh-card und die
-   Wurzel standen alle auf 16px, keine Regel dazu). */
+   Wurzel standen alle auf 16px, keine Regel dazu).
+   29.09. spaet: 2px kleiner, 15 ("mach die Fontsizes der Prompts kleiner, 2px") -- eine Stufe
+   ueber der Visibility daneben (14), die Zeile bleibt der Gegenstand. */
 .ulh-vis-prompt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  font-size: 17px; font-weight: var(--ulh-vis-text); }
+  font-size: 15px; font-weight: var(--ulh-vis-text); }
 /* Der Ring zwischen den Markenzeichen ist der ABSTAND zum Nachbarn und traegt die Farbe der Zeile
    (core.css, .up-stack-vis). Beim Ueberfahren nimmt core dafuer die Hoverfarbe der Zeile -- die
    Zeilen der Vorschau behalten ihren Grund aber (weiter unten: "Der eigene Hover der Bauteile
@@ -1858,7 +1860,14 @@
    mehr, sondern gar keiner. Bei 50 bleibt er als Flaeche erkennbar und ist eine Stufe ruhiger. */
 .ulh-app .udt-subrows,
 .ulh-vis .udt-subrows { background: color-mix(in srgb, var(--vt-head-bg) 50%, var(--vc-bg) 50%); }
-.ulh-vis-themen { display: flex; gap: 5px; min-width: 0; overflow: hidden; }
+/* DIE THEMEN WERDEN NICHT ABGESCHNITTEN (29.09. spaet: "die Topics sind truncated, mach das
+   nicht"). Gemessen passten zwei Chips bei 1440 mit 161 in 162px gerade noch, bei jeder
+   schmaleren Seite wurden sie gestaucht und bekamen die Auslassung aus core (.up-topicchip-lbl).
+   Jetzt behaelt jeder Chip seine Breite und ein zweiter bricht notfalls in eine zweite Zeile --
+   die Zeile ist 72px hoch, zwei Reihen passen hinein. */
+.ulh-vis-themen { display: flex; flex-wrap: wrap; gap: 4px 5px; min-width: 0; }
+.ulh-vis-themen .up-topicchip { flex: 0 0 auto; }
+.ulh-vis-themen .up-topicchip-lbl { overflow: visible; text-overflow: clip; }
 
 /* Der Auslauf nach unten: erst weich zeichnen, dann in den Kartengrund verlaufen. Zwei Ebenen,
    weil eine Maske BEIDES treffen wuerde -- die Unschaerfe soll von oben nach unten zunehmen, der
@@ -2155,8 +2164,15 @@
    Hauptfensters abdecken.
    Das alles gilt fuer die GRENZE. Auf dem Weg dorthin (Stufe 1, gemessen zwischen gut 2040 und
    1940px Seitenbreite) rueckt jedes Fenster stufenlos, und die Kante des Hauptfensters schneidet
-   dabei auch einmal durch das Zeichen -- so sieht ein Fenster hinter einem anderen eben aus. */
-.ulh-fen { --ulh-rein-max: .16; }
+   dabei auch einmal durch das Zeichen -- so sieht ein Fenster hinter einem anderen eben aus.
+   SEIT DEM 29.09. SPAET 30 PROZENT ("die koennen sich bitte noch etwas weiter dahinter schieben,
+   oder davor, bevor alles mitskaliert"). Wieder zwischen zwei gemessenen Kanten: in der
+   Antwortkarte endet der Stimmungswert bei 28.3 Prozent (von innen) und das naechste Zeichen
+   beginnt bei 32.2 -- 30 schneidet nichts an, die Stimmung liegt jetzt ganz dahinter. In den Teams
+   stehen die Namen linksbuendig weit aussen, hinter der Grenze liegen nur Haken und Leerraum.
+   Gemessen bringt das bei gleicher Seitenbreite ein groesseres Hauptfenster: 1440 -> 976 statt
+   928, 1280 -> 856 statt 814, 1100 -> 721 statt 686. */
+.ulh-fen { --ulh-rein-max: .30; }
 /* 300x254: die Breite ist die des Panels in der App (sidebar.css: .usn-bar .usn-menu), die Hoehe
    ist ADDIERT und nicht geschaetzt -- 8 Polster + 32 Suchfeld + 6 Abstand + drei Zeilen a 64 mit
    4px dazwischen + 8 Polster. Mit 250 stand die dritte Zeile 4px unter der Kante (gemessen:
@@ -2627,23 +2643,20 @@
    nicht anstossen, er laesst nur mehr Luft. Und es gilt ausschliesslich im Schaustueck -- jede
    dieser Regeln haengt an .ulh-app und erreicht die App nicht.
    Die Zeilenhoehen der beiden Tabellen ziehen unten mit, das war die ausdrueckliche Ansage. */
-/* ---- DER KLEINE SEITENKOPF (24.09. angefordert) ---------------------------------------------
-   "Bitte nutze den kleinen Pageheader, wie wir das in der Hauptapp schon im Power-Mode haben.
-   Gerne auch mit dem Switcher oben, auf Analytic gestellt."
-   Zwei Dinge, die in der App zusammengehoeren, sind hier getrennt: die GEOMETRIE des kleinen
-   Kopfes haengt dort an .is-power, und .is-power heisst zugleich "Agentic" am Umschalter. Auf
-   der Landingpage soll aber der kleine Kopf stehen UND der Umschalter auf Analytic -- das ist
-   der Zustand, den diese Sektion zeigt. Also die Geometrie hier direkt, ohne die Klasse:
-   dieselben vier Werte wie in dashboard-page-header.css (.dph-root.is-power).
-   Nur im Fenster dieser Sektion; die App entscheidet das weiter ueber ihren Modus. */
-.ulh-app .dph-root .up-ph-desc { display: none; }
-.ulh-app .dph-root .up-ph-top { align-items: center; }
-.ulh-app .dph-root { padding-top: 8px; padding-bottom: 40px; }
-/* 20px wie im kleinen Kopf der App -- und damit ersetzt diese Zeile die 27px von vorher, die fuer
-   den grossen Kopf gerechnet waren. */
-.ulh-app .up-ph-heading { font-size: 20px; margin: 0; }
+/* ---- DER SEITENKOPF IST DER DER APP (29.09. spaet angefordert) -------------------------------
+   "Hier bitte den gesamten Pageheader-Kram einbauen ... neben den Kopfzeilen sind noch 16px links
+   und rechts, das soll genauso sein wie in der Hauptapp." Der kompakte Kopf mit Krumen kommt aus
+   core und den Seitenkopf-Skripten, wie in der App. Die Seiten tragen data-up-kopfrahmen
+   (landing-hero.js), damit er gegen sie misst: Inhalt 16 links und 8 rechts, Linien bis an die
+   Kante -- gemessen in allen vier Koepfen genau so.
+   Hier standen bis dahin die Masse des kleinen Kopfes vom 24.09. (Ueberschrift 20px, Polster
+   8/40 am Dashboard-Kopf, Beschreibung aus). Gegen den kompakten Kopf griffen sie nicht mehr
+   (gemessen: Krume 14px, Polster unten 0) und sind weg.
+   Auf der Prompts-Seite 16 zwischen Reiterleiste und Tabelle ("genau wie zwischen Topbar und
+   Tabellenanfang in der Komponente"): die Seite hat schon 16 Luecke zwischen ihren Bloecken,
+   also ohne das Polster unter den Reitern -- gemessen vorher 32. */
+.ulh-app .ulh-prompts > .up-ph-root.pph-root { padding-bottom: 0; }
 .ulh-app .n { font-size: 15px; }
-.ulh-app .up-ph-desc { font-size: 14px; }
 .ulh-app .dph-kpi-label,
 .ulh-app .dph-kpi-value,
 .ulh-app .tcd-head-count,
@@ -3204,6 +3217,17 @@
    Oberflaeche auf einem Telefon ehrlich zu zeigen -- eine auf 320px gequetschte Tabelle ist keine
    Tabelle mehr, sondern ein Bild von einer. Abgeschnitten liest man wenigstens, was da steht.
    ============================================================================================== */
+/* ---- DIE NEBENFENSTER GEHEN AB 1200px (29.09. spaet angefordert: "der Umbruch in den Tablet-/
+   Mobile-Modus kann frueher kommen, bevor da alles zu klein wird") ----
+   Vorher erst ab 900. Gemessen stand die App darueber am kleinsten: bei 901px auf 0.39 ihrer
+   Groesse (Krume 5.5px auf dem Schirm), bei 1100 auf 0.50 -- kleiner als im Mobilmodus darunter
+   (0.59). Mit der Einrueckung von 30 Prozent sind es bei 1180 noch 0.57, bei 1280 schon 0.62: die
+   Grenze liegt dazwischen. Darunter traegt das Hauptfenster die ganze Breite der Spur und wird
+   nicht mehr verkleinert (landing-hero.js, anwenden -- dieselbe Zahl als NEBENFENSTER_BIS). Der
+   Mobilmodus darunter (16px Rand, festes 900er Fenster, hoeheres Verhaeltnis) bleibt bei 900. */
+@media (max-width: 1200px) {
+  .ulh-fen { display: none; }
+}
 @media (max-width: 1100px) {
   /* Die Karten stehen frueher untereinander als der Rest umbricht: zwei Karten nebeneinander
      brauchen mehr Platz als eine Ueberschrift. */
@@ -3226,11 +3250,9 @@
   /* ---- Das Fenster im Hero ----
      Es bleibt. Vorher war es ab 900px ganz weg -- die Sektion bestand dann aus einer Ueberschrift
      und sonst nichts.
-     Die drei Nebenfenster gehen dagegen: sie stehen links und rechts NEBEN dem Hauptfenster, und
-     dieser Platz existiert hier nicht mehr.
+     Die drei Nebenfenster sind hier laengst weg (ab 1200px, siehe den Block darueber).
      Das Fenster behaelt 900px Breite und steht links. Was rechts nicht mehr passt, schneidet die
      Wurzel ab (overflow-x: clip) -- gewollt, kein Fehler: so bleibt die Schrift darin lesbar. */
-  .ulh-fen { display: none; }
   /* 16px von links wie alles andere -- die Buehne haengt nicht in der Spur, also steht die Zahl
      hier noch einmal. Rechts laeuft sie hinaus, das ist der Sinn. */
   .ulh-buehne { width: 900px; margin-left: 16px; margin-right: 0; }

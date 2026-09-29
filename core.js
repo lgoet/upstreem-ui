@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261051;
+  var BUILD = 20261052;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -9317,6 +9317,13 @@
      zoege sich ueber die Leiste. Das Durchlassen der Klicks bleibt bei der Gruppe
      (kopfPolsterDurchlassen); an einem Reusable wird nichts gesetzt, nur gemessen. */
   function kopfRahmen(root){
+    /* EIN AUSDRUECKLICH MARKIERTER RAHMEN (29.09. spaet): die Landingpage setzt ihre Seitenkoepfe
+       ohne Bubble-Huelle direkt in ihre Seiten (.ulh-seite, 16px Polster wie eine Gruppe). Ohne
+       Rahmen lief keine Messung -- gemessen alle drei Variablen leer --, und Kopf samt Linien
+       blieben im Polster stecken ("neben den Kopfzeilen noch 16px links und rechts, das soll wie
+       in der Hauptapp sein"). Ein Elternteil mit data-up-kopfrahmen gilt deshalb wie eine Gruppe. */
+    var eltern = root && root.parentElement;
+    if (eltern && eltern.hasAttribute && eltern.hasAttribute("data-up-kopfrahmen")) return eltern;
     var html = root && root.parentElement, gr = html && html.parentElement;
     if (!html || !html.classList || !html.classList.contains("bubble-element")) return null;
     if (!gr || !gr.classList || !gr.classList.contains("bubble-element") || gr.classList.contains("Page")) return null;
@@ -9573,6 +9580,22 @@
        ihr Polster, ohne dass sich die Breite der Wurzel aendern muss -- und onResize meldet nur
        Breiten. Der Strich stand dann 27px ueber dem Textende statt 3 (gemessen). */
     nav.__upStrichNeu = function(){ positionUnderline(nav.querySelector(".up-ph-navitem.is-selected"), false); };
+    /* Und wenn eine Webschrift fertig geladen ist: Geist aendert die Breite der Beschriftung, nicht
+       die der Wurzel -- onResize schweigt dazu. Gemessen: Strich 4.34 statt 3px hinter dem Text,
+       wenn die Schrift erst nach dem Aufbau ankam. Nur solange die Leiste im Dokument haengt. */
+    try {
+      if (document.fonts && document.fonts.addEventListener){
+        /* EIN Horcher je Leiste: baut ein Kopf seine Reiter neu (Settings beim Logo), kaeme sonst
+           mit jedem Aufbau einer dazu. */
+        if (nav.__upSchriftDa) document.fonts.removeEventListener("loadingdone", nav.__upSchriftDa);
+        var schriftDa = nav.__upSchriftDa = function(){
+          if (!nav.isConnected){ document.fonts.removeEventListener("loadingdone", schriftDa); return; }
+          nav.__upStrichNeu();
+        };
+        document.fonts.addEventListener("loadingdone", schriftDa);
+        if (document.fonts.ready) document.fonts.ready.then(function(){ if (nav.isConnected) nav.__upStrichNeu(); });
+      }
+    } catch(e){}
     /* is-narrow/is-vnarrow: measured off the ROOT's own box width via ResizeObserver, not a CSS
        media query -- consistent with every other component in this repo, and correct if a page
        header ever ends up in a narrower Bubble container than the full page (it doesn't today,
@@ -9690,7 +9713,11 @@
       var rs = getComputedStyle(root), l, re;
       var zl = Math.max(0, -(parseFloat(rs.marginLeft) || 0)), zr = Math.max(0, -(parseFloat(rs.marginRight) || 0));
       var r = root.getBoundingClientRect(), g = gr.getBoundingClientRect();
-      if (r.width && g.width){ l = r.left - g.left + zl; re = g.right - r.right + zr; }
+      /* IN LAYOUT-PIXELN: steht der Kopf unter einem transform (die Landingpage verkleinert ihr
+         Fenster mit scale), liefert getBoundingClientRect verkleinerte Masse -- gemessen 15,3 statt
+         16, und Krume, Knopf und Linien rutschten um 0,4 bis 0,7px. Ohne transform ist das Mass 1. */
+      var mass = (gr.offsetWidth && g.width) ? g.width / gr.offsetWidth : 1;
+      if (r.width && g.width){ l = (r.left - g.left) / mass + zl; re = (g.right - r.right) / mass + zr; }
       else { var gs = getComputedStyle(gr); l = parseFloat(gs.paddingLeft) || 0; re = parseFloat(gs.paddingRight) || 0; }
       l = Math.max(0, l); re = Math.max(0, re);
       var pl = Math.max(0, ZIEL_L - l), pr = Math.max(0, ZIEL_R - re);
