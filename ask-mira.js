@@ -3412,8 +3412,11 @@
   }
   /* Das Zeichen vor dem Text -- dasselbe, das der Punkt in der Seitenleiste traegt (Brands,
      Prompt Insights, Citations); Responses nimmt das des Prompts-Seitenkopfs. Kein Kasten
-     darum, zweite Textfarbe: es beschriftet die Zeile, es ist kein Chip. */
-  var _RUN_IC = { brand:'squareStack', prompts:'zap', sources:'globe', responses:'scan' };
+     darum, zweite Textfarbe: es beschriftet die Zeile, es ist kein Chip.
+     Responses traegt seit dem 30.09. 'response' (Chat01) statt 'scan'. Der Seitenkopf hat am
+     22.09. auf Chat01 gewechselt, diese Zeile war beim Wechsel uebersehen worden -- gemeldet
+     aus der Landingpage, dieselbe Datei laeuft in der App. */
+  var _RUN_IC = { brand:'squareStack', prompts:'zap', sources:'globe', responses:'response' };
   function runZeichen(st){
     var kern = window.UpstreemCore;
     var el = document.createElement('span');

@@ -336,8 +336,8 @@
       '<section class="ulh-hero">' +
       /* Der Hintergrund steht als ERSTES im Markup und nicht als letztes: bei gleichem z-index
          entscheidet die Reihenfolge, und so liegt er hinter allem, ohne dass jedes Geschwister
-         einen eigenen Wert braucht. Reihenfolge darin: blaues Bild hinten, Onboarding-Grafik
-         davor. */
+         einen eigenen Wert braucht. Reihenfolge darin: der blaue Verlauf hinten (ulh-bg-foto,
+         der Name stammt noch aus der Zeit des Bildes), das Linienraster davor. */
       '<div class="ulh-bg" aria-hidden="true">' +
         '<span class="ulh-bg-foto"></span>' +
         '<span class="ulh-bg-grid"></span>' +
@@ -1231,24 +1231,54 @@
            Fenster), und diese Regeln sollen ueber die Spezifitaet gewinnen. */
         '#ask-mira .am-textarea,#ask-mira .am-ph-text{font-size:16px;line-height:1.7;}' +
         '#ask-mira .am-ph-loop{height:28px;}' +
-        /* DIE TREFFERLISTE DES ADD-DROPDOWNS KLEINER (29.09. spaet angefordert: "Schriften und
-           Logos erscheinen mir da zu gross"). Alle Masse der Zeile ziehen mit, jedes auf die
-           naechste Stufe der Skala: Name 14 -> 12, Nebenzeile und Gruppenkopf 12 -> 11, Kachel
-           30 -> 24 (Radius 8 -> 6, Flagge 24x18 -> 20x15, Rueckfallzeichen 15 -> 13), Polster
-           senkrecht 8 -> 7, Luecke 11 -> 9. Die Zeile misst damit 38 statt 46.
-           Seitlich bleiben die 10: .am-pick-scroll holt genau diese 10 mit einem negativen Rand
-           wieder herein (ask-mira.css), damit der Text mit dem Suchfeld darueber fluchtet -- mit 9
-           stuende er einen Pixel daneben. Die Typangabe rechts bleibt bei 11, der kleinsten Stufe.
-           Nur hier: in der App bleibt die Liste, wie sie ist. */
+        /* DAS ADD-DROPDOWN KLEINER, in zwei Runden. 29.09. spaet die Trefferliste ("Schriften
+           und Logos erscheinen mir da zu gross"), 30.09. das ganze Dropdown noch einmal ("font
+           sizes und logo sizes etwas kleiner", dazu die Namen 100 leichter und kein grauer Grund
+           hinter dem Logo). Jedes Mass geht eine Stufe herunter, und was zu einem Mass gehoert,
+           zieht mit -- sonst stoesst Schrift an ihren Kasten (CLAUDE.md, Paragraph 1):
+             Suchzeile     Text 14 -> 13, Lupe 17 -> 16
+             Befehlschips  die Masse von .up-entchip.is-lifted.is-sm aus core, Wert fuer Wert:
+                           22 hoch, Radius 6.4, Luecke 5.5, Polster 5.5/8.25, Schrift 11. Das ist
+                           die kleine Fassung, die die Palette schon traegt (.mqa-mini) -- eine
+                           dritte Groesse dazwischen waere ein neues Bauteil.
+             Faecher       per zoom 0.875, weil seine Karten auf einem gerechneten Bogen stehen
+                           (transform-origin 50% 440%): Karte 32 -> 28, Logo 20 -> 17.5, und der
+                           Bogen schrumpft mit, statt dass die Karten sich anders ueberlappen.
+                           Die Unterschrift 13 -> 12 eigens, sie steht nicht im Faecher.
+             Trefferzeile  Name 12 -> 11, Nebenzeile, Typ und Gruppenkopf 11 -> 10, Kachel
+                           24 -> 20 (Radius 6 -> 5, Flagge 20x15 -> 16x12, Rueckfallzeichen
+                           13 -> 11), Polster senkrecht 7 -> 6, Luecke 9 -> 8. Das Skelett, das
+                           waehrend der Suche an ihrer Stelle steht, bekommt dieselben Masse --
+                           sonst springt die Liste, wenn die Treffer kommen.
+           DER NAME 100 LEICHTER: 500 -> 400, und der getippte Teil darin 700 -> 600. Beide, weil
+           "BMW" ganz aus getipptem Teil besteht -- der sichtbare Name ist der Treffer.
+           KEIN GRUND HINTER EINEM LOGO: Fuellung und Rahmen der Kachel fallen, sobald ein Bild
+           darin steht. Ohne Bild (.is-fb) bleibt die Kachel -- dort traegt sie das Ersatzzeichen.
+           Seitlich bleiben die 10 der Zeile: .am-pick-scroll holt genau diese 10 mit einem
+           negativen Rand wieder herein (ask-mira.css), damit der Text mit dem Suchfeld darueber
+           fluchtet.
+           Nur hier: in der App bleibt das Dropdown, wie es ist. */
+        '#ask-mira .am-pick-input{font-size:13px;}' +
+        '#ask-mira .am-pick-sic{width:16px;height:16px;}' +
+        '#ask-mira .am-pick-cmd{height:22px;gap:5.5px;padding:0 5.5px 0 8.25px;border-radius:6.4px;font-size:11px;}' +
+        '#ask-mira .up-fan{zoom:.875;}' +
+        '#ask-mira .up-fan-cap{font-size:12px;}' +
         '#ask-mira .am-pick-cgroup{padding:3px 0 2px;}' +
-        '#ask-mira .am-pick-cgroup+.am-pick-cgroup{margin-top:8px;}' +
-        '#ask-mira .am-pick-cghead{padding:5px 10px 3px;font-size:11px;}' +
-        '#ask-mira .am-pick-row{padding:7px 10px;gap:9px;}' +
-        '#ask-mira .am-pick-av{width:24px;height:24px;border-radius:6px;}' +
-        '#ask-mira .am-pick-av.is-flag{width:20px;height:15px;border-radius:3px;}' +
-        '#ask-mira .am-pick-av-fb svg{width:13px;height:13px;}' +
-        '#ask-mira .am-pick-primary{font-size:12px;}' +
-        '#ask-mira .am-pick-secondary{font-size:11px;}' +
+        '#ask-mira .am-pick-cgroup+.am-pick-cgroup{margin-top:7px;}' +
+        '#ask-mira .am-pick-cghead{padding:4px 10px 3px;font-size:10px;}' +
+        '#ask-mira .am-pick-row{padding:6px 10px;gap:8px;}' +
+        '#ask-mira .am-pick-av{width:20px;height:20px;border-radius:5px;}' +
+        '#ask-mira .am-pick-av:not(.is-fb){background:transparent;border:0;}' +
+        '#ask-mira .am-pick-av.is-flag{width:16px;height:12px;border-radius:2px;}' +
+        '#ask-mira .am-pick-av-fb svg{width:11px;height:11px;}' +
+        '#ask-mira .am-pick-primary{font-size:11px;font-weight:400;}' +
+        '#ask-mira .am-pick-hl{font-weight:600;}' +
+        '#ask-mira .am-pick-secondary{font-size:10px;}' +
+        '#ask-mira .am-pick-type{font-size:10px;}' +
+        '#ask-mira .am-pick-sk{gap:8px;padding:6px 10px;}' +
+        '#ask-mira .am-pick-sk-av{width:20px;height:20px;border-radius:5px;}' +
+        '#ask-mira .am-pick-sk-lines{gap:5px;}' +
+        '#ask-mira .am-pick-sk-line{height:8px;}' +
       '</style></head><body>' + (MARKUP.mira || "") +
       '<script src="' + basis + 'core.js"><\/script>' +
       '<script src="' + basis + 'ask-mira.js"><\/script>' +

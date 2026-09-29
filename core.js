@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261056;
+  var BUILD = 20261057;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -16886,8 +16886,11 @@
            '<path d="M21 9H3"/>',
     /* blend und telescope, beide aus Lucide wie alles hier: blend traegt Mira (Seitenleiste und
        Wortmarke), telescope die Prompt Research. */
-    /* lucide "scan": vier Ecken eines Rahmens. Dasselbe Zeichen fuehrt der Prompts-Seitenkopf
-       fuer den Abschnitt Responses -- Miras Arbeitsprotokoll benutzt es fuer denselben Schritt. */
+    /* lucide "scan": vier Ecken eines Rahmens. Fuehrte der Prompts-Seitenkopf fuer Responses, bis
+       beide Stellen auf 'response' (Chat01) gewechselt sind -- der Kopf am 22.09., Miras
+       Arbeitsprotokoll am 30.09. Seitdem ruft es niemand mehr auf. Es bleibt trotzdem: ein
+       Element an einem aelteren Pin fragt noch danach, und ein fehlender Name liefert eine
+       leere Huelle statt eines Zeichens. */
     scan: '<path d="M16.0042 2.5C17.9974 2.61348 19.2576 2.93381 20.1619 3.83811C21.0662 4.74243 21.3865 6.00268 21.5 7.99598M7.99582 2.5C6.00261 2.61348 4.74241 2.93381 3.83812 3.83811C2.9338 4.74243 2.61347 6.00268 2.5 7.99598M21.5 16.004C21.3865 17.9973 21.0662 19.2576 20.1619 20.1619C19.2576 21.0662 17.9973 21.3865 16.004 21.5M2.5 16.004C2.61347 17.9973 2.9338 19.2576 3.83812 20.1619C4.74244 21.0662 6.00268 21.3865 7.99597 21.5"/>' +
           '<path d="M5 12H19"/>',
     blend:    '<path d="M13.427 8.08396C12.8007 5.84272 12.3226 4 11.0004 4C9.67824 4 9.19964 5.84274 8.5731 8.08399C8.31853 8.99465 8.19125 9.44998 7.82042 9.82077C7.4496 10.1916 6.99434 10.3188 6.08381 10.5732C3.84273 11.1995 2 11.6775 2 13C2 14.3225 3.84273 14.8005 6.08381 15.4268C6.99434 15.6812 7.4496 15.8084 7.82042 16.1792C8.19125 16.55 8.31853 17.0054 8.5731 17.916C9.19964 20.1573 9.67824 22 11.0004 22C12.3226 22 12.8007 20.1573 13.427 17.916C13.6815 17.0054 13.8087 16.5501 14.1795 16.1793C14.5504 15.8085 15.0056 15.6812 15.9162 15.4268C18.1573 14.8005 20 14.3225 20 13C20 11.6775 18.1573 11.1995 15.9162 10.5732C15.0056 10.3188 14.5504 10.1915 14.1795 9.8207C13.8087 9.44986 13.6815 8.99456 13.427 8.08396Z"/>' +

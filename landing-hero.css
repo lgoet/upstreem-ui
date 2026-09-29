@@ -344,12 +344,12 @@
 .ulh-btn-pri:hover { background: #33332e; border-color: #33332e; }
 
 /* ---------- Der Hintergrund ----------
-   Zwei Ebenen, beide unten verankert und nach OBEN ausblendend, beide hinter allem:
-     hinten   das blaue Bild (deine Datei auf Supabase), schwaecher
-     davor    dieselbe Grafik wie im Onboarding und hinter Miras Startschirm (.up-bgart-* aus core)
-   Oben ist NICHTS zu sehen: die Maske laesst die ersten 26% ganz durchsichtig und kommt bis 78%
-   langsam auf voll. 26% liegen etwa auf Hoehe des Fensteranfangs -- der Textblock bleibt also frei,
-   und das Bild beginnt genau dort, wo der Screen anfaengt. */
+   Zwei Ebenen, beide hinter allem:
+     hinten   ein Verlauf in drei Blautoenen, nach oben heller und oben ganz durchsichtig
+     davor    senkrechte weisse Linien, von unten her eingeblendet
+   Bis zum 30.09. lag hinten ein Bild (ein blaues SVG auf Supabase, 12527x8769, per cover auf
+   die Flaeche gezogen, Deckkraft .44). Ersetzt auf Wunsch durch reine Farbe -- dieselbe
+   Wirkung, drei vorgegebene Toene, und keine Datei, die erst geladen werden muss. */
 .ulh-bg {
   position: absolute;
   inset: 0;
@@ -359,48 +359,59 @@
 }
 .ulh-bg-foto, .ulh-bg-grid {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  /* Die Blende. Zwei Angaben, weil Safari die Kurzform noch mit Praefix braucht. */
-  /* Die Stufen liegen jetzt rund zehn Punkte hoeher als zuerst (26/42/60/78): die Grafik setzt
-     weiter oben ein und ist bei zwei Dritteln der Hoehe schon voll da. Subtil kraeftiger, ohne
-     dass sie in die Ueberschrift laeuft -- oben bleiben 16 Prozent ganz frei. */
-  -webkit-mask-image: linear-gradient(to bottom, transparent 16%, rgba(0,0,0,.18) 32%,
-                      rgba(0,0,0,.62) 50%, #000 66%);
-  mask-image: linear-gradient(to bottom, transparent 16%, rgba(0,0,0,.18) 32%,
-              rgba(0,0,0,.62) 50%, #000 66%);
+  inset: 0;
 }
-/* Das blaue Bild: unten mittig, ueber die ganze Breite, und nur ein Hauch davon. Die Datei ist ein
-   CorelDRAW-Export mit 12527x8769 -- also flach; auf voller Breite steht sie im unteren Drittel. */
+/* DIE FARBE. Die drei Toene sind vorgegeben (30.09.): #8fb4e6 unten, der kraeftigste,
+   #b9d1f1 in der Mitte, #eef4fc oben, fast weiss. Sie stehen hier so, wie man sie sieht --
+   ohne Deckkraft und ohne Maske darueber. Das Bild brauchte beides, weil es selbst keinen
+   Verlauf hatte; ein Verlauf kann seine Blende selbst tragen, und dann ist der Ton, der dasteht,
+   der Ton, der verlangt war.
+   Die Blende ist dieselbe wie vorher: bis 16% der Hoehe nichts -- dort steht die Ueberschrift --,
+   bei 34% der hellste Ton (auf Hoehe der Knoepfe, kurz vor dem Fenster), die Mitte bei 60%, also
+   etwa auf halber Hoehe des Fensters, und unten der kraeftigste. Der Anfang ist #eef4fc mit
+   Deckkraft 0 und nicht "transparent": so blendet derselbe Ton ein, statt aus einem
+   durchsichtigen Schwarz heraus grau zu werden. */
 .ulh-bg-foto {
-  top: 0;
-  /* cover und nicht "100% auto", und das ist der Unterschied zwischen einer Kante und keiner:
-     die Datei ist 12527x8769, also flach. Mit 100% auto ist sie 0.7 mal so hoch wie breit -- bei
-     1440px Breite rund 1008px -- und ihre OBERKANTE liegt damit mitten in der Flaeche. Genau dort
-     sass die harte waagrechte Linie. Wird das Fenster schmaler, wird das Bild kuerzer, die Kante
-     wandert nach UNTEN in den kraeftigeren Teil der Blende und faellt noch mehr auf: genau das war
-     der Bericht.
-     Mit cover deckt das Bild den Kasten immer ganz ab -- es gibt keine Oberkante mehr, an keiner
-     Fenstergroesse. Es wird dafuer links und rechts beschnitten, mittig; das Seitenverhaeltnis
-     bleibt. Eine feste Groesse waere der andere Weg gewesen und der schlechtere: die Kante waere
-     dann nur immer an derselben Stelle, statt zu verschwinden. */
-  background: url("https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/slimane-kadi-M3TevYf1EKo-unsplash.svg")
-              center bottom / cover no-repeat;
-  /* Doppelt so kraeftig wie zuerst (.22) -- da war es kaum zu sehen. */
-  opacity: .44;
+  background: linear-gradient(to bottom,
+              rgba(238, 244, 252, 0) 16%, #eef4fc 34%, #b9d1f1 60%, #8fb4e6 100%);
+}
+/* MITTIG ETWAS HELLER (30.09. angefordert: "mittig ganz leicht weniger kraeftig als links und
+   rechts"): ein Schleier aus Weiss darueber, quer, der in der Mitte 18% deckt und nach aussen auf
+   0 geht. Neun Stufen statt drei, als Glocke: mit nur Mitte und Raendern waere es ein Dach mit
+   einem Grat, und den Grat sieht man als senkrechten Strich (Machsche Streifen).
+   EIGENE EBENE MIT EIGENER BLENDE, nicht als zweite Lage im Hintergrund oben: dort lag der
+   Schleier auch ueber dem durchsichtigen oberen Sechstel, und halbdurchsichtiges Weiss ueber
+   Durchsichtigem kam gemessen als feine graue Laengsstreifen unter der Leiste heraus (zu sehen
+   nur mit beiden Lagen zusammen, mit jeder allein nicht). Die Blende hier setzt den Schleier
+   erst ein, wo das Blau schon deckt (34%), und ist ab 60% voll -- oben waere er ohnehin
+   unsichtbar, Weiss auf fast Weiss. */
+.ulh-bg-foto::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right,
+              rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, .03) 18%, rgba(255, 255, 255, .1) 32%,
+              rgba(255, 255, 255, .16) 44%, rgba(255, 255, 255, .18) 50%, rgba(255, 255, 255, .16) 56%,
+              rgba(255, 255, 255, .1) 68%, rgba(255, 255, 255, .03) 82%, rgba(255, 255, 255, 0) 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 34%, #000 60%);
+  mask-image: linear-gradient(to bottom, transparent 34%, #000 60%);
 }
 /* Das Raster darueber: einfache SENKRECHTE Linien, 1px, alle 8px, weiss. Keine waagrechten.
    Vorher stand hier die Grafik aus dem Onboarding -- die bringt Bogen, Kreuzmarken und Lichter mit
    und war fuer diese Flaeche zu viel Bild. Ein Verlauf, der sich wiederholt, kostet ausserdem keine
    Datei, keine Maske und keine .up-root-Huelle.
-   Weiss wirkt nur, wo darunter das blaue Bild liegt; ueber dem weissen Grund ist es unsichtbar --
-   genau richtig, denn oben soll ohnehin nichts zu sehen sein. */
+   Weiss wirkt nur, wo darunter Blau liegt; ueber dem weissen Grund ist es unsichtbar -- genau
+   richtig, denn oben soll ohnehin nichts zu sehen sein.
+   Die Blende ist die, die frueher auch das Bild trug, und sie bleibt unveraendert: bis 16% nichts,
+   dann langsam, ab 66% voll. Zwei Angaben, weil Safari die Kurzform noch mit Praefix braucht. */
 .ulh-bg-grid {
-  top: 0;
   background: repeating-linear-gradient(to right,
               rgba(255, 255, 255, .55) 0, rgba(255, 255, 255, .55) 1px,
               transparent 1px, transparent 8px);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 16%, rgba(0,0,0,.18) 32%,
+                      rgba(0,0,0,.62) 50%, #000 66%);
+  mask-image: linear-gradient(to bottom, transparent 16%, rgba(0,0,0,.18) 32%,
+              rgba(0,0,0,.62) 50%, #000 66%);
 }
 
 /* ---------- Die Blende unten im Dashboardbereich ----------
