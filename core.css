@@ -3301,6 +3301,14 @@
    gedaempft. */
 .up-planpill .up-sent-dot { background: var(--vc-third); }
 .up-planpill.is-off .up-sent-val { color: var(--vc-muted); }
+/* Mobil kuerzt die Pille, statt abgeschnitten zu werden (29.09., Teams: "der Tarif ist
+   abgeschnitten, truncate den einfach im mobile"). .up-sent steht sonst auf flex 0 0 auto; hier
+   darf sie schrumpfen, der Name endet mit Auslassungspunkten.
+   NUR auf schmalen Wurzeln: am Desktop ist die Tarifzelle der Teams-Tabelle innen 137px breit und
+   ">_ Developer Access" 147px -- die Pille laeuft dort unsichtbar ins Polster der Zelle, und eine
+   Kuerzung waere an genau der Stelle, an der Platz ist, ein neuer Fehler (so gemessen). */
+.up-root.is-narrow .up-planpill { max-width: 100%; min-width: 0; flex-shrink: 1; }
+.up-root.is-narrow .up-planpill .up-sent-val { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Der dauerhafte Entwicklerzugang ("Legacy Free", UC.planIstDev): kein Stufenpunkt, sondern ein
    Prompt >_ und der Name in Monospace, der Rahmen gestrichelt -- er ist kein Tarif der Leiter
    Essential/Professional/Enterprise und soll auch nicht so aussehen. Dieselbe Hoehe und dasselbe
@@ -3391,7 +3399,11 @@
    blendet der Streifen beim ersten Bild aus der Breite 0 heran, und das behauptet einen Wechsel,
    den es nicht gab. */
 .is-gleitend::before { opacity: 1; }
-.is-gleitend::before { transition: transform 200ms ease, width 200ms ease, height 200ms ease; }
+.is-gleitend::before { transition: transform var(--up-seg-dauer, 200ms) var(--up-seg-kurve, ease),
+  width var(--up-seg-dauer, 200ms) var(--up-seg-kurve, ease), height var(--up-seg-dauer, 200ms) var(--up-seg-kurve, ease); }
+/* --up-seg-dauer und --up-seg-kurve setzt core NUR, wenn eine neu gebaute Box eine laufende Fahrt
+   uebernimmt (segSchreiben, 29.09.): Restzeit statt 200ms, ease-out statt ease. Sonst fehlen sie,
+   und es gilt der Rueckfall -- dieselben 200ms ease wie immer. */
 /* Ein Schreibvorgang OHNE Fahrt. Gesetzt von segMessen fuer alles, was kein echter Wechsel des
    aktiven Knopfes ist: die erste Messung nach einem Neuaufbau, eine engere Werkzeugleiste, ein
    Menue, das aufgeht. Zwei Klassen gegen eine, also ueber die Spezifitaet und nicht ueber die

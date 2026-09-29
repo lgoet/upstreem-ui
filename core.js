@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261030;
+  var BUILD = 20261031;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -1675,6 +1675,7 @@
     /* settings-billing beim Entwicklerzugang: Intervall und Preis */
     "Permanent": "Dauerhaft",
     "Free": "Kostenlos",
+    "Developer access has no billing to manage": "Der Entwicklerzugang hat keine Abrechnung",
     "Go to parent prompt": "Zum übergeordneten Prompt",
     "No models available yet.": "Noch keine Modelle verfügbar.",
 
@@ -4697,6 +4698,20 @@
       var W = state.widths || {};
       var pinned = !!W[FIRST];
       var firstPx = W[FIRST];
+      /* EINE GEZOGENE BREITE GILT NUR, WO SIE PASST (29.09.). Gemeldet in der Teams-Tabelle:
+         "der Wechseln-Knopf ist im Mobilmodus einfach weg, und der Tarif ist abgeschnitten".
+         Nachgestellt: eine am Desktop gezogene Teamspalte (gespeichert, gilt ueberall) wurde unten
+         auf FIRST_MIN (210) gehalten; mit Tarif 140 und Aktion 80 ergab das 430px in einem 343px
+         breiten Kasten -- die Aktionsspalte lag ganz ausserhalb, der Knopf bei x 392 bis 424.
+         Kann die gezogene Breite samt den Mindestbreiten der anderen nicht mehr stehen, gilt die
+         bewegliche Spur wie ohne Ziehen. Die gespeicherte Breite bleibt, am Desktop ist sie
+         wieder da. */
+      if (pinned && cw){
+        var andereMin = 0;
+        cols.forEach(function(c){ andereMin += colMin(c.key); });
+        if (!cfg.noActions && !root.classList.contains("is-t2")) andereMin += ACTIONS_MIN_F();
+        if (cw - LEAD() - andereMin < FIRST_MIN) pinned = false;
+      }
       if (pinned){
         /* Once the lead column is pinned to a pixel width, every other track has to switch from
            its percentage minimum to its PIXEL minimum: the percentages are relative to the whole
@@ -7227,7 +7242,13 @@
     var key = segSchluessel(box);
     var idx = Array.prototype.indexOf.call(box.children, aktiv);
     var frueher = SEG_STAND[key];
-    if (!zwingen && !box.__segNeu && frueher && frueher.idx === idx) return null;
+    /* Eine Box OHNE is-gleitend hat noch nie einen Streifen bekommen: sie ist gerade neu gebaut.
+       Die darf der Riegel nicht verschlucken -- sonst steht sie ohne Streifen da, bis der
+       gedrosselte Groessenwaechter (bis 250ms) sie anstoesst. Genau das war das Aufblitzen im
+       Umschalter "Pages / URLs | Responses" (29.09.): Bubble baut das Element nach dem Klick neu,
+       die neue Box trug dieselbe Stufe wie der Merker, und der Riegel liess sie leer. */
+    if (!zwingen && !box.__segNeu && frueher && frueher.idx === idx &&
+        box.classList.contains("is-gleitend")) return null;
     box.__segNeu = false;
     var b = aktiv.offsetWidth, h = aktiv.offsetHeight;
     /* Breite 0 heisst: der Umschalter ist gerade nicht sichtbar (ein Popover, das noch zu ist).
@@ -7276,21 +7297,84 @@
                                 Genau das war das Aufblitzen im Filtermenue.
      VIER ZAHLEN, sonst nichts. Kein Element, kein Einhaengen, kein Umbau -- der Streifen ist ein
      ::before und existiert im DOM gar nicht. */
+  /* DIE FAHRT UEBERLEBT DEN NEUAUFBAU (29.09.). Gemeldet am Umschalter "Pages / URLs |
+     Responses": "darf nicht aufflashen, die Animation beenden oder umspringen ohne sliden".
+     Bubble baut das Element nach dem Klick neu (data-value haengt an einem State), und zwar
+     MITTEN in der 200ms-Fahrt. Die neue Box stand danach sofort am Ziel -- die Fahrt riss ab.
+     Deshalb merkt sich jeder Wechsel, WANN er begann und VON WO. Kommt waehrend der Fahrt eine
+     neue Box mit derselben Stufe, setzt sie den Streifen dorthin, wo der alte gerade war
+     (dieselbe Kurve wie in core.css, "ease"), und faehrt in der Restzeit weiter -- mit ease-out,
+     denn sie uebernimmt eine Bewegung, die schon Fahrt hat. SEG_MS muss zur Dauer in core.css
+     passen (.is-gleitend::before). */
+  var SEG_MS = 200;
+  function segUhr(){ return (window.performance && performance.now) ? performance.now() : Date.now(); }
+  /* cubic-bezier(.25, .1, .25, 1) -- das CSS-"ease". Newton auf x(t) = p, dann y(t). */
+  function segKurve(p){
+    if (p <= 0) return 0;
+    if (p >= 1) return 1;
+    var t = p, i, x, dx;
+    for (i = 0; i < 8; i++){
+      x = 3 * (1 - t) * (1 - t) * t * 0.25 + 3 * (1 - t) * t * t * 0.25 + t * t * t - p;
+      dx = 3 * (1 - t) * (1 - t) * 0.25 + 6 * (1 - t) * t * (0.25 - 0.25) + 3 * t * t * (1 - 0.25);
+      if (Math.abs(x) < 1e-5 || !dx) break;
+      t -= x / dx;
+    }
+    return 3 * (1 - t) * (1 - t) * t * 0.1 + 3 * (1 - t) * t * t * 1 + t * t * t;
+  }
+  function segZwischen(von, nach, p){
+    var k = segKurve(p);
+    function z(a, b){ var va = parseFloat(a) || 0, vb = parseFloat(b) || 0; return (va + (vb - va) * k) + "px"; }
+    return { x: z(von.x, nach.x), y: z(von.y, nach.y), w: z(von.w, nach.w), h: z(von.h, nach.h) };
+  }
+  /* Wo steht der Streifen dieses Schluessels GERADE? Am Ziel, oder unterwegs dorthin. */
+  function segJetztStand(alt, jetzt){
+    if (alt && alt.t && alt.von && jetzt - alt.t < SEG_MS)
+      return segZwischen(alt.von, alt, (jetzt - alt.t) / SEG_MS);
+    return alt ? { x: alt.x, y: alt.y, w: alt.w, h: alt.h } : null;
+  }
+  function segDauerZurueck(box){
+    if (box.style.getPropertyValue("--up-seg-dauer")){
+      box.style.removeProperty("--up-seg-dauer");
+      box.style.removeProperty("--up-seg-kurve");
+    }
+  }
+
   function segSchreiben(m){
     var box = m.box;
     var alt = SEG_STAND[m.key];
     var stand = box.classList.contains("is-gleitend");
     var wechsel = !!alt && alt.idx !== m.idx;
-    SEG_STAND[m.key] = { idx: m.idx, x: m.x, y: m.y, w: m.w, h: m.h };
+    var jetzt = segUhr();
+    var hier = segJetztStand(alt, jetzt);
+    /* Laeuft die Fahrt dieses Schluessels noch, und diese Box ist neu (noch nie gezeichnet)? */
+    var fortsetzen = !wechsel && !stand && alt && alt.idx === m.idx && alt.t && alt.von &&
+                     jetzt - alt.t < SEG_MS;
+    SEG_STAND[m.key] = { idx: m.idx, x: m.x, y: m.y, w: m.w, h: m.h,
+      t: wechsel ? jetzt : (fortsetzen ? alt.t : 0),
+      von: wechsel ? hier : (fortsetzen ? alt.von : null) };
 
     if (wechsel && stand){                 /* dasselbe Element: einfach fahren */
+      segDauerZurueck(box);
       segWerte(box, m);
       return null;
     }
-    if (wechsel){                          /* neues Element: erst zurueck, dann fahren */
+    if (wechsel){                          /* neues Element: erst dorthin, wo der Streifen steht, dann fahren */
+      segDauerZurueck(box);
       box.classList.add("is-sofort");
-      segWerte(box, alt);
+      segWerte(box, hier || alt);
       box.classList.add("is-gleitend");
+      return { box: box, ziel: m };
+    }
+    if (fortsetzen){                       /* neues Element mitten in der Fahrt: weiterfahren */
+      var rest = Math.max(40, Math.round(SEG_MS - (jetzt - alt.t)));
+      box.classList.add("is-sofort");
+      segWerte(box, hier);
+      box.style.setProperty("--up-seg-dauer", rest + "ms");
+      box.style.setProperty("--up-seg-kurve", "cubic-bezier(0, 0, .58, 1)");
+      box.classList.add("is-gleitend");
+      /* Danach wieder die gewoehnliche Dauer. Ein Wechsel der Dauer beruehrt eine LAUFENDE
+         Fahrt nicht, die naechste faehrt also wieder 200ms mit "ease". */
+      setTimeout(function(){ segDauerZurueck(box); }, rest + 40);
       return { box: box, ziel: m };
     }
     box.classList.add("is-sofort");        /* kein Wechsel: springen */
@@ -17050,6 +17134,23 @@
      dann ist das mein Permanent Free Developer Access. Das bitte in der Liste schoen, gern
      etwas techy"). Erkannt an der Tarif-Id ODER am Namen: die Teams-Tabelle bekommt nur den
      Namen (billing_plan), settings-billing hat die Id. Laut Nutzer meinen beide dasselbe. */
+  /* ══ Die ruhige Familie fuer Datenkurven (29.09.) ═══════════════════════════════════════════
+     Aus der Landingpage (landing-hero.js QUELL_FARBEN, dort am 28.09. hergeleitet): EIN gedecktes
+     Blau bei Farbton 262 in OKLCH, das zum Grau der Seite hin auslaeuft -- je schwaecher die
+     Stufe, desto heller und weniger bunt. Seit dem 29.09. traegt die obere Reihe des Domain
+     Detail genau diese Farben ("so wie in der Landingpage, dass es nicht so wild bunt ist").
+     Hell: die fuenf Werte der Landingpage, unveraendert (nachgerechnet: L .52/.61/.69/.76/.82,
+     C .125/.104/.085/.061/.045). Dunkel: gegenlaeufig abgeleitet, gleicher Farbton -- auf dunklem
+     Grund ist die staerkste Stufe die HELLSTE (L .74/.66/.58/.50/.43, C .115/.10/.085/.065/.05).
+     Kontrast: hell auf Weiss 5.6 bis 1.75, dunkel auf #1c1c1f 7.4 bis 2.1.
+     Die Landingpage fuehrt die hellen Werte noch als eigene Konstante; beim naechsten Eingriff
+     dort liest sie sie von hier. */
+  var RUHIG = {
+    hell:   ["#3f66b0", "#6083c2", "#7f9cd1", "#9cb2d9", "#b4c5e2"],
+    dunkel: ["#83abf4", "#7092d0", "#5e7aad", "#4f6389", "#41506c"]
+  };
+  function ruhigeFamilie(dunkel){ return (dunkel ? RUHIG.dunkel : RUHIG.hell).slice(); }
+
   var PLAN_DEV_ID = "472ab9d4-b1e5-4bbb-9c76-9972d85e4703";
   function planIstDev(name, id){
     if (String(id == null ? "" : id).trim().toLowerCase() === PLAN_DEV_ID) return true;
@@ -18267,6 +18368,10 @@
     planPilleHtml: planPilleHtml,
     planIstDev: planIstDev,
     planAnzeige: planAnzeige,
+    ruhigeFamilie: ruhigeFamilie,
+    /* Den Streifen eines gerade gebauten Umschalters SOFORT setzen, noch vor dem ersten Bild --
+       sonst steht die Box bis zum naechsten Lauf ohne Streifen da (view-switch, 29.09.). */
+    segJetzt: function(el){ sicher("segLauf", function(){ segLauf(el || null, true, true); }); },
     planInterval: planInterval,
     planListe: planListe,
     aboLesen: aboLesen,

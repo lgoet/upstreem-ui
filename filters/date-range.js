@@ -1082,8 +1082,11 @@
       /* urlPreset() zuerst: es ist der Zeitraum, mit dem Bubble diesen Aufbau gefahren hat.
          Anzeige und Daten muessen zusammenpassen, sonst zeigt der Kalender "Last 30 Days" ueber
          Zahlen aus sieben Tagen. */
+      /* ?range= nur VOR dem Aufbau: danach kann die Adresse hinter dem geteilten Zeitraum
+         zurueckliegen (geaendert in einem Kalender ohne data-url-range), und ein Kalender, der
+         erst mit seiner Ansicht mountet, zeigte sonst den Wert vom Seitenaufbau. */
       if (syncAn() && nimmtTeil(instanceId))
-        applyPreset((urlAn(root) && urlPreset()) || syncPreset(), false);
+        applyPreset((!bootGetan() && urlAn(root) && urlPreset()) || syncPreset(), false);
       syncSperren();
       /* Aendert die Einstellung woanders (anderer Picker, Einstellungen), zieht dieser mit. */
       window.addEventListener("up-prefs-change", function (e) {
@@ -1131,7 +1134,7 @@
            im Fach (der stellt deshalb den geteilten Zeitraum mit um). */
         reset: function () {
           var ziel = (syncAn() && nimmtTeil(instanceId))
-            ? ((urlAn(root) && urlPreset()) || syncPreset())
+            ? ((!bootGetan() && urlAn(root) && urlPreset()) || syncPreset())
             : DEFAULT_PRESET;
           return applyPreset(ziel, false);
         },
@@ -1189,6 +1192,25 @@
       };
       root.__udrCtrl = ctrl;
       CONTROLLERS.push(ctrl);
+      /* DER KALENDER KOMMT ERST MIT SEINER ANSICHT (29.09.). Bubble baut das Markup einer
+         Ansicht beim ersten Oeffnen; der Ansichtswechsel (onViewChange, unten) lief da schon und
+         fand keinen Kalender -- also gab es keine Uebergabe und kein Nachladen, und die Ansicht
+         lud mit den States vom Aufbau. Hier, beim Mounten, dieselbe Pruefung: ist das der
+         Kalender der offenen Ansicht, hat er noch keinen STAND, und weicht sein Zeitraum von
+         dem ab, mit dem die Seite aufgebaut wurde, laedt er einmal nach -- 250ms spaeter, wie
+         beim Ansichtswechsel, damit die Gruppe als sichtbar gilt. */
+      if (bootGetan() && syncAn() && nimmtTeil(instanceId) && istStartkandidat(instanceId) &&
+          !STAND[instanceId]){
+        var offen = (UC.currentView && UC.currentView()) || urlAnsicht();
+        if (offen && pickerFuer(offen) === ctrl){
+          var sigM = sigVon(ctrl);
+          if (ersterBesuchVeraltet(sigM)){
+            STAND[instanceId] = sigM;
+            UEBERGEBEN[instanceId] = 1;
+            setTimeout(function(){ if (root.isConnected) ctrl.nachladen(); }, 250);
+          }
+        }
+      }
       /* Der Aufbau-Fall: der erste teilnehmende Kalender der Seite gibt seinen Zeitraum an
          Bubble. setTimeout(0) und nicht sofort: dieser Aufruf loest einen Bubble-Workflow aus,
          und der soll nicht mitten im Mounten dieses Elements laufen.
@@ -1386,6 +1408,20 @@
      waere, bei jeder Aenderung die ganze Seite neu zu laden -- der Aufbau kostet dort 9 Sekunden,
      also nein. */
   var STAND = {};
+  /* MIT WELCHEM ZEITRAUM WURDE DIE SEITE AUFGEBAUT? (29.09.) Gemeldet: "wenn man View wechselt und
+     der View vorher noch nicht geladen war, dann switcht er nicht zum neuen Wert -- nur beim
+     zweiten Besuch greift die Aenderung". Beim ZWEITEN Besuch gibt es einen STAND, der abweicht,
+     und es wird nachgeladen. Beim ERSTEN gab es keinen, und die Regel lautete "laedt ueber den
+     eigenen Workflow" -- nur laedt der mit den States vom Seitenaufbau, also mit dem ALTEN Wert.
+     Jetzt steht hier, womit aufgebaut wurde: war der Schalter dabei an, ist es der geteilte
+     Zeitraum von damals (Signatur des Startkalenders); war er aus, hatte keine Ansicht den
+     geteilten Zeitraum, und jeder erste Besuch gilt als veraltet. */
+  var BOOT_SIG = null, BOOT_SYNC = false;
+  function ersterBesuchVeraltet(sig){
+    if (!sig || !bootGetan()) return false;
+    if (!BOOT_SYNC) return true;
+    return !!(BOOT_SIG && sig !== BOOT_SIG);
+  }
   function sigVon(c){
     try {
       var r = typeof c.getRange === "function" ? c.getRange() : null;
@@ -1631,6 +1667,11 @@
        hat eigene Datums-States, jede braucht ihre Uebergabe -- nur eben eine stille. */
     var sig = sigVon(c), alt = STAND[c.instanceId];
     var veraltet = !!(alt && sig && alt !== sig);
+    /* ERSTER Besuch: gegen den Aufbau vergleichen (BOOT_SIG). Weicht der Zeitraum ab, laedt die
+       Ansicht zwar ueber ihren eigenen Workflow -- aber mit den States vom Aufbau. Dann derselbe
+       Weg wie beim zweiten Besuch: States und Nachladen in EINEM Workflow. Das kostet hoechstens
+       einen zweiten Ladevorgang, und nur, wenn sich der Zeitraum seit dem Aufbau geaendert hat. */
+    if (!alt && ersterBesuchVeraltet(sig)) veraltet = true;
     /* Bei einer VERALTETEN Ansicht wird der Aufbau-Kanal uebersprungen. Zwei Bubble-Ereignisse
        fuer einen Wechsel waren einer zu viel, und im Log des Nutzers stand genau das:
 
@@ -1668,6 +1709,15 @@
   window.addEventListener("up-prefs-change", function (e) {
     var n = e && e.detail && e.detail.name;
     if (!n || n === "date_preset" || n === "date_sync") UEBERGEBEN = {};
+    /* ?range= folgt dem geteilten Zeitraum, in welchem Kalender er auch geaendert wurde. Bisher
+       schrieb nur ein Kalender MIT data-url-range die Adresse -- ein Wechsel in einem anderen
+       liess sie auf dem alten Wert, und der naechste Aufbau fuhr damit. */
+    if ((!n || n === "date_preset") && syncAn()){
+      for (var i = 0; i < CONTROLLERS.length; i++){
+        var c = CONTROLLERS[i];
+        if (c && c.root && c.root.isConnected && urlAn(c.root)){ urlSchreiben(syncPreset()); break; }
+      }
+    }
   });
   window.setDateRangeTheme = function (instanceId, theme) {
       initAll();
@@ -1762,6 +1812,7 @@
           /* Die Startansicht laedt gleich mit genau diesem Zeitraum -- festhalten, sonst gilt sie
              beim ersten Zurueckkehren als veraltet und wird ohne Not nachgeladen. */
           var s0 = sigVon(c); if (s0) STAND[c.instanceId] = s0;
+          BOOT_SIG = s0 || null; BOOT_SYNC = syncAn();
           startlageFesthalten();
           return;
         }
@@ -1780,6 +1831,7 @@
         bootMerken();
         uebergeben(c, "boot");
         var s1 = sigVon(c); if (s1) STAND[c.instanceId] = s1;
+        BOOT_SIG = s1 || null; BOOT_SYNC = syncAn();
         startlageFesthalten();
         /* Ab jetzt steht der Zeitraum in der URL. Der naechste Aufbau braucht diese Uebergabe
            deshalb nicht mehr -- und damit auch keinen zweiten Abfragedurchlauf. */

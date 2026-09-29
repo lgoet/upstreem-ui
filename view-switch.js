@@ -54,6 +54,10 @@
   var STORE = (window.__uvwStore = window.__uvwStore || {});
 
   var WERTE = { pages: "Pages / URLs", responses: "Responses" };
+  /* Die Zeichen, die die App fuer genau diese Dinge schon traegt (29.09. angefordert: "die
+     korrekten"): linkFeather wie der URLs-Reiter im Citations-Seitenkopf, response wie die
+     KI-Antworten im Seitenkopf der Prompts-Seite (core, NAV_ZEICHEN). Strich 2, Hausstandard. */
+  var ZEICHEN = { pages: "linkFeather", responses: "response" };
   var VORGABE = "pages";
 
   function uvwBoot(triesLeft) {
@@ -87,9 +91,11 @@
 
       function knopf(v) {
         /* data-i18n traegt das englische Original: wechselt die Sprache spaeter, uebersetzt core
-           von dort aus neu (derselbe Weg wie in power-dashboard). */
-        return '<button type="button" class="up-seg-btn uvw-btn" role="tab" data-uvw="' + v + '"' +
-               ' data-i18n="' + esc(WERTE[v]) + '">' + esc(t(WERTE[v])) + '</button>';
+           von dort aus neu (derselbe Weg wie in power-dashboard). Die Beschriftung steht in einem
+           eigenen span, das Zeichen davor: Groesse und Farbe kommen aus core (.up-seg-btn svg). */
+        return '<button type="button" class="up-seg-btn uvw-btn" role="tab" data-uvw="' + v + '">' +
+               (UC.icon ? UC.icon(ZEICHEN[v], 2) : "") +
+               '<span data-i18n="' + esc(WERTE[v]) + '">' + esc(t(WERTE[v])) + '</span></button>';
       }
       /* EINMAL gebaut, danach nur Klassen umgestellt. Ein innerHTML je Wechsel wuerde die Pille
          von vorn messen lassen und die Uebersetzung wegwerfen -- und in einem Bubble-Element
@@ -173,6 +179,11 @@
       thema();
       zeigen();
       merken();
+      /* Den Streifen JETZT setzen, nicht beim naechsten Lauf. Bubble baut dieses Element nach
+         jedem Klick neu (data-value haengt an einem State) -- und bis der naechste Lauf kam, stand
+         die neue Box ohne Streifen da ("aufflashen"). Ist die Fahrt der alten Box noch unterwegs,
+         uebernimmt core sie hier und faehrt weiter (segSchreiben). */
+      if (UC.segJetzt) UC.segJetzt(root);
       root.__uvwCtrl = ctrl;
       if (spaet) spaet.drain(id, ctrl);
       return ctrl;

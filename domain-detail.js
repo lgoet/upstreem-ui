@@ -12,6 +12,7 @@
                                           je als Ring oder Balken. Ein Baustein, eine Bewegung.
      UC.trendChip / UC.fmtPct / UC.fmtTotal   die Formate
      UC.typeColor                         die Farbe des Zitationstyps, hell wie dunkel
+     UC.ruhigeFamilie                     die Farben der oberen Reihe (Kurven, Trichter), 29.09.
      UC.makeMount / makeFire / makeLate / parseLoose / widthTiers / onTheme / themeParam
 
    Neu ist nur der Trichter. Fuer den gibt es in core nichts, und es gibt ihn genau einmal in der
@@ -144,45 +145,20 @@
   function num(v) { return UC.toNum(v); }
 
   /* ---- Farben ---------------------------------------------------------------------------------
-     Die Kurve im Citation-Share-Modus traegt die Farbe des Zitationstyps dieser Domain -- dieselbe,
-     die der Typ in jeder Tabelle und im Combo-Chart hat (UC.typeColor).
-     Fuer den Domain-Share-Modus braucht es mehrere Farben aus derselben Familie. Die Skala des
-     Typs hat nur EINE Farbe, also wird sie erweitert: gleicher Farbton, gestaffelte Helligkeit und
-     Saettigung. Das haelt die Kurven als Familie zusammen und unterscheidet sie trotzdem --
-     und es funktioniert fuer jeden Typ, auch fuer einen, den es heute noch nicht gibt. */
-  function hexZuHsl(hex) {
-    var h = String(hex || "").replace("#", "");
-    if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
-    var r = parseInt(h.slice(0, 2), 16) / 255, g = parseInt(h.slice(2, 4), 16) / 255, b = parseInt(h.slice(4, 6), 16) / 255;
-    if (isNaN(r) || isNaN(g) || isNaN(b)) return null;
-    var max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
-    var l = (max + min) / 2, s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1)), hu = 0;
-    if (d !== 0) {
-      if (max === r) hu = ((g - b) / d) % 6;
-      else if (max === g) hu = (b - r) / d + 2;
-      else hu = (r - g) / d + 4;
-      hu *= 60; if (hu < 0) hu += 360;
-    }
-    return { h: hu, s: s, l: l };
-  }
-  /* Fuenf Stufen um die Grundfarbe herum, im Dunkeln heller angesetzt als im Hellen -- dieselbe
-     Richtung, in die core seine Chart-Paletten zwischen den Themen verschiebt. */
-  var RAMPE_HELL   = [0, -0.10, 0.10, -0.20, 0.18, -0.28, 0.26];
-  var RAMPE_DUNKEL = [0, 0.10, -0.10, 0.20, -0.18, 0.28, -0.26];
-  function familie(basis, n, dunkel) {
-    var hsl = hexZuHsl(basis);
-    var out = [];
-    var rampe = dunkel ? RAMPE_DUNKEL : RAMPE_HELL;
-    for (var i = 0; i < n; i++) {
-      if (!hsl) { out.push(basis); continue; }
-      var d = rampe[i % rampe.length];
-      var l = Math.min(0.82, Math.max(0.22, hsl.l + d));
-      /* Die Saettigung wandert gegenlaeufig mit: eine sehr helle Linie mit voller Saettigung
-         wirkt grell, eine sehr dunkle mit wenig Saettigung wird zu Grau. */
-      var s = Math.min(0.85, Math.max(0.28, hsl.s - Math.abs(d) * 0.25));
-      out.push("hsl(" + Math.round(hsl.h) + "," + Math.round(s * 100) + "%," + Math.round(l * 100) + "%)");
-    }
-    return out;
+     DIE OBERE REIHE IN DER RUHIGEN FAMILIE (29.09. angefordert: "Passe die Farben oben genau so an,
+     wie wir das in der Landingpage-Komponente gebaut haben, dass es nicht so wild bunt ist").
+     Vorher trug alles die Farbe des Zitationstyps dieser Domain: der Trichter direkt, die
+     URL-Kurven als Familie darum herum, abwechselnd heller und dunkler gestaffelt -- je Domain
+     eine andere Farbwelt, und bei UGC ein leuchtendes Cyan in sechs Tönen. Jetzt dieselbe Familie
+     wie auf der Landingpage (UC.ruhigeFamilie, core): die Kurven nach Anteil vom Akzent zum Grau,
+     die einzelne Kurve im Akzent, der Trichter auf der dritten Stufe (die Flaeche traegt eine
+     hellere Stufe als eine 2px-Linie; die Deckkraft stuft er selbst weiter ab).
+     Die URL-Typen (Ring, Balken darunter) behalten ihre Farben -- auch das wie dort.
+     Ohne ruhigeFamilie (aelteres core) bleibt es bei der Farbe des Zitationstyps. */
+  function ruhig(isDark, rueckfall) {
+    var UCr = window.UpstreemCore;
+    if (UCr && typeof UCr.ruhigeFamilie === "function") return UCr.ruhigeFamilie(isDark);
+    return [rueckfall, rueckfall, rueckfall, rueckfall, rueckfall];
   }
 
   /* ============================================================================================
@@ -556,7 +532,7 @@
         };
       });
       var basis = stufen[0].wert || 0;
-      var farbe = typFarbe();
+      var farbe = ruhig(isDark, typFarbe())[2];
       var hoehen = stufen.map(function (s) {
         var a = basis > 0 ? (s.wert / basis) : 0;
         return Math.max(FN_MIN, Math.min(1, a));
@@ -660,7 +636,7 @@
         var built = UC.buildLineDatasets(punkte, [{
           company_id: id,
           name: id,
-          color: typFarbe(),
+          color: ruhig(isDark, typFarbe())[0],
           favicon_url: (state.header && (state.header.favicon || state.header.favicon_url)) || ""
         }], null);
         line.render(built);
@@ -675,9 +651,10 @@
       if (urlWartet()) { line.skeleton(); return; }
       var pts = state.urls && isArr(state.urls.points) ? state.urls.points : [];
       if (!pts.length) { line.empty("No URL data for this period."); return; }
-      /* Eine Farbe je URL, aus der Familie des Zitationstyps -- siehe familie(). Die Reihenfolge
-         richtet sich nach dem Gesamtanteil, damit die staerkste Kurve immer dieselbe Farbe hat
-         und nicht bei jedem Neuladen springt. */
+      /* Eine Farbe je URL aus der ruhigen Familie (siehe ruhig()). Die Reihenfolge richtet sich
+         nach dem Gesamtanteil: die staerkste Kurve traegt den Akzent und immer dieselbe Farbe,
+         statt bei jedem Neuladen zu springen. Ab der sechsten URL beginnt die Familie von vorn,
+         wie auf der Landingpage. */
       var meta = {}, reihenfolge = [];
       pts.forEach(function (p) {
         var u = String(p.url || "");
@@ -688,9 +665,9 @@
         }
       });
       reihenfolge.sort(function (a, b) { return meta[b].gesamt - meta[a].gesamt; });
-      var farben = familie(typFarbe(), reihenfolge.length, isDark);
+      var fam = ruhig(isDark, typFarbe());
       var companies = reihenfolge.map(function (u, i) {
-        meta[u].color = farben[i];
+        meta[u].color = fam[i % fam.length];
         return meta[u];
       });
       var punkte2 = pts.map(function (p) {

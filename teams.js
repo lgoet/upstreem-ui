@@ -74,7 +74,10 @@
   var COLUMNS = [
     { key: "prompts", label: "Active Prompts", w: "minmax(140px, 0.9fr)", min: 140, prio: 30 },
     { key: "brands",  label: "Active Brands",  w: "minmax(132px, 0.8fr)", min: 132, prio: 20 },
-    { key: "plan",    label: "Plan",           w: "minmax(140px, 1fr)",   min: 140, prio: 40 },
+    /* minNarrow 100: mobil bleibt der Tarif die einzige Spalte neben dem Team, und mit 140
+       reichte der Platz bei 320px nicht mehr fuer die Aktionsspalte. Die Pille kuerzt dort mit
+       Auslassungspunkten (core.css .up-planpill). */
+    { key: "plan",    label: "Plan",           w: "minmax(140px, 1fr)",   min: 140, minNarrow: 100, prio: 40 },
     { key: "created", label: "Created",        w: "minmax(120px, 0.8fr)", min: 120, prio: 10, dropAt: "narrow" }
   ];
 

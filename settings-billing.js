@@ -368,6 +368,15 @@
            verweigert. Ausgeblendet erst auf ein ausdrueckliches Nein; solange nichts gesagt ist,
            steht er da (settings-billing.css, [hidden]). */
         elManage.hidden = state.verwalten === false;
+        /* DER ENTWICKLERZUGANG HAT NICHTS ZU VERWALTEN (29.09. angefordert: "bei Legacy Free soll
+           der Abrechnung-verwalten-Knopf ausgegraut, nicht klickbar sein"). Ohne Abo gibt es kein
+           Kundenportal; ein Klick fuehrte ins Leere oder in eine Fehlermeldung. Gesperrt statt
+           ausgeblendet, damit die Kopfzeile gleich aussieht und der Hinweis sagt, warum.
+           Waehrend einer laufenden Klicksperre (sperrUhr) bleibt der Knopf ohnehin zu. */
+        var dev = !!(state.abo && state.abo.dev);
+        if (!sperrUhr) elManage.disabled = dev;
+        if (dev) elManage.setAttribute("data-tip", UC.t("Developer access has no billing to manage"));
+        else elManage.removeAttribute("data-tip");
         elTable.innerHTML = tabelleHtml();
       }
 
@@ -386,6 +395,7 @@
       var sperrUhr = null;
       function manage() {
         if (sperrUhr) return;
+        if (state.abo && state.abo.dev) return;
         /* makeFire sagt, ob ein Empfaenger da war. Fehlt das JavaScript-to-Bubble-Element, taete
            der Knopf sonst schlicht nichts -- der stille Ausfall. Dann steht es darunter, mit dem,
            was der Nutzer tun kann. */
@@ -396,7 +406,8 @@
         elManage.setAttribute("aria-busy", "true");
         sperrUhr = setTimeout(function () {
           sperrUhr = null;
-          elManage.disabled = false;
+          /* Frei wird er nur, wenn er es vorher war: beim Entwicklerzugang bleibt er zu. */
+          elManage.disabled = !!(state.abo && state.abo.dev);
           elManage.removeAttribute("aria-busy");
         }, KLICK_SPERRE_MS);
       }
