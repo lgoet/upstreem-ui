@@ -1921,10 +1921,19 @@
   }
   function drawerBedienen(art, nr){
     var liste = drawerKalender(art), ids = [];
+    var tor = DRAWER_TOR[String(art || "")];
     for (var i = 0; i < liste.length; i++){
       var c = liste[i], sig = sigVon(c);
       if (!sig) continue;
       ids.push(c.instanceId);
+      /* DIESE Oeffnung ist durch das Tor gegangen (drawerTor, unten): der Drawer-Workflow lief
+         erst, nachdem sein Boot-Kanal genau diesen Zeitraum hatte. Also ist er damit geladen --
+         kein Nachladen, auch nicht beim zweiten Blick. */
+      if (tor && tor.nr === nr && tor.sig === sig){
+        STAND[c.instanceId] = sig; STAND_BEI_OEFFNUNG[c.instanceId] = nr;
+        if (!GEGEBEN[c.instanceId]) gegebenMerken(c.instanceId, sig);
+        continue;
+      }
       var alt = STAND[c.instanceId];
       /* ERSTES OEFFNEN (30.09. korrigiert): der Drawer hat ueber seinen eigenen Workflow mit dem
          geladen, was seine States hatten -- gegeben hat sie ihm hier nie jemand, also die
@@ -1948,6 +1957,9 @@
   window.__udrDrawerAngemeldet = true;
   if (UC.onDrawerOpen && drawerErster) UC.onDrawerOpen(function(art){
     var nr = ++OEFFNUNG.n;
+    /* core meldet das Oeffnen VOR dem Original von openDrawer -- der Wickel sitzt also, bevor die
+       Host-App bubble_fn_drawer_<art> ruft. */
+    try { LETZTE_OEFFNUNG[String(art || "")] = nr; drawerTorWickeln(art); } catch(e){}
     setTimeout(function(){ drawerBedienen(art, nr); }, 300);
     setTimeout(function(){ drawerBedienen(art, nr); }, 900);
   });
@@ -1956,6 +1968,130 @@
   if (UC.onDrawerClose && drawerErster) UC.onDrawerClose(function(art){
     delete OFFENE_DRAWER[String(art || "")];
   });
+
+  /* ---- DER DRAWER WARTET AUF SEINEN ZEITRAUM (01.10.) ---------------------------------------
+     Gemeldet, nicht zum ersten Mal: "Seite mit last 30 days laden, Kalender auf last 3 months,
+     Domain-Drawer oeffnen -- sein Kalender zeigt last 3 months, die Daten kommen fuer last 7 days.
+     Und nicht mal die 30 Tage vom Start klappen."
+     Genau so war es gebaut. Ein Drawer laedt ueber seinen EIGENEN Workflow -- die Host-App ruft beim
+     Oeffnen bubble_fn_drawer_<art> --, und der liest die States seines Kalender-Reusables. Die hatte
+     ihm nie jemand gegeben, also stand dort die Vorgabe (7 Tage). drawerBedienen oben hielt das nur
+     fest und lud erst beim ZWEITEN Oeffnen nach.
+     Jetzt dieselbe Machart wie vor view_first (vorErstlauf): bubble_fn_drawer_<art> wird am Fenster
+     umwickelt, und der Ruf der Host-App wartet, bis der geteilte Zeitraum ueber den Boot-Kanal des
+     Drawers raus ist (bubble_fn_udr_date_boot_<art>, nur States), plus 120ms -- Bubble arbeitet
+     zwei Workflows nicht in Aufrufreihenfolge ab. Danach laeuft der Drawer-Workflow wie immer,
+     EINMAL, und liest die richtigen States. Hat der Boot-Kanal den Zeitraum schon (GEGEBEN), geht
+     der Ruf sofort durch.
+     Der Boot-Kanal steht womoeglich erst, wenn der Drawer aufgeht -- Bubble baut das Reusable dann.
+     Darum wird bis zu 700ms auf ihn gewartet. Kommt er nicht, laeuft der Workflow trotzdem, mit
+     einer Zeile in der Konsole, die den erwarteten Namen nennt: dann fehlt Bubble-seitig etwas.
+     NUR MIT SCHALTER: ohne "Apply to all" gehoert der Zeitraum dem Kalender des Drawers.
+     Was passiert ist, steht in window.upstreemDatesDrawerSpur() -- die Antwort auf "warum hat der
+     Drawer mit 7 Tagen geladen", ohne Raten. */
+  var DRAWER_TOR = window.__udrDrawerTor || (window.__udrDrawerTor = {});
+  var LETZTE_OEFFNUNG = window.__udrLetzteOeffnung || (window.__udrLetzteOeffnung = {});
+  var DRAWER_SPUR = window.__udrDrawerSpur || (window.__udrDrawerSpur = []);
+  var DRAWER_WARTEN = 28;          /* mal 25ms: so lange darf der Drawer auf seinen Boot-Kanal warten */
+  var DRAWER_GEKLAGT = {};
+  function spur(art, was){
+    DRAWER_SPUR.push(new Date().toISOString().slice(11, 23) + "  " + art + ": " + was);
+    if (DRAWER_SPUR.length > 60) DRAWER_SPUR.shift();
+  }
+  window.upstreemDatesDrawerSpur = function(){ return DRAWER_SPUR.slice(); };
+  function wortVon(t){ return String(t || "").toLowerCase().replace(/[^a-z0-9]/g, ""); }
+  /* Der Boot-Kanal DIESES Drawers. Zuerst ueber einen schon stehenden Kalender des Drawers (sein
+     data-boot-fn), dann ueber den Namen bubble_fn_udr_date_boot_<art>, dann ueber alle Boot-
+     Funktionen am Fenster, deren Endung den Drawer nennt. Nie die einer ANSICHT: ein Drawer
+     "domain" und eine Ansicht "domains" teilen sich den Wortstamm, und dann bekaeme die Ansicht
+     die States, die dem Drawer gehoeren. */
+  function drawerBoot(art){
+    var wort = wortVon(art), i, c, n, f;
+    if (!wort) return null;
+    for (i = 0; i < CONTROLLERS.length; i++){
+      c = CONTROLLERS[i];
+      if (!c || !c.root || !c.root.isConnected || !c.instanceId || istStartkandidat(c.instanceId)) continue;
+      if (c.instanceId.toLowerCase().indexOf(wort) < 0) continue;
+      n = c.root.getAttribute("data-boot-fn") || "";
+      f = n ? UC.resolveBubbleFn(n) : null;
+      if (typeof f === "function") return { f: f, name: n, id: c.instanceId };
+    }
+    n = "bubble_fn_udr_date_boot_" + art;
+    f = UC.resolveBubbleFn(n);
+    if (typeof f === "function") return { f: f, name: n, id: "dates_v2_" + art };
+    var namen = [];
+    try { namen = Object.keys(window); } catch(e){}
+    var P = "bubble_fn_udr_date_boot_", treffer = null;
+    for (i = 0; i < namen.length; i++){
+      if (namen[i].indexOf(P) !== 0) continue;
+      var rest = namen[i].slice(P.length), rw = wortVon(rest);
+      if (!rw || rw.indexOf(wort) < 0) continue;
+      if (document.getElementById("view-" + rest)) continue;
+      f = window[namen[i]];
+      if (typeof f !== "function") continue;
+      /* Die kuerzeste Endung gewinnt: "domain" vor "domainspotlightbar". */
+      if (!treffer || rest.length < treffer.rest.length) treffer = { f: f, name: namen[i], id: "dates_v2_" + rest, rest: rest };
+    }
+    return treffer;
+  }
+  function drawerTor(art, weiter){
+    art = String(art || "");
+    var gelaufen = false, t0 = Date.now(), nr = LETZTE_OEFFNUNG[art] || 0;
+    function los(was){
+      if (gelaufen) return;
+      gelaufen = true;
+      spur(art, "Drawer-Workflow laeuft (" + was + ", nach " + (Date.now() - t0) + "ms)");
+      try { weiter(); }
+      catch(e){ if (window.console) console.warn("[date-range] bubble_fn_drawer_" + art + " hat geworfen:", e); }
+    }
+    if (!syncAn()){ delete DRAWER_TOR[art]; return los("ohne Apply to all"); }
+    var r = rangeFuerPreset(geltendesPreset());
+    if (!r){ delete DRAWER_TOR[art]; return los("kein teilbarer Zeitraum"); }
+    var sig = r.from + "|" + r.to + "|" + r.preset, n = 0;
+    (function versuch(){
+      var b = null;
+      try { b = drawerBoot(art); } catch(e){}
+      if (!b){
+        if (n++ < DRAWER_WARTEN){ setTimeout(versuch, 25); return; }
+        delete DRAWER_TOR[art];
+        if (!DRAWER_GEKLAGT[art] && window.console){
+          DRAWER_GEKLAGT[art] = true;
+          console.warn("[date-range] Drawer \"" + art + "\": kein Boot-Kanal nach 700ms " +
+            "(erwartet bubble_fn_udr_date_boot_" + art + "). Der Drawer laedt mit den States, die " +
+            "Bubble hat -- das JavaScriptToBubble-Element udr_date_boot_" + art + " muss im Drawer " +
+            "stehen, sobald er aufgeht.");
+        }
+        return los("OHNE Zeitraum, kein Boot-Kanal");
+      }
+      DRAWER_TOR[art] = { nr: nr, sig: sig };
+      if (GEGEBEN[b.id] === sig){
+        var w = restWarten(b.id, 120);
+        spur(art, "Boot " + b.name + " hat " + r.preset + " schon");
+        if (w) setTimeout(function(){ los("Zeitraum stand schon"); }, w); else los("Zeitraum stand schon");
+        return;
+      }
+      var payload = { instance_id: b.id, date_from: r.from, date_to: r.to, preset: r.preset,
+                      reason: "activate", event_id: b.id + "_" + Date.now() + "_drawer" };
+      try { b.f(JSON.stringify(payload)); }
+      catch(e){ delete DRAWER_TOR[art]; return los("Boot-Kanal hat geworfen"); }
+      gegebenMerken(b.id, sig);
+      if (b.id !== "dates_v2_" + art) gegebenMerken("dates_v2_" + art, sig);
+      spur(art, "Boot " + b.name + " <- " + r.preset + " (" + r.from + " bis " + r.to + "), nach " + (Date.now() - t0) + "ms");
+      setTimeout(function(){ los("Zeitraum gegeben"); }, 120);
+    })();
+  }
+  function drawerTorWickeln(art){
+    art = String(art || "").trim();
+    if (!art || !/^[\w-]+$/.test(art)) return;
+    var name = "bubble_fn_drawer_" + art;
+    if (amFensterWickeln(name, function(original){
+      return function(){
+        var args = arguments, self = this;
+        spur(art, "Ruf der Host-App gehalten");
+        drawerTor(art, function(){ return original.apply(self, args); });
+      };
+    })) spur(art, "Tor an " + name);
+  }
 
   /* ---- EINE AENDERUNG BEDIENT ALLES, WAS MAN SIEHT ----------------------------------------
      Wer im Drawer den Zeitraum umstellt, meint die ganze Seite -- die Ansicht dahinter gehoert

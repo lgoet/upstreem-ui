@@ -129,23 +129,32 @@
      drops it to the default, so the view you are looking at reloads — that one view, through the
      normal apply channel.
 
-     ── Drawers: nothing to do ───────────────────────────────────────────────────
+     ── Drawers ──────────────────────────────────────────────────────────────────
      The calendars inside the drawers (domain, URL, prompt, brand spotlight) share the range too —
      "Apply everywhere" means everywhere, and the switch is available in them, so it can be
      toggled from a second-level drawer as well. Only the EXPORT calendar stays out: an export is
      its own action with its own range.
 
-     A drawer has no view change to hang a reload on, so the picker listens to the app's own
-     openDrawer(kind, id) and closeDrawer(kind) instead — core wraps both the same way it wraps
-     showView, before the original, and the originals keep running untouched. When a drawer opens
-     whose data is from another range, that drawer reloads once through the apply channel (reason
-     "stale").
-     The FIRST open still never reloads: the drawer loads through its own workflow with whatever
-     its states hold -- and nobody has handed it the shared range yet, so the page default.
-     Changed 30.09.: that is now recorded as what it is. Before, it was noted as "loaded with the
-     shared range" and the drawer was never corrected, not even on the next open. Now the second
-     open reloads it once. For the FIRST open to be right as well, the drawer's own opening
-     workflow would have to take the range itself -- a Bubble-side step, see the handover.
+     THE DRAWER WAITS FOR ITS RANGE (since 01.10.). The app opens a drawer with
+     openDrawer(kind, id), and that calls bubble_fn_drawer_<kind>(id) -- the drawer's own load
+     workflow, which reads the states of the calendar reusable inside the drawer. With "Apply
+     everywhere" ON, the picker now holds that call until the shared range has gone out through
+     the drawer's boot channel (bubble_fn_udr_date_boot_<name>, states only), then lets it through
+     120ms later. So the drawer loads ONCE, with the right range -- first open included. If its
+     boot channel already has this range, the call goes straight through.
+     What Bubble needs for that, per drawer:
+       - the calendar reusable inside the drawer, with its JavaScriptToBubble element for the boot
+         channel named udr_date_boot_<name>, where <name> contains the drawer's kind
+         (udr_date_boot_domain or udr_date_boot_domainspotlight for openDrawer("domain", ...))
+       - that element's workflow sets the date states from the JSON (date_from / date_to) and
+         loads NOTHING
+       - the drawer's load workflow keeps reading those states, as today
+     The picker waits up to 700ms for the boot channel (the reusable may only be built when the
+     drawer opens). If it never comes, the drawer loads with what Bubble has, and the console names
+     the function it expected. What happened on every open: window.upstreemDatesDrawerSpur().
+
+     A drawer that is open while the range changes elsewhere reloads through the apply channel
+     (reason "stale"), like every other visible calendar -- see below.
 
      ── One change serves everything that is VISIBLE ─────────────────────────────
      Change the range in a drawer and the view behind it changes too — anything on screen with a
