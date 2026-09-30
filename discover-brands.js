@@ -60,11 +60,6 @@
     gear:   '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="1.8"><path d="M21.3175 7.14139L20.8239 6.28479C20.4506 5.63696 20.264 5.31305 19.9464 5.18388C19.6288 5.05472 19.2696 5.15664 18.5513 5.36048L17.3311 5.70418C16.8725 5.80994 16.3913 5.74994 15.9726 5.53479L15.6357 5.34042C15.2766 5.11043 15.0004 4.77133 14.8475 4.37274L14.5136 3.37536C14.294 2.71534 14.1842 2.38533 13.9228 2.19657C13.6615 2.00781 13.3143 2.00781 12.6199 2.00781H11.5051C10.8108 2.00781 10.4636 2.00781 10.2022 2.19657C9.94085 2.38533 9.83106 2.71534 9.61149 3.37536L9.27753 4.37274C9.12465 4.77133 8.84845 5.11043 8.48937 5.34042L8.15249 5.53479C7.73374 5.74994 7.25259 5.80994 6.79398 5.70418L5.57375 5.36048C4.85541 5.15664 4.49625 5.05472 4.17867 5.18388C3.86109 5.31305 3.67445 5.63696 3.30115 6.28479L2.80757 7.14139C2.45766 7.74864 2.2827 8.05227 2.31666 8.37549C2.35061 8.69871 2.58483 8.95918 3.05326 9.48012L4.0843 10.6328C4.3363 10.9518 4.51521 11.5078 4.51521 12.0077C4.51521 12.5078 4.33636 13.0636 4.08433 13.3827L3.05326 14.5354C2.58483 15.0564 2.35062 15.3168 2.31666 15.6401C2.2827 15.9633 2.45766 16.2669 2.80757 16.8741L3.30114 17.7307C3.67443 18.3785 3.86109 18.7025 4.17867 18.8316C4.49625 18.9608 4.85542 18.8589 5.57377 18.655L6.79394 18.3113C7.25263 18.2055 7.73387 18.2656 8.15267 18.4808L8.4895 18.6752C8.84851 18.9052 9.12464 19.2442 9.2775 19.6428L9.61149 20.6403C9.83106 21.3003 9.94085 21.6303 10.2022 21.8191C10.4636 22.0078 10.8108 22.0078 11.5051 22.0078H12.6199C13.3143 22.0078 13.6615 22.0078 13.9228 21.8191C14.1842 21.6303 14.294 21.3003 14.5136 20.6403L14.8476 19.6428C15.0004 19.2442 15.2765 18.9052 15.6356 18.6752L15.9724 18.4808C16.3912 18.2656 16.8724 18.2055 17.3311 18.3113L18.5513 18.655C19.2696 18.8589 19.6288 18.9608 19.9464 18.8316C20.264 18.7025 20.4506 18.3785 20.8239 17.7307L21.3175 16.8741C21.6674 16.2669 21.8423 15.9633 21.8084 15.6401C21.7744 15.3168 21.5402 15.0564 21.0718 14.5354L20.0407 13.3827C19.7887 13.0636 19.6098 12.5078 19.6098 12.0077C19.6098 11.5078 19.7888 10.9518 20.0407 10.6328L21.0718 9.48012C21.5402 8.95918 21.7744 8.69871 21.8084 8.37549C21.8423 8.05227 21.6674 7.74864 21.3175 7.14139Z"/><path d="M15.5195 12C15.5195 13.933 13.9525 15.5 12.0195 15.5C10.0865 15.5 8.51953 13.933 8.51953 12C8.51953 10.067 10.0865 8.5 12.0195 8.5C13.9525 8.5 15.5195 10.067 15.5195 12Z"/></svg>',
     search: '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="1.9"><path d="M17 17L21 21"/><path d="M19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19C15.4183 19 19 15.4183 19 11Z"/></svg>',
     x:      '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="2"><path d="M18 6L6.00081 17.9992M17.9992 18L6 6.00085"/></svg>',
-    /* Der KOMPASS und nicht mehr die drei Ringe. Die Ringe waren ein Zielscheiben-Zeichen, und die
-       Unterseite, auf der diese Suche laeuft, heisst "Discover" -- ihr Reiter im Seitenkopf traegt
-       genau diesen Kompass (page-headers/brands-page-header.js, PAGES). Zwei Bilder fuer eine
-       Sache waren es vorher. Pfad woertlich von dort uebernommen, nicht nachgezeichnet. */
-    radar:  '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="1.8"><circle cx="12" cy="13" r="9"/><path d="M12 3.5V2"/><path d="M10 2H14"/><path d="M14.7728 10.2571C15.5061 10.9837 14.3328 16.8933 13.1289 16.9974C12.1189 17.0848 11.8041 15.0928 11.5914 14.4614C11.3815 13.8383 11.1478 13.6139 10.5298 13.4095C8.95989 12.8901 8.17492 12.6304 8.0195 12.2192C7.60796 11.1304 13.8362 9.32902 14.7728 10.2571Z"/></svg>',
     /* Feather "box" als neutrales Markenlogo im Erklaerbeispiel. Nichts selbstgezeichnetes und
        nichts, was nach einer echten Firma aussieht -- es steht nur fuer "irgendeine Marke". */
     brand:  '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="1.9"><path d="M2.5 7.5V13.5C2.5 17.2712 2.5 19.1569 3.67157 20.3284C4.84315 21.5 6.72876 21.5 10.5 21.5H13.5C17.2712 21.5 19.1569 21.5 20.3284 20.3284C21.5 19.1569 21.5 17.2712 21.5 13.5V7.5"/><path d="M3.86909 5.31461L2.5 7.5H21.5L20.2478 5.41303C19.3941 3.99021 18.9673 3.2788 18.2795 2.8894C17.5918 2.5 16.7621 2.5 15.1029 2.5H8.95371C7.32998 2.5 6.51812 2.5 5.84013 2.8753C5.16215 3.2506 4.73113 3.93861 3.86909 5.31461Z"/><path d="M12 7.5V2.5"/><path d="M10 10.5H14"/></svg>'
@@ -105,7 +100,10 @@
      einem anderen Rechner nicht doch wieder schneidet.
      Als Funktion und ueber data-up-locale am <html>: core setzt die Marke in jedem Sprachlauf,
      genau dafuer gibt es sie. Dieselbe Loesung wie die Einladungstabelle in team-orga, nur dort
-     in CSS -- hier rechnet das Spaltenraster in JS, also steht die Zahl hier. */
+     in CSS -- hier rechnet das Spaltenraster in JS, also steht die Zahl hier.
+     SEIT DEM 01.10. NUR NOCH DER STARTWERT: auch die 128 reichten nicht ("Beobachten" ragte wieder
+     heraus -- gerechnet mit 13/500, gezeichnet in 12.5/600). Sobald Zeilen dastehen, misst
+     UC.makeAktionsSpur die Knoepfe selbst, siehe actionsMin. */
   var TRACK_WIDE_EN = 108, TRACK_WIDE_DE = 128, TRACK_NARROW = 56;
   function trackWide(){
     var l = "";
@@ -202,22 +200,14 @@
 
         '<div class="up-box udb-box">' +
           '<div class="up-table" data-table></div>' +
-          '<div class="udb-loading" data-loading aria-live="polite">' +
-            '<div class="udb-loading-inner">' +
-              '<div class="udb-mark">' +
-                '<span class="udb-ring r1"></span><span class="udb-ring r2"></span>' +
-                '<span class="udb-core">' + ICON.radar + '</span>' +
-              '</div>' +
-              '<div class="udb-ltitle">Scanning your AI answers</div>' +
-              '<div class="udb-lloop"><div class="udb-ltext" data-ltext>' + esc(STEPS[0]) + '</div></div>' +
-            '</div>' +
-          '</div>' +
+          /* Das Ladebild selbst kommt aus core (UC.makeLadebild, unten) -- seit dem 01.10. dasselbe
+             wie in Opportunities und Prompt Research. Hier steht nur die Flaeche, die es traegt. */
+          '<div class="udb-loading" data-loading></div>' +
         '</div>';
 
       var elTable   = root.querySelector("[data-table]");
       var elTotal   = root.querySelector("[data-total]");
       var elMatched = root.querySelector("[data-matched]");
-      var elLText   = root.querySelector("[data-ltext]");
       var elColsMenu= root.querySelector("[data-colsmenu]");
       var elSearch  = root.querySelector(".up-search");
       var elSearchIn= root.querySelector(".up-search-input");
@@ -280,13 +270,28 @@
         leadWidth: IDX_W,
         /* Breit traegt der Track-Knopf seine Beschriftung, schmal ist er quadratisch -- die Spur
            folgt dem. Als Funktion, weil das Kit sie bei jeder Rasterrechnung neu abfragt. */
-        actionsMin: function () { return root.classList.contains("is-narrow") ? TRACK_NARROW : trackWide(); },
+        /* Breit: GEMESSEN (UC.makeAktionsSpur, unten), sobald Zeilen dastehen -- die feste Zahl je
+           Sprache ist nur noch der Wert fuer den ersten Aufbau. 01.10. gemeldet: "Beobachten" ragte
+           links aus der Spalte; die 128 waren fuer 13/500 gerechnet, der Knopf traegt 12.5/600. */
+        actionsMin: function () {
+          if (root.classList.contains("is-narrow")) return TRACK_NARROW;
+          return (aktSpur && aktSpur.breite()) || trackWide();
+        },
         badgeSel: ".udb-cols-badge", cellPrefixes: ["up", "udb"],
         onChange: function () { renderTable(); }
       });
       state.cols = colsKit.readCols();
       state.widths = colsKit.readWidths();
       var applyCols = colsKit.applyCols, startResize = colsKit.startResize;
+      /* Die Aktionsspur aus dem Inhalt. Nur breit gemessen: schmal ist der Knopf quadratisch, und
+         dort gilt TRACK_NARROW (siehe actionsMin). Wird sie breiter oder schmaler, rechnet das
+         Raster neu -- mit genau dieser Zahl fuer Kopf und Zeilen. */
+      var aktSpur = UC.makeAktionsSpur ? UC.makeAktionsSpur({
+        root: root, zellen: ".up-tbody .up-td-act",
+        anwenden: function () { applyCols(); } }) : null;
+      function spurMessen() {
+        if (aktSpur && !root.classList.contains("is-narrow")) aktSpur.messen();
+      }
       var populateCols = colsKit.populateCols, toggleCol = colsKit.toggleCol;
       var selectAllCols = colsKit.selectAllCols, syncColsBadge = colsKit.syncColsBadge;
       var visibleCols = colsKit.visibleCols;
@@ -389,29 +394,12 @@
       else window.addEventListener("resize", UC.rafThrottle(sticky.applySticky));
       sticky.applySticky();
 
-      /* ---------------- Ladeflaeche ---------------- */
-      var stepIdx = 0, stepTimer = null;
-      function stepTick() {
-        var t = elLText;
-        /* Nicht in einer geparkten Ansicht. Der Ticker laeuft im Takt weiter, aber das
-           void t.offsetWidth unten ist ein Reflow-Ausloeser -- und in einem Teilbaum, den der
-           Browser wegen content-visibility auslaesst, zwingt er ihn, ihn doch zu layouten.
-           Auf der echten Seite war das mit 15 Zugriffen in 20 Sekunden Ruhe der groesste Posten
-           (gemessen mit bubble/diagnostics/_diagnose_parkleser.js). Zu sehen ist die Animation
-           dort ohnehin nicht. */
-        if (window.UpstreemCore && window.UpstreemCore.messbar &&
-            !window.UpstreemCore.messbar(t)) return;
-        t.classList.add("is-out");
-        setTimeout(function () {
-          stepIdx = (stepIdx + 1) % STEPS.length;
-          t.style.transition = "none";
-          t.classList.remove("is-out"); t.classList.add("is-in");
-          t.textContent = STEPS[stepIdx];
-          void t.offsetWidth;
-          t.style.transition = "";
-          t.classList.remove("is-in");
-        }, 240);
-      }
+      /* ---------------- Ladeflaeche ----------------
+         Das Ladebild aus core. Zeichen: der Kompass, den der Reiter "Discover" im Seitenkopf der
+         Brands-Seite traegt (01.10. gemeldet, dass hier eine andere Form stand). Die Pruefung auf
+         geparkte Ansichten, die hier am Statustakt stand, macht jetzt core selbst. */
+      var ladebild = UC.makeLadebild(root.querySelector("[data-loading]"), {
+        icon: "compass", name: "Scanning your AI answers", saetze: STEPS, satzMs: STEP_MS });
       function setLoading(on) {
         on = !!on;
         /* Gegen die KLASSE pruefen, nicht gegen state.loading. UC.makeSearch schreibt bei jeder
@@ -424,14 +412,13 @@
         if (on === root.classList.contains("is-loading")) { state.loading = on; return; }
         state.loading = on;
         root.classList.toggle("is-loading", on);
-        clearInterval(stepTimer);
         if (on) startStepTimer();
+        else if (ladebild) ladebild.stop();
       }
+      /* Der Name bleibt, obwohl es keinen eigenen Takt mehr gibt: er wird auch beim Aufbau gerufen
+         (siehe unten), und dort soll dasselbe passieren wie beim Einschalten. */
       function startStepTimer() {
-        clearInterval(stepTimer);
-        stepIdx = 0; elLText.textContent = STEPS[0];
-        elLText.classList.remove("is-out", "is-in");
-        stepTimer = setInterval(stepTick, STEP_MS);
+        if (ladebild){ ladebild.stop(); ladebild.start(); }
         elTotal.classList.add("is-sk"); elTotal.textContent = "";
       }
 
@@ -505,7 +492,11 @@
         });
         return h + '<div class="up-td up-td-act">' +
           '<button type="button" class="udb-track" data-track="' + esc(r.id) + '">' +
-          ICON.check + '<span class="udb-track-label">Track</span></button></div></div>';
+          /* Schon uebersetzt gezeichnet, mit dem englischen Schluessel in data-i18n (der Sprachlauf
+             liest ihn und findet nichts mehr zu tun). Kaeme "Track" roh und wuerde erst danach zu
+             "Beobachten", mass die Aktionsspur die englische Breite (gemessen: 105 statt 144). */
+          ICON.check + '<span class="udb-track-label" data-i18n="Track">' + esc(UC.t ? UC.t("Track") : "Track") +
+          '</span></button></div></div>';
       }
 
       function renderTable() {
@@ -548,6 +539,7 @@
         elTable.innerHTML = head + '<div class="up-tbody">' +
           rows.map(rowHtml).join("") + "</div>";
         applyCols(); syncColsBadge();
+        spurMessen();
       }
 
       function renderTotal() {

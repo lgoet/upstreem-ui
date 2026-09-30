@@ -158,8 +158,7 @@
                Datensatz war nicht lesbar. Alles fuer render(), siehe dort. */
             hasData: false, jeKarten: false, leerFrei: false, leseFehler: false,
             /* suche: die Suche nach neuen Opportunities laeuft (Knopf im Seitenkopf oder
-               opportunitiesSetSearching), sucheSeit ihr Beginn -- fuer den Balken des Ladebilds
-               und die Obergrenze, auch ueber einen Neuaufbau hinweg (siehe STORE). */
+               opportunitiesSetSearching), sucheSeit ihr Beginn -- fuer die Obergrenze, auch ueber einen Neuaufbau hinweg (siehe STORE). */
             suche: false, sucheSeit: 0 };
 
   /* ---- EIN NEU GEBAUTES ELEMENT MACHT WEITER (27.09. gemeldet) ----
@@ -616,8 +615,10 @@
                opportunities-page-header.js) oder opportunitiesSetSearching("yes") aus Bubble.
        Ende    die naechste Liste (opportunitiesSetItems) -- das ist der Abschluss der Suche --
                oder opportunitiesSetSearching("no"), etwa im Fehlerzweig des Workflows.
-       Grenze  SUCHE_MAX_MS. Kommt bis dahin nichts, wird die Suche nicht still weitergedreht: das
-               Brett kommt zurueck und ein Hinweis sagt, dass die Ergebnisse spaeter erscheinen.
+       Grenze  SUCHE_MAX_MS. Kommt bis dahin nichts, dreht das Bild nicht endlos weiter: das Brett
+               kommt zurueck. OHNE eigenen Hinweis (01.10.: "die Komponente schickt selbst
+               Notifications -- das mache ich im Bubble-Workflow schon"). Zwei Meldungen fuer
+               denselben Lauf waeren eine zu viel, und die des Workflows weiss, wie er ausging.
      Die Statuszeilen nennen, was die Karten verraten, woraus eine Opportunity entsteht: zitierte
      Quellen, genannte Wettbewerber, Anteil und Luecke, das Potenzial. */
   var SUCHE_SAETZE = [
@@ -642,9 +643,6 @@
       sucheUhr = null;
       if (!S.suche || window.__uoAktiv !== root) return;
       sucheEnde();
-      var UCt = window.UpstreemCore;
-      var satz = "The search is taking longer than usual. New opportunities will appear here once it finishes.";
-      if (UCt && UCt.toast) UCt.toast(UCt.t ? UCt.t(satz) : satz, { icon: "info", timeout: 6000 });
     }, Math.max(0, rest));
   }
   function sucheStart(){
@@ -656,8 +654,8 @@
     if (!S.suche) return;
     S.suche = false; S.sucheSeit = 0;
     sucheUhrStellen(); sucheMelden();
-    /* Erst den Balken voll zeigen, dann das Brett: ein Bild, das mittendrin verschwindet, sieht
-       nach Abbruch aus. 400ms sind die Fahrt auf 100 (260) und ein kurzer Halt. */
+    /* Erst den Kreis schliessen, dann das Brett: ein Bild, das mittendrin verschwindet, sieht nach
+       Abbruch aus. 400ms sind das Schliessen (260, UC.makeLadebild) und ein kurzer Halt. */
     var lb = ladebild; ladebild = null;
     if (lb && lb.laeuft() && lb.el.isConnected){ lb.stop(); setTimeout(render, 400); }
     else render();
@@ -666,12 +664,14 @@
     var stage = root.querySelector('.uo-stage');
     if (!stage) return;
     /* Steht das Bild schon, bleibt es stehen -- ein Neuzeichnen waehrend der Suche (Ansicht,
-       Lanes, Suche im Brett) soll den Balken nicht von vorn anfangen lassen. */
+       Lanes, Suche im Brett) soll die Statuszeile nicht von vorn anfangen lassen. */
     if (ladebild && stage.contains(ladebild.el)) return;
     var UCl = window.UpstreemCore;
     if (!UCl || !UCl.makeLadebild){ renderSkeleton(); return; }
     stage.innerHTML = '<div class="uo-suche"></div>';
-    ladebild = UCl.makeLadebild(stage.firstChild, { icon: "searchVisual",
+    /* listTodo: das Zeichen der Seite im Seitenkopf (makePageCrumbs in opportunities-page-header.js)
+       -- 01.10. gemeldet, dass hier ein anderes stand ("searchVisual"). */
+    ladebild = UCl.makeLadebild(stage.firstChild, { icon: "listTodo",
       name: "Looking for new Opportunities", saetze: SUCHE_SAETZE });
     if (ladebild) ladebild.start(S.sucheSeit || Date.now());
   }
@@ -1332,7 +1332,7 @@
     if (S.items.length){ S.jeKarten = true; S.leerFrei = false; }
     if (S.detailId && !S.items.find(function(x){ return String(x.id)===String(S.detailId); })) closeDetail();
     /* Die Liste ist der Abschluss der Suche (siehe SUCHE_SAETZE oben): sucheEnde zeichnet selbst,
-       nach dem vollen Balken. */
+       nach dem geschlossenen Kreis. */
     if (S.suche){ sucheEnde(); return; }
     render();
   };

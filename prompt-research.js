@@ -299,43 +299,43 @@
     if (!UC || !UC.icon) return;
     var svg = UC.icon('telescope', 2);
     if (!svg) return;
-    /* BEIDE Mitten, und die alte Ladekugel dazu: die Startseite traegt .upr-research-orb, das
-       Ladebild .upr-l2-mark -- und ein Element, das schon vor dem Umbau des Ladebilds in Bubble
-       eingebaut wurde, traegt dort noch .upr-loader-core mit dem alten scan-search. Das Ladebild
-       baut ladebildSetzen zwar neu, aber nur wenn es .upr-loading-inner findet; fehlt die, bleibt
-       die alte Kugel stehen. Ein Selektor mehr kostet nichts und schliesst genau diese Luecke. */
-    [].forEach.call(root.querySelectorAll('.upr-research-orb, .upr-l2-mark, .upr-loader-core'),
+    /* Die Mitte der Startseite (.upr-research-orb) und die alte Ladekugel: ein Element, das schon
+       vor dem Umbau des Ladebilds in Bubble eingebaut wurde, traegt dort noch .upr-loader-core mit
+       dem alten scan-search. Das Ladebild baut ladebildSetzen zwar neu, aber nur wenn es
+       .upr-loading-inner findet; fehlt die, bleibt die alte Kugel stehen. Das Ladebild aus core
+       bringt sein Teleskop selbst mit. */
+    [].forEach.call(root.querySelectorAll('.upr-research-orb, .upr-loader-core'),
       function(el){ if (el.innerHTML.indexOf('10.065') < 0) el.innerHTML = svg; });
   }
   fernrohrSetzen();
   [60, 250, 700, 1500, 3000].forEach(function(ms){ setTimeout(fernrohrSetzen, ms); });
 
-  /* Das Ladebild: dasselbe Bild wie im ZWEITEN Ladeschirm des Onboardings (uob-load.is-compact) --
-     Kachel, Name, Unterzeile, Balken, Satz, Marken. Die Werte sind von dort uebernommen und nicht
-     nachempfunden: Kachel 44px mit Radius 13, Zeichen 30px, Name 18px/600, Unterzeile 13px,
-     Balken 3px hoch und hoechstens 320 breit.
-     Vorher schwebte hier ein Kasten zwischen zwei pulsenden Ringen ueber zwei Skelettbalken --
-     drei Bewegungen, die nichts ueber den Stand sagten.
-     Gebaut wird im JS und nicht nur in der Vorlage: eine Vorlagenaenderung erreicht ein schon
-     eingebautes Bubble-Element nicht. Die zwei Anker der Animation (#upr-tl-tags und
-     #upr-think-text) stehen wieder drin, damit startLoaderAnim unveraendert weiterlaeuft. */
-  (function ladebildSetzen(){
+  /* DAS LADEBILD kommt seit dem 01.10. aus core (UC.makeLadebild) -- dasselbe wie in Opportunities
+     und Explore Brands: Kachel mit dem Teleskop im umlaufenden Kreis, Titel, Unterzeile,
+     Statuszeile. Vorher stand hier die Fassung aus dem Onboarding mit einem Balken auf einer
+     erfundenen Kurve.
+     Gebaut wird im JS und nicht in der Vorlage: eine Vorlagenaenderung erreicht ein schon
+     eingebautes Bubble-Element nicht. Und nicht nur einmal -- Bubble setzt seine Gruppen per
+     jQuery.html() neu (siehe fernrohrSetzen), danach stuende im Kasten wieder die Vorlage. Also
+     prueft ladebildSetzen bei jedem Start, ob das Bild noch in seinem Kasten steht.
+     Die Statuszeilen als Funktion: LOADER_PHRASES wird weiter unten angelegt und ist hier noch
+     undefined (var wird hochgezogen, sein Wert nicht); gelesen wird die Liste erst beim Start.
+     #upr-tl-tags steht darunter, wie vorher: die Themen-Chips sind das Eigene dieser Seite. */
+  var ladebild = null;
+  function ladebildSetzen(){
     var innen = root.querySelector('.upr-loading-inner');
-    if (!innen) return;
-    var zeichen = (UC && UC.icon) ? UC.icon('telescope', 2) : '';
-    innen.innerHTML =
-      '<div class="upr-l2-mark">' + zeichen + '</div>' +
-      '<div class="upr-l2-name" id="upr-l2-name">Prompt research</div>' +
-      '<div class="upr-l2-sub" id="upr-l2-sub"></div>' +
-      '<div class="upr-bar"><span class="upr-bar-fill" id="upr-bar"></span></div>' +
-      /* Der Satz steht hier als fester Text und nicht als LOADER_PHRASES[0]: die Liste wird
-         weiter unten in der Datei angelegt und ist an dieser Stelle noch undefined -- var wird
-         hochgezogen, sein Wert nicht. Die Schleife setzt den Satz ohnehin neu, sobald sie
-         laeuft; das hier ist nur, was ohne laufende Recherche dasteht. */
-      '<div class="upr-think-loop"><span class="upr-think-text" id="upr-think-text">' +
-        'Understanding your intent…</span></div>' +
-      '<div class="upr-tl-tags" id="upr-tl-tags"></div>';
-  })();
+    if (!innen || !UC || !UC.makeLadebild) return null;
+    if (ladebild && innen.contains(ladebild.el) && innen.querySelector('#upr-tl-tags')) return ladebild;
+    if (ladebild) ladebild.stop();
+    innen.innerHTML = '';
+    ladebild = UC.makeLadebild(innen, { icon: 'telescope', name: 'Prompt research',
+      saetze: function(){ return LOADER_PHRASES; } });
+    var tags = document.createElement('div');
+    tags.className = 'upr-tl-tags'; tags.id = 'upr-tl-tags';
+    innen.appendChild(tags);
+    return ladebild;
+  }
+  ladebildSetzen();
 
   var openHistoryButton   = root.querySelector('#upr-open-history');
   var closeHistoryButton  = root.querySelector('#upr-close-history');
@@ -574,6 +574,11 @@
     host.classList.add('is-loop');
     var i = 0;
     function batch(){
+      /* Hat eine neu gebaute Wurzel uebernommen, raeumt die alte ihre Schleifen selbst ab -- sonst
+         liefen die Marken im abgehaengten Knoten weiter, bis die Seite wechselt. Die Pruefung stand
+         bis zum 01.10. im Takt des Balkens; mit dem Balken ist sie hierher umgezogen (den Satz
+         raeumt core selbst ab, sobald das Bild aus dem Dokument ist). */
+      if (BESITZER[instanceId] !== root){ _uprClearLoad(); return; }
       host.innerHTML = '';
       var slice = []; for (var k = 0; k < count; k++) slice.push(pool[(i + k) % pool.length]);
       i = (i + count) % pool.length;
@@ -586,72 +591,22 @@
     }
     batch();
   }
-  function _uprLoopText(el, phrases){
-    var idx = 0; el.textContent = phrases[0];
-    var iv = setInterval(function(){
-      el.classList.add('is-out');
-      _uprLoadTimers.push(setTimeout(function(){
-        idx = (idx + 1) % phrases.length;
-        el.style.transition = 'none'; el.classList.remove('is-out'); el.classList.add('is-in');
-        el.textContent = phrases[idx]; void el.offsetWidth; el.style.transition = ''; el.classList.remove('is-in');
-      }, 240));
-    }, 2800);
-    _uprLoadTimers.push(iv);
-  }
-  /* Der Balken. Das Onboarding faehrt seinen aus echten Serverphasen; hier gibt es keine, also
-     laeuft er auf einer abflachenden Kurve gegen 92 Prozent und springt erst auf 100, wenn die
-     Ergebnisse da sind. Nie von selbst auf 100: ein voller Balken, unter dem sich weiter etwas
-     dreht, ist eine Luege ueber den Stand.
-     620ms Takt, weil die CSS genau so lange auf eine neue Breite faehrt (uebernommen aus
-     onboarding-page.css: .uob-bar-fill transition width 620ms linear) -- ein schnellerer Takt
-     wuerde jede Fahrt abschneiden, ein langsamerer liesse den Balken stehen. */
-  var BALKEN_TAKT = 620, BALKEN_ZIEL = 92, BALKEN_HALB = 26000;
-  function balkenStarten(){
-    var el = root.querySelector('#upr-bar');
-    if (!el) return;
-    /* Ab laufSeit, nicht ab jetzt: nach einem Neuaufbau mitten im Lauf faehrt der Balken dort
-       weiter, wo er stand, statt auf 0 zurueckzuspringen. Frisch gestartet ist laufSeit jetzt --
-       die erste Breite ist dann 0 %, wie vorher. */
-    var t0 = laufSeit || Date.now();
-    function breite(){ return (BALKEN_ZIEL * (1 - Math.exp(-(Date.now() - t0) / BALKEN_HALB))).toFixed(1) + '%'; }
-    el.style.width = breite();
-    var iv = setInterval(function(){
-      /* Hat eine neu gebaute Wurzel uebernommen, raeumt die alte ihre Schleifen selbst ab --
-         Balken, Satz und Marken liefen sonst im abgehaengten Knoten weiter, bis die Seite wechselt.
-         Eine Pruefung genuegt: _uprClearLoad nimmt alle Ladeuhren dieser Wurzel mit, und diese
-         hier tickt am haeufigsten. */
-      if (BESITZER[instanceId] !== root){ _uprClearLoad(); return; }
-      el.style.width = breite();
-    }, BALKEN_TAKT);
-    _uprLoadTimers.push(iv);
-  }
-  function balkenVoll(){
-    var el = root.querySelector('#upr-bar');
-    if (el) el.style.width = '100%';
-  }
   /* Kachelzeile des Ladebilds: was gesucht wird, und wo. Ohne Schlagworte bleibt der Name die
      Ueberschrift der Seite -- behauptet wird nichts, was nicht dasteht. */
-  function ladebildFuellen(){
-    var name = root.querySelector('#upr-l2-name');
-    var sub  = root.querySelector('#upr-l2-sub');
+  function ladebildFuellen(lb){
     var kws = (currentResearchMeta && Array.isArray(currentResearchMeta.keywords)) ? currentResearchMeta.keywords : [];
-    if (name) name.textContent = kws.length ? kws.slice(0, 3).join(', ') : 'Prompt research';
-    if (sub){
-      var m = currentResearchMeta && (currentResearchMeta.market_name || currentResearchMeta.market);
-      sub.textContent = m ? String(m) : '';
-      sub.style.display = m ? '' : 'none';
-    }
+    var m = currentResearchMeta && (currentResearchMeta.market_name || currentResearchMeta.market);
+    lb.name(kws.length ? kws.slice(0, 3).join(', ') : 'Prompt research');
+    lb.sub(m ? String(m) : '');
   }
   function startLoaderAnim(){
     stopLoaderAnim();
+    var lb = ladebildSetzen();
+    if (lb){ ladebildFuellen(lb); lb.start(); }
     var host = root.querySelector('#upr-tl-tags');
-    var textEl = root.querySelector('#upr-think-text');
-    ladebildFuellen();
-    balkenStarten();
     if (host){ var sel = _uprSelectedTags(); if (sel.length) _uprRevealOnce(host, sel); else _uprLoopTags(host, _uprPoolTags(), 3); }
-    if (textEl) _uprLoopText(textEl, LOADER_PHRASES);
   }
-  function stopLoaderAnim(){ _uprClearLoad(); balkenVoll(); }
+  function stopLoaderAnim(){ _uprClearLoad(); if (ladebild) ladebild.stop(); }
 
   /* ---------- research state ---------- */
   function setResearchState(nextState){
@@ -891,6 +846,14 @@
   }
 
   /* ---------- results table ---------- */
+  /* DIE AKTIONSSPALTE AUS DEM INHALT (01.10. gemeldet: "im deutschen Setting haben die Knoepfe
+     nicht genug Platz und ragen links in die anderen Zellen"). Die Breite je Sprache in der CSS
+     (--upr-act-w, 176 bzw. 236) bleibt der Startwert; sobald Zeilen dastehen, misst core die
+     Knoepfe und setzt die Variable an der Box -- fuer Kopf und Zeilen dieselbe Zahl. */
+  var aktSpur = (UC && UC.makeAktionsSpur) ? UC.makeAktionsSpur({
+    root: root, zellen: '.upr-box .upr-td-actions',
+    anwenden: function(w){ var box = root.querySelector('.upr-box'); if (box) box.style.setProperty('--upr-act-w', w + 'px'); }
+  }) : null;
   function renderSuggestedPrompts(rawItems){
     var items = Array.isArray(rawItems) ? rawItems : [];
     currentSuggestedPrompts = items.map(normalizePromptItem).filter(function(item){ return item.prompt_text; });
@@ -911,13 +874,16 @@
           '<div class="up-td">' + renderTags(item.tags) + '</div>' +
           '<div class="up-td">' + renderVolume(item.estimated_volume) + '</div>' +
           '<div class="up-td upr-td-actions"><div class="upr-row-actions">' +
-            '<button class="upr-row-btn is-ignore" type="button" data-action="ignore" data-index="' + index + '"><span>Ignore</span>' + ICON.x + '</button>' +
-            '<button class="upr-row-btn is-accept" type="button" data-action="accept" data-index="' + index + '"><span>Track</span>' + ICON.check + '</button>' +
+            /* Schon uebersetzt, Schluessel in data-i18n: sonst mass die Aktionsspur die englische
+               Breite, bevor der Sprachlauf die Beschriftung tauschte (siehe aktSpur). */
+            '<button class="upr-row-btn is-ignore" type="button" data-action="ignore" data-index="' + index + '"><span data-i18n="Ignore">' + esc(UC.t ? UC.t('Ignore') : 'Ignore') + '</span>' + ICON.x + '</button>' +
+            '<button class="upr-row-btn is-accept" type="button" data-action="accept" data-index="' + index + '"><span data-i18n="Track">' + esc(UC.t ? UC.t('Track') : 'Track') + '</span>' + ICON.check + '</button>' +
           '</div></div>' +
         '</div>';
       }).join('');
     }
     setResearchState('results');
+    if (aktSpur) aktSpur.messen();
   }
 
   function setActionLoading(isLoading){
@@ -1256,7 +1222,10 @@
                /* Ueber UC.t und nicht fest: die Erklaerkarte haengt am body, der Sprachlauf
                   erreicht sie also nicht ueber die Wurzel der Komponente. Gemeldet am 10.09.,
                   dass der Tooltip auf Deutsch fehlt -- er fehlte nicht, er war englisch. */
-               '<div class="up-explain-h">' + UC.esc(UC.t("Est. Volume")) + '</div>' +
+               /* AUSGESCHRIEBEN, nicht die Kopfzelle wiederholt (01.10.: "im Tooltip steht auf
+                  Deutsch nur die Abkuerzung"). Die Kopfzelle kuerzt, weil die Spalte schmal ist --
+                  die Karte hat den Platz, und sie ist genau die Stelle, an der man nachliest. */
+               '<div class="up-explain-h">' + UC.esc(UC.t("Estimated Volume")) + '</div>' +
                '<div class="up-explain-t">' + UC.esc(UC.t(
                  "The estimated frequency that users actually use this or a very similar prompt.")) +
                '</div>';

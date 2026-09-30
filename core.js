@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261058;
+  var BUILD = 20261059;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -2506,6 +2506,8 @@
     "Track accepted prompts with their suggested tags":
       "Übernommene Prompts mit ihren vorgeschlagenen Tags beobachten",
     "Est. Volume": "Gesch. Volumen",
+    /* Die Ueberschrift der Erklaerkarte zur Spalte -- dort ausgeschrieben (01.10.). */
+    "Estimated Volume": "Geschätztes Volumen",
     "Estimated volume:": "Geschätztes Volumen:",
     "Business model:": "Geschäftsmodell:",
     "Remove tag:": "Tag entfernen:",
@@ -4696,6 +4698,68 @@
      were ever component-specific here are the per-column minimum width, which columns drop at
      which breakpoint, and whether the Columns menu offers the row-height switch. Those are now
      config, not forked code. */
+
+  /* ---------- DIE AKTIONSSPALTE SO BREIT WIE IHR INHALT (01.10.) ----------
+     Gemeldet in Prompt Research und Explore Brands: im deutschen Setting ragen die Knoepfe
+     ("Ignorieren", "Beobachten") links aus ihrer Spalte in die Nachbarzellen. Beide Spalten hatten
+     eine FESTE Breite je Sprache, einmal gemessen und eingetragen -- und beide Male mit einer
+     Schrift, die nicht die des Knopfs war (13/500 gerechnet, 12.5/600 gezeichnet). Eine Zahl, die
+     eine Sprache und eine Schriftmetrik vorwegnimmt, ist eine Wette.
+     Jetzt wird GEMESSEN, was wirklich in der Zelle steht: die natuerliche Breite ihrer Kinder, ihre
+     Abstaende und das Polster der Zelle, das Maximum ueber alle Zeilen. Die Breite der Kinder haengt
+     nicht an der Spur (sie schrumpfen nicht, nowrap bzw. flex: 0 0 auto) -- also kann das Setzen der
+     Spur die Messung nicht zurueckwirken lassen.
+     Die Spur bleibt EINE Zahl fuer Kopf und Zeilen (siehe makeColumns: getrennte Raster, darum kein
+     max-content). Der Aufrufer setzt sie -- als Variable oder ueber seine Rasterrechnung.
+     cfg: { root, zellen (Selektor der Aktionszellen), anwenden(px) }
+     messen() nach jedem Zeichnen der Zeilen. Dazu beobachtet der Baustein den Inhalt der ersten
+     Zelle: aendert der Sprachlauf die Beschriftung an Ort und Stelle (data-i18n, ohne Neuzeichnen)
+     oder kommt die Schrift nach, misst er selbst nach. Rueckgabe { messen, breite }. */
+  function aktionsBreite(zellen){
+    var max = 0;
+    Array.prototype.forEach.call(zellen || [], function(z){
+      /* Nur gezeichnete Zellen: unter einem verborgenen Vorfahren (prompt-research baut die Zeilen,
+         bevor die Ergebnisansicht aufgeht) ist jedes Kind 0 breit, und uebrig bliebe das Polster
+         allein -- eine Spur von 24px. Der Beobachter unten misst nach, sobald sie aufgeht. */
+      if (!z || !z.isConnected || !z.getClientRects().length) return;
+      var cs = getComputedStyle(z);
+      var w = 0, n = 0;
+      Array.prototype.forEach.call(z.children, function(k){
+        if (getComputedStyle(k).display === "none") return;
+        w += k.getBoundingClientRect().width; n++;
+      });
+      if (!n) return;
+      /* Rahmen mit: die Zellen tragen links die Spaltenlinie (1px), und ohne sie stand der Knopf
+         genau diesen Pixel in das rechte Polster hinein (gemessen in Explore Brands). */
+      w += (parseFloat(cs.columnGap) || 0) * (n - 1) +
+           (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0) +
+           (parseFloat(cs.borderLeftWidth) || 0) + (parseFloat(cs.borderRightWidth) || 0);
+      if (w > max) max = w;
+    });
+    return max ? Math.ceil(max) : 0;
+  }
+  function makeAktionsSpur(cfg){
+    cfg = cfg || {};
+    var zuletzt = 0, ro = null, beobachtet = null;
+    function messen(){
+      if (!cfg.root) return 0;
+      var zellen = cfg.root.querySelectorAll(cfg.zellen);
+      var w = aktionsBreite(zellen);
+      if (w && w !== zuletzt){
+        zuletzt = w;
+        try { if (cfg.anwenden) cfg.anwenden(w); } catch(e){}
+      }
+      var erste = zellen[0] ? zellen[0].firstElementChild : null;
+      if (erste !== beobachtet && typeof ResizeObserver !== "undefined"){
+        if (ro) ro.disconnect();
+        beobachtet = erste;
+        ro = erste ? new ResizeObserver(function(){ messen(); }) : null;
+        if (ro) ro.observe(erste);
+      }
+      return w;
+    }
+    return { messen: messen, breite: function(){ return zuletzt; } };
+  }
 
   /* ---------- makeColumns ----------
      cfg: { root, state, columns, storePrefix, instanceId, firstKey, firstMin, actionsMin,
@@ -9652,6 +9716,8 @@
     var NAV_ZEICHEN = {
       allprompts: "scroll", "all prompts": "scroll",
       tracked: "chatPreview",
+      /* Seit dem 01.10.: dieselbe Form wie im Ladebild von Explore Brands (siehe ICON_PATHS.compass). */
+      discover: "compass",
       prompt: "zap", prompts: "zap", "prompt insights": "zap",
       topic: "tags", topics: "tags",
       response: "response", responses: "response",
@@ -13325,25 +13391,29 @@
     return { el: el, zeigen: zeigen };
   }
 
-  /* ---------- DAS LADEBILD FUER LANGE LAEUFE (30.09.) ----------
-     Kachel mit Zeichen, Name, Unterzeile, Balken, wechselnder Satz: die Form des zweiten
-     Ladeschirms im Onboarding (uob-load.is-compact), die prompt-research als erste uebernommen hat
-     (dort die l2-Klassen). Als Baustein, seit Opportunities dasselbe Bild fuer seine Suche braucht --
-     die dritte Kopie waere die, die beim naechsten Fix vergessen wird. prompt-research und
-     Onboarding tragen ihre Fassung noch selbst; sie koennen hierher umziehen.
-     DIE MASSE AUF DER SKALA (core.css, .up-lb): Name 16 statt 18, Kachelradius 12 statt 13 --
-     die Altwerte der Vorbilder liegen ausserhalb und stehen dort nur als Bestand.
-     DER BALKEN wie in prompt-research: eine abflachende Kurve gegen 92 Prozent, nie von selbst auf
-     100 -- ein voller Balken, unter dem sich weiter etwas dreht, ist eine Luege ueber den Stand.
-     Voll wird er erst mit stop(). Der Takt ist die Dauer der Fahrt in der CSS (--up-t-3, 260ms):
-     ein kuerzerer schnitte jede Fahrt ab, ein laengerer liesse den Balken zwischendurch stehen.
-     cfg:  icon     Name aus UC.icon (Kachelzeichen)
-           name     die Zeile unter der Kachel, sub die leisere darunter (leer = keine)
-           saetze   die wechselnde Statuszeile; sie soll nur Schritte nennen, die wirklich laufen
-           satzMs   Wechsel der Statuszeile (2800 wie prompt-research), halbMs die Kurve (26000)
-     start(seit): seit ist der Startzeitpunkt -- nach einem Neuaufbau mitten im Lauf faehrt der
-     Balken dort weiter, wo er stand. Rueckgabe { el, start, stop, laeuft }. */
-  var LADEBILD_TAKT = 260;
+  /* ---------- DAS LADEBILD FUER LANGE LAEUFE (30.09., zweite Fassung 01.10.) ----------
+     EIN Ladebild fuer alle langen Laeufe: Opportunities (Suche), Prompt Research (Recherche) und
+     Explore Brands (Scan). Bis zum 01.10. trugen die zwei letzten je eine eigene Kopie -- und die
+     drei sahen verschieden aus ("das ist ein core-Thema").
+     DIE FORM kommt vom Ladebild in Explore Brands (01.10.: "nimm den als Grundlage"): Kachel mit
+     dem Zeichen der Seite in der Mitte, darunter Titel und wechselnde Statuszeile. Geaendert, wie
+     gewuenscht: die Kachel schwebt nicht mehr auf und ab, und die zwei pulsierenden Ringe sind EIN
+     duenner Kreis, auf dem ein Bogen umlaeuft -- ein Spinner. Er ist das einzige, was sich bewegt,
+     und damit das Zeichen "hier wird gearbeitet".
+     KEIN BALKEN MEHR. Er lief auf einer erfundenen Kurve gegen 92 Prozent -- kein Lauf hier kennt
+     seinen Fortschritt, und ein Balken behauptet einen.
+     cfg:  icon     Name aus UC.icon: das Zeichen, das die Seite im Seitenkopf traegt
+           name     der Titel, sub die leisere Zeile darunter (leer = keine)
+           saetze   die wechselnde Statuszeile -- ein Feld oder eine Funktion, die es beim Start
+                    liefert (prompt-research legt seine Liste erst nach dem Bauen an)
+           satzMs   Wechsel der Statuszeile (2800)
+     start(seit)  seit wird angenommen und nicht mehr gebraucht (es gibt keinen Balken, der an
+                  einer Stelle weiterfahren muesste) -- die Aufrufer bleiben, wie sie sind.
+     stop()       der Bogen schliesst sich zum vollen Kreis, das Drehen haelt an: "fertig". Wer
+                  danach umschaltet, wartet 400ms (Opportunities), sonst verschwindet das Bild
+                  mitten in der Bewegung.
+     name(t), sub(t)  Titel und Unterzeile nachtraeglich setzen (prompt-research: die Schlagworte).
+     Rueckgabe { el, start, stop, laeuft, name, sub }. */
   function makeLadebild(host, cfg){
     cfg = cfg || {};
     if (!host) return null;
@@ -13355,44 +13425,57 @@
       return '<div class="' + klasse + '"' + (text ? ' data-i18n="' + esc(text) + '"' : '') + '>' +
         esc(text ? t_(text) : "") + '</div>';
     }
+    /* pathLength 100: der Bogen ist damit in Prozent des Umfangs angegeben (CSS, stroke-dasharray)
+       und haengt nicht am Radius. */
     el.innerHTML =
-      '<div class="up-lb-mark">' + (cfg.icon ? icon(cfg.icon, 2) : "") + '</div>' +
+      '<div class="up-lb-mark">' +
+        '<svg class="up-lb-spin" viewBox="0 0 72 72" aria-hidden="true">' +
+          '<circle class="up-lb-spur" cx="36" cy="36" r="35"/>' +
+          '<circle class="up-lb-bogen" cx="36" cy="36" r="35" pathLength="100"/>' +
+        '</svg>' +
+        '<span class="up-lb-tile">' + (cfg.icon ? icon(cfg.icon, 2) : "") + '</span>' +
+      '</div>' +
       zeile("up-lb-name", cfg.name || "") +
-      (cfg.sub ? zeile("up-lb-sub", cfg.sub) : "") +
-      '<div class="up-lb-bar"><span class="up-lb-fill"></span></div>' +
+      zeile("up-lb-sub", cfg.sub || "") +
       '<div class="up-lb-loop"><span class="up-lb-text"></span></div>';
     host.appendChild(el);
-    var fill = el.querySelector(".up-lb-fill"), textEl = el.querySelector(".up-lb-text");
-    var saetze = (cfg.saetze || []).slice();
-    var satzMs = cfg.satzMs || 2800, halbMs = cfg.halbMs || 26000;
-    var t0 = 0, uhren = [], idx = 0, an = false;
-    function satzSetzen(i){
-      var s = saetze[i] || "";
-      textEl.setAttribute("data-i18n", s);
-      textEl.textContent = t_(s);
+    var nameEl = el.querySelector(".up-lb-name"), subEl = el.querySelector(".up-lb-sub");
+    var textEl = el.querySelector(".up-lb-text");
+    var satzMs = cfg.satzMs || 2800;
+    var saetze = [], uhren = [], idx = 0, an = false;
+    function textSetzen(z, s){
+      s = String(s == null ? "" : s);
+      if (s) z.setAttribute("data-i18n", s); else z.removeAttribute("data-i18n");
+      z.textContent = s ? t_(s) : "";
     }
-    function breite(){ return (92 * (1 - Math.exp(-(Date.now() - t0) / halbMs))).toFixed(1) + "%"; }
+    /* Die Unterzeile belegt nur Platz, wenn sie etwas sagt. */
+    function subSetzen(s){ textSetzen(subEl, s); subEl.hidden = !s; }
+    subSetzen(cfg.sub || "");
+    function satzSetzen(i){ textSetzen(textEl, saetze[i] || ""); }
     function aufraeumen(){ uhren.forEach(function(u){ clearTimeout(u); clearInterval(u); }); uhren = []; }
     function stop(){
       an = false;
       aufraeumen();
-      fill.style.width = "100%";
+      el.classList.add("is-fertig");
     }
-    function start(seit){
+    function start(){
       if (an) return;
       an = true;
-      t0 = seit || Date.now();
-      fill.style.width = breite();
+      el.classList.remove("is-fertig");
+      saetze = (typeof cfg.saetze === "function" ? cfg.saetze() : cfg.saetze) || [];
+      saetze = saetze.slice();
       idx = 0;
       if (saetze.length) satzSetzen(0);
       /* Ein Bild, das aus dem Dokument genommen wurde (die Buehne zeichnet neu), raeumt seine Uhren
-         selbst ab -- sonst liefen Balken und Satz im abgehaengten Knoten weiter. */
-      uhren.push(setInterval(function(){
-        if (!el.isConnected){ stop(); return; }
-        fill.style.width = breite();
-      }, LADEBILD_TAKT));
+         selbst ab -- sonst liefe der Satz im abgehaengten Knoten weiter.
+         In einer GEPARKTEN Ansicht (content-visibility) laeuft der Takt weiter, wechselt aber nicht:
+         das void offsetWidth unten zwingt den Browser, den ausgelassenen Teilbaum doch zu layouten.
+         In Explore Brands war das der groesste Posten in der Ruhe (15 Zugriffe in 20 Sekunden,
+         _diagnose_parkleser.js) -- dieselbe Pruefung stand dort und zieht mit hierher um. */
       if (saetze.length > 1){
         uhren.push(setInterval(function(){
+          if (!el.isConnected){ stop(); return; }
+          if (!messbar(textEl)) return;
           textEl.classList.add("is-out");
           uhren.push(setTimeout(function(){
             idx = (idx + 1) % saetze.length;
@@ -13407,7 +13490,8 @@
         }, satzMs));
       }
     }
-    return { el: el, start: start, stop: stop, laeuft: function(){ return an; } };
+    return { el: el, start: start, stop: stop, laeuft: function(){ return an; },
+             name: function(t){ textSetzen(nameEl, t); }, sub: subSetzen };
   }
 
   /* ---------- makeScaleMenu ----------
@@ -17301,9 +17385,13 @@
                 '<path d="M12.125 16.75H12M12.25 16.75C12.25 16.8881 12.1381 17 12 17C11.8619 17 11.75 16.8881 11.75 16.75C11.75 16.6119 11.8619 16.5 12 16.5C12.1381 16.5 12.25 16.6119 12.25 16.75Z"/>',
     /* ArrowLeft01Icon -- Zurueck -- in Create with AI */
     arrowLeft: '<path d="M15 6C15 6 9.00001 10.4189 9 12C8.99999 13.5812 15 18 15 18"/>',
-    /* CompassIcon -- Entdecken -- Discover Brands */
-    compass: '<circle cx="12" cy="13" r="9"/><path d="M12 3.5V2"/><path d="M10 2H14"/>' +
-             '<path d="M14.7728 10.2571C15.5061 10.9837 14.3328 16.8933 13.1289 16.9974C12.1189 17.0848 11.8041 15.0928 11.5914 14.4614C11.3815 13.8383 11.1478 13.6139 10.5298 13.4095C8.95989 12.8901 8.17492 12.6304 8.0195 12.2192C7.60796 11.1304 13.8362 9.32902 14.7728 10.2571Z"/>',
+    /* Kompass -- Entdecken -- Discover Brands. SEIT DEM 01.10. DIE FORM DES REITERS "Discover" im
+       Seitenkopf der Brands-Seite (Kreis, Nadel als Raute), nicht mehr die Stoppuhr-Form: das
+       Ladebild in Explore Brands trug die Stoppuhr, der Reiter darueber den Kompass -- gemeldet als
+       "das Zeichen im Loader stimmt nicht mit dem Seitenkopf ueberein". Der Reiter war die Vorgabe,
+       also traegt der Satz jetzt seine Form, und beide holen sie von hier (NAV_ZEICHEN "discover"). */
+    compass: '<circle cx="12" cy="12" r="10"/>' +
+             '<path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/>',
     /* Package01Icon -- Produkt/Paket -- Discover Brands und Settings Brand */
     package: '<path d="M2.5 7.5V13.5C2.5 17.2712 2.5 19.1569 3.67157 20.3284C4.84315 21.5 6.72876 21.5 10.5 21.5H13.5C17.2712 21.5 19.1569 21.5 20.3284 20.3284C21.5 19.1569 21.5 17.2712 21.5 13.5V7.5"/>' +
              '<path d="M3.86909 5.31461L2.5 7.5H21.5L20.2478 5.41303C19.3941 3.99021 18.9673 3.2788 18.2795 2.8894C17.5918 2.5 16.7621 2.5 15.1029 2.5H8.95371C7.32998 2.5 6.51812 2.5 5.84013 2.8753C5.16215 3.2506 4.73113 3.93861 3.86909 5.31461Z"/>' +
@@ -19315,6 +19403,7 @@
     stackFit: stackFit,
     skeletonRows: skeletonRows,
     makeColumns: makeColumns,
+    makeAktionsSpur: makeAktionsSpur,
     makeSearch: makeSearch,
     bootStubs: bootStubs,
     makeFlickerGrid: makeFlickerGrid,

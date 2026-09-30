@@ -224,7 +224,10 @@
 /* ---------- composer ---------- */
 .upr-composer-area { width: min(100%, 820px); margin-top: clamp(48px, 7vw, 78px); position: relative; }
 /* Grey tray wrapping composer + settings, so the settings panel reads as part of the same object */
-.upr-composer-shell { width: 100%; background: var(--vc-heading-bg); border-radius: 24px; transition: background 200ms ease; }
+/* Rundung 16 statt 24 (01.10.: "Roundness des Inputfelds und Settings-Bereichs 16 statt 32") --
+   wie Miras Eingabefeld seit dem 30.09. Schale und Feld mit derselben Zahl: das Feld liegt ohne
+   Abstand in der Schale, ihre Ecken fallen zusammen. */
+.upr-composer-shell { width: 100%; background: var(--vc-heading-bg); border-radius: var(--up-r-2xl); transition: background 200ms ease; }
 /* Im Dunkeln dieselben zwei Flaechen wie Miras Eingabefeld: die Schale #1e1e1e, das Feld darin die
    Flaechenfarbe der Seite (--up-surface, #121212). Vorher lag hier --vc-heading-bg ueber --vc-bg,
    also zwei Grautoene eine Stufe heller -- dasselbe Feld sah in den zwei Komponenten verschieden
@@ -241,7 +244,7 @@
 .up-root[data-theme="dark"].upr-root .upr-composer:not(:focus-within) { border-color: transparent; }
 /* NACH DEM VORBILD VON MIRA (22.09. angefordert). Die Werte sind nicht neu erfunden, sondern
    aus .am-composer uebernommen -- dieselbe Zahl, nicht eine aehnliche:
-     Rundung   24 -> 32
+     Rundung   24 -> 32 (seit dem 01.10. 16, wie Mira inzwischen auch)
      Polster   16 rundum -> 16px 8px 8px. Oben bleibt 16, weil dort das Eingabefeld sitzt und
                seinen Platz nicht aendern soll; links, rechts und unten ruecken auf 8, damit die
                Aktionszeile naeher an die Kante kommt. Genau die Begruendung steht an .am-composer.
@@ -250,7 +253,7 @@
    hier ist es 90px hoch, und der Knopf gehoert an seinen Fuss. */
 .upr-composer {
   width: 100%; min-height: 130px;
-  border: 1px solid var(--vc-border); border-radius: 32px; background: var(--vc-bg);
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl); background: var(--vc-bg);
   /* e-1: das Feld liegt auf der Seite (28.09.; vorher 0 0 4px .05, derselbe Wert wie Miras
      Eingabefeld -- das ebenfalls auf e-1 steht). */
   box-shadow: var(--up-e-1);
@@ -566,7 +569,10 @@
   flex: 0 0 auto;
 }
 /* Deutsch: "Ignorieren" und "Beobachten" statt "Ignore" und "Track" -- gemessen 221px, plus
-   Luft fuer eine andere Schriftmetrik. */
+   Luft fuer eine andere Schriftmetrik.
+   SEIT DEM 01.10. NUR NOCH DER STARTWERT: die Knoepfe ragten trotzdem heraus. Sobald Zeilen
+   dastehen, misst UC.makeAktionsSpur sie und setzt --upr-act-w an der Box (prompt-research.js,
+   aktSpur) -- die Inline-Angabe schlaegt diese Regel. */
 :root[data-up-locale="de"] .upr-box { --upr-act-w: 236px; }
 /* KEINE EIGENE STICKY-REGEL FUER DEN SPALTENKOPF (27.09. entfernt). Hier stand
    .upr-box .up-thead mit position: sticky, top = --up-sticky-top + --up-thead-off und dem deckenden
@@ -644,32 +650,13 @@
 .upr-root.is-running .upr-loading-stage { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
 .upr-loading-inner { width: min(100%, 620px); display: flex; flex-direction: column; align-items: center; text-align: center; position: relative; }
 
-/* ---------- Das Ladebild: dieselbe Form wie der zweite Ladeschirm des Onboardings ----------
-   Kachel, Name, Unterzeile, Balken, Satz, Marken. Alle Werte aus onboarding-page.css uebernommen
-   (uob-load.is-compact / uob-load-name / uob-load-dom / uob-bar) und nicht neu erfunden: derselbe
-   Vorgang soll in beiden Teilen der App gleich aussehen. */
-.upr-l2-mark {
-  width: 44px; height: 44px; border-radius: 13px; display: grid; place-items: center;
-  background: linear-gradient(180deg, var(--vc-bg), var(--vc-heading-bg));
-  border: 1px solid var(--vc-border); color: var(--vc-text);
-  box-shadow: var(--up-e-1, 0 1px 2px rgba(0,0,0,0.04));
-}
-.upr-l2-mark svg { width: 30px; height: 30px; display: block; }
-.upr-l2-name { margin-top: 14px; max-width: 100%; font-size: 18px; font-weight: 600; color: var(--vc-text);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.upr-l2-sub { margin-top: 3px; max-width: 100%; font-size: 13px; color: var(--vc-third);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.upr-bar {
-  margin-top: clamp(20px, 3.4vh, 30px); width: 100%; max-width: 320px;
-  height: 3px; border-radius: 999px; background: var(--vc-sk); overflow: hidden;
-}
-.upr-bar-fill { display: block; height: 100%; width: 0; border-radius: 999px; background: var(--up-accent);
-  transition: width 620ms linear; }
-.upr-loading-inner .upr-tl-tags { margin-top: 14px; }
-/* Der schwebende Kasten zwischen zwei pulsenden Ringen ist weg, mit ihm die zwei Skelettbalken:
-   drei Dauerbewegungen, die nichts ueber den Stand sagten, und drei Endlosanimationen, die den
-   Compositor auch dann beschaeftigt haben, wenn die Buehne unsichtbar dalag. An ihrer Stelle
-   steht jetzt der Balken, der etwas aussagt. */
+/* ---------- Das Ladebild ----------
+   Kachel, Titel (die Schlagworte), Unterzeile (der Markt) und Statuszeile kommen seit dem 01.10.
+   aus core (UC.makeLadebild, .up-lb) -- dasselbe Bild wie in Opportunities und Explore Brands.
+   Vorher stand hier die Fassung aus dem Onboarding mit Balken; der Balken lief auf einer erfundenen
+   Kurve, denn eine Recherche kennt ihren Fortschritt nicht. Eigen ist nur, was es genau hier gibt:
+   die Themen-Chips darunter. */
+.upr-loading-inner .upr-tl-tags { margin-top: 16px; }
 .upr-tl-tags { display: flex; gap: 7px; flex-wrap: wrap; justify-content: center; align-items: flex-start; width: 100%; min-height: 24px; }
 .upr-tl-tags.is-loop { flex-wrap: nowrap; overflow: hidden; }
 .upr-tl-tag {
@@ -681,14 +668,6 @@
 }
 .upr-tl-tag.on { opacity: 1; transform: none; }
 .upr-tl-dot { width: 6px; height: 6px; border-radius: 50%; flex: 0 0 auto; background: var(--vc-third); }
-.upr-think-loop { position: relative; height: 19px; overflow: hidden; width: 100%; margin-top: 16px; }
-.upr-think-text {
-  position: absolute; left: 0; right: 0; top: 0; white-space: nowrap;
-  font-size: 13px; color: var(--vc-muted); transform: translateY(0); opacity: 1;
-  transition: transform 260ms cubic-bezier(0.22,1,0.36,1), opacity 210ms ease-out;
-}
-.upr-think-text.is-out { transform: translateY(-95%); opacity: 0; }
-.upr-think-text.is-in { transform: translateY(95%); opacity: 0; }
 
 /* ---------- previous researches: right-hand sidebar ----------
    Was an inline panel under the composer; it is a page-level drawer now, so the list has room for
@@ -803,12 +782,9 @@
   .upr-box .up-th:last-child, .upr-box .up-td:last-child { padding-left: 8px; padding-right: 8px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  /* .upr-loader-core und .upr-loader-ring standen hier, solange der schwebende Kasten das
-     Ladebild war. Der Balken faehrt statt zu pulsen -- er BLEIBT auch bei reduzierter Bewegung,
-     denn er ist der Stand und keine Zierde; nur seine Fahrt wird abgestellt. */
+  /* Das Ladebild regelt seine reduzierte Bewegung selbst (core.css, .up-lb). */
   .upr-float-point, .upr-float-spark,
   .upr-skeleton-chip, .upr-start-btn.is-running svg { animation: none; }
-  .upr-bar-fill { transition: none; }
 }
 
 

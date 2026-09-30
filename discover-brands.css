@@ -128,10 +128,10 @@
 .udb-root.is-narrow .up-td-act { justify-content: center; padding: 0 6px; }
 
 /* ---------- Ladeflaeche ----------
-   Bauart aus prompt-research uebernommen (schwebender Kern mit zwei pulsenden Ringen plus eine
-   wechselnde Statuszeile), weil dieselbe Wartezeit dahintersteht: der RPC laeuft bei grossen
-   Teams 20-30 Sekunden. Ein Skelett aus grauen Balken behauptet in dieser Zeit, es kaeme gleich
-   etwas; diese Flaeche sagt, dass gerechnet wird. */
+   Das Ladebild selbst kommt seit dem 01.10. aus core (UC.makeLadebild, .up-lb) -- dasselbe wie in
+   Opportunities und Prompt Research. Bis dahin stand es hier als eigene Fassung (schwebender Kern,
+   zwei pulsierende Ringe), und genau diese Fassung ist in core die Vorlage geworden, ohne das
+   Schweben und mit einem Spinner statt der Ringe. Hier bleibt nur die Flaeche, die es traegt. */
 /* Die Ladeflaeche liegt IM FLUSS, nicht als position:absolute ueber der Tabelle.
    Als Ueberlagerung war sie unbrauchbar, sobald schon Daten dastanden: der Kasten behielt die
    Hoehe der alten Tabelle (gemessen 1848px bei 30 Zeilen), die Flaeche erbte sie ueber inset:0,
@@ -140,9 +140,8 @@
    leeres Rechteck: nicht von einem Ausfall zu unterscheiden.
    Im Fluss bestimmt die Flaeche die Hoehe des Kastens selbst, die Animation steht also immer da,
    wo der Nutzer hinsieht. Die Tabelle geht dafuer auf display:none -- durchsichtig genuegt nicht,
-   sie wuerde ihren Platz weiter belegen und das Problem bliebe.
-   Das Einblenden laeuft als Animation statt als Transition: aus display:none heraus gibt es keinen
-   Startwert, gegen den eine Transition laufen koennte. */
+   sie wuerde ihren Platz weiter belegen und das Problem bliebe. Das Einblenden bringt .up-lb selbst
+   mit: aus display:none heraus startet seine Animation neu. */
 .udb-loading { display: none; }
 .udb-root.is-loading .udb-loading {
   display: grid; place-items: center; min-height: 420px;
@@ -152,51 +151,7 @@
      Radius selbst mitbringen. */
   border-radius: 16px;
 }
-.udb-root.is-loading .udb-loading-inner { animation: udbLoadIn 260ms ease both; }
-@keyframes udbLoadIn { from { opacity: 0; } to { opacity: 1; } }
 .udb-root.is-loading .up-table, .udb-root.is-loading .up-empty { display: none; }
-.udb-loading-inner { display: flex; flex-direction: column; align-items: center; text-align: center;
-  width: min(100%, 420px); }
-
-.udb-mark { width: 132px; height: 132px; position: relative; display: grid; place-items: center; margin-bottom: 20px; }
-.udb-core {
-  width: 60px; height: 60px; border-radius: 20px;
-  background: linear-gradient(180deg, var(--vc-bg), var(--vc-heading-bg));
-  border: 1px solid var(--vc-border);
-  /* e-3: das Zeichen schwebt frei ueber dem Ladezustand (28.09.; vorher zwei eigene Lagen,
-     0 18px 54px). Dieselbe Tiefe traegt sein Zwilling in prompt-research (.upr-research-orb). */
-  box-shadow: var(--up-e-3);
-  display: grid; place-items: center; position: relative; z-index: 3; color: var(--vc-text);
-  animation: udbFloat 3.2s ease-in-out infinite;
-}
-.udb-core::before { content: ""; position: absolute; inset: 8px; border-radius: 14px; border: 1px solid var(--vc-border); }
-.udb-core svg { width: 20px; height: 20px; display: block; }
-.udb-ring { position: absolute; inset: 16px; border-radius: 999px; border: 1px solid var(--vc-border); }
-.udb-ring.r1 { animation: udbRing 2.8s ease-in-out infinite; }
-.udb-ring.r2 { inset: 3px; animation: udbRing 3.7s ease-in-out infinite reverse; }
-@keyframes udbFloat { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-4px) scale(1.018); } }
-@keyframes udbRing { 0%, 100% { transform: scale(0.96); opacity: 0.42; } 50% { transform: scale(1.04); opacity: 0.84; } }
-/* Die Flaeche bleibt im DOM, damit sie ein- und ausblenden kann. Ihre drei Endlosanimationen
-   wuerden den Compositor sonst die ganze Seitenlebensdauer beschaeftigen -- als Ruckeln beim
-   Scrollen spuerbar. Aus, sobald nicht wirklich geladen wird. Gleiche Begruendung wie in
-   prompt-research. */
-.udb-root:not(.is-loading) .udb-core, .udb-root:not(.is-loading) .udb-ring { animation: none; }
-
-.udb-ltitle { font-size: 14.5px; font-weight: 500; color: var(--vc-text); }
-/* Feste Hoehe und eine Zeile: der Text wechselt, und ohne feste Hoehe huepfte alles darunter
-   bei jedem Wechsel. */
-.udb-lloop { position: relative; height: 19px; overflow: hidden; width: 100%; margin-top: 8px; }
-.udb-ltext {
-  position: absolute; left: 0; right: 0; top: 0; white-space: nowrap;
-  font-size: 13px; color: var(--vc-muted); transform: translateY(0); opacity: 1;
-  transition: transform 260ms cubic-bezier(0.22,1,0.36,1), opacity 210ms ease-out;
-}
-.udb-ltext.is-out { transform: translateY(-95%); opacity: 0; }
-.udb-ltext.is-in  { transform: translateY(95%);  opacity: 0; }
-@media (prefers-reduced-motion: reduce) {
-  .udb-core, .udb-ring { animation: none !important; }
-  .udb-ltext { transition: none; }
-}
 
 /* ---------- Mobil ---------- */
 @media (max-width: 560px) {
