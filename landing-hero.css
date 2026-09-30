@@ -2626,7 +2626,7 @@
 .ulh-app .tcl-seg-btn.is-active { border-color: var(--vc-border); }
 
 /* Der Day-Knopf soll normal aussehen. Er ist gesperrt, und das ist RICHTIG: die Serie spannt sechs
-   Monate, und ueber 92 Tagen ist eine Tageskurve unlesbar (UC.granAvailability) -- in der App
+   Monate, und ueber 100 Tagen ist eine Tageskurve unlesbar (UC.granAvailability) -- in der App
    gehoert der Knopf dann ausgegraut. Im Schaustueck erklaert das aber niemand, und ein
    halbdurchsichtiger Knopf sieht nach einem Fehler aus. pointer-events wieder auf auto, damit er
    sich auch unter der Maus verhaelt wie die beiden anderen; klicken kann ihn ohnehin niemand, das

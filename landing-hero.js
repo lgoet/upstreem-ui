@@ -175,7 +175,7 @@
   /* Sechs MONATSpunkte, nicht dreissig Tagespunkte. Das Chart aggregiert nicht selbst --
      UC.buildLineDatasets nimmt die Serie, wie sie kommt --, also entscheidet die Serie die Stufe.
      Sechs Punkte im Monatsabstand ergeben eine Spanne von etwa 152 Tagen, und damit sperrt
-     UC.granAvailability von sich aus "Day" (ueber 92 Tagen unlesbar) und gibt Week und Month frei.
+     UC.granAvailability von sich aus "Day" (ueber 100 Tagen unlesbar) und gibt Week und Month frei.
      Die Achse beschriftet einen ganzen Monatsbereich nur mit dem Monatsnamen. */
   var PUNKTE = 6;
 

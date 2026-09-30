@@ -129,44 +129,19 @@
     var GRAN_PICKED = (window.__votGranPicked = window.__votGranPicked || {});
     var INIT_COMPANIES = (window.__votInitCompanies = window.__votInitCompanies || {});
     var curGran = (GRAN_STORE[instanceId] === "week" || GRAN_STORE[instanceId] === "month") ? GRAN_STORE[instanceId] : "day";
-    function seriesRangeDays(){
-      var days = [];
-      /* dayKey: die Liste wird sortiert und dann per Date.parse auf ihre Spanne geprueft. Mit
-         einem formatierten Datum sortiert sie alphabetisch, also stehen vorn und hinten die
-         falschen Tage -- und die Spanne entscheidet, welche Granularitaetsknoepfe frei sind. */
-      (state.series || []).forEach(function(p){ if (p && p.day != null) days.push(UC.dayKey ? UC.dayKey(p.day) : String(p.day)); });
-      if (!days.length) return 0;
-      days.sort();
-      var a = Date.parse(days[0]), b = Date.parse(days[days.length - 1]);
-      if (isNaN(a) || isNaN(b)) return days.length;
-      return Math.round((b - a) / 86400000) + 1;
-    }
     /* Steht jetzt in core -- brand-detail liest dieselben Schreibweisen. */
     var normGran = UC.normGran;
-    function inferGran(series){
-      var seen = {};
-      (series || []).forEach(function(p){ if (p && p.day != null) seen[UC.dayKey ? UC.dayKey(p.day) : String(p.day)] = 1; });
-      var arr = Object.keys(seen).sort();
-      if (arr.length < 2) return null;
-      var gaps = [];
-      for (var i = 1; i < arr.length; i++){
-        var a = Date.parse(arr[i - 1]), b = Date.parse(arr[i]);
-        if (!isNaN(a) && !isNaN(b)) gaps.push((b - a) / 86400000);
-      }
-      if (!gaps.length) return null;
-      gaps.sort(function(x, y){ return x - y; });
-      var med = gaps[Math.floor(gaps.length / 2)];
-      if (med >= 20) return "month";
-      if (med >= 4) return "week";
-      return "day";
-    }
+    /* Der Schluss aus den Punktabstaenden steht seit dem 01.10. in core (UC.granAusDaten) --
+       dieselbe Rechnung, jetzt fuer jeden Schalter der App. */
+    function inferGran(series){ return UC.granAusDaten ? UC.granAusDaten(series) : null; }
     function granBtnsLive(){ return Array.prototype.slice.call(root.querySelectorAll(".vc-gran-btn")); }
     function syncGranActive(){ granBtnsLive().forEach(function(bn){ bn.classList.toggle("is-active", bn.getAttribute("data-gran") === curGran); }); }
-    /* Die Schwellen stehen in core (UC.granAvailability) -- brand-detail sperrt mit denselben
-       Zahlen. Was hier stand, war die Vorlage dafuer. */
+    /* Die Schwellen stehen in core (UC.granAvailability), fuer jeden Schalter dieselben. Seit dem
+       01.10. stellt core die aktive Stufe nie mehr von selbst um -- vorher sprang sie hier still
+       auf Week, sobald eine Tagesreihe "last 3 months" 93 Tage lang war, und Day war gesperrt
+       ("manchmal kann man nicht auf Day wechseln"). Die Rueckgabe ist darum immer curGran. */
     function applyGranAvailability(){
-      var neu = UC.granAvailability(root, state.series, curGran);
-      if (neu !== curGran){ curGran = neu; GRAN_STORE[instanceId] = neu; syncGranActive(); }
+      if (UC.granAvailability) UC.granAvailability(root, state.series, curGran);
     }
 
     /* ---------- the line chart, from the shared kit ----------
@@ -988,12 +963,17 @@
           }
         }
         var __proc = readProcessing();
-        if (!GRAN_PICKED[instanceId]){
-          var __explicit = normGran(params.granularity != null ? params.granularity : params.gran);
-          var __resolved = __explicit || ((!__proc && params.series != null) ? inferGran(state.series) : null);
-          if (__resolved && __resolved !== curGran){ curGran = __resolved; GRAN_STORE[instanceId] = __resolved; }
-        }
+        /* DIE LIEFERUNG GEWINNT, auch nach einem Klick (01.10., fuer alle Schalter gleich): ihr
+           Feld granularity bzw. gran, sonst der Abstand der Punkte -- beides sagt, was die Kurve
+           zeigt. Vorher galt das nur bis zum ersten Klick (GRAN_PICKED); stellte der Workflow
+           danach selbst auf Week (etwa bei einem langen Zeitraum), zeigte der Schalter weiter Day
+           neben einer Wochenkurve. Domain und Brand Detail haben es schon immer so gehalten. */
+        var __explicit = normGran(params.granularity != null ? params.granularity : params.gran);
+        var __resolved = __explicit || ((!__proc && params.series != null) ? inferGran(state.series) : null);
+        if (__resolved && __resolved !== curGran){ curGran = __resolved; GRAN_STORE[instanceId] = __resolved; }
         syncGranActive();
+        /* Die Freigabe erst MIT der aktiven Stufe der Lieferung -- core sperrt nie die aktive. */
+        applyGranAvailability();
         if (!LOADING_EXPLICIT[instanceId]) state.loading = __proc;
         render();
       },

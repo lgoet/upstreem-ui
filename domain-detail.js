@@ -910,8 +910,11 @@
        beiden zu bedienen war genau der gemeldete Fehler.
        Nur die drei bekannten Werte werden uebernommen: ein Tippfehler in der RPC soll den Schalter
        nicht auf etwas stellen, das es nicht gibt. */
+    /* Seit dem 01.10. ueber core (UC.granAusLieferung), wie jeder Schalter: das Feld granularity
+       bzw. gran, und nur wenn es fehlt, der Abstand der Punkte der Kurve, die gerade zu sehen ist.
+       Ein unbekannter Wert bleibt weiter ohne Wirkung (normGran gibt dafuer null). */
     function granAusPayload(p) {
-      var g = String((p && p.granularity) || "").trim().toLowerCase();
+      var g = UC.granAusLieferung ? UC.granAusLieferung(p, granReihe()) : null;
       if (g !== "day" && g !== "week" && g !== "month") return false;
       if (g === state.gran) return false;
       state.gran = g; GRAN_STORE[instanceId] = g;
@@ -922,14 +925,14 @@
         ? (isArr(state.share) ? state.share : [])
         : (state.urls && isArr(state.urls.points) ? state.urls.points : []);
     }
+    /* NUR NOCH DIE FREIGABE, KEIN EREIGNIS MEHR (01.10.). Hier stand die Korrektur: kam eine
+       Tagesreihe ueber 92 Tage ("last 3 months" hat bis zu 93), sperrte core Day, und diese
+       Funktion stellte auf Week UND meldete uddGran an Bubble -- das zweite Laden und das
+       Zurueckspringen auf Week, genau so gemeldet. core stellt die aktive Stufe seitdem nie mehr
+       von selbst um (siehe granAvailability dort), eintreffende Daten loesen hier also nichts
+       mehr aus. Der Name bleibt: drei Aufrufer. */
     function granPruefen() {
-      if (!UC.granAvailability) return;
-      var neu = UC.granAvailability(root, granReihe(), state.gran);
-      if (neu !== state.gran) {
-        state.gran = neu; GRAN_STORE[instanceId] = neu;
-        syncSeg();
-        fire("data-gran-fn", "uddGran", { mode: state.mode, gran: neu, scope: state.scope });
-      }
+      if (UC.granAvailability) UC.granAvailability(root, granReihe(), state.gran);
     }
 
     /* ---- Klicks ------------------------------------------------------------------------------ */
@@ -977,6 +980,9 @@
       var g = e.target.closest("[data-gran]");
       if (g && elGran.contains(g)) {
         var gk = g.getAttribute("data-gran");
+        /* Gesperrt heisst gesperrt, auch per Tastatur -- bisher hielt nur pointer-events aus der
+           CSS den Klick auf, Enter und Leertaste gingen durch. Wie in jedem anderen Schalter. */
+        if (g.classList.contains("is-disabled")) return;
         if (gk === state.gran) return;
         state.gran = gk; GRAN_STORE[instanceId] = gk;
         /* Nur im Domain-Share: dort haengt die x-Achse an der URL-Serie, und eine Tageskurve

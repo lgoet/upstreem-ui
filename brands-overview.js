@@ -812,28 +812,11 @@
 
     function granBtns(){ return Array.prototype.slice.call(root.querySelectorAll(".vc-gran-btn")); }
     function syncGran(){ granBtns().forEach(function(b){ b.classList.toggle("is-active", b.getAttribute("data-gran") === curGran); }); }
-    function seriesRangeDays(){
-      var days = [];
-      /* dayKey: die Liste wird sortiert und dann per Date.parse auf ihre Spanne geprueft. Mit
-         einem formatierten Datum sortiert sie alphabetisch, also stehen vorn und hinten die
-         falschen Tage -- und die Spanne entscheidet, welche Granularitaetsknoepfe frei sind. */
-      (state.series || []).forEach(function(p){ if (p && p.day != null) days.push(UC.dayKey ? UC.dayKey(p.day) : String(p.day)); });
-      if (!days.length) return 0;
-      days.sort();
-      var a = Date.parse(days[0]), b = Date.parse(days[days.length - 1]);
-      if (isNaN(a) || isNaN(b)) return days.length;
-      return Math.round((b - a) / 86400000) + 1;
-    }
+    /* Freigabe aus core, wie in jedem Schalter (01.10.). Hier stand eine eigene Fassung ohne
+       Obergrenze fuer Day, die bei einer gesperrten aktiven Stufe immer auf Day fiel. core sperrt
+       nie die aktive Stufe und stellt sie nie von selbst um. */
     function applyGranAvailability(){
-      var r = seriesRangeDays();
-      granBtns().forEach(function(b){
-        var g = b.getAttribute("data-gran");
-        var dis = (g === "week" && r > 0 && r < 8) || (g === "month" && r > 0 && r < 31);
-        b.classList.toggle("is-disabled", dis);
-        if (dis) b.setAttribute("aria-disabled", "true"); else b.removeAttribute("aria-disabled");
-      });
-      var act = granBtns().filter(function(b){ return b.getAttribute("data-gran") === curGran; })[0];
-      if (act && act.classList.contains("is-disabled")){ curGran = "day"; GRAN_STORE[instanceId] = "day"; syncGran(); }
+      if (UC.granAvailability) UC.granAvailability(root, state.series, curGran);
     }
 
     function syncYAxis(){
@@ -1790,6 +1773,11 @@
         delete USER_FILTERED[instanceId];
         delete INIT_COMPANIES[instanceId];
         state.status = "active"; state.query = "";
+        /* Die Granularitaet zurueck auf Day, wie in jedem anderen Schalter (01.10.). Bis dahin
+           liess ein Reset sie stehen, und die Marke eines frueheren Klicks sperrte danach jede
+           Stufe aus dem Payload aus. */
+        delete GRAN_PICKED[instanceId];
+        curGran = "day"; GRAN_STORE[instanceId] = "day"; syncGran();
         ansichtMerken();
         state.series = []; state.companies = []; state.filterCompanies = [];
         state.tableRows = []; state.inactiveRows = [];
@@ -1863,12 +1851,14 @@
             }, 600);
           }
         }
-        if (!GRAN_PICKED[instanceId]){
-          var g = params.granularity != null ? params.granularity : params.gran;
-          g = String(g == null ? "" : g).toLowerCase().trim();
-          var resolved = g.indexOf("month") === 0 ? "month" : g.indexOf("week") === 0 ? "week" : g.indexOf("day") === 0 ? "day" : null;
-          if (resolved && resolved !== curGran){ curGran = resolved; GRAN_STORE[instanceId] = resolved; }
-        }
+        /* Die Lieferung gewinnt, auch nach einem Klick, und ohne Feld der Abstand der Punkte
+           (UC.granAusLieferung, 01.10. fuer alle Schalter gleich). Vorher galt sie nur bis zum
+           ersten Klick -- und weil reset() die Marke nie loeschte, danach fuer immer nicht mehr. */
+        var resolved = UC.granAusLieferung
+          ? UC.granAusLieferung(params, params.series != null ? state.series : null) : null;
+        if (resolved && resolved !== curGran){ curGran = resolved; GRAN_STORE[instanceId] = resolved; }
+        syncGran();
+        applyGranAvailability();
         if (!LOADING_EXPLICIT[instanceId]) state.loading = readProcessing();
         render();
       },

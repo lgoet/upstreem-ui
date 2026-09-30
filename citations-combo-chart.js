@@ -253,53 +253,16 @@
     var GRAN_PICKED = (window.__ccGranPicked = window.__ccGranPicked || {});
     var curGran = (GRAN_STORE[instanceId] === "week" || GRAN_STORE[instanceId] === "month") ? GRAN_STORE[instanceId] : "day";
     var granBtns = Array.prototype.slice.call(root.querySelectorAll(".cc-gran-btn"));
-    function seriesRangeDays(){
-      var days = [];
-      /* dayKey: die Liste wird sortiert und dann per Date.parse auf ihre Spanne geprueft. Mit
-         einem formatierten Datum sortiert sie alphabetisch, also stehen vorn und hinten die
-         falschen Tage -- und die Spanne entscheidet, welche Granularitaetsknoepfe frei sind. */
-      (state.series || []).forEach(function(p){ if (p && p.day != null) days.push(UC.dayKey ? UC.dayKey(p.day) : String(p.day)); });
-      if (!days.length) return 0;
-      days.sort();
-      var a = Date.parse(days[0]), b = Date.parse(days[days.length - 1]);
-      if (isNaN(a) || isNaN(b)) return days.length;
-      return Math.round((b - a) / 86400000) + 1;
-    }
-    function normGran(v){
-      v = String(v == null ? "" : v).toLowerCase().trim();
-      if (v.indexOf("month") === 0 || v === "mon" || v === "m") return "month";
-      if (v.indexOf("week") === 0 || v === "w") return "week";
-      if (v.indexOf("day") === 0 || v === "daily" || v === "d") return "day";
-      return null;
-    }
-    function inferGran(series){
-      var seen = {};
-      (series || []).forEach(function(p){ if (p && p.day != null) seen[UC.dayKey ? UC.dayKey(p.day) : String(p.day)] = 1; });
-      var arr = Object.keys(seen).sort();
-      if (arr.length < 2) return null;
-      var gaps = [];
-      for (var i = 1; i < arr.length; i++){
-        var a = Date.parse(arr[i - 1]), b = Date.parse(arr[i]);
-        if (!isNaN(a) && !isNaN(b)) gaps.push((b - a) / 86400000);
-      }
-      if (!gaps.length) return null;
-      gaps.sort(function(x, y){ return x - y; });
-      var med = gaps[Math.floor(gaps.length / 2)];
-      if (med >= 20) return "month";
-      if (med >= 4) return "week";
-      return "day";
-    }
+    /* SPANNE, SCHREIBWEISEN UND DER SCHLUSS AUS DEN PUNKTEN kommen seit dem 01.10. aus core --
+       dieselben wie in jedem anderen Schalter. Hier stand eine eigene Fassung: ohne Obergrenze
+       fuer Day (ein halbes Jahr als Tageskurve, anderswo gesperrt), und fiel die aktive Stufe weg,
+       ging sie immer auf Day statt auf eine erlaubte. */
+    var normGran = UC.normGran || function(){ return null; };
+    function inferGran(series){ return UC.granAusDaten ? UC.granAusDaten(series) : null; }
     function syncGranActive(){ granBtns.forEach(function(bn){ bn.classList.toggle("is-active", bn.getAttribute("data-gran") === curGran); }); }
+    /* core sperrt nie die aktive Stufe und stellt sie nie von selbst um (Regel 2 dort). */
     function applyGranAvailability(){
-      var r = seriesRangeDays();
-      granBtns.forEach(function(bn){
-        var g = bn.getAttribute("data-gran");
-        var dis = (g === "week" && r > 0 && r < 8) || (g === "month" && r > 0 && r < 31);
-        bn.classList.toggle("is-disabled", dis);
-        if (dis) bn.setAttribute("aria-disabled", "true"); else bn.removeAttribute("aria-disabled");
-      });
-      var activeBtn = granBtns.filter(function(bn){ return bn.getAttribute("data-gran") === curGran; })[0];
-      if (activeBtn && activeBtn.classList.contains("is-disabled")){ curGran = "day"; GRAN_STORE[instanceId] = "day"; syncGranActive(); }
+      if (UC.granAvailability) UC.granAvailability(root, state.series, curGran, ".cc-gran-btn");
     }
 
     function setHeading(){
@@ -747,12 +710,13 @@
         if (params.domains != null) state.meta.domains = Array.isArray(params.domains) ? params.domains : [];
         if (params.urls != null) state.meta.urls = Array.isArray(params.urls) ? params.urls : [];
         var __proc = readProcessing();
-        if (!GRAN_PICKED[instanceId]){
-          var __explicit = normGran(params.granularity != null ? params.granularity : params.gran);
-          var __resolved = __explicit || ((!__proc && params.series != null) ? inferGran(state.series) : null);
-          if (__resolved && __resolved !== curGran){ curGran = __resolved; GRAN_STORE[instanceId] = __resolved; }
-        }
+        /* Die Lieferung gewinnt, auch nach einem Klick (01.10., fuer alle Schalter gleich) --
+           sie sagt, was die Kurve zeigt. Freigabe danach, mit der aktiven Stufe der Lieferung. */
+        var __explicit = normGran(params.granularity != null ? params.granularity : params.gran);
+        var __resolved = __explicit || ((!__proc && params.series != null) ? inferGran(state.series) : null);
+        if (__resolved && __resolved !== curGran){ curGran = __resolved; GRAN_STORE[instanceId] = __resolved; }
         syncGranActive();
+        applyGranAvailability();
         if (!LOADING_EXPLICIT[instanceId]) state.loading = __proc;
         render();
       },

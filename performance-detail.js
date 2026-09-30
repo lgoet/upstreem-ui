@@ -267,7 +267,15 @@
     var line = UC.makeLine({
       wrap: lineWrap, canvas: lineCv, legend: null,
       isDark: darkNow, isOwner: isOwner,
-      gran: function(){ return "day"; },
+      /* Die Stufe der Kurve, die gerade zu sehen ist: ihr Feld granularity bzw. gran, sonst der
+         Abstand der Punkte (UC.granAusLieferung, 01.10.). Hier stand fest "day" -- kam eine
+         Wochenreihe, stand an der Achse und im Tooltip trotzdem ein Tagesdatum statt der Woche.
+         Einen Schalter gibt es hier nicht; es geht nur um die Beschriftung. */
+      gran: function(){
+        var pl = state.series && state.series[state.scope];
+        var g = (pl && UC.granAusLieferung) ? UC.granAusLieferung(pl, pl.series) : null;
+        return g || "day";
+      },
       /* "in jedem Linechart" -- auch hier. Die Kurve ist 260px hoch (.upd-chartsec .upd-linewrap),
          also in derselben Groessenordnung wie die anderen; das Zeichen sitzt nicht im Weg. */
       watermark: true

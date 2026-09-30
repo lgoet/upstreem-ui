@@ -319,19 +319,15 @@
     });
 
     /* ---- Rendern ---------------------------------------------------------------------------- */
-    /* Dieselben Schwellen wie im visibility-chart: unter acht Tagen keine Wochen-, unter einem
-       Monat keine Monatskurve. Faellt die aktive Stufe weg, springt der Schalter auf Day und die
-       Komponente holt die Serie in dieser Stufe nach -- sonst zeigte sie eine Kurve, deren Stufe
-       nicht mehr waehlbar ist. */
+    /* Dieselben Schwellen wie ueberall (core, UC.granAvailability). NUR DIE FREIGABE, KEIN
+       EREIGNIS MEHR (01.10.): hier stellte die Komponente die aktive Stufe um und holte die Serie
+       nach, sobald core sie sperrte -- bei "last 3 months" mit 93 Tagen also Day -> Week und ein
+       zweites Laden, dasselbe, was im Domain Spotlight gemeldet wurde. core stellt die aktive
+       Stufe nie mehr von selbst um; sie ist, was die Kurve zeigt. */
     function syncGranAvailability() {
       if (!UC.granAvailability) return;
       var s = state.series;
-      var neu = UC.granAvailability(root, (s && s.series) || [], state.gran);
-      if (neu !== state.gran) {
-        state.gran = neu; GRAN_STORE[instanceId] = neu;
-        syncGran();
-        fire("data-gran-fn", "bubble_fn_ubdGran", { mode: state.mode, gran: neu });
-      }
+      UC.granAvailability(root, (s && s.series) || [], state.gran);
     }
 
     function syncSwitch() {
@@ -602,6 +598,8 @@
     elGran.addEventListener("click", function (e) {
       var b = e.target.closest("[data-gran]");
       if (!b) return;
+      /* Gesperrt heisst gesperrt, auch per Tastatur (bisher nur pointer-events in der CSS). */
+      if (b.classList.contains("is-disabled")) return;
       var g = b.getAttribute("data-gran");
       if (g === state.gran) return;
       state.gran = g; GRAN_STORE[instanceId] = g;
@@ -629,7 +627,10 @@
              Monat wechselt, muss der Schalter das zeigen -- sonst steht dort Day, waehrend eine
              Wochenkurve daneben liegt. Dieselben Feldnamen wie im visibility-chart: granularity,
              gran als Alternative. */
-          var g = UC.normGran ? UC.normGran(p.granularity != null ? p.granularity : p.gran) : null;
+          /* Ohne Feld der Abstand der Punkte (UC.granAusLieferung, seit dem 01.10. fuer alle
+             Schalter gleich). */
+          var g = UC.granAusLieferung ? UC.granAusLieferung(p, p.series)
+                : (UC.normGran ? UC.normGran(p.granularity != null ? p.granularity : p.gran) : null);
           if (g) { state.gran = g; GRAN_STORE[instanceId] = g; }
           /* Der Modus wird hier NICHT angefasst. Er wechselt ausschliesslich durch einen Klick
              auf den Switcher oder durch resetBrandDetail. Ein Workflow, der beim Filterwechsel

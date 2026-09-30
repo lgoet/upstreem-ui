@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261060;
+  var BUILD = 20261061;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -17584,44 +17584,93 @@
     return null;
   }
 
+  /* ---- DIE GRANULARITAET, EINHEITLICH FUER JEDEN SCHALTER (01.10.) ---------------------------
+     Gemeldet: in Drawern mit "last 3 months" liess sich Day mal waehlen und mal nicht (Prompt
+     Spotlight); im Domain Spotlight ging Day, das Chart lud zweimal kurz hintereinander, und der
+     Schalter sprang auf Week zurueck. Dazu verhielt sich jede Komponente anders.
+     Die Ursache stand hier: Day war ueber 92 Tagen gesperrt, gemessen an der Spanne der DATEN.
+     "Last 3 Months" ist aber bis zu 93 Tage lang (heute bis heute vor drei Monaten, beide Enden
+     mitgezaehlt), und eine Wochenreihe ueber denselben Zeitraum ist kuerzer als die Tagesreihe.
+     Also: mit der Wochenreihe war Day frei, nach dem Klick kam die Tagesreihe mit 93 Tagen, Day
+     war gesperrt, und die Komponente stellte von selbst auf Week -- Domain und Brand Detail
+     meldeten das sogar an Bubble und luden ein zweites Mal.
+     Seit heute gilt fuer JEDEN Schalter dasselbe:
+       1. Erlaubt nach der ZEITSPANNE, die die Reihe abdeckt: erster bis letzter Punkt PLUS ein
+          Schritt (1 Tag, 7 Tage, ein Monat -- geschaetzt aus dem Abstand der Punkte). So ergeben
+          Tages- und Wochenreihe ueber denselben Zeitraum dieselbe Spanne, und ein Klick kann die
+          Freigabe nicht mehr kippen. Day bis GRAN_DAY_MAX, Week ab 8 Tagen, Month ab 31.
+       2. Der AKTIVE Knopf wird nie gesperrt und nie von selbst umgestellt. Eintreffende Daten
+          loesen darum nie mehr ein Ereignis aus -- kein zweites Laden, kein Zurueckspringen.
+       3. Welche Stufe aktiv ist, sagt die Lieferung (granAusLieferung): ihr Feld granularity bzw.
+          gran, sonst der Abstand der Punkte. Sie beschreibt, was die Kurve zeigt.
+     granAvailability behaelt seinen Namen und seine Rueckgabe (die aktive Stufe) -- sie ist
+     jetzt immer die uebergebene. */
+  function granTage(series){
+    var seen = {};
+    (series || []).forEach(function(p){ if (p && p.day != null) seen[dayKey(p.day)] = 1; });
+    return Object.keys(seen).sort();
+  }
+  /* Der mittlere Abstand der Punkte in Tagen, oder null bei weniger als zwei Punkten. */
+  function granAbstand(tage){
+    if (!tage || tage.length < 2) return null;
+    var gaps = [];
+    for (var i = 1; i < tage.length; i++){
+      var a = Date.parse(tage[i - 1]), b = Date.parse(tage[i]);
+      if (!isNaN(a) && !isNaN(b)) gaps.push((b - a) / 86400000);
+    }
+    if (!gaps.length) return null;
+    gaps.sort(function(x, y){ return x - y; });
+    return gaps[Math.floor(gaps.length / 2)];
+  }
+  /* Die Stufe, die eine Reihe HAT -- aus dem Abstand ihrer Punkte (die Schwellen stammen aus
+     visibility-chart, wo das zuerst stand). Weniger als zwei Punkte: keine Aussage. */
+  function granAusDaten(series){
+    var med = granAbstand(granTage(series));
+    if (med == null) return null;
+    if (med >= 20) return "month";
+    if (med >= 4) return "week";
+    return "day";
+  }
+  /* Die Stufe einer Lieferung: erst ihr eigenes Feld, dann die Reihe selbst. */
+  function granAusLieferung(p, series){
+    var g = p ? normGran(p.granularity != null ? p.granularity : p.gran) : null;
+    return g || granAusDaten(series);
+  }
   function granRangeDays(series){
-    var tage = [];
-    (series || []).forEach(function(p){ if (p && p.day != null) tage.push(dayKey(p.day)); });
+    var tage = granTage(series);
     if (!tage.length) return 0;
-    tage.sort();
     var a = Date.parse(tage[0]), b = Date.parse(tage[tage.length - 1]);
     if (isNaN(a) || isNaN(b)) return tage.length;
-    return Math.round((b - a) / 86400000) + 1;
+    var g = granAusDaten(series);
+    var schritt = g === "month" ? 30 : g === "week" ? 7 : 1;
+    return Math.round((b - a) / 86400000) + schritt;
   }
 
-  /* Ueber drei Monaten ist eine Tageskurve unlesbar: 90 und mehr Punkte auf einer Chartbreite,
-     die Achse beschriftet ohnehin nur vier Stellen. 92 Tage, damit drei Monate selbst noch als
-     Tageskurve gehen und erst DARUEBER gesperrt wird. */
-  var GRAN_DAY_MAX = 92;
+  /* Ueber drei Monaten ist eine Tageskurve unlesbar. 100 und nicht 92: drei Kalendermonate sind
+     bis zu 93 Tage, und die Wochenreihe desselben Zeitraums kommt mit ihrem Schritt auf bis zu 98.
+     Die naechste Stufe des Kalenders, sechs Monate, liegt bei mindestens 181 -- dazwischen gibt es
+     kein Preset, an dessen Rand ein Klick kippen koennte. */
+  var GRAN_DAY_MAX = 100;
 
-  function granAvailability(root, series, aktuell){
+  /* sel: die Knoepfe des Schalters. Ohne Angabe .vc-gran-btn (Visibility Chart, Brand Detail,
+     Domain Detail, Brands Overview); der Combo Chart traegt .cc-gran-btn. */
+  function granAvailability(root, series, aktuell, sel){
     var spanne = granRangeDays(series);
-    var btns = root ? [].slice.call(root.querySelectorAll(".vc-gran-btn")) : [];
-    var erlaubt = {};
+    var btns = root ? [].slice.call(root.querySelectorAll(sel || ".vc-gran-btn")) : [];
+    aktuell = normGran(aktuell) || "day";
     btns.forEach(function(bn){
       var g = bn.getAttribute("data-gran");
       /* Nur sperren, wenn ueberhaupt Daten da sind (spanne > 0) -- sonst waeren beim ersten
-         Rendern alle Stufen ausser Day gesperrt, bevor die Serie ankommt. */
-      var aus = (g === "day"   && spanne > GRAN_DAY_MAX) ||
+         Rendern alle Stufen ausser Day gesperrt, bevor die Serie ankommt. Und NIE die aktive
+         Stufe (Regel 2 oben): sie ist das, was die Kurve gerade zeigt. */
+      var aus = g !== aktuell && (
+                (g === "day"   && spanne > GRAN_DAY_MAX) ||
                 (g === "week"  && spanne > 0 && spanne < 8) ||
-                (g === "month" && spanne > 0 && spanne < 31);
+                (g === "month" && spanne > 0 && spanne < 31));
       bn.classList.toggle("is-disabled", aus);
       if (aus) bn.setAttribute("aria-disabled", "true"); else bn.removeAttribute("aria-disabled");
-      erlaubt[g] = !aus;
     });
-    /* Faellt die aktive Stufe weg, die naechste erlaubte nehmen -- nicht blind "day". Bei einer
-       Spanne ueber drei Monaten ist day selbst gesperrt, und ein Rueckfall dorthin haette den
-       Schalter auf einen ausgegrauten Knopf gesetzt. */
-    var neu = aktuell || "day";
-    if (erlaubt[neu] === false) {
-      neu = ["week", "month", "day"].filter(function(g){ return erlaubt[g]; })[0] || "day";
-    }
-    return neu;
+    return aktuell;
   }
 
   function variationsExplain(scope){
@@ -19228,6 +19277,8 @@
     granAvailability: granAvailability,
     normGran: normGran,
     granRangeDays: granRangeDays,
+    granAusDaten: granAusDaten,
+    granAusLieferung: granAusLieferung,
     dayKey: dayKey,
     variationsSection: variationsSection,
     variationsExplain: variationsExplain,
