@@ -99,6 +99,15 @@
        - a view whose data is from another range (Apply everywhere changed it since) gets
          resetView(name) when it is opened, so view_first runs again -- with the new states.
        - the picker itself no longer reloads a view on activation.
+       - (30.09.) after a handover, view_first waits data-range-apply-delay (120ms) so the boot
+         workflow has written the states before the view reads them -- Bubble does not run two
+         workflows strictly in call order.
+       - (30.09.) if a view's calendar is not mounted yet when view_first fires (Bubble builds
+         it on the first open), the shared range still goes out first: straight to
+         bubble_fn_udr_date_boot_<view>, for instance dates_v2_<view>. So the first and only
+         load carries it. Only if that function does not exist either does the view load with
+         what its states hold -- the picker then records exactly that, and the NEXT visit
+         reloads it the usual way. Nothing is ever reloaded on mount or on a first open.
      The apply channel is delivered ONCE per change even if both the snippet at the end of the
      date_range workflow and data-range-apply-fn call it (same payload, same event_id).
 
@@ -130,8 +139,13 @@
      openDrawer(kind, id) and closeDrawer(kind) instead — core wraps both the same way it wraps
      showView, before the original, and the originals keep running untouched. When a drawer opens
      whose data is from another range, that drawer reloads once through the apply channel (reason
-     "stale"). Opening it the first time never reloads: the drawer loads through its own workflow,
-     and a second call would be the double run.
+     "stale").
+     The FIRST open still never reloads: the drawer loads through its own workflow with whatever
+     its states hold -- and nobody has handed it the shared range yet, so the page default.
+     Changed 30.09.: that is now recorded as what it is. Before, it was noted as "loaded with the
+     shared range" and the drawer was never corrected, not even on the next open. Now the second
+     open reloads it once. For the FIRST open to be right as well, the drawer's own opening
+     workflow would have to take the range itself -- a Bubble-side step, see the handover.
 
      ── One change serves everything that is VISIBLE ─────────────────────────────
      Change the range in a drawer and the view behind it changes too — anything on screen with a

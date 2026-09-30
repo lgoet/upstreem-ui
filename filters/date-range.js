@@ -628,7 +628,7 @@
         if (grund === "user") {
           var sigKlick = payload.date_from + "|" + payload.date_to + "|" + payload.preset;
           STAND[instanceId] = sigKlick;
-          GEGEBEN[instanceId] = sigKlick;
+          gegebenMerken(instanceId, sigKlick);
         }
         /* data-range-json ist der letzte Zeitraum, den EIN MENSCH ausgewaehlt hat -- und nur der.
            Der Nutzer hat am 03.09. gezeigt, was auf seiner Seite am Ende des
@@ -1173,6 +1173,13 @@
           if (dark) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
         },
         getRange: function () { return { from: iso(committed.from), to: iso(committed.to), preset: committedPreset }; },
+        /* Der Zeitraum, mit dem Bubble laedt, wenn ihm nie jemand einen gegeben hat: die Vorgabe
+           der Seite, Last 7 Days -- derselbe Start wie jeder Kalender (DEFAULT_PRESET). Als
+           Signatur wie sigVon, damit STAND ihn vergleichen kann. */
+        vorgabeSig: function () {
+          var r = presetRange(DEFAULT_PRESET);
+          return iso(r.from) + "|" + iso(r.to) + "|" + DEFAULT_PRESET;
+        },
         /* Feuert den aktuellen Stand, ohne ihn zu aendern -- fuer upstreemDatesActivate und die
            Uebergabe beim Aufbau. Der Grund geht mit, damit kein seitenweiter Workflow anspringt. */
         emitCurrent: function (grund) { return emit(committed.from, committed.to, grund || "activate"); },
@@ -1220,12 +1227,26 @@
              dem Zeitraum vom Seitenaufbau, weil ihr den neuen nie jemand gegeben hatte. Also
              erst die States ueber den Boot-Kanal (nur wenn Bubble sie noch nicht hat), dann das
              Apply. Ohne Boot-Kanal der Range-Kanal unten, der beides in einem Workflow tut. */
-          if (root.getAttribute("data-range-apply-fn") &&
-              (GEGEBEN[instanceId] === sigN || emit(committed.from, committed.to, "activate"))) {
-            GEGEBEN[instanceId] = sigN;
-            return callFn("data-range-apply-fn", null, j2);
+          /* UND DANN ERST DAS APPLY, mit demselben Aufschub wie nach einem Klick (30.09.). States
+             und Apply sind zwei Bubble-Workflows, und Bubble arbeitet sie nicht zwingend in der
+             Reihenfolge des Aufrufs ab -- genau dafuer gibt es data-range-apply-delay am Klickweg.
+             Hier fehlte er: das Apply konnte die alten States lesen. Hat Bubble den Zeitraum
+             schon (GEGEBEN), gibt es nichts abzuwarten. */
+          if (root.getAttribute("data-range-apply-fn")) {
+            var schonGegeben = GEGEBEN[instanceId] === sigN;
+            if (schonGegeben || emit(committed.from, committed.to, "activate")) {
+              var vzN = parseInt(root.getAttribute("data-range-apply-delay"), 10);
+              if (!isFinite(vzN) || vzN < 0) vzN = 120;
+              /* Schon gegeben heisst nicht schon geschrieben: ging die Uebergabe eben erst raus,
+                 den Rest des Aufschubs abwarten. */
+              var warten = schonGegeben ? restWarten(instanceId, vzN) : vzN;
+              if (!schonGegeben) gegebenMerken(instanceId, sigN);
+              if (!warten) return callFn("data-range-apply-fn", null, j2);
+              setTimeout(function () { callFn("data-range-apply-fn", null, j2); }, warten);
+              return true;
+            }
           }
-          GEGEBEN[instanceId] = sigN;
+          gegebenMerken(instanceId, sigN);
 
           /* Sonst der Weg, den die Seite ohnehin hat. Gemessen am 03.09.: auf der echten Seite
              ist data-range-apply-fn nicht gesetzt -- das Apply-Event wird dort am ENDE des
@@ -1260,6 +1281,11 @@
       /* Genau EINE Warteschleife fuer die Seite. Vorher startete jeder teilnehmende Picker eine
          eigene -- bei fuenf Ansichten fuenf Schleifen, und im Log der echten Seite entsprechend
          fuenf Bloecke pro Runde. */
+      /* Hat die Ansicht (oder der Drawer) dieses Kalenders schon geladen, bevor er stand? Dann
+         weiss nur er, mit welchem Zeitraum sie haette laden sollen -- nachMount vergleicht und
+         korrigiert einmal. VOR der Aufbau-Uebergabe eingeplant: die setzt GEGEBEN, und nachMount
+         muss den Stand davor sehen. */
+      setTimeout(function(){ nachMount(ctrl); }, 0);
       if (!aufbauLaeuft && !bootGetan() && istStartkandidat(instanceId)){
         aufbauLaeuft = true;
         setTimeout(function(){ aufbauUebergeben(ctrl); }, 0);
@@ -1440,6 +1466,116 @@
      der Boot-Kanal fehlte, fiel sie auf den Range-Kanal zurueck -- an dem der Nachlade-Workflow
      haengt. Zusammen: ein Ladevorgang je Umschalten, zusaetzlich zu view_first. */
   var GEGEBEN = window.__udrGegeben || (window.__udrGegeben = {});
+  /* WANN Bubble den Zeitraum bekommen hat. "Gegeben" heisst: der Aufruf ist raus -- nicht, dass
+     Bubbles Workflow die States schon geschrieben hat. Wer gleich danach laedt, wartet den Rest
+     des Aufschubs ab (restWarten). Im Nachbau gemessen: die Korrektur beim Aufbau lud sonst mit
+     den alten States, weil die Aufbau-Uebergabe Millisekunden vorher rausgegangen war. */
+  var GEGEBEN_T = window.__udrGegebenT || (window.__udrGegebenT = {});
+  function gegebenMerken(id, sig){ GEGEBEN[id] = sig; GEGEBEN_T[id] = Date.now(); }
+  function restWarten(id, verzug){
+    var t = GEGEBEN_T[id];
+    return t ? Math.max(0, verzug - (Date.now() - t)) : 0;
+  }
+  /* ---- STAND IST EINE MESSUNG, KEIN WUNSCH (30.09.) ----------------------------------------
+     Gemeldet: "nach ein paar Stunden oder Tagen wieder auf der Seite -- der Kalender zeigt last 3
+     months, angewendet wird es nirgends" und "nach einem Wechsel bekommen neue Ansichten und
+     Drawer den Zeitraum nicht, nur schon besuchte". Im Nachbau udr31 beides mit HEAD
+     nachgestellt. Drei Dinge zusammen:
+       1. Vor view_first wurde nur uebergeben, wenn der Kalender der Ansicht schon gemountet war.
+          Bubble baut ihn aber erst beim ersten Oeffnen, und das Kopfskript ruft view_first,
+          sobald die Funktion steht -- oft vorher. Dann lud die Ansicht mit der Vorgabe.
+       2. Wurde uebergeben, lief view_first in derselben Millisekunde. States und Laden sind zwei
+          Bubble-Workflows, und Bubble arbeitet sie nicht zwingend in Aufrufreihenfolge ab --
+          im Nachbau las view_first die alten States.
+       3. STAND wurde trotzdem auf den geteilten Zeitraum gesetzt (beim Aufbau, vor view_first,
+          beim ersten Oeffnen eines Drawers). Danach galt alles als richtig geladen und wurde nie
+          mehr nachgeladen, auch nicht beim naechsten Besuch.
+     Die Antwort, ohne einen einzigen zusaetzlichen Ladevorgang beim ersten Oeffnen (das ist
+     zweimal ausdruecklich abgelehnt worden -- siehe die Notiz zum Erstbesuch):
+       zu 1  vorabGeben: fehlt der Kalender, geht der geteilte Zeitraum trotzdem raus, direkt an
+             die Boot-Funktion der Ansicht (bubble_fn_udr_date_boot_<ansicht>). Die Daten
+             rechnet rangeFuerPreset genau wie der Kalender.
+       zu 2  view_first wartet nach einer Uebergabe den Aufschub von data-range-apply-delay ab
+             (120ms, derselbe wie zwischen Klick und Apply), auch den Rest, wenn die Uebergabe
+             gerade erst rausging (restWarten).
+       zu 3  STAND bekommt den geteilten Zeitraum nur, wenn die Uebergabe VOR dem Laden
+             rausging. Sonst steht dort, womit Bubble wirklich geladen hat (geladenOhneUns) --
+             und der naechste Besuch laedt dann ueber den Weg nach, den es fuer veraltete
+             Ansichten und Drawer schon gibt. Nachgeladen wird NIE beim Mounten und nie beim
+             ersten Oeffnen. */
+  function geladenOhneUns(c){
+    if (!c) return null;
+    return GEGEBEN[c.instanceId] || (typeof c.vorgabeSig === "function" ? c.vorgabeSig() : null);
+  }
+  function applyVerzug(c){
+    var v = parseInt(c && c.root && c.root.getAttribute("data-range-apply-delay"), 10);
+    return (isFinite(v) && v >= 0) ? v : 120;
+  }
+  /* Derselbe Zeitraum, den ein Kalender fuer dieses Preset haette -- dieselben Helfer, derselbe
+     heutige Tag (startOfDay(new Date())) --, damit ein spaeter mountender Kalender dieselbe
+     Signatur rechnet und nichts fuer veraltet haelt, was stimmt. */
+  function rangeFuerPreset(key){
+    if (!TEILBAR[key]) return null;
+    var heute = startOfDay(new Date()), from;
+    if (key === "last30") from = addDays(heute, -29);
+    else if (key === "last3") from = addMonths(heute, -3);
+    else from = addDays(heute, -6);
+    return { from: iso(from), to: iso(heute), preset: key };
+  }
+  /* Uebergabe OHNE gemounteten Kalender (zu 1). Die Instanz heisst wie ueberall dates_v2_<ansicht>,
+     die Boot-Funktion bubble_fn_udr_date_boot_<ansicht> -- so traegt es die echte Seite, und
+     unter diesem Namen meldet diese Datei ein fehlendes Boot-Element. Gibt es sie nicht, bleibt
+     es beim Laden mit dem, was Bubble hat.
+     Rueckgabe: null (nichts gegeben) oder { sig, neu } -- neu heisst: eben erst raus, also warten. */
+  var VORAB = window.__udrVorab || (window.__udrVorab = {});
+  function vorabGeben(name){
+    var f = UC.resolveBubbleFn("bubble_fn_udr_date_boot_" + name);
+    if (typeof f !== "function") return null;
+    var r = rangeFuerPreset(syncPreset());
+    if (!r) return null;
+    var id = "dates_v2_" + name, sig = r.from + "|" + r.to + "|" + r.preset;
+    if (GEGEBEN[id] === sig) return { sig: sig, neu: false };
+    var payload = { instance_id: id, date_from: r.from, date_to: r.to, preset: r.preset,
+                    reason: "activate", event_id: id + "_" + Date.now() + "_vorab" };
+    try { f(JSON.stringify(payload)); } catch(e){ return null; }
+    gegebenMerken(id, sig);
+    VORAB[name] = sig;
+    return { sig: sig, neu: true };
+  }
+  /* Ansichten, deren view_first lief, ohne dass wir vorher etwas geben konnten -- weder Kalender
+     noch Boot-Funktion standen, oder view_first kam, bevor diese Datei geladen war. Am Fenster wie
+     STAND: zwei Einbindungen dieser Datei muessen dieselbe Antwort geben. */
+  var OHNE_UEBERGABE = window.__udrOhneUebergabe || (window.__udrOhneUebergabe = {});
+  /* Ein Kalender ist fertig gemountet: festhalten, womit seine Ansicht bzw. sein Drawer geladen
+     hat, wo das bisher niemand wusste. KEIN Nachladen hier -- das erledigt der naechste Besuch. */
+  function nachMount(c){
+    if (!c || !c.instanceId || !c.root || !c.root.isConnected || !nimmtTeil(c.instanceId)) return;
+    if (istStartkandidat(c.instanceId)){
+      var box = c.root.closest ? c.root.closest('[id^="view-"]') : null;
+      var name = box ? box.id.slice(5) : "", k;
+      if (!name){
+        for (k in OHNE_UEBERGABE) if (c.instanceId.slice(-k.length) === k){ name = k; break; }
+        for (k in VORAB) if (!name && c.instanceId.slice(-k.length) === k){ name = k; break; }
+      }
+      if (!name) return;
+      /* Vorab gegeben (unter dates_v2_<ansicht>): heisst die echte Instanz anders, uebernimmt sie
+         den Stand, statt als "nie geladen" zu gelten. */
+      if (VORAB[name] && !STAND[c.instanceId]){
+        STAND[c.instanceId] = VORAB[name];
+        if (!GEGEBEN[c.instanceId]) GEGEBEN[c.instanceId] = VORAB[name];
+      }
+      if (OHNE_UEBERGABE[name]){
+        delete OHNE_UEBERGABE[name];
+        if (!STAND[c.instanceId]){ var s0 = geladenOhneUns(c); if (s0) STAND[c.instanceId] = s0; }
+      }
+      return;
+    }
+    /* Drawer-Kalender, erstes Mounten bei offenem Drawer: er hat ueber seinen eigenen Workflow mit
+       seinen States geladen -- die ihm nie jemand gegeben hat. */
+    if (STAND[c.instanceId] || !sichtbarImFenster(c.root)) return;
+    var s1 = geladenOhneUns(c); if (s1) STAND[c.instanceId] = s1;
+    STAND_BEI_OEFFNUNG[c.instanceId] = OEFFNUNG.n;
+  }
   function bootDa(c){
     var r = c && c.root;
     return !!r && typeof UC.resolveBubbleFn(r.getAttribute("data-boot-fn") || "bubble_fn_udr_date_boot") === "function";
@@ -1450,7 +1586,7 @@
     if (!sig) return false;
     if (GEGEBEN[c.instanceId] === sig) return true;
     var ok = c.nurStates(grund);
-    if (ok){ GEGEBEN[c.instanceId] = sig; UEBERGEBEN[c.instanceId] = 1; }
+    if (ok){ gegebenMerken(c.instanceId, sig); UEBERGEBEN[c.instanceId] = 1; }
     return !!ok;
   }
   /* ---- EIN APPLY JE AENDERUNG (29.09.) ------------------------------------------------------
@@ -1478,6 +1614,7 @@
     try { Object.defineProperty(window, name, { configurable: true, enumerable: true, get: hole, set: setze }); }
     catch(e){ return; }
     if (vorher !== undefined) setze(vorher);
+    return true;
   }
   function applyFangen(name){
     name = String(name || "").trim();
@@ -1510,12 +1647,26 @@
   function erstlaufFangen(name){
     name = String(name || "").trim();
     if (!name || !/^[\w-]+$/.test(name)) return;
-    amFensterWickeln("bubble_fn_view_first_" + name, function(original){
+    var vorher = null;
+    try { vorher = window["bubble_fn_view_first_" + name]; } catch(e){}
+    var jetztGewickelt = amFensterWickeln("bubble_fn_view_first_" + name, function(original){
       return function(){
         var args = arguments, self = this;
         vorErstlauf(name, function(){ return original.apply(self, args); });
       };
     });
+    /* STAND DIE FUNKTION SCHON, als diese Datei sie umwickeln wollte, und ist die Ansicht offen,
+       dann hat das Kopfskript sie schon gerufen -- es ruft sie, sobald Bubble sie anlegt, und
+       fragt dafuer alle 50ms nach. Die Ansicht hat also ohne uns geladen. Vermerken; die Kalender
+       dieser Ansicht, die schon stehen, sofort pruefen, die anderen beim Mounten. Kommt der Ruf
+       doch erst jetzt durch den Wickel, setzt vorErstlauf STAND richtig, und nachMount findet
+       nichts mehr zu tun. */
+    if (jetztGewickelt && typeof vorher === "function" && offeneAnsicht() === name){
+      OHNE_UEBERGABE[name] = 1;
+      var da = [];
+      try { da = ansichtsKalender(name); } catch(e){}
+      for (var i = 0; i < da.length; i++) nachMount(da[i]);
+    }
   }
   function alleErstlaeufeFangen(){
     var v = document.querySelectorAll('[id^="view-"]');
@@ -1546,15 +1697,40 @@
       try { weiter(); }
       catch(e){ if (window.console) console.warn("[date-range] view_first_" + name + " hat geworfen:", e); }
     }
-    /* NUR bei aktivem Schalter. Ein Anlauf, auch ohne Schalter den eigenen Zeitraum des Kalenders
-       zu uebergeben, ist am 29.09. spaet wieder raus: er aenderte, womit die Ansichten laden, fuer
-       jeden, der den Schalter nie eingeschaltet hat. */
-    if (!syncAn()) return los();
+    /* Die Kalender der Ansicht: im Behaelter, und zusaetzlich nach dem Namen -- steht der Kalender
+       ausserhalb von #view-<name> (etwa in einem Seitenkopf daneben), fand der Behaelter-Test
+       nichts, und es wurde nichts uebergeben. */
     var cs = [];
-    try { cs = ansichtsKalender(name); } catch(e){}
-    if (!cs.length) return los();
+    try {
+      cs = ansichtsKalender(name);
+      var nachName = pickerFuer(name);
+      if (nachName && istStartkandidat(nachName.instanceId) && cs.indexOf(nachName) < 0) cs.push(nachName);
+    } catch(e){}
+    /* OHNE SCHALTER gehoert der Zeitraum dem Kalender, und uebergeben wird nichts (29.09. spaet so
+       entschieden). Festgehalten wird trotzdem, womit die Ansicht laedt: vorher blieb STAND hier
+       leer, und wer den Schalter spaeter einschaltete, bekam diese Ansicht nie nachgeladen -- sie
+       galt als "nie geladen". */
+    if (!syncAn()){
+      for (var i0 = 0; i0 < cs.length; i0++){ var s0 = geladenOhneUns(cs[i0]); if (s0) STAND[cs[i0].instanceId] = s0; }
+      return los();
+    }
+    /* Der Kalender der Ansicht steht noch nicht -- Bubble baut ihn beim ersten Oeffnen, und das
+       Kopfskript ruft view_first, sobald die Funktion da ist, oft vor dem Kalender. Nicht warten:
+       eine Ansicht ohne Kalender waere jedesmal um die ganze Frist verzoegert. Stattdessen
+       vermerken; nachMount vergleicht, sobald er steht, und korrigiert einmal, wenn noetig. */
+    if (!cs.length){
+      var vorab = null;
+      try { vorab = vorabGeben(name); } catch(e){}
+      if (!vorab){ OHNE_UEBERGABE[name] = 1; return los(); }
+      delete OHNE_UEBERGABE[name];
+      var warte = vorab.neu ? 120 : restWarten("dates_v2_" + name, 120);
+      if (warte) setTimeout(los, warte); else los();
+      return;
+    }
+    delete OHNE_UEBERGABE[name];
     var n = 0;
     (function versuch(){
+      var verzug = 0;
       try {
         var fehlt = false, i;
         for (i = 0; i < cs.length; i++) if (!bootDa(cs[i])) fehlt = true;
@@ -1564,20 +1740,38 @@
           var c = cs[i];
           if (TEILBAR[ziel] && c.getRange().preset !== ziel) c.setPreset(ziel, false);
           var sg = sigVon(c);
-          if (bootDa(c)) zustandGeben(c);
-          /* OHNE BOOT-ELEMENT der Range-Kanal, aber nur fuer die States (29.09. spaet). Ohne jeden
-             Rueckfall lud eine solche Ansicht mit dem alten Zeitraum -- gemeldet als "die Kalender
-             funktionieren jetzt noch schlechter als vorher". Der Range-Workflow setzt die States;
-             das Apply, das sein Snippet danach ruft, faengt applyFangen ab (APPLY_SPERRE) --
-             geladen wird in view_first, einmal. */
-          else if (sg && GEGEBEN[c.instanceId] !== sg && typeof c.statesUeberRange === "function" &&
-                   c.statesUeberRange()) GEGEBEN[c.instanceId] = sg;
-          if (sg) STAND[c.instanceId] = sg;
+          if (!sg) continue;
+          /* Hat Bubble genau diesen Zeitraum schon, laedt die Ansicht damit -- nichts zu tun. */
+          if (GEGEBEN[c.instanceId] === sg){
+            STAND[c.instanceId] = sg;
+            verzug = Math.max(verzug, restWarten(c.instanceId, applyVerzug(c)));
+            continue;
+          }
+          var ok = false;
+          if (bootDa(c)) ok = zustandGeben(c);
+          /* OHNE BOOT-ELEMENT der Range-Kanal, aber nur fuer die States (29.09. spaet). Das Apply,
+             das sein Snippet danach ruft, faengt applyFangen ab (APPLY_SPERRE) -- geladen wird in
+             view_first, einmal. */
+          else if (typeof c.statesUeberRange === "function" && c.statesUeberRange()){ gegebenMerken(c.instanceId, sg); ok = true; }
+          if (ok){
+            STAND[c.instanceId] = sg;
+            verzug = Math.max(verzug, applyVerzug(c));
+          } else {
+            /* Kein Kanal erreicht Bubble: die Ansicht laedt mit dem, was sie hat. So festhalten --
+               der naechste Besuch haelt sie dann fuer veraltet und laedt richtig nach. */
+            var alt = geladenOhneUns(c);
+            if (alt) STAND[c.instanceId] = alt;
+          }
         }
       } catch(e){
         if (window.console) console.warn("[date-range] Zeitraum vor view_first_" + name + " nicht uebergeben:", e);
       }
-      los();
+      /* ERST DIE STATES, DANN DAS LADEN (30.09.). Beides sind Bubble-Workflows, und Bubble
+         arbeitet sie nicht zwingend in der Reihenfolge des Aufrufs ab -- ein view_first in
+         derselben Millisekunde las im Nachbau die alten States. Derselbe Aufschub wie zwischen
+         Klick und Apply (data-range-apply-delay, 120ms), und nur, wenn wirklich etwas uebergeben
+         wurde. */
+      if (verzug) setTimeout(los, verzug); else los();
     })();
   }
   function sigVon(c){
@@ -1681,6 +1875,13 @@
      und ein zweiter Aufruf waere der doppelte Durchlauf. Festgehalten wird nur, mit welchem
      Zeitraum. */
   var OFFENE_DRAWER = {};            /* art -> [instanceId, ...] */
+  /* Jedes Oeffnen hat eine Nummer. Der Stand "so hat er beim ersten Oeffnen geladen" gehoert zu
+     GENAU dieser Oeffnung -- die zwei Blicke (300/900ms) und das Mounten dazwischen sind dasselbe
+     Oeffnen. Ohne die Nummer hielt der zweite Blick den eben festgehaltenen Stand fuer veraltet
+     und lud nach: im Nachbau ein zweiter Ladevorgang beim ERSTEN Oeffnen, genau der, der nicht
+     sein darf. */
+  var OEFFNUNG = { n: 0 };
+  var STAND_BEI_OEFFNUNG = window.__udrStandBeiOeffnung || (window.__udrStandBeiOeffnung = {});
   function drawerKalender(art){
     var wort = String(art || "").toLowerCase().replace(/[^a-z0-9]/g, "");
     var nachName = [], mitFlaeche = [];
@@ -1693,16 +1894,25 @@
     }
     return nachName.length ? nachName : mitFlaeche;
   }
-  function drawerBedienen(art){
+  function drawerBedienen(art, nr){
     var liste = drawerKalender(art), ids = [];
     for (var i = 0; i < liste.length; i++){
       var c = liste[i], sig = sigVon(c);
       if (!sig) continue;
       ids.push(c.instanceId);
       var alt = STAND[c.instanceId];
+      /* ERSTES OEFFNEN (30.09. korrigiert): der Drawer hat ueber seinen eigenen Workflow mit dem
+         geladen, was seine States hatten -- gegeben hat sie ihm hier nie jemand, also die
+         Vorgabe. Vorher stand an dieser Stelle STAND = der geteilte Zeitraum, und der Drawer galt
+         fuer immer als richtig geladen: im Nachbau lud er bei JEDEM Oeffnen mit der Vorgabe,
+         waehrend sein Kalender last3 zeigte. Jetzt wird festgehalten, womit er wirklich geladen
+         hat. Nachgeladen wird beim ersten Oeffnen weiter nicht (das waere der doppelte Lauf) --
+         beim zweiten Oeffnen greift der Weg darunter. */
+      if (!alt){ var gl = geladenOhneUns(c); if (gl) STAND[c.instanceId] = gl; STAND_BEI_OEFFNUNG[c.instanceId] = nr; continue; }
+      if (STAND_BEI_OEFFNUNG[c.instanceId] === nr) continue;   /* dasselbe Oeffnen */
+      if (alt === sig) continue;                      /* unveraendert */
+      if (!syncAn()) { STAND[c.instanceId] = sig; continue; }   /* ohne Schalter gehoert der Zeitraum ihm */
       STAND[c.instanceId] = sig;
-      if (!alt || alt === sig) continue;              /* erstes Oeffnen bzw. unveraendert */
-      if (!syncAn()) continue;                        /* ohne Schalter gehoert der Zeitraum ihm */
       if (typeof c.nachladen === "function") c.nachladen();
     }
     if (ids.length) OFFENE_DRAWER[String(art || "")] = ids;
@@ -1712,8 +1922,9 @@
   var drawerErster = !window.__udrDrawerAngemeldet;
   window.__udrDrawerAngemeldet = true;
   if (UC.onDrawerOpen && drawerErster) UC.onDrawerOpen(function(art){
-    setTimeout(function(){ drawerBedienen(art); }, 300);
-    setTimeout(function(){ drawerBedienen(art); }, 900);
+    var nr = ++OEFFNUNG.n;
+    setTimeout(function(){ drawerBedienen(art, nr); }, 300);
+    setTimeout(function(){ drawerBedienen(art, nr); }, 900);
   });
   /* Zu heisst RAUS aus der Liste. Ohne diese Zeile bliebe der Drawer fuer immer "offen" und
      wuerde bei jeder Aenderung mitbedient -- unsichtbar, also ein Ladevorgang fuer nichts. */
@@ -1977,8 +2188,12 @@
            drin, und alles danach ist fremd. */
         bootMerken();
         zustandGeben(c, "boot");
-        var s1 = sigVon(c); if (s1) STAND[c.instanceId] = s1;
-        startlageFesthalten();
+        /* KEIN STAND MEHR HIER (30.09.). Die States gehen jetzt raus -- ob die Startansicht damit
+           geladen hat, weiss diese Stelle nicht: Bubbles Bruecke steht erst Sekunden nach dem
+           Aufbau, und bis dahin kann view_first laengst mit der Vorgabe gelaufen sein. Genau das
+           war "der Kalender zeigt last 3 months, angewendet wird es nirgends": hier stand
+           "geladen mit last3", und die Ansicht wurde nie nachgeladen. STAND setzt jetzt, wer es
+           weiss: vorErstlauf (Uebergabe vor view_first) oder nachMount (Vergleich danach). */
         /* Ab jetzt steht der Zeitraum in der URL. Der naechste Aufbau braucht diese Uebergabe
            deshalb nicht mehr -- und damit auch keinen zweiten Abfragedurchlauf. */
         if (syncAn() && urlAn(c.root)) urlSchreiben(syncPreset());
