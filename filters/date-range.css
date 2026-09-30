@@ -228,13 +228,24 @@
    Geschwister-Selektor waere eine zweite Wahrheit ueber dasselbe. */
 .udr-day.is-edge-l { border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
 .udr-day.is-edge-r { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+/* HEUTE BLEIBT ROT, ABER LESBAR AUF JEDEM GRUND (01.10. gemeldet: "die rote Schrift am heutigen
+   Tag ist kaum lesbar, wenn im Lightmode der schwarze Hintergrund um den Tag liegt"). Gemessen
+   gegen die 4,5 fuer kleine Schrift:
+     hell, heute = Anfang/Ende   #b0200c auf #1f1f1b   2,4  -> gemischt mit dem Panelgrund 5,8
+     dunkel, heute = Anfang/Ende #d25d5d auf #e0e0e0   2,9  -> gemischt mit dem Panelgrund 5,4
+     dunkel, heute im Band       #d25d5d auf #313131   3,4  -> gemischt mit der Schrift   4,7
+     dunkel, heute ohne Auswahl  #d25d5d auf dem Panel 4,1  -> dieselbe Mischung, 6,2
+     hell ohne Auswahl und im Band: 6,9 und 5,9, bleibt, wie es ist.
+   Gemischt und nicht neu gewaehlt: das Rot bleibt --vt-down, es wird nur je Grund heller oder
+   dunkler -- auf dem dunklen Endpunkt zum Weiss hin, auf dem hellen zum Dunkel hin. */
 .udr-day.is-today { color: var(--vt-down); }
 .udr-day.is-today:not(.is-start):not(.is-end) { border-color: var(--vc-border); }
-.udr-day.is-today.is-start, .udr-day.is-today.is-end { color: var(--vt-down); }
+.udr-day.is-today.is-start, .udr-day.is-today.is-end { color: color-mix(in srgb, var(--vt-down) 55%, var(--vc-bg)); }
 .up-root[data-theme="dark"] .udr-day.is-start,
 .up-root[data-theme="dark"] .udr-day.is-end { border-color: #e0e0e0; background: #e0e0e0; color: #1f1f1b; }
+.up-root[data-theme="dark"] .udr-day.is-today { color: color-mix(in srgb, var(--vt-down) 70%, var(--vc-text)); }
 .up-root[data-theme="dark"] .udr-day.is-today.is-start,
-.up-root[data-theme="dark"] .udr-day.is-today.is-end { color: var(--vt-down); }
+.up-root[data-theme="dark"] .udr-day.is-today.is-end { color: color-mix(in srgb, var(--vt-down) 60%, var(--vc-bg)); }
 
 /* ---------- responsive ----------
    Driven by a class the script sets from the VIEWPORT width, not a media query: the panel is

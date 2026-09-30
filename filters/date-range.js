@@ -2000,12 +2000,62 @@
   }
   window.upstreemDatesDrawerSpur = function(){ return DRAWER_SPUR.slice(); };
   function wortVon(t){ return String(t || "").toLowerCase().replace(/[^a-z0-9]/g, ""); }
+  /* GELERNT, NICHT GERATEN (01.10., zweite Runde). Die Namen sind nicht immer verwandt: der Drawer
+     heisst in openDrawer "brand", sein Kalender dates_v2_company_spotlight, der Boot-Kanal also
+     bubble_fn_udr_date_boot_company_spotlight -- kein "brand" darin, und die Namenssuche ging leer
+     aus (gemeldet mit der Spur: "brand: OHNE Zeitraum, kein Boot-Kanal", waehrend der Kanal auf
+     der Seite stand). Darum ein zweiter Weg: der Kalender, der MIT dem Drawer sichtbar wird, ist
+     seiner (drawerWurzelNeu). Einmal gefunden, wird die Zuordnung gemerkt -- am Fenster und im
+     localStorage --, und jedes weitere Oeffnen findet den Kanal sofort.
+     Ebenso gemerkt: ein Drawer ohne Kalender (etwa die Einstellungen). Er wartet dann nicht bei
+     jedem Oeffnen 700ms, sondern nur beim allerersten; danach geht sein Ruf gleich durch. */
+  var LERN_SCHLUESSEL = "udr_drawer_kanal";
+  var DRAWER_KANAL = window.__udrDrawerKanal || (window.__udrDrawerKanal = (function(){
+    try { var o = JSON.parse(localStorage.getItem(LERN_SCHLUESSEL) || "{}"); return (o && typeof o === "object") ? o : {}; }
+    catch(e){ return {}; }
+  })());
+  function kanalMerken(art, name){
+    if (!art || DRAWER_KANAL[art] === name) return;
+    DRAWER_KANAL[art] = name;
+    try { localStorage.setItem(LERN_SCHLUESSEL, JSON.stringify(DRAWER_KANAL)); } catch(e){}
+  }
+  /* Der Boot-Kanal einer Kalenderwurzel: ihr data-boot-fn, sonst aus der Instanz abgeleitet
+     (dates_v2_<name> -> bubble_fn_udr_date_boot_<name>) -- Drawer-Kalender tragen meist kein
+     data-boot-fn, ihr Boot-Element heisst aber nach derselben Endung. */
+  function bootVonWurzel(w){
+    var id = String((w && w.getAttribute("data-instance")) || "").trim();
+    var n = (w && w.getAttribute("data-boot-fn")) || "", f = n ? UC.resolveBubbleFn(n) : null;
+    if (typeof f !== "function" && /^dates_v2_/.test(id)){
+      n = "bubble_fn_udr_date_boot_" + id.slice(9);
+      f = UC.resolveBubbleFn(n);
+    }
+    return typeof f === "function" ? { f: f, name: n, id: id } : null;
+  }
+  /* Kalender, die zu einem Drawer gehoeren koennen und gerade zu sehen sind: kein Export, keiner
+     einer Ansicht (weder dem Namen noch dem Behaelter nach). */
+  function drawerWurzelnSichtbar(){
+    return [].filter.call(document.querySelectorAll(".udr-root, [data-udr-root]"), function(w){
+      var id = String(w.getAttribute("data-instance") || "");
+      if (!nimmtTeil(id) || istStartkandidat(id)) return false;
+      if (w.closest && w.closest('[id^="view-"]')) return false;
+      return sichtbarImFenster(w);
+    });
+  }
+  function drawerWurzelNeu(vorher){
+    var jetzt = drawerWurzelnSichtbar();
+    for (var i = 0; i < jetzt.length; i++){
+      if (vorher && vorher.indexOf(jetzt[i]) >= 0) continue;
+      var b = bootVonWurzel(jetzt[i]);
+      if (b) return b;
+    }
+    return null;
+  }
   /* Der Boot-Kanal DIESES Drawers. Zuerst ueber einen schon stehenden Kalender des Drawers (sein
      data-boot-fn), dann ueber den Namen bubble_fn_udr_date_boot_<art>, dann ueber alle Boot-
      Funktionen am Fenster, deren Endung den Drawer nennt. Nie die einer ANSICHT: ein Drawer
      "domain" und eine Ansicht "domains" teilen sich den Wortstamm, und dann bekaeme die Ansicht
      die States, die dem Drawer gehoeren. */
-  function drawerBoot(art){
+  function drawerBoot(art, vorher){
     var wort = wortVon(art), i, c, n, f;
     if (!wort) return null;
     for (i = 0; i < CONTROLLERS.length; i++){
@@ -2032,15 +2082,43 @@
       /* Die kuerzeste Endung gewinnt: "domain" vor "domainspotlightbar". */
       if (!treffer || rest.length < treffer.rest.length) treffer = { f: f, name: namen[i], id: "dates_v2_" + rest, rest: rest };
     }
-    return treffer;
+    if (treffer) return treffer;
+    /* Kein Name passt: erst der gelernte Kanal (drawerTor, Nachlernen), dann der Kalender, der
+       seit dem Oeffnen sichtbar geworden ist. Das Gelernte steht bewusst HINTER den Namen -- ein
+       passender Name ist sicherer als eine Beobachtung. */
+    if (DRAWER_KANAL[art]){
+      f = UC.resolveBubbleFn(DRAWER_KANAL[art]);
+      if (typeof f === "function") return { f: f, name: DRAWER_KANAL[art], id: "dates_v2_" + DRAWER_KANAL[art].replace(/^bubble_fn_udr_date_boot_/, "") };
+    }
+    return drawerWurzelNeu(vorher);
   }
   function drawerTor(art, weiter){
     art = String(art || "");
     var gelaufen = false, t0 = Date.now(), nr = LETZTE_OEFFNUNG[art] || 0;
+    /* Was VOR dem Oeffnen schon zu sehen war -- der Kalender dieses Drawers ist, was danach
+       dazukommt. Als Erstes, vor jedem Ausstieg: auch das Nachlernen in los() vergleicht damit. */
+    var vorher = [];
+    try { vorher = drawerWurzelnSichtbar(); } catch(e){}
     function los(was){
       if (gelaufen) return;
       gelaufen = true;
       spur(art, "Drawer-Workflow laeuft (" + was + ", nach " + (Date.now() - t0) + "ms)");
+      /* NACHLERNEN, 1,5s nach dem Oeffnen: welcher Kalender ist mit diesem Drawer sichtbar
+         geworden? Den fuer das naechste Mal merken -- auch wenn er diesmal zu spaet kam. Und
+         erst HIER, wenn bis dahin keiner kam, gilt der Drawer als einer ohne Kalender: ein
+         einzelner verpasster Blick soll einen Drawer mit Kalender nicht fuer immer abschalten. */
+      setTimeout(function(){
+        try {
+          /* Nur, wenn seitdem KEIN anderer Drawer aufging und dieser noch offen ist: sonst ist der
+             neue Kalender womoeglich der des naechsten Drawers (im Nachbau gemessen -- "domain"
+             lernte den Kalender des Brand-Drawers, der 1,2s spaeter aufging). */
+          if (OEFFNUNG.n !== nr) return;
+          if (UC.openDrawers && UC.openDrawers().indexOf(art) < 0) return;
+          var nb = drawerWurzelNeu(vorher);
+          if (nb){ if (DRAWER_KANAL[art] !== nb.name) spur(art, "gelernt: " + nb.name); kanalMerken(art, nb.name); }
+          else if (!DRAWER_KANAL[art]) kanalMerken(art, "");
+        } catch(e){}
+      }, 1500);
       try { weiter(); }
       catch(e){ if (window.console) console.warn("[date-range] bubble_fn_drawer_" + art + " hat geworfen:", e); }
     }
@@ -2048,18 +2126,21 @@
     var r = rangeFuerPreset(geltendesPreset());
     if (!r){ delete DRAWER_TOR[art]; return los("kein teilbarer Zeitraum"); }
     var sig = r.from + "|" + r.to + "|" + r.preset, n = 0;
+    /* Ein Drawer, der beim letzten Mal keinen Kalender hatte, wartet nicht: einmal nachsehen, dann durch. */
+    var grenze = DRAWER_KANAL[art] === "" ? 0 : DRAWER_WARTEN;
     (function versuch(){
       var b = null;
-      try { b = drawerBoot(art); } catch(e){}
+      try { b = drawerBoot(art, vorher); } catch(e){}
+      if (b) kanalMerken(art, b.name);
       if (!b){
-        if (n++ < DRAWER_WARTEN){ setTimeout(versuch, 25); return; }
+        if (n++ < grenze){ setTimeout(versuch, 25); return; }
         delete DRAWER_TOR[art];
         if (!DRAWER_GEKLAGT[art] && window.console){
           DRAWER_GEKLAGT[art] = true;
           console.warn("[date-range] Drawer \"" + art + "\": kein Boot-Kanal nach 700ms " +
-            "(erwartet bubble_fn_udr_date_boot_" + art + "). Der Drawer laedt mit den States, die " +
-            "Bubble hat -- das JavaScriptToBubble-Element udr_date_boot_" + art + " muss im Drawer " +
-            "stehen, sobald er aufgeht.");
+            "und kein Kalender, der mit ihm sichtbar wurde. Hat dieser Drawer einen Kalender, laedt " +
+            "er mit den States, die Bubble hat: sein udr_date_boot-Element muss stehen, sobald er " +
+            "aufgeht. Hat er keinen, ist nichts zu tun -- das naechste Oeffnen wartet nicht mehr.");
         }
         return los("OHNE Zeitraum, kein Boot-Kanal");
       }
