@@ -1116,6 +1116,13 @@
          den Wert vom Seitenaufbau. Nur die Anzeige -- applyPreset ohne Emit laedt nichts. */
       if (syncAn() && nimmtTeil(instanceId))
         applyPreset((!bootGetan() && urlAn(root) && urlPreset()) || syncPreset(), false);
+      /* OHNE SCHALTER, aber mit URL (01.10.): der Startup der Seite hat mit ?range= geladen --
+         jeder Ansicht und jedes Drawers, bei jedem Oeffnen. Dann zeigt der Kalender genau das,
+         auch wenn er erst spaeter mountet. Vorher stand er dort auf "Last 7 Days" ueber Daten aus
+         einem anderen Zeitraum. Ohne Schalter schreibt diese Datei die Adresse nicht mehr um, sie
+         bleibt also auf dem Wert, mit dem jeder Startup laedt. */
+      else if (nimmtTeil(instanceId) && urlAn(root) && urlPreset())
+        applyPreset(urlPreset(), false);
       syncSperren();
       /* Aendert die Einstellung woanders (anderer Picker, Einstellungen), zieht dieser mit. */
       window.addEventListener("up-prefs-change", function (e) {
@@ -1505,7 +1512,12 @@
              ersten Oeffnen. */
   function geladenOhneUns(c){
     if (!c) return null;
-    return GEGEBEN[c.instanceId] || (typeof c.vorgabeSig === "function" ? c.vorgabeSig() : null);
+    if (GEGEBEN[c.instanceId]) return GEGEBEN[c.instanceId];
+    /* Liest die Seite die URL (data-url-range="on"), hat ihr Startup mit ?range= geladen -- ein
+       Drawer beim Oeffnen genauso wie eine Ansicht. Dann ist DAS der Stand, nicht die Vorgabe. */
+    var u = (c.root && urlAn(c.root)) ? rangeFuerPreset(urlPreset()) : null;
+    if (u) return u.from + "|" + u.to + "|" + u.preset;
+    return typeof c.vorgabeSig === "function" ? c.vorgabeSig() : null;
   }
   function applyVerzug(c){
     var v = parseInt(c && c.root && c.root.getAttribute("data-range-apply-delay"), 10);
@@ -1528,10 +1540,24 @@
      es beim Laden mit dem, was Bubble hat.
      Rueckgabe: null (nichts gegeben) oder { sig, neu } -- neu heisst: eben erst raus, also warten. */
   var VORAB = window.__udrVorab || (window.__udrVorab = {});
+  /* Welcher Zeitraum gilt fuer eine Uebergabe? Traegt die Adresse ?range=, der: diese Datei
+     schreibt ihn nur, wenn die Seite ihn liest (data-url-range), und der Startup der Seite hat
+     damit geladen. Sonst das gespeicherte Preset. Im Nachbau gemessen (01.10.): mit Adresse last30
+     und gespeichertem last3 gab die Uebergabe vor view_first last3 -- also genau das Ueberschreiben
+     der richtigen Startup-Werte, das der Nutzer beschrieben hat. */
+  /* Gerufen wird das nur bei aktivem Schalter (vorErstlauf und vorabGeben steigen ohne ihn vorher
+     aus). Und ?range= steht nur in der Adresse, wenn diese Datei ihn geschrieben hat -- das tut sie
+     nur fuer eine Seite, die ihn liest (data-url-range) -- oder wenn jemand einen Link mit ihm
+     oeffnet, der dann genau der Zeitraum ist, mit dem die Seite geladen hat. Eine Pruefung, ob
+     die Seite die Adresse liest, geht an dieser Stelle nicht: vor view_first steht oft noch
+     kein Kalender, an dem das Attribut sitzen koennte. */
+  function geltendesPreset(){
+    return urlPreset() || syncPreset();
+  }
   function vorabGeben(name){
     var f = UC.resolveBubbleFn("bubble_fn_udr_date_boot_" + name);
     if (typeof f !== "function") return null;
-    var r = rangeFuerPreset(syncPreset());
+    var r = rangeFuerPreset(geltendesPreset());
     if (!r) return null;
     var id = "dates_v2_" + name, sig = r.from + "|" + r.to + "|" + r.preset;
     if (GEGEBEN[id] === sig) return { sig: sig, neu: false };
@@ -1735,9 +1761,8 @@
         var fehlt = false, i;
         for (i = 0; i < cs.length; i++) if (!bootDa(cs[i])) fehlt = true;
         if (fehlt && n++ < ERSTLAUF_WARTEN){ setTimeout(versuch, 25); return; }
-        var ziel = syncPreset();
         for (i = 0; i < cs.length; i++){
-          var c = cs[i];
+          var c = cs[i], ziel = geltendesPreset();
           if (TEILBAR[ziel] && c.getRange().preset !== ziel) c.setPreset(ziel, false);
           var sg = sigVon(c);
           if (!sg) continue;
@@ -2154,10 +2179,22 @@
        echten Seite tat sie es nicht -- Ergebnis: p_date_from: null, gemeldet als "das hat
        ueberhaupt nicht funktioniert". data-url-range="on" ist die Zusage der Seite, dass sie den
        Parameter im Page-Load-Workflow liest. Ohne die Zusage wird uebergeben. */
+    /* DIE URL IST DIE QUELLE, sobald die Seite sie liest (01.10.). Der Nutzer hat beschrieben,
+       was seine Seite tut: der Startup jeder Ansicht und JEDES Drawers setzt die Datums-States
+       aus ?range=, bevor die RPCs laufen. Und dann kam diese Datei und rief udr_date_boot mit dem
+       Wert des Kalenders -- ohne Schalter immer "Last 7 Days", mit Schalter das Preset aus dem
+       Browser -- und ueberschrieb, was der Startup eben richtig gesetzt hatte. Genau so gemeldet:
+       "wenn das nach dem Startup laeuft und die alten Daten hat, ueberschreibt es die Werte".
+       Vorher wurde nur uebersprungen, wenn Schalter an UND URL gleich gespeichertem Preset. Jetzt
+       reicht, dass die Seite die URL liest (data-url-range="on") und die URL einen Zeitraum traegt:
+       dann hatte Bubble ihn vor der ersten Abfrage. Weicht das gespeicherte Preset ab, wird es
+       der URL angeglichen -- mit ihr ist die Seite gerade geladen worden, und Anzeige, States und
+       Daten muessen dasselbe sagen. */
     function urlHatIhnSchon(root){
-      if (!syncAn() || !urlAn(root)) return null;
+      if (!urlAn(root)) return null;
       var u = urlPreset();
-      if (!u || u !== syncPreset()) return null;
+      if (!u) return null;
+      if (syncAn() && u !== syncPreset()) UC.setPref("date_preset", u);
       return 'die URL trug "' + u + '" und data-url-range="on" steht am Element -- Bubble ' +
              'kannte den Zeitraum vor der ersten Abfrage';
     }
