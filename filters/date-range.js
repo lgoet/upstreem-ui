@@ -1598,7 +1598,7 @@
     }
     /* Drawer-Kalender, erstes Mounten bei offenem Drawer: er hat ueber seinen eigenen Workflow mit
        seinen States geladen -- die ihm nie jemand gegeben hat. */
-    if (STAND[c.instanceId] || !sichtbarImFenster(c.root)) return;
+    if (STAND[c.instanceId] || !wirklichZuSehen(c.root)) return;
     var s1 = geladenOhneUns(c); if (s1) STAND[c.instanceId] = s1;
     STAND_BEI_OEFFNUNG[c.instanceId] = OEFFNUNG.n;
   }
@@ -1915,7 +1915,10 @@
       if (!c || !c.root || !c.root.isConnected || !c.instanceId) continue;
       if (!nimmtTeil(c.instanceId) || istStartkandidat(c.instanceId)) continue;
       if (wort && c.instanceId.toLowerCase().indexOf(wort) >= 0) nachName.push(c);
-      else if (sichtbarImFenster(c.root)) mitFlaeche.push(c);
+      /* wirklichZuSehen und nicht nur im Fenster: ein geschlossener Drawer, der nur durchsichtig
+         ist, liegt im Fenster -- und der Einstellungs-Drawer (ohne Kalender) nahm sonst den des
+         Brand-Drawers als seinen und lud ihn bei jeder Aenderung unsichtbar mit (udr31, s=4). */
+      else if (wirklichZuSehen(c.root)) mitFlaeche.push(c);
     }
     return nachName.length ? nachName : mitFlaeche;
   }
@@ -1959,6 +1962,10 @@
     var nr = ++OEFFNUNG.n;
     /* core meldet das Oeffnen VOR dem Original von openDrawer -- der Wickel sitzt also, bevor die
        Host-App bubble_fn_drawer_<art> ruft. */
+    /* Die Momentaufnahme "was war schon zu sehen" HIER, vor dem Original: die Host-App zeigt den
+       Drawer, BEVOR sie bubble_fn_drawer_<art> ruft. Im Tor genommen, stand sein Kalender schon
+       in der Aufnahme und galt nie als neu (01.10., zweite Meldung zum Brand-Drawer). */
+    try { VORHER_OEFFNUNG[String(art || "")] = drawerWurzelnSichtbar(); } catch(e){}
     try { LETZTE_OEFFNUNG[String(art || "")] = nr; drawerTorWickeln(art); } catch(e){}
     setTimeout(function(){ drawerBedienen(art, nr); }, 300);
     setTimeout(function(){ drawerBedienen(art, nr); }, 900);
@@ -1991,6 +1998,7 @@
      Drawer mit 7 Tagen geladen", ohne Raten. */
   var DRAWER_TOR = window.__udrDrawerTor || (window.__udrDrawerTor = {});
   var LETZTE_OEFFNUNG = window.__udrLetzteOeffnung || (window.__udrLetzteOeffnung = {});
+  var VORHER_OEFFNUNG = window.__udrVorherOeffnung || (window.__udrVorherOeffnung = {});
   var DRAWER_SPUR = window.__udrDrawerSpur || (window.__udrDrawerSpur = []);
   var DRAWER_WARTEN = 28;          /* mal 25ms: so lange darf der Drawer auf seinen Boot-Kanal warten */
   var DRAWER_GEKLAGT = {};
@@ -2032,13 +2040,25 @@
     return typeof f === "function" ? { f: f, name: n, id: id } : null;
   }
   /* Kalender, die zu einem Drawer gehoeren koennen und gerade zu sehen sind: kein Export, keiner
-     einer Ansicht (weder dem Namen noch dem Behaelter nach). */
+     einer Ansicht (weder dem Namen noch dem Behaelter nach).
+     "Zu sehen" heisst hier STRENGER als sichtbarImFenster: auch kein durchsichtiger oder
+     verborgener Vorfahr. Ein geschlossener Drawer kann im Fenster liegen und nur ausgeblendet sein
+     (opacity 0, visibility hidden) -- dann stand sein Kalender schon VOR dem Oeffnen in der Liste,
+     galt nicht als neu, und der Brand-Drawer fand ihn nie (01.10., zweite Meldung). */
+  function wirklichZuSehen(el){
+    if (!sichtbarImFenster(el)) return false;
+    for (var x = el, k = 0; x && x.nodeType === 1 && k < 40; x = x.parentElement, k++){
+      var cs = getComputedStyle(x);
+      if (cs.visibility === "hidden" || cs.display === "none" || parseFloat(cs.opacity) < 0.05) return false;
+    }
+    return true;
+  }
   function drawerWurzelnSichtbar(){
     return [].filter.call(document.querySelectorAll(".udr-root, [data-udr-root]"), function(w){
       var id = String(w.getAttribute("data-instance") || "");
       if (!nimmtTeil(id) || istStartkandidat(id)) return false;
       if (w.closest && w.closest('[id^="view-"]')) return false;
-      return sichtbarImFenster(w);
+      return wirklichZuSehen(w);
     });
   }
   function drawerWurzelNeu(vorher){
@@ -2096,9 +2116,10 @@
     art = String(art || "");
     var gelaufen = false, t0 = Date.now(), nr = LETZTE_OEFFNUNG[art] || 0;
     /* Was VOR dem Oeffnen schon zu sehen war -- der Kalender dieses Drawers ist, was danach
-       dazukommt. Als Erstes, vor jedem Ausstieg: auch das Nachlernen in los() vergleicht damit. */
-    var vorher = [];
-    try { vorher = drawerWurzelnSichtbar(); } catch(e){}
+       dazukommt. Aufgenommen im Oeffnen-Hook (vor dem Original); nur ohne den hier. Als Erstes,
+       vor jedem Ausstieg: auch das Nachlernen in los() vergleicht damit. */
+    var vorher = VORHER_OEFFNUNG[art];
+    if (!vorher){ vorher = []; try { vorher = drawerWurzelnSichtbar(); } catch(e){} }
     function los(was){
       if (gelaufen) return;
       gelaufen = true;
