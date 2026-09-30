@@ -24,12 +24,21 @@
     if (k.length) s += "." + k.join(".");
     return s;
   }
-  /* Sichtbar? Und wenn nicht, WARUM -- der erste Vorfahr, der es verhindert. */
+  /* Sichtbar? Und wenn nicht, WARUM -- der Vorfahr, der es verhindert.
+     Die geparkte Ansicht zuerst: sonst stand dort "visibility hidden an div.up-root", weil
+     visibility ERBT und damit schon die Wurzel selbst hidden meldet (Ausgabe vom 30.09.). Aus
+     demselben Grund wird bei visibility nach oben bis zu dem Element gegangen, das es setzt. */
   function sicht(el) {
+    var geparkt = el.closest && el.closest('[id^="view-"]:not(.view-on)');
+    if (geparkt) return "nein: geparkte Ansicht " + geparkt.id;
     for (var x = el, n = 0; x && x.nodeType === 1 && n < 60; x = x.parentElement, n++) {
       var cs = getComputedStyle(x);
       if (cs.display === "none") return "nein: display none an " + kurz(x);
-      if (cs.visibility === "hidden") return "nein: visibility hidden an " + kurz(x);
+      if (cs.visibility === "hidden") {
+        var o = x;
+        while (o.parentElement && o.parentElement.nodeType === 1 && getComputedStyle(o.parentElement).visibility === "hidden") o = o.parentElement;
+        return "nein: visibility hidden an " + kurz(o);
+      }
       if (parseFloat(cs.opacity) < 0.05) return "nein: opacity " + cs.opacity + " an " + kurz(x);
     }
     var r = el.getBoundingClientRect();
@@ -37,8 +46,6 @@
     var h = W.innerHeight, w = W.innerWidth;
     if (!(r.bottom > 0 && r.top < h && r.right > 0 && r.left < w))
       return "nein: ausserhalb des Fensters (" + Math.round(r.left) + "," + Math.round(r.top) + ")";
-    var geparkt = el.closest && el.closest('[id^="view-"]:not(.view-on)');
-    if (geparkt) return "nein: geparkte Ansicht " + geparkt.id;
     return "ja";
   }
   function fixierterBehaelter(el) {
@@ -70,6 +77,7 @@
       var c = w.__udrCtrl, preset = "";
       try { preset = c && c.getRange ? c.getRange().preset : ""; } catch (e) {}
       return { instanz: inst, ort: box ? "Ansicht " + box.id.slice(5) : ("fixiert in " + (fixierterBehaelter(w) || "-")),
+               geparkt: !!(box && !box.classList.contains("view-on")),
                boot: bootName + (fnDa(bootName) ? " (da)" : " (FEHLT)"), fn: fn, gemountet: !!c,
                preset: preset, sichtbar: sicht(w) };
     });
@@ -88,9 +96,17 @@
     var hat = A.kal.some(function (k) { return k.instanz.replace(/^dates_v2_/, "") === b; });
     if (!hat) P.push("Boot-Kanal udr_date_boot_" + b + " ohne Kalender dates_v2_" + b + " im Dokument");
   });
-  /* Jeder Kalender (ausser Export) braucht seinen Boot-Kanal */
+  /* Jeder Kalender (ausser Export) braucht seinen Boot-Kanal -- ausser in einer GEPARKTEN Ansicht.
+     Dort fehlen die Bubble-Funktionen immer (30.09. an der echten Seite: boot, range, from, to,
+     view_first aller geparkten Ansichten, waehrend die der geschlossenen Drawer stehen); Bubble legt
+     sie beim Zeigen wieder an. Im Nachbau gemessen: die Rueckkehr in eine geparkte, veraltete
+     Ansicht laedt trotzdem genau einmal mit dem neuen Zeitraum -- core merkt sich die einmal
+     gefundene Funktion (resolveBubbleFn), der Kalender ruft resetView, und das Kopfskript ruft
+     view_first, sobald Bubble es wieder anlegt. 28 Meldungen dafuer waren Fehlalarm. */
+  var geparkt = [];
   A.kal.forEach(function (k) {
     if (/export/i.test(k.instanz)) return;
+    if (k.geparkt) { if (geparkt.indexOf(k.ort.slice(8)) < 0) geparkt.push(k.ort.slice(8)); return; }
     if (/FEHLT/.test(k.boot)) P.push("Kalender " + k.instanz + ": Boot-Kanal fehlt (" + k.boot + ")");
     Object.keys(k.fn).forEach(function (a) { if (/FEHLT/.test(k.fn[a])) P.push("Kalender " + k.instanz + ": " + a + " = " + k.fn[a]); });
   });
@@ -100,6 +116,7 @@
   A.views.forEach(function (v) {
     var box = D.getElementById("view-" + v.name);
     if (box && !box.querySelector(".udr-root, [data-udr-root]")) { nieGeoeffnet.push(v.name); return; }
+    if (!v.offen) return;
     if (!fnDa("bubble_fn_view_first_" + v.name)) P.push("Ansicht " + v.name + ": bubble_fn_view_first_" + v.name + " fehlt");
     if (!fnDa("bubble_fn_udr_date_boot_" + v.name)) P.push("Ansicht " + v.name + ": bubble_fn_udr_date_boot_" + v.name + " fehlt");
   });
@@ -110,7 +127,7 @@
     var g = A.gelernt[art];
     var weg = nachName.length ? "nach Name: udr_date_boot_" + nachName.join(", udr_date_boot_")
             : (g ? "gelernt: " + g + (fnDa(g) ? " (da)" : " (FEHLT jetzt)")
-            : (g === "" ? "gelernt: KEIN Kalender" : "KEINER -- weder Name noch gelernt"));
+            : (g === "" ? "gelernt: KEIN Kalender" : "keiner (richtig, wenn dieser Drawer keinen Kalender hat)"));
     return { drawer: art, kalender: weg };
   });
   var UC = W.UpstreemCore, pref = function (k) { try { return UC && UC.getPref ? UC.getPref(k) : "?"; } catch (e) { return "?"; } };
@@ -128,6 +145,7 @@
     "\n         apply " + JSON.stringify(A.APPLY) + "\n         view_first " + JSON.stringify(A.VFIRST));
   console.log("Gelernt (udr_drawer_kanal_2): " + JSON.stringify(A.gelernt));
   if (nieGeoeffnet.length) console.log("Noch nie geoeffnet (ohne Kalender, normal): " + nieGeoeffnet.join(", "));
+  if (geparkt.length) console.log("Geparkt (Bubble-Funktionen erst beim Zeigen wieder da, normal): " + geparkt.join(", "));
   console.log(P.length ? "%cAUFFAELLIG (" + P.length + "):\n  " + P.join("\n  ") : "%cNichts auffaellig.", "color:" + (P.length ? "#b0200c" : "#2ea84a"));
   if (W.upstreemDatesDrawerSpur) console.log("Spur:\n" + W.upstreemDatesDrawerSpur().join("\n"));
 
