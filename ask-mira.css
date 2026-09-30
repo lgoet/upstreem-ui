@@ -479,12 +479,17 @@
   #ask-mira .am-bubble :is(td, th, p, li) > :is(strong, b, em, i):first-child > .am-logo-wrap:first-child { margin-left: 0; }
   .am-logo-wrap .am-inline-logo { margin: 0 5px 0 0; }
   /* DAS ZITAT-LOGO IST 4px KLEINER als das einer Marke (18.09. in zwei Schritten angefordert:
-     erst 24 -> 22, dann 22 -> 20). Nur bei Zitaten -- Marke und Wettbewerber behalten ihre 24px.
-     Der Radius geht im selben Verhaeltnis mit (8 * 20/24 = 6,7), sonst waere die Rundung an einem
-     kleineren Bild sichtbar staerker. */
+     erst 24 -> 22, dann 22 -> 20). Der Radius geht im selben Verhaeltnis mit (8 * 20/24 = 6,7),
+     sonst waere die Rundung an einem kleineren Bild sichtbar staerker.
+     Seit dem 01.10. auch Marke und Wettbewerber ("genauso gross wie die Favicons"): in DIESER
+     Regel und nicht in einer eigenen mit denselben Zahlen -- so bleiben beide gleich, auch wenn
+     eine davon noch einmal angefasst wird. Ein Bild gibt es nur im Modus "logo"; im Modus "icon"
+     steht .am-inline-ic, das hiervon nicht getroffen wird. */
   #ask-mira .am-logo-wrap[data-type="url"] .am-inline-logo,
   #ask-mira .am-logo-wrap[data-type="domain"] .am-inline-logo,
-  #ask-mira .am-logo-wrap[data-type="prompt"] .am-inline-logo {
+  #ask-mira .am-logo-wrap[data-type="prompt"] .am-inline-logo,
+  #ask-mira .am-logo-wrap[data-type="brand"] .am-inline-logo,
+  #ask-mira .am-logo-wrap[data-type="competitor"] .am-inline-logo {
     width: 20px; height: 20px; border-radius: 6px;
   }
   .am-logo-wrap .am-inline-ic { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; margin: 0 5px 0 0; vertical-align: middle; color: var(--am-muted); pointer-events: none; }
@@ -600,6 +605,12 @@
   }
   .am-url-pop button:hover { background: var(--am-soft); }
   .am-url-pop button.is-primary { font-weight: 600; }
+  /* DIE ADRESSE WIRD IMMER GEKUERZT (01.10. gemeldet: "die Domain im unteren Item guckt rechts
+     raus"). urlPreview schneidet nach 34 Zeichen -- das ist eine Zeichenzahl, keine Breite: 34
+     breite Zeichen mit Zeichen, Abstand und Polster sind mehr als die 280px des Fensters, und der
+     Knopf bricht nicht um (nowrap). Also kuerzt die Breite selbst. min-width: 0, weil ein
+     Flex-Kind sonst nie schmaler wird als sein Text. */
+  .am-url-pop button > span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .am-url-pop button.is-primary svg { color: var(--am-text); }
   /* "Add as opportunity" action button (rendered inline in content) */
   .am-oppc-btn { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 12px 0 10px; margin: 3px 0; border: 1px solid var(--am-border); border-radius: 9px; background: var(--am-card); color: var(--am-text); font-family: inherit; font-size: 13px; font-weight: 550; letter-spacing: -0.01em; cursor: pointer; vertical-align: middle; -webkit-user-select: none; user-select: none; transition: background .14s ease, border-color .14s ease, color .14s ease; }
