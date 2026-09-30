@@ -2434,14 +2434,16 @@
     var GRPSIDE_SEARCH_ICON = UC.icon("search", 2);
     var elGrpWrap = null, elGrpMenu = null;
     /* DAS STEUERELEMENT "GROUP PROMPTS" (30.09. angefordert, statt des Zeichenknopfs in der
-       Werkzeugleiste): ein 24px hoher Kasten links neben Active/Inactive -- vorn ein Kaestchen und
-       der Name, rechts ein Chevron. Der vordere Teil schaltet die Gruppierung direkt (dieselbe
+       Werkzeugleiste): ein 32px hoher Kasten RECHTS neben Active/Inactive (zuerst 24 hoch und
+       links davon, am selben Tag umgestellt) -- vorn ein Kaestchen und der Name, rechts ein
+       Chevron. Der vordere Teil schaltet die Gruppierung direkt (dieselbe
        Handlung wie der Schalter "Group by topics" im Menue, toggleGrouping), der Chevron oeffnet
        das Menue. Der Chevron traegt die alte Klasse .upt-group-btn weiter: an ihr haengen der
        Klickweg, das Schliessen der anderen Menues und das Popover (opener) -- das Menue selbst ist
        unveraendert.
-       Das Kaestchen ist .upt-check, dasselbe wie in den Zeilen der Tabelle. Neben Active/Inactive,
-       weil beide dieselbe Art Frage beantworten: WELCHE Prompts und wie sie geordnet dastehen.
+       Das Kaestchen ist .upt-check, dasselbe wie in den Zeilen der Tabelle, in den Massen des
+       Kaestchens der Filtermenues (core .up-filter-check). Neben Active/Inactive, weil beide
+       dieselbe Art Frage beantworten: WELCHE Prompts und wie sie geordnet dastehen.
        Aus JS gebaut wie vorher (die Wurzel ist eine Kopie in Bubble, die kein Pin erreicht) --
        und auch ein aelterer Kasten .upt-group aus einem eingebauten Element bekommt den neuen
        Inhalt. */
@@ -2462,7 +2464,7 @@
           GRP_CHEV_ICON + '</button>' +
         '<div class="up-menu upt-group-menu" role="menu" aria-hidden="true"></div>';
       var elStatusJetzt = root.querySelector(".upt-status");
-      if (elStatusJetzt && elStatusJetzt.parentNode === elHeadTools) elHeadTools.insertBefore(elGrpWrap, elStatusJetzt);
+      if (elStatusJetzt && elStatusJetzt.parentNode === elHeadTools) elHeadTools.insertBefore(elGrpWrap, elStatusJetzt.nextSibling);
       else if (elCols && elCols.parentNode === elHeadTools) elHeadTools.insertBefore(elGrpWrap, elCols);
       else elHeadTools.appendChild(elGrpWrap);
       elGrpMenu = elGrpWrap.querySelector(".upt-group-menu");
@@ -4708,7 +4710,7 @@
          fallen, und diesen Sprung darf die Toleranz nicht verschlucken. */
       var vorher = root.__uptLastW;
       if (typeof vorher === "number" && Math.abs(w - vorher) < 4){
-        var schwellen = [480, 560, 620, 860], sprung = false;
+        var schwellen = [500, 560, 620, 860], sprung = false;
         for (var si = 0; si < schwellen.length; si++){
           var g = schwellen[si];
           if ((vorher < g) !== (w < g)){ sprung = true; break; }
@@ -4723,11 +4725,12 @@
       root.classList.toggle("is-t1", w < 560);
       root.classList.toggle("is-narrow", w < 860);
       root.classList.toggle("is-vnarrow", w < 620);
-      /* "Group Prompts" ohne Namen unter 480px Wurzelbreite -- nur Kaestchen und Chevron. Gemessen:
-         bei 520 passt der deutsche Name mit rund 90px Luft, bei 350 lief die Kopfzeile um 103px
-         ueber und schob Active/Inactive aus dem Bild. Den Namen traegt der Knopf dann als
-         Tooltip, damit das Kaestchen nicht stumm dasteht. */
-      var grpKurz = w < 480;
+      /* "Group Prompts" ohne Namen unter 500px Wurzelbreite -- nur Kaestchen und Chevron. Gemessen
+         mit dem laengeren deutschen Namen in der 32er Fassung: bei 500 passt er ohne Ueberlauf,
+         bei 460 lief die Kopfzeile um 20px ueber, bei 350 um 130 und schob Active/Inactive aus
+         dem Bild. Den Namen traegt der Knopf dann als Tooltip, damit das Kaestchen nicht stumm
+         dasteht. */
+      var grpKurz = w < 500;
       if (root.classList.contains("is-grp-kurz") !== grpKurz){
         root.classList.toggle("is-grp-kurz", grpKurz);
         var grpMain = elGrpWrap && elGrpWrap.querySelector(".upt-grpctl-main");
@@ -5350,7 +5353,7 @@
        keep: .upt-status traegt role="tablist" und faellt damit schon unter die Vorgabe des Kits.
        Ausdruecklich mitgeschrieben, weil es die Aussage der Zeile ist -- Active/Inactive klappt
        NICHT mit ein: das ist kein Filter, sondern die Antwort auf "was sehe ich hier gerade".
-       Dazu seit dem 30.09. "Group Prompts" (.upt-grpctl): es steht links neben Active/Inactive,
+       Dazu seit dem 30.09. "Group Prompts" (.upt-grpctl): es steht rechts neben Active/Inactive,
        so verlangt, und beantwortet dieselbe Art Frage. Ohne diesen Eintrag zog der Kit es in die
        einklappbare Gruppe -- gemessen am Ende der verborgenen Werkzeuge statt neben dem Schalter.
 

@@ -1128,33 +1128,36 @@
    Ein Kasten, zwei Knoepfe: vorn Kaestchen + Name (schaltet), hinten der Chevron (oeffnet das
    Menue), dazwischen eine Linie -- die Form eines geteilten Knopfs, damit man sieht, dass es zwei
    Stellen mit zwei Wirkungen sind.
-   24 hoch, verlangt so. Die Schrift ist die des Active/Inactive-Umschalters daneben (12/500,
-   --vc-muted, core .upt-status-btn), damit die zwei als Nachbarn lesen. Radius 6 zur Hoehe 24
-   (Skala: --up-r-s), die zwei Knoepfe darin konzentrisch 5 (1px Rand dazwischen).
-   Das Kaestchen ist .upt-check der Tabellenzeilen, auf 14 statt 18: 18 in einem 22px hohen
-   Innenraum laesst 2px Luft und liest sich wie ein Stempel. Der Haken zieht im selben Verhaeltnis
-   mit (11 -> 9), der Radius auch (5 -> 4). */
-.upt-grpctl { display: inline-flex; align-items: stretch; height: 24px; align-self: center;
-  border: 1px solid var(--vc-border); border-radius: var(--up-r-s); box-sizing: border-box; }
+   32 HOCH (zweite Fassung, 30.09.; die erste war 24) und damit so hoch wie Export und jeder andere
+   Knopf der Leiste: Radius 8 (--up-r-m), Schrift 13/500 wie der ruhige Knopf aus core
+   (.up-quietbtn). Die zwei Knoepfe darin konzentrisch 7 (1px Rand dazwischen).
+   DAS KAESTCHEN (gemeldet: "die Checkbox ist iwie off"). Gemessen war es 14px mit 1px Rand und
+   Radius 4 -- eine verkleinerte Kopie des Zeilenkaestchens, mit einem Rand, der auf 14px zu duenn
+   und zu hell wurde, um als Kaestchen zu lesen. Jetzt traegt es die Masse des Kaestchens der
+   Filtermenues (core .up-filter-check, Wert fuer Wert): 16px, Radius 5, 1.5px Rand, Haken 11. Das
+   ist das Kaestchen, das man in der App neben einer Beschriftung sieht; das 18er der Zeilen steht
+   allein. */
+.upt-grpctl { display: inline-flex; align-items: stretch; height: 32px; align-self: center;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-m); box-sizing: border-box; }
 .upt-grpctl-main, .upt-grpctl-chev { display: inline-flex; align-items: center; border: 0; margin: 0;
   background: transparent; font-family: inherit; cursor: pointer; color: var(--vc-muted);
   transition: background var(--up-t-1) ease, color var(--up-t-1) ease; }
-.upt-grpctl-main { gap: 6px; padding: 0 8px 0 5px; border-radius: 5px 0 0 5px;
-  font-size: var(--up-fs-s); font-weight: var(--up-fw-m); line-height: 1; white-space: nowrap; }
-.upt-grpctl-chev { justify-content: center; width: 22px; padding: 0; border-left: 1px solid var(--vc-border);
-  border-radius: 0 5px 5px 0; color: var(--vc-third); }
-.upt-grpctl-chev svg { width: 12px; height: 12px; display: block; }
+.upt-grpctl-main { gap: 8px; padding: 0 11px 0 9px; border-radius: 7px 0 0 7px;
+  font-size: var(--up-fs-m); font-weight: var(--up-fw-m); line-height: 1; white-space: nowrap; }
+.upt-grpctl-chev { justify-content: center; width: 28px; padding: 0; border-left: 1px solid var(--vc-border);
+  border-radius: 0 7px 7px 0; color: var(--vc-third); }
+.upt-grpctl-chev svg { width: 14px; height: 14px; display: block; }
 .upt-grpctl-main:hover:not(:disabled), .upt-grpctl-chev:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
-.upt-grpctl .upt-check { --upt-check-size: 14px; border-radius: 4px; pointer-events: none; }
-.upt-grpctl .upt-check svg { width: 9px; height: 9px; }
+.upt-grpctl .upt-check { --upt-check-size: 16px; border-radius: 5px; pointer-events: none; }
+.upt-grpctl .upt-check svg { width: 11px; height: 11px; }
 .upt-grpctl .upt-check::before { content: none; }
 .upt-grpctl-main:hover:not(:disabled) .upt-check:not(.is-checked) { border-color: var(--vc-third); }
 /* Offenes Menue: der Chevron traegt den Zustand, wie jeder Oeffner der Leiste. */
 .upt-group.upt-grpctl.is-open .upt-grpctl-chev { color: var(--vc-text); background: var(--vc-heading-bg); }
-/* Schmal (applyResponsive, Wurzel unter 480px): nur Kaestchen und Chevron, der Name steht dann
+/* Schmal (applyResponsive, siehe dort die Grenze): nur Kaestchen und Chevron, der Name steht dann
    im Tooltip. Das Polster rechts wird so breit wie links, damit das Kaestchen mittig sitzt. */
 .upt-root.is-grp-kurz .upt-grpctl-lbl { display: none; }
-.upt-root.is-grp-kurz .upt-grpctl-main { padding-right: 5px; }
+.upt-root.is-grp-kurz .upt-grpctl-main { padding-right: 9px; }
 /* Inactive-Ansicht: der vordere Teil ist gesperrt (syncGroupBtn), das Menue erklaert warum. */
 .upt-grpctl-main:disabled { cursor: default; opacity: .5; }
 .upt-grpctl-main:focus-visible, .upt-grpctl-chev:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
