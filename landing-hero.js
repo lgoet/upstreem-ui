@@ -344,7 +344,11 @@
       '</div>' +
       '<div class="ulh-text">' +
         '<p class="ulh-eyebrow">' +
-          '<span class="ulh-chip"><span class="ulh-chip-in">Get mentioned in AI search</span></span>' +
+          /* Als Badge (30.09.): vorn das Zeichen in einem dunklen Kreis, dahinter der Satz. Das
+             Zeichen kommt ueber data-ic aus core wie jedes andere auf dieser Seite (zeichenSetzen). */
+          '<span class="ulh-chip"><span class="ulh-chip-in">' +
+            '<span class="ulh-chip-ic" data-ic="sparkle" data-ic-w="2" aria-hidden="true"></span>' +
+            '<span class="ulh-chip-t">Get mentioned in AI search</span></span></span>' +
         '</p>' +
         '<h1 class="ulh-h1"><span>AI Search Analytics</span><span>Made simple.</span></h1>' +
         /* Der Umbruch nach "drive" steht hier und nicht in der CSS: die drei Treiber sollen zu
@@ -1045,21 +1049,27 @@
   function mscFaelle(){
     return [
       /* DER ERSTE FALL ZEIGT DAS ADD-DROPDOWN (29.09. spaet angefordert: "Add-Dropdown auf, kurz
-         ohne Eingabe sichtbar, also der Ruhezustand, dann tippt der Nutzer den Namen eines
-         Wettbewerbers ein, z.B. BMW, und fragt etwas darueber"). wahl ist das Wort, das im
-         Dropdown gesucht wird; der erste Treffer wird uebernommen und steht als Bezug im Feld,
-         bevor die Frage getippt wird. Die Zahlen sind die der Demodaten (MARKEN, Zustand b):
-         BMW 32.1 Sichtbarkeit und 75 Stimmung, Acme 38.9 und 79. */
-      { wahl: "BMW", q: "How is BMW doing against us this month?",
-        titel: "BMW against Acme",
-        werkzeuge: ["brand_overview", "prompt_insights"],
+         ohne Eingabe sichtbar, also der Ruhezustand, dann wird etwas gesucht und gefragt"). wahl
+         ist das Wort, das im Dropdown gesucht wird; der erste Treffer wird uebernommen und steht
+         als Bezug im Feld, bevor die Frage getippt wird.
+         SEIT DEM 30.09. EINE DOMAIN und keine Marke: "forbes" findet in den Demodaten genau eine
+         Zeile, die Domain forbes.com (Marken und Prompts treffen nicht), und die Frage ist die, die
+         Mira selbst zu einer Domain vorschlaegt (ask-mira.js, "What can you tell me about this
+         domain?"). Die Zahlen sind die der Quellen-Demodaten: 18.4% Anteil (+2.1), 2,926
+         Zitate, Editorial, 42 Seiten; die Seite und die Chance stehen so auch im Chancen-Brett. */
+      { wahl: "forbes", q: "What can you tell me about this domain?",
+        titel: "forbes.com at a glance",
+        werkzeuge: ["citation_overview", "url_detail"],
         dauer: 16000,
-        html: '<p>' + markeChip("bm") + ' is named in <strong>32.1%</strong> of the answers to your ' +
-          'prompts, ' + markeChip("ac") + ' in <strong>38.9%</strong>. Two places where BMW still ' +
-          'leads:</p><ul>' +
-          '<li>Charging questions: <strong>41%</strong> against your 29%.</li>' +
-          '<li>The winter range thread on ' + quelleChip(1) + ' recommends BMW and does not name you.</li>' +
-          '</ul><p>Sentiment is close: <strong>75</strong> for BMW, <strong>79</strong> for you.</p>' },
+        belege: [{ id: "ev-d1", type: "domain", entity_id: "d1", domain: "forbes.com",
+                   title: "forbes.com", icon_url: quellzeichen("forbes.com"), action: "open_domain" }],
+        html: '<p>' + miraChip("domain", "d1", "forbes.com") + ' is an <strong>Editorial</strong> ' +
+          'source and one of the most cited in your market: <strong>18.4%</strong> of all ' +
+          'citations, up 2.1 points, across <strong>42 pages</strong>.</p><ul>' +
+          '<li>Its most cited page is the buyer guide on ' + quelleChip(0) + '. It names ' +
+          markeChip("bm") + ' and ' + markeChip("au") + ', not you.</li>' +
+          '<li>That page feeds five of your comparison prompts.</li>' +
+          '</ul><p>Getting ' + markeChip("ac") + ' into that guide is your biggest opening here.</p>' },
 
       { q: "What are people saying about Acme right now?",
         titel: "Sentiment, last 30 days",
@@ -1433,8 +1443,12 @@
     function fall(meine, f){
       var jetzt = new Date().toISOString();
       var frage = { id: "msc-q", role: "user", content: f.q, created_at: jetzt };
+      /* f.belege: Belege, die nur dieser Fall braucht (die Domain im ersten Fall). Sie haengen an
+         der gemeinsamen Liste, statt in ihr zu stehen -- sonst truege jede Antwort eine Domain in
+         ihrer Datenpunktzeile, die im Text nicht vorkommt. */
       var antwort = { id: "msc-a", role: "assistant", status: "success", created_at: jetzt,
-                      content_html: f.html, evidence_items: miraBelege(), latency_ms: f.dauer };
+                      content_html: f.html, evidence_items: miraBelege().concat(f.belege || []),
+                      latency_ms: f.dauer };
 
       /* Der aktive Chat MUSS stehen, bevor die erste Nachricht kommt: ohne ihn faellt Mira nach
          140ms auf den Startbildschirm zurueck (_maybeHomeIfUnknownChat). Der Titel oben kommt aus

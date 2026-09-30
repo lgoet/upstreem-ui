@@ -266,23 +266,46 @@
   transform-origin: top center;
 }
 @keyframes ulhSchimmer { to { transform: rotate(360deg); } }
+/* ALS BADGE (30.09. angefordert: "Icon vorne, dann der Text, Hintergrund komplett weiss, gerne
+   ein bisschen invertiert, modern mit Schatten -- Abmessung gleich lassen").
+   Vorn ein dunkler Kreis mit hellem Zeichen (das Invertierte), 24px und 3px vom Rand -- in einer
+   30px hohen Innenflaeche also rundum gleich weit eingerueckt. Die Flaeche reinweiss statt
+   --ulh-grund (95% Weiss), der Ring mit dem wandernden Licht bleibt aussen.
+   ABMESSUNG: 32 hoch wie vorher, und die Breite bleibt dieselbe (bei 1024px gemessen: vorher
+   224.3, jetzt 224 +/- 1). Das geht nur, weil der Satz jetzt normal geschrieben steht und nicht
+   in gesperrten Versalien -- die brauchten fuer dieselben Worte rund 40px mehr, und mit dem Kreis
+   davor waere der Chip um ein Fuenftel breiter geworden. 13/500 in der Textfarbe: neben dem
+   dunklen Kreis braucht der Satz mehr Gewicht als das blasse Grau von vorher, sonst liest der
+   Kreis allein. */
 .ulh-chip-in {
   position: relative;
   z-index: 1;
   margin: 1px;
   display: inline-flex;
   align-items: center;
+  gap: 10px;
   height: calc(100% - 2px);
-  padding: 0 14px;
+  padding: 0 18px 0 3px;
   border-radius: 999px;
-  background: var(--ulh-grund);
-  font-size: 11.5px;
-  font-weight: 600;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: var(--ulh-muted);
+  background: #ffffff;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: .01em;
+  color: var(--ulh-text);
   white-space: nowrap;
 }
+.ulh-chip-ic {
+  display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
+  width: 24px; height: 24px; border-radius: 999px;
+  background: var(--ulh-text); color: #ffffff;
+  /* Ein Hauch Licht oben im Kreis: so liest er als Knopf und nicht als Loch. */
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16), 0 1px 2px rgba(11, 13, 24, .18);
+}
+.ulh-chip-ic svg { width: 13px; height: 13px; display: block; }
+/* Der Schatten des ganzen Badges: zwei Lagen wie bei den Karten der Seite, eine enge fuer die
+   Kante, eine weite fuer das Abheben. Am aeusseren Kasten -- overflow: hidden schneidet nur den
+   Inhalt, nicht den eigenen Schatten. */
+.ulh-chip { box-shadow: 0 1px 2px rgba(11, 13, 24, .06), 0 6px 18px -4px rgba(11, 13, 24, .14); }
 /* Wer keine Bewegung will, bekommt keine. */
 @media (prefers-reduced-motion: reduce) {
   .ulh-chip::before { animation: none; }
@@ -371,13 +394,15 @@
    etwa auf halber Hoehe des Fensters, und unten der kraeftigste. Der Anfang ist #eef4fc mit
    Deckkraft 0 und nicht "transparent": so blendet derselbe Ton ein, statt aus einem
    durchsichtigen Schwarz heraus grau zu werden. */
+/* UNTEN MINIMAL SCHWAECHER (30.09. angefordert): #8fb4e6 -> #9cbde9, also 12 Prozent Weiss
+   hineingemischt. Die Mitte bleibt #b9d1f1 -- verlangt war nur das untere Ende. */
 .ulh-bg-foto {
   background: linear-gradient(to bottom,
-              rgba(238, 244, 252, 0) 16%, #eef4fc 34%, #b9d1f1 60%, #8fb4e6 100%);
+              rgba(238, 244, 252, 0) 16%, #eef4fc 34%, #b9d1f1 60%, #9cbde9 100%);
 }
 /* MITTIG ETWAS HELLER (30.09. angefordert: "mittig ganz leicht weniger kraeftig als links und
-   rechts"): ein Schleier aus Weiss darueber, quer, der in der Mitte 18% deckt und nach aussen auf
-   0 geht. Neun Stufen statt drei, als Glocke: mit nur Mitte und Raendern waere es ein Dach mit
+   rechts"): ein Schleier aus Weiss darueber, der zu den Seiten auf 0 geht. Die quer laufende
+   Glocke darin hat neun Stufen statt drei: mit nur Mitte und Raendern waere es ein Dach mit
    einem Grat, und den Grat sieht man als senkrechten Strich (Machsche Streifen).
    EIGENE EBENE MIT EIGENER BLENDE, nicht als zweite Lage im Hintergrund oben: dort lag der
    Schleier auch ueber dem durchsichtigen oberen Sechstel, und halbdurchsichtiges Weiss ueber
@@ -385,14 +410,32 @@
    nur mit beiden Lagen zusammen, mit jeder allein nicht). Die Blende hier setzt den Schleier
    erst ein, wo das Blau schon deckt (34%), und ist ab 60% voll -- oben waere er ohnehin
    unsichtbar, Weiss auf fast Weiss. */
+/* UNTEN IN DER MITTE HELLER, NICHT GANZ SYMMETRISCH (30.09. angefordert: "mittig unten minimal
+   heller, nach links und rechts ein Fade von hellerem Blau zu dunklerem, ganz leicht
+   randomisiert"). Drei Lagen statt der einen Glocke:
+     - ein breites Oval, unten angesetzt, sein Kern leicht LINKS der Mitte (44%)
+     - ein kleineres, schwaecheres rechts daneben (61%, etwas hoeher) -- zusammen ein Licht, das
+       nicht auf einer Achse steht, sondern so aussieht, als fiele es zufaellig
+     - darunter die flache Glocke von vorher, auf gut die Haelfte gesenkt, damit auch weiter oben
+       zu den Seiten hin noch etwas Verlauf bleibt.
+   Unregelmaessig ist es fest und nicht bei jedem Laden neu: ein Hintergrund, der sich von Besuch
+   zu Besuch verschiebt, sieht im zweiten Blick nach Fehler aus. Die Ovale haben je vier Stufen,
+   damit ihr Kern keinen Punkt bildet. */
 .ulh-bg-foto::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(to right,
-              rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, .03) 18%, rgba(255, 255, 255, .1) 32%,
-              rgba(255, 255, 255, .16) 44%, rgba(255, 255, 255, .18) 50%, rgba(255, 255, 255, .16) 56%,
-              rgba(255, 255, 255, .1) 68%, rgba(255, 255, 255, .03) 82%, rgba(255, 255, 255, 0) 100%);
+  background:
+    radial-gradient(58% 72% at 44% 100%,
+      rgba(255, 255, 255, .34) 0%, rgba(255, 255, 255, .24) 28%,
+      rgba(255, 255, 255, .1) 62%, rgba(255, 255, 255, 0) 100%),
+    radial-gradient(34% 52% at 61% 97%,
+      rgba(255, 255, 255, .16) 0%, rgba(255, 255, 255, .09) 40%,
+      rgba(255, 255, 255, .03) 72%, rgba(255, 255, 255, 0) 100%),
+    linear-gradient(to right,
+      rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, .02) 18%, rgba(255, 255, 255, .06) 32%,
+      rgba(255, 255, 255, .09) 44%, rgba(255, 255, 255, .1) 50%, rgba(255, 255, 255, .09) 56%,
+      rgba(255, 255, 255, .06) 68%, rgba(255, 255, 255, .02) 82%, rgba(255, 255, 255, 0) 100%);
   -webkit-mask-image: linear-gradient(to bottom, transparent 34%, #000 60%);
   mask-image: linear-gradient(to bottom, transparent 34%, #000 60%);
 }
