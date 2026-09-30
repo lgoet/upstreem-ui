@@ -189,11 +189,24 @@
    beide Karten gleich hoch, ohne dass ein Chart nach oben gezogen wird. */
 .udd-row2 > .udd-card { min-width: 0; }
 .udd-typecard, .udd-modelcard { display: flex; flex-direction: column; }
-/* Die Modell-Logos im Balken OHNE Platte (29.09. angefordert: "den weissen Background hinter den
-   LLM-Logos weg"). core legt hinter .up-bar-logo --vt-logo-bg (hell Weiss, dunkel #e0e0e0) -- fuer
-   Favicons fremder Seiten gedacht, die auf Transparenz schlecht aussehen. Die Modell-Logos sind
-   dafuer gezeichnet, auf farbigem Grund zu stehen. Nur in dieser Karte. */
-.udd-modelcard .up-bar-logo { background: transparent; }
+/* DIE MODELL-LOGOS IN EINEM KAESTCHEN (01.10. angefordert, "von den Brand-Mention-Chips
+   inspiriert"): Rahmen, hell weisser Grund, dunkel in der Schriftfarbe, 2px Polster -- in beiden
+   Modi, Balken und Ring (dort in der Legende). Das nimmt den 29.09. zurueck ("den weissen
+   Background hinter den LLM-Logos weg"): damals lag eine Platte ohne Kante direkt unter dem Bild,
+   jetzt ist es ein Kaestchen mit Rand und Luft, wie die Chips der Markennennungen in den Tabellen.
+   Am Bild selbst und ohne Huelle: Rahmen und Polster gehen an einem img, das Bild sitzt dann in der
+   Inhaltsflaeche (object-fit contain, nichts wird angeschnitten). Eine Huelle braeuchte eine
+   Aenderung am Markup in core, und die gaelte fuer jede Balkenliste der App.
+   20px aussen: 14 Bild + 2x2 Polster + 2x1 Rahmen, Radius s (6). Im Dunkeln verschmilzt der Rahmen
+   mit dem Grund, wie an den Chips (.up-stack-vis). */
+.udd-modelcard :is(.up-bar-logo, .up-donut-legend-logo) {
+  box-sizing: border-box; width: 20px; height: 20px; flex: 0 0 20px; padding: 2px;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-s);
+  background: var(--vt-logo-bg); object-fit: contain;
+}
+.up-root[data-theme="dark"] .udd-modelcard :is(.up-bar-logo, .up-donut-legend-logo) {
+  background: var(--vc-text); border-color: var(--vc-text);
+}
 /* Die Hoehe aendert sich beim Umschalten zwischen Ring und Balken -- 200ms ease (Vorgabe), damit
    der Sprung als Bewegung lesbar ist und nicht als Ruck. */
 .udd-typecard, .udd-modelcard { transition: min-height 200ms ease; }
