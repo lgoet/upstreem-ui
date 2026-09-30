@@ -1290,6 +1290,17 @@
         '#ask-mira .am-pick-sk-lines{gap:5px;}' +
         '#ask-mira .am-pick-sk-line{height:8px;}' +
       '</style></head><body>' + (MARKUP.mira || "") +
+      /* DIE VORFUEHRUNG NIMMT NIE DEN FOKUS (01.10. gemeldet: "bis zum Domain Detail
+         runtergescrollt, dann springt es auf einmal zum Mira Standalone"). Mira fokussiert beim
+         Oeffnen des Add-Dropdowns das Suchfeld und nach einem Bezug das Eingabefeld -- in der App
+         richtig. In einem iframe zieht focus() aber das Fenster DARUEBER mit: der Browser scrollt
+         die Seite, bis das Feld zu sehen ist. Gemessen: von 4900 auf 6171, sobald der Rahmen
+         geladen war, und danach in jedem Durchgang wieder, egal wo man gerade liest.
+         Kein focus({ preventScroll }) statt dessen: der Fokus laege dann trotzdem im iframe, und
+         dort sperrt die Vorfuehrung jede echte Taste (unten) -- Leertaste und Pfeile bewegten die
+         Seite nicht mehr. Hier bedient niemand etwas, also braucht auch nichts den Fokus. Vor
+         core.js, damit es fuer jeden Aufruf gilt, auch fuer einen beim Start. */
+      '<script>HTMLElement.prototype.focus=function(){};<\/script>' +
       '<script src="' + basis + 'core.js"><\/script>' +
       '<script src="' + basis + 'ask-mira.js"><\/script>' +
       '<script>' +
@@ -4717,8 +4728,8 @@
   /* Der Ablauf der Sektion, in Zahlen:
        0            das Fenster erscheint gestaffelt (CSS, ulhRise): Rahmen, Seitenkopf, dann die
                     vier Kaesten des Dashboards einzeln, jeder mit Kopf und Panel
-       1410         das Erscheinen ist durch -- die letzte Stufe endet bei 1330, die Zahl hier
-                    behaelt ihre Reserve
+       1970         das Erscheinen ist durch -- zuletzt endet der Textblock ueber dem Fenster
+                    (ERSCHEINEN_MS, seit dem 01.10.)
        ~3200        der Filterwechsel im Dashboard (gegatet auf das fertige Chart)
        7410         das Dashboard blendet aus, halb so lang wie eine Erscheinensstufe
        7755         Mira kommt mit derselben Bewegung von unten herein
@@ -4728,11 +4739,13 @@
      Alles ueber Uhren und nicht ueber Scrollen: die Sektion steht am Seitenanfang und laeuft einmal
      durch. Ob spaeter der Scrollstand die Szenen treibt, ist Schritt 3 -- dann tauscht nur der
      Ausloeser, nicht der Ablauf. */
-  /* Das Ende von STUFE 1 -- Textblock, Rahmen, Seitenkopf. Die letzte Stufe dort faengt bei
-     640ms an und laeuft 620ms: 1260, plus Reserve fuer einen Frame Verzug beim Klassenwechsel.
-     Der INHALT der Dashboard-Seite haengt nicht mehr an dieser Uhr, sondern an is-inhalt
+  /* Das Ende von STUFE 0 und 1 -- Textblock, Rahmen, Seitenkopf. Seit dem 01.10. endet der
+     Textblock zuletzt: der zweite Knopf faengt bei 870ms an und rollt 1100ms aus, also 1970
+     (landing-hero.css, STUFE 0). Der Seitenkopf ist bei 1170 + 620 = 1790 schon durch.
+     is-entering faellt 190ms danach ab -- Reserve fuer einen Frame Verzug beim Klassenwechsel.
+     Der INHALT der Dashboard-Seite haengt nicht an dieser Uhr, sondern an is-inhalt
      (inhaltZeigen) -- siehe landing-hero.css. */
-  var ERSCHEINEN_MS = 1300;
+  var ERSCHEINEN_MS = 1970;
   /* Die vier Kaesten der Dashboard-Seite: letzte Stufe 230ms Verzoegerung plus 620ms Lauf. */
   var INHALT_MS = 850;
   /* Mira kommt als EINE Stufe herein, nicht als vier -- also nur der Lauf, ohne Verzoegerungen. */
@@ -6523,9 +6536,8 @@
   /* Das Erscheinen anstossen. is-shown BLEIBT und macht das Fenster ueberhaupt sichtbar,
      is-entering traegt die vier gestaffelten Animationen und faellt danach ab -- bliebe sie stehen,
      liefe jede spaetere Bewegung im Fenster gegen eine noch gesetzte animation.
-     Die Abfallzeit MUSS hinter dem Ende der letzten Stufe liegen: 720ms Verzoegerung plus 690ms
-     Lauf sind 1410 (siehe landing-hero.css), also 1600 mit Reserve fuer einen Frame Verzug beim
-     Klassenwechsel. Hier stand 1100 -- der Wert aus der Zeit, als eine Stufe 460ms lief. Nach der
+     Die Abfallzeit MUSS hinter dem Ende der letzten Stufe liegen (ERSCHEINEN_MS, dort gerechnet),
+     plus 190ms Reserve fuer einen Frame Verzug beim Klassenwechsel. Hier stand einmal 1100 -- der Wert aus der Zeit, als eine Stufe 460ms lief. Nach der
      Verlaengerung schnitt er die letzte Stufe 310ms vor ihrem Ende ab, und der Zitatblock sprang
      dabei auf seinen Endzustand. Gemessen: is-entering fiel bei 1102ms ab. */
   function erscheinen(root){
@@ -6553,9 +6565,11 @@
      Die Uhr fuer Mira haengt hier dran und nicht mehr am blossen Erscheinen: die Ruhe vor dem
      Wechsel soll ab dem Moment zaehlen, in dem das Dashboard fertig DASTEHT. */
   /* 1150 -> 880 (24.09.: "mach den Delay etwas kleiner, das soll von oben bis unten eine schoene
-     smoothe Animation sein"). Der Rahmen faengt bei 440 an und laeuft 690 -- bei 880 ist er zu
-     zwei Dritteln durch, und der Inhalt setzt darauf auf, statt zu warten, bis alles steht. */
-  var INHALT_FRUEH = 880;
+     smoothe Animation sein"). Der Rahmen laeuft 690 -- 440ms nach seinem Anfang ist er zu zwei
+     Dritteln durch, und der Inhalt setzt darauf auf, statt zu warten, bis alles steht.
+     Seit dem 01.10. faengt der Rahmen bei 970 an statt bei 440 (der Textblock darueber ist
+     langsamer), also 970 + 440 = 1410. */
+  var INHALT_FRUEH = 1410;
   var INHALT_SPAET = 6000;       /* Notbremse */
   function inhaltZeigen(root){
     if (root.__ulhInhaltAn) return;

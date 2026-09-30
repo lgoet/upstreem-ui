@@ -496,25 +496,43 @@
   from { opacity: 0; transform: translateY(18px); }
   to   { opacity: 1; transform: none; }
 }
-/* Alles um die Haelfte laenger: 460 -> 690ms, Verzoegerungen 160/320/480 -> 240/480/720. Das Ende
-   liegt damit bei 720 + 690 = 1410ms, und darauf ist der Ablauf in landing-hero.js bezogen. */
+/* Das Ende aller Stufen mit is-entering steht als ERSCHEINEN_MS in landing-hero.js -- wer hier
+   eine Verzoegerung oder Laenge aendert, zieht die Zahl dort mit (sonst faellt is-entering mitten
+   in einer Stufe ab, und das Teil springt auf seinen Endzustand). */
 .ulh-stage { opacity: 0; }
 .ulh-root.is-shown .ulh-stage { opacity: 1; }
 /* ---- STUFE 0: DER TEXTBLOCK UEBER DEM FENSTER (24.09. angefordert) --------------------------
    "Erst der GET-MENTIONED-Chip, dann die h1, usw. -- natuerlich vor dem Hero-Fenster darunter."
-   Vier Stufen zu 110ms, jede 560ms lang; die letzte endet bei 900, und erst danach faengt der
-   Rahmen an. Dieselbe Bewegung wie alles andere (ulhRise), damit die Seite eine Handschrift hat.
-   backwards: vor der eigenen Verzoegerung ist ein Teil unsichtbar -- ohne das blitzen alle vier
-   gleichzeitig auf und springen dann zurueck. */
-.ulh-root.is-entering .ulh-eyebrow { animation: ulhRise 560ms var(--ulh-ease) backwards; }
-.ulh-root.is-entering .ulh-h1      { animation: ulhRise 560ms var(--ulh-ease) 120ms backwards; }
-.ulh-root.is-entering .ulh-sub     { animation: ulhRise 560ms var(--ulh-ease) 240ms backwards; }
-.ulh-root.is-entering .ulh-cta     { animation: ulhRise 560ms var(--ulh-ease) 340ms backwards; }
+   backwards: vor der eigenen Verzoegerung ist ein Teil unsichtbar -- ohne das blitzen alle
+   gleichzeitig auf und springen dann zurueck.
+
+   LANGSAMER UND WEITER AUSEINANDER (01.10.: "etwas smoother und mit mehr Delay, die Sachen ueber
+   dem Fenster sind noch fast instant -- erst Talk to Sales, dann Book a Demo").
+   Vorher 560ms je Stufe im Abstand von 120: die vier lagen so dicht, dass sie als EIN Auftritt
+   ankamen, und 560ms mit dem beidseitig weichen Verlauf sind vorbei, bevor das Auge folgt.
+   Jetzt:
+     - fuenf Stufen statt vier -- die zwei Knoepfe einzeln, in der Reihenfolge des Markups
+     - 180ms Abstand, und die erste erst nach 150: die Seite steht einen Augenblick leer, bevor
+       etwas kommt, sonst faellt der Anfang mit dem Laden zusammen
+     - Deckkraft und Weg GETRENNT, wie beim Auftritt der Sektionen weiter unten (.ulh-auf):
+       die Deckkraft blendet 900ms weich auf (--ulh-ease), der Weg rollt 1100ms aus (--ulh-gleit,
+       schnell an, lang aus). In einer Kurve fuer beides stuende der Text nach einem Drittel der
+       Zeit schon fast voll da -- genau das "fast instant".
+   Das Ende liegt bei 870 + 1100 = 1970ms; ERSCHEINEN_MS in landing-hero.js ist darauf bezogen. */
+@keyframes ulhAufblenden { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ulhHochrollen { from { transform: translateY(16px); } to { transform: none; } }
+.ulh-root.is-entering .ulh-eyebrow { animation: ulhAufblenden 900ms var(--ulh-ease) 150ms backwards, ulhHochrollen 1100ms var(--ulh-gleit) 150ms backwards; }
+.ulh-root.is-entering .ulh-h1      { animation: ulhAufblenden 900ms var(--ulh-ease) 330ms backwards, ulhHochrollen 1100ms var(--ulh-gleit) 330ms backwards; }
+.ulh-root.is-entering .ulh-sub     { animation: ulhAufblenden 900ms var(--ulh-ease) 510ms backwards, ulhHochrollen 1100ms var(--ulh-gleit) 510ms backwards; }
+.ulh-root.is-entering .ulh-cta .ulh-btn-sec { animation: ulhAufblenden 900ms var(--ulh-ease) 690ms backwards, ulhHochrollen 1100ms var(--ulh-gleit) 690ms backwards; }
+.ulh-root.is-entering .ulh-cta .ulh-btn-pri { animation: ulhAufblenden 900ms var(--ulh-ease) 870ms backwards, ulhHochrollen 1100ms var(--ulh-gleit) 870ms backwards; }
 /* ---- STUFE 1: DAS FENSTER, ABER NOCH OHNE DEN INHALT DER DASHBOARD-SEITE --------------------
    Rahmen samt Leiste und Hintergruenden, dann der Seitenkopf. Der Inhalt kommt in Stufe 2 und
-   haengt nicht mehr an einer Uhr -- siehe unten. */
-.ulh-root.is-entering .ulh-frame  { animation: ulhRise 690ms var(--ulh-ease) 440ms backwards; }
-.ulh-root.is-entering .dph-root   { animation: ulhRise 620ms var(--ulh-ease) 640ms backwards; }
+   haengt nicht mehr an einer Uhr -- siehe unten.
+   Beide um 530ms spaeter (440 -> 970, 640 -> 1170), damit das Fenster wie bisher 100ms nach dem
+   letzten Knopf anfaengt und nicht mitten in den Text faellt. Die Laengen bleiben. */
+.ulh-root.is-entering .ulh-frame  { animation: ulhRise 690ms var(--ulh-ease) 970ms backwards; }
+.ulh-root.is-entering .dph-root   { animation: ulhRise 620ms var(--ulh-ease) 1170ms backwards; }
 /* NICHT MEHR ZWEI GROSSE RECHTECKE (21.09. gemeldet: "Bitte eine richtige Appear animation im
    Dashboard, das sieht aktuell sehr mau aus"). Vorher stiegen .vot-root und .tcd-root als je ein
    Block herauf -- zwei Bewegungen fuer vier Kaesten, und in einer Sektion, in der das Brett der
@@ -528,8 +546,8 @@
    und nicht an den Zeilen der Zitatliste: eine Zeile, die waehrend ihrer eigenen Verzoegerung
    neu gezeichnet wird, faengt die Verzoegerung von vorn an und springt, wenn is-entering
    inzwischen abgefallen ist.
-   Das Ende liegt bei 710 + 620 = 1330ms und damit weiter unter ERSCHEINEN_MS (1410) --
-   an der Uhr in landing-hero.js aendert sich nichts. */
+   Die Kaesten haengen an is-inhalt und nicht an is-entering, ERSCHEINEN_MS in landing-hero.js
+   betrifft sie also nicht. */
 /* ---- STUFE 2: DER INHALT DER DASHBOARD-SEITE ------------------------------------------------
    NICHT MEHR AN EINER UHR, SONDERN AN is-inhalt (24.09. -- "die Appear-Animation beim ersten Load
    ist immer noch etwas hakelig, das muss butter smooth sein").
@@ -574,7 +592,8 @@
   .ulh-root.is-entering .ulh-eyebrow,
   .ulh-root.is-entering .ulh-h1,
   .ulh-root.is-entering .ulh-sub,
-  .ulh-root.is-entering .ulh-cta,
+  .ulh-root.is-entering .ulh-cta .ulh-btn-sec,
+  .ulh-root.is-entering .ulh-cta .ulh-btn-pri,
   .ulh-root.is-inhalt .vot-unit-left  .vot-head,
   .ulh-root.is-inhalt .vot-unit-left  .vot-box,
   .ulh-root.is-inhalt .vot-unit-right .vot-head,
@@ -617,7 +636,7 @@
 /* Der Faktor selbst steht NICHT hier, sondern als Inline-Stil aus landing-hero.js. Hier stand er,
    mit :not(.is-entering) davor, und er hat im Betrieb nicht gegriffen -- eine Regel mehr, deren
    Zutreffen von einer zweiten Klasse und von der Spezifitaet abhaengt. Der Inline-Stil kann von
-   nichts geschlagen werden ausser einer laufenden animation, und die ist nach 1410ms vorbei;
+   nichts geschlagen werden ausser einer laufenden animation, und die ist nach ERSCHEINEN_MS vorbei;
    der Takt in landing-hero.js schreibt ihn danach von sich aus nach. */
 /* REDUZIERT HEISST KUERZER, NICHT SPRUNGHAFT (21.09. gemeldet: "auf einigen Windows-Rechnern
    ist das ein instantes Runterploppen auf den finalen Stand, ohne Animation dazwischen").
