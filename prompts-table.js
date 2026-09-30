@@ -2619,18 +2619,25 @@
          Sits BELOW the list, its own gap, not above: it is a view filter on the list that already
          rendered above it, not a heading for it. yes = groupMode "custom" (only custom), no =
          "topics" (custom excluded), off = "both". */
-      var onlyCustom = state.groupMode === "custom", noCustom = state.groupMode === "topics";
-      /* Label flips with the "no" state -- "Only show custom groupings" reads as backwards once
-         the checkbox is actually hiding them (noCustom / groupMode "topics"), since "only" implies
-         it's the one thing still showing. */
-      h += '<div class="upt-group-onlycustom' + (onlyCustom ? " is-yes" : (noCustom ? " is-no" : "")) +
-          '" data-grp-onlycustom role="checkbox" aria-checked="' + (onlyCustom ? "true" : "false") + '">' +
-        '<span class="upt-brand-toggle-lbl"><span class="upt-brand-label">' +
-          (noCustom ? "Don&#39;t show custom groupings" : "Only show custom groupings") + '</span></span>' +
-        '<span class="upt-brand-check">' +
-          '<svg class="upt-brand-check-yes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13.2592L7.58583 15.9568C8.2525 16.6523 8.58583 17 9.00004 17C9.41425 17 9.74759 16.6523 10.4143 15.9568L19 7"/></svg>' +
-          '<svg class="upt-brand-check-no" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20.9922 12L2.99219 12"/></svg>' +
-        '</span></div>';
+      /* NUR MIT EIGENEN GRUPPIERUNGEN (30.09. gemeldet: unter "Noch keine eigene Gruppierung."
+         stand trotzdem "Nur eigene Gruppierungen zeigen"). Der Schalter wurde bedingungslos nach
+         der Liste gebaut; ohne eine einzige Gruppierung filtert er nichts. Welcher Modus dann
+         gesendet wird, regelt groupModeWirksam() -- ein unsichtbarer Schalter darf nicht weiter
+         wirken. */
+      if (custom.length){
+        var onlyCustom = state.groupMode === "custom", noCustom = state.groupMode === "topics";
+        /* Label flips with the "no" state -- "Only show custom groupings" reads as backwards once
+           the checkbox is actually hiding them (noCustom / groupMode "topics"), since "only" implies
+           it's the one thing still showing. */
+        h += '<div class="upt-group-onlycustom' + (onlyCustom ? " is-yes" : (noCustom ? " is-no" : "")) +
+            '" data-grp-onlycustom role="checkbox" aria-checked="' + (onlyCustom ? "true" : "false") + '">' +
+          '<span class="upt-brand-toggle-lbl"><span class="upt-brand-label">' +
+            (noCustom ? "Don&#39;t show custom groupings" : "Only show custom groupings") + '</span></span>' +
+          '<span class="upt-brand-check">' +
+            '<svg class="upt-brand-check-yes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13.2592L7.58583 15.9568C8.2525 16.6523 8.58583 17 9.00004 17C9.41425 17 9.74759 16.6523 10.4143 15.9568L19 7"/></svg>' +
+            '<svg class="upt-brand-check-no" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20.9922 12L2.99219 12"/></svg>' +
+          '</span></div>';
+      }
       h += '<div class="up-pop-div"></div>' +
         '<button class="up-btn-sec upt-group-new" type="button" data-grp-new>New Grouping</button>';
       elGrpMenu.innerHTML = h;
@@ -3567,6 +3574,15 @@
         renderTable();
       }, GRP_TIMEOUT_MS);
     }
+    /* Der Modus, der wirklich gilt. Ohne sichtbare eigene Gruppierung gibt es nichts, was "nur
+       eigene" zeigen oder "ohne eigene" weglassen koennte -- ein gemerktes "custom" lieferte dann
+       eine leere Ansicht, und der Schalter, mit dem man es aufheben koennte, steht im Menue nicht
+       mehr da (populateGroupMenu). Also "both". Die Wahl selbst bleibt gespeichert und gilt
+       wieder, sobald es eine Gruppierung gibt. */
+    function groupModeWirksam(){
+      var sichtbar = readCustomGroups().filter(function(g){ return !g.hidden; });
+      return sichtbar.length ? state.groupMode : "both";
+    }
     function fetchGroups(){
       state.groupsLoading = true;
       state.groupsTimeout = false;
@@ -3575,7 +3591,7 @@
       /* Hidden groupings are simply not sent: the server never computes a section nobody wants to
          see, instead of computing it and the client throwing it away. */
       var custom = readCustomGroups().filter(function(g){ return !g.hidden; });
-      var p = { grouped: "yes", mode: state.groupMode };
+      var p = { grouped: "yes", mode: groupModeWirksam() };
       /* Only send p_groups when the user actually HAS visible custom groups -- the RPC's default
          is one group per topic plus untagged, and sending an empty array would ask for zero. */
       if (custom.length) p.groups = JSON.stringify(custom.map(function(g){
