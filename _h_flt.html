@@ -258,7 +258,112 @@ async function dupEnde(L){
     " | Fehler " + JSON.stringify(window.__fehler));
 }
 
+/* RESET GEGEN NEUBAU (01.10.): "ein Filterchip ist nach resetFilterBar stehengeblieben, die Daten
+   waren richtig". Gemessen wird, was die LEISTE zeigt (Chips), was JEDE Wurzel je Filter als Auswahl
+   haelt, und welche Ereignisse nach Bubble gingen. */
+function chipsJetzt(){
+  var bar = document.querySelector("#c-bar .ufb-root");
+  return bar ? [].map.call(bar.querySelectorAll(".ufb-chip-lbl"), function(c){ return c.textContent; }) : ["(keine Leiste)"];
+}
+function wurzelAuswahl(){
+  var o = {};
+  [["umf","__umfCtrl","model_keys"],["umk","__umkCtrl","market_codes"],["utf","__utfCtrl","topic_ids"]].forEach(function(p){
+    o[p[0]] = [].map.call(document.querySelectorAll("." + p[0] + "-root"), function(r){
+      var c = r[p[1]], s = c && c.getSelected ? c.getSelected()[p[2]] : "?";
+      return (r.closest(".ufb-root") ? "Leiste" : "daneben") + " Gen" + (r.__gen || "?") + "=" + JSON.stringify(s);
+    }).join(" | ");
+  });
+  return "umf: " + o.umf + "\n    umk: " + o.umk + "\n    utf: " + o.utf;
+}
+async function rstStart(L){
+  await w(900);
+  ladeStore();
+  window.setModelsFilterSelected("models_prompts", "gpt-4o");
+  window.setMarketsFilterSelected && window.setMarketsFilterSelected("markets_prompts", "DE");
+  await w(300);
+  stempeln();
+  window.__ev = [];
+  L("1 Auswahl steht. Chips: " + JSON.stringify(chipsJetzt()));
+}
+async function rstEnde(L, was){
+  L(was + " Chips: " + JSON.stringify(chipsJetzt()) + "\n    " + wurzelAuswahl() +
+    "\n    Ereignisse: " + JSON.stringify(window.__ev.map(function(e){ return e[0] + "=" + String(e[1]).slice(0, 60); })) +
+    "\n    Fehler " + JSON.stringify(window.__fehler));
+}
+
 var SZENARIEN = {
+  /* Gegenprobe: Reset ohne Neubau. */
+  rst0: async function(L){
+    await rstStart(L);
+    window.resetFilterBar("filterbar_prompts");
+    await w(2500);
+    await rstEnde(L, "2 Reset, nach 2,5s.");
+  },
+  /* Bubble baut die Filter neu (die frischen Wurzeln lesen die Ablage MIT der Auswahl), und im
+     selben Augenblick laeuft der Reset -- bevor der Waechter die frischen einzieht. */
+  rst1: async function(L){
+    await rstStart(L);
+    filterNeu({});
+    window.resetFilterBar("filterbar_prompts");
+    await rstEnde(L, "2 Filter neu + Reset, sofort.");
+    await w(2500);
+    await rstEnde(L, "3 nach 2,5s (Waechter hat getauscht).");
+  },
+  /* DAS FENSTER: die frischen Wurzeln sind schon HOCHGEFAHREN (haben die Ablage mit der Auswahl
+     gelesen), aber der Waechter hat sie noch nicht eingezogen -- genau dann der Reset. */
+  rst3: async function(L){
+    await rstStart(L);
+    filterNeu({});
+    var t0 = performance.now();
+    while (performance.now() - t0 < 2000){
+      var frisch = [].filter.call(document.querySelectorAll(".umf-root"), function(r){ return !r.closest(".ufb-root") && r.__umfCtrl; });
+      if (frisch.length) break;
+      await w(10);
+    }
+    L("2 frische Wurzeln hochgefahren nach " + Math.round(performance.now() - t0) + "ms, noch nicht eingezogen:\n    " + wurzelAuswahl());
+    window.resetFilterBar("filterbar_prompts");
+    await rstEnde(L, "3 Reset, sofort.");
+    await w(2500);
+    await rstEnde(L, "4 nach 2,5s (Waechter hat getauscht).");
+    await oeffnen();
+    var bar = document.querySelector("#c-bar .ufb-root");
+    L("5 More Filters offen, Models-Zeile zeigt: " + JSON.stringify((bar.querySelector('.up-subwrap[data-sub="models"] [data-mirror]') || {}).textContent));
+  },
+  /* DAS FENSTER, DETERMINISTISCH: die frische Wurzel meldet sich bei der Leiste
+     (window.__ufbWurzelNeu), und die tauscht erst im naechsten Takt (setTimeout 0). Laeuft der Reset
+     GENAU dazwischen -- so wie ein Run-JS-Schritt, den Bubble im selben Zug wie den Neubau ausfuehrt
+     --, leert er die alte Wurzel, und die frische bringt danach die alte Auswahl mit. */
+  rst4: async function(L){
+    await rstStart(L);
+    var orig = window.__ufbWurzelNeu, einmal = false, vorher = "";
+    window.__ufbWurzelNeu = function(r){
+      var ret = orig.apply(this, arguments);
+      if (!einmal && r && r.classList && r.classList.contains("umf-root")){
+        einmal = true;
+        vorher = wurzelAuswahl();
+        window.resetFilterBar("filterbar_prompts");
+      }
+      return ret;
+    };
+    filterNeu({});
+    await w(50);
+    window.__ufbWurzelNeu = orig;
+    L("2 Reset lief zwischen Hochfahren und Einziehen. Stand davor:\n    " + vorher);
+    await w(2500);
+    await rstEnde(L, "3 nach 2,5s.");
+    await oeffnen();
+    var bar = document.querySelector("#c-bar .ufb-root");
+    L("4 More Filters offen, Models-Zeile zeigt: " + JSON.stringify((bar.querySelector('.up-subwrap[data-sub="models"] [data-mirror]') || {}).textContent));
+  },
+  /* Wie rst1, aber der Neubau kommt 150ms NACH dem Reset (liest also die geleerte Ablage). */
+  rst2: async function(L){
+    await rstStart(L);
+    window.resetFilterBar("filterbar_prompts");
+    await w(150);
+    filterNeu({});
+    await w(2500);
+    await rstEnde(L, "2 Reset, 150ms spaeter Filter neu, nach 2,5s.");
+  },
   /* Gegenprobe: kein Neubau. Beide Fassungen muessen hier gleich stehen. */
   dup0: async function(L){
     await dupStart(L);

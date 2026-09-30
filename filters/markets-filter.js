@@ -359,6 +359,25 @@
     }
     function render() { renderList(); renderTrigger(); renderMode(); renderSortMenu(); }
 
+    /* DIE AUSWAHL AUS DER ABLAGE UEBERNEHMEN (01.10. gemeldet: "ein Filterchip ist nach
+       resetFilterBar stehengeblieben -- die Daten waren richtig, nur die Anzeige nicht").
+       Baut Bubble dieses Element neu, faehrt die frische Wurzel mit der Auswahl aus der Ablage hoch
+       und haelt sie danach als EIGENE Kopie. Die "More Filters"-Leiste tauscht sie erst im naechsten
+       Takt gegen die alte, eingezogene Wurzel. Laeuft ein Reset genau dazwischen, leert er die ALTE
+       (Ereignis an Bubble, Ablage leer -- deshalb stimmten die Daten), und danach zieht die Leiste
+       die frische mit der alten Auswahl ein. Nachgestellt in _h_flt.html, Szenario rst4.
+       Die Ablage ist immer der neueste Stand: JEDE Wurzel dieser Instanz schreibt sie bei jeder
+       Aenderung (persist). Fuer die eine lebende Wurzel ist das hier also ein Vergleich ohne
+       Folgen; nur eine Wurzel, die hinter der Ablage zurueckliegt, holt auf. Still -- gemeldet hat
+       die Aenderung schon die Wurzel, die sie geschrieben hat. */
+    function auswahlAusAblage() {
+      var ab = STATE[instanceId];
+      if (!ab || !Array.isArray(ab.selected)) return;
+      if (ab.selected.join(",") === selected.join(",") && (!ab.mode || ab.mode === mode)) return;
+      selected = ab.selected.slice();
+      if (ab.mode) mode = ab.mode;
+      syncRows(); renderTrigger(); renderMode();
+    }
     function persist() {
       /* Auch die LISTE samt ihrem Stand, aus demselben Grund wie in models-filter.js: ein neu
          gebautes Element macht mit derselben Liste weiter, auch mit einer, die nur ueber
@@ -675,6 +694,7 @@
          nachholen, geparkte Instanz-Aufrufe laufen lassen. Kosten: ein Zahlenvergleich. */
       sync: function () {
         if (!root.isConnected) return;               /* draussen: nichts nachholen, nichts senden */
+        auswahlAusAblage();
         var jetzt = stand();
         if (jetzt != null && jetzt !== gesehen) {
           anmelden();
