@@ -268,44 +268,44 @@
 @keyframes ulhSchimmer { to { transform: rotate(360deg); } }
 /* ALS BADGE (30.09. angefordert: "Icon vorne, dann der Text, Hintergrund komplett weiss, gerne
    ein bisschen invertiert, modern mit Schatten -- Abmessung gleich lassen").
-   Vorn ein dunkler Kreis mit hellem Zeichen (das Invertierte), 24px und 3px vom Rand -- in einer
-   30px hohen Innenflaeche also rundum gleich weit eingerueckt. Die Flaeche reinweiss statt
-   --ulh-grund (95% Weiss), der Ring mit dem wandernden Licht bleibt aussen.
+   ZWEITE FASSUNG (30.09. spaet): das Zeichen ist Zap und steht OHNE den dunklen Kreis, und die
+   Tiefe kommt jetzt aus einem Schatten nach INNEN statt aus dem Kreis ("den Schatten oben auch
+   invertiert, damit eine Tiefe entsteht, und den aeusseren subtiler").
+   Die Flaeche reinweiss statt --ulh-grund (95% Weiss), der Ring mit dem wandernden Licht bleibt
+   aussen.
    ABMESSUNG: 32 hoch wie vorher, und die Breite bleibt dieselbe (bei 1024px gemessen: vorher
-   224.3, jetzt 224 +/- 1). Das geht nur, weil der Satz jetzt normal geschrieben steht und nicht
-   in gesperrten Versalien -- die brauchten fuer dieselben Worte rund 40px mehr, und mit dem Kreis
-   davor waere der Chip um ein Fuenftel breiter geworden. 13/500 in der Textfarbe: neben dem
-   dunklen Kreis braucht der Satz mehr Gewicht als das blasse Grau von vorher, sonst liest der
-   Kreis allein. */
+   224.3, jetzt 224 +/- 1). Das geht nur, weil der Satz normal geschrieben steht und nicht in
+   gesperrten Versalien -- die brauchten fuer dieselben Worte rund 40px mehr. 13/500 in der
+   Textfarbe, das Zeichen in derselben. */
 .ulh-chip-in {
   position: relative;
   z-index: 1;
   margin: 1px;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 7px;
   height: calc(100% - 2px);
-  padding: 0 18px 0 3px;
+  padding: 0 19px 0 15px;
   border-radius: 999px;
   background: #ffffff;
+  /* DER SCHATTEN NACH INNEN: oben 1px Versatz und 3px Unschaerfe, also ein schmaler Schatten an
+     der Oberkante der Flaeche -- sie liegt damit eine Spur tiefer als der Ring um sie herum. Dazu
+     unten eine weisse Kante: Licht von oben, das in der Mulde unten wieder ankommt. Beide leise,
+     sonst sieht es nach Eingabefeld aus. */
+  box-shadow: inset 0 1px 3px rgba(11, 13, 24, .09), inset 0 -1px 0 rgba(255, 255, 255, .9);
   font-size: 13px;
   font-weight: 500;
   letter-spacing: .01em;
   color: var(--ulh-text);
   white-space: nowrap;
 }
-.ulh-chip-ic {
-  display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
-  width: 24px; height: 24px; border-radius: 999px;
-  background: var(--ulh-text); color: #ffffff;
-  /* Ein Hauch Licht oben im Kreis: so liest er als Knopf und nicht als Loch. */
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16), 0 1px 2px rgba(11, 13, 24, .18);
-}
-.ulh-chip-ic svg { width: 13px; height: 13px; display: block; }
-/* Der Schatten des ganzen Badges: zwei Lagen wie bei den Karten der Seite, eine enge fuer die
-   Kante, eine weite fuer das Abheben. Am aeusseren Kasten -- overflow: hidden schneidet nur den
-   Inhalt, nicht den eigenen Schatten. */
-.ulh-chip { box-shadow: 0 1px 2px rgba(11, 13, 24, .06), 0 6px 18px -4px rgba(11, 13, 24, .14); }
+.ulh-chip-ic { display: inline-flex; flex: 0 0 auto; color: var(--ulh-text); }
+.ulh-chip-ic svg { width: 14px; height: 14px; display: block; }
+/* Der Schatten nach AUSSEN, subtiler als zuerst (30.09. spaet): die weite Lage von .14 auf .07 und
+   von 18 auf 12 Unschaerfe, die enge von .06 auf .04. Er hebt das Badge nur noch an, statt es
+   schweben zu lassen -- die Tiefe steckt jetzt innen. Am aeusseren Kasten: overflow: hidden
+   schneidet nur den Inhalt, nicht den eigenen Schatten. */
+.ulh-chip { box-shadow: 0 1px 2px rgba(11, 13, 24, .04), 0 4px 12px -4px rgba(11, 13, 24, .07); }
 /* Wer keine Bewegung will, bekommt keine. */
 @media (prefers-reduced-motion: reduce) {
   .ulh-chip::before { animation: none; }

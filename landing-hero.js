@@ -344,10 +344,10 @@
       '</div>' +
       '<div class="ulh-text">' +
         '<p class="ulh-eyebrow">' +
-          /* Als Badge (30.09.): vorn das Zeichen in einem dunklen Kreis, dahinter der Satz. Das
+          /* Als Badge (30.09.): vorn das Zeichen (Zap, ohne Kreis), dahinter der Satz. Das
              Zeichen kommt ueber data-ic aus core wie jedes andere auf dieser Seite (zeichenSetzen). */
           '<span class="ulh-chip"><span class="ulh-chip-in">' +
-            '<span class="ulh-chip-ic" data-ic="sparkle" data-ic-w="2" aria-hidden="true"></span>' +
+            '<span class="ulh-chip-ic" data-ic="zap" data-ic-w="1.9" aria-hidden="true"></span>' +
             '<span class="ulh-chip-t">Get mentioned in AI search</span></span></span>' +
         '</p>' +
         '<h1 class="ulh-h1"><span>AI Search Analytics</span><span>Made simple.</span></h1>' +
