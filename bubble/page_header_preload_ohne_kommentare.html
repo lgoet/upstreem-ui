@@ -38,37 +38,47 @@
   var PIN_RE = new RegExp("upstreem-ui@([^/]+)/");
   function pinAus(u){ var m = PIN_RE.exec(String(u || "")); return m ? m[1] : ""; }
 
-  function cssRoh(f){ once(base + f, function(){
-    var l = document.createElement("link"); l.rel = "stylesheet"; l.href = base + f;
-    l.setAttribute("data-up-preload", "1");
-    document.head.appendChild(l);
-  }); }
-  function jsRoh(f){ once(base + f, function(){
-    var s = document.createElement("script"); s.src = base + f; s.async = false;
-    s.setAttribute("data-up-preload", "1");
-    document.head.appendChild(s);
-  }); }
-
-  function css(f){ once(base + f, function(){
-    var l = document.createElement("link"); l.rel = "stylesheet"; l.href = minUrl(f);
-    l.setAttribute("data-up-preload", "1");
-    l.onerror = function(){
-      var r = document.createElement("link"); r.rel = "stylesheet"; r.href = base + f;
-      r.setAttribute("data-up-preload", "1");
-      document.head.appendChild(r);
-      if (l.parentNode) l.parentNode.removeChild(l);
-    };
-    document.head.appendChild(l);
-  }); }
-  function js(f){ once(base + f, function(){
-    var s = document.createElement("script"); s.src = minUrl(f); s.async = false; s.setAttribute("data-up-preload", "1");
-    s.onerror = function(){
-      var r = document.createElement("script"); r.src = base + f; r.async = false; r.setAttribute("data-up-preload", "1");
-      document.head.appendChild(r);
-      if (s.parentNode) s.parentNode.removeChild(s);
-    };
-    document.head.appendChild(s);
-  }); }
+  function zweiterWeg(u){ return String(u).replace("https://cdn.jsdelivr.net/", "https://fastly.jsdelivr.net/"); }
+  function cssKette(urls){
+    var i = 0, alt = null;
+    function naechste(){
+      if (i >= urls.length) return;
+      var u = urls[i++], weiter = false;
+      var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; l.crossOrigin = "anonymous";
+      l.setAttribute("data-up-preload", "1");
+      function fort(){ if (weiter) return; weiter = true; alt = l; naechste(); }
+      l.onerror = fort;
+      l.onload = function(){ try { if (l.sheet && l.sheet.cssRules.length === 0) fort(); } catch(e){} };
+      if (alt && alt.parentNode){ alt.parentNode.insertBefore(l, alt.nextSibling); alt.parentNode.removeChild(alt); }
+      else document.head.appendChild(l);
+    }
+    naechste();
+  }
+  function jsKette(urls){
+    var i = 0;
+    function naechste(){
+      if (i >= urls.length) return;
+      var u = urls[i++];
+      var s = document.createElement("script"); s.src = u; s.async = false; s.crossOrigin = "anonymous";
+      s.setAttribute("data-up-preload", "1");
+      s.__upWeiter = function(){ if (s.__upWeg) return; s.__upWeg = true; if (s.parentNode) s.parentNode.removeChild(s); naechste(); };
+      s.onerror = s.__upWeiter;
+      document.head.appendChild(s);
+    }
+    naechste();
+  }
+  if (!window.__upKetteHoert){
+    window.__upKetteHoert = true;
+    window.addEventListener("error", function(e){
+      if (!e || !e.filename || !/SyntaxError/.test(String(e.message || ""))) return;
+      var t = document.querySelectorAll("script[data-up-preload]");
+      for (var k = 0; k < t.length; k++) if (t[k].src === e.filename && t[k].__upWeiter){ t[k].__upWeiter(); return; }
+    }, true);
+  }
+  function cssRoh(f){ once(base + f, function(){ cssKette([base + f, zweiterWeg(base + f)]); }); }
+  function jsRoh(f){ once(base + f, function(){ jsKette([base + f, zweiterWeg(base + f)]); }); }
+  function css(f){ once(base + f, function(){ cssKette([minUrl(f), base + f, zweiterWeg(base + f)]); }); }
+  function js(f){ once(base + f, function(){ jsKette([minUrl(f), base + f, zweiterWeg(base + f)]); }); }
 
   ["Topics","Markets","Brands"].forEach(function(n){
     var q = "__up" + n + "Queue";

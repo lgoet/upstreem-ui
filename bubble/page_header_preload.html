@@ -144,57 +144,62 @@
      mit Schraegstrich darin sieht fuer jeden Kommentar-Entferner wie ein Zeilenkommentar aus. */
   function pinAus(u){ var m = PIN_RE.exec(String(u || "")); return m ? m[1] : ""; }
 
-  /* CSS BLOCKIEREND, ohne den media="print"-Trick.
-     Der Trick stand hier, damit zwanzig Stylesheets das erste Zeichnen nicht anhalten. Er ist
-     falsch geworden, sobald der Waechter unten die blockierenden <link>s der Elemente entfernt:
-     dann gilt fuer einen Moment KEIN Stylesheet, und der Browser malt die Komponenten roh. Genau
-     so gemeldet -- unformatierter Inhalt fuer ein paar Millisekunden, und das Export-Popup kurz
-     sichtbar (es ist nur durch seine CSS verborgen).
-     Blockierend ist ausserdem das Verhalten, das die App vorher hatte: die Element-Loader haengten
-     gewoehnliche Stylesheets ein. Neu ist nur, dass es minifiziert und frueh passiert statt roh und
-     erst beim Bau des Elements.
-     Der Rueckfall bleibt: fehlt die minifizierte Fassung (jsDelivr minifiziert auf Anfrage und
-     antwortet bis dahin mit 404), kommt die rohe. */
-  /* Dieselben zwei Lader, aber ohne den Umweg ueber die minifizierte Fassung. Siehe die
-     Begruendung bei core weiter unten. */
-  function cssRoh(f){ once(base + f, function(){
-    var l = document.createElement("link"); l.rel = "stylesheet"; l.href = base + f;
-    l.setAttribute("data-up-preload", "1");
-    document.head.appendChild(l);
-  }); }
-  function jsRoh(f){ once(base + f, function(){
-    var s = document.createElement("script"); s.src = base + f; s.async = false;
-    s.setAttribute("data-up-preload", "1");
-    document.head.appendChild(s);
-  }); }
-
-  function css(f){ once(base + f, function(){
-    var l = document.createElement("link"); l.rel = "stylesheet"; l.href = minUrl(f);
-    l.setAttribute("data-up-preload", "1");
-    l.onerror = function(){
-      var r = document.createElement("link"); r.rel = "stylesheet"; r.href = base + f;
-      r.setAttribute("data-up-preload", "1");
-      document.head.appendChild(r);
-      if (l.parentNode) l.parentNode.removeChild(l);
-    };
-    document.head.appendChild(l);
-  }); }
-  /* async=false haelt die Reihenfolge der eingehaengten Skripte ein -- die Komponenten brauchen
-     core.js vor ihrem eigenen. Der Rueckfall wird sofort im Fehlerfall eingehaengt, also lange
-     bevor Bubble das erste Element baut; die Reihenfolge bleibt damit gewahrt. */
-  function js(f){ once(base + f, function(){
-    var s = document.createElement("script"); s.src = minUrl(f); s.async = false; s.setAttribute("data-up-preload", "1");
-    s.onerror = function(){
-      var r = document.createElement("script"); r.src = base + f; r.async = false; r.setAttribute("data-up-preload", "1");
-      document.head.appendChild(r);
-      /* Den gescheiterten .min-Knoten mitnehmen -- bei CSS geschah das schon, bei JS nicht. Er
-         blieb sonst als zweiter Tag derselben Datei im Kopf stehen: ausgefuehrt wird er nicht
-         (404), aber jede Zaehlung sieht die Datei doppelt, und man sucht einen Fehler, den es
-         nicht gibt. Genau das war die letzte Meldung "topics-manager.js doppelt". */
-      if (s.parentNode) s.parentNode.removeChild(s);
-    };
-    document.head.appendChild(s);
-  }); }
+  /* DIE LADEKETTE (01.10.). Gemeldet: der Models-Filter war tot, in der Konsole "Uncaught
+     SyntaxError: Unexpected token ':'" aus models-filter.min.js -- in der Datei stand
+     "429: Too Many Requests". GitHub hatte jsDelivr beim ersten Abruf des Pins gedrosselt, und
+     jsDelivr lieferte den Fehltext mit Status 200 aus und merkte ihn sich. Ein Status 200 loest
+     kein onerror aus, der Rueckfall auf die rohe Datei griff also nie. Auf der Landingpage kamen
+     dieselben Dateien als 404 "Couldn't find" -- einen Tag lang im Browser zwischengespeichert.
+     Jede Datei hat jetzt eine KETTE: minifiziert, roh, roh vom zweiten Rechner (fastly.jsdelivr.net,
+     derselbe Pin, eigener Zwischenspeicher im Browser und am Rand). Weiter geht es bei
+       - einem Ladefehler (onerror, etwa 404),
+       - einem SyntaxError AUS GENAU DIESER DATEI (der Fehltext mit Status 200) -- erkannt ueber
+         den Dateinamen im Fehlerereignis, dafuer crossorigin="anonymous" (jsDelivr erlaubt es),
+       - einem Stylesheet ohne eine einzige Regel (derselbe Fehltext als CSS).
+     Ein Stylesheet kommt an DERSELBEN Stelle wieder hinein, sonst verschoebe sich die Kaskade.
+     Ein Skript, das so nachkommt, laeuft nach den anderen; das tragen die Komponenten, sie warten
+     beim Start auf core. */
+  function zweiterWeg(u){ return String(u).replace("https://cdn.jsdelivr.net/", "https://fastly.jsdelivr.net/"); }
+  function cssKette(urls){
+    var i = 0, alt = null;
+    function naechste(){
+      if (i >= urls.length) return;
+      var u = urls[i++], weiter = false;
+      var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; l.crossOrigin = "anonymous";
+      l.setAttribute("data-up-preload", "1");
+      function fort(){ if (weiter) return; weiter = true; alt = l; naechste(); }
+      l.onerror = fort;
+      l.onload = function(){ try { if (l.sheet && l.sheet.cssRules.length === 0) fort(); } catch(e){} };
+      if (alt && alt.parentNode){ alt.parentNode.insertBefore(l, alt.nextSibling); alt.parentNode.removeChild(alt); }
+      else document.head.appendChild(l);
+    }
+    naechste();
+  }
+  function jsKette(urls){
+    var i = 0;
+    function naechste(){
+      if (i >= urls.length) return;
+      var u = urls[i++];
+      var s = document.createElement("script"); s.src = u; s.async = false; s.crossOrigin = "anonymous";
+      s.setAttribute("data-up-preload", "1");
+      s.__upWeiter = function(){ if (s.__upWeg) return; s.__upWeg = true; if (s.parentNode) s.parentNode.removeChild(s); naechste(); };
+      s.onerror = s.__upWeiter;
+      document.head.appendChild(s);
+    }
+    naechste();
+  }
+  if (!window.__upKetteHoert){
+    window.__upKetteHoert = true;
+    window.addEventListener("error", function(e){
+      if (!e || !e.filename || !/SyntaxError/.test(String(e.message || ""))) return;
+      var t = document.querySelectorAll("script[data-up-preload]");
+      for (var k = 0; k < t.length; k++) if (t[k].src === e.filename && t[k].__upWeiter){ t[k].__upWeiter(); return; }
+    }, true);
+  }
+  function cssRoh(f){ once(base + f, function(){ cssKette([base + f, zweiterWeg(base + f)]); }); }
+  function jsRoh(f){ once(base + f, function(){ jsKette([base + f, zweiterWeg(base + f)]); }); }
+  function css(f){ once(base + f, function(){ cssKette([minUrl(f), base + f, zweiterWeg(base + f)]); }); }
+  function js(f){ once(base + f, function(){ jsKette([minUrl(f), base + f, zweiterWeg(base + f)]); }); }
 
   /* ── Boot-Stubs für die vier seitenweiten Stores ────────────────────────────
      core.js kommt über das Netz, der Page-Load-Workflow nicht. Ruft Bubble also setUpstreemTopics/

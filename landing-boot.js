@@ -41,18 +41,43 @@
     if (L[name]) return;
     L[name] = url; make(url);
   }
+  /* ZWEITER WEG BEI EINEM FEHLER (01.10.). Gemeldet: "die Landingpage ist komplett kaputt,
+     unformatierte Icons". Sechs Dateien des Pins kamen als 404 "Couldn't find the requested file":
+     GitHub hatte jsDelivr beim ersten Abruf gedrosselt (429), und jsDelivr merkt sich den Fehlschlag
+     einen Tag lang -- an seinem Rand UND im Browser (max-age 86400). Ohne sidebar.js und
+     opportunities.js lief die Sektion nie an.
+     Faellt eine Datei aus, kommt sie jetzt einmal ueber den zweiten Rechner von jsDelivr
+     (fastly.jsdelivr.net) -- derselbe Pin, derselbe Inhalt, aber ein eigener Zwischenspeicher im
+     Browser und am Rand. Ein Stylesheet kommt an DERSELBEN Stelle wieder hinein, sonst stuende
+     core.css ploetzlich hinter landing-hero.css und schluege dessen Regeln gleicher Spezifitaet. */
+  function zweiterWeg(u){ return u.indexOf("https://cdn.jsdelivr.net/") === 0 ? u.replace("https://cdn.jsdelivr.net/", "https://fastly.jsdelivr.net/") : ""; }
   function css(f){
     once(base + f, function(u){
       var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u;
+      l.onerror = function(){
+        var u2 = zweiterWeg(u); if (!u2) return;
+        var r = document.createElement("link"); r.rel = "stylesheet"; r.href = u2;
+        if (l.parentNode){ l.parentNode.insertBefore(r, l.nextSibling); l.parentNode.removeChild(l); }
+        else document.head.appendChild(r);
+      };
       document.head.appendChild(l);
     });
   }
   /* async = false ist PFLICHT und keine Feinheit: ein per createElement eingehaengtes Skript laeuft
      sonst, sobald es da ist, und dann kann visibility-chart.js vor core.js starten und findet
      window.UpstreemCore nicht. Mit async = false halten die Skripte ihre Reihenfolge. */
+  /* Ein Skript, das ueber den zweiten Weg nachkommt, laeuft nach den anderen -- die Reihenfolge ist
+     dann nicht mehr zu halten. Das tragen die Komponenten: jede wartet beim Start auf core, und
+     landing-hero.js wartet bis zu zehn Sekunden, bis alles da ist (bereit()). */
   function js(f){
     once(base + f, function(u){
       var s = document.createElement("script"); s.src = u; s.async = false;
+      s.onerror = function(){
+        var u2 = zweiterWeg(u); if (!u2) return;
+        var r = document.createElement("script"); r.src = u2; r.async = false;
+        document.head.appendChild(r);
+        if (s.parentNode) s.parentNode.removeChild(s);
+      };
       document.head.appendChild(s);
     });
   }
