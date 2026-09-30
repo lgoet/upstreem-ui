@@ -96,7 +96,10 @@
         '.ust-cell .ust-empty-add{display:inline-flex;align-items:center;gap:3px;max-width:0;opacity:0;overflow:hidden;white-space:nowrap;transition:max-width 180ms cubic-bezier(.2,0,.38,.9),opacity 140ms ease,margin-left 180ms cubic-bezier(.2,0,.38,.9);}',
         '.up-root:not(.is-inactive-view) .upt-td-topics:hover .ust-empty{color:var(--vc-text,#1f1f1b);}',
         '.up-root:not(.is-inactive-view) .upt-td-topics:hover .ust-empty-dash{opacity:0;max-width:0;}',
-        '.up-root:not(.is-inactive-view) .upt-td-topics:hover .ust-empty-add{max-width:50px;opacity:1;margin-left:4px;}',
+        /* 120 statt 50 (30.09. gemeldet: im Deutschen stand "+ Hinzufü"). max-width ist hier nur
+           die Obergrenze der Aufklapp-Bewegung, nicht die Breite: "+ Add" ist 30px, "+ Hinzufuegen"
+           gemessen 79 -- 120 laesst beiden Luft, ohne dass die Bewegung merklich schneller wird. */
+        '.up-root:not(.is-inactive-view) .upt-td-topics:hover .ust-empty-add{max-width:120px;opacity:1;margin-left:4px;}',
         '.ust-cell .ust-more{height:28px;padding:0 10px;border-radius:8px;display:inline-flex;align-items:center;flex:0 0 auto;border:0;background:#f9f8f9;color:var(--ust-more-color,#5f646d);font-size:12px;line-height:1;font-weight:600;white-space:nowrap;cursor:pointer;user-select:none;}',
         '.ust-cell.ust-cell{--ust-more-border:#d9dde3;--ust-more-color:#5f646d;}',
         '.ust-cell .ust-more:hover{background:#ececec;color:#1f1f1b;}',
@@ -2405,22 +2408,6 @@
        Built from JS for the same reason the Mentioned dropdown above is: the root markup is a
        hand-pasted copy in Bubble that a CDN pin never touches, so anything new that only lives in
        the markup simply never arrives. */
-    /* "Rows" glyph (rows-into-group, user-supplied asset) -- stroke="currentColor" (was hardcoded
-       black in the source export) so it follows .up-iconbtn's existing color/hover/dark-theme rules
-       exactly like every other toolbar icon. Redrawn as two <rect rx>/one <polyline> instead of the
-       hand-coded cubic-bezier rounded-corner paths Figma originally exported: those paths' corner
-       control points landed on messy decimals (10.835784, 19.91424, ...) even after the 20->24
-       viewBox rescale, and at this icon's forced 20x20 render size (up from the shared 16x16, see
-       below) that showed as visibly soft/blurry edges -- a <rect> with rx is rasterized natively,
-       no bezier-approximation fuzz. stroke-width dropped 2 -> 1.7 (~15%): 2 matched the OTHER
-       Feather icons' weight at THEIR 16x16 size, but this icon renders 20x20 (see the size note
-       below), and stroke-width doesn't scale with the forced CSS box -- 2 was too heavy at the
-       bigger size. */
-    /* Aus core wie jedes andere Zeichen (§5). Hier stand bis zum 22.09. ein von Hand
-       gezeichnetes SVG -- die einzige Stelle der App, an der eines nicht aus dem Satz kam, und
-       damit die einzige, die bei einem Satzwechsel stehen geblieben waere. Das svg der Vorlage
-       traegt Groesse und Strichbreite aus der CSS des Knopfes, gebraucht wird nur der Inhalt. */
-    var GRP_ICON = UC.icon("combine", 1.7);
     /* EIN Zeichen fuer beide Umschalter (den im Kopf der Gruppenliste und den in der Werkzeugleiste):
        ein Klick auf einen von beiden heisst immer "Gruppenleiste umschalten".
 
@@ -2446,21 +2433,38 @@
     /* Same magnifier glyph the toolbar's own .up-search-btn uses -- one search icon everywhere. */
     var GRPSIDE_SEARCH_ICON = UC.icon("search", 2);
     var elGrpWrap = null, elGrpMenu = null;
+    /* DAS STEUERELEMENT "GROUP PROMPTS" (30.09. angefordert, statt des Zeichenknopfs in der
+       Werkzeugleiste): ein 24px hoher Kasten links neben Active/Inactive -- vorn ein Kaestchen und
+       der Name, rechts ein Chevron. Der vordere Teil schaltet die Gruppierung direkt (dieselbe
+       Handlung wie der Schalter "Group by topics" im Menue, toggleGrouping), der Chevron oeffnet
+       das Menue. Der Chevron traegt die alte Klasse .upt-group-btn weiter: an ihr haengen der
+       Klickweg, das Schliessen der anderen Menues und das Popover (opener) -- das Menue selbst ist
+       unveraendert.
+       Das Kaestchen ist .upt-check, dasselbe wie in den Zeilen der Tabelle. Neben Active/Inactive,
+       weil beide dieselbe Art Frage beantworten: WELCHE Prompts und wie sie geordnet dastehen.
+       Aus JS gebaut wie vorher (die Wurzel ist eine Kopie in Bubble, die kein Pin erreicht) --
+       und auch ein aelterer Kasten .upt-group aus einem eingebauten Element bekommt den neuen
+       Inhalt. */
+    var GRP_CHEV_ICON = UC.icon("chevronDown", 2);
     (function(){
       if (!elHeadTools) return;
       elGrpWrap = root.querySelector(".upt-group");
       if (!elGrpWrap){
         elGrpWrap = document.createElement("div");
         elGrpWrap.className = "upt-group";
-        elGrpWrap.innerHTML =
-          '<button class="upt-group-btn up-iconbtn" type="button" data-tip="Grouping" aria-label="Grouping" aria-haspopup="menu" aria-expanded="false">' +
-            GRP_ICON + '<span class="upt-group-dot"></span></button>' +
-          '<div class="up-menu upt-group-menu" role="menu" aria-hidden="true"></div>';
-        /* Left of the column-settings gear — grouping changes WHAT the table lists, the gear only
-           changes how it is drawn, and the app orders toolbar controls that way everywhere. */
-        if (elCols && elCols.parentNode === elHeadTools) elHeadTools.insertBefore(elGrpWrap, elCols);
-        else elHeadTools.appendChild(elGrpWrap);
       }
+      elGrpWrap.classList.add("upt-grpctl");
+      elGrpWrap.innerHTML =
+        '<button class="upt-grpctl-main" type="button" role="switch" aria-checked="false" aria-label="Group Prompts" data-grp-quick>' +
+          '<span class="upt-check" aria-hidden="true">' + CHECK_SVG + '</span>' +
+          '<span class="upt-grpctl-lbl">Group Prompts</span></button>' +
+        '<button class="upt-group-btn upt-grpctl-chev" type="button" data-tip="Grouping" aria-label="Grouping" aria-haspopup="menu" aria-expanded="false">' +
+          GRP_CHEV_ICON + '</button>' +
+        '<div class="up-menu upt-group-menu" role="menu" aria-hidden="true"></div>';
+      var elStatusJetzt = root.querySelector(".upt-status");
+      if (elStatusJetzt && elStatusJetzt.parentNode === elHeadTools) elHeadTools.insertBefore(elGrpWrap, elStatusJetzt);
+      else if (elCols && elCols.parentNode === elHeadTools) elHeadTools.insertBefore(elGrpWrap, elCols);
+      else elHeadTools.appendChild(elGrpWrap);
       elGrpMenu = elGrpWrap.querySelector(".upt-group-menu");
     })();
     /* The popover itself is wired further down, next to the other dropdowns — POP_GROUP does not
@@ -2629,9 +2633,57 @@
         '<button class="up-btn-sec upt-group-new" type="button" data-grp-new>New Grouping</button>';
       elGrpMenu.innerHTML = h;
     }
+    /* Gruppierung an/aus. Zwei Aufrufer: der vordere Teil von "Group Prompts" in der
+       Werkzeugleiste und der Schalter "Group by topics" im Menue -- eine Handlung, ein Weg. */
+    function toggleGrouping(){
+      state.grouped = !state.grouped;
+      writeGrouped(state.grouped);
+      /* Flipping between the flat and grouped view is a different question, not a refinement
+         of the last one -- a search or selection made in one reads as stale leftover state in
+         the other. */
+      clearSelection();
+      var hadQuery = !!state.query;
+      if (hadQuery){
+        state.query = "";
+        if (elSearchIn) elSearchIn.value = "";
+        if (elSearch) elSearch.classList.remove("is-open", "has-text");
+      }
+      populateGroupMenu(); syncGroupBtn();
+      state.expandedGroup = null;
+      if (groupingOn() && !state.groupsHasData){
+        fetchGroups();
+      } else {
+        /* Turning OFF fired nothing at all here before this line -- the only other place
+           uptGroups fires is fetchGroups(), which this branch deliberately does NOT call
+           (there's nothing to fetch when grouping is off). Bubble-side workflows that need to
+           track "is grouping currently on" (e.g. an external date-range filter deciding
+           whether it also needs to refresh the groups RPC) had no reliable signal for this
+           transition -- turning ON always fired uptGroups with grouped:"yes" the first time,
+           but the reverse never fired anything, unless a search happened to be active (whose
+           own runSearch() event carries no `grouped` field at all). This one-off, no-RPC-
+           expected fire makes uptGroups's own `grouped` field the single source of truth for
+           both directions: extract it from every uptGroups payload, regardless of whether
+           `groups` is also present, and keep a persistent state from that alone. */
+        if (!groupingOn()) fire("data-groups-fn", "uptGroups", { grouped: "no" });
+        if (hadQuery) runSearch();     // clears the filter server-side, not just the input
+        else render();
+      }
+    }
+
     function syncGroupBtn(){
       if (!elGrpWrap) return;
       elGrpWrap.classList.toggle("is-on", groupingOn());
+      /* Das Kaestchen zeigt die WAHL (state.grouped), nicht ob gerade gruppiert dasteht: in der
+         Inactive-Ansicht gilt die Gruppierung nicht (groupingOn), die Wahl bleibt aber erhalten und
+         greift beim Zurueckwechseln. Dort ist der vordere Teil gesperrt -- ein Klick, der sichtbar
+         nichts aendert, waere schlechter als keiner. Der Chevron bleibt bedienbar; das Menue sagt,
+         warum ("Active view only"). */
+      var main = elGrpWrap.querySelector(".upt-grpctl-main");
+      if (!main) return;
+      var cb = main.querySelector(".upt-check");
+      if (cb) cb.classList.toggle("is-checked", !!state.grouped);
+      main.setAttribute("aria-checked", state.grouped ? "true" : "false");
+      main.disabled = state.status === "inactive";
     }
 
     /* Liest die AKTUELLE DOM-Reihenfolge der [data-grp-drag]-Zeilen -- die Zeigerbewegung hat sie
@@ -3996,41 +4048,15 @@
         else if (grpPop) grpPop.close(false);
         return;
       }
+      if (e.target.closest("[data-grp-quick]")){
+        e.stopPropagation();
+        toggleGrouping();
+        return;
+      }
       if (e.target.closest(".upt-group-menu")){
         e.stopPropagation();
         if (e.target.closest("[data-grp-toggle]")){
-          state.grouped = !state.grouped;
-          writeGrouped(state.grouped);
-          /* Flipping between the flat and grouped view is a different question, not a refinement
-             of the last one -- a search or selection made in one reads as stale leftover state in
-             the other. */
-          clearSelection();
-          var hadQuery = !!state.query;
-          if (hadQuery){
-            state.query = "";
-            if (elSearchIn) elSearchIn.value = "";
-            if (elSearch) elSearch.classList.remove("is-open", "has-text");
-          }
-          populateGroupMenu(); syncGroupBtn();
-          state.expandedGroup = null;
-          if (groupingOn() && !state.groupsHasData){
-            fetchGroups();
-          } else {
-            /* Turning OFF fired nothing at all here before this line -- the only other place
-               uptGroups fires is fetchGroups(), which this branch deliberately does NOT call
-               (there's nothing to fetch when grouping is off). Bubble-side workflows that need to
-               track "is grouping currently on" (e.g. an external date-range filter deciding
-               whether it also needs to refresh the groups RPC) had no reliable signal for this
-               transition -- turning ON always fired uptGroups with grouped:"yes" the first time,
-               but the reverse never fired anything, unless a search happened to be active (whose
-               own runSearch() event carries no `grouped` field at all). This one-off, no-RPC-
-               expected fire makes uptGroups's own `grouped` field the single source of truth for
-               both directions: extract it from every uptGroups payload, regardless of whether
-               `groups` is also present, and keep a persistent state from that alone. */
-            if (!groupingOn()) fire("data-groups-fn", "uptGroups", { grouped: "no" });
-            if (hadQuery) runSearch();     // clears the filter server-side, not just the input
-            else render();
-          }
+          toggleGrouping();
           return;
         }
         if (e.target.closest("[data-grp-onlycustom]")){
@@ -4682,7 +4708,7 @@
          fallen, und diesen Sprung darf die Toleranz nicht verschlucken. */
       var vorher = root.__uptLastW;
       if (typeof vorher === "number" && Math.abs(w - vorher) < 4){
-        var schwellen = [560, 620, 860], sprung = false;
+        var schwellen = [480, 560, 620, 860], sprung = false;
         for (var si = 0; si < schwellen.length; si++){
           var g = schwellen[si];
           if ((vorher < g) !== (w < g)){ sprung = true; break; }
@@ -4697,6 +4723,19 @@
       root.classList.toggle("is-t1", w < 560);
       root.classList.toggle("is-narrow", w < 860);
       root.classList.toggle("is-vnarrow", w < 620);
+      /* "Group Prompts" ohne Namen unter 480px Wurzelbreite -- nur Kaestchen und Chevron. Gemessen:
+         bei 520 passt der deutsche Name mit rund 90px Luft, bei 350 lief die Kopfzeile um 103px
+         ueber und schob Active/Inactive aus dem Bild. Den Namen traegt der Knopf dann als
+         Tooltip, damit das Kaestchen nicht stumm dasteht. */
+      var grpKurz = w < 480;
+      if (root.classList.contains("is-grp-kurz") !== grpKurz){
+        root.classList.toggle("is-grp-kurz", grpKurz);
+        var grpMain = elGrpWrap && elGrpWrap.querySelector(".upt-grpctl-main");
+        if (grpMain){
+          if (grpKurz) grpMain.setAttribute("data-tip", UC.t ? UC.t("Group Prompts") : "Group Prompts");
+          else grpMain.removeAttribute("data-tip");
+        }
+      }
       /* Dieselbe Grenze wie is-vnarrow: darunter verhaelt sich die Leiste wie vor dem Kit.
          Die Breite ist hier schon gemessen -- refit bekommt sie mit, statt sie neu zu lesen. */
       if (typeof toolGroup !== "undefined" && toolGroup) toolGroup.refit(w);
@@ -5311,6 +5350,9 @@
        keep: .upt-status traegt role="tablist" und faellt damit schon unter die Vorgabe des Kits.
        Ausdruecklich mitgeschrieben, weil es die Aussage der Zeile ist -- Active/Inactive klappt
        NICHT mit ein: das ist kein Filter, sondern die Antwort auf "was sehe ich hier gerade".
+       Dazu seit dem 30.09. "Group Prompts" (.upt-grpctl): es steht links neben Active/Inactive,
+       so verlangt, und beantwortet dieselbe Art Frage. Ohne diesen Eintrag zog der Kit es in die
+       einklappbare Gruppe -- gemessen am Ende der verborgenen Werkzeuge statt neben dem Schalter.
 
        filterActive: nur die drei ECHTEN Filter. Sortierung, Spalten und Gruppierung sind
        Ansichtseinstellungen -- sie nehmen keine Zeile weg, und man sieht ihnen an der Tabelle an,
@@ -5318,6 +5360,7 @@
        jeder, der sie einmal einschaltet, die Leiste fuer immer offen. */
     var toolGroup = UC.makeToolGroup ? UC.makeToolGroup({
       root: root, tools: elHeadTools,
+      keep: '[role="tablist"], .up-seg, .up-dense, .up-export, .upt-grpctl',
       filterActive: function(){
         if (state.query) return true;
         if (state.brandMentioned) return true;

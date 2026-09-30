@@ -92,7 +92,7 @@
 
 /* ---------- Mira ----------
    Der Platz fuer die geliehene Wurzel. Bis sie da ist, ihr Umriss: dieselbe Hoehe, derselbe
-   Radius (32px wie .am-composer), damit darunter nichts springt.
+   Radius (16px wie .am-composer, seit dem 30.09.), damit darunter nichts springt.
    133px, im Prueftand an der geliehenen Wurzel GEMESSEN (_h_upw.html). Der Wert haengt an dem,
    was ask-mira.css im Launcher auf .am-composer gibt: 16px Polster rundum und 10px Abstand
    zwischen Text- und Aktionszeile. Die Hoehe sitzt bewusst im ABSTAND und nicht im Polster --
@@ -104,7 +104,7 @@
    zur naechsten Reihe (den Chips) kommt jetzt allein aus deren eigenem margin-top. */
 .upw-mira { position: relative; }
 .upw-mira-sk {
-  height: 133px; border-radius: 32px; border: 1px solid var(--vc-border); background: var(--vc-bg);
+  height: 133px; border-radius: var(--up-r-2xl, 16px); border: 1px solid var(--vc-border); background: var(--vc-bg);
   padding: 20px 16px 16px; box-sizing: border-box;
   display: flex; flex-direction: column; justify-content: space-between;
 }

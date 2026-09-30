@@ -73,6 +73,10 @@
   data-setinactive-fn  = "bubble_fn_uboSetInactive_[dynamic id]"
   data-edit-fn         = "bubble_fn_uboEdit_[dynamic id]"
   data-activate-fn     = "bubble_fn_uboActivate_[dynamic id]"
+  data-add-fn          = "bubble_fn_uboAddBrand_[dynamic id]"   optional. Das Plus im Kopf der
+                         Brand-Spalte oeffnet den Add-Brand-Dialog (add-brand.js, openAddBrand),
+                         wenn er auf der Seite liegt -- dann braucht es dieses Event nicht. Nur
+                         ohne add-brand.js feuert das Plus hierhin (Wert leer).
 
   Each fires ONE RAW value via fn(value) — not JSON, no regex needed on your side:
 

@@ -956,16 +956,33 @@
     /* Every cell carries its column key as a class (up-th-<key> / up-td-<key>) because that is
        what core's applyCols() shows and hides by. The Brand header is the resizable one; core
        appends the .up-grip to it itself. */
+    /* DAS PLUS IM KOPF DER BRAND-SPALTE (30.09. angefordert): oeffnet denselben Dialog wie der
+       Knopf "+ Add Brand" im Seitenkopf. Rechts in der Zelle und nicht neben dem Wort: der Kopf ist
+       die Spalte, und ihr rechtes Ende ist der Platz, an dem die App Handgriffe einer Spalte
+       fuehrt (Sortierchevron, Info). Das Wort steht dafuer in .up-th-txt -- so darf es bei enger
+       Spalte kuerzen, und der Knopf behaelt seine Breite. */
+    var ADD_BRAND_BTN = '<button class="up-iconbtn is-24 ubo-addbrand" type="button" data-tip="Add brand" ' +
+      'aria-label="Add brand">' + UC.icon("plus", 2) + '</button>';
+    function brandHeadHtml(){
+      return '<div class="up-th up-th-brand"><span class="up-th-txt">Brand</span>' + ADD_BRAND_BTN + '</div>';
+    }
+    /* Liegt add-brand.js auf der Seite, oeffnet es seinen Dialog und feuert das Add-Event selbst --
+       dieselbe Reihenfolge wie im Brands-Seitenkopf. Ohne die Datei ein eigenes Ereignis, damit der
+       Knopf nie stumm bleibt. */
+    function neueMarke(){
+      if (typeof window.openAddBrand === "function"){ window.openAddBrand(); return; }
+      fireRaw("data-add-fn", "uboAddBrand", "");
+    }
     function headHtml(){
       if (state.status === "inactive"){
         return '<div class="up-thead">' +
-          '<div class="up-th up-th-brand">Brand</div>' +
+          brandHeadHtml() +
           '<div class="up-th up-th-deactivated">Deactivated</div>' +
           '<div class="up-th up-th-act"></div></div>';
       }
       var h = '<div class="up-thead">' +
         '<div class="up-th up-th-idx">' + HASH_ICON + '</div>' +
-        '<div class="up-th up-th-brand">Brand</div>';
+        brandHeadHtml();
       var sortAttr = function(col){
         return ' aria-sort="' + (sortField === col ? (sortDir === "asc" ? "ascending" : "descending") : "none") + '"';
       };
@@ -1499,6 +1516,7 @@
         if (!inMenu && !onOpener) closePops(null);
       });
       root.addEventListener("click", function(e){
+        if (e.target.closest(".ubo-addbrand")){ e.stopPropagation(); neueMarke(); return; }
         var thSort = e.target.closest("[data-sortcol]");
         if (thSort){ headSortClick(thSort.getAttribute("data-sortcol")); return; }
         var gran = e.target.closest(".vc-gran-btn");

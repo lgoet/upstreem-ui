@@ -120,6 +120,21 @@
 .ufb-chip {
   flex: 0 0 auto; gap: 6px; padding: 0 5px 0 9px;
 }
+/* 32 HOCH (30.09. angefordert: "die Filter-Chips auch 32px"), also so hoch wie der More-Filters-
+   Knopf und der Datumsfilter daneben -- vorher standen drei Hoehen in einer Zeile (32, 28, 32).
+   Mit der Hoehe zieht die Geometrie des Chips nach, die zu ihr gehoert: links 10 wie das Polster
+   des Knopfs (.ufb-btn), rechts 6, und das X waechst von 18 auf 20 -- dasselbe Verhaeltnis, das
+   der Kommentar am X schon nennt (18 auf 28 wie 20 auf 32). Radius 8 bleibt: so rund ist der
+   Knopf daneben auch. Schrift und Zeichen bleiben 13 und 14 -- verlangt war die Hoehe, und das
+   Zeichen ist ausdruecklich 14.
+   Ueber .up-entchip.ufb-chip und nicht ueber .ufb-chip allein: die Hoehe kommt aus core, und
+   gegen core gewinnt die Spezifitaet, nicht die Ladereihenfolge. */
+.up-entchip.ufb-chip { height: 32px; padding: 0 6px 0 10px; }
+.up-entchip.ufb-chip .ufb-chip-x { flex-basis: 20px; width: 20px; height: 20px; border-radius: 6px; }
+/* IM DUNKELN OHNE FLAECHE (30.09. angefordert), wie der More-Filters-Knopf daneben
+   (.up-root[data-theme="dark"] .ufb-btn): dort liegt --vc-bg eine Stufe ueber dem Grund der
+   Leiste und steht als Kasten da. Hell bleibt es beim Grund aus core -- Weiss auf Weiss. */
+.up-root[data-theme="dark"] .up-entchip.ufb-chip { background: transparent; }
 /* 14x14, ausdruecklich so verlangt. Dieselbe dritte Farbe wie der Bezug daneben -- Zeichen und
    "Topic:" sagen zusammen, WOVON die Rede ist; der Wert ist die Aussage. */
 .ufb-chip-ic { flex: 0 0 14px; width: 14px; height: 14px; display: inline-flex; color: var(--vc-third); }

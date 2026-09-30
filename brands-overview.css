@@ -295,3 +295,10 @@
    der Abstand zu etwas Unsichtbarem. Dieselbe Regel hat .ubo-status-tag oben schon aus genau
    demselben Grund. */
 .ubo-seg-n:empty { display: none; }
+
+/* Das Plus im Kopf der Brand-Spalte (brandHeadHtml in brands-overview.js). margin-left: auto
+   schiebt es an das rechte Ende der Zelle; -8px rechts holt die Haelfte des Zellpolsters (16)
+   zurueck, sodass es 8px vor der Spaltenlinie steht -- dieselbe 8, mit der die Seitenkoepfe
+   rechts enden. Der Greifer zum Ziehen der Spalte liegt auf der Linie selbst (right: -4px, 9px
+   breit) und bleibt damit frei. */
+.up-th-brand .ubo-addbrand { margin-left: auto; margin-right: -8px; }
