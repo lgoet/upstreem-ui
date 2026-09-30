@@ -74,7 +74,7 @@
                preset: preset, sichtbar: sicht(w) };
     });
     var gelernt = W.__udrDrawerKanal || (function () {
-      try { return JSON.parse(localStorage.getItem("udr_drawer_kanal") || "{}"); } catch (e) { return {}; }
+      try { return JSON.parse(localStorage.getItem("udr_drawer_kanal_2") || "{}"); } catch (e) { return {}; }
     })();
     return { BOOT: BOOT, RANGE: RANGE, APPLY: APPLY, DRAWER: DRAWER, VFIRST: VFIRST, views: views, kal: kal, wurzeln: wurzeln, gelernt: gelernt };
   }
@@ -126,7 +126,7 @@
   console.log("Drawer -> Kalender:"); console.table(drawerZeilen);
   console.log("Kanaele: boot " + JSON.stringify(A.BOOT) + "\n         range " + JSON.stringify(A.RANGE) +
     "\n         apply " + JSON.stringify(A.APPLY) + "\n         view_first " + JSON.stringify(A.VFIRST));
-  console.log("Gelernt (udr_drawer_kanal): " + JSON.stringify(A.gelernt));
+  console.log("Gelernt (udr_drawer_kanal_2): " + JSON.stringify(A.gelernt));
   if (nieGeoeffnet.length) console.log("Noch nie geoeffnet (ohne Kalender, normal): " + nieGeoeffnet.join(", "));
   console.log(P.length ? "%cAUFFAELLIG (" + P.length + "):\n  " + P.join("\n  ") : "%cNichts auffaellig.", "color:" + (P.length ? "#b0200c" : "#2ea84a"));
   if (W.upstreemDatesDrawerSpur) console.log("Spur:\n" + W.upstreemDatesDrawerSpur().join("\n"));

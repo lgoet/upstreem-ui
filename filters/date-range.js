@@ -2017,7 +2017,10 @@
      localStorage --, und jedes weitere Oeffnen findet den Kanal sofort.
      Ebenso gemerkt: ein Drawer ohne Kalender (etwa die Einstellungen). Er wartet dann nicht bei
      jedem Oeffnen 700ms, sondern nur beim allerersten; danach geht sein Ruf gleich durch. */
-  var LERN_SCHLUESSEL = "udr_drawer_kanal";
+  /* "_2" seit 64bde34+: die Fassung davor nahm ihre Aufnahme zu spaet und hat dabei fuer Drawer
+     MIT Kalender "kein Kalender" gelernt (brand -> ""). Ein neuer Schluessel laesst diese falschen
+     Eintraege liegen, statt sie weiter gelten zu lassen. */
+  var LERN_SCHLUESSEL = "udr_drawer_kanal_2";
   var DRAWER_KANAL = window.__udrDrawerKanal || (window.__udrDrawerKanal = (function(){
     try { var o = JSON.parse(localStorage.getItem(LERN_SCHLUESSEL) || "{}"); return (o && typeof o === "object") ? o : {}; }
     catch(e){ return {}; }
