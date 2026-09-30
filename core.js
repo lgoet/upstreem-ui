@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261059;
+  var BUILD = 20261060;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -16860,7 +16860,7 @@
        Neun Zeichen sind ausdruecklich benannt worden und folgen keinem Namensgleichklang:
        libraryBig -> BookOpen01 (bis 22.09. SquareLibrary), settings2 -> FilterVertical,
        donut -> PieChart,
-       chartBarDec -> ChartNoAxesColumnDecreasing, calendar -> Calendar04,
+       chartBarDec -> ChartNoAxesColumnDecreasing (seit 01.10. ChartBarDecreasing, siehe dort), calendar -> Calendar04,
        listFilterPlus -> ListFilterPlus, combine -> Combine, externalLink -> Link01,
        tags -> CollectionsBookmark.
        ─────────────────────────────────────────────────────────────────────────────
@@ -17011,14 +17011,17 @@
               '<path d="M17.0516 11.114L17.5159 10.6497C19.4947 8.67095 19.4947 5.46279 17.5159 3.48405C15.5372 1.50532 12.329 1.50532 10.3503 3.48405L7.48405 6.35031C5.50532 8.32904 5.50532 11.5372 7.48405 13.5159C9.46279 15.4947 12.671 15.4947 14.6497 13.5159L14.8566 13.309"/>',
     chatDots: '<path d="M21.5 12C21.5 17.2467 17.2467 21.5 12 21.5C10.3719 21.5 8.8394 21.0904 7.5 20.3687C5.63177 19.362 4.37462 20.2979 3.26592 20.4658C3.09774 20.4913 2.93024 20.4302 2.80997 20.31C2.62741 20.1274 2.59266 19.8451 2.6935 19.6074C3.12865 18.5818 3.5282 16.6382 2.98341 15C2.6698 14.057 2.5 13.0483 2.5 12C2.5 6.75329 6.75329 2.5 12 2.5C17.2467 2.5 21.5 6.75329 21.5 12Z"/>' +
               '<path d="M12.1257 12H12.0007M8.125 12H8M16.125 12H16M12.2507 12C12.2507 12.1381 12.1388 12.25 12.0007 12.25C11.8627 12.25 11.7507 12.1381 11.7507 12C11.7507 11.8619 11.8627 11.75 12.0007 11.75C12.1388 11.75 12.2507 11.8619 12.2507 12ZM8.25 12C8.25 12.1381 8.13807 12.25 8 12.25C7.86193 12.25 7.75 12.1381 7.75 12C7.75 11.8619 7.86193 11.75 8 11.75C8.13807 11.75 8.25 11.8619 8.25 12ZM16.25 12C16.25 12.1381 16.1381 12.25 16 12.25C15.8619 12.25 15.75 12.1381 15.75 12C15.75 11.8619 15.8619 11.75 16 11.75C16.1381 11.75 16.25 11.8619 16.25 12Z"/>',
-    /* CHARTBARBIG -- LIEGENDE Balken, und sie bleiben liegend (23.09.). Bis heute drehte
-       core.css jedes Balken-Zeichen der Umschalter um 90 Grad; diese Regel ist entfallen,
-       siehe dort. Das Zeichen traegt seine Lage jetzt selbst, so wie jedes andere auch --
-       das ist der ganze Grund, warum die Drehung weg ist.
-       Woertlich aus @hugeicons/core-free-icons@4.3.5, ChartBarBigIcon. */
-    chartBarDec: '<path d="M3 3V13C3 16.7712 3 18.6569 4.17157 19.8284C5.34315 21 7.22876 21 11 21H21"/>' +
-                 '<path d="M7 8V9C7 9.55228 7.44772 10 8 10H18C18.5523 10 19 9.55228 19 9V8C19 7.44772 18.5523 7 18 7H8C7.44772 7 7 7.44772 7 8Z"/>' +
-                 '<path d="M7 15V16C7 16.5523 7.44772 17 8 17H14C14.5523 17 15 16.5523 15 16V15C15 14.4477 14.5523 14 14 14H8C7.44772 14 7 14.4477 7 15Z"/>',
+    /* CHARTBARDECREASING -- LIEGENDE Balken, und sie bleiben liegend (23.09.). Bis dahin drehte
+       core.css jedes Balken-Zeichen der Umschalter um 90 Grad; diese Regel ist entfallen, siehe
+       dort. Das Zeichen traegt seine Lage selbst, so wie jedes andere auch.
+       SEIT DEM 01.10. ChartBarDecreasing (Lucide) statt Hugeicons ChartBarBig -- ausdruecklich
+       angefordert, "in allen Donut-/Balken-Umschaltern, einmal im core". Das ist diese eine
+       Stelle: Domain Detail zeichnet das Zeichen ueber UC.icon, Citations, Top Citations und die
+       Landingpage bekommen es ueber den Klassen-Stempel (TOOLBAR_SEL, .cc-seg-btn/.tcl-seg-btn
+       [data-chart="bar"]), der auch das Markup eines schon eingebauten Elements tauscht.
+       Woertlich Lucide chart-bar-decreasing: Achse, drei Balken von lang nach kurz. Dieselbe Form
+       stand hier schon einmal, vor dem Wechsel auf Hugeicons (06c9bee). */
+    chartBarDec: '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M7 11h8"/><path d="M7 16h3"/><path d="M7 6h12"/>',
     barChart2:'<path d="M7 19.5V4.5C7 4.03406 7 3.80109 6.92388 3.61732C6.82239 3.37229 6.62771 3.17761 6.38268 3.07612C6.19891 3 5.96594 3 5.5 3C5.03406 3 4.80109 3 4.61732 3.07612C4.37229 3.17761 4.17761 3.37229 4.07612 3.61732C4 3.80109 4 4.03406 4 4.5V19.5C4 19.9659 4 20.1989 4.07612 20.3827C4.17761 20.6277 4.37229 20.8224 4.61732 20.9239C4.80109 21 5.03406 21 5.5 21C5.96594 21 6.19891 21 6.38268 20.9239C6.62771 20.8224 6.82239 20.6277 6.92388 20.3827C7 20.1989 7 19.9659 7 19.5Z"/>' +
                '<path d="M13.5 19.5V15.5C13.5 15.0341 13.5 14.8011 13.4239 14.6173C13.3224 14.3723 13.1277 14.1776 12.8827 14.0761C12.6989 14 12.4659 14 12 14C11.5341 14 11.3011 14 11.1173 14.0761C10.8723 14.1776 10.6776 14.3723 10.5761 14.6173C10.5 14.8011 10.5 15.0341 10.5 15.5V19.5C10.5 19.9659 10.5 20.1989 10.5761 20.3827C10.6776 20.6277 10.8723 20.8224 11.1173 20.9239C11.3011 21 11.5341 21 12 21C12.4659 21 12.6989 21 12.8827 20.9239C13.1277 20.8224 13.3224 20.6277 13.4239 20.3827C13.5 20.1989 13.5 19.9659 13.5 19.5Z"/>' +
                '<path d="M20 19.5V9.5C20 9.03406 20 8.80109 19.9239 8.61732C19.8224 8.37229 19.6277 8.17761 19.3827 8.07612C19.1989 8 18.9659 8 18.5 8C18.0341 8 17.8011 8 17.6173 8.07612C17.3723 8.17761 17.1776 8.37229 17.0761 8.61732C17 8.80109 17 9.03406 17 9.5V19.5C17 19.9659 17 20.1989 17.0761 20.3827C17.1776 20.6277 17.3723 20.8224 17.6173 20.9239C17.8011 21 18.0341 21 18.5 21C18.9659 21 19.1989 21 19.3827 20.9239C19.6277 20.8224 19.8224 20.6277 19.9239 20.3827C20 20.1989 20 19.9659 20 19.5Z"/>',
