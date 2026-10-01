@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261061;
+  var BUILD = 20261062;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -6326,11 +6326,27 @@
      jemand auf ihre Daten wartet. Wer das verwechselt, laesst Warte-Uhren fuer Seiten ablaufen,
      die gar nicht offen sind: gemeldet am 24.08., weil response-detail und domain-detail im
      SELBEN Pageload meldeten -- auf beiden Seiten zugleich kann niemand sein.
-     getClientRects() ist der Test dafuer: bei display:none am Element ODER an einem Vorfahren
+     getClientRects() war der Test dafuer: bei display:none am Element ODER an einem Vorfahren
      kommt eine leere Liste zurueck. Kennt ein Browser die Methode nicht, gilt sichtbar -- lieber
-     einmal zu viel gemeldet als eine echte Fehlmeldung verschluckt. */
+     einmal zu viel gemeldet als eine echte Fehlmeldung verschluckt.
+     ZU KURZ GEDACHT (01.10.): die Host-App versteckt nicht mit display:none. Ein geschlossener
+     Drawer ist visibility:hidden (Kalender-Diagnose vom 30.09.: "visibility hidden an
+     div#content-prompt"), eine geparkte Ansicht content-visibility:hidden mit opacity 0. Beides
+     hat Kaesten, also galt beides als sichtbar -- im Pruefstand gemessen: getClientRects true,
+     checkVisibility false. Die Warte-Uhren von response-, brand- und domain-detail setzten
+     dadurch "No data" in einem Drawer, den niemand offen hatte, und beim naechsten Oeffnen stand
+     genau das da, bis der Lade-Schritt kam (gemeldet fuer Response Detail: "kein Skelett, nur
+     Keine Daten"). checkVisibility() beantwortet alle drei Faelle ohne Layoutzugriff. Die alten
+     Namen der Optionen stehen mit dabei: Chrome 105 bis 120 kennt nur die. */
   function istSichtbar(el){
-    if (!el || !el.getClientRects) return true;
+    if (!el) return true;
+    if (typeof el.checkVisibility === "function"){
+      try {
+        return el.checkVisibility({ visibilityProperty: true, opacityProperty: true,
+                                    checkVisibilityCSS: true, checkOpacity: true });
+      } catch(e){}
+    }
+    if (!el.getClientRects) return true;
     return el.getClientRects().length > 0;
   }
 

@@ -259,12 +259,25 @@
         if (state.hasData || state.fehler) return;
         /* Unsichtbar heisst: diese Seite ist gar nicht offen, Bubble haelt sie nur im DOM --
            siehe domain-detail. Dann weiter warten statt "No data" auf Vorrat setzen. */
-        if (!UC.istSichtbar(root)) { warteStarten(); return; }
+        if (!UC.istSichtbar(root)) { verdecktWarten(); return; }
         state.fehler = "No data";
         state.loading = false;
         render();
         persist();
       }, WARTE_MS);
+    }
+    /* Verdeckt: jede Sekunde nachsehen, statt die volle Frist neu zu stellen -- und sobald die
+       Wurzel wieder zu sehen ist, beginnt die Frist von vorn (01.10.). Mit der vollen Frist konnte
+       der Ablauf kurz nach dem Oeffnen fallen, noch vor dem Lade-Schritt des Workflows, und dann
+       stand "No data" im eben geoeffneten Drawer. Die Sekunde haengt an derselben Uhr: beenden
+       und Neuaufbau-Merker (wartet) gelten auch fuer sie. */
+    function verdecktWarten(){
+      warteUhr = setTimeout(function(){
+        warteUhr = null;
+        if (root.isConnected === false) return;
+        if (state.hasData || state.fehler) return;
+        if (UC.istSichtbar(root)) warteStarten(); else verdecktWarten();
+      }, 1000);
     }
     function warteBeenden(){ if (warteUhr){ clearTimeout(warteUhr); warteUhr = null; } }
 

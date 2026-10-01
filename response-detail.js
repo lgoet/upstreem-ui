@@ -293,12 +293,25 @@
            wartet niemand, und "No data" jetzt zu setzen hiesse, es steht beim spaeteren Oeffnen
            der Seite schon da, bevor der Pageload-Workflow ueberhaupt laufen konnte. Also weiter
            warten statt melden. */
-        if (!UC.istSichtbar(root)) { warteStarten(); return; }
+        if (!UC.istSichtbar(root)) { verdecktWarten(); return; }
         state.fehler = "No data";
         state.loading = false;
         render();
         persist();
       }, WARTE_MS);
+    }
+    /* Verdeckt: jede Sekunde nachsehen, statt die volle Frist neu zu stellen -- und sobald die
+       Wurzel wieder zu sehen ist, beginnt die Frist von vorn (01.10.). Mit der vollen Frist konnte
+       der Ablauf kurz nach dem Oeffnen fallen, noch vor dem Lade-Schritt des Workflows, und dann
+       stand "No data" im eben geoeffneten Drawer. Die Sekunde haengt an derselben Uhr: beenden
+       und Neuaufbau-Merker (wartet) gelten auch fuer sie. */
+    function verdecktWarten() {
+      warteUhr = setTimeout(function () {
+        warteUhr = null;
+        if (root.isConnected === false) return;
+        if (state.hasData || state.fehler) return;
+        if (UC.istSichtbar(root)) warteStarten(); else verdecktWarten();
+      }, 1000);
     }
     function warteBeenden() { if (warteUhr) { clearTimeout(warteUhr); warteUhr = null; } }
 
@@ -1137,6 +1150,39 @@
     }
     roots.forEach(function (r) { var c = initRoot(r); if (c) fn(c); });
     return true;
+  }
+
+  /* ---- ZU HEISST: DAS NAECHSTE OEFFNEN BEGINNT MIT DEM SKELETT (01.10.) ---------------------
+     Gemeldet: "manchmal gibt es keinen Loading-State, nur 'Keine Daten' und kein einziges
+     Skelett". Der Lade-Schritt haengt am Oeffnen-Ereignis des Drawers, und das ruft die Host-App
+     erst NACH ihrer Einblendung -- in der Zeitleiste vom 30.09. 200 bis 450ms nach openDrawer,
+     beim ersten Oeffnen eines Drawers ohne Kalender 700ms. Bis dahin zeigte der Drawer, was beim
+     letzten Schliessen darin stand: die vorige Antwort, oder das "No data" einer Warte-Uhr, die
+     im geschlossenen Drawer abgelaufen war.
+     Also wechselt die Komponente schon beim SCHLIESSEN ihres Drawers in den Ladezustand -- so vom
+     Nutzer vorgeschlagen. Es ist dasselbe, was der Lade-Schritt beim Oeffnen ohnehin tut, nur
+     frueher: die Daten kommen bei jedem Oeffnen neu.
+     WELCHER Drawer zugeht, steht nicht sicher im Aufruf (closeDrawer() ohne Namen schliesst den
+     obersten), und die Ids der Host-App gehoeren nicht in eine Komponente. Also gemessen: eine
+     Wurzel, die beim Schliessen zu sehen war und danach nicht mehr, sass in dem Drawer, der
+     zuging. core meldet das Schliessen VOR dem Original, die Wurzel ist in dem Moment also noch zu
+     sehen. Eine Wurzel in einer Ansicht bleibt zu sehen oder war es gar nicht -- beides laesst sie
+     in Ruhe. 450ms: visibility:hidden steht nach rund 200ms (Zeitleiste vom 30.09.). Geht der
+     Drawer in der Zeit wieder auf, ist die Wurzel wieder zu sehen und bleibt, wie sie ist. */
+  if (UC.onDrawerClose && !window.__urdZuAngemeldet) {
+    window.__urdZuAngemeldet = true;
+    UC.onDrawerClose(function () {
+      var offen = [].filter.call(document.getElementsByClassName("urd-root"), function (r) {
+        return !!r.__urdController && UC.istSichtbar(r);
+      });
+      if (!offen.length) return;
+      setTimeout(function () {
+        offen.forEach(function (r) {
+          if (r.isConnected === false || !r.__urdController || UC.istSichtbar(r)) return;
+          r.__urdController.setLoading("yes");
+        });
+      }, 450);
+    });
   }
 
   /* Bubble spritzt das Markup neu ein -- ohne das findet ein Setter nach dem Neuaufbau keine
