@@ -578,7 +578,6 @@
   if (!S.models) S.models = {};
   if (!S.favicons) S.favicons = [];
   if (!S.brandLogos) S.brandLogos = [];
-  var feedbackMap = {};   // message_id -> 'up' | 'down'
   var exportPendingMap = {};   // message_id -> true while a PDF export is running
   var USER_CLAMP = 450;        // max chars shown for a long user message before truncation (desktop)
   var USER_CLAMP_MOBILE = 225; // mobile: about half
@@ -1367,9 +1366,10 @@
     if (role === 'user') return '<div class="am-msg-actions">'+copyBtn+'</div>';
     var exporting = !!exportPendingMap[m.id];
     var exportBtn = '<button class="am-act-btn'+(exporting?' is-exporting':'')+'" type="button" data-act="export" aria-label="Export to PDF" data-tip="Export to PDF"'+(exporting?' disabled':'')+'>'+(exporting?'<span class="am-act-spinner" aria-hidden="true"></span>':ICON.download)+'</button>';
-    var fb = feedbackMap[m.id] || '';
-    var up = '<button class="am-act-btn'+(fb==='up'?' is-active':'')+'" type="button" data-act="up" aria-label="Good response" data-tip="Good response">'+ICON.thumbsUp+'</button>';
-    var down = '<button class="am-act-btn'+(fb==='down'?' is-active':'')+'" type="button" data-act="down" aria-label="Bad response" data-tip="Bad response">'+ICON.thumbsDown+'</button>';
+    /* Die Daumen haben vorerst KEINE Funktion (01.10.): kein Ereignis, kein gemerkter Zustand --
+       ein Klick quittiert nur, wie beim Kopieren (siehe quittieren). */
+    var up = '<button class="am-act-btn" type="button" data-act="up" aria-label="Good response" data-tip="Good response">'+ICON.thumbsUp+'</button>';
+    var down = '<button class="am-act-btn" type="button" data-act="down" aria-label="Bad response" data-tip="Bad response">'+ICON.thumbsDown+'</button>';
     return '<div class="am-msg-actions">'+exportBtn+copyBtn+up+down+'</div>';
   }
 
@@ -7699,15 +7699,20 @@
       catch(err){ reject(err); }
     });
   }
-  function flashCopied(btn){
-    var original = btn.innerHTML;
+  /* Kurz ein Haken, dann wieder das eigene Zeichen -- fuer Kopieren UND die Daumen (01.10.:
+     "wie beim Copy-Knopf: Klick -> Haken -> wieder das Reaktionszeichen"). Das Zeichen kommt aus
+     data-act, nicht aus innerHTML: ein zweiter Klick innerhalb der 1,3s hielt sonst den Haken
+     fuer das Original, und der Haken blieb fuer immer stehen. */
+  var QUITT_ZEICHEN = { copy: 'copy', up: 'thumbsUp', down: 'thumbsDown' };
+  function quittieren(btn){
+    var zeichen = ICON[QUITT_ZEICHEN[btn.getAttribute('data-act')]];
+    if (!zeichen) return;
+    if (btn.__quittUhr) clearTimeout(btn.__quittUhr);
     btn.innerHTML = ICON.check; btn.classList.add('is-copied');
-    setTimeout(function(){ btn.innerHTML = original; btn.classList.remove('is-copied'); }, 1300);
-  }
-  function fireFeedback(messageId, rating){
-    var payload = { chat_id: S.activeChatId, message_id: messageId, rating: rating };
-    if (window.bubble_fn_ask_mira_feedback) window.bubble_fn_ask_mira_feedback(JSON.stringify(payload));
-    else { window.dispatchEvent(new CustomEvent('askmira:feedback', { detail: payload })); }
+    btn.__quittUhr = setTimeout(function(){
+      btn.__quittUhr = null;
+      btn.innerHTML = zeichen; btn.classList.remove('is-copied');
+    }, 1300);
   }
   function fireExportPdf(messageId){
     var payload = { assistant_message_id: messageId, session_id: S.activeChatId };
@@ -7867,19 +7872,9 @@
 
     if (act === 'export'){ setExportPending(id, true); fireExportPdf(id); return; }
 
-    if (act === 'copy'){ copyText(messageText(m)).then(function(){ flashCopied(btn); }).catch(function(){}); return; }
+    if (act === 'copy'){ copyText(messageText(m)).then(function(){ quittieren(btn); }).catch(function(){}); return; }
 
-    if (act === 'up' || act === 'down'){
-      var current = feedbackMap[id] || '';
-      var next = (current === act) ? '' : act; // toggle off if same
-      feedbackMap[id] = next;
-      var group = btn.parentNode;
-      var upBtn = group.querySelector('[data-act="up"]');
-      var downBtn = group.querySelector('[data-act="down"]');
-      if (upBtn) upBtn.classList.toggle('is-active', next === 'up');
-      if (downBtn) downBtn.classList.toggle('is-active', next === 'down');
-      fireFeedback(id, next || 'none');
-    }
+    if (act === 'up' || act === 'down'){ quittieren(btn); return; }
   });
 
   /* ---- Evidence hover -> explainer popover ----

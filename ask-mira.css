@@ -401,9 +401,6 @@
   .am-act-btn.is-exporting { color: var(--am-muted-2); cursor: default; background: transparent; }
   .am-act-btn:disabled { cursor: default; }
   .am-act-btn:hover { background: var(--am-soft); color: var(--am-text); }
-  /* Gewaehlt heisst gedrueckt, nicht gefuellt (29.09. spaet: "niemals gefuellte Icons") -- der
-     Daumen bleibt ein Strich, der Knopf traegt Farbe und Grund seines Hovers. */
-  .am-act-btn.is-active { color: var(--am-text); background: var(--am-soft); }
   .am-act-btn.is-copied { color: var(--am-text); }
   .am-act-btn.is-copied svg { fill: none; }
   .am-act-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
