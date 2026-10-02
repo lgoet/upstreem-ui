@@ -309,7 +309,24 @@
         b.setAttribute("aria-selected", on ? "true" : "false");
       });
     }
-    function modeMelden(v){ fire("data-mode-fn", "dphMode", { mode: v }); }
+    /* DER ZEITRAUM REIST MIT (02.10.). Die Analytic-Gruppe traegt den Kalender, und im
+       Agentic-Modus ist sie in Bubble versteckt -- ihr Kalender kann vorher nichts uebergeben.
+       Der dphMode-Workflow blendet sie ein und laedt gleich danach, also mit den Vorgabe-States
+       (gemeldet: Kalender 3 Monate, Daten 7 Tage). Steht der Zeitraum im Ereignis, setzt der
+       Workflow ihn VOR seinem RPC, und der erste Lauf ist richtig. Ohne date-range auf der
+       Seite oder ohne Zeitraum kommt das Ereignis wie bisher, nur mit mode. Die Ansicht ist
+       die, in der dieser Kopf steht -- sonst "dashboard". */
+    function modeNutzlast(v){
+      var p = { mode: v };
+      try {
+        var box = root.closest ? root.closest('[id^="view-"]') : null;
+        var z = typeof window.upstreemDatesFuerAnsicht === "function"
+          ? window.upstreemDatesFuerAnsicht(box ? box.id.slice(5) : "dashboard") : null;
+        if (z && z.date_from && z.date_to){ p.date_from = z.date_from; p.date_to = z.date_to; p.preset = z.preset || ""; }
+      } catch(e){}
+      return p;
+    }
+    function modeMelden(v){ fire("data-mode-fn", "dphMode", modeNutzlast(v)); }
     /* WENN HIER ETWAS FEHLT, DARF ES NICHT SCHWEIGEN (CLAUDE.md §5 / STYLEGUIDE §46). Ohne
        modeSeg lief der ganze Block nicht -- kein Umschalter, KEINE Modusmeldung beim Aufbau,
        und in der Konsole stand nichts. Wer daran die Sichtbarkeit der zwei Dashboards haengt,
@@ -346,7 +363,7 @@
          und wer daran die Sichtbarkeit der zwei Dashboards haengt, sah danach gar nichts.
          Ohne die Bedingung von vorher: die fragte, ob der Empfaenger JETZT da ist -- genau die
          Annahme, die hier nicht gilt. */
-      fire.spaet("data-mode-fn", "dphMode", { mode: modeStart });
+      fire.spaet("data-mode-fn", "dphMode", modeNutzlast(modeStart));
     }
 
     /* Brotkrumen statt Ueberschrift (29.09.): nur Zeichen und "Dashboard", in der Primaerfarbe. KEINE Unterseite dahinter (29.09. spaet: "Analytic und Agentic sind ja eher

@@ -45,6 +45,16 @@
                     IM WORKFLOW: den Wert in einen Custom State der Seite schreiben (z.B.
                     dash_mode). Die Gruppe des Standard-Dashboards ist sichtbar, wenn dash_mode
                     NICHT "power" ist; die Gruppe mit dem Power Dashboard, wenn er "power" ist.
+                    SEIT 02.10. TRAEGT DIE NUTZLAST DEN ZEITRAUM, bei aktivem Apply to all:
+                        { "team_id": "...", "mode": "standard",
+                          "date_from": "2026-07-02", "date_to": "2026-10-02", "preset": "last3" }
+                    Ohne Apply to all fehlen die drei Felder. Wozu: der Kalender sitzt in der
+                    Analytic-Gruppe und kann im Agentic-Modus nichts uebergeben -- lud der
+                    Workflow beim Umschalten, las er die Vorgabe (7 Tage). Also im Workflow, NACH
+                    dem Setzen von dash_mode und VOR dem Analytic-RPC: die Datums-States des
+                    Kalenders aus date_from/date_to setzen -- dieselben zwei Aktionen mit
+                    derselben Regex wie im udr_date_boot-Workflow, "Only when" der Wert
+                    date_from enthaelt.
                     Der Umschalter selbst wird vom JS eingebaut -- auch in einem schon eingebauten
                     Seitenkopf. Neu ist nur dieses Attribut.
 

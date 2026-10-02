@@ -1397,6 +1397,32 @@
        Die Daten daraus zu rechnen ist Sache des Kalenders, nicht dieser Zeile. */
     return { preset: p, from: null, to: null };
   };
+  /* ---- DER ZEITRAUM FUER EINE ANSICHT, DIE GLEICH LAEDT (02.10.) ---------------------------
+     Gemeldet: Seitenaufbau im Agentic-Dashboard mit Apply to all und 3 Monaten, dann auf
+     Analytic -- der Kalender steht auf 3 Monaten, die Daten sind 7 Tage. Der Kalender sitzt in
+     der Analytic-Gruppe, und die ist im Agentic-Modus in Bubble versteckt: sein Boot-Element
+     gibt es dann nicht, niemand kann ihm den Zeitraum geben. Der dphMode-Workflow blendet die
+     Gruppe ein und laedt im NAECHSTEN Schritt -- mit den States, die der Kalender zu dem
+     Zeitpunkt hat. Sein Boot-Kanal entsteht erst beim Zeichnen der Gruppe, zu spaet.
+     Der Kalender kann dieses Rennen nicht gewinnen, er existiert vorher nicht. Also traegt das
+     Ereignis, das den Wechsel ausloest, den Zeitraum selbst (dashboard-page-header, dphMode),
+     und der Workflow setzt ihn VOR seinem RPC. Ein Lauf, richtig -- kein Nachladen.
+     Dieselbe Rechnung wie vorabGeben (geltendesPreset, rangeFuerPreset), damit der Kalender
+     beim Mounten dieselbe Signatur sieht. Ohne Schalter der Zeitraum des Kalenders dieser
+     Ansicht, wenn er schon steht; sonst null -- dann bleibt es bei dem, was Bubble hat.
+     Gibt NUR Auskunft und vermerkt nichts als uebergeben: ob Bubble den Wert nutzt, weiss diese
+     Datei nicht, und ein falscher Vermerk nahme dem naechsten Besuch die Korrektur. */
+  window.upstreemDatesFuerAnsicht = function (name) {
+    var r = null;
+    try {
+      if (syncAn()) r = rangeFuerPreset(geltendesPreset());
+      else {
+        var c = pickerFuer(name), g = c && typeof c.getRange === "function" ? c.getRange() : null;
+        if (g && g.from && g.to) r = g;
+      }
+    } catch (e) { r = null; }
+    return r ? { date_from: r.from, date_to: r.to, preset: r.preset || "" } : null;
+  };
   /* Der Picker einer Ansicht: der View-Name steckt im Instanznamen (view "prompts" ->
      dates_v2_prompts). Ein genauer Vergleich waere falsch -- der Aufrufer kennt den View-Namen,
      nicht die volle Instanz-Id. Ein reines "enthaelt" ist aber auch falsch, und das ist derselbe
