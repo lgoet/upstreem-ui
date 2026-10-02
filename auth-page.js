@@ -472,7 +472,7 @@
               '<span class="uau-send">' + UP_SVG + '</span>' +
             '</span>' +
           '</div>' +
-          '<div class="uau-panel-f">upstreem · your AI visibility analyst</div>' +
+          '<div class="uau-panel-f">upstreem – your AI visibility analyst</div>' +
         '</div>' +
       '</div>';
     }

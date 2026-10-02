@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261067;
+  var BUILD = 20261068;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -1385,7 +1385,6 @@
     "Refresh Data": "Daten aktualisieren",
 
     /* ---- Filterleiste ---- */
-    "More Filters": "Mehr Filter",
     "No filters on this page": "Keine Filter auf dieser Seite",
     "These filters are not on this page yet": "Diese Filter gibt es auf dieser Seite noch nicht",
     /* Das X am Chip (28.09.: im deutschen Setting stand dort "Clear Models"). Dieselben Worte
@@ -5930,7 +5929,7 @@
     } else if (t === "prompt"){
       var mk = String(item.market || "").toUpperCase();
       av = entityAvatar(bild, '<span class="' + p + '-av-t">' + esc(mk) + '</span>', !!bild, p);
-      zweit = mk ? (t_("Market") + " · " + esc(mk)) : "";
+      zweit = mk ? (t_("Market") + ": " + esc(mk)) : "";
     } else {
       av = entityAvatar(bild, icon("domain"), false, p);
       if (t === "url") zweit = entityHl(item.url || "", q, p + "-hl");
@@ -13835,8 +13834,9 @@
      17px ueber der obersten Rasterlinie, und darunter eine punktierte Hilfslinie bis zur
      Grundlinie, HINTER den Datenlinien. Neutral, nicht in der Farbe des Events: die Pins sind
      Nebensache, die Daten bleiben die Hauptsache (Vorgabe: "sekundaere Marker").
-     Hover zeigt den Namen und das Datum; Pins, die naeher als eine Pinbreite plus 4px stehen,
-     werden zum Stapel mit einer Gruppenkarte. Ein Klick oeffnet das Event (Spezifikation 74).
+     Pins, die naeher als eine Pinbreite plus 4px stehen, werden zum Stapel. Hover zeigt EINE Karte
+     -- dieselbe fuer einen Pin und einen Stapel (03.10.) --, ein Klick oeffnet das Event
+     (Spezifikation 74).
      ZENTRAL HIER, nicht je Komponente: alle Zeitreihen (visibility-chart, citations-combo,
      brands-overview, brand-/domain-/performance-detail, events) laufen ueber makeLine und bekommen
      die Pins ohne eigene Zeile. Die Linie ist ein Plugin wie Raster und Fuehrungslinie, Pins und
@@ -13849,7 +13849,7 @@
      gezeigten Zeit steht kein Pin. */
   var EVM_PIN = 20;          /* Pin 20 x 20 (Vorgabe) */
   var EVM_LUFT = 4;          /* naeher als Pin + 4px: ein Stapel statt zweier Pins (Vorgabe) */
-  var EVM_VERSATZ = 14;      /* Versatz der Pins im Stapel (Vorgabe) */
+  var EVM_VERSATZ = 16;      /* Versatz der Pins im Stapel: 14 aus der Vorgabe, am 03.10. zwei Pixel mehr */
   var EVM_STAPEL_MAX = 3;    /* mehr zeigt der Stapel nicht -- die Karte nennt alle */
   var EVM_UEBER = 17;        /* Pin-Mitte ueber der obersten Rasterlinie (Vorgabe: ~17px) */
   function evmTag(s){
@@ -14014,46 +14014,48 @@
     /* Tooltip und Karte bleiben im Diagramm (Vorgabe: "an Chart-Raendern spiegeln", "nicht
        abschneiden"): gemessen, sobald sie gezeigt werden -- visibility:hidden laesst die Breite
        messbar. */
+    /* EINE KARTE FUER EINEN PIN UND FUER EINEN STAPEL (03.10.: "das macht grundlegend keinen Sinn,
+       dass das verschiedene Klassen sind"). Kopf mit Tag bzw. Zeitraum und Zahl, darunter je Event
+       eine Zeile, die das Event oeffnet. Sie steht immer RECHTS OBEN am Marker -- beim Stapel rechts
+       vom letzten Pin --, und an der Kante des Diagramms auf der anderen Seite. Gemessen, sobald
+       sie gezeigt wird: visibility:hidden laesst die Breite messbar. */
     function evmPlatzieren(ort){
-      var W = wrap.clientWidth, x = parseFloat(ort.style.left) || 0;
-      var tip = ort.querySelector(".up-evm-tip");
-      if (tip) ort.classList.toggle("is-links", x + 20 + tip.offsetWidth > W - 4 && x - 20 - tip.offsetWidth >= 4);
       var karte = ort.querySelector(".up-evm-karte");
-      if (karte){
-        var l = 8, w = karte.offsetWidth;
-        if (x + l + w > W - 4) l = W - 4 - w - x;
-        if (x + l < 4) l = 4 - x;
-        karte.style.left = Math.round(l) + "px";
-      }
+      if (!karte) return;
+      var W = wrap.clientWidth, x = parseFloat(ort.style.left) || 0, w = karte.offsetWidth;
+      var n = parseInt(ort.getAttribute("data-n"), 10) || 1;
+      var rechts = 20 + (n - 1) * EVM_VERSATZ;
+      karte.style.left = "";
+      if (x + rechts + w <= W - 4){ ort.classList.remove("is-links"); return; }
+      if (x - 20 - w >= 4){ ort.classList.add("is-links"); return; }
+      ort.classList.remove("is-links");
+      karte.style.left = Math.round(Math.max(4 - x, W - 4 - w - x)) + "px";
     }
     function evmPinHtml(m, i){
       var typ = eventTyp(m.type);
-      return '<span class="up-evm' + (m.fokus ? " is-fokus" : "") + '"' + (i != null ? ' style="--i:' + i + '"' : '') + '>' + icon(typ.icon, 2) + '</span>';
+      return '<span class="up-evm' + (m.fokus ? " is-fokus" : "") + '" style="--i:' + (i || 0) + '">' + icon(typ.icon, 2) + '</span>';
     }
     function evmOrtHtml(g){
-      var m = g.items[0], typ = eventTyp(m.type);
-      if (g.items.length === 1){
-        var lbl = (m.name || "") + " · " + evmDatum(m.date);
-        return '<div class="up-evm-ort' + (g.fokus ? " is-fokus" : "") + '">' +
-          '<button type="button" class="up-evm-knopf" data-event-id="' + esc(m.id) + '" aria-label="' + esc(lbl) + '">' + evmPinHtml(m) + '</button>' +
-          '<div class="up-evm-tip" aria-hidden="true"><span class="up-evm-ic">' + icon(typ.icon, 2) + '</span>' +
-            '<span class="up-evm-tip-txt"><span class="up-evm-tip-name">' + esc(m.name || "") + '</span>' +
-            '<span class="up-evm-tip-datum">' + esc(evmDatum(m.date)) + '</span></span></div></div>';
-      }
+      var m = g.items[0], n = g.items.length, einzel = n === 1;
       var zeilen = g.items.slice().sort(function(a, b){ return String(a.date).localeCompare(String(b.date)); });
-      var n = g.items.length, sichtbar = g.items.slice(0, EVM_STAPEL_MAX);
+      var sichtbar = g.items.slice(0, EVM_STAPEL_MAX);
       var zahl = t(n === 1 ? "{n} Event" : "{n} Events").replace("{n}", n);
-      return '<div class="up-evm-ort is-gruppe' + (g.fokus ? " is-fokus" : "") + '">' +
-        '<button type="button" class="up-evm-knopf up-evm-stapel" style="--n:' + sichtbar.length + '" aria-expanded="false" aria-label="' + esc(zahl) + '">' +
+      /* Ein Komma statt eines Mittelpunkts: seit dem 03.10. stehen keine Punkte mehr als Trenner. */
+      var lbl = einzel ? (m.name || "") + ", " + evmDatum(m.date) : zahl;
+      return '<div class="up-evm-ort' + (einzel ? "" : " is-gruppe") + (g.fokus ? " is-fokus" : "") + '" data-n="' + sichtbar.length + '" style="--n:' + sichtbar.length + '">' +
+        '<button type="button" class="up-evm-knopf' + (einzel ? "" : " up-evm-stapel") + '"' +
+          (einzel ? ' data-event-id="' + esc(m.id) + '"' : ' aria-expanded="false"') + ' aria-label="' + esc(lbl) + '">' +
           sichtbar.map(function(x, k){ return evmPinHtml(x, k); }).join("") + '</button>' +
         '<div class="up-evm-karte">' +
-          '<div class="up-evm-karte-kopf"><span class="up-evm-zeitraum">' + esc(evmZeitraum(zeilen[0].date, zeilen[zeilen.length - 1].date)) + '</span>' +
+          '<div class="up-evm-karte-kopf"><span class="up-evm-zeitraum">' +
+            esc(einzel ? evmDatum(m.date) : evmZeitraum(zeilen[0].date, zeilen[zeilen.length - 1].date)) + '</span>' +
             '<span class="up-evm-zahl">' + esc(zahl) + '</span></div>' +
           zeilen.map(function(x){
             return '<button type="button" class="up-evm-zeile" data-event-id="' + esc(x.id) + '">' +
               '<span class="up-evm-ic">' + icon(eventTyp(x.type).icon, 2) + '</span>' +
               '<span class="up-evm-zeile-name">' + esc(x.name || "") + '</span>' +
-              '<span class="up-evm-zeile-datum">' + esc(evmDatum(x.date, true)) + '</span></button>';
+              /* Beim einzelnen Event steht der Tag schon im Kopf -- nicht zweimal. */
+              (einzel ? '' : '<span class="up-evm-zeile-datum">' + esc(evmDatum(x.date, true)) + '</span>') + '</button>';
           }).join("") +
         '</div></div>';
     }
@@ -18055,6 +18057,9 @@
        uebernommen -- nicht nachgezeichnet. Bei palette sind die Farbpunkte ohne Fuellung (Regel:
        keine gefuellten Icons); als Strich mit 2px Breite stehen sie trotzdem als Punkte da. */
     appWindow: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M10 4v4"/><path d="M2 8h20"/><path d="M6 4v4"/>',
+    /* Lucide tickets (lucide-static 0.460.0) -- das Zeichen der Events (03.10. angefordert: "TicketsIcon"),
+       in der Seitenleiste, im Seitenkopf und im Leerzustand. */
+    tickets: '<path d="m4.5 8 10.58-5.06a1 1 0 0 1 1.342.488L18.5 8"/><path d="M6 10V8"/><path d="M6 14v1"/><path d="M6 19v2"/><rect x="2" y="8" width="20" height="13" rx="2"/>',
     /* Lucide mail (lucide-static 0.460.0) -- das zwanzigste Zeichen im Event-Popup: ein Newsletter
        ist ein haeufiges Event, und mit 20 stehen zwei volle Reihen zu zehn (03.10. angefordert). */
     mail: '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',

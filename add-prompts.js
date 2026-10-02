@@ -380,8 +380,9 @@
                                         : tr("{n} duplicates skipped").replace("{n}", dupes));
     if (dropped) notes.push((dropped === 1 ? tr("1 more row left out")
                                            : tr("{n} more rows left out").replace("{n}", dropped)) +
-                            " — " + tr("{n} prompts per batch").replace("{n}", MAX_PROMPTS));
-    S.capNote = notes.join(" · ");
+                            " (" + tr("{n} prompts per batch").replace("{n}", MAX_PROMPTS) + ")");
+    /* Komma statt Mittelpunkt (seit 03.10. keine Punkte als Trenner), Klammer statt Geviertstrich. */
+    S.capNote = notes.join(", ");
     return dropped + dupes;
   }
 
@@ -630,7 +631,7 @@
     if (S.csvSkipped) bits.push(S.csvSkipped === 1 ? tr("1 row skipped")
                                                     : tr("{n} rows skipped").replace("{n}", S.csvSkipped));
     if (S.csvNote) bits.push(esc(S.csvNote));
-    M.csvnote.innerHTML = ICON.file + '<span>' + bits.join(" · ") + '</span>';
+    M.csvnote.innerHTML = ICON.file + '<span>' + bits.join(", ") + '</span>';
   }
 
   function renderTabs() {

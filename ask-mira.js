@@ -1797,7 +1797,7 @@
 
     var meta = '<div class="uo-meta-grid">'+
       _oppMeta('Market', esc(item.market||'–'))+
-      _oppMeta('Priority', esc(item.priority_label||'–')+(item.priority_score!=null?' · '+(Math.round((Number(item.priority_score)||0)*10)/10):''))+
+      _oppMeta('Priority', esc(item.priority_label||'–')+(item.priority_score!=null?' ('+(Math.round((Number(item.priority_score)||0)*10)/10)+')':''))+
       (item.effective_citation_type ? _oppMeta('Citation Type', '<span class="uo-cite" style="--uo-cite:'+_oppCiteColor(item.effective_citation_type)+';">'+esc(_oppCitePretty(item.effective_citation_type))+'</span>') : '')+
       (item.created_at ? _oppMeta('Created', esc(_oppFmtDate(item.created_at))) : '')+
     '</div>';

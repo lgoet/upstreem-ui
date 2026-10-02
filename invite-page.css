@@ -238,6 +238,7 @@
 }
 .uiv-who b { font-weight: 500; color: var(--vc-muted); overflow-wrap: anywhere; }
 .uiv-notyou {
+  margin-left: 8px;
   font: inherit; font-weight: 600; color: var(--vc-text);
   background: none; border: 0; padding: 0; cursor: pointer; border-radius: 4px;
   transition: opacity var(--up-t-2) var(--up-ease);
@@ -311,11 +312,10 @@
    Auf dem Telefon traegt die Mitte weniger Luft -- die Spalte ist dort ohnehin der ganze Schirm.
    Die Kachel bleibt bei 64: sie ist das Erste, woran man das Team erkennt. */
 .uiv-root.is-vnarrow .uiv-mid { padding-block: 20px; }
-/* "Not you?" in eigener Zeile und ohne Trennpunkt: eine lange Firmenadresse bricht auf 375px
-   sonst so um, dass der Punkt am ANFANG einer Zeile steht (gemessen mit einer 51 Zeichen langen
-   Adresse) -- ein Trenner, der nichts trennt. */
-.uiv-root.is-vnarrow .uiv-dot { display: none; }
-.uiv-root.is-vnarrow .uiv-notyou { flex-basis: 100%; }
+/* "Not you?" in eigener Zeile: eine lange Firmenadresse bricht auf 375px sonst mitten durch die
+   Zeile (gemessen mit einer 51 Zeichen langen Adresse). Dort ohne den Abstand nach links -- die
+   Zeile steht zentriert fuer sich. */
+.uiv-root.is-vnarrow .uiv-notyou { flex-basis: 100%; margin-left: 0; }
 
 /* Wer Bewegung abgestellt hat, bekommt die Zustaende trotzdem -- nur ohne Weg dorthin. Blenden
    bleiben (sie bewegen nichts), Wege, Unschaerfe, Staffelung und Zeichnen fallen weg. */

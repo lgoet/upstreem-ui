@@ -7,12 +7,11 @@
    DIE DATEN sind die Beispiele des Backend-Vertrags (bubble/events_backend_vertrag.md), dieselben
    wie im Pruefstand: Liste 3.1, Detail A/B/C 3.2, Analyse A/B und "Event von gestern" 3.9,
    Responses 3.10. ABGELEITET -- und nur das -- ist, was der Vertrag nicht zeigt:
-     - Detail des vierten Events (PR-Kampagne Herbst): die Zeile der Liste, Topics und URLs aus
-       Detail A in der Anzahl der Zeile;
-     - Analysen fuer dieses und neu angelegte Events: die Analyse A (ab einer Woche Abstand,
-       abgeschnitten bei heute) bzw. "Event von gestern" (juenger), alle Tage auf das Event-Datum
-       verschoben; URLs ohne Eintrag als "nicht beobachtet" mit Share 0; Ueberschneidungen aus der
-       Liste;
+     - Detail des vierten Events (PR-Kampagne Herbst) und jedes Events, das nur im Store der
+       Seite steht: die Zeile, Topics und URLs aus Detail A in der Anzahl der Zeile;
+     - Analysen fuer alle Events ausser A und B (auch C und neu angelegte): die Analyse A, alle
+       Tage auf das Event-Datum verschoben und bei heute abgeschnitten; URLs ohne Eintrag als
+       "nicht beobachtet" mit Share 0; Ueberschneidungen aus der Liste;
      - Responses: fuer jedes Event die aus 3.10;
      - Suchtreffer: die URLs aller Details, mit Host und Pfad als Titel.
    Nichts davon geht an einen Server, nichts davon wird gespeichert. */
@@ -42,11 +41,13 @@
   function urlSchluessel(u) { return String(u || "").trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/[?#].*$/, "").replace(/\/+$/, ""); }
   function mitSchema(u) { u = String(u || "").trim(); return /^https?:\/\//i.test(u) ? u : "https://" + u; }
 
-  var ids = DATEN.ids, liste = kopie(DATEN.liste), details = kopie(DATEN.details);
+  var ids = DATEN.ids, liste = kopie(DATEN.liste), details = kopie(DATEN.details), CTX = {};
   function zeile(id) { for (var i = 0; i < liste.length; i++) if (String(liste[i].id) === String(id)) return liste[i]; return null; }
+  /* Ein Event, das nur im Store der Seite steht (etwa aus einem Beispiel-Schritt fuer die Pins),
+     bekommt ebenfalls ein Detail -- aus seiner Zeile abgeleitet wie das vierte Event. */
   function detail(id) {
     if (details[id]) return details[id];
-    var z = zeile(id), a = details[ids.A];
+    var z = zeile(id) || (CTX.storeZeile && CTX.storeZeile(id)), a = details[ids.A];
     if (!z || !a) return null;
     var d = kopie(z);
     d.team_id = a.team_id; d.updated_at = z.created_at;
@@ -64,11 +65,12 @@
   function analyse(id, tage) {
     var d = detail(id);
     if (!d) return null;
-    var eigen = id === ids.A ? "A" : id === ids.B ? "B" : id === ids.C ? "NEU" : null;
-    /* Ab einer Woche Abstand die volle Analyse A, abgeschnitten bei heute -- sonst zeigte ein
-       Event, das drei Wochen alt ist, nur "No comparable data yet". Juenger: "Event von gestern". */
-    var alter = (tagMs(heute()) - tagMs(d.event_date)) / TAG;
-    var basis = eigen ? DATEN.analysen[eigen] : DATEN.analysen[alter >= 7 ? "A" : "NEU"];
+    var eigen = id === ids.A ? "A" : id === ids.B ? "B" : null;
+    /* Jedes Event ausser A und B bekommt die VOLLE Analyse A, auf sein Datum verschoben und bei
+       heute abgeschnitten (03.10.: "will sehen, wie das voll gefuellt aussieht"). Vorher bekam das
+       neueste Event der Liste den Stand "Event von gestern" -- und das ist die Karte, die man als
+       Erstes oeffnet: fast leer. B bleibt der Vertragsfall "alle Prompts, kein Vergleich". */
+    var basis = eigen ? DATEN.analysen[eigen] : DATEN.analysen.A;
     var a = verschieben(kopie(basis), Math.round((tagMs(d.event_date) - tagMs(basis.event_date)) / TAG));
     if (!eigen && basis === DATEN.analysen.A) {
       var h = heute();
@@ -126,7 +128,7 @@
   /* Die Antwort auf ein Ereignis der Komponente -- dieselbe Form, die der Run-JS-Schritt nach der
      RPC an den Setter gaebe. topicName(id) kommt aus der Komponente (Topic-Store). */
   function antwort(name, b, ctx) {
-    b = b || {}; ctx = ctx || {};
+    b = b || {}; ctx = ctx || {}; CTX = ctx;
     var id = b.p_event_id, d;
     if (name === "uevDetail") { d = detail(id); return d ? { detail: d } : { fehler: "impact_event_not_found" }; }
     if (name === "uevAnalysis") { var a = analyse(id, b.p_window_days); return a ? { analyse: a } : { fehler: "impact_event_not_found" }; }

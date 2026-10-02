@@ -737,7 +737,7 @@
       metaItem('Market', esc(item.market||'–'))+
       metaItem('Citation Type', '<span class="uo-cite" style="--uo-cite:'+citeColor(item.effective_citation_type)+';">'+esc(citePretty(item.effective_citation_type))+'</span>')+
       (Number(item.supporting_urls_count) > 0 ? metaItem('Supporting URLs', esc(item.supporting_urls_count)) : '')+
-      metaItem('Priority', esc(item.priority_label||'')+' · '+(Math.round((Number(item.priority_score)||0)*10)/10))+
+      metaItem('Priority', esc(item.priority_label||'')+' ('+(Math.round((Number(item.priority_score)||0)*10)/10)+')')+
       metaItem('Created', esc(fmtDate(item.created_at)))+
     '</div>';
 

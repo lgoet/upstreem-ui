@@ -86,10 +86,10 @@
     { head: "Workspace", items: [
       { key: "performance",   label: "Performance",     icon: "chartColumnUp" },
       { key: "opportunities", label: "Opportunities",   icon: "listTodo" },
-      /* Impact Events (03.10. angefordert: zwischen Opportunities und Prompt Research). Die
-         Fahne ist das Zeichen der Events-Komponente selbst (Krume im Seitenkopf), derselbe Ort,
-         dasselbe Zeichen. Schluessel "events" = ?view=events. */
-      { key: "events",        label: "Events",          icon: "flag" },
+      /* Impact Events (03.10. angefordert: zwischen Opportunities und Prompt Research). Tickets
+         (Lucide, 03.10. angefordert) ist das Zeichen der Events-Komponente selbst (Krume im
+         Seitenkopf), derselbe Ort, dasselbe Zeichen. Schluessel "events" = ?view=events. */
+      { key: "events",        label: "Events",          icon: "tickets" },
       /* Schluessel "research", nicht "prompt-research" -- siehe AKTIV_SYNONYM weiter unten. */
       { key: "research",      label: "Prompt Research", icon: "telescope" },
       /* blend statt der Bilddatei: Mira traegt jetzt dasselbe Zeichen wie ihre Wortmarke in der

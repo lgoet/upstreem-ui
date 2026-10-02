@@ -122,7 +122,7 @@
 (function(){
   /* Loader nach STYLEGUIDE §26 -- wortgleich mit response_detail_bubble.html, nur Klasse und
      Dateien anders. Die Filter-Dateien laedt dieses Element mit: Models- und Markets-Filter stehen
-     als lokale Instanzen IN der Komponente (Entscheidung 7), der Topics-Filter im Anlegen-Popup. */
+     als lokale Instanzen IN der Komponente (Entscheidung 7), in der Filterleiste der App. */
   function echterPin(p){
     p = String(p == null ? "" : p).trim();
     return (p && p !== "CDN_" + "PIN") ? p : "";
@@ -165,9 +165,10 @@
   css("core.css");                        js("core.js");
   css("filters/models-filter.css");       js("filters/models-filter.js");
   css("filters/markets-filter.css");      js("filters/markets-filter.js");
-  /* Fuer das Anlegen-Popup: der Topics-Filter (Umfang) und die Kalender-Zellen aus date-range.css
-     (Datum) -- deren Regeln stehen ohne Elternklasse, das Popup nutzt sie mit. */
-  css("filters/topics-filter.css");       js("filters/topics-filter.js");
+  /* Die Filterleiste ("Filters") um Models und Markets im Detail, und fuer das Anlegen-Popup die
+     Kalender-Zellen aus date-range.css (Datum) -- deren Regeln stehen ohne Elternklasse. Den
+     Topics-Filter braucht das Popup seit dem 03.10. nicht mehr (eigene Liste). */
+  css("filters/filter-bar.css");          js("filters/filter-bar.js");
   css("filters/date-range.css");
   css("events.css");                      js("events.js");
 })();

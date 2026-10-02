@@ -770,7 +770,7 @@
          nur das Sternenfeld uebrig. viewedRowHtml unten gibt es seit Langem mit, hier fehlte
          es: solange der Doppelgaenger oben gewann, war das Argument ohnehin ohne Wirkung. */
       av = avHtml(flag, '<span class="mqa-av-t">' + esc(mk) + '</span>', !!flag);
-      primary = hl(item.prompt_text || ""); secondary = "Market · " + esc(mk);
+      primary = hl(item.prompt_text || ""); secondary = "Market: " + esc(mk);
     }
     return '<button class="mqa-row" type="button" role="option" data-ri="' + ri + '">' +
       av +
@@ -1112,7 +1112,7 @@
       var mk = String(item.market || "").toUpperCase();
       av = avHtml(flaggeUrl(item.market),
                   '<span class="mqa-av-t">' + esc(mk) + '</span>', true);
-      primary = esc(item.prompt_text || ""); secondary = mk ? ("Market · " + esc(mk)) : "";
+      primary = esc(item.prompt_text || ""); secondary = mk ? ("Market: " + esc(mk)) : "";
     }
     return '<button class="mqa-row is-mini" type="button" role="option" data-viewed="' + i + '">' +
       av +

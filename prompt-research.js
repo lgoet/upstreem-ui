@@ -732,7 +732,7 @@
       return '<div class="upr-history-item" data-history-index="' + index + '" role="button" tabindex="0">' +
         '<div class="upr-history-main">' +
           '<div class="upr-history-headline" data-tip="' + esc(headline) + '">' + esc(headline) + '</div>' +
-          '<div class="upr-history-date">' + esc(formatHistoryDate(item.created_at)) + ' · ' + esc(item.prompt_count || 0) + ' prompts</div>' +
+          '<div class="upr-history-date">' + esc(formatHistoryDate(item.created_at)) + ', ' + esc(item.prompt_count || 0) + ' prompts</div>' +
           '<div class="upr-history-meta-row">' + contextPills(item, false) + '</div>' +
         '</div>' +
         '<div class="upr-history-actions">' +

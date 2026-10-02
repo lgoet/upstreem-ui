@@ -231,7 +231,7 @@
           return '<div class="up-explain-vis">' +
                    '<span class="up-explain-row">' +
                      '<span class="udb-explain-logo">' + ICON.brand + '</span>' +
-                     '<span>Acme Inc. &middot; acme.com</span>' +
+                     '<span>Acme Inc. (acme.com)</span>' +
                    '</span>' +
                  '</div>' +
                  '<div class="up-explain-h">Matched Brands</div>' +

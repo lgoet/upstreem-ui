@@ -395,6 +395,9 @@ eingebautes Element nicht — das muss dort von Hand nachgezogen werden, und das
 - Sichtbare UI-Texte: **Englisch**. Kommentare und Commit-Meldungen: **Deutsch**.
 - Kommentare sagen **warum**, nicht was. Bei jedem nicht offensichtlichen Wert: die Begründung dazu.
 - Keine Geviertstriche in Texten an den Nutzer (Halbgeviertstriche sind in Ordnung).
+- **Keine Mittelpunkte (·) als Trenner** in der UI (03.10. eingefuehrt: "ich hasse die"). Teile
+  einer Zeile werden durch Abstand getrennt -- je ein eigenes Element mit `gap` --, in reinem Text
+  (aria-label, Tooltip, Satz) durch Komma, Doppelpunkt oder Klammer.
 - Icons kommen aus Feather über `UC.icon(name, strokeWidth)` — nie selbst gezeichnet. Ausnahme nur
   dort, wo `UC` nachweislich nicht im Scope ist; dann mit Begründung im Kommentar.
 - Keine Debug-Ausgaben in der ausgelieferten App.

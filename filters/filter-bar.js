@@ -380,7 +380,8 @@
                Chips daneben, und die sagen es genauer als ein Punkt. */
             '<button class="up-quietbtn ufb-btn" type="button" aria-haspopup="menu" aria-expanded="false">' +
               '<span class="ufb-btn-ic">' + UC.icon("settings2", 2) + '</span>' +
-              '<span class="ufb-btn-lbl">More Filters</span>' +
+              /* "Filters", nicht mehr "More Filters" (03.10. angefordert, ueberall in der UI). */
+              '<span class="ufb-btn-lbl">Filters</span>' +
               '<span class="ufb-btn-chev">' + UC.icon("chevronDown", 2.2) + '</span>' +
             '</button>' +
             '<div class="up-menu ufb-menu" role="menu" aria-hidden="true">' +

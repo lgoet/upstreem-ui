@@ -110,17 +110,28 @@
     var c = ev && ev.color;
     return c && /^#[0-9a-f]{6}$/i.test(String(c)) ? String(c) : "";
   }
-  /* Die Umfangszeile, genau nach dem Vertrag (3.1): "3 Topics · 24 Prompts · 5 URLs", bei "all"
-     "All active Prompts · 61 Prompts". Ohne URLs faellt der Teil weg statt "0 URLs" zu sagen
+  /* Der Umfang nach dem Vertrag (3.1): Topics, Prompts, URLs -- als einzelne Angaben, die Zahl
+     betont, getrennt durch Abstand (03.10.: keine Mittelpunkte als Trenner). Bei "all" steht "All
+     active Prompts" statt der Topics; ohne URLs faellt der Teil weg statt "0 URLs" zu sagen
      (Spezifikation 15). */
-  function umfang(ev) {
-    var teile = [];
-    if (ev.scope_mode === "all") teile.push(t("All active Prompts"));
-    else if (num(ev.selected_topic_count) != null) teile.push(ersetze(t(num(ev.selected_topic_count) === 1 ? "{n} Topic" : "{n} Topics"), { n: zahl(ev.selected_topic_count) }));
-    if (num(ev.affected_prompt_count) != null) teile.push(ersetze(t(num(ev.affected_prompt_count) === 1 ? "{n} Prompt" : "{n} Prompts"), { n: zahl(ev.affected_prompt_count) }));
+  function umfangTeile(ev) {
+    var l = [];
+    if (ev.scope_mode === "all") l.push({ text: t("All active Prompts") });
+    else if (num(ev.selected_topic_count) != null) l.push({ n: num(ev.selected_topic_count), eins: "{n} Topic", viele: "{n} Topics" });
+    if (num(ev.affected_prompt_count) != null) l.push({ n: num(ev.affected_prompt_count), eins: "{n} Prompt", viele: "{n} Prompts" });
     var u = num(ev.affected_url_count != null ? ev.affected_url_count : (isArr(ev.urls) ? ev.urls.length : null));
-    if (u) teile.push(ersetze(t(u === 1 ? "{n} URL" : "{n} URLs"), { n: zahl(u) }));
-    return teile.join(" · ");
+    if (u) l.push({ n: u, eins: "{n} URL", viele: "{n} URLs" });
+    return l;
+  }
+  /* Als reiner Text (Tooltips, Vorlesen): mit Komma. */
+  function umfang(ev) {
+    return umfangTeile(ev).map(function (x) { return x.text || ersetze(t(x.n === 1 ? x.eins : x.viele), { n: zahl(x.n) }); }).join(", ");
+  }
+  function umfangHtml(ev, klasse) {
+    return '<span class="uev-zahlen' + (klasse ? " " + klasse : "") + '">' + umfangTeile(ev).map(function (x) {
+      if (x.text) return '<span class="uev-zahl-teil">' + esc(x.text) + '</span>';
+      return '<span class="uev-zahl-teil">' + esc(t(x.n === 1 ? x.eins : x.viele)).replace("{n}", '<span class="uev-zahl-n">' + esc(zahl(x.n)) + '</span>') + '</span>';
+    }).join("") + '</span>';
   }
   function hostPfad(url) {
     try {
@@ -222,8 +233,8 @@
       "Seiten, Artikel oder externe Quellen zu diesem Event. Der Global Share zählt in den betroffenen Prompts.",
     "Observation": "Beobachtung", "Global share before": "Global Share vorher", "Global share after": "Global Share nachher",
     "Observed on event day": "Am Event-Tag beobachtet",
-    "First observed after event · {date} · day {n}": "Erstmals beobachtet nach Event · {date} · Tag {n}",
-    "Still cited · from day {n}": "Weiter zitiert seit Tag {n}",
+    "First observed after the event: {date} (day {n})": "Erstmals nach dem Event beobachtet: {date} (Tag {n})",
+    "Still cited from day {n}": "Weiter zitiert seit Tag {n}",
     "Not observed since event": "Seit dem Event noch nicht beobachtet",
     "Not observed within 6 months": "In 6 Monaten nach dem Event nicht beobachtet",
     "Open the response with the first observation": "Response mit der ersten Beobachtung öffnen",
@@ -242,7 +253,7 @@
     "Tracked AI responses that cite one or more URLs associated with this event.":
       "Getrackte AI-Antworten, die eine oder mehrere URLs dieses Events zitieren.",
     "All affected URLs": "Alle betroffenen URLs",
-    "Still running · data until {date}": "Läuft noch · Daten bis {date}",
+    "Still running, data until {date}": "Läuft noch, Daten bis {date}",
     "Limited baseline ({n} days)": "Begrenzte Vergleichsbasis ({n} Tage)",
     "Less historical data is available before this event for the selected period.":
       "Vor diesem Event gibt es für den gewählten Zeitraum weniger historische Daten.",
@@ -301,6 +312,8 @@
     "Event created": "Event angelegt", "URL added": "URL hinzugefügt", "Event updated": "Event aktualisiert",
     "Observations are counted from the event date, also for URLs you add now.":
       "Beobachtungen zählen ab dem Event-Datum, auch für URLs, die du jetzt hinzufügst.",
+    "{n} days": "{n} Tage", "Preview": "Vorschau", "Untitled event": "Unbenanntes Event",
+    "{n} of {total} selected": "{n} von {total} ausgewählt",
     /* 03.10.: Typ-Auswahl mit eigenem Typ, Klick-Dummy, Ende des Wartens */
     "Search types": "Typen durchsuchen", "No types found": "Keine Typen gefunden", "Your type": "Dein Typ",
     "Example data": "Beispieldaten", "Example data. Nothing you do here is saved.": "Beispieldaten. Nichts, was du hier tust, wird gespeichert.",
@@ -347,7 +360,7 @@
         setTimeout(function () {
           if (root.isConnected === false) return;
           if (!D) { ctrl.setFehler(""); return; }
-          var r = D.antwort(name, b, { topicName: topicName }) || {};
+          var r = D.antwort(name, b, { topicName: topicName, storeZeile: listeEvent }) || {};
           if (r.fehler) ctrl.setFehler(r.fehler);
           if (r.detail) ctrl.setDetail(JSON.stringify(r.detail));
           if (r.analyse) ctrl.setAnalysis(JSON.stringify(r.analyse));
@@ -419,7 +432,7 @@
       '<div class="uev-main"></div>';
     var elMain = root.querySelector(".uev-main"), elAktion = root.querySelector(".uev-kopfaktion");
     var krumen = UC.makePageCrumbs ? UC.makePageCrumbs(root, {
-      icon: "flag", name: "Events", komponente: true,
+      icon: "tickets", name: "Events", komponente: true,
       klick: function () { zurUebersicht(true); },
       klickWenn: function () { return state.ansicht === "detail"; },
       stufen: function () {
@@ -568,10 +581,11 @@
        Linien, Punkte, Ringe ...) unter dem Zeichen des Typs auf einer Kachel -- das gaengige Muster
        fuer Vorlagen-Karten, kein gezeichnetes Bild (Entscheidung 4). Die Farbe des Events toent
        sie nur. */
-    function kunst(ev, klein) {
+    /* Das "Profilbild" eines Events: sein Zeichen in einer weissen Kachel, in seiner Farbe (ohne
+       Farbe in der Schriftfarbe). In der Karte und im Kopf des Details halb ueber dem Farbband. */
+    function avatarHtml(ev, groesse) {
       var f = farbe(ev);
-      return '<div class="uev-kunst uev-kunst-' + esc(typ(ev).gruppe) + (klein ? " is-klein" : "") + '"' + (f ? ' style="--uev-ton:' + esc(f) + '"' : '') + ' aria-hidden="true">' +
-        '<span class="uev-kunst-kachel">' + UC.icon(zeichen(ev), 2) + '</span></div>';
+      return '<span class="uev-avatar' + (groesse ? " is-" + groesse : "") + '"' + (f ? ' style="--uev-ton:' + esc(f) + '"' : '') + ' aria-hidden="true">' + UC.icon(zeichen(ev), 2) + '</span>';
     }
     function mehrMenue(ev, wo) {
       var kannLoeschen = ev.can_delete === true;
@@ -582,19 +596,25 @@
           (kannLoeschen ? '<div class="up-filter-item uev-gefahr" role="menuitem" data-aktion="delete" data-event-id="' + esc(ev.id) + '">' + UC.icon("trash", 2) + '<span>' + esc(t("Delete")) + '</span></div>' : '') +
         '</div></span>';
     }
-    function karteHtml(ev) {
-      var tp = typ(ev);
-      return '<article class="uev-karte" role="link" tabindex="0" data-event-id="' + esc(ev.id) + '">' +
-        kunst(ev) +
+    /* DIE KARTE (03.10. neu, nach Kole Jain): oben ein einfarbiges Band in der Event-Farbe mit
+       wenig Deckkraft auf dem weissen Kartengrund, darueber halb das Zeichen als Profilbild. Darunter
+       mit Luft: Name, Typ und Datum als zwei Angaben, die Beschreibung, unten der Umfang mit
+       betonten Zahlen. Das Menue nur beim Ueberfahren -- eine Nebenhandlung, kein Knopf auf der
+       Karte. vorschau: dieselbe Karte im Anlegen-Popup, ohne Menue und ohne Klick. */
+    function karteHtml(ev, vorschau) {
+      var tp = typ(ev), f = farbe(ev);
+      return '<article class="uev-karte' + (vorschau ? " is-vorschau" : "") + '"' +
+          (vorschau ? ' aria-hidden="true"' : ' role="link" tabindex="0" data-event-id="' + esc(ev.id) + '"') +
+          (f ? ' style="--uev-ton:' + esc(f) + '"' : '') + '>' +
+        '<div class="uev-karte-band"></div>' +
+        (vorschau ? '' : mehrMenue(ev, "karte")) +
         '<div class="uev-karte-body">' +
-          '<div class="uev-karte-oben">' +
-            '<span class="uev-typ">' + UC.icon(zeichen(ev), 2) + '<span data-i18n="' + esc(tp.label) + '">' + esc(t(tp.label)) + '</span></span>' +
-            mehrMenue(ev, "karte") +
-          '</div>' +
+          avatarHtml(ev) +
           '<h3 class="uev-karte-titel">' + esc(ev.name || "") + '</h3>' +
-          '<div class="uev-karte-datum">' + esc(datum(ev.event_date)) + '</div>' +
+          '<div class="uev-karte-meta"><span data-i18n="' + esc(tp.label) + '">' + esc(t(tp.label)) + '</span>' +
+            '<span class="uev-karte-datum">' + esc(datum(ev.event_date)) + '</span></div>' +
           (ev.description ? '<p class="uev-karte-text">' + esc(ev.description) + '</p>' : '') +
-          '<div class="uev-karte-umfang">' + esc(umfang(ev)) + '</div>' +
+          umfangHtml(ev, "uev-karte-zahlen") +
         '</div>' +
       '</article>';
     }
@@ -602,12 +622,12 @@
     function zeileHtml(ev) {
       var tp = typ(ev);
       return '<div class="up-row is-dense uev-zeile" role="link" tabindex="0" data-event-id="' + esc(ev.id) + '">' +
-        '<div class="up-td uev-td-kunst">' + kunst(ev, true) + '</div>' +
+        '<div class="up-td uev-td-kunst">' + avatarHtml(ev, "klein") + '</div>' +
         '<div class="up-td uev-td-name"><span class="uev-zeile-titel">' + esc(ev.name || "") + '</span>' +
           (ev.description ? '<span class="uev-zeile-text">' + esc(ev.description) + '</span>' : '') + '</div>' +
         '<div class="up-td uev-td-typ"><span class="uev-typ">' + UC.icon(zeichen(ev), 2) + '<span data-i18n="' + esc(tp.label) + '">' + esc(t(tp.label)) + '</span></span></div>' +
         '<div class="up-td uev-td-datum">' + esc(datum(ev.event_date)) + '</div>' +
-        '<div class="up-td uev-td-umfang">' + esc(umfang(ev)) + '</div>' +
+        '<div class="up-td uev-td-umfang">' + umfangHtml(ev) + '</div>' +
         '<div class="up-td up-td-act uev-td-act">' + mehrMenue(ev, "zeile") +
           '<span class="uev-chev" aria-hidden="true">' + UC.icon("chevronRight", 2) + '</span></div>' +
       '</div>';
@@ -665,7 +685,7 @@
       elZahl.textContent = alle.length ? String(l.length === alle.length ? alle.length : l.length + " / " + alle.length) : "";
       elListe.className = "uev-liste is-" + state.darstellung;
       if (!alle.length) {
-        elListe.innerHTML = UC.leerHtml({ icon: "flag", titel: "No events yet",
+        elListe.innerHTML = UC.leerHtml({ icon: "tickets", titel: "No events yet",
           text: "Add important launches, content changes, campaigns or other changes to understand how your AI performance develops around them.",
           knopf: "Create event", knopfAttr: "data-uev-create" });
         return;
@@ -696,9 +716,11 @@
       k.style.setProperty("--uev-cols", spalten(elListe.clientWidth || root.clientWidth || 1200, n));
     }
     function karteSkelett() {
-      var eine = '<div class="uev-karte is-sk"><div class="uev-kunst uev-sk-kunst"></div><div class="uev-karte-body">' +
-        '<span class="uev-sk" style="width:38%"></span><span class="uev-sk uev-sk-titel" style="width:72%"></span>' +
-        '<span class="uev-sk" style="width:30%"></span><span class="uev-sk" style="width:88%"></span><span class="uev-sk" style="width:54%"></span></div></div>';
+      /* Dieselbe Form wie die Karte: Band, Profilbild, Name, Angaben, Text, Zahlen. */
+      var eine = '<div class="uev-karte is-sk"><div class="uev-karte-band uev-sk-band"></div><div class="uev-karte-body">' +
+        '<span class="uev-avatar uev-sk-avatar"></span><span class="uev-sk uev-sk-titel" style="width:62%"></span>' +
+        '<span class="uev-sk uev-sk-meta" style="width:42%"></span><span class="uev-sk uev-sk-text" style="width:90%"></span><span class="uev-sk" style="width:64%"></span>' +
+        '<span class="uev-sk uev-sk-zahlen" style="width:56%"></span></div></div>';
       return '<div class="uev-karten uev-karten-sk">' + eine + eine + eine + '</div>';
     }
     function listeSkelett() {
@@ -721,13 +743,20 @@
           '<div class="uev-steuer">' +
             '<div class="uev-steuer-links">' +
               '<div class="up-seg is-lg uev-fenster" role="group" aria-label="' + esc(t("Analysis window")) + '">' +
+                /* "7 days" statt "7D" (03.10.: mit dem grossen D war nicht zu erkennen, was das ist). */
                 FENSTER.map(function (f) {
-                  return '<button class="up-seg-btn" type="button" data-fenster="' + f + '">' + f + 'D</button>';
+                  return '<button class="up-seg-btn" type="button" data-fenster="' + f + '">' + esc(ersetze(t("{n} days"), { n: f })) + '</button>';
                 }).join("") +
               '</div>' +
+              /* Models und Markets in der Filterleiste der App (filters/filter-bar.js, "Filters") --
+                 dieselbe wie auf jeder Seite (03.10. angefordert). Die Leiste zieht die zwei lokalen
+                 Filter ueber ihre Instanz-Ids zu sich; ihre Ereignisse steigen weiter bis elMain. */
               '<div class="uev-filter">' +
-                '<div class="up-root umf-root uev-modelle" data-instance="' + esc(instanceId) + '_models" data-local="yes"></div>' +
-                '<div class="up-root umk-root uev-maerkte" data-instance="' + esc(instanceId) + '_markets" data-local="yes"></div>' +
+                '<div class="up-root ufb-root uev-filterleiste" data-instance="' + esc(instanceId) + '_filters"' +
+                  ' data-models-instance="' + esc(instanceId) + '_models" data-markets-instance="' + esc(instanceId) + '_markets"' +
+                  ' data-isdark="' + (isDark() ? "yes" : "no") + '"></div>' +
+                '<div class="up-root umf-root uev-modelle" data-instance="' + esc(instanceId) + '_models" data-local="yes" data-isdark="' + (isDark() ? "yes" : "no") + '"></div>' +
+                '<div class="up-root umk-root uev-maerkte" data-instance="' + esc(instanceId) + '_markets" data-local="yes" data-isdark="' + (isDark() ? "yes" : "no") + '"></div>' +
               '</div>' +
             '</div>' +
             '<div class="uev-hinweise" data-sek="hinweise"></div>' +
@@ -822,6 +851,9 @@
       return l;
     }
 
+    /* DER KOPF DES DETAILS (03.10. neu): dieselbe Sprache wie die Karte -- Band in der Event-Farbe,
+       das Zeichen gross als Profilbild, darunter Name, Datum und Typ als zwei Angaben mit Zeichen,
+       die Beschreibung und der Umfang mit betonten Zahlen. Ein Kasten, kein lose stehender Text. */
     function renderKopf() {
       var el = elMain.querySelector('[data-sek="kopf"]');
       var d = dieDetail() || listeEvent(state.eventId);
@@ -829,21 +861,27 @@
         el.innerHTML = state.detailFehler
           ? '<div class="uev-fehlerkopf">' + (UC.leseFehlerHtml ? UC.leseFehlerHtml("event") : esc(t("This event could not be loaded."))) +
               '<button type="button" class="up-btn-sec uev-zurueck">' + esc(t("Back to overview")) + '</button></div>'
-          : '<div class="uev-dkopf-sk"><span class="uev-sk uev-sk-ic"></span><span class="uev-sk uev-sk-titel" style="width:40%"></span><span class="uev-sk" style="width:24%"></span></div>';
+          : '<div class="up-box uev-hero is-sk"><div class="uev-hero-band uev-sk-band"></div><div class="uev-hero-body">' +
+              '<span class="uev-avatar is-gross uev-sk-avatar"></span><span class="uev-sk uev-sk-titel" style="width:36%"></span>' +
+              '<span class="uev-sk uev-sk-meta" style="width:22%"></span><span class="uev-sk uev-sk-text" style="width:58%"></span></div></div>';
         elAktion.querySelector(".uev-kopfmehr").innerHTML = "";
         return;
       }
       var tp = typ(d), f = farbe(d);
       el.innerHTML =
-        '<div class="uev-dkopf-reihe">' +
-          '<span class="uev-dkopf-ic"' + (f ? ' style="--uev-ton:' + esc(f) + '"' : '') + '>' + UC.icon(zeichen(d), 2) + '</span>' +
-          '<div class="uev-dkopf-txt">' +
+        '<div class="up-box uev-hero"' + (f ? ' style="--uev-ton:' + esc(f) + '"' : '') + '>' +
+          '<div class="uev-hero-band"></div>' +
+          '<div class="uev-hero-body">' +
+            avatarHtml(d, "gross") +
             '<h2 class="uev-dkopf-titel">' + esc(d.name || "") + '</h2>' +
-            '<div class="uev-dkopf-meta">' + esc(datum(d.event_date)) + ' · <span data-i18n="' + esc(tp.label) + '">' + esc(t(tp.label)) + '</span>' +
-              (umfang(d) ? ' · ' + esc(umfang(d)) : '') + '</div>' +
+            '<div class="uev-hero-meta">' +
+              '<span class="uev-hero-angabe">' + UC.icon("calendar", 2) + '<span>' + esc(datum(d.event_date)) + '</span></span>' +
+              '<span class="uev-hero-angabe">' + UC.icon(zeichen(d), 2) + '<span data-i18n="' + esc(tp.label) + '">' + esc(t(tp.label)) + '</span></span>' +
+            '</div>' +
+            (d.description ? '<p class="uev-dkopf-text">' + esc(d.description) + '</p>' : '') +
+            umfangHtml(d, "uev-hero-zahlen") +
           '</div>' +
-        '</div>' +
-        (d.description ? '<p class="uev-dkopf-text">' + esc(d.description) + '</p>' : '');
+        '</div>';
       elAktion.querySelector(".uev-kopfmehr").innerHTML = mehrMenue(d, "kopf");
     }
 
@@ -858,11 +896,11 @@
         return '<span class="up-sent up-pille uev-hinweis' + (klasse ? " " + klasse : "") + '"' + (tip ? ' data-tip="' + esc(tip) + '"' : "") + '>' +
           UC.icon(ic, 2) + '<span class="up-sent-val">' + esc(text) + '</span></span>';
       }
-      if (w.after_complete === false) h.push(pille("clock", ersetze(t("Still running · data until {date}"), { date: datum(w.effective_after_to) }), "", "is-lauf"));
+      if (w.after_complete === false) h.push(pille("clock", ersetze(t("Still running, data until {date}"), { date: datum(w.effective_after_to) }), "", "is-lauf"));
       if (w.limited_baseline === true) h.push(pille("info", ersetze(t("Limited baseline ({n} days)"), { n: zahl(w.before_observed_days) }),
         t("Less historical data is available before this event for the selected period.")));
       var ov = isArr(a.overlaps) ? a.overlaps.length : 0;
-      if (ov) h.push(pille("flag", ersetze(t(ov === 1 ? "{n} other event in this period" : "{n} other events in this period"), { n: ov })));
+      if (ov) h.push(pille("tickets", ersetze(t(ov === 1 ? "{n} other event in this period" : "{n} other events in this period"), { n: ov })));
       el.innerHTML = h.join("");
     }
 
@@ -975,8 +1013,8 @@
       else if (st === "first_observed_after_event") {
         art = "is-ja";
         txt = o.observed_before_event === true
-          ? ersetze(t("Still cited · from day {n}"), { n: zahl(o.day_number) })
-          : ersetze(t("First observed after event · {date} · day {n}"), { date: datum(o.first_observed_day), n: zahl(o.day_number) });
+          ? ersetze(t("Still cited from day {n}"), { n: zahl(o.day_number) })
+          : ersetze(t("First observed after the event: {date} (day {n})"), { date: datum(o.first_observed_day), n: zahl(o.day_number) });
       } else if (st === "not_observed_within_6_months") { txt = t("Not observed within 6 months"); art = "is-lange"; }
       else { txt = t("Not observed since event"); art = "is-nein"; }
       var klick = o.first_observed_prompt_run_id;
@@ -1048,7 +1086,7 @@
       var neben = [];
       if (num(c.post_only_prompt_count) > 0) neben.push(ersetze(t("{n} Prompts only after the event, shown in the trend only"), { n: zahl(c.post_only_prompt_count) }));
       if (num(c.deleted_prompt_count) > 0) neben.push(ersetze(t("{n} Prompts deleted since"), { n: zahl(c.deleted_prompt_count) }));
-      if (neben.length) zeilen.push('<div class="uev-scope-neben">' + neben.map(esc).join(" · ") + '</div>');
+      if (neben.length) zeilen.push('<div class="uev-scope-neben">' + neben.map(function (x) { return '<span>' + esc(x) + '</span>'; }).join("") + '</div>');
       el.innerHTML = sekKopf("Event scope", "") + '<div class="up-box uev-scope">' + zeilen.join("") + '</div>';
     }
 
@@ -1329,7 +1367,7 @@
        des Markers in jedem Diagramm, eine 1,5px-Linie auf hellem UND dunklem Grund -- die blassen
        und die tiefen Reihen verschwinden dort auf je einem der beiden (Spezifikation 50). */
     var FARBEN = (UC.TOPIC_COLOR_PALETTE || []).slice(0, 10);
-    var popup = null, popupNr = 0;
+    var popup = null;
 
     function tagAus(iso) {
       var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ""));
@@ -1510,7 +1548,7 @@
            eigene Zelle hinten -- wie paletteMit im Topic-Dialog. Sonst waere nichts gewaehlt. */
         var toene = FARBEN.slice();
         if (f && !toene.some(function (hx) { return hx.toLowerCase() === f.toLowerCase(); })) toene.push(f);
-        panel = '<div class="up-topicmodal-pickpanel"><div class="up-topicmodal-colorgrid uev-farbraster" style="grid-template-columns:repeat(' + (toene.length + 1) + ',1fr)">' +
+        panel = '<div class="up-topicmodal-pickpanel"><div class="up-topicmodal-colorgrid uev-farbraster" style="grid-template-columns:repeat(' + (toene.length + 1) + ',minmax(0,32px))">' +
           '<button type="button" class="up-topicmodal-colorcell" data-farbe="" aria-pressed="' + !f + '" aria-label="' + esc(t("Default")) + '" data-tip="' + esc(t("Default")) + '">' +
             '<span class="up-topicmodal-colorblob uev-standardfarbe">' + (!f ? UC.icon("check", 3) : "") + '</span></button>' +
           toene.map(function (hx) {
@@ -1541,15 +1579,65 @@
     /* Umschalter, Topics und die Zahl als EINE Gruppe: die Zahl gehoert zur Auswahl darueber und
        steht darum nicht 32px entfernt wie ein eigenes Feld. Kein Wort ueber die Vergleichsgruppe
        (Spezifikation 55) -- die legt der Server selbst fest. */
-    function umfangFelder(e, topicsId) {
+    /* DIE TOPICS ALS SICHTBARE LISTE (03.10.: der Filter-Knopf "Topics" war im Popup "richtig
+       unintuitiv"). Alle Topics stehen offen da, jede Zeile mit dem Kaestchen aus core
+       (.up-filter-item / .up-filter-check, dieselben Zeilen wie im Topics-Filter), Zeichen oder
+       Farbpunkt, Name und Zahl der Prompts. Ab sieben Topics ein Suchfeld darueber, darunter die
+       Zahl der gewaehlten und "Select all" bzw. "Clear". Die Topics kommen aus dem Store der Seite. */
+    function topicsAlle() { return (UC.getTopics ? UC.getTopics() : []).filter(function (x) { return x && x.id != null; }); }
+    function topicFarbe(x) { return (isDark() ? (x.hex_dark || x.hex_light) : (x.hex_light || x.hex_dark)) || ""; }
+    function topicZeilen(p) {
+      var alle = topicsAlle(), q = String(p.topicSuche || "").trim().toLowerCase();
+      if (!alle.length) return '<div class="up-ment-noresult">' + esc(t("No topics found")) + '</div>';
+      var l = alle.filter(function (x) { return !q || String(x.name || "").toLowerCase().indexOf(q) >= 0; });
+      if (!l.length) return '<div class="up-ment-noresult">' + esc(t("No topics found")) + '</div>';
+      return l.map(function (x) {
+        var an = p.e.topics.indexOf(String(x.id)) >= 0, fb = topicFarbe(x);
+        return '<div class="up-filter-item uev-topicitem' + (an ? " is-checked" : "") + '" role="checkbox" tabindex="0" aria-checked="' + an + '" data-topic-id="' + esc(x.id) + '">' +
+          '<span class="up-filter-check">' + UC.icon("check", 3) + '</span>' +
+          (x.emoji ? '<span class="uev-topic-zeichen">' + esc(x.emoji) + '</span>'
+                   : '<span class="uev-topic-punkt"' + (fb ? ' style="background:' + esc(fb) + '"' : '') + '></span>') +
+          '<span class="uev-topic-name">' + esc(x.name || "") + '</span>' +
+          (num(x.prompt_count) != null ? '<span class="uev-topic-zahl">' + esc(zahl(x.prompt_count)) + '</span>' : '') +
+        '</div>';
+      }).join("");
+    }
+    function topicsFuss(p) {
+      var n = p.e.topics.length, alle = topicsAlle().length;
+      return '<span class="uev-topicfuss-zahl">' + esc(ersetze(t("{n} of {total} selected"), { n: n, total: alle })) + '</span>' +
+        (alle ? '<button type="button" class="up-quietbtn uev-topicalle">' + esc(t(n === alle ? "Clear" : "Select all")) + '</button>' : '');
+    }
+    function topicsZeigen() {
+      var p = popup, l = im(".uev-topicliste"), f = im(".uev-topicfuss");
+      if (l) l.innerHTML = topicZeilen(p);
+      if (f) f.innerHTML = topicsFuss(p);
+    }
+    function topicUmschalten(id) {
+      var p = popup;
+      if (!p || id == null) return;
+      id = String(id);
+      var i = p.e.topics.indexOf(id);
+      if (i >= 0) p.e.topics.splice(i, 1); else p.e.topics.push(id);
+      topicsZeigen();
+      /* Der Fokus bleibt auf der Zeile, die gerade umgeschaltet wurde -- sie ist neu gezeichnet. */
+      var z = im('.uev-topicitem[data-topic-id="' + id.replace(/"/g, "") + '"]');
+      try { if (z && document.activeElement && document.activeElement.classList && document.activeElement.classList.contains("uev-topicitem")) z.focus(); } catch (e) {}
+      vorschauAnfordern();
+    }
+    function umfangFelder(e) {
+      var viele = topicsAlle().length > 6;
       return feld("Affected scope",
         '<div class="uev-umfang">' +
           '<div class="up-seg uev-umfangseg" role="group">' +
             '<button type="button" class="up-seg-btn' + (e.modus === "topics" ? " is-active" : "") + '" data-modus="topics">' + esc(t("Selected topics")) + '</button>' +
             '<button type="button" class="up-seg-btn' + (e.modus === "all" ? " is-active" : "") + '" data-modus="all">' + esc(t("All active Prompts")) + '</button>' +
           '</div>' +
-          '<div class="uev-umfang-topics"' + (e.modus === "topics" ? "" : " hidden") + '>' +
-            '<div class="up-root utf-root uev-topicwahl" data-instance="' + esc(topicsId) + '" data-local="yes" data-newtopic="no" data-isdark="' + (isDark() ? "yes" : "no") + '"></div>' +
+          '<div class="uev-umfang-topics uev-topicbox"' + (e.modus === "topics" ? "" : " hidden") + '>' +
+            (viele ? '<div class="up-ment-searchwrap uev-topicsuche-w">' +
+              '<input class="up-ment-search uev-topicsuche" type="text" placeholder="' + esc(t("Search topics")) + '" autocomplete="off" spellcheck="false" aria-label="' + esc(t("Search topics")) + '"/>' +
+              '<button class="up-ment-searchclear uev-topicsuche-x" type="button" aria-label="' + esc(t("Clear search")) + '">' + UC.icon("x", 2) + '</button></div>' : '') +
+            '<div class="up-filter-list uev-topicliste" role="group" aria-label="' + esc(t("Topics")) + '"></div>' +
+            '<div class="uev-topicfuss"></div>' +
           '</div>' +
           '<p class="uev-umfang-zahl" aria-live="polite"></p>' +
         '</div>');
@@ -1570,7 +1658,7 @@
     /* ---- Zeichnen in einem offenen Popup --------------------------------------------------- */
     function im(sel) { return popup ? popup.api.el.querySelector(sel) : null; }
     function schrittText(n) {
-      return ersetze(t("Step {n} of 3"), { n: n }) + " · " + t(["Details", "Scope", "URLs & review"][n - 1]);
+      return ersetze(t("Step {n} of 3"), { n: n }) + ": " + t(["Details", "Scope", "URLs & review"][n - 1]);
     }
     function typNeu() {
       var p = popup, tp = typVon(p.e.typ), b = im('[data-wahl="typ"]');
@@ -1686,21 +1774,21 @@
             '<span class="uev-url-txt"><span class="uev-url-host">' + esc(hp.host) + '</span><span class="uev-url-pfad" title="' + esc(u.url) + '">' + esc(hp.pfad) + '</span></span>' +
             (u.neu ? '<span class="uev-urlwahl-neu">' + esc(t("New target")) + '</span>' : '') +
             '<button type="button" class="up-iconbtn uev-urlwahl-weg" data-url-weg="' + i + '" aria-label="' + esc(t("Remove")) + '" data-tip="' + esc(t("Remove")) + '">' + UC.icon("x", 2) + '</button></div>';
-        }).join("") + '</div>' +
-        (p.art === "anlegen" ? '<p class="up-modal-hinweis uev-urlzahl">' + esc(ersetze(t("{n} of {max} URLs"), { n: l.length, max: URL_MAX })) + '</p>' : '');
+        }).join("") + '</div>';
     }
+    /* DIE VORSCHAU (03.10. angefordert): im letzten Schritt die Karte, wie sie danach in der
+       Uebersicht steht -- dieselbe karteHtml, gefuellt aus dem Entwurf, ohne Menue und ohne Klick.
+       Sie ersetzt die Zusammenfassung: alles, was dort stand, steht auf der Karte. */
     function pruefenZeigen() {
       var p = popup, el = im(".uev-pruef");
       if (!el || p.art !== "anlegen") return;
-      var e = p.e, tp = typVon(e.typ), v = dieVorschau(p);
-      var umf = e.modus === "all" ? t("All active Prompts") : ersetze(t(e.topics.length === 1 ? "{n} Topic" : "{n} Topics"), { n: e.topics.length });
-      var pr = v && !v.fehler && v.n != null ? ersetze(t(v.n === 1 ? "{n} Prompt" : "{n} Prompts"), { n: zahl(v.n) }) : "";
-      var ur = e.urls.length ? ersetze(t(e.urls.length === 1 ? "{n} URL target" : "{n} URL targets"), { n: e.urls.length }) : t("No URL targets");
-      el.innerHTML =
-        '<div class="uev-pruef-kopf"><span class="uev-pruef-ic"' + (e.farbe ? ' style="--uev-ton:' + esc(e.farbe) + '"' : '') + '>' + UC.icon(e.icon || tp.icon, 2) + '</span>' +
-          '<span class="uev-pruef-name">' + esc(e.name.trim()) + '</span></div>' +
-        '<div class="uev-pruef-zeile">' + esc(datum(e.datum)) + ' · ' + esc(t(tp.label)) + '</div>' +
-        '<div class="uev-pruef-zeile">' + [umf, pr, ur].filter(Boolean).map(esc).join(" · ") + '</div>';
+      var e = p.e, v = dieVorschau(p);
+      var ev = { id: "", name: e.name.trim() || t("Untitled event"), event_date: e.datum, event_type: e.typ,
+        icon: e.icon, color: e.farbe, description: e.text.trim() || null, scope_mode: e.modus,
+        selected_topic_count: e.modus === "topics" ? e.topics.length : null,
+        affected_prompt_count: v && !v.fehler ? v.n : null, affected_url_count: e.urls.length };
+      el.innerHTML = '<span class="up-topicmodal-label">' + esc(t("Preview")) + '</span>' +
+        '<div class="uev-vorschau">' + karteHtml(ev, true) + '</div>';
     }
     function schrittOk(p) {
       var e = p.e;
@@ -1741,7 +1829,7 @@
       var box = p.api.body.querySelector('.uev-schritt[data-schritt="' + n + '"]');
       if (box && !box.__uevGebaut) {
         box.__uevGebaut = 1;
-        if (n === 2) box.innerHTML = umfangFelder(p.e, p.topicsId);
+        if (n === 2) { box.innerHTML = umfangFelder(p.e); topicsZeigen(); }
         if (n === 3) box.innerHTML = urlFelder();
       }
       var sub = p.api.el.querySelector(".up-topicmodal-sub");
@@ -1945,13 +2033,6 @@
       el.addEventListener("click", popupKlick);
       el.addEventListener("input", popupEingabe);
       el.addEventListener("keydown", popupTaste);
-      /* Der Topics-Filter meldet seine Auswahl als DOM-Ereignis (data-local="yes"): kommagetrennte
-         ids in topic_ids. */
-      el.addEventListener("utf-topics", function (ev) {
-        if (popup !== p || !ev.detail) return;
-        p.e.topics = String(ev.detail.topic_ids || "").split(",").map(function (x) { return x.trim(); }).filter(Boolean);
-        vorschauAnfordern();
-      });
       knoepfeSync();
     }
     function popupAnlegen() {
@@ -1973,10 +2054,7 @@
         onClose: popupZu
       });
       api.body.querySelector('.uev-schritt[data-schritt="1"]').__uevGebaut = 1;
-      /* Eine eigene Instanz des Topics-Filters je Popup: der Filter merkt sich seine Auswahl je
-         Instanz, und ein neues Event soll leer anfangen und nicht mit den Topics des letzten. */
-      var p = { art: "anlegen", api: api, e: e, schritt: 1, knopf: "weiter", pops: {}, vorschauen: {},
-                topicsId: instanceId + "_neu_" + (++popupNr) };
+      var p = { art: "anlegen", api: api, e: e, schritt: 1, knopf: "weiter", pops: {}, vorschauen: {}, topicSuche: "" };
       sucheBauen(p);
       popupAufbauen(p);
       schritt(1);
@@ -2076,6 +2154,19 @@
       }
       var fa = x.closest("[data-farbe]");
       if (fa) { p.e.farbe = fa.getAttribute("data-farbe") || null; aussehenNeu(); pruefenZeigen(); return; }
+      var ti = x.closest(".uev-topicitem");
+      if (ti) { topicUmschalten(ti.getAttribute("data-topic-id")); return; }
+      if (x.closest(".uev-topicalle")) {
+        var alleIds = topicsAlle().map(function (y) { return String(y.id); });
+        p.e.topics = p.e.topics.length === alleIds.length ? [] : alleIds;
+        topicsZeigen(); vorschauAnfordern();
+        return;
+      }
+      if (x.closest(".uev-topicsuche-x")) {
+        p.topicSuche = ""; var tsx = im(".uev-topicsuche"); if (tsx) { tsx.value = ""; try { tsx.focus(); } catch (e2) {} }
+        topicsZeigen();
+        return;
+      }
       var mod = x.closest("[data-modus]");
       if (mod) {
         var mw = mod.getAttribute("data-modus");
@@ -2099,6 +2190,7 @@
       if (x.matches('[data-feld="name"]')) { p.e.name = x.value; knoepfeSync(); return; }
       if (x.matches('[data-feld="text"]')) { p.e.text = x.value; return; }
       if (x.matches(".uev-typsuche")) { p.typSuche = x.value; typListeZeigen(); return; }
+      if (x.matches(".uev-topicsuche")) { p.topicSuche = x.value; topicsZeigen(); return; }
       if (x.matches(".uev-typeigen")) { var add = im(".uev-typeigen-add"); if (add) add.disabled = !typEigenOk(p); return; }
       if (x.matches(".uev-urlein")) {
         p.such.frage = x.value;
@@ -2110,9 +2202,11 @@
        die eingefuegte Adresse als neues Ziel uebernehmen. */
     function popupTaste(ev) {
       var p = popup, x = ev.target;
+      if (p && ev.key === " " && x && x.matches && x.matches(".uev-topicitem")) { ev.preventDefault(); topicUmschalten(x.getAttribute("data-topic-id")); return; }
       if (!p || ev.key !== "Enter" || !x || !x.matches) return;
       if (x.matches(".uev-typeigen")) { ev.preventDefault(); typEigenNehmen(); return; }
       if (x.matches(".uev-typitem")) { ev.preventDefault(); x.click(); return; }
+      if (x.matches(".uev-topicitem")) { ev.preventDefault(); topicUmschalten(x.getAttribute("data-topic-id")); return; }
       if (x.matches('[data-feld="name"]')) {
         ev.preventDefault();
         var b = p.api.knopf(p.knopf);

@@ -467,8 +467,8 @@
       /* Mit welchem Konto. "Not you?" nur, wenn nicht schon der Log-out-Knopf daneben steht. */
       if (angemeldet && mail){
         var who = '<span>' + T.signedInAs + '</span><b>' + esc(mail) + '</b>' +
-          (zweiter ? '' : '<span class="uiv-dot" aria-hidden="true">·</span>' +
-                          '<button class="uiv-notyou" type="button" data-act="logout">' + T.notYou + '</button>');
+          /* Ohne Trennpunkt (03.10.: keine Punkte als Trenner) -- den Abstand gibt .uiv-notyou. */
+          (zweiter ? '' : '<button class="uiv-notyou" type="button" data-act="logout">' + T.notYou + '</button>');
         if (elWho.__uivHtml !== who){ elWho.__uivHtml = who; elWho.innerHTML = who; }
         elWho.hidden = false;
       } else if (!angemeldet && !fehler && state.phase === "ready"){
