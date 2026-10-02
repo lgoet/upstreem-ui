@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261064;
+  var BUILD = 20261065;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -4383,6 +4383,31 @@
      is not the same as whether it went up — for a ranking, down is good. Hence `inverted`.
      Returns "" for null/NaN/rounds-to-zero, so callers can concatenate it unconditionally.
      opts: { decimals, inverted, suffix, cls } */
+  /* ---- DIE KENNZAHL-KACHEL (02.10., Impact Events) ------------------------------------------
+     Die Spezifikation der Events verlangt "die KPI-Kachel aus core" -- es gab keine. Jede
+     Komponente hatte ihre eigene: power-dashboard (kpiKarte, .upw-kpi), performance-detail
+     (kpiTile), brand-detail. Diese hier traegt die Masse von .upw-kpi, dem naechsten Vorbild:
+     Beschriftung 13/500 in --vc-muted, Zahl 22/500 (dort 21 -- 22 ist die Stufe der Skala fuer
+     "die grosse Zahl einer Kennzahl"), Trend daneben. Dazu, was die Events brauchen: ein Vorher-Wert
+     vor der Zahl (vorherHtml, kleiner und zurueckgenommen, mit Pfeil) und eine Fusszeile.
+     Die drei alten Kacheln sind NICHT umgezogen -- das ist ein eigener Schritt mit eigener Messung. */
+  function kpiKarte(o){
+    o = o || {};
+    var lbl = String(o.label || "");
+    return '<div class="up-kpi' + (o.klasse ? " " + o.klasse : "") + '">' +
+      '<span class="up-kpi-label" data-i18n="' + esc(lbl) + '">' + esc(t(lbl)) + '</span>' +
+      '<span class="up-kpi-row">' +
+        (o.vorherHtml ? '<span class="up-kpi-vorher">' + o.vorherHtml + '</span><span class="up-kpi-pfeil" aria-hidden="true">' + icon("arrowRight", 2) + '</span>' : '') +
+        '<span class="up-kpi-val">' + (o.wertHtml == null || o.wertHtml === "" ? "\u2013" : o.wertHtml) + '</span>' +
+        (o.trendHtml ? '<span class="up-kpi-trend">' + o.trendHtml + '</span>' : '') +
+      '</span>' +
+      (o.fussHtml ? '<span class="up-kpi-foot">' + o.fussHtml + '</span>' : '') +
+    '</div>';
+  }
+  function kpiKarteSkelett(){
+    return '<div class="up-kpi is-sk"><span class="up-kpi-sk up-kpi-sk-l"></span><span class="up-kpi-sk up-kpi-sk-v"></span><span class="up-kpi-sk up-kpi-sk-f"></span></div>';
+  }
+
   function trendChip(delta, opts){
     opts = opts || {};
     if (delta == null || delta === "") return "";
@@ -9884,21 +9909,58 @@
     };
     var quelle = cfg.quelle || nav;
     var stand = null;
-    function zeichnen(){
+    /* MEHR ALS ZWEI STUFEN, UND ANKLICKBAR (02.10., Events: "Events > Overview > Apple Relaunch").
+       cfg.stufen() liefert die Stufen NACH dem Namen der Seite als [{ name, klick, uebersetzen }].
+       Eine Stufe mit klick ist ein Knopf -- nur die letzte nie, sie ist der Ort, an dem man steht.
+       cfg.klick macht auch den Seitennamen selbst zum Knopf. Ohne cfg.stufen bleibt alles wie
+       bisher: eine Stufe aus aktuell() (dem gewaehlten Reiter). */
+    var stufenFn = typeof cfg.stufen === "function" ? cfg.stufen : null;
+    var klicks = [];
+    function stufenLesen(){
+      if (stufenFn){
+        var l = [];
+        try { l = stufenFn() || []; } catch(e){ l = []; }
+        return l.filter(function(x){ return x && String(x.name || "").trim(); });
+      }
       var akt = "";
       try { akt = String(aktuell() || "").replace(/\s+/g, " ").trim(); } catch(e){}
+      return akt ? [{ name: akt }] : [];
+    }
+    function krume(inhalt, istAkt, idx, klickbar){
+      return klickbar
+        ? '<button type="button" class="up-ph-crumb is-link" data-up-krume="' + idx + '">' + inhalt + '</button>'
+        : '<span class="up-ph-crumb' + (istAkt ? ' is-akt' : '') + '">' + inhalt + '</span>';
+    }
+    function zeichnen(){
+      var liste = stufenLesen();
       var name = t_(cfg.name || "");
-      var schl = akt + "|" + name;
+      var schl = name + "|" + liste.map(function(x){ return x.name + (x.klick ? "*" : ""); }).join(">") +
+        (typeof cfg.klick === "function" && (typeof cfg.klickWenn !== "function" || cfg.klickWenn()) ? "*" : "");
       if (schl === stand) return;
       stand = schl;
-      h.innerHTML =
-        '<span class="up-ph-crumb' + (akt ? '' : ' is-akt') + '">' +
-          (cfg.icon ? '<span class="up-ph-crumbic" aria-hidden="true">' + icon(cfg.icon, 2) + '</span>' : '') +
-          '<span class="up-ph-crumbname" data-i18n="' + esc(cfg.name || "") + '">' + esc(name) + '</span>' +
-        '</span>' +
-        (akt ? '<span class="up-ph-crumbsep" aria-hidden="true">' + icon("chevronRight", 2) + '</span>' +
-               '<span class="up-ph-crumb is-akt"><span class="up-ph-crumbname">' + esc(akt) + '</span></span>' : '');
+      /* cfg.klickWenn: der Seitenname ist nur dann ein Knopf, wenn er wohin fuehrt -- in der
+         Events-Uebersicht steht man schon dort. */
+      klicks = [typeof cfg.klick === "function" && (typeof cfg.klickWenn !== "function" || cfg.klickWenn()) ? cfg.klick : null];
+      var html = krume(
+        (cfg.icon ? '<span class="up-ph-crumbic" aria-hidden="true">' + icon(cfg.icon, 2) + '</span>' : '') +
+        '<span class="up-ph-crumbname" data-i18n="' + esc(cfg.name || "") + '">' + esc(name) + '</span>',
+        !liste.length, 0, !!klicks[0] && liste.length > 0);
+      liste.forEach(function(x, i){
+        var letzte = i === liste.length - 1;
+        klicks.push(!letzte && typeof x.klick === "function" ? x.klick : null);
+        var txt = x.uebersetzen ? t_(x.name) : String(x.name);
+        html += '<span class="up-ph-crumbsep" aria-hidden="true">' + icon("chevronRight", 2) + '</span>' +
+          krume('<span class="up-ph-crumbname"' + (x.uebersetzen ? ' data-i18n="' + esc(x.name) + '"' : '') + '>' + esc(txt) + '</span>',
+                letzte, i + 1, !!klicks[i + 1]);
+      });
+      h.innerHTML = html;
     }
+    h.addEventListener("click", function(e){
+      var b = e.target && e.target.closest ? e.target.closest("[data-up-krume]") : null;
+      if (!b) return;
+      var f = klicks[parseInt(b.getAttribute("data-up-krume"), 10)];
+      if (typeof f === "function"){ try { f(); } catch(err){} }
+    });
     /* EIN SEITENKOPF TRAEGT .up-ph-root, AUCH WENN SEIN MARKUP ES NICHT MITBRINGT (29.09. spaet).
        Die Settings-Vorlage hatte in ihrer ersten Fassung (13.08., 3464856) nur "up-root sph-root";
        am selben Tag nachgezogen -- aber die Vorlage erreicht ein schon eingebautes Element nicht.
@@ -10842,6 +10904,108 @@
 
     return { open: open, close: close, current: function(){ return offen; },
              gepinnt: function(){ return gepinnt; }, sync: anwenden, drill: drill };
+  }
+
+  /* ---- EIN ALLGEMEINES POPUP (02.10., Impact Events) ---------------------------------------
+     Bisher baute jedes Popup sein DOM, sein Oeffnen, sein Escape und seinen Schleier selbst --
+     gemeinsam war nur die Huelle aus core.css (.up-topicmodal-*). Hier die Logik dazu, einmal:
+     Schleier mit .up-root (sonst loesen die Marken am body nicht auf), Karte, Kopf mit Titel und
+     Schliessen-Knopf, Inhalt, Fehlerzeile, Fuss mit Knoepfen. Schliesst ueber Escape, den Knopf
+     und einen Klick auf den Schleier -- aber nur, wenn der Druck auch AUF dem Schleier begann
+     (aus makePlanDialog: wer im Feld markiert und draussen loslaesst, verliert sonst den Dialog).
+     Waehrend einer laufenden Aktion (busy) schliesst nichts davon -- wie in add-brand.
+     Der Fokus geht beim Schliessen an den Ausloeser zurueck.
+     cfg: { titel, unter, inhaltHtml, breit, knoepfe: [{ id, text, art: "pri"|"sec"|"gefahr", aktion }],
+            isDark(), onClose, onOpen(api) }
+     aktion: Funktion(api) -- gibt sie false zurueck, bleibt das Popup offen; ohne aktion schliesst
+     der Knopf. Rueckgabe: { el, karte, body, schliessen, busy(id, an), fehler(text), knopf(id) }. */
+  function makeModal(cfg){
+    cfg = cfg || {};
+    var dunkel = false;
+    try { dunkel = !!(cfg.isDark && cfg.isDark()); } catch(e){}
+    var ausloeser = document.activeElement;
+    var el = document.createElement("div");
+    el.className = "up-root up-portal up-topicmodal-backdrop up-modal-backdrop";
+    if (dunkel){ el.setAttribute("data-theme", "dark"); }
+    var titelId = "upm-" + Math.random().toString(36).slice(2, 8);
+    var knoepfe = cfg.knoepfe || [];
+    function knopfHtml(k){
+      var cls = k.art === "pri" ? "up-btn-pri" : (k.art === "gefahr" ? "up-btn-sec up-modal-gefahr" : "up-btn-sec");
+      return '<button type="button" class="' + cls + '" data-upm-knopf="' + esc(k.id || "") + '">' +
+        '<span class="up-modal-spin" aria-hidden="true"></span><span class="up-modal-knopftxt" data-i18n="' + esc(k.text || "") + '">' + esc(t(k.text || "")) + '</span></button>';
+    }
+    el.innerHTML =
+      '<div class="up-topicmodal-card up-modal' + (cfg.breit ? " is-breit" : "") + '" role="dialog" aria-modal="true" aria-labelledby="' + titelId + '">' +
+        '<div class="up-topicmodal-head">' +
+          '<div class="up-topicmodal-heading">' +
+            '<h2 class="up-topicmodal-title" id="' + titelId + '" data-i18n="' + esc(cfg.titel || "") + '">' + esc(t(cfg.titel || "")) + '</h2>' +
+            (cfg.unter ? '<p class="up-topicmodal-sub">' + esc(t(cfg.unter)) + '</p>' : '') +
+          '</div>' +
+          '<button type="button" class="up-popup-close" aria-label="' + esc(t("Close")) + '">' + icon("x", 2) + '</button>' +
+        '</div>' +
+        '<div class="up-topicmodal-body up-modal-body">' + (cfg.inhaltHtml || "") + '</div>' +
+        '<div class="up-formerr up-modal-err" role="alert"></div>' +
+        (knoepfe.length ? '<div class="up-topicmodal-foot up-modal-foot">' + knoepfe.map(knopfHtml).join("") + '</div>' : '') +
+      '</div>';
+    document.body.appendChild(el);
+    var karte = el.querySelector(".up-modal"), body = el.querySelector(".up-modal-body"), errEl = el.querySelector(".up-modal-err");
+    var beschaeftigt = {}, zu = false, druckAufSchleier = false;
+    function istBusy(){ for (var k in beschaeftigt) if (beschaeftigt[k]) return true; return false; }
+    function schliessen(){
+      if (zu) return;
+      zu = true;
+      document.removeEventListener("keydown", taste, true);
+      el.classList.remove("is-shown");
+      setTimeout(function(){ if (el.parentNode) el.parentNode.removeChild(el); }, 180);
+      try { if (ausloeser && ausloeser.focus && document.contains(ausloeser)) ausloeser.focus(); } catch(e){}
+      if (typeof cfg.onClose === "function"){ try { cfg.onClose(); } catch(e){} }
+    }
+    function taste(e){
+      if (e.key === "Escape"){ e.stopPropagation(); e.preventDefault(); if (!istBusy()) schliessen(); }
+    }
+    document.addEventListener("keydown", taste, true);
+    el.addEventListener("mousedown", function(e){ druckAufSchleier = e.target === el; });
+    el.addEventListener("click", function(e){
+      if (e.target === el && druckAufSchleier && !istBusy()) schliessen();
+      druckAufSchleier = false;
+    });
+    el.querySelector(".up-popup-close").addEventListener("click", function(){ if (!istBusy()) schliessen(); });
+    var api = {
+      el: el, karte: karte, body: body, schliessen: schliessen,
+      knopf: function(id){ return el.querySelector('[data-upm-knopf="' + id + '"]'); },
+      busy: function(id, an){
+        beschaeftigt[id] = !!an;
+        var b = api.knopf(id);
+        if (b){ b.classList.toggle("is-busy", !!an); b.disabled = !!an; }
+      },
+      fehler: function(text){
+        var tx = String(text || "").trim();
+        errEl.textContent = tx;
+        errEl.classList.toggle("is-on", !!tx);
+      }
+    };
+    knoepfe.forEach(function(k){
+      var b = api.knopf(k.id || "");
+      if (!b) return;
+      b.addEventListener("click", function(){
+        if (b.disabled) return;
+        if (typeof k.aktion === "function"){
+          var r;
+          try { r = k.aktion(api); } catch(e){ r = false; }
+          if (r === false) return;
+        }
+        schliessen();
+      });
+    });
+    /* Ein Bild spaeter einblenden, sonst laeuft der Uebergang nicht (Startzustand und Ziel im
+       selben Stilaufbau). setTimeout statt rAF: rAF ruht in einem verdeckten Tab. */
+    setTimeout(function(){ el.classList.add("is-shown"); }, 16);
+    setTimeout(function(){
+      var f = karte.querySelector("input:not([type=hidden]), textarea, select, [data-upm-fokus]");
+      try { (f || el.querySelector(".up-popup-close")).focus(); } catch(e){}
+    }, 60);
+    if (typeof cfg.onOpen === "function"){ try { cfg.onOpen(api); } catch(e){} }
+    return api;
   }
 
   function makePopover(cfg){
@@ -19714,6 +19878,7 @@
     onModels: onModels,
     getEvents: getEvents, setEvents: setEvents, onEvents: onEvents, eventsStand: eventsStand,
     EVENT_TYPEN: EVENT_TYPEN, eventTyp: eventTyp, eventOeffnen: eventOeffnen,
+    kpiKarte: kpiKarte, kpiKarteSkelett: kpiKarteSkelett, makeModal: makeModal,
     storeStand: storeStand,
     getQuota: getQuota,
     setQuota: setQuota,

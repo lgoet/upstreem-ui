@@ -4182,6 +4182,39 @@
 /* Nur noch die Lage -- Aussehen kommt aus .up-btn-pri. */
 .up-topicmodal-save { margin-left: auto; }
 
+/* ---- Das allgemeine Popup (UC.makeModal, 02.10.) -------------------------------------------
+   Nur, was die Huelle oben nicht schon hat. is-breit: der Anlegen-Dialog der Events hat drei
+   Schritte mit Listen -- 420 waere dort zu eng; 560 ist die Breite des Plan-Dialogs. Der Fuss
+   stellt die Knoepfe rechts; ein Gefahr-Knopf (Loeschen) traegt die Warnfarbe wie
+   .up-topicmodal-delete. Der Kreisel erscheint nur im Knopf, der gerade arbeitet. */
+.up-modal.is-breit { max-width: 560px; }
+.up-modal-foot { justify-content: flex-end; }
+.up-modal-foot > button { display: inline-flex; align-items: center; gap: 6px; }
+.up-modal-gefahr:hover { border-color: var(--vt-down, #b0200c); color: var(--vt-down, #b0200c); }
+.up-modal-spin { display: none; width: 12px; height: 12px; border-radius: var(--up-r-voll);
+  border: 2px solid currentColor; border-right-color: transparent; animation: upModalDreh 700ms linear infinite; }
+.up-modal-foot > button.is-busy .up-modal-spin { display: inline-block; }
+@keyframes upModalDreh { to { transform: rotate(360deg); } }
+.up-modal-err:not(.is-on) { display: none; }
+
+/* ---- Die Kennzahl-Kachel (UC.kpiKarte, 02.10.) ------------------------------------------------
+   Masse von .upw-kpi (power-dashboard), die Zahl auf der Skalenstufe 22 statt 21. */
+.up-kpi { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.up-kpi-label { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-muted); }
+.up-kpi-row { display: flex; align-items: baseline; flex-wrap: wrap; column-gap: 8px; row-gap: 2px; min-height: var(--up-h-seg); }
+.up-kpi-val { font-size: var(--up-fs-2xl); font-weight: var(--up-fw-m); line-height: 1.15; letter-spacing: -0.4px;
+  font-variant-numeric: tabular-nums; color: var(--vc-text); }
+.up-kpi-vorher { font-size: var(--up-fs-xl); font-weight: var(--up-fw-m); color: var(--vc-third); font-variant-numeric: tabular-nums; }
+.up-kpi-pfeil { display: inline-flex; color: var(--vc-fourth); align-self: center; }
+.up-kpi-pfeil svg { width: 14px; height: 14px; }
+.up-kpi-trend { display: inline-flex; align-items: center; align-self: center; }
+.up-kpi-trend .up-trend { font-size: var(--up-fs-l); }
+.up-kpi-foot { font-size: var(--up-fs-s); color: var(--vc-third); }
+.up-kpi-foot strong { font-weight: var(--up-fw-m); color: var(--vc-muted); }
+.up-kpi.is-sk { gap: 10px; }
+.up-kpi-sk { display: block; height: 12px; border-radius: var(--up-r-xs); background: var(--vc-sk); }
+.up-kpi-sk-l { width: 40%; } .up-kpi-sk-v { width: 70%; height: 24px; } .up-kpi-sk-f { width: 55%; }
+
 /* ======================================================================
    Page Header Kit — shared by every page-headers/* component (first user:
    prompts-page-header.js). One dedicated component per page (see that
@@ -4399,21 +4432,21 @@
   margin-left: calc(-1 * var(--up-ph-zug-l, 0px)); margin-right: calc(-1 * var(--up-ph-zug-r, 0px));
   width: calc(100% + var(--up-ph-zug-l, 0px) + var(--up-ph-zug-r, 0px)); }
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-desc,
-.up-ph-top:is(.uts-pagehead, .upr-pagehead) .up-ph-desc { display: none; }
+.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead) .up-ph-desc { display: none; }
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-top {
   align-items: center; min-height: var(--up-h-btn); padding-bottom: 8px; position: relative; }
 /* Die Linie laeuft bis an die Kante der Bubble-Gruppe um den Kopf, also so weit UEBER das Element
    hinaus, wie die Gruppe Polster hat -- 16 oder 0, je nachdem, ob es in Bubble schon raus ist.
    UC.makePageCrumbs misst das (--up-ph-rand-l/-r); ohne Messung liegt sie unter dem Element. */
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-top::after,
-.up-ph-top:is(.uts-pagehead, .upr-pagehead)::after {
+.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead)::after {
   content: ""; position: absolute; bottom: 0; height: 1px; pointer-events: none;
   left: calc(-1 * var(--up-ph-rand-l, 0px)); right: calc(-1 * var(--up-ph-rand-r, 0px));
   background: var(--vc-border); }
 /* Die Ueberschrift als Krumenzeile: 14px, auf der Mitte der 32px-Zeile. Vor dem JS steht hier der
    Seitenname aus der Vorlage -- in derselben Groesse, also ohne Sprung. */
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-heading,
-.up-ph-top:is(.uts-pagehead, .upr-pagehead) .up-ph-heading {
+.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead) .up-ph-heading {
   display: flex; align-items: center; gap: 6px; min-width: 0; margin: 0;
   font-size: var(--up-fs-l); font-weight: 500; line-height: var(--up-h-btn); letter-spacing: 0;
   color: var(--vc-third); white-space: nowrap; }
@@ -4466,6 +4499,11 @@
 .up-ph-crumbsep { display: inline-flex; flex: 0 0 auto; color: var(--vc-third); }
 .up-ph-crumbsep svg { width: 14px; height: 14px; display: block; }
 .up-ph-crumbname { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+/* Eine fruehere Stufe als Knopf (Events: "Events > Overview > Name"). Sieht aus wie die Krume,
+   bekommt beim Ueberfahren die Farbe der aktuellen Stufe -- kein Unterstrich, keine Flaeche. */
+button.up-ph-crumb { background: none; border: 0; padding: 0; font: inherit; cursor: pointer;
+  transition: color var(--up-t-1) var(--up-ease); }
+button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-text); outline: none; }
 
 /* Ein Kopf OHNE Reiterleiste endet an seiner Linie (29.09. nachmittags, Performance und
    Opportunities): wie der Dashboard-Kopf im Analysemodus. Den Abstand zum naechsten Block gibt
@@ -4485,14 +4523,14 @@
    Beschreibung, Linie und Ueberschrift teilen sich die Regeln des kompakten Kopfs oben. Hoehe
    und Luft der Zeile stehen in der Komponente (teams.css, prompt-research.css), weil dort ihr
    Regler data-head-top sitzt; hier nur, was keinen Regler braucht. */
-.up-root:is(.uts-root, .upr-root).has-crumbs {
+.up-root:is(.uts-root, .upr-root, .uev-root).has-crumbs {
   padding-left: var(--up-ph-innen-l, 0px); padding-right: var(--up-ph-innen-r, 0px);
   margin-left: calc(-1 * var(--up-ph-zug-l, 0px)); margin-right: calc(-1 * var(--up-ph-zug-r, 0px));
   width: calc(100% + var(--up-ph-zug-l, 0px) + var(--up-ph-zug-r, 0px)); }
 /* Die Kopfzeile steht rechts bei 8 wie in jedem Seitenkopf, der Inhalt der Komponente darunter
    bei 16: also zieht sie sich um die Differenz nach aussen (--up-ph-kopfzug-l/-r aus
    UC.makePageCrumbs, ohne JS 0; links ist die Differenz heute 0). */
-.up-ph-top:is(.uts-pagehead, .upr-pagehead) { align-items: center; min-height: var(--up-h-btn); position: relative;
+.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead) { align-items: center; min-height: var(--up-h-btn); position: relative;
   margin-left: calc(-1 * var(--up-ph-kopfzug-l, 0px)); margin-right: calc(-1 * var(--up-ph-kopfzug-r, 0px)); }
 
 /* ---------- DIE KOMPONENTEN TRAGEN IHR SEITENPOLSTER SELBST (29.09. angefordert) ----------

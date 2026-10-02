@@ -1,0 +1,151 @@
+<!--
+  UPSTREEM — EVENTS (Impact Events, Praefix uev), 02.10.2026
+
+  WOHIN: ein HTML-Element in der Ansicht "events" (#view-events). Das Element ist LEER bis auf das
+  Wurzel-Div; die Komponente baut Seitenkopf, Uebersicht und Detail selbst.
+  Darunter, als EIGENES Element: eine Responses-Tabelle (responses_table_bubble.html) mit
+  data-instance="responses_events" -- dort erscheinen die Responses, die die URLs des Events
+  zitieren. Die Events-Komponente blendet sie selbst ein und aus. An diesem Element
+  data-sticky="no" setzen: ihr klebender Kopf malt sonst einen 171px hohen Streifen ueber sich und
+  deckt den Umfang des Events zu (die Komponente schaltet es zur Sicherheit auch selbst ab).
+
+  Massgeblich fuer alle Felder: bubble/events_backend_vertrag.md (Backend-Vertrag vom 02.10.).
+
+  ── Zwei Zustaende ───────────────────────────────────────────────────────────
+    ?view=events                 Uebersicht (Karten oder Liste)
+    ?view=events&event=<uuid>    Detail
+  ?event= schreibt die Komponente selbst. Ein Event-Marker in einem anderen Diagramm oeffnet das
+  Detail ueber UC.eventOeffnen -- auch dafuer ist in Bubble nichts zu tun.
+
+  ── Attribute am Wurzel-Div ──────────────────────────────────────────────────
+  | Attribut                  | Pflicht | Bedeutung                                              |
+  |---------------------------|---------|--------------------------------------------------------|
+  | data-instance             | JA      | z.B. "events_page"                                     |
+  | data-cdn-pin              | JA      | derselbe Commit wie alle Elemente der Seite            |
+  | data-isdark               | nein    | "yes"/"no"; kennt core ein Thema, gewinnt core          |
+  | data-responses-instance   | nein    | Instanz der Responses-Tabelle, Vorgabe "responses_events" |
+  | data-detail-fn …          | nein    | Namen der JavaScriptToBubble-Elemente, siehe unten      |
+
+  ── DIE LISTE: kein eigener Setter ───────────────────────────────────────────
+  Die Uebersicht liest den Event-Store aus core. Ihn fuellt EIN Run-JS-Schritt im Seitenaufbau mit
+  list_impact_events_v1 -- dieselbe Antwort setzt die Event-Marker in ALLEN Liniendiagrammen der
+  App. Nach Anlegen und Loeschen denselben Schritt noch einmal laufen lassen.
+
+      (function () {
+        var ROH = `[Ergebnis von list_impact_events_v1]`
+          .replace(/:\s*([,}\]])/g, ": null$1")
+          .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+        var n = 0;
+        (function los() {
+          if (window.setUpstreemEvents && !window.setUpstreemEvents.__upShim) { try { window.setUpstreemEvents(ROH); } catch (e) {} return; }
+          if (n++ < 60) setTimeout(los, 100);
+        })();
+      })();
+
+  ── Ereignisse an Bubble: der Wert IST der RPC-Body ───────────────────────────
+  Jedes Ereignis traegt den fertigen JSON-Body der RPC, p_team schon drin. Im Workflow:
+    1. API Connector: die RPC, Body = der Wert des Ereignisses (unveraendert).
+    2. Erfolg: Run JS mit dem Setter unten. Fehler ("Include errors in response"): nur `message`
+       an setEventError geben.
+
+  | Ereignis (JS-to-Bubble) | Attribut am Wurzel-Div | RPC                              | Setter danach        |
+  |-------------------------|------------------------|----------------------------------|----------------------|
+  | uevDetail               | data-detail-fn         | get_impact_event_v1              | setEventDetail       |
+  | uevAnalysis             | data-analysis-fn       | cached_impact_event_analysis_v1  | setEventAnalysis     |
+  | uevResponses            | data-responses-fn      | cached_mentions_overview_v1      | renderResponsesTable |
+  | uevScopePreview         | data-preview-fn        | preview_impact_event_scope_v1    | setEventScopePreview |
+  | uevCreate               | data-create-fn         | create_impact_event_v1           | setEventDetail       |
+  | uevUpdate               | data-update-fn         | update_impact_event_v1           | setEventDetail       |
+  | uevAddUrl               | data-addurl-fn         | add_impact_event_url_v1          | setEventDetail       |
+  | uevRemoveUrl            | data-removeurl-fn      | remove_impact_event_url_v1       | setEventDetail       |
+  | uevDelete               | data-delete-fn         | delete_impact_event_v1           | setEventDeleted      |
+
+  Nach uevCreate, uevDelete: zusaetzlich die Liste neu (Schritt oben).
+  Nach uevAddUrl, uevRemoveUrl: die Komponente fordert die Analyse selbst neu an (uevAnalysis).
+
+  ── Die Setter ────────────────────────────────────────────────────────────────
+    setEventDetail("<instanz>", `<json>`)          Objekt aus get_/create_/update_/…_url_v1
+    setEventAnalysis("<instanz>", `<json>`)        Objekt aus cached_impact_event_analysis_v1
+    setEventScopePreview("<instanz>", `<json>`)    {"affected_prompt_count": 47}
+    setEventDeleted("<instanz>", `<json>`)         {"ok": true, "deleted_event_id": "…"}
+    setEventError("<instanz>", "<message>")        oder ohne Instanz: setEventError("<message>")
+    setEventsLoading("<instanz>", "analysis"|"detail", "yes"|"no")
+    resetEvents("<instanz>")
+
+  Run-JS-Form (CLAUDE.md 2a), z.B. nach get_impact_event_v1:
+      (function () {
+        var ROH = `[Ergebnis der RPC]`
+          .replace(/:\s*([,}\]])/g, ": null$1")
+          .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+        try { if (window.setEventDetail) window.setEventDetail("events_page", ROH); } catch (e) {}
+      })();
+
+  Die Texte der RPCs sind laut Vertrag (1) durch app.js_safe gelaufen -- Backticks, Backslashes
+  und ${ sind dort schon entschaerft.
+-->
+
+<div class="up-root uev-root"
+     data-instance="events_page"
+     data-cdn-pin="CDN_PIN"
+     data-isdark="IS_DARK"
+     data-responses-instance="responses_events"
+     data-detail-fn="bubble_fn_uevDetail"
+     data-analysis-fn="bubble_fn_uevAnalysis"
+     data-responses-fn="bubble_fn_uevResponses"
+     data-preview-fn="bubble_fn_uevScopePreview"
+     data-create-fn="bubble_fn_uevCreate"
+     data-update-fn="bubble_fn_uevUpdate"
+     data-addurl-fn="bubble_fn_uevAddUrl"
+     data-removeurl-fn="bubble_fn_uevRemoveUrl"
+     data-delete-fn="bubble_fn_uevDelete"></div>
+
+<script>
+(function(){
+  /* Loader nach STYLEGUIDE §26 -- wortgleich mit response_detail_bubble.html, nur Klasse und
+     Dateien anders. Die Filter-Dateien laedt dieses Element mit: Models- und Markets-Filter stehen
+     als lokale Instanzen IN der Komponente (Entscheidung 7). */
+  function echterPin(p){
+    p = String(p == null ? "" : p).trim();
+    return (p && p !== "CDN_" + "PIN") ? p : "";
+  }
+  function readPin(cls){
+    var i, p, els = document.getElementsByClassName(cls);
+    for (i = 0; i < els.length; i++){
+      p = echterPin(els[i].getAttribute("data-cdn-pin"));
+      if (p) return (window.__upPin = p);
+    }
+    if (echterPin(window.__upPin)) return window.__upPin;
+    var alle = document.querySelectorAll ? document.querySelectorAll("[data-cdn-pin]") : [];
+    for (i = 0; i < alle.length; i++){
+      p = echterPin(alle[i].getAttribute("data-cdn-pin"));
+      if (p) return (window.__upPin = p);
+    }
+    var L0 = window.__upAssetsLoaded, k, m;
+    for (k in L0){
+      if (!Object.prototype.hasOwnProperty.call(L0, k)) continue;
+      m = String(L0[k] || "").match(/upstreem-ui@([^/]+)\//);
+      if (m && m[1] && m[1] !== "main") return (window.__upPin = m[1]);
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("uev-root") + "/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  function once(url, make){
+    var name = url.slice(url.lastIndexOf("/") + 1);
+    if (L[name]){
+      if (L[name] !== url && window.console) console.warn("upstreem: " + name +
+        " ist schon von einem anderen Pin geladen. Geladen bleibt " + L[name] +
+        ", ignoriert wird " + url + ". Setzt alle Elemente auf denselben Pin.");
+      return;
+    }
+    L[name] = url; make(url);
+  }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+
+  css("core.css");                        js("core.js");
+  css("filters/models-filter.css");       js("filters/models-filter.js");
+  css("filters/markets-filter.css");      js("filters/markets-filter.js");
+  css("events.css");                      js("events.js");
+})();
+</script>

@@ -1,0 +1,193 @@
+/* upstreem events.css -- Impact Events (02.10.). Praefix uev.
+
+   Werte von den Vorbildern uebernommen, nicht neu erfunden (CLAUDE.md 1b):
+     Seitenkopf in der Komponente   teams.css (.uts-pagehead): Luft 8 oben, 8 unten, 16 Abstand
+     Karte                          opportunities.css (.uo-card): Rahmen, Radius 16, Polster 16,
+                                    Hover-Rahmen und -Flaeche
+     Abschnittskopf                 response-detail.css (.urd-sec): Titel 14/500, Text 13/400
+     Kasten, Tabelle, Kennzahl      core (.up-box, .up-table, UC.kpiKarte)
+   Farben nur aus Marken. Die Farbe eines Events (--uev-ton) toent Grafik und Zeichen, sonst nichts:
+   Event-Farben sind Akzente, kein Farbsystem der Seite (Spezifikation 2). */
+
+.uev-root { --uev-head-top: 8px; display: block; }
+.uev-root .uev-pagehead { padding: var(--uev-head-top) 0 8px; margin-bottom: 16px; }
+.uev-kopfaktion { display: inline-flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+.uev-kopfaktion .up-btn-sec { display: inline-flex; align-items: center; gap: 6px; }
+.uev-kopfaktion .up-btn-sec svg { width: 14px; height: 14px; }
+
+/* ---- Uebersicht ------------------------------------------------------------------------------ */
+.uev-head { margin-bottom: 16px; }
+.uev-typfilter { position: relative; }
+.uev-typbadge:not(.is-on) { display: none; }
+.uev-typitem-ic { display: inline-flex; color: var(--vc-third); }
+.uev-typitem-ic svg { width: 14px; height: 14px; }
+.uev-typalle { color: var(--vc-third); justify-content: center; }
+
+.uev-karten { display: grid; grid-template-columns: repeat(var(--uev-cols, 1), minmax(0, 1fr)); gap: 16px; }
+.uev-karte { position: relative; display: flex; flex-direction: column; min-width: 0; overflow: hidden;
+  background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl); cursor: pointer;
+  transition: border-color var(--up-t-1) var(--up-ease), background var(--up-t-1) var(--up-ease); }
+.uev-karte:hover { border-color: var(--vc-hover-border); background: var(--vt-row-hover); }
+.uev-karte:focus-visible { outline: var(--up-focus-w, 2px) solid var(--up-focus); outline-offset: 2px; }
+.uev-karte.is-sk { cursor: default; }
+.uev-karte-body { display: flex; flex-direction: column; gap: 6px; padding: 16px; min-width: 0; }
+.uev-karte-oben { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: var(--up-h-seg); }
+.uev-typ { display: inline-flex; align-items: center; gap: 6px; min-width: 0; font-size: var(--up-fs-s); color: var(--vc-third); }
+.uev-typ svg { width: 14px; height: 14px; flex: 0 0 auto; }
+.uev-typ > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.uev-karte-titel { margin: 0; font-size: var(--up-fs-l); font-weight: var(--up-fw-h); color: var(--vc-text); line-height: 1.35;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.uev-karte-datum { font-size: var(--up-fs-s); color: var(--vc-third); font-variant-numeric: tabular-nums; }
+.uev-karte-text { margin: 4px 0 0; font-size: var(--up-fs-m); line-height: 1.45; color: var(--vc-muted);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.uev-karte-umfang { margin-top: 6px; font-size: var(--up-fs-s); color: var(--vc-third); }
+
+/* Die Grafik: eine flache Flaeche im Ton des Events, darauf ein Muster je Typgruppe, das zur
+   Mitte hin in die Kachel mit dem Zeichen auslaeuft. Kein gezeichnetes Bild (Entscheidung 4) --
+   das gaengige Muster von Vorlagen-Karten. 72 hoch: die Grafik soll nicht die halbe Karte nehmen
+   (Spezifikation 14). Ohne Event-Farbe der Ton der dritten Schriftfarbe. */
+.uev-kunst { --uev-t: var(--uev-ton, var(--vc-third)); position: relative; flex: 0 0 auto; height: 72px;
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+  background: color-mix(in srgb, var(--uev-t) 7%, var(--vc-heading-bg)); border-bottom: 1px solid var(--vc-border); }
+.uev-kunst::before { content: ""; position: absolute; inset: 0; pointer-events: none;
+  --uev-m: color-mix(in srgb, var(--uev-t) 22%, transparent);
+  -webkit-mask-image: radial-gradient(ellipse 60% 90% at 50% 50%, transparent 18%, #000 75%);
+  mask-image: radial-gradient(ellipse 60% 90% at 50% 50%, transparent 18%, #000 75%); }
+.uev-kunst-website::before { background-image: linear-gradient(to right, var(--uev-m) 1px, transparent 1px),
+  linear-gradient(to bottom, var(--uev-m) 1px, transparent 1px); background-size: 16px 16px; }
+.uev-kunst-content::before { background-image: repeating-linear-gradient(to bottom, var(--uev-m) 0 1px, transparent 1px 10px); }
+.uev-kunst-pr::before { background-image: repeating-linear-gradient(135deg, var(--uev-m) 0 1px, transparent 1px 9px); }
+.uev-kunst-external::before { background-image: radial-gradient(var(--uev-m) 1.2px, transparent 1.4px); background-size: 12px 12px; }
+.uev-kunst-product::before { background-image: repeating-radial-gradient(circle at 50% 50%, var(--uev-m) 0 1px, transparent 1px 12px); }
+.uev-kunst-pricing::before { background-image: repeating-linear-gradient(to right, var(--uev-m) 0 1px, transparent 1px 14px); }
+.uev-kunst-campaign::before { background-image: repeating-radial-gradient(circle at 0% 100%, var(--uev-m) 0 1px, transparent 1px 14px); }
+.uev-kunst-other::before { background-image: radial-gradient(var(--uev-m) 1px, transparent 1.2px); background-size: 8px 8px; }
+.uev-kunst-kachel { position: relative; z-index: 1; width: 36px; height: 36px; border-radius: var(--up-r-l);
+  display: inline-flex; align-items: center; justify-content: center; color: var(--uev-t);
+  background: var(--vc-bg); border: 1px solid var(--vc-border); box-shadow: var(--up-e-1); }
+.uev-kunst-kachel svg { width: 18px; height: 18px; }
+/* Klein in der Listenzeile: nur die Kachel im Ton, ohne Muster. 32 wie die Logokacheln der Zeilen. */
+.uev-kunst.is-klein { width: 32px; height: 32px; border-radius: var(--up-r-m); border: 1px solid var(--vc-border); }
+.uev-kunst.is-klein::before { display: none; }
+.uev-kunst.is-klein .uev-kunst-kachel { width: auto; height: auto; border: 0; box-shadow: none; background: transparent; }
+.uev-kunst.is-klein .uev-kunst-kachel svg { width: 16px; height: 16px; }
+
+.uev-mehr { position: relative; display: inline-flex; flex: 0 0 auto; }
+.uev-mehrbtn { width: var(--up-h-seg); height: var(--up-h-seg); }
+.uev-mehrmenu { width: 180px; }
+.uev-mehrmenu .up-filter-item svg { width: 14px; height: 14px; flex: 0 0 auto; }
+.uev-gefahr:hover { color: var(--vt-down); }
+
+/* Liste */
+.uev-tabelle .up-row { cursor: pointer; }
+.uev-td-name { flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; min-width: 0; }
+.uev-zeile-titel { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-text); max-width: 100%;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.uev-zeile-text { font-size: var(--up-fs-s); color: var(--vc-third); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.uev-td-datum { font-variant-numeric: tabular-nums; color: var(--vc-muted); font-size: var(--up-fs-s); }
+.uev-td-umfang { color: var(--vc-muted); font-size: var(--up-fs-s); }
+.uev-td-act { justify-content: flex-end; gap: 4px; }
+.uev-chev { display: inline-flex; color: var(--vc-fourth); }
+.uev-chev svg { width: 16px; height: 16px; }
+
+/* Skelett: dieselbe Flaeche wie jedes Skelett der App (--vc-sk). */
+.uev-sk { display: block; height: 12px; border-radius: var(--up-r-xs); background: var(--vc-sk); }
+.uev-sk-titel { height: 16px; }
+.uev-sk-kunst { background: var(--vc-sk); }
+.uev-sk-ic { width: 40px; height: 40px; border-radius: var(--up-r-l); }
+
+/* ---- Detail ---------------------------------------------------------------------------------- */
+.uev-detail { display: flex; flex-direction: column; gap: 24px; }
+.uev-dkopf-reihe { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.uev-dkopf-ic { --uev-t: var(--uev-ton, var(--vc-third)); flex: 0 0 auto; width: var(--up-h-gross); height: var(--up-h-gross);
+  border-radius: var(--up-r-l); display: inline-flex; align-items: center; justify-content: center;
+  color: var(--uev-t); background: color-mix(in srgb, var(--uev-t) 12%, var(--vc-bg)); border: 1px solid color-mix(in srgb, var(--uev-t) 24%, var(--vc-border)); }
+.uev-dkopf-ic svg { width: 20px; height: 20px; }
+.uev-dkopf-txt { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.uev-dkopf-titel { margin: 0; font-size: var(--up-fs-2xl); font-weight: var(--up-fw-m); line-height: 1.25; color: var(--vc-text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.uev-dkopf-meta { font-size: var(--up-fs-m); color: var(--vc-third); }
+.uev-dkopf-text { margin: 12px 0 0; max-width: 72ch; font-size: var(--up-fs-m); line-height: 1.5; color: var(--vc-muted); }
+.uev-dkopf-sk { display: flex; flex-direction: column; gap: 8px; }
+.uev-fehlerkopf { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+
+.uev-steuer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.uev-steuer-links { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.uev-filter { display: inline-flex; align-items: center; gap: 8px; }
+.uev-hinweise { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.uev-hinweis .up-sent-val { color: var(--vc-muted); }
+.uev-hinweis svg { width: 13px; height: 13px; color: var(--vc-third); flex: 0 0 auto; }
+
+.uev-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; padding: 16px; }
+.uev-kpis > .up-kpi + .up-kpi { border-left: 1px solid var(--vc-border); padding-left: 16px; }
+.uev-kpifehler { grid-column: 1 / -1; }
+.uev-gleich { font-size: var(--up-fs-s); color: var(--vc-third); }
+
+.uev-sek { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.uev-sekkopf { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
+.uev-sektxt { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.uev-sektitel { font-size: var(--up-fs-l); font-weight: var(--up-fw-m); color: var(--vc-text); }
+.uev-sekdesc { font-size: var(--up-fs-m); line-height: 1.45; color: var(--vc-muted); }
+.uev-sekkopf .up-btn-sec { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+.uev-sekkopf .up-btn-sec svg { width: 14px; height: 14px; }
+.uev-chartbox { padding: 16px; }
+.uev-linewrap { height: 300px; }
+
+/* Tabellen: Zahlen tabellarisch, aber NICHT rechtsbuendig (abgelehnt, siehe Notiz). */
+.uev-td-marke { gap: 10px; min-width: 0; }
+.uev-marke { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--vc-text); font-weight: var(--up-fw-m); }
+.uev-du { flex: 0 0 auto; font-size: var(--up-fs-xs); color: var(--vc-third); border: 1px solid var(--vc-border);
+  border-radius: var(--up-r-xs); padding: 1px 5px; }
+.uev-marktzeile.is-du { background: color-mix(in srgb, var(--vc-heading-bg) 60%, transparent); }
+.uev-neu { font-size: var(--up-fs-s); color: var(--vc-third); }
+
+.uev-td-url { gap: 10px; min-width: 0; }
+.uev-url-txt { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
+.uev-url-host { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.uev-url-pfad { font-size: var(--up-fs-s); color: var(--vc-third); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.uev-td-beob { min-width: 0; }
+/* Status als Pille aus core (.up-sent.up-pille): der Punkt traegt die Aussage, der Text sagt sie
+   aus -- Farbe ist nie die einzige Unterscheidung (Spezifikation 97). */
+.uev-beob { max-width: 100%; }
+.uev-beob .up-sent-val { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--up-fs-s); }
+.uev-beob.is-ja .up-sent-dot { background: var(--vt-up); }
+.uev-beob.is-nein .up-sent-dot { background: var(--vc-fourth); }
+.uev-beob.is-lange .up-sent-dot { background: var(--vc-third); }
+button.uev-beob { font: inherit; cursor: pointer; background: transparent; }
+button.uev-beob:hover { border-color: var(--vc-hover-border); }
+.uev-td-urlakt { justify-content: flex-end; gap: 2px; }
+
+.uev-scope { display: flex; flex-direction: column; gap: 12px; padding: 16px; }
+.uev-scope-zeile { display: grid; grid-template-columns: 160px minmax(0, 1fr); align-items: center; gap: 12px; }
+.uev-scope-lbl { font-size: var(--up-fs-m); color: var(--vc-third); }
+.uev-scope-wert { font-size: var(--up-fs-m); color: var(--vc-text); display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.uev-scope-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.uev-topic { cursor: default; }
+.uev-topic.is-geloescht { color: var(--vc-fourth); text-decoration: line-through; }
+.uev-scope-alle { font-size: var(--up-fs-m); color: var(--vc-text); }
+.uev-scope-neben { font-size: var(--up-fs-s); color: var(--vc-third); }
+.uev-info { display: inline-flex; color: var(--vc-third); cursor: help; }
+.uev-info svg { width: 14px; height: 14px; }
+
+.uev-respfilter { position: relative; display: inline-flex; flex: 0 0 auto; }
+.uev-respbtn { max-width: 320px; }
+.uev-respbtn-lbl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.uev-respmenu { width: 320px; max-height: 320px; overflow-y: auto; }
+.uev-respmenu .up-optrow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+
+/* Die Responses-Tabelle unter der Komponente (eigenes Element, Vorgabe-Instanz responses_events):
+   nur im Detail eines Events mit URLs. Die Wurzel sagt es mit data-uev-resp (siehe respSichtbar). */
+body:has(.uev-root[data-uev-resp="aus"]) .urt-root[data-instance="responses_events"] { display: none; }
+
+.uev-popup-text { margin: 0; font-size: var(--up-fs-m); line-height: 1.5; color: var(--vc-muted); }
+.uev-popup-url { margin: 0; font-size: var(--up-fs-m); color: var(--vc-text); word-break: break-all; }
+
+/* ---- Schmal (UC.widthTiers: is-narrow < 760, is-vnarrow < 520) ------------------------------ */
+.uev-root.is-narrow .uev-kpis { grid-template-columns: minmax(0, 1fr); }
+.uev-root.is-narrow .uev-kpis > .up-kpi + .up-kpi { border-left: 0; padding-left: 0; border-top: 1px solid var(--vc-border); padding-top: 16px; }
+.uev-root.is-narrow .uev-sekkopf { flex-direction: column; align-items: stretch; gap: 12px; }
+.uev-root.is-narrow .uev-scope-zeile { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+.uev-root.is-narrow .uev-dkopf-titel { white-space: normal; }
+/* Breite Tabellen scrollen in ihrem Kasten statt die Seite (Spezifikation 87). */
+.uev-root.is-narrow .up-box > .up-table { min-width: 680px; }
+.uev-root.is-narrow .uev-detail .up-box:has(> .up-table), .uev-root.is-narrow .uev-liste .up-box { overflow-x: auto; }
