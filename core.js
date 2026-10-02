@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261068;
+  var BUILD = 20261069;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -13849,7 +13849,7 @@
      gezeigten Zeit steht kein Pin. */
   var EVM_PIN = 20;          /* Pin 20 x 20 (Vorgabe) */
   var EVM_LUFT = 4;          /* naeher als Pin + 4px: ein Stapel statt zweier Pins (Vorgabe) */
-  var EVM_VERSATZ = 16;      /* Versatz der Pins im Stapel: 14 aus der Vorgabe, am 03.10. zwei Pixel mehr */
+  var EVM_VERSATZ = 14;      /* Versatz der Pins im Stapel (Vorgabe). Mehr Luft zwischen ihnen gibt der Ring, nicht der Versatz. */
   var EVM_STAPEL_MAX = 3;    /* mehr zeigt der Stapel nicht -- die Karte nennt alle */
   var EVM_UEBER = 17;        /* Pin-Mitte ueber der obersten Rasterlinie (Vorgabe: ~17px) */
   function evmTag(s){
@@ -18057,9 +18057,12 @@
        uebernommen -- nicht nachgezeichnet. Bei palette sind die Farbpunkte ohne Fuellung (Regel:
        keine gefuellten Icons); als Strich mit 2px Breite stehen sie trotzdem als Punkte da. */
     appWindow: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M10 4v4"/><path d="M2 8h20"/><path d="M6 4v4"/>',
-    /* Lucide tickets (lucide-static 0.460.0) -- das Zeichen der Events (03.10. angefordert: "TicketsIcon"),
-       in der Seitenleiste, im Seitenkopf und im Leerzustand. */
-    tickets: '<path d="m4.5 8 10.58-5.06a1 1 0 0 1 1.342.488L18.5 8"/><path d="M6 10V8"/><path d="M6 14v1"/><path d="M6 19v2"/><rect x="2" y="8" width="20" height="13" rx="2"/>',
+    /* Hugeicons TicketsIcon -- das Zeichen der Events in der Seitenleiste, im Seitenkopf und im
+       Leerzustand. Woertlich aus @hugeicons/core-free-icons@4.3.5 (dist/esm/TicketsIcon.js), in
+       der Familie der Seitenleiste; am 03.10. stand hier kurz Lucide tickets -- gemeint war
+       ausdruecklich das Hugeicons-Zeichen. */
+    tickets: '<path d="M19.9023 7.25L19.409 5.98277C18.858 4.72435 18.3862 3.95201 17.7169 3.46387C17.3318 3.18304 16.9085 2.97545 16.4661 2.85049C15.2702 2.51272 13.9775 3.04892 11.392 4.12133L8.23816 5.42944C7.53483 5.72116 6.92717 5.97321 6.40234 6.20767"/>' +
+             '<path d="M3 16.25C4.38071 16.25 5.5 15.1307 5.5 13.75C5.5 12.3693 4.38071 11.25 3 11.25C3 10.3207 3 9.85603 3.07686 9.46964C3.39249 7.88288 4.63288 6.64249 6.21964 6.32686C6.60603 6.25 7.07069 6.25 8 6.25H13.5C16.7875 6.25 18.4312 6.25 19.5376 7.15796C19.7401 7.32418 19.9258 7.50989 20.092 7.71243C21 8.81878 21 10.6418 21 14.288C21 17.2168 21 18.6812 20.092 19.7876C19.9258 19.9901 19.7401 20.1758 19.5376 20.342C18.4312 21.25 16.7875 21.25 13.5 21.25H8C7.07069 21.25 6.60603 21.25 6.21964 21.1731C4.63288 20.8575 3.39249 19.6171 3.07686 18.0304C3 17.644 3 17.1793 3 16.25Z"/>',
     /* Lucide mail (lucide-static 0.460.0) -- das zwanzigste Zeichen im Event-Popup: ein Newsletter
        ist ein haeufiges Event, und mit 20 stehen zwei volle Reihen zu zehn (03.10. angefordert). */
     mail: '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
@@ -18472,6 +18475,127 @@
       (selCount
          ? '<button class="up-pop-action" type="button" data-mentreset>Reset</button>'
          : (list.length ? '<button class="up-pop-action" type="button" data-mentall>Select all</button>' : ""));
+  }
+
+  /* ---- DER MEHRFACH-FILTER IN DER BAUART "SELECTED BRANDS" (03.10.) --------------------------
+     Der Marken-Filter ueber den Tabellen (prompts-, responses-, urls-, domains-table) als Baustein,
+     Verhalten fuer Verhalten: ein leiser Knopf mit Beschriftung ("All Types" / der eine Name / "3
+     Types") und Chevron, aktiv grau hinterlegt, beim Ueberfahren ein X, das den Filter leert. Das
+     Menue: Kopf mit Titel und "Reset" bzw. "Select all", Suche, Liste mit Kaestchen, "Apply".
+     Ausgewaehlt wird im Menue, angewandt erst mit Apply; wer es ohne Apply schliesst, verwirft die
+     Auswahl (beim naechsten Oeffnen steht wieder die angewandte). Dieselben Klassen wie dort
+     (.up-ment, .up-ment-btn, .up-ment-menu, .up-filter-item, .up-filter-submit) -- es sieht also
+     gleich aus, weil es dieselben Regeln sind. Die Tabellen behalten vorerst ihre eigene Fassung.
+     cfg: { titel, alle, mehrere ("{n} Types"), suche, leer, tip,
+            items: function -> [{ key, label, icon? }], gewaehlt: [keys], onChange(keys) }
+     Rueckgabe: { el, setGewaehlt(keys), gewaehlt(), neu() (Liste neu lesen) } */
+  function makeAuswahlFilter(cfg){
+    cfg = cfg || {};
+    var angewandt = (cfg.gewaehlt || []).map(String), auswahl = angewandt.slice(), frage = "";
+    var el = document.createElement("div");
+    el.className = "up-ment" + (cfg.klasse ? " " + cfg.klasse : "");
+    el.innerHTML =
+      '<button class="up-ment-btn" type="button" aria-haspopup="menu" aria-expanded="false"' + (cfg.tip ? ' data-tip="' + esc(t_(cfg.tip)) + '"' : '') + '>' +
+        '<span class="up-ment-lbl"></span>' +
+        '<svg class="up-ment-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9"/></svg>' +
+        '<svg class="up-ment-clear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6.00081 17.9992M17.9992 18L6 6.00085"/></svg>' +
+      '</button>' +
+      '<div class="up-ment-menu" role="menu" aria-hidden="true"></div>';
+    var btn = el.querySelector(".up-ment-btn"), menu = el.querySelector(".up-ment-menu"), lbl = el.querySelector(".up-ment-lbl");
+    function liste(){ var l = []; try { l = (typeof cfg.items === "function" ? cfg.items() : cfg.items) || []; } catch(e){} return l; }
+    function hat(arr, k){ return arr.indexOf(String(k)) >= 0; }
+    function beschriftung(){
+      var l = liste(), n = angewandt.length, txt;
+      if (!n) txt = t_(cfg.alle || "All");
+      else if (n === 1){
+        var hit = l.filter(function(x){ return String(x.key) === angewandt[0]; })[0];
+        txt = hit ? t_(hit.label) : angewandt[0];
+      } else txt = t_(cfg.mehrere || "{n} selected").replace("{n}", n);
+      lbl.textContent = txt;
+      el.classList.toggle("is-active", n > 0);
+    }
+    function kopfHtml(){
+      var l = liste();
+      return '<div class="up-filter-head"><span class="up-filter-title">' + esc(t_(cfg.titel || "")) + '</span>' +
+        (auswahl.length ? '<button class="up-pop-action" type="button" data-af-reset>' + esc(t_("Reset")) + '</button>'
+          : (l.length ? '<button class="up-pop-action" type="button" data-af-alle>' + esc(t_("Select all")) + '</button>' : '')) +
+        '</div>';
+    }
+    function fuellen(){
+      var l = liste();
+      var zeilen = !l.length ? '<div class="up-ment-empty">' + esc(t_(cfg.leer || "Nothing available")) + '</div>'
+        : l.map(function(x){
+            var k = String(x.key);
+            return '<div class="up-filter-item' + (hat(auswahl, k) ? " is-checked" : "") + '" role="menuitemcheckbox" tabindex="0" aria-checked="' + hat(auswahl, k) +
+                '" data-af-key="' + esc(k) + '" data-af-name="' + esc(String(t_(x.label)).toLowerCase()) + '">' +
+              '<span class="up-filter-check">' + CHECK_SVG + '</span>' +
+              (x.icon ? '<span class="up-ment-zeichen">' + icon(x.icon, 2) + '</span>' : '') +
+              '<span class="up-ment-name">' + esc(t_(x.label)) + '</span></div>';
+          }).join("");
+      menu.innerHTML = kopfHtml() +
+        (l.length ? '<div class="up-ment-searchwrap">' +
+          '<input class="up-ment-search" type="text" placeholder="' + esc(t_(cfg.suche || "Search…")) + '" autocomplete="off" spellcheck="false" value="' + esc(frage) + '"/>' +
+          '<button class="up-ment-searchclear" type="button" aria-label="' + esc(t_("Clear search")) + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6.00081 17.9992M17.9992 18L6 6.00085"/></svg></button></div>' : '') +
+        '<div class="up-filter-list up-ment-list is-fill-checked">' + zeilen + '<div class="up-ment-noresult" style="display:none">' + esc(t_("No matches")) + '</div></div>' +
+        '<button class="up-filter-submit" type="button" data-af-apply>' + esc(t_("Apply")) + '</button>';
+      suchen();
+    }
+    function suchen(){
+      var q = frage.trim().toLowerCase(), n = 0, items = menu.querySelectorAll("[data-af-key]");
+      for (var i = 0; i < items.length; i++){
+        var ja = !q || (items[i].getAttribute("data-af-name") || "").indexOf(q) > -1;
+        items[i].style.display = ja ? "" : "none";
+        if (ja) n++;
+      }
+      var nr = menu.querySelector(".up-ment-noresult");
+      if (nr) nr.style.display = (items.length && !n) ? "" : "none";
+    }
+    function kopfNeu(){ var h = menu.querySelector(".up-filter-head"); if (h) h.outerHTML = kopfHtml(); }
+    function anwenden(){
+      var vorher = angewandt.slice().sort().join(","), nachher = auswahl.slice().sort().join(",");
+      angewandt = auswahl.slice();
+      beschriftung();
+      if (vorher !== nachher && typeof cfg.onChange === "function"){ try { cfg.onChange(angewandt.slice()); } catch(e){} }
+    }
+    var pop = makePopover({ wrap: el, menu: menu, opener: btn, onClose: function(){ btn.setAttribute("aria-expanded", "false"); } });
+    function zu(){ pop.close(); }
+    el.addEventListener("click", function(e){
+      var x = e.target;
+      if (!x || !x.closest) return;
+      if (x.closest(".up-ment-clear")){ e.stopPropagation(); auswahl = []; anwenden(); zu(); return; }
+      if (x.closest(".up-ment-btn")){
+        if (el.classList.contains("is-open")){ zu(); return; }
+        auswahl = angewandt.slice(); frage = ""; fuellen();
+        pop.open(); btn.setAttribute("aria-expanded", "true");
+        setTimeout(function(){ var f = menu.querySelector(".up-ment-search"); try { if (f) f.focus(); } catch(e2){} }, 0);
+        return;
+      }
+      if (x.closest(".up-ment-searchclear")){
+        frage = ""; var f2 = menu.querySelector(".up-ment-search"); if (f2){ f2.value = ""; try { f2.focus(); } catch(e3){} }
+        suchen(); return;
+      }
+      var it = x.closest("[data-af-key]");
+      if (it){
+        var k = it.getAttribute("data-af-key"), i = auswahl.indexOf(k);
+        if (i >= 0) auswahl.splice(i, 1); else auswahl.push(k);
+        it.classList.toggle("is-checked", i < 0); it.setAttribute("aria-checked", String(i < 0));
+        kopfNeu(); return;
+      }
+      if (x.closest("[data-af-alle]")){ auswahl = liste().map(function(y){ return String(y.key); }); fuellen(); anwenden(); return; }
+      if (x.closest("[data-af-reset]")){ auswahl = []; anwenden(); zu(); return; }
+      if (x.closest("[data-af-apply]")){ anwenden(); zu(); return; }
+    });
+    menu.addEventListener("input", function(e){ if (e.target && e.target.classList && e.target.classList.contains("up-ment-search")){ frage = e.target.value; suchen(); } });
+    menu.addEventListener("keydown", function(e){
+      if ((e.key === "Enter" || e.key === " ") && e.target && e.target.hasAttribute && e.target.hasAttribute("data-af-key")){ e.preventDefault(); e.target.click(); }
+    });
+    beschriftung();
+    return {
+      el: el,
+      gewaehlt: function(){ return angewandt.slice(); },
+      setGewaehlt: function(keys){ angewandt = (keys || []).map(String); auswahl = angewandt.slice(); beschriftung(); if (el.classList.contains("is-open")) fuellen(); },
+      neu: function(){ beschriftung(); if (el.classList.contains("is-open")) fuellen(); }
+    };
   }
 
   /* ---- Gefuellte Zeichen -----------------------------------------------------------------
@@ -19960,6 +20084,7 @@
     variationsSection: variationsSection,
     variationsExplain: variationsExplain,
     mentFilter: mentFilter,
+    makeAuswahlFilter: makeAuswahlFilter,
     mentHead: mentHead,
     upstreemSetTheme: upstreemSetTheme,
     readPrefTheme: readPrefTheme,

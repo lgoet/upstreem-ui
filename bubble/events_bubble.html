@@ -12,7 +12,7 @@
   Massgeblich fuer alle Felder: bubble/events_backend_vertrag.md (Backend-Vertrag vom 02.10.).
 
   ── Zwei Zustaende ───────────────────────────────────────────────────────────
-    ?view=events                 Uebersicht (Karten oder Liste)
+    ?view=events                 Uebersicht (Karten; die Liste gibt es seit dem 03.10. nicht mehr)
     ?view=events&event=<uuid>    Detail
   ?event= schreibt die Komponente selbst. Ein Event-Marker in einem anderen Diagramm oeffnet das
   Detail ueber UC.eventOeffnen -- auch dafuer ist in Bubble nichts zu tun.
@@ -34,6 +34,9 @@
   kommen auch in den Event-Store, die Pins erscheinen also in allen Liniendiagrammen der Seite.
   Nichts geht an Bubble, nichts wird gespeichert; ein Neuladen setzt alles zurueck. Kommt eine
   echte Liste (setUpstreemEvents), gewinnt sie. Fuer den Betrieb das Attribut wieder entfernen.
+  Auch die Events aus den Diagramm-Beispielen (events_runjs_charts.md) bekommen damit ein Detail.
+  OHNE data-demo und ohne Workflows fuer uevDetail/uevAnalysis zeigt das Detail nach 25s sichtbarer
+  Wartezeit "Could not load analysis" statt eines endlosen Skeletts.
 
   ── DIE LISTE: kein eigener Setter ───────────────────────────────────────────
   Die Uebersicht liest den Event-Store aus core. Ihn fuellt EIN Run-JS-Schritt im Seitenaufbau mit

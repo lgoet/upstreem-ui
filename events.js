@@ -133,6 +133,32 @@
       return '<span class="uev-zahl-teil">' + esc(t(x.n === 1 ? x.eins : x.viele)).replace("{n}", '<span class="uev-zahl-n">' + esc(zahl(x.n)) + '</span>') + '</span>';
     }).join("") + '</span>';
   }
+  /* Datum und Typ als zwei Angaben mit Zeichen -- in der Karte und im Kopf des Details dieselben
+     (03.10.: "vor dem Datum ein kleines Kalender-Icon"). Der Typ mit dem Zeichen SEINES Typs, nicht
+     dem frei gewaehlten des Events: das steht schon gross im Profilbild. */
+  function angabenHtml(ev, klasse) {
+    var tp = typ(ev);
+    return '<div class="uev-angaben' + (klasse ? " " + klasse : "") + '">' +
+      '<span class="uev-angabe uev-angabe-datum">' + UC.icon("calendar", 2) + '<span>' + esc(datum(ev.event_date)) + '</span></span>' +
+      '<span class="uev-angabe">' + UC.icon(tp.icon, 2) + '<span data-i18n="' + esc(tp.label) + '">' + esc(t(tp.label)) + '</span></span>' +
+    '</div>';
+  }
+  /* Der Umfang als Kennzahlen-Raster (Vorlage des Nutzers vom 03.10.: Bezeichnung ueber dem Wert).
+     Immer drei Zellen an derselben Stelle, auch bei 0 URLs -- in einer Reihe Karten sucht das Auge
+     die Zahl dort, wo sie auf der Nachbarkarte stand; der Vertrag (3.1) zeigt die URLs ebenfalls
+     immer. Fehlt ein Wert ganz, steht ein Halbgeviertstrich statt einer erfundenen 0. */
+  function kennzahlenHtml(ev) {
+    var tc = num(ev.selected_topic_count), pc = num(ev.affected_prompt_count);
+    var uc = num(ev.affected_url_count != null ? ev.affected_url_count : (isArr(ev.urls) ? ev.urls.length : null));
+    var zellen = [
+      ["Topics", ev.scope_mode === "all" ? t("All") : (tc != null ? zahl(tc) : "\u2013")],
+      ["Prompts", pc != null ? zahl(pc) : "\u2013"],
+      ["URLs", uc != null ? zahl(uc) : "\u2013"]
+    ];
+    return '<dl class="uev-stats">' + zellen.map(function (z) {
+      return '<div class="uev-stat"><dt>' + esc(t(z[0])) + '</dt><dd>' + esc(z[1]) + '</dd></div>';
+    }).join("") + '</dl>';
+  }
   function hostPfad(url) {
     try {
       var u = new URL(String(url));
@@ -210,7 +236,7 @@
     "Track important changes and understand how AI performance develops around them.":
       "Halte wichtige Änderungen fest und sieh, wie sich die AI Performance um sie herum entwickelt.",
     "Create event": "Event anlegen", "Search events…": "Events durchsuchen…", "Search events": "Events durchsuchen",
-    "Event type": "Event-Typ", "Cards": "Karten",
+    "Event type": "Event-Typ", "Event types": "Event-Typen", "Search types…": "Typen durchsuchen…",
     "No events yet": "Noch keine Events",
     "Add important launches, content changes, campaigns or other changes to understand how your AI performance develops around them.":
       "Lege wichtige Launches, Content-Änderungen, Kampagnen oder andere Änderungen an, um zu sehen, wie sich deine AI Performance um sie herum entwickelt.",
@@ -383,15 +409,9 @@
        Element neu) -- dasselbe Muster wie response-detail. */
     var saved = STORE[instanceId] || null;
     function gemerkt(k, sonst) { return saved && saved[k] != null ? saved[k] : sonst; }
-    var DARST_KEY = "uevDarstellung__" + instanceId;
     var state = {
       ansicht: "uebersicht", eventId: null,
       suche: gemerkt("suche", ""), typen: gemerkt("typen", []),
-      darstellung: (function () {
-        var v = null;
-        try { v = UC.prefGet ? UC.prefGet(UC.prefKey ? UC.prefKey(DARST_KEY) : DARST_KEY) : null; } catch (e) {}
-        return v === "list" ? "list" : "cards";
-      })(),
       detail: gemerkt("detail", {}), detailLaden: false, detailFehler: false,
       analyse: gemerkt("analyse", {}), analyseLaden: false, analyseFehler: false,
       fenster: gemerkt("fenster", 30), metrik: gemerkt("metrik", "visibility"),
@@ -462,7 +482,7 @@
     /* ============================================================================================
        Uebersicht
        ============================================================================================ */
-    var elListe = null, elZahl = null, elSucheIn = null, elSuche = null, sucheKit = null, typPop = null;
+    var elListe = null, elZahl = null, elSucheIn = null, elSuche = null, sucheKit = null, typFilter = null;
     function baueUebersicht() {
       elAktion.innerHTML =
         '<button class="up-ph-addbtn up-export uev-anlegen" type="button">' + UC.icon("plus", 1.8) +
@@ -478,15 +498,6 @@
                 '<input class="up-search-input" type="text" placeholder="' + esc(t("Search events…")) + '" autocomplete="off" spellcheck="false" aria-label="' + esc(t("Search events")) + '"/>' +
                 '<button type="button" class="up-search-clear" aria-label="' + esc(t("Clear search")) + '">' + UC.icon("x", 2.2) + '</button>' +
               '</div>' +
-            '</div>' +
-            '<div class="up-filter uev-typfilter">' +
-              '<button type="button" class="up-iconbtn uev-typbtn" aria-label="' + esc(t("Event type")) + '" data-tip="' + esc(t("Event type")) + '">' +
-                UC.icon("listFilter", 2) + '<span class="up-badge uev-typbadge"></span></button>' +
-              '<div class="up-menu uev-typmenu" role="menu" aria-hidden="true"></div>' +
-            '</div>' +
-            '<div class="up-seg uev-darst" role="group" aria-label="' + esc(t("View")) + '">' +
-              '<button class="up-seg-btn" type="button" data-darst="cards" data-tip="' + esc(t("Cards")) + '" aria-label="' + esc(t("Cards")) + '">' + UC.icon("card", 2) + '</button>' +
-              '<button class="up-seg-btn" type="button" data-darst="list" data-tip="' + esc(t("List")) + '" aria-label="' + esc(t("List")) + '">' + UC.icon("listIcon", 2) + '</button>' +
             '</div>' +
           '</div>' +
         '</div>' +
@@ -514,52 +525,26 @@
         elSucheIn.value = ""; state.suche = ""; elSuche.classList.remove("has-text");
         persist(); renderListe();
       });
-      var wrap = elMain.querySelector(".uev-typfilter"), menu = elMain.querySelector(".uev-typmenu");
-      typPop = UC.makePopover ? UC.makePopover({ wrap: wrap, menu: menu, opener: wrap.querySelector(".uev-typbtn") }) : null;
-      wrap.querySelector(".uev-typbtn").addEventListener("click", function (e) { e.stopPropagation(); typMenu(); if (typPop) typPop.toggle(); });
-      menu.addEventListener("click", function (e) {
-        var it = e.target.closest("[data-typ]");
-        if (it) {
-          var k = it.getAttribute("data-typ"), i = state.typen.indexOf(k);
-          if (i >= 0) state.typen.splice(i, 1); else state.typen.push(k);
-        } else if (e.target.closest("[data-typ-alle]")) state.typen = [];
-        else return;
-        persist(); typMenu(); renderListe();
-      });
-      elMain.querySelector(".uev-darst").addEventListener("click", function (e) {
-        var b = e.target.closest("[data-darst]");
-        if (!b) return;
-        state.darstellung = b.getAttribute("data-darst");
-        try { if (UC.prefSet) UC.prefSet(UC.prefKey ? UC.prefKey(DARST_KEY) : DARST_KEY, state.darstellung); } catch (err) {}
-        renderListe();
-      });
+      /* Der Typ-Filter ist der Marken-Filter der Tabellen (UC.makeAuswahlFilter, 03.10.: "alles
+         gleich wie im Selected Brands"). Er zeigt nur Typen, die es in der Liste gibt -- ein Filter
+         auf einen Typ ohne Event ist ein toter Eintrag; ein gewaehlter bleibt drin, auch wenn er
+         gerade wegfiel. Eigene Typen (frei eingetippt) stehen hinter den festen. */
+      typFilter = UC.makeAuswahlFilter ? UC.makeAuswahlFilter({
+        klasse: "uev-typfilter", titel: "Event types", alle: "All Types", mehrere: "{n} Types",
+        suche: "Search types…", tip: "Event type", gewaehlt: state.typen,
+        items: filterTypen,
+        onChange: function (keys) { state.typen = keys; persist(); renderListe(); }
+      }) : null;
+      if (typFilter) elMain.querySelector(".up-head-tools").appendChild(typFilter.el);
       renderListe();
     }
-    /* Das Typ-Menue zeigt nur Typen, die es in der Liste gibt -- ein Filter auf einen Typ ohne
-       Event ist ein toter Eintrag. Ein gewaehlter Typ bleibt drin, auch wenn er gerade wegfiel. */
-    function typMenu() {
-      var menu = elMain && elMain.querySelector(".uev-typmenu");
-      if (!menu) return;
+    function filterTypen() {
       var da = {};
-      (UC.getEvents ? UC.getEvents() : []).forEach(function (ev) { da[typ(ev).key] = 1; });
+      (UC.getEvents ? UC.getEvents() : []).forEach(function (ev) { if (!state.geloescht[ev.id]) da[typ(ev).key] = 1; });
       state.typen.forEach(function (k) { da[k] = 1; });
       var typen = (UC.EVENT_TYPEN || []).filter(function (x) { return da[x.key]; });
-      /* Eigene Typen (frei eingetippt) stehen hinter den festen -- sonst liesse sich nach ihnen
-         nicht filtern. */
       Object.keys(da).forEach(function (k) { var x = typ({ event_type: k }); if (x.eigen) typen.push(x); });
-      menu.innerHTML =
-        '<div class="up-filter-list">' +
-          typen.map(function (x) {
-            var an = state.typen.indexOf(x.key) >= 0;
-            return '<div class="up-filter-item uev-typitem' + (an ? " is-active" : "") + '" role="menuitemcheckbox" aria-checked="' + an + '" data-typ="' + esc(x.key) + '">' +
-              '<span class="up-filter-check' + (an ? " is-on" : "") + '">' + (an ? UC.icon("check", 3) : "") + '</span>' +
-              '<span class="uev-typitem-ic">' + UC.icon(x.icon, 2) + '</span>' +
-              '<span class="uev-typitem-lbl" data-i18n="' + esc(x.label) + '">' + esc(t(x.label)) + '</span></div>';
-          }).join("") +
-        '</div>' +
-        (state.typen.length ? '<div class="up-filter-item uev-typalle" data-typ-alle="1">' + esc(t("Clear filters")) + '</div>' : '');
-      var badge = elMain.querySelector(".uev-typbadge");
-      if (badge) { badge.textContent = state.typen.length ? String(state.typen.length) : ""; badge.classList.toggle("is-on", !!state.typen.length); }
+      return typen.map(function (x) { return { key: x.key, label: x.label, icon: x.icon }; });
     }
     function gefiltert() {
       var q = String(state.suche || "").trim().toLowerCase();
@@ -596,13 +581,14 @@
           (kannLoeschen ? '<div class="up-filter-item uev-gefahr" role="menuitem" data-aktion="delete" data-event-id="' + esc(ev.id) + '">' + UC.icon("trash", 2) + '<span>' + esc(t("Delete")) + '</span></div>' : '') +
         '</div></span>';
     }
-    /* DIE KARTE (03.10. neu, nach Kole Jain): oben ein einfarbiges Band in der Event-Farbe mit
-       wenig Deckkraft auf dem weissen Kartengrund, darueber halb das Zeichen als Profilbild. Darunter
-       mit Luft: Name, Typ und Datum als zwei Angaben, die Beschreibung, unten der Umfang mit
-       betonten Zahlen. Das Menue nur beim Ueberfahren -- eine Nebenhandlung, kein Knopf auf der
-       Karte. vorschau: dieselbe Karte im Anlegen-Popup, ohne Menue und ohne Klick. */
+    /* DIE KARTE (03.10., nach der Vorlage des Nutzers, einer Profilkarte): oben, mit Abstand zum
+       Rand, ein einfarbiges Band in der Event-Farbe mit wenig Deckkraft; darueber halb das Zeichen
+       als Profilbild mit einem Ring im Kartengrund. Darunter mit Luft: Name, Datum und Typ als
+       Angaben mit Zeichen, die Beschreibung, unten der Umfang als Raster (Bezeichnung ueber dem
+       Wert). Das Menue nur beim Ueberfahren -- eine Nebenhandlung, kein Knopf auf der Karte.
+       vorschau: dieselbe Karte im Anlegen-Popup, ohne Menue und ohne Klick. */
     function karteHtml(ev, vorschau) {
-      var tp = typ(ev), f = farbe(ev);
+      var f = farbe(ev);
       return '<article class="uev-karte' + (vorschau ? " is-vorschau" : "") + '"' +
           (vorschau ? ' aria-hidden="true"' : ' role="link" tabindex="0" data-event-id="' + esc(ev.id) + '"') +
           (f ? ' style="--uev-ton:' + esc(f) + '"' : '') + '>' +
@@ -611,26 +597,11 @@
         '<div class="uev-karte-body">' +
           avatarHtml(ev) +
           '<h3 class="uev-karte-titel">' + esc(ev.name || "") + '</h3>' +
-          '<div class="uev-karte-meta"><span data-i18n="' + esc(tp.label) + '">' + esc(t(tp.label)) + '</span>' +
-            '<span class="uev-karte-datum">' + esc(datum(ev.event_date)) + '</span></div>' +
+          angabenHtml(ev, "uev-karte-meta") +
           (ev.description ? '<p class="uev-karte-text">' + esc(ev.description) + '</p>' : '') +
-          umfangHtml(ev, "uev-karte-zahlen") +
+          kennzahlenHtml(ev) +
         '</div>' +
       '</article>';
-    }
-    var LISTE_COLS = "56px minmax(220px, 1fr) minmax(120px, 160px) 120px minmax(150px, 220px) 72px";
-    function zeileHtml(ev) {
-      var tp = typ(ev);
-      return '<div class="up-row is-dense uev-zeile" role="link" tabindex="0" data-event-id="' + esc(ev.id) + '">' +
-        '<div class="up-td uev-td-kunst">' + avatarHtml(ev, "klein") + '</div>' +
-        '<div class="up-td uev-td-name"><span class="uev-zeile-titel">' + esc(ev.name || "") + '</span>' +
-          (ev.description ? '<span class="uev-zeile-text">' + esc(ev.description) + '</span>' : '') + '</div>' +
-        '<div class="up-td uev-td-typ"><span class="uev-typ">' + UC.icon(zeichen(ev), 2) + '<span data-i18n="' + esc(tp.label) + '">' + esc(t(tp.label)) + '</span></span></div>' +
-        '<div class="up-td uev-td-datum">' + esc(datum(ev.event_date)) + '</div>' +
-        '<div class="up-td uev-td-umfang">' + umfangHtml(ev) + '</div>' +
-        '<div class="up-td up-td-act uev-td-act">' + mehrMenue(ev, "zeile") +
-          '<span class="uev-chev" aria-hidden="true">' + UC.icon("chevronRight", 2) + '</span></div>' +
-      '</div>';
     }
     /* EIN WARTEN, DAS ENDET (Muster brand-detail: 25s, gezaehlt erst, wenn die Uebersicht zu sehen
        ist). Kommt die Liste nie -- der Schritt im Seitenaufbau fehlt, der Workflow brach ab --,
@@ -657,10 +628,7 @@
     function renderListe() {
       if (!elListe) return;
       var stand = UC.eventsStand ? UC.eventsStand() : { geladen: true, fehler: false };
-      var seg = elMain.querySelectorAll(".uev-darst [data-darst]");
-      for (var i = 0; i < seg.length; i++) seg[i].classList.toggle("is-active", seg[i].getAttribute("data-darst") === state.darstellung);
-      if (UC.segJetzt) { try { UC.segJetzt(elMain.querySelector(".uev-darst")); } catch (e) {} }
-      typMenu();
+      if (typFilter) typFilter.neu();
       if (stand.fehler && !(UC.getEvents && UC.getEvents().length)) {
         elZahl.textContent = "";
         elListe.className = "uev-liste";
@@ -674,8 +642,8 @@
           elListe.innerHTML = UC.leerHtml({ icon: "info", titel: "Events could not be loaded", text: "Please reload the page." });
           return;
         }
-        elListe.className = "uev-liste is-" + state.darstellung;
-        elListe.innerHTML = state.darstellung === "list" ? listeSkelett() : karteSkelett();
+        elListe.className = "uev-liste";
+        elListe.innerHTML = karteSkelett();
         rasterSetzen(3);
         listeUhr();
         return;
@@ -683,7 +651,7 @@
       var alle = (UC.getEvents ? UC.getEvents() : []).filter(function (ev) { return !state.geloescht[ev.id]; });
       var l = gefiltert();
       elZahl.textContent = alle.length ? String(l.length === alle.length ? alle.length : l.length + " / " + alle.length) : "";
-      elListe.className = "uev-liste is-" + state.darstellung;
+      elListe.className = "uev-liste";
       if (!alle.length) {
         elListe.innerHTML = UC.leerHtml({ icon: "tickets", titel: "No events yet",
           text: "Add important launches, content changes, campaigns or other changes to understand how your AI performance develops around them.",
@@ -694,21 +662,11 @@
         elListe.innerHTML = UC.leerHtml({ gefiltert: true, was: "events" });
         return;
       }
-      if (state.darstellung === "list") {
-        elListe.innerHTML = '<div class="up-box"><div class="up-table uev-tabelle" style="--up-cols:' + LISTE_COLS + '">' +
-          '<div class="up-thead">' +
-            '<div class="up-th"></div>' +
-            '<div class="up-th"><span class="up-th-txt">' + esc(t("Name")) + '</span></div>' +
-            '<div class="up-th"><span class="up-th-txt">' + esc(t("Type")) + '</span></div>' +
-            '<div class="up-th"><span class="up-th-txt">' + esc(t("Date")) + '</span></div>' +
-            '<div class="up-th"><span class="up-th-txt">' + esc(t("Scope")) + '</span></div>' +
-            '<div class="up-th"></div>' +
-          '</div>' +
-          '<div class="up-tbody">' + l.map(zeileHtml).join("") + '</div></div></div>';
-      } else {
-        elListe.innerHTML = '<div class="uev-karten">' + l.map(karteHtml).join("") + '</div>';
-        rasterSetzen(l.length);
-      }
+      /* Nicht l.map(karteHtml): map reicht den Index als zweites Argument durch, und das ist der
+         Schalter vorschau -- jede Karte ab der zweiten kam als nicht klickbare Vorschau heraus
+         (im Pruefstand am 03.10. gefunden: nur die erste Karte oeffnete das Detail). */
+      elListe.innerHTML = '<div class="uev-karten">' + l.map(function (ev) { return karteHtml(ev, false); }).join("") + '</div>';
+      rasterSetzen(l.length);
     }
     function rasterSetzen(n) {
       var k = elListe && elListe.querySelector(".uev-karten, .uev-karten-sk");
@@ -716,16 +674,13 @@
       k.style.setProperty("--uev-cols", spalten(elListe.clientWidth || root.clientWidth || 1200, n));
     }
     function karteSkelett() {
-      /* Dieselbe Form wie die Karte: Band, Profilbild, Name, Angaben, Text, Zahlen. */
+      /* Dieselbe Form wie die Karte: Band, Profilbild, Name, Angaben, Text, das Raster. */
+      var zelle = '<div class="uev-stat"><span class="uev-sk" style="width:48%"></span><span class="uev-sk uev-sk-wert" style="width:32%"></span></div>';
       var eine = '<div class="uev-karte is-sk"><div class="uev-karte-band uev-sk-band"></div><div class="uev-karte-body">' +
         '<span class="uev-avatar uev-sk-avatar"></span><span class="uev-sk uev-sk-titel" style="width:62%"></span>' +
         '<span class="uev-sk uev-sk-meta" style="width:42%"></span><span class="uev-sk uev-sk-text" style="width:90%"></span><span class="uev-sk" style="width:64%"></span>' +
-        '<span class="uev-sk uev-sk-zahlen" style="width:56%"></span></div></div>';
+        '<div class="uev-stats">' + zelle + zelle + zelle + '</div></div></div>';
       return '<div class="uev-karten uev-karten-sk">' + eine + eine + eine + '</div>';
-    }
-    function listeSkelett() {
-      return UC.skeletonRows ? '<div class="up-box"><div class="up-table" style="--up-cols:' + LISTE_COLS + '">' +
-        UC.skeletonRows({ count: 4, rowClass: "up-row is-dense", cols: [32, { w: 60, jitter: 20 }, 40, 50, 60, 20] }) + '</div></div>' : '';
     }
 
     /* ============================================================================================
@@ -867,17 +822,14 @@
         elAktion.querySelector(".uev-kopfmehr").innerHTML = "";
         return;
       }
-      var tp = typ(d), f = farbe(d);
+      var f = farbe(d);
       el.innerHTML =
         '<div class="up-box uev-hero"' + (f ? ' style="--uev-ton:' + esc(f) + '"' : '') + '>' +
           '<div class="uev-hero-band"></div>' +
           '<div class="uev-hero-body">' +
             avatarHtml(d, "gross") +
             '<h2 class="uev-dkopf-titel">' + esc(d.name || "") + '</h2>' +
-            '<div class="uev-hero-meta">' +
-              '<span class="uev-hero-angabe">' + UC.icon("calendar", 2) + '<span>' + esc(datum(d.event_date)) + '</span></span>' +
-              '<span class="uev-hero-angabe">' + UC.icon(zeichen(d), 2) + '<span data-i18n="' + esc(tp.label) + '">' + esc(t(tp.label)) + '</span></span>' +
-            '</div>' +
+            angabenHtml(d, "uev-hero-meta") +
             (d.description ? '<p class="uev-dkopf-text">' + esc(d.description) + '</p>' : '') +
             umfangHtml(d, "uev-hero-zahlen") +
           '</div>' +
@@ -969,9 +921,16 @@
     var MARKT_COLS = "minmax(180px, 1fr) 110px 110px 130px";
     function renderMarkt() {
       var el = elMain.querySelector('[data-sek="markt"]'), a = dieAnalyse();
+      /* Ohne Analyse wegen eines Fehlers: der Abschnitt faellt weg. Den Fehler sagen schon die
+         Kennzahlen und das Diagramm darueber -- ein drittes Mal waere Laerm. */
+      if (!a && state.analyseFehler && !state.analyseLaden) { el.innerHTML = ""; el.hidden = true; return; }
+      el.hidden = false;
       if (!a) {
         el.innerHTML = sekKopf("Market movement", "Visibility of every tracked brand in the affected prompts, before and after.") +
-          '<div class="up-box"><div class="up-table" style="--up-cols:' + MARKT_COLS + '">' + (UC.skeletonRows ? UC.skeletonRows({ count: 3, rowClass: "up-row is-dense", cols: [{ w: 50, logo: true }, 40, 40, 40] }) : "") + '</div></div>';
+          /* Die Zeilen IN .up-tbody: nur dort nimmt core der letzten Zeile die Unterkante
+             (.up-tbody > .up-row:last-child). Ohne stand sie doppelt mit dem Rahmen des Kastens
+             (03.10. gemeldet: "unten ein extra Bottom-Border im Skeleton"). */
+          '<div class="up-box"><div class="up-table" style="--up-cols:' + MARKT_COLS + '"><div class="up-tbody">' + (UC.skeletonRows ? UC.skeletonRows({ count: 3, rowClass: "up-row is-dense", cols: [{ w: 50, logo: true }, 40, 40, 40] }) : "") + '</div></div></div>';
         return;
       }
       var reihen = [];
@@ -1139,13 +1098,41 @@
     }
 
     /* ---- Anforderungen an Bubble (fertige RPC-Bodies) --------------------------------------- */
+    /* EIN WARTEN, DAS ENDET -- auch im Detail (03.10. gemeldet: "seh immer noch nur Skeleton beim
+       Navigieren auf die Event-Detail-Ansichten"). Fehlt der Workflow fuer uevDetail oder
+       uevAnalysis, kam nie eine Antwort, und das Skelett lief fuer immer -- das sieht aus wie
+       "gleich da". Dieselbe Uhr wie bei der Liste: 25s, gezaehlt erst, wenn die Ansicht zu sehen
+       ist; jede neue Anfrage (Fenster, Filter, URL) zieht sie neu auf. Laeuft sie ab, steht der
+       Lesefehler, wo das Skelett stand. */
+    var DETAIL_WARTE_MS = 25000, detailUhrId = null;
+    function detailUhr() {
+      if (detailUhrId) clearTimeout(detailUhrId);
+      detailUhrId = setTimeout(detailAblauf, DETAIL_WARTE_MS);
+    }
+    function detailAblauf() {
+      detailUhrId = null;
+      if (root.isConnected === false || state.ansicht !== "detail") return;
+      var ohneDetail = !dieDetail(), ohneAnalyse = !dieAnalyse();
+      if (!ohneDetail && !ohneAnalyse) return;
+      if (UC.istSichtbar && !UC.istSichtbar(root)) { detailUhrId = setTimeout(detailVerdeckt, 1000); return; }
+      if (ohneDetail) { state.detailLaden = false; state.detailFehler = true; }
+      if (ohneAnalyse) { state.analyseLaden = false; state.analyseFehler = true; }
+      renderDetail();
+    }
+    function detailVerdeckt() {
+      detailUhrId = null;
+      if (root.isConnected === false || state.ansicht !== "detail") return;
+      if (UC.istSichtbar && UC.istSichtbar(root)) detailUhr(); else detailUhrId = setTimeout(detailVerdeckt, 1000);
+    }
     function detailAnfordern(spaet) {
       state.detailFehler = false;
+      detailUhr();
       var b = body({ p_event_id: state.eventId });
       if (spaet && fire.spaet) fire.spaet("data-detail-fn", "uevDetail", b); else fire("data-detail-fn", "uevDetail", b);
     }
     function analyseAnfordern(spaet) {
       state.analyseLaden = true; state.analyseFehler = false;
+      detailUhr();
       var b = body({ p_event_id: state.eventId, p_window_days: state.fenster,
                      p_models: state.modelle && state.modelle.length ? state.modelle : null,
                      p_markets: state.maerkte && state.maerkte.length ? state.maerkte : null });
@@ -1188,6 +1175,7 @@
 
     /* ---- Navigation ----------------------------------------------------------------------- */
     function zurUebersicht(neuerEintrag) {
+      if (detailUhrId) { clearTimeout(detailUhrId); detailUhrId = null; }
       state.ansicht = "uebersicht"; state.eventId = null; state.respUrl = "";
       adresseSetzen("", neuerEintrag);
       respSichtbar(false);
@@ -1234,6 +1222,7 @@
          Typ-Filter zuruecksetzen. */
       if (e.target.closest("[data-clearall]")) {
         state.suche = ""; state.typen = [];
+        if (typFilter) typFilter.setGewaehlt([]);
         if (elSucheIn) elSucheIn.value = "";
         if (elSuche) elSuche.classList.remove("has-text");
         persist(); renderListe();
@@ -1284,12 +1273,12 @@
         respFilter(ro.getAttribute("data-resp-url"), false);
         return;
       }
-      var k = e.target.closest(".uev-karte[data-event-id], .uev-zeile[data-event-id]");
+      var k = e.target.closest(".uev-karte[data-event-id]");
       if (k && !k.classList.contains("is-sk")) oeffnen(k.getAttribute("data-event-id"), true);
     });
     root.addEventListener("keydown", function (e) {
       if (e.key !== "Enter" && e.key !== " ") return;
-      var k = e.target.closest && e.target.closest(".uev-karte[data-event-id], .uev-zeile[data-event-id]");
+      var k = e.target.closest && e.target.closest(".uev-karte[data-event-id]");
       if (k && e.target === k) { e.preventDefault(); oeffnen(k.getAttribute("data-event-id"), true); }
     });
     function respFilter(urlId, rollen) {

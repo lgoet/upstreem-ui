@@ -87,7 +87,7 @@
       { key: "performance",   label: "Performance",     icon: "chartColumnUp" },
       { key: "opportunities", label: "Opportunities",   icon: "listTodo" },
       /* Impact Events (03.10. angefordert: zwischen Opportunities und Prompt Research). Tickets
-         (Lucide, 03.10. angefordert) ist das Zeichen der Events-Komponente selbst (Krume im
+         (Hugeicons, 03.10. angefordert) ist das Zeichen der Events-Komponente selbst (Krume im
          Seitenkopf), derselbe Ort, dasselbe Zeichen. Schluessel "events" = ?view=events. */
       { key: "events",        label: "Events",          icon: "tickets" },
       /* Schluessel "research", nicht "prompt-research" -- siehe AKTIV_SYNONYM weiter unten. */

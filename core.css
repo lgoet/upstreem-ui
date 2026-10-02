@@ -1401,6 +1401,10 @@
     .up-ment.is-active .up-ment-btn:hover .up-ment-chev { display: none; }
     .up-ment.is-active .up-ment-btn:hover .up-ment-clear { display: block; }
     .up-ment-lbl { overflow: hidden; text-overflow: ellipsis; }
+    /* Ein Zeichen statt eines Logos in der Zeile (UC.makeAuswahlFilter, Typen der Events): so breit
+       wie .up-ment-logo, damit die Namen in derselben Flucht stehen. */
+    .up-ment-zeichen { width: 18px; height: 18px; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; color: var(--vc-third); }
+    .up-ment-zeichen svg { width: 14px; height: 14px; }
     .up-ment-chev { width: 14px; height: 14px; flex: 0 0 14px; color: var(--vc-muted); }
     .up-ment-menu {
       position: absolute; top: calc(100% + var(--up-dd-gap)); right: 0; z-index: 60;
@@ -3009,12 +3013,12 @@
      Pins und eine offene Karte tun es. */
   z-index: 10000; }
 .up-evm-ort { position: absolute; width: 0; height: 0; }
-/* Der Knopf traegt seine Pins: einer beim einzelnen Event, bis zu drei im Stapel, je 16px versetzt
-   (Vorgabe 14, am 03.10. zwei Pixel mehr), der vorderste oben. --n und --i setzt makeLine. */
-.up-evm-knopf { position: absolute; left: -10px; top: -10px; height: 20px; width: calc(20px + (var(--n, 1) - 1) * 16px);
+/* Der Knopf traegt seine Pins: einer beim einzelnen Event, bis zu drei im Stapel, je 14px versetzt
+   (Vorgabe), der vorderste oben. --n und --i setzt makeLine. */
+.up-evm-knopf { position: absolute; left: -10px; top: -10px; height: 20px; width: calc(20px + (var(--n, 1) - 1) * 14px);
   padding: 0; margin: 0; border: 0; background: none; cursor: pointer; pointer-events: auto; font: inherit; }
 .up-evm-knopf:focus-visible { outline: 2px solid var(--up-focus); outline-offset: 2px; border-radius: var(--up-r-m); }
-.up-evm { position: absolute; left: calc(var(--i, 0) * 16px); top: 0; z-index: calc(3 - var(--i, 0)); width: 20px; height: 20px; box-sizing: border-box;
+.up-evm { position: absolute; left: calc(var(--i, 0) * 14px); top: 0; z-index: calc(3 - var(--i, 0)); width: 20px; height: 20px; box-sizing: border-box;
   display: flex; align-items: center; justify-content: center;
   border: 1px solid var(--up-evm-rand); border-radius: var(--up-r-s); background: var(--vc-bg);
   color: var(--vc-muted); box-shadow: var(--up-e-1); }
@@ -3022,14 +3026,16 @@
 /* Das Fokus-Event im Event-Detail: dasselbe Zeichen, voll gedeckt -- der Rest ist Vorgabe. */
 .up-evm.is-fokus { border-color: var(--vc-third); }
 .up-evm.is-fokus svg { opacity: 1; }
-/* Im Stapel je 1,5px Ring in der Flaeche des Diagramms (Vorgabe: box-shadow 0 0 0 1.5px #fff). */
-.up-evm-stapel .up-evm { box-shadow: 0 0 0 1.5px var(--vc-bg); }
+/* Im Stapel ein Ring in der Flaeche des Diagramms -- er ist die sichtbare Luft zwischen den
+   ueberlappenden Pins. Vorgabe 1,5px; am 03.10. zwei Pixel mehr verlangt, und zwar an DIESER Luft,
+   nicht am Versatz (der kurz auf 16 stand und die Pins nur auseinanderschob). */
+.up-evm-stapel .up-evm { box-shadow: 0 0 0 3.5px var(--vc-bg); }
 
 /* DIE KARTE -- eine fuer einen Pin und fuer einen Stapel. Rechts oben am Marker: 20px rechts der
    Mitte des letzten Pins, 3px ueber seiner Oberkante; an der Kante spiegelt makeLine sie nach links
    (.is-links). Schatten wie in der Vorgabe (0 4px 14px .08) -- zwischen --up-e-1 und --up-e-2, die
    beide nicht passen. Erscheint bei Hover, Fokus oder nach einem Tipp (.is-offen), 120ms Einblenden. */
-.up-evm-karte { position: absolute; z-index: 5; left: calc(20px + (var(--n, 1) - 1) * 16px); top: -13px; white-space: nowrap;
+.up-evm-karte { position: absolute; z-index: 5; left: calc(20px + (var(--n, 1) - 1) * 14px); top: -13px; white-space: nowrap;
   min-width: 190px; padding: 6px; display: flex; flex-direction: column; gap: 2px;
   background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
   box-shadow: 0 4px 14px rgba(17,24,39,.08);
@@ -3047,13 +3053,17 @@
 .up-evm-ic { display: inline-flex; flex: 0 0 auto; color: var(--vc-muted); }
 .up-evm-ic svg { width: 13px; height: 13px; opacity: .7; }
 .up-evm-karte-kopf { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 2px 2px 4px; }
-.up-evm-zeitraum { padding-left: 4px; font-size: var(--up-fs-xs); color: var(--up-evm-linie); font-variant-numeric: tabular-nums; }
-.up-evm-zahl { font-size: var(--up-fs-xs); color: var(--up-evm-linie); background: var(--up-sel-bg); border-radius: 5px; padding: 2px 6px; }
+/* Datum links in der vierten Schriftfarbe, die Zahl rechts eine Stufe kraeftiger in der dritten
+   (03.10.) -- sie ist die Auskunft, das Datum die Einordnung. */
+.up-evm-zeitraum { padding-left: 4px; font-size: var(--up-fs-xs); color: var(--vc-fourth); font-variant-numeric: tabular-nums; }
+.up-evm-zahl { font-size: var(--up-fs-xs); color: var(--vc-third); background: var(--up-sel-bg); border-radius: 5px; padding: 2px 6px; }
 .up-evm-zeile { display: flex; align-items: center; gap: 8px; width: 100%; padding: 5px 6px; margin: 0;
   border: 0; border-radius: 5px; background: none; font: inherit; text-align: left; cursor: pointer; }
 .up-evm-zeile:hover, .up-evm-zeile:focus-visible { background: var(--up-sel-bg); outline: none; }
 .up-evm-zeile-name { flex: 1 1 auto; margin-right: 12px; font-size: var(--up-fs-s); font-weight: 500; color: var(--vc-text); }
-.up-evm-zeile-datum { flex: 0 0 auto; font-size: var(--up-fs-xs); color: var(--up-evm-linie); font-variant-numeric: tabular-nums; }
+/* Die Daten der Zeilen wie das Datum im Kopf: vierte Schriftfarbe statt der Farbe der Hilfslinie
+   (die lag neben der Skala der Schriftfarben). */
+.up-evm-zeile-datum { flex: 0 0 auto; font-size: var(--up-fs-xs); color: var(--vc-fourth); font-variant-numeric: tabular-nums; }
 @media (prefers-reduced-motion: reduce){ .up-evm-karte { transition: none; } }
 .up-legend .up-company-favicon { width: 16px; height: 16px; min-width: 16px; min-height: 16px; border-radius: 4px; object-fit: cover; display: block; flex: 0 0 auto; }
 .up-legend .up-company-name { font-family: Geist, Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 12px; font-weight: 500; line-height: 16px; color: var(--vc-text); white-space: nowrap; max-width: 150px; overflow: hidden; text-overflow: ellipsis; flex: 1 1 auto; min-width: 0; }

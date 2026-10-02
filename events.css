@@ -18,56 +18,65 @@
 
 /* ---- Uebersicht ------------------------------------------------------------------------------ */
 .uev-head { margin-bottom: 16px; }
-.uev-typfilter { position: relative; }
-.uev-typbadge:not(.is-on) { display: none; }
 .uev-typitem-ic { display: inline-flex; color: var(--vc-third); }
 .uev-typitem-ic svg { width: 14px; height: 14px; }
-.uev-typalle { color: var(--vc-third); justify-content: center; }
 
-/* DIE KARTE (03.10. neu). Nach Kole Jain: Luft, die gruppiert (20px Polster, 20px zwischen den
-   Karten), Hierarchie ueber Groesse und Lage statt ueber Linien, Farbe nur mit Bedeutung, die
-   Nebenhandlung im Menue, das erst beim Ueberfahren erscheint. Oben ein einfarbiges Band in der
-   Event-Farbe mit wenig Deckkraft auf dem weissen Grund, das Zeichen als Profilbild halb darueber.
-   Die Zahlen stehen unten -- margin-top: auto --, damit sie in einer Reihe auf gleicher Hoehe
-   liegen, auch wenn eine Karte keine Beschreibung hat. */
+/* DIE KARTE (03.10., nach der Vorlage des Nutzers, einer Profilkarte). Nach Kole Jain: Luft,
+   die gruppiert (20px zum Rand, 20px zwischen den Karten), Hierarchie ueber Groesse und Lage statt
+   ueber Linien, Farbe nur mit Bedeutung, die Nebenhandlung im Menue, das erst beim Ueberfahren
+   erscheint. Das Band sitzt wie in der Vorlage MIT Abstand im Rahmen (8px Polster der Karte), daher
+   sein Radius 8 = 16 - 8 (konzentrisch, CLAUDE.md 1c); 80 hoch (03.10.: 16px mehr als vorher).
+   Das Raster steht unten -- margin-top: auto --, damit es in einer Reihe auf gleicher Hoehe liegt,
+   auch wenn eine Karte keine Beschreibung hat. */
 .uev-karten { display: grid; grid-template-columns: repeat(var(--uev-cols, 1), minmax(0, 1fr)); gap: 20px; }
 .uev-karte { --uev-t: var(--uev-ton, var(--vc-text)); position: relative; display: flex; flex-direction: column; min-width: 0; overflow: hidden;
-  background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl); cursor: pointer;
+  padding: 8px; background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl); cursor: pointer;
   transition: border-color var(--up-t-1) var(--up-ease), box-shadow var(--up-t-2) var(--up-ease); }
 .uev-karte:hover { border-color: var(--vc-hover-border); box-shadow: var(--up-e-1); }
 .uev-karte:focus-visible { outline: var(--up-focus-w, 2px) solid var(--up-focus); outline-offset: 2px; }
 .uev-karte:is(.is-sk, .is-vorschau) { cursor: default; }
 .uev-karte:is(.is-sk, .is-vorschau):hover { border-color: var(--vc-border); box-shadow: none; }
-.uev-karte-band { flex: 0 0 auto; height: 64px; background: color-mix(in srgb, var(--uev-t) 10%, var(--vc-bg)); }
-.uev-karte-body { flex: 1 1 auto; display: flex; flex-direction: column; align-items: flex-start; padding: 0 20px 20px; min-width: 0; }
-.uev-karte .uev-avatar { margin: -24px 0 16px; }
+.uev-karte-band { flex: 0 0 auto; height: 80px; border-radius: var(--up-r-m); background: color-mix(in srgb, var(--uev-t) 10%, var(--vc-bg)); }
+.uev-karte-body { flex: 1 1 auto; display: flex; flex-direction: column; align-items: flex-start; padding: 0 12px 12px; min-width: 0; }
+/* Der Ring im Kartengrund trennt das Profilbild vom Band wie in der Vorlage; der Schatten der
+   Kachel faellt hier weg, er laege unter dem Ring und machte ihn grau. */
+.uev-karte .uev-avatar { margin: -24px 0 16px; box-shadow: 0 0 0 4px var(--vc-bg); }
 .uev-karte-titel { margin: 0; max-width: 100%; font-size: var(--up-fs-xl); font-weight: var(--up-fw-m); letter-spacing: -0.01em; line-height: 1.3;
   color: var(--vc-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.uev-karte-meta { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 4px; font-size: var(--up-fs-m); color: var(--vc-third); }
-.uev-karte-datum { font-variant-numeric: tabular-nums; }
+.uev-karte-meta { margin-top: 6px; }
 .uev-karte-text { margin: 12px 0 0; font-size: var(--up-fs-m); line-height: 1.5; color: var(--vc-muted);
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.uev-karte-zahlen { margin-top: auto; padding-top: 20px; }
-/* Das Menue in der Ecke des Bands, sichtbar beim Ueberfahren, mit Fokus oder offen; ohne Zeiger
-   (Touch) immer -- dort gibt es kein Ueberfahren. */
-.uev-karte > .uev-mehr { position: absolute; top: 12px; right: 12px; z-index: 1; opacity: 0; transition: opacity var(--up-t-1) var(--up-ease); }
+.uev-karte .uev-stats { margin-top: auto; padding-top: 20px; }
+/* Das Menue in der Ecke des Bands (8 Polster + 8 im Band), sichtbar beim Ueberfahren, mit Fokus
+   oder offen; ohne Zeiger (Touch) immer -- dort gibt es kein Ueberfahren. */
+.uev-karte > .uev-mehr { position: absolute; top: 16px; right: 16px; z-index: 1; opacity: 0; transition: opacity var(--up-t-1) var(--up-ease); }
 .uev-karte:hover > .uev-mehr, .uev-karte:focus-within > .uev-mehr, .uev-karte > .uev-mehr.is-open { opacity: 1; }
 @media (hover: none) { .uev-karte > .uev-mehr { opacity: 1; } }
 
 /* Das Profilbild: Zeichen des Events in einer weissen Kachel, in seiner Farbe. 48 in der Karte,
-   64 im Kopf des Details, 32 in der Listenzeile (dort ohne Kachel, im Ton gefuellt -- in einer
-   Zeile steht es nicht ueber einem Band). */
+   64 im Kopf des Details. */
 .uev-avatar { --uev-t: var(--uev-ton, var(--vc-text)); flex: 0 0 auto; width: 48px; height: 48px; box-sizing: border-box;
   display: inline-flex; align-items: center; justify-content: center; border-radius: var(--up-r-xl);
   background: var(--vc-bg); border: 1px solid var(--vc-border); color: var(--uev-t); box-shadow: var(--up-e-1); }
 .uev-avatar svg { width: 22px; height: 22px; }
 .uev-avatar.is-gross { width: 64px; height: 64px; border-radius: var(--up-r-2xl); }
 .uev-avatar.is-gross svg { width: 28px; height: 28px; }
-.uev-avatar.is-klein { width: 32px; height: 32px; border-radius: var(--up-r-m); border-color: transparent; box-shadow: none;
-  background: color-mix(in srgb, var(--uev-t) 10%, var(--vc-bg)); }
-.uev-avatar.is-klein svg { width: 16px; height: 16px; }
 
-/* Der Umfang: Angaben nebeneinander, getrennt durch Abstand (keine Mittelpunkte), die Zahl betont. */
+/* Datum und Typ: Angaben mit Zeichen, getrennt durch Abstand (keine Mittelpunkte). Karte und Kopf
+   des Details tragen dieselben. */
+.uev-angaben { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: var(--up-fs-m); color: var(--vc-third); }
+.uev-angabe { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.uev-angabe svg { width: 14px; height: 14px; flex: 0 0 auto; }
+.uev-angabe-datum { font-variant-numeric: tabular-nums; }
+/* Der Umfang als Raster: Bezeichnung ueber dem Wert, drei gleich breite Zellen. */
+.uev-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; width: 100%; margin: 0; }
+.uev-stat { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.uev-stat dt { font-size: var(--up-fs-s); color: var(--vc-third); }
+.uev-stat dd { margin: 0; font-size: var(--up-fs-l); font-weight: var(--up-fw-m); color: var(--vc-text); font-variant-numeric: tabular-nums;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.uev-stat .uev-sk-wert { height: 16px; margin-top: 4px; }
+
+/* Der Umfang als Zeile (Kopf des Details): Angaben nebeneinander, die Zahl betont. */
 .uev-zahlen { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: var(--up-fs-m); color: var(--vc-third); }
 .uev-zahl-n { color: var(--vc-text); font-weight: var(--up-fw-m); font-variant-numeric: tabular-nums; }
 
@@ -77,46 +86,32 @@
 .uev-mehrmenu .up-filter-item svg { width: 14px; height: 14px; flex: 0 0 auto; }
 .uev-gefahr:hover { color: var(--vt-down); }
 
-/* Liste */
-.uev-tabelle .up-row { cursor: pointer; }
-.uev-typ { display: inline-flex; align-items: center; gap: 6px; min-width: 0; font-size: var(--up-fs-s); color: var(--vc-third); }
-.uev-typ svg { width: 14px; height: 14px; flex: 0 0 auto; }
-.uev-typ > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.uev-td-umfang .uev-zahlen { font-size: var(--up-fs-s); gap: 2px 12px; }
-.uev-td-name { flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; min-width: 0; }
-.uev-zeile-titel { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-text); max-width: 100%;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.uev-zeile-text { font-size: var(--up-fs-s); color: var(--vc-third); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.uev-td-datum { font-variant-numeric: tabular-nums; color: var(--vc-muted); font-size: var(--up-fs-s); }
-.uev-td-umfang { color: var(--vc-muted); font-size: var(--up-fs-s); }
-.uev-td-act { justify-content: flex-end; gap: 4px; }
-.uev-chev { display: inline-flex; color: var(--vc-fourth); }
-.uev-chev svg { width: 16px; height: 16px; }
-
 /* Skelett: dieselbe Flaeche wie jedes Skelett der App (--vc-sk). */
 .uev-sk { display: block; height: 12px; border-radius: var(--up-r-xs); background: var(--vc-sk); }
 .uev-sk-titel { height: 16px; }
 .uev-sk-band { background: var(--vc-sk); }
 .uev-avatar.uev-sk-avatar { background: var(--vc-sk); border-color: transparent; box-shadow: none; }
+/* In der Karte behaelt das Skelett den Ring -- sonst laufen Band und Kachel, beide in --vc-sk, zu
+   einem Fleck zusammen. */
+.uev-karte .uev-avatar.uev-sk-avatar { box-shadow: 0 0 0 4px var(--vc-bg); }
 .uev-sk-meta { margin-top: 8px; }
 .uev-sk-text { margin-top: 16px; }
 .uev-sk-text + .uev-sk { margin-top: 8px; }
-.uev-sk-zahlen { margin-top: auto; }
-.uev-karte .uev-sk-zahlen { margin-top: 24px; }
 
 /* ---- Detail ---------------------------------------------------------------------------------- */
 .uev-detail { display: flex; flex-direction: column; gap: 24px; }
 /* DER KOPF DES DETAILS (03.10. neu): dieselbe Sprache wie die Karte, eine Nummer groesser --
    Band 96, Profilbild 64, Name in der groessten Stufe der App (Dashboards: hoechstens 22-24px).
    Datum und Typ als zwei Angaben mit Zeichen, der Umfang darunter. */
-.uev-hero-band { height: 96px; background: color-mix(in srgb, var(--uev-ton, var(--vc-text)) 10%, var(--vc-bg)); }
-.uev-hero-body { display: flex; flex-direction: column; align-items: flex-start; padding: 0 24px 24px; min-width: 0; }
-.uev-hero .uev-avatar { margin: -32px 0 16px; }
+/* Wie die Karte: das Band mit 8px Abstand im Rahmen des Kastens (16 - 8 = Radius 8), das
+   Profilbild mit Ring im Kastengrund. 24px zum Rand wie vorher: 8 Polster + 16 im Koerper. */
+.up-box.uev-hero { padding: 8px; }
+.uev-hero-band { height: 96px; border-radius: var(--up-r-m); background: color-mix(in srgb, var(--uev-ton, var(--vc-text)) 10%, var(--vc-bg)); }
+.uev-hero-body { display: flex; flex-direction: column; align-items: flex-start; padding: 0 16px 16px; min-width: 0; }
+.uev-hero .uev-avatar { margin: -32px 0 16px; box-shadow: 0 0 0 4px var(--vc-bg); }
 .uev-dkopf-titel { margin: 0; max-width: 100%; font-size: var(--up-fs-2xl); font-weight: var(--up-fw-m); letter-spacing: -0.02em; line-height: 1.2;
   color: var(--vc-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.uev-hero-meta { display: flex; flex-wrap: wrap; gap: 4px 20px; margin-top: 8px; font-size: var(--up-fs-m); color: var(--vc-third); }
-.uev-hero-angabe { display: inline-flex; align-items: center; gap: 6px; }
-.uev-hero-angabe svg { width: 14px; height: 14px; flex: 0 0 auto; }
+.uev-hero-meta { gap: 4px 20px; margin-top: 8px; }
 .uev-dkopf-text { margin: 16px 0 0; max-width: 72ch; font-size: var(--up-fs-m); line-height: 1.5; color: var(--vc-muted); }
 .uev-hero-zahlen { margin-top: 20px; }
 .uev-hero.is-sk .uev-sk-titel { height: 20px; }
@@ -293,7 +288,8 @@ body:has(.uev-root[data-uev-resp="aus"]) .urt-root[data-instance="responses_even
 /* Die Vorschau im letzten Schritt: die Karte der Uebersicht, so breit wie dort eine Spalte. */
 .uev-pruef { display: flex; flex-direction: column; gap: 8px; }
 .uev-pruef:empty { display: none; }
-.uev-vorschau { width: 100%; max-width: 300px; }
+/* Die Vorschau in voller Breite des Popups (03.10. so gewuenscht). */
+.uev-vorschau { width: 100%; }
 
 .uev-gesperrt { display: flex; align-items: flex-start; gap: 8px; }
 .uev-gesperrt svg { width: 14px; height: 14px; flex: 0 0 auto; margin-top: 2px; }
