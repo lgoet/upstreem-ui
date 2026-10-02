@@ -60,8 +60,19 @@
   | uevRemoveUrl            | data-removeurl-fn      | remove_impact_event_url_v1       | setEventDetail       |
   | uevDelete               | data-delete-fn         | delete_impact_event_v1           | setEventDeleted      |
 
-  Nach uevCreate, uevDelete: zusaetzlich die Liste neu (Schritt oben).
+  Nach uevCreate, uevDelete: zusaetzlich die Liste neu (Schritt oben) -- sonst fehlt das neue Event
+  in der Uebersicht und als Pin in den Diagrammen, bis die Seite neu laedt.
   Nach uevAddUrl, uevRemoveUrl: die Komponente fordert die Analyse selbst neu an (uevAnalysis).
+
+  ── Die Popups (Anlegen, Bearbeiten, URL hinzufuegen) ────────────────────────
+  Brauchen nichts Neues ausser den vier Ereignissen oben (uevScopePreview, uevCreate, uevUpdate,
+  uevAddUrl). Die URL-Suche darin ist die Suche der Palette und von Ask Mira (UC.makeEntitySearch):
+  sie schickt an bubble_fn_quick_actions_search und erwartet die Antwort ueber
+  window.MiraQuickActions.setResults -- derselbe Workflow, der auf jeder Seite mit der Palette schon
+  laeuft (search_quick_actions_v2, scope "url"). Fehlt er auf der Events-Seite, sagt das Popup
+  "Search is not available right now" und laesst einen vollstaendigen Link trotzdem zu.
+  Ein Fehler beim Zaehlen (setEventError waehrend uevScopePreview) erscheint unter der Auswahl,
+  ein Fehler beim Speichern im Popup selbst -- bei Anlegen springt es zum Schritt, der ihn behebt.
 
   ── Die Setter ────────────────────────────────────────────────────────────────
     setEventDetail("<instanz>", `<json>`)          Objekt aus get_/create_/update_/…_url_v1
@@ -103,7 +114,7 @@
 (function(){
   /* Loader nach STYLEGUIDE §26 -- wortgleich mit response_detail_bubble.html, nur Klasse und
      Dateien anders. Die Filter-Dateien laedt dieses Element mit: Models- und Markets-Filter stehen
-     als lokale Instanzen IN der Komponente (Entscheidung 7). */
+     als lokale Instanzen IN der Komponente (Entscheidung 7), der Topics-Filter im Anlegen-Popup. */
   function echterPin(p){
     p = String(p == null ? "" : p).trim();
     return (p && p !== "CDN_" + "PIN") ? p : "";
@@ -146,6 +157,10 @@
   css("core.css");                        js("core.js");
   css("filters/models-filter.css");       js("filters/models-filter.js");
   css("filters/markets-filter.css");      js("filters/markets-filter.js");
+  /* Fuer das Anlegen-Popup: der Topics-Filter (Umfang) und die Kalender-Zellen aus date-range.css
+     (Datum) -- deren Regeln stehen ohne Elternklasse, das Popup nutzt sie mit. */
+  css("filters/topics-filter.css");       js("filters/topics-filter.js");
+  css("filters/date-range.css");
   css("events.css");                      js("events.js");
 })();
 </script>

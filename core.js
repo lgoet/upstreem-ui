@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261065;
+  var BUILD = 20261066;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -5914,6 +5914,9 @@
   /* ---- DIE TREFFERZEILE -------------------------------------------------------------------
      Ein Knopf je Treffer. Der Aufrufer gibt das Klassen-Praefix mit (siehe oben, warum), dazu
      die Suche fuer das Hervorheben und ob rechts der Typ stehen soll. */
+  /* cfg.rechts: ein eigener Text rechts statt des Typs ("Previously observed" in den Events,
+     wo jeder Treffer eine URL ist und der Typ nichts sagt). cfg.klasse: ein Zustand an der Zeile
+     (is-taken, is-active) -- ohne ihn musste der Aufrufer die fertige Zeichenkette umschreiben. */
   function entityRow(item, cfg){
     cfg = cfg || {};
     var p = cfg.prefix || "up-es";
@@ -5932,13 +5935,14 @@
       av = entityAvatar(bild, icon("domain"), false, p);
       if (t === "url") zweit = entityHl(item.url || "", q, p + "-hl");
     }
-    return '<button class="' + p + '-row" type="button" role="option" data-esi="' +
+    return '<button class="' + p + '-row' + (cfg.klasse ? " " + esc(cfg.klasse) : "") + '" type="button" role="option" data-esi="' +
         esc(cfg.index == null ? "" : cfg.index) + '">' + av +
       '<span class="' + p + '-main">' +
         '<span class="' + p + '-primary">' + entityHl(entityLabel(item), q, p + "-hl") + '</span>' +
         (zweit ? '<span class="' + p + '-secondary">' + zweit + '</span>' : '') +
       '</span>' +
-      (cfg.typLabel === false ? '' :
+      (cfg.rechts ? '<span class="' + p + '-type">' + esc(cfg.rechts) + '</span>' :
+        cfg.typLabel === false ? '' :
         '<span class="' + p + '-type">' + esc(t_(ES_TYP_LABEL[t] || t)) + '</span>') +
     '</button>';
   }
@@ -7921,12 +7925,14 @@
      in der Konsole, statt einer weniger. Nach dem Zug ist das Feld frei, und ein von dort
      gesetztes visibility:hidden wird gleich mit zurueckgenommen. */
   var FAV_DIENST = /gstatic\.com\/faviconV2|google\.com\/s2\/favicons|wsrv\.nl\/\?url=/i;
-  var FAV_KASTEN = ".up-fav, .up-logo-box, .up-stack-item, .up-ment-logo, .uhm-logo, .uab-fav";
+  var FAV_KASTEN = ".up-fav, .up-logo-box, .up-stack-item, .up-ment-logo, .uhm-logo, .uab-fav, .up-es-av";
   var FAV_KLASSE = { "up-company-favicon": 1, "combo-filter-favicon": 1, "up-ment-logo": 1,
                      "usn-fav": 1, "uca-src-fav": 1 };
   /* Ein Kasten zeigt schon von sich aus etwas, wenn er einen Buchstaben traegt oder wenn er ein
      .up-fav ist (dessen ::after IST der Globus). Nur wer beides nicht hat, braucht die Marke. */
-  var FAV_BUCHSTABE = ".up-logo-ltr, .up-stack-ltr, .udt-logo-ltr, .udt-sub-ltr, .uut-logo-ltr";
+  /* .up-es-av-fb: der Rueckfall der Suchzeile (entityAvatar) -- er zeigt schon ein Zeichen, ein
+     Globus darueber waere doppelt. */
+  var FAV_BUCHSTABE = ".up-logo-ltr, .up-stack-ltr, .udt-logo-ltr, .udt-sub-ltr, .uut-logo-ltr, .up-es-av-fb";
 
   function istFavicon(img){
     var src = img.getAttribute("src") || "";
@@ -10960,8 +10966,21 @@
       try { if (ausloeser && ausloeser.focus && document.contains(ausloeser)) ausloeser.focus(); } catch(e){}
       if (typeof cfg.onClose === "function"){ try { cfg.onClose(); } catch(e){} }
     }
+    /* Ein offenes Menue IM Popup (Typ-Auswahl, Kalender, Topics-Filter) schliesst bei Escape
+       zuerst -- und zwar es allein. Dieser Zuhoerer laeuft in der Einfangphase, also VOR dem
+       Escape der Menues (makePopover am Dokument, die Filter an ihrem Element); mit
+       stopPropagation hier kam keins davon je an, und Escape schloss das ganze Popup samt Eingaben. */
+    function offenesMenue(){
+      for (var i = 0; i < POPOVERS.length; i++){
+        var p = POPOVERS[i];
+        if (p.wrap && p.wrap.classList.contains("is-open") && el.contains(p.wrap)) return true;
+      }
+      return !!el.querySelector(".utf-wrap.is-open, .umf-wrap.is-open, .umk-wrap.is-open");
+    }
     function taste(e){
-      if (e.key === "Escape"){ e.stopPropagation(); e.preventDefault(); if (!istBusy()) schliessen(); }
+      if (e.key !== "Escape") return;
+      if (offenesMenue()) return;
+      e.stopPropagation(); e.preventDefault(); if (!istBusy()) schliessen();
     }
     document.addEventListener("keydown", taste, true);
     el.addEventListener("mousedown", function(e){ druckAufSchleier = e.target === el; });
@@ -13810,23 +13829,29 @@
      cfg: { wrap, canvas, legend, isDark(), isOwner(), gran(), watermark:bool }
      The component builds {labels, datasets}; datasets must carry __id / __baseColor / __favicon.
      Returns { render, skeleton, empty, destroy, resize, relayoutLegend, chart }. */
-  /* ---- EVENT-MARKER IN DEN LINIENDIAGRAMMEN (02.10., Impact Events) -----------------------------
-     Ein Event ist ein Tag mit einem Namen. Im Diagramm: ein duenner senkrechter Strich an diesem
-     Tag in der Farbe des Events und oben darueber ein kleiner runder Kopf mit dem Zeichen des Typs.
-     Kein Hintergrund, keine Flaeche -- das Diagramm bleibt ein Upstreem-Diagramm.
-     ZENTRAL HIER, nicht je Komponente: alle sechs Zeitreihen (visibility-chart, citations-combo,
-     brands-overview, brand-/domain-/performance-detail) laufen ueber makeLine und bekommen die
-     Marker damit ohne eigene Zeile. Ein Annotations-Plugin von Chart.js ist nicht geladen; der
-     Strich ist ein eigenes Plugin wie Raster und Fuehrungslinie, der Kopf ein Knopf ueber der
-     Leinwand -- so traegt er den Tooltip der App (data-tip) und ist klick- und tastaturbar.
+  /* ---- EVENT-PINS IN DEN LINIENDIAGRAMMEN (02.10., Impact Events; Gestalt nach der Vorgabe
+     "Event-Pins im Analytics-Chart", Design-Handoff vom 02.10.) -------------------------------------
+     Ein Event ist ein Tag mit einem Namen. Im Diagramm: ein weisser Pin mit dem Zeichen des Typs,
+     17px ueber der obersten Rasterlinie, und darunter eine punktierte Hilfslinie bis zur
+     Grundlinie, HINTER den Datenlinien. Neutral, nicht in der Farbe des Events: die Pins sind
+     Nebensache, die Daten bleiben die Hauptsache (Vorgabe: "sekundaere Marker").
+     Hover zeigt den Namen und das Datum; Pins, die naeher als eine Pinbreite plus 4px stehen,
+     werden zum Stapel mit einer Gruppenkarte. Ein Klick oeffnet das Event (Spezifikation 74).
+     ZENTRAL HIER, nicht je Komponente: alle Zeitreihen (visibility-chart, citations-combo,
+     brands-overview, brand-/domain-/performance-detail, events) laufen ueber makeLine und bekommen
+     die Pins ohne eigene Zeile. Die Linie ist ein Plugin wie Raster und Fuehrungslinie, Pins und
+     Karten liegen als Knoepfe ueber der Leinwand -- klick- und tastaturbar.
      Woher: cfg.markers als Funktion (das Event-Detail gibt sein eigenes Event und die
      Ueberschneidungen), cfg.markers === false schaltet ab, sonst der Event-Store -- dann nur bei
      der Einstellung "Show event markers" an.
      Wo: ein Tag zwischen zwei Beschriftungen wird zwischen ihnen eingeordnet, nach Tagen. Das
-     deckt Luecken in einer Tagesreihe ebenso ab wie Wochen- und Monatsbuckets: ein Event am
-     10.09. steht in der Woche ab dem 08.09. an seiner Stelle, nicht auf deren Anfang. Ausserhalb
-     der gezeigten Zeit steht kein Marker. */
-  var EVM_GRUPPE_PX = 14;   /* naeher als ein Kopf breit: ein Marker mit Zaehler statt zweier uebereinander */
+     deckt Luecken in einer Tagesreihe ebenso ab wie Wochen- und Monatsbuckets. Ausserhalb der
+     gezeigten Zeit steht kein Pin. */
+  var EVM_PIN = 20;          /* Pin 20 x 20 (Vorgabe) */
+  var EVM_LUFT = 4;          /* naeher als Pin + 4px: ein Stapel statt zweier Pins (Vorgabe) */
+  var EVM_VERSATZ = 14;      /* Versatz der Pins im Stapel (Vorgabe) */
+  var EVM_STAPEL_MAX = 3;    /* mehr zeigt der Stapel nicht -- die Karte nennt alle */
+  var EVM_UEBER = 17;        /* Pin-Mitte ueber der obersten Rasterlinie (Vorgabe: ~17px) */
   function evmTag(s){
     var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s || ""));
     return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) : NaN;
@@ -13856,25 +13881,61 @@
     }
     return null;
   }
-  /* Marker zu Gruppen: nach x sortiert, alles innerhalb von EVM_GRUPPE_PX in eine Gruppe. Eine
-     Gruppe mit dem Fokus-Event ist eine Fokus-Gruppe; ihre Farbe ist die des Fokus. */
+  /* Pins zu Stapeln: nach x sortiert; ein Event gehoert zum Stapel davor, wenn es naeher als
+     Pin + 4px an dessen rechtestem Pin steht. Gemessen wird am RECHTEN Rand des Stapels, nicht an
+     seinem Anker -- sonst laege der naechste Pin unter dem zweiten oder dritten des Stapels.
+     Vorne (und auf der Hilfslinie) steht das Fokus-Event, sonst das frueheste ("fruehestes vorne"). */
   function evmGruppen(chart, liste){
     var mit = [];
-    (liste || []).forEach(function(m){
+    (liste || []).forEach(function(m, i){
       var x = evmX(chart, m.date);
-      if (x != null && isFinite(x)) mit.push({ m: m, x: x });
+      if (x != null && isFinite(x)) mit.push({ m: m, x: x, i: i });
     });
-    mit.sort(function(a, b){ return a.x - b.x; });
+    mit.sort(function(a, b){ return a.x - b.x || a.i - b.i; });
     var gruppen = [];
     mit.forEach(function(e){
       var g = gruppen[gruppen.length - 1];
-      if (g && Math.abs(e.x - g.x) < EVM_GRUPPE_PX){ g.items.push(e.m); if (e.m.fokus){ g.fokus = true; g.x = e.x; } }
-      else gruppen.push({ x: e.x, items: [e.m], fokus: !!e.m.fokus });
+      if (g){
+        var rechts = g.x + (Math.min(g.items.length, EVM_STAPEL_MAX) - 1) * EVM_VERSATZ;
+        if (e.x - rechts < EVM_PIN + EVM_LUFT){ g.items.push(e.m); g.xs.push(e.x); return; }
+      }
+      gruppen.push({ x: e.x, xs: [e.x], items: [e.m] });
     });
     gruppen.forEach(function(g){
-      g.items.sort(function(a, b){ return (b.fokus ? 1 : 0) - (a.fokus ? 1 : 0); });
+      var f = -1;
+      for (var k = 0; k < g.items.length; k++) if (g.items[k].fokus){ f = k; break; }
+      g.fokus = f >= 0;
+      if (f > 0){
+        g.x = g.xs[f];
+        g.items = [g.items[f]].concat(g.items.slice(0, f), g.items.slice(f + 1));
+      }
     });
     return gruppen;
+  }
+  /* Die Daten der Vorgabe: TT.MM.JJJJ im Tooltip, TT.MM. in der Karte, ein Zeitraum im Kopf der
+     Karte ("29.–30.09.2026", ueber Monats- und Jahresgrenzen entsprechend laenger). */
+  function evmTeile(s){
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s || ""));
+    return m ? { j: m[1], m: m[2], t: m[3] } : null;
+  }
+  function evmDatum(s, kurz){
+    var d = evmTeile(s);
+    return d ? d.t + "." + d.m + "." + (kurz ? "" : d.j) : "";
+  }
+  function evmZeitraum(a, b){
+    var x = evmTeile(a), y = evmTeile(b);
+    if (!x || !y) return evmDatum(a || b);
+    if (a === b) return evmDatum(a);
+    if (x.j !== y.j) return evmDatum(a) + "–" + evmDatum(b);
+    if (x.m !== y.m) return x.t + "." + x.m + ".–" + evmDatum(b);
+    return x.t + ".–" + evmDatum(b);
+  }
+  /* Die Farbe der Hilfslinie fuer die Leinwand: aus der Marke --up-evm-linie, die hell und dunkel
+     je ihren Wert traegt. */
+  function evmLinienFarbe(wrap){
+    var c = "";
+    try { c = getComputedStyle(wrap).getPropertyValue("--up-evm-linie").trim(); } catch(e){}
+    return c || "#9aa1ab";
   }
   /* Steht ueberhaupt ein Marker im Bild? Nur nach Tagen, ohne Pixel: das obere Polster wird
      berechnet, BEVOR es Skalen gibt -- beim ersten Aufbau ist das Chart dann noch gar nicht da
@@ -13890,13 +13951,6 @@
       if (!isNaN(d) && d >= a && (d <= z || d < z + schritt)) return true;
     }
     return false;
-  }
-  function evmFarbe(m, wrap){
-    var c = m && m.color;
-    if (c && /^#[0-9a-f]{6}$/i.test(String(c))) return c;
-    var a = "";
-    try { a = getComputedStyle(wrap).getPropertyValue("--up-accent").trim(); } catch(e){}
-    return a || "#6b6f78";
   }
   /* Ein Event oeffnen -- von einem Marker, einer Karte, einem Link. Die Adresse traegt ?event=,
      die Ansicht ist "events"; das Ereignis up-event-open sagt es einer Events-Komponente, die
@@ -13942,13 +13996,71 @@
         return { id: e.id, date: e.event_date, name: e.name, type: e.event_type, color: e.color };
       });
     }
-    var evmEbene = null, evmSig = "";
-    function evmEbeneWeg(){ if (evmEbene && evmEbene.parentNode) evmEbene.parentNode.removeChild(evmEbene); evmEbene = null; evmSig = ""; }
-    function evmTip(g){
-      return g.items.map(function(m){
-        var typ = eventTyp(m.type);
-        return (m.name || "") + " \u00b7 " + fmtDate(m.date) + " \u00b7 " + t(typ.label);
-      }).join("\n");
+    var evmEbene = null, evmSig = "", evmZeiger = "", evmDraussen = null;
+    function evmEbeneWeg(){
+      if (evmEbene && evmEbene.parentNode) evmEbene.parentNode.removeChild(evmEbene);
+      if (evmDraussen){ document.removeEventListener("pointerdown", evmDraussen, true); evmDraussen = null; }
+      evmEbene = null; evmSig = "";
+    }
+    function evmZu(ausser){
+      if (!evmEbene) return;
+      var o = evmEbene.querySelectorAll(".up-evm-ort.is-offen");
+      for (var i = 0; i < o.length; i++) if (o[i] !== ausser){
+        o[i].classList.remove("is-offen");
+        var s1 = o[i].querySelector(".up-evm-stapel");
+        if (s1) s1.setAttribute("aria-expanded", "false");
+      }
+    }
+    /* Tooltip und Karte bleiben im Diagramm (Vorgabe: "an Chart-Raendern spiegeln", "nicht
+       abschneiden"): gemessen, sobald sie gezeigt werden -- visibility:hidden laesst die Breite
+       messbar. */
+    function evmPlatzieren(ort){
+      var W = wrap.clientWidth, x = parseFloat(ort.style.left) || 0;
+      var tip = ort.querySelector(".up-evm-tip");
+      if (tip) ort.classList.toggle("is-links", x + 20 + tip.offsetWidth > W - 4 && x - 20 - tip.offsetWidth >= 4);
+      var karte = ort.querySelector(".up-evm-karte");
+      if (karte){
+        var l = 8, w = karte.offsetWidth;
+        if (x + l + w > W - 4) l = W - 4 - w - x;
+        if (x + l < 4) l = 4 - x;
+        karte.style.left = Math.round(l) + "px";
+      }
+    }
+    function evmPinHtml(m, i){
+      var typ = eventTyp(m.type);
+      return '<span class="up-evm' + (m.fokus ? " is-fokus" : "") + '"' + (i != null ? ' style="--i:' + i + '"' : '') + '>' + icon(typ.icon, 2) + '</span>';
+    }
+    function evmOrtHtml(g){
+      var m = g.items[0], typ = eventTyp(m.type);
+      if (g.items.length === 1){
+        var lbl = (m.name || "") + " · " + evmDatum(m.date);
+        return '<div class="up-evm-ort' + (g.fokus ? " is-fokus" : "") + '">' +
+          '<button type="button" class="up-evm-knopf" data-event-id="' + esc(m.id) + '" aria-label="' + esc(lbl) + '">' + evmPinHtml(m) + '</button>' +
+          '<div class="up-evm-tip" aria-hidden="true"><span class="up-evm-ic">' + icon(typ.icon, 2) + '</span>' +
+            '<span class="up-evm-tip-txt"><span class="up-evm-tip-name">' + esc(m.name || "") + '</span>' +
+            '<span class="up-evm-tip-datum">' + esc(evmDatum(m.date)) + '</span></span></div></div>';
+      }
+      var zeilen = g.items.slice().sort(function(a, b){ return String(a.date).localeCompare(String(b.date)); });
+      var n = g.items.length, sichtbar = g.items.slice(0, EVM_STAPEL_MAX);
+      var zahl = t(n === 1 ? "{n} Event" : "{n} Events").replace("{n}", n);
+      return '<div class="up-evm-ort is-gruppe' + (g.fokus ? " is-fokus" : "") + '">' +
+        '<button type="button" class="up-evm-knopf up-evm-stapel" style="--n:' + sichtbar.length + '" aria-expanded="false" aria-label="' + esc(zahl) + '">' +
+          sichtbar.map(function(x, k){ return evmPinHtml(x, k); }).join("") + '</button>' +
+        '<div class="up-evm-karte">' +
+          '<div class="up-evm-karte-kopf"><span class="up-evm-zeitraum">' + esc(evmZeitraum(zeilen[0].date, zeilen[zeilen.length - 1].date)) + '</span>' +
+            '<span class="up-evm-zahl">' + esc(zahl) + '</span></div>' +
+          zeilen.map(function(x){
+            return '<button type="button" class="up-evm-zeile" data-event-id="' + esc(x.id) + '">' +
+              '<span class="up-evm-ic">' + icon(eventTyp(x.type).icon, 2) + '</span>' +
+              '<span class="up-evm-zeile-name">' + esc(x.name || "") + '</span>' +
+              '<span class="up-evm-zeile-datum">' + esc(evmDatum(x.date, true)) + '</span></button>';
+          }).join("") +
+        '</div></div>';
+    }
+    function evmOeffnen(id){
+      if (!id) return;
+      if (typeof cfg.onMarker === "function"){ try { cfg.onMarker(id); } catch(err){} return; }
+      eventOeffnen(id);
     }
     function evmZeichnen(c){
       var ca = c.chartArea;
@@ -13960,48 +14072,69 @@
         evmEbene.className = "up-evm-layer";
         wrap.appendChild(evmEbene);
         evmSig = "";
-        evmEbene.addEventListener("click", function(e){
-          var b = e.target && e.target.closest ? e.target.closest(".up-evm") : null;
-          if (!b) return;
-          var id = b.getAttribute("data-event-id");
-          if (typeof cfg.onMarker === "function"){ try { cfg.onMarker(id); } catch(err){} return; }
-          eventOeffnen(id);
+        /* Touch: der erste Tipp zeigt Tooltip bzw. Karte (Vorgabe: "Touch: Tap"), erst der
+           zweite oeffnet das Event. Mit der Maus oeffnet der Klick sofort -- gezeigt ist dort
+           schon beim Hover. */
+        evmEbene.addEventListener("pointerdown", function(e){ evmZeiger = e.pointerType || ""; });
+        evmEbene.addEventListener("mouseover", function(e){
+          var o = e.target && e.target.closest ? e.target.closest(".up-evm-ort") : null;
+          if (o) evmPlatzieren(o);
         });
+        evmEbene.addEventListener("focusin", function(e){
+          var o = e.target && e.target.closest ? e.target.closest(".up-evm-ort") : null;
+          if (o) evmPlatzieren(o);
+        });
+        evmEbene.addEventListener("click", function(e){
+          var z = e.target && e.target.closest ? e.target.closest(".up-evm-zeile") : null;
+          if (z){ evmZu(null); evmOeffnen(z.getAttribute("data-event-id")); return; }
+          var k = e.target && e.target.closest ? e.target.closest(".up-evm-knopf") : null;
+          if (!k) return;
+          var ort = k.closest(".up-evm-ort"), offen = ort.classList.contains("is-offen");
+          if (k.classList.contains("up-evm-stapel") || (evmZeiger === "touch" && !offen)){
+            evmZu(ort);
+            ort.classList.toggle("is-offen", !offen);
+            if (k.classList.contains("up-evm-stapel")) k.setAttribute("aria-expanded", String(!offen));
+            evmPlatzieren(ort);
+            return;
+          }
+          evmZu(null);
+          evmOeffnen(k.getAttribute("data-event-id"));
+        });
+        evmEbene.addEventListener("keydown", function(e){
+          if (e.key === "Escape") evmZu(null);
+        });
+        evmDraussen = function(e){ if (evmEbene && !evmEbene.contains(e.target)) evmZu(null); };
+        document.addEventListener("pointerdown", evmDraussen, true);
       }
-      var sig = gruppen.map(function(g){ return g.items.map(function(m){ return m.id + ":" + (m.color || "") + ":" + (m.fokus ? 1 : 0); }).join("+"); }).join("|");
+      var sig = gruppen.map(function(g){ return g.items.map(function(m){ return m.id + ":" + (m.name || "") + ":" + (m.type || "") + ":" + (m.fokus ? 1 : 0); }).join("+"); }).join("|");
       if (sig !== evmSig){
         evmSig = sig;
-        evmEbene.innerHTML = gruppen.map(function(g){
-          var m = g.items[0], typ = eventTyp(m.type), mehr = g.items.length - 1;
-          return '<button type="button" class="up-evm' + (g.fokus ? " is-fokus" : "") + (m.fokus || g.fokus ? "" : " is-neben") + '"' +
-            ' style="--evm:' + esc(evmFarbe(m, wrap)) + '" data-event-id="' + esc(m.id) + '"' +
-            ' data-tip="' + esc(evmTip(g)) + '" aria-label="' + esc(evmTip(g)) + '">' +
-            icon(typ.icon, 2) + (mehr > 0 ? '<span class="up-evm-mehr">+' + mehr + '</span>' : '') + '</button>';
-        }).join("");
+        evmEbene.innerHTML = gruppen.map(evmOrtHtml).join("");
       }
-      var knoepfe = evmEbene.querySelectorAll(".up-evm");
-      for (var i = 0; i < knoepfe.length && i < gruppen.length; i++){
-        knoepfe[i].style.left = (canvas.offsetLeft + gruppen[i].x) + "px";
-        knoepfe[i].style.top = (canvas.offsetTop + ca.top) + "px";
+      var orte = evmEbene.querySelectorAll(".up-evm-ort");
+      for (var i = 0; i < orte.length && i < gruppen.length; i++){
+        orte[i].style.left = Math.round(canvas.offsetLeft + gruppen[i].x) + "px";
+        orte[i].style.top = Math.round(canvas.offsetTop + ca.top - EVM_UEBER) + "px";
       }
     }
     var evmPlugin = {
       id: "upEventMarker",
+      /* Die Hilfslinie: vom Fuss des Pins bis zur Grundlinie, punktiert, HINTER den Datenlinien
+         (Vorgabe: stroke 1.2, dasharray 1 3, linecap round). Das Fokus-Event im Event-Detail
+         zieht sie durch -- dort ist es der Gegenstand der ganzen Seite. */
       beforeDatasetsDraw: function(c){
         var ca = c.chartArea, ctx = c.ctx;
         if (!ca) return;
         var gruppen = evmGruppen(c, markerDaten());
         if (!gruppen.length) return;
         ctx.save();
+        ctx.strokeStyle = evmLinienFarbe(wrap);
+        ctx.lineWidth = 1.2;
+        ctx.lineCap = "round";
         gruppen.forEach(function(g){
-          var m = g.items[0], x = Math.round(g.x) + 0.5;
-          ctx.beginPath(); ctx.moveTo(x, ca.top); ctx.lineTo(x, ca.bottom);
-          /* Das Fokus-Event (Event-Detail) traegt den kraeftigeren Strich; alle anderen sind
-             duenn und gestrichelt, wenn sie als Nebensache markiert sind. */
-          ctx.lineWidth = g.fokus ? 1.5 : 1;
-          ctx.setLineDash(m.gestrichelt && !g.fokus ? [3, 3] : []);
-          ctx.globalAlpha = g.fokus || !m.gestrichelt ? 0.9 : 0.6;
-          ctx.strokeStyle = evmFarbe(m, wrap);
+          var x = Math.round(g.x) + 0.5;
+          ctx.setLineDash(g.fokus ? [] : [1, 3]);
+          ctx.beginPath(); ctx.moveTo(x, ca.top - EVM_UEBER + EVM_PIN / 2 - 1); ctx.lineTo(x, ca.bottom);
           ctx.stroke();
         });
         ctx.restore();
@@ -14281,9 +14414,10 @@
             transitions: { highlight: { animation: { duration: 200, easing: "easeOutQuad" } } },
             interaction: { mode: "index", intersect: false },
             layout: { padding: function(){
-              /* Oben Platz fuer die Koepfe der Event-Marker, aber nur, wenn einer im Bild steht --
-                 sonst bleibt jedes Diagramm genau so hoch, wie es war. */
-              var oben = evmImZeitraum(labels, markerDaten()) ? 26 : 8;
+              /* Oben Platz fuer die Event-Pins, aber nur, wenn einer im Bild steht -- sonst bleibt
+                 jedes Diagramm genau so hoch, wie es war. 30 = 17 (Pin-Mitte ueber der Linie) + 10
+                 (halber Pin) + 1,5 (Ring im Stapel), aufgerundet. */
+              var oben = evmImZeitraum(labels, markerDaten()) ? 30 : 8;
               return { top: oben, right: single ? 2 : xRandRechts((cfg.gran && cfg.gran()) || "day"), bottom: 0, left: 0 };
             } },
             plugins: { legend: { display: false }, tooltip: { enabled: false, external: makeLineTooltip(wrap, isDark, cfg.gran, einheit, cfg.tipLabel, cfg.decimals) } },
@@ -15361,6 +15495,18 @@
     var prev = { position: panel.style.position, left: panel.style.left, top: panel.style.top,
                  right: panel.style.right, bottom: panel.style.bottom, margin: panel.style.margin,
                  width: panel.style.width, maxHeight: panel.style.maxHeight };
+    /* EIN PANEL, DAS ZWISCHEN BEIDEN KANTEN AUFGESPANNT IST (left UND right 0, width auto -- die
+       Typ-Auswahl im Event-Popup, so breit wie ihr Feld), hat seine Breite nur aus diesen zwei
+       Werten. Unten wird right auf auto gesetzt, und es schrumpfte auf seinen Inhalt: gemessen
+       216 statt 528px. Ein solches Panel sagt es mit data-up-feldbreit, und dann wird die Breite
+       der Ruhelage festgehalten.
+       Ausdruecklich und nicht erkannt: getComputedStyle liefert fuer left/right eines
+       positionierten Elements den BENUTZTEN Wert, nie "auto" -- gemessen -198px am Typ-Menue der
+       Uebersicht, das nur right: 0 traegt. Eine Erkennung haette also jedes Panel eingefroren,
+       auch die Filter-Dropdowns, die sich erst nach dem Oeffnen fuellen. */
+    if (panel.hasAttribute("data-up-feldbreit") && !panel.style.width){
+      panel.style.width = (p0.right - p0.left) + "px";
+    }
     panel.setAttribute("popover", "manual");
     try { panel.showPopover(); } catch(e){
       if (prevPopover == null) panel.removeAttribute("popover"); else panel.setAttribute("popover", prevPopover);
@@ -15437,6 +15583,7 @@
       if (prevPopover == null) panel.removeAttribute("popover"); else panel.setAttribute("popover", prevPopover);
       panel.style.position = prev.position; panel.style.left = prev.left; panel.style.top = prev.top;
       panel.style.right = prev.right; panel.style.bottom = prev.bottom; panel.style.margin = prev.margin;
+      panel.style.width = prev.width;
     };
     return panel.__upEscapeRelease;
   }

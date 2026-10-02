@@ -139,7 +139,7 @@
 .uev-du { flex: 0 0 auto; font-size: var(--up-fs-xs); color: var(--vc-third); border: 1px solid var(--vc-border);
   border-radius: var(--up-r-xs); padding: 1px 5px; }
 .uev-marktzeile.is-du { background: color-mix(in srgb, var(--vc-heading-bg) 60%, transparent); }
-.uev-neu { font-size: var(--up-fs-s); color: var(--vc-third); }
+.uev-neugetrackt { font-size: var(--up-fs-s); color: var(--vc-third); }
 
 .uev-td-url { gap: 10px; min-width: 0; }
 .uev-url-txt { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
@@ -191,3 +191,79 @@ body:has(.uev-root[data-uev-resp="aus"]) .urt-root[data-instance="responses_even
 /* Breite Tabellen scrollen in ihrem Kasten statt die Seite (Spezifikation 87). */
 .uev-root.is-narrow .up-box > .up-table { min-width: 680px; }
 .uev-root.is-narrow .uev-detail .up-box:has(> .up-table), .uev-root.is-narrow .uev-liste .up-box { overflow-x: auto; }
+
+/* ---- Die Popups: Anlegen, Bearbeiten, URL hinzufuegen ---------------------------------------
+   Huelle, Felder, Aussehen-Knoepfe und Farbraster kommen aus core (.up-modal, .up-topicmodal-*),
+   die Trefferzeilen der Suche ebenfalls (.up-es-*), der Kalender aus date-range.css (.udr-*).
+   Hier steht nur, was es genau hier gibt. */
+/* Ein Schritt traegt den Abstand der Popup-Huelle (.up-topicmodal-body: 32) zwischen seinen Feldern. */
+.uev-schritt { display: flex; flex-direction: column; gap: 32px; }
+.uev-schritt[hidden] { display: none; }
+.uev-optional { margin-left: 4px; font-weight: var(--up-fw-n); color: var(--vc-fourth); }
+
+/* Typ und Datum: ein Menue aus core (.up-menu), so breit wie das Feld bzw. wie der Monat. */
+.uev-wahl { position: relative; }
+.uev-wahl .uev-wahlmenu { left: 0; right: 0; width: auto; }
+.uev-wahl .uev-typwahl { max-height: 320px; overflow-y: auto; }
+.uev-wahl .uev-datumwahl { right: auto; }
+.uev-typopt { display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
+
+/* Das Zeichenraster: die Zellen des Farbrasters, darin ein Zeichen statt eines Kreises. */
+.uev-zeichenzelle { color: var(--vc-muted); }
+.uev-zeichenzelle svg { width: 16px; height: 16px; }
+.uev-aussehen .uev-zeichenzelle.is-on { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); color: var(--vc-text); }
+/* Die Spaltenzahl setzt das JS (zehn Toene, vorn "ohne Farbe", hinten eine fremde Farbe): alles
+   in EINER Reihe. */
+.uev-aussehen .uev-ohnefarbe { background: transparent; border: 1.5px dashed var(--vc-third); color: var(--vc-text); }
+
+/* Umfang: Umschalter, Topics und Zahl als eine Gruppe. */
+.uev-umfang { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+/* .up-seg steht in core auf align-self: center (Werkzeugleisten) -- hier buendig mit dem Etikett. */
+.uev-umfang .uev-umfangseg { align-self: flex-start; }
+.uev-umfang-topics[hidden] { display: none; }
+.uev-umfang-zahl { display: flex; align-items: center; gap: 8px; margin: 0; font-size: var(--up-fs-m); color: var(--vc-text); }
+.uev-umfang-zahl.is-laeuft { color: var(--vc-third); }
+.uev-umfang-zahl.is-fehler { color: var(--vt-down); }
+.uev-umfang-zahl svg { width: 14px; height: 14px; flex: 0 0 auto; }
+.uev-umfang-zahl .up-modal-spin { display: inline-block; }
+
+/* Die Suche: das Namensfeld mit Lupe; darunter die Treffer mit der Zeile aus Ask Mira. Der
+   negative Rand holt das Zeilenpolster wieder herein (wie .am-pick-scroll): die Hoverflaeche
+   reicht bis ans Polster, der Text fluchtet mit dem Feld darueber. */
+.uev-urlsuche { position: relative; }
+.uev-urlsuche-ic { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); display: inline-flex; color: var(--vc-third); pointer-events: none; }
+.uev-urlsuche-ic svg { width: 15px; height: 15px; }
+.uev-urlsuche .uev-urlein { padding-left: 34px; }
+.uev-urltreffer { display: flex; flex-direction: column; gap: 2px; margin: 0 -10px; }
+.uev-urltreffer[hidden] { display: none; }
+.uev-urltreffer .uev-urlnote { padding: 8px 10px; }
+.uev-urlsk { display: flex; align-items: center; gap: 11px; padding: 8px 10px; }
+.uev-urlsk .uev-urlsk-av { width: 30px; height: 30px; border-radius: var(--up-r-m); flex: 0 0 auto; }
+.uev-urlsk-txt { flex: 1 1 auto; display: flex; flex-direction: column; gap: 6px; }
+.uev-urlsk-txt .uev-sk:first-child { width: 45%; }
+.uev-urlsk-txt .uev-sk:last-child { width: 70%; height: 10px; }
+
+/* Der Rahmen des Eingabefeldes darueber (.up-topicmodal-name: Rand, Radius 9) und NICHT .up-box:
+   die verliert im Dunkeln ihren Rand mit Absicht (Flaechen trennt dort die Helligkeit, core.css
+   "Modale, Eingabefelder ... keine Flaechen") und stand auf der gleichfarbigen Karte unsichtbar. */
+.uev-urlwahl-liste { display: flex; flex-direction: column; border: 1px solid var(--vc-border); border-radius: 9px; overflow: hidden; }
+.uev-urlwahl { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 8px 8px 8px 12px; }
+.uev-urlwahl + .uev-urlwahl { border-top: 1px solid var(--vc-border); }
+.uev-urlwahl .uev-url-txt { flex: 1 1 auto; }
+.uev-urlwahl-neu { flex: 0 0 auto; font-size: var(--up-fs-xs); color: var(--vc-third); }
+.uev-urlauswahl { display: flex; flex-direction: column; gap: 8px; }
+.uev-urlauswahl:empty { display: none; }
+.uev-urlauswahl .uev-urlzahl { font-size: var(--up-fs-s); }
+
+/* Die Zusammenfassung vor dem Anlegen (Spezifikation 62): kein Kasten mit Rahmen, eine leise
+   Flaeche -- sie wiederholt nur, was schon gewaehlt ist. */
+.uev-pruef { display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; border-radius: var(--up-r-xl); background: var(--vc-heading-bg); }
+.uev-pruef:empty { display: none; }
+.uev-pruef-kopf { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.uev-pruef-ic { --uev-t: var(--uev-ton, var(--vc-third)); display: inline-flex; flex: 0 0 auto; color: var(--uev-t); }
+.uev-pruef-ic svg { width: 16px; height: 16px; }
+.uev-pruef-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--up-fs-l); font-weight: var(--up-fw-m); color: var(--vc-text); }
+.uev-pruef-zeile { font-size: var(--up-fs-m); color: var(--vc-muted); }
+
+.uev-gesperrt { display: flex; align-items: flex-start; gap: 8px; }
+.uev-gesperrt svg { width: 14px; height: 14px; flex: 0 0 auto; margin-top: 2px; }
