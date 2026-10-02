@@ -101,6 +101,12 @@
    alle Werte -- Radius 5 -> 8.9, Bild 16 -> 28.4, Polsterung 1 -> 1.8. */
 .urd-msg-av .up-ment-logo { width: 32px; height: 32px; border-radius: 8.9px; padding: 1.8px; }
 .urd-msg-av .up-ment-logo img { width: 28.4px; height: 28.4px; border-radius: 7.1px; }
+/* Im Dunkeln ohne helle Platte (02.10. angefordert) -- dieselbe Regel wie am Modell-Chip in core
+   (.up-model-chip .up-ment-logo): die Modell-Logos sind dort selbst hell. Der Avatar nimmt nur
+   das Logo AUS dem Chip (renderAbsender), darum griff die Regel von core hier nicht. Ohne Bild
+   steht der Buchstabe dann auf der Karte -- deren Schrift, nicht die Tinte der Platte. */
+.up-root[data-theme="dark"] .urd-msg-av .up-ment-logo { background: transparent; padding: 0; }
+.up-root[data-theme="dark"] .urd-msg-av .up-model-ltr { color: var(--vc-muted); }
 .urd-body { position: relative; min-width: 0; }
 .urd-body .up-rb { max-width: 100%; }
 
