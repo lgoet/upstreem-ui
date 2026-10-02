@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261063;
+  var BUILD = 20261064;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -225,7 +225,7 @@
      Merkmal des Kontos. Bei "off" faellt die Zeile GANZ weg (siehe sidebar.css), und der
      Teamschalter steht wieder oben links. */
   var PREF_DEFAULT = { locale: "en", num: "en", date: "d-mon-y", date_sync: "off", date_preset: "last7",
-                       branding: "on", accent: "default" };
+                       branding: "on", accent: "default", event_markers: "on" };
   var PREF_ERLAUBT = {
     locale: { en: 1, de: 1 },
     /* "en": 1,234.56 und 1.24k -- Punkt trennt die Nachkommastellen.
@@ -237,7 +237,11 @@
     date_preset: { last7: 1, last30: 1, last3: 1 },
     branding:    { on: 1, off: 1 },
     /* Die Akzentfarbe. "default" ist die bisherige -- Flaeche in der Schriftfarbe des Themas. */
-    accent:      { "default": 1, indigo: 1, azur: 1, terrakotta: 1 }
+    accent:      { "default": 1, indigo: 1, azur: 1, terrakotta: 1 },
+    /* Event-Marker in den Liniendiagrammen (02.10., Impact Events). Vorgabe AN -- so verlangt:
+       "die Standarderfahrung muss die Events zeigen". Der Fokus-Marker im Event-Detail steht
+       unabhaengig davon immer (das ganze Diagramm handelt von ihm). */
+    event_markers: { on: 1, off: 1 }
   };
   var _prefs = null;
   /* OHNE Team-Suffix, und das ist eine Korrektur. Diese Werte liefen ueber storeKey, und storeKey
@@ -12850,7 +12854,10 @@
            zwei Pixel, die der Name dazubekommt. */
         var icon = ds.__favicon
           ? '<img src="' + esc(ds.__favicon) + '" width="14" height="14" style="border-radius:3.5px;display:block;object-fit:cover"/>'
-          : '<span style="width:14px;height:14px;border-radius:3.5px;background:' + ds.__baseColor + ';display:block"></span>';
+          : ds.__dash
+            /* Vergleichsreihe: dasselbe Feld, gestrichelt umrandet statt gefuellt -- wie ihre Linie. */
+            ? '<span style="width:14px;height:14px;border-radius:3.5px;border:2px dashed ' + ds.__baseColor + ';box-sizing:border-box;display:block"></span>'
+            : '<span style="width:14px;height:14px;border-radius:3.5px;background:' + ds.__baseColor + ';display:block"></span>';
         /* HIER steht der Wert des Linechart-Tooltips -- nicht in makeDonutTooltip, wo ich ihn
            zuerst gesucht habe. fmtPct haengt fest ein Prozentzeichen an; Rang und Sentiment
            sind keine Prozentwerte. Ohne Angabe bleibt es bei fmtPct, damit sich fuer die
@@ -12957,7 +12964,9 @@
         '<span class="up-company-inner-gap"></span>'
       : '';
     return '<div class="up-company-item' + (measure ? " up-measure-item" : "") + '" data-company-id="' + esc(c.company_id) + '">' +
-        '<span class="up-company-color" style="background:' + esc(c.color || "#999999") + '"></span>' +
+        (c.dash
+          ? '<span class="up-company-color is-dash" style="border-color:' + esc(c.color || "#999999") + '"></span>'
+          : '<span class="up-company-color" style="background:' + esc(c.color || "#999999") + '"></span>') +
         '<span class="up-company-inner-gap"></span>' +
         fav +
         '<span class="up-company-name">' + esc(c.name) + '</span>' +
@@ -13637,6 +13646,113 @@
      cfg: { wrap, canvas, legend, isDark(), isOwner(), gran(), watermark:bool }
      The component builds {labels, datasets}; datasets must carry __id / __baseColor / __favicon.
      Returns { render, skeleton, empty, destroy, resize, relayoutLegend, chart }. */
+  /* ---- EVENT-MARKER IN DEN LINIENDIAGRAMMEN (02.10., Impact Events) -----------------------------
+     Ein Event ist ein Tag mit einem Namen. Im Diagramm: ein duenner senkrechter Strich an diesem
+     Tag in der Farbe des Events und oben darueber ein kleiner runder Kopf mit dem Zeichen des Typs.
+     Kein Hintergrund, keine Flaeche -- das Diagramm bleibt ein Upstreem-Diagramm.
+     ZENTRAL HIER, nicht je Komponente: alle sechs Zeitreihen (visibility-chart, citations-combo,
+     brands-overview, brand-/domain-/performance-detail) laufen ueber makeLine und bekommen die
+     Marker damit ohne eigene Zeile. Ein Annotations-Plugin von Chart.js ist nicht geladen; der
+     Strich ist ein eigenes Plugin wie Raster und Fuehrungslinie, der Kopf ein Knopf ueber der
+     Leinwand -- so traegt er den Tooltip der App (data-tip) und ist klick- und tastaturbar.
+     Woher: cfg.markers als Funktion (das Event-Detail gibt sein eigenes Event und die
+     Ueberschneidungen), cfg.markers === false schaltet ab, sonst der Event-Store -- dann nur bei
+     der Einstellung "Show event markers" an.
+     Wo: ein Tag zwischen zwei Beschriftungen wird zwischen ihnen eingeordnet, nach Tagen. Das
+     deckt Luecken in einer Tagesreihe ebenso ab wie Wochen- und Monatsbuckets: ein Event am
+     10.09. steht in der Woche ab dem 08.09. an seiner Stelle, nicht auf deren Anfang. Ausserhalb
+     der gezeigten Zeit steht kein Marker. */
+  var EVM_GRUPPE_PX = 14;   /* naeher als ein Kopf breit: ein Marker mit Zaehler statt zweier uebereinander */
+  function evmTag(s){
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s || ""));
+    return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) : NaN;
+  }
+  function evmX(chart, datum){
+    var labels = (chart.data && chart.data.labels) || [], x = chart.scales && chart.scales.x, n = labels.length;
+    if (!x || !n) return null;
+    var d = evmTag(datum);
+    if (isNaN(d)) return null;
+    var ks = labels.map(function(l){ return evmTag(dayKey(l)); });
+    function px(i){ return x.getPixelForValue(i); }
+    if (n === 1) return ks[0] === d ? px(0) : null;
+    if (isNaN(ks[0]) || d < ks[0]) return null;
+    for (var i = 0; i < n - 1; i++){
+      if (isNaN(ks[i]) || isNaN(ks[i + 1])) continue;
+      if (d >= ks[i] && d <= ks[i + 1]){
+        var span = ks[i + 1] - ks[i];
+        return span > 0 ? px(i) + (px(i + 1) - px(i)) * ((d - ks[i]) / span) : px(i);
+      }
+    }
+    /* Hinter der letzten Beschriftung nur innerhalb ihres eigenen Buckets (Woche, Monat). In
+       einer Tagesreihe ist der Bucket ein Tag -- dort steht danach nichts mehr. */
+    var schritt = ks[n - 1] - ks[n - 2];
+    if (d > ks[n - 1] && d < ks[n - 1] + schritt){
+      var xp = px(n - 1) + (px(n - 1) - px(n - 2)) * ((d - ks[n - 1]) / schritt);
+      return Math.min(xp, chart.chartArea ? chart.chartArea.right : xp);
+    }
+    return null;
+  }
+  /* Marker zu Gruppen: nach x sortiert, alles innerhalb von EVM_GRUPPE_PX in eine Gruppe. Eine
+     Gruppe mit dem Fokus-Event ist eine Fokus-Gruppe; ihre Farbe ist die des Fokus. */
+  function evmGruppen(chart, liste){
+    var mit = [];
+    (liste || []).forEach(function(m){
+      var x = evmX(chart, m.date);
+      if (x != null && isFinite(x)) mit.push({ m: m, x: x });
+    });
+    mit.sort(function(a, b){ return a.x - b.x; });
+    var gruppen = [];
+    mit.forEach(function(e){
+      var g = gruppen[gruppen.length - 1];
+      if (g && Math.abs(e.x - g.x) < EVM_GRUPPE_PX){ g.items.push(e.m); if (e.m.fokus){ g.fokus = true; g.x = e.x; } }
+      else gruppen.push({ x: e.x, items: [e.m], fokus: !!e.m.fokus });
+    });
+    gruppen.forEach(function(g){
+      g.items.sort(function(a, b){ return (b.fokus ? 1 : 0) - (a.fokus ? 1 : 0); });
+    });
+    return gruppen;
+  }
+  /* Steht ueberhaupt ein Marker im Bild? Nur nach Tagen, ohne Pixel: das obere Polster wird
+     berechnet, BEVOR es Skalen gibt -- beim ersten Aufbau ist das Chart dann noch gar nicht da
+     (gemessen: Polster 10 statt 26, die Koepfe ragten aus dem Kasten). */
+  function evmImZeitraum(labels, liste){
+    var n = (labels || []).length;
+    if (!n || !liste || !liste.length) return false;
+    var a = evmTag(dayKey(labels[0])), z = evmTag(dayKey(labels[n - 1]));
+    if (isNaN(a) || isNaN(z)) return false;
+    var schritt = n > 1 ? z - evmTag(dayKey(labels[n - 2])) : 0;
+    for (var i = 0; i < liste.length; i++){
+      var d = evmTag(liste[i] && liste[i].date);
+      if (!isNaN(d) && d >= a && (d <= z || d < z + schritt)) return true;
+    }
+    return false;
+  }
+  function evmFarbe(m, wrap){
+    var c = m && m.color;
+    if (c && /^#[0-9a-f]{6}$/i.test(String(c))) return c;
+    var a = "";
+    try { a = getComputedStyle(wrap).getPropertyValue("--up-accent").trim(); } catch(e){}
+    return a || "#6b6f78";
+  }
+  /* Ein Event oeffnen -- von einem Marker, einer Karte, einem Link. Die Adresse traegt ?event=,
+     die Ansicht ist "events"; das Ereignis up-event-open sagt es einer Events-Komponente, die
+     schon offen ist (dort gibt es keinen Ansichtswechsel, den sie sehen koennte). */
+  function eventOeffnen(id){
+    id = String(id == null ? "" : id).trim();
+    if (!id) return false;
+    try {
+      var u = new URL(window.location.href);
+      u.searchParams.set("event", id);
+      window.history.pushState(window.history.state, "", u.pathname + u.search + u.hash);
+    } catch(e){}
+    try { window.dispatchEvent(new CustomEvent("up-event-open", { detail: { id: id } })); } catch(e){}
+    try {
+      var offen = (typeof currentView === "function" && currentView()) || "";
+      if (offen !== "events" && typeof window.showView === "function") window.showView("events");
+    } catch(e){}
+    return true;
+  }
+
   function makeLine(cfg){
     /* Standard bleibt Prozent -- alle bestehenden Aufrufer erwarten das. Als Funktion, weil
        der Modus in brand-detail zwischen zwei Renders wechselt. */
@@ -13649,6 +13765,91 @@
     var isDark = cfg.isDark || function(){ return false; };
     var isOwner = cfg.isOwner || function(){ return true; };
     var chart = null, legendCompanies = [], verifyT = null, sizeIv = null, lastBuilt = null, lastSig = null;
+    /* Event-Marker (siehe evmX darueber). Gruppen und Ebene leben je Diagramm. */
+    function markerDaten(){
+      if (cfg.markers === false) return [];
+      if (typeof cfg.markers === "function"){
+        var l = null;
+        try { l = cfg.markers(); } catch(e){ l = null; }
+        return Array.isArray(l) ? l : [];
+      }
+      if (getPref("event_markers") !== "on") return [];
+      return getEvents().map(function(e){
+        return { id: e.id, date: e.event_date, name: e.name, type: e.event_type, color: e.color };
+      });
+    }
+    var evmEbene = null, evmSig = "";
+    function evmEbeneWeg(){ if (evmEbene && evmEbene.parentNode) evmEbene.parentNode.removeChild(evmEbene); evmEbene = null; evmSig = ""; }
+    function evmTip(g){
+      return g.items.map(function(m){
+        var typ = eventTyp(m.type);
+        return (m.name || "") + " \u00b7 " + fmtDate(m.date) + " \u00b7 " + t(typ.label);
+      }).join("\n");
+    }
+    function evmZeichnen(c){
+      var ca = c.chartArea;
+      if (!ca){ evmEbeneWeg(); return; }
+      var gruppen = evmGruppen(c, markerDaten());
+      if (!gruppen.length){ evmEbeneWeg(); return; }
+      if (!evmEbene || !evmEbene.isConnected){
+        evmEbene = document.createElement("div");
+        evmEbene.className = "up-evm-layer";
+        wrap.appendChild(evmEbene);
+        evmSig = "";
+        evmEbene.addEventListener("click", function(e){
+          var b = e.target && e.target.closest ? e.target.closest(".up-evm") : null;
+          if (!b) return;
+          var id = b.getAttribute("data-event-id");
+          if (typeof cfg.onMarker === "function"){ try { cfg.onMarker(id); } catch(err){} return; }
+          eventOeffnen(id);
+        });
+      }
+      var sig = gruppen.map(function(g){ return g.items.map(function(m){ return m.id + ":" + (m.color || "") + ":" + (m.fokus ? 1 : 0); }).join("+"); }).join("|");
+      if (sig !== evmSig){
+        evmSig = sig;
+        evmEbene.innerHTML = gruppen.map(function(g){
+          var m = g.items[0], typ = eventTyp(m.type), mehr = g.items.length - 1;
+          return '<button type="button" class="up-evm' + (g.fokus ? " is-fokus" : "") + (m.fokus || g.fokus ? "" : " is-neben") + '"' +
+            ' style="--evm:' + esc(evmFarbe(m, wrap)) + '" data-event-id="' + esc(m.id) + '"' +
+            ' data-tip="' + esc(evmTip(g)) + '" aria-label="' + esc(evmTip(g)) + '">' +
+            icon(typ.icon, 2) + (mehr > 0 ? '<span class="up-evm-mehr">+' + mehr + '</span>' : '') + '</button>';
+        }).join("");
+      }
+      var knoepfe = evmEbene.querySelectorAll(".up-evm");
+      for (var i = 0; i < knoepfe.length && i < gruppen.length; i++){
+        knoepfe[i].style.left = (canvas.offsetLeft + gruppen[i].x) + "px";
+        knoepfe[i].style.top = (canvas.offsetTop + ca.top) + "px";
+      }
+    }
+    var evmPlugin = {
+      id: "upEventMarker",
+      beforeDatasetsDraw: function(c){
+        var ca = c.chartArea, ctx = c.ctx;
+        if (!ca) return;
+        var gruppen = evmGruppen(c, markerDaten());
+        if (!gruppen.length) return;
+        ctx.save();
+        gruppen.forEach(function(g){
+          var m = g.items[0], x = Math.round(g.x) + 0.5;
+          ctx.beginPath(); ctx.moveTo(x, ca.top); ctx.lineTo(x, ca.bottom);
+          /* Das Fokus-Event (Event-Detail) traegt den kraeftigeren Strich; alle anderen sind
+             duenn und gestrichelt, wenn sie als Nebensache markiert sind. */
+          ctx.lineWidth = g.fokus ? 1.5 : 1;
+          ctx.setLineDash(m.gestrichelt && !g.fokus ? [3, 3] : []);
+          ctx.globalAlpha = g.fokus || !m.gestrichelt ? 0.9 : 0.6;
+          ctx.strokeStyle = evmFarbe(m, wrap);
+          ctx.stroke();
+        });
+        ctx.restore();
+      },
+      afterDraw: function(c){ try { evmZeichnen(c); } catch(e){} }
+    };
+    /* Neue Events oder ein anderer Stand der Einstellung: still nachzeichnen. update rechnet auch
+       das obere Polster neu, in dem die Koepfe stehen. */
+    window.addEventListener("up-events-change", function(){
+      if (!isOwner() || !chart) return;
+      try { chart.update("none"); } catch(e){}
+    });
     /* Der Waechter fuer "der View wird eingeblendet". Angelegt EINMAL je makeLine und nicht je
        Zeichnung -- er haengt am Kasten, nicht am Chart, und den Kasten gibt es hier schon. */
     chartBeiSichtbarwerden(wrap, function(){ return chart; });
@@ -13674,10 +13875,11 @@
     function builtSig(built){
       if (!built || !built.datasets) return null;
       try {
-        var parts = [isDark() ? "d" : "l", getLineWidthPref(), (built.labels || []).join(",")];
+        var parts = [isDark() ? "d" : "l", getLineWidthPref(), (built.labels || []).join(","),
+                     (typeof cfg.reverse === "function" ? cfg.reverse() : cfg.reverse) ? "r" : ""];
         for (var i = 0; i < built.datasets.length; i++){
           var d = built.datasets[i];
-          parts.push(String(d.label) + "|" + String(d.__baseColor || d.borderColor || "") + "|" + (d.data || []).join(","));
+          parts.push(String(d.label) + "|" + String(d.__baseColor || d.borderColor || "") + "|" + (d.__dash ? "-" : "") + "|" + (d.data || []).join(","));
         }
         return parts.join(";");
       } catch(e){ return null; }
@@ -13756,6 +13958,7 @@
          from a hover right before a reload would stay stuck on screen. */
       var tt = wrap.querySelector(".up-line-tt");
       if (tt) tt.style.opacity = "0";
+      evmEbeneWeg();
     }
     function clearLegend(){ if (legendEl){ legendCompanies = []; legendEl.innerHTML = ""; } }
 
@@ -13790,7 +13993,7 @@
     function renderLegend(datasets){
       if (!legendEl) return;
       legendCompanies = (datasets || []).map(function(ds){
-        return { company_id: ds.__id, name: ds.label, color: ds.__baseColor, favicon_url: ds.__favicon };
+        return { company_id: ds.__id, name: ds.label, color: ds.__baseColor, favicon_url: ds.__favicon, dash: !!ds.__dash };
       });
       if (!legendCompanies.length){ legendEl.innerHTML = ""; return; }
       legendEl.innerHTML =
@@ -13886,6 +14089,9 @@
         d.pointBackgroundColor = single ? d.__baseColor : tc.bg;
         d.pointBorderColor = d.__baseColor; d.pointHoverBackgroundColor = tc.bg; d.pointHoverBorderColor = d.__baseColor;
         d.spanGaps = true; d.clip = 8;
+        /* __dash: eine Vergleichsreihe (Event-Detail). build() setzt jede Linieneigenschaft neu,
+           also muss auch der Strich hier stehen -- sonst waere er nach dem ersten Neuzeichnen weg. */
+        d.borderDash = d.__dash ? [5, 4] : [];
       });
       var visMax = 0;
       ds.forEach(function(d){ (d.data || []).forEach(function(v){ if (v != null && v > visMax) visMax = v; }); });
@@ -13897,7 +14103,7 @@
           /* Raster ZUERST. Beide zeichnen in beforeDatasetsDraw, und dort entscheidet die
              Reihenfolge in dieser Liste: so liegt die Fuehrungslinie ueber dem gestrichelten
              Raster und beide unter den Linien und Punkten. */
-          plugins: [dashedGridPlugin, hoverLinePlugin],
+          plugins: [dashedGridPlugin, hoverLinePlugin, evmPlugin],
           options: {
             responsive: true, maintainAspectRatio: false,
             /* Chart.js haengt bei responsive: true einen eigenen Beobachter an den Kasten und
@@ -13911,7 +14117,10 @@
             transitions: { highlight: { animation: { duration: 200, easing: "easeOutQuad" } } },
             interaction: { mode: "index", intersect: false },
             layout: { padding: function(){
-              return { top: 8, right: single ? 2 : xRandRechts((cfg.gran && cfg.gran()) || "day"), bottom: 0, left: 0 };
+              /* Oben Platz fuer die Koepfe der Event-Marker, aber nur, wenn einer im Bild steht --
+                 sonst bleibt jedes Diagramm genau so hoch, wie es war. */
+              var oben = evmImZeitraum(labels, markerDaten()) ? 26 : 8;
+              return { top: oben, right: single ? 2 : xRandRechts((cfg.gran && cfg.gran()) || "day"), bottom: 0, left: 0 };
             } },
             plugins: { legend: { display: false }, tooltip: { enabled: false, external: makeLineTooltip(wrap, isDark, cfg.gran, einheit, cfg.tipLabel, cfg.decimals) } },
             scales: {
@@ -13962,7 +14171,8 @@
                               }
                               return lab.slice(5);   // day / week → "MM-DD"
                             } } },
-              y: { min:0, max:yMax, beginAtZero:true,
+              /* reverse: beim Rang ist kleiner besser -- oben steht dann der bessere Wert. */
+              y: { min:0, max:yMax, beginAtZero:true, reverse: !!(typeof cfg.reverse === "function" ? cfg.reverse() : cfg.reverse),
                    /* RASTER_N + 1 Ticks: die Null und dann jeder Bruchteil bis zum Maximum. Vorher
                       drei Schritte (0, m/3, 2m/3, m), jetzt vier -- die "zusaetzliche waagerechte
                       Linie" der Meldung ist genau dieser Schritt, und weil die Beschriftungen
@@ -15761,6 +15971,112 @@
   })();
 
   /* ---------------------------------------------------------------------------------------------
+     Event-Store (02.10., Impact Events). Dieselbe Form wie der Modell-Store darueber. Gefuellt aus
+     list_impact_events_v1 -- EINE Antwort fuer zwei Leser: die Events-Uebersicht und die
+     Event-Marker in jedem Liniendiagramm. Die Marker brauchen nur event_date, name, event_type,
+     color; die volle Analyse laedt nur das Event-Detail.
+     readBubble statt parseLoose: das Feld icon traegt in der Datenbank Emojis, und parseLoose
+     scheitert an Emojis (gemessen, siehe Notiz zur Parser-Wahl).
+     at > 0 heisst "geliefert" -- eine leere Liste ist dann wirklich leer, nicht "kommt noch".
+     fehler: die letzte Lieferung war unlesbar. Leer und kaputt sehen nie gleich aus. */
+  var EVENTS = (window.__upEvents = window.__upEvents || { list: [], at: 0, seq: 0, subs: [], fehler: false });
+  function getEvents(){ return EVENTS.list.slice(); }
+  function eventsStand(){ return { geladen: EVENTS.at > 0, fehler: !!EVENTS.fehler, seq: EVENTS.seq }; }
+  function onEvents(fn, owner){
+    var sub = { fn: fn, owner: owner || null };
+    EVENTS.subs.push(sub);
+    return function(){
+      var i = EVENTS.subs.indexOf(sub);
+      if (i >= 0) EVENTS.subs.splice(i, 1);
+    };
+  }
+  /* Nur Zeilen mit id und einem Tag im Format JJJJ-MM-TT. Eine Zeile ohne Datum kann kein Marker
+     sein und keine Karte sortieren -- sie faellt weg, und die Konsole sagt es einmal. */
+  function eventZeileOk(r){
+    return !!(r && typeof r === "object" && r.id != null && /^\d{4}-\d{2}-\d{2}/.test(String(r.event_date || "")));
+  }
+  function setEvents(rows, label){
+    var list = readBubble(rows);
+    if (list && !isArray(list)) list = [list];
+    EVENTS.at = nowMs();
+    EVENTS.seq++;
+    if (!list){
+      EVENTS.fehler = true;
+      if (window.console) console.warn("[events] " + (label || "setUpstreemEvents") + ": die Liste war nicht lesbar.");
+    } else {
+      var gut = list.filter(eventZeileOk);
+      if (gut.length !== list.length && window.console)
+        console.warn("[events] " + (list.length - gut.length) + " Zeile(n) ohne id oder event_date verworfen.");
+      gut.forEach(function(r){ r.event_date = String(r.event_date).slice(0, 10); });
+      EVENTS.list = gut;
+      EVENTS.fehler = false;
+    }
+    for (var i = EVENTS.subs.length - 1; i >= 0; i--){
+      var sub = EVENTS.subs[i];
+      if (sub.owner && !document.contains(sub.owner)){ EVENTS.subs.splice(i, 1); continue; }
+      try { sub.fn(EVENTS.list.slice()); } catch(e){
+        if (window.console) console.warn("[events] a subscriber threw while updating:", e);
+      }
+    }
+    try { window.dispatchEvent(new CustomEvent("up-events-change", { detail: { seq: EVENTS.seq } })); } catch(e){}
+    return !!list;
+  }
+  /* DIE EVENT-TYPEN. event_type ist in der Datenbank freier Text -- die Liste legt die UI fest
+     (Vertrag 6.2). Hier in core und nicht in events.js, weil auch die Marker in jedem
+     Liniendiagramm Zeichen und Namen des Typs zeigen. Das Zeichen kommt aus UC.icon, NIE aus dem
+     Feld icon der Datenbank: dort stehen Emojis, und Emojis gehoeren nicht in die Oberflaeche
+     (Entscheidung 02.10.). gruppe waehlt eine der acht Grafik-Varianten der Karten. */
+  var EVENT_TYPEN = [
+    { key: "website_relaunch",  label: "Website relaunch",   icon: "globe",         gruppe: "website" },
+    { key: "new_website",       label: "New website",        icon: "appWindow",     gruppe: "website" },
+    { key: "blog_article",      label: "New blog article",   icon: "fileText",      gruppe: "content" },
+    { key: "content_update",    label: "Content update",     icon: "squarePen",     gruppe: "content" },
+    { key: "landing_page",      label: "Landing page",       icon: "compass",       gruppe: "website" },
+    { key: "product_launch",    label: "Product launch",     icon: "rocket",        gruppe: "product" },
+    { key: "feature_launch",    label: "Feature launch",     icon: "sparkles",      gruppe: "product" },
+    { key: "pricing_change",    label: "Pricing change",     icon: "euro",          gruppe: "pricing" },
+    { key: "pr_campaign",       label: "PR campaign",        icon: "newspaper",     gruppe: "pr" },
+    { key: "paid_editorial",    label: "Paid article",       icon: "badgeEuro",     gruppe: "pr" },
+    { key: "wikipedia_new",     label: "New Wikipedia page", icon: "bookOpen",      gruppe: "external" },
+    { key: "wikipedia_update",  label: "Wikipedia update",   icon: "bookOpenCheck", gruppe: "external" },
+    { key: "directory_profile", label: "Directory profile",  icon: "star",          gruppe: "external" },
+    { key: "event_page",        label: "Event page",         icon: "ticket",        gruppe: "website" },
+    { key: "brand_campaign",    label: "Brand campaign",     icon: "megaphone",     gruppe: "campaign" },
+    { key: "offline_campaign",  label: "Offline campaign",   icon: "signpost",      gruppe: "campaign" },
+    { key: "rebranding",        label: "Rebranding",         icon: "palette",       gruppe: "campaign" },
+    { key: "partnership",       label: "Partnership",        icon: "handshake",     gruppe: "other" },
+    { key: "other",             label: "Other",              icon: "pin",           gruppe: "other" }
+  ];
+  /* Ein unbekannter Typ (freier Text aus einer spaeteren Fassung) ist "Other" -- mit Zeichen und
+     Grafik von Other, aber seinem eigenen Namen nicht: ein Schluessel wie "podcast_launch" ist
+     kein Wort fuer die Oberflaeche. */
+  function eventTyp(key){
+    var k = String(key || "").trim();
+    for (var i = 0; i < EVENT_TYPEN.length; i++) if (EVENT_TYPEN[i].key === k) return EVENT_TYPEN[i];
+    return EVENT_TYPEN[EVENT_TYPEN.length - 1];
+  }
+  addMessages("de", {
+    "Website relaunch": "Website-Relaunch", "New website": "Neue Website", "New blog article": "Neuer Blogartikel",
+    "Content update": "Content-Update", "Landing page": "Landingpage", "Product launch": "Produktlaunch",
+    "Feature launch": "Feature-Launch", "Pricing change": "Preisänderung", "PR campaign": "PR-Kampagne",
+    "Paid article": "Bezahlter Artikel", "New Wikipedia page": "Neue Wikipedia-Seite", "Wikipedia update": "Wikipedia-Update",
+    /* "Event page" ebenso: steht schon als "Veranstaltung" im Katalog (URL-Typ) und bleibt so. */
+    "Directory profile": "Verzeichnisprofil", "Brand campaign": "Markenkampagne",
+    /* "Other" steht schon im Katalog ("Andere", Zeile um 2228) -- hier NICHT noch einmal: ein
+       zweiter Eintrag haette das Wort in der ganzen App umgestellt. */
+    "Offline campaign": "Offline-Kampagne", "Rebranding": "Rebranding", "Partnership": "Partnerschaft",
+    "Show event markers": "Event-Marker zeigen", "Events": "Events"
+  });
+  window.setUpstreemEvents = function(rows){ return setEvents(rows, "setUpstreemEvents"); };
+  window.getUpstreemEvents = getEvents;
+  (function drainEventsQueue(){
+    var q = window.__upEventsQueue;
+    if (!q || !q.length) return;
+    window.__upEventsQueue = [];
+    for (var i = 0; i < q.length; i++){ try { setEvents(q[i], "setUpstreemEvents (queued)"); } catch(e){} }
+  })();
+
+  /* ---------------------------------------------------------------------------------------------
      Market store. Third store of the same shape, and it needs BOTH halves of the topic store's
      design, not just the fan-out: a market row carries prompt_count, and the list only ever holds
      markets the team has actually assigned prompts to. Adding or deleting a prompt therefore
@@ -17417,6 +17733,19 @@
        also traegt der Satz jetzt seine Form, und beide holen sie von hier (NAV_ZEICHEN "discover"). */
     compass: '<circle cx="12" cy="12" r="10"/>' +
              '<path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/>',
+    /* Die Zeichen der Event-Typen (02.10., Impact Events), Lucide 0.460.0 aus lucide-static
+       uebernommen -- nicht nachgezeichnet. Bei palette sind die Farbpunkte ohne Fuellung (Regel:
+       keine gefuellten Icons); als Strich mit 2px Breite stehen sie trotzdem als Punkte da. */
+    appWindow: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M10 4v4"/><path d="M2 8h20"/><path d="M6 4v4"/>',
+    rocket: '<path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>',
+    sparkles: '<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/>',
+    euro: '<path d="M4 10h12"/><path d="M4 14h9"/><path d="M19 6a7.7 7.7 0 0 0-5.2-2A7.9 7.9 0 0 0 6 12c0 4.4 3.5 8 7.8 8 2 0 3.8-.8 5.2-2"/>',
+    badgeEuro: '<path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="M7 12h5"/><path d="M15 9.4a4 4 0 1 0 0 5.2"/>',
+    bookOpenCheck: '<path d="M12 21V7"/><path d="m16 12 2 2 4-4"/><path d="M22 6V4a1 1 0 0 0-1-1h-5a4 4 0 0 0-4 4 4 4 0 0 0-4-4H3a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h6a3 3 0 0 1 3 3 3 3 0 0 1 3-3h6a1 1 0 0 0 1-1v-1.3"/>',
+    ticket: '<path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/>',
+    signpost: '<path d="M12 13v8"/><path d="M12 3v3"/><path d="M18 6a2 2 0 0 1 1.387.56l2.307 2.22a1 1 0 0 1 0 1.44l-2.307 2.22A2 2 0 0 1 18 13H6a2 2 0 0 1-1.387-.56l-2.306-2.22a1 1 0 0 1 0-1.44l2.306-2.22A2 2 0 0 1 6 6z"/>',
+    palette: '<circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>',
+    handshake: '<path d="m11 17 2 2a1 1 0 1 0 3-3"/><path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/><path d="m21 3 1 11h-2"/><path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"/><path d="M3 4h8"/>',
     /* Package01Icon -- Produkt/Paket -- Discover Brands und Settings Brand */
     package: '<path d="M2.5 7.5V13.5C2.5 17.2712 2.5 19.1569 3.67157 20.3284C4.84315 21.5 6.72876 21.5 10.5 21.5H13.5C17.2712 21.5 19.1569 21.5 20.3284 20.3284C21.5 19.1569 21.5 17.2712 21.5 13.5V7.5"/>' +
              '<path d="M3.86909 5.31461L2.5 7.5H21.5L20.2478 5.41303C19.3941 3.99021 18.9673 3.2788 18.2795 2.8894C17.5918 2.5 16.7621 2.5 15.1029 2.5H8.95371C7.32998 2.5 6.51812 2.5 5.84013 2.8753C5.16215 3.2506 4.73113 3.93861 3.86909 5.31461Z"/>' +
@@ -19383,6 +19712,8 @@
     getModels: getModels,
     setModels: setModels,
     onModels: onModels,
+    getEvents: getEvents, setEvents: setEvents, onEvents: onEvents, eventsStand: eventsStand,
+    EVENT_TYPEN: EVENT_TYPEN, eventTyp: eventTyp, eventOeffnen: eventOeffnen,
     storeStand: storeStand,
     getQuota: getQuota,
     setQuota: setQuota,

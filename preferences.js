@@ -95,6 +95,8 @@
       "Show legend": "Legende zeigen",
       "The legend under a line chart, with one entry per brand.":
         "Die Legende unter einem Linienchart, ein Eintrag je Marke.",
+      "A thin line on every line chart for each event in its time range.":
+        "Eine dünne Linie in jedem Linienchart für jedes Event in seinem Zeitraum.",
       "Preferred name": "Bevorzugter Name",
       "Your name": "Dein Name",
       "Change your picture": "Bild wechseln",
@@ -467,6 +469,10 @@
           '</span>') +
         zeileHtml("Show legend", "The legend under a line chart, with one entry per brand.",
           schalterHtml("legend", legende)) +
+        /* Event-Marker (02.10., Impact Events). Vorgabe an. Das Event-Detail zeigt sein eigenes
+           Event unabhaengig davon -- die Beschreibung sagt "line charts", nicht "everywhere". */
+        zeileHtml("Show event markers", "A thin line on every line chart for each event in its time range.",
+          schalterHtml("event_markers", !UC.getPref || UC.getPref("event_markers") !== "off")) +
       '</div>';
     }
     function themaJetzt() {
@@ -615,6 +621,10 @@
          die Seitenleiste haengt. Ein zweiter Weg waere ein zweiter Zustand. */
       if (name === "branding" && UC.setPref) {
         UC.setPref("branding", UC.getPref("branding") === "off" ? "on" : "off");
+      }
+      /* Derselbe Weg: setPref feuert up-prefs-change, und daran zeichnet jedes Liniendiagramm neu. */
+      if (name === "event_markers" && UC.setPref) {
+        UC.setPref("event_markers", UC.getPref("event_markers") === "off" ? "on" : "off");
       }
       zeichnen();
     }
