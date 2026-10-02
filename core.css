@@ -3015,10 +3015,10 @@
 .up-evm-ort { position: absolute; width: 0; height: 0; }
 /* Der Knopf traegt seine Pins: einer beim einzelnen Event, bis zu drei im Stapel, je 14px versetzt
    (Vorgabe), der vorderste oben. --n und --i setzt makeLine. */
-.up-evm-knopf { position: absolute; left: -10px; top: -10px; height: 20px; width: calc(20px + (var(--n, 1) - 1) * 14px);
+.up-evm-knopf { position: absolute; left: -10px; top: -10px; height: 20px; width: calc(20px + (var(--n, 1) - 1) * 16px);
   padding: 0; margin: 0; border: 0; background: none; cursor: pointer; pointer-events: auto; font: inherit; }
 .up-evm-knopf:focus-visible { outline: 2px solid var(--up-focus); outline-offset: 2px; border-radius: var(--up-r-m); }
-.up-evm { position: absolute; left: calc(var(--i, 0) * 14px); top: 0; z-index: calc(3 - var(--i, 0)); width: 20px; height: 20px; box-sizing: border-box;
+.up-evm { position: absolute; left: calc(var(--i, 0) * 16px); top: 0; z-index: calc(3 - var(--i, 0)); width: 20px; height: 20px; box-sizing: border-box;
   display: flex; align-items: center; justify-content: center;
   border: 1px solid var(--up-evm-rand); border-radius: var(--up-r-s); background: var(--vc-bg);
   color: var(--vc-muted); box-shadow: var(--up-e-1); }
@@ -3035,7 +3035,7 @@
    Mitte des letzten Pins, 3px ueber seiner Oberkante; an der Kante spiegelt makeLine sie nach links
    (.is-links). Schatten wie in der Vorgabe (0 4px 14px .08) -- zwischen --up-e-1 und --up-e-2, die
    beide nicht passen. Erscheint bei Hover, Fokus oder nach einem Tipp (.is-offen), 120ms Einblenden. */
-.up-evm-karte { position: absolute; z-index: 5; left: calc(20px + (var(--n, 1) - 1) * 14px); top: -13px; white-space: nowrap;
+.up-evm-karte { position: absolute; z-index: 5; left: calc(20px + (var(--n, 1) - 1) * 16px); top: -13px; white-space: nowrap;
   min-width: 190px; padding: 6px; display: flex; flex-direction: column; gap: 2px;
   background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
   box-shadow: 0 4px 14px rgba(17,24,39,.08);
@@ -3502,6 +3502,20 @@
 .up-sent.up-pille { height: var(--up-h-chip); padding: 0 6px; border: 1px solid var(--vc-border); border-radius: var(--up-r-s); }
 .up-pille .up-sent-dot { width: 6px; height: 6px; border-radius: 2px; }
 .up-pille .up-sent-val { font-size: var(--up-fs-m); }
+/* DIE MARKE HINTER EINEM NAMEN (03.10. aus team-orga.css nach core): "You" in der Mitgliederliste
+   und in der Marktbewegung der Events, "upstreem Team" in der Mitgliederliste. EINE Geometrie,
+   die Farbe je Marke -- vorher lebte die Form nur in team-orga, und die Events bauten sich eine
+   zweite. Masse unveraendert von dort: 20 hoch, Polster 7, Radius 7, Schrift 11/600. "You" in
+   der Akzent-Tinte mit 10 Prozent Flaeche; am Standard ein leises Grau mit fast schwarzer Schrift. */
+.up-marke { flex: 0 0 auto; height: 20px; padding: 0 7px; border-radius: 7px; max-width: 100%;
+  font-size: var(--up-fs-xs); font-weight: var(--up-fw-h); letter-spacing: .02em; line-height: 20px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.up-you { background: color-mix(in srgb, var(--up-accent-ink) 10%, transparent); color: var(--up-accent-ink); }
+/* Die leise Marke: eine Einordnung ohne Betonung -- der Typ eines Events auf seiner Karte (03.10.:
+   "den Typ ohne Icon in einem kleinen Chip"). Die Flaeche ist die des Zaehler-Chips in der Karte
+   der Event-Pins (--up-sel-bg, "3 Events"): dieselbe Art Angabe, derselbe Grund. --vc-heading-bg
+   war zu nah am Kartenweiss (#f9f8f9 auf #fff), der Chip las sich als blosser Text. */
+.up-marke.is-leise { background: var(--up-sel-bg); color: var(--vc-muted); }
 /* Der Tarif als Pille (UC.planPilleHtml, 28.09. aus teams.css hierher, seit settings-billing sie
    auch zeigt). Der Grundton des Punktes steht HIER und nicht im JS: .up-sent-dot bringt keine
    Farbe mit (die Sentiment-Zelle setzt sie immer inline), und ein Tarif ohne Farbeintrag hatte
@@ -4333,6 +4347,24 @@
 .up-kpi-trend .up-trend { font-size: var(--up-fs-l); }
 .up-kpi-foot { font-size: var(--up-fs-s); color: var(--vc-third); }
 .up-kpi-foot strong { font-weight: var(--up-fw-m); color: var(--vc-muted); }
+/* DIE WERTE IN DER KACHEL SIND DIE DER TABELLENZELLEN (03.10.): .up-num, UC.sentHtml (Balken +
+   Zahl) und .up-rank-group mit Raute -- nur groesser gestellt, wie in power-dashboard (.upw-kpi-val)
+   und brand-detail (.ubd-kpi-val). Ohne diese Zeilen stand die Zahl in ihrer Zellgroesse (14px) in
+   einer 22px-Kachel, und Rang und Sentiment sahen hier anders aus als ueberall sonst.
+   Raute 20 bei 22px Zahl (brand-detail: 21 bei 23), Sentiment-Balken 4x16 wie in power-dashboard.
+   Der Vorher-Wert davor eine Stufe kleiner und zurueckgenommen: Raute 15, Balken bleibt 3x12. */
+.up-kpi-val .up-num, .up-kpi-val .up-sent-val { font-size: inherit; font-weight: inherit; letter-spacing: inherit; }
+.up-kpi-val .up-sent { gap: 8px; }
+.up-kpi-val .up-sent-dot { width: 4px; height: 16px; }
+.up-kpi-val .up-hash { width: 20px; height: 20px; }
+.up-kpi-vorher .up-num, .up-kpi-vorher .up-sent-val { font-size: inherit; font-weight: inherit; color: inherit; }
+.up-kpi-vorher .up-hash { width: 15px; height: 15px; }
+/* Die Fusszeile traegt seit dem 03.10. einen Trend-Chip aus core ("vs. comparison" + Chip) statt
+   fett gesetzten Texts -- dieselbe Einheit wie der Trend neben der Zahl. Chip in Fussgroesse:
+   Schrift wie der Fuss, Pfeil 15 statt 16 (Faktor 12/13). */
+.up-kpi-foot { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px; }
+.up-kpi-foot .up-trend { font-size: inherit; }
+.up-kpi-foot .up-trend svg { width: 15px; height: 15px; }
 .up-kpi.is-sk { gap: 10px; }
 .up-kpi-sk { display: block; height: 12px; border-radius: var(--up-r-xs); background: var(--vc-sk); }
 .up-kpi-sk-l { width: 40%; } .up-kpi-sk-v { width: 70%; height: 24px; } .up-kpi-sk-f { width: 55%; }

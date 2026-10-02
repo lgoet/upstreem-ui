@@ -588,8 +588,8 @@
               '<span class="uto-nametxt">' + esc(name) + '</span>' +
               /* Vor "You": die Marke sagt, WER hier steht, "You" nur, dass man es selbst ist.
                  translate="no" -- "upstreem Team" ist ein Name und bleibt in jeder Sprache so. */
-              (istUpstreem(m) ? '<span class="uto-staff" translate="no">upstreem Team</span>' : "") +
-              (istSelbst(m) ? '<span class="uto-you">' + esc(UC.t("You")) + '</span>' : "") +
+              (istUpstreem(m) ? '<span class="up-marke uto-staff" translate="no">upstreem Team</span>' : "") +
+              (istSelbst(m) ? '<span class="up-marke up-you">' + esc(UC.t("You")) + '</span>' : "") +
             '</div>' +
             '<div class="up-td uto-mail">' + esc(feld(m.email) || "–") + '</div>' +
             '<div class="up-td uto-when">' + esc(fmtDate(feld(m.joined_at))) + '</div>' +

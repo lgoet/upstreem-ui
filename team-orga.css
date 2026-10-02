@@ -112,9 +112,8 @@
    Masse unveraendert: 20px hoch, Polster 7, Radius 7, Schrift 11. */
 /* Die Form teilen sich "You" und "upstreem Team" (28.09.): zwei Marken derselben Art an derselben
    Stelle, also EINE Geometrie -- nur die Farbe ist je Marke eigen. */
-.uto-you, .uto-staff { flex: 0 0 auto; height: 20px; padding: 0 7px; border-radius: 7px;
-  font-size: 11px; font-weight: 600; letter-spacing: .02em; line-height: 20px; white-space: nowrap; }
-.uto-you { background: color-mix(in srgb, var(--up-accent-ink) 10%, transparent); color: var(--up-accent-ink); }
+/* Form (.up-marke) und "You" (.up-you) stehen seit dem 03.10. in core -- die Events brauchen
+   dieselbe Marke. Hier bleibt nur die Farbe der eigenen Marke. */
 /* DAS UPSTREEM-TEAM (28.09. angefordert): wer mit einer @upstreem.ai-Adresse im Team steht, ist
    ein Admin von upstreem und kein Mitglied des Kunden. Die Farbe ist eine eigene Marke aus core
    (--vc-staff-*, warmes Taupe, Begruendung dort) -- "neutral, aber eindeutig", und es gibt sie

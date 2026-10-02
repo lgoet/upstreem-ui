@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261069;
+  var BUILD = 20261070;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -13849,7 +13849,7 @@
      gezeigten Zeit steht kein Pin. */
   var EVM_PIN = 20;          /* Pin 20 x 20 (Vorgabe) */
   var EVM_LUFT = 4;          /* naeher als Pin + 4px: ein Stapel statt zweier Pins (Vorgabe) */
-  var EVM_VERSATZ = 14;      /* Versatz der Pins im Stapel (Vorgabe). Mehr Luft zwischen ihnen gibt der Ring, nicht der Versatz. */
+  var EVM_VERSATZ = 16;      /* Versatz der Pins im Stapel: 14 aus der Vorgabe, am 03.10. abends 2px mehr, damit von den hinteren mehr zu sehen ist. Die Luft zwischen ihnen gibt der Ring (3.5px), nicht der Versatz. */
   var EVM_STAPEL_MAX = 3;    /* mehr zeigt der Stapel nicht -- die Karte nennt alle */
   var EVM_UEBER = 17;        /* Pin-Mitte ueber der obersten Rasterlinie (Vorgabe: ~17px) */
   function evmTag(s){
@@ -18486,8 +18486,11 @@
      Auswahl (beim naechsten Oeffnen steht wieder die angewandte). Dieselben Klassen wie dort
      (.up-ment, .up-ment-btn, .up-ment-menu, .up-filter-item, .up-filter-submit) -- es sieht also
      gleich aus, weil es dieselben Regeln sind. Die Tabellen behalten vorerst ihre eigene Fassung.
-     cfg: { titel, alle, mehrere ("{n} Types"), suche, leer, tip,
-            items: function -> [{ key, label, icon? }], gewaehlt: [keys], onChange(keys) }
+     cfg: { titel, alle, mehrere ("{n} Types"), suche, leer, tip, einzeln,
+            items: function -> [{ key, label, icon?, titel? }], gewaehlt: [keys], onChange(keys) }
+     einzeln (03.10., die URL-Auswahl der Responses in den Events): hoechstens EIN Eintrag -- ein
+     Klick waehlt ihn und nimmt den vorigen ab, ein zweiter Klick nimmt ihn wieder ab. Sonst alles
+     gleich, auch Apply; "Select all" faellt weg, es gibt nichts zum Zusammenwaehlen.
      Rueckgabe: { el, setGewaehlt(keys), gewaehlt(), neu() (Liste neu lesen) } */
   function makeAuswahlFilter(cfg){
     cfg = cfg || {};
@@ -18518,7 +18521,7 @@
       var l = liste();
       return '<div class="up-filter-head"><span class="up-filter-title">' + esc(t_(cfg.titel || "")) + '</span>' +
         (auswahl.length ? '<button class="up-pop-action" type="button" data-af-reset>' + esc(t_("Reset")) + '</button>'
-          : (l.length ? '<button class="up-pop-action" type="button" data-af-alle>' + esc(t_("Select all")) + '</button>' : '')) +
+          : (l.length && !cfg.einzeln ? '<button class="up-pop-action" type="button" data-af-alle>' + esc(t_("Select all")) + '</button>' : '')) +
         '</div>';
     }
     function fuellen(){
@@ -18527,7 +18530,7 @@
         : l.map(function(x){
             var k = String(x.key);
             return '<div class="up-filter-item' + (hat(auswahl, k) ? " is-checked" : "") + '" role="menuitemcheckbox" tabindex="0" aria-checked="' + hat(auswahl, k) +
-                '" data-af-key="' + esc(k) + '" data-af-name="' + esc(String(t_(x.label)).toLowerCase()) + '">' +
+                '" data-af-key="' + esc(k) + '" data-af-name="' + esc(String(t_(x.label)).toLowerCase()) + '"' + (x.titel ? ' title="' + esc(x.titel) + '"' : '') + '>' +
               '<span class="up-filter-check">' + CHECK_SVG + '</span>' +
               (x.icon ? '<span class="up-ment-zeichen">' + icon(x.icon, 2) + '</span>' : '') +
               '<span class="up-ment-name">' + esc(t_(x.label)) + '</span></div>';
@@ -18577,6 +18580,15 @@
       var it = x.closest("[data-af-key]");
       if (it){
         var k = it.getAttribute("data-af-key"), i = auswahl.indexOf(k);
+        if (cfg.einzeln){
+          auswahl = i >= 0 ? [] : [k];
+          var alle = menu.querySelectorAll("[data-af-key]");
+          for (var j = 0; j < alle.length; j++){
+            var an = auswahl.indexOf(alle[j].getAttribute("data-af-key")) >= 0;
+            alle[j].classList.toggle("is-checked", an); alle[j].setAttribute("aria-checked", String(an));
+          }
+          kopfNeu(); return;
+        }
         if (i >= 0) auswahl.splice(i, 1); else auswahl.push(k);
         it.classList.toggle("is-checked", i < 0); it.setAttribute("aria-checked", String(i < 0));
         kopfNeu(); return;
