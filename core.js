@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261062;
+  var BUILD = 20261063;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -6833,12 +6833,18 @@
       return (++versuche) <= VERSUCHE_FRIST;
     }
     var uebersprungen = false;
+    /* cfg.auchVerdeckt (02.10.): diese Komponente wird AUCH verdeckt gebaut, sofort. Fuer genau
+       den Fall, in dem das Parken oben falsch ist: eine Komponente, die beim Aufgehen ihres
+       Drawers schon im Ladezustand stehen muss (Response Detail, gemeldet "das allererste Oeffnen
+       ohne Ladestate"). Gebaut zeigt sie ihr Skelett vom ersten Bild an; ungebaut stand die
+       Flaeche leer, bis core 350ms nach dem Oeffnen weckte oder der erste Setter kam. Eine
+       Wurzel, kein Massenfall -- das Argument fuer das Parken bleibt fuer alle anderen stehen. */
     function initAll(){
       /* Zurueckgestellt, nicht verworfen: uebersprungen setzt das Auffangnetz unten in Gang. */
-      if (zuFrueh()){ uebersprungen = true; return; }
+      if (!cfg.auchVerdeckt && zuFrueh()){ uebersprungen = true; return; }
       var all = roots(), rest = false;
       for (var i = 0; i < all.length; i++){
-        if (messbar(all[i])) cfg.initRoot(all[i]);
+        if (cfg.auchVerdeckt || messbar(all[i])) cfg.initRoot(all[i]);
         else rest = true;
       }
       uebersprungen = rest;

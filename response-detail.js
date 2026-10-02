@@ -1108,6 +1108,15 @@
   mount = UC.makeMount({
     onMount: function (m) { mount = m; },
     rootClass: "urd-root", notPortal: true,
+    /* IM LADEZUSTAND AUF DIE WELT KOMMEN (02.10.). Gemeldet: "oft ist das allererste Oeffnen ohne
+       Ladestate -- die Komponente soll bei Pageload im Ladestate spawnen". makeMount baut eine
+       Wurzel, die der Browser nicht zeichnet, sonst absichtlich NICHT (das Parken in core). Im
+       geschlossenen Drawer stand diese hier darum leer, bis der Drawer aufging oder der erste
+       Setter kam -- kamen die Daten schnell, sah man nie ein Skelett. Gemessen im Pruefstand
+       urd01: HEAD ungebaut bis zum Setter, jetzt gebaut mit 27 Skelett-Teilen vor dem Oeffnen,
+       ob die Wurzel vor dem Skript steht oder 500ms danach kommt. Die Warte-Uhr laeuft verdeckt
+       nur im Sekundentakt (verdecktWarten) und meldet erst bei offenem Drawer. */
+    auchVerdeckt: true,
     ctrlProp: "__urdController",
     resolveLocal: "__urdResolveLocal",
     queue: "__urdBootQueue",
