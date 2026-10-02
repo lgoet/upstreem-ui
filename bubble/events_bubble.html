@@ -29,17 +29,16 @@
   ── DIE LISTE: kein eigener Setter ───────────────────────────────────────────
   Die Uebersicht liest den Event-Store aus core. Ihn fuellt EIN Run-JS-Schritt im Seitenaufbau mit
   list_impact_events_v1 -- dieselbe Antwort setzt die Event-Marker in ALLEN Liniendiagrammen der
-  App. Nach Anlegen und Loeschen denselben Schritt noch einmal laufen lassen.
+  App. Nach Anlegen und Loeschen denselben Schritt noch einmal laufen lassen. Alle Schritte samt
+  statischer Fassung mit den Vertragsdaten: bubble/events_runjs.md.
+  setUpstreemEvents steht seit Pin 2d61ace im Vorlade-Snippet (UP_API): ein Aufruf, der vor core
+  kommt, wird gemerkt und nachgeholt -- die Hausform reicht, keine Warteschleife.
 
       (function () {
         var ROH = `[Ergebnis von list_impact_events_v1]`
           .replace(/:\s*([,}\]])/g, ": null$1")
           .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
-        var n = 0;
-        (function los() {
-          if (window.setUpstreemEvents && !window.setUpstreemEvents.__upShim) { try { window.setUpstreemEvents(ROH); } catch (e) {} return; }
-          if (n++ < 60) setTimeout(los, 100);
-        })();
+        try { if (window.setUpstreemEvents) window.setUpstreemEvents(ROH); } catch (e) {}
       })();
 
   ── Ereignisse an Bubble: der Wert IST der RPC-Body ───────────────────────────
