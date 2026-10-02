@@ -30,6 +30,9 @@
    -> Leerzustand, noch nicht da -> Skelett. Die drei sehen nie gleich aus. */
 (function () {
   "use strict";
+  /* Woher diese Datei kam: daneben liegen die Beispieldaten des Klick-Dummys (events-demo.js).
+     currentScript gibt es nur waehrend des ersten Durchlaufs -- darum hier ganz oben. */
+  var EIGENE_URL = (document.currentScript && document.currentScript.src) || "";
 
   /* ---- Boot-Stubs (STYLEGUIDE §25), VOR der core-Pruefung ---------------------------------- */
   var API_NAMES = ["setEventDetail", "setEventAnalysis", "setEventScopePreview", "setEventError",
@@ -94,7 +97,11 @@
      die Oberflaeche (Entscheidung 1). */
   function typ(ev) { return UC.eventTyp ? UC.eventTyp(ev && ev.event_type) : { key: "other", label: "Other", icon: "pin", gruppe: "other" }; }
   var ZEICHEN = {};
+  /* Die Zeichen der 19 Typen und eines mehr: mail fuer den Newsletter -- im Popup stehen damit zwei
+     volle Reihen zu zehn (03.10. angefordert: "immer einheitlich viele"). */
+  var ZEICHEN_EXTRA = ["mail"];
   (UC.EVENT_TYPEN || []).forEach(function (x) { ZEICHEN[x.icon] = 1; });
+  ZEICHEN_EXTRA.forEach(function (k) { ZEICHEN[k] = 1; });
   function zeichen(ev) {
     var ic = ev && ev.icon;
     return ic && ZEICHEN[ic] ? ic : typ(ev).icon;
@@ -152,6 +159,31 @@
     "impact_event_not_found": "This event no longer exists.",
     "impact_event_url_not_found": "This URL is no longer part of the event."
   };
+  /* ---- Der Klick-Dummy (data-demo="yes", 03.10. angefordert) -----------------------------
+     Die Beispieldaten liegen in einer eigenen Datei neben dieser und kommen nur, wenn eine
+     Komponente sie will -- 100 KB, die sonst jede Seite der App mitlaedt. Der Pfad ist der dieser
+     Datei: aus dem Loader (__upAssetsLoaded, auch bei .min.js) oder aus currentScript. */
+  var DEMO_WARTE = [], demoLaeuft = false, DEMO_MS = 350;
+  function demoUrl() {
+    var geladen = window.__upAssetsLoaded && window.__upAssetsLoaded["events.js"];
+    var u = String(geladen || EIGENE_URL || "").replace(/[?#].*$/, "");
+    return /events(\.min)?\.js$/.test(u) ? u.replace(/events(\.min)?\.js$/, "events-demo.js") : "events-demo.js";
+  }
+  function demoHolen(fertig) {
+    if (window.__uevDemo) { fertig(window.__uevDemo); return; }
+    DEMO_WARTE.push(fertig);
+    if (demoLaeuft) return;
+    demoLaeuft = true;
+    function alle() {
+      demoLaeuft = false;
+      var l = DEMO_WARTE; DEMO_WARTE = [];
+      l.forEach(function (f) { try { f(window.__uevDemo || null); } catch (e) {} });
+    }
+    var sc = document.createElement("script");
+    sc.src = demoUrl(); sc.async = true; sc.onload = alle; sc.onerror = alle;
+    (document.head || document.documentElement).appendChild(sc);
+  }
+
   function fehlerText(code) {
     var c = String(code == null ? "" : code).trim();
     if (/^team_access_/.test(c)) return t("Your team doesn't have access right now.");
@@ -243,7 +275,7 @@
     "This URL is no longer part of the event.": "Diese URL gehört nicht mehr zum Event.",
     "Your team doesn't have access right now.": "Dein Team hat gerade keinen Zugang.",
     /* Die Popups (Teil 3) */
-    "Optional": "Optional", "Select a date": "Datum wählen", "Default color": "Standardfarbe",
+    "Optional": "Optional", "Select a date": "Datum wählen",
     "Event icon": "Event-Symbol", "Event color": "Event-Farbe", "e.g. Website relaunch": "z. B. Website-Relaunch",
     "What changed?": "Was hat sich geändert?", "Description": "Beschreibung", "Selected topics": "Ausgewählte Topics",
     "Affected scope": "Betroffener Umfang", "Edit event": "Event bearbeiten",
@@ -268,7 +300,11 @@
     "This is taking longer than expected. Please try again.": "Das dauert länger als erwartet. Bitte erneut versuchen.",
     "Event created": "Event angelegt", "URL added": "URL hinzugefügt", "Event updated": "Event aktualisiert",
     "Observations are counted from the event date, also for URLs you add now.":
-      "Beobachtungen zählen ab dem Event-Datum, auch für URLs, die du jetzt hinzufügst."
+      "Beobachtungen zählen ab dem Event-Datum, auch für URLs, die du jetzt hinzufügst.",
+    /* 03.10.: Typ-Auswahl mit eigenem Typ, Klick-Dummy, Ende des Wartens */
+    "Search types": "Typen durchsuchen", "No types found": "Keine Typen gefunden", "Your type": "Dein Typ",
+    "Example data": "Beispieldaten", "Example data. Nothing you do here is saved.": "Beispieldaten. Nichts, was du hier tust, wird gespeichert.",
+    "Events could not be loaded": "Events konnten nicht geladen werden", "Please reload the page.": "Bitte lade die Seite neu."
   });
 
   /* Spaltenzahl der Karten: nach dem PLATZ (wie response-detail.spalten -- dieselben Schwellen,
@@ -287,7 +323,43 @@
     var instanceId = root.getAttribute("data-instance") || "default";
     if (/^[A-Z_]{4,}$/.test(instanceId)) return null;   /* Platzhalter noch nicht ersetzt */
 
-    var fire = UC.makeFire(root, { label: "events", eventPrefix: "uev" });
+    /* data-demo="yes": jedes Ereignis wird hier im Tab aus events-demo.js beantwortet statt an
+       Bubble zu gehen (demoAntwort) -- derselbe Weg durch die Setter wie mit echten Daten. */
+    var demo = UC.isYes ? UC.isYes(root.getAttribute("data-demo")) : root.getAttribute("data-demo") === "yes";
+    var fireBubble = UC.makeFire(root, { label: "events", eventPrefix: "uev" });
+    function fire(attr, name, wert) {
+      if (demo) { demoAntwort(name, wert); return true; }
+      return fireBubble(attr, name, wert);
+    }
+    fire.spaet = function (attr, name, wert) {
+      if (demo) { demoAntwort(name, wert); return true; }
+      return fireBubble.spaet ? fireBubble.spaet(attr, name, wert) : fireBubble(attr, name, wert);
+    };
+    function topicName(id) {
+      var l = UC.getTopics ? UC.getTopics() : [];
+      for (var i = 0; i < l.length; i++) if (String(l[i].id) === String(id)) return l[i].name || "";
+      return "";
+    }
+    function demoAntwort(name, wert) {
+      var b = {};
+      try { b = JSON.parse(wert); } catch (e) {}
+      demoHolen(function (D) {
+        setTimeout(function () {
+          if (root.isConnected === false) return;
+          if (!D) { ctrl.setFehler(""); return; }
+          var r = D.antwort(name, b, { topicName: topicName }) || {};
+          if (r.fehler) ctrl.setFehler(r.fehler);
+          if (r.detail) ctrl.setDetail(JSON.stringify(r.detail));
+          if (r.analyse) ctrl.setAnalysis(JSON.stringify(r.analyse));
+          if (r.vorschau) ctrl.setVorschau(JSON.stringify(r.vorschau));
+          if (r.geloescht) ctrl.setGeloescht(JSON.stringify(r.geloescht));
+          if (r.responses && window.renderResponsesTable) {
+            try { window.renderResponsesTable({ instanceId: respInstanz, rows: r.responses, totalCount: r.total }); } catch (e) {}
+          }
+          if (r.liste && UC.setEvents) UC.setEvents(JSON.stringify(r.liste), "demo");
+        }, DEMO_MS);
+      });
+    }
     function isDark() { return UC.themeParam(root.getAttribute("data-isdark")) || root.getAttribute("data-theme") === "dark"; }
     if (isDark()) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
     var tips = UC.makeTooltips ? UC.makeTooltips(root, isDark) : null;
@@ -336,7 +408,13 @@
           '<p class="up-ph-desc" data-i18n="Track important changes and understand how AI performance develops around them.">' +
             esc(t("Track important changes and understand how AI performance develops around them.")) + '</p>' +
         '</div>' +
-        '<div class="uev-kopfaktion"></div>' +
+        '<div class="uev-kopfrechts">' +
+          /* Im Klick-Dummy sagt der Kopf es selbst -- sonst haelt jemand die Beispiele fuer die
+             eigenen Events. Die Hinweis-Pille der Seite (.up-pille wie "Limited baseline"). */
+          (demo ? '<span class="up-sent up-pille uev-hinweis uev-demo" data-tip="' + esc(t("Example data. Nothing you do here is saved.")) + '">' +
+            UC.icon("info", 2) + '<span class="up-sent-val">' + esc(t("Example data")) + '</span></span>' : '') +
+          '<div class="uev-kopfaktion"></div>' +
+        '</div>' +
       '</div>' +
       '<div class="uev-main"></div>';
     var elMain = root.querySelector(".uev-main"), elAktion = root.querySelector(".uev-kopfaktion");
@@ -453,6 +531,9 @@
       (UC.getEvents ? UC.getEvents() : []).forEach(function (ev) { da[typ(ev).key] = 1; });
       state.typen.forEach(function (k) { da[k] = 1; });
       var typen = (UC.EVENT_TYPEN || []).filter(function (x) { return da[x.key]; });
+      /* Eigene Typen (frei eingetippt) stehen hinter den festen -- sonst liesse sich nach ihnen
+         nicht filtern. */
+      Object.keys(da).forEach(function (k) { var x = typ({ event_type: k }); if (x.eigen) typen.push(x); });
       menu.innerHTML =
         '<div class="up-filter-list">' +
           typen.map(function (x) {
@@ -531,6 +612,28 @@
           '<span class="uev-chev" aria-hidden="true">' + UC.icon("chevronRight", 2) + '</span></div>' +
       '</div>';
     }
+    /* EIN WARTEN, DAS ENDET (Muster brand-detail: 25s, gezaehlt erst, wenn die Uebersicht zu sehen
+       ist). Kommt die Liste nie -- der Schritt im Seitenaufbau fehlt, der Workflow brach ab --,
+       lief das Skelett sonst fuer immer, und das sieht aus wie "gleich da" (03.10. so gemeldet:
+       "ich seh nur Skeleton Loader"). Im Klick-Dummy kommt die Liste aus der Datei, dort keine Uhr. */
+    var LISTE_WARTE_MS = 25000, listeUhrId = null;
+    function listeGeladen() { return !!(UC.eventsStand && UC.eventsStand().geladen); }
+    function listeUhr() {
+      if (listeUhrId || demo || state.listeZeitUm) return;
+      listeUhrId = setTimeout(listeAblauf, LISTE_WARTE_MS);
+    }
+    function listeAblauf() {
+      listeUhrId = null;
+      if (root.isConnected === false || listeGeladen()) return;
+      if (UC.istSichtbar && !UC.istSichtbar(root)) { listeUhrId = setTimeout(listeVerdeckt, 1000); return; }
+      state.listeZeitUm = true;
+      if (state.ansicht === "uebersicht") renderListe();
+    }
+    function listeVerdeckt() {
+      listeUhrId = null;
+      if (root.isConnected === false || listeGeladen()) return;
+      if (UC.istSichtbar && UC.istSichtbar(root)) listeUhr(); else listeUhrId = setTimeout(listeVerdeckt, 1000);
+    }
     function renderListe() {
       if (!elListe) return;
       var stand = UC.eventsStand ? UC.eventsStand() : { geladen: true, fehler: false };
@@ -546,9 +649,15 @@
       }
       if (!stand.geladen) {
         elZahl.textContent = "";
+        if (state.listeZeitUm) {
+          elListe.className = "uev-liste";
+          elListe.innerHTML = UC.leerHtml({ icon: "info", titel: "Events could not be loaded", text: "Please reload the page." });
+          return;
+        }
         elListe.className = "uev-liste is-" + state.darstellung;
         elListe.innerHTML = state.darstellung === "list" ? listeSkelett() : karteSkelett();
         rasterSetzen(3);
+        listeUhr();
         return;
       }
       var alle = (UC.getEvents ? UC.getEvents() : []).filter(function (ev) { return !state.geloescht[ev.id]; });
@@ -1255,6 +1364,7 @@
     function zeichenListe() {
       var l = [], da = {};
       (UC.EVENT_TYPEN || []).forEach(function (x) { if (!da[x.icon]) { da[x.icon] = 1; l.push(x.icon); } });
+      ZEICHEN_EXTRA.forEach(function (k) { if (!da[k]) { da[k] = 1; l.push(k); } });
       return l;
     }
     function typVon(key) { return typ({ event_type: key }); }
@@ -1273,20 +1383,83 @@
         '<span class="up-modal-wahl-txt' + (leer ? " is-leer" : "") + '">' + esc(txt) + '</span>' +
         '<span class="up-modal-wahl-chev">' + UC.icon("chevronDown", 2) + '</span></button>';
     }
-    function typOptionen(akt) {
-      return typenGeordnet().map(function (g) {
-        return g.map(function (x) {
-          var an = x.key === akt;
-          return '<div class="up-pop-opt' + (an ? " is-active" : "") + '" role="option" aria-selected="' + an + '" data-typ-wahl="' + esc(x.key) + '">' +
-            '<span class="uev-typopt"><span class="uev-typitem-ic">' + UC.icon(x.icon, 2) + '</span>' + esc(t(x.label)) + '</span>' +
-            '<span class="up-check">' + UC.icon("check", 2) + '</span></div>';
-        }).join("");
-      }).join('<div class="up-pop-div"></div>');
+    /* DIE TYP-AUSWAHL in der Bauart der Branche in Your Brand (settings-brand, makeDropdown):
+       Titel, Suchfeld, Liste mit Haken, darunter "Not listed? Add your own" mit Feld und Add. Der
+       Vertrag fuehrt event_type als freien Text -- ein eigener Typ ist also ein gueltiger Wert.
+       In der Liste: die 19 Typen nach Gruppen, dann die eigenen Typen, die es schon gibt (aus
+       dem Event-Store), dann der gerade gewaehlte -- wie die eigene Branche, die in die Liste
+       wandert, damit sie beim naechsten Oeffnen dabeisteht. */
+    var TYP_MAX = 48;           /* wie die eigene Branche (IND_MAX in settings-brand) */
+    function typListe(akt) {
+      var l = [], da = {};
+      function merk(x) { da[String(x.key).toLowerCase()] = 1; da[String(t(x.label)).toLowerCase()] = 1; da[String(x.label).toLowerCase()] = 1; }
+      typenGeordnet().forEach(function (g) { g.forEach(function (x) { l.push(x); merk(x); }); });
+      function eigen(k) {
+        k = String(k == null ? "" : k).trim();
+        if (!k || da[k.toLowerCase()]) return;
+        var x = typVon(k);
+        if (!x.eigen) return;
+        l.push(x); merk(x);
+      }
+      (UC.getEvents ? UC.getEvents() : []).forEach(function (ev) { eigen(ev.event_type); });
+      eigen(akt);
+      return { liste: l, da: da };
+    }
+    function typListeHtml(p) {
+      var q = String(p.typSuche || "").trim().toLowerCase();
+      var l = typListe(p.e.typ).liste.filter(function (x) {
+        return !q || String(t(x.label)).toLowerCase().indexOf(q) >= 0 || String(x.label).toLowerCase().indexOf(q) >= 0;
+      });
+      if (!l.length) return '<div class="up-ment-noresult">' + esc(t("No types found")) + '</div>';
+      return l.map(function (x) {
+        var an = x.key === p.e.typ;
+        return '<div class="up-filter-item uev-typitem' + (an ? " is-checked" : "") + '" role="option" tabindex="0" aria-selected="' + an + '" data-typ-wahl="' + esc(x.key) + '">' +
+          '<span class="up-filter-check">' + UC.icon("check", 3) + '</span>' +
+          '<span class="uev-typitem-ic">' + UC.icon(x.icon, 2) + '</span>' +
+          '<span class="uev-typitem-lbl">' + esc(t(x.label)) + '</span></div>';
+      }).join("");
     }
     function typFeld(e) {
       var tp = typVon(e.typ);
       return '<div class="up-filter uev-wahl" data-wahlwrap="typ">' + wahlKnopf("typ", tp.icon, t(tp.label)) +
-        '<div class="up-menu uev-wahlmenu uev-typwahl" role="listbox" aria-hidden="true" data-up-feldbreit>' + typOptionen(e.typ) + '</div></div>';
+        '<div class="up-ment-menu uev-wahlmenu uev-typwahl" role="menu" aria-hidden="true" data-up-feldbreit>' +
+          '<div class="up-filter-head"><span class="up-filter-title">' + esc(t("Event type")) + '</span></div>' +
+          '<div class="up-ment-searchwrap">' +
+            '<input class="up-ment-search uev-typsuche" type="text" placeholder="' + esc(t("Search types")) + '" autocomplete="off" spellcheck="false" aria-label="' + esc(t("Search types")) + '"/>' +
+            '<button class="up-ment-searchclear uev-typsuche-x" type="button" aria-label="' + esc(t("Clear search")) + '">' + UC.icon("x", 2) + '</button>' +
+          '</div>' +
+          '<div class="up-filter-list up-ment-list uev-typliste"></div>' +
+          '<div class="up-ddcustom">' +
+            '<div class="up-filter-title">' + esc(t("Not listed? Add your own")) + '</div>' +
+            '<div class="up-ddcustom-row">' +
+              '<span class="up-ddcustom-field">' +
+                '<input class="up-ment-search up-ddcustom-in uev-typeigen" type="text" maxlength="' + TYP_MAX + '" placeholder="' + esc(t("Your type")) + '" autocomplete="off" spellcheck="false" aria-label="' + esc(t("Your type")) + '"/>' +
+                '<button class="up-iconbtn is-20 is-quiet up-ddcustom-clear uev-typeigen-x" type="button" aria-label="' + esc(t("Clear")) + '">' + UC.icon("x", 2) + '</button>' +
+              '</span>' +
+              '<button class="up-btn-pri uev-typeigen-add" type="button" disabled>' + esc(t("Add")) + '</button>' +
+            '</div>' +
+          '</div>' +
+        '</div></div>';
+    }
+    /* Ein eigener Typ ist erlaubt, wenn das Feld nicht leer ist und der Text nicht schon in der
+       Liste steht -- sonst entsteht ein Doppel, das sich nur in der Schreibung unterscheidet. */
+    function typEigenOk(p) {
+      var inp = im(".uev-typeigen");
+      var v = inp ? inp.value.trim() : "";
+      return !!v && !typListe(p.e.typ).da[v.toLowerCase()];
+    }
+    function typEigenNehmen() {
+      var p = popup, inp = im(".uev-typeigen");
+      if (!p || !inp || !typEigenOk(p)) return;
+      p.e.typ = inp.value.trim().slice(0, TYP_MAX);
+      inp.value = "";
+      menueZu("typ"); typNeu(); pruefenZeigen();
+    }
+    function typListeZeigen() {
+      var el = im(".uev-typliste");
+      if (el) el.innerHTML = typListeHtml(popup);
+      var add = im(".uev-typeigen-add");
+      if (add) add.disabled = !typEigenOk(popup);
     }
     /* Ein Monat in der Bauart des Kalenders aus date-range.js (.udr-month, .udr-day) -- dessen
        Regeln stehen ohne Elternklasse in date-range.css, die Zellen sehen also genau so aus. Der
@@ -1320,12 +1493,14 @@
         '<div class="up-menu uev-wahlmenu uev-datumwahl" aria-hidden="true">' + kalender(e) + '</div></div>';
     }
     /* Zeichen und Farbe wie Emoji und Farbe im Topic-Dialog: zwei Knoepfe, darunter das Raster des
-       offenen. Ohne eigene Wahl folgt das Zeichen dem Typ und die Farbe bleibt leer -- dann malt
-       jede Stelle ihren Grundton (Vertrag: p_icon und p_color sind optional). */
+       offenen. Ohne eigene Wahl folgt das Zeichen dem Typ und die Farbe bleibt leer (Vertrag:
+       p_icon und p_color sind optional). Leer heisst "Default" und ist die SCHRIFTFARBE (03.10.:
+       "nenn es Standard, aber belasse es bei Font color") -- die erste Zelle zeigt sie gefuellt,
+       und Karte, Kopf und Zusammenfassung malen ein Event ohne Farbe in ihr. */
     function aussehen(e) {
       var ic = e.icon || typVon(e.typ).icon, f = e.farbe, panel = "";
       if (e.offen === "icon") {
-        panel = '<div class="up-topicmodal-pickpanel"><div class="up-topicmodal-colorgrid">' +
+        panel = '<div class="up-topicmodal-pickpanel"><div class="up-topicmodal-colorgrid uev-zeichenraster">' +
           zeichenListe().map(function (k) {
             var an = k === ic;
             return '<button type="button" class="up-topicmodal-colorcell uev-zeichenzelle' + (an ? " is-on" : "") + '" data-zeichen="' + esc(k) + '" aria-pressed="' + an + '">' + UC.icon(k, 2) + '</button>';
@@ -1336,8 +1511,8 @@
         var toene = FARBEN.slice();
         if (f && !toene.some(function (hx) { return hx.toLowerCase() === f.toLowerCase(); })) toene.push(f);
         panel = '<div class="up-topicmodal-pickpanel"><div class="up-topicmodal-colorgrid uev-farbraster" style="grid-template-columns:repeat(' + (toene.length + 1) + ',1fr)">' +
-          '<button type="button" class="up-topicmodal-colorcell" data-farbe="" aria-pressed="' + !f + '" aria-label="' + esc(t("Default color")) + '" data-tip="' + esc(t("Default color")) + '">' +
-            '<span class="up-topicmodal-colorblob uev-ohnefarbe">' + (!f ? UC.icon("check", 3) : "") + '</span></button>' +
+          '<button type="button" class="up-topicmodal-colorcell" data-farbe="" aria-pressed="' + !f + '" aria-label="' + esc(t("Default")) + '" data-tip="' + esc(t("Default")) + '">' +
+            '<span class="up-topicmodal-colorblob uev-standardfarbe">' + (!f ? UC.icon("check", 3) : "") + '</span></button>' +
           toene.map(function (hx) {
             var an = !!f && hx.toLowerCase() === f.toLowerCase();
             return '<button type="button" class="up-topicmodal-colorcell" data-farbe="' + esc(hx) + '" aria-pressed="' + an + '" aria-label="' + esc(hx) + '">' +
@@ -1349,7 +1524,7 @@
             ' aria-label="' + esc(t("Event icon")) + '" data-tip="' + esc(t("Event icon")) + '"' + (f ? ' style="color:' + esc(f) + '"' : '') + '>' + UC.icon(ic, 2) + '</button>' +
           '<button type="button" class="up-topicmodal-pickbtn' + (e.offen === "farbe" ? " is-open" : "") + '" data-pick="farbe" aria-expanded="' + (e.offen === "farbe") + '"' +
             ' aria-label="' + esc(t("Event color")) + '" data-tip="' + esc(t("Event color")) + '">' +
-            '<span class="up-topicmodal-pickswatch' + (f ? "" : " uev-ohnefarbe") + '"' + (f ? ' style="background:' + esc(f) + '"' : '') + '></span></button>' +
+            '<span class="up-topicmodal-pickswatch' + (f ? "" : " uev-standardfarbe") + '"' + (f ? ' style="background:' + esc(f) + '"' : '') + '></span></button>' +
         '</div>' + panel;
     }
     function detailFelder(e, mitDatum) {
@@ -1403,8 +1578,7 @@
         b.querySelector(".up-modal-wahl-ic").innerHTML = UC.icon(tp.icon, 2);
         b.querySelector(".up-modal-wahl-txt").textContent = t(tp.label);
       }
-      var m = im(".uev-typwahl");
-      if (m) m.innerHTML = typOptionen(p.e.typ);
+      typListeZeigen();
       aussehenNeu();
     }
     function datumNeu() {
@@ -1618,6 +1792,29 @@
        in Bubble ist dafuer nichts Neues zu bauen. */
     function sucheBauen(p) {
       p.such = { frage: "", treffer: null, laedt: false, fehler: "" };
+      /* Im Klick-Dummy sucht die Datei: dieselben Zeitpunkte wie die Maschine aus core (ab zwei
+         Zeichen, 300ms Ruhe), aber ohne Bubble. */
+      if (demo) {
+        var uhr = 0;
+        p.maschine = {
+          tippen: function (q) {
+            clearTimeout(uhr);
+            q = String(q || "").trim();
+            if (q.length < 2) { p.such.laedt = false; p.such.treffer = null; trefferZeigen(); return; }
+            uhr = setTimeout(function () {
+              p.such.laedt = true; trefferZeigen();
+              demoHolen(function (D) {
+                setTimeout(function () {
+                  if (popup !== p) return;
+                  p.such.laedt = false; p.such.treffer = D ? D.suche(q) : []; trefferZeigen();
+                }, DEMO_MS);
+              });
+            }, 300);
+          },
+          abbrechen: function () { clearTimeout(uhr); }
+        };
+        return;
+      }
       if (!UC.makeEntitySearch) return;
       p.maschine = UC.makeEntitySearch({
         prefix: "uev", limit: 8,
@@ -1829,14 +2026,33 @@
         if (!w || !UC.makePopover) return;
         if (w.classList.contains("is-open")) { menueZu(art); return; }
         if (art === "datum") { p.e.monat = null; datumNeu(); }
+        if (art === "typ") {
+          p.typSuche = "";
+          var ts = w.querySelector(".uev-typsuche"), te = w.querySelector(".uev-typeigen");
+          if (ts) ts.value = "";
+          if (te) te.value = "";
+          typListeZeigen();
+        }
         p.pops[art] = UC.makePopover({ wrap: w, menu: w.querySelector(".uev-wahlmenu"), opener: wb,
           onClose: function () { wb.setAttribute("aria-expanded", "false"); } });
         p.pops[art].open();
         wb.setAttribute("aria-expanded", "true");
+        if (art === "typ") setTimeout(function () { var f = w.querySelector(".uev-typsuche"); try { if (f) f.focus(); } catch (e) {} }, 0);
         return;
       }
       var to = x.closest("[data-typ-wahl]");
       if (to) { p.e.typ = to.getAttribute("data-typ-wahl"); menueZu("typ"); typNeu(); pruefenZeigen(); return; }
+      if (x.closest(".uev-typsuche-x")) {
+        p.typSuche = ""; var ts2 = im(".uev-typsuche"); if (ts2) { ts2.value = ""; try { ts2.focus(); } catch (e) {} }
+        typListeZeigen();
+        return;
+      }
+      if (x.closest(".uev-typeigen-x")) {
+        var te2 = im(".uev-typeigen"); if (te2) { te2.value = ""; try { te2.focus(); } catch (e) {} }
+        typListeZeigen();
+        return;
+      }
+      if (x.closest(".uev-typeigen-add")) { typEigenNehmen(); return; }
       var mo = x.closest("[data-monat]");
       if (mo) {
         if (mo.disabled) return;
@@ -1882,6 +2098,8 @@
       if (!p || !x || !x.matches) return;
       if (x.matches('[data-feld="name"]')) { p.e.name = x.value; knoepfeSync(); return; }
       if (x.matches('[data-feld="text"]')) { p.e.text = x.value; return; }
+      if (x.matches(".uev-typsuche")) { p.typSuche = x.value; typListeZeigen(); return; }
+      if (x.matches(".uev-typeigen")) { var add = im(".uev-typeigen-add"); if (add) add.disabled = !typEigenOk(p); return; }
       if (x.matches(".uev-urlein")) {
         p.such.frage = x.value;
         if (p.maschine) p.maschine.tippen(x.value);
@@ -1893,6 +2111,8 @@
     function popupTaste(ev) {
       var p = popup, x = ev.target;
       if (!p || ev.key !== "Enter" || !x || !x.matches) return;
+      if (x.matches(".uev-typeigen")) { ev.preventDefault(); typEigenNehmen(); return; }
+      if (x.matches(".uev-typitem")) { ev.preventDefault(); x.click(); return; }
       if (x.matches('[data-feld="name"]')) {
         ev.preventDefault();
         var b = p.api.knopf(p.knopf);
@@ -1908,6 +2128,8 @@
 
     /* ---- Abos ----------------------------------------------------------------------------- */
     if (UC.onEvents) UC.onEvents(function () {
+      state.listeZeitUm = false;
+      if (listeUhrId) { clearTimeout(listeUhrId); listeUhrId = null; }
       if (state.ansicht === "uebersicht") renderListe(); else { krumenNeu(); renderKopf(); }
     }, root);
     window.addEventListener("popstate", function () { if (root.isConnected) adresseLesen(false); });
@@ -2021,6 +2243,12 @@
     };
     root.__uevController = ctrl;
 
+    /* Klick-Dummy: die Beispielliste in den Event-Store -- aber nur, wenn noch keine echte Liste
+       mit Events da ist. Kommt danach eine echte, gewinnt sie. */
+    if (demo) demoHolen(function (D) {
+      if (!D || root.isConnected === false) return;
+      if (!listeGeladen() || !(UC.getEvents && UC.getEvents().length)) UC.setEvents(JSON.stringify(D.liste()), "demo");
+    });
     /* Erster Stand: die Adresse entscheidet. fire.spaet fuer einen Tiefenlink -- beim
        Seitenaufbau stehen Bubbles Empfaenger oft noch nicht. */
     if (adresseEvent()) oeffnen(adresseEvent(), false, true); else baueUebersicht();

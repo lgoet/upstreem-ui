@@ -1439,6 +1439,20 @@
     .up-ment-search:not(:placeholder-shown) + .up-ment-searchclear { display: inline-flex; }
     .up-ment-list { max-height: 336px; }   /* ~10.5 rows -> the 11th peeks and signals scrolling */
     .up-ment-noresult { padding: 12px; font-size: 12px; color: var(--vc-muted); text-align: center; }
+    /* ---- "Not listed? Add your own" unten im Menue (03.10. nach core) --------------------------
+       Die Bauart der Branche in Your Brand (settings-brand, dort noch .usb-ddcustom-*), Wert fuer
+       Wert: durch eine Linie abgesetzt, ueber und unter ihr derselbe Abstand (12), darunter Feld und
+       Knopf nebeneinander. Das X im Feld ist .up-iconbtn.is-20.is-quiet, der Knopf .up-btn-pri --
+       hier steht nur die Lage. Das Event-Popup nimmt es fuer den eigenen Typ. */
+    .up-ddcustom { --up-ddc-gap: 12px; flex: 0 0 auto; margin-top: var(--up-ddc-gap); padding-top: var(--up-ddc-gap);
+      border-top: 1px solid var(--vc-border); display: flex; flex-direction: column; gap: var(--up-ddc-gap); }
+    .up-ddcustom-row { display: flex; align-items: center; gap: 8px; }
+    .up-ddcustom-field { position: relative; flex: 1 1 auto; min-width: 0; display: block; }
+    .up-ddcustom-in.up-ment-search { width: 100%; min-width: 0; margin: 0; padding-right: 34px; }
+    /* Zwei Klassen: .up-iconbtn setzt position und display mit einer -- gewonnen wird ueber die
+       Spezifitaet, nicht ueber die Reihenfolge (CLAUDE.md 1). */
+    .up-ddcustom-field .up-ddcustom-clear { position: absolute; top: 50%; right: 6px; transform: translateY(-50%); display: none; }
+    .up-ddcustom-in:not(:placeholder-shown) ~ .up-ddcustom-clear { display: inline-flex; }
 
     /* ---------- column visibility (gear) ---------- */
     .up-cols { position: relative; flex: 0 0 auto; }

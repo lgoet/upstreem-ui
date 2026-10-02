@@ -24,7 +24,16 @@
   | data-cdn-pin              | JA      | derselbe Commit wie alle Elemente der Seite            |
   | data-isdark               | nein    | "yes"/"no"; kennt core ein Thema, gewinnt core          |
   | data-responses-instance   | nein    | Instanz der Responses-Tabelle, Vorgabe "responses_events" |
+  | data-demo                 | nein    | "yes": Klick-Dummy mit den Beispielen des Vertrags        |
   | data-detail-fn …          | nein    | Namen der JavaScriptToBubble-Elemente, siehe unten      |
+
+  ── KLICK-DUMMY: data-demo="yes" ───────────────────────────────────────────────
+  Zum Durchklicken ohne einen einzigen Workflow: die Komponente holt events-demo.js (neben
+  events.js, nur in diesem Fall) und beantwortet jedes Ereignis selbst -- Uebersicht, Detail,
+  Anlegen, Bearbeiten, URLs, Loeschen, Suche. Im Kopf steht "Example data". Die Beispiel-Events
+  kommen auch in den Event-Store, die Pins erscheinen also in allen Liniendiagrammen der Seite.
+  Nichts geht an Bubble, nichts wird gespeichert; ein Neuladen setzt alles zurueck. Kommt eine
+  echte Liste (setUpstreemEvents), gewinnt sie. Fuer den Betrieb das Attribut wieder entfernen.
 
   ── DIE LISTE: kein eigener Setter ───────────────────────────────────────────
   Die Uebersicht liest den Event-Store aus core. Ihn fuellt EIN Run-JS-Schritt im Seitenaufbau mit

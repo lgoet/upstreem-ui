@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261066;
+  var BUILD = 20261067;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -16358,13 +16358,20 @@
     { key: "partnership",       label: "Partnership",        icon: "handshake",     gruppe: "other" },
     { key: "other",             label: "Other",              icon: "pin",           gruppe: "other" }
   ];
-  /* Ein unbekannter Typ (freier Text aus einer spaeteren Fassung) ist "Other" -- mit Zeichen und
-     Grafik von Other, aber seinem eigenen Namen nicht: ein Schluessel wie "podcast_launch" ist
-     kein Wort fuer die Oberflaeche. */
+  /* Ein Typ, der nicht in der Liste steht, ist ein EIGENER (03.10.: im Anlegen-Popup laesst sich
+     wie bei der Branche in Your Brand ein eigener Typ eintippen -- event_type ist freier Text).
+     Zeichen und Grafik von Other, aber sein eigener Name: was jemand als "Podcast" angelegt hat,
+     heisst nicht "Other". Ein Schluessel in Systemform ("podcast_launch") wird lesbar gemacht.
+     Leer ist Other -- der Vertrag setzt dann "other". */
+  var EVENT_TYP_EIGEN = {};
   function eventTyp(key){
     var k = String(key || "").trim();
+    if (!k) return EVENT_TYPEN[EVENT_TYPEN.length - 1];
     for (var i = 0; i < EVENT_TYPEN.length; i++) if (EVENT_TYPEN[i].key === k) return EVENT_TYPEN[i];
-    return EVENT_TYPEN[EVENT_TYPEN.length - 1];
+    if (EVENT_TYP_EIGEN[k]) return EVENT_TYP_EIGEN[k];
+    var lbl = k;
+    if (/^[a-z0-9]+(_[a-z0-9]+)+$/.test(k)){ lbl = k.replace(/_/g, " "); lbl = lbl.charAt(0).toUpperCase() + lbl.slice(1); }
+    return (EVENT_TYP_EIGEN[k] = { key: k, label: lbl, icon: "pin", gruppe: "other", eigen: true });
   }
   addMessages("de", {
     "Website relaunch": "Website-Relaunch", "New website": "Neue Website", "New blog article": "Neuer Blogartikel",
@@ -18048,6 +18055,9 @@
        uebernommen -- nicht nachgezeichnet. Bei palette sind die Farbpunkte ohne Fuellung (Regel:
        keine gefuellten Icons); als Strich mit 2px Breite stehen sie trotzdem als Punkte da. */
     appWindow: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M10 4v4"/><path d="M2 8h20"/><path d="M6 4v4"/>',
+    /* Lucide mail (lucide-static 0.460.0) -- das zwanzigste Zeichen im Event-Popup: ein Newsletter
+       ist ein haeufiges Event, und mit 20 stehen zwei volle Reihen zu zehn (03.10. angefordert). */
+    mail: '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
     rocket: '<path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>',
     sparkles: '<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/>',
     euro: '<path d="M4 10h12"/><path d="M4 14h9"/><path d="M19 6a7.7 7.7 0 0 0-5.2-2A7.9 7.9 0 0 0 6 12c0 4.4 3.5 8 7.8 8 2 0 3.8-.8 5.2-2"/>',

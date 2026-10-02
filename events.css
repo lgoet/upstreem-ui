@@ -11,6 +11,7 @@
 
 .uev-root { --uev-head-top: 8px; display: block; }
 .uev-root .uev-pagehead { padding: var(--uev-head-top) 0 8px; margin-bottom: 16px; }
+.uev-kopfrechts { display: inline-flex; align-items: center; gap: 12px; flex: 0 0 auto; }
 .uev-kopfaktion { display: inline-flex; align-items: center; gap: 8px; flex: 0 0 auto; }
 .uev-kopfaktion .up-btn-sec { display: inline-flex; align-items: center; gap: 6px; }
 .uev-kopfaktion .up-btn-sec svg { width: 14px; height: 14px; }
@@ -46,7 +47,7 @@
    Mitte hin in die Kachel mit dem Zeichen auslaeuft. Kein gezeichnetes Bild (Entscheidung 4) --
    das gaengige Muster von Vorlagen-Karten. 72 hoch: die Grafik soll nicht die halbe Karte nehmen
    (Spezifikation 14). Ohne Event-Farbe der Ton der dritten Schriftfarbe. */
-.uev-kunst { --uev-t: var(--uev-ton, var(--vc-third)); position: relative; flex: 0 0 auto; height: 72px;
+.uev-kunst { --uev-t: var(--uev-ton, var(--vc-text)); position: relative; flex: 0 0 auto; height: 72px;
   display: flex; align-items: center; justify-content: center; overflow: hidden;
   background: color-mix(in srgb, var(--uev-t) 7%, var(--vc-heading-bg)); border-bottom: 1px solid var(--vc-border); }
 .uev-kunst::before { content: ""; position: absolute; inset: 0; pointer-events: none;
@@ -99,7 +100,7 @@
 /* ---- Detail ---------------------------------------------------------------------------------- */
 .uev-detail { display: flex; flex-direction: column; gap: 24px; }
 .uev-dkopf-reihe { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.uev-dkopf-ic { --uev-t: var(--uev-ton, var(--vc-third)); flex: 0 0 auto; width: var(--up-h-gross); height: var(--up-h-gross);
+.uev-dkopf-ic { --uev-t: var(--uev-ton, var(--vc-text)); flex: 0 0 auto; width: var(--up-h-gross); height: var(--up-h-gross);
   border-radius: var(--up-r-l); display: inline-flex; align-items: center; justify-content: center;
   color: var(--uev-t); background: color-mix(in srgb, var(--uev-t) 12%, var(--vc-bg)); border: 1px solid color-mix(in srgb, var(--uev-t) 24%, var(--vc-border)); }
 .uev-dkopf-ic svg { width: 20px; height: 20px; }
@@ -204,17 +205,28 @@ body:has(.uev-root[data-uev-resp="aus"]) .urt-root[data-instance="responses_even
 /* Typ und Datum: ein Menue aus core (.up-menu), so breit wie das Feld bzw. wie der Monat. */
 .uev-wahl { position: relative; }
 .uev-wahl .uev-wahlmenu { left: 0; right: 0; width: auto; }
-.uev-wahl .uev-typwahl { max-height: 320px; overflow-y: auto; }
 .uev-wahl .uev-datumwahl { right: auto; }
-.uev-typopt { display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
+/* Die Typ-Auswahl ist das Menue der Branche (.up-ment-menu) -- hier so breit wie ihr Feld statt
+   der 320, die es sonst hoechstens hat, und die Liste so hoch wie dort (256), damit "Add your own"
+   darunter immer zu sehen ist. */
+.uev-wahl .uev-typwahl { max-width: none; }
+.uev-typwahl .uev-typliste { max-height: 256px; }
+/* 13px wie die Namen in der Branchen-Auswahl (.usb-opt-name). Ohne Angabe erbte die Zeile im
+   Popup die 16px des Dokuments: das Menue liegt in der obersten Ebene, ausserhalb der Karte. */
+.uev-typitem .uev-typitem-lbl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--up-fs-m); color: var(--vc-text); }
 
-/* Das Zeichenraster: die Zellen des Farbrasters, darin ein Zeichen statt eines Kreises. */
+/* Das Zeichenraster: die Zellen des Farbrasters, darin ein Zeichen statt eines Kreises. Zwanzig
+   Zeichen in zwei Reihen zu zehn; eine Zelle hoechstens 32 x 32 (03.10.: "viel zu gross" -- als
+   1fr waren es 46px) -- die Spalten verteilen den Rest als Luft. */
+.uev-aussehen .uev-zeichenraster { grid-template-columns: repeat(10, minmax(0, 32px)); justify-content: space-between; }
 .uev-zeichenzelle { color: var(--vc-muted); }
 .uev-zeichenzelle svg { width: 16px; height: 16px; }
 .uev-aussehen .uev-zeichenzelle.is-on { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); color: var(--vc-text); }
-/* Die Spaltenzahl setzt das JS (zehn Toene, vorn "ohne Farbe", hinten eine fremde Farbe): alles
-   in EINER Reihe. */
-.uev-aussehen .uev-ohnefarbe { background: transparent; border: 1.5px dashed var(--vc-third); color: var(--vc-text); }
+/* Die Spaltenzahl setzt das JS (zehn Toene, vorn "Default", hinten eine fremde Farbe): alles in
+   EINER Reihe. "Default" ist die Schriftfarbe, gefuellt; der Haken darauf in der Flaeche -- core
+   setzt ihn im Dunkeln auf --vc-text, und das waere hell auf hell. */
+.uev-aussehen .uev-standardfarbe { background: var(--vc-text); }
+.uev-aussehen .uev-farbraster .up-topicmodal-colorblob.uev-standardfarbe { color: var(--vc-bg); }
 
 /* Umfang: Umschalter, Topics und Zahl als eine Gruppe. */
 .uev-umfang { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
@@ -260,7 +272,7 @@ body:has(.uev-root[data-uev-resp="aus"]) .urt-root[data-instance="responses_even
 .uev-pruef { display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; border-radius: var(--up-r-xl); background: var(--vc-heading-bg); }
 .uev-pruef:empty { display: none; }
 .uev-pruef-kopf { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.uev-pruef-ic { --uev-t: var(--uev-ton, var(--vc-third)); display: inline-flex; flex: 0 0 auto; color: var(--uev-t); }
+.uev-pruef-ic { --uev-t: var(--uev-ton, var(--vc-text)); display: inline-flex; flex: 0 0 auto; color: var(--uev-t); }
 .uev-pruef-ic svg { width: 16px; height: 16px; }
 .uev-pruef-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--up-fs-l); font-weight: var(--up-fw-m); color: var(--vc-text); }
 .uev-pruef-zeile { font-size: var(--up-fs-m); color: var(--vc-muted); }
