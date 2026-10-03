@@ -390,6 +390,9 @@
    Balken nur als Paket aus Breite, Hoehe und Radius stimmt. */
 .upw-kpi-val .up-sent { gap: 8px; }
 .upw-kpi-val .up-sent-dot { width: 4px; height: 16px; border-radius: var(--up-r-voll); }
+/* Die Raute des Rangs (03.10. dazugekommen): klein und in der dritten Farbe (core .up-hash), 14px
+   neben der 21px-Zahl -- dieselbe Groesse wie in der Kennzahl-Kachel der Events. */
+.upw-kpi-val .up-hash { width: 14px; height: 14px; }
 .upw-kpi-trend { display: inline-flex; align-items: center; }
 .upw-kpi-trend .up-trend { font-size: 15px; }
 .upw-kpi-trend .up-trend svg { width: 17px; height: 17px; }

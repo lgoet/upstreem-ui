@@ -170,6 +170,32 @@
   /* Die Analysefenster des Vertrags (3.9): Presets 7 / 30 / 90 / 180 Tage, Standard 30.
      Entscheidung 2: ein Segment, kein Kalender -- ein freier Zeitraum ist hier nicht gefragt. */
   var FENSTER = [7, 30, 90, 180];
+  /* Kurz und in der Reihenfolge, in der man die Seite liest: was ein Event ist, womit verglichen
+     wird, wie man das Ergebnis liest. */
+  var SEITE_SAETZE = [
+    "An event marks a change, such as a relaunch or a campaign. Upstreem compares your AI performance before and after its date.",
+    "Affected prompts are the prompts in the topics you chose. The comparison group is your other active prompts, which the event did not touch. They show what would have happened anyway.",
+    "If the affected prompts improve more than the comparison group, the event likely made the difference. The analysis window sets how many days before and after are compared."
+  ];
+  /* Die Zeichnung im hellen Feld der Karte: in currentColor, also in der Schrift des Feldes und mit
+     ihm hell und dunkel gedreht. Das Zeichen im Pin ist das der Events aus core (iconFormen). */
+  function seiteZeichnung() {
+    var pin = UC.iconFormen ? UC.iconFormen("tickets") : "";
+    return '<div class="up-explain-vis uev-seite-vis">' +
+      '<svg viewBox="0 0 456 92" aria-hidden="true">' +
+        '<line x1="228" y1="26" x2="228" y2="76" stroke="currentColor" stroke-opacity=".35" stroke-width="1.5" stroke-dasharray="1 4" stroke-linecap="round"/>' +
+        '<polyline points="0,62 76,60 152,63 228,60 304,58 380,59 456,57" fill="none" stroke="currentColor" stroke-opacity=".45" stroke-width="2" stroke-dasharray="5 5" stroke-linecap="round"/>' +
+        '<polyline points="0,64 76,61 152,65 228,61 304,42 380,32 456,24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+        '<rect x="217" y="3" width="22" height="22" rx="6" fill="none" stroke="currentColor" stroke-opacity=".3"/>' +
+        '<svg x="222" y="8" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + pin + '</svg>' +
+        '<text x="114" y="88" text-anchor="middle" fill="currentColor" fill-opacity=".6" font-size="11">' + esc(t("Before")) + '</text>' +
+        '<text x="342" y="88" text-anchor="middle" fill="currentColor" fill-opacity=".6" font-size="11">' + esc(t("After")) + '</text>' +
+      '</svg>' +
+      '<div class="uev-seite-legende">' +
+        '<span class="up-explain-row"><span class="uev-vis-linie"></span>' + esc(t("Affected prompts")) + '</span>' +
+        '<span class="up-explain-row"><span class="uev-vis-linie is-vgl"></span>' + esc(t("Comparison group")) + '</span>' +
+      '</div></div>';
+  }
   var ERKLAERUNG = {
     vergleich: { h: "Comparison", t: "Upstreem compares the affected Prompts with other eligible Prompts that were active when this event was created." }
   };
@@ -201,10 +227,37 @@
      Komponente sie will -- 100 KB, die sonst jede Seite der App mitlaedt. Der Pfad ist der dieser
      Datei: aus dem Loader (__upAssetsLoaded, auch bei .min.js) oder aus currentScript. */
   var DEMO_WARTE = [], demoLaeuft = false, DEMO_MS = 350;
-  function demoUrl() {
+  /* Eine Datei NEBEN dieser (Beispieldaten, Titelbilder): derselbe Pin wie events.js. */
+  function nebenUrl(datei) {
     var geladen = window.__upAssetsLoaded && window.__upAssetsLoaded["events.js"];
     var u = String(geladen || EIGENE_URL || "").replace(/[?#].*$/, "");
-    return /events(\.min)?\.js$/.test(u) ? u.replace(/events(\.min)?\.js$/, "events-demo.js") : "events-demo.js";
+    return /events(\.min)?\.js$/.test(u) ? u.replace(/events(\.min)?\.js$/, datei) : datei;
+  }
+  function demoUrl() { return nebenUrl("events-demo.js"); }
+
+  /* DIE TITELBILDER (03.10.: "ein Titelbild fuer die Events, dort wo jetzt der Hintergrund mit
+     wenig Deckkraft steht -- die Auswahl aus den SVGs anbei"). Sechs Motive des Nutzers, als
+     Dateien neben dieser (event-covers/), gespeichert wird nur der Schluessel (Feld cover).
+     pos ist die senkrechte Lage im Band: das Band ist viel flacher als das Bild (16:9), und bei den
+     Wellen soll die Kante zu sehen sein -- sie liegt je Motiv woanders (Mitte der Welle in Prozent
+     der Bildhoehe). Die Mosaike sind ueberall gleich dicht, dort die Mitte. */
+  var COVERS = [
+    { key: "wave_blue", datei: "wave-blue.svg", pos: "55%", label: "Blue wave" },
+    { key: "wave_pink", datei: "wave-pink.svg", pos: "78%", label: "Pink wave" },
+    { key: "wave_teal", datei: "wave-teal.svg", pos: "70%", label: "Teal wave" },
+    { key: "poly_blue", datei: "poly-blue.svg", pos: "50%", label: "Blue mosaic" },
+    { key: "poly_pink", datei: "poly-pink.svg", pos: "50%", label: "Pink mosaic" },
+    { key: "poly_sand", datei: "poly-sand.svg", pos: "50%", label: "Sand mosaic" }
+  ];
+  function coverVon(ev) {
+    var k = ev && ev.cover;
+    for (var i = 0; i < COVERS.length; i++) if (COVERS[i].key === k) return COVERS[i];
+    return null;
+  }
+  /* Ein unbekannter Schluessel (aelterer Stand, Tippfehler in der Datenbank) ergibt kein Bild --
+     dann steht das Band in der Event-Farbe wie ohne Titelbild. */
+  function coverStil(c) {
+    return c ? "background-image:url(" + nebenUrl("event-covers/" + c.datei) + ");background-position:50% " + c.pos : "";
   }
   function demoHolen(fertig) {
     if (window.__uevDemo) { fertig(window.__uevDemo); return; }
@@ -253,18 +306,16 @@
     "Visibility of every tracked brand in the affected prompts, before and after.":
       "Visibility jeder getrackten Marke in den betroffenen Prompts, vorher und nachher.",
     "Before": "Vorher", "After": "Nachher", "Change": "Veränderung",
-    "Newly tracked": "Neu getrackt",
     "Affected URLs": "Betroffene URLs",
     "Pages, articles or external sources associated with this event. Global share is measured in the affected prompts.":
       "Seiten, Artikel oder externe Quellen zu diesem Event. Der Global Share zählt in den betroffenen Prompts.",
-    "Observation": "Beobachtung", "Global share before": "Global Share vorher", "Global share after": "Global Share nachher",
+    "First cited": "Zuerst zitiert", "Global share before": "Global Share vorher", "Global share after": "Global Share nachher",
     "Observed on event day": "Am Event-Tag beobachtet",
     "First observed after the event: {date} (day {n})": "Erstmals nach dem Event beobachtet: {date} (Tag {n})",
     "Still cited from day {n}": "Weiter zitiert seit Tag {n}",
     "Not observed since event": "Seit dem Event noch nicht beobachtet",
     "Not observed within 6 months": "In 6 Monaten nach dem Event nicht beobachtet",
     "Open the response with the first observation": "Response mit der ersten Beobachtung öffnen",
-    "View responses": "Responses ansehen",
     "No URLs added yet": "Noch keine URLs",
     "Add pages, articles or external sources associated with this event.":
       "Füge Seiten, Artikel oder externe Quellen zu diesem Event hinzu.",
@@ -293,7 +344,14 @@
     "This topic was deleted after the event was created. Its prompts still count.":
       "Dieses Topic wurde nach dem Anlegen des Events gelöscht. Seine Prompts zählen weiter.",
     "{n} Prompts deleted since": "{n} Prompts inzwischen gelöscht",
-    "vs. comparison": "vs. Vergleich", "Search URLs…": "URLs durchsuchen…", "Filter by URL": "Nach URL filtern",
+    "vs. comparison": "vs. Vergleich", "Comparison group": "Vergleichsgruppe",
+    "How event analysis works": "So funktioniert die Event-Analyse",
+    "An event marks a change, such as a relaunch or a campaign. Upstreem compares your AI performance before and after its date.":
+      "Ein Event markiert eine Änderung, etwa einen Relaunch oder eine Kampagne. Upstreem vergleicht deine AI Performance vor und nach dem Datum.",
+    "Affected prompts are the prompts in the topics you chose. The comparison group is your other active prompts, which the event did not touch. They show what would have happened anyway.":
+      "Betroffene Prompts sind die Prompts in den gewählten Topics. Die Vergleichsgruppe sind deine übrigen aktiven Prompts, die das Event nicht berührt. Sie zeigen, was ohnehin passiert wäre.",
+    "If the affected prompts improve more than the comparison group, the event likely made the difference. The analysis window sets how many days before and after are compared.":
+      "Steigen die betroffenen Prompts stärker als die Vergleichsgruppe, hat das Event wahrscheinlich den Unterschied gemacht. Das Analysefenster legt fest, wie viele Tage davor und danach verglichen werden.", "Search URLs…": "URLs durchsuchen…", "Filter by URL": "Nach URL filtern",
     "This event could not be loaded.": "Dieses Event konnte nicht geladen werden.",
     "Back to overview": "Zurück zur Übersicht",
     "Delete event": "Event löschen", "Delete this event?": "Dieses Event löschen?",
@@ -325,6 +383,9 @@
     "Date and scope can't be changed later": "Datum und Umfang später nicht änderbar",
     "Date and scope can't be changed": "Datum und Umfang nicht änderbar",
     "Select a type": "Typ wählen", "Create without URLs?": "Ohne URLs anlegen?",
+    "Cover image": "Titelbild", "Remove cover": "Titelbild entfernen",
+    "Blue wave": "Blaue Welle", "Pink wave": "Rosa Welle", "Teal wave": "Petrol-Welle",
+    "Blue mosaic": "Blaues Mosaik", "Pink mosaic": "Rosa Mosaik", "Sand mosaic": "Sandfarbenes Mosaik",
     "Step {n} of 3": "Schritt {n} von 3", "URLs & review": "URLs & Prüfen",
     "Select at least one topic.": "Mindestens ein Topic wählen.", "Counting prompts…": "Prompts werden gezählt…",
     "The number of prompts could not be loaded.": "Die Zahl der Prompts konnte nicht geladen werden.",
@@ -356,8 +417,10 @@
   /* NICHT nach der Zahl der Karten (03.10.: eine einzelne Karte zog sich ueber den ganzen
      Bildschirm). Die Spalten richten sich nur nach dem Platz; eine Karte steht dann in EINER
      Spalte eines Rasters, das fuer mehr gedacht ist -- 300 bis gut 400px breit. */
+  /* 03.10. abends: breiter ("mach die Max-Width groesser") -- hoechstens drei Spalten, und erst
+     ab 1500px. Eine Karte ist damit rund 480 bis 620px breit statt 300 bis 430. */
   function spalten(breite) {
-    return breite >= 1308 ? 4 : breite >= 976 ? 3 : breite >= 664 ? 2 : 1;
+    return breite >= 1500 ? 3 : breite >= 800 ? 2 : 1;
   }
 
   /* ============================================================================================
@@ -415,6 +478,24 @@
         var e = ERKLAERUNG[key];
         return e ? '<div class="up-explain-h">' + esc(t(e.h)) + '</div><div class="up-explain-t">' + esc(t(e.t)) + '</div>' : "";
       } });
+    /* DIE ERKLAERUNG DER SEITE (03.10.): ein Info-Knopf links neben der Hauptaktion im Kopf, am
+       Zeiger UND per Klick. Die Erklaerkarte aus core, doppelt so breit (496 statt 248, cls
+       uev-explain-breit), oben im hellen Feld eine kleine Zeichnung: zwei Kurven, die bis zum
+       Event gleichauf laufen und danach auseinandergehen -- genau das, was die Seite misst. */
+    var seitenKarte = UC.makeExplain ? UC.makeExplain({ root: root, triggerSel: ".uev-seiteninfo", cls: "uev-explain-breit", getIsDark: isDark,
+      html: function () {
+        return seiteZeichnung() + '<div class="up-explain-h">' + esc(t("How event analysis works")) + '</div>' +
+          SEITE_SAETZE.map(function (x) { return '<div class="up-explain-t">' + esc(t(x)) + '</div>'; }).join("");
+      } }) : null;
+    /* Per Klick (Touch hat kein Zeigen): oeffnen, wenn zu; schliessen tut ein Druck daneben. */
+    document.addEventListener("pointerdown", function (e) {
+      if (!seitenKarte || !seitenKarte.el.classList.contains("is-on")) return;
+      if (e.target.closest && (e.target.closest(".uev-seiteninfo") || seitenKarte.el.contains(e.target))) return;
+      seitenKarte.hide();
+    }, true);
+    function seitenInfoKnopf() {
+      return '<button type="button" class="up-iconbtn uev-seiteninfo" aria-label="' + esc(t("How event analysis works")) + '">' + UC.icon("info", 2) + '</button>';
+    }
     if (UC.widthTiers) UC.widthTiers(root, { narrowAt: 760, vnarrowAt: 520 });
     var respInstanz = String(root.getAttribute("data-responses-instance") || "responses_events").trim();
 
@@ -497,7 +578,7 @@
        ============================================================================================ */
     var elListe = null, elZahl = null, elSucheIn = null, elSuche = null, sucheKit = null, typFilter = null;
     function baueUebersicht() {
-      elAktion.innerHTML =
+      elAktion.innerHTML = seitenInfoKnopf() +
         '<button class="up-ph-addbtn up-export uev-anlegen" type="button">' + UC.icon("plus", 1.8) +
           '<span data-i18n="Create event">' + esc(t("Create event")) + '</span></button>';
       elMain.innerHTML =
@@ -601,11 +682,11 @@
        Wert). Das Menue nur beim Ueberfahren -- eine Nebenhandlung, kein Knopf auf der Karte.
        vorschau: dieselbe Karte im Anlegen-Popup, ohne Menue und ohne Klick. */
     function karteHtml(ev, vorschau) {
-      var f = farbe(ev);
-      return '<article class="uev-karte' + (vorschau ? " is-vorschau" : "") + '"' +
+      var f = farbe(ev), cv = coverVon(ev);
+      return '<article class="uev-karte' + (vorschau ? " is-vorschau" : "") + (cv ? " has-cover" : "") + '"' +
           (vorschau ? ' aria-hidden="true"' : ' role="link" tabindex="0" data-event-id="' + esc(ev.id) + '"') +
           (f ? ' style="--uev-ton:' + esc(f) + '"' : '') + '>' +
-        '<div class="uev-karte-band"></div>' +
+        '<div class="uev-karte-band' + (cv ? " has-cover" : "") + '"' + (cv ? ' style="' + esc(coverStil(cv)) + '"' : '') + '></div>' +
         (vorschau ? '' : mehrMenue(ev, "karte")) +
         '<div class="uev-karte-body">' +
           avatarHtml(ev) +
@@ -702,7 +783,7 @@
     var linie = null, elChartWrap = null, elLegende = null;
     function baueDetail() {
       linie = null;
-      elAktion.innerHTML =
+      elAktion.innerHTML = seitenInfoKnopf() +
         '<button class="up-btn-sec uev-addurl-kopf" type="button">' + UC.icon("plus", 1.8) + '<span>' + esc(t("Add URL")) + '</span></button>' +
         '<span class="uev-kopfmehr"></span>';
       elMain.innerHTML =
@@ -832,10 +913,10 @@
         elAktion.querySelector(".uev-kopfmehr").innerHTML = "";
         return;
       }
-      var f = farbe(d);
+      var f = farbe(d), cv = coverVon(d);
       el.innerHTML =
         '<div class="up-box uev-hero"' + (f ? ' style="--uev-ton:' + esc(f) + '"' : '') + '>' +
-          '<div class="uev-hero-band"></div>' +
+          '<div class="uev-hero-band' + (cv ? " has-cover" : "") + '"' + (cv ? ' style="' + esc(coverStil(cv)) + '"' : '') + '></div>' +
           '<div class="uev-hero-body">' +
             avatarHtml(d, "gross") +
             '<h2 class="uev-dkopf-titel">' + esc(d.name || "") + '</h2>' +
@@ -894,17 +975,16 @@
       var el = elMain.querySelector('[data-sek="hinweise"]'), a = dieAnalyse();
       if (!a) { el.innerHTML = ""; return; }
       var w = a.windows || {}, h = [];
-      /* Die Pille aus core (.up-sent.up-pille: Punkt + Text, 24 hoch, Rahmen), wie Tarif und
-         Status -- kein Zeichen statt des Punktes. */
-      function pille(text, tip) {
-        return '<span class="up-sent up-pille uev-hinweis"' + (tip ? ' data-tip="' + esc(tip) + '"' : "") + '>' +
-          '<span class="up-sent-dot"></span><span class="up-sent-val">' + esc(text) + '</span></span>';
+      /* Angaben wie Datum und Typ im Kopf: Zeichen + Text, leise (03.10.: "warum ist jede
+         Information in diesen kleinen Chips mit den Punkten davor? Die habe ich sonst nirgendwo"). */
+      function angabe(ic, text, tip) {
+        return '<span class="uev-angabe"' + (tip ? ' data-tip="' + esc(tip) + '"' : "") + '>' + UC.icon(ic, 2) + '<span>' + esc(text) + '</span></span>';
       }
-      if (w.after_complete === false) h.push(pille(ersetze(t("Still running, data until {date}"), { date: datum(w.effective_after_to) })));
-      if (w.limited_baseline === true) h.push(pille(ersetze(t("Limited baseline ({n} days)"), { n: zahl(w.before_observed_days) }),
+      if (w.after_complete === false) h.push(angabe("clock", ersetze(t("Still running, data until {date}"), { date: datum(w.effective_after_to) })));
+      if (w.limited_baseline === true) h.push(angabe("info", ersetze(t("Limited baseline ({n} days)"), { n: zahl(w.before_observed_days) }),
         t("Less historical data is available before this event for the selected period.")));
       var ov = isArr(a.overlaps) ? a.overlaps.length : 0;
-      if (ov) h.push(pille(ersetze(t(ov === 1 ? "{n} other event in this period" : "{n} other events in this period"), { n: ov })));
+      if (ov) h.push(angabe("tickets", ersetze(t(ov === 1 ? "{n} other event in this period" : "{n} other events in this period"), { n: ov })));
       el.innerHTML = h.join("");
     }
 
@@ -951,10 +1031,11 @@
       var aName = (a.affected && a.affected.name) || t("Affected prompts");
       /* Die eigene Linie in der PRIMAERFARBE (03.10.: "Linefarbe in Primaerfarbe. Punkt."): die
          Akzent-Tinte aus core, am Standard die Schriftfarbe des Themas -- dieselbe Quelle wie die
-         Kurve in brand-detail. Der Vergleich gestrichelt in der dritten Schriftfarbe. Keine
+         Kurve in brand-detail. Der Vergleich gestrichelt in der VIERTEN Schriftfarbe (03.10.:
+         "heller"). Keine
          Event-Farbe fuer Reihen (Spezifikation 29). */
       var tinte = UC.accentInk ? UC.accentInk(root) : token("--vc-text", "#1f1f1b");
-      var grau = token("--vc-third", "#6b6f78");
+      var grau = token("--vc-fourth", "#80858e");
       var ds = [{ label: aName, __id: "affected", __baseColor: tinte, borderColor: tinte,
                   __favicon: a.affected && a.affected.logo_url ? a.affected.logo_url : undefined,
                   data: tr.map(function (p) { return num(p["affected_" + feld]); }) }];
@@ -1005,12 +1086,9 @@
       el.innerHTML = sekKopf(titel, desc) +
         '<div class="up-vartable uev-markt">' + kopf + '<div class="up-tbody up-vbody">' + reihen.map(function (r) {
           var v = r.m.visibility || {};
-          /* Neu getrackt: vorher gab es fuer die Marke keinen einzigen Lauf (Vertrag 3.9). Dann ist
-             "vorher" kein Wert -- die Pille aus core sagt es, statt eines Strichs, der wie ein
-             fehlender Wert aussaehe. */
-          var neu = num(v.before) == null && r.m.total_runs && num(r.m.total_runs.before) === 0;
-          var aend = neu ? '<span class="up-sent up-pille uev-hinweis"><span class="up-sent-dot"></span><span class="up-sent-val">' + esc(t("Newly tracked")) + '</span></span>'
-            : trendHtml("visibility", v.delta);
+          /* Ohne Vorher-Wert steht vorher ein Strich und kein Trend -- und kein "Neu getrackt"
+             (03.10.: "ein Wert ohne Vorher-Wert ist nicht gleich neu getrackt"). */
+          var aend = num(v.before) == null ? "" : trendHtml("visibility", v.delta);
           return '<div class="up-row up-vrow' + (r.du ? " is-du" : "") + '">' +
             '<div class="up-td up-var-name uev-td-marke">' + markeLogo(r.m) + '<span class="up-varname">' + esc(r.m.name || "") + '</span>' +
               (r.du ? '<span class="up-marke up-you">' + esc(t("You")) + '</span>' : '') + '</div>' +
@@ -1034,10 +1112,11 @@
       } else if (st === "not_observed_within_6_months") { txt = t("Not observed within 6 months"); art = "is-lange"; }
       else { txt = t("Not observed since event"); art = "is-nein"; }
       var klick = o.first_observed_prompt_run_id;
-      var inhalt = '<span class="up-sent-dot"></span><span class="up-sent-val">' + esc(txt) + '</span>';
+      /* Als Text, der umbricht -- als Pille wurde "Seit dem Event noch nicht beobachtet"
+         abgeschnitten (03.10.). Zitiert in der Schriftfarbe, nicht zitiert zurueckgenommen. */
       return klick
-        ? '<button type="button" class="up-sent up-pille uev-beob ' + art + ' is-klick" data-run="' + esc(klick) + '" data-tip="' + esc(t("Open the response with the first observation")) + '">' + inhalt + '</button>'
-        : '<span class="up-sent up-pille uev-beob ' + art + '">' + inhalt + '</span>';
+        ? '<button type="button" class="uev-beob ' + art + ' is-klick" data-run="' + esc(klick) + '" data-tip="' + esc(t("Open the response with the first observation")) + '">' + esc(txt) + '</button>'
+        : '<span class="uev-beob ' + art + '">' + esc(txt) + '</span>';
     }
     function renderUrls() {
       var el = elMain.querySelector('[data-sek="urls"]'), d = dieDetail(), a = dieAnalyse();
@@ -1055,17 +1134,17 @@
       (a && isArr(a.urls) ? a.urls : []).forEach(function (u) { proId[u.id] = u; });
       el.innerHTML = sekKopf("Affected URLs", "Pages, articles or external sources associated with this event. Global share is measured in the affected prompts.") +
         '<div class="up-vartable uev-urls">' +
-          tabKopf("URL", [{ t: "Observation", k: "uev-th-beob" }, { t: "Before" }, { t: "After" }, { t: "Change" }]) +
+          tabKopf("URL", [{ t: "First cited", k: "uev-th-beob" }, { t: "Global share before" }, { t: "Global share after" }, { t: "Change" }]) +
           '<div class="up-tbody up-vbody">' + urls.map(function (u) {
             var an = proId[u.id], hp = hostPfad(u.url), gs = an && an.global_share ? an.global_share : null;
             var sk = '<span class="up-tsk-bar"></span>';
             return '<div class="up-row up-vrow uev-urlzeile" data-url-id="' + esc(u.id) + '">' +
-              /* Die Zeilenknoepfe sitzen in der ersten Zelle und erscheinen am Hover der Zeile --
-                 das Bauteil .up-btn-sec.up-rowbtn aus core, wie "Edit" in brands-overview. */
+              /* Der Zeilenknopf sitzt in der ersten Zelle und erscheint am Hover der Zeile -- das
+                 Bauteil .up-btn-sec.up-rowbtn aus core, wie "Edit" in brands-overview. Nur "Remove":
+                 der Knopf "Responses" filterte die Tabelle darunter und war unverstaendlich (03.10.). */
               '<div class="up-td up-var-name uev-td-url"><span class="up-fav up-logo-box has-img"><img src="' + esc(favicon(u.url)) + '" alt="" loading="lazy" referrerpolicy="no-referrer"/></span>' +
                 '<span class="uev-url-txt"><span class="uev-url-host">' + esc(hp.host) + '</span>' +
                 '<span class="uev-url-pfad" title="' + esc(u.url) + '">' + esc(hp.pfad) + '</span></span>' +
-                '<button type="button" class="up-btn-sec up-rowbtn uev-urlresp" data-url-id="' + esc(u.id) + '" aria-label="' + esc(t("View responses")) + '">' + UC.icon("messageCircle", 2) + '<span>' + esc(t("Responses")) + '</span></button>' +
                 '<button type="button" class="up-btn-sec up-rowbtn uev-urlweg" data-url-id="' + esc(u.id) + '" aria-label="' + esc(t("Remove")) + '">' + UC.icon("trash", 2) + '<span>' + esc(t("Remove")) + '</span></button>' +
               '</div>' +
               '<div class="up-td uev-td-zahl uev-td-beob">' + (an ? beobachtung(an.observation) : sk) + '</div>' +
@@ -1308,6 +1387,8 @@
       if (!e.target.closest) return;
       if (e.target.closest(".uev-anlegen, [data-uev-create]")) { e.preventDefault(); popupAnlegen(); return; }
       if (e.target.closest(".uev-zurueck")) { zurUebersicht(true); return; }
+      var si = e.target.closest(".uev-seiteninfo");
+      if (si) { if (seitenKarte && !seitenKarte.el.classList.contains("is-on")) seitenKarte.show(si); return; }
       /* Der Knopf im gefilterten Leerzustand (UC.leerHtml traegt data-clearall): Suche und
          Typ-Filter zuruecksetzen. */
       if (e.target.closest("[data-clearall]")) {
@@ -1344,8 +1425,6 @@
         if (UC.drawerOeffnen) UC.drawerOeffnen("response", beob.getAttribute("data-run"), "events");
         return;
       }
-      var ur = e.target.closest(".uev-urlresp");
-      if (ur) { respFilter(ur.getAttribute("data-url-id"), true); return; }
       var uw = e.target.closest(".uev-urlweg");
       if (uw) { urlEntfernenFragen(uw.getAttribute("data-url-id")); return; }
       if (e.target.closest(".uev-addurl-kopf, [data-uev-addurl]")) { popupUrl(); return; }
@@ -1672,10 +1751,40 @@
         feld("Description", '<textarea class="up-topicmodal-name up-modal-text" data-feld="text" rows="3" placeholder="' + esc(t("What changed?")) + '">' + esc(e.text) + '</textarea>', true) +
         feld("Appearance", '<div class="uev-aussehen">' + aussehen(e) + '</div>');
     }
-    /* Als dezente Pille aus core (03.10.: "pack das in einen subtilen Chip") -- dieselbe wie die
-       Hinweise im Detail. Kurz, damit sie in einer Zeile steht. */
+    /* DER TITELBILD-PICKER: die sechs Motive als Kacheln im Format des Bands, drei je Reihe (immer
+       gleich viele je Reihe). Gewaehlt traegt die Kachel den Ring in der Akzent-Tinte und den Haken
+       in einem runden Grund -- dieselbe Sprache wie die Farbwahl darueber (Haken auf dem Feld).
+       Ein zweiter Klick auf die gewaehlte Kachel nimmt sie ab; "Remove cover" klappt darunter auf,
+       sobald eine gewaehlt ist (200ms wie jedes Aufklappen im Popup). Ohne Titelbild steht das Band
+       in der Event-Farbe -- das zeigt die Vorschau darunter. */
+    function coverKacheln(e) {
+      return COVERS.map(function (c) {
+        var an = e.cover === c.key;
+        return '<button type="button" class="uev-cover' + (an ? " is-on" : "") + '" data-cover="' + c.key + '" aria-pressed="' + an + '"' +
+            ' aria-label="' + esc(t(c.label)) + '" data-tip="' + esc(t(c.label)) + '" style="' + esc(coverStil(c)) + '">' +
+          '<span class="uev-cover-haken" aria-hidden="true">' + UC.icon("check", 3) + '</span></button>';
+      }).join("");
+    }
+    function coverFeld(e) {
+      return feld("Cover image",
+        '<div class="uev-cover-raster" role="group" aria-label="' + esc(t("Cover image")) + '">' + coverKacheln(e) + '</div>' +
+        klapp(!!e.cover, '<div class="uev-cover-fuss"><button type="button" class="up-quietbtn uev-cover-weg">' + esc(t("Remove cover")) + '</button></div>', "uev-cover-klapp"), true);
+    }
+    function coverNeu() {
+      var p = popup, r = im(".uev-cover-raster");
+      if (!p || !r) return;
+      var ks = r.querySelectorAll("[data-cover]");
+      for (var i = 0; i < ks.length; i++) {
+        var an = ks[i].getAttribute("data-cover") === p.e.cover;
+        ks[i].classList.toggle("is-on", an); ks[i].setAttribute("aria-pressed", String(an));
+      }
+      klappen(im(".uev-cover-klapp"), !!p.e.cover);
+    }
+    /* Ein leiser Chip OHNE Rahmen und ohne Punkt: Flaeche wie der Zaehler in der Karte der
+       Event-Pins (--up-sel-bg), davor das Schloss. Die Punkt-Pille sah hier "vibecodig" aus und
+       passte nicht zur App (03.10.). */
     function gesperrtHinweis(text) {
-      return '<span class="up-sent up-pille uev-hinweis uev-gesperrt"><span class="up-sent-dot"></span><span class="up-sent-val">' + esc(t(text)) + '</span></span>';
+      return '<span class="uev-gesperrt">' + UC.icon("lock", 2) + '<span>' + esc(t(text)) + '</span></span>';
     }
     /* Umschalter, Topics und die Zahl als EINE Gruppe: die Zahl gehoert zur Auswahl darueber und
        steht darum nicht 32px entfernt wie ein eigenes Feld. Kein Wort ueber die Vergleichsgruppe
@@ -1748,10 +1857,11 @@
           '<input type="text" class="up-topicmodal-name uev-urlein" placeholder="' + esc(t("Search your URLs or paste a link")) + '" autocomplete="off" spellcheck="false" inputmode="url"/></div>' +
         klapp(false, '<div class="uev-urltreffer" role="listbox"></div>', "uev-treffer-klapp");
     }
-    function urlFelder() {
+    function urlFelder(e) {
       return feld("Affected URLs",
           '<p class="up-modal-hinweis">' + esc(t("Add pages, articles or external sources associated with this event.")) + '</p>' +
           urlSuche() + '<div class="uev-urlauswahl"></div>', true) +
+        coverFeld(e) +
         '<div class="uev-pruef"></div>' +
         gesperrtHinweis("Date and scope can't be changed later");
     }
@@ -1890,7 +2000,7 @@
       if (!el || p.art !== "anlegen") return;
       var e = p.e, v = dieVorschau(p);
       var ev = { id: "", name: e.name.trim() || t("Untitled event"), event_date: e.datum, event_type: e.typ,
-        icon: e.icon, color: e.farbe, description: e.text.trim() || null, scope_mode: e.modus,
+        icon: e.icon, color: e.farbe, cover: e.cover, description: e.text.trim() || null, scope_mode: e.modus,
         selected_topic_count: e.modus === "topics" ? e.topics.length : null,
         affected_prompt_count: v && !v.fehler ? v.n : null, affected_url_count: e.urls.length };
       el.innerHTML = '<span class="up-topicmodal-label">' + esc(t("Preview")) + '</span>' +
@@ -1939,7 +2049,7 @@
       if (box && !box.__uevGebaut) {
         box.__uevGebaut = 1;
         if (n === 2) { box.innerHTML = umfangFelder(p.e); topicsZeigen(); }
-        if (n === 3) box.innerHTML = urlFelder();
+        if (n === 3) box.innerHTML = urlFelder(p.e);
       }
       var sub = p.api.el.querySelector(".up-topicmodal-sub");
       if (sub) sub.textContent = schrittText(n);
@@ -2066,7 +2176,7 @@
         p_tag_ids: e.modus === "topics" ? e.topics.slice() : null,
         p_urls: e.urls.length ? e.urls.map(function (u) { return u.url; }) : null,
         p_description: e.text.trim() || null, p_event_type: e.typ,
-        p_icon: e.icon || null, p_color: e.farbe || null
+        p_icon: e.icon || null, p_color: e.farbe || null, p_cover: e.cover || null
       }));
     }
     /* Vertrag 3.5: null heisst unveraendert, "" leert (Beschreibung, Zeichen, Farbe). Ein leerer
@@ -2080,9 +2190,11 @@
         p_description: text !== a.text.trim() ? text : null,
         p_event_type: e.typ !== a.typ ? e.typ : null,
         p_icon: e.icon !== a.icon ? (e.icon || "") : null,
-        p_color: e.farbe !== a.farbe ? (e.farbe || "") : null
+        p_color: e.farbe !== a.farbe ? (e.farbe || "") : null,
+        /* Wie Zeichen und Farbe (Vertrag 3.5): null unveraendert, "" nimmt das Titelbild ab. */
+        p_cover: e.cover !== a.cover ? (e.cover || "") : null
       };
-      if (b.p_name == null && b.p_description == null && b.p_event_type == null && b.p_icon == null && b.p_color == null) { p.api.schliessen(); return; }
+      if (b.p_name == null && b.p_description == null && b.p_event_type == null && b.p_icon == null && b.p_color == null && b.p_cover == null) { p.api.schliessen(); return; }
       warten(p, "bearbeiten");
       fire("data-update-fn", "uevUpdate", body(b));
     }
@@ -2146,7 +2258,7 @@
     }
     function popupAnlegen() {
       if (popup) return;
-      var e = { name: "", datum: heuteIso(), monat: null, typ: "", text: "", icon: null, farbe: null, offen: null,
+      var e = { name: "", datum: heuteIso(), monat: null, typ: "", text: "", icon: null, farbe: null, cover: null, offen: null,
                 modus: "topics", topics: [], urls: [] };
       var api = UC.makeModal({
         titel: "Create event", unter: schrittText(1), breit: true, isDark: isDark,
@@ -2175,11 +2287,11 @@
       var ev = state.detail[eid] || listeEvent(eid);
       if (!ev) return;
       var e = { name: String(ev.name || ""), typ: typ(ev).key, text: String(ev.description || ""),
-                icon: ZEICHEN[ev.icon] ? ev.icon : null, farbe: farbe(ev) || null, offen: null, urls: [] };
-      var alt = { name: e.name, typ: e.typ, text: e.text, icon: e.icon, farbe: e.farbe };
+                icon: ZEICHEN[ev.icon] ? ev.icon : null, farbe: farbe(ev) || null, cover: coverVon(ev) ? ev.cover : null, offen: null, urls: [] };
+      var alt = { name: e.name, typ: e.typ, text: e.text, icon: e.icon, farbe: e.farbe, cover: e.cover };
       var api = UC.makeModal({
         titel: "Edit event", breit: true, isDark: isDark,
-        inhaltHtml: '<div class="uev-schritt">' + detailFelder(e, false) +
+        inhaltHtml: '<div class="uev-schritt">' + detailFelder(e, false) + coverFeld(e) +
           gesperrtHinweis("Date and scope can't be changed") + '</div>',
         knoepfe: [{ id: "abbrechen", text: "Cancel", art: "sec" },
                   { id: "speichern", text: "Save", art: "pri", aktion: function () { if (schrittOk(popup)) speichern(); return false; } }],
@@ -2253,6 +2365,9 @@
       }
       var tg = x.closest(".uev-datumwahl [data-tag]");
       if (tg) { if (tg.disabled) return; p.e.datum = tg.getAttribute("data-tag"); menueZu("datum"); datumNeu(); knoepfeSync(); return; }
+      var cvk = x.closest("[data-cover]");
+      if (cvk) { var ck = cvk.getAttribute("data-cover"); p.e.cover = p.e.cover === ck ? null : ck; coverNeu(); pruefenZeigen(); knoepfeSync(); return; }
+      if (x.closest(".uev-cover-weg")) { p.e.cover = null; coverNeu(); pruefenZeigen(); knoepfeSync(); return; }
       var pk = x.closest("[data-pick]");
       if (pk) { var k = pk.getAttribute("data-pick"); p.e.offen = p.e.offen === k ? null : k; aussehenKlappen(); return; }
       var ze = x.closest("[data-zeichen]");

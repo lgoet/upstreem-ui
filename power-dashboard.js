@@ -732,6 +732,7 @@
         '<div class="upw-kpi-foot">' + (fussStark ? '<span class="upw-kpi-strong">' + esc(fussStark) + '</span>' : '') + '</div>' +
       '</div>';
     }
+    var HASH = UC.HASH_ICON ? UC.HASH_ICON.replace("<svg ", '<svg class="up-hash" ') : "";
     function fmtPct1(v){ return v == null ? "–" : (UC.fmtPct ? UC.fmtPct(v, 1) : v.toFixed(1) + "%"); }
     function fmtR(v){ return v == null ? "–" : (UC.fmt1 ? UC.fmt1(v) : v.toFixed(1)); }
     function fmtI(v){ return v == null ? "–" : (UC.fmtInt ? UC.fmtInt(v) : String(Math.round(v))); }
@@ -760,7 +761,9 @@
       elKpis.innerHTML =
         kpiKarte("Visibility", '<span class="up-num">' + fmtPct1(vis) + '</span>',
           UC.trendChip(o.visibility_delta_pct, { decimals: true, suffix: "%" }), fussVis) +
-        kpiKarte("Avg. Rank", '<span class="up-num">' + fmtR(rank) + '</span>',
+        /* Rang mit Raute wie ueberall (03.10. angefordert: "da fehlt das Hashtag bei Rank"). */
+        kpiKarte("Avg. Rank", rank == null ? '<span class="up-num">' + fmtR(rank) + '</span>'
+          : '<span class="up-rank-group">' + HASH + '<span class="up-num">' + fmtR(rank) + '</span></span>',
           UC.trendChip(o.avg_rank_delta, { decimals: true, inverted: true }), fussRank) +
         /* Sentiment mit dem Balken aus core, wie ueberall (29.09.) -- hier stand die nackte Zahl. */
         kpiKarte("Sentiment", sent == null ? '<span class="up-num">' + fmtI(sent) + '</span>' : UC.sentHtml(sent),

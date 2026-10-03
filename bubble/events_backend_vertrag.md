@@ -106,6 +106,7 @@ Daneben gibt es `get_impact_event_analysis_v1` und `get_mentions_overview_v21`. 
 | `event_type` | text | nein | freier Typ-Schlüssel, Standard `"other"` (Liste in 6.2) |
 | `icon` | text | ja | z. B. Emoji |
 | `color` | text | ja | Hex `#rrggbb` |
+| `cover` | text | ja | **Neu 03.10.** Titelbild, einer von `wave_blue`, `wave_pink`, `wave_teal`, `poly_blue`, `poly_pink`, `poly_sand`. `null` = kein Titelbild (Band in `color`). Die Bilder liefert das Frontend, gespeichert wird nur der Schlüssel |
 | `scope_mode` | text | nein | `"topics"` (gewählte Topics) oder `"all"` (alle aktiven Prompts beim Anlegen) |
 | `selected_topic_count` | int | **ja** | Anzahl gewählter Topics. **`null` bei `scope_mode = "all"`** (nicht anwendbar) |
 | `affected_prompt_count` | int | nein | Prompts der eingefrorenen betroffenen Kohorte |
@@ -211,6 +212,7 @@ UI-Zeile: `"topics"` → „{selected_topic_count} Topics · {affected_prompt_co
 | `event_type` | text | nein | |
 | `event_date` | date | nein | |
 | `icon`, `color` | text | ja | |
+| `cover` | text | ja | **Neu 03.10.** wie in 3.1 |
 | `scope_mode` | text | nein | `"topics"` / `"all"` |
 | `created_by` | uuid | nein | |
 | `created_at`, `updated_at` | timestamptz | nein | |
@@ -364,6 +366,7 @@ Nur ein ungültiger `p_scope_mode` wirft `impact_event_invalid_scope`.
 | `p_event_type` | text | nein | `"other"` | |
 | `p_icon` | text | nein | `null` | |
 | `p_color` | text | nein | `null` | `#rrggbb` |
+| `p_cover` | text | nein | `null` | **Neu 03.10.** Schlüssel des Titelbilds (Liste in 3.1). Unbekannte Werte als `null` speichern |
 
 Alles läuft in einer Transaktion. Bei einem Fehler entsteht nichts. **Erfolg:** das Detail-Objekt (3.2).
 Mögliche Fehler: `impact_event_name_required`, `impact_event_invalid_date`, `impact_event_invalid_scope`, `impact_event_topics_required`,
@@ -399,7 +402,7 @@ Beispiel-Request:
 |---|---|---|---|---|
 | `p_team`, `p_event_id` | uuid | ja | – | |
 | `p_name` | text | nein | `null` | `null` = unverändert. Leerer String ist nicht erlaubt (`impact_event_name_required`) |
-| `p_description`, `p_event_type`, `p_icon`, `p_color` | text | nein | `null` | `null` = unverändert, `""` = leeren (Typ fällt dann auf `"other"` zurück) |
+| `p_description`, `p_event_type`, `p_icon`, `p_color`, `p_cover` | text | nein | `null` | `null` = unverändert, `""` = leeren (Typ fällt dann auf `"other"` zurück; `p_cover` ist **neu seit 03.10.**) |
 
 Datum, Scope und Topics sind **nicht** änderbar, dafür gibt es keinen Parameter. **Erfolg:** das Detail-Objekt. Fehler: `impact_event_not_found`, `impact_event_name_required`, `impact_event_rate_limited`.
 

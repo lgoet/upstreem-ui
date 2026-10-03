@@ -101,7 +101,7 @@
   }
   function zeileAus(d) {
     return { id: d.id, event_date: d.event_date, name: d.name, description: d.description, event_type: d.event_type,
-      icon: d.icon, color: d.color, scope_mode: d.scope_mode, selected_topic_count: d.selected_topic_count,
+      icon: d.icon, color: d.color, cover: d.cover || null, scope_mode: d.scope_mode, selected_topic_count: d.selected_topic_count,
       affected_prompt_count: d.affected_prompt_count, comparison_prompt_count: d.comparison_prompt_count,
       affected_url_count: (d.urls || []).length, created_by: d.created_by, created_at: d.created_at, can_delete: d.can_delete };
   }
@@ -145,7 +145,7 @@
       if ((b.p_urls || []).length > 100) return { fehler: "impact_event_too_many_urls" };
       var a0 = details[ids.A] || {}, jetzt = new Date().toISOString(), alle = b.p_scope_mode === "all";
       d = { id: uuid(), team_id: a0.team_id, name: String(b.p_name).trim(), description: b.p_description || null,
-        event_type: b.p_event_type || "other", event_date: b.p_event_date, icon: b.p_icon || null, color: b.p_color || null,
+        event_type: b.p_event_type || "other", event_date: b.p_event_date, icon: b.p_icon || null, color: b.p_color || null, cover: b.p_cover || null,
         scope_mode: alle ? "all" : "topics", created_by: a0.created_by, created_at: jetzt, updated_at: jetzt, can_delete: true,
         topics: alle ? [] : (b.p_tag_ids || []).map(function (t) { return { id: t, name: (ctx.topicName && ctx.topicName(t)) || "Topic", deleted: false }; }),
         selected_topic_count: alle ? null : (b.p_tag_ids || []).length,
@@ -170,6 +170,7 @@
       if (b.p_event_type != null) d.event_type = b.p_event_type || "other";
       if (b.p_icon != null) d.icon = b.p_icon || null;
       if (b.p_color != null) d.color = b.p_color || null;
+      if (b.p_cover != null) d.cover = b.p_cover || null;
       d.updated_at = new Date().toISOString();
       zeileErneuern(d);
       return { detail: d, liste: kopie(liste) };

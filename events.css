@@ -13,6 +13,16 @@
 .uev-root .uev-pagehead { padding: var(--uev-head-top) 0 8px; margin-bottom: 16px; }
 .uev-kopfrechts { display: inline-flex; align-items: center; gap: 12px; flex: 0 0 auto; }
 .uev-kopfaktion { display: inline-flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+/* DIE ERKLAERUNG DER SEITE: Knopf aus core (.up-iconbtn) im Kopf, die Karte ist die Erklaerkarte
+   aus core, doppelt so breit (sie haengt am <body>, darum ohne Elternklasse). Zwischen den Saetzen
+   Luft; oben die Zeichnung ueber die volle Breite des hellen Felds. */
+.up-explain.uev-explain-breit { width: 496px; max-width: calc(100vw - 16px); }
+.uev-explain-breit .up-explain-t + .up-explain-t { margin-top: 8px; }
+.uev-seite-vis { align-items: stretch; }
+.uev-seite-vis svg { display: block; width: 100%; height: auto; }
+.uev-seite-legende { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.uev-vis-linie { width: 18px; height: 0; border-top: 2.5px solid currentColor; flex: 0 0 auto; }
+.uev-vis-linie.is-vgl { border-top: 2px dashed currentColor; opacity: .5; }
 .uev-kopfaktion .up-btn-sec { display: inline-flex; align-items: center; gap: 6px; }
 .uev-kopfaktion .up-btn-sec svg { width: 14px; height: 14px; }
 
@@ -37,6 +47,9 @@
 .uev-karte:is(.is-sk, .is-vorschau) { cursor: default; }
 .uev-karte:is(.is-sk, .is-vorschau):hover { border-color: var(--vc-border); box-shadow: none; }
 .uev-karte-band { flex: 0 0 auto; height: 80px; border-radius: var(--up-r-m); background: color-mix(in srgb, var(--uev-t) 10%, var(--vc-bg)); }
+/* Mit Titelbild (03.10.): das Motiv deckt das Band, Bild und senkrechte Lage kommen inline
+   (coverStil); bis es geladen ist, steht die leise Flaeche darunter. */
+.uev-karte-band.has-cover, .uev-hero-band.has-cover { background-color: var(--vc-heading-bg); background-size: cover; background-repeat: no-repeat; }
 .uev-karte-body { flex: 1 1 auto; display: flex; flex-direction: column; align-items: flex-start; padding: 0 12px 12px; min-width: 0; }
 /* Der Ring im Kartengrund trennt das Profilbild vom Band wie in der Vorlage; der Schatten der
    Kachel faellt hier weg, er laege unter dem Ring und machte ihn grau. */
@@ -50,6 +63,9 @@
 /* Das Menue in der Ecke des Bands (8 Polster + 8 im Band), sichtbar beim Ueberfahren, mit Fokus
    oder offen; ohne Zeiger (Touch) immer -- dort gibt es kein Ueberfahren. */
 .uev-karte > .uev-mehr { position: absolute; top: 16px; right: 16px; z-index: 1; opacity: 0; transition: opacity var(--up-t-1) var(--up-ease); }
+/* Auf einem Titelbild braucht der Menue-Knopf einen Grund -- die dunkle Schrift laege sonst auf
+   Blau oder Rosa. */
+.uev-karte.has-cover > .uev-mehr .uev-mehrbtn { background: var(--vc-bg); }
 .uev-karte:hover > .uev-mehr, .uev-karte:focus-within > .uev-mehr, .uev-karte > .uev-mehr.is-open { opacity: 1; }
 @media (hover: none) { .uev-karte > .uev-mehr { opacity: 1; } }
 
@@ -120,10 +136,9 @@
 .uev-steuer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
 .uev-steuer-links { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .uev-filter { display: inline-flex; align-items: center; gap: 8px; }
-/* Hinweise: die Pille aus core (.up-sent.up-pille). Der Punkt in der dritten Schriftfarbe -- ein
-   Hinweis ist keine Wertung, also keine Signalfarbe. */
-.uev-hinweise { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
-.uev-hinweis .up-sent-dot { background: var(--vc-third); }
+/* Hinweise ("Still running", "Limited baseline", andere Events): Angaben mit Zeichen wie Datum
+   und Typ im Kopf -- KEINE Pillen mit Punkt (03.10.: "die habe ich sonst nirgendwo in der App"). */
+.uev-hinweise { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 16px; font-size: var(--up-fs-m); color: var(--vc-third); }
 
 /* Drei Kacheln in EINEM Kasten, getrennt durch Linien -- wie die Overview in power-dashboard. */
 .uev-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; padding: 16px; }
@@ -142,7 +157,7 @@
    Zahlen stehen fest. Zahlen tabellarisch, aber NICHT rechtsbuendig (abgelehnt, siehe Notiz). */
 .uev-td-marke, .uev-td-url { gap: 10px; }
 .uev-markt .uev-td-zahl, .uev-markt .uev-th-zahl { flex: 0 0 140px; min-width: 0; }
-.uev-urls .uev-td-zahl, .uev-urls .uev-th-zahl { flex: 0 0 110px; min-width: 0; }
+.uev-urls .uev-td-zahl, .uev-urls .uev-th-zahl { flex: 0 0 140px; min-width: 0; }
 .uev-urls .uev-td-beob, .uev-urls .uev-th-beob { flex: 0 0 260px; }
 .uev-url-txt { display: flex; flex-direction: column; min-width: 0; gap: 2px; }
 .uev-url-host { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -150,17 +165,15 @@
 /* Die Zeilenknoepfe (.up-btn-sec.up-rowbtn aus core) stehen hintereinander; nur der erste schiebt
    sich nach rechts (margin-left: auto aus core). */
 .uev-td-url .up-rowbtn + .up-rowbtn { margin-left: 0; }
-/* Beobachtung: die Pille aus core. Der Punkt traegt die Aussage, der Text sagt sie aus -- Farbe
-   ist nie die einzige Unterscheidung (Spezifikation 97). */
-.uev-beob { max-width: 100%; }
-.uev-beob .up-sent-val { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.uev-beob.is-ja .up-sent-dot { background: var(--vt-up); }
-.uev-beob.is-nein .up-sent-dot { background: var(--vc-fourth); }
-.uev-beob.is-lange .up-sent-dot { background: var(--vc-third); }
-/* Als Knopf (oeffnet die erste Beobachtung): nur die Knopf-Vorgaben des Browsers weg, und der
-   Hover-Rahmen der App. */
-button.uev-beob { font: inherit; cursor: pointer; background: transparent; }
-button.uev-beob:hover { border-color: var(--vc-hover-border); }
+/* "Zuerst zitiert": Text, der umbricht (als Pille wurde er abgeschnitten, 03.10.). Zitiert in der
+   Schriftfarbe, nicht zitiert zurueckgenommen -- der Satz sagt es, die Farbe stuetzt nur
+   (Spezifikation 97). Zwei Zeilen passen in die 55px der Zeile. */
+.uev-beob { min-width: 0; font-size: var(--up-fs-m); line-height: 1.35; color: var(--vc-text); white-space: normal; }
+.uev-beob.is-nein, .uev-beob.is-lange { color: var(--vc-muted); }
+/* Als Knopf (oeffnet die Response mit der ersten Beobachtung): Text bleibt Text, unterstrichen am
+   Hover. Nur die Knopf-Vorgaben des Browsers weg. */
+button.uev-beob { padding: 0; border: 0; background: none; font-family: inherit; font-weight: inherit; text-align: left; cursor: pointer; }
+button.uev-beob:hover { text-decoration: underline; text-underline-offset: 2px; }
 
 .uev-scope { display: flex; flex-direction: column; gap: 12px; padding: 16px; }
 .uev-scope-zeile { display: grid; grid-template-columns: 160px minmax(0, 1fr); align-items: center; gap: 12px; }
@@ -224,6 +237,26 @@ body:has(.uev-root[data-uev-resp="aus"]) .urt-root[data-instance="responses_even
 .uev-aussehen .uev-farbraster { justify-content: space-between; }
 .uev-aussehen .uev-standardfarbe { background: var(--vc-text); }
 .uev-aussehen .uev-farbraster .up-topicmodal-colorblob.uev-standardfarbe { color: var(--vc-bg); }
+
+/* DER TITELBILD-PICKER (03.10.): drei Kacheln je Reihe im Format des Bands der Karte (gleiche
+   senkrechte Lage des Motivs, darum aus derselben Quelle, coverStil). Rahmen und Hover wie die
+   Zellen der Farbwahl darueber (--vc-border, Hover --vc-hover-border); gewaehlt: Ring in der
+   Akzent-Tinte und der Haken auf einem runden Grund oben rechts. Radius 8 wie die Felder. */
+.uev-cover-raster { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.uev-cover { position: relative; width: 100%; aspect-ratio: 16 / 6; padding: 0; border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
+  background-color: var(--vc-heading-bg); background-size: cover; background-repeat: no-repeat; cursor: pointer; overflow: hidden;
+  transition: border-color var(--up-t-1) var(--up-ease), box-shadow var(--up-t-1) var(--up-ease); }
+.uev-cover:hover { border-color: var(--vc-hover-border); }
+.uev-cover:focus-visible { outline: var(--up-focus-w, 2px) solid var(--up-focus); outline-offset: 2px; }
+.uev-cover.is-on { border-color: var(--up-accent-ink); box-shadow: 0 0 0 1px var(--up-accent-ink); }
+.uev-cover-haken { position: absolute; top: 6px; right: 6px; width: 18px; height: 18px; border-radius: var(--up-r-voll);
+  display: inline-flex; align-items: center; justify-content: center; background: var(--vc-bg); color: var(--vc-text);
+  opacity: 0; transform: scale(.8); transition: opacity var(--up-t-1) var(--up-ease), transform var(--up-t-1) var(--up-ease); }
+.uev-cover-haken svg { width: 10px; height: 10px; }
+.uev-cover.is-on .uev-cover-haken { opacity: 1; transform: scale(1); }
+.uev-cover-fuss { display: flex; justify-content: flex-end; padding-top: 8px; }
+/* Der Abstand zum Raster liegt im Klapp-Behaelter (Polster oben), zugeklappt steht keiner zu viel. */
+.uev-cover-klapp { margin-top: -8px; }
 
 /* AUF- UND ZUKLAPPEN (03.10.): 200ms in der Kurve der App. Die Zeile waechst von 0fr auf 1fr --
    die Hoehe folgt dem Inhalt, ohne gemessen zu werden. Zugeklappt unsichtbar UND ohne Fokus
@@ -298,6 +331,9 @@ body:has(.uev-root[data-uev-resp="aus"]) .urt-root[data-instance="responses_even
 /* Die Vorschau in voller Breite des Popups (03.10. so gewuenscht). */
 .uev-vorschau { width: 100%; }
 
-/* "Datum und Umfang spaeter nicht aenderbar" als Pille aus core: nur so breit wie ihr Text, nicht
-   ueber die ganze Zeile gezogen (die Felder darueber sind Spalten eines Flex-Stapels). */
-.uev-gesperrt { align-self: flex-start; }
+/* "Datum und Umfang spaeter nicht aenderbar": ein leiser Chip ohne Rahmen und ohne Punkt -- die
+   Flaeche des Zaehlers in der Karte der Event-Pins (--up-sel-bg), Schrift 12 in --vc-muted, das
+   Schloss davor in der dritten Farbe. Nur so breit wie sein Text. */
+.uev-gesperrt { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; height: var(--up-h-chip); padding: 0 8px;
+  border-radius: var(--up-r-s); background: var(--up-sel-bg); color: var(--vc-muted); font-size: var(--up-fs-s); font-weight: var(--up-fw-m); }
+.uev-gesperrt svg { width: 13px; height: 13px; flex: 0 0 auto; color: var(--vc-third); }

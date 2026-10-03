@@ -4351,14 +4351,16 @@
    Zahl) und .up-rank-group mit Raute -- nur groesser gestellt, wie in power-dashboard (.upw-kpi-val)
    und brand-detail (.ubd-kpi-val). Ohne diese Zeilen stand die Zahl in ihrer Zellgroesse (14px) in
    einer 22px-Kachel, und Rang und Sentiment sahen hier anders aus als ueberall sonst.
-   Raute 20 bei 22px Zahl (brand-detail: 21 bei 23), Sentiment-Balken 4x16 wie in power-dashboard.
-   Der Vorher-Wert davor eine Stufe kleiner und zurueckgenommen: Raute 15, Balken bleibt 3x12. */
+   Sentiment-Balken 4x16 wie in power-dashboard. Die Raute bleibt klein und in der dritten Farbe
+   (03.10.: mit 20px "zu gross und zu dunkel" -- im Visibility-Chart steht sie 12px neben 14px
+   Zahlen): 14px neben der 22px-Zahl, wie performance-detail sie neben 18px haelt (12). Der
+   Vorher-Wert davor eine Stufe kleiner und zurueckgenommen: Raute in Zellgroesse 12. */
 .up-kpi-val .up-num, .up-kpi-val .up-sent-val { font-size: inherit; font-weight: inherit; letter-spacing: inherit; }
 .up-kpi-val .up-sent { gap: 8px; }
 .up-kpi-val .up-sent-dot { width: 4px; height: 16px; }
-.up-kpi-val .up-hash { width: 20px; height: 20px; }
+.up-kpi-val .up-hash { width: 14px; height: 14px; }
 .up-kpi-vorher .up-num, .up-kpi-vorher .up-sent-val { font-size: inherit; font-weight: inherit; color: inherit; }
-.up-kpi-vorher .up-hash { width: 15px; height: 15px; }
+.up-kpi-vorher .up-hash { width: 12px; height: 12px; }
 /* Die Fusszeile traegt seit dem 03.10. einen Trend-Chip aus core ("vs. comparison" + Chip) statt
    fett gesetzten Texts -- dieselbe Einheit wie der Trend neben der Zahl. Chip in Fussgroesse:
    Schrift wie der Fuss, Pfeil 15 statt 16 (Faktor 12/13). */
