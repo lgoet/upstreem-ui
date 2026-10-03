@@ -177,60 +177,54 @@
     "Affected prompts are the prompts in the topics you chose. The comparison group is your other active prompts, which the event did not touch. They show what would have happened anyway.",
     "If the affected prompts improve more than the comparison group, the event likely made the difference. The analysis window sets how many days before and after are compared."
   ];
-  /* DIE ZEICHNUNG IM HELLEN FELD DER KARTE (03.10. neu gezeichnet: die erste Fassung waren zwei
-     eckige Polylinien mit abgeschnittenem Pin -- "sieht richtig schlecht aus"). Jetzt wie das
-     Liniendiagramm der App im Kleinen: weiche Kurven (Catmull-Rom, als Bezier vorgerechnet),
-     Hilfslinien und Grundlinie ganz leise, unter der betroffenen Kurve nach dem Event eine Flaeche,
-     Endpunkte wie die Kurvenenden im Chart, der Event-Pin wie im echten Diagramm (Kachel 22,
-     Radius 6, Zeichen der Events) mit punktierter Linie. Nach dem Event ist NUR der Raum zwischen
-     den beiden Kurven gefuellt, nach rechts kraeftiger werdend, und darin steht "Effect": der
-     Abstand zur Vergleichsgruppe IST die Wirkung des Events -- der Kern der ganzen Seite in einer
-     Flaeche.
-     Alles in currentColor (die Schrift des hellen Felds), die Kachel in dessen Grund
+  /* DIE ZEICHNUNG IM HELLEN FELD DER KARTE (03.10., dritte Fassung). Wie das Liniendiagramm der
+     App im Kleinen: weiche Kurven (Catmull-Rom, als Bezier vorgerechnet), leise Hilfslinien, unter
+     der betroffenen Kurve eine Flaeche, die nach unten auslaeuft, Endpunkte wie die Kurvenenden im
+     Chart, der Event-Pin wie im echten Diagramm (Kachel 22, Radius 6, Zeichen der Events) mit
+     punktierter Linie. Die beiden Kurven laufen vor dem Event mit Abstand nebeneinander (12px) und
+     gehen danach deutlich auseinander -- ohne Beschriftung "Effect", das Bild sagt es selbst
+     (03.10.: "nicht noetig", "die Linien liegen zu nah beieinander").
+     Alles in currentColor (die Schrift des hellen Felds), Kachel und Ring in dessen Grund
      (--vc-inverse-ink) -- dreht also mit hell und dunkel. Das Zeichen im Pin kommt aus core. */
-  var VIS_VGL = "M8,76 C17.2,75.7 44.7,73.8 63,74 C81.3,74.2 99.7,76.8 118,77 C136.3,77.2 154.7,75.5 173,75 C191.3,74.5 209.7,74.3 228,74 C246.3,73.7 264.7,73 283,73 C301.3,73 319.7,74.2 338,74 C356.3,73.8 374.7,72.3 393,72 C411.3,71.7 438.8,72 448,72";
-  var VIS_BET_VOR = "M8,78 C17.2,77.7 44.7,75.8 63,76 C81.3,76.2 99.7,79 118,79 C136.3,79 154.7,76.7 173,76 C191.3,75.3 209.7,77 228,75";
-  var VIS_BET_NACH = "C246.3,73 264.7,67.5 283,64 C301.3,60.5 319.7,57 338,54 C356.3,51 374.7,48.3 393,46 C411.3,43.7 438.8,41 448,40";
-  /* Die Vergleichskurve ab dem Event RUECKWAERTS (448 -> 228), damit die Flaeche zwischen den
-     Kurven sich schliessen laesst. */
-  var VIS_VGL_ZURUECK = "C438.8,72 411.3,71.7 393,72 C374.7,72.3 356.3,73.8 338,74 C319.7,74.2 301.3,73 283,73 C264.7,73 246.3,73.7 228,74";
+  var VIS_VGL = "M8,92 C17.2,91.7 44.7,89.8 63,90 C81.3,90.2 99.7,92.8 118,93 C136.3,93.2 154.7,91.5 173,91 C191.3,90.5 209.7,90 228,90 C246.3,90 264.7,91 283,91 C301.3,91 319.7,90 338,90 C356.3,90 374.7,91 393,91 C411.3,91 438.8,90.2 448,90";
+  var VIS_BET = "M8,79 C17.2,78.7 44.7,76.8 63,77 C81.3,77.2 99.7,79.8 118,80 C136.3,80.2 154.7,78.5 173,78 C191.3,77.5 209.7,79 228,77 C246.3,75 264.7,69.7 283,66 C301.3,62.3 319.7,58.5 338,55 C356.3,51.5 374.7,48 393,45 C411.3,42 438.8,38.3 448,37";
   function seiteZeichnung() {
     var pin = UC.iconFormen ? UC.iconFormen("tickets") : "";
-    var tinte = 'style="fill:var(--vc-inverse-ink)"';
+    var grund = 'style="fill:var(--vc-inverse-ink)"';
+    function legLinie(gestrichelt) {
+      return '<svg class="uev-vis-linie" viewBox="0 0 18 4" aria-hidden="true"><line x1="1" y1="2" x2="17" y2="2" stroke="currentColor" stroke-width="2" stroke-linecap="round"' +
+        (gestrichelt ? ' stroke-dasharray="3 3" stroke-opacity=".55"' : '') + '/></svg>';
+    }
     return '<div class="up-explain-vis uev-seite-vis">' +
-      '<svg viewBox="0 0 456 124" aria-hidden="true">' +
-        '<defs><linearGradient id="uevVisFlaeche" x1="0" y1="0" x2="1" y2="0">' +
-          '<stop offset="0" stop-color="currentColor" stop-opacity=".03"/><stop offset="1" stop-color="currentColor" stop-opacity=".16"/>' +
+      '<svg class="uev-vis-chart" viewBox="0 0 456 124" aria-hidden="true">' +
+        '<defs><linearGradient id="uevVisFlaeche" x1="0" y1="0" x2="0" y2="1">' +
+          '<stop offset="0" stop-color="currentColor" stop-opacity=".12"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/>' +
         '</linearGradient></defs>' +
-        /* Hilfslinien und Grundlinie */
-        '<line x1="0" y1="44" x2="456" y2="44" stroke="currentColor" stroke-opacity=".08" stroke-dasharray="2 4"/>' +
-        '<line x1="0" y1="72" x2="456" y2="72" stroke="currentColor" stroke-opacity=".08" stroke-dasharray="2 4"/>' +
-        '<line x1="0" y1="100.5" x2="456" y2="100.5" stroke="currentColor" stroke-opacity=".18"/>' +
-        /* Die Wirkung: Flaeche zwischen den Kurven, nur nach dem Event */
-        '<path d="M228,75 ' + VIS_BET_NACH + ' L448,72 ' + VIS_VGL_ZURUECK + ' Z" fill="url(#uevVisFlaeche)"/>' +
-        /* Event: punktierte Linie und Pin */
-        '<line x1="228" y1="31" x2="228" y2="100" stroke="currentColor" stroke-opacity=".4" stroke-width="1.5" stroke-dasharray="0.5 4" stroke-linecap="round"/>' +
-        /* Kurven */
+        '<line x1="0" y1="44" x2="456" y2="44" stroke="currentColor" stroke-opacity=".07" stroke-dasharray="2 4"/>' +
+        '<line x1="0" y1="74" x2="456" y2="74" stroke="currentColor" stroke-opacity=".07" stroke-dasharray="2 4"/>' +
+        '<line x1="0" y1="104.5" x2="456" y2="104.5" stroke="currentColor" stroke-opacity=".16"/>' +
+        '<path d="' + VIS_BET + ' L448,104 L8,104 Z" fill="url(#uevVisFlaeche)"/>' +
+        '<line x1="228" y1="33" x2="228" y2="104" stroke="currentColor" stroke-opacity=".4" stroke-width="1.5" stroke-dasharray="0.5 4" stroke-linecap="round"/>' +
         '<path d="' + VIS_VGL + '" fill="none" stroke="currentColor" stroke-opacity=".5" stroke-width="2" stroke-dasharray="4 4" stroke-linecap="round"/>' +
-        '<path d="' + VIS_BET_VOR + ' ' + VIS_BET_NACH + '" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"/>' +
-        /* "Effect" mitten in der Flaeche, wo sie breit genug ist (zwischen y 48 und 73 bei x 390) */
-        '<text x="388" y="65" text-anchor="middle" fill="currentColor" font-size="11" font-weight="600">' + esc(t("Effect")) + '</text>' +
-        /* Kurvenenden wie im Chart */
-        '<circle cx="448" cy="72" r="3.5" ' + tinte + ' stroke="currentColor" stroke-opacity=".55" stroke-width="1.5"/>' +
-        '<circle cx="448" cy="40" r="4.5" fill="currentColor" stroke="var(--vc-inverse-ink)" stroke-width="2"/>' +
-        '<rect x="217" y="6.5" width="22" height="22" rx="6" ' + tinte + ' stroke="currentColor" stroke-opacity=".22"/>' +
-        '<svg x="222" y="11.5" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity=".85">' + pin + '</svg>' +
-        /* Vorher / Nachher */
-        '<text x="118" y="118" text-anchor="middle" fill="currentColor" fill-opacity=".55" font-size="11" font-weight="500">' + esc(t("Before")) + '</text>' +
-        '<text x="338" y="118" text-anchor="middle" fill="currentColor" fill-opacity=".55" font-size="11" font-weight="500">' + esc(t("After")) + '</text>' +
+        '<path d="' + VIS_BET + '" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"/>' +
+        '<circle cx="448" cy="90" r="3.5" ' + grund + ' stroke="currentColor" stroke-opacity=".55" stroke-width="1.5"/>' +
+        '<circle cx="448" cy="37" r="4.5" fill="currentColor" stroke="var(--vc-inverse-ink)" stroke-width="2"/>' +
+        '<rect x="217" y="8.5" width="22" height="22" rx="6" ' + grund + ' stroke="currentColor" stroke-opacity=".22"/>' +
+        '<svg x="222" y="13.5" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity=".85">' + pin + '</svg>' +
+        '<text x="118" y="121" text-anchor="middle" fill="currentColor" fill-opacity=".5" font-size="11" font-weight="500">' + esc(t("Before")) + '</text>' +
+        '<text x="338" y="121" text-anchor="middle" fill="currentColor" fill-opacity=".5" font-size="11" font-weight="500">' + esc(t("After")) + '</text>' +
       '</svg>' +
       '<div class="uev-seite-legende">' +
-        '<span class="up-explain-row"><span class="uev-vis-linie"></span>' + esc(t("Affected prompts")) + '</span>' +
-        '<span class="up-explain-row"><span class="uev-vis-linie is-vgl"></span>' + esc(t("Comparison group")) + '</span>' +
+        '<span class="uev-vis-eintrag">' + legLinie(false) + esc(t("Affected prompts")) + '</span>' +
+        '<span class="uev-vis-eintrag">' + legLinie(true) + esc(t("Comparison group")) + '</span>' +
       '</div></div>';
   }
   var ERKLAERUNG = {
-    vergleich: { h: "Comparison", t: "Upstreem compares the affected Prompts with other eligible Prompts that were active when this event was created." }
+    vergleich: { h: "Comparison", t: "Upstreem compares the affected Prompts with other eligible Prompts that were active when this event was created." },
+    /* Die Spalte "First cited" der URL-Tabelle (03.10.: "bitte einen Explainer, der die Metrik
+       erklaert"). Beispielwerte oben wie in jeder Spaltenerklaerung. */
+    zitiert: { h: "First cited", t: "When an AI response first cited this URL for the affected prompts after the event. \u201cAlready cited before\u201d means it was also cited in the six months before the event.",
+      vis: ["After 10 days (18. Sep 2026)", "Not yet"] }
   };
   var METRIKEN = [
     { key: "visibility", label: "Visibility" },
@@ -289,8 +283,41 @@
   }
   /* Ein unbekannter Schluessel (aelterer Stand, Tippfehler in der Datenbank) ergibt kein Bild --
      dann steht das Band in der Event-Farbe wie ohne Titelbild. */
+  function coverUrl(c) { return nebenUrl("event-covers/" + c.datei); }
   function coverStil(c) {
-    return c ? "background-image:url(" + nebenUrl("event-covers/" + c.datei) + ");background-position:50% " + c.pos : "";
+    return c ? "background-image:url(" + coverUrl(c) + ");background-position:50% " + c.pos : "";
+  }
+  /* MIT SKELETT, BIS DAS BILD DA IST (03.10.): ein Hintergrundbild meldet nicht, wann es geladen
+     ist -- also laedt jedes Motiv EINMAL ueber ein Image-Objekt vor, und bis dahin steht an seiner
+     Stelle das Skelett aus core (--vc-sk, uutpulse; Klasse is-laedt). Ist es da, bekommen alle
+     Elemente mit diesem Motiv (data-cover-bild) das Bild auf einen Schlag; was danach gezeichnet
+     wird, bekommt es sofort. Laedt ein Motiv nicht, faellt das Band auf die Event-Farbe zurueck
+     (has-cover weg) statt grau zu bleiben. */
+  var COVER_STAND = {};
+  function coverLaden(c) {
+    if (!c || COVER_STAND[c.key]) return;
+    COVER_STAND[c.key] = "laedt";
+    var img = new Image();
+    img.onload = function () { COVER_STAND[c.key] = "da"; coverEinsetzen(c); };
+    img.onerror = function () { COVER_STAND[c.key] = "fehler"; coverEinsetzen(c); };
+    img.src = coverUrl(c);
+  }
+  function coverEinsetzen(c) {
+    var els = document.querySelectorAll('[data-cover-bild="' + c.key + '"]');
+    for (var i = 0; i < els.length; i++) {
+      els[i].classList.remove("is-laedt");
+      if (COVER_STAND[c.key] === "da") { els[i].style.backgroundImage = "url(" + coverUrl(c) + ")"; els[i].style.backgroundPosition = "50% " + c.pos; }
+      else els[i].classList.remove("has-cover");
+    }
+  }
+  /* Klasse und Attribute eines Elements, das ein Motiv zeigt: das Bild nur, wenn es schon geladen
+     ist, sonst das Skelett. */
+  function coverTeile(c) {
+    if (!c) return { klasse: "", attr: "" };
+    coverLaden(c);
+    var st = COVER_STAND[c.key];
+    return { klasse: st === "da" ? " has-cover" : (st === "fehler" ? "" : " has-cover is-laedt"),
+             attr: ' data-cover-bild="' + c.key + '"' + (st === "da" ? ' style="' + esc(coverStil(c)) + '"' : '') };
   }
   function demoHolen(fertig) {
     if (window.__uevDemo) { fertig(window.__uevDemo); return; }
@@ -342,9 +369,11 @@
     "Affected URLs": "Betroffene URLs",
     "Pages, articles or external sources associated with this event. Global share is measured in the affected prompts.":
       "Seiten, Artikel oder externe Quellen zu diesem Event. Der Global Share zählt in den betroffenen Prompts.",
-    "First cited": "Zuerst zitiert", "Global share before": "Global Share vorher", "Global share after": "Global Share nachher",
-    "On event day": "Am Event-Tag", "Day {n} ({date})": "Tag {n} ({date})",
-    "Still cited from day {n}": "Weiter zitiert seit Tag {n}",
+    "First cited": "Erstmals zitiert", "Global share before": "Global Share vorher", "Global share after": "Global Share nachher",
+    "On event day": "Am Event-Tag", "After {n} days ({date})": "Nach {n} Tagen ({date})", "After 1 day ({date})": "Nach 1 Tag ({date})",
+    "Already cited before": "Schon vorher zitiert", "After 10 days (18. Sep 2026)": "Nach 10 Tagen (18. Sep 2026)",
+    "When an AI response first cited this URL for the affected prompts after the event. \u201cAlready cited before\u201d means it was also cited in the six months before the event.":
+      "Wann eine KI-Antwort diese URL nach dem Event zum ersten Mal für die betroffenen Prompts zitiert hat. \u201eSchon vorher zitiert\u201c heißt: auch in den sechs Monaten vor dem Event.",
     "Not yet": "Noch nicht", "Not within 6 months": "Nicht in 6 Monaten",
     "No URLs added yet": "Noch keine URLs",
     "Add pages, articles or external sources associated with this event.":
@@ -374,7 +403,7 @@
     "This topic was deleted after the event was created. Its prompts still count.":
       "Dieses Topic wurde nach dem Anlegen des Events gelöscht. Seine Prompts zählen weiter.",
     "{n} Prompts deleted since": "{n} Prompts inzwischen gelöscht",
-    "vs. comparison": "vs. Vergleich", "Comparison group": "Vergleichsgruppe", "Effect": "Wirkung",
+    "vs. comparison": "vs. Vergleich", "Comparison group": "Vergleichsgruppe",
     "How event analysis works": "So funktioniert die Event-Analyse",
     "An event marks a change, such as a relaunch or a campaign. Upstreem compares your AI performance before and after its date.":
       "Ein Event markiert eine Änderung, etwa einen Relaunch oder eine Kampagne. Upstreem vergleicht deine AI Performance vor und nach dem Datum.",
@@ -507,7 +536,10 @@
     if (UC.makeExplain) UC.makeExplain({ root: root, triggerSel: ".uev-erklaer", getIsDark: isDark,
       html: function (key) {
         var e = ERKLAERUNG[key];
-        return e ? '<div class="up-explain-h">' + esc(t(e.h)) + '</div><div class="up-explain-t">' + esc(t(e.t)) + '</div>' : "";
+        if (!e) return "";
+        var vis = e.vis ? '<div class="up-explain-vis">' + e.vis.map(function (x) {
+          return '<span class="up-explain-row">' + esc(t(x)) + '</span>'; }).join("") + '</div>' : "";
+        return vis + '<div class="up-explain-h">' + esc(t(e.h)) + '</div><div class="up-explain-t">' + esc(t(e.t)) + '</div>';
       } });
     /* DIE ERKLAERUNG DER SEITE (03.10.): ein Info-Knopf links neben der Hauptaktion im Kopf, am
        Zeiger UND per Klick. Die Erklaerkarte aus core, doppelt so breit (496 statt 248, cls
@@ -701,9 +733,11 @@
       var kannLoeschen = ev.can_delete === true;
       return '<span class="uev-mehr" data-mehr-wo="' + wo + '">' +
         '<button type="button" class="up-iconbtn uev-mehrbtn" aria-label="' + esc(t("More")) + '" data-tip="' + esc(t("More")) + '">' + UC.icon("moreHorizontal", 2) + '</button>' +
-        '<div class="up-menu uev-mehrmenu" role="menu" aria-hidden="true">' +
-          '<div class="up-filter-item" role="menuitem" data-aktion="edit" data-event-id="' + esc(ev.id) + '">' + UC.icon("squarePen", 2) + '<span>' + esc(t("Edit")) + '</span></div>' +
-          (kannLoeschen ? '<div class="up-filter-item uev-gefahr" role="menuitem" data-aktion="delete" data-event-id="' + esc(ev.id) + '">' + UC.icon("trash", 2) + '<span>' + esc(t("Delete")) + '</span></div>' : '') +
+        /* Das Aktionsmenue aus core (.up-aktionsmenue + .up-optrow), dasselbe wie das Menue der
+           Mitgliederliste -- vorher erbten die Zeilen hier die 16px der Seite (03.10. gemessen). */
+        '<div class="up-menu uev-mehrmenu up-aktionsmenue" role="menu" aria-hidden="true">' +
+          '<button type="button" class="up-optrow" role="menuitem" data-aktion="edit" data-event-id="' + esc(ev.id) + '">' + UC.icon("squarePen", 2) + '<span class="up-aktionsmenue-lbl">' + esc(t("Edit")) + '</span></button>' +
+          (kannLoeschen ? '<div class="up-aktionsmenue-div"></div><button type="button" class="up-optrow is-gefahr" role="menuitem" data-aktion="delete" data-event-id="' + esc(ev.id) + '">' + UC.icon("trash", 2) + '<span class="up-aktionsmenue-lbl">' + esc(t("Delete")) + '</span></button>' : '') +
         '</div></span>';
     }
     /* DIE KARTE (03.10., nach der Vorlage des Nutzers, einer Profilkarte): oben, mit Abstand zum
@@ -717,7 +751,7 @@
       return '<article class="uev-karte' + (vorschau ? " is-vorschau" : "") + (cv ? " has-cover" : "") + '"' +
           (vorschau ? ' aria-hidden="true"' : ' role="link" tabindex="0" data-event-id="' + esc(ev.id) + '"') +
           (f ? ' style="--uev-ton:' + esc(f) + '"' : '') + '>' +
-        '<div class="uev-karte-band' + (cv ? " has-cover" : "") + '"' + (cv ? ' style="' + esc(coverStil(cv)) + '"' : '') + '></div>' +
+        (function () { var ct = coverTeile(cv); return '<div class="uev-karte-band' + ct.klasse + '"' + ct.attr + '></div>'; })() +
         (vorschau ? '' : mehrMenue(ev, "karte")) +
         '<div class="uev-karte-body">' +
           avatarHtml(ev) +
@@ -947,7 +981,7 @@
       var f = farbe(d), cv = coverVon(d);
       el.innerHTML =
         '<div class="up-box uev-hero"' + (f ? ' style="--uev-ton:' + esc(f) + '"' : '') + '>' +
-          '<div class="uev-hero-band' + (cv ? " has-cover" : "") + '"' + (cv ? ' style="' + esc(coverStil(cv)) + '"' : '') + '></div>' +
+          (function () { var ct = coverTeile(cv); return '<div class="uev-hero-band' + ct.klasse + '"' + ct.attr + '></div>'; })() +
           '<div class="uev-hero-body">' +
             avatarHtml(d, "gross") +
             '<h2 class="uev-dkopf-titel">' + esc(d.name || "") + '</h2>' +
@@ -1088,8 +1122,12 @@
        fest (.uev-th-zahl, Breite in events.css -- core laesst die Spaltenbreiten bewusst bei der
        Komponente). */
     function tabKopf(erste, zahlen) {
+      /* z.info: die Erklaerkarte am Spaltenkopf, wie an jedem Spaltenkopf der App (.up-th-info). */
       return '<div class="up-thead up-vrow"><div class="up-th up-th-vname">' + esc(t(erste)) + '</div>' +
-        zahlen.map(function (z) { return '<div class="up-th uev-th-zahl' + (z.k ? " " + z.k : "") + '">' + esc(t(z.t)) + '</div>'; }).join("") + '</div>';
+        zahlen.map(function (z) {
+          return '<div class="up-th uev-th-zahl' + (z.k ? " " + z.k : "") + '">' + esc(t(z.t)) +
+            (z.info ? '<span class="up-th-info uev-erklaer" data-explain="' + esc(z.info) + '">' + UC.icon("info", 2) + '</span>' : '') + '</div>';
+        }).join("") + '</div>';
     }
     function renderMarkt() {
       var el = elMain.querySelector('[data-sek="markt"]'), a = dieAnalyse();
@@ -1137,11 +1175,13 @@
     function beobachtung(o) {
       o = o || {};
       var st = o.status, txt, ja = true;
-      if (st === "observed_on_event_day") txt = t("On event day");
+      /* day_number zaehlt die Tage NACH dem Event (Vertrag 3.9: 0 = Event-Tag) -- darum "After 10
+         days" und nicht "Day 10", das sich wie ein Wochentag oder ein Zaehler ab 1 las. */
+      var n = num(o.day_number);
+      if (st === "observed_on_event_day" || (st === "first_observed_after_event" && n === 0 && o.observed_before_event !== true)) txt = t("On event day");
       else if (st === "first_observed_after_event") {
-        txt = o.observed_before_event === true
-          ? ersetze(t("Still cited from day {n}"), { n: zahl(o.day_number) })
-          : ersetze(t("Day {n} ({date})"), { n: zahl(o.day_number), date: datum(o.first_observed_day) });
+        txt = o.observed_before_event === true ? t("Already cited before")
+          : ersetze(t(n === 1 ? "After 1 day ({date})" : "After {n} days ({date})"), { n: zahl(n), date: datum(o.first_observed_day) });
       } else if (st === "not_observed_within_6_months") { txt = t("Not within 6 months"); ja = false; }
       else { txt = t("Not yet"); ja = false; }
       return '<span class="up-marke is-leise uev-beob' + (ja ? " is-ja" : "") + '">' + esc(txt) + '</span>';
@@ -1162,7 +1202,7 @@
       (a && isArr(a.urls) ? a.urls : []).forEach(function (u) { proId[u.id] = u; });
       el.innerHTML = sekKopf("Affected URLs", "Pages, articles or external sources associated with this event. Global share is measured in the affected prompts.") +
         '<div class="up-vartable uev-urls">' +
-          tabKopf("URL", [{ t: "First cited", k: "uev-th-beob" }, { t: "Global share before" }, { t: "Global share after" }, { t: "Change" }]) +
+          tabKopf("URL", [{ t: "First cited", k: "uev-th-beob", info: "zitiert" }, { t: "Global share before" }, { t: "Global share after" }, { t: "Change" }]) +
           '<div class="up-tbody up-vbody">' + urls.map(function (u) {
             var an = proId[u.id], hp = hostPfad(u.url), gs = an && an.global_share ? an.global_share : null;
             var sk = '<span class="up-tsk-bar"></span>';
@@ -1626,8 +1666,10 @@
         var an = x.key === p.e.typ;
         return '<div class="up-filter-item uev-typitem' + (an ? " is-checked" : "") + '" role="option" tabindex="0" aria-selected="' + an + '" data-typ-wahl="' + esc(x.key) + '">' +
           '<span class="up-filter-check">' + UC.icon("check", 3) + '</span>' +
-          '<span class="uev-typitem-ic">' + UC.icon(x.icon, 2) + '</span>' +
-          '<span class="uev-typitem-lbl">' + esc(t(x.label)) + '</span></div>';
+          /* Zeichen und Name mit den Klassen des Marken-Filters (.up-ment-zeichen, .up-ment-name:
+             13/500) -- vorher eigene mit 13/400, das Menue sah dadurch fremd aus (03.10.). */
+          '<span class="up-ment-zeichen">' + UC.icon(x.icon, 2) + '</span>' +
+          '<span class="up-ment-name">' + esc(t(x.label)) + '</span></div>';
       }).join("");
     }
     /* Der Typ ist eine PFLICHTWAHL ohne Vorbelegung (03.10.: "es soll nicht 'Andere' vorselektiert
@@ -1788,9 +1830,9 @@
        in der Event-Farbe -- das zeigt die Vorschau darunter. */
     function coverKacheln(e) {
       return COVERS.map(function (c) {
-        var an = e.cover === c.key;
-        return '<button type="button" class="uev-cover' + (an ? " is-on" : "") + '" data-cover="' + c.key + '" aria-pressed="' + an + '"' +
-            ' aria-label="' + esc(t(c.label)) + '" data-tip="' + esc(t(c.label)) + '" style="' + esc(coverStil(c)) + '">' +
+        var an = e.cover === c.key, ct = coverTeile(c);
+        return '<button type="button" class="uev-cover' + (an ? " is-on" : "") + (ct.klasse.indexOf("is-laedt") >= 0 ? " is-laedt" : "") + '" data-cover="' + c.key + '" aria-pressed="' + an + '"' +
+            ' aria-label="' + esc(t(c.label)) + '" data-tip="' + esc(t(c.label)) + '"' + ct.attr + '>' +
           '<span class="uev-cover-haken" aria-hidden="true">' + UC.icon("check", 3) + '</span></button>';
       }).join("");
     }
@@ -1836,7 +1878,7 @@
           '<span class="up-filter-check">' + UC.icon("check", 3) + '</span>' +
           (x.emoji ? '<span class="uev-topic-zeichen">' + esc(x.emoji) + '</span>'
                    : '<span class="uev-topic-punkt"' + (fb ? ' style="background:' + esc(fb) + '"' : '') + '></span>') +
-          '<span class="uev-topic-name">' + esc(x.name || "") + '</span>' +
+          '<span class="up-ment-name uev-topic-name">' + esc(x.name || "") + '</span>' +
           (num(x.prompt_count) != null ? '<span class="uev-topic-zahl">' + esc(zahl(x.prompt_count)) + '</span>' : '') +
         '</div>';
       }).join("");

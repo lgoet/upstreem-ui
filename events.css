@@ -18,18 +18,19 @@
    Luft; oben die Zeichnung ueber die volle Breite des hellen Felds. */
 .up-explain.uev-explain-breit { width: 496px; max-width: calc(100vw - 16px); }
 .uev-explain-breit .up-explain-t + .up-explain-t { margin-top: 8px; }
-.uev-seite-vis { align-items: stretch; }
-.uev-seite-vis svg { display: block; width: 100%; height: auto; }
-.uev-seite-legende { display: flex; flex-wrap: wrap; gap: 4px 16px; }
-.uev-vis-linie { width: 18px; height: 0; border-top: 2.5px solid currentColor; flex: 0 0 auto; }
-.uev-vis-linie.is-vgl { border-top: 2px dashed currentColor; opacity: .5; }
+/* Das helle Feld: Zeichnung ueber die volle Breite, darunter die Legende MITTIG. Zur Ueberschrift
+   darunter 16px statt der 9 aus core -- die Zeichnung ist hier groesser als ein Beispielwert und
+   braucht mehr Abstand, sonst klebt der Titel an ihr (03.10.). */
+.up-explain-vis.uev-seite-vis { align-items: stretch; gap: 10px; padding: 14px 12px 12px; margin-bottom: 16px; }
+.uev-vis-chart { display: block; width: 100%; height: auto; }
+.uev-seite-legende { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 4px 20px; }
+.uev-vis-eintrag { display: inline-flex; align-items: center; gap: 6px; font-size: var(--up-fs-xs); font-weight: var(--up-fw-m); line-height: 1; opacity: .7; }
+.uev-vis-linie { display: block; width: 18px; height: 4px; flex: 0 0 auto; }
 .uev-kopfaktion .up-btn-sec { display: inline-flex; align-items: center; gap: 6px; }
 .uev-kopfaktion .up-btn-sec svg { width: 14px; height: 14px; }
 
 /* ---- Uebersicht ------------------------------------------------------------------------------ */
 .uev-head { margin-bottom: 16px; }
-.uev-typitem-ic { display: inline-flex; color: var(--vc-third); }
-.uev-typitem-ic svg { width: 14px; height: 14px; }
 
 /* DIE KARTE (03.10., nach der Vorlage des Nutzers, einer Profilkarte). Nach Kole Jain: Luft,
    die gruppiert (20px zum Rand, 20px zwischen den Karten), Hierarchie ueber Groesse und Lage statt
@@ -53,6 +54,10 @@
 /* Mit Titelbild (03.10.): das Motiv deckt das Band, Bild und senkrechte Lage kommen inline
    (coverStil); bis es geladen ist, steht die leise Flaeche darunter. */
 .uev-karte-band.has-cover, .uev-hero-band.has-cover { background-color: var(--vc-heading-bg); background-size: cover; background-repeat: no-repeat; }
+/* Bis das Motiv geladen ist: das Skelett aus core (Flaeche --vc-sk, Puls uutpulse wie .up-tsk-bar),
+   im Band wie in den Kacheln des Pickers. */
+.uev-karte-band.has-cover.is-laedt, .uev-hero-band.has-cover.is-laedt, .uev-cover.is-laedt { background-color: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .uev-karte-band.has-cover.is-laedt, .uev-hero-band.has-cover.is-laedt, .uev-cover.is-laedt { animation: none; } }
 .uev-karte-body { flex: 1 1 auto; display: flex; flex-direction: column; align-items: flex-start; padding: 0 12px 12px; min-width: 0; }
 /* Der Ring im Kartengrund trennt das Profilbild vom Band wie in der Vorlage; der Schatten der
    Kachel faellt hier weg, er laege unter dem Ring und machte ihn grau. */
@@ -102,8 +107,6 @@
 .uev-mehr { position: relative; display: inline-flex; flex: 0 0 auto; }
 .uev-mehrbtn { width: var(--up-h-seg); height: var(--up-h-seg); }
 .uev-mehrmenu { width: 180px; }
-.uev-mehrmenu .up-filter-item svg { width: 14px; height: 14px; flex: 0 0 auto; }
-.uev-gefahr:hover { color: var(--vt-down); }
 
 /* Skelett: dieselbe Flaeche wie jedes Skelett der App (--vc-sk). */
 .uev-sk { display: block; height: 12px; border-radius: var(--up-r-xs); background: var(--vc-sk); }
@@ -161,7 +164,16 @@
 .uev-td-marke, .uev-td-url { gap: 10px; }
 .uev-markt .uev-td-zahl, .uev-markt .uev-th-zahl { flex: 0 0 140px; min-width: 0; }
 .uev-urls .uev-td-zahl, .uev-urls .uev-th-zahl { flex: 0 0 140px; min-width: 0; }
-.uev-urls .uev-td-beob, .uev-urls .uev-th-beob { flex: 0 0 260px; }
+.uev-urls .uev-td-beob, .uev-urls .uev-th-beob { flex: 0 0 210px; }
+/* Die erste Spalte nie schmaler als ihr Inhalt braucht -- bei 800px Fensterbreite blieb von der
+   URL-Spalte nur das Favicon (03.10. gesehen). Reicht der Platz nicht, scrollt die Tabelle in
+   ihrem Rahmen (Spezifikation 87): Kopf und Koerper so breit wie die Summe der Spalten, der
+   Rahmen laesst waagerecht scrollen statt abzuschneiden. Spezifischer als .up-vartable aus core. */
+.uev-urls .up-var-name, .uev-urls .up-th-vname { min-width: 220px; }
+.uev-markt .up-var-name, .uev-markt .up-th-vname { min-width: 180px; }
+.up-vartable.uev-urls, .up-vartable.uev-markt { overflow-x: auto; }
+.uev-urls > .up-thead, .uev-urls > .up-tbody { min-width: 860px; }
+.uev-markt > .up-thead, .uev-markt > .up-tbody { min-width: 600px; }
 .uev-url-txt { display: flex; flex-direction: column; min-width: 0; gap: 2px; }
 .uev-url-host { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .uev-url-pfad { font-size: var(--up-fs-s); color: var(--vc-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -198,9 +210,7 @@ body:has(.uev-root[data-uev-resp="aus"]) .urt-root[data-instance="responses_even
 .uev-root.is-narrow .uev-sec-head { flex-wrap: wrap; }
 .uev-root.is-narrow .uev-scope-zeile { grid-template-columns: minmax(0, 1fr); gap: 6px; }
 .uev-root.is-narrow .uev-dkopf-titel { white-space: normal; }
-/* Breite Tabellen scrollen in ihrem Rahmen statt die Seite (Spezifikation 87). */
-.uev-root.is-narrow .uev-detail .up-vartable { overflow-x: auto; }
-.uev-root.is-narrow .uev-detail .up-vartable > .up-thead, .uev-root.is-narrow .uev-detail .up-vartable > .up-tbody { min-width: 680px; }
+
 
 /* ---- Die Popups: Anlegen, Bearbeiten, URL hinzufuegen ---------------------------------------
    Huelle, Felder, Aussehen-Knoepfe und Farbraster kommen aus core (.up-modal, .up-topicmodal-*),
@@ -220,9 +230,6 @@ body:has(.uev-root[data-uev-resp="aus"]) .urt-root[data-instance="responses_even
    darunter immer zu sehen ist. */
 .uev-wahl .uev-typwahl { max-width: none; }
 .uev-typwahl .uev-typliste { max-height: 256px; }
-/* 13px wie die Namen in der Branchen-Auswahl (.usb-opt-name). Ohne Angabe erbte die Zeile im
-   Popup die 16px des Dokuments: das Menue liegt in der obersten Ebene, ausserhalb der Karte. */
-.uev-typitem .uev-typitem-lbl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--up-fs-m); color: var(--vc-text); }
 
 /* Das Zeichenraster: die Zellen des Farbrasters, darin ein Zeichen statt eines Kreises. Zwanzig
    Zeichen in zwei Reihen zu zehn; eine Zelle hoechstens 32 x 32 (03.10.: "viel zu gross" -- als
@@ -287,7 +294,8 @@ body:has(.uev-root[data-uev-resp="aus"]) .urt-root[data-instance="responses_even
 .uev-topicbox .uev-topicliste { max-height: 232px; overflow-y: auto; }
 .uev-topic-zeichen { flex: 0 0 auto; font-size: var(--up-fs-m); line-height: 1; }
 .uev-topic-punkt { flex: 0 0 auto; width: 8px; height: 8px; border-radius: var(--up-r-voll); background: var(--vc-fourth); }
-.uev-topic-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--up-fs-m); color: var(--vc-text); }
+/* Name: .up-ment-name aus core (13/500, wie im Marken-Filter), hier nur das Wachsen. */
+.uev-topic-name { flex: 1 1 auto; }
 .uev-topic-zahl { flex: 0 0 auto; font-size: var(--up-fs-s); color: var(--vc-fourth); font-variant-numeric: tabular-nums; }
 .uev-topicfuss { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 0 0 9px; border-top: 1px solid var(--vc-border); }
 .uev-topicfuss-zahl { font-size: var(--up-fs-s); color: var(--vc-third); }

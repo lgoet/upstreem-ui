@@ -1642,6 +1642,17 @@
     .up-optrow-check { margin-left: auto; width: 16px; height: 16px; flex: 0 0 16px; display: grid; place-items: center; color: var(--vc-text); opacity: 0; }
     .up-optrow.is-on .up-optrow-check { opacity: 1; }
     .up-optrow-check svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+    /* DAS AKTIONSMENUE (03.10. nach core, Werte 1:1 aus team-orga .uto-menu): Handlungen wie
+       "Edit" und "Delete" am Dreipunkt-Knopf einer Zeile oder Karte. Zeilen .up-optrow, 34 hoch,
+       Schrift 13/500 -- .up-optrow setzt selbst keine Schrift und erbte sonst die der Seite (im
+       Events-Menue gemessen: 16px). Die wegnehmende Zeile steht hinter einem Trennstrich, leise,
+       und wird erst am Zeiger rot -- dauerhaft rot liest sich wie ein Fehler. */
+    .up-aktionsmenue .up-optrow { min-height: 34px; padding: 0 9px; font-size: var(--up-fs-m); font-weight: var(--up-fw-m); }
+    .up-aktionsmenue .up-optrow svg { width: 15px; height: 15px; flex: 0 0 15px; }
+    .up-aktionsmenue-lbl { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .up-aktionsmenue-div { height: 1px; background: var(--vc-border); margin: 6px 4px; }
+    .up-aktionsmenue .up-optrow.is-gefahr { color: var(--vc-muted); }
+    .up-aktionsmenue .up-optrow.is-gefahr:hover { color: var(--vt-down); }
     /* icon buttons have no border, so their open state is the background */
     /* ---------- Icon-Trigger: Hintergrund NUR im offenen Zustand ----------
        Eine Regel fuer die ganze App statt einer pro Komponente. Jeder Popover-Wrapper bekommt
