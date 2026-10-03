@@ -38,7 +38,10 @@
    sein Radius 8 = 16 - 8 (konzentrisch, CLAUDE.md 1c); 80 hoch (03.10.: 16px mehr als vorher).
    Das Raster steht unten -- margin-top: auto --, damit es in einer Reihe auf gleicher Hoehe liegt,
    auch wenn eine Karte keine Beschreibung hat. */
-.uev-karten { display: grid; grid-template-columns: repeat(var(--uev-cols, 1), minmax(0, 1fr)); gap: 20px; }
+/* Hoechstens 500px je Karte (03.10.: "die Mitte der letzten beiden Fassungen" -- bei 1240px waren
+   es 400 und 610). Die Spalte waechst nicht darueber hinaus; was in der Reihe uebrig bleibt, steht
+   rechts frei, statt die Karten zu dehnen. */
+.uev-karten { display: grid; grid-template-columns: repeat(var(--uev-cols, 1), minmax(0, 500px)); gap: 20px; }
 .uev-karte { --uev-t: var(--uev-ton, var(--vc-text)); position: relative; display: flex; flex-direction: column; min-width: 0; overflow: hidden;
   padding: 8px; background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl); cursor: pointer;
   transition: border-color var(--up-t-1) var(--up-ease), box-shadow var(--up-t-2) var(--up-ease); }
@@ -165,15 +168,13 @@
 /* Die Zeilenknoepfe (.up-btn-sec.up-rowbtn aus core) stehen hintereinander; nur der erste schiebt
    sich nach rechts (margin-left: auto aus core). */
 .uev-td-url .up-rowbtn + .up-rowbtn { margin-left: 0; }
-/* "Zuerst zitiert": Text, der umbricht (als Pille wurde er abgeschnitten, 03.10.). Zitiert in der
-   Schriftfarbe, nicht zitiert zurueckgenommen -- der Satz sagt es, die Farbe stuetzt nur
-   (Spezifikation 97). Zwei Zeilen passen in die 55px der Zeile. */
-.uev-beob { min-width: 0; font-size: var(--up-fs-m); line-height: 1.35; color: var(--vc-text); white-space: normal; }
-.uev-beob.is-nein, .uev-beob.is-lange { color: var(--vc-muted); }
-/* Als Knopf (oeffnet die Response mit der ersten Beobachtung): Text bleibt Text, unterstrichen am
-   Hover. Nur die Knopf-Vorgaben des Browsers weg. */
-button.uev-beob { padding: 0; border: 0; background: none; font-family: inherit; font-weight: inherit; text-align: left; cursor: pointer; }
-button.uev-beob:hover { text-decoration: underline; text-underline-offset: 2px; }
+/* "Zuerst zitiert": die leise Marke aus core (.up-marke.is-leise), die Texte kurz genug fuer die
+   Spalte. Zitiert in der Schriftfarbe, nicht zitiert in der leisen -- der Text sagt es, die Farbe
+   stuetzt nur (Spezifikation 97). */
+.uev-beob.is-ja { color: var(--vc-text); }
+/* Die Zeile oeffnet das URL-Detail: Zeiger wie jede klickbare Zeile (core setzt in .up-vartable
+   "default", hier eine Stufe spezifischer). Den Hover-Grund bringt .up-row aus core mit. */
+.uev-urls .up-row.uev-urlzeile { cursor: pointer; }
 
 .uev-scope { display: flex; flex-direction: column; gap: 12px; padding: 16px; }
 .uev-scope-zeile { display: grid; grid-template-columns: 160px minmax(0, 1fr); align-items: center; gap: 12px; }
@@ -241,7 +242,9 @@ body:has(.uev-root[data-uev-resp="aus"]) .urt-root[data-instance="responses_even
 /* DER TITELBILD-PICKER (03.10.): drei Kacheln je Reihe im Format des Bands der Karte (gleiche
    senkrechte Lage des Motivs, darum aus derselben Quelle, coverStil). Rahmen und Hover wie die
    Zellen der Farbwahl darueber (--vc-border, Hover --vc-hover-border); gewaehlt: Ring in der
-   Akzent-Tinte und der Haken auf einem runden Grund oben rechts. Radius 8 wie die Felder. */
+   Akzent-Tinte und der Haken auf einem runden Grund oben rechts. Radius 8 wie die Felder.
+   (.check_reinvention.py haelt .uev-cover fuer eine Slide-out-Suche: es ist eine Bildkachel, die
+   Breite fuellt die Rasterzelle, overflow schneidet das Motiv an der Rundung ab.) */
 .uev-cover-raster { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .uev-cover { position: relative; width: 100%; aspect-ratio: 16 / 6; padding: 0; border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
   background-color: var(--vc-heading-bg); background-size: cover; background-repeat: no-repeat; cursor: pointer; overflow: hidden;

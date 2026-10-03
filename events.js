@@ -177,19 +177,52 @@
     "Affected prompts are the prompts in the topics you chose. The comparison group is your other active prompts, which the event did not touch. They show what would have happened anyway.",
     "If the affected prompts improve more than the comparison group, the event likely made the difference. The analysis window sets how many days before and after are compared."
   ];
-  /* Die Zeichnung im hellen Feld der Karte: in currentColor, also in der Schrift des Feldes und mit
-     ihm hell und dunkel gedreht. Das Zeichen im Pin ist das der Events aus core (iconFormen). */
+  /* DIE ZEICHNUNG IM HELLEN FELD DER KARTE (03.10. neu gezeichnet: die erste Fassung waren zwei
+     eckige Polylinien mit abgeschnittenem Pin -- "sieht richtig schlecht aus"). Jetzt wie das
+     Liniendiagramm der App im Kleinen: weiche Kurven (Catmull-Rom, als Bezier vorgerechnet),
+     Hilfslinien und Grundlinie ganz leise, unter der betroffenen Kurve nach dem Event eine Flaeche,
+     Endpunkte wie die Kurvenenden im Chart, der Event-Pin wie im echten Diagramm (Kachel 22,
+     Radius 6, Zeichen der Events) mit punktierter Linie. Nach dem Event ist NUR der Raum zwischen
+     den beiden Kurven gefuellt, nach rechts kraeftiger werdend, und darin steht "Effect": der
+     Abstand zur Vergleichsgruppe IST die Wirkung des Events -- der Kern der ganzen Seite in einer
+     Flaeche.
+     Alles in currentColor (die Schrift des hellen Felds), die Kachel in dessen Grund
+     (--vc-inverse-ink) -- dreht also mit hell und dunkel. Das Zeichen im Pin kommt aus core. */
+  var VIS_VGL = "M8,76 C17.2,75.7 44.7,73.8 63,74 C81.3,74.2 99.7,76.8 118,77 C136.3,77.2 154.7,75.5 173,75 C191.3,74.5 209.7,74.3 228,74 C246.3,73.7 264.7,73 283,73 C301.3,73 319.7,74.2 338,74 C356.3,73.8 374.7,72.3 393,72 C411.3,71.7 438.8,72 448,72";
+  var VIS_BET_VOR = "M8,78 C17.2,77.7 44.7,75.8 63,76 C81.3,76.2 99.7,79 118,79 C136.3,79 154.7,76.7 173,76 C191.3,75.3 209.7,77 228,75";
+  var VIS_BET_NACH = "C246.3,73 264.7,67.5 283,64 C301.3,60.5 319.7,57 338,54 C356.3,51 374.7,48.3 393,46 C411.3,43.7 438.8,41 448,40";
+  /* Die Vergleichskurve ab dem Event RUECKWAERTS (448 -> 228), damit die Flaeche zwischen den
+     Kurven sich schliessen laesst. */
+  var VIS_VGL_ZURUECK = "C438.8,72 411.3,71.7 393,72 C374.7,72.3 356.3,73.8 338,74 C319.7,74.2 301.3,73 283,73 C264.7,73 246.3,73.7 228,74";
   function seiteZeichnung() {
     var pin = UC.iconFormen ? UC.iconFormen("tickets") : "";
+    var tinte = 'style="fill:var(--vc-inverse-ink)"';
     return '<div class="up-explain-vis uev-seite-vis">' +
-      '<svg viewBox="0 0 456 92" aria-hidden="true">' +
-        '<line x1="228" y1="26" x2="228" y2="76" stroke="currentColor" stroke-opacity=".35" stroke-width="1.5" stroke-dasharray="1 4" stroke-linecap="round"/>' +
-        '<polyline points="0,62 76,60 152,63 228,60 304,58 380,59 456,57" fill="none" stroke="currentColor" stroke-opacity=".45" stroke-width="2" stroke-dasharray="5 5" stroke-linecap="round"/>' +
-        '<polyline points="0,64 76,61 152,65 228,61 304,42 380,32 456,24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>' +
-        '<rect x="217" y="3" width="22" height="22" rx="6" fill="none" stroke="currentColor" stroke-opacity=".3"/>' +
-        '<svg x="222" y="8" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + pin + '</svg>' +
-        '<text x="114" y="88" text-anchor="middle" fill="currentColor" fill-opacity=".6" font-size="11">' + esc(t("Before")) + '</text>' +
-        '<text x="342" y="88" text-anchor="middle" fill="currentColor" fill-opacity=".6" font-size="11">' + esc(t("After")) + '</text>' +
+      '<svg viewBox="0 0 456 124" aria-hidden="true">' +
+        '<defs><linearGradient id="uevVisFlaeche" x1="0" y1="0" x2="1" y2="0">' +
+          '<stop offset="0" stop-color="currentColor" stop-opacity=".03"/><stop offset="1" stop-color="currentColor" stop-opacity=".16"/>' +
+        '</linearGradient></defs>' +
+        /* Hilfslinien und Grundlinie */
+        '<line x1="0" y1="44" x2="456" y2="44" stroke="currentColor" stroke-opacity=".08" stroke-dasharray="2 4"/>' +
+        '<line x1="0" y1="72" x2="456" y2="72" stroke="currentColor" stroke-opacity=".08" stroke-dasharray="2 4"/>' +
+        '<line x1="0" y1="100.5" x2="456" y2="100.5" stroke="currentColor" stroke-opacity=".18"/>' +
+        /* Die Wirkung: Flaeche zwischen den Kurven, nur nach dem Event */
+        '<path d="M228,75 ' + VIS_BET_NACH + ' L448,72 ' + VIS_VGL_ZURUECK + ' Z" fill="url(#uevVisFlaeche)"/>' +
+        /* Event: punktierte Linie und Pin */
+        '<line x1="228" y1="31" x2="228" y2="100" stroke="currentColor" stroke-opacity=".4" stroke-width="1.5" stroke-dasharray="0.5 4" stroke-linecap="round"/>' +
+        /* Kurven */
+        '<path d="' + VIS_VGL + '" fill="none" stroke="currentColor" stroke-opacity=".5" stroke-width="2" stroke-dasharray="4 4" stroke-linecap="round"/>' +
+        '<path d="' + VIS_BET_VOR + ' ' + VIS_BET_NACH + '" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"/>' +
+        /* "Effect" mitten in der Flaeche, wo sie breit genug ist (zwischen y 48 und 73 bei x 390) */
+        '<text x="388" y="65" text-anchor="middle" fill="currentColor" font-size="11" font-weight="600">' + esc(t("Effect")) + '</text>' +
+        /* Kurvenenden wie im Chart */
+        '<circle cx="448" cy="72" r="3.5" ' + tinte + ' stroke="currentColor" stroke-opacity=".55" stroke-width="1.5"/>' +
+        '<circle cx="448" cy="40" r="4.5" fill="currentColor" stroke="var(--vc-inverse-ink)" stroke-width="2"/>' +
+        '<rect x="217" y="6.5" width="22" height="22" rx="6" ' + tinte + ' stroke="currentColor" stroke-opacity=".22"/>' +
+        '<svg x="222" y="11.5" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity=".85">' + pin + '</svg>' +
+        /* Vorher / Nachher */
+        '<text x="118" y="118" text-anchor="middle" fill="currentColor" fill-opacity=".55" font-size="11" font-weight="500">' + esc(t("Before")) + '</text>' +
+        '<text x="338" y="118" text-anchor="middle" fill="currentColor" fill-opacity=".55" font-size="11" font-weight="500">' + esc(t("After")) + '</text>' +
       '</svg>' +
       '<div class="uev-seite-legende">' +
         '<span class="up-explain-row"><span class="uev-vis-linie"></span>' + esc(t("Affected prompts")) + '</span>' +
@@ -310,12 +343,9 @@
     "Pages, articles or external sources associated with this event. Global share is measured in the affected prompts.":
       "Seiten, Artikel oder externe Quellen zu diesem Event. Der Global Share zählt in den betroffenen Prompts.",
     "First cited": "Zuerst zitiert", "Global share before": "Global Share vorher", "Global share after": "Global Share nachher",
-    "Observed on event day": "Am Event-Tag beobachtet",
-    "First observed after the event: {date} (day {n})": "Erstmals nach dem Event beobachtet: {date} (Tag {n})",
+    "On event day": "Am Event-Tag", "Day {n} ({date})": "Tag {n} ({date})",
     "Still cited from day {n}": "Weiter zitiert seit Tag {n}",
-    "Not observed since event": "Seit dem Event noch nicht beobachtet",
-    "Not observed within 6 months": "In 6 Monaten nach dem Event nicht beobachtet",
-    "Open the response with the first observation": "Response mit der ersten Beobachtung öffnen",
+    "Not yet": "Noch nicht", "Not within 6 months": "Nicht in 6 Monaten",
     "No URLs added yet": "Noch keine URLs",
     "Add pages, articles or external sources associated with this event.":
       "Füge Seiten, Artikel oder externe Quellen zu diesem Event hinzu.",
@@ -344,7 +374,7 @@
     "This topic was deleted after the event was created. Its prompts still count.":
       "Dieses Topic wurde nach dem Anlegen des Events gelöscht. Seine Prompts zählen weiter.",
     "{n} Prompts deleted since": "{n} Prompts inzwischen gelöscht",
-    "vs. comparison": "vs. Vergleich", "Comparison group": "Vergleichsgruppe",
+    "vs. comparison": "vs. Vergleich", "Comparison group": "Vergleichsgruppe", "Effect": "Wirkung",
     "How event analysis works": "So funktioniert die Event-Analyse",
     "An event marks a change, such as a relaunch or a campaign. Upstreem compares your AI performance before and after its date.":
       "Ein Event markiert eine Änderung, etwa einen Relaunch oder eine Kampagne. Upstreem vergleicht deine AI Performance vor und nach dem Datum.",
@@ -417,10 +447,11 @@
   /* NICHT nach der Zahl der Karten (03.10.: eine einzelne Karte zog sich ueber den ganzen
      Bildschirm). Die Spalten richten sich nur nach dem Platz; eine Karte steht dann in EINER
      Spalte eines Rasters, das fuer mehr gedacht ist -- 300 bis gut 400px breit. */
-  /* 03.10. abends: breiter ("mach die Max-Width groesser") -- hoechstens drei Spalten, und erst
-     ab 1500px. Eine Karte ist damit rund 480 bis 620px breit statt 300 bis 430. */
+  /* DIE MITTE der beiden letzten Fassungen (03.10.): erst 300 bis 430px je Karte ("zu schmal"),
+     dann 480 bis 620 ("zu breit"). Jetzt hoechstens 500 (events.css) und eine neue Spalte, sobald
+     jede mindestens 440 breit waere -- eine Karte liegt damit zwischen rund 390 und 500px. */
   function spalten(breite) {
-    return breite >= 1500 ? 3 : breite >= 800 ? 2 : 1;
+    return breite >= 1880 ? 4 : breite >= 1360 ? 3 : breite >= 800 ? 2 : 1;
   }
 
   /* ============================================================================================
@@ -1098,25 +1129,22 @@
         }).join("") + '</div></div>';
     }
 
-    /* Ein Beobachtungsstatus als Pille mit Punkt aus core. Formulierung nach dem Vertrag 5 -- nie
-       "noch nie zitiert": gezaehlt wird nur in den betroffenen Prompts des eigenen Teams. */
+    /* "Zuerst zitiert" als leise Marke aus core (.up-marke.is-leise, wie der Typ auf der Karte) --
+       03.10.: "in kleinen Chips, einfach nur in Bg, wie sonst auch, und nicht klickbar". Darum kurz:
+       die Spalte heisst schon "First cited", der Chip sagt nur noch wann. Nie "noch nie zitiert"
+       (Vertrag 5): gezaehlt wird nur in den betroffenen Prompts des eigenen Teams. Zitiert in der
+       Schriftfarbe, nicht zitiert zurueckgenommen -- der Text sagt es, die Farbe stuetzt nur. */
     function beobachtung(o) {
       o = o || {};
-      var st = o.status, txt, art;
-      if (st === "observed_on_event_day") { txt = t("Observed on event day"); art = "is-ja"; }
+      var st = o.status, txt, ja = true;
+      if (st === "observed_on_event_day") txt = t("On event day");
       else if (st === "first_observed_after_event") {
-        art = "is-ja";
         txt = o.observed_before_event === true
           ? ersetze(t("Still cited from day {n}"), { n: zahl(o.day_number) })
-          : ersetze(t("First observed after the event: {date} (day {n})"), { date: datum(o.first_observed_day), n: zahl(o.day_number) });
-      } else if (st === "not_observed_within_6_months") { txt = t("Not observed within 6 months"); art = "is-lange"; }
-      else { txt = t("Not observed since event"); art = "is-nein"; }
-      var klick = o.first_observed_prompt_run_id;
-      /* Als Text, der umbricht -- als Pille wurde "Seit dem Event noch nicht beobachtet"
-         abgeschnitten (03.10.). Zitiert in der Schriftfarbe, nicht zitiert zurueckgenommen. */
-      return klick
-        ? '<button type="button" class="uev-beob ' + art + ' is-klick" data-run="' + esc(klick) + '" data-tip="' + esc(t("Open the response with the first observation")) + '">' + esc(txt) + '</button>'
-        : '<span class="uev-beob ' + art + '">' + esc(txt) + '</span>';
+          : ersetze(t("Day {n} ({date})"), { n: zahl(o.day_number), date: datum(o.first_observed_day) });
+      } else if (st === "not_observed_within_6_months") { txt = t("Not within 6 months"); ja = false; }
+      else { txt = t("Not yet"); ja = false; }
+      return '<span class="up-marke is-leise uev-beob' + (ja ? " is-ja" : "") + '">' + esc(txt) + '</span>';
     }
     function renderUrls() {
       var el = elMain.querySelector('[data-sek="urls"]'), d = dieDetail(), a = dieAnalyse();
@@ -1138,7 +1166,8 @@
           '<div class="up-tbody up-vbody">' + urls.map(function (u) {
             var an = proId[u.id], hp = hostPfad(u.url), gs = an && an.global_share ? an.global_share : null;
             var sk = '<span class="up-tsk-bar"></span>';
-            return '<div class="up-row up-vrow uev-urlzeile" data-url-id="' + esc(u.id) + '">' +
+            /* Die ganze Zeile oeffnet das URL-Detail (03.10.), "Remove" faengt seinen Klick selbst ab. */
+            return '<div class="up-row up-vrow uev-urlzeile" data-url-id="' + esc(u.id) + '" data-url="' + esc(u.url) + '" role="link" tabindex="0">' +
               /* Der Zeilenknopf sitzt in der ersten Zelle und erscheint am Hover der Zeile -- das
                  Bauteil .up-btn-sec.up-rowbtn aus core, wie "Edit" in brands-overview. Nur "Remove":
                  der Knopf "Responses" filterte die Tabelle darunter und war unverstaendlich (03.10.). */
@@ -1419,14 +1448,12 @@
         return;
       }
       if (e.target.closest(".uev-mehr")) return;
-      var beob = e.target.closest(".uev-beob.is-klick");
-      if (beob) {
-        /* Die erste Beobachtung im bestehenden Response-Detail -- derselbe Drawer wie ueberall. */
-        if (UC.drawerOeffnen) UC.drawerOeffnen("response", beob.getAttribute("data-run"), "events");
-        return;
-      }
       var uw = e.target.closest(".uev-urlweg");
       if (uw) { urlEntfernenFragen(uw.getAttribute("data-url-id")); return; }
+      /* Zeile der URL-Tabelle: das URL-Detail im Drawer der App. Kennung ist die URL selbst -- so
+         nimmt der URL-Drawer sie (Drawer-System der Host-App: "IDs koennen ganze URLs sein"). */
+      var uz = e.target.closest(".uev-urlzeile[data-url]");
+      if (uz) { if (UC.drawerOeffnen) UC.drawerOeffnen("url", uz.getAttribute("data-url"), "events"); return; }
       if (e.target.closest(".uev-addurl-kopf, [data-uev-addurl]")) { popupUrl(); return; }
       var k = e.target.closest(".uev-karte[data-event-id]");
       if (k && !k.classList.contains("is-sk")) oeffnen(k.getAttribute("data-event-id"), true);
@@ -1434,7 +1461,9 @@
     root.addEventListener("keydown", function (e) {
       if (e.key !== "Enter" && e.key !== " ") return;
       var k = e.target.closest && e.target.closest(".uev-karte[data-event-id]");
-      if (k && e.target === k) { e.preventDefault(); oeffnen(k.getAttribute("data-event-id"), true); }
+      if (k && e.target === k) { e.preventDefault(); oeffnen(k.getAttribute("data-event-id"), true); return; }
+      var uz = e.target.closest && e.target.closest(".uev-urlzeile[data-url]");
+      if (uz && e.target === uz) { e.preventDefault(); if (UC.drawerOeffnen) UC.drawerOeffnen("url", uz.getAttribute("data-url"), "events"); }
     });
     function respFilter(urlId, rollen) {
       state.respUrl = urlId || "";
