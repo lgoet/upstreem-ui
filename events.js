@@ -224,7 +224,7 @@
     /* Die Spalte "First cited" der URL-Tabelle (03.10.: "bitte einen Explainer, der die Metrik
        erklaert"). Beispielwerte oben wie in jeder Spaltenerklaerung. */
     zitiert: { h: "First cited", t: "When an AI response first cited this URL for the affected prompts after the event. \u201cAlready cited before\u201d means it was also cited in the six months before the event.",
-      vis: ["After 10 days (18. Sep 2026)", "Not yet"] }
+      chips: [{ text: "After 10 days (18. Sep 2026)", ja: true }, { text: "Not yet" }] }
   };
   var METRIKEN = [
     { key: "visibility", label: "Visibility" },
@@ -379,17 +379,13 @@
     "Add pages, articles or external sources associated with this event.":
       "Füge Seiten, Artikel oder externe Quellen zu diesem Event hinzu.",
     "Event scope": "Umfang des Events", "Affected topics": "Betroffene Topics",
-    "{n} affected Prompts": "{n} betroffene Prompts",
     "All active Prompts at event creation": "Alle aktiven Prompts beim Anlegen",
-    "{n} comparison Prompts are used as a workspace benchmark.": "{n} Vergleichs-Prompts dienen als Benchmark im Workspace.",
     "Upstreem compares the affected Prompts with other eligible Prompts that were active when this event was created.":
       "Upstreem vergleicht die betroffenen Prompts mit anderen passenden Prompts, die beim Anlegen des Events aktiv waren.",
-    "No comparison benchmark available": "Kein Vergleichs-Benchmark verfügbar",
     "Responses citing affected URLs": "Responses mit betroffenen URLs",
     "Tracked AI responses that cite one or more URLs associated with this event.":
       "Getrackte AI-Antworten, die eine oder mehrere URLs dieses Events zitieren.",
     "All affected URLs": "Alle betroffenen URLs",
-    "Still running, data until {date}": "Läuft noch, Daten bis {date}",
     "Limited baseline ({n} days)": "Begrenzte Vergleichsbasis ({n} Tage)",
     "Less historical data is available before this event for the selected period.":
       "Vor diesem Event gibt es für den gewählten Zeitraum weniger historische Daten.",
@@ -403,7 +399,10 @@
     "This topic was deleted after the event was created. Its prompts still count.":
       "Dieses Topic wurde nach dem Anlegen des Events gelöscht. Seine Prompts zählen weiter.",
     "{n} Prompts deleted since": "{n} Prompts inzwischen gelöscht",
-    "vs. comparison": "vs. Vergleich", "Comparison group": "Vergleichsgruppe",
+    "vs. comparison": "vs. Vergleich", "Comparison group": "Vergleichsgruppe", "No comparison group": "Keine Vergleichsgruppe",
+    "{n} of {m} days after the event so far": "Bisher {n} von {m} Tagen nach dem Event",
+    "Events have no end date. The analysis compares the selected number of days before and after the event date. This event is more recent than that, so the after period is still filling up.":
+      "Events haben kein Enddatum. Die Analyse vergleicht die gewählte Zahl an Tagen vor und nach dem Event-Datum. Dieses Event ist jünger, die Nachher-Seite füllt sich also noch.",
     "How event analysis works": "So funktioniert die Event-Analyse",
     "An event marks a change, such as a relaunch or a campaign. Upstreem compares your AI performance before and after its date.":
       "Ein Event markiert eine Änderung, etwa einen Relaunch oder eine Kampagne. Upstreem vergleicht deine AI Performance vor und nach dem Datum.",
@@ -537,8 +536,10 @@
       html: function (key) {
         var e = ERKLAERUNG[key];
         if (!e) return "";
-        var vis = e.vis ? '<div class="up-explain-vis">' + e.vis.map(function (x) {
-          return '<span class="up-explain-row">' + esc(t(x)) + '</span>'; }).join("") + '</div>' : "";
+        /* Beispielwerte als die Chips der Tabelle (.up-marke.is-leise, 03.10. angefordert). Die
+           Marken stehen an :root und [data-theme] -- die Karte am <body> sieht dieselben Werte. */
+        var vis = e.chips ? '<div class="up-explain-vis uev-explain-chips">' + e.chips.map(function (x) {
+          return '<span class="up-marke is-leise uev-beob' + (x.ja ? " is-ja" : "") + '">' + esc(t(x.text)) + '</span>'; }).join("") + '</div>' : "";
         return vis + '<div class="up-explain-h">' + esc(t(e.h)) + '</div><div class="up-explain-t">' + esc(t(e.t)) + '</div>';
       } });
     /* DIE ERKLAERUNG DER SEITE (03.10.): ein Info-Knopf links neben der Hauptaktion im Kopf, am
@@ -784,18 +785,29 @@
       if (root.isConnected === false || listeGeladen()) return;
       if (UC.istSichtbar && UC.istSichtbar(root)) listeUhr(); else listeUhrId = setTimeout(listeVerdeckt, 1000);
     }
+    /* DER ZAEHLER IM KOPF wie in jeder Tabelle (brands-overview): sichtbar nur mit has-count an
+       .up-heading -- ohne die Klasse blendet core ihn aus, und genau so stand er hier bisher
+       unsichtbar im Markup (03.10. gemeldet). Beim Laden das Skelett aus core (.is-sk), danach die
+       Zahl der gezeigten Events. */
+    function zahlSetzen(n, laedt) {
+      if (!elZahl) return;
+      var kopf = elZahl.closest(".up-heading");
+      elZahl.classList.toggle("is-sk", !!laedt);
+      elZahl.textContent = laedt || n == null ? "" : (UC.fmtTotal ? UC.fmtTotal(n) : String(n));
+      if (kopf) kopf.classList.toggle("has-count", !!laedt || n != null);
+    }
     function renderListe() {
       if (!elListe) return;
       var stand = UC.eventsStand ? UC.eventsStand() : { geladen: true, fehler: false };
       if (typFilter) typFilter.neu();
       if (stand.fehler && !(UC.getEvents && UC.getEvents().length)) {
-        elZahl.textContent = "";
+        zahlSetzen(null);
         elListe.className = "uev-liste";
         elListe.innerHTML = UC.leseFehlerHtml ? UC.leseFehlerHtml("events") : "";
         return;
       }
       if (!stand.geladen) {
-        elZahl.textContent = "";
+        zahlSetzen(null, !state.listeZeitUm);
         if (state.listeZeitUm) {
           elListe.className = "uev-liste";
           elListe.innerHTML = UC.leerHtml({ icon: "info", titel: "Events could not be loaded", text: "Please reload the page." });
@@ -809,7 +821,7 @@
       }
       var alle = (UC.getEvents ? UC.getEvents() : []).filter(function (ev) { return !state.geloescht[ev.id]; });
       var l = gefiltert();
-      elZahl.textContent = alle.length ? String(l.length === alle.length ? alle.length : l.length + " / " + alle.length) : "";
+      zahlSetzen(l.length);
       elListe.className = "uev-liste";
       if (!alle.length) {
         elListe.innerHTML = UC.leerHtml({ icon: "tickets", titel: "No events yet",
@@ -872,10 +884,12 @@
                 '<div class="up-root umf-root uev-modelle" data-instance="' + esc(instanceId) + '_models" data-local="yes" data-isdark="' + (isDark() ? "yes" : "no") + '"></div>' +
                 '<div class="up-root umk-root uev-maerkte" data-instance="' + esc(instanceId) + '_markets" data-local="yes" data-isdark="' + (isDark() ? "yes" : "no") + '"></div>' +
               '</div>' +
+              /* Hinter den Filtern, in derselben Gruppe wie der Umschalter, auf den es sich bezieht. */
+              '<span class="uev-fensterstand" data-sek="fensterstand"></span>' +
             '</div>' +
             '<div class="uev-hinweise" data-sek="hinweise"></div>' +
           '</div>' +
-          '<div class="up-box uev-kpis" data-sek="kpis"></div>' +
+          '<div class="uev-kpis" data-sek="kpis"></div>' +
           '<section class="uev-sek uev-sek-chart">' +
             sekKopf("Performance around event", "How your brand developed in the affected prompts before and after the event.",
               '<div class="up-seg uev-metrik" role="group">' +
@@ -1038,14 +1052,27 @@
 
     function renderHinweise() {
       var el = elMain.querySelector('[data-sek="hinweise"]'), a = dieAnalyse();
-      if (!a) { el.innerHTML = ""; return; }
+      if (!a) { el.innerHTML = ""; var st0 = elMain.querySelector('[data-sek="fensterstand"]'); if (st0) st0.innerHTML = ""; return; }
       var w = a.windows || {}, h = [];
       /* Angaben wie Datum und Typ im Kopf: Zeichen + Text, leise (03.10.: "warum ist jede
          Information in diesen kleinen Chips mit den Punkten davor? Die habe ich sonst nirgendwo"). */
       function angabe(ic, text, tip) {
         return '<span class="uev-angabe"' + (tip ? ' data-tip="' + esc(tip) + '"' : "") + '>' + UC.icon(ic, 2) + '<span>' + esc(text) + '</span></span>';
       }
-      if (w.after_complete === false) h.push(angabe("clock", ersetze(t("Still running, data until {date}"), { date: datum(w.effective_after_to) })));
+      /* DAS FENSTER LAEUFT NOCH (03.10. gefragt: "gibt es jetzt ein Enddatum fuer Events?"). Nein --
+         ein Event hat nur ein Datum. Verglichen werden N Tage davor und N Tage danach (der
+         Umschalter links), und liegt das Event weniger als N Tage zurueck, ist die Nachher-Seite
+         noch nicht voll. Darum steht die Angabe direkt NEBEN dem Umschalter und sagt es in Tagen
+         ("14 of 30 days after the event so far"), der Satz am Zeiger erklaert den Rest. */
+      var stand = elMain.querySelector('[data-sek="fensterstand"]');
+      if (stand) {
+        var bisher = Math.max(0, Math.round((tagMs(w.effective_after_to) - tagMs((dieDetail() || listeEvent(state.eventId) || {}).event_date)) / 864e5));
+        var fenster = num(w.window_days) || state.fenster;
+        stand.innerHTML = w.after_complete === false
+          ? angabe("clock", ersetze(t("{n} of {m} days after the event so far"), { n: zahl(bisher), m: zahl(fenster) }),
+              t("Events have no end date. The analysis compares the selected number of days before and after the event date. This event is more recent than that, so the after period is still filling up."))
+          : "";
+      }
       if (w.limited_baseline === true) h.push(angabe("info", ersetze(t("Limited baseline ({n} days)"), { n: zahl(w.before_observed_days) }),
         t("Less historical data is available before this event for the selected period.")));
       var ov = isArr(a.overlaps) ? a.overlaps.length : 0;
@@ -1059,8 +1086,10 @@
       /* Der Vergleich als Trend-Chip aus core, in derselben Einheit wie der Trend neben der Zahl.
          Gleich viel bewegt (Chip leer): ein Strich, kein erfundenes "+0". */
       var fuss = cd == null ? "" : '<span>' + esc(t("vs. comparison")) + '</span>' + (trendHtml(feld, cd) || '<span class="up-num is-empty">–</span>');
-      return { vorherHtml: num(m.before) == null ? "" : wertHtml(feld, m.before), wertHtml: wertHtml(feld, m.after),
-               trendHtml: trendHtml(feld, m.delta), fussHtml: fuss };
+      /* Wie die Overview im Agentic Dashboard (03.10.: "aufraeumen, nicht in Cards"): die Zahl mit
+         ihrem Trend gegen vorher, darunter EINE Angabe -- der Vergleich mit der Vergleichsgruppe.
+         Der Vorher-Wert steht nicht mehr davor; der Trend sagt, wie weit es von dort ging. */
+      return { wertHtml: wertHtml(feld, m.after), trendHtml: trendHtml(feld, m.delta), fussHtml: fuss };
     }
     function renderKpis() {
       var el = elMain.querySelector('[data-sek="kpis"]'), a = dieAnalyse();
@@ -1242,28 +1271,31 @@
       if (!d) { el.innerHTML = ""; return; }
       var c = (a && a.cohort) || {}, zeilen = [];
       var topics = isArr(d.topics) ? d.topics : [];
-      var chips = d.scope_mode === "all"
-        ? '<span class="uev-scope-wert">' + esc(t("All active Prompts at event creation")) + '</span>'
-        : '<div class="uev-scope-chips">' + topics.map(topicChipHtml).join("") + '</div>';
-      zeilen.push('<div class="uev-scope-zeile"><span class="uev-scope-lbl">' + esc(t(d.scope_mode === "all" ? "Scope" : "Affected topics")) + '</span>' + chips + '</div>');
-      zeilen.push('<div class="uev-scope-zeile"><span class="uev-scope-lbl">' + esc(t("Affected prompts")) + '</span><span class="uev-scope-wert">' +
-        esc(ersetze(t("{n} affected Prompts"), { n: zahl(d.affected_prompt_count) })) + '</span></div>');
+      /* OHNE KASTEN und kurz (03.10.: "aufraeumen, nicht in eine Card packen"): links die
+         Bezeichnung, rechts nur der Wert -- die Saetze ("14 affected Prompts", "47 comparison Prompts
+         are used as a workspace benchmark") wiederholten die Bezeichnung. Was die Vergleichsgruppe
+         ist, sagt die Erklaerkarte am Zeichen. */
+      function zeile(lbl, wertHtml, erklaerung) {
+        return '<div class="uev-scope-zeile"><span class="uev-scope-lbl">' + esc(t(lbl)) +
+          (erklaerung ? '<span class="up-th-info uev-erklaer" data-explain="' + esc(erklaerung) + '">' + UC.icon("info", 2) + '</span>' : '') +
+          '</span>' + wertHtml + '</div>';
+      }
+      function prompts(n) { n = num(n); return n == null ? "–" : ersetze(t(n === 1 ? "{n} Prompt" : "{n} Prompts"), { n: zahl(n) }); }
+      if (d.scope_mode === "all") zeilen.push(zeile("Scope", '<span class="uev-scope-wert">' + esc(t("All active Prompts at event creation")) + '</span>'));
+      else zeilen.push(zeile("Affected topics", '<div class="uev-scope-chips">' + topics.map(topicChipHtml).join("") + '</div>'));
+      zeilen.push(zeile("Affected prompts", '<span class="uev-scope-wert">' + esc(prompts(d.affected_prompt_count)) + '</span>'));
       var vgl = num(d.comparison_prompt_count);
-      zeilen.push('<div class="uev-scope-zeile"><span class="uev-scope-lbl">' + esc(t("Comparison")) +
-          (vgl ? '<span class="up-th-info uev-erklaer" data-explain="vergleich">' + UC.icon("info", 2) + '</span>' : '') + '</span>' +
-        '<span class="uev-scope-wert">' + esc(vgl ? ersetze(t("{n} comparison Prompts are used as a workspace benchmark."), { n: zahl(vgl) })
-          : t("No comparison benchmark available")) + '</span></div>');
-      /* Was nicht in die Vorher/Nachher-Zahlen eingeht, in ganzen Saetzen (03.10. gefragt: "2 Prompts
-         erst nach dem Event, nur im Verlauf -- was soll das heissen?"). Gemeint ist: diese Prompts
-         gab es vor dem Event noch nicht; sie haben keinen Vorher-Wert und zaehlen darum nur in der
-         Kurve, nicht in den Kennzahlen (Vertrag 3.9, cohort.post_only_prompt_count). */
+      zeilen.push(zeile("Comparison group", '<span class="uev-scope-wert">' + esc(vgl ? prompts(vgl) : t("No comparison group")) + '</span>', vgl ? "vergleich" : ""));
+      /* Was nicht in die Vorher/Nachher-Zahlen eingeht, in ganzen Saetzen: Prompts, die es vor dem
+         Event noch nicht gab, haben keinen Vorher-Wert und zaehlen nur in der Kurve (Vertrag 3.9,
+         cohort.post_only_prompt_count). */
       var neben = [];
       if (num(c.post_only_prompt_count) > 0) neben.push(ersetze(t(num(c.post_only_prompt_count) === 1
         ? "{n} prompt was added after the event. It appears in the chart, but not in the before and after numbers."
         : "{n} prompts were added after the event. They appear in the chart, but not in the before and after numbers."), { n: zahl(c.post_only_prompt_count) }));
       if (num(c.deleted_prompt_count) > 0) neben.push(ersetze(t("{n} Prompts deleted since"), { n: zahl(c.deleted_prompt_count) }));
-      if (neben.length) zeilen.push('<div class="uev-scope-neben">' + neben.map(function (x) { return '<span>' + esc(x) + '</span>'; }).join("") + '</div>');
-      el.innerHTML = sekKopf("Event scope", "") + '<div class="up-box uev-scope">' + zeilen.join("") + '</div>';
+      el.innerHTML = sekKopf("Event scope", "") + '<div class="uev-scope">' + zeilen.join("") +
+        (neben.length ? '<div class="uev-scope-neben">' + neben.map(function (x) { return '<span>' + esc(x) + '</span>'; }).join("") + '</div>' : '') + '</div>';
     }
 
     /* Die URL-Auswahl der Responses: der Filter aus core in der Bauart "Selected Brands" (03.10.:

@@ -4,6 +4,28 @@ Hausform nach CLAUDE.md 2a: ein Backtick je Ausdruck, beide Ersetzungen, `window
 
 Jedes Ereignis der Komponente traegt den fertigen RPC-Body als Text. Im Workflow: API Connector mit Body = Wert des Ereignisses, danach der Schritt unten. Fehler ("Include errors in response"): nur `message` an `setEventError` (Schritt 9).
 
+## 0. Die Antwort als EIN Feld (03.10.)
+
+Kein Zuordnen einzelner Felder in Bubble. Jede RPC liefert ihre Antwort in genau der Struktur dieses
+Vertrags, aber als **ein einziger Text-Schluessel** -- und verdoppelt darin die Backslashes:
+
+```sql
+-- am Ende jeder RPC (r = die bisherige jsonb-Antwort):
+return jsonb_build_object('json', replace(r::text, chr(92), chr(92) || chr(92)));
+```
+
+In Bubble kennt der API Connector dann nur das Feld `json` (Text), und es geht unveraendert in den
+Backtick: `` var ROH = `[Result of step 1's json]`; `` -- sonst bleibt jeder Schritt unten wie er ist.
+Die Komponente braucht dafuer **keine Aenderung**: alle Setter nehmen schon den ganzen JSON-Text
+und lesen ihn mit `UC.readBubble`.
+
+Warum verdoppelt: im Backtick ist ein Backslash ein Steuerzeichen. Aus `\"` (ein Anfuehrungszeichen in
+einem Wert, so schreibt JSON es) und `\n` (ein Zeilenumbruch) wuerde ein rohes `"` und ein echter
+Umbruch -- kaputtes JSON. Verdoppelt bleibt nach dem Backtick genau das `\"` uebrig, das JSON braucht.
+Gemessen am 03.10. mit einer Beschreibung `Zeile 1\nZeile 2 mit "Zitat"`: verdoppelt liest `JSON.parse`
+sie sauber, unverdoppelt stirbt es ("Expected ',' or '}'"). `UC.readBubble` flickt den zweiten Fall
+zwar meistens, aber Raten bleibt Raten.
+
 ## 1. Liste und Pins: `list_impact_events_v1` → `setUpstreemEvents`
 
 Beim Seitenaufbau EINMAL (fuettert die Uebersicht UND die Pins in allen Liniendiagrammen der App) und nach Anlegen und Loeschen noch einmal. Keine Chart-RPC wird dafuer angefasst. Seit Pin 2d61ace steht `setUpstreemEvents` im Vorlade-Snippet: ein Aufruf vor core wird gemerkt und nachgeholt.

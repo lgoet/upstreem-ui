@@ -1805,13 +1805,16 @@
      Hier stehen sie deshalb noch einmal fuer alles ausserhalb einer Wurzel. .up-root und
      .up-root[data-theme="dark"] sind spezifischer und gewinnen weiterhin, diese Zeilen aendern
      also nichts an dem, was schon funktioniert. */
+  /* --up-sel-bg seit dem 03.10. auch hier: die leise Marke (.up-marke.is-leise) steht als Beispiel
+     in einer Erklaerkarte, und die haengt am <body> -- ohne den Token hatte sie keinen Grund
+     (gemessen: rgba(0,0,0,0)). Dieselben Werte wie an .up-root. */
   :root {
     --vc-text: #1f1f1b; --vc-muted: #3e4146; --vc-third: #6b6f78; --vc-fourth: #80858e;
-    --vc-text-invert: #e0e0e0;
+    --vc-text-invert: #e0e0e0; --up-sel-bg: #f4f2f4;
   }
   [data-theme="dark"] {
     --vc-text: #e0e0e0; --vc-muted: #c9cbd0; --vc-third: #a0a0a0; --vc-fourth: #6c717a;
-    --vc-text-invert: #1f1f1b;
+    --vc-text-invert: #1f1f1b; --up-sel-bg: #28282c;
   }
   .up-root {
       --uhm-h0: #f0f3f8; --uhm-h1: #c8d4e5; --uhm-h2: #8aa4c4; --uhm-h3: #4a6e96; --uhm-h4: #1e3a5f;
@@ -4356,7 +4359,9 @@
 .up-kpi-pfeil svg { width: 14px; height: 14px; }
 .up-kpi-trend { display: inline-flex; align-items: center; align-self: center; }
 .up-kpi-trend .up-trend { font-size: var(--up-fs-l); }
-.up-kpi-foot { font-size: var(--up-fs-s); color: var(--vc-third); }
+/* Fusszeile wie in der Overview des Agentic Dashboards (.upw-kpi-foot): 11px in der dritten
+   Farbe, 10px unter der Zahl (5 gap + 5 hier). */
+.up-kpi-foot { font-size: var(--up-fs-xs); color: var(--vc-third); margin-top: 5px; }
 .up-kpi-foot strong { font-weight: var(--up-fw-m); color: var(--vc-muted); }
 /* DIE WERTE IN DER KACHEL SIND DIE DER TABELLENZELLEN (03.10.): .up-num, UC.sentHtml (Balken +
    Zahl) und .up-rank-group mit Raute -- nur groesser gestellt, wie in power-dashboard (.upw-kpi-val)
@@ -4374,10 +4379,10 @@
 .up-kpi-vorher .up-hash { width: 12px; height: 12px; }
 /* Die Fusszeile traegt seit dem 03.10. einen Trend-Chip aus core ("vs. comparison" + Chip) statt
    fett gesetzten Texts -- dieselbe Einheit wie der Trend neben der Zahl. Chip in Fussgroesse:
-   Schrift wie der Fuss, Pfeil 15 statt 16 (Faktor 12/13). */
+   Schrift wie der Fuss, Pfeil 14 statt 16 (Faktor 11/13, gerundet). */
 .up-kpi-foot { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px; }
 .up-kpi-foot .up-trend { font-size: inherit; }
-.up-kpi-foot .up-trend svg { width: 15px; height: 15px; }
+.up-kpi-foot .up-trend svg { width: 14px; height: 14px; }
 .up-kpi.is-sk { gap: 10px; }
 .up-kpi-sk { display: block; height: 12px; border-radius: var(--up-r-xs); background: var(--vc-sk); }
 .up-kpi-sk-l { width: 40%; } .up-kpi-sk-v { width: 70%; height: 24px; } .up-kpi-sk-f { width: 55%; }

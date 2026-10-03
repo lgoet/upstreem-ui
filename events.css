@@ -145,10 +145,17 @@
 /* Hinweise ("Still running", "Limited baseline", andere Events): Angaben mit Zeichen wie Datum
    und Typ im Kopf -- KEINE Pillen mit Punkt (03.10.: "die habe ich sonst nirgendwo in der App"). */
 .uev-hinweise { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 16px; font-size: var(--up-fs-m); color: var(--vc-third); }
+/* "Bisher 14 von 30 Tagen nach dem Event": direkt neben dem Umschalter, auf den es sich bezieht,
+   in derselben leisen Form wie die Hinweise. */
+.uev-fensterstand { display: inline-flex; align-items: center; font-size: var(--up-fs-m); color: var(--vc-third); }
+.uev-fensterstand:empty { display: none; }
+/* Beispielwerte in der Erklaerkarte der Spalte "First cited": die Chips der Tabelle nebeneinander. */
+.up-explain-vis.uev-explain-chips { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 6px; }
 
-/* Drei Kacheln in EINEM Kasten, getrennt durch Linien -- wie die Overview in power-dashboard. */
-.uev-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; padding: 16px; }
-.uev-kpis > .up-kpi + .up-kpi { border-left: 1px solid var(--vc-border); padding-left: 16px; }
+/* Die drei Kennzahlen wie die Overview im Agentic Dashboard (.upw-kpis): drei Spalten, KEIN
+   Kasten, keine Trennlinien, kein Polster (03.10.: "aufraeumen, nicht in Cards") -- die Spalten des
+   Rasters trennen sie schon. */
+.uev-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 .uev-kpifehler { grid-column: 1 / -1; }
 
 /* Ein Abschnitt: Kopf aus core (.up-sec-head bringt seine 14px Abstand nach unten mit), darunter
@@ -188,7 +195,8 @@
    "default", hier eine Stufe spezifischer). Den Hover-Grund bringt .up-row aus core mit. */
 .uev-urls .up-row.uev-urlzeile { cursor: pointer; }
 
-.uev-scope { display: flex; flex-direction: column; gap: 12px; padding: 16px; }
+/* Ohne Kasten (03.10.): Zeilen aus Bezeichnung und Wert direkt unter dem Abschnittskopf. */
+.uev-scope { display: flex; flex-direction: column; gap: 12px; }
 .uev-scope-zeile { display: grid; grid-template-columns: 160px minmax(0, 1fr); align-items: center; gap: 12px; }
 .uev-scope-lbl { display: inline-flex; align-items: center; gap: 6px; font-size: var(--up-fs-m); color: var(--vc-muted); }
 .uev-scope-wert { font-size: var(--up-fs-m); color: var(--vc-text); }
@@ -205,8 +213,7 @@ body:has(.uev-root[data-uev-resp="aus"]) .urt-root[data-instance="responses_even
 .uev-popup-url { margin: 0; font-size: var(--up-fs-m); color: var(--vc-text); word-break: break-all; }
 
 /* ---- Schmal (UC.widthTiers: is-narrow < 760, is-vnarrow < 520) ------------------------------ */
-.uev-root.is-narrow .uev-kpis { grid-template-columns: minmax(0, 1fr); }
-.uev-root.is-narrow .uev-kpis > .up-kpi + .up-kpi { border-left: 0; padding-left: 0; border-top: 1px solid var(--vc-border); padding-top: 16px; }
+.uev-root.is-vnarrow .uev-kpis { grid-template-columns: minmax(0, 1fr); }
 .uev-root.is-narrow .uev-sec-head { flex-wrap: wrap; }
 .uev-root.is-narrow .uev-scope-zeile { grid-template-columns: minmax(0, 1fr); gap: 6px; }
 .uev-root.is-narrow .uev-dkopf-titel { white-space: normal; }
