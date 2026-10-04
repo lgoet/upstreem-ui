@@ -1515,7 +1515,13 @@
     }
 
     /* ---- Klicks --------------------------------------------------------------------------- */
+    /* Ueber das Popover aus core schliessen, nicht selbst (04.10.): close() nimmt den Fokus aus dem
+       Menue, BEVOR es aria-hidden setzt, und meldet die Escape-Bindung ab. Vorher setzte diese
+       Funktion aria-hidden direkt, waehrend "Delete" noch den Fokus hatte -- Chrome meldete
+       "Blocked aria-hidden ... its descendant retained focus". Die Schleife faengt den Rest ab. */
+    var mehrPop = null;
     function mehrSchliessen() {
+      if (mehrPop) { var pz = mehrPop; mehrPop = null; try { pz.close(); } catch (e) {} }
       var offen = root.querySelectorAll(".uev-mehr.is-open");
       for (var i = 0; i < offen.length; i++) {
         offen[i].classList.remove("is-open");
@@ -1545,8 +1551,8 @@
         var w = mb.closest(".uev-mehr"), war = w.classList.contains("is-open");
         mehrSchliessen();
         if (!war && UC.makePopover) {
-          var pop = UC.makePopover({ wrap: w, menu: w.querySelector(".uev-mehrmenu"), opener: mb });
-          pop.open();
+          mehrPop = UC.makePopover({ wrap: w, menu: w.querySelector(".uev-mehrmenu"), opener: mb });
+          mehrPop.open();
         }
         return;
       }
@@ -1611,7 +1617,7 @@
         knoepfe: [{ id: "abbrechen", text: "Cancel", art: "sec" },
                   { id: "ok", text: "Delete event", art: "gefahr", aktion: function (api) {
                     api.busy("ok", true); api.fehler("");
-                    wartend.del = { id: eid, api: api, uhr: warteUhr("del", api) };
+                    wartend.del = { id: eid, api: api, uhr: warteUhr("del", api), seq: listenStand().seq };
                     fire("data-delete-fn", "uevDelete", body({ p_event_id: eid }));
                     return false;
                   } }],
@@ -2367,6 +2373,40 @@
       if (demo || !UC.eventsChanged) return;
       try { UC.eventsChanged(); } catch (e) {}
     }
+    function listenStand() {
+      try { return (UC.eventsStand && UC.eventsStand()) || {}; } catch (e) { return {}; }
+    }
+    function geloeschtFertig(id, listeFrisch) {
+      state.geloescht[id] = 1;
+      delete state.detail[id];
+      persist();
+      if (wartend.del) { var api2 = wartend.del.api; clearTimeout(wartend.del.uhr); wartend.del = null; api2.schliessen(); }
+      if (!listeFrisch) listeNeu();
+      if (state.ansicht === "detail" && state.eventId === id) zurUebersicht(true); else renderListe();
+    }
+    function loeschFehler() {
+      var w = wartend.del;
+      if (!w) return;
+      clearTimeout(w.uhr); w.api.busy("ok", false); w.api.fehler(fehlerText("")); wartend.del = null;
+    }
+    /* Ist seit dem Klick schon eine neue Liste gekommen, entscheidet sie sofort; sonst wird eine
+       angefordert (upEventsChanged), und das Abo unten entscheidet, wenn sie da ist. Kommt keine,
+       endet das Warten an der Uhr des Dialogs. */
+    function loeschPruefen() {
+      var w = wartend.del;
+      if (!w) return;
+      var st = listenStand();
+      if (st.geladen && w.seq != null && st.seq !== w.seq) { loeschEntscheiden(); return; }
+      w.pruefen = true;
+      listeNeu();
+    }
+    function loeschEntscheiden() {
+      var w = wartend.del;
+      if (!w) return;
+      var st = listenStand();
+      var noch = !!st.fehler || (UC.getEvents ? UC.getEvents() : []).some(function (e) { return String(e.id) === String(w.id); });
+      if (noch) loeschFehler(); else geloeschtFertig(w.id, true);
+    }
     function popupDetailKam(d, neu) {
       var p = popup;
       if (!p || !p.warte || !d) return;
@@ -2612,6 +2652,7 @@
 
     /* ---- Abos ----------------------------------------------------------------------------- */
     if (UC.onEvents) UC.onEvents(function () {
+      if (wartend.del && wartend.del.pruefen) loeschEntscheiden();
       state.listeZeitUm = false;
       if (listeUhrId) { clearTimeout(listeUhrId); listeUhrId = null; }
       if (state.ansicht === "uebersicht") renderListe(); else { krumenNeu(); renderKopf(); }
@@ -2742,14 +2783,16 @@
       setGeloescht: function (raw) {
         var r = objekt(raw);
         var id = r && r.ok === true ? String(r.deleted_event_id || (wartend.del && wartend.del.id) || "") : "";
-        if (!id) { if (wartend.del) { clearTimeout(wartend.del.uhr); wartend.del.api.busy("ok", false); wartend.del.api.fehler(fehlerText("")); wartend.del = null; } return false; }
-        state.geloescht[id] = 1;
-        delete state.detail[id];
-        persist();
-        if (wartend.del) { var api2 = wartend.del.api; clearTimeout(wartend.del.uhr); wartend.del = null; api2.schliessen(); }
-        listeNeu();
-        if (state.ansicht === "detail" && state.eventId === id) zurUebersicht(true); else renderListe();
-        return true;
+        if (id) { geloeschtFertig(id, false); return true; }
+        if (!wartend.del) return false;
+        /* LEER ODER UNLESBAR heisst "unklar", nicht "fehlgeschlagen" (04.10. gemeldet und im Log
+           belegt: setEventDeleted("events_page", "", ""), das Event war in der Datenbank aber weg,
+           und der Dialog sagte "Da ist etwas schiefgegangen"). Dann entscheidet die Liste: steht
+           das Event nach dem Loeschen nicht mehr darin, war es erfolgreich. Nur eine Antwort, die
+           gelesen wurde und NICHT ok ist, ist ein Fehler. */
+        if (!r) { loeschPruefen(); return false; }
+        loeschFehler();
+        return false;
       },
       setLoading: function (teil, v) {
         var an = UC.isYes ? UC.isYes(v) : (v === true || v === "yes");
