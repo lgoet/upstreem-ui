@@ -1215,7 +1215,11 @@
           /* Ohne Vorher-Wert steht vorher ein Strich und kein Trend -- und kein "Neu getrackt"
              (03.10.: "ein Wert ohne Vorher-Wert ist nicht gleich neu getrackt"). */
           var aend = num(v.before) == null ? "" : trendHtml("visibility", v.delta);
-          return '<div class="up-row up-vrow' + (r.du ? " is-du" : "") + '">' +
+          /* Die Zeile oeffnet die Marke im Drawer der App (04.10.), wie die URL-Zeilen darunter ihr
+             URL-Detail -- openDrawer("brand", company_id), derselbe Weg wie url-detail und das
+             Power Dashboard. Kein Bubble-Workflow noetig. */
+          var cid = r.m.company_id != null ? String(r.m.company_id) : "";
+          return '<div class="up-row up-vrow' + (r.du ? " is-du" : "") + (cid ? ' uev-markenzeile" data-company-id="' + esc(cid) + '" role="link" tabindex="0' : "") + '">' +
             '<div class="up-td up-var-name uev-td-marke">' + markeLogo(r.m) + '<span class="up-varname">' + esc(r.m.name || "") + '</span>' +
               (r.du ? '<span class="up-marke up-you">' + esc(t("You")) + '</span>' : '') + '</div>' +
             '<div class="up-td uev-td-zahl">' + wertHtml("visibility", v.before) + '</div>' +
@@ -1330,9 +1334,15 @@
        "so wie Selected Brands. Punkt."), mit Einzelwahl -- die RPC nimmt genau eine URL oder
        keine (p_event_url_id). Er bleibt ueber das Neuzeichnen hinweg derselbe Knoten. */
     var respFilterKit = null;
+    /* Responses im Event-Detail VORERST AUS (04.10.: "erstmal streichen, also keine Responses im
+       Event-Detail anzeigen"). Ein Schalter statt Loeschen: Abschnitt, Filter und Anfrage bleiben
+       im Code und kommen mit true zurueck. Aus heisst: kein uevResponses an Bubble, und eine
+       Responses-Tabelle, die doch auf der Seite steht, bleibt versteckt. */
+    var MIT_RESPONSES = false;
     function respUrls() { var d = dieDetail(); return d && isArr(d.urls) ? d.urls : []; }
     function renderResp() {
       var el = elMain.querySelector('[data-sek="resp"]');
+      if (!MIT_RESPONSES) { respSichtbar(false); el.innerHTML = ""; el.hidden = true; return; }
       var urls = respUrls();
       /* Ohne URLs gibt es nichts, was zitiert sein koennte. Ohne das Tabellen-Element darunter
          (eigenes Element in Bubble, Entscheidung 5) gaebe es nur eine Ueberschrift ueber nichts --
@@ -1460,6 +1470,7 @@
        raus (einmal mit dem Detail, einmal aus dem Takt in oeffnen). erzwingen: nach einer
        Aenderung der URL-Liste, dort ist dieselbe Signatur trotzdem veraltet. */
     function responsesAnfordern(spaet, erzwingen) {
+      if (!MIT_RESPONSES) return;
       var f = respFenster();
       if (!f || urlAnzahl() === 0) return;
       var sig = [state.eventId, state.fenster, state.respUrl].join("|");
@@ -1554,6 +1565,8 @@
          nimmt der URL-Drawer sie (Drawer-System der Host-App: "IDs koennen ganze URLs sein"). */
       var uz = e.target.closest(".uev-urlzeile[data-url]");
       if (uz) { if (UC.drawerOeffnen) UC.drawerOeffnen("url", uz.getAttribute("data-url"), "events"); return; }
+      var mz = e.target.closest(".uev-markenzeile[data-company-id]");
+      if (mz) { if (UC.drawerOeffnen) UC.drawerOeffnen("brand", mz.getAttribute("data-company-id"), "events"); return; }
       if (e.target.closest(".uev-addurl-kopf, [data-uev-addurl]")) { popupUrl(); return; }
       var k = e.target.closest(".uev-karte[data-event-id]");
       if (k && !k.classList.contains("is-sk")) oeffnen(k.getAttribute("data-event-id"), true);
@@ -1563,7 +1576,9 @@
       var k = e.target.closest && e.target.closest(".uev-karte[data-event-id]");
       if (k && e.target === k) { e.preventDefault(); oeffnen(k.getAttribute("data-event-id"), true); return; }
       var uz = e.target.closest && e.target.closest(".uev-urlzeile[data-url]");
-      if (uz && e.target === uz) { e.preventDefault(); if (UC.drawerOeffnen) UC.drawerOeffnen("url", uz.getAttribute("data-url"), "events"); }
+      if (uz && e.target === uz) { e.preventDefault(); if (UC.drawerOeffnen) UC.drawerOeffnen("url", uz.getAttribute("data-url"), "events"); return; }
+      var mz = e.target.closest && e.target.closest(".uev-markenzeile[data-company-id]");
+      if (mz && e.target === mz) { e.preventDefault(); if (UC.drawerOeffnen) UC.drawerOeffnen("brand", mz.getAttribute("data-company-id"), "events"); }
     });
     function respFilter(urlId, rollen) {
       state.respUrl = urlId || "";

@@ -200,6 +200,8 @@
 /* Die Zeile oeffnet das URL-Detail: Zeiger wie jede klickbare Zeile (core setzt in .up-vartable
    "default", hier eine Stufe spezifischer). Den Hover-Grund bringt .up-row aus core mit. */
 .uev-urls .up-row.uev-urlzeile { cursor: pointer; }
+/* Dasselbe fuer die Marktbewegung: die Zeile oeffnet die Marke (04.10.). */
+.uev-markt .up-row.uev-markenzeile { cursor: pointer; }
 
 /* Ohne Kasten (03.10.): Zeilen aus Bezeichnung und Wert direkt unter dem Abschnittskopf. */
 .uev-scope { display: flex; flex-direction: column; gap: 12px; }

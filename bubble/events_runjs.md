@@ -1447,6 +1447,10 @@ Der ganze Fehler-Body, wie Bubble ihn liefert (der nackte Code geht weiter). Die
 
 ## 10. Responses: `uevResponses` → `cached_mentions_overview_v1` → `setEventResponses`
 
+**VORERST AUS (04.10.):** Das Event-Detail zeigt keine Responses, die Komponente schickt kein
+`uevResponses` (Schalter `MIT_RESPONSES` in events.js). Diesen Workflow und den zweiten Call
+NICHT bauen. Der Rest dieses Abschnitts gilt, sobald der Schalter wieder an ist.
+
 Die Responses-Tabelle `responses_events` unter der Events-Komponente (Form aus `responses_table_bubble.html`).
 
 Die RPC bleibt die gemeinsame (kein Umschlag, Antwort ein Array). Weil die Komponente den ganzen
