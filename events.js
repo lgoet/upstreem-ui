@@ -65,6 +65,13 @@
   function objekt(raw) {
     var v = UC.readBubble ? UC.readBubble(raw) : null;
     if (isArr(v)) v = v.length ? v[0] : null;
+    /* Der Umschlag der RPC ({"json": "<Text>"}) statt seines Feldes json (04.10.): wer in Bubble
+       "Result of step 1" statt "Result of step 1's json" einsetzt, schickt das Ganze. Gemessen
+       ergab das "Die Zahl der Prompts konnte nicht geladen werden" -- der Inhalt steckt aber
+       vollstaendig darin, also wird er ausgepackt statt verworfen. */
+    if (v && typeof v === "object" && !isArr(v) && v.json != null && Object.keys(v).length === 1) {
+      return typeof v.json === "object" ? v.json : objekt(v.json);
+    }
     return v && typeof v === "object" ? v : null;
   }
   function team() { try { return (UC.getTeam && UC.getTeam()) || ""; } catch (e) { return ""; } }
@@ -337,8 +344,11 @@
   /* Der dritte Wert jedes Setters: Bubbles "error body" (04.10.). Bei Erfolg ist er leer -- dann
      zaehlt allein die Antwort. So braucht der Workflow keinen zweiten Schritt mit "Only when". */
   function fehlerDa(f) {
-    var s = String(f == null ? "" : f).trim();
-    return s !== "" && s !== "null" && s !== "undefined";
+    var s = String(f == null ? "" : f).trim().toLowerCase();
+    /* "no"/"false": dort steht "returned an error" statt "error body" (04.10. gemessen: mit "no"
+       meldete der Zaehler bei einer gueltigen Antwort einen Fehler). Das Feld sagt dasselbe --
+       kein Fehler --, also wird es auch so gelesen. "yes" bleibt ein Fehler ohne Text. */
+    return s !== "" && s !== "null" && s !== "undefined" && s !== "no" && s !== "false";
   }
 
   function fehlerText(code) {

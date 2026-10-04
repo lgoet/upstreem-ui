@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261074;
+  var BUILD = 20261075;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -16314,6 +16314,12 @@
   }
   function setEvents(rows, label){
     var list = readBubble(rows);
+    /* Der Umschlag der RPC ({"json": "<Text>"}) statt seines Feldes json (04.10.): ohne das
+       Auspacken fiel die eine Zeile durch eventZeileOk, und die Uebersicht sagte "No events
+       yet" -- ein kaputter Aufruf, der wie eine leere Liste aussah. */
+    var hulle = isArray(list) && list.length === 1 ? list[0] : list;
+    if (hulle && typeof hulle === "object" && !isArray(hulle) && hulle.json != null && Object.keys(hulle).length === 1)
+      list = typeof hulle.json === "object" ? hulle.json : readBubble(hulle.json);
     if (list && !isArray(list)) list = [list];
     EVENTS.at = nowMs();
     EVENTS.seq++;
