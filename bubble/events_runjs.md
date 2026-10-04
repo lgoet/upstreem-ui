@@ -15,7 +15,21 @@ return jsonb_build_object('json', replace(r::text, chr(92), chr(92) || chr(92)))
 ```
 
 In Bubble kennt der API Connector dann nur das Feld `json` (Text), und es geht unveraendert in den
-Backtick: `` var ROH = `[Result of step 1's json]`; `` -- sonst bleibt jeder Schritt unten wie er ist.
+Backtick: `` var ROH = `[Result of step 1's json]`; `` -- so stehen die Schritte unten.
+
+**Ausnahme: `cached_mentions_overview_v1` (Schritt 10) NICHT umstellen.** Sie ist die gemeinsame RPC
+aller Responses-Tabellen der App; im Ein-Feld-Format braechen die anderen Seiten. Ihr Schritt bleibt
+wie auf jeder Seite.
+
+**Fehler:** im API Connector "Include errors in response and allow workflow actions to continue"
+anhaken. Dann je Workflow zwei Schritte nach dem Aufruf: der Setter (Only when: Result of step 1's
+returned an error is "no") und `setEventError` mit dem ganzen Fehler-Body (Only when: ... is "yes",
+Schritt 9). Den Code aus dem Body liest die Komponente seit dem 04.10. selbst.
+
+**Liste nachziehen:** Anlegen, Bearbeiten, URL hinzufuegen/entfernen und Loeschen aendern, was die
+Uebersicht und die Pins zeigen (Name, Farbe, Titelbild, Zahl der URLs). Die Komponente aktualisiert
+dabei nur das Detail -- jeder dieser Workflows endet darum mit Schritt 1 (Hausregel: jeder
+aendernde Workflow endet mit RPC + setUpstreem*).
 Die Komponente braucht dafuer **keine Aenderung**: alle Setter nehmen schon den ganzen JSON-Text
 und lesen ihn mit `UC.readBubble`.
 
@@ -34,7 +48,7 @@ Beim Seitenaufbau EINMAL (fuettert die Uebersicht UND die Pins in allen Liniendi
 
 ```javascript
 (function () {
-  var ROH = `[Ergebnis von list_impact_events_v1]`
+  var ROH = `[Result of step 1's json]`
     .replace(/:\s*([,}\]])/g, ": null$1")
     .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
   try { if (window.setUpstreemEvents) window.setUpstreemEvents(ROH); } catch (e) {}
@@ -129,7 +143,7 @@ Dieselbe Antwortform kommt von Create, Update, Add-URL und Remove-URL -- dort de
 
 ```javascript
 (function () {
-  var ROH = `[Ergebnis der RPC]`
+  var ROH = `[Result of step 1's json]`
     .replace(/:\s*([,}\]])/g, ": null$1")
     .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
   try { if (window.setEventDetail) window.setEventDetail("events_page", ROH); } catch (e) {}
@@ -227,7 +241,7 @@ Die Antwort ist das Detail-Objekt; die Komponente schliesst das Popup und oeffne
 
 ```javascript
 (function () {
-  var ROH = `[Ergebnis von create_impact_event_v1]`
+  var ROH = `[Result of step 1's json]`
     .replace(/:\s*([,}\]])/g, ": null$1")
     .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
   try { if (window.setEventDetail) window.setEventDetail("events_page", ROH); } catch (e) {}
@@ -242,7 +256,7 @@ Die Antwort ist das Detail-Objekt; die Komponente schliesst das Popup und oeffne
 
 ```javascript
 (function () {
-  var ROH = `[Ergebnis der RPC]`
+  var ROH = `[Result of step 1's json]`
     .replace(/:\s*([,}\]])/g, ": null$1")
     .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
   try { if (window.setEventAnalysis) window.setEventAnalysis("events_page", ROH); } catch (e) {}
@@ -1321,7 +1335,7 @@ Die Antwort ist das Detail-Objekt; die Komponente schliesst das Popup und oeffne
 
 ```javascript
 (function () {
-  var ROH = `[Ergebnis von update_impact_event_v1]`
+  var ROH = `[Result of step 1's json]`
     .replace(/:\s*([,}\]])/g, ": null$1")
     .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
   try { if (window.setEventDetail) window.setEventDetail("events_page", ROH); } catch (e) {}
@@ -1336,7 +1350,7 @@ Die Komponente fordert Analyse und Responses danach selbst neu an.
 
 ```javascript
 (function () {
-  var ROH = `[Ergebnis der RPC]`
+  var ROH = `[Result of step 1's json]`
     .replace(/:\s*([,}\]])/g, ": null$1")
     .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
   try { if (window.setEventDetail) window.setEventDetail("events_page", ROH); } catch (e) {}
@@ -1351,7 +1365,7 @@ Die Komponente fordert Analyse und Responses danach selbst neu an.
 
 ```javascript
 (function () {
-  var ROH = `[Ergebnis der RPC]`
+  var ROH = `[Result of step 1's json]`
     .replace(/:\s*([,}\]])/g, ": null$1")
     .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
   try { if (window.setEventScopePreview) window.setEventScopePreview("events_page", ROH); } catch (e) {}
@@ -1379,7 +1393,7 @@ Die Komponente fordert Analyse und Responses danach selbst neu an.
 
 ```javascript
 (function () {
-  var ROH = `[Ergebnis der RPC]`
+  var ROH = `[Result of step 1's json]`
     .replace(/:\s*([,}\]])/g, ": null$1")
     .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
   try { if (window.setEventDeleted) window.setEventDeleted("events_page", ROH); } catch (e) {}
@@ -1402,14 +1416,14 @@ Die Komponente fordert Analyse und Responses danach selbst neu an.
 
 ## 9. Fehler (jede Event-RPC): `setEventError`
 
-Nur das Feld `message` des Fehler-Bodys. Die Komponente zeigt den Satz dort, wo gerade gewartet wird (Popup, Zaehler) -- sonst als Toast.
+Der ganze Fehler-Body, wie Bubble ihn liefert (seit 04.10.; der nackte Code geht weiter). Die Komponente liest `message` daraus und zeigt den Satz dort, wo gerade gewartet wird (Popup, Zaehler) -- sonst als Toast. Gemessen: `{"code":"P0001","message":"impact_event_url_duplicate"}` ergibt "This URL is already part of the event.".
 
 **Dynamisch:**
 
 ```javascript
 (function () {
-  var MSG = `[Fehler-Body der RPC:message]`;
-  try { if (window.setEventError) window.setEventError("events_page", MSG); } catch (e) {}
+  var ROH = `[Result of step 1's error body]`;
+  try { if (window.setEventError) window.setEventError("events_page", ROH); } catch (e) {}
 })();
 ```
 

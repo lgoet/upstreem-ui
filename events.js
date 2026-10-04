@@ -2617,6 +2617,15 @@
         return !!v;
       },
       setFehler: function (code) {
+        /* Nimmt den Code ODER den ganzen Fehler-Body der RPC (04.10.): Bubble liefert bei "Include
+           errors in response" den Body als Text -- {"code":"P0001","message":"impact_event_...",...}.
+           Dann steht der Code in message; so muss in Bubble kein Feld einzeln zugeordnet werden. */
+        var roh = String(code == null ? "" : code).trim();
+        if (roh.charAt(0) === "{") {
+          /* objekt() wie setEventDetail -- UC.readBubble allein liest als Liste und gaebe [ {...} ]. */
+          var o = objekt(roh);
+          if (o && o.message != null) code = String(o.message);
+        }
         var txt = fehlerText(code);
         if (wartend.del) { clearTimeout(wartend.del.uhr); wartend.del.api.busy("ok", false); wartend.del.api.fehler(txt); wartend.del = null; return true; }
         if (wartend.urlWeg) { clearTimeout(wartend.urlWeg.uhr); wartend.urlWeg.api.busy("ok", false); wartend.urlWeg.api.fehler(txt); wartend.urlWeg = null; return true; }
