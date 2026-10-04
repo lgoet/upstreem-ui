@@ -36,7 +36,7 @@
 
   /* ---- Boot-Stubs (STYLEGUIDE §25), VOR der core-Pruefung ---------------------------------- */
   var API_NAMES = ["setEventDetail", "setEventAnalysis", "setEventScopePreview", "setEventError",
-                   "setEventDeleted", "setEventsLoading", "resetEvents"];
+                   "setEventDeleted", "setEventResponses", "setEventsLoading", "resetEvents"];
   var Q = (window.__uevBootQueue = window.__uevBootQueue || []);
   API_NAMES.forEach(function (n) {
     if (!window[n]) window[n] = function () { Q.push([n, [].slice.call(arguments)]); };
@@ -332,6 +332,13 @@
     var sc = document.createElement("script");
     sc.src = demoUrl(); sc.async = true; sc.onload = alle; sc.onerror = alle;
     (document.head || document.documentElement).appendChild(sc);
+  }
+
+  /* Der dritte Wert jedes Setters: Bubbles "error body" (04.10.). Bei Erfolg ist er leer -- dann
+     zaehlt allein die Antwort. So braucht der Workflow keinen zweiten Schritt mit "Only when". */
+  function fehlerDa(f) {
+    var s = String(f == null ? "" : f).trim();
+    return s !== "" && s !== "null" && s !== "undefined";
   }
 
   function fehlerText(code) {
@@ -2622,7 +2629,7 @@
         popupVorschauKam(v && num(v.affected_prompt_count) != null ? num(v.affected_prompt_count) : null);
         return !!v;
       },
-      setFehler: function (code) {
+      setFehler: function (code, wo) {
         /* Nimmt den Code ODER den ganzen Fehler-Body der RPC (04.10.): Bubble liefert bei "Include
            errors in response" den Body als Text -- {"code":"P0001","message":"impact_event_...",...}.
            Dann steht der Code in message; so muss in Bubble kein Feld einzeln zugeordnet werden. */
@@ -2632,13 +2639,45 @@
           var o = objekt(roh);
           if (o && o.message != null) code = String(o.message);
         }
-        var txt = fehlerText(code);
-        if (wartend.del) { clearTimeout(wartend.del.uhr); wartend.del.api.busy("ok", false); wartend.del.api.fehler(txt); wartend.del = null; return true; }
-        if (wartend.urlWeg) { clearTimeout(wartend.urlWeg.uhr); wartend.urlWeg.api.busy("ok", false); wartend.urlWeg.api.fehler(txt); wartend.urlWeg = null; return true; }
-        if (popupFehlerKam(txt, code)) return true;
-        /* Kein offenes Popup wartet: das Event selbst ist weg oder nicht erreichbar. */
-        if (String(code) === "impact_event_not_found" && state.ansicht === "detail") { state.detailFehler = true; renderDetail(); }
+        var txt = fehlerText(code), weg = String(code) === "impact_event_not_found";
+        /* wo: welcher Setter den Fehler mitbrachte (der dritte Wert, 04.10.). Dann ist bekannt, wer
+           gewartet hat, und die Meldung landet nur dort -- eine fehlgeschlagene Vorschau-Zahl darf
+           nicht das Anlegen abbrechen, das zufaellig zur selben Zeit wartet. Ohne wo
+           (setEventError) wie bisher: das Erste, was wartet. */
+        if (wo === "preview") { popupVorschauKam(null); return true; }
+        if (wo === "analysis" && !weg) {
+          state.analyseLaden = false; state.analyseFehler = true;
+          if (state.ansicht === "detail") renderDetail();
+          return true;
+        }
+        /* Loeschen antwortet ueber setEventDeleted; URL entfernen und jedes Popup ueber setEventDetail. */
+        var ohneWo = wo == null, mitDetail = ohneWo || wo === "detail";
+        if (wartend.del && (ohneWo || wo === "delete")) { clearTimeout(wartend.del.uhr); wartend.del.api.busy("ok", false); wartend.del.api.fehler(txt); wartend.del = null; return true; }
+        if (wartend.urlWeg && mitDetail) { clearTimeout(wartend.urlWeg.uhr); wartend.urlWeg.api.busy("ok", false); wartend.urlWeg.api.fehler(txt); wartend.urlWeg = null; return true; }
+        if (mitDetail && popupFehlerKam(txt, code)) return true;
+        /* Kein offenes Popup wartet: das Event selbst ist weg oder nicht erreichbar. Kam der Fehler
+           auf die Detail-Anfrage und steht noch kein Detail, ersetzt der Fehlerzustand das Skelett
+           -- sonst liefe es bis zur Warte-Uhr. Den Toast gibt es dazu nur, wenn er mehr sagt als
+           der Fehlerzustand (ein bekannter Code, nicht der allgemeine Satz). */
+        if (state.ansicht === "detail" && (weg || (wo === "detail" && !dieDetail()))) {
+          state.detailLaden = false; state.detailFehler = true;
+          if (weg) { state.analyseLaden = false; state.analyseFehler = true; }
+          renderDetail();
+          if (!weg && txt === fehlerText("")) return true;
+        }
         if (UC.toast) UC.toast(txt);
+        return true;
+      },
+      /* Die Responses-Tabelle gehoert nicht dieser Komponente: bei Erfolg geht der Text unveraendert
+         an renderResponsesTable. Bei einem Fehler-Body bekommt sie ihren Lesefehler ueber den
+         dokumentierten Weg (__parseError, responses-table.js) -- ohne das bliebe das Skelett
+         stehen, das responsesAnfordern eingeschaltet hat; die Tabelle hat keine eigene Warte-Uhr. */
+      setResponses: function (raw, f) {
+        if (!window.renderResponsesTable) return false;
+        try {
+          if (fehlerDa(f)) window.renderResponsesTable({ instanceId: respInstanz, __parseError: true });
+          else window.renderResponsesTable(raw);
+        } catch (e) {}
         return true;
       },
       setGeloescht: function (raw) {
@@ -2698,10 +2737,14 @@
     queue: "__uevBootQueue",
     initRoot: initRoot,
     api: {
-      setEventDetail:       function (id, p) { return jede(id, p, function (c, v) { c.setDetail(v); }); },
-      setEventAnalysis:     function (id, p) { return jede(id, p, function (c, v) { c.setAnalysis(v); }); },
-      setEventScopePreview: function (id, p) { return jede(id, p, function (c, v) { c.setVorschau(v); }); },
-      setEventDeleted:      function (id, p) { return jede(id, p, function (c, v) { c.setGeloescht(v); }); },
+      /* Der dritte Wert ist Bubbles "error body" (04.10.): ist er gefuellt, gilt die Antwort als
+         Fehler, und die Komponente zeigt ihn dort, wo gewartet wird. Im Workflow steht damit EIN
+         Schritt ohne "Only when". Mit zwei Werten wie bisher. */
+      setEventDetail:       function (id, p, f) { return jede(id, p, function (c, v) { if (fehlerDa(f)) c.setFehler(f, "detail"); else c.setDetail(v); }); },
+      setEventAnalysis:     function (id, p, f) { return jede(id, p, function (c, v) { if (fehlerDa(f)) c.setFehler(f, "analysis"); else c.setAnalysis(v); }); },
+      setEventScopePreview: function (id, p, f) { return jede(id, p, function (c, v) { if (fehlerDa(f)) c.setFehler(f, "preview"); else c.setVorschau(v); }); },
+      setEventDeleted:      function (id, p, f) { return jede(id, p, function (c, v) { if (fehlerDa(f)) c.setFehler(f, "delete"); else c.setGeloescht(v); }); },
+      setEventResponses:    function (id, p, f) { return jede(id, p, function (c, v) { c.setResponses(v, f); }); },
       /* setEventError("impact_event_url_duplicate") -- so steht es im Vertrag (1.1), ohne Instanz.
          Mit zwei Argumenten wie jeder andere Setter: (instanz, code). */
       setEventError:        function (a, b) {

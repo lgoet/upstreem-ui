@@ -56,16 +56,17 @@
       })();
 
   ── Ereignisse an Bubble: der Wert IST der RPC-Body ───────────────────────────
-  Jedes Ereignis traegt den fertigen JSON-Body der RPC, p_team schon drin. Im Workflow:
-    1. API Connector: die RPC, Body = der Wert des Ereignisses (unveraendert).
-    2. Erfolg: Run JS mit dem Setter unten. Fehler ("Include errors in response"): nur `message`
-       an setEventError geben.
+  Jedes Ereignis traegt den fertigen JSON-Body der RPC, p_team schon drin. Im API Connector ist
+  der Body jedes Calls darum genau <body> -- ein Parameter mit dem Schluessel "body". Im Workflow:
+    1. API Connector: die RPC, Feld body = This JavascriptToBubble's value (unveraendert).
+    2. Run JS mit dem Setter unten: Antwort UND Fehler-Body in einem Schritt, ohne "Only when".
+       Die Komponente prueft selbst, ob es ein Fehler war (seit 04.10.).
 
   | Ereignis (JS-to-Bubble) | Attribut am Wurzel-Div | RPC                              | Setter danach        |
   |-------------------------|------------------------|----------------------------------|----------------------|
   | uevDetail               | data-detail-fn         | get_impact_event_v1              | setEventDetail       |
   | uevAnalysis             | data-analysis-fn       | cached_impact_event_analysis_v1  | setEventAnalysis     |
-  | uevResponses            | data-responses-fn      | cached_mentions_overview_v1      | renderResponsesTable |
+  | uevResponses            | data-responses-fn      | cached_mentions_overview_v1      | setEventResponses    |
   | uevScopePreview         | data-preview-fn        | preview_impact_event_scope_v1    | setEventScopePreview |
   | uevCreate               | data-create-fn         | create_impact_event_v1           | setEventDetail       |
   | uevUpdate               | data-update-fn         | update_impact_event_v1           | setEventDetail       |
@@ -73,8 +74,9 @@
   | uevRemoveUrl            | data-removeurl-fn      | remove_impact_event_url_v1       | setEventDetail       |
   | uevDelete               | data-delete-fn         | delete_impact_event_v1           | setEventDeleted      |
 
-  Nach uevCreate, uevDelete: zusaetzlich die Liste neu (Schritt oben) -- sonst fehlt das neue Event
-  in der Uebersicht und als Pin in den Diagrammen, bis die Seite neu laedt.
+  Nach uevCreate, uevUpdate, uevAddUrl, uevRemoveUrl, uevDelete: zusaetzlich die Liste neu (ein
+  zweiter Call list_impact_events_v1 und der Schritt oben) -- sonst zeigen Uebersicht und Pins den
+  alten Stand (Name, Farbe, Titelbild, Zahl der URLs), bis die Seite neu laedt.
   Nach uevAddUrl, uevRemoveUrl: die Komponente fordert die Analyse selbst neu an (uevAnalysis).
 
   ── Die Popups (Anlegen, Bearbeiten, URL hinzufuegen) ────────────────────────
@@ -84,15 +86,17 @@
   window.MiraQuickActions.setResults -- derselbe Workflow, der auf jeder Seite mit der Palette schon
   laeuft (search_quick_actions_v2, scope "url"). Fehlt er auf der Events-Seite, sagt das Popup
   "Search is not available right now" und laesst einen vollstaendigen Link trotzdem zu.
-  Ein Fehler beim Zaehlen (setEventError waehrend uevScopePreview) erscheint unter der Auswahl,
+  Ein Fehler beim Zaehlen (Fehler-Body an setEventScopePreview) erscheint unter der Auswahl,
   ein Fehler beim Speichern im Popup selbst -- bei Anlegen springt es zum Schritt, der ihn behebt.
 
   ── Die Setter ────────────────────────────────────────────────────────────────
-    setEventDetail("<instanz>", `<json>`)          Objekt aus get_/create_/update_/…_url_v1
-    setEventAnalysis("<instanz>", `<json>`)        Objekt aus cached_impact_event_analysis_v1
-    setEventScopePreview("<instanz>", `<json>`)    {"affected_prompt_count": 47}
-    setEventDeleted("<instanz>", `<json>`)         {"ok": true, "deleted_event_id": "…"}
-    setEventError("<instanz>", "<message>")        oder ohne Instanz: setEventError("<message>")
+    setEventDetail("<instanz>", `<json>`, `<error body>`)          Objekt aus get_/create_/update_/…_url_v1
+    setEventAnalysis("<instanz>", `<json>`, `<error body>`)        Objekt aus cached_impact_event_analysis_v1
+    setEventScopePreview("<instanz>", `<json>`, `<error body>`)    {"affected_prompt_count": 47}
+    setEventDeleted("<instanz>", `<json>`, `<error body>`)         {"ok": true, "deleted_event_id": "…"}
+    setEventResponses("<instanz>", `<payload>`, `<error body>`)    Payload wie renderResponsesTable
+    setEventError("<instanz>", "<message>")        nur noch fuer alte Workflows mit "Only when"
+  Der dritte Wert ist [Result of step 1's error body]; bei Erfolg leer. Mit zwei Werten wie bisher.
     setEventsLoading("<instanz>", "analysis"|"detail", "yes"|"no")
     resetEvents("<instanz>")
 
@@ -101,7 +105,8 @@
         var ROH = `[Ergebnis der RPC]`
           .replace(/:\s*([,}\]])/g, ": null$1")
           .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
-        try { if (window.setEventDetail) window.setEventDetail("events_page", ROH); } catch (e) {}
+        var FEHLER = `[Result of step 1's error body]`;
+        try { if (window.setEventDetail) window.setEventDetail("events_page", ROH, FEHLER); } catch (e) {}
       })();
 
   Die Texte der RPCs sind laut Vertrag (1) durch app.js_safe gelaufen -- Backticks, Backslashes
