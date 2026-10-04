@@ -2474,7 +2474,14 @@
                     var p = popup;
                     if (!schrittOk(p)) return false;
                     if (p.schritt < 3) { schritt(p.schritt + 1); return false; }
-                    if (!p.e.urls.length && !p.ohneUrlsFrage) { p.ohneUrlsFrage = true; knoepfeSync(); return false; }
+                    /* Ohne URLs: der Knopf fragt nach, und das Feld "Affected URLs" bekommt den Fokus
+                       (04.10.) -- wer doch eine URL will, tippt sofort los. */
+                    if (!p.e.urls.length && !p.ohneUrlsFrage) {
+                      p.ohneUrlsFrage = true; knoepfeSync();
+                      var ein = im(".uev-urlein");
+                      try { if (ein) ein.focus(); } catch (e) {}
+                      return false;
+                    }
                     anlegenSenden();
                     return false;
                   } }],
