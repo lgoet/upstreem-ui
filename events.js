@@ -341,14 +341,28 @@
     (document.head || document.documentElement).appendChild(sc);
   }
 
-  /* Der dritte Wert jedes Setters: Bubbles "error body" (04.10.). Bei Erfolg ist er leer -- dann
-     zaehlt allein die Antwort. So braucht der Workflow keinen zweiten Schritt mit "Only when". */
+  /* Der dritte Wert jedes Setters: Bubbles "error body" (04.10.). Er zaehlt NUR, wenn keine
+     brauchbare Antwort da ist (siehe antwortOk): eine fehlgeschlagene RPC hat kein json, eine
+     gelungene braucht keinen Fehler-Wert. Gemeldet am 04.10.: richtige Antwort
+     {"affected_prompt_count": 16} kam an, der Zaehler zeigte trotzdem den Fehler -- der dritte
+     Wert hatte Vorrang vor einer lesbaren Antwort. So braucht der Workflow keinen zweiten Schritt
+     mit "Only when", und was immer Bubble bei Erfolg in den dritten Wert schreibt, schadet nicht. */
   function fehlerDa(f) {
     var s = String(f == null ? "" : f).trim().toLowerCase();
     /* "no"/"false": dort steht "returned an error" statt "error body" (04.10. gemessen: mit "no"
        meldete der Zaehler bei einer gueltigen Antwort einen Fehler). Das Feld sagt dasselbe --
        kein Fehler --, also wird es auch so gelesen. "yes" bleibt ein Fehler ohne Text. */
     return s !== "" && s !== "null" && s !== "undefined" && s !== "no" && s !== "false";
+  }
+
+  function antwortOk(art, raw) {
+    var o = objekt(raw);
+    if (!o) return false;
+    if (art === "detail") return o.id != null;
+    if (art === "analysis") return o.event_id != null || !!o.windows;
+    if (art === "preview") return num(o.affected_prompt_count) != null;
+    if (art === "delete") return o.ok === true;
+    return true;
   }
 
   function fehlerText(code) {
@@ -2693,8 +2707,10 @@
          stehen, das responsesAnfordern eingeschaltet hat; die Tabelle hat keine eigene Warte-Uhr. */
       setResponses: function (raw, f) {
         if (!window.renderResponsesTable) return false;
+        /* Wie bei den anderen Settern: lesbare Zeilen gewinnen gegen den Fehler-Wert. */
+        var o = objekt(raw), zeilenDa = !!(o && isArr(o.rows));
         try {
-          if (fehlerDa(f)) window.renderResponsesTable({ instanceId: respInstanz, __parseError: true });
+          if (!zeilenDa && fehlerDa(f)) window.renderResponsesTable({ instanceId: respInstanz, __parseError: true });
           else window.renderResponsesTable(raw);
         } catch (e) {}
         return true;
@@ -2760,15 +2776,19 @@
       /* Der dritte Wert ist Bubbles "error body" (04.10.): ist er gefuellt, gilt die Antwort als
          Fehler, und die Komponente zeigt ihn dort, wo gewartet wird. Im Workflow steht damit EIN
          Schritt ohne "Only when". Mit zwei Werten wie bisher. */
-      setEventDetail:       function (id, p, f) { return jede(id, p, function (c, v) { if (fehlerDa(f)) c.setFehler(f, "detail"); else c.setDetail(v); }); },
-      setEventAnalysis:     function (id, p, f) { return jede(id, p, function (c, v) { if (fehlerDa(f)) c.setFehler(f, "analysis"); else c.setAnalysis(v); }); },
-      setEventScopePreview: function (id, p, f) { return jede(id, p, function (c, v) { if (fehlerDa(f)) c.setFehler(f, "preview"); else c.setVorschau(v); }); },
-      setEventDeleted:      function (id, p, f) { return jede(id, p, function (c, v) { if (fehlerDa(f)) c.setFehler(f, "delete"); else c.setGeloescht(v); }); },
+      setEventDetail:       function (id, p, f) { return jede(id, p, function (c, v) { if (!antwortOk("detail", v) && fehlerDa(f)) c.setFehler(f, "detail"); else c.setDetail(v); }); },
+      setEventAnalysis:     function (id, p, f) { return jede(id, p, function (c, v) { if (!antwortOk("analysis", v) && fehlerDa(f)) c.setFehler(f, "analysis"); else c.setAnalysis(v); }); },
+      setEventScopePreview: function (id, p, f) { return jede(id, p, function (c, v) { if (!antwortOk("preview", v) && fehlerDa(f)) c.setFehler(f, "preview"); else c.setVorschau(v); }); },
+      setEventDeleted:      function (id, p, f) { return jede(id, p, function (c, v) { if (!antwortOk("delete", v) && fehlerDa(f)) c.setFehler(f, "delete"); else c.setGeloescht(v); }); },
       setEventResponses:    function (id, p, f) { return jede(id, p, function (c, v) { c.setResponses(v, f); }); },
       /* setEventError("impact_event_url_duplicate") -- so steht es im Vertrag (1.1), ohne Instanz.
          Mit zwei Argumenten wie jeder andere Setter: (instanz, code). */
       setEventError:        function (a, b) {
-        if (b === undefined) return alle(function (c) { c.setFehler(a); });
+        /* Ein LEERER Fehler-Body ist kein Fehler (04.10.): laeuft ein alter setEventError-Schritt
+           ohne greifendes "Only when" auch bei Erfolg, kam hier "" an -- und brach die laufende
+           Zaehlung ab, bevor deren richtige Antwort da war. */
+        if (b === undefined) return fehlerDa(a) ? alle(function (c) { c.setFehler(a); }) : false;
+        if (!fehlerDa(b)) return false;
         return jede(a, b, function (c, v) { c.setFehler(v); });
       },
       setEventsLoading:     function (id, teil, v) { return jede(id, teil, function (c, x) { c.setLoading(x, v); }); },

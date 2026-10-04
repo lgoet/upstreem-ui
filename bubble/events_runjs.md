@@ -23,9 +23,12 @@ wie auf jeder Seite.
 
 **Fehler (04.10.): die Komponente prueft selbst.** Im API Connector "Include errors in response and
 allow workflow actions to continue" anhaken. Dann bekommt jeder Setter als DRITTEN Wert
-`[Result of step 1's error body]` in einem eigenen Backtick. Bei Erfolg ist der leer und es zaehlt
-die Antwort; ist er gefuellt, zeigt die Komponente den Fehler dort, wo gewartet wird (Popup,
-Zaehler, Skelett des Details, Analyse, Responses-Tabelle). Kein zweiter Schritt, kein "Only when".
+`[Result of step 1's error body]` in einem eigenen Backtick. Er zaehlt NUR, wenn keine lesbare
+Antwort da ist: eine lesbare Antwort gewinnt immer, egal was im dritten Wert steht (04.10. gemeldet:
+richtige Antwort, trotzdem Fehler -- gemessen und behoben). Ohne lesbare Antwort und mit Fehler-Wert
+zeigt die Komponente den Fehler dort, wo gewartet wird (Popup, Zaehler, Skelett des Details,
+Analyse, Responses-Tabelle). Kein zweiter Schritt, kein "Only when". Ein alter setEventError-Schritt
+mit LEEREM Body tut nichts mehr.
 Gemessen am 04.10. fuer Detail, Analyse, Zaehler, Bearbeiten, Loeschen und Responses; dabei auch,
 dass ein Fehler auf eine ANDERE Anfrage ein wartendes Loeschen nicht abbricht.
 Fuer die Liste (Schritt 1) braucht es den dritten Wert nicht: schlaegt sie fehl, ist `json` leer,
