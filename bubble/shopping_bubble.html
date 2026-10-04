@@ -1,0 +1,144 @@
+<!--
+  UPSTREEM — SHOPPING (Beta, Praefix ush), 04.10.2026
+
+  WOHIN: ein HTML-Element in der Ansicht "shopping" (#view-shopping, eine Gruppe wie view-events).
+  Das Element ist LEER bis auf das Wurzel-Div; die Komponente baut Seitenkopf (Krume "Shopping"
+  mit Beta-Marke, Reiter Overview / Products / Brands / Merchants), Kalender, Filterleiste und alle
+  vier Unterseiten samt Produkt-Detail selbst. Kalender und Filter sind LOKAL: sie gehoeren der
+  Seite und schreiben nichts in die globalen Filter der App ("Apply everywhere" im Kalender geht
+  weiterhin). Massgeblich fuer alle Felder: bubble/shopping_backend_vertrag.md (Uebergabe 04.10.).
+  Alle Workflows mit Bodies und Run-JS-Schritten: bubble/shopping_runjs.md.
+
+  ── Zustaende in der Adresse (schreibt die Komponente selbst) ─────────────────
+    ?view=shopping                                  Overview
+    ?view=shopping&shop=products                    Products (ebenso brands, merchants)
+    ?view=shopping&shop=products&product=<id>       Produkt-Detail (source_product_id, Text)
+  Zurueck/Vor im Browser wechselt die Unterseite. In Bubble ist dafuer nichts zu tun.
+
+  ── Navigation ────────────────────────────────────────────────────────────────
+  Die Seitenleiste fuehrt "Shopping" nach "Brands" (Schluessel "shopping", Beta-Marke). Ein Klick
+  feuert wie jeder Eintrag usnNav mit {"key":"shopping"} UND zeigt die Ansicht selbst (showView),
+  sobald #view-shopping auf der Seite steht -- auch in der mobilen Leiste. Ein Zweig im
+  usnNav-Workflow, der dasselbe tut, schadet nicht (showView tut bei offener Ansicht nichts).
+  showView ruft bubble_fn_view_first_shopping, wenn es das gibt: Shopping laedt seine Daten selbst,
+  der Workflow darf leer sein -- das Element "view_first_shopping" verhindert nur die Warnung.
+
+  ── Attribute am Wurzel-Div ──────────────────────────────────────────────────
+  | Attribut          | Pflicht | Bedeutung                                                    |
+  |-------------------|---------|--------------------------------------------------------------|
+  | data-instance     | JA      | "shopping_page" -- so heissen alle Schritte in shopping_runjs.md |
+  | data-cdn-pin      | JA      | derselbe Commit wie alle Elemente der Seite                  |
+  | data-isdark       | nein    | "yes"/"no"; kennt core ein Thema, gewinnt core               |
+  | data-overview-fn  | JA      | bubble_fn_shopOverview      (Overview UND Brands)           |
+  | data-products-fn  | JA      | bubble_fn_shopProducts                                       |
+  | data-detail-fn    | JA      | bubble_fn_shopProductDetail                                  |
+  | data-merchants-fn | JA      | bubble_fn_shopMerchants                                      |
+
+  ── Ereignisse an Bubble: der Wert IST der RPC-Body ───────────────────────────
+  Jedes Ereignis traegt den fertigen JSON-Body der RPC als Text, p_team und alle Filter schon
+  drin, nicht gesetzte Werte als null. Im API Connector ist der Body jedes Calls genau <body>
+  (ein Parameter mit dem Schluessel "body"). Im Workflow:
+    1. API Connector: die RPC, Feld body = This JavascriptToBubble's value (unveraendert).
+       "Include errors in response and allow workflow actions to continue" anhaken.
+    2. Run JS mit dem Setter: Antwort UND Fehler-Body in einem Schritt, ohne "Only when".
+
+  | Ereignis (JS-to-Bubble) | Attribut          | RPC (Schema app)                  | Setter danach            |
+  |-------------------------|-------------------|-----------------------------------|--------------------------|
+  | shopOverview            | data-overview-fn  | cached_shopping_overview_v1       | setShoppingOverview      |
+  | shopProducts            | data-products-fn  | cached_shopping_products_v1       | setShoppingProducts      |
+  | shopProductDetail       | data-detail-fn    | cached_shopping_product_detail_v1 | setShoppingProductDetail |
+  | shopMerchants           | data-merchants-fn | cached_shopping_merchants_v1      | setShoppingMerchants     |
+
+  Die Komponente schickt je RPC hoechstens EINE Anfrage gleichzeitig, merkt sich die letzten 16
+  Antworten je RPC (Reiter- und Filterwechsel zurueck zeigen sofort) und wartet 25s; danach steht
+  "This is taking longer than expected" mit "Try again" statt eines endlosen Skeletts.
+
+  ── Die Setter ────────────────────────────────────────────────────────────────
+    setShoppingOverview("shopping_page", `<json>`, `<error body>`)
+    setShoppingProducts("shopping_page", `<json>`, `<error body>`)
+    setShoppingProductDetail("shopping_page", `<json>`, `<error body>`)
+    setShoppingMerchants("shopping_page", `<json>`, `<error body>`)
+    resetShopping("shopping_page")        verwirft alle gemerkten Antworten und laedt neu
+  <json> ist das Feld json des Umschlags ({"json": "..."}, Uebergabe 2). Der dritte Wert ist
+  [Result of step 1's error body]; eine lesbare Antwort gewinnt immer, der Fehler zaehlt nur ohne
+  sie. Die Schritte nach einem Ereignis kommen nie zu frueh (das Ereignis kommt von shopping.js).
+  Die STATISCHEN Testfassungen aus shopping_runjs.md erst ausfuehren, wenn die Shopping-Ansicht
+  offen ist -- vor dem Laden von shopping.js gibt es die Setter noch nicht.
+
+  Run-JS-Form (CLAUDE.md 2a):
+      (function () {
+        var ROH = `[Result of step 1's json]`
+          .replace(/:\s*([,}\]])/g, ": null$1")
+          .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+        var FEHLER = `[Result of step 1's error body]`;
+        try { if (window.setShoppingOverview) window.setShoppingOverview("shopping_page", ROH, FEHLER); } catch (e) {}
+      })();
+
+  ── Was die Seite sonst braucht (steht auf jeder Seite schon) ─────────────────
+  setUpstreemTeam (p_team), setUpstreemModels, setUpstreemMarkets, setUpstreemTopics fuer die
+  Filter. "View Response" in Recent Appearances oeffnet openDrawer("response", prompt_run_id) --
+  derselbe Drawer wie in der Responses-Tabelle (get_mention_detail_v7).
+-->
+
+<div class="up-root ush-root"
+     data-instance="shopping_page"
+     data-cdn-pin="CDN_PIN"
+     data-isdark="IS_DARK"
+     data-overview-fn="bubble_fn_shopOverview"
+     data-products-fn="bubble_fn_shopProducts"
+     data-detail-fn="bubble_fn_shopProductDetail"
+     data-merchants-fn="bubble_fn_shopMerchants"></div>
+
+<script>
+(function(){
+  /* Loader nach STYLEGUIDE §26 -- wortgleich mit events_bubble.html, nur Klasse und Dateien
+     anders. Kalender und Filter stehen als LOKALE Instanzen in der Komponente, ihre Dateien
+     laedt dieses Element mit. */
+  function echterPin(p){
+    p = String(p == null ? "" : p).trim();
+    return (p && p !== "CDN_" + "PIN") ? p : "";
+  }
+  function readPin(cls){
+    var i, p, els = document.getElementsByClassName(cls);
+    for (i = 0; i < els.length; i++){
+      p = echterPin(els[i].getAttribute("data-cdn-pin"));
+      if (p) return (window.__upPin = p);
+    }
+    if (echterPin(window.__upPin)) return window.__upPin;
+    var alle = document.querySelectorAll ? document.querySelectorAll("[data-cdn-pin]") : [];
+    for (i = 0; i < alle.length; i++){
+      p = echterPin(alle[i].getAttribute("data-cdn-pin"));
+      if (p) return (window.__upPin = p);
+    }
+    var L0 = window.__upAssetsLoaded, k, m;
+    for (k in L0){
+      if (!Object.prototype.hasOwnProperty.call(L0, k)) continue;
+      m = String(L0[k] || "").match(/upstreem-ui@([^/]+)\//);
+      if (m && m[1] && m[1] !== "main") return (window.__upPin = m[1]);
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("ush-root") + "/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  function once(url, make){
+    var name = url.slice(url.lastIndexOf("/") + 1);
+    if (L[name]){
+      if (L[name] !== url && window.console) console.warn("upstreem: " + name +
+        " ist schon von einem anderen Pin geladen. Geladen bleibt " + L[name] +
+        ", ignoriert wird " + url + ". Setzt alle Elemente auf denselben Pin.");
+      return;
+    }
+    L[name] = url; make(url);
+  }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+
+  css("core.css");                        js("core.js");
+  css("filters/date-range.css");          js("filters/date-range.js");
+  css("filters/topics-filter.css");       js("filters/topics-filter.js");
+  css("filters/models-filter.css");       js("filters/models-filter.js");
+  css("filters/markets-filter.css");      js("filters/markets-filter.js");
+  css("filters/filter-bar.css");          js("filters/filter-bar.js");
+  css("shopping.css");                    js("shopping.js");
+})();
+</script>

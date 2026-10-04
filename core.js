@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261076;
+  var BUILD = 20261077;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -4402,6 +4402,79 @@
       '</span>' +
       (o.fussHtml ? '<span class="up-kpi-foot">' + o.fussHtml + '</span>' : '') +
     '</div>';
+  }
+  /* DIE SPARKLINE (04.10., Shopping: die Kacheln des Produkt-Details). Werte eines Verlaufs; null
+     ist eine Luecke, dort bricht die Linie ab, statt ueber einen Tag ohne Messung zu laufen.
+     opts.umgekehrt: kleiner ist besser (Position) -- der kleinere Wert steht oben, damit "nach
+     oben" in jeder Kachel "besser" heisst. Ohne einen einzigen Wert: leerer Text, die Kachel
+     zeigt dann keine. CSS: .up-spark in core.css. */
+  function sparkHtml(werte, opts){
+    opts = opts || {};
+    var W = 72, H = 24, RAND = 3;
+    var v = isArr(werte) ? werte.map(function(x){ return toNum(x); }) : [];
+    var zahlen = v.filter(function(x){ return x != null; });
+    if (!zahlen.length) return "";
+    var mn = Math.min.apply(null, zahlen), mx = Math.max.apply(null, zahlen), n = v.length;
+    function px(i){ return n > 1 ? (i / (n - 1)) * W : W / 2; }
+    function py(w){
+      if (mx === mn) return H / 2;
+      var r = (w - mn) / (mx - mn);
+      if (opts.umgekehrt) r = 1 - r;
+      return H - RAND - r * (H - 2 * RAND);
+    }
+    var teile = [], akt = [], letzter = -1;
+    v.forEach(function(w, i){
+      if (w == null){ if (akt.length) teile.push(akt); akt = []; return; }
+      akt.push(px(i).toFixed(1) + "," + py(w).toFixed(1));
+      letzter = i;
+    });
+    if (akt.length) teile.push(akt);
+    return '<svg class="up-spark' + (opts.cls ? " " + esc(opts.cls) : "") + '" viewBox="0 0 72 24" aria-hidden="true">' +
+      teile.filter(function(t){ return t.length > 1; }).map(function(t){
+        return '<polyline class="up-spark-linie" points="' + t.join(" ") + '"/>';
+      }).join("") +
+      '<circle class="up-spark-punkt" cx="' + px(letzter).toFixed(1) + '" cy="' + py(v[letzter]).toFixed(1) + '" r="2.2"/>' +
+    '</svg>';
+  }
+  /* HOCHZAEHLEN (04.10., Shopping: die Werte der Kennzahl-Kacheln). Dieselbe Bauart wie
+     planZaehlen weiter unten -- die Uhr steht VOR der Animation, data-up-wert traegt die
+     Ausgangszahl --, nur fuer jede Zahl: fmt macht den Text. Ohne Ausgangszahl beginnt es bei
+     85 Prozent des Ziels: ein Anlauf, kein Sprung von 0. 320ms, quadratisch auslaufend.
+     Reduzierte Bewegung oder verdeckter Tab: sofort der Endwert. Es endet IMMER auf dem Endwert --
+     die Uhr setzt ihn, auch wenn kein Bild mehr gemalt wird. */
+  function zahlZaehlen(el, ziel, fmt){
+    if (!el) return;
+    fmt = fmt || function(v){ return fmtNum(v); };
+    if (el.__upZLauf){ try { window.cancelAnimationFrame(el.__upZLauf); } catch(e){} el.__upZLauf = 0; }
+    if (el.__upZEnde){ clearTimeout(el.__upZEnde); el.__upZEnde = 0; }
+    var z = toNum(ziel);
+    function setzen(v){
+      el.textContent = v == null ? "\u2013" : fmt(v);
+      el.setAttribute("data-up-wert", v == null ? "" : String(v));
+    }
+    var von = toNum(el.getAttribute("data-up-wert"));
+    if (von == null && z != null) von = z * 0.85;
+    var ruhig = false;
+    try { ruhig = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) || !!document.hidden; } catch(e){}
+    if (z == null || von == null || ruhig || Math.abs(von - z) < 1e-9 || !window.requestAnimationFrame){ setzen(z); return; }
+    var start = 0, DAUER = 320;
+    function fertig(){
+      if (el.__upZLauf){ try { window.cancelAnimationFrame(el.__upZLauf); } catch(e){} el.__upZLauf = 0; }
+      el.__upZEnde = 0;
+      setzen(z);
+    }
+    el.__upZEnde = setTimeout(fertig, DAUER + 180);
+    function schritt(ts){
+      if (!start) start = ts || 1;
+      var p = Math.min(1, ((ts || start) - start) / DAUER);
+      var w = von + (z - von) * (1 - Math.pow(1 - p, 2));
+      el.textContent = fmt(w);
+      el.setAttribute("data-up-wert", String(w));
+      if (p < 1) el.__upZLauf = window.requestAnimationFrame(schritt);
+      else fertig();
+    }
+    el.textContent = fmt(von);
+    el.__upZLauf = window.requestAnimationFrame(schritt);
   }
   function kpiKarteSkelett(klasse){
     return '<div class="up-kpi is-sk' + (klasse ? " " + klasse : "") + '"><span class="up-kpi-sk up-kpi-sk-l"></span><span class="up-kpi-sk up-kpi-sk-v"></span><span class="up-kpi-sk up-kpi-sk-f"></span></div>';
@@ -9946,9 +10019,13 @@
       /* cfg.klickWenn: der Seitenname ist nur dann ein Knopf, wenn er wohin fuehrt -- in der
          Events-Uebersicht steht man schon dort. */
       klicks = [typeof cfg.klick === "function" && (typeof cfg.klickWenn !== "function" || cfg.klickWenn()) ? cfg.klick : null];
+      /* cfg.marke (04.10., Shopping): ein Kennzeichen HINTER dem Seitennamen, z. B. "Beta" --
+         als .up-marke.is-leise aus core, wie in der Seitenleiste. Hier und nicht vom Aufrufer
+         angehaengt: zeichnen() schreibt die Zeile bei jedem Reiterwechsel neu. */
+      var marke = cfg.marke ? '<span class="up-marke is-leise up-ph-crumbmarke" data-i18n="' + esc(cfg.marke) + '">' + esc(t_(cfg.marke)) + '</span>' : '';
       var html = krume(
         (cfg.icon ? '<span class="up-ph-crumbic" aria-hidden="true">' + icon(cfg.icon, 2) + '</span>' : '') +
-        '<span class="up-ph-crumbname" data-i18n="' + esc(cfg.name || "") + '">' + esc(name) + '</span>',
+        '<span class="up-ph-crumbname" data-i18n="' + esc(cfg.name || "") + '">' + esc(name) + '</span>' + marke,
         !liste.length, 0, !!klicks[0] && liste.length > 0);
       liste.forEach(function(x, i){
         var letzte = i === liste.length - 1;
@@ -13317,7 +13394,13 @@
      schmalem Balken daneben).
 
      cfg: { mount, isDark(), labelCol() -> bool, minLabel, fmt(v) }
-     items: [{ key, name, share, color, logo }]                                                */
+     items: [{ key, name, share, color, logo, zeichen, wert }]
+       zeichen (04.10., Shopping): fertiges Zeichen-Markup (UC.icon) auf einer Platte vor dem
+               Namen -- fuer Eintraege OHNE Bild, die trotzdem eins tragen sollen (Haendler: es gibt
+               kein Logo in den Daten). Ohne Beschriftungsspalte steht dort sonst auch ein logo,
+               wie im Balkenmodus von makeTypeChart.
+       wert    der Text des Werts, wenn er nicht der Anteil ist ("16 responses"). Die Breite
+               kommt weiter aus share.                                                         */
   function makeBarList(cfg){
     cfg = cfg || {};
     var mount = cfg.mount;
@@ -13344,6 +13427,14 @@
         var ausFarbe = isDark() ? "rgba(255,255,255,0.85)" : "var(--vc-text)";
         var ausPct = isDark() ? "rgba(255,255,255,0.55)" : "var(--vc-muted)";
         if (String(it.name || "").length > maxName) maxName = String(it.name).length;
+        /* Vor dem Namen im Balken (ohne Beschriftungsspalte): die Zeichen-Platte oder das Logo,
+           dieselbe Regel wie im Balkenmodus von makeTypeChart. */
+        var blg = it.logo ? String(it.logo) : "";
+        if (blg.indexOf("//") === 0) blg = "https:" + blg;
+        var vorName = spalte ? "" : it.zeichen
+          ? '<span class="up-bar-logo is-zeichen" aria-hidden="true">' + it.zeichen + '</span>'
+          : (blg ? '<img class="up-bar-logo" src="' + esc(blg) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()"/>' : '');
+        var wertTxt = it.wert != null ? String(it.wert) : fmt(it.share);
         return '<div class="up-bar-row" data-bar-key="' + esc(String(it.key == null ? it.name : it.key)) + '">' +
           (spalte ? '<span class="up-bar-label">' +
               (it.logo ? '<img class="up-bar-logo" src="' + esc(it.logo) + '" alt="" loading="lazy" ' +
@@ -13352,12 +13443,12 @@
           '<div class="up-bar-track">' +
             '<div class="up-bar-fill" style="background:' + esc(it.color) + ';width:' +
               (ohneFahrt ? Math.max(Number(it.share) || 0, 0) : 0) + '%">' +
-              (spalte ? '' : '<span class="up-bar-name" style="color:' + txt + ';opacity:0">' + esc(it.name) + '</span>') +
-              '<span class="up-bar-pct up-bar-pct-in" style="color:' + txtPct + ';opacity:0">' + esc(fmt(it.share)) + '</span>' +
+              (spalte ? '' : '<span class="up-bar-name" style="color:' + txt + ';opacity:0">' + vorName + esc(it.name) + '</span>') +
+              '<span class="up-bar-pct up-bar-pct-in" style="color:' + txtPct + ';opacity:0">' + esc(wertTxt) + '</span>' +
             '</div>' +
             '<span class="up-bar-outside" style="opacity:0">' +
-              (spalte ? '' : '<span class="up-bar-name-out" style="color:' + ausFarbe + '">' + esc(it.name) + '</span>') +
-              '<span class="up-bar-pct-out" style="color:' + ausPct + '">' + esc(fmt(it.share)) + '</span>' +
+              (spalte ? '' : '<span class="up-bar-name-out" style="color:' + ausFarbe + '">' + vorName + esc(it.name) + '</span>') +
+              '<span class="up-bar-pct-out" style="color:' + ausPct + '">' + esc(wertTxt) + '</span>' +
             '</span>' +
           '</div>' +
           /* cfg.pctCol: der Wert bekommt eine EIGENE dritte Spalte hinter der Balkenspur, statt
@@ -13367,14 +13458,19 @@
              die Spalte das Richtige: die Spur endet vor ihr, und alle Zahlen stehen untereinander.
              Der Wert ist die Breite in px. */
           (cfg.pctCol ? '<span class="up-bar-pctcol" style="flex:0 0 ' + cfg.pctCol + 'px;width:' +
-                        cfg.pctCol + 'px">' + esc(fmt(it.share)) + '</span>' : '') +
+                        cfg.pctCol + 'px">' + esc(wertTxt) + '</span>' : '') +
           '</div>';
       }).join("") + '</div>';
       mount.innerHTML = html;
 
       var rows = [].slice.call(mount.querySelectorAll(".up-bar-row"));
+      /* Logo oder Zeichen-Platte vor dem Namen zaehlen mit (04.10.): measureText misst nur den
+         Text, und so blieb "Kaufland" mit Platte im Balken stehen und wurde abgeschnitten, statt
+         nach aussen zu ruecken -- 15px Platte plus 6px Abstand fehlten in der Rechnung. */
       var masse = rows.map(function(row){
-        return { nameW: measureText(row.querySelector(".up-bar-name")),
+        var name = row.querySelector(".up-bar-name"), lg = name && name.querySelector(".up-bar-logo");
+        var lgW = lg ? lg.getBoundingClientRect().width + (parseFloat(getComputedStyle(name).columnGap) || 0) : 0;
+        return { nameW: measureText(name) + lgW,
                  pctW:  measureText(row.querySelector(".up-bar-pct-in")) };
       });
       /* Passt die Beschriftung in den Balken, steht sie drin; sonst rueckt sie daneben. Dieselbe
@@ -14391,14 +14487,21 @@
         d.pointBorderWidth = d.borderWidth; d.pointHoverBorderWidth = d.borderWidth;
         d.pointBackgroundColor = single ? d.__baseColor : tc.bg;
         d.pointBorderColor = d.__baseColor; d.pointHoverBackgroundColor = tc.bg; d.pointHoverBorderColor = d.__baseColor;
-        d.spanGaps = true; d.clip = 8;
+        /* __luecken (04.10., Shopping): ein null-Tag UNTERBRICHT die Linie, statt ueberbrueckt zu
+           werden -- dort gab es an dem Tag gar keine Messung (Uebergabe: "die Linie dort
+           unterbrechen"). Ohne das Feld wie bisher. */
+        d.spanGaps = !d.__luecken; d.clip = 8;
         /* __dash: eine Vergleichsreihe (Event-Detail). build() setzt jede Linieneigenschaft neu,
            also muss auch der Strich hier stehen -- sonst waere er nach dem ersten Neuzeichnen weg. */
         d.borderDash = d.__dash ? [5, 4] : [];
       });
       var visMax = 0;
       ds.forEach(function(d){ (d.data || []).forEach(function(v){ if (v != null && v > visMax) visMax = v; }); });
-      var yMax = visMax * Y_PAD; if (yMax <= 0) yMax = 1; if (yMax > 100) yMax = 100;
+      /* cfg.yOhneDeckel (04.10., Shopping): eine Achse, die keine Prozentachse ist (Beobachtungen
+         je Tag), darf ueber 100 hinaus -- sonst schnitte der Deckel die Linie ab. Ohne die Angabe
+         wie bisher. */
+      var ohneDeckel = typeof cfg.yOhneDeckel === "function" ? !!cfg.yOhneDeckel() : !!cfg.yOhneDeckel;
+      var yMax = visMax * Y_PAD; if (yMax <= 0) yMax = 1; if (yMax > 100 && !ohneDeckel) yMax = 100;
       try {
         chart = new window.Chart(ctx, {
           type: "line",
@@ -18091,6 +18194,35 @@
        ausdruecklich das Hugeicons-Zeichen. */
     tickets: '<path d="M19.9023 7.25L19.409 5.98277C18.858 4.72435 18.3862 3.95201 17.7169 3.46387C17.3318 3.18304 16.9085 2.97545 16.4661 2.85049C15.2702 2.51272 13.9775 3.04892 11.392 4.12133L8.23816 5.42944C7.53483 5.72116 6.92717 5.97321 6.40234 6.20767"/>' +
              '<path d="M3 16.25C4.38071 16.25 5.5 15.1307 5.5 13.75C5.5 12.3693 4.38071 11.25 3 11.25C3 10.3207 3 9.85603 3.07686 9.46964C3.39249 7.88288 4.63288 6.64249 6.21964 6.32686C6.60603 6.25 7.07069 6.25 8 6.25H13.5C16.7875 6.25 18.4312 6.25 19.5376 7.15796C19.7401 7.32418 19.9258 7.50989 20.092 7.71243C21 8.81878 21 10.6418 21 14.288C21 17.2168 21 18.6812 20.092 19.7876C19.9258 19.9901 19.7401 20.1758 19.5376 20.342C18.4312 21.25 16.7875 21.25 13.5 21.25H8C7.07069 21.25 6.60603 21.25 6.21964 21.1731C4.63288 20.8575 3.39249 19.6171 3.07686 18.0304C3 17.644 3 17.1793 3 16.25Z"/>',
+    /* DIE ZEICHEN DER SHOPPING-SEITE (04.10. angefordert, jeweils mit Namen): woertlich aus
+       @hugeicons/core-free-icons@4.3.5 (dist/esm/<Name>.js), wie tickets darueber.
+         shoppingBag     ShoppingBag01Icon     die Seite selbst (Seitenleiste, Krume)
+         dashboardSquare DashboardSquare01Icon Reiter "Overview"
+         stackStar       StackStarIcon         Reiter "Products"
+         store           Store02Icon           Reiter "Merchants" und jeder Haendler (es gibt kein
+                                               Haendlerlogo in den Daten, Uebergabe Abschnitt 4)
+         aiSearchLines   AiSearchLinesIcon     die Zusammenfassung der Overview
+         image           Image01Icon           Platzhalter fuer ein fehlendes Produktbild
+       DashboardSquare01 traegt im Paket eckige Enden -- die stehen am Pfad, die runden der Huelle
+       in icon() gelten fuer die anderen. */
+    shoppingBag: '<path d="M3.32352 13.0113C3.6739 10.009 4.18586 7.75784 4.66063 6.15851C5.04994 4.84711 5.24459 4.19141 6.04283 3.5957C6.84107 3 7.65697 3 9.28876 3H14.7113C16.3431 3 17.159 3 17.9572 3.5957C18.7554 4.19141 18.9501 4.84711 19.3394 6.15851C19.8142 7.75784 20.3261 10.009 20.6765 13.0113C21.0895 16.5497 21.2959 18.3189 20.1027 19.6594C18.9095 21 16.9758 21 13.1084 21H10.8916C7.02422 21 5.09052 21 3.89731 19.6594C2.70411 18.3189 2.91058 16.5497 3.32352 13.0113Z"/>' +
+                 '<path d="M9 7C9 8.65685 10.3431 10 12 10C13.6569 10 15 8.65685 15 7"/>',
+    dashboardSquare: '<path stroke-linecap="square" d="M13.6903 19.4567C13.5 18.9973 13.5 18.4149 13.5 17.25C13.5 16.0851 13.5 15.5027 13.6903 15.0433C13.944 14.4307 14.4307 13.944 15.0433 13.6903C15.5027 13.5 16.0851 13.5 17.25 13.5C18.4149 13.5 18.9973 13.5 19.4567 13.6903C20.0693 13.944 20.556 14.4307 20.8097 15.0433C21 15.5027 21 16.0851 21 17.25C21 18.4149 21 18.9973 20.8097 19.4567C20.556 20.0693 20.0693 20.556 19.4567 20.8097C18.9973 21 18.4149 21 17.25 21C16.0851 21 15.5027 21 15.0433 20.8097C14.4307 20.556 13.944 20.0693 13.6903 19.4567Z"/>' +
+                     '<path stroke-linecap="square" d="M13.6903 8.95671C13.5 8.49728 13.5 7.91485 13.5 6.75C13.5 5.58515 13.5 5.00272 13.6903 4.54329C13.944 3.93072 14.4307 3.44404 15.0433 3.1903C15.5027 3 16.0851 3 17.25 3C18.4149 3 18.9973 3 19.4567 3.1903C20.0693 3.44404 20.556 3.93072 20.8097 4.54329C21 5.00272 21 5.58515 21 6.75C21 7.91485 21 8.49728 20.8097 8.95671C20.556 9.56928 20.0693 10.056 19.4567 10.3097C18.9973 10.5 18.4149 10.5 17.25 10.5C16.0851 10.5 15.5027 10.5 15.0433 10.3097C14.4307 10.056 13.944 9.56928 13.6903 8.95671Z"/>' +
+                     '<path stroke-linecap="square" d="M3.1903 19.4567C3 18.9973 3 18.4149 3 17.25C3 16.0851 3 15.5027 3.1903 15.0433C3.44404 14.4307 3.93072 13.944 4.54329 13.6903C5.00272 13.5 5.58515 13.5 6.75 13.5C7.91485 13.5 8.49728 13.5 8.95671 13.6903C9.56928 13.944 10.056 14.4307 10.3097 15.0433C10.5 15.5027 10.5 16.0851 10.5 17.25C10.5 18.4149 10.5 18.9973 10.3097 19.4567C10.056 20.0693 9.56928 20.556 8.95671 20.8097C8.49728 21 7.91485 21 6.75 21C5.58515 21 5.00272 21 4.54329 20.8097C3.93072 20.556 3.44404 20.0693 3.1903 19.4567Z"/>' +
+                     '<path stroke-linecap="square" d="M3.1903 8.95671C3 8.49728 3 7.91485 3 6.75C3 5.58515 3 5.00272 3.1903 4.54329C3.44404 3.93072 3.93072 3.44404 4.54329 3.1903C5.00272 3 5.58515 3 6.75 3C7.91485 3 8.49728 3 8.95671 3.1903C9.56928 3.44404 10.056 3.93072 10.3097 4.54329C10.5 5.00272 10.5 5.58515 10.5 6.75C10.5 7.91485 10.5 8.49728 10.3097 8.95671C10.056 9.56928 9.56928 10.056 8.95671 10.3097C8.49728 10.5 7.91485 10.5 6.75 10.5C5.58515 10.5 5.00272 10.5 4.54329 10.3097C3.93072 10.056 3.44404 9.56928 3.1903 8.95671Z"/>',
+    stackStar: '<path d="M16.8284 7.06234C18 8.12469 18 9.83451 18 13.2541V14.7459C18 18.1655 18 19.8753 16.8284 20.9377C15.6569 22 13.7712 22 10 22C6.22876 22 4.34315 22 3.17157 20.9377C2 19.8753 2 18.1655 2 14.7459V13.2541C2 9.83451 2 8.12469 3.17157 7.06234C4.34315 6 6.22876 6 10 6C13.7712 6 15.6569 6 16.8284 7.06234Z"/>' +
+               '<path d="M6.06641 6C6.17344 4.61213 6.451 3.71504 7.1708 3.06234C8.34237 2 10.228 2 13.9992 2C17.7705 2 19.6561 2 20.8277 3.06234C21.9992 4.12469 21.9992 5.83451 21.9992 9.25414V10.7459C21.9992 14.1655 21.9992 15.8753 20.8277 16.9377C20.1745 17.5299 19.2993 17.792 17.9992 17.908"/>' +
+               '<path d="M10.6911 10.5777L11.395 11.9972C11.491 12.1947 11.7469 12.3843 11.9629 12.4206L13.2388 12.6343C14.0547 12.7714 14.2467 13.3682 13.6587 13.957L12.6668 14.9571C12.4989 15.1265 12.4069 15.4531 12.4589 15.687L12.7428 16.925C12.9668 17.9049 12.4509 18.284 11.591 17.7718L10.3951 17.0581C10.1791 16.929 9.82315 16.929 9.60318 17.0581L8.40731 17.7718C7.5514 18.284 7.03146 17.9009 7.25543 16.925L7.5394 15.687C7.5914 15.4531 7.49941 15.1265 7.33143 14.9571L6.33954 13.957C5.7556 13.3682 5.94358 12.7714 6.75949 12.6343L8.03535 12.4206C8.24732 12.3843 8.5033 12.1947 8.59929 11.9972L9.30321 10.5777C9.68717 9.80744 10.3111 9.80744 10.6911 10.5777Z"/>',
+    store: '<path d="M3.5 9.99976V14.9998C3.5 17.8282 3.5 19.2424 4.37868 20.1211C5.25736 20.9998 6.67157 20.9998 9.5 20.9998H14.5C17.3284 20.9998 18.7426 20.9998 19.6213 20.1211C20.5 19.2424 20.5 17.8282 20.5 14.9998V9.99976"/>' +
+           '<path d="M8 17.9998H16"/>' +
+           '<path d="M17 7.50159C17 8.8823 15.8807 9.99973 14.5 9.99973C13.1193 9.99973 12 8.88044 12 7.49973C12 8.88044 10.8807 9.99973 9.5 9.99973C8.11929 9.99973 7 8.88044 7 7.49973C7 8.88044 5.82654 9.99973 4.379 9.99973C3.59983 9.99973 2.90007 9.67543 2.41999 9.16063C1.59461 8.27555 2.12559 6.97378 2.81446 5.98818L3.202 5.45827C4.08384 4.25246 4.52476 3.64956 5.16491 3.32469C5.80507 2.99983 6.552 2.99993 8.04586 3.00013L15.9551 3.00119C17.4485 3.00138 18.1952 3.00148 18.8351 3.32634C19.475 3.65119 19.9158 4.2539 20.7974 5.45933L21.1855 5.99004C21.8744 6.97565 22.4054 8.27742 21.58 9.16249C21.0999 9.67729 20.4001 10.0016 19.621 10.0016C18.1734 10.0016 17 8.8823 17 7.50159Z"/>',
+    aiSearchLines: '<path d="M18 10.5V13.5C18 16.7875 18 18.4312 17.092 19.5376C16.9258 19.7401 16.7401 19.9258 16.5376 20.092C15.4312 21 13.7875 21 10.5 21C7.21252 21 5.56878 21 4.46243 20.092C4.25989 19.9258 4.07418 19.7401 3.90796 19.5376C3 18.4312 3 16.7875 3 13.5V11C3 7.22876 3 5.34315 4.17157 4.17157C5.34315 3 7.22876 3 11 3H12.5"/>' +
+                   '<path d="M7 17H14"/><path d="M7 13H11"/>' +
+                   '<path d="M18.5 2.9375V4.5M18.5 4.5V6.0625M18.5 4.5H17.25M18.5 4.5H19.75M21 4.5L19.9156 4.13852C19.4179 3.97263 19.0274 3.58211 18.8615 3.08443L18.5 2L18.1385 3.08443C17.9726 3.58211 17.5821 3.97263 17.0844 4.13852L16 4.5L17.0844 4.86148C17.5821 5.02737 17.9726 5.41789 18.1385 5.91557L18.5 7L18.8615 5.91557C19.0274 5.41789 19.4179 5.02737 19.9156 4.86148L21 4.5Z"/>',
+    image: '<circle cx="7.5" cy="7.5" r="1.5"/>' +
+           '<path d="M2.5 12C2.5 7.52166 2.5 5.28249 3.89124 3.89124C5.28249 2.5 7.52166 2.5 12 2.5C16.4783 2.5 18.7175 2.5 20.1088 3.89124C21.5 5.28249 21.5 7.52166 21.5 12C21.5 16.4783 21.5 18.7175 20.1088 20.1088C18.7175 21.5 16.4783 21.5 12 21.5C7.52166 21.5 5.28249 21.5 3.89124 20.1088C2.5 18.7175 2.5 16.4783 2.5 12Z"/>' +
+           '<path d="M5 21C9.37246 15.775 14.2741 8.88406 21.4975 13.5424"/>',
     /* Lucide mail (lucide-static 0.460.0) -- das zwanzigste Zeichen im Event-Popup: ein Newsletter
        ist ein haeufiges Event, und mit 20 stehen zwei volle Reihen zu zehn (03.10. angefordert). */
     mail: '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
@@ -20206,6 +20338,7 @@
     getEvents: getEvents, setEvents: setEvents, onEvents: onEvents, eventsStand: eventsStand, eventsChanged: eventsChanged,
     EVENT_TYPEN: EVENT_TYPEN, eventTyp: eventTyp, eventOeffnen: eventOeffnen,
     kpiKarte: kpiKarte, kpiKarteSkelett: kpiKarteSkelett, makeModal: makeModal,
+    sparkHtml: sparkHtml, zahlZaehlen: zahlZaehlen,
     storeStand: storeStand,
     getQuota: getQuota,
     setQuota: setQuota,

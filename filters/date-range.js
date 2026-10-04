@@ -126,8 +126,18 @@
        Drawer am geteilten Zeitraum teilnehmen, ist das kein Randfall mehr, sondern
        Mount-Reihenfolge. */
     function istStartkandidat(id){
-      return nimmtTeil(id) && !/spotlight|drawer/i.test(String(id || ""));
+      return nimmtTeil(id) && !lokal(id) && !/spotlight|drawer/i.test(String(id || ""));
     }
+    /* ---- DER LOKALE KALENDER (data-local="yes", 04.10. fuer Shopping) -----------------------
+       Wie data-local an den drei Geschwister-Filtern (models/markets/topics): die Auswahl verlaesst
+       die Seite NICHT. Kein bubble_fn_udr_*, keine Warnung ueber fehlende Kanaele -- die Komponente,
+       in der er steht, liest das DOM-Ereignis "change" (bzw. getRange) und laedt selbst.
+       Er ist darum auch weder Startkandidat (keine Uebergabe beim Seitenaufbau) noch ein
+       Drawer-Kalender, und pickerFuer findet ihn nicht: diese Wege geben Zeitraeume an
+       Bubble-States, und die hat ein lokaler Kalender nicht. Am geteilten Zeitraum ("Apply
+       everywhere") nimmt er weiter teil -- das ist eine Einstellung des Nutzers, kein Bubble-Weg. */
+    var LOKAL = window.__udrLokal || (window.__udrLokal = {});
+    function lokal(id){ return !!LOKAL[String(id || "")]; }
     var TEILBAR = { last7: 1, last30: 1, last3: 1 };
     function syncAn(){ return UC.getPref && UC.getPref("date_sync") === "on"; }
 
@@ -291,6 +301,8 @@
       var instanceId = String(root.getAttribute("data-instance") || "").trim() ||
                        ("udr-" + Math.random().toString(36).slice(2, 10));
       root.setAttribute("data-instance", instanceId);
+      var istLokal = UC.isYes ? UC.isYes(root.getAttribute("data-local")) : root.getAttribute("data-local") === "yes";
+      if (istLokal) LOKAL[instanceId] = 1;
 
       var committed = presetRange(DEFAULT_PRESET);
       var committedPreset = DEFAULT_PRESET;
@@ -582,6 +594,7 @@
          the standalone's contract and the existing workflows depend on it, so this cannot go
          through UC.makeFire (which JSON-stringifies everything). */
       function callFn(attr, fallback, value) {
+        if (istLokal) return false;
         var name = root.getAttribute(attr) || fallback;
         var fn = UC.resolveBubbleFn(name);
         if (typeof fn !== "function") return false;
@@ -703,6 +716,8 @@
            eine Seite ohne Zeitraum ist schlimmer als eine, die zweimal laedt, und still wollen
            wir keins von beidem. */
         var istBoot = nurStates;
+        /* Lokal: das DOM-Ereignis darueber IST die Zustellung -- kein Kanal, keine Warnung. */
+        if (istLokal) return true;
         if (istBoot) {
           if (callFn("data-boot-fn", "bubble_fn_udr_date_boot", json)) return true;
           /* Der Hinweis auf das fehlende Element NUR, wenn der Range-Kanal wirklich da ist.
@@ -1435,7 +1450,7 @@
     var da = [];
     for (i = 0; i < CONTROLLERS.length; i++){
       c = CONTROLLERS[i];
-      if (c && c.instanceId && c.root && c.root.isConnected) da.push(c);
+      if (c && c.instanceId && c.root && c.root.isConnected && !lokal(c.instanceId)) da.push(c);
     }
     for (i = 0; i < da.length; i++) if (da[i].instanceId.slice(-id.length) === id) return da[i];
     for (i = 0; i < da.length; i++) if (da[i].instanceId.indexOf(id) >= 0) return da[i];
@@ -1601,7 +1616,7 @@
   /* Ein Kalender ist fertig gemountet: festhalten, womit seine Ansicht bzw. sein Drawer geladen
      hat, wo das bisher niemand wusste. KEIN Nachladen hier -- das erledigt der naechste Besuch. */
   function nachMount(c){
-    if (!c || !c.instanceId || !c.root || !c.root.isConnected || !nimmtTeil(c.instanceId)) return;
+    if (!c || !c.instanceId || !c.root || !c.root.isConnected || !nimmtTeil(c.instanceId) || lokal(c.instanceId)) return;
     if (istStartkandidat(c.instanceId)){
       var box = c.root.closest ? c.root.closest('[id^="view-"]') : null;
       var name = box ? box.id.slice(5) : "", k;
@@ -1939,7 +1954,7 @@
     for (var i = 0; i < CONTROLLERS.length; i++){
       var c = CONTROLLERS[i];
       if (!c || !c.root || !c.root.isConnected || !c.instanceId) continue;
-      if (!nimmtTeil(c.instanceId) || istStartkandidat(c.instanceId)) continue;
+      if (!nimmtTeil(c.instanceId) || istStartkandidat(c.instanceId) || lokal(c.instanceId)) continue;
       if (wort && c.instanceId.toLowerCase().indexOf(wort) >= 0) nachName.push(c);
       /* wirklichZuSehen und nicht nur im Fenster: ein geschlossener Drawer, der nur durchsichtig
          ist, liegt im Fenster -- und der Einstellungs-Drawer (ohne Kalender) nahm sonst den des
@@ -2085,7 +2100,7 @@
   function drawerWurzelnSichtbar(){
     return [].filter.call(document.querySelectorAll(".udr-root, [data-udr-root]"), function(w){
       var id = String(w.getAttribute("data-instance") || "");
-      if (!nimmtTeil(id) || istStartkandidat(id)) return false;
+      if (!nimmtTeil(id) || istStartkandidat(id) || lokal(id)) return false;
       if (w.closest && w.closest('[id^="view-"]')) return false;
       return wirklichZuSehen(w);
     });
@@ -2109,7 +2124,7 @@
     if (!wort) return null;
     for (i = 0; i < CONTROLLERS.length; i++){
       c = CONTROLLERS[i];
-      if (!c || !c.root || !c.root.isConnected || !c.instanceId || istStartkandidat(c.instanceId)) continue;
+      if (!c || !c.root || !c.root.isConnected || !c.instanceId || istStartkandidat(c.instanceId) || lokal(c.instanceId)) continue;
       if (c.instanceId.toLowerCase().indexOf(wort) < 0) continue;
       n = c.root.getAttribute("data-boot-fn") || "";
       f = n ? UC.resolveBubbleFn(n) : null;

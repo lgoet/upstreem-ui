@@ -155,13 +155,8 @@
 /* Beispielwerte in der Erklaerkarte der Spalte "First cited": die Chips der Tabelle nebeneinander. */
 .up-explain-vis.uev-explain-chips { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 6px; }
 
-/* Die drei Kennzahlen in EINEM Kasten (.up-box am Behaelter, 04.10.), getrennt durch senkrechte
-   Linien ueber die volle Hoehe -- die Bauart der Kacheln in performance-detail (.upd-kpi +
-   .upd-kpi). border-left an jeder ausser der ersten, so bleibt die Aussenkante die des Kastens.
-   Innen unveraendert der Aufbau der Overview im Agentic Dashboard, 16px Polster, linksbuendig. */
-.uev-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.uev-kpis > .up-kpi.uev-kpi { padding: 16px; }
-.uev-kpis > .up-kpi.uev-kpi + .up-kpi.uev-kpi { border-left: 1px solid var(--vc-border); }
+/* Die drei Kennzahlen: das Kennzahlen-Band aus core (.up-kpiband, 04.10.) -- ein Kasten, Linien
+   ueber die volle Hoehe, 16px Polster. Hier nur noch der Fehlerzustand ueber alle Spalten. */
 .uev-kpifehler { grid-column: 1 / -1; }
 
 /* Ein Abschnitt: Kopf aus core (.up-sec-head bringt seine 14px Abstand nach unten mit), darunter
@@ -221,9 +216,7 @@ body:has(.uev-root[data-uev-resp="aus"]) .urt-root[data-instance="responses_even
 .uev-popup-url { margin: 0; font-size: var(--up-fs-m); color: var(--vc-text); word-break: break-all; }
 
 /* ---- Schmal (UC.widthTiers: is-narrow < 760, is-vnarrow < 520) ------------------------------ */
-.uev-root.is-vnarrow .uev-kpis { grid-template-columns: minmax(0, 1fr); }
-/* Untereinander wandert der Trenner von links nach oben. */
-.uev-root.is-vnarrow .uev-kpis > .up-kpi.uev-kpi + .up-kpi.uev-kpi { border-left: 0; border-top: 1px solid var(--vc-border); }
+
 .uev-root.is-narrow .uev-sec-head { flex-wrap: wrap; }
 .uev-root.is-narrow .uev-scope-zeile { grid-template-columns: minmax(0, 1fr); gap: 6px; }
 .uev-root.is-narrow .uev-dkopf-titel { white-space: normal; }

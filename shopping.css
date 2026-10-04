@@ -1,0 +1,207 @@
+/* upstreem shopping.css -- Shopping (Beta), 04.10. Praefix ush.
+
+   Werte aus dem Entwurf (design_handoff_shopping/README.md), gemessen gegen die Skalen in core.css
+   (CLAUDE.md 1c) -- wo beide sich widersprechen, gilt die Skala:
+     Seitenkopf, Reiter      der kompakte Kopf in einer Komponente (core.css: .ush-pagehead,
+                             .up-root.ush-root .up-ph-nav, wie Events/Teams/Prompt Research)
+     Kasten, Tabelle, Pager  core (.up-box, .up-thead/.up-row mit --up-cols, .up-foot, UC.makePager)
+     Kennzahlen              das Kennzahlen-Band aus core (.up-kpiband, UC.kpiKarte)
+     Balken                  UC.makeBarList (.up-bars), wie Domain Detail
+     Zeilenhoehe             --up-h-row (55) statt der 56/60/64 des Entwurfs -- die Stufe der Skala
+   Abstaende des Entwurfs: 48 zwischen Bloecken, 24 innerhalb einer Gruppe, 16 zwischen Kopf und
+   Filterzeile. Farben nur aus Marken. */
+
+.ush-root { display: block; }
+.ush-root .ush-pagehead { padding: 8px 0; }
+.ush-filterzeile { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-top: 16px; }
+/* Kalender fest, die Filterleiste nimmt den Rest (ihre Chips brauchen den Platz). Ohne das stand
+   die Leiste als volle Breite unter dem Kalender. */
+.ush-filterzeile > .udr-root { flex: 0 0 auto; }
+.ush-filterzeile > .ufb-root { flex: 1 1 auto; width: auto; min-width: 0; }
+.ush-main { padding: 24px 0 64px; }
+
+.ush-seite { display: flex; flex-direction: column; gap: 48px; min-width: 0; }
+/* Ein leerer Hinweis-Platz nimmt im Fluss keine Luecke ein. */
+.ush-seite > [data-sek="hinweise"]:empty { display: none; }
+.ush-gruppe { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+.ush-sek { display: flex; flex-direction: column; min-width: 0; }
+/* hidden muss gegen die eigenen display-Regeln gewinnen: .ush-sek, .ush-scope und .up-foot setzen
+   display, und jede Autorenregel schlaegt das hidden des Browsers. Ohne das blieb der Pager bei
+   0 Treffern stehen und der leere Scope-Platz hielt 8px Rand. */
+.ush-root .ush-sek[hidden], .ush-root .ush-scope[hidden], .ush-root .ush-foot[hidden] { display: none; }
+.ush-sec-head .up-sec-h { gap: 6px; }
+.ush-root.is-narrow .ush-sec-head { flex-wrap: wrap; }
+
+/* Hinweise: Zeichen + Text, leise -- keine Pillen (feedback keine Punkt-Pillen), wie im Event-Detail. */
+.ush-hinweise { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 16px; font-size: var(--up-fs-m); color: var(--vc-third); }
+.ush-hinweis { display: inline-flex; align-items: center; gap: 6px; }
+.ush-hinweis svg { width: 14px; height: 14px; flex: 0 0 auto; }
+
+/* ---- Overview: Zusammenfassung -------------------------------------------------------------------
+   Entwurf: Flaeche ohne Rahmen, Radius 16, Polster 16/20, Zeichen 16 mittig. Die zwei Teile der
+   Kopfzeile stehen durch Abstand getrennt, nicht durch einen Mittelpunkt (feedback keine Mittelpunkte). */
+.ush-summary { display: flex; align-items: center; gap: 14px; padding: 16px 20px; border-radius: var(--up-r-2xl); background: var(--vc-heading-bg); }
+.ush-summary-ic { display: inline-flex; flex: 0 0 auto; color: var(--vc-muted); }
+.ush-summary-ic svg { width: 16px; height: 16px; display: block; }
+.ush-summary-txt { min-width: 0; }
+.ush-summary-kopf { display: flex; flex-wrap: wrap; gap: 8px; font-size: var(--up-fs-s); font-weight: var(--up-fw-m); color: var(--vc-third); margin-bottom: 2px; }
+.ush-summary p { margin: 0; font-size: var(--up-fs-l); line-height: 1.55; color: var(--vc-text); text-wrap: pretty; overflow-wrap: anywhere; }
+.ush-summary.is-sk { flex-direction: column; align-items: flex-start; gap: 10px; }
+
+/* ---- Kennzahlen ----------------------------------------------------------------------------------- */
+.ush-kpi .up-kpi-label { display: inline-flex; align-items: center; gap: 6px; }
+.ush-kpifehler { grid-column: 1 / -1; }
+/* Die Sparkline (UC.sparkHtml) steht rechts in der Zeile, hinter dem Trend. */
+.ush-kpi .up-kpi-trend { flex: 1 1 auto; }
+.ush-spark { display: inline-flex; margin-left: auto; align-self: center; }
+.ush-kpi-marke { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.ush-kpi-text { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ush-kpi .up-kpi-val { min-width: 0; max-width: 100%; }
+
+/* ---- Diagramm ------------------------------------------------------------------------------------- */
+.ush-chartbox { padding: 16px; }
+.ush-linewrap { position: relative; height: 280px; }
+.ush-seite[data-seite="detail"] .ush-linewrap { height: 240px; }
+.ush-chartnote { margin: 0 0 8px; font-size: var(--up-fs-s); color: var(--vc-third); }
+
+/* ---- Tabellen --------------------------------------------------------------------------------------
+   Das Raster aus core (.up-thead/.up-row, Spalten ueber --up-cols am Kasten). Unter der Summe der
+   Spalten-Minima (--ush-min, aus JS) scrollt der Kasten waagerecht, statt dass Spalten aus den
+   Zeilen laufen. Zeilen 55 hoch: --up-h-row. */
+.ush-scrollx { overflow-x: auto; overscroll-behavior-x: contain; }
+.ush-innen { min-width: var(--ush-min, 0px); }
+.ush-root :is(.ush-box, .ush-bewegung) .up-row { height: var(--up-h-row); flex: 0 0 var(--up-h-row); }
+.ush-root .ush-box .up-row.is-andere, .ush-root .ush-box .up-row.is-statisch { cursor: default; }
+.ush-root .ush-box .up-row.is-angepinnt { border-top: 1px solid var(--vc-border); background: var(--vc-heading-bg); }
+.ush-root .ush-box .up-row.is-angepinnt:hover { background: var(--vc-heading-bg); }
+.ush-root .ush-box .up-row:focus-visible { outline: var(--up-focus-w, 2px) solid var(--up-focus); outline-offset: -2px; }
+.ush-tabwurzel { width: 100%; }
+.ush-head .up-head-tools { flex-wrap: wrap; justify-content: flex-end; }
+.ush-root.is-narrow .ush-head { height: auto; flex-wrap: wrap; row-gap: 8px; }
+.ush-root.is-narrow .ush-head .up-head-tools { margin-left: 0; }
+.ush-scope { display: flex; flex-wrap: wrap; gap: 8px; margin: -4px 0 12px; }
+
+/* Die Produktspalte bleibt beim waagerechten Scrollen stehen (Entwurf: sticky left, Trenner
+   rechts). Der Trenner als Schatten: die Linie der naechsten Zelle scrollt mit weg. */
+.ush-produkte .up-thead .up-th:first-child, .ush-produkte .up-row > .ush-fest {
+  position: sticky; left: 0; z-index: 1; box-shadow: 1px 0 0 var(--vc-border); }
+.ush-produkte .up-thead .up-th:first-child { background: var(--vt-head-bg); }
+.ush-produkte .up-row > .ush-fest { background: var(--vc-bg); }
+.ush-produkte .up-row:hover > .ush-fest { background: var(--vt-row-hover); }
+
+/* Zellinhalte */
+.ush-zweizeilig { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ush-titel { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-text); }
+.ush-unter { display: inline-flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--up-fs-s); color: var(--vc-third); }
+.ush-andere { color: var(--vc-third); }
+/* Der Strich auf der Platte von "Andere" in der Tinte der Logo-Platten: --vc-third lag im Dunkeln
+   auf der hellen Platte bei 1,98:1. Die Zuruecknahme traegt der Name daneben (.ush-andere). */
+.ush-haendler-ic { display: inline-flex; align-items: center; justify-content: center; color: var(--vt-logo-ink, var(--vc-muted)); }
+.ush-haendler-ic svg { width: 14px; height: 14px; display: block; }
+.ush-haendlerzahl { display: inline-flex; align-items: center; gap: 8px; min-width: 0; font-size: var(--up-fs-m); color: var(--vc-text); white-space: nowrap; }
+.ush-rating { display: inline-flex; align-items: center; gap: 4px; }
+.ush-rating svg { width: 13px; height: 13px; display: block; color: var(--vc-third); }
+.ush-topics { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.ush-topprodukt { display: inline-flex; align-items: center; gap: 10px; min-width: 0; cursor: pointer; }
+.ush-topprodukt:hover .ush-titel { text-decoration: underline; text-underline-offset: 2px; }
+
+/* Produktbild: Flaeche der Logo-Platten, das Bild ganz drin (contain), ohne Bild das Zeichen.
+   Mit Rahmen wie im Entwurf: ohne ihn verschwand die weisse Platte auf der weissen Zeile, solange
+   das Bild noch lud -- die Spalte sah leer aus statt "Bild kommt". */
+.ush-bild { position: relative; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
+  width: 40px; height: 40px; border: 1px solid var(--vc-border); border-radius: var(--up-r-l); overflow: hidden;
+  background: var(--vc-heading-bg); }
+.ush-bild.has-img { background: var(--vt-logo-bg); }
+.ush-bild img { position: absolute; inset: 2px; width: calc(100% - 4px); height: calc(100% - 4px); object-fit: contain; display: block; }
+.ush-bild-ph { display: inline-flex; color: var(--vc-fourth); }
+.ush-bild-ph svg { width: 18px; height: 18px; display: block; }
+.ush-bild.has-img .ush-bild-ph { display: none; }
+.ush-bild.is-klein { width: 32px; height: 32px; border-radius: var(--up-r-m); }
+.ush-bild.is-klein .ush-bild-ph svg { width: 15px; height: 15px; }
+
+/* Abschnitts-Knoepfe "View all ..." und "View Response" (.up-btn-sec aus core). */
+.ush-mehr { flex: 0 0 auto; }
+.ush-mehr svg, .ush-antwort svg { width: 14px; height: 14px; display: block; }
+.ush-antwort { height: var(--up-h-seg); padding: 0 10px; white-space: nowrap; }
+.ush-seg-zahl { margin-left: 6px; color: var(--vc-third); font-variant-numeric: tabular-nums; }
+.up-seg-btn.is-active .ush-seg-zahl { color: var(--vc-muted); }
+
+/* ---- Product Movement ----------------------------------------------------------------------------- */
+.ush-zwei { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(440px, 100%), 1fr)); gap: 48px 16px; align-items: start; }
+.ush-bewegung .up-thead.ush-gruppenkopf { display: flex; }
+.ush-bewegung .up-tbody + .up-thead { border-top: 1px solid var(--vc-border); }
+.ush-gruppenkopf .up-th { flex: 1 1 auto; gap: 6px; font-weight: var(--up-fw-m); color: var(--vc-text); border-left: 0; }
+.ush-gruppen-ic { display: inline-flex; }
+.ush-gruppen-ic svg { width: 14px; height: 14px; display: block; }
+.ush-bewegung .up-thead:first-child .ush-gruppen-ic { color: var(--vt-up); }
+.ush-bewegung .up-tbody + .up-thead .ush-gruppen-ic { color: var(--vt-down); }
+.ush-bew-rechts { flex-direction: column; align-items: flex-end; justify-content: center; gap: 2px; }
+.ush-bewegung .up-td + .up-td { border-left: 0; }
+.ush-bew-zeile { display: inline-flex; align-items: center; gap: 6px; font-size: var(--up-fs-s); color: var(--vc-third); white-space: nowrap; }
+.ush-bew-zeile .up-trend { font-size: var(--up-fs-s); }
+.ush-bew-zeile .up-trend svg { width: 14px; height: 14px; }
+.ush-bew-pos svg { width: 12px; height: 12px; display: block; }
+.ush-bew-pos .up-num { color: var(--vc-muted); font-size: var(--up-fs-s); }
+
+/* ---- Balkenlisten (UC.makeBarList) ------------------------------------------------------------------ */
+.ush-balkenbox { padding: 12px 16px; }
+.ush-balkenbox .up-bar-row[data-bar-key]:not([data-bar-key^="__rest"]) { cursor: pointer; }
+.ush-balkenbox .up-bar-row[data-bar-key]:not([data-bar-key^="__rest"]):hover .up-bar-fill { filter: brightness(1.12); }
+
+/* ---- Product Detail --------------------------------------------------------------------------------- */
+.ush-hero-oben { display: flex; gap: 32px; padding: 24px; }
+.ush-galerie { display: flex; flex-direction: column; gap: 8px; flex: 0 0 232px; }
+.ush-hero-bild { position: relative; display: flex; align-items: center; justify-content: center; width: 232px; height: 232px;
+  padding: 12px; border-radius: var(--up-r-xl); overflow: hidden; background: var(--vc-heading-bg); }
+.ush-hero-bild.has-img { background: var(--vt-logo-bg); }
+.ush-hero-bild img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.ush-hero-bild .ush-bild-ph svg { width: 40px; height: 40px; }
+.ush-hero-bild.has-img .ush-bild-ph { display: none; }
+.ush-hero-bild.is-sk { background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
+.ush-galerie-leiste { display: flex; flex-wrap: wrap; gap: 8px; }
+/* Kein Icon-Knopf (.up-iconbtn), auch wenn der Pruefer es so liest: ein Vorschaubild des Produkts
+   auf der Logo-Platte, 40px wie das Bild in der Produktzeile, die Wahl zeigt der Rand in Tinte.
+   .up-iconbtn ist 32px, ohne Rahmen, mit Hover-Grund -- ein Bild darin waere beschnitten. */
+.ush-galerie-knopf { width: 40px; height: 40px; padding: 2px; border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
+  background: var(--vt-logo-bg); cursor: pointer; overflow: hidden; }
+.ush-galerie-knopf img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.ush-galerie-knopf.is-on { border-color: var(--up-accent-ink); }
+.ush-galerie-knopf:focus-visible { outline: var(--up-focus-w, 2px) solid var(--up-focus); outline-offset: 2px; }
+.ush-hero-info { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.ush-hero-info > .up-tsk-bar { display: block; }
+.ush-hero-marke { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: var(--up-fs-m); font-weight: var(--up-fw-m); }
+.ush-hero-titel { margin: 0; font-size: var(--up-fs-2xl); font-weight: var(--up-fw-m); line-height: 1.25; letter-spacing: -0.4px;
+  color: var(--vc-text); overflow-wrap: anywhere; text-wrap: balance; }
+.ush-hero-listing { margin: 0; font-size: var(--up-fs-m); color: var(--vc-third); overflow-wrap: anywhere; }
+.ush-hero-fakten { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin: auto 0 0; padding-top: 16px; border-top: 1px solid var(--vc-border); }
+.ush-hero-fakten dt { display: flex; align-items: center; gap: 4px; margin-bottom: 4px; font-size: var(--up-fs-s); color: var(--vc-third); }
+.ush-hero-fakten dd { display: flex; align-items: center; gap: 6px; min-width: 0; margin: 0; font-size: var(--up-fs-l); font-weight: var(--up-fw-m);
+  color: var(--vc-text); overflow-wrap: anywhere; }
+.ush-hero-fakten .is-empty { color: var(--vc-third); }
+.ush-reviews { font-size: var(--up-fs-s); font-weight: var(--up-fw-n); color: var(--vc-third); }
+.ush-hero > .up-kpiband { border-top: 1px solid var(--vc-border); }
+.ush-root.is-narrow .ush-hero-oben { flex-direction: column; gap: 16px; padding: 16px; }
+.ush-root.is-narrow .ush-galerie { flex-basis: auto; }
+.ush-root.is-narrow .ush-hero-fakten { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+/* Wo das Produkt erscheint: drei Balkenlisten in einem Kasten, getrennt wie das Kennzahlen-Band. */
+.ush-wo { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.ush-wo-spalte { min-width: 0; padding: 16px; }
+.ush-wo-spalte + .ush-wo-spalte { border-left: 1px solid var(--vc-border); }
+.ush-wo-kopf { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-muted); }
+.ush-wo-kopf svg { width: 14px; height: 14px; display: block; color: var(--vc-third); }
+.ush-root.is-narrow .ush-wo { grid-template-columns: minmax(0, 1fr); }
+.ush-root.is-narrow .ush-wo-spalte + .ush-wo-spalte { border-left: 0; border-top: 1px solid var(--vc-border); }
+
+/* ---- Telefon (is-vnarrow unter 500, gesetzt von UC.makePageNav) ------------------------------------
+   Vier Reiter passen mit Zeichen nicht in 368px (gemessen bei 400: 108px Ueberlauf, "Merchants"
+   allein braucht gut 110px). Dort tragen die Reiter nur ihren Namen, mit 8px Polster; is-narrow
+   steht zusaetzlich in der Kette, damit die Regel den schmalen Reiter aus core ueber die
+   Spezifitaet schlaegt und nicht ueber die Ladereihenfolge. */
+.up-root.ush-root.is-narrow.is-vnarrow .up-ph-navicon { display: none; }
+.up-root.ush-root.is-narrow.is-vnarrow .up-ph-navitem { padding: 0 8px; }
+/* Der Kennzahl-Umschalter der Charts (vier Stufen, 415px breit) wird eine waagerecht wischbare
+   Leiste ueber die volle Breite, wie eine Chip-Reihe. Der gleitende Streifen ist ein ::before im
+   Kasten und faehrt beim Wischen mit. */
+.ush-root.is-vnarrow .ush-metrik { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.ush-root.is-vnarrow .ush-metrik::-webkit-scrollbar { display: none; }

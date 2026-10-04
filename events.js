@@ -924,7 +924,7 @@
             '</div>' +
             '<div class="uev-hinweise" data-sek="hinweise"></div>' +
           '</div>' +
-          '<div class="up-box uev-kpis" data-sek="kpis"></div>' +
+          '<div class="up-box up-kpiband uev-kpis" data-sek="kpis"></div>' +
           '</div>' +
           '<section class="uev-sek uev-sek-chart">' +
             sekKopf("Performance around event", "How your brand developed in the affected prompts before and after the event.",
@@ -1129,8 +1129,8 @@
         var teile = leer ? { wertHtml: '<span class="up-num is-empty">–</span>' } : kpiTeile(m.key, a);
         if (leer && m.key === "visibility") teile.fussHtml = esc(t("No comparable data yet"));
         teile.label = m.label;
-        /* Die drei Kennzahlen in EINEM Kasten (.up-box am Behaelter), getrennt durch senkrechte
-           Linien ueber die volle Hoehe (04.10.) -- wie die Kacheln in performance-detail. */
+        /* Die drei Kennzahlen in EINEM Kasten: das Kennzahlen-Band aus core (.up-kpiband am
+           Behaelter, 04.10.), senkrechte Linien ueber die volle Hoehe. */
         teile.klasse = "uev-kpi";
         return UC.kpiKarte(teile);
       }).join("");

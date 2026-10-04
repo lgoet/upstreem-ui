@@ -81,7 +81,11 @@
       { key: "dashboard",  label: "Dashboard",       icon: "home" },
       { key: "prompts",    label: "Prompt Insights", icon: "zap", count: true },
       { key: "citations",  label: "Citations",       icon: "globe" },
-      { key: "brands",     label: "Brands",          icon: "squareStack", brands: true }
+      { key: "brands",     label: "Brands",          icon: "squareStack", brands: true },
+      /* Shopping (04.10. angefordert: nach Brands, mit "Beta" hinter dem Namen). ShoppingBag01 aus
+         Hugeicons, dasselbe Zeichen wie in der Krume der Komponente. Schluessel "shopping" =
+         ?view=shopping. beta: das leise Kennzeichen aus core (.up-marke.is-leise). */
+      { key: "shopping",   label: "Shopping",        icon: "shoppingBag", beta: true }
     ]},
     { head: "Workspace", items: [
       { key: "performance",   label: "Performance",     icon: "chartColumnUp" },
@@ -718,6 +722,21 @@
       }
       renderNav();
     }
+    /* DIE ANSICHT AUCH SELBST ZEIGEN (04.10.). Gemeldet: in der mobilen Leiste oeffnet "Events"
+       nichts. Die Leiste feuert dort dasselbe usnNav wie breit -- den Wechsel macht danach ein
+       Zweig im Bubble-Workflow, und fehlt der (oder greift er nur breit), passiert nichts.
+       Dieselbe Bauart wie das Power Dashboard und die Event-Pins (UC.eventOeffnen): gibt es die
+       Ansicht #view-<key> und showView der App, zeigt die Leiste sie selbst. Nach dem Ereignis,
+       damit Bubbles Workflow nicht wartet; showView tut nichts, wenn die Ansicht schon offen ist,
+       also bleibt ein Zweig in Bubble, der dasselbe tut, folgenlos. Ohne die Ansicht (eine eigene
+       Seite statt einer Gruppe) bleibt es beim Ereignis allein. */
+    function ansichtZeigen(k){
+      try {
+        if (typeof window.showView !== "function") return;
+        if (!document.getElementById("view-" + k)) return;
+        window.showView(k);
+      } catch(e){}
+    }
     function navItemHtml(it){
       var extra = "";
       if (it.count) extra = '<span class="usn-count usn-fade" data-count>' +
@@ -732,6 +751,9 @@
       if (it.chips) extra = '<span class="usn-count usn-fade" data-teamcount>' +
         (state.teamsDa && state.enthuellt ? esc(String((state.teams || []).length))
                         : '<span class="usn-sk"></span>') + '</span>';
+      /* "Beta" hinter dem Namen (04.10., Shopping): .up-marke.is-leise aus core, dieselbe Marke wie
+         in der Krume der Seite. usn-fade: eingeklappt verschwindet sie mit dem Namen. */
+      if (it.beta) extra = '<span class="up-marke is-leise usn-beta usn-fade" data-i18n="Beta">' + esc(UC.t ? UC.t("Beta") : "Beta") + '</span>';
       /* data-tip statt title: der Browser-Tooltip erscheint verzoegert, an der Maus und in
          Systemoptik. data-tip ist der Chip des Hauses (.up-tip), und data-tip-place="right"
          setzt ihn neben den Punkt -- unter einem Icon steht in der eingeklappten Leiste schon
@@ -751,7 +773,7 @@
          der Knopf steht damit sofort in seinem Endzustand, und der naechste Lauf findet nichts
          mehr zu tun. Dieselbe Loesung wie im Kontomenue dieser Datei (UC.t dort seit jeher). */
       var lbl = (UC.t ? UC.t(it.label) : it.label);
-      return '<button class="usn-item' + ((state.enthuellt && it.key === state.aktiv) ? " is-active" : "") + '" ' +
+      return '<button class="usn-item' + (it.beta ? " has-beta" : "") + ((state.enthuellt && it.key === state.aktiv) ? " is-active" : "") + '" ' +
         'type="button" data-nav-key="' + esc(it.key) + '" data-tiplabel="' + esc(lbl) + '" ' +
         'data-tip-place="right">' +
         '<span class="usn-ic">' + ic(it.icon) + '</span>' +
@@ -1262,6 +1284,7 @@
            verzoegert ihn um genau seine eigene Dauer. Das Bild danach ist billig (eine Klasse, eine
            Messung) und im selben Tick fertig -- der Nutzer sieht die Markierung trotzdem sofort. */
         fire("data-nav-fn", "usnNav", { key: k });
+        ansichtZeigen(k);
         state.aktiv = k;
         vorrat.aktiv = k;   /* fuer einen Neuaufbau, siehe aktiv im Zustand */
         aktivMarkieren();

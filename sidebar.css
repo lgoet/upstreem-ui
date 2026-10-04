@@ -707,6 +707,21 @@
   font-variant-numeric: tabular-nums;
 }
 .usn-count:empty { display: none; }
+/* "Beta" (04.10., Shopping) steht DIREKT hinter dem Namen, nicht rechts am Rand wie die Zaehler:
+   der Name waechst dafuer nicht in den freien Platz. Nur ausgeklappt -- eingeklappt gilt die
+   Regel fuer .is-mini weiter oben (Breite 0, Zeichen mittig). */
+.usn-bar:not(.is-mini) .usn-item.has-beta > .usn-txt { flex: 0 1 auto; }
+.usn-beta { flex: 0 0 auto; }
+/* Eingeklappt geht die Marke wie der Name auf Breite 0 (.usn-fade) -- ihr Polster aus .up-marke
+   (0 7px) blieb aber stehen: 14px Restbreite, und das Zeichen sass 7px links neben den anderen
+   (gemessen 14 gegen 21). Das Polster faellt mit der Breite, im selben verzoegerten Takt. */
+.usn-bar.is-mini .usn-item .usn-beta {
+  padding: 0;
+  transition: opacity calc(var(--usn-t) * .5) var(--usn-ease) 0s,
+              flex-basis 0s linear var(--usn-t),
+              width 0s linear var(--usn-t),
+              padding 0s linear var(--usn-t);
+}
 /* KEINE Hoverstates auf der Logo-Vorschau. .up-stack bringt Anheben, Spreizen und den
    Marken-Tooltip mit -- alles richtig in einer Tabellenzeile, hier falsch: die Chips sind
    Beiwerk in einem Knopf, kein eigenes Ziel. pointer-events:none nimmt Hover UND Tooltip auf
