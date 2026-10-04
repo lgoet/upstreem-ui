@@ -2265,13 +2265,18 @@
     function anlegenSenden() {
       var p = popup, e = p.e;
       warten(p, "anlegen");
-      fire("data-create-fn", "uevCreate", body({
+      var b = {
         p_name: e.name.trim(), p_event_date: e.datum, p_scope_mode: e.modus,
         p_tag_ids: e.modus === "topics" ? e.topics.slice() : null,
         p_urls: e.urls.length ? e.urls.map(function (u) { return u.url; }) : null,
         p_description: e.text.trim() || null, p_event_type: e.typ,
-        p_icon: e.icon || null, p_color: e.farbe || null, p_cover: e.cover || null
-      }));
+        p_icon: e.icon || null, p_color: e.farbe || null
+      };
+      /* p_cover NUR, wenn ein Titelbild gewaehlt ist (04.10.): PostgREST lehnt einen Aufruf mit
+         einem Parameter ab, den die Funktion nicht kennt -- und solange die Datenbank p_cover noch
+         nicht fuehrt, haette sonst JEDES Anlegen gescheitert, auch ohne Titelbild. */
+      if (e.cover) b.p_cover = e.cover;
+      fire("data-create-fn", "uevCreate", body(b));
     }
     /* Vertrag 3.5: null heisst unveraendert, "" leert (Beschreibung, Zeichen, Farbe). Ein leerer
        Name ist nicht erlaubt -- der Knopf ist dann gar nicht erst frei. */
@@ -2284,11 +2289,12 @@
         p_description: text !== a.text.trim() ? text : null,
         p_event_type: e.typ !== a.typ ? e.typ : null,
         p_icon: e.icon !== a.icon ? (e.icon || "") : null,
-        p_color: e.farbe !== a.farbe ? (e.farbe || "") : null,
-        /* Wie Zeichen und Farbe (Vertrag 3.5): null unveraendert, "" nimmt das Titelbild ab. */
-        p_cover: e.cover !== a.cover ? (e.cover || "") : null
+        p_color: e.farbe !== a.farbe ? (e.farbe || "") : null
       };
-      if (b.p_name == null && b.p_description == null && b.p_event_type == null && b.p_icon == null && b.p_color == null && b.p_cover == null) { p.api.schliessen(); return; }
+      /* Wie Zeichen und Farbe (Vertrag 3.5): "" nimmt das Titelbild ab. Unveraendert steht p_cover
+         gar nicht im Body -- aus demselben Grund wie beim Anlegen (unbekannter Parameter). */
+      if (e.cover !== a.cover) b.p_cover = e.cover || "";
+      if (b.p_name == null && b.p_description == null && b.p_event_type == null && b.p_icon == null && b.p_color == null && !("p_cover" in b)) { p.api.schliessen(); return; }
       warten(p, "bearbeiten");
       fire("data-update-fn", "uevUpdate", body(b));
     }
