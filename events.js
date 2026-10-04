@@ -163,12 +163,17 @@
       return '<div class="uev-stat"><dt>' + esc(t(z[0])) + '</dt><dd>' + esc(z[1]) + '</dd></div>';
     }).join("") + '</dl>';
   }
+  /* start: die Startseite einer Domain. Ihr Pfad ist "/", und ein einzelner Schraegstrich als
+     zweite Zeile las sich wie ein Fehler (04.10.: "was soll das? Dann schreib da doch Homepage
+     hin") -- pfadText zeigt dort "Homepage" aus dem Katalog von core ("Startseite"). */
   function hostPfad(url) {
     try {
       var u = new URL(String(url));
-      return { host: u.hostname.replace(/^www\./, ""), pfad: (u.pathname || "/") + (u.search || "") };
-    } catch (e) { return { host: String(url || ""), pfad: "" }; }
+      var pfad = (u.pathname || "/") + (u.search || "");
+      return { host: u.hostname.replace(/^www\./, ""), pfad: pfad, start: pfad === "/" };
+    } catch (e) { return { host: String(url || ""), pfad: "", start: false }; }
   }
+  function pfadText(hp) { return hp.start ? t("Homepage") : hp.pfad; }
   function favicon(url) {
     var h = hostPfad(url).host;
     return h ? "https://www.google.com/s2/favicons?domain=" + encodeURIComponent(h) + "&sz=64" : "";
@@ -230,7 +235,7 @@
     vergleich: { h: "Comparison", t: "Upstreem compares the affected Prompts with other eligible Prompts that were active when this event was created." },
     /* Die Spalte "First cited" der URL-Tabelle (03.10.: "bitte einen Explainer, der die Metrik
        erklaert"). Beispielwerte oben wie in jeder Spaltenerklaerung. */
-    zitiert: { h: "First cited", t: "When an AI response first cited this URL for the affected prompts after the event. \u201cAlready cited before\u201d means it was also cited in the six months before the event.",
+    zitiert: { h: "First cited", t: "When an AI response first cited this URL for the affected prompts after the event. \u201cBefore event start\u201d means it was also cited in the six months before the event.",
       chips: [{ text: "After 10 days (18. Sep 2026)", ja: true }, { text: "Not yet" }] }
   };
   var METRIKEN = [
@@ -402,9 +407,9 @@
       "Seiten, Artikel oder externe Quellen zu diesem Event. Der Global Share zählt in den betroffenen Prompts.",
     "First cited": "Erstmals zitiert", "Global share before": "Global Share vorher", "Global share after": "Global Share nachher",
     "On event day": "Am Event-Tag", "After {n} days ({date})": "Nach {n} Tagen ({date})", "After 1 day ({date})": "Nach 1 Tag ({date})",
-    "Already cited before": "Schon vorher zitiert", "After 10 days (18. Sep 2026)": "Nach 10 Tagen (18. Sep 2026)",
-    "When an AI response first cited this URL for the affected prompts after the event. \u201cAlready cited before\u201d means it was also cited in the six months before the event.":
-      "Wann eine KI-Antwort diese URL nach dem Event zum ersten Mal für die betroffenen Prompts zitiert hat. \u201eSchon vorher zitiert\u201c heißt: auch in den sechs Monaten vor dem Event.",
+    "Before event start": "Vor Eventstart", "After 10 days (18. Sep 2026)": "Nach 10 Tagen (18. Sep 2026)",
+    "When an AI response first cited this URL for the affected prompts after the event. \u201cBefore event start\u201d means it was also cited in the six months before the event.":
+      "Wann eine KI-Antwort diese URL nach dem Event zum ersten Mal für die betroffenen Prompts zitiert hat. \u201eVor Eventstart\u201c heißt: auch in den sechs Monaten vor dem Event zitiert.",
     "Not yet": "Noch nicht", "Not within 6 months": "Nicht in 6 Monaten",
     "No URLs added yet": "Noch keine URLs",
     "Add pages, articles or external sources associated with this event.":
@@ -479,7 +484,7 @@
     "{n} prompts will be included in this event.": "{n} Prompts gehören zu diesem Event.",
     "{n} active prompt included": "{n} aktiver Prompt enthalten", "{n} active prompts included": "{n} aktive Prompts enthalten",
     "Already in this event": "Schon im Event", "Added": "Hinzugefügt", "Add as new target": "Als neues Ziel hinzufügen",
-    "Previously observed": "Bereits beobachtet", "New target": "Neues Ziel",
+    "New target": "Neues Ziel",
     "No matching URLs. Paste a full link to add it as a new target.":
       "Keine passenden URLs. Füge einen vollständigen Link ein, um ihn als neues Ziel hinzuzufügen.",
     "{n} of {max} URLs": "{n} von {max} URLs", "{n} URL target": "{n} URL-Ziel", "{n} URL targets": "{n} URL-Ziele",
@@ -919,7 +924,7 @@
             '</div>' +
             '<div class="uev-hinweise" data-sek="hinweise"></div>' +
           '</div>' +
-          '<div class="uev-kpis" data-sek="kpis"></div>' +
+          '<div class="up-box uev-kpis" data-sek="kpis"></div>' +
           '</div>' +
           '<section class="uev-sek uev-sek-chart">' +
             sekKopf("Performance around event", "How your brand developed in the affected prompts before and after the event.",
@@ -1116,7 +1121,7 @@
       if (!a) {
         el.innerHTML = state.analyseFehler && !state.analyseLaden
           ? '<div class="uev-kpifehler">' + (UC.leseFehlerHtml ? UC.leseFehlerHtml("analysis") : "") + '</div>'
-          : [0, 1, 2].map(function () { return UC.kpiKarteSkelett("up-box uev-kpi"); }).join("");
+          : [0, 1, 2].map(function () { return UC.kpiKarteSkelett("uev-kpi"); }).join("");
         return;
       }
       var leer = !(a.cohort && num(a.cohort.comparable_prompt_count) > 0);
@@ -1124,8 +1129,9 @@
         var teile = leer ? { wertHtml: '<span class="up-num is-empty">–</span>' } : kpiTeile(m.key, a);
         if (leer && m.key === "visibility") teile.fussHtml = esc(t("No comparable data yet"));
         teile.label = m.label;
-        /* Je Kennzahl eine Karte, der Kasten aus core (.up-box), Inhalt linksbuendig (04.10.). */
-        teile.klasse = "up-box uev-kpi";
+        /* Die drei Kennzahlen in EINEM Kasten (.up-box am Behaelter), getrennt durch senkrechte
+           Linien ueber die volle Hoehe (04.10.) -- wie die Kacheln in performance-detail. */
+        teile.klasse = "uev-kpi";
         return UC.kpiKarte(teile);
       }).join("");
     }
@@ -1231,7 +1237,7 @@
       var n = num(o.day_number);
       if (st === "observed_on_event_day" || (st === "first_observed_after_event" && n === 0 && o.observed_before_event !== true)) txt = t("On event day");
       else if (st === "first_observed_after_event") {
-        txt = o.observed_before_event === true ? t("Already cited before")
+        txt = o.observed_before_event === true ? t("Before event start")
           : ersetze(t(n === 1 ? "After 1 day ({date})" : "After {n} days ({date})"), { n: zahl(n), date: datum(o.first_observed_day) });
       } else if (st === "not_observed_within_6_months") { txt = t("Not within 6 months"); ja = false; }
       else { txt = t("Not yet"); ja = false; }
@@ -1264,7 +1270,7 @@
                  der Knopf "Responses" filterte die Tabelle darunter und war unverstaendlich (03.10.). */
               '<div class="up-td up-var-name uev-td-url"><span class="up-fav up-logo-box has-img"><img src="' + esc(favicon(u.url)) + '" alt="" loading="lazy" referrerpolicy="no-referrer"/></span>' +
                 '<span class="uev-url-txt"><span class="uev-url-host">' + esc(hp.host) + '</span>' +
-                '<span class="uev-url-pfad" title="' + esc(u.url) + '">' + esc(hp.pfad) + '</span></span>' +
+                '<span class="uev-url-pfad" title="' + esc(u.url) + '">' + esc(pfadText(hp)) + '</span></span>' +
                 '<button type="button" class="up-btn-sec up-rowbtn uev-urlweg" data-url-id="' + esc(u.id) + '" aria-label="' + esc(t("Remove")) + '">' + UC.icon("trash", 2) + '<span>' + esc(t("Remove")) + '</span></button>' +
               '</div>' +
               '<div class="up-td uev-td-zahl uev-td-beob">' + (an ? beobachtung(an.observation) : sk) + '</div>' +
@@ -1342,7 +1348,7 @@
           klasse: "uev-respfilter", einzeln: true, titel: "Affected URLs", alle: "All affected URLs",
           suche: "Search URLs…", tip: "Filter by URL",
           items: function () {
-            return respUrls().map(function (u) { var hp = hostPfad(u.url); return { key: u.id, label: hp.host + hp.pfad, titel: u.url }; });
+            return respUrls().map(function (u) { var hp = hostPfad(u.url); return { key: u.id, label: hp.host + (hp.start ? "" : hp.pfad), titel: u.url }; });
           },
           gewaehlt: state.respUrl ? [state.respUrl] : [],
           onChange: function (keys) { respFilter(keys[0] || "", false); }
@@ -2095,7 +2101,10 @@
       } else if (s.treffer) {
         html += treffer.map(function (it, i) {
           var z = zustand(it.url);
-          return UC.entityRow(it, { prefix: "up-es", query: q, index: i, rechts: z.txt || t("Previously observed"), klasse: z.klasse });
+          /* Rechts steht nur, was die Zeile von den anderen unterscheidet ("Already in this event",
+             "Added"). "Previously observed" stand an JEDEM Treffer (04.10.: "natuerlich gibt's die
+             schon, das ist unnoetig") -- die Suche findet ohnehin nur beobachtete URLs. */
+          return UC.entityRow(it, { prefix: "up-es", query: q, index: i, rechts: z.txt || "", typLabel: false, klasse: z.klasse });
         }).join("");
         if (!treffer.length && !neu) html += '<p class="up-modal-hinweis uev-urlnote">' + esc(t("No matching URLs. Paste a full link to add it as a new target.")) + '</p>';
       }
@@ -2112,7 +2121,7 @@
           var hp = hostPfad(u.url);
           return '<div class="uev-urlwahl">' +
             '<span class="up-fav up-logo-box has-img"><img src="' + esc(favicon(u.url)) + '" alt="" loading="lazy" referrerpolicy="no-referrer"/></span>' +
-            '<span class="uev-url-txt"><span class="uev-url-host">' + esc(hp.host) + '</span><span class="uev-url-pfad" title="' + esc(u.url) + '">' + esc(hp.pfad) + '</span></span>' +
+            '<span class="uev-url-txt"><span class="uev-url-host">' + esc(hp.host) + '</span><span class="uev-url-pfad" title="' + esc(u.url) + '">' + esc(pfadText(hp)) + '</span></span>' +
             (u.neu ? '<span class="uev-urlwahl-neu">' + esc(t("New target")) + '</span>' : '') +
             '<button type="button" class="up-iconbtn uev-urlwahl-weg" data-url-weg="' + i + '" aria-label="' + esc(t("Remove")) + '" data-tip="' + esc(t("Remove")) + '">' + UC.icon("x", 2) + '</button></div>';
         }).join("") + '</div>';
