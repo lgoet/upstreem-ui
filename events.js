@@ -400,9 +400,6 @@
       "Dieses Topic wurde nach dem Anlegen des Events gelöscht. Seine Prompts zählen weiter.",
     "{n} Prompts deleted since": "{n} Prompts inzwischen gelöscht",
     "vs. comparison": "vs. Vergleich", "Comparison group": "Vergleichsgruppe", "No comparison group": "Keine Vergleichsgruppe",
-    "{n} of {m} days after the event so far": "Bisher {n} von {m} Tagen nach dem Event",
-    "Events have no end date. The analysis compares the selected number of days before and after the event date. This event is more recent than that, so the after period is still filling up.":
-      "Events haben kein Enddatum. Die Analyse vergleicht die gewählte Zahl an Tagen vor und nach dem Event-Datum. Dieses Event ist jünger, die Nachher-Seite füllt sich also noch.",
     "How event analysis works": "So funktioniert die Event-Analyse",
     "An event marks a change, such as a relaunch or a campaign. Upstreem compares your AI performance before and after its date.":
       "Ein Event markiert eine Änderung, etwa einen Relaunch oder eine Kampagne. Upstreem vergleicht deine AI Performance vor und nach dem Datum.",
@@ -866,6 +863,10 @@
       elMain.innerHTML =
         '<div class="uev-detail">' +
           '<div class="uev-dkopf" data-sek="kopf"></div>' +
+          /* Steuerzeile und Kennzahlen als EINE Gruppe (04.10.): Zeitraum und Filter gehoeren zu den
+             Zahlen darunter, mit 16px wie zwischen den Karten -- nicht mit den 40 zwischen den
+             Abschnitten, mit denen die Zeile vorher zwischen Kopf und Zahlen schwebte. */
+          '<div class="uev-steuerblock">' +
           '<div class="uev-steuer">' +
             '<div class="uev-steuer-links">' +
               '<div class="up-seg is-lg uev-fenster" role="group" aria-label="' + esc(t("Analysis window")) + '">' +
@@ -884,12 +885,11 @@
                 '<div class="up-root umf-root uev-modelle" data-instance="' + esc(instanceId) + '_models" data-local="yes" data-isdark="' + (isDark() ? "yes" : "no") + '"></div>' +
                 '<div class="up-root umk-root uev-maerkte" data-instance="' + esc(instanceId) + '_markets" data-local="yes" data-isdark="' + (isDark() ? "yes" : "no") + '"></div>' +
               '</div>' +
-              /* Hinter den Filtern, in derselben Gruppe wie der Umschalter, auf den es sich bezieht. */
-              '<span class="uev-fensterstand" data-sek="fensterstand"></span>' +
             '</div>' +
             '<div class="uev-hinweise" data-sek="hinweise"></div>' +
           '</div>' +
           '<div class="uev-kpis" data-sek="kpis"></div>' +
+          '</div>' +
           '<section class="uev-sek uev-sek-chart">' +
             sekKopf("Performance around event", "How your brand developed in the affected prompts before and after the event.",
               '<div class="up-seg uev-metrik" role="group">' +
@@ -912,6 +912,9 @@
         decimals: function () { return state.metrik === "sentiment" ? 0 : 1; },
         tipLabel: function () { return t(state.metrik === "rank" ? "Rank:" : state.metrik === "sentiment" ? "Sentiment:" : "Visibility:"); },
         reverse: function () { return state.metrik === "rank"; },
+        /* Die Legende IMMER (04.10.): erst sie sagt, welche Linie die betroffenen Prompts und
+           welche die Vergleichsgruppe ist -- unabhaengig von "Legende zeigen" in den Preferences. */
+        legendeImmer: true,
         markers: chartMarker,
         onMarker: function (id) { if (id && id !== state.eventId) oeffnen(id, true); }
       });
@@ -1052,26 +1055,12 @@
 
     function renderHinweise() {
       var el = elMain.querySelector('[data-sek="hinweise"]'), a = dieAnalyse();
-      if (!a) { el.innerHTML = ""; var st0 = elMain.querySelector('[data-sek="fensterstand"]'); if (st0) st0.innerHTML = ""; return; }
+      if (!a) { el.innerHTML = ""; return; }
       var w = a.windows || {}, h = [];
       /* Angaben wie Datum und Typ im Kopf: Zeichen + Text, leise (03.10.: "warum ist jede
          Information in diesen kleinen Chips mit den Punkten davor? Die habe ich sonst nirgendwo"). */
       function angabe(ic, text, tip) {
         return '<span class="uev-angabe"' + (tip ? ' data-tip="' + esc(tip) + '"' : "") + '>' + UC.icon(ic, 2) + '<span>' + esc(text) + '</span></span>';
-      }
-      /* DAS FENSTER LAEUFT NOCH (03.10. gefragt: "gibt es jetzt ein Enddatum fuer Events?"). Nein --
-         ein Event hat nur ein Datum. Verglichen werden N Tage davor und N Tage danach (der
-         Umschalter links), und liegt das Event weniger als N Tage zurueck, ist die Nachher-Seite
-         noch nicht voll. Darum steht die Angabe direkt NEBEN dem Umschalter und sagt es in Tagen
-         ("14 of 30 days after the event so far"), der Satz am Zeiger erklaert den Rest. */
-      var stand = elMain.querySelector('[data-sek="fensterstand"]');
-      if (stand) {
-        var bisher = Math.max(0, Math.round((tagMs(w.effective_after_to) - tagMs((dieDetail() || listeEvent(state.eventId) || {}).event_date)) / 864e5));
-        var fenster = num(w.window_days) || state.fenster;
-        stand.innerHTML = w.after_complete === false
-          ? angabe("clock", ersetze(t("{n} of {m} days after the event so far"), { n: zahl(bisher), m: zahl(fenster) }),
-              t("Events have no end date. The analysis compares the selected number of days before and after the event date. This event is more recent than that, so the after period is still filling up."))
-          : "";
       }
       if (w.limited_baseline === true) h.push(angabe("info", ersetze(t("Limited baseline ({n} days)"), { n: zahl(w.before_observed_days) }),
         t("Less historical data is available before this event for the selected period.")));
@@ -1096,7 +1085,7 @@
       if (!a) {
         el.innerHTML = state.analyseFehler && !state.analyseLaden
           ? '<div class="uev-kpifehler">' + (UC.leseFehlerHtml ? UC.leseFehlerHtml("analysis") : "") + '</div>'
-          : [0, 1, 2].map(function () { return UC.kpiKarteSkelett(); }).join("");
+          : [0, 1, 2].map(function () { return UC.kpiKarteSkelett("up-box uev-kpi"); }).join("");
         return;
       }
       var leer = !(a.cohort && num(a.cohort.comparable_prompt_count) > 0);
@@ -1104,6 +1093,8 @@
         var teile = leer ? { wertHtml: '<span class="up-num is-empty">–</span>' } : kpiTeile(m.key, a);
         if (leer && m.key === "visibility") teile.fussHtml = esc(t("No comparable data yet"));
         teile.label = m.label;
+        /* Je Kennzahl eine Karte, der Kasten aus core (.up-box), Inhalt linksbuendig (04.10.). */
+        teile.klasse = "up-box uev-kpi";
         return UC.kpiKarte(teile);
       }).join("");
     }

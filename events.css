@@ -121,7 +121,14 @@
 .uev-sk-text + .uev-sk { margin-top: 8px; }
 
 /* ---- Detail ---------------------------------------------------------------------------------- */
-.uev-detail { display: flex; flex-direction: column; gap: 24px; }
+/* SICHTBAR 40px von der Unterkante eines Kastens bis zur naechsten Ueberschrift (04.10.: "32px,
+   mit der Mitte der Koepfe kommen wir auf 40"). Gemessen stimmte die Rechnung nur fuer Koepfe ohne
+   Untertitel: mit Untertitel fuellt der Text seinen 32px-Behaelter (.up-sec-head) schon aus, und
+   es blieben 32. Darum 40 Abstand und die Koepfe oben statt mittig -- dann sind es bei jedem
+   Abschnitt dieselben 40. */
+.uev-detail { display: flex; flex-direction: column; gap: 40px; }
+.uev-detail .uev-sec-head { align-items: flex-start; }
+.uev-steuerblock { display: flex; flex-direction: column; gap: 16px; }
 /* DER KOPF DES DETAILS (03.10. neu): dieselbe Sprache wie die Karte, eine Nummer groesser --
    Band 96, Profilbild 64, Name in der groessten Stufe der App (Dashboards: hoechstens 22-24px).
    Datum und Typ als zwei Angaben mit Zeichen, der Umfang darunter. */
@@ -145,17 +152,14 @@
 /* Hinweise ("Still running", "Limited baseline", andere Events): Angaben mit Zeichen wie Datum
    und Typ im Kopf -- KEINE Pillen mit Punkt (03.10.: "die habe ich sonst nirgendwo in der App"). */
 .uev-hinweise { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 16px; font-size: var(--up-fs-m); color: var(--vc-third); }
-/* "Bisher 14 von 30 Tagen nach dem Event": direkt neben dem Umschalter, auf den es sich bezieht,
-   in derselben leisen Form wie die Hinweise. */
-.uev-fensterstand { display: inline-flex; align-items: center; font-size: var(--up-fs-m); color: var(--vc-third); }
-.uev-fensterstand:empty { display: none; }
 /* Beispielwerte in der Erklaerkarte der Spalte "First cited": die Chips der Tabelle nebeneinander. */
 .up-explain-vis.uev-explain-chips { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 6px; }
 
-/* Die drei Kennzahlen wie die Overview im Agentic Dashboard (.upw-kpis): drei Spalten, KEIN
-   Kasten, keine Trennlinien, kein Polster (03.10.: "aufraeumen, nicht in Cards") -- die Spalten des
-   Rasters trennen sie schon. */
+/* Die drei Kennzahlen: je eine Karte (.up-box aus core), die Reihe ausfuellend, 16px dazwischen,
+   Inhalt linksbuendig (04.10.). Innen der Aufbau der Overview im Agentic Dashboard: Bezeichnung,
+   Zahl mit Trend, darunter der Vergleich -- 16px Polster wie jede Karte der Seite. */
 .uev-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.uev-kpis > .up-kpi.uev-kpi { padding: 16px; }
 .uev-kpifehler { grid-column: 1 / -1; }
 
 /* Ein Abschnitt: Kopf aus core (.up-sec-head bringt seine 14px Abstand nach unten mit), darunter

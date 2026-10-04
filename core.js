@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261073;
+  var BUILD = 20261074;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -4403,8 +4403,8 @@
       (o.fussHtml ? '<span class="up-kpi-foot">' + o.fussHtml + '</span>' : '') +
     '</div>';
   }
-  function kpiKarteSkelett(){
-    return '<div class="up-kpi is-sk"><span class="up-kpi-sk up-kpi-sk-l"></span><span class="up-kpi-sk up-kpi-sk-v"></span><span class="up-kpi-sk up-kpi-sk-f"></span></div>';
+  function kpiKarteSkelett(klasse){
+    return '<div class="up-kpi is-sk' + (klasse ? " " + klasse : "") + '"><span class="up-kpi-sk up-kpi-sk-l"></span><span class="up-kpi-sk up-kpi-sk-v"></span><span class="up-kpi-sk up-kpi-sk-f"></span></div>';
   }
 
   function trendChip(delta, opts){
@@ -14266,7 +14266,11 @@
       /* Abgewaehlt: nur verstecken, NICHT leeren. Das Geruest (die Messkopien) bleibt stehen,
          damit das Wiedereinschalten ohne neuen Datensatz auskommt -- sonst braeuchte es einen
          render() aus Bubble, nur weil jemand einen Schalter umgelegt hat. */
-      if (getLegendPref() === "off"){ legendEl.classList.add("is-hidden"); return; }
+      /* cfg.legendeImmer (04.10., Event-Detail): diese Kurve zeigt ihre Legende auch dann, wenn
+         die Einstellung "Legende zeigen" aus ist -- dort sagt erst die Legende, welche Linie die
+         betroffenen Prompts und welche die Vergleichsgruppe ist. Die Breitengrenze darunter gilt
+         weiter: unter 500px ist fuer eine Legende kein Platz. */
+      if (getLegendPref() === "off" && !cfg.legendeImmer){ legendEl.classList.add("is-hidden"); return; }
       if (getPageWidth() < 500){ legendEl.classList.add("is-hidden"); return; }
       legendEl.classList.remove("is-hidden");
       var rowsC = legendEl.querySelector(".up-company-rows");
