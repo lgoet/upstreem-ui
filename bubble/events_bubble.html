@@ -43,7 +43,8 @@
   ── DIE LISTE: kein eigener Setter ───────────────────────────────────────────
   Die Uebersicht liest den Event-Store aus core. Ihn fuellt EIN Run-JS-Schritt im Seitenaufbau mit
   list_impact_events_v1 -- dieselbe Antwort setzt die Event-Marker in ALLEN Liniendiagrammen der
-  App. Nach Anlegen und Loeschen denselben Schritt noch einmal laufen lassen. Alle Schritte samt
+  App. Nach jeder Aenderung laeuft derselbe Schritt noch einmal, ausgeloest von upEventsChanged
+  (siehe unten). Alle Schritte samt
   statischer Fassung mit den Vertragsdaten: bubble/events_runjs.md.
   setUpstreemEvents steht seit Pin 2d61ace im Vorlade-Snippet (UP_API): ein Aufruf, der vor core
   kommt, wird gemerkt und nachgeholt -- die Hausform reicht, keine Warteschleife.
@@ -74,9 +75,11 @@
   | uevRemoveUrl            | data-removeurl-fn      | remove_impact_event_url_v1       | setEventDetail       |
   | uevDelete               | data-delete-fn         | delete_impact_event_v1           | setEventDeleted      |
 
-  Nach uevCreate, uevUpdate, uevAddUrl, uevRemoveUrl, uevDelete: zusaetzlich die Liste neu (ein
-  zweiter Call list_impact_events_v1 und der Schritt oben) -- sonst zeigen Uebersicht und Pins den
-  alten Stand (Name, Farbe, Titelbild, Zahl der URLs), bis die Seite neu laedt.
+  Die Liste nach einer Aenderung holt NICHT der aendernde Workflow: nach jedem gelungenen Anlegen,
+  Bearbeiten, URL hinzufuegen/entfernen und Loeschen ruft die Komponente upstreemEventsChanged()
+  (core, seit 04.10.), und das feuert bubble_fn_upEventsChanged -- wie upBrandsChanged. Dafuer auf
+  der Hauptseite ein Toolbox-Element "JavaScript to Bubble" namens upEventsChanged (Trigger event
+  an), dessen Workflow list_impact_events_v1 ruft und setUpstreemEvents (Schritt oben).
   Nach uevAddUrl, uevRemoveUrl: die Komponente fordert die Analyse selbst neu an (uevAnalysis).
 
   ── Die Popups (Anlegen, Bearbeiten, URL hinzufuegen) ────────────────────────

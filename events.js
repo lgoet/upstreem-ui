@@ -2321,6 +2321,14 @@
       warten(p, "url");
       fire("data-addurl-fn", "uevAddUrl", body({ p_event_id: p.eventId, p_url: p.e.urls[0].url }));
     }
+    /* Nach jeder gelungenen Aenderung: Bubble laedt die Liste neu (upEventsChanged, 04.10.) --
+       Uebersicht und Pins zeigen sonst Name, Farbe, Titelbild und URL-Zahl von vorher. Im
+       Klick-Dummy nicht: dort fuellt events-demo.js die Liste selbst, und eine echte Liste wuerde
+       die Beispiele ersetzen. */
+    function listeNeu() {
+      if (demo || !UC.eventsChanged) return;
+      try { UC.eventsChanged(); } catch (e) {}
+    }
     function popupDetailKam(d, neu) {
       var p = popup;
       if (!p || !p.warte || !d) return;
@@ -2331,6 +2339,7 @@
       p.warte = null;
       p.api.busy(p.knopf, false);
       p.api.schliessen();
+      listeNeu();
       if (art === "anlegen") { if (UC.toast) UC.toast(t("Event created")); oeffnen(id, true, false, true); }
       else if (UC.toast) UC.toast(t(art === "url" ? "URL added" : "Event updated"));
     }
@@ -2605,7 +2614,7 @@
         persist();
         /* Ein Detail-Objekt ist auch die Antwort auf Anlegen, Bearbeiten, URL hinzufuegen und
            entfernen -- also schliesst es ein wartendes Popup dieser Art. */
-        if (wartend.urlWeg && wartend.urlWeg.eventId === id) { var api1 = wartend.urlWeg.api; clearTimeout(wartend.urlWeg.uhr); wartend.urlWeg = null; api1.schliessen(); }
+        if (wartend.urlWeg && wartend.urlWeg.eventId === id) { var api1 = wartend.urlWeg.api; clearTimeout(wartend.urlWeg.uhr); wartend.urlWeg = null; api1.schliessen(); listeNeu(); }
         popupDetailKam(d, neu);
         if (state.ansicht === "detail" && state.eventId === id) {
           if (urlsNeu) { analyseAnfordern(); responsesAnfordern(false, true); }
@@ -2698,6 +2707,7 @@
         delete state.detail[id];
         persist();
         if (wartend.del) { var api2 = wartend.del.api; clearTimeout(wartend.del.uhr); wartend.del = null; api2.schliessen(); }
+        listeNeu();
         if (state.ansicht === "detail" && state.eventId === id) zurUebersicht(true); else renderListe();
         return true;
       },

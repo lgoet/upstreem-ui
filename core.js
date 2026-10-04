@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261075;
+  var BUILD = 20261076;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -16397,8 +16397,26 @@
     "Offline campaign": "Offline-Kampagne", "Rebranding": "Rebranding", "Partnership": "Partnerschaft",
     "Show event markers": "Event-Marker zeigen", "Events": "Events"
   });
+  /* Die Gegenrichtung, wie upstreemBrandsChanged und upstreemMarketsChanged (04.10.): events.js
+     ruft sie nach jedem GELUNGENEN Anlegen, Bearbeiten, URL hinzufuegen/entfernen und Loeschen.
+     Bubble antwortet mit list_impact_events_v1 + setUpstreemEvents -- EIN Workflow auf der
+     Hauptseite statt eines zweiten RPC-Aufrufs in jedem der fuenf aendernden Workflows, und die
+     Pins in den Diagrammen ziehen mit, ohne dass ein Aenderungsort von ihnen weiss. */
+  function eventsChanged(){
+    var fn = resolveBubbleFn("bubble_fn_upEventsChanged");
+    if (typeof fn === "function"){ try { fn(""); } catch(e){} return true; }
+    if (window.console) {
+      console.info("[events] bubble_fn_upEventsChanged not found. The event overview and the event " +
+        "markers in the charts will not refresh by themselves, so a created, edited or deleted event " +
+        "only shows up after a reload. Add a Toolbox \"JavaScript to Bubble\" element named " +
+        "upEventsChanged (Trigger event checked) whose workflow re-runs list_impact_events_v1 and " +
+        "calls setUpstreemEvents().");
+    }
+    return false;
+  }
   window.setUpstreemEvents = function(rows){ return setEvents(rows, "setUpstreemEvents"); };
   window.getUpstreemEvents = getEvents;
+  window.upstreemEventsChanged = eventsChanged;
   (function drainEventsQueue(){
     var q = window.__upEventsQueue;
     if (!q || !q.length) return;
@@ -20185,7 +20203,7 @@
     getModels: getModels,
     setModels: setModels,
     onModels: onModels,
-    getEvents: getEvents, setEvents: setEvents, onEvents: onEvents, eventsStand: eventsStand,
+    getEvents: getEvents, setEvents: setEvents, onEvents: onEvents, eventsStand: eventsStand, eventsChanged: eventsChanged,
     EVENT_TYPEN: EVENT_TYPEN, eventTyp: eventTyp, eventOeffnen: eventOeffnen,
     kpiKarte: kpiKarte, kpiKarteSkelett: kpiKarteSkelett, makeModal: makeModal,
     storeStand: storeStand,

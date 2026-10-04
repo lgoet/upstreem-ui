@@ -31,12 +31,13 @@ dass ein Fehler auf eine ANDERE Anfrage ein wartendes Loeschen nicht abbricht.
 Fuer die Liste (Schritt 1) braucht es den dritten Wert nicht: schlaegt sie fehl, ist `json` leer,
 und ein leerer Text ergibt "Could not load events" (gemessen), nicht "No events yet".
 
-**Liste nachziehen:** Anlegen, Bearbeiten, URL hinzufuegen/entfernen und Loeschen aendern, was die
-Uebersicht und die Pins zeigen (Name, Farbe, Titelbild, Zahl der URLs). Die Komponente aktualisiert
-dabei nur das Detail -- jeder dieser Workflows endet darum mit Schritt 1 (Hausregel: jeder
-aendernde Workflow endet mit RPC + setUpstreem*).
-Die Komponente braucht dafuer **keine Aenderung**: alle Setter nehmen schon den ganzen JSON-Text
-und lesen ihn mit `UC.readBubble`.
+**Liste nachziehen: `upEventsChanged` (04.10.)**, wie `upBrandsChanged`, `upMarketsChanged` und
+`upTopicsChanged`. Nach jedem GELUNGENEN Anlegen, Bearbeiten, URL hinzufuegen/entfernen und Loeschen
+ruft die Komponente `upstreemEventsChanged()`, das feuert `bubble_fn_upEventsChanged`. Auf der
+Hauptseite steht dafuer EIN Toolbox-Element "JavaScript to Bubble" namens `upEventsChanged`
+(Trigger event an); sein Workflow ist Schritt 1 (Liste + `setUpstreemEvents`). Die fuenf aendernden
+Workflows brauchen damit KEINEN zweiten RPC-Aufruf. Bei einem Fehler und im Klick-Dummy feuert
+nichts (gemessen). Fehlt das Element, sagt die Konsole es einmal.
 
 Warum verdoppelt: im Backtick ist ein Backslash ein Steuerzeichen. Aus `\"` (ein Anfuehrungszeichen in
 einem Wert, so schreibt JSON es) und `\n` (ein Zeilenumbruch) wuerde ein rohes `"` und ein echter
@@ -47,7 +48,7 @@ zwar meistens, aber Raten bleibt Raten.
 
 ## 1. Liste und Pins: `list_impact_events_v1` → `setUpstreemEvents`
 
-Beim Seitenaufbau EINMAL (fuettert die Uebersicht UND die Pins in allen Liniendiagrammen der App) und nach Anlegen und Loeschen noch einmal. Keine Chart-RPC wird dafuer angefasst. Seit Pin 2d61ace steht `setUpstreemEvents` im Vorlade-Snippet: ein Aufruf vor core wird gemerkt und nachgeholt.
+Zwei Ausloeser, dieselben zwei Schritte: der Seitenaufbau (fuettert die Uebersicht UND die Pins in allen Liniendiagrammen der App) und das Ereignis `upEventsChanged` (siehe 0). Keine Chart-RPC wird dafuer angefasst. Seit Pin 2d61ace steht `setUpstreemEvents` im Vorlade-Snippet: ein Aufruf vor core wird gemerkt und nachgeholt.
 
 **Dynamisch:**
 
@@ -239,9 +240,9 @@ Dieselbe Antwortform kommt von Create, Update, Add-URL und Remove-URL -- dort de
 })();
 ```
 
-## 3. Anlegen: `uevCreate` → `create_impact_event_v1` → `setEventDetail`, danach Schritt 1
+## 3. Anlegen: `uevCreate` → `create_impact_event_v1` → `setEventDetail`
 
-Die Antwort ist das Detail-Objekt; die Komponente schliesst das Popup und oeffnet das neue Event. Danach Schritt 1, damit es in der Liste und als Pin erscheint.
+Die Antwort ist das Detail-Objekt; die Komponente schliesst das Popup, oeffnet das neue Event und ruft `upEventsChanged` -- damit erscheint es in der Liste und als Pin.
 
 **Dynamisch:**
 
@@ -1335,7 +1336,7 @@ Die Antwort ist das Detail-Objekt; die Komponente schliesst das Popup und oeffne
 })();
 ```
 
-## 5. Bearbeiten: `uevUpdate` → `update_impact_event_v1` → `setEventDetail`, danach Schritt 1
+## 5. Bearbeiten: `uevUpdate` → `update_impact_event_v1` → `setEventDetail`
 
 
 
@@ -1351,7 +1352,7 @@ Die Antwort ist das Detail-Objekt; die Komponente schliesst das Popup und oeffne
 })();
 ```
 
-## 6. URL hinzufuegen / entfernen: `uevAddUrl` / `uevRemoveUrl` → `add_/remove_impact_event_url_v1` → `setEventDetail`, danach Schritt 1
+## 6. URL hinzufuegen / entfernen: `uevAddUrl` / `uevRemoveUrl` → `add_/remove_impact_event_url_v1` → `setEventDetail`
 
 Die Komponente fordert Analyse und Responses danach selbst neu an.
 
@@ -1396,7 +1397,7 @@ Die Komponente fordert Analyse und Responses danach selbst neu an.
 })();
 ```
 
-## 8. Loeschen: `uevDelete` → `delete_impact_event_v1` → `setEventDeleted`, danach Schritt 1
+## 8. Loeschen: `uevDelete` → `delete_impact_event_v1` → `setEventDeleted`
 
 
 
