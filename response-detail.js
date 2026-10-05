@@ -1,11 +1,15 @@
 /* upstreem response-detail.js — die Detailseite einer einzelnen Modellantwort.
    Braucht core.js (window.UpstreemCore).
 
-   Vier Abschnitte in einer Wurzel, von oben:
-     1. Der Prompt-Text als Titel, vollstaendig. Darunter Modell, Laufzeit und Market.
-     2. "Mentions": welche verfolgten Marken in dieser Antwort vorkommen.
-     3. "Full Response": der Antworttext selbst.
-     4. "Citations": die Quellen, als Kacheln oder als Liste.
+   Vier Abschnitte in einer Wurzel, von oben (v2, 05.10., Design-Uebergabe "Response Detail v2 +
+   Products"):
+     1. Kopf: der Prompt-Text als Titel, vollstaendig. Darunter Modell und Laufzeit links, Market
+        und Themen rechts, und die Zeile "Mentioned" mit den Marken dieser Antwort.
+     2. "Products": die Shopping-Produkte der Antwort als Karten in ihrer Reihenfolge -- NUR wenn
+        die Antwort welche hat (get_mention_detail_v8: shopping_products).
+     3. "Full Response": der Antworttext, die Produkte darin ausgezeichnet und mit ihrer Karte
+        verbunden.
+     4. "Citations": die Quellen, nummeriert, als Kacheln oder als Liste.
 
    Was aus core kommt und hier NICHT noch einmal entsteht:
      UC.respBody          der Antworttext samt Tabellen, Zitat-Chips und Markenauszeichnung
@@ -16,6 +20,10 @@
      UC.icon              jedes Icon
      UC.makeMount / makeFire / makeLate / parseLoose / widthTiers / onTheme / themeParam
      UC.makeTooltips      die Tooltips an allem, was data-tip traegt
+     UC.bubbleObjekt      die Nutzlast lesen (Umschlag {"json"}, grosse Produkt-Ids als Text)
+     UC.bubbleFehler      Bubbles "error body" als dritter Wert des Setters
+     UC.markenChip        Logo und Name der Marke an der Produktkarte
+     UC.fmtGeld           der Preis
 
    Neu ist hier nur, was es genau einmal gibt: der Aufbau der Seite, die zwei Ansichten der
    Quellen und das Menue, das ein Zitat-Chip oeffnet.
@@ -117,16 +125,35 @@
            Titel mit der Tastatur nicht erreichen. */
         '<h2 class="urd-prompt" role="button" tabindex="0"></h2>' +
         '<div class="urd-kpis"></div>' +
+        /* DIE MARKEN IM KOPF (v2): eine Zeile unter einer Linie statt eines eigenen Abschnitts.
+           Was nicht in die Zeile passt, steht hinter "+N more" (mentionsZeile). Bei zwanzig Marken
+           bleibt es so eine Zeile, bis man sie alle haben will. */
+        '<div class="urd-mrow" hidden>' +
+          /* Das Wort im eigenen Element: der Sprachlauf von core uebersetzt Elemente, deren Text
+             ein Katalogschluessel ist -- "Mentioned" plus Zaehler in einem waere "Mentioned2". */
+          '<span class="urd-mrow-lbl"><span>Mentioned</span><span class="urd-mrow-n"></span></span>' +
+          '<div class="urd-mrow-box">' +
+            '<div class="urd-ments up-mentlist"></div>' +
+            '<button type="button" class="urd-mrow-more" hidden></button>' +
+          '</div>' +
+        '</div>' +
       '</div>' +
 
-      '<div class="urd-sect urd-sect-ments">' +
-        '<div class="urd-sec"><div class="urd-sec-txt">' +
-          '<span class="urd-sec-title">Mentions</span>' +
-          '<span class="urd-sec-desc">What tracked brands are mentioned in this response</span>' +
-        '</div></div>' +
-        /* Keine Karte um die Chips: sie tragen selbst schon einen Rahmen, und ein Rahmen im
-           Rahmen liest sich als zwei Ebenen, wo es nur eine gibt. */
-        '<div class="urd-ments up-mentlist"></div>' +
+      /* PRODUKTE (05.10., get_mention_detail_v8): ueber "Full Response", und nur wenn die Antwort
+         welche gezeigt hat. Bei den meisten Antworten gibt es keine -- ein leerer Abschnitt waere
+         dort keine Auskunft, sondern Rauschen. */
+      '<div class="urd-sect urd-sect-shop" hidden>' +
+        '<div class="urd-sec">' +
+          '<div class="urd-sec-txt">' +
+            '<span class="urd-sec-title">Products</span>' +
+            '<span class="urd-sec-desc">Shopping products the model showed in this response</span>' +
+          '</div>' +
+          '<div class="urd-shop-nav" hidden>' +
+            '<button type="button" class="up-iconbtn urd-shop-prev" aria-label="Previous products">' + UC.icon("chevronLeft", 2) + '</button>' +
+            '<button type="button" class="up-iconbtn urd-shop-next" aria-label="More products">' + UC.icon("chevronRight", 2) + '</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="urd-shop-wrap"><div class="urd-shop-row"></div></div>' +
       '</div>' +
 
       '<div class="urd-sect urd-sect-body">' +
@@ -139,9 +166,11 @@
              eine Zeile mit space-between, der Platz rechts war frei.
              wrap + menu, wie UC.makePopover es erwartet: der Wrap traegt is-open, das Menue haengt
              darin und wird von core positioniert und geschlossen. */
+          /* v2: ein beschrifteter Textknopf statt des Zahnrads allein -- das Zeichen sagte nicht,
+             was dahinter liegt. KEIN .up-iconbtn mehr: der waere hier in Breite, Polster und
+             Hover ueberschrieben worden, also ein gesprengtes Bauteil (CLAUDE.md 1). */
           '<span class="urd-hlwrap">' +
-            '<button class="up-iconbtn urd-hlbtn" type="button" data-tip="Highlights"' +
-              ' aria-label="Highlight settings"></button>' +
+            '<button class="urd-hlbtn" type="button" aria-label="Highlight settings"></button>' +
             '<div class="urd-hlpop up-pop"></div>' +
           '</span>' +
         '</div>' +
@@ -203,6 +232,13 @@
     var elPrompt = root.querySelector(".urd-prompt");
     var elKpis   = root.querySelector(".urd-kpis");
     var elMents  = root.querySelector(".urd-ments");
+    var elMRow   = root.querySelector(".urd-mrow");
+    var elMN     = root.querySelector(".urd-mrow-n");
+    var elMMore  = root.querySelector(".urd-mrow-more");
+    var elShop   = root.querySelector(".urd-sect-shop");
+    var elShopRow = root.querySelector(".urd-shop-row");
+    var elShopWrap = root.querySelector(".urd-shop-wrap");
+    var elShopNav = root.querySelector(".urd-shop-nav");
     var elBody   = root.querySelector(".up-rb");
     var elAv     = root.querySelector(".urd-msg-av");
     var elHlBtn  = root.querySelector(".urd-hlbtn");
@@ -424,20 +460,19 @@
       elPrompt.textContent = String(d.prompt_text || "");
       elPrompt.setAttribute("data-id", String(d.prompt_id || ""));
 
-      var teile = [];
-      if (d.model) teile.push(UC.modelChip(d.model, { full: true }));
+      /* v2: zwei Gruppen statt Trennstrichen. Links der Absender (Modell, Zeit), rechts wo und
+         worueber (Market, Themen). Der Abstand zwischen den Gruppen trennt staerker als ein Strich. */
+      var links = [], rechts = [];
+      if (d.model) links.push(UC.modelChip(d.model, { full: true }));
       var zeit = UC.relativeTime(d.run_at);
-      if (zeit) teile.push('<span class="urd-kpi-time" data-tip="' +
+      if (zeit) links.push('<span class="urd-kpi-time" data-tip="' +
         esc(String(d.run_at || "")) + '">' + esc(zeit) + "</span>");
-      if (d.market) teile.push(UC.marketChip(d.market));
+      if (d.market) rechts.push(UC.marketChip(d.market));
       /* Erst bauen, dann pruefen: topicChip laesst ein Thema ohne Namen weg, und eine Liste, in
-         der keines einen Namen hat, ergab eine leere Huelle -- die zaehlte als Angabe, also stand
-         hinter dem Market ein Trenner, hinter dem nichts mehr kam. */
+         der keines einen Namen hat, ergab eine leere Huelle. */
       var themen = isArr(d.tags) ? d.tags.map(topicChip).join("") : "";
-      if (themen) teile.push('<span class="urd-tags">' + themen + "</span>");
-      /* Ein Trenner zwischen den Angaben. Ohne ihn standen Modell, Zeit, Market und Themen als
-         eine Reihe da und lasen sich als ein zusammenhaengender Satz. */
-      elKpis.innerHTML = teile.join('<span class="urd-kpi-sep" aria-hidden="true"></span>');
+      if (themen) rechts.push('<span class="urd-tags">' + themen + "</span>");
+      elKpis.innerHTML = links.join("") + (rechts.length ? '<span class="urd-kpi-push">' + rechts.join("") + "</span>" : "");
     }
 
     /* Ein Thema als .up-topicchip aus core -- dasselbe Bauteil und dieselbe Farbe wie in der
@@ -475,18 +510,22 @@
 
     /* ---- Mentions ------------------------------------------------------------------------- */
     function renderMents() {
-      if (state.fehler) { elMents.innerHTML = '<span class="urd-empty">' + esc(state.fehler) + "</span>"; return; }
+      /* Der Fehler steht im Antworttext, nicht noch einmal hier: der Kopf traegt dann keine Zeile. */
+      if (state.fehler) { elMents.innerHTML = ""; elMN.textContent = ""; elMRow.hidden = true; return; }
       if (istLaden() || !state.data) {
         elMents.innerHTML = new Array(4).join("x").split("x")
           .map(function () { return '<span class="urd-sk urd-sk-ment"></span>'; }).join("");
+        elMN.textContent = "";
+        elMRow.hidden = false;
+        mentionsZeile();
         return;
       }
       var liste = isArr(state.data.companies) ? state.data.companies : [];
+      /* Ohne Marken keine Zeile: "Mentioned" ohne etwas dahinter waere eine leere Ueberschrift. */
+      elMRow.hidden = !liste.length;
+      elMN.textContent = liste.length ? String(liste.length) : "";
       if (!liste.length) {
-        /* Ein Minus statt eines Satzes: derselbe leere Zustand wie in den Tabellenzellen, und
-           dasselbe Zeichen. Ein ganzer Satz an dieser Stelle liest sich wie eine Meldung, obwohl
-           es nur "nichts" heisst. */
-        elMents.innerHTML = '<span class="up-stack-empty urd-mentempty">' + UC.icon("minus", 2.5) + "</span>";
+        elMents.innerHTML = "";
         return;
       }
       elMents.innerHTML = liste.map(function (c) {
@@ -513,6 +552,255 @@
                  '<span class="up-ment-name">' + esc(name) + "</span>" +
                "</span>";
       }).join("");
+      mentionsZeile();
+    }
+
+    /* "+N more": wie viele Chips NICHT in der ersten Zeile stehen -- alles, was tiefer beginnt als
+       der erste (offsetTop, das ist eine Layoutgroesse und braucht kein gemaltes Bild). Aufgeklappt
+       bricht die Zeile um, und der Knopf heisst "Show less". */
+    var mentionsOffen = false;
+    function mentionsZeile() {
+      elMRow.classList.toggle("is-open", mentionsOffen);
+      var chips = elMents.querySelectorAll(".urd-ment");
+      if (!chips.length) { elMMore.hidden = true; return; }
+      /* Bis zu drei Runden: der Knopf selbst nimmt der Zeile Platz, und mit "+11 more" daneben
+         rutschte ein zwoelfter Chip in die zweite Zeile (gemessen: 11 gezaehlt, 12 verdeckt). Also
+         nach dem Setzen noch einmal zaehlen, bis die Zahl steht. */
+      for (var runde = 0; runde < 3; runde++) {
+        var oben = chips[0].offsetTop, weg = 0;
+        for (var i = 0; i < chips.length; i++) if (chips[i].offsetTop > oben + 4) weg++;
+        var txt = mentionsOffen ? UC.t("Show less") : UC.t("+{n} more").replace("{n}", String(weg));
+        var versteckt = !mentionsOffen && weg === 0;
+        if (elMMore.hidden === versteckt && elMMore.textContent === txt) break;
+        elMMore.hidden = versteckt;
+        elMMore.textContent = txt;
+      }
+    }
+    elMMore.addEventListener("click", function () { mentionsOffen = !mentionsOffen; mentionsZeile(); });
+
+    /* ---- Products (05.10.) -----------------------------------------------------------------
+       shopping_products aus get_mention_detail_v8, je Produkt: ordinal (Reihenfolge in der Antwort),
+       position (Platz in der Produktliste, null bei Einzelkarte), source_product_id (Text, fuehrt
+       zum Product Detail), title / listing_title, brand {company_id, name, logo_url, type},
+       image_url / image_urls, price / price_str / currency, rating / num_reviews, merchant_name.
+       Gezeigt wird in der Reihenfolge der Antwort (ordinal) -- so hat das Modell sie gezeigt. */
+    function zahl(v) {
+      if (v == null || v === "" || typeof v === "boolean") return null;
+      var n = Number(v);
+      return isFinite(n) ? n : null;
+    }
+    /* Nur http(s): ein Bild aus den Daten darf nie javascript: oder data: sein. */
+    function sichereUrl(u) {
+      var x = String(u == null ? "" : u).trim();
+      if (x.indexOf("//") === 0) x = "https:" + x;
+      return /^https?:\/\//i.test(x) ? x : "";
+    }
+    function produkte(d) {
+      var l = d && isArr(d.shopping_products) ? d.shopping_products : [];
+      return l.filter(function (p) {
+        return p && typeof p === "object" && String(p.title || p.listing_title || "").trim();
+      }).map(function (p, i) { return { p: p, i: i }; }).sort(function (a, b) {
+        var x = zahl(a.p.ordinal), y = zahl(b.p.ordinal);
+        if (x == null) x = 1e9 + a.i;
+        if (y == null) y = 1e9 + b.i;
+        return x - y;
+      }).map(function (o) { return o.p; });
+    }
+    function produktKarte(p, k) {
+      var b = p.brand && typeof p.brand === "object" ? p.brand : { type: "other" };
+      var andere = b.type === "other" || !String(b.name || "").trim();
+      var titel = String(p.title || p.listing_title || "").trim();
+      var listing = String(p.listing_title || "").trim();
+      var id = String(p.source_product_id == null ? "" : p.source_product_id).trim();
+      var pos = zahl(p.position);
+      var bild = sichereUrl(p.image_url) || sichereUrl(isArr(p.image_urls) ? p.image_urls[0] : "");
+      /* Erst der Preis im Format der App, sonst was die Antwort schrieb (price_str), sonst der
+         Hinweis -- nie eine geratene Zahl. */
+      var preis = (UC.fmtGeld ? UC.fmtGeld(p.price, p.currency) : "") || String(p.price_str || "").trim().slice(0, 40);
+      var note = zahl(p.rating);
+      if (note != null && (note < 0 || note > 5.05)) note = null;
+      var stimmen = zahl(p.num_reviews);
+      var haendler = String(p.merchant_name || "").trim();
+      var marke = andere
+        ? UC.markenChip({ name: UC.t("Other (unassigned)") }, { ltr: "\u2013", cls: "urd-pc-brand is-none" })
+        : UC.markenChip(b, { cls: "urd-pc-brand" });
+      /* Ohne Produkt-Id kein Ziel -- dann ist die Karte nur Anzeige, kein Knopf. */
+      var tag = id ? 'button type="button"' : "div";
+      return "<" + tag + ' class="urd-pc' + (id ? "" : " is-static") + '" data-pkey="' + k + '"' +
+          (id ? ' data-product="' + esc(id) + '"' : "") + ">" +
+        '<span class="urd-pc-media' + (bild ? " has-img" : "") + '">' +
+          (bild ? '<img src="' + esc(bild) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
+                  ' onerror="this.parentNode.classList.remove(\'has-img\');this.remove()"/>' : "") +
+          '<span class="urd-pc-noimg">' + UC.icon("image", 1.5) + "</span>" +
+          (pos != null && pos >= 1 ? '<span class="urd-pc-pos" data-tip="' +
+            esc(UC.t("Position {n} in this response").replace("{n}", String(Math.round(pos)))) + '">' + Math.round(pos) + "</span>" : "") +
+          (b.type === "own" && !andere ? '<span class="up-marke up-you urd-pc-you">' + esc(UC.t("You")) + "</span>" : "") +
+        "</span>" +
+        '<span class="urd-pc-body">' +
+          '<span class="urd-pc-top">' + marke +
+            (note != null ? '<span class="urd-pc-rate">' + UC.icon("star", 2) +
+              '<span class="up-num">' + esc(UC.fmtNum ? UC.fmtNum(note, 1) : note.toFixed(1)) + "</span>" +
+              (stimmen != null && stimmen >= 0 ? '<span class="urd-pc-revs">(' + esc(UC.fmtNum ? UC.fmtNum(Math.round(stimmen), 0, true) : String(Math.round(stimmen))) + ")</span>" : "") +
+            "</span>" : "") +
+          "</span>" +
+          '<span class="urd-pc-title"' + (listing && listing !== titel ? ' data-tip="' + esc(listing) + '"' : "") + ">" + esc(titel) + "</span>" +
+          '<span class="urd-pc-foot">' +
+            '<span class="urd-pc-price' + (preis ? "" : " is-none") + '">' + esc(preis || UC.t("No price shown")) + "</span>" +
+            '<span class="urd-pc-merch' + (haendler ? "" : " is-none") + '">' + UC.icon("store", 2) +
+              '<span class="urd-pc-mname"' + (haendler ? ' data-tip="' + esc(haendler) + '"' : "") + ">" + esc(haendler || UC.t("No merchant shown")) + "</span>" +
+            "</span>" +
+          "</span>" +
+        "</span>" +
+      "</" + (id ? "button" : "div") + ">";
+    }
+    /* KEIN Skelett fuer die Produkte, solange die Antwort laedt: bei den meisten Antworten gibt es
+       keine, und ein Skelett, das danach verschwindet, liesse die Seite springen und behauptete
+       vorher etwas, das nicht stimmt. Der Abschnitt kommt mit den Daten oder gar nicht. */
+    var produktListe = [];
+    function renderShop() {
+      produktListe = (!istLaden() && !state.fehler && state.data) ? produkte(state.data) : [];
+      elShop.hidden = !produktListe.length;
+      if (!produktListe.length) { elShopRow.innerHTML = ""; return; }
+      elShopRow.innerHTML = produktListe.map(produktKarte).join("");
+      elShopRow.scrollLeft = 0;
+      shopRand();
+    }
+    /* Pfeile nur, wenn es etwas zu blaettern gibt; jeder aus, wenn seine Seite am Ende ist. Die Blende
+       rechts (is-more) sagt "da kommt noch was" und verschwindet am Ende, sonst laege die letzte
+       Karte halb im Nebel. ziel: wohin ein Pfeil gerade faehrt -- das scroll-Ereignis kommt erst
+       mit gemalten Bildern, ein verdeckter Tab malt keine. */
+    function shopRand(ziel) {
+      var max = elShopRow.scrollWidth - elShopRow.clientWidth;
+      var pos = ziel != null ? ziel : elShopRow.scrollLeft;
+      elShopNav.hidden = max <= 2;
+      var prev = elShopNav.querySelector(".urd-shop-prev"), next = elShopNav.querySelector(".urd-shop-next");
+      prev.disabled = pos <= 2; prev.classList.toggle("is-disabled", pos <= 2);
+      next.disabled = pos >= max - 2; next.classList.toggle("is-disabled", pos >= max - 2);
+      elShopWrap.classList.toggle("is-more", max > 2 && pos < max - 2);
+    }
+    function shopBlaettern(r) {
+      /* Eine Seite weniger eine Kartenbreite Ueberlapp: die letzte Karte der alten Seite steht
+         dann vorn auf der neuen, der Blick verliert den Faden nicht. */
+      var max = elShopRow.scrollWidth - elShopRow.clientWidth;
+      var ziel = Math.max(0, Math.min(max, elShopRow.scrollLeft + r * Math.max(220, elShopRow.clientWidth - 80)));
+      try { elShopRow.scrollTo({ left: ziel, behavior: "smooth" }); } catch (e) { elShopRow.scrollLeft = ziel; }
+      shopRand(ziel);
+    }
+    elShopNav.querySelector(".urd-shop-prev").addEventListener("click", function () { shopBlaettern(-1); });
+    elShopNav.querySelector(".urd-shop-next").addEventListener("click", function () { shopBlaettern(1); });
+    elShopRow.addEventListener("scroll", function () { shopRand(); }, { passive: true });
+
+    /* ---- Produkte im Text ------------------------------------------------------------------
+       Der Produktname vor dem ersten Komma ("Raab Vitalfood Elektrolyt"), weil das Modell
+       Packungsangaben fast nie mitschreibt. Nur reine Textknoten, nicht in Zitat-, Marken- oder
+       Gruppen-Chips. Schreibt das Modell den Namen anders, wird nichts markiert -- verlaesslich
+       ginge es nur mit Textstellen aus der RPC. */
+    function rxEsc(x) { return x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+    function produkteImText() {
+      if (!produktListe.length || !elBody) return 0;
+      var keys = produktListe.map(function (p, k) {
+        return { k: k, n: String(p.title || p.listing_title || "").split(",")[0].trim() };
+      }).filter(function (x) { return x.n.length >= 6; }).sort(function (a, b) { return b.n.length - a.n.length; });
+      if (!keys.length) return 0;
+      var muster = keys.map(function (x) { return rxEsc(x.n); }).join("|");
+      var treffe = new RegExp("(" + muster + ")", "i");
+      var w = document.createTreeWalker(elBody, NodeFilter.SHOW_TEXT, {
+        acceptNode: function (n) {
+          if (!n.nodeValue || !treffe.test(n.nodeValue)) return NodeFilter.FILTER_REJECT;
+          if (n.parentNode.closest(".up-rb-cite, .up-rb-cgroup, .up-rb-brand, .urd-pmark")) return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      });
+      var knoten = [];
+      while (w.nextNode()) knoten.push(w.currentNode);
+      var zahlMarken = 0;
+      knoten.forEach(function (n) {
+        var teile = n.nodeValue.split(new RegExp("(" + muster + ")", "i"));
+        if (teile.length < 2) return;
+        var frag = document.createDocumentFragment();
+        teile.forEach(function (t, i) {
+          if (!t) return;
+          if (i % 2 === 1) {
+            var hit = keys.filter(function (x) { return x.n.toLowerCase() === t.toLowerCase(); })[0];
+            var m = document.createElement("span");
+            m.className = "urd-pmark";
+            m.setAttribute("data-pkey", hit ? String(hit.k) : "");
+            m.setAttribute("role", "button");
+            m.setAttribute("tabindex", "0");
+            m.textContent = t;
+            frag.appendChild(m);
+            zahlMarken++;
+          } else frag.appendChild(document.createTextNode(t));
+        });
+        n.parentNode.replaceChild(frag, n);
+      });
+      return zahlMarken;
+    }
+    /* Wort und Karte gehoeren zusammen: Hover auf das eine hebt das andere an, und die Karte rollt
+       dabei in den sichtbaren Teil ihrer Reihe. */
+    function produktHervor(k, an) {
+      if (k == null || k === "") return;
+      [].forEach.call(root.querySelectorAll('.urd-pmark[data-pkey="' + k + '"], .urd-pc[data-pkey="' + k + '"]'), function (e) {
+        e.classList.toggle("is-hl", an);
+      });
+      if (!an) return;
+      var karte = elShopRow.querySelector('.urd-pc[data-pkey="' + k + '"]');
+      if (!karte) return;
+      var l = karte.offsetLeft, r = l + karte.offsetWidth;
+      if (l < elShopRow.scrollLeft || r > elShopRow.scrollLeft + elShopRow.clientWidth) {
+        var ziel = Math.max(0, l - 2);
+        try { elShopRow.scrollTo({ left: ziel, behavior: "smooth" }); } catch (e) { elShopRow.scrollLeft = ziel; }
+        shopRand(ziel);
+      }
+    }
+    root.addEventListener("mouseover", function (e) {
+      var t = e.target.closest ? e.target.closest(".urd-pmark, .urd-pc[data-pkey]") : null;
+      if (!t || (e.relatedTarget && t.contains(e.relatedTarget))) return;
+      produktHervor(t.getAttribute("data-pkey"), true);
+    });
+    root.addEventListener("mouseout", function (e) {
+      var t = e.target.closest ? e.target.closest(".urd-pmark, .urd-pc[data-pkey]") : null;
+      if (!t || (e.relatedTarget && t.contains(e.relatedTarget))) return;
+      produktHervor(t.getAttribute("data-pkey"), false);
+    });
+    /* Der Klick auf ein Wort rollt die Seite zum Abschnitt Products -- in ihrem eigenen Scrollkasten
+       (Drawer oder #main), nicht im Fenster. */
+    function zuDenProdukten() {
+      var p = elShop.parentElement;
+      for (; p && p !== document.body; p = p.parentElement) {
+        var o = getComputedStyle(p).overflowY;
+        if ((o === "auto" || o === "scroll") && p.scrollHeight > p.clientHeight) break;
+      }
+      var top;
+      if (p && p !== document.body) {
+        top = elShop.getBoundingClientRect().top - p.getBoundingClientRect().top + p.scrollTop - 24;
+        try { p.scrollTo({ top: top, behavior: "smooth" }); } catch (e) { p.scrollTop = top; }
+      } else {
+        top = elShop.getBoundingClientRect().top + window.pageYOffset - 24;
+        try { window.scrollTo({ top: top, behavior: "smooth" }); } catch (e2) { window.scrollTo(0, top); }
+      }
+    }
+    /* Ein Produkt oeffnen: ist in Bubble ein Empfaenger fuer urdProduct verdrahtet, entscheidet er.
+       Sonst direkt: den Drawer schliessen, in den Shopping-Bereich wechseln (ueber die Seitenleiste,
+       damit Bubble seinen View-State setzt) und dort das Produkt oeffnen. Ohne Shopping-Element auf
+       der Seite bleibt das Ereignis -- dann sagt makeFire in der Konsole, dass niemand zuhoert. */
+    function produktOeffnen(id) {
+      id = String(id || "").trim();
+      if (!id) return;
+      var fnName = root.getAttribute("data-product-fn") || "bubble_fn_urdProduct";
+      var sh = document.querySelector(".ush-root");
+      var sc = sh && sh.__ushController;
+      if (typeof window[fnName] === "function" || !sc || typeof sc.oeffnen !== "function") {
+        fire("data-product-fn", "urdProduct", id);
+        return;
+      }
+      var dr = root.closest ? root.closest('[id^="drawer-"]') : null;
+      if (dr && typeof window.closeDrawer === "function") {
+        try { window.closeDrawer(dr.id.replace(/^drawer-/, "")); } catch (e) {}
+      }
+      if (typeof window.usnNavigieren === "function") window.usnNavigieren("shopping");
+      else if (typeof window.showView === "function") window.showView("shopping");
+      sc.oeffnen(id);
     }
 
     /* ---- Full Response -------------------------------------------------------------------- */
@@ -566,8 +854,11 @@
         brandMode: state.hl.brands,
         cites: state.hl.cites,
         groupCites: state.hl.group,
-        ownIds: eigeneIds(d)
+        ownIds: eigeneIds(d),
+        /* v2: dieselbe Nummer am Zitat wie an der Quelle im Abschnitt "Citations". */
+        nummern: true
       });
+      produkteImText();
     }
 
     /* Welche Marke ist die eigene? Das companies-Array sagt es nicht -- die Rolle steht nur an
@@ -651,13 +942,18 @@
        liefert genau das Paar). Der Chip wird auseinandergenommen, weil das Logo hier gross links
        neben der Karte steht und der Name darueber. */
     function renderAbsender() {
-      if (istLaden() || !state.data || state.fehler) {
+      /* Bei einem Fehler KEIN Skelett: ein pulsierendes Logo neben der Fehlermeldung sagte "kommt
+         gleich", wo nichts mehr kommt (leer und kaputt duerfen nie gleich aussehen). */
+      if (state.fehler) { elAv.innerHTML = ""; elHlBtn.hidden = true; return; }
+      if (istLaden() || !state.data) {
         elAv.innerHTML = '<span class="urd-sk urd-sk-av"></span>';
         elHlBtn.hidden = true;
         return;
       }
       elHlBtn.hidden = false;
-      if (!elHlBtn.innerHTML) elHlBtn.innerHTML = UC.icon("settings", 2);
+      /* Der Pfeil zeigt nur, dass ein Menue folgt -- er dreht sich beim Oeffnen nicht. */
+      if (!elHlBtn.innerHTML) elHlBtn.innerHTML = UC.icon("settings", 2) +
+        '<span class="urd-hllbl">Highlights</span><span class="urd-hlchev">' + UC.icon("chevronDown", 2) + "</span>";
       /* Nur das Logo aus dem Modell-Chip -- den Namen traegt die KPI-Zeile oben. Der Tooltip
          nennt ihn trotzdem, damit das Bild allein nicht raten laesst. */
       var chip = document.createElement("div");
@@ -791,6 +1087,9 @@
       var alle = (isArr(state.data.citations) ? state.data.citations : []).filter(function (c) {
         return c && c.url;
       });
+      /* Die Nummer ist die Stelle in der UNgefilterten Liste: sie bleibt dieselbe, wenn der
+         Marken-Filter Quellen ausblendet, und ist dieselbe wie am Zitat im Text (respBody nummern). */
+      function nr(c) { return '<span class="urd-nr">' + (alle.indexOf(c) + 1) + "</span>"; }
       /* Der Filter arbeitet nur hier, auf den Daten, die schon da sind -- kein neuer Aufruf, kein
          Ereignis nach Bubble. "ja" zeigt die Quellen, die die eigene Marke nennen, "nein" die
          anderen, leer alle. */
@@ -815,7 +1114,7 @@
         var fav = favOf(c), dom = domainOf(c), desc = descOf(c);
         return '<div class="urd-cite-card" role="button" tabindex="0" data-url="' +
                  esc(quellWert(c)) + '" data-href="' + esc(String(c.url)) + '">' +
-                 '<div class="urd-cc-head">' +
+                 '<div class="urd-cc-head">' + nr(c) +
                    (fav ? '<img class="urd-cc-fav" src="' + esc(fav) + '" alt="" loading="lazy"' +
                           ' referrerpolicy="no-referrer" onerror="this.remove()"/>' : "") +
                    /* Die Domain ist ein eigenes Ziel: sie fuehrt zur Domain-Detailseite, die
@@ -832,7 +1131,7 @@
       elList.innerHTML = liste.map(function (c) {
         var fav = favOf(c);
         return '<div class="urd-cite-row" role="button" tabindex="0" data-url="' +
-                 esc(quellWert(c)) + '" data-href="' + esc(String(c.url)) + '">' +
+                 esc(quellWert(c)) + '" data-href="' + esc(String(c.url)) + '">' + nr(c) +
                  (fav ? '<img class="urd-cr-fav" src="' + esc(fav) + '" alt="" loading="lazy"' +
                         ' referrerpolicy="no-referrer" onerror="this.remove()"/>' : "") +
                  '<span class="urd-cr-txt">' +
@@ -896,12 +1195,36 @@
 
     function istLaden() { return !!state.loading; }
 
+    /* Was im UI steht, wenn die RPC nicht antworten konnte (get_mention_detail_v8 meldet
+       mention_not_found, wenn es den Lauf nicht gibt oder er nicht zum Team gehoert). Ohne Code:
+       die Nutzlast liess sich nicht lesen. */
+    function fehlerText(code) {
+      var c = String(code || "").trim();
+      if (!c) return "The response data could not be read.";
+      if (c === "mention_not_found") return "This response could not be found.";
+      if (/^team_access_/.test(c) || c === "forbidden" || c === "not authenticated") return "Your team doesn't have access right now.";
+      return "This response could not be loaded. Please try again.";
+    }
+
+    /* EINBLENDEN (v2): einmal je neuer Antwort, nicht bei jedem Neuzeichnen -- die Abschnitte
+       kommen nacheinander herein (CSS .is-einblenden). Nach dem Ende wieder weg, sonst liefe die
+       Animation bei jedem Wechsel einer Klasse am Root erneut an. */
+    var einblendUhr = null;
+    function einblenden() {
+      root.classList.remove("is-einblenden");
+      void root.offsetWidth;
+      root.classList.add("is-einblenden");
+      if (einblendUhr) clearTimeout(einblendUhr);
+      einblendUhr = setTimeout(function () { root.classList.remove("is-einblenden"); }, 700);
+    }
+
     function render() {
       syncSeg();
       renderBrandFilter();
       renderHead();
       renderAbsender();
       renderMents();
+      renderShop();
       renderBody();
       renderCites();
     }
@@ -960,7 +1283,13 @@
         markeFeuern(bchip.getAttribute("data-rb-brand"));
         return;
       }
-      /* Eine Marke im Mentions-Abschnitt. */
+      /* Ein Produkt im Text: zu seiner Karte. */
+      var pm = e.target.closest(".urd-pmark");
+      if (pm) { zuDenProdukten(); return; }
+      /* Eine Produktkarte. */
+      var pc = e.target.closest(".urd-pc[data-product]");
+      if (pc) { produktOeffnen(pc.getAttribute("data-product")); return; }
+      /* Eine Marke in der Zeile "Mentioned". */
       var m = e.target.closest(".urd-ment");
       if (m) { markeFeuern(m.getAttribute("data-brand")); return; }
       /* Die Domain ZUERST pruefen -- sie liegt in der Kachel, und der Klick auf sie meint die
@@ -991,7 +1320,7 @@
       if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
       var z = e.target.closest ? e.target.closest(
         ".urd-prompt, .urd-ment, .urd-cite-card, .urd-cite-row, .up-rb-cite, .up-rb-brand, " +
-        ".up-rb-cgroup, [data-domain]") : null;
+        ".up-rb-cgroup, .urd-pmark, [data-domain]") : null;
       if (!z) return;
       e.preventDefault();
       z.click();
@@ -1046,6 +1375,8 @@
     if (UC.onResize) UC.onResize(root, function () {
       if (state.data && state.view === "grid") { spaltenSetzen((state.data.citations || []).length); markenPassen(); }
       glistSchliessen();
+      mentionsZeile();
+      if (produktListe.length) shopRand();
     });
 
     render();
@@ -1058,19 +1389,28 @@
     }
 
     var ctrl = {
-      set: function (payload) {
-        var p = UC.parseLoose ? UC.parseLoose(payload, "response-detail") : payload;
-        /* Die RPC liefert eine Liste mit einem Eintrag (so sehen alle drei Beispiele aus). Ein
-           blankes Objekt wird genauso genommen -- wer den Payload von Hand baut, soll nicht an
-           einer Klammer scheitern. */
+      set: function (payload, fehler) {
+        /* get_mention_detail_v8 (05.10.): EIN Objekt im Umschlag {"json": "<Text>"}; v7 lieferte
+           eine Liste mit einem Eintrag. UC.bubbleObjekt nimmt beides, packt den Umschlag aus und
+           liest mit readBubble -- dem einen Leseweg der App (parseLoose scheitert an Emoji).
+           source_product_id kann groesser sein als Number.MAX_SAFE_INTEGER und wird VOR dem Lesen
+           zu Text, falls sie doch einmal ohne Anfuehrungszeichen kommt. */
+        var p = UC.bubbleObjekt ? UC.bubbleObjekt(payload, { grosseIds: ["source_product_id"] })
+          : (UC.readBubble ? UC.readBubble(payload) : payload);
         if (isArr(p)) p = p.length ? p[0] : null;
         var ok = p && typeof p === "object" && (p.prompt_text != null || p.response_json || p.id);
-        state.fehler = ok ? null : "The response data could not be read.";
+        /* Der dritte Wert ist Bubbles "error body". Er zaehlt NUR ohne lesbare Antwort -- was
+           Bubble bei Erfolg dort hinschreibt, darf eine richtige Antwort nie verdraengen. */
+        var code = !ok && UC.bubbleFehler ? UC.bubbleFehler(fehler) : "";
+        var neu = !!ok && (state.loading || !state.data || String(state.data.id || "") !== String(p.id || ""));
+        state.fehler = ok ? null : fehlerText(code);
         state.data = ok ? p : null;
         state.hasData = !!ok;
         state.loading = false;
+        mentionsOffen = false;
         warteBeenden();
         render();
+        if (neu) einblenden();
         persist();
         return true;
       },
@@ -1134,7 +1474,9 @@
     queue: "__urdBootQueue",
     initRoot: initRoot,
     api: {
-      setResponseDetail:        function (id, p) { return each(id, function (c) { c.set(p); }); },
+      /* (instanz, json, fehler): json ist das Feld json des Umschlags, fehler Bubbles "error body"
+         (get_mention_detail_v8). Mit zwei Werten wie bisher. */
+      setResponseDetail:        function (id, p, f) { return each(id, function (c) { c.set(p, f); }); },
       /* Den Payload aus einem DOM-Element lesen statt ihn in JS-Quelltext zu setzen. Das ist der
          Weg fuer alles, was echte Zeilenumbrueche, Anfuehrungszeichen oder Backticks enthaelt --
          also fuer jeden Antworttext. Im Quelltext eines Run-JS-Schritts ist so ein Text nicht

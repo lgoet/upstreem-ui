@@ -9,12 +9,15 @@
   Unterschiede sind genau drei Zitatschreibweisen, und die erkennt core am Text. Ein viertes
   Modell braucht kein viertes Element.
 
-  ── Die vier Abschnitte ──────────────────────────────────────────────────────
-  1. Der Prompt-Text als Titel, VOLLSTAENDIG (nie gekuerzt). Darunter Modell, Laufzeit
-     ("2 minutes ago", ab einem Tag das Datum) und Market.
-  2. "Mentions": die verfolgten Marken dieser Antwort als Chips.
-  3. "Full Response": der Antworttext mit Tabellen, Zitat-Chips und Markenauszeichnung.
-  4. "Citations": die Quellen, umschaltbar zwischen Kacheln (Standard) und Liste.
+  ── Die Abschnitte (v2, 05.10.) ──────────────────────────────────────────────
+  1. Kopf: der Prompt-Text als Titel, VOLLSTAENDIG (nie gekuerzt). Darunter Modell und Laufzeit
+     links, Market und Themen rechts, und die Zeile "Mentioned" mit den Marken ("+N more").
+  2. "Products": die Shopping-Produkte DIESER Antwort als Karten, in ihrer Reihenfolge. Nur wenn
+     die Antwort welche hat (shopping_products, get_mention_detail_v8) -- sonst fehlt der Abschnitt.
+  3. "Full Response": der Antworttext mit Tabellen, nummerierten Zitat-Chips, Markenauszeichnung
+     und den Produkten im Text (gepunktet unterstrichen, mit ihrer Karte verbunden).
+  4. "Citations": die Quellen, nummeriert (dieselbe Zahl wie am Zitat im Text), umschaltbar
+     zwischen Kacheln (Standard) und Liste.
 
   ── Attribute am Wurzel-Div ──────────────────────────────────────────────────
   | Attribut        | Pflicht | Bedeutung                                                  |
@@ -27,6 +30,7 @@
   | data-url-fn     | nein    | Toolbox-Funktion fuer den Klick auf eine Quelle             |
   | data-view-fn    | nein    | Toolbox-Funktion fuer den Wechsel Kacheln/Liste             |
   | data-domain-fn  | nein    | Toolbox-Funktion fuer den Klick auf eine Domain             |
+  | data-product-fn | nein    | Toolbox-Funktion fuer den Klick auf eine Produktkarte (siehe urdProduct) |
 
   ── Die Ereignisse und ihre Werte ────────────────────────────────────────────
   Die ersten drei tragen einen BLANKEN Wert, kein JSON -- Bubble liest sie ohne Umweg:
@@ -38,6 +42,12 @@
   | urdUrl     | Klick auf eine Quelle (Kachel, Zeile) ODER "Open detail page" im Menue eines Zitat-Chips | citations[].id -- und wenn die RPC keine id liefert, die URL |
   | urdView    | Umschalter Kacheln/Liste                  | "grid" oder "list", roh         |
   | urdDomain  | Klick auf die Domain einer Quelle (Kachel oder Zeile) | die Domain als Text  |
+  | urdProduct | Klick auf eine Produktkarte, NUR wenn ein Empfaenger verdrahtet ist ODER kein Shopping-Element auf der Seite steht | source_product_id, roh |
+
+  urdProduct braucht KEINEN Workflow: ohne Empfaenger oeffnet der Klick das Produkt selbst -- der
+  Drawer geht zu, die Seitenleiste wechselt auf Shopping (usnNav wie ein Klick dort), und das
+  Shopping-Element zeigt das Product Detail. Wer etwas anderes will, legt ein JavaScriptToBubble
+  "urdProduct" an; dann entscheidet der Workflow.
 
   urdView ist der EINZIGE dieser Auslöser, der optional ist. Die Komponente merkt sich die
   Wahl Kacheln/Liste ohnehin selbst (UC.prefSet), Bubble braucht davon nichts zu wissen.
@@ -57,14 +67,20 @@
   automatisch und es ist nichts umzustellen.
 
   ── Die drei Setter ──────────────────────────────────────────────────────────
-    setResponseDetail("<instance>", <json>)          alles: Prompt, Modell, Marken, Text, Quellen
+    setResponseDetail("<instance>", <json>, <fehler>)  alles: Prompt, Modell, Marken, Produkte,
+                                                     Text, Quellen. <fehler> = Bubbles "error body"
+                                                     (optional, zaehlt nur ohne lesbare Antwort)
     setResponseDetailFrom("<instance>", "<selektor>")  dasselbe, aber der Payload wird aus dem
                                                      Inhalt eines DOM-Elements gelesen
     setResponseDetailLoading("<instance>", "yes")    Skelette an
     resetResponseDetail("<instance>")                alles leer, zurueck auf Kacheln
 
-  Der Payload ist die LISTE, wie die RPC sie liefert -- ein Eintrag darin. Ein blankes Objekt
-  geht genauso. Ein Payload, den core nicht lesen kann, endet als benannter Fehler in den
+  Der Payload ist seit get_mention_detail_v8 EIN OBJEKT (das Feld json des Umschlags); die Liste
+  aus v7 mit einem Eintrag geht weiter, ebenso der ganze Umschlag {"json": "..."}. Gelesen wird
+  mit UC.readBubble; source_product_id bleibt Text, auch ueber 2^53.
+  Fehler der RPC (dritter Wert): mention_not_found -> "This response could not be found.",
+  team_access_* / forbidden -> "Your team doesn't have access right now.", alles andere -> "This
+  response could not be loaded. Please try again." Ein Payload, den core nicht lesen kann, endet als benannter Fehler in den
   Abschnitten, nicht als endloses Skelett. Bleibt der Setter 25 Sekunden aus, steht "No data" da
   und der Grund in der Konsole.
 
@@ -140,6 +156,25 @@
       "... — title: \"LeeUP Media ...\" meta: \"og:title\": \"LeeUP Media ...\""
   Ein JSON-WERT wird nie von : gefolgt, ein Schluessel immer -- diese Unterscheidung fehlte.
 
+  ── Der Workflow mit get_mention_detail_v8 (05.10.) ──────────────────────────
+  Ereignis: "When drawer_response event" (bzw. dort, wo bisher v7 lief).
+  Schritt 1: API Connector get_mention_detail_v8, Parameter body:
+      {"p_prompt_run_id": "<prompt_run_id aus dem Ereignis>", "p_team": "<Team>"}
+      Beispiel: {"p_prompt_run_id":"f0e1d2c3-0000-4000-8000-000000000005","p_team":"877c649c-f5f2-44e9-bb04-155f5bf44e70"}
+      "Include errors in response and allow workflow actions to continue" AN.
+  Schritt 2: Run javascript, OHNE "Only when":
+
+      (function () {
+        var ROH = `[Result of step 1's json]`
+          .replace(/:\s*([,}\]])/g, ": null$1")
+          .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+        var FEHLER = `[Result of step 1's error body]`;
+        try { if (window.setResponseDetail) window.setResponseDetail("INSTANCE_ID", ROH, FEHLER); } catch (e) {}
+      })();
+
+  Statisch zum Ausprobieren: derselbe Schritt, im Backtick statt des Ausdrucks das Beispiel aus der
+  v8-Uebergabe (ausgepackt) -- im Pruefstand urd06/_v8.js unveraendert gegen die Komponente gelaufen.
+
   ── Statischer Start zum Ausprobieren ────────────────────────────────────────
   Die Beispieldaten liegen NICHT in diesem Element, sondern als Run-JS-Schritt im
   Pageload-Workflow. Die getesteten Fassungen liegen im Repo als _h_urd_daten.js (alle drei
@@ -155,6 +190,8 @@
      data-url-fn="bubble_fn_urdUrl"
      data-view-fn="bubble_fn_urdView"
      data-domain-fn="bubble_fn_urdDomain">
+  <!-- data-product-fn="bubble_fn_urdProduct" nur, wenn ein Workflow den Klick auf ein Produkt
+       selbst behandeln soll -- ohne oeffnet die Komponente das Produkt im Shopping-Bereich. -->
   <!--
     DER EINFACHSTE WEG, die Daten hereinzugeben: den dynamischen Ausdruck als INHALT dieses Blocks.
     Die Komponente liest ihn beim Aufbau selbst, es braucht dafuer keinen Run-JS-Schritt.

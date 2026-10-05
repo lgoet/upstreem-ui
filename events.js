@@ -464,7 +464,6 @@
     "An event can have at most 100 URLs.": "Maximal 100 URLs pro Event.",
     "This event no longer exists.": "Dieses Event existiert nicht mehr.",
     "This URL is no longer part of the event.": "Diese URL gehört nicht mehr zum Event.",
-    "Your team doesn't have access right now.": "Dein Team hat gerade keinen Zugang.",
     /* Die Popups (Teil 3) */
     "Optional": "Optional", "Select a date": "Datum wählen",
     "Event icon": "Event-Symbol", "Event color": "Event-Farbe", "e.g. Website relaunch": "z. B. Website-Relaunch",

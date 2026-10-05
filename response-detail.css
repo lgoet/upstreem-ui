@@ -1,22 +1,27 @@
 /* upstreem response-detail.css — Praefix urd. Braucht core.css.
 
-   Eine einzelne Modellantwort in vier Abschnitten: Prompt als Titel, KPI-Zeile, Mentions,
-   Full Response, Citations. Die Abschnitte stehen mit 32px Abstand untereinander -- dasselbe Mass
-   wie in domain-detail, damit zwei Detailseiten denselben Rhythmus haben.
+   Eine einzelne Modellantwort, v2 (05.10., Design-Uebergabe "Response Detail v2 + Products"):
+   Kopf (Prompt, Absenderzeile, Marken), Products (nur mit Shopping-Produkten), Full Response,
+   Citations. 40px zwischen den Abschnitten -- der Kopf traegt jetzt die Marken mit, und mehr Luft
+   trennt die Abschnitte ohne Linien.
 
    Was hier steht, ist Positionierung oder etwas, das es in core nicht gibt. Der Antworttext, seine
    Tabellen, Zitat-Chips, Markenauszeichnungen und das URL-Menue kommen komplett aus core
    (.up-rb-*). Die Karte, die Logos, die Marken-Chips, der Umschalter ebenfalls. */
 
-.urd-root { display: flex; flex-direction: column; gap: 32px; width: 100%; }
+.urd-root { display: flex; flex-direction: column; gap: 40px; width: 100%; }
 
 /* ---- Prompt als Titel ------------------------------------------------------------------------
    Vollstaendig, nie gekuerzt (Vorgabe): kein line-clamp, kein ellipsis. 20px ist eine Stufe ueber
    der Kartenueberschrift (14px) und eine unter dem Seitentitel -- die Antwort ist ein Detail einer
    Seite, nicht die Seite. Der Klick geht nach Bubble, also traegt er auch den Zeiger. */
-.urd-head { display: flex; flex-direction: column; gap: 12px; }
-.urd-prompt { font-size: 23.5px; font-weight: 500; line-height: 1.4; letter-spacing: -0.015em;
-  color: var(--vc-text); margin: 0; cursor: pointer; border-radius: 8px;
+.urd-head { display: flex; flex-direction: column; gap: 14px; }
+/* 22 statt 23.5: 23.5 lag ausserhalb der Skala (CLAUDE.md 1c). Der Prompt ist eine Frage, keine
+   Seitenueberschrift -- --up-fs-2xl ist die Stufe fuer "Titel eines Details". 820px, damit eine
+   lange Frage nicht ueber die ganze Breite laeuft. */
+.urd-prompt { font-size: var(--up-fs-2xl); font-weight: 500; line-height: 1.38; letter-spacing: -0.02em;
+  max-width: 820px; text-wrap: pretty;
+  color: var(--vc-text); margin: 0; cursor: pointer; border-radius: var(--up-r-m);
   transition: color 120ms ease; }
 .urd-prompt:hover { color: var(--vc-muted); }
 .urd-prompt:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 3px; }
@@ -26,18 +31,48 @@
    kein Strich, wie in der Kopfzeile der Antwortkarten. */
 /* 16px ist der Standardabstand der App zwischen zwei Angaben einer Kopfzeile. Der Trenner selbst
    traegt keinen eigenen Abstand -- er sitzt in der Luecke, die es ohnehin gibt. */
-.urd-kpis { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; min-height: 24px; }
-.urd-kpi-time { font-size: 12px; font-weight: 500; color: var(--vc-muted); white-space: nowrap; }
-/* 1px breit, 14px hoch: hoch genug, um zwischen zwei 28px-Chips als Trennung zu wirken, und
-   niedrig genug, dass er nicht selbst wie ein Rahmen aussieht. */
-.urd-kpi-sep { width: 1px; height: 14px; flex: 0 0 1px; background: var(--vc-border);
-  border-radius: 1px; }
+/* v2: ohne Trennstriche. Links der Absender (Modell, Zeit), rechts Market und Themen
+   (.urd-kpi-push, margin-left auto) -- der Abstand zwischen den Gruppen trennt staerker als ein
+   Strich. */
+.urd-kpis { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; min-height: 24px; }
+.urd-kpi-time { font-size: var(--up-fs-m); font-weight: 400; color: var(--vc-third); white-space: nowrap; }
+.urd-kpi-push { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; margin-left: auto; min-width: 0; }
 .urd-tags { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 /* 26 statt der 28 des Bauteils, und die Geometrie zieht im Verhaeltnis 26/28 mit: Polsterung
    8/11 -> 7/10, Radius 8 -> 7.4, Innenabstand 6 -> 5.5. Die Schriftgroesse bleibt bei 12 -- ein
    26px hoher Chip hat 24px innen, 12px Text bei Zeilenhoehe 1 stoesst dort an nichts, und ein
    kleinerer Themenname waere die kleinste Schrift der ganzen Seite. */
-.urd-tags .up-topicchip { height: 26px; padding: 0 7px 0 10px; border-radius: 7.4px; gap: 5.5px; }
+/* Radius 7 statt 7.4 und Abstand 6 statt 5.5 (v2: auf die Skala gerundet) -- 7 ist konzentrisch zu
+   den 8 einer Kachel bei 1px Rahmen. */
+.urd-tags .up-topicchip { height: 26px; padding: 0 7px 0 10px; border-radius: 7px; gap: 6px; }
+
+/* ---- Marken im Kopf (v2) ----------------------------------------------------------------------
+   Eine Zeile, 32px hoch, unter einer Linie. Was nicht passt, steht hinter "+N more"; aufgeklappt
+   bricht die Liste um. Bei zwanzig Marken bleibt es so eine Zeile, bis man sie haben will. */
+.urd-mrow { display: flex; align-items: flex-start; gap: 12px; min-width: 0;
+  padding-top: 14px; border-top: 1px solid var(--vc-border); }
+.urd-root .urd-mrow[hidden] { display: none; }
+.urd-mrow-lbl { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; height: 32px;
+  font-size: var(--up-fs-m); font-weight: 500; color: var(--vc-third); }
+/* Der Zaehler: 20px hoch, Radius 6, auf der Kopfflaeche -- dieselbe Form wie die Zaehler an den
+   Reitern, nur ohne Rahmen. */
+.urd-mrow-n { display: inline-flex; align-items: center; justify-content: center; min-width: 20px;
+  height: 20px; padding: 0 6px; box-sizing: border-box; border-radius: var(--up-r-s);
+  background: var(--vc-heading-bg); color: var(--vc-muted); font-size: var(--up-fs-xs); font-weight: 600;
+  font-variant-numeric: tabular-nums; }
+.urd-mrow-n:empty { display: none; }
+.urd-mrow-box { flex: 1 1 auto; min-width: 0; display: flex; align-items: flex-start; gap: 8px; }
+.urd-mrow .urd-ments { flex: 0 1 auto; min-width: 0; max-height: 32px; overflow: hidden; gap: 6px; }
+.urd-mrow.is-open .urd-ments { max-height: none; }
+/* Ein Textknopf ohne Flaeche im Ruhezustand: er ist Nachsatz der Zeile, kein Werkzeug. Kein
+   Segment-Knopf (.up-seg-btn), auch wenn der Pruefer ihn so liest: er steht allein, ohne Schiene
+   und ohne aktiven Zustand -- und einen Textknopf mit Hover-Grund hat core nicht. */
+.urd-mrow-more { flex: 0 0 auto; height: 32px; padding: 0 10px; border: 0; border-radius: var(--up-r-m);
+  background: transparent; font: inherit; font-size: var(--up-fs-m); font-weight: 500; color: var(--vc-muted);
+  cursor: pointer; white-space: nowrap; transition: background var(--up-t-1) ease, color var(--up-t-1) ease; }
+.urd-mrow-more:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
+.urd-mrow-more:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 2px; }
+.urd-root .urd-mrow-more[hidden] { display: none; }
 
 /* ---- Abschnittskopf (Mentions, Full Response, Citations) ----
    Dieselbe Staffelung wie in domain-detail: Titel in Textfarbe, Beschreibung eine Stufe kleiner
@@ -47,7 +82,7 @@
 /* Der Knopf richtet sich an der Ueberschrift aus, nicht am Fuss der Beschreibung darunter --
    sonst haengt er unter dem Titel statt neben ihm. */
 .urd-sect-body .urd-sec { align-items: flex-start; }
-.urd-sect-body .urd-hlwrap { margin-top: -4px; }
+.urd-sect-body .urd-hlwrap { margin-top: -6px; }
 /* Ueberschrift und Unterzeile NEBENEINANDER, Wert fuer Wert wie in url-detail.css: an der
    Grundlinie ausgerichtet, 10px Abstand, Unterzeile genau einen Punkt kleiner (14 -> 13). Zwei
    Detailseiten, die ihre Abschnitte verschieden ueberschreiben, lesen sich als zwei Apps.
@@ -58,10 +93,11 @@
 .urd-sec-title { font-size: 14px; font-weight: 500; color: var(--vc-text); }
 .urd-sec-desc { font-size: 13px; font-weight: 400; line-height: 1.45; color: var(--vc-muted); }
 
-/* ---- Karte ----
-   Werte 1:1 aus .ubd-card / .udd-card: 16px Radius, 1px Rahmen, 16px Polsterung. */
-.urd-card { border: 1px solid var(--vc-border); border-radius: 16px; background: var(--vc-bg);
-  padding: 16px; width: 100%; box-sizing: border-box; }
+/* ---- Die Antwort ohne Karte (v2) ----
+   Der Rahmen um einen langen Text machte ihn schwer; der Absender (Logo links) traegt die
+   Zuordnung allein. Tabellen behalten ihren eigenen Rahmen aus core. 4px oben, damit die erste
+   Zeile auf der Hoehe der Logo-Mitte beginnt. */
+.urd-card { width: 100%; box-sizing: border-box; padding: 4px 0 0; }
 
 /* ---- Mentions ----
    Ein Chip je Marke, umbrechend. Zehn bis fuenfzehn Marken sind die Ausnahme, kommen aber vor --
@@ -78,9 +114,6 @@
    Was NICHT mitgezogen ist und deshalb hier bleibt: die Breitenbegrenzung des einzelnen Chips
    und der leere Zustand darunter -- beides gehoert zu DIESER Seite, nicht zum Chip. */
 .urd-ment { max-width: 100%; }
-/* Der leere Zustand der Mentions: das Minus steht fuer sich, ohne Karte und ohne Satz. Etwas
-   Hoehe, damit der Abschnitt nicht auf eine Zeile zusammenfaellt. */
-.urd-mentempty { min-height: 24px; }
 
 /* Kein Treffer: derselbe Ton wie jeder leere Zustand der App, nur ohne Bild -- der Abschnitt ist
    eine Zeile hoch und braucht keine halbe Karte Luft. */
@@ -93,14 +126,15 @@
 /* Die Antwort als Nachricht: links das Logo des Modells wie ein Profilbild, rechts daneben der
    Name und darunter die Karte mit dem Text. 12px zwischen Logo und Spalte, damit das Logo als
    Absender neben der Karte steht und nicht als Teil von ihr. */
-.urd-msg { display: flex; align-items: flex-start; gap: 12px; min-width: 0; }
+.urd-msg { display: flex; align-items: flex-start; gap: 16px; min-width: 0; }
 /* Kein margin-top: die Oberkante des Logos liegt auf der Oberkante der Karte (Vorgabe) -- so
    liest es sich als Profilbild neben einer Nachricht und nicht als etwas, das daneben schwebt. */
 .urd-msg-av { flex: 0 0 auto; }
-/* Das Logo ist .up-ment-logo aus core, hier eine Stufe groesser: 32 statt 18. Faktor 32/18 auf
-   alle Werte -- Radius 5 -> 8.9, Bild 16 -> 28.4, Polsterung 1 -> 1.8. */
-.urd-msg-av .up-ment-logo { width: 32px; height: 32px; border-radius: 8.9px; padding: 1.8px; }
-.urd-msg-av .up-ment-logo img { width: 28.4px; height: 28.4px; border-radius: 7.1px; }
+/* Das Logo ist .up-ment-logo aus core, hier eine Stufe groesser: 32 statt 18. Der Faktor 32/18
+   ergab 8.9 / 28.4 / 1.8 -- auf die Skala gerundet (v2): Radius 8, Polster 2, Bild 28 mit Radius 6
+   (konzentrisch: 8 - 2). */
+.urd-msg-av .up-ment-logo { width: 32px; height: 32px; border-radius: var(--up-r-m); padding: 2px; }
+.urd-msg-av .up-ment-logo img { width: 28px; height: 28px; border-radius: var(--up-r-s); }
 /* Im Dunkeln ohne helle Platte (02.10. angefordert) -- dieselbe Regel wie am Modell-Chip in core
    (.up-model-chip .up-ment-logo): die Modell-Logos sind dort selbst hell. Der Avatar nimmt nur
    das Logo AUS dem Chip (renderAbsender), darum griff die Regel von core hier nicht. Ohne Bild
@@ -108,17 +142,34 @@
 .up-root[data-theme="dark"] .urd-msg-av .up-ment-logo { background: transparent; padding: 0; }
 .up-root[data-theme="dark"] .urd-msg-av .up-model-ltr { color: var(--vc-muted); }
 .urd-body { position: relative; min-width: 0; }
-.urd-body .up-rb { max-width: 100%; }
+/* Lesebreite: 720px, ohne Karte liefe der Text sonst ueber die ganze Breite des Drawers. */
+.urd-body .up-rb { max-width: min(720px, 100%); }
+
+/* ---- Produkte im Text (v2) ----
+   Eine leise Unterstreichung, keine Flaeche: im Text stehen schon Marken- und Zitat-Chips, eine
+   dritte Auszeichnung mit Grund waere zu viel. Hover verbindet Wort und Karte in beide Richtungen. */
+.urd-pmark { text-decoration: underline; text-decoration-style: dotted; text-decoration-thickness: 1.5px;
+  text-decoration-color: var(--vc-fourth); text-underline-offset: 3px; cursor: pointer; border-radius: var(--up-r-xs);
+  transition: background var(--up-t-1) ease, text-decoration-color var(--up-t-1) ease; }
+.urd-pmark:hover, .urd-pmark.is-hl { background: var(--vc-heading-bg); text-decoration-color: var(--vc-text); }
+.urd-pmark:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 2px; }
 
 /* ---- Menue der Hervorhebungen (Punkt 10) -----------------------------------------------------
    Der Knopf ist der Zahnrad-Knopf der App: 28px, Radius 8, Icon in Sekundaerfarbe, Hover wie
    ueberall. .up-pop und die Positionierung kommen aus core (UC.makePopover). */
 .urd-hlwrap { position: relative; flex: 0 0 auto; }
-/* Der Knopf ist .up-iconbtn aus core -- 32px, Radius 8, Icon 16px, Hover und Dunkelmodus
-   inklusive. Hier steht die Drittfarbe im Ruhezustand (Vorgabe) und der offene Zustand, den das
-   Bauteil nicht kennt. Beim Hover uebernimmt wieder core. */
-.urd-hlbtn { color: var(--vc-third); }
-.urd-hlwrap.is-open .up-iconbtn { background: var(--vc-heading-bg); color: var(--vc-text); }
+/* v2: ein beschrifteter Textknopf (Zeichen, "Highlights", Pfeil) ohne Rahmen und ohne Flaeche --
+   auch nicht beim Ueberfahren oder offen, nur die Schrift wird dunkler. Kein .up-iconbtn: dessen
+   feste 32x32, Polster und Hover haetten hier alle ueberschrieben werden muessen. 32 hoch wie jeder
+   Knopf einer Werkzeugzeile. Der Pfeil dreht sich beim Oeffnen nicht. */
+.urd-hlbtn { display: inline-flex; align-items: center; gap: 6px; height: var(--up-h-btn); padding: 0 2px;
+  border: 0; background: transparent; font: inherit; font-size: var(--up-fs-m); font-weight: 500;
+  color: var(--vc-muted); cursor: pointer; transition: color var(--up-t-1) ease; }
+.urd-hlbtn svg { width: 15px; height: 15px; flex: 0 0 15px; display: block; }
+.urd-hlchev { display: inline-flex; }
+.urd-hlbtn .urd-hlchev svg { width: 14px; height: 14px; flex: 0 0 14px; }
+.urd-hlbtn:hover, .urd-hlwrap.is-open .urd-hlbtn { color: var(--vc-text); }
+.urd-hlbtn:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 2px; border-radius: var(--up-r-xs); }
 .urd-hlbtn[hidden] { display: none; }
 .urd-hlopt[disabled] { opacity: 0.45; cursor: default; }
 .urd-hlopt[disabled]:hover { background: transparent; }
@@ -157,7 +208,7 @@
 
 /* ---- Citations ----
    Zwei Ansichten derselben Liste. Der Umschalter ist .up-seg aus core. */
-.urd-cites-grid { display: grid; grid-template-columns: repeat(var(--urd-cols, 1), 1fr); gap: 14px; }
+.urd-cites-grid { display: grid; grid-template-columns: repeat(var(--urd-cols, 1), 1fr); gap: 12px; }
 .urd-root:not(.is-listview) .urd-cites-list { display: none; }
 .urd-root.is-listview .urd-cites-grid { display: none; }
 
@@ -166,8 +217,10 @@
    und 200px waeren zur Haelfte leer. */
 /* min-height 184 statt 152 (Vorgabe: 32px hoeher) -- die Beschreibung bekommt damit ihre zwei
    Zeilen auch dann, wenn der Titel nur eine braucht, und der Fuss steht auf gleicher Hoehe. */
-.urd-cite-card { display: flex; flex-direction: column; min-width: 0; min-height: 184px;
-  padding: 16px; border-radius: 14px; border: 1px solid var(--vc-border); background: var(--vc-bg);
+/* v2: ohne Mindesthoehe, Polster 14/16, Radius 16 -- kurze Quellen liessen mit 184px halbe
+   Kacheln leer. */
+.urd-cite-card { display: flex; flex-direction: column; min-width: 0;
+  padding: 14px 16px; border-radius: var(--up-r-2xl); border: 1px solid var(--vc-border); background: var(--vc-bg);
   cursor: pointer; transition: background 120ms ease; box-sizing: border-box; }
 .urd-cite-card:hover { background: var(--vt-row-hover); }
 .urd-cite-card:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 2px; }
@@ -196,16 +249,22 @@
 /* Der Titel ist der Wert der Karte: zwei Zeilen, dann gekuerzt. */
 .urd-cc-title { font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.4;
   letter-spacing: -0.01em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-  overflow: hidden; margin-bottom: 6px; }
+  overflow: hidden; margin-bottom: 4px; }
 /* Die Beschreibung nimmt, was uebrig ist: sie ist Vorschau und darf als erstes weichen. */
+/* v2: eine Zeile -- die Kachel ist eine Quelle, keine Vorschau ihres Inhalts. */
 .urd-cc-desc { font-size: 13px; font-weight: 400; color: var(--vc-muted); line-height: 1.45;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
   flex: 1 1 auto; }
 /* Die Marken stehen rechts unten -- wie im Fuss der Antwortkarten. */
 /* Rechtsbuendig wie im Fuss der Antwortkarten, und links bleiben 32px frei (Vorgabe): UC.stackFit
    rechnet diesen Rand mit und zeigt nur so viele Marken, wie davor Platz haben. */
 .urd-cc-foot { display: flex; align-items: center; justify-content: flex-end; gap: 8px;
-  margin-top: 12px; min-height: 24px; padding-left: 32px; box-sizing: border-box; }
+  margin-top: 10px; min-height: 24px; padding-left: 32px; box-sizing: border-box; }
+/* Die Nummer der Quelle (v2) vor dem Favicon, an Kachel und Zeile -- dieselbe Zahl wie am Zitat im
+   Text (.up-rb-cite-nr aus core). 18px, Radius 5 (konzentrisch zur 6er-Stufe). */
+.urd-nr { flex: 0 0 auto; min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box;
+  border-radius: 5px; background: var(--vc-heading-bg); color: var(--vc-muted); font-size: var(--up-fs-xs);
+  font-weight: 600; line-height: 18px; text-align: center; font-variant-numeric: tabular-nums; }
 
 /* Liste: keine Rasterlinien, keine Spalten. Eine Quellenliste, wie man sie aus Chatbots kennt --
    Favicon, Titel, Marken, mit Luft dazwischen. Getrennt wird durch Abstand, nicht durch Striche;
@@ -250,14 +309,14 @@
    aus core und bleiben -- ein Pixel skaliert nicht sinnvoll auf 0.93. Bild also 26 - 2 - 4 = 20px,
    Bildradius 7.4 - 3 = 4.4. */
 .urd-cc-foot .up-stack-vis, .urd-cr-ments .up-stack-vis {
-  border-radius: 7.4px; box-shadow: none; border: 1px solid var(--vc-border); }
+  border-radius: 7px; box-shadow: none; border: 1px solid var(--vc-border); }
 /* Im Dunkeln kein Rahmen: die Logokachel ist dort selbst hell und traegt die Form allein --
    dieselbe Entscheidung wie beim Marken-Chip in den Mentions und beim Zitations-Chip im Text.
    Ein Marken-Chip soll nicht an drei Orten drei Rahmen-Regeln haben. */
 .up-root[data-theme="dark"] .urd-cc-foot .up-stack-vis,
 .up-root[data-theme="dark"] .urd-cr-ments .up-stack-vis {
   border-color: transparent; background-clip: padding-box; }
-.urd-cc-foot .up-stack-item img, .urd-cr-ments .up-stack-item img { border-radius: 4.4px; }
+.urd-cc-foot .up-stack-item img, .urd-cr-ments .up-stack-item img { border-radius: 4px; }
 /* Ohne Ueberlappung gibt es nichts auseinanderzuschieben: das SEITLICHE Wegruecken der Nachbarn
    faellt weg, sonst zappelt die ganze Reihe, wenn man ueber einen Chip faehrt.
    Das Anheben bleibt -- und zwar auf JEDEM Chip. Vorher hob nur der erste: core gibt dem ersten
@@ -307,7 +366,7 @@
    darueber, 10px darunter -- so steht eine Ueberschrift auch im fertigen Text: naeher am Absatz, der
    ihr folgt, als an dem, der ihr vorausgeht. Der erste Abschnitt hat keine Ueberschrift, also
    braucht die Regel keinen Sonderfall fuer "oben". */
-.urd-sk-h { height: 18px; border-radius: 7.7px; margin: 36px 0 10px; }
+.urd-sk-h { height: 18px; border-radius: var(--up-r-m); margin: 36px 0 10px; }
 /* Ein Absatz ist eine eigene Kiste, damit die letzte Zeile darin ihren Rand verliert und der
    Abstand zwischen Absaetzen einmal an einer Stelle steht statt an jeder Zeile.
    Die Abstaende sind gewachsen (Zeile 10 -> 14, Absatz 14 -> 22), weil die Zahl der Balken gesunken
@@ -315,16 +374,17 @@
 .urd-sk-para { display: block; margin-bottom: 22px; }
 .urd-sk-para .urd-sk-line { margin-bottom: 14px; }
 .urd-sk-para .urd-sk-line:last-child { margin-bottom: 0; }
-.urd-sk-card { height: 184px; border-radius: 14px; }
-.urd-sk-av { width: 32px; height: 32px; border-radius: 8.9px; }
+/* 144: zwischen den gemessenen Kacheln mit ein- und zweizeiligem Titel (134 / 154, v2 ohne
+   Mindesthoehe) -- der Sprung beim Eintreffen der Daten bleibt so am kleinsten. */
+.urd-sk-card { height: 144px; border-radius: var(--up-r-2xl); }
+.urd-sk-av { width: 32px; height: 32px; border-radius: var(--up-r-m); }
 
 /* ---- Schmal ----
    Gemessen an der EIGENEN Box (UC.widthTiers), nicht am Fenster: diese Seite kann in einem Drawer
    stehen, der auf einem breiten Bildschirm schmal ist. Genau das fehlte den alten
    Response-Elementen komplett -- sie hatten keine einzige Regel fuer schmale Breiten. */
-.urd-root.is-narrow { gap: 24px; }
-.urd-root.is-narrow .urd-prompt { font-size: 19px; }
-.urd-root.is-narrow .urd-card { padding: 14px; border-radius: 14px; }
+.urd-root.is-narrow { gap: 32px; }
+.urd-root.is-narrow .urd-kpi-push { margin-left: 0; }
 /* Der Umschalter rutscht unter die Ueberschrift, sobald beides nicht mehr nebeneinander passt. */
 .urd-root.is-narrow .urd-sec { flex-direction: column; align-items: stretch; gap: 12px; }
 .urd-root.is-narrow .urd-sec .up-seg { align-self: flex-start; }
@@ -332,7 +392,11 @@
 /* Bei einer Spalte ist die Kachel nur noch ein breiter Streifen: die Beschreibung darf dann drei
    Zeilen nehmen, sonst steht darunter Luft. */
 .urd-root.is-narrow .urd-cc-desc { -webkit-line-clamp: 3; }
-.urd-root.is-vnarrow .urd-prompt { font-size: 17.5px; }
+/* Auf dem Telefon die naechste Stufe der Skala darunter (16) -- 20 und 18 aus dem Entwurf liegen
+   nicht auf ihr. */
+.urd-root.is-vnarrow .urd-prompt { font-size: var(--up-fs-xl); }
+.urd-root.is-vnarrow .urd-mrow { flex-direction: column; gap: 4px; }
+.urd-root.is-vnarrow .urd-mrow-lbl { height: 24px; }
 .urd-root.is-vnarrow .urd-kpis { gap: 10px; }
 /* Ganz schmal darf der Chip die volle Breite der Karte nehmen, statt den Namen zu kappen. */
 .urd-root.is-vnarrow .urd-ment { max-width: 100%; }
@@ -341,3 +405,107 @@
    fuer den Titel nichts uebrig. */
 .urd-root.is-vnarrow .urd-cite-row { flex-wrap: wrap; }
 .urd-root.is-vnarrow .urd-cr-ments { width: 100%; padding-left: 30px; }
+
+/* ==== Products (05.10., get_mention_detail_v8) ===================================================
+   Die Shopping-Produkte DIESER Antwort, in ihrer Reihenfolge, ueber "Full Response". Nur mit
+   Produkten (renderShop). Kopf, Abstand und Rhythmus wie jeder Abschnitt (.urd-sect, .urd-sec).
+   Waagerecht scrollend statt Raster: so zeigt das Modell seine Produkte auch -- als Karussell in
+   fester Reihenfolge. Ein Raster stellte Position 5 unter Position 1. */
+.urd-root .urd-sect-shop[hidden] { display: none; }
+/* Zwei Pfeile (.up-iconbtn aus core), 4px auseinander: die zwei gehoeren zusammen, anders als zwei
+   verschiedene Werkzeuge, die 8px halten. Gesperrt ueber .is-disabled aus core. */
+.urd-shop-nav { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; }
+.urd-root .urd-shop-nav[hidden] { display: none; }
+.urd-shop-nav .up-iconbtn { color: var(--vc-third); }
+.urd-shop-wrap { position: relative; min-width: 0; }
+/* Polster und negativer Rand gleichen sich aus: Platz fuer das Anheben der Karte beim Ueberfahren,
+   ohne dass die Reihe es abschneidet. */
+.urd-shop-row { display: flex; gap: 16px; overflow-x: auto; overflow-y: hidden;
+  scroll-snap-type: x mandatory; scrollbar-width: none;
+  padding: 4px 2px 12px; margin: -4px -2px -12px; }
+.urd-shop-row::-webkit-scrollbar { display: none; }
+/* Rechts ausgeblendet, solange es weitergeht: das sagt "da kommt noch was", ohne einen Knopf. */
+.urd-shop-wrap.is-more .urd-shop-row {
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 48px), transparent);
+          mask-image: linear-gradient(90deg, #000 calc(100% - 48px), transparent); }
+
+/* Die Karte: 236 breit, Polster 8, Radius 16 -- innen also 16 - 8 = 8 am Bild (konzentrisch). */
+.urd-pc { flex: 0 0 236px; scroll-snap-align: start; display: flex; flex-direction: column;
+  min-width: 0; padding: 8px; border-radius: var(--up-r-2xl); border: 1px solid var(--vc-border);
+  background: var(--vc-bg); box-sizing: border-box; text-align: left; font: inherit; color: inherit;
+  transition: box-shadow var(--up-t-2) var(--up-ease), transform var(--up-t-2) var(--up-ease),
+    border-color var(--up-t-2) ease; }
+button.urd-pc { cursor: pointer; }
+/* Anheben statt Einfaerben: die Flaeche bleibt ruhig, die Karte liest sich als Objekt. Der kleine
+   Schatten (--up-e-chip) statt des Menue-Schattens e-2 aus dem Entwurf -- e-2 lag schon unter den
+   kleinen Kacheln in Mira wie eine Wolke (05.10.). */
+button.urd-pc:hover, .urd-pc.is-hl { transform: translateY(-2px); box-shadow: var(--up-e-chip); }
+.urd-pc.is-hl { border-color: var(--vc-text); }
+@media (prefers-reduced-motion: reduce) { button.urd-pc:hover, .urd-pc.is-hl { transform: none; } }
+.urd-pc:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 2px; }
+
+/* Bild: quadratisch auf der Kopfflaeche, contain -- ein Produkt wird nie beschnitten. multiply im
+   Hellen: Produktfotos stehen fast immer freigestellt auf Weiss, und Weiss auf Grau haette eine
+   Kante. */
+.urd-pc-media { position: relative; aspect-ratio: 1 / 1; border-radius: var(--up-r-m);
+  background: var(--vc-heading-bg); overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.urd-pc-media img { width: 100%; height: 100%; object-fit: contain; display: block; padding: 16px;
+  box-sizing: border-box; mix-blend-mode: multiply; transition: transform var(--up-t-3) var(--up-ease); }
+.up-root[data-theme="dark"] .urd-pc-media img { mix-blend-mode: normal; }
+button.urd-pc:hover .urd-pc-media img { transform: scale(1.04); }
+@media (prefers-reduced-motion: reduce) { button.urd-pc:hover .urd-pc-media img { transform: none; } }
+.urd-pc-noimg { color: var(--vc-fourth); display: inline-flex; }
+.urd-pc-noimg svg { width: 22px; height: 22px; }
+.urd-pc-media.has-img .urd-pc-noimg { display: none; }
+/* Position in der Produktliste, links oben auf dem Bild: 22px, Radius 6 -- eine Stufe kleiner als
+   ein Chip, weil sie AUF etwas liegt. Einzelkarten (position null) tragen keine. */
+.urd-pc-pos { position: absolute; top: 10px; left: 10px; min-width: 22px; height: 22px; padding: 0 6px;
+  box-sizing: border-box; border-radius: var(--up-r-s); background: var(--vc-bg); color: var(--vc-text);
+  font-size: var(--up-fs-xs); font-weight: 600; line-height: 22px; text-align: center;
+  font-variant-numeric: tabular-nums; box-shadow: var(--up-e-1); }
+.urd-pc-you { position: absolute; top: 10px; right: 10px; }
+
+/* Text: 14 oben, 6 seitlich -- mit den 8 der Karte stehen Text und Bild auf derselben Kante. */
+.urd-pc-body { display: flex; flex-direction: column; gap: 8px; padding: 14px 6px 6px; flex: 1 1 auto; min-width: 0; }
+.urd-pc-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; height: 18px; }
+/* Die Marke ist UC.markenChip (18px-Logo, Name). Der Name hier eine Stufe kleiner und gedaempft:
+   er ist Absender, nicht Titel. */
+.urd-pc-brand { flex: 1 1 auto; }
+.urd-pc-brand .up-ment-name { font-size: var(--up-fs-s); font-weight: 500; color: var(--vc-muted); }
+.urd-pc-brand.is-none .up-ment-name { color: var(--vc-third); font-weight: 400; }
+/* Bewertung rechts in der Markenzeile -- dort sucht man sie bei einem Produkt. Der Stern bleibt ein
+   Strich (keine gefuellten Zeichen in dieser App). */
+.urd-pc-rate { display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto;
+  font-size: var(--up-fs-s); font-weight: 500; color: var(--vc-muted); }
+.urd-pc-rate svg { width: 12px; height: 12px; display: block; color: var(--vc-third); }
+.urd-pc-revs { color: var(--vc-third); font-weight: 400; font-variant-numeric: tabular-nums; }
+/* Zwei Zeilen Platz auch fuer einen kurzen Titel: sonst stuende der Preis jeder Karte anders hoch. */
+.urd-pc-title { font-size: var(--up-fs-l); font-weight: 500; line-height: 1.4; color: var(--vc-text);
+  letter-spacing: -0.01em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; min-height: calc(2 * 1.4em); }
+/* Fuss am Boden (margin-top auto): Karten mit und ohne Bewertung enden unten buendig. */
+.urd-pc-foot { margin-top: auto; padding-top: 6px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.urd-pc-price { font-size: var(--up-fs-xl); font-weight: 600; letter-spacing: -0.01em; color: var(--vc-text);
+  font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.urd-pc-price.is-none { color: var(--vc-third); font-weight: 500; font-size: var(--up-fs-m); }
+/* Der Haendler mit dem Laden-Zeichen wie im Shopping-Bereich (store, nicht shoppingBag): dasselbe
+   Ding soll in der App ein Zeichen haben. */
+.urd-pc-merch { display: flex; align-items: center; gap: 5px; min-width: 0; font-size: var(--up-fs-s); color: var(--vc-muted); }
+.urd-pc-merch svg { width: 12px; height: 12px; flex: 0 0 12px; display: block; color: var(--vc-third); }
+.urd-pc-mname { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.urd-pc-merch.is-none { color: var(--vc-third); }
+
+.urd-root.is-narrow .urd-pc { flex-basis: 200px; }
+.urd-root.is-narrow .urd-pc-title { font-size: var(--up-fs-m); }
+.urd-root.is-vnarrow .urd-shop-nav { display: none; }
+.urd-root.is-vnarrow .urd-pc { flex-basis: 176px; }
+
+/* ==== Einblenden (v2) =============================================================================
+   Einmal je neuer Antwort (JS setzt .is-einblenden nur beim Wechsel auf neue Daten): die Abschnitte
+   kommen nacheinander herein, 6px von unten, 40ms versetzt. */
+@keyframes urdEin { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.urd-root.is-einblenden > * { animation: urdEin var(--up-t-2) var(--up-ease) both; }
+.urd-root.is-einblenden > :nth-child(2) { animation-delay: 40ms; }
+.urd-root.is-einblenden > :nth-child(3) { animation-delay: 80ms; }
+.urd-root.is-einblenden > :nth-child(4) { animation-delay: 120ms; }
+@media (prefers-reduced-motion: reduce) { .urd-root.is-einblenden > * { animation: none; } }

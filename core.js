@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261081;
+  var BUILD = 20261082;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -1764,6 +1764,19 @@
     "Several in a row become one chip": "Mehrere hintereinander werden ein Chip",
     "Sources stay listed below either way": "Die Quellen stehen so oder so unten in der Liste",
     "No response text.": "Kein Antworttext.",
+    /* v2 mit Produkten (05.10., get_mention_detail_v8). "Products" aus shopping.js hierher: der
+       Abschnitt braucht es auch, wenn shopping.js einmal nicht auf der Seite ist. */
+    "Products": "Produkte",
+    "Shopping products the model showed in this response": "Shopping-Produkte, die das Modell in dieser Response gezeigt hat",
+    "Previous products": "Vorherige Produkte",
+    "More products": "Weitere Produkte",
+    "No price shown": "Kein Preis angegeben",
+    "No merchant shown": "Kein Händler angegeben",
+    "Position {n} in this response": "Platz {n} in dieser Response",
+    "This response could not be found.": "Diese Response wurde nicht gefunden.",
+    "This response could not be loaded. Please try again.": "Diese Response konnte nicht geladen werden. Bitte versuche es erneut.",
+    /* Aus events.js hierher -- Response Detail meldet denselben Fall. */
+    "Your team doesn't have access right now.": "Dein Team hat gerade keinen Zugang.",
 
     /* Leerzustaende der Charts und Tabellen */
     "No types": "Keine Typen",
@@ -2437,6 +2450,8 @@
     "Preferences": "Präferenzen",
     /* Der Haendler-Filter (makeHaendlerFilter, 05.10.) -- aus shopping.js hierher, wo er jetzt steht. */
     "Merchants": "Händler", "All Merchants": "Alle Händler", "{n} Merchants": "{n} Händler",
+    /* Ein Produkt ohne zugeordnete Marke (Shopping und Response Detail, 05.10. aus shopping.js). */
+    "Other (unassigned)": "Andere (nicht zugeordnet)",
     "Search merchants…": "Händler durchsuchen…", "No merchants yet": "Noch keine Händler",
     "Theme": "Design",
     "Light": "Hell",
@@ -2659,6 +2674,19 @@
   /* Tausenderpunkte in eine bereits fertige Ganzzahl-Zeichenkette setzen. */
   function tausender(ganz, tsd){
     return String(ganz).replace(/\B(?=(\d{3})+(?!\d))/g, tsd);
+  }
+  /* ---- EIN PREIS (05.10., aus shopping.js hierher, Response Detail zeigt jetzt auch Preise) ----
+     Zahl im Format der App, davor das Zeichen der Waehrung, sonst ihr Code. Werte, die kein Preis
+     sein koennen (negativ, ab einer Billion), ergeben "" -- dann zeigt der Aufrufer, was die Quelle
+     schrieb (price_str), statt einer erfundenen Zahl. */
+  var WAEHRUNG_ZEICHEN = { EUR: "\u20ac", USD: "$", GBP: "\u00a3", JPY: "\u00a5" };
+  function fmtGeld(v, waehrung){
+    var n = (v == null || v === "" || typeof v === "boolean") ? NaN : Number(v);
+    if (!isFinite(n) || n < 0 || n >= 1e12) return "";
+    var code = String(waehrung == null ? "" : waehrung).trim().toUpperCase().replace(/[^A-Z]/g, "").slice(0, 3);
+    var z = fmtNum(n, 2);
+    if (WAEHRUNG_ZEICHEN[code]) return WAEHRUNG_ZEICHEN[code] + z;
+    return code ? code + " " + z : z;
   }
   /* Die eine Stelle, durch die JEDE Zahl dieser App geht. nachkomma == null heisst: so viele
      Stellen, wie die Zahl schon hat (also keine erzwungene Genauigkeit). */
@@ -3237,6 +3265,49 @@
        nachgeladen wird -- dann kaeme das Ereignis nie wieder. */
     var uhr = setInterval(function(){ if (document.body){ clearInterval(uhr); los(); } }, 20);
     setTimeout(function(){ clearInterval(uhr); }, 10000);
+  }
+
+  /* ---- EIN OBJEKT AUS EINER BUBBLE-NUTZLAST (05.10.) ----------------------------------------
+     Bisher je eine Kopie in shopping.js und events.js ("objekt"); Response Detail braucht es mit
+     get_mention_detail_v8 ein drittes Mal, also steht es hier. readBubble liest den Text (eine
+     Liste gibt ihr erstes Element), und der Umschlag {"json": "<Text>"} wird ausgepackt, wenn in
+     Bubble "Result of step 1" statt "Result of step 1's json" steht -- der Inhalt steckt dann
+     vollstaendig darin.
+     opts.grosseIds: Felder, deren Werte Ids groesser als Number.MAX_SAFE_INTEGER sein koennen
+     (source_product_id, z. B. 9007199254740993001). Als nackte Zahl verloeren sie ihre letzten
+     Stellen und waeren still eine andere Id -- also werden sie VOR dem Lesen zu Text. */
+  function bubbleObjekt(raw, opts){
+    opts = opts || {};
+    if (raw == null) return null;
+    var v = raw;
+    if (typeof raw === "string"){
+      var s = raw;
+      (opts.grosseIds || []).forEach(function(f){
+        var name = String(f).replace(/[^\w]/g, "");
+        if (!name) return;
+        s = s.replace(new RegExp('("' + name + '"\\s*:\\s*)(-?\\d{12,})(?=\\s*[,}\\]])', "g"), '$1"$2"');
+      });
+      v = readBubble(s);
+    }
+    if (isArray(v)) v = v.length ? v[0] : null;
+    if (v && typeof v === "object" && !isArray(v) && v.json != null && Object.keys(v).length === 1){
+      return typeof v.json === "object" ? v.json : bubbleObjekt(v.json, opts);
+    }
+    return v && typeof v === "object" && !isArray(v) ? v : null;
+  }
+  /* Der dritte Wert eines Setters: Bubbles "error body" (Events, Shopping, Response Detail).
+     Gibt den Fehlercode zurueck -- message aus {"code":"P0001","message":"mention_not_found"} oder
+     den nackten Text -- und "" fuer KEIN Fehler. "no"/"false" stehen dort, wo in Bubble "returned
+     an error" statt "error body" eingesetzt ist; das Feld sagt dasselbe, also auch "kein Fehler"
+     (04.10. gemessen). Der Aufrufer zaehlt ihn nur, wenn keine lesbare Antwort da ist. */
+  function bubbleFehler(f){
+    var roh = String(f == null ? "" : f).trim(), k = roh.toLowerCase();
+    if (k === "" || k === "null" || k === "undefined" || k === "no" || k === "false") return "";
+    if (roh.charAt(0) === "{"){
+      var o = bubbleObjekt(roh);
+      if (o && o.message != null && String(o.message).trim()) return String(o.message).trim();
+    }
+    return roh;
   }
 
   function readBubble(raw){
@@ -4403,6 +4474,21 @@
     if (!hostEl) return { html: "", brands: 0, cites: 0, tables: 0 };
     var idx = rbCiteIndex(cfg.citations);
     hostEl.innerHTML = rbBlocks(text, idx);
+    /* NUMMERN AN DEN ZITATEN (05.10., Response Detail v2): dieselbe Zahl wie an der Quelle im
+       Abschnitt "Citations" darunter -- die Stelle in citations, gezaehlt ueber die Eintraege mit
+       Adresse, so wie die Komponente dort zaehlt. Hier und nicht in der Komponente, weil hier der
+       Chip entsteht und seine Karte kennt. Ein Chip ohne Karte (das Modell zitiert eine Adresse,
+       die nicht in der Liste steht) bleibt ohne Nummer. */
+    if (cfg.nummern && cfg.cites !== false){
+      var mitUrl = (isArr(cfg.citations) ? cfg.citations : []).filter(function (c) { return c && c.url; });
+      [].forEach.call(hostEl.querySelectorAll(".up-rb-cite"), function (chip) {
+        var karte = rbLookup(idx, chip.getAttribute("data-rb-cite") || "");
+        var n = karte ? mitUrl.indexOf(karte) + 1 : 0;
+        if (n < 1) return;
+        chip.setAttribute("data-rb-nr", String(n));
+        chip.insertAdjacentHTML("afterbegin", '<span class="up-rb-cite-nr">' + n + "</span>");
+      });
+    }
     /* Zitat-Chips abschalten heisst: WEG, nicht "als Text stehen lassen". Vorher wurde der Chip zu
        seinem Text, also blieb die nackte Adresse mitten im Satz -- schlechter lesbar als der Chip.
        Die Quellen bleiben im Abschnitt "Citations" vollstaendig sichtbar. */
@@ -20572,7 +20658,7 @@
     parseLinkedinUrl: parseLinkedinUrl,
     esc: esc,
     parseBubbleJson: parseBubbleJson,
-    readBubble: readBubble,
+    readBubble: readBubble, bubbleObjekt: bubbleObjekt, bubbleFehler: bubbleFehler,
     wennBody: wennBody,
     citeName: citeName,
     tint: tint,
@@ -20751,7 +20837,7 @@
     anMira: anMira, miraBezug: miraBezug,
     onPrefs: onPrefs, getUpstreemThemeChoice: getUpstreemThemeChoice,
     PREF_DEFAULT: PREF_DEFAULT, PREF_ERLAUBT: PREF_ERLAUBT,
-    fmtNum: fmtNum, fmtDateMuster: fmtDateMuster, datumsTeile: datumsTeile,
+    fmtNum: fmtNum, fmtGeld: fmtGeld, fmtDateMuster: fmtDateMuster, datumsTeile: datumsTeile,
     addMessages: addMessages, t: t,
     lineWidthSectionHtml: lineWidthSectionHtml,
     getColorScalePref: getColorScalePref, setColorScalePref: setColorScalePref,

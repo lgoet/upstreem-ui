@@ -5125,6 +5125,13 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
    24px hoch, das Bild passt also weiter hinein, ohne an den Rahmen zu stossen. */
 .up-rb-cite-fav { width: 14px; height: 14px; border-radius: 3.23px; flex: 0 0 auto;
   object-fit: cover; display: block; }
+/* Die Nummer der Quelle (respBody cfg.nummern, 05.10.): dieselbe Zahl wie an der Kachel im
+   Abschnitt "Citations". 16px im 24px-Chip, Radius 4 -- konzentrisch zu den 7 des Chips bei 3px
+   Luft. Grund wie die Seite, damit sie sich vom Chip abhebt. */
+.up-rb-cite-nr { flex: 0 0 auto; min-width: 16px; height: 16px; padding: 0 4px; box-sizing: border-box;
+  border-radius: var(--up-r-xs); background: var(--vc-bg); color: var(--vc-muted);
+  font-size: var(--up-fs-xs); font-weight: 600; line-height: 16px; text-align: center;
+  font-variant-numeric: tabular-nums; }
 .up-rb-cite-txt { font-size: 12px; font-weight: 500; color: var(--vc-muted); line-height: 1;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .up-rb-cite:hover .up-rb-cite-txt { color: var(--vc-text); }
