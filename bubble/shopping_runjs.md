@@ -508,8 +508,9 @@ Blaettern bleiben sie stehen.
 
 Segment (All/You/Competition/Other), Suche (ab 2 Zeichen, 300 ms Entprellung), Sortierung ueber die
 Spaltenkoepfe, Seite. `p_merchant` kommt aus einem Klick auf einen Haendler (Merchants, Merchant
-Distribution), `p_company_id` aus einem Klick auf eine Marke (Brands, Landscape); beide stehen als
-Chip ueber der Tabelle und lassen sich dort entfernen.
+Distribution) und steht als Chip ueber der Tabelle. `p_company_id` setzt die Marken-Auswahl in der
+Werkzeugleiste ("All Brands", eine Marke, seit 05.10.) -- oder ein Klick auf eine Marke in Brands bzw.
+der Landscape, der dieselbe Auswahl setzt. Die Liste kommt aus dem Markenspeicher (setUpstreemBrands).
 
 **Body, wie er kommt** (Reiter Products, Vorgabe):
 
@@ -1033,3 +1034,12 @@ ein Kasten mit "Try again" (fragt dieselbe RPC mit demselben Body noch einmal):
 Ein Zeitraum ohne Daten ist kein Fehler (Uebergabe 9): `totals.shopping_responses = 0` zeigt "No AI
 Shopping products observed", `totals.runs_with_known_state = 0` "Shopping results aren't available
 for these models" (z.B. nur Perplexity gewaehlt), beide mit "Clear all filters", wenn ein Filter steht.
+
+**In der Konsole (seit 05.10.)** -- nie im UI:
+- `setShoppingOverview bekam die Antwort von cached_shopping_products_v1 ...`: ein Workflow ruft den
+  Setter einer anderen RPC (typisch: kopierter Workflow). Die Komponente erkennt die Antwort am Inhalt
+  und zeigt sie trotzdem richtig; den Setter im genannten Workflow trotzdem korrigieren.
+- `Keine Antwort auf shopProducts nach 25 s ...`: der Workflow laeuft nicht zu Ende oder ruft keinen
+  Setter.
+- `setShoppingProducts("..."): kein Shopping-Element mit dieser data-instance`: die Instanz im
+  Run-JS-Schritt passt nicht zu `data-instance` am Element.

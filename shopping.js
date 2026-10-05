@@ -222,8 +222,6 @@
       "KI-Shopping-Ergebnisse werden derzeit nur in ChatGPT beobachtet. Wähle ChatGPT im Modell-Filter.",
     "Clear all filters": "Alle Filter zurücksetzen",
     "Set up your own brand to see your brand metrics.": "Lege deine eigene Marke an, um deine Markenkennzahlen zu sehen.",
-    "None of the observed products could be assigned to {brand}.": "Keines der beobachteten Produkte ließ sich {brand} zuordnen.",
-    "Shopping data is available from {date}. The range starts there.": "Shopping-Daten gibt es ab {date}. Der Zeitraum beginnt dort.",
     "Shopping data could not be loaded": "Shopping-Daten konnten nicht geladen werden",
     "This product could not be loaded": "Dieses Produkt konnte nicht geladen werden",
     "This product was not found.": "Dieses Produkt wurde nicht gefunden.",
@@ -267,7 +265,20 @@
     price: { h: "Observed price", f: "Lowest – highest observed price",
       t: "Price shown next to the product in AI shopping results during the selected period. Not a live shop price." },
     merchant: { h: "Merchant Share", f: "Mentions of this merchant ÷ all merchant mentions",
-      t: "How often a merchant was listed with observed products. This shows presence in AI results, not sales or conversions." }
+      t: "How often a merchant was listed with observed products. This shows presence in AI results, not sales or conversions." },
+    /* Die Kacheln von Brands und Merchants (05.10.: jede Kachel der Reihe bekommt ihre Erklaerung). */
+    brandsObserved: { h: "Brands observed", f: "Tracked brands with at least one observed product",
+      t: "How many of your tracked brands appeared in shopping results in this period. Products without a tracked brand are not counted." },
+    ownRank: { h: "Your rank", f: "Rank by Share of Shelf, 1 is the highest",
+      t: "Where your brand stands among all tracked brands, ranked by Share of Shelf." },
+    topCompetitor: { h: "Top competitor", f: "Highest Share of Shelf among tracked competitors",
+      t: "The tracked competitor with the largest part of all product placements in this period." },
+    merchantsObserved: { h: "Merchants observed", f: "Distinct merchant names on observed products",
+      t: "How many different merchants were listed with the observed products. Merchant names are shown as they appear in the results." },
+    topMerchant: { h: "Top merchant", f: "Most merchant mentions",
+      t: "The merchant listed most often with the observed products in this period." },
+    topMerchantShare: { h: "Top merchant share", f: "Mentions of the top merchant ÷ all merchant mentions",
+      t: "The top merchant's part of all merchant mentions on observed products." }
   };
   if (UC.addMessages) UC.addMessages("de", {
     "Shopping responses ÷ valid responses": "Shopping-Antworten ÷ gültige Antworten",
@@ -289,7 +300,19 @@
     "Lowest – highest observed price": "Niedrigster – höchster beobachteter Preis",
     "Price shown next to the product in AI shopping results during the selected period. Not a live shop price.": "Der Preis, der in KI-Shopping-Ergebnissen im gewählten Zeitraum neben dem Produkt stand. Kein aktueller Shop-Preis.",
     "Mentions of this merchant ÷ all merchant mentions": "Nennungen dieses Händlers ÷ alle Händlernennungen",
-    "How often a merchant was listed with observed products. This shows presence in AI results, not sales or conversions.": "Wie oft ein Händler mit beobachteten Produkten gelistet war. Das zeigt Präsenz in KI-Ergebnissen, keine Verkäufe oder Conversions."
+    "How often a merchant was listed with observed products. This shows presence in AI results, not sales or conversions.": "Wie oft ein Händler mit beobachteten Produkten gelistet war. Das zeigt Präsenz in KI-Ergebnissen, keine Verkäufe oder Conversions.",
+    "Tracked brands with at least one observed product": "Getrackte Marken mit mindestens einem beobachteten Produkt",
+    "How many of your tracked brands appeared in shopping results in this period. Products without a tracked brand are not counted.": "Wie viele deiner getrackten Marken in diesem Zeitraum in Shopping-Ergebnissen erschienen. Produkte ohne getrackte Marke zählen nicht.",
+    "Rank by Share of Shelf, 1 is the highest": "Rang nach Share of Shelf, 1 ist der höchste",
+    "Where your brand stands among all tracked brands, ranked by Share of Shelf.": "Wo deine Marke unter allen getrackten Marken steht, gereiht nach Share of Shelf.",
+    "Highest Share of Shelf among tracked competitors": "Höchster Share of Shelf unter den getrackten Wettbewerbern",
+    "The tracked competitor with the largest part of all product placements in this period.": "Der getrackte Wettbewerber mit dem größten Anteil an allen Produktplatzierungen in diesem Zeitraum.",
+    "Distinct merchant names on observed products": "Verschiedene Händlernamen bei beobachteten Produkten",
+    "How many different merchants were listed with the observed products. Merchant names are shown as they appear in the results.": "Wie viele verschiedene Händler mit den beobachteten Produkten gelistet waren. Die Händlernamen stehen so da, wie sie in den Ergebnissen erscheinen.",
+    "Most merchant mentions": "Die meisten Händlernennungen",
+    "The merchant listed most often with the observed products in this period.": "Der Händler, der in diesem Zeitraum am häufigsten mit den beobachteten Produkten gelistet war.",
+    "Mentions of the top merchant ÷ all merchant mentions": "Nennungen des stärksten Händlers ÷ alle Händlernennungen",
+    "The top merchant's part of all merchant mentions on observed products.": "Der Anteil des stärksten Händlers an allen Händlernennungen bei beobachteten Produkten."
   });
 
   /* Stabile Fehlercodes (Uebergabe 9) -> was der Nutzer tun kann. Alles andere: der allgemeine Satz. */
@@ -388,14 +411,30 @@
     if (isDark()) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
     if (UC.makeTooltips) UC.makeTooltips(root, isDark);
 
-    /* Die Erklaerkarte aus core, an jedem Info-Zeichen der Seite: Formel auf der hellen Platte,
-       darunter Titel und Satz -- wie an jedem Spaltenkopf der App. */
+    /* Die Erklaerkarte aus core, an jedem Info-Zeichen der Seite, im Format der Spaltenkoepfe
+       (brands-overview, 05.10. angefordert: "im gewohnten Format"): oben auf der hellen Platte ein
+       Wert, so wie ihn die Zelle zeigt, darunter Titel und Satz. Die Formel der Uebergabe steht als
+       zweiter Satz darunter -- sie sagt, wovon der Anteil ein Anteil ist. */
+    var HASH_ERKL = UC.HASH_ICON || "";
+    function erklaerVorschau(key) {
+      var hoch = '<span class="up-explain-up">' + (UC.TREND_UP || "") + '</span>';
+      var bsp = { shoppingRate: ["36.7%", "1.0%"], presence: ["84.7%", "2.6%"], share: ["31.9%", "6.4%"],
+                  firstBrand: ["65.6%", "2.9%"], firstProd: ["66.8%", "4.1%"], vis: ["37.8%", "6.5%"],
+                  obs: ["49", "8"], merchant: ["25.7%", ""], price: ["€13.49–€14.99", ""], brandsObserved: ["31", ""],
+                  ownRank: ["#1", ""], topCompetitor: ["12.0%", ""], merchantsObserved: ["32", ""],
+                  topMerchant: ["Amazon.de", ""], topMerchantShare: ["25.7%", ""] }[key];
+      if (key === "pos") return '<span class="up-explain-row">' + HASH_ERKL + '<span>2.0</span></span>';
+      if (!bsp) return "";
+      return '<span class="up-explain-row">' + esc(bsp[0]) + (bsp[1] ? hoch + '<span class="up-explain-up">' + esc(bsp[1]) + '</span>' : '') + '</span>';
+    }
     if (UC.makeExplain) UC.makeExplain({ root: root, triggerSel: ".ush-erklaer", getIsDark: isDark,
       html: function (key) {
         var e = ERKLAER[key];
         if (!e) return "";
-        return '<div class="up-explain-vis"><span class="up-explain-row">' + esc(t(e.f)) + '</span></div>' +
-          '<div class="up-explain-h">' + esc(t(e.h)) + '</div><div class="up-explain-t">' + esc(t(e.t)) + '</div>';
+        var vis = erklaerVorschau(key);
+        return (vis ? '<div class="up-explain-vis">' + vis + '</div>' : '') +
+          '<div class="up-explain-h">' + esc(t(e.h)) + '</div><div class="up-explain-t">' + esc(t(e.t)) + '</div>' +
+          '<div class="up-explain-t">' + esc(t(e.f)) + '</div>';
       } });
     function info(key) {
       return '<span class="up-th-info ush-erklaer" data-explain="' + esc(key) + '">' + UC.icon("info", 2) + '</span>';
@@ -579,10 +618,10 @@
        Je RPC ein Kanal: hoechstens EINE Anfrage unterwegs, eine Uhr, die das Warten beendet. Die
        Antwort gehoert der Anfrage, die unterwegs war (sig). */
     var KANAL = {
-      overview: { attr: "data-overview-fn", name: "shopOverview" },
-      products: { attr: "data-products-fn", name: "shopProducts" },
-      detail: { attr: "data-detail-fn", name: "shopProductDetail" },
-      merchants: { attr: "data-merchants-fn", name: "shopMerchants" }
+      overview: { attr: "data-overview-fn", name: "shopOverview", setter: "setShoppingOverview", rpc: "cached_shopping_overview_v1" },
+      products: { attr: "data-products-fn", name: "shopProducts", setter: "setShoppingProducts", rpc: "cached_shopping_products_v1" },
+      detail: { attr: "data-detail-fn", name: "shopProductDetail", setter: "setShoppingProductDetail", rpc: "cached_shopping_product_detail_v1" },
+      merchants: { attr: "data-merchants-fn", name: "shopMerchants", setter: "setShoppingMerchants", rpc: "cached_shopping_merchants_v1" }
     };
     var unterwegs = { overview: null, products: null, detail: null, merchants: null };
     function grundBody() {
@@ -675,6 +714,8 @@
         unterwegs[a.kanal] = null;
         nachzuegler[a.kanal]++;
         state.fehler[a.kanal + a.sig] = "zeit";
+        melden("zeit" + a.kanal, "Keine Antwort auf " + k.name + " nach " + (WARTE_MS / 1000) + " s. Ruft der Workflow von " +
+          k.name + " am Ende " + KANAL[a.kanal].setter + '("' + instanceId + '", ...) auf?');
         zeichnen();
         bedarf();
       }, WARTE_MS);
@@ -682,16 +723,43 @@
       try { text = JSON.stringify(a.body); } catch (e) { text = ""; }
       fire(k.attr, k.name, text);
     }
+    /* WELCHER RPC GEHOERT DIE ANTWORT? (05.10.) Gemeldet: Products, Merchants und Detail blieben
+       im Skelett, obwohl die RPCs liefen und die Konsole still war -- genau das Bild, wenn ein
+       kopierter Workflow noch den Setter des Originals ruft: die Antwort kommt im falschen Kanal an,
+       dort wartet keine Anfrage, und sie faellt weg. Die vier Antworten sind am Inhalt eindeutig
+       (Produkt, Produktliste, Haendlerliste, Uebersicht); die Komponente legt sie dorthin, wo sie
+       hingehoert, und sagt die Fehlverdrahtung einmal in der Konsole. */
+    function kanalVon(d) {
+      if (!d || typeof d !== "object") return null;
+      if (d.product && typeof d.product === "object") return "detail";
+      if (isArr(d.rows) || (d.segment_counts && typeof d.segment_counts === "object")) return "products";
+      if (isArr(d.merchants) && !d.kpis && !isArr(d.brands)) return "merchants";
+      if (d.kpis || isArr(d.brands) || d.brands_page || d.brands_summary || d.chart) return "overview";
+      return null;
+    }
+    var gemeldet = {};
+    function melden(schluessel, text) {
+      if (gemeldet[schluessel]) return;
+      gemeldet[schluessel] = true;
+      if (window.console) console.warn("[shopping] " + text);
+    }
     /* Eine Antwort. Ohne Anfrage unterwegs (Bubble hat von sich aus neu geladen) gehoert sie der
        ersten Anfrage, die die offene Seite fuer diesen Kanal braucht -- die einzige, fuer die sie
        ueberhaupt gemeint sein kann. */
     function antwort(kanal, raw, f) {
+      var d = objekt(raw), echt = kanalVon(d);
+      if (echt && echt !== kanal) {
+        melden("kanal" + kanal + echt, KANAL[kanal].setter + " bekam die Antwort von " + KANAL[echt].rpc + ". Im Workflow von " +
+          KANAL[echt].name + " muss der Run-JS-Schritt " + KANAL[echt].setter + " rufen. Die Antwort ist trotzdem richtig zugeordnet.");
+        kanal = echt;
+      }
       var u = unterwegs[kanal], ziel = u;
       if (!ziel) {
         var l = bedarfListe().filter(function (a) { return a.kanal === kanal; });
         ziel = l.length ? l[0] : null;
+        if (!ziel && d) melden("ohne" + kanal, KANAL[kanal].setter + " bekam eine Antwort, ohne dass die offene Seite sie braucht -- sie wird nicht angezeigt.");
       }
-      var d = objekt(raw), ok = d && pruefen(kanal, d);
+      var ok = d && pruefen(kanal, d);
       if (ok && ziel && nachzuegler[kanal] > 0 && !passtZu(kanal, d, ziel.body)) {
         /* Ein Nachzuegler: die Anfrage, der er zugeordnet wuerde, bleibt unterwegs, ihre Uhr
            laeuft weiter. */
@@ -824,7 +892,7 @@
     /* ============================================================================================
        Zeichnen
        ============================================================================================ */
-    var geruest = null, linie = null, pager = {}, sucheKit = {}, sortKit = {}, balken = {};
+    var geruest = null, linie = null, pager = {}, sucheKit = {}, sortKit = {}, balken = {}, markenFilter = null;
     function zeichnen() {
       if (root.isConnected === false) return;
       var s = state.seite;
@@ -834,7 +902,7 @@
       var leer = meta ? leerZustand(meta) : null;
       if (leer && s !== "detail") {
         if (geruest !== "leer") { aufraeumen(); elMain.innerHTML = ""; geruest = "leer"; }
-        elMain.innerHTML = '<div class="ush-seite">' + hinweiseHtml(meta) + leer + '</div>';
+        elMain.innerHTML = '<div class="ush-seite">' + leer + '</div>';
         return;
       }
       if (geruest !== s) baueGeruest(s);
@@ -870,20 +938,6 @@
       return null;
     }
     /* Die Hinweise ueber dem Inhalt: Zeichen + Text, leise (feedback keine Punkt-Pillen). */
-    function hinweiseHtml(meta) {
-      if (!meta) return "";
-      var h = [];
-      var per = meta.period && typeof meta.period === "object" ? meta.period : null;
-      if (per && per.from && per.requested_from && str(per.from) !== str(per.requested_from)) {
-        h.push(['calendar', ersetze(t("Shopping data is available from {date}. The range starts there."), { date: datum(meta.data_available_from || per.from) })]);
-      }
-      if (meta.own_company_set === false) h.push(["info", t("Set up your own brand to see your brand metrics.")]);
-      else if (eigeneOhneTreffer(meta)) h.push(["info", ersetze(t("None of the observed products could be assigned to {brand}."), { brand: eigenName(meta) })]);
-      if (!h.length) return "";
-      return '<div class="ush-hinweise">' + h.map(function (x) {
-        return '<span class="ush-hinweis">' + UC.icon(x[0], 2) + '<span>' + esc(x[1]) + '</span></span>';
-      }).join("") + '</div>';
-    }
     function eigeneOhneTreffer(meta) { return !!meta && meta.own_company_set === true && num(meta.own_observations) === 0; }
     function eigenName(meta) {
       var o = meta && meta.own_company && typeof meta.own_company === "object" ? meta.own_company : null;
@@ -899,7 +953,7 @@
 
     function aufraeumen() {
       if (linie && linie.destroy) { try { linie.destroy(); } catch (e) {} }
-      linie = null; pager = {}; sucheKit = {}; sortKit = {}; balken = {};
+      linie = null; pager = {}; sucheKit = {}; sortKit = {}; balken = {}; markenFilter = null;
     }
     function sek(name) { return elMain.querySelector('[data-sek="' + name + '"]'); }
     /* Abschnittskopf aus core (.up-sec-head), wie im Event-Detail. */
@@ -966,7 +1020,6 @@
       var html = "";
       if (s === "overview") {
         html = '<div class="ush-seite" data-seite="overview">' +
-          '<div data-sek="hinweise"></div>' +
           '<div class="ush-gruppe">' +
             '<div data-sek="summary"></div>' +
             '<div class="up-box up-kpiband is-4 ush-kpis" data-sek="kpis"></div>' +
@@ -985,7 +1038,6 @@
         '</div>';
       } else if (s === "brands") {
         html = '<div class="ush-seite" data-seite="brands">' +
-          '<div data-sek="hinweise"></div>' +
           '<div class="ush-gruppe">' +
             '<div class="up-box up-kpiband is-4 ush-kpis" data-sek="kpis"></div>' +
             '<section class="ush-sek" data-sek="chart">' +
@@ -998,12 +1050,10 @@
         '</div>';
       } else if (s === "products") {
         html = '<div class="ush-seite" data-seite="products">' +
-          '<div data-sek="hinweise"></div>' +
-          tabSek("tabelle", "Products", '<span class="ush-segplatz"></span>' + sucheHtml("Search products…", "Search products")) +
+          tabSek("tabelle", "Products", '<span class="ush-markenplatz"></span><span class="ush-segplatz"></span>' + sucheHtml("Search products…", "Search products")) +
         '</div>';
       } else if (s === "merchants") {
         html = '<div class="ush-seite" data-seite="merchants">' +
-          '<div data-sek="hinweise"></div>' +
           '<div class="ush-gruppe">' +
             '<div class="up-box up-kpiband ush-kpis" data-sek="kpis"></div>' +
             '<section class="ush-sek" data-sek="balken"></section>' +
@@ -1012,7 +1062,6 @@
         '</div>';
       } else if (s === "detail") {
         html = '<div class="ush-seite" data-seite="detail">' +
-          '<div data-sek="hinweise"></div>' +
           '<div data-sek="hero"></div>' +
           '<section class="ush-sek" data-sek="chart">' +
             sekKopf("Product Performance", t("How this product appears in AI shopping results over time"),
@@ -1036,9 +1085,10 @@
           reverse: function () { return metrikJetzt() === "avg_position"; },
           yOhneDeckel: function () { return metrikJetzt() === "observations" || metrikJetzt() === "avg_position"; },
           tipLabel: function () { return t(metrikLabel()) + ":"; },
-          /* Die Legende IMMER: sie sagt, welche Linie welche Marke ist -- unabhaengig von "Legende
-             zeigen" in den Preferences (wie im Event-Detail). */
-          legendeImmer: true,
+          /* Die Legende folgt "Legende zeigen" (05.10.). Nur im Produkt-Detail IMMER, wie im
+             Event-Detail: dort sagt erst sie, welche Linie das Produkt und welche die gestrichelte
+             Vergleichslinie der Marke ist. */
+          legendeImmer: s === "detail",
           markers: false
         });
       }
@@ -1165,12 +1215,24 @@
       return UC.kpiKarte ? UC.kpiKarte(o) : "";
     }
     /* Die Kacheln zaehlen hoch (UC.zahlZaehlen): nach dem Zeichnen, je Wert mit seinem Format. */
+    /* EINMAL JE WERT (05.10. gemeldet: "die triggern doppelt"). Die Kacheln werden nach einer
+       Antwort oft ein zweites Mal gezeichnet -- Kalender und Filter gleichen ab, ein Reiter kommt
+       zurueck --, und jedes Mal stand ein frisches Element ohne Ausgangszahl da, also lief die
+       Animation von vorn. Gemerkt wird je Seite und Kachel der zuletzt gezaehlte Wert, am Fenster
+       je Instanz: auch nach Bubbles Neuaufbau (Themenwechsel) zaehlt nichts noch einmal. Der Text
+       steht schon auf dem Endwert (zaehlWert), es bleibt dann einfach so. */
+    var GEZAEHLT = (window.__ushGezaehlt = window.__ushGezaehlt || {});
+    var gezaehlt = GEZAEHLT[instanceId] || (GEZAEHLT[instanceId] = {});
     function hochzaehlen(el) {
       if (!el || !UC.zahlZaehlen) return;
       var w = el.querySelectorAll("[data-ush-zaehl]");
       for (var i = 0; i < w.length; i++) {
         var art = w[i].getAttribute("data-ush-zaehl"), v = num(w[i].getAttribute("data-ush-wert"));
         if (v == null) continue;
+        var kachel = w[i].closest(".up-kpi"), lbl = kachel && kachel.querySelector(".up-kpi-label");
+        var schluessel = state.seite + "|" + (lbl ? lbl.getAttribute("data-i18n") || lbl.textContent : i);
+        if (gezaehlt[schluessel] === v) continue;
+        gezaehlt[schluessel] = v;
         var f = art === "pct" ? function (x) { return pct(x); } : art === "pos" ? function (x) { return stelle(x); } : function (x) { return ganz(x); };
         UC.zahlZaehlen(w[i], v, f);
       }
@@ -1195,7 +1257,6 @@
        ============================================================================================ */
     function zeichneOverview() {
       var a = ovAnfrage(OV_VORGABE), d = daten(a), meta = d && d.meta;
-      sek("hinweise").innerHTML = hinweiseHtml(meta);
       var fe = !d && fehlerVon(a);
       if (fe) {
         /* Ein Fehler steht EINMAL, an der Stelle der Kennzahlen; der Rest der Seite traegt dann
@@ -1228,7 +1289,8 @@
     }
     /* Der Satz der Zusammenfassung, aus kpis, meta, brands und movement (Uebergabe 4: "Textvorlage,
        es gibt dafuer kein Feld"). Drei Faelle wie im Entwurf: normal, ohne Vergleich, ohne Treffer
-       der eigenen Marke. Nur Werte, die geliefert wurden -- fehlt einer, faellt sein Satz weg. */
+       der eigenen Marke -- dort nur die Wettbewerber, ohne Satz ueber die eigene Marke (05.10.: das
+       sagt der Platzhalter der Kennzahlen schon). Nur Werte, die geliefert wurden. */
     function summaryText(d) {
       var meta = d.meta || {}, k = d.kpis || {}, saetze = [];
       var own = meta.own_company && typeof meta.own_company === "object" ? meta.own_company : null;
@@ -1256,7 +1318,6 @@
             ? ersetze(t("{brand} leads with {sos}, followed by {brand2} at {sos2}."), { brand: str(a.name).trim(), sos: pct(kz(a.share_of_shelf).v), brand2: str(b.name).trim(), sos2: pct(kz(b.share_of_shelf).v) })
             : ersetze(t("{brand} leads with {sos}."), { brand: str(a.name).trim(), sos: pct(kz(a.share_of_shelf).v) }));
         }
-        if (meta.own_company_set === true && ownName) saetze.push(ersetze(t("None of the observed products could be assigned to {brand}."), { brand: ownName }));
       }
       if (vergleich(meta) && d.movement) {
         var r = isArr(d.movement.rising) ? d.movement.rising[0] : null, f = isArr(d.movement.declining) ? d.movement.declining[0] : null;
@@ -1309,18 +1370,40 @@
          eigene ohne Treffer faellt heraus (Entwurf: "own brand hidden from charts"). */
       if (s === "overview") reihen = reihen.filter(function (x) { return x.in_top5 === true; });
       if (eigeneOhneTreffer(d.meta)) reihen = reihen.filter(function (x) { return x.is_own !== true; });
-      var feld = metrikJetzt();
+      var feld = metrikJetzt(), istPos = feld === "avg_position";
       if (!tage.length || !reihen.length) { linie.empty(); return; }
-      var grau = token("--vc-fourth", "#80858e");
-      var ds = reihen.map(function (r, i) {
-        var proTag = {};
+      /* WIE JEDES LINIENCHART DER APP (05.10. gemeldet: Farben und Legende folgten den
+         Einstellungen nicht, und ein Tag ohne Wert brach die Linie ab):
+         - die Datensaetze baut UC.buildLineDatasets wie in Visibility- und Brands-Chart, mit der
+           Farbskala aus den Einstellungen; "Brand Colors" nimmt die Farbe der Marke aus der Antwort.
+           Die Reihenfolge der Antwort bleibt (visibility_window_pct absteigend), damit eine Marke
+           beim Wechsel der Kennzahl ihre Farbe behaelt;
+         - die Legende folgt "Legende zeigen" (legendeImmer nur im Detail, siehe makeLine oben);
+         - ein Tag ohne Wert steht auf 0 wie dort. Ausnahme die Position: 0 waere ein Platz vor dem
+           ersten -- dort fehlt der Punkt, und die Linie laeuft ueber den Tag hinweg. */
+      var punkte = [], firmen = [];
+      reihen.forEach(function (r, i) {
+        var id = str(r.company_id).trim() || ("r" + i), proTag = {};
         (isArr(r.points) ? r.points : []).forEach(function (p) { if (p && p.day) proTag[str(p.day).slice(0, 10)] = metrikWert(feld, p[feld]); });
-        var farbe = /^#[0-9a-f]{3,8}$/i.test(str(r.color).trim()) ? str(r.color).trim() : grau;
-        return { label: str(r.name).trim() || t("Other"), __id: str(r.company_id || ("r" + i)), __baseColor: farbe, borderColor: farbe,
-                 __favicon: sichereUrl(r.logo_url) || undefined, __luecken: true,
-                 data: tage.map(function (tg) { return proTag[tg] != null ? proTag[tg] : null; }) };
+        tage.forEach(function (tg) {
+          var v = proTag[tg];
+          if (v == null) { if (istPos) return; v = 0; }
+          punkte.push({ company_id: id, day: tg, visibility_pct: v });
+        });
+        firmen.push({ company_id: id, name: str(r.name).trim() || t("Other"), favicon_url: sichereUrl(r.logo_url),
+                      color: /^#[0-9a-f]{3,8}$/i.test(str(r.color).trim()) ? str(r.color).trim() : null,
+                      visibility_window_pct: reihen.length - i });
       });
-      linie.render({ labels: tage, datasets: ds });
+      var bau = UC.buildLineDatasets(punkte, firmen, UC.getColorScalePref ? UC.getColorScalePref() : null);
+      /* buildLineDatasets kennt nur die Tage, an denen es Punkte gab -- die Achse sind aber alle
+         Tage des Zeitraums. Also auf chart.days zurueckgelegt. */
+      var stelleVon = {};
+      bau.labels.forEach(function (l, i) { stelleVon[l] = i; });
+      bau.datasets.forEach(function (ds) {
+        var alt = ds.data;
+        ds.data = tage.map(function (tg) { return stelleVon[tg] != null ? alt[stelleVon[tg]] : null; });
+      });
+      linie.render({ labels: tage, datasets: bau.datasets });
     }
     function token(name, sonst) {
       var v = "";
@@ -1469,6 +1552,24 @@
       if (UC.makePager) pager[s] = { st: pst, kit: UC.makePager({ root: tab, state: pst, onChange: function () {
         tb.page = pst.page; tb.pageSize = pst.pageSize; persist(); zeichneTabelle(); bedarf();
       } }) };
+      /* DIE MARKEN-AUSWAHL (05.10. angefordert: "kein Selected Brands Dropdown"). Der Marken-Filter
+         der anderen Tabellen aus core (UC.makeAuswahlFilter), als Einzelauswahl: die RPC kennt genau
+         eine Marke (p_company_id). Er ersetzt den Chip "Brand: ..." -- ein Klick auf eine Marke in
+         Brands oder in der Landscape setzt dieselbe Auswahl, und hier ist sie zu sehen und zu aendern. */
+      if (s === "products" && UC.makeAuswahlFilter) {
+        var mp = tab.querySelector(".ush-markenplatz");
+        markenFilter = UC.makeAuswahlFilter({
+          einzeln: true, klasse: "ush-markenfilter", titel: "Brands", alle: "All Brands", suche: "Search brands…", leer: "No brands yet",
+          items: markenListe, gewaehlt: tb.marke && tb.marke.id ? [str(tb.marke.id)] : [],
+          onChange: function (keys) {
+            var k = keys && keys.length ? str(keys[0]) : "";
+            var hit = markenListe().filter(function (x) { return x.key === k; })[0];
+            tb.marke = k ? { id: k, name: hit ? hit.label : "" } : null;
+            tb.page = 1; pst.page = 1; persist(); zeichneTabelle(); bedarf();
+          }
+        });
+        if (mp) mp.appendChild(markenFilter.el);
+      }
       tab.addEventListener("click", function (e) {
         var ps = e.target.closest && e.target.closest("[data-pagesize]");
         var k = pager[s] && pager[s].kit;
@@ -1581,7 +1682,6 @@
     var COLS_PROD = "minmax(280px,2.6fr) minmax(160px,1.2fr) minmax(124px,1fr) minmax(148px,1fr) minmax(144px,1fr) minmax(176px,1.1fr) minmax(128px,1.1fr) minmax(92px,.7fr) minmax(128px,1.1fr) minmax(112px,.9fr)";
     function zeichneProducts() {
       var a = prodAnfrage(), d = daten(a);
-      sek("hinweise").innerHTML = hinweiseHtml(d && d.meta);
       zeichneProdTabelle();
     }
     function prodKopf() {
@@ -1602,6 +1702,10 @@
       if (segPlatz) {
         segPlatz.innerHTML = segHtml("ush-segmente", [["all", "All", sc ? ganz(sc.all) : null], ["you", "You", sc ? ganz(sc.you) : null],
           ["competition", "Competition", sc ? ganz(sc.competition) : null], ["other", "Other", sc ? ganz(sc.other) : null]], tb.seg);
+      }
+      if (markenFilter) {
+        var soll = tb.marke && tb.marke.id ? [str(tb.marke.id)] : [];
+        if (soll.join() !== markenFilter.gewaehlt().join()) markenFilter.setGewaehlt(soll);
       }
       scopeZeigen(tab);
       zaehlerSetzen(d ? anzahlWert(d.total_count) : null);
@@ -1653,9 +1757,29 @@
       '</div>';
     }
     /* Der Bezug aus einem Klick (Marke oder Haendler) als Chip, wie die Chips der Filterleiste. */
+    /* Die Marken fuer die Auswahl: die getrackten Marken der App (Markenspeicher), dazu jede Marke
+       aus einer schon geladenen Uebersicht und die gerade gewaehlte -- so steht nie eine Id statt
+       eines Namens im Knopf. Alphabetisch. */
+    function markenListe() {
+      var l = [], da = {};
+      function rein(id, name) {
+        id = str(id).trim(); name = str(name).trim();
+        if (!id || !name || da[id]) return;
+        da[id] = 1; l.push({ key: id, label: name });
+      }
+      (UC.getBrands ? UC.getBrands() : []).forEach(function (b) { if (b) rein(b.company_id, b.name); });
+      Object.keys(state.cache.overview).forEach(function (sig) {
+        var d = state.cache.overview[sig];
+        (isArr(d && d.brands) ? d.brands : []).forEach(function (b) { if (b && typeof b === "object" && b.type !== "other") rein(b.company_id, b.name); });
+      });
+      var m = state.products.marke;
+      if (m && m.id) rein(m.id, m.name || m.id);
+      return l.sort(function (a, b) { return a.label.localeCompare(b.label); });
+    }
     function scopeZeigen(tab) {
       var el = tab.querySelector(".ush-scope"), tb = state.products, teile = [];
-      if (tb.marke && tb.marke.id) teile.push(["marke", "Brand", str(tb.marke.name) || "–", "squareStack"]);
+      /* Die Marke zeigt die Marken-Auswahl in der Werkzeugleiste; nur ohne sie (core zu alt) ein Chip. */
+      if (tb.marke && tb.marke.id && !markenFilter) teile.push(["marke", "Brand", str(tb.marke.name) || "–", "squareStack"]);
       if (tb.haendler) teile.push(["haendler", "Merchant", str(tb.haendler), "store"]);
       el.hidden = !teile.length;
       el.innerHTML = teile.map(function (x) {
@@ -1672,7 +1796,6 @@
     var COLS_MARKE = "minmax(220px,1.8fr) minmax(154px,1.2fr) minmax(126px,.9fr) minmax(104px,.8fr) minmax(148px,.9fr) minmax(144px,1fr) minmax(176px,1.1fr) minmax(110px,.9fr) minmax(240px,1.8fr)";
     function zeichneBrands() {
       var d = overviewGleicherFilter();
-      sek("hinweise").innerHTML = hinweiseHtml(d && d.meta);
       zeichneMarkenKpis(d);
       zeichneChart();
       zeichneMarkenTabelle();
@@ -1699,7 +1822,7 @@
           trendHtml: ohneEigene ? "" : trend("pct", sos.d, meta), fussHtml: ohneEigene ? leerFuss : vergleichFuss(meta) }) +
         kpiHtml({ label: "Top competitor", wertHtml: tc && anteilWert(tc.share_of_shelf) != null ? '<span class="ush-kpi-marke">' + markeLogo(tc) + zaehlWert("pct", tc.share_of_shelf) + '</span>' : '<span class="up-num is-empty">–</span>',
           fussHtml: tc && str(tc.name).trim() ? esc(ersetze(t("Share of Shelf of {brand}"), { brand: str(tc.name).trim() })) : "" });
-      erklaerAnLabels(el, ["", "", "share", ""]);
+      erklaerAnLabels(el, ["brandsObserved", "ownRank", "share", "topCompetitor"]);
       hochzaehlen(el);
     }
     function markenKopf() {
@@ -1764,7 +1887,6 @@
     var COLS_HAENDLER = "minmax(240px,2fr) minmax(150px,1.2fr) minmax(104px,.8fr) minmax(148px,1.1fr) minmax(192px,1.1fr) minmax(120px,1fr) minmax(120px,1fr)";
     function zeichneMerchants() {
       var a0 = meAnfrage(ME_VORGABE), d0 = daten(a0), d = daten(meAnfrage(state.merchants)) || d0;
-      sek("hinweise").innerHTML = hinweiseHtml(d && d.meta);
       zeichneHaendlerKpis(d0 || d, a0);
       zeichneHaendlerBalken(d0, a0);
       zeichneHaendlerTabelle();
@@ -1786,7 +1908,7 @@
           fussHtml: esc(t("Most listed with observed products")) }) +
         kpiHtml({ label: "Top merchant share", wertHtml: tm ? zaehlWert("pct", tm.share) : '<span class="up-num is-empty">–</span>',
           fussHtml: tm && num(tm.observations) != null && num(s.observations) != null ? esc(ersetze(t("{n} of {total} merchant mentions"), { n: ganz(tm.observations), total: ganz(s.observations) })) : "" });
-      erklaerAnLabels(el, ["", "", "merchant"]);
+      erklaerAnLabels(el, ["merchantsObserved", "topMerchant", "topMerchantShare"]);
       hochzaehlen(el);
     }
     function zeichneHaendlerBalken(d, a) {
@@ -1856,7 +1978,6 @@
        ============================================================================================ */
     function zeichneDetail() {
       var a = detailAnfrage(), d = dasDetail();
-      sek("hinweise").innerHTML = hinweiseHtml(d && d.meta);
       krumenNeu();
       var fe = !d && fehlerVon(a);
       /* Ist das Produkt nicht ladbar, steht nur der eine Fehlerkasten da -- kein zweiter im Chart,
@@ -1894,7 +2015,8 @@
       var preis = letzterPreis(p.latest_price) || preisSpanne(p.price_ranges);
       var mz = anzahlWert(p.merchant_count);
       var k = d.kpis || {}, tr = isArr(d.trend) ? d.trend.filter(function (x) { return x && typeof x === "object"; }) : [];
-      function reihe(f) { return tr.map(function (x) { return metrikWert(f, x[f]); }); }
+      /* Wie im Chart darunter: ein Tag ohne Wert ist 0, nur die Position bleibt eine Luecke. */
+      function reihe(f) { return tr.map(function (x) { var v = metrikWert(f, x[f]); return v == null && !/position/.test(f) ? 0 : v; }); }
       var kv = kz(k.visibility), ko = kz(k.observations), kp = kz(k.avg_position), kf = kz(k.first_position_rate);
       var fuss = vergleichFuss(meta);
       function kachel(label, wert, trendH, spark) {
@@ -1948,16 +2070,19 @@
       var feld = state.dMetrik;
       var tinte = UC.accentInk ? UC.accentInk(root) : token("--vc-text", "#1f1f1b");
       var grau = token("--vc-fourth", "#80858e");
-      var ds = [{ label: str(p.title).trim() || t("Product"), __id: "produkt", __baseColor: tinte, borderColor: tinte, __luecken: true,
-                  data: tr.map(function (x) { return metrikWert(feld, x[feld]); }) }];
+      /* Ein Tag ohne Wert steht auf 0 wie in jedem Chart der App -- ausser der Position, dort
+         laeuft die Linie ueber den Tag (siehe zeichneChart). */
+      function wert(f, x) { var v = metrikWert(f, x[f]); return v == null && !/position/.test(f) ? 0 : v; }
+      var ds = [{ label: str(p.title).trim() || t("Product"), __id: "produkt", __baseColor: tinte, borderColor: tinte,
+                  data: tr.map(function (x) { return wert(feld, x); }) }];
       /* Die Vergleichslinie der Marke (Uebergabe 7.3): brand_presence neben Visibility,
          brand_avg_position neben Avg. Position. Bei "Andere" null -- dann keine. */
       var vf = feld === "visibility" ? "brand_presence" : feld === "avg_position" ? "brand_avg_position" : "";
       if (vf && b.type !== "other" && str(b.name).trim()) {
-        var werte = tr.map(function (x) { return metrikWert(vf, x[vf]); });
-        if (werte.some(function (v) { return v != null; })) {
+        var gemessen = tr.some(function (x) { return metrikWert(vf, x[vf]) != null; });
+        if (gemessen) {
           ds.push({ label: ersetze(t(vf === "brand_presence" ? "{brand} presence" : "{brand} avg. position"), { brand: str(b.name).trim() }),
-                    __id: "marke", __baseColor: grau, borderColor: grau, __dash: true, __luecken: true, data: werte });
+                    __id: "marke", __baseColor: grau, borderColor: grau, __dash: true, data: tr.map(function (x) { return wert(vf, x); }) });
         }
       }
       linie.render({ labels: tr.map(function (x) { return str(x.day).slice(0, 10); }), datasets: ds });
@@ -2147,6 +2272,12 @@
     if (UC.onViewChange) UC.onViewChange(function (name) {
       if (name === "shopping" && root.isConnected) setTimeout(function () { adresseAnwenden(); if (filterAbgleichen()) filterGeaendert(); else { zeichnen(); bedarf(); } }, 0);
     });
+    /* Die Farbskala wechselt im Einstellungsfenster -- jedes Linienchart der App zeichnet dann neu
+       (brands-overview, visibility-chart), dieses auch. */
+    window.addEventListener("up-colorscale-change", function () {
+      if (root.isConnected === false || !linie || state.seite === "detail") return;
+      zeichneChart();
+    });
     if (UC.onResize) UC.onResize(root, function () {
       Object.keys(sucheKit).forEach(function (k) { try { if (sucheKit[k] && sucheKit[k].syncTakeover) sucheKit[k].syncTakeover(); } catch (e) {} });
       if (sichtbar()) bedarf();
@@ -2195,16 +2326,23 @@
     api: {
       /* (instanz, json, fehler): json ist das Feld json des Umschlags, fehler Bubbles "error body".
          Mit zwei Werten wie bisher. */
-      setShoppingOverview:      function (id, p, f) { return jede(id, function (c) { c.setOverview(p, f); }); },
-      setShoppingProducts:      function (id, p, f) { return jede(id, function (c) { c.setProducts(p, f); }); },
-      setShoppingProductDetail: function (id, p, f) { return jede(id, function (c) { c.setDetail(p, f); }); },
-      setShoppingMerchants:     function (id, p, f) { return jede(id, function (c) { c.setMerchants(p, f); }); },
-      resetShopping:            function (id) { return jede(id, function (c) { c.reset(); }); }
+      setShoppingOverview:      function (id, p, f) { return jede(id, function (c) { c.setOverview(p, f); }, "setShoppingOverview"); },
+      setShoppingProducts:      function (id, p, f) { return jede(id, function (c) { c.setProducts(p, f); }, "setShoppingProducts"); },
+      setShoppingProductDetail: function (id, p, f) { return jede(id, function (c) { c.setDetail(p, f); }, "setShoppingProductDetail"); },
+      setShoppingMerchants:     function (id, p, f) { return jede(id, function (c) { c.setMerchants(p, f); }, "setShoppingMerchants"); },
+      resetShopping:            function (id) { return jede(id, function (c) { c.reset(); }, "resetShopping"); }
     }
   });
-  function jede(id, fn) {
+  /* Ein Setter ohne passende Wurzel sagt es einmal in der Konsole: sonst faellt die Antwort
+     still weg (falsche Instanz im Run-JS-Schritt, Element nicht auf der Seite). */
+  var ohneWurzel = {};
+  function jede(id, fn, wer) {
     var roots = mount.rootsWithId(String(id == null ? "default" : id).trim());
-    if (!roots.length) return false;
+    if (!roots.length) {
+      var k = String(wer) + "|" + String(id);
+      if (!ohneWurzel[k] && window.console) { ohneWurzel[k] = true; console.warn("[shopping] " + wer + '("' + id + '"): kein Shopping-Element mit dieser data-instance auf der Seite.'); }
+      return false;
+    }
     roots.forEach(function (r) { var c = initRoot(r); if (c) fn(c); });
     return true;
   }

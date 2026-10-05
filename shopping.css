@@ -21,8 +21,6 @@
 .ush-main { padding: 24px 0 64px; }
 
 .ush-seite { display: flex; flex-direction: column; gap: 48px; min-width: 0; }
-/* Ein leerer Hinweis-Platz nimmt im Fluss keine Luecke ein. */
-.ush-seite > [data-sek="hinweise"]:empty { display: none; }
 .ush-gruppe { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
 .ush-sek { display: flex; flex-direction: column; min-width: 0; }
 /* hidden muss gegen die eigenen display-Regeln gewinnen: .ush-sek, .ush-scope und .up-foot setzen
@@ -31,11 +29,6 @@
 .ush-root .ush-sek[hidden], .ush-root .ush-scope[hidden], .ush-root .ush-foot[hidden] { display: none; }
 .ush-sec-head .up-sec-h { gap: 6px; }
 .ush-root.is-narrow .ush-sec-head { flex-wrap: wrap; }
-
-/* Hinweise: Zeichen + Text, leise -- keine Pillen (feedback keine Punkt-Pillen), wie im Event-Detail. */
-.ush-hinweise { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 16px; font-size: var(--up-fs-m); color: var(--vc-third); }
-.ush-hinweis { display: inline-flex; align-items: center; gap: 6px; }
-.ush-hinweis svg { width: 14px; height: 14px; flex: 0 0 auto; }
 
 /* ---- Overview: Zusammenfassung -------------------------------------------------------------------
    Entwurf: Flaeche ohne Rahmen, Radius 16, Polster 16/20, Zeichen 16 mittig. Die zwei Teile der
@@ -50,6 +43,12 @@
 
 /* ---- Kennzahlen ----------------------------------------------------------------------------------- */
 .ush-kpi .up-kpi-label { display: inline-flex; align-items: center; gap: 6px; }
+/* DAS ERKLAER-ZEICHEN (05.10.: "Tooltips bei den Top KPIs!"). Es ist .up-th-info aus core -- und das
+   zeigt sich nur unter .up-th:hover, also im Tabellenkopf. In der Kachel und im Abschnittskopf
+   blieb es dadurch dauerhaft unsichtbar. Hier erscheint es wie in url-detail (.uud-kpi:hover):
+   beim Ueberfahren der Kachel bzw. des Kopfs, dicht hinter dem Wort statt am rechten Rand. */
+.ush-root .ush-kpi .up-th-info, .ush-root .ush-sec-head .up-sec-h .up-th-info { margin-left: 0; }
+.ush-root .ush-kpi:hover .up-th-info, .ush-root .ush-sec-head:hover .up-th-info { opacity: 1; }
 .ush-kpifehler { grid-column: 1 / -1; }
 /* Die Sparkline (UC.sparkHtml) steht rechts in der Zeile, hinter dem Trend. */
 .ush-kpi .up-kpi-trend { flex: 1 1 auto; }

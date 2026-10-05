@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261077;
+  var BUILD = 20261078;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -4438,8 +4438,9 @@
   }
   /* HOCHZAEHLEN (04.10., Shopping: die Werte der Kennzahl-Kacheln). Dieselbe Bauart wie
      planZaehlen weiter unten -- die Uhr steht VOR der Animation, data-up-wert traegt die
-     Ausgangszahl --, nur fuer jede Zahl: fmt macht den Text. Ohne Ausgangszahl beginnt es bei
-     85 Prozent des Ziels: ein Anlauf, kein Sprung von 0. 320ms, quadratisch auslaufend.
+     Ausgangszahl --, nur fuer jede Zahl: fmt macht den Text. Ohne Ausgangszahl beginnt es bei 0.
+     900ms mit Ease-out fuenfter Ordnung (05.10. angefordert: "ein deutliches Ease-out"): vorher
+     liefen 320ms quadratisch ab 85 Prozent, und die Bremsung war nicht zu sehen.
      Reduzierte Bewegung oder verdeckter Tab: sofort der Endwert. Es endet IMMER auf dem Endwert --
      die Uhr setzt ihn, auch wenn kein Bild mehr gemalt wird. */
   function zahlZaehlen(el, ziel, fmt){
@@ -4453,11 +4454,11 @@
       el.setAttribute("data-up-wert", v == null ? "" : String(v));
     }
     var von = toNum(el.getAttribute("data-up-wert"));
-    if (von == null && z != null) von = z * 0.85;
+    if (von == null && z != null) von = 0;
     var ruhig = false;
     try { ruhig = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) || !!document.hidden; } catch(e){}
     if (z == null || von == null || ruhig || Math.abs(von - z) < 1e-9 || !window.requestAnimationFrame){ setzen(z); return; }
-    var start = 0, DAUER = 320;
+    var start = 0, DAUER = 900;
     function fertig(){
       if (el.__upZLauf){ try { window.cancelAnimationFrame(el.__upZLauf); } catch(e){} el.__upZLauf = 0; }
       el.__upZEnde = 0;
@@ -4467,7 +4468,7 @@
     function schritt(ts){
       if (!start) start = ts || 1;
       var p = Math.min(1, ((ts || start) - start) / DAUER);
-      var w = von + (z - von) * (1 - Math.pow(1 - p, 2));
+      var w = von + (z - von) * (1 - Math.pow(1 - p, 5));
       el.textContent = fmt(w);
       el.setAttribute("data-up-wert", String(w));
       if (p < 1) el.__upZLauf = window.requestAnimationFrame(schritt);
