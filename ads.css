@@ -49,7 +49,6 @@
 .uad-kpi .up-kpi-label { display: inline-flex; align-items: center; gap: 6px; }
 .uad-kpifehler { grid-column: 1 / -1; }
 .uad-kpi .up-kpi-foot { min-width: 0; }
-.uad-kpi-fusstext { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ---- Diagramme ---------------------------------------------------------------------------------- */
 .uad-chartbox { padding: 16px; }
@@ -79,7 +78,11 @@
    (feedback keine Mittelpunkte). */
 .uad-unter { display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden; white-space: nowrap; font-size: var(--up-fs-s); color: var(--vc-third); }
 .uad-unter > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.uad-topics { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+/* Topic-Chip (core) und "+N" in Zelle und Kachelfuss: der Chip kuerzt seinen Namen, die Zahl nie. */
+.uad-topics { display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 100%; }
+.uad-topics .up-marke { flex: 0 0 auto; }
+.uad-maerkte { display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
+.uad-maerkte .up-marke { flex: 0 0 auto; }
 .uad-root .up-td-model { gap: 8px; }
 .uad-prompt-ic { display: inline-flex; flex: 0 0 auto; color: var(--vc-third); }
 .uad-prompt-ic svg { width: 14px; height: 14px; display: block; }
@@ -197,6 +200,7 @@
   line-height: 1.45; color: var(--vc-text); overflow-wrap: anywhere; }
 .uad-dr-v > span, .uad-dr-v > a, .uad-dr-v > button { min-width: 0; }
 .uad-dr-v.is-mono > span, .uad-dr-v.is-mono > a { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: var(--up-fs-s); }
+.uad-dr-topics { display: flex; flex-wrap: wrap; gap: 6px; }
 .uad-dr-url { color: inherit; text-decoration: none; }
 .uad-dr-url:hover { text-decoration: underline; text-underline-offset: 3px; }
 .uad-dr-link { display: inline-flex; align-items: center; gap: 8px; padding: 0; border: 0; background: none; font: inherit; color: inherit;

@@ -1415,6 +1415,8 @@
       opacity: 0; transform: translateY(-4px) scale(0.985); pointer-events: none; transition: opacity 140ms ease, transform 140ms ease;
     }
     .up-ment-menu.is-shown { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+    /* Linksbuendig, wenn rechtsbuendig links aus dem Bild liefe (makeAuswahlFilter misst das). */
+    .up-ment-menu.is-links { right: auto; left: 0; }
     .up-root[data-theme="dark"] .up-ment-menu { background: var(--up-menu-bg); }
     .up-ment-logo { width: 18px; height: 18px; border-radius: 5px; flex: 0 0 auto; background: var(--vt-logo-bg); padding: 1px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; }
     .up-ment-logo img { width: 16px; height: 16px; border-radius: 4px; object-fit: cover; display: block; }
@@ -3605,8 +3607,12 @@
 .up-adcard-domain svg { width: 12px; height: 12px; flex: 0 0 12px; display: block; }
 .up-adcard-domain span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .up-adcard-meta { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: var(--up-fs-s); color: var(--vc-muted); white-space: nowrap; }
-.up-adcard-model { font-weight: 500; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-.up-adcard-meta .up-marke { flex: 0 0 auto; }
+/* Modell und Markt als die Chips der Tabellen (05.10. abends: "das LLM-Logo und den Market wie in
+   der Prompts-Tabelle, mit der Flagge"). Der Name des Modells in 12 wie der Werbetreibende oben in
+   der Karte (.up-adcard-top), die Kachel bleibt bei 18 -- dieselbe Paarung, schon einmal hier. */
+.up-adcard-model { min-width: 0; }
+.up-adcard-model .up-ment-name { font-size: var(--up-fs-s); color: var(--vc-muted); }
+.up-adcard-meta .up-market { flex: 0 0 auto; }
 .up-adcard-date { margin-left: auto; flex: 0 0 auto; color: var(--vc-third); font-variant-numeric: tabular-nums; }
 
 /* DER SEITEN-DRAWER (05.10., core.js makeSeitenDrawer). Der Kasten am <body> erzeugt keine Box

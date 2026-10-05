@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261089;
+  var BUILD = 20261090;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -3869,6 +3869,61 @@
            '</span>';
   }
 
+  /* DAS FAVICON EINER DOMAIN, in der Form, die die ganze App schon traegt (rbFavicon, die
+     logo_url der Marken aus der Datenbank): google.com/s2/favicons mit dem Hostnamen ohne "www.".
+     Nimmt eine nackte Domain oder eine ganze Adresse; was sich nicht als Host lesen laesst, gibt
+     "" -- der Aufrufer zeigt dann den Buchstaben. sz 64: die Kacheln sind 18 bis 32px gross, 64
+     haelt das auf doppelter Dichte scharf. */
+  function faviconUrl(domainOderUrl, sz){
+    var h = String(domainOderUrl == null ? "" : domainOderUrl).trim();
+    if (!h) return "";
+    if (h.indexOf("//") >= 0){ try { h = new URL(h.indexOf("//") === 0 ? "https:" + h : h).hostname; } catch (e) { return ""; } }
+    else h = h.split(/[\/?#]/)[0];
+    h = h.replace(/^www\./i, "").replace(/:\d+$/, "").toLowerCase();
+    if (!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(h)) return "";
+    return "https://www.google.com/s2/favicons?domain=" + h + "&sz=" + (sz || 64);
+  }
+
+  /* DER STATISCHE TOPIC-CHIP (.up-topicchip.is-static), der eine Topic ANZEIGT statt sie zu
+     waehlen. Bis zum 05.10. stand er viermal lokal (response-detail, events, performance-detail,
+     onboarding), jedes Mal mit eigener Farbsuche; Ads ist der fuenfte Ort und holt ihn von hier.
+     tp: ein Topic-Objekt in einer der Formen, die die RPCs liefern -- {id, name} aus dem Store oder
+     {topic_id, topic_name} aus den Ads-RPCs, wahlweise mit hex_light/hex_dark/emoji.
+     Farbe und Emoji: zuerst, was das Objekt selbst traegt, sonst die Topic gleicher Id aus dem
+     Store der Seite (setUpstreemTopics). Ohne beides der Chip in Grau -- so wie im Store eine
+     Topic ohne Farbe aussieht. Wird nur EIN Thema geliefert, gilt diese Farbe in beiden.
+     cfg { dunkel, cls, tip } */
+  function topicHex(x, dunkel){
+    if (!x || typeof x !== "object") return "";
+    var h = String((dunkel ? (x.hex_dark || x.hex_light) : (x.hex_light || x.hex_dark)) || x.color || "").trim();
+    if (/^[0-9a-f]{3,8}$/i.test(h)) h = "#" + h;
+    return /^#[0-9a-f]{3,8}$/i.test(h) ? h : "";
+  }
+  function topicChipHtml(tp, cfg){
+    cfg = cfg || {};
+    tp = tp && typeof tp === "object" ? tp : {};
+    var id = String(tp.id != null ? tp.id : (tp.topic_id != null ? tp.topic_id : (tp.tag_id != null ? tp.tag_id : ""))).trim();
+    var name = String(tp.name != null ? tp.name : (tp.topic_name != null ? tp.topic_name : "")).trim();
+    var eigen = null;
+    if (id){
+      var liste = getTopics();
+      for (var i = 0; i < liste.length; i++){
+        var x = liste[i];
+        if (x && String(x.id != null ? x.id : x.tag_id) === id){ eigen = x; break; }
+      }
+    }
+    if (!name && eigen) name = String(eigen.name == null ? "" : eigen.name).trim();
+    if (!name) return "";
+    var hex = topicHex(tp, cfg.dunkel) || topicHex(eigen, cfg.dunkel);
+    var emo = String(tp.emoji || (eigen && eigen.emoji) || "").trim();
+    return '<span class="up-topicchip is-static' + (cfg.cls ? " " + cfg.cls : "") + '"' +
+             (hex ? ' style="--ust-tag-color:' + esc(hex) + '"' : "") +
+             (cfg.tip ? ' data-tip="' + esc(cfg.tip) + '"' : "") + '>' +
+             (emo ? '<span class="up-topicchip-e">' + esc(emo) + '</span>' : "") +
+             '<span class="up-topicchip-lbl">' + esc(name) + '</span>' +
+           '</span>';
+  }
+
   /* DER MARKEN-CHIP (05.10., Shopping: Spalte Brand der Products-Tabelle). Dasselbe Paar wie der
      Modell-Chip daneben -- 18px-Logo (.up-ment-logo) und Name in 13px (.up-ment-name) --, nur aus
      einer Marke {name, logo_url} statt aus dem Modell-Store. Ohne Logo der Anfangsbuchstabe.
@@ -3882,6 +3937,9 @@
     var lg = String(m.logo_url || m.logo || m.favicon_url || "").trim();
     if (lg.indexOf("//") === 0) lg = "https:" + lg;
     if (lg && !/^https?:\/\//i.test(lg)) lg = "";
+    /* Ohne Logo, aber mit Domain: das Favicon dieser Domain statt des Buchstabens (05.10., Ads:
+       Werbetreibende ausserhalb der getrackten Marken tragen nur ihre Landing-Domain). */
+    if (!lg && m.domain) lg = faviconUrl(m.domain);
     return '<span class="up-model-chip up-marken-chip' + (cfg.cls ? " " + cfg.cls : "") + '"' + (name ? ' title="' + esc(name) + '"' : '') + '>' +
              '<span class="up-ment-logo' + (lg ? " has-img" : "") + '">' +
                '<span class="up-model-ltr">' + esc(cfg.ltr != null ? cfg.ltr : (name.charAt(0).toUpperCase() || "?")) + '</span>' +
@@ -3924,7 +3982,6 @@
     var preis = fmtGeld(ad.price, ad.currency) || adText(ad.price_str).slice(0, 40);
     var modell = adText(ad.model), markt = adText(ad.market).toUpperCase();
     if (!/^[A-Z0-9_-]{1,12}$/.test(markt)) markt = "";
-    var mName = modell ? modelLabelOf(modelInfoOf(modell), modell, null) : "";
     var wann = ad.observed_at ? fmtDate(ad.observed_at) : "";
     var marke = opts.beziehung === "you" ? '<span class="up-marke up-you">' + esc(t_("You")) + '</span>'
       : opts.beziehung === "competitor" ? '<span class="up-marke is-leise">' + esc(t_("Competitor")) + '</span>' : '';
@@ -3942,8 +3999,8 @@
           (preis ? '<span class="up-adcard-price">' + esc(preis) + '</span>' : '') +
           (dom ? '<span class="up-adcard-domain">' + icon("link", 2) + '<span>' + mark(dom) + '</span></span>' : '') +
           '<span class="up-adcard-meta">' +
-            (mName ? '<span class="up-adcard-model">' + esc(mName) + '</span>' : '') +
-            (markt ? '<span class="up-marke is-leise">' + esc(markt) + '</span>' : '') +
+            (modell ? modelChip(modell, { cls: "up-adcard-model" }) : '') +
+            (markt ? marketChip(markt) : '') +
             (wann ? '<span class="up-adcard-date">' + esc(wann) + '</span>' : '') +
           '</span>' +
         '</span>' +
@@ -18737,7 +18794,7 @@
        @hugeicons/core-free-icons@4.3.5 (dist/esm/<Name>.js), wie die Shopping-Zeichen darueber.
          marketing  MarketingIcon  die Seite selbst (Seitenleiste, Krume)
          album      Album01Icon    Reiter "Ad Library"
-         brochure   BrochureIcon   Reiter "Advertisers" */
+         bank       BankIcon       Reiter "Advertisers" (05.10. abends statt BrochureIcon) */
     marketing: '<ellipse cx="18" cy="10" rx="4" ry="8"/>' +
                '<path d="M18 2C14.8969 2 8.46512 4.37761 4.77105 5.85372C3.07942 6.52968 2 8.17832 2 10C2 11.8217 3.07942 13.4703 4.77105 14.1463C8.46512 15.6224 14.8969 18 18 18"/>' +
                '<path d="M11 22L9.05674 20.9303C6.94097 19.7657 5.74654 17.4134 6.04547 15"/>',
@@ -18745,10 +18802,11 @@
            '<path d="M15.5 21.5L9.2658 14.5858C8.5452 13.8652 7.398 13.8016 6.6022 14.4383L2 17.5"/>' +
            '<path d="M12.5 11.25V11.75M12.25 11.5H12.75M13 11.5C13 11.7761 12.7761 12 12.5 12C12.2239 12 12 11.7761 12 11.5C12 11.2239 12.2239 11 12.5 11C12.7761 11 13 11.2239 13 11.5Z"/>' +
            '<path d="M19.9933 17C21.1382 16.7676 22 15.7553 22 14.5418V8.02007C22 5.18218 22 3.76324 21.1184 2.88162C20.2368 2 18.8178 2 15.9799 2H9.45819C8.24466 2 7.23241 2.86175 7 4.00669"/>',
-    brochure: '<path d="M18.5 17V7C18.5 5.11438 18.5 4.17157 17.9142 3.58579C17.3284 3 16.3856 3 14.5 3H9.5C7.61438 3 6.67157 3 6.08579 3.58579C5.5 4.17157 5.5 5.11438 5.5 7V17C5.5 18.8856 5.5 19.8284 6.08579 20.4142C6.67157 21 7.61438 21 9.5 21H14.5C16.3856 21 17.3284 21 17.9142 20.4142C18.5 19.8284 18.5 18.8856 18.5 17Z"/>' +
-              '<path d="M18.5 6H19C20.4142 6 21.1213 6 21.5607 6.43934C22 6.87868 22 7.58579 22 9V16C22 17.4142 22 18.1213 21.5607 18.5607C21.1213 19 20.4142 19 19 19H18.5"/>' +
-              '<path d="M5.5 6H5C3.58579 6 2.87868 6 2.43934 6.43934C2 6.87868 2 7.58579 2 9V16C2 17.4142 2 18.1213 2.43934 18.5607C2.87868 19 3.58579 19 5 19H5.5"/>' +
-              '<path d="M14.5 8L9.5 8M14.5 12L9.5 12M14.5 16H9.5"/>',
+    bank: '<path d="M12.125 5.75H12M12.25 5.75C12.25 5.88807 12.1381 6 12 6C11.8619 6 11.75 5.88807 11.75 5.75C11.75 5.61193 11.8619 5.5 12 5.5C12.1381 5.5 12.25 5.61193 12.25 5.75Z"/>' +
+          '<path d="M5 9V19M9 9V19"/>' +
+          '<path d="M15 9V19M19 9V19"/>' +
+          '<path d="M21.3518 9H2.64822C2.29022 9 2 8.70651 2 8.34447C2 8.12259 2.11099 7.91577 2.29495 7.79485L8.73007 3.56485C10.3171 2.52162 11.1107 2 12 2C12.8893 2 13.6829 2.52162 15.2699 3.56485L21.7051 7.79485C21.889 7.91577 22 8.12259 22 8.34447C22 8.70651 21.7098 9 21.3518 9Z"/>' +
+          '<path d="M21.0397 20.2929L20.3519 19.5858C20.0707 19.2968 19.9301 19.1522 19.7514 19.0761C19.5726 19 19.3738 19 18.9762 19H5.02382C4.62621 19 4.4274 19 4.24863 19.0761C4.06987 19.1522 3.92929 19.2968 3.64814 19.5858L2.9603 20.2929C2.25356 21.0194 1.9002 21.3827 2.02456 21.6913C2.14893 22 2.64867 22 3.64814 22H20.3519C21.3513 22 21.8511 22 21.9754 21.6913C22.0998 21.3827 21.7464 21.0194 21.0397 20.2929Z"/>',
     /* Lucide mail (lucide-static 0.460.0) -- das zwanzigste Zeichen im Event-Popup: ein Newsletter
        ist ein haeufiges Event, und mit 20 stehen zwei volle Reihen zu zehn (03.10. angefordert). */
     mail: '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
@@ -19268,6 +19326,26 @@
     }
     var pop = makePopover({ wrap: el, menu: menu, opener: btn, onClose: function(){ btn.setAttribute("aria-expanded", "false"); } });
     function zu(){ pop.close(); }
+    /* Das Menue haengt rechtsbuendig am Knopf (.up-ment-menu: right 0) -- richtig fuer die
+       Tabellen, deren Filter rechts in der Leiste stehen. Steht der Knopf weit links, lief es links
+       aus dem Bild (05.10., Ad Library auf dem Tablet: gemessen 20px). Dann haengt es linksbuendig;
+       passt es auch so nicht (Telefon, Knopf in der Mitte: 9px rechts hinaus), ruckt es genau so
+       weit nach links, dass es 8px vor dem Rand endet, aber nie ueber den linken hinaus. Wo es
+       rechtsbuendig passt, bleibt alles, wie es war. Gemessen wird das ausgelegte Menue, auch
+       wenn es noch durchsichtig einfaehrt. */
+    function ausrichten(){
+      menu.classList.remove("is-links");
+      menu.style.left = "";
+      try {
+        var r = menu.getBoundingClientRect();
+        if (r.left >= 8) return;
+        menu.classList.add("is-links");
+        r = menu.getBoundingClientRect();
+        var vw = document.documentElement.clientWidth || window.innerWidth;
+        var d = Math.min(r.right - (vw - 8), r.left - 8);
+        if (d > 0) menu.style.left = -Math.round(d) + "px";
+      } catch(e){}
+    }
     el.addEventListener("click", function(e){
       var x = e.target;
       if (!x || !x.closest) return;
@@ -19276,6 +19354,7 @@
         if (el.classList.contains("is-open")){ zu(); return; }
         auswahl = angewandt.slice(); frage = ""; fuellen();
         pop.open(); btn.setAttribute("aria-expanded", "true");
+        ausrichten();
         if (typeof cfg.onOpen === "function"){ try { cfg.onOpen(); } catch(e4){} }
         setTimeout(function(){ var f = menu.querySelector(".up-ment-search"); try { if (f) f.focus(); } catch(e2){} }, 0);
         return;
@@ -21001,6 +21080,7 @@
     relativeTime: relativeTime,
     modelChip: modelChip, modelLogoUrl: modelLogoUrl, markenChip: markenChip, ansichtHalten: ansichtHalten, makeHaendlerFilter: makeHaendlerFilter,
     adCardHtml: adCardHtml, adFormatLabel: adFormatLabel, makeSeitenDrawer: makeSeitenDrawer, balkenGrau: balkenGrau,
+    faviconUrl: faviconUrl, topicChipHtml: topicChipHtml,
     marketChip: marketChip,
     aufResize: aufResize,
     beobachteGroesse: beobachteGroesse,

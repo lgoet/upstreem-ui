@@ -30,7 +30,12 @@
   dasselbe tut, schadet nicht. Optional ein Element "view_first_ads" (JavaScript to Bubble, ohne
   Workflow): ohne es steht beim ersten Oeffnen eine Warnung in der Konsole, sonst nichts.
   "Prompt Detail" (Prompt-Zeilen, Drawer, aufgeklappte Prompts) oeffnet openDrawer("prompt",
-  prompt_id) -- der Prompt-Drawer, den es schon gibt.
+  prompt_id) -- der Prompt-Drawer, den es schon gibt. "View Response" im Ad-Drawer (05.10. abends)
+  oeffnet openDrawer("response", prompt_run_id) -- der Response-Drawer, wie "View Response" in
+  Shopping. Bubble-seitig nichts Neues.
+  Favicons und Topic-Farben: bubble/ads_db_auftrag.md (Feld "domain" an den Advertisern, Farben an
+  den Topics). Bis dahin liest die Komponente die Domain aus den geladenen Ads und die Topic-Farbe
+  aus setUpstreemTopics.
 
   ── Attribute am Wurzel-Div ──────────────────────────────────────────────────
   | Attribut             | Pflicht | Bedeutung                                                 |

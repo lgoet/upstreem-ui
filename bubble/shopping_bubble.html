@@ -2,8 +2,8 @@
   UPSTREEM — SHOPPING (Beta, Praefix ush), 04.10.2026
 
   WOHIN: ein HTML-Element in der Ansicht "shopping" (#view-shopping, eine Gruppe wie view-events).
-  Das Element ist LEER bis auf das Wurzel-Div; die Komponente baut Seitenkopf (Krume "Shopping"
-  mit Beta-Marke, Reiter Overview / Products / Brands / Merchants), Kalender, Filterleiste und alle
+  Das Element ist LEER bis auf das Wurzel-Div; die Komponente baut Seitenkopf (Krume "Shopping",
+  Reiter Overview / Products / Brands / Merchants), Kalender, Filterleiste und alle
   vier Unterseiten samt Produkt-Detail selbst. Kalender und Filter sind LOKAL: sie gehoeren der
   Seite und schreiben nichts in die globalen Filter der App ("Apply everywhere" im Kalender geht
   weiterhin). Massgeblich fuer alle Felder: bubble/shopping_backend_vertrag.md (Uebergabe 04.10.).
@@ -16,7 +16,8 @@
   Zurueck/Vor im Browser wechselt die Unterseite. In Bubble ist dafuer nichts zu tun.
 
   ── Navigation ────────────────────────────────────────────────────────────────
-  Die Seitenleiste fuehrt "Shopping" nach "Brands" (Schluessel "shopping", Beta-Marke). Ein Klick
+  Die Seitenleiste fuehrt "Shopping" nach "Brands" (Schluessel "shopping"; die Beta-Marke ist seit
+  dem 05.10. abends weg, in Leiste und Krume). Ein Klick
   feuert wie jeder Eintrag usnNav mit {"key":"shopping"} UND zeigt die Ansicht selbst (showView),
   sobald #view-shopping auf der Seite steht -- auch in der mobilen Leiste. Ein Zweig im
   usnNav-Workflow, der dasselbe tut, schadet nicht (showView tut bei offener Ansicht nichts).

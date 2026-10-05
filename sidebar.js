@@ -82,12 +82,13 @@
       { key: "prompts",    label: "Prompt Insights", icon: "zap", count: true },
       { key: "citations",  label: "Citations",       icon: "globe" },
       { key: "brands",     label: "Brands",          icon: "squareStack", brands: true },
-      /* Shopping (04.10. angefordert: nach Brands, mit "Beta" hinter dem Namen). ShoppingBag01 aus
-         Hugeicons, dasselbe Zeichen wie in der Krume der Komponente. Schluessel "shopping" =
-         ?view=shopping. beta: das Kennzeichen aus core in der Akzentfarbe (.up-marke.is-akzent). */
-      { key: "shopping",   label: "Shopping",        icon: "shoppingBag", beta: true },
+      /* Shopping (04.10. angefordert: nach Brands). ShoppingBag01 aus Hugeicons, dasselbe Zeichen
+         wie in der Krume der Komponente. Schluessel "shopping" = ?view=shopping. Die Beta-Marke ist
+         seit dem 05.10. abends weg (angefordert), Ads traegt sie weiter. */
+      { key: "shopping",   label: "Shopping",        icon: "shoppingBag" },
       /* Ads (05.10. angefordert: direkt unter Shopping, mit Beta). MarketingIcon aus Hugeicons,
-         dasselbe Zeichen wie in der Krume der Komponente. Schluessel "ads" = ?view=ads. */
+         dasselbe Zeichen wie in der Krume der Komponente. Schluessel "ads" = ?view=ads.
+         beta: das Kennzeichen aus core in der Akzentfarbe (.up-marke.is-akzent). */
       { key: "ads",        label: "Ads",             icon: "marketing", beta: true }
     ]},
     { head: "Workspace", items: [

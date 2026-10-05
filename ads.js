@@ -109,9 +109,6 @@
     }
     return code;
   }
-  function topicNamen(l) {
-    return (isArr(l) ? l : []).map(function (x) { return x && typeof x === "object" ? str(x.topic_name).trim() : str(x).trim(); }).filter(Boolean);
-  }
 
   /* ---- Katalog (Deutsch) ----------------------------------------------------------------------
      DER KATALOG IST EINER FUER DIE GANZE APP (feedback Katalog-Kollision): kein Schluessel, den core
@@ -153,7 +150,8 @@
     "The date range is not valid.": "Der Zeitraum ist ungültig.",
     "Too many requests. Please wait a moment.": "Zu viele Anfragen. Bitte warte einen Moment.",
     "This is taking longer than expected. Please try again.": "Das dauert länger als erwartet. Bitte erneut versuchen.",
-    "Try again": "Erneut versuchen"
+    "Try again": "Erneut versuchen",
+    "View Response": "Antwort ansehen"
   });
 
   /* Die Erklaerkarten (UC.makeExplain), Texte aus dem Entwurf (TIPS). */
@@ -203,7 +201,7 @@
 
   var SEITEN = [
     { value: "overview", label: "Overview", icon: "dashboardSquare" },
-    { value: "advertisers", label: "Advertisers", icon: "brochure" },
+    { value: "advertisers", label: "Advertisers", icon: "bank" },
     { value: "library", label: "Ad Library", icon: "album" }
   ];
   var SEITE_OK = { overview: 1, advertisers: 1, library: 1, advertiser: 1 };
@@ -257,25 +255,42 @@
       dMetrik: gemerkt("dMetrik", "n"), dGruppe: gemerkt("dGruppe", "all"),
       offen: {},
       cache: gemerkt("cache", { overview: {}, advertisers: {}, detail: {}, library: {}, prompts: {}, optionen: {} }),
+      /* Name des Werbetreibenden -> { fest: Domain aus einem Advertiser-Objekt, z: { Domain: Anzahl
+         seiner Ads } }. Gelernt beim Merken jeder Antwort, siehe domainsLernen. */
+      domains: gemerkt("domains", {}),
       reihe: gemerkt("reihe", { overview: [], advertisers: [], detail: [], library: [], prompts: [], optionen: [] }),
       fehler: {}, kalenderDa: false
     };
     function persist() {
       if (root.isConnected === false) return;
       STORE[instanceId] = { filter: state.filter, adFilter: state.adFilter, advertisers: state.advertisers, library: state.library,
-        prompts: state.prompts, dMetrik: state.dMetrik, dGruppe: state.dGruppe, cache: state.cache, reihe: state.reihe };
+        prompts: state.prompts, dMetrik: state.dMetrik, dGruppe: state.dGruppe, cache: state.cache, reihe: state.reihe,
+        domains: state.domains };
     }
     function isDark() { return (UC.themeParam && UC.themeParam(root.getAttribute("data-isdark"))) || root.getAttribute("data-theme") === "dark"; }
     if (isDark()) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
     if (UC.makeTooltips) UC.makeTooltips(root, isDark);
 
-    /* Die Erklaerkarte aus core an jedem Info-Zeichen, im Format der Spaltenkoepfe: Titel, Satz,
-       darunter die Formel (wie Shopping). */
+    /* Die Erklaerkarte aus core an jedem Info-Zeichen, im Format aller Spaltenkoepfe der App
+       (05.10. abends: "Explainer Tooltips, so wie ueberall"): oben auf der hellen Platte ein Wert,
+       so wie ihn die Kachel oder Zelle zeigt, darunter Titel, Satz und die Formel -- Wort fuer Wort
+       der Aufbau von Shopping. Ohne Trendpfeil: die Ads-RPCs liefern keinen Vorperiodenwert, ein
+       Pfeil in der Probe versprache einen, den die Seite nie zeigt. Die Werte sind die der
+       Uebergabe-Daten (Overview: 11.4%, 6, 81, 13; HOLY: 34.6%). */
+    function erklaerVorschau(key) {
+      if (key === "organic") {
+        return '<span class="up-explain-row"><span class="up-explain-up">' + UC.icon("check", 2) + '</span><span>' + esc(t("Also mentioned organically")) + '</span></span>';
+      }
+      var bsp = { coverage: "11.4%", advertisers: "6", appearances: "81", prompts: "13", share: "34.6%" }[key];
+      return bsp ? '<span class="up-explain-row">' + esc(bsp) + '</span>' : "";
+    }
     if (UC.makeExplain) UC.makeExplain({ root: root, triggerSel: ".uad-erklaer", getIsDark: isDark,
       html: function (key) {
         var e = ERKLAER[key];
         if (!e) return "";
-        return '<div class="up-explain-h">' + esc(t(e.h)) + '</div><div class="up-explain-t">' + esc(t(e.t)) + '</div>' +
+        var vis = erklaerVorschau(key);
+        return (vis ? '<div class="up-explain-vis">' + vis + '</div>' : '') +
+          '<div class="up-explain-h">' + esc(t(e.h)) + '</div><div class="up-explain-t">' + esc(t(e.t)) + '</div>' +
           '<div class="up-explain-t">' + esc(t(e.f)) + '</div>';
       } });
     function info(key) {
@@ -649,6 +664,7 @@
     function merken(kanal, sig, d) {
       var c = state.cache[kanal], r = state.reihe[kanal];
       c[sig] = d;
+      domainsLernen(d);
       var i = r.indexOf(sig);
       if (i >= 0) r.splice(i, 1);
       r.push(sig);
@@ -668,6 +684,48 @@
        ueber team_company bzw. company"). Die Ad-Objekte tragen nur company_id. Also: zuerst, was eine
        geladene Antwort zu diesem Namen sagt, sonst der Markenspeicher der App mit derselben
        company_id (dieselbe Quelle: die getrackten Marken des Teams). Aus Namen wird nichts abgeleitet. */
+    /* ---- Advertiser: Domain, fuer das Favicon statt des Anfangsbuchstabens ------------------------
+       Die Advertiser-Objekte der RPCs tragen (Stand 05.10.) keine Domain -- nur die Ads tragen ihre
+       landing_domain, das Detail seine landing_domains. Ein Werbetreibender ohne getrackte Firma
+       (company_id null, also auch logo_url null) stand deshalb ueberall als Buchstabe. Bis die RPCs
+       ein Feld "domain" liefern (DB-Auftrag bubble/ads_db_auftrag.md), gilt: ein geliefertes
+       domain/advertiser_domain an einem Advertiser-Objekt, sonst die Landing-Domain, die bei seinen
+       geladenen Ads am haeufigsten steht. Gelernt einmal beim Merken einer Antwort, nicht bei
+       jedem Zeichnen. Liefert die RPC das Feld spaeter, gewinnt es ohne Aenderung hier. */
+    function domainsLernen(d) {
+      if (!d || typeof d !== "object") return;
+      var D = state.domains;
+      function eintrag(n) { return D[n] || (D[n] = { fest: "", z: {} }); }
+      function host(v) { var h = str(v).trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").split(/[\/?#]/)[0]; return /^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(h) ? h : ""; }
+      function advObjekt(x, nameFeld) {
+        if (!x || typeof x !== "object") return;
+        var n = str(x[nameFeld]).trim(), h = host(x.domain || x.advertiser_domain);
+        if (!h && isArr(x.landing_domains)) h = host(x.landing_domains[0]);
+        if (n && h) eintrag(n).fest = h;
+      }
+      function ads(l) {
+        (isArr(l) ? l : []).forEach(function (a) {
+          if (!a || typeof a !== "object") return;
+          var n = str(a.advertiser_name).trim(), h = host(a.landing_domain);
+          if (n && h) { var e = eintrag(n); e.z[h] = (e.z[h] || 0) + 1; }
+        });
+      }
+      ads(d.recent_ads); ads(d.ads);
+      if (isArr(d.items)) d.items.forEach(function (x) {
+        if (x && typeof x === "object" && x.landing_domain != null) ads([x]); else advObjekt(x, "advertiser_name");
+      });
+      (isArr(d.advertiser_share) ? d.advertiser_share : []).forEach(function (x) { advObjekt(x, "advertiser_name"); });
+      (isArr(d.advertisers) ? d.advertisers : []).forEach(function (x) { advObjekt(x, "value"); });
+      if (objOder(d.advertiser)) advObjekt(d.advertiser, "advertiser_name");
+    }
+    function domainVon(n) {
+      var e = state.domains[str(n).trim()];
+      if (!e) return "";
+      if (e.fest) return e.fest;
+      var best = "", max = 0;
+      for (var h in e.z) if (Object.prototype.hasOwnProperty.call(e.z, h) && e.z[h] > max) { max = e.z[h]; best = h; }
+      return best;
+    }
     function advInfo(name, companyId) {
       var n = str(name).trim(), cid = str(companyId).trim(), out = { beziehung: null, logo: "" };
       function aus(x) {
@@ -695,10 +753,13 @@
           if (!out.logo) out.logo = sichereUrl(b.logo_url);
         }
       }
+      if (!out.logo && UC.faviconUrl) out.logo = UC.faviconUrl(domainVon(n));
       return out;
     }
-    function advLogo(name, logo) {
-      var n = str(name).trim(), u = sichereUrl(logo);
+    /* Die Logo-Kachel der Tabellen (.up-logo-box). Ein geliefertes Logo gewinnt, sonst was advInfo
+       kennt (Marken-Store, dann das Favicon der Domain), erst danach der Buchstabe. */
+    function advLogo(name, logo, companyId) {
+      var n = str(name).trim(), u = sichereUrl(logo) || advInfo(n, companyId).logo;
       var ltr = '<span class="up-logo-ltr">' + esc(n.charAt(0).toUpperCase() || "?") + '</span>';
       return u ? '<span class="up-logo-box has-img"><img src="' + esc(u) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.classList.remove(\'has-img\');this.remove()"/>' + ltr + '</span>'
                : '<span class="up-logo-box">' + ltr + '</span>';
@@ -760,6 +821,14 @@
       if (!/^[A-Za-z0-9_-]{6,80}$/.test(id)) return;
       if (drawer && drawer.isOpen()) drawer.close();
       if (UC.drawerOeffnen) UC.drawerOeffnen("prompt", id, "ads");
+    }
+    /* Der Response-Drawer der App, mit der prompt_run_id der Ad. Der eigene Drawer schliesst vorher,
+       wie beim Prompt: zwei Seitenfluegel uebereinander verdecken sich gegenseitig. */
+    function antwortOeffnen(id) {
+      id = str(id).trim();
+      if (!/^[A-Za-z0-9_-]{6,80}$/.test(id)) return;
+      if (drawer && drawer.isOpen()) drawer.close();
+      if (UC.drawerOeffnen) UC.drawerOeffnen("response", id, "ads");
     }
 
     /* ============================================================================================
@@ -945,7 +1014,8 @@
         sp("n", "Appearances", 132, 1, 85, 30, { sort: "ad_appearances", info: "appearances" }),
         sp("prompts", "Prompts", 104, 0.8, 70, 30, { sort: "prompt_count" }),
         sp("topics", "Topics", 100, 0.8, 60, 30, { sort: "topic_count" }),
-        sp("markets", "Markets", 120, 1, 40, 50),
+        /* 150: zwei Markt-Chips (Flagge 18, Code, Abstand 10) und "+N" muessen nebeneinander passen. */
+        sp("markets", "Markets", 150, 1, 40, 50),
         sp("formats", "Formats", 140, 1, 30, 60),
         sp("first", "First Seen", 120, 0.9, 20, 60, { sort: "first_seen" }),
         sp("last", "Last Seen", 120, 0.9, 50, 60, { sort: "last_seen" })] },
@@ -1148,7 +1218,7 @@
       platz.innerHTML = tabelleHtml(kopfAus("topics"), l.map(function (x) {
         var id = str(x.topic_id).trim();
         return '<div class="up-row uad-zeile' + (id ? '" data-topic="' + esc(id) + '" role="link" tabindex="0"' : ' is-statisch"') + '>' +
-          '<div class="up-td"><span class="uad-titel" title="' + esc(str(x.topic_name).trim()) + '">' + esc(str(x.topic_name).trim()) + '</span></div>' +
+          '<div class="up-td">' + topicChip(x) + '</div>' +
           '<div class="up-td up-td-cov up-var-sov">' + ringHtml(x.ad_coverage_pct) + '</div>' +
           td("advs", ganzHtml(x.advertiser_count)) +
           td("n", ganzHtml(x.ad_appearances)) +
@@ -1196,7 +1266,7 @@
       var l = (isArr(d.items) ? d.items : []).filter(function (x) { return x && typeof x === "object" && str(x.advertiser_name).trim(); });
       if (!l.length) {
         var gef = !!(tb.suche || filterAktiv());
-        tabInhalt('<div class="up-box">' + UC.leerHtml({ gefiltert: gef, was: "advertisers", icon: "brochure",
+        tabInhalt('<div class="up-box">' + UC.leerHtml({ gefiltert: gef, was: "advertisers", icon: "bank",
           titel: gef ? "No matching advertisers" : "No advertisers yet",
           text: gef ? "" : "None of the tracked AI responses in this range contained an Ad.",
           knopf: gef ? "Clear search and filters" : "", knopfAttr: "data-uad-alleweg" }) + '</div>');
@@ -1211,12 +1281,12 @@
         var formate = (isArr(x.ad_formats) ? x.ad_formats : []).map(function (f) { f = str(f).trim(); return FORMAT_KURZ[f] ? t(FORMAT_KURZ[f]) : f; }).filter(Boolean);
         var r = str(x.relationship).trim();
         return '<div class="up-row uad-zeile" data-advertiser="' + esc(n) + '" role="link" tabindex="0">' +
-          '<div class="up-td">' + advLogo(n, x.logo_url) + '<span class="up-varname" title="' + esc(n) + '">' + hl(n, q) + '</span>' + beziehungsMarke(r) + '</div>' +
+          '<div class="up-td">' + advLogo(n, x.logo_url, x.company_id) + '<span class="up-varname" title="' + esc(n) + '">' + hl(n, q) + '</span>' + beziehungsMarke(r) + '</div>' +
           '<div class="up-td up-td-share up-var-sov">' + ringHtml(x.ad_share_pct) + '</div>' +
           td("n", ganzHtml(x.ad_appearances)) +
           td("prompts", ganzHtml(x.prompt_count)) +
           td("topics", ganzHtml(x.topic_count)) +
-          td("markets", markets.length ? '<span class="uad-text" title="' + esc(markets.join(", ")) + '">' + esc(markets.join(", ")) + '</span>' : leerZelle()) +
+          td("markets", maerkteZelle(markets)) +
           td("formats", formate.length ? '<span class="uad-text" title="' + esc(formate.join(", ")) + '">' + esc(formate.join(", ")) + '</span>' : leerZelle()) +
           td("first", datumHtml(x.first_seen)) +
           td("last", datumHtml(x.last_seen)) +
@@ -1424,7 +1494,7 @@
       var adv = objOder(d.advertiser) || {}, n = str(adv.advertiser_name).trim() || name;
       var doms = (isArr(adv.landing_domains) ? adv.landing_domains : []).map(function (x) { return str(x).trim(); }).filter(Boolean);
       var r = str(adv.relationship).trim();
-      el.innerHTML = '<div class="uad-held">' + advLogo(n, adv.logo_url).replace('class="up-logo-box', 'class="up-logo-box uad-held-logo') +
+      el.innerHTML = '<div class="uad-held">' + advLogo(n, adv.logo_url, adv.company_id).replace('class="up-logo-box', 'class="up-logo-box uad-held-logo') +
         '<div class="uad-held-text">' +
           '<div class="uad-held-zeile"><h2 class="uad-held-name">' + esc(n) + '</h2>' + beziehungsMarke(r) + '</div>' +
           (doms.length ? '<span class="uad-held-dom">' + UC.icon("globe", 2) + '<span>' + esc(doms.join(", ")) + '</span></span>' : '') +
@@ -1437,14 +1507,17 @@
       var s = objOder(d.summary) || {};
       /* Der Fuss der Topics nennt sie (Entwurf) -- aus den Prompts des Advertisers, denn summary
          traegt nur die Zahl. */
-      var tn = {}, namen = [];
+      var tn = {}, topics = [];
       (isArr(d.prompts) ? d.prompts : []).forEach(function (p) {
-        topicNamen(p && p.topics).forEach(function (n) { if (!tn[n]) { tn[n] = 1; namen.push(n); } });
+        topicListe(p && p.topics).forEach(function (x) {
+          var k = str(x.topic_id).trim() || str(x.topic_name).trim();
+          if (!tn[k]) { tn[k] = 1; topics.push(x); }
+        });
       });
       el.innerHTML =
         kpiHtml({ label: "Ad Appearances", wertHtml: zaehlWert("int", s.ad_appearances) }) +
         kpiHtml({ label: "Prompts", wertHtml: zaehlWert("int", s.prompt_count) }) +
-        kpiHtml({ label: "Topics", wertHtml: zaehlWert("int", s.topic_count), fussHtml: namen.length ? '<span class="uad-kpi-fusstext" title="' + esc(namen.join(", ")) + '">' + esc(namen.join(", ")) + '</span>' : "" }) +
+        kpiHtml({ label: "Topics", wertHtml: zaehlWert("int", s.topic_count), fussHtml: topics.length ? topicZelle(topics) : "" }) +
         kpiHtml({ label: "Ad Share", wertHtml: zaehlWert("pct", s.ad_share_pct) });
       erklaerAnLabels(el, ["appearances", "", "", "share"]);
       hochzaehlen(el);
@@ -1472,14 +1545,14 @@
       zahlSetzen(el, l.length);
       if (!l.length) { platz.innerHTML = '<div class="up-box">' + UC.leerHtml({ mini: true, titel: "No prompts yet" }) + '</div>'; return; }
       platz.innerHTML = tabelleHtml(kopfAus("dprompts"), l.map(function (x) {
-        var pid = str(x.prompt_id).trim(), topics = topicNamen(x.topics);
+        var pid = str(x.prompt_id).trim();
         var org = x.organic_mentioned, organisch;
         if (!verknuepft || (org !== true && org !== false)) organisch = leerZelle();
         else if (org) organisch = '<span class="uad-organisch is-ja">' + UC.icon("check", 2) + '<span>' + esc(t(r === "you" ? "You are also mentioned organically" : "Also mentioned organically")) + '</span></span>';
         else organisch = '<span class="uad-organisch">' + UC.icon("x", 2) + '<span>' + esc(t("Not mentioned organically")) + '</span></span>';
         return '<div class="up-row uad-zeile' + (pid ? '" data-prompt="' + esc(pid) + '" role="link" tabindex="0"' : ' is-statisch"') + '>' +
           '<div class="up-td"><span class="uad-prompt-ic">' + UC.icon("zap", 2) + '</span><span class="uad-titel" title="' + esc(str(x.prompt_text).trim()) + '">' + esc(str(x.prompt_text).trim()) + '</span></div>' +
-          td("topic", topicZelle(topics)) +
+          td("topic", topicZelle(x.topics)) +
           td("n", ganzHtml(x.ad_appearances)) +
           td("last", datumHtml(x.last_seen)) +
           td("organic", organisch) +
@@ -1487,10 +1560,31 @@
       }).join(""), "uad-klickbar");
       spaltenAnwenden("dprompts");
     }
-    function topicZelle(topics) {
-      if (!topics.length) return leerZelle();
-      return '<span class="uad-topics" title="' + esc(topics.join(", ")) + '"><span class="uad-text">' + esc(topics[0]) + '</span>' +
-        (topics.length > 1 ? '<span class="up-marke is-leise">+' + (topics.length - 1) + '</span>' : '') + '</span>';
+    /* Topics als der Chip der App (UC.topicChipHtml, 05.10. abends: "die uebliche Topic-Stylings").
+       Die Ads-RPCs tragen nur topic_id und topic_name -- Farbe und Emoji kommen ueber die Id aus dem
+       Store der Seite (setUpstreemTopics). In Zelle und Kachel die erste Topic und "+N" mit den
+       uebrigen Namen im Tooltip; im Drawer alle. */
+    /* Maerkte als der Chip der Prompts-Tabelle (UC.marketChip: Flagge und Code, 05.10. abends
+       angefordert). Mehr als zwei: die ersten zwei und "+N", die uebrigen Codes im Tooltip. */
+    function maerkteZelle(codes) {
+      if (!codes.length) return leerZelle();
+      if (!UC.marketChip) return '<span class="uad-text">' + esc(codes.join(", ")) + '</span>';
+      var zeigen = codes.length > 2 ? codes.slice(0, 2) : codes, rest = codes.slice(zeigen.length);
+      return '<span class="uad-maerkte">' + zeigen.map(function (c) { return UC.marketChip(c); }).join("") +
+        (rest.length ? '<span class="up-marke is-leise" data-tip="' + esc(rest.join(", ")) + '">+' + rest.length + '</span>' : '') + '</span>';
+    }
+    function topicListe(l) {
+      return (isArr(l) ? l : []).filter(function (x) { return x && typeof x === "object" && str(x.topic_name).trim(); });
+    }
+    function topicChip(x) {
+      return UC.topicChipHtml ? UC.topicChipHtml(x, { dunkel: isDark() }) : '<span class="uad-text">' + esc(str(x.topic_name).trim()) + '</span>';
+    }
+    function topicZelle(l) {
+      l = topicListe(l);
+      if (!l.length) return leerZelle();
+      var rest = l.slice(1).map(function (x) { return str(x.topic_name).trim(); });
+      return '<span class="uad-topics">' + topicChip(l[0]) +
+        (rest.length ? '<span class="up-marke is-leise" data-tip="' + esc(rest.join(", ")) + '">+' + rest.length + '</span>' : '') + '</span>';
     }
     /* Ads des Advertisers: die neuesten 20 (Vertrag), als Karten; "By Campaign" gruppiert nach
        campaign_id, sonst utm_campaign -- nur, wenn eine Ad Kampagnendaten traegt. */
@@ -1586,7 +1680,7 @@
           '<span class="uad-unter">' + (adv ? '<span>' + hl(adv, q) + '</span>' : '') + (dom ? '<span>' + hl(dom, q) + '</span>' : '') + '</span></span></div>' +
         td("format", str(ad.ad_format).trim() ? '<span class="uad-text">' + esc(UC.adFormatLabel ? UC.adFormatLabel(ad.ad_format) : str(ad.ad_format)) + '</span>' : leerZelle()) +
         td("price", preis ? '<span class="up-num">' + esc(preis) + '</span>' : leerZelle()) +
-        td("model", (modell ? (UC.modelChip ? UC.modelChip(modell) : esc(modell)) : leerZelle()) + (markt ? '<span class="up-marke is-leise">' + esc(markt) + '</span>' : '')) +
+        td("model", (modell ? (UC.modelChip ? UC.modelChip(modell) : esc(modell)) : leerZelle()) + (markt ? maerkteZelle([markt]) : '')) +
         td("prompt", str(ad.prompt_text).trim() ? '<span class="uad-text" title="' + esc(str(ad.prompt_text).trim()) + '">' + hl(str(ad.prompt_text).trim(), q) + '</span>' : leerZelle()) +
         td("seen", datumHtml(ad.observed_at)) +
       '</div>';
@@ -1610,7 +1704,7 @@
         return '<div class="up-row uad-zeile uad-pzeile' + (offen ? " is-offen" : "") + '"' + (pid ? ' data-auf="' + esc(pid) + '" data-auf-text="' + esc(text) + '" role="button" tabindex="0" aria-expanded="' + offen + '"' : '') + '>' +
             '<div class="up-td"><span class="uad-auf-ic">' + UC.icon(offen ? "chevronDown" : "chevronRight", 2.2) + '</span>' +
               '<span class="uad-titel" title="' + esc(text) + '">' + hl(text, q) + '</span></div>' +
-            td("topic", topicZelle(topicNamen(x.topics))) +
+            td("topic", topicZelle(x.topics)) +
             '<div class="up-td up-td-cov up-var-sov">' + ringHtml(x.ad_coverage_pct) + '</div>' +
             td("advs", ganzHtml(x.advertiser_count)) +
             td("n", ganzHtml(x.ad_appearances)) +
@@ -1672,7 +1766,11 @@
       var fmt = str(ad.ad_format).trim(), titel = str(ad.title).trim(), desc = str(ad.description).trim();
       var preis = (UC.fmtGeld ? UC.fmtGeld(ad.price, ad.currency) : "") || str(ad.price_str).trim().slice(0, 40);
       var bild = sichereUrl(ad.image_url), url = sichereUrl(ad.url), dom = str(ad.landing_domain).trim();
-      var markt = marktCode(ad.market), modell = str(ad.model).trim(), topics = topicNamen(ad.topics);
+      var markt = marktCode(ad.market), modell = str(ad.model).trim(), topics = topicListe(ad.topics);
+      /* Die Antwort, in der diese Ad stand: prompt_run_id traegt jedes Ad-Objekt (Vertrag), und
+         genau das ist die Id des Response-Drawers -- wie "View Response" in Shopping. */
+      var lauf = str(ad.prompt_run_id).trim();
+      if (!/^[A-Za-z0-9_-]{6,80}$/.test(lauf)) lauf = "";
       var pid = str(ad.prompt_id).trim(), ptext = str(ad.prompt_text).trim();
       var logoHtml = '<span class="up-ment-logo' + (i.logo ? " has-img" : "") + '"><span class="up-model-ltr">' + esc(adv.charAt(0).toUpperCase() || "?") + '</span>' +
         (i.logo ? '<img src="' + esc(i.logo) + '" alt="" referrerpolicy="no-referrer" onerror="this.parentNode.classList.remove(\'has-img\');this.remove()"/>' : '') + '</span>';
@@ -1706,9 +1804,10 @@
           zeile("Landing URL", url ? '<a class="uad-dr-url" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + esc(url) + '</a>' : leerZelle(), { mono: true, kopie: url || "" })) +
         gruppe("Observation",
           zeile("Prompt", ptext ? (pid ? '<button type="button" class="uad-dr-link" data-prompt="' + esc(pid) + '">' + esc(ptext) + UC.icon("arrowRight", 2) + '</button>' : '<span>' + esc(ptext) + '</span>') : leerZelle()) +
-          zeile("Topic", topics.length ? '<span>' + esc(topics.join(", ")) + '</span>' : leerZelle()) +
+          zeile("Response", lauf ? '<button type="button" class="uad-dr-link" data-antwort="' + esc(lauf) + '">' + esc(t("View Response")) + UC.icon("arrowUpRight", 2) + '</button>' : leerZelle()) +
+          zeile("Topic", topics.length ? '<span class="uad-dr-topics">' + topics.map(topicChip).join("") + '</span>' : leerZelle()) +
           zeile("Model", modell ? (UC.modelChip ? UC.modelChip(modell, { full: true }) : esc(modell)) : leerZelle()) +
-          zeile("Market", markt ? '<span>' + esc(marktName(markt)) + '</span>' : leerZelle()) +
+          zeile("Market", markt ? (UC.marketChip ? UC.marketChip(markt) : '<span>' + esc(marktName(markt)) + '</span>') : leerZelle()) +
           zeile("Observed at", '<span>' + esc(zeitpunkt(ad.observed_at)) + '</span>')) +
         (kampagne ? gruppe("Campaign metadata", kampagne) : "");
       drawer.open(krume, inhalt);
@@ -1722,6 +1821,8 @@
           if (kp) { kopieren(kp); return; }
           var av = z.closest(".uad-dr-adv[data-advertiser]");
           if (av) { var n = av.getAttribute("data-advertiser"); drawer.close(); advertiserOeffnen(n); return; }
+          var an = z.closest("[data-antwort]");
+          if (an) { antwortOeffnen(an.getAttribute("data-antwort")); return; }
           var pr = z.closest("[data-prompt]");
           if (pr) promptOeffnen(pr.getAttribute("data-prompt"));
         });
@@ -1817,6 +1918,19 @@
       Object.keys(spalten).forEach(function (k) { try { spalten[k].kit.applyCols(); } catch (e) {} });
       if (sichtbar()) bedarf();
     });
+    /* Die Stores der Seite kommen oft NACH der ersten Antwort -- setUpstreemTopics, -Brands, -Models
+       und -Markets laufen in eigenen Workflows. Was sie beitragen (Topic-Farbe und Emoji, You/
+       Competitor und Logo, Modell-Logo, Flagge), steht erst mit dem naechsten Zeichnen da; ohne das
+       blieben die Topic-Chips bis zur naechsten Antwort grau. Vier Stores, ein gebuendelter Lauf. */
+    var storeUhr = null;
+    function storeNeu() {
+      if (storeUhr) return;
+      storeUhr = setTimeout(function () { storeUhr = null; if (root.isConnected !== false && sichtbar()) zeichnen(); }, 0);
+    }
+    if (UC.onTopics) UC.onTopics(storeNeu, root);
+    if (UC.onBrands) UC.onBrands(storeNeu, root);
+    if (UC.onModels) UC.onModels(storeNeu, root);
+    if (UC.onMarkets) UC.onMarkets(storeNeu, root);
 
     /* ---- Setter -------------------------------------------------------------------------------- */
     var ctrl = {

@@ -459,7 +459,7 @@
       onSelect: function (v) { seiteOeffnen(v, true); }
     }) : null;
     var krumen = UC.makePageCrumbs ? UC.makePageCrumbs(root, {
-      icon: "shoppingBag", name: "Shopping", marke: "Beta", komponente: true, quelle: elNav,
+      icon: "shoppingBag", name: "Shopping", komponente: true, quelle: elNav,
       klick: function () { seiteOeffnen("overview", true); },
       klickWenn: function () { return state.seite === "detail"; },
       stufen: function () {
