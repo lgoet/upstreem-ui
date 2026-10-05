@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261083;
+  var BUILD = 20261084;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -4635,8 +4635,10 @@
                                in data-up-ziel, NICHT in data-up-wert: das liest zahlZaehlen als
                                Ausgangszahl, und dann liefe nichts.
        hochzaehlen(el, ort)    zaehlt jede so markierte Zahl in el hoch. ort trennt die Orte
-                               ("events|<instanz>|<event>"); je Ort und Kachel (Label der .up-kpi)
-                               wird der zuletzt gezaehlte Wert gemerkt. Zeichnet die Komponente mit
+                               ("events|<instanz>|<event>"); je Ort und Kachel wird der zuletzt
+                               gezaehlte Wert gemerkt. Die Kachel ist eine .up-kpi (Schluessel ist
+                               ihr Label) oder ein Element mit data-up-kachel="<Name>" -- fuer
+                               Kacheln mit eigenem Markup (Agentic Dashboard, .upw-kpi). Zeichnet die Komponente mit
                                denselben Werten neu (Theme, Breite, Nachzuegler), laeuft nichts von
                                vorn -- die Zahl steht dann schon auf dem Endwert. Gemerkt am Fenster:
                                Bubble baut beim Theme-Wechsel die Elemente neu. */
@@ -4662,8 +4664,12 @@
     for (var i = 0; i < w.length; i++){
       var v = toNum(w[i].getAttribute("data-up-ziel"));
       if (v == null) continue;
-      var kachel = w[i].closest(".up-kpi"), lbl = kachel && kachel.querySelector(".up-kpi-label");
-      var schluessel = lbl ? (lbl.getAttribute("data-i18n") || lbl.textContent) : String(i);
+      var kachel = w[i].closest(".up-kpi, [data-up-kachel]");
+      var schluessel = kachel && kachel.getAttribute("data-up-kachel");
+      if (!schluessel){
+        var lbl = kachel && kachel.querySelector(".up-kpi-label");
+        schluessel = lbl ? (lbl.getAttribute("data-i18n") || lbl.textContent) : String(i);
+      }
       if (gemerkt[schluessel] === v) continue;
       gemerkt[schluessel] = v;
       zahlZaehlen(w[i], v, ZAEHL_FMT[w[i].getAttribute("data-up-zaehl")] || ZAEHL_FMT["int"]);

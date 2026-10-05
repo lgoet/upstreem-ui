@@ -723,8 +723,10 @@
        Groessen sind die der Kennzahl in brand-detail (23px, Trend 15px mit 17px-Pfeil) -- das
        naechste Vorbild in der App, dieselbe Rolle. Der Verlauf ist eine schmale Linie mit Punkt am
        Ende, ohne Achsen: er sagt "steigt oder faellt", die Zahl daneben sagt wie viel. */
+    /* data-up-kachel: der Name, unter dem UC.hochzaehlen den gezaehlten Wert dieser Kachel merkt
+       (eigenes Markup, keine .up-kpi). */
     function kpiKarte(label, wertHtml, trendHtml, fussStark){
-      return '<div class="upw-kpi">' +
+      return '<div class="upw-kpi" data-up-kachel="' + esc(label) + '">' +
         '<div class="upw-kpi-top"><div class="upw-kpi-main">' +
           '<span class="upw-kpi-label" data-i18n="' + esc(label) + '">' + esc(t(label)) + '</span>' +
           '<span class="upw-kpi-row"><span class="upw-kpi-val">' + wertHtml + '</span>' +
@@ -758,16 +760,26 @@
       var fussRank = bestR != null ? ersetze(t("Best in field {v}"), { v: fmtR(bestR) }) : "";
       var avg = num(o.field_avg_sentiment);
       var fussSent = avg != null ? ersetze(t("Field average {v}"), { v: fmtI(avg) }) : "";
+      /* Die Zahlen zaehlen hoch wie in Shopping und Events (05.10. angefordert): UC.zaehlHtml
+         zeichnet sie schon mit dem Endwert, UC.hochzaehlen zaehlt danach. Ohne Wert bleibt der
+         Strich wie bisher. */
+      var zaehlen = !!(UC.zaehlHtml && UC.hochzaehlen);
+      function zahl(v, art, fmt){
+        return v != null && zaehlen ? UC.zaehlHtml(v, art) : '<span class="up-num">' + fmt(v) + '</span>';
+      }
       elKpis.innerHTML =
-        kpiKarte("Visibility", '<span class="up-num">' + fmtPct1(vis) + '</span>',
+        kpiKarte("Visibility", zahl(vis, "pct1", fmtPct1),
           UC.trendChip(o.visibility_delta_pct, { decimals: true, suffix: "%" }), fussVis) +
         /* Rang mit Raute wie ueberall (03.10. angefordert: "da fehlt das Hashtag bei Rank"). */
-        kpiKarte("Avg. Rank", rank == null ? '<span class="up-num">' + fmtR(rank) + '</span>'
-          : '<span class="up-rank-group">' + HASH + '<span class="up-num">' + fmtR(rank) + '</span></span>',
+        kpiKarte("Avg. Rank", rank == null ? zahl(rank, "num1", fmtR)
+          : '<span class="up-rank-group">' + HASH + zahl(rank, "num1", fmtR) + '</span>',
           UC.trendChip(o.avg_rank_delta, { decimals: true, inverted: true }), fussRank) +
         /* Sentiment mit dem Balken aus core, wie ueberall (29.09.) -- hier stand die nackte Zahl. */
-        kpiKarte("Sentiment", sent == null ? '<span class="up-num">' + fmtI(sent) + '</span>' : UC.sentHtml(sent),
+        kpiKarte("Sentiment", sent == null ? zahl(sent, "int", fmtI) : UC.sentHtml(sent, { zaehlen: zaehlen }),
           UC.trendChip(o.sentiment_delta, { decimals: true }), fussSent);
+      /* Einmal je Wert: renderAll zeichnet die Kacheln bei jeder Lieferung neu (Marken, Zitate,
+         Chips) -- mit denselben Zahlen laeuft dann nichts von vorn. */
+      if (zaehlen) UC.hochzaehlen(elKpis, "agentic|" + instanceId);
     }
     function kpiSkelett(){
       var k = '<div class="upw-kpi is-sk"><div class="upw-kpi-top"><div class="upw-kpi-main">' +
