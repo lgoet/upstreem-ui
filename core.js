@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261084;
+  var BUILD = 20261085;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -10258,9 +10258,10 @@
          Events-Uebersicht steht man schon dort. */
       klicks = [typeof cfg.klick === "function" && (typeof cfg.klickWenn !== "function" || cfg.klickWenn()) ? cfg.klick : null];
       /* cfg.marke (04.10., Shopping): ein Kennzeichen HINTER dem Seitennamen, z. B. "Beta" --
-         als .up-marke.is-leise aus core, wie in der Seitenleiste. Hier und nicht vom Aufrufer
-         angehaengt: zeichnen() schreibt die Zeile bei jedem Reiterwechsel neu. */
-      var marke = cfg.marke ? '<span class="up-marke is-leise up-ph-crumbmarke" data-i18n="' + esc(cfg.marke) + '">' + esc(t_(cfg.marke)) + '</span>' : '';
+         als .up-marke.is-akzent aus core (seit 05.10. in der Akzentfarbe), wie in der
+         Seitenleiste. Hier und nicht vom Aufrufer angehaengt: zeichnen() schreibt die Zeile bei
+         jedem Reiterwechsel neu. */
+      var marke = cfg.marke ? '<span class="up-marke is-akzent up-ph-crumbmarke" data-i18n="' + esc(cfg.marke) + '">' + esc(t_(cfg.marke)) + '</span>' : '';
       var html = krume(
         (cfg.icon ? '<span class="up-ph-crumbic" aria-hidden="true">' + icon(cfg.icon, 2) + '</span>' : '') +
         '<span class="up-ph-crumbname" data-i18n="' + esc(cfg.name || "") + '">' + esc(name) + '</span>' + marke,

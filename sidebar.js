@@ -84,7 +84,7 @@
       { key: "brands",     label: "Brands",          icon: "squareStack", brands: true },
       /* Shopping (04.10. angefordert: nach Brands, mit "Beta" hinter dem Namen). ShoppingBag01 aus
          Hugeicons, dasselbe Zeichen wie in der Krume der Komponente. Schluessel "shopping" =
-         ?view=shopping. beta: das leise Kennzeichen aus core (.up-marke.is-leise). */
+         ?view=shopping. beta: das Kennzeichen aus core in der Akzentfarbe (.up-marke.is-akzent). */
       { key: "shopping",   label: "Shopping",        icon: "shoppingBag", beta: true }
     ]},
     { head: "Workspace", items: [
@@ -775,9 +775,10 @@
       if (it.chips) extra = '<span class="usn-count usn-fade" data-teamcount>' +
         (state.teamsDa && state.enthuellt ? esc(String((state.teams || []).length))
                         : '<span class="usn-sk"></span>') + '</span>';
-      /* "Beta" hinter dem Namen (04.10., Shopping): .up-marke.is-leise aus core, dieselbe Marke wie
-         in der Krume der Seite. usn-fade: eingeklappt verschwindet sie mit dem Namen. */
-      if (it.beta) extra = '<span class="up-marke is-leise usn-beta usn-fade" data-i18n="Beta">' + esc(UC.t ? UC.t("Beta") : "Beta") + '</span>';
+      /* "Beta" hinter dem Namen (04.10., Shopping): .up-marke.is-akzent aus core (seit 05.10. in der
+         Akzentfarbe), dieselbe Marke wie in der Krume der Seite. usn-fade: eingeklappt
+         verschwindet sie mit dem Namen. */
+      if (it.beta) extra = '<span class="up-marke is-akzent usn-beta usn-fade" data-i18n="Beta">' + esc(UC.t ? UC.t("Beta") : "Beta") + '</span>';
       /* data-tip statt title: der Browser-Tooltip erscheint verzoegert, an der Maus und in
          Systemoptik. data-tip ist der Chip des Hauses (.up-tip), und data-tip-place="right"
          setzt ihn neben den Punkt -- unter einem Icon steht in der eingeklappten Leiste schon
