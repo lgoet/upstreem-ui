@@ -328,8 +328,15 @@
       STORE[instanceId] = {
         data: state.data, hasData: !!state.hasData, fehler: state.fehler || null,
         loading: !!state.loading, brandFilter: state.brandFilter || "",
-        wartet: warteUhr != null
+        wartet: warteUhr != null,
+        /* In welchem Drawer die Wurzel sass -- fuer das Oeffnen unten, falls Bubble sie beim
+           Aufgehen neu baut und die neue noch nicht im Dokument steht. */
+        drawer: drawerVon(root)
       };
+    }
+    function drawerVon(el) {
+      var d = el.closest ? el.closest('[id^="drawer-"], [id^="content-"]') : null;
+      return d ? String(d.id).replace(/^(drawer|content)-/, "") : "";
     }
 
     /* Beim ersten Aufbau laeuft die Uhr sofort (siehe loading oben). Ein Neuaufbau startet sie
@@ -1082,12 +1089,17 @@
         return true;
       },
       reset: function () {
-        state.data = null; state.hasData = false; state.fehler = null; state.loading = false;
+        /* WARTEN, NICHT "LEER" (05.10.). Gemeldet: "oeffnet beim ersten Aufruf mit 'Keine Daten'
+           und ohne Skelett". Ein Reset kommt im Drawer-Workflow VOR den neuen Daten -- und mit
+           loading = false stand bis zu ihrer Ankunft in jedem Abschnitt der Leerzustand. Nach
+           einem Reset kommt die naechste Antwort; bis dahin das Skelett, und die Warte-Uhr sorgt
+           dafuer, dass "kommt gleich" nach 25s endet. */
+        state.data = null; state.hasData = false; state.fehler = null; state.loading = true;
         /* Die Ansicht bleibt, wie der Nutzer sie gestellt hat -- sie ist eine Einstellung, keine
            Daten. Sie hier auf Grid zu zwingen hiesse, sie bei jedem Reset zu ueberschreiben und
            die Speicherung damit wieder aufzuheben. */
         state.brandFilter = "";
-        warteBeenden();
+        warteStarten();
         glistSchliessen();
         render();
         /* Der geleerte Stand ersetzt den gemerkten, Marken-Filter eingeschlossen. */
@@ -1191,6 +1203,36 @@
           r.__urdController.setLoading("yes");
         });
       }, 450);
+    });
+  }
+
+  /* ---- AUF HEISST: SKELETT, BIS DIE ANTWORT DA IST (05.10.) ------------------------------------
+     Das Gegenstueck zum Schliessen oben. Vor dem ERSTEN Oeffnen gab es kein Schliessen, das den
+     Ladezustand haette setzen koennen -- stand in der Zwischenzeit etwas anderes im Zustand (ein
+     Reset, ein "no" an setResponseDetailLoading aus dem Seitenaufbau), oeffnete der Drawer mit
+     dem Leerzustand. Die Antwort kommt nach jedem Oeffnen neu (bubble_fn_drawer_<art> laeuft erst
+     240ms NACH openDrawer), also ist alles, was beim Oeffnen darin steht, ohnehin veraltet.
+     Betroffen sind nur Wurzeln IN dem Drawer, der aufgeht (#drawer-<art> / #content-<art>). */
+  if (UC.onDrawerOpen && !window.__urdAufAngemeldet) {
+    window.__urdAufAngemeldet = true;
+    UC.onDrawerOpen(function (art, id) {
+      art = String(art == null ? "" : art).trim();
+      /* Ohne Kennung meldet die Host-App das Oeffnen nicht an Bubble -- dann kommen auch keine
+         neuen Daten, und was drinsteht, muss stehen bleiben. */
+      if (!art || id == null || String(id) === "") return;
+      [].forEach.call(document.getElementsByClassName("urd-root"), function (r) {
+        if (!r.__urdController || r.isConnected === false) return;
+        if (!r.closest('[id="drawer-' + art + '"], [id="content-' + art + '"]')) return;
+        r.__urdController.setLoading("yes");
+      });
+      /* Baut Bubble das Element beim Aufgehen neu, startet die neue Wurzel aus dem Speicher --
+         und dort stand womoeglich das "No data" einer abgelaufenen Uhr, ohne neue Uhr dazu.
+         Also auch der Speicher wartet ab jetzt. */
+      Object.keys(STORE).forEach(function (k) {
+        var e = STORE[k];
+        if (!e || e.drawer !== art) return;
+        e.data = null; e.hasData = false; e.fehler = null; e.loading = true; e.wartet = true;
+      });
     });
   }
 

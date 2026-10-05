@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261078;
+  var BUILD = 20261079;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -1587,7 +1587,7 @@
       "Wähle, wie upstreem aussieht und deine Daten formatiert",
     "How lines and legends are drawn across every chart":
       "Wie Linien und Legenden in allen Charts gezeichnet werden",
-    "My Preferences": "Meine Einstellungen",
+    "My Preferences": "Meine Präferenzen",
     "Profile": "Profil",
     "Your name and picture, as your team sees them":
       "Dein Name und Bild, so wie dein Team sie sieht",
@@ -2434,7 +2434,10 @@
      (Domains, URLs, Brand, Prompt) und die haben schlicht keinen Eintrag. */
   addMessages("de", {
     /* ---- Konto-Menue der Seitenleiste, und das Einstellungsfenster nutzt dieselben ---- */
-    "Preferences": "Einstellungen",
+    "Preferences": "Präferenzen",
+    /* Der Haendler-Filter (makeHaendlerFilter, 05.10.) -- aus shopping.js hierher, wo er jetzt steht. */
+    "Merchants": "Händler", "All Merchants": "Alle Händler", "{n} Merchants": "{n} Händler",
+    "Search merchants…": "Händler durchsuchen…", "No merchants yet": "Noch keine Händler",
     "Theme": "Design",
     "Light": "Hell",
     "Dark": "Dunkel",
@@ -3756,6 +3759,30 @@
            '</span>';
   }
 
+  /* DER MARKEN-CHIP (05.10., Shopping: Spalte Brand der Products-Tabelle). Dasselbe Paar wie der
+     Modell-Chip daneben -- 18px-Logo (.up-ment-logo) und Name in 13px (.up-ment-name) --, nur aus
+     einer Marke {name, logo_url} statt aus dem Modell-Store. Ohne Logo der Anfangsbuchstabe.
+     cfg.cls haengt eine Klasse an, cfg.nach fertiges Markup hinter den Namen (die Marke "You"),
+     cfg.nameHtml ersetzt den Namen (Suchtreffer markiert), cfg.ltr das Zeichen in der Kachel
+     (Shopping: "–" fuer nicht zugeordnete Produkte). */
+  function markenChip(m, cfg){
+    cfg = cfg || {};
+    m = m || {};
+    var name = String(m.name == null ? "" : m.name).trim();
+    var lg = String(m.logo_url || m.logo || m.favicon_url || "").trim();
+    if (lg.indexOf("//") === 0) lg = "https:" + lg;
+    if (lg && !/^https?:\/\//i.test(lg)) lg = "";
+    return '<span class="up-model-chip up-marken-chip' + (cfg.cls ? " " + cfg.cls : "") + '"' + (name ? ' title="' + esc(name) + '"' : '') + '>' +
+             '<span class="up-ment-logo' + (lg ? " has-img" : "") + '">' +
+               '<span class="up-model-ltr">' + esc(cfg.ltr != null ? cfg.ltr : (name.charAt(0).toUpperCase() || "?")) + '</span>' +
+               (lg ? '<img src="' + esc(lg) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
+                     ' onerror="this.parentNode.classList.remove(\'has-img\'); this.remove()"/>' : "") +
+             '</span>' +
+             '<span class="up-ment-name">' + (cfg.nameHtml != null ? cfg.nameHtml : esc(name)) + '</span>' +
+             (cfg.nach || '') +
+           '</span>';
+  }
+
   /* Market-Chip: Flagge als liegende Kachel plus Laendercode. Rund wuerde jede Flagge auf ihre
      Mitte beschneiden, und genau da tragen DE, FR und IT nichts Unterscheidbares. */
   /* Das Markup des Marken-Schalters. Dreistufig: aus, ja, nein -- dieselbe Reihenfolge wie in
@@ -4940,9 +4967,19 @@
        250px-Seitenleiste nie. Gerechnet, nicht geschaetzt (dieselbe Formel wie autoFit unten).
        FIRST_MIN bleibt die harte Untergrenze: ein kleiner Anteil kann die fuehrende Spalte nicht
        unbrauchbar schmal machen. */
+    /* DIE UNTERGRENZE DER SPUR (05.10., Shopping). Die fuehrende Spur war fest minmax(30%, 1.6fr),
+       auch wo firstShare die Rechnung kleiner macht. Fuer eine Tabelle, deren erste Spalte ein
+       Datum ist (Recent Appearances), sind 30 Prozent ein Drittel der Breite fuer zehn Zeichen.
+       cfg.firstFloor setzt die Spur UND, wenn firstShare fehlt, die Rechnung -- beide mit
+       derselben Zahl, sonst rechnet autoFit mit einer anderen Breite als das Raster sie zieht.
+       Ohne Angabe bleibt alles bei 0.30 wie bisher. */
+    function firstFloor(){
+      var v = cfg.firstFloor;
+      return (typeof v === "number" && v > 0 && v < 1) ? v : 0.30;
+    }
     function firstShare(){
       var v = cfg.firstShare;
-      return (typeof v === "number" && v > 0 && v < 1) ? v : 0.30;
+      return (typeof v === "number" && v > 0 && v < 1) ? v : firstFloor();
     }
     function firstWidth(cw){
       return Math.max(FIRST_MIN, (cw - LEAD()) * firstShare());
@@ -5144,7 +5181,7 @@
       }
       var lw = LEAD();
       var parts = lw ? [lw + "px"] : [];
-      parts.push(pinned ? firstPx + "px" : "minmax(30%, 1.6fr)");
+      parts.push(pinned ? firstPx + "px" : "minmax(" + Math.round(firstFloor() * 1000) / 10 + "%, 1.6fr)");
       cols.forEach(function(c){
         parts.push(pinned ? "minmax(" + colMin(c.key) + "px, 1fr)" : colTrack(c));
       });
@@ -13407,7 +13444,7 @@
     var mount = cfg.mount;
     var isDark = cfg.isDark || function(){ return false; };
     var fmt = cfg.fmt || function(v){ return fmtPct(v); };
-    var letzte = null;
+    var letzte = null, ro = null;
 
     /* opts.ohneFahrt (29.09. spaet): die Balken stehen sofort auf ihrer Breite, statt von 0
        einzufahren. Fuer einen Aufrufer, der DIESELBEN Daten ein zweites Mal zeichnet -- nach
@@ -13520,6 +13557,14 @@
           if (fill) fill.style.width = Math.max(Number(d[i].share) || 0, 0) + "%";
         });
       }
+      /* WERTE UND ZEICHEN ERST NACH DER EINFAHRT (05.10. gemeldet: "die Values + Logos sollen erst
+         nach der Animation einblenden, wie in allen anderen Bar Charts"). Das war schon so gedacht
+         (alle() nach 640ms) -- aber der Groessenwaechter darunter ruft beim Anmelden SOFORT, und
+         dieser erste Ruf setzte die Beschriftung, solange die Balken noch 0 breit waren: alles
+         stand "daneben" am linken Rand und war von Anfang an zu sehen. Jetzt darf der Waechter
+         erst nach der Einfahrt. Und es gibt EINEN Waechter je Liste: bisher kam bei jedem
+         Zeichnen ein neuer dazu, und die alten liefen mit. */
+      var bereit = ohneFahrt;
       if (ohneFahrt) alle();
       else {
         requestAnimationFrame(function(){ requestAnimationFrame(function(){ breitenSetzen(); }); });
@@ -13527,10 +13572,11 @@
            blieben die Balken dort auf 0% stehen -- und stuenden auch dann noch leer da, wenn der
            Nutzer zurueckwechselt, weil der Rueckruf nur EINMAL vorgesehen war. */
         setTimeout(function(){ if (rows[0] && rows[0].querySelector(".up-bar-fill").style.width === "0%") breitenSetzen(); }, 300);
-        setTimeout(alle, 640);
+        setTimeout(function(){ bereit = true; alle(); }, 640);
       }
       if (window.ResizeObserver){
-        var ro = new ResizeObserver(function(){ alle(); });
+        if (ro) ro.disconnect();
+        ro = new ResizeObserver(function(){ if (bereit) alle(); });
         ro.observe(mount);
       }
     }
@@ -14063,9 +14109,47 @@
     try { window.dispatchEvent(new CustomEvent("up-event-open", { detail: { id: id } })); } catch(e){}
     try {
       var offen = (typeof currentView === "function" && currentView()) || "";
-      if (offen !== "events" && typeof window.showView === "function") window.showView("events");
+      if (offen !== "events"){
+        /* UEBER DIE SEITENLEISTE (05.10.). Die Ansichten der App schaltet ein Bubble-State
+           (usnNav -> showView -> Set state "Current View"), und eine Bedingung blendet das
+           Reusable ein. showView allein setzt den State nicht -- das Reusable blieb ausgeblendet.
+           usnNavigieren ist derselbe Weg wie ein Klick in die Leiste. */
+        if (typeof window.usnNavigieren === "function") window.usnNavigieren("events");
+        else if (typeof window.showView === "function"){ window.showView("events"); ansichtHalten("events"); }
+      }
     } catch(e){}
     return true;
+  }
+  /* DIE ANSICHT HALTEN (05.10.). Gemeldet: der Klick in die Leiste setzt ?view=..., aber eine
+     Ansicht, die seit dem Seitenaufbau noch nie offen war, bleibt unsichtbar; nach einem Aufruf
+     direkt auf sie geht es danach immer. Die Reihenfolge im Workflow ist: showView, DANN der
+     State, der das Reusable einblendet -- showView setzt view-on also an ein Element, das Bubble
+     erst danach zeigt. Geht view-on dabei verloren (Bubble schreibt die Klassen beim ersten
+     Einblenden neu oder baut das Element neu), haelt der Kopf es mit
+     [id^="view-"]:not(.view-on) weiter versteckt. Fuenf Sekunden lang wird darum nachgesehen:
+     ist die Ansicht laut Adresse die offene, von Bubble eingeblendet und ohne view-on, setzt
+     fadeView (Kopf-Skript, schaltet nur die Klasse) sie wieder an. Ein neuer Wechsel beendet das
+     Nachsehen fuer die alte Ansicht. */
+  function ansichtHalten(name){
+    name = String(name == null ? "" : name).trim();
+    if (!name) return;
+    var bis = Date.now() + 5000;
+    window.__upAnsichtZiel = name;
+    (function schauen(){
+      if (window.__upAnsichtZiel !== name || Date.now() > bis) return;
+      try {
+        var v = document.getElementById("view-" + name);
+        var inUrl = new URL(window.location.href).searchParams.get("view") || String(window.DEFAULT_VIEW || "dashboard");
+        if (v && inUrl === name && !v.classList.contains("view-on") && getComputedStyle(v).display !== "none"){
+          if (typeof window.fadeView === "function") window.fadeView(name);
+          else {
+            [].forEach.call(document.querySelectorAll('[id^="view-"].view-on'), function(x){ if (x !== v) x.classList.remove("view-on"); });
+            v.classList.add("view-on");
+          }
+        }
+      } catch(e){}
+      setTimeout(schauen, 100);
+    })();
   }
 
   function makeLine(cfg){
@@ -18652,7 +18736,22 @@
      einzeln (03.10., die URL-Auswahl der Responses in den Events): hoechstens EIN Eintrag -- ein
      Klick waehlt ihn und nimmt den vorigen ab, ein zweiter Klick nimmt ihn wieder ab. Sonst alles
      gleich, auch Apply; "Select all" faellt weg, es gibt nichts zum Zusammenwaehlen.
-     Rueckgabe: { el, setGewaehlt(keys), gewaehlt(), neu() (Liste neu lesen) } */
+     Rueckgabe: { el, setGewaehlt(keys), gewaehlt(), neu() (Liste neu lesen) }
+     onOpen (05.10.): beim Aufklappen, nach dem Fuellen -- fuer eine Liste, die erst dann geholt
+     wird (die Haendler der Shopping-Produkte). Kommt sie spaeter, fuellt neu() das offene Menue.
+     logo (05.10., Shopping: "im Selected Brands Dropdown fehlen die Logos"): ein Eintrag mit
+     logo (URL, auch leer) bekommt das 18px-Logo der Marken-Menues (.up-ment-logo, wie im Filter
+     "Mentioned brands" der Tabellen), ohne Bild den Anfangsbuchstaben. icon bleibt fuer
+     Eintraege ohne Bild, die ein Zeichen tragen (Haendler: store). */
+  function auswahlLogo(x){
+    var lg = String(x.logo || "").trim();
+    if (lg.indexOf("//") === 0) lg = "https:" + lg;
+    if (lg && !/^https?:\/\//i.test(lg)) lg = "";
+    var ltr = String(x.label || "?").trim().charAt(0).toUpperCase() || "?";
+    return '<span class="up-ment-logo' + (lg ? " has-img" : "") + '"><span class="up-model-ltr">' + esc(ltr) + '</span>' +
+      (lg ? '<img src="' + esc(lg) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.classList.remove(\'has-img\');this.remove()"/>' : '') +
+      '</span>';
+  }
   function makeAuswahlFilter(cfg){
     cfg = cfg || {};
     var angewandt = (cfg.gewaehlt || []).map(String), auswahl = angewandt.slice(), frage = "";
@@ -18693,6 +18792,7 @@
             return '<div class="up-filter-item' + (hat(auswahl, k) ? " is-checked" : "") + '" role="menuitemcheckbox" tabindex="0" aria-checked="' + hat(auswahl, k) +
                 '" data-af-key="' + esc(k) + '" data-af-name="' + esc(String(t_(x.label)).toLowerCase()) + '"' + (x.titel ? ' title="' + esc(x.titel) + '"' : '') + '>' +
               '<span class="up-filter-check">' + CHECK_SVG + '</span>' +
+              (x.logo != null ? auswahlLogo(x) : '') +
               (x.icon ? '<span class="up-ment-zeichen">' + icon(x.icon, 2) + '</span>' : '') +
               '<span class="up-ment-name">' + esc(t_(x.label)) + '</span></div>';
           }).join("");
@@ -18731,6 +18831,7 @@
         if (el.classList.contains("is-open")){ zu(); return; }
         auswahl = angewandt.slice(); frage = ""; fuellen();
         pop.open(); btn.setAttribute("aria-expanded", "true");
+        if (typeof cfg.onOpen === "function"){ try { cfg.onOpen(); } catch(e4){} }
         setTimeout(function(){ var f = menu.querySelector(".up-ment-search"); try { if (f) f.focus(); } catch(e2){} }, 0);
         return;
       }
@@ -18769,6 +18870,35 @@
       setGewaehlt: function(keys){ angewandt = (keys || []).map(String); auswahl = angewandt.slice(); beschriftung(); if (el.classList.contains("is-open")) fuellen(); },
       neu: function(){ beschriftung(); if (el.classList.contains("is-open")) fuellen(); }
     };
+  }
+  /* ---- "SELECTED MERCHANTS" (05.10., Shopping: "mach auch ein Selected Merchants Dropdown,
+     leg das in den Core") ------------------------------------------------------------------------
+     Der Auswahlfilter oben in der Bauart der Haendler: Titel, "All Merchants", Suche, und vor
+     jedem Namen das Laden-Zeichen statt eines Logos -- Haendler haben in den Daten keins. Ein
+     Haendler IST sein Name (die Shopping-RPCs filtern mit p_merchant nach dem Namen), also ist der
+     Name auch der Schluessel.
+     cfg: { namen: function -> [Name, ...] oder Liste, gewaehlt: [Namen], onChange(namen),
+            onOpen, einzeln (Vorgabe true: die RPC kennt EINEN Haendler), klasse, tip }
+     Rueckgabe wie makeAuswahlFilter. */
+  function makeHaendlerFilter(cfg){
+    cfg = cfg || {};
+    function items(){
+      var l = [];
+      try { l = (typeof cfg.namen === "function" ? cfg.namen() : cfg.namen) || []; } catch(e){}
+      var da = {}, out = [];
+      l.forEach(function(n){
+        n = String(n == null ? "" : n).trim();
+        if (!n || da[n.toLowerCase()]) return;
+        da[n.toLowerCase()] = 1;
+        out.push({ key: n, label: n, icon: "store" });
+      });
+      return out.sort(function(a, b){ return a.label.localeCompare(b.label); });
+    }
+    return makeAuswahlFilter({
+      einzeln: cfg.einzeln !== false, klasse: "up-haendlerfilter" + (cfg.klasse ? " " + cfg.klasse : ""), tip: cfg.tip,
+      titel: "Merchants", alle: "All Merchants", mehrere: "{n} Merchants", suche: "Search merchants…", leer: "No merchants yet",
+      items: items, gewaehlt: cfg.gewaehlt || [], onChange: cfg.onChange, onOpen: cfg.onOpen
+    });
   }
 
   /* ---- Gefuellte Zeichen -----------------------------------------------------------------
@@ -20424,7 +20554,7 @@
     sentHtml: sentHtml,
     brandStack: brandStack,
     relativeTime: relativeTime,
-    modelChip: modelChip,
+    modelChip: modelChip, markenChip: markenChip, ansichtHalten: ansichtHalten, makeHaendlerFilter: makeHaendlerFilter,
     marketChip: marketChip,
     aufResize: aufResize,
     beobachteGroesse: beobachteGroesse,

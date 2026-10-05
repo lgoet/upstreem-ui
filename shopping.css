@@ -7,7 +7,8 @@
      Kasten, Tabelle, Pager  core (.up-box, .up-thead/.up-row mit --up-cols, .up-foot, UC.makePager)
      Kennzahlen              das Kennzahlen-Band aus core (.up-kpiband, UC.kpiKarte)
      Balken                  UC.makeBarList (.up-bars), wie Domain Detail
-     Zeilenhoehe             --up-h-row (55) statt der 56/60/64 des Entwurfs -- die Stufe der Skala
+     Zeilenhoehe             72 / kompakt 55 aus core (.up-row, .up-root.is-dense), Spalten und
+                             Ziehgriff aus UC.makeColumns wie in jeder Tabelle der App
    Abstaende des Entwurfs: 48 zwischen Bloecken, 24 innerhalb einer Gruppe, 16 zwischen Kopf und
    Filterzeile. Farben nur aus Marken. */
 
@@ -64,12 +65,17 @@
 .ush-chartnote { margin: 0 0 8px; font-size: var(--up-fs-s); color: var(--vc-third); }
 
 /* ---- Tabellen --------------------------------------------------------------------------------------
-   Das Raster aus core (.up-thead/.up-row, Spalten ueber --up-cols am Kasten). Unter der Summe der
-   Spalten-Minima (--ush-min, aus JS) scrollt der Kasten waagerecht, statt dass Spalten aus den
-   Zeilen laufen. Zeilen 55 hoch: --up-h-row. */
-.ush-scrollx { overflow-x: auto; overscroll-behavior-x: contain; }
-.ush-innen { min-width: var(--ush-min, 0px); }
-.ush-root :is(.ush-box, .ush-bewegung) .up-row { height: var(--up-h-row); flex: 0 0 var(--up-h-row); }
+   Das Raster aus core (.up-thead/.up-row); die Spuren setzt UC.makeColumns als --up-cols an die
+   Wurzel der Tabelle, und wird es eng, fallen Spalten weg, statt dass der Kasten waagerecht
+   scrollt (05.10., wie in allen Tabellen der App). Zeilenhoehe aus core: 72, kompakt 55 -- die
+   Vorschauen der Uebersicht und des Details sind fest kompakt (.ush-vorschau.is-dense im Markup).
+   Product Movement ist keine Tabelle mit Spalten, sondern eine Liste in diesem Raster: 55. */
+.ush-root .ush-bewegung .up-row { height: var(--up-h-row); flex: 0 0 var(--up-h-row); }
+/* Kompakt im Zahnrad: die Produktzeile zeigt nur den Titel, das Bild in der kleinen Stufe -- wie
+   urls-table, deren Unterzeile kompakt ebenfalls entfaellt. */
+.ush-tab.is-dense .ush-produkte .ush-unter { display: none; }
+.ush-tab.is-dense .ush-produkte .ush-bild { width: 32px; height: 32px; border-radius: var(--up-r-m); }
+.ush-tab.is-dense .ush-produkte .ush-bild-ph svg { width: 15px; height: 15px; }
 .ush-root .ush-box .up-row.is-andere, .ush-root .ush-box .up-row.is-statisch { cursor: default; }
 .ush-root .ush-box .up-row.is-angepinnt { border-top: 1px solid var(--vc-border); background: var(--vc-heading-bg); }
 .ush-root .ush-box .up-row.is-angepinnt:hover { background: var(--vc-heading-bg); }
@@ -80,13 +86,6 @@
 .ush-root.is-narrow .ush-head .up-head-tools { margin-left: 0; }
 .ush-scope { display: flex; flex-wrap: wrap; gap: 8px; margin: -4px 0 12px; }
 
-/* Die Produktspalte bleibt beim waagerechten Scrollen stehen (Entwurf: sticky left, Trenner
-   rechts). Der Trenner als Schatten: die Linie der naechsten Zelle scrollt mit weg. */
-.ush-produkte .up-thead .up-th:first-child, .ush-produkte .up-row > .ush-fest {
-  position: sticky; left: 0; z-index: 1; box-shadow: 1px 0 0 var(--vc-border); }
-.ush-produkte .up-thead .up-th:first-child { background: var(--vt-head-bg); }
-.ush-produkte .up-row > .ush-fest { background: var(--vc-bg); }
-.ush-produkte .up-row:hover > .ush-fest { background: var(--vt-row-hover); }
 
 /* Zellinhalte */
 .ush-zweizeilig { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
@@ -118,15 +117,31 @@
 .ush-bild.is-klein { width: 32px; height: 32px; border-radius: var(--up-r-m); }
 .ush-bild.is-klein .ush-bild-ph svg { width: 15px; height: 15px; }
 
-/* Abschnitts-Knoepfe "View all ..." und "View Response" (.up-btn-sec aus core). */
-.ush-mehr { flex: 0 0 auto; }
+/* "View all ..." als Textverweis ohne Kasten (05.10.: "einfach nur Text, Abstand, Chevron rechts").
+   Leise wie die Unterzeile des Abschnittskopfs, beim Ueberfahren in Textfarbe. "View Response"
+   bleibt ein Knopf (.up-btn-sec): er steht in einer Zeile, dort braucht er eine Flaeche. */
+.ush-mehr { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 4px; padding: 0; border: 0; background: none;
+  font: inherit; font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-muted); white-space: nowrap; cursor: pointer;
+  transition: color var(--up-t-1) var(--up-ease); }
+.ush-mehr:hover { color: var(--vc-text); }
+.ush-mehr:focus-visible { outline: var(--up-focus-w, 2px) solid var(--up-focus); outline-offset: 2px; border-radius: var(--up-r-xs); }
 .ush-mehr svg, .ush-antwort svg { width: 14px; height: 14px; display: block; }
 .ush-antwort { height: var(--up-h-seg); padding: 0 10px; white-space: nowrap; }
-.ush-seg-zahl { margin-left: 6px; color: var(--vc-third); font-variant-numeric: tabular-nums; }
+/* Auf dem Telefon nur das Zeichen: die Spalte misst sich nach ihrem Inhalt (UC.makeAktionsSpur) und
+   wird damit von selbst schmal. Quadratisch in der Hoehe des Knopfs. */
+.ush-root.is-vnarrow .ush-antwort { width: var(--up-h-seg); padding: 0; justify-content: center; }
+.ush-root.is-vnarrow .ush-antwort span { display: none; }
+/* 3 statt 6 (05.10.: "die Abstaende zwischen Typ und Zahl halbieren"). */
+.ush-seg-zahl { margin-left: 3px; color: var(--vc-third); font-variant-numeric: tabular-nums; }
 .up-seg-btn.is-active .ush-seg-zahl { color: var(--vc-muted); }
 
 /* ---- Product Movement ----------------------------------------------------------------------------- */
-.ush-zwei { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(440px, 100%), 1fr)); gap: 48px 16px; align-items: start; }
+/* GLEICH HOCH (05.10.: "Produktbewegung und Haendlerverteilung sollen immer die gleiche Hoehe
+   haben"). Die Kaesten fuellen ihre Zelle, die Balken stehen mittig im hoeheren Kasten. Mehr
+   Balken gaebe es nur von der RPC: merchant_distribution liefert fuenf und den Rest. */
+.ush-zwei { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(440px, 100%), 1fr)); gap: 48px 16px; align-items: stretch; }
+.ush-zwei > .ush-sek > .up-box { flex: 1 1 auto; }
+.ush-zwei .ush-balkenbox { display: flex; flex-direction: column; justify-content: center; }
 .ush-bewegung .up-thead.ush-gruppenkopf { display: flex; }
 .ush-bewegung .up-tbody + .up-thead { border-top: 1px solid var(--vc-border); }
 .ush-gruppenkopf .up-th { flex: 1 1 auto; gap: 6px; font-weight: var(--up-fw-m); color: var(--vc-text); border-left: 0; }
@@ -149,7 +164,9 @@
 
 /* ---- Product Detail --------------------------------------------------------------------------------- */
 .ush-hero-oben { display: flex; gap: 32px; padding: 24px; }
-.ush-galerie { display: flex; flex-direction: column; gap: 8px; flex: 0 0 232px; }
+/* min-width 0: ohne sie nimmt die Spalte als Flex-Kind die Mindestbreite ihres Inhalts an -- seit
+   die Vorschaubilder in EINER Reihe stehen, ist das die ganze Reihe (gemessen 376 statt 232). */
+.ush-galerie { display: flex; flex-direction: column; gap: 8px; flex: 0 0 232px; min-width: 0; }
 .ush-hero-bild { position: relative; display: flex; align-items: center; justify-content: center; width: 232px; height: 232px;
   padding: 12px; border-radius: var(--up-r-xl); overflow: hidden; background: var(--vc-heading-bg); }
 .ush-hero-bild.has-img { background: var(--vt-logo-bg); }
@@ -157,15 +174,24 @@
 .ush-hero-bild .ush-bild-ph svg { width: 40px; height: 40px; }
 .ush-hero-bild.has-img .ush-bild-ph { display: none; }
 .ush-hero-bild.is-sk { background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
-.ush-galerie-leiste { display: flex; flex-wrap: wrap; gap: 8px; }
+/* Eine Reihe, die waagerecht blaettert (05.10.); die Pfeile (.up-iconbtn.is-28 aus core) nur, wenn
+   sie ueberlaeuft. 28 + 4 + Reihe + 4 + 28 = 232: drei ganze Vorschaubilder und ein Anschnitt, der
+   zeigt, dass es weitergeht. */
+.ush-karussell { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.ush-galerie-leiste { display: flex; flex-wrap: nowrap; gap: 8px; flex: 1 1 auto; min-width: 0;
+  overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; }
+.ush-galerie-leiste::-webkit-scrollbar { display: none; }
+.ush-kar-pfeil { display: none; flex: 0 0 auto; }
+.ush-karussell.hat-mehr .ush-kar-pfeil { display: inline-flex; }
 /* Kein Icon-Knopf (.up-iconbtn), auch wenn der Pruefer es so liest: ein Vorschaubild des Produkts
    auf der Logo-Platte, 40px wie das Bild in der Produktzeile, die Wahl zeigt der Rand in Tinte.
    .up-iconbtn ist 32px, ohne Rahmen, mit Hover-Grund -- ein Bild darin waere beschnitten. */
-.ush-galerie-knopf { width: 40px; height: 40px; padding: 2px; border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
-  background: var(--vt-logo-bg); cursor: pointer; overflow: hidden; }
+.ush-galerie-knopf { flex: 0 0 40px; width: 40px; height: 40px; padding: 2px; border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
+  background: var(--vt-logo-bg); cursor: pointer; overflow: hidden; scroll-snap-align: start; }
 .ush-galerie-knopf img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .ush-galerie-knopf.is-on { border-color: var(--up-accent-ink); }
-.ush-galerie-knopf:focus-visible { outline: var(--up-focus-w, 2px) solid var(--up-focus); outline-offset: 2px; }
+/* Nach innen: die Reihe schneidet alles ab, was ueber ihren Rand ragt. */
+.ush-galerie-knopf:focus-visible { outline: var(--up-focus-w, 2px) solid var(--up-focus); outline-offset: -2px; }
 .ush-hero-info { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
 .ush-hero-info > .up-tsk-bar { display: block; }
 .ush-hero-marke { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: var(--up-fs-m); font-weight: var(--up-fw-m); }

@@ -67,7 +67,7 @@
        der in den Chart-Menues ebenfalls so steht). Die Regel ist dieselbe wie in der Seitenleiste:
        Oberflaeche ja, Eigennamen und Fachbegriffe der Ausgabe nein. */
     if (UC.addMessages) UC.addMessages("de", {
-      "My Preferences": "Meine Einstellungen",
+      "My Preferences": "Meine Präferenzen",
       "Choose how upstreem looks and formats your data": "Wie upstreem aussieht und deine Daten darstellt",
       "Profile": "Profil",
       "Your name and picture, as your team sees them": "Dein Name und Bild, so wie dein Team sie sieht",

@@ -928,6 +928,16 @@ dieselbe RPC, zwei Bodies. Solange die Tabelle in der Vorgabe steht, ist es eine
 {"p_team":"877c649c-f5f2-44e9-bb04-155f5bf44e70","p_date_from":"2026-09-28","p_date_to":"2026-10-04","p_models":null,"p_markets":null,"p_tag_ids":null,"p_tagmode":"or","p_search":null,"p_order":"products_desc","p_limit":15,"p_offset":15}
 ```
 
+**Body** (05.10.: Products, das Dropdown "All Merchants" wird zum ersten Mal aufgeklappt -- es holt die Liste
+der Haendler ueber DENSELBEN Workflow, 100 Zeilen, einmal je Filterstand):
+
+```json
+{"p_team":"877c649c-f5f2-44e9-bb04-155f5bf44e70","p_date_from":"2026-09-28","p_date_to":"2026-10-04","p_models":null,"p_markets":null,"p_tag_ids":null,"p_tagmode":"or","p_search":null,"p_order":"observations_desc","p_limit":100,"p_offset":0}
+```
+
+Bubble-seitig ist dafuer nichts zu tun: der Workflow reicht den Body unveraendert durch, und die RPC kennt
+`p_limit` bis 100.
+
 **Workflow** "When shopMerchants event" (JavaScript to Bubble `shopMerchants`):
 
 1. API Connector `cached_shopping_merchants_v1`, Parameter `body` = `This JavascriptToBubble's value` (unveraendert, kein

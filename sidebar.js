@@ -735,8 +735,32 @@
         if (typeof window.showView !== "function") return;
         if (!document.getElementById("view-" + k)) return;
         window.showView(k);
+        /* Bubble blendet das Reusable erst NACH showView ein (State "Current View"); verliert es
+           dabei view-on, setzt core es zurueck (UC.ansichtHalten, 05.10.). */
+        if (UC.ansichtHalten) UC.ansichtHalten(k);
       } catch(e){}
     }
+    /* EIN WEG FUER JEDEN WECHSEL (05.10.): der Klick in die Leiste und jeder andere Ort, der eine
+       Ansicht oeffnen will (die Event-Pins in den Diagrammen ueber UC.eventOeffnen), gehen ueber
+       dasselbe usnNav -- nur dort setzt Bubble den State "Current View". Als window.usnNavigieren
+       nach aussen gegeben. */
+    function navigieren(k){
+      k = String(k == null ? "" : k).trim();
+      if (!k) return;
+      /* ZUERST das Event: daran haengt der Seitenwechsel in Bubble, und alles, was davor laeuft,
+         verzoegert ihn um genau seine eigene Dauer. Das Bild danach ist billig (eine Klasse, eine
+         Messung) und im selben Tick fertig -- der Nutzer sieht die Markierung trotzdem sofort. */
+      fire("data-nav-fn", "usnNav", { key: k });
+      ansichtZeigen(k);
+      state.aktiv = k;
+      vorrat.aktiv = k;   /* fuer einen Neuaufbau, siehe aktiv im Zustand */
+      aktivMarkieren();
+      menuZu();
+      /* Auf dem Telefon faehrt die Leiste nach der Wahl wieder ein -- sonst steht der Nutzer
+         vor der Seite, die er gerade geoeffnet hat, und sieht sie nicht. */
+      if (state.klasse === "hint"){ state.offen = false; anwenden(); }
+    }
+    window.usnNavigieren = navigieren;
     function navItemHtml(it){
       var extra = "";
       if (it.count) extra = '<span class="usn-count usn-fade" data-count>' +
@@ -1278,22 +1302,7 @@
       }
 
       var nb = t.closest("[data-nav-key]");
-      if (nb){
-        var k = nb.getAttribute("data-nav-key");
-        /* ZUERST das Event: daran haengt der Seitenwechsel in Bubble, und alles, was davor laeuft,
-           verzoegert ihn um genau seine eigene Dauer. Das Bild danach ist billig (eine Klasse, eine
-           Messung) und im selben Tick fertig -- der Nutzer sieht die Markierung trotzdem sofort. */
-        fire("data-nav-fn", "usnNav", { key: k });
-        ansichtZeigen(k);
-        state.aktiv = k;
-        vorrat.aktiv = k;   /* fuer einen Neuaufbau, siehe aktiv im Zustand */
-        aktivMarkieren();
-        menuZu();
-        /* Auf dem Telefon faehrt die Leiste nach der Wahl wieder ein -- sonst steht der Nutzer
-           vor der Seite, die er gerade geoeffnet hat, und sieht sie nicht. */
-        if (state.klasse === "hint"){ state.offen = false; anwenden(); }
-        return;
-      }
+      if (nb){ navigieren(nb.getAttribute("data-nav-key")); return; }
     });
     elTeamMenu.addEventListener("input", function(e){
       if (!e.target.closest || !e.target.closest("[data-search]")) return;

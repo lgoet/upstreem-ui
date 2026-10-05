@@ -167,7 +167,7 @@
      Komponenten, Filter) gemessen: 0 Kollisionen; "Change" und der Zeitueberschreitungs-Satz
      stehen gleichlautend auch in events.js und bleiben hier, weil events keine Grundlage ist. */
   if (UC.addMessages) UC.addMessages("de", {
-    "Shopping": "Shopping", "Beta": "Beta", "Merchants": "Händler", "Merchant": "Händler",
+    "Shopping": "Shopping", "Beta": "Beta", "Merchant": "Händler",
     "Shopping Performance": "Shopping-Performance", "How your brand and competitors appear in AI shopping results": "Wie deine Marke und Wettbewerber in KI-Shopping-Ergebnissen erscheinen",
     "Brand Landscape": "Markenlandschaft", "Top brands by Share of Shelf": "Die stärksten Marken nach Share of Shelf",
     "Top Products": "Top-Produkte", "Most visible products across all brands": "Die sichtbarsten Produkte über alle Marken",
@@ -188,7 +188,7 @@
     "{n} merchant": "{n} Händler", "{n} merchants": "{n} Händler", "{n} other merchants": "{n} weitere Händler",
     "Unknown": "Unbekannt", "Search products…": "Produkte durchsuchen…",
     "Search products": "Produkte durchsuchen",
-    "Search merchants…": "Händler durchsuchen…", "Search merchants": "Händler durchsuchen",
+    "Search merchants": "Händler durchsuchen", "Previous images": "Vorherige Bilder", "Next images": "Nächste Bilder",
     "No matching products": "Keine passenden Produkte", "No matching brands": "Keine passenden Marken", "No matching merchants": "Keine passenden Händler",
     "Clear search and filters": "Suche und Filter zurücksetzen",
     "Brands observed": "Beobachtete Marken", "Tracked brands. Unassigned products are not counted.": "Getrackte Marken. Nicht zugeordnete Produkte zählen nicht.",
@@ -211,7 +211,7 @@
     "Lower is better: position 1 sits at the top of the chart.": "Kleiner ist besser: Position 1 steht oben im Diagramm.",
     "{brand} presence": "Presence von {brand}", "{brand} avg. position": "Ø Position von {brand}",
     "Image": "Bild",
-    "No brands yet": "Noch keine Marken", "No products yet": "Noch keine Produkte", "No merchants yet": "Noch keine Händler",
+    "No brands yet": "Noch keine Marken", "No products yet": "Noch keine Produkte",
     "Largest Visibility changes": "Größte Visibility-Änderungen",
     "No product title, listing or brand contains \u201c{q}\u201d.": "Kein Produkttitel, Listing oder Markenname enthält \u201e{q}\u201c.",
     "No observed products match these filters.": "Keine beobachteten Produkte passen zu diesen Filtern.",
@@ -892,7 +892,7 @@
     /* ============================================================================================
        Zeichnen
        ============================================================================================ */
-    var geruest = null, linie = null, pager = {}, sucheKit = {}, sortKit = {}, balken = {}, markenFilter = null;
+    var geruest = null, linie = null, pager = {}, sucheKit = {}, sortKit = {}, balken = {}, markenFilter = null, haendlerFilter = null;
     function zeichnen() {
       if (root.isConnected === false) return;
       var s = state.seite;
@@ -953,7 +953,7 @@
 
     function aufraeumen() {
       if (linie && linie.destroy) { try { linie.destroy(); } catch (e) {} }
-      linie = null; pager = {}; sucheKit = {}; sortKit = {}; balken = {}; markenFilter = null;
+      linie = null; pager = {}; sucheKit = {}; sortKit = {}; balken = {}; markenFilter = null; haendlerFilter = null; spalten = {};
     }
     function sek(name) { return elMain.querySelector('[data-sek="' + name + '"]'); }
     /* Abschnittskopf aus core (.up-sec-head), wie im Event-Detail. */
@@ -963,9 +963,11 @@
           (desc ? '<span class="up-sec-sub">' + esc(desc) + '</span>' : '') +
         '</div>' + (rechts || '') + '</div>';
     }
+    /* "Alle Marken" und Geschwister (05.10.: "ohne Container, einfach nur Text, Abstand, Chevron
+       rechts"): ein Textverweis, kein .up-btn-sec. */
     function mehrKnopf(text, ziel) {
-      return '<button type="button" class="up-btn-sec ush-mehr" data-ush-ziel="' + esc(ziel) + '">' +
-        '<span>' + esc(t(text)) + '</span>' + UC.icon("arrowRight", 2) + '</button>';
+      return '<button type="button" class="ush-mehr" data-ush-ziel="' + esc(ziel) + '">' +
+        '<span>' + esc(t(text)) + '</span>' + UC.icon("chevronRight", 2) + '</button>';
     }
     function segHtml(klasse, werte, aktiv) {
       return '<div class="up-seg ' + klasse + '" role="group">' + werte.map(function (w) {
@@ -996,7 +998,7 @@
         '<div class="up-head ush-head">' +
           '<span class="up-heading ush-heading"><span class="up-head-label">' + esc(t(titel)) + '</span>' +
             '<span class="up-head-sep"></span><span class="up-head-count"></span></span>' +
-          '<div class="up-head-tools ush-tools">' + (suchePlatz || '') + '</div>' +
+          '<div class="up-head-tools ush-tools">' + (suchePlatz || '') + spaltenKnopf() + '</div>' +
         '</div>' +
         '<div class="ush-scope" hidden></div>' +
         '<div class="up-root ush-tabwurzel"><div class="ush-tabelle"></div></div>' +
@@ -1006,6 +1008,14 @@
           '<div class="up-pager"></div>' +
         '</div>' +
       '</section>';
+    }
+    /* Das Zahnrad der Tabellen (Table Settings): Spalten und Zeilenhoehe, Menue aus
+       UC.makeColumns. Dasselbe Markup wie in teams.js. */
+    function spaltenKnopf() {
+      return '<div class="up-cols">' +
+        '<button type="button" class="up-iconbtn up-cols-btn" data-tip="' + esc(t("Table Settings")) + '" aria-label="' + esc(t("Table settings")) + '">' +
+          UC.icon("settings", 2) + '<span class="up-badge ush-cols-badge"></span></button>' +
+        '<div class="up-menu up-cols-menu" role="menu" aria-hidden="true"></div></div>';
     }
     function sucheHtml(platzhalter, label) {
       return '<div class="up-search ush-suche">' +
@@ -1050,7 +1060,7 @@
         '</div>';
       } else if (s === "products") {
         html = '<div class="ush-seite" data-seite="products">' +
-          tabSek("tabelle", "Products", '<span class="ush-markenplatz"></span><span class="ush-segplatz"></span>' + sucheHtml("Search products…", "Search products")) +
+          tabSek("tabelle", "Products", '<span class="ush-markenplatz"></span><span class="ush-haendlerplatz"></span><span class="ush-segplatz"></span>' + sucheHtml("Search products…", "Search products")) +
         '</div>';
       } else if (s === "merchants") {
         html = '<div class="ush-seite" data-seite="merchants">' +
@@ -1131,19 +1141,30 @@
       return u ? '<span class="up-logo-box has-img"><img src="' + esc(u) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.classList.remove(\'has-img\');this.remove()"/>' + ltr + '</span>'
                : '<span class="up-logo-box">' + ltr + '</span>';
     }
-    function markeName(m) {
+    /* Suchtreffer markiert wie in jeder Tabelle der App (UC.highlight, .up-hl) -- 05.10. gemeldet:
+       "bei den Suchfunktionen fehlen ueberall die Highlights". q leer: nur escapen. */
+    function hl(text, q) { return q && UC.highlight ? UC.highlight(text, q) : esc(text); }
+    function markeName(m, q) {
       m = m || {};
       if (m.type === "other" || !str(m.name).trim()) return '<span class="up-varname ush-andere">' + esc(t("Other (unassigned)")) + '</span>';
-      return '<span class="up-varname">' + esc(str(m.name).trim()) + '</span>';
+      return '<span class="up-varname">' + hl(str(m.name).trim(), q) + '</span>';
+    }
+    /* Die Marke als Chip (05.10.: "unsere gewohnten Chips fuer die Logos, der Name dahinter
+       kleiner"): UC.markenChip, 18px-Logo und 13px-Name wie der Modell-Chip. "You" dahinter. */
+    function markeChip(m, meta, q) {
+      m = m || {};
+      var andere = m.type === "other" || !str(m.name).trim();
+      if (andere) return UC.markenChip({ name: t("Other (unassigned)") }, { ltr: "–", nameHtml: '<span class="ush-andere">' + esc(t("Other (unassigned)")) + '</span>' });
+      return UC.markenChip(m, { nameHtml: hl(str(m.name).trim(), q), nach: duMarke(m, meta) });
     }
     function duMarke(m, meta) {
       return m && m.type === "own" && !eigeneOhneTreffer(meta) ? '<span class="up-marke up-you">' + esc(t("You")) + '</span>' : '';
     }
     function haendlerName(n) { return str(n).trim(); }
-    function haendlerHtml(n) {
+    function haendlerHtml(n, q) {
       var name = haendlerName(n);
       if (!name) return '<span class="up-logo-box ush-haendler-ic"><span class="up-logo-ltr">?</span></span><span class="up-varname ush-andere">' + esc(t("Unknown")) + '</span>';
-      return '<span class="up-logo-box ush-haendler-ic">' + UC.icon("store", 2) + '</span><span class="up-varname" title="' + esc(name) + '">' + esc(name) + '</span>';
+      return '<span class="up-logo-box ush-haendler-ic">' + UC.icon("store", 2) + '</span><span class="up-varname" title="' + esc(name) + '">' + hl(name, q) + '</span>';
     }
     function bildHtml(url, klasse) {
       var u = sichereUrl(url);
@@ -1187,19 +1208,158 @@
           '<svg class="up-thsort-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9"/></svg></span>' : '') +
         '</div>';
     }
-    /* Die Mindestbreite einer Tabelle ist die Summe der minmax-Minima ihrer Spalten: darunter
-       scrollt der Kasten waagerecht (.ush-scrollx), statt dass die Spalten aus den Zeilen laufen. */
-    function mindestBreite(cols) {
-      var s = 0;
-      String(cols).replace(/minmax\((\d+)px/g, function (_, n) { s += Number(n); return _; });
-      return s;
-    }
-    function tabelleHtml(cols, kopf, zeilen, klasse) {
-      return '<div class="up-box ush-box' + (klasse ? " " + klasse : "") + '" style="--up-cols:' + cols + ';--ush-min:' + mindestBreite(cols) + 'px">' +
-        '<div class="ush-scrollx"><div class="ush-innen">' +
+    /* Das Raster setzt UC.makeColumns als --up-cols an der Wurzel der Tabelle (spaltenFuer). */
+    function tabelleHtml(kopf, zeilen, klasse) {
+      return '<div class="up-box ush-box' + (klasse ? " " + klasse : "") + '">' +
           '<div class="up-thead">' + kopf + '</div>' +
           '<div class="up-tbody">' + zeilen + '</div>' +
-        '</div></div></div>';
+        '</div>';
+    }
+
+    /* ---- DIE SPALTEN JEDER TABELLE (05.10.: "in allen Tabellen die erste Spalte resizen",
+       "Table Settings ueberall in die Toolbars") --------------------------------------------------
+       Jede Tabelle laeuft ueber UC.makeColumns wie die anderen der App: Ziehgriff an der ersten
+       Spalte, und wird es eng, fallen die unwichtigsten Spalten weg, statt dass der Kasten
+       waagerecht scrollt. In den Tabellen mit Werkzeugleiste dazu das Zahnrad mit Spalten und
+       Zeilenhoehe.
+       min ist die Untergrenze der Spur UND die Zahl, mit der das Kit den Abwurf rechnet -- beide
+       muessen gleich sein (teams.js). Die Werte sind die gemessenen Minima der festen Raster von
+       vorher (04.10.: Kopf mit Erklaer- und Sortierzeichen ohne Ellipse).
+       prio: die KLEINSTE faellt zuerst. sk: der Balken der Skelettzeile. */
+    function sp(key, label, min, fr, prio, sk, o) {
+      o = o || {};
+      return { key: key, label: label, w: "minmax(" + min + "px," + fr + "fr)", min: min, minNarrow: o.minNarrow, prio: prio, sk: sk, sort: o.sort, info: o.info };
+    }
+    var TABELLEN = {
+      landscape: { erste: { label: "Brand", min: 220, sk: { w: 110, logo: true } }, spalten: [
+        sp("share", "Share of Shelf", 154, 1.2, 90, 60, { info: "share" }),
+        sp("presence", "Presence", 120, 1, 80, 44, { info: "presence" }),
+        sp("products", "Products", 104, 0.8, 50, 30),
+        sp("pos", "Avg. Position", 124, 1, 70, 36, { info: "pos" }),
+        sp("first", "First Position Rate", 156, 1.1, 40, 44, { info: "firstBrand" }),
+        sp("change", "Change", 110, 0.9, 60, 40)] },
+      topprodukte: { erste: { label: "Product", min: 260, sk: { w: 160, logo: true } }, spalten: [
+        sp("vis", "Visibility", 130, 1.1, 90, 60, { info: "vis" }),
+        sp("pos", "Avg. Position", 126, 0.9, 80, 36, { info: "pos" }),
+        sp("obs", "Observations", 128, 0.9, 70, 30, { info: "obs" }),
+        sp("first", "First Position Rate", 156, 1.1, 50, 44, { info: "firstProd" }),
+        sp("rating", "Rating", 92, 0.7, 40, 30),
+        sp("price", "Price", 130, 1, 60, 50, { info: "price" })] },
+      products: { erste: { label: "Product", min: 280, sort: "title", sk: { w: 170, logo: true } }, spalten: [
+        sp("brand", "Brand", 160, 1.2, 85, { w: 70, logo: true }),
+        sp("vis", "Visibility", 124, 1, 90, 60, { sort: "visibility", info: "vis" }),
+        sp("obs", "Observations", 148, 1, 70, 30, { sort: "observations", info: "obs" }),
+        sp("pos", "Avg. Position", 144, 1, 80, 36, { sort: "avg_position", info: "pos" }),
+        sp("first", "First Position Rate", 176, 1.1, 50, 44, { sort: "first_position_rate", info: "firstProd" }),
+        sp("price", "Price", 128, 1.1, 60, 60, { sort: "price", info: "price" }),
+        sp("rating", "Rating", 92, 0.7, 30, 30, { sort: "rating" }),
+        sp("merchants", "Merchants", 128, 1.1, 40, 70),
+        sp("seen", "Last Seen", 112, 0.9, 20, 60, { sort: "last_seen" })] },
+      brands: { erste: { label: "Brand", min: 220, sort: "name", sk: { w: 110, logo: true } }, spalten: [
+        sp("share", "Share of Shelf", 154, 1.2, 90, 60, { sort: "share_of_shelf", info: "share" }),
+        sp("presence", "Presence", 126, 0.9, 80, 44, { sort: "presence", info: "presence" }),
+        sp("products", "Products", 104, 0.8, 60, 30, { sort: "products" }),
+        sp("obs", "Observations", 148, 0.9, 50, 36, { sort: "observations", info: "obs" }),
+        sp("pos", "Avg. Position", 144, 1, 70, 36, { sort: "avg_position", info: "pos" }),
+        sp("first", "First Position Rate", 176, 1.1, 40, 44, { sort: "first_position_rate", info: "firstBrand" }),
+        sp("change", "Change", 110, 0.9, 65, 40, { sort: "share_of_shelf_delta" }),
+        sp("top", "Top Product", 240, 1.8, 30, { w: 140, logo: true })] },
+      merchants: { erste: { label: "Merchant", min: 240, sort: "name", sk: { w: 120, logo: true } }, spalten: [
+        sp("share", "Share", 150, 1.2, 90, 60, { sort: "observations", info: "merchant" }),
+        sp("products", "Products", 104, 0.8, 80, 30, { sort: "products" }),
+        sp("obs", "Observations", 148, 1.1, 70, 50, { sort: "observations", info: "obs" }),
+        sp("pos", "Avg. Product Position", 192, 1.1, 60, 36, { sort: "avg_position", info: "pos" }),
+        sp("firstseen", "First Seen", 120, 1, 30, 60, { sort: "first_seen" }),
+        sp("seen", "Last Seen", 120, 1, 40, 60, { sort: "last_seen" })] },
+      dhaendler: { erste: { label: "Merchant", min: 220, sk: { w: 120, logo: true } }, spalten: [
+        sp("share", "Share", 124, 1, 90, 40, { info: "merchant" }),
+        sp("obs", "Observations", 128, 1, 80, 30, { info: "obs" }),
+        sp("price", "Price", 160, 1.2, 70, 60, { info: "price" })] },
+      /* Recent Appearances: die erste Spalte ist ein Datum -- 12 statt 30 Prozent (firstFloor),
+         sonst nahm sie ein Drittel der Breite fuer zehn Zeichen. Dahinter die Knopfspalte "View
+         Response", gemessen (UC.makeAktionsSpur) statt geschaetzt. */
+      detail: { erste: { label: "Date", min: 120, sk: 60 }, floor: 0.12, aktion: true, spalten: [
+        /* Auf dem Telefon 110: Datum, Modell und Knopf passten bei 343px nicht nebeneinander
+           (12px Ueberlauf gemessen); der Chip kuerzt den Namen mit Auslassungspunkten. */
+        sp("model", "Model", 150, 1.2, 90, { w: 70, logo: true }, { minNarrow: 110 }),
+        sp("market", "Market", 90, 0.7, 50, 30),
+        sp("topic", "Topic", 160, 1.4, 40, 80),
+        sp("position", "Position", 100, 0.8, 70, 30, { info: "pos" }),
+        sp("price", "Price", 110, 0.9, 60, 40, { info: "price" }),
+        sp("merchant", "Merchant", 180, 1.4, 80, { w: 90, logo: true })] }
+    };
+    function kopfAus(name) {
+      var d = TABELLEN[name];
+      return th(d.erste.label, { sort: d.erste.sort }) + d.spalten.map(function (c) {
+        return th(c.label, { k: "up-th-" + c.key, sort: c.sort, info: c.info });
+      }).join("") + (d.aktion ? '<div class="up-th ush-th-aktion"></div>' : '');
+    }
+    /* Die Skelettzellen tragen dieselben Spaltenklassen -- sonst blendet das Kit sie nicht aus,
+       und eine Zeile mit mehr Zellen als Spuren bricht in eine zweite Rasterzeile um. */
+    function skelettAus(name, n) {
+      var d = TABELLEN[name];
+      return skelettZeilen(n, [d.erste.sk].concat(d.spalten.map(function (c) {
+        var o = c.sk && typeof c.sk === "object" ? mit({}, c.sk) : { w: c.sk };
+        o.cls = "up-td-" + c.key;
+        return o;
+      }), d.aktion ? [{ w: 90, cls: "ush-td-aktion" }] : []));
+    }
+    function td(key, html) { return '<div class="up-td up-td-' + key + '">' + html + '</div>'; }
+
+    /* Ein Kit je Tabelle, gebunden an die Wurzel, in der Kopf, Kasten und -- bei den Tabellen mit
+       Werkzeugleiste -- das Zahnrad stehen. Neu nur mit einer neuen Wurzel (ein Seitenwechsel baut
+       das Geruest neu). Die Zeilenhoehe je Tabelle im Browser wie in urls-table. */
+    var spalten = {};
+    function dichteSchluessel(name) { return "ush_dense__" + instanceId + "__" + name; }
+    function spaltenFuer(name, wurzel) {
+      var e = spalten[name];
+      if (e && e.wurzel === wurzel) return e;
+      if (!UC.makeColumns || !wurzel) return null;
+      /* Die Stufen an die Wurzel des Kits: minNarrow liest is-vnarrow dort, nicht an .ush-root. */
+      if (UC.widthTiers) UC.widthTiers(wurzel);
+      var d = TABELLEN[name], st = { cols: {}, widths: {}, dense: false }, aktPx = 0;
+      var mitMenue = !!wurzel.querySelector(".up-cols-menu");
+      var kit = UC.makeColumns({
+        root: wurzel, state: st, columns: d.spalten, storePrefix: "ush", instanceId: instanceId + "__" + name,
+        firstKey: "erste", firstMin: d.erste.min, firstFloor: d.floor, noActions: !d.aktion,
+        actionsMin: function () { return aktPx || 150; },
+        dense: mitMenue, badgeSel: ".ush-cols-badge", cellPrefixes: ["up"]
+      });
+      st.cols = kit.readCols(); st.widths = kit.readWidths();
+      if (mitMenue) {
+        try { st.dense = window.localStorage.getItem(dichteSchluessel(name)) === "1"; } catch (x) {}
+        wurzel.classList.toggle("is-dense", st.dense);
+      }
+      e = spalten[name] = { wurzel: wurzel, kit: kit, st: st, spur: null };
+      if (d.aktion && UC.makeAktionsSpur) {
+        e.spur = UC.makeAktionsSpur({ root: wurzel, zellen: ".up-row:not(.up-tsk) .ush-td-aktion", anwenden: function (px) { aktPx = px; kit.applyCols(); } });
+      }
+      wurzel.__ushSpalten = e;
+      return e;
+    }
+    function dichteSetzen(name, an) {
+      var e = spalten[name];
+      if (!e) return;
+      e.st.dense = !!an;
+      try { window.localStorage.setItem(dichteSchluessel(name), an ? "1" : "0"); } catch (x) {}
+      e.wurzel.classList.toggle("is-dense", !!an);
+      if (e.spur) { try { e.spur.messen(); } catch (x2) {} }
+    }
+    /* Nach jedem Zeichnen: frische Zeilen tragen noch keine Spaltenauswahl. */
+    function spaltenAnwenden(name) {
+      var e = spalten[name];
+      if (!e) return;
+      try { e.kit.applyCols(); e.kit.syncColsBadge(); } catch (x) {}
+      if (e.spur) { try { e.spur.messen(); } catch (x2) {} }
+    }
+    /* Die Tabellen der Uebersicht und des Details ohne Werkzeugleiste: Kopf einmal, darunter eine
+       eigene Wurzel fuer das Kit. Dicht (55) wie bisher -- sie sind Vorschauen, und ohne Zahnrad
+       gibt es keinen Schalter, der sie aufziehen koennte. */
+    function vorschauPlatz(el, name, kopf) {
+      if (!el.querySelector(".ush-vorschau")) el.innerHTML = kopf + '<div class="up-root ush-vorschau is-dense"><div class="ush-tabelle"></div></div>';
+      var w = el.querySelector(".ush-vorschau");
+      spaltenFuer(name, w);
+      return w.querySelector(".ush-tabelle");
     }
     function skelettZeilen(n, spalten) {
       return UC.skeletonRows ? UC.skeletonRows({ count: n, rowClass: "up-row", cellClass: "up-td", cols: spalten }) : "";
@@ -1412,65 +1572,58 @@
     }
 
     /* ---- Brand Landscape: die Top 6 nach Share of Shelf ---------------------------------------- */
-    /* Minima so, dass jeder Kopf AUF dem Minimum passt (gemessen mit allen Spalten am Minimum,
-       04.10.: First Position Rate fehlten 8,6px), plus Luft fuer die Ersatzschrift. */
-    var COLS_MARKE_OV = "minmax(220px,2fr) minmax(154px,1.2fr) minmax(120px,1fr) minmax(104px,.8fr) minmax(124px,1fr) minmax(156px,1.1fr) minmax(110px,.9fr)";
     function zeichneLandscape(d) {
       var el = sek("landscape");
       if (!el) return;
-      var kopf = sekKopf("Brand Landscape", t("Top brands by Share of Shelf"), mehrKnopf("View all brands", "brands"));
-      var heads = th("Brand") + th("Share of Shelf", { info: "share" }) + th("Presence", { info: "presence" }) + th("Products") +
-        th("Avg. Position", { info: "pos" }) + th("First Position Rate", { info: "firstBrand" }) + th("Change");
-      if (!d) { el.innerHTML = kopf + tabelleHtml(COLS_MARKE_OV, heads, skelettZeilen(5, [{ w: 110, logo: true }, 60, 44, 30, 36, 44, 40])); return; }
+      var platz = vorschauPlatz(el, "landscape", sekKopf("Brand Landscape", t("Top brands by Share of Shelf"), mehrKnopf("View all brands", "brands")));
+      if (!d) { platz.innerHTML = tabelleHtml(kopfAus("landscape"), skelettAus("landscape", 5)); spaltenAnwenden("landscape"); return; }
       var meta = d.meta;
       var l = (isArr(d.brands) ? d.brands : []).filter(function (b) { return b && typeof b === "object" && !(b.type === "own" && eigeneOhneTreffer(meta)); }).slice(0, 6);
-      if (!l.length) { el.innerHTML = kopf + '<div class="up-box">' + UC.leerHtml({ mini: true, titel: "No brands yet" }) + '</div>'; return; }
-      el.innerHTML = kopf + tabelleHtml(COLS_MARKE_OV, heads, l.map(function (b) { return markeZeileOv(b, meta); }).join(""), "ush-klickbar");
+      if (!l.length) { platz.innerHTML = '<div class="up-box">' + UC.leerHtml({ mini: true, titel: "No brands yet" }) + '</div>'; return; }
+      platz.innerHTML = tabelleHtml(kopfAus("landscape"), l.map(function (b) { return markeZeileOv(b, meta); }).join(""), "ush-klickbar");
+      spaltenAnwenden("landscape");
     }
     function markeZeileOv(b, meta) {
       var sos = kz(b.share_of_shelf), andere = b.type === "other" || !b.company_id;
       return '<div class="up-row ush-zeile' + (andere ? " is-andere" : "") + '"' + (andere ? '' : ' data-marke="' + esc(b.company_id) + '" data-marke-name="' + esc(str(b.name).trim()) + '" role="link" tabindex="0"') + '>' +
         '<div class="up-td">' + markeLogo(b) + markeName(b) + duMarke(b, meta) + '</div>' +
-        '<div class="up-td up-var-sov">' + ringHtml(sos.v) + '</div>' +
-        '<div class="up-td">' + pctHtml(kz(b.presence).v) + '</div>' +
-        '<div class="up-td">' + ganzHtml(b.products) + '</div>' +
-        '<div class="up-td">' + posHtml(kz(b.avg_position).v) + '</div>' +
-        '<div class="up-td">' + pctHtml(kz(b.first_position_rate).v) + '</div>' +
-        '<div class="up-td">' + (trend("pct", sos.d, meta) || '<span class="up-num is-empty">–</span>') + '</div>' +
+        '<div class="up-td up-td-share up-var-sov">' + ringHtml(sos.v) + '</div>' +
+        td("presence", pctHtml(kz(b.presence).v)) +
+        td("products", ganzHtml(b.products)) +
+        td("pos", posHtml(kz(b.avg_position).v)) +
+        td("first", pctHtml(kz(b.first_position_rate).v)) +
+        td("change", trend("pct", sos.d, meta) || '<span class="up-num is-empty">–</span>') +
       '</div>';
     }
 
     /* ---- Top Products ---------------------------------------------------------------------------- */
-    /* Wie oben gemessen: Avg. Position fehlten 8,8px, Observations 11,3, First Position Rate 18,6. */
-    var COLS_PROD_OV = "minmax(260px,2.4fr) minmax(130px,1.1fr) minmax(126px,.9fr) minmax(128px,.9fr) minmax(156px,1.1fr) minmax(92px,.7fr) minmax(130px,1fr)";
     function zeichneTopProdukte(d) {
       var el = sek("topprodukte");
       if (!el) return;
-      var kopf = sekKopf("Top Products", t("Most visible products across all brands"), mehrKnopf("View all products", "products"));
-      var heads = th("Product") + th("Visibility", { info: "vis" }) + th("Avg. Position", { info: "pos" }) + th("Observations", { info: "obs" }) +
-        th("First Position Rate", { info: "firstProd" }) + th("Rating") + th("Price", { info: "price" });
-      if (!d) { el.innerHTML = kopf + tabelleHtml(COLS_PROD_OV, heads, skelettZeilen(5, [{ w: 160, logo: true }, 60, 36, 30, 44, 30, 50])); return; }
+      var platz = vorschauPlatz(el, "topprodukte", sekKopf("Top Products", t("Most visible products across all brands"), mehrKnopf("View all products", "products")));
+      if (!d) { platz.innerHTML = tabelleHtml(kopfAus("topprodukte"), skelettAus("topprodukte", 5)); spaltenAnwenden("topprodukte"); return; }
       var l = (isArr(d.top_products) ? d.top_products : []).filter(function (p) { return p && typeof p === "object" && str(p.source_product_id).trim(); }).slice(0, 10);
-      if (!l.length) { el.innerHTML = kopf + '<div class="up-box">' + UC.leerHtml({ mini: true, titel: "No products yet" }) + '</div>'; return; }
-      el.innerHTML = kopf + tabelleHtml(COLS_PROD_OV, heads, l.map(function (p) {
+      if (!l.length) { platz.innerHTML = '<div class="up-box">' + UC.leerHtml({ mini: true, titel: "No products yet" }) + '</div>'; return; }
+      platz.innerHTML = tabelleHtml(kopfAus("topprodukte"), l.map(function (p) {
         return '<div ' + produktZeile(p) + '>' +
           '<div class="up-td">' + produktZelle(p, d.meta) + '</div>' +
-          '<div class="up-td up-var-sov">' + ringHtml(kz(p.visibility).v) + '</div>' +
-          '<div class="up-td">' + posHtml(kz(p.avg_position).v) + '</div>' +
-          '<div class="up-td">' + ganzHtml(kz(p.observations).v) + '</div>' +
-          '<div class="up-td">' + pctHtml(kz(p.first_position_rate).v) + '</div>' +
-          '<div class="up-td">' + sterne(p.rating) + '</div>' +
-          '<div class="up-td">' + preisZelle(p.price_ranges) + '</div>' +
+          '<div class="up-td up-td-vis up-var-sov">' + ringHtml(kz(p.visibility).v) + '</div>' +
+          td("pos", posHtml(kz(p.avg_position).v)) +
+          td("obs", ganzHtml(kz(p.observations).v)) +
+          td("first", pctHtml(kz(p.first_position_rate).v)) +
+          td("rating", sterne(p.rating)) +
+          td("price", preisZelle(p.price_ranges)) +
         '</div>';
       }).join(""), "ush-klickbar");
+      spaltenAnwenden("topprodukte");
     }
-    function produktZelle(p, meta, mitListing) {
+    function produktZelle(p, meta, mitListing, q) {
       var b = p.brand && typeof p.brand === "object" ? p.brand : { type: "other" };
       var titel = str(p.title).trim() || str(p.listing_title).trim() || "–";
       var unter = mitListing && str(p.listing_title).trim() && str(p.listing_title).trim() !== titel
-        ? '<span class="ush-unter" title="' + esc(str(p.listing_title).trim()) + '">' + esc(str(p.listing_title).trim()) + '</span>'
-        : '<span class="ush-unter">' + (b.type === "other" || !str(b.name).trim() ? esc(t("Other (unassigned)")) : esc(str(b.name).trim())) + duMarke(b, meta) + '</span>';
-      return bildHtml(p.image_url) + '<span class="ush-zweizeilig"><span class="ush-titel" title="' + esc(titel) + '">' + esc(titel) + '</span>' + unter + '</span>';
+        ? '<span class="ush-unter" title="' + esc(str(p.listing_title).trim()) + '">' + hl(str(p.listing_title).trim(), q) + '</span>'
+        : '<span class="ush-unter">' + (b.type === "other" || !str(b.name).trim() ? esc(t("Other (unassigned)")) : hl(str(b.name).trim(), q)) + duMarke(b, meta) + '</span>';
+      return bildHtml(p.image_url) + '<span class="ush-zweizeilig"><span class="ush-titel" title="' + esc(titel) + '">' + hl(titel, q) + '</span>' + unter + '</span>';
     }
     function preisZelle(r) {
       var p = preisSpanne(r);
@@ -1570,7 +1723,44 @@
         });
         if (mp) mp.appendChild(markenFilter.el);
       }
+      /* DIE HAENDLER-AUSWAHL (05.10.: "es gibt auch einen Merchant-Filter, mach ein Selected
+         Merchants Dropdown, leg das in den Core"): UC.makeHaendlerFilter, Einzelauswahl wie die
+         RPC (p_merchant). Ersetzt den Chip "Merchant: ...". Die Namen kommen aus allem, was schon
+         geladen ist; beim ersten Aufklappen holt er die ersten 100 Haendler nach (haendlerHolen). */
+      if (s === "products" && UC.makeHaendlerFilter) {
+        var hp = tab.querySelector(".ush-haendlerplatz");
+        haendlerFilter = UC.makeHaendlerFilter({
+          klasse: "ush-haendlerfilter", namen: haendlerListe, gewaehlt: tb.haendler ? [str(tb.haendler)] : [],
+          onOpen: haendlerHolen,
+          onChange: function (namen) {
+            tb.haendler = namen && namen.length ? str(namen[0]) : null;
+            tb.page = 1; pst.page = 1; persist(); zeichneTabelle(); bedarf();
+          }
+        });
+        if (hp) hp.appendChild(haendlerFilter.el);
+      }
+      /* Das Zahnrad: Spalten und Zeilenhoehe aus UC.makeColumns, bedient wie in teams.js. */
+      var spe = spaltenFuer(s, tab), cw = tab.querySelector(".up-cols");
+      if (spe && cw && UC.makePopover) {
+        var cm = cw.querySelector(".up-cols-menu"), cb = cw.querySelector(".up-cols-btn");
+        var cpop = UC.makePopover({ wrap: cw, menu: cm, opener: cb, group: "ush-" + instanceId });
+        cb.addEventListener("click", function (e) {
+          e.stopPropagation();
+          if (cpop.isOpen()) { cpop.close(false); return; }
+          spe.kit.populateCols(); cpop.open();
+        });
+        cm.addEventListener("click", function (e) {
+          if (e.target.closest("[data-colsall]")) { spe.kit.selectAllCols(); return; }
+          var dn = e.target.closest("[data-dense]");
+          if (dn) { dichteSetzen(s, dn.getAttribute("data-dense") === "1"); spe.kit.populateCols(); return; }
+          var cr = e.target.closest("[data-col]");
+          if (cr) spe.kit.toggleCol(cr.getAttribute("data-col"));
+        });
+        spe.kit.syncColsBadge();
+      }
       tab.addEventListener("click", function (e) {
+        /* Ein Zug am Spaltengriff endet mit einem Klick auf den Kopf -- der darf nicht sortieren. */
+        if (ziehtNoch || (e.target.closest && e.target.closest(".up-grip"))) return;
         var ps = e.target.closest && e.target.closest("[data-pagesize]");
         var k = pager[s] && pager[s].kit;
         if (ps && k) { k.setPageSize(Number(ps.getAttribute("data-pagesize"))); return; }
@@ -1675,20 +1865,9 @@
     }
 
     /* ---- Products --------------------------------------------------------------------------------- */
-    /* Minima aus dem Design, wo der Kopf mit Erklaer- und Sortierzeichen nicht hineinpasste nach der
-       gemessenen Kopfbreite angehoben (Polster 28 + Text + 2 x 20 Zeichen, plus gut 4px Luft:
-       ein Text von 51,09px in 51px Spalte bekommt schon die Ellipse, und die Ersatzschrift ist
-       breiter als Geist). Brand 160 traegt Logo, Name und You. */
-    var COLS_PROD = "minmax(280px,2.6fr) minmax(160px,1.2fr) minmax(124px,1fr) minmax(148px,1fr) minmax(144px,1fr) minmax(176px,1.1fr) minmax(128px,1.1fr) minmax(92px,.7fr) minmax(128px,1.1fr) minmax(112px,.9fr)";
     function zeichneProducts() {
       var a = prodAnfrage(), d = daten(a);
       zeichneProdTabelle();
-    }
-    function prodKopf() {
-      return th("Product", { sort: "title" }) + th("Brand") + th("Visibility", { sort: "visibility", info: "vis" }) +
-        th("Observations", { sort: "observations", info: "obs" }) + th("Avg. Position", { sort: "avg_position", info: "pos" }) +
-        th("First Position Rate", { sort: "first_position_rate", info: "firstProd" }) + th("Price", { sort: "price", info: "price" }) +
-        th("Rating", { sort: "rating" }) + th("Merchants") + th("Last Seen", { sort: "last_seen" });
     }
     function zeichneProdTabelle() {
       var tab = sek("tabelle");
@@ -1707,14 +1886,19 @@
         var soll = tb.marke && tb.marke.id ? [str(tb.marke.id)] : [];
         if (soll.join() !== markenFilter.gewaehlt().join()) markenFilter.setGewaehlt(soll);
       }
+      if (haendlerFilter) {
+        var sollH = tb.haendler ? [str(tb.haendler)] : [];
+        if (sollH.join() !== haendlerFilter.gewaehlt().join()) haendlerFilter.setGewaehlt(sollH);
+        else haendlerFilter.neu();
+      }
       scopeZeigen(tab);
       zaehlerSetzen(d ? anzahlWert(d.total_count) : null);
-      var kopf = prodKopf();
+      var kopf = kopfAus("products");
       if (!d) {
         if (fehlerVon(a)) { tabInhalt('<div class="up-box">' + fehlerKasten(a) + '</div>'); pagerSetzen("products", null); return; }
-        if (vorige.prod && vorige.prodFilter === filterSig()) { tabInhalt(vorige.prod, true); pagerSetzen("products", vorige.prodTotal, true); sortSync("products"); return; }
-        tabInhalt(tabelleHtml(COLS_PROD, kopf, skelettZeilen(6, [{ w: 170, logo: true }, 70, 60, 30, 36, 44, 60, 30, 70, 60]), "ush-produkte"));
-        pagerSetzen("products", null, true); sortSync("products");
+        if (vorige.prod && vorige.prodFilter === filterSig()) { tabInhalt(vorige.prod, true); spaltenAnwenden("products"); pagerSetzen("products", vorige.prodTotal, true); sortSync("products"); return; }
+        tabInhalt(tabelleHtml(kopf, skelettAus("products", 6), "ush-produkte"));
+        spaltenAnwenden("products"); pagerSetzen("products", null, true); sortSync("products");
         return;
       }
       var rows = (isArr(d.rows) ? d.rows : []).filter(function (p) { return p && typeof p === "object" && str(p.source_product_id).trim(); });
@@ -1727,14 +1911,15 @@
         pagerSetzen("products", 0); sortSync("products");
         return;
       }
-      var html = tabelleHtml(COLS_PROD, kopf, rows.map(function (p) { return prodZeile(p, meta); }).join(""), "ush-produkte ush-klickbar");
+      var html = tabelleHtml(kopf, rows.map(function (p) { return prodZeile(p, meta, tb.suche); }).join(""), "ush-produkte ush-klickbar");
       vorige.prod = html; vorige.prodTotal = gesamt(d.total_count, tb, rows.length); vorige.prodFilter = filterSig();
       zaehlerSetzen(vorige.prodTotal);
       tabInhalt(html);
+      spaltenAnwenden("products");
       pagerSetzen("products", vorige.prodTotal);
       sortSync("products");
     }
-    function prodZeile(p, meta) {
+    function prodZeile(p, meta, q) {
       var b = p.brand && typeof p.brand === "object" ? p.brand : { type: "other" };
       var vis = kz(p.visibility), obs = kz(p.observations), pos = kz(p.avg_position), fp = kz(p.first_position_rate);
       var mh = (isArr(p.merchants) ? p.merchants : []).map(haendlerName).filter(Boolean);
@@ -1744,43 +1929,80 @@
           esc(ersetze(t(mz === 1 ? "{n} merchant" : "{n} merchants"), { n: ganz(mz) })) + '</span>'
         : '<span class="up-num is-empty">–</span>';
       return '<div ' + produktZeile(p) + '>' +
-        '<div class="up-td ush-fest">' + produktZelle(p, meta, true) + '</div>' +
-        '<div class="up-td">' + markeLogo(b) + markeName(b) + duMarke(b, meta) + '</div>' +
-        '<div class="up-td up-var-sov">' + ringHtml(vis.v) + '</div>' +
-        '<div class="up-td">' + ganzHtml(obs.v) + '</div>' +
-        '<div class="up-td">' + posHtml(pos.v) + '</div>' +
-        '<div class="up-td">' + pctHtml(fp.v) + '</div>' +
-        '<div class="up-td">' + preisZelle(p.price_ranges) + '</div>' +
-        '<div class="up-td">' + sterne(p.rating) + '</div>' +
-        '<div class="up-td">' + haendler + '</div>' +
-        '<div class="up-td"><span class="up-num">' + esc(datum(p.last_seen)) + '</span></div>' +
+        '<div class="up-td">' + produktZelle(p, meta, true, q) + '</div>' +
+        td("brand", markeChip(b, meta, q)) +
+        '<div class="up-td up-td-vis up-var-sov">' + ringHtml(vis.v) + '</div>' +
+        td("obs", ganzHtml(obs.v)) +
+        td("pos", posHtml(pos.v)) +
+        td("first", pctHtml(fp.v)) +
+        td("price", preisZelle(p.price_ranges)) +
+        td("rating", sterne(p.rating)) +
+        td("merchants", haendler) +
+        td("seen", '<span class="up-num">' + esc(datum(p.last_seen)) + '</span>') +
       '</div>';
     }
     /* Der Bezug aus einem Klick (Marke oder Haendler) als Chip, wie die Chips der Filterleiste. */
     /* Die Marken fuer die Auswahl: die getrackten Marken der App (Markenspeicher), dazu jede Marke
        aus einer schon geladenen Uebersicht und die gerade gewaehlte -- so steht nie eine Id statt
        eines Namens im Knopf. Alphabetisch. */
+    /* Mit Logo (05.10.: "im Selected Brands Dropdown fehlen die Logos"): logo_url aus dem
+       Markenspeicher, sonst aus der Uebersicht; ein Eintrag ohne Bild zeigt den Anfangsbuchstaben. */
     function markenListe() {
       var l = [], da = {};
-      function rein(id, name) {
+      function rein(id, name, logo) {
         id = str(id).trim(); name = str(name).trim();
-        if (!id || !name || da[id]) return;
-        da[id] = 1; l.push({ key: id, label: name });
+        if (!id || !name) return;
+        if (da[id]) { if (!da[id].logo && sichereUrl(logo)) da[id].logo = sichereUrl(logo); return; }
+        da[id] = { key: id, label: name, logo: sichereUrl(logo) || "" };
+        l.push(da[id]);
       }
-      (UC.getBrands ? UC.getBrands() : []).forEach(function (b) { if (b) rein(b.company_id, b.name); });
+      (UC.getBrands ? UC.getBrands() : []).forEach(function (b) { if (b) rein(b.company_id, b.name, b.logo_url || b.favicon_url); });
       Object.keys(state.cache.overview).forEach(function (sig) {
         var d = state.cache.overview[sig];
-        (isArr(d && d.brands) ? d.brands : []).forEach(function (b) { if (b && typeof b === "object" && b.type !== "other") rein(b.company_id, b.name); });
+        (isArr(d && d.brands) ? d.brands : []).forEach(function (b) { if (b && typeof b === "object" && b.type !== "other") rein(b.company_id, b.name, b.logo_url); });
+      });
+      Object.keys(state.cache.products).forEach(function (sig) {
+        var d = state.cache.products[sig];
+        (isArr(d && d.rows) ? d.rows : []).forEach(function (p) { var b = p && p.brand; if (b && typeof b === "object" && b.type !== "other") rein(b.company_id, b.name, b.logo_url); });
       });
       var m = state.products.marke;
       if (m && m.id) rein(m.id, m.name || m.id);
       return l.sort(function (a, b) { return a.label.localeCompare(b.label); });
     }
+    /* Alle Haendlernamen, die schon geladen sind: die Haendler-Antworten, die Verteilung der
+       Uebersicht, die Haendler der geladenen Produktzeilen und der gewaehlte. */
+    function haendlerListe() {
+      var l = [];
+      function rein(n) { n = haendlerName(n); if (n) l.push(n); }
+      Object.keys(state.cache.merchants).forEach(function (sig) {
+        var d = state.cache.merchants[sig];
+        (isArr(d && d.merchants) ? d.merchants : []).forEach(function (m) { if (m && typeof m === "object") rein(m.merchant_name); });
+      });
+      Object.keys(state.cache.overview).forEach(function (sig) {
+        var md = state.cache.overview[sig] && state.cache.overview[sig].merchant_distribution;
+        (isArr(md && md.top) ? md.top : []).forEach(function (m) { if (m && typeof m === "object") rein(m.merchant_name); });
+      });
+      Object.keys(state.cache.products).forEach(function (sig) {
+        var d = state.cache.products[sig];
+        (isArr(d && d.rows) ? d.rows : []).forEach(function (p) { (isArr(p && p.merchants) ? p.merchants : []).forEach(rein); });
+      });
+      if (state.products.haendler) rein(state.products.haendler);
+      return l;
+    }
+    /* Die Liste beim ersten Aufklappen: die 100 meistgenannten Haendler im selben Zeitraum und mit
+       denselben Filtern -- dieselbe Anfrage wie die Merchants-Tabelle mit 100 Zeilen, also auch
+       derselbe Workflow (shopMerchants). Liegt sie schon vor oder laeuft sie, passiert nichts. */
+    var HAENDLER_LISTE = { suche: "", order: "observations_desc", page: 1, pageSize: 100 };
+    function haendlerHolen() {
+      var a = meAnfrage(HAENDLER_LISTE);
+      if (state.cache.merchants[a.sig] || unterwegs.merchants || state.fehler[a.kanal + a.sig]) return;
+      senden(a);
+    }
     function scopeZeigen(tab) {
       var el = tab.querySelector(".ush-scope"), tb = state.products, teile = [];
       /* Die Marke zeigt die Marken-Auswahl in der Werkzeugleiste; nur ohne sie (core zu alt) ein Chip. */
       if (tb.marke && tb.marke.id && !markenFilter) teile.push(["marke", "Brand", str(tb.marke.name) || "–", "squareStack"]);
-      if (tb.haendler) teile.push(["haendler", "Merchant", str(tb.haendler), "store"]);
+      if (tb.haendler && !haendlerFilter) teile.push(["haendler", "Merchant", str(tb.haendler), "store"]);
       el.hidden = !teile.length;
       el.innerHTML = teile.map(function (x) {
         return '<span class="up-entchip is-static ufb-chip ush-scopechip">' +
@@ -1791,9 +2013,6 @@
     }
 
     /* ---- Brands ----------------------------------------------------------------------------------- */
-    /* Kopfbreiten wie bei COLS_PROD gemessen, mit derselben Luft: Text, Erklaer- und
-       Sortierzeichen passen ohne Ellipse. */
-    var COLS_MARKE = "minmax(220px,1.8fr) minmax(154px,1.2fr) minmax(126px,.9fr) minmax(104px,.8fr) minmax(148px,.9fr) minmax(144px,1fr) minmax(176px,1.1fr) minmax(110px,.9fr) minmax(240px,1.8fr)";
     function zeichneBrands() {
       var d = overviewGleicherFilter();
       zeichneMarkenKpis(d);
@@ -1825,24 +2044,18 @@
       erklaerAnLabels(el, ["brandsObserved", "ownRank", "share", "topCompetitor"]);
       hochzaehlen(el);
     }
-    function markenKopf() {
-      return th("Brand", { sort: "name" }) + th("Share of Shelf", { sort: "share_of_shelf", info: "share" }) +
-        th("Presence", { sort: "presence", info: "presence" }) + th("Products", { sort: "products" }) +
-        th("Observations", { sort: "observations", info: "obs" }) + th("Avg. Position", { sort: "avg_position", info: "pos" }) +
-        th("First Position Rate", { sort: "first_position_rate", info: "firstBrand" }) + th("Change", { sort: "share_of_shelf_delta" }) + th("Top Product");
-    }
     function zeichneMarkenTabelle() {
       var tab = sek("tabelle");
       if (!tab) return;
       var a = ovAnfrage(state.brands), d = daten(a), meta = d && d.meta;
       var bp = d && d.brands_page && typeof d.brands_page === "object" ? d.brands_page : null;
       zaehlerSetzen(bp ? anzahlWert(bp.total_count) : null);
-      var kopf = markenKopf();
+      var kopf = kopfAus("brands");
       if (!d) {
         if (fehlerVon(a)) { tabInhalt('<div class="up-box">' + fehlerKasten(a) + '</div>'); pagerSetzen("brands", null); return; }
-        if (vorige.marke && vorige.markeFilter === filterSig()) { tabInhalt(vorige.marke, true); pagerSetzen("brands", vorige.markeTotal, true); sortSync("brands"); return; }
-        tabInhalt(tabelleHtml(COLS_MARKE, kopf, skelettZeilen(6, [{ w: 110, logo: true }, 60, 44, 30, 36, 36, 44, 40, { w: 140, logo: true }])));
-        pagerSetzen("brands", null, true); sortSync("brands");
+        if (vorige.marke && vorige.markeFilter === filterSig()) { tabInhalt(vorige.marke, true); spaltenAnwenden("brands"); pagerSetzen("brands", vorige.markeTotal, true); sortSync("brands"); return; }
+        tabInhalt(tabelleHtml(kopf, skelettAus("brands", 6)));
+        spaltenAnwenden("brands"); pagerSetzen("brands", null, true); sortSync("brands");
         return;
       }
       var l = (isArr(d.brands) ? d.brands : []).filter(function (b) { return b && typeof b === "object"; });
@@ -1856,35 +2069,34 @@
         pagerSetzen("brands", 0); sortSync("brands");
         return;
       }
-      var zeilen = l.map(function (b) { return markenZeile(b, meta); }).join("");
-      var html = tabelleHtml(COLS_MARKE, kopf, zeilen + (andere ? markenZeile(mit({}, mit(andere, { type: "other" })), meta, true) : ""), "ush-marken ush-klickbar");
+      var zeilen = l.map(function (b) { return markenZeile(b, meta, false, state.brands.suche); }).join("");
+      var html = tabelleHtml(kopf, zeilen + (andere ? markenZeile(mit({}, mit(andere, { type: "other" })), meta, true) : ""), "ush-marken ush-klickbar");
       vorige.marke = html; vorige.markeTotal = gesamt(bp && bp.total_count, state.brands, l.length); vorige.markeFilter = filterSig();
       zaehlerSetzen(vorige.markeTotal);
       tabInhalt(html);
+      spaltenAnwenden("brands");
       pagerSetzen("brands", vorige.markeTotal);
       sortSync("brands");
     }
-    function markenZeile(b, meta, angepinnt) {
+    function markenZeile(b, meta, angepinnt, q) {
       var sos = kz(b.share_of_shelf), andere = b.type === "other" || !b.company_id;
       var tp = b.top_product && typeof b.top_product === "object" && str(b.top_product.source_product_id).trim() ? b.top_product : null;
       return '<div class="up-row ush-zeile' + (andere ? " is-andere" : "") + (angepinnt ? " is-angepinnt" : "") + '"' +
           (andere ? '' : ' data-marke="' + esc(b.company_id) + '" data-marke-name="' + esc(str(b.name).trim()) + '" role="link" tabindex="0"') + '>' +
-        '<div class="up-td">' + markeLogo(b) + markeName(b) + duMarke(b, meta) + '</div>' +
-        '<div class="up-td up-var-sov">' + ringHtml(sos.v) + '</div>' +
-        '<div class="up-td">' + pctHtml(kz(b.presence).v) + '</div>' +
-        '<div class="up-td">' + ganzHtml(b.products) + '</div>' +
-        '<div class="up-td">' + ganzHtml(kz(b.observations).v) + '</div>' +
-        '<div class="up-td">' + posHtml(kz(b.avg_position).v) + '</div>' +
-        '<div class="up-td">' + pctHtml(kz(b.first_position_rate).v) + '</div>' +
-        '<div class="up-td">' + (trend("pct", sos.d, meta) || '<span class="up-num is-empty">–</span>') + '</div>' +
-        '<div class="up-td">' + (tp ? '<span class="ush-topprodukt"' + (str(tp.source_product_id).trim() ? ' data-produkt="' + esc(str(tp.source_product_id).trim()) + '"' : '') + '>' + bildHtml(tp.image_url, "is-klein") +
+        '<div class="up-td">' + markeLogo(b) + markeName(b, q) + duMarke(b, meta) + '</div>' +
+        '<div class="up-td up-td-share up-var-sov">' + ringHtml(sos.v) + '</div>' +
+        td("presence", pctHtml(kz(b.presence).v)) +
+        td("products", ganzHtml(b.products)) +
+        td("obs", ganzHtml(kz(b.observations).v)) +
+        td("pos", posHtml(kz(b.avg_position).v)) +
+        td("first", pctHtml(kz(b.first_position_rate).v)) +
+        td("change", trend("pct", sos.d, meta) || '<span class="up-num is-empty">–</span>') +
+        '<div class="up-td up-td-top">' + (tp ? '<span class="ush-topprodukt"' + (str(tp.source_product_id).trim() ? ' data-produkt="' + esc(str(tp.source_product_id).trim()) + '"' : '') + '>' + bildHtml(tp.image_url, "is-klein") +
           '<span class="ush-titel" title="' + esc(str(tp.title)) + '">' + esc(str(tp.title).trim() || "–") + '</span></span>' : '<span class="up-num is-empty">–</span>') + '</div>' +
       '</div>';
     }
 
     /* ---- Merchants --------------------------------------------------------------------------------- */
-    /* Wie oben gemessen: Observations fehlten 1,3px, Avg. Product Position 34,9. */
-    var COLS_HAENDLER = "minmax(240px,2fr) minmax(150px,1.2fr) minmax(104px,.8fr) minmax(148px,1.1fr) minmax(192px,1.1fr) minmax(120px,1fr) minmax(120px,1fr)";
     function zeichneMerchants() {
       var a0 = meAnfrage(ME_VORGABE), d0 = daten(a0), d = daten(meAnfrage(state.merchants)) || d0;
       zeichneHaendlerKpis(d0 || d, a0);
@@ -1923,27 +2135,34 @@
          zeigt den Haendler trotzdem. */
       var l = (isArr(d.merchants) ? d.merchants : []).filter(function (m) { return m && typeof m === "object" && anteilWert(kz(m.share).v) != null; });
       if (!l.length) { platz.innerHTML = UC.leerHtml({ mini: true, titel: "No merchants yet" }); return; }
-      balken.me.render(l.map(function (m, i) {
+      var items = l.map(function (m, i) {
         var n = haendlerName(m.merchant_name);
         return { key: n, name: n || t("Unknown"), share: anteilWert(kz(m.share).v), color: grau(i), zeichen: UC.icon("store", 2) };
-      }));
-    }
-    function haendlerKopf() {
-      return th("Merchant", { sort: "name" }) + th("Share", { sort: "observations", info: "merchant" }) + th("Products", { sort: "products" }) +
-        th("Observations", { sort: "observations", info: "obs" }) + th("Avg. Product Position", { sort: "avg_position", info: "pos" }) +
-        th("First Seen", { sort: "first_seen" }) + th("Last Seen", { sort: "last_seen" });
+      });
+      /* DER REST ALS EIN BALKEN (05.10. gefragt: "wird das gruppiert, damit es nicht unendlich
+         gross wird?"). Gross werden kann es nicht: die Balken sind die erste Seite der
+         Vorgabe-Anfrage, also hoechstens 15. Was darueber hinaus geht, steht jetzt wie in der
+         Verteilung der Uebersicht als "{n} weitere Haendler" darunter -- in der Oberflaeche
+         gerechnet, ohne die RPC: der Anteil ist einer an ALLEN Nennungen, der Rest ist also
+         100 minus die gezeigten, und die Zahl der uebrigen summary.merchants minus die gezeigten. */
+      var su = d.summary && typeof d.summary === "object" ? d.summary : {}, gesamtN = anzahlWert(su.merchants);
+      var summe = items.reduce(function (a, x) { return a + x.share; }, 0), restN = gesamtN != null ? gesamtN - items.length : null;
+      if (restN != null && restN > 0 && 100 - summe >= 0.05) {
+        items.push({ key: "__rest", name: ersetze(t(restN === 1 ? "{n} merchant" : "{n} other merchants"), { n: ganz(restN) }), share: Math.min(100, 100 - summe), color: grau(99) });
+      }
+      balken.me.render(items);
     }
     function zeichneHaendlerTabelle() {
       var tab = sek("tabelle");
       if (!tab) return;
       var a = meAnfrage(state.merchants), d = daten(a), meta = d && d.meta;
       zaehlerSetzen(d ? anzahlWert(d.total_count) : null);
-      var kopf = haendlerKopf();
+      var kopf = kopfAus("merchants");
       if (!d) {
         if (fehlerVon(a)) { tabInhalt('<div class="up-box">' + fehlerKasten(a) + '</div>'); pagerSetzen("merchants", null); return; }
-        if (vorige.me && vorige.meFilter === filterSig()) { tabInhalt(vorige.me, true); pagerSetzen("merchants", vorige.meTotal, true); sortSync("merchants"); return; }
-        tabInhalt(tabelleHtml(COLS_HAENDLER, kopf, skelettZeilen(6, [{ w: 120, logo: true }, 60, 30, 50, 36, 60, 60])));
-        pagerSetzen("merchants", null, true); sortSync("merchants");
+        if (vorige.me && vorige.meFilter === filterSig()) { tabInhalt(vorige.me, true); spaltenAnwenden("merchants"); pagerSetzen("merchants", vorige.meTotal, true); sortSync("merchants"); return; }
+        tabInhalt(tabelleHtml(kopf, skelettAus("merchants", 6)));
+        spaltenAnwenden("merchants"); pagerSetzen("merchants", null, true); sortSync("merchants");
         return;
       }
       var l = (isArr(d.merchants) ? d.merchants : []).filter(function (m) { return m && typeof m === "object"; });
@@ -1954,21 +2173,23 @@
         pagerSetzen("merchants", 0); sortSync("merchants");
         return;
       }
-      var html = tabelleHtml(COLS_HAENDLER, kopf, l.map(function (m) {
+      var q = state.merchants.suche;
+      var html = tabelleHtml(kopf, l.map(function (m) {
         var n = haendlerName(m.merchant_name), sh = kz(m.share), ob = kz(m.observations);
         return '<div class="up-row ush-zeile"' + (n ? ' data-haendler="' + esc(n) + '" role="link" tabindex="0"' : '') + '>' +
-          '<div class="up-td">' + haendlerHtml(n) + '</div>' +
-          '<div class="up-td">' + pctHtml(sh.v) + trend("pct", sh.d, meta) + '</div>' +
-          '<div class="up-td">' + ganzHtml(m.products) + '</div>' +
-          '<div class="up-td">' + ganzHtml(ob.v) + trend("anzahl", ob.d, meta) + '</div>' +
-          '<div class="up-td">' + posHtml(m.avg_position) + '</div>' +
-          '<div class="up-td"><span class="up-num">' + esc(datum(m.first_seen)) + '</span></div>' +
-          '<div class="up-td"><span class="up-num">' + esc(datum(m.last_seen)) + '</span></div>' +
+          '<div class="up-td">' + haendlerHtml(n, q) + '</div>' +
+          td("share", pctHtml(sh.v) + trend("pct", sh.d, meta)) +
+          td("products", ganzHtml(m.products)) +
+          td("obs", ganzHtml(ob.v) + trend("anzahl", ob.d, meta)) +
+          td("pos", posHtml(m.avg_position)) +
+          td("firstseen", '<span class="up-num">' + esc(datum(m.first_seen)) + '</span>') +
+          td("seen", '<span class="up-num">' + esc(datum(m.last_seen)) + '</span>') +
         '</div>';
       }).join(""), "ush-haendler ush-klickbar");
       vorige.me = html; vorige.meTotal = gesamt(d.total_count, state.merchants, l.length); vorige.meFilter = filterSig();
       zaehlerSetzen(vorige.meTotal);
       tabInhalt(html);
+      spaltenAnwenden("merchants");
       pagerSetzen("merchants", vorige.meTotal);
       sortSync("merchants");
     }
@@ -2008,10 +2229,11 @@
       var p = d.product || {}, meta = d.meta || {}, b = p.brand && typeof p.brand === "object" ? p.brand : { type: "other" };
       var titel = str(p.title).trim() || str(p.listing_title).trim() || "–";
       var listing = str(p.listing_title).trim();
-      var bilder = (isArr(p.images) ? p.images : []).map(sichereUrl).filter(Boolean);
-      var haupt = sichereUrl(p.image_url) || bilder[0] || "";
-      if (haupt && bilder.indexOf(haupt) < 0) bilder.unshift(haupt);
-      bilder = bilder.slice(0, 6);
+      /* DOPPELTE BILDER (05.10.: "oft dieselben Bilder 2-4 mal"). Hier nach der Adresse; was
+         danach noch gleich aussieht, nimmt bilderAbgleichen nach dem Laden heraus. Zwoelf statt
+         sechs: die Leiste blaettert jetzt, statt umzubrechen. */
+      var bilder = bilderEinmal([p.image_url].concat(isArr(p.images) ? p.images : [])).slice(0, 12);
+      var haupt = bilder[0] || "";
       var preis = letzterPreis(p.latest_price) || preisSpanne(p.price_ranges);
       var mz = anzahlWert(p.merchant_count);
       var k = d.kpis || {}, tr = isArr(d.trend) ? d.trend.filter(function (x) { return x && typeof x === "object"; }) : [];
@@ -2030,12 +2252,18 @@
               '<span class="ush-bild-ph">' + UC.icon("image", 1.6) + '</span>' +
               (haupt ? '<img src="' + esc(haupt) + '" alt="" referrerpolicy="no-referrer" onerror="this.parentNode.classList.remove(\'has-img\');this.remove()"/>' : '') +
             '</span>' +
-            (bilder.length > 1 ? '<div class="ush-galerie-leiste">' + bilder.map(function (u, i) {
-              return '<button type="button" class="ush-galerie-knopf' + (u === haupt ? " is-on" : "") + '" data-bild="' + esc(u) + '" aria-label="' + esc(t("Image") + " " + (i + 1)) + '">' +
-                /* Ein Vorschaubild, das nicht laedt, geht mit seinem Knopf; bleibt nur eins uebrig,
-                   geht die Leiste -- ein einzelnes Kaestchen unter dem Hauptbild zeigt nichts Neues. */
-                '<img src="' + esc(u) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="var l=this.closest(\'.ush-galerie-leiste\');this.parentNode.remove();if(l&amp;&amp;l.children.length&lt;2)l.remove()"/></button>';
-            }).join("") + '</div>' : '') +
+            /* EINE REIHE, DIE BLAETTERT (05.10.: "max. eine Reihe Vorschaubilder, eher wie ein
+               Karussell"). Passen nicht alle hinein, stehen links und rechts die Pfeile. */
+            (bilder.length > 1 ? '<div class="ush-karussell">' +
+              '<button type="button" class="up-iconbtn is-28 ush-kar-pfeil" data-kar="-1" aria-label="' + esc(t("Previous images")) + '">' + UC.icon("chevronLeft", 2) + '</button>' +
+              '<div class="ush-galerie-leiste">' + bilder.map(function (u, i) {
+                return '<button type="button" class="ush-galerie-knopf' + (u === haupt ? " is-on" : "") + '" data-bild="' + esc(u) + '" aria-label="' + esc(t("Image") + " " + (i + 1)) + '">' +
+                  /* Ein Vorschaubild, das nicht laedt, geht mit seinem Knopf; bleibt nur eins uebrig,
+                     geht die Leiste -- ein einzelnes Kaestchen unter dem Hauptbild zeigt nichts Neues. */
+                  '<img src="' + esc(u) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="var k=this.closest(\'.ush-karussell\');this.parentNode.remove();if(k&amp;&amp;k.querySelectorAll(\'.ush-galerie-knopf\').length&lt;2)k.remove()"/></button>';
+              }).join("") + '</div>' +
+              '<button type="button" class="up-iconbtn is-28 ush-kar-pfeil" data-kar="1" aria-label="' + esc(t("Next images")) + '">' + UC.icon("chevronRight", 2) + '</button>' +
+            '</div>' : '') +
           '</div>' +
           '<div class="ush-hero-info">' +
             '<div class="ush-hero-marke">' + markeLogo(b) + markeName(b) + duMarke(b, meta) + '</div>' +
@@ -2057,6 +2285,95 @@
         '</div></div>';
       erklaerAnLabels(el.querySelector(".ush-kpis"), ["vis", "obs", "pos", "firstProd"]);
       hochzaehlen(el);
+      var leiste = el.querySelector(".ush-galerie-leiste");
+      if (leiste) leiste.addEventListener("scroll", function () { karussellPruefen(el); }, { passive: true });
+      karussellPruefen(el);
+      bilderAbgleichen(el);
+    }
+    /* ---- Doppelte Bilder ------------------------------------------------------------------------
+       Nach der Adresse: ohne Protokoll und Anker, Host klein -- dieselbe Datei zweimal verlinkt.
+       Nach dem Inhalt: dieselbe Aufnahme unter zwei Adressen (images.openai.com legt sie als
+       ..._1.jpg, ..._2.jpg ab). Dazu wird jedes Vorschaubild ein zweites Mal geladen, verkleinert
+       auf 16 x 16 Grauwerte und verglichen: gleiches Seitenverhaeltnis (2 Prozent) und im Mittel
+       weniger als 6 von 255 Abweichung heisst gleiches Bild. Das geht NUR, wenn der Bildserver
+       das Auslesen erlaubt (CORS); sonst wirft getImageData, und das Bild bleibt -- lieber ein
+       Bild doppelt als ein verschiedenes weg. Je Adresse einmal (BILD_SIG). */
+    function bilderEinmal(l) {
+      var da = {}, out = [];
+      l.forEach(function (u) {
+        u = sichereUrl(u);
+        if (!u) return;
+        var k = u.replace(/^https?:\/\//i, "").replace(/#.*$/, "").replace(/\/+$/, "");
+        k = k.replace(/^[^\/]+/, function (h) { return h.toLowerCase(); });
+        if (da[k]) return;
+        da[k] = 1; out.push(u);
+      });
+      return out;
+    }
+    var BILD_SIG = (window.__ushBildSig = window.__ushBildSig || {});
+    function bildSignatur(u, fertig) {
+      if (BILD_SIG[u] !== undefined) { fertig(BILD_SIG[u]); return; }
+      var im = new Image();
+      im.crossOrigin = "anonymous";
+      im.referrerPolicy = "no-referrer";
+      im.onload = function () {
+        var sig = false;
+        try {
+          var c = document.createElement("canvas");
+          c.width = 16; c.height = 16;
+          var x = c.getContext("2d");
+          x.drawImage(im, 0, 0, 16, 16);
+          var px = x.getImageData(0, 0, 16, 16).data, g = [];
+          /* Durchsichtiges zaehlt als Weiss -- so steht ein freigestelltes Produkt auf der Platte. */
+          for (var i = 0; i < px.length; i += 4) {
+            var a = px[i + 3] / 255;
+            g.push((px[i] * 0.299 + px[i + 1] * 0.587 + px[i + 2] * 0.114) * a + 255 * (1 - a));
+          }
+          sig = { g: g, r: im.naturalWidth / Math.max(1, im.naturalHeight) };
+        } catch (e) { sig = false; }
+        BILD_SIG[u] = sig;
+        fertig(sig);
+      };
+      im.onerror = function () { BILD_SIG[u] = false; fertig(false); };
+      im.src = u;
+    }
+    function gleichesBild(a, b) {
+      if (!a || !b || Math.abs(a.r - b.r) > 0.02 * Math.max(a.r, b.r)) return false;
+      var d = 0;
+      for (var i = 0; i < a.g.length; i++) d += Math.abs(a.g[i] - b.g[i]);
+      return d / a.g.length < 6;
+    }
+    function bilderAbgleichen(el) {
+      var knoepfe = [].slice.call(el.querySelectorAll(".ush-galerie-knopf[data-bild]"));
+      if (knoepfe.length < 2) return;
+      var offen = knoepfe.length, sigs = [];
+      knoepfe.forEach(function (k, i) {
+        bildSignatur(k.getAttribute("data-bild"), function (sig) {
+          sigs[i] = sig;
+          if (--offen) return;
+          var behalten = [];
+          knoepfe.forEach(function (kn, j) {
+            var doppelt = behalten.some(function (b) { return gleichesBild(sigs[j], b); });
+            if (doppelt) kn.remove(); else if (sigs[j]) behalten.push(sigs[j]);
+          });
+          karussellPruefen(el);
+        });
+      });
+    }
+    /* Pfeile nur, wenn die Reihe ueberlaeuft; am Anfang und am Ende gedimmt. Bleibt nur ein Bild,
+       geht die Reihe ganz. */
+    /* ziel: die Stelle, zu der ein Pfeil gerade blaettert. Die Pfeile stellen sich danach sofort ein
+       -- das scroll-Ereignis kommt erst mit gemalten Bildern, und ein verdeckter Tab malt keine. */
+    function karussellPruefen(el, ziel) {
+      var k = el.querySelector(".ush-karussell"), l = k && k.querySelector(".ush-galerie-leiste");
+      if (!k) return;
+      if (!l || l.querySelectorAll(".ush-galerie-knopf").length < 2) { k.remove(); return; }
+      var mehr = l.scrollWidth > l.clientWidth + 1, pos = ziel != null ? ziel : l.scrollLeft;
+      k.classList.toggle("hat-mehr", mehr);
+      var pf = k.querySelectorAll(".ush-kar-pfeil");
+      var amAnfang = pos <= 1, amEnde = pos + l.clientWidth >= l.scrollWidth - 1;
+      if (pf[0]) { pf[0].classList.toggle("is-disabled", amAnfang); pf[0].disabled = amAnfang; }
+      if (pf[1]) { pf[1].classList.toggle("is-disabled", amEnde); pf[1].disabled = amEnde; }
     }
     function zeichneDetailChart() {
       if (!linie) return;
@@ -2140,44 +2457,41 @@
       return code;
     }
     function flagge(code) { return /^[A-Z]{2}$/.test(code) ? "https://flagcdn.com/w40/" + code.toLowerCase() + ".png" : ""; }
-    /* Observations fehlten am Minimum 1,3px. */
-    var COLS_DH = "minmax(220px,2fr) minmax(124px,1fr) minmax(128px,1fr) minmax(160px,1.2fr)";
     function zeichneDetailHaendler(d) {
       var el = sek("dhaendler");
       if (!el) return;
-      var kopf = sekKopf("Merchants", "", "", "merchant");
-      var heads = th("Merchant") + th("Share", { info: "merchant" }) + th("Observations", { info: "obs" }) + th("Price", { info: "price" });
-      if (!d) { el.innerHTML = kopf + tabelleHtml(COLS_DH, heads, skelettZeilen(3, [{ w: 120, logo: true }, 40, 30, 60])); return; }
+      var platz = vorschauPlatz(el, "dhaendler", sekKopf("Merchants", "", "", "merchant"));
+      if (!d) { platz.innerHTML = tabelleHtml(kopfAus("dhaendler"), skelettAus("dhaendler", 3)); spaltenAnwenden("dhaendler"); return; }
       var l = (isArr(d.merchants) ? d.merchants : []).filter(function (m) { return m && typeof m === "object"; });
-      if (!l.length) { el.innerHTML = kopf + '<div class="up-box">' + UC.leerHtml({ mini: true, titel: "No merchants were listed with this product." }) + '</div>'; return; }
-      el.innerHTML = kopf + tabelleHtml(COLS_DH, heads, l.map(function (m) {
+      if (!l.length) { platz.innerHTML = '<div class="up-box">' + UC.leerHtml({ mini: true, titel: "No merchants were listed with this product." }) + '</div>'; return; }
+      platz.innerHTML = tabelleHtml(kopfAus("dhaendler"), l.map(function (m) {
         var n = haendlerName(m.merchant_name), p = letzterPreis(m.latest_price), sp = preisSpanne(m.price_ranges);
         return '<div class="up-row ush-zeile"' + (n ? ' data-haendler="' + esc(n) + '" role="link" tabindex="0"' : '') + '>' +
           '<div class="up-td">' + haendlerHtml(n) + '</div>' +
-          '<div class="up-td">' + pctHtml(m.share) + '</div>' +
-          '<div class="up-td">' + ganzHtml(m.observations) + '</div>' +
-          '<div class="up-td">' + (p || sp ? '<span class="ush-zweizeilig"><span class="up-num">' + esc(p || sp) + '</span>' + (p && sp && sp !== p ? '<span class="ush-unter">' + esc(sp) + '</span>' : '') + '</span>' : '<span class="up-num is-empty">–</span>') + '</div>' +
+          td("share", pctHtml(m.share)) +
+          td("obs", ganzHtml(m.observations)) +
+          td("price", p || sp ? '<span class="ush-zweizeilig"><span class="up-num">' + esc(p || sp) + '</span>' + (p && sp && sp !== p ? '<span class="ush-unter">' + esc(sp) + '</span>' : '') + '</span>' : '<span class="up-num is-empty">–</span>') +
         '</div>';
       }).join(""), "ush-klickbar");
+      spaltenAnwenden("dhaendler");
     }
-    var COLS_AUFTRITT = "minmax(120px,1fr) minmax(150px,1.2fr) minmax(90px,.7fr) minmax(160px,1.4fr) minmax(100px,.8fr) minmax(110px,.9fr) minmax(180px,1.4fr) minmax(170px,1.1fr)";
     function zeichneAuftritte() {
       var tab = sek("tabelle");
       if (!tab) return;
       var a = detailAnfrage(), d = daten(a);
       var ap = d && d.appearances && typeof d.appearances === "object" ? d.appearances : null;
       zaehlerSetzen(ap ? anzahlWert(ap.total_count) : null);
-      var kopf = th("Date") + th("Model") + th("Market") + th("Topic") + th("Position", { info: "pos" }) + th("Price", { info: "price" }) + th("Merchant") + th("");
+      var kopf = kopfAus("detail");
       if (!d) {
         if (fehlerVon(a)) { tabInhalt(""); pagerSetzen("detail", null); return; }
-        if (vorige.auf && vorige.aufProdukt === state.produktId && vorige.aufFilter === filterSig()) { tabInhalt(vorige.auf, true); pagerSetzen("detail", vorige.aufTotal, true); return; }
-        tabInhalt(tabelleHtml(COLS_AUFTRITT, kopf, skelettZeilen(5, [60, { w: 70, logo: true }, 30, 80, 30, 40, 90, 90])));
-        pagerSetzen("detail", null, true);
+        if (vorige.auf && vorige.aufProdukt === state.produktId && vorige.aufFilter === filterSig()) { tabInhalt(vorige.auf, true); spaltenAnwenden("detail"); pagerSetzen("detail", vorige.aufTotal, true); return; }
+        tabInhalt(tabelleHtml(kopf, skelettAus("detail", 5)));
+        spaltenAnwenden("detail"); pagerSetzen("detail", null, true);
         return;
       }
       var rows = ap && isArr(ap.rows) ? ap.rows.filter(function (r) { return r && typeof r === "object"; }) : [];
       if (!rows.length) { tabInhalt('<div class="up-box">' + UC.leerHtml({ mini: true, titel: "No appearances in this range." }) + '</div>'); pagerSetzen("detail", 0); return; }
-      var html = tabelleHtml(COLS_AUFTRITT, kopf, rows.map(function (r) {
+      var html = tabelleHtml(kopf, rows.map(function (r) {
         var topics = (isArr(r.topics) ? r.topics : []).map(function (x) { return str(x).trim(); }).filter(Boolean);
         /* null heisst Einzelkarte (Uebergabe 7.3); ein Wert, der keine Platzierung sein kann, ist
            keine Einzelkarte, sondern unbekannt. */
@@ -2189,21 +2503,22 @@
         if (!/^[A-Za-z0-9_-]{6,80}$/.test(pr)) pr = "";
         return '<div class="up-row ush-zeile is-statisch">' +
           '<div class="up-td"><span class="up-num">' + esc(datum(r.run_at || r.day)) + '</span></div>' +
-          '<div class="up-td">' + (r.model ? (UC.modelChip ? UC.modelChip(str(r.model)) : esc(str(r.model))) : '<span class="up-num is-empty">–</span>') + '</div>' +
-          '<div class="up-td">' + (/^[A-Za-z]{2}$/.test(str(r.market).trim()) && UC.marketChip ? UC.marketChip(str(r.market).trim()) : (marktCode(r.market) ? esc(marktCode(r.market)) : '<span class="up-num is-empty">–</span>')) + '</div>' +
-          '<div class="up-td">' + (topics.length ? '<span class="ush-topics" title="' + esc(topics.join(", ")) + '"><span class="ush-titel">' + esc(topics[0]) + '</span>' +
+          td("model", r.model ? (UC.modelChip ? UC.modelChip(str(r.model)) : esc(str(r.model))) : '<span class="up-num is-empty">–</span>') +
+          td("market", /^[A-Za-z]{2}$/.test(str(r.market).trim()) && UC.marketChip ? UC.marketChip(str(r.market).trim()) : (marktCode(r.market) ? esc(marktCode(r.market)) : '<span class="up-num is-empty">–</span>')) +
+          '<div class="up-td up-td-topic">' + (topics.length ? '<span class="ush-topics" title="' + esc(topics.join(", ")) + '"><span class="ush-titel">' + esc(topics[0]) + '</span>' +
             (topics.length > 1 ? '<span class="up-marke is-leise">+' + (topics.length - 1) + '</span>' : '') + '</span>' : '<span class="up-num is-empty">–</span>') + '</div>' +
           /* Die Platzierung EINER Antwort ist eine ganze Zahl (Platz 2 im Karussell), kein
              Durchschnitt -- "2.0" laese sich wie ein Mittelwert. Die Raute bleibt wie beim Rang. */
-          '<div class="up-td">' + (pos != null ? '<span class="up-rank-group">' + HASH + '<span class="up-num">' + esc(ganz(pos)) + '</span></span>' : posLeer ? '<span class="ush-unter">' + esc(t("Single card")) + '</span>' : '<span class="up-num is-empty">–</span>') + '</div>' +
-          '<div class="up-td">' + (preis ? '<span class="up-num">' + esc(preis) + '</span>' : '<span class="up-num is-empty">–</span>') + '</div>' +
-          '<div class="up-td">' + haendlerHtml(r.merchant_name) + '</div>' +
-          '<div class="up-td">' + (pr ? '<button type="button" class="up-btn-sec ush-antwort" data-antwort="' + esc(pr) + '"><span>' + esc(t("View Response")) + '</span>' + UC.icon("arrowUpRight", 2) + '</button>' : '') + '</div>' +
+          td("position", pos != null ? '<span class="up-rank-group">' + HASH + '<span class="up-num">' + esc(ganz(pos)) + '</span></span>' : posLeer ? '<span class="ush-unter">' + esc(t("Single card")) + '</span>' : '<span class="up-num is-empty">–</span>') +
+          td("price", preis ? '<span class="up-num">' + esc(preis) + '</span>' : '<span class="up-num is-empty">–</span>') +
+          td("merchant", haendlerHtml(r.merchant_name)) +
+          '<div class="up-td ush-td-aktion">' + (pr ? '<button type="button" class="up-btn-sec ush-antwort" data-antwort="' + esc(pr) + '" aria-label="' + esc(t("View Response")) + '"><span>' + esc(t("View Response")) + '</span>' + UC.icon("arrowUpRight", 2) + '</button>' : '') + '</div>' +
         '</div>';
       }).join(""), "ush-auftritte");
       vorige.auf = html; vorige.aufTotal = gesamt(ap.total_count, state.auftritte, rows.length); vorige.aufProdukt = state.produktId; vorige.aufFilter = filterSig();
       zaehlerSetzen(vorige.aufTotal);
       tabInhalt(html);
+      spaltenAnwenden("detail");
       pagerSetzen("detail", vorige.aufTotal);
     }
 
@@ -2243,6 +2558,17 @@
         for (var i = 0; i < alle.length; i++) alle[i].classList.toggle("is-on", alle[i] === gb);
         return;
       }
+      var kp = z.closest(".ush-kar-pfeil[data-kar]");
+      if (kp) {
+        var lst = kp.parentNode.querySelector(".ush-galerie-leiste");
+        /* Drei Vorschaubilder je Schritt (40 breit, 8 Abstand) -- so viele stehen ganz in der Reihe. */
+        if (lst) {
+          var ziel = Math.max(0, Math.min(lst.scrollWidth - lst.clientWidth, lst.scrollLeft + Number(kp.getAttribute("data-kar")) * 144));
+          try { lst.scrollTo({ left: ziel, behavior: "smooth" }); } catch (e2) { lst.scrollLeft = ziel; }
+          karussellPruefen(kp.closest('[data-sek="hero"]') || elMain, ziel);
+        }
+        return;
+      }
       var mk = z.closest("[data-ush-ziel]");
       if (mk) { seiteOeffnen(mk.getAttribute("data-ush-ziel"), true, mk.getAttribute("data-ush-ziel") === "products" ? { marke: null, haendler: null } : null); return; }
       var an = z.closest("[data-antwort]");
@@ -2268,6 +2594,23 @@
       if (zeile.hasAttribute("data-haendler")) seiteOeffnen("products", true, { haendler: zeile.getAttribute("data-haendler"), marke: null, seg: "all" });
     }
 
+    /* ---- Spaltengriff ------------------------------------------------------------------------
+       Der Griff gehoert zu dem Kit, an dessen Wurzel er steht (spaltenFuer haengt es dort an). */
+    var ziehtNoch = false;
+    root.addEventListener("pointerdown", function (e) {
+      var g = e.target && e.target.closest && e.target.closest(".up-grip");
+      if (!g) return;
+      for (var n = g; n && n !== root.parentNode; n = n.parentNode) {
+        if (n.__ushSpalten) {
+          e.stopPropagation();
+          ziehtNoch = true;
+          document.addEventListener("pointerup", function () { setTimeout(function () { ziehtNoch = false; }, 0); }, { once: true });
+          n.__ushSpalten.kit.startResize(e);
+          return;
+        }
+      }
+    });
+
     /* ---- Sichtbarkeit, Groesse, Format -------------------------------------------------------- */
     if (UC.onViewChange) UC.onViewChange(function (name) {
       if (name === "shopping" && root.isConnected) setTimeout(function () { adresseAnwenden(); if (filterAbgleichen()) filterGeaendert(); else { zeichnen(); bedarf(); } }, 0);
@@ -2280,6 +2623,7 @@
     });
     if (UC.onResize) UC.onResize(root, function () {
       Object.keys(sucheKit).forEach(function (k) { try { if (sucheKit[k] && sucheKit[k].syncTakeover) sucheKit[k].syncTakeover(); } catch (e) {} });
+      Object.keys(spalten).forEach(function (k) { try { spalten[k].kit.applyCols(); } catch (e) {} });
       if (sichtbar()) bedarf();
     });
 
