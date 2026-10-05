@@ -224,6 +224,9 @@
        dieser Leiste bleibt beim Prompt das zap: dort sagt das Zeichen, WAS es ist, in der
        Seitenleiste sagt die Flagge, WELCHER Prompt. */
     function markt() { return feld("market", "data-market"); }
+    /* Der Prompt ueber einer Antwort (05.10.): Response Detail schickt ihn mit, damit das Zap den
+       Prompt-Drawer selbst oeffnen kann. Fehlt er, bleibt es beim Ereignis. */
+    function promptId() { return feld("prompt_id", "data-prompt-id"); }
 
     var elType, elLogo, elName, elEdit, elDomain, elPin, elPrompt, elMira, elAi;
     var state = { leer: true };
@@ -383,7 +386,11 @@
          Dieselbe Regel, die zwei Zeilen weiter unten fuer den Mira-Knopf steht und dort
          woertlich begruendet ist: ein Knopf, dessen Klick nichts tut, ist schlimmer als keiner.
          Damit macht das fehlende Attribut sich selbst sichtbar, statt still zu bleiben. */
-      elPrompt.hidden = laedt || (t !== "response") || !root.getAttribute("data-prompt-fn");
+      /* Seit dem 05.10. auch OHNE Attribut: kennt die Leiste den Prompt (prompt_id, von Response
+         Detail mitgeschickt) und gibt es openDrawer, oeffnet der Klick den Prompt-Drawer selbst --
+         dann tut der Knopf etwas, also steht er da. */
+      var zapGeht = !!root.getAttribute("data-prompt-fn") || (!!promptId() && typeof window.openDrawer === "function");
+      elPrompt.hidden = laedt || (t !== "response") || !zapGeht;
       /* Der Mira-Knopf nur, wenn der Bezug VOLLSTAENDIG ist -- miraBezug() entscheidet das, an
          einer Stelle: bei der Domain reicht der Name, Marke und Prompt brauchen zusaetzlich ihre
          Kennung, die URL ihre Adresse. Ein Knopf, dessen Klick nichts tut, waere schlimmer als
@@ -429,7 +436,7 @@
       }
       /* Nur die vier Felder, die es gibt, und nur die MITGESCHICKTEN. item_id auch als "id":
          so heisst das Feld in den Ereignissen dieser Leiste und in jedem Payload der App. */
-      ["type", "name", "logo", "market"].forEach(function (k) {
+      ["type", "name", "logo", "market", "prompt_id"].forEach(function (k) {
         if (o[k] != null) daten[k] = String(o[k]);
       });
       if (o.item_id != null) daten.item_id = String(o.item_id);
@@ -447,7 +454,7 @@
       var t = e.target;
       if (!t || !t.closest) return;
       if (t.closest("[data-utb-close]")) {
-        fire("data-close-fn", "utbClose", { type: typ(), item_id: itemId() });
+        if (empfaenger("data-close-fn", "utbClose") || !schliessen()) fire("data-close-fn", "utbClose", { type: typ(), item_id: itemId() });
         return;
       }
       if (t.closest("[data-utb-edit]")) {
@@ -455,17 +462,54 @@
         return;
       }
       if (t.closest("[data-utb-domain]")) {
-        fire("data-domain-fn", "utbDomain", { type: typ(), item_id: itemId() });
+        if (empfaenger("data-domain-fn", "utbDomain") || !oeffnen("domain", domainAus(itemId())))
+          fire("data-domain-fn", "utbDomain", { type: typ(), item_id: itemId() });
         return;
       }
       if (t.closest("[data-utb-prompt]")) {
-        fire("data-prompt-fn", "utbPrompt", { type: typ(), item_id: itemId() });
+        if (empfaenger("data-prompt-fn", "utbPrompt") || !oeffnen("prompt", promptId()))
+          fire("data-prompt-fn", "utbPrompt", { type: typ(), item_id: itemId() });
         return;
       }
       if (t.closest("[data-utb-pin]")) { anheften(); return; }
       if (t.closest("[data-utb-mira]")) { zuMira(); return; }
       if (t.closest("[data-utb-ai]")) { zuCreateWithAi(); return; }
     });
+
+    /* ---- OHNE BUBBLE (05.10.: "die Topbar dann auch, damit ich keine JS-Events mehr brauche") --
+       Zurueck und Kreuz schliessen den Drawer, in dem die Leiste steht (closeDrawer der Host-App,
+       die meldet das Schliessen selbst an bubble_fn_drawer_closed_<name>). Der Globus oeffnet die
+       Domain der URL, das Zap den Prompt der Antwort -- beide mit openDrawer wie die Host-App.
+       Ist in Bubble noch ein Empfaenger fuer das Ereignis da, entscheidet weiter er (sonst liefe
+       beides). Der Stift bleibt ein Ereignis: wie der Marken-Editor aufgeht, weiss nur Bubble. */
+    function empfaenger(attrName, ereignis) {
+      var fnName = attr(attrName).trim() || ("bubble_fn_" + ereignis);
+      return typeof window[fnName] === "function";
+    }
+    function meinDrawer() {
+      var d = root.closest ? root.closest('[id^="drawer-"], [id^="content-"]') : null;
+      if (d) return d.id.replace(/^(drawer|content)-/, "");
+      /* Ausserhalb eines Drawers (Pruefstand): der Typ, wie die Drawer heissen. */
+      return { brand: "brand", url: "url", domain: "domain", prompt: "prompt", response: "response" }[typ()] || "";
+    }
+    function schliessen() {
+      var n = meinDrawer();
+      if (!n || typeof window.closeDrawer !== "function") return false;
+      try { window.closeDrawer(n); return true; } catch (e) { return false; }
+    }
+    function oeffnen(art, id) {
+      id = String(id == null ? "" : id).trim();
+      if (!id || !UC.drawerOeffnen || typeof window.openDrawer !== "function") return false;
+      return UC.drawerOeffnen(art, id, "drawer-topbar") !== false;
+    }
+    /* Bei einer URL IST die Kennung die Adresse (siehe miraBezug); die Domain ist ihr Host ohne www
+       -- so heissen Domains in jeder Liste der App (adac.de, nicht www.adac.de). */
+    function domainAus(u) {
+      var x = String(u || "").trim();
+      if (!x) return "";
+      if (!/^https?:\/\//i.test(x)) x = "https://" + x;
+      try { return new URL(x).hostname.replace(/^www\./i, "").toLowerCase(); } catch (e) { return ""; }
+    }
 
     /* ---- Create with AI (16.09. angefordert) ----
        Die Leiste hat alles, was das Fenster braucht: die Adresse steht in data-item-id (bei einer

@@ -33,6 +33,14 @@
   | data-product-fn | nein    | Toolbox-Funktion fuer den Klick auf eine Produktkarte (siehe urdProduct) |
   | data-topbar     | nein    | Instanz der drawer-topbar, die diese Komponente fuellt. Ohne: die im selben Drawer |
 
+  ── DRAWER OEFFNEN SICH SELBST (05.10.) ──────────────────────────────────────
+  urdPrompt, urdBrand, urdUrl und urdDomain sind nicht mehr noetig: ohne Empfaenger oeffnet die
+  Komponente den Drawer selbst (openDrawer wie die Host-App, die meldet das an
+  bubble_fn_drawer_<art>). Kennungen: prompt = prompt_id, brand = company_id, url = Adresse,
+  domain = Name. Steht ein JavaScriptToBubble-Element fuer eines davon noch auf der Seite,
+  gewinnt es -- sonst ginge der Drawer zweimal auf. Zum Umstellen die vier Elemente und ihre
+  Workflows loeschen. urdView bleibt optional wie bisher.
+
   ── Die Ereignisse und ihre Werte ────────────────────────────────────────────
   Die ersten drei tragen einen BLANKEN Wert, kein JSON -- Bubble liest sie ohne Umweg:
 

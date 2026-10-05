@@ -1296,8 +1296,7 @@
          Domain, nicht die URL. */
       var dm = e.target.closest("[data-domain]");
       if (dm) {
-        var dv = dm.getAttribute("data-domain") || "";
-        if (dv) fire("data-domain-fn", "urdDomain", dv);
+        fireOderDrawer("data-domain-fn", "urdDomain", "domain", dm.getAttribute("data-domain") || "");
         return;
       }
       /* Eine Quelle, als Kachel oder als Zeile. */
@@ -1305,8 +1304,7 @@
       if (q) { quelleFeuern(q); return; }
       /* Der Prompt-Titel. */
       if (e.target.closest(".urd-prompt")) {
-        var pid = elPrompt.getAttribute("data-id") || "";
-        if (pid) fire("data-prompt-fn", "urdPrompt", pid);
+        fireOderDrawer("data-prompt-fn", "urdPrompt", "prompt", elPrompt.getAttribute("data-id") || "");
         return;
       }
     });
@@ -1326,16 +1324,37 @@
       z.click();
     });
 
-    /* Die Werte sind blanke Zeichenketten, keine Objekte -- so ist es in der Aufgabe festgelegt
-       und so liest Bubble sie ohne Umweg. */
+    /* ---- ZIELE OEFFNEN IHREN DRAWER SELBST (05.10.) ------------------------------------------
+       Gemeldet: "kann die Komponente alle Drawer-Oeffnungen selber machen? brand, domain, prompt,
+       url -- damit ich dafuer keine JS-Events mehr in Bubble brauche". Ja: UC.drawerOeffnen ruft
+       openDrawer(art, id) wie die Host-App, und die meldet das Oeffnen selbst an
+       bubble_fn_drawer_<art> -- dort laedt der Workflow des Ziel-Drawers seine Daten wie immer.
+       Die Kennungen sind die der anderen Komponenten: brand = company_id, domain = Name,
+       url = Adresse, prompt = prompt_id.
+       IST IN BUBBLE NOCH EIN EMPFAENGER DA (urdBrand, urdUrl, ...), entscheidet weiter er: sonst
+       liefe beim Umstellen beides, und der Drawer ginge zweimal auf. Wer das JavaScriptToBubble-
+       Element loescht, bekommt den direkten Weg. Ohne openDrawer auf der Seite bleibt das Ereignis
+       -- dann sagt makeFire in der Konsole, dass niemand zuhoert.
+       Der Name beginnt mit "fire", und die Aufrufe tragen Attribut und Ereignis woertlich: so
+       findet .contract_snapshot.py die vier Ereignisse weiter (es sucht Aufrufe, deren Name mit
+       fire beginnt, mit Attribut und Ereignis als erste zwei Zeichenketten). */
+    function fireOderDrawer(attrName, ereignis, art, wert) {
+      wert = String(wert == null ? "" : wert).trim();
+      if (!wert) return;
+      var fnName = (root.getAttribute(attrName) || "").trim() || ("bubble_fn_" + ereignis);
+      if (typeof window[fnName] !== "function" && typeof window.openDrawer === "function" && UC.drawerOeffnen) {
+        UC.drawerOeffnen(art, wert, "response-detail");
+        return;
+      }
+      fire(attrName, ereignis, wert);
+    }
     function markeFeuern(id) {
-      if (id) fire("data-brand-fn", "urdBrand", id);
+      if (id) fireOderDrawer("data-brand-fn", "urdBrand", "brand", id);
       else if (window.console) console.warn("[response-detail] Marke ohne company_id -- " +
-        "kein Ereignis. Liefert die RPC company_id in companies mit?");
+        "kein Ziel. Liefert die RPC company_id in companies mit?");
     }
     function quelleFeuern(el) {
-      var wert = el.getAttribute("data-url") || "";
-      if (wert) fire("data-url-fn", "urdUrl", wert);
+      fireOderDrawer("data-url-fn", "urdUrl", "url", el.getAttribute("data-url") || "");
     }
     /* Die Zitate IM FLIESSTEXT sind etwas anderes als der Abschnitt "Citations" darunter: sie
        stehen nur im Antworttext des Modells und haben keine Zeile in der Datenbank. Ein Ereignis
@@ -1419,8 +1438,10 @@
       }
       var name = [d.model ? modellName(d.model) : "", d.run_at && UC.fmtDate ? UC.fmtDate(d.run_at) : ""]
         .filter(Boolean).join(", ");
+      /* prompt_id: damit das Zap der Leiste ("zum Prompt") den Prompt-Drawer selbst oeffnen kann. */
       window.setDrawerTopbar(id, { type: "response", name: name || "\u2013",
-        item_id: String(d.prompt_run_id || d.id || ""), market: String(d.market || "") });
+        item_id: String(d.prompt_run_id || d.id || ""), market: String(d.market || ""),
+        prompt_id: String(d.prompt_id || "") });
     }
 
     /* Die Spaltenzahl haengt an der Breite der eigenen Box. */

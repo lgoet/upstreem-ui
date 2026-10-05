@@ -105,6 +105,15 @@
   ALLE VIER WERDEN LIVE MITGELESEN. Wechselt der Drawer sein Element, aendert Bubble die
   Attribute -- die Leiste zieht von selbst nach, kein Workflow-Schritt noetig.
 
+  ── OHNE WORKFLOW (05.10.) ──────────────────────────────────────────────────────
+  Zurueck und Kreuz schliessen den Drawer, in dem die Leiste steht (closeDrawer der Host-App).
+  Der Globus (url) oeffnet die Domain der Adresse, das Zap (response) den Prompt der Antwort --
+  beide mit openDrawer, die Host-App meldet das Oeffnen wie immer an bubble_fn_drawer_<art>.
+  Fuer das Zap schickt Response Detail prompt_id selbst mit (setDrawerTopbar-Feld prompt_id).
+  Die Ereignisse unten sind dafuer NICHT mehr noetig. Steht ein JavaScriptToBubble-Element fuer
+  eines davon noch auf der Seite, gewinnt es (sonst liefe beides); geloescht, uebernimmt die Leiste.
+  Nur der Stift (utbEdit, Marken-Editor) braucht weiter seinen Workflow.
+
   ── Ereignisse (JavaScriptToBubble) ─────────────────────────────────────────────
   data-close-fn   = "bubble_fn_utbClose_[dynamic id]"
                     Ausgeloest vom Pfeil links UND vom Kreuz rechts -- beide bedeuten
