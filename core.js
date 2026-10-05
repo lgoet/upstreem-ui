@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261086;
+  var BUILD = 20261087;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -14335,24 +14335,53 @@
      #view-events blendet eine Bedingung ein, die die ADRESSE liest ("Get data from page URL").
      Bubble liest sie nur beim Laden und bei popstate neu -- das pushState von showView bemerkt es
      nicht, Bubbles display:none blieb stehen, obwohl Workflow, Adresse und view-on stimmten. Nach
-     einem popstate ging die Ansicht auf. Darum: steht die Ansicht laut Adresse offen, ist aber nach
-     400ms noch von Bubble ausgeblendet, EIN popstate je Wechsel. Die 400ms: das showView aus dem
-     Workflow kam nach 154ms, eine Ansicht mit State-Bedingung ist bis dahin offen und bekommt
-     keinen Anstoss. Die popstate-Hoerer der Seite (Drawer-Skript, Shopping, Events) lesen dabei nur
-     die Adresse, die ohnehin gilt. */
+     einem popstate ging die Ansicht auf. Sauber behoben ist das in Bubble (Bedingung wie bei den
+     anderen Ansichten auf den State); bis dahin stoesst core an.
+     SOFORT STATT NACH 400ms (05.10. gemeldet: "deutlich groesserer Delay hinterm Klick als bei
+     allen anderen Ansichten"). Die erste Fassung wartete bei JEDEM Wechsel 400ms (plus bis zu 100ms
+     Takt), ob Bubble die Ansicht selbst zeigt. Jetzt wird gemerkt, welche Ansicht den Anstoss
+     brauchte (am Fenster und im localStorage, ADRESS_SCHLUESSEL) -- fuer die kommt er im selben
+     Klick. Eine noch unbekannte wird nach 250ms angestossen (das showView aus dem Workflow kam nach
+     154ms) und ab dann gemerkt. Ein Anstoss bei einer Ansicht, die ihn nicht gebraucht haette, ist
+     folgenlos: sie ist in dem Moment noch von Bubble ausgeblendet, und die Hoerer lesen nur die
+     Adresse, die ohnehin gilt. */
+  var ADRESS_SCHLUESSEL = "up_ansicht_adresse";
+  function adressAnsichten(){
+    if (window.__upAdressAnsichten) return window.__upAdressAnsichten;
+    var l = [];
+    try { l = JSON.parse(window.localStorage.getItem(ADRESS_SCHLUESSEL) || "[]"); } catch(e){ l = []; }
+    return (window.__upAdressAnsichten = isArr(l) ? l : []);
+  }
+  function adressAnsichtMerken(name){
+    var l = adressAnsichten();
+    if (l.indexOf(name) >= 0) return;
+    l.push(name);
+    try { window.localStorage.setItem(ADRESS_SCHLUESSEL, JSON.stringify(l)); } catch(e){}
+  }
+  /* Der Anstoss selbst. Der popstate-Hoerer des Kopf-Skripts (View-System v7) meldet dabei
+     bubble_fn_view_changed ein ZWEITES Mal -- die Ansicht hat aber nicht gewechselt, showView hat
+     sie schon gemeldet. Waehrend des (synchronen) Ereignisses steht dort darum ein Leerlauf. */
+  function adresseNeuLesen(){
+    var fn = "bubble_fn_view_changed", hatte = Object.prototype.hasOwnProperty.call(window, fn), vorher = window[fn];
+    try { window[fn] = function(){}; } catch(e){}
+    try { window.dispatchEvent(new PopStateEvent("popstate", { state: window.history.state })); }
+    catch(e){}
+    finally { try { if (hatte) window[fn] = vorher; else delete window[fn]; } catch(e){} }
+  }
   function ansichtHalten(name){
     name = String(name == null ? "" : name).trim();
     if (!name) return;
-    var bis = Date.now() + 5000, anstoss = Date.now() + 400, angestossen = false;
+    var start = Date.now(), bis = start + 5000, angestossen = false, bekannt = adressAnsichten().indexOf(name) >= 0;
     window.__upAnsichtZiel = name;
     (function schauen(){
       if (window.__upAnsichtZiel !== name || Date.now() > bis) return;
       try {
         var v = document.getElementById("view-" + name);
         var inUrl = new URL(window.location.href).searchParams.get("view") || String(window.DEFAULT_VIEW || "dashboard");
-        if (v && inUrl === name && !angestossen && Date.now() >= anstoss && getComputedStyle(v).display === "none"){
+        if (v && inUrl === name && !angestossen && (bekannt || Date.now() - start >= 250) && getComputedStyle(v).display === "none"){
           angestossen = true;
-          window.dispatchEvent(new PopStateEvent("popstate", { state: window.history.state }));
+          adresseNeuLesen();
+          if (!bekannt) adressAnsichtMerken(name);
         }
         if (v && inUrl === name && !v.classList.contains("view-on") && getComputedStyle(v).display !== "none"){
           if (typeof window.fadeView === "function") window.fadeView(name);
@@ -14362,7 +14391,9 @@
           }
         }
       } catch(e){}
-      setTimeout(schauen, 100);
+      /* 50ms in der ersten Sekunde, damit der Anstoss fuer eine unbekannte Ansicht nicht bis zu
+         einem vollen Takt hinter der 250ms-Marke liegt; danach reicht der alte Takt. */
+      setTimeout(schauen, Date.now() - start < 1000 ? 50 : 100);
     })();
   }
 
