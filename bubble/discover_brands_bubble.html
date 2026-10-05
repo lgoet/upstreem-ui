@@ -69,7 +69,7 @@
   |-----------------------|-----------------------------|------------------------------------------|
   | bubble_fn_udbSearch   | Suchfeld, entprellt         | {"team_id":"…","q":"…"}                  |
   | bubble_fn_udbMatched  | Matched-Schalter geklickt   | {"team_id":"…","matched":"yes"|"no"}     |
-  | bubble_fn_udbTrack    | Track-Knopf in einer Zeile  | {"team_id":"…","name":"…","domain":"…"}  |
+  | bubble_fn_udbTrack    | Track-Knopf, NUR wenn add-brand.js fehlt (siehe unten) | {"team_id":"…","name":"…","domain":"…"}  |
 
   ZUM SUCHFELD: die Tabelle filtert die 30 Zeilen SOFORT im Browser und schickt das Event
   trotzdem. Du musst darauf nicht antworten -- tu es nur, wenn dein RPC breiter suchen soll als
@@ -81,9 +81,13 @@
     matched = yes  ->  nur Marken, denen eine zitierte Domain klar zugeordnet werden konnte
     matched = no   ->  reines Matching auf den Namen: findet mehr, faengt aber auch Namensvettern
 
-  ZUM TRACK-KNOPF: er sperrt sich sofort nach dem Klick, damit niemand zweimal drueckt. Lauf am
-  Ende deines Track-Workflows renderDiscoverBrands() erneut -- die angelegte Marke ist dann
-  getrackt und faellt aus der Liste.
+  ZUM TRACK-KNOPF (seit 05.10.): er oeffnet den Add-Brand-Dialog (add-brand.js, openAddBrand) mit
+  Name und Domain der Zeile vorausgefuellt. Der Nutzer kann beides aendern und legt die Marke mit
+  "Track" im Dialog an -- ueber DENSELBEN Workflow wie der Plus-Knopf der Brands-Seite
+  (bubble_fn_uabAddBrand, Antwort addBrandSuccess()/addBrandError()). Nach addBrandSuccess()
+  faellt die Zeile von selbst aus der Liste. Ein eigener udbTrack-Workflow ist damit nicht
+  noetig; das Event kommt nur noch, wenn add-brand.js auf der Seite fehlt (dann sperrt sich der
+  Knopf wie frueher, und dein Workflow sollte am Ende renderDiscoverBrands() erneut laufen lassen).
 
   ── HOEHE DES BUBBLE-ELEMENTS ────────────────────────────────────────────────
   Fit height. Die Tabelle hat keine Pagination und waechst mit der Zeilenzahl.

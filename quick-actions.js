@@ -2069,6 +2069,6 @@
       catch(e){ if (window.console) console.warn("[MQA] vorgemerkter Aufruf " + offen[qi][0] +
         " ist fehlgeschlagen:", e); }
     }
-    if (window.console) console.info("[MQA] " + offen.length + " vorgemerkte(r) Aufruf(e) nachgeholt.");
+    /* Kein Bericht ueber das Nachholen: das ist der Normalfall (05.10., Logs raus). */
   }
 })();

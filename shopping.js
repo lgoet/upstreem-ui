@@ -1208,27 +1208,30 @@
           '<svg class="up-thsort-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9"/></svg></span>' : '') +
         '</div>';
     }
-    /* Das Raster setzt UC.makeColumns als --up-cols an der Wurzel der Tabelle (spaltenFuer). */
+    /* Das Raster setzt UC.makeColumns als --up-cols an der Wurzel der Tabelle (spaltenFuer), die
+       Mindestbreite als --up-cols-min: darunter scrollt der Kasten waagerecht (.ush-scrollx). */
     function tabelleHtml(kopf, zeilen, klasse) {
       return '<div class="up-box ush-box' + (klasse ? " " + klasse : "") + '">' +
+        '<div class="ush-scrollx"><div class="ush-innen">' +
           '<div class="up-thead">' + kopf + '</div>' +
           '<div class="up-tbody">' + zeilen + '</div>' +
-        '</div>';
+        '</div></div></div>';
     }
 
     /* ---- DIE SPALTEN JEDER TABELLE (05.10.: "in allen Tabellen die erste Spalte resizen",
        "Table Settings ueberall in die Toolbars") --------------------------------------------------
        Jede Tabelle laeuft ueber UC.makeColumns wie die anderen der App: Ziehgriff an der ersten
-       Spalte, und wird es eng, fallen die unwichtigsten Spalten weg, statt dass der Kasten
-       waagerecht scrollt. In den Tabellen mit Werkzeugleiste dazu das Zahnrad mit Spalten und
-       Zeilenhoehe.
+       Spalte, in den Tabellen mit Werkzeugleiste dazu das Zahnrad mit Spalten und Zeilenhoehe.
+       ANDERS als dort faellt keine Spalte der Breite wegen weg (cfg.scrollen, 05.10.: "vorher
+       konnte man immer die gesamte Tabelle sehen, ggf. mit horizontalem Scroll -- ich will
+       beides"): ist es zu eng, scrollt der Kasten, und die erste Spalte bleibt dabei stehen.
        min ist die Untergrenze der Spur UND die Zahl, mit der das Kit den Abwurf rechnet -- beide
        muessen gleich sein (teams.js). Die Werte sind die gemessenen Minima der festen Raster von
        vorher (04.10.: Kopf mit Erklaer- und Sortierzeichen ohne Ellipse).
        prio: die KLEINSTE faellt zuerst. sk: der Balken der Skelettzeile. */
     function sp(key, label, min, fr, prio, sk, o) {
       o = o || {};
-      return { key: key, label: label, w: "minmax(" + min + "px," + fr + "fr)", min: min, minNarrow: o.minNarrow, prio: prio, sk: sk, sort: o.sort, info: o.info };
+      return { key: key, label: label, w: "minmax(" + min + "px," + fr + "fr)", min: min, prio: prio, sk: sk, sort: o.sort, info: o.info };
     }
     var TABELLEN = {
       landscape: { erste: { label: "Brand", min: 220, sk: { w: 110, logo: true } }, spalten: [
@@ -1275,13 +1278,10 @@
         sp("share", "Share", 124, 1, 90, 40, { info: "merchant" }),
         sp("obs", "Observations", 128, 1, 80, 30, { info: "obs" }),
         sp("price", "Price", 160, 1.2, 70, 60, { info: "price" })] },
-      /* Recent Appearances: die erste Spalte ist ein Datum -- 12 statt 30 Prozent (firstFloor),
-         sonst nahm sie ein Drittel der Breite fuer zehn Zeichen. Dahinter die Knopfspalte "View
-         Response", gemessen (UC.makeAktionsSpur) statt geschaetzt. */
-      detail: { erste: { label: "Date", min: 120, sk: 60 }, floor: 0.12, aktion: true, spalten: [
-        /* Auf dem Telefon 110: Datum, Modell und Knopf passten bei 343px nicht nebeneinander
-           (12px Ueberlauf gemessen); der Chip kuerzt den Namen mit Auslassungspunkten. */
-        sp("model", "Model", 150, 1.2, 90, { w: 70, logo: true }, { minNarrow: 110 }),
+      /* Recent Appearances: die erste Spalte ist ein Datum (120 Untergrenze). Dahinter die
+         Knopfspalte "View Response", gemessen (UC.makeAktionsSpur) statt geschaetzt. */
+      detail: { erste: { label: "Date", min: 120, sk: 60 }, aktion: true, spalten: [
+        sp("model", "Model", 150, 1.2, 90, { w: 70, logo: true }),
         sp("market", "Market", 90, 0.7, 50, 30),
         sp("topic", "Topic", 160, 1.4, 40, 80),
         sp("position", "Position", 100, 0.8, 70, 30, { info: "pos" }),
@@ -1315,13 +1315,11 @@
       var e = spalten[name];
       if (e && e.wurzel === wurzel) return e;
       if (!UC.makeColumns || !wurzel) return null;
-      /* Die Stufen an die Wurzel des Kits: minNarrow liest is-vnarrow dort, nicht an .ush-root. */
-      if (UC.widthTiers) UC.widthTiers(wurzel);
       var d = TABELLEN[name], st = { cols: {}, widths: {}, dense: false }, aktPx = 0;
       var mitMenue = !!wurzel.querySelector(".up-cols-menu");
       var kit = UC.makeColumns({
         root: wurzel, state: st, columns: d.spalten, storePrefix: "ush", instanceId: instanceId + "__" + name,
-        firstKey: "erste", firstMin: d.erste.min, firstFloor: d.floor, noActions: !d.aktion,
+        firstKey: "erste", firstMin: d.erste.min, firstFloor: d.floor, noActions: !d.aktion, scrollen: true,
         actionsMin: function () { return aktPx || 150; },
         dense: mitMenue, badgeSel: ".ush-cols-badge", cellPrefixes: ["up"]
       });
@@ -2229,9 +2227,9 @@
       var p = d.product || {}, meta = d.meta || {}, b = p.brand && typeof p.brand === "object" ? p.brand : { type: "other" };
       var titel = str(p.title).trim() || str(p.listing_title).trim() || "–";
       var listing = str(p.listing_title).trim();
-      /* DOPPELTE BILDER (05.10.: "oft dieselben Bilder 2-4 mal"). Hier nach der Adresse; was
-         danach noch gleich aussieht, nimmt bilderAbgleichen nach dem Laden heraus. Zwoelf statt
-         sechs: die Leiste blaettert jetzt, statt umzubrechen. */
+      /* DOPPELTE BILDER (05.10.: "oft dieselben Bilder 2-4 mal"): nach der Adresse, nicht nach dem
+         Inhalt -- kein zweites Laden und Vergleichen bei jedem Produktaufruf. Zwoelf statt sechs:
+         die Leiste blaettert jetzt, statt umzubrechen. */
       var bilder = bilderEinmal([p.image_url].concat(isArr(p.images) ? p.images : [])).slice(0, 12);
       var haupt = bilder[0] || "";
       var preis = letzterPreis(p.latest_price) || preisSpanne(p.price_ranges);
@@ -2255,14 +2253,14 @@
             /* EINE REIHE, DIE BLAETTERT (05.10.: "max. eine Reihe Vorschaubilder, eher wie ein
                Karussell"). Passen nicht alle hinein, stehen links und rechts die Pfeile. */
             (bilder.length > 1 ? '<div class="ush-karussell">' +
-              '<button type="button" class="up-iconbtn is-28 ush-kar-pfeil" data-kar="-1" aria-label="' + esc(t("Previous images")) + '">' + UC.icon("chevronLeft", 2) + '</button>' +
+              '<button type="button" class="up-iconbtn is-20 ush-kar-pfeil" data-kar="-1" aria-label="' + esc(t("Previous images")) + '">' + UC.icon("chevronLeft", 2) + '</button>' +
               '<div class="ush-galerie-leiste">' + bilder.map(function (u, i) {
                 return '<button type="button" class="ush-galerie-knopf' + (u === haupt ? " is-on" : "") + '" data-bild="' + esc(u) + '" aria-label="' + esc(t("Image") + " " + (i + 1)) + '">' +
                   /* Ein Vorschaubild, das nicht laedt, geht mit seinem Knopf; bleibt nur eins uebrig,
                      geht die Leiste -- ein einzelnes Kaestchen unter dem Hauptbild zeigt nichts Neues. */
                   '<img src="' + esc(u) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="var k=this.closest(\'.ush-karussell\');this.parentNode.remove();if(k&amp;&amp;k.querySelectorAll(\'.ush-galerie-knopf\').length&lt;2)k.remove()"/></button>';
               }).join("") + '</div>' +
-              '<button type="button" class="up-iconbtn is-28 ush-kar-pfeil" data-kar="1" aria-label="' + esc(t("Next images")) + '">' + UC.icon("chevronRight", 2) + '</button>' +
+              '<button type="button" class="up-iconbtn is-20 ush-kar-pfeil" data-kar="1" aria-label="' + esc(t("Next images")) + '">' + UC.icon("chevronRight", 2) + '</button>' +
             '</div>' : '') +
           '</div>' +
           '<div class="ush-hero-info">' +
@@ -2288,16 +2286,9 @@
       var leiste = el.querySelector(".ush-galerie-leiste");
       if (leiste) leiste.addEventListener("scroll", function () { karussellPruefen(el); }, { passive: true });
       karussellPruefen(el);
-      bilderAbgleichen(el);
     }
-    /* ---- Doppelte Bilder ------------------------------------------------------------------------
-       Nach der Adresse: ohne Protokoll und Anker, Host klein -- dieselbe Datei zweimal verlinkt.
-       Nach dem Inhalt: dieselbe Aufnahme unter zwei Adressen (images.openai.com legt sie als
-       ..._1.jpg, ..._2.jpg ab). Dazu wird jedes Vorschaubild ein zweites Mal geladen, verkleinert
-       auf 16 x 16 Grauwerte und verglichen: gleiches Seitenverhaeltnis (2 Prozent) und im Mittel
-       weniger als 6 von 255 Abweichung heisst gleiches Bild. Das geht NUR, wenn der Bildserver
-       das Auslesen erlaubt (CORS); sonst wirft getImageData, und das Bild bleibt -- lieber ein
-       Bild doppelt als ein verschiedenes weg. Je Adresse einmal (BILD_SIG). */
+    /* ---- Doppelte Bilder: dieselbe Adresse --------------------------------------------------------
+       Ohne Protokoll und Anker, Host klein -- dieselbe Datei zweimal verlinkt zaehlt einmal. */
     function bilderEinmal(l) {
       var da = {}, out = [];
       l.forEach(function (u) {
@@ -2309,56 +2300,6 @@
         da[k] = 1; out.push(u);
       });
       return out;
-    }
-    var BILD_SIG = (window.__ushBildSig = window.__ushBildSig || {});
-    function bildSignatur(u, fertig) {
-      if (BILD_SIG[u] !== undefined) { fertig(BILD_SIG[u]); return; }
-      var im = new Image();
-      im.crossOrigin = "anonymous";
-      im.referrerPolicy = "no-referrer";
-      im.onload = function () {
-        var sig = false;
-        try {
-          var c = document.createElement("canvas");
-          c.width = 16; c.height = 16;
-          var x = c.getContext("2d");
-          x.drawImage(im, 0, 0, 16, 16);
-          var px = x.getImageData(0, 0, 16, 16).data, g = [];
-          /* Durchsichtiges zaehlt als Weiss -- so steht ein freigestelltes Produkt auf der Platte. */
-          for (var i = 0; i < px.length; i += 4) {
-            var a = px[i + 3] / 255;
-            g.push((px[i] * 0.299 + px[i + 1] * 0.587 + px[i + 2] * 0.114) * a + 255 * (1 - a));
-          }
-          sig = { g: g, r: im.naturalWidth / Math.max(1, im.naturalHeight) };
-        } catch (e) { sig = false; }
-        BILD_SIG[u] = sig;
-        fertig(sig);
-      };
-      im.onerror = function () { BILD_SIG[u] = false; fertig(false); };
-      im.src = u;
-    }
-    function gleichesBild(a, b) {
-      if (!a || !b || Math.abs(a.r - b.r) > 0.02 * Math.max(a.r, b.r)) return false;
-      var d = 0;
-      for (var i = 0; i < a.g.length; i++) d += Math.abs(a.g[i] - b.g[i]);
-      return d / a.g.length < 6;
-    }
-    function bilderAbgleichen(el) {
-      var knoepfe = [].slice.call(el.querySelectorAll(".ush-galerie-knopf[data-bild]"));
-      if (knoepfe.length < 2) return;
-      var offen = knoepfe.length, sigs = [];
-      knoepfe.forEach(function (k, i) {
-        bildSignatur(k.getAttribute("data-bild"), function (sig) {
-          sigs[i] = sig;
-          if (--offen) return;
-          var behalten = [];
-          knoepfe.forEach(function (kn, j) {
-            var doppelt = behalten.some(function (b) { return gleichesBild(sigs[j], b); });
-            if (doppelt) kn.remove(); else if (sigs[j]) behalten.push(sigs[j]);
-          });
-          karussellPruefen(el);
-        });
-      });
     }
     /* Pfeile nur, wenn die Reihe ueberlaeuft; am Anfang und am Ende gedimmt. Bleibt nur ein Bild,
        geht die Reihe ganz. */
@@ -2561,9 +2502,9 @@
       var kp = z.closest(".ush-kar-pfeil[data-kar]");
       if (kp) {
         var lst = kp.parentNode.querySelector(".ush-galerie-leiste");
-        /* Drei Vorschaubilder je Schritt (40 breit, 8 Abstand) -- so viele stehen ganz in der Reihe. */
+        /* Vier Vorschaubilder je Schritt (40 breit, 8 Abstand) -- so viele stehen ganz in der Reihe. */
         if (lst) {
-          var ziel = Math.max(0, Math.min(lst.scrollWidth - lst.clientWidth, lst.scrollLeft + Number(kp.getAttribute("data-kar")) * 144));
+          var ziel = Math.max(0, Math.min(lst.scrollWidth - lst.clientWidth, lst.scrollLeft + Number(kp.getAttribute("data-kar")) * 192));
           try { lst.scrollTo({ left: ziel, behavior: "smooth" }); } catch (e2) { lst.scrollLeft = ziel; }
           karussellPruefen(kp.closest('[data-sek="hero"]') || elMain, ziel);
         }

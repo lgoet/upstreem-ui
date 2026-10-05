@@ -66,11 +66,23 @@
 
 /* ---- Tabellen --------------------------------------------------------------------------------------
    Das Raster aus core (.up-thead/.up-row); die Spuren setzt UC.makeColumns als --up-cols an die
-   Wurzel der Tabelle, und wird es eng, fallen Spalten weg, statt dass der Kasten waagerecht
-   scrollt (05.10., wie in allen Tabellen der App). Zeilenhoehe aus core: 72, kompakt 55 -- die
-   Vorschauen der Uebersicht und des Details sind fest kompakt (.ush-vorschau.is-dense im Markup).
-   Product Movement ist keine Tabelle mit Spalten, sondern eine Liste in diesem Raster: 55. */
+   Wurzel der Tabelle, im Scrollmodus (cfg.scrollen) dazu --up-cols-min: die Summe der
+   Mindestbreiten. Darunter scrollt der Kasten waagerecht, statt dass Spalten wegfallen (05.10.:
+   "ich will beides", ziehbare erste Spalte UND die ganze Tabelle). Zeilenhoehe aus core: 72,
+   kompakt 55 -- die Vorschauen der Uebersicht und des Details sind fest kompakt
+   (.ush-vorschau.is-dense im Markup). Product Movement ist keine Tabelle mit Spalten, sondern
+   eine Liste in diesem Raster: 55. */
+.ush-scrollx { overflow-x: auto; overscroll-behavior-x: contain; }
+.ush-innen { min-width: var(--up-cols-min, 0px); }
 .ush-root .ush-bewegung .up-row { height: var(--up-h-row); flex: 0 0 var(--up-h-row); }
+/* Die erste Spalte bleibt beim Scrollen stehen. Der Trenner als Schatten: die Linie der naechsten
+   Zelle scrollt mit weg. Grund wie die Zeile darunter, sonst scheint der Inhalt durch. */
+.ush-scrollx .up-thead > .up-th:first-child, .ush-scrollx .up-row > .up-td:first-child {
+  position: sticky; left: 0; z-index: 1; box-shadow: 1px 0 0 var(--vc-border); }
+.ush-scrollx .up-thead > .up-th:first-child { background: var(--vt-head-bg); }
+.ush-scrollx .up-row > .up-td:first-child { background: var(--vc-bg); }
+.ush-scrollx .up-row:hover > .up-td:first-child { background: var(--vt-row-hover); }
+.ush-root .ush-box .up-row.is-angepinnt > .up-td:first-child { background: var(--vc-heading-bg); }
 /* Kompakt im Zahnrad: die Produktzeile zeigt nur den Titel, das Bild in der kleinen Stufe -- wie
    urls-table, deren Unterzeile kompakt ebenfalls entfaellt. */
 .ush-tab.is-dense .ush-produkte .ush-unter { display: none; }
@@ -174,9 +186,9 @@
 .ush-hero-bild .ush-bild-ph svg { width: 40px; height: 40px; }
 .ush-hero-bild.has-img .ush-bild-ph { display: none; }
 .ush-hero-bild.is-sk { background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
-/* Eine Reihe, die waagerecht blaettert (05.10.); die Pfeile (.up-iconbtn.is-28 aus core) nur, wenn
-   sie ueberlaeuft. 28 + 4 + Reihe + 4 + 28 = 232: drei ganze Vorschaubilder und ein Anschnitt, der
-   zeigt, dass es weitergeht. */
+/* Eine Reihe, die waagerecht blaettert (05.10.); die Pfeile (.up-iconbtn.is-20 aus core) nur, wenn
+   sie ueberlaeuft. 20 + 4 + 184 + 4 + 20 = 232: genau vier ganze Vorschaubilder (4 x 40 + 3 x 8),
+   so gewuenscht -- mit is-28 waren es dreieinhalb. Ohne Pfeile passen fuenf (5 x 40 + 4 x 8). */
 .ush-karussell { display: flex; align-items: center; gap: 4px; min-width: 0; }
 .ush-galerie-leiste { display: flex; flex-wrap: nowrap; gap: 8px; flex: 1 1 auto; min-width: 0;
   overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; }
@@ -206,7 +218,8 @@
 .ush-reviews { font-size: var(--up-fs-s); font-weight: var(--up-fw-n); color: var(--vc-third); }
 .ush-hero > .up-kpiband { border-top: 1px solid var(--vc-border); }
 .ush-root.is-narrow .ush-hero-oben { flex-direction: column; gap: 16px; padding: 16px; }
-.ush-root.is-narrow .ush-galerie { flex-basis: auto; }
+/* Schmal so breit wie das Hauptbild: die Reihe zeigt auch hier vier ganze Bilder. */
+.ush-root.is-narrow .ush-galerie { flex-basis: auto; width: 232px; max-width: 100%; }
 .ush-root.is-narrow .ush-hero-fakten { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
 /* Wo das Produkt erscheint: drei Balkenlisten in einem Kasten, getrennt wie das Kennzahlen-Band. */

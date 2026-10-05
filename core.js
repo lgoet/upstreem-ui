@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261079;
+  var BUILD = 20261080;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -4892,7 +4892,8 @@
 
   /* ---------- makeColumns ----------
      cfg: { root, state, columns, storePrefix, instanceId, firstKey, firstMin, actionsMin,
-            dense, badgeSel, cellPrefixes, onChange }
+            dense, badgeSel, cellPrefixes, onChange, scrollen }
+       scrollen   — no column drops for width; the table scrolls sideways instead (see autoFit)
        columns    — [{key, label, w, min, dropAt}]; `w` is the responsive track, `dropAt` is
                     "narrow" | "vnarrow" (the breakpoint at which the column stops being shown)
        firstKey   — the leading column that becomes a fixed px track once dragged ("domain")
@@ -4993,7 +4994,11 @@
        itself is computed, not guessed. Adding a column to any table can no longer silently break
        a width range. */
     function autoFit(cols, cw){
-      if (!cw) return cols;
+      /* cfg.scrollen (05.10., Shopping: "ich will beides -- ziehbare erste Spalte UND waagerecht
+         scrollen"): keine Spalte faellt der Breite wegen weg. Die Tabelle wird so breit wie die
+         Summe ihrer Mindestbreiten (--up-cols-min an der Wurzel) und scrollt in ihrem Kasten.
+         Abschalten kann der Nutzer Spalten weiter im Zahnrad. */
+      if (!cw || cfg.scrollen) return cols;
       /* Reserve beyond the declared minimums: one separator border per column plus the table
          frame and sub-pixel track rounding. Measured, not guessed — without it an 8-column
          prompts-table still overflowed by ~20px at 1300px, because the sum of `min` values is
@@ -5162,7 +5167,7 @@
          Kann die gezogene Breite samt den Mindestbreiten der anderen nicht mehr stehen, gilt die
          bewegliche Spur wie ohne Ziehen. Die gespeicherte Breite bleibt, am Desktop ist sie
          wieder da. */
-      if (pinned && cw){
+      if (pinned && cw && !cfg.scrollen){
         var andereMin = 0;
         cols.forEach(function(c){ andereMin += colMin(c.key); });
         if (!cfg.noActions && !root.classList.contains("is-t2")) andereMin += ACTIONS_MIN_F();
@@ -5177,11 +5182,18 @@
         var othersMin = 0;
         cols.forEach(function(c){ othersMin += colMin(c.key); });
         if (!cfg.noActions && !root.classList.contains("is-t2")) othersMin += ACTIONS_MIN_F();
-        if (cw) firstPx = Math.max(FIRST_MIN, Math.min(W[FIRST], cw - LEAD() - othersMin));
+        if (cw && !cfg.scrollen) firstPx = Math.max(FIRST_MIN, Math.min(W[FIRST], cw - LEAD() - othersMin));
+        /* Beim Scrollen gilt die gezogene Breite, wie sie ist: der Kasten waechst mit. */
+        else if (cfg.scrollen) firstPx = Math.max(FIRST_MIN, W[FIRST]);
       }
       var lw = LEAD();
       var parts = lw ? [lw + "px"] : [];
-      parts.push(pinned ? firstPx + "px" : "minmax(" + Math.round(firstFloor() * 1000) / 10 + "%, 1.6fr)");
+      /* Beim Scrollen ist die Untergrenze FIRST_MIN in Pixeln statt eines Anteils: ein Anteil an
+         einer Breite, die selbst aus den Spalten folgt, rechnet im Kreis (30 Prozent von 1500 sind
+         450, und die Spalten ragten 170px aus ihrer eigenen Mindestbreite). */
+      parts.push(pinned ? firstPx + "px"
+        : cfg.scrollen ? "minmax(" + FIRST_MIN + "px, 1.6fr)"
+        : "minmax(" + Math.round(firstFloor() * 1000) / 10 + "%, 1.6fr)");
       cols.forEach(function(c){
         parts.push(pinned ? "minmax(" + colMin(c.key) + "px, 1fr)" : colTrack(c));
       });
@@ -5199,6 +5211,16 @@
         parts.push(ACTIONS_MIN_F() + "px");
       }
       var tpl = parts.join(" ");
+      if (cfg.scrollen){
+        /* Die Breite, unter die die Tabelle nicht schrumpft: die Summe der Mindestbreiten. Die
+           Trennlinien liegen IN den Spuren (border der Zelle), zaehlen also nicht extra -- mit
+           einem Pixel je Spalte scrollte die Brand Landscape um 4px. Der Aufrufer setzt den Wert
+           als min-width an den Inhalt seines Scrollkastens. */
+        var minW = LEAD() + (pinned ? firstPx : FIRST_MIN);
+        cols.forEach(function(c){ minW += colMin(c.key); });
+        if (!cfg.noActions && !root.classList.contains("is-t2")) minW += ACTIONS_MIN_F();
+        root.style.setProperty("--up-cols-min", minW + "px");
+      }
       /* The track list goes on the ROOT as --up-cols; core.css has .up-thead/.up-row read it via
          var(). One style write instead of one per row — during a column drag that is the
          difference between ~100 writes per frame and 1, and it costs nothing to keep in sync
@@ -5257,6 +5279,9 @@
          disagreed by exactly one fudge factor. */
       var reserve = 24 + effectiveCols().length;
       var maxA = Math.max(FIRST_MIN, total - LEAD() - others - reserve);
+      /* Beim Scrollen darf die Spalte ueber den Kasten hinaus -- bis zur dreifachen Untergrenze,
+         damit ein Zug nicht versehentlich eine meterbreite Spalte hinterlaesst. */
+      if (cfg.scrollen) maxA = Math.max(maxA, FIRST_MIN * 3);
       var grip = e.target.closest(".up-grip");
       if (grip) grip.classList.add("is-active");
       root.classList.add("is-resizing");
@@ -16798,7 +16823,8 @@
         else setMarkets(q[i].rows, "setUpstreemMarkets (nachgeholt)");
       } catch(e){}
     }
-    if (window.console) console.info("[markets] " + q.length + " vorgemerkte Aufruf(e) nachgeholt.");
+    /* Kein Bericht ueber das Nachholen (05.10.: "bitte endlich die Logs entfernen") -- das ist der
+       Normalfall bei jedem Seitenaufbau. Was schiefgeht, meldet setMarkets selbst. */
   })();
   /* Zum Nachsehen in der Konsole: UpstreemCore.dumpMarkets() zeigt beide Listen nebeneinander.
      Ohne das ist "zu wenige Maerkte" nicht von "falsche Liste" zu unterscheiden. */

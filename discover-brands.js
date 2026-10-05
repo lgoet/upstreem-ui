@@ -591,11 +591,43 @@
           var row = null;
           for (var i = 0; i < state.rows.length; i++) if (state.rows[i].id === id) { row = state.rows[i]; break; }
           if (!row) return;
+          /* TRACK OEFFNET DEN ADD-BRAND-DIALOG (05.10.: "Add Brand oeffnen, Domain und Namen
+             eintragen, der Nutzer drueckt dort Track oder aendert vorher noch etwas -- geht das
+             ohne riesige Bubble-Action?"). Ja: add-brand.js stellt openAddBrand() app-weit bereit
+             (der Dialog haengt an <body>) und legt die Marke ueber seinen eigenen, schon
+             verdrahteten Workflow an (bubble_fn_uabAddBrand). Kein udbTrack mehr, also auch kein
+             Workflow dafuer. Gesperrt wird nichts: bricht der Nutzer ab, bleibt die Zeile, wie sie
+             war. Nach dem Anlegen faellt sie weg (up-brand-added, unten).
+             Nur ohne add-brand.js auf der Seite bleibt es beim alten Ereignis. */
+          if (typeof window.openAddBrand === "function") {
+            window.openAddBrand({ name: row.name, domain: row.domain || "" });
+            return;
+          }
           /* Der Knopf sperrt sich sofort. Das Anlegen laeuft in Bubble, und ein Knopf, der nach
              dem Klick noch klickbar aussieht, wird ein zweites Mal gedrueckt. */
           tr.disabled = true;
           fire("data-track-fn", "udbTrack", { name: row.name, domain: row.domain || "" });
         }
+      });
+
+      /* Eine Marke ist angelegt (add-brand.js meldet es nach addBrandSuccess): ihre Zeile geht aus
+         der Liste der UNbeobachteten. Erkannt an der Domain, sonst am Namen -- wer im Dialog den
+         Namen geaendert hat, wird an der Domain gefunden und umgekehrt. */
+      function domainKern(d) {
+        return String(d == null ? "" : d).trim().toLowerCase()
+          .replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/[\/?#].*$/, "");
+      }
+      window.addEventListener("up-brand-added", function (e) {
+        if (root.isConnected === false) return;
+        var d = (e && e.detail) || {}, dom = domainKern(d.domain), name = String(d.name || "").trim().toLowerCase();
+        if (!dom && !name) return;
+        var vorher = state.rows.length;
+        state.rows = state.rows.filter(function (r) {
+          return !((dom && domainKern(r.domain) === dom) || (name && r.name.trim().toLowerCase() === name));
+        });
+        if (state.rows.length === vorher) return;
+        merken();
+        render();
       });
 
       /* ---------------- Daten herein ---------------- */

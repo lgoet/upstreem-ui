@@ -1280,7 +1280,10 @@
     transform: rotate(-8deg);
     transition: transform 200ms cubic-bezier(.2,.8,.3,1), box-shadow 200ms ease, color 120ms ease;
   }
-  .am-cat-card:hover .am-cat-ic { transform: rotate(-4deg) scale(1.02); box-shadow: var(--up-e-2); color: var(--am-text); }
+  /* Hell nur die Chip-Tiefe beim Ueberfahren (05.10.: "den Schatten der angeschraegten Elemente
+     stark reduzieren") -- e-2 ist der Schatten eines aufgeklappten Menues und lag wie eine Wolke
+     unter der kleinen Kachel. Dunkel bleibt e-2 (eigene Regel unten), dort traegt er kaum. */
+  .am-cat-card:hover .am-cat-ic { transform: rotate(-4deg) scale(1.02); box-shadow: var(--up-e-chip); color: var(--am-text); }
   .am-cat-ic svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
   .am-cat-name { flex: 1 1 auto; min-width: 0; }
   #ask-mira[data-theme="dark"] .am-cat-ic { background: rgba(42,42,42,0.3); border-color: #28282c; box-shadow: var(--up-e-1, 0 1px 4px rgba(0,0,0,.28)); }
@@ -1447,7 +1450,8 @@
     transform: rotate(-8deg);
     transition: transform 200ms cubic-bezier(.2,.8,.3,1), box-shadow 200ms ease, color 120ms ease;
   }
-  .am-rep-card:hover .am-rep-ic { transform: rotate(-4deg) scale(1.02); box-shadow: var(--up-e-2); color: var(--am-text); }
+  /* Wie .am-cat-ic: hell nur die Chip-Tiefe beim Ueberfahren (05.10.). */
+  .am-rep-card:hover .am-rep-ic { transform: rotate(-4deg) scale(1.02); box-shadow: var(--up-e-chip); color: var(--am-text); }
   .am-rep-ic svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
   .am-rep-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
   .am-rep-label { font-size: 14px; font-weight: 600; color: var(--am-text); }

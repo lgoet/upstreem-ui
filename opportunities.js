@@ -965,7 +965,7 @@
     }[action];
     var json = JSON.stringify(payload);
     if (fn && typeof window[fn] === 'function') window[fn](json);
-    else { window.dispatchEvent(new CustomEvent('upstreem:opportunity:' + action, { detail: payload })); console.log('Opportunity ' + action + ':', payload); }
+    else window.dispatchEvent(new CustomEvent('upstreem:opportunity:' + action, { detail: payload }));
   }
 
   /* ---------- move all cards of a column ---------- */

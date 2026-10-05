@@ -59,6 +59,7 @@
     }
 
     var M = null, fire = null, isOpen = false, opener = null;
+    var zuletzt = null;   /* der zuletzt abgeschickte Eintrag, fuer up-brand-added */
     var S = { name: "", domain: "", touched: false, saving: false };
 
     /* ---------------------------------------------------------------------
@@ -350,6 +351,7 @@
          gesetzt ist -- der Dialog haenge dann im Spinner, obwohl alles fertig ist. Dieselbe
          Reihenfolge wie beim Radar-Zellklick, aus demselben Grund. */
       setSaving(true);
+      zuletzt = payload;
       fire("data-add-fn", "bubble_fn_uabAddBrand", payload);
       /* Der Dialog schliesst NICHT selbst. Er wartet auf addBrandSuccess() oder addBrandError()
          aus dem Workflow -- das Anlegen dauert ein paar Sekunden, und ein Dialog, der sofort
@@ -371,7 +373,16 @@
 
     /* Die beiden Antworten des Workflows. Beide beenden den Ladezustand -- der Unterschied ist
        nur, ob der Dialog zugeht oder mit einer Meldung stehen bleibt. */
-    window.addBrandSuccess = function () { if (!M) return; setSaving(false); close(); };
+    /* Nach dem Erfolg sagt der Dialog der App, WAS angelegt wurde (05.10.): Explore Brands nimmt
+       die Zeile dann aus der Liste der unbeobachteten Marken. */
+    window.addBrandSuccess = function () {
+      if (!M) return;
+      setSaving(false); close();
+      if (zuletzt) {
+        try { window.dispatchEvent(new CustomEvent("up-brand-added", { detail: { name: zuletzt.name, domain: zuletzt.domain } })); } catch (e) {}
+        zuletzt = null;
+      }
+    };
     window.addBrandError = function (msg) {
       if (!M) return;
       setSaving(false);
