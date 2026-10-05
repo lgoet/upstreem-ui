@@ -712,10 +712,14 @@
    Regel fuer .is-mini weiter oben (Breite 0, Zeichen mittig). */
 .usn-bar:not(.is-mini) .usn-item.has-beta > .usn-txt { flex: 0 1 auto; }
 .usn-beta { flex: 0 0 auto; }
-/* Die Flaeche kommt seit dem 05.10. aus core (.up-marke.is-akzent, Akzentfarbe). Die helle
-   Ueberlagerung, die hier stand, galt der leisen grauen Marke: sie war auf der Leiste kaum vom
-   Grund zu trennen. Eine Akzentflaeche hebt sich von selbst ab -- und die Ueberlagerung haette
-   sie mit ihrer hoeheren Spezifitaet grau gefaerbt. */
+/* IM HELLEN DERSELBE KONTRAST WIE IN DER TOPBAR (05.10. angefordert). Dort steht die Marke auf
+   Weiss mit 1,114:1. Auf der Leiste (#f9f8f9) waren es mit einer festen Farbe nur 1,051:1, und
+   auf dem aktiven Eintrag war sie sogar HELLER als ihr Grund. Darum keine feste Farbe, sondern
+   eine Ueberlagerung wie --usn-sel/--usn-akt: 5,6 % dunkeln ab, was darunter liegt -- gerechnet
+   1,114 auf der Leiste und 1,112 auf dem aktiven Eintrag. Seit dem 05.10. aus der Akzent-Tinte
+   statt aus der Schriftfarbe (.up-marke.is-akzent), am Standard-Akzent ist das dieselbe Farbe.
+   Im Dunkeln traegt die Leiste den Grund der Seite, dort gilt die Marke aus core unveraendert. */
+.usn-bar:not([data-theme="dark"]) .usn-item .usn-beta { background: color-mix(in srgb, var(--up-accent-ink) 5.6%, transparent); }
 /* Eingeklappt geht die Marke wie der Name auf Breite 0 (.usn-fade) -- ihr Polster aus .up-marke
    (0 7px) blieb aber stehen: 14px Restbreite, und das Zeichen sass 7px links neben den anderen
    (gemessen 14 gegen 21). Das Polster faellt mit der Breite, im selben verzoegerten Takt. */

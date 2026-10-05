@@ -3534,11 +3534,14 @@
    der Event-Pins (--up-sel-bg, "3 Events"): dieselbe Art Angabe, derselbe Grund. --vc-heading-bg
    war zu nah am Kartenweiss (#f9f8f9 auf #fff), der Chip las sich als blosser Text. */
 .up-marke.is-leise { background: var(--up-sel-bg); color: var(--vc-muted); }
-/* Die Marke in der Akzentfarbe (05.10. angefordert: "die Beta-Badges in Primaer-/Akzentfarbe,
-   nicht in der Schriftfarbe"): Flaeche und Schrift wie ein Primaerknopf -- --up-accent mit
-   --up-accent-fg darauf, also auch in jeder gewaehlten Akzentfarbe lesbar (Kontraste stehen an
-   html[data-accent]). Fuer ein Kennzeichen, das auffallen soll ("Beta"); "You" bleibt die Tinte. */
-.up-marke.is-akzent { background: var(--up-accent); color: var(--up-accent-fg); }
+/* Die leise Marke in der Akzentfarbe (05.10., "Beta"): dieselbe Staerke wie .is-leise, nur aus
+   der Primaerfarbe statt aus der Schriftfarbe -- Text in der Akzent-Tinte, die Flaeche ein Hauch
+   davon. Angefordert: "nicht Deckkraft o. Ae. aendern, nur das, was vorher Schriftfarbe war, in
+   Primaerfarbe". Die Anteile sind so gewaehlt, dass am Standard-Akzent (= Schriftfarbe) der alte
+   Grund herauskommt: 5 % auf Weiss ergibt #f4f4f4 (war --up-sel-bg #f4f2f4), 6 % im Dunkeln auf
+   #1c1c1f ergibt #28282b (war #28282c). Eine volle Akzentflaeche war die erste Fassung -- zu laut. */
+.up-marke.is-akzent { background: color-mix(in srgb, var(--up-accent-ink) 5%, var(--vc-bg)); color: var(--up-accent-ink); }
+.up-root[data-theme="dark"] .up-marke.is-akzent { background: color-mix(in srgb, var(--up-accent-ink) 6%, var(--vc-bg)); }
 /* Der Tarif als Pille (UC.planPilleHtml, 28.09. aus teams.css hierher, seit settings-billing sie
    auch zeigt). Der Grundton des Punktes steht HIER und nicht im JS: .up-sent-dot bringt keine
    Farbe mit (die Sentiment-Zelle setzt sie immer inline), und ein Tarif ohne Farbeintrag hatte
