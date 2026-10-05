@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261082;
+  var BUILD = 20261083;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -4627,6 +4627,48 @@
     el.textContent = fmt(von);
     el.__upZLauf = window.requestAnimationFrame(schritt);
   }
+  /* KENNZAHLEN HOCHZAEHLEN (05.10., aus Shopping nach core, fuer Events). Zwei Teile:
+       zaehlHtml(v, art)       die Zahl als .up-num, die schon den ENDWERT als Text traegt -- wer
+                               nicht zaehlt (verdeckter Tab, kein Aufruf von hochzaehlen), sieht
+                               trotzdem das Richtige. art: "pct1" (Prozent, eine Stelle), "num1"
+                               (eine Stelle, etwa der Rang) oder "int" (ganze Zahl). Das Ziel steht
+                               in data-up-ziel, NICHT in data-up-wert: das liest zahlZaehlen als
+                               Ausgangszahl, und dann liefe nichts.
+       hochzaehlen(el, ort)    zaehlt jede so markierte Zahl in el hoch. ort trennt die Orte
+                               ("events|<instanz>|<event>"); je Ort und Kachel (Label der .up-kpi)
+                               wird der zuletzt gezaehlte Wert gemerkt. Zeichnet die Komponente mit
+                               denselben Werten neu (Theme, Breite, Nachzuegler), laeuft nichts von
+                               vorn -- die Zahl steht dann schon auf dem Endwert. Gemerkt am Fenster:
+                               Bubble baut beim Theme-Wechsel die Elemente neu. */
+  var ZAEHL_FMT = {
+    pct1: function(v){ return fmtPct(v, 1); },
+    num1: function(v){ return fmtNum(v, 1); },
+    "int": function(v){ return fmtInt(v); }
+  };
+  function zaehlHtml(v, art, opts){
+    opts = opts || {};
+    var n = toNum(v);
+    if (n == null) return '<span class="up-num is-empty">\u2013</span>';
+    var a = ZAEHL_FMT[art] ? art : "int";
+    return '<span class="up-num' + (opts.klasse ? " " + esc(opts.klasse) : "") + '" data-up-zaehl="' + a + '" data-up-ziel="' + n + '">' +
+      esc(ZAEHL_FMT[a](n)) + '</span>';
+  }
+  function hochzaehlen(el, ort){
+    if (!el || !el.querySelectorAll) return;
+    var alle = (window.__upGezaehlt = window.__upGezaehlt || {});
+    var k = String(ort == null ? "" : ort);
+    var gemerkt = alle[k] || (alle[k] = {});
+    var w = el.querySelectorAll("[data-up-zaehl]");
+    for (var i = 0; i < w.length; i++){
+      var v = toNum(w[i].getAttribute("data-up-ziel"));
+      if (v == null) continue;
+      var kachel = w[i].closest(".up-kpi"), lbl = kachel && kachel.querySelector(".up-kpi-label");
+      var schluessel = lbl ? (lbl.getAttribute("data-i18n") || lbl.textContent) : String(i);
+      if (gemerkt[schluessel] === v) continue;
+      gemerkt[schluessel] = v;
+      zahlZaehlen(w[i], v, ZAEHL_FMT[w[i].getAttribute("data-up-zaehl")] || ZAEHL_FMT["int"]);
+    }
+  }
   function kpiKarteSkelett(klasse){
     return '<div class="up-kpi is-sk' + (klasse ? " " + klasse : "") + '"><span class="up-kpi-sk up-kpi-sk-l"></span><span class="up-kpi-sk up-kpi-sk-v"></span><span class="up-kpi-sk up-kpi-sk-f"></span></div>';
   }
@@ -4666,6 +4708,7 @@
        opts.leer    Text statt des Strichs, wenn es keinen Wert gibt
        opts.text    eigener Text statt der ganzen Zahl -- fuer einen Wert, der dieselbe
                     Gut/Schlecht-Skala traegt, aber anders geschrieben wird (url-detail: "25.4%")
+       opts.zaehlen die Zahl zaehlt hoch (UC.hochzaehlen), etwa in einer Kennzahl-Kachel
      Die Farbe folgt dem Wert, DER DASTEHT: der ganzen Zahl, sonst standen "25" rot und "25"
      orange nebeneinander (25.4 lag ueber der Schwelle). Mit opts.text dem genauen Wert. */
   function sentHtml(v, opts){
@@ -4677,8 +4720,11 @@
         esc(opts.leer != null ? opts.leer : "\u2013") + '</span></span>';
     }
     var r = Math.round(n), mitText = opts.text != null;
+    /* opts.zaehlen: die Zahl fuer hochzaehlen markieren (Kennzahl-Kachel). Der Balken steht sofort
+       in der Farbe des Endwerts -- er sagt, wo die Zahl ankommt. */
+    var z = opts.zaehlen && !mitText ? ' data-up-zaehl="int" data-up-ziel="' + r + '"' : '';
     return '<span class="' + k + '"><span class="up-sent-dot" style="background:' + sentColor(mitText ? n : r) + '"></span>' +
-      '<span class="up-sent-val">' + (mitText ? esc(opts.text) : r) + '</span></span>';
+      '<span class="up-sent-val"' + z + '>' + (mitText ? esc(opts.text) : r) + '</span></span>';
   }
 
   /* Brand-mention chip stack: overlapping favicon circles + "+N" overflow. Shared by urls-table
@@ -14277,17 +14323,30 @@
      [id^="view-"]:not(.view-on) weiter versteckt. Fuenf Sekunden lang wird darum nachgesehen:
      ist die Ansicht laut Adresse die offene, von Bubble eingeblendet und ohne view-on, setzt
      fadeView (Kopf-Skript, schaltet nur die Klasse) sie wieder an. Ein neuer Wechsel beendet das
-     Nachsehen fuer die alte Ansicht. */
+     Nachsehen fuer die alte Ansicht.
+     DIE ADRESSE NEU LESEN LASSEN (05.10., Diagnose klick2 beim Nutzer): #view-shopping und
+     #view-events blendet eine Bedingung ein, die die ADRESSE liest ("Get data from page URL").
+     Bubble liest sie nur beim Laden und bei popstate neu -- das pushState von showView bemerkt es
+     nicht, Bubbles display:none blieb stehen, obwohl Workflow, Adresse und view-on stimmten. Nach
+     einem popstate ging die Ansicht auf. Darum: steht die Ansicht laut Adresse offen, ist aber nach
+     400ms noch von Bubble ausgeblendet, EIN popstate je Wechsel. Die 400ms: das showView aus dem
+     Workflow kam nach 154ms, eine Ansicht mit State-Bedingung ist bis dahin offen und bekommt
+     keinen Anstoss. Die popstate-Hoerer der Seite (Drawer-Skript, Shopping, Events) lesen dabei nur
+     die Adresse, die ohnehin gilt. */
   function ansichtHalten(name){
     name = String(name == null ? "" : name).trim();
     if (!name) return;
-    var bis = Date.now() + 5000;
+    var bis = Date.now() + 5000, anstoss = Date.now() + 400, angestossen = false;
     window.__upAnsichtZiel = name;
     (function schauen(){
       if (window.__upAnsichtZiel !== name || Date.now() > bis) return;
       try {
         var v = document.getElementById("view-" + name);
         var inUrl = new URL(window.location.href).searchParams.get("view") || String(window.DEFAULT_VIEW || "dashboard");
+        if (v && inUrl === name && !angestossen && Date.now() >= anstoss && getComputedStyle(v).display === "none"){
+          angestossen = true;
+          window.dispatchEvent(new PopStateEvent("popstate", { state: window.history.state }));
+        }
         if (v && inUrl === name && !v.classList.contains("view-on") && getComputedStyle(v).display !== "none"){
           if (typeof window.fadeView === "function") window.fadeView(name);
           else {
@@ -20618,7 +20677,7 @@
     getEvents: getEvents, setEvents: setEvents, onEvents: onEvents, eventsStand: eventsStand, eventsChanged: eventsChanged,
     EVENT_TYPEN: EVENT_TYPEN, eventTyp: eventTyp, eventOeffnen: eventOeffnen,
     kpiKarte: kpiKarte, kpiKarteSkelett: kpiKarteSkelett, makeModal: makeModal,
-    sparkHtml: sparkHtml, zahlZaehlen: zahlZaehlen,
+    sparkHtml: sparkHtml, zahlZaehlen: zahlZaehlen, zaehlHtml: zaehlHtml, hochzaehlen: hochzaehlen,
     storeStand: storeStand,
     getQuota: getQuota,
     setQuota: setQuota,

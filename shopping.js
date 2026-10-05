@@ -1371,34 +1371,21 @@
       o.klasse = (o.klasse ? o.klasse + " " : "") + "ush-kpi";
       return UC.kpiKarte ? UC.kpiKarte(o) : "";
     }
-    /* Die Kacheln zaehlen hoch (UC.zahlZaehlen): nach dem Zeichnen, je Wert mit seinem Format. */
-    /* EINMAL JE WERT (05.10. gemeldet: "die triggern doppelt"). Die Kacheln werden nach einer
-       Antwort oft ein zweites Mal gezeichnet -- Kalender und Filter gleichen ab, ein Reiter kommt
-       zurueck --, und jedes Mal stand ein frisches Element ohne Ausgangszahl da, also lief die
-       Animation von vorn. Gemerkt wird je Seite und Kachel der zuletzt gezaehlte Wert, am Fenster
-       je Instanz: auch nach Bubbles Neuaufbau (Themenwechsel) zaehlt nichts noch einmal. Der Text
-       steht schon auf dem Endwert (zaehlWert), es bleibt dann einfach so. */
-    var GEZAEHLT = (window.__ushGezaehlt = window.__ushGezaehlt || {});
-    var gezaehlt = GEZAEHLT[instanceId] || (GEZAEHLT[instanceId] = {});
+    /* Die Kacheln zaehlen hoch: UC.zaehlHtml zeichnet die Zahl, UC.hochzaehlen zaehlt nach dem
+       Zeichnen (seit 05.10. in core, Events zaehlt genauso). EINMAL JE WERT (05.10. gemeldet: "die
+       triggern doppelt"): core merkt sich je Ort und Kachel den zuletzt gezaehlten Wert -- der Ort
+       ist hier Instanz und Seite. Ein zweites Zeichnen mit denselben Werten (Kalender und Filter
+       gleichen ab, ein Reiter kommt zurueck, Bubbles Neuaufbau) zaehlt nicht noch einmal. */
     function hochzaehlen(el) {
-      if (!el || !UC.zahlZaehlen) return;
-      var w = el.querySelectorAll("[data-ush-zaehl]");
-      for (var i = 0; i < w.length; i++) {
-        var art = w[i].getAttribute("data-ush-zaehl"), v = num(w[i].getAttribute("data-ush-wert"));
-        if (v == null) continue;
-        var kachel = w[i].closest(".up-kpi"), lbl = kachel && kachel.querySelector(".up-kpi-label");
-        var schluessel = state.seite + "|" + (lbl ? lbl.getAttribute("data-i18n") || lbl.textContent : i);
-        if (gezaehlt[schluessel] === v) continue;
-        gezaehlt[schluessel] = v;
-        var f = art === "pct" ? function (x) { return pct(x); } : art === "pos" ? function (x) { return stelle(x); } : function (x) { return ganz(x); };
-        UC.zahlZaehlen(w[i], v, f);
-      }
+      if (UC.hochzaehlen) UC.hochzaehlen(el, "shopping|" + instanceId + "|" + state.seite);
     }
+    /* Die Plausibilitaetsgrenzen bleiben hier (anteilWert, posWert, anzahlWert): was ausserhalb
+       liegt, ist ein Strich und zaehlt nicht. */
     function zaehlWert(art, v) {
       v = art === "pct" ? anteilWert(v) : art === "pos" ? posWert(v) : anzahlWert(v);
       if (v == null) return '<span class="up-num is-empty">–</span>';
-      var txt = art === "pct" ? pct(v) : art === "pos" ? stelle(v) : ganz(v);
-      var inner = '<span class="up-num" data-ush-zaehl="' + art + '" data-ush-wert="' + v + '">' + esc(txt) + '</span>';
+      var inner = UC.zaehlHtml ? UC.zaehlHtml(v, art === "pct" ? "pct1" : art === "pos" ? "num1" : "int")
+        : '<span class="up-num">' + esc(art === "pct" ? pct(v) : art === "pos" ? stelle(v) : ganz(v)) + '</span>';
       return art === "pos" ? '<span class="up-rank-group">' + HASH + inner + '</span>' : inner;
     }
     /* Das Kennzahlen-Label mit seiner Erklaerung: kpiKarte schreibt das Label als Text, die

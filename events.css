@@ -78,8 +78,13 @@
 @media (hover: none) { .uev-karte > .uev-mehr { opacity: 1; } }
 
 /* Das Profilbild: Zeichen des Events in einer weissen Kachel, in seiner Farbe. 48 in der Karte,
-   64 im Kopf des Details. */
-.uev-avatar { --uev-t: var(--uev-ton, var(--vc-text)); flex: 0 0 auto; width: 48px; height: 48px; box-sizing: border-box;
+   64 im Kopf des Details.
+   position: relative (05.10. gemeldet: "der Skeleton-Loader beim Titelbild sitzt ueber dem
+   Profilbild"). Das Band pulsiert beim Laden ueber opacity (uutpulse), bekommt damit eine eigene
+   Ebene und wird NACH allem Unpositionierten gemalt -- also ueber das Profilbild, das per
+   negativem Rand hineinragt. Positioniert steht das Profilbild in derselben Ebene, und dort
+   entscheidet die Reihenfolge im Markup: es kommt nach dem Band. */
+.uev-avatar { --uev-t: var(--uev-ton, var(--vc-text)); position: relative; flex: 0 0 auto; width: 48px; height: 48px; box-sizing: border-box;
   display: inline-flex; align-items: center; justify-content: center; border-radius: var(--up-r-xl);
   background: var(--vc-bg); border: 1px solid var(--vc-border); color: var(--uev-t); box-shadow: var(--up-e-1); }
 .uev-avatar svg { width: 22px; height: 22px; }

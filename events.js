@@ -1113,7 +1113,16 @@
       /* Wie die Overview im Agentic Dashboard (03.10.: "aufraeumen, nicht in Cards"): die Zahl mit
          ihrem Trend gegen vorher, darunter EINE Angabe -- der Vergleich mit der Vergleichsgruppe.
          Der Vorher-Wert steht nicht mehr davor; der Trend sagt, wie weit es von dort ging. */
-      return { wertHtml: wertHtml(feld, m.after), trendHtml: trendHtml(feld, m.delta), fussHtml: fuss };
+      return { wertHtml: kpiWertHtml(feld, m.after), trendHtml: trendHtml(feld, m.delta), fussHtml: fuss };
+    }
+    /* Der Wert in der Kachel zaehlt hoch wie in Shopping (05.10.): dieselbe Form wie wertHtml, nur
+       mit den Zaehl-Markierungen aus core. wertHtml bleibt fuer die Tabellen -- Zellen zaehlen nicht. */
+    function kpiWertHtml(feld, v) {
+      v = num(v);
+      if (v == null || !UC.zaehlHtml) return wertHtml(feld, v);
+      if (feld === "sentiment") return UC.sentHtml ? UC.sentHtml(v, { zaehlen: true }) : wertHtml(feld, v);
+      if (feld === "rank") return '<span class="up-rank-group">' + HASH + UC.zaehlHtml(v, "num1") + '</span>';
+      return UC.zaehlHtml(v, "pct1");
     }
     function renderKpis() {
       var el = elMain.querySelector('[data-sek="kpis"]'), a = dieAnalyse();
@@ -1133,6 +1142,9 @@
         teile.klasse = "uev-kpi";
         return UC.kpiKarte(teile);
       }).join("");
+      /* Je Event gemerkt: dasselbe Event noch einmal gezeichnet zaehlt nicht von vorn, ein anderes
+         schon. */
+      if (UC.hochzaehlen) UC.hochzaehlen(el, "events|" + instanceId + "|" + state.eventId);
     }
 
     /* Ein Farbwert aus den Marken des Themas -- die Kurve braucht ihn als Zeichenkette. */
