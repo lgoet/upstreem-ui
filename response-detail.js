@@ -677,12 +677,32 @@
       prev.disabled = pos <= 2; prev.classList.toggle("is-disabled", pos <= 2);
       next.disabled = pos >= max - 2; next.classList.toggle("is-disabled", pos >= max - 2);
       elShopWrap.classList.toggle("is-more", max > 2 && pos < max - 2);
+      /* Links angeschnitten heisst: gescrollt, und keine Karte beginnt genau an der Kante. */
+      var anKante = pos <= 1 || [].some.call(elShopRow.querySelectorAll(".urd-pc"), function (k) {
+        return Math.abs(k.offsetLeft - SHOP_RAND - pos) <= 1;
+      });
+      elShopWrap.classList.toggle("is-links", !anKante);
     }
+    /* Die Pfeile zielen auf den ANFANG einer Karte, nie dazwischen (05.10.: vorher eine Sichtbreite
+       minus 80px, und das Einrasten legte die Karte dann an die Aussenkante der Reihe -- links
+       abgeschnitten). "Weiter": die erste Karte, die rechts nicht ganz zu sehen ist, steht danach
+       vorn. "Zurueck": eine Sichtbreite zurueck, auf den naechsten Kartenanfang. RAND = das Polster
+       der Reihe (2px), auf dem auch die erste Karte steht. Am Ende steht die letzte Karte rechts. */
+    var SHOP_RAND = 2;
     function shopBlaettern(r) {
-      /* Eine Seite weniger eine Kartenbreite Ueberlapp: die letzte Karte der alten Seite steht
-         dann vorn auf der neuen, der Blick verliert den Faden nicht. */
-      var max = elShopRow.scrollWidth - elShopRow.clientWidth;
-      var ziel = Math.max(0, Math.min(max, elShopRow.scrollLeft + r * Math.max(220, elShopRow.clientWidth - 80)));
+      var karten = [].slice.call(elShopRow.querySelectorAll(".urd-pc"));
+      if (!karten.length) return;
+      var max = elShopRow.scrollWidth - elShopRow.clientWidth, pos = elShopRow.scrollLeft, sicht = elShopRow.clientWidth;
+      var ziel;
+      if (r > 0) {
+        var naechste = karten.filter(function (k) { return k.offsetLeft + k.offsetWidth > pos + sicht + 1; })[0];
+        ziel = naechste ? naechste.offsetLeft - SHOP_RAND : max;
+      } else {
+        var grenze = pos - sicht + SHOP_RAND;
+        var erste = karten.filter(function (k) { return k.offsetLeft - SHOP_RAND >= grenze - 1; })[0];
+        ziel = erste ? erste.offsetLeft - SHOP_RAND : 0;
+      }
+      ziel = Math.max(0, Math.min(max, ziel));
       try { elShopRow.scrollTo({ left: ziel, behavior: "smooth" }); } catch (e) { elShopRow.scrollLeft = ziel; }
       shopRand(ziel);
     }
@@ -748,7 +768,7 @@
       if (!karte) return;
       var l = karte.offsetLeft, r = l + karte.offsetWidth;
       if (l < elShopRow.scrollLeft || r > elShopRow.scrollLeft + elShopRow.clientWidth) {
-        var ziel = Math.max(0, l - 2);
+        var ziel = Math.max(0, Math.min(elShopRow.scrollWidth - elShopRow.clientWidth, l - SHOP_RAND));
         try { elShopRow.scrollTo({ left: ziel, behavior: "smooth" }); } catch (e) { elShopRow.scrollLeft = ziel; }
         shopRand(ziel);
       }

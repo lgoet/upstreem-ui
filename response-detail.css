@@ -420,14 +420,32 @@
 .urd-shop-wrap { position: relative; min-width: 0; }
 /* Polster und negativer Rand gleichen sich aus: Platz fuer das Anheben der Karte beim Ueberfahren,
    ohne dass die Reihe es abschneidet. */
-.urd-shop-row { display: flex; gap: 16px; overflow-x: auto; overflow-y: hidden;
-  scroll-snap-type: x mandatory; scrollbar-width: none;
+/* EINRASTEN MIT DEM RAND (05.10. gemeldet: "nach Chevron rechts ist das linke Produkt abgeschnitten,
+   die linke Border liegt gerade ausserhalb"). Die Reihe steht 2px ueber die Kante hinaus (Platz fuer
+   das Anheben), und mandatory rastete jede Karte an DIESER Kante ein -- gemessen 2px, nach "weiter"
+   14px links ausserhalb des Abschnitts. scroll-padding-inline 2px rastet sie dort ein, wo die erste
+   Karte von Anfang an steht; proximity statt mandatory, weil die Pfeile selbst auf Kartenanfaenge
+   zielen (shopBlaettern) und mandatory das Ende der Reihe unerreichbar machen kann.
+   position: relative macht die Reihe zum offsetParent der Karten -- deren offsetLeft ist dann die
+   Stelle IN der Reihe, und daran rechnet die JS. */
+.urd-shop-row { position: relative; display: flex; gap: 16px; overflow-x: auto; overflow-y: hidden;
+  scroll-snap-type: x proximity; scroll-padding-inline: 2px; scrollbar-width: none;
   padding: 4px 2px 12px; margin: -4px -2px -12px; }
 .urd-shop-row::-webkit-scrollbar { display: none; }
 /* Rechts ausgeblendet, solange es weitergeht: das sagt "da kommt noch was", ohne einen Knopf. */
 .urd-shop-wrap.is-more .urd-shop-row {
   -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 48px), transparent);
           mask-image: linear-gradient(90deg, #000 calc(100% - 48px), transparent); }
+/* Links dasselbe, wenn die erste Karte nur angeschnitten ist (05.10.): am Ende der Reihe steht die
+   letzte Karte buendig rechts, und die davor ragt links hinaus -- mit der Blende liest sich das als
+   "geht links weiter" und nicht als abgeschnitten. Steht eine Karte genau an der Kante, gibt es
+   links keine Blende (shopRand, is-links). */
+.urd-shop-wrap.is-links .urd-shop-row {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 48px);
+          mask-image: linear-gradient(90deg, transparent, #000 48px); }
+.urd-shop-wrap.is-links.is-more .urd-shop-row {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 48px, #000 calc(100% - 48px), transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 48px, #000 calc(100% - 48px), transparent); }
 
 /* Die Karte: 236 breit, Polster 8, Radius 16 -- innen also 16 - 8 = 8 am Bild (konzentrisch). */
 .urd-pc { flex: 0 0 236px; scroll-snap-align: start; display: flex; flex-direction: column;
