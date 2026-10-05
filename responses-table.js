@@ -437,6 +437,9 @@
       var name = modelLabel(m, key);
       var full = m ? String(m.display_name || key) : String(key || "");
       var logo = m && m.logo_url ? String(m.logo_url) : "";
+      /* OpenAI hell/dunkel (05.10.): die Modelle kommen hier auch aus der eigenen Nutzlast
+         (params.models), also am Store vorbei. Der Chip traegt im Dunkeln keine Platte. */
+      if (UC.modelLogoUrl) logo = UC.modelLogoUrl(key, logo, undefined, m && m.provider);
       if (logo.indexOf("//") === 0) logo = "https:" + logo;
       var initial = name.charAt(0) || "?";
       /* .up-ment-logo / .up-ment-name are the shared 18px logo + label pair from core.css — the

@@ -757,7 +757,7 @@
                 (starr ? ' aria-disabled="true" data-tip="' + esc(why) + '"' : "") + '>' +
               /* Nur wenn es ein Logo gibt. Ein leeres Kaestchen als Platzhalter sieht aus wie ein
                  Bild, das nicht geladen hat. */
-              (m.logo_url ? '<span class="usb-model-logo"><img src="' + esc(m.logo_url) + '" alt="" ' +
+              (m.logo_url ? '<span class="usb-model-logo"><img src="' + esc(UC.modelLogoUrl ? UC.modelLogoUrl(m.key, m.logo_url, isDark(), m.provider) : m.logo_url) + '" alt="" ' +
                  'onerror="this.parentNode.remove();"/></span>' : "") +
               '<span class="usb-model-txt">' +
                 '<span class="usb-model-name">' + esc(m.display_name || m.key) + '</span>' +

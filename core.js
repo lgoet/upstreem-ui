@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261080;
+  var BUILD = 20261081;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -3740,12 +3740,49 @@
     if (MODEL_SHORT[key]) return MODEL_SHORT[key];
     return m ? String(m.display_name || key) : String(key || "");
   }
+  /* ---- OPENAI IN HELL UND DUNKEL (05.10.) ---------------------------------------------------
+     Fuer OpenAI gibt es zwei Logos: schwarz (openai_light.svg) fuer helle Flaechen, weiss
+     (openai_dark.png, transparent) fuer dunkle. Welches passt, haengt am GRUND, auf dem es sitzt,
+     nicht allein am Thema: die Balkenlisten (.up-bar-logo) und Miras Lauf-Chips tragen in BEIDEN
+     Themen eine helle Platte (--vt-logo-bg, im Dunkeln #e0e0e0) -- dort waere das weisse Logo
+     unsichtbar. Darum fragt die Funktion "dunkler Grund?" (dunkel); ohne Angabe gilt das Thema der
+     App, weil die Modell-Chips im Dunkeln keine Platte tragen.
+     Erkannt wird OpenAI am Schluessel (chatgpt, openai, gpt-...), am Anbieter oder an einer der
+     bisherigen Adressen (freepik, llm_logos/openai_logo.png) -- je nach Quelle kommt nur eins davon
+     mit. Der Modell-Store liefert schon das passende (getModels, onModels); wer ein Logo aus einer
+     eigenen Nutzlast zeichnet, ruft UC.modelLogoUrl selbst. */
+  var OPENAI_LOGO = {
+    hell: "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/llm_logos/openai_light.svg",
+    dunkel: "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/llm_logos/openai_dark.png"
+  };
+  function istOpenAi(key, url, provider){
+    var k = String(key == null ? "" : key).trim().toLowerCase();
+    if (/^(chatgpt|openai|searchgpt|gpt)([-_ .]|\d|$)/.test(k)) return true;
+    if (/^open\s*ai$/i.test(String(provider == null ? "" : provider).trim())) return true;
+    return /\/llm_logos\/openai[_.-]|cdn-icons-png\.freepik\.com\/512\/12222\/12222588\.png/i.test(String(url == null ? "" : url));
+  }
+  function modelLogoUrl(key, url, dunkel, provider){
+    if (!istOpenAi(key, url, provider)) return url == null ? "" : String(url);
+    var d = typeof dunkel === "boolean" ? dunkel : getUpstreemTheme() === "dark";
+    return d ? OPENAI_LOGO.dunkel : OPENAI_LOGO.hell;
+  }
+  /* Kopien, keine veraenderten Eintraege: der Store behaelt die Adresse aus Bubble, und ein
+     Themenwechsel liest beim naechsten Zeichnen das andere Logo. */
+  function modelleMitLogo(list){
+    return (list || []).map(function(m){
+      if (!m || typeof m !== "object" || !istOpenAi(m.key || m.model, m.logo_url, m.provider)) return m;
+      var c = {};
+      for (var k in m) if (Object.prototype.hasOwnProperty.call(m, k)) c[k] = m[k];
+      c.logo_url = modelLogoUrl(m.key || m.model, m.logo_url, undefined, m.provider);
+      return c;
+    });
+  }
   function modelChip(key, cfg){
     cfg = cfg || {};
     var m = modelInfoOf(key);
     var full = m ? String(m.display_name || key) : String(key || "");
     var name = cfg.full ? full : modelLabelOf(m, key, null);
-    var logo = m && m.logo_url ? String(m.logo_url) : "";
+    var logo = modelLogoUrl(key, m && m.logo_url ? String(m.logo_url) : "", undefined, m && m.provider);
     if (logo.indexOf("//") === 0) logo = "https:" + logo;
     var initial = (name.charAt(0) || "?");
     return '<span class="up-model-chip' + (cfg.cls ? " " + cfg.cls : "") + '"' +
@@ -16466,7 +16503,7 @@
      the topic store's comment for the why. */
   var MODELS = (window.__upModels = window.__upModels || { list: [], at: 0, seq: 0, subs: [] });
 
-  function getModels(){ return MODELS.list.slice(); }
+  function getModels(){ return modelleMitLogo(MODELS.list); }
   function onModels(fn, owner){
     var sub = { fn: fn, owner: owner || null };
     MODELS.subs.push(sub);
@@ -16485,7 +16522,7 @@
     for (var i = MODELS.subs.length - 1; i >= 0; i--){
       var sub = MODELS.subs[i];
       if (sub.owner && !document.contains(sub.owner)){ MODELS.subs.splice(i, 1); continue; }
-      try { sub.fn(list.slice()); } catch(e){
+      try { sub.fn(modelleMitLogo(list)); } catch(e){
         if (window.console) console.warn("[models] a subscriber threw while updating:", e);
       }
     }
@@ -20580,7 +20617,7 @@
     sentHtml: sentHtml,
     brandStack: brandStack,
     relativeTime: relativeTime,
-    modelChip: modelChip, markenChip: markenChip, ansichtHalten: ansichtHalten, makeHaendlerFilter: makeHaendlerFilter,
+    modelChip: modelChip, modelLogoUrl: modelLogoUrl, markenChip: markenChip, ansichtHalten: ansichtHalten, makeHaendlerFilter: makeHaendlerFilter,
     marketChip: marketChip,
     aufResize: aufResize,
     beobachteGroesse: beobachteGroesse,

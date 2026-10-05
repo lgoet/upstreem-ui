@@ -282,7 +282,9 @@
        with an image that is ALREADY complete by the time the markup lands (a cached logo fires
        neither event), and that check has nowhere to live in an attribute. */
     function logoHtml(m, cls) {
-      var url = fixUrl(m.logo_url);
+      /* OpenAI hell/dunkel (05.10.): auch Modelle aus setModelsFilterModels, die nicht durch den
+         Store gehen. Die Kachel faellt mit dem Bild weg, Grund ist also das Menue. */
+      var url = fixUrl(UC && UC.modelLogoUrl ? UC.modelLogoUrl(m.key || m.model, m.logo_url, undefined, m.provider) : m.logo_url);
       var initial = esc(nameOf(m).charAt(0).toUpperCase() || "?");
       if (url && LOGO_OK[url]) cls += " has-img";
       return '<span class="' + cls + ' umf-logo">' +

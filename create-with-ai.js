@@ -73,7 +73,8 @@
 
   var TEMPLATE_DEFAULT = "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/content_templates/upstreem-matching-content-v2-0.txt";
   var LOGO = {
-    chatgpt: "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/llm_logos/openai_logo.png",
+    /* OpenAI hell/dunkel ueber UC.modelLogoUrl (siehe logoVon); diese Adresse ist nur der Rueckfall. */
+    chatgpt: "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/llm_logos/openai_light.svg",
     claude:  "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/llm_logos/claude-logo%20(1).svg",
     gemini:  "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/llm_logos/gemini_logo.webp",
     grok:    "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/llm_logos/grok_logo.webp"
@@ -513,7 +514,7 @@
       elAssist.innerHTML = ORDER.map(function(k){
         var a = ASSISTANTS[k];
         return '<button class="uca-assistant' + (S.assistant === k ? " is-selected" : "") + '" type="button" data-assistant="' + k + '">' +
-          '<span class="uca-ai-logo">' + imgHtml(LOGO[k]) + "</span>" +
+          '<span class="uca-ai-logo">' + imgHtml(UC.modelLogoUrl ? UC.modelLogoUrl(k, LOGO[k], isDark()) : LOGO[k]) + "</span>" +
           '<span class="uca-ai-meta"><span class="uca-ai-name">' + esc(a.name) + "</span>" +
             '<span class="uca-ai-desc">' + esc(a.desc) + "</span></span>" +
           '<span class="uca-ai-check">' + CHECK_SVG + "</span>" +

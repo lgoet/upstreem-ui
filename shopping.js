@@ -2381,7 +2381,10 @@
     }
     function modellInfo(key) {
       var k = str(key).trim(), l = UC.getModels ? UC.getModels() : [];
-      for (var i = 0; i < l.length; i++) if (str(l[i].key || l[i].model) === k) return { name: str(l[i].display_name || k), logo: sichereUrl(l[i].logo_url) };
+      /* Fuer die Balkenliste: deren Platte ist in beiden Themen hell, also das schwarze OpenAI-Logo. */
+      for (var i = 0; i < l.length; i++) if (str(l[i].key || l[i].model) === k) {
+        return { name: str(l[i].display_name || k), logo: sichereUrl(UC.modelLogoUrl ? UC.modelLogoUrl(k, l[i].logo_url, false, l[i].provider) : l[i].logo_url) };
+      }
       return { name: k ? k.charAt(0).toUpperCase() + k.slice(1) : t("Unknown"), logo: "" };
     }
     /* "Germany (DE)" wie im Entwurf, der Name aus dem Markt-Speicher (Feld alpha2); kennt der ihn

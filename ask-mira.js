@@ -1491,7 +1491,11 @@
   function _modelLogo(key){
     if (!key || !S.models) return '';
     var m = S.models[String(key).toLowerCase()] || S.models[String(key)];
-    return (m && m.logo_url) ? String(m.logo_url) : '';
+    var u = (m && m.logo_url) ? String(m.logo_url) : '';
+    /* OpenAI hell/dunkel (05.10.): der Antwort-Chip (.am-inline-logo) liegt auf --am-soft, im
+       Dunkeln also dunkel -- das Logo folgt dem Thema. */
+    var UCm = window.UpstreemCore;
+    return (u && UCm && UCm.modelLogoUrl) ? UCm.modelLogoUrl(m.key || key, u, undefined, m.provider) : u;
   }
   // small "response" fallback icon (message bubble), used when no model logo resolves
   /* Funktion statt Konstante: der Wert braucht amFormen, und das braucht core --
@@ -3341,7 +3345,8 @@
   function _tlModelList(){
     var out = [], k, m;
     for (k in S.models){ if (!Object.prototype.hasOwnProperty.call(S.models, k)) continue; m = S.models[k];
-      if (m && m.logo_url) out.push({ src: m.logo_url, label: m.display_name || m.key || k }); }
+      /* Die Lauf-Chips tragen in beiden Themen eine helle Platte: immer das schwarze OpenAI-Logo. */
+      if (m && m.logo_url) out.push({ src: (window.UpstreemCore && window.UpstreemCore.modelLogoUrl) ? window.UpstreemCore.modelLogoUrl(m.key || k, m.logo_url, false, m.provider) : m.logo_url, label: m.display_name || m.key || k }); }
     return out.slice(0, 20);
   }
   function _tlTopicList(){

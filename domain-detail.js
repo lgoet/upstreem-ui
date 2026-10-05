@@ -885,7 +885,8 @@
           name: String(m.model || ""),
           share: num(m.model_share_pct) || 0,
           color: (isDark ? m.color_darkmode : m.color_lightmode) || typFarbe(),
-          logo: String(m.model_logo_url || "")
+          /* Die Balken-Platte ist in BEIDEN Themen hell -- also immer das schwarze OpenAI-Logo. */
+          logo: UC.modelLogoUrl ? UC.modelLogoUrl(m.model, m.model_logo_url, false) : String(m.model_logo_url || "")
         };
       });
       var fam = ruhig(isDark, null);
